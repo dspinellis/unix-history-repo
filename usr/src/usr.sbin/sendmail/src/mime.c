@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -58,8 +58,9 @@ static int	MimeBoundaryType;	/* internal linkage */
 **		mci -- mailer connection information.
 **		header -- the header for this body part.
 **		e -- envelope.
-**		boundary -- the message boundary -- NULL if we are
-**			processing the outer portion.
+**		boundaries -- the currently pending message boundaries.
+**			NULL if we are processing the outer portion.
+**		flags -- to tweak processing.
 **
 **	Returns:
 **		An indicator of what terminated the message part:
@@ -68,44 +69,94 @@ static int	MimeBoundaryType;	/* internal linkage */
 **		  MBT_NOTSEP -- an end of file
 */
 
+struct args
+{
+	char	*field;		/* name of field */
+	char	*value;		/* value of that field */
+};
+
 int
-mime8to7(mci, header, e, boundary)
+mime8to7(mci, header, e, boundaries, flags)
 	register MCI *mci;
 	HDR *header; register ENVELOPE *e;
-	char *boundary;
+	char **boundaries;
+	int flags;
 {
 	register char *p;
 	int linelen;
 	int bt;
 	off_t offset;
 	size_t sectionsize, sectionhighbits;
+	int i;
+	char *type;
+	char *subtype;
+	char **pvp;
+	int argc = 0;
+	struct args argv[MAXMIMEARGS];
 	char bbuf[128];
 	char buf[MAXLINE];
+	char pvpbuf[MAXLINE];
 
 	if (tTd(43, 1))
 	{
 		printf("mime8to7: boundary=%s\n",
-			boundary == NULL ? "<none>" : boundary);
+			boundaries[0] == NULL ? "<none>" : boundaries[0]);
+		for (i = 1; boundaries[i] != NULL; i++)
+			printf("\tboundaries[i]\n");
 	}
+	type = subtype = "-none-";
 	p = hvalue("Content-Type", header);
-	if (p != NULL && strncasecmp(p, "multipart/", 10) == 0)
+	if (p != NULL &&
+	    (pvp = prescan(p, '\0', pvpbuf, sizeof pvpbuf, NULL)) != NULL &&
+	    pvp[0] != NULL)
+	{
+		type = *pvp++;
+		if (*pvp != NULL && strcmp(*pvp, "/") == 0 &&
+		    *++pvp != NULL)
+		{
+			subtype = *pvp++;
+		}
+
+		/* break out parameters */
+		while (*pvp != NULL && argc < MAXMIMEARGS)
+		{
+			/* skip to semicolon separator */
+			while (*pvp != NULL && strcmp(*pvp, ";") != 0)
+				pvp++;
+			if (*pvp++ == NULL || *pvp == NULL)
+				break;
+
+			/* extract field name */
+			argv[argc].field = *pvp++;
+
+			/* see if there is a value */
+			if (*pvp != NULL && strcmp(*pvp, "=") == 0 &&
+			    (*++pvp == NULL || strcmp(*pvp, ";") != 0))
+			{
+				argv[argc].value = *pvp;
+				argc++;
+			}
+		}
+	}
+	if (strcasecmp(type, "multipart") == 0)
 	{
 		register char *q;
 
-		/* oh dear -- this part is hard */
-		p = strstr(p, "boundary=");		/*XXX*/
-		if (p == NULL)
+		for (i = 0; i < argc; i++)
+		{
+			if (strcasecmp(argv[i].field, "boundary") == 0)
+				break;
+		}
+		if (i >= argc)
 		{
 			syserr("mime8to7: Content-Type: %s missing boundary", p);
 			p = "---";
 		}
 		else
-			p += 9;
+			p = argv[i].value;
 		if (*p == '"')
 			q = strchr(p, '"');
 		else
-			q = strchr(p, ',');
-		if (q == NULL)
 			q = p + strlen(p);
 		if (q - p > sizeof bbuf - 1)
 		{
@@ -119,12 +170,26 @@ mime8to7(mci, header, e, boundary)
 		{
 			printf("mime8to7: multipart boundary \"%s\"\n", bbuf);
 		}
+		for (i = 0; i < MAXMIMENESTING; i++)
+			if (boundaries[i] == NULL)
+				break;
+		if (i >= MAXMIMENESTING)
+			syserr("mime8to7: multipart nesting boundary too deep");
+		else
+		{
+			boundaries[i] = bbuf;
+			boundaries[i + 1] = NULL;
+		}
+
+		/* flag subtypes that can't have any 8-bit data */
+		if (strcasecmp(subtype, "signed") == 0)
+			flags |= M87F_NO8BIT;
 
 		/* skip the early "comment" prologue */
 		bt = MBT_FINAL;
 		while (fgets(buf, sizeof buf, e->e_dfp) != NULL)
 		{
-			bt = mimeboundary(buf, bbuf);
+			bt = mimeboundary(buf, boundaries);
 			if (bt != MBT_NOTSEP)
 				break;
 			putline(buf, mci);
@@ -137,7 +202,7 @@ mime8to7(mci, header, e, boundary)
 			putline(buf, mci);
 			collect(e->e_dfp, FALSE, FALSE, &hdr, e);
 			putheader(mci, hdr, e, 0);
-			bt = mime8to7(mci, hdr, e, bbuf);
+			bt = mime8to7(mci, hdr, e, boundaries, flags);
 		}
 		sprintf(buf, "--%s--", bbuf);
 		putline(buf, mci);
@@ -146,10 +211,11 @@ mime8to7(mci, header, e, boundary)
 		while (fgets(buf, sizeof buf, e->e_dfp) != NULL)
 		{
 			putline(buf, mci);
-			bt = mimeboundary(buf, boundary);
+			bt = mimeboundary(buf, boundaries);
 			if (bt != MBT_NOTSEP)
 				break;
 		}
+		boundaries[i] = NULL;
 		return bt;
 	}
 
@@ -161,8 +227,13 @@ mime8to7(mci, header, e, boundary)
 	**	encoding.
 	*/
 
+	/* handle types that cannot have 8-bit data internally */
+	sprintf(buf, "%s/%s", type, subtype);
+	if (wordinclass(buf, 'n'))
+		flags |= M87F_NO8BIT;
+
 	sectionsize = sectionhighbits = 0;
-	if (p == NULL || strcasecmp(p, "message/rfc822") != 0)
+	if (!bitset(M87F_NO8BIT, flags))
 	{
 		/* remember where we were */
 		offset = ftell(e->e_dfp);
@@ -172,7 +243,7 @@ mime8to7(mci, header, e, boundary)
 		/* do a scan of this body type to count character types */
 		while (fgets(buf, sizeof buf, e->e_dfp) != NULL)
 		{
-			bt = mimeboundary(buf, boundary);
+			bt = mimeboundary(buf, boundaries);
 			if (bt != MBT_NOTSEP)
 				break;
 			for (p = buf; *p != '\0'; p++)
@@ -226,7 +297,7 @@ mime8to7(mci, header, e, boundary)
 		mci->mci_flags &= ~MCIF_INHEADER;
 		while (fgets(buf, sizeof buf, e->e_dfp) != NULL)
 		{
-			bt = mimeboundary(buf, boundary);
+			bt = mimeboundary(buf, boundaries);
 			if (bt != MBT_NOTSEP)
 				break;
 			if (buf[0] == 'F' &&
@@ -245,7 +316,7 @@ mime8to7(mci, header, e, boundary)
 		putline("", mci);
 		mci->mci_flags &= ~MCIF_INHEADER;
 		linelen = 0;
-		while ((c1 = mime_getchar(e->e_dfp, boundary)) != EOF)
+		while ((c1 = mime_getchar(e->e_dfp, boundaries)) != EOF)
 		{
 			if (linelen > 71)
 			{
@@ -255,7 +326,7 @@ mime8to7(mci, header, e, boundary)
 			linelen += 4;
 			fputc(Base64Code[c1 >> 2], mci->mci_out);
 			c1 = (c1 & 0x03) << 4;
-			c2 = mime_getchar(e->e_dfp, boundary);
+			c2 = mime_getchar(e->e_dfp, boundaries);
 			if (c2 == EOF)
 			{
 				fputc(Base64Code[c1], mci->mci_out);
@@ -266,7 +337,7 @@ mime8to7(mci, header, e, boundary)
 			c1 |= (c2 >> 4) & 0x0f;
 			fputc(Base64Code[c1], mci->mci_out);
 			c1 = (c2 & 0x0f) << 2;
-			c2 = mime_getchar(e->e_dfp, boundary);
+			c2 = mime_getchar(e->e_dfp, boundaries);
 			if (c2 == EOF)
 			{
 				fputc(Base64Code[c1], mci->mci_out);
@@ -289,7 +360,7 @@ mime8to7(mci, header, e, boundary)
 		mci->mci_flags &= ~MCIF_INHEADER;
 		linelen = fromstate = 0;
 		c2 = '\n';
-		while ((c1 = mime_getchar(e->e_dfp, boundary)) != EOF)
+		while ((c1 = mime_getchar(e->e_dfp, boundaries)) != EOF)
 		{
 			if (c1 == '\n')
 			{
@@ -369,16 +440,16 @@ mime8to7(mci, header, e, boundary)
 **
 **	Parameters:
 **		fp -- the input file.
-**		boundary -- the current MIME boundary.
+**		boundaries -- the current MIME boundaries.
 **
 **	Returns:
 **		The next character in the input stream.
 */
 
 int
-mime_getchar(fp, boundary)
+mime_getchar(fp, boundaries)
 	register FILE *fp;
-	char *boundary;
+	char **boundaries;
 {
 	int c;
 	static char *bp = NULL;
@@ -403,7 +474,7 @@ mime_getchar(fp, boundary)
 	}
 	if (c != EOF)
 		*bp++ = c;
-	if (atbol && c == '-' && boundary != NULL)
+	if (atbol && c == '-')
 	{
 		/* check for a message boundary */
 		c = fgetc(fp);
@@ -424,7 +495,7 @@ mime_getchar(fp, boundary)
 			*bp++ = c;
 		}
 		*bp = '\0';
-		MimeBoundaryType = mimeboundary(buf, boundary);
+		MimeBoundaryType = mimeboundary(buf, boundaries);
 		switch (MimeBoundaryType)
 		{
 		  case MBT_FINAL:
@@ -450,7 +521,7 @@ mime_getchar(fp, boundary)
 **
 **	Parameters:
 **		line -- the input line.
-**		boundary -- the expected boundary.
+**		boundaries -- the set of currently pending boundaries.
 **
 **	Returns:
 **		MBT_NOTSEP -- if this is not a separator line
@@ -461,18 +532,18 @@ mime_getchar(fp, boundary)
 */
 
 int
-mimeboundary(line, boundary)
+mimeboundary(line, boundaries)
 	register char *line;
-	char *boundary;
+	char **boundaries;
 {
 	int type;
 	int i;
+	int savec;
 
-	if (line[0] != '-' || line[1] != '-' || boundary == NULL)
+	if (line[0] != '-' || line[1] != '-' || boundaries == NULL)
 		return MBT_NOTSEP;
 	if (tTd(43, 5))
-		printf("mimeboundary: bound=\"%s\", line=\"%s\"... ",
-			boundary, line);
+		printf("mimeboundary: line=\"%s\"... ", line);
 	i = strlen(line);
 	if (line[i - 1] == '\n')
 		i--;
@@ -486,10 +557,12 @@ mimeboundary(line, boundary)
 	else
 		type = MBT_INTERMED;
 
+	savec = line[i];
+	line[i] = '\0';
 	/* XXX should check for improper nesting here */
-	if (strncmp(boundary, &line[2], i - 2) != 0 ||
-	    strlen(boundary) != i - 2)
+	if (isboundary(&line[2], boundaries) < 0)
 		type = MBT_NOTSEP;
+	line[i] = savec;
 	if (tTd(43, 5))
 		printf("%d\n", type);
 	return type;
@@ -520,4 +593,32 @@ defcharset(e)
 	if (DefaultCharSet != NULL)
 		return DefaultCharSet;
 	return "unknown-8bit";
+}
+/*
+**  ISBOUNDARY -- is a given string a currently valid boundary?
+**
+**	Parameters:
+**		line -- the current input line.
+**		boundaries -- the list of valid boundaries.
+**
+**	Returns:
+**		The index number in boundaries if the line is found.
+**		-1 -- otherwise.
+**
+*/
+
+int
+isboundary(line, boundaries)
+	char *line;
+	char **boundaries;
+{
+	register int i;
+
+	i = 0;
+	while (boundaries[i] != NULL)
+	{
+		if (strcmp(line, boundaries[i]) == 0)
+			return i;
+	}
+	return -1;
 }
