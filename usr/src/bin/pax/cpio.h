@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpio.h	1.1 (Berkeley) %G%
+ *	@(#)cpio.h	1.2 (Berkeley) %G%
  */
 
 /*
@@ -30,7 +30,7 @@
 #define C_IFMT		0170000		/* type of file */
 
 /*
- * Data Interchange Format - Extended cpio Format - POSIX 1003.1-1990
+ * Data Interchange Format - Extended cpio header format - POSIX 1003.1-1990
  */
 typedef struct {
 	char	c_magic[6];		/* magic cookie */
@@ -47,15 +47,18 @@ typedef struct {
 } HD_CPIO; 
 
 #define	MAGIC		070707		/* transportable archive id */
-#define	AMAGIC		"070707"	/* ascii string of above */
+
+#ifdef _PAX_
+#define	AMAGIC		"070707"	/* ascii equivalent string of MAGIC */
 #define CPIO_MASK	0x3ffff		/* bits valid in the dev/ino fields */
 					/* used for dev/inode remaps */
+#endif /* _PAX_ */
 
 /*
- * Binary cpio structure 
+ * Binary cpio header structure 
  *
  * CAUTION! CAUTION! CAUTION!
- * Each field really represents a 16 bit short (NOT ASCII). We deal with it as
+ * Each field really represents a 16 bit short (NOT ASCII). Described as
  * an array of chars in an attempt to improve portability!!
  */
 typedef struct {
@@ -74,8 +77,9 @@ typedef struct {
 	u_char	h_filesize_2[2];
 } HD_BCPIO; 
 
+#ifdef _PAX_
 /*
- * extraction and creation macros
+ * extraction and creation macros for binary cpio
  */
 #define SHRT_EXT(ch)	((((unsigned)(ch)[0])<<8) | (((unsigned)(ch)[1])&0xff))
 #define RSHRT_EXT(ch)	((((unsigned)(ch)[1])<<8) | (((unsigned)(ch)[0])&0xff))
@@ -85,13 +89,14 @@ typedef struct {
 #define CHR_WR_3(val)	((char)((val) & 0xff))
 
 /*
- * masks and pads
+ * binary cpio masks and pads
  */
 #define BCPIO_PAD(x)	((2 - ((x) & 1)) & 1)	/* pad to next 2 byte word */
 #define BCPIO_MASK	0xffff			/* mask for dev/ino fields */
+#endif /* _PAX_ */
 
 /*
- * System VR4 cpio structure 
+ * System VR4 cpio header structure (with/without file data crc)
  */
 typedef struct {
 	char	c_magic[6];		/* magic cookie */
@@ -107,12 +112,14 @@ typedef struct {
 	char	c_rmaj[8];		/* special file major # */
 	char	c_rmin[8];		/* special file minor # */
 	char	c_namesize[8];		/* length of pathname */
-	char	c_chksum[8];		/* 0 OR CRC of bytes in FILE */
+	char	c_chksum[8];		/* 0 OR CRC of bytes of FILE data */
 } HD_VCPIO; 
 
 #define	VMAGIC		070701		/* sVr4 new portable archive id */
-#define	AVMAGIC		"070701"	/* ascii string of above */
 #define	VCMAGIC		070702		/* sVr4 new portable archive id CRC */
+#ifdef _PAX_
+#define	AVMAGIC		"070701"	/* ascii string of above */
 #define	AVCMAGIC	"070702"	/* ascii string of above */
-#define VCPIO_PAD(x)	((4 - ((x) & 3)) & 3)	/*pad to next 4 byte word */
+#define VCPIO_PAD(x)	((4 - ((x) & 3)) & 3)	/* pad to next 4 byte word */
 #define VCPIO_MASK	0xffffffff	/* mask for dev/ino fields */
+#endif /* _PAX_ */
