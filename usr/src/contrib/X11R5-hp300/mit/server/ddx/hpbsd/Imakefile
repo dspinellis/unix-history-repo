@@ -1,0 +1,39 @@
+#include <Server.tmpl>
+
+#define IHaveSubdirs
+
+SRCS =	init.c crtstub.c hpscrninit.c hpFonts.c \
+	hpOScrnBuf.c hpCursorUtils.c hpcursor.c hpsprite.c \
+	hpScreens.c
+
+OBJS =	init.o crtstub.o hpscrninit.o hpFonts.o \
+	hpOScrnBuf.o hpCursorUtils.o hpcursor.o hpsprite.o \
+	hpScreens.o
+
+#if BSD44
+        DEVINC = -I/sys/hp/dev
+#else
+        DEVINC = -I/sys/hpdev
+#endif
+      INCLUDES = -I. -I./include -I./input -I../../include -I../mi \
+		 -I$(INCLUDESRC) -I$(FONTSRC)/include \
+		 -I../../../extensions/include $(DEVINC)
+      LINTLIBS = ../../dix/llib-ldix.ln ../../os/llib-los.ln
+LIBDIR_DEFINES = -DLIBDIR=\"$(LIBDIR)\"
+       SUBDIRS = input cfb mfb topcat hyperion
+
+NormalLibraryObjectRule()
+NormalLibraryTarget(hpbsd,$(OBJS))
+
+SpecialObjectRule(init.o, $(ICONFIGFILES), $(LIBDIR_DEFINES))
+
+DependTarget()
+
+lintlib:
+
+NormalLintTarget($(SRCS))
+
+MakeSubdirs($(SUBDIRS))
+DependSubdirs($(SUBDIRS))
+
+InstallNonExecFile(XHPKeymaps,$(LIBDIR))
