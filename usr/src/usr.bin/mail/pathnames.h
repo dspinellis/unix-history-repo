@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)pathnames.h	5.2 (Berkeley) %G%
+ *	@(#)pathnames.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -32,12 +32,7 @@
 #define	POSTAGE		"/usr/adm/maillog"
 					/* Where to audit mail sending */
 					/* Name of casual tilde help */
-#define	UIDMASK		0177777		/* Significant uid bits */
 #define	MASTER		"/usr/lib/Mail.rc"
 #define	APPEND				/* New mail goes to end of mailbox */
 #define CANLOCK				/* Locking protocol actually works */
 #define	UTIME				/* System implements utime(2) */
-
-#ifndef VMUNIX
-#include "sigretro.h"			/* Retrofit signal defs */
-#endif VMUNIX

@@ -5,11 +5,12 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)cmd3.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)cmd3.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 /*
  * Mail -- a mail program
@@ -25,7 +26,8 @@ static char *sccsid = "@(#)cmd3.c	5.3 (Berkeley) %G%";
 shell(str)
 	char *str;
 {
-	int (*sig[2])(), stat[1];
+	int (*sigint)(), (*sigquit)();
+	union wait stat;
 	register int t;
 	char *Shell;
 	char cmd[BUFSIZ];
@@ -35,24 +37,24 @@ shell(str)
 		return(-1);
 	if ((Shell = value("SHELL")) == NOSTR)
 		Shell = SHELL;
-	for (t = 2; t < 4; t++)
-		sig[t-2] = sigset(t, SIG_IGN);
+	sigint = signal(SIGINT, SIG_IGN);
+	sigquit = signal(SIGQUIT, SIG_IGN);
 	t = vfork();
 	if (t == 0) {
-		sigchild();
-		for (t = 2; t < 4; t++)
-			if (sig[t-2] != SIG_IGN)
-				sigsys(t, SIG_DFL);
+		if (sigint != SIG_IGN)
+			signal(SIGINT, SIG_DFL);
+		if (sigquit != SIG_IGN)
+			signal(SIGQUIT, SIG_DFL);
 		execl(Shell, Shell, "-c", cmd, (char *)0);
 		perror(Shell);
 		_exit(1);
 	}
-	while (wait(stat) != t)
+	while (wait(&stat) != t)
 		;
 	if (t == -1)
 		perror("fork");
-	for (t = 2; t < 4; t++)
-		sigset(t, sig[t-2]);
+	signal(SIGINT, sigint);
+	signal(SIGQUIT, sigquit);
 	printf("!\n");
 	return(0);
 }
@@ -61,32 +63,35 @@ shell(str)
  * Fork an interactive shell.
  */
 
+/*ARGSUSED*/
 dosh(str)
 	char *str;
 {
-	int (*sig[2])(), stat[1];
+	int (*sigint)(), (*sigquit)();
+	union wait stat;
 	register int t;
 	char *Shell;
+
 	if ((Shell = value("SHELL")) == NOSTR)
 		Shell = SHELL;
-	for (t = 2; t < 4; t++)
-		sig[t-2] = sigset(t, SIG_IGN);
+	sigint = signal(SIGINT, SIG_IGN);
+	sigquit = signal(SIGQUIT, SIG_IGN);
 	t = vfork();
 	if (t == 0) {
-		sigchild();
-		for (t = 2; t < 4; t++)
-			if (sig[t-2] != SIG_IGN)
-				sigsys(t, SIG_DFL);
+		if (sigint != SIG_IGN)
+			signal(SIGINT, SIG_DFL);
+		if (sigquit != SIG_IGN)
+			signal(SIGQUIT, SIG_DFL);
 		execl(Shell, Shell, (char *)0);
 		perror(Shell);
 		_exit(1);
 	}
-	while (wait(stat) != t)
+	while (wait(&stat) != t)
 		;
 	if (t == -1)
 		perror("fork");
-	for (t = 2; t < 4; t++)
-		sigsys(t, sig[t-2]);
+	signal(SIGINT, sigint);
+	signal(SIGQUIT, sigquit);
 	putchar('\n');
 	return(0);
 }
@@ -205,7 +210,7 @@ _respond(msgvec)
 	int *msgvec;
 {
 	struct message *mp;
-	char *cp, *cp2, *cp3, *rcv, *replyto;
+	char *cp, *rcv, *replyto;
 	char buf[2 * LINESIZE], **ap;
 	struct name *np;
 	struct header head;
@@ -233,7 +238,6 @@ _respond(msgvec)
 			strcpy(buf, cp);
 	}
 	np = elide(extract(buf, GTO));
-	/* rcv = rename(rcv); */
 	mapf(np, rcv);
 	/*
 	 * Delete my name from the reply list,
@@ -265,7 +269,7 @@ _respond(msgvec)
 	head.h_subject = reedit(head.h_subject);
 	head.h_cc = NOSTR;
 	if (replyto == NOSTR) {
-		cp = hfield("cc", mp);
+		cp = skin(hfield("cc", mp));
 		if (cp != NOSTR) {
 			np = elide(extract(cp, GCC));
 			mapf(np, rcv);
@@ -300,7 +304,7 @@ reedit(subj)
 	if (icequal(sbuf, "re:"))
 		return(subj);
 	newsubj = salloc(strlen(subj) + 6);
-	sprintf(newsubj, "Re:  %s", subj);
+	sprintf(newsubj, "Re: %s", subj);
 	return(newsubj);
 }
 
@@ -375,6 +379,7 @@ rexit(e)
 	if (Tflag != NOSTR)
 		close(creat(Tflag, 0600));
 	exit(e);
+	/*NOTREACHED*/
 }
 
 /*
@@ -433,7 +438,6 @@ unset(arglist)
 	char **arglist;
 {
 	register struct var *vp, *vp2;
-	register char *cp;
 	int errs, h;
 	char **ap;
 
@@ -451,7 +455,7 @@ unset(arglist)
 			variables[h] = variables[h]->v_link;
 			vfree(vp2->v_name);
 			vfree(vp2->v_value);
-			cfree(vp2);
+			cfree((char *)vp2);
 			continue;
 		}
 		for (vp = variables[h]; vp->v_link != vp2; vp = vp->v_link)
@@ -459,7 +463,7 @@ unset(arglist)
 		vp->v_link = vp2->v_link;
 		vfree(vp2->v_name);
 		vfree(vp2->v_value);
-		cfree(vp2);
+		cfree((char *) vp2);
 	}
 	return(errs);
 }
@@ -535,7 +539,7 @@ sort(list)
 		;
 	if (ap-list < 2)
 		return;
-	qsort(list, ap-list, sizeof *list, diction);
+	qsort((char *)list, ap-list, sizeof *list, diction);
 }
 
 /*
@@ -553,9 +557,10 @@ diction(a, b)
  * The do nothing command for comments.
  */
 
+/*ARGSUSED*/
 null(e)
 {
-	return(0);
+	return 0;
 }
 
 /*
@@ -568,7 +573,6 @@ file(argv)
 	char **argv;
 {
 	register char *cp;
-	char fname[BUFSIZ];
 	int edit;
 
 	if (argv[0] == NOSTR) {
@@ -594,6 +598,7 @@ file(argv)
 		return(-1);
 	}
 	announce(0);
+	return 0;
 }
 
 /*
@@ -707,7 +712,7 @@ _Respond(msgvec)
 {
 	struct header head;
 	struct message *mp;
-	register int i, s, *ap;
+	register int s, *ap;
 	register char *cp, *cp2, *subject;
 
 	for (s = 0, ap = msgvec; *ap != 0; ap++) {
@@ -840,9 +845,9 @@ alternates(namelist)
 	}
 	if (altnames != 0)
 		cfree((char *) altnames);
-	altnames = (char **) calloc(c, sizeof (char *));
+	altnames = (char **) calloc((unsigned) c, sizeof (char *));
 	for (ap = namelist, ap2 = altnames; *ap; ap++, ap2++) {
-		cp = (char *) calloc(strlen(*ap) + 1, sizeof (char));
+		cp = (char *) calloc((unsigned) strlen(*ap) + 1, sizeof (char));
 		strcpy(cp, *ap);
 		*ap2 = cp;
 	}

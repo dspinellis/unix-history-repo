@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)tty.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)tty.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -32,15 +32,13 @@ grabh(hp, gflags)
 	struct header *hp;
 {
 	struct sgttyb ttybuf;
-	int ttycont(), signull();
+	int ttycont();
 #ifndef TIOCSTI
-	int (*savesigs[2])();
+	int (*saveint)(), (*savequit)();
 #endif
 	int (*savecont)();
-	register int s;
 	int errs;
 
-	savecont = sigset(SIGCONT, signull);
 	errs = 0;
 #ifndef TIOCSTI
 	ttyset = 0;
@@ -54,9 +52,10 @@ grabh(hp, gflags)
 #ifndef TIOCSTI
 	ttybuf.sg_erase = 0;
 	ttybuf.sg_kill = 0;
-	for (s = SIGINT; s <= SIGQUIT; s++)
-		if ((savesigs[s-SIGINT] = sigset(s, SIG_IGN)) == SIG_DFL)
-			sigset(s, SIG_DFL);
+	if ((saveint = signal(SIGINT, SIG_IGN)) == SIG_DFL)
+		signal(SIGINT, SIG_DFL);
+	if ((savequit = signal(SIGQUIT, SIG_IGN)) == SIG_DFL)
+		signal(SIGQUIT, SIG_DFL);
 #endif
 	if (gflags & GTO) {
 #ifndef TIOCSTI
@@ -94,14 +93,13 @@ grabh(hp, gflags)
 		if (hp->h_bcc != NOSTR)
 			hp->h_seq++;
 	}
-	sigset(SIGCONT, savecont);
 #ifndef TIOCSTI
 	ttybuf.sg_erase = c_erase;
 	ttybuf.sg_kill = c_kill;
 	if (ttyset)
 		stty(fileno(stdin), &ttybuf);
-	for (s = SIGINT; s <= SIGQUIT; s++)
-		sigset(s, savesigs[s-SIGINT]);
+	signal(SIGINT, saveint);
+	signal(SIGQUIT, savequit);
 #endif
 	return(errs);
 }
@@ -118,7 +116,7 @@ readtty(pr, src)
 	char pr[], src[];
 {
 	char ch, canonb[BUFSIZ];
-	int c, signull();
+	int c;
 	register char *cp, *cp2;
 
 	fputs(pr, stdout);
@@ -153,7 +151,6 @@ readtty(pr, src)
 	cp2 = cp;
 	if (setjmp(rewrite))
 		goto redo;
-	sigset(SIGCONT, ttycont);
 	while (cp2 < canonb + BUFSIZ) {
 		c = getc(stdin);
 		if (c == EOF || c == '\n')
@@ -161,7 +158,6 @@ readtty(pr, src)
 		*cp2++ = c;
 	}
 	*cp2 = 0;
-	sigset(SIGCONT, signull);
 	if (c == EOF && ferror(stdin) && hadcont) {
 redo:
 		hadcont = 0;
@@ -209,16 +205,10 @@ redo:
 /*
  * Receipt continuation.
  */
+/*ARGSUSED*/
 ttycont(s)
 {
 
 	hadcont++;
 	longjmp(rewrite, 1);
 }
-
-/*
- * Null routine to satisfy
- * silly system bug that denies us holding SIGCONT
- */
-signull(s)
-{}

@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)main.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -41,23 +41,15 @@ main(argc, argv)
 {
 	register char *ef;
 	register int i, argp;
-	int mustsend, uflag, hdrstop(), (*prevint)(), f;
-	FILE *ibuf, *ftat;
+	int mustsend, hdrstop(), (*prevint)(), f;
 	struct sgttyb tbuf;
 
-#ifdef signal
-	Siginit();
-#endif
-
 	/*
-	 * Set up a reasonable environment.  We clobber the last
-	 * element of argument list for compatibility with version 6,
-	 * figure out whether we are being run interactively, set up
+	 * Set up a reasonable environment.
+	 * Figure out whether we are being run interactively, set up
 	 * all the temporary files, buffer standard output, and so forth.
 	 */
 
-	uflag = 0;
-	argv[argc] = (char *) -1;
 #ifdef	GETHOST
 	inithost();
 #endif	GETHOST
@@ -67,8 +59,7 @@ main(argc, argv)
 	if (outtty) {
 		gtty(1, &tbuf);
 		baud = tbuf.sg_ospeed;
-	}
-	else
+	} else
 		baud = B9600;
 	image = -1;
 
@@ -134,7 +125,6 @@ main(argc, argv)
 			/*
 			 * Next argument is person to pretend to be.
 			 */
-			uflag++;
 			if (i >= argc - 1) {
 				fprintf(stderr, "Missing user name for -u\n");
 				exit(1);
@@ -250,6 +240,7 @@ main(argc, argv)
 		exit(1);
 	}
 	tinit();
+	setscreensize();
 	input = stdin;
 	rcvmode = argp == -1;
 	if (!nosrc)
@@ -277,7 +268,7 @@ main(argc, argv)
 		edit++;
 		ename = expand(ef);
 		if (ename != ef) {
-			ef = (char *) calloc(1, strlen(ename) + 1);
+			ef = malloc((unsigned) strlen(ename) + 1);
 			strcpy(ef, ename);
 		}
 		editfile = ef;
@@ -292,11 +283,11 @@ main(argc, argv)
 	}
 	if (!noheader && value("noheader") == NOSTR) {
 		if (setjmp(hdrjmp) == 0) {
-			if ((prevint = sigset(SIGINT, SIG_IGN)) != SIG_IGN)
-				sigset(SIGINT, hdrstop);
+			if ((prevint = signal(SIGINT, SIG_IGN)) != SIG_IGN)
+				signal(SIGINT, hdrstop);
 			announce(!0);
 			fflush(stdout);
-			sigset(SIGINT, prevint);
+			signal(SIGINT, prevint);
 		}
 	}
 	if (!edit && msgCount == 0) {
@@ -306,9 +297,9 @@ main(argc, argv)
 	}
 	commands();
 	if (!edit) {
-		sigset(SIGHUP, SIG_IGN);
-		sigset(SIGINT, SIG_IGN);
-		sigset(SIGQUIT, SIG_IGN);
+		signal(SIGHUP, SIG_IGN);
+		signal(SIGINT, SIG_IGN);
+		signal(SIGQUIT, SIG_IGN);
 		quit();
 	}
 	exit(0);
@@ -323,4 +314,38 @@ hdrstop()
 	fflush(stdout);
 	fprintf(stderr, "\nInterrupt\n");
 	longjmp(hdrjmp, 1);
+}
+
+/*
+ * Compute what the screen size should be.
+ * We use the following algorithm for the height:
+ *	If baud rate < 1200, use  9
+ *	If baud rate = 1200, use 14
+ *	If baud rate > 1200, use 24 or ws_row
+ * Width is either 80 or ws_col;
+ */
+setscreensize()
+{
+#ifdef	TIOCGWINSZ
+	struct winsize ws;
+
+	if (ioctl(fileno(stdout), TIOCGWINSZ, (char *) &ws) < 0)
+		ws.ws_col = ws.ws_row = 0;
+#endif
+	if (baud < B1200)
+		screenheight = 9;
+	else if (baud == B1200)
+		screenheight = 14;
+#ifdef	TIOCGWINSZ
+	else if (ws.ws_row != 0)
+		screenheight = ws.ws_row;
+#endif
+	else
+		screenheight = 24;
+#ifdef TIOCGWINSZ
+	if (ws.ws_col != 0)
+		screenwidth = ws.ws_col;
+	else
+#endif
+		screenwidth = 80;
 }

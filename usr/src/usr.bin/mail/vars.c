@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)vars.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)vars.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
@@ -46,10 +46,10 @@ assign(name, value)
  */
 
 vfree(cp)
-	register char *cp;
+	char *cp;
 {
-	if (!equal(cp, ""))
-		cfree(cp);
+	if (*cp)
+		free(cp);
 }
 
 /*
@@ -61,17 +61,16 @@ char *
 vcopy(str)
 	char str[];
 {
-	register char *top, *cp, *cp2;
+	char *new;
+	unsigned len;
 
-	if (equal(str, ""))
-		return("");
-	if ((top = calloc(strlen(str)+1, 1)) == NULL)
-		panic ("Out of memory");
-	cp = top;
-	cp2 = str;
-	while (*cp++ = *cp2++)
-		;
-	return(top);
+	if (*str == '\0')
+		return "";
+	len = strlen(str) + 1;
+	if ((new = malloc(len)) == NULL)
+		panic("Out of memory");
+	bcopy(str, new, (int) len);
+	return new;
 }
 
 /*
@@ -97,14 +96,12 @@ value(name)
 
 struct var *
 lookup(name)
-	char name[];
+	register char name[];
 {
 	register struct var *vp;
-	register int h;
 
-	h = hash(name);
-	for (vp = variables[h]; vp != NOVAR; vp = vp->v_link)
-		if (equal(vp->v_name, name))
+	for (vp = variables[hash(name)]; vp != NOVAR; vp = vp->v_link)
+		if (*vp->v_name == *name && equal(vp->v_name, name))
 			return(vp);
 	return(NOVAR);
 }
@@ -115,14 +112,12 @@ lookup(name)
 
 struct grouphead *
 findgroup(name)
-	char name[];
+	register char name[];
 {
 	register struct grouphead *gh;
-	register int h;
 
-	h = hash(name);
-	for (gh = groups[h]; gh != NOGRP; gh = gh->g_link)
-		if (equal(gh->g_name, name))
+	for (gh = groups[hash(name)]; gh != NOGRP; gh = gh->g_link)
+		if (*gh->g_name == *name && equal(gh->g_name, name))
 			return(gh);
 	return(NOGRP);
 }
@@ -144,7 +139,7 @@ printgroup(name)
 	printf("%s\t", gh->g_name);
 	for (gp = gh->g_list; gp != NOGE; gp = gp->ge_link)
 		printf(" %s", gp->ge_name);
-	printf("\n");
+	putchar('\n');
 }
 
 /*
@@ -153,16 +148,15 @@ printgroup(name)
  */
 
 hash(name)
-	char name[];
+	register char *name;
 {
-	register unsigned h;
-	register char *cp;
+	register h = 0;
 
-	for (cp = name, h = 0; *cp; h = (h << 2) + *cp++)
-		;
-	if (h < 0)
-		h = -h;
-	if (h < 0)
+	while (*name) {
+		h <<= 2;
+		h += *name++;
+	}
+	if (h < 0 && (h = -h) < 0)
 		h = 0;
-	return(h % HSHSIZE);
+	return (h % HSHSIZE);
 }

@@ -5,12 +5,13 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)edit.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)edit.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
 #include <stdio.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 /*
  * Mail -- a mail program
@@ -56,25 +57,24 @@ edit1(msgvec, ed)
 	int *msgvec;
 	char *ed;
 {
-	register char *cp, *cp2;
 	register int c;
-	int *ip, pid, mesg, lines;
-	long ms;
+	int *ip, pid, mesg;
 	int (*sigint)(), (*sigquit)();
 	FILE *ibuf, *obuf;
 	char edname[15], nbuf[10];
-	struct message *mp;
+	register struct message *mp;
 	extern char tempEdit[];
 	off_t fsize(), size;
 	struct stat statb;
 	long modtime;
+	union wait status;
 
 	/*
 	 * Set signals; locate editor.
 	 */
 
-	sigint = sigset(SIGINT, SIG_IGN);
-	sigquit = sigset(SIGQUIT, SIG_IGN);
+	sigint = signal(SIGINT, SIG_IGN);
+	sigquit = signal(SIGQUIT, SIG_IGN);
 
 	/*
 	 * Deal with each message to be edited . . .
@@ -84,22 +84,15 @@ edit1(msgvec, ed)
 		mesg = *ip;
 		mp = &message[mesg-1];
 		mp->m_flag |= MODIFY;
+		touch(mesg);
+		dot = mp;
 
 		/*
 		 * Make up a name for the edit file of the
 		 * form "Message%d" and make sure it doesn't
 		 * already exist.
 		 */
-
-		cp = &nbuf[10];
-		*--cp = 0;
-		while (mesg) {
-			*--cp = mesg % 10 + '0';
-			mesg /= 10;
-		}
-		cp2 = copy("Message", edname);
-		while (*cp2++ = *cp++)
-			;
+		sprintf(edname, "Message%d", mesg);
 		if (!access(edname, 2)) {
 			printf("%s: file exists\n", edname);
 			goto out;
@@ -108,7 +101,6 @@ edit1(msgvec, ed)
 		/*
 		 * Copy the message into the edit file.
 		 */
-
 		close(creat(edname, 0600));
 		if ((obuf = fopen(edname, "w")) == NULL) {
 			perror(edname);
@@ -150,16 +142,15 @@ edit1(msgvec, ed)
 			goto out;
 		}
 		if (pid == 0) {
-			sigchild();
 			if (sigint != SIG_IGN)
-				sigsys(SIGINT, SIG_DFL);
+				signal(SIGINT, SIG_DFL);
 			if (sigquit != SIG_IGN)
-				sigsys(SIGQUIT, SIG_DFL);
+				signal(SIGQUIT, SIG_DFL);
 			execl(ed, ed, edname, 0);
 			perror(ed);
 			_exit(1);
 		}
-		while (wait(&mesg) != pid)
+		while (wait(&status) != pid)
 			;
 
 		/*
@@ -192,21 +183,18 @@ edit1(msgvec, ed)
 		}
 		remove(edname);
 		fseek(otf, (long) 0, 2);
-		size = fsize(otf);
+		size = ftell(otf);
 		mp->m_block = blockof(size);
 		mp->m_offset = offsetof(size);
-		ms = 0L;
-		lines = 0;
+		mp->m_size = fsize(ibuf);
+		mp->m_lines = 0;
 		while ((c = getc(ibuf)) != EOF) {
 			if (c == '\n')
-				lines++;
+				mp->m_lines++;
 			putc(c, otf);
 			if (ferror(otf))
 				break;
-			ms++;
 		}
-		mp->m_size = ms;
-		mp->m_lines = lines;
 		if (ferror(otf))
 			perror("/tmp");
 		fclose(ibuf);
@@ -217,6 +205,7 @@ edit1(msgvec, ed)
 	 */
 
 out:
-	sigset(SIGINT, sigint);
-	sigset(SIGQUIT, sigquit);
+	signal(SIGINT, sigint);
+	signal(SIGQUIT, sigquit);
+	return 0;
 }

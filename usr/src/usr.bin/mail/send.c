@@ -5,14 +5,11 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)send.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)send.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "rcv.h"
-#ifdef VMUNIX
 #include <sys/wait.h>
-#endif
-#include <ctype.h>
 #include <sys/stat.h>
 
 /*
@@ -27,153 +24,152 @@ static char *sccsid = "@(#)send.c	5.2 (Berkeley) %G%";
  * the number of lines written.  Adjust the status: field
  * if need be.  If doign is set, suppress ignored header fields.
  */
-send(mailp, obuf, doign)
-	struct message *mailp;
+send(mp, obuf, doign)
+	register struct message *mp;
 	FILE *obuf;
 {
-	register struct message *mp;
-	register int t;
-	long c;
-	FILE *ibuf;
-	char line[LINESIZE], field[BUFSIZ];
-	int lc, ishead, infld, fline, dostat;
-	char *cp, *cp2;
+	long count;
+	register FILE *ibuf;
+	char line[LINESIZE];
+	int lc, ishead, infld, ignoring, dostat;
+	register char *cp, *cp2;
+	register int c;
+	int length;
 
-	mp = mailp;
 	ibuf = setinput(mp);
-	c = mp->m_size;
+	count = mp->m_size;
 	ishead = 1;
-	dostat = 1;
+	dostat = !doign || !isign("status");
 	infld = 0;
-	fline = 1;
 	lc = 0;
-	while (c > 0L) {
-		fgets(line, LINESIZE, ibuf);
-		c -= (long) strlen(line);
-		lc++;
-		if (ishead) {
+	/*
+	 * Process headers first
+	 */
+	while (count > 0 && ishead) {
+		if (fgets(line, LINESIZE, ibuf) == NULL)
+			break;
+		count -= length = strlen(line);
+		if (lc == 0) {
 			/* 
 			 * First line is the From line, so no headers
 			 * there to worry about
 			 */
-			if (fline) {
-				fline = 0;
-				goto writeit;
-			}
+			ignoring = 0;
+		} else if (line[0] == '\n') {
 			/*
 			 * If line is blank, we've reached end of
 			 * headers, so force out status: field
 			 * and note that we are no longer in header
 			 * fields
 			 */
-			if (line[0] == '\n') {
-				if (dostat) {
-					statusput(mailp, obuf, doign);
-					dostat = 0;
-				}
-				ishead = 0;
-				goto writeit;
+			if (dostat) {
+				statusput(mp, obuf);
+				dostat = 0;
 			}
+			ishead = 0;
+			ignoring = 0;
+		} else if (infld && (line[0] == ' ' || line[0] == '\t')) {
 			/*
 			 * If this line is a continuation (via space or tab)
 			 * of a previous header field, just echo it
 			 * (unless the field should be ignored).
+			 * In other words, nothing to do.
 			 */
-			if (infld && (isspace(line[0]) || line[0] == '\t')) {
-				if (doign && isign(field)) continue;
-				goto writeit;
-			}
-			infld = 0;
+		} else {
 			/*
-			 * If we are no longer looking at real
-			 * header lines, force out status:
-			 * This happens in uucp style mail where
-			 * there are no headers at all.
+			 * Pick up the header field if we have one.
 			 */
-			if (!headerp(line)) {
+			for (cp = line; (c = *cp++) && c != ':' && !isspace(c);)
+				;
+			cp2 = --cp;
+			while (isspace(*cp++))
+				;
+			if (cp[-1] != ':') {
+				/*
+				 * Not a header line, force out status:
+				 * This happens in uucp style mail where
+				 * there are no headers at all.
+				 */
 				if (dostat) {
-					statusput(mailp, obuf, doign);
+					statusput(mp, obuf);
 					dostat = 0;
 				}
-				putc('\n', obuf);
+				putc('\n', obuf);	/* add blank line */
+				lc++;
 				ishead = 0;
-				goto writeit;
-			}
-			infld++;
-			/*
-			 * Pick up the header field.
-			 * If it is an ignored field and
-			 * we care about such things, skip it.
-			 */
-			cp = line;
-			cp2 = field;
-			while (*cp && *cp != ':' && !isspace(*cp))
-				*cp2++ = *cp++;
-			*cp2 = 0;
-			if (doign && isign(field))
-				continue;
-			/*
-			 * If the field is "status," go compute and print the
-			 * real Status: field
-			 */
-			if (icequal(field, "status")) {
-				if (dostat) {
-					statusput(mailp, obuf, doign);
-					dostat = 0;
+				ignoring = 0;
+			} else {
+				/*
+				 * If it is an ignored field and
+				 * we care about such things, skip it.
+				 */
+				*cp2 = 0;	/* temporarily null terminate */
+				if (doign && isign(line))
+					ignoring = 1;
+				else if ((line[0] == 's' || line[0] == 'S') &&
+					 icequal(line, "status")) {
+					/*
+					 * If the field is "status," go compute
+					 * and print the real Status: field
+					 */
+					if (dostat) {
+						statusput(mp, obuf);
+						dostat = 0;
+					}
+					ignoring = 1;
+				} else {
+					ignoring = 0;
+					*cp2 = c;	/* restore */
 				}
-				continue;
+				infld = 1;
 			}
 		}
-writeit:
-		fputs(line, obuf);
-		if (ferror(obuf))
-			return(-1);
+		if (!ignoring) {
+			fwrite(line, sizeof *line, length, obuf);
+			if (ferror(obuf))
+				return -1;
+			lc++;
+		}
 	}
-	if (ferror(obuf))
-		return(-1);
-	if (ishead && (mailp->m_flag & MSTATUS))
+	/*
+	 * Copy out message body
+	 */
+	while (count > 0) {
+		cp = line;
+		c = count < LINESIZE ? count : LINESIZE;
+		if ((c = fread(cp, sizeof *cp, c, ibuf)) <= 0)
+			break;
+		if (fwrite(cp, sizeof *cp, c, obuf) != c)
+			return -1;
+		count -= c;
+		while (--c >= 0)
+			if (*cp++ == '\n')
+				lc++;
+	}
+	if (ishead && (mp->m_flag & MSTATUS))
 		printf("failed to fix up status field\n");
-	return(lc);
-}
-
-/*
- * Test if the passed line is a header line, RFC 733 style.
- */
-headerp(line)
-	register char *line;
-{
-	register char *cp = line;
-
-	while (*cp && !isspace(*cp) && *cp != ':')
-		cp++;
-	while (*cp && isspace(*cp))
-		cp++;
-	return(*cp == ':');
+	return (lc);
 }
 
 /*
  * Output a reasonable looking status field.
  * But if "status" is ignored and doign, forget it.
  */
-statusput(mp, obuf, doign)
+statusput(mp, obuf)
 	register struct message *mp;
-	register FILE *obuf;
+	FILE *obuf;
 {
 	char statout[3];
+	register char *cp = statout;
 
-	if (doign && isign("status"))
-		return;
-	if ((mp->m_flag & (MNEW|MREAD)) == MNEW)
-		return;
 	if (mp->m_flag & MREAD)
-		strcpy(statout, "R");
-	else
-		strcpy(statout, "");
+		*cp++ = 'R';
 	if ((mp->m_flag & MNEW) == 0)
-		strcat(statout, "O");
-	fprintf(obuf, "Status: %s\n", statout);
+		*cp++ = 'O';
+	*cp = 0;
+	if (statout[0])
+		fprintf(obuf, "Status: %s\n", statout);
 }
-
 
 /*
  * Interface between the argument list and the mail1 routine
@@ -188,11 +184,11 @@ mail(people)
 	char *buf, **ap;
 	struct header head;
 
-	for (s = 0, ap = people; *ap != (char *) -1; ap++)
+	for (s = 0, ap = people; *ap != 0; ap++)
 		s += strlen(*ap) + 1;
 	buf = salloc(s+1);
 	cp2 = buf;
-	for (ap = people; *ap != (char *) -1; ap++) {
+	for (ap = people; *ap != 0; ap++) {
 		cp2 = copy(*ap, cp2);
 		*cp2++ = ' ';
 	}
@@ -217,9 +213,6 @@ mail(people)
 sendmail(str)
 	char *str;
 {
-	register char **ap;
-	char *bufp;
-	register int t;
 	struct header head;
 
 	if (blankline(str))
@@ -243,7 +236,8 @@ mail1(hp)
 	struct header *hp;
 {
 	register char *cp;
-	int pid, i, s, p, gotcha;
+	int pid, i, p, gotcha;
+	union wait s;
 	char **namelist, *deliver;
 	struct name *to, *np;
 	struct stat sbuf;
@@ -330,10 +324,10 @@ topdog:
 			printf(" \"%s\"", *t);
 		printf("\n");
 		fflush(stdout);
-		return;
+		return 0;
 	}
 	if ((cp = value("record")) != NOSTR)
-		savemail(expand(cp), hp, mtf);
+		savemail(expand(cp), mtf);
 
 	/*
 	 * Wait, to absorb a potential zombie, then
@@ -343,17 +337,8 @@ topdog:
 	 * wants to await the completion of mail.
 	 */
 
-#ifdef VMUNIX
-#ifdef	pdp11
-	while (wait2(&s, WNOHANG) > 0)
-#endif
-#if defined(vax) || defined(sun)
-	while (wait3(&s, WNOHANG, 0) > 0)
-#endif
+	while (wait3(&s, WNOHANG, (struct timeval *) 0) > 0)
 		;
-#else
-	wait(&s);
-#endif
 	rewind(mtf);
 	pid = fork();
 	if (pid == -1) {
@@ -363,32 +348,26 @@ topdog:
 		goto out;
 	}
 	if (pid == 0) {
-		sigchild();
 #ifdef SIGTSTP
 		if (remote == 0) {
-			sigset(SIGTSTP, SIG_IGN);
-			sigset(SIGTTIN, SIG_IGN);
-			sigset(SIGTTOU, SIG_IGN);
+			signal(SIGTSTP, SIG_IGN);
+			signal(SIGTTIN, SIG_IGN);
+			signal(SIGTTOU, SIG_IGN);
 		}
 #endif
-		for (i = SIGHUP; i <= SIGQUIT; i++)
-			sigset(i, SIG_IGN);
+		signal(SIGHUP, SIG_IGN);
+		signal(SIGINT, SIG_IGN);
+		signal(SIGQUIT, SIG_IGN);
 		if (!stat(POSTAGE, &sbuf))
 			if ((postage = fopen(POSTAGE, "a")) != NULL) {
 				fprintf(postage, "%s %d %d\n", myname,
 				    count(to), fsize(mtf));
 				fclose(postage);
 			}
-		s = fileno(mtf);
-		for (i = 3; i < 15; i++)
-			if (i != s)
-				close(i);
 		close(0);
-		dup(s);
-		close(s);
-#ifdef CC
-		submit(getpid());
-#endif CC
+		dup(fileno(mtf));
+		for (i = getdtablesize(); --i > 2;)
+			close(i);
 #ifdef SENDMAIL
 		if ((deliver = value("sendmail")) == NOSTR)
 			deliver = SENDMAIL;
@@ -403,7 +382,7 @@ out:
 	if (remote || (value("verbose") != NOSTR)) {
 		while ((p = wait(&s)) != pid && p != -1)
 			;
-		if (s != 0)
+		if (s.w_status != 0)
 			senderr++;
 		pid = 0;
 	}
@@ -422,7 +401,6 @@ fixhead(hp, tolist)
 	struct header *hp;
 	struct name *tolist;
 {
-	register struct name *nlist;
 	register int f;
 	register struct name *np;
 
@@ -529,7 +507,7 @@ fmt(str, txt, fo)
 	bl = 0;
 	while (*bg) {
 		pt++;
-		if (++col >72) {
+		if (++col > 72) {
 			if (!bl) {
 				bl = bg;
 				while (*bl && !isspace(*bl))
@@ -559,32 +537,33 @@ finish:
  * Save the outgoing mail on the passed file.
  */
 
-savemail(name, hp, fi)
+/*ARGSUSED*/
+savemail(name, fi)
 	char name[];
-	struct header *hp;
-	FILE *fi;
+	register FILE *fi;
 {
 	register FILE *fo;
-	register int c;
-	long now;
+	char buf[BUFSIZ];
+	register i;
+	time_t now, time();
 	char *n;
+	char *ctime();
 
 	if ((fo = fopen(name, "a")) == NULL) {
 		perror(name);
-		return(-1);
+		return (-1);
 	}
 	time(&now);
-	n = rflag;
-	if (n == NOSTR)
+	if ((n = rflag) == NOSTR)
 		n = myname;
 	fprintf(fo, "From %s %s", n, ctime(&now));
 	rewind(fi);
-	for (c = getc(fi); c != EOF; c = getc(fi))
-		putc(c, fo);
-	fprintf(fo, "\n");
+	while ((i = fread(buf, 1, sizeof buf, fi)) > 0)
+		fwrite(buf, 1, i, fo);
+	putc('\n', fo);
 	fflush(fo);
 	if (ferror(fo))
 		perror(name);
 	fclose(fo);
-	return(0);
+	return (0);
 }

@@ -5,11 +5,13 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)popen.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)popen.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
-#include <signal.h>
+#include <sys/signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #define	tst(a,b)	(*mode == 'r'? (b) : (a))
 #define	RDR	0
 #define	WTR	1
@@ -29,7 +31,6 @@ char	*mode;
 	hisside = tst(p[RDR], p[WTR]);
 	if((pid = vfork()) == 0) {
 		/* myside and hisside reverse roles in child */
-		sigchild();
 		close(myside);
 		dup2(hisside, tst(0, 1));
 		close(hisside);
@@ -47,7 +48,8 @@ pclose(ptr)
 FILE *ptr;
 {
 	register f, r;
-	int status, omask;
+	int omask;
+	union wait status;
 
 	f = fileno(ptr);
 	fclose(ptr);
@@ -55,7 +57,6 @@ FILE *ptr;
 	while((r = wait(&status)) != popen_pid[f] && r != -1)
 		;
 	if(r == -1)
-		status = -1;
 	sigsetmask(omask);
-	return(status);
+	return (status.w_status);
 }

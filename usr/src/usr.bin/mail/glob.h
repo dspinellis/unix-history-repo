@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)glob.h	5.1 (Berkeley) %G%
+ *	@(#)glob.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -27,7 +27,6 @@ int	readonly;			/* Will be unable to rewrite file */
 int	noreset;			/* String resets suspended */
 int	sourcing;			/* Currently reading variant file */
 int	loading;			/* Loading user definitions */
-int	shudann;			/* Print headers when possible */
 int	cond;				/* Current state of conditional exc. */
 FILE	*itf;				/* Input temp file buffer */
 FILE	*otf;				/* Output temp file buffer */
@@ -64,6 +63,8 @@ char	**altnames;			/* List of alternate names for user */
 char	**localnames;			/* List of aliases for our local host */
 int	debug;				/* Debug flag set */
 int	rmail;				/* Being called as rmail */
+int	screenwidth;			/* Screen width, or best guess */
+int	screenheight;			/* Screen height, or best guess */
 
 #include <setjmp.h>
 
