@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	1.9	%G%";
+static char SccsId[] = "@(#)deliver.c	1.10	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -200,6 +200,9 @@ deliver(to, editfcn)
 	else if (pid == 0)
 	{
 		/* child -- set up input & exec mailer */
+		/* make diagnostic output be standard output */
+		close(2);
+		dup(1);
 		signal(SIGINT, SIG_IGN);
 		if (editfcn != NULL)
 		{
@@ -404,6 +407,7 @@ putheader(fp)
 pipesig()
 {
 	syserr("Broken pipe");
+	signal(SIGPIPE, SIG_IGN);
 }
 /*
 **  SENDTO -- Designate a send list.
