@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_ktrace.c	7.21 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.22 (Berkeley) %G%
  */
 
 #ifdef KTRACE
@@ -20,6 +20,7 @@
 
 struct ktr_header *
 ktrgetheader(type)
+	int type;
 {
 	register struct ktr_header *kth;
 	struct proc *p = curproc;	/* XXX */
@@ -103,6 +104,7 @@ ktrgenio(vp, fd, rw, iov, len, error)
 	int fd;
 	enum uio_rw rw;
 	register struct iovec *iov;
+	int len, error;
 {
 	struct ktr_header *kth;
 	register struct ktr_genio *ktp;
@@ -139,8 +141,10 @@ done:
 }
 
 ktrpsig(vp, sig, action, mask, code)
-	struct	vnode *vp;
-	sig_t	action;
+	struct vnode *vp;
+	int sig;
+	sig_t action;
+	int mask, code;
 {
 	struct ktr_header *kth;
 	struct ktr_psig	kp;
@@ -161,8 +165,8 @@ ktrpsig(vp, sig, action, mask, code)
 }
 
 ktrcsw(vp, out, user)
-	struct	vnode *vp;
-	int	out, user;
+	struct vnode *vp;
+	int out, user;
 {
 	struct ktr_header *kth;
 	struct	ktr_csw kc;
@@ -290,8 +294,10 @@ done:
 	return (error);
 }
 
+int
 ktrops(curp, p, ops, facs, vp)
-	struct proc *curp, *p;
+	struct proc *p, *curp;
+	int ops, facs;
 	struct vnode *vp;
 {
 
@@ -327,6 +333,7 @@ ktrops(curp, p, ops, facs, vp)
 
 ktrsetchildren(curp, top, ops, facs, vp)
 	struct proc *curp, *top;
+	int ops, facs;
 	struct vnode *vp;
 {
 	register struct proc *p;
