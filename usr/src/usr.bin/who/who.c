@@ -1,103 +1,119 @@
 /*
- * Copyright (c) 1980, 1989 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Michael Fischbein.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980, 1989 Regents of the University of California.\n\
+"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)who.c	5.9 (Berkeley) %G%";
-#endif not lint
-
-/*
- * who
- */
+static char sccsid[] = "@(#)who.c	5.10 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/types.h>
-#include <utmp.h>
+#include <sys/file.h>
+#include <sys/time.h>
 #include <pwd.h>
+#include <utmp.h>
 #include <stdio.h>
-#include <ctype.h>
-
-#define NMAX sizeof(utmp.ut_name)
-#define LMAX sizeof(utmp.ut_line)
-#define	HMAX sizeof(utmp.ut_host)
-
-struct	utmp utmp;
-struct	passwd *pw;
-struct	passwd *getpwuid();
-
-char	*ttyname(), *rindex(), *ctime(), *strcpy();
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	register char *tp, *s;
-	register FILE *fi;
+	register char *p;
+	struct utmp usr;
+	struct passwd *pw;
+	FILE *ufp, *file();
+	char *t, *rindex(), *strcpy(), *strncpy(), *ttyname();
+	time_t time();
 
-	s = _PATH_UTMP;
-	if(argc == 2)
-		s = argv[1];
-	if (argc == 3) {
-		tp = ttyname(0);
-		if (tp)
-			tp = rindex(tp, '/') + 1;
-		else {	/* no tty - use best guess from passwd file */
-			(void)strcpy(utmp.ut_line, "tty??");
-			guess();
-			exit(0);
-		}
-	}
-	if (!(fi = fopen(s, "r"))) {
-		fprintf(stderr, "who: cannot read %s.\n", s);
+	switch (argc) {
+	case 1:					/* who */
+		ufp = file(_PATH_UTMP);
+		/* only entries with both name and line fields */
+		while (fread((char *)&usr, sizeof(usr), 1, ufp) == 1)
+			if (*usr.ut_name && *usr.ut_line)
+				output(&usr);
+		break;
+	case 2:					/* who utmp_file */
+		ufp = file(argv[1]);
+		/* all entries */
+		while (fread((char *)&usr, sizeof(usr), 1, ufp) == 1)
+			output(&usr);
+		break;
+	case 3:					/* who am i */
+		ufp = file(_PATH_UTMP);
+
+		/* search through the utmp and find an entry for this tty */
+		if (p = ttyname(0)) {
+			/* strip any directory component */
+			if (t = rindex(p, '/'))
+				p = t + 1;
+			while (fread((char *)&usr, sizeof(usr), 1, ufp) == 1)
+				if (usr.ut_name && !strcmp(usr.ut_line, p)) {
+					output(&usr);
+					exit(0);
+				}
+			/* well, at least we know what the tty is */
+			(void)strncpy(usr.ut_line, p, UT_LINESIZE);
+		} else
+			(void)strcpy(usr.ut_line, "tty??");
+		pw = getpwuid(getuid());
+		(void)strncpy(usr.ut_name, pw ? pw->pw_name : "?", UT_NAMESIZE);
+		(void)time(&usr.ut_time);
+		*usr.ut_host = '\0';
+		output(&usr);
+		break;
+	default:
+		(void)fprintf(stderr, "usage: who [ file ]\n       who am i\n");
 		exit(1);
-	}
-	while (fread((char *)&utmp, sizeof(utmp), 1, fi) == 1) {
-		if (argc == 3) {
-			if (strcmp(utmp.ut_line, tp))
-				continue;
-			if (!utmp.ut_name[0])
-				guess();
-			else
-				putline();
-			exit(0);
-		}
-		if (utmp.ut_name[0] == '\0' && argc == 1)
-			continue;
-		putline();
-	}
-	if (argc == 3) {
-		strncpy(utmp.ut_line, tp, sizeof(utmp.ut_line));
-		guess();
 	}
 	exit(0);
 }
 
-putline()
+output(up)
+	struct utmp *up;
 {
-	register char *cbuf;
+	char *ctime();
 
-	printf("%-*.*s %-*.*s",
-		NMAX, NMAX, utmp.ut_name,
-		LMAX, LMAX, utmp.ut_line);
-	cbuf = ctime(&utmp.ut_time);
-	printf("%.12s", cbuf+4);
-	if (utmp.ut_host[0])
-		printf("\t(%.*s)", HMAX, utmp.ut_host);
-	putchar('\n');
+	(void)printf("%-*.*s %-*.*s", UT_NAMESIZE, UT_NAMESIZE, up->ut_name,
+	    UT_LINESIZE, UT_LINESIZE, up->ut_line);
+	(void)printf("%.12s", ctime(&up->ut_time) + 4);
+	if (*up->ut_host)
+		printf("\t(%.*s)", UT_HOSTSIZE, up->ut_host);
+	(void)putchar('\n');
 }
 
-guess()
+FILE *
+file(name)
+	char *name;
 {
-	pw = getpwuid(getuid());
-	strncpy(utmp.ut_name, pw ? pw->pw_name : "?", NMAX);
-	time(&utmp.ut_time);
-	utmp.ut_host[0] = '\0';
-	putline();
+	extern int errno;
+	FILE *ufp;
+	char *strerror();
+
+	if (!(ufp = fopen(name, "r"))) {
+		(void)fprintf(stderr, "who: %s: %s.\n", name, strerror(errno));
+		exit(1);
+	}
+	return(ufp);
 }
