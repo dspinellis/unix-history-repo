@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)GETNAME.c 1.10 %G%";
+static char sccsid[] = "@(#)GETNAME.c 1.11 %G%";
 
 #include "h00vars.h"
 #include "libpc.h"
@@ -74,7 +74,7 @@ gotone:
 		filep->fblk = _filefre;
 		_actfile[_filefre] = filep;
 		/*
-		 * Link the newrecord into the file chain.
+		 * Link the new record into the file chain.
 		 */
 		prev = (struct iorec *)&_fchain;
 		next = _fchain.fchain;
@@ -87,7 +87,9 @@ gotone:
 			 * Must order global files so that all dynamic files
 			 * within a record are grouped together.
 			 */
-			while (next != FILNIL && (struct iorec *)filep > next) {
+			while ((next != FILNIL) &&
+			       (next->flev == GLVL) &&
+			       ((struct iorec *)filep > next)) {
 				prev = next;
 				next = next->fchain;
 			}
