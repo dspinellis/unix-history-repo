@@ -1,4 +1,4 @@
-/* @(#)config.c	1.2	%G%
+/* @(#)config.c	1.3	%G%
  *
  * This file contains a few strings that define file locations for
  * the current gremlin configuration.
@@ -21,7 +21,7 @@ char GDisplays[] = "/usr/local/displays";
  * to the gremlin maintainer.
  */
 
-char GMailCommand[] = "mail slatteng@ucbernie";
+char GMailCommand[] = "/usr/ucb/Mail slatteng@ucbernie";
 
 /* The following string should indicate the rooted name of gremlin's 
  * color map
