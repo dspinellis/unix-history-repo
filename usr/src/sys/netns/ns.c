@@ -11,9 +11,9 @@
 #include "mbuf.h"
 #include "ioctl.h"
 #include "protosw.h"
+#include "errno.h"
 #include "socket.h"
 #include "socketvar.h"
-#include "user.h"
 
 
 #include "../net/if.h"
@@ -82,8 +82,8 @@ ns_control(so, cmd, data, ifp)
 		return (0);
 	}
 
-	if (error = suser(u.u_cred, &u.u_acflag))
-		return (error);
+	if ((so->so_state & SS_PRIV) == 0)
+		return (EPERM);
 
 	switch (cmd) {
 	case SIOCAIFADDR:

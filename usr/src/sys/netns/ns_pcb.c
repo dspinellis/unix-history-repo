@@ -9,13 +9,14 @@
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "mbuf.h"
+#include "errno.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "protosw.h"
+
 #include "../net/if.h"
 #include "../net/route.h"
-#include "protosw.h"
 
 #include "ns.h"
 #include "ns_if.h"
@@ -66,7 +67,8 @@ ns_pcbbind(nsp, nam)
 	if (lport) {
 		u_short aport = ntohs(lport);
 
-		if (aport < NSPORT_RESERVED && u.u_uid != 0)
+		if (aport < NSPORT_RESERVED &&
+		    (nsp->nsp_socket->so_state & SS_PRIV) == 0)
 			return (EACCES);
 		if (ns_pcblookup(&zerons_addr, lport, 0))
 			return (EADDRINUSE);
