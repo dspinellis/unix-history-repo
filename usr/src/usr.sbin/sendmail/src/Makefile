@@ -1,4 +1,9 @@
-#	@(#)Makefile	8.5 (Berkeley) %G%
+#	@(#)Makefile	8.6 (Berkeley) %G%
+
+#########################################################################
+#  This Makefile is for 4.4BSD only!!!  For all other systems, use	#
+#  the "makesendmail" script.						#
+#########################################################################
 
 PROG=	sendmail
 
