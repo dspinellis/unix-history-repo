@@ -911,6 +911,7 @@ main(argc, argv, envp)
 		exit(EX_OK);
 
 	  case MD_DAEMON:
+	  case MD_SMTP:
 		/* don't open alias database -- done in srvrsmtp */
 		break;
 
