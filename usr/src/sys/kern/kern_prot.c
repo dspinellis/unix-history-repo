@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	7.14 (Berkeley) %G%
+ *	@(#)kern_prot.c	7.15 (Berkeley) %G%
  */
 
 /*
@@ -125,23 +125,23 @@ getgroups(p, uap, retval)
 {
 	register gid_t *gp;
 	register int *lp;
+	register u_int ngrp;
 	int groups[NGROUPS];
 	int error;
 
-	if (uap->gidsetsize == 0) {
+	if ((ngrp = uap->gidsetsize) == 0) {
 		*retval = u.u_cred->cr_ngroups;
 		return (0);
 	}
-	if (uap->gidsetsize < u.u_cred->cr_ngroups)
+	if (ngrp < u.u_cred->cr_ngroups)
 		return (EINVAL);
-	uap->gidsetsize = u.u_cred->cr_ngroups;
-	gp = u.u_cred->cr_groups;
-	for (lp = groups; lp < &groups[uap->gidsetsize]; )
+	ngrp = u.u_cred->cr_ngroups;
+	for (gp = u.u_cred->cr_groups, lp = groups; lp < &groups[ngrp]; )
 		*lp++ = *gp++;
 	if (error = copyout((caddr_t)groups, (caddr_t)uap->gidset,
-	    uap->gidsetsize * sizeof (groups[0])))
+	    ngrp * sizeof (groups[0])))
 		return (error);
-	*retval = uap->gidsetsize;
+	*retval = ngrp;
 	return (0);
 }
 
@@ -377,21 +377,21 @@ setgroups(p, uap, retval)
 	int *retval;
 {
 	register gid_t *gp;
-	register u_int ngrps;
+	register u_int ngrp;
 	register int *lp;
 	int error, groups[NGROUPS];
 
 	if (error = suser(u.u_cred, &u.u_acflag))
 		return (error);
-	if ((ngrps = uap->gidsetsize) > NGROUPS)
+	if ((ngrp = uap->gidsetsize) > NGROUPS)
 		return (EINVAL);
 	if (error = copyin((caddr_t)uap->gidset, (caddr_t)groups,
-	    ngrps * sizeof (groups[0])))
+	    ngrp * sizeof (groups[0])))
 		return (error);
-	u.u_cred->cr_ngroups = ngrps;
+	u.u_cred->cr_ngroups = ngrp;
 	/* convert from int's to gid_t's */
-	for (gp = u.u_cred->cr_groups, lp = groups; ngrps--; *gp++ = *lp++)
-		/* void */;
+	for (gp = u.u_cred->cr_groups, lp = groups; ngrp--; )
+		*gp++ = *lp++;
 	return (0);
 }
 
