@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)ffs_alloc.c 1.15 %G%";
+static char vers[] = "@(#)ffs_alloc.c 1.16 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -774,12 +774,13 @@ mapsearch(fs, cgp, bpref, allocsiz)
 		start = dtogd(fs, bpref) / NBBY;
 	else
 		start = cgp->cg_frotor / NBBY;
-	len = roundup(fs->fs_fpg - 1, NBBY) / NBBY - start;
+	len = howmany(fs->fs_fpg, NBBY) - start;
 	loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
 		1 << (allocsiz - 1));
 	if (loc == 0) {
-		len = start - 1;
-		start = fs->fs_dblkno / NBBY;
+		loc = fs->fs_dblkno / NBBY;
+		len = start - loc + 1;
+		start = loc;
 		loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
 			1 << (allocsiz - 1));
 		if (loc == 0) {
