@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -73,7 +73,7 @@ main(argc, argv)
 	 * doesn't belong here, there kernel should not know about either.
 	 */
 	if ((tz.tz_minuteswest || tz.tz_dsttime) &&
-	    settimeofday((struct timeval *)NULL, &tz)) {
+	    settimeofday(NULL, &tz)) {
 		perror("date: settimeofday");
 		exit(1);
 	}
@@ -165,21 +165,21 @@ setthetime(p)
 	if ((tval = mktime(lt)) == -1)
 		badformat();
 
-	if (!(p = getlogin()))			/* single-user or no tty */
-		p = "root";
-	syslog(LOG_AUTH | LOG_NOTICE, "date set by %s", p);
-
 	/* set the time */
 	if (nflag || netsettime(tval)) {
 		logwtmp("|", "date", "");
 		tv.tv_sec = tval;
 		tv.tv_usec = 0;
-		if (settimeofday(&tv, (struct timezone *)NULL)) {
+		if (settimeofday(&tv, NULL)) {
 			perror("date: settimeofday");
 			exit(1);
 		}
 		logwtmp("{", "date", "");
 	}
+
+	if ((p = getlogin()) == NULL)
+		p = "???";
+	syslog(LOG_AUTH | LOG_NOTICE, "date set by %s", p);
 }
 
 badformat()
