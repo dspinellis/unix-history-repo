@@ -9,13 +9,13 @@
  * All advertising materials mentioning features or use of this software
  * must display the following acknowledgement:
  *	This product includes software developed by the University of
- *	California, Lawrence Berkeley Laboratories.
+ *	California, Lawrence Berkeley Laboratory.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	7.4 (Berkeley) %G%
+ *	@(#)machdep.c	7.5 (Berkeley) %G%
  *
- * from: $Header: machdep.c,v 1.33 92/08/05 04:20:03 torek Exp $
+ * from: $Header: machdep.c,v 1.40 93/04/20 11:16:12 torek Exp $
  */
 
 #include <sys/param.h>
@@ -512,11 +512,7 @@ boot(howto)
 		 */
 		if (panicstr == 0)
 			vnode_pager_umount((struct mount *)NULL);
-#include "fd.h"
-#if NFD > 0
-		fdshutdown();
-#endif
-		sync((struct proc *)NULL, (void *)NULL, (int *)NULL);
+		sync(&proc0, (void *)NULL, (int *)NULL);
 
 		for (iter = 0; iter < 20; iter++) {
 			nbusy = 0;
@@ -604,7 +600,7 @@ dumpconf()
 
 #ifdef DUMPMMU
 /* XXX */
-#include <sparc/sparc/ctlreg.h>
+#include <machine/ctlreg.h>
 #define	getpte(va)		lda(va, ASI_PTE)
 #define	setsegmap(va, pmeg)	stba(va, ASI_SEGMAP, pmeg)
 
@@ -688,7 +684,7 @@ dumpmmu(blkno)
 	 * XXX assume it's a multiple of the block size
 	 */
 	error = (*dump)(dumpdev, blkno, (caddr_t)kpmap->pm_rsegmap,
-			sizeof(kpmap->pm_rsegmap), 0);
+			sizeof(kpmap->pm_rsegmap));
 	return (error);
 }
 #endif
@@ -806,7 +802,7 @@ mapdev(phys, virt, size)
 
 	size = round_page(size);
 	if (virt)
-		v = virt;
+		v = trunc_page(virt);
 	else {
 		v = iobase;
 		iobase += size;
@@ -814,6 +810,7 @@ mapdev(phys, virt, size)
 			panic("mapiodev");
 	}
 	ret = (void *)v;
+	phys = (void *)trunc_page(phys);
 	do {
 		pmap_enter(kernel_pmap, v,
 		    (vm_offset_t)phys | PMAP_OBIO | PMAP_NC,
