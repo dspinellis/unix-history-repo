@@ -48,7 +48,7 @@ SOFTWARE.
  *
  * $Header: tp_sizes.c,v 5.1 88/10/12 12:21:03 root Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_sizes.c,v $
- *	@(#)tp_sizes.c	7.3 (Berkeley) %G% *
+ *	@(#)tp_sizes.c	7.4 (Berkeley) %G% *
  *
  *
  * This is the initialization and cleanup stuff - 
@@ -67,7 +67,6 @@ SOFTWARE.
 static char *rcsid = "$Header: tp_sizes.c,v 5.1 88/10/12 12:21:03 root Exp $";
 #endif lint
 
-#include "argoxtwentyfive.h"
 #include "types.h"
 #include "param.h"
 #include "mbuf.h"
