@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lval.c 1.8 %G%";
+static char sccsid[] = "@(#)lval.c 1.9 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -345,7 +345,8 @@ arycod(np, el)
 			    return (0);
 		    }
 #		    ifdef PC
-			postcheck( p );
+			postcheck(p, ap);
+			sconv(p2type(ap),P2INT);
 #		    endif PC
 		}
 		if (incompat(ap, p->type, el[1])) {

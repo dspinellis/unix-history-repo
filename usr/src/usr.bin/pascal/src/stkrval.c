@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stkrval.c 1.4 %G%";
+static char sccsid[] = "@(#)stkrval.c 1.5 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -105,7 +105,11 @@ stkrval(r, contype , required )
 			     }
 #			endif OBJ
 #			ifdef PC
-			     return rvalue( r , contype , required );
+			    q = rvalue( r , contype , required );
+			    if (isa(q, "sbci")) {
+				sconv(p2type(q),P2INT);
+			    }
+			    return q;
 #			endif PC
 
 		case WITHPTR:
@@ -144,6 +148,9 @@ ind:
 #			ifdef PC
 			    if ( required == RREQ ) {
 				putop( P2UNARY P2MUL , p2type( q ) );
+				if (isa(q,"sbci")) {
+				    sconv(p2type(q),P2INT);
+				}
 			    }
 			    return q;
 #			endif PC
@@ -196,7 +203,7 @@ cstrng:
 				put(2, O_CONC4, (int)p->value[0]);
 #			    endif OBJ
 #			    ifdef PC
-				putleaf( P2ICON , p -> value[0] , 0 , P2CHAR , 0 );
+				putleaf(P2ICON, p -> value[0], 0, P2INT, 0);
 #			    endif PC
 			    return(q);
 			}
@@ -233,7 +240,11 @@ cstrng:
 			    }
 #			endif OBJ
 #			ifdef PC
-			    return rvalue( r , contype , required );
+			    q = rvalue( r , contype , required );
+			    if (isa(q,"sbci")) {
+				sconv(p2type(q),P2INT);
+			    }
+			    return q;
 #			endif PC
 
 		case FUNC:
@@ -269,6 +280,9 @@ cstrng:
 #			endif OBJ
 #			ifdef PC
 			    p = pcfunccod( r );
+			    if (isa(p,"sbci")) {
+				sconv(p2type(p),P2INT);
+			    }
 #			endif PC
 			return (p);
 
@@ -306,6 +320,11 @@ cstrng:
 		    if (width(p) <= 2)
 			    put(1, O_STOI);
 #		endif OBJ
+#		ifdef PC
+		    if (isa(p,"sbci")) {
+			sconv(p2type(p),P2INT);
+		    }
+#		endif PC
 		return (p);
 	case T_CSET:
 		p = rvalue(r, contype , required );
@@ -376,7 +395,7 @@ conint:
 				    put(2, O_CONC4, cp[0]);
 #				endif OBJ
 #				ifdef PC
-				    putleaf( P2ICON , cp[0] , 0 , P2CHAR , 0 );
+				    putleaf( P2ICON , cp[0] , 0 , P2INT , 0 );
 #				endif PC
 				return(nl+T1CHAR);
 			}
