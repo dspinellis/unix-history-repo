@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	6.9 (Berkeley) %G%
+.\"	@(#)4.t	6.10 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -503,6 +503,7 @@ to get the swap interleaved, and
 .Pn /etc/fstab
 would then contain
 .TS
+center;
 l l l l n n.
 /dev/\*(Dk0a	/	ufs	rw	1	1
 /dev/\*(Dk0b	none	swap	sw	0	0
@@ -808,9 +809,9 @@ and then adjust the necessary configuration files.
 You should also set up the file
 .Pn /etc/aliases
 for your installation, creating mail groups as appropriate.
-Documents describing
-.Xr sendmail 's
-operation and installation are also included in the System Manager's Manual.
+For more informations see
+``Sendmail Installation and Operation Guide'' (SMM:8) and
+``Sendmail \- An Internetwork Mail Router'' (SMM:9).
 .NH 3
 Setting up a UUCP connection
 .LP
