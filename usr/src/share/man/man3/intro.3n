@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.3n	5.1 (Berkeley) %G%
+.\"	@(#)intro.3n	6.1 (Berkeley) %G%
 .\"
-.TH INTRO 3N "10 February 1983"
+.TH INTRO 3N ""
 .UC 5
 .SH NAME
 intro \- introduction to network library functions
