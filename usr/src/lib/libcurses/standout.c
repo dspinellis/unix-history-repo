@@ -1,7 +1,7 @@
 /*
  * routines dealing with entering and exiting standout mode
  *
- * %G% (Berkeley) @(#)standout.c	1.1
+ * @(#)standout.c	1.2 (Berkeley) %G%
  */
 
 # include	"curses.ext"
