@@ -1,0 +1,240 @@
+.pa 1
+.he '3/15/72''BOOT PROCEDURES (VII)'
+.ti 0
+NAME		bos, maki, rom, vcboot, msys, et al
+.sp
+.ti 0
+SYNOPSIS	--
+.sp
+.ti 0
+DESCRIPTION	On
+the RF disk, the highest 16K words are
+reserved for stand-alone programs.
+These 16K words are allocated as follows:
+.sp
+bos		(1K)
+.br
+Warm UNIX	(7K)
+.br
+Cold UNIX	(8K)
+.sp
+The UNIX read only memory (ROM)
+is home cut with 2 programs of 16 words each.
+The first (address 173000)
+reads bos___ from the RF disk into core
+location 154000
+and transfers to 154000.
+The other ROM program
+(address 173040)
+reads a DECtape sitting in the end-zone
+on drive 0
+into core location 0 and transfers to 0.
+This latter operation is compatible with
+part of DEC's standard ROM.
+The disassembled code for the UNIX ROM follows:
+.sp
+.nf
+.in 8
+173000:	mov	$177472,r0		12700;177472
+	mov	$3,-(r0)		12740;3
+	mov	$140000,-(r0)		12740;140000
+	mov	$154000,-(r0)		12740;154000
+	mov	$-2000,-(r0)		12740;176000
+	mov	$5,-(r0)		12740;5
+	tstb	(r0)			105710
+	bge	.-2			2376
+	jmp	*$154000		137;154000
+.sp
+173040:	mov	$177350,r0		12700;177350
+	clr	-(r0)			5040
+	mov	r0,-(r0)		10040
+	mov	$3,-(r0)		12740;3
+	tstb	(r0)			105710
+	bge	.-2			2376
+	tst	*$177350		5737;177350
+	bne	.			1377
+	movb	$5,(r0)			112710;5
+	tstb	(r0)			105710
+	bge	.-2			2376
+	clr	pc			5007
+.fi
+.in 16
+.sp
+The program bos___ (Bootstrap Operating System)
+examines the console switchs and executes
+one of several internal programs depending on the setting.
+The following settings are currently recognized:
+.sp
+.in +8
+.ti -8
+???	Will read Warm UNIX from
+the RF into core location 0 and transfer to 600.
+.sp
+.ti -8
+1	Will read Cold UNIX from the
+RF into core location 0 and transfer to 600.
+.sp
+.ti -8
+10	Will dump all of memory
+from core location 0 onto DECtape drive 7
+and then halt.
+.sp
+.ti -8
+20	Will read 256 words from RK0 into
+core 0 and transfer to zero.
+This is the procedure to boot
+DOS from an RK.
+.sp
+.ti -8
+40	This is the same as 10 above, but
+instead of halting, UNIX warm is loaded.
+.sp
+.ti -8
+0	Will load a standard UNIX binary paper tape
+into core location 0 and transfer to 0.
+.sp
+.ti -8
+77500	Will load the standard DEC absolute and binary
+loaders and transfer to 77500.
+.sp
+.in 16
+Thus we come to the UNIX warm boot procedure:
+put 173000 into the switches, push
+.ul
+load address
+and then push
+.ul
+start.
+The alternate switch setting of 173030
+that will load warm UNIX is used
+as a signal to bring up
+a single user system for special
+purposes.
+See
+init(VII).
+For systems without a rom,
+UNIX (both warm and cold)
+have a copy of the disk boot
+program at location 602.
+This is probably a better warm boot
+procedure because
+the program at 602 also
+attempts to complete outstanding I/O.
+.sp
+Cold boots can be accomplished with the
+Cold UNIX program, but they're not.
+Thus the Cold UNIX slot on the RF may have
+any program desired.
+This slot is, however, used during a cold boot.
+Mount the UNIX INIT DECtape on drive
+0 positioned in the end-zone.
+Put 173040 into the switches.
+Push
+.ul
+load address.
+Put 1 into the switches.
+Push
+.ul
+start.
+This reads a program called
+.ul
+vcboot
+from the tape into
+core location 0 and transfers to it.
+vcboot______ then reads 16K words from
+the DECtape (blocks 1-32)
+and copies the data to the highest 16K words of
+the RF.
+Thus this initializes the read-only part of the RF.
+vcboot______ then reads in bos___ and executes it.
+bos___ then reads in Cold UNIX and executes that.
+Cold UNIX halts for a last chance before
+it completely initializes the RF file system.
+Push
+.ul
+continue,
+and Cold UNIX will initialize the RF.
+It then sets into execution a user program
+that reads the DECtape for initialization files
+starting from block 33.
+.a
+When this is done, the program executes
+/etc/init
+which should have been on the tape.
+.sp
+The INIT tape is made by the program maki____
+running under UNIX.
+maki____ writes vcboot______ on block 0 of
+.ul
+/dev/tap7.
+It then copies the RF 16K words (using
+.ul
+/dev/rf0)
+onto blocks 1 thru 32.
+It has internally a list of files to
+be copied from block 33 on.
+This list follows:
+.sp
+.nf
+.in +8
+/etc/init
+/bin/chmod
+/bin/date
+/bin/login
+/bin/ls
+/bin/mkdir
+/etc/mount
+/bin/sh
+/bin/tap
+.in -8
+.fi
+.sp
+Thus this is the set of programs available after a cold boot.
+init____ and sh__ are mandatory.
+For multi-user UNIX,
+getty_____ and login_____ are also necessary.
+mkdir_____ is necessary due to a bug in tap___.
+tap___ and mount_____ are useful to
+bring in new files.
+As soon as possible, date____ should be done.
+That leaves ls__ and chmod_____ as frosting.
+.sp
+The last link in this incestuous
+daisy chain is the program msys____.
+.sp
+   msys____ char file
+.sp
+will copy the file file____ onto the
+RF read only slot specified by the characacter char____.
+Char is taken from the following set:
+.sp
+   b_ bos
+   u_ Warm UNIX
+   1_ Cold UNIX
+.sp
+Due to their rarity of use,
+maki____ and msys____ are maintained off line and
+must be reassembled before used.
+.sp
+.ti 0
+FILES		/dev/rf0,
+/dev/tap?
+.sp
+.ti 0
+SEE ALSO	init(VII),
+tap(I),
+sh(I),
+mkdir(I)
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		This
+section is very configuration dependent.
+Thus, it does not
+describe the boot procedure for
+any one machine.
+.sp
+.ti 0
+OWNER		ken
