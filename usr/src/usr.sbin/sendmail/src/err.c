@@ -3,7 +3,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)err.c	3.21		%G%);
+SCCSID(@(#)err.c	3.22		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -127,7 +127,7 @@ message(num, msg, a, b, c, d, e)
 	fprintf(Xscript, "%s\n", &errbuf[4]);
 
 	/* output to channel if appropriate */
-	if (!HoldErrs)
+	if (!HoldErrs && (Verbose || errbuf[0] != '0'))
 	{
 		if (ArpaMode)
 			fprintf(OutChannel, "%s\r\n", errbuf);

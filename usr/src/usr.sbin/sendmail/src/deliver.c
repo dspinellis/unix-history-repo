@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.84		%G%);
+SCCSID(@(#)deliver.c	3.85		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -56,9 +56,10 @@ deliver(firstto, editfcn)
 	bool clever = FALSE;		/* running user smtp to this mailer */
 	bool tempfail = FALSE;
 	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
+	bool notopen = TRUE;		/* set if connection not quite open */
 
 	errno = 0;
-	if (!ForceMail && bitset(QDONTSEND, to->q_flags))
+	if (bitset(QDONTSEND, to->q_flags))
 		return (0);
 
 # ifdef DEBUG
@@ -165,13 +166,6 @@ deliver(firstto, editfcn)
 # ifdef SMTP
 		clever = TRUE;
 		*pvp = NULL;
-
-		/* send the initial SMTP protocol */
-		i = smtpinit(m, pv, (ADDRESS *) NULL);
-# ifdef QUEUE
-		if (i == EX_TEMPFAIL)
-			tempfail = TRUE;
-# endif QUEUE
 # else SMTP
 		/* oops!  we don't implement SMTP */
 		syserr("SMTP style mailer");
@@ -196,8 +190,9 @@ deliver(firstto, editfcn)
 			break;
 
 		/* if already sent or not for this host, don't send */
-		if ((!ForceMail && bitset(QDONTSEND, to->q_flags)) ||
-		    strcmp(to->q_host, host) != 0 || to->q_mailer != firstto->q_mailer)
+		if (bitset(QDONTSEND, to->q_flags) ||
+		    strcmp(to->q_host, host) != 0 ||
+		    to->q_mailer != firstto->q_mailer)
 			continue;
 
 # ifdef DEBUG
@@ -246,6 +241,27 @@ deliver(firstto, editfcn)
 		{
 			stripquotes(user, FALSE);
 			stripquotes(host, FALSE);
+		}
+
+		/*
+		**  Do initial connection setup if needed.
+		*/
+
+		if (notopen)
+		{
+			message(Arpa_Info, "Connecting to %s.%s...", host, m->m_name);
+# ifdef SMTP
+			if (clever)
+			{
+				/* send the initial SMTP protocol */
+				i = smtpinit(m, pv, (ADDRESS *) NULL);
+# ifdef QUEUE
+				if (i == EX_TEMPFAIL)
+					tempfail = TRUE;
+# endif QUEUE
+			}
+# ifdef SMTP
+			notopen = FALSE;
 		}
 
 		/*
@@ -837,14 +853,12 @@ giveresponse(stat, force, m)
 			statmsg = "delivered";
 		else
 			statmsg = "queued";
-		if (Verbose)
-			message(Arpa_Info, statmsg);
+		message(Arpa_Info, statmsg);
 	}
 # ifdef QUEUE
 	else if (stat == EX_TEMPFAIL)
 	{
-		if (Verbose)
-			message(Arpa_Info, "transmission deferred");
+		message(Arpa_Info, "transmission deferred");
 	}
 # endif QUEUE
 	else
@@ -1441,12 +1455,7 @@ sendall(e, verifyonly)
 		{
 			CurEnv->e_to = q->q_paddr;
 			if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
-			{
-				if (bitset(M_LOCAL, q->q_mailer->m_flags))
-					message(Arpa_Info, "deliverable");
-				else
-					message(Arpa_Info, "queueable");
-			}
+				message(Arpa_Info, "deliverable");
 		}
 		else
 			(void) deliver(q, (fnptr) NULL);

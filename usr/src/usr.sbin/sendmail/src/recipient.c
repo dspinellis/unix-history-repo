@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.37		%G%);
+SCCSID(@(#)recipient.c	3.38		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -197,7 +197,7 @@ recipient(a, sendq)
 				printaddr(q, FALSE);
 			}
 # endif DEBUG
-			if (Verbose && !bitset(QDONTSEND, a->q_flags))
+			if (!bitset(QDONTSEND, a->q_flags))
 				message(Arpa_Info, "duplicate suppressed");
 			if (!bitset(QPRIMARY, q->q_flags))
 				q->q_flags |= a->q_flags;
@@ -224,8 +224,7 @@ recipient(a, sendq)
 				usrerr("Cannot mail directly to :include:s");
 			else
 			{
-				if (Verbose)
-					message(Arpa_Info, "including file %s", &a->q_user[9]);
+				message(Arpa_Info, "including file %s", &a->q_user[9]);
 				include(&a->q_user[9], " sending", a, sendq);
 			}
 		}
@@ -354,9 +353,7 @@ finduser(name)
 		buildfname(pw->pw_gecos, pw->pw_name, buf);
 		if (index(buf, ' ') != NULL && sameword(buf, name))
 		{
-			if (Verbose)
-				message(Arpa_Info, "sending to login name %s",
-				    pw->pw_name);
+			message(Arpa_Info, "sending to login name %s", pw->pw_name);
 			return (pw);
 		}
 	}
@@ -471,8 +468,7 @@ include(fname, msg, ctladdr, sendq)
 		if (buf[0] == '\0')
 			continue;
 		CurEnv->e_to = oldto;
-		if (Verbose)
-			message(Arpa_Info, "%s to %s", msg, buf);
+		message(Arpa_Info, "%s to %s", msg, buf);
 		AliasLevel++;
 		sendto(buf, 1, ctladdr, sendq);
 		AliasLevel--;

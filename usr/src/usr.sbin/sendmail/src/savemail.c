@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.32		%G%);
+SCCSID(@(#)savemail.c	3.33		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -36,7 +36,7 @@ savemail()
 
 	if (exclusive++ || CurEnv->e_class <= PRI_JUNK)
 		return;
-	/* ForceMail = TRUE; */
+	ForceMail = TRUE;
 
 	/*
 	**  In the unhappy event we don't know who to return the mail
@@ -150,9 +150,12 @@ savemail()
 	if (p != NULL && TempFile != NULL)
 	{
 		auto ADDRESS *q;
+		bool oldverb = Verbose;
 
 		/* we have a home directory; open dead.letter */
+		Verbose = TRUE;
 		message(Arpa_Info, "Saving message in dead.letter");
+		Verbose = oldverb;
 		define('z', p);
 		(void) expand("$z/dead.letter", buf, &buf[sizeof buf - 1]);
 		CurEnv->e_to = buf;
