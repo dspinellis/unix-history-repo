@@ -3,7 +3,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_mbuf.c	7.19 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -486,4 +486,138 @@ bad:
 	m_freem(n);
 	MPFail++;
 	return (0);
+}
+
+/*
+ * Partition an mbuf chain in two pieces, returning the tail --
+ * all but the first len0 bytes.  In case of failure, it returns NULL and
+ * attempts to restore the chain to its original state.
+ */
+struct mbuf *
+m_split(m0, len0, wait)
+register struct mbuf *m0;
+int len0;
+{
+	register struct mbuf *m, *n;
+	unsigned len = len0, remain;
+
+	for (m = m0; m && len > m->m_len; m = m->m_next)
+		len -= m->m_len;
+	if (m == 0)
+		return (0);
+	remain = m->m_len - len;
+	if (m0->m_flags & M_PKTHDR) {
+		MGETHDR(n, wait, m0->m_type);
+		if (n == 0)
+			return (0);
+		n->m_pkthdr.rcvif = m0->m_pkthdr.rcvif;
+		n->m_pkthdr.len = m0->m_pkthdr.len - len0;
+		m0->m_pkthdr.len = len0;
+		if (m->m_flags & M_EXT)
+			goto extpacket;
+		if (remain > MHLEN) {
+			/* m can't be the lead packet */
+			MH_ALIGN(n, 0);
+			n->m_next = m_split(m, len, wait);
+			if (n->m_next == 0) {
+				(void) m_free(n);
+				return (0);
+			} else
+				return (n);
+		} else
+			MH_ALIGN(n, remain);
+	} else if (remain == 0) {
+		n = m->m_next;
+		m->m_next = 0;
+		return (n);
+	} else {
+		MGET(n, wait, m->m_type);
+		if (n == 0)
+			return (0);
+		M_ALIGN(n, remain);
+	}
+extpacket:
+	if (m->m_flags & M_EXT) {
+		n->m_flags |= M_EXT;
+		n->m_ext = m->m_ext;
+		mclrefcnt[mtocl(m->m_ext.ext_buf)]++;
+		m->m_ext.ext_size = 0; /* For Accounting XXXXXX danger */
+		n->m_data = m->m_data + len;
+	} else {
+		bcopy(mtod(m, caddr_t) + len, mtod(n, caddr_t), remain);
+	}
+	n->m_len = remain;
+	m->m_len = len;
+	n->m_next = m->m_next;
+	m->m_next = 0;
+	return (n);
+}
+/*
+ * Routine to copy from device local memory into mbufs.
+ */
+struct mbuf *
+m_devget(buf, totlen, off0, ifp, copy)
+	char *buf;
+	int totlen, off0;
+	struct ifnet *ifp;
+	void (*copy)();
+{
+	register struct mbuf *m;
+	struct mbuf *top = 0, **mp = &top;
+	register int off = off0, len;
+	register char *cp;
+	char *epkt;
+
+	cp = buf;
+	epkt = cp + totlen;
+	if (off) {
+		cp += off + 2 * sizeof(u_short);
+		totlen -= 2 * sizeof(u_short);
+	}
+	MGETHDR(m, M_DONTWAIT, MT_DATA);
+	if (m == 0)
+		return (0);
+	m->m_pkthdr.rcvif = ifp;
+	m->m_pkthdr.len = totlen;
+	m->m_len = MHLEN;
+
+	while (totlen > 0) {
+		if (top) {
+			MGET(m, M_DONTWAIT, MT_DATA);
+			if (m == 0) {
+				m_freem(top);
+				return (0);
+			}
+			m->m_len = MLEN;
+		}
+		len = min(totlen, epkt - cp);
+		if (len >= MINCLSIZE) {
+			MCLGET(m, M_DONTWAIT);
+			if (m->m_flags & M_EXT)
+				m->m_len = len = min(len, MCLBYTES);
+			else
+				len = m->m_len;
+		} else {
+			/*
+			 * Place initial small packet/header at end of mbuf.
+			 */
+			if (len < m->m_len) {
+				if (top == 0 && len + max_linkhdr <= m->m_len)
+					m->m_data += max_linkhdr;
+				m->m_len = len;
+			} else
+				len = m->m_len;
+		}
+		if (copy)
+			copy(cp, mtod(m, caddr_t), (unsigned)len);
+		else
+			bcopy(cp, mtod(m, caddr_t), (unsigned)len);
+		cp += len;
+		*mp = m;
+		mp = &m->m_next;
+		totlen -= len;
+		if (cp == epkt)
+			cp = buf;
+	}
+	return (top);
 }
