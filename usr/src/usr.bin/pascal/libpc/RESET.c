@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)RESET.c 1.6 %G%";
+static char sccsid[] = "@(#)RESET.c 1.7 %G%";
 
 #include "h00vars.h"
 
@@ -16,8 +16,8 @@ RESET(filep, name, maxnamlen, datasize)
 			PERROR("Could not reset ", filep->pfname);
 			return;
 		}
-		filep->funit &= ~(EOFF | EOLN);
-		filep->funit |= SYNC;
+		filep->funit &= ~EOFF;
+		filep->funit |= (SYNC | EOLN);
 		return;
 	}
 	filep = GETNAME(filep, name, maxnamlen, datasize);

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)PCSTART.c 1.6 %G%";
+static char sccsid[] = "@(#)PCSTART.c 1.7 %G%";
 
 #include <signal.h>
 #include "h00vars.h"
@@ -48,7 +48,7 @@ struct iorechd	input = {
 	OUTPUT,			/* fchain  */
 	STDLVL,			/* flev    */
 	"standard input",	/* pfname  */
-	FTEXT | FREAD | SYNC,	/* funit   */
+	FTEXT|FREAD|SYNC|EOLN,	/* funit   */
 	0,			/* fblk    */
 	1			/* fsize   */
 };
