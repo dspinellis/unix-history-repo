@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -26,7 +26,7 @@ static char sccsid[] = "@(#)inode.c	5.13 (Berkeley) %G%";
 #include <pwd.h>
 #include "fsck.h"
 
-struct bufarea *pbp = 0;
+static ino_t startinum;
 
 ckinode(dp, idesc)
 	struct dinode *dp;
@@ -176,7 +176,6 @@ ginode(inumber)
 	ino_t inumber;
 {
 	daddr_t iblk;
-	static ino_t startinum = 0;
 
 	if (inumber < ROOTINO || inumber > maxino)
 		errexit("bad inode number %d to ginode\n", inumber);
@@ -228,6 +227,7 @@ getnextinode(inumber)
 resetinodebuf()
 {
 
+	startinum = 0;
 	nextino = 0;
 	lastinum = 0;
 	readcnt = 0;
