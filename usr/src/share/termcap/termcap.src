@@ -698,12 +698,12 @@ Mt|terak|Terak emulating Datamedia 1520:\
 	:tc=dm1520:
 Mu|sun|Sun Microsystems Workstation console:\
 	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:am:bs:mi:ms:pt:\
+	:am:bs:mi:ms:pt:km:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:rs=\E[s:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
 	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:\
-	:AL=\E[%dL:DL=\E[%dM:
+	:AL=\E[%dL:DL=\E[%dM:IC=\E[%d@:DC=\E[%dP:
 # From john@ucbrenoir  Tue Sep 24 13:14:44 1985
 Mu|sun-s|Sun Microsystems Workstation window with status line:\
 	:hs:ts=\E]l:fs=\E\\:ds=\E]l\E\\:tc=sun:
