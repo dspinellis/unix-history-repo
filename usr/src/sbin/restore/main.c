@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-char version[] = "@(#)main.c 2.12 %G%";
+char version[] = "@(#)main.c 2.13 %G%";
 #endif
 
 /*	Modified to include h option (recursively extract all files within
@@ -74,7 +74,6 @@ FILE	*df;
 DIR	*dirp;
 int	ofile;
 char	dirfile[] = "/tmp/rstaXXXXXX";
-char	entryfile[] = "/tmp/rstbXXXXXX";
 char	lnkbuf[MAXPATHLEN + 1];
 int	pathlen;
 
@@ -93,7 +92,6 @@ int maxino = 0;
 struct xtrlist {
 	struct xtrlist	*x_next;
 	struct xtrlist	*x_linkedto;
-	struct xtrlist	*x_self;
 	time_t		x_timep[2];
 	ino_t		x_ino;
 	char		x_flags;
@@ -101,11 +99,9 @@ struct xtrlist {
 	/* actually longer */
 } *xtrlist[MAXINO];
 int xtrcnt = 0;
-int maxentry = 0;
-union {
-	struct xtrlist u_xtrlist;
-	char dummy[BUFSIZ];
-} entry;
+struct xtrlist *entry;
+struct xtrlist *unknown;
+struct xtrlist *allocxtr();
 
 char	*dumpmap;
 char	*clrimap;
@@ -278,7 +274,6 @@ extractfiles(argc, argv)
 	int	xtrfile(), xtrskip(), xtrcvtdir(), xtrcvtskip(),
 		xtrlnkfile(), xtrlnkskip(), null();
 	int	mode, uid, gid, i;
-	FILE	*fe;
 	struct	stat stbuf;
 	char	name[BUFSIZ + 1];
 
@@ -296,6 +291,7 @@ extractfiles(argc, argv)
 	}
 	clrimap = 0;
 	dumpmap = 0;
+	unknown = allocxtr(0, "name unknown - not extracted", 0);
 	pass1(1);  /* This sets the various maps on the way by */
 	while (argc--) {
 		if ((d = psearch(*argv)) == 0 || BIT(d,dumpmap) == 0) {
@@ -307,27 +303,8 @@ extractfiles(argc, argv)
 		if (hflag)
 			getleaves(d, *argv++);
 		else
-			allocxtr(d, *argv++, XINUSE);
+			(void)allocxtr(d, *argv++, XINUSE);
 	}
-	mktemp(entryfile);
-	fe = fopen(entryfile, "w");
-	if (fe == 0) {
-		fprintf(stderr, "restor: %s - cannot create directory temporary\n", entryfile);
-		done(1);
-	}
-	for (d = 0; d <= maxino; d++) {
-		for (xp = xtrlist[INOHASH(d)]; xp; xp = xp->x_next) {
-			if (d != xp->x_ino || (xp->x_flags & XLINKED))
-				continue;
-			blkcpy(xp, &entry, maxentry);
-			fwrite(&entry, maxentry, 1, fe);
-			break;
-		}
-	}
-	fclose(fe);
-	fe = fopen(entryfile, "r");
-	xp = &entry.u_xtrlist;
-	xp->x_ino = 0;
 	if (dumpnum > 1) {
 		/*
 		 * if this is a multi-dump tape we always start with 
@@ -401,13 +378,12 @@ again:
 			goto again;
 		}
 		d = spcl.c_inumber;
-		if (d < xp->x_ino) {
-			fseek(fe, 0, 0);
-			xp->x_ino = 0;
-		}
-		while (d > xp->x_ino)
-			fread(xp, maxentry, 1, fe);
-		if (d == xp->x_ino) {
+		entry = unknown;
+		entry->x_ino = d;
+		for (xp = xtrlist[INOHASH(d)]; xp; xp = xp->x_next) {
+			if (d != xp->x_ino || (xp->x_flags & XLINKED))
+				continue;
+			entry = xp;
 			xp->x_timep[0] = spcl.c_dinode.di_atime;
 			xp->x_timep[1] = spcl.c_dinode.di_mtime;
 			mode = spcl.c_dinode.di_mode;
@@ -419,7 +395,7 @@ again:
 			default:
 				fprintf(stderr, "%s: unknown file mode 0%o\n",
 				    name, mode);
-				xp->x_self->x_flags |= XTRACTD;
+				xp->x_flags |= XTRACTD;
 				xtrcnt--;
 				goto skipfile;
 			case IFCHR:
@@ -428,7 +404,7 @@ again:
 					fprintf(stdout, "extract special file %s\n", name);
 				if (mknod(name, mode, spcl.c_dinode.di_rdev)) {
 					fprintf(stderr, "%s: cannot create special file\n", name);
-					xp->x_self->x_flags |= XTRACTD;
+					xp->x_flags |= XTRACTD;
 					xtrcnt--;
 					goto skipfile;
 				}
@@ -448,7 +424,7 @@ again:
 					fprintf(stdout, "extract file %s\n", name);
 				if ((ofile = creat(name, 0666)) < 0) {
 					fprintf(stderr, "%s: cannot create file\n", name);
-					xp->x_self->x_flags |= XTRACTD;
+					xp->x_flags |= XTRACTD;
 					xtrcnt--;
 					goto skipfile;
 				}
@@ -472,7 +448,7 @@ again:
 				getfile(xtrlnkfile, xtrlnkskip, spcl.c_dinode.di_size);
 				if (symlink(lnkbuf, name) < 0) {
 					fprintf(stderr, "%s: cannot create symbolic link\n", name);
-					xp->x_self->x_flags |= XTRACTD;
+					xp->x_flags |= XTRACTD;
 					xtrcnt--;
 					goto finished;
 				}
@@ -483,7 +459,7 @@ again:
 					fprintf(stdout, "extract file %s\n", name);
 				if ((ofile = creat(name, 0666)) < 0) {
 					fprintf(stderr, "%s: cannot create file\n", name);
-					xp->x_self->x_flags |= XTRACTD;
+					xp->x_flags |= XTRACTD;
 					xtrcnt--;
 					goto skipfile;
 				}
@@ -494,7 +470,7 @@ again:
 			}
 			chmod(name, mode);
 			utime(name, xp->x_timep);
-			xp->x_self->x_flags |= XTRACTD;
+			xp->x_flags |= XTRACTD;
 			xtrcnt--;
 			goto finished;
 		}
@@ -662,7 +638,7 @@ getleaves(ino, pname)
 		/*
 		 * pname is a directory name 
 		 */
-		allocxtr(ino, pname, XISDIR);
+		(void)allocxtr(ino, pname, XISDIR);
 		/*
 		 * begin search through the directory
 		 * skipping over "." and ".."
@@ -696,7 +672,7 @@ getleaves(ino, pname)
 	/*
 	 * locname is name of a simple file 
 	 */
-	allocxtr(ino, pname, XINUSE);
+	(void)allocxtr(ino, pname, XINUSE);
 }
 
 /*
@@ -800,7 +776,7 @@ getfile(f1, f2, size)
 		}
 		if (gethead(&addrblock) == 0) {
 			fprintf(stderr, "Missing address (header) block for %s\n",
-				entry.u_xtrlist.x_name);
+				entry->x_name);
 			spcl.c_magic = 0;
 			goto out;
 		}
@@ -865,7 +841,7 @@ xtrcvtskip(buf, size)
 {
 
 	fprintf(stderr, "unallocated block in directory %s\n",
-		entry.u_xtrlist.x_name);
+		entry->x_name);
 	xtrskip(buf, size);
 }
 
@@ -892,7 +868,7 @@ xtrlnkskip(buf, size)
 	buf = buf, size = size;
 #endif
 	fprintf(stderr, "unallocated block in symbolic link %s\n",
-		entry.u_xtrlist.x_name);
+		entry->x_name);
 	done(1);
 }
 
@@ -919,7 +895,7 @@ readtape(b)
 		if ((i = read(mt, tbf, NTREC*TP_BSIZE)) < 0) {
 #endif
 			fprintf(stderr, "Tape read error while restoring %s\n",
-				entry.u_xtrlist.x_name);
+				entry->x_name);
 			if (!yflag) {
 				fprintf(stderr, "continue? ");
 				do	{
@@ -1183,7 +1159,7 @@ checksum(b)
 	while (--j);
 	if (i != CHECKSUM) {
 		fprintf(stderr, "Checksum error %o, file %s\n", i,
-			entry.u_xtrlist.x_name);
+			entry->x_name);
 		return(0);
 	}
 	return(1);
@@ -1401,6 +1377,7 @@ allocinotab(ino, seekpt)
 	itp->t_seekpt = seekpt;
 }
 
+struct xtrlist *
 allocxtr(ino, name, flags)
 	ino_t ino;
 	char *name;
@@ -1410,18 +1387,15 @@ allocxtr(ino, name, flags)
 	int size;
 
 	size = sizeof(struct xtrlist) + strlen(name);
-	if (maxentry < size)
-		maxentry = size;
-	if (maxino < ino)
-		maxino = ino;
 	xp = (struct xtrlist *)calloc(1, size);
-	xp->x_self = xp;
+	xp->x_ino = ino;
+	xp->x_flags = flags;
+	strcpy(xp->x_name, name);
+	if (flags == 0)
+		return (xp);
 	xp->x_next = xtrlist[INOHASH(ino)];
 	xtrlist[INOHASH(ino)] = xp;
-	xp->x_ino = ino;
-	strcpy(xp->x_name, name);
 	xtrcnt++;
-	xp->x_flags = flags;
 	for (pxp = xp->x_next; pxp; pxp = pxp->x_next)
 		if (pxp->x_ino == ino && (pxp->x_flags & XLINKED) == 0) {
 			xp->x_flags |= XLINKED;
@@ -1430,23 +1404,29 @@ allocxtr(ino, name, flags)
 			break;
 		}
 	if (!vflag)
-		return;
+		return (xp);
 	if (xp->x_flags & XLINKED)
 		fprintf(stdout, "%s: linked to %s\n", xp->x_name, pxp->x_name);
 	else if (xp->x_flags & XISDIR)
 		fprintf(stdout, "%s: directory inode %u\n", xp->x_name, ino);
 	else
 		fprintf(stdout, "%s: inode %u\n", xp->x_name, ino);
+	return (xp);
 }
+
+#ifdef RRESTOR
+msg(cp, a1, a2, a3)
+	char *cp;
+{
+
+	fprintf(stderr, cp, a1, a2, a3);
+}
+#endif RRESTOR
 
 done(exitcode)
 	int exitcode;
 {
 
 	unlink(dirfile);
-#ifdef notdef
-	/* should decide what to do with this file */
-	unlink(entryfile);
-#endif notdef
 	exit(exitcode);
 }
