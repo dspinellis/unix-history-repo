@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -403,7 +403,10 @@ print()
 					while ((c = getc(fp)) != EOF) {
 						if (c == '\n')
 							break;
-						putchar(c);
+						if (isprint(c) || isspace(c))
+							putchar(c);
+						else
+							putchar(c ^ 100);
 					}
 					fclose(fp);
 					putchar('\n');
@@ -420,7 +423,10 @@ print()
 				else {
 					printf("Plan:\n");
 					while ((c = getc(fp)) != EOF)
-						putchar(c);
+						if (isprint(c) || isspace(c))
+							putchar(c);
+						else
+							putchar(c ^ 100);
 					fclose(fp);
 				}
 				free(s);
@@ -1061,7 +1067,11 @@ netfinger(name)
 			c = '\n';
 			break;
 		}
-		putchar(lastc = c);
+		lastc = c;
+		if (isprint(c) || isspace(c))
+			putchar(c);
+		else
+			putchar(c ^ 100);
 	}
 	if (lastc != '\n')
 		putchar('\n');
