@@ -1,0 +1,6 @@
+Mcut	cut.c	/^main(argc, argv)$/
+badlist	cut.c	/^badlist(msg)$/
+c_cut	cut.c	/^c_cut(fp, fname)$/
+f_cut	cut.c	/^f_cut(fp, fname)$/
+get_list	cut.c	/^get_list(list)$/
+usage	cut.c	/^usage()$/
