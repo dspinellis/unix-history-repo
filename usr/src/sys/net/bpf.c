@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpf.c	7.14 (Berkeley) %G%
+ *      @(#)bpf.c	7.15 (Berkeley) %G%
  *
  * static char rcsid[] =
  * "$Header: bpf.c,v 1.33 91/10/27 21:21:58 mccanne Exp $";
@@ -96,12 +96,22 @@ bpfilterattach(n)
 }
 #endif
 
-static void	bpf_ifname();
-static void	catchpacket();
-static void	bpf_freed();
-static int	bpf_setif();
-static int	bpf_initd();
-static int	bpf_allocbufs();
+static int	bpf_allocbufs __P((struct bpf_d *));
+static int	bpf_allocbufs __P((struct bpf_d *));
+static void	bpf_freed __P((struct bpf_d *));
+static void	bpf_freed __P((struct bpf_d *));
+static void	bpf_ifname __P((struct ifnet *, struct ifreq *));
+static void	bpf_ifname __P((struct ifnet *, struct ifreq *));
+static void	bpf_mcopy __P((void *, void *, u_int));
+static int	bpf_movein __P((struct uio *, int,
+		    struct mbuf **, struct sockaddr *, int *));
+static int	bpf_setif __P((struct bpf_d *, struct ifreq *));
+static int	bpf_setif __P((struct bpf_d *, struct ifreq *));
+static inline void
+		bpf_wakeup __P((struct bpf_d *));
+static void	catchpacket __P((struct bpf_d *, u_char *, u_int,
+		    u_int, void (*)(void *, void *, u_int)));
+static void	reset_d __P((struct bpf_d *));
 
 static int
 bpf_movein(uio, linktype, mp, sockp, datlen)
@@ -908,7 +918,6 @@ bpfselect(dev, rw)
 
 /*
  * Support for select() system call
- * Inspired by the code in tty.c for the same purpose.
  *
  * Return true iff the specific operation will not block indefinitely.
  * Otherwise, return false but make a note that a selwakeup() must be done.
@@ -990,14 +999,17 @@ bpf_tap(arg, pkt, pktlen)
  * from m_copydata in sys/uipc_mbuf.c.
  */
 static void
-bpf_mcopy(src, dst, len)
-	u_char *src;
-	u_char *dst;
-	register int len;
+bpf_mcopy(src_arg, dst_arg, len)
+	void *src_arg, *dst_arg;
+	register u_int len;
 {
-	register struct mbuf *m = (struct mbuf *)src;
-	register unsigned count;
+	register struct mbuf *m;
+	register u_int count;
+	u_char *src, *dst;
 
+	src = src_arg;
+	dst = dst_arg;
+	m = src_arg;
 	while (len > 0) {
 		if (m == 0)
 			panic("bpf_mcopy");
