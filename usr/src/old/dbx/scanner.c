@@ -1,11 +1,12 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)scanner.c	1.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)scanner.c	1.10 (Berkeley) %G%";
 
 /*
  * Debugger scanner.
  */
 
+#include <ctype.h>
 #include "defs.h"
 #include "scanner.h"
 #include "main.h"
@@ -19,620 +20,624 @@ static	char sccsid[] = "@(#)scanner.c	1.9 (Berkeley) %G%";
 typedef int Token;
 #endif
 
+typedef struct {
+	int	s_type;
+#define	ST_FILE		0
+#define	ST_ALIAS	1
+	char	*s_name;
+	int	s_lineno;
+	union {
+		File	su_file;
+		struct sum {
+			char	*sum_data;
+			char	*sum_cur;
+		} su_macro;
+	} su;
+#define	s_file	su.su_file
+#define	s_macro	su.su_macro
+#define	s_data	s_macro.sum_data
+#define	s_cur	s_macro.sum_cur
+} STREAM;
+
+#define	NSTREAMS	10
+private	STREAM stack[NSTREAMS];
+private	STREAM *sp = &stack[-1];
+
 public String initfile = ".dbxinit";
-
-typedef enum { WHITE, ALPHA, NUM, OTHER } Charclass;
-
-private Charclass class[256 + 1];
-private Charclass *lexclass = class + 1;
-
-#define isdigit(c) (lexclass[c] == NUM)
-#define isalnum(c) (lexclass[c] == ALPHA or lexclass[c] == NUM)
-#define ishexdigit(c) ( \
-    isdigit(c) or (c >= 'a' and c <= 'f') or (c >= 'A' and c <= 'F') \
-)
-
-#define MAXLINESIZE 1024
-
-private File in;
-private Char linebuf[MAXLINESIZE];
-private Char *curchar, *prevchar;
-
-#define MAXINCLDEPTH 10
-
-private struct {
-    File savefile;
-    Filename savefn;
-    int savelineno;
-} inclinfo[MAXINCLDEPTH];
-
-private unsigned int curinclindex;
 
 private Token getident();
 private Token getnum();
 private Token getstring();
-private Boolean eofinput();
 private Char charcon();
-private Char charlookup();
 
-private enterlexclass(class, s)
-Charclass class;
-String s;
-{
-    register char *p;
-
-    for (p = s; *p != '\0'; p++) {
-	lexclass[*p] = class;
-    }
-}
+#define MAXLINESIZE 1024
+private Char yytext[MAXLINESIZE];
+private Boolean shellmode;
+private	Boolean doaliases;
 
 public scanner_init()
 {
-    register Integer i;
+	register Integer i;
 
-    for (i = 0; i < 257; i++) {
-	class[i] = OTHER;
-    }
-    enterlexclass(WHITE, " \t");
-    enterlexclass(ALPHA, "abcdefghijklmnopqrstuvwxyz");
-    enterlexclass(ALPHA, "ABCDEFGHIJKLMNOPQRSTUVWXYZ_$");
-    enterlexclass(NUM, "0123456789");
-    in = stdin;
-    errfilename = nil;
-    errlineno = 0;
-    curchar = linebuf;
-    linebuf[0] = '\0';
+	if (sp < stack)
+		(void) pushinput(ST_FILE, nil, stdin);
+	shellmode = false;
+	doaliases = true;
+	errfilename = nil;
+	errlineno = sp->s_lineno = 0;
+	yytext[0] = '\0';
 }
 
+#define	MAXDEPTH	25
 /*
  * Read a single token.
- *
- * Input is line buffered.
- *
  * There are two "modes" of operation:  one as in a compiler,
  * and one for reading shell-like syntax.
  */
-
-private Boolean shellmode;
-
 public Token yylex()
 {
-    register int c;
-    register char *p;
-    register Token t;
-    String line;
+	register int c;
+	register char *p;
+	register Token t;
+	static int depth = 0;
 
-    p = curchar;
-    if (*p == '\0') {
-	do {
-	    if (isterm(in)) {
-		printf("(%s) ", cmdname);
-		fflush(stdout);
-	    }
-	    line = fgets(linebuf, MAXLINESIZE, in);
-	} while (line == nil and not eofinput());
-	if (line == nil) {
-	    c = EOF;
-	} else {
-	    p = linebuf;
-	    while (lexclass[*p] == WHITE) {
-		p++;
-	    }
-	    shellmode = false;
+	depth++;
+	if (depth > MAXDEPTH) {
+	    depth = 0;
+	    error("Alias loop (maximum %d deep).\n", MAXDEPTH);
 	}
-    } else {
-	while (lexclass[*p] == WHITE) {
-	    p++;
+again:
+	do
+		c = getch();
+	while (c == ' ' || c == '\t');
+	if (isalpha(c) || c == '_' || c == '$') {
+		t = getident(c);
+		if (t == NAME && doaliases) {
+			p = findalias(yylval.y_name);
+			if (p != nil) {
+				if (lexdebug)
+					fprintf(stderr, "alias %s to \"%s\"\n",
+					    ident(yylval.y_name), p);
+				if (!pushinput(ST_ALIAS, "", p)) {
+					unwindinput(ST_ALIAS);
+					error("Alias stack overflow.");
+				}
+				t = yylex();
+			}
+		}
+		goto done;
 	}
-    }
-    curchar = p;
-    prevchar = curchar;
-    c = *p;
-    if (lexclass[c] == ALPHA) {
-	t = getident();
-    } else if (lexclass[c] == NUM) {
-	if (shellmode) {
-	    t = getident();
-	} else {
-	    t = getnum();
+	if (isdigit(c)) {
+		t = shellmode ? getident(c) : getnum(c);
+		goto done;
 	}
-    } else {
-	++curchar;
 	switch (c) {
-	    case '\n':
+
+	case '\n':
 		t = '\n';
-		if (errlineno != 0) {
-		    errlineno++;
+		if (sp->s_lineno != 0) {
+			sp->s_lineno++;
+			if (sp->s_type == ST_FILE)
+				errlineno = sp->s_lineno;
 		}
 		break;
 
-	    case '"':
-	    case '\'':
-		t = getstring();
+	case '"':
+	case '\'':
+		t = getstring(c);
 		break;
 
-	    case '.':
+	case '.':
 		if (shellmode) {
-		    --curchar;
-		    t = getident();
-		} else if (isdigit(*curchar)) {
-		    --curchar;
-		    t = getnum();
-		} else {
-		    t = '.';
+			t = getident(c);
+			break;
 		}
+		c = getch();
+		ungetch(c);
+		t = isdigit(c) ? getnum('.') : '.';
 		break;
 
-	    case '<':
-		if (not shellmode and *curchar == '<') {
-		    ++curchar;
-		    t = LFORMER;
-		} else {
-		    t = '<';
-		}
+	case '<':
+		c = getch();
+		if (shellmode || c != '<') {
+			ungetch(c);
+			t = '<';
+		} else
+			t = LFORMER;
 		break;
 
-	    case '>':
-		if (not shellmode and *curchar == '>') {
-		    ++curchar;
-		    t = RFORMER;
-		} else {
-		    t = '>';
-		}
+	case '>':
+		c = getch();
+		if (shellmode || c != '>') {
+			ungetch(c);
+			t = '>';
+		} else
+			t = RFORMER;
 		break;
 
-	    case '#':
-		if (*curchar == '^') {
-		    ++curchar;
-		    t = ABSTRACTION;
-		} else {
-		    t = '#';
-		}
+	case '#':
+		c = getch();
+		if (c != '^') {
+			ungetch(c);
+			t = '#';
+		} else
+			t = ABSTRACTION;
 		break;
 
-	    case '-':
+	case '-':
 		if (shellmode) {
-		    --curchar;
-		    t = getident();
-		} else if (*curchar == '>') {
-		    ++curchar;
-		    t = ARROW;
-		} else {
-		    t = '-';
+			t = getident(c);
+			break;
 		}
+		c = getch();
+		if (c != '>') {
+			ungetch(c);
+			t = '-';
+		} else
+			t = ARROW;
 		break;
 
-	    case EOF:
+	case EOF:
 		t = 0;
 		break;
 
-	    default:
-		if (shellmode and index("!&*()[]", c) == nil) {
-		    --curchar;
-		    t = getident();
-		} else {
-		    t = c;
-		}
+	default:
+		t = shellmode && index("!&*()[];", c) == nil ?
+		    getident(c) : c;
 		break;
 	}
-    }
-#   ifdef LEXDEBUG
+done:
 	if (lexdebug) {
-	    fprintf(stderr, "yylex returns ");
-	    print_token(stderr, t);
-	    fprintf(stderr, "\n");
+		fprintf(stderr, "token ");
+		print_token(stderr, t);
+		fprintf(stderr, "\n");
 	}
-#   endif
-    return t;
-}
-
-/*
- * Parser error handling.
- */
-
-public yyerror(s)
-String s;
-{
-    register char *p;
-    register integer start;
-
-    if (streq(s, "syntax error")) {
-	beginerrmsg();
-	p = prevchar;
-	start = p - &linebuf[0];
-	if (p > &linebuf[0]) {
-	    while (lexclass[*p] == WHITE and p > &linebuf[0]) {
-		--p;
-	    }
-	}
-	fprintf(stderr, "%s", linebuf);
-	if (start != 0) {
-	    fprintf(stderr, "%*c", start, ' ');
-	}
-	if (p == &linebuf[0]) {
-	    fprintf(stderr, "^ unrecognized command");
-	} else {
-	    fprintf(stderr, "^ syntax error");
-	}
-	enderrmsg();
-    } else {
-	error(s);
-    }
-}
-
-/*
- * Eat the current line.
- */
-
-public gobble()
-{
-    curchar = linebuf;
-    linebuf[0] = '\0';
+	depth--;
+	return (t);
 }
 
 /*
  * Scan an identifier and check to see if it's a keyword.
  */
-
-private Token getident()
+private Token getident(c)
+Char c;
 {
-    char buf[256];
-    register Char *p, *q;
-    register Token t;
+	register Char *p, *q;
+	Token t;
 
-    p = curchar;
-    q = buf;
-    if (shellmode) {
-	do {
-	    *q++ = *p++;
-	} while (index(" \t\n!&<>*[]()'\"", *p) == nil);
-    } else {
-	do {
-	    *q++ = *p++;
-	} while (isalnum(*p));
-    }
-    curchar = p;
-    *q = '\0';
-    yylval.y_name = identname(buf, false);
-    if (not shellmode) {
-	t = findkeyword(yylval.y_name);
-	if (t == nil) {
-	    t = NAME;
+	q = yytext;
+	if (shellmode) {
+		do {
+			*q++ = c;
+			c = getch();
+		} while (index(" \t\n!&<>*[]();", c) == nil);
+	} else {
+		do {
+			*q++ = c;
+			c = getch();
+		} while (isalnum(c) || c == '_' || c == '$');
 	}
-    } else {
-	t = NAME;
-    }
-    return t;
+	ungetch(c);
+	*q = '\0';
+	yylval.y_name = identname(yytext, false);
+	if (shellmode)
+		return (NAME);
+	t = findkeyword(yylval.y_name);
+	return (t == nil ? NAME : t);
 }
 
 /*
  * Scan a number.
  */
-
-private Token getnum()
+private Token getnum(c)
+Char c;
 {
-    char buf[256];
-    register Char *p, *q;
-    register Token t;
-    Integer base;
+	register Char *q;
+	register Token t;
+	Integer base = 10;
 
-    p = curchar;
-    q = buf;
-    if (*p == '0') {
-	if (*(p+1) == 'x') {
-	    p += 2;
-	    base = 16;
+	q = yytext;
+	if (c == '0') {
+		c = getch();
+		if (c == 'x') {
+			base = 16;
+		} else {
+			base = 8;
+			ungetch(c);
+			c = '0';
+		}
+	}
+	if (base == 16) {
+		while (isdigit(c = getch()) ||
+		    (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))
+			*q++ = c;
 	} else {
-	    base = 8;
-	}
-    } else {
-	base = 10;
-    }
-    if (base == 16) {
-	do {
-	    *q++ = *p++;
-	} while (ishexdigit(*p));
-    } else {
-	do {
-	    *q++ = *p++;
-	} while (isdigit(*p));
-    }
-    if (*p == '.') {
-	do {
-	    *q++ = *p++;
-	} while (isdigit(*p));
-	if (*p == 'e' or *p == 'E') {
-	    p++;
-	    if (*p == '+' or *p == '-' or isdigit(*p)) {
-		*q++ = 'e';
 		do {
-		    *q++ = *p++;
-		} while (isdigit(*p));
-	    }
+			*q++ = c;
+			c = getch();
+		} while (isdigit(c));
 	}
-	*q = '\0';
-	yylval.y_real = atof(buf);
-	t = REAL;
-    } else {
+	if (c == '.') {
+		do {
+			*q++ = c;
+			c = getch();
+		} while (isdigit(c));
+		if (c == 'e' || c == 'E') {
+			c = getch();
+			if (c == '+' || c == '-' || isdigit(c)) {
+				*q++ = 'e';
+				do {
+					*q++ = c;
+					c = getch();
+				} while (isdigit(c));
+			}
+		}
+		ungetch(c);
+		*q = '\0';
+		yylval.y_real = atof(yytext);
+		return (REAL);
+	}
+	ungetch(c);
 	*q = '\0';
 	switch (base) {
-	    case 10:
-		yylval.y_int = atol(buf);
+
+	case 10:
+		yylval.y_int = atol(yytext);
 		break;
 
-	    case 8:
-		yylval.y_int = octal(buf);
+	case 8:
+		yylval.y_int = octal(yytext);
 		break;
 
-	    case 16:
-		yylval.y_int = hex(buf);
+	case 16:
+		yylval.y_int = hex(yytext);
 		break;
 
-	    default:
+	default:
 		badcaseval(base);
 	}
-	t = INT;
-    }
-    curchar = p;
-    return t;
+	return (INT);
 }
 
 /*
  * Convert a string of octal digits to an integer.
  */
-
 private int octal(s)
 String s;
 {
-    register Char *p;
-    register Integer n;
+	register Char *p;
+	register Integer n;
 
-    n = 0;
-    for (p = s; *p != '\0'; p++) {
-	n = 8*n + (*p - '0');
-    }
-    return n;
+	n = 0;
+	for (p = s; *p != '\0'; p++)
+		n = (n << 3) + (*p - '0');
+	return (n);
 }
 
 /*
  * Convert a string of hexadecimal digits to an integer.
  */
-
 private int hex(s)
 String s;
 {
-    register Char *p;
-    register Integer n;
+	register Char *p;
+	register Integer n;
 
-    n = 0;
-    for (p = s; *p != '\0'; p++) {
-	n *= 16;
-	if (*p >= 'a' and *p <= 'f') {
-	    n += (*p - 'a' + 10);
-	} else if (*p >= 'A' and *p <= 'F') {
-	    n += (*p - 'A' + 10);
-	} else {
-	    n += (*p - '0');
+	n = 0;
+	for (p = s; *p != '\0'; p++) {
+		n <<= 4;
+		if (*p >= 'a' && *p <= 'f')
+			n += (*p - 'a' + 10);
+		else if (*p >= 'A' && *p <= 'F')
+			n += (*p - 'A' + 10);
+		else
+			n += (*p - '0');
 	}
-    }
-    return n;
+	return (n);
 }
 
 /*
  * Scan a string.
  */
-
-private Token getstring()
+private Token getstring(match)
+Char match;
 {
-    char buf[256];
-    register Char *p, *q;
-    Boolean endofstring;
+	register Char *q, c;
 
-    p = curchar;
-    q = buf;
-    endofstring = false;
-    while (not endofstring) {
-	if (*p == '\n' or *p == '\0') {
-	    error("non-terminated string");
-	    endofstring = true;
-	} else if (*p == '"' or *p == '\'') {
-	    if (*(p+1) != *p) {
-		endofstring = true;
-	    } else {
-		*q++ = *p;
-	    }
-	} else {
-	    curchar = p;
-	    *q++ = charcon(p);
-	    p = curchar;
+	q = yytext;
+	for (;;) {
+		c = getch();
+		if (c == '\n' || c == EOF) {
+			error("Unterminated string.");
+			break;
+		}
+		if (c == match)
+			break;
+		*q++ = charcon(c);
 	}
-	p++;
-    }
-    curchar = p;
-    *q = '\0';
-    yylval.y_string = strdup(buf);
-    return STRING;
+	*q = '\0';
+	yylval.y_string = strdup(yytext);
+	return (STRING);
 }
 
 /*
  * Process a character constant.
  * Watch out for backslashes.
  */
-
-private Char charcon(p)
-char *p;
+private Char charcon(c)
+Char c;
 {
-    char c, buf[10], *q;
+	register char *cp;
 
-    if (*p == '\\') {
-	++p;
-	if (*p != '\\') {
-	    q = buf;
-	    do {
-		*q++ = *p++;
-	    } while (*p != '\\' and *p != '\'' and *p != '\n' and *p != '\0');
-	    *q = '\0';
-	    if (isdigit(buf[0])) {
-		c = (Char) octal(buf);
-	    } else {
-		c = charlookup(buf);
-	    }
-	    curchar = p - 1;
-	} else {
-	    c = '\\';
+	if (c == '\\') {
+		c = getch();
+		if (isdigit(c)) {
+			int v;
+
+			v = 0;
+			do {
+				v = (v << 3) + (c - '0');
+				c = getch();
+			} while (isdigit(c));
+			ungetch(c);
+			return (v);
+		}
+		for (cp = "f\ft\tb\bn\nr\rv\v"; *cp != c; cp += 2)
+			;
+		if (*cp != '\0')
+			c = *cp;
 	}
-    } else {
-	c = *p;
-    }
-    return c;
+	return (c);
 }
 
 /*
- * Do a lookup for a ASCII character name.
+ * Parser error handling.
  */
-
-private String ascii[] = {
-    "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL",
-    "BS",  "HT",  "NL",  "VT",  "NP",  "CR",  "SO",  "SI",
-    "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB",
-    "CAN", "EM",  "SUB", "ESC", "FS",  "GS",  "RS",  "US",
-    "SP", nil
-};
-
-private char charlookup(s)
+public yyerror(s)
 String s;
 {
-    register int i;
 
-    for (i = 0; ascii[i] != NULL; i++) {
-	if (streq(s, ascii[i])) {
-	    return i;
+	if (streq(s, "syntax error")) {
+		beginerrmsg();
+		fprintf(stderr, "Syntax error");
+		if (yytext[0] != '\0')
+			fprintf(stderr, " on \"%s\".", yytext);
+		enderrmsg();
+		return;
 	}
-    }
-    if (streq(s, "DEL")) {
-	return 0177;
-    }
-    error("unknown ascii name \"%s\"", s);
-    return '?';
+	error(s);
+}
+
+/*
+ * Eat the current line.
+ */
+private Char lastc = '\0';
+
+public gobble()
+{
+	register char c;
+
+	if (lastc != '\n' && lastc != EOF)
+		while ((c = getch()) != EOF && c != '\n')
+			;
 }
 
 /*
  * Input file management routines.
  */
-
 public setinput(filename)
 Filename filename;
 {
-    File f;
+	File f;
 
-    f = fopen(filename, "r");
-    if (f == nil) {
-	error("can't open %s", filename);
-    } else {
-	if (curinclindex >= MAXINCLDEPTH) {
-	    error("unreasonable input nesting on \"%s\"", filename);
+	f = fopen(filename, "r");
+	if (f == nil)
+		error("%s: Can't open.", filename);
+	if (!pushinput(ST_FILE, filename, f)) {
+		unwindinput(ST_FILE);
+		error("Source file nesting too deep.");
 	}
-	inclinfo[curinclindex].savefile = in;
-	inclinfo[curinclindex].savefn = errfilename;
-	inclinfo[curinclindex].savelineno = errlineno;
-	curinclindex++;
-	in = f;
-	errfilename = filename;
-	errlineno = 1;
-    }
-}
-
-private Boolean eofinput()
-{
-    register Boolean b;
-
-    if (curinclindex == 0) {
-	if (isterm(in)) {
-	    putchar('\n');
-	    clearerr(in);
-	    b = false;
-	} else {
-	    b = true;
-	}
-    } else {
-	fclose(in);
-	--curinclindex;
-	in = inclinfo[curinclindex].savefile;
-	errfilename = inclinfo[curinclindex].savefn;
-	errlineno = inclinfo[curinclindex].savelineno;
-	b = false;
-    }
-    return b;
-}
-
-/*
- * Pop the current input.  Return whether successful.
- */
-
-public Boolean popinput()
-{
-    Boolean b;
-
-    if (curinclindex == 0) {
-	b = false;
-    } else {
-	b = (Boolean) (not eofinput());
-    }
-    return b;
-}
-
-/*
- * Return whether we are currently reading from standard input.
- */
-
-public Boolean isstdin()
-{
-    return (Boolean) (in == stdin);
 }
 
 /*
  * Send the current line to the shell.
  */
-
 public shellline()
 {
-    register char *p;
+	register Char *p, c;
 
-    p = curchar;
-    while (*p != '\0' and (*p == '\n' or lexclass[*p] == WHITE)) {
-	++p;
-    }
-    shell(p);
-    if (*p == '\0' and isterm(in)) {
-	putchar('\n');
-    }
-    erecover();
+	for (p = yytext; (c = getch()) != EOF && c != '\n'; *p++ = c)
+		;
+	*p = '\0';
+	shell(yytext);
+	erecover();
 }
 
 /*
  * Read the rest of the current line in "shell mode".
  */
-
 public beginshellmode()
 {
-    shellmode = true;
+
+	shellmode = true;
+}
+
+public endshellmode()
+{
+
+	shellmode = false;
+}
+
+public stopaliasing()
+{
+
+	doaliases = false;
+}
+
+public startaliasing()
+{
+
+	doaliases = true;
 }
 
 /*
  * Print out a token for debugging.
  */
-
 public print_token(f, t)
 File f;
 Token t;
 {
-    if (t == '\n') {
-	fprintf(f, "char '\\n'");
-    } else if (t == EOF) {
-	fprintf(f, "EOF");
-    } else if (t < 256) {
-	fprintf(f, "char '%c'", t);
-    } else {
-	fprintf(f, "\"%s\"", keywdstring(t));
-    }
+
+	switch (t) {
+
+	case '\n':
+		fprintf(f, "char '\\n'");
+		return;
+
+	case EOF:
+		fprintf(f, "EOF");
+		return;
+
+	case NAME:
+	case STRING:
+		fprintf(f, "%s, \"%s\"", keywdstring(t), ident(yylval.y_name));
+		return;
+	}
+	if (t < 256)
+		fprintf(f, "char '%c'", t);
+	else
+		fprintf(f, "%s", keywdstring(t));
+}
+
+public int getch()
+{
+	int c;
+
+again:
+	switch (sp->s_type) {
+
+	case ST_FILE:
+		c = getc(sp->s_file);
+		if (c == EOF && isterm(sp->s_file)) {
+			clearerr(sp->s_file);
+			putchar('\n');
+			c = '\n';
+		}
+		break;
+
+	case ST_ALIAS:
+		c = *sp->s_cur++;
+		if (c == '\0') {
+			c = EOF;
+			--sp->s_cur;
+		}
+		break;
+
+	default:
+		panic("Invalid input stream (type %d) to getch.",
+		    sp->s_type);
+	}
+	if (c == EOF && popinput())
+		goto again;
+	return (lastc = c);
+}
+
+private int ungetch(c)
+Char c;
+{
+	Char uc;
+
+	if (c != EOF) switch (sp->s_type) {
+
+	case ST_FILE:
+		uc = ungetc(c, sp->s_file);
+		break;
+
+	case ST_ALIAS:
+		if (sp->s_cur == sp->s_data)
+			panic("Illegal ungetch on alias.");
+		*--sp->s_cur = c;
+		uc = c;
+		break;
+
+	default:
+		panic("Invalid input stream (type %d) to ungetch.",
+		    sp->s_type);
+	}
+	lastc = '\0';
+	return (uc);
+}
+
+/*
+ * Push the current input stream and
+ * make the supplied stream the current.
+ */
+/*VARARGS3*/
+public pushinput(type, name, info)
+int type;
+Filename name;
+{
+
+	if (sp >= &stack[NSTREAMS])
+		return (0);
+	++sp;
+	sp->s_type = type;
+	switch (type) {
+
+	case ST_FILE:
+		sp->s_file = (File)info;
+		errfilename = sp->s_name = name;
+		errlineno = sp->s_lineno = 1;
+		break;
+
+	case ST_ALIAS:
+		sp->s_cur = sp->s_data = (char *)info;
+		break;
+
+	default:
+		panic("Invalid input stream (type %d) to pushinput.", type);
+	}
+	return (1);
+}
+
+public popinput()
+{
+
+	if (sp <= &stack[0])		/* never pop stdin or equivalent */
+		return (0);
+	if (sp->s_type == ST_FILE && sp->s_file != stdin)
+		fclose(sp->s_file);
+	--sp;
+	if (sp->s_type == ST_FILE)
+		errfilename = sp->s_name;
+	errlineno = sp->s_lineno;
+	return (1);
+}
+
+/*
+ * Unwind the input stack of all input types specified.
+ * This is called to recover from an infinite
+ * loop in alias processing or source file including.
+ */
+public unwindinput(type)
+Integer type;
+{
+
+	while (sp->s_type == type && popinput())
+		;
+}
+
+/*
+ * Return whether we are currently reading from standard input.
+ */
+public Boolean isstdin()
+{
+
+	return ((Boolean)(sp->s_type == ST_FILE && sp->s_file == stdin));
+}
+
+public Boolean istty()
+{
+
+	return ((Boolean)isterm(sp->s_file));
 }

@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)process.c	1.13 (Berkeley) %G%";
+static	char sccsid[] = "@(#)process.c	1.14 (Berkeley) %G%";
 
 /*
  * Process management.
@@ -1280,3 +1280,94 @@ Fileid newfd;
 	close(newfd);
     }
 }
+
+#define	bit(i)		(1 << ((i)-1))
+/*
+ * Signal manipulation routines.
+ */
+static String signames[NSIG] = {
+	0,
+	"HUP",
+	"INT",
+	"QUIT",
+	"ILL",
+	"TRAP",
+	"IOT",
+	"EMT",
+	"FPE",
+	"KILL",
+	"BUS",
+	"SEGV",
+	"SYS",
+	"PIPE",
+	"ALRM",
+	"TERM",
+	0,
+	"STOP",
+	"TSTP",
+	"CONT",
+	"CHLD",
+	"TTIN",
+	"TTOU",
+	"TINT",
+	"XCPU",
+	"XFSZ",
+};
+
+/*
+ * Map a signal name to a number.
+ */
+public signalname(s)
+String s;
+{
+	register String *p;
+
+	for (p = signames; p < &signames[NSIG]; p++)
+		if (*p && streq(*p, s))
+			return (p - signames);
+	error("%s: Unknown signal.", s);
+}
+
+/*
+ * Print all signals being ignored by the
+ * debugger.  These signals are auotmatically
+ * passed on to the debugged process.
+ */
+public printsigsignored(vec)
+long vec;
+{
+	register Integer s;
+	String sep = "";
+
+	for (s = 1; s < NSIG; s++)
+		if ((vec & bit(s)) && signames[s]) {
+			printf("%s%s", sep, signames[s]);
+			sep = " ";
+		}
+	if (*sep != '\0') {
+		putchar('\n');
+		fflush(stdout);
+	}
+}
+
+/*
+ * Print all signals being intercepted by
+ * the debugger for the specified process.
+ */
+public printsigscaught(vec)
+long vec;
+{
+	register Integer s;
+	String sep = "";
+
+	for (s = 1; s < NSIG; s++)
+		if ((vec & bit(s)) == 0 && signames[s]) {
+			printf("%s%s", sep, signames[s]);
+			sep = " ";
+		}
+	if (*sep != '\0') {
+		putchar('\n');
+		fflush(stdout);
+	}
+}
+
