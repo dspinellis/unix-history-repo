@@ -4,12 +4,13 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <stdio.h>
+#include <sgtty.h>
 
 #undef isalpha
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	2.3 %G%";
+ * Sccs Id = "@(#)def.h	2.4 %G%";
  */
 
 /*
@@ -39,7 +40,6 @@
 #define	HSHSIZE		19		/* Hash size for aliases and vars */
 #define	HDRFIELDS	3		/* Number of header fields */
 #define	LINESIZE	BUFSIZ		/* max readable line width */
-#define	SCREEN		18		/* screen size in lines (effective) */
 #define	STRINGSIZE	((unsigned) 128)/* Dynamic allocation units */
 #define	MAXARGC		20		/* Maximum list of raw strings */
 #define	NOSTR		((char *) 0)	/* Null string pointer */
