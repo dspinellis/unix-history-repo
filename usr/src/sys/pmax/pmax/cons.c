@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cons.c 1.1 90/07/09$
  *
- *	@(#)cons.c	8.1 (Berkeley) %G%
+ *	@(#)cons.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -27,9 +27,11 @@
 
 /*
  * Console I/O is redirected to the appropriate device, either a screen and
- * keyboard or a serial port.
+ * keyboard, a serial port, or the "virtual" console.
  */
 #include <pmax/pmax/cons.h>
+
+extern struct tty *constty;	/* virtual console output device */
 
 struct consdev cn_tab = {
 	1,
@@ -78,6 +80,8 @@ cnwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
+	if (constty)
+		return ((*linesw[constty->t_line].l_write)(constty, uio, flag));
 	if (cn_tab.cn_dev == NODEV)
 		return (0);
 	dev = cn_tab.cn_dev;
@@ -91,6 +95,25 @@ cnioctl(dev, cmd, data, flag, p)
 {
 	int error;
 
+	/*
+	 * Superuser can always use this to wrest control of console
+	 * output from the "virtual" console.
+	 */
+	if (cmd == TIOCCONS && constty) {
+		error = suser(p->p_ucred, (u_short *) NULL);
+		if (error)
+			return (error);
+		constty = NULL;
+		return (0);
+	}
+#if 0
+	if (constty) {
+		error = (*linesw[constty->t_line].l_ioctl)
+			(constty, cmd, data, flag, p);
+		if (error >= 0)
+			return (error);
+	}
+#endif
 	if (cn_tab.cn_dev == NODEV)
 		return (0);
 	dev = cn_tab.cn_dev;
