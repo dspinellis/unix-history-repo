@@ -42,6 +42,7 @@ static char sccsid[] = "@(#)rcp.c	5.11 (Berkeley) 9/22/88";
 #include <ctype.h>
 #include <netdb.h>
 #include <errno.h>
+#include "pathnames.h"
 
 #ifdef	KERBEROS
 #include <kerberos/krb.h>
@@ -192,14 +193,14 @@ main(argc, argv)
 						suser = pwd->pw_name;
 					else if (!okname(suser))
 						continue;
-		(void) sprintf(buf, "/usr/ucb/rsh %s -l %s -n %s %s '%s%s%s:%s'",
-					    host, suser, cmd, src,
+		(void) sprintf(buf, "%s %s -l %s -n %s %s '%s%s%s:%s'",
+					    _PATH_RSH, host, suser, cmd, src,
 					    tuser ? tuser : "",
 					    tuser ? "@" : "",
 					    thost, targ);
 				} else
-		(void) sprintf(buf, "/usr/ucb/rsh %s -n %s %s '%s%s%s:%s'",
-					    argv[i], cmd, src,
+		(void) sprintf(buf, "%s %s -n %s %s '%s%s%s:%s'",
+					    _PATH_RSH, argv[i], cmd, src,
 					    tuser ? tuser : "",
 					    tuser ? "@" : "",
 					    thost, targ);
@@ -277,8 +278,8 @@ try_again:
 		for (i = 0; i < argc - 1; i++) {
 			src = colon(argv[i]);
 			if (src == 0) {		/* local to local */
-				(void) sprintf(buf, "/bin/cp%s%s %s %s",
-				    iamrecursive ? " -r" : "",
+				(void) sprintf(buf, "%s%s%s %s %s",
+				    _PATH_CP, iamrecursive ? " -r" : "",
 				    pflag ? " -p" : "",
 				    argv[i], argv[argc - 1]);
 				(void) susystem(buf);
@@ -419,7 +420,7 @@ susystem(s)
 
 	if ((pid = vfork()) == 0) {
 		(void) setuid(userid);
-		execl("/bin/sh", "sh", "-c", s, (char *)0);
+		execl(_PATH_BSHELL, "sh", "-c", s, (char *)0);
 		_exit(127);
 	}
 	istat = signal(SIGINT, SIG_IGN);
