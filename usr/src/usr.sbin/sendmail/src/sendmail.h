@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.44	%G%
+**	@(#)sendmail.h	3.44.1.1	%G%
 */
 
 
@@ -14,6 +14,7 @@
 
 # include <stdio.h>
 # include <ctype.h>
+# include "conf.h"
 # include "useful.h"
 
 /*
