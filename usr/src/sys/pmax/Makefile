@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.5 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 # Makefile for pmax links, tags file
 
