@@ -4,13 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	8.1 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
-#include <net/radix.h>
-#include <sys/domain.h>
-#include <sys/socket.h>
 #include <sys/mbuf.h>
 #include <sys/mount.h>
 #include <sys/proc.h>
@@ -46,12 +43,6 @@ ufs_start(mp, flags, p)
 {
 
 	return (0);
-}
-
-/*
-	error = closei(dev, IFBLK, fs->fs_ronly? FREAD : FREAD|FWRITE);
-	irele(ip);
-	return (error);
 }
 
 /*
@@ -125,114 +116,6 @@ ufs_quotactl(mp, cmds, uid, arg, p)
 }
 
 /*
- * Build hash lists of net addresses and hang them off the mount point.
- * Called by ufs_mount() to set up the lists of export addresses.
- */
-ufs_hang_addrlist(mp, argp)
-	struct mount *mp;
-	struct ufs_args *argp;
-{
-	register struct netcred *np;
-	register struct radix_node_head *rnh;
-	register int i;
-	struct radix_node *rn;
-	struct ufsmount *ump;
-	struct sockaddr *saddr, *smask = 0;
-	struct domain *dom;
-	int error;
-
-	ump = VFSTOUFS(mp);
-	if (argp->slen == 0) {
-		if (mp->mnt_flag & MNT_DEFEXPORTED)
-			return (EPERM);
-		np = &ump->um_defexported;
-		np->netc_exflags = argp->exflags;
-		np->netc_anon = argp->anon;
-		np->netc_anon.cr_ref = 1;
-		mp->mnt_flag |= MNT_DEFEXPORTED;
-		return (0);
-	}
-	i = sizeof(struct netcred) + argp->slen + argp->msklen;
-	np = (struct netcred *)malloc(i, M_NETADDR, M_WAITOK);
-	bzero((caddr_t)np, i);
-	saddr = (struct sockaddr *)(np + 1);
-	if (error = copyin(argp->saddr, (caddr_t)saddr, argp->slen))
-		goto out;
-	if (saddr->sa_len > argp->slen)
-		saddr->sa_len = argp->slen;
-	if (argp->msklen) {
-		smask = (struct sockaddr *)((caddr_t)saddr + argp->slen);
-		if (error = copyin(argp->saddr, (caddr_t)smask, argp->msklen))
-			goto out;
-		if (smask->sa_len > argp->msklen)
-			smask->sa_len = argp->msklen;
-	}
-	i = saddr->sa_family;
-	if ((rnh = ump->um_rtable[i]) == 0) {
-		/*
-		 * Seems silly to initialize every AF when most are not
-		 * used, do so on demand here
-		 */
-		for (dom = domains; dom; dom = dom->dom_next)
-			if (dom->dom_family == i && dom->dom_rtattach) {
-				dom->dom_rtattach((void **)&ump->um_rtable[i],
-					dom->dom_rtoffset);
-				break;
-			}
-		if ((rnh = ump->um_rtable[i]) == 0) {
-			error = ENOBUFS;
-			goto out;
-		}
-	}
-	rn = (*rnh->rnh_addaddr)((caddr_t)saddr, (caddr_t)smask, rnh,
-		np->netc_rnodes);
-	if (rn == 0 || np != (struct netcred *)rn) { /* already exists */
-		error = EPERM;
-		goto out;
-	}
-	np->netc_exflags = argp->exflags;
-	np->netc_anon = argp->anon;
-	np->netc_anon.cr_ref = 1;
-	return (0);
-out:
-	free(np, M_NETADDR);
-	return (error);
-}
-
-/* ARGSUSED */
-static int
-ufs_free_netcred(rn, w)
-	struct radix_node *rn;
-	caddr_t w;
-{
-	register struct radix_node_head *rnh = (struct radix_node_head *)w;
-
-	(*rnh->rnh_deladdr)(rn->rn_key, rn->rn_mask, rnh);
-	free((caddr_t)rn, M_NETADDR);
-	return (0);
-}
-	
-
-/*
- * Free the net address hash lists that are hanging off the mount points.
- */
-void
-ufs_free_addrlist(ump)
-	struct ufsmount *ump;
-{
-	register int i;
-	register struct radix_node_head *rnh;
-
-	for (i = 0; i <= AF_MAX; i++)
-		if (rnh = ump->um_rtable[i]) {
-			(*rnh->rnh_walktree)(rnh, ufs_free_netcred,
-			    (caddr_t)rnh);
-			free((caddr_t)rnh, M_RTABLE);
-			ump->um_rtable[i] = 0;
-		}
-}
-
-/*
  * This is the generic part of fhtovp called after the underlying
  * filesystem has validated the file handle.
  *
@@ -251,35 +134,16 @@ ufs_check_export(mp, ufhp, nam, vpp, exflagsp, credanonp)
 	register struct inode *ip;
 	register struct netcred *np;
 	register struct ufsmount *ump = VFSTOUFS(mp);
-	register struct radix_node_head *rnh;
 	struct vnode *nvp;
-	struct sockaddr *saddr;
 	int error;
 
 	/*
 	 * Get the export permission structure for this <mp, client> tuple.
 	 */
-	if ((mp->mnt_flag & MNT_EXPORTED) == 0)
+	np = vfs_export_lookup(mp, &ump->um_export, nam);
+	if (np == NULL)
 		return (EACCES);
-	np = NULL;
-	if (nam != NULL) {
-		saddr = mtod(nam, struct sockaddr *);
-		rnh = ump->um_rtable[saddr->sa_family];
-		if (rnh != NULL) {
-			np = (struct netcred *)
-			    (*rnh->rnh_matchaddr)((caddr_t)saddr, rnh);
-			if (np && np->netc_rnodes->rn_flags & RNF_ROOT)
-				np = NULL;
-		}
-	}
-	if (np == NULL) {
-		/*
-		 * If no address match, use the default if it exists.
-		 */
-		if ((mp->mnt_flag & MNT_DEFEXPORTED) == 0)
-			return (EACCES);
-		np = &ump->um_defexported;
-	}
+
 	if (error = VFS_VGET(mp, ufhp->ufid_ino, &nvp)) {
 		*vpp = NULLVP;
 		return (error);
