@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)setup.c 4.4 %G%";
+static	char sccsid[] = "@(#)setup.c	4.5 82/04/01";
 /*
  * adb - routines to read a.out+core at startup
  */
@@ -93,7 +93,7 @@ setcor()
 {
 
 	fcor = datmap.ufd = getfile(corfil,2);
-	if (fcor != -1 && INKERNEL(filhdr.a_entry)) {
+	if (kernel && fcor != -1 && INKERNEL(filhdr.a_entry)) {
 		struct stat stb;
 
 		kcore = 1;
@@ -107,8 +107,9 @@ setcor()
 		lookup("_Syssize");
 		slr = cursym->n_value;
 		printf("sbr %X slr %X\n", sbr, slr);
-		lookup("_masterpcbb");
+		lookup("_masterpaddr");
 		physrw(fcor, cursym->n_value&0x7fffffff, &masterpcbb, 1);
+		masterpcbb = (masterpcbb&PG_PFNUM)*512;
 		getpcb();
 		return;
 	}
