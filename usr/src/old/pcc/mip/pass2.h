@@ -1,4 +1,4 @@
-/*	pass2.h	4.1	85/03/19	*/
+/*	pass2.h	4.2	86/10/15	*/
 
 #ifndef _PASS2_
 #define	_PASS2_
