@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)termios.4	8.1 (Berkeley) %G%
+.\"	@(#)termios.4	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TERMIOS 4
@@ -87,7 +87,7 @@ and has the affect of stopping the entire job.
 The shell will notice that the job stopped, and will resume running after
 placing itself in the foreground.
 The shell also has commands for placing stopped jobs in the background,
-and for placing stopped or background jobs into to the foreground.
+and for placing stopped or background jobs into the foreground.
 .Ss Orphaned Process Groups
 An orphaned process group is a process group that has no process
 whose parent is in a different process group, yet is in the same
@@ -105,7 +105,7 @@ most one session.  The controlling terminal for a session is allocated by
 the session leader by issuing the
 .Dv TIOCSCTTY
 ioctl.  A controlling terminal
-is never acquired by mereley opening a terminal device file.
+is never acquired by merely opening a terminal device file.
 When a controlling terminal becomes
 associated with a session, its foreground process group is set to
 the process group of the session leader.
@@ -203,7 +203,7 @@ If this flag is set, the terminal
 is a sent an
 .Tn ASCII
 .Dv BEL
-character each time a character is recieved
+character each time a character is received
 while the input queue is full.  Otherwise, the input queue is flushed
 upon receiving the character.
 .Pp
@@ -248,7 +248,7 @@ much data as possible, the number of bytes read is returned.
 .It
 If there is no data available, the read returns -1, with
 errno set to
-.Br EAGAIN .
+.Er EAGAIN .
 .El
 .Pp
 When data is available depends on whether the input processing mode is
@@ -427,7 +427,7 @@ section).  The
 implementation may provide a buffering mechanism; as such, when a call to
 write() completes, all of the bytes written have been scheduled for
 transmission to the device, but the transmission will not necessarily
-have completed.
+have been completed.
 .\" See also .Sx "6.4.2" for the effects of
 .\" .Dv O_NONBLOCK
 .\" on write.
@@ -611,7 +611,7 @@ is set, first any preceding
 whitespace is erased, and then the maximal sequence
 of alphabetic/underscores or non alphabetic/underscores.
 As a special case in this second algorithm, the first previous
-non-whitespace character is skippied in determining
+non-whitespace character is skipped in determining
 whether the preceding word is a sequence of
 alphabetic/undercores.  This sounds confusing but turns
 out to be quite practical.
@@ -644,7 +644,7 @@ Special character on input and is recognized if the
 .Dv ICANON
 flag is set.  Receipt of this character causes a
 .Dv SIGINFO
-signal to be sent to the forground process group of the
+signal to be sent to the foreground process group of the
 terminal.  Also, if the
 .Dv NOKERNINFO
 flag is not set, it
@@ -686,7 +686,7 @@ the terminal, the
 signal is sent to the controlling
 process associated with the terminal.  Unless other arrangements have
 been made, this causes the controlling process to terminate.
-Any subsequent call to the read() function return the value zero,
+Any subsequent call to the read() function returns the value zero,
 indicating end of file.  Thus, processes that read a terminal
 file and test for end-of-file can terminate appropriately after a
 disconnect.
@@ -726,8 +726,8 @@ named:
 .Fa c_oflag ,
 .Fa c_cflag ,
 and
-.Fa c_lflag .  The character array
-is named
+.Fa c_lflag .
+The character array is named
 .Fa c_cc ,
 and its maximum index is
 .Dv NCCS .
@@ -810,8 +810,8 @@ If
 is set, and
 .Dv IGNPAR
 is not set, a byte with a framing or parity
-error (other than break) is given to the application as the three-
-character sequence
+error (other than break) is given to the application as the
+three-character sequence
 .Ql \&\e377 ,
 .Ql \&\e0 ,
 X, where
@@ -859,7 +859,8 @@ otherwise all eight bits are processed.
 If
 .Dv INLCR
 is set, a received
-.Dv NL character is translated into a
+.Dv NL
+character is translated into a
 .Dv CR
 character.  If
 .Dv IGNCR
@@ -966,7 +967,7 @@ is set, newlines are translated to carriage return, linefeeds.
 .Pp
 If
 .Dv OXTABS
-is set, tabs are expanded to the appropiate number of
+is set, tabs are expanded to the appropriate number of
 spaces (assuming 8 column tab stops).
 .Pp
 If
@@ -980,7 +981,7 @@ Values of the
 .Fa c_cflag
 field describe the basic
 terminal hardware control, and are composed of the
-the following masks.
+following masks.
 Not all values
 specified are supported by all hardware.
 .Pp
@@ -1042,16 +1043,17 @@ is set, two stop bits are used, otherwise one stop bit.  For example, at
 .Pp
 If
 .Dv CREAD
-is set, the receiver is enabled.  Otherwise, no characters shall
-be received.  Not all hardware supports this bit.  In fact, this flag
+is set, the receiver is enabled.  Otherwise, no character is
+received. 
+Not all hardware supports this bit.  In fact, this flag
 is pretty silly and if it were not part of the
 .Nm termios
 specification
-it would be ommitted.
+it would be omitted.
 .Pp
 If
 .Dv PARENB
-is set, parity generation and detection is enabled and a parity
+is set, parity generation and detection are enabled and a parity
 bit is added to each character.  If parity is enabled,
 .Dv PARODD
 specifies
@@ -1059,25 +1061,25 @@ odd parity if set, otherwise even parity is used.
 .Pp
 If
 .Dv HUPCL
-is set, the modem control lines for the port shall be lowered
+is set, the modem control lines for the port are lowered
 when the last process with the port open closes the port or the process
-terminates.  The modem connection shall be broken.
+terminates.  The modem connection is broken.
 .Pp
 If
 .Dv CLOCAL
 is set, a connection does not depend on the state of the modem
 status lines.  If
 .Dv CLOCAL
-is clear, the modem status lines shall be
+is clear, the modem status lines are
 monitored.
 .Pp
-Under normal circumstances, a call to the open() function shall wait for
+Under normal circumstances, a call to the open() function waits for
 the modem connection to complete.  However, if the
 .Dv O_NONBLOCK
 flag is set
 or if
 .Dv CLOCAL
-has been set, the open() function shall return
+has been set, the open() function returns
 immediately without waiting for the connection.
 .Pp
 The
@@ -1097,7 +1099,9 @@ terminal on another host, the baud rate may or may not be set on the
 connection between that terminal and the machine it is directly connected
 to.
 .Ss Local Modes
-Values of the c_lflag field describe the control of
+Values of the
+.Fa c_lflag
+field describe the control of
 various functions, and are composed of the following
 masks.
 .Pp
@@ -1164,7 +1168,7 @@ and
 .Dv ICANON
 are set, the
 .Dv ERASE
-character shall cause the terminal
+character causes the terminal
 to erase the last character in the current line from the display, if
 possible.  If there is no character to erase, an implementation may echo
 an indication that this was the case or do nothing.
@@ -1175,9 +1179,8 @@ and
 .Dv ICANON
 are set, the
 .Dv KILL
-character shall
-cause the current line to be discarded and the system shall
-echo the
+character causes
+the current line to be discarded and the system echoes the
 .Ql \&\en
 character after the
 .Dv KILL
@@ -1189,8 +1192,8 @@ and
 .Dv ICANON
 are set, the
 .Dv KILL
-character shall cause
-the current line to be discarded and the system shall cause
+character causes
+the current line to be discarded and the system causes
 the terminal
 to erase the line from the display.
 .Pp
@@ -1198,20 +1201,20 @@ If
 .Dv ECHOPRT
 and
 .Dv ICANON
-are set, the system shall assume
-that the display is a printing device and shall print a
+are set, the system assumes
+that the display is a printing device and prints a
 backslash and the erased characters when processing
 .Dv ERASE
 characters, followed by a forward slash.
 .Pp
 If
 .Dv ECHOCTL
-is set, the system shall echo control characters
-in a visible fashion using a carrot followed by the control character.
+is set, the system echoes control characters
+in a visible fashion using a caret followed by the control character.
 .Pp
 If
 .Dv ALTWERASE
-is set, the system will use an alternative algorithm
+is set, the system uses an alternative algorithm
 for determining what constitutes a word when processing
 .Dv WERASE
 characters (see
@@ -1223,7 +1226,7 @@ and
 .Dv ICANON
 are set, the
 .Ql \&\en
-character shall be echoed even if
+character echoes even if
 .Dv ECHO
 is not set.
 .Pp
@@ -1242,7 +1245,7 @@ as described in
 If
 .Dv ICANON
 is not set, read requests are satisfied directly from the input
-queue.  A read shall not be satisfied until at least
+queue.  A read is not satisfied until at least
 .Dv MIN
 bytes have been
 received or the timeout value
@@ -1272,8 +1275,8 @@ is set.
 .Pp
 If
 .Dv IEXTEN
-is set, implementation-defined functions shall be recognized
-from the input data.  It is implementation defined how
+is set, implementation-defined functions are recognized
+from the input data.  How
 .Dv IEXTEN
 being set
 interacts with
@@ -1281,12 +1284,13 @@ interacts with
 .Dv ISIG ,
 .Dv IXON ,
 or
-.Dv IXOFF .
+.Dv IXOFF
+is implementation defined.
 If
 .Dv IEXTEN
 is not set, then
-implementation-defined functions shall not be recognized, and the
-corresponding input characters shall be processed as described for
+implementation-defined functions are not recognized, and the
+corresponding input characters are not processed as described for
 .Dv ICANON ,
 .Dv ISIG ,
 .Dv IXON ,
@@ -1302,7 +1306,7 @@ associated with the
 and
 .Dv SUSP
 characters
-shall not be done.
+are not be done.
 .Pp
 If
 .Dv TOSTOP
@@ -1321,13 +1325,14 @@ is not sent.
 .Pp
 If
 .Dv NOKERNINFO
-is set, the kernel shall not produce a status message
+is set, the kernel does not produce a status message
 when processing
 .Dv STATUS
 characters (see
 .Dv STATUS ) .
 .Ss Special Control Characters
-The special control characters values are defined by the array c_cc.
+The special control characters values are defined by the array
+.Fa c_cc .
 This table lists the array index, the corresponding special character,
 and the system default value.  For an accurate list of
 the system defaults, consult the header file
@@ -1360,8 +1365,8 @@ value of one of the changeable special control characters (see
 .Sx "Special Characters" )
 is
 .Dv {_POSIX_VDISABLE} ,
-that function shall be disabled; that is, no input
-data shall be recognized as the disabled special character.
+that function is disabled; that is, no input
+data is recognized as the disabled special character.
 If
 .Dv ICANON
 is

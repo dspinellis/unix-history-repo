@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)route.4	8.1 (Berkeley) %G%
+.\"     @(#)route.4	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ROUTE 4
@@ -33,7 +33,7 @@ used in earlier releases.
 Routing table changes may only be carried out by the super user.
 .Pp
 The operating system may spontaneously emit routing messages in response
-to external events, such as recipt of a re-direct, or failure to
+to external events, such as receipt of a re-direct, or failure to
 locate a suitable route for a request.
 The message types are described in greater detail below.
 .Pp
@@ -78,7 +78,7 @@ by using the socket call shown in the synopsis above:
 .Pp
 The
 .Fa family
-paramter may be
+parameter may be
 .Dv AF_UNSPEC
 which will provide
 routing information for all address families, or can be restricted

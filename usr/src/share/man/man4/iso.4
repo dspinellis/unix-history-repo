@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)iso.4	8.1 (Berkeley) %G%
+.\"     @(#)iso.4	8.2 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ISO 4
@@ -77,7 +77,7 @@ The fields of this structure are:
 .Bl -tag -width Ds
 .It Ar siso_len:
 Length of the entire address structure, in bytes, which may grow to
-be longer than the 32 bytes show above.
+be longer than the 32 bytes shown above.
 .It Ar siso_family:
 Identifies the domain:
 .Dv AF_ISO .
@@ -113,7 +113,7 @@ While ports are always 16 bits,
 transport selectors may be
 of (almost) arbitrary size.
 .Pp
-Since the C language does not provide conveninent variable
+Since the C language does not provide convenient variable
 length structures, we have separated the selector lengths
 from the data themselves.
 The network address and various selectors are stored contiguously,
