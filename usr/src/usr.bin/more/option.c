@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)option.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)option.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -216,7 +216,7 @@ toggle_option(s, do_toggle)
 	char *msg;
 	int n;
 	int dorepaint;
-	char message[100];
+	char message[100], *strcat();
 
 	c = *s++;
 
@@ -306,7 +306,7 @@ toggle_option(s, do_toggle)
 			if (o->ovar == &cbufs)
 				ch_init(cbufs, 1);
 
-			sprintf(message, o->odesc[0], 
+			(void)sprintf(message, o->odesc[0],
 				(o->ovar == &back_scroll) ? 
 				get_back_scroll() : *(o->ovar));
 			msg = message;
@@ -326,10 +326,10 @@ toggle_option(s, do_toggle)
 	}
 
 	if (control_char(c))
-		sprintf(message, "-^%c", carat_char(c));
+		(void)sprintf(message, "-^%c", carat_char(c));
 	else
-		sprintf(message, "-%c", c);
-	strcat(message, ": no such flag.");
+		(void)sprintf(message, "-%c", c);
+	(void)strcat(message, ": no such flag.");
 	error(message);
 }
 
@@ -368,7 +368,7 @@ optstring(s, c)
 
 	if (*s == '\0')
 	{
-		sprintf(message, "string is required after -%c", c);
+		(void)sprintf(message, "string is required after -%c", c);
 		error(message);
 		exit(1);
 	}
@@ -471,7 +471,7 @@ scan_option(s)
 		}
 	}
 
-	sprintf(message, "\"-%c\": invalid flag", c);
+	(void)sprintf(message, "\"-%c\": invalid flag", c);
 	error(message);
 	exit(1);
 }
@@ -524,7 +524,7 @@ getnum(sp, c)
 	{
 		if (c == '\0')
 			return (-1);
-		sprintf(message, "number is required after -%c", c);
+		(void)sprintf(message, "number is required after -%c", c);
 		error(message);
 		exit(1);
 	}
