@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)chgrp.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)chgrp.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -127,7 +127,7 @@ chownr(dir, uid, gid)
 	if (getwd(savedir) == 0)
 		fatal(255, "%s", savedir);
 	/*
-	 * Change what we are given before doing it's contents.
+	 * Change what we are given before doing its contents.
 	 */
 	if (chown(dir, uid, gid) < 0 && error("can't change %s", dir))
 		return (1);
@@ -143,6 +143,11 @@ chownr(dir, uid, gid)
 			ecode = error("can't access %s", dp->d_name);
 			if (ecode)
 				break;
+			continue;
+		}
+		if (uid && uid != st.st_uid) {
+			ecode = error("You are not the owner of %s",
+				dp->d_name);
 			continue;
 		}
 		if (st.st_mode&S_IFDIR) {
