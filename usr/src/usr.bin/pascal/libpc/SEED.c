@@ -1,6 +1,9 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)SEED.c 1.1 %G%";
+static char sccsid[] = "@(#)SEED.c 1.2 %G%";
+
+#include <math.h>
+#include <math.h>
 
 SEED(value)
 
