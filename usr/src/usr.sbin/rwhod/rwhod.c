@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.2 82/04/15";
+static char sccsid[] = "@(#)rwhod.c	4.3 82/04/20";
 #endif
 
 #include <stdio.h>
@@ -134,14 +134,14 @@ again:
 
 int	utmptime;
 int	utmpent;
-struct	utmp utmp[500];
+struct	utmp utmp[100];
 int	alarmcount;
 
 onalrm()
 {
 	register int i;
 	struct stat stb;
-	register struct whoent *we = mywd.wd_we;
+	register struct whoent *we = mywd.wd_we, *wlast;
 	int cc;
 	double avenrun[3];
 	time_t now = time(0);
@@ -157,10 +157,13 @@ onalrm()
 			perror("/etc/utmp");
 			return;
 		}
+		wlast = &mywd.wd_we[(1024 / sizeof (struct whoent)) - 1];
 		utmpent = cc / sizeof (struct utmp);
 		for (i = 0; i < utmpent; i++)
 			if (utmp[i].ut_name[0]) {
 				we->we_utmp = utmp[i];
+				if (we >= wlast)
+					break;
 				we++;
 			}
 		utmpent = we - mywd.wd_we;
