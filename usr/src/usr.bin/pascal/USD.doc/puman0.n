@@ -2,20 +2,17 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)puman0.n	4.1 (Berkeley) %G%
+.\"	@(#)puman0.n	5.1 (Berkeley) %G%
 .\"
 .so tmac.p
 .RP
 .TL
 Berkeley Pascal User's Manual
 .br
-Version 2.0 \- October 1980
+Version 3.0 \- July 1983
 .AU
-William N. Joy*
-.AU
-Susan L. Graham*
-.AU
-Charles B. Haley**
+William N. Joy, Susan L. Graham, Charles B. Haley\(dd,
+Marshall Kirk McKusick, and Peter B. Kessler
 .AI
 Computer Science Division
 .if n Department of Electrical Engineering
@@ -27,19 +24,21 @@ Berkeley, California  94720
 ...MH
 .AB
 .FS
-\s-2(C)\s0 1977, 1979, 1980 William N. Joy, Susan L. Graham, Charles B. Haley
+\s-2(C)\s0 1977, 1979, 1980, 1983
+W. N. Joy, S. L. Graham, C. B. Haley, M. K. McKusick, P. B. Kessler
 .FE
 .FS
-* The financial support of the first and second authors' work by
+The financial support of the first and second authors' work by
 the National Science Foundation under grants
-MCS74-07644-A04, MCS78-07291, and MCS-8005144,
+MCS74-07644-A04, MCS78-07291, and MCS80-05144,
 and the first author's work by an
 .SM IBM
 Graduate Fellowship
 are gratefully acknowledged.
 .FE
 .FS
-** Author's current address: S & B Associates, 1110 Centennial Ave., Piscataway, NJ  08854
+\(ddAuthor's current address:
+S & B Associates, 1110 Centennial Ave., Piscataway, NJ  08854
 .FE
 .PP
 Berkeley
