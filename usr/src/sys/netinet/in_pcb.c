@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.39	83/01/22	*/
+/*	in_pcb.c	4.40	83/01/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
