@@ -15,12 +15,15 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cut.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)cut.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <ctype.h>
+#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
-#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 int	cflag;
 char	dchar;
@@ -28,15 +31,20 @@ int	dflag;
 int	fflag;
 int	sflag;
 
+void	c_cut __P((FILE *, char *));
+void	err __P((const char *, ...));
+void	f_cut __P((FILE *, char *));
+void	get_list __P((char *));
+void	usage __P((void));
+
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern char *optarg;
-	extern int errno, optind;
 	FILE *fp;
-	int ch, (*fcn)(), c_cut(), f_cut();
-	char *strerror();
+	void (*fcn) __P((FILE *, char *));
+	int ch;
 
 	dchar = '\t';			/* default delimiter is \t */
 
@@ -74,12 +82,10 @@ main(argc, argv)
 
 	if (*argv)
 		for (; *argv; ++argv) {
-			if (!(fp = fopen(*argv, "r"))) {
-				(void)fprintf(stderr,
-				    "cut: %s: %s\n", *argv, strerror(errno));
-				exit(1);
-			}
+			if (!(fp = fopen(*argv, "r")))
+				err("%s: %s\n", *argv, strerror(errno));
 			fcn(fp, *argv);
+			(void)fclose(fp);
 		}
 	else
 		fcn(stdin, "stdin");
@@ -90,12 +96,13 @@ int autostart, autostop, maxval;
 
 char positions[_POSIX2_LINE_MAX + 1];
 
+void
 get_list(list)
 	char *list;
 {
-	register char *pos;
 	register int setautostart, start, stop;
-	char *p, *strtok();
+	register char *pos;
+	char *p;
 
 	/*
 	 * set a byte in the positions array to indicate if a field or
@@ -126,15 +133,12 @@ get_list(list)
 			}
 		}
 		if (*p)
-			badlist("illegal list value");
+			err("[-cf] list: illegal list value\n");
 		if (!stop || !start)
-			badlist("values may not include zero");
-		if (stop > _POSIX2_LINE_MAX) {
-			/* positions used rather than allocate a new buffer */
-			(void)sprintf(positions, "%d too large (max %d)",
+			err("[-cf] list: values may not include zero\n");
+		if (stop > _POSIX2_LINE_MAX)
+			err("[-cf] list: %d too large (max %d)\n",
 			    stop, _POSIX2_LINE_MAX);
-			badlist(positions);
-		}
 		if (maxval < stop)
 			maxval = stop;
 		for (pos = positions + start; start++ <= stop; *pos++ = 1);
@@ -150,6 +154,7 @@ get_list(list)
 }
 
 /* ARGSUSED */
+void
 c_cut(fp, fname)
 	FILE *fp;
 	char *fname;
@@ -165,18 +170,19 @@ c_cut(fp, fname)
 			if (ch == '\n')
 				break;
 			if (*pos++)
-				putchar(ch);
+				(void)putchar(ch);
 		}
 		if (ch != '\n')
 			if (autostop)
 				while ((ch = getc(fp)) != EOF && ch != '\n')
-					putchar(ch);
+					(void)putchar(ch);
 			else
 				while ((ch = getc(fp)) != EOF && ch != '\n');
-		putchar('\n');
+		(void)putchar('\n');
 	}
 }
 
+void
 f_cut(fp, fname)
 	FILE *fp;
 	char *fname;
@@ -188,11 +194,8 @@ f_cut(fp, fname)
 
 	for (sep = dchar, output = 0; fgets(lbuf, sizeof(lbuf), fp);) {
 		for (isdelim = 0, p = lbuf;; ++p) {
-			if (!(ch = *p)) {
-				(void)fprintf(stderr,
-				    "cut: %s: line too long.\n", fname);
-				exit(1);
-			}
+			if (!(ch = *p))
+				err("%s: line too long.\n", fname);
 			/* this should work if newline is delimiter */
 			if (ch == sep)
 				isdelim = 1;
@@ -209,9 +212,9 @@ f_cut(fp, fname)
 		for (field = maxval, p = lbuf; field; --field, ++pos) {
 			if (*pos) {
 				if (output++)
-					putchar(sep);
+					(void)putchar(sep);
 				while ((ch = *p++) != '\n' && ch != sep)
-					putchar(ch);
+					(void)putchar(ch);
 			} else
 				while ((ch = *p++) != '\n' && ch != sep);
 			if (ch == '\n')
@@ -220,25 +223,48 @@ f_cut(fp, fname)
 		if (ch != '\n')
 			if (autostop) {
 				if (output)
-					putchar(sep);
+					(void)putchar(sep);
 				for (; (ch = *p) != '\n'; ++p)
-					putchar(ch);
+					(void)putchar(ch);
 			} else
 				for (; (ch = *p) != '\n'; ++p);
-		putchar('\n');
+		(void)putchar('\n');
 	}
 }
 
-badlist(msg)
-	char *msg;
-{
-	(void)fprintf(stderr, "cut: [-cf] list: %s.\n", msg);
-	exit(1);
-}
-
+void
 usage()
 {
 	(void)fprintf(stderr,
 "usage:\tcut -c list [file1 ...]\n\tcut -f list [-s] [-d delim] [file ...]\n");
 	exit(1);
+}
+
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "cut: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
