@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.14 (Berkeley) %G%
+ *	@(#)clock.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -23,7 +23,7 @@
 #include "../include/cpu.h"
 
 #ifdef GPROF
-#include "sys/gprof.h"
+#include "sys/gmon.h"
 #endif
 
 int    clkstd[1];
