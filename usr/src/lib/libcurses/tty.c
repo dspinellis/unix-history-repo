@@ -1,19 +1,18 @@
 /*-
- * Copyright (c) 1992, 1993
+ * Copyright (c) 1992, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/ioctl.h>
-
-#include <curses.h>
 #include <termios.h>
 #include <unistd.h>
+
+#include "curses.h"
 
 /*
  * In general, curses should leave tty hardware settings alone (speed, parity,
