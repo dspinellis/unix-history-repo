@@ -1,4 +1,4 @@
-/*	dip.c	1.2	(Berkeley)	83/09/14
+/*	dip.c	1.3	(Berkeley)	83/10/22
  *	dip
  *	driver for impress/imagen canon laser printer
  */
@@ -148,6 +148,12 @@ char *argv[];
 
 	while (--argc > 0 && **++argv == '-') {
 		switch ((*argv)[1]) {
+		case 'X':
+			MAXX = atoi(operand(&argc, &argv));
+			break;
+		case 'Y':
+			MAXY = atoi(operand(&argc, &argv));
+			break;
 		case 'F':
 			fontdir = operand(&argc, &argv);
 			break;
@@ -205,8 +211,7 @@ char ***argvp;
 {
 	if ((**argvp)[2]) return(**argvp + 2); /* operand immediately follows */
 	if ((--*argcp) <= 0) {			/* no operand */
-	    fprintf (stderr, "command-line option operand missing.\n");
-	    exit(1);
+	    error (FATAL, "command-line option operand missing.");
 	}
 	return(*(++(*argvp)));			/* operand next word */
 }
@@ -385,8 +390,7 @@ register FILE *fp;
 			devcntrl(fp);
 			break;
 		default:
-			error(!FATAL, "unknown input character %o %c", c, c);
-			exit(0);
+			error(FATAL, "unknown input character %o %c", c, c);
 		}
 	}
 }
@@ -561,7 +565,7 @@ char *s;
 	fprintf(stderr, s, a1, a2, a3, a4, a5, a6, a7);
 	fprintf(stderr, "\n");
 	if (f)
-		exit(1);
+		exit(2);
 }
 
 
@@ -717,7 +721,7 @@ register int c;
 		p = codetab[font];
 		pw = widtab[font];
 	} else {		/* on another font */
-		k = 1;		/* start with ROMAN, then run down the list */
+		k = font;	/* start with current, then run down the list */
 		for (j=0; j++ <= nfonts; k = (k+1) % (nfonts+1))
 			if (fontbase[k] != NULL && (i = fitab[k][c]) != 0) {
 				p = codetab[k];
@@ -882,8 +886,8 @@ int s;
 	if ((fd = fopen(name, "r")) == NULL)
 		error(FATAL, "can't open %s", name);
 						/* check for proper file mark */
-	i = fscanf(fd, "%8s", &filemark[0]);
-	if (strncmp(filemark, "Rast", 4) || i == EOF)
+	for(i = 0; i < FMARK; filemark[i++] = getc(fd));
+	if (strncmp(filemark, "Rast", 4))
 		error(FATAL, "bad File Mark in %s.", name);
 					/* get preamble */
 	p.p_size = rd2(fd);
