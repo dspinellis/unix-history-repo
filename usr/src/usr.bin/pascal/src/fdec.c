@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)fdec.c 1.10 %G%";
+static	char sccsid[] = "@(#)fdec.c 1.11 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -430,21 +430,9 @@ funcbody(fp)
 	 * later (funcend).
 	 */
 	fp->ptr[2] = nlp;
-#	ifdef PC
-	    if ( fp -> class != PROG ) {
-		stabfunc( fp -> symbol , fp -> class , line , cbn - 1 );
-	    } else {
-		stabfunc( "program" , fp -> class , line , 0 );
-	    }
-#	endif PC
 	if (fp->class != PROG) {
 		for (q = fp->chain; q != NIL; q = q->chain) {
 			enter(q);
-#			ifdef PC
-			    stabparam( q -> symbol , p2type( q -> type )
-					, q -> value[ NL_OFFS ]
-					, lwidth( q -> type ) );
-#			endif PC
 		}
 	}
 	if (fp->class == FUNC) {
@@ -456,9 +444,6 @@ funcbody(fp)
 		    q = fp -> ptr[ NL_FVAR ];
 		    sizes[cbn].om_off -= lwidth( q -> type );
 		    sizes[cbn].om_max = sizes[cbn].om_off;
-		    stabvar( q -> symbol , p2type( q -> type ) , cbn 
-			    , q -> value[ NL_OFFS ] , lwidth( q -> type )
-			    , line );
 #		endif PC
 	}
 #	ifdef PTREE
@@ -553,6 +538,7 @@ funcend(fp, bundle, endline)
 	    putprintf( "	.align	1" , 0 );
 	    putprintf( "	.globl	_program" , 0 );
 	    putprintf( "_program:" , 0 );
+	    stabfunc( "program" , fp -> class , bundle[1] , 0 );
 	} else {
 	    ftnno = fp -> entloc;
 	    putprintf( "	.text" , 0 );
@@ -566,6 +552,40 @@ funcend(fp, bundle, endline)
 		putprintf( EXTFORMAT , 1 , enclosing[ i ] );
 	    }
 	    putprintf( ":" , 0 );
+	    stabfunc( fp -> symbol , fp -> class , bundle[1] , cbn - 1 );
+	    for ( p = fp -> chain ; p != NIL ; p = p -> chain ) {
+		stabparam( p -> symbol , p2type( p -> type )
+			    , p -> value[ NL_OFFS ] , lwidth( p -> type ) );
+	    }
+	    if ( fp -> class == FUNC ) {
+		    /*
+		     *	stab the function variable
+		     */
+		p = fp -> ptr[ NL_FVAR ];
+		stablvar( p -> symbol , p2type( p -> type ) , cbn 
+			, p -> value[ NL_OFFS ] , lwidth( p -> type ) );
+	    }
+		/*
+		 *	stab local variables
+		 *	rummage down hash chain links.
+		 */
+	    for ( i = 0 ; i <= 077 ; i++ ) {
+		for ( p = disptab[ i ] ; p != NIL ; p = p->nl_next) {
+		    if ( ( p -> nl_block & 037 ) != cbn ) {
+			break;
+		    }
+		    /*
+		     *	stab local variables
+		     *	that's named variables, but not params
+		     */
+		    if (   ( p -> symbol != NIL ) 
+			&& ( p -> class == VAR )
+			&& ( p -> value[ NL_OFFS ] < 0 ) ) {
+			stablvar( p -> symbol , p2type( p -> type ) , cbn 
+			    , p -> value[ NL_OFFS ] , lwidth( p -> type ) );
+		    }
+		}
+	    }
 	}
 	stablbrac( cbn );
 	    /*
