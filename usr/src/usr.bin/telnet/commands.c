@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)commands.c	1.7 (Berkeley) %G%";
 #include <signal.h>
 #include <netdb.h>
 #include <ctype.h>
+#include <varargs.h>
 
 #include <arpa/telnet.h>
 
@@ -1119,22 +1120,30 @@ static Command cmdtab2[] = {
 	0
 };
 
+
 /*
  * Call routine with argc, argv set from args (terminated by 0).
- * VARARGS2
  */
-static
-call(routine, args)
-	int (*routine)();
-	char *args;
-{
-	register char **argp;
-	register int argc;
 
-	for (argc = 0, argp = &args; *argp++ != 0; argc++)
-		;
-	return (*routine)(argc, &args);
+static
+call(va_alist)
+va_dcl
+{
+    va_list ap;
+    typedef int (*intrtn_t)();
+    intrtn_t routine;
+    char *args[100];
+
+    int argno = 0;
+
+    va_start(ap);
+    routine = (va_arg(ap, intrtn_t));
+    while (args[argno++] = va_arg(ap, char *))
+	;
+    va_end(ap);
+    return (*routine)(argno, args);
 }
+
 
 static char **
 getnextcmd(name)
