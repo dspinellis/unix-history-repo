@@ -1,0 +1,17 @@
+*** Makefile.src.virgin	Tue Feb 16 20:12:31 1993
+--- Makefile.src	Tue Feb 16 20:13:32 1993
+***************
+*** 130,135 ****
+--- 130,141 ----
+  
+  FRC:
+  
++ assym.s: ${MACHINE}/genassym.c
++ 	${CC} -E ${CPPOPTS} ${MACHINE}/genassym.c > ./a.out.c
++ 	cc ${COPTS} ./a.out.c
++ 	./a.out >assym.s
++ 	rm -f ./a.out ./a.out.c
++ 
+  Locore.L:
+  	@echo Locore.c:
+  	@-(${CPP} ${LCOPTS} ${MACHINE}/Locore.c | \

@@ -1,0 +1,229 @@
+# README,v 3.1 1993/07/06 01:09:46 jbj Exp
+
+PPSCLOCK 1.3 BETA Release
+
+Please send bugs and comments to ppsclock@ee.lbl.gov.
+
+This is SunOS 4 tty STREAMS module that can be used to interface
+the one-pulse-per-second output of an accurate external clock
+(e.g., a GPS receiver) to NTP.  This module records the value of
+the Unix clock each time the 1pps pulse happens.  The recorded
+value can then be read by an application using a CIOGETEV ioctl.
+
+We have been running this module with xntp3, SunOS 4.1.2 and a
+Magnavox MX4200 GPS receiver (a very nice, relatively inexpensive
+GPS box for use with NTP) and have been happy with the results:
+The time from when the GPS sends the 1pps pulse to when this code
+grabs the Unix time is an almost constant 15us on a SparcStation 1+
+and 9us on a SparcStation 2 (there is conditionally compiled code
+in the driver that may help if you want to measure this interval
+yourself -- see below).
+
+Since the GPS is typically connected via an RS-232 serial port
+& since the SparcStation has too few serial ports, this module
+gets the 1pps signal via the same port used to get the GPS data.
+We do this by connecting the GPS 1pps output to `Carrier Detect'
+(RS-232 pin 8) on serial cable between the GPS & the Sparc.
+Since `Carrier Detect' transitions cause a high priority zs
+`service' interrupt on the Sparc (which is separate from the zs
+`data' interrupt used to collect ascii data from the GPS), this
+is a cheap way to turn the 1pps pulse into a Sparc interrupt.
+However, since `Carrier Detect' now has a non-standard meaning on
+the clock serial line, *YOU MUST SET "SOFT CARRIER" ON THE CLOCK
+SERIAL PORT* (i.e., the port you push this streams module onto).
+But note that this module changes the meaning of the `Carrier
+Detect' interrupt *only* on the port(s) it's pushed on; other
+serial ports continue to work as they always have & the special
+interpretation of `Carrier Detect' will go away whenever this
+steams module is popped (e.g., if xntpd exits).
+
+In order to use the 1pps pulse to correct both the Unix clock
+offset and frequency, the time between when the external clock
+signals 1pps and when this module records the Unix clock should
+be as small as possible and should be repeatable.  The totally
+braindead AT&T STREAMS code makes it very difficult to achieve
+these objectives: The allocb/wput overhead adds about 700us of
+latency on a SS-1+ and the worthless stream 'scheduler' combined
+with doing everything at a relatively low interrupt priority
+adds about +-400us of jitter.  So, to get a high quality time
+stamp, this module uses STREAMS *only* to get the ioctl request.
+It gets the 1pps signal by avoiding STREAMS code entirely and
+inserting itself directly into the hardware interrupt service path
+for the 1pps pulse.  It does this by being *very* chummy with
+Sun's `zs' serial driver -- it basically steals the modem control
+interrupt from the zs.  So *THIS IS NOT A GENERIC STREAMS MODULE*.
+It is designed to work with Sun's zs driver under SunOS 4.
+Expect it to break under Solaris-2.  Expect it to not run on
+anything but a Sun.
+
+Also note that for our GPS clock, `1 second' seems to occur at the
+leading edge of the pulse so that's when we grab the timestamp.  If
+your clock indicates 1pps on the trailing edge you should change the line:
+	if ((s0 & ZSRR0_CD) != 0) {
+in ppsclock_intr to:
+	if ((s0 & ZSRR0_CD) == 0) {
+to grab the time stamp on the trailing edge of the pulse.
+
+One final note about running this code on a Sun Sparcstation 1; we have
+found that you need revision 1.3 or higher proms with the Sun 4/60;
+this is because 1.2 and earlier roms listen to BOTH the A and B serial
+ports while selftesting; if you have something like a GPS receiver
+talking once a second at 4800 baud to a serial port, even if it's not
+the console serial port, the system will see a "break" and abort
+booting up. This makes it impossible to automatically reboot after a
+crash.
+
+
+Measuring Performance
+---------------------
+We have frequently found the need for some non-invasive means
+to measure internal system performance numbers such as interrupt
+latencies.  The following trick works pretty well: The SparcStation
+has a front panel LED that the system turns on at boot time then
+never changes.  There is a register (the 'auxio' register) that the
+kernel can write to change the state of this LED & it costs almost
+exactly 1us to turn the LED off then on again.  So, for example,
+you can measure the interrupt latency to when we grab unix time
+stamp by attaching a scope probe to the LED (it's easiest to stick
+the probe into the LED's connector on the motherboard) then trigger
+the scope off the appropriate edge of the 1pps pulse from the GPS.
+If you want to measure the amount of time some system routine
+takes, you can turn the LED off before calling the routine and
+on afterwards so the pulse width on the scope is a direct measure
+of the routine's execution time.  If you want to play with this,
+there's code in ppsclock.c (conditional on the define PPSCLOCKLED)
+that will toggle the LED in the hardware interrupt handler for
+the 1pps intr.  The time from whichever edge of the 1pps pulse
+you chose to stamp to when the LED goes off is the interrupt
+latency & the LED off time is a measure of the cost to call Sun's
+routine uniqtime (which reads the Unix time to 1us accuracy).
+
+By the way, if you try this & think the cost of calling Sun's
+`uniqtime' is appalling (42-85us/call -- we thought this was
+appalling) this distribution includes a replacement for it,
+microtime.s, that runs 10 times faster than Sun's code (~3us/call)
+& gives you a more accurate time.  (If you install this, it will
+improve anything that gets high-res unix kernel time, including
+the gettimeofday system call that xntp uses).
+
+
+
+INSTALLATION
+------------
+These are some (sketchy) notes on installation of the SunOS 4 pps clock
+streams module.
+
+This directory contains:
+
+	README		- this file
+	RELEASE		- version of this releasethis
+	CHANGES		- description of differences between releases
+	magnavox.ps	- PostScript schematic (Magnavox rs422/rs232 converter)
+	b-and-b.ps	- PostScript schematic (B&B rs422/rs232 converter)
+	Makefile	- compilation rules
+	ppstest		- ppsclock test program (works with Magnavox
+			  MX4200 GPS -- you can probably use this as
+			  sample code illustrating the use of this
+			  streams module if you have some other kind
+			  of clock).
+	sys		- SunOS 4 kernel modules
+	sys/genassym	- genassym program for object-only (non-source) sites
+
+KERNEL CONFIGURATION
+--------------------
+
+    (1) Copy sys/sundev/ppsclock.c to /sys/sundev.
+
+    (2) Copy sys/sys/ppsclock.h to /sys/sys (and /usr/include/sys if it
+        is separate directory).
+
+    (3) If you want to use the fast microtime module, copy
+	sys/sun4c/microtime.s to /sys/sun4c.
+
+    (4) Use sys/sun/str_conf.c.patch to patch /sys/sun/str_conf.c.
+	Alternately, manually install the following lines in the
+	appropriate places:
+
+		#include "zs.h"
+		[...]
+		#if   NZS > 0
+		#include "sys/ppsclock.h"
+		extern struct streamtab ppsclockinfo;
+		#endif
+		[...]
+		#if   NZS > 0
+			{ PPSCLOCKSTR,  &ppsclockinfo },
+		#endif
+
+    (5) Use sun4c/conf/files.patch to patch /sys/sun4c/conf/files.
+	Alternately, manually install the following line in the
+	appropriate place:
+
+		sundev/ppsclock.c	optional zs device-driver
+
+	In addition, if you want to use the fast microtime module,
+	use sun4c/conf/files.microtime.patch to patch
+	/sys/sun4c/conf/files. Alternately, manually install the
+	following line in the appropriate place:
+
+		sun4c/microtime.s	standard
+	
+	If you are using SunOS 4.1.3 and wish to support the sun4m
+	architecture, apply the corresponding patches from the sun4m
+	tree.
+
+    (6) If you want to use the fast microtime module, and have full
+	SunOS 4 source, use /sys/os/kern_clock.c.patch to patch
+	/sys/os/kern_clock.c. Alternately, edit /sys/os/kern_clock.c
+	and bracket the code for uniqtime() with the following two
+	lines:
+
+		#if !defined(sun4c) && !defined(sun4m)
+		#endif
+
+	If you DO NOT have full SunOS 4 source but still want to use
+	the fast microtime, change the symbol table entry in for
+	_uniqtime to _Uniqtime as follows:
+
+		hell 1 % cd /sys/sun4c/OBJ		# or /sys/sun4m
+		hell 2 % mv kern_clock.o kern_clock.o.virgin
+		hell 2 % cp kern_clock.o.virgin kern_clock.o
+		hell 3 % chmod +w kern_clock.o
+		hell 5 % strings -o -a kern_clock.o | grep -w _uniqtime
+		   7892 _uniqtime
+		hell 6 % adb -w kern_clock.o
+		?m 0 0xffffffff 0
+		0t7892?s
+		_dk_ndrive+0x12cc:		_uniqtime
+		.?x
+		_dk_ndrive+0x12cc:		5f75
+		.?w5f55
+		_dk_ndrive+0x12cc:		0x5f75	=	0x5f55
+		.?s
+		_dk_ndrive+0x12cc:		_Uniqtime
+		^D
+
+    (7) If you DO NOT have full SunOS 4 source, you are missing the
+	source to genassym. Copy the "mini" genassym source from
+	genassym/genassym.c to /sys/sun4c (and into /sys/sun4m if you
+	have SunOS 4.1.3 and wish to support the sun4m architecture).
+
+	Next, use sun4c/conf/Makefile.src.patch to patch
+	/sys/sun4c/conf/Makefile.src (and possibly
+	/sys/sun4m/conf/Makefile.src).
+
+	Alternately, manually install the following rules in the
+	prototype Makefile(s).
+
+		assym.s: ${MACHINE}/genassym.c
+			${CC} -E ${CPPOPTS} ${MACHINE}/genassym.c > ./a.out.c
+			cc ${COPTS} ./a.out.c
+			./a.out >assym.s
+			rm -f ./a.out ./a.out.c
+
+    (8) Config, build, and boot the new kernel.
+
+    (9) If you have an MX4200, build the test program in the ppstest
+	directory and run it.  It waits for a message at 4800
+	baud and then prints both the message and the time stamp
+	of the last "carrier detect" transition.
