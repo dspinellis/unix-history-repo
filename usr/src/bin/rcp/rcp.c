@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -59,7 +59,8 @@ struct passwd *pwd;
 int errs, pflag, port, rem, userid;
 int iamremote, iamrecursive, targetshouldbedirectory;
 
-char cmd[20];			/* must hold "rcp -r -p -d\0" */
+#define	CMDNEEDS	20
+char cmd[CMDNEEDS];		/* must hold "rcp -r -p -d\0" */
 
 typedef struct _buf {
 	int	cnt;
@@ -176,15 +177,14 @@ toremote(targ, argc, argv)
 	char **argv;
 {
 	int i;
-	char *host, *src, *suser, *thost, *tuser;
-	char buf[1024], *colon();
+	char *bp, *host, *src, *suser, *thost, *tuser;
+	char *colon(), *malloc();
 
 	*targ++ = 0;
 	if (*targ == 0)
 		targ = ".";
 
-	thost = index(argv[argc - 1], '@');
-	if (thost) {
+	if (thost = index(argv[argc - 1], '@')) {
 		*thost++ = 0;
 		tuser = argv[argc - 1];
 		if (*tuser == '\0')
@@ -203,6 +203,11 @@ toremote(targ, argc, argv)
 			if (*src == 0)
 				src = ".";
 			host = index(argv[i], '@');
+			if (!(bp = malloc((u_int)(strlen(_PATH_RSH) +
+				    strlen(argv[i]) + strlen(src) +
+				    strlen(tuser) + strlen(thost) +
+				    strlen(targ)) + CMDNEEDS + 20)))
+					nospace();
 			if (host) {
 				*host++ = 0;
 				suser = argv[i];
@@ -210,35 +215,39 @@ toremote(targ, argc, argv)
 					suser = pwd->pw_name;
 				else if (!okname(suser))
 					continue;
-				(void)sprintf(buf,
+				(void)sprintf(bp,
 				    "%s %s -l %s -n %s %s '%s%s%s:%s'",
 				    _PATH_RSH, host, suser, cmd, src,
 				    tuser ? tuser : "", tuser ? "@" : "",
 				    thost, targ);
 			} else
-				(void)sprintf(buf,
-				    "%s %s -n %s %s '%s%s%s:%s'",
+				(void)sprintf(bp, "%s %s -n %s %s '%s%s%s:%s'",
 				    _PATH_RSH, argv[i], cmd, src,
 				    tuser ? tuser : "", tuser ? "@" : "",
 				    thost, targ);
-			(void)susystem(buf);
+			(void)susystem(bp);
+			(void)free(bp);
 		} else {			/* local to remote */
 			if (rem == -1) {
-				(void)sprintf(buf, "%s -t %s", cmd, targ);
+				if (!(bp = malloc((u_int)strlen(targ) +
+				    CMDNEEDS + 20)))
+					nospace();
+				(void)sprintf(bp, "%s -t %s", cmd, targ);
 				host = thost;
 #ifdef KERBEROS
 				if (use_kerberos)
-					kerberos(buf, tuser ?
-					    tuser : pwd->pw_name);
+					kerberos(bp,
+					    tuser ? tuser : pwd->pw_name);
 				else
 #endif
 					rem = rcmd(&host, port, pwd->pw_name,
 					    tuser ? tuser : pwd->pw_name,
-					    buf, 0);
+					    bp, 0);
 				if (rem < 0)
 					exit(1);
 				if (response() < 0)
 					exit(1);
+				(void)free(bp);
 				(void)setuid(userid);
 			}
 			source(1, argv+i);
@@ -251,54 +260,59 @@ tolocal(argc, argv)
 	char **argv;
 {
 	int i;
-	char *host, *src, *suser;
-	char buf[1024], *colon();
+	char *bp, *host, *src, *suser;
+	char *colon(), *malloc();
 
 	for (i = 0; i < argc - 1; i++) {
-		src = colon(argv[i]);
-		if (src == 0) {			/* local to local */
-			(void)sprintf(buf, "%s%s%s %s %s",
-			    _PATH_CP, iamrecursive ? " -r" : "",
-			    pflag ? " -p" : "", argv[i], argv[argc - 1]);
-			(void)susystem(buf);
-		} else {			/* remote to local */
-			*src++ = 0;
-			if (*src == 0)
-				src = ".";
-			host = index(argv[i], '@');
-			if (host) {
-				*host++ = 0;
-				suser = argv[i];
-				if (*suser == '\0')
-					suser = pwd->pw_name;
-				else if (!okname(suser))
-					continue;
-			} else {
-				host = argv[i];
-				suser = pwd->pw_name;
-			}
-			(void)sprintf(buf, "%s -f %s", cmd, src);
-#ifdef KERBEROS
-			if (use_kerberos)
-				kerberos(buf, suser);
-			else
-#endif
-				rem = rcmd(&host, port, pwd->pw_name, suser,
-				    buf, 0);
-			if (rem < 0)
-				continue;
-			(void)setreuid(0, userid);
-			sink(1, argv + argc - 1);
-			(void)setreuid(userid, 0);
-			(void)close(rem);
-			rem = -1;
+		if (!(src = colon(argv[i]))) {	/* local to local */
+			if (!(bp = malloc((u_int)(strlen(_PATH_CP) +
+			    strlen(argv[i]) + strlen(argv[argc - 1])) + 20)))
+				nospace();
+			(void)sprintf(bp, "%s%s%s %s %s", _PATH_CP,
+			    iamrecursive ? " -r" : "", pflag ? " -p" : "",
+			    argv[i], argv[argc - 1]);
+			(void)susystem(bp);
+			(void)free(bp);
+			continue;
 		}
+		*src++ = 0;
+		if (*src == 0)
+			src = ".";
+		host = index(argv[i], '@');
+		if (host) {
+			*host++ = 0;
+			suser = argv[i];
+			if (*suser == '\0')
+				suser = pwd->pw_name;
+			else if (!okname(suser))
+				continue;
+		} else {
+			host = argv[i];
+			suser = pwd->pw_name;
+		}
+		if (!(bp = malloc((u_int)(strlen(src)) + CMDNEEDS + 20)))
+			nospace();
+		(void)sprintf(bp, "%s -f %s", cmd, src);
+#ifdef KERBEROS
+		if (use_kerberos)
+			kerberos(bp, suser);
+		else
+#endif
+			rem = rcmd(&host, port, pwd->pw_name, suser, bp, 0);
+		(void)free(bp);
+		if (rem < 0)
+			continue;
+		(void)setreuid(0, userid);
+		sink(1, argv + argc - 1);
+		(void)setreuid(userid, 0);
+		(void)close(rem);
+		rem = -1;
 	}
 }
 
 #ifdef KERBEROS
-kerberos(buf, user)
-	char *buf, *user;
+kerberos(bp, user)
+	char *bp, *user;
 {
 	struct servent *sp;
 	char *host;
@@ -308,10 +322,10 @@ again:	rem = KSUCCESS;
 		rem = krb_get_lrealm(krb_realm, 1);
 	if (rem == KSUCCESS) {
 		if (encrypt)
-			rem = krcmd_mutual(&host, port, user, buf,
-			    0, krb_realm, &cred, schedule);
+			rem = krcmd_mutual(&host, port, user, bp, 0,
+			    krb_realm, &cred, schedule);
 		else
-			rem = krcmd(&host, port, user, buf, 0, krb_realm);
+			rem = krcmd(&host, port, user, bp, 0, krb_realm);
 	} else {
 		(void)fprintf(stderr,
 		    "rcp: error getting local realm %s\n", krb_err_txt[rem]);
@@ -371,11 +385,10 @@ okname(cp0)
 			goto bad;
 		if (!isalpha(c) && !isdigit(c) && c != '_' && c != '-')
 			goto bad;
-		cp++;
-	} while (*cp);
+	} while (*++cp);
 	return(1);
 bad:
-	fprintf(stderr, "rcp: invalid user name %s\n", cp0);
+	(void)fprintf(stderr, "rcp: invalid user name %s\n", cp0);
 	return(0);
 }
 
@@ -448,16 +461,16 @@ notreg:			(void)close(f);
 			 * Make it compatible with possible future
 			 * versions expecting microseconds.
 			 */
-			(void)sprintf(buf, "T%ld 0 %ld 0\n",
-			    stb.st_mtime, stb.st_atime);
+			(void)sprintf(buf, "T%ld 0 %ld 0\n", stb.st_mtime,
+			    stb.st_atime);
 			(void)write(rem, buf, strlen(buf));
 			if (response() < 0) {
 				(void)close(f);
 				continue;
 			}
 		}
-		(void)sprintf(buf, "C%04o %ld %s\n",
-		    stb.st_mode&07777, stb.st_size, last);
+		(void)sprintf(buf, "C%04o %ld %s\n", stb.st_mode&07777,
+		    stb.st_size, last);
 		(void)write(rem, buf, strlen(buf));
 		if (response() < 0) {
 			(void)close(f);
@@ -491,7 +504,7 @@ rsource(name, statp)
 {
 	DIR *d;
 	struct direct *dp;
-	char *last, *bufv[1], buf[BUFSIZ];
+	char *last, *vect[1], path[MAXPATHLEN];
 
 	if (!(d = opendir(name))) {
 		error("rcp: %s: %s\n", name, sys_errlist[errno]);
@@ -503,16 +516,16 @@ rsource(name, statp)
 	else
 		last++;
 	if (pflag) {
-		(void)sprintf(buf, "T%ld 0 %ld 0\n",
-		    statp->st_mtime, statp->st_atime);
-		(void)write(rem, buf, strlen(buf));
+		(void)sprintf(path, "T%ld 0 %ld 0\n", statp->st_mtime,
+		    statp->st_atime);
+		(void)write(rem, path, strlen(path));
 		if (response() < 0) {
 			closedir(d);
 			return;
 		}
 	}
-	(void)sprintf(buf, "D%04o %d %s\n", statp->st_mode&07777, 0, last);
-	(void)write(rem, buf, strlen(buf));
+	(void)sprintf(path, "D%04o %d %s\n", statp->st_mode&07777, 0, last);
+	(void)write(rem, path, strlen(path));
 	if (response() < 0) {
 		closedir(d);
 		return;
@@ -522,13 +535,13 @@ rsource(name, statp)
 			continue;
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
 			continue;
-		if (strlen(name) + 1 + strlen(dp->d_name) >= BUFSIZ - 1) {
-			error("%s/%s: Name too long.\n", name, dp->d_name);
+		if (strlen(name) + 1 + strlen(dp->d_name) >= MAXPATHLEN - 1) {
+			error("%s/%s: name too long.\n", name, dp->d_name);
 			continue;
 		}
-		(void)sprintf(buf, "%s/%s", name, dp->d_name);
-		bufv[0] = buf;
-		source(1, bufv);
+		(void)sprintf(path, "%s/%s", name, dp->d_name);
+		vect[0] = path;
+		source(1, vect);
 	}
 	closedir(d);
 	(void)write(rem, "E\n", 2);
@@ -579,23 +592,23 @@ sink(argc, argv)
 	int argc;
 	char **argv;
 {
-	off_t i, j;
-	char *targ, *whopp, *cp;
-	int of, mode, wrerr, exists, first, count, amt, size;
-	BUF *bp;
+	register char *cp;
 	static BUF buffer;
 	struct stat stb;
-	int targisdir = 0;
-	int mask = umask(0);
-	char *myargv[1];
-	char cmdbuf[BUFSIZ], nambuf[BUFSIZ];
-	int setimes = 0;
 	struct timeval tv[2];
-	BUF *allocbuf();
-#define atime	tv[0]
-#define mtime	tv[1]
-#define	SCREWUP(str)	{ whopp = str; goto screwup; }
+	BUF *bp, *allocbuf();
+	off_t i, j;
+	char ch, *targ, *why;
+	int amt, count, exists, first, mask, mode;
+	int ofd, setimes, size, targisdir, wrerr;
+	char *np, *vect[1], buf[BUFSIZ], *malloc();
 
+#define	atime	tv[0]
+#define	mtime	tv[1]
+#define	SCREWUP(str)	{ why = str; goto screwup; }
+
+	setimes = targisdir = 0;
+	mask = umask(0);
 	if (!pflag)
 		(void)umask(mask);
 	if (argc != 1) {
@@ -608,33 +621,36 @@ sink(argc, argv)
 	(void)write(rem, "", 1);
 	if (stat(targ, &stb) == 0 && (stb.st_mode & S_IFMT) == S_IFDIR)
 		targisdir = 1;
-	for (first = 1; ; first = 0) {
-		cp = cmdbuf;
+	for (first = 1;; first = 0) {
+		cp = buf;
 		if (read(rem, cp, 1) <= 0)
 			return;
 		if (*cp++ == '\n')
-			SCREWUP("unexpected '\\n'");
+			SCREWUP("unexpected <newline>");
 		do {
-			if (read(rem, cp, 1) != 1)
+			if (read(rem, &ch, sizeof(ch)) != sizeof(ch))
 				SCREWUP("lost connection");
-		} while (*cp++ != '\n');
+			*cp++ = ch;
+		} while (cp < &buf[BUFSIZ - 1] && ch != '\n');
+		if (ch == '\n')
+			*--cp;
 		*cp = 0;
-		if (cmdbuf[0] == '\01' || cmdbuf[0] == '\02') {
+
+		if (buf[0] == '\01' || buf[0] == '\02') {
 			if (iamremote == 0)
-				(void)write(2, cmdbuf+1, strlen(cmdbuf+1));
-			if (cmdbuf[0] == '\02')
+				(void)write(2, buf + 1, strlen(buf + 1));
+			if (buf[0] == '\02')
 				exit(1);
 			errs++;
 			continue;
 		}
-		*--cp = 0;
-		cp = cmdbuf;
-		if (*cp == 'E') {
+		if (buf[0] == 'E') {
 			(void)write(rem, "", 1);
 			return;
 		}
 
 #define getnum(t) (t) = 0; while (isdigit(*cp)) (t) = (t) * 10 + (*cp++ - '0');
+		cp = buf;
 		if (*cp == 'T') {
 			setimes++;
 			cp++;
@@ -667,9 +683,8 @@ sink(argc, argv)
 			}
 			SCREWUP("expected control record");
 		}
-		cp++;
 		mode = 0;
-		for (; cp < cmdbuf+5; cp++) {
+		for (++cp; cp < buf + 5; cp++) {
 			if (*cp < '0' || *cp > '7')
 				SCREWUP("bad mode");
 			mode = (mode << 3) | (*cp - '0');
@@ -681,42 +696,52 @@ sink(argc, argv)
 			size = size * 10 + (*cp++ - '0');
 		if (*cp++ != ' ')
 			SCREWUP("size not delimited");
-		if (targisdir)
-			(void)sprintf(nambuf, "%s%s%s", targ,
+		if (targisdir) {
+			static char *namebuf;
+			static int cursize;
+			int need;
+
+			need = strlen(targ) + strlen(cp) + 250;
+			if (need > cursize) {
+				if (!(namebuf = malloc((u_int)need)))
+					error("out of memory");
+			}
+			(void)sprintf(namebuf, "%s%s%s", targ,
 			    *targ ? "/" : "", cp);
+			np = namebuf;
+		}
 		else
-			(void)strcpy(nambuf, targ);
-		exists = stat(nambuf, &stb) == 0;
-		if (cmdbuf[0] == 'D') {
+			np = targ;
+		exists = stat(np, &stb) == 0;
+		if (buf[0] == 'D') {
 			if (exists) {
 				if ((stb.st_mode&S_IFMT) != S_IFDIR) {
 					errno = ENOTDIR;
 					goto bad;
 				}
 				if (pflag)
-					(void)chmod(nambuf, mode);
-			} else if (mkdir(nambuf, mode) < 0)
+					(void)chmod(np, mode);
+			} else if (mkdir(np, mode) < 0)
 				goto bad;
-			myargv[0] = nambuf;
-			sink(1, myargv);
+			vect[0] = np;
+			sink(1, vect);
 			if (setimes) {
 				setimes = 0;
-				if (utimes(nambuf, tv) < 0)
-					error("rcp: can't set times on %s: %s\n",
-					    nambuf, sys_errlist[errno]);
+				if (utimes(np, tv) < 0)
+				    error("rcp: can't set times on %s: %s\n",
+					np, sys_errlist[errno]);
 			}
 			continue;
 		}
-		if ((of = open(nambuf, O_WRONLY|O_CREAT, mode)) < 0) {
-	bad:
-			error("rcp: %s: %s\n", nambuf, sys_errlist[errno]);
+		if ((ofd = open(np, O_WRONLY|O_CREAT, mode)) < 0) {
+bad:			error("rcp: %s: %s\n", np, sys_errlist[errno]);
 			continue;
 		}
 		if (exists && pflag)
-			(void)fchmod(of, mode);
+			(void)fchmod(ofd, mode);
 		(void)write(rem, "", 1);
-		if ((bp = allocbuf(&buffer, of, BUFSIZ)) == 0) {
-			(void)close(of);
+		if ((bp = allocbuf(&buffer, ofd, BUFSIZ)) == 0) {
+			(void)close(ofd);
 			continue;
 		}
 		cp = bp->buf;
@@ -730,11 +755,9 @@ sink(argc, argv)
 			do {
 				j = read(rem, cp, amt);
 				if (j <= 0) {
-					if (j == 0)
-					    error("rcp: dropped connection");
-					else
-					    error("rcp: %s\n",
-						sys_errlist[errno]);
+					error("rcp: %s",
+					    j ? sys_errlist[errno] :
+					    "dropped connection");
 					exit(1);
 				}
 				amt -= j;
@@ -742,33 +765,33 @@ sink(argc, argv)
 			} while (amt > 0);
 			if (count == bp->cnt) {
 				if (wrerr == 0 &&
-				    write(of, bp->buf, count) != count)
+				    write(ofd, bp->buf, count) != count)
 					wrerr++;
 				count = 0;
 				cp = bp->buf;
 			}
 		}
 		if (count != 0 && wrerr == 0 &&
-		    write(of, bp->buf, count) != count)
+		    write(ofd, bp->buf, count) != count)
 			wrerr++;
-		if (ftruncate(of, size))
-			error("rcp: can't truncate %s: %s\n",
-			    nambuf, sys_errlist[errno]);
-		(void)close(of);
+		if (ftruncate(ofd, size))
+			error("rcp: can't truncate %s: %s\n", np,
+			    sys_errlist[errno]);
+		(void)close(ofd);
 		(void)response();
 		if (setimes) {
 			setimes = 0;
-			if (utimes(nambuf, tv) < 0)
+			if (utimes(np, tv) < 0)
 				error("rcp: can't set times on %s: %s\n",
-				    nambuf, sys_errlist[errno]);
+				    np, sys_errlist[errno]);
 		}				   
 		if (wrerr)
-			error("rcp: %s: %s\n", nambuf, sys_errlist[errno]);
+			error("rcp: %s: %s\n", np, sys_errlist[errno]);
 		else
 			(void)write(rem, "", 1);
 	}
 screwup:
-	error("rcp: protocol screwup: %s\n", whopp);
+	error("rcp: protocol screwup: %s\n", why);
 	exit(1);
 }
 
@@ -792,7 +815,7 @@ allocbuf(bp, fd, blksize)
 		if (bp->buf != 0)
 			free(bp->buf);
 		bp->buf = (char *)malloc((u_int)size);
-		if (bp->buf == 0) {
+		if (!bp->buf) {
 			error("rcp: malloc: out of memory\n");
 			return(0);
 		}
@@ -802,21 +825,35 @@ allocbuf(bp, fd, blksize)
 }
 
 /* VARARGS1 */
-error(fmt, a1, a2, a3, a4, a5)
+error(fmt, a1, a2, a3)
 	char *fmt;
-	int a1, a2, a3, a4, a5;
+	int a1, a2, a3;
 {
 	int len;
 	char buf[BUFSIZ];
 
 	++errs;
 	buf[0] = 0x01;
-	(void)sprintf(buf + 1, fmt, a1, a2, a3, a4, a5);
+	(void)sprintf(buf + 1, fmt, a1, a2, a3);
 	len = strlen(buf);
 	(void)write(rem, buf, len);
 	if (!iamremote)
 		(void)write(2, buf + 1, len - 1);
 }
+
+nospace()
+{
+	(void)fprintf(stderr, "rcp: out of memory.\n");
+	exit(1);
+}
+
+#ifdef KERBEROS
+old_warning(str)
+	char *str;
+{
+	(void)fprintf(stderr, "rcp: warning: %s, using standard rcp\n", str);
+}
+#endif
 
 usage()
 {
@@ -830,11 +867,3 @@ usage()
 #endif
 	exit(1);
 }
-
-#ifdef KERBEROS
-old_warning(str)
-	char *str;
-{
-	(void)fprintf(stderr, "rcp: warning: %s, using standard rcp\n", str);
-}
-#endif
