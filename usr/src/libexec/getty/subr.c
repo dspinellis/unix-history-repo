@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)subr.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)subr.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -62,7 +62,6 @@ gettable(name, buf)
 			fp->value = 1 ^ fp->invrt;
 		}
 	}
-#define DEBUG
 #ifdef DEBUG
 	printf("name=\"%s\", buf=\"%s\"\n", name, buf);
 	for (sp = gettystrs; sp->field; sp++)
