@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.18 (Berkeley) %G%
+.\"	@(#)3.t	6.19 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -28,7 +28,7 @@ There are at least 4 different versions of ``4.3'' out there:
 HPBSD 1.x from Utah.
 .br
 This was the original version of 4.3\*(Bs for HP300s from which the
-other varients (and 4.4) are derived.
+other variants (and 4.4) are derived.
 It is largely a 4.3 system with Sun's NFS 3.0 filesystem code and
 some 4.3-Tahoe features (e.g. networking code).
 Since the filesystem code is 4.2/4.3 vintage and the filesystem
@@ -46,7 +46,7 @@ At least one site bootstrapped HP300 support from the Reno distribution.
 The Reno filesystem code was somewhere between 4.3 and 4.4: the VFS switch
 had been added but many of the UFS features (e.g. ``inline'' symlinks)
 were missing.
-The filesystem hierarchy reorginization first appeared in this release.
+The filesystem hierarchy reorganization first appeared in this release.
 Be extremely careful following these instructions in this case.
 .IP 4)
 HPBSD 2.0 from Utah.
@@ -333,7 +333,7 @@ db	(system-wide databases, e.g. tags)
 games	(score files)
 log	(log files)
 mail	(users mail)
-obj	(heirarchy to build \f(CW/usr/src\fP)
+obj	(hierarchy to build \f(CW/usr/src\fP)
 preserve	(preserve area for vi)
 quotas	(directory to store quota files)
 run	(directory to store *.pid files)
@@ -374,7 +374,7 @@ See section 4.1.3 and ``Building 4.3BSD UNIX Systems with Config'' (SMM:2).
 If converting from \*(Ps, your old filesystems should be converted.
 If you've modified the partition
 sizes from the original \*(Ps ones, and are not already using the
-\*(4B disk labels, you will have to modify the default disk partion
+\*(4B disk labels, you will have to modify the default disk partition
 tables in the kernel.  Make the necessary table changes and boot
 your custom kernel \fBBEFORE\fP trying to access any of your old
 filesystems!  After doing this, if necessary, the remaining filesystems
@@ -1044,14 +1044,14 @@ The integration of the new virtual memory is functionally complete,
 but still has serious performance problems under heavy memory load.
 The internal kernel interfaces have not yet been completed
 and the memory pool and buffer cache have not been merged.
-Some additional cavaets:
+Some additional caveats:
 .IP \(bu
 Since the code is based on the 2.0 release of Mach,
 bugs and misfeatures of the BSD version should not be considered
 short-comings of the current Mach virtual memory system.
 .IP \(bu
 Because of the disjoint virtual memory (page) and IO (buffer) caches,
-it is possible to see inconsistancies if using both the mmap and
+it is possible to see inconsistencies if using both the mmap and
 read/write interfaces on the same file simultaneously.
 .IP \(bu
 Swap space is allocated on-demand rather than up front and no
@@ -1421,7 +1421,7 @@ It is important to remember that merely copying over a native binary
 and executing it (or executing it directly across NFS) does not imply
 that it will run.
 All but the most trivial of applications are likely to require access
-to auxilliary files that don't exist under \*(4B (e.g.
+to auxiliary files that don't exist under \*(4B (e.g.
 .Pn /etc/ld.so.cache )
 or have a slightly different format (e.g.
 .Pn /etc/passwd ).
