@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_er.c,v 5.1 89/02/09 16:20:18 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_er.c,v $ */
-/*	@(#)clnp_er.c	7.5 (Berkeley) %G% */
+/*	@(#)clnp_er.c	7.6 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_er.c,v 5.1 89/02/09 16:20:18 hagens Exp $";
@@ -100,7 +100,7 @@ u_char			reason;	/* reason code of er */
 			cmd = PRC_PARAMPROB;
 			break;
 		case GEN_SEGNEEDED:		
-			cmd = PRC_UNREACH_NEEDFRAG; 
+			cmd = PRC_MSGSIZE; 
 			break;
 		case GEN_INCOMPLETE:	
 			cmd = PRC_PARAMPROB; 		
@@ -320,7 +320,7 @@ char					reason;	/* reason for discard */
 	
 	/* send packet */
 	INCSTAT(cns_er_outhist[clnp_er_index(reason)]);
-	(void) (*ifp->if_output)(ifp, m0, first_hop);
+	(void) (*ifp->if_output)(ifp, m0, first_hop, route.ro_rt);
 	goto done;
 
 bad:
