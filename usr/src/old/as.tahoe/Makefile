@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.2	(Berkeley)	%G%
+#	@(#)Makefile	1.3	(Berkeley)	%G%
 #
 #	as.h		Definitions for data structures
 #	asnumber.h	Definitions for all numbers: byte .. G format float
@@ -90,150 +90,20 @@ aspseudo.o: as.h astoks.h aspseudo.c instrs.h instrs.as
 instrs.as: instrs
 	(echo FLAVOR AS ; cat instrs) | awk -f instrs > instrs.as
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core as
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
-	install -s -o bin -g bin as ${DESTDIR}/bin/as
+install: ${MAN}
+	install -s -o bin -g bin as ${DESTDIR}/usr/bin
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-asscan1.o: asscan1.c
-asscan1.o:asscanl.h
-asscan1.o: /usr/include/stdio.h
-asscan1.o:as.h
-asscan1.o: /usr/include/sys/types.h /usr/include/a.out.h
-asscan1.o: /usr/include/sys/exec.h /usr/include/stab.h
-asscan1.o:instrs.h
-asscan1.o:astoks.h
-asscan1.o:asnumber.h
-asscan1.o:asscan.h
-asscan2.o: asscan2.c
-asscan2.o:asscanl.h
-asscan2.o: /usr/include/stdio.h
-asscan2.o:as.h
-asscan2.o: /usr/include/sys/types.h /usr/include/a.out.h
-asscan2.o: /usr/include/sys/exec.h /usr/include/stab.h
-asscan2.o:instrs.h
-asscan2.o:astoks.h
-asscan2.o:asnumber.h
-asscan2.o:asscan.h
-asscan3.o: asscan3.c
-asscan3.o:asscanl.h
-asscan3.o: /usr/include/stdio.h
-asscan3.o:as.h
-asscan3.o: /usr/include/sys/types.h /usr/include/a.out.h
-asscan3.o: /usr/include/sys/exec.h /usr/include/stab.h
-asscan3.o:instrs.h
-asscan3.o:astoks.h
-asscan3.o:asnumber.h
-asscan3.o:asscan.h
-asscan4.o: asscan4.c
-asscan4.o:asscanl.h
-asscan4.o: /usr/include/stdio.h
-asscan4.o:as.h
-asscan4.o: /usr/include/sys/types.h /usr/include/a.out.h
-asscan4.o: /usr/include/sys/exec.h /usr/include/stab.h
-asscan4.o:instrs.h
-asscan4.o:astoks.h
-asscan4.o:asnumber.h
-asscan4.o:asscan.h
-bignum.o: bignum.c /usr/include/errno.h /usr/include/stdio.h
-bignum.o:as.h
-bignum.o: /usr/include/sys/types.h /usr/include/a.out.h /usr/include/sys/exec.h
-bignum.o: /usr/include/stab.h
-bignum.o:instrs.h
-bignum.o:astoks.h
-bignum.o:asnumber.h
-asmain.o: asmain.c /usr/include/stdio.h /usr/include/ctype.h
-asmain.o: /usr/include/signal.h
-asmain.o:as.h
-asmain.o: /usr/include/sys/types.h /usr/include/a.out.h /usr/include/sys/exec.h
-asmain.o: /usr/include/stab.h
-asmain.o:instrs.h
-asmain.o:astoks.h
-asmain.o:asnumber.h
-asmain.o:assyms.h
-asmain.o:asscan.h
-asmain.o:asexpr.h
-asparse.o: asparse.c /usr/include/stdio.h
-asparse.o:as.h
-asparse.o: /usr/include/sys/types.h /usr/include/a.out.h
-asparse.o: /usr/include/sys/exec.h /usr/include/stab.h
-asparse.o:instrs.h
-asparse.o:astoks.h
-asparse.o:asnumber.h
-asparse.o:asscan.h
-asparse.o:assyms.h
-asparse.o:asexpr.h
-asexpr.o: asexpr.c /usr/include/stdio.h
-asexpr.o:as.h
-asexpr.o: /usr/include/sys/types.h /usr/include/a.out.h /usr/include/sys/exec.h
-asexpr.o: /usr/include/stab.h
-asexpr.o:instrs.h
-asexpr.o:astoks.h
-asexpr.o:asnumber.h
-asexpr.o:asscan.h
-asexpr.o:asexpr.h
-assyms.o: assyms.c /usr/include/stdio.h /usr/include/ctype.h
-assyms.o:as.h
-assyms.o: /usr/include/sys/types.h /usr/include/a.out.h /usr/include/sys/exec.h
-assyms.o: /usr/include/stab.h
-assyms.o:instrs.h
-assyms.o:astoks.h
-assyms.o:asnumber.h
-assyms.o:asscan.h
-assyms.o:assyms.h
-asjxxx.o: asjxxx.c /usr/include/stdio.h
-asjxxx.o:as.h
-asjxxx.o: /usr/include/sys/types.h /usr/include/a.out.h /usr/include/sys/exec.h
-asjxxx.o: /usr/include/stab.h
-asjxxx.o:instrs.h
-asjxxx.o:astoks.h
-asjxxx.o:asnumber.h
-asjxxx.o:assyms.h
-ascode.o: ascode.c /usr/include/stdio.h
-ascode.o:as.h
-ascode.o: /usr/include/sys/types.h /usr/include/a.out.h /usr/include/sys/exec.h
-ascode.o: /usr/include/stab.h
-ascode.o:instrs.h
-ascode.o:astoks.h
-ascode.o:asnumber.h
-ascode.o:assyms.h
-aspseudo.o: aspseudo.c /usr/include/stdio.h
-aspseudo.o:as.h
-aspseudo.o: /usr/include/sys/types.h /usr/include/a.out.h
-aspseudo.o: /usr/include/sys/exec.h /usr/include/stab.h
-aspseudo.o:instrs.h
-aspseudo.o:astoks.h
-aspseudo.o:asnumber.h
-aspseudo.o:instrs.as
-assizetab.o: assizetab.c /usr/include/stdio.h
-assizetab.o:as.h
-assizetab.o: /usr/include/sys/types.h /usr/include/a.out.h
-assizetab.o: /usr/include/sys/exec.h /usr/include/stab.h
-assizetab.o:instrs.h
-assizetab.o:astoks.h
-assizetab.o:asnumber.h
-assizetab.o:assyms.h
-asio.o: asio.c /usr/include/stdio.h
-asio.o:as.h
-asio.o: /usr/include/sys/types.h /usr/include/a.out.h /usr/include/sys/exec.h
-asio.o: /usr/include/stab.h
-asio.o:instrs.h
-asio.o:astoks.h
-asio.o:asnumber.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
