@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.77 (Berkeley) %G%
+#	@(#)READ_ME	8.78 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -184,6 +184,7 @@ DGUX		Define this if you are on DG/UX 5.4.3 or later
 DGUX_5_4_2	Define this if you are on DG/UX systems prior to 5.4.3.
 NonStop_UX_BXX	Define this if you are on a Tandem NonStop-UX release
 		Bxx system.
+IRIX64		Define this if you are on an IRIX64 system.
 
 If you are a system that sendmail has already been ported to, you
 probably won't have to touch these.  But if you are porting, you may
@@ -927,4 +928,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.77, last update %G% 08:07:21)
+(Version 8.78, last update %G% 07:21:13)
