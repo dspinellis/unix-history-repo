@@ -1,4 +1,4 @@
-/* main.c	(Berkeley)	1.8	84/01/02	*/
+/* main.c	(Berkeley)	1.9	86/03/11	*/
 #include	<stdio.h>
 #include	"pic.h"
 #include	"y.tab.h"
@@ -10,6 +10,7 @@
 
 char	*devdir = DEVDIR;
 char	*dev = "va";			/* default typesetter is varian */
+char	*getenv();
 
 struct	obj	*objlist[MAXOBJ];	/* store the elements here */
 int	nobj	= 0;
@@ -62,6 +63,9 @@ float	ymax	= -30000;
 main(argc, argv)
 	char **argv;
 {
+	register char *cp;
+	if ((cp = getenv("PRINTER")) != NULL) dev = cp;
+	if ((cp = getenv("TYPESETTER")) != NULL) dev = cp;
 	cmdname = argv[0];
 	while (argc > 1 && *argv[1] == '-' && argv[1][1]) {
 		switch (argv[1][1]) {
