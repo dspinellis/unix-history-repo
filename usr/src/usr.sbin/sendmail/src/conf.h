@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.140 (Berkeley) %G%
+ *	@(#)conf.h	8.141 (Berkeley) %G%
  */
 
 /*
@@ -708,6 +708,9 @@ extern void		*malloc();
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
 # define GIDSET_T	gid_t	/* from <linux/types.h> */
 # define HASGETUSERSHELL 0	/* getusershell(3) broken in Slackware 2.0 */
+# ifndef HASFLOCK
+#  define HASFLOCK	0	/* flock(2) is broken after 0.99.13 */
+# endif
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_PROCSTR
 # endif
