@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_descrip.c	7.9 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -424,47 +424,41 @@ fdopen(dev, mode, type)
 	int mode, type;
 {
 	struct file *fp, *wfp;
-	int indx, dfd, rwmode;
+	int indx, dfd;
 
 	/*
-	 * Note the horrid kludge here: u.u_r.r_val1 contains the value
-	 * of the new file descriptor, which was set before the call to
-	 * vn_open() by copen() in vfs_syscalls.c
+	 * XXX
+	 * Horrid kludge: u.u_r.r_val1 contains the value of the new file
+	 * descriptor, which was set before the call to vn_open() by copen()
+	 * in vfs_syscalls.c.
 	 */
-	indx = u.u_r.r_val1;		/* XXX from copen */
-	if ((unsigned)indx >= NOFILE || (fp = u.u_ofile[indx]) == NULL)
-		return (EBADF);
+	indx = u.u_r.r_val1;
+	fp = u.u_ofile[indx];
+
+	/*
+	 * File system device minor number is the to-be-dup'd fd number.
+	 * If it is greater than the allowed number of file descriptors,
+	 * or the fd to be dup'd has already been closed, reject.  Note,
+ 	 * check for new == old is necessary as u_falloc could allocate
+	 * an already closed to-be-dup'd descriptor as the new descriptor.
+	 */
 	dfd = minor(dev);
-	if ((unsigned)dfd >= NOFILE || (wfp = u.u_ofile[dfd]) == NULL)
+	if ((u_int)dfd >= NOFILE || (wfp = u.u_ofile[dfd]) == NULL ||
+	    fp == wfp)
 		return (EBADF);
+
 	/*
-	 * We must explicitly test for this case because ufalloc() may
-	 * have allocated us the same file desriptor we are referring
-	 * to, if the proccess referred to an invalid (closed) descriptor.
-	 * Ordinarily this would be caught by the check for NULL above,
-	 * but by the time we reach this routine u_pofile[minor(dev)]
-	 * could already be set to point to our file struct.
+	 * Check that the mode the file is being opened for is a subset 
+	 * of the mode of the existing descriptor.
 	 */
-	if (fp == wfp)
-		return (EBADF);
-	/*
-	 * Fake a ``dup()'' sys call.
-	 * Check that the mode the file is being opened
-	 * for is consistent with the mode of the existing
-	 * descriptor. This isn't as clean as it should be,
-	 * but this entire driver is a real kludge anyway.
-	 */
-	rwmode = mode & (FREAD|FWRITE);
-	if ((wfp->f_flag & rwmode) != rwmode)
+	if ((mode & (FREAD|FWRITE) | wfp->f_flag) != wfp->f_flag)
 		return (EACCES);
-	/* 
-	 * Dup the file descriptor. 
-	 */
 	dupit(indx, wfp, u.u_pofile[dfd]);
+
 	/*
-	 * Delete references to this pseudo-device by returning
-	 * a special error (EJUSTRETURN) that will cause all resources to
-	 * be freed, then detected and cleared by copen.
+	 * Delete references to this pseudo-device by returning a special
+	 * error (EJUSTRETURN) that will cause all resources to be freed,
+	 * then detected and cleared by copen().
 	 */
 	return (EJUSTRETURN);			/* XXX */
 }
