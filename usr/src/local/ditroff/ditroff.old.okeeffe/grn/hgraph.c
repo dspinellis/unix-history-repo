@@ -1,4 +1,4 @@
-/*	hgraph.c	1.1	(Berkeley) 83/07/21
+/*	hgraph.c	1.2	(Berkeley) 83/07/24
  *
  *     This file contains the graphics routines for converting gremlin
  * pictures to troff input.
@@ -6,25 +6,20 @@
 
 #include "gprint.h"
 
-#define MAXVECT 50
 
-/* line and character styles */
+#define  MAXVECT	50
+#define  pi		3.14159265358979324
+#define  twopi		(2.0 * pi)
+#define  len(a, b)	sqrt((b.x-a.x) * (b.x-a.x) + (b.y-a.y) * (b.y-a.y))
 
-extern int style[];
+
+extern int style[];	/* line and character styles */
 extern int thick[];
 extern char *tfont[];
 extern char *tsize[];
 
 
-/* variables used to print from font file */
-
-extern cfont;
-extern csize;
-extern char *devdir ;
-
-/* imports from main.c */
-
-extern double scale;
+extern double scale;		/* imports from main.c */
 extern double troffscale;
 extern point();
 extern int linethickness;
@@ -32,7 +27,6 @@ extern int linmod;
 extern int lastx;
 extern int lasty;
 extern int lastyline;
-
 extern int ytop;
 extern int ybottom;
 extern int xleft;
@@ -55,23 +49,20 @@ ELT *element;
     register int length;
 
     if ( !DBNullelt(element) ) {
+	p1 = element->ptlist;		/* p1 always has first point */
         if (TEXT(element->type)) {
             HGSetFont(element->brushf, element->size);
-            HGPutText(element->type, *(element->ptlist), element->textpt);
+            HGPutText(element->type, *p1, element->textpt);
         } else {
-	    tmove(p1 = element->ptlist);	/* always move to start first */
-	    HGSetBrush(element->brushf);	/* p1 always has first point */
+	    HGSetBrush(element->brushf);	/* graphics need brush set */
             switch (element->type) {
 
                  case ARC:  p2 = PTNextPoint(p1);
-			    printf("\\D'a");
-
-				/* stuff... */
-				printf(" 0 0 0 0'");
-
+			    doarc(*p1, *p2, element->size);
                             break;
 
-               case CURVE:  printf("\\D'g");
+               case CURVE:  tmove(p1);
+			    printf("\\D'g");
                             while (!Nullpoint((p1 = PTNextPoint(p1)))) {
                                 dx((double) p1->x);
                                 dy((double) p1->y);
@@ -80,7 +71,7 @@ ELT *element;
                             break;
 
               case VECTOR:  length = 1;		/* keep track of line length */
-					   /* so single lines don't get long */
+			    tmove(p1);	   /* so single lines don't get long */
                             while (!Nullpoint((p1 = PTNextPoint(p1)))) {
 				printf("\\D'l");
                                 dx((double) p1->x);
@@ -90,9 +81,9 @@ ELT *element;
 				    tmove (p1);
 				    length = 1;
 				}
-                            }  /* end while */;
+                            }  /* end while */
                             break;
-            }  /* end switch */;
+            }  /* end switch */
         }  /* end else Text */
     }  /* end if */
 }  /* end PrintElt */
@@ -101,59 +92,102 @@ ELT *element;
 /*----------------------------------------------------------------------------*
  | Routine:	HGPutText (justification, position_point, string)
  |
- | Results:	
- |
- | Side Efct:	
- |
- | Bugs:	
+ | Results:	given the justification, a point to position with, and a
+ |		string to put, HGPutText first sends the string into a
+ |		diversion, moves to the positioning point, then outputs local
+ |		vertical and horizontal motions as needed to justify the text.
+ |		After all motions are done, the diversion is printed out.
  *----------------------------------------------------------------------------*/
 
 HGPutText(justify,pnt,string)
 int justify;
 POINT pnt;
 char string[];
-
-/* This routine is used to calculate the proper starting position for a
- * text string (based on justification, size and font), and prints it 
- * character by character.
- */
-
 {
+    printf(".di gt\n\\&%s\n.di", string);	/* divert the text. */
+    tmove(&pnt);				/* move to positioning point */
     switch (justify) {
+					/* local vertical motions */
+        case CENTLEFT:
+        case CENTCENT:
+       case CENTRIGHT:	printf("\\v'\\n(dnu/2u'");	/* down half */
+			break;
 
-	case BOTLEFT:
-			break;
-	case BOTCENT:
-			break;
-       case BOTRIGHT:
-			break;
-       case CENTLEFT:
-			break;
-       case CENTCENT:
-			break;
-      case CENTRIGHT:
-			break;
-	case TOPLEFT:
-			break;
-	case TOPCENT:
-			break;
-       case TOPRIGHT:
-			break;
+	 case TOPLEFT:
+	 case TOPCENT:
+        case TOPRIGHT:	printf("\\v'\\n(dnu'");		/* down whole */
     }
-    HGplotch(string);
-} /* end HGPutText */;
+
+    switch (justify) {
+					/* local horizontal motions */
+	 case BOTCENT:
+        case CENTCENT:
+	 case TOPCENT:	printf("\\h'-\\n(dlu/2u'");	/* back half */
+			break;
+
+        case BOTRIGHT:
+       case CENTRIGHT:
+        case TOPRIGHT:	printf("\\h'-\\n(dlu'");	/* back whole */
+    }
+				/* now print the text.  The (cr) at the end */
+    printf("\\c\n.gt\n");	/* results in a blank line in the output.  It */
+				/* is necessary to break the "\c" directive. */
+} /* end HGPutText */
 
 
+/*----------------------------------------------------------------------------*
+ | Routine:	doarc (center_point, start_point, angle)
+ |
+ | Results:	produces either drawarc command or a drawcircle command
+ |		depending on the angle needed to draw through.
+ *----------------------------------------------------------------------------*/
+
+doarc (cp, sp, angle)
+POINT cp;
+POINT sp;
+int angle;
+{
+	double radius = len(cp, sp);
+	double radians;
+
+
+	if (angle) {		/* arc with angle */
+	    tmove (&sp);		/* starting point first */
+	    printf("\\D'a");
+	    dx((double) cp.x);		/* move to center */
+	    dy((double) cp.y);
+
+	    radians = acos((sp.x - cp.x) / radius);	  /* angle of ending */
+	    if (cp.y - sp.y < 0.0)			 /* point calculated */
+		radians = twopi - radians;		 /* from start point */
+	    radians += ((double) angle) * (pi / 180.0);	  /* and arc's angle */
+	    if (radians > twopi) radians -= twopi;
+
+	    dx(cp.x + cos(radians) * radius);	/* move to ending point */
+	    dy(cp.y - sin(radians) * radius);
+
+	} else {		/* a full circle (angle == 0) */
+	    cp.x -= radius;
+	    tmove(&cp);			/* move to the left point first */
+					/* draw circle with given diameter */
+	    printf("\\D'c %du", (int) ((radius + radius) * troffscale));
+	}
+	putchar('\'');		/* finish the command */
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	HGSetFont (font_number, Point_size)
+ |
+ | Results:	ALWAYS outputs a .ft and .ps directive to troff.  This is
+ |		done because someone may change stuff inside a text string.
+ *----------------------------------------------------------------------------*/
 
 HGSetFont(font, size)
 int font, size;
 {
-    int i;
-    char c, string[100];
-
-    if (font != cfont) cfont = font;
-    if (size != csize) csize = size;
-    /* and whatever... */
+    cr();
+    printf(".ft %s\n.ps %s\n", tfont[font-1], tsize[size-1]);
 }
 
 
@@ -175,12 +209,6 @@ int mode;
     if (linethickness != thick[mode]) {
 	printf ("\\D't %du'", linethickness = thick[mode]);
     }
-}
-
-
-HGplotch(string)
-char *string;
-{
 }
 
 
@@ -256,8 +284,7 @@ POINT *ptr;
  | Routine:	cr
  |
  | Results:	breaks the output line up to not overrun troff with lines that
- |		are too long.  Outputs a ".sp -1" also to keep the vertical
- |		spacing correct.
+ |		are too long.
  |
  | Side Efct:	sets "lastx" to "leftpoint" for troff's return to left margin
  *----------------------------------------------------------------------------*/
