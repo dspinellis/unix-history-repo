@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_put.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_put.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -184,7 +184,6 @@ __rec_iput(t, nrec, data, flags)
 	default:
 		if (nrec < t->bt_nrecs &&
 		    __rec_dleaf(t, h, index) == RET_ERROR) {
-			BT_CLR(t);
 			mpool_put(t->bt_mp, h, 0);
 			return (RET_ERROR);
 		}
