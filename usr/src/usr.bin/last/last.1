@@ -2,14 +2,17 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)last.1	4.1 (Berkeley) %G%
+.\"	@(#)last.1	5.1 (Berkeley) %G%
 .\"
-.TH LAST 1 4/1/81
+.TH LAST 1 "1 April 1981"
 .UC 4
 .SH NAME
 last \- indicate last logins of users and teletypes
 .SH SYNOPSIS
 .B last
+[
+\-N
+]
 [
 name ...
 ] [
@@ -49,6 +52,9 @@ will give an indication of mean time between reboot.
 .I Last
 with no arguments prints a record of all logins and logouts, in
 reverse order.
+The
+.B \-N
+option limits the report to N lines.
 .PP
 If
 .I last
