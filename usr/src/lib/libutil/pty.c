@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)pty.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pty.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -40,6 +40,7 @@ openpty(amaster, aslave, name, termp, winp)
 	for (cp1 = "pqrs"; *cp1; cp1++) {
 		line[8] = *cp1;
 		for (cp2 = "0123456789abcdef"; *cp2; cp2++) {
+			line[5] = 'p';
 			line[9] = *cp2;
 			if ((master = open(line, O_RDWR, 0)) == -1) {
 				if (errno == ENOENT)
@@ -63,7 +64,6 @@ openpty(amaster, aslave, name, termp, winp)
 					return (0);
 				}
 				(void) close(master);
-				line[5] = 'p';
 			}
 		}
 	}
