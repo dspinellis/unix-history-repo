@@ -1,0 +1,31 @@
+.pa 1
+.he 'TC (IV)'3/15/72'TC (IV)'
+.ti 0
+NAME		tc -- TC-11/TU56 DECtape
+.sp
+.ti 0
+DESCRIPTION	The
+files tap0 ... tap7 refer to the
+TC-11/TU56 DECtape drives 0 to 7.
+Since the logical drive number can be manually set,
+all eight files exist even though at present there are fewer
+physical drives.
+
+The 256-word blocks on a standard DECtape are numbered 0 to 577.
+However, the system makes no assumption about this number;
+a block can be read or written if it exists on the
+tape and not otherwise.
+An error is returned if a transaction
+is attempted for a block which does not exist.
+
+Addressing on the tape files, like that on the
+RK and RF disks, is block-oriented.
+.sp
+.ti 0
+FILES		/dev/tap?
+.sp
+.ti 0
+SEE ALSO	rf(IV), tap(I)
+.sp
+.ti 0
+BUGS		see rf(IV)
