@@ -1,4 +1,4 @@
-/*	up.c	4.7	83/02/17	*/
+/*	up.c	4.8	83/02/18	*/
 
 /*
  * UNIBUS peripheral standalone driver
@@ -29,19 +29,7 @@ u_short	ubastd[] = { 0776700 };
 
 char	up_gottype[MAXNUBA*8] = { 0 };
 char	up_type[MAXNUBA*8] = { 0 };
-short	up9300_off[] = { 0, 27, 68, -1, -1, -1, -1, 82 };
-short	up9766_off[] = { 0, 27, 68, -1, -1, -1, -1, 82 };
-short	fj_off[] = { 0, 50, 0, -1, -1, -1, -1, 155 };
-/* this is called upam instead of am because hp.c has a similar array */
-short	upam_off[] = { 0, 32, 0, 668, 723, 778, 668, 98 };
-
-#define	NUPTYPES	4
-struct st upst[NUPTYPES] = {
-	32,	19,	32*19,	815,	up9300_off,	/* 9300 */
-	32,	19,	32*19,	823,	up9766_off,	/* 9766 */
-	32,	10,	32*10,	823,	fj_off,		/* Fuji 160 */
-	32,	16,	32*16,	1024,	upam_off,	/* Capricorn */
-};
+extern	struct st upst[];
 
 u_char	up_offset[16] = {
 	UPOF_P400, UPOF_M400, UPOF_P400, UPOF_M400,
@@ -60,7 +48,7 @@ upopen(io)
 	register struct updevice *upaddr;
 	register struct st *st;
 
-	if (io->i_boff < 0 || io->i_boff > 7 || st->off[io->i_boff] == -1)
+	if (io->i_boff < 0 || io->i_boff > 7)
 		_stop("up bad unit");
 	upaddr = (struct updevice *)ubamem(unit, ubastd[0]);
 	while ((upaddr->upcs1 & UP_DVA) == 0)
@@ -73,6 +61,8 @@ upopen(io)
 		if (up_type[unit] < 0)
 			_stop("unknown drive type");
 		st = &upst[up_type[unit]];
+		if (st->off[io->i_boff] == -1)
+			_stop("up bad unit");
 		/*
 		 * Read in the bad sector table:
 		 *	copy the contents of the io structure
@@ -100,32 +90,6 @@ upopen(io)
 	}
 	io->i_boff = st->off[io->i_boff] * st->nspc;
 	io->i_flgs &= ~F_TYPEMASK;
-}
-
-upmaptype(unit, upaddr)
-	int unit;
-	register struct updevice *upaddr;
-{
-	register struct st *st;
-	int type = -1;
-
-	upaddr->upcs1 = 0;
-	upaddr->upcs2 = unit % 8;
-	upaddr->uphr = UPHR_MAXTRAK;
-	for (st = upst; st < &upst[NUPTYPES]; st++)
-		if (upaddr->uphr == st->ntrak - 1) {
-			type = st - upst;
-			break;
-		}
-	if (type < 0)
-		printf("up%d: uphr=%x\n", unit, upaddr->uphr);
-	if (type == 0) {
-		upaddr->uphr = UPHR_MAXCYL;
-		if (upaddr->uphr == 822)	/* CDC 9766 */
-			type++;
-	}
-	upaddr->upcs2 = UPCS2_CLR;
-	return (type);
 }
 
 upstrategy(io, func)
@@ -216,12 +180,8 @@ hard:
 		return (io->i_cc + upaddr->upwc * sizeof(short));
 	}
 	if (upaddr->uper2 & UPER2_BSE) {
-		short wc = upaddr->upwc;
-		if ((io->i_flgs&F_NBSF) == 0 && upecc(io, BSE) == 0) {
-			if (wc != upaddr->upwc)
-				printf("wc %x upwc %x\n", wc, upaddr->upwc);
+		if ((io->i_flgs&F_NBSF) == 0 && upecc(io, BSE) == 0)
 			goto success;
-		}
 		io->i_error = EBSE;
 		goto hard;
 	}
@@ -306,9 +266,10 @@ success:
 }
 
 /*
- * Correct an ECC error, and restart the i/o to complete
- * the transfer if necessary.  This is quite complicated because
- * the transfer may be going to an odd memory address base and/or
+ * Correct an ECC error, and restart the
+ * i/o to complete the transfer (if necessary). 
+ * This is quite complicated because the transfer
+ * may be going to an odd memory address base and/or
  * across a page boundary.
  */
 upecc(io, flag)
@@ -324,13 +285,15 @@ upecc(io, flag)
 	daddr_t bbn;
 
 	/*
-	 * Npf is the number of sectors transferred before the sector
-	 * containing the ECC error, bn is the current block number
+	 * Npf is the number of sectors transferred
+	 * before the sector containing the ECC error;
+	 * bn is the current block number.
 	 */
 	twc = up->upwc;
-	npf = ((twc * sizeof(short)) + io->i_cc)/sectsiz;
+	npf = ((twc * sizeof(short)) + io->i_cc) / sectsiz;
 #ifdef UPECCDEBUG
-	printf("npf %d mask 0x%x pos %d wc 0x%x\n",npf,mask,up->upec1,-up->upwc);
+	printf("npf %d mask 0x%x pos %d wc 0x%x\n",
+		npf, up->ec2, up->upec1, -twc);
 #endif
 	bn = io->i_bn + npf ;
 	st = &upst[up_type[io->i_unit]];
@@ -338,8 +301,9 @@ upecc(io, flag)
 	sn = bn%st->nspc;
 	tn = sn/st->nsect;
 	sn = sn%st->nsect;
+
 	/*
-	 * action taken depends on the flag
+	 * ECC correction.
 	 */
 	if (flag == ECC) {
 		int bit, byte, ecccnt;
@@ -348,9 +312,10 @@ upecc(io, flag)
 		mask = up->upec2;
 		printf("up%d: soft ecc sn%d\n", io->i_unit, bn);
 		/*
-		 * Compute the
-		 * byte and bit position of the error.  The variable i
-		 * is the byte offset in the transfer.
+		 * Compute the byte and bit position
+		 * of the error.  i is the byte offset
+		 * in the transfer at which the correction
+		 * is first applied.
 		 */
 		i = up->upec1 - 1;		/* -1 makes 0 origin */
 		bit = i&07;
@@ -358,16 +323,18 @@ upecc(io, flag)
 		byte = i;
 		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 		/*
-		 * Correct while possible bits remain of mask.  Since mask
-		 * contains 11 bits, we continue while the bit offset is > -11.
-		 * Also watch out for end of this block and the end of the whole
-		 * transfer.
+		 * Correct while possible bits remain of mask.
+		 * Since mask contains 11 bits, we continue while
+		 * the bit offset is > -11.  Also watch out for
+		 * end of this block and the end of the transfer.
 		 */
 		while (i < sectsiz && (npf*sectsiz)+i < io->i_cc && bit > -11) {
 			/*
-			 * addr = vax base addr + (number of sectors transferred
-			 *	  before the error sector times the sector size)
-			 *	  + byte number
+			 * addr =
+			 *  vax base addr +
+			 *  (# sectors transferred before the error) *
+			 *    (sector size) +
+			 *  byte number
 			 */
 			addr = io->i_ma + (npf * sectsiz) + byte;
 #ifdef UPECCDEBUG
@@ -378,17 +345,21 @@ upecc(io, flag)
 #ifdef UPECCDEBUG
 			printf("new: %x\n", (*addr&0xff));
 #endif
-			byte++;
-			i++;
+			byte++, i++;
 			bit -= 8;
 			if ((io->i_flgs&F_ECCLM) && ++ecccnt > MAXECC)
 				return (1);
 		}
 		return (0);
 	}
+
+	/*
+	 * Bad sector forwarding.
+	 */
 	if (flag == BSE) {
 		/*
-		 * if not in bad sector table, return 1 (= hard error)
+		 * If not in bad sector table,
+		 * indicate a hard error to caller.
 		 */
 		up->upcs1 = UP_TRE|UP_DCLR|UP_GO;
 		if ((bbn = isbad(&upbad[io->i_unit], cn, tn, sn)) < 0)
@@ -400,11 +371,12 @@ upecc(io, flag)
 		printf("revector to block %d\n", bbn);
 #endif
 		/*
-	 	* Clear the drive & read the replacement sector.
-	 	* If this is in the middle of a transfer, then set up the
-	 	* controller registers in a normal fashion. 
-	 	* The ub-address need not be changed.
-	 	*/
+	 	 * Clear the drive & read the replacement
+		 * sector.  If this is in the middle of a
+		 * transfer, then set up the controller
+		 * registers in a normal fashion. 
+	 	 * The UNIBUS address need not be changed.
+	 	 */
 		while (up->upcs1 & UP_RDY == 0) 
 			;
 		if (upstart(io, bbn) != 0)

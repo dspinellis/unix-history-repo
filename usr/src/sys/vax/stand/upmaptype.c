@@ -1,4 +1,4 @@
-/*	upmaptype.c	4.1	83/02/18	*/
+/*	upmaptype.c	4.2	83/02/18	*/
 
 /*
  * UNIBUS peripheral standalone
