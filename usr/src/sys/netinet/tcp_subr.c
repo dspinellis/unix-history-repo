@@ -1,4 +1,4 @@
-/*	tcp_subr.c	6.2	84/08/29	*/
+/*	tcp_subr.c	6.3	84/11/01	*/
 
 #include "param.h"
 #include "systm.h"
@@ -155,16 +155,10 @@ tcp_newtcpcb(inp)
 		return ((struct tcpcb *)0);
 	tp = mtod(m, struct tcpcb *);
 	tp->seg_next = tp->seg_prev = (struct tcpiphdr *)tp;
-	/*
-	 * If the default maximum IP packet size is 576 bytes
-	 * and a standard IP header is 20 bytes, with a TCP
-	 * header of 20 bytes plus the options necessary to
-	 * upgrade it to something higher, then initialize the
-	 * maximum segment size to 576 - (20 + 20 + 8 + slop).
-	 */
-	tp->t_maxseg = 512;		/* satisfy the rest of the world */
+	tp->t_maxseg = TCP_MSS;
 	tp->t_flags = 0;		/* sends options! */
 	tp->t_inpcb = inp;
+	tp->t_srtt = TCPTV_SRTTBASE;
 	inp->inp_ppcb = (caddr_t)tp;
 	return (tp);
 }
