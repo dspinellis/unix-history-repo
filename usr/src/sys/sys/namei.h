@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)namei.h	6.11 (Berkeley) %G%
+ *	@(#)namei.h	6.12 (Berkeley) %G%
  */
 
 #ifndef _NAMEI_
@@ -68,8 +68,10 @@ struct	namecache {
 #define	NCHNAMLEN	15	/* maximum name segment length we bother with */
 	char	nc_name[NCHNAMLEN];	/* segment name */
 };
+#ifdef KERNEL
 struct	namecache *namecache;
 int	nchsize;
+#endif
 
 /*
  * Stats on usefulness of namei caches.
