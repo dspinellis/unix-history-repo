@@ -1,11 +1,9 @@
-/*	@(#)defs.h	1.4 83/07/27		*/
+/*	@(#)defs.h	1.5 83/07/28		*/
 
 #include "ww.h"
 #include <signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-
-#define ESCAPE CTRL(p)
 
 int nread;
 int nreade;
@@ -25,6 +23,8 @@ struct ww *selwin;
 struct ww *cmdwin;
 
 char quit;
+char terse;
+char escapec;
 
 	/* flags to doclose() */
 #define CLOSE_ONE	0
