@@ -1,18 +1,15 @@
-/*	tcp_timer.h	4.8	82/06/06	*/
+/*	tcp_timer.h	4.9	82/12/20	*/
 
 /*
  * Definitions of the TCP timers.  These timers are counted
  * down PR_SLOWHZ times a second.
  */
-#define	TCPT_NTIMERS	5
+#define	TCPT_NTIMERS	4
 
 #define	TCPT_REXMT	0		/* retransmit */
 #define	TCPT_PERSIST	1		/* retransmit persistance */
 #define	TCPT_KEEP	2		/* keep alive */
 #define	TCPT_2MSL	3		/* 2*msl quiet time timer */
-#ifdef TCPTRUEOOB
-#define	TCPT_OOBREXMT	4		/* out-of-band rexmt */
-#endif
 
 /*
  * The TCPT_REXMT timer is used to force retransmissions.
@@ -44,10 +41,6 @@
  * an ack segment in response from the peer.  If, despite the TCPT_KEEP
  * initiated segments we cannot elicit a response from a peer in TCPT_MAXIDLE
  * amount of time, then we drop the connection.
- *
- * The OOBREXMT timer is to force retransmissions of out-of-band indications.
- * Because out-of-band data is considered critical, it does not exponential
- * backoff, but runs at a multiple of smoothed round trip time until acked.
  */
 
 #define	TCP_TTL		15		/* time to live for TCP segs */
@@ -71,7 +64,7 @@
 
 #ifdef	TCPTIMERS
 char *tcptimers[] =
-    { "REXMT", "PERSIST", "KEEP", "2MSL", "OOBREXMT" };
+    { "REXMT", "PERSIST", "KEEP", "2MSL" };
 #endif
 
 /*

@@ -1,4 +1,4 @@
-/* tcp.h 1.21 82/01/18 */
+/* tcp.h 1.22 82/12/20 */
 
 typedef	u_long	tcp_seq;
 /*
@@ -28,16 +28,3 @@ struct tcphdr {
 #define	TCPOPT_EOL	0
 #define	TCPOPT_NOP	1
 #define	TCPOPT_MAXSEG	2
-
-#ifdef TCPTRUEOOB
-/*
- * True out-of-band as value added option.
- * Advertise willingness with TCPOPT_WILOOB in
- * initial segment.  If peer is willing, will receive
- * such also.  Then can send TCPOPT_OOBDATA whenever oob data
- * exists; peer should ack with TCPOPT_OOBACK in segment.
- */
-#define	TCPOPT_WILLOOB	64		/* bytes: 64, 2 */
-#define	TCPOPT_OOBDATA	65		/* bytes: 65, 8, seq#, data, markseq */
-#define	TCPOPT_OOBACK	66		/* bytes: 66, 3, ack# */
-#endif
