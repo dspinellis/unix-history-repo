@@ -47,7 +47,7 @@
 %#ifndef lint
 %/*static char sccsid[] = "from: @(#)rstat.x 1.2 87/09/18 Copyr 1987 Sun Micro";*/
 %/*static char sccsid[] = "from: @(#)rstat.x	2.2 88/08/01 4.0 RPCSRC";*/
-%static char rcsid[] = "$Id: rstat.x,v 1.1 1993/09/14 17:42:50 jtc Exp $";
+%static char rcsid[] = "$Id: rstat.x,v 1.2 1993/11/30 19:40:06 ats Exp $";
 %#endif /* not lint */
 
 #endif /* def RPC_HDR */
@@ -64,8 +64,8 @@ struct rstat_timeval {
 };
 
 struct statstime {				/* RSTATVERS_TIME */
-	int cp_time[CPUSTATES];
-	int dk_xfer[DK_NDRIVE];
+	int cp_time[RSTAT_CPUSTATES];
+	int dk_xfer[RSTAT_DK_NDRIVE];
 	unsigned int v_pgpgin;	/* these are cumulative sum */
 	unsigned int v_pgpgout;
 	unsigned int v_pswpin;
@@ -83,8 +83,8 @@ struct statstime {				/* RSTATVERS_TIME */
 };
 
 struct statsswtch {			/* RSTATVERS_SWTCH */
-	int cp_time[CPUSTATES];
-	int dk_xfer[DK_NDRIVE];
+	int cp_time[RSTAT_CPUSTATES];
+	int dk_xfer[RSTAT_DK_NDRIVE];
 	unsigned int v_pgpgin;	/* these are cumulative sum */
 	unsigned int v_pgpgout;
 	unsigned int v_pswpin;
@@ -101,8 +101,8 @@ struct statsswtch {			/* RSTATVERS_SWTCH */
 };
 
 struct stats {				/* RSTATVERS_ORIG */
-	int cp_time[CPUSTATES];
-	int dk_xfer[DK_NDRIVE];
+	int cp_time[RSTAT_CPUSTATES];
+	int dk_xfer[RSTAT_DK_NDRIVE];
 	unsigned int v_pgpgin;	/* these are cumulative sum */
 	unsigned int v_pgpgout;
 	unsigned int v_pswpin;
