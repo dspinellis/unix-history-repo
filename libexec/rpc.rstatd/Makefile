@@ -1,10 +1,10 @@
-#	$Id: Makefile,v 1.4 1993/08/02 17:50:37 mycroft Exp $
+#	$Id: Makefile,v 1.1 1993/09/16 00:27:42 jtc Exp $
 
 PROG =	rpc.rstatd
 SRCS =	rstatd.c rstat_proc.c
 MAN8 =	rpc.rstatd.8
 
-DPADD=	${LIBRPCSVC} ${LIBRPC} ${LIBUTIL}
-LDADD=	-lrpcsvc -lrpc -lutil
+DPADD=	${LIBRPCSVC} ${LIBUTIL}
+LDADD=	-lrpcsvc -lutil
 
 .include <bsd.prog.mk>

@@ -1,11 +1,11 @@
 #	from: @(#)Makefile	5.5 (Berkeley) 6/29/90
-#	$Id: Makefile,v 1.4 1993/09/23 17:33:35 jtc Exp $
+#	$Id: Makefile,v 1.5 1993/09/25 12:14:32 rgrimes Exp $
 
 PROG=	inetd
 MAN8=	inetd.8
 MLINKS=	inetd.8 inetd.5
 
-DPADD=	${LIBUTIL} ${LIBRPC}
-LDADD=	-lutil -lrpc
+DPADD=	${LIBUTIL}
+LDADD=	-lutil
 
 .include <bsd.prog.mk>
