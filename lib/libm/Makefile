@@ -154,11 +154,11 @@ depend: .depend
 
 .s.o:
 	${AS} -o ${.TARGET} ${.IMPSRC}
-#	@${LD} -x -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .s.po:
 	sed -f ${.CURDIR}/${HARDWARE}/mcount.sed ${.IMPSRC} | \
 	    ${AS} -o ${.TARGET}
-#	@${LD} -X -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+	@${LD} -X -r ${.TARGET}
+	@mv a.out ${.TARGET}
