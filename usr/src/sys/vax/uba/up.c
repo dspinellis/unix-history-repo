@@ -1,4 +1,4 @@
-/*	up.c	4.69	83/02/16	*/
+/*	up.c	4.69	83/02/17	*/
 
 #include "up.h"
 #if NSC > 0
@@ -108,10 +108,11 @@ struct	upst {
 	short	ncyl;
 	struct	size *sizes;
 } upst[] = {
-	32,	19,	32*19,	823,	up_sizes,	/* 9300/cdc */
-/* 9300 actually has 815 cylinders... */
+	32,	19,	32*19,	815,	up_sizes,	/* 9300 */
 	32,	10,	32*10,	823,	fj_sizes,	/* fujitsu 160m */
 	32,	16,	32*16,	1024,	upam_sizes,	/* ampex capricorn */
+/* should make a new partition table for cdc drives */
+	32,	19,	32*19,	823,	up_sizes,	/* cdc */
 };
 
 u_char	up_offset[16] = {
@@ -192,6 +193,11 @@ upattach(ui)
 		ui->ui_type = 1;		/* fujitsu hack */
 	else if (upaddr->uphr == 15)
 		ui->ui_type = 2;		/* ampex hack */
+	else {
+		upaddr->uphr = UPHR_MAXCYL;
+		if (upaddr->uphr == 822)
+			ui->ui_type = 3;	/* cdc hack */
+	}
 	upaddr->upcs2 = UPCS2_CLR;
 }
  
