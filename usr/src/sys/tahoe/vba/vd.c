@@ -1,4 +1,4 @@
-/*	vd.c	1.14	87/02/18	*/
+/*	vd.c	1.15	87/02/28	*/
 
 #include "dk.h"
 #if NVD > 0
@@ -71,7 +71,6 @@ struct vdsoftc {
 struct	dksoftc {
 	u_short	dk_state;	/* open fsm */
 	u_short	dk_openpart;	/* units open on this drive */
-	u_short	dk_bshift;	/* shift for * (DEV_BSIZE / sectorsize) XXX */
 	u_short	dk_curdaddr;	/* last selected track & sector */
 	u_int	dk_curcyl;	/* last selected cylinder */
 	struct	dcb dk_dcb;	/* seek command block */
@@ -109,6 +108,7 @@ vdprobe(reg, vm)
 	register br, cvec;		/* must be r12, r11 */
 	register struct vddevice *vdaddr = (struct vddevice *)reg;
 	struct vdsoftc *vd;
+	int s;
 
 #ifdef lint
 	br = 0; cvec = br; br = cvec;
@@ -140,11 +140,14 @@ vdprobe(reg, vm)
 	vd->vd_mdcbphys = vtoph((struct proc *)0, (unsigned)&vd->vd_mdcb);
 	vd->vd_dcbphys = vtoph((struct proc *)0, (unsigned)&vd->vd_dcb);
 	vm->um_addr = reg;		/* XXX */
+	s = spl7();
 	if (!vdcmd(vm, VDOP_INIT, 10) || !vdcmd(vm, VDOP_DIAG, 10)) {
 		printf("vd%d: %s cmd failed\n", vm->um_ctlr,
 		    vd->vd_dcb.opcode == VDOP_INIT ? "init" : "diag");
+		splx(s);
 		return (0);
 	}
+	splx(s);
 	/*
 	 * Allocate page tables and i/o buffer.
 	 */
@@ -199,10 +202,6 @@ vdattach(vi)
 	register struct dksoftc *dk = &dksoftc[unit];
 	register struct disklabel *lp;
 
-	if (vdwstart == 0) {
-		timeout(vdwatch, (caddr_t)0, hz);
-		vdwstart++;
-	}
 	/*
 	 * Try to initialize device and read pack label.
 	 */
@@ -230,7 +229,7 @@ vdattach(vi)
 		dk_mspw[vi->ui_dk] = 120.0 /
 		    (lp->d_rpm * lp->d_nsectors * lp->d_secsize);
 #ifdef notyet
-	addwap(makedev(VDMAJOR, vdminor(unit, 0)), &dklabel[unit]);
+	addswap(makedev(VDMAJOR, vdminor(unit, 0)), lp);
 #endif
 }
 
@@ -260,6 +259,11 @@ vdopen(dev, flags)
 	if (dk->dk_state != OPEN && dk->dk_state != OPENRAW)
 		if (error = vdinit(dev, flags))
 			return (error);
+
+	if (vdwstart == 0) {
+		timeout(vdwatch, (caddr_t)0, hz);
+		vdwstart++;
+	}
 	/*
 	 * Warn if a partion is opened
 	 * that overlaps another partition which is open
@@ -299,23 +303,17 @@ vdclose(dev, flags)
 	register struct dksoftc *dk = &dksoftc[unit];
 
 	dk->dk_openpart &= ~(1 << vdpart(dev));
-#ifdef notdef
 	/*
 	 * Should wait for i/o to complete on this partition
 	 * even if others are open, but wait for work on blkflush().
 	 */
 	if (dk->dk_openpart == 0) {
-		struct vba_device *vi = vddinfo[unit];
-		int s;
-
-		s = spl7();
-		/* can't sleep on b_actf, it might be async. */
-		while (vi->ui_tab.b_actf)
-			sleep((caddr_t)&vi->ui_tab.b_actf, PZERO-1);
+		int s = spl7();
+		while (dkutab[unit].b_actf)
+			sleep((caddr_t)dk, PZERO-1);
 		splx(s);
 		dk->dk_state = CLOSED;
 	}
-#endif
 }
 
 vdinit(dev, flags)
@@ -340,7 +338,6 @@ vdinit(dev, flags)
 	 * Initialize portion of the label
 	 * not set up in the slave routine.
 	 */
-	dk->dk_bshift = 1;		/* DEV_BSIZE / 512 */
 	dk->dk_state = RDLABEL;
 	lp = &dklabel[unit];
 	lp->d_secperunit = 0x1fffffff;
@@ -391,16 +388,6 @@ vdinit(dev, flags)
 #endif
 	}
 done:
-	/*
-	 * If open, calculate scaling shift for
-	 * mapping DEV_BSIZE blocks to drive sectors.
-	 */
-	if (dk->dk_state == OPEN || dk->dk_state == OPENRAW) {
-		int mul = DEV_BSIZE / lp->d_secsize;
-		dk->dk_bshift = 0;
-		while ((mul >>= 1) > 0)
-			dk->dk_bshift++;
-	}
 	if (bp) {
 		bp->b_flags = B_INVAL | B_AGE;
 		brelse(bp);
@@ -423,8 +410,9 @@ vdstrategy(bp)
 	register struct disklabel *lp;
 	register struct dksoftc *dk;
 	register int unit;
+	register daddr_t sn;
 	struct buf *dp;
-	daddr_t sz, sn, maxsz;
+	daddr_t sz, maxsz;
 	int part, s;
 
 	sz = bp->b_bcount;
@@ -449,14 +437,18 @@ vdstrategy(bp)
 		goto bad;
 	}
 	maxsz = lp->d_partitions[part].p_size;
-	sn = bp->b_blkno << dk->dk_bshift;
+	sn = bp->b_blkno;
 	if (sn < 0 || sn + sz > maxsz) {
 		if (sn == maxsz) {
 			bp->b_resid = bp->b_bcount;
 			goto done;
 		}
-		bp->b_error = EINVAL;
-		goto bad;
+		sz = maxsz - bp->b_blkno;
+		if (sz <= 0) {
+			bp->b_error = EINVAL;
+			goto bad;
+		}
+		bp->b_bcount = sz * lp->d_secsize;
 	}
 	bp->b_cylin = (sn + lp->d_partitions[part].p_offset) / lp->d_secpercyl;
 q:
@@ -466,8 +458,7 @@ q:
 	disksort(dp, bp);
 	if (!dp->b_active) {
 		(void) vdustart(vi);
-		bp = &vi->ui_mi->um_tab;
-		if (bp->b_actf && !bp->b_active)
+		if (!vi->ui_mi->um_tab.b_active)
 			vdstart(vi->ui_mi);
 	}
 	splx(s);
@@ -489,7 +480,6 @@ vdustart(vi)
 	register struct vdsoftc *vd;
 	struct disklabel *lp;
 
-	dk_busy &= ~(1<<vi->ui_dk);
 	dp = &dkutab[unit];
 	/*
 	 * If queue empty, nothing to do.
@@ -503,26 +493,23 @@ vdustart(vi)
 	vd = &vdsoftc[vi->ui_ctlr];
 	dk = &dksoftc[unit];
 	if (bp->b_cylin != dk->dk_curcyl && vd->vd_flags&VD_DOSEEKS) {
-		int sn = bp->b_blkno << dk->dk_bshift;
 		lp = &dklabel[unit];
-		bp->b_daddr = (sn % lp->d_secpercyl) / lp->d_nsectors;
+		bp->b_daddr = (bp->b_blkno % lp->d_secpercyl) / lp->d_nsectors;
 		if (bp->b_daddr != dk->dk_curdaddr)
 			vd->vd_offcyl |= 1 << vi->ui_slave;
 	}
 	/*
 	 * If controller is not busy, place request on the
-	 * controller's ready queue (unless its already there).
+	 * controller's ready queue).
 	 */
-	if (!dp->b_active) {
-		dp->b_forw = NULL;
-		vm = vi->ui_mi;
-		if (vm->um_tab.b_actf == NULL)
-			vm->um_tab.b_actf = dp;
-		else
-			vm->um_tab.b_actl->b_forw = dp;
-		vm->um_tab.b_actl = dp;
-		dp->b_active++;
-	}
+	dp->b_forw = NULL;
+	vm = vi->ui_mi;
+	if (vm->um_tab.b_actf == NULL)
+		vm->um_tab.b_actf = dp;
+	else
+		vm->um_tab.b_actl->b_forw = dp;
+	vm->um_tab.b_actl = dp;
+	dp->b_active++;
 }
 
 /*
@@ -560,7 +547,7 @@ loop:
 	vm->um_tab.b_active++;
 	vi = vddinfo[vdunit(bp->b_dev)];
 	dk = &dksoftc[vi->ui_unit];
-	sn = bp->b_blkno << dk->dk_bshift;
+	sn = bp->b_blkno;
 	lp = &dklabel[vi->ui_unit];
 	sn %= lp->d_secpercyl;
 	tn = sn / lp->d_nsectors;
@@ -647,6 +634,7 @@ vdintr(ctlr)
 	register struct vba_device *vi;
 	register struct vdsoftc *vd = &vdsoftc[ctlr];
 	register status;
+	struct dksoftc *dk;
 
 	vd->vd_wticks = 0;
 	if (!vm->um_tab.b_active) {
@@ -672,9 +660,9 @@ vdintr(ctlr)
 			/*
 			 * Give up on write locked devices immediately.
 			 */
-			printf("dk%d: write locked\n", vdunit(bp->b_dev));
+			printf("dk%d: write locked\n", vi->ui_unit);
 			bp->b_flags |= B_ERROR;
-		} else if (status & VDERR_SOFT) {
+		} else if (status & VDERR_RETRY) {
 			if (status & VDERR_DRIVE) {
 				if (!vdreset_drive(vi))
 					vi->ui_alive = 0;
@@ -717,6 +705,8 @@ vdintr(ctlr)
 		 */
 		if (dp->b_actf)
 			vdustart(vi);
+		else if ((dk = &dksoftc[vi->ui_unit])->dk_openpart == 0)
+			wakeup((caddr_t)dk);
 	}
 	/*
 	 * If there are devices ready to
@@ -782,8 +772,10 @@ vdioctl(dev, cmd, data, flag)
 		*(struct disklabel *)data = *lp;
 		break;
 
-	case DIOCGDINFOP:
-		*(struct disklabel **)data = lp;
+	case DIOCGPART:
+		((struct partinfo *)data)->disklab = lp;
+		((struct partinfo *)data)->part =
+		    &lp->d_partitions[vdpart(dev)];
 		break;
 
 	case DIOCSDINFO:
@@ -899,11 +891,10 @@ vddump(dev)
 	if (dumplo < 0)
 		return (EINVAL);
 	/*
-	 * Dumplo and maxfree are in pages;
-	 * dumplo will change soon (XXX).
+	 * Dumplo and maxfree are in pages.
 	 */
 	num = maxfree * (NBPG / lp->d_secsize);
-	dumplo *= NBPG / lp->d_secsize;		/* XXX */
+	dumplo *= NBPG / lp->d_secsize;
 	if (dumplo + num >= lp->d_partitions[vdpart(dev)].p_size)
 		num = lp->d_partitions[vdpart(dev)].p_size - dumplo;
 	vd = &vdsoftc[vm->um_ctlr];
@@ -956,7 +947,7 @@ vdsize(dev)
 	    (dk = &dksoftc[unit])->dk_state != OPEN)
 		return (-1);
 	lp = &dklabel[unit];
-	return ((int)lp->d_partitions[vdpart(dev)].p_size >> dk->dk_bshift);
+	return ((int)lp->d_partitions[vdpart(dev)].p_size);
 }
 
 /*
@@ -1111,14 +1102,68 @@ struct	vdst {
 	struct {
 		int	off;	/* partition offset in sectors */
 		int	size;	/* partition size in sectors */
-	} parts[3];
+	} parts[8];
 } vdst[] = {
-	{ 48, 24, 711, "xsd", {0,61056}, {61056,61056}, {122112,691200} },
-	{ 44, 20, 842, "egl", {0,52800}, {52800,66000}, {118800,617760} },
-	{ 64, 10, 823, "fuj", {0,38400}, {38400,48000}, { 86400,437120} },
-	{ 32, 24, 711, "xfd", {0,40704}, {40704,40704}, { 81408,460800} },
-	{ 32, 19, 823, "smd", {0,40128}, {40128,27360}, { 67488,429856} },
-	{ 32, 10, 823, "fsd", {0,19200}, {19200,24000}, { 43200,218560} }
+	{ 48, 24, 711, "xsd",
+		{0,	 30528},	/* a cyl   0 - 52 */
+		{30528,	 30528},	/* b cyl  53 - 105 */
+		{61056,	 345600}, 	/* c cyl 106 - 705 */
+		{118656, 288000}, 	/* d cyl 206 - 705 */
+		{176256, 230400},	/* e cyl 306 - 705 */
+		{233856, 172800}, 	/* f cyl 406 - 705 */
+		{291456, 115200},	/* g cyl 506 - 705 */
+		{349056, 57600}		/* h cyl 606 - 705 */
+	},
+	{ 44, 20, 842, "egl",
+		{0,	 26400},	/* egl0a cyl   0 - 59 */
+		{26400,	 33000},	/* egl0b cyl  60 - 134 */
+		{59400,	 308880}, 	/* egl0c cyl 135 - 836 */
+		{368280, 2640}, 	/* egl0d cyl 837 - 842 */
+		{0, 368280},		/* egl0e cyl 0 - 836 */
+		{0, 370920}, 		/* egl0f cyl 0 - 842 */
+		{59400, 155320},	/* egl0g cyl 135 - 487 */
+		{214720, 153560}	/* egl0h cyl 488 - 836 */
+	},
+	{ 64, 10, 823, "fuj",
+		{0,	 19200},	/* fuj0a cyl   0 - 59 */
+		{19200,	 24000},	/* fuj0b cyl  60 - 134 */
+		{43200,	 218560}, 	/* fuj0c cyl 135 - 817 */
+		{79680,	 182080}, 	/* fuj0d cyl 249 - 817 */
+		{116160, 145600},	/* fuj0e cyl 363 - 817 */
+		{152640, 109120}, 	/* fuj0f cyl 477 - 817 */
+		{189120, 72640},	/* fuj0g cyl 591 - 817 */
+		{225600, 36160}		/* fug0h cyl 705 - 817 */
+	},
+	{ 32, 24, 711, "xfd",
+		{ 0,	 20352 },	/* a cyl   0 - 52 */
+		{ 20352, 20352 },	/* b cyl  53 - 105 */
+		{ 40704, 230400 },	/* c cyl 106 - 705 */
+		{ 0,	 40704 },	/* d cyl 709 - 710 (a & b) */
+		{ 0,	 271104 },	/* e cyl   0 - 705 */
+		{ 20352, 250752 },	/* f cyl  53 - 705 (b & c) */
+		{ 40704, 115200 },	/* g cyl 106 - 405 (1/2 of c) */
+		{ 155904,115200 }	/* h cyl 406 - 705 (1/2 of c) */
+	},
+	{ 32, 19, 823, "smd",
+		{0,	 20064},	/* a cyl   0-65 */
+		{20064, 13680},		/* b cyl  66-110 */
+		{33744, 214928},	/* c cyl 111-817 */
+		{69616,	 179056},	/* d cyl 229 - 817 */
+		{105488, 143184},	/* e cyl 347 - 817 */
+		{141360, 107312},	/* f cyl 465 - 817 */
+		{177232, 71440},	/* g cyl 583 - 817 */
+		{213104, 35568}		/* h cyl 701 - 817 */
+	},
+	{ 32, 10, 823, "fsd",
+		{0,	 9600},		/* a cyl   0 -  59 */
+		{9600,	 12000},	/* b cyl  60 - 134 */
+		{21600,	 109280},	/* c cyl 135 - 817 */
+		{39840,	 91040},	/* d cyl 249 - 817 */
+		{58080,	 72800},	/* e cyl 363 - 817 */
+		{76320,	 54560},	/* f cyl 477 - 817 */
+		{94560,  36320},	/* g cyl 591 - 817 */
+		{112800, 18080}		/* h cyl 705 - 817 */
+	}
 };
 #define	NVDST	(sizeof (vdst) / sizeof (vdst[0]))
 
@@ -1170,11 +1215,11 @@ vdmaptype(vi, lp)
 		printf("dk%d: unknown drive type\n", vi->ui_unit);
 		return (0);
 	}
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 8; i++) {
 		lp->d_partitions[i].p_offset = p->parts[i].off;
 		lp->d_partitions[i].p_size = p->parts[i].size;
 	}
-	lp->d_npartitions = 3;
+	lp->d_npartitions = 8;
 	lp->d_secpercyl = lp->d_nsectors * lp->d_ntracks;
 	lp->d_rpm = 3600;
 	lp->d_secsize = 512;
