@@ -2,8 +2,10 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	1.2 (Berkeley) %G%
+.\"	@(#)0.t	1.3 (Berkeley) %G%
 .\"
+.EH 'PS1:8-%''Advanced 4.3BSD IPC Tutorial'
+.OH 'Advanced 4.3BSD IPC Tutorial''PS1:8-%'
 .ds lq ``
 .ds rq ''
 .de DT
@@ -13,7 +15,7 @@
 ..
 .bd S B 3
 .TL
-A 4.3BSD Interprocess Communication Primer
+An Advanced 4.3BSD Interprocess Communication Tutorial
 .AU
 Samuel J. Leffler
 .AU
@@ -21,17 +23,13 @@ Robert S. Fabry
 .AU
 William N. Joy
 .AU
-\fRRevised December 16, 1985\fI
-.br
 Phil Lapsley
 .AI
 Computer Systems Research Group
 Department of Electrical Engineering and Computer Science
 University of California, Berkeley
 Berkeley, California  94720
-(415) 642-7780
-.sp 0.5i
-\fRAlso revised by\fI
+.sp 2
 .AU
 Steve Miller
 .AU
@@ -41,7 +39,6 @@ Heterogeneous Systems Laboratory
 Department of Computer Science
 University of Maryland, College Park
 College Park, Maryland 20742
-(301) 454-1516
 .de IR
 \fI\\$1\fP\\$2
 ..

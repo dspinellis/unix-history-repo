@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	1.3 (Berkeley) %G%
+.\"	@(#)3.t	1.4 (Berkeley) %G%
 .\"
-.ds RH "Network Library Routines
+.\".ds RH "Network Library Routines
 .bp
 .nr H1 3
 .nr H2 0
@@ -91,52 +91,14 @@ and is defined to be the first address in the list of addresses
 in the \fIhostent\fP structure.
 .PP
 The database for these calls is provided either by the
-file \fI/etc/hosts\fP, or by use of a nameserver.  If the data
-returned by \fIgethostbyname\fP are unsuitable, the lower level
-routine \fIgethostent\fP(3N) may be used.  For example, to
-obtain a \fIhostent\fP structure for a
-host on a particular network the following routine might be
-used (for simplicity, only Internet addresses are considered):
-.DS
-.if t .ta .5i 1.0i 1.5i 2.0i
-.\" 3.5i went to 3.8i
-.if n .ta .7i 1.4i 2.1i 2.8i 3.5i 4.2i
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
- ...
-struct hostent *
-gethostbynameandnet(name, net)
-	char *name;
-	int net;
-{
-	register struct hostent *hp;
-	register char **cp;
-
-	sethostent(0);
-	while ((hp = gethostent()) != NULL) {
-		if (hp->h_addrtype != AF_INET)
-			continue;
-		if (strcmp(name, hp->h_name)) {
-			for (cp = hp->h_aliases; cp && *cp != NULL; cp++)
-				if (strcmp(name, *cp) == 0)
-					goto found;
-			continue;
-		}
-	found:
-		if (in_netof(*(struct in_addr *)hp->h_addr)) == net)
-			break;
-	}
-	endhostent(0);
-	return (hp);
-}
-.DE
-(\fIin_netof\fP(3N) is a standard routine which returns
-the network portion of an Internet address.)
-\fIGethostent\fP can be used only
-by systems which use the \fI/etc/hosts\fP database; systems
-using nameservers cannot execute such a call.
+file \fI/etc/hosts\fP (\fIhosts\fP\|(5)),
+or by use of a nameserver, \fInamed\fP\|(8).
+Because of the differences in these databases and their access protocols,
+the information returned may differ.
+When using the host table version of \fIgethostbyname\fP,
+only one address will be returned, but all listed aliases will be included.
+The nameserver version may return alternate addresses,
+but will not provide any aliases other than one given as argument.
 .PP
 Unlike Internet names, NS names are always mapped into host
 addresses by the use of a standard NS \fIClearinghouse service\fP,
@@ -151,7 +113,7 @@ expected that almost all software that has to communicate
 using NS will need to use the facilities of
 the Courier compiler.
 .PP
-A NS host address is represented by the following:
+An NS host address is represented by the following:
 .DS
 union ns_host {
 	u_char	c_host[6];
@@ -266,8 +228,7 @@ a particular communication protocol.  This view is consistent with
 the Internet domain, but inconsistent with other network architectures.
 Further, a service may reside on multiple ports.
 If this occurs, the higher level library routines
-will have to be bypassed in favor of homegrown routines similar in
-spirit to the \*(lqgethostbynameandnet\*(rq routine described above.
+will have to be bypassed or extended.
 Services available are contained in the file \fI/etc/services\fP.
 A service mapping is described by the \fIservent\fP structure,
 .DS
