@@ -1,4 +1,4 @@
-/*	hp.c	3.12	%G%	*/
+/*	hp.c	3.13	%G%	*/
 
 /*
  * RP06/RM03/RM05 disk driver
@@ -337,7 +337,7 @@ loop:
 		iodone(bp);
 		goto loop;
 	}
-	if(hptab.b_errcnt >= 16) {
+	if(hptab.b_errcnt >= 16 && (bp->b_flags&B_WRITE)) {
 		hpaddr->hpof = hp_offset[hptab.b_errcnt & 017] | FMT22;
 		HPMBA->mba_cr &= ~MBAIE;
 		hpaddr->hpcs1 = OFFSET|GO;
