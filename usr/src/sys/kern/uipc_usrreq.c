@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.13	83/06/14	*/
+/*	uipc_usrreq.c	1.14	83/06/14	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -18,9 +18,10 @@
  *
  * TODO:
  *	SEQPACKET, RDM
- *	change for names in file system
+ *	rethink name space problems
  *	need a proper out-of-band
  */
+struct	sockaddr sun_noname = { AF_UNIX };
 
 /*ARGSUSED*/
 uipc_usrreq(so, req, m, nam, rights)
@@ -144,9 +145,12 @@ uipc_usrreq(so, req, m, nam, rights)
 					break;
 			}
 			if (sbspace(&so2->so_rcv) > 0) {
+				/*
+				 * There's no record of source socket's
+				 * name, so send null name for the moment.
+				 */
 				(void) sbappendaddr(&so2->so_rcv,
-				    mtod(nam, struct sockaddr *), m,
-				    rights);
+				    &sun_noname, m, rights);
 				sbwakeup(&so2->so_rcv);
 				m = 0;
 			}
