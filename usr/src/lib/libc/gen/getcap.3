@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)getcap.3	5.3 (Berkeley) %G%
+.\"	@(#)getcap.3	5.4 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt GETCAP 3 
@@ -56,7 +56,13 @@ terminated file array
 and returns a pointer to a
 .Xr malloc Ns \&'d
 copy of it in
-.Fa buf .
+.Fa buf .  
+.Nm Cgetent
+will first look for files ending in 
+.Nm .db 
+(see
+.Xr cap_mkdb 1) 
+before accessing the ASCII file.
 .Fa Buf
 must be retained through all subsequent calls to
 .Fn cgetmatch ,
@@ -67,7 +73,11 @@ and
 .Fn cgetustr ,
 but may then be
 .Xr free Ns \&'d.
-On success 0 is returned, \-1 if the requested record couldn't be found,
+On success 0 is returned, 1 if the returned
+record contains an unresolved 
+.Nm tc 
+expansion,
+\-1 if the requested record couldn't be found,
 \-2 if a system error was encountered (couldn't open/read a file, etc.) also
 setting
 .Va errno , 
@@ -198,7 +208,9 @@ expansion is done (see
 comments below).
 Upon completion of the database 0 is returned,  1 is returned upon successful
 return of record with possibly more remaining (we haven't reached the end of 
-the database yet), \-1 is returned if an system error occured, and \-2
+the database yet), 2 is returned if the record contains an unresolved
+.Nm tc 
+expansion, \-1 is returned if an system error occured, and \-2
 is returned if a potential reference loop is detected (see 
 .Ic tc=
 comments below).
@@ -458,6 +470,7 @@ as follows:
 No memory to allocate.
 .El
 .Sh SEE ALSO
+.Xr cap_mkdb 1 ,
 .Xr malloc 3
 .Sh BUGS
 Colons (`:') can't be used in names, types, or values.
