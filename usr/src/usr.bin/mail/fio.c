@@ -10,7 +10,7 @@
  * File I/O.
  */
 
-static char *SccsId = "@(#)fio.c	2.6 %G%";
+static char *SccsId = "@(#)fio.c	2.7 %G%";
 
 /*
  * Set up the input pointers while copying the mail file into
@@ -496,11 +496,8 @@ expand(name)
 	int s, pivec[2], (*sigint)();
 	struct stat sbuf;
 
-	if (name[0] == '+' && (cp = value("maildir")) != 0) {
-		if (*cp == '/')
-			sprintf(xname, "%s/%s", cp, name + 1);
-		else
-			sprintf(xname, "%s/%s/%s", homedir, cp, name + 1);
+	if (name[0] == '+' && getfold(cmdbuf) >= 0) {
+		sprintf(xname, "%s/%s", cmdbuf, name + 1);
 		return(expand(savestr(xname)));
 	}
 	if (!anyof(name, "~{[*?$`'\"\\"))
@@ -562,6 +559,23 @@ expand(name)
 
 err:
 	return(NOSTR);
+}
+
+/*
+ * Determine the current folder directory name.
+ */
+getfold(name)
+	char *name;
+{
+	char *folder;
+
+	if ((folder = value("folder")) == NOSTR)
+		return(-1);
+	if (*folder == '/')
+		strcpy(name, folder);
+	else
+		sprintf(name, "%s/%s", homedir, folder);
+	return(0);
 }
 
 /*
