@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_kern.c	7.5 (Berkeley) %G%
+ *	@(#)vm_kern.c	7.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -100,25 +100,18 @@ vm_offset_t kmem_alloc(map, size)
 	 *	referenced more than once.
 	 */
 
-	addr = vm_map_min(map);
-	result = vm_map_find(map, NULL, (vm_offset_t) 0,
-				 &addr, size, TRUE);
-	if (result != KERN_SUCCESS) {
-		return(0);
-	}
-
 	/*
-	 *	Since we didn't know where the new region would
-	 *	start, we couldn't supply the correct offset into
-	 *	the kernel object.  Re-allocate that address
-	 *	region with the correct offset.
+	 * Locate sufficient space in the map.  This will give us the
+	 * final virtual address for the new memory, and thus will tell
+	 * us the offset within the kernel map.
 	 */
-
+	vm_map_lock(map);
+	if (vm_map_findspace(map, 0, size, &addr)) {
+		vm_map_unlock(map);
+		return (0);
+	}
 	offset = addr - VM_MIN_KERNEL_ADDRESS;
 	vm_object_reference(kernel_object);
-
-	vm_map_lock(map);
-	vm_map_delete(map, addr, addr + size);
 	vm_map_insert(map, kernel_object, offset, addr, addr + size);
 	vm_map_unlock(map);
 
@@ -341,23 +334,21 @@ kmem_malloc(map, size, canwait)
 	size = round_page(size);
 	addr = vm_map_min(map);
 
-	if (vm_map_find(map, NULL, (vm_offset_t)0,
-			&addr, size, TRUE) != KERN_SUCCESS) {
-		if (canwait)
-			panic("kmem_malloc: kmem_map too small");
-		return(0);
-	}
-
 	/*
-	 * Since we didn't know where the new region would start,
-	 * we couldn't supply the correct offset into the kmem object.
-	 * Re-allocate that address region with the correct offset.
+	 * Locate sufficient space in the map.  This will give us the
+	 * final virtual address for the new memory, and thus will tell
+	 * us the offset within the kernel map.
 	 */
+	vm_map_lock(map);
+	if (vm_map_findspace(map, 0, size, &addr)) {
+		vm_map_unlock(map);
+		if (canwait)		/* XXX  should wait */
+			panic("kmem_malloc: %s too small",
+			    map == kmem_map ? "kmem_map" : "mb_map");
+		return (0);
+	}
 	offset = addr - vm_map_min(kmem_map);
 	vm_object_reference(kmem_object);
-
-	vm_map_lock(map);
-	vm_map_delete(map, addr, addr + size);
 	vm_map_insert(map, kmem_object, offset, addr, addr + size);
 
 	/*
@@ -449,38 +440,26 @@ vm_offset_t kmem_alloc_wait(map, size)
 
 	size = round_page(size);
 
-	do {
+	for (;;) {
 		/*
-		 *	To make this work for more than one map,
-		 *	use the map's lock to lock out sleepers/wakers.
-		 *	Unfortunately, vm_map_find also grabs the map lock.
+		 * To make this work for more than one map,
+		 * use the map's lock to lock out sleepers/wakers.
 		 */
 		vm_map_lock(map);
-		lock_set_recursive(&map->lock);
-
-		addr = vm_map_min(map);
-		result = vm_map_find(map, NULL, (vm_offset_t) 0,
-				&addr, size, TRUE);
-
-		lock_clear_recursive(&map->lock);
-		if (result != KERN_SUCCESS) {
-
-			if ( (vm_map_max(map) - vm_map_min(map)) < size ) {
-				vm_map_unlock(map);
-				return(0);
-			}
-
-			assert_wait((int)map, TRUE);
+		if (vm_map_findspace(map, 0, size, &addr))
+			break;
+		/* no space now; see if we can ever get space */
+		if (vm_map_max(map) - vm_map_min(map) < size) {
 			vm_map_unlock(map);
-			thread_block();
+			return (0);
 		}
-		else {
-			vm_map_unlock(map);
-		}
-
-	} while (result != KERN_SUCCESS);
-
-	return(addr);
+		assert_wait((int)map, TRUE);
+		vm_map_unlock(map);
+		thread_block();
+	}
+	vm_map_insert(map, NULL, (vm_offset_t)0, addr, addr + size);
+	vm_map_unlock(map);
+	return (addr);
 }
 
 /*
@@ -501,21 +480,22 @@ void	kmem_free_wakeup(map, addr, size)
 }
 
 /*
- *	kmem_init:
- *
- *	Initialize the kernel's virtual memory map, taking
- *	into account all memory allocated up to this time.
+ * Create the kernel map; insert a mapping covering kernel text, data, bss,
+ * and all space allocated thus far (`boostrap' data).  The new map will thus
+ * map the range between VM_MIN_KERNEL_ADDRESS and `start' as allocated, and
+ * the range between `start' and `end' as free.
  */
 void kmem_init(start, end)
-	vm_offset_t	start;
-	vm_offset_t	end;
+	vm_offset_t start, end;
 {
-	vm_offset_t	addr;
-	extern vm_map_t	kernel_map;
+	register vm_map_t m;
 
-	addr = VM_MIN_KERNEL_ADDRESS;
-	kernel_map = vm_map_create(kernel_pmap, addr, end, FALSE);
-	(void) vm_map_find(kernel_map, NULL, (vm_offset_t) 0,
-				&addr, (start - VM_MIN_KERNEL_ADDRESS),
-				FALSE);
+	m = vm_map_create(kernel_pmap, addr, end, FALSE);
+	vm_map_lock(m);
+	/* N.B.: cannot use kgdb to debug, starting with this assignment ... */
+	kernel_map = m;
+	(void) vm_map_insert(m, NULL, (vm_offset_t)0,
+	    VM_MIN_KERNEL_ADDRESS, start);
+	/* ... and ending with the completion of the above `insert' */
+	vm_map_unlock(m);
 }

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.c	7.4 (Berkeley) %G%
+ *	@(#)vm_map.c	7.5 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -568,6 +568,63 @@ boolean_t vm_map_lookup_entry(map, address, entry)
 }
 
 /*
+ * Find sufficient space for `length' bytes in the given map, starting at
+ * `start'.  The map must be locked.  Returns 0 on success, 1 on no space.
+ */
+int
+vm_map_findspace(map, start, length, addr)
+	register vm_map_t map;
+	register vm_offset_t start;
+	vm_size_t length;
+	vm_offset_t *addr;
+{
+	register vm_map_entry_t entry, next;
+	register vm_offset_t end;
+
+	if (start < map->min_offset)
+		start = map->min_offset;
+	if (start > map->max_offset)
+		return (1);
+
+	/*
+	 * Look for the first possible address; if there's already
+	 * something at this address, we have to start after it.
+	 */
+	if (start == map->min_offset) {
+		if ((entry = map->first_free) != &map->header)
+			start = entry->end;
+	} else {
+		vm_map_entry_t tmp;
+		if (vm_map_lookup_entry(map, start, &tmp))
+			start = tmp->end;
+		entry = tmp;
+	}
+
+	/*
+	 * Look through the rest of the map, trying to fit a new region in
+	 * the gap between existing regions, or after the very last region.
+	 */
+	for (;; start = (entry = next)->end) {
+		/*
+		 * Find the end of the proposed new region.  Be sure we didn't
+		 * go beyond the end of the map, or wrap around the address;
+		 * if so, we lose.  Otherwise, if this is the last entry, or
+		 * if the proposed new region fits before the next entry, we
+		 * win.
+		 */
+		end = start + length;
+		if (end > map->max_offset || end < start)
+			return (1);
+		next = entry->next;
+		if (next == &map->header || next->start >= end)
+			break;
+	}
+	SAVE_HINT(map, entry);
+	*addr = start;
+	return (0);
+}
+
+/*
  *	vm_map_find finds an unallocated region in the target address
  *	map with the given length.  The search is defined to be
  *	first-fit from the specified address; the region found is
@@ -582,97 +639,21 @@ vm_map_find(map, object, offset, addr, length, find_space)
 	vm_size_t	length;
 	boolean_t	find_space;
 {
-	register vm_map_entry_t	entry;
 	register vm_offset_t	start;
-	register vm_offset_t	end;
 	int			result;
 
 	start = *addr;
-
 	vm_map_lock(map);
-
 	if (find_space) {
-		/*
-		 *	Calculate the first possible address.
-		 */
-
-		if (start < map->min_offset)
-			start = map->min_offset;
-		if (start > map->max_offset) {
+		if (vm_map_findspace(map, start, length, addr)) {
 			vm_map_unlock(map);
 			return (KERN_NO_SPACE);
 		}
-
-		/*
-		 *	Look for the first possible address;
-		 *	if there's already something at this
-		 *	address, we have to start after it.
-		 */
-
-		if (start == map->min_offset) {
-			if ((entry = map->first_free) != &map->header)
-				start = entry->end;
-		} else {
-			vm_map_entry_t	tmp_entry;
-			if (vm_map_lookup_entry(map, start, &tmp_entry))
-				start = tmp_entry->end;
-			entry = tmp_entry;
-		}
-
-		/*
-		 *	In any case, the "entry" always precedes
-		 *	the proposed new region throughout the
-		 *	loop:
-		 */
-
-		while (TRUE) {
-			register vm_map_entry_t	next;
-
-		    	/*
-			 *	Find the end of the proposed new region.
-			 *	Be sure we didn't go beyond the end, or
-			 *	wrap around the address.
-			 */
-
-			end = start + length;
-
-			if ((end > map->max_offset) || (end < start)) {
-				vm_map_unlock(map);
-				return (KERN_NO_SPACE);
-			}
-
-			/*
-			 *	If there are no more entries, we must win.
-			 */
-
-			next = entry->next;
-			if (next == &map->header)
-				break;
-
-			/*
-			 *	If there is another entry, it must be
-			 *	after the end of the potential new region.
-			 */
-
-			if (next->start >= end)
-				break;
-
-			/*
-			 *	Didn't fit -- move to the next entry.
-			 */
-
-			entry = next;
-			start = entry->end;
-		}
-		*addr = start;
-		
-		SAVE_HINT(map, entry);
+		start = *addr;
 	}
-
 	result = vm_map_insert(map, object, offset, start, start + length);
-
 	vm_map_unlock(map);
-	return(result);
+	return (result);
 }
 
 /*
