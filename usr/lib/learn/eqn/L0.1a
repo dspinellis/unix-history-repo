@@ -1,0 +1,51 @@
+#once #create message
+.EQ
+delim $$
+.EN
+.pl 1
+.ll 55
+This script is designed to teach you the "eqn" language
+for typing mathematics. 
+There are two versions of the program. "eqn" is for
+use on the phototypesetter; "neqn" is for use on a
+terminal like a DASI or GSI, or a Model 37 teletype.
+The lessons are mostly written under the assumption
+that you will be using neqn on a DASI or GSI or teletype;
+a few things that are specific to eqn on the typesetter are
+left to the end.
+
+The terminal MUST be a DASI or GSI or teletype,
+or you will get some rather startling results
+from this script.
+It is possible to use another kind of terminal using "colcrt",
+but the results will not always be very pretty.
+
+To verify that everything is working without colcrt, this message
+should come out with subscripts, superscripts, Greek
+letters and so on.  If it doesn't, we're in
+trouble.
+.sp
+Summation sign: $ sum $
+.sp
+Letter pi: $ pi $
+.sp
+Subscript and superscript: $ x sub i ~=~ y sup j $
+.sp
+If this looks ok, type yes.  Otherwise, type no.
+.pl 1
+#
+#once neqn message | nroff -T$TERM
+#copyin
+#user
+#uncopyin
+#match yes
+#fail
+Do you have the right kind of terminal?
+If you are using a DASI or GSI, make
+sure the switch labeled "PLOT" inside the cover
+is set to ON.
+If these fail, call for help;
+otherwise type yes the next time.
+#log
+#next
+1.1a
