@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mem.c	7.2 (Berkeley) %G%
+ *	@(#)mem.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -13,14 +13,12 @@
 #include "pte.h"
 
 #include "param.h"
-#include "dir.h"
 #include "user.h"
 #include "conf.h"
 #include "buf.h"
 #include "systm.h"
 #include "vm.h"
 #include "cmap.h"
-#include "uio.h"
 
 #include "mtpr.h"
 

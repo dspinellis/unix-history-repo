@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tu.c	7.2 (Berkeley) %G%
+ *	@(#)tu.c	7.3 (Berkeley) %G%
  */
 
 #if defined(VAX750) || defined(VAX730)
@@ -28,7 +28,6 @@
 #include "systm.h"
 #include "buf.h"
 #include "conf.h"
-#include "dir.h"
 #include "user.h"
 #include "kernel.h"
 

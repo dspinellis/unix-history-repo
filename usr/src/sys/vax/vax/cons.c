@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cons.c	7.8 (Berkeley) %G%
+ *	@(#)cons.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -11,13 +11,11 @@
  */
 #include "param.h"
 #include "conf.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "ioctl.h"
 #include "tty.h"
 #include "systm.h"
-#include "uio.h"
 
 #include "cpu.h"
 #include "cons.h"

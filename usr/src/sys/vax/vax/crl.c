@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)crl.c	7.2 (Berkeley) %G%
+ *	@(#)crl.c	7.3 (Berkeley) %G%
  */
 /*
  * TO DO (tef  7/18/85):
@@ -14,10 +14,8 @@
 #include "param.h"
 #include "systm.h"
 #include "conf.h"
-#include "dir.h"
 #include "user.h"
 #include "buf.h"
-#include "uio.h"
 
 #include "cons.h"
 #include "cpu.h"

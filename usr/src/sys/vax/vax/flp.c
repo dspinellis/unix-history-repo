@@ -3,17 +3,15 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)flp.c	7.2 (Berkeley) %G%
+ *	@(#)flp.c	7.3 (Berkeley) %G%
  */
 
 #if VAX780
 #include "param.h"
 #include "systm.h"
 #include "conf.h"
-#include "dir.h"
 #include "user.h"
 #include "buf.h"
-#include "uio.h"
 
 #include "cons.h"
 #include "cpu.h"
