@@ -1,0 +1,5 @@
+1000	In domain %0 numeric retrieved into char field.~
+1001	Numeric overflow during retrieve on domain %0.~
+1002	In domain %0, character retrieved into numeric variable.~
+1003	Bad type in target list of parametrized retrieve "%0".~
+1004	Bad type in target list of parametrized statement "%0".~
