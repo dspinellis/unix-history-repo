@@ -1,5 +1,5 @@
 #! /bin/sh -
-#	@(#)makesyscalls.sh	1.1 (Berkeley) %G%
+#	@(#)makesyscalls.sh	7.1 (Berkeley) %G%
 
 # name of compat option:
 compat=COMPAT_43
