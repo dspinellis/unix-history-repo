@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *
- *	@(#)sysv_shm.c	7.2 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -256,7 +256,7 @@ shmat(ap)
 		return;
 	shp = &shmsegs[uap->shmid % SHMMMNI];
 	if (shp->shm_handle == NULL)
-		panic("shmat NULL ptbl");
+		panic("shmat NULL handle");
 	if (!ipcaccess(&shp->shm_perm,
 		      (uap->shmflg&SHM_RDONLY) ? IPC_R : IPC_R|IPC_W))
 		return;
