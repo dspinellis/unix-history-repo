@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)Makefile	1.1
+#	@(#)makefile	1.3	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
