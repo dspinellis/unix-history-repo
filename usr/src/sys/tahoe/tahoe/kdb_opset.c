@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_opset.c	7.4 (Berkeley) %G%
+ *	@(#)kdb_opset.c	7.5 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
@@ -12,21 +12,21 @@
  * Instruction printing.
  */
 
-REGLIST reglist[] = {
-	"p2lr",	&pcb.pcb_p2lr,	"p2br",	(int *)&pcb.pcb_p2br,
-	"p1lr",	&pcb.pcb_p1lr,	"p1br",	(int *)&pcb.pcb_p1br,
-	"p0lr",	&pcb.pcb_p0lr,	"p0br",	(int *)&pcb.pcb_p0br,
-	"ksp",	&pcb.pcb_ksp,	"hfs",	&pcb.pcb_hfs,
-	"psl",	&pcb.pcb_psl,	"pc",	&pcb.pcb_pc,
-	"ach",	&pcb.pcb_ach,	"acl",	&pcb.pcb_acl,
-	"usp",	&pcb.pcb_usp,	"fp",	&pcb.pcb_fp,
-	"r12",	&pcb.pcb_r12,	"r11",	&pcb.pcb_r11,
-	"r10",	&pcb.pcb_r10,	"r9",	&pcb.pcb_r9,
-	"r8",	&pcb.pcb_r8,	"r7",	&pcb.pcb_r7,
-	"r6",	&pcb.pcb_r6,	"r5",	&pcb.pcb_r5,
-	"r4",	&pcb.pcb_r4,	"r3",	&pcb.pcb_r3,
-	"r2",	&pcb.pcb_r2,	"r1",	&pcb.pcb_r1,
-	"r0",	&pcb.pcb_r0,
+REGLIST kdbreglist[] = {
+	"p2lr",	&kdbpcb.pcb_p2lr,	"p2br",	(int *)&kdbpcb.pcb_p2br,
+	"p1lr",	&kdbpcb.pcb_p1lr,	"p1br",	(int *)&kdbpcb.pcb_p1br,
+	"p0lr",	&kdbpcb.pcb_p0lr,	"p0br",	(int *)&kdbpcb.pcb_p0br,
+	"ksp",	&kdbpcb.pcb_ksp,	"hfs",	&kdbpcb.pcb_hfs,
+	"psl",	&kdbpcb.pcb_psl,	"pc",	&kdbpcb.pcb_pc,
+	"ach",	&kdbpcb.pcb_ach,	"acl",	&kdbpcb.pcb_acl,
+	"usp",	&kdbpcb.pcb_usp,	"fp",	&kdbpcb.pcb_fp,
+	"r12",	&kdbpcb.pcb_r12,	"r11",	&kdbpcb.pcb_r11,
+	"r10",	&kdbpcb.pcb_r10,	"r9",	&kdbpcb.pcb_r9,
+	"r8",	&kdbpcb.pcb_r8,	"r7",	&kdbpcb.pcb_r7,
+	"r6",	&kdbpcb.pcb_r6,	"r5",	&kdbpcb.pcb_r5,
+	"r4",	&kdbpcb.pcb_r4,	"r3",	&kdbpcb.pcb_r3,
+	"r2",	&kdbpcb.pcb_r2,	"r1",	&kdbpcb.pcb_r1,
+	"r0",	&kdbpcb.pcb_r0,
 	0
 };
 
@@ -82,12 +82,12 @@ snarf(nbytes, idsp)
 {
 	register long value;
 
-	value = (u_int)chkget((off_t)inkdot(incp), idsp);
+	value = (u_int)kdbchkget((off_t)kdbinkdot(incp), idsp);
 	incp += nbytes;
 	return(value>>(4-nbytes)*8);
 }
 
-printins(idsp, ins)
+kdbprintins(idsp, ins)
 	register long ins;
 {
 	short argno;		/* argument index */
@@ -101,96 +101,96 @@ printins(idsp, ins)
 	space = idsp;
 	ins = byte(ins);
 	if ((ip = ioptab[ins]) == (struct optab *)0) {
-		printf("?%2x%8t", ins);
-		dotinc = 1;
+		kdbprintf("?%2x%8t", ins);
+		kdbdotinc = 1;
 		return;
 	}
-	printf("%s%8t",ip->iname);
+	kdbprintf("%s%8t",ip->iname);
 	incp = 1;
 	ap = ip->argtype;
 	for (argno = 0; argno < ip->nargs; argno++, ap++) {
-		var[argno] = 0x80000000;
-		if (argno!=0) printc(',');
+		kdbvar[argno] = 0x80000000;
+		if (argno!=0) kdbprintc(',');
 	  top:
 		if (*ap&ACCB)
 			mode = 0xAF + ((*ap&7)<<5);  /* branch displacement */
 		else {
-			mode = bchkget(inkdot(incp),idsp); ++incp;
+			mode = kdbbchkget(kdbinkdot(incp),idsp); ++incp;
 		}
 		r = mode&0xF;
 		mode >>= 4;
 		switch ((int)mode) {
 			case 0: case 1:
 			case 2: case 3:	/* short literal */
-				printc('$');
+				kdbprintc('$');
 				d = mode<<4|r;
 				goto immed;
 			case 4: /* [r] */
-				printf("[%s]", regname[r]);
+				kdbprintf("[%s]", regname[r]);
 				goto top;
 			case 5: /* r */
-				printf("%s", regname[r]);
+				kdbprintf("%s", regname[r]);
 				break;
 			case 6: /* (r) */
-				printf("(%s)", regname[r]);
+				kdbprintf("(%s)", regname[r]);
 				break;
 			case 7: /* -(r) */
-				printf("-(%s)", regname[r]);
+				kdbprintf("-(%s)", regname[r]);
 				break;
 			case 9: /* *(r)+ */
-				printc('*');
+				kdbprintc('*');
 			case 8: /* (r)+ */
 				if (r == 0xF ||
 				    mode == 8 && (r == 8 || r == 9)) {
-					printc('$');
+					kdbprintc('$');
 					d = snarf((r&03)+1, idsp);
 				} else {	/*it's not PC immediate or abs*/
-					printf("(%s)+", regname[r]);
+					kdbprintf("(%s)+", regname[r]);
 					break;
 				}
 			immed:
 				if (ins == KCALL && d >= 0 && d < 200) {
-					printf("%R", d);
+					kdbprintf("%R", d);
 					break;
 				}
 				goto disp;
 			case 0xB:	/* byte displacement deferred */
 			case 0xD:	/* word displacement deferred */
 			case 0xF:	/* long displacement deferred */
-				printc('*');
+				kdbprintc('*');
 			case 0xA:	/* byte displacement */
 			case 0xC:	/* word displacement */
 			case 0xE:	/* long displacement */
 				d = snarf(1<<((mode>>1&03)-1), idsp);
 				if (r==0xF) { /* PC offset addressing */
-					d += dot+incp;
-					psymoff(d,type,"");
-					var[argno]=d;
+					d += kdbdot+incp;
+					kdbpsymoff(d,type,"");
+					kdbvar[argno]=d;
 					break;
 				}
 			disp:
-				if (d >= 0 && d < maxoff)
-					printf("%R", d);
+				if (d >= 0 && d < kdbmaxoff)
+					kdbprintf("%R", d);
 				else
-					psymoff(d,type,"");
+					kdbpsymoff(d,type,"");
 				if (mode >= 0xA)
-					printf("(%s)", regname[r]);
-				var[argno] = d;
+					kdbprintf("(%s)", regname[r]);
+				kdbvar[argno] = d;
 				break;
 		}
 	}
 	if (ins == CASEL) {
-		if (inkdot(incp)&01)	/* align */
+		if (kdbinkdot(incp)&01)	/* align */
 			incp++;
-		for (argno = 0; argno <= var[2]; ++argno) {
-			printc(EOR);
-			printf("    %R:  ", argno+var[1]);
-			d = shorten(get(inkdot(incp+argno+argno), idsp));
+		for (argno = 0; argno <= kdbvar[2]; ++argno) {
+			kdbprintc(EOR);
+			kdbprintf("    %R:  ", argno+kdbvar[1]);
+			d = shorten(kdbget(kdbinkdot(incp+argno+argno), idsp));
 			if (d&0x8000)
 				d -= 0x10000;
-			psymoff(inkdot(incp)+d, type, "");
+			kdbpsymoff(kdbinkdot(incp)+d, type, "");
 		}
-		incp += var[2]+var[2]+2;
+		incp += kdbvar[2]+kdbvar[2]+2;
 	}
-	dotinc = incp;
+	kdbdotinc = incp;
 }
