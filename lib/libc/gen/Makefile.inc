@@ -54,7 +54,7 @@ MAN3+=	gen/alarm.3 gen/clock.3 gen/crypt.3 gen/ctermid.3 gen/ctime.3 \
 	gen/tzset.3 gen/ualarm.3 gen/unvis.3 gen/usleep.3 gen/utime.3 \
 	gen/valloc.3 gen/vis.3
 
-MLINKS=	crypt.3 encrypt.3 crypt.3 setkey.3
+MLINKS+=crypt.3 encrypt.3 crypt.3 setkey.3
 MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
 	ctime.3 localtime.3 ctime.3 mktime.3
 MLINKS+=directory.3 closedir.3 directory.3 dirfd.3 directory.3 opendir.3 \
