@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_search.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_search.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -28,12 +28,9 @@ static char sccsid[] = "@(#)bt_search.c	8.1 (Berkeley) %G%";
  *	exactp:	pointer to exact match flag
  *
  * Returns:
- *	EPG for matching record, if any, or the EPG for the location of the
- *	key, if it were inserted into the tree.
- *
- * Warnings:
- *	The EPG returned is in static memory, and will be overwritten by the
- *	next search of any kind in any tree.
+ *	The EPG for matching record, if any, or the EPG for the location
+ *	of the key, if it were inserted into the tree, is entered into
+ *	the bt_cur field of the tree.  A pointer to the field is returned.
  */
 EPG *
 __bt_search(t, key, exactp)
@@ -45,7 +42,6 @@ __bt_search(t, key, exactp)
 	register int base, cmp, lim;
 	register PAGE *h;
 	pgno_t pg;
-	static EPG e;
 
 	BT_CLR(t);
 	for (pg = P_ROOT;;) {
@@ -53,13 +49,13 @@ __bt_search(t, key, exactp)
 			return (NULL);
 
 		/* Do a binary search on the current page. */
-		e.page = h;
+		t->bt_cur.page = h;
 		for (base = 0, lim = NEXTINDEX(h); lim; lim >>= 1) {
-			e.index = index = base + (lim >> 1);
-			if ((cmp = __bt_cmp(t, key, &e)) == 0) {
+			t->bt_cur.index = index = base + (lim >> 1);
+			if ((cmp = __bt_cmp(t, key, &t->bt_cur)) == 0) {
 				if (h->flags & P_BLEAF) {
 					*exactp = 1;
-					return (&e);
+					return (&t->bt_cur);
 				}
 				goto next;
 			}
@@ -71,9 +67,9 @@ __bt_search(t, key, exactp)
 
 		/* If it's a leaf page, we're done. */
 		if (h->flags & P_BLEAF) {
-			e.index = base;
+			t->bt_cur.index = base;
 			*exactp = 0;
-			return (&e);
+			return (&t->bt_cur);
 		}
 
 		/*
