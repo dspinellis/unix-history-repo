@@ -1,6 +1,6 @@
-/*	flp.h	4.3	81/02/19	*/
+/*	flp.h	4.4	81/02/25	*/
 
-#if VAX==780
+#if VAX780
 /*
  * Console floppy command/status and sectoring information.
  */
