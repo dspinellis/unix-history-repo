@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	1.6 (Berkeley) %G%
+.\"	@(#)0.t	8.1 (Berkeley) %G%
 .\"
 .nr Th 1		\" Tahoe version
 .ds Th Tahoe
