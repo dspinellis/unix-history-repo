@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_acct.c	7.18 (Berkeley) 5/11/91
- *	$Id: kern_acct.c,v 1.6 1993/11/09 03:47:03 ache Exp $
+ *	$Id: kern_acct.c,v 1.7 1993/11/09 17:04:24 ache Exp $
  */
 
 #include "param.h"
@@ -147,8 +147,8 @@ sysacct(p, uap, retval)
 
 	acctp  = nd.ni_vp;
 	savacctp = NULL;
-	acctwatch(&chk);		/* look for full system */
 	VOP_UNLOCK(acctp);
+	acctwatch(&chk);		/* look for full system */
 	return(0);		/* end successfully */
 
 acct_fail:
