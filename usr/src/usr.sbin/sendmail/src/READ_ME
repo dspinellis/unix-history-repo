@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.58 (Berkeley) %G%
+#	@(#)READ_ME	8.59 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -270,11 +270,11 @@ SFS_TYPE	Encodes how your kernel can locate the amount of free
 		SFS_USTAT (1) if you have the ustat(2) system call,
 		SFS_4ARGS (2) if you have a four-argument statfs(2)
 		system call (and the include file is <sys/statfs.h>),
-		and SFS_VFS (3), SFS_MOUNT (4), or SFS_STATFS (5) if
-		you have the two-argument statfs(2) system call, with
-		includes in <sys/vfs.h>, <sys/mount.h>, or <sys/statfs.h>
-		respectively.  The default if nothing is defined is
-		SFS_NONE.
+		and SFS_VFS (3), SFS_MOUNT (4), SFS_STATFS (5) or
+		SFS_STATVFS (6) if you have the two-argument statfs(2)
+		system call, with includes in <sys/vfs.h>, <sys/mount.h>,
+		<sys/statfs.h>, or <sys/statvfs.h> respectively.  The
+		default if nothing is defined is SFS_NONE.
 ERRLIST_PREDEFINED
 		If set, assumes that some header file defines sys_errlist.
 		This may be needed if you get type conflicts on this
@@ -835,4 +835,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.58, last update %G% 09:38:23)
+(Version 8.59, last update %G% 09:33:14)
