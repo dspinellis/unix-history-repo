@@ -1,4 +1,4 @@
-/*	machdep.c	3.15	%G%	*/
+/*	machdep.c	3.16	%G%	*/
 extern cmap,ecmap;
 
 #include "../h/param.h"
@@ -15,7 +15,7 @@ extern cmap,ecmap;
 #include "../h/psl.h"
 #include "../h/uba.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.15) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.16) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
