@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "dlvrmail.h"
 
-static char SccsId[] = "@(#)conf.c	1.4	%G%";
+static char SccsId[] = "@(#)conf.c	1.5	%G%";
 # include <whoami.h>
 
 /*
@@ -47,6 +47,7 @@ static char SccsId[] = "@(#)conf.c	1.4	%G%";
 
 # ifdef ING70
 static char	*BerkLocal[] = { "i", "ingres", "ing70", NULL };
+# define ArpaLocal	NULL
 char		*MyLocNam = "Ing70";
 # define HASARPA
 # define V6
@@ -61,7 +62,8 @@ char		*MyLocNam = "IngVax";
 # ifdef CSVAX
 /* untested */
 static char	*BerkLocal[] = { "v", "csvax", "vax", NULL };
-char		*MyLocNam = "CSVax";
+static char	*UucpLocal[] = { "ucbvax", "ernie", NULL };
+char		*MyLocNam = "CSVAX";
 # define HASUUCP
 # define NETV6MAIL
 # endif CSVAX
@@ -82,7 +84,7 @@ char		*MyLocNam = "Image";
 # ifdef ESVAX
 /* untested */
 static char	*BerkLocal[] = { "o", "esvax", NULL };
-char		*MyLocNam = "ESVax";
+char		*MyLocNam = "ESVAX";
 # endif ESVAX
 
 # ifdef EECS40
@@ -91,6 +93,16 @@ static char	*BerkLocal[] = { "z", "eecs40", NULL };
 char		*MyLocNam = "EECS40";
 # define V6
 # endif EECS40
+
+
+# ifndef HASARPA
+# define ArpaLocal	NULL
+# endif HASARPA
+
+# ifndef HASUUCP
+# define UucpLocal	NULL
+# endif HASUUCP
+
 
 struct mailer Mailer[] =
 {
@@ -119,17 +131,13 @@ struct mailer Mailer[] =
 	/* arpanet mail */
 	{
 		"/usr/lib/mailers/arpa",
-		M_STRIPQ,			0,		NULL,
+		M_STRIPQ,			0,		ArpaLocal,
 		{ "...arpa%mail", "$f", "$h", "$u", NULL }
 	},
 	/* uucp mail (cheat & use Bell's v7 mail) */
 	{
-# ifdef UCKMAIL
-		"/bin/badmail",
-# else
 		"/bin/mail",
-# endif
-		M_ROPT|M_NOHOST|M_STRIPQ,	EX_NOUSER,	NULL,
+		M_ROPT|M_NOHOST|M_STRIPQ,	EX_NOUSER,	UucpLocal,
 # ifdef DUMBMAIL
 		{ "...uucp%mail", "$h!$u", NULL }
 # else
