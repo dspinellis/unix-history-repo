@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)proc.c	5.13 (Berkeley) %G%";
+static char *sccsid = "@(#)proc.c	5.14 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -346,16 +346,16 @@ palloc(pid, t)
 
 	pp = (struct process *)calloc(1, sizeof(struct process));
 	pp->p_pid = pid;
-	pp->p_flags = t->t_dflg & FAND ? PRUNNING : PRUNNING|PFOREGND;
-	if (t->t_dflg & FTIME)
+	pp->p_flags = t->t_dflg & F_AMPERSAND ? PRUNNING : PRUNNING|PFOREGND;
+	if (t->t_dflg & F_TIME)
 		pp->p_flags |= PPTIME;
 	cmdp = command;
 	cmdlen = 0;
 	padd(t);
 	*cmdp++ = 0;
-	if (t->t_dflg & FPOU) {
+	if (t->t_dflg & F_PIPEOUT) {
 		pp->p_flags |= PPOU;
-		if (t->t_dflg & FDIAG)
+		if (t->t_dflg & F_STDERR)
 			pp->p_flags |= PDIAG;
 	}
 	pp->p_command = savestr(command);
@@ -410,13 +410,13 @@ padd(t)
 		return;
 	switch (t->t_dtyp) {
 
-	case TPAR:
+	case NODE_PAREN:
 		pads("( ");
 		padd(t->t_dspr);
 		pads(" )");
 		break;
 
-	case TCOM:
+	case NODE_COMMAND:
 		for (argp = t->t_dcom; *argp; argp++) {
 			pads(*argp);
 			if (argp[1])
@@ -424,35 +424,35 @@ padd(t)
 		}
 		break;
 
-	case TOR:
-	case TAND:
-	case TFIL:
-	case TLST:
+	case NODE_OR:
+	case NODE_AND:
+	case NODE_PIPE:
+	case NODE_LIST:
 		padd(t->t_dcar);
 		switch (t->t_dtyp) {
-		case TOR:
+		case NODE_OR:
 			pads(" || ");
 			break;
-		case TAND:
+		case NODE_AND:
 			pads(" && ");
 			break;
-		case TFIL:
+		case NODE_PIPE:
 			pads(" | ");
 			break;
-		case TLST:
+		case NODE_LIST:
 			pads("; ");
 			break;
 		}
 		padd(t->t_dcdr);
 		return;
 	}
-	if ((t->t_dflg & FPIN) == 0 && t->t_dlef) {
-		pads((t->t_dflg & FHERE) ? " << " : " < ");
+	if ((t->t_dflg & F_PIPEIN) == 0 && t->t_dlef) {
+		pads((t->t_dflg & F_READ) ? " << " : " < ");
 		pads(t->t_dlef);
 	}
-	if ((t->t_dflg & FPOU) == 0 && t->t_drit) {
-		pads((t->t_dflg & FCAT) ? " >>" : " >");
-		if (t->t_dflg & FDIAG)
+	if ((t->t_dflg & F_PIPEOUT) == 0 && t->t_drit) {
+		pads((t->t_dflg & F_APPEND) ? " >>" : " >");
+		if (t->t_dflg & F_STDERR)
 			pads("&");
 		pads(" ");
 		pads(t->t_drit);
@@ -1028,7 +1028,7 @@ pfork(t, wanttty)
 	 *	we are not playing with signals (inherit action)
 	 */
 	if (setintr)
-		ignint = (tpgrp == -1 && (t->t_dflg&FINT))
+		ignint = (tpgrp == -1 && (t->t_dflg&F_NOINTERRUPT))
 		    || (gointr && eq(gointr, "-"));
 	/*
 	 * Hold SIGCHLD until we have the process installed in our table.
@@ -1062,7 +1062,7 @@ pfork(t, wanttty)
 				(void) signal(SIGTTOU, SIG_DFL);
 			}
 			(void) signal(SIGTERM, parterm);
-		} else if (tpgrp == -1 && (t->t_dflg&FINT)) {
+		} else if (tpgrp == -1 && (t->t_dflg&F_NOINTERRUPT)) {
 			(void) signal(SIGINT, SIG_IGN);
 			(void) signal(SIGQUIT, SIG_IGN);
 		}
@@ -1073,13 +1073,13 @@ pfork(t, wanttty)
 		if (tpgrp > 0)
 			tpgrp = 0;		/* gave tty away */
 		/*
-		 * Nohup and nice apply only to TCOM's but it would be
-		 * nice (?!?) if you could say "nohup (foo;bar)"
-		 * Then the parser would have to know about nice/nohup/time
+		 * Nohup and nice apply only to NODE_COMMAND's but it would be
+		 * nice (?!?) if you could say "nohup (foo;bar)".  Then the
+		 * parser would have to know about nice/nohup/time.
 		 */
-		if (t->t_dflg & FNOHUP)
+		if (t->t_dflg & F_NOHUP)
 			(void) signal(SIGHUP, SIG_IGN);
-		if (t->t_dflg & FNICE)
+		if (t->t_dflg & F_NICE)
 			(void) setpriority(PRIO_PROCESS, 0, t->t_nice);
 	} else {
 		if (wanttty >= 0 && tpgrp >= 0)

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)init.c	5.5 (Berkeley) %G%";
+static char *sccsid = "@(#)init.c	5.6 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -137,23 +137,23 @@ struct biltins bfunc[] = {
 int nbfunc = sizeof bfunc / sizeof *bfunc;
 
 struct srch srchn[] = {
-	"@",		ZLET,
-	"break",	ZBREAK,
-	"breaksw",	ZBRKSW,
-	"case",		ZCASE,
-	"default", 	ZDEFAULT,
-	"else",		ZELSE,
-	"end",		ZEND,
-	"endif",	ZENDIF,
-	"endsw",	ZENDSW,
-	"exit",		ZEXIT,
-	"foreach", 	ZFOREACH,
-	"goto",		ZGOTO,
-	"if",		ZIF,
-	"label",	ZLABEL,
-	"set",		ZSET,
-	"switch",	ZSWITCH,
-	"while",	ZWHILE,
+	"@",		T_LET,
+	"break",	T_BREAK,
+	"breaksw",	T_BRKSW,
+	"case",		T_CASE,
+	"default", 	T_DEFAULT,
+	"else",		T_ELSE,
+	"end",		T_END,
+	"endif",	T_ENDIF,
+	"endsw",	T_ENDSW,
+	"exit",		T_EXIT,
+	"foreach", 	T_FOREACH,
+	"goto",		T_GOTO,
+	"if",		T_IF,
+	"label",	T_LABEL,
+	"set",		T_SET,
+	"switch",	T_SWITCH,
+	"while",	T_WHILE,
 };
 int nsrchn = sizeof srchn / sizeof *srchn;
 

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)csh.c	5.18 (Berkeley) %G%";
+static char *sccsid = "@(#)csh.c	5.19 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -317,7 +317,7 @@ notty:
 	 * Set an exit here in case of an interrupt or error reading
 	 * the shell start-up scripts.
 	 */
-	setexit();
+	(void)setjmp(reslab);
 	haderr = 0;		/* In case second time through */
 	if (!fast && reenter == 0) {
 		reenter++;
@@ -492,7 +492,7 @@ srcunit(unit, onlyown, hflg)
 	reenter = 0;
 	if (setintr)
 		omask = sigblock(sigmask(SIGINT));
-	setexit();
+	(void)setjmp(reslab);
 	reenter++;
 	if (reenter == 1) {
 		/* Setup the new values of the state stuff saved above */
@@ -656,13 +656,13 @@ pintr1(wantnl)
 	 * so we needn't worry about that here.
 	 */
 	if (gointr) {
-		search(ZGOTO, 0, gointr);
+		search(T_GOTO, 0, gointr);
 		timflg = 0;
 		if (v = pargv)
 			pargv = 0, blkfree(v);
 		if (v = gargv)
 			gargv = 0, blkfree(v);
-		reset();
+		longjmp(reslab, 0);
 	} else if (intty && wantnl)
 		printf("\n");		/* Some like this, others don't */
 	error(NOSTR);
@@ -694,7 +694,7 @@ process(catch)
 		paraml.next = paraml.prev = &paraml;
 		paraml.word = "";
 		t = 0;
-		setexit();
+		(void)setjmp(reslab);
 		justpr = enterhist;	/* execute if not entering history */
 
 		/*
@@ -713,7 +713,7 @@ process(catch)
 				/* unwind */
 				doneinp = 0;
 				resexit(osetexit);
-				reset();
+				longjmp(reslab, 0);
 			}
 			haderr = 0;
 			/*
@@ -787,7 +787,7 @@ process(catch)
 		 * this is as far as we should go
 		 */
 		if (justpr)
-			reset();
+			longjmp(reslab, 0);
 
 		alias(&paraml);
 

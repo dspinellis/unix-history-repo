@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)glob.c	5.11 (Berkeley) %G%";
+static char *sccsid = "@(#)glob.c	5.12 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -488,7 +488,7 @@ backeval(cp, literal)
 	hadnl = 0;
 	icnt = 0;
 	quoted = (literal || (cp[0] & QUOTE)) ? QUOTE : 0;
-	faket.t_dtyp = TCOM;
+	faket.t_dtyp = NODE_COMMAND;
 	faket.t_dflg = 0;
 	faket.t_dlef = 0;
 	faket.t_drit = 0;
@@ -531,7 +531,7 @@ backeval(cp, literal)
 		if (err)
 			error(err);
 		if (t)
-			t->t_dflg |= FPAR;
+			t->t_dflg |= F_NOFORK;
 		(void) signal(SIGTSTP, SIG_IGN);
 		(void) signal(SIGTTIN, SIG_IGN);
 		(void) signal(SIGTTOU, SIG_IGN);

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)parse.c	5.4 (Berkeley) %G%";
+static char *sccsid = "@(#)parse.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -27,10 +27,10 @@ alias(lex)
 	jmp_buf osetexit;
 
 	getexit(osetexit);
-	setexit();
+	(void)setjmp(reslab);
 	if (haderr) {
 		resexit(osetexit);
-		reset();
+		longjmp(reslab, 0);
 	}
 	if (--aleft == 0)
 		error("Alias loop");
@@ -137,7 +137,7 @@ asyn3(p1, p2)
 		XFREE(alout.prev->word)
 		XFREE((char *)alout.prev)
 	}
-	reset();		/* throw! */
+	longjmp(reslab, 0);		/* throw! */
 }
 
 struct wordent *
@@ -224,18 +224,18 @@ syn0(p1, p2, flags)
 			if (p->word[1] == '&')
 				continue;
 			t1 = syn1(p1, p, flags);
-    			if (t1->t_dtyp == TLST ||
-    			    t1->t_dtyp == TAND ||
-    			    t1->t_dtyp == TOR) {
+    			if (t1->t_dtyp == NODE_LIST ||
+    			    t1->t_dtyp == NODE_AND ||
+    			    t1->t_dtyp == NODE_OR) {
 				t = (struct command *) calloc(1, sizeof (*t));
-				t->t_dtyp = TPAR;
-				t->t_dflg = FAND|FINT;
+				t->t_dtyp = NODE_PAREN;
+				t->t_dflg = F_AMPERSAND|F_NOINTERRUPT;
 				t->t_dspr = t1;
 				t1 = t;
 			} else
-				t1->t_dflg |= FAND|FINT;
+				t1->t_dflg |= F_AMPERSAND|F_NOINTERRUPT;
 			t = (struct command *) calloc(1, sizeof (*t));
-			t->t_dtyp = TLST;
+			t->t_dtyp = NODE_LIST;
 			t->t_dflg = 0;
 			t->t_dcar = t1;
 			t->t_dcdr = syntax(p, p2, flags);
@@ -278,7 +278,7 @@ syn1(p1, p2, flags)
 			if (l != 0)
 				break;
 			t = (struct command *) calloc(1, sizeof (*t));
-			t->t_dtyp = TLST;
+			t->t_dtyp = NODE_LIST;
 			t->t_dcar = syn1a(p1, p, flags);
 			t->t_dcdr = syntax(p->next, p2, flags);
 			if (t->t_dcdr == 0)
@@ -318,7 +318,7 @@ syn1a(p1, p2, flags)
 				continue;
 			if (l == 0) {
 				t = (struct command *) calloc(1, sizeof (*t));
-				t->t_dtyp = TOR;
+				t->t_dtyp = NODE_OR;
 				t->t_dcar = syn1b(p1, p, flags);
 				t->t_dcdr = syn1a(p->next, p2, flags);
 				t->t_dflg = 0;
@@ -358,7 +358,7 @@ syn1b(p1, p2, flags)
 		case '&':
 			if (p->word[1] == '&' && l == 0) {
 				t = (struct command *) calloc(1, sizeof (*t));
-				t->t_dtyp = TAND;
+				t->t_dtyp = NODE_AND;
 				t->t_dcar = syn2(p1, p, flags);
 				t->t_dcdr = syn1b(p->next, p2, flags);
 				t->t_dflg = 0;
@@ -404,9 +404,9 @@ syn2(p1, p2, flags)
 			pn = p->next;
 			if (pn != p2 && pn->word[0] == '&') {
 				f |= PDIAG;
-				t->t_dflg |= FDIAG;
+				t->t_dflg |= F_STDERR;
 			}
-			t->t_dtyp = TFIL;
+			t->t_dtyp = NODE_PIPE;
 			t->t_dcar = syn3(p1, p, f);
 			if (pn != p2 && pn->word[0] == '&')
 				p = pn;
@@ -444,19 +444,19 @@ syn3(p1, p2, flags)
 again:
 		switch (srchx(p->word)) {
 
-		case ZELSE:
+		case T_ELSE:
 			p = p->next;
 			if (p != p2)
 				goto again;
 			break;
 
-		case ZEXIT:
-		case ZFOREACH:
-		case ZIF:
-		case ZLET:
-		case ZSET:
-		case ZSWITCH:
-		case ZWHILE:
+		case T_EXIT:
+		case T_FOREACH:
+		case T_IF:
+		case T_LET:
+		case T_SET:
+		case T_SWITCH:
+		case T_WHILE:
 			specp = 1;
 			break;
 		}
@@ -505,7 +505,7 @@ again:
 	t->t_dcom = av;
 	n = 0;
 	if (p2->word[0] == ')')
-		t->t_dflg = FPAR;
+		t->t_dflg = F_NOFORK;
 	lp = 0;
 	rp = 0;
 	l = 0;
@@ -532,14 +532,17 @@ again:
 			if (l != 0)
 				goto savep;
 			if (p->word[1] == '>')
-				t->t_dflg |= FCAT;
+				t->t_dflg |= F_APPEND;
 			if (p->next != p2 && eq(p->next->word, "&")) {
-				t->t_dflg |= FDIAG, p = p->next;
+				t->t_dflg |= F_STDERR;
+				p = p->next;
 				if (flags & (POUT|PDIAG))
 					goto badout;
 			}
-			if (p->next != p2 && eq(p->next->word, "!"))
-				t->t_dflg |= FANY, p = p->next;
+			if (p->next != p2 && eq(p->next->word, "!")) {
+				t->t_dflg |= F_OVERWRITE;
+				p = p->next;
+			}
 			if (p->next == p2) {
 missfile:
 				seterr("Missing name for redirect");
@@ -559,13 +562,13 @@ badout:
 			if (l != 0)
 				goto savep;
 			if (p->word[1] == '<')
-				t->t_dflg |= FHERE;
+				t->t_dflg |= F_READ;
 			if (p->next == p2)
 				goto missfile;
 			p = p->next;
 			if (index(RELPAR, p->word[0]))
 				goto missfile;
-			if ((flags & PHERE) && (t->t_dflg & FHERE))
+			if ((flags & PHERE) && (t->t_dflg & F_READ))
 				seterr("Can't << within ()'s");
 			else if ((flags & PIN) || t->t_dlef)
 				seterr("Ambiguous input redirect");
@@ -588,12 +591,12 @@ savep:
 	if (lp != 0 && !specp) {
 		if (n != 0)
 			seterr("Badly placed ()'s");
-		t->t_dtyp = TPAR;
+		t->t_dtyp = NODE_PAREN;
 		t->t_dspr = syn0(lp, rp, PHERE);
 	} else {
 		if (n == 0)
 			seterr("Invalid null command");
-		t->t_dtyp = TCOM;
+		t->t_dtyp = NODE_COMMAND;
 	}
 	return (t);
 }
@@ -607,13 +610,13 @@ freesyn(t)
 		return;
 	switch (t->t_dtyp) {
 
-	case TCOM:
+	case NODE_COMMAND:
 		for (v = t->t_dcom; *v; v++)
 			XFREE(*v)
 		XFREE((char *)t->t_dcom)
 		goto lr;
 
-	case TPAR:
+	case NODE_PAREN:
 		freesyn(t->t_dspr);
 		/* fall into ... */
 
@@ -622,11 +625,12 @@ lr:
 		XFREE(t->t_drit)
 		break;
 
-	case TAND:
-	case TOR:
-	case TFIL:
-	case TLST:
-		freesyn(t->t_dcar), freesyn(t->t_dcdr);
+	case NODE_AND:
+	case NODE_OR:
+	case NODE_PIPE:
+	case NODE_LIST:
+		freesyn(t->t_dcar);
+		freesyn(t->t_dcdr);
 		break;
 	}
 	XFREE((char *)t)

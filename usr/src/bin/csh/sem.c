@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)sem.c	5.9 (Berkeley) %G%";
+static char *sccsid = "@(#)sem.c	5.10 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -32,28 +32,28 @@ execute(t, wanttty, pipein, pipeout)
 
 	if (t == 0)
 		return;
-	if ((t->t_dflg & FAND) && wanttty > 0)
+	if ((t->t_dflg & F_AMPERSAND) && wanttty > 0)
 		wanttty = 0;
 	switch (t->t_dtyp) {
 
-	case TCOM:
+	case NODE_COMMAND:
 		if ((t->t_dcom[0][0] & (QUOTE|TRIM)) == QUOTE)
 			(void) strcpy(t->t_dcom[0], t->t_dcom[0] + 1);
-		if ((t->t_dflg & FREDO) == 0)
+		if ((t->t_dflg & F_REPEAT) == 0)
 			Dfix(t);		/* $ " ' \ */
 		if (t->t_dcom[0] == 0)
 			return;
 		/* fall into... */
 
-	case TPAR:
-		if (t->t_dflg & FPOU)
+	case NODE_PAREN:
+		if (t->t_dflg & F_PIPEOUT)
 			mypipe(pipeout);
 		/*
 		 * Must do << early so parent will know
 		 * where input pointer should be.
 		 * If noexec then this is all we do.
 		 */
-		if (t->t_dflg & FHERE) {
+		if (t->t_dflg & F_READ) {
 			(void) close(0);
 			heredoc(t->t_dlef);
 			if (noexec)
@@ -70,7 +70,7 @@ execute(t, wanttty, pipein, pipeout)
 		 * be used by themselves, and this is not handled here.
 		 * This will also work when loops are parsed.
 		 */
-		while (t->t_dtyp == TCOM)
+		while (t->t_dtyp == NODE_COMMAND)
 			if (eq(t->t_dcom[0], "nice"))
 				if (t->t_dcom[1])
 					if (index("+-", t->t_dcom[1][0]))
@@ -78,25 +78,25 @@ execute(t, wanttty, pipein, pipeout)
 							setname("nice");
 							t->t_nice = getn(t->t_dcom[1]);
 							lshift(t->t_dcom, 2);
-							t->t_dflg |= FNICE;
+							t->t_dflg |= F_NICE;
 						} else
 							break;
 					else {
 						t->t_nice = 4;
 						lshift(t->t_dcom, 1);
-						t->t_dflg |= FNICE;
+						t->t_dflg |= F_NICE;
 					}
 				else
 					break;
 			else if (eq(t->t_dcom[0], "nohup"))
 				if (t->t_dcom[1]) {
-					t->t_dflg |= FNOHUP;
+					t->t_dflg |= F_NOHUP;
 					lshift(t->t_dcom, 1);
 				} else
 					break;
 			else if (eq(t->t_dcom[0], "time"))
 				if (t->t_dcom[1]) {
-					t->t_dflg |= FTIME;
+					t->t_dflg |= F_TIME;
 					lshift(t->t_dcom, 1);
 				} else
 					break;
@@ -105,7 +105,8 @@ execute(t, wanttty, pipein, pipeout)
 		/*
 		 * Check if we have a builtin function and remember which one.
 		 */
-		bifunc = t->t_dtyp == TCOM ? isbfunc(t) : (struct biltins *) 0;
+		bifunc = t->t_dtyp ==
+		    NODE_COMMAND ? isbfunc(t) : (struct biltins *) 0;
 
 		/*
 		 * We fork only if we are timed, or are not the end of
@@ -114,10 +115,12 @@ execute(t, wanttty, pipein, pipeout)
 		 * or &'d.
 		 * It would be nice(?) to not fork in some of these cases.
 		 */
-		if (((t->t_dflg & FTIME) || (t->t_dflg & FPAR) == 0 &&
-		     (!bifunc || t->t_dflg & (FPOU|FAND|FNICE|FNOHUP))))
+		if (((t->t_dflg & F_TIME) || (t->t_dflg & F_NOFORK) == 0 &&
+		    (!bifunc ||
+		    t->t_dflg & (F_PIPEOUT|F_AMPERSAND|F_NICE|F_NOHUP))))
 #ifdef VFORK
-		    if (t->t_dtyp == TPAR || t->t_dflg&(FREDO|FAND) || bifunc)
+		    if (t->t_dtyp == NODE_PAREN ||
+			t->t_dflg&(F_REPEAT|F_AMPERSAND) || bifunc)
 #endif
 			{ forked++; 
 			  if (wanttty >= 0 && !nosigchld) {
@@ -188,9 +191,9 @@ execute(t, wanttty, pipein, pipeout)
 					nosigchld = 0;
 				}
 				if (setintr)
-					ignint =
-					    (tpgrp == -1 && (t->t_dflg&FINT))
-					    || gointr && eq(gointr, "-");
+					ignint = (tpgrp == -1 &&
+					    (t->t_dflg&F_NOINTERRUPT)) ||
+					    gointr && eq(gointr, "-");
 				pgrp = pcurrjob ? pcurrjob->p_jobid : getpid();
 				child++;
 				if (setintr) {
@@ -208,7 +211,8 @@ execute(t, wanttty, pipein, pipeout)
 						(void) signal(SIGTTOU, SIG_DFL);
 					}
 					(void) signal(SIGTERM, parterm);
-				} else if (tpgrp == -1 && (t->t_dflg&FINT)) {
+				} else if (tpgrp == -1 &&
+				    (t->t_dflg&F_NOINTERRUPT)) {
 					(void) signal(SIGINT, SIG_IGN);
 					(void) signal(SIGQUIT, SIG_IGN);
 				}
@@ -219,9 +223,9 @@ execute(t, wanttty, pipein, pipeout)
 						(char *)&pgrp);
 				if (tpgrp > 0)
 					tpgrp = 0;
-				if (t->t_dflg & FNOHUP)
+				if (t->t_dflg & F_NOHUP)
 					(void) signal(SIGHUP, SIG_IGN);
-				if (t->t_dflg & FNICE)
+				if (t->t_dflg & F_NICE)
 					(void) setpriority(PRIO_PROCESS,
 						0, t->t_nice);
 			}
@@ -236,11 +240,11 @@ execute(t, wanttty, pipein, pipeout)
 			 * wait for the whole job anyway, but this test
 			 * doesn't really express our intentions.
 			 */
-			if (didfds==0 && t->t_dflg&FPIN) {
+			if (didfds==0 && t->t_dflg&F_PIPEIN) {
 				(void) close(pipein[0]);
 				(void) close(pipein[1]);
 			}
-			if ((t->t_dflg & FPOU) == 0) {
+			if ((t->t_dflg & F_PIPEOUT) == 0) {
 				if (nosigchld) {
 #ifdef foobarbaz
 					printf("DID\n");
@@ -248,13 +252,13 @@ execute(t, wanttty, pipein, pipeout)
 					sigsetmask(osigmask);
 					nosigchld = 0;
 				}
-				if ((t->t_dflg & FAND) == 0)
+				if ((t->t_dflg & F_AMPERSAND) == 0)
 					pwait();
 			}
 			break;
 		}
 		doio(t, pipein, pipeout);
-		if (t->t_dflg & FPOU) {
+		if (t->t_dflg & F_PIPEOUT) {
 			(void) close(pipeout[0]);
 			(void) close(pipeout[1]);
 		}
@@ -269,7 +273,7 @@ execute(t, wanttty, pipein, pipeout)
 				exitstat();
 			break;
 		}
-		if (t->t_dtyp != TPAR) {
+		if (t->t_dtyp != NODE_PAREN) {
 			doexec(t);
 			/*NOTREACHED*/
 		}
@@ -283,61 +287,64 @@ execute(t, wanttty, pipein, pipeout)
 		SHIN = -1;
 		didfds = 0;
 		wanttty = -1;
-		t->t_dspr->t_dflg |= t->t_dflg & FINT;
+		t->t_dspr->t_dflg |= t->t_dflg & F_NOINTERRUPT;
 		execute(t->t_dspr, wanttty);
 		exitstat();
 
-	case TFIL:
-		t->t_dcar->t_dflg |= FPOU |
-		    (t->t_dflg & (FPIN|FAND|FDIAG|FINT));
+	case NODE_PIPE:
+		t->t_dcar->t_dflg |= F_PIPEOUT |
+		    (t->t_dflg & (F_PIPEIN|F_AMPERSAND|F_STDERR|F_NOINTERRUPT));
 		execute(t->t_dcar, wanttty, pipein, pv);
-		t->t_dcdr->t_dflg |= FPIN |
-		    (t->t_dflg & (FPOU|FAND|FPAR|FINT));
+		t->t_dcdr->t_dflg |= F_PIPEIN |
+		    (t->t_dflg &
+		    (F_PIPEOUT|F_AMPERSAND|F_NOFORK|F_NOINTERRUPT));
 		if (wanttty > 0)
 			wanttty = 0;		/* got tty already */
 		execute(t->t_dcdr, wanttty, pv, pipeout);
 		break;
 
-	case TLST:
+	case NODE_LIST:
 		if (t->t_dcar) {
-			t->t_dcar->t_dflg |= t->t_dflg & FINT;
+			t->t_dcar->t_dflg |= t->t_dflg & F_NOINTERRUPT;
 			execute(t->t_dcar, wanttty);
 			/*
 			 * In strange case of A&B make a new job after A
 			 */
-			if (t->t_dcar->t_dflg&FAND && t->t_dcdr &&
-			    (t->t_dcdr->t_dflg&FAND) == 0)
+			if (t->t_dcar->t_dflg&F_AMPERSAND && t->t_dcdr &&
+			    (t->t_dcdr->t_dflg&F_AMPERSAND) == 0)
 				pendjob();
 		}
 		if (t->t_dcdr) {
-			t->t_dcdr->t_dflg |= t->t_dflg & (FPAR|FINT);
+			t->t_dcdr->t_dflg |=
+			    t->t_dflg & (F_NOFORK|F_NOINTERRUPT);
 			execute(t->t_dcdr, wanttty);
 		}
 		break;
 
-	case TOR:
-	case TAND:
+	case NODE_OR:
+	case NODE_AND:
 		if (t->t_dcar) {
-			t->t_dcar->t_dflg |= t->t_dflg & FINT;
+			t->t_dcar->t_dflg |= t->t_dflg & F_NOINTERRUPT;
 			execute(t->t_dcar, wanttty);
-			if ((getn(value("status")) == 0) != (t->t_dtyp == TAND))
+			if ((getn(value("status")) == 0) !=
+			    (t->t_dtyp == NODE_AND))
 				return;
 		}
 		if (t->t_dcdr) {
-			t->t_dcdr->t_dflg |= t->t_dflg & (FPAR|FINT);
+			t->t_dcdr->t_dflg |=
+			    t->t_dflg & (F_NOFORK|F_NOINTERRUPT);
 			execute(t->t_dcdr, wanttty);
 		}
 		break;
 	}
 	/*
-	 * Fall through for all breaks from switch
+	 * Fall through for all breaks from switch.
 	 *
-	 * If there will be no more executions of this
-	 * command, flush all file descriptors.
-	 * Places that turn on the FREDO bit are responsible
-	 * for doing donefds after the last re-execution
+	 * If there will be no more executions of this command, flush all
+	 * file descriptors.  Places that turn on the F_REPEAT bit are
+	 * responsible for doing donefds after the last re-execution
 	 */
-	if (didfds && !(t->t_dflg & FREDO))
+	if (didfds && !(t->t_dflg & F_REPEAT))
 		donefds();
 }
 
@@ -365,20 +372,20 @@ doio(t, pipein, pipeout)
 	register char *cp;
 	register int flags = t->t_dflg;
 
-	if (didfds || (flags & FREDO))
+	if (didfds || (flags & F_REPEAT))
 		return;
-	if ((flags & FHERE) == 0) {	/* FHERE already done */
+	if ((flags & F_READ) == 0) {	/* F_READ already done */
 		(void) close(0);
 		if (cp = t->t_dlef) {
 			cp = globone(Dfix1(cp));
 			xfree(cp);
 			if (open(cp, 0) < 0)
 				Perror(cp);
-		} else if (flags & FPIN) {
+		} else if (flags & F_PIPEIN) {
 			(void) dup(pipein[0]);
 			(void) close(pipein[0]);
 			(void) close(pipein[1]);
-		} else if ((flags & FINT) && tpgrp == -1) {
+		} else if ((flags & F_NOINTERRUPT) && tpgrp == -1) {
 			(void) close(0);
 			(void) open(_PATH_DEVNULL, 0);
 		} else
@@ -388,22 +395,22 @@ doio(t, pipein, pipeout)
 	if (cp = t->t_drit) {
 		cp = globone(Dfix1(cp));
 		xfree(cp);
-		if (!(flags & FCAT) || open(cp, O_WRONLY|O_APPEND, 0) < 0) {
-			if (!(flags & FANY) && adrof("noclobber")) {
-				if (flags & FCAT)
+		if (!(flags & F_APPEND) || open(cp, O_WRONLY|O_APPEND, 0) < 0) {
+			if (!(flags & F_OVERWRITE) && adrof("noclobber")) {
+				if (flags & F_APPEND)
 					Perror(cp);
 				chkclob(cp);
 			}
 			if (creat(cp, 0666) < 0)
 				Perror(cp);
 		}
-	} else if (flags & FPOU)
+	} else if (flags & F_PIPEOUT)
 		(void) dup(pipeout[1]);
 	else
 		(void) dup(SHOUT);
 
 	(void) close(2);
-	if (flags & FDIAG)
+	if (flags & F_STDERR)
 		(void) dup(1);
 	else
 		(void) dup(SHDIAG);
