@@ -12,7 +12,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)atan2.c	1.1 (ELEFUNT) %G%";
+static char sccsid[] =
+"@(#)atan2.c	1.3 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%";
 #endif not lint
 
 /* ATAN2(Y,X)

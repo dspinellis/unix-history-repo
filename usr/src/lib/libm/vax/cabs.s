@@ -11,7 +11,7 @@
 # using "sendbug 4bsd-bugs@BERKELEY", to the authors.
 #
 
-# @(#)cabs.s	1.1 (ELEFUNT) %G%
+# @(#)cabs.s	1.2 (Berkeley) 8/21/85; 1.2 (ucb.elefunt) %G%
 
 # double precision complex absolute value
 # CABS by W. Kahan, 9/7/80.

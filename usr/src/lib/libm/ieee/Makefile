@@ -1,5 +1,5 @@
-# @(#)Makefile	1.1 (ELEFUNT) %G%
-SCCSID = "@(#)Makefile	1.1 (ELEFUNT) %G%"
+# @(#)Makefile	1.2 (ucb.elefunt) %G%
+SCCSID = "@(#)Makefile	1.2 (ucb.elefunt) %G%"
 MORE=atan2.o cbrt.o trig.o cabs.o support.o
 
 .c.o:
