@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)order.c	1.1 (Berkeley) %G%";
+static char *sccsid ="@(#)order.c	1.2 (Berkeley) %G%";
 # include "mfile2"
 
 int maxargs = { -1 };
@@ -482,6 +482,7 @@ genargs( p, ptemp ) register NODE *p, *ptemp; {
 
 		pasg = talloc();
 		pasg->in.op = STASG;
+		pasg->in.rall = NOPREF;
 		pasg->stn.stsize = size;
 		pasg->stn.stalign = align;
 		pasg->in.right = p;
