@@ -1,4 +1,4 @@
-/*	machdep.c	3.21	%G%	*/
+/*	machdep.c	3.22	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,7 +14,7 @@
 #include "../h/psl.h"
 #include "../h/uba.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.21) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.22) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -207,6 +207,9 @@ ttime()
 
 /*
  * Send an interrupt to process
+ *
+ * SHOULD CHANGE THIS TO PASS ONE MORE WORK SO THAT ALL INFORMATION
+ * PROVIDED BY HARDWARE IS AVAILABLE TO THE USER PROCESS.
  */
 sendsig(p, n)
 {
