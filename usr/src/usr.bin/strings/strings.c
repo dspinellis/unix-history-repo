@@ -1,18 +1,29 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1980, 1987 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1980, 1987 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strings.c	5.3 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)strings.c	5.4 (Berkeley) %G%";
+#endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/file.h>
@@ -21,13 +32,6 @@ static char sccsid[] = "@(#)strings.c	5.3 (Berkeley) %G%";
 #include <ctype.h>
 
 #define DEF_LEN		4		/* default minimum string length */
-#define EOS		(char)NULL	/* end of string */
-#define ERR		-1		/* general error */
-#define ERREXIT		1		/* error exit */
-#define NO		0		/* false/no */
-#define OK		0		/* ok exit */
-#define YES		1		/* true/yes */
-
 #define ISSTR(ch)	(isascii(ch) && (isprint(ch) || ch == '\t'))
 
 typedef struct exec	EXEC;		/* struct exec cast */
@@ -38,75 +42,90 @@ static int	hcnt,			/* head count */
 		read_len;		/* length to read */
 static u_char	hbfr[sizeof(EXEC)];	/* buffer for struct exec */
 
-main(argc,argv)
-int	argc;
-char	**argv;
+main(argc, argv)
+	int argc;
+	char **argv;
 {
-	register int	ch,		/* character */
-			cnt;		/* general counter */
-	register u_char	*C;		/* bfr pointer */
-	EXEC	*head;			/* exec header pointer */
-	int	minlen = DEF_LEN;	/* minimum string length */
-	short	asdata = NO,		/* look in everything */
-		oflg;			/* print octal location */
-	u_char	*bfr;			/* collection buffer */
-	char	*file,			/* file name for error */
-		*malloc();
+	extern char *optarg;
+	extern int optind;
+	register int ch, cnt;
+	register u_char *C;
+	EXEC *head;
+	int minlen;
+	short asdata, oflg;
+	u_char *bfr;
+	char *file, *p, *malloc();
 
 	/*
 	 * for backward compatibility, allow '-' to specify 'a' flag; no
 	 * longer documented in the man page or usage string.
 	 */
-	for (++argv;*argv && **argv ==  '-';++argv) {
-		for (cnt = 1;(*argv)[cnt];++cnt)
-			switch ((*argv)[cnt]) {
-				case 'a':
-					asdata = YES;
-					break;
-				case 'o':
-					oflg = YES;
-					break;
-				default:	/* getopt message compatible */
-					if (!isdigit((*argv)[cnt])) {
-						fprintf(stderr,"strings: illegal option -- %c\nusage: strings [-ao] [-#] [file ... ]\n",(*argv)[cnt]);
-						exit(ERREXIT);
-					}
-					minlen = atoi(*argv + 1);
-					break;
+	asdata = 0;
+	minlen = -1;
+	while ((ch = getopt(argc, argv, "-0123456789ao")) != EOF)
+		switch((char)ch) {
+		case '0': case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+			/*
+			 * kludge: strings was originally designed to take
+			 * a number after a dash.
+			 */
+			if (minlen == -1) {
+				p = argv[optind - 1];
+				if (p[0] == '-' && p[1] == ch && !p[2])
+					minlen = atoi(++p);
+				else
+					minlen = atoi(argv[optind] + 1);
 			}
-		if (cnt == 1)
-			asdata = YES;
-	}
+			break;
+		case '-':
+		case 'a':
+			asdata = 1;
+			break;
+		case 'o':
+			oflg = 1;
+			break;
+		case '?':
+		default:
+			fprintf(stderr,
+			    "usage: strings [-ao] [-#] [file ... ]\n");
+			exit(1);
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (minlen == -1)
+		minlen = DEF_LEN;
 
 	if (!(bfr = (u_char *)malloc((u_int)minlen))) {
-		fputs("strings: unable to allocate space.\n",stderr);
-		exit(ERREXIT);
+		fputs("strings: no space.\n", stderr);
+		exit(1);
 	}
-	bfr[minlen] = EOS;
+	bfr[minlen] = '\0';
 	file = "stdin";
 	do {
 		if (*argv) {
-			if (!freopen(*argv,"r",stdin)) {
+			if (!freopen(*argv, "r", stdin)) {
 				perror(*argv);
-				exit(ERREXIT);
+				exit(1);
 			}
 			file = *argv++;
 		}
 		foff = 0;
-		read_len = ERR;
+		read_len = -1;
 		if (asdata)
 			head_len = 0;
 		else {
 			head = (EXEC *)hbfr;
-			if ((head_len = read(fileno(stdin),(char *)head,sizeof(EXEC))) == ERR) {
+			if ((head_len = read(fileno(stdin), (char *)head, sizeof(EXEC))) == -1) {
 				perror(file);
-				exit(ERREXIT);
+				exit(1);
 			}
 			if (head_len == sizeof(EXEC) && !N_BADMAG(*head)) {
 				foff = N_TXTOFF(*head) + head->a_text;
-				if (fseek(stdin,foff,L_SET) == ERR) {
+				if (fseek(stdin, foff, L_SET) == -1) {
 					perror(file);
-					exit(ERREXIT);
+					exit(1);
 				}
 				read_len = head->a_data;
 				head_len = 0;
@@ -114,7 +133,7 @@ char	**argv;
 			else
 				hcnt = 0;
 		}
-		for (cnt = 0;(ch = getch()) != EOF;) {
+		for (cnt = 0; (ch = getch()) != EOF;) {
 			if (ISSTR(ch)) {
 				if (!cnt)
 					C = bfr;
@@ -122,9 +141,10 @@ char	**argv;
 				if (++cnt < minlen)
 					continue;
 				if (oflg)
-					printf("%07ld %s",foff - minlen,bfr);
+					printf("%07ld %s", foff - minlen,
+					    (char *)bfr);
 				else
-					fputs((char *)bfr,stdout);
+					fputs((char *)bfr, stdout);
 				while ((ch = getch()) != EOF && ISSTR(ch))
 					putchar((char)ch);
 				putchar('\n');
@@ -132,14 +152,13 @@ char	**argv;
 			cnt = 0;
 		}
 	} while (*argv);
-	exit(OK);
+	exit(0);
 }
 
 /*
  * getch --
  *	get next character from wherever
  */
-static
 getch()
 {
 	++foff;
@@ -148,7 +167,7 @@ getch()
 			return((int)hbfr[hcnt++]);
 		head_len = 0;
 	}
-	if (read_len == ERR || read_len-- > 0)
+	if (read_len == -1 || read_len-- > 0)
 		return(getchar());
 	return(EOF);
 }
