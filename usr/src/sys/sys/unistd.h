@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)unistd.h	5.4 (Berkeley) %G%
+ *	@(#)unistd.h	5.5 (Berkeley) %G%
  */
 
 /* compile-time symbolic constants */
@@ -28,10 +28,10 @@
 #define	POSIX_VDISABLE		/* may disable terminal special characters */
 
 /* access function */
-#define	R_OK		4	/* test for read permission */
-#define	W_OK		2	/* test for write permission */
-#define	X_OK		1	/* test for execute or search permission */
 #define	F_OK		0	/* test for existence of file */
+#define	X_OK		0x01	/* test for execute or search permission */
+#define	W_OK		0x02	/* test for write permission */
+#define	R_OK		0x04	/* test for read permission */
 
 /* lseek function */
 #define	SEEK_SET	0	/* set file offset to offset */
