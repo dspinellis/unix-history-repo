@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.20 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.21 (Berkeley) %G%
  */
 
 /*
@@ -64,7 +64,7 @@ vntblinit()
 {
 
 	TAILQ_INIT(&vnode_free_list);
-	TAILQ_INIT(&mountlist);
+	CIRCLEQ_INIT(&mountlist);
 }
 
 /*
@@ -148,7 +148,8 @@ vfs_getvfs(fsid)
 {
 	register struct mount *mp;
 
-	for (mp = mountlist.tqh_first; mp != NULL; mp = mp->mnt_list.tqe_next) {
+	for (mp = mountlist.cqh_first; mp != (void *)&mountlist;
+	     mp = mp->mnt_list.cqe_next) {
 		if (mp->mnt_stat.f_fsid.val[0] == fsid->val[0] &&
 		    mp->mnt_stat.f_fsid.val[1] == fsid->val[1])
 			return (mp);
@@ -175,7 +176,7 @@ static u_short xxxfs_mntid;
 		++xxxfs_mntid;
 	tfsid.val[0] = makedev(nblkdev + mtype, xxxfs_mntid);
 	tfsid.val[1] = mtype;
-	if (mountlist.tqh_first != NULL) {
+	if (mountlist.cqh_first != (void *)&mountlist) {
 		while (vfs_getvfs(&tfsid)) {
 			tfsid.val[0]++;
 			xxxfs_mntid++;
@@ -1123,12 +1124,14 @@ printlockedvnodes()
 	register struct vnode *vp;
 
 	printf("Locked vnodes\n");
-	for (mp = mountlist.tqh_first; mp != NULL; mp = mp->mnt_list.tqe_next) {
+	for (mp = mountlist.cqh_first; mp != (void *)&mountlist;
+	     mp = mp->mnt_list.cqe_next) {
 		for (vp = mp->mnt_vnodelist.lh_first;
 		     vp != NULL;
-		     vp = vp->v_mntvnodes.le_next)
+		     vp = vp->v_mntvnodes.le_next) {
 			if (VOP_ISLOCKED(vp))
 				vprint((char *)0, vp);
+		}
 	}
 }
 #endif
@@ -1205,8 +1208,8 @@ sysctl_vnode(where, sizep)
 	}
 	ewhere = where + *sizep;
 		
-	for (mp = mountlist.tqh_first; mp != NULL; mp = nmp) {
-		nmp = mp->mnt_list.tqe_next;
+	for (mp = mountlist.cqh_first; mp != (void *)&mountlist; mp = nmp) {
+		nmp = mp->mnt_list.cqe_next;
 		if (vfs_busy(mp))
 			continue;
 		savebp = bp;
@@ -1262,6 +1265,21 @@ vfs_mountedon(vp)
 		}
 	}
 	return (0);
+}
+
+/*
+ * Unmount all filesystems. The list is traversed in reverse order
+ * of mounting to avoid dependencies.
+ */
+void
+vfs_unmountall()
+{
+	struct mount *mp, *nmp;
+
+	for (mp = mountlist.cqh_last; mp != (void *)&mountlist; mp = nmp) {
+		nmp = mp->mnt_list.cqe_prev;
+		(void) dounmount(mp, MNT_FORCE, &proc0);
+	}
 }
 
 /*
