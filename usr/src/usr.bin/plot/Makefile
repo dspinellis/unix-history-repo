@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.14 (Berkeley) %G%
+#	@(#)Makefile	4.15 (Berkeley) %G%
 
 PROGS=	tek t4013 t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
 	hpplot hp7221plot implot atoplot plottoa grnplot
@@ -97,9 +97,9 @@ install: maninstall
 	    ${DESTDIR}${BINDIR}/plot
 
 lint: ${SRCS}
-	${LINT} ${LINTFLAGS} ${CFLAGS} ${.ALLSRC}
+	lint ${LINTFLAGS} ${CFLAGS} ${.ALLSRC}
 
 tags: ${SRCS}
-	${CTAGS} -f ${.CURDIR}/tags ${.ALLSRC}
+	ctags -f ${.CURDIR}/tags ${.ALLSRC}
 
 .include <bsd.prog.mk>
