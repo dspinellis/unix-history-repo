@@ -1,4 +1,4 @@
-/*	fs.h	6.1	83/07/29	*/
+/*	fs.h	6.2	84/09/28	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -318,6 +318,10 @@ struct	cg {
 	((frags) >> (fs)->fs_fragshift)
 #define blkstofrags(fs, blks)	/* calculates (blks * fs->fs_frag) */ \
 	((blks) << (fs)->fs_fragshift)
+#define fragnum(fs, fsb)	/* calculates (fsb % fs->fs_frag) */ \
+	((fsb) & ((fs)->fs_frag - 1))
+#define blknum(fs, fsb)		/* calculates rounddown(fsb, fs->fs_frag) */ \
+	((fsb) &~ ((fs)->fs_frag - 1))
 
 /*
  * Determine the number of available frags given a
