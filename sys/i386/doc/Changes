@@ -1,6 +1,6 @@
 Hello, Emacs, this is an -*- Indented-Text -*- file!
 
-$Id: Changes,v 1.7 1994/02/01 06:55:07 nate Exp $
+$Id: Changes,v 1.8 1994/02/02 05:54:28 wollman Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.  Entries are in reverse
@@ -11,10 +11,20 @@ Since 1.0.2:
 - Substantial changes to system configuration; you MUST re-build
   `config' before attempting to build a 1.1 kernel.  (nate/martin)
 
-- Upgrade to new version of sycons which handles the 'hanging console'
-  problem and adds some new features and code cleanup. (nate)
+- Improved the quality of the information given to the user when
+  a fatal trap occurs.  (davidg)
 
-- Various TCP bugs fixed.  (davidg)
+- Added support in the if_ed driver for the WD8013W, WD8003W, and
+  WD8003EB.  (davidg)
+
+- Change to generic console code to eliminate console hangs with all 
+  "pc" consoles.  (davidg)
+
+- Upgrade to new version of sycons which handles the 'hanging console'
+  problem and adds some new features and code cleanup.  (nate)
+
+- Various TCP bugs fixed - don't forward loopback packets; Nagel
+  congestion avoidence - immediately ack small packets.  (davidg)
 
 - TCP debugging code is now truly optional, thus reducing kernel size
   when it is disabled (the default).  (davidg)
@@ -25,7 +35,7 @@ Since 1.0.2:
 - Performance improvements and partial implementation of POSIX VMIN
   and VTIME for the generic TTY code.  (ache/bde)
 
-- Crash dumps on SCSI disks now work and are standard.  (rgrimes)
+- Crash dumps on SCSI disks now work and are standard.  (rgrimes/davidg)
 
 - QMAGIC is now the official default executable format.  (davidg)
 
@@ -37,40 +47,51 @@ Since 1.0.2:
 - DDB will now print symbolic arguments and line numbers in
   backtraces (from John Brezak).  (davidg)
 
-- Substantial VM system improvements: (davidg/dyson)
+- Added four pattern memory test to eliminate problems with buggy
+  chipsets that incorrectly map memory, and to find problems with
+  defective memory. The memory sizing code has been improved to
+  further eliminate problems with buggy chipsets/BIOSs.  (davidg)
+
+- USE_486_WRITE_PROTECT is now gone; the system will automatically
+  detect 486 CPUs and behave accordingly.  (davidg)
+
+- Added SysV IPC, messaging, and semaphore code by Danny Boulet.
+  (hsu/davidg)
+
+- Substantial VM system improvements: (dyson/davidg)
 	o FreeBSD once again works on 4-MB machines.
 	o Maximum and default size limits set to reasonable values.
 	o The user area is now in the process address space, and can
 	  now be paged out along with the rest of the process.
-	o Page tables are no longer wired doan and can also be paged
-	  out.
+	o Process page tables can now be paged out.
 	o The physical map (pmap) module has been mostly rewritten for
 	  efficiency, and is considerably faster than it used to be.
-	o The pageout system now actually implements LRU.
-	o Hooks are in place for process RSS limits.
-	o Pagers can now do multiple-page operations.
-	o Pre-paging has been implemented to take advantage of this.
+	o The pageout system now actually implements modified LRU.
+	o Process RSS soft limits implemented. Hooks are in place for
+	  RSS hard limits.
+	o Pagers can now do multiple-page operations ("page fault
+	  clustering"), and page fault read behind and read ahead
+	  have been implemented to take advantage of this.
 	o The vnode pager no longer drags pages through the buffer
-	  cache, eliminating an expensive memory copy.
+	  cache, eliminating an expensive memory copy and flushing
+	  of cached data.
 	o When the system runs out of swap space, the faulting process
 	  is killed off (with a message to syslog); the old code would
 	  just deadlock.
 	o Swap space allocation is much more efficient, and swap
-	  striping actually works now.
+	  striping actually works now. It's now possible for every
+	  last block of swap space to be used before the systems runs
+	  out.
 	o The pagedaemon's algorithms are considerably improved, thus
 	  reducing the amount of CPU time used by the pagedaemon.
 	o All kernels MUST now load at virtual address 0xf010000, and
-	  the lower 640k is reclaimed for system use.
-	o The system now automatically sizes memory at start-up, thus
-	  eliminating problems with buggy chipsets that don't map all
-	  the user's memory in the right places.
-	o VM object cache size increased significantly.
-	o Memory in the I/O hole is explicitly marked non-cacheable
-	  for the 486.
-	o USE_486_WRITE_PROTECT is now gone; the system will
-	  automatically detect 486 CPUs and behave accordingly.
+	  the lower 640k is reclaimed for system use. This removes
+	  the 640K kernel size limit.
+	o VM object cache size is now dynamic and a function of the
+	  kernel 'maxusers' parameter.
+	o Memory in the I/O hole is explicitly marked non-cacheable.
 
-- Added 3C509 driver written by Herb Peyerl. (anybody claim this?)
+- Added 3C509 driver written by Herb Peyerl. (nate)
 
 - Added a new 'wd' driver which does a much better job of probing, handles
   stray interrupts better, and supports multiple controllers.  In addition
@@ -83,6 +104,9 @@ Since 1.0.2:
   file. Done it this way, because i don't know how widespread this cards
   are. (ats)
 
+- Added support in the if_ed driver for the SMC Ultra via patches from
+  Glen Lowe. (davidg)
+
 - Add extended formats set to floppy driver, improve autoconfiguration,
   add "fdformat" utility for floppy formatting.
   (ache/joerg/Serge Vakulenko)
@@ -94,6 +118,8 @@ Since 1.0.2:
   rather than manually enumerating all the options in the source files.
   This makes certain pseudo-devices and all image activators drop-in at
   link time, if desired.  (wollman)
+
+- Added YP code from Theo Deraadt.  (paul)
 
 - Make all mandatory options ``standard''.  (wollman)
 
@@ -123,7 +149,9 @@ alm		Andrew Moore
 ats		Andreas Schulz
 chmr		Christoph Robitscho
 davidg		David Greenman
+dyson		John Dyson
 guido		Guido van Rooij
+hsu		Jeffrey Hsu
 jkh		Jordan Hubbard
 joerg		Joerg Wunsch
 jtc		J.T. Conklin
