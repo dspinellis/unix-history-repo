@@ -1,6 +1,6 @@
 			    Sendmail Version 8
 			Frequently Asked Questions
-		         Version 8.2 of %G%
+		         Version 8.3 of %G%
 
 
 This FAQ is specific to Version 8 of sendmail.
@@ -207,6 +207,12 @@ This FAQ is specific to Version 8 of sendmail.
 	description to be a new program that does this local delivery.
 	I understand that "procmail" works well, although I haven't
 	used it myself.
+
+	You might be interested in reading the paper ``HLFSD: Delivering
+	Email to your $HOME'' available in the Proceedings of the
+	USENIX System Administration (LISA VII) Conference (November
+	1993).  This is also available via public FTP from
+	ftp.cs.columbia.edu:/pub/hlfsd/{README.hlfsd,hlfsd.ps}.
 ----------------------------------------------------------------------
   * Under V8, the "From " header gets mysteriously munged when I send
     to an alias.
