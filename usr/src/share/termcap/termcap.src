@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.100 (Berkeley) %G%
+#	@(#)termcap.src	5.101 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -2770,6 +2770,36 @@ va|ims950|ims televideo 950 emulation:\
 vd|ims950-rv|ims tvi950 rev video:\
 	:k0@:k1@:k2@:k3@:k4@:k5@:k6@:k7@:k8@:k9@:kb@:kd@:kh@:kl@:ko@:kr@:ku@:\
 	:vb@:xn@:tc=tvi950-rv:
+#From Andreas Stolcke <stolcke@icsi.berkeley.edu>
+vy|tvi955|955|televideo955:\
+	:ct=\E3:st=\E1:do=^J:\
+	:rs=\EDF\EC\Eg\Er\EO\E\047\E(\Ew\EX\Ee ^O\
+	\E0P\E6\200\E0p\E4\200\Ef\r:\
+	:is=\E[=3l\EF1\Ed\EG0\E[=5l\E%\El:\
+	:al=\EE:am:le=^H:bs:bt=\EI:cd=\Ey:ce=\Et:cl=\E*:cm=\E=%+ %+ :\
+	:co#80:dc=\EW:dl=\ER:do=^V:ei=\Er:ho=^^:im=\Eq:k0=^A0\r:\
+	:k1=^A@\r:k2=^AA\r:k3=^AB\r:k4=^AC\r:k5=^AD\r:k6=^AE\r:\
+	:k7=^AF\r:k8=^AG\r:k9=^AH\r:kb=^H:kd=^V:kh=^^:kl=^H:\
+	:ko=ic\054dc\054al\054dl\054cl\054bt\054ce\054cd:kr=^L:\
+	:ku=^K:li#24:ma=^Vj^Kk^Hh^Ll^^H:mi:nd=^L:pt:se=\EG0:\
+	:so=\EG4:sr=\Ej:ue=\EG0:up=^K:us=\EG8:\
+	:vb=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed:\
+	:xn:hs:ts=\Eg\Ef:fs=\r:ds=\Eg\Ef\r:\
+	:mb=\EG2:mh=\E[=5h:me=\EG0\E[=5l:mk=\EG1:mr=\EG4:\
+	:ve=\E.2:vi=\E.0:vs=\E.1:\
+	:xo:RX=^N:SX=^O:RA=\E[=7l:SA=\E[=7h:\
+	:kA=\EE:kB=\EI:kC=\EY:kD=\EW:kE=\ET:kI=\EQ:kL=\ER:kM=\EQ:\
+	:kN=\EK:kP=\EJ:kT=\E1:ka=\E3:kt=\E2:\
+	:as=\E$:ae=\E%:ac=0_`RjHkGlFmEnIoPqKsQtMuLvOwNxJ:\
+	:5i:ps=\EP:po=\E`:pf=\Ea:
+vw|tvi955-w|955-w|televideo955 w/132 cols:\
+	:is=\E[=3h\EF1\Ed\EG0\E[=5l\E%\El:\
+	:co#132:tc=tvi955:
+# use half-intensity as normal mode, full intensity as bold (md)
+vz|tvi955-hb|955-hb|televideo955 half-bright:\
+	:is=\E[=3l\EF1\Ed\EG0\E[=5h\E%\El:\
+	:mh@:md=\E[=5l:me=\EG0\E[=5h:\
+	:tc=tvi955:
 vx|ims-ansi|ultima2|ultimaII|IMS Ultima II:\
 	:pt:am:bs:co#80:li#24:\
 	:is=\E[0m\E[>14l\E[?1;?5;20l\E>\E[1m^M:if=/usr/share/tabset/vt100:\
