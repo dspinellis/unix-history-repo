@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rmt.c	4.7 (Berkeley) 85/03/20";
+static char sccsid[] = "@(#)rmt.c	4.8 (Berkeley) 85/03/24";
 #endif
 
 /*
@@ -181,7 +181,9 @@ checkbuf(record, size)
 		DEBUG("rmtd: cannot allocate buffer space\n");
 		exit(4);
 	}
-	(void) setsockopt(0, SOL_SOCKET, SO_RCVBUF, &size, sizeof (size));
+	while (size > 1024 &&
+	       setsockopt(0, SOL_SOCKET, SO_RCVBUF, &size, sizeof (size)) < 0)
+		size -= 1024;
 	return (record);
 }
 
