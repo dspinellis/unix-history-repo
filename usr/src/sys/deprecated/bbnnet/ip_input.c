@@ -709,7 +709,7 @@ int hlen;
 		break;
 
 	      default:
-		log(KERN_RECOV, "ip_forward: error %d\n", error);
+		log(LOG_INFO, "ip_forward: error %d\n", error);
 	    }
 	}
     }
@@ -882,14 +882,14 @@ struct in_addr dst;
     if (ip_nhops != 0)
     {
 	/* Use both loose and strict source routing? */
-	log(KERN_RECOV, "ip_nhops %d\n", ip_nhops);
+	log(LOG_INFO, "ip_nhops %d\n", ip_nhops);
 	ip_nhops = 0;
 	return;
     }
     olen = option[OFF_OLEN];
     if (olen > sizeof(ip_hops))
     {
-	log(KERN_RECOV, "save_rte: olen %d\n", olen);
+	log(LOG_INFO, "save_rte: olen %d\n", olen);
 	return;
     }
     off = option[OFF_OFFSET];
@@ -1259,7 +1259,7 @@ u_long should_be;
 
     s.ul = ip->ip_src.s_addr;
     d.ul = ip->ip_dst.s_addr;
-    log (KERN_RECOV,
+    log (LOG_INFO,
 	"%s checksum was 0x%x not 0x%x src %d.%d.%d.%d dst %d.%d.%d.%d\n",
 	protoname, was, should_be,
 	s.c[0], s.c[1], s.c[2], s.c[3],
@@ -1274,7 +1274,7 @@ char *emsg;
 
     s.ul = ip->ip_src.s_addr;
     d.ul = ip->ip_dst.s_addr;
-    log(KERN_RECOV, "%s: src %d.%d.%d.%d dst %d.%d.%d.%d\n",
+    log(LOG_INFO, "%s: src %d.%d.%d.%d dst %d.%d.%d.%d\n",
 	emsg,
 	s.c[0], s.c[1], s.c[2], s.c[3],
 	d.c[0], d.c[1], d.c[2], d.c[3]);
@@ -1289,7 +1289,7 @@ struct in_addr	 to;
 
     f.ul = from.s_addr;
     t.ul = to.s_addr;
-    log(KERN_RECOV, "%s: no route %d.%d.%d.%d -> %d.%d.%d.%d\n",
+    log(LOG_INFO, "%s: no route %d.%d.%d.%d -> %d.%d.%d.%d\n",
 	msg,
 	f.c[0], f.c[1], f.c[2], f.c[3],
 	t.c[0], t.c[1], t.c[2], t.c[3]);

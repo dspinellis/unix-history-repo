@@ -274,7 +274,7 @@ int asis;
 	    p->ip_dst = ipa[inp->inp_optlen/sizeof(struct in_addr)];
 	}
 	else
-	    log(KERN_RECOV, "ip_send: optlen %d inpcb 0x%x\n",
+	    log(LOG_INFO, "ip_send: optlen %d inpcb 0x%x\n",
 		(int)inp->inp_optlen, inp);
     }
 

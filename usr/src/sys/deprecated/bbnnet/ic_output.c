@@ -160,7 +160,7 @@ caddr_t dp;	/* assumed to be contiguous */
     m->m_off = MMAXOFF - len;
     if (m->m_off < (MMINOFF + sizeof(struct ip))) 
     {
-	log (KERN_RECOV, "ic_errmsg len %d", len);
+	log (LOG_INFO, "ic_errmsg len %d", len);
 	m_free (m);
 	return;
     }

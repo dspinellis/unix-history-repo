@@ -1052,7 +1052,7 @@ struct sockbuf	*sorcv;
      */
     if ((off = so->so_oobmark - sorcv->sb_cc) < 0)
     {
-	log(KERN_RECOV, "extract_oob:  neg off\n");
+	log(LOG_INFO, "extract_oob:  neg off\n");
 	tp->rcv_urpend = tp->rcv_urp = tp->irs;
 	return (mp);
     }

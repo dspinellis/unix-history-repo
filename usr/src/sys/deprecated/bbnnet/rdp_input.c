@@ -187,7 +187,7 @@ register struct mbuf *mp;
     if (ip->ip_len != hdrlen(pkt) + pkt->rh_dlen)
     {
 	ip_log(ip, "rdp length error");
-	log(KERN_RECOV, "%d + %d != %d\n", hdrlen(pkt), pkt->rh_dlen,
+	log(LOG_INFO, "%d + %d != %d\n", hdrlen(pkt), pkt->rh_dlen,
 	    ip->ip_len);
 	netlog(mp);
 	return;

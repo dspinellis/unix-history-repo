@@ -220,7 +220,7 @@ rdpsequence msgnum;
 	    /* and restart connection loss detection */
 	    rdpcb->r_nullsent = 0;
 	    rdpcb->r_timers[RDP_tNULL] = rdpcb->r_tvnull;
-	    log(KERN_RECOV, "Incorrect ACK strategy on rdpcb 0x%x\n", rdpcb);
+	    log(LOG_INFO, "Incorrect ACK strategy on rdpcb 0x%x\n", rdpcb);
 	}
 	else 
 	{
