@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fork.2	6.2 (Berkeley) %G%
+.\"	@(#)fork.2	6.3 (Berkeley) %G%
 .\"
 .TH FORK 2 ""
 .UC
@@ -29,7 +29,7 @@ the process ID of the parent process).
 The child process has its own copy of the parent's descriptors.
 These descriptors reference the same underlying objects, so that,
 for instance, file pointers in file objects are shared between
-the child and the parent, so that a
+the child and the parent, so that an
 .IR lseek (2)
 on a descriptor in the child process can affect a subsequent
 .I read
@@ -55,11 +55,12 @@ will fail and no child process will be created if one or more of the
 following are true:
 .TP 15
 [EAGAIN]
-The system-imposed limit {PROC_MAX} on the total
+The system-imposed limit on the total
 number of processes under execution would be exceeded.
+This limit is configuration-dependent.
 .TP 15
 [EAGAIN]
-The system-imposed limit {KID_MAX} on the total number of
+The system-imposed limit MAXUPRC (\fI<sys/param.h>) on the total number of
 processes under execution by a single user would be exceeded.
 .TP 15
 [ENOMEM]
