@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttzapple.c	3.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttzapple.c	3.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -303,8 +303,8 @@ zz_set_token(t, s, n)
 		ttputs(buf);
 		tt.tt_col += 3;
 	}
-	pc(ctrl('^'));
-	pc(t);
+	pc(0x80);
+	pc(t + 1);
 	s[n - 1] |= 0x80;
 	ttwrite(s, n);
 	s[n - 1] &= ~0x80;
@@ -326,7 +326,7 @@ zz_put_token(t, s, n)
 		ttputs(buf);
 		tt.tt_col += 3;
 	}
-	pc(t | 0x80);
+	pc(t + 0x81);
 	tt.tt_col += n;
 	if (tt.tt_col == NCOL)
 		tt.tt_col = 0, tt.tt_row++;
@@ -356,7 +356,7 @@ tt_zapple()
 	tt.tt_clear = zz_clear;
 	tt.tt_setmodes = zz_setmodes;
 	tt.tt_frame = gen_frame;
-	tt.tt_ntoken = 128;
+	tt.tt_ntoken = 127;
 	tt.tt_set_token = zz_set_token;
 	tt.tt_put_token = zz_put_token;
 	tt.tt_token_min = 1;
