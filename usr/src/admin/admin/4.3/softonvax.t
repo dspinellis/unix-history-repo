@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)softonvax.t	5.4 (Berkeley) %G%
+.\"	@(#)softonvax.t	5.5 (Berkeley) %G%
 .\"
 .LG
 .B
@@ -18,10 +18,10 @@ Berkeley Software for UNIX\(dg on the VAX\(dd
 .PP
 .FS
 \(dg\s-2UNIX\s0, \s-2UNIX/32V\s0, \s-2UNIX\s0 System III, and \s-2UNIX\s0
-System V are trademarks of Western Electric.
+System V are trademarks of AT&T Bell Laboratories.
 .FE
 .FS
-\(dd\s-2VAX, PDP, UNIBUS\s0, and \s-2MASSBUS\s0 are
+\(dd\s-2VAX, UNIBUS, MASSBUS\s0, and \s-2DECwriter\s0 are
 trademarks of Digital Equipment Corporation.
 .FE
 .PP
@@ -29,10 +29,11 @@ A new version of the \s-2UNIX\s0 system for the \s-2VAX\s0 family of computers
 is available from the Computer Systems Research Group
 of the University of California at Berkeley.
 This is an updated package of software for \s-2UNIX/32V\s0\(dg
-licensees, and includes a bug fixed and performance tuned kernel for the
-\s-2VAX\s0 as well as many other programs.
+licensees, and includes a kernel for the
+\s-2VAX\s0 with many bug fixes and improved performance
+as well as many other programs.
 This document highlights the differences between
-the August, 1983 distribution known as 4.2BSD
+the September, 1983 distribution known as 4.2BSD
 and the April, 1986 release known as 4.3BSD.
 A more detailed explanation of the differences is contained
 in the documents ``Changes to the Kernel in 4.3BSD'',
@@ -43,23 +44,21 @@ The new release may be used in two ways:
 as a bootstrap system for new hardware
 (or to bootstrap systems that were previously
 running 3BSD, 4.0BSD, 4.1BSD, or \s-2UNIX/32V\s0),
-or to update a system running the 4.2BSD release of August, 1983.
+or to update a system running 4.2BSD.
 Hardware configurations supported for booting are described below and in the
 document ``Installing and Operating 4.2BSD''.
 The things most notable for sites that are updating
 4.3BSD to this new release are:
 .IP 1)
-The performance of the system has been improved to be at least as
+The performance of the system as a whole has been improved to be at least as
 good as that of 4.1BSD, and in many instances is better.
 .IP 2)
 The system now provides full support for the Xerox Network System
 network communication protocols.
-This support has been integrated into the system to allow the
-development and concurrent use of other communication protocols.
-Hardware support and addressing have been isolated from the
-protocols to allow sharing between varying network architectures.
+Most of the remaining Internet dependencies in shared kernel code
+have been removed or generalized.
 .IP 3)
-A new internet name server has been added to allow sites to
+A new Internet name domain server has been added to allow sites to
 administer their name space locally and export it to the rest of the net.
 .IP 4)
 The C and Fortran 77 compilers have been modified so that they
@@ -108,14 +107,14 @@ This augments the existing set of languages already present on 4.2BSD
 including C, Fortran 77, Pascal, Franz Lisp, APL, ICON, and FP.
 .PP
 There are two new screen based editors in 4.3BSD.
-In addition to the venerable modefull editor \fIvi\fP,
+In addition to the venerable modeful editor \fIvi\fP,
 are added two modeless editors.
 The first is GNU \fIemacs\fP, full of functionality but somewhat big and slow.
 The other is \fIjove\fP from Jonathan Payne,
 a mean and lean editor in the modeless tradition.
 .PP
 An alternative to \fIMail\fP is now available in the fourth rewrite
-of the Rand mail handler, \fImh\fP.
+of the Rand mail handler, \fImh\fP (version 6.3 with Berkeley modifications).
 For those users that spend half their day reading mail,
 this mail handler backed by an 8650 is up to the job.
 .SH
@@ -143,7 +142,7 @@ and the FUJITSU Eagle 404 Megabyte Winchester disk drive.
 Bad blocking support is provided on all disks attached to an EMULEX
 UNIBUS or MASSBUS controller.
 The EMULEX TC-11 tape controller
-(that emulates a TM-11 DEC UNIBUS controller),
+(that emulates a TM11 DEC UNIBUS controller),
 the EMULEX TC-7000 tape controller
 (that emulates a TU77 DEC MASSBUS controller),
 and System Industries Model 9700 tape drive
@@ -155,13 +154,13 @@ sources and binary programs, at least 120 Megabytes
 of disk storage is required.
 .PP
 For terminal interfaces,
-the standard DEC DZ-11, DMZ-32, DHU-11, and DMF-32 terminal
+the standard DEC DZ11, DMZ32, DHU11, and DMF32 terminal
 interfaces are supported.
-In addition, DH-11 emulators such as
+In addition, DH11 emulators such as
 the ABLE DH/DM (that replaces the ABLE DMAX) and EMULEX CS-11 are supported.
 The system also provides support for standard line printer
-interfaces emulating the DEC LP-11 or the parallel port of the DMF-32.
-Support for serial printers such as a DECWRITER-III and printer-plotters
+interfaces emulting the DEC LP11 or the parallel port of the DMF32.
+Support for serial printers such as a DECwriter-III and printer-plotters
 such as those made by BENSON/VARIAN or VERSATEC is 
 available with standard drivers.
 .PP
