@@ -1,4 +1,4 @@
-/*	uipc_mu_msg.c	Melb 4.1	82/07/16	*/
+/*	uipc_mu_msg.c	Melb 4.2	82/11/13	*/
 
 #ifdef	MUSH
 #include "../h/param.h"
@@ -93,7 +93,7 @@ mu_msg()
 			} else {
 				if (p->p_msgflgs & MSGRPLY) {
 					while (pp = mu_send(&p->p_mb,
-					    p->p_mb.msg_pid, 0)) {
+					    (int)p->p_mb.msg_pid, 0)) {
 						pp->p_msgflgs |= MSGWAIT;
 						sleep((caddr_t)&pp->p_mb,
 						    MSGPRI);
@@ -119,7 +119,7 @@ mu_msg()
 				p->p_msgflgs |= MSGWRPLY;
 			}
 			mb.msg_uid = u.u_uid;
-			while ((pp = mu_send(&mb, mb.msg_pid, p->p_pid)) &&
+			while ((pp = mu_send(&mb, (int)mb.msg_pid, p->p_pid)) &&
 			    uap->wait & MSG_W_POST) {
 				pp->p_msgflgs |= MSGWAIT;
 				sleep((caddr_t)&pp->p_mb, MSGPRI);
@@ -146,9 +146,8 @@ mu_msg()
 
 struct proc *
 mu_send(mp, pid, from)
-register mmsgbuf *mp;
-register int pid;
-register int from;
+	register mmsgbuf *mp;
+	register int pid, from;
 {
 	register struct proc *p;
 

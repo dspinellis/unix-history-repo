@@ -1,4 +1,4 @@
-/*	tty_subr.c	4.16	82/10/31	*/
+/*	tty_subr.c	4.17	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -382,6 +382,8 @@ struct clist *from, *to;
 		(void) putc(c, to);
 }
 
+#include "dmc.h"
+#ifdef NDMC > 0
 /*
  * integer (2-byte) get/put
  * using clists
@@ -412,3 +414,4 @@ putw(c, p)
 	splx(s);
 	return(0);
 }
+#endif

@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.47	82/11/02	*/
+/*	kern_proc.c	4.48	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -22,6 +22,7 @@
 #include "../h/descrip.h"
 #include "../h/uio.h"
 #include "../h/mbuf.h"
+#include "../h/nami.h"
 
 gethostid()
 {
@@ -103,7 +104,7 @@ execve()
 	char cfarg[SHSIZE];
 	int resid;
 
-	if ((ip = namei(uchar, 0, 1)) == NULL)
+	if ((ip = namei(uchar, LOOKUP, 1)) == NULL)
 		return;
 	bno = 0;
 	bp = 0;
@@ -208,7 +209,7 @@ execve()
 		    (unsigned)(u.u_dent.d_namlen + 1));
 		indir = 1;
 		iput(ip);
-		ip = namei(schar, 0, 1);
+		ip = namei(schar, LOOKUP, 1);
 		if (ip == NULL)
 			return;
 		goto again;
@@ -1006,10 +1007,10 @@ retry:
 		if (fp == NULL)
 			continue;
 		fp->f_count++;
-		if (u.u_pofile[n]&RDLOCK)
-			fp->f_inode->i_rdlockc++;
-		if (u.u_pofile[n]&WRLOCK)
-			fp->f_inode->i_wrlockc++;
+		if (u.u_pofile[n]&SHLOCK)
+			fp->f_inode->i_shlockc++;
+		if (u.u_pofile[n]&EXLOCK)
+			fp->f_inode->i_exlockc++;
 	}
 	u.u_cdir->i_count++;
 	if (u.u_rdir)

@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.63	82/11/02	*/
+/*	uipc_socket.c	4.64	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -34,13 +34,12 @@ socreate(dom, aso, type, proto, opt)
 	register struct protosw *prp;
 	register struct socket *so;
 	struct mbuf *m;
-	int pf, error;
+	int error;
 
-	pf = dom ? PF_UNIX : PF_INET;		/* should be u.u_protof */
 	if (proto)
-		prp = pffindproto(pf, proto);
+		prp = pffindproto(dom, proto);
 	else
-		prp = pffindtype(pf, type);
+		prp = pffindtype(dom, type);
 	if (prp == 0)
 		return (EPROTONOSUPPORT);
 	if (prp->pr_type != type)
@@ -51,6 +50,7 @@ socreate(dom, aso, type, proto, opt)
 	so = mtod(m, struct socket *);
 	so->so_options = 0;
 	so->so_state = 0;
+	so->so_type = type;
 	if (u.u_uid == 0)
 		so->so_state = SS_PRIV;
 	so->so_proto = prp;
@@ -187,7 +187,7 @@ sostat(so, ub)
 	struct stat sb;
 
 	bzero((caddr_t)&sb, sizeof (sb));		/* XXX */
-	copyout((caddr_t)&sb, (caddr_t)ub, sizeof (sb));/* XXX */
+	(void) copyout((caddr_t)&sb, (caddr_t)ub, sizeof (sb));/* XXX */
 	return (0);					/* XXX */
 }
 

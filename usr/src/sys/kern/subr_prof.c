@@ -1,4 +1,4 @@
-/*	subr_prof.c	4.1	82/06/28	*/
+/*	subr_prof.c	4.2	82/11/13	*/
 
 #ifdef GPROF
 #include "../h/crt0.h"
@@ -28,13 +28,13 @@ kmstartup()
 	ssiz = s_textsize + sizeof(struct phdr);
 	printf("Profiling kernel, s_textsize=%d [%x..%x]\n",
 		s_textsize, s_lowpc, s_highpc);
-	sbuf = (u_short *)wmemall(vmemall, ssiz);
+	sbuf = (u_short *)wmemall(memall, ssiz);
 	if (sbuf == 0) {
 		printf("No space for monitor buffer(s)\n");
 		return;
 	}
 	blkclr((caddr_t)sbuf, ssiz);
-	froms = (u_short *)wmemall(vmemall, s_textsize);
+	froms = (u_short *)wmemall(memall, s_textsize);
 	if (froms == 0) {
 		printf("No space for monitor buffer(s)\n");
 		wmemfree(sbuf, ssiz);
@@ -42,7 +42,7 @@ kmstartup()
 		return;
 	}
 	blkclr((caddr_t)froms, s_textsize);
-	tos = (struct tostruct *)wmemall(vmemall, s_textsize);
+	tos = (struct tostruct *)wmemall(memall, s_textsize);
 	if (tos == 0) {
 		printf("No space for monitor buffer(s)\n");
 		wmemfree(sbuf, ssiz);

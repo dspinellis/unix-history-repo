@@ -1,9 +1,11 @@
-/*	uipc_domain.c	5.5	82/11/02	*/
+/*	uipc_domain.c	5.6	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
 #include "../h/domain.h"
+#include <time.h>
+#include "../h/kernel.h"
 
 #define	ADDDOMAIN(x)	{ \
 	extern struct domain x/**/domain; \
@@ -13,7 +15,10 @@
 
 domaininit()
 {
+	register struct domain *dp;
+	register struct protosw *pr;
 
+#ifndef lint
 	ADDDOMAIN(unix);
 #ifdef INET
 	ADDDOMAIN(inet);
@@ -24,22 +29,14 @@ domaininit()
 #ifdef IMP
 	ADDDOMAIN(imp);
 #endif
-	pfinit();
-}
-
-/*
- * Operations applying to the sets of protocols
- * defined by the available communications domains.
- */
-pfinit()
-{
-	register struct domain *dp;
-	register struct protosw *pr;
+#endif
 
 	for (dp = domains; dp; dp = dp->dom_next)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_init)
 				(*pr->pr_init)();
+	pffasttimo();
+	pfslowtimo();
 }
 
 struct protosw *
@@ -74,7 +71,7 @@ pffindproto(family, protocol)
 			goto found;
 	return (0);
 found:
-	for (pr = dp->dom_protosw; pr <= dp->dom_protoswNPROTOSW; pr++)
+	for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 		if (pr->pr_protocol == protocol)
 			return (pr);
 	return (0);
@@ -102,6 +99,7 @@ pfslowtimo()
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_slowtimo)
 				(*pr->pr_slowtimo)();
+	timeout(pfslowtimo, (caddr_t)0, hz/2);
 }
 
 pffasttimo()
@@ -113,4 +111,5 @@ pffasttimo()
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_fasttimo)
 				(*pr->pr_fasttimo)();
+	timeout(pffasttimo, (caddr_t)0, hz/5);
 }

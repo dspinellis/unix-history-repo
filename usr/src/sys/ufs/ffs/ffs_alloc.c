@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	2.18	82/10/21	*/
+/*	ffs_alloc.c	2.19	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,8 +13,8 @@
 #include "../h/kernel.h"
 
 extern u_long		hashalloc();
-extern u_long		ialloccg();
-extern u_long		alloccg();
+extern ino_t		ialloccg();
+extern daddr_t		alloccg();
 extern daddr_t		alloccgblk();
 extern daddr_t		fragextend();
 extern daddr_t		blkpref();
@@ -74,7 +74,8 @@ alloc(ip, bpref, size)
 		cg = itog(fs, ip->i_number);
 	else
 		cg = dtog(fs, bpref);
-	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, size, alloccg);
+	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, size,
+		(u_long (*)())alloccg);
 	if (bno <= 0)
 		goto nospace;
 	bp = getblk(ip->i_dev, fsbtodb(fs, bno), size);
@@ -137,12 +138,13 @@ realloccg(ip, bprev, bpref, osize, nsize)
 			}
 		} while (brealloc(bp, nsize) == 0);
 		bp->b_flags |= B_DONE;
-		bzero(bp->b_un.b_addr + osize, nsize - osize);
+		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
 		return (bp);
 	}
 	if (bpref >= fs->fs_size)
 		bpref = 0;
-	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, nsize, alloccg);
+	bno = (daddr_t)hashalloc(ip, cg, (long)bpref, nsize,
+		(u_long (*)())alloccg);
 	if (bno > 0) {
 		obp = bread(ip->i_dev, fsbtodb(fs, bprev), osize);
 		if (obp->b_flags & B_ERROR) {
@@ -151,9 +153,9 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		}
 		bp = getblk(ip->i_dev, fsbtodb(fs, bno), nsize);
 		bcopy(obp->b_un.b_addr, bp->b_un.b_addr, (u_int)osize);
-		bzero(bp->b_un.b_addr + osize, nsize - osize);
+		bzero(bp->b_un.b_addr + osize, (unsigned)nsize - osize);
 		brelse(obp);
-		fre(ip, bprev, (off_t)osize);
+		free(ip, bprev, (off_t)osize);
 		return (bp);
 	}
 nospace:
@@ -196,7 +198,7 @@ ialloc(pip, ipref, mode)
 	if (fs->fs_cstotal.cs_nifree == 0)
 		goto noinodes;
 #ifdef QUOTA
-	if (chkiq(pip->i_dev, NULL, u.u_uid, 0))
+	if (chkiq(pip->i_dev, (struct inode *)NULL, u.u_uid, 0))
 		return(NULL);
 #endif
 	if (ipref >= fs->fs_ncg * fs->fs_ipg)
@@ -230,6 +232,7 @@ noinodes:
  * among those cylinder groups with above the average number of
  * free inodes, the one with the smallest number of directories.
  */
+ino_t
 dirpref(fs)
 	register struct fs *fs;
 {
@@ -244,35 +247,85 @@ dirpref(fs)
 			mincg = cg;
 			minndir = fs->fs_cs(fs, cg).cs_ndir;
 		}
-	return (fs->fs_ipg * mincg);
+	return ((ino_t)(fs->fs_ipg * mincg));
 }
 
 /*
- * Select a cylinder to place a large block of data.
- *
- * The policy implemented by this algorithm is to maintain a
- * rotor that sweeps the cylinder groups. When a block is 
- * needed, the rotor is advanced until a cylinder group with
- * greater than the average number of free blocks is found.
+ * Select the desired position for the next block in a file.  The file is
+ * logically divided into sections. The first section is composed of the
+ * direct blocks. Each additional section contains fs_maxbpg blocks.
+ * 
+ * If no blocks have been allocated in the first section, the policy is to
+ * request a block in the same cylinder group as the inode that describes
+ * the file. If no blocks have been allocated in any other section, the
+ * policy is to place the section in a cylinder group with a greater than
+ * average number of free blocks.  An appropriate cylinder group is found
+ * by maintaining a rotor that sweeps the cylinder groups. When a new
+ * group of blocks is needed, the rotor is advanced until a cylinder group
+ * with greater than the average number of free blocks is found.
+ * 
+ * If a section is already partially allocated, the policy is to
+ * contiguously allocate fs_maxcontig blocks.  The end of one of these
+ * contiguous blocks and the beginning of the next is physically separated
+ * so that the disk head will be in transit between them for at least
+ * fs_rotdelay milliseconds.  This is to allow time for the processor to
+ * schedule another I/O transfer.
  */
 daddr_t
-blkpref(fs)
-	register struct fs *fs;
+blkpref(ip, lbn, indx, bap)
+	struct inode *ip;
+	daddr_t lbn;
+	int indx;
+	daddr_t *bap;
 {
+	register struct fs *fs;
 	int cg, avgbfree;
+	daddr_t nextblk;
 
-	avgbfree = fs->fs_cstotal.cs_nbfree / fs->fs_ncg;
-	for (cg = fs->fs_cgrotor + 1; cg < fs->fs_ncg; cg++)
-		if (fs->fs_cs(fs, cg).cs_nbfree >= avgbfree) {
-			fs->fs_cgrotor = cg;
+	fs = ip->i_fs;
+	if (indx % fs->fs_maxbpg == 0 || bap[indx - 1] == 0) {
+		if (lbn < NDADDR) {
+			cg = itog(fs, ip->i_number);
 			return (fs->fs_fpg * cg + fs->fs_frag);
 		}
-	for (cg = 0; cg <= fs->fs_cgrotor; cg++)
-		if (fs->fs_cs(fs, cg).cs_nbfree >= avgbfree) {
-			fs->fs_cgrotor = cg;
-			return (fs->fs_fpg * cg + fs->fs_frag);
-		}
-	return (NULL);
+		/*
+		 * Find a cylinder with greater than average number of
+		 * unused data blocks.
+		 */
+		avgbfree = fs->fs_cstotal.cs_nbfree / fs->fs_ncg;
+		for (cg = fs->fs_cgrotor + 1; cg < fs->fs_ncg; cg++)
+			if (fs->fs_cs(fs, cg).cs_nbfree >= avgbfree) {
+				fs->fs_cgrotor = cg;
+				return (fs->fs_fpg * cg + fs->fs_frag);
+			}
+		for (cg = 0; cg <= fs->fs_cgrotor; cg++)
+			if (fs->fs_cs(fs, cg).cs_nbfree >= avgbfree) {
+				fs->fs_cgrotor = cg;
+				return (fs->fs_fpg * cg + fs->fs_frag);
+			}
+		return (NULL);
+	}
+	/*
+	 * One or more previous blocks have been laid out. If less
+	 * than fs_maxcontig previous blocks are contiguous, the
+	 * next block is requested contiguously, otherwise it is
+	 * requested rotationally delayed by fs_rotdelay milliseconds.
+	 */
+	nextblk = bap[indx - 1] + fs->fs_frag;
+	if (indx > fs->fs_maxcontig &&
+	    bap[indx - fs->fs_maxcontig] + fs->fs_frag * fs->fs_maxcontig
+	    != nextblk)
+		return (nextblk);
+	if (fs->fs_rotdelay != 0)
+		/*
+		 * Here we convert ms of delay to frags as:
+		 * (frags) = (ms) * (rev/sec) * (sect/rev) /
+		 *	((sect/frag) * (ms/sec))
+		 * then round up to the next block.
+		 */
+		nextblk += roundup(fs->fs_rotdelay * fs->fs_rps * fs->fs_nsect /
+		    (NSPF(fs) * 1000), fs->fs_frag);
+	return (nextblk);
 }
 
 /*
@@ -400,7 +453,7 @@ fragextend(ip, cg, bprev, osize, nsize)
  * Check to see if a block of the apprpriate size is available,
  * and if it is, allocate it.
  */
-u_long
+daddr_t
 alloccg(ip, cg, bpref, size)
 	struct inode *ip;
 	int cg;
@@ -505,14 +558,10 @@ alloccgblk(fs, cgp, bpref)
 	/*
 	 * if the requested block is available, use it
 	 */
-/*
- * disallow sequential layout.
- *
 	if (isblock(fs, cgp->cg_free, bpref/fs->fs_frag)) {
 		bno = bpref;
 		goto gotit;
 	}
- */
 	/*
 	 * check for a block available on the same cylinder
 	 */
@@ -528,28 +577,12 @@ alloccgblk(fs, cgp, bpref)
 		goto norot;
 	}
 	/*
-	 * find a block that is rotationally optimal
-	 */
-	cylbp = cgp->cg_b[cylno];
-	if (fs->fs_rotdelay == 0) {
-		pos = cbtorpos(fs, bpref);
-	} else {
-		/*
-		 * here we convert ms of delay to frags as:
-		 * (frags) = (ms) * (rev/sec) * (sect/rev) /
-		 *	((sect/frag) * (ms/sec))
-		 * then round up to the next rotational position
-		 */
-		bpref += fs->fs_rotdelay * fs->fs_rps * fs->fs_nsect /
-		    (NSPF(fs) * 1000);
-		pos = cbtorpos(fs, bpref);
-		pos = (pos + 1) % NRPOS;
-	}
-	/*
 	 * check the summary information to see if a block is 
 	 * available in the requested cylinder starting at the
-	 * optimal rotational position and proceeding around.
+	 * requested rotational position and proceeding around.
 	 */
+	cylbp = cgp->cg_b[cylno];
+	pos = cbtorpos(fs, bpref);
 	for (i = pos; i < NRPOS; i++)
 		if (cylbp[i] > 0)
 			break;
@@ -612,7 +645,7 @@ gotit:
  *   2) allocate the next available inode after the requested
  *      inode in the specified cylinder group.
  */
-u_long
+ino_t
 ialloccg(ip, cg, ipref, mode)
 	struct inode *ip;
 	int cg;
@@ -673,7 +706,7 @@ gotit:
  * free map. If a fragment is deallocated, a possible 
  * block reassembly is checked.
  */
-fre(ip, bno, size)
+free(ip, bno, size)
 	register struct inode *ip;
 	daddr_t bno;
 	off_t size;
@@ -874,37 +907,6 @@ mapsearch(fs, cgp, bpref, allocsiz)
 }
 
 /*
- * Getfs maps a device number into a pointer to the incore super block.
- *
- * The algorithm is a linear search through the mount table. A
- * consistency check of the super block magic number is performed.
- *
- * panic: no fs -- the device is not mounted.
- *	this "cannot happen"
- */
-struct fs *
-getfs(dev)
-	dev_t dev;
-{
-	register struct mount *mp;
-	register struct fs *fs;
-
-	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
-		if (mp->m_bufp == NULL || mp->m_dev != dev)
-			continue;
-		fs = mp->m_bufp->b_un.b_fs;
-		if (fs->fs_magic != FS_MAGIC) {
-			printf("dev = 0x%x, fs = %s\n", dev, fs->fs_fsmnt);
-			panic("getfs: bad magic");
-		}
-		return (fs);
-	}
-	printf("dev = 0x%x\n", dev);
-	panic("getfs: no fs");
-	return (NULL);
-}
-
-/*
  * Fserr prints the name of a file system with an error diagnostic.
  * 
  * The form of the error message is:
@@ -917,82 +919,3 @@ fserr(fs, cp)
 
 	printf("%s: %s\n", fs->fs_fsmnt, cp);
 }
-
-/*
- * Getfsx returns the index in the file system
- * table of the specified device.  The swap device
- * is also assigned a pseudo-index.  The index may
- * be used as a compressed indication of the location
- * of a block, recording
- *	<getfsx(dev),blkno>
- * rather than
- *	<dev, blkno>
- * provided the information need remain valid only
- * as long as the file system is mounted.
- */
-getfsx(dev)
-	dev_t dev;
-{
-	register struct mount *mp;
-
-	if (dev == swapdev)
-		return (MSWAPX);
-	for(mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		if (mp->m_dev == dev)
-			return (mp - &mount[0]);
-	return (-1);
-}
-
-/*
- * Update is the internal name of 'sync'.  It goes through the disk
- * queues to initiate sandbagged IO; goes through the inodes to write
- * modified nodes; and it goes through the mount table to initiate
- * the writing of the modified super blocks.
- */
-update()
-{
-	register struct inode *ip;
-	register struct mount *mp;
-	struct fs *fs;
-
-	if (updlock)
-		return;
-	updlock++;
-	/*
-	 * Write back modified superblocks.
-	 * Consistency check that the superblock
-	 * of each file system is still in the buffer cache.
-	 */
-	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
-		if (mp->m_bufp == NULL)
-			continue;
-		fs = mp->m_bufp->b_un.b_fs;
-		if (fs->fs_fmod == 0)
-			continue;
-		if (fs->fs_ronly != 0) {		/* XXX */
-			printf("fs = %s\n", fs->fs_fsmnt);
-			panic("update: rofs mod");
-		}
-		fs->fs_fmod = 0;
-		fs->fs_time = time.tv_sec;
-		sbupdate(mp);
-	}
-	/*
-	 * Write back each (modified) inode.
-	 */
-	for (ip = inode; ip < inodeNINODE; ip++) {
-		if ((ip->i_flag & ILOCKED) != 0 || ip->i_count == 0)
-			continue;
-		ip->i_flag |= ILOCKED;
-		ip->i_count++;
-		iupdat(ip, &time, &time, 0);
-		iput(ip);
-	}
-	updlock = 0;
-	/*
-	 * Force stale buffer cache information to be flushed,
-	 * for all devices.
-	 */
-	bflush(NODEV);
-}
-

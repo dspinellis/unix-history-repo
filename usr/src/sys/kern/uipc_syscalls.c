@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.35	82/10/21	*/
+/*	uipc_syscalls.c	4.36	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -38,7 +38,7 @@ socket()
 		goto freeopt;
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_type = DTYPE_SOCKET;
-	u.u_error = socreate(0, &so, uap->type, uap->protocol, &aopt);
+	u.u_error = socreate(AF_UNSPEC, &so, uap->type, uap->protocol, &aopt);
 	if (u.u_error)
 		goto bad;
 	fp->f_socket = so;
@@ -467,10 +467,12 @@ pipe()
 	struct socket *rso, *wso;
 	int r;
 
-	u.u_error = socreate(1, &rso, SOCK_STREAM, 0, (struct socketopt *)0);
+	u.u_error = socreate(AF_UNIX, &rso, SOCK_STREAM, 0,
+		(struct socketopt *)0);
 	if (u.u_error)
 		return;
-	u.u_error = socreate(1, &wso, SOCK_STREAM, 0, (struct socketopt *)0);
+	u.u_error = socreate(AF_UNIX, &wso, SOCK_STREAM, 0,
+		(struct socketopt *)0);
 	if (u.u_error)
 		goto free;
 	rf = falloc();

@@ -1,4 +1,4 @@
-/*	ffs_balloc.c	5.2	82/09/25	*/
+/*	ffs_balloc.c	5.3	82/11/13	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -51,8 +51,8 @@ bmap(ip, bn, rwflg, size)
 		osize = blksize(fs, ip, nb);
 		if (osize < fs->fs_bsize && osize > 0) {
 			bp = realloccg(ip, ip->i_db[nb],
-				blkpref(ip, nb, nb, &ip->i_db[0]),
-				osize, fs->fs_bsize);
+				blkpref(ip, nb, (int)nb, &ip->i_db[0]),
+				osize, (int)fs->fs_bsize);
 			ip->i_size = (nb + 1) * fs->fs_bsize;
 			ip->i_db[nb] = dbtofsb(fs, bp->b_blkno);
 			ip->i_flag |= IUPD|ICHG;
@@ -77,7 +77,7 @@ bmap(ip, bn, rwflg, size)
 				if (nsize <= osize)
 					goto gotit;
 				bp = realloccg(ip, nb,
-					blkpref(ip, bn, bn, &ip->i_db[0]),
+					blkpref(ip, bn, (int)bn, &ip->i_db[0]),
 					osize, nsize);
 			} else {
 				if (ip->i_size < (bn + 1) * fs->fs_bsize)
@@ -85,7 +85,7 @@ bmap(ip, bn, rwflg, size)
 				else
 					nsize = fs->fs_bsize;
 				bp = alloc(ip,
-					blkpref(ip, bn, bn, &ip->i_db[0]),
+					blkpref(ip, bn, (int)bn, &ip->i_db[0]),
 					nsize);
 			}
 			if (bp == NULL)
@@ -136,8 +136,8 @@ gotit:
 	if (nb == 0) {
 		if (rwflg == B_READ)
 			return ((daddr_t)-1);
-		pref = blkpref(ip, lbn, 0, 0);
-	        bp = alloc(ip, pref, fs->fs_bsize);
+		pref = blkpref(ip, lbn, 0, (daddr_t *)0);
+	        bp = alloc(ip, pref, (int)fs->fs_bsize);
 		if (bp == NULL)
 			return ((daddr_t)-1);
 		nb = dbtofsb(fs, bp->b_blkno);
@@ -154,7 +154,7 @@ gotit:
 	 * fetch through the indirect blocks
 	 */
 	for (; j <= NIADDR; j++) {
-		bp = bread(ip->i_dev, fsbtodb(fs, nb), fs->fs_bsize);
+		bp = bread(ip->i_dev, fsbtodb(fs, nb), (int)fs->fs_bsize);
 		if (bp->b_flags & B_ERROR) {
 			brelse(bp);
 			return ((daddr_t)0);
@@ -170,10 +170,11 @@ gotit:
 			}
 			if (pref == 0)
 				if (j < NIADDR)
-					pref = blkpref(ip, lbn, 0, 0);
+					pref = blkpref(ip, lbn, 0,
+						(daddr_t *)0);
 				else
 					pref = blkpref(ip, lbn, i, &bap[0]);
-		        nbp = alloc(ip, pref, fs->fs_bsize);
+		        nbp = alloc(ip, pref, (int)fs->fs_bsize);
 			if (nbp == NULL) {
 				brelse(bp);
 				return ((daddr_t)-1);

@@ -1,4 +1,4 @@
-/*	kern_prot.c	5.10	82/10/20	*/
+/*	kern_prot.c	5.11	82/11/13	*/
 
 /*
  * System calls related to processes and protection
@@ -105,7 +105,43 @@ setpgrp()
 	p->p_pgrp = uap->pgrp;
 }
 
-setuid()
+setreuid()
+{
+	struct a {
+		int	ruid;
+		int	euid;
+	} *uap;
+	register int ruid, euid;
+
+	uap = (struct a *)u.u_ap;
+	ruid = uap->ruid;
+	if (ruid == -1)
+		ruid = u.u_ruid;
+	if (u.u_ruid != ruid && u.u_uid != ruid && !suser())
+		return;
+	euid = uap->euid;
+	if (euid == -1)
+		euid = u.u_uid;
+	if (u.u_ruid != euid && u.u_uid != euid && !suser())
+		return;
+	/*
+	 * Everything's okay, do it.
+	 */
+	if (ruid != u.u_ruid) {
+#ifdef QUOTA
+		if (u.u_quota->q_uid != ruid) {
+			qclean();
+			qstart(getquota(ruid, 0, 0));
+		}
+#endif
+		u.u_procp->p_uid = ruid;
+		u.u_ruid = ruid;
+	}
+	u.u_uid = euid;
+}
+
+#ifndef NOCOMPAT
+osetuid()
 {
 	register uid;
 	register struct a {
@@ -126,8 +162,41 @@ setuid()
 		u.u_ruid = uid;
 	}
 }
+#endif
 
-setgid()
+setregid()
+{
+	register struct a {
+		int	rgid;
+		int	egid;
+	} *uap;
+	register int rgid, egid;
+
+	uap = (struct a *)u.u_ap;
+	rgid = uap->rgid;
+	if (rgid == -1)
+		rgid = u.u_rgid;
+	if (u.u_rgid != rgid && u.u_gid != rgid && !suser())
+		return;
+	egid = uap->egid;
+	if (egid == -1)
+		egid = u.u_gid;
+	if (u.u_rgid != egid && u.u_gid != egid && !suser())
+		return;
+	if (u.u_rgid != rgid) {
+		leavegroup(u.u_rgid);
+		(void) entergroup(u.u_rgid);
+		u.u_rgid = rgid;
+	}
+	if (u.u_gid != egid) {
+		leavegroup(u.u_gid);
+		(void) entergroup(egid);
+		u.u_gid = egid;
+	}
+}
+
+#ifndef NOCOMPAT
+osetgid()
 {
 	register gid;
 	register struct a {
