@@ -1,4 +1,4 @@
-/*	vm_swap.c	4.6	82/06/25	*/
+/*	vm_swap.c	4.7	82/07/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -19,6 +19,17 @@ swstrategy(bp)
 	int sz, off, seg;
 	dev_t dev;
 
+#ifdef GENERIC
+	/*
+	 * A mini-root gets copied into the front of the swap
+	 * and we run over top of the swap area just long
+	 * enough for us to do a mkfs and restor of the real
+	 * root (sure beats rewriting standalone restor).
+	 */
+#define	MINIROOTSIZE	2048
+	if (rootdev == dumpdev)
+		bp->b_blkno += MINIROOTSIZE;
+#endif
 	sz = (bp->b_bcount+511)/512;
 	off = bp->b_blkno % DMMAX;
 	if (bp->b_blkno+sz > nswap || off+sz > DMMAX) {
