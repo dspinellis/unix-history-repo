@@ -1,7 +1,7 @@
 /*
  * Terminal initialization routines.
  *
- * %G% (Berkeley) @(#)setterm.c	1.6
+ * %G% (Berkeley) @(#)setterm.c	1.7
  */
 
 # undef	DEBUG
@@ -106,12 +106,13 @@ reg char	*type; {
 	return OK;
 }
 /*
- *	This routine gets all the terminal falgs from the termcap database
+ *	This routine gets all the terminal flags from the termcap database
  */
 zap() {
 
 	reg bool	**fp;
 	reg char	*namp, ***sp;
+	reg int		SG, UG;
 	extern char	*tgetstr();
 
 	/*
@@ -145,7 +146,9 @@ zap() {
 # endif
 		namp += 2;
 	} while (*namp);
-	if (!SO && US) {
+	SG = tgetnum("sg");
+	UG = tgetnum("ug");
+	if ((SG || !SO) && (!UG && US)) {
 		SO = US;
 		SE = UE;
 	}
@@ -158,7 +161,7 @@ char *
 getcap(name)
 char *name;
 {
-	char *tgetent();
+	char *tgetstr();
 
-	return tgetent(name, &aoftspace);
+	return tgetstr(name, &aoftspace);
 }
