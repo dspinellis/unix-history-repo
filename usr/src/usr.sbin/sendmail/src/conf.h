@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.75 (Berkeley) %G%
+ *	@(#)conf.h	8.76 (Berkeley) %G%
  */
 
 /*
@@ -634,6 +634,20 @@ typedef int		pid_t;
 
 #endif
 
+
+/*
+**  Cray Unicos
+**
+**	Ported by David L. Kensiski, Sterling Sofware <kensiski@nas.nasa.gov>
+*/
+
+#ifdef UNICOS
+# define SYSTEM5	1	/* include all the System V defines */
+# define SYS5SIGNALS	1	/* SysV signal semantics -- reset on each sig */
+# define HASSTATFS	1	/* has the statfs(2) syscall */
+# define MAXPATHLEN	PATHSIZE
+# define LA_TYPE	LA_ZERO
+#endif
 
 
 
