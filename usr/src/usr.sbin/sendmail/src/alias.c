@@ -29,15 +29,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.18 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.19 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.18 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.19 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.18 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.19 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.18 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.19 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -925,7 +925,6 @@ forward(user, sendq, e)
 {
 	char *pp;
 	char *ep;
-	extern bool safefile();
 
 	if (tTd(27, 1))
 		printf("forward(%s)\n", user->q_paddr);
@@ -947,7 +946,9 @@ forward(user, sendq, e)
 
 	for (pp = ForwardPath; pp != NULL; pp = ep)
 	{
+		int err;
 		char buf[MAXPATHLEN+1];
+		extern bool transienterror();
 
 		ep = strchr(pp, ':');
 		if (ep != NULL)
@@ -957,8 +958,15 @@ forward(user, sendq, e)
 			*ep++ = ':';
 		if (tTd(27, 3))
 			printf("forward: trying %s\n", buf);
-		if (include(buf, TRUE, user, sendq, e) == 0)
+		err = include(buf, TRUE, user, sendq, e);
+		if (err == 0)
 			break;
+		if (transienterror(err))
+		{
+			/* we have to suspend this message */
+			user->q_flags |= QQUEUEUP|QDONTSEND;
+			return;
+		}
 	}
 }
 /*

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -428,7 +428,6 @@ setsender(from, e)
 	extern struct passwd *getpwnam();
 	extern char *macvalue();
 	extern char **prescan();
-	extern bool safefile();
 	extern char *FullName;
 
 	if (tTd(45, 1))
