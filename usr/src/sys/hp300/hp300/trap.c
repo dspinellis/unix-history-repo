@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	7.13 (Berkeley) %G%
+ *	@(#)trap.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -41,8 +41,6 @@
 #ifdef HPUXCOMPAT
 #include "../hpux/hpux.h"
 #endif
-
-#define	USER	040		/* user-mode flag added to type */
 
 struct	sysent	sysent[];
 int	nsysent;
@@ -87,7 +85,9 @@ int mmudebug = 0;
 #endif
 
 /*
- * Called from the trap handler when a processor trap occurs.
+ * Trap is called from locore to handle most types of processor traps,
+ * including events such as simulated software interrupts/AST's.
+ * System calls are broken out for efficiency.
  */
 /*ARGSUSED*/
 trap(type, code, v, frame)
@@ -105,7 +105,7 @@ trap(type, code, v, frame)
 	cnt.v_trap++;
 	syst = p->p_stime;
 	if (USERMODE(frame.f_sr)) {
-		type |= USER;
+		type |= T_USER;
 		p->p_regs = frame.f_regs;
 	}
 	switch (type) {
@@ -114,7 +114,7 @@ trap(type, code, v, frame)
 dopanic:
 		printf("trap type %d, code = %x, v = %x\n", type, code, v);
 		regdump(frame.f_regs, 128);
-		type &= ~USER;
+		type &= ~T_USER;
 		if ((unsigned)type < TRAP_TYPES)
 			panic(trap_type[type]);
 		panic("trap");
@@ -134,8 +134,8 @@ copyfault:
 		frame.f_pc = (int) p->p_addr->u_pcb.pcb_onfault;
 		return;
 
-	case T_BUSERR+USER:	/* bus error */
-	case T_ADDRERR+USER:	/* address error */
+	case T_BUSERR|T_USER:	/* bus error */
+	case T_ADDRERR|T_USER:	/* address error */
 		i = SIGBUS;
 		break;
 
@@ -147,7 +147,7 @@ copyfault:
 	 * The user has most likely trashed the RTE or FP state info
 	 * in the stack frame of a signal handler.
 	 */
-		type |= USER;
+		type |= T_USER;
 		printf("pid %d: kernel %s exception\n", p->p_pid,
 		       type==T_COPERR ? "coprocessor" : "format");
 		p->p_sigacts->ps_sigact[SIGILL] = SIG_DFL;
@@ -160,13 +160,13 @@ copyfault:
 		break;
 
 #ifdef FPCOPROC
-	case T_COPERR+USER:	/* user coprocessor violation */
+	case T_COPERR|T_USER:	/* user coprocessor violation */
 	/* What is a proper response here? */
 		ucode = 0;
 		i = SIGFPE;
 		break;
 
-	case T_FPERR+USER:	/* 68881 exceptions */
+	case T_FPERR|T_USER:	/* 68881 exceptions */
 	/*
 	 * We pass along the 68881 status register which locore stashed
 	 * in code for us.  Note that there is a possibility that the
@@ -181,7 +181,7 @@ copyfault:
 		break;
 #endif
 
-	case T_ILLINST+USER:	/* illegal instruction fault */
+	case T_ILLINST|T_USER:	/* illegal instruction fault */
 #ifdef HPUXCOMPAT
 		if (p->p_flag & SHPUX) {
 			ucode = HPUX_ILL_ILLINST_TRAP;
@@ -190,7 +190,7 @@ copyfault:
 		}
 		/* fall through */
 #endif
-	case T_PRIVINST+USER:	/* privileged instruction fault */
+	case T_PRIVINST|T_USER:	/* privileged instruction fault */
 #ifdef HPUXCOMPAT
 		if (p->p_flag & SHPUX)
 			ucode = HPUX_ILL_PRIV_TRAP;
@@ -200,7 +200,7 @@ copyfault:
 		i = SIGILL;
 		break;
 
-	case T_ZERODIV+USER:	/* Divide by zero */
+	case T_ZERODIV|T_USER:	/* Divide by zero */
 #ifdef HPUXCOMPAT
 		if (p->p_flag & SHPUX)
 			ucode = HPUX_FPE_INTDIV_TRAP;
@@ -210,7 +210,7 @@ copyfault:
 		i = SIGFPE;
 		break;
 
-	case T_CHKINST+USER:	/* CHK instruction trap */
+	case T_CHKINST|T_USER:	/* CHK instruction trap */
 #ifdef HPUXCOMPAT
 		if (p->p_flag & SHPUX) {
 			/* handled differently under hp-ux */
@@ -223,7 +223,7 @@ copyfault:
 		i = SIGFPE;
 		break;
 
-	case T_TRAPVINST+USER:	/* TRAPV instruction trap */
+	case T_TRAPVINST|T_USER:	/* TRAPV instruction trap */
 #ifdef HPUXCOMPAT
 		if (p->p_flag & SHPUX) {
 			/* handled differently under hp-ux */
@@ -254,8 +254,8 @@ copyfault:
 		i = SIGTRAP;
 		break;
 
-	case T_TRACE+USER:	/* user trace trap */
-	case T_TRAP15+USER:	/* SUN user trace trap */
+	case T_TRACE|T_USER:	/* user trace trap */
+	case T_TRAP15|T_USER:	/* SUN user trace trap */
 		frame.f_sr &= ~PSL_T;
 		i = SIGTRAP;
 		break;
@@ -263,7 +263,7 @@ copyfault:
 	case T_ASTFLT:		/* system async trap, cannot happen */
 		goto dopanic;
 
-	case T_ASTFLT+USER:	/* user async trap */
+	case T_ASTFLT|T_USER:	/* user async trap */
 		astpending = 0;
 		/*
 		 * We check for software interrupts first.  This is because
@@ -277,7 +277,7 @@ copyfault:
 		/* fall into... */
 
 	case T_SSIR:		/* software interrupt */
-	case T_SSIR+USER:
+	case T_SSIR|T_USER:
 		if (ssir & SIR_NET) {
 			siroff(SIR_NET);
 			cnt.v_soft++;
@@ -291,7 +291,7 @@ copyfault:
 		/*
 		 * If this was not an AST trap, we are all done.
 		 */
-		if (type != T_ASTFLT+USER) {
+		if (type != T_ASTFLT|T_USER) {
 			cnt.v_trap--;
 			return;
 		}
@@ -307,7 +307,7 @@ copyfault:
 	case T_MMUFLT:		/* kernel mode page fault */
 		/* fall into ... */
 
-	case T_MMUFLT+USER:	/* page fault */
+	case T_MMUFLT|T_USER:	/* page fault */
 	    {
 		register vm_offset_t va;
 		register struct vmspace *vm = p->p_vmspace;
@@ -318,7 +318,7 @@ copyfault:
 
 		/*
 		 * It is only a kernel address space fault iff:
-		 * 	1. (type & USER) == 0  and
+		 * 	1. (type & T_USER) == 0  and
 		 * 	2. pcb_onfault not set or
 		 *	3. pcb_onfault set but supervisor space data fault
 		 * The last can occur during an exec() copyin where the
@@ -379,7 +379,7 @@ copyfault:
 	    }
 	}
 	trapsignal(p, i, ucode);
-	if ((type & USER) == 0)
+	if ((type & T_USER) == 0)
 		return;
 out:
 	while (i = CURSIG(p))
@@ -421,9 +421,8 @@ out:
 }
 
 /*
- * Called from the trap handler when a system call occurs
+ * Proces a system call.
  */
-/*ARGSUSED*/
 syscall(code, frame)
 	volatile int code;
 	struct frame frame;
@@ -458,10 +457,10 @@ syscall(code, frame)
 		numsys = hpuxnsysent;
 	}
 #endif
-	params = (caddr_t)frame.f_regs[SP] + NBPW;
+	params = (caddr_t)frame.f_regs[SP] + sizeof(int);
 	if (code == 0) {			/* indir */
 		code = fuword(params);
-		params += NBPW;
+		params += sizeof(int);
 	}
 	if (code >= numsys)
 		callp = &systab[0];		/* indir (illegal) */
