@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char *sccsid = "@(#)init.c	5.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -111,8 +111,8 @@ ftnint autoleng;
 ftnint bssleng	= 0;
 int retlabel;
 int ret0label;
-int lowbss = 0;
-int highbss = 0;
+ftnint lowbss = 0;
+ftnint highbss = 0;
 int bsslabel;
 flag anyinits = NO;
 flag anylocals = NO;
