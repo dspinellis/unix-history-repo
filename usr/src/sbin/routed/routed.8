@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)routed.8	6.2 (Berkeley) %G%
+.\"	@(#)routed.8	6.3 (Berkeley) %G%
 .\"
 .TH ROUTED 8C ""
 .UC 5
@@ -202,16 +202,18 @@ should be willing to exchange routing information (i.e.
 they should have a
 .I routed
 process running on the machine).
-Passive gateways are maintained in the
-routing tables forever and information
-regarding their existence is included in
+Routes through passive gateways are installed in the
+kernel's routing tables once upon startup.
+Such routes are not included in
 any routing information transmitted.
 Active gateways are treated equally to network
 interfaces.  Routing information is distributed
 to the gateway and if no routing information is
 received for a period of the time, the associated
 route is deleted.
-External gateways are also passive, but are not placed in the kernel
+Gateways marked
+.I external
+are also passive, but are not placed in the kernel
 routing table nor are they included in routing updates.
 The function of external entries is to inform
 .I routed
@@ -266,7 +268,9 @@ indicates if the gateway should be treated as
 or
 .I active
 (as described above),
-or whether the gateway is external to the scope of the
+or whether the gateway is
+.I external
+to the scope of the
 .I routed
 protocol.
 .PP
@@ -284,13 +288,14 @@ should contact the Computer Systems Research Group at Berkeley.
 ``Internet Transport Protocols'', XSIS 028112, Xerox System Integration
 Standard.
 .br
-udp(4P), XNSrouted(8C), htable(8)
+udp(4P), icmp(4P), XNSrouted(8C), htable(8)
 .SH BUGS
 The kernel's routing tables may not correspond to those of
 .I routed
 when redirects change or add routes.
-The only remedy for this is to place the routing
-process in the kernel.
+.I Routed
+should note any redirects received by reading
+the ICMP packets received via a raw socket.
 .PP
 .I Routed
 should incorporate other routing protocols,
@@ -301,7 +306,7 @@ Using separate processes for each requires configuration options
 to avoid redundant or competing routes.
 .PP
 .I Routed
-should listen to intelligent interfaces, such as an IMP, and
-to error protocols, such as ICMP, to gather more information.
+should listen to intelligent interfaces, such as an IMP,
+to gather more information.
 It does not always detect unidirectional failures in network interfaces
 (e.g., when the output side fails).
