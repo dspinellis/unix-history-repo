@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.21 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.22 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -311,7 +311,7 @@ union_lookup(ap)
 		VOP_UNLOCK(lowervp);
 
 	error = union_allocvp(ap->a_vpp, dvp->v_mount, dvp, upperdvp, cnp,
-			      uppervp, lowervp);
+			      uppervp, lowervp, 1);
 
 	if (error) {
 		if (uppervp != NULLVP)
@@ -342,11 +342,13 @@ union_create(ap)
 	if (dvp != NULLVP) {
 		int error;
 		struct vnode *vp;
+		struct mount *mp;
 
 		FIXUP(un);
 
 		VREF(dvp);
 		un->un_flags |= UN_KLOCK;
+		mp = ap->a_dvp->v_mount;
 		vput(ap->a_dvp);
 		error = VOP_CREATE(dvp, &vp, ap->a_cnp, ap->a_vap);
 		if (error)
@@ -354,12 +356,13 @@ union_create(ap)
 
 		error = union_allocvp(
 				ap->a_vpp,
-				ap->a_dvp->v_mount,
-				ap->a_dvp,
+				mp,
+				NULLVP,
 				NULLVP,
 				ap->a_cnp,
 				vp,
-				NULLVP);
+				NULLVP,
+				1);
 		if (error)
 			vput(vp);
 		return (error);
@@ -401,11 +404,13 @@ union_mknod(ap)
 	if (dvp != NULLVP) {
 		int error;
 		struct vnode *vp;
+		struct mount *mp;
 
 		FIXUP(un);
 
 		VREF(dvp);
 		un->un_flags |= UN_KLOCK;
+		mp = ap->a_dvp->v_mount;
 		vput(ap->a_dvp);
 		error = VOP_MKNOD(dvp, &vp, ap->a_cnp, ap->a_vap);
 		if (error)
@@ -414,12 +419,13 @@ union_mknod(ap)
 		if (vp != NULLVP) {
 			error = union_allocvp(
 					ap->a_vpp,
-					ap->a_dvp->v_mount,
-					ap->a_dvp,
+					mp,
+					NULLVP,
 					NULLVP,
 					ap->a_cnp,
 					vp,
-					NULLVP);
+					NULLVP,
+					1);
 			if (error)
 				vput(vp);
 		}
@@ -614,9 +620,7 @@ union_getattr(ap)
 	}
 
 	if (vp != NULLVP) {
-		VOP_LOCK(vp);
 		error = VOP_GETATTR(vp, vap, ap->a_cred, ap->a_p);
-		VOP_UNLOCK(vp);
 		if (error)
 			return (error);
 		union_newsize(ap->a_vp, VNOVAL, vap->va_size);
@@ -1059,10 +1063,12 @@ union_mkdir(ap)
 		FIXUP(un);
 		VREF(dvp);
 		un->un_flags |= UN_KLOCK;
-		vput(ap->a_dvp);
+		VOP_UNLOCK(ap->a_dvp);
 		error = VOP_MKDIR(dvp, &vp, ap->a_cnp, ap->a_vap);
-		if (error)
+		if (error) {
+			vrele(ap->a_dvp);
 			return (error);
+		}
 
 		error = union_allocvp(
 				ap->a_vpp,
@@ -1071,7 +1077,9 @@ union_mkdir(ap)
 				NULLVP,
 				ap->a_cnp,
 				vp,
-				NULLVP);
+				NULLVP,
+				1);
+		vrele(ap->a_dvp);
 		if (error)
 			vput(vp);
 		return (error);
@@ -1245,6 +1253,7 @@ union_inactive(ap)
 	} */ *ap;
 {
 	struct union_node *un = VTOUNION(ap->a_vp);
+	struct vnode **vpp;
 
 	/*
 	 * Do nothing (and _don't_ bypass).
@@ -1265,6 +1274,13 @@ union_inactive(ap)
 	if (un->un_flags & UN_ULOCK)
 		panic("union: inactivating w/locked upper node");
 #endif
+
+	if (un->un_dircache != 0) {
+		for (vpp = un->un_dircache; *vpp != NULLVP; vpp++)
+			vrele(*vpp);
+		free(un->un_dircache, M_TEMP);
+		un->un_dircache = 0;
+	}
 
 	if ((un->un_flags & UN_CACHED) == 0)
 		vgone(ap->a_vp);

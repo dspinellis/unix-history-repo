@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union.h	8.8 (Berkeley) %G%
+ *	@(#)union.h	8.9 (Berkeley) %G%
  */
 
 struct union_args {
@@ -53,6 +53,7 @@ struct union_node {
 	int			un_hash;	/* saved un_path hash value */
 	int			un_openl;	/* # of opens on lowervp */
 	unsigned int		un_flags;
+	struct vnode		**un_dircache;	/* cached union stack */
 	off_t			un_uppersz;	/* size of upper object */
 	off_t			un_lowersz;	/* size of lower object */
 #ifdef DIAGNOSTIC
@@ -69,7 +70,7 @@ struct union_node {
 extern int union_allocvp __P((struct vnode **, struct mount *,
 				struct vnode *, struct vnode *,
 				struct componentname *, struct vnode *,
-				struct vnode *));
+				struct vnode *, int));
 extern int union_copyfile __P((struct vnode *, struct vnode *,
 					struct ucred *, struct proc *));
 extern int union_copyup __P((struct union_node *, int, struct ucred *,

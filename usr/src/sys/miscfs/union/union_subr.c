@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	8.15 (Berkeley) %G%
+ *	@(#)union_subr.c	8.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -239,7 +239,7 @@ union_newsize(vp, uppersz, lowersz)
  * the vnode free list.
  */
 int
-union_allocvp(vpp, mp, undvp, dvp, cnp, uppervp, lowervp)
+union_allocvp(vpp, mp, undvp, dvp, cnp, uppervp, lowervp, docache)
 	struct vnode **vpp;
 	struct mount *mp;
 	struct vnode *undvp;		/* parent union vnode */
@@ -247,6 +247,7 @@ union_allocvp(vpp, mp, undvp, dvp, cnp, uppervp, lowervp)
 	struct componentname *cnp;	/* may be null */
 	struct vnode *uppervp;		/* may be null */
 	struct vnode *lowervp;		/* may be null */
+	int docache;
 {
 	int error;
 	struct union_node *un;
@@ -278,7 +279,9 @@ union_allocvp(vpp, mp, undvp, dvp, cnp, uppervp, lowervp)
 	}
 
 loop:
-	for (try = 0; try < 3; try++) {
+	if (!docache) {
+		un = 0;
+	} else for (try = 0; try < 3; try++) {
 		switch (try) {
 		case 0:
 			if (lowervp == NULLVP)
@@ -409,14 +412,16 @@ loop:
 		return (0);
 	}
 
-	/*
-	 * otherwise lock the vp list while we call getnewvnode
-	 * since that can block.
-	 */ 
-	hash = UNION_HASH(uppervp, lowervp);
+	if (docache) {
+		/*
+		 * otherwise lock the vp list while we call getnewvnode
+		 * since that can block.
+		 */ 
+		hash = UNION_HASH(uppervp, lowervp);
 
-	if (union_list_lock(hash))
-		goto loop;
+		if (union_list_lock(hash))
+			goto loop;
+	}
 
 	error = getnewvnode(VT_UNION, mp, union_vnodeop_p, vpp);
 	if (error) {
@@ -449,6 +454,7 @@ loop:
 	un->un_pvp = undvp;
 	if (undvp != NULLVP)
 		VREF(undvp);
+	un->un_dircache = 0;
 	un->un_openl = 0;
 	un->un_flags = UN_LOCKED;
 	if (un->un_uppervp)
@@ -472,14 +478,17 @@ loop:
 		un->un_dirvp = 0;
 	}
 
-	LIST_INSERT_HEAD(&unhead[hash], un, un_cache);
-	un->un_flags |= UN_CACHED;
+	if (docache) {
+		LIST_INSERT_HEAD(&unhead[hash], un, un_cache);
+		un->un_flags |= UN_CACHED;
+	}
 
 	if (xlowervp)
 		vrele(xlowervp);
 
 out:
-	union_list_unlock(hash);
+	if (docache)
+		union_list_unlock(hash);
 
 	return (error);
 }
@@ -923,6 +932,7 @@ union_removed_upper(un)
 	}
 }
 
+#if 0
 struct vnode *
 union_lowervp(vp)
 	struct vnode *vp;
@@ -937,6 +947,7 @@ union_lowervp(vp)
 
 	return (NULLVP);
 }
+#endif
 
 /*
  * determine whether a whiteout is needed
@@ -958,4 +969,77 @@ union_dowhiteout(un, cred, p)
 		return (1);
 
 	return (0);
+}
+
+static void
+union_dircache_r(vp, vppp, cntp)
+	struct vnode *vp;
+	struct vnode ***vppp;
+	int *cntp;
+{
+	struct union_node *un;
+
+	if (vp->v_op != union_vnodeop_p) {
+		if (vppp) {
+			VREF(vp);
+			*(*vppp)++ = vp;
+			if (--(*cntp) == 0)
+				panic("union: dircache table too small");
+		} else {
+			(*cntp)++;
+		}
+
+		return;
+	}
+
+	un = VTOUNION(vp);
+	if (un->un_uppervp != NULLVP)
+		union_dircache_r(un->un_uppervp, vppp, cntp);
+	if (un->un_lowervp != NULLVP)
+		union_dircache_r(un->un_lowervp, vppp, cntp);
+}
+
+struct vnode *
+union_dircache(vp)
+	struct vnode *vp;
+{
+	int cnt;
+	struct vnode *nvp;
+	struct vnode **vpp;
+	struct vnode **dircache = VTOUNION(vp)->un_dircache;
+	struct union_node *un;
+	int error;
+
+	if (dircache == 0) {
+		cnt = 0;
+		union_dircache_r(vp, 0, &cnt);
+		cnt++;
+		dircache = (struct vnode **)
+				malloc(cnt * sizeof(struct vnode *),
+					M_TEMP, M_WAITOK);
+		vpp = dircache;
+		union_dircache_r(vp, &vpp, &cnt);
+		*vpp = NULLVP;
+		vpp = dircache + 1;
+	} else {
+		vpp = dircache;
+		do {
+			if (*vpp++ == VTOUNION(vp)->un_uppervp)
+				break;
+		} while (*vpp != NULLVP);
+	}
+
+	if (*vpp == NULLVP)
+		return (NULLVP);
+
+	VOP_LOCK(*vpp);
+	VREF(*vpp);
+	error = union_allocvp(&nvp, vp->v_mount, NULLVP, NULLVP, 0, *vpp, NULLVP, 0);
+	if (error)
+		return (NULLVP);
+	VTOUNION(vp)->un_dircache = 0;
+	un = VTOUNION(nvp);
+	un->un_dircache = dircache;
+
+	return (nvp);
 }

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.12 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.13 (Berkeley) %G%
  */
 
 /*
@@ -345,7 +345,8 @@ union_root(mp, vpp)
 			      (struct vnode *) 0,
 			      (struct componentname *) 0,
 			      um->um_uppervp,
-			      um->um_lowervp);
+			      um->um_lowervp,
+			      1);
 
 	if (error) {
 		if (!loselock)
