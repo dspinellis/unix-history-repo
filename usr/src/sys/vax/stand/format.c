@@ -1,4 +1,4 @@
-/*	format.c	4.1	83/03/01	*/
+/*	format.c	4.2	83/03/02	*/
 
 /* 
  * Standalone program to do media checking
@@ -34,7 +34,8 @@ struct	dkbad dkbad;		/* bad sector table */
 struct	dkbad sstab;		/* skip sector table */
 
 #define	NERRORS		6
-char	*errornames[NERRORS] = {
+static char *
+errornames[NERRORS] = {
 #define	FE_WCE		0
 	"Write check",
 #define	FE_BSE		1
@@ -50,6 +51,7 @@ char	*errornames[NERRORS] = {
 };
 
 int	errors[NERRORS];	/* histogram of errors */
+int	pattern;
 
 char	*malloc();
 char	*prompt();
@@ -58,7 +60,7 @@ extern	int end;
 main()
 {
 	register int sector, sn;
-	int pattern, lastsector, tracksize;
+	int lastsector, tracksize;
 	int unit, fd, resid, i, trk, cyl, debug;
 	struct st st;
 	struct sector *bp, *cbp;
@@ -77,13 +79,7 @@ again:
 	ioctl(fd, SAIODEVDATA, &st);
 	printf("Device data: #cylinders=%d, #tracks=%d, #sectors=%d\n",
 	  st.ncyl, st.ntrak, st.nsect);
-	printf("Available test patterns are:\n");
-	printf("\t0 - (f00f) RH750 worst case\n");
-	printf("\t1 - (ec6d) media worst case\n");
-	printf("\t2 - (a5a5) alternate 1's & 0's\n");
-	cp = prompt("Pattern (0, 1, 2, other to restart)? ");
-	pattern = atoi(cp);
-	if (pattern < 0 || pattern > 2)
+	if (getpattern())
 		goto again;
 	printf("Start formatting...make sure the drive is online\n");
 	ioctl(fd, SAIONOBAD, (char *)0);
@@ -96,7 +92,7 @@ again:
 	}
 	tracksize = sizeof (struct sector) * st.nsect;
 	bp = (struct sector *)malloc(tracksize);
-	bufinit(bp, tracksize, pattern);
+	bufinit(bp, tracksize);
 	/*
 	 * Begin check, for each track,
 	 *
@@ -199,38 +195,6 @@ again:
 #ifndef JUSTEXIT
 	goto again;
 #endif
-}
-
-static struct pat {
-	long	pt[2];
-} pat[3] = {
-	{ 0xf00ff00f, 0xf00ff00f }, 	/* worst case for RH750 */
-	{ 0xec6dec6d, 0xec6dec6d },	/* worst case for media */
-	{ 0xa5a5a5a5, 0xa5a5a5a5 }
-};
-
-struct xsect {
-	u_short	hd1;
-	u_short	hd2;
-	struct	pat buf[64];
-};
-
-/*
- * Initialize the buffer with the requested pattern. 
- */
-bufinit(bufptr, size, pattern)
-	register struct xsect bufptr[];
-	int size, pattern;
-{
-	register struct pat *pptr;
-
-	int i, j;
-
-	size /= sizeof (struct sector);
-	pptr = &pat[pattern];
-	for (i = 0; i < size; i++)
-		for (j = 0; j < 64; j++)
-			bufptr[i].buf[j] = *pptr;
 }
 
 /*
@@ -367,6 +331,60 @@ top:
 	if (*cp == 'y')
 		return (fd);
 	goto top;
+}
+
+static struct pattern {
+	long	pa_value;
+	char	*pa_name;
+} pat[] = {
+	{ 0xf00ff00f, 	"RH750 worst case" },
+	{ 0xec6dec6d,	"media worst case" },
+	{ 0xa5a5a5a5,	"alternate 1's and 0's" },
+	{ 0, 0 },
+};
+
+getpattern()
+{
+	register struct pattern *p;
+	int npatterns;
+	char *cp;
+
+	printf("Available test patterns are:\n");
+	for (p = pat; p->pa_value; p++)
+		printf("\t%d - (%x) %s\n", (p - pat) + 1,
+		  p->pa_value & 0xffff, p->pa_name);
+	npatterns = p - pat;
+	cp = prompt("Pattern (one of the above, other to restart)? ");
+	pattern = atoi(cp) - 1;
+	return (pattern < 0 || pattern >= npatterns);
+}
+
+struct xsect {
+	u_short	hd1;
+	u_short	hd2;
+	long	buf[128];
+};
+
+/*
+ * Initialize the buffer with the requested pattern. 
+ */
+bufinit(bp, size)
+	register struct xsect *bp;
+	int size;
+{
+	register struct pattern *pptr;
+	register long *pp, *last;
+	register struct xsect *lastbuf;
+
+	size /= sizeof (struct sector);
+	lastbuf = bp + size;
+	pptr = &pat[pattern];
+	while (bp < lastbuf) {
+		last = &bp->buf[128];
+		for (pp = bp->buf; pp < last; pp++)
+			*pp = pptr->pa_value;
+		bp++;
+	}
 }
 
 char *
