@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)main.c	2.14	(Berkeley)	%G%";
+static	char sccsid[] = "@(#)main.c	2.15	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -1688,40 +1688,6 @@ makecg()
 	sbdirty();
 }
 
-/*
- * update the frsum fields to reflect addition or deletion 
- * of some frags
- */
-fragacct(fs, fragmap, fraglist, cnt)
-	struct fs *fs;
-	int fragmap;
-	long fraglist[];
-	int cnt;
-{
-	int inblk;
-	register int field, subfield;
-	register int siz, pos;
-
-	inblk = (int)(fragtbl[fs->fs_frag][fragmap] << 1);
-	fragmap <<= 1;
-	for (siz = 1; siz < fs->fs_frag; siz++) {
-		if ((inblk & (1 << (siz + (fs->fs_frag % NBBY)))) == 0)
-			continue;
-		field = around[siz];
-		subfield = inside[siz];
-		for (pos = siz; pos <= fs->fs_frag; pos++) {
-			if ((fragmap & field) == subfield) {
-				fraglist[siz] += cnt;
-				pos += siz;
-				field <<= siz;
-				subfield <<= siz;
-			}
-			field <<= 1;
-			subfield <<= 1;
-		}
-	}
-}
-
 findino(dirp)
 	register DIRECT *dirp;
 {
@@ -1899,35 +1865,6 @@ catch()
 	exit(12);
 }
 
-/*
- * block operations
- */
-
-isblock(fs, cp, h)
-	struct fs *fs;
-	unsigned char *cp;
-	int h;
-{
-	unsigned char mask;
-
-	switch (fs->fs_frag) {
-	case 8:
-		return (cp[h] == 0xff);
-	case 4:
-		mask = 0x0f << ((h & 0x1) << 2);
-		return ((cp[h >> 1] & mask) == mask);
-	case 2:
-		mask = 0x03 << ((h & 0x3) << 1);
-		return ((cp[h >> 2] & mask) == mask);
-	case 1:
-		mask = 0x01 << (h & 0x7);
-		return ((cp[h >> 3] & mask) == mask);
-	default:
-		error("isblock bad fs_frag %d\n", fs->fs_frag);
-		return (0);
-	}
-}
-
 char *
 unrawname(cp)
 	char *cp;
@@ -2017,4 +1954,12 @@ pwarn(s, a1, a2, a3, a4, a5, a6)
 	if (preen)
 		printf("%s: ", devname);
 	printf(s, a1, a2, a3, a4, a5, a6);
+}
+
+panic(s)
+	char *s;
+{
+
+	pfatal("internal inconsistency: %s\n");
+	exit(12);
 }
