@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.9	(Berkeley)	%G%
+#	@(#)Makefile	1.10	(Berkeley)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
