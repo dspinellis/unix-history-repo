@@ -1,13 +1,25 @@
-.\"	@(#)spell.1	4.1 (Berkeley) %G%
+.\"	@(#)spell.1	5.1 (Berkeley) %G%
 .\"
-.TH SPELL 1 
+.TH SPELL 1 "12 September 1983"
 .AT 3
 .SH NAME
 spell, spellin, spellout \- find spelling errors
 .SH SYNOPSIS
 .B spell
-[ option ] ...
-[ file ] ...
+[
+.B \-v
+] [
+.B \-b
+] [
+.B \-x
+] [
+.B \-d
+hlist ] [
+.B \-s
+hstop ] [
+.B \-h
+spellhist
+] [ file ] ...
 .PP
 .B spellin
 [ list ]
@@ -52,57 +64,82 @@ this option insists upon
 .I -ise
 in words like
 .I standardise,
-Fowler and the OED to the contrary
-notwithstanding.
+Fowler and the OED to the contrary notwithstanding.
 .PP
 Under the 
 .B \-x
 option, every plausible stem is printed with `=' for each word.
 .PP
-The spelling list is based on many sources,
-and while more haphazard than an ordinary
-dictionary, is also more effective in respect to
+The spelling list is based on many sources.
+While it is more haphazard than an ordinary
+dictionary, it is also more effective with
 proper names and popular technical words.
 Coverage of
 the specialized vocabularies of biology,
 medicine and chemistry is light.
 .PP
-Pertinent auxiliary files may be specified by
-name arguments, indicated below with their
-default settings.
+The auxiliary files used for the spelling list,
+stop list, and history file may be specified by
+arguments following the
+.BR \-d ,
+.BR \-s ,
+and
+.B \-h
+options.
+The default files are indicated below.
 Copies of all output
-are accumulated in the history file.
+may be accumulated in the history file.
 The stop list filters out misspellings (e.g. thier=thy\-y+ier)
 that would otherwise pass.
 .PP
 Two routines help maintain the hash lists used by
 .I spell.
-Both expect a list of words, one per line,
+Both expect a set of words, one per line,
 from the standard input.
 .I Spellin
-adds the words on the standard input to the
+combines the words from the standard input and the
 preexisting
 .I list
-and places a new list on the standard output.
+file and places a new list on the standard output.
 If no 
 .I list
-is specified, the new list is created from scratch.
+file is specified, the new list is created from scratch.
 .I Spellout
-looks up each word in the standard input and prints
+looks up each word from the standard input and prints
 on the standard output
 those that are missing from (or present on, with
 option
 .BR \-d )
-the hash list.
+the hashed
+.I list
+file.
+For example, to verify that
+.I hookey
+is not on the default spelling list, add it to your own
+private list, and then use it with
+.IR spell ,
+.PP
+.RS
+.nf
+echo  hookey  |  spellout  /usr/dict/hlista
+echo  hookey  |  spellin  /usr/dict/hlista  >  myhlist
+spell  \-d  myhlist  huckfinn
+.RE
 .SH FILES
-D=/usr/dict/hlist[ab]: hashed spelling lists, American & British
+/usr/dict/hlist[ab]	hashed spelling lists, American & British, default for
+.B \-d
 .br
-S=/usr/dict/hstop: hashed stop list
+/usr/dict/hstop		hashed stop list, default for
+.B \-s
 .br
-H=/usr/dict/spellhist: history file
+/dev/null		history file, default for
+.B \-h
+.br
+/tmp/spell.$$\(**		temporary files
 .br
 /usr/lib/spell
 .br
+.SH SEE ALSO
 deroff(1), sort(1), tee(1), sed(1)
 .SH BUGS
 The spelling list's coverage is uneven;
