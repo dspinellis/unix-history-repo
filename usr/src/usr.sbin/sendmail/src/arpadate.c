@@ -7,7 +7,7 @@
 # endif
 # include "useful.h"
 
-SCCSID(@(#)arpadate.c	4.2		%G%);
+SCCSID(@(#)arpadate.c	4.3		%G%);
 
 /*
 **  ARPADATE -- Create date in ARPANET format
@@ -45,6 +45,7 @@ arpadate(ud)
 	extern char *ctime();
 	register int i;
 	extern struct tm *localtime();
+	extern bool fconvert();
 # ifdef V6
 	long t;
 	extern char *StdTimezone, *DstTimezone;
@@ -116,7 +117,8 @@ arpadate(ud)
 # else
 	p = timezone(t.timezone, localtime(&t.time)->tm_isdst);
 # endif V6
-	if ( (strncmp(p,"GMT",3)==0 || strncmp(p,"gmt",3)==0) && p[3] != '\0')
+	if ((strncmp(p, "GMT", 3) == 0 || strncmp(p, "gmt", 3) == 0) &&
+	    p[3] != '\0')
 	{
 		/* hours from GMT */
 		p += 3;
@@ -131,8 +133,7 @@ arpadate(ud)
 		*q++ = *p++;
 		*q = '\0';
 	}
-	else
-	if( !fconvert(p,q) )
+	else if (!fconvert(p, q))
 	{
 		*q++ = ' ';
 		*q++ = *p++;
@@ -143,39 +144,60 @@ arpadate(ud)
 
 	return (b);
 }
+/*
+**  FCONVERT -- convert foreign timezones to ARPA timezones
+**
+**	This routine is essentially from Teus Hagen.
+**
+**	Parameters:
+**		a -- timezone as returned from UNIX.
+**		b -- place to put ARPA-style timezone.
+**
+**	Returns:
+**		TRUE -- if a conversion was made (and b was filled in).
+**		FALSE -- if this is not a recognized local time.
+**
+**	Side Effects:
+**		none.
+*/
 
-/* convert foreign identifications to some ARPA interpretable form */
-/* with dst we put the time zone one hour ahead */
-struct foreign { 
+/* UNIX to arpa conversion table */
+struct foreign
+{
 	char *f_from; 
 	char *f_to; 
-} foreign[] = {
-	{"eet", " -0200"}, /* eastern europe */
-	{"met", " -0100"}, /* middle europe */
-	{"wet", " GMT"},   /* western europe, and what for australia? */
-	{"eet dst", " -0300"}, /* daylight saving times */
-	{"met dst", " -0200"},
-	{"wet dst", " -0100"},
-	{NULL, NULL}
 };
 
-fconvert( a, b ) register char *a; char *b;
-{	register struct foreign *euptr;
-	register char *ptr;
-	extern makelower();
+static struct foreign Foreign[] =
+{
+	{ "eet",	" -0200" },	/* eastern europe */
+	{ "met",	" -0100" },	/* middle europe */
+	{ "wet",	" GMT"   },	/* western europe */
+	{ "eet dst",	" -0300" },	/* daylight saving times */
+	{ "met dst",	" -0200" },
+	{ "wet dst",	" -0100" },
+	{ NULL,		NULL	 }
+};
 
-/* for news:	for ( ptr = a; *ptr; ptr++ )
-		if ( isupper(*ptr) )
-			*ptr = tolower( *ptr );
-*/
-	makelower( a );
-	for ( euptr = &foreign[0]; euptr->f_from != NULL; euptr++ )
-		if ( strcmp(euptr->f_from, a) == 0 )
-		{	ptr = euptr->f_to;
-			while ( *ptr )
-				*b++ = *ptr++;
+bool
+fconvert(a, b)
+	register char *a;
+	char *b;
+{
+	register struct foreign *euptr;
+	register char *p;
+
+	makelower(a);
+	for (euptr = Foreign; euptr->f_from != NULL; euptr++)
+	{
+		if (strcmp(euptr->f_from, a) == 0)
+		{
+			p = euptr->f_to;
+			while (*p)
+				*b++ = *p++;
 			*b = '\0';
-			return 1;
+			return (TRUE);
 		}
-	return 0;
+	}
+	return (FALSE);
 }

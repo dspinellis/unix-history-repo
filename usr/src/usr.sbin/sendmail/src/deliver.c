@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	4.2		%G%);
+SCCSID(@(#)deliver.c	4.3		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -898,22 +898,13 @@ giveresponse(stat, m, e)
 	}
 	else if (stat == EX_TEMPFAIL)
 	{
-		extern char *sys_errlist[];
-		extern int sys_nerr;
-
 		(void) strcpy(buf, SysExMsg[i]);
 		if (errno != 0)
 		{
-			(void) strcat(buf, ": ");
-			if (errno > 0 && errno < sys_nerr)
-				(void) strcat(buf, sys_errlist[errno]);
-			else
-			{
-				char xbuf[30];
+			extern char *errstring();
 
-				(void) sprintf(xbuf, "Error %d", errno);
-				(void) strcat(buf, xbuf);
-			}
+			(void) strcat(buf, ": ");
+			(void) strcat(buf, errstring(errno));
 		}
 		statmsg = buf;
 	}

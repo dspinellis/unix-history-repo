@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	4.2		%G%);
+SCCSID(@(#)err.c	4.3		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -269,12 +269,36 @@ fmtmsg(eb, to, num, fmt, a, b, c, d, e)
 	/* output the error code, if any */
 	if (errno != 0)
 	{
-		extern int sys_nerr;
-		extern char *sys_errlist[];
-		if (errno < sys_nerr && errno > 0)
-			(void) sprintf(eb, ": %s", sys_errlist[errno]);
-		else
-			(void) sprintf(eb, ": error %d", errno);
+		extern char *errstring();
+
+		(void) sprintf(eb, ": %s", errstring(errno));
 		eb += strlen(eb);
 	}
+}
+/*
+**  ERRSTRING -- return string description of error code
+**
+**	Parameters:
+**		errno -- the error number to translate
+**
+**	Returns:
+**		A string description of errno.
+**
+**	Side Effects:
+**		none.
+*/
+
+char *
+errstring(errno)
+	int errno;
+{
+	extern char *sys_errlist[];
+	extern int sys_nerr;
+	static char buf[50];
+
+	if (errno > 0 && errno < sys_nerr)
+		return (sys_errlist[errno]);
+
+	(void) sprintf(buf, "Error %d", errno);
+	return (buf);
 }

@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	4.4		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	4.5		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	4.4		%G%);
+SCCSID(@(#)usersmtp.c	4.5		%G%);
 
 
 
@@ -80,6 +80,13 @@ smtpinit(m, pvp)
 			printf("smtpinit: cannot open %s: stat %d errno %d\n",
 			   pvp[0], ExitStat, errno);
 # endif DEBUG
+		if (CurEnv->e_xfp != NULL)
+		{
+			extern char *errstring();
+
+			fprintf(CurEnv->e_xfp, "421 %s.%s... Deferred: %s",
+				pvp[1], m->m_name, errstring(errno));
+		}
 		return (ExitStat);
 	}
 	SmtpState = SMTP_OPEN;
