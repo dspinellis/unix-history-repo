@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)findfp.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)findfp.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -23,21 +23,37 @@ FILE _iob[NSTATIC] = {
 	{ 0, NULL, NULL, 0, _IOWRT|_IONBF,	2 },	/* stderr */
 };
 
-extern	char	*calloc();
+extern	char	*malloc();
 
+static	char sbuf[NSTATIC];
+char	*_smallbuf = sbuf;
 static	FILE	**iobglue;
 static	FILE	**endglue;
-static	int	nfiles;
 
+/*
+ * Find a free FILE for fopen et al.
+ * We have a fixed static array of entries, and in addition
+ * may allocate additional entries dynamically, up to the kernel
+ * limit on the number of open files.
+ * At first just check for a free slot in the fixed static array.
+ * If none are available, then we allocate a structure to glue together
+ * the old and new FILE entries, which are then no longer contiguous.
+ */
 FILE *
 _findiop()
 {
-	register FILE **iov;
+	register FILE **iov, *iop;
 	register FILE *fp;
 
-	if (iobglue == 0 && _stdio_init() == 0) {
-		errno = ENOMEM;
-		return (NULL);
+	if (iobglue == 0) {
+		for (iop = _iob; iop < _iob + NSTATIC; iop++)
+			if (!active(iop))
+				return (iop);
+
+		if (_f_morefiles() == 0) {
+			errno = ENOMEM;
+			return (NULL);
+		}
 	}
 
 	iov = iobglue;
@@ -48,26 +64,33 @@ _findiop()
 		}
 
 	if (*iov == NULL)
-		*iov = (FILE *)calloc(1, sizeof **iov);
+		*iov = (FILE *)malloc(sizeof **iov);
+	if (*iov)
+		bzero((char *)*iov, sizeof(**iov));
 
 	return (*iov);
 }
 
-_stdio_init()
+_f_morefiles()
 {
 	register FILE **iov;
 	register FILE *fp;
+	register char *cp;
+	int nfiles;
 
 	nfiles = getdtablesize();
 
-	iobglue = (FILE **)calloc(nfiles, sizeof *iobglue);
+	iobglue = (FILE **)malloc(nfiles * sizeof *iobglue);
 	if (iobglue == NULL)
 		return (0);
 
+	bzero((char *)iobglue, nfiles * sizeof(*iobglue));
 	endglue = iobglue + nfiles;
 
 	for (fp = _iob, iov = iobglue; fp < &_iob[NSTATIC]; /* void */)
 		*iov++ = fp++;
+
+	_smallbuf = malloc(nfiles * sizeof(*_smallbuf));
 	return (1);
 }
 
@@ -76,12 +99,15 @@ f_prealloc()
 	register FILE **iov;
 	register FILE *fp;
 
-	if (iobglue == NULL && _stdio_init() == 0)
+	if (iobglue == NULL && _f_morefiles() == 0)
 		return;
 
 	for (iov = iobglue; iov < endglue; iov++)
-		if (*iov == NULL)
-			*iov = (FILE *)calloc(1, sizeof **iov);
+		if (*iov == NULL) {
+			*iov = (FILE *)malloc(1, sizeof **iov);
+			if (*iov)
+				bzero((char *)*iov, sizeof(**iov));
+		}
 }
 
 _fwalk(function)
