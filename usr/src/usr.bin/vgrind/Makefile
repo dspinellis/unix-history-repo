@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 
 PROG=	vfontedpr
-SRCS=	regexp.c vfontedpr.c vgrindefs.c
+SRCS=	regexp.c vfontedpr.c
 MAN1=	vgrind.0
 MAN5=	vgrindefs.0
 BINDIR=	/usr/libexec
