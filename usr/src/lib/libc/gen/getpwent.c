@@ -6,13 +6,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getpwent.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwent.c	5.19 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <fcntl.h>
+#include <db.h>
 #include <pwd.h>
-#include <ndbm.h>
 #include <utmp.h>
 #include <errno.h>
 #include <unistd.h>
@@ -21,7 +21,7 @@ static char sccsid[] = "@(#)getpwent.c	5.18 (Berkeley) %G%";
 #include <limits.h>
 
 static struct passwd _pw_passwd;	/* password structure */
-static DBM *_pw_db;			/* password database */
+static DB *_pw_db;			/* password database */
 static int _pw_keynum;			/* key counter */
 static int _pw_stayopen;		/* keep fd's open */
 static int __hashpw(), __initdb();
@@ -29,7 +29,7 @@ static int __hashpw(), __initdb();
 struct passwd *
 getpwent()
 {
-	datum key;
+	DBT key;
 	char bf[sizeof(_pw_keynum) + 1];
 
 	if (!_pw_db && !__initdb())
@@ -38,16 +38,16 @@ getpwent()
 	++_pw_keynum;
 	bf[0] = _PW_KEYBYNUM;
 	bcopy((char *)&_pw_keynum, bf + 1, sizeof(_pw_keynum));
-	key.dptr = bf;
-	key.dsize = sizeof(_pw_keynum) + 1;
-	return(__hashpw(key) ? &_pw_passwd : (struct passwd *)NULL);
+	key.data = (u_char *)bf;
+	key.size = sizeof(_pw_keynum) + 1;
+	return(__hashpw(&key) ? &_pw_passwd : (struct passwd *)NULL);
 }
 
 struct passwd *
 getpwnam(name)
 	const char *name;
 {
-	datum key;
+	DBT key;
 	int len, rval;
 	char bf[UT_NAMESIZE + 1];
 
@@ -57,13 +57,13 @@ getpwnam(name)
 	bf[0] = _PW_KEYBYNAME;
 	len = strlen(name);
 	bcopy(name, bf + 1, MIN(len, UT_NAMESIZE));
-	key.dptr = bf;
-	key.dsize = len + 1;
-	rval = __hashpw(key);
+	key.data = (u_char *)bf;
+	key.size = len + 1;
+	rval = __hashpw(&key);
 
 	if (!_pw_stayopen) {
-		(void)dbm_close(_pw_db);
-		_pw_db = (DBM *)NULL;
+		(void)(_pw_db->close)(_pw_db);
+		_pw_db = (DB *)NULL;
 	}
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
 }
@@ -76,7 +76,7 @@ getpwuid(uid)
 	int uid;
 #endif
 {
-	datum key;
+	DBT key;
 	int keyuid, rval;
 	char bf[sizeof(keyuid) + 1];
 
@@ -86,13 +86,13 @@ getpwuid(uid)
 	bf[0] = _PW_KEYBYUID;
 	keyuid = uid;
 	bcopy(&keyuid, bf + 1, sizeof(keyuid));
-	key.dptr = bf;
-	key.dsize = sizeof(keyuid) + 1;
-	rval = __hashpw(key);
+	key.data = (u_char *)bf;
+	key.size = sizeof(keyuid) + 1;
+	rval = __hashpw(&key);
 
 	if (!_pw_stayopen) {
-		(void)dbm_close(_pw_db);
-		_pw_db = (DBM *)NULL;
+		(void)(_pw_db->close)(_pw_db);
+		_pw_db = (DB *)NULL;
 	}
 	return(rval ? &_pw_passwd : (struct passwd *)NULL);
 }
@@ -119,8 +119,8 @@ endpwent()
 {
 	_pw_keynum = 0;
 	if (_pw_db) {
-		(void)dbm_close(_pw_db);
-		_pw_db = (DBM *)NULL;
+		(void)(_pw_db->close)(_pw_db);
+		_pw_db = (DB *)NULL;
 	}
 }
 
@@ -131,7 +131,8 @@ __initdb()
 	char *p;
 
 	p = (geteuid()) ? _PATH_MP_DB : _PATH_SMP_DB;
-	if (_pw_db = dbm_open(p, O_RDONLY, 0))
+	_pw_db = hash_open(p, O_RDONLY, 0, NULL);
+	if (_pw_db)
 		return(1);
 	if (!warned) {
 		(void)write(STDERR_FILENO, "getpwent: ", 10);
@@ -147,17 +148,17 @@ __initdb()
 
 static
 __hashpw(key)
-	datum key;
+	DBT *key;
 {
 	register char *p, *t;
 	static u_int max;
 	static char *line;
-	datum dp;
+	DBT data;
 
-	dp = dbm_fetch(_pw_db, key);
-	if (!(p = dp.dptr))
+	if ((_pw_db->get)(_pw_db, key, &data, 0))
 		return(0);
-	if (dp.dsize > max && !(line = (char *)realloc(line, max += 1024)))
+	p = (char *)data.data;
+	if (data.size > max && !(line = realloc(line, max += 1024)))
 		return(0);
 
 	t = line;
