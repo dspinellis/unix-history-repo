@@ -9,7 +9,7 @@
  * More user commands.
  */
 
-static char *SccsId = "@(#)cmd2.c	2.4 %G%";
+static char *SccsId = "@(#)cmd2.c	2.5 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument
@@ -399,6 +399,7 @@ core()
 		return(1);
 	}
 	if (pid == 0) {
+		sigchild();
 		abort();
 		_exit(1);
 	}
