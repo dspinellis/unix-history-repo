@@ -1,4 +1,4 @@
-/*	tm.c	4.36	81/04/15	*/
+/*	tm.c	4.37	81/04/28	*/
 
 #include "te.h"
 #include "ts.h"
@@ -241,7 +241,7 @@ get:
 	if (sc->sc_tact == 0) {
 		sc->sc_timo = INF;
 		sc->sc_tact = 1;
-		timeout(tmtimer, dev, 5*hz);
+		timeout(tmtimer, (caddr_t)dev, 5*hz);
 	}
 	(void) spl0();
 }
@@ -415,14 +415,14 @@ loop:
 		/*
 		 * Set next state; give 5 minutes to complete
 		 * rewind, or 10 seconds per iteration (minimum 60
-		 * seconds and max 5 minute) to complete other ops.
+		 * seconds and max 5 minutes) to complete other ops.
 		 */
 		if (bp->b_command == TM_REW) {
 			um->um_tab.b_active = SREW;
 			sc->sc_timo = 5 * 60;
 		} else {
 			um->um_tab.b_active = SCOM;
-			sc->sc_timo = min(max(10 * bp->b_repcnt, 60), 5 * 60);
+			sc->sc_timo = imin(imax(10 * bp->b_repcnt, 60), 5*60);
 		}
 		if (bp->b_command == TM_SFORW || bp->b_command == TM_SREV)
 			addr->tmbc = bp->b_repcnt;
@@ -496,7 +496,7 @@ loop:
 		bp->b_command = TM_SREV;
 		addr->tmbc = dbtofsb(bp->b_blkno) - blkno;
 	}
-	sc->sc_timo = min(max(10 * -addr->tmbc, 60), 5 * 60);
+	sc->sc_timo = imin(imax(10 * -addr->tmbc, 60), 5 * 60);
 dobpcmd:
 #ifdef notdef
 	/*
@@ -715,7 +715,7 @@ tmtimer(dev)
 		tmintr(TMUNIT(dev));
 		(void) spl0();
 	}
-	timeout(tmtimer, dev, 5*hz);
+	timeout(tmtimer, (caddr_t)dev, 5*hz);
 }
 
 tmseteof(bp)
