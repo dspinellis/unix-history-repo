@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ncheck.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)ncheck.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,9 +28,9 @@ static char sccsid[] = "@(#)ncheck.c	5.14 (Berkeley) %G%";
 #include <ufs/ffs/fs.h>
 #include <stdio.h>
 
-struct	fs	sblock;
+struct	fs	*sblockp;
 struct	dinode	itab[MAXBSIZE/sizeof(struct dinode)];
-struct 	dinode	*gip;
+struct	dinode	*gip;
 struct ilist {
 	ino_t	ino;
 	u_short	mode;
@@ -87,7 +87,7 @@ main(argc, argv)
 			continue;
 
 		case 'i':
-			for(iflg=0; iflg<NB; iflg++) {
+			for(iflg=0; iflg<NB && argc >= 2; iflg++) {
 				n = atol(argv[1]);
 				if(n == 0)
 					break;
@@ -131,14 +131,21 @@ check(file)
 	(void) printf("%s:\n", file);
 	sync();
 	dev_bsize = 1;
-	bread(SBOFF, (char *)&sblock, (long)SBSIZE);
-	if (sblock.fs_magic != FS_MAGIC) {
+	sblockp = (struct fs *)malloc((unsigned)SBSIZE);
+	if (sblockp == 0) {
+		(void) printf("icheck: couldn't malloc superblock memory\n");
+		nerror++;
+		return;
+	}
+	bread(SBOFF, (char *)sblockp, (long)SBSIZE);
+	if (sblockp->fs_magic != FS_MAGIC) {
 		(void) printf("%s: not a file system\n", file);
 		nerror++;
 		return;
 	}
-	dev_bsize = sblock.fs_fsize / fsbtodb(&sblock, 1);
-	hsize = sblock.fs_ipg * sblock.fs_ncg - sblock.fs_cstotal.cs_nifree + 1;
+	dev_bsize = sblockp->fs_fsize / fsbtodb(sblockp, 1);
+	hsize = sblockp->fs_ipg * sblockp->fs_ncg -
+	    sblockp->fs_cstotal.cs_nifree + 1;
 	htab = (struct htab *)malloc((unsigned)hsize * sizeof(struct htab));
 	strngtab = malloc((unsigned)(30 * hsize));
 	if (htab == 0 || strngtab == 0) {
@@ -147,13 +154,13 @@ check(file)
 		return;
 	}
 	ino = 0;
-	for (c = 0; c < sblock.fs_ncg; c++) {
+	for (c = 0; c < sblockp->fs_ncg; c++) {
 		for (i = 0;
-		     i < sblock.fs_ipg / INOPF(&sblock);
-		     i += sblock.fs_frag) {
-			bread(fsbtodb(&sblock, cgimin(&sblock, c) + i),
-			    (char *)itab, sblock.fs_bsize);
-			for (j = 0; j < INOPB(&sblock); j++) {
+		     i < sblockp->fs_ipg / INOPF(sblockp);
+		     i += sblockp->fs_frag) {
+			bread(fsbtodb(sblockp, cgimin(sblockp, c) + i),
+			    (char *)itab, sblockp->fs_bsize);
+			for (j = 0; j < INOPB(sblockp); j++) {
 				if (itab[j].di_mode != 0)
 					pass1(&itab[j]);
 				ino++;
@@ -162,13 +169,13 @@ check(file)
 	}
 	ilist[nxfile+1].ino = 0;
 	ino = 0;
-	for (c = 0; c < sblock.fs_ncg; c++) {
+	for (c = 0; c < sblockp->fs_ncg; c++) {
 		for (i = 0;
-		     i < sblock.fs_ipg / INOPF(&sblock);
-		     i += sblock.fs_frag) {
-			bread(fsbtodb(&sblock, cgimin(&sblock, c) + i),
-			    (char *)itab, sblock.fs_bsize);
-			for (j = 0; j < INOPB(&sblock); j++) {
+		     i < sblockp->fs_ipg / INOPF(sblockp);
+		     i += sblockp->fs_frag) {
+			bread(fsbtodb(sblockp, cgimin(sblockp, c) + i),
+			    (char *)itab, sblockp->fs_bsize);
+			for (j = 0; j < INOPB(sblockp); j++) {
 				if (itab[j].di_mode != 0)
 					pass2(&itab[j]);
 				ino++;
@@ -176,13 +183,13 @@ check(file)
 		}
 	}
 	ino = 0;
-	for (c = 0; c < sblock.fs_ncg; c++) {
+	for (c = 0; c < sblockp->fs_ncg; c++) {
 		for (i = 0;
-		     i < sblock.fs_ipg / INOPF(&sblock);
-		     i += sblock.fs_frag) {
-			bread(fsbtodb(&sblock, cgimin(&sblock, c) + i),
-			    (char *)itab, sblock.fs_bsize);
-			for (j = 0; j < INOPB(&sblock); j++) {
+		     i < sblockp->fs_ipg / INOPF(sblockp);
+		     i += sblockp->fs_frag) {
+			bread(fsbtodb(sblockp, cgimin(sblockp, c) + i),
+			    (char *)itab, sblockp->fs_bsize);
+			for (j = 0; j < INOPB(sblockp); j++) {
 				if (itab[j].di_mode != 0)
 					pass3(&itab[j]);
 				ino++;
@@ -299,16 +306,16 @@ nreaddir(dirp)
 	for(;;) {
 		if (dirp->loc >= dirp->ip->di_size)
 			return NULL;
-		if (blkoff(&sblock, dirp->loc) == 0) {
-			lbn = lblkno(&sblock, dirp->loc);
+		if (blkoff(sblockp, dirp->loc) == 0) {
+			lbn = lblkno(sblockp, dirp->loc);
 			d = bmap(lbn);
 			if(d == 0)
 				return NULL;
-			bread(fsbtodb(&sblock, d), dirp->dbuf,
-			    dblksize(&sblock, dirp->ip, lbn));
+			bread(fsbtodb(sblockp, d), dirp->dbuf,
+			    dblksize(sblockp, dirp->ip, lbn));
 		}
 		dp = (struct direct *)
-		    (dirp->dbuf + blkoff(&sblock, dirp->loc));
+		    (dirp->dbuf + blkoff(sblockp, dirp->loc));
 		dirp->loc += dp->d_reclen;
 		if (dp->d_ino == 0)
 			continue;
@@ -438,7 +445,7 @@ bmap(bn)
 	sh = 1;
 	bn -= NDADDR;
 	for (j = NIADDR; j > 0; j--) {
-		sh *= NINDIR(&sblock);
+		sh *= NINDIR(sblockp);
 		if (bn < sh)
 			break;
 		bn -= sh;
@@ -462,12 +469,12 @@ bmap(bn)
 	 */
 	for (; j <= NIADDR; j++) {
 		if (blknos[j] != nb) {
-			bread(fsbtodb(&sblock, nb), b[j], sblock.fs_bsize);
+			bread(fsbtodb(sblockp, nb), b[j], sblockp->fs_bsize);
 			blknos[j] = nb;
 		}
 		bap = (daddr_t *)b[j];
-		sh /= NINDIR(&sblock);
-		i = (bn / sh) % NINDIR(&sblock);
+		sh /= NINDIR(sblockp);
+		i = (bn / sh) % NINDIR(sblockp);
 		nb = bap[i];
 		if(nb == 0) {
 			(void) printf("ncheck: bn %ld void2, ino %lu\n", bn,
