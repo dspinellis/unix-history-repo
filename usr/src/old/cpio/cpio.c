@@ -17,7 +17,6 @@
 	cpio -- copy file collections
 
 */
-#include "errmsg.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <memory.h>
@@ -25,7 +24,17 @@
 #include <string.h>
 #include <signal.h>
 #include <varargs.h>
+#include <sys/param.h>
+#include <sys/types.h>
 #include <sys/stat.h>
+
+struct utimbuf {
+	time_t	actime;
+	time_t	modtime;
+};
+#ifndef S_IFIFO
+#define	S_IFIFO	010000
+#endif
 
 #define EQ(x,y)	(strcmp(x,y)==0)
 
@@ -35,6 +44,7 @@
 #define MKSHORT(v,lv) {U.l=1L;if(U.c[0]) U.l=lv,v[0]=U.s[1],v[1]=U.s[0]; else U.l=lv,v[0]=U.s[0],v[1]=U.s[1];}
 
 #define MAGIC	070707		/* cpio magic number */
+#define BSMAGIC	0143561		/* byte-swapped cpio magic number */
 #define IN	'i'		/* copy in */
 #define OUT	'o'		/* copy out */
 #define PASS	'p'		/* direct copy */
@@ -68,6 +78,7 @@ static struct header {
 	char	h_name[256];
 } Hdr;
 
+char	Symlbuf[MAXPATHLEN + 1];	/* target of symbolic link */
 static unsigned	Bufsize = BUFSIZE;		/* default record size */
 static char	Buf[CPIOBSZ], *Cbuf;
 static char	*Cp;
@@ -87,7 +98,6 @@ short	Option,
 	fflag,
 	Swap,
 	byteswap,
-	bothswap,
 	halfswap;
 
 static
@@ -130,13 +140,15 @@ short	Dev;
 ushort	Uid,
 	A_directory,
 	A_special,
+	A_symlink,
 	Filetype = S_IFMT;
 
 extern	errno;
 extern	void exit();
-extern	char *sys_errlist[];
 char	*malloc();
 FILE 	*popen();
+
+static char *smemcpy();
 
 static
 union {
@@ -163,23 +175,21 @@ char **argv;
 {
 	register ct;
 	long	filesz;
+	int	symlsz;
 	register char *fullp;
 	register i;
 	int ans;
+	register char *symlinkp;
 	short select;			/* set when files are selected */
 	extern char	*optarg;
 	extern int	optind;
 
-	errsource( *argv );
-	errverb("notag,notofix");
-	errexit( 2 );
-	signal(SIGSYS, 1);
-	if(*argv[1] != '-')
+	signal(SIGSYS, SIG_IGN);
+	if(argc <= 1 || *argv[1] != '-')
 		usage();
 	Uid = getuid();
-	umask(0);
 
-	while( (ans = getopt( argc, argv, "aBC:ifopcdlmrSsbtuvVM:6eI:O:")) != EOF ) {
+	while( (ans = getopt( argc, argv, "aBC:ifopcdlmrSsbtuvM:6eI:O:")) != EOF ) {
 
 		switch( ans ) {
 		case 'a':		/* reset access time */
@@ -191,10 +201,11 @@ char **argv;
 		case 'C':		/* reset buffer size to arbitrary valu
 					*/
 			Bufsize = atoi( optarg );
-			if( Bufsize == 0 )
-				errmsg( EERROR,
-					"Illegal argument to -%c, '%s'.",
+			if( Bufsize == 0 ) {
+				fperr("Illegal argument to -%c, '%s'",
 					ans, optarg );
+				exit(2);
+			}
 			break;
 		case 'i':
 			Option = IN;
@@ -225,8 +236,9 @@ char **argv;
 			Rtty = fopen(ttyname, "r");
 			Wtty = fopen(ttyname, "w");
 			if(Rtty==NULL || Wtty==NULL) {
-				errmsg( EERROR, "Cannot rename (%s missing)",
+				fperrno("Cannot rename (%s missing)",
 					ttyname );
+				exit(2);
 			}
 			break;
 		case 'S':		/* swap halfwords */
@@ -238,7 +250,8 @@ char **argv;
 			Swap++;
 			break;
 		case 'b':		/* swap both bytes and halfwords */
-			bothswap++;
+			halfswap++;
+			byteswap++;
 			Swap++;
 			break;
 		case 't':		/* table of contents */
@@ -248,10 +261,7 @@ char **argv;
 			Uncond++;
 			break;
 		case 'v':		/* verbose - print out file names */
-			Verbose = 1;
-			break;
-		case 'V':		/* print a dot '.' for each file */
-			Verbose = 2;
+			Verbose++;
 			break;
 		case 'M':		/* alternate message for end-of-media */
 			eommsg = optarg;
@@ -261,17 +271,27 @@ char **argv;
 			break;
 		case 'I':
 			chkswfile( swfile, ans, Option );
-			close( Input );
-			if( open( optarg, O_RDONLY ) != Input )
-				cannotopen( optarg, "input" );
+			if( (i = open( optarg, O_RDONLY ) ) < 0) {
+				fperrno("Cannot open <%s> for input", optarg);
+				exit(2);
+			}
+			if( dup2(i, Input ) < 0 ) {
+				fperrno("Cannot dup to standard input");
+				exit(2);
+			}
 			swfile = optarg;
 			break;
 		case 'O':
 			chkswfile( swfile, ans, Option );
-			close( Output );
-			if( open( optarg, O_WRONLY | O_CREAT | O_TRUNC, 0666 )
-				!= Output)
-				cannotopen( optarg, "output" );
+			if( (i = open( optarg, O_WRONLY | O_CREAT | O_TRUNC,
+			    0666 ) ) < 0) {
+				fperrno("Cannot open <%s> for output", optarg);
+				exit(2);
+			}
+			if( dup2(i, Output ) < 0 ) {
+				fperrno("Cannot dup to standard output");
+				exit(2);
+			}
 			swfile = optarg;
 			break;
 		default:
@@ -279,12 +299,16 @@ char **argv;
 		}
 	}
 	if(!Option) {
-		errmsg( EERROR, "Options must include one: -o, -i, -p.");
+		(void) fprintf(stderr,
+		    "Options must include one of -o, -i, or -p\n");
+		exit(2);
 	}
 
 	if(Option == PASS) {
 		if(Rename) {
-			errmsg( EERROR, "Pass and Rename cannot be used together.");
+			(void) fprintf(stderr,
+			    "Pass and Rename cannot be used together\n");
+			exit(2);
 		}
 		if( Bufsize != BUFSIZE ) {
 			fprintf( stderr, "`B' or `C' option is irrelevant with the '-p' option\n");
@@ -292,7 +316,11 @@ char **argv;
 		}
 
 	}else  {
-		Cp = Cbuf = (char *)zmalloc( EERROR, Bufsize);
+		Cp = Cbuf = (char *)malloc(Bufsize);
+		if(Cp == NULL) {
+			perror("cpio");
+			exit(2);
+		}
 	}
 	argc -= optind;
 	argv += optind;
@@ -309,11 +337,26 @@ char **argv;
 				else
 					bwrite(&Hdr, HDRSIZE+Hdr.h_namesize);
 				if(Verbose)
-					verbdot( stderr, Hdr.h_name);
+					(void) fprintf(stderr, "%s\n",
+					    Hdr.h_name);
+				continue;
+			} else if( A_symlink ) {
+				symlsz = (int) mklong(Hdr.h_filesize);
+				if (readlink(Hdr.h_name, Symlbuf, symlsz) < 0) {
+					fperrno("Cannot read symbolic link <%s>",
+					    Hdr.h_name);
+					continue;
+				}
+				Symlbuf[symlsz] = '\0';
+				bwrite(&Hdr, HDRSIZE+Hdr.h_namesize);
+				bwrite(Symlbuf, symlsz);
+				if(Verbose)
+					(void) fprintf(stderr, "%s\n",
+					    Hdr.h_name);
 				continue;
 			}
 			if((Ifile = open(Hdr.h_name, 0)) < 0) {
-				fperr("<%s> ?\n", Hdr.h_name);
+				fperrno("Cannot open <%s>", Hdr.h_name);
 				continue;
 			}
 			if ( Cflag )
@@ -323,16 +366,21 @@ char **argv;
 			for(filesz=mklong(Hdr.h_filesize); filesz>0; filesz-= CPIOBSZ){
 				ct = filesz>CPIOBSZ? CPIOBSZ: filesz;
 				if(read(Ifile, Buf, ct) < 0) {
-					fperr("Cannot read %s\n", Hdr.h_name);
+ 					fperrno("Cannot read %s", Hdr.h_name);
 					continue;
 				}
 				bwrite(Buf,ct);
 			}
 			close(Ifile);
-			if(Acc_time)
-				utime(Hdr.h_name, &Statb.st_atime);
+			if(Acc_time) {
+				struct utimbuf utb;
+
+				utb.actime = Statb.st_atime;
+				utb.modtime = Statb.st_mtime;
+				(void)utime(Hdr.h_name, &utb);
+			}
 			if(Verbose)
-				verbdot( stderr, Hdr.h_name);
+				(void) fprintf(stderr, "%s\n", Hdr.h_name);
 		}
 
 	/* copy trailer, after all files have been copied */
@@ -356,33 +404,43 @@ char **argv;
 		pwd();
 		chkhdr();
 		while(gethdr()) {
-			if( (select = ckname(Hdr.h_name))  &&  !Toc )
-				Ofile = openout(Hdr.h_name);
-			else
-				Ofile = 0;
-			for(filesz=mklong(Hdr.h_filesize); filesz>0; filesz-= CPIOBSZ){
-				ct = filesz>CPIOBSZ? CPIOBSZ: filesz;
-				bread(Buf, ct);
-				if(Ofile) {
-					if(Swap)
-						swap(Buf,ct);
-					if(write(Ofile, Buf, ct) < 0) {
-					 fperr("Cannot write %s\n", Hdr.h_name);
-					 continue;
+			if (A_symlink) {
+				symlsz = (int) mklong(Hdr.h_filesize);
+				bread(Symlbuf, symlsz);
+				Symlbuf[symlsz] = '\0';
+				if((void) ckname(Hdr.h_name)  &&  !Toc)
+					(void)openout(Hdr.h_name, Symlbuf);
+			} else {
+				if( (select = ckname(Hdr.h_name))  &&  !Toc )
+					Ofile = openout(Hdr.h_name, (char *)0);
+				else
+					Ofile = 0;
+				for(filesz=mklong(Hdr.h_filesize); filesz>0; filesz-= CPIOBSZ){
+					ct = filesz>CPIOBSZ? CPIOBSZ: filesz;
+					bread(Buf, ct);
+					if(Ofile) {
+						if(Swap)
+						       swap(Buf,ct,byteswap,halfswap);
+						if(write(Ofile, Buf, ct) < 0) {
+						 fperrno("Cannot write %s", Hdr.h_name);
+						 continue;
+						}
 					}
 				}
-			}
-			if( Ofile ) {
-				zclose( EERROR, Ofile );
-				zchmod( EWARN, Hdr.h_name, Hdr.h_mode);
-				set_time(Hdr.h_name, mklong(Hdr.h_mtime), mklong(Hdr.h_mtime));
+				if( Ofile ) {
+					(void) close(Ofile);
+					if(chmod(Hdr.h_name, Hdr.h_mode) < 0)
+						fperrno("Cannot change mode of <%s>",
+						    Hdr.h_name);
+					set_time(Hdr.h_name, mklong(Hdr.h_mtime), mklong(Hdr.h_mtime));
+				}
 			}
 			if(select) {
 				if(Verbose)
 					if(Toc)
 						pentry(Hdr.h_name);
 					else
-						verbdot( stdout, Hdr.h_name);
+						puts(Hdr.h_name);
 				else if(Toc)
 					puts(Hdr.h_name);
 			}
@@ -393,12 +451,19 @@ char **argv;
 		if(argc != 1)
 			usage();
 		if(access(argv[0], 2) == -1) {
-			errmsg( EERROR, "cannot write in <%s>", argv[0]);
+			(void) fperrno("Cannot write in <%s>", argv[0]);
+			exit(2);
 		}
 		strcpy(Fullname, argv[0]);	/* destination directory */
-		zstat( EERROR, Fullname, &Xstatb );
-		if((Xstatb.st_mode&S_IFMT) != S_IFDIR)
-			errmsg( EERROR, "<%s> not a directory.", Fullname );
+		if(stat(Fullname, &Xstatb) < 0) {
+			fperrno("Cannot stat <%s>", Fullname);
+			exit(2);
+		}
+		if((Xstatb.st_mode&S_IFMT) != S_IFDIR) {
+			(void) fprintf(stderr, "<%s> is not a directory",
+			    Fullname);
+			exit(2);
+		}
 		Dev = Xstatb.st_dev;
 		if( Fullname[ strlen(Fullname) - 1 ] != '/' )
 			strcat(Fullname, "/");
@@ -406,7 +471,7 @@ char **argv;
 
 		while(getname()) {
 			if (A_directory && !Dir)
-				fperr("Use `-d' option to copy <%s>\n",
+				fperr("Use `-d' option to copy <%s>",
 					Hdr.h_name);
 			if(!ckname(Hdr.h_name))
 				continue;
@@ -420,39 +485,51 @@ char **argv;
 					switch(errno) {
 						case ENOENT:
 							if(missdir(Fullname) != 0) {
-								fprintf(stderr,
-									"cpio: cannot create directory for <%s>: %s\n",
-									Fullname, sys_errlist[errno]);
+								fperrno("Cannot create directory for <%s>",
+									Fullname);
 								continue;
 							}
 							break;
 						case EEXIST:
 							if(unlink(Fullname) < 0) {
-								fprintf(stderr,
-									"cpio: cannot unlink <%s>: %s\n",
-									Fullname, sys_errlist[errno]);
+								fperrno("Cannot unlink <%s>",
+									Fullname);
 								continue;
 							}
 							break;
 						default:
-							fprintf(stderr,
-								"Cpio: cannot link <%s> to <%s>: %s\n",
-								Hdr.h_name, Fullname, sys_errlist[errno]);
+							fperrno("Cannot link <%s> to <%s>",
+								Hdr.h_name, Fullname);
 							continue;
 						}
 					if(link(Hdr.h_name, Fullname) < 0) {
-						fprintf(stderr,
-							"cpio: cannot link <%s> to <%s>: %s\n",
-							Hdr.h_name, Fullname, sys_errlist[errno]);
+						fperrno("Cannot link <%s> to <%s>",
+							Hdr.h_name, Fullname);
 						continue;
 					}
 				}
 
 				goto ckverbose;
 			}
-			if(!(Ofile = openout(Fullname)))
+			if( A_symlink ) {
+			   symlsz = (int) mklong(Hdr.h_filesize);
+			   if (readlink(Hdr.h_name, Symlbuf, symlsz) < 0) {
+				fperrno("Cannot read symbolic link <%s>",
+				    Hdr.h_name);
 				continue;
-			if((Ifile = zopen( EWARN, Hdr.h_name, 0)) < 0) {
+			   }
+			   Symlbuf[symlsz] = '\0';
+			   if(!openout(Fullname, Symlbuf))
+				continue;
+			   Blocks += ((symlsz + (BUFSIZE - 1)) / BUFSIZE);
+			   if(Verbose)
+				puts(Fullname);
+			   continue;
+			}
+			if(!(Ofile = openout(Fullname, (char *)0)))
+				continue;
+			if((Ifile = open(Hdr.h_name, 0)) < 0) {
+				fperrno("Cannot open <%s>", Hdr.h_name);
 				close(Ofile);
 				continue;
 			}
@@ -460,47 +537,53 @@ char **argv;
 			for(; filesz > 0; filesz -= CPIOBSZ) {
 				ct = filesz>CPIOBSZ? CPIOBSZ: filesz;
 				if(read(Ifile, Buf, ct) < 0) {
-					fperr("Cannot read %s\n", Hdr.h_name);
+					fperrno("Cannot read %s", Hdr.h_name);
 					break;
 				}
-				if(Ofile)
-					if(write(Ofile, Buf, ct) < 0) {
-					 fperr("Cannot write %s\n", Hdr.h_name);
-					 break;
-					}
-					/* Removed u370 ifdef which caused cpio */
-					/* to report blocks in terms of 4096 bytes. */
+				if(write(Ofile, Buf, ct) < 0) {
+				 fperrno("Cannot write %s", Hdr.h_name);
+				 break;
+				}
+				/* Removed u370 ifdef which caused cpio */
+				/* to report blocks in terms of 4096 bytes. */
 
 				Blocks += ((ct + (BUFSIZE - 1)) / BUFSIZE);
 			}
 			close(Ifile);
-			if(Acc_time)
-				utime(Hdr.h_name, &Statb.st_atime);
+			if(Acc_time) {
+				struct utimbuf utb;
+
+				utb.actime = Statb.st_atime;
+				utb.modtime = Statb.st_mtime;
+				(void)utime(Hdr.h_name, &utb);
+			}
 			if(Ofile) {
 				close(Ofile);
-				zchmod( EWARN, Fullname, Hdr.h_mode);
+				if(chmod(Fullname, Hdr.h_mode) < 0)
+					fperrno("Cannot change mode of <%s>",
+					    Fullname);
 				set_time(Fullname, Statb.st_atime, mklong(Hdr.h_mtime));
 ckverbose:
 				if(Verbose)
-					verbdot( stdout, Fullname );
+					puts(Fullname);
 			}
 		}
 	}
 	/* print number of blocks actually copied */
 	Blocks += ((sBlocks + (BUFSIZE - 1)) / BUFSIZE);
-	fperr("%ld blocks\n", Blocks * (Bufsize>>9));
+	(void) fprintf(stderr, "%ld blocks\n", Blocks * (Bufsize>>9));
 	exit(0);
 }
 
 static
 usage()
 {
-	errusage("%s\n\t%s %s\n\t%s %s\n\t%s %s\n\t%s %s\n",
-		    "-o[acvB] <name-list >collection",
-	Err.source, "-o[acvB] -Ocollection <name-list",
-	Err.source, "-i[cdmrstuvfB6] [pattern ...] <collection",
-	Err.source, "-i[cdmrstuvfB6] -Icollection [pattern ...]",
-	Err.source, "-p[adlmruv] directory <name-list");
+	(void) fprintf("Usage: %s\n     %s\n     %s\n     %s\n       %s\n",
+	    "cpio -o[acvB] <name-list >collection",
+	    "cpio -o[acvB] -Ocollection <name-list",
+	    "cpio -i[cdmrstuvfB6] [ pattern ... ] <collection",
+	    "cpio -i[cdmrstuvfB6] -Icollection [ pattern ... ]",
+	    "cpio -p[adlmruv] directory <name-list");
 }
 
 static
@@ -509,22 +592,20 @@ char	*sp;
 char	c;
 short	option;
 {
-	if( !option )
-		errmsg( EERROR, "-%c must be specified before -%c option.",
+	if( !option ) {
+		fperr( "-%c must be specified before -%c option",
 			c == 'I' ? 'i' : 'o', c );
-	if( (c == 'I'  &&  option != IN)  ||  (c == 'O'  &&  option != OUT) )
-		errmsg( EERROR, "-%c option not permitted with -%c option.", c,
+		exit(2);
+	}
+	if( (c == 'I'  &&  option != IN)  ||  (c == 'O'  &&  option != OUT) ) {
+		fperr( "-%c option not permitted with -%c option", c,
 			option );
+		exit(2);
+	}
 	if( !sp )
 		return;
-	errmsg( EERROR, "No more than one -I or -O flag permitted.");
-}
-
-static
-cannotopen( sp, mode )
-char	*sp, *mode;
-{
-	errmsg( EERROR, "Cannot open <%s> for %s.", sp, mode );
+	fperr("No more than one -I or -O flag permitted");
+	exit(2);
 }
 
 static
@@ -532,6 +613,7 @@ getname()		/* get file name, get info for header */
 {
 	register char *namep = Name;
 	register ushort ftype;
+	struct stat Lstatb;
 	long tlong;
 
 	for(;;) {
@@ -542,7 +624,8 @@ getname()		/* get file name, get info for header */
 			while(*namep == '/') namep++;
 		}
 		strcpy(Hdr.h_name, namep);
-		if(zstat( EWARN, namep, &Statb) < 0) {
+		if(lstat(namep, &Statb) < 0) {
+			fperrno("Cannot stat <%s>", Hdr.h_name);
 			continue;
 		}
 		ftype = Statb.st_mode & Filetype;
@@ -550,6 +633,7 @@ getname()		/* get file name, get info for header */
 		A_special = (ftype == S_IFBLK)
 			|| (ftype == S_IFCHR)
 			|| (ftype == S_IFIFO);
+		A_symlink = (ftype == S_IFLNK);
 		Hdr.h_magic = MAGIC;
 		Hdr.h_namesize = strlen(Hdr.h_name) + 1;
 		Hdr.h_uid = Statb.st_uid;
@@ -559,7 +643,8 @@ getname()		/* get file name, get info for header */
 		Hdr.h_mode = Statb.st_mode;
 		MKSHORT(Hdr.h_mtime, Statb.st_mtime);
 		Hdr.h_nlink = Statb.st_nlink;
-		tlong = (Hdr.h_mode&S_IFMT) == S_IFREG? Statb.st_size: 0L;
+		tlong = ((Hdr.h_mode&S_IFMT) == S_IFREG ||
+			(Hdr.h_mode&S_IFMT) == S_IFLNK)? Statb.st_size: 0L;
 		MKSHORT(Hdr.h_filesize, tlong);
 		Hdr.h_rdev = Statb.st_rdev;
 		if( Cflag )
@@ -602,11 +687,12 @@ chkhdr()
 		Cflag = 1;
 	else {
 		breread(&Hdr.h_magic, sizeof Hdr.h_magic);
-		if( Hdr.h_magic == MAGIC )
+		if( Hdr.h_magic == MAGIC || Hdr.h_magic == (short)BSMAGIC )
 			Cflag = 0;
-		else
-			errmsg( EERROR,
-				"This is not a cpio file.  Bad magic number.");
+		else {
+			fperr("This is not a cpio file.  Bad magic number.");
+			exit(2);
+		}
 	}
 	breread(Chdr, 0);
 }
@@ -624,8 +710,11 @@ gethdr()		/* get file headers */
 	else
 		bread(&Hdr, HDRSIZE);
 
-	if( Hdr.h_magic != MAGIC ) {
-		errmsg( EERROR, "Out of phase--get help.");
+	if(Hdr.h_magic == (short)BSMAGIC)
+		swap((char *)&Hdr, HDRSIZE, 1, 0);
+	else if( Hdr.h_magic != MAGIC ) {
+		fperr("Out of phase--get help");
+		exit(2);
 	}
 	bread(Hdr.h_name, Hdr.h_namesize);
 	if(EQ(Hdr.h_name, "TRAILER!!!"))
@@ -635,6 +724,7 @@ gethdr()		/* get file headers */
 	A_special = (ftype == S_IFBLK)
 		||  (ftype == S_IFCHR)
 		||  (ftype == S_IFIFO);
+	A_symlink = (ftype == S_IFLNK);
 	return 1;
 }
 
@@ -668,8 +758,9 @@ register char *namep;
 }
 
 static
-openout(namep)	/* open files for writing, set all necessary info */
+openout(namep, symlname)	/* open files for writing, set all necessary info */
 register char *namep;
+char *symlname;
 {
 	register f;
 	register char *np;
@@ -687,7 +778,7 @@ register char *namep;
 /* try creating (only twice) */
 			ans = 0;
 			do {
-				if(makdir(namep) != 0) {
+				if(mkdir(namep, Hdr.h_mode) != 0) {
 					ans += 1;
 				}else {
 					ans = 0;
@@ -705,16 +796,19 @@ register char *namep;
 		}
 
 ret:
-		zchmod( EWARN, namep, Hdr.h_mode);
+		if(chmod(namep, Hdr.h_mode) < 0)
+			fperrno("Cannot change mode of <%s>", namep);
 		if(Uid == 0)
-			zchown( EWARN, namep, Hdr.h_uid, Hdr.h_gid);
+			if(chown(namep, Hdr.h_uid, Hdr.h_gid) < 0)
+				fperrno("Cannot change ownership of <%s>",
+				    namep);
 		set_time(namep, mklong(Hdr.h_mtime), mklong(Hdr.h_mtime));
 		return 0;
 	}
 	if(Hdr.h_nlink > 1)
 		if(!postml(namep, np))
 			return 0;
-	if(stat(namep, &Xstatb) == 0) {
+	if(lstat(namep, &Xstatb) == 0) {
 		if(Uncond && !((!(Xstatb.st_mode & S_IWRITE) || A_special) && (Uid != 0))) {
 			if(unlink(namep) < 0) {
 				fperrno("cannot unlink current <%s>", namep);
@@ -722,14 +816,37 @@ ret:
 		}
 		if(!Uncond && (mklong(Hdr.h_mtime) <= Xstatb.st_mtime)) {
 		/* There's a newer or same aged version of file on destination */
-			fperr("current <%s> newer or same age\n", np);
+			fperr("current <%s> newer or same age", np);
 			return 0;
 		}
 	}
 	if( Option == PASS
 		&& Hdr.h_ino == Xstatb.st_ino
 		&& Hdr.h_dev == Xstatb.st_dev) {
-		errmsg( EERROR, "Attempt to pass file to self!");
+		fperr("Attempt to pass file to self!");
+		exit(2);
+	}
+	if(A_symlink) {
+/* try symlinking (only twice) */
+		ans = 0;
+		do {
+			if(symlink(
+symlname, namep) < 0) {
+				ans += 1;
+			}else {
+				ans = 0;
+				break;
+			}
+		}while(ans < 2 && missdir(np) == 0);
+		if(ans == 1) {
+			fperrno("Cannot create directory for <%s>", namep);
+			return(0);
+		}else if(ans == 2) {
+			fperrno("Cannot symlink <%s> and <%s>", namep, symlname);
+			return(0);
+		}
+
+		return 0;
 	}
 	if(A_special) {
 		if((Hdr.h_mode & Filetype) == S_IFIFO)
@@ -775,7 +892,8 @@ ret:
 	}
 
 	if(Uid == 0)
-		zchown( EWARN, namep, Hdr.h_uid, Hdr.h_gid);
+		if(chown(namep, Hdr.h_uid, Hdr.h_gid) < 0)
+			fperrno("Cannot change ownership of <%s>", namep);
 	return f;
 }
 
@@ -825,19 +943,16 @@ register int	c;
 				p = Cbuf;
 				++Blocks;
 			}
-			else if( rv == -1 )
-				errmsg( EERROR,
-					"Read() in bread() failed\n");
+			else if( rv == -1 ) {
+				fperrno("Read error on archive");
+				exit(2);
+			}
 			else if( rv < Bufsize ) {	/* short read */
 				smemcpy( &Cbuf[ Bufsize - rv ], Cbuf, rv );
 				nleft = rv;
 				p = &Cbuf[ Bufsize - rv ];
 				sBlocks += rv;
 			}
-			else
-				errmsg( EHALT,
-					"Impossible return from read(), %d\n",
-					rv );
 		}
 		if( nleft <= c ) {
 			memcpy( b, p, nleft );
@@ -884,19 +999,16 @@ register c;
 				Ccnt = 0;
 				cp = Cbuf;
 			}
-			else if( rv == -1 )
-				errmsg( EERROR,
-					"Write() in bwrite() failed\n");
+			else if( rv == -1 ) {
+				fperrno("Write error on archive");
+				exit(2);
+			}
 			else if( rv < Bufsize ) {
 				Output = chgreel(1, Output, 0);
 				smemcpy( Cbuf, &Cbuf[ Bufsize - rv ], rv );
 				Ccnt = Bufsize - rv;
 				cp = &Cbuf[ rv ];
 			}
-			else
-				errmsg( EHALT,
-					"Impossible return from read(), %d\n",
-					rv );
 			++Blocks;
 			rp += Cleft;
 			c -= Cleft;
@@ -930,7 +1042,11 @@ eomchgreel()
 		rv = write(Output, Cbuf, Bufsize);
 		if( rv == Bufsize )
 			return  rv;
-		fperr( "Unable to write this medium.  Try again.\n" );
+		if( rv == -1 )
+			fperrno( "Unable to write this medium" );
+		else
+			fperr( "Unable to write this medium: Premature EOF" );
+		(void) fprintf(stderr, "Try again.\n");
 		reelcount--;
 	}
 	/*NOTREACHED*/
@@ -956,19 +1072,23 @@ register char *namep, *np;	/* namep is created.  Postml() checks to see  */
 
 	if( !ml ) {
 		mlsize = LINKS;
-		ml = (struct ml **) zmalloc( EERROR, mlsize * sizeof(struct ml));
+		ml = (struct ml **) malloc(mlsize * sizeof(struct ml));
 	}
 	else if( mlinks == mlsize ) {
 		mlsize += LINKS;
-		ml = (struct ml **) zrealloc( EERROR, ml, mlsize * sizeof(struct ml));
+		ml = (struct ml **) realloc((char *) ml,
+		    mlsize * sizeof(struct ml));
+	}
+	if (ml == NULL) {
+		fperr("Out of memory for links");
+		exit(2);
 	}
 	for(i = 0; i < mlinks; ++i) {
 		mlp = ml[i];
 		if(mlp->m_ino==Hdr.h_ino  &&  mlp->m_dev==Hdr.h_dev) {
-			if(Verbose == 1)
-				fprintf(stderr, "%s linked to %s\n", mlp->m_name, np);
 			if(Verbose)
-				verbdot(stdout, np);
+			  printf("%s linked to %s\n", ml[i]->m_name,
+				np);
 			unlink(namep);
 			if(Option == IN && *(mlp->m_name) != '/') {
 				Fullname[Pathend] = '\0';
@@ -999,11 +1119,11 @@ register char *namep, *np;	/* namep is created.  Postml() checks to see  */
 			return 0;
 		}
 	}
-	if( !(ml[mlinks] = (struct ml *)zmalloc( EWARN, strlen(np) + 2 + sizeof(struct ml)))) {
+	if( !(ml[mlinks] = (struct ml *)malloc(strlen(np) + 2 + sizeof(struct ml)))) {
 		static int first=1;
 
 		if(first)
-			fperr("No memory for links (%d)\n", mlinks);
+			fperr("Out of memory for links");
 		first = 0;
 		return 1;
 	}
@@ -1043,7 +1163,10 @@ register char *namep;
 	U.l = mklong(Hdr.h_mtime);
 	strcpy(tbuf, ctime((long *)&U.l));
 	tbuf[24] = '\0';
-	printf(" %s  %s\n", &tbuf[4], namep);
+	printf(" %s  %s", &tbuf[4], namep);
+	if (A_symlink)
+		printf(" -> %s", Symlbuf);
+	putchar('\n');
 }
 
 		/* pattern matching functions */
@@ -1117,77 +1240,52 @@ register char *s, *p;
 	return(0);
 }
 
-
-
-static
-makdir(namep)		/* make needed directories */
-register char *namep;
+swap(buf, bytecount, bytes, halfwords)	/* swap halfwords, bytes or both */
+char *buf;
+int bytecount;
+int bytes, halfwords;
 {
-	static status;
-	register pid;
+	register int count;
+	int n, i;
 
-	pid = fork();
-	if (pid == 0) {			/* pid == 0 implies child process */
-		close(2);
-		execl("/bin/mkdir", "mkdir", namep, 0);
-		exit(2);
-	}
-	if (pid == -1) {		/* pid != 0 implies parent process */
-		fprintf(stderr,"Cannot fork, try again\n");
-		exit(2);
-	}
-	while(wait(&status) != pid);
+	if(bytes) {
+		register union swpbytes {
+			short	shortw;
+			char	charv[2];
+		} *pbuf;
+		register char c;
 
-	return ((status>>8) & 0377)? 1: 0;
-}
-
-
-
-static
-swap(buf, ct)		/* swap halfwords, bytes or both */
-register ct;
-register char *buf;
-{
-	register char c;
-	register union swp { long	longw; short	shortv[2]; char charv[4]; } *pbuf;
-	int savect, n, i;
-	char *savebuf;
-	short cc;
-
-	savect = ct;	savebuf = buf;
-	if(byteswap || bothswap) {
-		if (ct % 2) buf[ct] = 0;
-		ct = (ct + 1) / 2;
-		while (ct--) {
-			c = *buf;
-			*buf = *(buf + 1);
-			*(buf + 1) = c;
-			buf += 2;
-		}
-		if (bothswap) {
-			ct = savect;
-			pbuf = (union swp *)savebuf;
-			if (n = ct % sizeof(union swp)) {
-				if(n % 2)
-					for(i = ct + 1; i <= ct + (sizeof(union swp) - n); i++) pbuf->charv[i] = 0;
-				else
-					for (i = ct; i < ct + (sizeof(union swp) - n); i++) pbuf->charv[i] = 0;
-			}
-			ct = (ct + (sizeof(union swp) -1)) / sizeof(union swp);
-			while(ct--) {
-				cc = pbuf->shortv[0];
-				pbuf->shortv[0] = pbuf->shortv[1];
-				pbuf->shortv[1] = cc;
-				++pbuf;
-			}
+		count = bytecount;
+		pbuf = (union swpbytes *)buf;
+		if (count % sizeof(union swpbytes))
+			pbuf->charv[count] = 0;
+		count = (count + (sizeof(union swpbytes) - 1)) / sizeof(union swpbytes);
+		while (count--) {
+			c = pbuf->charv[0];
+			pbuf->charv[0] = pbuf->charv[1];
+			pbuf->charv[1] = c;
+			++pbuf;
 		}
 	}
-	else if (halfswap) {
-		pbuf = (union swp *)buf;
-		if (n = ct % sizeof(union swp))
-			for (i = ct; i < ct + (sizeof(union swp) - n); i++) pbuf->charv[i] = 0;
-		ct = (ct + (sizeof(union swp) -1)) / sizeof(union swp);
-		while (ct--) {
+	if (halfwords) {
+		register union swphalf {
+			long	longw;
+			short	shortv[2];
+			char	charv[4];
+		} *pbuf;
+		register short cc;
+
+		count = bytecount;
+		pbuf = (union swphalf *)buf;
+		if (n = count % sizeof(union swphalf))
+			if(bytes && n % 2)
+				for(i = count + 1; i <= count + (sizeof(union swphalf) - n); i++)
+					pbuf->charv[i] = 0;
+			else
+				for (i = count; i < count + (sizeof(union swphalf) - n); i++)
+					pbuf->charv[i] = 0;
+		count = (count + (sizeof(union swphalf) - 1)) / sizeof(union swphalf);
+		while (count--) {
 			cc = pbuf->shortv[0];
 			pbuf->shortv[0] = pbuf->shortv[1];
 			pbuf->shortv[1] = cc;
@@ -1202,13 +1300,13 @@ set_time(namep, atime, mtime)	/* set access and modification times */
 register char *namep;
 time_t atime, mtime;
 {
-	static time_t timevec[2];
+	static struct utimbuf timevec;
 
 	if(!Mod_time)
 		return;
-	timevec[0] = atime;
-	timevec[1] = mtime;
-	utime(namep, timevec);
+	timevec.actime = atime;
+	timevec.modtime = mtime;
+	(void)utime(namep, &timevec);
 }
 
 
@@ -1227,15 +1325,20 @@ chgreel(x, fl, rv)
 	}
 	if( rv == 0  ||
 		( rv == -1  &&  ( errno == ENOSPC  ||  errno == ENXIO ) ) )
-		fperr( "\007Reached end of medium on %s.\n",
+		fperr( "\007Reached end of medium on %s",
 			x? "output":"input" );
 	else {
 		fperrno( "\007Encountered an error on %s",
 			x? "output":"input" );
 		exit(2);
 	}
-	if( Rtty == NULL )
-		Rtty = zfopen( EERROR, ttyname, "r");
+	if( Rtty == NULL ) {
+		Rtty = fopen(ttyname, "r");
+		if( Rtty == NULL ) {
+			fperrno("Cannot prompt (can't open %s)", ttyname);
+			exit(2);
+		}
+	}
 	close(fl);
 	reelcount++;
 again:
@@ -1254,16 +1357,14 @@ again:
 		}
 	}
 	else {
-		fperr("If you want to go on, type device/file name when ready.\n");
+		fperr("If you want to go on, type device/file name when ready.");
 		fgets(str, sizeof str, Rtty);
 		str[strlen(str) - 1] = '\0';
 		if(!*str)
 			exit(2);
 	}
 	if((f = open(str, x? 1: 0)) < 0) {
-		fperr("That didn't work, cannot open \"%s\"\n", str);
-		if( errno )
-			perror("");
+		fperrno("Can't open <%s>", str);
 		goto again;
 	}
 	return f;
@@ -1284,12 +1385,12 @@ register char *namep;
 			*np = '\0';
 			if(stat(namep, &Xstatb) == -1) {
 				if(Dir) {
-					if((ct = makdir(namep)) != 0) {
+					if((ct = mkdir(namep, 0777)) != 0) {
 						*np = '/';
 						return(ct);
 					}
 				}else {
-					fperr("missing 'd' option\n");
+					fperr("missing 'd' option");
 					return(-1);
 				}
 			}
@@ -1304,42 +1405,14 @@ register char *namep;
 static
 pwd()		/* get working directory */
 {
-	FILE *dir;
-
-	dir = popen("pwd", "r");
-	fgets(Fullname, sizeof Fullname, dir);
-	if(pclose(dir))
+	if (getwd(Fullname) == 0) {
+		(void)fprintf(stderr, "cpio: %s\n",
+		    Fullname);
 		exit(2);
+	}
 	Pathend = strlen(Fullname);
-	Fullname[Pathend - 1] = '/';
-}
-
-
-static int	verbcount = 0;
-static FILE	*verbout = 0;
-/*
-	In -V verbose mode, print out a dot for each file processed.
-*/
-static
-verbdot( fp, cp )
-FILE	*fp;
-char	*cp;
-{
-
-	if( !verbout )
-		verbout = fp;
-	if( Verbose == 2 ) {
-		fputc( '.', fp );
-		if( ++verbcount >= 50 ) {
-			/* start a new line of dots */
-			verbcount = 0;
-			fputc( '\n', fp );
-		}
-	}
-	else {
-		fputs( cp, fp );
-		fputc( '\n', fp );
-	}
+	Fullname[Pathend++] = '/';
+	Fullname[Pathend] = '\0';
 }
 
 
@@ -1353,10 +1426,11 @@ va_dcl
 	va_list	args;
 	char	*fmt;
 
-	resetverbcount();
 	va_start( args );
+	fprintf( stderr, "cpio: ");
 	fmt = va_arg( args, char * );
 	vfprintf( stderr, fmt, args );
+	putc( '\n', stderr);
 	fflush( stderr );
 }
 
@@ -1370,28 +1444,44 @@ va_dcl
 	va_list	args;
 	char	*fmt;
 
-	resetverbcount();
 	va_start( args );
+	fprintf( stderr, "cpio: ");
 	fmt = va_arg( args, char * );
 	vfprintf( stderr, fmt, args );
-	fprintf( stderr, ", errno %d, ", errno );
+	fprintf( stderr, ": " );
 	fflush( stderr );
 	perror("");
 }
 
 
-static
-resetverbcount()
+/*	Safe memory copy.
+	Fast if the to and from strings do not overlap,
+	slower but safe if they do.
+*/
+
+static char *
+smemcpy( to, from, count )
+register char		*to, *from;
+register unsigned	count;
 {
-	if( Verbose == 2  &&  verbcount ) {
-		fputc( '\n', verbout );
-		verbcount = 0;
+	char	*savedto;
+
+	if( &to[ count ] <= from  ||  &from[ count ] <= to )
+		return  memcpy( to, from, count );
+
+	if( to == from )
+		return  to;
+
+	savedto = to;
+	if( to < from )
+		while( count-- )
+			*(to++) = *(from++);
+	else {
+		to += count;
+		from += count;
+		while( count-- )
+			*(--to) = *(--from);
 	}
-}
 
-
-void
-errbefore()
-{
-	resetverbcount();
+	return  savedto;
 }
