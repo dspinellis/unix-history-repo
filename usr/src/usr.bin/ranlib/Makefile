@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 PROG=	ranlib
-SRCS=	archive.c build.c header.c misc.c ranlib.c touch.c
+SRCS=	archive.c build.c misc.c ranlib.c touch.c
 CFLAGS+=-I${.CURDIR} -I${.CURDIR}/../ar
 MAN1=	ranlib.0
 VPATH=	${.CURDIR}/../ar
