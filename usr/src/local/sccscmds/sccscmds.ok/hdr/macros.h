@@ -3,7 +3,7 @@
 #define min(a,b) (a>b ? b : a)
 #define abs(x) (x<0 ? -x : x)
 
-#define copy(src,dest) cat(dest,src,0)
+#define copy(src,dest) strcpy(dest,src)
 #define compare(str1,str2) strcmp(str1,str2)
 #define equal(str1,str2) !strcmp(str1,str2)
 #define length(str) strlen(str)
