@@ -1,4 +1,4 @@
-/*	machdep.c	4.38	81/08/31	*/
+/*	machdep.c	4.39	81/10/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -123,7 +123,6 @@ startup(firstaddr)
 #ifdef BBNNET
 	valloc(netmap, struct map, nnetpages/2);
 	valloc(freetab, struct pfree, nnetpages);
-	valloclim(workfree, struct work, nwork, workNWORK);
 	valloclim(contab, struct ucb, nnetcon, conNCON);
 	valloclim(host, struct host, nhost, hostNHOST);
 #endif BBNNET
