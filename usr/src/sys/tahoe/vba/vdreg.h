@@ -1,4 +1,4 @@
-/*	vdreg.h	1.9	87/03/10	*/
+/*	vdreg.h	1.10	87/04/02	*/
 
 /*
  * Versabus VDDC/SMDE disk controller definitions.
@@ -173,43 +173,50 @@ typedef struct {
  * DCB trailer formats.
  */
 /* read/write trailer */
-typedef struct {
+struct trrw {
 	u_long	memadr;		/* memory address */
 	u_long	wcount;		/* 16 bit word count */
 	dskadr	disk;		/* disk address */
-} trrw;
+};
 
 /* scatter/gather trailer */
-#define	VDMAXPAGES	32
-typedef struct {
-	trrw	start_addr;
-	struct {
+#define	VDMAXPAGES	(MAXPHYS / NBPG)
+struct trsg {
+	struct	trrw start_addr;
+	struct addr_chain {
 		u_long	nxt_addr;
 		u_long	nxt_len;
-	} addr_chain[VDMAXPAGES+1];
-} trsg;
+	} addr_chain[VDMAXPAGES + 1];
+};
 
 /* seek trailer format */
-typedef struct {
+struct trseek {
 	dskadr	skaddr;
-} trseek;
+};
 
 /* format trailer */
-typedef struct {
+struct trfmt {
 	char	*addr;		/* data buffer to be filled on sector*/
 	long	nsectors;	/* # of sectors to be formatted */
 	dskadr	disk;		/* disk physical address info */
 	dskadr  hdr;		/* header address info */
-} trfmt;
+};
 
 /* reset/configure trailer */
-typedef struct {
+struct treset {
 	long	ncyl;		/* # cylinders */
 	long	nsurfaces;	/* # surfaces */
 	long	nsectors;	/* # sectors */
 	long	slip_sec;	/* # of slip sectors */
 	long	recovery;	/* recovery flags */
-} treset;
+};
+
+/* ident trailer */
+struct trid {
+	long	name;
+	long	id;
+	long	date;
+};
 
 /*
  * DCB layout.
@@ -230,11 +237,35 @@ struct dcb {
 	char	err_sec;	/* error track/sector */
 	short	err_cyl;	/* error cylinder adr */
 	union {
-		trseek	sktrail;	/* seek command trailer */
-		trsg	sgtrail;	/* scatter/gather trailer */
-		trrw	rwtrail;	/* read/write trailer */
-		trfmt	fmtrail;	/* format trailer */
-		treset	rstrail;	/* reset/configure trailer */
+		struct	trid idtrail;	/* ident command trailer */
+		struct	trseek sktrail;	/* seek command trailer */
+		struct	trsg sgtrail;	/* scatter/gather trailer */
+		struct	trrw rwtrail;	/* read/write trailer */
+		struct	trfmt fmtrail;	/* format trailer */
+		struct	treset rstrail;	/* reset/configure trailer */
+	} trail;
+};
+
+/*
+ * smaller DCB with seek trailer only (no scatter-gather).
+ */
+struct skdcb {
+	struct	dcb *nxtdcb;	/* next dcb */
+	short	intflg;		/* interrupt settings and flags */
+	short	opcode;		/* DCB command code etc... */
+	long	operrsta;	/* error & status info */
+	short	fill;		/* not used */
+	char	devselect;	/* drive selection */
+	char	trailcnt;	/* trailer Word Count */
+	long	err_memadr;	/* error memory address */
+	char	err_code;	/* error codes for SMD/E */
+	char	fill2;		/* not used */
+	short	err_wcount;	/* error word count */
+	char	err_trk;	/* error track/sector */
+	char	err_sec;	/* error track/sector */
+	short	err_cyl;	/* error cylinder adr */
+	union {
+		struct	trseek sktrail;	/* seek command trailer */
 	} trail;
 };
 
@@ -263,6 +294,7 @@ struct dcb {
 #define	VDOP_DIAG	0xd00		/* diagnose (self-test) controller */
 #define	VDOP_CONFIG	0xe00		/* reset & configure drive */
 #define	VDOP_STATUS	0xf00		/* get drive status */
+#define	VDOP_IDENT	0x700		/* identify controller */
 
 #define	VDOP_ABORT	0x80000000	/* abort current command */
 

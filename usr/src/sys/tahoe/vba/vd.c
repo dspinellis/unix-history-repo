@@ -1,4 +1,4 @@
-/*	vd.c	1.17	87/03/10	*/
+/*	vd.c	1.18	87/04/02	*/
 
 #include "dk.h"
 #if NVD > 0
@@ -22,6 +22,7 @@
 #include "syslog.h"
 #include "kernel.h"
 #include "ioctl.h"
+#include "stat.h"
 
 #include "../tahoe/cpu.h"
 #include "../tahoe/mtpr.h"
@@ -32,15 +33,13 @@
 
 #define	COMPAT_42
 
-#define	VDMAXIO		(VDMAXPAGES * NBPG)
-
 #define vdunit(dev)	(minor(dev) >> 3)
 #define vdpart(dev)	(minor(dev) & 0x07)
 #define	vdminor(unit,part)	(((unit) << 3) | (part))
 
 struct	vba_ctlr *vdminfo[NVD];
 struct  vba_device *vddinfo[NDK];
-int	vdprobe(), vdslave(), vdattach(), vddgo();
+int	vdprobe(), vdslave(), vdattach(), vddgo(), vdstrategy();
 long	vdaddr[] = { 0xffff2000, 0xffff2100, 0xffff2200, 0xffff2300, 0 };
 struct	vba_driver vddriver =
   { vdprobe, vdslave, vdattach, vddgo, vdaddr, "dk", vddinfo, "vd", vdminfo };
@@ -53,6 +52,7 @@ struct vdsoftc {
 #define	VD_INIT		0x1	/* controller initialized */
 #define	VD_STARTED	0x2	/* start command issued */
 #define	VD_DOSEEKS	0x4	/* should overlap seeks */
+#define	VD_SCATGATH	0x8	/* can do scatter-gather commands (correctly) */
 	u_short	vd_type;	/* controller type */
 	u_short	vd_wticks;	/* timeout */
 	struct	mdcb vd_mdcb;	/* master command block */
@@ -67,9 +67,14 @@ struct vdsoftc {
  */
 struct	dksoftc {
 	u_short	dk_state;	/* open fsm */
-	u_short	dk_openpart;	/* units open on this drive */
+	u_short	dk_copenpart;	/* character units open on this drive */
+	u_short	dk_bopenpart;	/* block units open on this drive */
+	u_short	dk_openpart;	/* all units open on this drive */
+#ifndef SECSIZE
+	u_short	dk_bshift;	/* shift for * (DEV_BSIZE / sectorsize) XXX */
+#endif SECSIZE
 	u_int	dk_curcyl;	/* last selected cylinder */
-	struct	dcb dk_dcb;	/* seek command block */
+	struct	skdcb dk_dcb;	/* seek command block */
 	u_long	dk_dcbphys;	/* physical address of dk_dcb */
 } dksoftc[NDK];
 
@@ -145,11 +150,19 @@ vdprobe(reg, vm)
 		splx(s);
 		return (0);
 	}
+	if (vd->vd_type == VDTYPE_SMDE) {
+		vd->vd_dcb.trail.idtrail.date = 0;
+		if (vdcmd(vm, VDOP_IDENT, 10)) {
+			uncache(&vd->vd_dcb.trail.idtrail.date);
+			if (vd->vd_dcb.trail.idtrail.date != 0)
+				vd->vd_flags |= VD_SCATGATH;
+		}
+	}
 	splx(s);
 	/*
 	 * Allocate page tables and i/o buffer.
 	 */
-	vbainit(&vd->vd_rbuf, VDMAXIO,
+	vbainit(&vd->vd_rbuf, MAXPHYS,
 	    vd->vd_type == VDTYPE_VDDC ? VB_24BIT : VB_32BIT);
 	br = 0x17, cvec = 0xe0 + vm->um_ctlr;	/* XXX */
 	return (sizeof (struct vddevice));
@@ -171,8 +184,9 @@ vdslave(vi, addr)
 	struct vdsoftc *vd = &vdsoftc[vi->ui_ctlr];
 
 	if ((vd->vd_flags&VD_INIT) == 0) {
-		printf("vd%d: %s controller\n", vi->ui_ctlr,
-		    vd->vd_type == VDTYPE_VDDC ? "VDDC" : "SMDE");
+		printf("vd%d: %s controller%s\n", vi->ui_ctlr,
+		    vd->vd_type == VDTYPE_VDDC ? "VDDC" : "SMDE",
+		    (vd->vd_flags & VD_SCATGATH) ? " with scatter-gather" : "");
 		vd->vd_flags |= VD_INIT;
 	}
 
@@ -183,9 +197,6 @@ vdslave(vi, addr)
 	 * at attach time.
 	 */
 	lp->d_secsize = DEV_BSIZE / 2;		/* XXX */
-if (vi->ui_ctlr)
-lp->d_nsectors = 48;
-else
 	lp->d_nsectors = 32;
 	lp->d_ntracks = 24;
 	lp->d_ncylinders = 711;
@@ -207,7 +218,7 @@ vdattach(vi)
 	dk->dk_dcb.opcode = VDOP_SEEK;
 	dk->dk_dcb.intflg = DCBINT_NONE | DCBINT_PBA;
 	dk->dk_dcb.devselect = vi->ui_slave;
-	dk->dk_dcb.trailcnt = sizeof (trseek) / sizeof (long);
+	dk->dk_dcb.trailcnt = sizeof (struct trseek) / sizeof (long);
 	dk->dk_dcb.trail.sktrail.skaddr.sector = 0;
 	dk->dk_dcbphys = vtoph((struct proc *)0, (unsigned)&dk->dk_dcb);
 	/*
@@ -231,17 +242,16 @@ vdattach(vi)
 #endif
 }
 
-/*ARGSUSED*/
-vdopen(dev, flags)
+vdopen(dev, flags, fmt)
 	dev_t dev;
-	int flags;
+	int flags, fmt;
 {
 	register unit = vdunit(dev);
 	register struct disklabel *lp;
 	register struct dksoftc *dk;
 	register struct partition *pp;
 	struct vba_device *vi;
-	int s, error, part = vdpart(dev);
+	int s, error, part = vdpart(dev), mask = 1 << part;
 	daddr_t start, end;
 
 	if (unit >= NDK || (vi = vddinfo[unit]) == 0 || vi->ui_alive == 0)
@@ -289,18 +299,36 @@ vdopen(dev, flags)
 	}
 	if (part >= lp->d_npartitions)
 		return (ENXIO);
-	dk->dk_openpart |= 1 << part;
+	dk->dk_openpart |= mask;
+	switch (fmt) {
+	case S_IFCHR:
+		dk->dk_copenpart |= mask;
+		break;
+	case S_IFBLK:
+		dk->dk_bopenpart |= mask;
+		break;
+	}
 	return (0);
 }
 
-vdclose(dev, flags)
+vdclose(dev, flags, fmt)
 	dev_t dev;
-	int flags;
+	int flags, fmt;
 {
 	register int unit = vdunit(dev);
 	register struct dksoftc *dk = &dksoftc[unit];
-	int part = vdpart(dev);
+	int part = vdpart(dev), mask = 1 << part;
 
+	switch (fmt) {
+	case S_IFCHR:
+		dk->dk_copenpart &= ~mask;
+		break;
+	case S_IFBLK:
+		dk->dk_bopenpart &= ~mask;
+		break;
+	}
+	if (((dk->dk_copenpart | dk->dk_bopenpart) & mask) == 0)
+		dk->dk_openpart &= ~mask;
 	/*
 	 * Should wait for i/o to complete on this partition
 	 * even if others are open, but wait for work on blkflush().
@@ -312,91 +340,67 @@ vdclose(dev, flags)
 		splx(s);
 		dk->dk_state = CLOSED;
 	}
+	return (0);
 }
 
-/*
- * Read pack label.
- */
 vdinit(dev, flags)
 	dev_t dev;
 	int flags;
 {
-	register struct buf *bp = NULL;
 	register struct disklabel *lp;
 	register struct dksoftc *dk;
 	struct vba_device *vi;
-	struct disklabel *dlp;
 	int unit = vdunit(dev), error = 0;
-	char *msg = "no disk label";
+	char *msg, *readdisklabel();
 	extern int cold;
 
 	dk = &dksoftc[unit];
+#ifndef SECSIZE
+	dk->dk_bshift = 1;		/* DEV_BSIZE / 512 */
+#endif SECSIZE
 	if (flags & O_NDELAY) {
 		dk->dk_state = OPENRAW;
-		goto done;
+		return;
 	}
-
-	/*
-	 * Initialize portion of the label
-	 * not set up in the slave routine.
-	 */
 	dk->dk_state = RDLABEL;
 	lp = &dklabel[unit];
-	lp->d_secperunit = 0x1fffffff;
-	lp->d_npartitions = 1;
-	lp->d_partitions[0].p_size = 0x1fffffff;
-	lp->d_partitions[0].p_offset = 0;
-
-	bp = geteblk(DEV_BSIZE);		/* max sector size */
-	bp->b_dev = dev;
-	bp->b_blkno = LABELSECTOR;
-	bp->b_bcount = DEV_BSIZE;
-	bp->b_flags = B_BUSY | B_READ;
-	bp->b_cylin = LABELSECTOR / lp->d_secpercyl;
-	vdstrategy(bp);
-	biowait(bp);
-	if (bp->b_flags & B_ERROR) {
-		error = u.u_error;		/* XXX */
-		u.u_error = 0;
-		dk->dk_state = CLOSED;
-		goto done;
-	}
 	vi = vddinfo[unit];
-	dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
-	if (dlp->d_magic == DISKMAGIC && dlp->d_magic2 == DISKMAGIC &&
-	    dkcksum(dlp) == 0) {
-		*lp = *dlp;
-		/*
-		 * Now that we have the label, configure
-		 * the correct drive parameters.
-		 */
-		if (!vdreset_drive(vi))
-			dk->dk_state = CLOSED;
-		else
-			dk->dk_state = OPEN;
-	} else {
-		if (dlp->d_magic == DISKMAGIC && dlp->d_magic2 == DISKMAGIC)
-			msg = "disk label corrupted";
+	if (msg = readdisklabel(dev, vdstrategy, lp)) {
 		if (cold)
 			printf(": %s", msg);
 		else
 			log(LOG_ERR, "dk%d: %s\n", vi->ui_unit, msg);
-printf("data %x %x %x, magic %x\n", bp->b_un.b_words[0], bp->b_un.b_words[1], bp->b_un.b_words[2], dlp->d_magic);
 #ifdef COMPAT_42
-		if (!vdmaptype(vi, lp)) {
-			error = ENXIO;
-			dk->dk_state = CLOSED;
-		} else
+		if (!vdmaptype(vi, lp))
+			dk->dk_state = OPENRAW;
+		else
 			dk->dk_state = OPEN;
 #else
 		dk->dk_state = OPENRAW;
 #endif
+	} else {
+		/*
+		 * Now that we have the label, configure
+		 * the correct drive parameters.
+		 */
+		if (!vdreset_drive(vi)) {
+			dk->dk_state = CLOSED;
+			error = ENXIO;
+		} else
+			dk->dk_state = OPEN;
 	}
-done:
-	if (bp) {
-		bp->b_flags = B_INVAL | B_AGE;
-		brelse(bp);
+#ifndef SECSIZE
+	/*
+	 * If open, calculate scaling shift for
+	 * mapping DEV_BSIZE blocks to drive sectors.
+	 */
+	if (dk->dk_state == OPEN || dk->dk_state == OPENRAW) {
+		int mul = DEV_BSIZE / lp->d_secsize;
+		dk->dk_bshift = 0;
+		while ((mul >>= 1) > 0)
+			dk->dk_bshift++;
 	}
+#endif SECSIZE
 	wakeup((caddr_t)dk);
 	return (error);
 }
@@ -441,13 +445,17 @@ vdstrategy(bp)
 		goto bad;
 	}
 	maxsz = lp->d_partitions[part].p_size;
+#ifndef SECSIZE
+	sn = bp->b_blkno << dk->dk_bshift;
+#else SECSIZE
 	sn = bp->b_blkno;
+#endif SECSIZE
 	if (sn < 0 || sn + sz > maxsz) {
 		if (sn == maxsz) {
 			bp->b_resid = bp->b_bcount;
 			goto done;
 		}
-		sz = maxsz - bp->b_blkno;
+		sz = maxsz - sn;
 		if (sz <= 0) {
 			bp->b_error = EINVAL;
 			goto bad;
@@ -455,6 +463,10 @@ vdstrategy(bp)
 		bp->b_bcount = sz * lp->d_secsize;
 	}
 	bp->b_cylin = (sn + lp->d_partitions[part].p_offset) / lp->d_secpercyl;
+#ifdef SECSIZE
+if (bp->b_blksize != lp->d_secsize && (bp->b_flags & B_PGIN) == 0)
+panic("vdstrat blksize");
+#endif SECSIZE
 q:
 	s = spl7();
 	dp = &dkutab[vi->ui_unit];
@@ -561,7 +573,11 @@ loop:
 	vm->um_tab.b_active++;
 	vi = vddinfo[vdunit(bp->b_dev)];
 	dk = &dksoftc[vi->ui_unit];
+#ifndef SECSIZE
+	sn = bp->b_blkno << dk->dk_bshift;
+#else SECSIZE
 	sn = bp->b_blkno;
+#endif SECSIZE
 	lp = &dklabel[vi->ui_unit];
 	sn %= lp->d_secpercyl;
 	tn = sn / lp->d_nsectors;
@@ -572,20 +588,27 @@ loop:
 	 */
 	vd = &vdsoftc[vm->um_ctlr];
 	slave = vi->ui_slave;
-	vd->vd_dcb.opcode = (bp->b_flags & B_READ) ? VDOP_RD : VDOP_WD;
 	vd->vd_dcb.intflg = DCBINT_DONE;
 	vd->vd_dcb.devselect = slave;
 	vd->vd_dcb.operrsta = 0;
 	vd->vd_dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
-	vd->vd_dcb.trailcnt = sizeof (trrw) / sizeof (long);
-	vd->vd_dcb.trail.rwtrail.memadr =
-		vbasetup(bp, &vd->vd_rbuf, lp->d_secsize);
-	vd->vd_dcb.trail.rwtrail.wcount = (bp->b_bcount+1) >> 1;
 	vd->vd_dcb.trail.rwtrail.disk.cylinder = bp->b_cylin;
 	vd->vd_dcb.trail.rwtrail.disk.track = tn;
 	vd->vd_dcb.trail.rwtrail.disk.sector = sn;
 	dk->dk_curcyl = bp->b_cylin;
 	bp->b_track = 0;		/* init overloaded field */
+	vd->vd_dcb.trailcnt = sizeof (struct trrw) / sizeof (long);
+	if (vd->vd_flags & VD_SCATGATH &&
+	    ((int)bp->b_un.b_addr & (sizeof(long) - 1)) == 0) {
+		vd->vd_dcb.opcode = (bp->b_flags & B_READ)? VDOP_RAS : VDOP_GAW;
+		vd->vd_dcb.trailcnt += vba_sgsetup(bp, &vd->vd_rbuf,
+		    &vd->vd_dcb.trail.sgtrail);
+	} else {
+		vd->vd_dcb.opcode = (bp->b_flags & B_READ)? VDOP_RD : VDOP_WD;
+		vd->vd_dcb.trail.rwtrail.memadr =
+			vbasetup(bp, &vd->vd_rbuf, lp->d_secsize);
+		vd->vd_dcb.trail.rwtrail.wcount = (bp->b_bcount+1) >> 1;
+	}
 	if (vi->ui_dk >= 0) {
 		dk_busy |= 1<<vi->ui_dk;
 		dk_xfer[vi->ui_dk]++;
@@ -613,13 +636,7 @@ loop:
 			dk_seek[vi->ui_dk]++;
 		dk->dk_dcb.operrsta = 0;
 		dk->dk_dcb.trail.sktrail.skaddr.cylinder = bp->b_cylin;
-#ifdef notdef
-		dk->dk_dcb.trail.sktrail.skaddr.track = bp->b_daddr>>8;
-		dk->dk_dcb.trail.sktrail.skaddr.sector =
-		    bp->b_daddr & 0xff;
-#else
 		dk->dk_dcb.trail.sktrail.skaddr.track = bp->b_track;
-#endif
 		*dcbp = (struct dcb *)dk->dk_dcbphys;
 		dcbp = &dk->dk_dcb.nxtdcb;
 	}
@@ -816,7 +833,7 @@ vdioctl(dev, cmd, data, flag)
 		}
 		*lp = *(struct disklabel *)data;
 		bp = geteblk(lp->d_secsize);
-		bp->b_dev = dev;
+		bp->b_dev = makedev(major(dev), vdminor(vdunit(dev), 0));
 		bp->b_blkno = LABELSECTOR;
 		bp->b_bcount = lp->d_secsize;
 		bp->b_flags = B_READ;
@@ -902,17 +919,17 @@ vddump(dev)
 	if (dumplo < 0)
 		return (EINVAL);
 	/*
-	 * Dumplo and maxfree are in pages.
+	 * Maxfree is in pages, dumplo is in DEV_BSIZE units.
 	 */
 	num = maxfree * (NBPG / lp->d_secsize);
-	dumplo *= NBPG / lp->d_secsize;
+	dumplo *= DEV_BSIZE / lp->d_secsize;
 	if (dumplo + num >= lp->d_partitions[vdpart(dev)].p_size)
 		num = lp->d_partitions[vdpart(dev)].p_size - dumplo;
 	vd = &vdsoftc[vm->um_ctlr];
 	vd->vd_dcb.intflg = DCBINT_NONE;
 	vd->vd_dcb.opcode = VDOP_WD;
 	vd->vd_dcb.devselect = vi->ui_slave;
-	vd->vd_dcb.trailcnt = sizeof (trrw) / sizeof (long);
+	vd->vd_dcb.trailcnt = sizeof (struct trrw) / sizeof (long);
 	while (num > 0) {
 		int nsec, cn, sn, tn;
 
@@ -958,7 +975,11 @@ vdsize(dev)
 	    (dk = &dksoftc[unit])->dk_state != OPEN)
 		return (-1);
 	lp = &dklabel[unit];
+#ifdef SECSIZE
 	return ((int)lp->d_partitions[vdpart(dev)].p_size);
+#else SECSIZE
+	return ((int)lp->d_partitions[vdpart(dev)].p_size >> dk->dk_bshift);
+#endif SECSIZE
 }
 
 /*
@@ -1009,7 +1030,7 @@ top:
 	vd->vd_dcb.trail.rstrail.ncyl = lp->d_ncylinders;
 	vd->vd_dcb.trail.rstrail.nsurfaces = lp->d_ntracks;
 	if (vd->vd_type == VDTYPE_SMDE) {
-		vd->vd_dcb.trailcnt = sizeof (treset) / sizeof (long);
+		vd->vd_dcb.trailcnt = sizeof (struct treset) / sizeof (long);
 		vd->vd_dcb.trail.rstrail.nsectors = lp->d_nsectors;
 		vd->vd_dcb.trail.rstrail.slip_sec = lp->d_sparespertrack;
 		vd->vd_dcb.trail.rstrail.recovery = 0x18f;
@@ -1129,9 +1150,9 @@ struct	vdst {
 		{0,	 52800},	/* egl0a cyl   0 - 59 */
 		{52800,	 66000},	/* egl0b cyl  60 - 134 */
 		{118800, 617760}, 	/* egl0c cyl 135 - 836 */
-		{736560, 5280}, 	/* egl0d cyl 837 - 842 */
+		{736560, 4400}, 	/* egl0d cyl 837 - 841 */
 		{0, 	 736560},	/* egl0e cyl 0 - 836 */
-		{0, 	 741840}, 	/* egl0f cyl 0 - 842 */
+		{0, 	 740960}, 	/* egl0f cyl 0 - 841 */
 		{118800, 310640},	/* egl0g cyl 135 - 487 */
 		{429440, 307120}	/* egl0h cyl 488 - 836 */
 	},
@@ -1146,14 +1167,14 @@ struct	vdst {
 		{225600, 36160}		/* fug0h cyl 705 - 817 */
 	},
 	{ 32, 24, 711, "xfd",
-		{ 0,	 20352 },	/* a cyl   0 - 52 */
-		{ 20352, 20352 },	/* b cyl  53 - 105 */
-		{ 40704, 230400 },	/* c cyl 106 - 705 */
-		{ 0,	 40704 },	/* d cyl 709 - 710 (a & b) */
-		{ 0,	 271104 },	/* e cyl   0 - 705 */
-		{ 20352, 250752 },	/* f cyl  53 - 705 (b & c) */
-		{ 40704, 115200 },	/* g cyl 106 - 405 (1/2 of c) */
-		{ 155904,115200 }	/* h cyl 406 - 705 (1/2 of c) */
+		{ 0,	 40704 },	/* a cyl   0 - 52 */
+		{ 40704, 40704 },	/* b cyl  53 - 105 */
+		{ 81408, 460800 },	/* c cyl 106 - 705 */
+		{ 0,	 81408 },	/* d cyl 709 - 710 (a & b) */
+		{ 0,	 542208 },	/* e cyl   0 - 705 */
+		{ 40704, 501504 },	/* f cyl  53 - 705 (b & c) */
+		{ 81408, 230400 },	/* g cyl 106 - 405 (1/2 of c) */
+		{ 311808,230400 }	/* h cyl 406 - 705 (1/2 of c) */
 	},
 	{ 32, 19, 823, "smd",
 		{0,	 20064},	/* a cyl   0-65 */
@@ -1166,14 +1187,9 @@ struct	vdst {
 		{213104, 35568}		/* h cyl 701 - 817 */
 	},
 	{ 32, 10, 823, "fsd",
-		{0,	 9600},		/* a cyl   0 -  59 */
-		{9600,	 12000},	/* b cyl  60 - 134 */
-		{21600,	 109280},	/* c cyl 135 - 817 */
-		{39840,	 91040},	/* d cyl 249 - 817 */
-		{58080,	 72800},	/* e cyl 363 - 817 */
-		{76320,	 54560},	/* f cyl 477 - 817 */
-		{94560,  36320},	/* g cyl 591 - 817 */
-		{112800, 18080}		/* h cyl 705 - 817 */
+		{0,	 19200},	/* a cyl   0 -  59 */
+		{19200,	 24000},	/* b cyl  60 - 134 */
+		{43200,	 218560},	/* c cyl 135 - 817 */
 	}
 };
 #define	NVDST	(sizeof (vdst) / sizeof (vdst[0]))
@@ -1206,7 +1222,7 @@ vdmaptype(vi, lp)
 		vd->vd_dcb.intflg = DCBINT_NONE;
 		vd->vd_dcb.nxtdcb = (struct dcb *)0;	/* end of chain */
 		vd->vd_dcb.devselect = vi->ui_slave;
-		vd->vd_dcb.trailcnt = sizeof (trrw) / sizeof (long);
+		vd->vd_dcb.trailcnt = sizeof (struct trrw) / sizeof (long);
 		vd->vd_dcb.trail.rwtrail.memadr =
 		    vtoph((struct proc *)0, (unsigned)vd->vd_rbuf.vb_rawbuf);
 		vd->vd_dcb.trail.rwtrail.wcount = 512 / sizeof(short);
