@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -281,6 +281,10 @@ readerr:
 	*/
 
 	eatheader(e, !requeueflag);
+
+	/* collect statistics */
+	if (OpMode != MD_VERIFY)
+		markstats(e, (ADDRESS *) NULL);
 
 	/*
 	**  Add an Apparently-To: line if we have no recipient lines.
