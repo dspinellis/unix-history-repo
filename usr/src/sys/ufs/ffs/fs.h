@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fs.h	8.9 (Berkeley) %G%
+ *	@(#)fs.h	8.10 (Berkeley) %G%
  */
 
 /*
@@ -84,9 +84,11 @@
  * The limit on the amount of summary information per file system
  * is defined by MAXCSBUFS. It is currently parameterized for a
  * size of 128 bytes (2 million cylinder groups on machines with
- * 32-bit pointers, and 1 million on 64-bit machines).
+ * 32-bit pointers, and 1 million on 64-bit machines). One pointer
+ * is taken away to point to an array of cluster sizes that is
+ * computed as cylinder groups are inspected.
  */
-#define	MAXCSBUFS	(128 / sizeof(void *))
+#define	MAXCSBUFS	((128 / sizeof(void *)) - 1)
 
 /*
  * A summary of contiguous blocks of various sizes is maintained
@@ -202,6 +204,7 @@ struct fs {
 /* these fields retain the current block allocation info */
 	int32_t	 fs_cgrotor;		/* last cg searched */
 	struct	csum *fs_csp[MAXCSBUFS];/* list of fs_cs info buffers */
+	int32_t	 *fs_maxcluster;	/* max cluster in each cyl group */
 	int32_t	 fs_cpc;		/* cyl per cycle in postbl */
 	int16_t	 fs_opostbl[16][8];	/* old rotation block list head */
 	int32_t	 fs_sparecon[50];	/* reserved for future constants */
