@@ -1,4 +1,4 @@
-/* dver.c	1.3	83/06/24
+/* dver.c	1.4	83/07/05
  *
  * dver.c - Versatec driver for the new troff
  *
@@ -64,19 +64,21 @@ x ..\n	device control functions:
 
 #define DEBUGABLE		/* Yes, debugable... */
 #define	NFONTS	25		/* total number of fonts useable */
+#define	MAXSTATE 6		/* number of environments rememberable */
 #define OPENREAD 0		/* mode for openning files */
 #define RESTART	1		/* upon exit, return either RESTART */
 #define ABORT	2		/*     or ABORT */
 #define	FATAL	1		/* type of error */
 #define	BMASK	0377		/* byte grabber */
 #define FONTDIR	"/usr/lib/font"	/* default place to look for fonts */
+#define MAXWRIT 4096		/* max characters allowed to write at once */
 
 #define  hmot(n)	hpos += n
 #define  hgoto(n)	hpos = n
 #define  vmot(n)	vgoto(vpos + n)
 
 
-char	SccsId[]= "dver.c	1.3	83/06/24";
+char	SccsId[]= "dver.c	1.4	83/07/05";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -85,9 +87,10 @@ int	spage	= 9999;	/* stop every spage pages */
 int	scount	= 0;
 struct	dev	dev;
 struct	font	*fontbase[NFONTS+1];
-short	*pstab;
-int	nsizes;
-int	nfonts;
+short	*pstab;		/* point size table pointer */
+int	res;		/* input was computed according to this resolution */
+int	nsizes;		/* number of sizes device is capable of printing */
+int	nfonts;		/* number of fonts device is capable of printing */
 int	smnt;		/* index of first special font */
 int	nchtab;
 char	*chname;
@@ -95,31 +98,36 @@ short	*chtab;
 char	*fitab[NFONTS+1];
 char	*widtab[NFONTS+1];
 char	*codetab[NFONTS+1];	/* device codes */
-int	res;		/* input was computed according to this resolution */
 char	*fontdir = FONTDIR;
+struct {			/* table of what font */
+	char *name;		/*   name is on what */
+	int number;		/*   position in font tables */
+} fontname[NFONTS+1];
 
 #ifdef DEBUGABLE
 int	dbg	= 0;
 #endif
-int	maxX;
-int	size	= -1;	/* this is invalid */
-int	font	= -1;	/* current font */
+int	maxH;		/* farthest down we've been on the current page */
+int	size	= -1;	/* current point size being use */
+int	font	= -1;	/* current font - not using any to start with */
 int	hpos;		/* horizontal position we are to be at next; left = 0 */
 int	vpos;		/* current vertical position (down positive) */
-int	horig;		/* h origin of current block; hpos rel to this */
-int	vorig;
+int	horig;		/* h origin of current block (just a marker) */
+int	vorig;		/* v origin of current block (just a marker) */
+int	lastw;		/* width of last character printed */
 
 
 #define DISPATCHSIZE	256		/* must be a power of two */
 #define CHARMASK	(DISPATCHSIZE-1)
 #define DSIZ		((sizeof *dispatch)*DISPATCHSIZE)
-#define MAXF		(NFONTS + 1)
 #define OUTFILE 	fileno (stdout)
+#define	RES		200		/* resolution of the device */
+#define	TRAILER		(10 * RES)	/* position of trailer */
 
-#define RASTER_LENGTH	7040
+#define RASTER_LENGTH	2048			/* device line length */
 #define BYTES_PER_LINE	(RASTER_LENGTH/8)
-#define NLINES		100
-#define BUFFER_SIZE	(NLINES*BYTES_PER_LINE)
+#define NLINES		(11 * RES)		/* 11" long paper */
+#define BUFFER_SIZE	(NLINES*BYTES_PER_LINE)	/* number of chars in picture */
 
 
 int	pltmode[] = { VPLOT };
@@ -203,7 +211,9 @@ char *argv[];
 		argv++;
 	}
 
+/* noversatec
 	ioctl(OUTFILE, VSETSTATE, pltmode);
+noversatec */
 
 	if (argc <= 1)
 		conv(stdin);
@@ -299,7 +309,7 @@ register FILE *fp;
 			switch (buf[0]) {
 			case 'l':	/* draw a line */
 			    sscanf(buf+1, "%d %d", &n, &m);
-			    drawline(n, m, ".");
+			    drawline(n, m);
 			    break;
 			case 'c':	/* circle */
 			    sscanf(buf+1, "%d", &n);
@@ -314,7 +324,7 @@ register FILE *fp;
 			    drawarc(n, m, n1, m1);
 			    break;
 			case '~':	/* wiggly line */
-			    drawwig(buf+1);
+			    drawwig(buf+1, fp);
 			    break;
 			default:
 			    error(FATAL, "unknown drawing function %s\n", buf);
@@ -393,7 +403,7 @@ FILE *fp;
 	switch (str[0]) {	/* crude for now */
 	case 'i':	/* initialize */
 		fileinit();
-		t_init(0);
+		t_init();
 		break;
 	case 't':	/* trailer */
 		t_trailer();
@@ -553,33 +563,21 @@ error(f, s, a1, a2, a3, a4, a5, a6, a7) {
 
 
 /*******************************************************************************
+ * Routine:	
+ * Results:	
+ * Side Efct:	
+ ******************************************************************************/
 
-    Here beginneth all the stuff that really depends on the versatec (we hope).
-
-*******************************************************************************/
-
-
-#define	RES	200
-#define	TRAILER	(14 * res)
-
-int	lastw;		/* last character and width (maybe not used) */
-long	paper;		/* paper used */
-
-
-t_init(reinit)	/* initialize device */
-int reinit;
+t_init()	/* initialize device */
 {
 	int i;
 
 	hpos = vpos = 0;
 
-		/* the above are not true until the code below happens*/
-
 	setsize(t_size(10));	/* start somewhere */
 	setfont(1);
 }
 
-#define	MAXSTATE	6
 
 struct state {
 	int	ssize;
@@ -626,22 +624,23 @@ t_page(n)	/* do whatever new page functions */
 
 
 	if (output) {
-		paper += vpos;
 		if (++scount >= spage) {
 			t_reset('p');
 			scount = 0;
 		}
-		slop_lines(maxX);
+		slop_lines(maxH);
+/* noversatec
 		ioctl(OUTFILE, VSETSTATE, prtmode);
 		if (write(OUTFILE, "\f", 2) != 2)
 			exit(RESTART);
 		ioctl(OUTFILE, VSETSTATE, pltmode);
-		size = BYTES_PER_LINE * maxX;
+noversatec */
+		size = BYTES_PER_LINE * maxH;
 		vclear(buf0p, size);
 		buf0p = buffer;
 	}
 
-	maxX = 0;
+	maxH = 0;
 
 	vpos = 0;
 	output = 1;
@@ -737,17 +736,15 @@ t_reset(c)
 {	
 
 
-	if (output)
-		paper += vpos;
 	output = 1;
 	switch(c){
 	case 'p':
-		slop_lines(maxX);
-		maxX = 0;
+		slop_lines(maxH);
+		maxH = 0;
 		buf0p = buffer;
 		break;
 	case 's':
-		slop_lines(maxX);
+		slop_lines(maxH);
 		t_done();
 		break; /* no Return */
 	}
@@ -755,9 +752,11 @@ t_reset(c)
 
 t_done()	/* clean up and get ready to die */
 {
+/* noversatec
 	ioctl(OUTFILE, VSETSTATE, prtmode);
 	if (write(OUTFILE, "\f", 2) != 2)
 		exit(RESTART);
+noversatec */
 }
 
 t_trailer()
@@ -811,14 +810,15 @@ int c;
 #ifdef DEBUGABLE
 		if (dbg) fprintf(stderr,"non-exist 0%o\n", c + 32);
 #endif
-		lastw = widtab[font][0] * pstab[size-1] / dev.unitwidth;
+ 		lastw = (widtab[font][0] * pstab[size-1] + dev.unitwidth/2)
+								/ dev.unitwidth;
 		return;
 	}
 	k = ofont = font;
 	i = fitab[font][c] & BMASK;
-	if (i != 0) {	/* it's on this font */
-		p = codetab[font]; /* get the printing value of ch */
-		pw = widtab[font]; /* get the width */
+	if (i != 0) {			/* it's on this font */
+		p = codetab[font];	/* get the printing value of ch */
+		pw = widtab[font];	/* get the width */
 	} else if (smnt > 0) {		/* on special (we hope) */
 		for (k=smnt, j=0; j <= nfonts; j++, k = (k+1) % (nfonts+1)){
 			if (fitab[k] == 0)
@@ -848,16 +848,9 @@ int c;
 	outc(code);	/* character is < 254 */
 	if (font != ofont)
 		setfont(ofont);
-	lastw = pw[i] & 077;
-	lastw = (lastw * pstab[size-1] + dev.unitwidth/2) / dev.unitwidth;
+	lastw = ((pw[i]&077) * pstab[size-1] + dev.unitwidth/2) / dev.unitwidth;
 }
 
-/* font position info: */
-
-struct {
-	char *name;
-	int number;
-} fontname[NFONTS+1];
 
 
 setsize(n)	/* set point size to n (internal) */
@@ -915,7 +908,7 @@ register int fsize;
 		}
 	}
 		/* this is a new font */
-	if (fnum < 0 || fnum >= MAXF || fontname[fnum].name == 0) {
+	if (fnum < 0 || fnum > NFONTS || fontname[fnum].name == 0) {
 	    fprintf(stderr, "Internal error: illegal font %d name %s size\n",
 			    fontname[fnum].name,fnum,fsize);
 	    return(-1);
@@ -1031,59 +1024,58 @@ int	N[] = { 0x00000000, 0x01010101, 0x03030303, 0x07070707,
 int	strim[] = { 0xffffffff, 0xffffff00, 0xffff0000, 0xff000000, 0 };
 
 outc(code)
-	int code;
+int code;		/* character to print */
 {
-	char c;				/* character to print */
-	register struct dispatch *d;	/* ptr to character font record */
-	register char *addr;		/* addr of font data */
-	int llen;			/* length of each font line */
-	int nlines;			/* number of font lines */
-	register char *scanp;		/* ptr to output buffer */
-	int scanp_inc;			/* increment to start of next buffer */
-	int offset;			/* bit offset to start of font data */
-	int i;				/* loop counter */
-	register int count;		/* font data ptr */
-	register unsigned fontdata;	/* font data temporary */
-	register int off8;		/* offset + 8 */
+    register struct dispatch *dis; /* ptr to character font record */
+    register char *addr;	/* addr of font data */
+    int llen;			/* length of each font line */
+    int nlines;			/* number of font lines */
+    register char *scanp;	/* ptr to output buffer */
+    int scanp_inc;		/* increment to start of next buffer */
+    int offset;			/* bit offset to start of font data */
+    int i;			/* loop counter */
+    register int count;		/* font data ptr */
+    register unsigned fontdata;	/* font data temporary */
+    register int off8;		/* offset + 8 */
 
-	if (fontwanted)
-		getfont();
-	c = code;
-	d = dispatch+c;
-	if (d->nbytes) {
-		addr = bits+d->addr;
-		llen = (d->left+d->right+7)/8;
-		nlines = d->up+d->down;
-		i = vpos + d->down;
-		if ( i > maxX ) maxX = i; /* for flush */
-		scanp= ((vpos-d->up-1)*BYTES_PER_LINE+(hpos-d->left)/8)+buf0p;
-		if (scanp < &buffer[0])
-			scanp += sizeof buffer;
-		scanp_inc = BYTES_PER_LINE-llen;
-		offset = -((hpos-d->left)&07);
-		off8 = offset+8;
-		for (i = 0; i < nlines; i++) {
-		    if (scanp >= &buffer[BUFFER_SIZE])
-			    scanp -= sizeof buffer;
-		    count = llen;
-		    if (scanp + count <= &buffer[BUFFER_SIZE])
-			do {
-			    fontdata = *(unsigned *)addr;
-			    addr += 4;
-			    if (count < 4)
-				    fontdata &= ~strim[count];
-			    *(unsigned*)scanp |=(fontdata << offset) & ~M[off8];
-			    scanp++;
-			    *(unsigned*)scanp |=(fontdata << off8) & ~N[off8];
-			    scanp += 3;
-			    count -= 4;
-			} while (count > 0);
-		    scanp += scanp_inc+count;
-		    addr += count;
-		}
-		return;
+    if (fontwanted)
+	getfont();
+    dis = dispatch + code;
+    if (dis->nbytes) {
+	addr = bits + dis->addr;
+	llen = (dis->left + dis->right + 7) / 8;
+	nlines = dis->up + dis->down;
+	if ((i = vpos + dis->down) > maxH) maxH = i;	/* remember page len */
+	scanp = buf0p + (((vpos - dis->up) - 1) * BYTES_PER_LINE
+			+ (hpos - dis->left) / 8);
+	if (scanp < &buffer[0])
+	    scanp += sizeof buffer;
+	scanp_inc = BYTES_PER_LINE - llen;
+	offset = - ((hpos - dis->left) &07);
+	off8 = offset + 8;
+	for (i = 0; i < nlines; i++) {
+	    if (scanp >= &buffer[BUFFER_SIZE])
+		scanp -= sizeof buffer;
+	    count = llen;
+	    if (scanp + count <= &buffer[BUFFER_SIZE]) {
+		do {
+		    fontdata = *(unsigned *)addr;
+		    addr += 4;
+		    if (count < 4)
+			fontdata &= ~strim[count];
+		    *(unsigned*)scanp |=(fontdata << offset) & ~M[off8];
+		    scanp++;
+		    *(unsigned*)scanp |=(fontdata << off8) & ~N[off8];
+		    scanp += 3;
+		    count -= 4;
+		} while (count > 0);
+	    }
+	    scanp += scanp_inc+count;
+	    addr += count;
 	}
 	return;
+    }
+    return;
 }
 
 slop_lines(nlines)
@@ -1098,7 +1090,9 @@ int nlines;
 	usize = BYTES_PER_LINE * nlines;
 	writev(buf0p,usize);
 	vclear(buf0p, usize);
+/* noversatec
 	ioctl(OUTFILE, VSETSTATE, pltmode);
+noversatec */
 }
 
 writev(buf,usize)
@@ -1109,7 +1103,7 @@ unsigned usize;
 
 	while (usize){
 		buf += tsize;
-		tsize = usize;
+		tsize = usize > MAXWRIT ? MAXWRIT : usize;
 #ifdef DEBUGABLE
 		if (dbg)fprintf(stderr,"buf = %d size = %d\n",buf,tsize);
 #endif
@@ -1172,15 +1166,16 @@ char *cp;
 }
 
 
-/*******************************************************************************
-
-	graphics routines go here
-
-*******************************************************************************/
-
-drawline(){}
-drawcirc(){}
-drawellip(){}
-drawarc(){}
-drawwig(){}
-
+/*
+ * Points should be in the range 0 <= x < RASTER_LENGTH, 0 <= y < NLINES.
+ * The origin is the top left-hand corner with increasing x towards the
+ * right and increasing y going down.
+ * The output array is NLINES x BYTES_PER_LINE pixels.
+ */
+point(x, y)
+register int x, y;
+{
+    if ((unsigned) x < RASTER_LENGTH && (unsigned) y < NLINES) {
+	buffer [y * BYTES_PER_LINE + (x >> 3)] |= 1 << (7 - (x & 07));
+    }
+}
