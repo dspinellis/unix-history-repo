@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)softonvax.t	5.2 (Berkeley) %G%
+.\"	@(#)softonvax.t	5.3 (Berkeley) %G%
 .\"
 .LG
 .B
@@ -21,7 +21,8 @@ Berkeley Software for UNIX\(dg on the VAX\(dd
 System V are trademarks of Western Electric.
 .FE
 .FS
-\(dd\s-2VAX\s0 and \s-2PDP\s0 are trademarks of Digital Equipment Corporation.
+\(dd\s-2VAX, PDP, UNIBUS\s0, and \s-2MASSBUS\s0 are
+trademarks of Digital Equipment Corporation.
 .FE
 .PP
 A new version of the \s-2UNIX\s0 system for the \s-2VAX\s0 family of computers
@@ -69,7 +70,8 @@ extensive changes to improve reliability and performance.
 The symbolic debugger, \fIdbx\fP, has been dramatically improved.
 \fIDbx\fP works on C, Pascal and Fortran 77 programs.
 .IP 6)
-Support has been added for the VAX\(dg 8600 and 8650 processors.
+Support has been added for the VAX 8600 and 8650 processors
+with MASSBUS and UNIBUS peripherals, but not CI peripherals.
 .IP 7)
 Many bug fixes have been made.
 .SH
@@ -79,10 +81,10 @@ As distributed the kernel supports process sizes
 with a program size of up to 6 megabytes.
 The hard limit on the size of data and stack has been raised to
 roughly 17 megabytes with a soft limit of 6 megabytes.
-The soft limit nay be increased up to
+The soft limit may be increased up to
 the hard limit with the \fIcsh limit\fP command.
 These numbers can be increased up to 64 megabytes per process
-on systems willing to dedicate increased
+segment on systems willing to dedicate increased
 disk space for paging the process image.
 .PP
 The system now maintains the number of rows and columns
@@ -109,8 +111,8 @@ There are two new screen based editors in 4.3BSD.
 In addition to the venerable modefull editor \fIvi\fP,
 are added two modeless editors.
 The first is GNU \fIemacs\fP, full of functionality but somewhat big and slow.
-The other is \fIjove\fP from BRL,
-a mean and lean editor in the army tradition.
+The other is \fIjove\fP from Jonathan Payne,
+a mean and lean editor in the modeless tradition.
 .PP
 An alternative to \fIMail\fP is now available in the fourth rewrite
 of the Rand mail handler, \fImh\fP.
@@ -153,7 +155,8 @@ sources and binary programs, at least 120 Megabytes
 of disk storage is required.
 .PP
 For terminal interfaces,
-the standard DEC DZ-11 and DMF-32 terminal interfaces are supported.
+the standard DEC DZ-11, DMZ-32, DHU-11, and DMF-32 terminal
+interfaces are supported.
 In addition, DH-11 emulators such as
 the ABLE DH/DM (that replaces the ABLE DMAX) and EMULEX CS-11 are supported.
 The system also provides support for standard line printer
@@ -174,6 +177,8 @@ about the topology of the machine and the addresses at which the various
 devices are located.
 It is possible (and desirable) to write the description using
 ``pattern matching'' to only partially specify some of the interconnects.
+The bootstrap passes the identity of the load device to the kernel,
+which will use it as the root file system.
 .PP
 The system configuration program sizes system data structures based on
 a specification of the maximum number of active users to be present on the
