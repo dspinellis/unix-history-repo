@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.16 1994/03/30 02:22:00 davidg Exp $
+ *	$Id: vnode_pager.c,v 1.17 1994/04/05 03:23:53 davidg Exp $
  */
 
 /*
@@ -351,13 +351,47 @@ vnode_pager_setsize(vp, nsize)
 	 * File has shrunk.
 	 * Toss any cached pages beyond the new EOF.
 	 */
-	if (round_page(nsize) < round_page(vnp->vnp_size)) {
+	if (nsize < vnp->vnp_size) {
 		vm_object_lock(object);
 		vm_object_page_remove(object,
-				      (vm_offset_t)round_page(nsize), round_page(vnp->vnp_size));
+				      round_page((vm_offset_t)nsize), vnp->vnp_size);
 		vm_object_unlock(object);
+		/*
+		 * this gets rid of garbage at the end of a page that is now only
+		 * partially backed by the vnode...
+		 */
+		if (nsize & PAGE_MASK) {
+			vm_offset_t kva;
+			vm_page_t m;
+			m = vm_page_lookup( object, trunc_page((vm_offset_t)nsize));
+			if( m) {
+				kva = vm_pager_map_page(m);
+				bzero( (caddr_t) kva + (nsize & PAGE_MASK),
+						round_page(nsize) - nsize);
+				vm_pager_unmap_page(kva);
+			}
+		}
+	} else {
+		/*
+		 * this allows the filesystem and VM cache to stay in sync
+		 * if the VM page hasn't been modified...  After the page is
+		 * removed -- it will be faulted back in from the filesystem
+		 * cache.
+		 */
+		if (vnp->vnp_size & PAGE_MASK) {
+			vm_page_t m;
+			m = vm_page_lookup( object, trunc_page(vnp->vnp_size));
+			if (m && (m->flags & PG_CLEAN)) {
+				vm_object_lock(object);
+				vm_object_page_remove(object,
+					      vnp->vnp_size, vnp->vnp_size);
+				vm_object_unlock(object);
+			}
+		}
 	}
 	vnp->vnp_size = (vm_offset_t)nsize;
+	object->size = round_page(nsize);
+
 	vm_object_deallocate(object);
 }
 
@@ -1366,4 +1400,3 @@ retryoutput:
 	}
 	return (error ? VM_PAGER_FAIL : VM_PAGER_OK);
 }
-
