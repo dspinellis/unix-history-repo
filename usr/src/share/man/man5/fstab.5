@@ -1,0 +1,127 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)fstab.5	4.1 (Berkeley) %G%
+.\"
+.TH FSTAB 5 
+.UC 4
+.SH NAME
+fstab \- static information about the filesystems
+.SH SYNOPSIS
+.B #include <fstab.h>
+.SH DESCRIPTION
+The file
+.I /etc/fstab
+contains descriptive information about the various file
+systems.
+.I /etc/fstab
+is only
+.I read
+by programs, and not written;
+it is the duty of the system administrator to properly create 
+and maintain this file.
+.PP
+These programs use
+.I /etc/fstab:
+.I dump,
+.I mount,
+.I umount,
+.I swapon,
+.I fsck
+and
+.I df.
+The order of records in
+.I /etc/fstab
+is important,
+for both
+.I fsck,
+.I mount,
+and
+.I umount
+sequentially iterate through
+.I /etc/fstab
+doing their thing.
+.PP
+The special file name is the 
+.B block
+special file name, 
+and not the character special file name.
+If a program needs the character special file name,
+the program must create it by appending a ``r'' after the
+last ``/'' in the special file name.
+.PP
+If
+.I fs_type
+is ``rw'' or ``ro'' then the file system whose name is given in the
+.I fs_file
+field is normally mounted read-write or read-only on the specified special
+file.
+The
+.I fs_freq
+field is used for these file systems by the
+.IR dump (8)
+command to determine which file systems need to be dumped.
+The
+.I fs_passno
+field is used by the
+.IR fsck (8)
+program to determine the order in which file system checks are done
+at reboot time.
+The root file system should be specified with a
+.I fs_passno
+of 1, and other file systems should have larger numbers.  File systems
+within a drive should have distinct numbers, but file systems on different
+drives can be checked on the same pass to utilize parallelism available in
+the hardware.
+.PP
+If
+.I fs_type
+is ``sw'' then the special file is made avaiable as a piece of swap
+space by the
+.IR swapon (8)
+command at the end of the system reboot procedure.
+The fields other than
+.I fs_spec
+and
+.I fs_type
+are not used in this case.
+.PP
+.I Fs_type
+may be specified as ``xx'' to cause an entry to be ignored.
+This is useful to show disk partitions which are currently not
+used but will be used later.
+.sp 1
+.nf
+.ta \w'#define 'u +\w'FSTABARG(p) 'u \w'#define 'u+\w'char\ \ 'u+\w'fs_spec[FSNMLG]; 'u
+#define	FSTAB		"/etc/fstab"
+#define	FSNMLG		16
+
+#define	FSTABFMT	"%16s:%16s:%2s:%d:%d\en"
+#define	FSTABARG(p)	(p)\->fs_spec, (p)\->fs_file, \e
+		(p)\->fs_type, &(p)\->fs_freq, &(p)\->fs_passno
+#define	FSTABNARGS	5
+
+#define	FSTAB_RW	"rw"		/* read write device */
+#define	FSTAB_RO	"ro"		/* read only device */
+#define	FSTAB_SW	"sw"		/* swap device */
+#define	FSTAB_XX	"xx"		/* ignore totally */
+
+.ta \w'#define 'u +\w'char\ \ 'u +\w'fs_spec[FSNMLG]; 'u
+struct fstab {
+	char	fs_spec[FSNMLG];	/* block special device name */
+	char	fs_file[FSNMLG];	/* file system path prefix */
+	char	fs_type[3];		/* rw,ro,sw or xx */
+	int	fs_freq;		/* dump frequency, in days */
+	int	fs_passno;		/* pass number on parallel dump */
+};
+.fi
+
+.PP
+The proper way to read records from
+.I /etc/fstab
+is to use the routines getfsent(), getfsspec() or getfsfile().
+.SH FILES
+/etc/fstab
+.SH SEE ALSO
+getfsent(3)
