@@ -1,18 +1,16 @@
 .\" Copyright (c) 1980, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)from.1	6.6 (Berkeley) %G%
+.\"	@(#)from.1	6.7 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt FROM 1
 .Os BSD 4
 .Sh NAME
 .Nm from
-.Nd tell who is mail from?
+.Nd print names of those who have sent mail
 .Sh SYNOPSIS
 .Nm from
 .Op Fl s Ar sender
@@ -21,43 +19,39 @@
 .Sh DESCRIPTION
 .Nm From
 prints
-out the mail header lines from your mailbox.
+out the mail header lines from the invoker's mailbox.
 .Pp
 Options:
-.Tw Fl
-.Tc Fl f
-.Ws
-.Ar file
-.Cx
+.Bl -tag -width Fl
+.It Fl f Ar file 
 The supplied file
-is examined instead of the your mailbox.
+is examined instead of the invoker's mailbox.
 If the
 .Fl f
 option is used, the
 .Ar user
 argument should not be used.
-.Tc Fl s
-.Ws
-.Ar sender
-.Cx
+.It Fl s Ar sender 
 Only mail from addresses containing
 the
 supplied string are printed.
-.Tp
+.El
 .Pp
 If
 .Ar user
 is given, the
-.Sf Ar user 's
-mailbox, is examined instead of your own mailbox.
+.Ar user Ns 's
+mailbox, is examined instead of the invoker's own mailbox.
+(Priviledges are required.)
 .Sh FILES
-.Dw /var/mail/*
-.Di L
-.Dp Pa /var/mail/*
-.Dp
+.Bl -tag -width /var/mail/* -compact
+.It Pa /var/mail/*
+.El
 .Sh SEE ALSO
 .Xr biff 1 ,
 .Xr mail 1
 .Sh HISTORY
-.Nm From
-appeared in 3 BSD.
+The
+.Nm from
+command appeared in
+.Bx 3.0 .
