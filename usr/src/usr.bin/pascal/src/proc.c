@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)proc.c 1.9 %G%";
+static char sccsid[] = "@(#)proc.c 1.10 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -342,6 +342,14 @@ proc(r)
 			 * the default.
 			 */
 			switch (typ) {
+			case TPTR:
+				warning();
+				if (opt('s')) {
+					standard();
+				}
+				error("Writing %ss to text files is non-standard",
+				    clnames[typ]);
+				/* and fall through */
 			case TINT:
 				if (fmt != 'f') {
 					ap = stkrval(alv, NIL , RREQ );
@@ -386,7 +394,9 @@ proc(r)
 				if (opt('s')) {
 					standard();
 				}
-				error("Writing scalars to text files is non-standard");
+				error("Writing %ss to text files is non-standard",
+				    clnames[typ]);
+				/* and fall through */
 			case TBOOL:
 				stkrval(alv, NIL , RREQ );
 				put(2, O_NAM, (long)listnames(ap));
