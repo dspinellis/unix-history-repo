@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex_vis.h	7.4 (Berkeley) %G%
+ *	@(#)ex_vis.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -217,7 +217,7 @@ var	char	INS[VBSIZE];	/* Last inserted text */
 var	int	Vlines;		/* Number of file lines "before" vi command */
 var	int	Xcnt;		/* External variable holding last cmd's count */
 var	bool	Xhadcnt;	/* Last command had explicit count? */
-var	short	ZERO;
+var	short	ex_ZERO;
 var	short	dir;		/* Direction for search (+1 or -1) */
 var	short	doomed;		/* Disply chars right of cursor to be killed */
 var	bool	gobblebl;	/* Wrapmargin space generated nl, eat a space */
@@ -234,9 +234,9 @@ var	char	*ncols['z'-'a'+2];	/* Cursor positions of marks */
 var	char	*notenam;	/* Name to be noted with change count */
 var	char	*notesgn;	/* Change count from last command */
 var	char	op;		/* Operation of current command */
-var	short	Peekkey;	/* Peek ahead key */
+var	short	Peek_key;	/* Peek ahead key */
 var	bool	rubble;		/* Line is filthy (in hardcopy open), redraw! */
-var	int	vSCROLL;	/* Number lines to scroll on ^D/^U */
+var	int	ex_vSCROLL;	/* Number lines to scroll on ^D/^U */
 var	char	*vglobp;	/* Untyped input (e.g. repeat insert text) */
 var	char	vmacbuf[VBSIZE];   /* Text of visual macro, hence nonnestable */
 var	char	*vmacp;		/* Like vglobp but for visual macros */

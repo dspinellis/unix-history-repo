@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_v.c	7.8 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_v.c	7.9 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -71,18 +71,19 @@ oop()
 	char atube[TUBESIZE + LBSIZE];
 #endif
 	ttymode f;	/* mjm: was register */
-	int resize;
 
-	if (resize = setjmp(venv)) {
+	if (setjmp(venv)) {
 		setsize();
 		initev = (char *)0;
 		inopen = 0;
 		addr1 = addr2 = dot;
 	}
+#ifdef	SIGWINCH
 	(void)signal(SIGWINCH, winch);
+#endif
 	ovbeg();
 	if (peekchar() == '/') {
-		ignore(compile(getchar(), 1));
+		ignore(compile(ex_getchar(), 1));
 		savere(scanre);
 		if (execute(0, dot) == 0)
 			error("Fail|Pattern not found on addressed line");
@@ -136,7 +137,9 @@ oop()
 		vclean();
 	Command = "open";
 	ovend(f);
+#ifdef	SIGWINCH
 	(void)signal(SIGWINCH, SIG_DFL);
+#endif
 }
 
 ovbeg()
@@ -182,7 +185,6 @@ vop()
 	char atube[TUBESIZE + LBSIZE];
 #endif
 	ttymode f;	/* mjm: was register */
-	int resize;
 
 	if (!CA && UP == NOSTR) {
 		if (initev) {
@@ -209,18 +211,20 @@ toopen:
 			goto toopen;
 		error("Visual requires scrolling");
 	}
-	if (resize = setjmp(venv)) {
+	if (setjmp(venv)) {
 		setsize();
 		initev = (char *)0;
 		inopen = 0;
 		addr1 = addr2 = dot;
 	}
+#ifdef	SIGWINCH
 	(void)signal(SIGWINCH, winch);
+#endif
 	ovbeg();
 	bastate = VISUAL;
 	c = 0;
 	if (any(peekchar(), "+-^."))
-		c = getchar();
+		c = ex_getchar();
 	pastwh();
 	vsetsiz(isdigit(peekchar()) ? getnum() : value(WINDOW));
 	setwind();
@@ -238,7 +242,9 @@ toopen:
 	vmain();
 	Command = "visual";
 	ovend(f);
+#ifdef	SIGWINCH
 	(void)signal(SIGWINCH, SIG_DFL);
+#endif
 }
 
 /*
@@ -254,7 +260,7 @@ fixzero()
 
 		vdoappend("");
 		if (!ochng)
-			sync();
+			ex_sync();
 		addr1 = addr2 = one;
 	} else if (addr2 == zero)
 		addr2 = one;
@@ -321,7 +327,7 @@ setwind()
 
 	case HARDOPEN:
 		basWTOP = WTOP = WBOT = WECHO = 0;
-		ZERO = 0;
+		ex_ZERO = 0;
 		holdcm++;
 		break;
 
@@ -330,10 +336,10 @@ setwind()
 		/* fall into */
 
 	case VISUAL:
-		ZERO = LINES - TUBESIZE / WCOLS;
-		if (ZERO < 0)
-			ZERO = 0;
-		if (ZERO > basWTOP)
+		ex_ZERO = LINES - TUBESIZE / WCOLS;
+		if (ex_ZERO < 0)
+			ex_ZERO = 0;
+		if (ex_ZERO > basWTOP)
 			error("Screen too large for internal buffer");
 		WTOP = basWTOP; WBOT = LINES - 2; WECHO = LINES - 1;
 		break;
@@ -356,12 +362,12 @@ vok(atube)
 		serror("Don't know enough about your terminal to use %s", Command);
 	if (WCOLS > TUBECOLS)
 		error("Terminal too wide");
-	if (WLINES >= TUBELINES || WCOLS * (WECHO - ZERO + 1) > TUBESIZE)
+	if (WLINES >= TUBELINES || WCOLS * (WECHO - ex_ZERO + 1) > TUBESIZE)
 		error("Screen too large");
 
 	vtube0 = atube;
-	vclrbyte(atube, WCOLS * (WECHO - ZERO + 1));
-	for (i = 0; i < ZERO; i++)
+	vclrbyte(atube, WCOLS * (WECHO - ex_ZERO + 1));
+	for (i = 0; i < ex_ZERO; i++)
 		vtube[i] = (char *) 0;
 	for (; i <= WECHO; i++)
 		vtube[i] = atube, atube += WCOLS;
@@ -379,10 +385,10 @@ vok(atube)
 	splitw = 0;
 	doomed = 0;
 	holdupd = 0;
-	Peekkey = 0;
+	Peek_key = 0;
 	vcnt = vcline = 0;
-	if (vSCROLL == 0)
-		vSCROLL = (value(WINDOW)+1)/2;	/* round up so dft=6,11 */
+	if (ex_vSCROLL == 0)
+		ex_vSCROLL = (value(WINDOW)+1)/2; /* round up so dft=6,11 */
 }
 
 #ifdef CBREAK
@@ -423,9 +429,11 @@ vsetsiz(size)
 	basWLINES = WBOT - b + 1;
 }
 
+#ifdef	SIGWINCH
 winch()
 {
 	vsave();
-	setty(normf);
+	ignore(setty(normf));
 	longjmp(venv, 1);
 }
+#endif

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_vmain.c	7.7 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_vmain.c	7.8 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -79,7 +79,7 @@ vmain()
 				ignore(peekkey());
 			holdupd = 0;
 /*
-			if (LINE(0) < ZERO) {
+			if (LINE(0) < ex_ZERO) {
 				vclear();
 				vcnt = 0;
 				i = 3;
@@ -302,8 +302,8 @@ reread:
 		 */
 		case CTRL(u):
 			if (hadcnt)
-				vSCROLL = cnt;
-			cnt = vSCROLL;
+				ex_vSCROLL = cnt;
+			cnt = ex_vSCROLL;
 			if (state == VISUAL)
 				ind = vcline, cnt += ind;
 			else
@@ -322,8 +322,8 @@ reread:
 			fprintf(trace, "before vdown in ^D, dot=%d, wdot=%d, dol=%d\n", lineno(dot), lineno(wdot), lineno(dol));
 #endif
 			if (hadcnt)
-				vSCROLL = cnt;
-			cnt = vSCROLL;
+				ex_vSCROLL = cnt;
+			cnt = ex_vSCROLL;
 			if (state == VISUAL)
 				ind = vcnt - vcline - 1, cnt += ind;
 			else
@@ -565,7 +565,7 @@ appnd:
 		case 'a':
 			if (*cursor) {
 				if (state == HARDOPEN)
-					putchar(*cursor);
+					ex_putchar(*cursor);
 				cursor++;
 			}
 			goto insrt;
@@ -936,7 +936,7 @@ doinit:
 				onumber = value(NUMBER);
 				olist = value(LIST);
 				OPline = Pline;
-				OPutchar = Putchar;
+				OPutchar = Put_char;
 #ifndef CBREAK
 				vcook();
 #endif
@@ -954,7 +954,7 @@ doinit:
 			ENDCATCH
 			fixol();
 			Pline = OPline;
-			Putchar = OPutchar;
+			Put_char = OPutchar;
 			ungetchar(d);
 			globp = oglobp;
 
@@ -964,7 +964,7 @@ doinit:
 			 */
 			if (dot == zero) {
 				fixzero();
-				sync();
+				ex_sync();
 			}
 			splitw = 0;
 
@@ -972,9 +972,9 @@ doinit:
 			 * Special case: did list/number options change?
 			 */
 			if (onumber != value(NUMBER))
-				setnumb(value(NUMBER));
+				ignorf(setnumb(value(NUMBER)));
 			if (olist != value(LIST))
-				setlist(value(LIST));
+				ignorf(setlist(value(LIST)));
 
 fixup:
 			/*
@@ -996,7 +996,7 @@ fixup:
 			 * If we are about to do another :, hold off
 			 * updating of screen.
 			 */
-			if (vcnt < 0 && Peekkey == ':') {
+			if (vcnt < 0 && Peek_key == ':') {
 				getDOT();
 				shouldpo = 1;
 				continue;
@@ -1098,7 +1098,7 @@ fixup:
 		 * U		restore current line to initial state.
 		 */
 		case 'U':
-			vUndo();
+			ex_vUndo();
 			continue;
 
 fonfon:

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_subr.c	7.10 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_subr.c	7.11 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -74,7 +74,7 @@ comment()
 	register int c;
 
 	do {
-		c = getchar();
+		c = ex_getchar();
 	} while (c != '\n' && c != EOF);
 	if (c == EOF)
 		ungetchar(c);
@@ -95,7 +95,6 @@ copyw(to, from, size)
 	register line *from, *to;
 	register int size;
 {
-
 	if (size > 0)
 		do
 			*to++ = *from++;
@@ -199,7 +198,7 @@ getn(cp)
 
 ignnEOF()
 {
-	register int c = getchar();
+	register int c = ex_getchar();
 
 	if (c == EOF)
 		ungetchar(c);
@@ -251,12 +250,12 @@ killcnt(cnt)
 	}
 	if (!notable(cnt))
 		return;
-	printf("%d lines", cnt);
+	ex_printf("%d lines", cnt);
 	if (value(TERSE) == 0) {
-		printf(" %c%s", Command[0] | ' ', Command + 1);
+		ex_printf(" %c%s", Command[0] | ' ', Command + 1);
 		if (Command[strlen(Command) - 1] != 'e')
-			putchar('e');
-		putchar('d');
+			ex_putchar('e');
+		ex_putchar('d');
 	}
 	putNFL();
 }
@@ -342,7 +341,7 @@ mesg(str)
 
 /*VARARGS2*/
 merror(seekpt, i)
-#ifdef VMUNIX
+#ifndef EXSTRINGS
 	char *seekpt;
 #else
 # ifdef lint
@@ -364,13 +363,13 @@ merror(seekpt, i)
 		vclreol();
 	if (SO && SE)
 		putpad(SO);
-	printf(mesg(cp), i);
+	ex_printf(mesg(cp), i);
 	if (SO && SE)
 		putpad(SE);
 }
 
 merror1(seekpt)
-#ifdef VMUNIX
+#ifndef EXSTRINGS
 	char *seekpt;
 #else
 # ifdef lint
@@ -381,7 +380,7 @@ merror1(seekpt)
 #endif
 {
 
-#ifdef VMUNIX
+#ifndef EXSTRINGS
 	strcpy(linebuf, seekpt);
 #else
 	lseek(erfile, (long) seekpt, 0);
@@ -392,11 +391,20 @@ merror1(seekpt)
 
 morelines()
 {
+#ifdef UNIX_SBRK
+	char *sbrk();
 
 	if ((int) sbrk(1024 * sizeof (line)) == -1)
 		return (-1);
 	endcore += 1024;
 	return (0);
+#else
+	/*
+	 * We can never be guaranteed that we can get more memory
+	 * beyond "endcore".  So we just punt every time.
+	 */
+	return -1;
+#endif
 }
 
 nonzero()
@@ -447,7 +455,7 @@ netchange(i)
 	}
 	if (!notable(i))
 		return;
-	printf(mesg("%d %slines@in file after %s"), i, cp, Command);
+	ex_printf(mesg("%d %slines@in file after %s"), i, cp, Command);
 	putNFL();
 }
 
@@ -501,7 +509,7 @@ qcolumn(lim, gp)
 		lim[1] = x;
 	if (gp)
 		while (*gp)
-			putchar(*gp++);
+			ex_putchar(*gp++);
 	Outchar = OO;
 	return (vcntcol);
 }
@@ -549,7 +557,11 @@ save(a1, a2)
 	more = (a2 - a1 + 1) - (unddol - dol);
 	while (more > (endcore - truedol))
 		if (morelines() < 0)
+#ifdef UNIX_SBRK
 			error("Out of memory@saving lines for undo - try using ed");
+#else
+			error("Out of memory@saving lines for undo - try increasing linelimit");
+#endif
 	if (more)
 		(*(more > 0 ? copywR : copyw))(unddol + more + 1, unddol + 1,
 		    (truedol - unddol));
@@ -584,7 +596,7 @@ span()
 	return (addr2 - addr1 + 1);
 }
 
-sync()
+ex_sync()
 {
 
 	chng = 0;
@@ -647,14 +659,26 @@ strcLIN(dp)
 syserror()
 {
 	register int e = errno;
+#ifndef	vms
 	extern int sys_nerr;
 	extern char *sys_errlist[];
+#else
+	extern noshare int sys_nerr;
+	extern noshare char *sys_errlist[];
+#endif
 
 	dirtcnt = 0;
-	putchar(' ');
+	ex_putchar(' ');
 	if (e >= 0 && e <= sys_nerr)
 		error(sys_errlist[e]);
 	else
+#ifdef vms
+		if (e == EVMSERR) {
+			error("VMS system error %d", vaxc$errno);
+			perror("vmserror");
+		}
+		else
+#endif
 		error("System error %d", e);
 }
 
@@ -687,7 +711,7 @@ vfindcol(i)
 	Outchar = qcount;
 	ignore(qcolumn(linebuf - 1, NOSTR));
 	for (cp = linebuf; *cp && vcntcol < i; cp++)
-		putchar(*cp);
+		ex_putchar(*cp);
 	if (cp != linebuf)
 		cp--;
 	Outchar = OO;
@@ -772,10 +796,7 @@ markit(addr)
 int _ovno;
 onemt()
 {
-	int oovno;
-
 	signal(SIGEMT, onemt);
-	oovno = _ovno;
 	/* 2 and 3 are valid on 11/40 type vi, so */
 	if (_ovno < 0 || _ovno > 3)
 		_ovno = 0;
@@ -802,15 +823,15 @@ onhup()
 	signal(SIGHUP, SIG_IGN);
 	if (chng == 0) {
 		cleanup(1);
-		exit(0);
+		ex_exit(0);
 	}
 	if (setexit() == 0) {
 		if (preserve()) {
 			cleanup(1);
-			exit(0);
+			ex_exit(0);
 		}
 	}
-	exit(1);
+	ex_exit(1);
 }
 
 /*
@@ -871,14 +892,14 @@ preserve()
 	tflush();
 #endif
 	synctmp();
-	pid = fork();
+	pid = vfork();
 	if (pid < 0)
 		return (0);
 	if (pid == 0) {
 		close(0);
 		dup(tfile);
 		execl(EXPRESERVE, "expreserve", (char *) 0);
-		exit(1);
+		ex_exit(1);
 	}
 	waitfor();
 	if (rpid == pid && status == 0)
@@ -887,7 +908,7 @@ preserve()
 }
 
 #ifndef V6
-exit(i)
+ex_exit(i)
 	int i;
 {
 
@@ -906,7 +927,6 @@ exit(i)
 onsusp()
 {
 	ttymode f;
-	int omask;
 	struct winsize win;
 
 	f = setty(normf);
@@ -922,14 +942,16 @@ onsusp()
 
 	signal(SIGTSTP, onsusp);
 	vcontin(0);
-	setty(f);
+	ignore(setty(f));
 	if (!inopen)
-		error(0);
+		error((char *) 0);
 	else {
+#ifdef	TIOCGWINSZ
 		if (ioctl(0, TIOCGWINSZ, &win) >= 0)
 			if (win.ws_row != winsz.ws_row ||
 			    win.ws_col != winsz.ws_col)
 				winch();
+#endif
 		if (vcnt < 0) {
 			vcnt = -vcnt;
 			if (state == VISUAL)

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_vadj.c	7.9 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_vadj.c	7.10 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -72,12 +72,12 @@ vopen(tp, p)
 	 * If we are opening at the top of the window, can try a window
 	 * expansion at the top.
 	 */
-	if (state == VISUAL && vcline == 0 && vcnt > 1 && p > ZERO) {
+	if (state == VISUAL && vcline == 0 && vcnt > 1 && p > ex_ZERO) {
 		cnt = p + vdepth() - LINE(1);
 		if (cnt > 0) {
 			p -= cnt;
-			if (p < ZERO)
-				p = ZERO;
+			if (p < ex_ZERO)
+				p = ex_ZERO;
 			WTOP = p;
 			WLINES = WBOT - WTOP + 1;
 		}
@@ -128,8 +128,8 @@ vreopen(p, lineno, l)
 	 */
 	if (hold & HOLDDOL)
 		return (d);
-	if (Putchar == listchar)
-		putchar('$');
+	if (Put_char == listchar)
+		ex_putchar('$');
 
 	/*
 	 * Optimization of cursor motion may prevent screen rollup if the
@@ -190,7 +190,7 @@ vglitchup(l, o)
  	if (l < vcnt - 1) {
 		need = p + vp->vdepth - (vp+1)->vliny;
 		if (need > 0) {
-			if (state == VISUAL && WTOP - ZERO >= need && AL && DL) {
+			if (state == VISUAL && WTOP - ex_ZERO >= need && AL && DL) {
 				glitched++;
 				WTOP -= need;
 				WLINES = WBOT - WTOP + 1;
@@ -247,7 +247,7 @@ vinslin(p, cnt, l)
 		for (i = cnt; i > 0; i--) {
 			vgoto(p, 0), vputp(SR, 0);
 			if (i > 1 && (hold & HOLDAT) == 0)
-				putchar('@');
+				ex_putchar('@');
 			/*
 			 * If we are at the top of the screen, and the
 			 * terminal retains display above, then we
@@ -284,7 +284,7 @@ vinslin(p, cnt, l)
 				vgoto(outline+1, 0);
 				vputp(AL, WECHO + 1 - outline);
 				if ((hold & HOLDAT) == 0)
-					putchar('@');
+					ex_putchar('@');
 			}
 		}
 		vadjAL(p, cnt);
@@ -450,9 +450,9 @@ vscroll(cnt)
 	if (cnt == 0)
 		return;
 	copy(tlines, vtube, sizeof vtube);
-	for (to = ZERO, from = ZERO + cnt; to <= WECHO - cnt; to++, from++)
+	for (to = ex_ZERO, from = ex_ZERO + cnt; to <= WECHO - cnt; to++, from++)
 		vtube[to] = tlines[from];
-	for (from = ZERO; to <= WECHO; to++, from++) {
+	for (from = ex_ZERO; to <= WECHO; to++, from++) {
 		vtube[to] = tlines[from];
 		vclrbyte(vtube[to], WCOLS);
 	}
@@ -473,7 +473,7 @@ vscrap()
 #endif
 	if (splitw)
 		return;
-	if (vcnt && WBOT != WECHO && LINE(0) < WTOP && LINE(0) >= ZERO) {
+	if (vcnt && WBOT != WECHO && LINE(0) < WTOP && LINE(0) >= ex_ZERO) {
 		WTOP = LINE(0);
 		WLINES = WBOT - WTOP + 1;
 	}
@@ -521,7 +521,7 @@ vrepaint(curs)
 	/*
 	 * In open want to notify first.
 	 */
-	noteit(0);
+	ignore(noteit(0));
 	vscrap();
 
 	/*
@@ -540,7 +540,7 @@ vrepaint(curs)
 		if (odol == zero)
 			fixzero();
 		vcontext(dot, '.');
-		noteit(1);
+		ignore(noteit(1));
 		if (noteit(1) == 0 && odol == zero) {
 			CATCH
 				error("No lines in buffer");
@@ -590,7 +590,7 @@ vrepaint(curs)
 	 * has to be done last or we may lose
 	 * the echo area with redisplay.
 	 */
-	noteit(1);
+	ignore(noteit(1));
 
 	/*
 	 * Finally.  Move the cursor onto the current line.
@@ -645,7 +645,7 @@ vredraw(p)
 	 */
 	heldech = 0;
 	hold |= HOLDECH;
-	for (; l < vcnt && Peekkey != ATTN; l++) {
+	for (; l < vcnt && Peek_key != ATTN; l++) {
 		if (l == vcline)
 			strcLIN(temp);
 		else
@@ -677,7 +677,7 @@ vredraw(p)
 				break;
 			}
 			FLAGS(l) &= ~VDIRT;
-			vreopen(p, lineno(tp), l);
+			ignore(vreopen(p, lineno(tp), l));
 			p = LINE(l) + DEPTH(l);
 		} else
 			p += DEPTH(l);
@@ -692,7 +692,7 @@ vredraw(p)
 		int ovcline = vcline;
 
 		vcline = l;
-		for (; tp <= dol && Peekkey != ATTN; tp++) {
+		for (; tp <= dol && Peek_key != ATTN; tp++) {
 			getline(*tp);
 			if (p + vdepth() - 1 > WBOT)
 				break;
@@ -708,7 +708,7 @@ vredraw(p)
 	 * Now rest of lines (if any) get either a ~ if they
 	 * are past end of file, or an @ if the next line won't fit.
 	 */
-	for (; p <= WBOT && Peekkey != ATTN; p++)			
+	for (; p <= WBOT && Peek_key != ATTN; p++)			
 		vclrlin(p, tp);
 	strcLIN(temp);
 	hold = oldhold;
@@ -847,7 +847,7 @@ vsync1(p)
 		l++, vp++;
 	heldech = 0;
 	hold |= HOLDECH;
-	while (p <= WBOT && Peekkey != ATTN) {
+	while (p <= WBOT && Peek_key != ATTN) {
 		/*
 		 * Want to put a line here if not in visual and first line
 		 * or if there are lies left and this line starts before
@@ -871,7 +871,7 @@ vsync1(p)
 					if (p + vp->vdepth - 1 > WBOT)
 						break;
 				}
-				vreopen(p, lineDOT() + (l - vcline), l);
+				ignore(vreopen(p, lineDOT() + (l - vcline), l));
 			}
 			p = vp->vliny + vp->vdepth;
 			vp++;
@@ -1068,7 +1068,7 @@ sethard()
 	vup1();
 	LINE(0) = WBOT;
 	if (Pline == numbline)
-		vgoto(WBOT, 0), printf("%6d  ", lineDOT());
+		vgoto(WBOT, 0), ex_printf("%6d  ", lineDOT());
 }
 
 /*

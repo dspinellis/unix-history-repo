@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_io.c	7.12 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_io.c	7.13 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -47,7 +47,7 @@ filename(comm)
 	register int c = comm, d;
 	register int i;
 
-	d = getchar();
+	d = ex_getchar();
 	if (endcmd(d)) {
 		if (savedfile[0] == 0 && comm != 'f')
 			error("No file|No current filename");
@@ -98,19 +98,19 @@ filename(comm)
 		lprintf("\"%s\"", file);
 		if (comm == 'f') {
 			if (value(READONLY))
-				printf(" [Read only]");
+				ex_printf(" [Read only]");
 			if (!edited)
-				printf(" [Not edited]");
+				ex_printf(" [Not edited]");
 			if (tchng)
-				printf(" [Modified]");
+				ex_printf(" [Modified]");
 		}
 		flush();
 	} else
-		printf("No file ");
+		ex_printf("No file ");
 	if (comm == 'f') {
 		if (!(i = lineDOL()))
 			i++;
-		printf(" line %d of %d --%ld%%--", lineDOT(), lineDOL(),
+		ex_printf(" line %d of %d --%ld%%--", lineDOT(), lineDOL(),
 		    (long) 100 * lineDOT() / i);
 	}
 }
@@ -128,11 +128,11 @@ getargs()
 	pastwh();
 	if (peekchar() == '+') {
 		for (cp = fpatbuf;;) {
-			c = *cp++ = getchar();
+			c = *cp++ = ex_getchar();
 			if (cp >= &fpatbuf[sizeof(fpatbuf)])
 				error("Pattern too long");
 			if (c == '\\' && isspace(peekchar()))
-				c = getchar();
+				c = ex_getchar();
 			if (c == EOF || isspace(c)) {
 				ungetchar(c);
 				*--cp = 0;
@@ -145,7 +145,7 @@ getargs()
 		return (0);
 	CP(genbuf, "echo "); cp = &genbuf[5];
 	for (;;) {
-		c = getchar();
+		c = ex_getchar();
 		if (endcmd(c)) {
 			ungetchar(c);
 			break;
@@ -154,7 +154,7 @@ getargs()
 
 		case '\\':
 			if (any(peekchar(), "#%|"))
-				c = getchar();
+				c = ex_getchar();
 			/* fall into... */
 
 		default:
@@ -221,7 +221,7 @@ glob(gp)
 	}
 	if (pipe(pvec) < 0)
 		error("Can't make pipe to glob");
-	pid = fork();
+	pid = vfork();
 	io = pvec[0];
 	if (pid < 0) {
 		close(pvec[1]);
@@ -234,9 +234,12 @@ glob(gp)
 		dup(pvec[1]);
 		close(pvec[0]);
 		close(2);	/* so errors don't mess up the screen */
-		open("/dev/null", 1);
+		ignore(open("/dev/null", 1));
 		execl(svalue(SHELL), "sh", "-c", genbuf, 0);
-		oerrno = errno; close(1); dup(2); errno = oerrno;
+		oerrno = errno;
+		close(1);
+		dup(2);
+		errno = oerrno;
 		filioerr(svalue(SHELL));
 	}
 	close(pvec[1]);
@@ -274,12 +277,17 @@ glob(gp)
  */
 gscan()
 {
+#ifndef	vms
 	register char *cp;
 
 	for (cp = genbuf; *cp; cp++)
 		if (any(*cp, "~{[*?$`'\"\\"))
+		if (any(*cp, "~{[*?$`'\"\\"))
 			return (1);
 	return (0);
+#else
+	return 0;	/* Never have meta-characters in vms */
+#endif
 }
 
 /*
@@ -298,7 +306,6 @@ getone()
 	str = G.argv[G.argc0 - 1];
 	if (strlen(str) > FNSIZE - 4)
 		error("Filename too long");
-samef:
 	CP(file, str);
 }
 
@@ -325,7 +332,7 @@ rop(c)
 			 * this is ugly, and it screws up the + option.
 			 */
 			if (!seenprompt) {
-				printf(" [New file]");
+				ex_printf(" [New file]");
 				noonl();
 				return;
 			}
@@ -354,6 +361,7 @@ rop(c)
 		lseek(io, 0l, 0);
 		if (i != sizeof(magic))
 			break;
+#ifndef vms
 		switch (magic) {
 
 		case 0405:	/* data overlay on exec */
@@ -388,6 +396,7 @@ rop(c)
 				error(" Non-ascii file");
 			break;
 		}
+#endif
 	}
 	if (c != 'r') {
 		if (value(READONLY) && denied) {
@@ -401,7 +410,7 @@ rop(c)
 		}
 	}
 	if (value(READONLY)) {
-		printf(" [Read only]");
+		ex_printf(" [Read only]");
 		flush();
 	}
 	if (c == 'r')
@@ -586,9 +595,9 @@ cre:
 		writing = 1;
 		if (hush == 0)
 			if (nonexist)
-				printf(" [New file]");
+				ex_printf(" [New file]");
 			else if (value(WRITEANY) && edfile() != EDF)
-				printf(" [Existing file]");
+				ex_printf(" [Existing file]");
 		break;
 
 	case 2:
@@ -602,12 +611,14 @@ cre:
 		break;
 	}
 	putfile(0);
+#ifndef	vms
 	(void) fsync(io);
+#endif
 	ignore(iostats());
 	if (c != 2 && addr1 == one && addr2 == dol) {
 		if (eq(file, savedfile))
 			edited = 1;
-		sync();
+		ex_sync();
 	}
 	if (!dofname) {
 		addr1 = saddr1;
@@ -644,11 +655,11 @@ getfile()
 	fp = nextip;
 	do {
 		if (--ninbuf < 0) {
-			ninbuf = read(io, genbuf, bsize) - 1;
+			ninbuf = read(io, genbuf, (int) bsize) - 1;
 			if (ninbuf < 0) {
 				if (lp != linebuf) {
 					lp++;
-					printf(" [Incomplete last line]");
+					ex_printf(" [Incomplete last line]");
 					break;
 				}
 				return (EOF);
@@ -681,6 +692,7 @@ getfile()
 /*
  * Write a range onto the io stream.
  */
+/* ARGSUSED */
 putfile(isfilter)
 int isfilter;
 {
@@ -829,20 +841,20 @@ iostats()
 	io = -1;
 	if (hush == 0) {
 		if (value(TERSE))
-			printf(" %d/%D", cntln, cntch);
+			ex_printf(" %d/%D", cntln, cntch);
 		else
-			printf(" %d line%s, %D character%s", cntln, plural((long) cntln),
+			ex_printf(" %d line%s, %D character%s", cntln, plural((long) cntln),
 			    cntch, plural(cntch));
 		if (cntnull || cntodd) {
-			printf(" (");
+			ex_printf(" (");
 			if (cntnull) {
-				printf("%D null", cntnull);
+				ex_printf("%D null", cntnull);
 				if (cntodd)
-					printf(", ");
+					ex_printf(", ");
 			}
 			if (cntodd)
-				printf("%D non-ASCII", cntodd);
-			putchar(')');
+				ex_printf("%D non-ASCII", cntodd);
+			ex_putchar(')');
 		}
 		noonl();
 		flush();
@@ -850,8 +862,15 @@ iostats()
 	return (cntnull != 0 || cntodd != 0);
 }
 
-#if USG | USG3TTY
-/* It's so wonderful how we all speak the same language... */
+#ifdef USG
+# define index strchr
+# define rindex strrchr
+#endif
+#ifdef USG3TTY
+# define index strchr
+# define rindex strrchr
+#endif
+#ifdef vms
 # define index strchr
 # define rindex strrchr
 #endif
@@ -861,7 +880,7 @@ char *line;
 {
 	char *beg, *end;
 	char cmdbuf[1024];
-	char *index(), *rindex();
+	char *index(), *rindex(), *strncpy();
 
 	beg = index(line, ':');
 	if (beg == NULL)

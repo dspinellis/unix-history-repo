@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_tty.c	7.10 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_tty.c	7.11 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -32,7 +32,7 @@ gettmode()
 	GT = (tty.sg_flags & XTABS) != XTABS && !XT;
 	NONL = (tty.sg_flags & CRMOD) == 0;
 #else
-	if (ioctl(1, TCGETA, &tty) < 0)
+	if (ioctl(1, TCGETA, (char *) &tty) < 0)
 		return;
 	if (ospeed != (tty.c_cflag & CBAUD))	/* mjm */
 		value(SLOWOPEN) = (tty.c_cflag & CBAUD) < B1200;
@@ -106,9 +106,9 @@ setterm(type)
 	 */
 	{
 		static char sc[2];
-		int i, fnd;
+		int i;
 
-		ioctl(0, TIOCGETD, &ldisc);
+		ioctl(0, TIOCGETD, (char *) &ldisc);
 		if (ldisc == NTTYDISC) {
 			sc[0] = olttyc.t_suspc;
 			sc[1] = 0;
@@ -116,7 +116,8 @@ setterm(type)
 				for (i=0; i<=4; i++)
 					if (arrows[i].cap &&
 					    arrows[i].cap[0] == CTRL(z))
-						addmac(sc, NULL, NULL, arrows);
+						addmac(sc, (char *) NULL,
+							(char *) NULL, arrows);
 			} else
 				addmac(sc, "\32", "susp", arrows);
 		}
@@ -149,11 +150,14 @@ setterm(type)
 setsize()
 {
 	register int l, i;
+#ifdef	TIOCGWINSZ
 	struct winsize win;
 
-	if (ioctl(0, TIOCGWINSZ, &win) < 0) {
+	if (ioctl(0, TIOCGWINSZ, (char *) &win) < 0) {
+#endif
 		i = LINES = tgetnum("li");
 		COLUMNS = tgetnum("co");
+#ifdef	TIOCGWINSZ
 	} else {
 		if ((LINES = winsz.ws_row = win.ws_row) == 0)
 			LINES = tgetnum("li");
@@ -161,6 +165,7 @@ setsize()
 		if ((COLUMNS = winsz.ws_col = win.ws_col) == 0)
 			COLUMNS = tgetnum("co");
 	}
+#endif
 	if (LINES <= 5)
 		LINES = 24;
 	if (LINES > TUBELINES)

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_vget.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_vget.c	6.9 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -26,8 +26,8 @@ ungetkey(c)
 	int c;		/* mjm: char --> int */
 {
 
-	if (Peekkey != ATTN)
-		Peekkey = c;
+	if (Peek_key != ATTN)
+		Peek_key = c;
 }
 
 /*
@@ -51,8 +51,8 @@ getkey()
 peekbr()
 {
 
-	Peekkey = getbr();
-	return (Peekkey == 0);
+	Peek_key = getbr();
+	return (Peek_key == 0);
 }
 
 short	precbksl;
@@ -74,7 +74,6 @@ getbr()
 	char ch;
 	register int c, d;
 	register char *colp;
-	int cnt;
 #define BEEHIVE
 #ifdef BEEHIVE
 	static char Peek2key;
@@ -82,9 +81,9 @@ getbr()
 	extern short slevel, ttyindes;
 
 getATTN:
-	if (Peekkey) {
-		c = Peekkey;
-		Peekkey = 0;
+	if (Peek_key) {
+		c = Peek_key;
+		Peek_key = 0;
 		return (c);
 	}
 #ifdef BEEHIVE
@@ -115,7 +114,11 @@ again:
 	if (setjmp(readbuf))
 		goto getATTN;
 	doingread = 1;
+#ifndef	vms
 	c = read(slevel == 0 ? 0 : ttyindes, &ch, 1);
+#else
+	c = vms_read(slevel == 0 ? 0 : ttyindes, &ch, 1);
+#endif
 	doingread = 0;
 	if (c != 1) {
 		if (errno == EINTR)
@@ -172,14 +175,14 @@ again:
 			}
 			if (precbksl == 2) {
 				if (!d) {
-					Peekkey = c;
+					Peek_key = c;
 					precbksl = 0;
 					c = '\\';
 				}
 			} else if (d)
 				c = d;
 			else {
-				Peekkey = c;
+				Peek_key = c;
 				precbksl = 0;
 				c = '\\';
 			}
@@ -235,8 +238,8 @@ getesc()
 peekkey()
 {
 
-	Peekkey = getkey();
-	return (Peekkey);
+	Peek_key = getkey();
+	return (Peek_key);
 }
 
 /*
@@ -257,7 +260,7 @@ readecho(c)
 		vclrech(0);
 	splitw++;
 	vgoto(WECHO, 0);
-	putchar(c);
+	ex_putchar(c);
 	vclreol();
 	vgoto(WECHO, 1);
 	cursor = linebuf; linebuf[0] = 0; genbuf[0] = c;
@@ -269,21 +272,21 @@ readecho(c)
 	OP = Pline; Pline = normline;
 	ignore(vgetline(0, genbuf + 1, &waste, c));
 	if (Outchar == termchar)
-		putchar('\n');
+		ex_putchar('\n');
 	vscrap();
 	Pline = OP;
-	if (Peekkey != ATTN && Peekkey != QUIT && Peekkey != CTRL(h)) {
+	if (Peek_key != ATTN && Peek_key != QUIT && Peek_key != CTRL(h)) {
 		cursor = sc;
 		vclreol();
 		return (0);
 	}
 blewit:
-	OPeek = Peekkey==CTRL(h) ? 0 : Peekkey; Peekkey = 0;
+	OPeek = Peek_key==CTRL(h) ? 0 : Peek_key; Peek_key = 0;
 	splitw = 0;
 	vclean();
 	vshow(dot, NOLINE);
 	vnline(sc);
-	Peekkey = OPeek;
+	Peek_key = OPeek;
 	return (1);
 }
 
@@ -323,13 +326,13 @@ addtext(cp)
 setDEL()
 {
 
-	setBUF(DEL);
+	ex_setBUF(DEL);
 }
 
 /*
  * Put text from cursor upto wcursor in BUF.
  */
-setBUF(BUF)
+ex_setBUF(BUF)
 	register char *BUF;
 {
 	register int c;
@@ -372,14 +375,14 @@ noteit(must)
 	if (WBOT == WECHO)
 		vmoveitup(1, 1);
 	vigoto(WECHO, 0);
-	printf("%d %sline", notecnt, notesgn);
+	ex_printf("%d %sline", notecnt, notesgn);
 	if (notecnt > 1)
-		putchar('s');
+		ex_putchar('s');
 	if (*notenam) {
-		printf(" %s", notenam);
+		ex_printf(" %s", notenam);
 		if (*(strend(notenam) - 1) != 'e')
-			putchar('e');
-		putchar('d');
+			ex_putchar('e');
+		ex_putchar('d');
 	}
 	vclreol();
 	notecnt = 0;

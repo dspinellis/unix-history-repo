@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex.c	7.5.1.1 (Berkeley) %G%";
+static char *sccsid = "@(#)ex.c	7.6 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -20,7 +20,11 @@ static char *sccsid = "@(#)ex.c	7.5.1.1 (Berkeley) %G%";
 #include "ex_tty.h"
 
 #ifdef TRACE
+#ifdef	vms
+char	tttrace[]	= { 't','r','a','c','e','.','l','i','s' };
+#else
 char	tttrace[]	= { '/','d','e','v','/','t','t','y','x','x',0 };
+#endif
 #endif
 
 /*
@@ -86,7 +90,7 @@ main(ac, av)
 	register int ac;
 	register char *av[];
 {
-#ifndef VMUNIX
+#ifdef EXSTRINGS
 	char *erpath = EXSTRINGS;
 #endif
 	register char *cp;
@@ -96,15 +100,23 @@ main(ac, av)
 	bool itag = 0;
 	bool fast = 0;
 	extern int onemt();
+#ifdef UNIX_SBRK
+	extern char *sbrk();
+#else
+	extern char *malloc();
+#endif
 #ifdef TRACE
 	register char *tracef;
+#endif
+#ifdef	vms
+	char termtype[20];
 #endif
 
 	/*
 	 * Immediately grab the tty modes so that we wont
 	 * get messed up if an interrupt comes in quickly.
 	 */
-	gTTY(1);
+	ex_gTTY(1);
 #ifndef USG3TTY
 	normf = tty.sg_flags;
 #else
@@ -115,7 +127,21 @@ main(ac, av)
 	 * Defend against d's, v's, w's, and a's in directories of
 	 * path leading to our true name.
 	 */
+#ifndef	vms
 	av[0] = tailpath(av[0]);
+#else
+	/*
+	 * This program has to be invoked by using the following
+	 * string definitions:
+	 *
+	 * vi == "$dir:ex.exe vi"
+	 * view == "$dir:ex.exe view"
+	 * ex == "$dir:ex.exe ex"
+	 * edit == "$dir:ex.exe edit"
+	 */
+	ac--;
+	av++;
+#endif
 
 	/*
 	 * Figure out how we were invoked: ex, edit, vi, view.
@@ -129,7 +155,7 @@ main(ac, av)
 		value(MAGIC) = 0;
 	}
 
-#ifndef VMUNIX
+#ifdef EXSTRINGS
 	/*
 	 * For debugging take files out of . if name is a.out.
 	 */
@@ -140,7 +166,7 @@ main(ac, av)
 	 * Open the error message file.
 	 */
 	draino();
-#ifndef VMUNIX
+#ifdef EXSTRINGS
 	erfile = open(erpath+4, 0);
 	if (erfile < 0) {
 		erfile = open(erpath, 0);
@@ -192,7 +218,7 @@ main(ac, av)
 			trace = fopen(tracef, "w");
 #define tracbuf NULL
 			if (trace == NULL)
-				printf("Trace create error\n");
+				ex_printf("Trace create error\n");
 			else
 				setbuf(trace, tracbuf);
 			break;
@@ -238,17 +264,6 @@ main(ac, av)
 		ac--, av++;
 	}
 
-	/*
-	 * Initialize end of core pointers.
-	 * Normally we avoid breaking back to fendcore after each
-	 * file since this can be expensive (much core-core copying).
-	 * If your system can scatter load processes you could do
-	 * this as ed does, saving a little core, but it will probably
-	 * not often make much difference.
-	 */
-	fendcore = (line *) sbrk(0);
-	endcore = fendcore - 2;
-
 #ifdef SIGTSTP
 	if (!hush && signal(SIGTSTP, SIG_IGN) == SIG_DFL)
 		signal(SIGTSTP, onsusp), dosusp++;
@@ -273,7 +288,7 @@ main(ac, av)
 			setrupt();
 			execl(EXRECOVER, "exrecover", "-r", 0);
 			filioerr(EXRECOVER);
-			exit(1);
+			ex_exit(1);
 		}
 		CP(savedfile, *av++), ac--;
 	}
@@ -294,18 +309,38 @@ main(ac, av)
 		setrupt();
 		intty = isatty(0);
 		value(PROMPT) = intty;
+#ifndef	vms
 		if (cp = getenv("SHELL"))
+#else
+		if (cp = getlog("SHELL"))
+#endif
 			CP(shell, cp);
 		if (fast || !intty)
 			setterm("dumb");
 		else {
 			gettmode();
+#ifndef	vms
 			if ((cp = getenv("TERM")) != 0 && *cp)
 				setterm(cp);
+#else
+			if ((cp = getlog("TERM")) != 0 && *cp) {
+				/*
+				 * Can't just use it directly since getlog
+				 * returns a pointer to a static buffer that
+				 * tgetent() will eventually use
+				 */
+				CP(termtype, cp);
+				setterm(termtype);
+			}
+#endif
 		}
 	}
 	if (setexit() == 0 && !fast && intty) {
+#ifndef	vms
 		if ((globp = getenv("EXINIT")) && *globp)
+#else
+		if ((globp = getlog("EXINIT")) && *globp)
+#endif
 			commands(1,1);
 		else {
 			globp = 0;
@@ -324,6 +359,37 @@ main(ac, av)
 		 if (iownit(".exrc"))
 			source(".exrc", 1);
 	}
+#ifdef	UNIX_SBRK
+	/*
+	 * Initialize end of core pointers.
+	 * Normally we avoid breaking back to fendcore after each
+	 * file since this can be expensive (much core-core copying).
+	 * If your system can scatter load processes you could do
+	 * this as ed does, saving a little core, but it will probably
+	 * not often make much difference.
+	 */
+	fendcore = (line *) sbrk(0);
+	endcore = fendcore - 2;
+#else
+	/*
+	 * Allocate all the memory we will ever use in one chunk.
+	 * This is for system such as VMS where sbrk() does not
+	 * guarantee that the memory allocated beyond the end is
+	 * consecutive.  VMS's RMS does all sorts of memory allocation
+	 * and screwed up ex royally because ex assumes that all
+	 * memory up to "endcore" belongs to it and RMS has different
+	 * ideas.
+	 */
+	fendcore = (line *) malloc((unsigned)
+		value(LINELIMIT) * sizeof (line *));
+	if (fendcore == NULL) {
+		lprintf("ex: cannot handle %d lines\n", value(LINELIMIT));
+		lprintf("ex: set \"linelimit\" lower\n");
+		flush();
+		ex_exit(1);
+	}
+	endcore = fendcore + (value(LINELIMIT) - 1);
+#endif
 	init();	/* moved after prev 2 chunks to fix directory option */
 
 	/*
@@ -379,7 +445,7 @@ main(ac, av)
 	setexit();
 	commands(0, 0);
 	cleanup(1);
-	exit(0);
+	ex_exit(0);
 }
 
 /*

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_put.c	7.9 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_put.c	7.10 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -29,7 +29,7 @@ static char *sccsid = "@(#)ex_put.c	7.9 (Berkeley) %G%";
  * routines in the file ex_vput.c (vputchar, vinschar, etc.).
  */
 int	(*Outchar)() = termchar;
-int	(*Putchar)() = normchar;
+int	(*Put_char)() = normchar;
 int	(*Pline)() = normline;
 
 int (*
@@ -39,8 +39,8 @@ setlist(t))()
 	register int (*P)();
 
 	listf = t;
-	P = Putchar;
-	Putchar = t ? listchar : normchar;
+	P = Put_char;
+	Put_char = t ? listchar : normchar;
 	return (P);
 }
 
@@ -118,7 +118,7 @@ normchar(c)
 			c &= TRIM;
 		}
 	else if (c < ' ' && (c != '\b' || !OS) && c != '\n' && c != '\t' || c == DELETE)
-		putchar('^'), c = ctlof(c);
+		ex_putchar('^'), c = ctlof(c);
 	else if (UPPERCASE)
 		if (isupper(c)) {
 			outchar('\\');
@@ -144,7 +144,7 @@ numbline(i)
 
 	if (shudclob)
 		slobber(' ');
-	printf("%6d  ", i);
+	ex_printf("%6d  ", i);
 	normline();
 }
 
@@ -160,9 +160,9 @@ normline()
 	/* pdp-11 doprnt is not reentrant so can't use "printf" here
 	   in case we are tracing */
 	for (cp = linebuf; *cp;)
-		putchar(*cp++);
+		ex_putchar(*cp++);
 	if (!inopen)
-		putchar('\n' | QUOTE);
+		ex_putchar('\n' | QUOTE);
 }
 
 /*
@@ -178,7 +178,7 @@ slobber(c)
 	switch (c) {
 
 	case '\t':
-		if (Putchar == listchar)
+		if (Put_char == listchar)
 			return;
 		break;
 
@@ -217,11 +217,11 @@ static	bool phadnl;
 /*
  * Indirect to current definition of putchar.
  */
-putchar(c)
+ex_putchar(c)
 	int c;
 {
 
-	(*Putchar)(c);
+	(*Put_char)(c);
 }
 
 /*
@@ -771,7 +771,11 @@ flusho()
 {
 
 	if (obp != obuf) {
+#ifndef vms
 		write(1, obuf, obp - obuf);
+#else
+		vms_write(1, obuf, obp - obuf);
+#endif
 		obp = obuf;
 	}
 }
@@ -779,10 +783,10 @@ flusho()
 putnl()
 {
 
-	putchar('\n');
+	ex_putchar('\n');
 }
 
-putS(cp)
+ex_putS(cp)
 	char *cp;
 {
 
@@ -833,15 +837,15 @@ setoutt()
 /*
  * Printf (temporarily) in list mode.
  */
-/*VARARGS2*/
+/*VARARGS1*/
 lprintf(cp, dp)
 	char *cp, *dp;
 {
 	register int (*P)();
 
 	P = setlist(1);
-	printf(cp, dp);
-	Putchar = P;
+	ex_printf(cp, dp);
+	Put_char = P;
 }
 
 /*
@@ -877,7 +881,7 @@ pstart()
 	tty.c_oflag &= ~(ONLCR|TAB3);
 	tty.c_lflag &= ~ECHO;
 #endif
-	sTTY(1);
+	ex_sTTY(1);
 }
 
 /*
@@ -905,7 +909,7 @@ ostart()
 
 	if (!intty)
 		error("Open and visual must be used interactively");
-	gTTY(1);
+	ex_gTTY(1);
 	normtty++;
 #ifndef USG3TTY
 	f = tty.sg_flags;
@@ -928,7 +932,7 @@ ostart()
 	tty.c_cc[VTIME] = 1;
 	ttcharoff();
 #endif
-	sTTY(1);
+	ex_sTTY(1);
 	tostart();
 	pfast |= 2;
 	return (f);
@@ -1043,7 +1047,7 @@ vcook()
 {
 
 	tty.sg_flags &= ~RAW;
-	sTTY(1);
+	ex_sTTY(1);
 }
 
 /*
@@ -1053,7 +1057,7 @@ vraw()
 {
 
 	tty.sg_flags |= RAW;
-	sTTY(1);
+	ex_sTTY(1);
 }
 #endif
 
@@ -1065,7 +1069,7 @@ normal(f)
 {
 
 	if (normtty > 0) {
-		setty(f);
+		ignore(setty(f));
 		normtty--;
 	}
 }
@@ -1085,6 +1089,7 @@ setty(f)
 #endif
 
 #ifndef USG3TTY
+# ifdef TIOCGETC
 	if (f == normf) {
 		nttyc = ottyc;
 # ifdef TIOCLGET
@@ -1092,40 +1097,41 @@ setty(f)
 # endif
 	} else
 		ttcharoff();
+# endif
 	tty.sg_flags = f;
 #else
 	if (tty.c_lflag & ICANON)
 		ttcharoff();
 	tty = f;
 #endif
-	sTTY(1);
+	ex_sTTY(1);
 	return (ot);
 }
 
-gTTY(i)
+ex_gTTY(i)
 	int i;
 {
 
 #ifndef USG3TTY
 	ignore(gtty(i, &tty));
 # ifdef TIOCGETC
-	ioctl(i, TIOCGETC, &ottyc);
+	ioctl(i, TIOCGETC, (char *) &ottyc);
 	nttyc = ottyc;
 # endif
 # ifdef TIOCGLTC
-	ioctl(i, TIOCGLTC, &olttyc);
+	ioctl(i, TIOCGLTC, (char *) &olttyc);
 	nlttyc = olttyc;
 # endif
 #else
-	ioctl(i, TCGETA, &tty);
+	ioctl(i, TCGETA, (char *) &tty);
 #endif
 }
 
 /*
- * sTTY: set the tty modes on file descriptor i to be what's
+ * ex_sTTY: set the tty modes on file descriptor i to be what's
  * currently in global "tty".  (Also use nttyc if needed.)
  */
-sTTY(i)
+ex_sTTY(i)
 	int i;
 {
 
@@ -1138,7 +1144,7 @@ sTTY(i)
 
 # ifdef TIOCSETN
 	/* Don't flush typeahead if we don't have to */
-	ioctl(i, TIOCSETN, &tty);
+	ioctl(i, TIOCSETN, (char *) &tty);
 # else
 	/* We have to.  Too bad. */
 	stty(i, &tty);
@@ -1146,15 +1152,15 @@ sTTY(i)
 
 # ifdef TIOCGETC
 	/* Update the other random chars while we're at it. */
-	ioctl(i, TIOCSETC, &nttyc);
+	ioctl(i, TIOCSETC, (char *) &nttyc);
 # endif
 # ifdef TIOCSLTC
-	ioctl(i, TIOCSLTC, &nlttyc);
+	ioctl(i, TIOCSLTC, (char *) &nlttyc);
 # endif
 
 #else
 	/* USG 3 very simple: just set everything */
-	ioctl(i, TCSETAW, &tty);
+	ioctl(i, TCSETAW, (char *) &tty);
 #endif
 }
 
@@ -1164,5 +1170,5 @@ sTTY(i)
 noonl()
 {
 
-	putchar(Outchar != termchar ? ' ' : '\n');
+	ex_putchar(Outchar != termchar ? ' ' : '\n');
 }

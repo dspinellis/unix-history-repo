@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)bcopy.c	7.3 (Berkeley) %G%";
+static char *sccsid = "@(#)bcopy.c	7.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,7 +15,7 @@ static char *sccsid = "@(#)bcopy.c	7.3 (Berkeley) %G%";
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bcopy.c	7.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)bcopy.c	7.4 (Berkeley) %G%";
 #endif not lint
 
 /* block copy from from to to, count bytes */
@@ -24,8 +24,12 @@ bcopy(from, to, count)
 	char *from, *to;
 	int count;
 {
-
+#ifndef vms
 	asm("	movc3	12(ap),*4(ap),*8(ap)");
+	/* ARGSUSED */
+#else
+	lib$movc3(&count, from, to);
+#endif
 }
 #else
 	register char *from, *to;

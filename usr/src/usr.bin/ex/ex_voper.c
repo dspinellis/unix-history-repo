@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_voper.c	7.4 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_voper.c	7.5 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -161,7 +161,7 @@ nocount:
 	case 'W':
 	case 'w':
 		wdkind = c & ' ';
-		forbid(lfind(2, cnt, opf, 0) < 0);
+		forbid(lfind(2, cnt, opf, (line *) 0) < 0);
 		vmoving = 0;
 		break;
 
@@ -178,7 +178,7 @@ nocount:
 	case 'e':
 		wdkind = 1;
 ein:
-		forbid(lfind(3, cnt - 1, opf, 0) < 0);
+		forbid(lfind(3, cnt - 1, opf, (line *) 0) < 0);
 		vmoving = 0;
 		break;
 
@@ -715,6 +715,7 @@ slerr:
 	if (vreg && wdot == 0)
 		wdot = dot;
 	(*opf)(c);
+flusho();
 	wdot = NOLINE;
 }
 

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex_tune.h	7.10 (Berkeley) %G%
+ *	@(#)ex_tune.h	7.11 (Berkeley) %G%
  */
 
 /*
@@ -20,12 +20,18 @@
 #define loclibpath(file) "/usr/local/lib/file"
 #define binpath(file) "/usr/ucb/file"
 #define usrpath(file) "/usr/file"
+#ifndef	vms
 #define E_TERMCAP	"/etc/termcap"
+#else
+#define E_TERMCAP	"etc:termcap."
+#endif
 #define B_CSH		"/bin/csh"
 #define	EXRECOVER	libpath(ex3.7recover)
 #define	EXPRESERVE	libpath(ex3.7preserve)
 #ifndef VMUNIX
+#ifndef	vms
 #define	EXSTRINGS	libpath(ex3.7strings)
+#endif
 #endif
 
 /*
@@ -54,9 +60,15 @@
 #define ESIZE		512
 #define CRSIZE		4096
 #else
+#ifdef vms
+#define LBSIZE		1024
+#define	ESIZE		512
+#define	CRSIZE		1024
+#else
 #define	LBSIZE		512		/* Line length */
 #define	ESIZE		128		/* Size of compiled re */
 #define CRSIZE		512
+#endif
 #endif
 #endif
 #define	RHSSIZE		256		/* Size of rhs of substitute */
@@ -87,7 +99,9 @@
  * of the incore line information and could then
  * be reasonably large.
  */
+#ifndef	vms
 #undef NCARGS
+#endif
 #ifndef VMUNIX
 #define	NARGS	100		/* Maximum number of names in "next" */
 #define	NCARGS	LBSIZE		/* Maximum arglist chars in "next" */

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_temp.c	7.5.1.1 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_temp.c	7.6 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -19,6 +19,12 @@ static char *sccsid = "@(#)ex_temp.c	7.5.1.1 (Berkeley) %G%";
  */
 #define	READ	0
 #define	WRITE	1
+
+#ifndef vms
+#define	EPOSITION	7
+#else
+#define	EPOSITION	13
+#endif
 
 char	tfname[40];
 char	rfname[40];
@@ -35,7 +41,8 @@ fileinit()
 	if (tline == INCRMT * (HBLKS+2))
 		return;
 	cleanup(0);
-	close(tfile);
+	if (tfile >= 0)
+		close(tfile);
 	tline = INCRMT * (HBLKS+2);
 	blocks[0] = HBLKS;
 	blocks[1] = HBLKS+1;
@@ -45,24 +52,41 @@ fileinit()
 	iblock2 = -1;
 	oblock = -1;
 	CP(tfname, svalue(DIRECTORY));
-	if (stat(tfname, &stbuf)) {
+#ifndef vms
+	if (stat(tfname, &stbuf))
+#else
+	goto vms_no_check_dir;
+#endif
+	{
 dumbness:
 		if (setexit() == 0)
 			filioerr(tfname);
 		else
 			putNFL();
 		cleanup(1);
-		exit(1);
+		ex_exit(1);
 	}
+#ifndef	vms
 	if ((stbuf.st_mode & S_IFMT) != S_IFDIR) {
 		errno = ENOTDIR;
 		goto dumbness;
 	}
+#else
+vms_no_check_dir:
+#endif
 	ichanged = 0;
 	ichang2 = 0;
+#ifndef	vms
 	ignore(strcat(tfname, "/ExXXXXX"));
+#else
+	ignore(strcat(tfname, "ExXXXXX"));
+#endif
 	for (p = strend(tfname), i = 5, j = getpid(); i > 0; i--, j /= 10)
 		*--p = j % 10 | '0';
+#ifdef vms
+	ignore(strcat(tfname, ".txt.1"));
+	unlink(tfname);
+#endif
 	tfile = creat(tfname, 0600);
 	if (tfile < 0)
 		goto dumbness;
@@ -73,11 +97,14 @@ dumbness:
 	}
 #endif
 	havetmp = 1;
-	close(tfile);
+	if (tfile >= 0)
+		close(tfile);
 	tfile = open(tfname, 2);
 	if (tfile < 0)
 		goto dumbness;
+#ifdef UNIX_SBRK
 /* 	brk((char *)fendcore); */
+#endif
 }
 
 cleanup(all)
@@ -87,12 +114,16 @@ cleanup(all)
 		putpad(TE);
 		flush();
 	}
-	if (havetmp)
+	if (havetmp) {
+		if (tfile >= 0)
+			close(tfile);
 		unlink(tfname);
+	}
 	havetmp = 0;
 	if (all && rfile >= 0) {
+		if (rfile >= 0)
+			close(rfile);
 		unlink(rfname);
-		close(rfile);
 		rfile = -1;
 	}
 }
@@ -152,8 +183,10 @@ getblock(atl, iof)
 	int iof;
 {
 	register int bno, off;
+#ifdef CRYPT
         register char *p1, *p2;
         register int n;
+#endif
 	
 	bno = (atl >> OFFBTS) & BLKMSK;
 	off = (atl << SHFT) & LBTMSK;
@@ -200,7 +233,11 @@ getblock(atl, iof)
 }
 
 #ifdef	VMUNIX
+#ifdef	vms
+#define	INCORB	32
+#else
 #define	INCORB	64
+#endif
 char	incorb[INCORB+1][BUFSIZ];
 #define	pagrnd(a)	((char *)(((int)a)&~(BUFSIZ-1)))
 int	stilinc;	/* up to here not written yet */
@@ -310,7 +347,9 @@ oops:
 	 * but can result in pregnant pauses between commands
 	 * when the TSYNC call is made, so...
 	 */
+#ifndef vms
 	(void) fsync(tfile);
+#endif
 #endif
 }
 
@@ -372,12 +411,13 @@ regio(b, iofcn)
 
 	if (rfile == -1) {
 		CP(rfname, tfname);
-		*(strend(rfname) - 7) = 'R';
+		*(strend(rfname) - EPOSITION) = 'R';
 		rfile = creat(rfname, 0600);
 		if (rfile < 0)
 oops:
 			filioerr(rfname);
-		close(rfile);
+		else
+			close(rfile);
 		rfile = open(rfname, 2);
 		if (rfile < 0)
 			goto oops;
@@ -402,7 +442,7 @@ REGblk()
 				j++, m >>= 1;
 			rused[i] |= (1 << j);
 #ifdef RDEBUG
-			printf("allocating block %d\n", i * 16 + j);
+			ex_printf("allocating block %d\n", i * 16 + j);
 #endif
 			return (i * 16 + j);
 		}
@@ -435,7 +475,7 @@ KILLreg(c)
 	sp->rg_flags = sp->rg_nleft = 0;
 	while (rblock != 0) {
 #ifdef RDEBUG
-		printf("freeing block %d\n", rblock);
+		ex_printf("freeing block %d\n", rblock);
 #endif
 		rused[rblock / 16] &= ~(1 << (rblock % 16));
 		regio(rblock, shread);

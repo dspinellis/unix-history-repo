@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex.h	7.7.1.1 (Berkeley) %G%
+ *	@(#)ex.h	7.8 (Berkeley) %G%
  */
 
 #ifdef V6
@@ -47,12 +47,21 @@
  * of additional terminal descriptions you add to the termcap data base.
  */
 
+#ifndef	vms
 #include <sys/param.h>
+#else
+#define	MAXBSIZE	1024	/* Maximum block size */
+#include <types.h>
+#endif
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
 #include <setjmp.h>
+#ifndef	vms
 #include <sys/stat.h>
+#else
+#include <stat.h>
+#endif
 
 #ifndef var
 #define var	extern
@@ -70,7 +79,11 @@
 #include <termio.h>
 #define CBREAK xxxxx
 #else
+#ifndef	vms
 #include <sgtty.h>
+#else
+#include "vmstty.h"
+#endif
 #endif
 
 extern	int errno;
@@ -111,6 +124,11 @@ struct	option {
 
 extern	 struct	option options[NOPTS + 1];
 
+#ifdef vms
+#define	st_blksize	st_fab_mrs
+#define	_exit(n)	vms_exit(n)
+#define	fork()		vfork()
+#endif
 
 /*
  * The editor does not normally use the standard i/o library.  Because
@@ -125,13 +143,11 @@ extern	 struct	option options[NOPTS + 1];
  * are not debugging.  Such a modified printf exists in "printf.c" here.
  */
 #ifdef TRACE
-#	include <stdio.h>
+# include <stdio.h>
 	var	FILE	*trace;
 	var	bool	trubble;
 	var	bool	techoin;
 	var	char	tracbuf[BUFSIZ];
-#	undef	putchar
-#	undef	getchar
 #else
 # ifdef	VMUNIX
 #	define	BUFSIZ	1024
@@ -156,7 +172,9 @@ extern	 struct	option options[NOPTS + 1];
  */
 #define	QUOTE	0200
 #define	TRIM	0177
+#ifndef vms
 #undef CTRL
+#endif
 #define	CTRL(c)	('c' & 037)
 #define	NL	CTRL(j)
 #define	CR	CTRL(m)
@@ -178,7 +196,7 @@ var	bool	dosusp;		/* Do SIGTSTP in visual when ^Z typed */
 var	bool	edited;		/* Current file is [Edited] */
 var	line	*endcore;	/* Last available core location */
 extern	 bool	endline;	/* Last cmd mode command ended with \n */
-#ifndef VMUNIX
+#ifdef EXSTRINGS
 var	short	erfile;		/* Error message file unit */
 #endif
 var	line	*fendcore;	/* First address in line pointer space */
@@ -323,7 +341,7 @@ var	line	*undadot;	/* If we saved all lines, dot reverts here */
 
 extern	int	(*Outchar)();
 extern	int	(*Pline)();
-extern	int	(*Putchar)();
+extern	int	(*Put_char)();
 var	int	(*oldhup)();
 int	(*setlist())();
 int	(*setnorm())();
@@ -334,6 +352,9 @@ char	*cgoto();
 char	*genindent();
 char	*getblock();
 char	*getenv();
+#ifdef	vms
+char	*getlog();
+#endif
 line	*getmark();
 char	*longname();
 char	*mesg();
@@ -357,7 +378,7 @@ char	*vskipwh();
 int	put();
 int	putreg();
 int	YANKreg();
-int	delete();
+int	ex_delete();
 int	execl();
 int	filter();
 int	getfile();

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_cmdsub.c	7.7 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_cmdsub.c	7.8 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -91,12 +91,12 @@ pargs()
 
 	for (ac = 0; ac < argc0; ac++) {
 		if (ac != 0)
-			putchar(' ' | QUOTE);
+			ex_putchar(' ' | QUOTE);
 		if (ac + argc == argc0 - 1)
-			printf("[");
+			ex_printf("[");
 		lprintf("%s", as);
 		if (ac + argc == argc0 - 1)
-			printf("]");
+			ex_printf("]");
 		as = av ? *++av : strend(as) + 1;
 	}
 	noonl();
@@ -106,7 +106,7 @@ pargs()
  * Delete lines; two cases are if we are really deleting,
  * more commonly we are just moving lines to the undo save area.
  */
-delete(hush)
+ex_delete(hush)
 	bool hush;
 {
 	register line *a1, *a2;
@@ -230,7 +230,7 @@ join(c)
 		cp--;
 	}
 	strcLIN(genbuf);
-	delete(0);
+	ex_delete(0);
 	jcount = 1;
 	if (FIXUNDO)
 		undap1 = undap2 = addr1;
@@ -491,7 +491,7 @@ tagfind(quick)
 
 		while (!iswhite(peekchar()) && !endcmd(peekchar()))
 			if (lp < &lasttag[sizeof lasttag - 2])
-				*lp++ = getchar();
+				*lp++ = ex_getchar();
 			else
 				ignchar();
 		*lp++ = 0;
@@ -500,7 +500,7 @@ badtag:
 			error("Bad tag|Give one tag per line");
 	} else if (lasttag[0] == 0)
 		error("No previous tag");
-	c = getchar();
+	c = ex_getchar();
 	if (!endcmd(c))
 		goto badtag;
 	if (c == EOF)
@@ -564,7 +564,7 @@ badtag:
 			if(tgets(linebuf, sizeof linebuf, iof)==NULL)
 				goto goleft;
 #ifdef TDEBUG
-			printf("tag: %o %o %o %s\n", bot, mid, top, linebuf);
+			ex_printf("tag: %o %o %o %s\n", bot, mid, top, linebuf);
 #endif
 #endif
 			while (*cp && *lp == *cp)
@@ -718,7 +718,7 @@ zop(hadpr)
 	znoclear = 0;
 	zweight = 0;
 	excl = exclam();
-	switch (c = op = getchar()) {
+	switch (c = op = ex_getchar()) {
 
 	case '^':
 		zweight = 1;
@@ -730,7 +730,7 @@ zop(hadpr)
 		}
 	case '=':
 	case '.':
-		c = getchar();
+		c = ex_getchar();
 		break;
 
 	case EOF:
@@ -744,7 +744,7 @@ zop(hadpr)
 	if (isdigit(c)) {
 		lines = c - '0';
 		for(;;) {
-			c = getchar();
+			c = ex_getchar();
 			if (!isdigit(c))
 				break;
 			lines *= 10;
@@ -830,7 +830,7 @@ zop2(lines, op)
 		return;
 	if (op == EOF && zhadpr) {
 		getline(*addr1);
-		putchar('\r' | QUOTE);
+		ex_putchar('\r' | QUOTE);
 		shudclob = 1;
 	} else if (znoclear == 0 && CL != NOSTR && !inopen) {
 		flush1();
@@ -854,7 +854,7 @@ splitit()
 	register int l;
 
 	for (l = COLUMNS > 80 ? 40 : COLUMNS / 2; l > 0; l--)
-		putchar('-');
+		ex_putchar('-');
 	putnl();
 }
 
@@ -870,7 +870,7 @@ plines(adr1, adr2, movedot)
 		getline(*addr);
 		pline(lineno(addr));
 		if (inopen)
-			putchar('\n' | QUOTE);
+			ex_putchar('\n' | QUOTE);
 		if (movedot)
 			dot = addr;
 	}
@@ -1096,9 +1096,9 @@ mapcmd(un, ab)
 		for (i=0; mp[i].mapto; i++)
 			if (mp[i].cap) {
 				lprintf("%s", mp[i].descr);
-				putchar('\t');
+				ex_putchar('\t');
 				lprintf("%s", mp[i].cap);
-				putchar('\t');
+				ex_putchar('\t');
 				lprintf("%s", mp[i].mapto);
 				putNFL();
 			}
@@ -1107,9 +1107,9 @@ mapcmd(un, ab)
 
 	ignore(skipwh());
 	for (p=lhs; ; ) {
-		c = getchar();
+		c = ex_getchar();
 		if (c == CTRL(v)) {
-			c = getchar();
+			c = ex_getchar();
 		} else if (!un && any(c, " \t")) {
 			/* End of lhs */
 			break;
@@ -1130,9 +1130,9 @@ mapcmd(un, ab)
 	if (skipend())
 		error("Missing rhs");
 	for (p=rhs; ; ) {
-		c = getchar();
+		c = ex_getchar();
 		if (c == CTRL(v)) {
-			c = getchar();
+			c = ex_getchar();
 		} else if (endcmd(c) && c!='"') {
 			ungetchar(c);
 			break;

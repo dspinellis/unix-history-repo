@@ -3,21 +3,21 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.13.1.1 (Berkeley) %G%
+#	@(#)Makefile	7.14 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.13.1.1 (Berkeley) %G%
+#	@(#)Makefile	7.14 (Berkeley) %G%
 #
 #
 # Copyright (c) 1980 Regents of the University of California.
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.13.1.1 (Berkeley) %G%
+#	@(#)Makefile	7.14 (Berkeley) %G%
 #
 VERSION=3.7
 #
@@ -95,7 +95,7 @@ tags:	/tmp
 
 ${OBJS}: ${HDRS}
 
-ex_vars.h:
+ex_vars.h:	ex_data.c
 	csh makeoptions ${CFLAGS}
 
 bcopy.o:	bcopy.c

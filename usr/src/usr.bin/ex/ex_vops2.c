@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_vops2.c	6.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_vops2.c	6.9 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -31,7 +31,7 @@ bleep(i, cp)
 
 	i -= column(cp);
 	do
-		putchar('\\' | QUOTE);
+		ex_putchar('\\' | QUOTE);
 	while (--i >= 0);
 	rubble = 1;
 }
@@ -75,7 +75,7 @@ takeout(BUF)
 		wcursor = cursor;
 		cursor = cp;
 	}
-	setBUF(BUF);
+	ex_setBUF(BUF);
 	if ((BUF[0] & (QUOTE|TRIM)) == OVERBUF)
 		beep();
 }
@@ -120,7 +120,9 @@ vappend(ch, cnt, indent)
 	bool escape;
 	int repcnt, savedoomed;
 	short oldhold = hold;
+#ifdef	SIGWINCH
 	int oldmask;
+#endif
 
 	/*
 	 * Before a move in hardopen when the line is dirty
@@ -210,7 +212,9 @@ vappend(ch, cnt, indent)
 	 */
 	gobblebl = 0;
 
+#ifdef	SIGWINCH
 	oldmask = sigblock(sigmask(SIGWINCH));
+#endif
 	/*
 	 * Text gathering loop.
 	 * New text goes into genbuf starting at gcursor.
@@ -270,7 +274,7 @@ vappend(ch, cnt, indent)
 
 				Outchar = vinschar;
 				hold |= HOLDQIK;
-				printf("%s", genbuf);
+				ex_printf("%s", genbuf);
 				hold = oldhold;
 				Outchar = vputchar;
 			}
@@ -388,7 +392,9 @@ vappend(ch, cnt, indent)
 	doomed = 0;
 	wcursor = cursor;
 	vmove();
+#ifdef	SIGWINCH
 	(void)sigsetmask(oldmask);
+#endif
 }
 
 /*
@@ -470,7 +476,7 @@ vgetline(cnt, gcursor, aescaped, commch)
 			c &= (QUOTE|TRIM);
 		ch = c;
 		maphopcnt = 0;
-		if (vglobp == 0 && Peekkey == 0 && commch != 'r')
+		if (vglobp == 0 && Peek_key == 0 && commch != 'r')
 			while ((ch = map(c, immacs)) != c) {
 				c = ch;
 				if (!value(REMAP))
@@ -577,7 +583,7 @@ vbackup:
 			 */
 			case '\\':
 				x = destcol, y = destline;
-				putchar('\\');
+				ex_putchar('\\');
 				vcsync();
 				c = getkey();
 #ifndef USG3TTY
@@ -607,7 +613,7 @@ vbackup:
 			case CTRL(q):
 			case CTRL(v):
 				x = destcol, y = destline;
-				putchar('^');
+				ex_putchar('^');
 				vgoto(y, x);
 				c = getkey();
 #ifdef TIOCSETC
@@ -692,22 +698,22 @@ vbackup:
 		 */
 		cstr[0] = c;
 		if (anyabbrs && gcursor > ogcursor && !wordch(cstr) && wordch(gcursor-1)) {
-				int wdtype, abno;
+			int wdtype, abno;
 
-				cstr[1] = 0;
-				wdkind = 1;
-				cp = gcursor - 1;
-				for (wdtype = wordch(cp - 1);
-				    cp > ogcursor && wordof(wdtype, cp - 1); cp--)
-					;
-				*gcursor = 0;
-				for (abno=0; abbrevs[abno].mapto; abno++) {
-					if (eq(cp, abbrevs[abno].cap)) {
-						macpush(cstr, 0);
-						macpush(abbrevs[abno].mapto);
-						goto vbackup;
-					}
+			cstr[1] = 0;
+			wdkind = 1;
+			cp = gcursor - 1;
+			for (wdtype = wordch(cp - 1);
+			    cp > ogcursor && wordof(wdtype, cp - 1); cp--)
+				;
+			*gcursor = 0;
+			for (abno=0; abbrevs[abno].mapto; abno++) {
+				if (eq(cp, abbrevs[abno].cap)) {
+					macpush(cstr, 0);
+					macpush(abbrevs[abno].mapto, 1);
+					goto vbackup;
 				}
+			}
 		}
 
 		switch (c) {
@@ -818,8 +824,7 @@ vbackup:
 			}
 def:
 			if (!backsl) {
-				int cnt;
-				putchar(c);
+				ex_putchar(c);
 				flush();
 			}
 			if (gcursor > &genbuf[LBSIZE - 2])
