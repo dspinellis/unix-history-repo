@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 2.1 %G%"; */
+/* static char sccsid[] = "@(#)0.h 2.2 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -79,7 +79,7 @@ bool	profflag;
  */
 
 #define	STRINC	1024		/* string space increment */
-#define	TRINC	512		/* tree space increment */
+#define	TRINC	1024		/* tree space increment */
 #define	HASHINC	509		/* hash table size in words, each increment */
 #define	NLINC	56		/* namelist increment size in nl structs */
 
@@ -113,7 +113,7 @@ bool	profflag;
 #endif ADDR16
 #define	MAXHASH	(4 * TABLE_MULTIPLIER)
 #define	MAXNL	(12 * TABLE_MULTIPLIER)
-#define	MAXTREE	(30 * TABLE_MULTIPLIER)
+#define	MAXTREE	(40 * TABLE_MULTIPLIER)
 /*
  * MAXDEPTH is the depth of the parse stack.
  * STACK_MULTIPLIER is for increasing its size.
