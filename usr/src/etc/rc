@@ -1,4 +1,4 @@
-#	@(#)rc	8.1 (Berkeley) %G%
+#	@(#)rc	8.2 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -18,10 +18,10 @@ export PATH
 
 if [ -r /fastboot ]
 then
-	echo Fast boot ... skipping disk checks
+	echo "Fast boot: skipping disk checks."
 elif [ $1x = autobootx ]
 then
-	echo Automatic reboot in progress...
+	echo "Automatic boot in progress: starting file system checks."
 	fsck -p
 	case $? in
 	0)
@@ -30,16 +30,17 @@ then
 		exit 1
 		;;
 	4)
+		echo "Rebooting..."
 		reboot
-		echo "reboot failed... help!"
+		echo "Reboot failed; help!"
 		exit 1
 		;;
 	8)
-		echo "Automatic file system check failed... help!"
+		echo "Automatic file system check failed; help!"
 		exit 1
 		;;
 	12)
-		echo "Reboot interrupted"
+		echo "Boot interrupted."
 		exit 1
 		;;
 	130)
@@ -47,13 +48,13 @@ then
 		exit 1
 		;;
 	*)
-		echo "Unknown error in reboot"
+		echo "Unknown error; help!"
 		exit 1
 		;;
 	esac
 fi
 
-trap "echo 'Reboot interrupted'; exit 1" 3
+trap "echo 'Boot interrupted.'; exit 1" 3
 
 swapon -a
 
