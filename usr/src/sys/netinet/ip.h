@@ -1,4 +1,4 @@
-/* ip.h 1.1 81/10/14 */
+/* ip.h 1.2 81/10/14 */
 struct ip {                     /* ip leader */
 	unsigned char ip_hl:4,          /* header length */
 		ip_v:4;                 /* version */
@@ -39,4 +39,9 @@ struct ipq {                    /* ip reass.q header */
 #define IPHILINK 158
 #define IPLINK IPLOLINK
 #define MAXTTL 255              /* maximum time to live (seconds) */
+
+#define	ip_bswap(p) { \
+	p->ip_len = ntohs(p->ip_len); \
+	p->ip_id = ntohs(p->ip_id); \
+	p->ip_off = ntohs(p->ip_off); }
 
