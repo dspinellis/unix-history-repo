@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.77		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.78		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -173,6 +173,7 @@ extern struct hdrinfo	HdrInfo[];
 # define H_ACHECK	00040	/* ditto, but always (not just default) */
 # define H_FORCE	00100	/* force this field, even if default */
 # define H_ADDR		00200	/* this field contains addresses */
+# define H_FROM		00400	/* this is a from-type field */
 /*
 **  Envelope structure.
 **	This structure defines the message itself.  There is usually
@@ -409,7 +410,8 @@ extern char	*QueueDir;	/* location of queue directory */
 EXTERN char	*ControlFile;	/* when queued, name of control file temp */
 EXTERN char	*MsgId;		/* Message-Id: for this message */
 EXTERN time_t	CurTime;	/* time of this message */
-EXTERN jmp_buf	TickFrame;	/* frame for clock ticks to jump to */
+EXTERN jmp_buf	TopFrame;	/* branch-to-top-of-loop-on-error frame */
+EXTERN bool	QuickAbort;	/*  .... but only if we want a quick abort */
 extern int	ReadTimeout;	/* timeout on reads before clock ticks */
 extern int	LogLevel;	/* level of logging to perform */
 /*
