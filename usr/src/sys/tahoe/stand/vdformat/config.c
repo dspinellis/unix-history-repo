@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)config.c	1.3 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)config.c	1.4 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -38,7 +38,7 @@ struct	disklabel vdproto[] = {
 	{ DISKMAGIC, DTYPE_SMD, 0, "egl", "newly formatted",
 		512, 44, 20, 842, 44*20, 44*20*842,
 		0, 0, 0, 3961, 1, 0, 0, 900, 0, 0,
-		0, 27720, (long)&defpats, 0, 0, 0, 0, 0, 0, 0,
+		0, 28160, (long)&defpats, 0, 0, 0, 0, 0, 0, 0,
 		DISKMAGIC, 0, 1, BBSIZE, SBSIZE,
 		{ 44*20*842, 0 }
 	},
