@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)readsym.c 1.2 %G%";
+static char sccsid[] = "@(#)readsym.c 1.3 %G%";
 
 /*
  * SYM representation dependent routines for reading in the
@@ -29,57 +29,57 @@ LOCAL SYM *findfunc();
 SYM *readsym(fp)
 FILE *fp;
 {
-	register SYM *s, *t;
-	SYM cursym;
-	static SYM *func;
+    register SYM *s, *t;
+    SYM cursym;
+    static SYM *func;
 
-	t = &cursym;
-	getsym(fp, t);
-	if (isblock(t)) {
-#		if (isvaxpx)
-			if (t->class == PROG) {
-				t->symvalue.funcv.codeloc = HEADER_BYTES;
-			}
-#		endif
-		s = findblock(t);
-		if (s->class == PROG) {
-			program = s;
-			s->func = NIL;
-		} else {
-			s->func = func;
-		}
-	} else if (t->class == BADUSE) {
-		func = enterblock(t);
-		return(func);
+    t = &cursym;
+    getsym(fp, t);
+    if (isblock(t)) {
+#       if (isvaxpx)
+	    if (t->class == PROG) {
+		t->symvalue.funcv.codeloc = HEADER_BYTES;
+	    }
+#       endif
+	s = findblock(t);
+	if (s->class == PROG) {
+	    program = s;
+	    s->func = NIL;
 	} else {
-		s = st_insert(symtab, t->symbol);
-		t->next_sym = s->next_sym;
-		*s = *t;
-		if (s->class == FVAR) {
-			s->func = findfunc(s);
-		} else {
-			s->func = func;
-		}
+	    s->func = func;
 	}
+    } else if (t->class == BADUSE) {
+	func = enterblock(t);
+	return(func);
+    } else {
+	s = st_insert(symtab, t->symbol);
+	t->next_sym = s->next_sym;
+	*s = *t;
+	if (s->class == FVAR) {
+	    s->func = findfunc(s);
+	} else {
+	    s->func = func;
+	}
+    }
 
 /*
  * This glitch is pi's fault.  It gives string constants
  * a type whose symbol number is -1.  For what reason, I know not.
  */
-	if (s->type == (SYM *) -1) {
-		s->type = NIL;
-	} else {
-		chkpatch(&s->type);
-	}
-	chkpatch(&s->chain);
-	if (s->class == RECORD || s->class == VARNT) {
-		chkpatch(&s->symvalue.varnt.vtorec);
-		chkpatch(&s->symvalue.varnt.vtag);
-	}
-	if (isblock(s)) {
-		fixparams(s);
-	}
-	return(s);
+    if (s->type == (SYM *) -1) {
+	s->type = NIL;
+    } else {
+	chkpatch(&s->type);
+    }
+    chkpatch(&s->chain);
+    if (s->class == RECORD || s->class == VARNT) {
+	chkpatch(&s->symvalue.varnt.vtorec);
+	chkpatch(&s->symvalue.varnt.vtag);
+    }
+    if (isblock(s)) {
+	fixparams(s);
+    }
+    return(s);
 }
 
 /*
@@ -90,26 +90,26 @@ LOCAL getsym(fp, t)
 FILE *fp;
 SYM *t;
 {
-	OBJSYM osym;
-	register OBJSYM *o;
+    OBJSYM osym;
+    register OBJSYM *o;
 
-	get(fp, osym);
-	o = &osym;
-	if (o->strindex == 0) {
-		t->symbol = NIL;
-	} else {
-		t->symbol = &stringtab[o->strindex];
-	}
-	t->class = o->oclass;
-	t->blkno = o->oblkno;
-	t->type = (SYM *) o->typno;
-	t->chain = (SYM *) o->chno;
-	t->symvalue.rangev.lower = o->osymvalue.orangev.lower;
-	t->symvalue.rangev.upper = o->osymvalue.orangev.upper;
-	if (t->class == RECORD || t->class == VARNT) {
-		t->symvalue.varnt.vtorec = (SYM *) o->osymvalue.ovarnt.vtorecno;
-		t->symvalue.varnt.vtag = (SYM *) o->osymvalue.ovarnt.vtagno;
-	}
+    get(fp, osym);
+    o = &osym;
+    if (o->strindex == 0) {
+	t->symbol = NIL;
+    } else {
+	t->symbol = &stringtab[o->strindex];
+    }
+    t->class = o->oclass;
+    t->blkno = o->oblkno;
+    t->type = (SYM *) o->typno;
+    t->chain = (SYM *) o->chno;
+    t->symvalue.rangev.lower = o->osymvalue.orangev.lower;
+    t->symvalue.rangev.upper = o->osymvalue.orangev.upper;
+    if (t->class == RECORD || t->class == VARNT) {
+	t->symvalue.varnt.vtorec = (SYM *) o->osymvalue.ovarnt.vtorecno;
+	t->symvalue.varnt.vtag = (SYM *) o->osymvalue.ovarnt.vtagno;
+    }
 }
 
 /*
@@ -120,23 +120,23 @@ SYM *t;
 LOCAL SYM *findblock(t)
 SYM *t;
 {
-	SYM *s;
+    SYM *s;
 
-	s = st_lookup(symtab, t->symbol);
-	while (s != NIL &&
-	    (s->class != FUNC || s->type != NIL ||
-	    strcmp(s->symbol, t->symbol) != 0)) {
-		s = s->next_sym;
-	}
-	if (s == NIL) {
-		panic("can't find %s", t->symbol);
-	}
-	t->next_sym = s->next_sym;
-	*s = *t;
-	s->symvalue.funcv.codeloc -= HEADER_BYTES;
-	findbeginning(s);
-	newfunc(s);
-	return(s);
+    s = st_lookup(symtab, t->symbol);
+    while (s != NIL &&
+	(s->class != FUNC || s->type != NIL ||
+	strcmp(s->symbol, t->symbol) != 0)) {
+	s = s->next_sym;
+    }
+    if (s == NIL) {
+	panic("can't find %s", t->symbol);
+    }
+    t->next_sym = s->next_sym;
+    *s = *t;
+    s->symvalue.funcv.codeloc -= HEADER_BYTES;
+    findbeginning(s);
+    newfunc(s);
+    return(s);
 }
 
 /*
@@ -146,15 +146,15 @@ SYM *t;
 LOCAL SYM *enterblock(t)
 SYM *t;
 {
-	SYM *s;
+    SYM *s;
 
-	s = st_insert(symtab, t->symbol);
-	t->next_sym = s->next_sym;
-	*s = *t;
-	backpatch();
-	s->class = FUNC;
-	s->type = NIL;
-	return(s);
+    s = st_insert(symtab, t->symbol);
+    t->next_sym = s->next_sym;
+    *s = *t;
+    backpatch();
+    s->class = FUNC;
+    s->type = NIL;
+    return(s);
 }
 
 /*
@@ -168,11 +168,11 @@ SYM *t;
 LOCAL fixparams(f)
 SYM *f;
 {
-	register SYM *s;
+    register SYM *s;
 
-	for (s = f->chain; s != NIL; s = s->chain) {
-		s->func = f;
-	}
+    for (s = f->chain; s != NIL; s = s->chain) {
+	s->func = f;
+    }
 }
 
 /*
@@ -183,21 +183,21 @@ SYM *f;
  */
 
 #define notfunc(f, fv) (\
-	f->class != FUNC || f->type != NIL || \
-	strcmp(f->symbol, fv->symbol) != 0 \
-	)
+    f->class != FUNC || f->type != NIL || \
+    strcmp(f->symbol, fv->symbol) != 0 \
+    )
 
 LOCAL SYM *findfunc(fv)
 SYM *fv;
 {
-	register SYM *t;
+    register SYM *t;
 
-	t = st_lookup(symtab, fv->symbol);
-	while (t != NIL && notfunc(t, fv)) {
-		t = t->next_sym;
-	}
-	if (t == NIL) {
-		panic("no func for funcvar %s", fv->symbol);
-	}
-	return(t);
+    t = st_lookup(symtab, fv->symbol);
+    while (t != NIL && notfunc(t, fv)) {
+	t = t->next_sym;
+    }
+    if (t == NIL) {
+	panic("no func for funcvar %s", fv->symbol);
+    }
+    return(t);
 }

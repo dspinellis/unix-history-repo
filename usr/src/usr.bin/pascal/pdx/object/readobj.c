@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)readobj.c 1.4 %G%";
+static char sccsid[] = "@(#)readobj.c 1.5 %G%";
 
 /*
  * Read in the namelist from the obj file.
@@ -66,7 +66,7 @@ char *file;
 }
 
 /*
- * allocate and read in file name information table
+ * Allocate and read in file name information table.
  */
 
 LOCAL readfiles(fp)
@@ -95,7 +95,7 @@ register FILE *fp;
 }
 
 /*
- * allocate and read in line number information table
+ * Allocate and read in line number information table.
  */
 
 LOCAL readlines(fp)
@@ -115,7 +115,9 @@ FILE *fp;
 	lp->line = 0;
     }
     for (ftp = &filetab[0]; ftp < &filetab[nlhdr.nfiles]; ftp++) {
-	linetab[ftp->lineindex].line = ftp->line;
+	if (ftp->lineindex < nlhdr.nlines) {
+	    linetab[ftp->lineindex].line = ftp->line;
+	}
     }
     oline = 0;
     oaddr = 0;
@@ -132,7 +134,7 @@ FILE *fp;
 }
 
 /*
- * read in the symbols
+ * Read in the symbols.
  */
 
 readsyms(fp)
