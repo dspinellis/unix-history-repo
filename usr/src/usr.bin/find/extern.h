@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.2 (Berkeley) %G%
+ *	@(#)extern.h	5.3 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -36,6 +36,7 @@ PLAN	*c_name __P((char *));
 PLAN	*c_newer __P((char *));
 PLAN	*c_nogroup __P((void));
 PLAN	*c_nouser __P((void));
+PLAN	*c_path __P((char *));
 PLAN	*c_perm __P((char *));
 PLAN	*c_print __P((void));
 PLAN	*c_prune __P((void));

@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -27,17 +27,13 @@ static char sccsid[] = "@(#)function.c	5.17 (Berkeley) %G%";
 #include <string.h>
 #include "find.h"
 
-#define	FIND_EQUAL	0
-#define	FIND_LESSTHAN	1
-#define	FIND_GREATER	2
-
 #define	COMPARE(a, b) { \
 	switch(plan->flags) { \
-	case FIND_EQUAL: \
+	case F_EQUAL: \
 		return(a == b); \
-	case FIND_LESSTHAN: \
+	case F_LESSTHAN: \
 		return(a < b); \
-	case FIND_GREATER: \
+	case F_GREATER: \
 		return(a > b); \
 	} \
 	return(0); \
@@ -61,14 +57,14 @@ find_parsenum(plan, option, str, endch)
 	switch(*str) {
 	case '+':
 		++str;
-		plan->flags = FIND_GREATER;
+		plan->flags = F_GREATER;
 		break;
 	case '-':
 		++str;
-		plan->flags = FIND_LESSTHAN;
+		plan->flags = F_LESSTHAN;
 		break;
 	default:
-		plan->flags = FIND_EQUAL;
+		plan->flags = F_EQUAL;
 		break;
 	}
     
@@ -193,7 +189,7 @@ f_exec(plan, entry)
 			brace_subst(plan->e_orig[cnt], &plan->e_argv[cnt],
 			    entry->fts_path, plan->e_len[cnt]);
 
-	if (plan->flags && !queryuser(plan->e_argv))
+	if (plan->flags == F_NEEDOK && !queryuser(plan->e_argv))
 		return(0);
 
 	switch(pid = vfork()) {
@@ -234,7 +230,8 @@ c_exec(argvp, isok)
 	isoutput = 1;
     
 	new = palloc(N_EXEC, f_exec);
-	new->flags = isok;
+	if (isok)
+		new->flags = F_NEEDOK;
 
 	for (ap = argv = *argvp;; ++ap) {
 		if (!*ap)
@@ -298,7 +295,7 @@ f_fstype(plan, entry)
 	static short val;
 	char *p, save[2];
 
-	/* only check when we cross mount point */
+	/* Only check when we cross mount point. */
 	if (first || curdev != entry->fts_statb.st_dev) {
 		curdev = entry->fts_statb.st_dev;
 
@@ -329,10 +326,21 @@ f_fstype(plan, entry)
 		}
 
 		first = 0;
-		val = plan->flags == MOUNT_NONE ? sb.f_flags : sb.f_type;
+		switch(plan->flags) {
+		case F_MTFLAG:
+			val = sb.f_flags;
+			break;
+		case F_MTTYPE:
+			val = sb.f_type;
+			break;
+		}
 	}
-	return(plan->flags == MOUNT_NONE ?
-	    val & MNT_LOCAL : val == plan->flags);
+	switch(plan->flags) {
+	case F_MTFLAG:
+		return(val & plan->mt_data);	
+	case F_MTTYPE:
+		return(val == plan->mt_data);
+	}
 }
  
 PLAN *
@@ -347,31 +355,43 @@ c_fstype(arg)
 	switch(*arg) {
 	case 'l':
 		if (!strcmp(arg, "local")) {
-			new->flags = MOUNT_NONE;
+			new->flags = F_MTFLAG;
+			new->mt_data = MNT_LOCAL;
 			return(new);
 		}
 		break;
 	case 'm':
 		if (!strcmp(arg, "mfs")) {
-			new->flags = MOUNT_MFS;
+			new->flags = F_MTTYPE;
+			new->mt_data = MOUNT_MFS;
 			return(new);
 		}
 		break;
 	case 'n':
 		if (!strcmp(arg, "nfs")) {
-			new->flags = MOUNT_NFS;
+			new->flags = F_MTTYPE;
+			new->mt_data = MOUNT_NFS;
 			return(new);
 		}
 		break;
 	case 'p':
 		if (!strcmp(arg, "pc")) {
-			new->flags = MOUNT_PC;
+			new->flags = F_MTTYPE;
+			new->mt_data = MOUNT_PC;
+			return(new);
+		}
+		break;
+	case 'r':
+		if (!strcmp(arg, "rdonly")) {
+			new->flags = F_MTFLAG;
+			new->mt_data = MNT_RDONLY;
 			return(new);
 		}
 		break;
 	case 'u':
 		if (!strcmp(arg, "ufs")) {
-			new->flags = MOUNT_UFS;
+			new->flags = F_MTTYPE;
+			new->mt_data = MOUNT_UFS;
 			return(new);
 		}
 		break;
@@ -491,6 +511,35 @@ c_ls()
 }
 
 /*
+ * -mtime n functions --
+ *
+ *	True if the difference between the file modification time and the
+ *	current time is n 24 hour periods.
+ */
+f_mtime(plan, entry)
+	PLAN *plan;
+	FTSENT *entry;
+{
+	extern time_t now;
+
+	COMPARE((now - entry->fts_statb.st_mtime + SECSPERDAY - 1) /
+	    SECSPERDAY, plan->t_data);
+}
+ 
+PLAN *
+c_mtime(arg)
+	char *arg;
+{
+	PLAN *new;
+
+	ftsoptions &= ~FTS_NOSTAT;
+
+	new = palloc(N_MTIME, f_mtime);
+	new->t_data = find_parsenum(new, "-mtime", arg, (char *)NULL);
+	return(new);
+}
+
+/*
  * -name functions --
  *
  *	True if the basename of the filename being examined
@@ -593,6 +642,30 @@ c_nouser()
 }
  
 /*
+ * -path functions --
+ *
+ *	True if the path of the filename being examined
+ *	matches pattern using Pattern Matching Notation S3.14
+ */
+f_path(plan, entry)
+	PLAN *plan;
+	FTSENT *entry;
+{
+	return(fnmatch(plan->c_data, entry->fts_path, FNM_QUOTE));
+}
+ 
+PLAN *
+c_path(pattern)
+	char *pattern;
+{
+	PLAN *new;
+
+	new = palloc(N_NAME, f_path);
+	new->c_data = pattern;
+	return(new);
+}
+ 
+/*
  * -perm functions --
  *
  *	The mode argument is used to represent file mode bits.  If it starts
@@ -607,7 +680,7 @@ f_perm(plan, entry)
 
 	mode = entry->fts_statb.st_mode &
 	    (S_ISUID|S_ISGID|S_ISTXT|S_IRWXU|S_IRWXG|S_IRWXO);
-	if (plan->flags)
+	if (plan->flags == F_ATLEAST)
 		return((plan->m_data | mode) == mode);
 	else
 		return(mode == plan->m_data);
@@ -626,7 +699,7 @@ c_perm(perm)
 	new = palloc(N_PERM, f_perm);
 
 	if (*perm == '-') {
-		new->flags = 1;
+		new->flags = F_ATLEAST;
 		++perm;
 	}
 
@@ -859,35 +932,6 @@ c_closeparen()
 	return(palloc(N_CLOSEPAREN, (int (*)())-1));
 }
  
-/*
- * -mtime n functions --
- *
- *	True if the difference between the file modification time and the
- *	current time is n 24 hour periods.
- */
-f_mtime(plan, entry)
-	PLAN *plan;
-	FTSENT *entry;
-{
-	extern time_t now;
-
-	COMPARE((now - entry->fts_statb.st_mtime + SECSPERDAY - 1) /
-	    SECSPERDAY, plan->t_data);
-}
- 
-PLAN *
-c_mtime(arg)
-	char *arg;
-{
-	PLAN *new;
-
-	ftsoptions &= ~FTS_NOSTAT;
-
-	new = palloc(N_MTIME, f_mtime);
-	new->t_data = find_parsenum(new, "-mtime", arg, (char *)NULL);
-	return(new);
-}
-
 /*
  * ! expression functions --
  *
