@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttydefaults.h	7.2 (Berkeley) %G%
+ *	@(#)ttydefaults.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -39,14 +39,13 @@
 #define	CSTART		CTRL('q')
 #define	CSTOP		CTRL('s')
 #define	CLNEXT		CTRL('v')
-#define	CFLUSHO 	CTRL('o')
+#define	CDISCARD 	CTRL('o')
 #define	CWERASE 	CTRL('w')
 #define	CREPRINT 	CTRL('r')
 #define	CEOT		CEOF
 /* compat */
 #define	CBRK		CEOL
 #define CRPRNT		CREPRINT
-#define CFLUSH		CFLUSHO
 
 /* PROTECTED INCLUSION ENDS HERE */
 #endif /* _TTYDEFAULTS_ */
@@ -58,7 +57,7 @@
 cc_t	ttydefchars[NCC] = {
 	CEOF,	CEOL,	CEOL,	CERASE, CWERASE, CKILL, CREPRINT, 
 	_POSIX_VDISABLE, CINTR,	CQUIT,	CSUSP,	CDSUSP,	CSTART,	CSTOP,	CLNEXT,
-	CFLUSHO, CMIN,	CTIME,  CINFO, _POSIX_VDISABLE
+	CDISCARD, CMIN,	CTIME,  CINFO, _POSIX_VDISABLE
 };
 #undef TTYDEFCHARS
 #endif /* TTYDEFCHARS */
