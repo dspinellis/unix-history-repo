@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	1.3 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)cmdtab.c	1.4 (Berkeley) %G%";
 #endif
 
 #include "systat.h"
@@ -19,6 +19,9 @@ WINDOW	*openiostat();
 int	showkre(), fetchkre(), labelkre();
 int	initkre(), closekre(), cmdkre();
 WINDOW	*openkre();
+int	shownetstat(), fetchnetstat(), labelnetstat();
+int	initnetstat(), closenetstat(), cmdnetstat();
+WINDOW	*opennetstat();
 
 struct	cmdtab cmdtab[] = {
         { "pigs",	showpigs,	fetchpigs,	labelpigs,
@@ -36,6 +39,9 @@ struct	cmdtab cmdtab[] = {
         { "vmstat",	showkre,	fetchkre,	labelkre,
 	  initkre,	openkre,	closekre,	cmdkre,
 	  0 },
+        { "netstat",	shownetstat,	fetchnetstat,	labelnetstat,
+	  initnetstat,	opennetstat,	closenetstat,	cmdnetstat,
+	  CF_LOADAV },
         { 0 }
 };
 struct  cmdtab *curcmd = &cmdtab[0];
