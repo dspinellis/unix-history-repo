@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_lookup.c	6.29 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	6.30 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -305,7 +305,7 @@ dirloop2:
 				if (!isdotdot || dp != u.u_rdir)
 					dp = ncp->nc_ip;
 				if (dp == NULL)
-					panic("nami: null cache ino");
+					panic("namei: null cache ino");
 				if (pdp == dp)
 					dp->i_count++;
 				else if (isdotdot) {
@@ -385,14 +385,8 @@ dirloop2:
 		ndp->ni_offset = 0;
 		numdirpasses = 1;
 	} else {
-		if ((dp->i_flag & (ICHG|IMOD)) ||
-		    dp->i_ctime >= u.u_ncache.nc_time) {
-			if (u.u_ncache.nc_prevoffset > dp->i_size)
-				u.u_ncache.nc_prevoffset = 0;
-			else
-				u.u_ncache.nc_prevoffset &= ~(DIRBLKSIZ - 1);
-			u.u_ncache.nc_time = time.tv_sec;
-		}
+		if (u.u_ncache.nc_prevoffset > dp->i_size)
+			u.u_ncache.nc_prevoffset = 0;
 		ndp->ni_offset = u.u_ncache.nc_prevoffset;
 		entryoffsetinblock = blkoff(fs, ndp->ni_offset);
 		if (entryoffsetinblock != 0) {
@@ -570,10 +564,9 @@ found:
 	 * in the cache as to where the entry was found.
 	 */
 	if (*cp == '\0' && flag == LOOKUP) {
-		u.u_ncache.nc_prevoffset = ndp->ni_offset;
+		u.u_ncache.nc_prevoffset = ndp->ni_offset &~ (DIRBLKSIZ - 1);
 		u.u_ncache.nc_inumber = dp->i_number;
 		u.u_ncache.nc_dev = dp->i_dev;
-		u.u_ncache.nc_time = time.tv_sec;
 	}
 	/*
 	 * Save directory entry's inode number and reclen in ndp->ni_dent,
@@ -731,7 +724,7 @@ found:
 	 */
 	if (makeentry) {
 		if (ncp != NULL)
-			panic("nami: duplicating cache");
+			panic("namei: duplicating cache");
 		/*
 		 * Free the cache slot at head of lru chain.
 		 */
