@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)nlist.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -80,7 +80,7 @@ nlist(name, list)
 		goto done2;
 	}
 
-	for (s = &nbuf; symbol_size--;) {
+	for (s = &nbuf; symbol_size -= sizeof(NLIST);) {
 		if (fread((char *)s, sizeof(NLIST), 1, fsym) != 1)
 			goto done2;
 		if (!s->_strx || s->n_type&N_STAB)
