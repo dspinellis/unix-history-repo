@@ -1,4 +1,4 @@
-# @(#)Makefile	1.7	(Berkeley) %G%
+# @(#)Makefile	1.8	(Berkeley) %G%
 #
 # reorder gives an editor command for most common terminals
 # (in reverse order from n'th to 1'st most commonly used)
@@ -21,8 +21,9 @@ clean:
 
 installall:
 	cp termcap /etc/termcap
+	rcp termcap arpa:/etc/termcap
 	rcp termcap ernie:/etc/termcap
 	rcp termcap kim:/etc/termcap
-	rcp termcap calder:/etc/termcap
-	rcp termcap arpa:/etc/termcap
 	rcp termcap dali:/etc/termcap
+	rcp termcap calder:/etc/termcap
+	rcp termcap ucbvax:/etc/termcap
