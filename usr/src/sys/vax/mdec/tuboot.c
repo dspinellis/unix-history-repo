@@ -1,4 +1,4 @@
-/*	tuboot.c	4.3	83/06/19	*/
+/*	tuboot.c	4.4	83/06/22	*/
 
 /*
  * VAX tu58 console cassette boot block
@@ -305,7 +305,7 @@ recv1:
 	mfpr	$CSRS,r7		/* get recv status */
 	bbc	$TU_READY,r7,1b		/* loop until ready */
 	mfpr	$CSRD,r1		/* get char */
-#	blss	9b			/* branch on recv error */
+	blss	9b			/* branch on recv error */
 	rsb
 
 getc:
@@ -366,3 +366,78 @@ readcom:
 ermsg:
 	.asciz	"tu err\r\n"
 end:
+
+/*
+ * Ascii to rad 50 conversion table,
+ * stored on the second block on the cassette
+ *
+ * NOTE: Always make sure this table ends up
+ * starting at byte 512!!!!
+ */
+	.align	2
+	.data	2
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d00
+	.long	0x1d1d1d1b
+	.long	0x1d1d1d1d
+	.long	0x1d1c1d1d
+	.long	0x21201f1e
+	.long	0x25242322
+	.long	0x1d1d2726
+	.long	0x1d1d1d1d
+	.long	0x302011d
+	.long	0x7060504
+	.long	0xb0a0908
+	.long	0xf0e0d0c
+	.long	0x13121110
+	.long	0x17161514
+	.long	0x1d1a1918
+	.long	0x1d1d1d1d
+	.long	0x302011d
+	.long	0x7060504
+	.long	0xb0a0908
+	.long	0xf0e0d0c
+	.long	0x13121110
+	.long	0x17161514
+	.long	0x1d1a1918
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d1d
+	.long	0x1d1d1d00
+	.long	0x1d1d1d1b
+	.long	0x1d1d1d1d
+	.long	0x1d1c1d1d
+	.long	0x21201f1e
+	.long	0x25242322
+	.long	0x1d1d2726
+	.long	0x1d1d1d1d
+	.long	0x302011d
+	.long	0x7060504
+	.long	0xb0a0908
+	.long	0xf0e0d0c
+	.long	0x13121110
+	.long	0x17161514
+	.long	0x1d1a1918
+	.long	0x1d1d1d1d
+	.long	0x302011d
+	.long	0x7060504
+	.long	0xb0a0908
+	.long	0xf0e0d0c
+	.long	0x13121110
+	.long	0x17161514
+	.long	0x1d1a1918
+	.long	0x1d1d1d
+	.data
