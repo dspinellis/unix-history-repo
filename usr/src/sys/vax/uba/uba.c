@@ -1,4 +1,4 @@
-/*	uba.c	4.29	81/04/03	*/
+/*	uba.c	4.30	81/04/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -111,8 +111,8 @@ ubasetup(uban, bp, flags)
 	struct proc *rp;
 	int a, o, ubinfo;
 
-#if VAX730
-	if (cpu == VAX_730)
+#if VAX7ZZ
+	if (cpu == VAX_7ZZ)
 		flags &= ~UBA_NEEDBDP;
 #endif
 	v = btop(bp->b_un.b_addr);
@@ -334,10 +334,10 @@ ubainit(uba)
 #if VAX750
 	case VAX_750:
 #endif
-#if VAX730
-	case VAX_730:
+#if VAX7ZZ
+	case VAX_7ZZ:
 #endif
-#if defined(VAX750) || defined(VAX730)
+#if defined(VAX750) || defined(VAX7ZZ)
 		mtpr(IUR, 0);
 		/* give devices time to recover from power fail */
 /* THIS IS PROBABLY UNNECESSARY */
