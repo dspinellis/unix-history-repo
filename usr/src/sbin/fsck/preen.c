@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)preen.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)preen.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -61,7 +61,7 @@ checkfstab(preen, maxrun, docheck, chkit)
 			if (preen == 0 || passno == 1 && fsp->fs_passno == 1) {
 				if (name = blockcheck(fsp->fs_spec)) {
 					if (sumstatus = (*chkit)(name,
-					    fsp->fs_file, auxdata))
+					    fsp->fs_file, auxdata, 0))
 						return (sumstatus);
 				} else if (preen)
 					return (8);
@@ -242,7 +242,7 @@ startdisk(dk, checkit)
 		return (8);
 	}
 	if (dk->pid == 0)
-		exit((*checkit)(pt->name, pt->fsname, pt->auxdata));
+		exit((*checkit)(pt->name, pt->fsname, pt->auxdata, 1));
 	nrun++;
 	return (0);
 }
