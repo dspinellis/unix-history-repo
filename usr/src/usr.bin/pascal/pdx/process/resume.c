@@ -1,7 +1,12 @@
-/* Copyright (c) 1982 Regents of the University of California */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
-static char sccsid[] = "@(#)resume.c 1.9 %G%";
-
+#ifndef lint
+static char sccsid[] = "@(#)resume.c	5.1 (Berkeley) %G%";
+#endif not lint
 /*
  * Resume execution, first setting appropriate registers.
  */

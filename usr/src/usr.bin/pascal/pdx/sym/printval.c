@@ -1,6 +1,12 @@
-/* Copyright (c) 1982 Regents of the University of California */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
-static char sccsid[] = "@(#)printval.c 1.7 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)printval.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Print out the value at the top of the stack using the given type.
