@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -57,13 +57,16 @@ static char	subbuffer[SUBBUFSIZE],
 				*subpointer++ = (c); \
 			}
 
-char	hisopts[256];
-char	myopts[256];
+char	options[256];		/* The combined options */
+#define	he_said_will(c)		options[c] |= OPT_HE_SAID_WILL
+#define	he_said_wont(c)		options[c] &= ~OPT_HE_SAID_WILL
+#define	he_said_do(c)		options[c] |= OPT_HE_SAID_DO
+#define	he_said_dont(c)		options[c] &= ~OPT_HE_SAID_DO
 
-char	doopt[] = { IAC, DO, '%', 'c', 0 };
-char	dont[] = { IAC, DONT, '%', 'c', 0 };
-char	will[] = { IAC, WILL, '%', 'c', 0 };
-char	wont[] = { IAC, WONT, '%', 'c', 0 };
+#define	I_said_will(c)		options[c] |= OPT_I_SAID_WILL
+#define	I_said_wont(c)		options[c] &= ~OPT_I_SAID_WILL
+#define	I_said_do(c)		options[c] |= OPT_I_SAID_DO
+#define	I_said_dont(c)		options[c] &= ~OPT_I_SAID_DO
 
 int
 	connected,
@@ -143,8 +146,7 @@ Modelist modelist[] = {
 init_telnet()
 {
     SB_CLEAR();
-    ClearArray(hisopts);
-    ClearArray(myopts);
+    ClearArray(options);
 
     connected = In3270 = ISend = localflow = donebinarytoggle = 0;
 
@@ -208,12 +210,66 @@ va_dcl
     ring_supply_data(ring, buffer, ptr-buffer);
 }
 
+/*
+ * These routines are in charge of sending option negotiations
+ * to the other side.
+ *
+ * The basic idea is that we send the negotiation if either side
+ * is in disagreement as to what the current state should be.
+ */
 
 void
-willoption(option, reply)
-	int option, reply;
+send_do(c)
+{
+    if (!(did_he_say_will(c) && did_I_say_do(c))) {
+	NET2ADD(IAC, DO);
+	NETADD(c);
+	I_said_do(c);
+	printoption("SENT", "do", c);
+    }
+}
+
+void
+send_dont(c)
+{
+    if (did_he_say_will(c) || did_I_say_do(c)) {
+	NET2ADD(IAC, DONT);
+	NETADD(c);
+	I_said_dont(c);
+	printoption("SENT", "dont", c);
+    }
+}
+
+void
+send_will(c)
+{
+    if (!(did_he_say_do(c) && did_I_say_will(c))) {
+	NET2ADD(IAC, WILL);
+	NETADD(c);
+	I_said_will(c);
+	printoption("SENT", "will", c);
+    }
+}
+
+void
+send_wont(c)
+{
+    if (did_he_say_do(c) || did_I_say_will(c)) {
+	NET2ADD(IAC, WONT);
+	NETADD(c);
+	I_said_wont(c);
+	printoption("SENT", "wont", c);
+    }
+}
+
+
+void
+willoption(option)
+	int option;
 {
 	char *fmt;
+
+	he_said_will(option);
 
 	switch (option) {
 
@@ -235,8 +291,8 @@ willoption(option, reply)
 	    {
 		if (askedSGA == 0) {
 		    askedSGA = 1;
-		    if (!hisopts[TELOPT_SGA]) {
-			willoption(TELOPT_SGA, 0);
+		    if (!did_I_say_do(TELOPT_SGA)) {
+			send_do(TELOPT_SGA);
 		    }
 		}
 	    }
@@ -246,8 +302,7 @@ willoption(option, reply)
 #endif	/* defined(TN3270) */
 	case TELOPT_SGA:
 		settimer(modenegotiated);
-		hisopts[option] = 1;
-		fmt = doopt;
+		send_do(option);
 		setconnmode();		/* possibly set new tty mode */
 		break;
 
@@ -255,29 +310,25 @@ willoption(option, reply)
 		return;			/* Never reply to TM will's/wont's */
 
 	default:
-		fmt = dont;
+		send_dont(option);
 		break;
 	}
-	printring(&netoring, fmt, option);
-	if (reply)
-		printoption(">SENT", fmt, option, reply);
-	else
-		printoption("<SENT", fmt, option, reply);
 }
 
 void
-wontoption(option, reply)
-	int option, reply;
+wontoption(option)
+	int option;
 {
 	char *fmt;
+
+	he_said_wont(option);
 
 	switch (option) {
 
 	case TELOPT_ECHO:
 	case TELOPT_SGA:
 		settimer(modenegotiated);
-		hisopts[option] = 0;
-		fmt = dont;
+		send_dont(option);
 		setconnmode();			/* Set new tty mode */
 		break;
 
@@ -285,14 +336,8 @@ wontoption(option, reply)
 		return;		/* Never reply to TM will's/wont's */
 
 	default:
-		hisopts[option] = 0;
-		fmt = dont;
+		send_dont(option);
 	}
-	printring(&netoring, fmt, option);
-	if (reply)
-		printoption(">SENT", fmt, option, reply);
-	else
-		printoption("<SENT", fmt, option, reply);
 }
 
 static void
@@ -301,12 +346,11 @@ dooption(option)
 {
 	char *fmt;
 
+	he_said_do(option);
+
 	switch (option) {
 
 	case TELOPT_TM:
-		fmt = will;
-		break;
-
 #	if defined(TN3270)
 	case TELOPT_EOR:		/* end of record */
 	case TELOPT_BINARY:		/* binary mode */
@@ -316,17 +360,14 @@ dooption(option)
 	case TELOPT_LFLOW:		/* local flow control */
 	case TELOPT_TTYPE:		/* terminal type option */
 	case TELOPT_SGA:		/* no big deal */
-		fmt = will;
-		myopts[option] = 1;
+		send_will(option);
 		break;
 
 	case TELOPT_ECHO:		/* We're never going to echo... */
 	default:
-		fmt = wont;
+		send_wont(option);
 		break;
 	}
-	printring(&netoring, fmt, option);
-	printoption(">SENT", fmt, option, 0);
 }
 
 /*
@@ -367,15 +408,16 @@ suboption()
 		len = strlen(name);
 	    }
 	    if ((len + 4+2) < NETROOM()) {
+		char temp[50];
+
 		strcpy(namebuf, name);
 		upcase(namebuf);
-		printring(&netoring, "%c%c%c%c%s%c%c", IAC, SB, TELOPT_TTYPE,
+		sprintf(temp, "%c%c%c%c%s%c%c", IAC, SB, TELOPT_TTYPE,
 				    TELQUAL_IS, namebuf, IAC, SE);
-		/* XXX */
-		/* printsub(">", nfrontp+2, 4+strlen(namebuf)+2-2-2); */
+		ring_supply_data(&netoring, temp, 4+strlen(namebuf)+2);
+		printsub(">", temp+2, 4+strlen(namebuf)+2-2-2);
 	    } else {
-		ExitString("No room in buffer for terminal type.\n",
-							1);
+		ExitString("No room in buffer for terminal type.\n", 1);
 		/*NOTREACHED*/
 	    }
 	}
@@ -447,7 +489,7 @@ telrcv()
 	    telrcv_state = TS_DATA;
 	    if (c == '\0') {
 		break;	/* Ignore \0 after CR */
-	    } else if ((c == '\n') && (!hisopts[TELOPT_ECHO]) && !crmod) {
+	    } else if ((c == '\n') && (!should_he(TELOPT_ECHO)) && !crmod) {
 		TTYADD(c);
 		break;
 	    }
@@ -478,14 +520,14 @@ telrcv()
 		     * \n; since we must turn off CRMOD to get proper
 		     * input, the mapping is done here (sigh).
 		     */
-	    if ((c == '\r') && !hisopts[TELOPT_BINARY]) {
+	    if ((c == '\r') && !should_he(TELOPT_BINARY)) {
 		if (scc > 0) {
 		    c = *sbp&0xff;
 		    if (c == 0) {
 			sbp++, scc--; count++;
 			/* a "true" CR */
 			TTYADD('\r');
-		    } else if (!hisopts[TELOPT_ECHO] &&
+		    } else if (!should_he(TELOPT_ECHO) &&
 					(c == '\n')) {
 			sbp++, scc--; count++;
 			TTYADD('\n');
@@ -580,25 +622,25 @@ telrcv()
 	    continue;
 
 	case TS_WILL:
-	    printoption(">RCVD", will, c, !hisopts[c]);
+	    printoption("RCVD", "will", c);
 	    if (c == TELOPT_TM) {
 		if (flushout) {
 		    flushout = 0;
 		}
-	    } else if (!hisopts[c]) {
-		willoption(c, 1);
+	    } else {
+		willoption(c);
 	    }
 	    SetIn3270();
 	    telrcv_state = TS_DATA;
 	    continue;
 
 	case TS_WONT:
-	    printoption(">RCVD", wont, c, hisopts[c]);
+	    printoption("RCVD", "wont", c);
 	    if (c == TELOPT_TM) {
 		if (flushout) {
 		    flushout = 0;
 		}
-	    } else if (hisopts[c]) {
+	    } else {
 		wontoption(c, 1);
 	    }
 	    SetIn3270();
@@ -606,9 +648,8 @@ telrcv()
 	    continue;
 
 	case TS_DO:
-	    printoption(">RCVD", doopt, c, !myopts[c]);
-	    if (!myopts[c])
-		dooption(c);
+	    printoption("RCVD", "do", c);
+	    dooption(c);
 	    SetIn3270();
 	    if (c == TELOPT_NAWS) {
 		sendnaws();
@@ -620,15 +661,17 @@ telrcv()
 	    telrcv_state = TS_DATA;
 	    continue;
 
+	/*
+	 * Now, I've never understood this.  Why do we
+	 * need separate routines for will, wont, do,
+	 * but not for dont?
+	 */
 	case TS_DONT:
-	    printoption(">RCVD", dont, c, myopts[c]);
-	    if (myopts[c]) {
-		myopts[c] = 0;
-		printring(&netoring, wont, c);
-		flushline = 1;
-		setconnmode();	/* set new tty mode (maybe) */
-		printoption(">SENT", wont, c, 0);
-	    }
+	    printoption("RCVD", "dont", c);
+	    he_said_dont(c);
+	    send_wont(c);
+	    flushline = 1;
+	    setconnmode();	/* set new tty mode (maybe) */
 	    SetIn3270();
 	    telrcv_state = TS_DATA;
 	    continue;
@@ -709,7 +752,7 @@ telsnd()
 		break;
 	    }
 	}
-	if (!myopts[TELOPT_BINARY]) {
+	if (!should_I(TELOPT_BINARY)) {
 	    switch (c) {
 	    case '\n':
 		    /*
@@ -774,7 +817,7 @@ int	block;			/* should we block in the select ? */
     /* Decide which rings should be processed */
 
     netout = ring_full_count(&netoring) &&
-	    (!MODE_LINE(globalmode) || flushline || myopts[TELOPT_BINARY]);
+	    (!MODE_LINE(globalmode) || flushline || should_I(TELOPT_BINARY));
     ttyout = ring_full_count(&ttyoring);
 
 #if	defined(TN3270)
@@ -844,21 +887,11 @@ telnet()
 
 #   if !defined(TN3270)
     if (telnetport) {
-	if (!hisopts[TELOPT_SGA]) {
-	    willoption(TELOPT_SGA, 0);
-	}
-	if (!myopts[TELOPT_TTYPE]) {
-	    dooption(TELOPT_TTYPE);
-	}
-	if (!myopts[TELOPT_NAWS]) {
-	    dooption(TELOPT_NAWS);
-	}
-	if (!myopts[TELOPT_TSPEED]) {
-	    dooption(TELOPT_TSPEED);
-	}
-	if (!myopts[TELOPT_LFLOW]) {
-	    dooption(TELOPT_LFLOW);
-	}
+	send_do(TELOPT_SGA);
+	send_will(TELOPT_TTYPE);
+	send_will(TELOPT_NAWS);
+	send_will(TELOPT_TSPEED);
+	send_will(TELOPT_LFLOW);
     }
 #   endif /* !defined(TN3270) */
 
@@ -1031,7 +1064,7 @@ doflush()
     flushout = 1;
     ttyflush(1);			/* Flush/drop output */
     /* do printoption AFTER flush, otherwise the output gets tossed... */
-    printoption("<SENT", doopt, TELOPT_TM, 0);
+    printoption("SENT", "do", TELOPT_TM);
 }
 
 void
@@ -1129,4 +1162,16 @@ sendnaws()
 	NETADDSHORT(rows);
 	NET2ADD(IAC, SE);
     }
+}
+
+tel_enter_binary()
+{
+    send_do(TELOPT_BINARY);
+    send_will(TELOPT_BINARY);
+}
+
+tel_leave_binary()
+{
+    send_dont(TELOPT_BINARY);
+    send_wont(TELOPT_BINARY);
 }
