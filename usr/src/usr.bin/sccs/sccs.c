@@ -87,7 +87,7 @@
 # define UIDUSER
 # endif
 
-static char SccsId[] = "@(#)sccs.c	1.27 %G%";
+static char SccsId[] = "@(#)sccs.c	1.28 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -627,10 +627,14 @@ clean(mode)
 	bool gotedit;
 	FILE *pfp;
 
-	dirfd = fopen(SccsPath, "r");
+	strcpy(buf, SccsDir);
+	if (buf[0] != '\0')
+		strcat(buf, "/");
+	strcat(buf, SccsPath);
+	dirfd = fopen(buf, "r");
 	if (dirfd == NULL)
 	{
-		usrerr("cannot open %s", SccsPath);
+		usrerr("cannot open %s", buf);
 		return;
 	}
 
@@ -645,7 +649,10 @@ clean(mode)
 			continue;
 		
 		/* got an s. file -- see if the p. file exists */
-		strcpy(buf, SccsPath);
+		strcpy(buf, SccsDir);
+		if (buf[0] != '\0')
+			strcat(buf, "/");
+		strcat(buf, SccsPath);
 		strcat(buf, "/p.");
 		basefile = &buf[strlen(buf)];
 		strncpy(basefile, &dir.d_name[2], sizeof dir.d_name - 2);
