@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getlogin.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)getlogin.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -32,11 +32,11 @@ getlogin()
 	static int notcalled = 1;
 
 	if (notcalled) {
-		if(getlogname(logname, sizeof(logname) - 1) < 0)
-			return((char *) 0);
+		if (getlogname(logname, sizeof(logname) - 1) < 0)
+			return((char *)NULL);
 		notcalled = 0;
 	}
-	return(logname);
+	return(*logname ? logname : (char *)NULL);
 }
 
 uid_t	geteuid();
@@ -47,13 +47,13 @@ cuserid(s)
 {
 	register struct passwd *pwd;
 
-	if((pwd = getpwuid(geteuid())) == NULL) {
-		if(s)
+	if ((pwd = getpwuid(geteuid())) == NULL) {
+		if (s)
 			*s = '\0';
 		return(NULL);
 	}
-	if(s) {
-		(void) strncpy(s, pwd->pw_name, L_cuserid);
+	if (s) {
+		(void)strncpy(s, pwd->pw_name, L_cuserid);
 		return(s);
 	}
 	return(pwd->pw_name);
