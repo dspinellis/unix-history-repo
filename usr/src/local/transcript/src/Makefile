@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.1 %G%
+#	@(#)Makefile	1.2 %G%
 # transcript/src/Makefile.bsd
 #
 # Copyright (C) 1985 Adobe Systems Incorporated
@@ -65,7 +65,7 @@ pscatmap: pscatmap.o psutil.o config.o
 	cc ${CFLAGS} -o pscatmap pscatmap.o psutil.o config.o
 
 psdit: psdit.o psutil.o config.o
-	cc ${CFLAGS} -o psdit psdit.o psutil.o config.o 
+	cc ${CFLAGS} -o psdit psdit.o psutil.o config.o -lm
 
 ${OBJECTS}: transcript.h
 pscomm.o psbanner.o pscat.o: psspool.h
