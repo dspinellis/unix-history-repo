@@ -3,7 +3,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_mbuf.c	7.17 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -14,18 +14,22 @@
 #include "map.h"
 #define MBTYPES
 #include "mbuf.h"
-#include "vm.h"
 #include "kernel.h"
 #include "syslog.h"
 #include "domain.h"
 #include "protosw.h"
-#include "machine/pte.h"
+#include "../vm/vm_param.h"
+#include "../vm/vm_map.h"
+
+extern vm_map_t mb_map;
+struct mbuf *mbutl;
+char *mclrefcnt;
 
 mbinit()
 {
 	int s;
 
-#if MCLBYTES < 4096
+#if CLBYTES < 4096
 #define NCL_INIT	(4096/CLBYTES)
 #else
 #define NCL_INIT	1
@@ -54,20 +58,14 @@ m_clalloc(ncl, canwait)
 	static int logged;
 
 	npg = ncl * CLSIZE;
-	mbx = rmalloc(mbmap, (long)npg);
-	if (mbx == 0) {
+	p = (caddr_t)kmem_malloc(mb_map, ctob(npg), canwait);
+	if (p == NULL) {
 		if (logged == 0) {
 			logged++;
-			log(LOG_ERR, "mbuf map full\n");
+			log(LOG_ERR, "mb_map full\n");
 		}
 		return (0);
 	}
-	p = cltom(mbx * NBPG / MCLBYTES);
-	if (memall(&Mbmap[mbx], npg, proc, CSYS) == 0) {
-		rmfree(mbmap, (long)npg, (long)mbx);
-		return (0);
-	}
-	vmaccess(&Mbmap[mbx], p, npg);
 	ncl = ncl * CLBYTES / MCLBYTES;
 	for (i = 0; i < ncl; i++) {
 		((union mcluster *)p)->mcl_next = mclfree;

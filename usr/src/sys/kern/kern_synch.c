@@ -3,20 +3,18 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_synch.c	7.12 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.13 (Berkeley) %G%
  */
-
-#include "machine/pte.h"
-#include "machine/psl.h"
-#include "machine/mtpr.h"
 
 #include "param.h"
 #include "systm.h"
 #include "user.h"
 #include "proc.h"
-#include "vm.h"
 #include "kernel.h"
 #include "buf.h"
+
+#include "machine/psl.h"
+#include "machine/mtpr.h"
 
 /*
  * Force switch among equal priority processes every 100ms.
@@ -540,8 +538,6 @@ setpri(pp)
 
 	p = (pp->p_cpu & 0377)/4;
 	p += PUSER + 2 * pp->p_nice;
-	if (pp->p_rssize > pp->p_maxrss && freemem < desfree)
-		p += 2*4;	/* effectively, nice(4) */
 	if (p > 127)
 		p = 127;
 	if (p < curpri) {

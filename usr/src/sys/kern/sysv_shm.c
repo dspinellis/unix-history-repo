@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *
- *	@(#)sysv_shm.c	7.9 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -22,17 +22,19 @@
 
 #ifdef SYSVSHM
 
-#include "machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "user.h"
 #include "kernel.h"
 #include "proc.h"
-#include "vm.h"
 #include "shm.h"
-#include "mapmem.h"
 #include "malloc.h"
+#include "mman.h"
+#include "../vm/vm_param.h"
+#include "../vm/vm_map.h"
+#include "../vm/vm_kern.h"
+#include "../vm/vm_inherit.h"
+#include "../vm/vm_pager.h"
 
 #ifdef HPUXCOMPAT
 #include "../hpux/hpux.h"
@@ -42,13 +44,32 @@ int	shmat(), shmctl(), shmdt(), shmget();
 int	(*shmcalls[])() = { shmat, shmctl, shmdt, shmget };
 int	shmtot = 0;
 
-int	shmfork(), shmexit();
-struct	mapmemops shmops = { shmfork, (int (*)())0, shmexit, shmexit };
+/*
+ * Per process internal structure for managing segments.
+ * Each process using shm will have an array of ``shmseg'' of these.
+ */
+struct	shmdesc {
+	vm_offset_t	shmd_uva;
+	int		shmd_id;
+};
+
+/*
+ * Per segment internal structure (shm_handle).
+ */
+struct	shmhandle {
+	vm_offset_t	shmh_kva;
+	caddr_t		shmh_id;
+};
+
+vm_map_t shm_map;	/* address space for shared memory segments */
 
 shminit()
 {
 	register int i;
+	vm_offset_t whocares1, whocares2;
 
+	shm_map = kmem_suballoc(kernel_map, &whocares1, &whocares2,
+				shminfo.shmall * NBPG, FALSE);
 	if (shminfo.shmmni > SHMMMNI)
 		shminfo.shmmni = SHMMMNI;
 	for (i = 0; i < shminfo.shmmni; i++) {
@@ -89,7 +110,7 @@ shmget(p, uap, retval)
 	register struct ucred *cred = u.u_cred;
 	register int i;
 	int error, size, rval = 0;
-	caddr_t kva;
+	register struct shmhandle *shmh;
 
 	/* look up the specified shm_id */
 	if (uap->key != IPC_PRIVATE) {
@@ -129,19 +150,22 @@ shmget(p, uap, retval)
 		 */
 		shp->shm_perm.mode = SHM_ALLOC | SHM_DEST;
 		shp->shm_perm.key = uap->key;
-		kva = (caddr_t) malloc((u_long)ctob(size), M_SHM, M_WAITOK);
-		if (kva == NULL) {
+		shmh = (struct shmhandle *)
+			malloc(sizeof(struct shmhandle), M_SHM, M_WAITOK);
+		shmh->shmh_kva = 0;
+		shmh->shmh_id = (caddr_t)(0xc0000000|rval);	/* XXX */
+		error = vm_mmap(shm_map, &shmh->shmh_kva, ctob(size),
+				VM_PROT_ALL, MAP_ANON, shmh->shmh_id, 0);
+		if (error) {
+			free((caddr_t)shmh, M_SHM);
 			shp->shm_perm.mode = 0;
-			return (ENOMEM);
+			return(ENOMEM);
 		}
-		if (!claligned(kva))
-			panic("shmget: non-aligned memory");
-		bzero(kva, (u_int)ctob(size));
+		shp->shm_handle = (void *) shmh;
 		shmtot += size;
 		shp->shm_perm.cuid = shp->shm_perm.uid = cred->cr_uid;
 		shp->shm_perm.cgid = shp->shm_perm.gid = cred->cr_gid;
 		shp->shm_perm.mode = SHM_ALLOC | (uap->shmflg&0777);
-		shp->shm_handle = (void *) kvtopte(kva);
 		shp->shm_segsz = uap->size;
 		shp->shm_cpid = p->p_pid;
 		shp->shm_lpid = shp->shm_nattch = 0;
@@ -246,10 +270,23 @@ shmat(p, uap, retval)
 {
 	register struct shmid_ds *shp;
 	register int size;
-	struct mapmem *mp;
 	caddr_t uva;
-	int error, prot, shmmapin();
+	int error;
+	int flags;
+	vm_prot_t prot;
+	struct shmdesc *shmd;
 
+	/*
+	 * Allocate descriptors now (before validity check)
+	 * in case malloc() blocks.
+	 */
+	shmd = (struct shmdesc *)p->p_shm;
+	size = shminfo.shmseg * sizeof(struct shmdesc);
+	if (shmd == NULL) {
+		shmd = (struct shmdesc *)malloc(size, M_SHM, M_WAITOK);
+		bzero((caddr_t)shmd, size);
+		p->p_shm = (caddr_t)shmd;
+	}
 	if (error = shmvalid(uap->shmid))
 		return (error);
 	shp = &shmsegs[uap->shmid % SHMMMNI];
@@ -268,28 +305,28 @@ shmat(p, uap, retval)
 	/*
 	 * Make sure user doesn't use more than their fair share
 	 */
-	size = 0;
-	for (mp = u.u_mmap; mp; mp = mp->mm_next)
-		if (mp->mm_ops == &shmops)
-			size++;
+	for (size = 0; size < shminfo.shmseg; size++) {
+		if (shmd->shmd_uva == 0)
+			break;
+		shmd++;
+	}
 	if (size >= shminfo.shmseg)
 		return (EMFILE);
-	/*
-	 * Allocate a mapped memory region descriptor and
-	 * attempt to expand the user page table to allow for region
-	 */
-	prot = (uap->shmflg & SHM_RDONLY) ? MM_RO : MM_RW;
-#if defined(hp300)
-	prot |= MM_CI;
-#endif
 	size = ctob(clrnd(btoc(shp->shm_segsz)));
-	error = mmalloc(p, uap->shmid, &uva, (segsz_t)size, prot, &shmops, &mp);
+	prot = VM_PROT_READ;
+	if ((uap->shmflg & SHM_RDONLY) == 0)
+		prot |= VM_PROT_WRITE;
+	flags = MAP_ANON|MAP_SHARED;
+	if (uva)
+		flags |= MAP_FIXED;
+	else
+		uva = (caddr_t)0x1000000;	/* XXX */
+	error = vm_mmap(p->p_map, &uva, (vm_size_t)size, prot, flags,
+			((struct shmhandle *)shp->shm_handle)->shmh_id, 0);
 	if (error)
-		return (error);
-	if (error = mmmapin(p, mp, shmmapin)) {
-		(void) mmfree(p, mp);
-		return (error);
-	}
+		return(error);
+	shmd->shmd_uva = (vm_offset_t)uva;
+	shmd->shmd_id = uap->shmid;
 	/*
 	 * Fill in the remaining fields
 	 */
@@ -311,48 +348,54 @@ shmdt(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	register struct mapmem *mp;
+	register struct shmdesc *shmd;
+	register int i;
 
-	for (mp = u.u_mmap; mp; mp = mp->mm_next)
-		if (mp->mm_ops == &shmops && mp->mm_uva == uap->shmaddr)
+	shmd = (struct shmdesc *)p->p_shm;
+	for (i = 0; i < shminfo.shmseg; i++, shmd++)
+		if (shmd->shmd_uva &&
+		    shmd->shmd_uva == (vm_offset_t)uap->shmaddr)
 			break;
-	if (mp == MMNIL)
-		return (EINVAL);
-	shmsegs[mp->mm_id % SHMMMNI].shm_lpid = p->p_pid;
-	return (shmufree(p, mp));
+	if (i == shminfo.shmseg)
+		return(EINVAL);
+	shmufree(p, shmd);
+	shmsegs[shmd->shmd_id % SHMMMNI].shm_lpid = p->p_pid;
 }
 
-shmmapin(mp, off)
-	struct mapmem *mp;
+shmfork(rip, rpp, isvfork)
+	struct proc *rip, *rpp;
+	int isvfork;
 {
-	register struct shmid_ds *shp;
+	register struct shmdesc *shmd;
+	register int size;
 
-	shp = &shmsegs[mp->mm_id % SHMMMNI];
-	if (off >= ctob(clrnd(btoc(shp->shm_segsz))))
-		return(-1);
-	return(((struct pte *)shp->shm_handle)[btop(off)].pg_pfnum);
+	/*
+	 * Copy parents descriptive information
+	 */
+	size = shminfo.shmseg * sizeof(struct shmdesc);
+	shmd = (struct shmdesc *)malloc(size, M_SHM, M_WAITOK);
+	bcopy((caddr_t)rip->p_shm, (caddr_t)shmd, size);
+	rpp->p_shm = (caddr_t)shmd;
+	/*
+	 * Increment reference counts
+	 */
+	for (size = 0; size < shminfo.shmseg; size++, shmd++)
+		if (shmd->shmd_uva)
+			shmsegs[shmd->shmd_id % SHMMMNI].shm_nattch++;
 }
 
-/*
- * Increment attach count on fork
- */
-/* ARGSUSED */
-shmfork(mp, ischild)
-	register struct mapmem *mp;
+shmexit(p)
+	struct proc *p;
 {
-	if (!ischild)
-		shmsegs[mp->mm_id % SHMMMNI].shm_nattch++;
-}
+	register struct shmdesc *shmd;
+	register int i;
 
-/*
- * Detach from shared memory segment on exit (or exec)
- */
-shmexit(mp)
-	struct mapmem *mp;
-{
-	struct proc *p = u.u_procp;		/* XXX */
-
-	return (shmufree(p, mp));
+	shmd = (struct shmdesc *)p->p_shm;
+	for (i = 0; i < shminfo.shmseg; i++, shmd++)
+		if (shmd->shmd_uva)
+			shmufree(p, shmd);
+	free((caddr_t)p->p_shm, M_SHM);
+	p->p_shm = NULL;
 }
 
 shmvalid(id)
@@ -372,20 +415,20 @@ shmvalid(id)
 /*
  * Free user resources associated with a shared memory segment
  */
-shmufree(p, mp)
+shmufree(p, shmd)
 	struct proc *p;
-	struct mapmem *mp;
+	struct shmdesc *shmd;
 {
 	register struct shmid_ds *shp;
-	int error;
 
-	shp = &shmsegs[mp->mm_id % SHMMMNI];
-	mmmapout(p, mp);
-	error = mmfree(p, mp);
+	shp = &shmsegs[shmd->shmd_id % SHMMMNI];
+	(void) vm_deallocate(p->p_map, shmd->shmd_uva,
+			     ctob(clrnd(btoc(shp->shm_segsz))));
+	shmd->shmd_id = 0;
+	shmd->shmd_uva = 0;
 	shp->shm_dtime = time.tv_sec;
 	if (--shp->shm_nattch <= 0 && (shp->shm_perm.mode & SHM_DEST))
 		shmfree(shp);
-	return (error);
 }
 
 /*
@@ -398,8 +441,14 @@ shmfree(shp)
 
 	if (shp->shm_handle == NULL)
 		panic("shmfree");
-	kva = (caddr_t) ptetokv(shp->shm_handle);
-	free(kva, M_SHM);
+	/*
+	 * Lose our lingering object reference by deallocating space
+	 * in kernel.  Pager will also be deallocated as a side-effect.
+	 */
+	vm_deallocate(shm_map,
+		      ((struct shmhandle *)shp->shm_handle)->shmh_kva,
+		      clrnd(btoc(shp->shm_segsz)));
+	free((caddr_t)shp->shm_handle, M_SHM);
 	shp->shm_handle = NULL;
 	shmtot -= clrnd(btoc(shp->shm_segsz));
 	shp->shm_perm.mode = 0;
@@ -444,5 +493,4 @@ ipcaccess(ipc, mode, cred)
 		return (0);
 	return (EACCES);
 }
-
 #endif /* SYSVSHM */

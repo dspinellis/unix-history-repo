@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.24 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -15,9 +15,7 @@
 #include "timeb.h"
 #include "times.h"
 #include "buf.h"
-#include "text.h"
 #include "seg.h"
-#include "vm.h"
 #include "acct.h"
 #include "uio.h"
 #include "file.h"
@@ -26,9 +24,9 @@
 #include "ktrace.h"
 
 #include "machine/reg.h"
-#include "machine/pte.h"
 #include "machine/psl.h"
 #include "machine/mtpr.h"
+#include "../vm/vm_param.h"
 
 #define	ttystopsigmask	(sigmask(SIGTSTP)|sigmask(SIGTTIN)|sigmask(SIGTTOU))
 #define	stopsigmask	(sigmask(SIGSTOP)|ttystopsigmask)
@@ -589,7 +587,7 @@ psignal(p, sig)
 		 * and don't clear any pending SIGCONT.
 		 */
 		if (p->p_pgrp->pg_jobc == 0 && action == SIG_DFL)
-			return;
+		        return;
 		/* FALLTHROUGH */
 
 	case SIGSTOP:
@@ -972,13 +970,6 @@ core()
 	if (ctob(UPAGES + u.u_dsize + u.u_ssize) >=
 	    u.u_rlimit[RLIMIT_CORE].rlim_cur)
 		return (EFAULT);
-	if (p->p_textp) {
-		VOP_LOCK(p->p_textp->x_vptr);
-		error = VOP_ACCESS(p->p_textp->x_vptr, VREAD, u.u_cred);
-		VOP_UNLOCK(p->p_textp->x_vptr);
-		if (error)
-			return (EFAULT);
-	}
 	ndp->ni_segflg = UIO_SYSSPACE;
 	ndp->ni_dirp = "core";
 	if (error = vn_open(ndp, FCREAT|FWRITE, 0644))
@@ -991,12 +982,6 @@ core()
 		vput(vp);
 		return (EFAULT);
 	}
-#ifdef MAPMEM
-	if (error = mmcore(p)) {
-		vput(vp);
-		return (error);
-	}
-#endif
 	VATTR_NULL(&vattr);
 	vattr.va_size = 0;
 	VOP_SETATTR(vp, &vattr, u.u_cred);
@@ -1014,14 +999,13 @@ core()
 	error = vn_rdwr(UIO_WRITE, vp, (caddr_t)&u, ctob(UPAGES), (off_t)0,
 	    UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, ndp->ni_cred, (int *)0);
 	if (error == 0)
-		error = vn_rdwr(UIO_WRITE, vp,
-		    (caddr_t)ctob(dptov(p, 0)),
+		error = vn_rdwr(UIO_WRITE, vp, u.u_daddr,
 		    (int)ctob(u.u_dsize), (off_t)ctob(UPAGES), UIO_USERSPACE,
 		    IO_NODELOCKED|IO_UNIT, ndp->ni_cred, (int *)0);
 	if (error == 0)
 		error = vn_rdwr(UIO_WRITE, vp,
-		    (caddr_t)ctob(sptov(p, u.u_ssize - 1)),
-		    (int)ctob(u.u_ssize),
+		    trunc_page(USRSTACK - ctob(u.u_ssize)),
+		    round_page(ctob(u.u_ssize)),
 		    (off_t)ctob(UPAGES) + ctob(u.u_dsize), UIO_USERSPACE,
 		    IO_NODELOCKED|IO_UNIT, ndp->ni_cred, (int *)0);
 	vput(vp);

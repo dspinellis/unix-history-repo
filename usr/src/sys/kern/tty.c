@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.36 (Berkeley) %G%
+ *	@(#)tty.c	7.37 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1729,7 +1729,7 @@ ttyinfo(tp)
 		tputchar('.', tp);
 		ttyoutint(x%100, 10, 2, tp);
 #endif
-		ttyprintf(tp, "%% %dk\n", pgtok(pick->p_ssize + pick->p_dsize));
+		ttyprintf(tp, "%% %dk\n", pgtok(pick->p_rssize));
 	}
 	tp->t_rocount = 0;	/* so pending input will be retyped if BS */
 }

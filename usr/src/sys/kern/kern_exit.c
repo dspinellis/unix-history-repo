@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_exit.c	7.28 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.29 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -17,7 +17,6 @@
 #include "proc.h"
 #include "buf.h"
 #include "wait.h"
-#include "vm.h"
 #include "file.h"
 #include "vnode.h"
 #include "syslog.h"
@@ -27,6 +26,10 @@
 #ifdef COMPAT_43
 #include "machine/psl.h"
 #endif
+
+#include "../vm/vm_param.h"
+#include "../vm/vm_map.h"
+#include "../vm/vm_kern.h"
 
 /*
  * Exit system call: pass back caller's arg
@@ -73,18 +76,16 @@ exit(p, rv)
 	for (i = 0; i < NSIG; i++)
 		u.u_signal[i] = SIG_IGN;
 	untimeout(realitexpire, (caddr_t)p);
-	/*
-	 * Release virtual memory.  If we resulted from
-	 * a vfork(), instead give the resources back to
-	 * the parent.
-	 */
-	if ((p->p_flag & SVFORK) == 0) {
-#ifdef MAPMEM
-		if (u.u_mmap)
-			(void) mmexit(p);
+#ifdef SYSVSHM
+	if (p->p_shm)
+		shmexit(p);
 #endif
-		vrelvm();
-	} else {
+	vm_map_deallocate(p->p_map);
+	p->p_map = VM_MAP_NULL;
+	/*
+	 * XXX preserve synchronization semantics of vfork
+	 */
+	if (p->p_flag & SVFORK) {
 		p->p_flag &= ~SVFORK;
 		wakeup((caddr_t)p);
 		while ((p->p_flag & SVFDONE) == 0)
@@ -139,21 +140,16 @@ exit(p, rv)
 	if (p->p_tracep)
 		vrele(p->p_tracep);
 #endif
-	/*
-	 * Freeing the user structure and kernel stack
-	 * for the current process: have to run a bit longer
-	 * using the pages which are about to be freed...
-	 * vrelu will block memory allocation by raising ipl.
-	 */
-	vrelu(p, 0);
-	vrelpt(p);
+	splimp();
+	/* I don't think this will cause a sleep/realloc anywhere... */
+	kmem_free(kernel_map, (vm_offset_t)p->p_addr,
+		  round_page(ctob(UPAGES)));
 	if (*p->p_prev = p->p_nxt)		/* off allproc queue */
 		p->p_nxt->p_prev = p->p_prev;
 	if (p->p_nxt = zombproc)		/* onto zombproc */
 		p->p_nxt->p_prev = &p->p_nxt;
 	p->p_prev = &zombproc;
 	zombproc = p;
-	multprog--;
 	p->p_stat = SZOMB;
 	noproc = 1;
 	for (pp = &pidhash[PIDHASH(p->p_pid)]; *pp; pp = &(*pp)->p_hash)
@@ -163,14 +159,8 @@ exit(p, rv)
 		}
 	panic("exit");
 done:
-	if (p->p_pid == 1) {
-		if (p->p_dsize == 0) {
-			printf("Can't exec init (errno %d)\n", WEXITSTATUS(rv));
-			for (;;)
-				;
-		} else
-			panic("init died");
-	}
+	if (p->p_pid == 1)
+		panic("init died");
 	p->p_xstat = rv;
 	*p->p_ru = u.u_ru;
 	i = splclock();
