@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.4'DRAFT'Last Mod %G%'
+.fo 'Version 3.5'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -26,7 +26,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.4
+Version 3.5
 .)l
 .sp 3
 .pp
@@ -1806,6 +1806,7 @@ The metasymbols are:
 \fB$+\fP	Match one or more tokens
 \fB$-\fP	Match exactly one token
 \fB$=\fP\fIx\fP	Match any token in class \fIx\fP
+\fB$~\fP\fIx\fP	Match any token not in class \fIx\fP
 .)b
 If any of these match,
 they are assigned to the symbol
@@ -1853,8 +1854,9 @@ syntax substitutes the corresponding value from a
 .b $+ ,
 .b $- ,
 .b $* ,
+.b $= ,
 or
-.b $=
+.b $~
 match on the LHS.
 It may be used anywhere.
 .pp
@@ -3451,7 +3453,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.4
+Version 3.5
 .ce 0
 .bp 1
 .ce
