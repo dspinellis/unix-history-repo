@@ -4,10 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.2 (Berkeley) %G%
+ *	@(#)pathnames.h	5.3 (Berkeley) %G%
  */
 
 #define	_PATH_OBJDIR		"obj"
 #define	_PATH_DEFSHELLDIR	"/bin"
-#define	_PATH_DEFSYSMK		"/usr/share/mk/sys.mk"
+#define	_PATH_DEFSYSMK		"sys.mk"
 #define	_PATH_DEFSYSPATH	"/usr/share/mk"
