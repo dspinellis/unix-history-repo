@@ -1,10 +1,10 @@
-#	Makefile	1.3	%G%
+#	Makefile	1.4	%G%
 
 CFLAGS = -O -DSTANDALONE
 RELOC=	70000
 DRIVERS=hp.o ht.o mba.o up.o uba.o
 
-all:	/usr/lib/libsa.a srt0.o boot cat ls mkfs restor tpmkfs tprestor
+all:	/usr/lib/libsa.a srt0.o boot cat ls icheck mkfs restor tpicheck tpmkfs tprestor
 
 /usr/lib/libsa.a:	sys.o conf.o hp.o ht.o mba.o up.o uba.o prf.o machdep.o 
 	ar crv /usr/lib/libsa.a $?
@@ -27,13 +27,26 @@ ls:	ls.o srt0.o /usr/lib/libsa.a
 	ld -N srt0.o ls.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=ls ibs=32 skip=1; rm b.out
 
+mkfs.o:	/usr/src/cmd/mkfs.c
+	cc ${CFLAGS} -c /usr/src/cmd/mkfs.c
+
 mkfs:	mkfs.o srt0.o /usr/lib/libsa.a
 	ld -N srt0.o mkfs.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=mkfs ibs=32 skip=1; rm b.out
 
+restor.o: /usr/src/cmd/restor.c
+	cc ${CFLAGS} -c /usr/src/cmd/restor.c
+
 restor:	restor.o srt0.o /usr/lib/libsa.a
 	ld -N srt0.o restor.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=restor ibs=32 skip=1; rm b.out
+
+icheck.o: /usr/src/cmd/icheck.c
+	cc ${CFLAGS} -c /usr/src/cmd/icheck.c
+
+icheck: icheck.o srt0.o /usr/lib/libsa.a
+	ld -N srt0.o icheck.o -lsa -lc
+	cp a.out b.out; strip b.out; dd if=b.out of=icheck ibs=32 skip=1; rm b.out
 
 tpmkfs:	mkfs.o tpsrt0.o /usr/lib/libsa.a
 	ld -N tpsrt0.o mkfs.o -lsa -lc
@@ -42,6 +55,10 @@ tpmkfs:	mkfs.o tpsrt0.o /usr/lib/libsa.a
 tprestor: restor.o tpsrt0.o /usr/lib/libsa.a
 	ld -N tpsrt0.o restor.o -lsa -lc
 	cp a.out b.out; strip b.out; dd if=b.out of=tprestor ibs=32 skip=1; rm b.out
+
+tpicheck: icheck.o tpsrt0.o /usr/lib/libsa.a
+	ld -N tpsrt0.o icheck.o -lsa -lc
+	cp a.out b.out; strip b.out; dd if=b.out of=tpicheck ibs=32 skip=1; rm b.out
 
 srt0.o: rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m srt0.s
 	as -o srt0.o rel.m ../h/mtpr.m ../h/mba.m ../h/uba.m srt0.s
@@ -64,10 +81,11 @@ print:
 
 clean:
 	rm -f *.o *.exe
-	rm -f a.out b.out boot cat ls mkfs restor rpboot tpmkfs tprestor
+	rm -f a.out b.out boot cat ls icheck mkfs restor rpboot tpicheck tpmkfs tprestor
 
 install:
 	cp tprestor ${DESTDIR}/sys/restor
+	cp tpicheck ${DESTDIR}/sys/icheck
 	cp tpmkfs ${DESTDIR}/sys/mkfs
 	cp boot ${DESTDIR}/sys/boot
-	cp boot mkfs restor cat ls ../floppy
+	cp boot icheck mkfs restor cat ls ../floppy
