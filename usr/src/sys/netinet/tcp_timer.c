@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_timer.c	7.18 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
