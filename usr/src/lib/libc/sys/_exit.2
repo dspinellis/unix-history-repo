@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)_exit.2	6.1 (Berkeley) %G%
+.\"	@(#)_exit.2	6.2 (Berkeley) %G%
 .\"
 .TH EXIT 2 ""
 .UC 4
@@ -37,7 +37,7 @@ inherits each of these processes as well.
 .in -5n
 .PP
 Most C programs call the library routine
-.IR exit (3)
+.IR exit (3),
 which performs cleanup actions in the standard i/o library before
 calling \fI_exit\fP\|.
 .SH "RETURN VALUE"
