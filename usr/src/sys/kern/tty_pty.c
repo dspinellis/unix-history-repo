@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_pty.c	7.2 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -551,7 +551,7 @@ ptyioctl(dev, cmd, data, flag)
 		error = ENOTTY;
 	}
 	stop = (tp->t_flags & RAW) == 0 &&
-	    tp->t_stopc == CTRL(s) && tp->t_startc == CTRL(q);
+	    tp->t_stopc == CTRL('s') && tp->t_startc == CTRL('q');
 	if (pti->pt_flags & PF_NOSTOP) {
 		if (stop) {
 			pti->pt_send &= ~TIOCPKT_NOSTOP;
