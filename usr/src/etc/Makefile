@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 
 NOOBJ=	oobj
 
@@ -13,7 +13,6 @@ BIN1=	aliases csh.cshrc csh.login csh.logout crontab daily dm.conf \
 # -rw-rw-rw-
 BIN2=	motd
 
-DOT=	dot.cshrc dot.login dot.profile
 MTREE=	BSD.root.dist BSD.usr.dist BSD.var.dist
 KRB=	README krb.conf krb.realms
 NAMEDB=	localhost.rev named.boot root.cache
@@ -31,7 +30,18 @@ distribution:
 	    mv master.passwd.orig passwd)
 	install -c -o ${BINOWN} -g ${BINGRP} -m 555 etc.${MACHINE}/MAKEDEV \
 	    ${DESTDIR}/dev
-	cd root; install -c -o root -g wheel -m 644 ${DOT} ${DESTDIR}/root
+	(cd root; \
+		install -c -o root -g wheel -m 644 dot.cshrc \
+		    ${DESTDIR}/root/.cshrc; \
+		install -c -o root -g wheel -m 644 dot.klogin \
+		    ${DESTDIR}/root/.klogin; \
+		install -c -o root -g wheel -m 644 dot.login \
+		    ${DESTDIR}/root/.login; \
+		install -c -o root -g wheel -m 644 dot.profile \
+		    ${DESTDIR}/root/.profile; \
+		rm -f ${DESTDIR}/.cshrc ${DESTDIR}/.profile; \
+		ln ${DESTDIR}/root/.cshrc ${DESTDIR}/.cshrc; \
+		ln ${DESTDIR}/root/.profile ${DESTDIR}/.profile)
 	cd mtree; install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${MTREE} \
 	    ${DESTDIR}/etc/mtree
 	cd namedb; install -c -o ${BINOWN} -g ${BINGRP} -m 644 ${NAMEDB} \
