@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ctime.3	6.8 (Berkeley) %G%
+.\"	@(#)ctime.3	6.9 (Berkeley) %G%
 .\"
 .TH CTIME 3  ""
 .UC 4
@@ -54,7 +54,7 @@ Programs that always wish to use local wall clock time should explicitly
 remove the environmental variable \fBTZ\fP with \fIunsetenv\fP(3).
 .PP
 \fICtime\fP converts a long integer, pointed to by \fIclock\fP,
-such as returned by \fItime\fP(2) into ASCII and returns a pointer
+such as returned by \fItime\fP(3), into ASCII and returns a pointer
 to a 26-character string in the following form.  All the fields
 have constant width.
 .PP
