@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.22 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -932,7 +932,7 @@ int option;
 
     switch (option) {
     case TELOPT_ECHO:		/* we should stop echoing */
-	mode(0, ECHO|CRMOD);
+	mode(0, ECHO);
 	fmt = wont;
 	break;
 
