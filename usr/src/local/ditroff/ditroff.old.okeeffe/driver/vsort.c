@@ -1,4 +1,4 @@
-/* vsort.c	1.1	83/07/12
+/* vsort.c	1.2	83/07/29
  *
  *	sort troff output into troff output that only goes one
  *	direction down the page.
@@ -21,11 +21,13 @@ nnc	move right nn, then print c (exactly 2 digits!)
 		(this wart is an optimization that shrinks output file size
 		 about 35% and run-time about 15% while preserving ascii-ness)
 Dt ...\n	draw operation 't':
+	Dt x		line thickness setting
+	Ds x		line style (bit mask) setting
 	Dl x y		line from here by x,y
 	Dc d		circle of diameter d with left side here
 	De x y		ellipse of axes x,y with left side here
 	Da x y r	arc counter-clockwise by x,y of radius r
-	D~ x y x y ...	wiggly line by x,y then x,y ...
+	D~ (or Dg) x y x y ...	wiggly line by x,y then x,y ...
 nb a	end of line (information only -- no action needed)
 	b = space before line, a = after
 p	new page begins -- set v to 0
@@ -63,15 +65,19 @@ x ...\n	device control functions:
 int	dbg	= 0;	/* debug flag != 0 means do debug output */
 int	size	= 10;	/* current size */
 int	font	= 1;	/* current font */
+int	thick	= 3;	/* line thickness */
+int	style	= 255;	/* line style bit-mask */
 int	hpos	= 0;	/* horizontal position to be at next (left = 0) */
 int	vpos	= 0;	/* current vertical position (down positive) */
 
 struct vlist {
-	int	v;
-	int	h;
-	int	s;
-	int	f;
-	char	*p;
+	int	v;	/* vertical position of this spread */
+	int	h;	/* horizontal position */
+	int	s;	/* point size */
+	int	t;	/* line thickness */
+	char	f;	/* font number */
+	char	st;	/* style mask */
+	char	*p;	/* text pointer to this spread */
 };
 
 struct	vlist	vlist[NVLIST + 1];
@@ -198,6 +204,14 @@ register FILE *fp;
 		case 'D':	/* draw function */
 			fgets(buf, SLOP, fp);
 			switch (buf[0]) {
+			case 's':	/* "style" */
+				sscanf(buf+1, "%d", &style);
+				sprintf(op, "D%s", buf);
+				break;
+			case 't':	/* thickness */
+				sscanf(buf+1, "%d", &thick);
+				sprintf(op, "D%s", buf);
+				break;
 			case 'l':	/* draw a line */
 				sscanf(buf+1, "%d %d", &n, &m);
 						/* if line starts higher, put */
@@ -236,6 +250,7 @@ register FILE *fp;
 				vmot(m + m1);
 				break;
 			case '~':	/* wiggly line */
+			case 'g':	/* gremlin curve */
 			    {
 				register char *pop;
 							/* a curve goes on */
@@ -327,7 +342,8 @@ register FILE *fp;
 oflush()	/* sort, then dump out contents of obuf */
 {
 	register struct vlist *vp;
-	int i;
+	register int lastv = -1;
+	register int i;
 	int compar();
 
 	if (dbg) fprintf(stderr, "into oflush, V=%d\n", vpos);
@@ -337,14 +353,11 @@ oflush()	/* sort, then dump out contents of obuf */
 	*op++ = 0;
 	vp = vlist;
 	for (i = 0; i < nvlist; i++, vp++) {
-		register int lastv = -1;
-		register char *p;
+	    register char *p;
 
-		if (lastv != vp->v)
-		    printf("V%d", lastv = vp->v);
-		printf("H%ds%df%d ", vp->h, vp->s, vp->f);
-		for (p = vp->p; *p != 0; p++)
-			putchar(*p);
+	    if (lastv != vp->v) printf("V%d", lastv = vp->v);
+	    printf("H%ds%df%d Ds %d\nDt %d\n",vp->h,vp->s,vp->f,vp->st,vp->t);
+	    for (p = vp->p; *p != 0; p++) putchar(*p);
 	}
 	fflush(stdout);
 	vlp = vlist;
@@ -353,6 +366,8 @@ oflush()	/* sort, then dump out contents of obuf */
 	vlp->v = vpos;
 	vlp->s = size;
 	vlp->f = font;
+	vlp->st = style;
+	vlp->t = thick;
 	*op = 0;
 	vlp++;
 	nvlist = 1;
@@ -435,6 +450,8 @@ register int n;
 	vlp->h = hpos;
 	vlp->s = size;
 	vlp->f = font;
+	vlp->st = style;
+	vlp->t = thick;
 	vlp++;
 	nvlist++;
 }
