@@ -1,0 +1,8 @@
+./"link"16t"magic"16t"time"n2XY
++/"cgx"16t"ncyl"8t"niblk"8t"ndblk"nXxxX
++/"csum"n
++$<<csum
++/"rotor"16t"frotor"16t"irotor"nXXX
++/"frsum"n8X
++/"btotoff"16t"boff"16t"iusedoff"n3X
++/"freeoff"16t"nxtfreeoff"n2X
