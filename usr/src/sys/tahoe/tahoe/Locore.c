@@ -3,12 +3,11 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	7.2 (Berkeley) %G%
+ *	@(#)Locore.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "vm.h"
 #include "ioctl.h"
@@ -175,6 +174,10 @@ struct	pte kmempt[100], ekmempt[1];
 char	kmembase[100*NBPG];
 struct	pte Mbmap[NMBCLUSTERS/CLSIZE];
 struct	mbuf mbutl[NMBCLUSTERS*CLBYTES/sizeof (struct mbuf)];
+#ifdef NFS
+struct	pte Nfsiomap[MAXPHYS/NBPG+1];
+char	nfsiobuf[MAXPHYS+NBPG];
+#endif
 
 /*ARGSUSED*/
 badaddr(addr, len) caddr_t addr; int len; { return (0); }
