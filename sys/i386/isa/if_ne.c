@@ -333,7 +333,7 @@ neattach(dvp)
 	ifp->if_unit = unit;
 	ifp->if_name = nedriver.name ;
 	ifp->if_mtu = ETHERMTU;
-	printf (" ethernet address %s", ether_sprintf(ns->ns_addr)) ;
+	printf ("ne%d: address %s", unit, ether_sprintf(ns->ns_addr)) ;
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_NOTRAILERS;
 	ifp->if_init = neinit;
 	ifp->if_output = ether_output;
