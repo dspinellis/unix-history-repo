@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.11 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.12 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -201,7 +201,6 @@ CONCAT(OQ, ifdef(`QUEUE_DIR', QUEUE_DIR, /var/spool/mqueue))
 ifdef(`confREAD_TIMEOUT',
 	CONCAT(Or, confREAD_TIMEOUT),
 	#Ordatablock=10m)
-CONCAT(Or, confREAD_TIMEOUT)
 
 # queue up everything before forking?
 CONCAT(Os, confSAFE_QUEUE)
