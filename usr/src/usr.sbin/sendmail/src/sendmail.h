@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.97		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.98		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -17,26 +17,12 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.97		%G%";
 # include <ctype.h>
 # include <setjmp.h>
 # include "conf.h"
+# include "conf.h"
 # include "useful.h"
 
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
-/*
-**  Configuration constants.
-**	There shouldn't be much need to change these....
-*/
-
-# define MAXLINE	256		/* max line length */
-# define MAXNAME	128		/* max length of a name */
-# define MAXFIELD	2500		/* max total length of a hdr field */
-# define MAXPV		40		/* max # of parms to mailers */
-# define MAXHOP		30		/* max value of HopCount */
-# define MAXATOM	100		/* max atoms per address */
-# define MAXMAILERS	25		/* maximum mailers known to system */
-# define MAXRWSETS	30		/* max # of sets of rewriting rules */
-# define MAXPRIORITIES	25		/* max values for Precedence: field */
-# define MAXTRUST	30		/* maximum number of trusted users */
 /*
 **  Address structure.
 **	Addresses are stored internally in this structure.
@@ -379,6 +365,9 @@ EXTERN char	Mode;		/* operation mode, see below */
 #define MD_DAEMON	'd'		/* run as a daemon */
 #define MD_VERIFY	'v'		/* verify: don't collect or deliver */
 #define MD_TEST		't'		/* test mode: resolve addrs only */
+#define MD_INITALIAS	'i'		/* initialize alias database */
+#define MD_PRINT	'p'		/* print the queue */
+#define MD_FREEZE	'z'		/* freeze the configuration file */
 
 #define MD_DEFAULT	MD_DELIVER	/* default operation mode */
 /*
@@ -407,6 +396,7 @@ EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
 EXTERN bool	FatalErrors;	/* set if fatal errors during processing */
 EXTERN bool	SuperSafe;	/* be extra careful, even if expensive */
 EXTERN bool	SafeAlias;	/* alias file must have "@:@" to be complete */
+EXTERN bool	AutoRebuild;	/* auto-rebuild the alias database as needed */
 EXTERN time_t	TimeOut;	/* time until timeout */
 EXTERN FILE	*InChannel;	/* input connection */
 EXTERN FILE	*OutChannel;	/* output connection */
