@@ -4,14 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.1 (Berkeley) %G%
+ *	@(#)extern.h	5.2 (Berkeley) %G%
  */
 
 BUFHEAD	*__add_ovflpage __P((BUFHEAD *));
 int	 __addel __P((BUFHEAD *, const DBT *, const DBT *));
-int	 __big_delete __P((BUFHEAD *, int));
+int	 __big_delete __P((BUFHEAD *));
 int	 __big_insert __P((BUFHEAD *, const DBT *, const DBT *));
-int	 __big_keydata __P((BUFHEAD *, int, DBT *, DBT *, int));
+int	 __big_keydata __P((BUFHEAD *, DBT *, DBT *, int));
 int	 __big_return __P((BUFHEAD *, int, DBT *, int));
 int	 __big_split __P((BUFHEAD *, BUFHEAD *, BUFHEAD *,
 		int, u_int, SPLIT_RETURN *));
@@ -25,8 +25,8 @@ u_short	 __find_last_page __P((BUFHEAD **));
 void	 __free_ovflpage __P((BUFHEAD *));
 BUFHEAD	*__get_buf __P((u_int, BUFHEAD *, int));
 int	 __get_page __P((char *, u_int, int, int, int));
-u_long	*__init_bitmap __P((int, int, int));
-int	 __log2 __P((int));
+int	 __init_bitmap __P((int, int, int));
+u_int	 __log2 __P((u_int));
 int	 __put_page __P((char *, u_int, int, int));
 void	 __reclaim_buf __P((BUFHEAD *));
 int	 __split_page __P((u_int, u_int));
