@@ -1,0 +1,53 @@
+DEFINES	= -DDEBUG -DCONFIGURE
+#DEFINES	= -DDEBUG -DUNTRUSTED -DCONFIGURE
+LDFLAGS	= 
+CFLAGS	= -g -O -Wall -pipe
+LIBS	= -lutil
+SRCS	= init.c ttytab.c configure.c cf_table.c utils.c
+OBJS	= init.o ttytab.o configure.o cf_table.o utils.o
+INC	= init.h prototypes.h
+BIN	= /sbin/init
+BAK	= .old
+MAN	= /usr/share/man/cat8/init.0
+#CC	= /usr/local/gcc-2.3.3/bin/gcc
+MKDEP	= mkdep
+TAGS	= ctags
+
+
+all!	
+	@[ -f .test ] && exec make test || \
+	exec make init CC="$(CC)" DEFINES="$(DEFINES)" OBJS="$(OBJS)"
+
+
+test!	.test
+	exec make init CC="$(CC)" DEFINES="$(DEFINES) -DTESTRUN" OBJS="$(OBJS) fake_syslog.c"
+
+init:	$(OBJS)
+	$(CC) -o $@ $(LDFLAGS) $(CFLAGS) $(OBJS) $(LIBS)
+
+init.0:	init.8
+	nroff -mandoc init.8 > init.0
+
+clean!
+	-rm -f $(OBJS) init init.0 .test .depend tags
+
+install!	init init.0
+	[ -f $(BIN)$(ORI) ] || mv -f $(BIN) $(BIN)$(ORI)
+	-mv -f $(BIN) $(BIN)$(BAK)
+	install -c -s -o bin -g bin -m 0555 -s init $(BIN)
+	install -c -o bin -g bin -m 0444 init.0 $(MAN)
+	[ -f /etc/init.conf ] || install -c -o bin -g wheel -m 644 init.conf /etc
+
+depend!
+	$(MKDEP) $(DEFINES) $(SRCS)
+
+tags!
+	$(TAGS) $(SRCS)
+
+.test:
+	make clean
+	touch .test
+
+.c.o:
+	$(CC) -c $(CFLAGS) $(DEFINES) $<
+
