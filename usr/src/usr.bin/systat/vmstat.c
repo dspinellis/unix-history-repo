@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -140,7 +140,7 @@ static	enum state { BOOT, TIME, RUN } state = TIME;
 #define NAMEICOL	 0
 #define GRAPHROW	16	/* uses 3 rows and 51 cols */
 #define GRAPHCOL	 0
-#define GENSTATROW	14	/* uses 8 rows and 11 cols */
+#define GENSTATROW	14	/* uses 9 rows and 11 cols */
 #define GENSTATCOL	51
 #define INTSROW		 2	/* uses all rows to bottom and 17 cols */
 #define INTSCOL		63
@@ -256,9 +256,10 @@ labelkre()
 	mvprintw(GENSTATROW + 2, GENSTATCOL + 8, "Sys");
 	mvprintw(GENSTATROW + 3, GENSTATCOL + 8, "Int");
 	mvprintw(GENSTATROW + 4, GENSTATCOL + 8, "Pdm");
-	mvprintw(GENSTATROW + 5, GENSTATCOL + 8, "Flt");
-	mvprintw(GENSTATROW + 6, GENSTATCOL + 8, "Scn");
-	mvprintw(GENSTATROW + 7, GENSTATCOL + 8, "Rev");
+	mvprintw(GENSTATROW + 5, GENSTATCOL + 8, "Sof");
+	mvprintw(GENSTATROW + 6, GENSTATCOL + 8, "Flt");
+	mvprintw(GENSTATROW + 7, GENSTATCOL + 8, "Scn");
+	mvprintw(GENSTATROW + 8, GENSTATCOL + 8, "Rev");
 
 	mvprintw(PAGEROW + 5, PAGECOL, "Rec It F/S F/F RFL Fre SFr");
 
@@ -408,12 +409,14 @@ showkre()
 		GENSTATROW + 3, GENSTATCOL, 7);
 	putrate(rate.v_pdma, oldrate.v_pdma, 
 		GENSTATROW + 4, GENSTATCOL, 7);
-	putrate(rate.v_faults, oldrate.v_faults, 
+	putrate(rate.v_soft, oldrate.v_soft, 
 		GENSTATROW + 5, GENSTATCOL, 7);
-	putrate(rate.v_scan, oldrate.v_scan, 
+	putrate(rate.v_faults, oldrate.v_faults, 
 		GENSTATROW + 6, GENSTATCOL, 7);
-	putrate(rate.v_rev, oldrate.v_rev, 
+	putrate(rate.v_scan, oldrate.v_scan, 
 		GENSTATROW + 7, GENSTATCOL, 7);
+	putrate(rate.v_rev, oldrate.v_rev, 
+		GENSTATROW + 8, GENSTATCOL, 7);
 	putrate(rate.v_pgin, oldrate.v_pgin, PAGEROW + 2,
 		PAGECOL + 5, 5);
 	putrate(rate.v_pgout, oldrate.v_pgout, PAGEROW + 2,
