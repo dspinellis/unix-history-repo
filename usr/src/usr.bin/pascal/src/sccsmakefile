@@ -2,9 +2,9 @@
 #	the sccs related things for the
 #	berkeley pascal system.
 
-SCCSID = "sccsmakefile 1.3 %G% 16:11:35"
+SCCSID = "sccsmakefile 1.4 %G% 15:12:50"
 
-PSCCSDIR = /usr/src/cmd/pascal
+PSCCSDIR = /usr/src/ucb/pascal/src
 PIDIR = ../pi
 PC0DIR = ../pc0
 
@@ -37,12 +37,12 @@ newversion:
 	/bin/csh newversion.csh pc ${PC0DIR}
 
 makefile: ${PSCCSDIR}/SCCS/s.pimakefile ${PSCCSDIR}/SCCS/s.pcmakefile
-	cd ${PIDIR} ; ${GET} pimakefile ; mv pimakefile makefile
-	cd ${PC0DIR} ; ${GET} pcmakefile ; mv pcmakefile makefile
+	${GET} pimakefile
+	${GET} pcmakefile
 
 whoami.h: ${PSCCSDIR}/SCCS/s.piwhoami.h ${PSCCSDIR}/SCCS/s.pcwhoami.h
-	cd ${PIDIR} ; ${GET} piwhoami.h ; mv piwhoami.h whoami.h
-	cd ${PC0DIR} ; ${GET} pcwhoami.h ; mv pcwhoami.h whoami.h
+	${GET} piwhoami.h
+	${GET} pcwhoami.h
 
 ato.c: ${PSCCSDIR}/SCCS/s.ato.c
 	cd ${PIDIR} ; ${GET} ato.c
