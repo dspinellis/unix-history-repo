@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)protosw.h	7.8 (Berkeley) %G%
+ *	@(#)protosw.h	7.9 (Berkeley) %G%
  */
 
 /*
@@ -46,6 +46,7 @@ struct protosw {
 	int	(*pr_fasttimo)();	/* fast timeout (200ms) */
 	int	(*pr_slowtimo)();	/* slow timeout (500ms) */
 	int	(*pr_drain)();		/* flush any excess space possible */
+	int	(*pr_sysctl)();		/* sysctl for protocol */
 };
 
 #define	PR_SLOWHZ	2		/* 2 slow timeouts per second */
