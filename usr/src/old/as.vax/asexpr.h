@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)asexpr.h 4.3 %G%
+ *	@(#)asexpr.h 4.4 %G%
  */
 /*
  *	Definitions to parse tokens
@@ -14,7 +14,7 @@
 #define advance 	shift
 
 #define shiftover(token)	if (val != token) { \
-					yyerror("token expected"); \
+					shiftoerror(token); \
 					goto errorfix; \
 				} \
 				shift
