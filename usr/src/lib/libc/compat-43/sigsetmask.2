@@ -1,0 +1,32 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)sigsetmask.2	5.1 (Berkeley) %G%
+.\"
+.TH SIGSETMASK 2 "7 July 1983"
+.UC 5
+.SH NAME
+sigsetmask \- set current signal mask
+.SH SYNOPSIS
+.nf
+.B sigsetmask(mask);
+.B int mask;
+.SH DESCRIPTION
+.I Sigsetmask
+sets the current signal mask (those signals
+which are blocked from delivery).  Signal
+.I i
+is blocked if the
+.IR i -th
+bit in 
+.I mask
+is a 1.
+.PP
+The system
+quietly disallows SIGKILL, SIGSTOP, or SIGCONT to
+be blocked.
+.SH "RETURN VALUE
+The previous set of masked signals is returned.
+.SH "SEE ALSO"
+kill(2), sigvec(2), sigblock(2), sigpause(2)
