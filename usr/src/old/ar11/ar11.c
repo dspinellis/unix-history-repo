@@ -1,35 +1,38 @@
-static char *sccsid = "@(#)ar11.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)ar11.c	4.3 (Berkeley) %G%";
 /* ar11 - archiver for PDP-11 formatted archives */
 
 #include <signal.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#define ARMAG -155  /* 017545 */
+#define	ARMAG ((short)0177545)
 struct ar_hdr {
-	char ar_name[14];
-	short ar_date1;
-	short ar_date2;
-	char ar_uid;
-	char ar_gid;
-	short ar_mode;
-	short ar_size1;
-	short ar_size2;
+	char	ar_name[14];
+	short	ar_sdate[2];
+	char	ar_uid;
+	char	ar_gid;
+	short	ar_mode;
+	short	ar_ssize[2];
 };
-int ar_date;
-int ar_size;
-#include <signal.h>
+long	ar_date;
+long	ar_size;
+
+#ifdef vax
+#define	fixshort(s)	(s)
+#define	mklong(sp)	(((sp)[0] << 16) + (sp)[1])
+#define unmklong(sp,l)	{ sp[0] = l >> 16; sp[1] = l & 0177777; }
+#define fixhdr(hdr)	(hdr)
+#endif
+#ifdef mc68000
+#define	fixshort(s)	((short)(((s>>8)&0377)+((s&0377)<<8)))
+#define	mklong(sp)	(((sp)[0] << 16) + (sp)[1])
+#define unmklong(sp,l)	{ sp[0] = l >> 16; sp[1] = l & 0177777; }
+#define fixhdr(hdr)	swaphdr(hdr)
+struct	ar_hdr swaphdr();
+#endif
+
 struct	stat	stbuf;
 struct	ar_hdr	arbuf;
-union ints
-{
-	struct fun
-	{
-		short h1;
-		short h2;
-	};
-	int w1;
-} x;
 
 #define	SKIP	1
 #define	IODD	2
@@ -294,7 +297,7 @@ tcmd()
 
 init()
 {
-	static short mbuf = ARMAG;
+	static short mbuf = fixshort(ARMAG);
 
 	tfnam = mktemp("/tmp/vXXXXX");
 	close(creat(tfnam, 0600));
@@ -314,7 +317,8 @@ getaf()
 	af = open(arnam, 0);
 	if(af < 0)
 		return(1);
-	if (read(af, (char *)&mbuf, sizeof(short)) != sizeof(short) || mbuf!=ARMAG) {
+	if (read(af, (char *)&mbuf, sizeof(short)) != sizeof(short) ||
+	    mbuf != fixshort(ARMAG)) {
 		fprintf(stderr, "ar11: %s not in PDP-11 archive format\n", arnam);
 		done(1);
 	}
@@ -427,12 +431,10 @@ movefil(f)
 	for(i=0; i<14; i++)
 		if(arbuf.ar_name[i] = *cp)
 			cp++;
-	ar_size = x.w1 = stbuf.st_size;
-	arbuf.ar_size1 = x.h2;
-	arbuf.ar_size2 = x.h1;
-	x.w1 = stbuf.st_mtime;
-	arbuf.ar_date1 = x.h2;
-	arbuf.ar_date2 = x.h1;
+	ar_size =  stbuf.st_size;
+	ar_date = stbuf.st_mtime;
+	unmklong(arbuf.ar_ssize, ar_size);
+	unmklong(arbuf.ar_sdate, ar_date);
 	arbuf.ar_uid = stbuf.st_uid;
 	arbuf.ar_gid = stbuf.st_gid;
 	arbuf.ar_mode = stbuf.st_mode;
@@ -463,9 +465,13 @@ copyfil(fi, fo, flag)
 	register i, o;
 	int pe;
 
-	if(flag & HEAD)
-		if (write(fo, (char *)&arbuf, sizeof arbuf) != sizeof arbuf)
+	if(flag & HEAD) {
+		struct ar_hdr tmpbuf;
+
+		tmpbuf = fixhdr(arbuf);
+		if (write(fo, (char *)&tmpbuf, sizeof arbuf) != sizeof arbuf)
 			wrerr();
+	}
 	pe = 0;
 	while(ar_size > 0) {
 		i = o = 512;
@@ -502,13 +508,12 @@ getdir()
 		}
 		return(1);
 	}
+	arbuf = fixhdr(arbuf);
 	for(i=0; i<14; i++)
-{
 		name[i] = arbuf.ar_name[i];
-}
 	file = name;
-	ar_date = swap(&arbuf.ar_date1);
-	ar_size = swap(&arbuf.ar_size1);
+	ar_date = mklong(arbuf.ar_sdate);
+	ar_size = mklong(arbuf.ar_ssize);
 	return(0);
 }
 
@@ -654,11 +659,16 @@ wrerr()
 	done(1);
 }
 
-swap(word)
-short *word;
+#ifdef mc68000
+struct ar_hdr
+swaphdr(hdr)
+	struct ar_hdr hdr;
 {
-	x.h1 = ((struct fun *)word)->h2;
-	x.h2 = ((struct fun *)word)->h1;
-	
-	return(x.w1);
+	hdr.ar_sdate[0] = fixshort(hdr.ar_sdate[0]);
+	hdr.ar_sdate[1] = fixshort(hdr.ar_sdate[1]);
+	hdr.ar_ssize[0] = fixshort(hdr.ar_ssize[0]);
+	hdr.ar_ssize[1] = fixshort(hdr.ar_ssize[1]);
+	hdr.ar_mode = fixshort(hdr.ar_mode);
+	return (hdr);
 }
+#endif
