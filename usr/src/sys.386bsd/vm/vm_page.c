@@ -60,6 +60,14 @@
  *
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00074
+ * --------------------         -----   ----------------------
+ *
+ * 22 Jan 93	Paul Mackerras		Fixed bug where pages got lost
+ *
  */
 
 /*
@@ -687,15 +695,22 @@ void vm_page_deactivate(m)
 	/*
 	 *	Only move active pages -- ignore locked or already
 	 *	inactive ones.
+	 *
+	 *	XXX: sometimes we get pages which aren't wired down
+	 *	or on any queue - we need to put them on the inactive
+	 *	queue also, otherwise we lose track of them.
+	 *	Paul Mackerras (paulus@cs.anu.edu.au) 9-Jan-93.
 	 */
 
-	if (m->active) {
+	if (!m->inactive && m->wire_count == 0) {
 		pmap_clear_reference(VM_PAGE_TO_PHYS(m));
-		queue_remove(&vm_page_queue_active, m, vm_page_t, pageq);
+		if (m->active) {
+			queue_remove(&vm_page_queue_active, m, vm_page_t, pageq);
+			m->active = FALSE;
+			vm_page_active_count--;
+		}
 		queue_enter(&vm_page_queue_inactive, m, vm_page_t, pageq);
-		m->active = FALSE;
 		m->inactive = TRUE;
-		vm_page_active_count--;
 		vm_page_inactive_count++;
 		if (pmap_is_modified(VM_PAGE_TO_PHYS(m)))
 			m->clean = FALSE;
