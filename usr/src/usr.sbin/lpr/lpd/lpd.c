@@ -7,13 +7,13 @@
  */
 
 #ifndef lint
-char copyright[] =
+static char copyright[] =
 "@(#) Copyright (c) 1983 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
