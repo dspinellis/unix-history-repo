@@ -17,7 +17,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)more.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)more.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1359,6 +1359,7 @@ va_dcl
 	    execv (cmd, argp);
 	    write (2, "exec failed\n", 12);
 	    exit (1);
+	    va_end(argp);	/* balance {}'s for some UNIX's */
 	}
 	if (id > 0) {
 	    signal (SIGINT, SIG_IGN);
