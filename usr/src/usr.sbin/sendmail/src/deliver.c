@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.122 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.123 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -656,6 +656,7 @@ deliver(e, firstto)
 	CurEnv = e;			/* just in case */
 	e->e_statmsg = NULL;
 	SmtpError[0] = '\0';
+	xstart = curtime();
 
 	if (tTd(10, 1))
 		printf("\n--deliver, id=%s, mailer=%s, host=`%s', first user=`%s'\n",
@@ -787,7 +788,6 @@ deliver(e, firstto)
 	tobuf[0] = '\0';
 	e->e_to = tobuf;
 	ctladdr = NULL;
-	xstart = curtime();
 	firstsig = hostsignature(firstto->q_mailer, firstto->q_host, e);
 	for (; to != NULL; to = to->q_next)
 	{
