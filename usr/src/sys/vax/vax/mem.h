@@ -1,4 +1,4 @@
-/*	mem.h	4.7	81/03/21	*/
+/*	mem.h	4.8	81/04/02	*/
 
 /*
  * Memory controller registers
@@ -30,12 +30,18 @@ struct	mcr {
  */
 #if VAX780
 #define	M780_ICRD	0x40000000	/* inhibit crd interrupts, in [2] */
-#define	M780_HIERR	0x20000000	/* high error rate, in reg[2] */
+#define	M780_HIER	0x20000000	/* high error rate, in reg[2] */
 #define	M780_ERLOG	0x10000000	/* error log request, in reg[2] */
+/* on a 780, memory crd's occur only when bit 15 is set in the SBIER */
+/* register; bit 14 there is an error bit which we also clear */
+/* these bits are in the back of the ``red book'' (or in the VMS code) */
 
-#define	M780_INH(mcr)	((mcr)->mc_reg[2] = (M780_ICRD|M780_HIERR|M780_ERLOG))
-#define	M780_ENA(mcr)	((mcr)->mc_reg[2] = (M780_HIERR|M780_ERLOG))
-#define	M780_ERR(mcr)	((mcr)->mc_reg[2] & (M780_ERLOG))
+#define	M780_INH(mcr)	\
+	(((mcr)->mc_reg[2] = (M780_ICRD|M780_HIER|M780_ERLOG)), mtpr(SBIER, 0))
+#define	M780_ENA(mcr)	\
+	(((mcr)->mc_reg[2] = (M780_HIER|M780_ERLOG)), mtpr(SBIER, 3<<14))
+#define	M780_ERR(mcr)	\
+	((mcr)->mc_reg[2] & (M780_ERLOG))
 
 #define	M780_SYN(mcr)	((mcr)->mc_reg[2] & 0xff)
 #define	M780_ADDR(mcr)	(((mcr)->mc_reg[2] >> 8) & 0xfffff)
