@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsnode.h	8.6 (Berkeley) %G%
+ *	@(#)nfsnode.h	8.7 (Berkeley) %G%
  */
 
 /*
@@ -105,6 +105,7 @@ int	nfsfifo_write __P((struct vop_write_args *));
 #endif
 #define nfs_ioctl ((int (*) __P((struct  vop_ioctl_args *)))enoioctl)
 #define nfs_select ((int (*) __P((struct  vop_select_args *)))seltrue)
+#define	nfs_revoke vop_revoke
 int	nfs_mmap __P((struct vop_mmap_args *));
 int	nfs_fsync __P((struct vop_fsync_args *));
 #define nfs_seek ((int (*) __P((struct  vop_seek_args *)))nullop)
