@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)signal.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)signal.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -41,7 +41,6 @@ static char sccsid[] = "@(#)signal.c	5.1 (Berkeley) %G%";
  */
 public int sigs;
 
-#define	S_INTERRUPT	01
 #ifdef SIGTSTP
 #define	S_STOP		02
 #endif
@@ -56,18 +55,6 @@ extern int linenums;
 extern int scroll;
 extern int reading;
 
-/*
- * Interrupt signal handler.
- */
-	static HANDLER
-interrupt()
-{
-	SIGNAL(SIGINT, interrupt);
-	sigs |= S_INTERRUPT;
-	if (reading)
-		intread();
-}
-
 #ifdef SIGTSTP
 /*
  * "Stop" (^Z) signal handler.
@@ -75,7 +62,7 @@ interrupt()
 	static HANDLER
 stop()
 {
-	SIGNAL(SIGTSTP, stop);
+	(void) signal(SIGTSTP, stop);
 	sigs |= S_STOP;
 	if (reading)
 		intread();
@@ -89,7 +76,7 @@ stop()
 	public HANDLER
 winch()
 {
-	SIGNAL(SIGWINCH, winch);
+	signal(SIGWINCH, winch);
 	sigs |= S_WINCH;
 	if (reading)
 		intread();
@@ -102,7 +89,7 @@ winch()
 	public HANDLER
 winch()
 {
-	SIGNAL(SIGWIND, winch);
+	signal(SIGWIND, winch);
 	sigs |= S_WINCH;
 	if (reading)
 		intread();
@@ -122,15 +109,15 @@ init_signals(on)
 		/*
 		 * Set signal handlers.
 		 */
-		(void) SIGNAL(SIGINT, interrupt);
+		(void) signal(SIGINT, quit);
 #ifdef SIGTSTP
-		(void) SIGNAL(SIGTSTP, stop);
+		(void) signal(SIGTSTP, stop);
 #endif
 #ifdef SIGWINCH
-		(void) SIGNAL(SIGWINCH, winch);
+		(void) signal(SIGWINCH, winch);
 #else
 #ifdef SIGWIND
-		(void) SIGNAL(SIGWIND, winch);
+		(void) signal(SIGWIND, winch);
 #endif
 #endif
 	} else
@@ -138,15 +125,15 @@ init_signals(on)
 		/*
 		 * Restore signals to defaults.
 		 */
-		(void) SIGNAL(SIGINT, SIG_DFL);
+		(void) signal(SIGINT, SIG_DFL);
 #ifdef SIGTSTP
-		(void) SIGNAL(SIGTSTP, SIG_DFL);
+		(void) signal(SIGTSTP, SIG_DFL);
 #endif
 #ifdef SIGWINCH
-		(void) SIGNAL(SIGWINCH, SIG_IGN);
+		(void) signal(SIGWINCH, SIG_IGN);
 #endif
 #ifdef SIGWIND
-		(void) SIGNAL(SIGWIND, SIG_IGN);
+		(void) signal(SIGWIND, SIG_IGN);
 #endif
 	}
 }
@@ -188,7 +175,7 @@ psignals()
 		 * Clean up the terminal.
 		 */
 #ifdef SIGTTOU
-		SIGNAL(SIGTTOU, SIG_IGN);
+		signal(SIGTTOU, SIG_IGN);
 #endif
 		lower_left();
 		clear_eol();
@@ -196,9 +183,9 @@ psignals()
 		flush();
 		raw_mode(0);
 #ifdef SIGTTOU
-		SIGNAL(SIGTTOU, SIG_DFL);
+		signal(SIGTTOU, SIG_DFL);
 #endif
-		SIGNAL(SIGTSTP, SIG_DFL);
+		signal(SIGTSTP, SIG_DFL);
 		kill(getpid(), SIGTSTP);
 		/*
 		 * ... Bye bye. ...
@@ -206,32 +193,10 @@ psignals()
 		 * Reset the terminal and arrange to repaint the
 		 * screen when we get back to the main command loop.
 		 */
-		SIGNAL(SIGTSTP, stop);
+		signal(SIGTSTP, stop);
 		raw_mode(1);
 		init();
 		screen_trashed = 1;
 	}
 #endif
-	if (tsignals & S_INTERRUPT)
-	{
-		bell();
-		/*
-		 * {{ You may wish to replace the bell() with 
-		 *    error("Interrupt"); }}
-		 */
-
-		/*
-		 * If we were interrupted while in the "calculating 
-		 * line numbers" loop, turn off line numbers.
-		 */
-		if (lnloop)
-		{
-			lnloop = 0;
-			linenums = 0;
-			error("Line numbers turned off");
-		}
-
-	}
-
-	return (1);
 }
