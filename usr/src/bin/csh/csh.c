@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)csh.c 4.6 %G%";
+static	char *sccsid = "@(#)csh.c 4.7 %G%";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -13,7 +13,7 @@ static	char *sccsid = "@(#)csh.c 4.6 %G%";
  */
 
 char	*pathlist[] =	{ ".", "/usr/ucb", "/bin", "/usr/bin", 0 };
-char	*dumphist[] =	{ "history", "-h", 0 };
+char	*dumphist[] =	{ "history", "-h", 0, 0 };
 char	*loadhist[] =	{ "source", "-h", "~/.history", 0 };
 char	HIST = '!';
 char	HISTSUB = '^';
@@ -551,19 +551,23 @@ rechist()
 	int fp, ftmp, oldidfds;
 
 	if (!fast) {
+		if (value("savehist")[0] == '\0')
+			return;
 		strcpy(buf, value("home"));
 		strcat(buf, "/.history");
 		fp = creat(buf, 0777);
-		if (fp != -1) {
-			oldidfds = didfds;
-			didfds = 0;
-			ftmp = SHOUT;
-			SHOUT = fp;
-			dohist(dumphist);
-			close(fp);
-			SHOUT = ftmp;
-			didfds = oldidfds;
-		}
+		if (fp == -1)
+			return;
+		oldidfds = didfds;
+		didfds = 0;
+		ftmp = SHOUT;
+		SHOUT = fp;
+		strcpy(buf, value("savehist"));
+		dumphist[2] = buf;
+		dohist(dumphist);
+		close(fp);
+		SHOUT = ftmp;
+		didfds = oldidfds;
 	}
 }
 
