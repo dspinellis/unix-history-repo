@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.3 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	xroach
 MAN6=	xroach.0
