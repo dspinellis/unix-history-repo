@@ -1,5 +1,6 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
+# include	<dir.h>
 
 SCCSID(@(#)get.c	4.4);
 USXALLOC();
@@ -13,7 +14,7 @@ char	had[26];
 char	*ilist, *elist, *lfile;
 long	cutoff	0X7FFFFFFFL;	/* max positive long */
 int verbosity;
-char	Gfile[16];
+char	Gfile[MAXNAMLEN + 3];
 char	*Type;
 int	Did_id;
 
@@ -385,7 +386,7 @@ char	Chgdate[18];
 char	*Chgtime;
 char	Gchgdate[9];
 char	Sid[32];
-char	Mod[16];
+char	Mod[MAXNAMLEN + 3];		/* should be as large as Gfile? */
 char	Olddir[BUFSIZ];
 char	Pname[BUFSIZ];
 char	Dir[BUFSIZ];
