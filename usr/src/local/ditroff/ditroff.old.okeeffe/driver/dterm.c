@@ -1,4 +1,4 @@
-/* @(#)dterm.c	1.9	(Berkeley)	%G%"
+/* @(#)dterm.c	1.10	(Berkeley)	%G%"
  *
  *	Converts ditroff output to text on a terminal.  It is NOT meant to
  *	produce readable output, but is to show one how one's paper is (in
@@ -52,11 +52,10 @@
 #define	abs(n)		((n) >= 0 ? (n) : -(n))
 #define	max(x,y)	((x) > (y) ? (x) : (y))
 #define	min(x,y)	((x) < (y) ? (x) : (y))
-#define	arcmove(x,y)	{ hgoto(x); vmot(-vpos-(y)); }
 #define sqr(x)		(long int)(x)*(x)
 
 
-char	SccsId [] = "@(#)dterm.c	1.9	(Berkeley)	%G%";
+char	SccsId [] = "@(#)dterm.c	1.10	(Berkeley)	%G%";
 
 char	**spectab;		/* here go the special characters */
 char	*specfile = SPECFILE;	/* place to look up special characters */
@@ -90,7 +89,6 @@ int	pgnum[40];	/* their actual numbers */
 long	pgadr[40];	/* their seek addresses */
 
 int	DP;			/* step size for drawing */
-int	drawdot = '.';		/* draw with this character */
 int	maxdots	= 3200;		/* maximum number of dots in an object */
 
 
@@ -690,20 +688,20 @@ char *s;
 		numdots = abs (yd);
 		numdots = min(numdots, maxdots);
 		motincr = DP * sgn (yd);
-		put1(drawdot);
+		put1('|');
 		for (i = 0; i < numdots; i++) {
 			vmot(motincr);
-			put1(drawdot);
+			put1('|');
 		}
 	} else
 	if (yd == 0) {
 		numdots = abs (xd);
 		numdots = min(numdots, maxdots);
 		motincr = DP * sgn (xd);
-		put1(drawdot);
+		put1('-');
 		for (i = 0; i < numdots; i++) {
 			hmot(motincr);
-			put1(drawdot);
+			put1('-');
 		}
 	} else {
 	    if (abs (xd) > abs (yd)) {
@@ -723,7 +721,7 @@ char *s;
 	    }
 	    numdots = min(numdots, maxdots);
 	    incrway = sgn ((int) slope);
-	    put1(drawdot);
+	    put1('*');
 	    for (i = 0; i < numdots; i++) {
 		val -= incrway;
 		if (dirmot == 'h')
@@ -737,7 +735,7 @@ char *s;
 				vmot(perpincr);
 			val += slope;
 		}
-		put1(drawdot);
+		put1('*');
 	    }
 	}
 	hgoto(ohpos + dx);
@@ -785,7 +783,7 @@ char *s;
 			if (xp != pxp || yp != pyp) {
 				hgoto(xp);
 				vgoto(yp);
-				put1(drawdot);
+				put1('*');
 				pxp = xp;
 				pyp = yp;
 			}
@@ -989,8 +987,11 @@ conicarc(x, y, x0, y0, x1, y1, a, b)
 	delta = sqr(Xs + 1) + sqr(Ys - 1) - sqr(xs) - sqr(ys);
 				/* here begins the work of drawing. */
 	while ((Q >= 0) || ((Q > -2) && ((Xt > Xc) && (Yt < Yc)))) {
-		if (dotcount++ % DP == 0)
-			putdot((int)xc, (int)yc);
+		if (dotcount++ % DP == 0) {
+			hgoto((int)xc);
+			vmot(-vpos-((int)yc));
+			put1('*');
+		}
 		if (Yc < 0.5) {
 			/* reinitialize */
 			Xs = Xc = 0;
@@ -1042,11 +1043,4 @@ conicarc(x, y, x0, y0, x1, y1, a, b)
 		}
 	}
 	drawline((int)xc-ox1,(int)yc-oy1,".");
-}
-
-
-putdot(x, y)
-{
-	arcmove(x, y);
-	put1(drawdot);
 }
