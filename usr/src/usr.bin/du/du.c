@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -77,16 +77,7 @@ main(argc, argv)
 
 	while (p = fts_read(fts))
 		switch(p->fts_info) {
-		case FTS_DNR:
-			(void)fprintf(stderr,
-			    "du: %s: unable to read.\n", p->fts_path);
-			break;
-		case FTS_DNX:
-			(void)fprintf(stderr,
-			    "du: %s: unable to search.\n", p->fts_path);
-			break;
 		case FTS_D:
-		case FTS_DC:
 			break;
 		case FTS_DP:
 			p->fts_parent->fts_number += 
@@ -101,14 +92,12 @@ main(argc, argv)
 				    howmany(p->fts_number, 2) :
 				    p->fts_number, p->fts_path);
 			break;
+		case FTS_DNR:
 		case FTS_ERR:
+		case FTS_NS:
 			(void)fprintf(stderr,
 			    "du: %s: %s.\n", p->fts_path, strerror(errno));
 			exit(1);
-		case FTS_NS:
-			(void)fprintf(stderr,
-			    "du: unable to stat: %s.\n", p->fts_path);
-			break;
 		default:
 			if (p->fts_statb.st_nlink > 1 && linkchk(p))
 				break;
