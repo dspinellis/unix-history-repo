@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)at.c	4.10	(Berkeley)	%G%";
+static char sccsid[] = "@(#)at.c	4.11	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -266,11 +266,18 @@ char **argv;
 	 * one to the day of year that the job will be executed.
 	 */
 	if (dateindex == NODATEFOUND) {
+		int daysinyear;
 		if (strncmp(*argv,"week",4) == 0)
 			attime.yday += 7;
 
 		else if (istomorrow())
 			++attime.yday;
+
+		daysinyear = isleap(attime.year) ? 366 : 365;
+		if (attime.yday >= daysinyear) {
+			attime.yday -= daysinyear;
+			++attime.year;
+		}
 	}
 
 
@@ -619,17 +626,18 @@ int dateindex;
  * 'week' later and the date is at least Dec. 24. (I think so anyway)
  */
 isnextyear()
-{
+{	register daysinyear;
 	if (attime.yday < nowtime.yday)
 		return(1);
 
 	if ((attime.yday == nowtime.yday) && (attime.hour < nowtime.hour))
 		return(1);
 
-	if ((attime.yday == nowtime.yday) && (attime.hour == nowtime.hour) 
-				&& (attime.min < nowtime.min))
+	daysinyear = isleap(attime.year) ? 366 : 365;
+	if (attime.yday >= daysinyear) {
+		attime.yday -= daysinyear;
 		return(1);
-
+	}
 	if (attime.yday > (isleap(attime.year) ? 366 : 365)) {
 		attime.yday -= (isleap(attime.year) ? 366 : 365);
 		return(1);
