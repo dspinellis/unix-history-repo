@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.22	82/11/13	*/
+/*	sys_generic.c	5.23	82/11/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -210,6 +210,8 @@ rwip(ip, uio, rw)
 
 	if (rw != UIO_READ && rw != UIO_WRITE)
 		panic("rwip");
+	if (rw == UIO_READ && uio->uio_resid == 0)
+		return (0);
 	if (uio->uio_offset < 0 &&
 	    ((ip->i_mode&IFMT) != IFCHR || mem_no != major(dev)))
 		return (EINVAL);
@@ -230,7 +232,7 @@ rwip(ip, uio, rw)
 		return (u.u_error);
 	}
 	if (uio->uio_resid == 0)
-		return;
+		return (0);
 	if (rw == UIO_WRITE && type == IFREG &&
 	    uio->uio_offset + uio->uio_resid >
 	      u.u_rlimit[RLIMIT_FSIZE].rlim_cur) {
