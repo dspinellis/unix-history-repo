@@ -1,4 +1,4 @@
-/*	raw_cb.c	4.19	83/06/19	*/
+/*	raw_cb.c	4.19	83/06/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -120,8 +120,7 @@ raw_bind(so, nam)
 
 		bzero((caddr_t)&inpup, (unsigned)sizeof(inpup));
 		inpup.sin_family = AF_INET;
-		inpup.sin_addr.s_net = spup->spup_net;
-		inpup.sin_addr.s_impno = spup->spup_host;
+		inpup.sin_addr = if_makeaddr(spup->spup_net, spup->spup_host);
 		if (inpup.sin_addr.s_addr &&
 		    if_ifwithaddr((struct sockaddr *)&inpup) == 0)
 			return (EADDRNOTAVAIL);
