@@ -14,7 +14,7 @@ LOCALTIME=	Factory
 # Alternately, if you discover you've got the wrong time zone, you can just
 #	zic -p rightzone
 
-POSIXRULES=	US/Eastern
+POSIXRULES=	America/New_York
 
 # Use an absolute path name for TZDIR unless you're just testing the software.
 
@@ -109,7 +109,7 @@ MAN5=	tzfile.5
 SRCS=	zic.c scheck.c ialloc.c
 
 YDATA=	africa antarctica asia australasia europe northamerica \
-	southamerica pacificnew russia etcetera factory
+	southamerica pacificnew etcetera factory
 NDATA=	systemv
 #SDATA=	solar87 solar88 solar89
 TDATA=	${YDATA} ${NDATA} ${SDATA}
