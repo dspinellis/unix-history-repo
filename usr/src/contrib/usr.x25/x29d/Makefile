@@ -4,7 +4,7 @@ x29d:	x29d.o
 install:	x29d
 	install -s -m 740 x29d /etc/x29d
 
-x29d.o:	../h/x29.h /sys/h/ioctl.h ../lib/x25lib.a
+x29d.o:	../h/x29.h
 	cc -O -c -DCCITT x29d.c
 
 lint:
