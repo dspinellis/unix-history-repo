@@ -1,0 +1,99 @@
+.th CTIME III 10/15/73
+.sh NAME
+ctime, localtime, gmtime  \*-  convert date and time to ASCII
+.sh SYNOPSIS
+.ft B
+char *ctime(tvec)
+.br
+int tvec[2];
+.s3
+.ft R
+[from Fortran]
+.br
+.ft B
+double precision ctime
+.br
+.li
+... = ctime(dummy)
+.s3
+int *localtime(tvec)
+.br
+int tvec[2];
+.s3
+int *gmtime(tvec)
+.br
+int tvec[2];
+.br
+.ft R
+.sh DESCRIPTION
+.it Ctime
+converts a time in the vector
+.it tvec
+such as returned by time (II)
+into ASCII
+and returns a pointer to a
+character string
+in the form
+.s3
+    Sun Sep 16 01:03:52 1973\\n\\0
+.s3
+All the fields have constant width.
+.s3
+The
+.it localtime
+and
+.it gmtime
+entries return pointers to integer vectors containing
+the broken-down time.
+.it Localtime
+corrects for the time zone and possible daylight savings time;
+.it gmtime
+converts directly to GMT, which is the time UNIX uses.
+The value is a pointer
+to an array whose components are
+.s3
+.lp +5 5
+0	seconds
+.lp +5 5
+1	minutes
+.lp +5 5
+2	hours
+.lp +5 5
+3	day of the month (1-31)
+.lp +5 5
+4	month (0-11)
+.lp +5 5
+5	year \*- 1900
+.lp +5 5
+6	day of the week (Sunday = 0)
+.lp +5 5
+7	day of the year (0-365)
+.lp +5 5
+8	Daylight Saving Time flag if non-zero
+.i0
+.s3
+The external variable
+.it timezone
+contains the difference, in seconds, between GMT and local
+standard time (in EST, is 5*60*60);
+the external variable
+.it daylight
+is non-zero iff the standard U.S.A. Daylight
+Savings Time conversion should be applied.
+The program knows about the peculiarities
+of this conversion in 1974 and 1975;
+if necessary,
+a table for these years can be extended.
+.s3
+A routine named
+.it ctime
+is also available from Fortran.
+Actually it more resembles the
+.it time
+(II) system entry in that it returns the number of seconds
+since the epoch
+0000 GMT Jan. 1, 1970
+(as a floating-point number).
+.sh "SEE ALSO"
+time(II)
+.sh BUGS

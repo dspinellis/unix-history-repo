@@ -1,0 +1,43 @@
+.th PASSWD V 9/10/73
+.sh NAME
+passwd \*- password file
+.sh DESCRIPTION
+.it Passwd
+contains for each user the
+following information:
+.s3
+.lp +10 5
+name (login name, contains no upper case)
+.lp +10 5
+encrypted password
+.lp +10 5
+numerical user ID
+.lp +10 5
+numerical group ID (for now, always 1)
+.lp +10 5
+GCOS job number, box number, optional GCOS user-id
+.lp +10 5
+initial working directory
+.lp +10 5
+program to use as Shell
+.s3
+.i0
+This is an ASCII file.  Each field within each user's entry
+is separated from the next by a colon.
+The GCOS field is used only when communicating with that
+system, and in other installations can contain
+any desired information.
+Each user is separated from the next by a new-line.
+If the password field is null, no password is demanded;
+if the Shell field is null, the Shell itself
+is used.
+.s3
+This file resides in directory /etc.
+Because of the encrypted
+passwords, it can and does have general read
+permission and can be used, for example,
+to map numerical user ID's to names.
+.sh FILES
+/etc/passwd
+.sh "SEE ALSO"
+login (I), crypt (III), passwd (I), group (V)

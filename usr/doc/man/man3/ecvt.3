@@ -1,0 +1,58 @@
+.th ECVT III 4/30/73
+.sh NAME
+ecvt, fcvt \*- output conversion
+.sh SYNOPSIS
+.ft B
+jsr	pc,ecvt
+.s3
+jsr	pc,fcvt
+.s3
+char *ecvt(value, ndigit, decpt, sign)
+.br
+double value;
+.br
+int ndigit, *decpt, *sign;
+.s3
+char *fcvt(value, ndigit, decpt, sign)
+.br
+.li
+...
+.ft R
+.sh DESCRIPTION
+.it Ecvt
+is called with a floating point number in fr0.
+.s3
+On exit, the number has been converted into a
+string of ascii digits in a buffer pointed to by r0.
+The number of digits produced is controlled
+by a global variable \fI\*_ndigits\fR.
+.s3
+Moreover, the position of the decimal point is
+contained in r2: r2=0 means the d.p. is at the
+left hand end of the string of digits;
+r2>0 means the d.p. is within or to the right
+of the string.
+.s3
+The sign of the number is indicated by r1 (0 for +; 1 for \*-).
+.s3
+The low order digit has suffered decimal rounding
+(i. e. may have been carried into).
+.s3
+From C,
+the
+.it value
+is converted and a pointer to a null-terminated
+string of \fIndigit\fR digits is returned.
+The position of the decimal point is stored indirectly
+through \fIdecpt\fR (negative means to the left of the
+returned digits).
+If the sign of the result is negative,
+the word pointed to by \fIsign\fR is non-zero, otherwise
+it is zero.
+.s3
+\fIFcvt\fR is identical to \fIecvt\fR, except that the correct digit
+been rounded for F-style output of the number
+of digits specified by \fI\(*_ndigits\fR.
+.sh "SEE ALSO"
+printf (III)
+.sh BUGS

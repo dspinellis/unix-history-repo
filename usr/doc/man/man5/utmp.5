@@ -1,0 +1,19 @@
+.th UTMP V 9/10/73
+.sh NAME
+utmp \*- user information
+.sh DESCRIPTION
+This
+file allows one to discover information about who is currently
+using UNIX.
+The file is binary; each entry is 16(10) bytes long.
+The first eight bytes contain a user's login name or
+are null if the table slot is unused.
+The low order byte of the next word contains the last
+character of a typewriter name.
+The next two words contain the user's login time.
+The last word is unused.
+.sh FILES
+/etc/utmp
+.sh "SEE ALSO"
+init (VIII) and login (I), which maintain the file;
+who (I), which interprets it.

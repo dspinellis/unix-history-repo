@@ -1,0 +1,75 @@
+.th END III 4/28/75
+.sh NAME
+end, etext, edata \*- last locations in program
+.sh SYNOPSIS
+.ft B
+.nf
+extern	end;
+extern	etext;
+extern	edata;
+.ft R
+.fi
+.sh DESCRIPTION
+These names refer neither to routines
+nor to locations with interesting contents.
+Instead, their addresses coincide with the first
+address above the program text region
+.it (etext),
+above the initialized data region
+.it (edata),
+or uninitialized data region
+.it (end).
+The last is the same as the program break.
+Values are given to these symbols
+by the link editor
+.it ld
+(I)
+when, and only when, they are referred to but not defined
+in the set of programs loaded.
+.s3
+The usage of these symbols is rather specialized, but one plausible
+possibility is
+.s3
+.nf
+	extern end;
+	...
+	... = brk(&end+...);
+.fi
+.s3
+(see
+.it break
+(II)).
+The problem with this is that it ignores any other
+subroutines which may want to extend core for their purposes;
+these include
+.it sbrk
+(see
+.it break
+(II)),
+.it alloc
+(III),
+and also secret subroutines invoked by the profile
+(\-p) option of 
+.it cc.
+Of course it was for the benefit of such systems
+that the symbols were invented,
+and user programs, unless they are in firm control
+of their environment,
+are wise not to refer to
+the absolute symbols directly.
+.s3
+One technique sometimes useful
+is to call
+.it sbrk(0),
+which returns the value of the current program break,
+instead of referring to
+.it &end,
+which yields the program break at the instant execution started.
+.s3
+These symbols are accessible from assembly
+language
+if it is remembered that they should be prefixed by
+`\*_'
+.sh "SEE ALSO"
+break (II), alloc (III)
+.sh BUGS

@@ -1,0 +1,39 @@
+.th RESET III 5/10/73
+.sh NAME
+reset, setexit \*- execute non-local goto
+.sh SYNOPSIS
+.ft B
+.bd "setexit( )"
+.s3
+.bd "reset( )"
+.ft R
+.sh DESCRIPTION
+These routines are useful for dealing with errors 
+and interrupts encountered in
+a low-level subroutine of a program.
+.s3
+.it Setexit
+saves its stack environment in a static place for
+later use by
+.it reset.
+.s3
+.it Reset
+restores the environment saved by the last call of
+.it setexit.
+It then returns in such a way that execution
+continues as if the call of 
+.it setexit
+had just returned.
+All accessible data have values as of the
+time 
+.it reset 
+was called.
+.s3
+The routine that called
+.it setexit
+must still be active when
+.it reset
+is called.
+.sh "SEE ALSO"
+signal (II)
+.sh BUGS

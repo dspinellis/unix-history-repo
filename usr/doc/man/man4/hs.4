@@ -1,0 +1,42 @@
+.th HS IV 2/9/75
+.sh NAME
+hs \*- RH11/RS03-RS04 fixed-head disk file
+.sh DESCRIPTION
+The files
+.it "hs0 ... hs7"
+refer to
+RJS03 disk drives 0 through 7.
+The files
+.it "hs8 ... hs15"
+refer to
+RJS04 disk drives 0 through 7.
+The RJS03 drives are each 1024 blocks long and
+the RJS04 drives are 2048 blocks long.
+.s3
+The
+.it hs
+files
+access the disk via the system's normal
+buffering mechanism
+and may be read and written without regard to
+physical disk records.
+There is also a ``raw'' inteface
+which provides for direct transmission between the disk
+and the user's read or write buffer.
+A single read or write call results in exactly one I/O operation
+and therefore raw I/O is considerably more efficient when
+many words are transmitted.
+The names of the raw HS files begin with
+.it rhs.
+The same minor device considerations
+hold for the raw interface as for the normal interface.
+.s3
+In raw I/O the buffer must begin on a word boundary,
+and counts should be a multiple of 512 bytes
+(a disk block).
+Likewise
+.it seek
+calls should specify a multiple of 512 bytes.
+.sh FILES
+/dev/hs?, /dev/rhs?
+.sh BUGS
