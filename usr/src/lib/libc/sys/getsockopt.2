@@ -3,14 +3,14 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getsockopt.2	6.8 (Berkeley) %G%
+.\"     @(#)getsockopt.2	6.9 (Berkeley) %G%
 .\"
 .\" Copyright (c) 1983, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getsockopt.2	6.8 (Berkeley) %G%
+.\"     @(#)getsockopt.2	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETSOCKOPT 2
@@ -23,9 +23,9 @@
 .Fd #include <sys/types.h>
 .Fd #include <sys/socket.h>
 .Ft int
-.Fn getsockopt "int s" "int level" "int optname" "char *optval" "int *optlen"
+.Fn getsockopt "int s" "int level" "int optname" "void *optval" "int *optlen"
 .Ft int
-.Fn setsockopt "int s" "int level" "int optname" "char *optval" "int optlen"
+.Fn setsockopt "int s" "int level" "int optname" "const void *optval" "int optlen"
 .Sh DESCRIPTION
 .Fn Getsockopt
 and
