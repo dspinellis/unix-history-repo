@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asjxxx.c 4.4 %G%";
+static	char sccsid[] = "@(#)asjxxx.c 4.5 %G%";
 #include	<stdio.h>
 #include	"as.h"
 #include	"assyms.h"
@@ -116,6 +116,24 @@ jalign(xp, sp)
 	register struct symtab *sp;
 {
 	register	int	mask;
+	/*
+	 *	Problem with .align
+	 *
+	 *	When the loader constructs an executable file from
+	 *	a number of objects, it effectively concatnates
+	 *	together all of the text segments from all objects,
+	 *	and then all of the data segments.
+	 *
+	 *	If we do an align by a large value, we can align
+	 *	within the a.out this assembly produces, but
+	 *	after the loader concatnates, the alignment can't
+	 *	be guaranteed if the objects preceding this one
+	 *	in the load are also aligned to the same size.
+	 *
+	 *	Currently, the loader guarantees full word alignment.
+	 *	So, ridiculous aligns are caught here and converted
+	 *	to a .align 2, if possible.
+	 */
 	if (   (xp->e_xtype != XABS)
 	    || (xp->e_xvalue < 0)
 	    || (xp->e_xvalue > 16)
@@ -123,11 +141,14 @@ jalign(xp, sp)
 		yyerror("Illegal `align' argument");
 		return;
 	}
-	if (   (xp->e_xvalue > 3)
-	    && (dotp != &usedot[0])
-	    ) {
-		yywarning("Alignment by %d in segments other than text 0 may not work.", xp->e_xvalue);
-		yywarning("Phase errors may occur after this .align in the second pass.");
+	if (xp->e_xvalue > 2){
+		if (passno == 1){
+		  yywarning(".align %d in any segment is NOT preserved by the loader",
+			xp->e_xvalue);
+		  yywarning(".align %d converted to .align 2",
+			xp->e_xvalue);
+		}
+		xp->e_xvalue = 2;
 	}
 	flushfield(NBPW/4);
 	if (passno == 1) {
