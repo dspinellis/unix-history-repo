@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -177,7 +177,8 @@ main(argc, argv)
 		doall();
 	else
 		donames(argv);
-	print();
+	if (person1)
+		print();
 	exit(0);
 }
 
@@ -232,7 +233,7 @@ doall()
 	close(uf);
 	if (person1 == 0) {
 		printf("No one logged on\n");
-		exit(0);
+		return;
 	}
 	p->link = 0;
 }
@@ -263,6 +264,8 @@ donames(argv)
 		p->original = 1;
 		p->pwd = 0;
 	}
+	if (person1 == 0)
+		return;
 	p->link = 0;
 	/*
 	 * if we are doing it, read /etc/passwd for the useful info
