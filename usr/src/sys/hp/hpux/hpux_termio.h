@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_termio.h 1.1 90/07/09$
  *
- *	@(#)hpux_termio.h	7.3 (Berkeley) %G%
+ *	@(#)hpux_termio.h	7.4 (Berkeley) %G%
  */
 
 /* HP-UX termio stuff */
@@ -27,6 +27,8 @@
 #define	HPUXVEOL	5
 #define	HPUXVMIN	4
 #define	HPUXVTIME	5
+#define HPUXVEOL2	6
+#define HPUXVSWTCH	7
 
 /* input modes */
 #define	TIO_IGNBRK	0x00000001	/* 0000001 */
@@ -135,3 +137,28 @@ struct hpuxtermio {
 #define	HPUXTCSETA	_IOW('T', 2, struct hpuxtermio)
 #define	HPUXTCSETAW	_IOW('T', 3, struct hpuxtermio)
 #define	HPUXTCSETAF	_IOW('T', 4, struct hpuxtermio)
+
+/* HP-UX termios stuff */
+
+#define	HPUXNCCS	16
+
+/* control characters */
+#define	HPUXVMINS	11	/* different than termio */
+#define	HPUXVTIMES	12	/* different than termio */
+#define	HPUXVSUSP	13
+#define	HPUXVSTART	14
+#define	HPUXVSTOP	15
+
+struct hpuxtermios {
+	u_int	c_iflag;	/* input modes */
+	u_int	c_oflag;	/* output modes */
+	u_int	c_cflag;	/* control modes */
+	u_int	c_lflag;	/* line discipline modes */
+	u_int	c_reserved;	/* future use */
+	u_char	c_cc[HPUXNCCS];	/* control chars */
+};
+
+#define	HPUXTCGETATTR	_IOR('T', 16, struct hpuxtermios)
+#define	HPUXTCSETATTR	_IOW('T', 17, struct hpuxtermios)
+#define	HPUXTCSETATTRD	_IOW('T', 18, struct hpuxtermios)
+#define	HPUXTCSETATTRF	_IOW('T', 19, struct hpuxtermios)
