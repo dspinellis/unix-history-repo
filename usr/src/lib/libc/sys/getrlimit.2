@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getrlimit.2	6.3 (Berkeley) %G%
+.\"	@(#)getrlimit.2	6.4 (Berkeley) %G%
 .\"
 .TH GETRLIMIT 2 ""
 .UC 4
@@ -67,10 +67,10 @@ to be given to a process; if memory is tight, the system will
 prefer to take memory from processes that are exceeding their
 declared resident set size.
 .PP
-A resource limit is specified as a soft limit and a hard limit.
-When a soft limit is exceeded a process may receive a signal
-(for example, if the cpu time is exceeded), but it will be allowed
-to continue execution until it reaches the hard limit (or modifies
+A resource limit is specified as a soft limit and a hard limit.  When a
+soft limit is exceeded a process may receive a signal (for example, if
+the cpu time or file size is exceeded), but it will be allowed to
+continue execution until it reaches the hard limit (or modifies
 its resource limit).  The 
 .I rlimit
 structure is used to specify the hard and soft limits on a resource,
@@ -112,10 +112,10 @@ a segmentation fault (SIGSEGV); if this signal is not
 caught by a handler using the signal stack, this signal
 will kill the process.
 .PP
-A file I/O operation that would create a file that is too large
-will cause a signal SIGXFSZ to be generated; this normally terminates
-the process, but may be caught.
-When the soft cpu time limit is exceeded, a signal SIGXCPU is sent to the
+A file I/O operation that would create a file larger that the process'
+soft limit will cause the write to fail and a signal SIGXFSZ to be
+generated; this normally terminates the process, but may be caught.  When
+the soft cpu time limit is exceeded, a signal SIGXCPU is sent to the
 offending process.
 .SH "RETURN VALUE
 A 0 return value indicates that the call succeeded, changing
