@@ -44,6 +44,12 @@ Zone	Australia/Victoria	10:00	Oz	EST	1985 Oct lastSun 2:00
 #	(And I can guarantee that Victoria and NSW are different, so the link
 #	between them in the current australasia file must be broken.)
 
+# From Robert Elz (May 5, 1989):
+#
+# From next year (1990) NSW will revert to ending DST on the 1st
+# Sunday in March (rather than the third, which it appears will
+# continue to be what everyone else uses).
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	NSW	1971	1985	-	Oct	lastSun	2:00	1:00	-
 Rule	NSW	1972	only	-	Feb	lastSun	3:00	0	-
@@ -54,7 +60,8 @@ Rule	NSW	1986	only	-	Mar	16	3:00	0	-
 Rule	NSW	1986	only	-	Oct	19	2:00	1:00	-
 Rule	NSW	1987	only	-	Mar	15	3:00	0	-
 Rule	NSW	1987	max	-	Oct	lastSun	2:00	1:00	-
-Rule	NSW	1988	max	-	Mar	Sun<=21	3:00	0	-
+Rule	NSW	1988	1989	-	Mar	Sun<=21	3:00	0	-
+Rule	NSW	1990	max	-	Mar	Sun>=1	3:00	0	-
 
 # Zone	NAME			GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Australia/NSW		10:00	NSW	EST
