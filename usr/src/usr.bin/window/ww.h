@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.14 83/09/15	
+ *	@(#)ww.h	3.15 83/09/15	
  */
 
 #include <stdio.h>
@@ -155,6 +155,7 @@ int wwnupdate, wwntouched, wwnmiss;
 #define wwbell()	putchar(CTRL(g))
 #define wwunbox(w)	wwunframe(w)
 #define wwclreol(w,r,c)	wwclreol1((w), (r), (c), 0)
+#define wwredrawwin(w)	wwredrawwin1((w), (w)->ww_i.t, (w)->ww_i.b, 0)
 
 	/* the window virtual terminal */
 #define WWT_TERM	"TERM=window"

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.12 83/09/15";
+static	char *sccsid = "@(#)wwwrite.c	3.13 83/09/15";
 #endif
 
 #include "ww.h"
@@ -88,9 +88,13 @@ int n;
 		lf:
 				if (++w->ww_cur.r >= w->ww_w.b) {
 					w->ww_cur.r = w->ww_w.b - 1;
-					if (w->ww_w.b < w->ww_b.b)
-						wwscroll(w, 1);
-					else
+					if (w->ww_w.b < w->ww_b.b) {
+						(void) wwscroll1(w, w->ww_i.t,
+							w->ww_i.b, 1, 0);
+						w->ww_buf++;
+						w->ww_b.t--;
+						w->ww_b.b--;
+					} else
 						wwdelline(w, w->ww_b.t);
 				}
 				break;
@@ -129,9 +133,13 @@ int n;
 		up:
 				if (--w->ww_cur.r < w->ww_w.t) {
 					w->ww_cur.r = w->ww_w.t;
-					if (w->ww_w.t > w->ww_b.t)
-						wwscroll(w, -1);
-					else
+					if (w->ww_w.t > w->ww_b.t) {
+						(void) wwscroll1(w, w->ww_i.t,
+							w->ww_i.b, -1, 0);
+						w->ww_buf--;
+						w->ww_b.t++;
+						w->ww_b.b++;
+					} else
 						wwinsline(w, w->ww_b.t);
 				}
 				break;
