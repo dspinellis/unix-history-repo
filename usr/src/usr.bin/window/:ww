@@ -1,4 +1,5 @@
-./"forw"16t"back"16t"state"8t"index"8t"order"nppbbb+
+./"state"8t"oflags"nbb++
++/"forw"16t"back"16t"index"8t"order"nppbb++
 +/"w.nr"16t"w.nc"nDD
 +/"w.t"16t"w.b"16t"w.l"16t"w.r"nDDDD
 +/"b.nr"16t"b.nc"nDD
@@ -12,4 +13,7 @@
 +/"ispty"8t"stopped"8t"pty"16t"socket"16t"pid"nbb+3D
 +/"ttyname"n11C+
 +/"ob"16t"obe"16t"obp"16t"obq"n4p
-+/"center"8t"id"8t"label"16t"altpos.r"16t"altpos.c"n2b2+pDD
++/"center"8t"id"8t"label"nbb++p
++/"alt.nr"16t"alt.nc"nDD
++/"alt.t"16t"alt.b"16t"alt.l"16t"alt.r"nDDDD
++/t
