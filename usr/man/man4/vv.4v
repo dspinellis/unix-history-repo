@@ -1,0 +1,90 @@
+.TH VV 4V 3/26/82
+.UC 4
+.SH NAME
+vv \- Proteon proNET 10 Megabit ring
+.SH SYNOPSIS
+.B "device vv0 at uba0 csr 161000 flags 0x8003 vector vvrint vvxint"
+.SH DESCRIPTION
+The
+.I vv
+interface provides access to a 10 Mb/s Proteon proNET ring network.
+The flags value is used to define the 
+network to which the interface is attached.
+The host's address
+is discovered at boot time by putting the interface in
+digital loopback mode (not joining the ring)
+and sending a broadcast packet from which the source
+address is extracted.
+The current ring/Internet address mapping simply uses the 1-byte
+ring address as the least-significant byte of the Internet address.
+If, for example, the host number is 24 and the network number
+is 128.3.0.0 (as in the configuration line example above),
+the Internet address of the interface would be 128.3.0.24.
+.PP
+The interface software implements error-rate limiting on
+the input side.
+This provides a defense against situations where other hosts
+or interface hardware failures cause a machine to be
+inundated with garbage packets.
+The scheme involves an exponential backoff where the input
+side of the interface is disabled for longer and longer periods.
+In the limiting case,
+the interface is turned on every two minutes or so to see
+if operation can resume.
+.PP
+In
+.IR if_vv.h ,
+you should define
+NEW_BROADCAST
+if the installation is running CTL boards which use the new broadcast
+address of 0xff instead of the old address of 0.
+In
+.I if_vv.c
+you should define
+WIRECENTER
+if you have a Wirecenter.
+.PP
+.BR N.B. :
+the Wirecenter and broadcast address flags are
+global and all ring interfaces
+present are assumed to be identical in these two respects.
+Moreover, an incorrect value of the Wirecenter #ifdef can
+cause hardware damage.
+.PP
+The interface currently only supports the Internet protocol family
+and provides both ``natural'' and ``trailer'' encapuslations.
+There is a global variable in the driver code which determines
+whether trailer encapsulations will be used for packets.
+Currently,
+this flag too is global so a mixed network
+of trailer and non-trailer hosts isn't possible.
+Several schemes are being considered for dealing with
+this problem, but at the moment it is ``all or nothing.''
+.SH DIAGNOSTICS
+.PP
+\fBvv%d: host %d\fP.  The software announces the host
+address discovered during autoconfiguration.
+.PP
+\fBvv%d: can't initialize\fP. The software was unable to
+discover the address of this interface, so it deemed
+"dead" will not be enabled.
+.PP
+\fBvv%d: error vvocsr=%b\fP.  The hardware indicated an error on
+the previous transmission.
+.PP
+\fBvv%d: output timeout\fP.  The token timer has fired and the
+token will be recreated.
+.PP
+\fBvv%d: error vvicsr=%b\fP.  The hardware indicated an error
+in reading a packet off the ring.
+.PP
+\fBen%d: can't handle af%d\fP.  The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.PP
+\fBvv%d: vs_olen=%d\fP.  The ring output routine has been
+handed a message with a preposterous length.  This results in
+an immediate 
+.IR "panic: vs_olen" .
+.SH SEE ALSO
+intro(4N), inet(4F)
