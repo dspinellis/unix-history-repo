@@ -816,7 +816,7 @@ waitproc(block, status)
 #endif
 	if (block == 0)
 		flags |= WNOHANG;
-	return wait3((union wait *)status, flags, (struct rusage *)NULL);
+	return wait3(status, flags, (struct rusage *)NULL);
 #else
 #ifdef SYSV
 	int (*save)();

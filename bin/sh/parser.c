@@ -638,7 +638,7 @@ readtoken() {
 		 * check for keywords
 		 */
 		if (t == TWORD && !quoteflag) {
-			register char **pp;
+			register char *const *pp;
 
 			for (pp = parsekwd; *pp; pp++) {
 				if (**pp == *wordtext && equal(*pp, wordtext)) {
@@ -1083,7 +1083,7 @@ parsebackq: {
 			ckfree(str);
 		parsebackquote = 0;
 		handler = savehandler;
-		longjmp(handler, 1);
+		longjmp(handler->loc, 1);
 	}
 	INTOFF;
 	str = NULL;
