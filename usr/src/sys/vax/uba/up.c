@@ -1,6 +1,7 @@
+int	asdel = 500;
 int	csdel3 = 100;
 int	printsw;
-/*	%H%	3.3	%G%	*/
+/*	%H%	3.4	%G%	*/
 
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
@@ -212,11 +213,7 @@ int	up_ubinfo;		/* Information about UBA usage saved here */
  * variables control the delay, DELAY(n) is approximately n usec.
  */
 int	idelay = 500;		/* Delay after PRESET or DCLR */
-int	sdelay = 125;		/* Delay after selecting drive in upcs2 */
-int	iedel1 = 500;
-int	iedel2 = 500;
-int	iedel3 = 0;
-int	iedel4 = 500;
+int	sdelay = 150;		/* Delay after selecting drive in upcs2 */
 
 #define	DELAY(N)		{ register int d; d = N; while (--d > 0); }
  
@@ -258,9 +255,9 @@ register struct buf *bp;
 	(void) spl5();
 	disksort(dp, bp);
 	if (dp->b_active == 0) {
-		upustart(unit);
+		(void) upustart(unit);
 		if (uptab.b_actf && uptab.b_active == 0)
-			upstart();
+			(void) upstart();
 	}
 	(void) spl0();
 }
@@ -277,10 +274,11 @@ register unit;
 	register struct device *upaddr = UPADDR;
 	daddr_t bn;
 	int sn, cn, csn;
+	int didie = 0;
 
 	if (printsw&1) printf("upustart\n");
 	if (unit >= NUP)
-		return;
+		goto out;
 	/*
 	 * Whether or not it was before, this unit is no longer busy.
 	 * Check to see if there is (still or now) a request in this
@@ -290,7 +288,7 @@ register unit;
 		dk_busy &= ~(1<<(unit+DK_N));
 	dp = &uputab[unit];
 	if ((bp = dp->b_actf) == NULL)
-		return;
+		goto out;
 	if ((upaddr->upcs2 & 07) != unit) {
 		upaddr->upcs2 = unit;
 		DELAY(sdelay);
@@ -308,6 +306,7 @@ register unit;
 		upaddr->upcs1 = IE|PRESET|GO;
 		DELAY(idelay);
 		upaddr->upof = FMT22;
+		didie = 1;
 	}
 	/*
 	 * We are called from upstrategy when a new request arrives
@@ -364,6 +363,7 @@ search:
 	upaddr->updc = cn;
 	upaddr->upda = sn;
 	upaddr->upcs1 = IE|SEARCH|GO;
+	didie = 1;
 	/*
 	 * Mark this unit busy.
 	 */
@@ -372,7 +372,7 @@ search:
 		dk_busy |= 1<<unit;
 		dk_numb[unit]++;
 	}
-	return;
+	goto out;
 
 done:
 	/*
@@ -387,6 +387,9 @@ done:
 	else
 		uptab.b_actl->b_forw = dp;
 	uptab.b_actl = dp;
+
+out:
+	return (didie);
 }
 
 /*
@@ -411,7 +414,7 @@ loop:
 	 * request queue.
 	 */
 	if ((dp = uptab.b_actf) == NULL)
-		return;
+		return (0);
 	if ((bp = dp->b_actf) == NULL) {
 		uptab.b_actf = dp->b_forw;
 		goto loop;
@@ -479,7 +482,9 @@ loop:
 	else
 		cmd |= IE|WCOM|GO;
 	upaddr->upcs1 = cmd;
+#ifdef notdef
 	if (csdel3) DELAY(csdel3);
+#endif
 	/*
 	 * This is a controller busy situation.
 	 * Record in dk slot NUP+DK_N (after last drive)
@@ -495,6 +500,7 @@ loop:
 		dk_numb[unit]++;
 		dk_wds[unit] += bp->b_bcount>>6;
 	}
+	return (1);
 }
 
 /*
@@ -512,6 +518,7 @@ upintr()
 	register unit;
 	register struct device *upaddr = UPADDR;
 	int as = upaddr->upas & 0377;
+	int needie = 1;
 
 	if (printsw&4) printf("upintr as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1].b_active);
 	if (uptab.b_active) {
@@ -582,6 +589,7 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 			 */
 			upaddr->upcs1 = TRE|IE|DCLR|GO;
 			DELAY(idelay);
+			needie = 0;
 			if ((uptab.b_errcnt&07) == 4) {
 				upaddr->upcs1 = RECAL|GO|IE;
 				DELAY(idelay);
@@ -610,6 +618,7 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 				DELAY(idelay);
 				while (upaddr->upds & PIP)
 					DELAY(25);
+				needie = 0;
 			}
 			uptab.b_active = 0;
 			uptab.b_errcnt = 0;
@@ -618,10 +627,10 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 			dp->b_errcnt = 0;
 			dp->b_actf = bp->av_forw;
 			bp->b_resid = (-upaddr->upwc * sizeof(short));
-			upaddr->upcs1 = IE;
 			iodone(bp);
 			if(dp->b_actf)
-				upustart(unit);
+				if (upustart(unit))
+					needie = 0;
 		}
 		as &= ~(1<<unit);
 		ubafree(up_ubinfo), up_ubinfo = 0;
@@ -649,7 +658,9 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 		if (as & (1<<unit))
 			if (uputab[unit].b_active == 1) {
 				upaddr->upas = 1<<unit;
-				upustart(unit);
+				if (asdel) DELAY(asdel);
+				if (upustart(unit))
+					needie = 0;
 			} else {
 			printf("as in upintr: cs1 %o\n", upaddr->upcs1);
 printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1].b_active);
@@ -657,9 +668,10 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 				DELAY(1000);
 			}
 	if (uptab.b_actf && uptab.b_active == 0)
-		upstart();
+		if (upstart())
+			needie = 0;
 out:
-	if ((upaddr->upcs1&IE) == 0)
+	if (needie)
 		upaddr->upcs1 = IE;
 	if (printsw&128) printf("exit cs1 %o\n", upaddr->upcs1);
 }
