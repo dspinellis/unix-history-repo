@@ -1,0 +1,48 @@
+.TH SOELIM UCB 2/24/79 UCB
+.SH NAME
+soelim \- eliminate source directives from a
+.I nroff
+or
+.I troff
+stream
+.SH SYNOPSIS
+.B soelim
+[
+file ...
+]
+.SH DESCRIPTION
+.I Soelim
+reads the specified files or the standard input and performs the textual
+inclusion implied by the
+.I nroff
+directives of the form
+.PP
+.DT
+	\&.so somefile
+.PP
+when they appear at the beginning of input lines.
+This is useful since programs such as
+.I tbl
+do not normally do this;
+it allows the placement of individual tables
+in separate files to be run as a part of a large document.
+.PP
+Note that inclusion can be suppressed by using
+`\'' instead of `\.', i.e.
+.PP
+.DT
+	\'so /usr/lib/tmac.s
+.PP
+A sample usage of
+.I soelim
+would be
+.PP
+	soelim exum?.n | tbl | nroff -ms | collpr
+.SH SEE\ ALSO
+colcrt(UCB), cr3(UCB)
+.SH AUTHOR
+William Joy
+.SH BUGS
+The format of the source commands must involve no strangeness \-
+exactly one
+blank must precede and no blanks follow the file name.
