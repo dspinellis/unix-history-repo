@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)netdaemon.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)netdaemon.c	4.2	(Berkeley)	%G%";
 
 /* sccs id variable */
 static char *netdaemon_sid = "@(#)netdaemon.c	1.10";
@@ -45,12 +45,11 @@ struct userinfo status;
 
 /* local variables */
 static long length;
-static FILE *dir;
+static DIR *dir;
 /* static char sheader[] = 		"ABCDE"; */
 static char tempfile[]= 	TEMPFILE;
 static char publogfile[]=  	PUBLOGFILE;
 static struct stat statbuf;
-static struct direct dirbuf;
 int handlekill();
 static char frommach;
 long linechars();
@@ -86,7 +85,7 @@ main(argc,argv)
 		perror(senddir);
 		exit(EX_OSFILE);
 		}
-	dir = fopen(senddir,"r");
+	dir = opendir(senddir);
 	if(dir == NULL){
 		perror(senddir);
 		exit(EX_OSFILE);
@@ -154,6 +153,7 @@ netsend(){
 	register int i;
 	char stemp[20];
 	static char jname[FNS];
+	register struct direct *dp;
 
 	debug("ck send");
 	if(stat(senddir,&statbuf) < 0){
@@ -162,19 +162,18 @@ netsend(){
 		}
 	if(statbuf.st_mtime == lasttime && nleft == 0)return;	/* no need to search */
 	lasttime = statbuf.st_mtime;
-	fseek(dir,0L,0);
+	rewinddir(dir);
 	lFileLen = 10000000L;
 	nleft = 0;
-	while(fread(&dirbuf,1,sizeof dirbuf,dir) == sizeof dirbuf){
-		if(dirbuf.d_ino == 0
-		   || dirbuf.d_name[0] != 'c'
-		   || dirbuf.d_name[1] != 'f'
-		   || dirbuf.d_name[2] != remote
-		   || stat(dirbuf.d_name,&statbuf) < 0
+	while((dp = readdir(dir)) != NULL){
+		if(dp->d_name[0] != 'c'
+		   || dp->d_name[1] != 'f'
+		   || dp->d_name[2] != remote
+		   || stat(dp->d_name,&statbuf) < 0
 		   || statbuf.st_mode == 0)
 			continue;
-		dirbuf.d_name[0] = 'd';
-		if(stat(dirbuf.d_name,&statbuf) < 0 || statbuf.st_mode == 0)
+		dp->d_name[0] = 'd';
+		if(stat(dp->d_name,&statbuf) < 0 || statbuf.st_mode == 0)
 			continue;
 		uid = guid(statbuf.st_uid,statbuf.st_gid);
 		if(netd.dp_onlyuid != 0 && uid != netd.dp_onlyuid && uid != SUPERUSER
@@ -186,13 +185,12 @@ netsend(){
 			if( !debugflg )
 				continue;
 			else
-				debug("sending large file %s\n", dirbuf.d_name );
+				debug("sending large file %s\n", dp->d_name );
 		}
 #endif DONTHOLDBIG
 		if(lFileLen > filesize){
 			lFileLen = filesize;
-			for(i=0; i<DIRSIZ; i++)
-				jname[i] = dirbuf.d_name[i];
+			strcpy(jname,dp->d_name);
 			uidBest = uid;
 		}
 # ifdef MAXSENDQ

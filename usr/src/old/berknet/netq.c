@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)netq.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)netq.c	4.2	(Berkeley)	%G%";
 
 /* netq - print the netq send queue */
 /* netq [-] [mach] */
@@ -12,7 +12,7 @@ static char *netq_sid = "@(#)netq.c	1.5";
 	be sorted correctly */
 # define STSIZE 150
 
-static FILE *df;
+static DIR *df;
 static char jname[16], printlong;
 static struct table {
 	char name[16];
@@ -24,7 +24,6 @@ static char netcmd1[] =	NETCMD1;
 static int hisuid,sumj,nsumj;
 static long sumb, nsumb;
 static struct stat statbuf;
-static struct direct dirbuf;
 
 char _sobuf[BUFSIZ];
 main(argc,argv)
@@ -82,21 +81,21 @@ static pdir(str)
 	char listrest = 0;
 	int (*compar)();
 	char printhead = 0;
-	df = fopen(str,"r");
+	register struct direct *dp;
+	df = opendir(str);
 	if(df == NULL){
 		perror(str);
 		exit(EX_OSFILE);
 		}
 	stptr = 0;
-	while(fread(&dirbuf,1,sizeof dirbuf,df)==sizeof dirbuf){
-		if(dirbuf.d_ino == 0 
-		|| dirbuf.d_name[0] != 'c'
-		|| dirbuf.d_name[1] != 'f'
-		|| stat(dirbuf.d_name,&statbuf) < 0)
+	while((dp = readdir(df)) != NULL){
+		if(dp->d_name[0] != 'c'
+		|| dp->d_name[1] != 'f'
+		|| stat(dp->d_name,&statbuf) < 0)
 			continue;
-		if(mach != dirbuf.d_name[2])continue;
-		dirbuf.d_name[0] = 'd';
-		if(stat(dirbuf.d_name,&statbuf) < 0)continue;
+		if(mach != dp->d_name[2])continue;
+		dp->d_name[0] = 'd';
+		if(stat(dp->d_name,&statbuf) < 0)continue;
 #ifdef MAXSENDQ
 		if( stptr >= MAXSENDQ ) {
 			listrest++;
@@ -104,13 +103,14 @@ static pdir(str)
 		}
 #endif
 
-		if(!insert(dirbuf.d_name,getsize(&statbuf))){
+		if(!insert(dp->d_name,getsize(&statbuf))){
 			more++;
 			break;
 			}
 		}
 	if(stptr == 0){
 		printf("Network queue to/thru %s is empty.\n",longname(mach));
+		closedir(df);
 		return;
 		}
 	cp = (char *)&(stack[0].name[0]);
@@ -132,8 +132,9 @@ static pdir(str)
 		}
 # ifdef MAXSENDQ
 	if( listrest )
-		listem();
+		listem(dp);
 # endif
+	closedir(df);
 	printsum();
 	if(more)printf("   ... more ...\n");
 	}
@@ -309,26 +310,24 @@ swap(a,b)
 	b->filesize = t;
 	}
 # ifdef MAXSENDQ
-listem() {
+listem(dp)
+register struct direct *dp; {
 	
-	fseek( df, -(long)(sizeof dirbuf), 1 );		/* backspace over already read entry */
-
-	while( fread( &dirbuf, 1, sizeof dirbuf, df ) == sizeof dirbuf ) {
-		if( dirbuf.d_ino == 0
-		|| dirbuf.d_name[0] != 'c'
-		|| dirbuf.d_name[1] != 'f'
-		|| stat( dirbuf.d_name, &statbuf ) < 0 )
+	do {
+		if(dp->d_name[0] != 'c'
+		|| dp->d_name[1] != 'f'
+		|| stat( dp->d_name, &statbuf ) < 0 )
 			continue;
-		if( mach != dirbuf.d_name[2] )
+		if( mach != dp->d_name[2] )
 			continue;
-		dirbuf.d_name[0] = 'd';
-		if( stat( dirbuf.d_name, &statbuf ) < 0 )
+		dp->d_name[0] = 'd';
+		if( stat( dp->d_name, &statbuf ) < 0 )
 			continue;
 		if( printlong || guid( statbuf.st_uid, statbuf.st_gid) == hisuid )
 			process();
 		else
 			summarize( getsize( &statbuf ) );
-	}
+	} while((dp = readdir(df)) != NULL);
 
 	return;
 }

@@ -1,4 +1,4 @@
-/*	@(#)mach.h	4.1	(Berkeley)	%G%	*/
+/*	@(#)mach.h	4.2	(Berkeley)	%G%	*/
 
 /* sccs id variable */
 static char *mach_h_sid = "@(#)mach.h	1.11";
@@ -59,7 +59,7 @@ definition for "VANILLA7" which indicates the v7 UNIX options.
 */
 /* be sure to include <stdio.h> before these defns */
 
-# include <whoami.h>
+# include "whoami.h"
 # include <sysexits.h>
 
 /* note NUID is only used in mmail.c */
@@ -390,7 +390,6 @@ int	(*signal())();
 # define ANYP 0300
 # define ECHO 010
 # define ROOTINO 1
-# define DIRSIZ 14
 # define TIOCEXCL 0
 # define SIGHUP		1
 # define SIGINT 	2
@@ -406,23 +405,6 @@ int	(*signal())();
 # define setjmp(a) setexit()
 
 
-struct stat {
-	int st_dev;
-	int st_ino;
-	int st_mode;
-	char st_nlink:8;
-	char st_uid:8;
-	char st_gid:8;
-	char st_size0;
-	int st_size1;
-	int st_addr[8];
-	long st_atime;
-	long st_mtime;
-	};
-struct direct {
-	int d_ino;
-	char d_name[DIRSIZ];
-	};
 struct tms {				/* see times - sect 2 */
 	int	tms_utime;		/* user time */
 	int	tms_stime;		/* system time */
