@@ -1,4 +1,4 @@
-/*	kern_clock.c	6.7	84/05/22	*/
+/*	kern_clock.c	6.8	84/08/22	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -46,6 +46,31 @@ int	adjtimedelta;
  *	time of day, system/user timing, timeouts, profiling on separate timers
  *	allocate more timeout table slots when table overflows.
  */
+#ifdef notdef
+/*
+ * Bump a timeval by a small number of usec's.
+ */
+bumptime(tp, usec)
+	register struct timeval *tp;
+	int usec;
+{
+
+	tp->tv_usec += usec;
+	if (tp->tv_usec >= 1000000) {
+		tp->tv_usec -= 1000000;
+		tp->tv_sec++;
+	}
+}
+#endif notdef
+#define BUMPTIME(t, usec) { \
+	register struct timeval *tp = (t); \
+ \
+	tp->tv_usec += (usec); \
+	if (tp->tv_usec >= 1000000) { \
+		tp->tv_usec -= 1000000; \
+		tp->tv_sec++; \
+	} \
+}
 
 /*
  * The hz hardware interval timer.
@@ -93,7 +118,7 @@ hardclock(pc, ps)
 		 * user time counter, and process process-virtual time
 		 * interval timer. 
 		 */
-		bumptime(&u.u_ru.ru_utime, tick);
+		BUMPTIME(&u.u_ru.ru_utime, tick);
 		if (timerisset(&u.u_timer[ITIMER_VIRTUAL].it_value) &&
 		    itimerdecr(&u.u_timer[ITIMER_VIRTUAL], tick) == 0)
 			psignal(u.u_procp, SIGVTALRM);
@@ -118,7 +143,7 @@ hardclock(pc, ps)
 			if (BASEPRI(ps))
 				cpstate = CP_IDLE;
 		} else {
-			bumptime(&u.u_ru.ru_stime, tick);
+			BUMPTIME(&u.u_ru.ru_stime, tick);
 		}
 	}
 
@@ -205,7 +230,7 @@ hardclock(pc, ps)
 		}
 	}
 #else
-	bumptime(&time, tick);
+	BUMPTIME(&time, tick);
 #endif
 	setsoftclock();
 }
@@ -312,21 +337,6 @@ softclock(pc, ps)
 			(void) setpri(p);
 			p->p_pri = p->p_usrpri;
 		}
-	}
-}
-
-/*
- * Bump a timeval by a small number of usec's.
- */
-bumptime(tp, usec)
-	register struct timeval *tp;
-	int usec;
-{
-
-	tp->tv_usec += usec;
-	if (tp->tv_usec >= 1000000) {
-		tp->tv_usec -= 1000000;
-		tp->tv_sec++;
 	}
 }
 
