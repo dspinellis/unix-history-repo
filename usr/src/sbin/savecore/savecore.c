@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)savecore.c	4.8 (Berkeley) 82/10/21";
+static	char *sccsid = "@(#)savecore.c	4.7.1.1 (Berkeley) 82/10/24";
 /*
  * savecore
  */
