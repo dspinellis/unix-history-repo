@@ -83,7 +83,7 @@ int	n;
  */
 
 int
-TerminalAutoFlush()					/* unix */
+TerminalAutoFlush()
 {
 #if	defined(LNOFLSH)
     int flush;
@@ -108,10 +108,10 @@ TerminalAutoFlush()					/* unix */
  */
 
 int
-TerminalSpecialChars(c)			/* unix */
+TerminalSpecialChars(c)
 int	c;
 {
-    void doflush(), intp(), sendbrk();
+    void xmitAO(), xmitEL(), xmitEC(), intp(), sendbrk();
 
     if (c == ntc.t_intrc) {
 	intp();
@@ -140,13 +140,13 @@ int	c;
  */
  
 void
-TerminalFlushOutput()				/* unix */
+TerminalFlushOutput()
 {
     (void) ioctl(fileno(stdout), TIOCFLUSH, (char *) 0);
 }
 
 void
-TerminalSaveState()				/* unix */
+TerminalSaveState()
 {
     ioctl(0, TIOCGETP, (char *)&ottyb);
     ioctl(0, TIOCGETC, (char *)&otc);
@@ -165,7 +165,7 @@ TerminalSaveState()				/* unix */
 }
 
 void
-TerminalRestoreState()				/* unix */
+TerminalRestoreState()
 {
 }
 
@@ -175,7 +175,7 @@ TerminalRestoreState()				/* unix */
 
 
 void
-TerminalNewMode(fd_in, fd_out, f)			/* unix */
+TerminalNewMode(fd_in, fd_out, f)
 int	fd_in, fd_out;		/* File descriptor */
 register int f;
 {
@@ -310,7 +310,7 @@ int	net;
 
 
 void
-NetNonblockingIO(fd, onoff)				/* unix */
+NetNonblockingIO(fd, onoff)
 int
 	fd,
 	onoff;
@@ -319,7 +319,7 @@ int
 }
 
 void
-NetSigIO(fd, onoff)				/* unix */
+NetSigIO(fd, onoff)
 int
 	fd,
 	onoff;
@@ -328,7 +328,7 @@ int
 }
 
 void
-NetSetPgrp(fd)				/* unix */
+NetSetPgrp(fd)
 int fd;
 {
     int myPid;
@@ -339,14 +339,54 @@ int fd;
 #endif	/* defined(NOT43) */
     ioctl(fd, SIOCSPGRP, (char *)&myPid);	/* set my pid */
 }
+
+/*
+ * Various signal handling routines.
+ */
 
+void
+deadpeer()
+{
+	setcommandmode();
+	longjmp(peerdied, -1);
+}
 
+void
+intr()
+{
+    if (localchars) {
+	intp();
+	return;
+    }
+    setcommandmode();
+    longjmp(toplevel, -1);
+}
+
+void
+intr2()
+{
+    if (localchars) {
+	sendbrk();
+	return;
+    }
+}
+
+void
+doescape()
+{
+    command(0);
+}
+
 void
 sys_telnet_init()
 {
-#if	defined(TN3270) && defined(unix)
+#if	defined(TN3270)
     int myPid;
 #endif	/* defined(TN3270) */
+
+    signal(SIGINT, intr);
+    signal(SIGQUIT, intr2);
+    signal(SIGPIPE, deadpeer);
 
     setconnmode();
 
@@ -445,9 +485,7 @@ int poll;		/* If 0, then block until something to do */
 #	    endif /* defined(TN3270) */
 		    /* I don't like this, does it ever happen? */
 	    printf("sleep(5) from telnet, after select\r\n");
-#if	defined(unix)
 	    sleep(5);
-#endif	/* defined(unix) */
 	}
 	return 0;
     }
@@ -548,14 +586,12 @@ int poll;		/* If 0, then block until something to do */
 	if (c < 0 && errno == EWOULDBLOCK) {
 	    c = 0;
 	} else {
-#if	defined(unix)
 	    /* EOF detection for line mode!!!! */
 	    if (c == 0 && MODE_LOCAL_CHARS(globalmode)) {
 			/* must be an EOF... */
 		*ttyiring.supply = termEofChar;
 		c = 1;
 	    }
-#endif	/* defined(unix) */
 	    if (c <= 0) {
 		return -1;
 	    }
