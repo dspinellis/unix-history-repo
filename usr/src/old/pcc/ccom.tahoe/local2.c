@@ -1,6 +1,6 @@
-#ifndef lint
-static char sccsid[] = "@(#)local2.c	1.23 (Berkeley) %G%";
-#endif
+# ifndef lint
+static char sccsid[] = "@(#)local2.c	1.24 (Berkeley) %G%";
+# endif
 
 # include "pass2.h"
 # include <ctype.h>
@@ -16,6 +16,7 @@ int ftlab1, ftlab2;
 # define BITMASK(n) ((1L<<n)-1)
 
 # ifndef ONEPASS
+/*ARGSUSED*/
 where(c){
 	fprintf( stderr, "%s, line %d: ", filename, lineno );
 	}
@@ -39,17 +40,17 @@ eobl2(){
 	SETOFF(spoff,4);
 #ifdef FORT
 #ifndef FLEXNAMES
-	printf( "	.set	.F%d,%d\n", ftnno, spoff );
+	printf( "	.set	.F%d,%ld\n", ftnno, spoff );
 #else
 	/* SHOULD BE L%d ... ftnno but must change pc/f77 */
-	printf( "	.set	LF%d,%d\n", ftnno, spoff );
+	printf( "	.set	LF%d,%ld\n", ftnno, spoff );
 #endif
 	printf( "	.set	LWM%d,0x%x\n", ftnno, ent_mask&0x1ffc|0x1000);
 #else
 	printf( "	.set	L%d,0x%x\n", ftnno, ent_mask&0x1ffc);
 	printf( "L%d:\n", ftlab1);
 	if( maxoff > AUTOINIT )
-		printf( "	subl3	$%d,fp,sp\n", spoff);
+		printf( "	subl3	$%ld,fp,sp\n", spoff);
 	printf( "	jbr 	L%d\n", ftlab2);
 #endif
 	ent_mask = 0;
@@ -122,24 +123,25 @@ tlen(p) NODE *p;
 
 		case SHORT:
 		case USHORT:
-			return(2);
+			return(SZSHORT/SZCHAR);
 
 		case DOUBLE:
-			return(8);
+			return(SZDOUBLE/SZCHAR);
 
 		default:
-			return(4);
+			return(SZINT/SZCHAR);
 		}
 }
 
-anyfloat(p, q)
-	NODE *p, *q;
+mixtypes(p, q) NODE *p, *q;
 {
 	register TWORD tp, tq;
 
 	tp = p->in.type;
 	tq = q->in.type;
-	return (tp == FLOAT || tp == DOUBLE || tq == FLOAT || tq == DOUBLE);
+
+	return( (tp==FLOAT || tp==DOUBLE) !=
+		(tq==FLOAT || tq==DOUBLE) );
 }
 
 prtype(n) NODE *n;
@@ -155,6 +157,8 @@ prtype(n) NODE *n;
 			putchar('f');
 			return;
 
+		case LONG:
+		case ULONG:
 		case INT:
 		case UNSIGNED:
 			putchar('l');
@@ -260,12 +264,53 @@ zzzcode( p, c ) register NODE *p; {
 		return;
 		}
 
+	case 'J':	/* unsigned DIV/MOD with constant divisors */
+		{
+		register int ck = INAREG;
+		int label1, label2;
+
+		/* case constant <= 1 is handled by optim() in pass 1 */
+		/* case constant < 0x80000000 is handled in table */
+		switch( p->in.op ) {
+		/* case DIV: handled in hardops() */
+		case MOD:
+			if( p->in.left->in.op == REG &&
+			    p->in.left->tn.rval == resc->tn.rval )
+				goto asgmod;
+			label1 = getlab();
+			expand(p, ck, "movl\tAL,A1\n\tcmpl\tA1,AR\n");
+			printf("\tjlssu\tL%d\n", label1);
+			expand(p, ck, "\tsubl2\tAR,A1\n");
+			printf("L%d:", label1);
+			break;
+		case ASG DIV:
+			label1 = getlab();
+			label2 = getlab();
+			expand(p, ck, "cmpl\tAL,AR\n");
+			printf("\tjgequ\tL%d\n", label1);
+			expand(p, ck, "\tmovl\t$1,AL\n");
+			printf("\tjbr\tL%d\nL%d:\n", label2, label1);
+			expand(p, ck, "\tclrl\tAL\n");
+			printf("L%d:", label2);
+			break;
+		case ASG MOD:
+		asgmod:
+			label1 = getlab();
+			expand(p, ck, "cmpl\tAL,AR\n");
+			printf("\tjlssu\tL%d\n", label1);
+			expand(p, ck, "\tsubl2\tAR,AL\n");
+			printf("L%d:", label1);
+			break;
+			}
+		return;
+		}
+
 	case 'B':	/* get oreg value in temp register for shift */
 		{
 		register NODE *r;
 		if (xdebug) eprint(p, 0, &val, &val);
 		r = p->in.right;
-		if( tlen(r) == sizeof(int) && r->in.type != FLOAT )
+		if( tlen(r) == SZINT/SZCHAR && r->in.type != FLOAT )
 			putstr("movl");
 		else {
 			putstr(ISUNSIGNED(r->in.type) ? "movz" : "cvt");
@@ -275,7 +320,7 @@ zzzcode( p, c ) register NODE *p; {
 		return;
 		}
 
-	case 'C':	/* num bytes pushed on arg stack */
+	case 'C':	/* generate 'call[fs] $bytes' */
 		{
 		extern int gc_numbytes;
 		extern int xdebug;
@@ -285,7 +330,7 @@ zzzcode( p, c ) register NODE *p; {
 		printf("call%c	$%d",
 		 (p->in.left->in.op==ICON && gc_numbytes<60)?'f':'s',
 		 gc_numbytes+4);
-		/* dont change to double (here's the only place to catch it) */
+		/* don't change to double (here's the only place to catch it) */
 		if(p->in.type == FLOAT)
 			rtyflg = 1;
 		return;
@@ -319,21 +364,21 @@ zzzcode( p, c ) register NODE *p; {
 	case 'I':	/* produce value of bitfield assignment */
 			/* avoid shifts -- shifts are SLOW on this machine */
 		{
-			register NODE *r = p->in.right;
-			if(r->in.op == ICON && r->tn.name[0] == '\0') {
-				putstr("movl\t");
-				printf(ACONFMT, r->tn.lval & ((1<<fldsz)-1));
-				}
-			else {
-				putstr("andl3\t");
-				printf(ACONFMT, (1 << fldsz) - 1);
-				putchar(',');
-				adrput(r);
-				}
-			putchar(',');
-			adrput(resc);
-			break;
+		register NODE *r = p->in.right;
+		if(r->in.op == ICON && r->tn.name[0] == '\0') {
+			putstr("movl\t");
+			printf(ACONFMT, r->tn.lval & ((1<<fldsz)-1));
 			}
+		else {
+			putstr("andl3\t");
+			printf(ACONFMT, (1 << fldsz) - 1);
+			putchar(',');
+			adrput(r);
+			}
+		putchar(',');
+		adrput(resc);
+		break;
+		}
 
 	case 'H':	/* opcode for shift */
 		if(p->in.op == LS || p->in.op == ASG LS)
@@ -383,6 +428,7 @@ zzzcode( p, c ) register NODE *p; {
 		stasg(p);
 		break;
 
+#ifdef I_don_t_understand_this
 	case 'X':	/* multiplication for short and char */
 		if (ISUNSIGNED(p->in.left->in.type)) 
 			printf("\tmovz");
@@ -405,6 +451,7 @@ zzzcode( p, c ) register NODE *p; {
 		adrput(&resc[1]);
 		printf("\n");
 		return;
+#endif
 
 	case 'U':		/* SCONV */
 	case 'V':		/* SCONV with FORCC */
@@ -435,6 +482,7 @@ zzzcode( p, c ) register NODE *p; {
 		rtyflg = 1;
 		break;
 
+#ifdef I_don_t_understand_this
 	case 'Z':
 		p = p->in.right;
 		switch (p->in.type) {
@@ -451,6 +499,7 @@ zzzcode( p, c ) register NODE *p; {
 		}
 		printf("$%d", p->tn.lval);
 		break;
+#endif
 
 	default:
 		cerror( "illegal zzzcode" );
@@ -582,41 +631,6 @@ stasg(p)
 		r->in.op = ICON;
 	else if (r->in.op == OREG)
 		r->in.op = REG;
-}
-
-/*
- * Output the address of the second item in the
- * pair pointed to by p.
- */
-upput(p, size)
-	register NODE *p;
-{
-	CONSZ save;
-
-	if (p->in.op == FLD)
-		p = p->in.left;
-	switch (p->in.op) {
-
-	case NAME:
-	case OREG:
-		save = p->tn.lval;
-		p->tn.lval += size/SZCHAR;
-		adrput(p);
-		p->tn.lval = save;
-		break;
-
-	case REG:
-		if (size == SZLONG) {
-			putstr(rname(p->tn.rval+1));
-			break;
-		}
-		/* fall thru... */
-
-	default:
-		cerror("illegal upper address op %s size %d",
-		    opst[p->tn.op], size);
-		/*NOTREACHED*/
-	}
 }
 
 /*
@@ -903,7 +917,7 @@ genconv(srcflag, srclen, dstlen, src, dst)
 	adrput(dst);
 }
 
-rmove( rt, rs, t ) TWORD t;{
+rmove( rt, rs, t ) TWORD t; {
 	printf( "	movl	%s,%s\n", rname(rs), rname(rt) );
 	if(t==DOUBLE)
 		printf( "	movl	%s,%s\n", rname(rs+1), rname(rt+1) );
@@ -928,10 +942,12 @@ szty(t) TWORD t;{ /* size, in registers, needed to hold thing of type t */
 	}
 #endif
 
+/*ARGSUSED*/
 rewfld( p ) NODE *p; {
 	return(1);
 	}
 
+/*ARGSUSED*/
 callreg(p) NODE *p; {
 	return( R0 );
 	}
@@ -950,18 +966,29 @@ base( p ) register NODE *p; {
 
 offset( p, tyl ) register NODE *p; int tyl; {
 
-	if(tyl > 8) return( -1 );
-	if( tyl==1 && p->in.op==REG && (p->in.type==INT || p->in.type==UNSIGNED) ) return( p->tn.rval );
-	if( (p->in.op==LS && p->in.left->in.op==REG && (p->in.left->in.type==INT || p->in.left->in.type==UNSIGNED) &&
-	      (p->in.right->in.op==ICON && p->in.right->in.name[0]=='\0')
-	      && (1<<p->in.right->tn.lval)==tyl))
+	if( tyl==1 &&
+	    p->in.op==REG &&
+	    (p->in.type==INT || p->in.type==UNSIGNED) )
+		return( p->tn.rval );
+	if( p->in.op==LS &&
+	    p->in.left->in.op==REG &&
+	    (p->in.left->in.type==INT || p->in.left->in.type==UNSIGNED) &&
+	    p->in.right->in.op==ICON &&
+	    p->in.right->in.name[0]=='\0' &&
+	    (1<<p->in.right->tn.lval)==tyl)
+		return( p->in.left->tn.rval );
+	if( tyl==2 &&
+	    p->in.op==PLUS &&
+	    (p->in.left->in.type==INT || p->in.left->in.type==UNSIGNED) &&
+	    p->in.left->in.op==REG &&
+	    p->in.right->in.op==REG &&
+	    p->in.left->tn.rval==p->in.right->tn.rval )
 		return( p->in.left->tn.rval );
 	return( -1 );
 	}
 
 makeor2( p, q, b, o) register NODE *p, *q; register int b, o; {
 	register NODE *t;
-	register int i;
 	NODE *f;
 
 	p->in.op = OREG;
@@ -991,8 +1018,11 @@ makeor2( p, q, b, o) register NODE *p, *q; register int b, o; {
 
 	p->tn.lval = t->tn.lval;
 #ifndef FLEXNAMES
-	for(i=0; i<NCHNAM; ++i)
-		p->in.name[i] = t->in.name[i];
+	{
+		register int i;
+		for(i=0; i<NCHNAM; ++i)
+			p->in.name[i] = t->in.name[i];
+	}
 #else
 	p->in.name = t->in.name;
 #endif
@@ -1024,9 +1054,30 @@ flshape( p ) NODE *p; {
 	return(0);
 	}
 
+/* INTEMP shapes must not contain any temporary registers */
 shtemp( p ) register NODE *p; {
+	int r;
+
 	if( p->in.op == STARG ) p = p->in.left;
-	return( p->in.op==NAME || p->in.op ==ICON || p->in.op == OREG || (p->in.op==UNARY MUL && shumul(p->in.left)) );
+
+	switch (p->in.op) {
+	case REG:
+		return( !istreg(p->tn.rval) );
+	case OREG:
+		r = p->tn.rval;
+		if( R2TEST(r) ) {
+			if( istreg(R2UPK1(r)) )
+				return(0);
+			r = R2UPK2(r);
+			}
+		return( !istreg(r) );
+	case UNARY MUL:
+		p = p->in.left;
+		return( p->in.op != UNARY MUL && shtemp(p) );
+		}
+
+	if( optype( p->in.op ) != LTYPE ) return(0);
+	return(1);
 	}
 
 shumul( p ) register NODE *p; {
@@ -1045,11 +1096,6 @@ shumul( p ) register NODE *p; {
 
 	return( 0 );
 	}
-
-special( p, shape ) register NODE *p; {
-	if( shape==SIREG && p->in.op == OREG && R2TEST(p->tn.rval) ) return(1);
-	else return(0);
-}
 
 adrcon( val ) CONSZ val; {
 	printf(ACONFMT, val);
@@ -1071,9 +1117,45 @@ conput( p ) register NODE *p; {
 		}
 	}
 
+/*ARGSUSED*/
 insput( p ) NODE *p; {
 	cerror( "insput" );
 	}
+
+/*
+ * Output the address of the second item in the
+ * pair pointed to by p.
+ */
+upput(p, size)
+	register NODE *p;
+{
+	CONSZ save;
+
+	if (p->in.op == FLD)
+		p = p->in.left;
+	switch (p->in.op) {
+
+	case NAME:
+	case OREG:
+		save = p->tn.lval;
+		p->tn.lval += size/SZCHAR;
+		adrput(p);
+		p->tn.lval = save;
+		break;
+
+	case REG:
+		if (size == SZLONG) {
+			putstr(rname(p->tn.rval+1));
+			break;
+		}
+		/* fall thru... */
+
+	default:
+		cerror("illegal upper address op %s size %d",
+		    opst[p->tn.op], size);
+		/*NOTREACHED*/
+	}
+}
 
 adrput( p ) register NODE *p; {
 	register int r;
@@ -1140,20 +1222,19 @@ adrput( p ) register NODE *p; {
 
 acon( p ) register NODE *p; { /* print out a constant */
 
-	if( p->in.name[0] == '\0' ){
+	if( p->in.name[0] == '\0' )
 		printf( CONFMT, p->tn.lval);
-		return;
-	} else {
+	else {
 #ifndef FLEXNAMES
 		printf( "%.8s", p->in.name );
 #else
-		putstr(p->in.name);
+		putstr( p->in.name );
 #endif
-		if (p->tn.lval != 0) {
-			putchar('+');
-			printf(CONFMT, p->tn.lval);
+		if( p->tn.lval != 0 ) {
+			putchar( '+' );
+			printf( CONFMT, p->tn.lval );
+			}
 		}
-	}
 	}
 
 genscall( p, cookie ) register NODE *p; {
@@ -1196,6 +1277,7 @@ genfcall( p, cookie ) register NODE *p; {
 int gc_numbytes;
 /* tbl */
 
+/*ARGSUSED*/
 gencall( p, cookie ) register NODE *p; {
 	/* generate the call given by p */
 	register NODE *p1, *ptemp;
@@ -1269,12 +1351,12 @@ ccbranches[] = {
 	};
 /* tbl */
 
+/*ARGSUSED*/
 cbgen( o, lab, mode ) { /*   printf conditional and unconditional branches */
 
-		if(o != 0 && (o < EQ || o > UGT ))
-			cerror( "bad conditional branch: %s", opst[o] );
-		printf( "	j%s	L%d\n",
-		 o == 0 ? "br" : ccbranches[o-EQ], lab );
+	if( o != 0 && ( o < EQ || o > UGT ) )
+		cerror( "bad conditional branch: %s", opst[o] );
+	printf( "	j%s	L%d\n", o == 0 ? "br" : ccbranches[o-EQ], lab );
 	}
 
 nextcook( p, cookie ) NODE *p; {
@@ -1285,200 +1367,314 @@ nextcook( p, cookie ) NODE *p; {
 	return( FORREW );
 	}
 
+/*ARGSUSED*/
 lastchance( p, cook ) NODE *p; {
 	/* forget it! */
 	return(0);
 	}
 
 optim2( p ) register NODE *p; {
-# ifdef ONEPASS
 	/* do local tree transformations and optimizations */
-# define RV(p) p->in.right->tn.lval
-# define nncon(p)	((p)->in.op == ICON && (p)->in.name[0] == 0)
-	register int o, i;
+
+	int o;
+	int i, mask;
 	register NODE *l, *r;
-	int lower, upper, result;
 
-	switch (o = p->in.op) {
+	switch( o = p->in.op ) {
 
-	case DIV: case ASG DIV:
-	case MOD: case ASG MOD:
-		/*
-		 * Change unsigned mods and divs to
-		 * logicals (mul is done in mip & c2)
-		 */
-		if (ISUNSIGNED(p->in.left->in.type) && nncon(p->in.right) &&
-		    (i = ispow2(RV(p))) >= 0) {
-			if (o == DIV || o == ASG DIV) {
-				p->in.op = RS;
-				RV(p) = i;
-			} else {
-				p->in.op = AND;
-				RV(p)--;
+	case AND:
+	case ASG AND:
+		r = p->in.right;
+		if( r->in.op==ICON && r->in.name[0]==0 ) {
+			/* check for degenerate operations */
+			l = p->in.left;
+			mask = (1 << tlen(l) * SZCHAR) - 1;
+			if( ISUNSIGNED(r->in.type) ) {
+				i = (r->tn.lval & mask);
+				if( i == mask ) {
+					r->in.op = FREE;
+					ncopy(p, l);
+					l->in.op = FREE;
+					break;
+					}
+				else if( i == 0 )
+					goto zero;
+				else
+					r->tn.lval = i;
+				}
+			else if( r->tn.lval == mask &&
+				 tlen(l) < SZINT/SZCHAR ) {
+				r->in.op = SCONV;
+				r->in.left = l;
+				r->in.right = 0;
+				r->in.type = ENUNSIGN(l->in.type);
+				r->in.su = l->in.su > 1 ? l->in.su : 1;
+				ncopy(p, r);
+				p->in.left = r;
+				p->in.type = INT;
+				}
 			}
-			if (asgop(o))
-				p->in.op = ASG p->in.op;
-		}
-		return;
+		break;
 
 	case SCONV:
 		l = p->in.left;
-		if (anyfloat(p, l)) {
-			/* save some labor later */
-			NODE *t = talloc();
+		if( p->in.type == FLOAT || p->in.type == DOUBLE ||
+		    l->in.type == FLOAT || l->in.type == DOUBLE )
+			return;
+		if( l->in.op == PCONV || l->in.op == CALL || l->in.op == UNARY CALL )
+			return;
 
-			if (p->in.type == UCHAR || p->in.type == USHORT) {
-				*t = *p;
-				t->in.type = UNSIGNED;
-				p->in.left = t;
-			} else if (l->in.type == UCHAR || l->in.type == USHORT) {
-				*t = *p;
-				t->in.type = INT;
-				p->in.left = t;
-			}
-		} else if (l->in.op != PCONV &&
-		    l->in.op != CALL && l->in.op != UNARY CALL &&
-		    tlen(p) == tlen(l)) {
-			/* clobber conversions w/o side effects */
-			if (l->in.op != FLD)
-				l->in.type = p->in.type;
-			ncopy(p, l);
-			l->in.op = FREE;
-		}
-		return;
+		/* Only trust it to get it right if the size is the same */
+		if( tlen(p) != tlen(l) )
+			return;
+
+		/* clobber conversion */
+		if( l->in.op != FLD )
+			l->in.type = p->in.type;
+		ncopy( p, l );
+		l->in.op = FREE;
+
+		break;
 
 	case ASSIGN:
 		/*
-		 * Try to zap storage conversions of non-float items.
+		 * Conversions are equivalent to assignments;
+		 * when the two operations are combined,
+		 * we can sometimes zap the conversion.
 		 */
 		r = p->in.right;
-		if (r->in.op == SCONV) {
-			int wdest, wconv, wsrc;
-
-			if (p->in.left->in.op == FLD)
-				return;
-			if (anyfloat(r, r->in.left)) {
-				/* let the code table handle two cases */
-				if (p->in.left->in.type == UNSIGNED && 
-					   r->in.type == UNSIGNED) {
-					p->in.right = r->in.left;
-					r->in.op = FREE;
-				} else if ((p->in.left->in.type == FLOAT ||
-					    p->in.left->in.type == DOUBLE) &&
-					   p->in.left->in.type == r->in.type &&
-					   r->in.left->in.type == UNSIGNED) {
-					p->in.right = r->in.left;
-					r->in.op = FREE;
-				}
-				return;
-			}
-			wdest = tlen(p->in.left);
-			wconv = tlen(r);
-			/*
-			 * If size doesn't change across assignment or
-			 * conversion expands src before shrinking again
-			 * due to the assignment, delete conversion so
-			 * code generator can create optimal code.
-			 */
-			if (wdest == wconv ||
-			 (wdest == (wsrc = tlen(r->in.left)) && wconv > wsrc)) {
+		l = p->in.left;
+		if ( r->in.op == SCONV &&
+		     !mixtypes(l, r) &&
+		     l->in.op != FLD &&
+		     tlen(l) == tlen(r) ) {
 				p->in.right = r->in.left;
 				r->in.op = FREE;
 			}
-		}
-		return;
+		break;
 
 	case ULE:
 	case ULT:
 	case UGE:
 	case UGT:
-		o -= (UGE-GE);
+		p->in.op -= (UGE-GE);
+		if( degenerate(p) )
+			break;
+		p->in.op += (UGE-GE);
+		break;
+
 	case EQ:
 	case NE:
 	case LE:
 	case LT:
 	case GE:
 	case GT:
-		/*
-		 * Optimize comparisons against constants which are
-		 * out of the range of a variable's precision.
-		 * This saves some labor out in the code table
-		 * handling ridiculous comparisons...
-		 */
-		r = p->in.right;
-		l = p->in.left;
-		if (r->in.op != ICON ||
-		    r->tn.name[0] != '\0' ||
-		    tlen(l) >= tlen(r))
-			return;
-		switch (l->in.type) {
-		case CHAR:
-			lower = -(1 << SZCHAR - 1);
-			upper = (1 << SZCHAR - 1) - 1;
-			break;
-		case UCHAR:
-			lower = 0;
-			upper = (1 << SZCHAR) - 1;
-			break;
-		case SHORT:
-			lower = -(1 << SZSHORT - 1);
-			upper = (1 << SZSHORT - 1) - 1;
-			break;
-		case USHORT:
-			lower = 0;
-			upper = (1 << SZSHORT) - 1;
-			break;
-		default:
-			cerror("unsupported OPLOG in optim2");
-		}
-		result = -1;
-		i = r->tn.lval;
-		switch (o) {
-		case EQ:
-		case NE:
-			if (lower == 0 && (unsigned) i > upper)
-				result = o == NE;
-			else if (i < lower || i > upper)
-				result = o == NE;
-			break;
-		case LT:
-		case GE:
-			if (lower == 0 && (unsigned) i > upper)
-				result = o == LT;
-			else if (i <= lower)
-				result = o != LT;
-			else if (i > upper)
-				result = o == LT;
-			break;
-		case LE:
-		case GT:
-			if (lower == 0 && (unsigned) i >= upper)
-				result = o == LE;
-			else if (i < lower)
-				result = o != LE;
-			else if (i >= upper)
-				result = o == LE;
-			break;
-		}
-		if (result == -1)
-			return;
+		(void) degenerate(p);
+		break;
 
-		if (tshape(l, SAREG|SNAME|SCON|SOREG|STARNM)) {
-			l->in.op = FREE;
-			ncopy(p, r);
-			r->in.op = FREE;
-			p->tn.type = INT;
-			p->tn.lval = result;
-		} else {
-			p->in.op = COMOP;
-			p->in.type = INT;
+	case DIV:
+		if( p->in.right->in.op == ICON &&
+		    p->in.right->tn.name[0] == '\0' &&
+		    ISUNSIGNED(p->in.right->in.type) &&
+		    (unsigned) p->in.right->tn.lval >= 0x80000000 ) {
+			/* easy to do here, harder to do in zzzcode() */
+			p->in.op = UGE;
+			break;
+			}
+	case MOD:
+	case ASG DIV:
+	case ASG MOD:
+		/*
+		 * optimize DIV and MOD
+		 *
+		 * basically we spot UCHAR and USHORT and try to do them
+		 * as signed ints...  this may need tuning for the tahoe.
+		 */
+		if( degenerate(p) )
+			break;
+		l = p->in.left;
+		r = p->in.right;
+		if( !ISUNSIGNED(r->in.type) ||
+		    tlen(l) >= SZINT/SZCHAR ||
+		    !(tlen(r) < SZINT/SZCHAR ||
+		      (r->in.op == ICON && r->tn.name[0] == '\0')) )
+			break;
+		if( r->in.op == ICON )
 			r->tn.type = INT;
-			r->tn.lval = result;
+		else {
+			NODE *t = talloc();
+			t->in.left = r;
+			r = t;
+			r->in.op = SCONV;
+			r->in.type = INT;
+			r->in.right = 0;
+			p->in.right = r;
+			}
+		if( o == DIV || o == MOD ) {
+			NODE *t = talloc();
+			t->in.left = l;
+			l = t;
+			l->in.op = SCONV;
+			l->in.type = INT;
+			l->in.right = 0;
+			p->in.left = l;
+			}
+		/* handle asgops in table */
+		break;
+
+	case RS:
+	case ASG RS:
+	case LS:
+	case ASG LS:
+		/* pick up degenerate shifts */
+		l = p->in.left;
+		r = p->in.right;
+		if( !(r->in.op == ICON && r->tn.name[0] == '\0') )
+			break;
+		i = r->tn.lval;
+		if( i < 0 )
+			/* front end 'fixes' this? */
+			if( o == LS || o == ASG LS )
+				o += (RS-LS);
+			else
+				o += (LS-RS);
+		if( (o == RS || o == ASG RS) &&
+		    !ISUNSIGNED(l->in.type) )
+			/* can't optimize signed right shifts */
+			break;
+		if( o == LS ) {
+			if( i < SZINT )
+				break;
+			}
+		else {
+			if( i < tlen(l) * SZCHAR )
+				break;
+			}
+	zero:
+		if( !asgop( o ) )
+			if( tshape(l, SAREG|SNAME|SCON|SOREG|STARNM) ) {
+				/* no side effects */
+				tfree(l);
+				ncopy(p, r);
+				r->in.op = FREE;
+				p->tn.lval = 0;
+				}
+			else {
+				p->in.op = COMOP;
+				r->tn.lval = 0;
+				}
+		else {
+			p->in.op = ASSIGN;
+			r->tn.lval = 0;
+			}
+		break;
 		}
-		return;
 	}
-# endif
-}
+
+degenerate(p) register NODE *p; {
+	int o;
+	int result, i;
+	int lower, upper;
+	register NODE *l, *r;
+
+	/*
+	 * try to keep degenerate comparisons with constants
+	 * out of the table.
+	 */
+	r = p->in.right;
+	l = p->in.left;
+	if( r->in.op != ICON ||
+	    r->tn.name[0] != '\0' ||
+	    tlen(l) >= tlen(r) )
+		return (0);
+	switch( l->in.type ) {
+	case CHAR:
+		lower = -(1 << SZCHAR - 1);
+		upper = (1 << SZCHAR - 1) - 1;
+		break;
+	case UCHAR:
+		lower = 0;
+		upper = (1 << SZCHAR) - 1;
+		break;
+	case SHORT:
+		lower = -(1 << SZSHORT - 1);
+		upper = (1 << SZSHORT - 1) - 1;
+		break;
+	case USHORT:
+		lower = 0;
+		upper = (1 << SZSHORT) - 1;
+		break;
+	default:
+		cerror("unsupported type in degenerate()");
+		}
+	i = r->tn.lval;
+	switch( o = p->in.op ) {
+	case DIV:
+	case ASG DIV:
+	case MOD:
+	case ASG MOD:
+		/* DIV and MOD work like EQ */
+	case EQ:
+	case NE:
+		if( lower == 0 && (unsigned) i > upper )
+			result = o == NE;
+		else if( i < lower || i > upper )
+			result = o == NE;
+		else
+			return (0);
+		break;
+	case LT:
+	case GE:
+		if( lower == 0 && (unsigned) i > upper )
+			result = o == LT;
+		else if( i <= lower )
+			result = o != LT;
+		else if( i > upper )
+			result = o == LT;
+		else
+			return (0);
+		break;
+	case LE:
+	case GT:
+		if( lower == 0 && (unsigned) i >= upper )
+			result = o == LE;
+		else if( i < lower )
+			result = o != LE;
+		else if( i >= upper )
+			result = o == LE;
+		else
+			return (0);
+		break;
+	default:
+		cerror("unknown op in degenerate()");
+		}
+		
+	if( o == MOD || o == ASG MOD ) {
+		r->in.op = FREE;
+		ncopy(p, l);
+		l->in.op = FREE;
+		}
+	else if( o != ASG DIV && tshape(l, SAREG|SNAME|SCON|SOREG|STARNM) ) {
+		/* no side effects */
+		tfree(l);
+		ncopy(p, r);
+		r->in.op = FREE;
+		p->tn.lval = result;
+		}
+	else {
+		if( o == ASG DIV )
+			p->in.op = ASSIGN;
+		else {
+			p->in.op = COMOP;
+			r->tn.type = INT;
+			}
+		r->tn.lval = result;
+		}
+	if( logop(o) )
+		p->in.type = INT;
+
+	return (1);
+	}
 
 struct functbl {
 	int fop;
@@ -1510,6 +1706,13 @@ hardops(p)  register NODE *p; {
 	return;
 
 	convert:
+	if( p->in.right->in.op == ICON && p->in.right->tn.name[0] == '\0' )
+		/* 'J' in zzzcode() -- assumes DIV or MOD operations */
+		/* save a subroutine call -- use at most 5 instructions */
+		return;
+	if( tlen(p->in.left) < SZINT/SZCHAR && tlen(p->in.right) < SZINT/SZCHAR )
+		/* optim2() will modify the op into an ordinary int op */
+		return;
 	if( asgop( o ) ) {
 		old = NIL;
 		switch( p->in.left->in.op ){
@@ -1650,6 +1853,7 @@ fixpre(p) NODE *p; {
 	if( ty != LTYPE ) fixpre( p->in.left );
 }
 
+/*ARGSUSED*/
 NODE * addroreg(l) NODE *l;
 				/* OREG was built in clocal()
 				 * for an auto or formal parameter
@@ -1660,6 +1864,7 @@ NODE * addroreg(l) NODE *l;
 				 */
 {
 	cerror("address of OREG taken");
+	/*NOTREACHED*/
 }
 
 # ifndef ONEPASS
@@ -1688,7 +1893,7 @@ strip(p) register NODE *p; {
 
 myreader(p) register NODE *p; {
 	strip( p );		/* strip off operations with no side effects */
+	canon( p );		/* expands r-vals for fields */
 	walkf( p, hardops );	/* convert ops to function calls */
-	canon( p );		/* expands r-vals for fileds */
 	walkf( p, optim2 );
 	}
