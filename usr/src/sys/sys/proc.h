@@ -1,4 +1,13 @@
-/*	proc.h	4.16	82/10/21	*/
+/*	proc.h	4.17	82/10/31	*/
+
+#ifdef vax		/* GROT */
+#ifndef QUOTA
+#define	QUOTA		/* GROT */
+#endif
+#ifndef MUSH
+#define	MUSH		/* GROT */
+#endif
+#endif			/* GROT */
 
 #include "mush.h"
 #include "mu_msg.h"
@@ -32,7 +41,7 @@ struct	proc {
 	short	p_pgrp;		/* name of process group leader */
 	short	p_pid;		/* unique process id */
 	short	p_ppid;		/* process id of parent */
-	short	p_xstat;	/* Exit status for wait */
+	u_short	p_xstat;	/* Exit status for wait */
 	struct	rusage *p_ru;	/* mbuf holding exit information */
 	short	p_poip;	/* page outs in progress */
 	short	p_szpt;	/* copy of page table size */
@@ -119,3 +128,4 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 /* unused */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
 #define	SLOGIN	0x0800000	/* a login process (legit child of init) */
+#define	SPTECHG	0x1000000	/* pte's for process have changed */
