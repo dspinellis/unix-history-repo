@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -727,7 +727,7 @@ sendfile(type, file)
 		if (i == 0)
 			status("no space on remote; waiting for queue to drain");
 		if (i == 10)
-			syslog(LOG_SALERT, "%s: can't send to %s; queue full",
+			syslog(LOG_ALERT, "%s: can't send to %s; queue full",
 				printer, RM);
 		sleep(5 * 60);
 	}

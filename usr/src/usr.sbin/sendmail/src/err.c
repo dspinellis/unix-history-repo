@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)err.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)err.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
@@ -69,7 +69,7 @@ syserr(fmt, a, b, c, d, e)
 	(void) queuename(CurEnv, '\0');
 # ifdef LOG
 	if (LogLevel > 0)
-		syslog(LOG_MAIL, "%s: SYSERR: %s", CurEnv->e_id, &MsgBuf[4]);
+		syslog(LOG_CRIT, "%s: SYSERR: %s", CurEnv->e_id, &MsgBuf[4]);
 # endif LOG
 	errno = 0;
 	if (QuickAbort)

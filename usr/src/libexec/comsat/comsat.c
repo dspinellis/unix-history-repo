@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -72,7 +72,7 @@ main(argc, argv)
 	}
 	chdir("/usr/spool/mail");
 	if ((uf = open("/etc/utmp",0)) < 0) {
-		openlog("comsat", 0, 0);
+		openlog("comsat", 0, LOG_DAEMON);
 		syslog(LOG_ERR, "/etc/utmp: %m");
 		(void) recv(0, msgbuf, sizeof (msgbuf) - 1, 0);
 		exit(1);

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <signal.h>
@@ -95,7 +95,7 @@ main(argc, argv)
 		howto = RB_SINGLE;
 	}
 #endif
-	openlog("init", LOG_CONS|LOG_ODELAY, 0);
+	openlog("init", LOG_CONS|LOG_ODELAY, LOG_AUTH);
 	sigvec(SIGTERM, &rvec, (struct sigvec *)0);
 	signal(SIGTSTP, idle);
 	signal(SIGSTOP, SIG_IGN);

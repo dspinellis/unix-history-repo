@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	6.8 (Berkeley) %G%
+ *	@(#)up.c	6.9 (Berkeley) %G%
  */
 
 #include "up.h"
@@ -817,7 +817,7 @@ upecc(ui, flag)
 		npf--;
 		reg--;
 		mask = up->upec2;
-		log(KERN_RECOV, "up%d%c: soft ecc sn%d\n", upunit(bp->b_dev),
+		log(LOG_WARNING, "up%d%c: soft ecc sn%d\n", upunit(bp->b_dev),
 			'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 		/*
 		 * Flush the buffered data path, and compute the

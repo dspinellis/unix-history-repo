@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -48,6 +48,7 @@ main(argc, argv)
 	int on = 1, fromlen;
 	struct sockaddr_in from;
 
+	openlog("rsh", LOG_PID | LOG_ODELAY, LOG_DAEMON);
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
 		fprintf(stderr, "%s: ", argv[0]);
@@ -55,13 +56,11 @@ main(argc, argv)
 		_exit(1);
 	}
 	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
-		openlog(argv[0], LOG_PID, 0);
 		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
 	}
 	linger.l_onoff = 1;
 	linger.l_linger = 60;			/* XXX */
 	if (setsockopt(0, SOL_SOCKET, SO_LINGER, &linger, sizeof (linger)) < 0) {
-		openlog(argv[0], LOG_PID, 0);
 		syslog(LOG_WARNING, "setsockopt (SO_LINGER): %m");
 	}
 	doit(dup(0), &from);
@@ -102,7 +101,6 @@ doit(f, fromp)
 	fromp->sin_port = ntohs((u_short)fromp->sin_port);
 	if (fromp->sin_family != AF_INET ||
 	    fromp->sin_port >= IPPORT_RESERVED) {
-		openlog("rshd", LOG_PID, 0);
 		syslog(LOG_ERR, "malformed from address\n");
 		exit(1);
 	}
@@ -111,7 +109,6 @@ doit(f, fromp)
 	for (;;) {
 		char c;
 		if (read(f, &c, 1) != 1) {
-			openlog("rshd", LOG_PID, 0);
 			syslog(LOG_ERR, "read: %m");
 			shutdown(f, 1+1);
 			exit(1);
@@ -125,18 +122,15 @@ doit(f, fromp)
 		int lport = IPPORT_RESERVED - 1, retryshift;
 		s = rresvport(&lport);
 		if (s < 0) {
-			openlog("rshd", LOG_PID, 0);
 			syslog(LOG_ERR, "can't get stderr port: %m");
 			exit(1);
 		}
 		if (port >= IPPORT_RESERVED) {
-			openlog("rshd", LOG_PID, 0);
 			syslog(LOG_ERR, "2nd port not reserved\n");
 			exit(1);
 		}
 		fromp->sin_port = htons((u_short)port);
 		if (connect(s, fromp, sizeof (*fromp), 0) < 0) {
-			openlog("rshd", LOG_PID, 0);
 			syslog(LOG_ERR, "connect: %m");
 			exit(1);
 		}
