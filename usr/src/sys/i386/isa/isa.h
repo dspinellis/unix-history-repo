@@ -7,83 +7,100 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)isa.h	5.2 (Berkeley) %G%
+ *	@(#)isa.h	5.3 (Berkeley) %G%
  */
 
 /*
- * AT bus specific definitions.
+ * ISA Bus conventions
  */
+
 #ifndef LOCORE
-
-#define Rd(s) ({u_char rtn; u_short ioa; \
-	ioa = (s); \
-	asm volatile ("movw %1,%%dx; nop ; in %%dx,%%al ; nop ; movb %%al,%0" \
-		: "=g" (rtn) \
-		: "g" (ioa) \
-		: "ax", "dx"); \
-	rtn; \
-})
-
-#define Wr(s,n) ({u_char val; u_short ioa; \
-	ioa = (s); \
-	val = (n); \
-	asm volatile ("movb %1,%%al; movw %0,%%dx; nop; out %%al,%%dx ; nop" \
-		: /* nothing returned */ \
-		: "g" (ioa), "g" (val) \
-		: "ax", "dx"); \
-})
-
-
-#define rdw(s) ({u_short rtn; u_short ioa; \
-	ioa = (s); \
-	asm volatile ("movw %1,%%dx; nop ; in %%dx,%%ax ; nop ; movw %%ax,%0" \
-		: "=g" (rtn) \
-		: "g" (ioa) \
-		: "ax", "dx"); \
-	rtn; \
-})
-
-#define wrw(s,n) ({u_short val; u_short ioa; \
-	ioa = (s); \
-	val = (n); \
-	asm volatile ("movw %1,%%ax; movw %0,%%dx; nop;  out %%ax,%%dx; nop" \
-		: /* nothing returned */ \
-		: "g" (ioa), "g" (val) \
-		: "ax", "dx"); \
-})
-
-#define Outsw(s,a, n) ({short *addr; u_short ioa; int cnt,rtn; \
-	ioa = (s); \
-	addr = (a); \
-	cnt = (n); \
-	asm volatile ("movw %1,%%dx; movl %2,%%esi; movl %3,%%ecx; cld; nop; .byte 0x66,0xf2,0x6f; nop ; movl %%esi,%0" \
-		: "=g" (rtn) \
-		: "g" (ioa), "g" (addr), "g" (cnt) \
-		: "si", "dx", "cx"); \
-	rtn; \
-})
-#define Insw(s,a, n) ({short  *addr; u_short ioa; int cnt,rtn; \
-	ioa = (s); \
-	addr = (a); \
-	cnt = (n); \
-	asm volatile ("movw %1,%%dx; movl %2,%%edi; movl %3,%%ecx; cld; nop; .byte 0x66,0xf2,0x6d; nop ; movl %%edi,%0" \
-		: "=g" (rtn) \
-		: "g" (ioa), "g" (addr), "g" (cnt)  \
-		: "di", "dx", "cx"); \
-	rtn; \
-})
-
-unsigned char inb() ;
+unsigned char inb() ;	/* XXX */
 extern outb();
 #endif
 
-#define IO_KBD	0x60			/* keyboard */
 
-#define IO_WD0	0x1f0			/* primary base i/o address */
-#define IO_WD1	0x170			/* secondary base i/o address */
+/*
+ * Input / Output Port Assignments
+ */
 
-#define IO_FD0	0x3f2			/* primary base i/o address */
-#define IO_FD1	0x372			/* secondary base i/o address */
+#ifndef IO_BEGIN
+#define	IO_ISABEGIN	0x000		/* 0x000 - Beginning of I/O Registers */
 
-#define IO_COM0	0x3f8			/* COM1 i/o address */
-#define IO_COM1	0x2f8			/* COM2 i/o address */
+		/* CPU Board */
+#define IO_DMA0		0x000		/* 8237A DMA Controller #1 */
+#define IO_ICU0		0x020		/* 8259A Interrupt Controller #1 */
+#define IO_TIMER0	0x040		/* 8252 Timer #1 */
+#define IO_TIMER1	0x048		/* 8252 Timer #2 */
+#define IO_KBD		0x060		/* 8042 Keyboard */
+#define IO_RTC		0x070		/* RTC */
+#define IO_NMI		IO_RTC		/* NMI Control */
+#define IO_DMAPG	0x080		/* DMA Page Registers */
+#define IO_ICU1		0x0A0		/* 8259A Interrupt Controller #2 */
+#define IO_DMA1		0x0C0		/* 8237A DMA Controller #2 */
+#define IO_NPX		0x0F0		/* Numeric Coprocessor */
+
+		/* Cards */
+					/* 0x100 - 0x16F Open */
+
+#define IO_WD1		0x170		/* Secondary Fixed Disk Controller */
+
+					/* 0x178 - 0x1EF Open */
+
+#define IO_WD0		0x1f0		/* Primary Fixed Disk Controller */
+#define IO_GAME		0x200		/* Game Controller */
+
+					/* 0x208 - 0x277 Open */
+
+#define IO_LPT1		0x278		/* Parallel Port #2 */
+
+					/* 0x280 - 0x2F7 Open */
+
+#define IO_COM1		0x2f8		/* COM2 i/o address */
+
+					/* 0x300 - 0x36F Open */
+
+#define IO_FD1		0x370		/* secondary base i/o address */
+#define IO_LPT0		0x378		/* Parallel Port #1 */
+
+					/* 0x380 - 0x3AF Open */
+
+#define IO_MDA		0x3B0		/* Monochome Adapter */
+#define IO_LPT2		0x3BC		/* Monochome Adapter Printer Port */
+#define IO_VGA		0x3C0		/* E/VGA Ports */
+#define IO_CGA		0x3D0		/* CGA Ports */
+
+					/* 0x3E0 - 0x3EF Open */
+
+#define IO_FD0		0x3f0		/* primary base i/o address */
+#define IO_COM0		0x3f8		/* COM1 i/o address */
+
+#define	IO_ISAEND	0x3FF		/* - 0x3FF End of I/O Registers */
+#endif	IO_ISABEGIN
+
+/*
+ * Input / Output Memory Physical Addresses
+ */
+
+#ifdef	IOM_BEGIN
+#define	IOM_BEGIN	0xa0000		/* Start of I/O Memory "hole" */
+#define	IOM_END		0xFFFFF		/* End of I/O Memory "hole" */
+#endif	IOM_BEGIN
+
+/*
+ * RAM Physical Address Space (ignoring the above mentioned "hole")
+ */
+
+#ifdef	RAM_BEGIN
+#define	RAM_BEGIN	0x000000	/* Start of RAM Memory */
+#define	IOM_END		0xFFFFFF	/* End of RAM Memory */
+#endif	IOM_BEGIN
+
+/*
+ * Oddball Physical Memory Addresses
+ */
+
+#define	COMPAQ_RAMRELOC	0x80c00000	/* Compaq RAM relocation/diag */
+#define	COMPAQ_RAMSETUP	0x80c00002	/* Compaq RAM setup */
+#define	WEITEK_FPU	0xC0000000	/* WTL 2167 */
+#define	CYRIX_EMC	0xC0000000	/* Cyrix EMC */
