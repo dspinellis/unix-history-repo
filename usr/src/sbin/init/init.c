@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)init.c	4.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.5 (Berkeley) %G%";
 #include <signal.h>
 #include <sys/types.h>
 #include <utmp.h>
@@ -348,7 +348,21 @@ struct tab *p;
 		strncat(tty, p->line, LINSIZ);
 		chown(tty, 0, 0);
 		chmod(tty, 0622);
-		open(tty, 2);
+		if (open(tty, 2) < 0) {
+			int repcnt = 0;
+			do {
+				if (repcnt % 10 == 0) {
+					int f = open("/dev/console", 1);
+					write(f, "init: ", 6);
+					write(f, tty, strlen(tty));
+					write(f, ": cannot open\n\r", 15);
+					close(f);
+				}
+				repcnt++;
+				sleep(60);
+			} while (open(tty, 2) < 0);
+			exit(0);	/* have wrong control tty, start over */
+		}
 		vhangup();
 		signal(SIGHUP, SIG_DFL);
 		open(tty, 2);
@@ -367,27 +381,31 @@ rmut(p)
 register struct tab *p;
 {
 	register f;
+	int found = 0;
 
 	f = open(utmp, 2);
 	if(f >= 0) {
 		while(read(f, (char *)&wtmp, sizeof(wtmp)) == sizeof(wtmp)) {
-			if (SCMPN(wtmp.ut_line, p->line))
+			if (SCMPN(wtmp.ut_line, p->line) || wtmp.ut_name[0]==0)
 				continue;
 			lseek(f, -(long)sizeof(wtmp), 1);
 			SCPYN(wtmp.ut_name, "");
 			time(&wtmp.ut_time);
 			write(f, (char *)&wtmp, sizeof(wtmp));
+			found++;
 		}
 		close(f);
 	}
-	f = open(wtmpf, 1);
-	if (f >= 0) {
-		SCPYN(wtmp.ut_line, p->line);
-		SCPYN(wtmp.ut_name, "");
-		time(&wtmp.ut_time);
-		lseek(f, (long)0, 2);
-		write(f, (char *)&wtmp, sizeof(wtmp));
-		close(f);
+	if (found) {
+		f = open(wtmpf, 1);
+		if (f >= 0) {
+			SCPYN(wtmp.ut_line, p->line);
+			SCPYN(wtmp.ut_name, "");
+			time(&wtmp.ut_time);
+			lseek(f, (long)0, 2);
+			write(f, (char *)&wtmp, sizeof(wtmp));
+			close(f);
+		}
 	}
 }
 
