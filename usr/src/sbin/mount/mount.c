@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	8.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	8.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)mount.c	8.20 (Berkeley) %G%";
 #include <err.h>
 #include <errno.h>
 #include <fstab.h>
+#include <pwd.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +44,7 @@ const char
 void	mangle __P((char *, int *, const char **));
 int	mountfs __P((const char *, const char *, const char *,
 			int, const char *, const char *));
-void	prmount __P((const char *, const char *, int));
+void	prmount __P((struct statfs *));
 void	usage __P((void));
 
 /* From mount_ufs.c. */
@@ -64,7 +65,6 @@ static struct opt {
 	{ MNT_RDONLY,		"read-only" },
 	{ MNT_SYNCHRONOUS,	"synchronous" },
 	{ MNT_UNION,		"union" },
-	{ MNT_USER,		"user mount" },
 	{ NULL }
 };
 
@@ -152,8 +152,7 @@ main(argc, argv)
 			for (i = 0; i < mntsize; i++) {
 				if (badvfstype(mntbuf[i].f_type, vfslist))
 					continue;
-				prmount(mntbuf[i].f_mntfromname,
-				    mntbuf[i].f_mntonname, mntbuf[i].f_flags);
+				prmount(&mntbuf[i]);
 			}
 		}
 		exit(rval);
@@ -352,7 +351,7 @@ mountfs(vfstype, spec, name, flags, options, mntopts)
 				warn("statfs %s", name);
 				return (1);
 			}
-			prmount(sf.f_mntfromname, sf.f_mntonname, sf.f_flags);
+			prmount(&sf);
 		}
 		break;
 	}
@@ -361,21 +360,29 @@ mountfs(vfstype, spec, name, flags, options, mntopts)
 }
 
 void
-prmount(spec, name, flags)
-	const char *spec, *name;
-	int flags;
+prmount(sfp)
+	struct statfs *sfp;
 {
+	int flags;
 	struct opt *o;
+	struct passwd *pw;
 	int f;
 
-	(void)printf("%s on %s", spec, name);
+	(void)printf("%s on %s", sfp->f_mntfromname, sfp->f_mntonname);
 
-	flags &= MNT_VISFLAGMASK;
+	flags = sfp->f_flags & MNT_VISFLAGMASK;
 	for (f = 0, o = optnames; flags && o->o_opt; o++)
 		if (flags & o->o_opt) {
 			(void)printf("%s%s", !f++ ? " (" : ", ", o->o_name);
 			flags &= ~o->o_opt;
 		}
+	if (sfp->f_owner) {
+		(void)printf("%smounted by ", !f++ ? " (" : ", ");
+		if ((pw = getpwuid(sfp->f_owner)) != NULL)
+			(void)printf("%s", pw->pw_name);
+		else
+			(void)printf("%d", sfp->f_owner);
+	}
 	(void)printf(f ? ")\n" : "\n");
 }
 
