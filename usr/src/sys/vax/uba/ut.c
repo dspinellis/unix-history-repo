@@ -1,4 +1,4 @@
-/*	ut.c	4.12	82/05/27	*/
+/*	ut.c	4.13	82/07/13	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -333,27 +333,27 @@ loop:
 	 * sc->sc_nxrec by utphys causes them to be skipped normally
 	 * (except in the case of retries).
 	 */
-	if (dbtofsb(bp->b_blkno) > sc->sc_nxrec) {
+	if (bdbtofsb(bp->b_blkno) > sc->sc_nxrec) {
 		/* can't read past end of file */
 		bp->b_flags |= B_ERROR;
 		bp->b_error = ENXIO;
 		goto next;
 	}
-	if (dbtofsb(bp->b_blkno) == sc->sc_nxrec && (bp->b_flags&B_READ)) {
+	if (bdbtofsb(bp->b_blkno) == sc->sc_nxrec && (bp->b_flags&B_READ)) {
 		/* read at eof returns 0 count */
 		bp->b_resid = bp->b_bcount;
 		clrbuf(bp);
 		goto next;
 	}
 	if ((bp->b_flags&B_READ) == 0)
-		sc->sc_nxrec = dbtofsb(bp->b_blkno)+1;
+		sc->sc_nxrec = bdbtofsb(bp->b_blkno)+1;
 	/*
 	 * If the tape is correctly positioned, set up all the
 	 * registers but the csr, and give control over to the
 	 * UNIBUS adaptor routines, to wait for resources to
 	 * start I/O.
 	 */
-	if ((blkno = sc->sc_blkno) == dbtofsb(bp->b_blkno)) {
+	if ((blkno = sc->sc_blkno) == bdbtofsb(bp->b_blkno)) {
 		addr->utwc = -(((bp->b_bcount)+1)>>1);
 		addr->utfc = -bp->b_bcount;
 		if ((bp->b_flags&B_READ) == 0) {
@@ -383,11 +383,11 @@ loop:
 	 * raw tapes only on error retries.
 	 */
 	um->um_tab.b_state = SSEEK;
-	if (blkno < dbtofsb(bp->b_blkno)) {
-		addr->utfc = blkno - dbtofsb(bp->b_blkno);
+	if (blkno < bdbtofsb(bp->b_blkno)) {
+		addr->utfc = blkno - bdbtofsb(bp->b_blkno);
 		bp->b_command = UT_SFORW;
 	} else {
-		addr->utfc = dbtofsb(bp->b_blkno) - blkno;
+		addr->utfc = bdbtofsb(bp->b_blkno) - blkno;
 		bp->b_command = UT_SREV;
 	}
 	sc->sc_timo = imin(imax(10 * -addr->utfc, 60), 5*60);
@@ -481,17 +481,17 @@ utintr(ut11)
 			 * Set blkno and nxrec
 			 */
 			if (bp == &cutbuf[UTUNIT(bp->b_dev)]) {
-				if (sc->sc_blkno > dbtofsb(bp->b_blkno)) {
+				if (sc->sc_blkno > bdbtofsb(bp->b_blkno)) {
 					sc->sc_nxrec =
-					      dbtofsb(bp->b_blkno) - addr->utfc;
+					      bdbtofsb(bp->b_blkno) - addr->utfc;
 					sc->sc_blkno = sc->sc_nxrec;
 				} else {
 					sc->sc_blkno =
-					      dbtofsb(bp->b_blkno) + addr->utfc;
+					      bdbtofsb(bp->b_blkno) + addr->utfc;
 					sc->sc_nxrec = sc->sc_blkno-1;
 				}
 			} else
-				sc->sc_nxrec = dbtofsb(bp->b_blkno);
+				sc->sc_nxrec = bdbtofsb(bp->b_blkno);
 			state = SCOM;		/* force completion */
 			/*
 			 * Stuff so we can unstuff later
@@ -573,7 +573,7 @@ ignoreerr:
 		break;
 
 	case SSEEK:
-		sc->sc_blkno = dbtofsb(bp->b_blkno);
+		sc->sc_blkno = bdbtofsb(bp->b_blkno);
 		goto opcont;
 
 	case SERASE:
@@ -681,7 +681,7 @@ utphys(dev)
 		return;
 	}
 	sc = &tj_softc[tjunit];
-	sc->sc_blkno = dbtofsb(u.u_offset>>9);
+	sc->sc_blkno = bdbtofsb(u.u_offset>>9);
 	sc->sc_nxrec = sc->sc_blkno+1;
 }
 
