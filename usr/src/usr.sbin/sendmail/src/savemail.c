@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.77 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.78 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -955,11 +955,24 @@ errbody(mci, e, separator)
 		else
 		{
 			(void) sprintf(buf, "--%s", e->e_msgboundary);
+
 			putline(buf, mci);
 			(void) sprintf(buf, "Content-Type: %s",
 				sendbody ? "message/rfc822"
 					 : "text/rfc822-headers");
 			putline(buf, mci);
+
+			p = hvalue("Content-Transfer-Encoding", e->e_parent->e_header);
+			if (p != NULL && strcasecmp(p, "binary") != 0)
+				p = NULL;
+			if (p == NULL && bitset(EF_HAS8BIT, e->e_parent->e_flags))
+				p = "8bit";
+			if (p != NULL)
+			{
+				(void) sprintf(buf, "Content-Transfer-Encoding: %s",
+					p);
+				putline(buf, mci);
+			}
 		}
 		putline("", mci);
 		putheader(mci, e->e_parent->e_header, e->e_parent);

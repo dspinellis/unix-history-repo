@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.25 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -379,6 +379,8 @@ mime8to7x(mci, header, e, boundaries, flags)
 			putheader(mci, hdr, e);
 			if (tTd(43, 101))
 				putline("+++after putheader", mci);
+			if (hvalue("MIME-Version", hdr) == NULL)
+				putline("MIME-Version: 1.0", mci);
 			bt = mime8to7(mci, hdr, e, boundaries, flags);
 			mci->mci_flags &= ~MCIF_INMIME;
 			return bt;
