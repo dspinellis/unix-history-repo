@@ -1,4 +1,4 @@
-/*	@(#)macdefs.h	1.5	(Berkeley)	%G%	*/
+/*	@(#)macdefs.h	1.6	(Berkeley)	%G%	*/
 
 #if defined(pdp11) || defined(vax)
 #define makecc(val,i)  lastcon |= val<<(8*i);  /* pdp-11 womp next char  */
@@ -33,6 +33,7 @@ extern int ALSTRUCT;
 /*	should be long if feasable */
 
 # define CONSZ long
+# define U_CONSZ unsigned long
 # define CONFMT "%Ld"
 # define CONOFMT "%Lo"
 # define LABFMT	"L%d"
