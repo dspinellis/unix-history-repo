@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.5	%G%	*/
+/*	tty_pty.c	4.6	81/03/09	*/
 
 /*
  * Pseudo-teletype Driver

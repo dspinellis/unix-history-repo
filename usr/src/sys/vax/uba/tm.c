@@ -1,4 +1,4 @@
-/*	tm.c	4.25	%G%	*/
+/*	tm.c	4.26	81/03/09	*/
 
 #include "te.h"
 #if NTM > 0
