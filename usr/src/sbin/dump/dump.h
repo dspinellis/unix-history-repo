@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dump.h	5.22 (Berkeley) %G%
+ *	@(#)dump.h	5.23 (Berkeley) %G%
  */
 
 #define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
@@ -47,6 +47,7 @@ long	tapesize;	/* estimated tape size, blocks */
 long	tsize;		/* tape size in 0.1" units */
 long	asize;		/* number of 0.1" units written on current tape */
 int	etapes;		/* estimated number of tapes */
+int	nonodump;	/* if set, do not honor UF_NODUMP user flags */
 
 int	notify;		/* notify operator flag */
 int	blockswritten;	/* number of blocks written on current tape */
@@ -57,6 +58,10 @@ char	sblock_buf[MAXBSIZE];
 long	dev_bsize;	/* block size of underlying disk device */
 int	dev_bshift;	/* log2(dev_bsize) */
 int	tp_bshift;	/* log2(TP_BSIZE) */
+
+#ifndef __P
+#include <sys/cdefs.h>
+#endif
 
 /* operator interface functions */
 void	broadcast __P((char *message));
@@ -90,7 +95,7 @@ void	startnewtape __P((int top));
 void	trewind __P((void));
 void	writerec __P((char *dp, int isspcl));
 
-void	Exit __P((int status));
+__dead void Exit __P((int status));
 void	dumpabort __P((int signo));
 void	getfstab __P((void));
 
@@ -151,12 +156,19 @@ void	sig __P((int signo));
 /*
  * Compatibility with old systems.
  */
-#ifndef __STDC__
+#ifdef COMPAT
 #include <sys/file.h>
-#define _PATH_FSTAB	"/etc/fstab"
-extern char *index(), *strdup();
+extern char *index(), *rindex(), *strdup();
 extern char *ctime();
+extern int read(), write();
 extern int errno;
+#endif
+
+#ifndef	_PATH_UTMP
+#define	_PATH_UTMP	"/etc/utmp"
+#endif
+#ifndef	_PATH_FSTAB
+#define	_PATH_FSTAB	"/etc/fstab"
 #endif
 
 #ifdef sunos
@@ -170,5 +182,5 @@ extern time_t time();
 extern void endgrent();
 extern __dead void exit();
 extern off_t lseek();
-extern char *strerror();
+extern const char *strerror();
 #endif
