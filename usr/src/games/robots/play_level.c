@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)play_level.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)play_level.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include	"robots.h"
@@ -23,6 +23,8 @@ play_level()
 	addch(PLAYER);
 	refresh();
 	for (cp = Robots; cp < &Robots[MAXROBOTS]; cp++) {
+		if (cp->y < 0)
+			continue;
 		move(cp->y, cp->x);
 		addch(ROBOT);
 	}
