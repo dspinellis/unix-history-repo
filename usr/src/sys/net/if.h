@@ -1,4 +1,4 @@
-/*	if.h	6.2	83/08/28	*/
+/*	if.h	6.3	84/03/20	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -152,6 +152,20 @@ struct	ifconf {
 #define	ifc_buf	ifc_ifcu.ifcu_buf	/* buffer address */
 #define	ifc_req	ifc_ifcu.ifcu_req	/* array of structures returned */
 };
+
+/*
+ * ARP ioctl request
+ */
+struct arpreq {
+	struct sockaddr	arp_pa;		/* protocol address */
+	struct sockaddr	arp_ha;		/* hardware address */
+	int	arp_flags;		/* flags */
+};
+/*  arp_flags and at_flags field values */
+#define	ATF_INUSE	1	/* entry in use */
+#define ATF_COM		2	/* completed entry (enaddr valid) */
+#define	ATF_PERM	4	/* permanent entry */
+#define	ATF_PUBL	8	/* publish entry (respond for other host) */
 
 #ifdef KERNEL
 #ifdef INET
