@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dh.c	7.3 (Berkeley) %G%
+ *	@(#)dh.c	7.4 (Berkeley) %G%
  */
 
 #include "dh.h"
@@ -98,6 +98,7 @@ int	cbase[NUBA];		/* base address of clists in unibus map */
  */
 /*ARGSUSED*/
 dhprobe(reg)
+p
 	caddr_t reg;
 {
 	register int br, cvec;		/* these are ``value-result'' */
@@ -707,7 +708,7 @@ dmopen(dev)
 			;
 		addr->dmcsr = unit;
 		addr->dmlstat = DML_ON;
-		if ((addr->dmlstat & DML_CAR) || (dhsoftCAR[dm] & (1 < unit)))
+		if ((addr->dmlstat & DML_CAR) || (dhsoftCAR[dm] & (1 << unit)))
 			tp->t_state |= TS_CARR_ON;
 		addr->dmcsr = DM_IE|DM_SE;
 		if (tp->t_state & TS_CARR_ON)
