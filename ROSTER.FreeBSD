@@ -58,6 +58,7 @@ ports/franz             Jordan Hubbard          jkh@freefall.cdrom.com
 ports/fvwm              Geoff Rehmet            csgr@cs.ru.ac.za
 ports/golddig		Jeffrey Hsu		hsu@freefall.cdrom.com
 ports/ile               Jordan Hubbard          jkh@freefall.cdrom.com
+ports/ispell		Piero Serini		piero@strider.st.dsi.unimi.it
 ports/jpeg              Scott Mace              smace@freefall.cdrom.com
 ports/kermit            Scott Mace              smace@freefall.cdrom.com
 ports/ksh               Sean Vickery            seanv@cs.uq.edu.au
