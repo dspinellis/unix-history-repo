@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_delete.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_delete.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -68,10 +68,8 @@ __rec_delete(dbp, key, flags)
 		return (RET_ERROR);
 	}
 
-	if (status == RET_SUCCESS) {
-		--t->bt_nrecs;
+	if (status == RET_SUCCESS)
 		SET(t, BTF_MODIFIED);
-	}
 	return (status);
 }
 
@@ -164,5 +162,6 @@ __rec_dleaf(t, h, index)
 	for (cnt = &h->linp[NEXTINDEX(h)] - ip; --cnt; ++ip)
 		ip[0] = ip[1] < offset ? ip[1] + nbytes : ip[1];
 	h->lower -= sizeof(index_t);
+	--t->bt_nrecs;
 	return (RET_SUCCESS);
 }
