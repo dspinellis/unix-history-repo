@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asexpr.c 4.3 %G%";
+static char sccsid[] = "@(#)asexpr.c 4.4 %G%";
 
 #endif not lint
 #include <stdio.h>
@@ -358,90 +358,124 @@ struct exp *yukkyexpr(val, np)
 	return(locxp);
 }
 
+/*
+ *	Print definitions for token kinds
+ */
+static char pdirect[]	= "directive";
+static char pinstr[]	= "instruction";
+static char phunk[]	= "lexeme";
+static char psmall[]	= "small symbol";
+static char pcntrl[]	= "control token";
 
-#ifdef DEBUG
-char	*tok_name[LASTTOKEN - FIRSTTOKEN + 1];
+#define	DIRECT	pdirect
+#define	INSTR	pinstr
+#define	HUNK	phunk
+#define	SMALL	psmall
+#define	CNTRL	pcntrl
+
 struct Tok_Desc{
 	int		tok_which;
+	char		*tok_kind;
 	char		*tok_name;
-} tok_desc[] = {
-	FIRSTTOKEN,	"firsttoken",
-	ISPACE,		"ispace", 
-	IBYTE,		"ibyte", 
-	IWORD,		"iword", 
-	IINT,		"iint", 
-	ILONG,		"ilong", 
-	IQUAD,		"quad",	
-	IOCTA,		"octa",	
-	IDATA,		"idata", 
-	IGLOBAL,	"iglobal", 
-	ISET,		"iset", 
-	ITEXT,		"itext", 
-	ICOMM,		"icomm", 
-	ILCOMM,		"ilcomm", 
-	IFFLOAT,	"iffloat", 
-	IDFLOAT,	"idfloat", 
-	IGFLOAT,	"igfloat", 
-	IHFLOAT,	"ihfloat", 
-	IORG,		"iorg", 
-	IASCII,		"iascii", 
-	IASCIZ,		"iasciz", 
-	ILSYM,		"ilsym", 
-	IFILE,		"ifile", 
-	ILINENO,	"ilineno", 
-	IABORT,		"iabort", 
-	ISTAB,		"istab", 
-	ISTABSTR,	"istabstr", 
-	ISTABNONE,	"istabnone", 
-	ISTABDOT,	"istabdot", 
-	IJXXX,		"ijxxx", 
-	IALIGN,		"ialign", 
-	INST0,		"inst0", 
-	INSTn,		"instn", 
-	BFINT,		"bfint",
-	PARSEEOF,	"parseeof",
-	ILINESKIP,	"ilineskip",
-	VOID,		"void",	
-	SKIP,		"skip",	
-	INT,		"int",	
-	BIGNUM,		"bignum",
-	NAME,		"name",	
-	STRING,		"string",
-	SIZESPEC,	"sizespec", 
-	REG,		"reg",	
-	MUL,		"mul",	
-	LITOP,		"litop",
-	LP,		"lp",	
-	MP,		"mp",	
-	NEEDSBUF,	"needsbuf",
-	REGOP,		"regop",
-	NL,		"nl",	
-	SCANEOF,	"scaneof",
-	BADCHAR,	"badchar",
-	SP,		"sp",	
-	ALPH,		"alph",	
-	DIG,		"dig",	
-	SQ,		"sq",	
-	DQ,		"dq",	
-	SH,		"sh",	
-	LSH,		"lsh",	
-	RSH,		"rsh",	
-	MINUS,		"minus",
-	SIZEQUOTE,	"sizequote",
-	XOR,		"xor",	
-	DIV,		"div",	
-	SEMI,		"semi",	
-	COLON,		"colon",
-	PLUS,		"plus",	
-	IOR,		"ior",	
-	AND,		"and",	
-	TILDE,		"tilde",
-	ORNOT,		"ornot",
-	CM,		"cm",	
-	LB,		"lb",	
-	RB,		"rb",	
-	RP,		"rp",	
-	LASTTOKEN,	"lasttoken"
+};
+struct Tok_Desc *tok_name[LASTTOKEN - FIRSTTOKEN + 1];
+
+struct Tok_Desc tok_desc[] = {
+	FIRSTTOKEN,	DIRECT,	"first token",
+
+	IBYTE,		DIRECT,	".byte",
+	IWORD,		DIRECT,	".word",
+	IINT,		DIRECT,	".int",
+	ILONG,		DIRECT,	".long",
+	IQUAD,		DIRECT,	".quad",
+	IOCTA,		DIRECT,	".octa",
+	IFFLOAT,	DIRECT,	".ffloat",
+	IDFLOAT,	DIRECT,	".dfloat",
+	IGFLOAT,	DIRECT,	".gfloat",
+	IHFLOAT,	DIRECT,	".hfloat",
+	IASCII,		DIRECT,	".ascii",
+	IASCIZ,		DIRECT,	".asciz",
+	IFILL,		DIRECT,	".fill",
+	ISPACE,		DIRECT,	".space",
+
+	IDATA,		DIRECT,	".data",
+	ITEXT,		DIRECT,	".text",
+	IGLOBAL,	DIRECT,	".global",
+	IALIGN,		DIRECT,	".align",
+
+	ISET,		DIRECT,	".set",
+	ICOMM,		DIRECT,	".comm",
+	ILCOMM,		DIRECT,	".lcomm",
+	IORG,		DIRECT,	".org",
+	ILSYM,		DIRECT,	".lsym",
+
+	ISTAB,		DIRECT,	".stab",
+	ISTABSTR,	DIRECT,	".stabstr",
+	ISTABNONE,	DIRECT,	".stabnone",
+	ISTABDOT,	DIRECT,	".stabdot",
+
+	IFILE,		DIRECT,	".file",
+	ILINENO,	DIRECT,	".lineno",
+	IABORT,		DIRECT,	".abort",
+
+	IJXXX,		INSTR,	"jump pseudo",
+	INST0,		INSTR,	"0 argument inst",
+	INSTn,		INSTR,	"n argument inst",
+
+	PARSEEOF,	CNTRL,	"parse end of file",
+	ILINESKIP,	CNTRL,	"skip lines",
+	VOID,		CNTRL,	"void",
+	SKIP,		CNTRL,	"skip",
+	NEEDSBUF,	CNTRL,	"need scanner buffer",
+	NL,		CNTRL,	"new line",
+	SCANEOF,	CNTRL,	"scanner end of file",
+	BADCHAR,	CNTRL,	"bad character",
+	SH,		CNTRL,	"comment, #",
+
+	INT,		HUNK,	"int",
+	BFINT,		HUNK,	"local label",
+	BIGNUM,		HUNK,	"big number",
+	NAME,		HUNK,	"name",
+	STRING,		HUNK,	"string",
+	REG,		HUNK,	"register specifier",
+
+	SIZESPEC,	SMALL,	"size specifier, [BWLbwl]",
+	SIZEQUOTE,	SMALL,	"sizequote, [^']",
+	LITOP,		SMALL,	"litop",
+
+	MP,		SMALL,	"minus parenthesis, -(",
+	REGOP,		SMALL,	"register operator, %",
+
+	SP,		SMALL,	"space",
+	ALPH,		SMALL,	"alphabetic character, [A-Za-z_]",
+	DIG,		SMALL,	"digit character, [A-Fa-f0-9]",
+
+	SQ,		SMALL,	"single quote, '",
+	DQ,		SMALL,	"double quote, \"",
+
+	LSH,		SMALL,	"arithmetic left shift, <",
+	RSH,		SMALL,	"arithmetic right shift, >",
+	XOR,		SMALL,	"exclusive or, ^",
+
+	PLUS,		SMALL,	"plus, +",
+	MINUS,		SMALL,	"minus, -",
+	MUL,		SMALL,	"multiply, *",
+	DIV,		SMALL,	"divide, /",
+	SEMI,		SMALL,	"semi colon, ;",
+	COLON,		SMALL,	"colon, :",
+	IOR,		SMALL,	"inclusive or, |",
+	AND,		SMALL,	"and, &",
+
+	TILDE,		SMALL,	"one's complement, ~",
+	ORNOT,		SMALL,	"ornot, !",
+	CM,		SMALL,	"comma",
+
+	LB,		SMALL,	"left bracket, [",
+	RB,		SMALL,	"right bracket, ]",
+	LP,		SMALL,	"left parenthesis, (",
+	RP,		SMALL,	"right parentheis, )",
+
+	LASTTOKEN,	SMALL,	"last token",
 };
 /*
  *	turn a token type into a string
@@ -449,20 +483,25 @@ struct Tok_Desc{
 char *tok_to_name(token)
 {
 	static	int	fixed = 0;
+	static	char	buf[64];
+	static	struct	Tok_Desc 	NA = {0, (char *)0, "NOT ASSIGNED"};
+		int	i;
+		char	*cp;
 
 	if (!fixed){
-		int	i;
 		for (i = FIRSTTOKEN; i <= LASTTOKEN; i++)
-			tok_name[i] = "NOT ASSIGNED";
-		for (i = FIRSTTOKEN; i <= sizeof(tok_desc)/sizeof(struct Tok_Desc); i++){
-			tok_name[tok_desc[i].tok_which] = tok_desc[i].tok_name;
+			tok_name[i] = &NA;
+		for (i = 0; i <= sizeof(tok_desc)/sizeof(struct Tok_Desc); i++){
+			tok_name[tok_desc[i].tok_which] = &tok_desc[i];
 		}
 		fixed = 1;
 	}
-	if (FIRSTTOKEN <= token && token <= LASTTOKEN)
-		return(tok_name[token]);
-	else
+	if (FIRSTTOKEN <= token && token <= LASTTOKEN){
+		sprintf(buf, "%s %s", tok_name[token]->tok_kind,
+			tok_name[token]->tok_name);
+		return(buf);
+	} else {
 		panic("Unknown token number, %d\n", token);
-	/*NOTREACHED*/
+		/*NOTREACHED*/
+	}
 }
-#endif DEBUG
