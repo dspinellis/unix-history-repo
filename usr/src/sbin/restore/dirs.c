@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.13	(Berkeley)	83/07/01";
+static char sccsid[] = "@(#)dirs.c	3.14	(Berkeley)	83/07/08";
 #endif
 
 #include "restore.h"
@@ -552,9 +552,14 @@ getdir(dirp, pfp0, pfplast)
 	static struct afile *basefp = NULL;
 	static long nent = 20;
 
-	if (basefp == NULL)
+	if (basefp == NULL) {
 		basefp = (struct afile *)calloc((unsigned)nent,
 			sizeof (struct afile));
+		if (basefp == NULL) {
+			fprintf(stderr, "ls: out of memory\n");
+			return (FAIL);
+		}
+	}
 	fp = *pfp0 = basefp;
 	*pfplast = *pfp0 + nent;
 	while (dp = rst_readdir(dirp)) {
@@ -704,6 +709,8 @@ allocinotab(ino, dip, seekpt)
 	struct modeinfo node;
 
 	itp = (struct inotab *)calloc(1, sizeof(struct inotab));
+	if (itp == 0)
+		panic("no memory directory table\n");
 	itp->t_next = inotab[INOHASH(ino)];
 	inotab[INOHASH(ino)] = itp;
 	itp->t_ino = ino;
