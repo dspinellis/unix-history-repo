@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.80 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.81 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.80 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.81 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1512,7 +1512,7 @@ printqueue()
 		long dfsize;
 		int flags = 0;
 		int qfver;
-		char message[MAXLINE];
+		char statmsg[MAXLINE];
 		char bodytype[MAXNAME + 1];
 
 		printf("%8s", w->w_name + 2);
@@ -1536,7 +1536,7 @@ printqueue()
 			printf(" ");
 		errno = 0;
 
-		message[0] = bodytype[0] = '\0';
+		statmsg[0] = bodytype[0] = '\0';
 		qfver = 0;
 		while (fgets(buf, sizeof buf, f) != NULL)
 		{
@@ -1551,10 +1551,10 @@ printqueue()
 				break;
 
 			  case 'M':	/* error message */
-				if ((i = strlen(&buf[1])) >= sizeof message)
-					i = sizeof message - 1;
-				bcopy(&buf[1], message, i);
-				message[i] = '\0';
+				if ((i = strlen(&buf[1])) >= sizeof statmsg)
+					i = sizeof statmsg - 1;
+				bcopy(&buf[1], statmsg, i);
+				statmsg[i] = '\0';
 				break;
 
 			  case 'B':	/* body type */
@@ -1575,11 +1575,11 @@ printqueue()
 				else
 					printf("%8ld %.16s %.45s", dfsize,
 					    ctime(&submittime), &buf[1]);
-				if (message[0] != '\0' || bodytype[0] != '\0')
+				if (statmsg[0] != '\0' || bodytype[0] != '\0')
 				{
 					printf("\n    %10.10s", bodytype);
-					if (message[0] != '\0')
-						printf("   (%.60s)", message);
+					if (statmsg[0] != '\0')
+						printf("   (%.60s)", statmsg);
 				}
 				break;
 
