@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)bugfiler.8	6.7 (Berkeley) %G%
+.\"	@(#)bugfiler.8	6.8 (Berkeley) %G%
 .\"
 .TH BUGFILER 8 ""
 .UC 5
@@ -53,9 +53,14 @@ is done as specified in the file ~bugs/\fIversion\fP/bug:redist.  This file
 is in the format of the \fIaliases\fP(5) file, including comments and
 entries requiring multiple lines, with the single exception that the
 \fIfolder\fP component of the ``Index:'' line replaces the name to alias.
-For example, the \fIbug:redist\fP file
+The special folder ``all:'' receives a redistribution of all bug reports
+sent to this \fIversion\fP.  For example, the \fIbug:redist\fP file
 .PP
 .DT
+	#	bigbug gets a copy of everything
+.br
+	all:	bigbug
+.br
 	#	ucb folder redistribution list
 .br
 	ucb:	karels, kjd@coke.berkeley.edu
@@ -64,7 +69,7 @@ For example, the \fIbug:redist\fP file
 .br
 .PP
 will send copies of all bug reports with ``ucb'' as the \fIfolder\fP
-to karels, kjd, and ra.
+to bigbug, karels, kjd, and ra.
 .PP
 Reports that cannot be filed, due to an invalid ``Index:'' line or
 some other error, are placed in the directory ~bugs/errors.  The
