@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)nl.c 1.8 %G%";
+static	char sccsid[] = "@(#)nl.c 1.9 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -583,7 +583,7 @@ con:
 				printf("\t%ld..%ld", p->range[0], p->range[1]);
 				break;
 			case RECORD:
-				printf("\t%d(%d)", v, p->value[NL_FLDSZ]);
+				printf("\t%d", v);
 				break;
 			case FIELD:
 				printf("\t%d", v);
@@ -615,13 +615,37 @@ casedef:
 			printf("\t[%d]", nloff(p->chain));
 		switch (p->class) {
 			case RECORD:
-				if (p->ptr[NL_VARNT])
-					printf("\tVARNT=[%d]", nloff(p->ptr[NL_VARNT]));
-				if (p->ptr[NL_TAG])
-					printf(" TAG=[%d]", nloff(p->ptr[NL_TAG]));
+				printf("\tALIGN=%d", p->align_info);
+				if (p->ptr[NL_FIELDLIST]) {
+				    printf(" FLIST=[%d]",
+					nloff(p->ptr[NL_FIELDLIST]));
+				} else {
+				    printf(" FLIST=[]");
+				}
+				if (p->ptr[NL_TAG]) {
+				    printf(" TAG=[%d]",
+					nloff(p->ptr[NL_TAG]));
+				} else {
+				    printf(" TAG=[]");
+				}
+				if (p->ptr[NL_VARNT]) {
+				    printf(" VARNT=[%d]",
+					nloff(p->ptr[NL_VARNT]));
+				} else {
+				    printf(" VARNT=[]");
+				}
+				break;
+			case FIELD:
+				if (p->ptr[NL_FIELDLIST]) {
+				    printf("\tFLIST=[%d]",
+					nloff(p->ptr[NL_FIELDLIST]));
+				} else {
+				    printf("\tFLIST=[]");
+				}
 				break;
 			case VARNT:
-				printf("\tVTOREC=[%d]", nloff(p->ptr[NL_VTOREC]));
+				printf("\tVTOREC=[%d]",
+				    nloff(p->ptr[NL_VTOREC]));
 				break;
 		}
 #		ifdef PC
