@@ -1,6 +1,0 @@
-Mchflags	chflags.c	/^main(argc, argv)$/
-SAPPEND	../../bin/ls/stat_flags.c	/^#define	SAPPEND(s) {							\\$/
-TEST	../../bin/ls/stat_flags.c	/^#define	TEST(a, b, f) {							\\$/
-flags_to_string	../../bin/ls/stat_flags.c	/^flags_to_string(flags, def)$/
-string_to_flags	../../bin/ls/stat_flags.c	/^string_to_flags(stringp, setp, clrp)$/
-usage	chflags.c	/^usage()$/

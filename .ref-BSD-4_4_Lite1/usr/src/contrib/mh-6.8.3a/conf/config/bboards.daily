@@ -1,3 +1,0 @@
-#! /bin/csh -f
-cd @(BBHOME)/etc
-sh -c 'make inst-aliases 2>&1 | tee daily.log | mhmail PostMaster -s "`hostname` bboards.daily"'
