@@ -378,7 +378,7 @@ htndtint(mi)
 	sc->sc_erreg = er;
 	sc->sc_resid = fc;
 	if (bp == &chtbuf[HTUNIT(bp->b_dev)]) {
-		switch (bp->b_command) {
+		switch ((int)bp->b_command) {
 		case HT_REWOFFL:
 			/* offline is on purpose; don't do anything special */
 			ds |= HTDS_MOL;	
