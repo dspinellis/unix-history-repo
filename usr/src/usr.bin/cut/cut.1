@@ -1,0 +1,85 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)cut.1	5.1 (Berkeley) %G%
+.\"
+.TH CUT 1 ""
+.UC 7
+.SH NAME
+cut - select portions of each line of a file
+.SH SYNOPSIS
+.nf
+cut -c list [file ...]
+cut -f list [-s] [-d string] [file ...]
+.fi
+.SH DESCRIPTION
+The
+.I cut
+utility selects portions of each line (as specified by
+.IR list )
+from each
+.I file
+(or the standard input by default), and writes them to the
+standard output.
+The items specified by
+.I list
+can be in terms of column position or in terms of fields delimited
+by a special character.
+.PP
+.I List
+is a comma or whitespace separated set of one-based numbers and/or
+number ranges.
+Number ranges consist of a number, a dash (``-''), and a second number
+and select the fields or columns from the first number to the second,
+inclusive.
+Numbers or number ranges may be preceded by a dash, which selects all
+fields or columns from 1 to the first number.
+Numbers or number ranges may be followed by a dash, which selects all
+fields or columns from the last number to the end of the line.
+Numbers and number ranges may be repeated, overlapping, and in any order.
+It is not an error to select fields or columns not present in the
+input line.
+.PP
+The options are as follows:
+.TP
+-c list
+The
+.I list
+specifies character positions.
+.TP
+-f list
+The
+.I list
+specifies fields, delimited in the input by a single tab character.
+Output fields are separated by a single tab character.
+.TP
+-d char
+Use
+.I char
+as the field delimiter character instead of the tab character.
+.TP
+-s
+Suppresses lines with no field delimiter characters.
+Unless specified, lines with no delimiters are passed through unmodified.
+.PP
+.I Cut
+exit 0 on success, 1 if an error occurred.
+.SH ENVIRONMENT
+.SH "SEE ALSO"
+paste(1)
+.SH STANDARDS
+The
+.I cut
+function is expected to be POSIX 1003.2 compatible.
