@@ -1,4 +1,4 @@
-/*	saio.h	4.9	%G%	*/
+/*	saio.h	4.10	%G%	*/
 
 /*
  * header file for standalone package
@@ -38,6 +38,8 @@ struct	iob {
 #define F_FILE		0x8	/* file instead of device */
 #define F_NBSF		0x10	/* no bad sector forwarding */
 #define F_ECCLM		0x20	/* limit the number of bad bits accepted in ecc's */
+#define F_SSI		0x40	/* set skip sector inhibit,
+				 * enable access to all sectors */
 /* io types */
 #define	F_RDDATA	0x0100	/* read data */
 #define	F_WRDATA	0x0200	/* write data */
@@ -66,6 +68,7 @@ struct st {
 	short	nspc;	/* number of sectors per cylinder */
 	short	ncyl;	/* number of cylinders */
 	short	*off;
+	short	sflg;	/* skip sector flag */
 };
 
 /*
@@ -113,7 +116,10 @@ extern	int errno;	/* just like unix */
 					 * 5 bits are bad in ecc */
 #define	SAIOECCUNL	(('d'<<8)|7)	/* use standard ecc procedures */
 #define SAIODEVDATA	(('d'<<8)|8)	/* get device data */
+#define SAIOSSI		(('d'<<8)|9)	/* set skip sector inhibit */
+#define SAIONOSSI	(('d'<<8)|10)	/* normal skip sector handling */
 
 /* codes for sector header word 1 */
 #define HDR1_FMT22	0x1000	/* standard 16 bit format */
 #define HDR1_OKSCT	0xc000	/* sector ok */
+#define HDR1_SSF	0x2000	/* skip sector flag */
