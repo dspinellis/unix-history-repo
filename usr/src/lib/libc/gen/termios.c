@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)termios.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)termios.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -41,12 +41,12 @@ tcsetattr(fd, opt, t)
 		localterm.c_cflag |= CIGNORE;
 		t = &localterm;
 	}
-	switch(opt & ~TCSASOFT) {
+	switch (opt & ~TCSASOFT) {
 	case TCSANOW:
 		return (ioctl(fd, TIOCSETA, t));
 	case TCSADRAIN:
 		return (ioctl(fd, TIOCSETAW, t));
-	case TIOCSETAF:
+	case TCSAFLUSH:
 		return (ioctl(fd, TIOCSETAF, t));
 	default:
 		errno = EINVAL;
