@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)keyword.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)keyword.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -57,7 +57,7 @@ VAR var[] = {
 #ifdef NEWVM
 	{"%cpu", "%CPU", NULL, 0, pcpu, 4},
 	{"%mem", "%MEM", NULL, 0, pmem, 4},
-	{"acflag", "ACFLG", NULL, 0, pvar, 3, POFF(p_acflag), SHORT, "x"},
+	{"acflag", "ACFLG", NULL, 0, pvar, 3, POFF(p_acflag), USHORT, "x"},
 	{"acflg", "", "acflag"},
 	{"blocked", "", "sigmask"},
 	{"caught", "", "sigcatch"},
@@ -102,13 +102,13 @@ VAR var[] = {
 	{"pri", "PRI", NULL, 0, pri, 3},
 	{"re", "RE", NULL, 0, pvar, 3, POFF(p_time), CHAR, "d"},
 	{"rgid", "RGID", NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_rgid),
-		USHORT, UIDFMT},
+		ULONG, UIDFMT},
 	{"rlink", "RLINK", NULL, 0, pvar, 8, POFF(p_rlink), KPTR, "x"},
 	{"rss", "RSS", NULL, 0, p_rssize, 4},
 	{"rssize", "", "rsz"},
 	{"rsz", "RSZ", NULL, 0, rssize, 4},
 	{"ruid", "RUID", NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_ruid),
-		USHORT, UIDFMT},
+		ULONG, UIDFMT},
 	{"ruser", "RUSER", NULL, LJUST, runame, USERLEN},
 	{"sess", "SESS", NULL, 0, evar, 6, EOFF(e_sess), KPTR, "x"},
 	{"sig", "PENDING", NULL, 0, pvar, 8, POFF(p_sig), LONG, "x"},
@@ -121,9 +121,9 @@ VAR var[] = {
 	{"stat", "", "state"},
 	{"state", "STAT", NULL, 0, state, 4},
 	{"svgid", "SVGID",
-		NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_svgid), USHORT, UIDFMT},
+		NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_svgid), ULONG, UIDFMT},
 	{"svuid", "SVUID",
-		NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_svuid), USHORT, UIDFMT},
+		NULL, 0, evar, UIDLEN, EOFF(e_pcred.p_svuid), ULONG, UIDFMT},
 	{"tdev", "TDEV", NULL, 0, tdev, 4},
 	{"time", "TIME", NULL, USER, cputime, 9},
 	{"tpgid", "TPGID", NULL, 0, evar, 4, EOFF(e_tpgid), USHORT, PIDFMT},
@@ -133,7 +133,7 @@ VAR var[] = {
 	{"tty", "TTY", NULL, LJUST, longtname, 8},
 	{"ucomm", "UCOMM", NULL, LJUST, ucomm, MAXCOMLEN},
 	{"uid", "UID", NULL, 0, evar, UIDLEN, EOFF(e_ucred.cr_uid),
-		USHORT, UIDFMT},
+		ULONG, UIDFMT},
 	{"upr", "UPR", NULL, 0, pvar, 3, POFF(p_usrpri), CHAR, "d"},
 	{"user", "USER", NULL, LJUST, uname, USERLEN},
 	{"usrpri", "", "upr"},
