@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -75,21 +75,17 @@ struct nlist nl[] = {
 	{ "_tp_inpcb" },
 #define	ISO_TP		22
 	{ "_tp_isopcb" },
-#define	ISO_X25		23
-	{ /*"_x25_isopcb"*/ "_file"}, /* fast gross hack to speed up */
-#define	N_TPSTAT	24
+#define	N_TPSTAT	23
 	{ "_tp_stat" },
-#define	N_X25STAT	25
-	{ /*"_x25_stat"*/ "_file"},
-#define	N_ESISSTAT	26
+#define	N_ESISSTAT	24
 	{ "_esis_stat"},
-#define N_NIMP		27
+#define N_NIMP		25
 	{ "_nimp"},
-#define N_RTREE		28
+#define N_RTREE		26
 	{ "_radix_node_head"},
-#define N_CLTP		29
+#define N_CLTP		27
 	{ "_cltb"},
-#define N_CLTPSTAT	30
+#define N_CLTPSTAT	28
 	{ "_cltpstat"},
 
     /* BBN Internet protocol implementation */
@@ -173,10 +169,6 @@ struct protox isoprotox[] = {
 	  tp_stats,	"tp" },
 	{ N_CLTP,	N_CLTPSTAT,	1,	iso_protopr,
 	  cltp_stats,	"cltp" },
-#ifdef notdef
-	{ ISO_X25,	N_X25STAT,	1,	x25_protopr,
-	  x25_stats,	"x25" },
-#endif
 	{ -1,		N_CLNPSTAT,	1,	 0,
 	  clnp_stats,	"clnp"},
 	{ -1,		N_ESISSTAT,	1,	 0,
