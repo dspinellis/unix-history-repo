@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.16 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,6 +24,7 @@
 #include "route.h"
 #include "if_llc.h"
 #include "if_dl.h"
+#include "if_types.h"
 
 #ifdef INET
 #include "../netinet/in.h"
@@ -391,4 +392,28 @@ ether_sprintf(ap)
 	}
 	*--cp = 0;
 	return (etherbuf);
+}
+
+/*
+ * Perform common duties while attaching to interface list
+ */
+ether_ifattach(ifp)
+	register struct ifnet *ifp;
+{
+	register struct ifaddr *ifa;
+	register struct sockaddr_dl *sdl;
+
+	ifp->if_type = IFT_ETHER;
+	ifp->if_addrlen = 6;
+	ifp->if_hdrlen = 14;
+	ifp->if_mtu = ETHERMTU;
+	for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
+		if ((sdl = (struct sockaddr_dl *)ifa->ifa_addr) &&
+		    sdl->sdl_family == AF_LINK) {
+			sdl->sdl_type = IFT_ETHER;
+			sdl->sdl_alen = ifp->if_addrlen;
+			bcopy((caddr_t)((struct arpcom *)ifp)->ac_enaddr,
+			      LLADDR(sdl), ifp->if_addrlen);
+			break;
+		}
 }
