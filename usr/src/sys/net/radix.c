@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)radix.c	7.5 (Berkeley) %G%
+ *	@(#)radix.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -274,8 +274,52 @@ on1:
 }
 
 struct radix_node *
+rn_addmask(netmask, search, skip)
+caddr_t netmask;
+{
+	register struct radix_node *x;
+	register caddr_t cp, cplim;
+	register int b, mlen, j;
+	int maskduplicated;
+
+	mlen = *(u_char *)netmask;
+	if (search) {
+		x = rn_search(netmask, rn_maskhead);
+		mlen = *(u_char *)netmask;
+		if (Bcmp(netmask, x->rn_key, mlen) == 0)
+			return (x);
+	}
+	R_Malloc(x, struct radix_node *, MAXKEYLEN + 2 * sizeof (*x));
+	if (x == 0)
+		return (0);
+	Bzero(x, MAXKEYLEN + 2 * sizeof (*x));
+	cp = (caddr_t)(x + 2);
+	Bcopy(netmask, cp, mlen);
+	netmask = cp;
+	x = rn_insert(netmask, rn_maskhead, &maskduplicated, x);
+	/*
+	 * Calculate index of mask.
+	 */
+	cplim = netmask + mlen;
+	for (cp = netmask + skip; cp < cplim; cp++)
+		if (*(u_char *)cp != 0xff)
+			break;
+	b = (cp - netmask) << 3;
+	if (cp != cplim) {
+		if (*cp != 0) {
+			gotOddMasks = 1;
+			for (j = 0x80; j; b++, j >>= 1)  
+				if ((j & *cp) == 0)
+					break;
+		}
+	}
+	x->rn_b = -1 - b;
+	return (x);
+}
+
+struct radix_node *
 rn_addroute(v, netmask, head, treenodes)
-	struct radix_node *head;
+struct radix_node *head;
 	caddr_t netmask, v;
 	struct radix_node treenodes[2];
 {
@@ -283,7 +327,7 @@ rn_addroute(v, netmask, head, treenodes)
 	register caddr_t cp;
 	register struct radix_node *t, *x, *tt;
 	short b = 0, b_leaf;
-	int vlen = *(u_char *)v, maskduplicated = 0, mlen, keyduplicated;
+	int vlen = *(u_char *)v, mlen, keyduplicated;
 	caddr_t cplim; unsigned char *maskp;
 	struct radix_mask *m, **mp;
 	struct radix_node *saved_tt;
@@ -298,38 +342,13 @@ rn_addroute(v, netmask, head, treenodes)
 	if (netmask)  {
 		x = rn_search(netmask, rn_maskhead);
 		mlen = *(u_char *)netmask;
-		if (Bcmp(netmask, x->rn_key, mlen) == 0) {
-			maskduplicated = 1;
-			netmask = x->rn_key;
-			b = -1 - x->rn_b;
-		} else {
-			maskduplicated = 0;
-			R_Malloc(x, struct radix_node *, MAXKEYLEN + 2 * sizeof (*x));
+		if (Bcmp(netmask, x->rn_key, mlen) != 0) {
+			x = rn_addmask(netmask, 0, head->rn_off);
 			if (x == 0)
 				return (0);
-			Bzero(x, MAXKEYLEN + 2 * sizeof (*x));
-			cp = (caddr_t)(x + 2);
-			Bcopy(netmask, cp, mlen);
-			netmask = cp;
-			x = rn_insert(netmask, rn_maskhead, &maskduplicated, x);
-			/*
-			 * Calculate index of mask.
-			 */
-			cplim = netmask + vlen;
-			for (cp = netmask + head->rn_off; cp < cplim; cp++)
-				if (*(u_char *)cp != 0xff)
-					break;
-			b = (cp - netmask) << 3;
-			if (cp != cplim) {
-				if (*cp != 0) {
-					gotOddMasks = 1;
-					for (j = 0x80; j; b++, j >>= 1)  
-						if ((j & *cp) == 0)
-							break;
-				}
-			}
-			x->rn_b = -1 - b;
 		}
+		netmask = x->rn_key;
+		b = -1 - x->rn_b;
 	}
 	/*
 	 * Deal with duplicated keys: attach node to previous instance

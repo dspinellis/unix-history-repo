@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if.c	7.11 (Berkeley) %G%
+ *	@(#)if.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,6 +31,7 @@
 #include "if.h"
 #include "af.h"
 #include "if_dl.h"
+#include "if_types.h"
 
 #include "ether.h"
 
@@ -69,6 +70,7 @@ ifubareset(uban)
 #endif
 
 int if_index = 0;
+struct ifaddr **ifnet_addrs;
 /*
  * Attach an interface to the
  * list of "active" interfaces.
@@ -76,18 +78,35 @@ int if_index = 0;
 if_attach(ifp)
 	struct ifnet *ifp;
 {
-	register struct ifnet **p = &ifnet;
 	unsigned socksize, ifasize;
 	int namelen, unitlen;
 	char workbuf[16];
+	register struct ifnet **p = &ifnet;
 	register struct sockaddr_dl *sdl;
 	register struct ifaddr *ifa;
-	extern link_rtrequest();
+	static int if_indexlim = 8;
+	extern link_rtrequest(), ether_output();
 
 	while (*p)
 		p = &((*p)->if_next);
 	*p = ifp;
 	ifp->if_index = ++if_index;
+	if (ifnet_addrs == 0 || if_index >= if_indexlim) {
+		unsigned n = (if_indexlim <<= 1) * sizeof(ifa);
+		struct ifaddr **q = (struct ifaddr **)
+					malloc(n, M_IFADDR, M_WAITOK);
+		if (ifnet_addrs) {
+			bcopy((caddr_t)ifnet_addrs, (caddr_t)q, n/2);
+			free((caddr_t)ifnet_addrs, M_IFADDR);
+		}
+		ifnet_addrs = q;
+	}
+	/* XXX -- Temporary fix before changing 10 ethernet drivers */
+	if (ifp->if_output == ether_output) {
+		ifp->if_type = IFT_ETHER;
+		ifp->if_addrlen = 6;
+		ifp->if_hdrlen = 14;
+	}
 	/*
 	 * create a Link Level name for this device
 	 */
@@ -99,10 +118,13 @@ if_attach(ifp)
 			       unitlen + namelen + ifp->if_addrlen;
 #define ROUNDUP(a) (1 + (((a) - 1) | (sizeof(long) - 1)))
 	socksize = ROUNDUP(socksize);
+	if (socksize < sizeof(*sdl))
+		socksize = sizeof(*sdl);
 	ifasize = sizeof(*ifa) + 2 * socksize;
 	ifa = (struct ifaddr *)malloc(ifasize, M_IFADDR, M_WAITOK);
 	if (ifa == 0)
 		return;
+	ifnet_addrs[if_index - 1] = ifa;
 	bzero((caddr_t)ifa, ifasize);
 	sdl = (struct sockaddr_dl *)(ifa + 1);
 	ifa->ifa_addr = (struct sockaddr *)sdl;
@@ -141,8 +163,8 @@ ifa_ifwithaddr(addr)
 			continue;
 		if (equal(addr, ifa->ifa_addr))
 			return (ifa);
-		if ((ifp->if_flags & IFF_BROADCAST) &&
-		    equal(&ifa->ifa_broadaddr, addr))
+		if ((ifp->if_flags & IFF_BROADCAST) && ifa->ifa_broadaddr &&
+		    equal(ifa->ifa_broadaddr, addr))
 			return (ifa);
 	}
 	return ((struct ifaddr *)0);
@@ -179,14 +201,19 @@ ifa_ifwithnet(addr)
 {
 	register struct ifnet *ifp;
 	register struct ifaddr *ifa;
-	register char *cp, *cp2, *cp3;
-	register char *cplim;
 	u_int af = addr->sa_family;
 
 	if (af >= AF_MAX)
 		return (0);
+	if (af == AF_LINK) {
+	    register struct sockaddr_dl *sdl = (struct sockaddr_dl *)addr;
+	    if (sdl->sdl_index && sdl->sdl_index <= if_index)
+		return (ifnet_addrs[sdl->sdl_index - 1]);
+	}
 	for (ifp = ifnet; ifp; ifp = ifp->if_next)
 	    for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next) {
+		register char *cp, *cp2, *cp3;
+		register char *cplim;
 		if (ifa->ifa_addr->sa_family != af || ifa->ifa_netmask == 0)
 			continue;
 		cp = addr->sa_data;
@@ -219,6 +246,45 @@ ifa_ifwithaf(af)
 	return ((struct ifaddr *)0);
 }
 
+/*
+ * Find an interface address specific to an interface best matching
+ * a given address.
+ */
+struct ifaddr *
+ifaof_ifpforaddr(addr, ifp)
+	struct sockaddr *addr;
+	register struct ifnet *ifp;
+{
+	register struct ifaddr *ifa;
+	register char *cp, *cp2, *cp3;
+	register char *cplim;
+	struct ifaddr *ifa_maybe = 0;
+	u_int af = addr->sa_family;
+
+	if (af >= AF_MAX)
+		return (0);
+	for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next) {
+		if (ifa->ifa_addr->sa_family != af)
+			continue;
+		ifa_maybe = ifa;
+		if (ifa->ifa_netmask == 0) {
+			if (equal(addr, ifa->ifa_addr) ||
+			    (ifa->ifa_dstaddr && equal(addr, ifa->ifa_dstaddr)))
+				return (ifa);
+			continue;
+		}
+		cp = addr->sa_data;
+		cp2 = ifa->ifa_addr->sa_data;
+		cp3 = ifa->ifa_netmask->sa_data;
+		cplim = ifa->ifa_netmask->sa_len + (char *)ifa->ifa_netmask;
+		for (; cp3 < cplim; cp3++)
+			if ((*cp++ ^ *cp2++) & *cp3)
+				break;
+		if (cp3 == cplim)
+			return (ifa);
+	}
+	return (ifa_maybe);
+}
 #include "route.h"
 /*
  * Default action when installing a route with a Link Level gateway.
@@ -236,15 +302,11 @@ struct sockaddr *sa;
 	if (cmd != RTM_ADD || ((ifa = rt->rt_ifa) == 0) ||
 	    ((ifp = ifa->ifa_ifp) == 0) || ((dst = rt_key(rt)) == 0))
 		return;
-	ifnet = ifp;
-	if (((ifa = ifa_ifwithnet(dst)) && ifa->ifa_ifp == ifp) ||
-	    ((ifa = ifa_ifwithaf(dst->sa_family)) && ifa->ifa_ifp == ifp)) {
-		ifnet = oldifnet;
+	if (ifa = ifaof_ifpforaddr(dst, ifp)) {
 		rt->rt_ifa = ifa;
 		if (ifa->ifa_rtrequest && ifa->ifa_rtrequest != link_rtrequest)
 			ifa->ifa_rtrequest(cmd, rt, sa);
-	} else
-		ifnet = oldifnet;
+	}
 }
 
 /*

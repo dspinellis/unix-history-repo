@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ethersubr.c	7.8 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -126,12 +126,11 @@ ether_output(ifp, m0, dst, rt)
 		struct	llc *l;
 
 	iso_again:
+		iso_etherout();
 		if (rt && rt->rt_gateway && (rt->rt_flags & RTF_UP)) {
 			if (rt->rt_flags & RTF_GATEWAY) {
-				register struct llinfo_llc *lc =
-					(struct llinfo_llc *)rt->rt_llinfo;
-				if (lc && lc->lc_rtgate) {
-					rt = lc->lc_rtgate;
+				if (rt->rt_llinfo) {
+					rt = (struct rtentry *)rt->rt_llinfo;
 					goto iso_again;
 				}
 			} else {
@@ -390,3 +389,4 @@ ether_sprintf(ap)
 	*--cp = 0;
 	return (etherbuf);
 }
+iso_etherout() {}
