@@ -7,7 +7,7 @@
 #include "api.h"
 #include "../general/general.h"
 
-#include "../ascii/disp_asc.h"
+#include "../apilib/disp_asc.h"
 
 #include "../ctlr/screen.h"
 #include "../ctlr/oia.h"
