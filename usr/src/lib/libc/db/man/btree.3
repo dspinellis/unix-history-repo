@@ -3,10 +3,10 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)btree.3	5.4 (Berkeley) %G%
+.\"	@(#)btree.3	5.5 (Berkeley) %G%
 .\"
 .TH BTREE 3 ""
-.UC 7
+.\".UC 7
 .SH NAME
 btree \- btree database access method
 .SH SYNOPSIS
@@ -68,12 +68,16 @@ The default behavior, as described in
 is to overwrite a matching key when inserting a new key or to fail if
 the R_NOOVERWRITE flag is specified.
 The R_DUP flag is overridden by the R_NOOVERWRITE flag, and if the
-R_NOOVERWRITE flag is specified attempts to insert duplicate keys into
+R_NOOVERWRITE flag is specified, attempts to insert duplicate keys into
 the tree will fail.
 .IP
-The order of retrieval of key/data pairs with duplicate keys is undefined,
-although a sequential retrieval call with the R_CURSOR flag set will always
-return the logical ``first'' of any group of duplicate keys.
+If the database contains duplicate keys, the order of retrieval of
+key/data pairs is undefined if the
+.I get
+routine is used, however,
+.I seq
+routine calls with the R_CURSOR flag set will always return the logical
+``first'' of any group of duplicate keys.
 .RE
 .TP
 cachesize
