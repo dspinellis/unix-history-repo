@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)security	5.11 (Berkeley) %G%
+#	@(#)security	5.12 (Berkeley) %G%
 #
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 
@@ -23,7 +23,7 @@ awk -F: "\$2==\"\" {print \"user: \" \$1 \", uid: \" \$3 }" /etc/master.passwd
 
 echo ""
 echo "Checking setuid files and devices:"
-(find /sbin \( ! -fstype local \) -a -prune -o \
+(find / \( ! -fstype local \) -a -prune -o \
     \( -perm -u+s -o -perm -g+s -o ! -type d -a ! -type f -a ! -type l \) | \
     sort | sed -e 's/^/ls -lgT /' | sh >$LIST) 2>$TMP
 
