@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.75 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.76 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1718,7 +1718,7 @@ giveresponse(stat, m, mci, ctladdr, e)
 	{
 		extern char MsgBuf[];
 
-		message(&statmsg[4], errstring(errno));
+		message("%s", &statmsg[4]);
 		if (stat == EX_TEMPFAIL && e->e_xfp != NULL)
 			fprintf(e->e_xfp, "%s\n", &MsgBuf[4]);
 	}
