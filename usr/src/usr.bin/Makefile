@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.21 (Berkeley) %G%
+#	@(#)Makefile	5.22 (Berkeley) %G%
 
-SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar cap_mkdb \
+SUBDIR=	apply ar at banner basename bc bdes biff cal calendar cap_mkdb \
 	checknr chflags chpass cksum col colcrt colrm column comm compress \
 	cpio cpp ctags cut dc deroff diction diff dirname du env error ex \
 	expand false file find finger fmt fold fpr from fsplit fstat ftp \
