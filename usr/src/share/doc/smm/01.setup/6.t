@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)6.t	6.1 (Berkeley) %G%
+.\"	@(#)6.t	6.2 (Berkeley) %G%
 .\"
 .de IR
 \fI\\$1\fP\|\\$2
@@ -116,7 +116,7 @@ should do this by:
 .DE
 .PP
 Each system shutdown, crash, processor halt and reboot
-is recorded in the file /usr/adm/shutdownlog
+is recorded in the system log
 with the cause.
 .NH 2
 Device errors and diagnostics
@@ -581,6 +581,5 @@ lb a.
 /usr/lib/aliases	mail forwarding and distribution groups
 /usr/adm/acct	raw process account data
 /usr/adm/messages	system error log
-/usr/adm/shutdownlog	log of system reboots
 /usr/adm/wtmp	login session accounting
 .TE
