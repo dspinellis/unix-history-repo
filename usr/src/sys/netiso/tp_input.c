@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_input.c	7.29 (Berkeley) %G%
+ *	@(#)tp_input.c	7.30 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -124,7 +124,7 @@ tp_inputprep(m)
 	     * calls "panic" if M_PKTHDR is not set. m_pullup is a cheap
 	     * way of keeping the head of the chain from being freed.
 		 */
-		if((m = m_pullup(m)) == MNULL)
+		if((m = m_pullup(m, 1)) == MNULL)
 			return (MNULL);
 	}
 	if(((int)m->m_data) & 0x3) {
@@ -420,10 +420,10 @@ tp_input(m, faddr, laddr, cons_channel, dgout_routine, ce_bit)
 again:
 	hdr = mtod(m, struct tpdu *);
 	tpcb = 0;
-	error = errlen = tpdulen = 0;
+	error = errlen = tpdu_len = 0;
 	takes_data = fcc_present = FALSE;
 	acktime = 2; sref = subseq = 0;
-	fsufxloc = lsusfloc = NULL;
+	fsufxloc = lsufxloc = NULL;
 	fsufxlen = lsufxlen =
 		preferred_class = class_to_use = pdusize = addlopt = 0;
 	dusize = TP_DFL_TPDUSIZE;
