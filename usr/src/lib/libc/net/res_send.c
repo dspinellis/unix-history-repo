@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_send.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -173,5 +173,6 @@ res_send(buf, buflen, answer, anslen)
 		return (resplen);
 	}
 	(void) close(s);
+	errno = ETIMEDOUT;
 	return (-1);
 }
