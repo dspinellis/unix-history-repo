@@ -1,4 +1,4 @@
-/*	route.c	6.8	85/03/19	*/
+/*	route.c	6.9	85/05/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -149,7 +149,6 @@ rtredirect(dst, gateway, flags)
 			 * Changing from route to net => route to host.
 			 * Create new route, rather than smashing route to net.
 			 */
-			rtfree(rt);
 			rtinit(dst, gateway, flags);
 		} else {
 			/*
@@ -160,10 +159,10 @@ rtredirect(dst, gateway, flags)
 			 * dynamic routing reconfiguration.
 			 */
 			rt->rt_gateway = *gateway;
-			rtfree(rt);
 		}
 		rtstat.rts_newgateway++;
 	}
+	rtfree(rt);
 }
 
 /*
