@@ -229,3 +229,10 @@ netccitt/pk_output.c	optional ccitt
 netccitt/pk_subr.c	optional ccitt
 netccitt/pk_timer.c	optional ccitt
 netccitt/pk_usrreq.c	optional ccitt
+lofs/lofs_subr.c	optional lofs
+lofs/lofs_vfsops.c	optional lofs
+lofs/lofs_vnops.c	optional lofs
+fdesc/fdesc_vfsops.c	optional fdesc
+fdesc/fdesc_vnops.c	optional fdesc
+portal/portal_vfsops.c	optional portal
+portal/portal_vnops.c	optional portal
