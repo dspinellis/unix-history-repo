@@ -63,15 +63,21 @@
 #define	CHARHT	015	/* size field sets character height */
 #define	SLANT	016	/* size field sets amount of slant */
 #define	DRAWFCN	017	/* next several chars describe arb drawing fcn */
+			/* style: 's' m */
+			/* thickness: 't' w */
 			/* line: 'l' dx dy char */
 			/* circle: 'c' r */
 			/* ellipse: 'e' rx ry */
 			/* arc: 'a' dx dy r */
 			/* wiggly line '~' x y x y ... */
+			/*	or     'g' x y x y ... */
+#define DRAWTHICK	't'
+#define DRAWSTYLE	's'
 #define	DRAWLINE	'l'
 #define	DRAWCIRCLE	'c'	/* circle */
 #define	DRAWELLIPSE	'e'
 #define	DRAWARC		'a'	/* arbitrary arc */
+#define DRAWCURVE	'g'	/* gremlin spline */
 #define	DRAWWIG		'~'	/* wiggly line with spline */
 
 #define	LEFT	020	/* \{ */
