@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.34		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.35		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.34		%G%);
+SCCSID(@(#)queue.c	3.35		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -63,8 +63,6 @@ queueup(df)
 	/* output name of sender */
 	fprintf(f, "S%s\n", CurEnv->e_from.q_paddr);
 
-	/* output timeout */
-	fprintf(f, "T%ld\n", TimeOut);
 
 	/* output message priority */
 	fprintf(f, "P%ld\n", CurEnv->e_msgpriority);
@@ -465,9 +463,10 @@ dowork(w)
 			sendall(CurEnv, FALSE);
 # ifdef DEBUG
 		if (tTd(40, 3))
-			printf("CurTime=%ld, TimeOut=%ld\n", CurTime, TimeOut);
+			printf("CurTime=%ld, TimeOut=%ld\n", CurTime,
+					     CurEnv->e_ctime + TimeOut);
 # endif DEBUG
-		if (CurEnv->e_queueup && CurTime > TimeOut)
+		if (CurEnv->e_queueup && CurTime > CurEnv->e_ctime + TimeOut)
 			timeout(w);
 		(void) unlink(w->w_name);
 		finis();
@@ -550,8 +549,8 @@ readqf(cf)
 				syserr("readqf: cannot open %s", CurEnv->e_df);
 			break;
 
-		  case 'T':		/* timeout */
-			(void) sscanf(&buf[1], "%ld", &TimeOut);
+		  case 'T':		/* init time */
+			(void) sscanf(&buf[1], "%ld", &CurEnv->e_ctime);
 			break;
 
 		  case 'P':		/* message priority */
@@ -589,7 +588,7 @@ timeout(w)
 	register WORK *w;
 {
 	char buf[MAXLINE];
-	extern char *TextTimeOut;
+	extern char *pintvl();
 
 # ifdef DEBUG
 	if (tTd(40, 3))
@@ -601,7 +600,7 @@ timeout(w)
 	(void) returntosender("Cannot send mail for three days");
 
 	/* arrange to remove files from queue */
-	CurEnv->e_queueup = FALSE;
+	CurEnv->e_dontqueue = TRUE;
 }
 
 # endif QUEUE
