@@ -1,4 +1,4 @@
-/*	locore.s	4.26	81/02/23	*/
+/*	locore.s	4.27	81/02/25	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -74,7 +74,8 @@ _doadump:
 #define	POPR		popr $0x3f
 
 SCBVEC(machcheck):
-	PUSHR; PANIC("Machine check");
+	PUSHR; pushab 6*4(sp); calls $1,_machinecheck; POPR;
+	addl2 (sp)+,sp; rei
 SCBVEC(kspnotval):
 	PUSHR; PANIC("KSP not valid");
 SCBVEC(powfail):
