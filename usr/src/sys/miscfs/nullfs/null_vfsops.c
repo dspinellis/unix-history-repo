@@ -8,13 +8,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vfsops.c	1.2 (Berkeley) 6/18/92
+ *	@(#)null_vfsops.c	1.3 (Berkeley) %G%
  *
- * $Id: null_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
+ * @(#)lofs_vfsops.c	1.2 (Berkeley) 6/18/92
+ * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
  */
 
 /*
- * Null layer Filesystem
+ * Null Layer
+ * (See null_vnops.c for a description of what this does.)
  */
 
 #include <sys/param.h>
@@ -28,7 +30,7 @@
 #include <lofs/lofs.h>
 
 /*
- * Mount loopback copy of existing name space
+ * Mount null layer
  */
 nullfs_mount(mp, path, data, ndp, p)
 	struct mount *mp;
@@ -40,7 +42,7 @@ nullfs_mount(mp, path, data, ndp, p)
 	USES_VOP_UNLOCK;
 	int error = 0;
 	struct null_args args;
-	struct vnode *vp;
+	struct vnode *lowerrootvp, *vp;
 	struct vnode *nullm_rootvp;
 	struct null_mount *amp;
 	u_int size;
@@ -74,15 +76,19 @@ nullfs_mount(mp, path, data, ndp, p)
 	/*
 	 * Sanity check on target vnode
 	 */
-	vp = ndp->ni_vp;
+	lowerrootvp = ndp->ni_vp;
 #ifdef NULLFS_DIAGNOSTIC
-	printf("vp = %x, check for VDIR...\n", vp);
+	printf("vp = %x, check for VDIR...\n", lowerrootvp);
 #endif
 	vrele(ndp->ni_dvp);
 	ndp->ni_dvp = 0;
 
-	if (vp->v_type != VDIR) {
-		vput(vp);
+	/*
+	 * NEEDSWORK: Is this really bad, or just not
+	 * the way it's been?
+	 */
+	if (lowerrootvp->v_type != VDIR) {
+		vput(lowerrootvp);
 		return (EINVAL);
 	}
 
@@ -96,13 +102,13 @@ nullfs_mount(mp, path, data, ndp, p)
 	/*
 	 * Save reference to underlying target FS
 	 */
-	amp->nullm_vfs = vp->v_mount;
+	amp->nullm_vfs = lowerrootvp->v_mount;
 
 	/*
 	 * Save reference.  Each mount also holds
 	 * a reference on the root vnode.
 	 */
-	error = make_null_node(mp, &vp);
+	error = make_null_node(mp, lowerrootvp, &vp);
 	/*
 	 * Unlock the node (either the target or the alias)
 	 */
@@ -111,7 +117,7 @@ nullfs_mount(mp, path, data, ndp, p)
 	 * Make sure the node alias worked
 	 */
 	if (error) {
-		vrele(vp);
+		vrele(lowerrootvp);
 		free(amp, M_UFSMNT);	/* XXX */
 		return (error);
 	}
@@ -155,7 +161,7 @@ nullfs_start(mp, flags, p)
 }
 
 /*
- * Free reference to looped FS
+ * Free reference to null layer
  */
 nullfs_unmount(mp, mntflags, p)
 	struct mount *mp;
@@ -294,6 +300,10 @@ nullfs_sync(mp, waitfor)
 struct mount *mp;
 int waitfor;
 {
+	/*
+	 * NEEDSWORK: Assumes no data cached at null layer.
+	 * Is this true?
+	 */
 	return (0);
 }
 
