@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device.h	7.1 (Berkeley) %G%
+ *	@(#)device.h	7.2 (Berkeley) %G%
  */
 
 struct driver {
@@ -82,6 +82,7 @@ struct hp_hw {
 #define	D_COMMDCL	0x07
 #define	D_PPORT		0x08
 #define	D_SIO		0x09
+#define	D_BMC		0x0A
 #define	D_MISC		0x7F
 
 #define HW_ISCTLR(hw)	((hw)->hw_type & C_FLAG)
