@@ -2,22 +2,22 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)worms.6	4.1 (Berkeley) %G%
+.\"	@(#)worms.6	5.1 (Berkeley) %G%
 .\"
-.TH WORMS 6
+.TH WORMS 6 "1 February 1983"
 .UC 4
 .SH NAME
 worms  \-  animate worms on a display terminal
 .SH SYNOPSIS
-.B worms
+.B /usr/games/worms
 [
-.B -field
+.B \-field
 ] [
-.B -length
+.B \-length
 # ] [
-.B -number
+.B \-number
 # ] [
-.B -trail
+.B \-trail
 ]
 .SH DESCRIPTION
 .ad b
@@ -29,9 +29,9 @@ and suggested that I write a similar program that would run under
 .IR Unix .
 I did, and no apologies.
 .PP
-.B -field
+.B \-field
 makes a "field" for the worm(s) to eat;
-.B -trail
+.B \-trail
 causes each worm to leave a trail behind it.  You can figure
 out the rest by yourself.
 .SH FILES
@@ -41,45 +41,8 @@ Eric P. Scott
 .SH SEE ALSO
 .IR Snails ,
 by Karl Heuer
-.SH DIAGNOSTICS
-Invalid length
-.br
-	Value not in range  2 <= length <= 1024
-.sp
-Invalid number of worms
-.br
-	Value not in range  1 <= number <= 40
-.sp
-TERM: parameter not set
-.br
-	The
-.B TERM
-environment variable is not defined.  Do
-.sp
-		\fBTERM=\fRterminal type
-.br
-		\fBexport TERM\fR
-.sp
-Unknown terminal type
-.br
-	Your terminal type (as determined from the
-.B TERM
-environment variable) is not defined in
-.BR /etc/termcap .
-.sp
-Terminal not capable of cursor motion
-.br
-	Your terminal is too stupid to run this program.
-.sp
-Out of memory
-.br
-	This should never happen on a VAX.
 .SH BUGS
 The lower-right-hand character position will not be updated properly
 on a terminal that wraps at the right margin.
 .PP
 Terminal initialization is not performed.
-.PP
-There should be an option to have the worms eat
-.I Pink Floyd
-lyrics.
