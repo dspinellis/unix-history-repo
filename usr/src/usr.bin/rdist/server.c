@@ -1,10 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)server.c	4.7 (Berkeley) 83/11/01";
+static	char *sccsid = "@(#)server.c	4.8 (Berkeley) 83/11/29";
 #endif
 
 #include "defs.h"
 
-#define	ga() 	(void) write(rem, "\0\n", 2)
+#define	ack() 	(void) write(rem, "\0\n", 2)
+#define	err() 	(void) write(rem, "\1\n", 2)
 
 char	buf[BUFSIZ];		/* general purpose buffer */
 char	target[BUFSIZ];		/* target/source directory name */
@@ -14,8 +15,6 @@ char	*stp[32];		/* stack of saved tp's for directories */
 int	oumask;			/* old umask for creating files */
 
 extern	FILE *lfp;		/* log file for mailing changes */
-
-extern char *exptilde();
 
 /*
  * Server routine to read requests and process them.
@@ -32,7 +31,7 @@ server()
 	int opts;
 
 	oumask = umask(0);
-	ga();
+	ack();
 
 	for (;;) {
 		cp = cmdbuf;
@@ -61,7 +60,7 @@ server()
 			tp = target;
 			while (*tp)
 				tp++;
-			ga();
+			ack();
 			continue;
 
 		case 'R':  /* Receive. Transfer file. */
@@ -80,21 +79,19 @@ server()
 			}
 			tp = stp[--catname];
 			*tp = '\0';
-			ga();
+			ack();
 			continue;
 
 		case 'C':  /* Clean. Cleanup a directory */
-			opts = 0;
-			while (*cp >= '0' && *cp <= '7')
-				opts = (opts << 3) | (*cp++ - '0');
-			if (*cp++ != ' ')
-				error("server: options not delimited\n");
-			else
-				clean(cp, opts, 1);
+			clean(cp);
 			continue;
 
 		case 'Q':  /* Query. Does the file/directory exist? */
 			query(cp);
+			continue;
+
+		case 'S':  /* Special. Execute commands */
+			dospecial(cp);
 			continue;
 
 #ifdef notdef
@@ -107,7 +104,7 @@ server()
 			except = bp = NULL;
 		case 'x':  /* add name to list of files to exclude */
 			if (*cp == '\0') {
-				ga();
+				ack();
 				continue;
 			}
 			if (*cp == '~') {
@@ -116,15 +113,15 @@ server()
 				cp = buf;
 			}
 			if (bp == NULL)
-				except = bp = expand(makeblock(NAME, cp), 0);
+				except = bp = expand(makeblock(NAME, cp), E_VARS);
 			else
-				bp->b_next = expand(makeblock(NAME, cp), 0);
+				bp->b_next = expand(makeblock(NAME, cp), E_VARS);
 			while (bp->b_next != NULL)
 				bp = bp->b_next;
-			ga();
+			ack();
 			continue;
 
-		case 'S':  /* Send. Transfer file if out of date. */
+		case 'I':  /* Install. Transfer file if out of date. */
 			opts = 0;
 			while (*cp >= '0' && *cp <= '7')
 				opts = (opts << 3) | (*cp++ - '0');
@@ -132,7 +129,7 @@ server()
 				error("server: options not delimited\n");
 				return;
 			}
-			sendf(cp, opts);
+			install(cp, opts);
 			continue;
 
 		case 'L':  /* Log. save message in log file */
@@ -176,7 +173,7 @@ install(src, dest, destdir, opts)
 			opts & WHOLE ? " -w" : "",
 			opts & YOUNGER ? " -y" : "",
 			opts & COMPARE ? " -b" : "",
-			opts & REMOVE ? " -r" : "", src, dest);
+			opts & REMOVE ? " -R" : "", src, dest);
 		if (nflag)
 			return;
 	}
@@ -189,19 +186,13 @@ install(src, dest, destdir, opts)
 		tp++;
 	/*
 	 * If we are renaming a directory and we want to preserve
-	 * the directory heirarchy (-w), we must strip off the first
+	 * the directory heirarchy (-w), we must strip off the leading
 	 * directory name and preserve the rest.
 	 */
 	if (opts & WHOLE) {
-		if (!destdir) {
-			rname = index(rname, '/');
-			if (rname == NULL)
-				rname = tp; /* doesn't matter what rname is */
-			else {
-				destdir++; /* cat rname to dest */
-				rname++;
-			}
-		}
+		while (*rname == '/')
+			rname++;
+		destdir = 1;
 	} else {
 		rname = rindex(target, '/');
 		if (rname == NULL)
@@ -233,23 +224,20 @@ sendf(rname, opts)
 	int opts;
 {
 	register char *cp;
+	register struct block *c;
 	struct stat stb;
 	int sizerr, f, u;
 	off_t i;
+	extern struct block *special;
 
 	if (debug)
 		printf("sendf(%s, %x)\n", rname, opts);
 
-	if (exclude(target))
+	if (inlist(except, target))
 		return;
-	if (access(target, 4) < 0 || stat(target, &stb) < 0) {
+	if (access(target, 4) < 0 || lstat(target, &stb) < 0) {
 		error("%s: %s\n", target, sys_errlist[errno]);
 		return;
-	}
-	if (opts & REMOVE) {
-		opts &= ~REMOVE;
-		if (ISDIR(stb.st_mode))
-			rmchk(rname, opts);
 	}
 	if ((u = update(rname, opts, &stb)) == 0)
 		return;
@@ -266,15 +254,21 @@ sendf(rname, opts)
 			return;
 		}
 	if (u == 1) {
+		if (opts & VERIFY) {
+			log(lfp, "need to install: %s\n", target);
+			goto dospecial;
+		}
 		log(lfp, "installing: %s\n", target);
-		if (opts & VERIFY)
-			return;
-		opts &= ~COMPARE;
+		opts &= ~(COMPARE|REMOVE);
 	}
 
 	switch (stb.st_mode & S_IFMT) {
 	case S_IFREG:
 		break;
+
+	case S_IFLNK:
+		error("%s: cannot install soft links - use 'special'\n", target);
+		return;
 
 	case S_IFDIR:
 		rsendf(rname, opts, &stb, pw->pw_name, gr->gr_name);
@@ -286,10 +280,14 @@ sendf(rname, opts)
 	}
 
 	if (u == 2) {
+		if (opts & VERIFY) {
+			log(lfp, "need to update: %s\n", target);
+			goto dospecial;
+		}
 		log(lfp, "updating: %s\n", target);
-		if (opts & VERIFY)
-			return;
 	}
+	if (stb.st_nlink != 1)
+		log(lfp, "%s: Warning: more than one hard link\n", target);
 
 	if ((f = open(target, 0)) < 0) {
 		error("%s: %s\n", target, sys_errlist[errno]);
@@ -315,11 +313,29 @@ sendf(rname, opts)
 		(void) write(rem, buf, amt);
 	}
 	(void) close(f);
-	if (sizerr)
+	if (sizerr) {
 		error("%s: file changed size\n", target);
-	else
-		ga();
-	(void) response();
+		err();
+	} else
+		ack();
+	if (response() == 0 && (opts & COMPARE))
+		return;
+dospecial:
+	for (c = special; c != NULL; c = c->b_next) {
+		if (c->b_type != SPECIAL)
+			continue;
+		if (!inlist(c->b_args, target))
+			continue;
+		log(lfp, "special \"%s\"\n", c->b_name);
+		if (opts & VERIFY)
+			continue;
+		(void) sprintf(buf, "S%s\n", c->b_name);
+		if (debug)
+			printf("buf = %s", buf);
+		(void) write(rem, buf, strlen(buf));
+		while (response() > 0)
+			;
+	}
 }
 
 rsendf(rname, opts, st, owner, group)
@@ -342,7 +358,7 @@ rsendf(rname, opts, st, owner, group)
 		return;
 	}
 	(void) sprintf(buf, "D%o %04o 0 0 %s %s %s\n", opts,
-		st->st_mode & 07777, owner, group, rname);
+		st->st_mode & 0777, owner, group, rname);
 	if (debug)
 		printf("buf = %s", buf);
 	(void) write(rem, buf, strlen(buf));
@@ -350,6 +366,10 @@ rsendf(rname, opts, st, owner, group)
 		closedir(d);
 		return;
 	}
+
+	if (opts & REMOVE)
+		rmchk(opts);
+
 	otp = tp;
 	len = tp - target;
 	while (dp = readdir(d)) {
@@ -577,23 +597,23 @@ recvf(cmd, isdir)
 			tp--;
 		}
 		if (opts & VERIFY) {
-			ga();
+			ack();
 			return;
 		}
 		if (stat(target, &stb) == 0) {
-			if (!ISDIR(stb.st_mode)) {
-				errno = ENOTDIR;
-				goto bad;
-			}
-		} else {
-			if (chkparent(target) < 0)
-				goto bad;
-			if (mkdir(target, mode) < 0)
-				goto bad;
-			if (chog(target, owner, group, mode) < 0)
+			if (ISDIR(stb.st_mode)) {
+				ack();
 				return;
+			}
+			error("%s: %s\n", target, sys_errlist[ENOTDIR]);
+		} else if (chkparent(target) < 0 || mkdir(target, mode) < 0)
+			error("%s: %s\n", target, sys_errlist[errno]);
+		else if (chog(target, owner, group, mode) == 0) {
+			ack();
+			return;
 		}
-		ga();
+		tp = stp[--catname];
+		*tp = '\0';
 		return;
 	}
 
@@ -624,12 +644,7 @@ recvf(cmd, isdir)
 		*cp = '/';
 	if ((f = creat(new, mode)) < 0)
 		goto bad1;
-	if (chog(new, owner, group, mode) < 0) {
-		(void) close(f);
-		(void) unlink(new);
-		return;
-	}
-	ga();
+	ack();
 
 	wrerr = 0;
 	for (i = 0; i < size; i += BUFSIZ) {
@@ -677,7 +692,7 @@ recvf(cmd, isdir)
 				(void) fclose(f1);
 				(void) fclose(f2);
 				(void) unlink(new);
-				ga();
+				ack();
 				return;
 			}
 		(void) fclose(f1);
@@ -685,7 +700,7 @@ recvf(cmd, isdir)
 		if (opts & VERIFY) {
 			(void) unlink(new);
 			buf[0] = '\0';
-			sprintf(buf + 1, "updating %s:%s\n", host, target);
+			sprintf(buf + 1, "need to update %s:%s\n", host, target);
 			(void) write(rem, buf, strlen(buf + 1) + 1);
 			return;
 		}
@@ -698,7 +713,7 @@ recvf(cmd, isdir)
 	tvp[0].tv_usec = 0;
 	tvp[1].tv_sec = mtime;
 	tvp[1].tv_usec = 0;
-	if (utimes(new, tvp) < 0) {
+	if (utimes(new, tvp) < 0 || chog(new, owner, group, mode) < 0) {
 bad1:
 		error("%s: %s\n", new, sys_errlist[errno]);
 		if (new[0])
@@ -718,7 +733,7 @@ bad:
 		sprintf(buf + 1, "updated %s:%s\n", host, target);
 		(void) write(rem, buf, strlen(buf + 1) + 1);
 	} else
-		ga();
+		ack();
 }
 
 /*
@@ -769,7 +784,7 @@ bad:
 }
 
 /*
- * Change owner and group of file.
+ * Change owner, group and mode of file.
  */
 chog(file, owner, group, mode)
 	char *file, *owner, *group;
@@ -792,7 +807,8 @@ chog(file, owner, group, mode)
 				uid = pw->pw_uid;
 		} else
 			uid = pw->pw_uid;
-	}
+	} else if ((mode & 04000) && strcmp(user, owner) != 0)
+		mode &= ~04000;
 	gid = groupid;
 	if (gr == NULL || strcmp(group, gr->gr_name) != 0) {
 		if ((gr = getgrnam(group)) == NULL) {
@@ -808,10 +824,18 @@ chog(file, owner, group, mode)
 		for (i = 0; gr->gr_mem[i] != NULL; i++)
 			if (!(strcmp(user, gr->gr_mem[i])))
 				goto ok;
+		mode &= ~02000;
 		gid = groupid;
 	}
 ok:
 	if (chown(file, uid, gid) < 0) {
+		error("%s: %s\n", file, sys_errlist[errno]);
+		return(-1);
+	}
+	/*
+	 * Restore set-user-id or set-group-id bit if appropriate.
+	 */
+	if ((mode & 06000) && chmod(file, mode) < 0) {
 		error("%s: %s\n", file, sys_errlist[errno]);
 		return(-1);
 	}
@@ -822,27 +846,24 @@ ok:
  * Check for files on the machine being updated that are not on the master
  * machine and remove them.
  */
-rmchk(rname, opts)
-	char *rname;
+rmchk(opts)
 	int opts;
 {
 	register char *cp, *s;
 	struct stat stb;
 
 	if (debug)
-		printf("rmchk(%s, %x)\n", rname, opts);
+		printf("rmchk()\n");
 
 	/*
 	 * Tell the remote to clean the files from the last directory sent.
 	 */
-	(void) sprintf(buf, "C%o %s\n", opts & VERIFY, rname);
+	(void) sprintf(buf, "C%o\n", opts & VERIFY);
 	if (debug)
 		printf("buf = %s", buf);
 	(void) write(rem, buf, strlen(buf));
 	if (response() < 0)
 		return;
-	stp[0] = tp;
-	catname = 1;
 	for (;;) {
 		cp = s = buf;
 		do {
@@ -851,45 +872,22 @@ rmchk(rname, opts)
 		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 
 		switch (*s++) {
-		case 'Q': /* its a directory on the remote end */
-		case 'q': /* its a regular file on the remote end */
+		case 'Q': /* Query if file should be removed */
 			/*
 			 * Return the following codes to remove query.
-			 * N\n -- file does not exisit, remove.
-			 * Y\n -- file exists and is a directory.
-			 * y\n -- file exists and is a regular file.
+			 * N\n -- file exists - DON'T remove.
+			 * Y\n -- file doesn't exist - REMOVE.
 			 */
 			*--cp = '\0';
 			(void) sprintf(tp, "/%s", s);
 			if (debug)
 				printf("check %s\n", target);
-			if (exclude(target))
-				(void) write(rem, "y\n", 2);
-			else if (stat(target, &stb) < 0)
+			if (inlist(except, target))
 				(void) write(rem, "N\n", 2);
-			else if (buf[0] == 'Q' && ISDIR(stb.st_mode)) {
-				if (catname >= sizeof(stp)) {
-					error("%s: too many directory levels\n", target);
-					break;
-				}
+			else if (stat(target, &stb) < 0)
 				(void) write(rem, "Y\n", 2);
-				if (response() < 0)
-					break;
-				stp[catname++] = tp;
-				while (*tp)
-					tp++;
-			} else
-				(void) write(rem, "y\n", 2);
-			break;
-
-		case 'E':
-			if (catname < 0)
-				fatal("too many 'E's\n");
-			ga();
-			tp = stp[--catname];
-			*tp = '\0';
-			if (catname == 0)
-				return;
+			else
+				(void) write(rem, "N\n", 2);
 			break;
 
 		case '\0':
@@ -897,6 +895,11 @@ rmchk(rname, opts)
 			if (*s != '\0')
 				log(lfp, "%s\n", s);
 			break;
+
+		case 'E':
+			*tp = '\0';
+			ack();
+			return;
 
 		case '\1':
 		case '\2':
@@ -914,64 +917,37 @@ rmchk(rname, opts)
 			break;
 
 		default:
-			error("rmchk: unexpected response '%c'\n", buf[0]);
+			error("rmchk: unexpected response '%s'\n", buf);
+			err();
 		}
 	}
 }
 
 /*
- * Check the directory initialized by the 'T' command to server()
+ * Check the current directory (initialized by the 'T' command to server())
  * for extraneous files and remove them.
  */
-clean(name, opts, first)
-	char *name;
-	int opts, first;
+clean(opts)
 {
 	DIR *d;
-	struct direct *dp;
+	register struct direct *dp;
 	register char *cp;
 	struct stat stb;
-	char *ootp, *otp;
-	int len;
+	char *otp;
+	int len, opts;
 
-	if (first) {
-		ootp = tp;
-		if (catname) {
-			*tp++ = '/';
-			cp = name;
-			while (*tp++ = *cp++)
-				;
-			tp--;
-		}
-		if (stat(target, &stb) < 0) {
-			if (errno != ENOENT) {
-				ga();
-				goto done;
-			}
-			error("%s: %s\n", target, sys_errlist[errno]);
-			tp = ootp;
-			*tp = '\0';
-			return;
-		}
-		/*
-		 * This should be a directory because its a directory on the
-		 * master machine. If not, let install complain about it.
-		 */
-		if (!ISDIR(stb.st_mode)) {
-			ga();
-			goto done;
-		}
-	}
-
-	if (access(target, 6) < 0 || (d = opendir(target)) == NULL) {
-		error("%s: %s\n", target, sys_errlist[errno]);
-		if (first) {
-			tp = ootp;
-			*tp = '\0';
-		}
+	opts = 0;
+	while (*cp >= '0' && *cp <= '7')
+		opts = (opts << 3) | (*cp++ - '0');
+	if (*cp != '\0') {
+		error("clean: options not delimited\n");
 		return;
 	}
-	ga();
+	if (access(target, 6) < 0 || (d = opendir(target)) == NULL) {
+		error("%s: %s\n", target, sys_errlist[errno]);
+		return;
+	}
+	ack();
 
 	otp = tp;
 	len = tp - target;
@@ -992,8 +968,7 @@ clean(name, opts, first)
 			error("%s: %s\n", target, sys_errlist[errno]);
 			continue;
 		}
-		(void) sprintf(buf, "%c%s\n", ISDIR(stb.st_mode) ? 'Q' : 'q',
-			dp->d_name);
+		(void) sprintf(buf, "Q%s\n", dp->d_name);
 		(void) write(rem, buf, strlen(buf));
 		cp = buf;
 		do {
@@ -1002,24 +977,20 @@ clean(name, opts, first)
 		} while (*cp++ != '\n' && cp < &buf[BUFSIZ]);
 		*--cp = '\0';
 		cp = buf;
-		if (*cp != 'N') {
-			if (*cp == 'Y' && ISDIR(stb.st_mode))
-				clean(dp->d_name, opts, 0);
+		if (*cp != 'Y')
 			continue;
-		}
 		if (opts & VERIFY) {
 			cp = buf;
 			*cp++ = '\0';
-			(void) sprintf(cp, "removing %s\n", target);
+			(void) sprintf(cp, "need to remove %s\n", target);
 			(void) write(rem, buf, strlen(cp) + 1);
 		} else
 			remove(&stb);
 	}
 	closedir(d);
-done:
 	(void) write(rem, "E\n", 2);
 	(void) response();
-	tp = (first) ? ootp : otp;
+	tp = otp;
 	*tp = '\0';
 }
 
@@ -1090,6 +1061,72 @@ removed:
 	(void) write(rem, buf, strlen(cp) + 1);
 }
 
+/*
+ * Execute a shell command to handle special cases.
+ */
+dospecial(cmd)
+	char *cmd;
+{
+	int fd[2], status, pid, i;
+	register char *cp, *s;
+	char sbuf[BUFSIZ];
+
+	if (pipe(fd) < 0) {
+		error("%s\n", sys_errlist[errno]);
+		return;
+	}
+	if ((pid = fork()) == 0) {
+		/*
+		 * Return everything the shell commands print.
+		 */
+		(void) close(0);
+		(void) close(1);
+		(void) close(2);
+		(void) open("/dev/null", 0);
+		(void) dup(fd[1]);
+		(void) dup(fd[1]);
+		(void) close(fd[0]);
+		(void) close(fd[1]);
+		execl("/bin/sh", "sh", "-c", cmd, 0);
+		_exit(127);
+	}
+	(void) close(fd[1]);
+	s = sbuf;
+	*s++ = '\0';
+	while ((i = read(fd[0], buf, sizeof(buf))) > 0) {
+		cp = buf;
+		do {
+			*s++ = *cp++;
+			if (cp[-1] != '\n') {
+				if (s < &sbuf[sizeof(sbuf)-1])
+					continue;
+				*s++ = '\n';
+			}
+			/*
+			 * Throw away blank lines.
+			 */
+			if (s == &sbuf[2]) {
+				s--;
+				continue;
+			}
+			(void) write(rem, sbuf, s - sbuf);
+			s = &sbuf[1];
+		} while (--i);
+	}
+	if (s > &sbuf[1]) {
+		*s++ = '\n';
+		(void) write(rem, sbuf, s - sbuf);
+	}
+	while ((i = wait(&status)) != pid && i != -1)
+		;
+	if (i == -1)
+		status = -1;
+	if (status)
+		error("shell returned %d\n", status);
+	else
+		ack();
+}
+
 /*VARARGS2*/
 log(fp, fmt, a1, a2, a3)
 	FILE *fp;
@@ -1113,11 +1150,11 @@ error(fmt, a1, a2, a3)
 	errs++;
 	strcpy(buf, "\1rdist: ");
 	(void) sprintf(buf+8, fmt, a1, a2, a3);
-	(void) write(rem, buf, strlen(buf));
 	if (!iamremote) {
 		fflush(stdout);
 		(void) write(2, buf+1, strlen(buf+1));
-	}
+	} else
+		(void) write(rem, buf, strlen(buf));
 	if (lfp != NULL)
 		(void) fwrite(buf+1, 1, strlen(buf+1), lfp);
 }
@@ -1130,11 +1167,11 @@ fatal(fmt, a1, a2,a3)
 	errs++;
 	strcpy(buf, "\2rdist: ");
 	(void) sprintf(buf+8, fmt, a1, a2, a3);
-	(void) write(rem, buf, strlen(buf));
 	if (!iamremote) {
 		fflush(stdout);
 		(void) write(2, buf+1, strlen(buf+1));
-	}
+	} else
+		(void) write(rem, buf, strlen(buf));
 	if (lfp != NULL)
 		(void) fwrite(buf+1, 1, strlen(buf+1), lfp);
 	cleanup();
@@ -1156,8 +1193,10 @@ response()
 	switch (*s++) {
 	case '\0':
 		*--cp = '\0';
-		if (*s != '\0')
+		if (*s != '\0') {
 			log(lfp, "%s\n", s);
+			return(1);
+		}
 		return(0);
 
 	default:

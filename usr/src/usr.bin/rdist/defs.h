@@ -1,4 +1,4 @@
-/*	defs.h	4.7	83/11/01	*/
+/*	defs.h	4.8	83/11/29	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -22,11 +22,13 @@
 #define ARROW	5
 #define DCOLON	6
 #define NAME	7
-#define INSTALL	8
-#define NOTIFY	9
-#define EXCEPT	10
-#define OPTION	11
-#define VAR	12
+#define STRING	8
+#define INSTALL	9
+#define NOTIFY	10
+#define EXCEPT	11
+#define SPECIAL	12
+#define OPTION	13
+#define VAR	14
 
 	/* lexical definitions */
 #define	QUOTE 	0200		/* used internally for quoted characters */
@@ -45,6 +47,12 @@
 #define YOUNGER	0x4
 #define COMPARE	0x8
 #define REMOVE	0x10
+
+	/* expand type definitions */
+#define E_VARS	0x1
+#define E_SHELL	0x2
+#define E_TILDE	0x4
+#define E_ALL	0x7
 
 #define ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 
@@ -81,6 +89,7 @@ extern char *sys_errlist[];
 struct block *lookup();
 struct block *makeblock();
 struct block *expand();
+char *exptilde();
 char *malloc();
 char *rindex();
 char *index();

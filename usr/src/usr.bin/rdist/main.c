@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.8 (Berkeley) 83/11/01";
+static	char *sccsid = "@(#)main.c	4.9 (Berkeley) 83/11/29";
 #endif
 
 #include "defs.h"
@@ -9,9 +9,8 @@ static	char *sccsid = "@(#)main.c	4.8 (Berkeley) 83/11/01";
  */
 
 char	*distfile = "distfile";
-char	tmpfile[] = "/tmp/rdistAXXXXXX";
+char	tmpfile[] = "/tmp/rdistXXXXXX";
 char	*tmpname = &tmpfile[5];
-char	*tmpinc = &tmpfile[10];
 
 int	debug;		/* debugging flag */
 int	nflag;		/* NOP flag, just print commands without executing */
@@ -83,6 +82,10 @@ main(argc, argv)
 				break;
 
 			case 'n':
+				if (options & VERIFY) {
+					printf("rdist: -n overrides -v\n");
+					options &= ~VERIFY;
+				}
 				nflag++;
 				break;
 
@@ -94,11 +97,15 @@ main(argc, argv)
 				options |= COMPARE;
 				break;
 
-			case 'r':
+			case 'R':
 				options |= REMOVE;
 				break;
 
 			case 'v':
+				if (nflag) {
+					printf("rdist: -n overrides -v\n");
+					break;
+				}
 				options |= VERIFY;
 				break;
 
@@ -185,7 +192,7 @@ docmdargs(nargs, args)
 	} else
 		dest[0] = '\0';
 
-	hosts = expand(hosts, 0);
+	hosts = expand(hosts, 1);
 
 	if (dest[0] == '\0')
 		cmds = NULL;
@@ -211,10 +218,7 @@ docmdargs(nargs, args)
  */
 cleanup()
 {
-	do {
-		(void) unlink(tmpfile);
-		(*tmpinc)--;
-	} while (*tmpinc >= 'A');
+	(void) unlink(tmpfile);
 	exit(1);
 }
 
