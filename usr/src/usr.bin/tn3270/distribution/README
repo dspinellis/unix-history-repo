@@ -1,15 +1,42 @@
-Welcome to the new (beta) tn3270.
+Welcome to the new tn3270 - version 4.0.
 
-The good news is that MOST system dependent code is in a few subdirectories
-(mostly in sys_curses, on Unix, or sys_dos, on MS_DOS).
+This version consists entirely of bug fixes to the August 1987 beta release
+of tn3270.  This version will now deal with CICS and VM/XA on the IBM
+side, and with SunOS 4.0 on Sun 3's and Sun 4's.
 
-Internally, the code has changed substantially.  We now look (to the
-best of our limited ability) like a 3274 controller.  The screen buffer
-is kept in 3270 display code format; keystokes are defined in terms
-of 3270 scan codes (but, no changes to /etc/map3270 are required).
+This version has been tested on various versions of BSD Unix, including
+4.2 and 4.3 (but there are never vanilla versions) and the post-4.3 systems
+running at Berkeley.  It has been tested on CCI's, Vaxen, Sun 3's and Sun 4's.
+However, it doesn't necessarily work on all systems (nor has the testing
+been as intensive as one might like).
 
-Unfortunately, things are much more complicated that ever.  There are now
-subdirectories.  To wit:
+This version should build on any Berkeley-derived system.
+
+There are two alternate make files:  ./makefile_4.2 and telnet/Makefile_ultrix.
+
+****    Try ./makefile_4.2 if you get compile-time errors, or get
+	"multiply defined" messages for "_putchar" from the loader.
+
+****    Try telnet/Makefile_ultrix if your make(1) utility doesn't
+	support VPATH.  Also try this makefile if your ld(1) doesn't
+	support the -r flag correctly.
+
+The bad news is that I've had to drop MS-DOS support.  The good news here is
+that there are various versions available for MS-DOS (from FTP Software in
+Cambridge, Mass.; from IBM; from Excelan; and probably from others).  The
+hooks are still there, as well as some code to update the screen.  However,
+I just haven't had the time to produce a fully integrated version that would
+"just make".  I suspect that a future release may have MS-DOS support back
+in it.
+
+There is no Mac support.  Contact Peter DiCamillo at Brown University if
+you need a Mac tn3270.
+
+The main code change in this version is to what used to be called "telnet.c".
+This is now replaced with a version of telnet (substantially what appeared
+in the "4.3tahoe" release from CSRG) which is broken into separate files.
+
+Here is an overview of the directory structure:
 
     api/		General library of function needed by API
 			(and, to some extent, by the rest of tn3270).
@@ -30,6 +57,10 @@ subdirectories.  To wit:
     sys_curses/		System-dependent code for a curses-based environment.
 
     sys_dos/		System-dependent code for an MS-DOS-base environment.
+			Remember that this is included for your developmental
+			needs (ie: it doesn't work).
+
+    telnet/		Where the telnet portion of tn3720 is built.
 
     tools/		Various tools.  Most of these are used during the
 			build process.  One (prt3270) is a debugging tool.
@@ -48,49 +79,21 @@ The fact that system dependancies are isolated should make it easy
 to port to other systems.  I would like to hear about problems porting
 to new areas.
 
-WHAT IS NOT IN THIS VERSION (sigh):
+In the August, 1987 README file, the following appeared:
 
-1)	We don't have a native X version yet.  I am waiting for X version 11
-	(though this is mostly an excuse; I could have done version 10,
-	but I haven't had the time).
+> WHAT IS NOT IN THIS VERSION (sigh):
 
-2)	We don't process structured fields.
+> 1)	We don't have a native X version yet.  I am waiting for X version 11
+> 	(though this is mostly an excuse; I could have done version 10,
+> 	but I haven't had the time).
 
-3)	We don't do 3270-style graphics (ala 3193, say).
+> 2)	We don't process structured fields.
 
-The above three items WILL be in the next version, which should come
-along "any day now" (say 6 months) (but, they WON'T be in the production
-release of this version).
+> 3)	We don't do 3270-style graphics (ala 3193, say).
 
-4.2 NOTE:
+> The above three items WILL be in the next version, which should come
+> along "any day now" (say 6 months) (but, they WON'T be in the production
+> release of this version).
 
-If you run 4.2 on a vax, you may get error messages involving assignments
-to variables which are pointers to void returning functions.  These
-errors can be corrected by using makefile_4.2 as your makefile.
-
-MS-DOS NOTES:
-
-This version can be built on an MS-DOS system.
-
-We use version 4.0 of the MicroSoft C compiler.  We use version 4.0
-of the MicroSoft assembler.  We use "PolyMake" from "POLYTRON"
-(P.O. Box 787; Hillsboro, OR 97123; (503)648-8595).
-
-There is a problem in that, on a 512KB PC, memory fills up.  Possibly,
-before saying make in the "tn3270" directory, you should say make
-in the "tn3270/api" directory.
-
-The INCLUDE environmental variable is assumed to point to
-the standard include files, plus to whereever the networking include
-files are located.  These are files like <sys/socket.h>.  This is
-assuming that you have a 4.2/3 network emulation package (UB offers such
-a package with their product; my understanding is that FTP Software
-is, or soon will be, offering such a package).
-
-As mentioned in the last paragraph, we use Ungermann-Bass's library
-to perform the networking functions.  Probably other vendors' libraries
-could be integrated as well.
-
-The file utilities/tarread.exe is a small program which reads tar
-files on MS-DOS.  It is from Drew Perkins and CMU.  Many thanks
-to them.
+The next piece of bad news is that none of the above have happened yet,
+and I don't know when they might occur.
