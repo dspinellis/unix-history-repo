@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chflags.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)chflags.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -144,6 +144,8 @@ main(argc, argv)
 		warn("%s", p->fts_path);
 		rval = 1;
 	}
+	if (errno)
+		err(1, "fts_read");
 	exit(rval);
 }
 
