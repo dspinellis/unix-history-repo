@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#       @(#)makesendmail	8.6 (Berkeley) %G%
+#       @(#)makesendmail	8.7 (Berkeley) %G%
 #
 
 #
@@ -84,4 +84,4 @@ else
 fi
 echo "Making in $obj"
 cd $obj
-exec make -f Makefile $*
+exec ${MAKE:-make} $*
