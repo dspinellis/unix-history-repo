@@ -10,12 +10,12 @@
 
 #ifndef MXDOMAIN
 #ifndef lint
-static char	SccsId[] = "@(#)domain.c	5.2 (Berkeley) %G% (no MXDOMAIN)";
+static char	SccsId[] = "@(#)domain.c	5.3 (Berkeley) %G% (no MXDOMAIN)";
 #endif not lint
 #else MXDOMAIN
 
 #ifndef lint
-static char	SccsId[] = "@(#)domain.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)domain.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 # include <sys/param.h>
@@ -91,11 +91,22 @@ getmxrr(host, mxhosts, maxmx, localhost)
 			case SERVFAIL:
 				h_errno = TRY_AGAIN;
 				return(-1);
+#ifdef OLDJEEVES
+			/*
+			 * Jeeves (TOPS-20 server) still does not
+			 * support MX records.  For the time being,
+			 * we must accept FORMERRs as the same as
+			 * NOERROR.
+			 */
+			case FORMERR:
+#endif OLDJEEVES
 			case NOERROR:
 				(void) strcpy(hostbuf, host);
 				mxhosts[0] = hostbuf;
 				return(1);
+#ifndef OLDJEEVES
 			case FORMERR:
+#endif OLDJEEVES
 			case NOTIMP:
 			case REFUSED:
 				h_errno = NO_RECOVERY;
@@ -188,5 +199,95 @@ getmxrr(host, mxhosts, maxmx, localhost)
 		}
 	}
 	return(nmx);
+}
+
+
+getcanonname(host, hbsize)
+	char *host;
+	int hbsize;
+{
+
+	HEADER *hp;
+	char *eom, *cp;
+	querybuf buf, answer;
+	int n, ancount, qdcount;
+	u_short type;
+	char nbuf[BUFSIZ];
+	int first;
+
+	n = res_mkquery(QUERY, host, C_IN, T_ANY, (char *)NULL, 0, NULL,
+		(char *)&buf, sizeof(buf));
+	if (n < 0) {
+#ifdef DEBUG
+		if (tTd(8, 1) || _res.options & RES_DEBUG)
+			printf("res_mkquery failed\n");
+#endif
+		h_errno = NO_RECOVERY;
+		return;
+	}
+	n = res_send((char *)&buf, n, (char *)&answer, sizeof(answer));
+	if (n < 0) {
+#ifdef DEBUG
+		if (tTd(8, 1) || _res.options & RES_DEBUG)
+			printf("res_send failed\n");
+#endif
+		h_errno = TRY_AGAIN;
+		return;
+	}
+	eom = (char *)&answer + n;
+	/*
+	 * find first satisfactory answer
+	 */
+	hp = (HEADER *) &answer;
+	ancount = ntohs(hp->ancount);
+	qdcount = ntohs(hp->qdcount);
+	/*
+	 * We don't care about errors here, only if we got an answer
+	 */
+	if (ancount == 0) {
+#ifdef DEBUG
+		if (tTd(8, 1) || _res.options & RES_DEBUG)
+			printf("rcode = %d, ancount=%d\n", hp->rcode, ancount);
+#endif
+		return;
+	}
+	cp = (char *)&answer + sizeof(HEADER);
+	if (qdcount) {
+		cp += dn_skip(cp) + QFIXEDSZ;
+		while (--qdcount > 0)
+			cp += dn_skip(cp) + QFIXEDSZ;
+	}
+	first = 1;
+	while (--ancount >= 0 && cp < eom) {
+		if ((n = dn_expand((char *)&answer, eom, cp, nbuf,
+		    sizeof(nbuf))) < 0)
+			break;
+		if (first) {
+			(void)strncpy(host, nbuf, hbsize);
+			host[hbsize - 1] = '\0';
+			first = 0;
+		}
+		cp += n;
+		type = getshort(cp);
+ 		cp += sizeof(u_short);
+ 		cp += sizeof(u_short) + sizeof(u_long);
+		n = getshort(cp);
+		cp += sizeof(u_short);
+		if (type == T_CNAME)  {
+			/*
+			 * Assume that only one cname will be found.  More
+			 * than one is undefined.
+			 */
+			if ((n = dn_expand((char *)&answer, eom, cp, nbuf,
+			    sizeof(nbuf))) < 0)
+				break;
+			(void)strncpy(host, nbuf, hbsize);
+			host[hbsize - 1] = '\0';
+			getcanonname(host, hbsize);
+			break;
+		}
+		cp += n;
+	}
+	return;
 }
 #endif MXDOMAIN
