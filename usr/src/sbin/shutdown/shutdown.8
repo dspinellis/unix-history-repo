@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)shutdown.8	6.3 (Berkeley) %G%
+.\"	@(#)shutdown.8	6.4 (Berkeley) %G%
 .\"
 .TH SHUTDOWN 8 ""
 .UC 4
@@ -65,7 +65,7 @@ exits.
 At shutdown time a
 message is written in the system log, containing the
 time of shutdown, who ran shutdown and the reason.
-Then a terminate signal is sent at
+Then a terminate signal is sent to
 .I init
 to bring the system down to single-user state.
 Alternatively, if
