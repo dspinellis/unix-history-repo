@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.6 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -33,11 +33,11 @@ int lock_wait_time = 100;
 		if (lock_wait_time > 0) {				\
 			int i;						\
 									\
-			atomic_unlock(&lkp->lk_interlock);		\
+			simple_unlock(&lkp->lk_interlock);		\
 			for (i = lock_wait_time; i > 0; i--)		\
 				if (!(wanted))				\
 					break;				\
-			atomic_lock(&lkp->lk_interlock);		\
+			simple_lock(&lkp->lk_interlock);		\
 		}							\
 		if (!(wanted))						\
 			break;
@@ -46,9 +46,16 @@ int lock_wait_time = 100;
 
 /*
  * It is an error to spin on a uniprocessor as nothing will ever cause
- * the atomic lock to clear while we are executing.
+ * the simple lock to clear while we are executing.
  */
 #define PAUSE(lkp, wanted)
+
+/*
+ * Panic messages for inline expanded simple locks.
+ * Put text here to avoid hundreds of copies.
+ */
+const char *simple_lock_held = "simple_lock: lock held";
+const char *simple_lock_not_held = "simple_lock: lock not held";
 
 #endif /* NCPUS == 1 */
 
@@ -59,10 +66,10 @@ int lock_wait_time = 100;
 	PAUSE(lkp, wanted);						\
 	for (error = 0; wanted; ) {					\
 		(lkp)->lk_waitcount++;					\
-		atomic_unlock(&(lkp)->lk_interlock);			\
+		simple_unlock(&(lkp)->lk_interlock);			\
 		error = tsleep((void *)lkp, (lkp)->lk_prio,		\
 		    (lkp)->lk_wmesg, (lkp)->lk_timo);			\
-		atomic_lock(&(lkp)->lk_interlock);			\
+		simple_lock(&(lkp)->lk_interlock);			\
 		(lkp)->lk_waitcount--;					\
 		if (error)						\
 			break;						\
@@ -84,7 +91,7 @@ lock_init(lkp, prio, wmesg, timo, flags)
 	int flags;
 {
 	bzero(lkp, sizeof(struct lock));
-	atomic_lock_init(&lkp->lk_interlock);
+	simple_lock_init(&lkp->lk_interlock);
 	lkp->lk_flags = flags & LK_EXTFLG_MASK;
 	lkp->lk_prio = prio;
 	lkp->lk_timo = timo;
@@ -101,12 +108,12 @@ lockstatus(lkp)
 {
 	int lock_type = 0;
 
-	atomic_lock(&lkp->lk_interlock);
+	simple_lock(&lkp->lk_interlock);
 	if (lkp->lk_exclusivecount != 0)
 		lock_type = LK_EXCLUSIVE;
 	else if (lkp->lk_sharecount != 0)
 		lock_type = LK_SHARED;
-	atomic_unlock(&lkp->lk_interlock);
+	simple_unlock(&lkp->lk_interlock);
 	return (lock_type);
 }
 
@@ -129,7 +136,7 @@ lockmgr(lkp, flags, p)
 
 	error = 0;
 	pid = p->p_pid;
-	atomic_lock(&lkp->lk_interlock);
+	simple_lock(&lkp->lk_interlock);
 	extflags = (flags | lkp->lk_flags) & LK_EXTFLG_MASK;
 	if (lkp->lk_flags & LK_DRAINED)
 		panic("lockmgr: using decommissioned lock");
@@ -311,19 +318,19 @@ lockmgr(lkp, flags, p)
 		     (LK_HAVE_EXCL | LK_WANT_EXCL | LK_WANT_UPGRADE)) ||
 		     lkp->lk_sharecount != 0 || lkp->lk_waitcount != 0); ) {
 			lkp->lk_flags |= LK_WAITDRAIN;
-			atomic_unlock(&lkp->lk_interlock);
+			simple_unlock(&lkp->lk_interlock);
 			if (error = tsleep((void *)&lkp->lk_flags, lkp->lk_prio,
 			    lkp->lk_wmesg, lkp->lk_timo))
 				return (error);
 			if ((extflags) & LK_SLEEPFAIL)
 				return (ENOLCK);
-			atomic_lock(&lkp->lk_interlock);
+			simple_lock(&lkp->lk_interlock);
 		}
 		lkp->lk_flags |= LK_DRAINED;
 		break;
 
 	default:
-		atomic_unlock(&lkp->lk_interlock);
+		simple_unlock(&lkp->lk_interlock);
 		panic("lockmgr: unknown locktype request %d",
 		    flags & LK_TYPE_MASK);
 		/* NOTREACHED */
@@ -334,6 +341,6 @@ lockmgr(lkp, flags, p)
 		lkp->lk_flags &= ~LK_WAITDRAIN;
 		wakeup((void *)&lkp->lk_flags);
 	}
-	atomic_unlock(&lkp->lk_interlock);
+	simple_unlock(&lkp->lk_interlock);
 	return (error);
 }
