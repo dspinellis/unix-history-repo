@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.52 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.53 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.52 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.53 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -586,14 +586,20 @@ smtp(e)
 			finis();
 
 		  case CMDVERB:		/* set verbose mode */
+			if (bitset(PRIV_NOEXPN, PrivacyFlags))
+			{
+				/* this would give out the same info */
+				message("502 Verbose unavailable");
+				break;
+			}
 			Verbose = TRUE;
 			e->e_sendmode = SM_DELIVER;
-			message("200 Verbose mode");
+			message("250 Verbose mode");
 			break;
 
 		  case CMDONEX:		/* doing one transaction only */
 			OneXact = TRUE;
-			message("200 Only one transaction");
+			message("250 Only one transaction");
 			break;
 
 # ifdef SMTPDEBUG
