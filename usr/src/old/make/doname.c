@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)doname.c	4.1 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)doname.c	4.2 (Berkeley) 83/02/03";
 #include "defs"
 
 /*  BASIC PROCEDURE.  RECURSIVE.  */
@@ -142,6 +142,7 @@ if(dbgflag) printf("TIME(%s)=%ld\n", p2->namep, td);
 				goto endloop;
 				}
 			}
+		setvar("*", &prefix[rindex(prefix, '/')]);
 		}
 	}
 
