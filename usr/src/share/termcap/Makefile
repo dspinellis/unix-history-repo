@@ -1,4 +1,4 @@
-# @(#)Makefile	1.6	%G%
+# @(#)Makefile	1.7	(Berkeley) %G%
 #
 # reorder gives an editor command for most common terminals
 # (in reverse order from n'th to 1'st most commonly used)
@@ -6,15 +6,23 @@
 #
 DESTDIR =
 
-termcap.obj: reorder termcap.src
+termcap: reorder termcap.src
 	ex - termcap.src < reorder
 
-install: termcap.obj
-	install -o root -m 664 -c termcap.obj ${DESTDIR}/etc/termcap
+install: termcap
+	install -o root -m 664 -c termcap ${DESTDIR}/etc/termcap
 	chgrp termcap ${DESTDIR}/etc/termcap
 	rm -fr ${DESTDIR}/usr/lib/tabset
 	mkdir ${DESTDIR}/usr/lib/tabset
 	cp tabset/* ${DESTDIR}/usr/lib/tabset
 
 clean:
-	rm -f termcap.obj
+	rm -f termcap
+
+installall:
+	cp termcap /etc/termcap
+	rcp termcap ernie:/etc/termcap
+	rcp termcap kim:/etc/termcap
+	rcp termcap calder:/etc/termcap
+	rcp termcap arpa:/etc/termcap
+	rcp termcap dali:/etc/termcap
