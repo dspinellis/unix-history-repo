@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.46 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1326,7 +1326,8 @@ static void
 obsolete(argv)
 	char *argv[];
 {
-	char *ap;
+	register char *ap;
+	register char *op;
 
 	while ((ap = *++argv) != NULL)
 	{
@@ -1334,10 +1335,18 @@ obsolete(argv)
 		if (ap[0] != '-' || ap[1] == '-')
 			return;
 
+		/* skip over options that do have a value */
+		op = strchr(OPTIONS, ap[1]);
+		if (op != NULL && *++op == ':' && ap[2] == '\0' &&
+		    argv[1] != NULL && argv[1][0] != '-')
+		{
+			argv++;
+			continue;
+		}
+
 		/* If -C doesn't have an argument, use sendmail.cf. */
 #define	__DEFPATH	"sendmail.cf"
-		if (ap[1] == 'C' && ap[2] == '\0' &&
-		    (argv[1] == NULL || argv[1][0] == '-'))
+		if (ap[1] == 'C' && ap[2] == '\0')
 		{
 			*argv = xalloc(sizeof(__DEFPATH) + 2);
 			argv[0][0] = '-';
@@ -1346,13 +1355,11 @@ obsolete(argv)
 		}
 
 		/* If -q doesn't have an argument, run it once. */
-		if (ap[1] == 'q' && ap[2] == '\0' &&
-		    (argv[1] == NULL || argv[1][0] == '-'))
+		if (ap[1] == 'q' && ap[2] == '\0')
 			*argv = "-q0";
 
 		/* if -d doesn't have an argument, use 0-99.1 */
-		if (ap[1] == 'd' && ap[2] == '\0' &&
-		    (argv[1] == NULL || !isdigit(argv[1][0])))
+		if (ap[1] == 'd' && ap[2] == '\0')
 			*argv = "-d0-99.1";
 	}
 }
