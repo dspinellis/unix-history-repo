@@ -1,0 +1,330 @@
+
+
+
+GROFF_FONT(@MAN5EXT@)  BSD Reference Manual GROFF_FONT(@MAN5EXT@)
+
+
+NNAAMMEE
+       groff_font  -  format of groff device and font description
+       files
+
+DDEESSCCRRIIPPTTIIOONN
+       The groff font format is roughly a superset of the ditroff
+       font  format.  Unlike the ditroff font format, there is no
+       associated binary format.  The font files for device  _n_a_m_e
+       are stored in a directory ddeevv_n_a_m_e_.  There are two types of
+       file: a device description file called DDEESSCC and  for  each
+       font  _F a font file called _F.  These are text files; there
+       is no associated binary format.
+
+   DDEESSCC ffiillee ffoorrmmaatt
+       The DESC file can contain the following types of line:
+
+       rreess _n  There are _n machine units per inch.
+
+       hhoorr _n  The horizontal resolution is _n machine units.
+
+       vveerrtt _n The vertical resolution is _n machine units.
+
+       ssiizzeessccaallee _n
+              The scale factor for pointsizes.  By  default  this
+              has a value of 1.  One _s_c_a_l_e_d _p_o_i_n_t is equal to one
+              point/_n.  The arguments to the uunniittwwiiddtthh and  ssiizzeess
+              commands are given in scaled points.
+
+       uunniittwwiiddtthh _n
+              Quantities  in  the font files are given in machine
+              units for  fonts  whose  point  size  is  _n  scaled
+              points.
+
+       ttccoommmmaanndd
+              This  means that the postprocessor can handle the tt
+              and uu output commands.
+
+       ssiizzeess _s_1 _s_2_._._._s_n 00
+              This  means  that  the  device  has  fonts  at  _s_1,
+              _s_2,..._s_n  scaled points.  The list of sizes must be
+              terminated by a 00.  Each ss_i can also be a range  of
+              sizes  _m-_n.  The list can extend over more than one
+              line.
+
+       ssttyylleess _S_1 _S_2_._._._S_m
+              The first _m font positions will be associated  with
+              styles _S_1_._._._S_m.
+
+       ffoonnttss _n _F_1 _F_2 _F_3_._._._F_n
+              Fonts _F_1_._._._F_n will be mounted in the font positions
+              _m+1,...,_m+_n where _m is the number of styles.   This
+
+
+
+Groff Version @VERSION@      @MDATE@                            1
+
+
+
+
+
+
+
+
+GROFF_FONT(@MAN5EXT@)  BSD Reference Manual GROFF_FONT(@MAN5EXT@)
+
+
+              command may extend over more than one line.  A font
+              name of 00 will cause no font to be mounted  on  the
+              corresponding font position.
+
+       ffaammiillyy _f_a_m
+              The default font family is _f_a_m.
+
+       cchhaarrsseett
+              This  line and everything following in the file are
+              ignored.  It is allowed for the sake  of  backwards
+              compatibility.
+
+       The  res, unitwidth, fonts and sizes lines are compulsory.
+       Other commands are ignored by ttrrooffff but  may  be  used  by
+       postprocessors  to  store  arbitrary information about the
+       device in the DESC file.
+
+   FFoonntt ffiillee ffoorrmmaatt
+       A font file has two  sections.  The  first  section  is  a
+       sequence  of  lines  each  containing  a sequence of blank
+       delimited words; the first word in the line is a key,  and
+       subsequent words give a value for that key.
+
+       nnaammee _F The name of the font is _F.
+
+       ssppaacceewwiiddtthh _n
+              The normal width of a space is _n.
+
+       ssllaanntt _n
+              The  characters  of  the  font  have  a  slant of _n
+              degrees. (Positive means forward.)
+
+       lliiggaattuurreess _l_i_g_1 _l_i_g_2_._._._l_i_g_n [00]
+              Characters _l_i_g_1, _l_i_g_2,...,_l_i_g_n are ligatures;  pos-
+              sible  ligatures are ffff, ffii, ffll and ffffll.  For back-
+              wards compatibiliy, the list of  ligatures  may  be
+              terminated with a 00..  The list of ligatures may not
+              extend over more than one line.
+
+       ssppeecciiaall
+              The font is _s_p_e_c_i_a_l; this means that when a charac-
+              ter is requested that is not present in the current
+              font, it will be searched for in any special  fonts
+              that are mounted.
+
+       Other  commands  are  ignored  by ttrrooffff but may be used by
+       postprocessors to store arbitrary  information  about  the
+       font in the font file.
+
+       The  first  section  can contain comments which start with
+       the ## character and extend to the end of a line.
+
+
+
+Groff Version @VERSION@      @MDATE@                            2
+
+
+
+
+
+
+
+
+GROFF_FONT(@MAN5EXT@)  BSD Reference Manual GROFF_FONT(@MAN5EXT@)
+
+
+       The second section contains one or  two  subsections.   It
+       must  contain a _c_h_a_r_s_e_t subsection and it may also contain
+       a _k_e_r_n_p_a_i_r_s subsection.  These subsections can  appear  in
+       any  order.   Each subsection starts with a word on a line
+       by itself.
+
+       The word  cchhaarrsseett  starts  the  charset  subsection.   The
+       cchhaarrsseett  line  is  followed  by a sequence of lines.  Each
+       line gives information for one  character.   A  line  com-
+       prises a number of fields separated by blanks or tabs. The
+       format is
+
+              _n_a_m_e _m_e_t_r_i_c_s _t_y_p_e _c_o_d_e _c_o_m_m_e_n_t
+
+       _n_a_m_e identifies the character: if _n_a_m_e is a single charac-
+       ter  _c then it corresponds to the groff input character _c;
+       if it is of the form \\_c where c  is  a  single  character,
+       then  it corresponds to the groff input character \\_c; oth-
+       erwise it corresponds to the groff input character \\[[_n_a_m_e]]
+       (if  it  is exactly two characters _x_x it can be entered as
+       \\((_x_x.)  Groff supports eight bit characters; however  some
+       utilities has difficulties with eight bit characters.  For
+       this reason, there is a convention that the name cchhaarr_n  is
+       equivalent  to the single character whose code is _n _.  For
+       example, cchhaarr116633 would be equivalent to the character with
+       code 163 which is the pounds sterling sign in ISO Latin-1.
+       The name ------ is special and indicates that  the  character
+       is  unnamed;  such characters can only be used by means of
+       the \\NN escape sequence in ttrrooffff.
+
+       The _t_y_p_e field gives the character type:
+
+       1      means the character has an descender, for  example,
+              p;
+
+       2      means  the  character has an ascender, for example,
+              b;
+
+       3      means the character has  both  an  ascender  and  a
+              descender, for example, (.
+
+       The _c_o_d_e field gives the code which the postprocessor uses
+       to print the character.  The character can also  be  input
+       to  groff  using  this  code  by  means  of  the \\NN escape
+       sequence.  The code can be any integer.  If it starts with
+       a  00 it will be interpreted as octal; if it starts with 00xx
+       or 00XX it will be intepreted as hexdecimal.
+
+       Anything on the line after the code field will be ignored.
+
+       The _m_e_t_r_i_c_s field has the form:
+
+
+
+Groff Version @VERSION@      @MDATE@                            3
+
+
+
+
+
+
+
+
+GROFF_FONT(@MAN5EXT@)  BSD Reference Manual GROFF_FONT(@MAN5EXT@)
+
+
+              _w_i_d_t_h[,,_h_e_i_g_h_t[,,_d_e_p_t_h[,,_i_t_a_l_i_c___c_o_r_r_e_c_t_i_o_n[,,_l_e_f_t___i_t_a_l_i_c___c_o_r_r_e_c_t_i_o_n[,,_s_u_b_s_c_r_i_p_t___c_o_r_r_e_c_t_i_o_n]]]]]
+
+       There must not be  any  spaces  between  these  subfields.
+       Missing  subfields are assumed to be 0.  The subfields are
+       all decimal integers.  Since there is no associated binary
+       format,  these values are not required to fit into a vari-
+       able of type cchhaarr as they are in ditroff.  The _w_i_d_t_h  sub-
+       fields  gives the width of the character.  The _h_e_i_g_h_t sub-
+       field gives the height of the character (upwards is  posi-
+       tive);  if a character does not extend above the baseline,
+       it should be given a zero height, rather than  a  negative
+       height.  The _d_e_p_t_h subfield gives the depth of the charac-
+       ter, that is, the distance below the  lowest  point  below
+       the  baseline to which the character extends (downwards is
+       positive); if a character does not extend below above  the
+       baseline,  it  should be given a zero depth, rather than a
+       negative depth.  The _i_t_a_l_i_c___c_o_r_r_e_c_t_i_o_n subfield gives  the
+       amount  of  space that should be added after the character
+       when it is immediately to be followed by a character  from
+       a  roman  font.  The _l_e_f_t___i_t_a_l_i_c___c_o_r_r_e_c_t_i_o_n subfield gives
+       the amount of space that should be added before the  char-
+       acter when it is immediately to be preceded by a character
+       from a roman font.   The  _s_u_b_s_c_r_i_p_t___c_o_r_r_e_c_t_i_o_n  gives  the
+       amount  of  space  that  should be added after a character
+       before adding a subscript.  This should be less  than  the
+       italic correction.
+
+       A line in the charset section can also have the format
+
+              _n_a_m_e ""
+
+       This  indicates  that  _n_a_m_e  is  just another name for the
+       character mentioned in the preceding line.
+
+       The word kkeerrnnppaaiirrss starts  the  kernpairs  section.   This
+       contains a sequence of lines of the form:
+
+              _c_1 _c_2 _n
+
+       This  means that when character _c_1 appears next to charac-
+       ter _c_2 the space between them should be  increased  by  _n.
+       Most  entries  in  kernpairs  section will have a negative
+       value for _n.
+
+FFIILLEESS
+       @@FFOONNTTDDIIRR@@//ddeevv_n_a_m_e//DDEESSCC   Device   description   file   for
+                                device _n_a_m_e.
+
+       @@FFOONNTTDDIIRR@@//ddeevv_n_a_m_e//_F      Font  file  for  font _F of device
+                                _n_a_m_e.
+
+
+
+
+Groff Version @VERSION@      @MDATE@                            4
+
+
+
+
+
+
+
+
+GROFF_FONT(@MAN5EXT@)  BSD Reference Manual GROFF_FONT(@MAN5EXT@)
+
+
+SSEEEE AALLSSOO
+       ggrrooffff__oouutt(@MAN5EXT@), @@gg@@ttrrooffff(@MAN1EXT@).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version @VERSION@      @MDATE@                            5
+
+
+
+
+
