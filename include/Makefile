@@ -3,7 +3,9 @@
 # The ``rm -rf''s used below are safe because rm doesn't follow symbolic
 # links.
 #
-all clean cleandir depend lint tags:
+all depend lint tags:
+
+SUBDIR=	rpcsvc
 
 # Missing: mp.h
 
@@ -29,7 +31,7 @@ NOOBJ=	noobj
 # SHARED=	copies
 SHARED?=	symlinks
 
-install: ${SHARED}
+realinstall: ${SHARED}
 	@echo installing ${FILES}
 	@-for i in ${FILES}; do \
 		cmp -s $$i ${DESTDIR}/usr/include/$$i || \
