@@ -1,0 +1,31 @@
+MAKE_KEYPAIR(8)           BSD System Manager's Manual          MAKE_KEYPAIR(8)
+
+NNAAMMEE
+     mmaakkee__kkeeyyppaaiirr - generate Kerberos host key pair
+
+SSYYNNOOPPSSIISS
+     mmaakkee__kkeeyyppaaiirr _h_o_s_t_n_a_m_e [_h_o_s_t_n_a_m_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The mmaakkee__kkeeyyppaaiirr command is used to create pairs of DES keys for each
+     _h_o_s_t_n_a_m_e. The keys are used by priviledged programs such as register(1)
+     to make remote updates to the Kerberos database without having to have
+     first acquired a Kerberos ticket granting ticket (TGT). The keys created
+     by mmaakkee__kkeeyyppaaiirr are placed (by hand) in the filesystems of the kerberos
+     server in _/_e_t_c_/_k_e_r_b_e_r_o_s_I_V_/_r_e_g_i_s_t_e_r___k_e_y_s, and in the root directory on the
+     clients.  For example, the file _/_._u_p_d_a_t_e_._k_e_y_1_2_8_._3_2_._1_3_0_._3 would contain a
+     copy of the key on the client with IP address 128.32.130.3.  These keys
+     provide a shared secret which may be used to establish a secure channel
+     between the client hosts and the Kerberos server.
+
+FFIILLEESS
+     /.update.keyxx.xx.xx.xx          shared DES key with server
+     /etc/kerberosIV/register_keys    server's key storage directory
+
+SSEEEE AALLSSOO
+     register(1),  registerd(8),  kerberos(1)
+
+HHIISSTTOORRYY
+     The mmaakkee__kkeeyyppaaiirr utility first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1
