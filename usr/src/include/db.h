@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	5.13 (Berkeley) %G%
+ *	@(#)db.h	5.14 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -74,7 +74,7 @@ typedef struct {
 } BTREEINFO;
 
 #define	HASHMAGIC	0x061561
-#define	HASHVERSION	1
+#define	HASHVERSION	2
 
 /* Structure used to pass parameters to the hashing routines. */
 typedef struct {
