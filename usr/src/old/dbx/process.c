@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)process.c	1.15 (Berkeley) %G%";
+static	char sccsid[] = "@(#)process.c	1.16 (Berkeley) %G%";
 
 /*
  * Process management.
@@ -23,6 +23,7 @@ static	char sccsid[] = "@(#)process.c	1.15 (Berkeley) %G%";
 #include "coredump.h"
 #include <signal.h>
 #include <errno.h>
+#include <ptrace.h>
 #include <sys/param.h>
 #include <sys/dir.h>
 #include <sys/user.h>
@@ -768,23 +769,9 @@ private write_err()
 #define FIRSTSIG        SIGINT
 #define LASTSIG         SIGQUIT
 #define ischild(pid)    ((pid) == 0)
-#define traceme()       ptrace(0, 0, 0, 0)
+#define traceme()       ptrace(PT_TRACE_ME, 0, 0, 0)
 #define setrep(n)       (1 << ((n)-1))
 #define istraced(p)     (p->sigset&setrep(p->signo))
-
-/*
- * Ptrace options (specified in first argument).
- */
-
-#define UREAD   3       /* read from process's user structure */
-#define UWRITE  6       /* write to process's user structure */
-#define IREAD   1       /* read from process's instruction space */
-#define IWRITE  4       /* write to process's instruction space */
-#define DREAD   2       /* read from process's data space */
-#define DWRITE  5       /* write to process's data space */
-#define CONT    7       /* continue stopped process */
-#define SSTEP   9       /* continue for approximately one instruction */
-#define PKILL   8       /* terminate the process */
 
 /*
  * Start up a new process by forking and exec-ing the
@@ -845,7 +832,7 @@ Process p;
     integer status;
 
     if (p != nil and p->pid != 0) {
-	ptrace(PKILL, p->pid, 0, 0);
+	ptrace(PT_KILL, p->pid, 0, 0);
 	pwait(p->pid, &status);
 	unptraced(p->pid);
     }
@@ -879,7 +866,7 @@ int signo;
 	    fflush(stdout);
 	}
 	sigs_off();
-	if (ptrace(CONT, p->pid, p->reg[PROGCTR], p->signo) < 0) {
+	if (ptrace(PT_CONTINUE, p->pid, p->reg[PROGCTR], p->signo) < 0) {
 	    panic("error %d trying to continue process", errno);
 	}
 	pwait(p->pid, &status);
@@ -914,7 +901,7 @@ integer signo;
 	fflush(stdout);
     }
     sigs_off();
-    if (ptrace(SSTEP, p->pid, p->reg[PROGCTR], p->signo) < 0) {
+    if (ptrace(PT_STEP, p->pid, p->reg[PROGCTR], p->signo) < 0) {
 	panic("error %d trying to step process", errno);
     }
     pwait(p->pid, &status);
@@ -1012,16 +999,16 @@ register int status;
     } else {
 	p->status = p->signo;
 	p->signo = p->exitval;
-	p->sigcode = ptrace(UREAD, p->pid, &((struct user *)0)->u_code, 0);
+	p->sigcode = ptrace(PT_READ_U, p->pid, &((struct user *)0)->u_code, 0);
 	p->exitval = 0;
-	p->mask = ptrace(UREAD, p->pid, regloc(PS), 0);
+	p->mask = ptrace(PT_READ_U, p->pid, regloc(PS), 0);
 	for (i = 0; i < NREG; i++) {
-	    p->reg[i] = ptrace(UREAD, p->pid, regloc(rloc[i]), 0);
+	    p->reg[i] = ptrace(PT_READ_U, p->pid, regloc(rloc[i]), 0);
 	    p->oreg[i] = p->reg[i];
 	}
 	savetty(stdout, &(p->ttyinfo));
 	addr = (Address) &(((struct user *) 0)->u_signal[p->signo]);
-	p->sigstatus = (Address) ptrace(UREAD, p->pid, addr, 0);
+	p->sigstatus = (Address) ptrace(PT_READ_U, p->pid, addr, 0);
     }
 }
 
@@ -1045,7 +1032,7 @@ int signo;
     }
     for (i = 0; i < NREG; i++) {
 	if ((r = p->reg[i]) != p->oreg[i]) {
-	    ptrace(UWRITE, p->pid, regloc(rloc[i]), r);
+	    ptrace(PT_WRITE_U, p->pid, regloc(rloc[i]), r);
 	}
     }
     restoretty(stdout, &(p->ttyinfo));
@@ -1177,7 +1164,7 @@ register int addr;
 	    wp = &p->word[cachehash(addr)];
 	    if (addr == 0 or wp->addr != addr) {
 		++nreads;
-		w = ptrace(IREAD, p->pid, addr, 0);
+		w = ptrace(PT_READ_I, p->pid, addr, 0);
 		wp->addr = addr;
 		wp->val = w;
 	    } else {
@@ -1186,7 +1173,7 @@ register int addr;
 	    break;
 
 	case DATASEG:
-	    w = ptrace(DREAD, p->pid, addr, 0);
+	    w = ptrace(PT_READ_D, p->pid, addr, 0);
 	    break;
 
 	default:
@@ -1215,11 +1202,11 @@ Word data;
 	    wp = &p->word[cachehash(addr)];
 	    wp->addr = addr;
 	    wp->val = data;
-	    ptrace(IWRITE, p->pid, addr, data);
+	    ptrace(PT_WRITE_I, p->pid, addr, data);
 	    break;
 
 	case DATASEG:
-	    ptrace(DWRITE, p->pid, addr, data);
+	    ptrace(PT_WRITE_D, p->pid, addr, data);
 	    break;
 
 	default:
