@@ -13,6 +13,9 @@ static char *sccsid = "@(#)ex_io.c	7.15 (Berkeley) %G%";
 #include "ex_temp.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
+#ifdef	FLOCKFILE
+#include <sys/file.h>
+#endif	FLOCKFILE
 
 /*
  * File input/output, source, preserve and recover
@@ -36,6 +39,17 @@ int	cntln;
 long	cntnull;		/* Count of nulls " */
 long	cntodd;			/* Count of non-ascii characters " */
 
+#ifdef	FLOCKFILE
+/*
+ * The alternate, saved and current file are locked the extent of the
+ * time that they are active. If the saved file is exchanged
+ * with the alternate file, the file descriptors are exchanged
+ * and the lock is not released.
+ */
+int	io_savedfile, io_altfile, io_curr ;
+int	lock_savedfile, lock_altfile, lock_curr ;
+#endif	FLOCKFILE
+
 /*
  * Parse file name for command encoded by comm.
  * If comm is E then command is doomed and we are
@@ -46,12 +60,22 @@ filename(comm)
 {
 	register int c = comm, d;
 	register int i;
+#ifdef	FLOCKFILE
+	int lock ;
+
+	lock = 0 ;
+#endif	FLOCKFILE
 
 	d = ex_getchar();
 	if (endcmd(d)) {
 		if (savedfile[0] == 0 && comm != 'f')
 			error("No file|No current filename");
 		CP(file, savedfile);
+#ifdef	FLOCKFILE
+		if (io_curr && io_curr != io_savedfile) close(io_curr) ;
+		lock = lock_curr = lock_savedfile ;
+		io_curr = io_savedfile ;
+#endif	FLOCKFILE
 		wasalt = (isalt > 0) ? isalt-1 : 0;
 		isalt = 0;
 		oldadot = altdot;
@@ -77,17 +101,41 @@ filename(comm)
 
 		case 'e':
 			if (savedfile[0]) {
+#ifdef	FLOCKFILE
+				if (strcmp(file,savedfile) == 0) break ;
+#endif	FLOCKFILE
 				altdot = lineDOT();
 				CP(altfile, savedfile);
+#ifdef	FLOCKFILE
+				if (io_altfile) close (io_altfile) ;
+				io_altfile = io_savedfile ;
+				lock_altfile = lock_savedfile ;
+				io_savedfile = 0 ;
+#endif	FLOCKFILE
 			}
 			CP(savedfile, file);
+#ifdef	FLOCKFILE
+			io_savedfile = io_curr ;
+			lock_savedfile = lock_curr ;
+			io_curr = 0 ;		lock = lock_curr = 0 ;
+#endif	FLOCKFILE
 			break;
 
 		default:
 			if (file[0]) {
+#ifdef	FLOCKFILE
+				if (wasalt) break ;
+#endif
 				if (c != 'E')
 					altdot = lineDOT();
 				CP(altfile, file);
+#ifdef	FLOCKFILE
+				if (io_altfile
+				&& io_altfile != io_curr) close (io_altfile) ;
+				io_altfile = io_curr ;
+				lock_altfile = lock_curr ;
+				io_curr = 0 ;		lock = lock_curr = 0 ;
+#endif	FLOCKFILE
 			}
 			break;
 		}
@@ -103,6 +151,12 @@ filename(comm)
 				ex_printf(" [Not edited]");
 			if (tchng)
 				ex_printf(" [Modified]");
+#ifdef	FLOCKFILE
+			if (lock == LOCK_SH)
+				ex_printf(" [Shared lock]") ;
+			else if (lock == LOCK_EX)
+				ex_printf(" [Exclusive lock]") ;
+#endif	FLOCKFILE
 		}
 		flush();
 	} else
@@ -318,6 +372,9 @@ rop(c)
 	short magic;
 	static int ovro;	/* old value(READONLY) */
 	static int denied;	/* 1 if READONLY was set due to file permissions */
+#ifdef	FLOCKFILE
+	int *lp, *iop ;
+#endif	FLOCKFILE
 
 	io = open(file, 0);
 	if (io < 0) {
@@ -410,6 +467,53 @@ rop(c)
 		ex_printf(" [Read only]");
 		flush();
 	}
+#ifdef	FLOCKFILE
+	/*
+	 * Attempt to lock the file. We use an sharable lock if reading
+	 * the file, and an exclusive lock if editting a file.
+	 * The lock will be released when the file is no longer being
+	 * referenced. At any time, the editor can have as many as
+	 * three files locked, and with different lock statuses.
+	 */
+	/*
+	 * if this is either the saved or alternate file or current file,
+	 * point to the appropriate descriptor and file lock status.
+	 */
+	if (strcmp (file,savedfile) == 0) {
+		if (!io_savedfile) io_savedfile = dup(io) ;
+		lp = &lock_savedfile ;	iop = &io_savedfile ;
+	} else if (strcmp (file,altfile) == 0) {
+		if (!io_altfile) io_altfile = dup(io) ;
+		lp = &lock_altfile ;	iop = &io_altfile ;
+	} else {
+		/* throw away current lock, accquire new current lock */
+		if (io_curr) close (io_curr) ;
+		io_curr = dup(io) ;
+		lp = &lock_curr ;	iop = &io_curr ;
+		lock_curr = 0 ;
+	}
+	if (c == 'r' || value(READONLY) || *lp == 0) {
+		/* if we have a lock already, don't bother */
+		if (!*lp) {
+			/* try for a shared lock */
+			if (flock(*iop, LOCK_SH|LOCK_NB) < 0
+			&& errno == EWOULDBLOCK) {
+				ex_printf (
+			" [FILE BEING MODIFIED BY ANOTHER PROCESS]") ;
+				flush();
+				goto fail_lock ;
+			} else *lp = LOCK_SH ;
+		}
+	}
+	if ( c != 'r'  && !value(READONLY) && *lp != LOCK_EX) {
+		/* if we are editting the file, upgrade to an exclusive lock. */
+		if (flock(*iop, LOCK_EX|LOCK_NB) < 0 && errno == EWOULDBLOCK) {
+			ex_printf (" [File open by another process]") ;
+			flush();
+		} else *lp = LOCK_EX ;
+	}
+fail_lock:
+#endif	FLOCKFILE
 	if (c == 'r')
 		setdot();
 	else
@@ -518,6 +622,9 @@ bool dofname;	/* if 1 call filename, else use savedfile */
 	register int c, exclam, nonexist;
 	line *saddr1, *saddr2;
 	struct stat stbuf;
+#ifdef	FLOCKFILE
+	int *lp, *iop ;
+#endif	FLOCKFILE
 
 	c = 0;
 	exclam = 0;
@@ -545,6 +652,23 @@ bool dofname;	/* if 1 call filename, else use savedfile */
 		lprintf("\"%s\"", file);
 	}
 	nonexist = stat(file, &stbuf);
+#ifdef	FLOCKFILE
+	/*
+	 * if this is either the saved or alternate file or current file,
+	 * point to the appropriate descriptor and file lock status.
+	 */
+	if (strcmp (file,savedfile) == 0) {
+		lp = &lock_savedfile ;	iop = &io_savedfile ;
+	} else if (strcmp (file,altfile) == 0) {
+		lp = &lock_altfile ;	iop = &io_altfile ;
+	} else {
+		lp = &lock_curr ;	iop = &io_curr ;
+	}
+	if (!*iop && !nonexist){
+		*lp = 0 ;
+		if ((*iop = open(file, 1)) < 0) *iop = 0 ;
+	}
+#endif	FLOCKFILE
 	switch (c) {
 
 	case 0:
@@ -582,6 +706,17 @@ cre:
 /*
 		synctmp();
 */
+#ifdef	FLOCKFILE
+	if (*iop && !*lp != LOCK_EX && !exclam) {
+		/*
+		 * upgrade to a exclusive lock. if can't get, someone else 
+		 * has the exclusive lock. bitch to the user.
+		 */
+		if (flock(*iop, LOCK_EX|LOCK_NB) < 0 && errno == EWOULDBLOCK)
+	error (" File being modified by another process - use \"w!\" to write");
+		 else *lp = LOCK_EX ;
+	}
+#endif	FLOCKFILE
 #ifdef V6
 		io = creat(file, 0644);
 #else
@@ -595,6 +730,10 @@ cre:
 				ex_printf(" [New file]");
 			else if (value(WRITEANY) && edfile() != EDF)
 				ex_printf(" [Existing file]");
+#ifdef	FLOCKFILE
+		if (!*iop)
+			*iop = dup(io) ;
+#endif	FLOCKFILE
 		break;
 
 	case 2:
@@ -605,8 +744,27 @@ cre:
 			syserror();
 		}
 		lseek(io, 0l, 2);
+#ifdef	FLOCKFILE
+		if (!*iop) *iop = dup(io) ;
+		if (*lp != LOCK_EX && !exclam) {
+			/*
+		 	 * upgrade to a exclusive lock. if can't get,
+			 * someone else has the exclusive lock.
+			 * bitch to the user.
+		 	 */
+			if (flock(*iop, LOCK_SH|LOCK_NB) < 0
+			&& errno == EWOULDBLOCK)
+				error (
+" File being modified by another process - use \"w!>>\" to write");
+		 	else *lp = LOCK_EX ;
+		}
+#endif	FLOCKFILE
 		break;
 	}
+#ifdef	FLOCKFILE
+	if (flock(*iop, LOCK_EX|LOCK_NB) >= 0)
+		*lp = LOCK_EX ;
+#endif	FLOCKFILE
 	putfile(0);
 #ifndef	vms
 	(void) fsync(io);
