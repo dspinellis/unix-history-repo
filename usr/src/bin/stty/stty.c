@@ -287,6 +287,11 @@ char	**iargv;
 				goto done;
 			win.ws_col = atoi(*++argv);
 		}
+		if (eq("size")) {
+			ioctl(open("/dev/tty", 0), TIOCGWINSZ, &win);
+			printf("%d %d\n", win.ws_row, win.ws_col);
+			exit(0);
+		}
 		for(i=0; speeds[i].string; i++)
 			if(eq(speeds[i].string)) {
 				mode.sg_ispeed = mode.sg_ospeed = speeds[i].speed;
