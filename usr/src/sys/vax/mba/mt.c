@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mt.c	7.3 (Berkeley) %G%
+ *	@(#)mt.c	7.4 (Berkeley) %G%
  */
 
 #include "mu.h"
@@ -1004,7 +1004,7 @@ static struct fmesg botmsg[] = {
 static struct fmesg notrdymsg[] = {
 	01,	"TU on-line but not ready",
 	02,	"fatal error has occurred",
-	03,	"access allowed by not really"
+	03,	"access allowed but not ready",
 	-1,	unclass
 };
 
@@ -1143,7 +1143,7 @@ static struct fmesg tmfltbmsg[] = {
 	042,	inlinetest,
 	043,	inlinetest,
 	044,	inlinetest,
-	045,	inlinetest
+	045,	inlinetest,
 	046,	inlinetest,
 	047,	inlinetest,
 	050,	inlinetest,
