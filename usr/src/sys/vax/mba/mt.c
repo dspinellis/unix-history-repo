@@ -1,4 +1,4 @@
-/*	mt.c	4.11	82/10/17	*/
+/*	mt.c	4.12	82/10/17	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -514,8 +514,8 @@ mtioctl(dev, cmd, data, flag)
 	switch (cmd) {
 
 	case MTIOCTOP:	/* tape operation */
-		mtop = (struct mtop *)mtop;
-		switch(mtop->mt_op) {
+		mtop = (struct mtop *)data;
+		switch (mtop->mt_op) {
 
 		case MTWEOF:
 			callcount = mtop->mt_count;
@@ -583,7 +583,6 @@ mtdump()
 {
 	register struct mba_device *mi;
 	register struct mba_regs *mp;
-	register struct mtdevice *mtaddr;
 	int blk, num;
 	int start;
 
@@ -596,7 +595,7 @@ mtdump()
 	mp = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
 	mp->mba_cr = MBCR_IE;
 #if lint
-	blk = blk; num = num; start = start;
+	blk = 0; num = blk; start = num; blk = start;
 	return (0);
 #endif
 #ifdef notyet

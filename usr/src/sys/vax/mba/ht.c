@@ -1,4 +1,4 @@
-/*	ht.c	4.30	82/10/17	*/
+/*	ht.c	4.31	82/10/17	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -419,7 +419,9 @@ htread(dev, uio)
 	return (physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_READ, minphys, uio));
 }
 
-htwrite(dev)
+htwrite(dev, uio)
+	dev_t dev;
+	struct uio uio;
 {
 	int errno;
 
