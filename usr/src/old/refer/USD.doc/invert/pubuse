@@ -1,4 +1,6 @@
-.\"	@(#)pubuse	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)pubuse	6.2 (Berkeley) %G%
 .\"
 ..... use tbl and troff \-ms
 .if \nP=0 .IM

@@ -1,4 +1,6 @@
-.\"	@(#)rm1	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)rm1	6.2 (Berkeley) %G%
 .\"
 .EQ
 delim $$

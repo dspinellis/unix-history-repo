@@ -1,9 +1,3 @@
-%Z Copyright (c) 1983 Regents of the University of California.
-%Z All rights reserved.  The Berkeley software License Agreement
-%Z specifies the terms and conditions for redistribution.
-%Z
-%Z	@(#)biblio	6.1 (Berkeley) %G%
-
 %A Mike E. Lesk
 %T Some Applications of Inverted Indexes on the Unix System
 %J Unix Programmer's Manual
