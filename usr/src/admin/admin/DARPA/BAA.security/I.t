@@ -1,4 +1,4 @@
-.\"     @(#)I.t	1.1     89/03/09
+.\"     @(#)I.t	1.2     89/03/17
 .LP
 \fB\s+4I. Accomplishments of the Berkeley UNIX Project\fP\s-4
 .PP
@@ -215,7 +215,7 @@ either type.
 .LP
 \fB\s+2I.3 Personnel\fP\s-2
 .PP
-The investigators in this proposal have been involved in the
+The investigators and researchers in this proposal have been involved in the
 Berkeley UNIX project for many years.
 Professor Susan L. Graham  has experience as Project Director
 for the \s-2DARPA\s+2 tasking contract for 

@@ -1,4 +1,4 @@
-.\"     @(#)A.t	1.1     89/03/09
+.\"     @(#)A.t	1.2     89/03/17
 .\" run with ditroff -ms
 .nr PS 18
 .nr VS 22
@@ -18,9 +18,11 @@
 February 23, 1989
 .sp 3
 .LP
-\fBPrincipal Investigators\fP
+\fBPrincipal Investigator\fP
 .LP
 Susan L. Graham		(415)-642-2059	graham@renoir.berkeley.edu
+.sp
+\fBCo-Principal Investigator\fP
 .LP
 Domenico Ferrari		(415)-642-3806	ferrari@ernie.berkeley.edu
 .sp 3
@@ -30,12 +32,12 @@ Domenico Ferrari		(415)-642-3806	ferrari@ernie.berkeley.edu
 Diane Leite			(415)-642-8882	dianel@willow.berkeley.edu
 .sp 3
 .LP
-\fBResearch Investigators\fP
+\fBResearchers\fP
 .LP
 Marshall K. McKusick	(415)-642-4948	mckusick@okeeffe.berkeley.edu
 .LP
 Michael J. Karels		(415)-642-4948	karels@okeeffe.berkeley.edu
-.sp 5
+.sp 4
 .LP
 The mailing address for all personnel above is:
 .in 2i
