@@ -1,0 +1,8 @@
+mymemo
+This is the 7-line file "mymemo";  you should
+have typed "ls *memo", which would print
+"mymemo", and then typed the
+command "cat mymemo".
+Or just plain "cat *memo" would have worked.
+But whatever you did, you got it right
+and now you can type "ready".
