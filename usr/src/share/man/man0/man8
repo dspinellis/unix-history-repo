@@ -81,7 +81,6 @@
 /usr/src/sbin/nfsd/nfsd.8
 /usr/src/sbin/nfsiod/nfsiod.8
 /usr/src/sbin/nologin/nologin.8
-/usr/src/contrib/nvi/nvi.recover/nvi.recover.8
 /usr/src/usr.sbin/lpr/pac/pac.8
 /usr/src/sbin/ping/ping.8
 /usr/src/usr.sbin/portmap/portmap.8
