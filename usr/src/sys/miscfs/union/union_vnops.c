@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.31 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.32 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1343,8 +1343,15 @@ union_lock(ap)
 
 
 	vop_nolock(ap);
+	/*
+	 * Need to do real lockmgr-style locking here.
+	 * in the mean time, draining won't work quite right,
+	 * which could lead to a few race conditions.
+	 * the following test was here, but is not quite right, we
+	 * still need to take the lock:
 	if ((flags & LK_TYPE_MASK) == LK_DRAIN)
 		return (0);
+	 */
 	flags &= ~LK_INTERLOCK;
 
 start:
