@@ -5,21 +5,22 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 #include <signal.h>
 #include <sys/types.h>
-#include <utmp.h>
 #include <setjmp.h>
 #include <sys/reboot.h>
+#include <utmp.h>
 #include <errno.h>
 #include <sys/file.h>
 #include <ttyent.h>
 #include <sys/syslog.h>
 #include <sys/stat.h>
 
-#define	LINSIZ	sizeof(wtmp.ut_line)
+struct utmp ut;
+#define	LINSIZ	sizeof(ut.ut_line)
 #define	CMDSIZ	200	/* max string length for getty or window command*/
 #define	ALL	p = itab; p ; p = p->next
 #define	EVER	;;
@@ -30,10 +31,8 @@ char	shell[]	= "/bin/sh";
 char	minus[]	= "-";
 char	runc[]	= "/etc/rc";
 char	utmpf[]	= "/etc/utmp";
-char	wtmpf[]	= "/usr/adm/wtmp";
 char	ctty[]	= "/dev/console";
 
-struct utmp wtmp;
 struct	tab
 {
 	char	line[LINSIZ];
@@ -53,7 +52,6 @@ int	fi;
 int	mergflag;
 char	tty[20];
 jmp_buf	sjbuf, shutpass;
-time_t	time0;
 
 int	reset();
 int	idle();
@@ -77,7 +75,6 @@ main(argc, argv)
 #endif
 	int howto, oldhowto;
 
-	time0 = time(0);
 #if defined(vax) || defined(tahoe)
 	howto = r11;
 #else
@@ -172,23 +169,14 @@ shutend()
 	signal(SIGALRM, SIG_DFL);
 	for (i = 0; i < 10; i++)
 		close(i);
-	f = open(wtmpf, O_WRONLY|O_APPEND);
-	if (f >= 0) {
-		SCPYN(wtmp.ut_line, "~");
-		SCPYN(wtmp.ut_name, "shutdown");
-		SCPYN(wtmp.ut_host, "");
-		time(&wtmp.ut_time);
-		write(f, (char *)&wtmp, sizeof(wtmp));
-		close(f);
-	}
-	return (1);
+	logwtmp("~", "shutdown", "");
 }
 
 single()
 {
 	register pid;
 	register xpid;
-	extern	errno;
+	extern int errno;
 
 	do {
 		pid = fork();
@@ -231,19 +219,7 @@ runcom(oldhowto)
 		;
 	if (status)
 		return (0);
-	f = open(wtmpf, O_WRONLY|O_APPEND);
-	if (f >= 0) {
-		SCPYN(wtmp.ut_line, "~");
-		SCPYN(wtmp.ut_name, "reboot");
-		SCPYN(wtmp.ut_host, "");
-		if (time0) {
-			wtmp.ut_time = time0;
-			time0 = 0;
-		} else
-			time(&wtmp.ut_time);
-		write(f, (char *)&wtmp, sizeof(wtmp));
-		close(f);
-	}
+	logwtmp("~", "reboot", "");
 	return (1);
 }
 
