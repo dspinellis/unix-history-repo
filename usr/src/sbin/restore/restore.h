@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)restore.h	5.10 (Berkeley) %G%
+ *	@(#)restore.h	5.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -37,6 +37,8 @@ extern time_t	dumptime;	/* time that this dump begins */
 extern time_t	dumpdate;	/* time that this dump was made */
 extern char	command;	/* opration being performed */
 extern FILE	*terminal;	/* file descriptor for the terminal input */
+extern int	oldinofmt;	/* reading tape with old format inodes */
+extern int	Bcvt;		/* need byte swapping on inodes and dirs */
 
 /*
  * Each file in the file system is described by one of these entries
