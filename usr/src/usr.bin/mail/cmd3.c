@@ -9,7 +9,7 @@
  * Still more user commands.
  */
 
-static char *SccsId = "@(#)cmd3.c	1.4 %G%";
+static char *SccsId = "@(#)cmd3.c	1.5 %G%";
 
 /*
  * Process a shell escape by saving signals, ignoring signals,
@@ -518,7 +518,7 @@ file(argv)
  *	file name -- for any other file
  */
 
-char	prevfile[BUFSIZ];
+char	prevfile[PATHSIZE];
 
 char *
 getfilename(name)
@@ -529,6 +529,7 @@ getfilename(name)
 
 	switch (*name) {
 	case '%':
+		strcpy(prevfile, mailname);
 		if (name[1] != 0) {
 			strcpy(savename, myname);
 			strncpy(myname, name+1, PATHSIZE-1);
@@ -548,15 +549,20 @@ getfilename(name)
 			printf("No previous file\n");
 			return(NOSTR);
 		}
-		return(prevfile);
+		strcpy(savename, prevfile);
+		strcpy(prevfile, mailname);
+		strcpy(mailname, savename);
+		return(mailname);
 
 	case '&':
+		strcpy(prevfile, mailname);
 		if (name[1] == 0)
 			return(mbox);
 		/* Fall into . . . */
 
 	default:
 regular:
+		strcpy(prevfile, mailname);
 		cp = expand(name);
 		return(cp);
 	}
@@ -620,5 +626,81 @@ Respond(msgvec)
 	head.h_cc = NOSTR;
 	head.h_bcc = NOSTR;
 	mail1(&head);
+	return(0);
+}
+
+/*
+ * Conditional commands.  These allow one to parameterize one's
+ * .mailrc and do some things if sending, others if receiving.
+ */
+
+ifcmd(argv)
+	char **argv;
+{
+	register char *cp;
+
+	if (cond != CANY) {
+		printf("Illegal nested \"if\"\n");
+		return(1);
+	}
+	cond = CANY;
+	cp = argv[0];
+	switch (*cp) {
+	case 'r': case 'R':
+		cond = CRCV;
+		break;
+
+	case 's': case 'S':
+		cond = CSEND;
+		break;
+
+	default:
+		printf("Unrecognized if-keyword: \"%s\"\n", cp);
+		return(1);
+	}
+	return(0);
+}
+
+/*
+ * Implement 'else'.  This is pretty simple -- we just
+ * flip over the conditional flag.
+ */
+
+elsecmd()
+{
+
+	switch (cond) {
+	case CANY:
+		printf("\"Else\" without matching \"if\"\n");
+		return(1);
+
+	case CSEND:
+		cond = CRCV;
+		break;
+
+	case CRCV:
+		cond = CSEND;
+		break;
+
+	default:
+		printf("Mail's idea of conditions is screwed up\n");
+		cond = CANY;
+		break;
+	}
+	return(0);
+}
+
+/*
+ * End of if statement.  Just set cond back to anything.
+ */
+
+endifcmd()
+{
+
+	if (cond == CANY) {
+		printf("\"Endif\" without matching \"if\"\n");
+		return(1);
+	}
+	cond = CANY;
 	return(0);
 }
