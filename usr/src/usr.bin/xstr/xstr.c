@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)xstr.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)xstr.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -26,7 +26,7 @@ static char sccsid[] = "@(#)xstr.c	5.2 (Berkeley) %G%";
  * November, 1978
  */
 
-#define	ignore(a)	Ignore((char *) a)
+#define	ignore(a)	((void) a)
 
 char	*calloc();
 off_t	tellpt;
@@ -299,7 +299,10 @@ hashit(str, new)
 		if (i >= 0)
 			return (hp->hpt + i);
 	}
-	hp = (struct hash *) calloc(1, sizeof (*hp));
+	if ((hp = (struct hash *) calloc(1, sizeof (*hp))) == NULL) {
+		perror("xstr");
+		exit(8);
+	}
 	hp->hpt = mesgpt;
 	hp->hstr = savestr(str);
 	mesgpt += strlen(hp->hstr) + 1;
@@ -337,7 +340,8 @@ flushsh()
 					perror(strings), exit(4);
 			}
 		}
-	ignore(fclose(mesgwrit));
+	if (fclose(mesgwrit) == EOF)
+		perror(strings), exit(4);
 }
 
 found(new, off, str)
@@ -409,23 +413,13 @@ char *
 savestr(cp)
 	register char *cp;
 {
-	register char *dp = (char *) calloc(1, strlen(cp) + 1);
+	register char *dp;
 
+	if ((dp = (char *) calloc(1, strlen(cp) + 1)) == NULL) {
+		perror("xstr");
+		exit(8);
+	}
 	return (strcpy(dp, cp));
-}
-
-Ignore(a)
-	char *a;
-{
-
-	a = a;
-}
-
-ignorf(a)
-	int (*a)();
-{
-
-	a = a;
 }
 
 lastchr(cp)
@@ -450,7 +444,7 @@ istail(str, of)
 onintr()
 {
 
-	ignorf(signal(SIGINT, SIG_IGN));
+	ignore(signal(SIGINT, SIG_IGN));
 	if (strings[0] == '/')
 		ignore(unlink(strings));
 	ignore(unlink("x.c"));
