@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -33,6 +33,20 @@ static char sccsid[] = "@(#)su.c	5.13 (Berkeley) %G%";
 #include <pwd.h>
 #include <grp.h>
 #include "pathnames.h"
+
+#ifdef	KERBEROS
+#include <krb.h>	
+#include <netdb.h>
+extern	char	*krb_err_txt[];
+int	use_kerberos = 1;
+int	kerno = 0;
+char	lrealm[REALM_SZ], krbtkfile[MAXPATHLEN];
+#define	MAXPWSIZE	128
+#define	ARGSTR	"-flmn"
+char	pw_buf[MAXPWSIZE];
+#else
+#define	ARGSTR	"-flm"
+#endif
 
 main(argc, argv)
 	int argc;
@@ -53,7 +67,7 @@ main(argc, argv)
 	np = &nargv[3];
 	*np-- = NULL;
 	asme = fulllogin = fastlogin = 0;
-	while ((ch = getopt(argc, argv, "-flm")) != EOF)
+	while ((ch = getopt(argc, argv, ARGSTR)) != EOF)
 		switch((char)ch) {
 		case 'f':
 			fastlogin = 1;
@@ -65,6 +79,11 @@ main(argc, argv)
 		case 'm':
 			asme = 1;
 			break;
+#ifdef	KERBEROS
+		case 'n':
+			use_kerberos = 0;
+			break;
+#endif
 		case '?':
 		default:
 			fprintf(stderr, "usage: su [-flm] [login]\n");
@@ -92,7 +111,7 @@ main(argc, argv)
 			iscsh = NO;
 		}
 
-	/* get target login information */
+	/* get target login information, default to root */
 	user = *argv ? *argv : "root";
 	if ((pwd = getpwnam(user)) == NULL) {
 		fprintf(stderr, "su: unknown login %s\n", user);
@@ -111,6 +130,129 @@ main(argc, argv)
 				break;
 		}
 	openlog("su", LOG_CONS, 0);
+
+#ifdef	KERBEROS
+again:
+	if (use_kerberos && ruid) {
+		KTEXT_ST	ticket;
+		AUTH_DAT	authdata;
+		char		hostname[MAXHOSTNAMELEN];
+		char		savehost[MAXHOSTNAMELEN];
+		u_long		faddr;
+		struct hostent	*hp;
+
+		if (krb_get_lrealm(lrealm, 1) != KSUCCESS) {
+			(void)fprintf(stderr, "Couldn't get local realm\n");
+			use_kerberos = 0;
+			goto again;
+		}
+
+		if (koktologin(username, lrealm, user) && !pwd->pw_uid) {
+			(void)fprintf(stderr,
+				"kerberos su: not in %s's ACL\n", user);
+			use_kerberos = 0;
+			goto again;
+		}
+
+		(void)sprintf(krbtkfile, "%s_%s_%d", TKT_ROOT, user, getuid());
+		/* setuid(pwd->pw_uid); */
+
+		if (read_pw_string(pw_buf, sizeof(pw_buf)-1,
+		   "Kerberos password: ", 0)) {
+			(void)fprintf(stderr, "error reading password\n");
+			use_kerberos = 0;
+			goto again;
+		}
+
+		p = pw_buf;
+		setenv("KRBTKFILE", krbtkfile, 1);
+		/* short lifetime for root tickets */
+		if (setuid(0) < 0) {
+			perror("setuid");
+			use_kerberos = 0;
+			goto again;
+		}
+		(void)unlink(krbtkfile);
+		/* POLICY: short ticket lifetime for root */
+		kerno = krb_get_pw_in_tkt(username,
+			(pwd->pw_uid == 0 ? "root" : ""),
+			lrealm, "krbtgt", lrealm,
+			(pwd->pw_uid == 0 ? 2 : DEFAULT_TKT_LIFE),
+			p);
+
+		(void)bzero(p, strlen(p));
+		if (kerno != KSUCCESS) {
+			if (kerno == KDC_PR_UNKNOWN) {
+				use_kerberos = 0;
+				goto again;
+			}
+			printf("su: unable to su: %s\n",
+				krb_err_txt[kerno]);
+			syslog(LOG_NOTICE|LOG_AUTH,
+				"su: BAD Kerberos SU: %s on %s: %s",
+					username, ttyname(2), krb_err_txt[kerno]);
+			use_kerberos = 0;
+			goto again;
+		} else if (chown(krbtkfile, pwd->pw_uid, -1) < 0) {
+				perror("su: chown:");
+				(void)unlink(krbtkfile);
+				use_kerberos = 0;
+				goto again;
+		}
+
+		setpriority(PRIO_PROCESS, 0, -2);
+
+		if (gethostname(hostname, sizeof(hostname)) == -1) {
+			fprintf(stderr, "couldn't get local hostname\n");
+			dest_tkt();
+			use_kerberos = 0;
+			goto again;
+		}
+
+		(void) strncpy(savehost, krb_get_phost(hostname),
+			sizeof(savehost));
+		savehost[sizeof(savehost)-1] = 0;
+
+		kerno = krb_mk_req(&ticket, "rcmd", savehost, lrealm, 33);
+
+		if (kerno == KDC_PR_UNKNOWN) {
+			printf("Warning: tgt not verified\n");
+			syslog(LOG_NOTICE|LOG_AUTH,
+				"su: %s on %s, tgt not verified",
+				username, ttyname(2));
+		} else if (kerno != KSUCCESS) {
+			printf("Unable to use tgt: %s\n", krb_err_txt[kerno]);
+			syslog(LOG_NOTICE|LOG_AUTH,
+				"su: failed su: %s on %s: %s",
+				username, ttyname(2), krb_err_txt[kerno]);
+			dest_tkt();
+			use_kerberos = 0;
+			goto again;
+		} else {
+			if (!(hp = gethostbyname(hostname))) {
+				printf("can't get addr of %s\n", hostname);
+				dest_tkt();
+				use_kerberos = 0;
+				goto again;
+			}
+			(void) bcopy((char *)hp->h_addr, (char *) &faddr,
+				sizeof(faddr));
+
+			if ((kerno = krb_rd_req(&ticket, "rcmd", savehost,
+				faddr, &authdata, "")) != KSUCCESS) {
+				printf("unable to verify rcmd ticket: %s\n",
+					krb_err_txt[kerno]);
+				syslog(LOG_NOTICE|LOG_AUTH,
+					"su: failed su: %s on %s: %s",
+					    username, ttyname(2), krb_err_txt[kerno]);
+				dest_tkt();
+				use_kerberos = 0;
+				goto again;
+			}
+		}
+
+	} else
+#endif
 
 	/* if target requires a password, verify it */
 	if (ruid && *pwd->pw_passwd) {
@@ -211,3 +353,19 @@ chshell(sh)
 			return(1);
 	return(0);
 }
+
+#ifdef	KERBEROS
+int
+koktologin(name, realm, toname)
+	char	*name, *realm, *toname;
+{
+	AUTH_DAT	kdata_st;
+	AUTH_DAT	*kdata = &kdata_st;
+
+	bzero((caddr_t) kdata, sizeof(*kdata));
+	strcpy(kdata->pname, name);
+	strcpy(kdata->pinst, ((strcmp(toname, "root") == 0) ? "root" : ""));
+	strcpy(kdata->prealm, realm);
+	return(kuserok(kdata, toname));
+}
+#endif
