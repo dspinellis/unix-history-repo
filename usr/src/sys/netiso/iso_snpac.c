@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso_snpac.c,v $ */
-/*	@(#)iso_snpac.c	7.6 (Berkeley) %G% */
+/*	@(#)iso_snpac.c	7.7 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $";
@@ -36,6 +36,7 @@ static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $"
 
 #include "types.h"
 #include "param.h"
+#include "systm.h"
 #include "user.h"
 #include "mbuf.h"
 #include "domain.h"
@@ -47,6 +48,7 @@ static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $"
 #include "kernel.h"
 
 #include "../net/if.h"
+#include "../net/if_dl.h"
 #include "../net/route.h"
 
 #include "iso.h"
@@ -78,26 +80,15 @@ static struct sockaddr_iso
 	   ((r = b) && bcopy((caddr_t)r, (caddr_t)&a.siso_addr, 1 + (r)->isoa_len)))
 #define S(x) ((struct sockaddr *)&(x))
 
-#define	SNPAC_HASH(addr) \
-	(((u_long) iso_hashchar((caddr_t)addr, (int)addr->isoa_len)) % SNPAC_NB)
-
-#define	SNPAC_LOOK(sc,addr) { \
-	register n; \
-	sc = &iso_snpac[SNPAC_HASH(addr) * SNPAC_BSIZ]; \
-	for (n = 0 ; n < SNPAC_BSIZ ; n++,sc++) \
-		if ((sc->sc_flags & SNPA_VALID) && \
-			(iso_addrmatch1(&sc->sc_nsap, addr))) \
-			break; \
-	if (n >= SNPAC_BSIZ) \
-		sc = 0; \
-}
-
-struct snpa_cache	*snpac_new();
+static struct sockaddr_dl blank_dl = {sizeof(blank_dl), AF_LINK};
+static struct sockaddr_dl gte_dl;
+#define zap_linkaddr(a, b, c, i) \
+	(*a = blank_dl, bcopy(b, a->sdl_data, a->sdl_alen = c), a->sdl_index = i)
 
 /*
  *	We only keep track of a single IS at a time.
  */
-struct snpa_cache	*known_is;
+struct rtentry	*known_is;
 
 /*
  *	Addresses taken from NBS agreements, December 1987.
@@ -130,8 +121,114 @@ struct snpa_cache	all_is = {
 	SNPA_VALID,							/* sc_flags */
 	0	}								/* sc_ht */ 
 };
+char all_es_snpa[] = { 0x09, 0x00, 0x2b, 0x00, 0x00, 0x04 }; /* sc_snpa */
+char all_is_snpa[] = { 0x09, 0x00, 0x2b, 0x00, 0x00, 0x05 }; /* sc_snpa */
 
+union sockunion {
+	struct sockaddr_iso siso;
+	struct sockaddr_dl	sdl;
+	struct sockaddr		sa;
+};
 
+/*
+ * FUNCTION:		llc_rtrequest
+ *
+ * PURPOSE:			Manage routing table entries specific to LLC for ISO.
+ *
+ * NOTES:			This does a lot of obscure magic;
+ */
+llc_rtrequest(req, rt, sa)
+int req;
+register struct rtentry *rt;
+struct sockaddr *sa;
+{
+	register union sockunion *gate = (union sockunion *)rt->rt_gateway;
+	register struct llinfo_llc *lc = (struct llinfo_llc *)rt->rt_llinfo, *lc2;
+	struct rtentry *rt2;
+	struct ifnet *ifp = rt->rt_ifp;
+	int addrlen = ifp->if_addrlen;
+
+	if (lc == 0)
+		panic("llc_rtrequest 1");
+	switch (req) {
+	case RTM_RESOLVE:
+		if (gate->sdl.sdl_family == AF_LINK) {
+			/* We have just cloned a route to a host presumed to be on
+			   our local net */
+			gate->sdl.sdl_alen = 0;
+		}
+		/* Fall Through */
+	case RTM_ADD:
+		lc->lc_rt = rt;
+		if (rt->rt_flags & RTF_CLONING) {
+			/*
+			 * Case 1: This route may come from a route to iface with mask
+			 * or from a default IS.
+			 */
+			rt->rt_gateway = ifp->if_addrlist->ifa_addr;
+		} else if ((rt->rt_flags & RTF_GATEWAY == 0) &&
+				   gate->sdl.sdl_family == AF_LINK) {
+			/*
+			 * Case 2:  This route may come from ESIS or a manual route
+			 * add with a LL address.
+			 */
+			insque(lc, &llinfo_llc);
+			if (gate->sdl.sdl_alen == sizeof(struct esis_req) + addrlen) {
+				gate->sdl.sdl_alen -= sizeof(struct esis_req);
+				bcopy(addrlen + LLADDR(&gate->sdl),
+					  (caddr_t)&lc->lc_er, sizeof(lc->lc_er));
+			} else if (gate->sdl.sdl_alen == addrlen)
+				lc->lc_flags = (SNPA_ES | SNPA_VALID | SNPA_PERM);
+		} else {
+			/*
+			 * Case 3:  Told to add route via a gateway;
+			 * try to provoke LL route to exist for gateway by cloning.
+			 */
+			if (gate->siso.siso_family == AF_ISO &&
+				(rt->rt_flags & RTF_GATEWAY) &&
+				(rt2 = rtalloc1(&gate->sa, 1)) &&
+					(lc2 = (struct llinfo_llc *)rt2->rt_llinfo)) {
+				lc->lc_rtgate = rt2;
+				rt2->rt_use++;
+				if (lc2->lc_rtgate == 0) {
+					lc->lc_prev = lc->lc_next = lc;
+					lc2->lc_rtgate = rt;
+					rt->rt_use++;
+				} else {
+					if (lc2->lc_rtgate->rt_llinfo == 0)
+						panic("llc_rtrequest 2");
+					insque(lc, lc2->lc_rtgate->rt_llinfo);
+				}
+			}
+		}
+		break;
+	case RTM_DELETE:
+		if (rt->rt_flags & RTF_GATEWAY) {
+			if (rt2 = lc->lc_rtgate) {
+				if ((lc2 = (struct llinfo_llc *)rt2->rt_llinfo) &&
+				    (lc2->lc_rtgate == rt)) {
+						rt->rt_use--;
+						lc2->lc_rtgate = (lc->lc_next != lc->lc_prev) ?
+						   lc->lc_next->lc_rt : 0;
+					}
+					RTFREE(rt2);
+			}
+		} else {
+			if ((rt2 = lc->lc_rtgate) &&
+			    (lc2 == (struct llinfo_llc *)rt2->rt_llinfo)) {
+					struct llinfo_llc *head = lc2;
+					do {
+						rt->rt_use--;
+						lc2->lc_rtgate = 0;
+						lc2 = lc2->lc_next;
+					} while (lc2 != head);
+			}
+		}
+		if (lc->lc_next)
+			remque(lc);
+		break;
+	}
+}
 /*
  * FUNCTION:		iso_snparesolve
  *
@@ -142,12 +239,11 @@ struct snpa_cache	all_is = {
  *
  * SIDE EFFECTS:	
  *
- * NOTES:			If an entry is found that matches the address, that 
- *					snpa is returned. If no entry is found, but an IS is
- *					known, then the address of the IS is returned. If
- *					neither an address is found that matches or an IS is
- *					known, then the multi-cast address for "all ES" for
- *					this interface is returned.
+ * NOTES:			Now that we have folded the snpa cache into the routing
+ *					table, we know there is no snpa address known for this
+ *					destination.  If we know of a default IS, then the address
+ *					of the IS is returned.  If no IS is known, then return the
+ *					multi-cast address for "all ES" for this interface.
  *
  *					NB: the last case described above constitutes the
  *					query configuration function 9542, sec 6.5
@@ -155,230 +251,58 @@ struct snpa_cache	all_is = {
  *					being invoked if the system is an IS.
  */
 iso_snparesolve(ifp, dest, snpa, snpa_len)
-struct ifnet 		*ifp;	/* outgoing interface */
-struct sockaddr_iso *dest;	/* destination */
-char				*snpa;	/* RESULT: snpa to be used */
-int					*snpa_len;	/* RESULT: length of snpa */
+struct	ifnet *ifp;			/* outgoing interface */
+struct	sockaddr_iso *dest;	/* destination */
+caddr_t	snpa;				/* RESULT: snpa to be used */
+int		*snpa_len;			/* RESULT: length of snpa */
 {
-	extern struct ifnet 	loif;		/* loopback interface */
-	struct snpa_cache		*sc;		/* ptr to snpa table entry */
-	struct iso_addr			*destiso;	/* destination iso addr */
-
- 	destiso = &dest->siso_addr;
+	struct	llinfo_llc *sc;	/* ptr to snpa table entry */
+	caddr_t	found_snpa;
+	int 	addrlen;
 
 	/*
 	 *	This hack allows us to send esis packets that have the destination snpa
 	 *	addresss embedded in the destination nsap address 
 	 */
-	if (destiso->isoa_genaddr[0] == AFI_SNA) {
+	if (dest->siso_data[0] == AFI_SNA) {
 		/*
 		 *	This is a subnetwork address. Return it immediately
 		 */
 		IFDEBUG(D_SNPA)
 			printf("iso_snparesolve: return SN address\n");
 		ENDDEBUG
-
-		*snpa_len = destiso->isoa_len - 1;	/* subtract size of AFI */
-		bcopy((caddr_t) destiso->isoa_genaddr + 1, (caddr_t)snpa,
-			  (unsigned)*snpa_len);
-		return (0);
-	}
-
-	IFDEBUG(D_SNPA)
-		printf("iso_snparesolve: resolving %s\n", clnp_iso_addrp(destiso));
-	ENDDEBUG
-
+		addrlen = dest->siso_nlen - 1;	/* subtract size of AFI */
+		found_snpa = (caddr_t) dest->siso_data + 1;
 	/* 
-	 *	packet is not for us, check cache for an entry 
+	 * If we are an IS, we can't do much with the packet;
+	 *	Check if we know about an IS.
 	 */
-	SNPAC_LOOK(sc, destiso);
-	if (sc == 0) {			/* not found */
-		/* If we are an IS, we can't do much with the packet */
-		if (iso_systype == SNPA_IS)
-			goto bad;
-
-		/*
-		 *	Check if we know about an IS
+	} else if (iso_systype != SNPA_IS && known_is != 0 &&
+				(sc = (struct llinfo_llc *)known_is->rt_llinfo) &&
+				 (sc->lc_flags & SNPA_VALID)) {
+		register struct sockaddr_dl *sdl =
+			(struct sockaddr_dl *)(known_is->rt_gateway);
+		found_snpa = LLADDR(sdl);
+		addrlen = sdl->sdl_alen;
+	} else if (ifp->if_flags & IFF_BROADCAST) {
+		/* 
+		 *	no IS, no match. Return "all es" multicast address for this
+		 *	interface, as per Query Configuration Function (9542 sec 6.5)
+		 *
+		 *	Note: there is a potential problem here. If the destination
+		 *	is on the subnet and it does not respond with a ESH, but
+		 *	does send back a TP CC, a connection could be established
+		 *	where we always transmit the CLNP packet to "all es"
 		 */
-		if ((known_is) && (known_is->sc_flags & SNPA_VALID)) {
-			sc = known_is;
-		} else if (ifp->if_flags & IFF_BROADCAST) {
-			/* 
-			 *	no IS, no match. Return "all es" multicast address for this
-			 *	interface, as per Query Configuration Function (9542 sec 6.5)
-			 *
-			 *	Note: there is a potential problem here. If the destination
-			 *	is on the subnet and it does not respond with a ESH, but
-			 *	does send back a TP CC, a connection could be established
-			 *	where we always transmit the CLNP packet to "all es"
-			 */
-			sc = &all_es;
-		} else {
-			goto bad;
-		}
-	}
-
-	bcopy((caddr_t)sc->sc_snpa, (caddr_t)snpa, sc->sc_len);
-	*snpa_len = sc->sc_len;
+		addrlen = ifp->if_addrlen;
+		found_snpa = (caddr_t)all_es_snpa;
+	} else
+		return (ENETUNREACH);
+	bcopy(found_snpa, snpa, *snpa_len = addrlen);
 	return (0);
-
-bad:
-	return(ENETUNREACH);
 }
 
 
-/*
- * FUNCTION:		snpac_look
- *
- * PURPOSE:			Look up an entry in the snpa cache
- *
- * RETURNS:			Pointer to snpa_cache structure, or null
- *
- * SIDE EFFECTS:	
- *
- * NOTES:			This is simply SNPAC_LOOK as a procedure.
- */
-struct snpa_cache *
-snpac_look(isoa)
-struct iso_addr *isoa;	/* destination nsap */
-{
-	struct snpa_cache	*sc;
-	int 				s = splimp();
-
-	SNPAC_LOOK(sc, isoa);
-
-	splx(s);
-	return(sc);
-}
-
-/*
- * FUNCTION:		iso_8208snparesolve
- *
- * PURPOSE:			Find the X.121 address that corresponds to an NSAP addr
- *
- * RETURNS:			0 or unix errno
- *
- * SIDE EFFECTS:	
- *
- * NOTES:			This ought to invoke the 8208 ES-IS function
- */
-iso_8208snparesolve(dest, snpa, snpa_len)
-struct sockaddr_iso *dest;	/* destination */
-char				*snpa;	/* RESULT: snpa to be used */
-int					*snpa_len;	/* RESULT: length of snpa */
-{
-	struct snpa_cache		*sc;		/* ptr to snpa table entry */
-	struct iso_addr			*destiso;	/* destination iso addr */
-	int						s;
-	int						err = 0;
-
- 	destiso = &dest->siso_addr;
-
-	s = splimp();
-	SNPAC_LOOK(sc, destiso);
-	if (sc) {
-		bcopy((caddr_t)sc->sc_snpa, (caddr_t)snpa, sc->sc_len);
-		*snpa_len = sc->sc_len;
-	} else {
-		err = ENETUNREACH;
-	}
-	splx(s);
-	return (err);
-}
-
-/*
- * FUNCTION:		iso_8208snpaadd
- *
- * PURPOSE:			Add an entry to the snpa cache
- *
- * RETURNS:			
- *
- * SIDE EFFECTS:	
- *
- * NOTES:			used by cons
- */
-iso_8208snpaadd(ifp, nsap, snpa, snpalen, ht)
-struct ifnet		*ifp;		/* interface info is related to */
-struct iso_addr		*nsap;		/* nsap to add */
-caddr_t				snpa;		/* translation */
-int					snpalen;	/* length in bytes */
-short				ht;			/* holding time (in seconds) */
-{
-	snpac_add(ifp, nsap, snpa, snpalen, SNPA_ES, (u_short)ht);
-}
-
-/*
- * FUNCTION:		iso_8208snpadelete
- *
- * PURPOSE:			Delete an entry from the snpa cache
- *
- * RETURNS:			nothing
- *
- * SIDE EFFECTS:	
- *
- * NOTES:			used by CONS
- */
-iso_8208snpadelete(nsap)
-struct iso_addr	*nsap;
-{
-	struct snpa_cache	*sc = snpac_look(nsap);
-
-	if (sc != NULL)
-		snpac_free(sc);
-}
-
-/*
- * FUNCTION:		snpac_new
- *
- * PURPOSE:			create a new entry in the iso address to ethernet
- *					address table
- *
- * RETURNS:			pointer to newest entry
- *
- * SIDE EFFECTS:	times out old entries if no new entries are found
- *
- * NOTES:			If the bucket is full, then timeout the oldest entry
- *					(ie. the one with the youngest holding time)
- */
-struct snpa_cache *
-snpac_new(isoa)
-struct iso_addr *isoa;		/* iso address to enter into table */
-{
-	register struct snpa_cache	*sc;
-	register int 				n;
-	int							smallest_ht = 1000000;
-	struct snpa_cache			*maybe;
-
-	sc = &iso_snpac[SNPAC_HASH(isoa) * SNPAC_BSIZ];
-	for (n = 0 ; n < SNPAC_BSIZ ; n++,sc++) {
-
-		IFDEBUG (D_IOCTL)
-			printf("snpac_new: sc x%x ", sc);
-
-			if (sc->sc_flags & SNPA_VALID) {
-				int i;
-
-				printf("(valid) %s ", clnp_iso_addrp(&sc->sc_nsap));
-				for (i=0; i<sc->sc_len; i++)
-					printf("%x%c", sc->sc_snpa[i], i < (sc->sc_len-1) ? ':' 
-						: '\n');
-			} else {
-				printf("invalid\n");
-			}
-		ENDDEBUG
-
-		if (sc->sc_flags & SNPA_VALID) {
-			if (sc->sc_ht < smallest_ht) {
-				smallest_ht = sc->sc_ht;
-				maybe = sc;
-			}
-		} else {
-			return sc; /* found unused slot */
-		}
-	}
-	snpac_free(maybe);
-	return maybe;
-}
 /*
  * FUNCTION:		snpac_free
  *
@@ -391,27 +315,21 @@ struct iso_addr *isoa;		/* iso address to enter into table */
  * NOTES:			If there is a route entry associated with cache
  *					entry, then delete that as well
  */
-snpac_free(sc)
-register struct snpa_cache *sc;		/* entry to free */
+snpac_free(lc)
+register struct llinfo_llc *lc;		/* entry to free */
 {
-	register struct rtentry *rt;
+	register struct rtentry *rt = lc->lc_rt;
 	register struct iso_addr *r;
 
-	if (known_is == sc) {
-		known_is = NULL;
-	}
-	if (sc->sc_rt) {
-		zap_isoaddr(dst, (&(sc->sc_da)));
-		rt = rtalloc1((struct sockaddr *)&dst, 0);
-		if ((sc->sc_rt == rt) && (rt->rt_flags & RTF_UP)
-			&& (rt->rt_flags & (RTF_DYNAMIC | RTF_MODIFIED))) {
+	if (known_is == rt)
+		known_is = 0;
+	if (rt && (rt->rt_flags & RTF_UP) &&
+		(rt->rt_flags & (RTF_DYNAMIC | RTF_MODIFIED))) {
 			RTFREE(rt);
 			rtrequest(RTM_DELETE, rt_key(rt), rt->rt_gateway, rt_mask(rt),
 						rt->rt_flags, (struct rtentry **)0);
-		}
 		RTFREE(rt);
 	}
-	bzero((caddr_t)sc, sizeof(struct snpa_cache));
 }
 
 /*
@@ -425,139 +343,47 @@ register struct snpa_cache *sc;		/* entry to free */
  *
  * NOTES:			If entry already exists, then update holding time.
  */
-snpac_add(ifp, nsap, snpa, snpalen, type, ht)
+snpac_add(ifp, nsap, snpa, type, ht)
 struct ifnet		*ifp;		/* interface info is related to */
 struct iso_addr		*nsap;		/* nsap to add */
 caddr_t				snpa;		/* translation */
-int					snpalen;	/* translation length */
 char				type;		/* SNPA_IS or SNPA_ES */
 u_short				ht;			/* holding time (in seconds) */
 {
-	struct snpa_cache	*sc;
+	register struct	llinfo_llc *lc;
+	struct	rtentry *rt;
+	register struct	iso_addr *r; /* for zap_isoaddr macro */
+	int		snpalen = min(ifp->if_addrlen, MAX_SNPALEN);
+	int		new_entry = 0, index = ifp->if_index;
 
-	SNPAC_LOOK(sc, nsap);
-	if (sc == NULL) {
-		sc = snpac_new(nsap);
-		sc->sc_nsap = *nsap;
+	zap_isoaddr(dst, nsap);
+	rt = rtalloc1(S(dst), 0);
+	if (rt == 0) {
+		new_entry = 1;
+		zap_linkaddr((&gte_dl), snpa, snpalen, index);
+		if (rtrequest(RTM_ADD, S(dst), S(gte_dl), (struct sockaddr *)0,
+						RTF_UP | RTF_HOST, &rt) || rt == 0)
+			return (0);
+	} else {
+		register struct sockaddr_dl *sdl = (struct sockaddr_dl *)rt->rt_gateway;
+		if (sdl->sdl_family != AF_LINK || sdl->sdl_alen == 0) {
+			int old_sdl_len = sdl->sdl_len;
+			if (old_sdl_len < sizeof(*sdl))
+				return (0);
+			zap_linkaddr(sdl, snpa, snpalen, index);
+			sdl->sdl_len = old_sdl_len;
+			new_entry = 1;
+		}
 	}
-
-	sc->sc_ht = ht;
-
-	sc->sc_len = min(snpalen, MAX_SNPALEN);
-	bcopy(snpa, (caddr_t)sc->sc_snpa, sc->sc_len);
-	sc->sc_flags = SNPA_VALID | type;
-	sc->sc_ifp = ifp;
-
+	lc = (struct llinfo_llc *)rt->rt_llinfo;
+	lc->lc_ht = ht;
+	lc->lc_flags = SNPA_VALID | type;
 	if (type & SNPA_IS)
-		snpac_logdefis(sc);
+		snpac_logdefis(rt);
 }
 
 /*
  * FUNCTION:		snpac_ioctl
- *
- * PURPOSE:			handle ioctls to change the iso address map
- *
- * RETURNS:			unix error code
- *
- * SIDE EFFECTS:	changes the snpa_cache table declared above.
- *
- * NOTES:			
- */
-snpac_ioctl(cmd, data)
-int		cmd;		/* ioctl to process */
-caddr_t	data;	/* data for the cmd */
-{
-	register struct snpa_req	*rq = (struct snpa_req *)data;
-	register struct snpa_cache	*sc;
-	register struct iso_addr	*isoa;
-	int							s;
-	char						*type;
-
-	switch(cmd) {
-		case SIOCSISOMAP: type = "set"; break;
-		case SIOCDISOMAP: type = "delete"; break;
-		case SIOCGISOMAP: type = "get"; break;
-		default: return(snpac_systype(cmd, data));
-	}
-
-	/* sanity check */
-	if (rq->sr_len > MAX_SNPALEN)
-		return(EINVAL);
-
-	IFDEBUG (D_IOCTL)
-		int i;
-
-		printf("snpac_ioctl: %s %s to ", type, clnp_iso_addrp(isoa));
-		for (i=0; i<rq->sr_len; i++)
-			printf("%x%c", rq->sr_snpa[i], i < (rq->sr_len-1) ? ':' : '\n');
-	ENDDEBUG
-
-	/* look up this address in table */
-	isoa = &rq->sr_isoa;
-
-	SNPAC_LOOK(sc, isoa);
-	if (sc == NULL) {	 /* not found */
-		if (cmd != SIOCSISOMAP)
-			return(ENXIO);
-	}
-
-	switch(cmd) {
-		case SIOCSISOMAP:	/* set entry */
-			snpac_add((struct ifnet *)NULL, isoa, (caddr_t)rq->sr_snpa,
-					  (int)rq->sr_len,
-					  (char)(rq->sr_flags & (SNPA_ES|SNPA_IS|SNPA_PERM)),
-					  rq->sr_ht);
-			break;
-		
-		case SIOCDISOMAP:	/* delete entry */
-			snpac_free(sc);
-			break;
-		
-		case SIOCGISOMAP:	/* get entry */
-			bcopy((caddr_t)&sc->sc_sr, (caddr_t)rq, sizeof(struct snpa_req));
-			break;
-	}
-	return(0);
-}
-
-/*
- * FUNCTION:		iso_tryloopback
- *
- * PURPOSE:			Attempt to use the software loopback interface for pkt
- *
- * RETURNS:			0		if packet was sent successfully
- *					errno	if there was a problem sending the packet
- *							Ie. the return value of looutput
- *					-1 		if software loopback is not appropriate
- *
- * SIDE EFFECTS:	
- *
- * NOTES:			
- */
-iso_tryloopback(m, dest)
-struct mbuf			*m;		/* pkt */
-struct sockaddr_iso *dest;	/* destination */
-{
-	struct iso_addr			*destiso;	/* destination iso addr */
-
- 	destiso = &dest->siso_addr;
-
-	if (clnp_ours(destiso)) {
-		IFDEBUG(D_SNPA)
-			printf("iso_tryloopback: local destination\n"); 
-		ENDDEBUG
-		if (loif.if_flags & IFF_UP) {
-			IFDEBUG(D_SNPA)
-				printf("iso_tryloopback: calling looutput\n"); 
-			ENDDEBUG
-			return (looutput(&loif, m, (struct sockaddr *)dest));
-		}
-	}
-	return (-1);
-}
-
-/*
- * FUNCTION:		snpac_systype
  *
  * PURPOSE:			Set/Get the system type and esis parameters
  *
@@ -567,7 +393,7 @@ struct sockaddr_iso *dest;	/* destination */
  *
  * NOTES:			
  */
-snpac_systype (cmd, data)
+snpac_ioctl (cmd, data)
 int		cmd;	/* ioctl to process */
 caddr_t	data;	/* data for the cmd */
 {
@@ -576,10 +402,10 @@ caddr_t	data;	/* data for the cmd */
 
 	IFDEBUG (D_IOCTL)
 		if (cmd == SIOCSSTYPE)
-			printf("snpac_systype: cmd set, type x%x, ht %d, ct %d\n",
+			printf("snpac_ioctl: cmd set, type x%x, ht %d, ct %d\n",
 				rq->sr_type, rq->sr_holdt, rq->sr_configt);
 		else
-			printf("snpac_systype: cmd get\n");
+			printf("snpac_ioctl: cmd get\n");
 	ENDDEBUG
 
 	if (cmd == SIOCSSTYPE) {
@@ -601,9 +427,9 @@ caddr_t	data;	/* data for the cmd */
 		rq->sr_holdt = esis_holding_time;
 		rq->sr_configt = esis_config_time;
 	} else {
-		return(EINVAL);
+		return (EINVAL);
 	}
-	return(0);
+	return (0);
 }
 
 /*
@@ -618,29 +444,26 @@ caddr_t	data;	/* data for the cmd */
  * NOTES:			
  */
 snpac_logdefis(sc)
-register struct snpa_cache	*sc;
+register struct rtentry *sc;
 {
 	register struct iso_addr *r;
+	register struct sockaddr_dl *sdl = (struct sockaddr_dl *)sc->rt_gateway;
 	register struct rtentry *rt = rtalloc1((struct sockaddr *)&zsi, 0);
+
+	zap_linkaddr((&gte_dl), LLADDR(sdl), sdl->sdl_alen, sdl->sdl_index);
 	if (known_is == 0)
 		known_is = sc;
 	if (known_is != sc) {
-		if (known_is->sc_rt) {
-			rtfree(known_is->sc_rt);
-			known_is->sc_rt = 0;
-		}
+		rtfree(known_is);
 		known_is = sc;
 	}
 	if (rt == 0) {
-		zap_isoaddr(dst, &(sc->sc_nsap));
-		rtrequest(RTM_ADD, S(zsi), S(dst), S(zmk),
-						RTF_DYNAMIC|RTF_GATEWAY, &sc->sc_rt);
+		rtrequest(RTM_ADD, S(zsi), S(gte_dl), S(zmk),
+						RTF_DYNAMIC|RTF_GATEWAY|RTF_CLONING, 0);
 		return;
 	}
 	if (rt->rt_flags & (RTF_DYNAMIC | RTF_MODIFIED)) {
-		((struct sockaddr_iso *)rt->rt_gateway)->siso_addr = sc->sc_nsap;
-		known_is = sc;
-		sc->sc_rt = rt;
+		*((struct sockaddr_dl *)rt->rt_gateway) = gte_dl;
 	}
 }
 
@@ -667,19 +490,17 @@ register struct snpa_cache	*sc;
  */
 snpac_age()
 {
-	register struct snpa_cache	*sc;
-	register int 				i;
+	register struct llinfo_llc	*lc;
 
 	timeout(snpac_age, (caddr_t)0, SNPAC_AGE * hz);
 
-	sc = &iso_snpac[0];
-	for (i=0; i<SNPAC_SIZE; i++, sc++) {
-		if (((sc->sc_flags & SNPA_PERM) == 0) && (sc->sc_flags & SNPA_VALID)) {
-			sc->sc_ht -= SNPAC_AGE;
-			if (sc->sc_ht > 0)
+	for (lc = llinfo_llc.lc_next; lc != & llinfo_llc; lc = lc->lc_next) {
+		if (((lc->lc_flags & SNPA_PERM) == 0) && (lc->lc_flags & SNPA_VALID)) {
+			lc->lc_ht -= SNPAC_AGE;
+			if (lc->lc_ht > 0)
 				continue;
 			else
-				snpac_free(sc);
+				snpac_free(lc);
 		}
 	}
 }
@@ -699,13 +520,13 @@ snpac_age()
  *					real multicast addresses can be configured
  */
 snpac_ownmulti(snpa, len)
-char	*snpa;
-int		len;
+caddr_t	snpa;
+u_int	len;
 {
 	return (((iso_systype & SNPA_ES) &&
-			 (!bcmp((caddr_t)snpa, (caddr_t)all_es.sc_snpa, (unsigned)len))) ||
+			 (!bcmp(snpa, (caddr_t)all_es_snpa, len))) ||
 			((iso_systype & SNPA_IS) &&
-			 (!bcmp((caddr_t)snpa, (caddr_t)all_is.sc_snpa, (unsigned)len))));
+			 (!bcmp(snpa, (caddr_t)all_is_snpa, len))));
 }
 
 /*
@@ -722,14 +543,11 @@ int		len;
 snpac_flushifp(ifp)
 struct ifnet	*ifp;
 {
-	register struct snpa_cache	*sc;
-	register int 				i;
+	register struct llinfo_llc	*lc;
 
-	sc = &iso_snpac[0];
-	for (i=0; i<SNPAC_SIZE; i++, sc++) {
-		if ((sc->sc_ifp == ifp) && (sc->sc_flags & SNPA_VALID)) {
-			snpac_free(sc);
-		}
+	for (lc = llinfo_llc.lc_next; lc != & llinfo_llc; lc = lc->lc_next) {
+		if (lc->lc_rt->rt_ifp == ifp && (lc->lc_flags & SNPA_VALID))
+			snpac_free(lc);
 	}
 }
 
@@ -799,20 +617,15 @@ snpac_addrt(ifp, host, gateway, netmask)
 struct ifnet *ifp;
 struct iso_addr	*host, *gateway, *netmask;
 {
-	register struct snpa_cache	*sc;
 	register struct iso_addr *r;
 
-	SNPAC_LOOK(sc, gateway);
-	if (sc != NULL) {
-		bcopy((caddr_t)host, (caddr_t)&sc->sc_da, sizeof(struct iso_addr));
-		zap_isoaddr(dst, host);
-		zap_isoaddr(gte, gateway);
-		zap_isoaddr(msk, netmask);
-		if (netmask) {
-			rtredirect(S(dst), S(gte), S(msk), RTF_DONE, S(gte), &sc->sc_rt);
-		} else
-			rtredirect(S(dst), S(gte), (struct sockaddr *)0,
-									RTF_DONE | RTF_HOST, S(gte), &sc->sc_rt);
-	}
+	zap_isoaddr(dst, host);
+	zap_isoaddr(gte, gateway);
+	zap_isoaddr(msk, netmask);
+	if (netmask) {
+		rtredirect(S(dst), S(gte), S(msk), RTF_DONE, S(gte), 0);
+	} else
+		rtredirect(S(dst), S(gte), (struct sockaddr *)0,
+							RTF_DONE | RTF_HOST, S(gte), 0);
 }
 #endif	ISO

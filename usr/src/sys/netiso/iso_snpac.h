@@ -24,7 +24,7 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
-/*	@(#)iso_snpac.h	7.4 (Berkeley) %G% */
+/*	@(#)iso_snpac.h	7.5 (Berkeley) %G% */
 #define	MAX_SNPALEN		8			/* curiously equal to sizeof x.121 (
 										plus 1 for nibble len) addr */
 struct snpa_req {
@@ -64,6 +64,25 @@ struct systype_req {
 	char	sr_type;		/* SNPA_ES or SNPA_IS */
 };
 
+struct esis_req {
+	short	er_ht;			/* holding time */
+	u_char	er_flags;		/* type and validity */
+};
+/*
+ * Space for this structure gets added onto the end of a route
+ * going to an ethernet or other 802.[45x] device.
+ */
+
+struct llinfo_llc {
+	struct	llinfo_llc *lc_next;	/* keep all llc routes linked */
+	struct	llinfo_llc *lc_prev;	/* keep all llc routes linked */
+	struct	rtentry *lc_rt;			/* backpointer to route */
+	struct	rtentry *lc_rtgate;		/* route to (RTF_GATEWAY ? ll : iface) */ 
+	struct	esis_req lc_er;			/* holding time, etc */
+#define lc_ht		lc_er.er_ht
+#define lc_flags	lc_er.er_flags
+};
+
 /* ISO arp IOCTL data structures */
 
 #define	SIOCSISOMAP	_IOW('a',30, struct snpa_req)	/* set arp entry */
@@ -74,4 +93,5 @@ struct systype_req {
 
 #ifdef	KERNEL
 struct snpa_cache *snpac_look(/* struct iso_addr *isoa */);
+struct llinfo_llc llinfo_llc;	/* head for linked lists */
 #endif	KERNEL
