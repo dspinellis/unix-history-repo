@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)termios.h	7.22 (Berkeley) %G%
+ *	@(#)termios.h	7.23 (Berkeley) %G%
  */
 
 /*
@@ -51,8 +51,8 @@
 #ifndef _POSIX_SOURCE
 #define VSTATUS		18	/* ICANON */
 /*			19	   spare 2 */
-#define	NCCS		20
 #endif
+#define	NCCS		20
 
 #define _POSIX_VDISABLE	((unsigned char)'\377')
 
