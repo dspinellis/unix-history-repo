@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)ERROR.c 1.6 %G%";
+static char sccsid[] = "@(#)ERROR.c 1.7 %G%";
 
 #include	<stdio.h>
 #include	<signal.h>
@@ -14,23 +14,24 @@ static char sccsid[] = "@(#)ERROR.c 1.6 %G%";
  * from errdata by the makefile using the editor script make.ed1.
  */
 long
-ERROR(errnum, errdata)
+ERROR(msg, d1, d2, d3, d4)
 
-	int	errnum;
+	char	*msg;
+	int	d1, d2, d3, d4;
+{
 	union cvt {
+		int	intdat;
 		long	longdat;
 		char	*strngdat;
 		double	dbldat;
 	} errdata;
-{
+
+	errdata.dbldat = 0.0;
+	errdata.intdat = d1;
 	PFLUSH();
-	if (_entry[errnum].entryaddr != 0) {
-		(*_entry[errnum].entryaddr)(errdata);
-		return;
-	}
 	fputc('\n',stderr);
 	SETRACE();
-	switch (errnum) {
+	switch ((int)msg) {
 	case ECHR:
 		fprintf(stderr, "Argument to chr of %D is out of range\n"
 			,errdata.longdat);
@@ -126,18 +127,6 @@ ERROR(errnum, errdata)
 	case EOUTOFMEM:
 		fputs("Ran out of memory\n",stderr);
 		return(0);
-	case ECTLWR:
-		fprintf(stderr, "Range lower bound of %D out of set bounds\n",
-			errdata.longdat);
-		return(0);
-	case ECTUPR:
-		fprintf(stderr, "Range upper bound of %D out of set bounds\n",
-			errdata.longdat);
-		return(0);
-	case ECTSNG:
-		fprintf(stderr, "Value of %D out of set bounds\n",
-			errdata.longdat);
-		return(0);
 	case EARGV:
 		fprintf(stderr,"Argument to argv of %D is out of range\n"
 			,errdata.longdat);
@@ -166,7 +155,7 @@ ERROR(errnum, errdata)
 			errdata.longdat);
 		return(errdata.longdat);
 	default:
-		fputs("Panic: unknown error\n",stderr);
+		fprintf(stderr, msg, d1, d2, d3, d4);
 		return(0);
 	}
 }

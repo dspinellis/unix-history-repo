@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)CTTOT.c 1.2 %G%";
+static char sccsid[] = "@(#)CTTOT.c 1.3 %G%";
 
 #include "whoami.h"
 #include "h00vars.h"
@@ -65,12 +65,14 @@ CTTOT(result0, lwrbnd, uprbnd, paircnt, singcnt, data)
 	for (cnt = 0; cnt < paircnt; cnt++) {
 		upper = *dataptr++ - lowerbnd;
 		if (upper < 0 || upper > upperbnd) {
-			ERROR(ECTUPR, *--dataptr);
+			ERROR("Range upper bound of %D out of set bounds\n",
+				*--dataptr);
 			return;
 		}
 		lower = *dataptr++ - lowerbnd;
 		if (lower < 0 || lower > upperbnd) {
-			ERROR(ECTLWR, *--dataptr);
+			ERROR("Range lower bound of %D out of set bounds\n",
+				*--dataptr);
 			return;
 		}
 		if (lower > upper) {
@@ -96,7 +98,7 @@ CTTOT(result0, lwrbnd, uprbnd, paircnt, singcnt, data)
 	for (cnt = 0, cp = (char *)result; cnt < singcnt; cnt++) {
 		lower = *dataptr++ - lowerbnd;
 		if (lower < 0 || lower > upperbnd) {
-			ERROR(ECTSNG, *--dataptr);
+			ERROR("Value of %D out of set bounds\n", *--dataptr);
 			return;
 		}
 		cp[ lower >> LG2BITSBYTE ] |= (1 << (lower & MSKBITSBYTE));
