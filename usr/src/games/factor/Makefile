@@ -14,22 +14,25 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	factor.c
+SRCS=	factor.c primes.c
 OBJS=
 MAN=	factor.0
 
-all: factor
+all: factor primes
 
 factor: ${LIBC}
 	${CC} -o $@ ${CFLAGS} $@.c
 
+primes: ${LIBC}
+	${CC} -o $@ ${CFLAGS} $@.c -lm
+
 clean:
-	rm -f ${OBJS} core factor
+	rm -f ${OBJS} core factor primes
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
@@ -38,7 +41,7 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 factor ${DESTDIR}/usr/games
+	install -s -o bin -g bin -m 755 factor primes ${DESTDIR}/usr/games
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat6
 
 lint: ${SRCS}
