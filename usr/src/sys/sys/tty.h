@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.h	7.11 (Berkeley) %G%
+ *	@(#)tty.h	7.12 (Berkeley) %G%
  */
 
 #include <sys/termios.h>
@@ -34,7 +34,7 @@ struct tty {
 #ifdef sun4c
 	void	(*t_stop)();		/* device */
 #endif
-	void	(*t_param)();		/* device */
+	int	(*t_param)();		/* device */
 	struct	proc *t_rsel;		/* tty */
 	struct	proc *t_wsel;
 	caddr_t	T_LINEP; 		/* XXX */
