@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
- *	$Id: sio.c,v 1.48 1994/05/30 15:44:10 ache Exp $
+ *	$Id: sio.c,v 1.49 1994/05/30 22:53:41 ache Exp $
  */
 
 #include "sio.h"
@@ -328,6 +328,10 @@ sioprobe(dev)
 	Port_t		iobase;
 	u_char		mcr_image;
 	int		result;
+#ifdef COM_MULTIPORT
+	struct	isa_device	*mdev;
+#endif /* COM_MULTIPORT */
+	struct	isa_device	*tdev;
 
 	if (!already_init) {
 		/*
@@ -353,14 +357,14 @@ sioprobe(dev)
 	mcr_image = MCR_IENABLE;
 #ifdef COM_MULTIPORT
 	if (COM_ISMULTIPORT(dev) && !COM_NOMASTER(dev)) {
-		struct isa_device *mdev;
-
 		mdev = find_isadev(isa_devtab_tty, &siodriver,
 				   COM_MPMASTER(dev));
 		if (mdev != NULL) {
 			outb(mdev->id_iobase + com_scr, 0x80);
 			mcr_image = 0;
 		}
+		else
+			return (0);
 	}
 #endif /* COM_MULTIPORT */
 
@@ -437,6 +441,11 @@ sioprobe(dev)
 	 */
 	outb(iobase + com_mcr, mcr_image);
 
+	tdev = dev;
+#ifdef COM_MULTIPORT
+	if (COM_ISMULTIPORT(dev) && !COM_NOMASTER(dev))
+		tdev = mdev;
+#endif /*COM_MULTIPORT*/
 	/*
 	 * Check that
 	 *	o the CFCR, IER and MCR in UART hold the values written to them
@@ -448,9 +457,9 @@ sioprobe(dev)
 	if (   inb(iobase + com_cfcr) != CFCR_8BITS && FAIL(0)
 	    || inb(iobase + com_ier) != IER_ETXRDY && FAIL(1)
 	    || inb(iobase + com_mcr) != mcr_image && FAIL(2)
-	    || !isa_irq_pending(dev) && FAIL(3)
+	    || !isa_irq_pending(tdev) && FAIL(3)
 	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_TXRDY && FAIL(4)
-	    || isa_irq_pending(dev) && FAIL(5)
+	    || isa_irq_pending(tdev) &&	FAIL(5)
 	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_NOPEND && FAIL(6))
 		result = 0;
 
@@ -466,7 +475,7 @@ sioprobe(dev)
 	outb(iobase + com_ier, 0);
 	outb(iobase + com_cfcr, CFCR_8BITS);	/* dummy to avoid bus echo */
 	if (   inb(iobase + com_ier) != 0 && FAIL(7)
-	    || isa_irq_pending(dev) && FAIL(8)
+	    || isa_irq_pending(tdev) &&	FAIL(8)
 	    || (inb(iobase + com_iir) & IIR_IMASK) != IIR_NOPEND && FAIL(9))
 		result = 0;
 	if (result == 0)
@@ -588,20 +597,12 @@ determined_type: ;
 
 #ifdef COM_MULTIPORT
 	if (COM_ISMULTIPORT(isdp)) {
-	    com->multiport = TRUE;
+		com->multiport = TRUE;
 		printf(" (multiport");
-	    if (!COM_NOMASTER(isdp)) {
-			struct isa_device *mdev;
-
-			mdev = find_isadev(isa_devtab_tty, &siodriver,
-					COM_MPMASTER(isdp));
-			if (mdev == NULL)
-				printf(" master not found");
-			else if (COM_MPMASTER(isdp) == unit)
-				printf(" master");
-		}
+		if (!COM_NOMASTER(isdp)	&& COM_MPMASTER(isdp) == unit)
+			printf(" master");
 		printf(")");
-	    }
+	 }
 #endif /* COM_MULTIPORT */
 	printf("\n");
 
