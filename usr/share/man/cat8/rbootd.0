@@ -1,0 +1,84 @@
+RBOOTD(8)                 BSD System Manager's Manual                RBOOTD(8)
+
+NNAAMMEE
+     rrbboooottdd - HP remote boot server
+
+SSYYNNOOPPSSIISS
+     rrbboooottdd [--aadd] [--ii _i_n_t_e_r_f_a_c_e] [config_file]
+
+DDEESSCCRRIIPPTTIIOONN
+     The rrbboooottdd utility services boot requests from Hewlett-Packard worksta-
+     tions over a local area network.  All boot files must reside in the boot
+     file directory; further, if a client supplies path information in its
+     boot request, it will be silently stripped away before processing.  By
+     default, rrbboooottdd only responds to requests from machines listed in its
+     configuration file.
+
+     The options are as follows:
+
+     --aa          Respond to boot requests from any machine.  The configuration
+                 file is ignored if this option is specified.
+
+     --dd          Run rrbboooottdd in debug mode.  Packets sent and received are dis-
+                 played to the terminal.
+
+     --ii _i_n_t_e_r_f_a_c_e
+                 Service boot requests on specified interface.  If unspeci-
+                 fied, rrbboooottdd searches the system interface list for the low-
+                 est numbered, configured ``up'' interface (excluding loop-
+                 back).  Ties are broken by choosing the earliest match.
+
+     Specifying _c_o_n_f_i_g___f_i_l_e on the command line causes rrbboooottdd to use a differ-
+     ent configuration file from the default.
+
+     The configuration file is a text file where each line describes a partic-
+     ular machine.  A line must start with a machine's Ethernet address fol-
+     lowed by an optional list of boot file names.  An ethernet address is
+     specified in hexadecimal with each of its six octets separated by a
+     colon.  The boot file names come from the boot file directory.  The eth-
+     ernet address and boot file(s) must be separated by white-space and/or
+     comma characters.  A pound sign causes the remainder of a line to be ig-
+     nored.
+
+     Here is a sample configuration file:
+
+     #
+     # ethernet addr     boot file(s)        comments
+     #
+     08:00:09:0:66:ad    SYSHPBSD            # snake (4.3BSD)
+     08:00:09:0:59:5b                        # vandy (anything)
+     8::9:1:C6:75        SYSHPBSD,SYSHPUX    # jaguar (either)
+
+     RRbboooottdd logs status and error messages via syslog(3).  A startup message
+     is always logged, and in the case of fatal errors (or deadly signals) a
+     message is logged announcing the server's termination.  In general, a
+     non-fatal error is handled by ignoring the event that caused it (e.g. an
+     invalid Ethernet address in the config file causes that line to be inval-
+     idated).
+
+     The following signals have the specified effect when sent to the server
+     process using the kill(1) command:
+
+             SIGHUP   Drop all active connections and reconfigure.
+
+
+
+             SIGUSR1  Turn on debugging, do nothing if already on.
+
+             SIGUSR2  Turn off debugging, do nothing if already off.
+
+FFIILLEESS
+     /dev/bpf#            packet-filter device
+     /etc/rbootd.conf     configuration file
+     /tmp/rbootd.dbg      debug output
+     /usr/mdec/rbootd     directory containing boot files
+     /var/run/rbootd.pid  process id
+
+SSEEEE AALLSSOO
+     kill(1),  socket(2),  signal(3),  syslog(3),  rmp(4)
+
+BBUUGGSS
+     If multiple servers are started on the same interface, each will receive
+     and respond to the same boot packets.
+
+4.4BSD                           June 4, 1993                                2
