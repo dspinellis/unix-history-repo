@@ -1,6 +1,6 @@
 Hello, Emacs, this is an -*- Indented-Text -*- file!
 
-$Id: Changes,v 1.10 1994/02/03 02:50:37 davidg Exp $
+$Id: Changes,v 1.11 1994/02/05 19:50:11 wollman Exp $
 
 This file is intended to keep track of important kernel and user
 changes in FreeBSD between releases.  Entries are in reverse
@@ -59,6 +59,10 @@ Since 1.0.2:
 
 - Added SysV IPC, messaging, and semaphore code by Danny Boulet.
   (hsu/davidg)
+
+- Because of the VM system changes, Paul Kranenburg's process
+  filesystem is now MANDATORY in order for `ps' and friends to be able
+  to dig up process information which has been paged out.  (davidg)
 
 - Substantial VM system improvements: (dyson/davidg)
 	o FreeBSD once again works on 4-MB machines.
@@ -130,8 +134,21 @@ Since 1.0.2:
   which recognize and load various file formats.  Currently only
   a.out and interpreted formats are recognized.  (davidg)
 
+- Provide the address of the faulting reference to signal handlers, to
+  make life easier for smart garbage-collection algorithms.  (hsu)
+
+- New, improved process tracing code from Sean Eric Fagan.  (davidg)
+
+- Re-organize locore into several different source files according to
+  function.  (davidg)
+
+- On panic, don't reboot right away but give the user some time to
+  abort the reboot or at least write down the panic message.  (davidg)
+
 - Separate all IP-related variables that users might want to modify into
   netinet/in_var.c.  (wollman)
+
+- Make it possible to mmap(2) /dev/mem.  (julian)
 
 Between 1.0.2 and 1.0:
 
