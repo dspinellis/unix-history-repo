@@ -1,0 +1,153 @@
+\initial {A}
+\entry {\code {ae}}{41}
+\entry {\code {al}}{33}
+\entry {\code {AL}}{33}
+\entry {\code {am}}{29}
+\entry {\code {as}}{41}
+\initial {B}
+\entry {\code {bc}}{28}
+\entry {\code {bl}}{43}
+\entry {\code {bs}}{28}
+\entry {\code {bt}}{28}
+\entry {\code {bw}}{27}
+\initial {C}
+\entry {\code {CC}}{24}
+\entry {\code {cd}}{32}
+\entry {\code {ce}}{32}
+\entry {\code {ch}}{27}
+\entry {\code {cl}}{32}
+\entry {\code {cm}}{26}
+\entry {\code {CM}}{27}
+\entry {\code {co}}{25}
+\entry {\code {cr}}{26}
+\entry {\code {cs}}{30}
+\entry {\code {cS}}{30}
+\entry {\code {ct}}{46}
+\entry {\code {cv}}{27}
+\initial {D}
+\entry {\code {da}}{31}
+\entry {\code {db}}{31}
+\entry {\code {dB}}{47}
+\entry {\code {dc}}{38}
+\entry {\code {dC}}{47}
+\entry {\code {DC}}{38}
+\entry {\code {dF}}{47}
+\entry {\code {dl}}{33}
+\entry {\code {DL}}{33}
+\entry {\code {dm}}{38}
+\entry {\code {dN}}{47}
+\entry {\code {do}}{26}
+\entry {\code {DO}}{27}
+\entry {\code {ds}}{47}
+\entry {\code {dT}}{47}
+\initial {E}
+\entry {\code {ec}}{32}
+\entry {\code {ed}}{38}
+\entry {\code {ei}}{36}
+\entry {\code {eo}}{23}
+\entry {\code {es}}{47}
+\initial {F}
+\entry {\code {ff}}{27}
+\entry {\code {fs}}{47}
+\initial {G}
+\entry {\code {gn}}{24}
+\initial {H}
+\entry {\code {hc}}{24}
+\entry {\code {hd}}{48}
+\entry {\code {ho}}{26}
+\entry {\code {hs}}{47}
+\entry {\code {hu}}{48}
+\entry {\code {hz}}{24}
+\initial {I}
+\entry {\code {i1}}{46}
+\entry {\code {i3}}{46}
+\entry {\code {ic}}{36}
+\entry {\code {IC}}{36}
+\entry {\code {if}}{46}
+\entry {\code {im}}{36}
+\entry {\code {in}}{36}
+\entry {\code {ip}}{36}
+\entry {\code {is}}{46}
+\entry {\code {it}}{46}
+\initial {K}
+\entry {\code {K1\dots {}K5}}{44}
+\entry {\code {k1\dots {}k9}}{44}
+\entry {\code {kA\dots {}kT}}{44}
+\entry {\code {ka\dots {}ku}}{43}
+\entry {\code {km}}{45}
+\initial {L}
+\entry {\code {l0\dots {}l9}}{44}
+\entry {\code {le}}{26}
+\entry {\code {LE}}{27}
+\entry {\code {li}}{25}
+\entry {\code {ll}}{26}
+\entry {\code {lm}}{31}
+\initial {M}
+\entry {\code {mb}}{41}
+\entry {\code {md}}{41}
+\entry {\code {me}}{41}
+\entry {\code {mh}}{41}
+\entry {\code {mi}}{36}
+\entry {\code {mk}}{41}
+\entry {\code {mm}}{45}
+\entry {\code {mo}}{45}
+\entry {\code {mp}}{41}
+\entry {\code {mr}}{41}
+\entry {\code {ms}}{41, 42}
+\initial {N}
+\entry {\code {nc}}{28}
+\entry {\code {nd}}{26}
+\entry {\code {nl}}{28}
+\entry {\code {ns}}{31}
+\entry {\code {nw}}{27}
+\initial {O}
+\entry {\code {os}}{23}
+\initial {P}
+\entry {\code {pb}}{46}
+\entry {\code {pc}}{46}
+\entry {\code {pf}}{48}
+\entry {\code {po}}{48}
+\entry {\code {pO}}{48}
+\entry {\code {ps}}{48}
+\initial {R}
+\entry {\code {rc}}{27}
+\entry {\code {RI}}{27}
+\entry {\code {rp}}{24}
+\entry {\code {rs}}{46}
+\initial {S}
+\entry {\code {sa}}{41}
+\entry {\code {sc}}{27}
+\entry {\code {se}}{41}
+\entry {\code {sf}}{30}
+\entry {\code {SF}}{30}
+\entry {\code {sg}}{41}
+\entry {\code {so}}{41}
+\entry {\code {sr}}{30}
+\entry {\code {SR}}{30}
+\entry {\code {st}}{46}
+\initial {T}
+\entry {\code {ta}}{27}
+\entry {\code {te}}{46}
+\entry {\code {ti}}{45}
+\entry {\code {ts}}{47}
+\initial {U}
+\entry {\code {uc}}{42}
+\entry {\code {ue}}{42}
+\entry {\code {ug}}{42}
+\entry {\code {ul}}{42}
+\entry {\code {up}}{26}
+\entry {\code {UP}}{27}
+\entry {\code {us}}{42}
+\initial {V}
+\entry {\code {vb}}{43}
+\entry {\code {ve}}{43}
+\entry {\code {vi}}{43}
+\entry {\code {vs}}{43}
+\initial {W}
+\entry {\code {wi}}{32}
+\entry {\code {ws}}{48}
+\initial {X}
+\entry {\code {xb}}{24}
+\entry {\code {xn}}{29}
+\entry {\code {xs}}{41}
+\entry {\code {xt}}{28, 41}
