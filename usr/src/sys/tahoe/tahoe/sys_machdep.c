@@ -1,19 +1,24 @@
-/*	sys_machdep.c	1.1	86/01/05	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)sys_machdep.c	7.1 (Berkeley) %G%
+ */
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/ioctl.h"
-#include "../h/file.h"
-#include "../h/proc.h"
-#include "../h/uio.h"
-#include "../h/kernel.h"
-#include "../h/mtio.h"
-#include "../h/buf.h"
+#include "param.h"
+#include "systm.h"
+#include "dir.h"
+#include "user.h"
+#include "ioctl.h"
+#include "file.h"
+#include "proc.h"
+#include "uio.h"
+#include "kernel.h"
+#include "mtio.h"
+#include "buf.h"
 
-#include "../machine/dkio.h"
-#include "../machine/pte.h"
+#include "pte.h"
 
 #ifdef TRACE
 int	nvualarm;

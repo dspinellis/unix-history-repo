@@ -1,4 +1,10 @@
-/*	kdbparam.h	7.6	87/03/13	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdbparam.h	7.7 (Berkeley) %G%
+ */
 
 #define DBNAME "kdb\n"
 #define LPRMODE "%R"

@@ -1,4 +1,4 @@
-/*	if_enp.c	1.5	87/04/29	*/
+/*	if_enp.c	7.1	88/05/21	*/
 
 #include "enp.h"
 #if NENP > 0

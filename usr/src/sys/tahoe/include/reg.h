@@ -1,5 +1,8 @@
-/*	reg.h	1.2	87/01/13	*/
-/*	reg.h	4.2	81/02/19	*/
+/*
+ *	@(#)reg.h	7.1 (Berkeley) %G%
+ *	from reg.h	4.2	81/02/19
+ */
+
 /*
  * Location of the users' stored
  * registers relative to PSL of 'trap' and 'syscall'.

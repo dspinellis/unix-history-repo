@@ -1,4 +1,4 @@
-/*	Locore.c	1.5	87/06/06	*/
+/*	Locore.c	7.1	88/05/21	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"

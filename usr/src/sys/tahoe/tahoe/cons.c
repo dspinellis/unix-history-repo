@@ -1,4 +1,10 @@
-/*	cons.c	1.10	87/05/27	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)cons.c	7.1 (Berkeley) %G%
+ */
 
 /*
  * Tahoe console processor driver
@@ -21,9 +27,9 @@
 #include "kernel.h"
 #include "syslog.h"
 
-#include "../tahoe/cp.h"
-#include "../tahoe/cpu.h"
-#include "../tahoe/mtpr.h"
+#include "cp.h"
+#include "cpu.h"
+#include "mtpr.h"
 
 int	cnrestart();
 int	timeout();
@@ -175,7 +181,7 @@ cnrint(dev)
 	cnlast = &consin[unit].cp_hdr;
 
 	tp = cntty[unit];
-#ifdef KDB
+#ifdef KADB
 	if (unit == CPCONS && kdbrintr(c, tp))
 		return;
 #endif
@@ -329,7 +335,7 @@ cnputchar(c, tp)
 	cnlast = &current->cp_hdr;
 }
 
-#if defined(KDB) || defined(GENERIC)
+#if defined(KADB) || defined(GENERIC)
 cngetc()
 {
 	register int c, s;
@@ -454,7 +460,7 @@ cnparams(tp)
 	cnpostread(unit);
 }
 
-#ifdef KDB
+#ifdef KADB
 /*
  * Turn input polling on/off (used by debugger).
  */

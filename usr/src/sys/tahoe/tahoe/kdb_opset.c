@@ -1,4 +1,10 @@
-/*	kdb_opset.c	7.3	86/12/15	*/
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)kdb_opset.c	7.4 (Berkeley) %G%
+ */
 
 #include "../kdb/defs.h"
 

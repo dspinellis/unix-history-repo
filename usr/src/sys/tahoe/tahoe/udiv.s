@@ -1,6 +1,9 @@
-/*	udiv.s	1.1	86/01/05	*/
+/*
+ *	@(#)udiv.s	7.1 (Berkeley) %G%
+ */
 
 #include "../tahoe/SYS.h"
+
 /*
  * result = udiv(dividend, divisor)
  *

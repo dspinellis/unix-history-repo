@@ -1,4 +1,4 @@
-/*	misc.c	1.2	85/07/29	*/
+/*	misc.c	7.1	88/05/21	*/
 
 #include "../h/types.h"
 #include "../tahoe/mtpr.h"

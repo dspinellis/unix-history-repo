@@ -1,9 +1,10 @@
-/*	trap.c	1.8	88/05/21	*/
-
-#include "../tahoe/psl.h"
-#include "../tahoe/reg.h"
-#include "../tahoe/pte.h"
-#include "../tahoe/mtpr.h"
+/*
+ * Copyright (c) 1988 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)trap.c	7.1 (Berkeley) %G%
+ */
 
 #include "param.h"
 #include "systm.h"
@@ -13,6 +14,12 @@
 #include "seg.h"
 #include "acct.h"
 #include "kernel.h"
+
+#include "psl.h"
+#include "reg.h"
+#include "pte.h"
+#include "mtpr.h"
+
 #define	SYSCALLTRACE
 #ifdef SYSCALLTRACE
 #include "../sys/syscalls.c"

@@ -1,4 +1,6 @@
-/*	cp.h	1.3	87/02/16	*/
+/*
+ *	@(#)cp.h	7.1 (Berkeley) %G%
+ */
 
 /*
  * Tahoe console processor interface

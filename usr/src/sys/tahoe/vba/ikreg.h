@@ -1,4 +1,6 @@
-/*	ikreg.h	1.2	86/12/11	*/
+/*
+ *	@(#)ikreg.h	7.1 (Berkeley) %G%
+ */
 
 /*
  * IKON DR-11W register definitions.
