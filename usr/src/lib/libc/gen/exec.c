@@ -1,4 +1,4 @@
-/* @(#)exec.c	4.1 (Berkeley) %G% */
+/* @(#)exec.c	4.2 (Berkeley) %G% */
 /*
  *	execlp(name, arg,...,0)	(like execl, but does path search)
  *	execvp(name, argv)	(like execv, but does path search)
@@ -73,7 +73,7 @@ char *si;
 	register char *s;
 
 	s = si;
-	while (*s1 && *s1 != ':' && *s1 != '-')
+	while (*s1 && *s1 != ':')
 		*s++ = *s1++;
 	if (si != s)
 		*s++ = '/';
