@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -41,11 +41,16 @@ static char sccsid[] = "@(#)rcp.c	5.29 (Berkeley) %G%";
 #include <kerberosIV/krb.h>
 char	dst_realm_buf[REALM_SZ];
 char	*dest_realm = NULL;
-int	use_kerberos = 1, encrypt = 0;
+int	use_kerberos = 1;
 CREDENTIALS 	cred;
 Key_schedule	schedule;
 extern	char	*krb_realmofhost();
+#ifdef CRYPT
+int	encrypt = 0;
 #define	OPTIONS	"dfkprtx"
+#else
+#define	OPTIONS	"dfkprt"
+#endif
 #else
 #define	OPTIONS "dfprt"
 #endif
@@ -72,7 +77,7 @@ main(argc, argv)
 	extern int optind;
 	struct servent *sp;
 	int ch, fflag, tflag;
-	char *targ, *colon();
+	char *targ, *shell, *colon();
 	struct passwd *getpwuid();
 	int lostconn();
 
@@ -91,10 +96,12 @@ main(argc, argv)
 			strncpy(dst_realm_buf, ++argv, REALM_SZ);
 			dest_realm = dst_realm_buf;
 			break;
+#ifdef CRYPT
 		case 'x':
 			encrypt = 1;
 			/* des_set_key(cred.session, schedule); */
 			break;
+#endif
 #endif
 		/* rshd-invoked options (server) */
 		case 'd':
@@ -117,12 +124,17 @@ main(argc, argv)
 	argv += optind;
 
 #ifdef KERBEROS
-	sp = getservbyname((encrypt ? "ekshell" : "kshell"), "tcp");
+#ifdef CRYPT
+	shell = encrypt ? "ekshell" : "kshell";
+#else
+	shell = "kshell";
+#endif
+	sp = getservbyname(shell, "tcp");
 	if (sp == NULL) {
 		char	msgbuf[64];
 		use_kerberos = 0;
 		(void) sprintf(msgbuf, "can't get entry for %s/tcp service",
-			(encrypt ? "ekshell" : "kshell"));
+			shell);
 		old_warning(msgbuf);
 		sp = getservbyname("shell", "tcp");
 	}
@@ -164,7 +176,11 @@ main(argc, argv)
 	/* command to be executed on remote system using "rsh" */
 #ifdef	KERBEROS
 	(void)sprintf(cmd, "rcp%s%s%s%s", iamrecursive ? " -r" : "",
+#ifdef CRYPT
 	    ((encrypt && use_kerberos) ? " -x" : ""),
+#else
+	    "",
+#endif
 	    pflag ? " -p" : "", targetshouldbedirectory ? " -d" : "");
 #else
 	(void)sprintf(cmd, "rcp%s%s%s", iamrecursive ? " -r" : "",
@@ -849,9 +865,15 @@ nospace()
 usage()
 {
 #ifdef KERBEROS
+#ifdef CRYPT
 	(void)fprintf(stderr, "%s\n\t%s\n",
 	    "usage: rcp [-k realm] [-px] f1 f2",
 	    "or: rcp [-k realm] [-rpx] f1 ... fn directory");
+#else
+	(void)fprintf(stderr, "%s\n\t%s\n",
+	    "usage: rcp [-k realm] [-p] f1 f2",
+	    "or: rcp [-k realm] [-rp] f1 ... fn directory");
+#endif
 #else
 	(void)fprintf(stderr,
 	    "usage: rcp [-p] f1 f2; or: rcp [-rp] f1 ... fn directory\n");
@@ -880,6 +902,7 @@ again:
 		if (dest_realm == NULL)
 			dest_realm = krb_realmofhost(*host);
 
+#ifdef CRYPT
 		if (encrypt)
 			rem = krcmd_mutual(
 				host, port,
@@ -887,6 +910,7 @@ again:
 		    		dest_realm,
 				&cred, schedule);
 		else
+#endif
 			rem = krcmd(
 				host, port,
 				user, bp, 0, dest_realm);
@@ -910,11 +934,13 @@ again:
 			goto again;
 		}
 	} else {
+#ifdef CRYPT
 		if (encrypt) {
 			fprintf(stderr,
 			    "The -x option requires Kerberos authentication\n");
 			exit(1);
 		}
+#endif
 		rem = rcmd(host, sp->s_port, locuser, user, bp, 0);
 	}
 	return(rem);
