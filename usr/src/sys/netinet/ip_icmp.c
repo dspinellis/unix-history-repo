@@ -1,15 +1,16 @@
-/*	ip_icmp.c	4.17	82/06/20	*/
+/*	ip_icmp.c	4.18	82/09/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include "../h/clock.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../net/ip.h"
 #include "../net/ip_icmp.h"
+#include <time.h>
+#include "../h/kernel.h"
 
 /*
  * ICMP routines: error generation, receive packet processing, and
@@ -235,7 +236,7 @@ iptime()
 	int s = spl6();
 	u_long t;
 
-	t = (time % SECDAY) * 1000 + lbolt * hz;
+	t = (time.tv_sec % (24*60*60)) * 1000 + time.tv_usec / 1000;
 	splx(s);
 	return (htonl(t));
 }
