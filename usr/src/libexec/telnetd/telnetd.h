@@ -14,18 +14,14 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.3 (Berkeley) %G%
+ *	@(#)telnetd.h	5.1 (Berkeley) %G%
  */
 
-#if BSD > 43
 
-# include <paths.h>
+#include "defs.h"
+#include "ext.h"
 
-# define	_PATH_LOGIN	"/usr/bin/login"
+/* other external variables */
+extern	char **environ;
+extern	int errno;
 
-#else
- 
-# define	_PATH_TTY	"/dev/tty"
-# define	_PATH_LOGIN	"/bin/login"
-
-#endif

@@ -14,19 +14,47 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
-CFLAGS=	-O
+
+DEFINES=
 LIBC=	/lib/libc.a
-SRCS=	telnetd.c get_date.c gettytab.c
-OBJS=	telnetd.o get_date.o gettytab.o
+# 4.4BSD
+#		LIBS= -lutil -ltermcap
+#		GETTYOBJ= get_date.o gettytab.o
+#		GETTYSRC= get_date.c gettytab.c
+#		LIBEXEC=${DESTDIR}/usr/libexec
+#
+# 4.3BSD	LIBS= -ltermcap
+#		GETTYOBJ= get_date.o gettytab.o
+#		GETTYSRC= get_date.c gettytab.c
+#		LIBEXEC=${DESTDIR}/etc
+#
+# Cray UNICOS
+#		LIBS= -lnet -lcurses
+#		GETTYOBJ=
+#		GETTYSRC=
+#		LIBEXEC=${DESTDIR}/etc
+
+LIBS=	-lutil -ltermcap
+GETTYOBJ= get_date.o gettytab.o
+GETTYSRC= get_date.c gettytab.c
+LIBEXEC= ${DESTDIR}/usr/libexec
+
+SRC1=	telnetd.c state.c termstat.c slc.c sys_term.c utility.c global.c
+OBJ1=	telnetd.o state.o termstat.o slc.o sys_term.o utility.o global.o
+
+OBJS=	${OBJ1} ${GETTYOBJ}
+SRCS=	${SRC1} ${GETTYSRC}
+
 VPATH=	../getty
 MAN=	telnetd.0
+CFLAGS=	-O ${DEFINES}
 
 all: telnetd
 
 telnetd: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS} -lutil
+	${CC} -o $@ ${CFLAGS} ${OBJS} ${LIBS}
 
 clean:
 	rm -f ${OBJS} core telnetd
@@ -38,7 +66,7 @@ depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 telnetd ${DESTDIR}/usr/libexec
+	install -s -o bin -g bin -m 755 telnetd ${LIBEXEC}
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat8
 
 lint: ${SRCS}
