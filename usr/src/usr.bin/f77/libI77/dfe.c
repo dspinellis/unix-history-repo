@@ -1,5 +1,5 @@
 /*
-char id_dfe[] = "@(#)dfe.c	1.2";
+char id_dfe[] = "@(#)dfe.c	1.3";
  *
  * direct formatted external i/o
  */
@@ -9,16 +9,15 @@ char id_dfe[] = "@(#)dfe.c	1.2";
 extern int rd_ed(),rd_ned(),w_ed(),w_ned();
 int y_getc(),y_putc(),y_rnew(),y_wnew(),y_tab();
 
-char *dfe = "dfe";
-char *rdfe = "read dfe";
-char *wdfe = "write dfe";
+char rdfe[] = "read dfe";
+char wdfe[] = "write dfe";
 
 s_rdfe(a) cilist *a;
 {
 	int n;
 	reading = YES;
 	if(n=c_dfe(a,READ)) return(n);
-	if(curunit->uwrt) nowreading(curunit);
+	if(curunit->uwrt && ! nowreading(curunit)) err(errflag, errno, rdfe)
 	getn = y_getc;
 	doed = rd_ed;
 	doned = rd_ned;
@@ -35,7 +34,7 @@ s_wdfe(a) cilist *a;
 	reading = NO;
 	if(n=c_dfe(a,WRITE)) return(n);
 	curunit->uend = NO;
-	if(!curunit->uwrt) nowwriting(curunit);
+	if(!curunit->uwrt && ! nowwriting(curunit)) err(errflag, errno, wdfe)
 	putn = y_putc;
 	doed = w_ed;
 	doned = w_ned;
@@ -71,15 +70,15 @@ c_dfe(a,flag) cilist *a;
 	errflag = a->cierr;
 	endflag = a->ciend;
 	lunit = a->ciunit;
-	if(not_legal(lunit)) err(errflag,F_ERUNIT,dfe);
+	if(not_legal(lunit)) err(errflag,F_ERUNIT,rdfe+5);
 	curunit = &units[lunit];
 	if(!curunit->ufd && (n=fk_open(flag,DIR,FMT,(ftnint)lunit)))
-		err(errflag,n,dfe)
+		err(errflag,n,rdfe+5)
 	cf = curunit->ufd;
 	elist = YES;
 	lfname = curunit->ufnm;
-	if(!curunit->ufmt) err(errflag,F_ERNOFIO,dfe)
-	if(!curunit->useek || !curunit->url) err(errflag,F_ERNODIO,dfe)
+	if(!curunit->ufmt) err(errflag,F_ERNOFIO,rdfe+5)
+	if(!curunit->useek || !curunit->url) err(errflag,F_ERNODIO,rdfe+5)
 	recnum = a->cirec - 1;
 	fseek(cf, (long)curunit->url * recnum, 0);
 	cblank = curunit->ublnk;
@@ -132,7 +131,7 @@ y_tab()
 			return(cursor=0);
 		}
 		recpos += cursor;
-		if(recpos >= curunit->url) err(errflag,F_EREREC,dfe)
+		if(recpos >= curunit->url) err(errflag,F_EREREC,rdfe+5)
 	}
 	fseek(cf,(long)cursor,1);
 	return(cursor=0);
@@ -149,7 +148,7 @@ y_tab()
 /*
 /*y_err()
 /*{
-/*	err(errflag, F_EREREC, dfe);
+/*	err(errflag, F_EREREC, rdfe+5);
 /*}
 */
 
