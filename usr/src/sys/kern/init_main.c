@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.38 (Berkeley) %G%
+ *	@(#)init_main.c	7.39 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,6 +30,9 @@
 #include "machine/cpu.h"
 
 #include "vm/vm.h"
+
+char	copyright[] =
+"Copyright (c) 1982,1986,1989,1991 The Regents of the University of California.\nAll rights reserved.\n\n";
 
 /*
  * Components of process 0;
@@ -73,6 +76,7 @@ main(firstaddr)
 	 * in case of early panic or other messages.
 	 */
 	consinit();
+	printf(copyright);
 
 	vm_mem_init();
 	kmeminit();
@@ -229,6 +233,8 @@ main(firstaddr)
 		static char initflags[] = "-sf";
 		char *ip = initflags + 1;
 		vm_offset_t addr = 0;
+		extern int icode[];		/* user init code */
+		extern int szicode;		/* size of icode */
 
 		/*
 		 * Now in process 1.  Set init flags into icode,
@@ -282,43 +288,4 @@ main(firstaddr)
 	 * enter scheduling loop
 	 */
 	sched();
-}
-
-/* MOVE TO vfs_bio.c (bufinit) XXX */
-/*
- * Initialize buffers and hash links for buffers.
- */
-bufinit()
-{
-	register int i;
-	register struct buf *bp, *dp;
-	register struct bufhd *hp;
-	int base, residual;
-
-	for (hp = bufhash, i = 0; i < BUFHSZ; i++, hp++)
-		hp->b_forw = hp->b_back = (struct buf *)hp;
-
-	for (dp = bfreelist; dp < &bfreelist[BQUEUES]; dp++) {
-		dp->b_forw = dp->b_back = dp->av_forw = dp->av_back = dp;
-		dp->b_flags = B_HEAD;
-	}
-	base = bufpages / nbuf;
-	residual = bufpages % nbuf;
-	for (i = 0; i < nbuf; i++) {
-		bp = &buf[i];
-		bp->b_dev = NODEV;
-		bp->b_bcount = 0;
-		bp->b_rcred = NOCRED;
-		bp->b_wcred = NOCRED;
-		bp->b_dirtyoff = 0;
-		bp->b_dirtyend = 0;
-		bp->b_un.b_addr = buffers + i * MAXBSIZE;
-		if (i < residual)
-			bp->b_bufsize = (base + 1) * CLBYTES;
-		else
-			bp->b_bufsize = base * CLBYTES;
-		binshash(bp, &bfreelist[BQ_AGE]);
-		bp->b_flags = B_BUSY|B_INVAL;
-		brelse(bp);
-	}
 }
