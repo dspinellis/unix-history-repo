@@ -24,12 +24,12 @@
 
 #ifndef lint
 #ifdef NEWDB
-static char sccsid[] = "@(#)alias.c	5.29 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	5.30 (Berkeley) %G% (with NEWDB)";
 #else
 #ifdef DBM
-static char sccsid[] = "@(#)alias.c	5.29 (Berkeley) %G% (with DBM)";
+static char sccsid[] = "@(#)alias.c	5.30 (Berkeley) %G% (with DBM)";
 #else
-static char sccsid[] = "@(#)alias.c	5.29 (Berkeley) %G% (without DBM)";
+static char sccsid[] = "@(#)alias.c	5.30 (Berkeley) %G% (without DBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -371,6 +371,12 @@ initaliases(aliasfile, init)
 **		Optionally, builds the .dir & .pag files.
 */
 
+# ifdef LOCKF
+# define RDLK_MODE	"r+"
+# else
+# define RDLK_MODE	"r"
+# endif
+
 static
 readaliases(aliasfile, init)
 	char *aliasfile;
@@ -390,7 +396,7 @@ readaliases(aliasfile, init)
 # endif
 	char line[BUFSIZ];
 
-	if ((af = fopen(aliasfile, "r")) == NULL)
+	if ((af = fopen(aliasfile, RDLK_MODE)) == NULL)
 	{
 		if (tTd(27, 1))
 			printf("Can't open %s\n", aliasfile);
