@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)fingerd.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fingerd.c	1.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -11,16 +11,15 @@ static char sccsid[] = "@(#)fingerd.c	1.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
-FILE	*popen();
-
 main(argc, argv)
 	char *argv[];
 {
-	register char *cp, *sp;
-	char cmdbuf[512], line[512];
+	register char *sp;
+	char line[512];
 	struct sockaddr_in sin;
-	int i;
+	int i, p[2], pid, status;
 	FILE *fp;
+	char *av[4];
 
 	i = sizeof (sin);
 	if (getpeername(0, &sin, &i) < 0)
@@ -28,31 +27,49 @@ main(argc, argv)
 	line[0] = '\0';
 	gets(line);
 	sp = line;
-	strcpy(cmdbuf, "/usr/ucb/finger");
-	cp = cmdbuf + strlen(cmdbuf);
+	av[0] = "finger";
+	i = 1;
 	while (1) {
 		while (isspace(*sp))
 			sp++;
 		if (!*sp)
 			break;
-		*cp++ = ' ';
 		if (*sp == '/' && (sp[1] == 'W' || sp[1] == 'w')) {
 			sp += 2;
-			*cp++ = '-';
-			*cp++ = 'l';
+			av[i++] = "-l";
 		}
-		while (!isspace(*sp))
-			*cp++ = *sp++;
+		if (*sp && !isspace(*sp)) {
+			av[i++] = sp;
+			while (*sp && !isspace(*sp))
+				sp++;
+			*sp = '\0';
+		}
 	}
-	*cp++ = '\0';
-	if ((fp = popen(cmdbuf, "r")) == NULL)
-		fatal(argv[0], "/usr/ucb/finger");
+	av[i] = 0;
+	if (pipe(p) < 0)
+		fatal(argv[0], "pipe");
+	if ((pid = fork()) == 0) {
+		close(p[0]);
+		if (p[1] != 1) {
+			dup2(p[1], 1);
+			close(p[1]);
+		}
+		execv("/usr/ucb/finger", av);
+		_exit(1);
+	}
+	if (pid == -1)
+		fatal(argv[0], "fork");
+	close(p[1]);
+	if ((fp = fdopen(p[0], "r")) == NULL)
+		fatal(argv[0], "fdopen");
 	while ((i = getc(fp)) != EOF) {
 		if (i == '\n')
 			putchar('\r');
 		putchar(i);
 	}
-	pclose(fp);
+	fclose(fp);
+	while ((i = wait(&status)) != pid && i != -1)
+		;
 	return(0);
 }
 
