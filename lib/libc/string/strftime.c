@@ -86,6 +86,10 @@ strftime(s, maxsize, format, t)
 	return(0);
 }
 
+#define SUN_WEEK(t)	(((t)->tm_yday + 7 - \
+				((t)->tm_wday)) / 7)
+#define MON_WEEK(t)	(((t)->tm_yday + 7 - \
+				((t)->tm_wday ? (t)->tm_wday - 1 : 6)) / 7)
 static size_t
 _fmt(format, t)
 	register char *format;
@@ -213,8 +217,7 @@ _fmt(format, t)
 					return(0);
 				continue;
 			case 'U':
-				if (!_conv((t->tm_yday + 7 - t->tm_wday) / 7,
-				    2, '0'))
+				if (!_conv(SUN_WEEK(t), 2, '0'))
 					return(0);
 				continue;
 			case 'u':
@@ -230,8 +233,7 @@ _fmt(format, t)
 				   week 53 of the previous year and the next
 				   week is week one. */
 				 
-				int week = (t->tm_yday + 7 - 
-					    (t->tm_wday ? (t->tm_wday - 1) : 6)) / 7;
+				int week = MON_WEEK(t);
 
 				if (((t->tm_yday + 7 - (t->tm_wday + 1)) % 7) >= 4) {
 					week++;
@@ -244,9 +246,7 @@ _fmt(format, t)
 				continue;
 				}
 			case 'W':
-				if (!_conv((t->tm_yday + 7 -
-				    (t->tm_wday ? (t->tm_wday - 1) : 6)) / 7,
-				    2, '0'))
+				if (!_conv(MON_WEEK(t), 2, '0'))
 					return(0);
 				continue;
 			case 'w':
