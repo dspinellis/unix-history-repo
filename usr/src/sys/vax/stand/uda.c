@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uda.c	7.4 (Berkeley) %G%
+ *	@(#)uda.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -28,9 +28,9 @@
 #define NRSP	1
 #define NCMD	1
 
-#include "../vaxuba/udareg.h"
+#include "udareg.h"
 #include "../vaxuba/ubareg.h"
-#include "../vax/mscp.h"
+#include "mscp.h"
 
 u_short udastd[] = { 0772150 };
 
