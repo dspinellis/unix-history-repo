@@ -1,4 +1,4 @@
-/*	ip_input.c	6.1	83/07/29	*/
+/*	ip_input.c	1.69	83/08/16	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -575,11 +575,11 @@ ip_stripoptions(ip, mopt)
 	m->m_len -= olen;
 }
 
-u_char inetctlerrmap[] = {
+u_char inetctlerrmap[PRC_NCMDS] = {
 	ECONNABORTED,	ECONNABORTED,	0,		0,
-	0,		0,
-	EHOSTDOWN,	EHOSTUNREACH,	ENETUNREACH,	EHOSTUNREACH,
-	ECONNREFUSED,	ECONNREFUSED,	EMSGSIZE,	0,
+	0,		0,		EHOSTDOWN,	EHOSTUNREACH,
+	ENETUNREACH,	EHOSTUNREACH,	ECONNREFUSED,	ECONNREFUSED,
+	EMSGSIZE,	0,		0,		0,
 	0,		0,		0,		0
 };
 
