@@ -1,4 +1,4 @@
-/*	pup.h	4.3	82/03/13	*/
+/*	pup.h	4.4	82/03/13	*/
 
 /*
  * PUP port addressing.
@@ -19,7 +19,7 @@ struct pup_header {
 	u_long	pup_id;			/* used by protocols */
 	struct	pupport pup_dport, pup_sport;
 #define	pup_dnet	pup_dport.pp_net
-#define	pup_dhost	pup_dport.pp_dhost
+#define	pup_dhost	pup_dport.pp_host
 #define	pup_dsocket	pup_dport.pp_socket
 #define	pup_snet	pup_sport.pp_net
 #define	pup_shost	pup_sport.pp_host

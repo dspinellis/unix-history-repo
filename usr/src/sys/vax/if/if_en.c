@@ -1,4 +1,4 @@
-/*	if_en.c	4.38	82/03/13	*/
+/*	if_en.c	4.39	82/03/13	*/
 
 #include "en.h"
 
@@ -435,10 +435,9 @@ enoutput(ifp, m0, pf)
 	struct mbuf *m0;
 	int pf;
 {
-	int type, dest;
+	int type, dest, s, off;
 	register struct mbuf *m = m0;
 	register struct en_header *en;
-	int s;
 
 COUNT(ENOUTPUT);
 	switch (pf) {
@@ -446,7 +445,6 @@ COUNT(ENOUTPUT);
 #ifdef INET
 	case PF_INET: {
 		register struct ip *ip = mtod(m0, struct ip *);
-		int off;
 
 #ifndef ENKLUDGE
 		dest = ip->ip_dst.s_addr >> 24;
