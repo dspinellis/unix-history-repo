@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)od.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)od.c	5.3 (Berkeley) %G%";
 /*
  * od -- octal, hex, decimal, character dump of data in a file.
  *
@@ -358,7 +358,7 @@ struct dfmt *d;
 	{
 		s[2] = *cc;
 		if (pbit == _parity)
-			printf(d->df_fmt, underline(s, 1));
+			printf(d->df_fmt, underline(s));
 		else
 			printf(d->df_fmt, s);
 	}
@@ -367,7 +367,7 @@ struct dfmt *d;
 		if (c == 0177)
 			c = ' ' + 1;
 		if (pbit == _parity)
-			printf(d->df_fmt, underline(asc_name[c], 3));
+			printf(d->df_fmt, underline(asc_name[c]));
 		else
 			printf(d->df_fmt, asc_name[c]);
 	}
@@ -388,15 +388,14 @@ int	word;
 }
 
 char *
-underline(s, n)
+underline(s)
 char	*s;
-int	n;
 {
 	static char ulbuf[16];
 	register char *u = ulbuf;
 
-	while (n--) {
-		if (*s && *s != ' ') {
+	while (*s) {
+		if (*s != ' ') {
 			*u++ = '_';
 			*u++ = '\b';
 		}
