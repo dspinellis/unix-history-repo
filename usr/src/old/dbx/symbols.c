@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)symbols.c 1.10 %G%";
+static char sccsid[] = "@(#)symbols.c 1.11 %G%";
 
 /*
  * Symbol management.
@@ -167,19 +167,23 @@ public Symbol symbol_alloc()
 public symbol_dump(func)
 Symbol func;
 {
-  register Symbol s;
-  register Integer i;
+    register Symbol s;
+    register Integer i;
 
-	printf(" symbols in %s \n",symname(func));
-	for(i=0; i< HASHTABLESIZE; i++)
-	   for(s=hashtab[i]; s != nil; s=s->next_sym)  {
-		if (s->block == func) psym(s);
-		}
+    printf(" symbols in %s \n",symname(func));
+    for (i = 0; i< HASHTABLESIZE; i++) {
+	for (s = hashtab[i]; s != nil; s = s->next_sym) {
+	    if (s->block == func) {
+		psym(s);
+	    }
+	}
+    }
 }
 
 /*
  * Free all the symbols currently allocated.
  */
+
 public symbol_free()
 {
     Sympool s, t;
@@ -284,6 +288,19 @@ Frame frame;
 	    }
 	}
     }
+}
+
+/*
+ * Create base types.
+ */
+
+public symbols_init()
+{
+    t_boolean = maketype("$boolean", 0L, 1L);
+    t_int = maketype("$integer", 0x80000000L, 0x7fffffffL);
+    t_char = maketype("$char", 0L, 127L);
+    t_real = maketype("$real", 8L, 0L);
+    t_nil = maketype("$nil", 0L, 0L);
 }
 
 /*
@@ -859,9 +876,6 @@ register Node p;
 	    }
 	    break;
 
-	/*
-	 * Perform a cast if the call is of the form "type(expr)".
-	 */
 	case O_CALL:
 	    p1 = p->value.arg[0];
 	    p->nodetype = rtype(p1->nodetype)->type;
