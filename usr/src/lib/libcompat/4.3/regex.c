@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regex.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)regex.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #
@@ -371,6 +371,7 @@ advance(lp, ep)
 		}
 }
 
+static
 backref(i, lp)
 	register int	i;
 	register char	*lp;
@@ -384,7 +385,7 @@ backref(i, lp)
 	return(0);
 }
 
-int
+static int
 cclass(set, c, af)
 	register char	*set, c;
 	int	af;
