@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_inode.c	7.23 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -439,7 +439,7 @@ itrunc(oip, length, flags)
 		oip->i_db[i] = 0;
 	oip->i_flag |= ICHG|IUPD;
 	vinvalbuf(ITOV(oip), (length > 0));
-	allerror = iupdat(ip, &time, &time, MNT_WAIT);
+	allerror = iupdat(oip, &time, &time, MNT_WAIT);
 
 	/*
 	 * Indirect blocks first.
