@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)verify.c	1.4 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)verify.c	1.5 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -141,7 +141,6 @@ int	verbosity;
 	register long	*after;
 	register long	offset = lab->d_secsize / sizeof(long);
 	int		pattern_count = pats;
-	int		sectorflagged = -1;
 
 	if (pats == 0)
 		return;
@@ -150,32 +149,53 @@ int	verbosity;
 	    lab->d_nsectors, 1);
 	for (index = 0; index < pattern_count; index++) {
 		if (!data_ok()) {
-			if (dcb.operrsta & HEADER_ERROR)  {
-		 
+			if (dcb.operrsta & HEADER_ERROR &&
+			    C_INFO->type == VDTYPE_SMDE) {
 				flag_sector(dskaddr, dcb.operrsta,
-				    dcb.err_code, verbosity);
+				    dcb.err_code, "write", verbosity);
 				break;
+			} else {
+				indent();
+				vd_error("write track");
+				exdent(1);
 			}
+#ifdef notdef
+			/*
+			 * we presume that write errors will be detected
+			 * on read or data compare,
+			 * don't bother with extra testing.
+			 */
 			if (dcb.operrsta & DATA_ERROR)
 				pattern_count = 16;
+#endif
+			/*
+			 * Write track a sector at a time,
+			 * so that a write aborted on one sector
+			 * doesn't cause compare errors on all
+			 * subsequent sectors on the track.
+			 */
+			for (i = 0; i < lab->d_nsectors; i++) {
+				dskaddr->sector = i;
+				access_dsk((char *)pattern_address[index],
+				    dskaddr, VDOP_WD, 1,1);
+			}
+			dskaddr->sector = (char)0;
 		}
 		access_dsk((char *)scratch, dskaddr, VDOP_RD,
 		    lab->d_nsectors, 1);
 		if (!data_ok()) {
 			if (dcb.operrsta & HEADER_ERROR)  {
 				flag_sector(dskaddr, dcb.operrsta,
-				    dcb.err_code, verbosity);
+				    dcb.err_code, "read", verbosity);
 				break;
 			}
 			for (i = 0; i < lab->d_nsectors; i++) {
-				register long	*next;
-
 				dskaddr->sector = i;
-				next = &scratch[i * offset];
-				access_dsk((char *)next, dskaddr, VDOP_RD, 1,1);
+				access_dsk((char *)&scratch[i * offset],
+				    dskaddr, VDOP_RD, 1,1);
 				if (!data_ok())
 					flag_sector(dskaddr, dcb.operrsta,
-					    dcb.err_code, verbosity);
+					    dcb.err_code, "read", verbosity);
 			}
 			dskaddr->sector = (char)0;
 		}
@@ -185,19 +205,20 @@ int	verbosity;
 		count = lab->d_nsectors * offset;
 		before = *pattern_address[index];
 		after = scratch;
-		for (i = 0; i < count; i++) {
+		for (i = 0; i < count; ) {
 			if (before != *(after++)) {
 				dskaddr->sector = (char)(i / offset);
-				if (dskaddr->sector != sectorflagged)
-					flag_sector(dskaddr, 0, 0,
-					    verbosity);
-				sectorflagged = dskaddr->sector;
-			}
+				flag_sector(dskaddr, 0, 0,
+				    "data compare", verbosity);
+				i = (dskaddr->sector + 1) * offset;
+				after = scratch + i;
+			} else
+				++i;
 		}
 		if (index+1 < pattern_count) {
 			poll(60);
 			if (vdtimeout <= 0) {
-				printf(" while verifing track.\n");
+				printf(" while writing track.\n");
 				_longjmp(abort_environ, 1);
 			}
 		}
@@ -214,33 +235,43 @@ int	verbosity;
 }
 
 
-flag_sector(dskaddr, status, ecode, verbosity)
+flag_sector(dskaddr, status, ecode, func, verbosity)
 dskadr	*dskaddr;
 long	status;
 int	ecode;
+char	*func;
 int	verbosity;
 {
 	fmt_err		error;
 	bs_entry	entry;
+	int		result;
 
-	indent();
-	if (verbosity != 0) {
-		print("Error at sector %d (cyl %d trk %d sect %d),\n",
-		    to_sector(*dskaddr), dskaddr->cylinder, dskaddr->track,
-		    dskaddr->sector);
-		if (status)
+	error.err_adr = *dskaddr;
+	error.err_stat = status;
+	(*C_INFO->code_pos)(&error, &entry);
+	result = add_flaw(&entry);
+	if (verbosity != 0 && result != 0) {
+		indent();
+		print("%s error at sector %d (cyl %d trk %d sect %d)",
+		    func, to_sector(*dskaddr), dskaddr->cylinder,
+		    dskaddr->track, dskaddr->sector);
+		if (status) {
+			printf(",\n");
 			print("  status=%b", status, VDERRBITS);
-		else
-			printf("  data comparison error");
-		if (C_INFO->type == VDTYPE_SMDE && ecode)
-			printf(", ecode=0x%x", ecode);
-		printf(".\n  Sector will be relocated.\n");
+			if (C_INFO->type == VDTYPE_SMDE && ecode)
+				printf(", ecode=0x%x", ecode);
+		}
+		printf(".\n");
+		switch (result) {
+		case 1:
+			print("%s will be relocated.\n",
+			    (status & HEADER_ERROR &&
+			    C_INFO->type == VDTYPE_SMDE) ? "Track" : "Sector");
+			break;
+		case -1:
+			print("Sector cannot be relocated.\n");
+			break;
+		}
+		exdent(1);
 	}
-	if(is_in_map(dskaddr) == false) {
-		error.err_adr = *dskaddr;
-		error.err_stat = status;
-		entry = (*C_INFO->code_pos)(error);
-		add_flaw(&entry);
-	}
-	exdent(1);
 }

@@ -1,4 +1,4 @@
-/*	vdfmt.h	1.6	88/05/31	*/
+/*	vdfmt.h	1.7	88/06/07	*/
 
 /*
  * VERSAbus disk controller (vd) disk formatter.
@@ -14,7 +14,7 @@
 #include "tahoevba/vdreg.h"
 
 #include "tahoe/cp.h"
-extern	struct cpdcb_i cpin;		/* found in prf.c */
+extern	struct cpdcb_i cpin;		/* found in cons.c */
 
 /*
  * Poll console and return 1 if input is present.
@@ -42,7 +42,7 @@ extern	struct cpdcb_i cpin;		/* found in prf.c */
 #define	HARD_ERROR \
     (DCBS_NRDY|DCBS_IVA|DCBS_NEM|DCBS_DPE|DCBS_OAB|DCBS_WPT|DCBS_SKI|DCBS_OCYL)
 #define DATA_ERROR \
-    (DCBS_HCE|DCBS_UDE|DCBS_DCE|DCBS_DSE|DCBS_DSL|DCBS_TOP|DCBS_TOM|DCBS_CCD|\
+    (DCBS_UDE|DCBS_DCE|DCBS_DSE|DCBS_DSL|DCBS_TOP|DCBS_TOM|DCBS_CCD|\
      DCBS_HARD|DCBS_SOFT)
 #define HEADER_ERROR	(DCBS_HCRC|DCBS_HCE)
 #define	NRM		(short)0
@@ -58,7 +58,6 @@ typedef enum { u_false, u_true, u_unknown } uncertain;
  * Free bad block allocation bit map
  */
 typedef struct {
-	long	free_error;
 	enum { ALLOCATED, NOTALLOCATED } free_status;
 } fmt_free;
 
@@ -149,7 +148,8 @@ typedef enum {
 	sub_rel,
 	sub_vfy,
 	sub_fmt,
-	sub_sk
+	sub_sk,
+	sub_wmap
 } substate;
 
 /*
@@ -188,8 +188,8 @@ typedef struct {
 	struct	vddevice *addr;
 	char		*name;
 	int		type;
-	fmt_err		(*decode_pos)();
-	bs_entry	(*code_pos)();
+	fmt_err		*(*decode_pos)();
+	bs_entry	*(*code_pos)();
 } ctlr_info;
 
 ctlr_info	c_info[MAXCTLR];

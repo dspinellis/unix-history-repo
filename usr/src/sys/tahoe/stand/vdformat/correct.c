@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)correct.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)correct.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -20,6 +20,7 @@ correct()
 	if(is_formatted() == true)
 		if(read_bad_sector_map() == true) {
 			get_corrections();
+			cur.substate = sub_wmap;
 			sync_bad_sector_map();
 		}
 		else 
@@ -44,6 +45,7 @@ cor_help()
 	print("SEctor (sector) -  Absolute sector number on disk.\n");
 	print("Track (track)   -  Absolute disk track number.\n");
 	print("(cylinder) (head) (offset) (length) - CDC flaw map format.\n");
+	print("CLEAR           -  Remove all relocations not from flaw map.\n");
 	print("STARt           -  Ends correction process.\n\n");
 	exdent(2);
 }
@@ -60,7 +62,9 @@ get_corrections()
 	char		*ptr;
 	bs_entry	entry;
 	dskadr		dskaddr;
+	fmt_err		dskerr;
 	int		max_track;
+	register int	block;
 
 	dskaddr.cylinder = lab->d_ncylinders - 1;
 	dskaddr.cylinder = lab->d_ntracks - 1;
@@ -90,51 +94,54 @@ get_corrections()
 					break;
 			}
 			D_INFO->id = bad_map->bs_id = temp;
+		} else if (!strcmp(ptr, "clear")) {
+			print(
+		     "Confirm removal of ALL relocations installed manually\n");
+			if (get_yes_no("or by verification") == true)
+				clear_relocations(true);
 		}
 		else if((*ptr  >= 'a') && (*ptr <= 'h')) {
 			register char	par = *ptr++;
-			register int	block = get_next_digit(ptr);
-				
-			dskaddr = *from_unix((unsigned char)par,
+
+			block = get_next_digit(ptr);
+			dskerr.err_adr = *from_unix((unsigned char)par,
 			    (unsigned int)block);
-			if((dskaddr.cylinder == -1) || (block == -1)) {
+			if((dskerr.err_adr.cylinder == -1) || (block == -1)) {
 				print("Invalid UNIX block number!\n");
 				goto	next;
 			}
 			print("Confirm block %d on file-system '%c'",block,par);
+			dskerr.err_stat = DATA_ERROR;
+		doreloc:
+			printf(" (cn %d tn %d bn %d)", dskerr.err_adr.cylinder,
+			    dskerr.err_adr.track, dskerr.err_adr.sector);
 			if(get_yes_no("") == true) {
-				entry=(*C_INFO->code_pos)(dskaddr,HEADER_ERROR);
-				remove_user_relocations(entry);
+				(*C_INFO->code_pos)(&dskerr, &entry);
+				remove_user_relocations(&entry);
 			}
 		}
 		else if(*ptr == 't') {
-			register int	trk = get_next_digit(ptr);
-
-			if((trk == -1) || (trk >= max_track)) {
+			block = get_next_digit(ptr);
+			if((block == -1) || (block >= max_track)) {
 				print("Invalid track number!\n");
 				goto	next;
 			}
-			print("Confirm track %d", trk);
-			if(get_yes_no("") == true) {
-				dskaddr = *from_track(trk);
-				entry=(*C_INFO->code_pos)(dskaddr,HEADER_ERROR);
-				remove_user_relocations(entry);
-			}
+			dskerr.err_adr = *from_track(block);
+			dskerr.err_stat = HEADER_ERROR;
+			print("Confirm track %d", block);
+			goto doreloc;
 		}
 		else if(!strncmp(ptr, "se", 2)) {
-			register int	sec = get_next_digit(ptr);
-
-			if (sec == -1 ||
-			    sec > lab->d_nsectors*lab->d_ntracks*lab->d_ncylinders) {
+			block = get_next_digit(ptr);
+			if (block == -1 ||
+			    block > lab->d_nsectors*lab->d_ntracks*lab->d_ncylinders) {
 				print("Invalid sector number!\n");
 				goto	next;
 			}
-			print("Confirm sector %d", sec);
-			if(get_yes_no("") == true) {
-				dskaddr = *from_sector((unsigned int)sec);
-				entry = (*C_INFO->code_pos)(dskaddr, DATA_ERROR);
-				remove_user_relocations(entry);
-			}
+			dskerr.err_adr = *from_sector((unsigned int)block);
+			dskerr.err_stat = DATA_ERROR;
+			print("Confirm sector %d", block);
+			goto doreloc;
 		}
 		else if(is_digit(*ptr)) {
 			entry.bs_cyl = get_next_digit(ptr);
@@ -163,13 +170,12 @@ get_corrections()
 					printf("offset %d, ", entry.bs_offset);
 					printf("length %d", entry.bs_length);
 					if(get_yes_no("") == true)
-						remove_user_relocations(entry);
+						remove_user_relocations(&entry);
 				}
 			}
 			else
 				goto bad;
-		}
-		else if(!strncmp(ptr, "star", 4)) {
+		} else if(!strncmp(ptr, "star", 4)) {
 			exdent(1);
 			break;
 		}
@@ -177,7 +183,6 @@ get_corrections()
 bad:			print("What?\n");
 next:		exdent(1);
 	}
-	write_bad_sector_map();
 	exdent(1);
 }
 

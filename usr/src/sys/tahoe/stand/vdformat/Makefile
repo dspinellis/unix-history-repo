@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	1.6 (Berkeley) %G%
+#	@(#)Makefile	1.7 (Berkeley) %G%
 #
 DESTDIR=
 COPTS=	-DSTANDALONE -I../../h -I../..
@@ -18,12 +18,10 @@ RELOC=	800
 LDTOPT= -T ${RELOC} -e _entry -x
 SRCS=	cmd.c cons.c config.c correct.c delete.c disklabel.c exercise.c help.c \
 	format.c info.c io.c list.c maps.c proc_cmd.c profile.c relocate.c \
-	reset.c smd.c smd_e.c start.c status.c strpbrk.c strspn.c strtok.c \
-	util.c vdfmt.c verify.c
+	reset.c smd.c smd_e.c start.c status.c util.c vdfmt.c verify.c
 OBJS=	cmd.o cons.o config.o correct.o delete.o disklabel.o exercise.o help.o \
 	format.o info.o io.o list.o maps.o proc_cmd.o profile.o relocate.o \
-	reset.o smd.o smd_e.o start.o status.o strpbrk.o strspn.o strtok.o \
-	util.o vdfmt.o verify.o
+	reset.o smd.o smd_e.o start.o status.o util.o vdfmt.o verify.o
 ALL=	vdformat
 
 all: ${ALL}
