@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.46 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.47 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -37,45 +37,42 @@ lfs_init()
  * Detection and handling of mount points must be done by the calling routine.
  */
 int
-lfs_iget(pip, ino, ipp)
-	struct inode *pip;
+lfs_vget(mntp, ino, vpp)
+	struct mount *mntp;
 	ino_t ino;
-	struct inode **ipp;
+	struct vnode **vpp;
 {
 	register struct lfs *fs;
 	register struct inode *ip;
 	struct buf *bp;
-	struct mount *mntp;
 	struct vnode *vp;
+	struct ufsmount *ump;
 	dev_t dev;
 	int error;
+	extern struct vnodeops lfs_fifoops, lfs_specops;
 
-	mntp = ITOV(pip)->v_mount;
-	fs = VFSTOUFS(mntp)->um_lfs;
-	if (ino < ROOTINO)
-		return (EINVAL);
-
-	dev = pip->i_dev;
-	if ((*ipp = ufs_ihashget(dev, ino)) != NULL)
+	ump = VFSTOUFS(mntp);
+	dev = ump->um_dev;
+	if ((*vpp = ufs_ihashget(dev, ino)) != NULL)
 		return (0);
 
 	/* Allocate new vnode/inode. */
 	if (error = lfs_vcreate(mntp, ino, &vp)) {
-		*ipp = NULL;
+		*vpp = NULL;
 		return (error);
 	}
-	ip = VTOI(vp);
-		
 	/*
 	 * Put it onto its hash chain and lock it so that other requests for
 	 * this inode will block if they arrive while we are sleeping waiting
 	 * for old data structures to be purged or for the contents of the
 	 * disk portion of this inode to be read.
 	 */
+	ip = VTOI(vp);
 	ufs_ihashins(ip);
 
 	/* Read in the disk contents for the inode, copy into the inode. */
-	if (error = bread(VFSTOUFS(mntp)->um_devvp, lfs_itod(fs, ino),
+	fs = ump->um_lfs;
+	if (error = bread(ump->um_devvp, lfs_itod(fs, ino),
 	    (int)fs->lfs_bsize, NOCRED, &bp)) {
 		/*
 		 * The inode does not contain anything useful, so it would
@@ -89,7 +86,7 @@ lfs_iget(pip, ino, ipp)
 		/* Unlock and discard unneeded inode. */
 		ufs_iput(ip);
 		brelse(bp);
-		*ipp = NULL;
+		*vpp = NULL;
 		return (error);
 	}
 	ip->i_din = *lfs_ifind(fs, ino, bp->b_un.b_dino);
@@ -99,26 +96,51 @@ lfs_iget(pip, ino, ipp)
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error = ufs_vinit(mntp, &vp)) {
+	if (error = ufs_vinit(mntp, &lfs_specops, &lfs_fifoops, &vp)) {
 		ufs_iput(ip);
-		*ipp = NULL;
+		*vpp = NULL;
 		return (error);
 	}
-	*ipp = VTOI(vp);
+	/*
+	 * Finish inode initialization now that aliasing has been resolved.
+	 */
+	ip = VTOI(vp);
+	ip->i_lfs = ump->um_lfs;
+	ip->i_devvp = ump->um_devvp;
+	VREF(ip->i_devvp);
+	*vpp = vp;
 	return (0);
 }
 
 int
-lfs_iupdat(ip, ta, tm, waitfor)
-	register struct inode *ip;
+lfs_update(vp, ta, tm, waitfor)
+	register struct vnode *vp;
 	struct timeval *ta, *tm;
         int waitfor;
 {
+	struct inode *ip;
+
+	if (vp->v_mount->mnt_flag & MNT_RDONLY)
+		return (0);
+	ip = VTOI(vp);
+	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
+		return (0);
+	if (ip->i_flag&IACC)
+		ip->i_atime = ta->tv_sec;
+	if (ip->i_flag&IUPD)
+		ip->i_mtime = tm->tv_sec;
+	if (ip->i_flag&ICHG)
+		ip->i_ctime = time.tv_sec;
+	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
+
 	/*
 	 * XXX
-	 * This isn't right, but ufs_iupdat() isn't either.
+	 * I'm not real sure what to do here; once we have fsync and partial
+	 * segments working in the LFS context, this must be fixed to be
+	 * correct.  The contents of the inode have to be pushed back to
+	 * stable storage; note that the ifile contains the access time of
+	 * the inode and must be updated as well.
 	 */
-	ITIMES(ip, ta, tm);
 	return (0);
 }
 
@@ -129,17 +151,19 @@ lfs_iupdat(ip, ta, tm, waitfor)
  */
 /* ARGSUSED */
 int
-lfs_itrunc(oip, length, flags)
-	register struct inode *oip;
+lfs_truncate(ovp, length, flags)
+	struct vnode *ovp;
 	u_long length;
 	int flags;
 {
 	register struct lfs *fs;
+	register struct inode *oip;
 	struct buf *bp;
 	daddr_t lbn;
 	int error, offset, size;
 
-	vnode_pager_setsize(ITOV(oip), length);
+	vnode_pager_setsize(ovp, length);
+	oip = VTOI(ovp);
 
 	/* If length is larger than the file, just update the times. */
 	if (oip->i_size <= length) {
@@ -164,11 +188,11 @@ lfs_itrunc(oip, length, flags)
 		if (error = getinoquota(oip))
 			return (error);
 #endif	
-		if (error = bread(ITOV(oip), lbn, fs->lfs_bsize, NOCRED, &bp))
+		if (error = bread(ovp, lbn, fs->lfs_bsize, NOCRED, &bp))
 			return (error);
 		oip->i_size = length;
 		size = blksize(fs);				/* LFS */
-		(void) vnode_pager_uncache(ITOV(oip));
+		(void) vnode_pager_uncache(ovp);
 		bzero(bp->b_un.b_addr + offset, (unsigned)(size - offset));
 		allocbuf(bp, size);
 		lfs_bwrite(bp);

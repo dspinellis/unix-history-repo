@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.1 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -490,7 +490,7 @@ lfs_updatemeta(fs, sp, ip, lbp, bpp, nblocks)
 
 	for (lbpp = bpp, i = 0; i < nblocks; ++i, ++lbpp) {
 		lbn = lbp[i];
-		if (error = lfs_bmap(ip, lbn, &daddr))
+		if (error = lfs_bmap(ITOV(ip), lbn, NULL, &daddr))
 			panic("lfs_updatemeta: lfs_bmap");
 
 		/* Update in-core copy of old segment usage information. */
