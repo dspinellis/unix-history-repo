@@ -1,0 +1,3 @@
+cat ansihead.mak unixhead.mak gs.mak devs.mak unixtail.mak >unix-ansi.mak
+cat cc-head.mak unixhead.mak gs.mak devs.mak unixtail.mak >unix-cc.mak
+cat gcc-head.mak unixhead.mak gs.mak devs.mak unixtail.mak >unix-gcc.mak
