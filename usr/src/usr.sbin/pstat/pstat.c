@@ -12,21 +12,22 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/vnode.h>
 #include <sys/map.h>
+#include <sys/ucred.h>
 #define KERNEL
 #include <sys/file.h>
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
-#undef KERNEL
 #define NFS
 #include <sys/mount.h>
 #undef NFS
+#undef KERNEL
 #include <sys/stat.h>
 #include <nfs/nfsnode.h>
 #include <sys/ioctl.h>
@@ -59,10 +60,10 @@ struct nlist nl[] = {
 	{ "_nswdev" },	/* number of swap devices */
 #define VM_DMMAX	5
 	{ "_dmmax" },	/* maximum size of a swap block */
-#define V_NUMV		6
+#define	V_MOUNTLIST	6
+	{ "_mountlist" },	/* address of head of mount list. */
+#define V_NUMV		7
 	{ "_numvnodes" },
-#define V_ROOTFS	7
-	{ "_rootfs" },
 #define	FNL_NFILE	8
 	{"_nfiles"},
 #define FNL_MAXFILE	9
@@ -649,11 +650,11 @@ struct e_vnode *
 kinfo_vnodes(avnodes)
 	int *avnodes;
 {
-	int numvnodes;
-	struct mount *rootfs, *mp, mount;
-	char *vbuf, *evbuf, *bp;
+	struct mntlist mountlist;
+	struct mount *mp, mount;
 	struct vnode *vp, vnode;
-	int num;
+	char *vbuf, *evbuf, *bp;
+	int num, numvnodes;
 
 #define VPTRSZ  sizeof(struct vnode *)
 #define VNODESZ sizeof(struct vnode)
@@ -663,11 +664,11 @@ kinfo_vnodes(avnodes)
 		err(1, NULL);
 	bp = vbuf;
 	evbuf = vbuf + (numvnodes + 20) * (VPTRSZ + VNODESZ);
-	KGET(V_ROOTFS, rootfs);
-	mp = rootfs;
-	do {
+	KGET(V_MOUNTLIST, mountlist);
+	for (mp = mountlist.tqh_first; mp != NULL; mp = mp->mnt_list.tqe_next) {
 		KGET2(mp, &mount, sizeof(mount), "mount entry");
-		for (vp = mount.mnt_mounth; vp; vp = vnode.v_mountf) {
+		for (vp = mount.mnt_vnodelist.lh_first;
+		    vp != NULL; vp = vp->v_mntvnodes.le_next) {
 			KGET2(vp, &vnode, sizeof(vnode), "vnode");
 			if ((bp + VPTRSZ + VNODESZ) > evbuf)
 				/* XXX - should realloc */
@@ -678,8 +679,7 @@ kinfo_vnodes(avnodes)
 			bp += VNODESZ;
 			num++;
 		}
-		mp = mount.mnt_next;
-	} while (mp != rootfs);
+	}
 	*avnodes = num;
 	return ((struct e_vnode *)vbuf);
 }
