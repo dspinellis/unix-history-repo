@@ -2,5 +2,6 @@
 +/"atime "Y4+n"mtime "Y4+n"ctime "Y4+n
 +/"addresses"
 +/15Xn
-+/"flags"nX24+
++/"flags"16t"blocks"nXD
++/"gen "Y16+n
 +,<9-1$<dino
