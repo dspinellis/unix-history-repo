@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lpd.8	6.1 (Berkeley) %G%
+.\"	@(#)lpd.8	6.2 (Berkeley) %G%
 .\"
 .TH LPD 8 ""
 .UC 5
@@ -11,7 +11,9 @@
 lpd \- line printer daemon
 .SH SYNOPSIS
 .B /usr/lib/lpd
-[ -l ] [ -L logfile ] [ port # ]
+[
+.B \-l
+] [ port # ]
 .SH DESCRIPTION
 .I Lpd
 is the line printer daemon (spool area handler) and is normally invoked
@@ -33,11 +35,7 @@ with other processes is normally obtained with
 .IR getservbyname (3)
 but can be changed with the
 .IR port #
-argument. The
-.B \-L
-option changes the file used for writing error conditions from the
-system console to
-.I logfile.
+argument.
 The
 .B \-l
 flag causes
@@ -157,8 +155,11 @@ for the standard input (when
 is invoked in a pipeline).
 .in -5
 .PP
-If a file can not be opened, a message will be placed
-in the log file (normally the console).
+If a file can not be opened, a message will be logged via
+.IR syslog (3)
+using the
+.I LOG_LPR
+facility.
 .I Lpd
 will try up to 20 times
 to reopen a file it expects to be there, after which it will
@@ -197,6 +198,7 @@ pac(1),
 lpr(1),
 lpq(1),
 lprm(1),
+syslog(3),
 printcap(5)
 .br
 .ul
