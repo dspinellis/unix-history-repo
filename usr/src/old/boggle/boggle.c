@@ -12,15 +12,22 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)boggle.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)boggle.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <setjmp.h>
 #include <sgtty.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
 #include "pathnames.h"
 
 /* basic parameters */
@@ -51,8 +58,7 @@ int master = 1;
 int column;
 int *timept;
 int timeint[] = {60,60,50,7,1,1,1,0};
-long timein;
-extern long int time();
+time_t timein;
 struct sgttyb origttyb, tempttyb;
 int ctlecho = 0;
 int lctlech = LCTLECH;
@@ -61,10 +67,8 @@ jmp_buf env;
 /* monitoring variables */
 int games;
 int logfile = -1;
-long logloc;
+off_t logloc;
 char logbuff[100] = {"inst\t"};
-extern char *ctime(), *getlogin();
-extern long lseek();
 
 /* dictionary interface */
 FILE *dict;
@@ -74,18 +78,18 @@ struct frame {
 	struct frame *parent;
 	int place;
 };
-struct frame stack [SSIZE];
-struct frame *level [BSIZE+1];
+struct frame stack[SSIZE];
+struct frame *level[BSIZE+1];
 
 /* the board and subsidiary structures */
-char present [BSIZE+1];
-char board [BSIZE];
-char olink [BSIZE];
-char adj [BSIZE+1][BSIZE];
-char occurs [26];
+char present[BSIZE+1];
+char board[BSIZE];
+char olink[BSIZE];
+char adj[BSIZE+1][BSIZE];
+char occurs[26];
 
 /* the boggle cubes */
-char *cube [BSIZE] = {
+char *cube[BSIZE] = {
 	"forixb", "moqabj", "gurilw", "setupl",
 	"cmpdae", "acitao", "slcrae", "romash",
 	"nodesw", "hefiye", "onudtk", "tevign",
@@ -95,11 +99,35 @@ char *cube [BSIZE] = {
 
 /* storage for words found */
 int ubotch, ustart, wcount;
-char *word [MAXWORDS];
+char *word[MAXWORDS];
 char *freesp;
 char space[10000];
 
-endline ()
+void		aputuword __P((int));
+void		aputword __P((int));
+void		clearscreen __P((void));
+int		compare __P((const void *, const void *));
+void		endline __P((void));
+int		evalboard __P((int (*)(void), void (*)(int)));
+void		genboard __P((void));
+int		getdword __P((void));
+int		getuword __P((void));
+__dead void	goodbye __P((int));
+void		interrupt __P((int));
+void		makelists __P((void));
+int		numways __P((struct frame *, struct frame *));
+void		outword __P((char *));
+void		printboard __P((void));
+void		printdiff __P((void));
+void		printinst __P((void));
+void		setup __P((void));
+void		timeout __P((int));
+void		tputword __P((int));
+int		wordcomp __P((char *, char *));
+
+
+void
+endline()
 {
 	if (column != 0) {
 		putchar('\n');
@@ -108,51 +136,58 @@ endline ()
 }
 
 void
-timeout ()
+timeout(sig)
+	int sig;
 {
 	if (*timept > 0) {
-		signal (SIGALRM, timeout);
+		signal(SIGALRM, timeout);
 		alarm(*timept++);
 	}
 	putchar('\007');
 }
 
 void
-interrupt ()
+interrupt(sig)
+	int sig;
 {
+
 	signal(SIGINT, interrupt);
 	if (delct++ >= 1)
 		longjmp(env, 1);
 	timept = &zero;
 }
 
-goodbye (stat)
-int stat;
+__dead void
+goodbye(stat)
+	int stat;
 {
 	if (master != 0) {
 		wait(&status);
-		if ( ctlecho & LCTLECH ) {
-			ioctl( fileno(stdin), TIOCLBIS, &lctlech );
-		}
+		if (ctlecho & LCTLECH)
+			ioctl(fileno(stdin), TIOCLBIS, &lctlech);
 		stty(fileno(stdin), &origttyb);
 	}
 	exit(stat);
 }
 
-clearscreen ()
+void
+clearscreen()
 {
-	stty (fileno(stdin), &tempttyb);
+	stty(fileno(stdin), &tempttyb);
 	printf("\n\033\f\r");
 }
 
-compare (a, b)
-char **a, **b;
+int
+compare(a, b)
+	const void *a, *b;
 {
-	return(wordcomp(*a, *b));
+
+	return(wordcomp(*(char **)a, *(char **)b));
 }
 
-wordcomp (p, q)
-register char *p, *q;
+int
+wordcomp(p, q)
+	register char *p, *q;
 {
 	if (*p=='0' && *q!='0')
 		return(-1);
@@ -166,9 +201,10 @@ register char *p, *q;
 	return(*p-*q);
 }
 
-printinst ()
+void
+printinst()
 {
-	stty (fileno(stdin), &tempttyb);
+	stty(fileno(stdin), &tempttyb);
 	printf("instructions?");
 	if (getchar() == 'y') {
 		clearscreen();
@@ -197,13 +233,14 @@ printinst ()
 		printf("can only be used once in each word.  The second + causes a position  to\n");
 		printf("be  considered  adjacent  to itself as well as its (up to) 8 neighbors.\n");
 		printf("Hit any key to begin.\n");
-		stty (fileno(stdin), &tempttyb);
+		stty(fileno(stdin), &tempttyb);
 		getchar();
 	}
-	stty (fileno(stdin), &tempttyb);
+	stty(fileno(stdin), &tempttyb);
 }
 
-setup ()
+void
+setup()
 {
 	register int i, j;
 	int rd, cd, k;
@@ -234,7 +271,8 @@ setup ()
 	level[1] = &stack[1];
 }
 
-makelists ()
+void
+makelists()
 {
 	register int i, c;
 	for (i=0; i<26; i++)
@@ -246,7 +284,8 @@ makelists ()
 	}
 }
 
-genboard ()
+void
+genboard()
 {
 	register int i, j;
 	for (i=0; i<BSIZE; i++)
@@ -259,7 +298,8 @@ genboard ()
 	}
 }
 
-printboard ()
+void
+printboard()
 {
 	register int i, j;
 	for (i=0; i<N; i++) {
@@ -273,7 +313,8 @@ printboard ()
 	putchar('\n');
 }
 
-getdword ()
+int
+getdword()
 {
 	/* input:  numsame = # chars same as last word   */
 	/* output: numsame = # same chars for next word  */
@@ -289,7 +330,8 @@ getdword ()
 	return (1);
 }
 
-getuword ()
+int
+getuword()
 {
 	int c;
 	register char *p, *q, *r;
@@ -321,14 +363,16 @@ getuword ()
 	return(1);
 }
 
-aputuword (ways)
-int ways;
+void
+aputuword(ways)
+	int ways;
 {
 	*word[wcount-1] = ways>=10 ? '*' : '0'+ways;
 }
 
-aputword (ways)
-int ways;
+void
+aputword(ways)
+	int ways;
 {
 	/* store (wbuff, ways) in next slot in space */
 	register int i;
@@ -338,8 +382,9 @@ int ways;
 	word[++wcount] = freesp;
 }
 
-tputword (ways)
-int ways;
+void
+tputword(ways)
+	int ways;
 {
 	/* print (wbuff, ways) on terminal */
 	wbuff[wlength+1] = '0';
@@ -347,8 +392,9 @@ int ways;
 	outword(&wbuff[0]);
 }
 
-outword (p)
-register char *p;
+void
+outword(p)
+	register char *p;
 {
 	register int newcol;
 	register char *q;
@@ -376,7 +422,8 @@ register char *p;
 	}
 }
 
-printdiff ()
+void
+printdiff()
 {
 	register int c, d, u;
 	char both, donly, uonly;
@@ -428,9 +475,10 @@ printdiff ()
 	}
 }
 
-numways (leaf, last)
-register struct frame *leaf;
-struct frame *last;
+int
+numways(leaf, last)
+	register struct frame *leaf;
+	struct frame *last;
 {
 	int count;
 	register char *p;
@@ -449,8 +497,10 @@ struct frame *last;
 	return(count);
 }
 
+int
 evalboard (getword, putword)
-int (*getword)(), (*putword)();
+	int (*getword) __P((void));
+	void (*putword) __P((int));
 {
 	register struct frame *top;
 	register int l, q;
@@ -506,28 +556,30 @@ int (*getword)(), (*putword)();
 	return(found);
 }
 
-main (argc, argv)
-int argc;
-char **argv;
+int
+main(argc, argv)
+	int argc;
+	char **argv;
 {
 	char *q;
 	register char *p;
 	register int i, c;
 
-	gtty (fileno(stdin), &origttyb);
+	gtty(fileno(stdin), &origttyb);
 	setbuf(stdin, NULL);
 	tempttyb = origttyb;
 	if (setjmp(env) != 0)
 		goodbye(0);
-	signal (SIGINT, interrupt);
+	signal(SIGINT, interrupt);
 	timein = time((time_t *)NULL);
-	if (argv[0][0] != 'a' && (logfile = open(_PATH_BOGLOG, 1)) >= 0) {
+	if (argv[0][0] != 'a' &&
+	    (logfile = open(_PATH_BOGLOG, O_WRONLY, 0)) >= 0) {
 		p = &logbuff[5];
 		q = getlogin();
-		while (*p++ = *q++);
+		while ((*p++ = *q++) != 0);
 		p[-1] = '\t';
 		q = ctime(&timein);
-		while (*p++ = *q++);
+		while ((*p++ = *q++) != 0);
 		logloc = lseek(logfile, 0L, 2);
 		write(logfile, &logbuff[0], p-&logbuff[1]);
 	}
@@ -601,7 +653,7 @@ char **argv;
 				alarm(*timept++);
 				evalboard(getuword, aputuword);
 				clearscreen();
-				qsort(&word[0], wcount, sizeof (int), compare);
+				qsort(&word[0], wcount, sizeof(int), compare);
 				for (i=0; i<wcount; i++)
 					if (i==0 || wordcomp(word[i], word[i-1])!=0) {
 						p = word[i];
