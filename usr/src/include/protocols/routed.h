@@ -1,9 +1,10 @@
-/*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1983, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)routed.h	5.1 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)routed.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -51,14 +52,22 @@ char *ripcmds[RIPCMD_MAX] =
 
 /*
  * Timer values used in managing the routing table.
- * Every update forces an entry's timer to be reset.  After
- * EXPIRE_TIME without updates, the entry is marked invalid,
+ * Complete tables are broadcast every SUPPLY_INTERVAL seconds.
+ * If changes occur between updates, dynamic updates containing only changes
+ * may be sent.  When these are sent, a timer is set for a random value
+ * between MIN_WAITTIME and MAX_WAITTIME, and no additional dynamic updates
+ * are sent until the timer expires.
+ *
+ * Every update of a routing entry forces an entry's timer to be reset.
+ * After EXPIRE_TIME without updates, the entry is marked invalid,
  * but held onto until GARBAGE_TIME so that others may
  * see it "be deleted".
  */
 #define	TIMER_RATE		30	/* alarm clocks every 30 seconds */
 
 #define	SUPPLY_INTERVAL		30	/* time to supply tables */
+#define	MIN_WAITTIME		2	/* min. interval to broadcast changes */
+#define	MAX_WAITTIME		5	/* max. time to delay changes */
 
 #define	EXPIRE_TIME		180	/* time to mark entry invalid */
 #define	GARBAGE_TIME		240	/* time to garbage collect */
