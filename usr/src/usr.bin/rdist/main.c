@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.7 (Berkeley) 83/10/26";
+static	char *sccsid = "@(#)main.c	4.8 (Berkeley) 83/11/01";
 #endif
 
 #include "defs.h"
@@ -30,6 +30,9 @@ char	homedir[128];	/* user's home directory */
 int	userid;		/* user's user ID */
 int	groupid;	/* user's group ID */
 
+struct	passwd *pw;	/* pointer to static area used by getpwent */
+struct	group *gr;	/* pointer to static area used by getgrent */
+
 int	cleanup();
 int	lostconn();
 
@@ -38,7 +41,6 @@ main(argc, argv)
 	char *argv[];
 {
 	register char *arg;
-	register struct	passwd *pw;
 	int cmdargs = 0;
 
 	pw = getpwuid(userid = getuid());

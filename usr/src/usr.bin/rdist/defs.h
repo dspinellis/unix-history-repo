@@ -1,4 +1,4 @@
-/*	defs.h	4.6	83/10/26	*/
+/*	defs.h	4.7	83/11/01	*/
 
 #include <stdio.h>
 #include <ctype.h>
@@ -44,8 +44,7 @@
 #define WHOLE	0x2
 #define YOUNGER	0x4
 #define COMPARE	0x8
-#define STRIP	0x10
-#define REMOVE	0x20
+#define REMOVE	0x10
 
 #define ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
 
@@ -70,6 +69,8 @@ extern int iamremote;		/* acting as remote server */
 extern int filec;		/* number of files to update */
 extern char **filev;		/* list of files/directories to update */
 extern char tmpfile[];		/* file name for logging changes */
+extern struct passwd *pw;	/* pointer to static area used by getpwent */
+extern struct group *gr;	/* pointer to static area used by getgrent */
 extern char host[];		/* host name of master copy */
 extern char *rhost;		/* host name of remote being updated */
 extern struct block *except;	/* list of files to exclude */
