@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwwrite.c	3.23 %G%";
+static char sccsid[] = "@(#)wwwrite.c	3.24 %G%";
 #endif
 
 /*
@@ -108,12 +108,8 @@ int n;
 						ns[i].c_w = bp[i].c_w
 							^ win[i] << WWC_MSHIFT;
 					}
-				if (nchanged > 0) {
+				if (nchanged > 0)
 					wwtouched[w->ww_cur.r] |= WWU_TOUCHED;
-					if (!w->ww_noupdate)
-						wwupdate1(w->ww_cur.r,
-							w->ww_cur.r + 1);
-				}
 			}
 		chklf:
 			if (w->ww_cur.c >= w->ww_w.r)
@@ -126,6 +122,8 @@ int n;
 		crlf:
 					w->ww_cur.c = w->ww_w.l;
 		lf:
+				if (!w->ww_noupdate && wwtouched[w->ww_cur.r])
+					wwupdate1(w->ww_cur.r, w->ww_cur.r + 1);
 				if (++w->ww_cur.r >= w->ww_w.b) {
 					w->ww_cur.r = w->ww_w.b - 1;
 					if (w->ww_w.b < w->ww_b.b) {
@@ -163,6 +161,8 @@ int n;
 				break;
 			case 'A':
 		up:
+				if (!w->ww_noupdate && wwtouched[w->ww_cur.r])
+					wwupdate1(w->ww_cur.r, w->ww_cur.r + 1);
 				if (--w->ww_cur.r < w->ww_w.t) {
 					w->ww_cur.r = w->ww_w.t;
 					if (w->ww_w.t > w->ww_b.t) {
@@ -190,6 +190,8 @@ int n;
 				wwclreos(w, w->ww_w.t, w->ww_w.l);
 				break;
 			case 'H':
+				if (!w->ww_noupdate && wwtouched[w->ww_cur.r])
+					wwupdate1(w->ww_cur.r, w->ww_cur.r + 1);
 				w->ww_cur.r = w->ww_w.t;
 				w->ww_cur.c = w->ww_w.l;
 				break;
@@ -200,6 +202,8 @@ int n;
 				wwclreol(w, w->ww_cur.r, w->ww_cur.c);
 				break;
 			case 'L':
+				if (!w->ww_noupdate && wwtouched[w->ww_cur.r])
+					wwupdate1(w->ww_cur.r, w->ww_cur.r + 1);
 				wwinsline(w, w->ww_cur.r);
 				break;
 			case 'M':
@@ -212,6 +216,8 @@ int n;
 				w->ww_insert = 0;
 				break;
 			case 'Y':
+				if (!w->ww_noupdate && wwtouched[w->ww_cur.r])
+					wwupdate1(w->ww_cur.r, w->ww_cur.r + 1);
 				w->ww_wstate = 2;
 				break;
 			case 's':
