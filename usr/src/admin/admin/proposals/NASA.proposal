@@ -1,4 +1,4 @@
-.\"	@(#)NASA.proposal	1.1	91/03/19
+.\"	@(#)NASA.proposal	1.2	91/04/02
 .if n \{\
 .ND
 .rm CH
@@ -29,21 +29,21 @@ the Computer Systems Research Group (\s-1CSRG\s0).
 Current funding for \s-1CSRG\s0 is provided by the Open Software
 Foundation (\s-1OSF\s0), Hewlett-Packard (HP), and Cray Research.
 Because of the current economic climate,
-these organizations have had to reduce their support of \s-1CSRG\s0;
-so we have had to seek additional funding from other sources so that we
-can continue our work at the university.
+these organizations have had to reduce their support of \s-1CSRG\s0, 
+and we are seeking additional funding from other sources so that we
+may continue our research.
 .PP
-Our strategy is to increase from three to four sources of funding,
-each of which would provide about one quarter of our annual budget.
-Annual grants of about $400,000 or
-annual gifts of about $200,000 would provide roughly
-a quarter of the budget needed by \s-1CSRG\s0
+Our strategy is to add an additional source of funding to our current
+three, and have each of the additional sources provide about one fourth
+of our annual budget.
+Annual grants of about $400,000 or annual gifts of about $200,000 would
+provide roughly a quarter of the budget needed by \s-1CSRG\s0
 for salaries and benefits, maintenance and network access fees,
 travel and other expenses.
-I understand that \s-1NASA\s0 cannot provide
-funding at this level in the current year,
-however, I would hope that a successful year at a lower level of funding
-could promote us to consideration for a larger grant in future years.
+I realize that \s-1NASA\s0 cannot provide funding at this level in the
+current year, however, I would hope that a successful year at a lower
+level of funding would promote us to consideration for a larger grant
+in future years.
 .PP
 The goal of the \s-1CSRG\s0 project
 is to use leading edge research ideas in a stable and reliable
@@ -57,9 +57,9 @@ The most recent two releases, \s-14.2BSD\s0
 and \s-14.3BSD\s0, provide the
 core of the standard networking and/or operating system software for
 nearly all vendors of \s-1UNIX\s0-based workstations and minicomputers.
-\s-14.3BSD\s0-based network support are included in the current systems
-released by both \s-1OSF\s0 (\s-1OSF-1\s0)
-and \s-1AT&T\s0 (System V, Release 4).
+The network support in the current systems released by both \s-1OSF\s0
+(\s-1OSF-1\s0) and \s-1AT&T\s0 (System V, Release 4) is based
+\s-14.3BSD\s0.
 .PP
 \s-1CSRG\s0 includes four full-time research staff (Mike Karels,
 Keith Bostic, Marc Teitelbaum and myself),
@@ -85,13 +85,15 @@ We expect that \s-14.4BSD\s0-Lite will contain a bootable system
 and have all the important utilities.
 We will have machine support for 386/486 based PCs,
 Hewlett-Packard's Motorola 68000 based workstations,
-and Sun 4 workstations.
+and Sun 4 workstations, as well as the traditional support for VAXes
+and machines based on Computer Consoles' 6/32 architecture.
 We are moderately confident of having support for \s-1MIPS\s0 workstations
-and DEC \s-1SPIM\s0 (byte reversed \s-1MIPS\s0) workstations.
+and DEC \s-1SPIM\s0 (byte reversed \s-1MIPS\s0) workstations, and may have
+support for other architectures.
 .PP
 The file system interface
 has been extended to allow greater flexibility and performance,
-and a public-domain version of \s-1NFS\s0 is included.
+and a freely redistributable version of \s-1NFS\s0 is included.
 The new system integrates an implementation of the
 \s-1ISO OSI\s0 networking protocols into the existing
 socket interface and internal network architecture.
@@ -117,7 +119,7 @@ We have also been closely tracking the P1003.2 and P1003.2a shell
 and utility standards, and have been updating our utilities to reflect
 that proposed standard.
 If the standard has been ratified by the time that we prepare to
-ship \s-14.4BSD\s0, we will be able to be compliant with it.
+ship \s-14.4BSD\s0, we expect to be compliant with it, as well.
 We have been attending the meetings of several other \s-1POSIX\s0
 working groups, including P1003.4 (real-time) P1003.4a (multiprocessing),
 P1003.8 (networked filesystems), and P1003.12 (networking interfaces).
