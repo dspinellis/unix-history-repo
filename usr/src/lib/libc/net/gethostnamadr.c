@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gethostnamadr.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -211,7 +211,7 @@ gethostbyaddr(addr, len, type)
 		return(NULL);
 	hp->h_addrtype = type;
 	hp->h_length = len;
-	h_addr_ptrs[0] = (char *)host_addr;
+	h_addr_ptrs[0] = (char *)&host_addr;
 	h_addr_ptrs[1] = (char *)0;
 	host_addr = *(struct in_addr *)addr;
 	return(hp);
