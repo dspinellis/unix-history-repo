@@ -17,11 +17,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
 # include "sendmail.h"
+# include "pathnames.h"
 
 /*
 **  CONF.C -- Sendmail Configuration Tables.
@@ -111,8 +112,8 @@ char	Arpa_Usrerr[] =		"554";	/* some (fatal) user error */
 **  Location of system files/databases/etc.
 */
 
-char	*ConfFile =	"/etc/sendmail.cf";	/* runtime configuration */
-char	*FreezeFile =	"/etc/sendmail.fc";	/* frozen version of above */
+char	*ConfFile =	_PATH_SENDMAILCF;	/* runtime configuration */
+char	*FreezeFile =	_PATH_SENDMAILFC;	/* frozen version of above */
 
 
 
