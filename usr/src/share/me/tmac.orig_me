@@ -12,14 +12,14 @@
 .\"*		1919 Addison Street Suite 304				*
 .\"*		Berkeley, California  94704				*
 .\"*									*
-.\"*	VERSION 2.17	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.18	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.17	%G%
+.\"	@(#)tmac.orig_me	2.18	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -195,13 +195,16 @@
 .	@n			\" begin the column
 .if \n@>2 .tm << @h
 ..
-.de @m			\" --- output cut mark
-.@O 0
-.lt 7.5i
-.tl '\(rn''\(rn'
-.@O
-.lt
+.if !\nv \
+\{\
+.	de @m		\" --- output cut mark (only on C/A/T-style)
+.	@O 0
+.	lt 7.5i
+.	tl '\(rn''\(rn'
+.	@O
+.	lt
 ..
+.\}
 .de @n			\" --- new column or page
 .if \n@>3 .tm >> @n nl=\\n(nl %=\\n% ?f=\\n(?f ?o=\\n(?o
 .if \\n(bm<=0 \
