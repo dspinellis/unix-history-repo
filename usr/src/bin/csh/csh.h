@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)csh.h	5.4 (Berkeley) %G%
+ *	@(#)csh.h	5.5 (Berkeley) %G%
  */
 
 #include <sys/time.h>
@@ -127,8 +127,8 @@ jmp_buf	reslab;
 #define	resexit(a)	copy((char *)reslab, ((char *)(a)), sizeof reslab)
 
 char	*gointr;		/* Label for an onintr transfer */
-int	(*parintr)();		/* Parents interrupt catch */
-int	(*parterm)();		/* Parents terminate catch */
+sig_t	parintr;		/* Parents interrupt catch */
+sig_t	parterm;		/* Parents terminate catch */
 
 /*
  * Lexical definitions.

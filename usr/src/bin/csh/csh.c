@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)csh.c	5.12 (Berkeley) %G%";
+static char *sccsid = "@(#)csh.c	5.13 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -114,6 +114,8 @@ main(c, av)
 	(void) sigvec(SIGTERM, (struct sigvec *)0, &osv);
 	parterm = osv.sv_handler;
 	if (loginsh) {
+		sig_t phup;
+
 		(void) signal(SIGHUP, phup);	/* exit processing on HUP */
 		(void) signal(SIGXCPU, phup);	/* ...and on XCPU */
 		(void) signal(SIGXFSZ, phup);	/* ...and on XFSZ */
@@ -286,7 +288,7 @@ retry:
 			    tpgrp != -1) {
 				int ldisc;
 				if (tpgrp != shpgrp) {
-					int (*old)() = signal(SIGTTIN, SIG_DFL);
+					sig_t old = signal(SIGTTIN, SIG_DFL);
 					(void) kill(0, SIGTTIN);
 					(void) signal(SIGTTIN, old);
 					goto retry;
