@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -285,7 +285,8 @@ getdrivedata(argv)
 		dr_name[i] = NULL;
 	cur.xfer = calloc((size_t)dk_ndrive, sizeof(long));
 	last.xfer = calloc((size_t)dk_ndrive, sizeof(long));
-	read_names();
+	if (!read_names())
+		exit (1);
 	for (i = 0; i < dk_ndrive; i++)
 		if (dr_name[i] == NULL) {
 			(void)sprintf(buf, "??%d", i);
