@@ -42,12 +42,6 @@ static	char	sccsid[] = "@(#)globals.c	3.1  10/29/86";
 
 #include	"../general/general.h"
 
-#if	defined(SLOWSCREEN)
-
-ScreenImage Terminal[MAXSCREENSIZE];
-
-#endif	/* defined(SLOWSCREEN) */
-
 /*
  * init_system()
  *
