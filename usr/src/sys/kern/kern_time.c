@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_time.c	7.18 (Berkeley) %G%
+ *	@(#)kern_time.c	7.19 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -109,35 +109,50 @@ adjtime(p, uap, retval)
 	register struct adjtime_args *uap;
 	int *retval;
 {
-	struct timeval atv, oatv;
-	register long ndelta;
+	struct timeval atv;
+	register long ndelta, ntickdelta, odelta;
 	int s, error;
 
 	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
 	if (error =
-	    copyin((caddr_t)uap->delta, (caddr_t)&atv, sizeof (struct timeval)))
+	    copyin((caddr_t)uap->delta, (caddr_t)&atv, sizeof(struct timeval)))
 		return (error);
-	ndelta = atv.tv_sec * 1000000 + atv.tv_usec;
-	if (timedelta == 0)
-		if (ndelta > bigadj)
-			tickdelta = 10 * tickadj;
-		else
-			tickdelta = tickadj;
-	if (ndelta % tickdelta)
-		ndelta = ndelta / tickadj * tickadj;
 
+	/*
+	 * Compute the total correction and the rate at which to apply it.
+	 * Round the adjustment down to a whole multiple of the per-tick
+	 * delta, so that after some number of incremental changes in
+	 * hardclock(), tickdelta will become zero, lest the correction
+	 * overshoot and start taking us away from the desired final time.
+	 */
+	ndelta = atv.tv_sec * 1000000 + atv.tv_usec;
+	if (ndelta > bigadj)
+		ntickdelta = 10 * tickadj;
+	else
+		ntickdelta = tickadj;
+	if (ndelta % ntickdelta)
+		ndelta = ndelta / ntickdelta * ntickdelta;
+
+	/*
+	 * To make hardclock()'s job easier, make the per-tick delta negative
+	 * if we want time to run slower; then hardclock can simply compute
+	 * tick + tickdelta, and subtract tickdelta from timedelta.
+	 */
+	if (ndelta < 0)
+		ntickdelta = -ntickdelta;
 	s = splclock();
-	if (uap->olddelta) {
-		oatv.tv_sec = timedelta / 1000000;
-		oatv.tv_usec = timedelta % 1000000;
-	}
+	odelta = timedelta;
 	timedelta = ndelta;
+	tickdelta = ntickdelta;
 	splx(s);
 
-	if (uap->olddelta)
-		(void) copyout((caddr_t)&oatv, (caddr_t)uap->olddelta,
-			sizeof (struct timeval));
+	if (uap->olddelta) {
+		atv.tv_sec = odelta / 1000000;
+		atv.tv_usec = odelta % 1000000;
+		(void) copyout((caddr_t)&atv, (caddr_t)uap->olddelta,
+		    sizeof(struct timeval));
+	}
 	return (0);
 }
 
