@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_exit.c	7.35 (Berkeley) 6/27/91
- *	$Id: kern_exit.c,v 1.12 1994/01/21 09:56:24 davidg Exp $
+ *	$Id: kern_exit.c,v 1.13 1994/01/26 19:47:41 chmr Exp $
  */
 
 #include "param.h"
@@ -158,7 +158,7 @@ kexit(p, rv)
 				(void) ttywait(sp->s_ttyp);
 				vgoneall(sp->s_ttyvp);
 			}
-			vn_close(sp->s_ttyvp, FREAD|FWRITE, p->p_ucred, p);
+			vn_close(sp->s_ttyvp, FREAD, p->p_ucred, p);
 			sp->s_ttyvp = NULL;
 			/*
 			 * s_ttyp is not zero'd; we use this to indicate
@@ -177,16 +177,6 @@ kexit(p, rv)
 	if (p->p_tracep)
 		vn_close(p->p_tracep, FREAD|FWRITE, p->p_ucred, p);
 #endif
-
-	/* current process does not exist, as far as other parts of the
-	 * system (clock) is concerned, since parts of it might not be
-	 * there anymore */
-	curproc = NULL;
-
-	if (--p->p_limit->p_refcnt == 0) {
-		FREE(p->p_limit, M_SUBPROC);
-		p->p_limit = (struct plimit *) -1;
-	}
 
 	/*
 	 * Remove proc from allproc queue and pidhash chain.
@@ -250,6 +240,18 @@ done:
 	/* move this to cpu_exit */
 	p->p_addr->u_pcb.pcb_savacc.faddr = (float *)NULL;
 #endif
+	/*
+	 * current process does not exist, as far as other parts of the
+	 * system (clock) is concerned, since parts of it might not be
+	 * there anymore
+	 */
+	curproc = NULL;
+
+	if (--p->p_limit->p_refcnt == 0) {
+		FREE(p->p_limit, M_SUBPROC);
+		p->p_limit = (struct plimit *) -1;
+	}
+
 	/*
 	 * Finally, call machine-dependent code to release the remaining
 	 * resources including address space, the kernel stack and pcb.
