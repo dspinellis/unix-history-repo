@@ -1,4 +1,4 @@
-#	Makefile	4.11	83/07/02
+#	Makefile	4.12	83/07/27
 #
 # makefile for line printer spooling system
 #
@@ -57,7 +57,7 @@ install: all
 	install -s -g ${SPGRP} -m 6711 lpr ${DESTDIR}/${BINDIR}/lpr
 	install -s -g ${SPGRP} -m 6711 lpq ${DESTDIR}/${BINDIR}/lpq
 	install -s -g ${SPGRP} -m 6711 lprm ${DESTDIR}/${BINDIR}/lprm
-	install -s -g ${SPGRP} -m 6711 lpc ${DESTDIR}/etc/lpc
+	install -s -g ${SPGRP} -m 2711 lpc ${DESTDIR}/etc/lpc
 	install -s pac ${DESTDIR}/etc/pac
 	chown ${DAEMON} ${DESTDIR}/${SPOOLDIR}
 	chgrp ${SPGRP} ${DESTDIR}/${SPOOLDIR}
