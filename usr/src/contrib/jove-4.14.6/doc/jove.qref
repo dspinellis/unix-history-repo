@@ -1,0 +1,132 @@
+					JOVE Command Quick Reference Guide
+
+--- HELP
+apropos					describe-bindings			describe-command	ESC ?
+describe-key		C-X ?		describe-variable			execute-named-command	ESC X
+
+
+--- MOVING AROUND
+backward-character	C-B		backward-list		ESC C-P		backward-paragraph	ESC [
+backward-s-expression	ESC C-B		backward-sentence	ESC A		backward-up-list	ESC C-U
+backward-word		ESC B		beginning-of-file	ESC <		beginning-of-line	C-A
+beginning-of-window	ESC ,		current-error				down-list		ESC C-D
+end-of-file		ESC >		end-of-line		C-E		end-of-window		ESC .
+find-tag		C-X T		find-tag-at-point			first-non-blank		ESC M
+forward-character	C-F		forward-list		ESC C-N		forward-paragraph	ESC ]
+forward-s-expression	ESC C-F		forward-sentence	ESC E		forward-word		ESC F
+goto-line		ESC G		next-error		C-X C-N		next-line		C-N
+next-page		C-V		previous-error		C-X C-P		previous-line		C-P
+previous-page		ESC V		window-find-tag		C-X 4 t		
+
+--- INSERTING AND DELETING
+delete-blank-lines	C-X C-O		delete-next-char	C-D		delete-previous-char	C-H (DEL)
+delete-white-space	ESC-\		erase-buffer				handle-tab		C-I (TAB)
+kill-next-word		ESC D		kill-next-word		ESC d		kill-previous-word	ESC ^?
+kill-s-expression	ESC C-K		kill-to-beginning-of-se	C-X ^?		kill-to-end-of-line	C-K
+kill-to-end-of-sentence	ESC K		newline			C-M (RETURN)	newline-and-backup	C-O
+newline-and-indent	C-J		over-write-mode				quoted-insert		C-^
+
+
+--- SEARCH AND REPLACE
+find-tag		C-X T		find-tag-at-point			i-search-forward	
+i-search-reverse			query-replace-string	ESC Q		replace-in-region	
+replace-string		ESC R		search-forward		C-\		search-reverse		C-R
+window-find-tag		C-X 4 t		
+
+--- MARKS AND REGIONS
+append-region				append-region				case-region-lower	
+case-region-upper			copy-region		ESC W		exchange-point-and-mark	C-X C-X
+filter-region				kill-region		C-W		replace-in-region	
+set-mark		C-@ (C-SPACE)	write-region				yank			C-Y
+yank-pop		ESC Y		
+
+--- TEXT PROCESSING
+auto-fill-mode				bind-macro-to-word-abbr			case-character-capitali	
+case-region-lower			case-region-upper			case-word-capitalize	ESC C
+case-word-lower		ESC L		case-word-upper		ESC U		current-error		
+define-global-word-abbr			define-mode-word-abbrev			edit-word-abbrevs	
+fill-paragraph		ESC J		fill-region				left-margin-here	
+next-error		C-X C-N		over-write-mode				parse-spelling-errors-i	
+previous-error		C-X C-P		read-word-abbrev-file			right-margin-here	
+spell-buffer				text-mode				transpose-characters	C-T
+transpose-lines		C-X C-T		visible-spaces-in-windo			word-abbrev-mode	
+write-word-abbrev-file			
+
+--- DISPLAY AND WINDOWS
+clear-and-redraw	ESC C-L		delete-current-window	C-X D		delete-current-window	C-X d
+delete-other-windows	C-X 1		grow-window		C-X ^		next-window		C-X N
+number-lines-in-window			page-next-window	ESC C-V		previous-window		C-X P
+redraw-display		C-L		scroll-down		ESC Z		scroll-up		C-Z
+shrink-window				split-current-window	C-X 2		window-find-buffer	C-X 4 b
+window-find-file	C-X 4 f		window-find-tag		C-X 4 t		
+
+--- FILES AND BUFFERS
+append-region				append-region				buffer-position		
+delete-buffer		C-X K		delete-buffer		C-X k		erase-buffer		
+find-file		C-X C-F		insert-file		C-X C-I		kill-buffer		C-X K
+list-buffers		C-X C-B		make-buffer-unmodified	ESC ~		read-macros-from-file	
+read-word-abbrev-file			rename-buffer				save-file		C-X C-\
+save-file		C-X C-S		select-buffer		C-X B		select-existing-buffer	C-X B
+spell-buffer				visit-file		C-X C-V		visit-file		C-X C-R
+window-find-buffer	C-X 4 b		window-find-file	C-X 4 f		write-file		C-X C-W
+write-macros-to-file			write-modified-files	C-X C-M		write-region		
+write-word-abbrev-file			
+
+--- DIRECTORIES
+cd					dirs					popd			
+pushd					pwd					
+
+
+--- PROGRAMMERS
+auto-indent-mode			backward-s-expression	ESC C-B		c-mode			
+compile-it(make)	C-X C-E		current-error				fill-comment		
+forward-s-expression	ESC C-F		grind-s-expr				kill-s-expression	ESC C-K
+lisp-mode				next-error		C-X C-N		number-lines-in-window	
+paren-flash		),],}		parse-errors				parse-special-errors	
+previous-error		C-X C-P		show-match-mode				string-length		
+visible-spaces-in-windo			
+
+--- REPEAT
+digit			ESC -		digit			ESC [0-9]	quadruple-numeric-argum	C-U
+
+
+--- MACROS
+delete-macro				execute-keyboard-macro	C-X E		make-macro-interactive	
+make-macro-interactive	ESC I		read-macros-from-file			begin-kbd-macro	C-X (
+end-kbd-macro		C-X )		write-macros-to-file			
+
+--- SHELL
+exit-jove		C-X C-C		i-shell-command				pause-jove		ESC S
+pause-jove		ESC s		push-shell				shell			
+shell-command		C-X !		shell-command-to-buffer			suspend-jove		
+
+
+--- PROCESSES
+eof-process				interrupt-process	C-C		kill-process		
+list-processes				process-bind-to-key			process-newline		C-M (RETURN)
+process-send-data-no-re			quit-process				stop-process		
+
+
+--- MISCELLANEOUS
+auto-execute-command			auto-execute-macro			bind-macro-to-key	
+bind-macro-to-word-abbr			bind-to-key				character-to-octal-inse	
+date					execute-extended-comman	ESC X		fundamental-mode	
+print					recursive-edit				ring-the-bell(ABORT)	C-G
+set					source					unbind-key		
+version					
+
+--- VARIABLES
+allow-^S-and-^Q				allow-bad-filenames			auto-case-abbrev	
+bad-filename-extensions			c-indentation-increment			case-ignore-search	
+comment-format				disable-biff				error-window-size	
+file-creation-mode			files-should-end-with-n			internal-tabstop	
+left-margin				mailbox					mail-check-frequency	
+make-backup-files			mark-threshold				marks-should-float	
+match-regular-expressio			meta-key				mode-line		
+mode-line-should-stando			paren-flash-delay			physical-tabstop	
+process-prompt				interrupt-character			right-margin		
+scroll-step				search-exit-char			send-typeout-to-buffer	
+shell					shell-flags				sync-frequency		
+tag-file				tmp-file-pathname			update-time-frequency	
+use-i/d-char				visible-bell				wrap-search		
+write-files-on-make			

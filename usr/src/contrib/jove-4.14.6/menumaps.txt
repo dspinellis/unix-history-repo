@@ -1,0 +1,131 @@
+/************************************************************************
+ * This program is Copyright (C) 1986 by Jonathan Payne.  JOVE is	*
+ * provided to you without charge, and with no warranty.  You may give	*
+ * away copies of JOVE, including sources, provided that this notice is *
+ * included in all the files.						*
+ ************************************************************************/
+
+/* menumaps.txt K. Mitchum 1/88. The same warnings apply as in keymaps.txt.
+   You MUST use a version of setmaps compiled with MAC defined for this
+   file to be converted correctly. */
+
+
+#include "jove.h"
+#include "mac.h"
+#MENU
+data_obj MDIV = { STRING, "(-" };
+data_obj MAJM = { STRING, "(Major Modes:" };
+data_obj MINM = { STRING, "(Minor Modes:" };
+data_obj BOOL = { STRING, "(Boolean:" };
+data_obj DECM = { STRING, "(Decimal:" };
+data_obj STRM = { STRING, "(String:" };
+data_obj CHAR = { STRING, "(Character:" };
+#define MENU_DIV &MDIV
+
+struct menu Menus[NMENUS] = {
+"File",101,0, {
+	"visit-file",
+	"find-file",
+	"insert-file",
+	MENU_DIV,
+	"save-file",
+	"write-file",
+	MENU_DIV,
+	"write-modified-files",
+	"write-region",
+	MENU_DIV,
+	"write-macros-to-file",
+	MENU_DIV,
+	"exit-jove",
+	0
+},
+
+"Buffer",103,0, {
+	&MAJM,
+	"c-mode",
+	"fundamental-mode",
+	"lisp-mode",
+	"text-mode",
+	&MINM,
+	"auto-fill-mode",
+	"auto-indent-mode",
+	"over-write-mode",
+	"show-match-mode",
+	"word-abbrev-mode",
+	MENU_DIV,
+	0
+},
+
+"Window",104,0, {
+	"grow-window",
+	"shrink-window",
+	MENU_DIV,
+	"split-current-window",
+	"delete-other-windows",
+	"window-find",
+	MENU_DIV,
+	"number-lines-in-window",
+	0
+},
+
+"Point",105,0, {
+	"set-mark",
+	"exchange-point-and-mark",
+	MENU_DIV,
+	"search-forward",
+	"search-reverse",
+	"i-search-forward",
+	"i-search-reverse",
+	"query-replace-string",
+	"replace-string",
+	MENU_DIV,
+	"find-tag",
+	0
+},
+
+"Command",106,0, {
+	"begin-kbd-macro",
+	"end-kbd-macro",
+	"name-kbd-macro",
+	"execute-kbd-macro",
+	"execute-macro",
+	MENU_DIV,
+	"bind-macro-to-key",
+	"bind-to-key",
+	"describe-key",
+	MENU_DIV,
+	"execute-named-command",
+	0
+},
+
+"Set",107,0, {
+	&BOOL,
+	"allow-bad-filenames",
+	"auto-case-abbrev",
+	"case-ignore-search",
+	"files-should-end-with-newline",
+	"macify",
+	"make-backup-files",
+	"marks-should-float",
+	"match-regular-expressions",
+	"send-typeout-to-buffer",
+	"wrap-search",
+	&DECM,
+	"c-indentation-increment",
+	"internal-tabstop",
+	"left-margin",
+	"mark-threshold",
+	"paren-flash-delay",
+	"right-margin",
+	"scroll-step",
+	"sync-frequency",
+	&STRM,
+	"comment-format",
+	"mode-line",
+	"tag-file",
+	&CHAR,
+	"abort-char",
+	0
+}
+};
+
