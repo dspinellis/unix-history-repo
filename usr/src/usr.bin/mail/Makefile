@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 # Berkeley Mail
 #
@@ -47,7 +47,7 @@ Mail:	$S $(OBJS)
 
 install: all
 	install -s Mail ${DESTDIR}/usr/ucb/Mail
-	cp misc/Mail.help* ${DESTDIR}/usr/lib
+	cp misc/Mail.* ${DESTDIR}/usr/lib
 	install -s fmt ${DESTDIR}/usr/ucb/fmt
 	cd ${DESTDIR}/usr/ucb; rm -f mail; ln Mail mail
 
