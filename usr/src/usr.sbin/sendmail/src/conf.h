@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.157 (Berkeley) %G%
+ *	@(#)conf.h	8.158 (Berkeley) %G%
  */
 
 /*
@@ -126,7 +126,7 @@
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define setreuid(r, e)		setresuid(r, e, -1)
-# define LA_TYPE	LA_SUBR
+# define LA_TYPE	LA_HPUX
 # define SPT_TYPE	SPT_PSTAT
 # define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
 # define GIDSET_T	gid_t
@@ -304,7 +304,7 @@ extern char		*getenv();
 
 #ifdef	DGUX
 # define SYSTEM5	1
-# define LA_TYPE	LA_SUBR
+# define LA_TYPE	LA_DGUX
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASSETSID	1	/* has Posix setsid(2) call */
@@ -1298,7 +1298,11 @@ extern int	errno;
 #  define HASULIMIT	1	/* has the ulimit(2) syscall */
 # endif
 # ifndef LA_TYPE
-#  define LA_TYPE	LA_INT		/* assume integer load average */
+#  ifdef MIOC_READKSYM
+#   define LA_TYPE	LA_READKSYM	/* use MIOC_READKSYM ioctl */
+#  else
+#   define LA_TYPE	LA_INT		/* assume integer load average */
+#  endif
 # endif
 # ifndef SFS_TYPE
 #  define SFS_TYPE	SFS_USTAT	/* use System V ustat(2) syscall */
