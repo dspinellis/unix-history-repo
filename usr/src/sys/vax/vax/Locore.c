@@ -1,4 +1,4 @@
-/*	Locore.c	3.1	%H%	*/
+/*	Locore.c	3.2	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -243,7 +243,7 @@ struct	user pushutl;
 
 struct	pte usrpt[USRPTSIZE*NPTEPG];
 
-struct	pte Sysmap[4*NPTEPG];
+struct	pte Sysmap[6*NPTEPG];
 struct	pte Swapmap[UPAGES];
 struct	pte Forkmap[UPAGES];
 struct	pte Xswapmap[UPAGES];
