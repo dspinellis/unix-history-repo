@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.6 (Berkeley) %G%
+ *	@(#)init_main.c	7.7 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -25,6 +25,7 @@
 #include "cmap.h"
 #include "text.h"
 #include "clist.h"
+#include "malloc.h"
 #include "protosw.h"
 #include "quota.h"
 #include "reboot.h"
@@ -51,6 +52,7 @@ main(firstaddr)
 {
 	register int i;
 	register struct proc *p;
+	register struct pgrp *pg;
 	struct fs *fs;
 	int s;
 
@@ -70,6 +72,22 @@ main(firstaddr)
 	p->p_nice = NZERO;
 	setredzone(p->p_addr, (caddr_t)&u);
 	u.u_procp = p;
+	MALLOC(pgrphash[0], struct pgrp *, sizeof (struct pgrp), 
+		M_PGRP, M_NOWAIT);
+	if ((pg = pgrphash[0]) == NULL)
+		panic("no space to craft zero'th process group");
+	pg->pg_id = 0;
+	pg->pg_hforw = 0;
+	pg->pg_mem = p;
+	pg->pg_jobc = 0;
+	p->p_pgrp = pg;
+	p->p_pgrpnxt = 0;
+	MALLOC(pg->pg_session, struct session *, sizeof (struct session),
+		M_SESSION, M_NOWAIT);
+	if (pg->pg_session == NULL)
+		panic("no space to craft zero'th session");
+	pg->pg_session->s_count = 1;
+	pg->pg_session->s_leader = 0;
 	/*
 	 * These assume that the u. area is always mapped 
 	 * to the same virtual address. Otherwise must be

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_fork.c	7.2 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -129,15 +129,16 @@ retry:
 		rpp = allproc;
 again:
 		for (; rpp != NULL; rpp = rpp->p_nxt) {
-			if (rpp->p_pid == mpid || rpp->p_pgrp == mpid) {
+			if (rpp->p_pid == mpid || rpp->p_pgrp->pg_id == mpid) {
 				mpid++;
 				if (mpid >= pidchecked)
 					goto retry;
 			}
 			if (rpp->p_pid > mpid && pidchecked > rpp->p_pid)
 				pidchecked = rpp->p_pid;
-			if (rpp->p_pgrp > mpid && pidchecked > rpp->p_pgrp)
-				pidchecked = rpp->p_pgrp;
+			if (rpp->p_pgrp->pg_id > mpid && 
+			    pidchecked > rpp->p_pgrp->pg_id)
+				pidchecked = rpp->p_pgrp->pg_id;
 		}
 		if (!doingzomb) {
 			doingzomb = 1;
@@ -176,6 +177,8 @@ again:
 		rpp->p_ndx = rpp - proc;
 	rpp->p_uid = rip->p_uid;
 	rpp->p_pgrp = rip->p_pgrp;
+	rpp->p_pgrpnxt = rip->p_pgrpnxt;
+	rip->p_pgrpnxt = rpp;
 	rpp->p_nice = rip->p_nice;
 	rpp->p_textp = isvfork ? 0 : rip->p_textp;
 	rpp->p_pid = mpid;

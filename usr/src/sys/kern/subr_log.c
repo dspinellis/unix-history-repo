@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_log.c	7.1 (Berkeley) %G%
+ *	@(#)subr_log.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -28,7 +28,7 @@
 struct logsoftc {
 	int	sc_state;		/* see above for possibilities */
 	struct	proc *sc_selp;		/* process waiting on select call */
-	int	sc_pgrp;		/* process group for async I/O */
+	pid_t	sc_pgid;		/* process group id for async I/O */
 } logsoftc;
 
 int	log_open;			/* also used in log() */
@@ -42,7 +42,7 @@ logopen(dev)
 		return (EBUSY);
 	log_open = 1;
 	logsoftc.sc_selp = 0;
-	logsoftc.sc_pgrp = u.u_procp->p_pgrp;
+	logsoftc.sc_pgid = u.u_procp->p_pgrp->pg_id;
 	/*
 	 * Potential race here with putchar() but since putchar should be
 	 * called by autoconf, msg_magic should be initialized by the time
@@ -66,7 +66,7 @@ logclose(dev, flag)
 	log_open = 0;
 	logsoftc.sc_state = 0;
 	logsoftc.sc_selp = 0;
-	logsoftc.sc_pgrp = 0;
+	logsoftc.sc_pgid = 0;
 }
 
 /*ARGSUSED*/
@@ -139,7 +139,7 @@ logwakeup()
 		logsoftc.sc_selp = 0;
 	}
 	if (logsoftc.sc_state & LOG_ASYNC)
-		gsignal(logsoftc.sc_pgrp, SIGIO); 
+		gsignal(logsoftc.sc_pgid, SIGIO); 
 	if (logsoftc.sc_state & LOG_RDWAIT) {
 		wakeup((caddr_t)&msgbuf);
 		logsoftc.sc_state &= ~LOG_RDWAIT;
@@ -179,12 +179,13 @@ logioctl(com, data, flag)
 			logsoftc.sc_state &= ~LOG_ASYNC;
 		break;
 
-	case TIOCSPGRP:
-		logsoftc.sc_pgrp = *(int *)data;
+	case TIOCSPGRP: {
+		logsoftc.sc_pgid = *(int *)data;
 		break;
+	}
 
 	case TIOCGPGRP:
-		*(int *)data = logsoftc.sc_pgrp;
+		*(int *)data = logsoftc.sc_pgid;
 		break;
 
 	default:

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_descrip.c	7.1 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -191,7 +191,7 @@ fgetown(fp, valuep)
 	switch (fp->f_type) {
 
 	case DTYPE_SOCKET:
-		*valuep = ((struct socket *)fp->f_data)->so_pgrp;
+		*valuep = ((struct socket *)fp->f_data)->so_pgid;
 		return (0);
 
 	default:
@@ -205,16 +205,15 @@ fsetown(fp, value)
 	struct file *fp;
 	int value;
 {
-
 	if (fp->f_type == DTYPE_SOCKET) {
-		((struct socket *)fp->f_data)->so_pgrp = value;
+		((struct socket *)fp->f_data)->so_pgid = value;
 		return (0);
 	}
 	if (value > 0) {
 		struct proc *p = pfind(value);
 		if (p == 0)
 			return (ESRCH);
-		value = p->p_pgrp;
+		value = p->p_pgrp->pg_id;
 	} else
 		value = -value;
 	return (fioctl(fp, (int)TIOCSPGRP, (caddr_t)&value));
