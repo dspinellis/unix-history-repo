@@ -42,9 +42,9 @@ lint: /tmp
 	    grep -v 'struct/union .* never defined' | \
 	    grep -v 'possible pointer alignment problem'
 
-../conf/symbols.sort: ../conf/symbols.raw
-	grep -v '^#' ../conf/symbols.raw \
-	    | sed 's/^	//' | sort -u > ../conf/symbols.sort
+../vax/symbols.sort: ../vax/symbols.raw
+	grep -v '^#' ../vax/symbols.raw \
+	    | sed 's/^	//' | sort -u > ../vax/symbols.sort
 
 locore.o: assym.s ${AHEADS} ../vax/scb.s ../vax/locore.s ubglue.s \
     ../vax/mtpr.h ../vax/trap.h ../machine/psl.h ../machine/pte.h \
