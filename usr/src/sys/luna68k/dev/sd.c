@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	8.2 (Berkeley) %G%
+ *	@(#)sd.c	8.3 (Berkeley) %G%
  */
 
 /*
@@ -257,6 +257,7 @@ sdclose(dev, flag, mode, p)
 	int flag, mode;
 	struct proc *p;
 {
+	return(0);
 }
 
 /*
