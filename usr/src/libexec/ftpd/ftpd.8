@@ -13,9 +13,9 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)ftpd.8	6.5 (Berkeley) %G%
+.\"	@(#)ftpd.8	6.6 (Berkeley) %G%
 .\"
-.TH FTPD 8 ""
+.TH FTPD 8 "January 24, 1989"
 .UC 5
 .SH NAME
 ftpd \- DARPA Internet File Transfer Protocol server
@@ -85,6 +85,7 @@ RNTO	specify rename-to file name
 STOR	store a file
 STOU	store a file with a unique name
 STRU	specify data transfer \fIstructure\fP
+SYST	show operating system type of server system
 TYPE	specify data transfer \fItype\fP
 USER	specify user name
 XCUP	change to parent of current working directory
@@ -92,6 +93,7 @@ XCWD	change working directory
 XMKD	make a directory
 XPWD	print the current working directory
 XRMD	remove a directory
+XUMA	set umask
 .fi
 .PP
 The remaining ftp requests specified in Internet RFC 959 are

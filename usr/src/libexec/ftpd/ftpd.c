@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.26	(Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -34,6 +34,7 @@ static char sccsid[] = "@(#)ftpd.c	5.25 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/file.h>
 #include <sys/wait.h>
+#include <sys/dir.h>
 
 #include <netinet/in.h>
 
@@ -109,9 +110,15 @@ int	lostconn();
 int	myoob();
 FILE	*getdatasock(), *dataconn();
 
-main(argc, argv)
+#ifdef SETPROCTITLE
+char	**Argv = NULL;		/* pointer to argument vector */
+char	*LastArgv = NULL;	/* end of argv */
+#endif /* SETPROCTITLE */
+
+main(argc, argv, envp)
 	int argc;
 	char *argv[];
+	char **envp;
 {
 	int addrlen, on = 1;
 	char *cp;
@@ -129,6 +136,16 @@ main(argc, argv)
 	data_source.sin_port = htons(ntohs(ctrl_addr.sin_port) - 1);
 	debug = 0;
 	openlog("ftpd", LOG_PID, LOG_DAEMON);
+#ifdef SETPROCTITLE
+	/*
+	 *  Save start and extent of argv for setproctitle.
+	 */
+	Argv = argv;
+	while (*envp)
+		envp++;
+	LastArgv = envp[-1] + strlen(envp[-1]);
+#endif /* SETPROCTITLE */
+
 	argc--, argv++;
 	while (argc > 0 && *argv[0] == '-') {
 		for (cp = &argv[0][1]; *cp; cp++) switch (*cp) {
@@ -187,6 +204,7 @@ nextopt:
 	(void) setjmp(errcatch);
 	for (;;)
 		(void) yyparse();
+	/* NOTREACHED */
 }
 
 lostconn()
@@ -210,8 +228,9 @@ sgetsave(s)
 	char *new = malloc((unsigned) strlen(s) + 1);
 	
 	if (new == NULL) {
-		reply(553, "Local resource failure: malloc");
+		perror_reply(421, "Local resource failure: malloc");
 		dologout(1);
+		/* NOTREACHED */
 	}
 	(void) strcpy(new, s);
 	return (new);
@@ -388,19 +407,24 @@ pass(passwd)
 	logged_in = 1;
 
 	if (guest) {
-		if (chroot(pw->pw_dir) < 0) {
+		/*
+		 * We MUST do a chdir() after the chroot. Otherwise "."
+		 * will be accessible outside the root!
+		 */
+		if (chroot(pw->pw_dir) < 0 || chdir("/") < 0) {
 			reply(550, "Can't set guest privileges.");
 			goto bad;
 		}
 	}
-	else if (chdir(pw->pw_dir))
-		if (chdir("/")) {
+	else if (chdir(pw->pw_dir) < 0) {
+		if (chdir("/") < 0) {
 			reply(530, "User %s: can't change directory to %s.",
 			    pw->pw_name, pw->pw_dir);
 			goto bad;
 		}
 		else
 			lreply(230, "No directory! Logging in with home=/");
+	}
 	if (seteuid((uid_t)pw->pw_uid) < 0) {
 		reply(550, "Can't set uid.");
 		goto bad;
@@ -427,7 +451,7 @@ retrieve(cmd, name)
 {
 	FILE *fin, *dout;
 	struct stat st;
-	int (*closefunc)(), tmp;
+	int (*closefunc)();
 
 	if (cmd == 0) {
 		fin = fopen(name, "r"), closefunc = fclose;
@@ -449,21 +473,22 @@ retrieve(cmd, name)
 		reply(550, "%s: not a plain file.", name);
 		goto done;
 	}
-	if (restart_point)
+	if (restart_point) {
 		if (type == TYPE_A) {
-			if (fseek(fin, restart_point, L_SET) < 0)
+			if (fseek(fin, restart_point, L_SET) < 0) {
 				perror_reply(550, name);
+				goto done;
+			}
 		}
-		else if (lseek(fileno(fin), restart_point, L_SET) < 0)
+		else if (lseek(fileno(fin), restart_point, L_SET) < 0) {
 			perror_reply(550, name);
+			goto done;
+		}
+	}
 	dout = dataconn(name, st.st_size, "w");
 	if (dout == NULL)
 		goto done;
-	if ((tmp = send_data(fin, dout, st.st_blksize)) > 0 ||
-	    ferror(dout) > 0)
-		perror_reply(550, name);
-	else if (tmp == 0)
-		reply(226, "Transfer complete.");
+	send_data(fin, dout, st.st_blksize);
 	(void) fclose(dout);
 	data = -1;
 	pdata = -1;
@@ -477,36 +502,40 @@ store(name, mode, unique)
 {
 	FILE *fout, *din;
 	struct stat st;
-	int (*closefunc)(), tmp;
+	int (*closefunc)();
 	char *gunique();
 
 	if (unique && stat(name, &st) == 0 &&
 	    (name = gunique(name)) == NULL)
 		return;
 
-	fout = fopen(name, mode), closefunc = fclose;
+	if (restart_point)
+		mode = "r+w";
+	fout = fopen(name, mode);
+	closefunc = fclose;
 	if (fout == NULL) {
 		perror_reply(553, name);
 		return;
 	}
-	if (restart_point)
+	if (restart_point) {
 		if (type == TYPE_A) {
-			if (fseek(fout, restart_point, L_SET) < 0)
+			if (fseek(fout, restart_point, L_SET) < 0) {
 				perror_reply(550, name);
+				goto done;
+			}
 		}
-		else if (lseek(fileno(fout), restart_point, L_SET) < 0)
+		else if (lseek(fileno(fout), restart_point, L_SET) < 0) {
 			perror_reply(550, name);
+			goto done;
+		}
+	}
 	din = dataconn(name, (off_t)-1, "r");
 	if (din == NULL)
 		goto done;
-	if ((tmp = receive_data(din, fout)) > 0)
-		perror_reply(552, name);
-	else if (tmp == 0) {
-		if (ferror(fout) > 0)
-			perror_reply(552, name);
-		else if (unique)
+	if (receive_data(din, fout) == 0) {
+		if (unique)
 			reply(226, "Transfer complete (unique file name:%s).",
-			    name);
+				name);
 		else
 			reply(226, "Transfer complete.");
 	}
@@ -629,44 +658,56 @@ send_data(instr, outstr, blksize)
 	transflag++;
 	if (setjmp(urgcatch)) {
 		transflag = 0;
-		return(-1);
+		return;
 	}
 	switch (type) {
 
 	case TYPE_A:
 		while ((c = getc(instr)) != EOF) {
 			if (c == '\n') {
-				if (ferror (outstr)) {
-					transflag = 0;
-					return (1);
-				}
+				if (ferror (outstr)) 
+					goto data_err;
 				(void) putc('\r', outstr);
 			}
 			(void) putc(c, outstr);
 		}
 		transflag = 0;
-		if (ferror (instr) || ferror (outstr)) {
-			return (1);
-		}
-		return (0);
+		fflush(outstr);
+		if (ferror (instr) || ferror (outstr)) 
+			goto data_err;
+		reply(226, "Transfer complete.");
+		return;
 
 	case TYPE_I:
 	case TYPE_L:
 		if ((buf = malloc((u_int)blksize)) == NULL) {
 			transflag = 0;
-			return (1);
+			perror_reply(421, "Local resource failure: malloc");
+			dologout(1);
+			/* NOTREACHED */
 		}
 		netfd = fileno(outstr);
 		filefd = fileno(instr);
 		while ((cnt = read(filefd, buf, sizeof(buf))) > 0 &&
-		    write(netfd, buf, cnt) == cnt);
+		    write(netfd, buf, cnt) == cnt)
+			/* LOOP */;
 		transflag = 0;
 		(void)free(buf);
-		return (cnt != 0);
+		if (cnt != 0)
+			goto data_err;
+		reply(226, "Transfer complete.");
+		return;
+	default:
+		transflag = 0;
+		reply(550, "Unimplemented TYPE %d in send_data", type);
+		return;
 	}
-	reply(550, "Unimplemented TYPE %d in send_data", type);
+
+data_err:
 	transflag = 0;
-	return (-1);
+	perror_reply(421, "Data connection");
+	dologout(1);
+	/* NOTREACHED */
 }
 
 /*
@@ -695,13 +736,13 @@ receive_data(instr, outstr)
 	case TYPE_I:
 	case TYPE_L:
 		while ((cnt = read(fileno(instr), buf, sizeof buf)) > 0) {
-			if (write(fileno(outstr), buf, cnt) < 0) {
-				transflag = 0;
-				return (1);
-			}
+			if (write(fileno(outstr), buf, cnt) != cnt)
+				goto data_err;
 		}
+		if (cnt < 0) 
+			goto data_err;
 		transflag = 0;
-		return (cnt < 0);
+		return 0;
 
 	case TYPE_E:
 		reply(553, "TYPE E not implemented.");
@@ -711,25 +752,29 @@ receive_data(instr, outstr)
 	case TYPE_A:
 		while ((c = getc(instr)) != EOF) {
 			while (c == '\r') {
-				if (ferror (outstr)) {
-					transflag = 0;
-					return (1);
-				}
+				if (ferror (outstr))
+					goto data_err;
 				if ((c = getc(instr)) != '\n')
 					(void) putc ('\r', outstr);
-			/*	if (c == '\0')			*/
-			/*		continue;		*/
 			}
 			(void) putc (c, outstr);
 		}
-		transflag = 0;
+		fflush(outstr);
 		if (ferror (instr) || ferror (outstr))
-			return (1);
+			goto data_err;
+		transflag = 0;
 		return (0);
+	default:
+		reply(550, "Unimplemented TYPE %d in receive_data", type);
+		transflag = 0;
+		return 1;
 	}
+
+data_err:
 	transflag = 0;
-	fatal("Unknown type in receive_data.");
-	/*NOTREACHED*/
+	perror_reply(421, "Data Connection");
+	dologout(1);
+	/* NOTREACHED */
 }
 
 fatal(s)
@@ -738,6 +783,7 @@ fatal(s)
 	reply(451, "Error in server: %s\n", s);
 	reply(221, "Closing connection due to server error.");
 	dologout(0);
+	/* NOTREACHED */
 }
 
 /* VARARGS2 */
@@ -752,7 +798,7 @@ reply(n, fmt, p0, p1, p2, p3, p4, p5)
 	if (debug) {
 		syslog(LOG_DEBUG, "<--- %d ", n);
 		syslog(LOG_DEBUG, fmt, p0, p1, p2, p3, p4, p5);
-	}
+}
 }
 
 /* VARARGS2 */
@@ -820,12 +866,10 @@ done:
 cwd(path)
 	char *path;
 {
-
-	if (chdir(path) < 0) {
+	if (chdir(path) < 0)
 		perror_reply(550, path);
-		return;
-	}
-	ack("CWD");
+	else
+		ack("CWD");
 }
 
 makedir(name)
@@ -840,12 +884,10 @@ makedir(name)
 removedir(name)
 	char *name;
 {
-
-	if (rmdir(name) < 0) {
+	if (rmdir(name) < 0)
 		perror_reply(550, name);
-		return;
-	}
-	ack("RMD");
+	else
+		ack("RMD");
 }
 
 pwd()
@@ -853,11 +895,10 @@ pwd()
 	char path[MAXPATHLEN + 1];
 	extern char *getwd();
 
-	if (getwd(path) == (char *)NULL) {
+	if (getwd(path) == (char *)NULL)
 		reply(550, "%s.", path);
-		return;
-	}
-	reply(257, "\"%s\" is current directory.", path);
+	else
+		reply(257, "\"%s\" is current directory.", path);
 }
 
 char *
@@ -877,12 +918,10 @@ renamefrom(name)
 renamecmd(from, to)
 	char *from, *to;
 {
-
-	if (rename(from, to) < 0) {
+	if (rename(from, to) < 0)
 		perror_reply(550, "rename");
-		return;
-	}
-	ack("RNTO");
+	else
+		ack("RNTO");
 }
 
 dolog(sin)
@@ -903,6 +942,9 @@ dolog(sin)
 	t = time((time_t *) 0);
 	syslog(LOG_INFO, "connection from %s at %s",
 	    remotehost, ctime(&t));
+#ifdef SETPROCTITLE
+	setproctitle("%s: connected", remotehost);
+#endif /* SETPROCTITLE */
 }
 
 /*
@@ -942,8 +984,10 @@ myoob()
 }
 
 /*
- * Note: The 530 reply codes could be 4xx codes, except nothing is
- * given in the state tables except 421 which implies an exit.  (RFC959)
+ * Note: a response of 425 is not mentioned as a possible response to
+ * 	the PASV command in RFC959. However, it has been blessed as
+ * 	a legitimate response by Jon Postel in a telephone conversation
+ *	with Rick Adams on 25 Jan 89.
  */
 passive()
 {
@@ -953,7 +997,7 @@ passive()
 
 	pdata = socket(AF_INET, SOCK_STREAM, 0);
 	if (pdata < 0) {
-		reply(530, "Can't open passive connection");
+		perror_reply(425, "Can't open passive connection");
 		return;
 	}
 	tmp = ctrl_addr;
@@ -961,25 +1005,14 @@ passive()
 	(void) seteuid((uid_t)0);
 	if (bind(pdata, (struct sockaddr *) &tmp, sizeof(tmp)) < 0) {
 		(void) seteuid((uid_t)pw->pw_uid);
-		(void) close(pdata);
-		pdata = -1;
-		reply(530, "Can't open passive connection");
-		return;
+		goto pasv_error;
 	}
 	(void) seteuid((uid_t)pw->pw_uid);
 	len = sizeof(tmp);
-	if (getsockname(pdata, (struct sockaddr *) &tmp, &len) < 0) {
-		(void) close(pdata);
-		pdata = -1;
-		reply(530, "Can't open passive connection");
-		return;
-	}
-	if (listen(pdata, 1) < 0) {
-		(void) close(pdata);
-		pdata = -1;
-		reply(530, "Can't open passive connection");
-		return;
-	}
+	if (getsockname(pdata, (struct sockaddr *) &tmp, &len) < 0)
+		goto pasv_error;
+	if (listen(pdata, 1) < 0)
+		goto pasv_error;
 	a = (char *) &tmp.sin_addr;
 	p = (char *) &tmp.sin_port;
 
@@ -987,6 +1020,13 @@ passive()
 
 	reply(227, "Entering Passive Mode (%d,%d,%d,%d,%d,%d)", UC(a[0]),
 		UC(a[1]), UC(a[2]), UC(a[3]), UC(p[0]), UC(p[1]));
+	return;
+
+pasv_error:
+	(void) close(pdata);
+	pdata = -1;
+	perror_reply(425, "Can't open passive connection");
+	return;
 }
 
 /*
@@ -1001,17 +1041,16 @@ gunique(local)
 	static char new[MAXPATHLEN];
 	struct stat st;
 	char *cp = rindex(local, '/');
-	int d, count=0;
+	int count=0;
 
 	if (cp)
 		*cp = '\0';
-	d = stat(cp ? local : ".", &st);
-	if (cp)
-		*cp = '/';
-	if (d < 0) {
+	if (stat(cp ? local : ".", &st) < 0) {
 		perror_reply(553, local);
 		return((char *) 0);
 	}
+	if (cp)
+		*cp = '/';
 	(void) strcpy(new, local);
 	cp = new + strlen(new);
 	*cp++ = '.';
@@ -1031,9 +1070,144 @@ perror_reply(code, string)
 	int code;
 	char *string;
 {
-
 	if (errno < sys_nerr)
 		reply(code, "%s: %s.", string, sys_errlist[errno]);
 	else
 		reply(code, "%s: unknown error %d.", string, errno);
 }
+
+static char *onefile[] = {
+	"",
+	0
+};
+
+send_file_list(whichfiles)
+	char *whichfiles;
+{
+	struct stat st;
+	DIR *dirp = NULL;
+	struct direct *dir;
+	FILE *dout = NULL;
+	register char **dirlist, *dirname;
+	char *strpbrk();
+
+	if (strpbrk(whichfiles, "~{[*?") != NULL) {
+		extern char **glob(), *globerr;
+		globerr = NULL;
+		dirlist = glob(whichfiles);
+		if (globerr != NULL) {
+			reply(550, globerr);
+			return;
+		} else if (dirlist == NULL) {
+			errno = ENOENT;
+			perror_reply(550, whichfiles);
+			return;
+		}
+	} else {
+		onefile[0] = whichfiles;
+		dirlist = onefile;
+	}
+	
+	while (dirname = *dirlist++) {
+		if (stat(dirname, &st) < 0) {
+			perror_reply(550, whichfiles);
+			if (dout != NULL) {
+				(void) fclose(dout);
+				data = -1;
+				pdata = -1;
+			}
+			return;
+		}
+			
+		if ((st.st_mode&S_IFMT) == S_IFREG) {
+			if (dout == NULL) {
+				dout = dataconn(whichfiles, (off_t)-1, "w");
+				if (dout == NULL)
+					return;
+			}
+			fprintf(dout, "%s\n", dirname);
+			continue;
+		} else if ((st.st_mode&S_IFMT) != S_IFDIR) 
+			continue;
+
+		if ((dirp = opendir(dirname)) == NULL)
+			continue;
+
+		while ((dir = readdir(dirp)) != NULL) {
+			char nbuf[BUFSIZ];
+
+			if (dir->d_name[0] == '.' && dir->d_namlen == 1)
+				continue;
+			if (dir->d_name[0] == '.' && dir->d_name[1] == '.'
+			    && dir->d_namlen == 2)
+				continue;
+
+			sprintf(nbuf, "%s/%s", dirname, dir->d_name); 
+			
+			/*
+			 * we have to do a stat to insure it's
+			 * not a directory
+			 */
+			if (stat(nbuf, &st) == 0 &&
+			    (st.st_mode&S_IFMT) == S_IFREG) {
+				if (dout == NULL) {
+					dout = dataconn(whichfiles, (off_t)-1,
+						"w");
+					if (dout == NULL)
+						return;
+				}
+				if (nbuf[0] == '.' && nbuf[1] == '/')
+					fprintf(dout, "%s\n", &nbuf[2]);
+				else
+					fprintf(dout, "%s\n", nbuf);
+			}
+		}
+		(void) closedir(dirp);
+	}
+
+	if (dout != NULL && ferror(dout) != 0)
+		perror_reply(550, whichfiles);
+	else 
+		reply(226, "Transfer complete.");
+
+	if (dout != NULL) 
+		(void) fclose(dout);
+	data = -1;
+	pdata = -1;
+}
+
+#ifdef SETPROCTITLE
+/*
+ * clobber argv so ps will show what we're doing.
+ * (stolen from sendmail)
+ * warning, since this is usually started from inetd.conf, it
+ * often doesn't have much of an environment or arglist to overwrite.
+ */
+
+/*VARARGS1*/
+setproctitle(fmt, a, b, c)
+char *fmt;
+{
+	register char *p, *bp, ch;
+	register int i;
+	char buf[BUFSIZ];
+
+	(void) sprintf(buf, fmt, a, b, c);
+
+	/* make ps print our process name */
+	p = Argv[0];
+	*p++ = '-';
+
+	i = strlen(buf);
+	if (i > LastArgv - p - 2) {
+		i = LastArgv - p - 2;
+		buf[i] = '\0';
+	}
+	bp = buf;
+	while (ch = *bp++)
+		if (ch != '\n' && ch != '\r')
+			*p++ = ch;
+	while (p < LastArgv)
+		*p++ = ' ';
+}
+#endif /* SETPROCTITLE */
