@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	8.4 (Berkeley) %G%
+ *	@(#)ufs_inode.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -42,7 +42,9 @@ ufs_init()
 		printf("ufs_init: bad size %d\n", sizeof(struct inode));
 #endif
 	ufs_ihashinit();
+#ifdef QUOTA
 	dqinit();
+#endif
 	return (0);
 }
 
