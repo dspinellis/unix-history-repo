@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static	char sccsid[] = "@(#)main.c	1.8 (Berkeley) %G%";
+static	char sccsid[] = "@(#)main.c	1.9 (Berkeley) %G%";
 
 /*
  * Debugger main routine.
@@ -44,7 +44,6 @@ public File corefile;			/* File id of core dump */
 
 private Boolean initdone = false;	/* true if initialization done */
 private jmp_buf env;			/* setjmp/longjmp data */
-private char outbuf[BUFSIZ];		/* standard output buffer */
 private char namebuf[512];		/* possible name of object file */
 private int firstarg;			/* first program argument (for -r) */
 
@@ -67,7 +66,6 @@ String argv[];
     cmdname = argv[0];
     catcherrs();
     onsyserr(EINTR, nil);
-    setbuf(stdout, outbuf);
     setlinebuf(stderr);
     printf("dbx version %d of %s.\nType 'help' for help.\n",
 	versionNumber, date);

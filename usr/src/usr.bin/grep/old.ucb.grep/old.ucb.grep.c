@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)old.ucb.grep.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)old.ucb.grep.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -42,9 +42,7 @@ long	tln;
 main(argc, argv)
 char **argv;
 {
-	char obuf[BUFSIZ];
 
-	setbuf(stdout, obuf);
 	while (--argc > 0 && (++argv)[0][0]=='-') {
 		char *cp = argv[0] + 1;
 		while (*cp) switch (*cp++) {

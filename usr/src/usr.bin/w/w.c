@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)w.c	4.12 (Berkeley) %G%";
+static char *sccsid = "@(#)w.c	4.13 (Berkeley) %G%";
 #endif
 /*
  * w - print system status (who and what)
@@ -117,9 +117,7 @@ main(argc, argv)
 	register int i, j;
 	char *cp;
 	register int curpid, empty;
-	char obuf[BUFSIZ];
 
-	setbuf(stdout, obuf);
 	login = (argv[0][0] == '-');
 	cp = rindex(argv[0], '/');
 	firstchar = login ? argv[0][1] : (cp==0) ? argv[0][0] : cp[1];

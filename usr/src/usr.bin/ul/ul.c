@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] =	"@(#)ul.c	4.5 (Berkeley) %G%";
+static char sccsid[] =	"@(#)ul.c	4.6 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -28,8 +28,6 @@ struct	CHAR	{
 	char	c_mode;
 	char	c_char;
 } ;
-
-char	buf[BUFSIZ];
 
 struct	CHAR	obuf[MAXBUF];
 int	col, maxcol;
@@ -89,7 +87,6 @@ main(argc, argv)
 	if (    (tgetflag("os") && ENTER_BOLD==NULL ) ||
 		(tgetflag("ul") && ENTER_UNDERLINE==NULL && UNDER_CHAR==NULL))
 			must_overstrike = 1;
-	setbuf(stdout, buf);
 	initbuf();
 	if (optind == argc)
 		filter(stdin);
