@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vfsops.c	8.7 (Berkeley) %G%
+ *	@(#)union_vfsops.c	8.8 (Berkeley) %G%
  */
 
 /*
@@ -368,7 +368,6 @@ union_root(mp, vpp)
 		if (um->um_lowervp)
 			vrele(um->um_lowervp);
 	} else {
-		(*vpp)->v_flag |= VROOT;
 		if (loselock)
 			VTOUNION(*vpp)->un_flags &= ~UN_ULOCK;
 	}
