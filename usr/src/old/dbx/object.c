@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)object.c 1.4 %G%";
+static char sccsid[] = "@(#)object.c 1.5 %G%";
 
 /*
  * Object code interface, mainly for extraction of symbolic information.
@@ -346,17 +346,17 @@ register struct nlist *np;
 	    break;
 
 	case N_LENG:
+	default:
 	    /*
 	     * Should complain out this, obviously the wrong symbol format.
-	     */
-	    break;
-
-	default:
+	     *
 	    if (name != nil) {
 		printf("%s, ", name);
 	    }
 	    printf("ntype %2x, desc %x, value %x\n",
 		np->n_type, np->n_desc, np->n_value);
+	     *
+	     */
 	    break;
     }
 }
@@ -550,11 +550,13 @@ struct nlist *np;
 	    /*
 	     * A hack for C typedefs that don't create new types,
 	     * e.g. typedef unsigned int Hashvalue;
+	     *  or  typedef struct blah BLAH;
 	     */
 	    if (*curchar == '\0') {
 		s->type = typetable[i];
 		if (s->type == nil) {
-		    panic("nil type for %d", i);
+		    s->type = symbol_alloc();
+		    typetable[i] = s->type;
 		}
 		knowtype = true;
 	    } else {
