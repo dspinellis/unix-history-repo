@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 
 CFLAGS=	-O -DLIBC_SCCS
 OBJS=	crt0.o mcrt0.o gcrt0.o
@@ -35,9 +35,6 @@ install:
 	install -o ${BINOWN} -g ${BINGRP} -m 444 ${OBJS} \
 	    ${DESTDIR}/usr/lib
 
-cleandir clean:
-	rm -f ${OBJS} core a.out
-
 depend lint tags:
 
-.include <bsd.own.mk>
+.include <bsd.prog.mk>
