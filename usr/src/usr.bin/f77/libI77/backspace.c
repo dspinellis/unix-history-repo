@@ -1,15 +1,16 @@
 /*
-char id_backspace[] = "@(#)backspace.c	1.4";
+char id_backspace[] = "@(#)backspace.c	1.5";
  *
  * Backspace records
  */
 
 #include "fio.h"
 
-char *bksp = "backspace";
-char last_char();
+static char	bksp[]	= "backspace";
+char	last_char();
 
-f_back(a) alist *a;
+f_back(a)
+alist	*a;
 {	unit *b;
 	int n,i;
 	long x,y;
@@ -19,19 +20,23 @@ f_back(a) alist *a;
 	external = YES;
 	errflag = a->aerr;
 	lunit = a->aunit;
-	if (not_legal(lunit)) err(errflag,F_ERUNIT,bksp)
+	if (not_legal(lunit))
+		err(errflag, F_ERUNIT, bksp)
 	b= &units[lunit];
-	if(!b->ufd && (n=fk_open(READ,SEQ,FMT,(ftnint)lunit)) )
-		err(errflag,n,bksp)
+	if(!b->ufd && (n = fk_open(READ, SEQ, FMT, (ftnint)lunit)) )
+		err(errflag, n, bksp)
 	lfname = b->ufnm;
 	if(b->uend)
 	{	b->uend = NO;
 		clearerr(b->ufd);
 		return(OK);
 	}
-	if((x=ftell(b->ufd))==0) return(OK);
-	if(!b->useek) err(errflag,F_ERNOBKSP,bksp)
-	if(b->uwrt && (n=t_runc(b,errflag))) return(n);
+	if((x = ftell(b->ufd)) == 0)
+		return(OK);
+	if(!b->useek)
+		err(errflag, F_ERNOBKSP, bksp)
+	if(b->uwrt && (n = t_runc(b, errflag)))
+		return(n);
 	if(b->url)		/* direct access, purely academic */
 	{	y = x%(long)b->url;
 		x -= y?y:b->url;
@@ -44,10 +49,13 @@ f_back(a) alist *a;
 		fseek(b->ufd,-(long)n-2*sizeof(int),1);
 		return(OK);
 	}
-	if(x==1)			/* formatted sequential */
+	if(x == 1)			/* formatted sequential */
 	{	rewind(b->ufd);
 		return(OK);
 	}
-	while(last_char(b->ufd)!='\n');	/* slow but simple */
+	if (b->uwrt && ! nowreading(b))
+		err(errflag, errno, bksp)
+	while (last_char(b->ufd) != '\n')	/* slow but simple */
+		;
 	return(OK);
 }
