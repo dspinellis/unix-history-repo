@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.8	5.2 (Berkeley) %G%
+.\"	@(#)sysctl.8	5.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SYSCTL 8
@@ -70,28 +70,64 @@ and
 The string and integer information is detailed below.
 The changeable column indicates whether a process with appropriate
 privilege can change the value.
-.Bl -column kern.posix1versionxx "integerxx"
-.It Sy "Name  " "	Type  " "	Changeable"
-.It Pa kern.ostype No "	string" No "	no"
-.It Pa kern.osrelease No "	string" No "	no"
-.It Pa kern.version No "	string" No "	no"
-.It Pa kern.osrevision No "	integer" No "	no"
-.It Pa kern.posix1version No "	integer" No "	no"
-.It Pa kern.maxproc No "	integer" No "	yes"
-.It Pa kern.maxfiles No "	integer" No "	yes"
-.It Pa kern.argmax No "	integer" No "	no"
-.It Pa kern.securelevel No "	integer" No "	raise only"
-.It Pa kern.hostname No "	string" No "	yes"
-.It Pa kern.hostid No "	integer" No "	yes"
-.It Pa kern.clockrate No "	struct" No "	no"
-.It Pa vm.loadavg No "	struct" No "	no"
-.It Pa hw.machine No "	string" No "	no"
-.It Pa hw.model No "	string" No "	no"
-.It Pa hw.ncpu No "	integer" No "	no"
-.It Pa hw.cpuspeed No "	integer" No "	no"
-.It Pa hw.physmem No "	integer" No "	no"
-.It Pa integer.usermem No "	integer" No "	no"
-.It Pa hw.pagesize No "	integer" No "	no"
+.Bl -column net.inet.ip.forwardingxxxxxx integerxxx
+.It Sy Name	Type	Changeable
+.It kern.ostype	string	no
+.It kern.osrelease	string	no
+.It kern.osrevision	integer	no
+.It kern.version	string	no
+.It kern.maxvnodes	integer	yes
+.It kern.maxproc	integer	yes
+.It kern.maxfiles	integer	yes
+.It kern.argmax	integer	no
+.It kern.securelevel	integer	raise only
+.It kern.hostname	string	yes
+.It kern.hostid	integer	yes
+.It kern.clockrate	struct	no
+.It kern.posix1version	integer	no
+.It kern.ngroups	integer	no
+.It kern.job_control	integer	no
+.It kern.saved_ids	integer	no
+.It kern.link_max	integer	no
+.It kern.max_canon	integer	no
+.It kern.max_input	integer	no
+.It kern.name_max	integer	no
+.It kern.path_max	integer	no
+.It kern.pipe_buf	integer	no
+.It kern.chown_restricted	integer	no
+.It kern.no_trunc	integer	no
+.It kern.vdisable	integer	no
+.It vm.loadavg	struct	no
+.It net.inet.ip.forwarding	integer	yes
+.It net.inet.ip.redirect	integer	yes
+.It net.inet.ip.ttl	integer	yes
+.It net.inet.icmp.maskrepl	integer	yes
+.It net.inet.udp.checksum	integer	yes
+.It hw.machine	string	no
+.It hw.model	string	no
+.It hw.ncpu	integer	no
+.It hw.byteorder	integer	no
+.It hw.physmem	integer	no
+.It hw.usermem	integer	no
+.It hw.pagesize	integer	no
+.It user.cs_path	string	no
+.It user.bc_base_max	integer	no
+.It user.bc_dim_max	integer	no
+.It user.bc_scale_max	integer	no
+.It user.bc_string_max	integer	no
+.It user.coll_weights_max	integer	no
+.It user.expr_nest_max	integer	no
+.It user.line_max	integer	no
+.It user.re_dup_max	integer	no
+.It user.posix2_version	integer	no
+.It user.posix2_c_bind	integer	no
+.It user.posix2_c_dev	integer	no
+.It user.posix2_char_term	integer	no
+.It user.posix2_fort_dev	integer	no
+.It user.posix2_fort_run	integer	no
+.It user.posix2_localedef	integer	no
+.It user.posix2_sw_dev	integer	no
+.It user.posix2_upe	integer	no
 .El
 .Sh EXAMPLES
 .Pp
@@ -117,17 +153,26 @@ Information about the load average history may be obtained with
 sysctl vm.loadavg
 .Ed
 .Sh FILES
-.Bl -tag -width <vm/vm_param.h> -compact
+.Bl -tag -width <netinet/icmpXvar.h> -compact
 .It Pa <sys/sysctl.h>
-definitions for top level identifiers and second level kernel
-and hardware identifiers
+definitions for top level identifiers, second level kernel and hardware
+identifiers, and user level identifiers
 .It Pa <sys/socket.h>
 definitions for second level network identifiers
+.It Pa <sys/gmon.h>
+definitions for third level profiling identifiers
 .It Pa <vm/vm_param.h>
 definitions for second level virtual memory identifiers
+.It Pa <netinet/in.h>
+definitions for third level Internet identifiers and
+fourth level IP identifiers
+.It Pa <netinet/icmp_var.h>
+definitions for fourth level ICMP identifiers
+.It Pa <netinet/udp_var.h>
+definitions for fourth level UDP identifiers
 .El
 .Sh SEE ALSO
-.Xr sysctl 2
+.Xr sysctl 3
 .Sh HISTORY
 .Nm sysctl
 first appeared in 4.4BSD.
