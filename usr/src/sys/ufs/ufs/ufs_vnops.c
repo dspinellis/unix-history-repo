@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.79 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.80 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1392,8 +1392,6 @@ ufs_islocked(vp)
  * Calculate the logical to physical mapping if not done already,
  * then call the device strategy routine.
  */
-int checkoverlap = 0;
-
 int
 ufs_strategy(bp)
 	register struct buf *bp;
@@ -1407,8 +1405,12 @@ ufs_strategy(bp)
 		panic("ufs_strategy: spec");
 	if (bp->b_blkno == bp->b_lblkno) {
 		if (error =
-		    VOP_BMAP(bp->b_vp, bp->b_lblkno, NULL, &bp->b_blkno))
+		    VOP_BMAP(bp->b_vp, bp->b_lblkno, NULL, &bp->b_blkno)) {
+			bp->b_error = error;
+			bp->b_flags |= B_ERROR;
+			biodone(bp);
 			return (error);
+		}
 		if ((long)bp->b_blkno == -1)
 			clrbuf(bp);
 	}
@@ -1416,11 +1418,6 @@ ufs_strategy(bp)
 		biodone(bp);
 		return (0);
 	}
-#ifdef DIAGNOSTIC
-	if (checkoverlap && bp->b_vp->v_mount->mnt_stat.f_type == MOUNT_UFS)
-		ffs_checkoverlap(bp, ip);
-#endif
-		
 	vp = ip->i_devvp;
 	bp->b_dev = vp->v_rdev;
 	(vp->v_op->vop_strategy)(bp);
