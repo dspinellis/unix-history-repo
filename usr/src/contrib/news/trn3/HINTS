@@ -1,0 +1,71 @@
+Here's some helpful hints for getting the most out of trn:
+
+The 'X' command in the selector (kinda like catchup/yes) can be made the
+default action on the last page of selections by using the command-line
+option:  -XX.  This lets you browse all the pages, making selections as you
+go, and then mark everything that was not selected as read when you press
+space at the last page.
+----------
+If you like to select a little, read a little, and then select a little
+more, try using the command-line option:  -XDD.  This makes the 'D' command
+the default on all pages of the selector.  Thus you can select the things
+you want to read on the current page, press space, and you will read the
+selected articles immediately (if there were any).  All other articles on
+the current page will be marked as read.
+----------
+Keep in mind that you can create a file called .trninit and point trn at
+it by definining the environment variable TRNINIT.  Depending on your shell,
+you might use "setenv TRNINIT ~/.trninit" or some other type of assignment
+(put the definition in your shell's rc file).  Then put all your command-line
+options in this file.
+----------
+I like to redefine the 'u' keys in the following way:  'u' visits the "Set
+unread?" prompt (except in the thread selector), 'U' goes directly to the
+already-read article selector, and Ctrl-U unsubscribes from the group (even
+while in the thread selector).  Put the following 3 macros in your .rnmac
+file to accomplish this (or change RNMACROS to .trnmac and put them there):
+
+u	%(%m=[aefnp]?U:u)
+U	%(%m=[aefnp]?U+:U)
+^U	%(%m=t?+u:u)
+----------
+I like to have the '=' command start the article selector and the '+'
+command to start the thread selector (or subject selector if the group
+isn't threaded).  You can accomplish this by adding the following macros
+to your .rnmac file:
+
+=	%(%m=[aep]?_a:=)
++	%(%m=[aep]?_T:+)
+----------
+If you like to be able to move forward/backward by article number more
+often than you need to search by subject, redefine ^N and ^P to be _N
+and _P by putting these lines into your .rnmac file:
+
+^P	%(%m=[aep]?_P:^P)
+^N	%(%m=[aep]?_N:^N)
+----------
+If you like the way that 'q' worked in the thread selector in trn 1.x, put
+the following macro in your .rnmac file:
+
+q	%(%m=t?+:q)
+----------
+If you would like the 'f' command to always answer yes to the "Are you start-
+ing an unreleated topic?" question, put this line into your .rnmac file:
+
+f	%(%m=[ap]?fy^m:f)
+----------
+If you want to be able to save your shar headers in a file as they are
+extracted and you have access to "unshar" (a program that can extract
+shar files while saving the headers in UNSHAR.HDR), twiddle the external
+extract command to send the entire article:
+
+-EEXSAVER="%e <%A"
+
+and then point the UNSHAR variable at unshar instead of /bin/sh:
+
+-EUNSHAR="unshar -s"
+
+Note that this assumes that any other commands you execute with "e dir|command"
+can also handle the entire article as input (uuencoded and shipped files are
+not affected).
+----------
