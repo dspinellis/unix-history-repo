@@ -1,4 +1,4 @@
-/*	up.c	3.21	%G%	*/
+/*	up.c	3.22	%G%	*/
 
 /*
  * UNIBUS disk driver with overlapped seeks and ECC recovery.
@@ -475,15 +475,20 @@ loop:
 	 * (Then on to any other ready drives.)
 	 */
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
-		printf("!DPR || !MOL, unit %d, ds %o\n", dn, upaddr->upds);
-		uptab.b_active = 0;
-		uptab.b_errcnt = 0;
-		dp->b_actf = bp->av_forw;
-		dp->b_active = 0;
-		bp->b_flags |= B_ERROR;
-		iodone(bp);
-		ubafree(up_ubinfo), up_ubinfo = 0;	/* A funny place ... */
-		goto loop;
+		printf("!DPR || !MOL, unit %d, ds %o", dn, upaddr->upds);
+		if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
+			printf("-- hard\n");
+			uptab.b_active = 0;
+			uptab.b_errcnt = 0;
+			dp->b_actf = bp->av_forw;
+			dp->b_active = 0;
+			bp->b_flags |= B_ERROR;
+			iodone(bp);
+			/* A funny place to do this ... */
+			ubafree(up_ubinfo), up_ubinfo = 0;
+			goto loop;
+		}
+		printf("-- came back\n");
 	}
 	/*
 	 * If this is a retry, then with the 16'th retry we
