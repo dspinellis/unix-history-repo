@@ -1,4 +1,4 @@
-/*	flp.c	4.5	81/03/09	*/
+/*	flp.c	4.6	82/06/14	*/
 
 #if VAX780
 #include "../h/flp.h"
@@ -38,7 +38,7 @@ flopen(dev, flag)
 		return;
 	}
 	fltab.fl_state = FL_OPEN;
-	fltab.fl_buf = geteblk();
+	fltab.fl_buf = geteblk(512);
 	fltab.fl_active = FL_IDLE;
 }
 

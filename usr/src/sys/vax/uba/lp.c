@@ -1,4 +1,4 @@
-/*	lp.c	4.24	82/05/04	*/
+/*	lp.c	4.25	82/06/14	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -121,7 +121,7 @@ lpopen(dev, flag)
 		return;
 	}
 	sc->sc_state |= OPEN;
-	sc->sc_inbuf = geteblk();
+	sc->sc_inbuf = geteblk(512);
 	sc->sc_flags = minor(dev) & 07;
 	(void) spl4();
 	if ((sc->sc_state&TOUT) == 0) {
@@ -151,7 +151,7 @@ lpwrite(dev)
 	register char *cp;
 	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
 
-	while (n = min(BSIZE, u.u_count)) {
+	while (n = min(512, u.u_count)) {
 		cp = sc->sc_inbuf->b_un.b_addr;
 		iomove(cp, n, B_WRITE);
 		do
