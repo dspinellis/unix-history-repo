@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  *
- *	@(#)param.h	7.5 (Berkeley) %G%
+ *	@(#)param.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -117,6 +117,7 @@
 #define splimp()        Mach_spl1()
 #define spltty()        Mach_spl2()
 #define splclock()      Mach_spl3()
+#define splstatclock()  Mach_spl3()
 #endif /* DS3100 */
 
 #ifdef DS5000
@@ -125,6 +126,7 @@
 #define splimp()        Mach_spl0()
 #define spltty()        Mach_spl0()
 #define splclock()      Mach_spl1()
+#define splstatclock()  Mach_spl1()
 #endif /* DS5000 */
 
 #ifdef KERNEL
