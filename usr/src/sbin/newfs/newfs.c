@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.16 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -41,9 +41,9 @@ static char sccsid[] = "@(#)newfs.c	6.15 (Berkeley) %G%";
 #define	DFL_BLKSIZE	8192
 
 /*
- * Cylinder groups may have up to MAXCPG cylinders. The actual
+ * Cylinder groups may have up to many cylinders. The actual
  * number used depends upon how much information can be stored
- * on a single cylinder. The default is to used 16 cylinders
+ * on a single cylinder. The default is to use 16 cylinders
  * per group.
  */
 #define	DESCPG		16	/* desired fs_cpg */
@@ -91,6 +91,16 @@ static char sccsid[] = "@(#)newfs.c	6.15 (Berkeley) %G%";
  */
 #define	NBPI		2048
 
+/*
+ * For each cylinder we keep track of the availability of blocks at different
+ * rotational positions, so that we can lay out the data to be picked
+ * up with minimum rotational latency.  NRPOS is the default number of
+ * rotational positions that we distinguish.  With NRPOS of 8 the resolution
+ * of our summary information is 2ms for a typical 3600 rpm drive.
+ */
+#define	NRPOS		8	/* number distinct rotational positions */
+
+
 int	Nflag;			/* run without writing file system */
 int	fssize;			/* file system size */
 int	ntracks;		/* # tracks/cylinder */
@@ -118,6 +128,7 @@ int	density = NBPI;		/* number of bytes per inode */
 int	maxcontig = MAXCONTIG;	/* max contiguous blocks to allocate */
 int	rotdelay = ROTDELAY;	/* rotational delay between blocks */
 int	maxbpg;			/* maximum blocks per file in a cyl group */
+int	nrpos = NRPOS;		/* # of distinguished rotational positions */
 int	bbsize = BBSIZE;	/* boot block size */
 int	sbsize = SBSIZE;	/* superblock size */
 #ifdef COMPAT
@@ -258,6 +269,16 @@ main(argc, argv)
 						*argv);
 				goto next;
 
+			case 'n':
+				if (argc < 1)
+					fatal("-n: missing rotational layout count\n");
+				argc--, argv++;
+				nrpos = atoi(*argv);
+				if (nrpos <= 0)
+					fatal("%s: bad rotational layout count\n",
+						*argv);
+				goto next;
+
 			case 'o':
 				if (argc < 1)
 					fatal("-o: missing optimization preference");
@@ -355,6 +376,8 @@ next:
 			"cylinder group");
 		fprintf(stderr, "\t-i number of bytes per inode\n");
 		fprintf(stderr, "\t-c cylinders/group\n");
+		fprintf(stderr, "\t-n number of distinguished %s\n",
+			"rotational positions");
 		fprintf(stderr, "\t-s file system size (sectors)\n");
 		fprintf(stderr, "\t-r revolutions/minute\n");
 		fprintf(stderr, "\t-S sector size\n");
