@@ -495,7 +495,6 @@ dousr()
 	printf("base, count, offset %.1x %.1x %ld\n", U.u_base,
 		U.u_count, U.u_offset);
 	printf("cdir rdir %.1x %.1x\n", U.u_cdir, U.u_rdir);
-	printf("dbuf %.14s\n", U.u_dbuf);
 	printf("dirp %.1x\n", U.u_dirp);
 	printf("dent %d %.14s\n", U.u_dent.d_ino, U.u_dent.d_name);
 	printf("pdir %.1o\n", U.u_pdir);
