@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)c21.c 4.12 %G%";
+static	char sccsid[] = "@(#)c21.c 4.13 %G%";
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
 /*
@@ -836,7 +836,7 @@ bicopt(p) register struct node *p; {
 				  && subop != GFLOAT && subop != HFLOAT
 				  && ((!indexa(cp1) && !autoid(cp1)) || lhssiz == subop)
 				  && 0<=(r=isreg(cp2)) && r<NUSE
-				  && bitsize[p->back->subop&0xF]>=(pos+siz)
+				  && bitsize[subop]>=(pos+siz)
 				  && bitsize[p->back->subop>>4]>=(pos+siz)) {/* good CVT */
 					cp1=regs[RT1]; cp2=src; while (*cp2++= *cp1++);
 					delnode(p->back);
