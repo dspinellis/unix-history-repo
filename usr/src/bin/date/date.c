@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -35,10 +35,11 @@ main(argc, argv)
 	extern int optind;
 	extern char *optarg;
 	struct timezone tz;
-	int ch;
+	int ch, rflag;
 	char *format, buf[1024];
 
 	tz.tz_dsttime = tz.tz_minuteswest = 0;
+	rflag = 0;
 	while ((ch = getopt(argc, argv, "d:nr:ut:")) != EOF)
 		switch((char)ch) {
 		case 'd':		/* daylight savings time */
@@ -47,7 +48,8 @@ main(argc, argv)
 		case 'n':		/* don't set network */
 			nflag = 1;
 			break;
-		case 'r':
+		case 'r':		/* user specified seconds */
+			rflag = 1;
 			tval = atol(optarg);
 			break;
 		case 'u':		/* do everything in GMT */
@@ -76,7 +78,7 @@ main(argc, argv)
 		exit(1);
 	}
 
-	if (!tval && time(&tval) == (time_t)-1) {
+	if (!rflag && time(&tval) == -1) {
 		perror("date: time");
 		exit(1);
 	}
