@@ -1,0 +1,66 @@
+KILL(1)                      BSD Reference Manual                      KILL(1)
+
+NNAAMMEE
+     kkiillll - terminate or signal a process
+
+SSYYNNOOPPSSIISS
+     kkiillll [--ss _s_i_g_n_a_l___n_a_m_e] _p_i_d ...
+     kkiillll --ll [_e_x_i_t___s_t_a_t_u_s]
+     kkiillll --ssiiggnnaall__nnaammee _p_i_d ...
+     kkiillll --ssiiggnnaall__nnuummbbeerr _p_i_d ...
+
+DDEESSCCRRIIPPTTIIOONN
+     The kill utility sends a signal to the processes specified by the pid
+     operand(s).
+
+     Only the super-user may send signals to other users' processes.
+
+     The options are as follows:
+
+     --ss _s_i_g_n_a_l___n_a_m_e
+             A symbolic signal name specifying the signal to be sent instead
+             of the default TERM.
+
+     --ll [_e_x_i_t___s_t_a_t_u_s]
+             If no operand is given, list the signal names; otherwise, write
+             the signal name corresponding to _e_x_i_t___s_t_a_t_u_s.
+
+     --ssiiggnnaall__nnaammee
+             A symbolic signal name specifying the signal to be sent instead
+             of the default TERM.
+
+     --ssiiggnnaall__nnuummbbeerr
+             A non-negative decimal integer, specifying the signal to be sent
+             instead of the default TERM.
+
+     The following pids have special meanings:
+     -1      If superuser, broadcast the signal to all processes; otherwise
+             broadcast to all processes belonging to the user.
+
+     Some of the more commonly used signals:
+     1       HUP (hang up)
+     2       INT (interrupt)
+     3       QUIT (quit)
+     6       ABRT (abort)
+     9       KILL (non-catchable, non-ignorable kill)
+     14      ALRM (alarm clock)
+     15      TERM (software termination signal)
+
+     KKiillll is a built-in to csh(1);  it allows job specifiers of the form
+     ``%...'' as arguments so process id's are not as often used as kkiillll argu-
+     ments.  See csh(1) for details.
+
+SSEEEE AALLSSOO
+     csh(1),  ps(1),  kill(2),  sigvec(2)
+
+SSTTAANNDDAARRDDSS
+     The kkiillll function is expected to be IEEE Std1003.2 (``POSIX'') compati-
+     ble.
+
+HHIISSTTOORRYY
+     A kkiillll command appeared in Version 6 AT&T UNIX.
+
+BBUUGGSS
+     A replacement for the command ``kill 0'' for csh(1) users should be pro-
+     vided.
+
