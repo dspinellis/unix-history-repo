@@ -1,8 +1,8 @@
 /*-
  * Copyright (c) 1990 Jan-Simon Pendry
  * Copyright (c) 1990 Imperial College of Science, Technology & Medicine
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Jan-Simon Pendry at Imperial College, London.
@@ -13,7 +13,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)nfs_ops.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)nfs_ops.c	8.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "am.h"
