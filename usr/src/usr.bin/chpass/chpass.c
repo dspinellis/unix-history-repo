@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chpass.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)chpass.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -31,7 +31,7 @@ static char sccsid[] = "@(#)chpass.c	5.6 (Berkeley) %G%";
 #include <sys/signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include </usr/src/include/pwd.h>
+#include <pwd.h>
 #include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -52,58 +52,80 @@ struct entry list[] = {
 	{ "Class",		p_class,  1,   5, e1,   },
 	{ "Change",		p_change, 1,   6, NULL, },
 	{ "Expire",		p_expire, 1,   6, NULL, },
-#define	E_NAME		6
+#define	E_NAME		7
 	{ "Full Name",		p_gecos,  0,   9, e2,   },
-#define	E_BPHONE	7
+#define	E_BPHONE	8
 	{ "Office Phone",	p_gecos,  0,  12, e2,   },
-#define	E_HPHONE	8
+#define	E_HPHONE	9
 	{ "Home Phone",		p_gecos,  0,  10, e2,   },
-#define	E_LOCATE	9
+#define	E_LOCATE	10
 	{ "Location",		p_gecos,  0,   8, e2,   },
 	{ "Home directory",	p_hdir,   1,  14, e1,   },
 	{ "Shell",		p_shell,  0,   5, e1,   },
 	{ NULL, 0, },
 };
 
-uid_t euid, uid;
+uid_t uid;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int errno;
+	extern int errno, optind;
+	extern char *optarg;
 	register char *p;
-	struct passwd *pw;
+	struct passwd lpw, *pw;
 	struct rlimit rlim;
 	FILE *temp_fp;
-	int fd;
-	char *fend, *passwd, *temp, *tend, buf[1024];
+	int aflag, ch, fd;
+	char *fend, *passwd, *temp, *tend;
 	char from[MAXPATHLEN], to[MAXPATHLEN];
 	char *getusershell();
 
-	euid = geteuid();
 	uid = getuid();
-	switch(--argc) {
-	case 0:
-		if (!(pw = getpwuid(uid))) {
-			fprintf(stderr, "chpass: unknown user: uid %u\n", uid);
-			exit(1);
+	aflag = 0;
+	while ((ch = getopt(argc, argv, "a:")) != EOF)
+		switch(ch) {
+		case 'a':
+			if (uid) {
+				(void)fprintf(stderr,
+				    "chpass: %s\n", strerror(EACCES));
+				exit(1);
+			}
+			loadpw(optarg, pw = &lpw);
+			aflag = 1;
+			break;
+		case '?':
+		default:
+			usage();
 		}
-		break;
-	case 1:
-		if (!(pw = getpwnam(argv[1]))) {
-			fprintf(stderr, "chpass: unknown user %s.\n", argv[1]);
-			exit(1);
+	argc -= optind;
+	argv += optind;
+
+	if (!aflag)
+		switch(argc) {
+		case 0:
+			if (!(pw = getpwuid(uid))) {
+				(void)fprintf(stderr,
+				    "chpass: unknown user: uid %u\n", uid);
+				exit(1);
+			}
+			break;
+		case 1:
+			if (!(pw = getpwnam(*argv))) {
+				(void)fprintf(stderr,
+				    "chpass: unknown user %s.\n", *argv);
+				exit(1);
+			}
+			if (uid && uid != pw->pw_uid) {
+				(void)fprintf(stderr,
+				    "chpass: %s\n", strerror(EACCES));
+				exit(1);
+			}
+			break;
+		default:
+			usage();
 		}
-		if (uid && uid != pw->pw_uid) {
-			fprintf(stderr, "chpass: %s\n", strerror(EACCES));
-			exit(1);
-		}
-		break;
-	default:
-		fprintf(stderr, "usage: chpass [user]\n");
-		exit(1);
-	}
 
 	(void)signal(SIGHUP, SIG_IGN);
 	(void)signal(SIGINT, SIG_IGN);
@@ -119,49 +141,31 @@ main(argc, argv)
 	temp = _PATH_PTMP;
 	if ((fd = open(temp, O_WRONLY|O_CREAT|O_EXCL, 0600)) < 0) {
 		if (errno == EEXIST) {
-			fprintf(stderr,
+			(void)fprintf(stderr,
 			    "chpass: password file busy -- try again later.\n");
 			exit(1);
 		}
-		fprintf(stderr, "chpass: %s: %s", temp, strerror(errno));
+		(void)fprintf(stderr, "chpass: %s: %s", temp, strerror(errno));
 		goto bad;
 	}
 	if (!(temp_fp = fdopen(fd, "w"))) {
-		fprintf(stderr, "chpass: can't write %s", temp);
+		(void)fprintf(stderr, "chpass: can't write %s", temp);
 		goto bad;
 	}
 
-	if (!info(pw))
+	if (!aflag && !info(pw))
 		goto bad;
-
-	/*
-	 * special checks...
-	 *
-	 * there has to be a limit on the size of the gecos fields,
-	 * otherwise getpwent(3) can choke.
-	 * ``if I swallow anything evil, put your fingers down my throat...''
-	 *	-- The Who
-	 */
-	if (strlen(list[E_NAME].save) + strlen(list[E_BPHONE].save) +
-	    strlen(list[E_HPHONE].save) + strlen(list[E_LOCATE].save)
-	    > 512) {
-		fprintf(stderr, "chpass: gecos field too large.\n");
-		exit(1);
-	}
-	(void)sprintf(pw->pw_gecos = buf, "%s,%s,%s,%s",
-	    list[E_NAME].save, list[E_LOCATE].save, list[E_BPHONE].save,
-	    list[E_HPHONE].save);
 
 	/* root should have a 0 uid and a reasonable shell */
 	if (!strcmp(pw->pw_name, "root")) {
 		if (pw->pw_uid) {
-			fprintf(stderr, "chpass: root uid should be 0.");
+			(void)fprintf(stderr, "chpass: root uid should be 0.");
 			exit(1);
 		}
 		setusershell();
 		for (;;)
 			if (!(p = getusershell())) {
-				fprintf(stderr,
+				(void)fprintf(stderr,
 				    "chpass: warning, unknown root shell.");
 				break;
 			}
@@ -171,7 +175,7 @@ main(argc, argv)
 
 	passwd = _PATH_MASTERPASSWD;
 	if (!freopen(passwd, "r", stdin)) {
-		fprintf(stderr, "chpass: can't read %s", passwd);
+		(void)fprintf(stderr, "chpass: can't read %s", passwd);
 		goto bad;
 	}
 	if (!copy(pw, temp_fp))
@@ -184,7 +188,7 @@ main(argc, argv)
 	case 0:
 		break;
 	case -1:
-		fprintf(stderr, "chpass: can't fork");
+		(void)fprintf(stderr, "chpass: can't fork");
 		goto bad;
 		/* NOTREACHED */
 	default:
@@ -193,8 +197,8 @@ main(argc, argv)
 	}
 
 	if (makedb(temp)) {
-		fprintf(stderr, "chpass: mkpasswd failed");
-bad:		fprintf(stderr, "; information unchanged.\n");
+		(void)fprintf(stderr, "chpass: mkpasswd failed");
+bad:		(void)fprintf(stderr, "; information unchanged.\n");
 		(void)unlink(temp);
 		exit(1);
 	}
@@ -230,14 +234,15 @@ info(pw)
 {
 	register struct entry *ep;
 	register char *p;
+	static char buf[1024];
 	struct stat begin, end;
 	FILE *fp;
 	int fd, rval;
-	char *tfile, buf[1024], *getenv();
+	char *tfile, *getenv();
 
 	tfile = "/tmp/passwd.XXXXXX";
 	if ((fd = mkstemp(tfile)) == -1 || !(fp = fdopen(fd, "w+"))) {
-		fprintf(stderr, "chpass: no temporary file");
+		(void)fprintf(stderr, "chpass: no temporary file");
 		return(0);
 	}
 
@@ -254,12 +259,12 @@ info(pw)
 	(void)unlink(tfile);
 
 	if (rval) {
-		fprintf(stderr, "chpass: edit failed");
+		(void)fprintf(stderr, "chpass: edit failed");
 		return(0);
 	}
 	(void)fstat(fd, &end);
 	if (begin.st_mtime == end.st_mtime) {
-		fprintf(stderr, "chpass: no changes made");
+		(void)fprintf(stderr, "chpass: no changes made");
 		return(0);
 	}
 	(void)rewind(fp);
@@ -267,22 +272,22 @@ info(pw)
 		if (!buf[0])
 			continue;
 		if (!(p = index(buf, '\n'))) {
-			fprintf(stderr, "chpass: line too long");
+			(void)fprintf(stderr, "chpass: line too long");
 			return(0);
 		}
 		*p = '\0';
 		for (ep = list; ep->prompt; ++ep)
 			if (!strncasecmp(buf, ep->prompt, ep->len)) {
-				if (ep->restricted && euid)
+				if (ep->restricted && uid)
 					continue;
 				if (!(p = index(buf, ':'))) {
-					fprintf(stderr,
+					(void)fprintf(stderr,
 					    "chpass: line corrupted");
 					return(0);
 				}
 				while (isspace(*++p));
 				if (ep->except && strpbrk(p, ep->except)) {
-					fprintf(stderr,
+					(void)fprintf(stderr,
 					   "chpass: illegal character in the \"%s\" field",
 					    ep->prompt);
 					return(0);
@@ -293,6 +298,23 @@ info(pw)
 			}
 	}
 	(void)fclose(fp);
+	/*
+	 * special checks...
+	 *
+	 * there has to be a limit on the size of the gecos fields,
+	 * otherwise getpwent(3) can choke.
+	 * ``if I swallow anything evil, put your fingers down my throat...''
+	 *	-- The Who
+	 */
+	if (strlen(list[E_NAME].save) + strlen(list[E_BPHONE].save) +
+	    strlen(list[E_HPHONE].save) + strlen(list[E_LOCATE].save)
+	    > 512) {
+		(void)fprintf(stderr, "chpass: gecos field too large.\n");
+		exit(1);
+	}
+	(void)sprintf(pw->pw_gecos = buf, "%s,%s,%s,%s",
+	    list[E_NAME].save, list[E_LOCATE].save, list[E_BPHONE].save,
+	    list[E_HPHONE].save);
 	return(1);
 }
 
@@ -307,31 +329,31 @@ copy(pw, fp)
 	for (done = 0; fgets(buf, sizeof(buf), stdin);) {
 		/* skip lines that are too big */
 		if (!index(buf, '\n')) {
-			fprintf(stderr, "chpass: line too long");
+			(void)fprintf(stderr, "chpass: line too long");
 			return(0);
 		}
 		if (done) {
-			fprintf(fp, "%s", buf);
+			(void)fprintf(fp, "%s", buf);
 			continue;
 		}
 		if (!(p = index(buf, ':'))) {
-			fprintf(stderr, "chpass: corrupted entry");
+			(void)fprintf(stderr, "chpass: corrupted entry");
 			return(0);
 		}
 		*p = '\0';
 		if (strcmp(buf, pw->pw_name)) {
 			*p = ':';
-			fprintf(fp, "%s", buf);
+			(void)fprintf(fp, "%s", buf);
 			continue;
 		}
-		fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
+		(void)fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
 		    pw->pw_name, pw->pw_passwd, pw->pw_uid, pw->pw_gid,
 		    pw->pw_class, pw->pw_change, pw->pw_expire, pw->pw_gecos,
 		    pw->pw_dir, pw->pw_shell);
 		done = 1;
 	}
 	if (!done)
-		fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
+		(void)fprintf(fp, "%s:%s:%d:%d:%s:%ld:%ld:%s:%s:%s\n",
 		    pw->pw_name, pw->pw_passwd, pw->pw_uid, pw->pw_gid,
 		    pw->pw_class, pw->pw_change, pw->pw_expire, pw->pw_gecos,
 		    pw->pw_dir, pw->pw_shell);
@@ -373,4 +395,42 @@ edit(file)
 	}
 	while ((w = wait(&status)) != pid && w != -1);
 	return(w == -1 || status);
+}
+
+loadpw(arg, pw)
+	char *arg;
+	register struct passwd *pw;
+{
+	register char *cp;
+	long atol();
+	char *strsep();
+
+	pw->pw_name = strsep(arg, ":");
+	pw->pw_passwd = strsep((char *)NULL, ":");
+	if (!(cp = strsep((char *)NULL, ":")))
+		goto bad;
+	pw->pw_uid = atoi(cp);
+	if (!(cp = strsep((char *)NULL, ":")))
+		goto bad;
+	pw->pw_gid = atoi(cp);
+	pw->pw_class = strsep((char *)NULL, ":");
+	if (!(cp = strsep((char *)NULL, ":")))
+		goto bad;
+	pw->pw_change = atol(cp);
+	if (!(cp = strsep((char *)NULL, ":")))
+		goto bad;
+	pw->pw_expire = atol(cp);
+	pw->pw_gecos = strsep((char *)NULL, ":");
+	pw->pw_dir = strsep((char *)NULL, ":");
+	pw->pw_shell = strsep((char *)NULL, ":");
+	if (!pw->pw_shell || strsep((char *)NULL, ":")) {
+bad:		(void)fprintf(stderr, "chpass: bad password list.\n");
+		exit(1);
+	}
+}
+
+usage()
+{
+	(void)fprintf(stderr, "usage: chpass [-a list] [user]\n");
+	exit(1);
 }

@@ -13,15 +13,14 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)chpass.1	5.5 (Berkeley) %G%
+.\"	@(#)chpass.1	5.6 (Berkeley) %G%
 .\"
 .TH CHPASS 1 ""
 .UC 4
 .SH NAME
 chpass \- add or change user database information
 .SH SYNOPSIS
-.B chpass
-[ user ]
+chpass [ -a list ] [ user ]
 .SH DESCRIPTION
 .I Chpass
 allows editing of the user database information associated
@@ -31,7 +30,7 @@ or, by default, the current user.
 The information is formatted and supplied to an editor for changes.
 The
 .I vi
-editor will be used unless the environmental variable EDITOR indicates
+editor will be used unless the environmental variable EDITOR selects
 an alternate editor.
 When the editor terminates, the information is re-read and used to
 update the user database itself.
@@ -44,6 +43,7 @@ Possible display items are as follows:
 .PP
 .RS
  Login:			user's login name
+ Password:		user's encrypted password
  Uid:			user's id
  Gid:			user's login group id
  Change:			password change time
@@ -59,12 +59,20 @@ Possible display items are as follows:
 .PP
 .PP
 The
-.I name
-field is the login used to access the computer account, and the
+.I login
+field is the user name used to access the computer account.
+.PP
+The
+.I password
+field contains the encrypted form of the user's password.
+.PP
+The
 .I uid
-field is the number associated with it.  They should both be unique
-across the system (and often across a group of systems) since they
-control file access.
+field is the number associated with the
+.I login
+field.
+Both of these fields should be unique across the system (and often
+across a group of systems) as they control file access.
 .PP
 While it is possible to have multiple entries with identical login names
 and/or identical user id's, it is usually a mistake to do so.  Routines
@@ -122,10 +130,14 @@ select an approved shell from the list in
 The last four fields are for storing the user's full name, office
 location, and home and work telephone numbers.
 .PP
-Additions to the user database will be given an illegal passwd
-(``NOLOGIN'') which should be updated using the
-.IR passwd (1)
-program.
+The super-user is also allowed to directly supply a user database
+entry, in the format specified by
+.IR passwd (5),
+as an argument to the
+.I -a
+option.
+This argument must be a colon (``:'') separated list of all the
+user database fields, although they may be empty.
 .PP
 Once the information has been verified,
 .I chpass
