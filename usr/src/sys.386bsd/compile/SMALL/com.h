@@ -1,0 +1,1 @@
+#define NCOM 1
