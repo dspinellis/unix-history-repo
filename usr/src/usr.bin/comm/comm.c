@@ -25,26 +25,27 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comm.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)comm.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/file.h>
+#include <limits.h>
 #include <stdio.h>
 
-#define	MAXLINELEN	(2048 + 1)
+#define	MAXLINELEN	(LINE_MAX + 1)
 
-static char *tabs[] = { "", "\t", "\t\t" };
+char *tabs[] = { "", "\t", "\t\t" };
 
 main(argc,argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	extern int optind;
-	FILE *fp1, *fp2, *file();
 	register int comp, file1done, file2done, read1, read2;
 	register char *col1, *col2, *col3;
 	int ch, flag1, flag2, flag3;
+	FILE *fp1, *fp2, *file();
 	char **p, line1[MAXLINELEN], line2[MAXLINELEN];
+	extern int optind;
 
 	flag1 = flag2 = flag3 = 1;
 	while ((ch = getopt(argc, argv, "-123")) != EOF)
