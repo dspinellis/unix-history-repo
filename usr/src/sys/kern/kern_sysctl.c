@@ -4,16 +4,19 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.13 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "user.h"
 #include "proc.h"
 #include "kinfo.h"
 #include "ioctl.h"
 #include "tty.h"
 #include "buf.h"
+
+#include "vm/vm.h"
+
+#include "kinfo_proc.h"
 
 #define snderr(e) { error = (e); goto release;}
 extern int kinfo_doproc(), kinfo_rtable(), kinfo_vnode();
@@ -149,33 +152,10 @@ again:
 			break;
 		}
 		if (where != NULL && buflen >= sizeof (struct kinfo_proc)) {
-			register struct tty *tp;
-
+			fill_eproc(p, &eproc);
 			if (error = copyout((caddr_t)p, &dp->kp_proc, 
 			    sizeof (struct proc)))
 				return (error);
-			eproc.e_paddr = p;
-			eproc.e_sess = p->p_pgrp->pg_session;
-			eproc.e_pcred = *p->p_cred;
-			eproc.e_ucred = *p->p_ucred;
-			eproc.e_vm = *p->p_vmspace;
-			eproc.e_pgid = p->p_pgrp->pg_id;
-			eproc.e_jobc = p->p_pgrp->pg_jobc;
-			if ((p->p_flag&SCTTY) && 
-			     (tp = eproc.e_sess->s_ttyp)) {
-				eproc.e_tdev = tp->t_dev;
-				eproc.e_tpgid = tp->t_pgrp ? 
-					tp->t_pgrp->pg_id : -1;
-				eproc.e_tsess = tp->t_session;
-			} else
-				eproc.e_tdev = NODEV;
-			eproc.e_flag = eproc.e_sess->s_ttyvp ? EPROC_CTTY : 0;
-			if (SESS_LEADER(p))
-				eproc.e_flag |= EPROC_SLEADER;
-			if (p->p_wmesg)
-				strncpy(eproc.e_wmesg, p->p_wmesg, WMESGLEN);
-			eproc.e_xsize = eproc.e_xrssize = 0;
-			eproc.e_xccount =  eproc.e_xswrss = 0;
 			if (error = copyout((caddr_t)&eproc, &dp->kp_eproc, 
 			    sizeof (eproc)))
 				return (error);
@@ -196,4 +176,38 @@ again:
 	*aneeded = needed;
 
 	return (0);
+}
+
+/*
+ * Fill in an eproc structure for the specified process.
+ */
+void
+fill_eproc(p, ep)
+	register struct proc *p;
+	register struct eproc *ep;
+{
+	register struct tty *tp;
+
+	ep->e_paddr = p;
+	ep->e_sess = p->p_pgrp->pg_session;
+	ep->e_pcred = *p->p_cred;
+	ep->e_ucred = *p->p_ucred;
+	ep->e_vm = *p->p_vmspace;
+	ep->e_ppid = p->p_pptr->p_pid;
+	ep->e_pgid = p->p_pgrp->pg_id;
+	ep->e_jobc = p->p_pgrp->pg_jobc;
+	if ((p->p_flag&SCTTY) && 
+	     (tp = ep->e_sess->s_ttyp)) {
+		ep->e_tdev = tp->t_dev;
+		ep->e_tpgid = tp->t_pgrp ? tp->t_pgrp->pg_id : -1;
+		ep->e_tsess = tp->t_session;
+	} else
+		ep->e_tdev = NODEV;
+	ep->e_flag = ep->e_sess->s_ttyvp ? EPROC_CTTY : 0;
+	if (SESS_LEADER(p))
+		ep->e_flag |= EPROC_SLEADER;
+	if (p->p_wmesg)
+		strncpy(ep->e_wmesg, p->p_wmesg, WMESGLEN);
+	ep->e_xsize = ep->e_xrssize = 0;
+	ep->e_xccount = ep->e_xswrss = 0;
 }
