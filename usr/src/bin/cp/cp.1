@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)cp.1	6.17 (Berkeley) %G%
+.\"	@(#)cp.1	6.18 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CP 1
@@ -104,6 +104,14 @@ permissions.
 For each destination file that already exists, its contents are
 overwritten if permissions allow, but its mode, user ID, and group
 ID are unchanged.
+.Pp
+In the second synopsis form, 
+.Ar target_directory 
+must exist unless there is only one named
+.Ar source_file
+which is a directory and the 
+.Fl R 
+flag is specified.
 .Pp
 If the destination file does not exist, the mode of the source file is
 used as modified by the file mode creation mask
