@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.3 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.4 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -61,87 +61,6 @@ main(argc, argv)
 	 */
     doarcs();
     done();
-}
-
-printprof()
-{
-    register nltype	*np;
-    nltype		**sortednlp;
-    int			index;
-
-    actime = 0.0;
-    putprofheader();
-	/*
-	 *	Sort the symbol table in by time
-	 */
-    sortednlp = (nltype **) calloc( nname , sizeof(nltype *) );
-    if ( sortednlp == (nltype **) 0 ) {
-	fprintf( stderr , "[printprof] ran out of memory for time sorting\n" );
-    }
-    for ( index = 0 ; index < nname ; index += 1 ) {
-	sortednlp[ index ] = &nl[ index ];
-    }
-    qsort( sortednlp , nname , sizeof(nltype *) , timecmp );
-    for ( index = 0 ; index < nname ; index += 1 ) {
-	np = sortednlp[ index ];
-	putprofline( np , 1 );
-    }
-    actime = 0.0;
-    printf( "\ngranularity: each sample hit covers %.1f bytes" , scale );
-    printf( " for %.2f%% of %.2f seconds\n" , 100.0/totime , totime / HZ );
-}
-
-putprofline( np , cumflag )
-    register nltype	*np;
-    int			cumflag;
-{
-    double	time;
-    long	calls = np -> ncall + np -> selfcalls;
-
-    if ( zflg == 0 && calls == 0 && np -> time == 0 && np -> childtime == 0 ) {
-	return;
-    }
-    if ( cumflag ) {
-	time = (np->time + np->childtime) / totime;
-	actime += np->time;
-	if ( np -> index != 0 ) {
-	    printf( "[%d]" , np -> index );
-	}
-	printf( "\t%5.1f %7.1f" , 100 * time , actime / HZ );
-    } else {
-	printf( "\t%5.5s %7.7s" , "" , "" );
-    }
-    printf( " %7.1f", np -> time / HZ );
-    if ( np -> childtime != 0.0 ) {
-	printf( " %7.1f" , np -> childtime / HZ );
-    } else {
-	printf( " %7.7s" , "" );
-    }
-    if ( calls != 0 ) {
-	printf( " %7d" , np -> ncall );
-	if ( np -> selfcalls != 0 ) {
-	    printf( "+%-7d  " , np -> selfcalls );
-	} else {
-	    printf( " %7.7s  " , "" );
-	}
-    } else {
-	printf( " %7.7s %7.7s  " , "" , "" );
-    }
-    if ( ! cumflag ) {
-	printf( "    " );
-    }
-    printname( np );
-    printf( "\n" );
-}
-
-    /*
-     *	header for putprofline
-     */
-putprofheader()
-{
-    
-    printf( "\n\t%5.5s %7.7s %-7.7s %-7.7s %7.7s %7.7s %5.5s\n" ,
-	    "%time" , "cumsecs" , "  self" , " child" , "ncall" , "" , "name" );
 }
 
 /*
@@ -310,7 +229,7 @@ getpfile(filename)
     while ( fread( &arc , sizeof arc , 1 , pfile ) == 1 ) {
 #	ifdef DEBUG
 	    if ( debug & SAMPLEDEBUG ) {
-		printf( "[getpfile] frompc %d selfpc %d count %d\n" ,
+		printf( "[getpfile] frompc 0x%x selfpc 0x%x count %d\n" ,
 			arc.raw_frompc , arc.raw_selfpc , arc.raw_count );
 	    }
 #	endif DEBUG
@@ -332,6 +251,8 @@ FILE *openpfile(filename)
 	done();
     }
     fread(&h, sizeof(struct hdr), 1, pfile);
+    s_lowpc = (unsigned long) h.lowpc;
+    s_highpc = (unsigned long) h.highpc;
     lowpc = h.lowpc - (UNIT *)0;
     highpc = h.highpc - (UNIT *)0;
     sampbytes = h.ncnt - sizeof(struct hdr);
@@ -472,19 +393,6 @@ max(a, b)
     if (a>b)
 	return(a);
     return(b);
-}
-
-timecmp( npp1 , npp2 )
-    nltype **npp1, **npp2;
-{
-    double d;
-
-    d = (*npp2)->time - (*npp1)->time;
-    if (d > 0.0)
-	return(1);
-    if (d < 0.0)
-	return(-1);
-    return(strcmp((*npp1)->name,(*npp2)->name));
 }
 
 done()
