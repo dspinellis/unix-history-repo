@@ -1,4 +1,4 @@
-/*	if_ec.c	6.6	85/02/15	*/
+/*	if_ec.c	6.7	85/05/01	*/
 
 #include "ec.h"
 
@@ -22,6 +22,7 @@
 #include "../net/route.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/if_ether.h"
@@ -185,7 +186,6 @@ ecattach(ui)
 	struct ec_softc *es = &ec_softc[ui->ui_unit];
 	register struct ifnet *ifp = &es->es_if;
 	register struct ecdevice *addr = (struct ecdevice *)ui->ui_addr;
-	struct sockaddr_in *sin;
 	int i, j;
 	u_char *cp;
 
@@ -198,7 +198,7 @@ ecattach(ui)
 	 */
 	addr->ec_xcr = EC_UECLR;
 	addr->ec_rcr = EC_AROM;
-	cp = (u_char *) &es->es_addr;
+	cp = es->es_addr;
 #define	NEXTBIT	addr->ec_rcr = EC_AROM|EC_ASTEP; addr->ec_rcr = EC_AROM
 	for (i=0; i < sizeof (es->es_addr); i++) {
 		*cp = 0;
@@ -208,12 +208,11 @@ ecattach(ui)
 		}
 		cp++;
 	}
-	sin = (struct sockaddr_in *)&es->es_if.if_addr;
-	sin->sin_family = AF_INET;
 	ifp->if_init = ecinit;
 	ifp->if_ioctl = ecioctl;
 	ifp->if_output = ecoutput;
 	ifp->if_reset = ecreset;
+	ifp->if_flags = IFF_BROADCAST;
 	for (i=0; i<16; i++)
 		es->es_buf[i] 
 		    = (u_char *)&umem[ui->ui_ubanum][ui->ui_flags + 2048*i];
@@ -247,11 +246,10 @@ ecinit(unit)
 	struct ec_softc *es = &ec_softc[unit];
 	struct ecdevice *addr;
 	register struct ifnet *ifp = &es->es_if;
-	register struct sockaddr_in *sin;
 	int i, s;
 
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	if (sin->sin_addr.s_addr == 0)		/* address still unknown */
+	/* not yet, if address still unknown */
+	if (ifp->if_addrlist == (struct ifaddr *)0)
 		return;
 
 	/*
@@ -259,20 +257,18 @@ ecinit(unit)
 	 * Writing into the rcr also makes sure the memory
 	 * is turned on.
 	 */
-	if ((es->es_if.if_flags & IFF_RUNNING) == 0) {
+	if ((ifp->if_flags & IFF_RUNNING) == 0) {
 		addr = (struct ecdevice *)ecinfo[unit]->ui_addr;
 		s = splimp();
 		for (i = ECRHBF; i >= ECRLBF; i--)
 			addr->ec_rcr = EC_READ | i;
 		es->es_oactive = 0;
 		es->es_mask = ~0;
-		es->es_if.if_flags |= IFF_UP|IFF_RUNNING;
+		es->es_if.if_flags |= IFF_RUNNING;
 		if (es->es_if.if_snd.ifq_head)
 			ecstart(unit);
 		splx(s);
 	}
-	if_rtinit(&es->es_if, RTF_UP);
-	arpwhohas(&es->es_ac, &sin->sin_addr);
 }
 
 /*
@@ -445,7 +441,7 @@ ecread(unit)
 	/*
 	 * Get input data length.
 	 * Get pointer to ethernet header (in input buffer).
-	 * Deal with trailer protocol: if type is PUP trailer
+	 * Deal with trailer protocol: if type is trailer type
 	 * get true type from first 16-bit word past data.
 	 * Remember that type was trailer by setting off.
 	 */
@@ -453,9 +449,9 @@ ecread(unit)
 	ec = (struct ether_header *)(ecbuf + ECRDOFF);
 	ec->ether_type = ntohs((u_short)ec->ether_type);
 #define	ecdataaddr(ec, off, type)	((type)(((caddr_t)((ec)+1)+(off))))
-	if (ec->ether_type >= ETHERPUP_TRAIL &&
-	    ec->ether_type < ETHERPUP_TRAIL+ETHERPUP_NTRAILER) {
-		off = (ec->ether_type - ETHERPUP_TRAIL) * 512;
+	if (ec->ether_type >= ETHERTYPE_TRAIL &&
+	    ec->ether_type < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
+		off = (ec->ether_type - ETHERTYPE_TRAIL) * 512;
 		if (off >= ETHERMTU)
 			goto setup;		/* sanity */
 		ec->ether_type = ntohs(*ecdataaddr(ec, off, u_short *));
@@ -484,12 +480,12 @@ ecread(unit)
 	switch (ec->ether_type) {
 
 #ifdef INET
-	case ETHERPUP_IPTYPE:
+	case ETHERTYPE_IP:
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
 
-	case ETHERPUP_ARPTYPE:
+	case ETHERTYPE_ARP:
 		arpinput(&es->es_ac, m);
 		goto setup;
 #endif
@@ -527,7 +523,7 @@ ecoutput(ifp, m0, dst)
 	struct sockaddr *dst;
 {
 	int type, s, error;
-	struct ether_addr edst;
+ 	u_char edst[6];
 	struct in_addr idst;
 	register struct ec_softc *es = &ec_softc[ifp->if_unit];
 	register struct mbuf *m = m0;
@@ -540,30 +536,31 @@ ecoutput(ifp, m0, dst)
 #ifdef INET
 	case AF_INET:
 		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&es->es_ac, m, &idst, &edst))
+		if (!arpresolve(&es->es_ac, m, &idst, edst))
 			return (0);	/* if not yet resolved */
-		if (in_lnaof(idst) == INADDR_ANY)
+		if (!bcmp((caddr_t)edst, (caddr_t)etherbroadcastaddr,
+		    sizeof(edst)))
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		/* need per host negotiation */
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERPUP_TRAIL + (off>>9);
+			type = ETHERTYPE_TRAIL + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
 			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = ntohs((u_short)ETHERPUP_IPTYPE);
+			*mtod(m, u_short *) = ntohs((u_short)ETHERTYPE_IP);
 			*(mtod(m, u_short *) + 1) = ntohs((u_short)m->m_len);
 			goto gottrailertype;
 		}
-		type = ETHERPUP_IPTYPE;
+		type = ETHERTYPE_IP;
 		off = 0;
 		goto gottype;
 #endif
 
 	case AF_UNSPEC:
 		ec = (struct ether_header *)dst->sa_data;
-		edst = ec->ether_dhost;
+ 		bcopy((caddr_t)ec->ether_dhost, (caddr_t)edst, sizeof (edst));
 		type = ec->ether_type;
 		goto gottype;
 
@@ -606,8 +603,9 @@ gottype:
 		m->m_len += sizeof (struct ether_header);
 	}
 	ec = mtod(m, struct ether_header *);
-	ec->ether_dhost = edst;
-	ec->ether_shost = es->es_addr;
+ 	bcopy((caddr_t)edst, (caddr_t)ec->ether_dhost, sizeof (edst));
+	bcopy((caddr_t)es->es_addr, (caddr_t)ec->ether_shost,
+	    sizeof(ec->ether_shost));
 	ec->ether_type = htons((u_short)type);
 
 	/*
@@ -772,16 +770,22 @@ ecioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
-	register struct ifreq *ifr = (struct ifreq *)data;
+	register struct ifaddr *ifa = (struct ifaddr *)data;
 	int s = splimp(), error = 0;
 
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);	/* delete previous route */
-		ecsetaddr(ifp, (struct sockaddr_in *)&ifr->ifr_addr);
+		ifp->if_flags |= IFF_UP;
 		ecinit(ifp->if_unit);
+
+		switch (ifa->ifa_addr.sa_family) {
+		case AF_INET:
+			((struct arpcom *)ifp)->ac_ipaddr =
+				IA_SIN(ifa)->sin_addr;
+			arpwhohas((struct arpcom *)ifp, &IA_SIN(ifa)->sin_addr);
+			break;
+		}
 		break;
 
 	default:
@@ -789,18 +793,4 @@ ecioctl(ifp, cmd, data)
 	}
 	splx(s);
 	return (error);
-}
-
-ecsetaddr(ifp, sin)
-	register struct ifnet *ifp;
-	register struct sockaddr_in *sin;
-{
-
-	ifp->if_addr = *(struct sockaddr *)sin;
-	ifp->if_net = in_netof(sin->sin_addr);
-	ifp->if_host[0] = in_lnaof(sin->sin_addr);
-	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags |= IFF_BROADCAST;
 }

@@ -1,4 +1,4 @@
-/*	if_acc.c	6.2	84/08/29	*/
+/*	if_acc.c	6.3	85/05/01	*/
 
 #include "acc.h"
 #ifdef NACC > 0
@@ -129,6 +129,7 @@ accreset(unit, uban)
 		return;
 	printf(" acc%d", unit);
 	sc = &acc_softc[unit];
+	sc->acc_if->if_flags &= ~IFF_RUNNING;
 	/* must go through IMP to allow it to set state */
 	(*sc->acc_if->if_init)(unit);
 }
@@ -165,6 +166,7 @@ accinit(unit)
 		ui->ui_alive = 0;
 		return (0);
 	}
+	sc->acc_if->if_flags |= IFF_RUNNING;
 	addr = (struct accdevice *)ui->ui_addr;
 
 	/*

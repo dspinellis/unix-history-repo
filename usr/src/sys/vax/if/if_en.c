@@ -1,4 +1,4 @@
-/*	if_en.c	6.5	84/12/20	*/
+/*	if_en.c	6.6	85/05/01	*/
 
 #include "en.h"
 
@@ -22,6 +22,7 @@
 #include "../net/route.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
+#include "../netinet/in_var.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netpup/pup.h"
@@ -52,7 +53,7 @@ int	eninit(),enoutput(),enreset(),enioctl();
  * If you need to byte swap IP's in the system, define
  * this and do a SIOCSIFFLAGS at boot time.
  */
-#define	ENF_SWABIPS	0x100
+#define	ENF_SWABIPS	0x1000
 #endif
 
 /*
@@ -114,6 +115,7 @@ enattach(ui)
 	es->es_if.if_unit = ui->ui_unit;
 	es->es_if.if_name = "en";
 	es->es_if.if_mtu = ENMTU;
+	es->es_if.if_flags = IFF_BROADCAST;
 	es->es_if.if_init = eninit;
 	es->es_if.if_output = enoutput;
 	es->es_if.if_ioctl = enioctl;
@@ -153,10 +155,9 @@ eninit(unit)
 	register struct en_softc *es = &en_softc[unit];
 	register struct uba_device *ui = eninfo[unit];
 	register struct endevice *addr;
-	struct sockaddr_in *sin = (struct sockaddr_in *)&es->es_if.if_addr;
 	int s;
 
-	if (in_netof(sin->sin_addr) == 0)
+	if (es->es_if.if_addrlist == (struct ifaddr *)0)
 		return;
 	if (if_ubainit(&es->es_ifuba, ui->ui_ubanum,
 	    sizeof (struct en_header), (int)btoc(ENMRU)) == 0) { 
@@ -176,10 +177,9 @@ eninit(unit)
 	addr->en_iwc = -(sizeof (struct en_header) + ENMRU) >> 1;
 	addr->en_istat = EN_IEN|EN_GO;
 	es->es_oactive = 1;
-	es->es_if.if_flags |= IFF_UP|IFF_RUNNING;
+	es->es_if.if_flags |= IFF_RUNNING;
 	enxint(unit);
 	splx(s);
-	if_rtinit(&es->es_if, RTF_UP);
 }
 
 int	enalldelay = 0;
@@ -490,12 +490,19 @@ enoutput(ifp, m0, dst)
 
 #ifdef INET
 	case AF_INET:
-		dest = ((struct sockaddr_in *)dst)->sin_addr.s_addr;
-		if (in_lnaof(*((struct in_addr *)&dest)) >= 0x100) {
+		{
+		struct in_addr in;
+
+		in = ((struct sockaddr_in *)dst)->sin_addr;
+		if (in_broadcast(in))
+			dest = EN_BROADCAST;
+		else
+			dest = in_lnaof(in);
+		}
+		if (dest >= 0x100) {
 			error = EPERM;		/* ??? */
 			goto bad;
 		}
-		dest = (dest >> 24) & 0xff;
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
 		/* need per host negotiation */
 		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
@@ -600,18 +607,28 @@ enioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t data;
 {
-	struct ifreq *ifr = (struct ifreq *)data;
+	register struct en_softc *es = ((struct en_softc *)ifp);
+	struct ifaddr *ifa = (struct ifaddr *) data;
 	int s = splimp(), error = 0;
+	struct endevice *enaddr;
 
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, -1);	/* delete previous route */
-		ensetaddr(ifp, (struct sockaddr_in *)&ifr->ifr_addr);
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, RTF_UP);
-		else
+		enaddr = (struct endevice *)eninfo[ifp->if_unit]->ui_addr;
+		es->es_host = (~enaddr->en_addr) & 0xff;
+		/*
+		 * Attempt to check agreement of protocol address
+		 * and board address.
+		 */
+		switch (ifa->ifa_addr.sa_family) {
+		case AF_INET:
+			if (in_lnaof(IA_SIN(ifa)->sin_addr) != es->es_host)
+				return (EADDRNOTAVAIL);
+			break;
+		}
+		ifp->if_flags |= IFF_UP;
+		if ((ifp->if_flags & IFF_RUNNING) == 0)
 			eninit(ifp->if_unit);
 		break;
 
@@ -622,40 +639,24 @@ enioctl(ifp, cmd, data)
 	return (error);
 }
 
-ensetaddr(ifp, sin)
-	register struct ifnet *ifp;
-	register struct sockaddr_in *sin;
-{
-	struct endevice *enaddr;
-
-	/* set address once for in_netof, so subnets will be recognized */
-	ifp->if_addr = *(struct sockaddr *)sin;
-	ifp->if_net = in_netof(sin->sin_addr);
-	enaddr = (struct endevice *)eninfo[ifp->if_unit]->ui_addr;
-	((struct en_softc *) ifp)->es_host = (~enaddr->en_addr) & 0xff;
-	sin = (struct sockaddr_in *)&ifp->if_addr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net,
-	    ((struct en_softc *)ifp)->es_host);
-	sin = (struct sockaddr_in *)&ifp->if_broadaddr;
-	sin->sin_family = AF_INET;
-	sin->sin_addr = if_makeaddr(ifp->if_net, INADDR_ANY);
-	ifp->if_flags |= IFF_BROADCAST;
-}
-
 #ifdef ENF_SWABIPS
 /*
  * Swab bytes
  * Jeffrey Mogul, Stanford
  */
 enswab(from, to, n)
-	register caddr_t *from, *to;
+	register unsigned char *from, *to;
 	register int n;
 {
 	register unsigned long temp;
+
+	if ((n <= 0) || (n > 0xFFFF)) {
+		printf("enswab: bad len %d\n", n);
+		return;
+	}
 	
 	n >>= 1; n++;
-#define	STEP	temp = *from++,*to++ = *from++,*to++ = temp
+#define	STEP	{temp = *from++;*to++ = *from++;*to++ = temp;}
 	/* round to multiple of 8 */
 	while ((--n) & 07)
 		STEP;
