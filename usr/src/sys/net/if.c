@@ -383,7 +383,7 @@ ifioctl(so, cmd, data)
 			cmd, data, ifp));
 #else
 	    {
-		int error, ocmd = cmd;
+		int ocmd = cmd;
 
 		switch (cmd) {
 
