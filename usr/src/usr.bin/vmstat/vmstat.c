@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)vmstat.c	5.8 (Berkeley) %G%";
 #include <sys/inode.h>
 #include <sys/namei.h>
 #include <sys/text.h>
+#include <sys/malloc.h>
 
 struct nlist nl[] = {
 #define	X_CPTIME	0
@@ -71,6 +72,10 @@ struct nlist nl[] = {
 	{ "_dk_ndrive" },
 #define	X_XSTATS	20
 	{ "_xstats" },
+#define	X_KMEMSTAT	21
+	{ "_kmemstats" },
+#define	X_KMEMBUCKETS	22
+	{ "_bucket" },
 #ifdef vax
 #define X_MBDINIT	(X_XSTATS+1)
 	{ "_mbdinit" },
@@ -171,6 +176,10 @@ main(argc, argv)
 			doforkst();
 			exit(0);
 		
+		case 'm':
+			domem();
+			exit(0);
+
 		case 's':
 			dosum();
 			exit(0);
@@ -181,7 +190,7 @@ main(argc, argv)
 
 		default:
 			fprintf(stderr,
-			    "usage: vmstat [ -fsi ] [ interval ] [ count]\n");
+			    "usage: vmstat [ -fsim ] [ interval ] [ count]\n");
 			exit(1);
 		}
 	}
@@ -442,7 +451,7 @@ dosum()
 	read(mf, &keystats, sizeof keystats);
 	printf("%9d %s (free %d%% norefs %d%% taken %d%% shared %d%%)\n",
 	    keystats.ks_allocs, "code cache keys allocated",
-	    pct(keystats.ks_free, keystats.ks_allocs),
+	    pct(keystats.ks_allocfree, keystats.ks_allocs),
 	    pct(keystats.ks_norefs, keystats.ks_allocs),
 	    pct(keystats.ks_taken, keystats.ks_allocs),
 	    pct(keystats.ks_shared, keystats.ks_allocs));
@@ -450,7 +459,7 @@ dosum()
 	read(mf, &keystats, sizeof keystats);
 	printf("%9d %s (free %d%% norefs %d%% taken %d%% shared %d%%)\n",
 	    keystats.ks_allocs, "data cache keys allocated",
-	    pct(keystats.ks_free, keystats.ks_allocs),
+	    pct(keystats.ks_allocfree, keystats.ks_allocs),
 	    pct(keystats.ks_norefs, keystats.ks_allocs),
 	    pct(keystats.ks_taken, keystats.ks_allocs),
 	    pct(keystats.ks_shared, keystats.ks_allocs));
@@ -530,6 +539,71 @@ dointr(nintv)
 		inttotal += *intrcnt++;
 	}
 	printf("Total        %8ld %8ld\n", inttotal, inttotal / nintv);
+}
+
+/*
+ * These names must be kept in sync with
+ * the types defined in <sys/malloc.h>.
+ */
+char *kmemnames[] = {
+	"free",		/* M_FREE */
+	"mbuf",		/* M_MBUF */
+	"devbuf",	/* M_DEVBUF */
+	"socket",	/* M_SOCKET */
+	"pcb",		/* M_PCB */
+	"routetbl",	/* M_RTABLE */
+	"hosttbl",	/* M_HTABLE */
+	"fragtbl",	/* M_FTABLE */
+	"zombie",	/* M_ZOMBIE */
+	"ifaddr",	/* M_IFADDR */
+	"soopts",	/* M_SOOPTS */
+	"soname",	/* M_SONAME */
+	"namei",	/* M_NAMEI */
+	"gprof",	/* M_GPROF */
+	"ioctlops",	/* M_IOCTLOPS */
+	"superblk",	/* M_SUPERBLK */
+	"cred",		/* M_CRED */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	"temp",		/* M_TEMP */
+};
+
+domem()
+{
+	struct kmemstats kmemstats[M_LAST];
+	struct kmembuckets buckets[MINBUCKET + 16];
+	register struct kmembuckets *kp;
+	register struct kmemstats *ks;
+	int i;
+
+	lseek(mf, (long)nl[X_KMEMBUCKETS].n_value, L_SET);
+	read(mf, buckets, sizeof buckets);
+	printf("Memory statistics by bucket size\n");
+	printf("    Size   In Use   Free   Requests  HighWater  Couldfree\n");
+	for (i = MINBUCKET, kp = &buckets[i]; i < MINBUCKET + 16; i++, kp++) {
+		if (kp->kb_calls == 0)
+			continue;
+		printf("%8d%9d%7d%11d%8d%11d\n", 1 << i, 
+			kp->kb_total - kp->kb_totalfree,
+			kp->kb_totalfree, kp->kb_calls,
+			kp->kb_highwat, kp->kb_couldfree);
+		
+	}
+	lseek(mf, (long)nl[X_KMEMSTAT].n_value, L_SET);
+	read(mf, kmemstats, sizeof kmemstats);
+	printf("Memory statistics by type\n");
+	printf("     Type   In Use  MemUse   HighUse  Limit  Requests %s\n",
+		"TypeLimit KernLimit");
+	for (i = 0, ks = &kmemstats[0]; i < M_LAST; i++, ks++) {
+		if (ks->ks_calls == 0)
+			continue;
+		printf("%10s%7d%8dK%9dK%6dK%9d%7d%10d\n",
+			kmemnames[i] ? kmemnames[i] : "undefined",
+			ks->ks_inuse, (ks->ks_memuse + 1023) / 1024,
+			(ks->ks_maxused + 1023) / 1024,
+			(ks->ks_limit + 1023) / 1024, ks->ks_calls,
+			ks->ks_limblocks, ks->ks_mapblocks);
+	}
 }
 
 #define steal(where, var) \
