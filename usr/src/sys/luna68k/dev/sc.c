@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sc.c	8.1 (Berkeley) %G%
+ *	@(#)sc.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -28,8 +28,8 @@
 #include <sys/buf.h>
 
 #include <luna68k/dev/device.h>
-#include <luna68k/dev/scsireg.h>
-#include <luna68k/dev/scsivar.h>
+#include <luna68k/dev/screg.h>
+#include <luna68k/dev/scvar.h>
 
 /*
  * SC Driver Options
@@ -51,7 +51,7 @@ struct	driver scdriver = {
 	scinit, "sc", scstart, (int (*)()) 0, scintr, (int (*)()) 0
 };
 
-struct	scsi_softc scsi_softc[NSC];
+struct	sc_softc sc_softc[NSC];
 
 
 #define	SC_TIMEOUT	0x01400000	/* (20971520) */
@@ -174,7 +174,7 @@ int
 scinit(hc)
 	register struct hp_ctlr *hc;
 {
-	register struct scsi_softc *hs = &scsi_softc[hc->hp_unit];
+	register struct sc_softc *hs = &sc_softc[hc->hp_unit];
 	register int i;
 
 	hc->hp_ipl    = SCSI_IPL;
@@ -197,7 +197,7 @@ void
 screset(unit)
 	register int unit;
 {
-	register struct scsi_softc *hs = &scsi_softc[unit];
+	register struct sc_softc *hs = &sc_softc[unit];
 	volatile register struct scsidevice *hd =
 				(struct scsidevice *)hs->sc_hc->hp_addr;
 
@@ -446,7 +446,7 @@ int
 txfer_in(ctlr)
 	register int ctlr;
 {
-	register struct scsi_softc *hs = &scsi_softc[ctlr];
+	register struct sc_softc *hs = &sc_softc[ctlr];
 	volatile register struct scsidevice *hd = (struct scsidevice *) hs->sc_hc->hp_addr;
 	register struct scsi_queue *dq = hs->sc_sq.dq_forw;
 #ifdef QUADBYTES
@@ -488,7 +488,7 @@ int
 scstart(ctlr)
 	int ctlr;
 {
-	register struct scsi_softc *hs = &scsi_softc[ctlr];
+	register struct sc_softc *hs = &sc_softc[ctlr];
 	volatile register struct scsidevice *hd =
 		(struct scsidevice *) hs->sc_hc->hp_addr;
 	register struct scsi_queue *dq = hs->sc_sq.dq_forw;
@@ -531,12 +531,12 @@ scstart(ctlr)
 int
 _scintr()
 {
-	register struct scsi_softc *hs;
+	register struct sc_softc *hs;
 	volatile register struct scsidevice *hd;
 	register int ctlr;
 
 	for (ctlr = 0; ctlr < NSC; ctlr++) {
-		hs = &scsi_softc[ctlr];
+		hs = &sc_softc[ctlr];
 		hd = (struct scsidevice *) hs->sc_hc->hp_addr;
 
 #ifdef XFER_ENABLE
@@ -556,7 +556,7 @@ int
 scintr(ctlr)
 	register int ctlr;
 {
-	register struct scsi_softc *hs = &scsi_softc[ctlr];
+	register struct sc_softc *hs = &sc_softc[ctlr];
 	volatile register struct scsidevice *hd = (struct scsidevice *) hs->sc_hc->hp_addr;
 	register struct scsi_queue *dq = hs->sc_sq.dq_forw;
 	register u_char ints, temp;
@@ -797,7 +797,7 @@ scintr(ctlr)
 
 int
 scabort(hs, hd)
-	register struct scsi_softc *hs;
+	register struct sc_softc *hs;
 	volatile register struct scsidevice *hd;
 {
 	int len;
@@ -910,7 +910,7 @@ int
 screq(dq)
 	register struct scsi_queue *dq;
 {
-	register struct scsi_softc *hs = &scsi_softc[dq->dq_ctlr];
+	register struct sc_softc *hs = &sc_softc[dq->dq_ctlr];
 	register struct scsi_queue *hq = &hs->sc_sq;
 
 	insque(dq, hq->dq_back);
@@ -932,7 +932,7 @@ int
 scpend(dq)
 	register struct scsi_queue *dq;
 {
-	register struct scsi_softc *hs = &scsi_softc[dq->dq_ctlr];
+	register struct sc_softc *hs = &sc_softc[dq->dq_ctlr];
 	register struct scsi_queue *hq = &hs->sc_sq;
 	register struct scsi_queue *wq = &hs->sc_wq;
 
@@ -946,7 +946,7 @@ scrschdl(ctlr, slave)
 	register int ctlr;
 	register int slave;
 {
-	register struct scsi_softc *hs = &scsi_softc[ctlr];
+	register struct sc_softc *hs = &sc_softc[ctlr];
 	register struct scsi_queue *wq = &hs->sc_wq;
 	register struct scsi_queue *hq = &hs->sc_sq;
 	register struct scsi_queue *dq;
@@ -970,7 +970,7 @@ int
 scfree(dq)
 	register struct scsi_queue *dq;
 {
-	register struct scsi_softc *hs = &scsi_softc[dq->dq_ctlr];
+	register struct sc_softc *hs = &sc_softc[dq->dq_ctlr];
 	register struct scsi_queue *hq = &hs->sc_sq;
 	int status = hs->sc_stat;
 
@@ -1026,7 +1026,7 @@ scsi_immed_command(ctlr, slave, lun, cdb, buf, len)
 	u_char *buf;
 	unsigned len;
 {
-	register struct scsi_softc *hs = &scsi_softc[ctlr];
+	register struct sc_softc *hs = &sc_softc[ctlr];
 	volatile register struct scsidevice *hd =
 		(struct scsidevice *) hs->sc_hc->hp_addr;
 	register struct scsi_queue *dq = &scsi_entry[ctlr];
@@ -1090,7 +1090,7 @@ scsi_immed_command(ctlr, slave, lun, cdb, buf, len)
 }
 
 int
-scsi_test_unit_rdy(ctlr, slave, lun)
+sc_test_unit_rdy(ctlr, slave, lun)
 	int ctlr, slave, lun;
 {
 	static struct scsi_fmt_cdb cdb = { 6, CMD_TEST_UNIT_READY };
@@ -1105,19 +1105,19 @@ scsi_test_unit_rdy(ctlr, slave, lun)
 }
 
 int
-scsi_request_sense(ctlr, slave, lun, buf, len)
+sc_request_sense(ctlr, slave, lun, buf, len)
 	int ctlr, slave, lun;
 	u_char *buf;
 	unsigned len;
 {
-	register struct scsi_softc *hs = &scsi_softc[ctlr];
+	register struct sc_softc *hs = &sc_softc[ctlr];
 	volatile register struct scsidevice *hd = 
 		(struct scsidevice *) hs->sc_hc->hp_addr;
 	static struct scsi_fmt_cdb req_cmd = { 6, CMD_REQUEST_SENSE };
 	int s, status, lock;
 
 #ifdef REQ_DEBUG
-	printf("scsi_request_sense( %d, %d, %d, buf, %d) -- Start\n",
+	printf("sc_request_sense( %d, %d, %d, buf, %d) -- Start\n",
 	       ctlr, slave, lun, len);
 #endif
 
@@ -1170,7 +1170,7 @@ scsi_request_sense(ctlr, slave, lun, buf, len)
 
 	if (lock == SC_IO_COMPLETE) {
 #ifdef REQ_DEBUG
-		printf("scsi_request_sense: Status -- 0x%x\n", status);
+		printf("sc_request_sense: Status -- 0x%x\n", status);
 #endif
 		return(status);
 	} else {
