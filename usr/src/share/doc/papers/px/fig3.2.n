@@ -1,0 +1,23 @@
+.FK
+.TS
+center, box;
+cw(15).
+No. of cases
+_
+.sp
+offsets
+of element
+names
+.sp
+_
+.sp
+Array of
+null terminated
+element names
+.sp
+.TE
+.sp
+.ce
+Figure 3.2 \- Enumerated type conversion structure
+.sp
+.KE
