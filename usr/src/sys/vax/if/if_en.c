@@ -1,4 +1,4 @@
-/*	if_en.c	6.2	84/04/12	*/
+/*	if_en.c	6.3	84/05/18	*/
 
 #include "en.h"
 
@@ -364,7 +364,7 @@ enrint(unit)
     	struct mbuf *m;
 	int len; short resid;
 	register struct ifqueue *inq;
-	int off;
+	int off, s;
 
 	es->es_if.if_ipackets++;
 
@@ -453,11 +453,13 @@ enrint(unit)
 		goto setup;
 	}
 
+	s = splimp();
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
 		m_freem(m);
 	} else
 		IF_ENQUEUE(inq, m);
+	splx(s);
 
 setup:
 	/*
