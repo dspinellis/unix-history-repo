@@ -5,25 +5,72 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.5 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)traverse.c	5.6 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "dump.h"
 
+void	indir(), dmpindir(), dsrch();
+
+/*
+ * This is an estimation of the number of TP_BSIZE blocks in the file.
+ * It estimates the number of blocks in files with holes by assuming
+ * that all of the blocks accounted for by di_blocks are data blocks
+ * (when some of the blocks are usually used for indirect pointers);
+ * hence the estimate may be high.
+ */
+void
+est(ip)
+	struct dinode *ip;
+{
+	long s, t;
+
+	/*
+	 * ip->di_size is the size of the file in bytes.
+	 * ip->di_blocks stores the number of sectors actually in the file.
+	 * If there are more sectors than the size would indicate, this just
+	 *	means that there are indirect blocks in the file or unused
+	 *	sectors in the last file block; we can safely ignore these
+	 *	(s = t below).
+	 * If the file is bigger than the number of sectors would indicate,
+	 *	then the file has holes in it.	In this case we must use the
+	 *	block count to estimate the number of data blocks used, but
+	 *	we use the actual size for estimating the number of indirect
+	 *	dump blocks (t vs. s in the indirect block calculation).
+	 */
+	esize++;
+	s = howmany(dbtob(ip->di_blocks), TP_BSIZE);
+	t = howmany(ip->di_size, TP_BSIZE);
+	if (s > t)
+		s = t;
+	if (ip->di_size > sblock->fs_bsize * NDADDR) {
+		/* calculate the number of indirect blocks on the dump tape */
+		s += howmany(t - NDADDR * sblock->fs_bsize / TP_BSIZE,
+			TP_NINDIR);
+	}
+	esize += s;
+}
+
+void
+bmapest(map)
+	char *map;
+{
+
+	esize += howmany(msiz * sizeof map[0], TP_BSIZE) + 1;
+}
+
+void
 pass(fn, map)
 	register int (*fn)();
 	register char *map;
 {
-	register int bits;
+	register int bits = 0;	/* this value not used, but keeps gcc happy */
 	ino_t maxino;
 
 	maxino = sblock->fs_ipg * sblock->fs_ncg - 1;
 	for (ino = 0; ino < maxino; ) {
-		if ((ino % NBBY) == 0) {
-			bits = ~0;
-			if (map != NULL)
-				bits = *map++;
-		}
+		if ((ino % NBBY) == 0)
+			bits = map ? *map++ : ~0;
 		ino++;
 		if (bits & 1)
 			(*fn)(getino(ino));
@@ -31,6 +78,7 @@ pass(fn, map)
 	}
 }
 
+void
 mark(ip)
 	struct dinode *ip;
 {
@@ -55,6 +103,7 @@ mark(ip)
 		anydskipped = 1;
 }
 
+void
 add(ip)
 	register struct	dinode	*ip;
 {
@@ -87,6 +136,7 @@ add(ip)
 			BIC(ino, dirmap);
 }
 
+void
 indir(d, n, filesize)
 	daddr_t d;
 	int n, *filesize;
@@ -112,6 +162,7 @@ indir(d, n, filesize)
 	}
 }
 
+void
 dirdump(ip)
 	struct dinode *ip;
 {
@@ -121,6 +172,7 @@ dirdump(ip)
 	dump(ip);
 }
 
+void
 dump(ip)
 	struct dinode *ip;
 {
@@ -157,6 +209,7 @@ dump(ip)
 	}
 }
 
+void
 dmpindir(blk, lvl, size)
 	daddr_t blk;
 	int lvl;
@@ -168,7 +221,7 @@ dmpindir(blk, lvl, size)
 	if (blk != 0)
 		bread(fsbtodb(sblock, blk), (char *)idblk, sblock->fs_bsize);
 	else
-		bzero(idblk, sblock->fs_bsize);
+		bzero((char *)idblk, sblock->fs_bsize);
 	if (lvl <= 0) {
 		if (*size < NINDIR(sblock) * sblock->fs_bsize)
 			cnt = howmany(*size, sblock->fs_fsize);
@@ -186,14 +239,16 @@ dmpindir(blk, lvl, size)
 	}
 }
 
+void
 blksout(blkp, frags)
 	daddr_t *blkp;
 	int frags;
 {
+	register daddr_t *bp;
 	int i, j, count, blks, tbperdb;
 
 	blks = howmany(frags * sblock->fs_fsize, TP_BSIZE);
-	tbperdb = sblock->fs_bsize / TP_BSIZE;
+	tbperdb = sblock->fs_bsize >> tp_bshift;
 	for (i = 0; i < blks; i += TP_NINDIR) {
 		if (i + TP_NINDIR > blks)
 			count = blks;
@@ -206,20 +261,21 @@ blksout(blkp, frags)
 				spcl.c_addr[j - i] = 0;
 		spcl.c_count = count - i;
 		spclrec();
-		for (j = i; j < count; j += tbperdb)
-			if (blkp[j / tbperdb] != 0)
+		bp = &blkp[i / tbperdb];
+		for (j = i; j < count; j += tbperdb, bp++)
+			if (*bp != 0)
 				if (j + tbperdb <= count)
-					dmpblk(blkp[j / tbperdb],
-					    sblock->fs_bsize);
+					dmpblk(*bp, sblock->fs_bsize);
 				else
-					dmpblk(blkp[j / tbperdb],
-					    (count - j) * TP_BSIZE);
+					dmpblk(*bp, (count - j) * TP_BSIZE);
 		spcl.c_type = TS_ADDR;
 	}
 }
 
+void
 bitmap(map, typ)
 	char *map;
+	int typ;
 {
 	register i;
 	char *cp;
@@ -231,6 +287,7 @@ bitmap(map, typ)
 		taprec(cp);
 }
 
+void
 spclrec()
 {
 	register int s, i, *ip;
@@ -249,6 +306,7 @@ spclrec()
 	taprec((char *)&spcl);
 }
 
+void
 dsrch(d, size, filesize)
 	daddr_t d;
 	int size, filesize;
@@ -293,9 +351,8 @@ getino(ino)
 	static daddr_t minino, maxino;
 	static struct dinode itab[MAXINOPB];
 
-	if (ino >= minino && ino < maxino) {
+	if (ino >= minino && ino < maxino)
 		return (&itab[ino - minino]);
-	}
 	bread(fsbtodb(sblock, itod(sblock, ino)), itab, sblock->fs_bsize);
 	minino = ino - (ino % INOPB(sblock));
 	maxino = minino + INOPB(sblock);
@@ -305,6 +362,7 @@ getino(ino)
 int	breaderrors = 0;		
 #define	BREADEMAX 32
 
+void
 bread(da, ba, cnt)
 	daddr_t da;
 	char *ba;
@@ -314,9 +372,8 @@ bread(da, ba, cnt)
 	extern int errno;
 
 loop:
-	if (lseek(fi, (long)(da * dev_bsize), 0) < 0){
+	if (lseek(fi, (long)(da << dev_bshift), 0) < 0)
 		msg("bread: lseek fails\n");
-	}
 	n = read(fi, ba, cnt);
 	if (n == cnt)
 		return;
@@ -334,9 +391,9 @@ loop:
 		cnt -= dev_bsize;
 		goto loop;
 	}
-	msg("read error from %s [block %d]: count=%d, got=%d, errno=%d\n",
-		disk, da, cnt, n, errno);
-	if (++breaderrors > BREADEMAX){
+	msg("read error from %s [block %d]: count=%d, got=%d, errno=%d (%s)\n",
+		disk, da, cnt, n, errno, strerror(errno));
+	if (++breaderrors > BREADEMAX) {
 		msg("More than %d block read errors from %d\n",
 			BREADEMAX, disk);
 		broadcast("DUMP IS AILING!\n");
@@ -352,7 +409,7 @@ loop:
 	 */
 	bzero(ba, cnt);
 	for (i = 0; i < cnt; i += dev_bsize, ba += dev_bsize, da++) {
-		if (lseek(fi, (long)(da * dev_bsize), 0) < 0)
+		if (lseek(fi, (long)(da << dev_bshift), 0) < 0)
 			msg("bread: lseek2 fails!\n");
 		n = read(fi, ba, dev_bsize);
 		if (n != dev_bsize)
