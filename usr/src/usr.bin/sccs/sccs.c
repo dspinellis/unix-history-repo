@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.61.1.2 %G%";
+static char SccsId[] = "@(#)sccs.c	1.65 %G%";
 
 /*******************  Configuration Information  ********************/
 
