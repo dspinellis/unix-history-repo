@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex.h	7.3	%G%  */
+/* sccs id:	@(#)ex.h	7.4	%G%  */
 #ifdef V6
 #include <retrofit.h>
 #endif
@@ -130,7 +130,11 @@ extern	 struct	option options[NOPTS + 1];
 # ifdef	VMUNIX
 #	define	BUFSIZ	1024
 # else
+#  ifdef u370
+#	define	BUFSIZ	4096
+#  else
 #	define	BUFSIZ	512
+#  endif
 # endif
 #	define	NULL	0
 #	define	EOF	-1

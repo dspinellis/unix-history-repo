@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_tty.c	7.1	%G%";
+static char *sccsid = "@(#)ex_tty.c	7.2	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 
@@ -40,12 +40,12 @@ char *xPC;
 char **sstrs[] = {
 	&AL, &BC, &BT, &CD, &CE, &CL, &CM, &xCR, &DC, &DL, &DM, &DO, &ED, &EI,
 	&F0, &F1, &F2, &F3, &F4, &F5, &F6, &F7, &F8, &F9,
-	&HO, &IC, &IM, &IP, &KD, &KE, &KH, &KL, &KR, &KS, &KU, &LL,
-	&ND, &xNL, &xPC, &SE, &SF, &SO, &SR, &TA, &TE, &TI, &UP, &VB, &VS, &VE
+	&HO, &IC, &IM, &IP, &KD, &KE, &KH, &KL, &KR, &KS, &KU, &LL, &ND, &xNL,
+	&xPC, &SE, &SF, &SO, &SR, &TA, &TE, &TI, &UP, &VA, &VB, &VD, &VS, &VE
 };
 bool *sflags[] = {
 	&AM, &BS, &DA, &DB, &EO, &HC, &HZ, &IN, &MI, &NC, &NS, &OS, &UL,
-	&XB, &XN, &XT, &XV, &XX
+	&XB, &XN, &XT, &XX
 };
 char **fkeys[10] = {
 	&F0, &F1, &F2, &F3, &F4, &F5, &F6, &F7, &F8, &F9
@@ -88,6 +88,14 @@ setterm(type)
 	arrows[2].cap = KL; arrows[2].mapto = "h"; arrows[2].descr = "left";
 	arrows[3].cap = KR; arrows[3].mapto = "l"; arrows[3].descr = "right";
 	arrows[4].cap = KH; arrows[4].mapto = "H"; arrows[4].descr = "home";
+
+	/*
+	 * Handle funny termcap capabilities
+	 */
+	if (VA) AL="";
+	if (VD) DL="";
+	if (IC && IM==NULL) IM="";
+	if (IC && EI==NULL) EI="";
 
 #ifdef TIOCLGET
 	/*
@@ -146,13 +154,13 @@ zap()
 	register bool **fp;
 	register char ***sp;
 
-	namp = "ambsdadbeohchzinmincnsosulxbxnxtxvxx";
+	namp = "ambsdadbeohchzinmincnsosulxbxnxtxx";
 	fp = sflags;
 	do {
 		*(*fp++) = tgetflag(namp);
 		namp += 2;
 	} while (*namp);
-	namp = "albcbtcdceclcmcrdcdldmdoedeik0k1k2k3k4k5k6k7k8k9hoicimipkdkekhklkrkskullndnlpcsesfsosrtatetiupvbvsve";
+	namp = "albcbtcdceclcmcrdcdldmdoedeik0k1k2k3k4k5k6k7k8k9hoicimipkdkekhklkrkskullndnlpcsesfsosrtatetiupvavbvdvsve";
 	sp = sstrs;
 	do {
 		*(*sp++) = tgetstr(namp, &aoftspace);

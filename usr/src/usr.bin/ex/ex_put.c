@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_put.c	7.1	%G%";
+static char *sccsid = "@(#)ex_put.c	7.2	%G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -196,7 +196,7 @@ slobber(c)
  * message so we don't have to keep it in data space.
  */
 static	char linb[66];
-static	char *linp = linb;
+char *linp = linb;
 
 /*
  * Phadnl records when we have already had a complete line ending with \n.
@@ -959,7 +959,7 @@ ostop(f)
 #ifndef USG3TTY
 	pfast = (f & CRMOD) == 0;
 #else
-	pfast = (f.c_oflag & OCRNL) == 0;
+	pfast = (f.c_oflag & ONLCR) == 0;
 #endif
 	termreset(), fgoto(), flusho();
 	normal(f);
