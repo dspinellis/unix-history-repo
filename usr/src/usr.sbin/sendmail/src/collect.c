@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.13 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -307,8 +307,8 @@ readerr:
 # ifdef LOG
 		if (LogLevel > 0 && feof(InChannel))
 			syslog(LOG_NOTICE,
-			    "collect: %s on connection from %s, sender=%s: %m\n",
-			    problem, host, e->e_from.q_paddr);
+			    "collect: %s on connection from %s, sender=%s: %s\n",
+			    problem, host, e->e_from.q_paddr, errstring(errno));
 # endif
 		if (feof(InChannel))
 			usrerr("451 collect: %s on connection from %s, from=%s",

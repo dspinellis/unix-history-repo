@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -305,10 +305,10 @@ putoutmsg(msg, holdmsg)
 #ifdef LOG
 	if (LogLevel > 0)
 		syslog(LOG_CRIT,
-			"%s: SYSERR: putoutmsg (%s): error on output channel sending \"%s\": %m",
+			"%s: SYSERR: putoutmsg (%s): error on output channel sending \"%s\": %s",
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
 			CurHostName == NULL ? "NO-HOST" : CurHostName,
-			msg);
+			msg, errstring(errno));
 #endif
 }
 /*
