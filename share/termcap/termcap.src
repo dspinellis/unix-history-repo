@@ -3250,15 +3250,15 @@ pc3|ibmpc3|IBM PC 386BSD Console:\
 	:ho=\E[H:\
 	:is=\E[m:\
 	:k0=\E[V:\
-	:k1:\E[M:\
-	:k2:\E[N:\
-	:k3:\E[O:\
-	:k4:\E[P:\
-	:k5:\E[Q:\
-	:k6:\E[R:\
-	:k7:\E[S:\
-	:k8:\E[T:\
-	:k9:\E[U:\
+	:k1=\E[M:\
+	:k2=\E[N:\
+	:k3=\E[O:\
+	:k4=\E[P:\
+	:k5=\E[Q:\
+	:k6=\E[R:\
+	:k7=\E[S:\
+	:k8=\E[T:\
+	:k9=\E[U:\
 	:kD=\177:\
 	:kH=\E[F:\
 	:kN=\E[G:\
