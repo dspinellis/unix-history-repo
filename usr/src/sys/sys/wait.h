@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)wait.h	7.2 (Berkeley) %G%
+ *	@(#)wait.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -16,7 +16,7 @@
  */
 
 #ifndef ENDIAN
-#include <machine/machparam.h>
+#include <machine/endian.h>
 #endif
 
 /*
@@ -30,12 +30,12 @@ union wait	{
 	 * Terminated process status.
 	 */
 	struct {
-#if ENDIAN == LITTLE
+#if BYTE_ORDER == LITTLE_ENDIAN 
 		unsigned short	w_Termsig:7;	/* termination signal */
 		unsigned short	w_Coredump:1;	/* core dump indicator */
 		unsigned short	w_Retcode:8;	/* exit code if w_termsig==0 */
 #endif
-#if ENDIAN == BIG
+#if BYTE_ORDER == BIG_ENDIAN 
 		unsigned short	w_Filler;	/* upper bits filler */
 		unsigned char	w_Retcode;	/* exit code if w_termsig==0 */
 		unsigned char	w_Coredump:1;	/* core dump indicator */
@@ -48,7 +48,7 @@ union wait	{
 	 * with the WUNTRACED option bit.
 	 */
 	struct {
-#if ENDIAN == LITTLE
+#if BYTE_ORDER == LITTLE_ENDIAN 
 		unsigned short	w_Stopval:8;	/* == W_STOPPED if stopped */
 		unsigned short	w_Stopsig:8;	/* signal that stopped us */
 #else
