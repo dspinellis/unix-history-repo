@@ -17,7 +17,7 @@ struct kmcntl {
 
 #include <sys/ioctl.h>
 
-#define	KCSETA	_IOW(k, 1, struct kmcntl)
+#define	KCSETA	_IOW('k', 1, struct kmcntl)
 
 #define	lobyte(X)	(((unsigned char *)&X)[0])
 #define	hibyte(X)	(((unsigned char *)&X)[1])
