@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.2	6.3 (Berkeley) %G%
+.\"	@(#)intro.2	6.4 (Berkeley) %G%
 .\"
 .TH INTRO 2 ""
 .UC 4
@@ -178,10 +178,14 @@ The size of a file exceeded the maximum (about
 .if n 1.0E9
 bytes).
 .en 28 ENOSPC "No space left on device
-During a
+A
 .I write
-to an ordinary file,
-there is no free space left on the device.
+to an ordinary file, the creation of a
+directory or symbolic link, or the creation of a directory
+entry failed because no more disk blocks are available
+on the file system, or the allocation of an inode for a newly
+created file failed because no more inodes are available
+on the file system.
 .en 29 ESPIPE "Illegal seek
 An
 .I lseek
@@ -309,8 +313,14 @@ was supplied to a remove directory or rename call.
 ...en 67 EPROCLIM "Too many processes"
 ...en 68 EUSERS "Too many users"
 .en 69 EDQUOT "Disc quota exceeded"
-A file creation or write operation failed because the hard limit
-for that resource had been reached.
+A 
+.i write
+to an ordinary file, the creation of a
+directory or symbolic link, or the creation of a directory
+entry failed because the user's quota of disk blocks was
+exhausted, or the allocation of an inode for a newly
+created file failed because the user's quota of inodes
+was exhausted.
 .SH DEFINITIONS
 .TP 5
 Process ID

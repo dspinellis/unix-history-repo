@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)read.2	6.2 (Berkeley) %G%
+.\"	@(#)read.2	6.3 (Berkeley) %G%
 .\"
 .TH READ 2 ""
 .UC 4
@@ -110,6 +110,9 @@ will fail if one or more of the following are true:
 [EFAULT]
 \fIBuf\fP points outside the allocated address space.
 .TP 15
+[EIO]
+An I/O error occurred while reading from the file system.
+.TP 15
 [EINTR]
 A read from a slow device was interrupted before
 any data arrived by the delivery of a signal.
@@ -135,5 +138,8 @@ The sum of the
 values in the
 .I iov
 array overflowed a 32-bit integer.
+.TP 15
+[EFAULT]
+Part of the \fIiov\fP points outside the process's allocated address space.
 .SH "SEE ALSO"
 dup(2), open(2), pipe(2), socket(2), socketpair(2)

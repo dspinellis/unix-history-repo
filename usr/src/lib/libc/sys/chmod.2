@@ -95,6 +95,9 @@ The named file resides on a read-only file system.
 [EFAULT]
 .I Path
 points outside the process's allocated address space.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
 .PP
 .I Fchmod
 will fail if:
@@ -108,5 +111,8 @@ refers to a socket, not to a file.
 .TP 15
 [EROFS]
 The file resides on a read-only file system.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
 .SH "SEE ALSO"
 open(2), chown(2)

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rmdir.2	6.2 (Berkeley) %G%
+.\"	@(#)rmdir.2	6.3 (Berkeley) %G%
 .\"
 .TH RMDIR 2 ""
 .UC 5
@@ -54,6 +54,11 @@ Search permission is denied for a component of the path prefix.
 [EACCES]
 Write permission is denied on the directory containing the link
 to be removed.
+.TP 15
+[EPERM]
+The directory containing the directory to be removed is marked sticky,
+and neither the containing directory nor the directory to be removed
+are owned by the effective user ID.
 .TP 15
 [EBUSY]
 The directory to be removed is the mount point

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rename.2	6.2 (Berkeley) %G%
+.\"	@(#)rename.2	6.3 (Berkeley) %G%
 .\"
 .TH RENAME 2 ""
 .UC 5
@@ -79,6 +79,17 @@ A component of either path prefix denies search permission.
 The requested link requires writing in a directory with a mode
 that denies write permission.
 .TP 15
+[EPERM]
+The directory containing \fIfrom\fP is marked sticky,
+and neither the containing directory nor \fIfrom\fP
+are owned by the effective user ID.
+.TP 15
+[EPERM]
+The \fIto\fP file exists,
+the directory containing \fIto\fP is marked sticky,
+and neither the containing directory nor \fIto\fP
+are owned by the effective user ID.
+.TP 15
 [ELOOP]
 Too many symbolic links were encountered in translating either pathname.
 .TP 15
@@ -98,6 +109,17 @@ The link named by \fIto\fP and the file named by \fIfrom\fP
 are on different logical devices (file systems).  Note that this error
 code will not be returned if the implementation permits cross-device
 links.
+.TP 15
+[ENOSPC]
+The directory in which the entry for the new name is being placed
+cannot be extended because there is no space left on the file
+system containing the directory.
+.TP 15
+[EDQUOT]
+The directory in which the entry for the new name
+is being placed cannot be extended because the
+user's quota of disk blocks on the file system
+containing the directory has been exhausted.
 .TP 15
 [EIO]
 An I/O error occurred while making or updating a directory entry.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)acct.2	6.2 (Berkeley) %G%
+.\"	@(#)acct.2	6.3 (Berkeley) %G%
 .\"
 .TH ACCT 2 ""
 .UC 4
@@ -72,6 +72,9 @@ The named file resides on a read-only file system.
 [EFAULT]
 .I File
 points outside the process's allocated address space.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
 .SH "SEE ALSO"
 acct(5), sa(8)
 .SH BUGS

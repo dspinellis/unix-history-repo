@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)open.2	6.2 (Berkeley) %G%
+.\"	@(#)open.2	6.3 (Berkeley) %G%
 .\"
 .TH OPEN 2 ""
 .UC 4
@@ -98,12 +98,21 @@ or an entire path name exceeded 1023 characters.
 [ENOENT]
 O_CREAT is not set and the named file does not exist.
 .TP 15
+[ENOENT]
+A component of the path name that must exist does not exist.
+.TP 15
 [EACCES]
 Search permission is denied for a component of the path prefix.
 .TP 15
 [EACCES]
 The required permissions (for reading and/or writing)
 are denied for the named flag.
+.TP 15
+[EACCES]
+O_CREAT is specified,
+the file does not exist,
+and the directory in which it is to be created
+does not permit writing.
 .TP 15
 [ELOOP]
 Too many symbolic links were encountered in translating the pathname.
@@ -119,6 +128,9 @@ and the file is to be modified.
 [EMFILE]
 {OPEN_MAX} file descriptors are currently open.
 .TP 15
+[ENFILE]
+The system file table is full.
+.TP 15
 [ENXIO]
 The named file is a character special or block
 special file, and the device associated with this special file
@@ -127,6 +139,33 @@ does not exist.
 [ENXIO]
 The O_NDELAY flag is given, and the file is a communications device
 on which their is no carrier present.
+.TP 15
+[ENOSPC]
+O_CREAT is specified,
+the file does not exist,
+and the directory in which the entry for the new file is being placed
+cannot be extended because there is no space left on the file
+system containing the directory.
+.TP 15
+[ENOSPC]
+O_CREAT is specified,
+the file does not exist,
+and there are no free inodes on the file system on which the
+file is being created.
+.TP 15
+[EDQUOT]
+O_CREAT is specified,
+the file does not exist,
+and the directory in which the entry for the new fie
+is being placed cannot be extended because the
+user's quota of disk blocks on the file system
+containing the directory has been exhausted.
+.TP 15
+[EDQUOT]
+O_CREAT is specified,
+the file does not exist,
+and the user's quota of inodes on the file system on
+which the file is being created has been exhausted.
 .TP 15
 [EIO]
 An I/O error occurred while making the directory entry or
@@ -141,7 +180,7 @@ executed and the \fIopen\fP call requests write access.
 points outside the process's allocated address space.
 .TP 15
 [EEXIST]
-O_EXCL was specified and the file exists.
+O_CREAT and O_EXCL were specified and the file exists.
 .TP 15
 [EOPNOTSUPP]
 An attempt was made to open a socket (not currently implemented).

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mount.2	6.2 (Berkeley) %G%
+.\"	@(#)mount.2	6.3 (Berkeley) %G%
 .\"
 .TH MOUNT 2 ""
 .UC 4
@@ -133,8 +133,12 @@ Not enough memory was available to read the cylinder
 group information for the file system.
 .TP 15
 [EIO]
-An i/o error occurred while reading the super block or
+An I/O error occurred while reading the super block or
 cylinder group information.
+.TP 15
+[EFAULT]
+\fISpecial\fP or \fIname\fP points outside the
+process's allocated address space.
 .PP
 .I Umount
 may fail with one of the following errors:
@@ -175,6 +179,13 @@ The requested device is not in the mount table.
 [EBUSY]
 A process is holding a reference to a file located
 on the file system.
+.TP 15
+[EIO]
+An I/O error occurred while writing the super block or
+other cached file system information.
+.TP 15
+[EFAULT]
+\fISpecial\fP points outside the process's allocated address space.
 .SH "SEE ALSO"
 mount(8), umount(8)
 .SH BUGS

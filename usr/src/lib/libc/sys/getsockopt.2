@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getsockopt.2	6.1 (Berkeley) %G%
+.\"	@(#)getsockopt.2	6.2 (Berkeley) %G%
 .\"
 .TH GETSOCKOPT 2 ""
 .UC 5
@@ -92,7 +92,13 @@ The argument \fIs\fP is a file, not a socket.
 The option is unknown.
 .TP 20
 [EFAULT]
-The options are not in a valid part of the
-process address space.
+The address pointed to by 
+.I optval
+is not in a valid part of the process address space.
+For
+.IR getsockopt ,
+this error may also be returned if
+.I optlen
+is not in a valid part of the process address space.
 .SH "SEE ALSO"
 socket(2), getprotoent(3N)

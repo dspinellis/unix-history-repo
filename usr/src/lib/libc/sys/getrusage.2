@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getrusage.2	6.2 (Berkeley) %G%
+.\"	@(#)getrusage.2	6.3 (Berkeley) %G%
 .\"
 .TH GETRUSAGE 2 ""
 .UC 4
@@ -135,6 +135,20 @@ and
 account only for real
 i/o; data supplied by the cacheing mechanism is charged only
 to the first process to read or write the data.
+.SH ERRORS
+The possible errors for
+.I getrusage
+are:
+.TP 15
+[EINVAL]
+The
+.I who
+parameter is not a valid value.
+.TP 15
+[EFAULT]
+The address specified by the
+.I rusage
+parameter is not in a valid part of the process address space.
 .SH SEE ALSO
 gettimeofday(2), wait(2)
 .SH BUGS

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)access.2	6.3 (Berkeley) %G%
+.\"	@(#)access.2	6.4 (Berkeley) %G%
 .\"
 .TH ACCESS 2 ""
 .UC 4
@@ -78,8 +78,7 @@ A component of a pathname exceeded 255 characters,
 or an entire path name exceeded 1023 characters.
 .TP 15
 [ENOENT]
-Read, write, or execute (search) permission is requested for a null
-path name or the named file does not exist.
+The named file does not exist.
 .TP 15
 [EACCES]
 Search permission is denied for a component of the path prefix.
@@ -107,5 +106,8 @@ mode bits.
 [EFAULT]
 .I Path
 points outside the process's allocated address space.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
 .SH "SEE ALSO
 chmod(2), stat(2)

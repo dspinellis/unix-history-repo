@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mkdir.2	6.3 (Berkeley) %G%
+.\"	@(#)mkdir.2	6.4 (Berkeley) %G%
 .\"
 .TH MKDIR 2 ""
 .UC 5
@@ -71,14 +71,43 @@ The named file resides on a read-only file system.
 [EEXIST]
 The named file exists.
 .TP 15
+[ENOSPC]
+The directory in which the entry for the new directory is being placed
+cannot be extended because there is no space left on the file
+system containing the directory.
+.TP 15
+[ENOSPC]
+The new directory cannot be created because there
+there is no space left on the file
+system that will contain the directory.
+.TP 15
+[ENOSPC]
+There are no free inodes on the file system on which the
+directory is being created.
+.TP 15
+[EDQUOT]
+The directory in which the entry for the new directory
+is being placed cannot be extended because the
+user's quota of disk blocks on the file system
+containing the directory has been exhausted.
+.TP 15
+[EDQUOT]
+The new directory cannot be created because the user's
+quota of disk blocks on the file system that will
+contain the directory has been exhausted.
+.TP 15
+[EDQUOT]
+The user's quota of inodes on the file system on
+which the directory is being created has been exhausted.
+.TP 15
 [EIO]
 An I/O error occurred while making the directory entry or allocating the inode.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
 .TP 15
 [EFAULT]
 .I Path
 points outside the process's allocated address space.
-.TP 15
-[EIO]
-An I/O error occured while writing to the file system.
 .SH "SEE ALSO"
 chmod(2), stat(2), umask(2)

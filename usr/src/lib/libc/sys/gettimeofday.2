@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gettimeofday.2	6.4 (Berkeley) %G%
+.\"	@(#)gettimeofday.2	6.5 (Berkeley) %G%
 .\"
 .TH GETTIMEOFDAY 2 ""
 .UC 4
@@ -28,6 +28,9 @@ struct timezone *tzp;
 returns the system's notion of the current Greenwich time and
 the current time zone.  Time returned is expressed relative
 in seconds and microseconds since midnight January 1, 1970.
+If
+.I tzp
+is NULL, the time zone information will not be returned or set.
 .PP
 The structures pointed to by
 .I tp

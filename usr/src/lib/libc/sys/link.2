@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)link.2	6.2 (Berkeley) %G%
+.\"	@(#)link.2	6.3 (Berkeley) %G%
 .\"
 .TH LINK 2 ""
 .UC 4
@@ -85,8 +85,20 @@ user ID is not super-user.
 The link named by \fIname2\fP and the file named by \fIname1\fP
 are on different file systems.
 .TP 15
+[ENOSPC]
+The directory in which the entry for the new link is being placed
+cannot be extended because there is no space left on the file
+system containing the directory.
+.TP 15
+[EDQUOT]
+The directory in which the entry for the new link
+is being placed cannot be extended because the
+user's quota of disk blocks on the file system
+containing the directory has been exhausted.
+.TP 15
 [EIO]
-An I/O error occurred while making the directory entry.
+An I/O error occurred while reading from or writing to 
+the file system to make the directory entry.
 .TP 15
 [EROFS]
 The requested link requires writing in a directory on a read-only file
