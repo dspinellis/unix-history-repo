@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.71 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.72 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -1098,7 +1098,7 @@ main(argc, argv, envp)
 	else
 	{
 		/* interactive -- all errors are global */
-		CurEnv->e_flags |= EF_GLOBALERRS;
+		CurEnv->e_flags |= EF_GLOBALERRS|EF_LOGSENDER;
 	}
 
 	/*
