@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -73,11 +73,12 @@ static char sccsid[] = "@(#)inetd.c	5.13 (Berkeley) %G%";
 #include <arpa/inet.h>
 
 #include <errno.h>
-#include <stdio.h>
 #include <signal.h>
 #include <netdb.h>
 #include <syslog.h>
 #include <pwd.h>
+#include <stdio.h>
+#include <strings.h>
 
 #define	TOOMANY		40		/* don't start more than TOOMANY */
 #define	CNT_INTVL	60		/* servers in CNT_INTVL sec. */
@@ -158,11 +159,14 @@ main(argc, argv, envp)
 	int argc;
 	char *argv[], *envp[];
 {
+	extern char *optarg;
+	extern int optind;
 	register struct servtab *sep;
 	register struct passwd *pwd;
-	char *cp, buf[50];
-	int pid, i, dofork;
+	register int tmpint;
 	struct sigvec sv;
+	int ch, pid, dofork;
+	char buf[50];
 
 	Argv = argv;
 	if (envp == 0 || *envp == 0)
@@ -170,45 +174,40 @@ main(argc, argv, envp)
 	while (*envp)
 		envp++;
 	LastArg = envp[-1] + strlen(envp[-1]);
-	argc--, argv++;
-	while (argc > 0 && *argv[0] == '-') {
-		for (cp = &argv[0][1]; *cp; cp++) switch (*cp) {
 
+	while ((ch = getopt(argc, argv, "d")) != EOF)
+		switch(ch) {
 		case 'd':
 			debug = 1;
 			options |= SO_DEBUG;
 			break;
-
+		case '?':
 		default:
-			fprintf(stderr,
-			    "inetd: Unknown flag -%c ignored.\n", *cp);
-			break;
+			fprintf(stderr, "usage: inetd [-d]");
+			exit(1);
 		}
-nextopt:
-		argc--, argv++;
-	}
+	argc -= optind;
+	argv += optind;
+
 	if (argc > 0)
 		CONFIG = argv[0];
 	if (debug == 0) {
 		if (fork())
 			exit(0);
-		{ int s;
-		for (s = 0; s < 10; s++)
-			(void) close(s);
-		}
+		for (tmpint = 0; tmpint < 10; tmpint++)
+			(void) close(tmpint);
 		(void) open("/", O_RDONLY);
 		(void) dup2(0, 1);
 		(void) dup2(0, 2);
-		{ int tt = open("/dev/tty", O_RDWR);
-		  if (tt > 0) {
-			ioctl(tt, TIOCNOTTY, (char *)0);
-			close(tt);
-		  }
+		tmpint = open("/dev/tty", O_RDWR);
+		if (tmpint > 0) {
+			ioctl(tmpint, TIOCNOTTY, (char *)0);
+			close(tmpint);
 		}
 		(void) setpgrp(0, 0);
-		signal(SIGTSTP, SIG_IGN);
-		signal(SIGTTIN, SIG_IGN);
-		signal(SIGTTOU, SIG_IGN);
+		(void) signal(SIGTSTP, SIG_IGN);
+		(void) signal(SIGTTIN, SIG_IGN);
+		(void) signal(SIGTTOU, SIG_IGN);
 	}
 	openlog("inetd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
 	bzero((char *)&sv, sizeof(sv));
@@ -221,8 +220,18 @@ nextopt:
 	sv.sv_handler = reapchild;
 	sigvec(SIGCHLD, &sv, (struct sigvec *)0);
 
+	{
+		/* space for daemons to overwrite environment for ps */
+#define	DUMMYSIZE	100
+		char dummy[DUMMYSIZE];
+
+		(void)memset(dummy, 'x', sizeof(DUMMYSIZE) - 1);
+		dummy[DUMMYSIZE - 1] = '\0';
+		(void)setenv("inetd_dummy", dummy, 1);
+	}
+
 	for (;;) {
-	    int s, ctrl, n;
+	    int n, ctrl;
 	    fd_set readable;
 
 	    if (nsock == 0) {
@@ -306,21 +315,20 @@ nextopt:
 		sigsetmask(0L);
 		if (pid == 0) {
 			if (debug) {
-			    int tt;
-
-			    if (dofork && (tt = open("/dev/tty", O_RDWR)) > 0) {
-				ioctl(tt, TIOCNOTTY, 0);
-				close(tt);
-			    }
-			    (void) setpgrp(0, 0);
-			    signal(SIGTSTP, SIG_IGN);
-			    signal(SIGTTIN, SIG_IGN);
-			    signal(SIGTTOU, SIG_IGN);
+				if (dofork &&
+				    (tmpint = open("/dev/tty", O_RDWR)) > 0) {
+					ioctl(tmpint, TIOCNOTTY, 0);
+					close(tmpint);
+				}
+				(void) setpgrp(0, 0);
+				(void) signal(SIGTSTP, SIG_IGN);
+				(void) signal(SIGTTIN, SIG_IGN);
+				(void) signal(SIGTTOU, SIG_IGN);
 			}
 			if (dofork)
-				for (i = getdtablesize(); --i > 2; )
-					if (i != ctrl)
-						close(i);
+				for (tmpint = getdtablesize(); --tmpint > 2; )
+					if (tmpint != ctrl)
+						close(tmpint);
 			if (sep->se_bi)
 				(*sep->se_bi->bi_fn)(ctrl, sep);
 			else {
@@ -552,11 +560,10 @@ setconfig()
 
 endconfig()
 {
-
-	if (fconfig == NULL)
-		return;
-	fclose(fconfig);
-	fconfig = NULL;
+	if (fconfig) {
+		(void) fclose(fconfig);
+		fconfig = NULL;
+	}
 }
 
 struct servtab *
@@ -647,7 +654,7 @@ again:
 		char c;
 
 		c = getc(fconfig);
-		ungetc(c, fconfig);
+		(void) ungetc(c, fconfig);
 		if (c == ' ' || c == '\t')
 			if (cp = nextline(fconfig))
 				goto again;
@@ -690,7 +697,7 @@ strdup(cp)
 		syslog(LOG_ERR, "Out of memory.");
 		exit(-1);
 	}
-	strcpy(new, cp);
+	(void)strcpy(new, cp);
 	return (new);
 }
 
@@ -950,5 +957,5 @@ print_service(action, sep)
 	fprintf(stderr,
 	    "%s: %s proto=%s, wait=%d, user=%s builtin=%x server=%s\n",
 	    action, sep->se_service, sep->se_proto,
-	    sep->se_wait, sep->se_user, sep->se_bi, sep->se_server);
+	    sep->se_wait, sep->se_user, (int)sep->se_bi, sep->se_server);
 }
