@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fcntl.2	6.9 (Berkeley) %G%
+.\"     @(#)fcntl.2	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FCNTL 2
@@ -107,7 +107,7 @@ call, or if a
 .Xr write
 operation would block,
 the read or write call returns -1 with the error
-.Er EWOULDBLOCK .
+.Er EAGAIN .
 .It Dv O_APPEND
 Force each write to append at the end of file;
 corresponds to the

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)recv.2	6.11 (Berkeley) %G%
+.\"     @(#)recv.2	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RECV 2
@@ -69,7 +69,7 @@ in which case the value
 -1 is returned and the external variable
 .Va errno
 set to
-.Er EWOULDBLOCK.
+.Er EAGAIN .
 The receive calls normally return any data available,
 up to the requested amount,
 rather than waiting for receipt of the full amount requested;
@@ -197,7 +197,7 @@ These calls return the number of bytes received, or -1
 if an error occurred.
 .Sh ERRORS
 The calls fail if:
-.Bl -tag -width EWOULDBLOCKAA
+.Bl -tag -width ENOTCONNAA
 .It Bq Er EBADF
 The argument
 .Fa s
@@ -212,7 +212,7 @@ and
 The argument
 .Fa s
 does not refer to a socket.
-.It Bq Er EWOULDBLOCK
+.It Bq Er EAGAIN
 The socket is marked non-blocking, and the receive operation
 would block, or
 a receive timeout had been set,
