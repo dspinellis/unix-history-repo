@@ -1,10 +1,9 @@
-static	char *sccsid = "@(#)icheck.c	1.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)icheck.c	1.9 (Berkeley) %G%";
 
 /*
  * icheck
  */
 #define	NB	500
-#define	BITS	8
 #define	MAXFN	500
 
 #ifndef STANDALONE
@@ -31,6 +30,7 @@ daddr_t	blist[NB];
 char	*bmap;
 
 int	mflg;
+int	sflg;
 int	dflg;
 int	fi;
 ino_t	ino;
@@ -54,14 +54,18 @@ daddr_t	ndup;
 
 int	nerror;
 
+extern int inside[], around[];
+extern unsigned char fragtbl[];
+
 long	atol();
-daddr_t	alloc();
 #ifndef STANDALONE
 char	*malloc();
+char	*calloc();
 #endif
 
 main(argc, argv)
-char *argv[];
+	int argc;
+	char *argv[];
 {
 	register i;
 	long n;
@@ -78,6 +82,10 @@ char *argv[];
 
 		case 'm':
 			mflg++;
+			continue;
+
+		case 's':
+			sflg++;
 			continue;
 
 		case 'b':
@@ -110,15 +118,15 @@ char *argv[];
 }
 
 check(file)
-char *file;
+	char *file;
 {
 	register i, j, c;
 	daddr_t d, cgd, cbase, b;
 	long n;
 
-	fi = open(file, 0);
+	fi = open(file, sflg ? 2 : 0);
 	if (fi < 0) {
-		printf("cannot open %s\n", file);
+		perror(file);
 		nerror |= 04;
 		return;
 	}
@@ -150,7 +158,7 @@ char *file;
 		      (char *)sblock.fs_csp[n], BSIZE);
 	}
 	ino = 0;
-	n = (sblock.fs_size*FRAG + BITS-1) / BITS;
+	n = roundup(howmany(sblock.fs_size, NBBY), sizeof(short));
 #ifdef STANDALONE
 	bmap = NULL;
 #else
@@ -159,6 +167,10 @@ char *file;
 	if (bmap==NULL) {
 		printf("Not enough core; duplicates unchecked\n");
 		dflg++;
+		if (sflg) {
+			printf("No Updates\n");
+			sflg = 0;
+		}
 	}
 	ino = 0;
 	cginit = 1;
@@ -198,6 +210,15 @@ char *file;
 	sync();
 #endif
 	bread(SBLOCK, (char *)&sblock, sizeof(sblock));
+	if (sflg) {
+		makecg();
+		close(fi);
+#ifndef STANDALONE
+		if (bmap)
+			free(bmap);
+#endif
+		return;
+	}
 	nffree = 0;
 	nbfree = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
@@ -390,14 +411,183 @@ duped(bno, size)
 	return(0);
 }
 
+makecg()
+{
+	int c, blk;
+	daddr_t dbase, d, dmin, dmax;
+	long i, j, s;
+	register struct csum *cs;
+	register struct dinode *dp;
+
+	sblock.fs_cstotal.cs_nbfree = 0;
+	sblock.fs_cstotal.cs_nffree = 0;
+	sblock.fs_cstotal.cs_nifree = 0;
+	sblock.fs_cstotal.cs_ndir = 0;
+	for (i = 0; i < howmany(cssize(&sblock), BSIZE); i++) {
+		sblock.fs_csp[i] = (struct csum *)calloc(1, BSIZE);
+		bread(csaddr(&sblock) + (i * FRAG),
+		      (char *)sblock.fs_csp[i], BSIZE);
+	}
+	for (c = 0; c < sblock.fs_ncg; c++) {
+		dbase = cgbase(c, &sblock);
+		dmax = dbase + sblock.fs_fpg;
+		if (dmax > sblock.fs_size)
+			dmax = sblock.fs_size;
+		dmin = cgdmin(c, &sblock) - dbase;
+		cs = &sblock.fs_cs(c);
+		cgrp.cg_time = time(0);
+		cgrp.cg_magic = CG_MAGIC;
+		cgrp.cg_cgx = c;
+		cgrp.cg_ncyl = sblock.fs_cpg;
+		cgrp.cg_niblk = sblock.fs_ipg;
+		cgrp.cg_ndblk = dmax - dbase;
+		cgrp.cg_cs.cs_ndir = 0;
+		cgrp.cg_cs.cs_nffree = 0;
+		cgrp.cg_cs.cs_nbfree = 0;
+		cgrp.cg_cs.cs_nifree = 0;
+		cgrp.cg_rotor = dmin;
+		cgrp.cg_frotor = dmin;
+		cgrp.cg_irotor = 0;
+		for (i = 0; i < FRAG; i++)
+			cgrp.cg_frsum[i] = 0;
+		bread(cgimin(c, &sblock), (char *)itab,
+		      sblock.fs_ipg * sizeof(struct dinode));
+		for (i = 0; i < sblock.fs_ipg; i++) {
+			dp = &itab[i];
+			if (dp == NULL)
+				continue;
+			if ((dp->di_mode & IFMT) != 0) {
+				if ((dp->di_mode & IFMT) == IFDIR)
+					cgrp.cg_cs.cs_ndir++;
+				setbit(cgrp.cg_iused, i);
+				continue;
+			}
+			cgrp.cg_cs.cs_nifree++;
+			clrbit(cgrp.cg_iused, i);
+		}
+		while (i < MAXIPG) {
+			clrbit(cgrp.cg_iused, i);
+			i++;
+		}
+		for (s = 0; s < MAXCPG; s++)
+			for (i = 0; i < NRPOS; i++)
+				cgrp.cg_b[s][i] = 0;
+		if (c == 0) {
+			dmin += howmany(cssize(&sblock), BSIZE) * FRAG;
+		}
+		for (d = 0; d < dmin; d++)
+			clrbit(cgrp.cg_free, d);
+		for (; (d + FRAG) <= dmax - dbase; d += FRAG) {
+			j = 0;
+			for (i = 0; i < FRAG; i++) {
+				if (!isset(bmap, dbase+d+i)) {
+					setbit(cgrp.cg_free, d+i);
+					j++;
+				} else
+					clrbit(cgrp.cg_free, d+i);
+			}
+			if (j == FRAG) {
+				cgrp.cg_cs.cs_nbfree++;
+				s = d * NSPF;
+				cgrp.cg_b[s/sblock.fs_spc]
+				  [s%sblock.fs_nsect*NRPOS/sblock.fs_nsect]++;
+			} else if (j > 0) {
+				cgrp.cg_cs.cs_nffree += j;
+				blk = ((cgrp.cg_free[d / NBBY] >> (d % NBBY)) &
+				       (0xff >> (NBBY - FRAG)));
+				fragacct(blk, cgrp.cg_frsum, 1);
+			}
+		}
+		for (j = d; d < dmax - dbase; d++) {
+			if (!isset(bmap, dbase+d)) {
+				setbit(cgrp.cg_free, d);
+				cgrp.cg_cs.cs_nffree++;
+			} else
+				clrbit(cgrp.cg_free, d);
+		}
+		if (j != d) {
+			blk = ((cgrp.cg_free[j / NBBY] >> (j % NBBY)) &
+			       (0xff >> (NBBY - FRAG)));
+			fragacct(blk, cgrp.cg_frsum, 1);
+		}
+		for (; d < MAXBPG; d++)
+			clrbit(cgrp.cg_free, d);
+		sblock.fs_cstotal.cs_nffree += cgrp.cg_cs.cs_nffree;
+		sblock.fs_cstotal.cs_nbfree += cgrp.cg_cs.cs_nbfree;
+		sblock.fs_cstotal.cs_nifree += cgrp.cg_cs.cs_nifree;
+		sblock.fs_cstotal.cs_ndir += cgrp.cg_cs.cs_ndir;
+		*cs = cgrp.cg_cs;
+		bwrite(cgtod(c, &sblock), &cgrp, sblock.fs_cgsize);
+	}
+	for (i = 0; i < howmany(cssize(&sblock), BSIZE); i++) {
+		bwrite(csaddr(&sblock) + (i * FRAG),
+		       (char *)sblock.fs_csp[i], BSIZE);
+	}
+	sblock.fs_ronly = 0;
+	sblock.fs_fmod = 0;
+	bwrite(SBLOCK, (char *)&sblock, sizeof(sblock));
+}
+
+/*
+ * update the frsum fields to reflect addition or deletion 
+ * of some frags
+ */
+fragacct(fragmap, fraglist, cnt)
+	int fragmap;
+	long fraglist[];
+	int cnt;
+{
+	int inblk;
+	register int field, subfield;
+	register int siz, pos;
+
+	inblk = (int)(fragtbl[fragmap] << 1);
+	fragmap <<= 1;
+	for (siz = 1; siz < FRAG; siz++) {
+		if (((1 << siz) & inblk) == 0)
+			continue;
+		field = around[siz];
+		subfield = inside[siz];
+		for (pos = siz; pos <= FRAG; pos++) {
+			if ((fragmap & field) == subfield) {
+				fraglist[siz] += cnt;
+				pos += siz;
+				field <<= siz;
+				subfield <<= siz;
+			}
+			field <<= 1;
+			subfield <<= 1;
+		}
+	}
+}
+
+bwrite(blk, buf, size)
+	char *buf;
+	daddr_t blk;
+	register size;
+{
+	if (lseek(fi, blk * FSIZE, 0) < 0) {
+		perror("FS SEEK");
+		return(1);
+	}
+	if (write(fi, buf, size) != size) {
+		perror("FS WRITE");
+		return(1);
+	}
+}
+
 bread(bno, buf, cnt)
 	daddr_t bno;
 	char *buf;
 {
 	register i;
 
-	lseek(fi, bno*FSIZE, 0);
+	lseek(fi, bno * FSIZE, 0);
 	if ((i = read(fi, buf, cnt)) != cnt) {
+		if (sflg) {
+			printf("No Update\n");
+			sflg = 0;
+		}
 		for(i=0; i<BSIZE; i++)
 			buf[i] = 0;
 	}
