@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.14 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.15 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -833,7 +833,7 @@ insput( p ) register NODE *p; {
 	cerror( "insput" );
 	}
 
-upput( p ) register NODE *p; {
+upput( p, off ) register NODE *p; int off; {
 	cerror( "upput" );
 	}
 
