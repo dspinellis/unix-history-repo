@@ -1,4 +1,4 @@
-/*	ubareg.h	6.1	83/07/29	*/
+/*	ubareg.h	6.2	83/09/29	*/
 
 /*
  * VAX UNIBUS adapter registers
@@ -121,7 +121,7 @@ struct uba_regs
 }
 #endif
 #if !defined(VAX780) && !defined(VAX750)
-#define	IF_UBAPURGE(uba, bdp)
+#define	UBAPURGE(uba, bdp)
 #endif
 
 /* uba_mr[] */
@@ -153,7 +153,11 @@ struct uba_regs
 #if VAX780
 #define	MAXNUBA	4
 #else
+#if VAX750
+#define	MAXNUBA	2
+#else
 #define	MAXNUBA	1
+#endif
 #endif
 
 /*
