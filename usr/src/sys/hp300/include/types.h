@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	8.1 (Berkeley) %G%
+ *	@(#)types.h	8.2 (Berkeley) %G%
  */
 
 #ifndef	_MACHTYPES_H_
@@ -20,8 +20,8 @@ typedef struct label_t {			/* Consistent with HP-UX. */
 } label_t;
 #endif
 
-typedef	u_long	vm_offset_t;
-typedef	u_long	vm_size_t;
+typedef	unsigned long	vm_offset_t;
+typedef	unsigned long	vm_size_t;
 
 /*
  * Basic integral types.  Omit the typedef if
