@@ -4,9 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_debug.c	5.1 (Berkeley) %G%
+ *	@(#)lfs_debug.c	5.2 (Berkeley) %G%
  */
 
+#ifdef LOGFS
 #include "param.h"
 #include "namei.h"
 #include "vnode.h"
@@ -104,3 +105,13 @@ lfs_print_inumber(vp)
 {
 	(void)printf("%d\n", VTOI(vp)->i_number);
 }
+
+void
+lfs_spin()
+{
+	u_long i, j;
+
+	for (i = 0; i < 10; ++i)
+		for (j = 0; j < 1000000; ++j);
+}
+#endif /* LOGFS */

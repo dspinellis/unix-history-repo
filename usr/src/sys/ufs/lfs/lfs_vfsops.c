@@ -4,9 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.58 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.59 (Berkeley) %G%
  */
 
+#ifdef LOGFS
 #include "param.h"
 #include "systm.h"
 #include "namei.h"
@@ -28,12 +29,16 @@
 #include "../ufs/quota.h"
 #include "../ufs/inode.h"
 #include "../ufs/ufsmount.h"
+#include "../vm/vm_param.h"
+#include "../vm/lock.h"
 #include "lfs.h"
 #include "lfs_extern.h"
 
 static int	lfs_mountfs
 		    __P((struct vnode *, struct mount *, struct proc *));
-static int	sbupdate __P((struct ufsmount *, int));
+
+static int 	lfs_umountdebug __P((struct mount *));
+static int 	lfs_vinvalbuf __P((register struct vnode *));
 
 struct vfsops lfs_vfsops = {
 	lfs_mount,
@@ -78,7 +83,6 @@ lfs_mount(mp, path, data, ndp, p)
 	u_int size;
 	int error;
 
-printf("lfs_mount\n");
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct ufs_args)))
 		return (error);
 	/*
@@ -310,6 +314,7 @@ lfs_unmount(mp, mntflags, p)
 	register struct ufsmount *ump;
 	register LFS *fs;					/* LFS */
 	int i, error, ronly, flags = 0;
+	int ndirty;						/* LFS */
 
 printf("lfs_unmount\n");
 	if (mntflags & MNT_FORCE) {
@@ -317,7 +322,12 @@ printf("lfs_unmount\n");
 			return (EINVAL);
 		flags |= FORCECLOSE;
 	}
-	mntflushbuf(mp, 0);
+	if (error = lfs_segwrite(mp, 1))
+		return(error);
+
+ndirty = lfs_umountdebug(mp);
+printf("lfs_umountdebug: returned %d dirty\n", ndirty);
+return(0);
 	if (mntinvalbuf(mp))
 		return (EBUSY);
 	ump = VFSTOUFS(mp);
@@ -357,7 +367,6 @@ lfs_root(mp, vpp)
 	struct vnode tvp;
 	int error;
 
-printf("lfs_root\n");
 	tvp.v_mount = mp;
 	ip = VTOI(&tvp);
 	ip->i_vnode = &tvp;
@@ -380,7 +389,6 @@ lfs_statfs(mp, sbp, p)
 	register LFS *fs;
 	register struct ufsmount *ump;
 
-printf("lfs_statfs\n");
 	ump = VFSTOUFS(mp);
 #ifdef NOTLFS							/* LFS */
 	fs = ump->um_fs;
@@ -420,6 +428,7 @@ printf("lfs_statfs\n");
 }
 
 extern int	syncprt;					/* LFS */
+extern lock_data_t lfs_sync_lock;
 
 /*
  * Go through the disk queues to initiate sandbagged IO;
@@ -428,51 +437,34 @@ extern int	syncprt;					/* LFS */
  *
  * Note: we are always called with the filesystem marked `MPBUSY'.
  */
+int STOPNOW;
 lfs_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
 {
-	register struct vnode *vp;
-	register struct inode *ip;
-	register struct ufsmount *ump = VFSTOUFS(mp);
-	register struct fs *fs;
-	int error, allerror = 0;
+	int error;
 
 printf("lfs_sync\n");
+
+	/*
+	 * Concurrent syncs aren't possible because the meta data blocks are
+	 * only marked dirty, not busy!
+	 */
+	lock_write(&lfs_sync_lock);
+
 	if (syncprt)
 		bufstats();
-#ifdef NOTLFS							/* LFS */
-	fs = ump->um_fs;
-	/*
-	 * Write back modified superblock.
-	 * Consistency check that the superblock
-	 * is still in the buffer cache.
+	/* 
+	 * If we do roll forward, then all syncs do not have to be checkpoints.
+	 * Until then, make sure they are.
 	 */
-	if (fs->fs_fmod != 0) {
-		if (fs->fs_ronly != 0) {		/* XXX */
-			printf("fs = %s\n", fs->fs_fsmnt);
-			panic("update: rofs mod");
-		}
-		fs->fs_fmod = 0;
-		fs->fs_time = time.tv_sec;
-		allerror = sbupdate(ump, waitfor);
-	}
-#else
-	allerror = lfs_segwrite(mp);
-#endif
+STOPNOW=1;
+	error = lfs_segwrite(mp, 1);		
+	lock_done(&lfs_sync_lock);
 #ifdef QUOTA
 	qsync(mp);
 #endif
-	return (allerror);
-}
-
-static int
-sbupdate(mp, waitfor)
-	struct ufsmount *mp;
-	int waitfor;
-{
-	/* LFS IMPLEMENT -- sbupdate */
-	panic("sbupdate not implemented");
+	return (error);
 }
 
 /*
@@ -535,3 +527,74 @@ lfs_fhtovp(mp, fhp, vpp)
 	*vpp = ITOV(ip);
 	return (0);
 }
+
+static int
+lfs_umountdebug(mp)
+	struct mount *mp;
+{
+	struct vnode *vp;
+	int dirty;
+
+	dirty = 0;
+	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
+		panic("umountdebug: not busy");
+loop:
+	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
+		if (vget(vp))
+			goto loop;
+		dirty += lfs_vinvalbuf(vp);
+		vput(vp);
+		if (vp->v_mount != mp)
+			goto loop;
+	}
+	return (dirty);
+}
+static int
+lfs_vinvalbuf(vp)
+	register struct vnode *vp;
+{
+	register struct buf *bp;
+	struct buf *nbp, *blist;
+	int s, dirty = 0;
+
+	for (;;) {
+		if (blist = vp->v_dirtyblkhd)
+			/* void */;
+		else if (blist = vp->v_cleanblkhd)
+			/* void */;
+		else
+			break;
+		for (bp = blist; bp; bp = nbp) {
+printf("lfs_vinvalbuf: ino %d, lblkno %d, blkno %lx flags %xl\n",
+VTOI(vp)->i_number, bp->b_lblkno, bp->b_blkno, bp->b_flags);
+			nbp = bp->b_blockf;
+			s = splbio();
+			if (bp->b_flags & B_BUSY) {
+printf("lfs_vinvalbuf: buffer busy, would normally sleep\n");
+/*
+				bp->b_flags |= B_WANTED;
+				sleep((caddr_t)bp, PRIBIO + 1);
+*/
+				splx(s);
+				break;
+			}
+			bremfree(bp);
+			bp->b_flags |= B_BUSY;
+			splx(s);
+			if (bp->b_flags & B_DELWRI) {
+				dirty++;			/* XXX */
+printf("lfs_vinvalbuf: buffer dirty (DELWRI). would normally write\n");
+				break;
+			}
+			if (bp->b_vp != vp)
+				reassignbuf(bp, bp->b_vp);
+			else
+				bp->b_flags |= B_INVAL;
+			brelse(bp);
+		}
+	}
+	if (vp->v_dirtyblkhd || vp->v_cleanblkhd)
+		panic("lfs_vinvalbuf: flush failed");
+	return (dirty);
+}
+#endif /* LOGFS */

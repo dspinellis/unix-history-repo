@@ -4,9 +4,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.67 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.68 (Berkeley) %G%
  */
 
+#ifdef LOGFS
 #include "param.h"
 #include "systm.h"
 #include "namei.h"
@@ -1080,7 +1081,7 @@ lfs_strategy(bp)
 	int error;
 
 printf("lfs_strategy: type: %d lblk %d pblk %d\n", bp->b_vp->v_type,
-	bp->b_lblkno, bp->b_blkno);
+bp->b_lblkno, bp->b_blkno);
 	if (bp->b_vp->v_type == VBLK || bp->b_vp->v_type == VCHR)
 		panic("ufs_strategy: spec");
 	if (bp->b_blkno == bp->b_lblkno) {			/* LFS */
@@ -1095,7 +1096,7 @@ printf("lfs_strategy: type: %d lblk %d pblk %d\n", bp->b_vp->v_type,
 	}
 	vp = ip->i_devvp;
 	bp->b_dev = vp->v_rdev;
-	(*(vp->v_op->vop_strategy))(bp);
+	(vp->v_op->vop_strategy)(bp);
 	return (0);
 }
 
@@ -1220,3 +1221,4 @@ struct vnodeops lfs_vnodeops = {
 	ufs_islocked,		/* islocked */
 	ufs_advlock,		/* advlock */
 };
+#endif /* LOGFS */

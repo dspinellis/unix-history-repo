@@ -4,14 +4,15 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_cksum.c	5.1 (Berkeley) %G%
+ *	@(#)lfs_cksum.c	5.2 (Berkeley) %G%
  */
 
+#ifdef LOGFS
 #include <sys/types.h>
 
 /*
- * cksum --
- *	Simple, general purpose, fast checksum.
+ * Simple, general purpose, fast checksum.  Data must be short-aligned.
+ * Returns a u_long in case we ever want to do something more rigorous.
  */
 u_long
 cksum(str, len)
@@ -25,3 +26,4 @@ cksum(str, len)
 		sum ^= *((u_short *)str)++;
 	return (sum);
 }
+#endif /* LOGFS */
