@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)uusend.1	4.1 (Berkeley) %G%
+.\"	@(#)uusend.1	5.1 (Berkeley) %G%
 .\"
-.TH UUSEND 1C 6/1/80
+.TH UUSEND 1C "1 May 1980"
 .UC 4
 .SH NAME
 uusend \- send a file to a remote host
@@ -21,7 +21,7 @@ sys1!sys2!..!remotefile
 sends a file to a given location on a remote system.
 The system need not be directly connected to the local
 system, but a chain of
-.I uucp(1)
+.IR uucp (1C)
 links needs to connect the two systems.
 .PP
 If the
@@ -40,7 +40,7 @@ The remotefile can include the ~userid syntax.
 If anything goes wrong any further away than the first system down
 the line, you will never hear about it.
 .SH SEE\ ALSO
-uux(1), uucp(1), uuencode(1)
+uux(1C), uucp(1C), uuencode(1)
 .SH AUTHOR
 Mark Horton
 .SH BUGS
