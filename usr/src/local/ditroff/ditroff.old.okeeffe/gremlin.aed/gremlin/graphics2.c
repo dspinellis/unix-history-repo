@@ -1,5 +1,4 @@
-
-/* graphics2.c
+/* @(#)graphics2.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -41,7 +40,7 @@ int   style;
         (void) fflush(display);
 }
 
-
+
 static RelativeVector(x, y)
 float x, y;
 /*
@@ -62,7 +61,7 @@ float x, y;
 	cury = nexty;
 }  /* end RelativeVector */
 
-
+
 #define pi 3.14159265357
 #define log2_10 3.321915
 
@@ -121,7 +120,7 @@ int   style;
 	return(0);
 }  /* end GRArc */;
 
-
+
 #define MAXPOINTS 200
 
 static Paramaterize(x, y, h, n)
@@ -232,7 +231,7 @@ int npoints;				/* number of valid points */
 	return(0);
 }  /* end PeriodicSpline */
 
-
+
 static NaturalEndSpline(h, z, dz, d2z, d3z, npoints)
 float h[MAXPOINTS], z[MAXPOINTS];	/* Point list and parameterization */
 float dz[MAXPOINTS];			/* to return the 1st derivative */
@@ -297,7 +296,7 @@ int npoints;				/* number of valid points */
 	return(0);
 }  /* end NaturalEndSpline */
 
-
+
 #define PointsPerInterval 16
 
 GRCurve(pointlist,style)
@@ -371,7 +370,7 @@ int   style;
 }  /* end GRCurve */
 
 
-
+
 GRPutText(justify,point1,font,size,string,pos)
 int justify, font, size;
 POINT *point1, *pos;
@@ -431,7 +430,7 @@ char string[];
 	(void) fflush(display);
 } /* end PutText */;
 
-
+
 GRClear(mask)
 int mask;
 /*
@@ -485,7 +484,7 @@ int x, y, number, mark;
 }  /* end DisplayPoint */
 
 
-
+
 GRErasePoint(x, y, number)
 int x, y, number;
 /*

@@ -1,8 +1,6 @@
-
-/* graphics3.c -
+/* @(#)graphics3.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
- *
  *
  *      This file contains additional routines for implementing graphics
  * primitives for the gremlin picture editor
@@ -68,7 +66,7 @@ GRDisableTablet()
     curx = cury = -1;
 }
 
-
+
 #define MINTIME 100        /* 100 milliseconds */
 
 int
@@ -141,7 +139,7 @@ int *py;			/* Address of word to hold y-coorinate */
 }
 
 
-
+
 GRSetGrid(x1, y1, x2, y2, size)
 int x1, y1, x2, y2, size;
 /*
@@ -210,7 +208,7 @@ int mask;
 	(void) fflush(display);
 }  /* end SetRead */
 
-
+
 GRDisplayGrid()
 /*
  *      This routine displays the grid created by setgrid by enabling
