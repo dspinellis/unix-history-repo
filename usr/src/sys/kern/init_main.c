@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.59 (Berkeley) %G%
+ *	@(#)init_main.c	7.60 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -30,10 +30,10 @@
 
 #ifdef HPFPLIB
 char	copyright[] =
-"Copyright (c) 1982,1986,1989,1991 The Regents of the University of California.\nCopyright (c) 1992 Hewlett-Packard Company\nCopyright (c) 1992 Motorola Inc.\nAll rights reserved.\n\n";
+"Copyright (c) 1982, 1986, 1989, 1991, 1993\n\tThe Regents of the University of California.\nCopyright (c) 1992 Hewlett-Packard Company\nCopyright (c) 1992 Motorola Inc.\nAll rights reserved.\n\n";
 #else
 char	copyright[] =
-"Copyright (c) 1982,1986,1989,1991 The Regents of the University of California.\nAll rights reserved.\n\n";
+"Copyright (c) 1982, 1986, 1989, 1991, 1993\n\tThe Regents of the University of California.  All rights reserved.\n\n";
 #endif
 
 /*
