@@ -807,11 +807,11 @@ domem()
 	kread(X_KMEMSTAT, kmemstats, sizeof(kmemstats));
 	(void)printf("\nMemory statistics by type\n");
 	(void)printf(
-"       Type  In Use   MemUse   HighUse  Limit Requests  TypeLimit KernLimit\n");
+"        Type  In Use   MemUse   HighUse  Limit Requests  TypeLimit KernLimit\n");
 	for (i = 0, ks = &kmemstats[0]; i < M_LAST; i++, ks++) {
 		if (ks->ks_calls == 0)
 			continue;
-		(void)printf("%11s %7ld %7ldK %8ldK %5ldK %8ld %6u %9u\n",
+		(void)printf("%12s %7ld %7ldK %8ldK %5ldK %8ld %6u %9u\n",
 		    kmemnames[i] ? kmemnames[i] : "undefined",
 		    ks->ks_inuse, (ks->ks_memuse + 1023) / 1024,
 		    (ks->ks_maxused + 1023) / 1024,
