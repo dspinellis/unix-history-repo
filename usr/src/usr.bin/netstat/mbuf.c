@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mbuf.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mbuf.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -33,17 +33,19 @@ static struct mbtypes {
 	char	*mt_name;
 } mbtypes[] = {
 	{ MT_DATA,	"data" },
+	{ MT_OOBDATA,	"oob data" },
+	{ MT_CONTROL,	"ancillary data" },
 	{ MT_HEADER,	"packet headers" },
-	{ MT_SOCKET,	"socket structures" },
-	{ MT_PCB,	"protocol control blocks" },
-	{ MT_RTABLE,	"routing table entries" },
-	{ MT_HTABLE,	"IMP host table entries" },
+	{ MT_SOCKET,	"socket structures" },			/* XXX */
+	{ MT_PCB,	"protocol control blocks" },		/* XXX */
+	{ MT_RTABLE,	"routing table entries" },		/* XXX */
+	{ MT_HTABLE,	"IMP host table entries" },		/* XXX */
 	{ MT_ATABLE,	"address resolution tables" },
-	{ MT_FTABLE,	"fragment reassembly queue headers" },
+	{ MT_FTABLE,	"fragment reassembly queue headers" },	/* XXX */
 	{ MT_SONAME,	"socket names and addresses" },
 	{ MT_SOOPTS,	"socket options" },
 	{ MT_RIGHTS,	"access rights" },
-	{ MT_IFADDR,	"interface addresses" }, 
+	{ MT_IFADDR,	"interface addresses" }, 		/* XXX */
 	{ 0, 0 }
 };
 
@@ -73,30 +75,26 @@ mbpr(mbaddr)
 		printf("mbstat: bad read\n");
 		return;
 	}
-	printf("%u/%u mbufs in use:\n",
-		mbstat.m_mbufs - mbstat.m_mtypes[MT_FREE], mbstat.m_mbufs);
 	totmbufs = 0;
+	for (mp = mbtypes; mp->mt_name; mp++)
+		totmbufs += mbstat.m_mtypes[mp->mt_type];
+	printf("%u mbufs in use:\n", totmbufs);
 	for (mp = mbtypes; mp->mt_name; mp++)
 		if (mbstat.m_mtypes[mp->mt_type]) {
 			seen[mp->mt_type] = YES;
 			printf("\t%u mbufs allocated to %s\n",
 			    mbstat.m_mtypes[mp->mt_type], mp->mt_name);
-			totmbufs += mbstat.m_mtypes[mp->mt_type];
 		}
 	seen[MT_FREE] = YES;
 	for (i = 0; i < nmbtypes; i++)
 		if (!seen[i] && mbstat.m_mtypes[i]) {
 			printf("\t%u mbufs allocated to <mbuf type %d>\n",
 			    mbstat.m_mtypes[i], i);
-			totmbufs += mbstat.m_mtypes[i];
 		}
-	if (totmbufs != mbstat.m_mbufs - mbstat.m_mtypes[MT_FREE])
-		printf("*** %u mbufs missing ***\n",
-			(mbstat.m_mbufs - mbstat.m_mtypes[MT_FREE]) - totmbufs);
 	printf("%u/%u mapped pages in use\n",
 		mbstat.m_clusters - mbstat.m_clfree, mbstat.m_clusters);
-	totmem = mbstat.m_mbufs * MSIZE + mbstat.m_clusters * CLBYTES;
-	totfree = mbstat.m_mtypes[MT_FREE]*MSIZE + mbstat.m_clfree * CLBYTES;
+	totmem = totmbufs * MSIZE + mbstat.m_clusters * CLBYTES;
+	totfree = mbstat.m_clfree * CLBYTES;
 	printf("%u Kbytes allocated to network (%d%% in use)\n",
 		totmem / 1024, (totmem - totfree) * 100 / totmem);
 	printf("%u requests for memory denied\n", mbstat.m_drops);
