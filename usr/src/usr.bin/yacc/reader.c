@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)reader.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)reader.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -430,7 +430,6 @@ loop:
 		}
 	    }
 	}
-	putc('/', f);
 	need_newline = 1;
 	goto loop;
 
