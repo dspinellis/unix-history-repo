@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.4 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.5 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -53,10 +53,24 @@ kernacc(addr, len, rw)
 	int len, rw;
 {
 	boolean_t rv;
+	vm_offset_t saddr, eaddr;
 	vm_prot_t prot = rw == B_READ ? VM_PROT_READ : VM_PROT_WRITE;
 
-	rv = vm_map_check_protection(kernel_map, trunc_page(addr),
-				     round_page(addr+len-1), prot);
+	saddr = trunc_page(addr);
+	eaddr = round_page(addr+len-1);
+	rv = vm_map_check_protection(kernel_map, saddr, eaddr, prot);
+	/*
+	 * XXX there are still some things (e.g. the buffer cache) that
+	 * are managed behind the VM system's back so even though an
+	 * address is accessible in the mind of the VM system, there may
+	 * not be physical pages where the VM thinks there is.  This can
+	 * lead to bogus allocation of pages in the kernel address space
+	 * or worse, inconsistencies at the pmap level.  We only worry
+	 * about the buffer cache for now.
+	 */
+	if (rv && (saddr >= (vm_offset_t)buffers ||
+		   eaddr < (vm_offset_t)buffers + MAXBSIZE * nbuf))
+		rv = FALSE;
 	return(rv == TRUE);
 }
 
@@ -158,6 +172,17 @@ vm_fork(p1, p2, isvfork)
 	    ((caddr_t)&up->u_stats.pstat_endcopy -
 	     (caddr_t)&up->u_stats.pstat_startcopy));
 
+#ifdef i386
+	/* bug in inherit_none? */
+	{ u_int addr = UPT_MIN_ADDRESS - UPAGES*NBPG; struct vm_map *vp;
+
+	vp = &p2->p_vmspace->vm_map;
+	(void)vm_map_pageable(vp, addr, 0xfe000000 - addr, TRUE);
+	(void)vm_deallocate(vp, addr, 0xfe000000 - addr);
+	(void)vm_allocate(vp, &addr, UPT_MAX_ADDRESS - addr, FALSE);
+	(void)vm_map_inherit(vp, addr, UPT_MAX_ADDRESS, VM_INHERIT_NONE);
+	}
+#endif
 	/*
 	 * cpu_fork will copy and update the kernel stack and pcb,
 	 * and make the child ready to run.  It marks the child
@@ -370,6 +395,26 @@ swapout(p)
 #endif
 	size = round_page(ctob(UPAGES));
 	addr = (vm_offset_t) p->p_addr;
+#ifdef hp300
+	/*
+	 * Ugh!  u-area is double mapped to a fixed address behind the
+	 * back of the VM system and accesses are usually through that
+	 * address rather than the per-process address.  Hence reference
+	 * and modify information are recorded at the fixed address and
+	 * lost at context switch time.  We assume the u-struct and
+	 * kernel stack are always accessed/modified and force it to be so.
+	 */
+	{
+		register int i;
+		volatile long tmp;
+
+		for (i = 0; i < UPAGES; i++) {
+			tmp = *(long *)addr; *(long *)addr = tmp;
+			addr += NBPG;
+		}
+		addr = (vm_offset_t) p->p_addr;
+	}
+#endif
 	vm_map_pageable(kernel_map, addr, addr+size, TRUE);
 	pmap_collect(vm_map_pmap(&p->p_vmspace->vm_map));
 	(void) splhigh();
@@ -443,14 +488,12 @@ iprintf(a, b, c, d, e, f, g, h)
 {
 	register int i;
 
-	for (i = indent; i > 0; ) {
-		if (i >= 8) {
-			putchar('\t', 1, (caddr_t)0);
-			i -= 8;
-		} else {
-			putchar(' ', 1, (caddr_t)0);
-			i--;
-		}
+	i = indent;
+	while (i >= 8) {
+		printf("\t");
+		i -= 8;
 	}
+	for (; i > 0; --i)
+		printf(" ");
 	printf(a, b, c, d, e, f, g, h);
 }
