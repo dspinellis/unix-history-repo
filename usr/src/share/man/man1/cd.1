@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)cd.1	6.6 (Berkeley) %G%
+.\"     @(#)cd.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CD 1
@@ -54,7 +54,6 @@ becomes the new working directory.
 See
 .Xr csh 1
 for more information on environment variables.
-.Tp
 .Pp
 The
 .Nm cd
@@ -67,4 +66,6 @@ utility exits 0 on success, and >0 if an error occurs.
 .Sh STANDARDS
 The
 .Nm cd
-function is expected to be POSIX 1003.2 compatible.
+command is expected to be
+.St -p1003.2
+compatible.
