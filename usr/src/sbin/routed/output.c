@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -136,6 +136,9 @@ again:
 #if BSD < 198810
 		if (sizeof(n->rip_dst.sa_family) > 1)	/* XXX */
 		n->rip_dst.sa_family = htons(n->rip_dst.sa_family);
+#else
+#define osa(x) ((struct osockaddr *)(&(x)))
+		osa(n->rip_dst)->sa_family = htons(n->rip_dst.sa_family);
 #endif
 		n->rip_metric = htonl(rt->rt_metric);
 		n++;

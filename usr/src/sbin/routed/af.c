@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)af.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)af.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -45,7 +45,11 @@ struct afswitch afswitch[AF_MAX] = {
 
 int af_max = sizeof(afswitch) / sizeof(afswitch[0]);
 
-struct sockaddr_in inet_default = { AF_INET, INADDR_ANY };
+struct sockaddr_in inet_default = {
+#ifdef RTM_ADD
+	sizeof (inet_default),
+#endif
+	AF_INET, INADDR_ANY };
 
 inet_hash(sin, hp)
 	register struct sockaddr_in *sin;
@@ -103,6 +107,8 @@ inet_output(s, flags, sin, size)
 	sin = &dst;
 	if (sin->sin_port == 0)
 		sin->sin_port = sp->s_port;
+	if (sin->sin_len == 0)
+		sin->sin_len = sizeof (*sin);
 	if (sendto(s, packet, size, flags, sin, sizeof (*sin)) < 0)
 		perror("sendto");
 }
@@ -135,6 +141,7 @@ inet_canon(sin)
 {
 
 	sin->sin_port = 0;
+	sin->sin_len = sizeof(*sin);
 }
 
 char *
