@@ -58,6 +58,7 @@ res_init()
 	extern char *strcpy(), *strncpy();
 	extern char *getenv();
 	int nserv = 0;    /* number of nameserver records read from file */
+	int haveenv = 0;
 	int havesearch = 0;
 
 	_res.nsaddr.sin_addr.s_addr = INADDR_ANY;
@@ -66,15 +67,17 @@ res_init()
 	_res.nscount = 1;
 
 	/* Allow user to override the local domain definition */
-	if ((cp = getenv("LOCALDOMAIN")) != NULL)
+	if ((cp = getenv("LOCALDOMAIN")) != NULL) {
 		(void)strncpy(_res.defdname, cp, sizeof(_res.defdname));
+		haveenv++;
+	}
 
 	if ((fp = fopen(_PATH_RESCONF, "r")) != NULL) {
 	    /* read the config file */
 	    while (fgets(buf, sizeof(buf), fp) != NULL) {
 		/* read default domain name */
 		if (!strncmp(buf, "domain", sizeof("domain") - 1)) {
-		    if (_res.defdname[0])	/* skip if have from environ */
+		    if (haveenv)	/* skip if have from environ */
 			    continue;
 		    cp = buf + sizeof("domain") - 1;
 		    while (*cp == ' ' || *cp == '\t')
@@ -89,6 +92,8 @@ res_init()
 		}
 		/* set search list */
 		if (!strncmp(buf, "search", sizeof("search") - 1)) {
+		    if (haveenv)	/* skip if have from environ */
+			    continue;
 		    cp = buf + sizeof("search") - 1;
 		    while (*cp == ' ' || *cp == '\t')
 			    cp++;
@@ -113,6 +118,7 @@ res_init()
 				    n = 0;
 			    }
 		    }
+		    *pp++ = 0;
 		    havesearch = 1;
 		    continue;
 		}
@@ -151,11 +157,12 @@ res_init()
 			if (*cp == '.')
 				n++;
 		cp = _res.defdname;
-		for (; n >= LOCALDOMAINPARTS && pp < _res.dnsrch + MAXDNSRCH;
+		for (; n >= LOCALDOMAINPARTS && pp < _res.dnsrch + MAXDFLSRCH;
 		    n--) {
 			cp = index(cp, '.');
 			*pp++ = ++cp;
 		}
+		*pp++ = 0;
 	}
 	_res.options |= RES_INIT;
 	return (0);
