@@ -9,10 +9,11 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)if.c	7.2 (Berkeley) %G%
+ *	@(#)if.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
+#include "mbuf.h"
 #include "systm.h"
 #include "socket.h"
 #include "socketvar.h"
@@ -181,6 +182,25 @@ if_down(ifp)
 	ifp->if_flags &= ~IFF_UP;
 	for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
 		pfctlinput(PRC_IFDOWN, &ifa->ifa_addr);
+	if_qflush(&ifp->if_snd);
+}
+
+/*
+ * Flush an interface queue.
+ */
+if_qflush(ifq)
+	register struct ifqueue *ifq;
+{
+	register struct mbuf *m, *n;
+
+	n = ifq->ifq_head;
+	while (m = n) {
+		n = m->m_act;
+		m_freem(m);
+	}
+	ifq->ifq_head = 0;
+	ifq->ifq_tail = 0;
+	ifq->ifq_len = 0;
 }
 
 /*
