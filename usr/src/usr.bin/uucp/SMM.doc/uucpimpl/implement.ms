@@ -1,4 +1,4 @@
-.\"	@(#)implement.ms	5.1 (Berkeley) %G%
+.\"	@(#)implement.ms	6.1 (Berkeley) %G%
 .\"
 .RP
 .TM 78-1273-5 39199 39199-11
