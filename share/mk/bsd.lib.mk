@@ -1,6 +1,11 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.26  1993/12/13  18:30:43  ats
+# Deleted a line with a superfluous "rm" in the clean target. The same
+# targets are already handled in the other "rm"s. Jordan was faster
+# for the missing rm of libc.so in cleandir :-).
+#
 # Revision 1.25  1993/12/12  16:51:22  jkh
 # Add profiled .m target
 #
@@ -143,54 +148,52 @@ BINMODE?=	555
 .SUFFIXES: .out .o .po .so .s .S .c .cc .cxx .m .C .f .y .l
 
 .c.o:
-	${CC} ${CFLAGS} -c ${.IMPSRC} 
-# XXX -- shouldn't need to comment these out  but there's something not quite
-#        worked out with the new linker.
-#	@${LD} -x -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+	${CC} ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .c.po:
 	${CC} -p ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
-#	@${LD} -X -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+	@${LD} -X -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .c.so:
 	${CC} ${PICFLAG} -DPIC ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
 
 .cc.o .cxx.o .C.o:
-	${CXX} ${CXXFLAGS} -c ${.IMPSRC} 
-#	@${LD} -x -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+	${CXX} ${CXXFLAGS} -c ${.IMPSRC} -o ${.TARGET}
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .cc.po .C.po .cxx.o:
 	${CXX} -p ${CXXFLAGS} -c ${.IMPSRC} -o ${.TARGET}
-#	@${LD} -X -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+	@${LD} -X -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .cc.so .C.so:
 	${CXX} ${PICFLAG} -DPIC ${CXXFLAGS} -c ${.IMPSRC} -o ${.TARGET}
 
 .f.o:
 	${FC} ${RFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
-#	@${LD} -x -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .f.po:
 	${FC} -p ${RFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
-#	@${LD} -X -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+	@${LD} -X -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .s.o:
 	${CPP} -E ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
 	    ${AS} -o ${.TARGET}
-#	@${LD} -x -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .s.po:
 	${CPP} -E -DPROF ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
 	    ${AS} -o ${.TARGET}
-#	@${LD} -X -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+	@${LD} -X -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .s.so:
 	${CPP} -E -DPIC ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
@@ -210,13 +213,13 @@ BINMODE?=	555
 
 .m.po:
 	${CC} ${CFLAGS} -p -c ${.IMPSRC} -o ${.TARGET}
-#	@${LD} -X -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+	@${LD} -X -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .m.o:
 	${CC} ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
-#	@${LD} -X -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+	@${LD} -X -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .if !defined(NOPROFILE)
 _LIBS=lib${LIB}.a lib${LIB}_p.a
@@ -224,8 +227,13 @@ _LIBS=lib${LIB}.a lib${LIB}_p.a
 _LIBS=lib${LIB}.a
 .endif
 
-.if !defined(NOPIC) && (defined(SHLIB_MAJOR) && defined(SHLIB_MINOR))
+.if !defined(NOPIC)
+.if defined(SHLIB_MAJOR) && defined(SHLIB_MINOR)
 _LIBS+=lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR}
+.endif
+.if defined(INSTALL_PIC_ARCHIVE)
+_LIBS+=lib${LIB}_pic.a
+.endif
 .endif
 
 .if !defined(PICFLAG)
@@ -255,7 +263,13 @@ lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR}: ${SOBJS}
 	@rm -f lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR}
 	@$(LD) -Bshareable \
 	    -o lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR} \
-	    `lorder ${SOBJS} | tsort` ${LDADD}
+	    ${SOBJS} ${LDADD}
+
+lib${LIB}_pic.a:: ${SOBJS}
+	@echo building special pic ${LIB} library
+	@rm -f lib${LIB}_pic.a
+	@${AR} cTq lib${LIB}_pic.a ${SOBJS} ${LDADD}
+	${RANLIB} lib${LIB}_pic.a
 
 llib-l${LIB}.ln: ${SRCS}
 	${LINT} -C${LIB} ${CFLAGS} ${.ALLSRC:M*.c}
@@ -266,7 +280,7 @@ clean:
 	rm -f lib${LIB}.a llib-l${LIB}.ln
 	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
 	rm -f ${SOBJS} shared/*.o
-	rm -f lib${LIB}.so.*.*
+	rm -f lib${LIB}.so.*.* lib${LIB}_pic.a
 .endif
 
 .if !target(cleandir)
@@ -276,7 +290,7 @@ cleandir:
 	rm -f ${.CURDIR}/tags .depend
 	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
 	rm -f ${SOBJS} shared/*.o
-	rm -f lib${LIB}.so.*.*
+	rm -f lib${LIB}.so.*.* lib${LIB}_pic.a
 	cd ${.CURDIR}; rm -rf obj;
 .endif
 
@@ -301,12 +315,17 @@ realinstall: beforeinstall
 	    lib${LIB}_p.a ${DESTDIR}${LIBDIR}
 	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}_p.a
 .endif
-.if !defined(NOPIC) && defined(SHLIB_MAJOR) && defined(SHLIB_MINOR)
-	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
+.if !defined(NOPIC)
+.if defined(SHLIB_MAJOR) && defined(SHLIB_MINOR)
+	install ${COPY} -s -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 	    lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR} ${DESTDIR}${LIBDIR}
 .endif
-#	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
-#	    llib-l${LIB}.ln ${DESTDIR}${LINTLIBDIR}
+.if defined(INSTALL_PIC_ARCHIVE)
+	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
+	    lib${LIB}_pic.a ${DESTDIR}${LIBDIR}
+	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}_pic.a
+.endif
+.endif
 .if defined(LINKS) && !empty(LINKS)
 	@set ${LINKS}; \
 	while test $$# -ge 2; do \
