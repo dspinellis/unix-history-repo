@@ -16,40 +16,38 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)logout.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)logout.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/time.h>
 #include <utmp.h>
-#include <stdio.h>
 
-/* 0 on failure, 1 on success */
+typedef struct utmp UTMP;
 
 logout(line)
 	register char *line;
 {
-	register FILE *fp;
-	struct utmp ut;
+	register int fd;
+	UTMP ut;
 	int rval;
+	off_t lseek();
 	time_t time();
 
-	if (!(fp = fopen(_PATH_UTMP, "r+")))
+	if ((fd = open(_PATH_UTMP, O_RDWR)) < 0)
 		return(0);
 	rval = 0;
-	while (fread((char *)&ut, sizeof(struct utmp), 1, fp) == 1) {
-		if (!ut.ut_name[0] ||
-		    strncmp(ut.ut_line, line, sizeof(ut.ut_line)))
+	while (read(fd, (char *)&ut, sizeof(UTMP)) == sizeof(UTMP)) {
+		if (!ut.ut_name[0] || strncmp(ut.ut_line, line, UT_LINESIZE))
 			continue;
-		bzero(ut.ut_name, sizeof(ut.ut_name));
-		bzero(ut.ut_host, sizeof(ut.ut_host));
+		bzero(ut.ut_name, UT_NAMESIZE);
+		bzero(ut.ut_host, UT_HOSTSIZE);
 		(void)time(&ut.ut_time);
-		(void)fseek(fp, (long)-sizeof(struct utmp), L_INCR);
-		(void)fwrite((char *)&ut, sizeof(struct utmp), 1, fp);
-		(void)fseek(fp, (long)0, L_INCR);
+		(void)lseek(fd, -(long)sizeof(UTMP), L_INCR);
+		(void)write(fd, (char *)&ut, sizeof(UTMP));
 		rval = 1;
 	}
-	(void)fclose(fp);
+	(void)close(fd);
 	return(rval);
 }
