@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)more.c	4.6 (Berkeley) 82/05/11";
+static	char *sccsid = "@(#)more.c	4.7 (Berkeley) 82/12/14";
 
 /*
 ** more.c - General purpose tty output filter and file perusal program
@@ -682,7 +682,7 @@ int *length;
 	    }
 	    else
 		column = 1 + (column | 7);
-	else if (c == '\b')
+	else if (c == '\b' && column > 0)
 	    column--;
 	else if (c == '\r')
 	    column = 0;
