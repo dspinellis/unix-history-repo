@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)store.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)store.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*	store.c		Larn is copyrighted 1986 by Noah Morgan. */
@@ -249,7 +249,7 @@ static dnditem(i)
 /*
 	for the college of larn
  */
-char course[26]=0;	/*	the list of courses taken	*/
+char course[26]={0};	/*	the list of courses taken	*/
 char coursetime[] = { 10, 15, 10, 20, 10, 10, 10, 5 };
 /*
 	function to display the header info for the school
@@ -419,8 +419,8 @@ ointerest()
 	lasttime = (gtime/100)*100;
 	}
 
-static short gemorder[26]=0;	/* the reference to screen location for each */
-static long gemvalue[26]=0;	/* the appraisal of the gems */
+static short gemorder[26]={0};	/* the reference to screen location for each */
+static long gemvalue[26]={0};	/* the appraisal of the gems */
 obanksub()
 	{
 	unsigned long amt;
