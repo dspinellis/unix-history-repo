@@ -1,0 +1,243 @@
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)tcsetattr.3	1.1 (Berkeley) %G%
+.\"
+.Dd Jun 11, 1991
+.Dt TCSETATTR 3
+.Os
+.Sh NAME
+.Nm cfgetospeed,
+.Nm cfsetospeed,
+.Nm cfgetispeed,
+.Nm cfsetospeed,
+.Nm cfsetspeed,
+.Nm cfmakeraw,
+.Nm tcgetattr,
+.Nm tcsetattr
+.LP
+.B "Baud Rate Functions"
+.LP
+Functions:  cfgetispeed(), cfgetospeed(), cfsetispeed(), cfsetospeed(),
+cfsetspeed()
+.LP
+.B "Synopsis"
+.LP
+.nf
+#include <termios.h>
+
+speed_t cfgetospeed(const struct termios *termios_p);
+int cfsetospeed(struct termios *termios_p, speed_t speed);
+
+speed_t cfgetispeed(const struct termios *termios_p);
+int cfsetispeed(struct termios *termios_p, speed_t speed);
+
+void cfsetspeed(struct termios *termios_p, speed_t speed);
+
+void cfmakeraw(struct termios *termios_p);
+.fi
+.LP
+.B "Description"
+.LP
+The following interfaces are provided for getting and setting the values
+of the input and output baud rates in the termios structure.  The effects
+on the terminal device described below do not become effective until the
+tcsetattr() function is successfully called, and not all errors are
+detected until tcsetattr() is called as well.
+.PP
+The input and output baud rates are represented in the termios structure.
+The type speed_t is an unsigned integer.  The value of the integer
+corresponds directly to the baud rate being represented, however,
+the following symbolic values are defined.  
+.nf
+	/*
+	 * Standard speeds
+	 */
+	#define B0	0
+	#define B50	50
+	#define B75	75
+	#define B110	110
+	#define B134	134
+	#define B150	150
+	#define B200	200
+	#define B300	300
+	#define B600	600
+	#define B1200	1200
+	#define	B1800	1800
+	#define B2400	2400
+	#define B4800	4800
+	#define B9600	9600
+	#define B19200	19200
+	#define B38400	38400
+	#ifndef _POSIX_SOURCE
+	#define EXTA	19200
+	#define EXTB	38400
+	#endif  /*_POSIX_SOURCE */
+.fi
+.PP
+The termios_p argument is a pointer to a termios structure.
+.PP
+The cfgetospeed() function shall return the output baud rate stored in
+the termios structure to which termios_p points.
+.PP
+The cfgetispeed() function shall return the input baud rate stored in the
+termios structure to which termios_p points.
+.PP
+The cfsetospeed() function shall set the output baud rate stored in the
+termios structure to which termios_p points.
+.PP
+The cfsetispeed() function shall set the input baud rate stored in the
+termios structure to which termios_p points.
+.PP
+The cfsetspeed() function shall set the input and output baud rate
+stored in the termios structure to which termios_p points.
+.PP
+Certain values for speeds that are set in the termios structure and
+passed to tcsetattr() have special meanings.  These are discussed under
+tcsetattr().
+.PP
+Both cfsetispeed() and cfsetospeed() return a value of zero if successful
+and -1 to indicate an error.  
+.PP
+The cfmakeraw() function shall set the flags stored in the termios
+structure in a state that disables all input and output processing,
+giving a "raw" i/o path.  Note that there is no "unraw" function.  This
+is because there are a variety of processing options that could
+be re-enabled and the correct method is for an application to
+snapshot the current terminal state using tcgetattr(), setting
+raw mode with cfmakeraw() and the subsequent tcsetattr(), and then
+to revert to the previous terminal state with another tcsetattr()
+using the saved terminal state.
+.LP
+.B "General Terminal Interface Control Functions"
+.LP
+The functions that are used to control the general terminal function are
+described in this section.  
+Unless otherwise noted for a specific command, these functions are
+restricted from use by background processes.  Attempts to perform these
+operations shall cause the process group to be sent a SIGTTOU signal.  If
+the calling process is blocking or ignoring SIGTTOU signals, the process
+is allowed to perform the operation and the SIGTTOU signal is not sent.
+.LP
+.B "General Terminal Interface Control Functions"
+.LP
+In all the functions, fildes is an open file descriptor.  However, the
+functions affect the underlying terminal file, and not just the open file
+description associated with the file descriptor.
+.LP
+.B "Get and Set State"
+.LP
+.B "Functions:  tcgetattr(), tcsetattr()"
+.LP
+.B "Synopsis"
+.LP
+.nf
+#include <termios.h>
+int tcgetattr(int fildes, struct termios *termios_p);
+
+int tcsetattr(int fildes, int optional_actions,
+        const struct termios * termios_p);
+.fi
+.LP
+.B "Description"
+.LP
+The tcgetattr() function shall get the parameters associated with the
+object referred to by fildes and store them in the termios structure
+referenced by termios_p.  This function is allowed from a background
+process; however, the terminal attributes may be subsequently changed by
+a foreground process.  If the terminal device supports different input
+and output baud rates, the baud rates stored in the termios structure
+returned by tcgetattr() shall reflect the actual baud rates, even if they
+are equal.  If differing baud rates are not supported, the rate returned
+as the output baud rate shall be the actual baud rate.  The rate returned
+as the input baud rate shall be either the number zero or the output rate.
+.PP
+The tcsetattr() function shall set the parameters associated with the
+terminal (unless support is required from the underlying hardware that is
+not available) from the termios structure referenced by termios_p as
+follows:
+.nf
+    (1)  If optional_actions is TCSANOW, the change shall occur
+         immediately.
+
+    (2)  If optional_actions is TCSADRAIN, the change shall occur after
+         all output written to fildes has been transmitted.  This
+         function should be used when changing parameters that affect
+         output.
+
+    (3)  If optional_actions is TCSAFLUSH, the change shall occur after
+         all output written to the object referred to by fildes has been
+         transmitted, and all input that has been received but not read
+         shall be discarded before the change is made.
+
+    (4)  If TCSASOFT is or'ed in with the optional_actions, then the
+	  value of the c_cflag and the speed will be ignored.
+.fi
+.PP
+The symbolic constants for the values of optional_actions are defined in
+<termios.h>.
+.PP
+The zero baud rate, B0, is used to terminate the connection.  If B0 is
+specified as the output speed when tcsetattr() is called, the modem
+control lines shall no longer be asserted.  Normally, this will
+disconnect the line.
+.PP
+If the input baud rate is equal to zero (the number) in the termios
+structure when tcsetattr() is called, the input baud rate will be changed
+by tcsetattr() to the same value as that specified by the value of the
+output baud rate, exactly as if the input rate had been set to the output
+rate by cfsetispeed().  This usage of zero is obsolescent.
+.PP
+If an attempt is made using tcsetattr() to set an unsupported baud rate,
+baud rates where the input and output baud rates differ and the hardware
+does not support that combination, or other features not supported by the
+hardware, but if tcsetattr() was able to perform some of the requested
+actions, it shall return success.  It shall set all the attributes that
+the implementation does support as requested and leave all the attributes
+not supported by the hardware unchanged.  If no part of the request can
+be honored, it shall return -1 and set errno to [EINVAL].  If the input
+and output baud rates differ and are a combination that is not supported,
+neither baud rate is changed.  A subsequent call to tcgetattr() shall
+return the actual state of the terminal device [reflecting both the
+changes made and not made in the previous tcsetattr() call].  The
+tcsetattr() function shall not change the values in the termios structure
+whether or not it actually accepts them.
+.PP
+The termios structure may have additional fields not defined by this
+standard.  The effect of the tcsetattr() function is undefined if the
+value of the termios structure pointed to by termios_p was not derived
+from the result of a call to tcgetattr() on fildes; a Strictly Conforming
+POSIX.1 Application shall modify only fields and flags defined by this
+standard between the call to tcgetattr() and tcsetattr(), leaving all
+other fields and flags unmodified.
+.PP
+.B "Returns"
+.LP
+Upon successful completion, a value of zero is returned.  Otherwise, a
+value of -1 is returned and errno is set to indicate the error.
+.LP
+.B "Errors"
+.LP
+If any of the following conditions occur, the tcgetattr() function shall
+return -1 and set errno to the corresponding value:
+.nf
+   [EBADF]       The fildes argument is not a valid file descriptor.
+
+   [ENOTTY]      The file associated with fildes is not a terminal.
+.fi
+.PP
+If any of the following conditions occur, the tcsetattr() function shall
+return -1 and set errno to the corresponding value:
+.nf
+   [EBADF]       The fildes argument is not a valid file descriptor.
+
+   [EINTR]       A signal interrupted the tcsetattr() function.
+
+   [EINVAL]      The optional_actions argument is not a proper value, or
+                 an attempt was made to change an attribute represented
+                 in the termios structure to an unsupported value.
+
+   [ENOTTY]      The file associated with fildes is not a terminal.
+.fi
