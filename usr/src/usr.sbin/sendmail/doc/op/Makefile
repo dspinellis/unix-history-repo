@@ -1,10 +1,10 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 DIR=	smm/07.sendmailop
 SRCS=	op.me
 MACROS=	-me
 
-all: op.${PRINTER}
+all: op.ps
 
 op.ps: ${SRCS}
 	${PIC} ${SRCS} | ${EQN} | ${ROFF} > ${.TARGET}
