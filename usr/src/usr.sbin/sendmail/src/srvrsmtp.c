@@ -15,12 +15,12 @@
 
 # ifndef SMTP
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.17 (Berkeley) %G%	(no SMTP)";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.18 (Berkeley) %G%	(no SMTP)";
 # endif not lint
 # else SMTP
 
 # ifndef lint
-static char	SccsId[] = "@(#)srvrsmtp.c	5.17 (Berkeley) %G%";
+static char	SccsId[] = "@(#)srvrsmtp.c	5.18 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -174,6 +174,10 @@ smtp()
 		for (cmd = cmdbuf; *p != '\0' && !isspace(*p); )
 			*cmd++ = *p++;
 		*cmd = '\0';
+
+		/* throw away leading whitespace */
+		while (isspace(*p))
+			p++;
 
 		/* decode command */
 		for (c = CmdTab; c->cmdname != NULL; c++)
