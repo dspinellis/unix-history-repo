@@ -1,4 +1,4 @@
-/*	vm_meter.c	4.16	82/10/17	*/
+/*	vm_meter.c	4.17	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -169,7 +169,11 @@ loop:
 	 * and	3. the short (5-second) and longer (30-second) average
 	 *	   memory is less than desirable.
 	 */
-	if (kmapwnt || (avenrun[0] >= 2 && imax(avefree, avefree30) < desfree &&
+	if (
+#ifdef NOPAGING
+	    freemem == 0 ||
+#endif
+	    kmapwnt || (avenrun[0] >= 2 && imax(avefree, avefree30) < desfree &&
 	    (rate.v_pgin + rate.v_pgout > maxpgio || avefree < minfree))) {
 		desperate = 1;
 		goto hardswap;
@@ -245,7 +249,11 @@ loop:
 	divisor = 1;
 	if (outpri > maxslp/2) {
 		deservin = 1;
+#ifdef NOPAGING
+		divisor = 1;
+#else
 		divisor = 2;
+#endif
 	}
 	needs = p->p_swrss;
 	if (p->p_textp && p->p_textp->x_ccount == 0)
