@@ -1,30 +1,28 @@
-#	Makefile	4.3	87/07/22
 #
-# Make install will build the learn lesson libraries
-# from this directory. 
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	4.3	(Berkeley)	%G%
 #
 LESSONS=C editor eqn files macros morefiles
 FILES=	Linfo Xinfo
-DESTDIR=
 
 all:
 
-install: ${LESSONS} ${FILES}
+install: FRC
 	-mkdir ${DESTDIR}/usr/lib/learn ${DESTDIR}/usr/lib/learn/log \
-		${DESTDIR}/usr/lib/learn/bin
+		${DESTDIR}/usr/lib/learn/bin > /dev/null 2>&1
 	chmod 755 ${DESTDIR}/usr/lib/learn ${DESTDIR}/usr/lib/learn/log \
 		${DESTDIR}/usr/lib/learn/bin
-	chown root ${DESTDIR}/usr/lib/learn ${DESTDIR}/usr/lib/learn/log \
+	chown root.staff ${DESTDIR}/usr/lib/learn ${DESTDIR}/usr/lib/learn/log \
 		${DESTDIR}/usr/lib/learn/bin
-	chgrp staff ${DESTDIR}/usr/lib/learn ${DESTDIR}/usr/lib/learn/log \
-		${DESTDIR}/usr/lib/learn/bin
-	@for i in ${FILES}; do \
-		echo copy $$i; \
-		install -c -m 644 $$i ${DESTDIR}/usr/lib/learn/$$i; \
-	done
-	@for i in ${LESSONS}; do \
-		echo tar $$i lessons; \
-		tar cf - $$i | (cd ${DESTDIR}/usr/lib/learn; tar xpf -); \
-	done
+	install -c -o bin -g bin -m 644 Linfo ${DESTDIR}/usr/lib/learn/Linfo
+	install -c -o bin -g bin -m 644 Xinfo ${DESTDIR}/usr/lib/learn/Xinfo
+	tar cf - ${LESSONS} | (cd ${DESTDIR}/usr/lib/learn; tar xpf -);
 
 clean:
+depend:
+lint:
+tags:
+FRC:
