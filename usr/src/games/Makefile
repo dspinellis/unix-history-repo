@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.10.1.2 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -34,13 +34,13 @@ SCRIPT=	wargames
 
 # C sources that live in the current directory
 #
-SRCS=	arithmetic.c banner.c bcd.c factor.c fish.c number.c ppt.c primes.c \
-	rain.c worm.c worms.c wump.c
+SRCS=	arithmetic.c banner.c bcd.c factor.c fish.c morse.c number.c ppt.c \
+	primes.c rain.c worm.c worms.c wump.c
 
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	arithmetic banner bcd factor fish number ppt wump
+STD=	arithmetic banner bcd factor fish morse number ppt wump
 
 # C programs that live in the current directory and need explicit make lines.
 #
@@ -50,7 +50,7 @@ NSTD=	primes rain worm worms
 HIDE=	fish wump worm
 
 # programs that don't
-NOHIDE=	arithmetic banner bcd factor number ppt primes rain worms
+NOHIDE=	arithmetic banner bcd factor morse number ppt primes rain worms
 
 # Programs that require a lisp interpreter or compiler
 LISP=	doctor
