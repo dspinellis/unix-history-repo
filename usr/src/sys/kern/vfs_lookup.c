@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	7.33 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.34 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -214,7 +214,7 @@ lookup(ndp, p)
 	int docache;			/* == 0 do not cache last component */
 	int flag;			/* LOOKUP, CREATE, RENAME or DELETE */
 	int wantparent;			/* 1 => wantparent or lockparent flag */
-	int rdonly;			/* mounted read-only flag bit(s) */
+	int rdonly;			/* lookup read-only flag bit */
 	int error = 0;
 
 	/*
@@ -225,9 +225,7 @@ lookup(ndp, p)
 	docache = (ndp->ni_nameiop & NOCACHE) ^ NOCACHE;
 	if (flag == DELETE || (wantparent && flag != CREATE))
 		docache = 0;
-	rdonly = MNT_RDONLY;
-	if (ndp->ni_nameiop & REMOTE)
-		rdonly |= MNT_EXRDONLY;
+	rdonly = ndp->ni_nameiop & RDONLY;
 	ndp->ni_dvp = NULL;
 	ndp->ni_more = 0;
 	dp = ndp->ni_startdir;
@@ -334,7 +332,7 @@ dirloop:
 		 * If creating and at end of pathname, then can consider
 		 * allowing file to be created.
 		 */
-		if (ndp->ni_dvp->v_mount->mnt_flag & rdonly) {
+		if (rdonly || (ndp->ni_dvp->v_mount->mnt_flag & MNT_RDONLY)) {
 			error = EROFS;
 			goto bad;
 		}
@@ -404,8 +402,9 @@ nextname:
 		 * Disallow directory write attempts on read-only
 		 * file systems.
 		 */
-		if ((dp->v_mount->mnt_flag & rdonly) ||
-		    (wantparent && (ndp->ni_dvp->v_mount->mnt_flag & rdonly))) {
+		if (rdonly || (dp->v_mount->mnt_flag & MNT_RDONLY) ||
+		    (wantparent &&
+		     (ndp->ni_dvp->v_mount->mnt_flag & MNT_RDONLY))) {
 			error = EROFS;
 			goto bad2;
 		}
