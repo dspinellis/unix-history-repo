@@ -1,16 +1,37 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	1.7 83/07/27";
+static	char *sccsid = "@(#)main.c	1.8 83/07/28";
 #endif
 
 #include "defs.h"
 
-main()
+char escapec = CTRL(l);
+
+#define next(a) (**(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
+
+/*ARGUSED*/
+main(argc, argv)
+char **argv;
 {
 	register n;
 	register char *p;
 	int wwchild();
 	int imask;
 
+	while (*++argv) {
+		if (**argv == '-') {
+			switch (*++*argv) {
+			case 'e':
+				setescape(next(argv));
+				break;
+			case 't':
+				terse++;
+				break;
+			default:
+				usage();
+			}
+		} else
+			usage();
+	}
 	gettimeofday(&starttime, &timezone);
 	if (wwinit() < 0) {
 		fflush(stdout);
@@ -22,6 +43,8 @@ main()
 		fprintf(stderr, "Can't open command window.\r\n");
 		goto bad;
 	}
+	if (terse)
+		Whide(cmdwin->ww_win);
 	wwsetcurwin(cmdwin);
 	for (n = 0; n < wwncol; n++)			/* XXX */
 		Waputc(0, WINVERSE|WBUF, cmdwin->ww_win);
@@ -72,7 +95,7 @@ main()
 				ibufp = ibuf;
 				ibufc = 0;
 				break;
-			} else if (*p++ == ESCAPE) {
+			} else if (*p++ == escapec) {
 				if ((n = p - ibufp) > 1)
 					write(curwin->ww_pty, ibufp, n - 1);
 				ibufp = p;
@@ -85,4 +108,10 @@ main()
 bad:
 	wwend();
 	return 0;
+}
+
+usage()
+{
+	fprintf(stderr, "window: [-e escape] [-t]\n");
+	exit(1);
 }
