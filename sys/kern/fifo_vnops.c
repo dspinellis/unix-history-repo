@@ -42,6 +42,7 @@
  *				unlocking the inode of the fifo
  */
 
+#ifdef	FIFO
 #include "param.h"
 #include "time.h"
 #include "namei.h"
@@ -436,3 +437,4 @@ fifo_badop()
 	panic("fifo_badop called");
 	/* NOTREACHED */
 }
+#endif	/*FIFO*/
