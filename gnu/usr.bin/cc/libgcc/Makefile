@@ -1,4 +1,4 @@
-#	$Id: Makefile,v 1.7 1993/11/06 23:43:03 paul Exp $
+#	$Id: Makefile,v 1.8 1993/11/09 20:16:36 paul Exp $
 
 LIB=	gcc
 NOPROFILE=
@@ -31,18 +31,20 @@ LIB2SOBJS=${LIB2OBJS:.o=.so}
 
 ${LIB1OBJS}: libgcc1.c
 	${CC} -c ${CFLAGS} -DL${.PREFIX} -o ${.TARGET} ${.CURDIR}/libgcc1.c
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
+#	@${LD} -x -r ${.TARGET}
+#	@mv a.out ${.TARGET}
 
 ${LIB2OBJS}: libgcc2.c
 	${CC} -c ${CFLAGS} -DL${.PREFIX} -o ${.TARGET} ${.CURDIR}/libgcc2.c
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
+#	@${LD} -x -r ${.TARGET}
+#	@mv a.out ${.TARGET}
 
+.if !defined(NOPIC)
 ${LIB1SOBJS}: libgcc1.c
 	${CC} -c -fpic ${CFLAGS} -DL${.PREFIX} -o ${.TARGET} ${.CURDIR}/libgcc1.c
 
 ${LIB2SOBJS}: libgcc2.c
 	${CC} -c -fpic ${CFLAGS} -DL${.PREFIX} -o ${.TARGET} ${.CURDIR}/libgcc2.c
+.endif
 
 .include <bsd.lib.mk>
