@@ -1,4 +1,4 @@
-#	@(#)Makefile	6.6 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 DIR=	psd/20.ipctut
 SRCS=	tutor.me
