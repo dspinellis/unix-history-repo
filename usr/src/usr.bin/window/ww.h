@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.24 84/01/11		*/
+/*	@(#)ww.h	3.25 84/01/16		*/
 
 #include <stdio.h>
 #include <sgtty.h>
@@ -106,16 +106,19 @@ union ww_char {
 #define WWU_TOUCHED	0x01		/* touched */
 #define WWU_MAJOR	0x02		/* major change */
 
+	/* the window structures */
 	/* ww_mode values */
 #define WW_PTY		0		/* has pty */
 #define WW_SOCKET	1		/* has socket pair */
 #define WW_NONE		2		/* has nothing */
 
+	/* tty things */
 #undef CTRL
 #define CTRL(c)		('c'&0x1f)
 #define DEL		0x7f
 #define ISCTRL(c)	((c) < ' ' || (c) >= DEL)
 
+	/* generally useful variables */
 extern struct ww *wwhead, *curwin;
 extern struct ww_tty wwoldtty, wwnewtty, wwwintty;
 extern int wwnwrite;

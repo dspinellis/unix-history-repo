@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.19 83/12/09";
+static	char *sccsid = "@(#)cmd.c	3.20 84/01/16";
 #endif
 
 #include "defs.h"
@@ -176,8 +176,8 @@ docmd()
 			(void) wwputs("Command: ", cmdwin);
 			wwcurtowin(cmdwin);
 		}
-		while (bpeekc() < 0)
-			bread();
+		while (wwpeekc() < 0)
+			wwiomux();
 	}
 	if (!quit)
 		wwsetcurwin(selwin);
@@ -192,8 +192,8 @@ getwin()
 	if (!terse)
 		wwputs("Which window? ", cmdwin);
 	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
-	while ((c = bgetc()) < 0)
-		bread();
+	while ((c = wwgetc()) < 0)
+		wwiomux();
 	if (c < '1' || c > '9' || (w = wwfind(c - '0')) == 0)
 		Ding();
 	if (!terse)

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	3.8 83/11/29";
+static	char *sccsid = "@(#)cmd5.c	3.9 84/01/16";
 #endif
 
 #include "defs.h"
@@ -26,8 +26,8 @@ register struct ww *w;
 		getminmax(col, w->ww_w.nc, 0, wwncol,
 			&curcol, &mincol, &maxcol);
 		wwsetcursor(currow, curcol);
-		while (bpeekc() < 0)
-			bread();
+		while (wwpeekc() < 0)
+			wwiomux();
 		switch (getpos(&row, &col, minrow, mincol, maxrow, maxcol)) {
 		case 3:
 			wwunbox(boxwin);

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)win.c	3.1 84/01/13";
+static	char *sccsid = "@(#)win.c	3.2 84/01/16";
 #endif
 
 #include "defs.h"
@@ -138,7 +138,7 @@ char *prompt;
 	(void) wwprintf(w, "\033Y%c%c\033p%s\033q ",
 		w->ww_w.nr - 1 + ' ', ' ', prompt);	/* print on last line */
 	wwcurtowin(w);
-	while (bpeekc() < 0)
-		bread();
-	return bgetc();
+	while (wwpeekc() < 0)
+		wwiomux();
+	return wwgetc();
 }

@@ -1,34 +1,32 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwiomux.c	3.6 84/01/13";
+static	char *sccsid = "@(#)wwiomux.c	3.7 84/01/16";
 #endif
 
 #include "ww.h"
+#include <sys/time.h>
 
 extern int _wwdtablesize;
 
-wwforce(imask)
-register int *imask;
+/*
+ * Multiple window IO handler.
+ */
+wwiomux()
 {
 	register struct ww *w;
-	char buf[512];
-	register int n;
+	register struct ww *w;
+	int imask;
+	char dont_block;
+	register char *p;
+	register n;
+	char c;
+	static struct timeval tv = { 0, 0 };
 
 	for (w = wwhead; w; w = w->ww_next)
 		if (w->ww_pty >= 0)
 			*imask |= 1 << w->ww_pty;
 	n = select(_wwdtablesize, imask,
 		(int *)0, (int *)0, (struct timeval *)0);
-	if (n <= 0)
-		return -1;
-	for (w = wwhead; w; w = w->ww_next) {
-		if (*imask & 1<<w->ww_pty) {
-			n = read(w->ww_pty, buf, sizeof buf);
-			if (n < 0) {
-				(void) close((*w)->ww_pty);
-				(*w)->ww_pty = -1;
-			} else if (n > 0)
-				wwwrite(w, buf, n);
 		}
 	}
-	return 0;
+	}
 }

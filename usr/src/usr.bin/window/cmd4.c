@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd4.c	3.6 83/12/02";
+static	char *sccsid = "@(#)cmd4.c	3.7 84/01/16";
 #endif
 
 #include "defs.h"
@@ -21,7 +21,7 @@ doshow()
 		wwsetcurwin(w);
 		wwsetcursor(w->ww_o.row, w->ww_o.col + 1);
 		for (;;) {
-			switch (bgetc()) {
+			switch (wwgetc()) {
 			case '\r':
 			case '\n':
 				break;
@@ -29,7 +29,7 @@ doshow()
 				setselwin(w);
 				goto out;
 			case -1:
-				bread();
+				wwiomux();
 				continue;
 			default:
 				if (terse)
@@ -63,7 +63,7 @@ docolon()
 	if (terse)
 		Wunhide(cmdwin->ww_win);
 	wwputc(':', cmdwin);
-	bgets(buf, wwncol - 3, cmdwin);
+	wwgets(buf, wwncol - 3, cmdwin);
 	wwputs("\r\n", cmdwin);
 	if (terse)
 		Whide(cmdwin->ww_win);

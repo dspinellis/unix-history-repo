@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.21 84/01/13";
+static	char *sccsid = "@(#)cmd2.c	3.22 84/01/16";
 #endif
 
 #include "defs.h"
@@ -187,12 +187,18 @@ dostat()
 	}
 	wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\r\n");
 	wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\r\n",
-	(void) wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\n");
-	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\n",
-		nread, nreadz, nreade, nreadc, wwnwrite, wwnwritec);
-	(void) wwprintf(w, "nupdate\tnupdlin\tnupdmis\tnmajlin\tnmajmis\n");
-	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
+	(void) wwprintf(w, "nwrite\tnwritec\tnupdate\tnupdlin\tnupdmis\tnmajlin\tnmajmis\n");
+	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+		wwnwrite, wwnwritec,
 		wwnupdate, wwnupdline, wwnupdmiss, wwnmajline, wwnmajmiss);
+	(void) wwprintf(w, "nsel\tnselz\tnsele\tnread\tnreadz\tnreade\tnreadc\n");
+	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
+		wwnselect, wwnselectz, wwnselecte,
+		wwnread, wwnreadz, wwnreade, wwnreadc);
+	(void) wwprintf(w, "nwread\tnwreadz\tnwreade\tnwreadd\tnwreadc\tnwreadp\n");
+	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\n",
+		wwnwread, wwnwreadz, wwnwreade,
+		wwnwreadd, wwnwreadc, wwnwreadp);
 	waitnl(w);
 	closewin(w);
 }
@@ -228,9 +234,9 @@ doquit()
 		Wunhide(cmdwin->ww_win);
 	wwputs("Really quit [yn]? ", cmdwin);
 	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
-	while (bpeekc() < 0)
-		bread();
-	if (bgetc() == 'y') {
+	while (wwpeekc() < 0)
+		wwiomux();
+	if (wwgetc() == 'y') {
 		wwputs("Yes", cmdwin);
 		quit++;
 	} else
