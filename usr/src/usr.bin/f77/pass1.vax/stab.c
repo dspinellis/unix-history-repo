@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)stab.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)stab.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -19,6 +19,16 @@ static char sccsid[] = "@(#)stab.c	5.1 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	stab.c,v $
+ * Revision 5.3  86/01/10  17:12:58  donn
+ * Add junk to handle PARAMETER variables.
+ * 
+ * Revision 5.2  86/01/10  13:51:31  donn
+ * Changes to produce correct stab information for logical and logical*2 types
+ * (from Jerry Berkman) plus changes for dummy procedures.
+ * 
+ * Revision 5.1  85/08/10  03:50:06  donn
+ * 4.3 alpha
+ * 
  * Revision 1.2  85/02/02  01:30:09  donn
  * Don't put the 'program' name into the file; it only confuses dbx, sigh.
  * 
@@ -125,6 +135,8 @@ Namep sym;
 {
     register Namep p;
     char *varname, *classname;
+    expptr ep;
+    char buf[100];
     Boolean ignore;
     int vartype;
 
@@ -135,7 +147,28 @@ Namep sym;
 	varname = varstr(VL, p->varname);
 	switch (p->vclass) {
 	    case CLPARAM:	/* parameter (constant) */
-		classname = "c";
+		classname = buf;
+		if ((ep = ((struct Paramblock *) p)->paramval) &&
+		    ep->tag == TCONST) {
+		  switch(ep->constblock.vtype) {
+		    case TYLONG:
+		    case TYSHORT:
+		    case TYLOGICAL:
+		    case TYADDR:
+		      sprintf(buf, "c=i%d", ep->constblock.const.ci);
+		      break;
+		    case TYREAL:
+		    case TYDREAL:
+		      sprintf(buf, "c=r%f", ep->constblock.const.cd[0]);
+		      break;
+		    default:
+		      /* punt */
+		      ignore = true;
+		      break;
+		  }
+		} else {
+		  ignore = true;
+		}
 		break;
 
 	    case CLVAR:		/* variable */
@@ -144,10 +177,15 @@ Namep sym;
     		else classname = "V";
 		break;
 
+	    case CLPROC:	/* external or function or subroutine */
+		if(p->vstg == STGARG) {
+		    classname = "v";
+		    break;
+		}
+		/* FALL THROUGH */
 	    case CLMAIN:	/* main program */
 	    case CLENTRY:	/* secondary entry point */
 	    case CLBLOCK:       /* block data name*/
-	    case CLPROC:	/* external or function or subroutine */
 		ignore = true;  /* these are put out by entrystab */
 		break;
 
@@ -169,6 +207,11 @@ Namep sym;
 	      case STGNULL :
 	      case STGREG :
 	      case STGINIT :
+		  if (p->vclass == CLPARAM) {
+		      /* these have zero storage class for some reason */
+		      sprintf(asmline+len, "\",0x%x,0,0,0\n", N_LSYM);
+		      break;
+		  }
 	          sprintf(asmline+len,
 		  "\",0x%x,0,0,0 /* don't know how to calc loc for stg %d*/ \n",
 			       N_LSYM,p->vstg);
@@ -205,32 +248,37 @@ Namep sym;
 	}
 }
 
-static typenum[NTYPES]; /* has the given type already been defined ?*/
+static typenum[NTYPES+1]; /* has the given type already been defined ?*/
 
 private writestabtype(type)
 int type;
 {
  char asmline[130];
- static char *typename[NTYPES] =
- { "unknown", "addr","integer*2", "integer", "real", "double precision",
-   "complex", "double complex", "logical", "char", "void", "error" };
+ static char *typename[NTYPES+1] = {
+ "unknown", "addr", "integer*2", "integer", "real", "double precision",
+ "complex", "double complex", "logical", "char", "void", "error", "logical*2" };
 
- static int typerange[NTYPES] = { 0, 3, 2, 3, 4, 5, 6, 7, 3, 9, 10, 11 };
+ static int typerange[NTYPES+1] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
 
  /* compare with typesize[] in init.c */
- static int typebounds[2] [NTYPES] ={
+ static int typebounds[2] [NTYPES+1] ={
  /* "unknown", "addr","integer*2", "integer",    "real", "double precision", */
     { 0      ,   0   ,   -32768,    -2147483648,   4,       8,
- /* "complex", "double complex", "logical", "char", "void", "error" }; */
-      8,         16,               0,        0,       0,          0 },
+ /* "complex", "d-complex", "logical", "char", "void", "error", "logical*2" */
+      8,         16,          4,        0,       0,      0,       2 },
  /* "unknown", "addr","integer*2", "integer",    "real", "double precision", */
-    { 0  ,       -1,      32767,    2147483647,   0,         0,
- /* "complex", "double complex", "logical", "char", "void", "error" }; */
-      0,         0,               1,        127,       0,          0 }
+    { 0  ,       -1,      32767,    2147483647,    0,       0,
+ /* "complex", "d-complex", "logical", "char", "void", "error", "logical*2" */
+      0,         0,           0,        127,     0,      0,       0 }
  };
                     
 
- if( type < 0 || type > NTYPES) badtype("writestabtype",type);
+    if (type < 0 || type > NTYPES)
+	badtype("writestabtype",type);
+
+    /* substitute "logical*2" for "logical" when "-i2" compiler flag used */
+    if (type == TYLOGICAL && tylogical == TYSHORT)
+	type = NTYPES;
 
     if (typenum[type]) return(typenum[type]);
     typenum[type] = type;
@@ -247,11 +295,17 @@ Namep p;
 {
 
   int t;
-  t = p->vtype;
-  if( t < TYSHORT || t > TYSUBR)
-  dclerr("can't get dbx basetype information",p);
 
-  if (p->vtype == TYCHAR || p->vdim != nil ) writestabtype(TYINT);
+  if (p->vclass == CLPROC && p->vstg == STGARG)
+    t = TYADDR;
+  else
+    t = p->vtype;
+
+  if (t < TYADDR || t > TYSUBR)
+    dclerr("can't get dbx basetype information",p);
+
+  if (p->vtype == TYCHAR || p->vdim != nil)
+    writestabtype(TYINT);
   return(writestabtype(t));
 }
 
@@ -268,6 +322,8 @@ Namep sym;
 
     p = sym;
     if (p->tag != TNAME) badtag("addtypeinfo",p->tag);
+    if (p->vclass == CLPARAM)
+	return;
 
     tnum = getbasenum(p);
     if(p->vdim != (struct Dimblock *) ENULL) {
