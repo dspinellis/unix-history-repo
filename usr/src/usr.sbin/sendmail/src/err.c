@@ -1,10 +1,11 @@
 # include <stdio.h>
+# include <ctype.h>
 # include "sendmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.3	%G%";
+static char	SccsId[] = "@(#)err.c	3.4	%G%";
 
 /*
 **  SYSERR -- Print error message.
@@ -34,17 +35,30 @@ syserr(fmt, a, b, c, d, e)
 	extern char *sys_errlist[];
 	extern int sys_nerr;
 	extern char *sprintf();
+	register char *eb = errbuf;
 
-	sprintf(errbuf, fmt, a, b, c, d, e);
+	/* add arpanet error number if not present */
+	if (!isdigit(*fmt))
+	{
+		strcpy(eb, "455 ");
+		eb += 4;
+	}
+
+	/* put error message into buffer */
+	sprintf(eb, fmt, a, b, c, d, e);
 	if (errno != 0)
 	{
-		p = &errbuf[strlen(errbuf)];
+		eb += strlen(eb);
 		if (errno < sys_nerr && errno > 0)
-			sprintf(p, ": %s", sys_errlist[errno]);
+			sprintf(eb, ": %s", sys_errlist[errno]);
 		else
-			sprintf(p, ": error %d", errno);
+			sprintf(eb, ": error %d", errno);
 	}
-	printf("sendmail: %s\n", errbuf);
+
+	if (ArpaFmt)
+		printf("%s\n", errbuf);
+	else
+		printf("sendmail: %s\n", &errbuf[4]);
 	fflush(stdout);
 	Errors++;
 
@@ -86,12 +100,45 @@ usrerr(fmt, a, b, c, d, e)
 
 	if (SuprErrs)
 		return (0);
-
 	Errors++;
-	if (To != NULL)
+
+	message("450", fmt, a, b, c, d, e);
+	return (-1);
+}
+/*
+**  MESSAGE -- print message (not necessarily an error)
+**
+**	Parameters:
+**		num -- the default ARPANET error number (in ascii)
+**		msg -- the message (printf fmt) -- if it begins
+**			with a digit, this number overrides num.
+**		a, b, c, d, e -- printf arguments
+**
+**	Returns:
+**		none
+**
+**	Side Effects:
+**		none.
+*/
+
+message(num, msg, a, b, c, d, e)
+	register char *num;
+	register char *msg;
+{
+	/* compute error number */
+	if (isdigit(*msg))
+	{
+		num = msg;
+		msg += 4;
+	}
+
+	/* print arpa format header if needed */
+	if (ArpaFmt)
+		printf("%.3s ", num);
+
+	if (To != NULL && To[0] != '\0')
 		printf("%s... ", To);
-	printf(fmt, a, b, c, d, e);
+	printf(msg, a, b, c, d, e);
 	printf("\n");
 	fflush(stdout);
-	return (-1);
 }
