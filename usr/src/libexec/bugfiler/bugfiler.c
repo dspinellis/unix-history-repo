@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -52,7 +52,7 @@ main(argc, argv)
 	register int n;
 	int pfd[2];
 
-	if (argc > 3) {
+	if (argc > 4) {
 	usage:
 		fprintf(stderr, "Usage: bugfiler [-d] [-mmsg_mode] [maildir]\n");
 		exit(1);
@@ -93,6 +93,7 @@ main(argc, argv)
 			fprintf(stderr, "can't chdir to %s\n", pwd->pw_dir);
 			exit(1);
 		}
+		setuid(pwd->pw_uid);
 	}
 	if (chdir(maildir) < 0) {
 		fprintf(stderr, "can't chdir to %s\n", maildir);
