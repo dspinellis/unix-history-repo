@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_subr.c	7.13 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: clnp_subr.c,v 1.3 1993/10/16 21:04:56 rgrimes Exp $
  */
 
 /***********************************************************
@@ -85,6 +85,12 @@ SOFTWARE.
 #include "clnp.h"
 #include "clnp_stat.h"
 #include "argo_debug.h"
+
+#ifdef TROLL
+struct troll trollctl;
+#endif
+struct clnp_stat clnp_stat;
+
 
 /*
  * FUNCTION:		clnp_data_ck

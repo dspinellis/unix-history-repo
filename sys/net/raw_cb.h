@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)raw_cb.h	7.6 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: raw_cb.h,v 1.2 1993/10/16 17:43:36 rgrimes Exp $
  */
+
+#ifndef _NET_RAW_CB_H_
+#define _NET_RAW_CB_H_ 1
 
 /*
  * Raw protocol interface control block.  Used
@@ -56,5 +59,6 @@ struct rawcb {
 #define	RAWRCVQ		8192
 
 #ifdef KERNEL
-struct rawcb rawcb;			/* head of list */
+extern struct rawcb rawcb;	/* head of list */
 #endif
+#endif /* _NET_RAW_CB_H_ */

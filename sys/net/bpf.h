@@ -36,8 +36,11 @@
  * SUCH DAMAGE.
  *
  *      from: @(#)bpf.h       7.1 (Berkeley) 5/7/91
- *	$Id$
+ *	$Id: bpf.h,v 1.2 1993/10/16 17:43:05 rgrimes Exp $
  */
+
+#ifndef _NET_BPF_H_
+#define _NET_BPF_H_ 1
 
 /*
  * Alignment macros.  BPF_WORDALIGN rounds up to the next 
@@ -241,3 +244,4 @@ extern void bpf_mtap();
  */
 #define BPF_MEMWORDS 16
 
+#endif /* _NET_BPF_H_ */

@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in_pcb.h	7.6 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: in_pcb.h,v 1.2 1993/10/16 18:26:03 rgrimes Exp $
  */
+
+#ifndef _NETINET_IN_PCB_H_
+#define _NETINET_IN_PCB_H_ 1
 
 /*
  * Common structure pcb for internet protocol implementation.
@@ -90,3 +93,4 @@ struct raw_inpcb {
 #ifdef KERNEL
 struct	inpcb *in_pcblookup();
 #endif
+#endif /* _NETINET_IN_PCB_H_ */

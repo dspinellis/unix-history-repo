@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ip_icmp.h	7.5 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: ip_icmp.h,v 1.2 1993/10/16 18:26:12 rgrimes Exp $
  */
+
+#ifndef _NETINET_IP_ICMP_H_
+#define _NETINET_IP_ICMP_H_ 1
 
 /*
  * Interface Control Message Protocol Definitions.
@@ -132,3 +135,4 @@ struct icmp {
 	(type) == ICMP_TSTAMP || (type) == ICMP_TSTAMPREPLY || \
 	(type) == ICMP_IREQ || (type) == ICMP_IREQREPLY || \
 	(type) == ICMP_MASKREQ || (type) == ICMP_MASKREPLY)
+#endif /* _NETINET_IP_ICMP_H_ */

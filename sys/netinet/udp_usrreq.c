@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)udp_usrreq.c	7.20 (Berkeley) 4/20/91
- *	$Id$
+ *	$Id: udp_usrreq.c,v 1.2 1993/10/16 18:26:43 rgrimes Exp $
  */
 
 #include "param.h"
@@ -53,6 +53,9 @@
 #include "ip_icmp.h"
 #include "udp.h"
 #include "udp_var.h"
+
+struct	inpcb udb;
+struct	udpstat udpstat;
 
 struct	inpcb *udp_last_inpcb = &udb;
 

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns_pcb.c	7.11 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: ns_pcb.c,v 1.2 1993/10/16 19:54:28 rgrimes Exp $
  */
 
 #include "param.h"
@@ -50,6 +50,8 @@
 #include "ns_pcb.h"
 
 struct	ns_addr zerons_addr;
+struct	nspcb nspcb;
+
 
 ns_pcballoc(so, head)
 	struct socket *so;

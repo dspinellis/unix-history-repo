@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_timer.h	7.8 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: tcp_timer.h,v 1.2 1993/10/16 18:26:35 rgrimes Exp $
  */
+
+#ifndef _NETINET_TCP_TIMER_H_
+#define _NETINET_TCP_TIMER_H_ 1
 
 /*
  * Definitions of the TCP timers.  These timers are counted
@@ -128,3 +131,4 @@ extern int tcp_maxidle;			/* time to drop after starting probes */
 extern int tcp_ttl;			/* time to live for TCP segs */
 extern int tcp_backoff[];
 #endif
+#endif /* _NETINET_TCP_TIMER_H_ */

@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns_if.h	7.6 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: ns_if.h,v 1.2 1993/10/16 19:54:22 rgrimes Exp $
  */
+
+#ifndef _NETNS_NS_IF_H_
+#define _NETNS_NS_IF_H_ 1
 
 /*
  * Interface address, xerox version.  One of these structures
@@ -79,7 +82,8 @@ struct nsip_req {
 #endif
 
 #ifdef	KERNEL
-struct	ns_ifaddr *ns_ifaddr;
+extern struct	ns_ifaddr *ns_ifaddr;
 struct	ns_ifaddr *ns_iaonnetof();
-struct	ifqueue	nsintrq;	/* XNS input packet queue */
+extern struct	ifqueue	nsintrq;	/* XNS input packet queue */
 #endif
+#endif /* _NETNS_NS_IF_H_ */

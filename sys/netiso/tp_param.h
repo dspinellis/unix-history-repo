@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_param.h	7.8 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: tp_param.h,v 1.2 1993/10/16 21:05:53 rgrimes Exp $
  */
 
 /***********************************************************
@@ -348,7 +348,7 @@ bcopy((caddr_t)&(((struct tp_vbp *)(src))->tpv_val),(caddr_t)&(dst),sizeof(type)
         (tpcb)->tp_lcredit = xxi; \
     } \
 }
-#endif ARGO_DEBUG
+#endif /* ARGO_DEBUG */
 
 #ifdef KERNEL
 
@@ -361,7 +361,7 @@ bcopy((caddr_t)&(((struct tp_vbp *)(src))->tpv_val),(caddr_t)&(dst),sizeof(type)
 #define ATTR(X) ev_union.EV_ ## X
 #endif /* defined(__STDC__) || defined(__cplusplus) */
 
-#endif  tp_NSTATES 
-#endif KERNEL
+#endif /* tp_NSTATES */
+#endif /* KERNEL */
 
-#endif __TP_PARAM__
+#endif /* __TP_PARAM__ */

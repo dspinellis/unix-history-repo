@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_pcb.h	7.9 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: tp_pcb.h,v 1.2 1993/10/16 21:05:56 rgrimes Exp $
  */
 
 /***********************************************************
@@ -76,7 +76,7 @@ SOFTWARE.
 #include "../netiso/tp_user.h"
 #ifndef sblock
 #include "socketvar.h"
-#endif sblock
+#endif /* sblock */
 
 /* NOTE: the code depends on REF_CLOSED > REF_OPEN > the rest, and
  * on REF_FREE being zero
@@ -285,7 +285,7 @@ struct tp_pcb {
 	/* performance stats - see tp_stat.h */
 	struct tp_pmeas		*tp_p_meas;
 	struct mbuf			*tp_p_mbuf;
-#endif TP_PERF_MEAS
+#endif /* TP_PERF_MEAS */
 	/* addressing */
 	u_short				tp_domain;		/* domain (INET, ISO) */
 	/* for compatibility with the *old* way and with INET, be sure that
@@ -315,7 +315,10 @@ struct tp_pcb {
 
 };
 
-u_int	tp_start_win;
+#ifdef KERNEL
+extern u_int	tp_start_win;
+#endif
+
 
 #define ROUND(scaled_int) (((scaled_int) >> 8) + (((scaled_int) & 0x80) ? 1:0))
 
@@ -369,4 +372,4 @@ extern struct tp_pcb	*tp_intercepts;
 #define	tpcbtoso(tp)	((struct socket *)((tp)->tp_sock))
 #define	tpcbtoref(tp)	((struct tp_ref *)((tp)->tp_ref))
 
-#endif  __TP_PCB__
+#endif /* __TP_PCB__ */

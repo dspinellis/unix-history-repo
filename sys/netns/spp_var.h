@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)spp_var.h	7.7 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: spp_var.h,v 1.2 1993/10/16 19:54:41 rgrimes Exp $
  */
+
+#ifndef _NETNS_SPP_VAR_H_
+#define _NETNS_SPP_VAR_H_ 1
 
 /*
  * Sp control block, one per connection
@@ -184,17 +187,17 @@ struct	spp_istat {
 };
 
 #ifdef KERNEL
-struct spp_istat spp_istat;
+extern struct spp_istat spp_istat;
 
 /* Following was struct sppstat sppstat; */
 #ifndef sppstat
 #define sppstat spp_istat.newstats
 #endif
 
-u_short spp_iss;
-extern struct sppcb *spp_close(), *spp_disconnect(),
-	*spp_usrclosed(), *spp_timers(), *spp_drop();
-#endif
+extern u_short spp_iss;
+extern struct sppcb *spp_close(), *spp_disconnect();
+extern struct sppcb *spp_usrclosed(), *spp_timers(), *spp_drop();
+#endif /* KERNEL */
 
 #define	SPP_ISSINCR	128
 /*
@@ -202,15 +205,8 @@ extern struct sppcb *spp_close(), *spp_disconnect(),
  * on with modular arithmetic.  These macros can be
  * used to compare such integers.
  */
-#ifdef sun
-short xnsCbug;
-#define	SSEQ_LT(a,b)	((xnsCbug = (short)((a)-(b))) < 0)
-#define	SSEQ_LEQ(a,b)	((xnsCbug = (short)((a)-(b))) <= 0)
-#define	SSEQ_GT(a,b)	((xnsCbug = (short)((a)-(b))) > 0)
-#define	SSEQ_GEQ(a,b)	((xnsCbug = (short)((a)-(b))) >= 0)
-#else
 #define	SSEQ_LT(a,b)	(((short)((a)-(b))) < 0)
 #define	SSEQ_LEQ(a,b)	(((short)((a)-(b))) <= 0)
 #define	SSEQ_GT(a,b)	(((short)((a)-(b))) > 0)
 #define	SSEQ_GEQ(a,b)	(((short)((a)-(b))) >= 0)
-#endif
+#endif /* _NETNS_SPP_VAR_H_ */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)idp_usrreq.c	7.11 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: idp_usrreq.c,v 1.2 1993/10/16 19:54:11 rgrimes Exp $
  */
 
 #include "param.h"
@@ -57,6 +57,7 @@
  * IDP protocol implementation.
  */
 
+struct	idpstat idpstat;
 struct	sockaddr_ns idp_ns = { sizeof(idp_ns), AF_NS };
 
 /*

@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)route.h	7.13 (Berkeley) 4/25/91
- *	$Id$
+ *	$Id: route.h,v 1.2 1993/10/16 17:43:41 rgrimes Exp $
  */
+
+#ifndef _NET_ROUTE_H_
+#define _NET_ROUTE_H_ 1
 
 /*
  * Kernel resident routing tables.
@@ -197,7 +200,7 @@ struct route_cb {
 #define RTA_AUTHOR	0x40	/* sockaddr for author of redirect */
 
 #ifdef KERNEL
-struct route_cb route_cb;
+extern struct route_cb route_cb;
 #endif
 
 #ifdef KERNEL
@@ -217,8 +220,9 @@ struct route_cb route_cb;
 #else
 #define RTHASHMOD(h)	((h) % RTHASHSIZ)
 #endif
-struct	mbuf *rthost[RTHASHSIZ];
-struct	mbuf *rtnet[RTHASHSIZ];
-struct	rtstat	rtstat;
+extern struct	mbuf *rthost[RTHASHSIZ];
+extern struct	mbuf *rtnet[RTHASHSIZ];
+extern struct	rtstat	rtstat;
 struct	rtentry *rtalloc1();
 #endif
+#endif /* _NET_ROUTE_H_ */

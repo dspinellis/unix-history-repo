@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)route.c	7.22 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: route.c,v 1.2 1993/10/16 17:43:39 rgrimes Exp $
  */
 
 #include "param.h"
@@ -45,7 +45,6 @@
 #include "ioctl.h"
 
 #include "if.h"
-#include "af.h"
 #include "route.h"
 #include "raw_cb.h"
 
@@ -59,6 +58,15 @@
 #include "netisr.h"
 
 #define	SA(p) ((struct sockaddr *)(p))
+
+#if 1				/* XXX these are obsolete, should be */
+				/* deleted if nobody depends on them in */
+				/* user-land */
+struct mbuf *rthost[RTHASHSIZ];
+struct mbuf *rtnet[RTHASHSIZ];
+#endif
+
+struct rtstat rtstat;
 
 int	rttrash;		/* routes not in table but not freed */
 struct	sockaddr wildcard;	/* zero valued cookie for wildcard searches */

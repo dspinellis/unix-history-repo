@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if_cons.c	7.10 (Berkeley) 5/29/91
- *	$Id$
+ *	$Id: if_cons.c,v 1.2 1993/10/16 21:05:10 rgrimes Exp $
  */
 
 /***********************************************************
@@ -156,6 +156,10 @@ NOTE:
 
  *********************************************************************/
 
+
+struct cons_stat cons_stat;
+u_char x25_error_stats[CONL_ERROR_MAX + 1];
+struct ifqueue consintrq;
 
 #define CONS_IFQMAXLEN 5
 

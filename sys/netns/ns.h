@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns.h	7.8 (Berkeley) 2/22/91
- *	$Id$
+ *	$Id: ns.h,v 1.2 1993/10/16 19:54:16 rgrimes Exp $
  */
+
+#ifndef _NETNS_NS_H_
+#define _NETNS_NS_H_ 1
 
 /*
  * Constants and Structures defined by the Xerox Network Software
@@ -134,11 +137,11 @@ struct sockaddr_ns {
 
 #ifdef KERNEL
 extern struct domain nsdomain;
-union ns_host ns_thishost;
-union ns_host ns_zerohost;
-union ns_host ns_broadhost;
-union ns_net ns_zeronet;
-union ns_net ns_broadnet;
+extern union ns_host ns_thishost;
+extern union ns_host ns_zerohost;
+extern union ns_host ns_broadhost;
+extern union ns_net ns_zeronet;
+extern union ns_net ns_broadnet;
 u_short ns_cksum();
 #else
 
@@ -149,4 +152,5 @@ extern struct ns_addr ns_addr __P((const char *));
 extern char *ns_ntoa __P((struct ns_addr));
 __END_DECLS
 
-#endif
+#endif /* not KERNEL */
+#endif /* _NETNS_NS_H_ */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)spp_usrreq.c	7.15 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: spp_usrreq.c,v 1.2 1993/10/16 19:54:39 rgrimes Exp $
  */
 
 #include "param.h"
@@ -57,6 +57,9 @@
 #include "spp_timer.h"
 #include "spp_var.h"
 #include "spp_debug.h"
+
+struct spp_istat spp_istat;
+u_short spp_iss;
 
 /*
  * SP protocol implementation.

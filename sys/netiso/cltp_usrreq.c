@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)cltp_usrreq.c	7.6 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: cltp_usrreq.c,v 1.3 1993/10/16 21:04:59 rgrimes Exp $
  */
 
 #ifndef CLTPOVAL_SRC /* XXX -- till files gets changed */
@@ -55,6 +55,10 @@
 #include "clnp.h"
 #include "cltp_var.h"
 #endif
+
+struct isopcb cltb;
+struct cltpstat cltpstat;
+
 
 /*
  * CLTP protocol implementation.

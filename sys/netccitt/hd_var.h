@@ -36,8 +36,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)hd_var.h	7.4 (Berkeley) 5/29/91
- *	$Id$
+ *	$Id: hd_var.h,v 1.2 1993/10/16 19:46:41 rgrimes Exp $
  */
+
+#ifndef _NETCCITT_HD_VAR_H_
+#define _NETCCITT_HD_VAR_H_ 1
 
 /*
  *
@@ -106,3 +109,4 @@ int	hd_t1;			/* timer T1 value */
 int	hd_t3;			/* RR send timer */
 int	hd_n2;			/* frame retransmission limit */
 #endif
+#endif /* _NETCCITT_HD_VAR_H_ */

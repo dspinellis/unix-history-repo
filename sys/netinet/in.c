@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in.c	7.17 (Berkeley) 4/20/91
- *	$Id$
+ *	$Id: in.c,v 1.2 1993/10/16 18:25:57 rgrimes Exp $
  */
 
 #include "param.h"
@@ -47,6 +47,9 @@
 #include "in_var.h"
 
 #ifdef INET
+struct in_ifaddr *in_ifaddr;
+struct ifqueue ipintrq;
+
 /*
  * Formulate an Internet address from network + host.
  */

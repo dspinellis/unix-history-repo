@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)idp_var.h	7.4 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: idp_var.h,v 1.2 1993/10/16 19:54:12 rgrimes Exp $
  */
+
+#ifndef _NETNS_IDP_VAR_H_
+#define _NETNS_IDP_VAR_H_ 1
 
 /*
  * IDP Kernel Structures and Variables
@@ -46,5 +49,6 @@ struct	idpstat {
 };
 
 #ifdef KERNEL
-struct	idpstat	idpstat;
+extern struct	idpstat	idpstat;
 #endif
+#endif /* _NETNS_IDP_VAR_H_ */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns.c	7.8 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: ns.c,v 1.2 1993/10/16 19:54:14 rgrimes Exp $
  */
 
 #include "param.h"
@@ -45,7 +45,6 @@
 
 #include "../net/if.h"
 #include "../net/route.h"
-#include "../net/af.h"
 
 #include "ns.h"
 #include "ns_if.h"
@@ -53,8 +52,15 @@
 #ifdef NS
 
 struct ns_ifaddr *ns_ifaddr;
+struct ifqueue nsintrq;
+
 int ns_interfaces;
 extern struct sockaddr_ns ns_netmask, ns_hostmask;
+union ns_host ns_thishost;
+union ns_host ns_zerohost;
+union ns_host ns_braodhost;
+union ns_net ns_zeronet;
+union ns_net ns_broadnet;
 
 /*
  * Generic internet control operations (ioctl's).

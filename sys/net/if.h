@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if.h	7.11 (Berkeley) 3/19/91
- *	$Id$
+ *	$Id: if.h,v 1.5 1993/10/16 17:43:12 rgrimes Exp $
  */
+
+#ifndef _NET_IF_H_
+#define _NET_IF_H_ 1
 
 /*
  * Structures defining a network interface, providing a packet
@@ -132,13 +135,24 @@ struct ifnet {
 #define	IFF_ALLMULTI	0x200		/* receive all multicast packets */
 #define	IFF_OACTIVE	0x400		/* transmission in progress */
 #define	IFF_SIMPLEX	0x800		/* can't hear own transmissions */
-#define	IFF_LLC0	0x1000		/* interface driver control/status */
-#define	IFF_LLC1	0x2000		/* interface driver control/status */
-#define	IFF_LLC2	0x4000		/* interface driver control/status */
+#define	IFF_LLC0	0x1000		/* IEEE 802.2 LLC class 0 */
+#define	IFF_LLC1	0x2000		/* IEEE 802.2 LLC class 1 */
+#define	IFF_LLC2	0x4000		/* IEEE 802.2 LLC class 2 */
+#ifdef notyet
+#define IFF_ALTPHYS	0x8000	/* alternative physical connection */
+#define IFF_MULTICAST	0x10000	/* i'face supports multicast */
+#define IFF_VIRTUAL	0x20000	/* i'face is really a VIF */
 
 /* flags set internally only: */
 #define	IFF_CANTCHANGE \
+	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_RUNNING|IFF_OACTIVE|IFF_SIMPLEX\
+	 IFF_MULTICAST|IFF_VIRTUAL)
+#else /* current code */
+/* flags set internally only: */
+#define	IFF_CANTCHANGE \
 	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_RUNNING|IFF_OACTIVE|IFF_SIMPLEX)
+#endif /* not notyet */
+
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)
@@ -246,10 +260,11 @@ struct	ifconf {
 
 #ifdef KERNEL
 #include "../net/if_arp.h"
-struct	ifqueue rawintrq;		/* raw packet input queue */
-struct	ifnet *ifnet;
+extern struct	ifqueue rawintrq;		/* raw packet input queue */
+extern struct	ifnet *ifnet;
 struct	ifaddr *ifa_ifwithaddr(), *ifa_ifwithnet();
 struct	ifaddr *ifa_ifwithdstaddr();
 #else KERNEL
 #include <net/if_arp.h>
 #endif KERNEL
+#endif /* _NET_IF_H_ */

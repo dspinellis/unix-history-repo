@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_subr.c	7.20 (Berkeley) 12/1/90
- *	$Id$
+ *	$Id: tcp_subr.c,v 1.2 1993/10/16 18:26:31 rgrimes Exp $
  */
 
 #include "param.h"
@@ -65,6 +65,14 @@ int 	tcp_mssdflt = TCP_MSS;
 int 	tcp_rttdflt = TCPTV_SRTTDFLT / PR_SLOWHZ;
 
 extern	struct inpcb *tcp_last_inpcb;
+
+#ifdef KPROF
+int	tcp_acounts[TCP_NSTATES][PRU_NREQ];
+#endif
+tcp_seq	tcp_iss;
+struct	inpcb tcb;
+struct	tcpstat tcpstat;
+
 
 /*
  * Tcp initialization

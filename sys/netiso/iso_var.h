@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)iso_var.h	7.5 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: iso_var.h,v 1.2 1993/10/16 21:05:30 rgrimes Exp $
  */
 
 /***********************************************************
@@ -60,6 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
+#ifndef _NETISO_ISO_VAR_H_
+#define _NETISO_ISO_VAR_H_ 1
 
 /*
  *	Interface address, iso version. One of these structures is 
@@ -129,7 +132,8 @@ struct snpa_hdr {
 	short	snh_flags;
 };
 #ifdef KERNEL
-struct iso_ifaddr	*iso_ifaddr;	/* linked list of iso address ifaces */
-struct iso_ifaddr	*iso_localifa();	/* linked list of iso address ifaces */
-struct ifqueue 		clnlintrq;		/* clnl packet input queue */
-#endif KERNEL
+extern struct iso_ifaddr *iso_ifaddr; /* linked list of iso address ifaces */
+struct iso_ifaddr *iso_localifa(); /* linked list of iso address ifaces */
+extern struct ifqueue clnlintrq; /* clnl packet input queue */
+#endif /* KERNEL */
+#endif /* _NETISO_ISO_VAR_H_ */

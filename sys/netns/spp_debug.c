@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)spp_debug.c	7.7 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: spp_debug.c,v 1.2 1993/10/16 19:54:35 rgrimes Exp $
  */
 
 #include "param.h"
@@ -57,6 +57,9 @@
 #include "spp_var.h"
 #define	SANAMES
 #include "spp_debug.h"
+
+struct 	spp_debug spp_debug[SPP_NDEBUG];
+int	spp_debx;
 
 int	sppconsdebug = 0;
 /*

@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)icmp_var.h	7.5 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: icmp_var.h,v 1.2 1993/10/16 18:25:52 rgrimes Exp $
  */
+
+#ifndef _NETINET_ICMP_VAR_H_
+#define _NETINET_ICMP_VAR_H_ 1
 
 /*
  * Variables related to this implementation
@@ -54,5 +57,6 @@ struct	icmpstat {
 };
 
 #ifdef KERNEL
-struct	icmpstat icmpstat;
+extern struct	icmpstat icmpstat;
 #endif
+#endif /* _NETINET_ICMP_VAR_H_ */

@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)netisr.h	7.8 (Berkeley) 5/7/91
- *	$Id$
+ *	$Id: netisr.h,v 1.2 1993/10/16 17:43:27 rgrimes Exp $
  */
+
+#ifndef _NET_NETISR_H_
+#define _NET_NETISR_H_ 1
 
 /*
  * The networking code runs off software interrupts.
@@ -75,13 +78,14 @@
 }
 #ifndef LOCORE
 #ifdef KERNEL
-int	softem;	
+extern int	softem;	
 #endif
 #endif
 #endif /* i386 */
 
 #ifndef LOCORE
 #ifdef KERNEL
-int	netisr;				/* scheduling bits for network */
+extern int	netisr;		/* scheduling bits for network */
 #endif
 #endif
+#endif /* _NET_NETISR_H_ */

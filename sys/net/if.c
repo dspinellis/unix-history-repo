@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if.c	7.14 (Berkeley) 4/20/91
- *	$Id$
+ *	$Id: if.c,v 1.4 1993/10/16 17:43:10 rgrimes Exp $
  */
 
 #include "param.h"
@@ -45,13 +45,14 @@
 #include "ioctl.h"
 
 #include "if.h"
-#include "af.h"
 #include "if_dl.h"
 #include "if_types.h"
 
 #include "ether.h"
 
 int	ifqmaxlen = IFQ_MAXLEN;
+struct	ifqueue rawintrq;	/* raw packet input queue */
+struct	ifnet *ifnet;		/* list of configured interfaces */
 
 /*
  * Network interface utility routines.

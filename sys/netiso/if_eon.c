@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if_eon.c	7.16 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: if_eon.c,v 1.2 1993/10/16 21:05:13 rgrimes Exp $
  */
 
 /***********************************************************
@@ -107,6 +107,8 @@ SOFTWARE.
 #include "eonvar.h"
 extern struct timeval time;
 extern struct ifnet loif;
+
+struct eon_stat eonstat;
 
 #define EOK 0
 

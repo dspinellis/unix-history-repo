@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_var.h	7.10 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: tcp_var.h,v 1.2 1993/10/16 18:26:38 rgrimes Exp $
  */
+
+#ifndef _NETINET_TCP_VAR_H_
+#define _NETINET_TCP_VAR_H_ 1
 
 /*
  * Kernel variables for tcp.
@@ -211,9 +214,10 @@ struct	tcpstat {
 };
 
 #ifdef KERNEL
-struct	inpcb tcb;		/* head of queue of active tcpcb's */
-struct	tcpstat tcpstat;	/* tcp statistics */
+extern struct	inpcb tcb;	/* head of queue of active tcpcb's */
+extern struct	tcpstat tcpstat; /* tcp statistics */
 struct	tcpiphdr *tcp_template();
 struct	tcpcb *tcp_close(), *tcp_drop();
 struct	tcpcb *tcp_timers(), *tcp_disconnect(), *tcp_usrclosed();
 #endif
+#endif /* _NETINET_TCP_VAR_H_ */

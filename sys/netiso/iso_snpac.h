@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)iso_snpac.h	7.8 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: iso_snpac.h,v 1.2 1993/10/16 21:05:28 rgrimes Exp $
  */
 
 /***********************************************************
@@ -60,6 +60,9 @@ SOFTWARE.
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
+
+#ifndef _NETISO_ISO_SNPAC_H_
+#define _NETISO_ISO_SNPAC_H_ 1
 
 #define	MAX_SNPALEN		8			/* curiously equal to sizeof x.121 (
 										plus 1 for nibble len) addr */
@@ -109,5 +112,6 @@ struct llinfo_llc {
 #define	SIOCGSTYPE 	_IOR('a', 40, struct systype_req) /* get system type */
 
 #ifdef	KERNEL
-struct llinfo_llc llinfo_llc;	/* head for linked lists */
-#endif	KERNEL
+extern struct llinfo_llc llinfo_llc;	/* head for linked lists */
+#endif /* KERNEL */
+#endif /* _NETISO_ISO_SNPAC_H_ */

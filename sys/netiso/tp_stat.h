@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_stat.h	7.5 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: tp_stat.h,v 1.2 1993/10/16 21:05:59 rgrimes Exp $
  */
 
 /***********************************************************
@@ -184,7 +184,12 @@ struct tp_stat {
 	  	 *	ACK_USRRCV **
 	  	 *	ACK_FCC **
 		 */
-} tp_stat ;
+} ;
+
+#ifdef KERNEL
+struct tp_stat tp_stat;
+#endif
+
 #define 	TP_PM_MAX			0xa /* 10 decimal */
 
 #define IncStat(x) tp_stat./**/x/**/++
@@ -265,9 +270,9 @@ struct tp_pmeas {
 #define  IFPERF(tpcb)  if (tpcb->tp_perf_on && tpcb->tp_p_meas) {
 #define  ENDPERF }
 
-#else
+#else /* not TP_PERF_MEAS */
 
-int PStat_Junk;
+extern int PStat_Junk;
 #define PStat(tpcb, x)  PStat_Junk
 #define IncPStat(tpcb, x)  /* no-op */
 #define tpmeas(a,b,c,d,e,f) 0
@@ -275,6 +280,6 @@ int PStat_Junk;
 #define IFPERF(x)	if (0) {
 #define ENDPERF }
 
-#endif TP_PERF_MEAS
+#endif /* TP_PERF_MEAS */
 
-#endif __TP_STAT__
+#endif /* __TP_STAT__ */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)iso.c	7.14 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: iso.c,v 1.3 1993/10/16 21:05:15 rgrimes Exp $
  */
 
 /***********************************************************
@@ -78,7 +78,6 @@ SOFTWARE.
 
 #include "../net/if.h"
 #include "../net/route.h"
-#include "../net/af.h"
 
 #include "iso.h"
 #include "iso_var.h"
@@ -88,6 +87,9 @@ SOFTWARE.
 #include "argo_debug.h"
 
 #ifdef ISO
+
+struct iso_ifaddr *iso_ifaddr;
+struct ifqueue clnlintrq;
 
 int	iso_interfaces = 0;		/* number of external interfaces */
 extern	struct ifnet loif;	/* loopback interface */

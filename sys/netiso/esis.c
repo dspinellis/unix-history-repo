@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)esis.c	7.19 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: esis.c,v 1.2 1993/10/16 21:05:06 rgrimes Exp $
  */
 
 /***********************************************************
@@ -99,6 +99,8 @@ SOFTWARE.
  *
  */
 struct rawcb	esis_pcb;
+struct esis_stat esis_stat;
+
 int				esis_config(), snpac_age();
 int				esis_sendspace = 2048;
 int				esis_recvspace = 2048;

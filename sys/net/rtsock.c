@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)rtsock.c	7.18 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: rtsock.c,v 1.3 1993/10/16 17:43:43 rgrimes Exp $
  */
 
 #include "param.h"
@@ -43,13 +43,13 @@
 #include "domain.h"
 #include "protosw.h"
 
-#include "af.h"
 #include "if.h"
 #include "route.h"
 #include "raw_cb.h"
 
 #include "machine/mtpr.h"
 
+struct route_cb route_cb;
 struct sockaddr route_dst = { 2, PF_ROUTE, };
 struct sockaddr route_src = { 2, PF_ROUTE, };
 struct sockproto route_proto = { PF_ROUTE, };

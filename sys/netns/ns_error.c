@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns_error.c	7.8 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: ns_error.c,v 1.3 1993/10/16 19:55:12 rgrimes Exp $
  */
 
 #include "param.h"
@@ -53,6 +53,8 @@
 #ifdef lint
 #define NS_ERRPRINTFS 1
 #endif
+
+struct ns_errstat ns_errstat;
 
 #ifdef NS_ERRPRINTFS
 /*

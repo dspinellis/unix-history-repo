@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)raw_cb.c	7.11 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: raw_cb.c,v 1.2 1993/10/16 17:43:34 rgrimes Exp $
  */
 
 #include "param.h"
@@ -61,6 +61,8 @@
 
 u_long	raw_sendspace = RAWSNDQ;
 u_long	raw_recvspace = RAWRCVQ;
+
+struct rawcb rawcb;
 
 /*
  * Allocate a control block and a nominal amount

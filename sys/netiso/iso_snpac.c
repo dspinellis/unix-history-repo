@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)iso_snpac.c	7.14 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: iso_snpac.c,v 1.2 1993/10/16 21:05:26 rgrimes Exp $
  */
 
 /***********************************************************
@@ -86,6 +86,8 @@ SOFTWARE.
 #include "clnp_stat.h"
 #include "esis.h"
 #include "argo_debug.h"
+
+struct llinfo_llc llinfo_llc;
 
 int 				iso_systype = SNPA_ES;	/* default to be an ES */
 extern short	esis_holding_time, esis_config_time, esis_esconfig_time;

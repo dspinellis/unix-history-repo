@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if_ether.h	7.5 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: if_ether.h,v 1.2 1993/10/16 18:25:55 rgrimes Exp $
  */
+
+#ifndef _NETINET_IF_ETHER_H_
+#define _NETINET_IF_ETHER_H_ 1
 
 /*
  * Structure of a 10Mb/s Ethernet header.
@@ -102,8 +105,9 @@ struct	arptab {
 };
 
 #ifdef	KERNEL
-u_char	etherbroadcastaddr[6];
+extern u_char	etherbroadcastaddr[6]; /* defined in net/if_ethersubr.c */
 struct	arptab *arptnew();
 int	ether_output(), ether_input();
 char	*ether_sprintf();
 #endif
+#endif /* _NETINET_IF_ETHER_H_ */

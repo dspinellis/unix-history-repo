@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp.h	7.8 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: clnp.h,v 1.2 1993/10/16 21:04:42 rgrimes Exp $
  */
 
 /***********************************************************
@@ -57,28 +57,15 @@ SOFTWARE.
 
 ******************************************************************/
 
+#ifndef _NETISO_CLNP_H_
+#define _NETISO_CLNP_H_ 1
+
 /*
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
 
-#ifndef BYTE_ORDER
-/*
- * Definitions for byte order,
- * according to byte significance from low address to high.
- */
-#define	LITTLE_ENDIAN	1234	/* least-significant byte first (vax) */
-#define	BIG_ENDIAN	4321	/* most-significant byte first (IBM, net) */
-#define	PDP_ENDIAN	3412	/* LSB first in word, MSW first in long (pdp) */
+#include <machine/endian.h>
 
-#ifdef vax
-#define	BYTE_ORDER	LITTLE_ENDIAN
-#else
-#define	BYTE_ORDER	BIG_ENDIAN	/* mc68000, tahoe, most others */
-#endif
-#endif BYTE_ORDER
-
-/* should be config option but cpp breaks with too many #defines */
-#define	DECBIT
 
 /*
  *	Return true if the mbuf is a cluster mbuf
@@ -403,7 +390,7 @@ struct troll {
 		- trollctl.tr_mtu_adj)
 
 #ifdef KERNEL
-extern float troll_random;
+extern float troll_random __P((void));
 #endif
 
 #else	/* NO TROLL */
@@ -414,7 +401,7 @@ extern float troll_random;
 #define	SN_MTU(ifp, rt) (((rt && rt->rt_rmx.rmx_mtu) ?\
 	rt->rt_rmx.rmx_mtu : clnp_badmtu(ifp, rt, __LINE__, __FILE__)))
 
-#endif	TROLL
+#endif	/* not TROLL */
 
 /*
  *	Macro to remove an address from a clnp header
@@ -472,6 +459,7 @@ caddr_t			clnp_insert_addr();
 struct iso_addr	*clnp_srcaddr();
 struct mbuf		*clnp_reass();
 #ifdef	TROLL
-struct troll	trollctl;
-#endif	TROLL
-#endif	KERNEL
+extern struct troll	trollctl;
+#endif	/* TROLL */
+#endif	/* KERNEL */
+#endif /* _NETISO_CLNP_H_ */
