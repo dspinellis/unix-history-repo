@@ -1,0 +1,139 @@
+.\" from Symmetric Computer Systems.
+.\" Modifications Copyright (c) 1987 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)disklabel.8	6.1 (Berkeley) %G%
+.\"
+.TH DISKLABEL 8 ""
+.UC 5
+.SH NAME
+disklabel \- read and write disk pack label
+.SH SYNOPSIS
+.B disklabel
+[
+.B \-r
+]
+.I disk
+.br
+.B disklabel \-w
+[
+.B \-r
+]
+.I disk
+.I disktype
+[
+.I packid
+[
+.I priboot secboot
+] ]
+.br
+.B disklabel \-e
+[
+.B \-r
+]
+.I disk
+.br
+.B disklabel \-R
+[
+.B \-r
+]
+.I disk
+[
+.I priboot secboot
+]
+.SH DESCRIPTION
+.I Disklabel
+can be used to install, examine or modify the label on a disk drive or pack.
+When writing the label, it can be used
+to change the drive identification,
+the disk partitions on the drive,
+or to replace a damaged label or bootstrap.
+The disk label and bootstrap are located on block 0 of each disk.
+This information is used by the system disk driver and by the bootstrap
+program to determine how to program the drive.
+.PP
+The first form of the command is used to examine the label on the named
+disk drive (e.g. hp0 or /dev/rhp0c).
+It will display all of the parameters associated with the drive
+and its partition layout.
+The kernel's in-core label is displayed;
+if the disk has no label, or the partition types on the disk are incorrect,
+the kernel may have modified the label.
+If the
+.B \-r
+flag is given, the label from the raw disk will be displayed rather
+than the in-core label.
+.PP
+The second form of the command, with the
+.B \-w
+flag, is used to write a standard label on the designated drive.
+The required arguments to
+.I disklabel
+are the drive to be labelled (e.g. hp0), and
+the drive type as described in the
+.IR disktab (5)
+file.
+The drive parameters and partitions are taken from that file.
+If different disks of the same physical type are to have different
+partitions, it will be necessary to have separate disktab entries
+describing each or to edit the label as described below.
+The first optional argument is a pack identification, up to 16 characters.
+The pack id must be quoted if it contains blanks.
+If the
+.B \-r
+flag is given, the disk sectors containing the label and bootstrap
+will be written directly,
+otherwise only the label will be modified.
+In either case, the kernel's in-core label is replaced.
+On machines that require a block-0 bootstrap (VAX 11/750),
+the
+.B \-r
+flag \fImust\fP be used when installing a label on a disk for the first time
+to install the version of the bootstrap that understands disk labels.
+An alternate version of the bootstrap may be specified
+after the pack identifier.
+If an alternate bootstrap is not specified, the standard bootstrap will be used.
+The bootstrap programs are located in
+.IR /usr/mdec ,
+with names of the form
+.IR disktype boot
+for the primary (block 0) bootstrap, and
+.RI boot disktype
+for the secondary (block 1-15) bootstrap;
+for example, /usr/mdec/hpboot and /usr/mdec/boothp.
+.PP
+An existing disk label may be edited by using the
+.B \-e
+flag.
+The label is read from the in-core kernel copy,
+or directly from the disk if the
+.B \-r
+flag is also given.
+The label is formatted and then supplied to an editor for changes.
+If no editor is specified in an EDITOR environment variable,
+.IR vi (1)
+is used.
+When the editor terminates, the formatted label is reread
+and used to rewrite the disk label.
+A bootstrap is also installed if using the
+.B \-r
+option.
+.PP
+Finally,
+.I disklabel
+is capable of restoring a disk label that was formatted
+in a prior operation and saved in an ascii file by the use
+of the 
+.B \-R
+flag.
+The prototype file used to create the label is exactly that
+produced when reading or editing a label.
+.SH FILES
+/etc/disktab
+.br
+/usr/mdec/\fIxx\fPboot
+.br
+/usr/mdec/boot\fIxx\fP
+.SH "SEE ALSO"
+disktab(5), disklabel(5)
