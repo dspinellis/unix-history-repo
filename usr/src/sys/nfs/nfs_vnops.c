@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.7 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -118,14 +118,15 @@ struct vnodeops nfsv2_vnodeops = {
 };
 
 /* Special device vnode ops */
-int	blk_open(),
+int	blk_lookup(),
+	blk_open(),
 	blk_read(),
 	blk_write(),
 	blk_ioctl(),
 	blk_select();
 
 struct vnodeops nfsv2chr_vnodeops = {
-	vfs_noop,
+	blk_lookup,
 	vfs_noop,
 	vfs_noop,
 	blk_open,
