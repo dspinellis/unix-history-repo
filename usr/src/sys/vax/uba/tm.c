@@ -1,4 +1,4 @@
-/*	tm.c	4.38	81/05/09	*/
+/*	tm.c	4.39	81/07/05	*/
 
 #include "te.h"
 #include "ts.h"
@@ -339,6 +339,7 @@ tmstrategy(bp)
 	dp = &teutab[teunit];
 	bp->av_forw = NULL;
 	(void) spl5();
+	um = tedinfo[teunit]->ui_mi;
 	if (dp->b_actf == NULL) {
 		dp->b_actf = bp;
 		/*
@@ -346,7 +347,6 @@ tmstrategy(bp)
 		 * put at end of controller queue.
 		 */
 		dp->b_forw = NULL;
-		um = tedinfo[teunit]->ui_mi;
 		if (um->um_tab.b_actf == NULL)
 			um->um_tab.b_actf = dp;
 		else
