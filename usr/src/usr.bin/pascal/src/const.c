@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)const.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)const.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -64,7 +64,7 @@ constbeg( lineofyconst , linenum )
 }
 #endif PI1
 
-const(cline, cid, cdecl)
+constant(cline, cid, cdecl)
 	int cline;
 	register char *cid;
 	register struct tnode *cdecl;
