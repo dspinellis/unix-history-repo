@@ -1,4 +1,4 @@
-#	Makefile	4.23	87/05/30
+#	Makefile	4.24	87/07/27
 #
 DESTDIR=
 CFLAGS=	-O
@@ -10,13 +10,13 @@ SUBDIR=	ansi apl bib courier cpm dsh help hyper icon jove kermit mh \
 #
 # Default programs that are installed
 #
-STDINST=bib jove mh patch rcs
+STDINST=ansi bib emacs jove kermit mh patch rcs
 #
 # Special purpose software that requires custom installation,
 # or may not be needed by all sites
 #
-OPTDIR=	B dipress emacs enet mmdf news nntp notes pathalias rn \
-	spms sumacc umodem xns X
+OPTDIR=	B dipress enet mmdf news nntp notes pathalias rn \
+	spms sumacc umodem xns X X.local/xlock
 
 all:	${STDINST}
 
