@@ -5,10 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)source.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)source.c	5.2 (Berkeley) %G%";
 #endif not lint
 
-static char rcsid[] = "$Header: source.c,v 1.4 84/06/07 16:29:38 linton Exp $";
+static char rcsid[] = "$Header: source.c,v 1.3 87/08/19 15:19:40 mike Exp $";
 
 /*
  * Source file management.
@@ -22,7 +22,12 @@ static char rcsid[] = "$Header: source.c,v 1.4 84/06/07 16:29:38 linton Exp $";
 #include "keywords.h"
 #include "tree.h"
 #include "eval.h"
-#include <sys/file.h>
+#ifdef IRIS
+#   define R_OK 04	/* read access */
+#   define L_SET 01	/* absolute offset for seek */
+#else
+#   include <sys/file.h>
+#endif
 
 #ifndef public
 typedef int Lineno;
@@ -36,6 +41,11 @@ Lineno cursrcline;
 #include "lists.h"
 
 List sourcepath;
+#endif
+
+#ifdef IRIS
+#   define re_comp regcmp
+#   define re_exec(buf) (regex(buf) != NULL)
 #endif
 
 extern char *re_comp();
@@ -445,6 +455,17 @@ String pattern;
     }
 }
 
+public integer srcwindowlen ()
+{
+    Node s;
+
+    s = findvar(identname("$listwindow", true));
+    if (s == nil)
+	return 10;
+    eval(s);
+    return pop(integer);
+}
+
 /*
  * Compute a small window around the given line.
  */
@@ -452,16 +473,9 @@ String pattern;
 public getsrcwindow (line, l1, l2)
 Lineno line, *l1, *l2;
 {
-    Node s;
     integer size;
 
-    s = findvar(identname("$listwindow", true));
-    if (s == nil) {
-	size = 10;
-    } else {
-	eval(s);
-	size = pop(integer);
-    }
+    size = srcwindowlen();
     *l1 = line - (size div 2);
     if (*l1 < 1) {
 	*l1 = 1;
