@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sigvec.2	6.5 (Berkeley) %G%
+.\"	@(#)sigvec.2	6.6 (Berkeley) %G%
 .\"
 .TH SIGVEC 2 ""
 .UC 4
@@ -18,7 +18,7 @@ sigvec \- software signal facilities
 .B #include <signal.h>
 .PP
 .B struct sigvec {
-.B	int	(*sv_handler)();
+.B	void	(*sv_handler)();
 .B	int	sv_mask;
 .B	int	sv_flags;
 .B };
@@ -28,6 +28,8 @@ sigvec \- software signal facilities
 .B struct sigvec *vec, *ovec;
 .fi
 .SH DESCRIPTION
+.B "This interface is made obsolete by sigaction(2).
+.LP
 The system defines a set of signals that may be delivered to a process.
 Signal delivery resembles the occurence of a hardware interrupt:
 the signal is blocked from further occurrence, the current process 
@@ -128,7 +130,7 @@ SIGTERM	15	software termination signal
 SIGURG	16\*b	urgent condition present on socket
 SIGSTOP	17\*d	stop (cannot be caught, blocked, or ignored)
 SIGTSTP	18\*d	stop signal generated from keyboard
-SIGCONT	19\*b	continue after stop (cannot be blocked)
+SIGCONT	19\*b	continue after stop
 SIGCHLD	20\*b	child status has changed
 SIGTTIN	21\*d	background read attempted from control terminal
 SIGTTOU	22\*d	background write attempted to control terminal
@@ -138,6 +140,7 @@ SIGXFSZ	25	file size limit exceeded (see \fIsetrlimit\fP(2))
 SIGVTALRM	26	virtual time alarm (see \fIsetitimer\fP(2))
 SIGPROF	27	profiling timer alarm (see \fIsetitimer\fP(2))
 SIGWINCH	28\*b	window size change
+SIGINFO	29\*b	status request from keyboard
 SIGUSR1	30	user defined signal 1
 SIGUSR2	31	user defined signal 2
 .fi
@@ -169,13 +172,22 @@ the call is normally restarted.
 The call can be forced to terminate prematurely with an
 EINTR error return by setting the SV_INTERRUPT bit in
 .I sv_flags.
-The affected system calls are
-.IR read (2)
-or
-.IR write (2)
-on a slow device (such as a terminal; but not a file)
+The affected system calls include
+.IR read (2),
+.IR write (2),
+.IR sendto (2),
+.IR recvfrom (2),
+.IR sendmsg (2)
+and
+.IR recvmsg (2)
+on a communications channel or a slow device (such as a terminal,
+but not a regular file)
 and during a
-.IR wait (2).
+.IR wait (2)
+or
+.IR ioctl (2).
+However, calls that have already committed are not restarted,
+but instead return a partial success (for example, a short read count).
 .PP
 After a
 .IR fork (2)
@@ -195,8 +207,8 @@ signals that interrupt system calls continue to do so.
 .SH NOTES
 The mask specified in 
 .I vec
-is not allowed to block SIGKILL, SIGSTOP, or SIGCONT.  This
-is done silently by the system.
+is not allowed to block SIGKILL or SIGSTOP.
+This is done silently by the system.
 .PP
 The SV_INTERRUPT flag is not available in 4.2BSD,
 hence it should not be used if backward compatibility is needed.
@@ -225,19 +237,15 @@ is not a valid signal number.
 [EINVAL]
 An attempt is made to ignore or supply a handler for SIGKILL
 or SIGSTOP.
-.TP 15
-[EINVAL]
-An attempt is made to ignore SIGCONT (by default SIGCONT
-is ignored).
 .SH "SEE ALSO"
-kill(1),
-ptrace(2), kill(2),
+sigaction(2), kill(1), ptrace(2), kill(2),
+sigprocmask(2), sigsuspend(2),
 sigblock(2), sigsetmask(2), sigpause(2),
-sigstack(2), sigvec(2), setjmp(3), siginterrupt(3), tty(4)
+sigstack(2), sigvec(2), sigsetops(3), setjmp(3), siginterrupt(3), tty(4)
 .SH "NOTES  (VAX-11)"
 The handler routine can be declared:
 .PP
-    handler(sig, code, scp)
+    void handler(sig, code, scp)
     int sig, code;
     struct sigcontext *scp;
 .PP

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)sigpause.2	6.4 (Berkeley) %G%
+.\"	@(#)sigpause.2	6.5 (Berkeley) %G%
 .\"
 .TH SIGPAUSE 2 ""
 .UC 4
@@ -16,6 +16,8 @@ sigpause(sigmask)
 int sigmask;
 .ft R
 .SH DESCRIPTION
+.B "This interface is made obsolete by sigsuspend(2).
+.LP
 .I Sigpause
 assigns 
 .I sigmask
@@ -39,4 +41,5 @@ to be done, and the process pauses awaiting work by using
 with the mask returned by
 .IR sigblock .
 .SH SEE ALSO
+sigsuspend(2), kill(2), sigaction(2), sigprocmask(2),
 sigblock(2), sigvec(2)
