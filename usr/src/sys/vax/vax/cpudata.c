@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)cpudata.c	6.7 (Berkeley) %G%
+ *	@(#)cpudata.c	6.8 (Berkeley) %G%
  */
 
 #include "pte.h"
@@ -50,6 +50,11 @@ caddr_t	umaddr730[1] = {
 	(caddr_t) UMEM730
 };
 #endif
+#if VAX630
+caddr_t	umaddr630[1] = {
+	(caddr_t) UMEM630
+};
+#endif
 
 /*
  * Information to patch around the stupidity of configuration
@@ -80,6 +85,11 @@ struct iobus io8600[] = {
 	{ IO_ABUS, IOA8600(1), IOAMAPSIZ, (caddr_t)&sbi8600[1] },
 };
 #endif
+#if VAX630
+short	nexty630[NNEX630] = {
+	NEX_UBA0,
+};
+#endif
 
 #if VAX780
 struct nexusconnect sbi780 = {
@@ -101,6 +111,12 @@ struct nexusconnect xxx730 = {
 };
 struct iobus io730[] = { IO_XXX730, 0, 0, (caddr_t)&xxx730 };
 #endif
+#if VAX630
+struct nexusconnect xxx630 = {
+	NNEX630, NEX630, umaddr630, NBDP630, 0, nexty630,
+};
+struct iobus io630[] = { IO_QBUS, 0, 0, (caddr_t)&xxx630 };
+#endif
 
 
 struct percpu percpu[] = {
@@ -115,6 +131,9 @@ struct percpu percpu[] = {
 #endif
 #if VAX730
 	{ VAX_730, 1, 1, io730 },
+#endif
+#if VAX630
+	{ VAX_630, 2, 1, io630 },
 #endif
 	0,
 };

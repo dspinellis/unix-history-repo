@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	6.24 (Berkeley) %G%
+ *	@(#)autoconf.c	6.25 (Berkeley) %G%
  */
 
 /*
@@ -146,10 +146,11 @@ probeio(pcpu)
 
 		switch (iob->io_type) {
 
-#if VAX780 || VAX750 || VAX730
+#if VAX780 || VAX750 || VAX730 || VAX630
 		case IO_SBI780:
 		case IO_CMI750:
 		case IO_XXX730:
+		case IO_QBUS:
 			probenexi((struct nexusconnect *)iob->io_details);
 			break;
 #endif
@@ -536,6 +537,17 @@ unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 	caddr_t ualloc, zmemall();
 	extern int catcher[256];
 
+#if VAX630
+	/*
+	 * The map registers start right at 20088000 on the
+	 * ka630, so we have to subtract out the 2k offset to make the
+	 * pointers work..
+	 */
+	if (cpu == VAX_630) {
+		vubp = (struct uba_regs *)(((u_long)vubp)-0x800);
+		pubp = (struct uba_regs *)(((u_long)pubp)-0x800);
+	}
+#endif
 	/*
 	 * Initialize the UNIBUS, by freeing the map
 	 * registers and the buffered data path registers
@@ -575,7 +587,18 @@ unifind(vubp, pubp, vumem, pumem, memmap, haveubasr)
 	 */
 	uhp->uh_lastiv = 0x200;
 
-	ioaccess(pumem, memmap, UBAPAGES * NBPG);
+#if VAX630
+	/*
+	 * Kludge time again. The q22 memory and device reg. address spaces
+	 * are not physically contiguous, so we need 2 loops to map them
+	 * into contiguous virtual space.
+	 */
+	if (cpu == VAX_630) {
+		ioaccess(pumem, memmap, (UBAPAGES-16)*NBPG);
+		ioaccess(0x20000000, memmap+(UBAPAGES-16), 16*NBPG);
+	} else
+#endif
+		ioaccess(pumem, memmap, UBAPAGES * NBPG);
 #if defined(VAX780) || defined(VAX8600)
 	if (haveubasr) {
 		vubp->uba_sr = vubp->uba_sr;
@@ -880,7 +903,8 @@ setroot()
 	dev_t temp, orootdev;
 	struct swdevt *swp;
 
-	if (boothowto & RB_DFLTROOT || (bootdev & B_MAGICMASK) != B_DEVMAGIC)
+	if (boothowto & RB_DFLTROOT ||
+	    (bootdev & B_MAGICMASK) != (u_long)B_DEVMAGIC)
 		return;
 	majdev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
 	if (majdev > sizeof(devname) / sizeof(devname[0]))

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)clock.c	6.3 (Berkeley) %G%
+ *	@(#)clock.c	6.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -12,6 +12,7 @@
 
 #include "mtpr.h"
 #include "clock.h"
+#include "cpu.h"
 
 /*
  * Machine-dependent clock routines.
@@ -31,9 +32,16 @@
  */
 startrtclock()
 {
-
-	mtpr(NICR, -1000000/hz);
-	mtpr(ICCS, ICCS_RUN+ICCS_IE+ICCS_TRANS+ICCS_INT+ICCS_ERR);
+#ifdef VAX630
+	if (cpu == VAX_630) {
+		mtpr(ICCS, ICCS_IE);
+	} else {
+#endif
+		mtpr(NICR, -1000000/hz);
+		mtpr(ICCS, ICCS_RUN+ICCS_IE+ICCS_TRANS+ICCS_INT+ICCS_ERR);
+#ifdef VAX630
+	}
+#endif
 }
 
 /*
@@ -47,7 +55,15 @@ inittodr(base)
 	register u_int todr = mfpr(TODR);
 	long deltat;
 	int year = YRREF;
-
+#if VAX630
+	/*
+	 * If this is a Ka630, call ka630tod to handle the funny tod clock.
+	 */
+	if (cpu == VAX_630) {
+		ka630tod(base);
+		return;
+	}
+#endif
 	if (base < 5*SECYR) {
 		printf("WARNING: preposterous time in file system");
 		time.tv_sec = 6*SECYR + 186*SECDAY + SECDAY/2;
@@ -110,6 +126,16 @@ resettodr()
 	int year = YRREF;
 	u_int secyr;
 	u_int yrtime = time.tv_sec;
+
+#if VAX630
+	/*
+	 * If this is a ka630, call ka630stod to set the funny tod clock.
+	 */
+	if (cpu == VAX_630) {
+		ka630stod();
+		return;
+	}
+#endif
 
 	/*
 	 * Whittle the time down to an offset in the current year,

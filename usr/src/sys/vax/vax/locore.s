@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	6.36 (Berkeley) %G%
+ *	@(#)locore.s	6.37 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -19,6 +19,7 @@
 #include "cons.h"
 #include "clock.h"
 #include "ioa.h"
+#include "ka630.h"
 #include "../vaxuba/ubareg.h"
 
 #include "dz.h"
@@ -104,6 +105,10 @@ SCBVEC(machcheck):
 	.word	5f-0b		# 2 is 750
 	.word	5f-0b		# 3 is 730
 	.word	7f-0b		# 4 is 8600
+	.word	1f-0b		# ???
+	.word	1f-0b		# ???
+	.word	1f-0b		# ???
+	.word	1f-0b		# 8 is 630
 5:
 #if defined(VAX750) || defined(VAX730)
 	mtpr	$0xf,$MCESR
@@ -543,6 +548,35 @@ SCBVEC(ustray):
 	POPR
 	rei
 
+#ifdef VAX630
+/*
+ * Emulation OpCode jump table:
+ *	ONLY GOES FROM 0xf8 (-8) TO 0x3B (59)
+ */
+#define EMUTABLE	0x43
+#define NOEMULATE	.long noemulate
+#define	EMULATE(a)	.long _EM/**/a
+	.globl	_emJUMPtable
+_emJUMPtable:
+/* f8 */	EMULATE(ashp);	EMULATE(cvtlp);	NOEMULATE;	NOEMULATE
+/* fc */	NOEMULATE;	NOEMULATE;	NOEMULATE;	NOEMULATE
+/* 00 */	NOEMULATE;	NOEMULATE;	NOEMULATE;	NOEMULATE
+/* 04 */	NOEMULATE;	NOEMULATE;	NOEMULATE;	NOEMULATE
+/* 08 */	EMULATE(cvtps);	EMULATE(cvtsp);	NOEMULATE;	EMULATE(crc)
+/* 0c */	NOEMULATE;	NOEMULATE;	NOEMULATE;	NOEMULATE
+/* 10 */	NOEMULATE;	NOEMULATE;	NOEMULATE;	NOEMULATE
+/* 14 */	NOEMULATE;	NOEMULATE;	NOEMULATE;	NOEMULATE
+/* 18 */	NOEMULATE;	NOEMULATE;	NOEMULATE;	NOEMULATE
+/* 1c */	NOEMULATE;	NOEMULATE;	NOEMULATE;	NOEMULATE
+/* 20 */	EMULATE(addp4);	EMULATE(addp6);	EMULATE(subp4);	EMULATE(subp6)
+/* 24 */	EMULATE(cvtpt);	EMULATE(mulp);	EMULATE(cvttp);	EMULATE(divp)
+/* 28 */	NOEMULATE;	EMULATE(cmpc3);	EMULATE(scanc);	EMULATE(spanc)
+/* 2c */	NOEMULATE;	EMULATE(cmpc5);	EMULATE(movtc);	EMULATE(movtuc)
+/* 30 */	NOEMULATE;	NOEMULATE;	NOEMULATE;	NOEMULATE
+/* 34 */	EMULATE(movp);	EMULATE(cmpp3);	EMULATE(cvtpl);	EMULATE(cmpp4)
+/* 38 */	EMULATE(editpc); EMULATE(matchc); EMULATE(locc); EMULATE(skpc)
+#endif
+
 /*
  * Trap and fault vector routines
  */ 
@@ -574,6 +608,63 @@ SCBVEC(protflt):
 	TRAP(PROTFLT)
 segflt:
 	TRAP(SEGFLT)
+
+/*
+ * The following is called with the stack set up as follows:
+ *
+ *	  (sp):	Opcode
+ *	 4(sp):	Instruction PC
+ *	 8(sp):	Operand 1
+ *	12(sp):	Operand 2
+ *	16(sp):	Operand 3
+ *	20(sp):	Operand 4
+ *	24(sp):	Operand 5
+ *	28(sp):	Operand 6
+ *	32(sp):	Operand 7 (unused)
+ *	36(sp):	Operand 8 (unused)
+ *	40(sp):	Return PC
+ *	44(sp):	Return PSL
+ *	48(sp): TOS before instruction
+ *
+ * Each individual routine is called with the stack set up as follows:
+ *
+ *	  (sp):	Return address of trap handler
+ *	 4(sp):	Opcode (will get return PSL)
+ *	 8(sp):	Instruction PC
+ *	12(sp):	Operand 1
+ *	16(sp):	Operand 2
+ *	20(sp):	Operand 3
+ *	24(sp):	Operand 4
+ *	28(sp):	Operand 5
+ *	32(sp):	Operand 6
+ *	36(sp):	saved register 11
+ *	40(sp):	saved register 10
+ *	44(sp):	Return PC
+ *	48(sp):	Return PSL
+ *	52(sp): TOS before instruction
+ */
+
+SCBVEC(emulate):
+#ifdef VAX630
+	movl	r11,32(sp)		# save register r11 in unused operand
+	movl	r10,36(sp)		# save register r10 in unused operand
+	cvtbl	(sp),r10		# get opcode
+	addl2	$8,r10			# shift negative opcodes
+	subl3	r10,$EMUTABLE,r11	# forget it if opcode is out of range
+	bcs	noemulate
+	movl	_emJUMPtable[r10],r10	# call appropriate emulation routine
+	jsb	(r10)		# routines put return values into regs 0-5
+	movl	32(sp),r11		# restore register r11
+	movl	36(sp),r10		# restore register r10
+	insv	(sp),$0,$4,44(sp)	# and condition codes in Opcode spot
+	addl2	$40,sp			# adjust stack for return
+	rei
+noemulate:
+	addl2	$48,sp			# adjust stack for
+#endif VAX630
+	.word	0xffff			# "reserved instruction fault"
+SCBVEC(emulateFPD):
+	.word	0xffff			# "reserved instruction fault"
 SCBVEC(transflt):
 	bitl	$2,(sp)+
 	bnequ	tableflt
@@ -635,6 +726,10 @@ _/**/mname:	.globl	_/**/mname;		\
 	SYSMAP(UMEMmap	,umem		,UBAPAGES*NUBA	)
 	SYSMAP(Ioamap	,ioa		,MAXNIOA*IOAMAPSIZ/NBPG	)
 	SYSMAP(UMBAend	,umbaend	,0		)
+#if VAX630
+	SYSMAP(Clockmap	,cldevice	,1		)
+	SYSMAP(Ka630map	,ka630cpu	,1		)
+#endif
 
 	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE+CLSIZE )
 
@@ -703,7 +798,7 @@ start:
 	bisl2	$PG_KR,_rpbmap
 /* make kernel text space read-only */
 	movab	_etext+NBPG-1,r1; bbcc $31,r1,0f; 0: ashl $-PGSHIFT,r1,r1
-1:	bisl3	$PG_V|PG_KR,r2,_Sysmap[r2]; aoblss r1,r2,1b
+1:	bisl3	$PG_V|PG_URKR,r2,_Sysmap[r2]; aoblss r1,r2,1b
 /* make kernel data, bss, read-write */
 	movab	_end+NBPG-1,r1; bbcc $31,r1,0f; 0:; ashl $-PGSHIFT,r1,r1
 1:	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]; aoblss r1,r2,1b
@@ -906,8 +1001,22 @@ ENTRY(copyinstr, R6)
 	prober	$3,r2,(r1)		# bytes accessible?
 	jeql	8f
 	subl2	r2,r6			# update bytes left count
+#ifdef NOSUBSINST
+	# fake the locc instr. for processors that don't have it
+	movl	r2,r0
+6:
+	tstb	(r1)+
+	jeql	5f
+	sobgtr	r0,6b
+	jbr	7f
+5:
+	decl	r1
+	jbr	3f
+7:
+#else
 	locc	$0,r2,(r1)		# null byte found?
 	jneq	3f
+#endif
 	subl2	r2,r1			# back up pointer updated by `locc'
 	movc3	r2,(r1),(r3)		# copy in next piece
 	movl	$(NBPG*CLSIZE),r2	# check next page
@@ -958,8 +1067,22 @@ ENTRY(copyoutstr, R6)
 	probew	$3,r2,(r3)		# bytes accessible?
 	jeql	8b
 	subl2	r2,r6			# update bytes left count
+#ifdef NOSUBSINST
+	# fake the locc instr. for processors that don't have it
+	movl	r2,r0
+6:
+	tstb	(r1)+
+	jeql	5f
+	sobgtr	r0,6b
+	jbr	7f
+5:
+	decl	r1
+	jbr	3b
+7:
+#else
 	locc	$0,r2,(r1)		# null byte found?
 	jneq	3b
+#endif
 	subl2	r2,r1			# back up pointer updated by `locc'
 	movc3	r2,(r1),(r3)		# copy in next piece
 	movl	$(NBPG*CLSIZE),r2	# check next page
@@ -986,8 +1109,22 @@ ENTRY(copystr, R6)
 	movl	r6,r2
 2:
 	subl2	r2,r6			# update bytes left count
+#ifdef NOSUBSINST
+	# fake the locc instr. for processors that don't have it
+	movl	r2,r0
+6:
+	tstb	(r1)+
+	jeql	5f
+	sobgtr	r0,6b
+	jbr	7f
+5:
+	decl	r1
+	jbr	3b
+7:
+#else
 	locc	$0,r2,(r1)		# null byte found?
 	jneq	3b
+#endif
 	subl2	r2,r1			# back up pointer updated by `locc'
 	movc3	r2,(r1),(r3)		# copy in next piece
 	tstl	r6			# run out of space?

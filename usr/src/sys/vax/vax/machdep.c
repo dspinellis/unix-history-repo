@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	6.27 (Berkeley) %G%
+ *	@(#)machdep.c	6.28 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -38,6 +38,7 @@
 #include "mem.h"
 #include "mtpr.h"
 #include "rpb.h"
+#include "ka630.h"
 #include "../vaxuba/ubavar.h"
 #include "../vaxuba/ubareg.h"
 
@@ -69,6 +70,13 @@ startup(firstaddr)
 	register caddr_t v;
 	int maxbufs, base, residual;
 
+#if VAX630
+	/*
+ 	 * Leave last 5k of phys. memory as console work area.
+	 */
+	if (cpu == VAX_630)
+		maxmem -= 10;
+#endif
 	/*
 	 * Initialize error message buffer (at end of core).
 	 */
@@ -487,6 +495,10 @@ memenable()
 	register struct mcr *mcr;
 	register int m;
 
+#if VAX630
+	if (cpu == VAX_630)
+		return;
+#endif
 #ifdef	VAX8600
 	if (cpu == VAX_8600) {
 		M8600_ENA;
@@ -536,6 +548,10 @@ memerr()
 	register struct mcr *mcr;
 	register int m;
 
+#if VAX630
+	if (cpu == VAX_630)
+		return;
+#endif
 #ifdef VAX8600
 	if (cpu == VAX_8600) {
 		int mdecc, mear, mstat1, mstat2, array;
@@ -778,8 +794,8 @@ boot(paniced, arghowto)
 		}
 		tocons(TXDB_BOOT);
 	}
-#if defined(VAX750) || defined(VAX730)
-	if (cpu == VAX_750 || cpu == VAX_730)
+#if defined(VAX750) || defined(VAX730) || defined(VAX630)
+	if (cpu == VAX_750 || cpu == VAX_730 || cpu == VAX_630)
 		{ asm("movl r11,r5"); }		/* boot flags go in r5 */
 #endif
 	for (;;)
@@ -796,10 +812,11 @@ tocons(c)
 
 	switch (cpu) {
 
-#if VAX780 || VAX750 || VAX730
+#if VAX780 || VAX750 || VAX730 || VAX630
 	case VAX_780:
 	case VAX_750:
 	case VAX_730:
+	case VAX_630:
 		c |= TXDB_CONS;
 		break;
 #endif
@@ -915,6 +932,15 @@ char *mc730[] = {
 	"unalgn ioref",	"nonlw ioref",	"bad ioaddr",	"unalgn ubaddr",
 };
 #endif
+#if VAX630
+#define NMC630	10
+extern struct ka630cpu ka630cpu;
+char *mc630[] = {
+	0,		"immcr (fsd)",	"immcr (ssd)",	"fpu err 0",
+	"fpu err 7",	"mmu st(tb)",	"mmu st(m=0)",	"pte in p0",
+	"pte in p1",	"un intr id",
+};
+#endif
 
 /*
  * Frame for each cpu
@@ -955,6 +981,14 @@ struct mc730frame {
 	int	mc3_parm[2];		/* parameter 1 and 2 */
 	int	mc3_pc;			/* trapped pc */
 	int	mc3_psl;		/* trapped psl */
+};
+struct mc630frame {
+	int	mc63_bcnt;		/* byte count == 0xc */
+	int	mc63_summary;		/* summary parameter */
+	int	mc63_mrvaddr;		/* most recent vad */
+	int	mc63_istate;		/* internal state */
+	int	mc63_pc;			/* trapped pc */
+	int	mc63_psl;		/* trapped psl */
 };
 struct mc8600frame {
 	int	mc6_bcnt;		/* byte count == 0x58 */
@@ -1086,6 +1120,24 @@ machinecheck(cmcf)
 		    mcf->mc3_parm[0], mcf->mc3_parm[1],
 		    mcf->mc3_pc, mcf->mc3_psl, mfpr(MCESR));
 		mtpr(MCESR, 0xf);
+		break;
+		}
+#endif
+#if VAX630
+	case VAX_630: {
+		register struct ka630cpu *ka630addr = &ka630cpu;
+		register struct mc630frame *mcf = (struct mc630frame *)cmcf;
+		printf("vap %x istate %x pc %x psl %x\n",
+		    mcf->mc63_mrvaddr, mcf->mc63_istate,
+		    mcf->mc63_pc, mcf->mc63_psl);
+		if (ka630addr->ka630_mser & KA630MSER_MERR) {
+			printf("mser=0x%x ",ka630addr->ka630_mser);
+			if (ka630addr->ka630_mser & KA630MSER_CPUER)
+				printf("page=%d",ka630addr->ka630_cear);
+			if (ka630addr->ka630_mser & KA630MSER_DQPE)
+				printf("page=%d",ka630addr->ka630_dear);
+			printf("\n");
+		}
 		break;
 		}
 #endif
