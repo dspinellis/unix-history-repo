@@ -150,7 +150,6 @@ AddHost(position, character)
 int	position;
 char	character;
 {
-#if	defined(SLOWSCREEN)
 #   define	AddHostA(p,c)					\
     {								\
 	if (IsStartField(p)) {					\
@@ -168,20 +167,6 @@ char	character;
 	}							\
 	AddHostA(p,c);						\
     }	/* end of macro of AddHost */
-#else	/* defined(SLOWSCREEN) */
-#   define	AddHost(p,c)					\
-    {								\
-	if (IsStartField(p)) {					\
-	    DeleteField(p);					\
-	    Highest = HighestScreen();				\
-	    Lowest = LowestScreen();				\
-	    SetHost(p, c);					\
-	} else {						\
-	    SetHost(p, c);					\
-	    SetHighestLowest(p);				\
-	}							\
-    }	/* end of macro of AddHost */
-#endif	/* defined(SLOWSCREEN) */
 
     AddHost(position, character);
 }
@@ -490,33 +475,21 @@ int	control;				/* this buffer ended block? */
 	} else {
 	    /* Data comes in large clumps - take it all */
 	    i = BufferAddress;
-#if	!defined(SLOWSCREEN)
-	    AddHost(i, ebc_disp[c]);
-#else	/* !defined(SLOWSCREEN) */
 	    AddHostA(i, ebc_disp[c]);
 	    SetHighestLowest(i);
-#endif	/* !defined(SLOWSCREEN) */
 	    i = ScreenInc(i);
 	    c = *buffer;
 	    while (count && !IsOrder(c)) {
-#if	!defined(SLOWSCREEN)
-		AddHost(i, ebc_disp[c]);
-#else	/* !defined(SLOWSCREEN) */
 		AddHostA(i, ebc_disp[c]);
-#endif	/* !defined(SLOWSCREEN) */
 		i = ScreenInc(i);
-#if	defined(SLOWSCREEN)
 		if (i == LowestScreen()) {
 		    SetHighestLowest(HighestScreen());
 		}
-#endif	/* defined(SLOWSCREEN) */
 		count--;
 		buffer++;
 		c = *buffer;
 	    }
-#if	defined(SLOWSCREEN)
 	    SetHighestLowest(i);
-#endif	/* defined(SLOWSCREEN) */
 	    BufferAddress = i;
 	}
     }
