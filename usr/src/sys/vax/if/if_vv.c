@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_vv.c	6.14 (Berkeley) %G%
+ *	@(#)if_vv.c	6.15 (Berkeley) %G%
  */
 
 #include "vv.h"
@@ -201,7 +201,7 @@ vvattach(ui)
 	vs->vs_if.if_reset = vvreset;
 	vs->vs_if.if_timer = 0;
 	vs->vs_if.if_watchdog = vvwatchdog;
-	vs->vs_ifuba.ifu_flags = UBA_CANTWAIT | UBA_NEEDBDP | UBA_NEED16;
+	vs->vs_ifuba.ifu_flags = UBA_CANTWAIT | UBA_NEEDBDP;
 #if defined(VAX750)
 	/* don't chew up 750 bdp's */
 	if (cpu == VAX_750 && ui->ui_unit > 0)
