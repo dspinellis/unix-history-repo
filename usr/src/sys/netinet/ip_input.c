@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_input.c	7.5 (Berkeley) %G%
+ *	@(#)ip_input.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -601,7 +601,7 @@ ip_dooptions(ip, ifp)
 			 */
 			if ((ia = ip_rtaddr(ipaddr.sin_addr)) == 0) {
 				type = ICMP_UNREACH;
-				code = ICMP_UNREACH_SRCFAIL;
+				code = ICMP_UNREACH_HOST;
 				goto bad;
 			}
 			bcopy((caddr_t)&(IA_SIN(ia)->sin_addr),
