@@ -737,21 +737,7 @@ process(catch)
 			 * need or want to prompt.
 			 */
 			if (fseekp == feobp)
-				if (!whyles)
-					for (cp = value("prompt"); *cp; cp++)
-						if (*cp == HIST)
-							printf("%d", eventno + 1);
-						else {
-							if (*cp == '\\' && cp[1] == HIST)
-								cp++;
-							putchar(*cp | QUOTE);
-						}
-				else
-					/*
-					 * Prompt for forward reading loop
-					 * body content.
-					 */
-					printf("? ");
+			    printprompt();
 			flush();
 		}
 		err = 0;
@@ -929,4 +915,26 @@ exit(i)
 #else
 	_exit(i);
 #endif
+}
+
+printprompt ()
+{
+    register char *cp;
+    if (!whyles)
+	for (cp = value ("prompt"); *cp; cp++)
+	    if (*cp == HIST)
+		printf ("%d", eventno + 1);
+	    else
+	    {
+		if (*cp == '\\' && cp[1] == HIST)
+		    cp++;
+		putchar (*cp | QUOTE);
+	    }
+    else
+    /* 
+     * Prompt for forward reading loop
+     * body content.
+     */
+	printf ("? ");
+    flush ();
 }
