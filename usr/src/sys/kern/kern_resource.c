@@ -1,4 +1,4 @@
-/*	kern_resource.c	6.1	83/07/29	*/
+/*	kern_resource.c	6.2	84/05/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -42,9 +42,7 @@ getpriority()
 	case PRIO_PGRP:
 		if (uap->who == 0)
 			uap->who = u.u_procp->p_pgrp;
-		for (p = proc; p < procNPROC; p++) {
-			if (p->p_stat == NULL)
-				continue;
+		for (p = allproc; p != NULL; p = p->p_nxt) {
 			if (p->p_pgrp == uap->who &&
 			    p->p_nice < u.u_r.r_val1) {
 				u.u_r.r_val1 = p->p_nice;
@@ -56,9 +54,7 @@ getpriority()
 	case PRIO_USER:
 		if (uap->who == 0)
 			uap->who = u.u_uid;
-		for (p = proc; p < procNPROC; p++) {
-			if (p->p_stat == NULL)
-				continue;
+		for (p = allproc; p != NULL; p = p->p_nxt) {
 			if (p->p_uid == uap->who &&
 			    p->p_nice < u.u_r.r_val1) {
 				u.u_r.r_val1 = p->p_nice;
@@ -99,7 +95,7 @@ setpriority()
 	case PRIO_PGRP:
 		if (uap->who == 0)
 			uap->who = u.u_procp->p_pgrp;
-		for (p = proc; p < procNPROC; p++)
+		for (p = allproc; p != NULL; p = p->p_nxt)
 			if (p->p_pgrp == uap->who)
 				donice(p, uap->prio);
 		break;
@@ -107,7 +103,7 @@ setpriority()
 	case PRIO_USER:
 		if (uap->who == 0)
 			uap->who = u.u_uid;
-		for (p = proc; p < procNPROC; p++)
+		for (p = allproc; p != NULL; p = p->p_nxt)
 			if (p->p_uid == uap->who)
 				donice(p, uap->prio);
 		break;

@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.2	83/09/08	*/
+/*	kern_sig.c	6.3	84/05/22	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -224,9 +224,7 @@ kill1(ispgrp, signo, who)
 		if (who == 0)
 			return (EINVAL);
 	}
-	for (f = 0, p = proc; p < procNPROC; p++) {
-		if (p->p_stat == NULL)
-			continue;
+	for (f = 0, p = allproc; p != NULL; p = p->p_nxt) {
 		if (!ispgrp) {
 			if (p->p_pid != who)
 				continue;
@@ -255,7 +253,7 @@ gsignal(pgrp, sig)
 
 	if (pgrp == 0)
 		return;
-	for(p = proc; p < procNPROC; p++)
+	for (p = allproc; p != NULL; p = p->p_nxt)
 		if (p->p_pgrp == pgrp)
 			psignal(p, sig);
 }

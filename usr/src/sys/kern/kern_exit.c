@@ -1,4 +1,4 @@
-/*	kern_exit.c	6.1	83/07/29	*/
+/*	kern_exit.c	6.2	84/05/22	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -41,7 +41,7 @@ exit(rv)
 	int rv;
 {
 	register int i;
-	register struct proc *p, *q;
+	register struct proc *p, *q, *nq;
 	register int x;
 	struct mbuf *m = m_getclr(M_WAIT, MT_ZOMBIE);
 
@@ -93,6 +93,12 @@ exit(rv)
 	vrelpt(u.u_procp);
 	vrelu(u.u_procp, 0);
 	(void) spl5();		/* hack for mem alloc race XXX */
+	if (*p->p_prev = p->p_nxt)		/* off allproc queue */
+		p->p_nxt->p_prev = p->p_prev;
+	if (p->p_nxt = zombproc)		/* onto zombproc */
+		p->p_nxt->p_prev = &p->p_nxt;
+	p->p_prev = &zombproc;
+	zombproc = p;
 	multprog--;
 	p->p_stat = SZOMB;
 	noproc = 1;
@@ -117,42 +123,41 @@ panic("exit: m_getclr");
 	p->p_ru = mtod(m, struct rusage *);
 	*p->p_ru = u.u_ru;
 	ruadd(p->p_ru, &u.u_cru);
-	for (q = proc; q < procNPROC; q++)
-		if (q->p_pptr == p) {
-			if (q->p_osptr)
-				q->p_osptr->p_ysptr = q->p_ysptr;
-			if (q->p_ysptr)
-				q->p_ysptr->p_osptr = q->p_osptr;
-			if (proc[1].p_cptr)
-				proc[1].p_cptr->p_ysptr = q;
-			q->p_osptr = proc[1].p_cptr;
-			q->p_ysptr = NULL;
-			proc[1].p_cptr = q;
+	if (p->p_cptr)		/* only need this if any child is S_ZOMB */
+		wakeup((caddr_t)&proc[1]);
+	for (q = p->p_cptr; q != NULL; q = nq) {
+		nq = q->p_osptr;
+		if (nq != NULL)
+			nq->p_ysptr = NULL;
+		if (proc[1].p_cptr)
+			proc[1].p_cptr->p_ysptr = q;
+		q->p_osptr = proc[1].p_cptr;
+		q->p_ysptr = NULL;
+		proc[1].p_cptr = q;
 
-			q->p_pptr = &proc[1];
-			q->p_ppid = 1;
-			wakeup((caddr_t)&proc[1]);
-			/*
-			 * Traced processes are killed
-			 * since their existence means someone is screwing up.
-			 * Stopped processes are sent a hangup and a continue.
-			 * This is designed to be ``safe'' for setuid
-			 * processes since they must be willing to tolerate
-			 * hangups anyways.
-			 */
-			if (q->p_flag&STRC) {
-				q->p_flag &= ~STRC;
-				psignal(q, SIGKILL);
-			} else if (q->p_stat == SSTOP) {
-				psignal(q, SIGHUP);
-				psignal(q, SIGCONT);
-			}
-			/*
-			 * Protect this process from future
-			 * tty signals, clear TSTP/TTIN/TTOU if pending.
-			 */
-			(void) spgrp(q, -1);
+		q->p_pptr = &proc[1];
+		q->p_ppid = 1;
+		/*
+		 * Traced processes are killed
+		 * since their existence means someone is screwing up.
+		 * Stopped processes are sent a hangup and a continue.
+		 * This is designed to be ``safe'' for setuid
+		 * processes since they must be willing to tolerate
+		 * hangups anyways.
+		 */
+		if (q->p_flag&STRC) {
+			q->p_flag &= ~STRC;
+			psignal(q, SIGKILL);
+		} else if (q->p_stat == SSTOP) {
+			psignal(q, SIGHUP);
+			psignal(q, SIGCONT);
 		}
+		/*
+		 * Protect this process from future
+		 * tty signals, clear TSTP/TTIN/TTOU if pending.
+		 */
+		(void) spgrp(q, -1);
+	}
 	psignal(p->p_pptr, SIGCHLD);
 	wakeup((caddr_t)p->p_pptr);
 	swtch();
@@ -189,8 +194,8 @@ wait1(options, ru)
 
 	f = 0;
 loop:
-	for (p = proc; p < procNPROC; p++)
-	if (p->p_pptr == u.u_procp) {
+	q = u.u_procp;
+	for (p = q->p_cptr; p; p = p->p_osptr) {
 		f++;
 		if (p->p_stat == SZOMB) {
 			u.u_r.r_val1 = p->p_pid;
@@ -204,6 +209,10 @@ loop:
 			p->p_stat = NULL;
 			p->p_pid = 0;
 			p->p_ppid = 0;
+			if (*p->p_prev = p->p_nxt)	/* off zombproc */
+				p->p_nxt->p_prev = p->p_prev;
+			p->p_nxt = freeproc;		/* onto freeproc */
+			freeproc = p;
 			if (q = p->p_ysptr)
 				q->p_osptr = p->p_osptr;
 			if (q = p->p_osptr)

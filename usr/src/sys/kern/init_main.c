@@ -1,4 +1,4 @@
-/*	init_main.c	6.2	84/01/03	*/
+/*	init_main.c	6.3	84/05/22	*/
 
 #include "../machine/pte.h"
 
@@ -75,11 +75,11 @@ main(firstaddr)
 		u.u_rlimit[i].rlim_cur = u.u_rlimit[i].rlim_max = 
 		    RLIM_INFINITY;
 	u.u_rlimit[RLIMIT_STACK].rlim_cur = 512*1024;
-	u.u_rlimit[RLIMIT_STACK].rlim_max = ctob(MAXDSIZ);
+	u.u_rlimit[RLIMIT_STACK].rlim_max = ctob(MAXSSIZ);
 	u.u_rlimit[RLIMIT_DATA].rlim_max =
 	    u.u_rlimit[RLIMIT_DATA].rlim_cur = ctob(MAXDSIZ);
 	p->p_maxrss = RLIM_INFINITY/NBPG;
-#ifdef QUOTA
+#if defined(QUOTA)
 	qtinit();
 	p->p_quota = u.u_quota = getquota(0, 0, Q_NDQ);
 #endif
@@ -109,6 +109,7 @@ main(firstaddr)
 #ifdef INET
 	splx(s);
 #endif
+	pqinit();
 	ihinit();
 	bhinit();
 	binit();
@@ -155,6 +156,8 @@ main(firstaddr)
 	mpid = 1;
 	proc[0].p_szpt = clrnd(ctopt(nswbuf*CLSIZE*KLMAX + UPAGES));
 	proc[1].p_stat = SZOMB;		/* force it to be in proc slot 2 */
+	p = freeproc;
+	freeproc = p->p_nxt;
 	if (newproc(0)) {
 		proc[2].p_flag |= SLOAD|SSYS;
 		proc[2].p_dsize = u.u_dsize = nswbuf*CLSIZE*KLMAX; 
@@ -170,6 +173,8 @@ main(firstaddr)
 	mpid = 0;
 	proc[1].p_stat = 0;
 	proc[0].p_szpt = CLSIZE;
+	p->p_nxt = freeproc;
+	freeproc = p;
 	if (newproc(0)) {
 		expand(clrnd((int)btoc(szicode)), 0);
 		(void) swpexpand(u.u_dsize, 0, &u.u_dmap, &u.u_smap);
