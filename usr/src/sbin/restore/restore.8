@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)restore.8	6.1 (Berkeley) %G%
+.\"	@(#)restore.8	6.2 (Berkeley) %G%
 .\"
 .TH RESTORE 8 ""
 .UC 4
@@ -187,6 +187,14 @@ from the dump tape.
 will ask which volume the user wishes to mount.
 The fastest way to extract a few files is to
 start with the last volume, and work towards the first volume.
+.ti -5n
+.sp
+.B setmodes
+\-
+All the directories that have been added to the extraction list
+have their owner, modes, and times set;
+nothing is extracted from the tape.
+This is useful for cleaning up after a restore has been prematurely aborted.
 .ti -5n
 .sp
 .B verbose
