@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fcntl.2	6.2 (Berkeley) %G%
+.\"	@(#)fcntl.2	6.3 (Berkeley) %G%
 .\"
 .TH FCNTL 2 ""
 .UC 5
@@ -138,6 +138,11 @@ is F_DUPFD and
 is negative or greater the maximum allowable number
 (see
 .IR getdtablesize (2)).
+.TP 15
+[ESRCH]
+.I Cmd
+is F_SETOWN and
+the process ID given as argument is not in use.
 .SH "SEE ALSO
 close(2), execve(2), getdtablesize(2), open(2), sigvec(2)
 .SH BUGS
