@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- * 	@(#)qd.c	1.3  Berkeley  %G%
+ * 	@(#)qd.c	1.4  Berkeley  %G%
  *
  * derived from: "@(#)qd.c	1.40	ULTRIX	10/2/86";
  */
@@ -104,7 +104,7 @@ struct qdflags {
 #define EVENT_BUFSIZE  1024	/* # of bytes per device's event buffer */
 #define MAXEVENTS  ( (EVENT_BUFSIZE - sizeof(struct qdinput))	 \
 		     / sizeof(struct _vs_event) )
-#define DMA_BUFSIZ	(1024 * 3)
+#define DMA_BUFSIZ	(1024 * 10)
 #define COLOR_BUFSIZ  ((sizeof(struct color_buf) + 512) & ~0x01FF)
 
 /*
