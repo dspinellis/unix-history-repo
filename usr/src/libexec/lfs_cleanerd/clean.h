@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)clean.h	5.1 (Berkeley) %G%
+ *	@(#)clean.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -83,8 +83,7 @@ void	 err __P((const int, const char *, ...));
 int	 fs_getmntinfo __P((struct statfs **, int));
 int	 get __P((int, off_t, void *, size_t));
 FS_INFO	*get_fs_info __P((struct statfs *, int));
-int 	 lfs_segmapv __P((FS_INFO *, int, caddr_t, BLOCK_INFO **, int *,
-	     INODE_INFO **, int *));
+int 	 lfs_segmapv __P((FS_INFO *, int, caddr_t, BLOCK_INFO **, int *));
 int	 mmap_segment __P((FS_INFO *, int, caddr_t *));
 void	 munmap_segment __P((FS_INFO *, caddr_t));
 void	 reread_fs_info __P((FS_INFO *, int));
@@ -103,10 +102,10 @@ void	 toss __P((void *, int *, size_t,
 	fflush(stdout); \
 }
 
-#define PRINT_IINFO(b, iip) { \
+#define PRINT_INODE(b, iip) { \
 	(void) printf("\t%s inode: %d daddr: 0x%lx create: %s\n", \
-	    b ? "KEEPING" : "TOSSING", (iip)->ii_inode, (iip)->ii_daddr, \
-	    ctime((time_t *)&(iip)->ii_segcreate)); \
+	    b ? "KEEPING" : "TOSSING", (bip)->bi_inode, (bip)->bi_daddr, \
+	    ctime((time_t *)&(bip)->bi_segcreate)); \
 	fflush(stdout); \
 }
 
@@ -134,7 +133,7 @@ void	 print_SEGSUM __P(( struct lfs *, SEGSUM *));
 void	 print_CLEANERINFO __P((CLEANERINFO *));
 #else
 #define	PRINT_FINFO(fp, ip)
-#define	PRINT_IINFO(b, iip)
+#define	PRINT_INODE(b, iip)
 #define PRINT_BINFO(bip)
 #define	PRINT_SEGUSE(sup, n)
 #define	dump_cleaner_info(cip)
