@@ -12,10 +12,8 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
-
-#define ADDRHACK
 
 /*
  * w - print system status (who and what)
@@ -24,57 +22,49 @@ static char sccsid[] = "@(#)w.c	5.34 (Berkeley) %G%";
  *
  */
 #include <sys/param.h>
-#include <sys/file.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/sysctl.h>
 #include <sys/proc.h>
 #include <sys/user.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
 #include <sys/tty.h>
+
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include <ctype.h>
+#include <err.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <kvm.h>
+#include <netdb.h>
 #include <nlist.h>
+#include <paths.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <tzfile.h>
+#include <unistd.h>
 #include <utmp.h>
-#include <paths.h>
 
-#ifdef ADDRHACK
-#include <sys/socket.h>
-#include <netdb.h>
-#endif
+#include "extern.h"
 
-char	*program;
-int	ttywidth;		/* width of tty */
-int	argwidth;		/* width of tty */
-int	header = 1;		/* true if -h flag: don't print heading */
-int	wcmd = 1;		/* true if this is w(1), and not uptime(1) */
-#ifdef ADDRHACK
-int	nflag = 0;		/* true if -n flag: don't convert addrs */
-#endif
-int	nusers;			/* number of users logged in now */
-char *	sel_user;		/* login of particular user selected */
-time_t	now;			/* the current time of day */
-struct	timeval boottime;
-time_t	uptime;			/* time of last reboot & elapsed time since */
-struct	utmp utmp;
-struct	winsize ws;
-int	sortidle;		/* sort bu idle time */
-#ifdef ADDRHACK
-char	domain[64];
-#endif
+struct timeval boottime;
+struct utmp utmp;
+struct winsize ws;
 kvm_t *kd;
-
-#if __STDC__
-void error(const char *fmt, ...);
-#else
-void error();
-#endif
-
-void prttime();
+time_t now;			/* the current time of day */
+time_t uptime;			/* time of last reboot & elapsed time since */
+int ttywidth;			/* width of tty */
+int argwidth;			/* width of tty */
+int header = 1;			/* true if -h flag: don't print heading */
+int nflag;			/* true if -n flag: don't convert addrs */
+int sortidle;			/* sort bu idle time */
+char *sel_user;			/* login of particular user selected */
+char *program;
+char domain[MAXHOSTNAMELEN];
 
 /*
  * One of these per active utmp entry.
@@ -83,7 +73,7 @@ struct	entry {
 	struct	entry *next;
 	struct	utmp utmp;
 	dev_t	tdev;		/* dev_t of terminal */
-	int	idle;		/* idle time of terminal in minutes */
+	time_t	idle;		/* idle time of terminal in seconds */
 	struct	kinfo_proc *kp;	/* `most interesting' proc */
 	char	*args;		/* arg list of interesting process */
 } *ep, *ehead = NULL, **nextp = &ehead;
@@ -98,100 +88,88 @@ struct nlist nl[] = {
 	{ "" },
 };
 
-#define USAGE "[ -hi ] [ user ]"
-#define usage()	fprintf(stderr, "usage: %s: %s\n", program, USAGE)
+static void	 pr_header __P((kvm_t *, time_t *, int));
+static struct stat
+		*ttystat __P((char *));
+static void	 usage __P((int));
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	register int i;
-	register struct kinfo_proc *kp;
-	struct stat *stp, *ttystat();
-	FILE *ut;
-	char *cp;
-	int nentries;
-	int ch;
 	extern char *optarg;
 	extern int optind;
-	char *attime();
-	char errbuf[80];
+	struct kinfo_proc *kp;
+	struct hostent *hp;
+	struct stat *stp;
+	FILE *ut;
+	u_long l;
+	int ch, i, nentries, nusers, wcmd;
+	char *memf, *nlistf, *p, *x;
+	char buf[MAXHOSTNAMELEN], errbuf[256];
 
+	/* Are we w(1) or uptime(1)? */
 	program = argv[0];
-	/*
-	 * are we w(1) or uptime(1)
-	 */
-	if ((cp = rindex(program, '/')) || *(cp = program) == '-')
-		cp++;
-	if (*cp == 'u')
+	if ((p = rindex(program, '/')) || *(p = program) == '-')
+		p++;
+	if (*p == 'u') {
 		wcmd = 0;
+		p = "";
+	} else {
+		wcmd = 1;
+		p = "hiflM:N:nsuw";
+	}
 
-	while ((ch = getopt(argc, argv, "hiflnsuw")) != EOF)
-		switch((char)ch) {
+	memf = nlistf = NULL;
+	while ((ch = getopt(argc, argv, p)) != EOF)
+		switch (ch) {
 		case 'h':
 			header = 0;
 			break;
 		case 'i':
-			sortidle++;
+			sortidle = 1;
+			break;
+		case 'M':
+			memf = optarg;
+			break;
+		case 'N':
+			nlistf = optarg;
 			break;
 		case 'n':
-#ifdef ADDRHACK
-			++nflag;
-#endif
+			nflag = 1;
 			break;
 		case 'f': case 'l': case 's': case 'u': case 'w':
-			error("[-flsuw] no longer supported");
-			usage();
-			exit(1);
+			warnx("[-flsuw] no longer supported");
+			/* FALLTHROUGH */
 		case '?':
 		default:
-			usage();
-			exit(1);
+			usage(wcmd);
 		}
 	argc -= optind;
 	argv += optind;
 
+	if ((kd = kvm_openfiles(nlistf, memf, NULL, O_RDONLY, errbuf)) == NULL)
+		err(1, "%s", errbuf);
+	if (header && kvm_nlist(kd, nl) != 0)
+		err(1, "can't read namelist");
+
+	(void)time(&now);
+	if ((ut = fopen(_PATH_UTMP, "r")) == NULL)
+		err(1, "%s", _PATH_UTMP);
+
 	if (*argv)
 		sel_user = *argv;
 
-	kd = kvm_openfiles((char *)0, (char *)0, (char *)0, O_RDONLY, errbuf);
-	if (kd == NULL) {
-		error("%s", errbuf);
-		exit(1);
-	}
-	if (header && kvm_nlist(kd, nl) != 0) {
-		error("can't get namelist");
-		exit(1);
-	}
-#ifdef ADDRHACK
-	if (!nflag) {
-		if (gethostname(domain, sizeof(domain) - 1) < 0 ||
-		    (cp = index(domain, '.')) == 0)
-			domain[0] = '\0';
-		else {
-			domain[sizeof(domain) - 1] = '\0';
-			bcopy(cp, domain, strlen(cp) + 1);
-		}
-	}
-#endif
-	time(&now);
-	ut = fopen(_PATH_UTMP, "r");
-	if (ut == NULL) {
-		error("%s: %s", _PATH_UTMP, strerror(errno));
-		exit(1);
-	}
-	while (fread(&utmp, sizeof(utmp), 1, ut)) {
+	for (nusers = 0; fread(&utmp, sizeof(utmp), 1, ut);) {
 		if (utmp.ut_name[0] == '\0')
 			continue;
-		nusers++;
+		++nusers;
 		if (wcmd == 0 || (sel_user &&
 		    strncmp(utmp.ut_name, sel_user, UT_NAMESIZE) != 0))
 			continue;
-		if ((ep = (struct entry *)
-		     calloc(1, sizeof (struct entry))) == NULL) {
-			error("out of memory");
-			exit(1);
-		}
+		if ((ep = calloc(1, sizeof(struct entry))) == NULL)
+			err(1, NULL);
 		*nextp = ep;
 		nextp = &(ep->next);
 		bcopy(&utmp, &(ep->utmp), sizeof (struct utmp));
@@ -199,7 +177,8 @@ main(argc, argv)
 		ep->tdev = stp->st_rdev;
 #if defined(hp300) || defined(i386)
 		/*
-		 * XXX  If this is the console device, attempt to ascertain
+		 * XXX
+		 * If this is the console device, attempt to ascertain
 		 * the true console device dev_t.
 		 */
 		if (ep->tdev == 0) {
@@ -219,69 +198,23 @@ main(argc, argv)
 			ep->tdev = cn_dev;
 		}
 #endif
-		ep->idle = ((now - stp->st_atime) + 30) / 60; /* secs->mins */
-		if (ep->idle < 0)
+		if ((ep->idle = now - stp->st_atime) < 0)
 			ep->idle = 0;
 	}
-	fclose(ut);
+	(void)fclose(ut);
 
 	if (header || wcmd == 0) {
-		double	avenrun[3];
-		int days, hrs, mins;
-
-		/*
-		 * Print time of day
-		 */
-		fputs(attime(&now), stdout);
-		/*
-		 * Print how long system has been up.
-		 * (Found by looking for "boottime" in kernel)
-		 */
-		(void)kvm_read(kd, (u_long)nl[X_BOOTTIME].n_value,
-		    (char *)&boottime, sizeof (boottime));
-		uptime = now - boottime.tv_sec;
-		uptime += 30;
-		days = uptime / (60*60*24);
-		uptime %= (60*60*24);
-		hrs = uptime / (60*60);
-		uptime %= (60*60);
-		mins = uptime / 60;
-
-		printf("  up");
-		if (days > 0)
-			printf(" %d day%s,", days, days>1?"s":"");
-		if (hrs > 0 && mins > 0) {
-			printf(" %2d:%02d,", hrs, mins);
-		} else {
-			if (hrs > 0)
-				printf(" %d hr%s,", hrs, hrs>1?"s":"");
-			if (mins > 0)
-				printf(" %d min%s,", mins, mins>1?"s":"");
-		}
-
-		/* Print number of users logged in to system */
-		printf("  %d user%s", nusers, nusers>1?"s":"");
-
-		/*
-		 * Print 1, 5, and 15 minute load averages.
-		 */
-		printf(",  load average:");
-		(void)getloadavg(avenrun, sizeof(avenrun) / sizeof(avenrun[0]));
-		for (i = 0; i < (sizeof(avenrun)/sizeof(avenrun[0])); i++) {
-			if (i > 0)
-				printf(",");
-			printf(" %.2f", avenrun[i]);
-		}
-		printf("\n");
-		if (wcmd == 0)		/* if uptime(1) then done */
-			exit(0);
-#define HEADER	"USER    TTY FROM              LOGIN@  IDLE WHAT\n"
-#define WUSED	(sizeof (HEADER) - sizeof ("WHAT\n"))
-		printf(HEADER);
+		pr_header(kd, &now, nusers);
+		if (wcmd == 0)
+			exit (0);
 	}
 
+#define HEADER	"USER    TTY FROM              LOGIN@  IDLE WHAT\n"
+#define WUSED	(sizeof (HEADER) - sizeof ("WHAT\n"))
+	(void)printf(HEADER);
+
 	if ((kp = kvm_getprocs(kd, KERN_PROC_ALL, 0, &nentries)) == NULL)
-		error("%s", kvm_geterr(kd));
+		err(1, "%s", kvm_geterr(kd));
 	for (i = 0; i < nentries; i++, kp++) {
 		register struct proc *p = &kp->kp_proc;
 		register struct eproc *e;
@@ -300,9 +233,9 @@ main(argc, argv)
 			}
 		}
 	}
-	if ((ioctl(1, TIOCGWINSZ, &ws) == -1 &&
-	     ioctl(2, TIOCGWINSZ, &ws) == -1 &&
-	     ioctl(0, TIOCGWINSZ, &ws) == -1) || ws.ws_col == 0)
+	if ((ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 &&
+	     ioctl(STDERR_FILENO, TIOCGWINSZ, &ws) == -1 &&
+	     ioctl(STDIN_FILENO, TIOCGWINSZ, &ws) == -1) || ws.ws_col == 0)
 	       ttywidth = 79;
         else
 	       ttywidth = ws.ws_col - 1;
@@ -318,10 +251,8 @@ main(argc, argv)
 		}
 		ep->args = fmt_argv(kvm_getargv(kd, ep->kp, argwidth),
 		    ep->kp->kp_proc.p_comm, MAXCOMLEN);
-		if (ep->args == NULL) {
-			error("out of memory");
-			exit(1);
-		}
+		if (ep->args == NULL)
+			err(1, NULL);
 	}
 	/* sort by idle time */
 	if (sortidle && ehead != NULL) {
@@ -340,112 +271,132 @@ main(argc, argv)
 		}
 	}
 			
-	for (ep = ehead; ep != NULL; ep = ep->next) {
-#ifdef ADDRHACK
-		register char *x;
-		register struct hostent *hp;
-		unsigned long l;
-		char buf[64];
-#endif
+	if (!nflag)
+		if (gethostname(domain, sizeof(domain) - 1) < 0 ||
+		    (p = index(domain, '.')) == 0)
+			domain[0] = '\0';
+		else {
+			domain[sizeof(domain) - 1] = '\0';
+			bcopy(p, domain, strlen(p) + 1);
+		}
 
-		cp = *ep->utmp.ut_host ? ep->utmp.ut_host : "-";
-#ifdef ADDRHACK
-		if (x = index(cp, ':'))
+	for (ep = ehead; ep != NULL; ep = ep->next) {
+		p = *ep->utmp.ut_host ? ep->utmp.ut_host : "-";
+		if (x = index(p, ':'))
 			*x++ = '\0';
-		if (!nflag && isdigit(*cp) &&
-		    (long)(l = inet_addr(cp)) != -1 &&
-		    (hp = gethostbyaddr((char *)&l, sizeof(l),
-		    AF_INET))) {
-			    if (domain[0] != '\0') {
-				    cp = hp->h_name;
-				    cp += strlen(hp->h_name);
-				    cp -= strlen(domain);
-				    if (cp > hp->h_name &&
-					strcmp(cp, domain) == 0)
-					*cp = '\0';
-			    }
-			    cp = hp->h_name;
+		if (!nflag && isdigit(*p) &&
+		    (long)(l = inet_addr(p)) != -1 &&
+		    (hp = gethostbyaddr((char *)&l, sizeof(l), AF_INET))) {
+			if (domain[0] != '\0') {
+				p = hp->h_name;
+				p += strlen(hp->h_name);
+				p -= strlen(domain);
+				if (p > hp->h_name && !strcmp(p, domain))
+					*p = '\0';
+			}
+			p = hp->h_name;
 		}
 		if (x) {
-			sprintf(buf, "%s:%s", cp, x);
-			cp = buf;
+			(void)snprintf(buf, sizeof(buf), "%s:%s", p, x);
+			p = buf;
 		}
-#endif
-		printf("%-*.*s %-2.2s %-*.*s %s",
-			UT_NAMESIZE, UT_NAMESIZE, ep->utmp.ut_name,
-			strncmp(ep->utmp.ut_line, "tty", 3) == 0 ?
-				ep->utmp.ut_line+3 : ep->utmp.ut_line,
-			UT_HOSTSIZE, UT_HOSTSIZE, *cp ? cp : "-",
-			attime(&ep->utmp.ut_time));
-		if (ep->idle >= 36 * 60)
-			printf(" %ddays ", (ep->idle + 12 * 60) / (24 * 60));
-		else
-			prttime(ep->idle, " ");
-		printf("%.*s\n", argwidth, ep->args);
+		(void)printf("%-*.*s %-2.2s %-*.*s ",
+		    UT_NAMESIZE, UT_NAMESIZE, ep->utmp.ut_name,
+		    strncmp(ep->utmp.ut_line, "tty", 3) ?
+		    ep->utmp.ut_line : ep->utmp.ut_line + 3,
+		    UT_HOSTSIZE, UT_HOSTSIZE, *p ? p : "-");
+		pr_attime(&ep->utmp.ut_time, &now);
+		pr_idle(ep->idle);
+		(void)printf("%.*s\n", argwidth, ep->args);
 	}
 	exit(0);
 }
 
-struct stat *
+static void
+pr_header(kd, nowp, nusers)
+	kvm_t *kd;
+	time_t *nowp;
+	int nusers;
+{
+	double avenrun[3];
+	time_t uptime;
+	int days, hrs, i, mins;
+	char buf[256];
+
+	/* Print time of day. */
+	(void)strftime(buf, sizeof(buf), "%l:w.cp", localtime(nowp));
+	(void)printf("%s ", buf);
+
+	/*
+	 * Print how long system has been up.
+	 * (Found by looking for "boottime" in kernel)
+	 */
+	if ((kvm_read(kd, (u_long)nl[X_BOOTTIME].n_value,
+	    &boottime, sizeof(boottime))) != sizeof(boottime))
+		err(1, "can't read kernel bootime variable");
+
+	uptime = now - boottime.tv_sec;
+	uptime += 30;
+	days = uptime / SECSPERDAY;
+	uptime %= SECSPERDAY;
+	hrs = uptime / SECSPERHOUR;
+	uptime %= SECSPERHOUR;
+	mins = uptime / SECSPERMIN;
+	(void)printf(" up");
+	if (days > 0)
+		(void)printf(" %d day%s,", days, days > 1 ? "s" : "");
+	if (hrs > 0 && mins > 0)
+		(void)printf(" %2d:%02d,", hrs, mins);
+	else {
+		if (hrs > 0)
+			(void)printf(" %d hr%s,",
+			    hrs, hrs > 1 ? "s" : "");
+		if (mins > 0)
+			(void)printf(" %d min%s,",
+			    mins, mins > 1 ? "s" : "");
+	}
+
+	/* Print number of users logged in to system */
+	(void)printf(" %d user%s", nusers, nusers > 1 ? "s" : "");
+
+	/*
+	 * Print 1, 5, and 15 minute load averages.
+	 */
+	if (kvm_getloadavg(kd,
+	    avenrun, sizeof(avenrun) / sizeof(avenrun[0])) == -1)
+		(void)printf(", no load average information available\n");
+	else {
+		(void)printf(", load averages:");
+		for (i = 0; i < (sizeof(avenrun) / sizeof(avenrun[0])); i++) {
+			if (i > 0)
+				(void)printf(",");
+			(void)printf(" %.2f", avenrun[i]);
+		}
+		(void)printf("\n");
+	}
+}
+
+static struct stat *
 ttystat(line)
 	char *line;
 {
-	static struct stat statbuf;
-	char ttybuf[sizeof (_PATH_DEV) + UT_LINESIZE + 1];
+	static struct stat sb;
+	char ttybuf[MAXPATHLEN];
 
-	sprintf(ttybuf, "%s/%.*s", _PATH_DEV, UT_LINESIZE, line);
-	(void) stat(ttybuf, &statbuf);
-
-	return (&statbuf);
+	(void)snprintf(ttybuf, sizeof(ttybuf), "%s/%s", _PATH_DEV, line);
+	if (stat(ttybuf, &sb))
+		err(1, "%s", ttybuf);
+	return (&sb);
 }
 
-/*
- * prttime prints a time in hours and minutes or minutes and seconds.
- * The character string tail is printed at the end, obvious
- * strings to pass are "", " ", or "am".
- */
-void
-prttime(tim, tail)
-	time_t tim;
-	char *tail;
+static void
+usage(wcmd)
+	int wcmd;
 {
-
-	if (tim >= 60) {
-		printf(" %2d:", tim/60);
-		tim %= 60;
-		printf("%02d", tim);
-	} else if (tim >= 0)
-		printf("    %2d", tim);
-	printf("%s", tail);
-}
-
-#if __STDC__
-#include <stdarg.h>
-#else
-#include <varargs.h>
-#endif
-
-void
-#if __STDC__
-error(const char *fmt, ...)
-#else
-error(va_alist)
-	va_dcl
-#endif
-{
-#if !__STDC__
-	char *fmt;
-#endif
-	va_list ap;
-
-	fprintf(stderr, "%s: ", program);
-#if __STDC__
-	va_start(ap, fmt);
-#else
-	va_start(ap);
-	fmt = va_arg(ap, char *);
-#endif
-	(void) vfprintf(stderr, fmt, ap);
-	va_end(ap);
-	fprintf(stderr, "\n");
+	if (wcmd)
+		(void)fprintf(stderr,
+		    "usage: w: [-hin] [-M core] [-N system] [user]\n");
+	else
+		(void)fprintf(stderr, "uptime\n");
+	exit (1);
 }
