@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_nfs.c	8.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_nfs.c	8.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -634,8 +634,7 @@ getnfsargs(spec, nfsargsp)
 	if (nfhret.stat) {
 		if (opflags & ISBGRND)
 			exit(1);
-		errno = nfhret.stat;
-		warn("can't access %s", spec);
+		warnx("can't access %s: %s", spec, strerror(nfhret.stat));
 		return (0);
 	}
 	saddr.sin_port = htons(tport);
@@ -697,7 +696,11 @@ xdr_fh(xdrsp, np)
 			if (auth == np->auth)
 				authfnd++;
 		}
-		if (!authfnd)
+		/*
+		 * Some servers, such as DEC's OSF/1 return a nil authenticator
+		 * list to indicate RPCAUTH_UNIX.
+		 */
+		if (!authfnd && (authcnt > 0 || np->auth != RPCAUTH_UNIX))
 			np->stat = EAUTH;
 		return (1);
 	};
