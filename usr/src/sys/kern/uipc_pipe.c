@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.13	82/06/20	*/
+/*	uipc_pipe.c	4.14	82/10/03	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
