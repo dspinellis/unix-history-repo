@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.69 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.70 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1262,11 +1262,11 @@ ufs_print(vp)
 		fifo_printinfo(vp);
 #endif /* FIFO */
 	printf("%s\n", (ip->i_flag & ILOCKED) ? " (LOCKED)" : "");
-	if (ip->i_spare0 == 0)
+	if (ip->i_lockholder == 0)
 		return (0);
-	printf("\towner pid %d", ip->i_spare0);
-	if (ip->i_spare1)
-		printf(" waiting pid %d", ip->i_spare1);
+	printf("\towner pid %d", ip->i_lockholder);
+	if (ip->i_lockwaiter)
+		printf(" waiting pid %d", ip->i_lockwaiter);
 	printf("\n");
 	return (0);
 }
@@ -1482,6 +1482,7 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 {
 	struct inode *ip, *nip;
 	struct vnode *vp, *nvp;
+	extern struct vnodeops spec_vnodeops;
 
 	vp = *vpp;
 	ip = VTOI(vp);
@@ -1491,22 +1492,21 @@ ufs_vinit(mntp, specops, fifoops, vpp)
 		vp->v_op = specops;
 		if (nvp = checkalias(vp, ip->i_rdev, mntp)) {
 			/*
+			 * Discard unneeded vnode, but save its inode.
+			 */
+			remque(ip);
+			IUNLOCK(ip);
+			nvp->v_data = vp->v_data;
+			vp->v_data = NULL;
+			vp->v_op = &spec_vnodeops;
+			vrele(vp);
+			vgone(vp);
+			/*
 			 * Reinitialize aliased inode.
 			 */
 			vp = nvp;
-			nip = VTOI(vp);
-			nip->i_vnode = vp;
-			nip->i_flag = 0;
-			nip->i_din = ip->i_din;
-			nip->i_dev = ip->i_dev;
-			nip->i_number = ip->i_number;
-			ufs_ihashins(nip);
-			/*
-			 * Discard unneeded inode.
-			 */
-			ip->i_mode = 0;
-			ufs_iput(ip);
-			ip = nip;
+			ip->i_vnode = vp;
+			ufs_ihashins(ip);
 		}
 		break;
 	case VFIFO:
