@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_inode.c	7.48 (Berkeley) %G%
+ *	@(#)ufs_inode.c	7.49 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -74,7 +74,7 @@ ufs_reclaim(ap)
 	 * Remove the inode from its hash chain.
 	 */
 	ip = VTOI(vp);
-	remque(ip);
+	ufs_ihashrem(ip);
 	/*
 	 * Purge old data structures associated with the inode.
 	 */
