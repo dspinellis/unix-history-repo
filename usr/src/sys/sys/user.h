@@ -1,4 +1,4 @@
-/*	user.h	4.28	83/06/09	*/
+/*	user.h	4.29	83/06/20	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
@@ -76,9 +76,7 @@ struct	user {
 	struct	file *u_ofile[NOFILE];	/* file structures for open files */
 	char	u_pofile[NOFILE];	/* per-process flags of open files */
 #define	UF_EXCLOSE 	0x1		/* auto-close on exec */
-#define	UF_SHLOCK	0x2		/* shared lock present */
-#define	UF_EXLOCK	0x4		/* exclusive lock present */
-#define	UF_MAPPED 	0x8
+#define	UF_MAPPED 	0x2		/* mapped from device */
 	struct	inode *u_cdir;		/* current directory */
 	struct	inode *u_rdir;		/* root directory of current process */
 	struct	tty *u_ttyp;		/* controlling tty pointer */
