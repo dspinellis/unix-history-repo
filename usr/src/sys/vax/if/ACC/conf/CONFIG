@@ -1,0 +1,16 @@
+
+For an Ultrix 3.0 system, add the appropriate lines to the configuration
+file before the "config" line.
+
+# We're running Ultrix 3.0
+options		ACC_ULTRIX=30
+# Enable the PAD (X.29 interface)
+options		DDA_PADOPT
+# Enable the RAW (programmers interface)
+options		DDA_RAWOPT
+
+After the "config" line,  near the end of the device entries,  add the
+following line (assuming you have one 6250/5250 to be installed in the
+default location):
+
+device         dda0      at  uba0      csr 0167000   vector ddainta  ddaintb  

@@ -1,0 +1,10 @@
+
+For Ultrix (versions 2.0, 2.2, 3.0):
+
+Add the following line to the file /sys/conf/files.vax:
+
+vaxif/if_dda.c		optional dda device-driver Notbinary
+
+For Berkeley UNIX,  add the following line to the file /sys/conf/files/vax:
+
+vaxif/if_dda.c		optional dda device-driver
