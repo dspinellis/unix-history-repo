@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -12,7 +12,10 @@ CFLAGS=	-O
 #
 SUBDIR=	eyacc pi pc0 px pxp pdx utilities
 
-all:	${SUBDIR}
+all:
+	for i in ${SUBDIR}; do \
+		(cd $$i; make ${MFLAGS}); \
+	done
 
 ${SUBDIR}: /tmp
 	cd $@; make ${MFLAGS}
