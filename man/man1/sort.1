@@ -1,0 +1,44 @@
+.pa 1
+.he 'SORT (I)'9/2/72'SORT (I)'
+.ti 0
+NAME		sort -- sort a file
+.sp
+.ti 0
+SYNOPSIS	sort____ [ -_ ] [ input [ output ] ]
+.sp
+.ti 0
+DESCRIPTION	sort____
+will sort the input file and write the
+sorted file on the output file.
+If the output file is not given,
+the input file is rewritten.
+If the input file is missing,
+sort uses the standard input as
+input and the standard output for output.
+Thus sort____ may be used as a filter.
+
+The sort is line-by-line in increasing ASCII collating sequence,
+except that upper-case letters are considered
+the same as the lower-case letters.
+
+The optional argument -_ will cause a reverse sort.
+
+sort____ is implemented in such a way that
+
+	sort /dev/mt0
+
+works correctly provided the tape is not too big.
+.sp
+.ti 0
+FILES		/tmp/stm?
+.sp
+.ti 0
+SEE ALSO	--
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		The
+largest file that can be
+sorted is about 128K bytes.
