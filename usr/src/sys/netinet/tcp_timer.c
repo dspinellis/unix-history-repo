@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tcp_timer.c	7.15 (Berkeley) %G%
+ *	@(#)tcp_timer.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -30,9 +30,9 @@
 #include "../net/route.h"
 
 #include "in.h"
-#include "in_pcb.h"
 #include "in_systm.h"
 #include "ip.h"
+#include "in_pcb.h"
 #include "ip_var.h"
 #include "tcp.h"
 #include "tcp_fsm.h"
