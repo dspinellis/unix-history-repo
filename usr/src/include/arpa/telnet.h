@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)telnet.h	5.12 (Berkeley) %G%
+ *	@(#)telnet.h	5.13 (Berkeley) %G%
  */
 
 /*
@@ -117,6 +117,7 @@ char *telopts[NTELOPTS+1] = {
 #define	TELQUAL_SEND	1	/* send option */
 #define	TELQUAL_INFO	2	/* ENVIRON: informational version of IS */
 #define	TELQUAL_REPLY	2	/* AUTHENTICATION: client version of IS */
+#define	TELQUAL_NAME	3	/* AUTHENTICATION: client version of IS */
 
 /*
  * LINEMODE suboptions
@@ -247,20 +248,23 @@ extern char *authtype_names[];
 #define	ENCRYPT_END		4	/* Am ending encrypted */
 #define	ENCRYPT_REQSTART	5	/* Request you start encrypting */
 #define	ENCRYPT_REQEND		6	/* Request you send encrypting */
-#define	ENCRYPT_CNT		7
+#define	ENCRYPT_ENC_KEYID	7
+#define	ENCRYPT_DEC_KEYID	8
+#define	ENCRYPT_CNT		9
 
 #define	ENCTYPE_ANY		0
-#define	ENCTYPE_KRBDES		1
-#define	ENCTYPE_CNT		2
+#define	ENCTYPE_DES_CFB64	1
+#define	ENCTYPE_DES_OFB64	2
+#define	ENCTYPE_CNT		3
 
 #ifdef	ENCRYPT_NAMES
 char *encrypt_names[] = {
 	"IS", "SUPPORT", "REPLY", "START", "END",
-	"REQUEST-START", "REQUEST-END",
+	"REQUEST-START", "REQUEST-END", "ENC-KEYID", "DEC-KEYID",
 	0,
 };
 char *enctype_names[] = {
-	"ANY", "KRBDES",  0,
+	"ANY", "DES_CFB64",  "DES_OFB64",  0,
 };
 #else
 extern char *encrypt_names[];
