@@ -202,7 +202,11 @@ hpopen(dev, flags, fmt)
 	s = spl5();
 	while (sc->sc_state != OPEN && sc->sc_state != OPENRAW &&
 	    sc->sc_state != CLOSED)
-		sleep ((caddr_t)sc, PZERO+1);
+		if (error = tsleep((caddr_t)sc, (PZERO+1) | PCATCH,
+		    devopn, 0)) {
+			splx(s);
+			return (error);
+		}
 	splx(s);
 	if (sc->sc_state != OPEN && sc->sc_state != OPENRAW)
 		if (error = hpinit(dev, flags))
@@ -436,7 +440,7 @@ hpstrategy(bp)
 #endif
 	if (sc->sc_state < OPEN)
 		goto q;
-	if (sc->sc_state != OPEN && (bp->b_flags & B_READ) == 0) {
+	if (sc->sc_state != OPEN && (bp->b_flags & (B_READ|B_FORMAT)) == 0) {
 		bp->b_error = EROFS;
 		goto bad;
 	}
@@ -713,9 +717,10 @@ hard:
 				    sc->sc_badbn);
 			if (mbsr & (MBSR_EBITS &~ (MBSR_DTABT|MBSR_MBEXC)))
 				printf(" mbsr=%b", mbsr, mbsr_bits);
-			printf(" er1=%b er2=%b\n",
+			printf(" er1=%b er2=%b ds=%b\n",
 			    MASKREG(hpaddr->hper1), HPER1_BITS,
-			    MASKREG(hpaddr->hper2), HPER2_BITS);
+			    MASKREG(hpaddr->hper2), HPER2_BITS,
+			    MASKREG(hpaddr->hpds), HPDS_BITS);
 			bp->b_flags |= B_ERROR;
 			bp->b_flags &= ~B_BAD;
 		} else
@@ -1051,12 +1056,13 @@ hpdump(dev)
 {
 	register struct mba_device *mi;
 	register struct mba_regs *mba;
+	register struct disklabel *lp;
 	struct hpdevice *hpaddr;
 	char *start;
 	int num, unit;
-	register struct disklabel *lp;
+	extern int dumpsize;
 
-	num = maxfree;
+	num = dumpsize;
 	start = 0;
 	unit = hpunit(dev);
 	if (unit >= NHP)
@@ -1074,8 +1080,6 @@ hpdump(dev)
 		hpaddr->hpcs1 = HP_PRESET|HP_GO;
 		hpaddr->hpof = HPOF_FMT22;
 	}
-	if (dumplo < 0)
-		return (EINVAL);
 	if (dumplo + num >= lp->d_partitions[hppart(dev)].p_size)
 		num = lp->d_partitions[hppart(dev)].p_size - dumplo;
 	while (num > 0) {
