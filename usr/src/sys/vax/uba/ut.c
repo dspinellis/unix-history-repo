@@ -1,4 +1,4 @@
-/*	ut.c	4.5	81/11/10	*/
+/*	ut.c	4.6	81/11/11	*/
 
 #include "ut.h"
 #if NUT > 0
@@ -635,7 +635,7 @@ uttimer(dev)
 	register short x;
 
 	if (sc->sc_timo != INF && (sc->sc_timo -= 5) < 0) {
-		printf("te%d: lost interrupt\n", TJUNIT(dev));
+		printf("tj%d: lost interrupt\n", TJUNIT(dev));
 		sc->sc_timo = INF;
 		x = spl5();
 		utintr(UTUNIT(dev));
