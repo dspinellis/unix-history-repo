@@ -1,0 +1,62 @@
+.pa 1
+.he 'NLIST (III)'6/12/72'NLIST (III)'
+.ti 0
+NAME		nlist -- get entries from name list
+.sp
+.ti 0
+SYNOPSIS	jsr r5,nlist; file; list
+.br
+.li
+...
+.br
+.ti -6
+file: <file name\\0>; .even
+.br
+.ti -6
+list:
+.br
+<name1xxx>; type1; value1
+.br
+<name2xxx>; type2; value2
+.br
+.li
+...
+.br
+0
+.sp
+.ti 0
+DESCRIPTION	nlist_____
+will examine the name list in
+the given assembler output file
+and selectively extract a
+list of values.
+The name list consists of
+a list of 8-character names (null padded)
+each followed by two words.
+The list is terminated with a zero.
+Each name is looked up in the name list of
+the file.
+If the name is found, the type and value of the
+name are placed in the two words following
+the name.
+If the name is not found, the type entry is set to -1.
+.sp
+This subroutine is useful for
+examining the system name list kept in
+the file /sys/sys/unix.
+In this way programs can obtain system 'magic'
+numbers that are up to date.
+.sp
+.ti 0
+FILES		kept in /lib/liba.a
+.sp
+.ti 0
+SEE ALSO	a.out(V)
+.sp
+.ti 0
+DIAGNOSTICS	All
+type entries are set to -1 if the file cannot be found
+or if it is not a valid namelist.
+.sp
+.ti 0
+BUGS		--
