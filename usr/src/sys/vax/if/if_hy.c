@@ -1,4 +1,4 @@
-/*	if_hy.c	4.4	83/05/27	*/
+/*	if_hy.c	4.6	83/06/12	*/
 
 #include "hy.h"
 #if NHY > 0
@@ -6,7 +6,7 @@
 /*
  * Network Systems Copropration Hyperchanel interface
  *
- * UNTESTED WITH 4.1C
+ * UNTESTED WITH 4.2
  */
 #include "../machine/pte.h"
 
@@ -21,11 +21,9 @@
 #include "../h/time.h"
 #include "../h/kernel.h"
 #include "../h/ioctl.h"
-
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
-
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
 #include "../netinet/ip.h"
@@ -33,10 +31,8 @@
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
-
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
-
 #include "../vaxif/if_hy.h"
 #include "../vaxif/if_hyreg.h"
 #include "../vaxif/if_uba.h"
@@ -45,7 +41,8 @@
 #define HYELOG
 #define	HYMTU	576
 
-int	hyprobe(), hyattach(), hyinit(), hyoutput(), hyreset(), hywatch();
+int	hyprobe(), hyattach(), hyinit(), hyioctl();
+int	hyoutput(), hyreset(), hywatch();
 struct	uba_device *hyinfo[NHY];
 u_short hystd[] = { 0772410, 0 };
 struct	uba_driver hydriver =
@@ -201,6 +198,7 @@ hyattach(ui)
 	ifp->if_net = ui->ui_flags;
 	is->hy_state = STARTUP;		/* don't allow state transitions yet */
 	ifp->if_init = hyinit;
+	ifp->if_ioctl = hyioctl;
 	ifp->if_output = hyoutput;
 	ifp->if_reset = hyreset;
 	ifp->if_watchdog = hywatch;
@@ -249,6 +247,7 @@ hyinit(unit)
 		is->hy_if.if_flags &= ~IFF_UP;
 		return;
 	}
+	is->is_hy.if_flags |= IFF_RUNNING;
 	/*
 	 * Issue wait for message and start the state machine
 	 */
@@ -1225,20 +1224,14 @@ out:
 }
 #endif
 
-#ifdef notdef
 /*ARGSUSED*/
-hyioctl(dev, cmd, data, flag)
-	dev_t dev;
+hyioctl(ifp, cmd, data)
+	register struct ifnet *ifp;
 	int cmd;
 	caddr_t	data;
-	int flag;
 {
 	int s = splimp(), error = 0;
 
-	if (minor(dev) >= NHY) {
-		error = ENXIO;
-		goto bad;
-	}
 	switch(cmd) {
 
 	case HYSETROUTE:
@@ -1246,21 +1239,20 @@ hyioctl(dev, cmd, data, flag)
 			error = EPERM;
 			goto bad;
 		}
-		hy_route[minor(dev)] = *(struct hyroute *)data;
-		hy_route[minor(dev)].hyr_lasttime = time;
+		hy_route[ifp->if_unit] = *(struct hyroute *)ifr->ifr_data;
+		hy_route[ifp->if_unit].hyr_lasttime = time;
 		break;
 
 	case HYGETROUTE:
-		*(struct hyroute *)data = hy_route[minor(dev)];
+		*(struct hyroute *)ifr->ifr_data = hy_route[ifp->if_unit];
 		break;
 
 	default:
-		error = ENXIO;
+		error = EINVAL;
 		break;
 	}
 bad:
 	splx(s);
 	return (error);
 }
-#endif
 #endif
