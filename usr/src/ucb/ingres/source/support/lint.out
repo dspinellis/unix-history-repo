@@ -1,0 +1,30 @@
+purge.c(62): warning: i unused in function main
+purge.c(63): warning: fake unused in function main
+purge.c(111): warning: c unused in function purgedb
+purge.c(120): warning: darg unused in function purgedb
+purge.c(299): warning: struct/union querytree never defined
+purge.c(8): static variable Sccsid unused
+time, arg. 1 used inconsistently	llib-lc(57)  ::  purge.c(73)
+tTfp, arg. 4 used inconsistently	purge.c(75)  ::  purge.c(136)
+fread, arg. 1 used inconsistently	llib-lc(74)  ::  purge.c(254)
+setkey: variable # of args.	llib-lc(100)  ::  purge.c(271)
+setkey, arg. 1 used inconsistently	llib-lc(100)  ::  purge.c(271)
+setkey: variable # of args.	llib-lc(100)  ::  purge.c(272)
+setkey, arg. 1 used inconsistently	llib-lc(100)  ::  purge.c(272)
+Sccsid defined( purge.c(8) ), but never used
+All defined( purge.c(39) ), but never used
+Superuser defined( purge.c(40) ), but never used
+time returns value which is always ignored
+rubproc defined( purge.c(88) ), but never used
+fseek returns value which is always ignored
+fclose returns value which is always ignored
+Wait_action declared( ???(44) ), but never used or defined
+Status declared( ???(45) ), but never used or defined
+Reldes used( purge.c(273) ), but not defined
+tT declared( ???(95) ), but never used or defined
+Qbuf declared( ???(191) ), but never used or defined
+Usercode used( purge.c(75) ), but not defined
+Pathname declared( ???(116) ), but never used or defined
+Acclock declared( ???(46) ), but never used or defined
+Alockdes declared( ???(47) ), but never used or defined
+Lockrel declared( ???(48) ), but never used or defined
