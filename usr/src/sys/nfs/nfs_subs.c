@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.37 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.38 (Berkeley) %G%
  */
 
 /*
@@ -16,7 +16,6 @@
  * copy data between mbuf chains and uio lists.
  */
 #include "param.h"
-#include "user.h"
 #include "proc.h"
 #include "filedesc.h"
 #include "systm.h"
@@ -25,10 +24,11 @@
 #include "file.h"
 #include "vnode.h"
 #include "mbuf.h"
-#include "errno.h"
 #include "map.h"
+
 #include "../ufs/quota.h"
 #include "../ufs/inode.h"
+
 #include "rpcv2.h"
 #include "nfsv2.h"
 #include "nfsnode.h"
