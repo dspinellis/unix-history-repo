@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.c	7.3 (Berkeley) %G%
+ *	@(#)vm_page.c	7.4 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -463,6 +463,26 @@ void		vm_page_init(mem, object, offset)
 	vm_object_t	object;
 	vm_offset_t	offset;
 {
+#ifdef DEBUG
+#define	vm_page_init(mem, object, offset)  {\
+		(mem)->busy = TRUE; \
+		(mem)->tabled = FALSE; \
+		vm_page_insert((mem), (object), (offset)); \
+		(mem)->absent = FALSE; \
+		(mem)->fictitious = FALSE; \
+		(mem)->page_lock = VM_PROT_NONE; \
+		(mem)->unlock_request = VM_PROT_NONE; \
+		(mem)->laundry = FALSE; \
+		(mem)->active = FALSE; \
+		(mem)->inactive = FALSE; \
+		(mem)->wire_count = 0; \
+		(mem)->clean = TRUE; \
+		(mem)->copy_on_write = FALSE; \
+		(mem)->fake = TRUE; \
+		(mem)->pagerowned = FALSE; \
+		(mem)->ptpage = FALSE; \
+	}
+#else
 #define	vm_page_init(mem, object, offset)  {\
 		(mem)->busy = TRUE; \
 		(mem)->tabled = FALSE; \
@@ -479,6 +499,7 @@ void		vm_page_init(mem, object, offset)
 		(mem)->copy_on_write = FALSE; \
 		(mem)->fake = TRUE; \
 	}
+#endif
 
 	vm_page_init(mem, object, offset);
 }
