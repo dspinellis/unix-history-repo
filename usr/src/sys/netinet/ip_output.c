@@ -1,4 +1,5 @@
-/*	ip_output.c	1.16	81/11/20	*/
+#define IMPLOOP
+/*	ip_output.c	1.17	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
