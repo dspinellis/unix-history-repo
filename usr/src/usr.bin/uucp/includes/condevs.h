@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)condevs.h	4.9 (Berkeley) %G%
+ *	@(#)condevs.h	4.10 (Berkeley) %G%
  */
 
 #include "uucp.h"
@@ -28,76 +28,76 @@ int nulldev(), nodev(), Acuopn(), diropn(), dircls();
 
 #ifdef DATAKIT
 int dkopn();
-#endif DATAKIT
+#endif
 
 #ifdef DN11
 int dnopn(), dncls();
-#endif DN11
+#endif
 
 #ifdef HAYES
 int hyspopn(), hystopn(), hyscls();
-#endif HAYES
+#endif
 
 #ifdef HAYES2400
 int hyspopn24(), hystopn24(), hyscls24();
-#endif HAYES2400
+#endif
 
 #ifdef HAYESQ
 int hysqopn(), hysqcls();  /* a version of hayes that doesn't use ret codes */
-#endif HAYESQ
+#endif
 
 #ifdef NOVATION
 int novopn(), novcls();
-#endif NOVATION
+#endif
 
 #ifdef CDS224
 int cdsopn224(), cdscls224();
-#endif CDs224
+#endif
 
 #ifdef DF02
 int df2opn(), df2cls();
-#endif DF02
+#endif
 
 #ifdef DF112
 int df12popn(), df12topn(), df12cls();
-#endif DF112
+#endif
 
 #ifdef PNET
 int pnetopn();
-#endif PNET
+#endif
 
 #ifdef VENTEL
 int ventopn(), ventcls();
-#endif VENTEL
+#endif
 
 #ifdef PENRIL
 int penopn(), pencls();
-#endif PENRIL
+#endif
 
 #ifdef	UNETTCP
 #define TO_ACTIVE	0
 int unetopn(), unetcls();
-#endif UNETTCP
+#endif
 
 #ifdef BSDTCP
 int bsdtcpopn(), bsdtcpcls();
-#endif BSDTCP
+#endif
 
 #ifdef VADIC
 int vadopn(), vadcls();
-#endif VADIC
+#endif
 
 #ifdef VA212
 int va212opn(), va212cls();
-#endif VA212
+#endif
 
 #ifdef VA811S
 int va811opn(), va811cls();
-#endif VA811S
+#endif
 
 #ifdef VA820
 int va820opn(), va820cls();
-#endif VA820
+#endif
 
 #ifdef	RVMACS
 int rvmacsopn(), rvmacscls();
@@ -109,13 +109,12 @@ int vmacsopn(), vmacscls();
 
 #ifdef MICOM
 int micopn(), miccls();
-#endif MICOM
+#endif
 
 #ifdef SYTEK
 int sykopn(), sykcls();
-#endif SYTEK
+#endif
 
 #ifdef ATT2224
 int attopn(), attcls();
-#endif	ATT2224
-
+#endif

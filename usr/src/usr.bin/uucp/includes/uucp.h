@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)uucp.h	5.19 (Berkeley) %G%
+ *	@(#)uucp.h	5.20 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -77,7 +77,7 @@
 
 #if defined(USR2400) && !defined(HAYES)
 #define HAYES
-#endif USR2400 && !HAYES
+#endif /* USR2400 && !HAYES */
 
 #if defined(UNETTCP) || defined(BSDTCP)
 #define TCPIP
@@ -127,7 +127,7 @@
 #if defined(BRL4_2) && !defined(BSD4_2)
 #define BSD4_2
 #undef BSD4_3
-#endif BRL4_2
+#endif
 
 /*
  * If you are using /etc/inetd with 4.2bsd, define BSDINETD
@@ -140,7 +140,7 @@
 
 #if (defined(BSD4_3) || defined(BRL4_2)) && !defined(BSDINETD)
 #define BSDINETD
-#endif (BSD4_3 ||BRL4_2) && !BSDINETD
+#endif
 
 /*#define VMSDTR	/* Turn on modem control on vms(works DTR) for
 			   develcon and gandalf ports to gain access */
@@ -357,7 +357,7 @@ struct Devices {
 #include <sys/types.h>
 #ifndef USG
 #include <sys/timeb.h>
-#else USG
+#else
 struct timeb
 {
 	time_t	time;
@@ -367,7 +367,7 @@ struct timeb
 };
 #define rindex strrchr
 #define index strchr
-#endif USG
+#endif
 
 #ifdef BSD4_2
 #include <syslog.h>
@@ -408,13 +408,9 @@ extern char _FAILED[], CANTOPEN[], DEVNULL[];
 /* This horrible gross kludge is the only way I know to
  * convince lint that signal(SIGINT,SIG_IGN) is legal. It hates SIG_IGN.
  */
-#ifdef SIG_IGN
 #undef SIG_IGN
-#endif /* SIG_IGN */
 #define SIG_IGN	main
 extern int main();
-#ifdef DEBUG
 #undef DEBUG
-#endif DEBUG
 #define DEBUG(a,b,c)
 #endif /* lint */
