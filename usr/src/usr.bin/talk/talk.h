@@ -14,9 +14,10 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)talk.h	5.4 (Berkeley) %G%
+ *	@(#)talk.h	5.5 (Berkeley) %G%
  */
 
+#include <sys/types.h>
 #include <curses.h>
 #include <utmp.h>
 
