@@ -1,7 +1,10 @@
-/*	cons.c	4.3	%G%	*/
+/*	cons.c	4.4	%G%	*/
 
 /*
  * Vax console driver and floppy interface
+ *
+ * WE AVOID USE THE READY BIT IN TXCS BECAUSE IT DOESN'T
+ * WORK ON AN 11/750 WITH AN RDM PLUGGED IN.
  */
 #include "../h/param.h"
 #include "../h/conf.h"
@@ -12,6 +15,7 @@
 #include "../h/cons.h"
 #include "../h/mtpr.h"
 #include "../h/mx.h"
+#include "../h/cpu.h"
 
 /*
  * When running dz's using only SAE (silo alarm) on input
@@ -104,8 +108,9 @@ dev_t dev;
 
 	c = mfpr(RXDB);
 	if (c&RXDB_ID) {
-#if VAX==780
-		cnrfl(c);
+#if VAX780
+		if (cpu == VAX_780)
+			cnrfl(c);
 #endif
 		return;
 	}
@@ -128,9 +133,7 @@ caddr_t addr;
 		u.u_error = ENOTTY;
 }
 
-#if VAX==750
 int	consdone = 1;
-#endif
 /*
  * Got a level-20 transmission interrupt -
  * the LSI wants another character.  First,
@@ -143,17 +146,15 @@ dev_t dev;
 {
 	register struct tty *tp;
 
-#if VAX==750
 	consdone++;
-#endif
 	tp = &cons;
 	tp->t_state &= ~BUSY;
 	if (tp->t_line)
 		(*linesw[tp->t_line].l_start)(tp);
 	else
 		cnstart(tp);
-#if VAX==780
-	if ((tp->t_state & BUSY) == 0)
+#if VAX780
+	if (vax==VAX_780 && (tp->t_state & BUSY) == 0)
 		conxfl();
 #endif
 }
@@ -176,17 +177,10 @@ register struct tty *tp;
 	}
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-#if VAX==750
 	if (consdone == 0)
 		return;
-#else
-	if ((mfpr(TXCS)&TXCS_RDY) == 0)
-		return;
-#endif
 	if ((c=getc(&tp->t_outq)) >= 0) {
-#if VAX==750
 		consdone = 0;
-#endif
 		if (tp->t_flags&RAW)
 			mtpr(TXDB, c&0xff);
 		else if (c<=0177)
