@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)mount.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)mount.c	4.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 
@@ -16,6 +16,7 @@ struct mtab {
 } mtab[NMOUNT];
 
 int	ro;
+int	fake;
 main(argc, argv)
 char **argv;
 {
@@ -41,6 +42,8 @@ char **argv;
 			exit(1);
 		}
 	}
+	if (!strcmp(argv[1], "-f"))
+		fake++, argc--, argv++;
 
 	if (!mountall){
 		ro = 0;
@@ -104,9 +107,8 @@ mountfs(spec, name, ro)
 	register	struct	mtab	*mp;
 	int	mf;
 
-	if(mount(spec, name, ro) < 0) {
+	if(fake==0 && mount(spec, name, ro) < 0)
 		return(1);
-	}
 	np = spec;
 	while(*np++)
 		;
