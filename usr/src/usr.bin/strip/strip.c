@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)strip.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)strip.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <a.out.h>
@@ -66,7 +66,7 @@ strip(name)
 	if (head.a_magic == ZMAGIC)
 		size += pagesize - sizeof (head);
 	if (ftruncate(f, size + sizeof (head)) < 0) {
-		fprintf("strip: "); perror(name);
+		fputs("strip: ", stderr); perror(name);
 		status = 1;
 		goto out;
 	}
