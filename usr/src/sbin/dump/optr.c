@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optr.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)optr.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -308,76 +308,78 @@ blocksontape()
 	return (tsize);
 }
 
-#ifdef lint
-
-/* VARARGS1 */
-void msg(fmt) char *fmt; { strcpy(lastmsg, fmt); }
-
-/* VARARGS1 */
-void msgtail(fmt) char *fmt; { fmt = fmt; }
-
-void quit(fmt) char *fmt; { msg(fmt); dumpabort(); }
-
-#else /* lint */
-
-/*
- * We have three of these.  Yes, this is horribly ugly, but at least
- * we only have to go through it once.
- */
+void
 #if __STDC__
-#define	MSG_FDECL(func)	void func(const char *fmt, ...)
-#define	MSG_VDECL	va_list ap
-#define	MSG_START	va_start(ap, fmt)
+msg(const char *fmt, ...)
 #else
-#define MSG_FDECL(func)	void func(va_alist) va_dcl
-#define	MSG_VDECL	char *fmt; va_list ap
-#define	MSG_START	va_start(ap); fmt = va_arg(ap, char *)
+msg(fmt, va_alist)
+	char *fmt;
+	va_dcl
 #endif
-
-MSG_FDECL(msg)
 {
-	MSG_VDECL;
+	va_list ap;
 
 	(void) fprintf(stderr,"  DUMP: ");
 #ifdef TDEBUG
 	(void) fprintf(stderr, "pid=%d ", getpid());
 #endif
-	MSG_START;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
 	(void) vfprintf(stderr, fmt, ap);
-	va_end(ap);
 	(void) fflush(stdout);
 	(void) fflush(stderr);
-	MSG_START;
 	(void) vsprintf(lastmsg, fmt, ap);
 	va_end(ap);
 }
 
-MSG_FDECL(msgtail)
+void
+#if __STDC__
+msgtail(const char *fmt, ...)
+#else
+msgtail(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
 {
-	MSG_VDECL;
-
-	MSG_START;
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
 	(void) vfprintf(stderr, fmt, ap);
 	va_end(ap);
 }
 
-MSG_FDECL(quit)
+void
+#if __STDC__
+quit(const char *fmt, ...)
+#else
+quit(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
 {
-	MSG_VDECL;
+	va_list ap;
 
 	(void) fprintf(stderr,"  DUMP: ");
 #ifdef TDEBUG
 	(void) fprintf(stderr, "pid=%d ", getpid());
 #endif
-	MSG_START;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	(void) fflush(stdout);
 	(void) fflush(stderr);
 	dumpabort();
 }
-
-#endif /* lint */
 
 /*
  *	Tell the operator what has to be done;
