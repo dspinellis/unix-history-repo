@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)edquota.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)edquota.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -173,8 +173,8 @@ getprivs(uid)
 		fprintf(fd,
 "fs %s blocks (soft = %d, hard = %d) inodes (soft = %d, hard = %d)\n"
 			, dqf[i]
-			, dq[i].dq_bsoftlimit / btodb(1024)
-			, dq[i].dq_bhardlimit / btodb(1024)
+			, dbtob(dq[i].dq_bsoftlimit) / 1024
+			, dbtob(dq[i].dq_bhardlimit) / 1024
 			, dq[i].dq_isoftlimit
 			, dq[i].dq_ihardlimit
 		);
@@ -224,8 +224,8 @@ putprivs(uid)
 			fprintf(stderr, "%s: bad format\n", cp);
 			continue;
 		}
-		dq[i].dq_bsoftlimit *= btodb(1024);
-		dq[i].dq_bhardlimit *= btodb(1024);
+		dq[i].dq_bsoftlimit = btodb(dq[i].dq_bsoftlimit * 1024);
+		dq[i].dq_bhardlimit = btodb(dq[i].dq_bhardlimit * 1024);
 	}
 	fclose(fd);
 	n = i;
