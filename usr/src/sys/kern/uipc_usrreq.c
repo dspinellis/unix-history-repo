@@ -1,4 +1,4 @@
-/*	uipc_usrreq.c	1.14	83/06/14	*/
+/*	uipc_usrreq.c	1.15	83/07/21	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -354,28 +354,26 @@ unp_connect2(so, sonam, so2)
 
 	if (so2->so_type != so->so_type)
 		return (EPROTOTYPE);
+	unp2 = sotounpcb(so2);
+	unp->unp_conn = unp2;
 	switch (so->so_type) {
 
 	case SOCK_DGRAM:
-		unp2 = sotounpcb(so2);
-		unp->unp_conn = unp2;
 		unp->unp_nextref = unp2->unp_refs;
 		unp2->unp_refs = unp;
 		break;
 
 	case SOCK_STREAM:
-		unp2 = sotounpcb(so2);
-		unp->unp_conn = unp2;
 		unp2->unp_conn = unp;
 		if (sonam)
 			unp2->unp_remaddr = m_copy(sonam, 0, (int)M_COPYALL);
+		soisconnected(so2);
+		soisconnected(so);
 		break;
 
 	default:
 		panic("unp_connect2");
 	}
-	soisconnected(so2);
-	soisconnected(so);
 	return (0);
 }
 
@@ -387,7 +385,6 @@ unp_disconnect(unp)
 	if (unp2 == 0)
 		return;
 	unp->unp_conn = 0;
-	soisdisconnected(unp->unp_socket);
 	switch (unp->unp_socket->so_type) {
 
 	case SOCK_DGRAM:
@@ -408,6 +405,7 @@ unp_disconnect(unp)
 		break;
 
 	case SOCK_STREAM:
+		soisdisconnected(unp->unp_socket);
 		unp2->unp_conn = 0;
 		soisdisconnected(unp2->unp_socket);
 		break;
