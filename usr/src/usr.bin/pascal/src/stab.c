@@ -1,7 +1,7 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)stab.c 1.9.1.1 %G%";
+static	char sccsid[] = "@(#)stab.c 2.3 %G%";
 #endif
 
     /*
@@ -310,7 +310,7 @@ stabsource(filename, firsttime)
 	    return;
     }
     if (oldway != 0) {
-	label = getlab();
+	label = (int) getlab();
 	putprintf( "	.stabs	\"" , 1 );
 	putprintf( NAMEFORMAT , 1 , filename );
 	putprintf( "\",0x%x,0,0," , 1 , N_SO );
@@ -355,7 +355,7 @@ stabinclude(filename, firsttime)
 	    return;
     }
     if (oldway != 0) {
-	label = getlab();
+	label = (int) getlab();
 	putprintf( "	.stabs	\"" , 1 );
 	putprintf( NAMEFORMAT , 1 , filename );
 	putprintf( "\",0x%x,0,0," , 1 , N_SOL );
@@ -438,7 +438,6 @@ stabgconst( const , line )
  * Generate symbolic information about a constant.
  */
 
-			, (int) type , N_PC , N_PGTYPE , ABS( line ) );
     }
 }
 
