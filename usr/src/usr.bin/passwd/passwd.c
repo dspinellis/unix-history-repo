@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.17 (Berkeley) 85/08/11";
+static char sccsid[] = "@(#)passwd.c	4.18 (Berkeley) 85/08/28";
 #endif
 
 /*
@@ -420,23 +420,16 @@ getfingerinfo(pwd, u)
 	(void) strcat(strcat(answer, ","), in_str);
 	/*
 	 * Get office phone number.
-	 * Remove hyphens and 642, x2, or 2 prefixes if present.
+	 * Remove hyphens.
 	 */
 	do {
-		printf("Office Phone (Ex: 1632) [%s]: ",
+		printf("Office Phone (Ex: 6426000) [%s]: ",
 			defaults->office_phone);
 		(void) fgets(in_str, BUFSIZ, stdin);
 		if (special_case(in_str, defaults->office_phone))
 			break;
 		remove_hyphens(in_str);
-		if (strlen(in_str) == 8 && strcmpn(in_str, "642", 3) == 0)
-			(void) strcpy(in_str, in_str+3);
-		if (strlen(in_str) == 7 && strcmpn(in_str, "x2", 2) == 0)
-			(void) strcpy(in_str, in_str+2);
-		if (strlen(in_str) == 6 && in_str[0] == '2')
-			(void) strcpy(in_str, in_str+1);
-	} while (illegal_input(in_str) || not_all_digits(in_str)
-		 || wrong_length(in_str, 4));
+	} while (illegal_input(in_str) || not_all_digits(in_str));
 	(void) strcat(strcat(answer, ","), in_str);
 	/*
 	 * Get home phone number.
@@ -530,22 +523,6 @@ not_all_digits(str)
 			printf("Phone numbers can only contain digits.\n");
 			return (1);
 		}
-	return (0);
-}
-
-/*
- * Returns 1 when the length of the input string is not zero or equal to n.
- * Prints an error message in this case.
- */
-wrong_length(str, n)
-	char *str;
-	int n;
-{
-
-	if (strlen(str) != 0 && strlen(str) != n) {
-		printf("The phone number should be %d digits long.\n", n);
-		return (1);
-	}
 	return (0);
 }
 
