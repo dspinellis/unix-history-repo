@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.26 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -290,18 +290,14 @@ nfs_nput(vp)
 	vrele(vp);
 }
 
+/*
+ * Nfs abort op, called after namei() when a CREATE/DELETE isn't actually
+ * done. Currently nothing to do.
+ */
+/* ARGSUSED */
 nfs_abortop(ndp)
-	register struct nameidata *ndp;
+	struct nameidata *ndp;
 {
 
-	if (ndp->ni_dvp != NULL) {
-		if (VOP_ISLOCKED(ndp->ni_dvp))
-			VOP_UNLOCK(ndp->ni_dvp);
-		vrele(ndp->ni_dvp);
-	}
-	if (ndp->ni_vp != NULL) {
-		if (VOP_ISLOCKED(ndp->ni_vp))
-			VOP_UNLOCK(ndp->ni_vp);
-		vrele(ndp->ni_vp);
-	}
+	return (0);
 }

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_vnops.c	7.41 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.42 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -912,9 +912,13 @@ ufs_rename(fndp, tndp)
 		 */
 		if ((d->d_namlen == 1 && d->d_name[0] == '.') || dp == ip ||
 		    fndp->ni_isdotdot || (ip->i_flag & IRENAME)) {
-			IUNLOCK(ip);
-			ufs_abortop(fndp);
-			ufs_abortop(tndp);
+			VOP_ABORTOP(tndp);
+			vput(tndp->ni_dvp);
+			if (tndp->ni_vp)
+				vput(tndp->ni_vp);
+			VOP_ABORTOP(fndp);
+			vrele(fndp->ni_dvp);
+			vput(fndp->ni_vp);
 			return (EINVAL);
 		}
 		ip->i_flag |= IRENAME;
@@ -1386,23 +1390,14 @@ ufs_readlink(vp, uiop, cred)
 
 /*
  * Ufs abort op, called after namei() when a CREATE/DELETE isn't actually
- * done. Iff ni_vp/ni_dvp not null and locked, unlock.
+ * done. Nothing to do at the moment.
  */
+/* ARGSUSED */
 ufs_abortop(ndp)
-	register struct nameidata *ndp;
+	struct nameidata *ndp;
 {
 
-	if (ndp->ni_dvp) {
-		if (VOP_ISLOCKED(ndp->ni_dvp))
-			VOP_UNLOCK(ndp->ni_dvp);
-		vrele(ndp->ni_dvp);
-	}
-	if (ndp->ni_vp) {
-		if (VOP_ISLOCKED(ndp->ni_vp))
-			VOP_UNLOCK(ndp->ni_vp);
-		vrele(ndp->ni_vp);
-	}
-	return;
+	return (0);
 }
 
 /*

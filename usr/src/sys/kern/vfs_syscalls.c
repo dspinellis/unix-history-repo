@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.48 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.49 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -651,10 +651,14 @@ mknod(p, uap, retval)
 	vattr.va_mode = (uap->fmode & 07777) &~ u.u_cmask;
 	vattr.va_rdev = uap->dev;
 out:
-	if (error)
-		VOP_ABORTOP(ndp);
-	else
+	if (!error) {
 		error = VOP_MKNOD(ndp, &vattr, ndp->ni_cred);
+	} else {
+		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
+		if (vp)
+			vrele(vp);
+	}
 	RETURN (error);
 }
 
@@ -684,6 +688,8 @@ mkfifo(p, uap, retval)
 		RETURN (error);
 	if (ndp->ni_vp != NULL) {
 		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
+		vrele(ndp->ni_vp);
 		RETURN (EEXIST);
 	} else {
 		VATTR_NULL(&vattr);
@@ -732,10 +738,14 @@ link(p, uap, retval)
 	if (vp->v_mount != xp->v_mount)
 		error = EXDEV;
 out:
-	if (error)
-		VOP_ABORTOP(ndp);
-	else
+	if (!error) {
 		error = VOP_LINK(vp, ndp);
+	} else {
+		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
+		if (ndp->ni_vp)
+			vrele(ndp->ni_vp);
+	}
 out1:
 	vrele(vp);
 	RETURN (error);
@@ -754,7 +764,6 @@ symlink(p, uap, retval)
 	int *retval;
 {
 	register struct nameidata *ndp = &u.u_nd;
-	register struct vnode *vp;
 	struct vattr vattr;
 	char *target;
 	int error;
@@ -763,24 +772,21 @@ symlink(p, uap, retval)
 	ndp->ni_dirp = uap->linkname;
 	MALLOC(target, char *, MAXPATHLEN, M_NAMEI, M_WAITOK);
 	if (error = copyinstr(uap->target, target, MAXPATHLEN, (u_int *)0))
-		goto out1;
+		goto out;
 	ndp->ni_nameiop = CREATE | LOCKPARENT;
 	if (error = namei(ndp))
-		goto out1;
-	vp = ndp->ni_vp;
-	if (vp) {
+		goto out;
+	if (ndp->ni_vp) {
+		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
+		vrele(ndp->ni_vp);
 		error = EEXIST;
 		goto out;
 	}
-	vp = ndp->ni_dvp;
 	VATTR_NULL(&vattr);
 	vattr.va_mode = 0777 &~ u.u_cmask;
+	error = VOP_SYMLINK(ndp, &vattr, target);
 out:
-	if (error)
-		VOP_ABORTOP(ndp);
-	else
-		error = VOP_SYMLINK(ndp, &vattr, target);
-out1:
 	FREE(target, M_NAMEI);
 	RETURN (error);
 }
@@ -821,10 +827,13 @@ unlink(p, uap, retval)
 	if (vp->v_flag & VTEXT)
 		xrele(vp);	/* try once to free text */
 out:
-	if (error)
-		VOP_ABORTOP(ndp);
-	else
+	if (!error) {
 		error = VOP_REMOVE(ndp);
+	} else {
+		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
+		vput(vp);
+	}
 	RETURN (error);
 }
 
@@ -1400,7 +1409,12 @@ rename(p, uap, retval)
 	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE;
 	tond.ni_segflg = UIO_USERSPACE;
 	tond.ni_dirp = uap->to;
-	error = namei(&tond);
+	if (error = namei(&tond)) {
+		VOP_ABORTOP(ndp);
+		vrele(ndp->ni_dvp);
+		vrele(fvp);
+		goto out1;
+	}
 	tdvp = tond.ni_dvp;
 	tvp = tond.ni_vp;
 	if (tvp != NULL) {
@@ -1411,10 +1425,6 @@ rename(p, uap, retval)
 			error = EISDIR;
 			goto out;
 		}
-	}
-	if (error) {
-		VOP_ABORTOP(ndp);
-		goto out1;
 	}
 	if (fvp->v_mount != tdvp->v_mount) {
 		error = EXDEV;
@@ -1429,11 +1439,16 @@ rename(p, uap, retval)
 	if (fvp == tvp)
 		error = -1;
 out:
-	if (error) {
-		VOP_ABORTOP(&tond);
-		VOP_ABORTOP(ndp);
-	} else {
+	if (!error) {
 		error = VOP_RENAME(ndp, &tond);
+	} else {
+		VOP_ABORTOP(&tond);
+		vput(tdvp);
+		if (tvp)
+			vput(tvp);
+		VOP_ABORTOP(ndp);
+		vrele(ndp->ni_dvp);
+		vrele(fvp);
 	}
 out1:
 	ndrele(&tond);
@@ -1467,6 +1482,8 @@ mkdir(p, uap, retval)
 	vp = ndp->ni_vp;
 	if (vp != NULL) {
 		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
+		vrele(vp);
 		RETURN (EEXIST);
 	}
 	VATTR_NULL(&vattr);
@@ -1516,10 +1533,13 @@ rmdir(p, uap, retval)
 	if (vp->v_flag & VROOT)
 		error = EBUSY;
 out:
-	if (error)
-		VOP_ABORTOP(ndp);
-	else
+	if (!error) {
 		error = VOP_RMDIR(ndp);
+	} else {
+		VOP_ABORTOP(ndp);
+		vput(ndp->ni_dvp);
+		vput(vp);
+	}
 	RETURN (error);
 }
 
