@@ -2,7 +2,7 @@
  * make the current screen look like "win" over the area coverd by
  * win.
  *
- * %G% (Berkeley) @(#)refresh.c	1.2
+ * %G% (Berkeley) @(#)refresh.c	1.3
  */
 
 # include	"curses.ext"
@@ -47,11 +47,10 @@ reg WINDOW	*win;
 	if (win->_clear || curscr->_clear || curwin) {
 		if ((win->_flags & _FULLWIN) || curscr->_clear) {
 			_puts(CL);
-			if (!curwin) {
-				curscr->_curx = curscr->_cury = 0;
-				curscr->_clear = FALSE;
+			ly = lx = curscr->_curx = curscr->_cury = 0;
+			curscr->_clear = FALSE;
+			if (!curwin)
 				werase(curscr);
-			}
 			touchwin(win);
 		}
 		win->_clear = FALSE;
