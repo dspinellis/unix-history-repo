@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bad144.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)bad144.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #ifdef vax
@@ -40,9 +40,11 @@ static char sccsid[] = "@(#)bad144.c	5.7 (Berkeley) %G%";
 #include <sys/disklabel.h>
 
 #define RETRIES	10		/* number of retries on reading old sectors */
+#define	RAWPART	"c"		/* disk partition containing badsector tables */
 
 int	fflag, add, copy, verbose, nflag;
 int	compare();
+int	dups;
 #define MAXSECSIZE	1024
 #ifndef SCS
 struct	dkbad curbad, oldbad;
@@ -106,7 +108,7 @@ usage:
 		fprintf(stderr,
 		  "usage: bad144 [ -f ] disk [ snum [ bn ... ] ]\n");
 		fprintf(stderr,
-	      "to read or overwrite bad-sector table, e.g.: bad144 rk07 hk0\n");
+	      "to read or overwrite bad-sector table, e.g.: bad144 hp0\n");
 		fprintf(stderr,
 		  "or bad144 -a [ -f ] [ -c ] disk  bn ...\n");
 		fprintf(stderr, "where options are:\n");
@@ -116,7 +118,7 @@ usage:
 		exit(1);
 	}
 	if (argv[0][0] != '/')
-		sprintf(name, "/dev/r%sc", argv[0]);
+		sprintf(name, "/dev/r%s%s", argv[0], RAWPART);
 	else
 		strcpy(name, argv[0]);
 	f = open(name, argc == 1? O_RDONLY : O_RDWR);
@@ -235,6 +237,11 @@ usage:
 		 */
 		qsort((char *)curbad.bt_bad, nbad, sizeof (struct bt_bad),
 		    compare);
+		if (dups) {
+			fprintf(stderr,
+"bad144: bad sectors have been duplicated; can't add existing sectors\n");
+			exit(3);
+		}
 		shift(f, nbad, nbad-new);
 	}
 	for (i = 0; i < 10 && i < dp->d_nsectors; i += 2) {
@@ -301,7 +308,6 @@ checkold()
 		fprintf(stderr, "bad144: %s: bad magic number\n", name);
 		errors++;
 	}
-	lsn = 0;
 	bt = oldbad.bt_bad;
 	for (i = 0; i < 126; i++, bt++) {
 		if (bt->bt_cyl == -1 && bt->bt_trksec == -1)
@@ -319,10 +325,15 @@ checkold()
 		sn = (bt->bt_cyl * dp->d_ntracks +
 		    (bt->bt_trksec >> 8)) *
 		    dp->d_nsectors + (bt->bt_trksec & 0xff);
-		if (sn < lsn && !warned) {
+		if (i > 0 && sn < lsn && !warned) {
 		    fprintf(stderr, "bad144: bad sector file out of order\n");
 		    errors++;
 		    warned++;
+		}
+		if (i > 0 && sn == lsn) {
+		    fprintf(stderr,
+			"bad144: bad sector file contains duplicates\n");
+		    errors++;
 		}
 		lsn = sn;
 	}
@@ -439,6 +450,8 @@ register struct bt_bad *b1, *b2;
 		return(1);
 	if (b1->bt_cyl < b2->bt_cyl)
 		return(-1);
+	if (b1->bt_trksec == b2->bt_trksec)
+		dups++;
 	return (b1->bt_trksec - b2->bt_trksec);
 }
 
