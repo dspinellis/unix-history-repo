@@ -1,4 +1,4 @@
-/* tcp.h 1.7 81/10/26 */
+/* tcp.h 1.6 81/10/28 */
 
 /*
  * Tcp header (fits over ip header).
@@ -8,7 +8,11 @@ struct th {
 	struct	th *t_prev;		/* -> prev tcp on rcv chain */
 	u_char	t_x1;			/* (unused) */
 	u_char	t_pr;			/* protocol */
-	u_short	t_len;			/* seg length */
+/* by rights, t_len should be a u_short, but this makes operations */
+/* on it very dangerous as comparisons become unsigned and comparing */
+/* against negative numbers then fails... we don't expect any > 32767 */
+/* byte segments, so pragmatically delcare it to be a short */
+	short	t_len;			/* seg length */
 	struct	socket t_s;		/* source internet address */
 	struct	socket t_d;		/* destination internet address */
 	u_short	t_src;			/* source port */
