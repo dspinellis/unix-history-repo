@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stab.c 1.7 %G%";
+static	char sccsid[] = "@(#)stab.c 1.8 %G%";
 
     /*
      *	procedures to put out sdb symbol table information.
@@ -12,6 +12,7 @@ static	char sccsid[] = "@(#)stab.c 1.7 %G%";
 #ifdef	PC
     /*	and the rest of the file */
 #   include	"0.h"
+#   include	"objfmt.h"
 #   include	<stab.h>
 
     /*
