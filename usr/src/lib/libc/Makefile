@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.13 (Berkeley) %G%
+#	@(#)Makefile	4.14 (Berkeley) %G%
 #
 #
 # The system has two monitoring schemes, utilizing either ``prof''
@@ -27,21 +27,21 @@
 #*********************************************************************
 #=====================================================================
 #							
-# There are two types of resolvers, 'res_named' which uses the 
-#  nameserver and 'res_static' which uses /etc/hosts.
+# There are two possible methods of doing host name look up.  They are
+# to use the nameserver or /etc/hosts.
 #
-#	RESOLVER defines which resolver is to be compiled into libc  
+#	HOSTLOOKUP defines which method is to be compiled into libc  
 #								     
-#		defining RESOLVER to res_named, compiles the         
+#		defining HOSTLOOKUP to be "named", compiles the         
 #		routines which the BIND nameserver uses into libc    
 #---------------------------------------------------------------------
-#RESOLVER=	res_named
+#HOSTLOOKUP=	named
 #---------------------------------------------------------------------
-#		defining RESOLVER to res_static, compiles            #
-#		the routines which use the old method of             #
-#		hostname resolveing. (ie /etc/HOSTS )                #
+#		defining HOSTLOOKUP to "hosttable", compiles
+#		the routines which use the old method of
+#		hostname lookup. (ie /etc/hosts )
 #---------------------------------------------------------------------
-RESOLVER=	res_static
+HOSTLOOKUP=	hosttable
 DESTDIR=
 INSTALL=install -m 644
 DFLMON=	mon.o
@@ -51,22 +51,24 @@ COMPAT=	compat-4.1 compat-sys5
 ALL=	gen inet net stdio ${MACHINE} ${COMPAT}
 TAGSFILE=tags
 
-libc.a libc_p.a: ${MACHINE}/csu ${ALL}
+libc.a libc_p.a: ${MACHINE}/csu ${ALL} net/${HOSTLOOKUP}
 	-mkdir tmp
 	for i in ${ALL}; do (cd tmp; ar x ../$$i/$${i}lib); done
+	cd tmp; ar x ../net/${HOSTLOOKUP}/hostlib
 	ls tmp/*.o | sort -t/ +1 > t1
 	ar cr libc.a `lorder \`cat t1\` | tsort` ${MACHINE}/csu/${DFLMON}
 	ar ma findiop.o libc.a exit.o
 	ar ma exit.o libc.a fakcu.o
 	rm -f t1 tmp/*
 	for i in ${ALL}; do (cd tmp; ar x ../$$i/$${i}lib_p); done
+	cd tmp; ar x ../net/${HOSTLOOKUP}/hostlib_p
 	ls tmp/*.o | sort -t/ +1 > t1
 	ar cr libc_p.a `lorder \`cat t1\` | tsort` ${MACHINE}/csu/${DFLMON}
 	ar ma findiop.o libc_p.a exit.o
 	ar ma exit.o libc_p.a fakcu.o
 	rm -rf t1 tmp
 
-${MACHINE}/csu ${ALL}: FRC
+${MACHINE}/csu ${ALL} net/${HOSTLOOKUP}: FRC
 	cd $@; make ${MFLAGS} DEFS=${DEFS}
 
 FRC:
@@ -81,9 +83,12 @@ install:
 tags:
 	for i in ${ALL}; do \
 		(cd $$i; make ${MFLAGS} TAGSFILE=../${TAGSFILE} tags); \
+	cd net/${HOSTLOOKUP}; \
+		make ${MFLAGS} TAGSFILE=../../${TAGSFILE} tags
 	done
 
 clean:
-	for i in ${MACHINE}/csu ${ALL}; do (cd $$i; make ${MFLAGS} clean); done
+	for i in ${MACHINE}/csu ${ALL} net/${HOSTLOOKUP}; \
+		do (cd $$i; make ${MFLAGS} clean); done
 	rm -f t1 tmp/*.o
 	-rmdir tmp
