@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.14		%G%);
+SCCSID(@(#)parseaddr.c	4.15		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -954,7 +954,14 @@ buildaddr(tv, a)
 		syserr("buildaddr: no user");
 		return (NULL);
 	}
-	rewrite(++tv, 4);
+
+	/* rewrite according recipient mailer rewriting rules */
+	rewrite(++tv, 2);
+	if (m->m_r_rwset > 0)
+		rewrite(tv, m->m_r_rwset);
+	rewrite(tv, 4);
+
+	/* save the result for the command line/RCPT argument */
 	cataddr(tv, buf, sizeof buf);
 	a->q_user = buf;
 
