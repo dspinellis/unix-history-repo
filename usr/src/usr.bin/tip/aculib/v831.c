@@ -1,4 +1,4 @@
-/*	v831.c	4.2	83/06/15	*/
+/*	v831.c	4.3	83/06/18	*/
 
 #ifdef V831
 /*
@@ -13,10 +13,10 @@
 
 #include "tip.h"
 
-static char *sccsid = "@(#)v831.c	4.2 %G%";
+static char *sccsid = "@(#)v831.c	4.3 %G%";
 
 int	v831_abort();
-int	alarmtr();
+static	int alarmtr();
 extern	errno;
 
 static jmp_buf jmpbuf;
@@ -33,7 +33,7 @@ v831_dialer(num, acu)
 #ifdef DEBUG
         printf ("(acu=%s)\n", acu);
 #endif
-        if ((AC = open(acu, FRDWR)) < 0) {
+        if ((AC = open(acu, O_RDWR)) < 0) {
                 if (errno == EBUSY)
                         printf("line busy...");
                 else
@@ -61,7 +61,7 @@ v831_dialer(num, acu)
         /*
          * open line - will return on carrier
          */
-        if ((FD = open(DV, 2)) < 0) {
+        if ((FD = open(DV, O_RDWR)) < 0) {
 #ifdef DEBUG
                 printf("(after open, errno=%d)\n", errno);
 #endif
@@ -88,8 +88,10 @@ v831_dialer(num, acu)
         return (1);
 }
 
+static
 alarmtr()
 {
+
         alarm(0);
         longjmp(jmpbuf, 1);
 }
@@ -120,6 +122,7 @@ v831_disconnect()
 
 v831_abort()
 {
+
 #ifdef DEBUG
         printf("[abort: AC=%d]\n", AC);
 #endif
@@ -156,6 +159,7 @@ struct vaconfig {
 #define STX	02
 #define ETX	03
 
+static
 dialit(phonenum, acu)
 	register char *phonenum;
 	char *acu;
