@@ -1,6 +1,6 @@
 # include "useful.h"
 
-static char SccsId[] = "@(#)macro.c	3.2	%G%";
+static char SccsId[] = "@(#)macro.c	3.3	%G%";
 
 char	*Macro[128];
 extern int	Debug;
@@ -109,9 +109,12 @@ expand(s, buf, buflim)
 **		although they are not all used.  The currently
 **		defined macros are:
 **
-**		$a   date in arpa format
+**		$a   date in ARPANET format (preferring the Date: line
+**		     of the message)
+**		$b   the current date (as opposed to the date as found
+**		     the message) in ARPANET format
 **		$c   hop count
-**		$d   date in ctime format
+**		$d   (current) date in UNIX (ctime) format
 **		$f   raw from address
 **		$g   translated from address
 **		$h   to host
@@ -124,6 +127,7 @@ expand(s, buf, buflim)
 **		$u   to user
 **		$v   version number of sendmail
 **		$x   signature (full name) of from person
+**		$y   the tty id of our terminal
 **		$z   home directory of to person
 **
 **		Macros marked with + must be defined in the
