@@ -855,7 +855,8 @@ char flag;
 		if (flag) {
 			v->v_type = V_STR;
 			v->v_str = token_str;
-		}
+		} else
+			str_free(token_str);
 		(void) s_gettok();
 		break;
 	case T_LP:
