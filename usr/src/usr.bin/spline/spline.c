@@ -12,14 +12,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)spline.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)spline.c	4.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
 #include <math.h>
 
 #define NP 1000
-#define INF HUGE
 
 struct proj { int lbf,ubf; float a,b,lb,ub,quant,mult,val[NP]; } x,y;
 float *diag, *r;
@@ -278,10 +277,13 @@ getfloat(p)
 
 getlim(p)
 	struct proj *p; {
-	int i;
-	for(i=0;i<n;i++) {
-		if(!p->lbf && p->lb>(p->val[i])) p->lb = p->val[i];
-		if(!p->ubf && p->ub<(p->val[i])) p->ub = p->val[i]; }
+	register int i;
+	if (!p->lbf) {
+		p->lb = p->val[0];
+		for(i=1;i<n;i++) if (p->lb>p->val[i]) p->lb = p->val[i]; }
+	if (!p->ubf) {
+		p->ub = p->val[0];
+		for(i=1;i<n;i++) if (p->ub<p->val[i]) p->ub = p->val[i]; }
 	}
 
 
@@ -290,10 +292,7 @@ main(argc,argv)
 	extern char *malloc();
 	int i;
 	x.lbf = x.ubf = y.lbf = y.ubf = 0;
-	x.lb = INF;
-	x.ub = -INF;
-	y.lb = INF;
-	y.ub = -INF;
+	x.lb = x.ub = y.lb = y.ub = 0;
 	while(--argc > 0) {
 		argv++;
 again:		switch(argv[0][0]) {
