@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)vacation.c	5.1 (Berkeley) %G%";
+static char	SccsId[] = "@(#)vacation.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 # include <sys/types.h>
@@ -216,12 +216,14 @@ junkmail(from)
 	extern char *rindex();
 	extern bool sameword();
 
-	/* test for sender == "*-REQUEST@*" */
+	/* test for inhuman sender */
 	p = rindex(from, '@');
-	if (p != NULL && p > &from[8])
+	if (p != NULL)
 	{
 		*p = '\0';
-		if (sameword(&p[-8], "-REQUEST"))
+		if (sameword(&p[-8],  "-REQUEST") ||
+		    sameword(&p[-10], "Postmaster") ||
+		    sameword(&p[-13], "MAILER-DAEMON"))
 		{
 			*p = '@';
 			return (TRUE);
