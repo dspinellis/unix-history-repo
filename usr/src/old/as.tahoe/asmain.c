@@ -399,7 +399,7 @@ FILE *tempopen(tname, part)
 	char	*part;
 {
 	FILE	*file;
-	sprintf(tname, "%s%sas%s%05d",
+	(void)sprintf(tname, "%s%sas%s%05d",
 		tmpdirprefix,
 		(tmpdirprefix[strlen(tmpdirprefix)-1] != '/') ? "/" : 0,
 		part,
@@ -584,7 +584,7 @@ pass2()
 	{
 		char ch;
 		source = fopen (innames[ind++], "r");
-		sprintf (layoutpos, "%4ld  00000000    ", lineno);
+		(void)sprintf (layoutpos, "%4ld  00000000    ", lineno);
 		layoutpos += LHEAD;
 		ch = getc (source);
 		if (ch == EOF)
