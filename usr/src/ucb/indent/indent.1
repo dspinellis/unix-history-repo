@@ -1,0 +1,175 @@
+.TH INDENT I 12/22/77
+.SH NAME
+indent \- indent and format a C program source
+.SH SYNOPSIS
+indent ifile [ ofile ] [ args ]
+.SH DESCRIPTION
+The arguments that can be specified follows. They
+may appear before or after the file names.
+
+.TP 10
+ifile
+Input file specification.
+.TP 10
+ofile
+Output file specification.
+.br
+If omitted, then the indented formatted file will be written
+back into the input file,
+and there will be a "back-up" copy of ifile written
+in the current directory.
+For an ifile named "/blah/blah/file", the backup file will be
+named ".Bfile". (It will only be listed when the `-a' argument
+is specified in ls.)
+If ofile is specified, indent checks to make sure it is different from ifile.
+.TP 10
+-lnnn
+Maximum length of an output line.  The default is 75.
+.TP 10
+-cnnn
+The column in which comments will start.  The default is 33.
+.TP 10
+-cdnnn
+The column in which comments on declarations will start.  The default
+is for these comments to start in the same column as other comments.
+.TP 10
+-innn
+The number of spaces for one indentation level.  The default is 4.
+.TP 10
+-dj,-ndj
+-dj will cause declarations to be left justified.  -ndj will cause
+them to be indented the same as code.  The default is -ndj.
+.TP 10
+-v,-nv
+-v turns on "verbose" mode, -nv turns it off.  When in verbose
+mode, indent will report when it 
+splits one line of input into two or more lines of output,
+and it will give some size statistics at completion.  The default is -nv.
+.TP 10
+-bc,-nbc
+If -bc is specified, then a newline will be forced after each
+comma in a declaration.  -nbc will turn off this option.  The default is -bc.
+.TP 10
+-dnnn
+This option controls the placement of comments which are not to the right
+of code.
+Specifying -d2 means that such comments will be placed two
+indentation levels to the left of code.
+The default -d0 lines up these comments with the code.
+See the section on comment indentation below.
+.TP 10
+-br,-bl
+Specifying -bl will cause
+complex statements to be lined up like this:
+.ne 4
+.nf
+    if (...)
+    {
+        code
+    }
+.fi
+Specifying -br (the default) will make them look like this:
+.ne 3
+.nf
+    if (...) {
+        code
+    }
+.fi
+.PP
+You may set up your own `profile' of defaults to indent
+by creating the file `/usr/your-name/.indent.pro'
+(where your-name is your
+login name)
+and including whatever switches you like.
+If indent is run and a profile file exists, then it is read
+to set up the program's defaults.
+Switches on the command line, though,
+will always over-ride profile switches.
+The profile
+file must be a single line of not more than 127 characters.
+The switches should be seperated on the line by spaces or tabs.
+Indent is intended primarily as a C program indenter.
+Specifically, indent will:
+.IP "   >" 5
+indent code lines
+.IP "   >" 5
+align comments
+.IP "   >" 5
+insert spaces around operators where necessary
+.IP "   >" 5
+break up declaration lists as in "int a,b,c;".
+.PP
+It will not break up long statements to make them fit within the
+maximum line length, but it will flag lines that are too long.  Lines
+will be broken so that each statement starts a new line, and braces
+will appear alone on a line.  (See the -br option to inhibit this.)
+Also, an attempt is made to line up identifiers in declarations.
+
+Multi-line expressions
+.br
+Indent will not break up complicated expressions that extend over multiple
+lines, but it will usually correctly indent such expressions which have
+already been broken up.  Such an expression might end up looking like this:
+.ne 10
+.in +4
+.nf
+x =
+        (
+            (Arbitrary parenthesized expression)
+            +
+            (
+                (Parenthesized expression)
+                *
+                (Parenthesized expression)
+            )
+        );
+
+.fi
+.PP
+Comments
+.br
+Indent recognizes four kinds of comments.  They are straight text, "box" comments,
+UNIX-style comments,
+and comments that should be passed thru unchanged.  The action taken with these
+various types is as follows:
+
+   "Box" comments: The DSG documentation standards specify that boxes will be
+placed around section headers.  Indent assumes that any comment with a dash
+immediately after the start of comment (i.e. "/*-") is such a box.  Each line
+of such a comment will be left unchanged, except that the first non-blank
+character of each successive line will be lined up with the beginning
+slash of the first line.  Box comments will be indented (see below).
+
+   Unix-style comments:  This is the type of section header which is used 
+extensively in the UNIX system source.  If the start of comment ('/*') appears on a
+line by itself, indent assumes that it is a UNIX-style comment.  These will be
+treated similarly to box comments, except the first non-blank character on each
+line will be lined up with the '*' of the '/*'.
+
+   Unchanged comments: Any comment which starts in column 1 will be left completely
+unchanged.  This is intended primarily for documentation header pages.
+The check for unchanged comments is made before the check for UNIX-style comments.
+
+   Straight text: All other comments are treated as straight text.  Indent will fit
+as many words (separated by blanks, tabs, or newlines) on a line as possible.
+Straight text comments will be indented.
+
+Comment indentation
+Box, UNIX-style, and straight text comments may be indented.
+If a comment is on a line
+with code it will be started in the "comment
+column", which is set by the -cnnn command line parameter.
+Otherwise, the
+comment will be started at nnn indentation levels less than where code is
+currently being placed, where nnn is specified by the -dnnn command line parameter.  (Indented
+comments will never be placed in column 1.)
+If the code on a line extends past the comment column, the comment will be moved
+to the next line.
+
+.SH DIAGNOSTICS
+Diagnostic error messsages, mostly to tell that a text line has been broken
+or is too long for the output line, will be printed on the controlling tty.
+.SH FILES
+/usr/your-name/.indent.pro \- profile file
+.SH BUGS
+Doesn't know how to format "long" declarations.
