@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.9 (Berkeley) %G%
+ *	@(#)sendmail.h	8.10 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.9		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.10		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -313,6 +313,7 @@ ENVELOPE
 #define EF_QUEUERUN	004000		/* this envelope is from queue */
 #define EF_GLOBALERRS	010000		/* treat errors as global */
 #define EF_PM_NOTIFY	020000		/* send return mail to postmaster */
+#define EF_METOO	040000		/* send to me too */
 
 EXTERN ENVELOPE	*CurEnv;	/* envelope currently being processed */
 /*
