@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -268,11 +268,11 @@ started(k, v)
 	if (!now)
 		(void)time(&now);
 	if (now - k->ki_u->u_start.tv_sec < 24 * SECSPERHOUR) {
-		static char *fmt = "%l:@M%p";
+		static char fmt[] = "%l:@M%p";
 		fmt[3] = '%';			/* I *hate* SCCS... */
 		(void) strftime(buf, sizeof(buf) - 1, fmt, tp);
 	} else if (now - k->ki_u->u_start.tv_sec < 7 * SECSPERDAY) {
-		static char *fmt = "%a@I%p";
+		static char fmt[] = "%a@I%p";
 		fmt[2] = '%';			/* I *hate* SCCS... */
 		(void) strftime(buf, sizeof(buf) - 1, fmt, tp);
 	} else
