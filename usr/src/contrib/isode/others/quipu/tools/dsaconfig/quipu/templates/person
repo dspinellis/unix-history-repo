@@ -1,0 +1,53 @@
+###############################################################################
+#
+# How to fill this template in:
+#
+# 1. Substitute your electronic mail address for each occurrence of
+#	local@domain -> mrose@cheetah.ca.psi.com
+#
+# 2. Fill-in the title and userid attributes
+#	title=Senior Scientist
+#	userid=mrose
+#
+# 3. Select a unique password for the userPassword attribute
+#	userPassword= secret
+#
+# 4. Fill-in telephoneNumber attribute
+#	telephoneNumber=+1 415-961-3380
+#
+# 5. Substitute your first, middle, and last name for each occurrence of
+#	FirstName MiddleName LastName
+#    Also subtitute your middle initial for MiddleInitial
+#
+# 6. Optional attributes (put any of these after the surname attribute)
+#	postalAddress= line1 $ line2 $ line3 $ ... $ line6
+#	streetAddress= number and street, e.g., 420 Whisman Court
+#	physicalDeliveryOfficeName= postal area, e.g., Mountain View
+#	stateOrProvinceName= state, e.g., California
+#	postalCode= zip code, e.g., 94043-2112
+#	l= regional area, e.g., Mountain View, California
+#	facsimileTelephoneNumber= +1 aaa-bbb-cccc, e.g., +1 415-961-3282
+#	description= fill this in, e.g., blah, blah
+#
+# 7. Delete this message (the first 34 lines of this file)
+#
+###############################################################################
+cn=FirstName LastName
+acl= self # write # entry
+acl= others # read # entry
+acl= self # write # default
+acl= others # read # default
+acl= self # write # attributes # userPassword
+acl= others # compare # attributes # userPassword
+rfc822Mailbox= local@domain
+otherMailbox= internet $ local@domain
+title= fill this in
+userid= fill this in
+userPassword= secret
+telephoneNumber= +1 aaa-bbb-cccc xDDDD
+surname= LastName
+cn= FirstName LastName & FirstName MiddleInitial LastName
+cn= FirstName MiddleName LastName
+objectClass= top & quipuObject
+objectClass= person & thornPerson & pilotPerson
+
