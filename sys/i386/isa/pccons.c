@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pccons.c	5.11 (Berkeley) 5/21/91
- *	$Id: pccons.c,v 1.11 1993/12/21 21:28:31 davidg Exp $
+ *	$Id: pccons.c,v 1.12 1994/01/03 07:55:45 davidg Exp $
  */
 
 /*
@@ -645,6 +645,21 @@ static char bgansitopc[] =
 {	BG_BLACK, BG_RED, BG_GREEN, BG_BROWN, BG_BLUE,
 	BG_MAGENTA, BG_CYAN, BG_LIGHTGREY};
 
+static void move_up(u_short *s, u_short *d, u_int len)
+{
+	s += len;
+	d += len;
+	while (len-- > 0)
+		*--d = *--s;
+}
+
+
+static void move_down(u_short *s, u_short *d, u_int len)
+{
+	while (len-- > 0)
+		*d++ = *s++;
+}
+
 /*
  *   sput has support for emulation of the 'pc3' termcap entry.
  *   if ka, use kernel attributes.
@@ -754,7 +769,9 @@ sput(c,  ka)
 		if (vs.esc) {
 			if (vs.ebrac) {
 				switch(c) {
-					int pos;
+					int pos, posy, count;
+					u_short *src, *dst;
+
 				case 'm':
 					if (!vs.cx) vs.so = 0;
 					else vs.so = 1;
@@ -866,6 +883,31 @@ sput(c,  ka)
 					/* crtat += vs.ncol*vs.cx;*/ /* XXX */
 					vs.esc = 0; vs.ebrac = 0; vs.eparm = 0;
 					break;
+				case 'L':       /* Insert cx lines */
+					if (vs.cx <= 0) vs.cx = 1;
+					posy = (crtat - Crtat) / vs.ncol;
+					if (vs.cx > vs.nrow - posy)
+						vs.cx = vs.nrow - posy;
+					src = Crtat + posy * vs.ncol;
+					dst = src + vs.cx * vs.ncol;
+					count = vs.nrow - (posy + vs.cx);
+					move_up(src, dst, count * vs.ncol);
+					fillw((at <<8)+' ', src, vs.cx * vs.ncol);
+					vs.esc = 0; vs.ebrac = 0; vs.eparm = 0;
+					break;
+				case 'M':       /* Delete cx lines */
+					if (vs.cx <= 0) vs.cx = 1;
+					posy = (crtat - Crtat) / vs.ncol;
+					if (vs.cx > vs.nrow - posy)
+						vs.cx = vs.nrow - posy;
+					dst = Crtat + posy * vs.ncol;
+					src = dst + vs.cx * vs.ncol;
+					count = vs.nrow - (posy + vs.cx);
+					move_down(src, dst, count * vs.ncol);
+					src = dst + count * vs.ncol;
+					fillw((at <<8)+' ', src, vs.cx * vs.ncol);
+					vs.esc = 0; vs.ebrac = 0; vs.eparm = 0;
+  					break;
 				case ';': /* Switch params in cursor def */
 					vs.eparm = 1;
 					break;
