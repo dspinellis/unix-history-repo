@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -364,10 +364,11 @@ eatheader(e)
 		p = hvalue("date", e);
 	if (p != NULL)
 	{
+		extern char *arpatounix();
+
 		define('a', p, e);
-		/* we don't have a good way to do canonical conversion ....
-		define('d', newstr(arpatounix(p)), e);
-		.... so we will ignore the problem for the time being */
+		if ((p = arpatounix(p, e)) != NULL)
+			define('d', newstr(p), e);
 	}
 
 	/*
@@ -395,8 +396,9 @@ eatheader(e)
 		}
 
 		/* some versions of syslog only take 5 printf args */
-		sprintf(sbuf, "from=%.200s, size=%ld, class=%d, msgid=%.100s",
-		    e->e_from.q_paddr, e->e_msgsize, e->e_class, msgid);
+		sprintf(sbuf, "from=%.200s, size=%ld, class=%d, pri=%ld, nrcpts=%d, msgid=%.100s",
+		    e->e_from.q_paddr, e->e_msgsize, e->e_class,
+		    e->e_msgpriority, e->e_nrcpts, msgid);
 		syslog(LOG_INFO, "%s: %s, received from %s\n",
 		    e->e_id, sbuf, name);
 	}
@@ -692,6 +694,13 @@ crackaddr(addr)
 **	Side Effects:
 **		none.
 */
+
+/*
+ * Macro for fast max (not available in e.g. DG/UX, 386/ix).
+ */
+#ifndef MAX
+# define MAX(a,b) (((a)>(b))?(a):(b))
+#endif
 
 putheader(fp, m, e)
 	register FILE *fp;

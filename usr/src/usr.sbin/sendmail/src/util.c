@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -239,21 +239,6 @@ xputs(s)
 		printf("<null>");
 		return;
 	}
-	c = *s;
-	if (c == MATCHREPL && isdigit(s[1]) && s[2] == '\0')
-	{
-		printf("$%c", s[1]);
-		return;
-	}
-	for (mp = MetaMacros; mp->metaname != NULL; mp++)
-	{
-		if (mp->metaval == c)
-		{
-			printf("$%c%s", mp->metaname, ++s);
-			return;
-		}
-	}
-	(void) putchar('"');
 	while ((c = *s++) != '\0')
 	{
 		if (!isascii(c))
@@ -261,36 +246,50 @@ xputs(s)
 			(void) putchar('\\');
 			c &= 0177;
 		}
-		if (c < 040 || c >= 0177)
+		if (isprint(c))
 		{
-			switch (c)
-			{
-			  case '\n':
-				c = 'n';
-				break;
-
-			  case '\r':
-				c = 'r';
-				break;
-
-			  case '\t':
-				c = 't';
-				break;
-
-			  case '\001':
-				(void) putchar('$');
-				continue;
-
-			  default:
-				(void) putchar('^');
-				(void) putchar(c ^ 0100);
-				continue;
-			}
-			(void) putchar('\\');
+			putchar(c);
+			continue;
 		}
-		(void) putchar(c);
+		if (c == MATCHREPL || c == '\001')
+		{
+			putchar('$');
+			continue;
+		}
+		for (mp = MetaMacros; mp->metaname != NULL; mp++)
+		{
+			if (mp->metaval == c)
+			{
+				printf("$%c", mp->metaname);
+				c = '\0';
+				break;
+			}
+		}
+
+		/* wasn't a meta-macro -- find another way to print it */
+		switch (c)
+		{
+		  case '\0':
+			continue;
+
+		  case '\n':
+			c = 'n';
+			break;
+
+		  case '\r':
+			c = 'r';
+			break;
+
+		  case '\t':
+			c = 't';
+			break;
+
+		  default:
+			(void) putchar('^');
+			(void) putchar(c ^ 0100);
+			continue;
+		}
 	}
-	(void) putchar('"');
 	(void) fflush(stdout);
 }
 /*

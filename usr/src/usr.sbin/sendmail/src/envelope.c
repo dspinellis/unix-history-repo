@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -154,6 +154,11 @@ dropenvelope(e)
 	if (e->e_dfp != NULL)
 		(void) fclose(e->e_dfp);
 	e->e_dfp = NULL;
+
+#ifdef LOG
+	if (LogLevel >= 10)
+		syslog(LOG_INFO, "%s: done", e->e_id);
+#endif /* LOG */
 }
 /*
 **  CLEARENVELOPE -- clear an envelope without unlocking
@@ -459,7 +464,9 @@ setsender(from, e)
 		}
 	}
 
+/*
 	SuprErrs = TRUE;
+*/
 	if (from == NULL || parseaddr(from, &e->e_from, 1, '\0', e) == NULL)
 	{
 		/* log garbage addresses for traceback */
@@ -475,11 +482,14 @@ setsender(from, e)
 				from, realname, host);
 		}
 # endif /* LOG */
-		from = newstr(realname);
-		if (parseaddr(from, &e->e_from, 1, '\0', e) == NULL &&
-		    parseaddr("postmaster", &e->e_from, 1, '\0', e) == NULL)
+		if (from != NULL)
+			SuprErrs = TRUE;
+		if (from == realname ||
+		    parseaddr(from = newstr(realname), &e->e_from, 1, '\0', e) == NULL)
 		{
-			syserr("setsender: can't even parse postmaster!");
+			SuprErrs = TRUE;
+			if (parseaddr("postmaster", &e->e_from, 1, '\0', e) == NULL)
+				syserr("setsender: can't even parse postmaster!");
 		}
 	}
 	else
