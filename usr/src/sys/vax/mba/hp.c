@@ -1,4 +1,4 @@
-/*	hp.c	4.21	81/03/03	*/
+/*	hp.c	4.22	81/03/06	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -6,7 +6,6 @@
  * HP disk driver for RP0x+RM0x
  *
  * TODO:
- *	Check out handling of spun-down drives and write lock
  *	Check RM80 skip sector handling, esp when ECC's occur later
  *	Add reading of bad sector information and disk layout from sector 1
  *	Add bad sector forwarding code
@@ -236,15 +235,14 @@ hpdtint(mi, mbasr)
 
 	if (hpaddr->hpds&HP_ERR || mbasr&MBAEBITS) {
 		if (hpaddr->hper1&HP_WLE) {
-			printf("hp%d is write locked\n", dkunit(bp));
+			printf("hp%d: write locked\n", dkunit(bp));
 			bp->b_flags |= B_ERROR;
 		} else if (++mi->mi_tab.b_errcnt > 27 ||
 		    mbasr & MBASR_HARD ||
 		    hpaddr->hper1 & HPER1_HARD ||
 		    hpaddr->hper2 & HPER2_HARD) {
-			harderr(bp);
-			printf("hp%d%c mbasr=%b er1=%b er2=%b\n",
-			    dkunit(bp), 'a'+(minor(bp->b_dev)&07),
+			harderr(bp, "hp");
+			printf("mbasr=%b er1=%b er2=%b\n",
 			    mbasr, mbasr_bits,
 			    hpaddr->hper1, HPER1_BITS,
 			    hpaddr->hper2, HPER2_BITS);
@@ -334,7 +332,7 @@ hpecc(mi, rm80sse)
 	}
 #endif
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	printf("soft ecc hp%d%c bn%d\n", dkunit(bp),
+	printf("hp%d%c: soft ecc bn%d\n", dkunit(bp),
 	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = rp->hpec2&0xffff;
 	i = (rp->hpec1&0xffff) - 1;		/* -1 makes 0 origin */
