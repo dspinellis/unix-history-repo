@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sysctl.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysctl.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -35,6 +35,8 @@ struct ctlname kernname[] = CTL_KERN_NAMES;
 struct ctlname vmname[] = CTL_VM_NAMES;
 struct ctlname netname[] = CTL_NET_NAMES;
 struct ctlname hwname[] = CTL_HW_NAMES;
+struct ctlname debugname[CTL_DEBUG_MAXID];
+char names[BUFSIZ];
 
 struct list {
 	struct	ctlname *list;
@@ -47,7 +49,7 @@ struct list secondlevel[] = {
 	{ vmname, VM_MAXID },		/* CTL_VM */
 	{ 0, 0 },			/* CTL_FS */
 	{ netname, NET_MAXID },		/* CTL_NET */
-	{ 0, 0 },			/* CTL_DEBUG */
+	{ 0, CTL_DEBUG_MAXID },		/* CTL_DEBUG */
 	{ hwname, HW_MAXID },		/* CTL_HW */
 	{ 0, 0 },			/* CTL_MACHDEP */
 };
@@ -90,6 +92,7 @@ main(argc, argv)
 	argv += optind;
 
 	if (Aflag || aflag) {
+		debuginit();
 		for (lvl1 = 1; lvl1 < CTL_MAXID; lvl1++)
 			listall(topname[lvl1].ctl_name, &secondlevel[lvl1]);
 		exit(0);
@@ -159,6 +162,8 @@ parse(string, flags)
 	if ((indx = findname(string, "top", &bufp, &toplist)) == -1)
 		return;
 	mib[0] = indx;
+	if (indx == CTL_DEBUG)
+		debuginit();
 	lp = &secondlevel[indx];
 	if (lp->list == 0) {
 		fprintf(stderr, "%s: class is not implemented\n",
@@ -229,8 +234,12 @@ parse(string, flags)
 		fprintf(stderr, "Use netstat to view %s information\n", string);
 		return;
 
-	case CTL_FS:
 	case CTL_DEBUG:
+		mib[2] = CTL_DEBUG_VALUE;
+		len = 3;
+		break;
+
+	case CTL_FS:
 	case CTL_MACHDEP:
 		break;
 
@@ -338,6 +347,29 @@ parse(string, flags)
 		fprintf(stderr, "%s: unknown type returned\n",
 		    string);
 		return;
+	}
+}
+
+/*
+ * Initialize the set of debugging names
+ */
+debuginit()
+{
+	int mib[3], size, loc, i;
+
+	if (secondlevel[CTL_DEBUG].list != 0)
+		return;
+	secondlevel[CTL_DEBUG].list = debugname;
+	mib[0] = CTL_DEBUG;
+	mib[2] = CTL_DEBUG_NAME;
+	for (loc = 0, i = 0; i < CTL_DEBUG_MAXID; i++) {
+		mib[1] = i;
+		size = BUFSIZ - loc;
+		if (sysctl(mib, 3, &names[loc], &size, NULL, 0) == -1)
+			continue;
+		debugname[i].ctl_name = &names[loc];
+		debugname[i].ctl_type = CTLTYPE_INT;
+		loc += size;
 	}
 }
 
