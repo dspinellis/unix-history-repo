@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *
- *	@(#)sysv_shm.c	7.13 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -445,7 +445,7 @@ shmfree(shp)
 	 */
 	vm_deallocate(shm_map,
 		      ((struct shmhandle *)shp->shm_handle)->shmh_kva,
-		      clrnd(btoc(shp->shm_segsz)));
+		      ctob(clrnd(btoc(shp->shm_segsz))));
 	free((caddr_t)shp->shm_handle, M_SHM);
 	shp->shm_handle = NULL;
 	shmtot -= clrnd(btoc(shp->shm_segsz));
