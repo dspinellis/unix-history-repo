@@ -1,0 +1,153 @@
+#	%M% %I% %G% %U%	
+#	Copyright (c) 1987, Benjamin G. Zorn
+#
+# Makefile for MPROF data generation
+#
+
+CC = cc
+
+# mips 			CFLAGS = -I. -g -DDEBUG
+# sun4 			CFLAGS = -I. -g -Dsun4
+# sun3,vax 		CFLAGS = -I. -g
+
+# sun4			ASFLAGS = -P -Dsun4
+# sun3,vax,mips 	ASFLAGS =
+
+CFLAGS = -I. -g
+ASFLAGS =
+BIN = .
+MPLIB = $(BIN)/libc_mp.a
+LINTFLAGS = -bhx
+
+# sun4,mips 		ASM_SRC = md.s
+# sun4,mips 		ASM_OBJ = md.o
+# vax,sun3 		ASM_SRC =
+# vax,sun3 		ASM_SRC =
+
+ASM_SRC =
+ASM_OBJ =
+
+MPROF_MON_SRCS = leak.c malloc.c mpattach.c mprof_mon.c mpstruct.c $(ASM_SRC)
+MPROF_MON_OBJS = leak.o malloc.o mpattach.o mprof_mon.o mpstruct.o $(ASM_OBJ)
+
+MPROF_SRCS = mprof.c mpstruct.c mpgraph.c
+MPROF_OBJS = mprof.o mpstruct.o mpgraph.o
+
+DOC_SRC = mprof.1
+DOC_OBJS = mprof.man
+
+DISTNAME = mprof30
+
+TEST_SRCS = test1.c test2.c
+TEST_OBJS = test1.o test2.o
+
+all: mprof $(MPROF_MON_OBJS) $(DOC_OBJS) $(MPLIB)
+
+# mips $(MPLIB): $(MPROF_MON_OBJS)
+#	ar cr libc_mp.a $(MPROF_MON_OBJS)
+#	ranlib libc_mp.a
+
+# sun3, sun4		LIB_REPLACE = memalign.o
+# vax			LIB_REPLACE = exit.o
+# mips			LIB_REPLACE = 
+
+LIB_REPLACE = exit.o
+
+$(MPLIB): $(MPROF_MON_OBJS)
+	rm -f libc_mp.a
+	cp /usr/lib/libc.a libc_mp.a
+	chmod 644 libc_mp.a
+	ar d libc_mp.a malloc.o valloc.o $(LIB_REPLACE)
+	ar r libc_mp.a $(MPROF_MON_OBJS)
+	ranlib libc_mp.a
+
+test: $(TEST_OBJS) test1-demo test2-demo
+	
+mprof-mon-lint:
+	lint $(LINTFLAGS) $(MPROF_MON_SRCS) > mprof.lint
+
+mprof-lint:
+	lint $(LINTFLAGS) $(MPROF_SRCS) > mprof.lint
+
+clean:
+	rm -f *.o mprof.lint mprof-mon.lint \
+	$(DOC_OBJS) \
+	$(TEST_OBJS) \
+	test1 test1.data test1.mprof \
+	test2 test2.data test2.mprof \
+	libc_mp.a mprof mprof.data
+
+leak.o: leak.c
+mprof_mon.o: mprof_mon.c
+mpstruct.o: mpstruct.c
+mpgraph.o: mpgraph.c
+mprof.o: mprof.c
+md.o: md.s
+	$(AS) $(ASFLAGS) -o md.o md.s
+
+malloc.o: malloc.c
+	$(CC) $(CFLAGS) -Dmalloc=__malloc__ -Dfree=__free__ -Drealloc=__realloc__ malloc.c -c
+
+mprof: $(MPROF_OBJS)
+	$(CC) $(CFLAGS) -o mprof $(MPROF_OBJS)
+
+mprof.man: mprof.1
+	nroff -man mprof.1 > mprof.man
+
+dist: MANIFEST
+	tar cvf $(DISTNAME).tar `cat MANIFEST`
+	compress $(DISTNAME).tar
+
+#
+# Examples to test if MPROF is installed correctly
+#
+
+# A very simple test (tests calloc and valloc)
+
+test1-demo: test1.data
+	$(BIN)/mprof -normal test1 test1.data > test1.mprof
+
+test1.mprof: test1.data
+	$(BIN)/mprof -normal test1 test1.data > test1.mprof
+
+test1.data: test1
+	test1
+	cp mprof.data test1.data
+
+test1: test1.o $(MPLIB)
+	$(CC) $(CFLAGS) -o test1 test1.o $(MPLIB)
+
+test1.o: test1.c
+
+
+# test2 program (example from paper)
+
+test2-demo: test2.data
+	$(BIN)/mprof -normal test2 test2.data > test2.mprof
+
+test2.mprof: test2.data
+	$(BIN)/mprof -normal test2 test2.data > test2.mprof
+
+test2.data: test2
+	test2
+	cp mprof.data test2.data
+
+test2: test2.o $(MPLIB)
+	$(CC) $(CFLAGS) -o test2 test2.o $(MPLIB)
+
+test2.o: test2.c
+
+
+###
+leak.o: /usr/include/stdio.h mprof.h /usr/include/sys/types.h \
+	/usr/include/frame.h
+malloc.o: /usr/include/sys/types.h /usr/include/stdio.h
+mprof.o: /usr/include/stdio.h /usr/include/sys/file.h /usr/include/ctype.h \
+	/usr/include/a.out.h /usr/include/sys/exec.h /usr/include/stab.h \
+	mprof.h /usr/include/sys/types.h /usr/include/frame.h
+mprof_mon.o: /usr/include/stdio.h /usr/include/sys/file.h mprof.h \
+	/usr/include/sys/types.h /usr/include/frame.h
+mpstruct.o: /usr/include/stdio.h mprof.h /usr/include/sys/types.h \
+	/usr/include/frame.h
+mpgraph.o: /usr/include/stdio.h mprof.h /usr/include/sys/types.h \
+	/usr/include/frame.h
