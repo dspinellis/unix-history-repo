@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_debug.c	5.2 (Berkeley) %G%
+ *	@(#)lfs_debug.c	5.3 (Berkeley) %G%
  */
 
 #ifdef LOGFS
@@ -77,6 +77,7 @@ dump_super(lfsp)
 	(void)printf("tstamp   %lx\n", lfsp->lfs_tstamp);
 }
 
+void
 dump_dinode(dip)
 	DINODE *dip;
 {
@@ -100,6 +101,7 @@ dump_dinode(dip)
 	(void)printf("\n");
 }
 
+void
 lfs_print_inumber(vp)
 	VNODE *vp;
 {

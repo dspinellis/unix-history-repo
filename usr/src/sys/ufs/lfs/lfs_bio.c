@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	5.2 (Berkeley) %G%
+ *	@(#)lfs_bio.c	5.3 (Berkeley) %G%
  */
 
 #ifdef LOGFS
@@ -23,6 +23,7 @@
  * use reassignbuf to move the buffer from the clean list to the dirty one,
  * then unlock the buffer.
  */
+void
 lfs_bwrite(bp)
 	register BUF *bp;
 {
