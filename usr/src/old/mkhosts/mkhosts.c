@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)mkhosts.c	4.1 (Berkeley) 83/12/05";
+static	char *sccsid = "@(#)mkhosts.c	4.2 (Berkeley) 84/02/02";
 #endif
 
 #include <sys/file.h>
@@ -63,15 +63,15 @@ main(argc, argv)
 			printf("store %s, %d aliases\n", hp->h_name, naliases);
 		key.dptr = hp->h_name;
 		key.dsize = strlen(hp->h_name);
-		dbmstore(dp, key, content);
+		dbmstore(dp, key, content, DB_INSERT);
 		for (sp = hp->h_aliases; *sp; sp++) {
 			key.dptr = *sp;
 			key.dsize = strlen(*sp);
-			dbmstore(dp, key, content);
+			dbmstore(dp, key, content, DB_INSERT);
 		}
 		key.dptr = hp->h_addr;
 		key.dsize = hp->h_length;
-		dbmstore(dp, key, content);
+		dbmstore(dp, key, content, DB_INSERT);
 		entries++;
 		if (cp - buf > maxlen)
 			maxlen = cp - buf;
