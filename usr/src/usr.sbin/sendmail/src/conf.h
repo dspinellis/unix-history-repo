@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.39 (Berkeley) %G%
+ *	@(#)conf.h	8.40 (Berkeley) %G%
  */
 
 /*
@@ -148,6 +148,7 @@
 			/* Solaris 2.x (a.k.a. SunOS 5.x) */
 #  define SYSTEM5	1	/* use System V definitions */
 #  define setreuid(r, e)	seteuid(e)
+#  include <sys/sysmacros.h>
 #  include <sys/time.h>
 #  define gethostbyname	__switch_gethostbyname	/* get working version */
 #  define gethostbyaddr	__switch_gethostbyaddr	/* get working version */
