@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)buf.h	7.9 (Berkeley) %G%
+ *	@(#)buf.h	7.10 (Berkeley) %G%
  */
 
 /*
@@ -188,17 +188,6 @@ unsigned minphys();
 	(bp)->av_back = (dp)->av_back; \
 	(dp)->av_back = (bp); \
 	(bp)->av_forw = (dp); \
-}
-
-/*
- * Take a buffer off the free list it's on and
- * mark it as being use (B_BUSY) by a device.
- */
-#define	notavail(bp) { \
-	int x = splbio(); \
-	bremfree(bp); \
-	(bp)->b_flags |= B_BUSY; \
-	splx(x); \
 }
 
 #define	iodone	biodone
