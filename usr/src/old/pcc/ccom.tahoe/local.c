@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)local.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)local.c	1.2 (Berkeley) %G%";
 #endif
 
-# include "mfile1"
+# include "pass1.h"
 
 /*	this file contains code which is dependent on the target machine */
 
@@ -109,7 +109,7 @@ clocal(p) register NODE *p; {
 			if (p->in.left->in.op == FCON){
 				p->in.left->in.op = FREE;
 				p->in.op = ICON;
-				p->tn.lval = p->in.left->fpn.dval;
+				p->tn.lval = p->in.left->fpn.fval;
 				p->tn.rval = NONAME;
 				return(p);
 			}
@@ -187,11 +187,11 @@ clocal(p) register NODE *p; {
 						p->in.left->in.type = INT;
 				}
 		break;
-		case FORTCALL: /* arg must be FLOAT */
-			if((r = p->in.right)->in.type != FLOAT)
-				p->in.right = clocal(makety(r, FLOAT, 0, FLOAT));
-			return(p);
-		}
+	case FORTCALL: /* arg must be FLOAT */
+		if((r = p->in.right)->in.type != FLOAT)
+			p->in.right = clocal(makety(r, FLOAT, 0, FLOAT));
+		return(p);
+	}
 
 	/* if both sides are FLOAT, so is the op */
 	if(optype(o)!=LTYPE && p->in.left->in.type==DOUBLE &&
@@ -283,84 +283,64 @@ incode( p, sz ) register NODE *p; {
 	word |= (p->tn.lval&((1L<<sz)-1)) << (SZINT-inwd);
 	inoff += sz;
 	if(inoff%SZINT == 0) {
-		printf( "	.long	0x%08X\n", word);
+		printf( "	.long	0x%X\n", word);
 		word = inwd = 0;
 		}
 	}
-
-# ifdef PRTDCON
-prtdcon( p ) register NODE *p; {
-	int i;
-
-	if( p->in.op == FCON ){
-		if(p->fpn.dval == 0) {
-			p->in.op = ICON;
-			p->tn.rval = NONAME;
-			return;
-		}
-		locctr( DATA );
-		defalign( ALDOUBLE );
-		deflab( i = getlab() );
-# ifndef SFCON
-		fincode( p->fpn.dval, p->in.type==DOUBLE ? SZDOUBLE : SZFLOAT);
-# else
-		p->in.type = fincode( p->fpn.dval, 0 );
-# endif
-		p->tn.lval = 0;
-		p->tn.rval = -i;
-		p->in.op = NAME;
-		}
-	}
-# endif
 
 fincode( d, sz ) double d; register int sz; {
 	/*
 	 * output code to initialize space of size sz to the value d
 	 * the proper alignment has been obtained
-	 * inoff is updated to have the proper final value
-	 * this code should be the same for PDP, VAX and Tahoe
-	 * SFCON makes use of value to determine type - only where
-	 * float<->double conversions are ignored.
+	 * inoff is updated to have the proper final value.
 	 */
 
 	register struct sh4 {
 		unsigned short sh[4];
 	} *x;
-# ifdef SFCON
-	register int type;
-# else
 	float f;
 
 	if(sz == SZFLOAT) {	/* force rounding */
 		f = d;
 		d = f;
 	}
-# endif
 
 	x = (struct sh4 *)&d;
 	printf("	.long	0x%04x%04x", x->sh[0], x->sh[1]);
-# ifdef SFCON
-	if(sz==0)
-		if(x->sh[2]==0 && x->sh[3]==0) {
-			sz = SZFLOAT;
-			type = FLOAT;
-		} else {
-			sz = SZDOUBLE;
-			type = DOUBLE;
-		}
-# endif
 	if(sz == SZDOUBLE) {
 		printf(", 0x%04x%04x", x->sh[2], x->sh[3]);
 		printf(" # .double %.17g\n", d);
 	} else
 		printf(" # .float %.8g\n", d);
 	inoff += sz;
-# ifdef SFCON
-	return type;
-# endif
 	}
 
 cinit( p, sz ) NODE *p; {
+	NODE *l;
+
+	/*
+	 * as a favor (?) to people who want to write
+	 *     int i = 9600/134.5;
+	 * we will, under the proper circumstances, do
+	 * a coersion here.
+	 */
+	switch (p->in.type) {
+	case INT:
+	case UNSIGNED:
+		l = p->in.left;
+		if (l->in.op != SCONV ||
+		    (l->in.left->tn.op != DCON && l->in.left->tn.op != FCON))
+			break;
+		l->in.op = FREE;
+		l = l->in.left;
+		l->tn.lval = l->tn.op == DCON ? (long)(l->dpn.dval) :
+			(long)(l->fpn.fval);
+		l->tn.rval = NONAME;
+		l->tn.op = ICON;
+		l->tn.type = INT;
+		p->in.left = l;
+		break;
+	}
 	/* arrange for the initialization of p into a space of
 	size sz */
 	/* the proper alignment has been opbtained */
@@ -376,7 +356,7 @@ vfdzero( n ){ /* define n bits of zeros in a vfd */
 	inwd += n;
 	inoff += n;
 	if( inoff%ALINT ==0 ) {
-		printf( "	.long	0x%08X\n", word );
+		printf( "	.long	0x%X\n", word );
 		word = inwd = 0;
 		}
 	}
@@ -395,12 +375,11 @@ exname( p ) char *p; {
 
 	text[0] = '_';
 #ifndef FLEXNAMES
-	for( i=1; *p&&i<NCHNAM; ++i ){
+	for( i=1; *p&&i<NCHNAM; ++i )
 #else
-	for( i=1; *p; ++i ){
+	for( i=1; *p; ++i )
 #endif
 		text[i] = *p++;
-		}
 
 	text[i] = '\0';
 #ifndef FLEXNAMES
@@ -442,11 +421,51 @@ commdec( id ){ /* make a common declaration for id, if reasonable */
 	printf( "\n" );
 	}
 
+prtdcon(p)
+	register NODE *p;
+{
+	register int o = p->in.op;
+	int i;
+
+	if (o != DCON && o != FCON)
+		return;
+	/*
+	 * Clobber constants of value zero so
+	 * we can generate more efficient code.
+	 */
+	if ((o == DCON && p->dpn.dval == 0) ||
+	    (o == FCON && p->fpn.fval == 0)) {
+		p->in.op = ICON;
+		p->tn.rval = NONAME;
+		return;
+	}
+	locctr(DATA);
+	defalign(o == DCON ? ALDOUBLE : ALFLOAT);
+	deflab(i = getlab());
+	if (o == FCON)
+		fincode(p->fpn.fval, SZFLOAT);
+	else
+		fincode(p->dpn.dval, SZDOUBLE);
+	p->tn.lval = 0;
+	p->tn.rval = -i;
+	p->in.type = (o == DCON ? DOUBLE : FLOAT);
+	p->in.op = NAME;
+}
 
 isitfloat( s ) char *s; {
+	union cvt {
+		double	d;
+		int	n[2];
+	} cvt;
 	double atof();
-	dcon = atof(s);
-	return( FCON );
+
+	/* avoid floating point exception for double -> float conversions */
+	dcon = cvt.d = atof(s);
+	if( cvt.n[1] == 0 ){
+		fcon = dcon;
+		return( FCON );
+		}
+	return( DCON );
 	}
 
 ecode( p ) NODE *p; {
