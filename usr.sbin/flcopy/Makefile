@@ -2,6 +2,6 @@
 
 PROG=	flcopy
 MANSUBDIR=/vax
-MAN8=	flcopy.0
+MAN8=	flcopy.8
 
 .include <bsd.prog.mk>

@@ -5,6 +5,6 @@ BINGRP=	kmem
 BINMODE=2555
 DPADD=	${LIBUTIL}
 LDADD=	-lutil
-MAN8=	arp.0
+MAN8=	arp.8
 
 .include <bsd.prog.mk>

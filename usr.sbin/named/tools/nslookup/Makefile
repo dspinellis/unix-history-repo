@@ -3,7 +3,7 @@
 PROG=	nslookup
 SRCS=	main.c getinfo.c debug.c send.c skip.c list.c subr.c
 OBJS+=	commands.o
-MAN8=	nslookup.0
+MAN8=	nslookup.8
 LFLAGS=	-I
 CFLAGS+=-I${.CURDIR}
 DPADD=	${LIBLN}

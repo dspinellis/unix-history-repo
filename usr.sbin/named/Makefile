@@ -3,7 +3,7 @@
 ### -DALLOW_T_UNSPEC -Dmalloc=rt_malloc -Dfree=rt_free
 ### ALLOC=storage.o
 PROG=	named
-MAN8=	named.0
+MAN8=	named.8
 CFLAGS=	-O -DDEBUG -DSTATS
 LDADD=	-lutil
 SRCS=	db_dump.c db_glue.c db_load.c db_lookup.c db_reload.c db_save.c \

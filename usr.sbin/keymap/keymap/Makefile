@@ -11,7 +11,7 @@ LDADD=		-lconsutil
 LDFLAGS+=	-L${.CURDIR}/../lib
 LDFLAGS+=	-L${.CURDIR}/../lib/obj
 
-MAN5=		keycap.0
-MAN8=		keymap.0
+MAN5=		keycap.5
+MAN8=		keymap.8
 
 .include 	<bsd.prog.mk>

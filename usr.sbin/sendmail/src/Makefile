@@ -21,9 +21,9 @@ SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	util.c version.c
 DPADD=	${LIBDBM} ${LIBCOMPAT} ${LIBUTIL}
 LDADD=	${LIBUTIL}
-MAN1=	newaliases.0
-MAN5=	aliases.0
-MAN8=	sendmail.0 
+MAN1=	newaliases.1
+MAN5=	aliases.5
+MAN8=	sendmail.8 
 LINKS=	${DESTDIR}/usr/sbin/sendmail ${DESTDIR}/usr/bin/newaliases \
 	${DESTDIR}/usr/sbin/sendmail ${DESTDIR}/usr/bin/mailq
 BINDIR=	/usr/sbin

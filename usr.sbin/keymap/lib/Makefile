@@ -2,9 +2,9 @@
 
 LIB=	consutil
 SRCS=	keycap.c setfont.c whichcons.c xc_fns.c
-MAN3=	keycap.0 setfont.0 whichcons.0
-MAN4=	co.0 
-MAN5=	vgafont.0
+MAN3=	keycap.3 setfont.3 whichcons.3
+MAN4=	co.4
+MAN5=	vgafont.5
 
 MLINKS+=keycap.3 kgetent.3
 MLINKS+=keycap.3 kgetflag.3

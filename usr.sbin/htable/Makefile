@@ -2,7 +2,7 @@
 
 PROG=	htable
 SRCS=	htable.c parse.c scan.c
-MAN8=	htable.0
+MAN8=	htable.8
 CFLAGS+=-I. -I${.CURDIR}
 CLEANFILES+=parse.c scan.c y.tab.h
 
