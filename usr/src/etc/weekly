@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)weekly	5.12 (Berkeley) %G%
+#	@(#)weekly	5.13 (Berkeley) %G%
 #
 
 PATH=/bin:/sbin:/usr/sbin:/usr/bin:/usr/libexec
@@ -17,13 +17,13 @@ echo "Subject: $host weekly run output"
 # before looking there for checked-out files
 
 if [ -d /usr/src -a \
-  X"`find -f /usr/src ! -fstype local -prune or -type d -print prune`" != X ];
+  X"`find -f /usr/src ! -fstype local -prune -or -type d -print prune`" != X ];
 then
 	echo "looking for checked out files:"
 	TDIR=/tmp/_checkout$$
 
 	mkdir $TDIR
-	for file in `find -f /usr/src ! -fstype local -prune or \
+	for file in `find -f /usr/src ! -fstype local -prune -or \
 	    -name 'p.*' -print | egrep 'SCCS/p\.'`; do
 		owner=`awk '{ print $3 }' $file`
 		echo "$owner	$file"
