@@ -1,4 +1,4 @@
-/*	machdep.c	4.8	%G%	*/
+/*	machdep.c	4.9	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,7 +21,7 @@
 int	coresw = 0;
 int	printsw = 0;
 
-char	version[] = "VM/UNIX (Berkeley Version 4.8) %D% \n";
+char	version[] = "VM/UNIX (Berkeley Version 4.9) 81/02/08 00:50:15 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
