@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -48,10 +48,11 @@ static PLAN *palloc __P((enum ntype, int (*)()));
  * find_parsenum --
  *	Parse a string of the form [+-]# and return the value.
  */
-long
-find_parsenum(plan, option, str, endch)
+static long
+find_parsenum(plan, option, str, nosign, endch)
 	PLAN *plan;
 	char *option, *str, *endch;
+	int nosign;
 {
 	long value;
 	char *endchar;		/* pointer to character ending conversion */
@@ -59,10 +60,14 @@ find_parsenum(plan, option, str, endch)
 	/* determine comparison from leading + or - */
 	switch(*str) {
 	case '+':
+		if (nosign)
+			err("%s: %s", option, "signed value not permitted");
 		++str;
 		plan->flags = F_GREATER;
 		break;
 	case '-':
+		if (nosign)
+			err("%s: %s", option, "signed value not permitted");
 		++str;
 		plan->flags = F_LESSTHAN;
 		break;
@@ -72,14 +77,15 @@ find_parsenum(plan, option, str, endch)
 	}
     
 	/*
-	 * convert the string with strtol().  Note, if strtol() returns zero
+	 * Convert the string with strtol().  Note, if strtol() returns zero
 	 * and endchar points to the beginning of the string we know we have
 	 * a syntax error.
 	 */
 	value = strtol(str, &endchar, 10);
-	if (!value && endchar == str ||
-	    endchar[0] && (!endch || endchar[0] != *endch))
+	if (value == 0 && endchar == str)
 		err("%s: %s", option, "illegal numeric value");
+	if (endchar[0] && (endch == NULL || endchar[0] != *endch))
+		err("%s: %s", option, "illegal trailing character");
 	if (endch)
 		*endch = endchar[0];
 	return(value);
@@ -111,7 +117,7 @@ c_atime(arg)
 	ftsoptions &= ~FTS_NOSTAT;
 
 	new = palloc(N_ATIME, f_atime);
-	new->t_data = find_parsenum(new, "-atime", arg, NULL);
+	new->t_data = find_parsenum(new, "-atime", arg, 0, NULL);
 	return(new);
 }
 /*
@@ -139,7 +145,7 @@ c_ctime(arg)
 	ftsoptions &= ~FTS_NOSTAT;
 
 	new = palloc(N_CTIME, f_ctime);
-	new->t_data = find_parsenum(new, "-ctime", arg, (char *)NULL);
+	new->t_data = find_parsenum(new, "-ctime", arg, 0, NULL);
 	return(new);
 }
 
@@ -461,7 +467,7 @@ c_inum(arg)
 	ftsoptions &= ~FTS_NOSTAT;
     
 	new = palloc(N_INUM, f_inum);
-	new->i_data = find_parsenum(new, "-inum", arg, (char *)NULL);
+	new->i_data = find_parsenum(new, "-inum", arg, 1, NULL);
 	return(new);
 }
  
@@ -486,7 +492,7 @@ c_links(arg)
 	ftsoptions &= ~FTS_NOSTAT;
     
 	new = palloc(N_LINKS, f_links);
-	new->l_data = (nlink_t)find_parsenum(new, "-links", arg, (char *)NULL);
+	new->l_data = (nlink_t)find_parsenum(new, "-links", arg, 1, NULL);
 	return(new);
 }
  
@@ -538,7 +544,7 @@ c_mtime(arg)
 	ftsoptions &= ~FTS_NOSTAT;
 
 	new = palloc(N_MTIME, f_mtime);
-	new->t_data = find_parsenum(new, "-mtime", arg, (char *)NULL);
+	new->t_data = find_parsenum(new, "-mtime", arg, 0, NULL);
 	return(new);
 }
 
@@ -790,7 +796,8 @@ c_size(arg)
 	ftsoptions &= ~FTS_NOSTAT;
 
 	new = palloc(N_SIZE, f_size);
-	new->o_data = find_parsenum(new, "-size", arg, &endch);
+	endch = 'c';
+	new->o_data = find_parsenum(new, "-size", arg, 1, &endch);
 	if (endch == 'c')
 		divsize = 0;
 	return(new);
