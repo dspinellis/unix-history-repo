@@ -1,4 +1,4 @@
-.\"     @(#)Infoletter	1.8 (Berkeley) %G%
+.\"     @(#)Infoletter	1.9 (Berkeley) %G%
 .\" use -ms
 .nr PS 10
 .ps 10
@@ -10,7 +10,7 @@
 .HE
 .LP
 .in 4.1i
-April 30, 1991
+June 28, 1991
 .in
 .sp
 .LP
@@ -318,9 +318,9 @@ Before the distribution can be sent, we require:
 .IP \(bu
 Execution of the included Berkeley License Agreement.
 .IP \(bu
-A check from a U.S. bank for $795.00 US for a single 6250 BPI 9-track tape
+A check from a U.S. bank for $850.00 US for a single 6250 BPI 9-track tape
 or 8mm Exabyte tape,
-or $895.00 US for three 1600 BPI tapes, payable to
+or $950.00 US for three 1600 BPI tapes, payable to
 ``The Regents of the University of California.''
 If you must issue a Purchase Order, please issue one that is blank-backed.
 If this is not possible, insert and initial in the body of the Purchase
