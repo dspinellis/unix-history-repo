@@ -8,7 +8,86 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.2 %G%";
+static char *SccsId = "@(#)lex.c	1.3 %G%";
+
+/*
+ * Set up editing on the given file name.
+ * If isedit is true, we are considered to be editing the file,
+ * otherwise we are reading our mail which has signficance for
+ * mbox and so forth.
+ */
+
+setfile(name, isedit)
+	char *name;
+{
+	FILE *ibuf;
+	int i;
+	static int shudclob;
+	static char efile[128];
+	extern char tempMesg[];
+	int (*sigs[2])();
+
+	if ((ibuf = fopen(name, "r")) == NULL) {
+		if (isedit)
+			perror(name);
+		else
+			printf("No mail for %s\n", myname);
+		return(-1);
+	}
+
+	/*
+	 * Looks like all will be well.  We must now relinquish our
+	 * hold on the current set of stuff.  Must ignore signals
+	 * while we are reading the new file, else we will ruin
+	 * the message[] data structure.
+	 */
+
+	for (i = SIGINT; i <= SIGQUIT; i++)
+		sigs[i - SIGINT] = signal(i, SIG_IGN);
+	if (shudclob) {
+		if (edit)
+			edstop();
+		else
+			quit();
+	}
+
+	/*
+	 * Copy the messages into /tmp
+	 * and set pointers.
+	 */
+
+	readonly = 0;
+	if ((i = open(name, 1)) < 0)
+		readonly++;
+	else
+		close(i);
+	if (shudclob) {
+		fclose(itf);
+		fclose(otf);
+	}
+	shudclob = 1;
+	edit = isedit;
+	strncpy(efile, name, 128);
+	editfile = efile;
+	mailsize = fsize(ibuf);
+	if ((otf = fopen(tempMesg, "w")) == NULL) {
+		perror(tempMesg);
+		exit(1);
+	}
+	if ((itf = fopen(tempMesg, "r")) == NULL) {
+		perror(tempMesg);
+		exit(1);
+	}
+	remove(tempMesg);
+	setptr(ibuf);
+	setmsize(msgCount);
+	fclose(ibuf);
+	for (i = SIGINT; i <= SIGQUIT; i++)
+		signal(i, sigs[i - SIGINT]);
+	printf("%s: ", name);
+	announce(!edit);
+	return(0);
+}
 
 /*
  * Interpret user commands one by one.  If standard input is not a tty,
@@ -23,7 +102,6 @@ commands()
 	register int n;
 	char linebuf[LINESIZE];
 
-	msgvec = (int *) calloc((unsigned) (msgCount + 1), sizeof *msgvec);
 	if (rcvmode)
 		if (signal(SIGINT, SIG_IGN) == SIG_DFL)
 			signal(SIGINT, stop);
@@ -47,11 +125,13 @@ commands()
 		 * go off and print the headers!
 		 */
 
+#ifdef CRAZYWOW
 		if (firstsw == 0 && !sourcing) {
 			firstsw = -1;
 			if (rcvmode)
-				announce();
+				announce(1);
 		}
+#endif
 
 		/*
 		 * Print the prompt, if needed.  Clear out
@@ -118,6 +198,7 @@ execute(linebuf)
 	struct cmd *com;
 	register char *cp, *cp2;
 	register int c;
+	int muvec[2];
 	int edstop(), e;
 
 	/*
@@ -142,7 +223,7 @@ execute(linebuf)
 		return(0);
 	}
 	cp2 = word;
-	while (*cp && !any(*cp, " \t0123456789$^.-+*'\""))
+	while (*cp && !any(*cp, " \t0123456789$^./-+*'\""))
 		*cp2++ = *cp++;
 	*cp2 = '\0';
 
@@ -198,8 +279,15 @@ execute(linebuf)
 		unstack();
 		return(0);
 	}
+	if (readonly && com->c_argtype & W) {
+		printf("May not execute \"%s\" -- message file is read only\n",
+		   com->c_name);
+		if (sourcing)
+			unstack();
+		return(0);
+	}
 	e = 1;
-	switch (com->c_argtype & ~(P|I|M)) {
+	switch (com->c_argtype & ~(P|I|M|W)) {
 	case MSGLIST:
 		/*
 		 * A message list defaulting to nearest forward
@@ -280,11 +368,27 @@ execute(linebuf)
 	if (com->c_func == edstop)
 		return(1);
 	if (value("autoprint") != NOSTR && com->c_argtype & P)
-		if ((dot->m_flag & MDELETED) == 0)
-			print(dot);
+		if ((dot->m_flag & MDELETED) == 0) {
+			muvec[0] = dot - &message[0] + 1;
+			muvec[1] = 0;
+			type(muvec);
+		}
 	if (!sourcing)
 		sawcom = 1;
 	return(0);
+}
+
+/*
+ * Set the size of the message vector used to construct argument
+ * lists to message list functions.
+ */
+ 
+setmsize(sz)
+{
+
+	if (msgvec != (int *) 0)
+		cfree(msgvec);
+	msgvec = (int *) calloc((unsigned) (sz + 1), sizeof *msgvec);
 }
 
 /*
@@ -350,6 +454,11 @@ stop()
 			continue;
 		if (fp == stderr)
 			continue;
+		if (fp == pipef) {
+			pclose(pipef);
+			pipef = NULL;
+			continue;
+		}
 		fclose(fp);
 	}
 	if (image >= 0) {
@@ -369,7 +478,7 @@ stop()
 
 char	*greeting	= "Mail version 2.0 %s.  Type ? for help.\n";
 
-announce()
+announce(pr)
 {
 	int vec[2];
 	extern char *version;
@@ -380,12 +489,15 @@ announce()
 			mp->m_flag |= MPRESERVE;
 	vec[0] = 1;
 	vec[1] = 0;
-	if (value("quiet") == NOSTR)
+	if (pr && value("quiet") == NOSTR)
 		printf(greeting, version);
 	if (msgCount == 1)
-		printf("1 message:\n");
+		printf("1 message");
 	else
-		printf("%d messages:\n", msgCount);
+		printf("%d messages", msgCount);
+	if (readonly)
+		printf(" [Read only]");
+	printf("\n");
 	headers(vec);
 }
 
