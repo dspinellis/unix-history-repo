@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.31 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -491,8 +491,11 @@ _cvt(number, prec, flags, fmtch, sign, startp, endp)
 	 */
 	else if (!fract || !prec) {
 		*startp++ = '0';
-		if (decpt && !(format&GFORMAT))
+		if (decpt && !(format&GFORMAT)) {
 			*startp++ = '.';
+			while (prec-- > 0)
+				*startp++ = '0';
+		}
 		*startp = '\0';
 		return(startp);
 	}
