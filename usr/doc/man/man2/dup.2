@@ -1,0 +1,61 @@
+.th DUP II 8/5/73
+.sh NAME
+dup \*- duplicate an open file descriptor
+.sh SYNOPSIS
+(dup = 41.; not in assembler)
+.br
+(file descriptor in r0)
+.br
+.ft B
+sys dup
+.s3
+dup(fildes)
+.br
+int fildes;
+.ft R
+.sh DESCRIPTION
+Given
+a file descriptor returned from
+an
+.it open,
+.it pipe,
+or
+.it creat
+call,
+.it dup
+will allocate another file descriptor
+synonymous
+with
+the original.
+The new file descriptor is returned in r0.
+.s3
+.it Dup
+is used more to reassign the value
+of file descriptors
+than to genuinely
+duplicate a file descriptor.
+Since the algorithm to allocate
+file descriptors
+returns the
+lowest available
+value,
+combinations of
+.it dup
+and
+.it close
+can be
+used to
+manipulate file descriptors
+in a general way.
+This is handy for
+manipulating standard input and/or
+standard output.
+.sh "SEE ALSO"
+creat (II), open (II), close (II), pipe (II)
+.sh DIAGNOSTICS
+The
+error bit (c-bit)
+is set if:
+the given file descriptor is invalid;
+there are already too many open files.
+From C, a \*-1 returned value indicates an error.

@@ -1,0 +1,60 @@
+.th SEEK II 8/5/73
+.sh NAME
+seek \*- move read/write pointer
+.sh SYNOPSIS
+(seek = 19.)
+.br
+(file descriptor in r0)
+.ft B
+.br
+sys seek; offset; ptrname
+.s3
+seek(fildes, offset, ptrname)
+.ft R
+.sh DESCRIPTION
+The file
+descriptor refers to a file open for reading or writing.
+The read (resp. write) pointer for the file is set as follows:
+.s3
+.lp +6 3
+if
+.it ptrname
+is 0, the pointer is set to
+.it offset.
+.s3
+.lp +6 3
+if
+.it ptrname
+is 1, the pointer is set to its current location plus
+.it offset.
+.s3
+.lp +6 3
+if
+.it ptrname
+is 2, the pointer is set to the size of the
+file plus
+.it offset.
+.s3
+.lp +6 3
+if
+.it ptrname
+is 3, 4 or 5,
+the meaning is as above for
+0, 1 and 2 except that
+the offset is
+multiplied by 512.
+.s3
+.i0
+If
+.it ptrname
+is 0 or 3,
+.it offset
+is unsigned,
+otherwise
+it is signed.
+.sh "SEE ALSO"
+open (II), creat (II)
+.sh DIAGNOSTICS
+The error bit
+(c-bit) is set for an undefined file descriptor.
+From C, a \*-1 return indicates an error.

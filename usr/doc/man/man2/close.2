@@ -1,0 +1,37 @@
+.th CLOSE II 8/5/73
+.sh NAME
+close  \*-  close a file
+.sh SYNOPSIS
+(close = 6.)
+.br
+(file descriptor in r0)
+.br
+.ft B
+sys close
+.s3
+close(fildes)
+.s3
+.ft R
+.sh DESCRIPTION
+Given
+a file descriptor such as returned from an
+.it open,
+.it creat,
+or
+.it pipe
+call,
+.it close
+closes the associated file.
+A close of all files is automatic on
+.it exit,
+but since
+processes are limited to 15 simultaneously open files,
+.it close
+is necessary for programs which deal with many files.
+.sh "SEE ALSO"
+creat (II), open (II), pipe (II)
+.sh DIAGNOSTICS
+The error bit
+(c-bit) is set for an unknown file descriptor.
+From C a \*-1 indicates an error, 0 indicates
+success.

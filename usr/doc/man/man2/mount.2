@@ -1,0 +1,63 @@
+.th MOUNT II 5/15/74
+.sh NAME
+mount \*- mount file system
+.sh SYNOPSIS
+(mount = 21.)
+.br
+.ft B
+sys  mount; special; name; rwflag
+.s3
+mount(special, name, rwflag)
+.br
+char *special, *name;
+.br
+.ft R
+.sh DESCRIPTION
+.it Mount
+announces to the system that a removable file system has
+been mounted on
+the block-structured special file
+.it special;
+from now on, references to file
+.it name
+will refer to
+the root file on the newly mounted file system.
+.it Special
+and
+.it name
+are pointers to null-terminated strings
+containing the appropriate path names.
+.s3
+.it Name
+must exist already. 
+Its old contents
+are inaccessible while the file system
+is mounted.
+.s3
+The
+.it rwflag
+argument determines whether
+the file system can be written on; if it is 0 writing
+is allowed, if non-zero no writing is done.
+Physically write-protected and magnetic
+tape file systems must be mounted read-only or
+errors will occur when access times are updated,
+whether or not any
+explicit write is attempted.
+.sh "SEE ALSO"
+mount (VIII), umount (II)
+.sh DIAGNOSTICS
+Error bit
+(c-bit) set if:
+.it special
+is inaccessible or not an appropriate file;
+.it name
+does not exist;
+.it special
+is already mounted;
+.it name
+is in use;
+there are already too many
+file systems mounted.
+.sh BUGS
+\-

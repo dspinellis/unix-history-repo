@@ -1,0 +1,54 @@
+.th READ II 8/5/73
+.sh NAME
+read \*- read from file
+.sh SYNOPSIS
+(read = 3.)
+.br
+(file descriptor in r0)
+.ft B
+.br
+sys read; buffer; nbytes
+.br
+.s3
+read(fildes, buffer, nbytes)
+.br
+char *buffer;
+.ft R
+.sh DESCRIPTION
+A file descriptor is a word
+returned from a successful
+.it "open, creat, dup,"
+or
+.it pipe
+call.
+.it Buffer
+is the location of
+.it nbytes
+contiguous
+bytes into which the input will be placed.
+It is not guaranteed
+that all
+.it nbytes
+bytes will be read; for example
+if the file refers to a typewriter at most one line
+will be returned.
+In any event the number of characters read is returned
+(in r0).
+.s3
+If the returned value is 0, then
+end-of-file has been reached.
+.sh "SEE ALSO"
+open (II), creat (II), dup (II), pipe (II)
+.sh DIAGNOSTICS
+As mentioned,
+0 is returned when the end of the file has been reached.
+If the read was otherwise unsuccessful
+the error bit (c-bit) is set.
+Many conditions
+can generate an error:
+physical I/O errors, bad buffer address,
+preposterous
+.it nbytes,
+file descriptor not that of
+an input file.
+From C, a \*-1 return indicates the error.

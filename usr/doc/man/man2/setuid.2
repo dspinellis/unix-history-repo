@@ -1,0 +1,25 @@
+.th SETUID II 8/5/73
+.sh NAME
+setuid \*- set process user ID
+.sh SYNOPSIS
+(setuid = 23.)
+.br
+(user ID in r0)
+.ft B
+.br
+sys setuid
+.s3
+setuid(uid)
+.ft R
+.sh DESCRIPTION
+The user ID of the current process is set to
+the argument.
+Both the effective and the real user ID are set.
+This call is only permitted to the super-user
+or if the argument is the real user ID.
+.sh "SEE ALSO"
+getuid (II)
+.sh DIAGNOSTICS
+Error bit
+(c-bit) is set as indicated;
+from C, a \*-1 value is returned.
