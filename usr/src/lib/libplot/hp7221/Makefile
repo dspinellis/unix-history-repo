@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 LIB=	plot7221
 SRCS=	arc.c box.c circle.c close.c cont.c dot.c erase.c label.c \
