@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.5 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.6 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.5 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.6 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -504,10 +504,10 @@ cnameloop:
 			{
 			  case T_MX:
 				gotmx = TRUE;
-				if (trymx && **dp != '\0')
+				if (**dp != '\0')
 				{
 					/* got a match -- save that info */
-					if (mxmatch == NULL)
+					if (trymx && mxmatch == NULL)
 						mxmatch = *dp;
 					continue;
 				}
