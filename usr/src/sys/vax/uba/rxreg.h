@@ -44,7 +44,8 @@ struct rxdevice {
  */
 #define	RXES_CRCERR	0x0001	/* CRC error (data read error) */
 #define	RXES_IDONE	0x0004	/* reinitialization complete */
-#define	RXES_DENERR	0x0010	/* density error (mismatch) */
+#define RXES_DENERR	0x0010	/* density error */
+#define	RXES_DBLDEN	0x0020	/* set if double density */
 #define	RXES_DDMARK	0x0040	/* deleted-data mark */
 #define	RXES_READY	0x0080	/* drive is ready */
 
