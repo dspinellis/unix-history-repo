@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)swapgeneric.c	7.2 (Berkeley) %G%
+ *	@(#)swapgeneric.c	7.3 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -65,6 +65,7 @@ setconf()
 	register struct mba_device *mi;
 	register struct uba_device *ui;
 	register struct genericconf *gc;
+	register char *cp;
 	int unit, swaponroot = 0;
 
 	if (rootdev != NODEV)
@@ -78,20 +79,19 @@ retry:
 			if (gc->gc_name[0] == name[0] &&
 			    gc->gc_name[1] == name[1])
 				goto gotit;
-		goto bad;
-gotit:
-		if (name[3] == '*') {
-			name[3] = name[4];
-			swaponroot++;
-		}
-		if (name[2] >= '0' && name[2] <= '7' && name[3] == 0) {
-			unit = name[2] - '0';
-			goto found;
-		}
-		printf("bad/missing unit number\n");
-bad:
 		printf("use hp%%d, up%%d, ra%%d, rb%%d, rl%%d or hk%%d\n");
 		goto retry;
+gotit:
+		cp = name + 2;
+		if (*cp < '0' || *cp > '9') {
+			printf("bad/missing unit number\n");
+			goto retry;
+		}
+		unit = 0;
+		while (*cp >= '0' && *cp <= '9')
+			unit = 10 * unit + *cp++ - '0';
+		if (*cp == '*')
+			swaponroot++;
 	}
 	unit = 0;
 	for (gc = genericconf; gc->gc_driver; gc++) {
