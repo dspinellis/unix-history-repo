@@ -1,4 +1,4 @@
-#	Makefile	4.21	83/01/20
+#	Makefile	4.22	83/01/23
 
 DESTDIR=/
 CFLAGS=	-O -DSTANDALONE ${COPTS} 
@@ -170,6 +170,12 @@ install: ${ALL}
 	cp tpboot ${DESTDIR}/tp/boot
 	cp copy a.out; strip a.out; dd if=a.out of=../floppy/copy bs=32 skip=1
 	cp boot a.out; strip a.out; dd if=a.out of=../floppy/boot bs=32 skip=1
+	cp upchk a.out; strip a.out; dd if=a.out of=../floppy/upchk bs=32 skip=1
+	cp hpchk a.out; strip a.out; dd if=a.out of=../floppy/hpchk bs=32 skip=1
+	cp hpdrtest a.out; strip a.out; \
+		dd if=a.out of=../floppy/hpdrtest bs=32 skip=1
+	cp updrtest a.out; strip a.out; \
+		dd if=a.out of=../floppy/updrtest bs=32 skip=1
 	cp bootup boothk boothp ${DESTDIR}/usr/mdec
 
 # beware...
