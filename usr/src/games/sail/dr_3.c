@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_3.c	2.5 84/01/19";
+static	char *sccsid = "@(#)dr_3.c	2.6 84/04/28";
 #endif
 
 #include "driver.h"
@@ -209,7 +209,7 @@ char *moved;
 		break;
 	case 'd':
 		if (!*moved) {
-			if (++sp->file->drift > 2 &&
+			if (windspeed != 0 && ++sp->file->drift > 2 &&
 			    (sp->specs->class >= 3 && !snagged(sp)
 			     || (turn & 1) == 0)) {
 				sp->file->row -= dr[winddir];
