@@ -7,7 +7,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cy.c	7.4 (Berkeley) 5/5/89
+ *
+ *	@(#)cy.c	7.8 (Berkeley) %G%
  */
 
 #include "yc.h"
