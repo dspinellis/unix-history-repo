@@ -1,4 +1,4 @@
-/*	param.c	6.8	84/12/20	*/
+/*	param.c	6.9	85/04/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -32,7 +32,7 @@ int	tickadj = 1000000 / HZ / 10;
 struct	timezone tz = { TIMEZONE, DST };
 #define	NPROC (20 + 8 * MAXUSERS)
 int	nproc = NPROC;
-int	ntext = 24 + MAXUSERS;
+int	ntext = 36 + MAXUSERS;
 #define NINODE ((NPROC + 16 + MAXUSERS) + 32)
 int	ninode = NINODE;
 int	nchsize = NINODE * 11 / 10;
