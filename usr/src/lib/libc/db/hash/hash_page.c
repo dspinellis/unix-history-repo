@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash_page.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash_page.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -530,12 +530,12 @@ __get_page(hashp, p, bucket, is_bucket, is_disk, is_bitmap)
 			if (is_bitmap) {
 				max = hashp->BSIZE >> 2; /* divide by 4 */
 				for (i = 0; i < max; i++)
-					BLSWAP(((long *)p)[i]);
+					M_32_SWAP(((long *)p)[i]);
 			} else {
-				BSSWAP(bp[0]);
+				M_16_SWAP(bp[0]);
 				max = bp[0] + 2;
 				for (i = 1; i <= max; i++)
-					BSSWAP(bp[i]);
+					M_16_SWAP(bp[i]);
 			}
 		}
 	return (0);
@@ -570,11 +570,11 @@ __put_page(hashp, p, bucket, is_bucket, is_bitmap)
 		if (is_bitmap) {
 			max = hashp->BSIZE >> 2;	/* divide by 4 */
 			for (i = 0; i < max; i++)
-				BLSWAP(((long *)p)[i]);
+				M_32_SWAP(((long *)p)[i]);
 		} else {
 			max = ((u_short *)p)[0] + 2;
 			for (i = 0; i <= max; i++)
-				BSSWAP(((u_short *)p)[i]);
+				M_16_SWAP(((u_short *)p)[i]);
 		}
 	}
 	if (is_bucket)

@@ -4,14 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	8.1 (Berkeley) %G%
+ *	@(#)extern.h	8.2 (Berkeley) %G%
  */
 
 #include "../btree/extern.h"
 
 int	 __rec_close __P((DB *));
 int	 __rec_delete __P((const DB *, const DBT *, u_int));
-int	 __rec_dleaf __P((BTREE *, PAGE *, int));
+int	 __rec_dleaf __P((BTREE *, PAGE *, indx_t));
 int	 __rec_fd __P((const DB *));
 int	 __rec_fmap __P((BTREE *, recno_t));
 int	 __rec_fout __P((BTREE *));

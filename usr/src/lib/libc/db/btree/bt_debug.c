@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_debug.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_debug.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -229,9 +229,8 @@ void
 __bt_stat(dbp)
 	DB *dbp;
 {
-	extern u_long bt_cache_hit, bt_cache_miss;
-	extern u_long bt_rootsplit, bt_split, bt_sortsplit;
-	extern u_long bt_pfxsaved;
+	extern u_long bt_cache_hit, bt_cache_miss, bt_pfxsaved, bt_rootsplit;
+	extern u_long bt_sortsplit, bt_split;
 	BTREE *t;
 	PAGE *h;
 	pgno_t i, pcont, pinternal, pleaf;

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)hash.3	8.4 (Berkeley) %G%
+.\"	@(#)hash.3	8.5 (Berkeley) %G%
 .\"
 .TH HASH 3 ""
 .UC 7
@@ -33,15 +33,15 @@ is defined in the <db.h> include file as follows:
 .sp
 typedef struct {
 .RS
-int bsize;
+u_int bsize;
 .br
-int ffactor;
+u_int ffactor;
 .br
-int nelem;
+u_int nelem;
 .br
-int cachesize;
+u_int cachesize;
 .br
-u_long (*hash)(const void *, size_t);
+u_int32_t (*hash)(const void *, size_t);
 .br
 int lorder;
 .RE
@@ -83,7 +83,8 @@ Since no hash function performs equally well on all possible data, the
 user may find that the built-in hash function does poorly on a particular
 data set.
 User specified hash functions must take two arguments (a pointer to a byte
-string and a length) and return an u_long to be used as the hash value.
+string and a length) and return a 32-bit quantity to be used as the hash
+value.
 .TP
 lorder
 The byte order for integers in the stored database metadata.

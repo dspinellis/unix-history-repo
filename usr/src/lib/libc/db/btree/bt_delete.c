@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_delete.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_delete.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -253,12 +253,11 @@ int
 __bt_dleaf(t, h, index)
 	BTREE *t;
 	PAGE *h;
-	int index;
+	indx_t index;
 {
 	register BLEAF *bl;
-	register indx_t *ip, offset;
+	register indx_t cnt, *ip, offset;
 	register size_t nbytes;
-	register int cnt;
 	char *from;
 	void *to;
 

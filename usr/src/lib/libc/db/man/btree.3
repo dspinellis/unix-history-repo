@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)btree.3	8.2 (Berkeley) %G%
+.\"	@(#)btree.3	8.3 (Berkeley) %G%
 .\"
 .TH BTREE 3 ""
 .\".UC 7
@@ -42,11 +42,11 @@ int maxkeypage;
 .br
 int minkeypage;
 .br
-index_t psize;
+u_int psize;
 .br
 int (*compare)(const DBT *key1, const DBT *key2);
 .br
-int (*prefix)(const DBT *key1, const DBT *key2);
+size_t (*prefix)(const DBT *key1, const DBT *key2);
 .br
 int lorder;
 .RE
