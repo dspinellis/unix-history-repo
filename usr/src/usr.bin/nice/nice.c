@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1989, 1993
+ * Copyright (c) 1989, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -7,12 +7,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1989, 1993\n\
+"@(#) Copyright (c) 1989, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)nice.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)nice.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -20,6 +20,7 @@ static char sccsid[] = "@(#)nice.c	8.1 (Berkeley) %G%";
 #include <sys/resource.h>
 
 #include <ctype.h>
+#include <err.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,39 +36,26 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int niceness;
+	int niceness = DEFNICE;
 
-	niceness = DEFNICE;
 	if (argv[1][0] == '-')
-		if (isdigit(argv[1][1])) {
+		if (argv[1][1] == '-' || isdigit(argv[1][1])) {
 			niceness = atoi(argv[1] + 1);
 			++argv;
-		}
-		else {
-			(void)fprintf(stderr, "nice: illegal option -- %c\n",
-			    argv[1][1]);
-			usage();
-		}
+		} else
+			errx(1, "illegal option -- %s", argv[1]);
 
-	if (!argv[1])
+	if (argv[1] == NULL)
 		usage();
 
 	errno = 0;
 	niceness += getpriority(PRIO_PROCESS, 0);
-	if (errno) {
-		(void)fprintf(stderr, "nice: getpriority: %s\n",
-		    strerror(errno));
-		exit(1);
-	}
-	if (setpriority(PRIO_PROCESS, 0, niceness)) {
-		(void)fprintf(stderr,
-		    "nice: setpriority: %s\n", strerror(errno));
-		exit(1);
-	}
+	if (errno)
+		err(1, "getpriority");
+	if (setpriority(PRIO_PROCESS, 0, niceness))
+		err(1, "setpriority");
 	execvp(argv[1], &argv[1]);
-	(void)fprintf(stderr,
-	    "nice: %s: %s\n", argv[1], strerror(errno));
-	exit(1);
+	err(1, "%s", argv[1]);
 }
 
 void
