@@ -1,4 +1,4 @@
-/*	if_uba.c	4.3	81/11/29	*/
+/*	if_uba.c	4.4	81/12/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -40,15 +40,16 @@ if_ubainit(ifu, uban, hlen, nmr)
 COUNT(IF_UBAINIT);
 	if (cp == 0)
 		return (0);
+	ifu->ifu_hlen = hlen;
 	ifu->ifu_uban = uban;
 	ifu->ifu_uba = uba_hd[uban].uh_uba;
 	ifu->ifu_r.ifrw_addr = cp + NBPG - hlen;
 	ifu->ifu_w.ifrw_addr = ifu->ifu_r.ifrw_addr + (nmr + 1) * NBPG;
-	if (if_ubaalloc(ifu, &ifu->ifu_r) == 0)
+	if (if_ubaalloc(ifu, &ifu->ifu_r, nmr) == 0)
 		goto bad;
-	if (if_ubaalloc(ifu, &ifu->ifu_w) == 0)
+	if (if_ubaalloc(ifu, &ifu->ifu_w, nmr) == 0)
 		goto bad2;
-	for (i = 0; i < IF_NUBAMR; i++)
+	for (i = 0; i < nmr; i++)
 		ifu->ifu_wmap[i] = ifu->ifu_w.ifrw_mr[i+1];
 	ifu->ifu_xswapd = 0;
 	return (1);
@@ -65,15 +66,16 @@ bad:
  * to minimize run-time overhead.
  */
 static
-if_ubaalloc(ifu, ifrw)
+if_ubaalloc(ifu, ifrw, nmr)
 	struct ifuba *ifu;
 	register struct ifrw *ifrw;
+	int nmr;
 {
 	register int info;
 
 COUNT(IF_UBAALLOC);
 	info =
-	    uballoc(ifu->ifu_uban, ifrw->ifrw_addr, IF_NUBAMR*NBPG + ifu->ifu_hlen,
+	    uballoc(ifu->ifu_uban, ifrw->ifrw_addr, nmr*NBPG + ifu->ifu_hlen,
 	        UBA_NEED16|UBA_NEEDBDP);
 	if (info == 0)
 		return (0);
@@ -99,10 +101,9 @@ if_rubaget(ifu, totlen, off0)
 	register struct ifuba *ifu;
 	int totlen, off0;
 {
-	register struct mbuf *m;
+	struct mbuf *top, **mp, *m;
+	int off = off0, len;
 	register caddr_t cp;
-	struct mbuf **mp, *p, *top;
-	int len, off = off0;
 
 COUNT(IF_RUBAGET);
 
@@ -118,45 +119,29 @@ COUNT(IF_RUBAGET);
 		} else
 			len = totlen;
 		if (len >= CLSIZE) {
+			struct mbuf *p;
 			struct pte *cpte, *ppte;
-			int i, x, *ip;
+			int x, *ip, i;
 
 			MCLGET(p, 1);
 			if (p == 0)
 				goto nopage;
 			m->m_len = CLSIZE;
 			m->m_off = (int)p - (int)m;
-			if ((int)cp & CLOFF)
+			if (!claligned(cp))
 				goto copy;
 
 			/*
-			 * Cluster size data on cluster size boundary.
-			 * Input by remapping newly allocated pages to
-			 * UNIBUS, and taking pages with data already
-			 * in them.
-			 *
-			 * Cpte is the pte of the virtual memory which
-			 * is mapped to the UNIBUS, and ppte is the pte
-			 * for the fresh pages.  We switch the memory
-			 * copies of these pte's, to make the allocated
-			 * virtual memory contain the data (using the old
-			 * physical pages).  We have to rewrite
-			 * the UNIBUS map so that the newly allocated
-			 * pages will be used for the next UNIBUS read,
-			 * and invalidate the kernel translations
-			 * for the virtual addresses of the pages
-			 * we are flipping.
-			 *
-			 * The idea here is that this is supposed
-			 * to take less time than copying the data.
+			 * Switch pages mapped to UNIBUS with new page p,
+			 * as quick form of copy.  Remap UNIBUS and invalidate.
 			 */
-			cpte = &Mbmap[mtocl(cp)];
-			ppte = &Mbmap[mtocl(p)];
+			cpte = &Mbmap[mtocl(cp)*CLSIZE];
+			ppte = &Mbmap[mtocl(p)*CLSIZE];
 			x = btop(cp - ifu->ifu_r.ifrw_addr);
 			ip = (int *)&ifu->ifu_r.ifrw_mr[x+1];
 			for (i = 0; i < CLSIZE; i++) {
 				struct pte t;
-				t = *ppte; *ppte = *cpte; *cpte = t;
+				t = *ppte; *ppte++ = *cpte; *cpte = t;
 				*ip++ =
 				    cpte++->pg_pfnum|ifu->ifu_r.ifrw_proto;
 				mtpr(TBIS, cp);
@@ -176,6 +161,7 @@ nocopy:
 		*mp = m;
 		mp = &m->m_next;
 		if (off) {
+			/* sort of an ALGOL-W style for statement... */
 			off += m->m_len;
 			if (off == totlen) {
 				cp = ifu->ifu_r.ifrw_addr + ifu->ifu_hlen;
@@ -204,8 +190,8 @@ if_wubaput(ifu, m)
 	register struct mbuf *mp;
 	register caddr_t cp, dp;
 	register int i;
-	int xswapd = ifu->ifu_xswapd;
-	int x;
+	int xswapd = 0;
+	int x, cc;
 
 COUNT(IF_WUBAPUT);
 	ifu->ifu_xswapd = 0;
@@ -214,29 +200,47 @@ COUNT(IF_WUBAPUT);
 		dp = mtod(m, char *);
 		if (claligned(cp) && claligned(dp)) {
 			struct pte *pte; int *ip;
-			pte = &Mbmap[mtocl(dp)];
+			pte = &Mbmap[mtocl(dp)*CLSIZE];
 			x = btop(cp - ifu->ifu_w.ifrw_addr);
 			ip = (int *)&ifu->ifu_w.ifrw_mr[x + 1];
 			for (i = 0; i < CLSIZE; i++)
 				*ip++ =
 				    ifu->ifu_w.ifrw_proto | pte++->pg_pfnum;
-			ifu->ifu_xswapd |= 1 << (x>>CLSHIFT);
-		} else
+			ifu->ifu_xswapd |= 1 << (x>>(CLSHIFT-PGSHIFT));
+			mp = m->m_next;
+			m->m_next = ifu->ifu_xtofree;
+			ifu->ifu_xtofree = m;
+			cp += m->m_len;
+		} else {
 			bcopy(mtod(m, caddr_t), cp, (unsigned)m->m_len);
-		cp += m->m_len;
-		MFREE(m, mp);			/* XXX too soon! */
+			cp += m->m_len;
+			MFREE(m, mp);
+		}
 		m = mp;
 	}
+
+	/*
+	 * Xswapd is the set of clusters we just mapped out.  Ifu->ifu_xswapd
+	 * is the set of clusters mapped out from before.  We compute
+	 * the number of clusters involved in this operation in x.
+	 * Clusters mapped out before and involved in this operation
+	 * should be unmapped so original pages will be accessed by the device.
+	 */
+	cc = cp - ifu->ifu_w.ifrw_addr;
+	x = ((cc - ifu->ifu_hlen) + CLBYTES - 1) >> CLSHIFT;
 	xswapd &= ~ifu->ifu_xswapd;
 	if (xswapd)
 		while (i = ffs(xswapd)) {
 			i--;
+			if (i >= x)
+				break;
 			xswapd &= ~(1<<i);
-			i <<= CLSHIFT;
+			i *= CLSIZE;
 			for (x = 0; x < CLSIZE; x++) {
 				ifu->ifu_w.ifrw_mr[i] = ifu->ifu_wmap[i];
 				i++;
 			}
 		}
-	return (cp - ifu->ifu_w.ifrw_addr);
+	ifu->ifu_xswapd |= xswapd;
+	return (cc);
 }

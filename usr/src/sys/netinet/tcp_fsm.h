@@ -1,4 +1,4 @@
-/*	tcp_fsm.h	4.9	81/11/26	*/
+/*	tcp_fsm.h	4.10	81/12/03	*/
 
 /*
  * TCP FSM state definitions.
@@ -30,7 +30,8 @@
 /*
  * Flags used when sending segments in tcp_output.
  * Basic flags (TH_RST,TH_ACK,TH_SYN,TH_FIN) are totally
- * determined by state.
+ * determined by state, with the proviso that TH_FIN is sent only
+ * if all data queued for output is included in the segment.
  */
 u_char	tcp_outflags[TCP_NSTATES] = {
     TH_RST|TH_ACK, 0, TH_SYN, TH_SYN|TH_ACK,

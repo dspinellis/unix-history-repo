@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.9	81/11/30	*/
+/*	uipc_proto.c	4.10	81/12/03	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -23,13 +23,13 @@ int	piusrreq();
  */
 int	ip_output();
 int	ip_init(),ip_slowtimo(),ip_drain();
-int	icmp_input();
+int	icmp_input(),icmp_ctlinput();
 int	icmp_drain();
 int	udp_input(),udp_ctlinput();
-int	udp_usrreq(),udp_sense();
+int	udp_usrreq();
 int	udp_init();
 int	tcp_input(),tcp_ctlinput();
-int	tcp_usrreq(),tcp_sense();
+int	tcp_usrreq();
 int	tcp_init(),tcp_fasttimo(),tcp_slowtimo(),tcp_drain();
 int	rip_input(),rip_output(),rip_ctlinput();
 int	rip_usrreq(),rip_slowtimo();
@@ -61,7 +61,7 @@ struct protosw protosw[] = {
   ip_init,	0,		ip_slowtimo,	ip_drain,
 },
 { 0,		0,		IPPROTO_ICMP,	0,
-  icmp_input,	0,		0,		0,
+  icmp_input,	0,		icmp_ctlinput,	0,
   0,
   0,		0,		0,		icmp_drain,
 },

@@ -1,11 +1,11 @@
-/*	if_uba.h	4.2	81/11/26	*/
+/*	if_uba.h	4.3	81/12/03	*/
 
 /*
  * Structure and routine definitions
  * for UNIBUS network interfaces.
  */
 
-#define	IF_NUBAMR	6
+#define	IF_MAXNUBAMR	10
 /*
  * Each interface has one of these structures giving information
  * about UNIBUS resources held by the interface.
@@ -29,6 +29,7 @@
  */
 struct	ifuba {
 	short	ifu_uban;			/* uba number */
+	short	ifu_hlen;			/* local net header length */
 	struct	uba_regs *ifu_uba;		/* uba regs, in vm */
 	struct ifrw {
 		int	ifrw_info;		/* value from ubaalloc */
@@ -37,14 +38,9 @@ struct	ifuba {
 		int	ifrw_proto;		/* map register prototype */
 		caddr_t	ifrw_addr;		/* virt addr of header */
 	} ifu_r, ifu_w;
-	struct	pte ifu_wmap[IF_NUBAMR];	/* base pages for output */
-	short	ifu_hlen;
-/* ifu_xswapd is set when we have swapped write pte's to do direct output */
-/* bit i of ifu_xswapd */
-	short	ifu_xswapd;			/* bit map of pages swapped */
-	int	ifu_ierrors;
-	int	ifu_oerrors;
-	int	ifu_collisions;
+	struct	pte ifu_wmap[IF_MAXNUBAMR];	/* base pages for output */
+	short	ifu_xswapd;			/* mask of clusters swapped */
+	struct	mbuf *ifu_xtofree;		/* pages being dma'd out */
 };
 
 #ifdef 	KERNEL

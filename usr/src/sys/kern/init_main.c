@@ -1,4 +1,4 @@
-/*	init_main.c	4.22	81/11/18	*/
+/*	init_main.c	4.23	81/12/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -84,6 +84,10 @@ main(firstaddr)
 	mbinit();
 #ifdef INET
 	pfinit();
+#endif
+#include "lo.h"
+#if NLOOP > 0
+	loattach();
 #endif
 	ihinit();
 	bhinit();

@@ -1,4 +1,4 @@
-/* tcp_subr.c 4.5 81/12/02 */
+/* tcp_subr.c 4.6 81/12/03 */
 
 #include "../h/param.h"
 #include "../h/systm.h"

@@ -1,4 +1,4 @@
-/*	if_loop.c	4.2	81/12/02	*/
+/*	if_loop.c	4.3	81/12/03	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -25,10 +25,11 @@ loattach()
 {
 	register struct ifnet *ifp = &loif;
 
+	ifp->if_name = "lo";
 	ifp->if_mtu = LOMTU;
 	ifp->if_net = LONET;
+	ifp->if_addr = if_makeaddr(ifp->if_net, 0);
 	ifp->if_output = looutput;
-	ifp->if_next = ifnet;
 	if_attach(ifp);
 }
 
@@ -39,6 +40,7 @@ looutput(ifp, m0, pf)
 {
 	int s = splimp();
 
+	ifp->if_opackets++;
 	switch (pf) {
 
 #ifdef INET
@@ -54,6 +56,7 @@ looutput(ifp, m0, pf)
 		m_freem(m0);
 		return (0);
 	}
+	ifp->if_ipackets++;
 	splx(s);
 	return (1);
 }

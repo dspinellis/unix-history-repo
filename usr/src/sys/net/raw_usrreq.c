@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.2	81/12/02	*/
+/*	raw_usrreq.c	4.3	81/12/03	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -46,7 +46,6 @@ rawintr()
 COUNT(RAWINTR);
 next:
 	s = splimp();
-/*###45 [cc] rawintrq undefined %%%*/
 	IF_DEQUEUE(&rawintrq, m);
 	splx(s);
 	if (m == 0)

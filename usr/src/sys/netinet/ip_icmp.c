@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.9	81/11/29	*/
+/*	ip_icmp.c	4.10	81/12/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -63,6 +63,7 @@ COUNT(ICMP_ERROR);
 	nip = (struct ip *)mtod(m, struct ip *);
 	*nip = *oip;
 	icmp_reflect(nip);
+	return;
 
 	/*
 	 * Discard mbufs of original datagram
@@ -82,6 +83,7 @@ icmp_input(m)
 	int hlen = ip->ip_hl << 2;
 	int icmplen = ip->ip_len - hlen;
 	int i;
+	extern u_char ip_protox[];
 COUNT(ICMP_INPUT);
 
 	/*
@@ -113,7 +115,7 @@ COUNT(ICMP_INPUT);
 		 */
 		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp))
 			goto free;
-		icmp_ctlinput(ip);
+		(*protosw[ip_protox[ip->ip_p]].pr_ctlinput)(m);
 		goto free;
 
 	case ICMP_ECHO:
@@ -182,17 +184,12 @@ COUNT(ICMP_SEND);
 	(void) ip_output(dtom(ip), (struct mbuf *)0);
 }
 
-/*
- * Advise a higher level protocol of a problem reported by
- * a gateway or another host.
- */
-icmp_ctlinput(ip)
-	struct ip *ip;
+icmp_ctlinput(m)
+	struct mbuf *m;
 {
-	extern u_char ip_protox[];		/* XXX */
 COUNT(ICMP_CTLINPUT);
 
-	(*protosw[ip_protox[ip->ip_p]].pr_ctlinput)(ip);
+	m_freem(m);
 }
 
 /*

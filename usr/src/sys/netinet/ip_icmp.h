@@ -1,4 +1,4 @@
-/* ip_icmp.h 4.2 81/11/18 */
+/* ip_icmp.h 4.3 81/12/03 */
 
 /*
  * Interface Control Message Protocol Definitions.
@@ -76,8 +76,8 @@ struct icmp {
 #define	ICMP_TIMXCEED		11		/* time exceeded, code: */
 #define		ICMP_TIMXCEED_INTRANS	0		/* ttl==0 in transit */
 #define		ICMP_TIMXCEED_REASS	1		/* ttl==0 in reass */
+#define	ICMP_PARAMPROB		12		/* ip header bad */
 #define	ICMP_TSTAMP		13		/* timestamp request */
 #define	ICMP_TSTAMPREPLY	14		/* timestamp reply */
 #define	ICMP_IREQ		15		/* information request */
 #define	ICMP_IREQREPLY		16		/* information reply */
-#define	ICMP_PARAMPROB		12		/* ip header bad */
