@@ -1,0 +1,46 @@
+.nr VS 14
+.vs 14
+.ce 3
+.nf
+LETTER OF AUTHORIZATION
+.sp 
+FOR
+.sp 
+UNIVERSITY OF CALIFORNIA SITES
+.sp 4
+.nr VS 16
+.vs 16
+.LP
+I authorize ___________________________________ \s8\u*\d\s10 to receive a
+copy of the Tahoe Release of 4.3BSD to be sent to:
+.sp
+.in 2i
+_________________________________________________
+.sp
+_________________________________________________
+.sp
+_________________________________________________
+.sp
+_________________________________________________
+.sp
+.in 0
+.LP
+I have read and understood the Berkeley License Agreement (Rev. 6/83)
+and warrant that ___________________________________________ \s8\u*\d\s10
+will abide by
+the terms and conditions of the Agreement.  I warrant that I have the
+authority to make this authorization.
+.sp 3
+.in 3i   
+.nf
+_______________________________________
+(Name)
+_______________________________________
+(Title)
+_______________________________________
+(Department)
+_______________________________________
+(Date)
+.sp 6
+.in 0
+\s8* name of recipient organization
