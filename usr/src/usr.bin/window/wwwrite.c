@@ -35,7 +35,6 @@ int n;
 		wwcursor(w, 0);
 	while (n-- > 0) {
 			}
-			
 		chklf:
 			if (w->ww_cur.c >= w->ww_w.r)
 				goto crlf;
@@ -101,23 +100,11 @@ int n;
 			case 'Y':
 				w->ww_wstate = 2;
 				break;
-			case 'p':
-				w->ww_modes |= WWM_REV;
-				break;
-			case 'q':
-				w->ww_modes &= ~WWM_REV;
+			case 's':
+				w->ww_wstate = 4;
 				break;
 			case 'r':
-				w->ww_modes |= WWM_UL;
-				break;
-			case 's':
-				w->ww_modes &= ~WWM_UL;
-				break;
-			case 'F':
-				w->ww_modes |= WWM_GRP;
-				break;
-			case 'G':
-				w->ww_modes &= ~WWM_GRP;
+				w->ww_wstate = 5;
 				break;
 			}
 			break;

@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.37 86/05/02		*/
+/*	@(#)ww.h	3.37 86/08/04		*/
 
 /*
  * Copyright (c) 1983 Regents of the University of California,
@@ -71,7 +71,9 @@ union ww_char {
 #define WWM_BLK		0x02	/* blinking */
 #define WWM_UL		0x04	/* underlined */
 #define WWM_GRP		0x08	/* graphics */
-#define WWM_GLS		0x10	/* window only, glass, i.e. transparent */
+#define WWM_DIM		0x10	/* half intensity */
+#define WWM_USR		0x20	/* user specified mode */
+#define WWM_GLS		0x40	/* window only, glass, i.e., transparent */
 
 	/* ww_state values */
 #define WWS_INITIAL	0	/* just opened */

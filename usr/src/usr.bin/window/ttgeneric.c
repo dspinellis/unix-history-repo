@@ -59,6 +59,8 @@ struct tt_str *gen_HO;
 struct tt_str *gen_NL;
 struct tt_str *gen_AS;
 struct tt_str *gen_AE;
+struct tt_str *gen_XS;
+struct tt_str *gen_XE;
 char gen_MI;
 char gen_MS;
 char gen_AM;
@@ -111,6 +113,14 @@ register new;
 		} else
 			if (gen_AE)
 				ttxputs(gen_AE);
+	}
+	if (diff & WWM_USR) {
+		if (new & WWM_USR) {
+			if (gen_XS)
+				ttxputs(gen_XS);
+		} else
+			if (gen_XE)
+				ttxputs(gen_XE);
 	}
 	tt.tt_modes = new;
 }
@@ -304,6 +314,8 @@ tt_generic()
 	gen_NL = ttxgetstr("nl");
 	gen_AS = ttxgetstr("as");
 	gen_AE = ttxgetstr("ae");
+	gen_XS = ttxgetstr("XS");
+	gen_XE = ttxgetstr("XE");
 	gen_MI = tgetflag("mi");
 	gen_MS = tgetflag("ms");
 	gen_AM = tgetflag("am");
@@ -348,6 +360,8 @@ tt_generic()
 		tt.tt_availmodes |= WWM_UL;
 	if (gen_AS)
 		tt.tt_availmodes |= WWM_GRP;
+	if (gen_XS)
+		tt.tt_availmodes |= WWM_USR;
 	tt.tt_hasinsert = gen_IM != 0;
 	tt.tt_wrap = gen_AM;
 	tt.tt_retain = gen_DB;

@@ -35,11 +35,14 @@ register struct ww *wp;
 	(void) ioctl(0, (int)TIOCSPGRP, (char *)&pgrp);
 	(void) setpgrp(pgrp, pgrp);
 	(void) signal(SIGPIPE, SIG_DFL);
-	(void) sprintf(wwwintermcap, "TERMCAP=%sco#%d:li#%d:%s%s%s%s",
+	(void) sprintf(wwwintermcap, "TERMCAP=%sco#%d:li#%d:%s%s%s%s%s%s%s",
 		WWT_TERMCAP, wp->ww_w.nc, wp->ww_w.nr,
 		wwavailmodes & WWM_REV ? WWT_REV : "",
+		wwavailmodes & WWM_BLK ? WWT_BLK : "",
 		wwavailmodes & WWM_UL ? WWT_UL : "",
 		wwavailmodes & WWM_GRP ? WWT_GRP : "",
+		wwavailmodes & WWM_DIM ? WWT_DIM : "",
+		wwavailmodes & WWM_USR ? WWT_USR : "",
 		wwkeys);
 	return 0;
 bad:
