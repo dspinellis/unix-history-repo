@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_fork.c	7.29 (Berkeley) 5/15/91
- *	$Id: kern_fork.c,v 1.2 1993/10/16 15:24:17 rgrimes Exp $
+ *	$Id: kern_fork.c,v 1.3 1993/11/25 01:32:58 wollman Exp $
  */
 
 #include "param.h"
@@ -175,6 +175,7 @@ again:
 	    (unsigned) ((caddr_t)&p2->p_endzero - (caddr_t)&p2->p_startzero));
 	bcopy(&p1->p_startcopy, &p2->p_startcopy,
 	    (unsigned) ((caddr_t)&p2->p_endcopy - (caddr_t)&p2->p_startcopy));
+	p2->p_wmesg = NULL;     /* to prevent getkerninfo fault */
 	p2->p_spare[0] = 0;	/* XXX - should be in zero range */
 	p2->p_spare[1] = 0;	/* XXX - should be in zero range */
 	p2->p_spare[2] = 0;	/* XXX - should be in zero range */
