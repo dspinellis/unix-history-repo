@@ -1,4 +1,4 @@
-/*	if_ether.c	6.7	85/03/18	*/
+/*	if_ether.c	6.8	85/04/16	*/
 
 /*
  * Ethernet address resolution protocol.
@@ -44,7 +44,7 @@ int	arpt_age;		/* aging timer */
 #define	ARPT_KILLC	20	/* kill completed entry in 20 mins. */
 #define	ARPT_KILLI	3	/* kill incomplete entry in 3 minutes */
 
-struct ether_addr etherbroadcastaddr = {{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff }};
+u_char	etherbroadcastaddr[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 extern struct ifnet loif;
 
 /*
@@ -105,16 +105,19 @@ arpwhohas(ac, addr)
 	ea = mtod(m, struct ether_arp *);
 	eh = (struct ether_header *)sa.sa_data;
 	bzero((caddr_t)ea, sizeof (*ea));
-	eh->ether_dhost = etherbroadcastaddr;
+	bcopy((caddr_t)etherbroadcastaddr, (caddr_t)eh->ether_dhost,
+	    sizeof(eh->ether_dhost));
 	eh->ether_type = ETHERTYPE_ARP;		/* if_output will swap */
 	ea->arp_hrd = htons(ARPHRD_ETHER);
 	ea->arp_pro = htons(ETHERTYPE_IP);
-	ea->arp_hln = sizeof arp_sha(ea);	/* hardware address length */
-	ea->arp_pln = sizeof arp_spa(ea);	/* protocol address length */
+	ea->arp_hln = sizeof(ea->arp_sha);	/* hardware address length */
+	ea->arp_pln = sizeof(ea->arp_spa);	/* protocol address length */
 	ea->arp_op = htons(ARPOP_REQUEST);
-	arp_sha(ea) = ac->ac_enaddr;
-	arp_spa(ea) = ac->ac_ipaddr;
-	arp_tpa(ea) = *addr;
+	bcopy((caddr_t)ac->ac_enaddr, (caddr_t)ea->arp_sha,
+	   sizeof(ea->arp_sha));
+	bcopy((caddr_t)&ac->ac_ipaddr, (caddr_t)ea->arp_spa,
+	   sizeof(ea->arp_spa));
+	bcopy((caddr_t)addr, (caddr_t)ea->arp_tpa, sizeof(ea->arp_tpa));
 	sa.sa_family = AF_UNSPEC;
 	return ((*ac->ac_if.if_output)(&ac->ac_if, m, &sa));
 }
@@ -134,7 +137,7 @@ arpresolve(ac, m, destip, desten)
 	register struct arpcom *ac;
 	struct mbuf *m;
 	register struct in_addr *destip;
-	register struct ether_addr *desten;
+	register u_char *desten;
 {
 	register struct arptab *at;
 	register struct ifnet *ifp;
@@ -143,7 +146,8 @@ arpresolve(ac, m, destip, desten)
 	int s, lna;
 
 	if (in_broadcast(*destip)) {	/* broadcast address */
-		*desten = etherbroadcastaddr;
+		bcopy((caddr_t)etherbroadcastaddr, (caddr_t)desten,
+		    sizeof(etherbroadcastaddr));
 		return (1);
 	}
 	lna = in_lnaof(*destip);
@@ -164,10 +168,10 @@ arpresolve(ac, m, destip, desten)
 	ARPTAB_LOOK(at, destip->s_addr);
 	if (at == 0) {			/* not found */
 		if ((ifp->if_flags & IFF_NOARP) || lna >= oldmap) {
-			*desten = ac->ac_enaddr;
-			desten->ether_addr_octet[3] = (lna >> 16) & 0x7f;
-			desten->ether_addr_octet[4] = (lna >> 8) & 0xff;
-			desten->ether_addr_octet[5] = lna & 0xff;
+			bcopy((caddr_t)ac->ac_enaddr, (caddr_t)desten, 3);
+			desten[3] = (lna >> 16) & 0x7f;
+			desten[4] = (lna >> 8) & 0xff;
+			desten[5] = lna & 0xff;
 			splx(s);
 			return (1);
 		} else {
@@ -180,7 +184,8 @@ arpresolve(ac, m, destip, desten)
 	}
 	at->at_timer = 0;		/* restart the timer */
 	if (at->at_flags & ATF_COM) {	/* entry IS complete */
-		*desten = at->at_enaddr;
+		bcopy((caddr_t)at->at_enaddr, (caddr_t)desten,
+		    sizeof(at->at_enaddr));
 		splx(s);
 		return (1);
 	}
@@ -224,24 +229,28 @@ arpinput(ac, m)
 	ea = mtod(m, struct ether_arp *);
 	if (ntohs(ea->arp_pro) != ETHERTYPE_IP)
 		goto out;
-	isaddr = arp_spa(ea);
-	itaddr = arp_tpa(ea);
-	if (!bcmp((caddr_t)&arp_sha(ea), (caddr_t)&ac->ac_enaddr,
-	  sizeof (ac->ac_enaddr)))
+	isaddr.s_addr = ((struct in_addr *)ea->arp_spa)->s_addr;
+	itaddr.s_addr = ((struct in_addr *)ea->arp_tpa)->s_addr;
+	if (!bcmp((caddr_t)ea->arp_sha, (caddr_t)ac->ac_enaddr,
+	  sizeof (ea->arp_sha)))
 		goto out;	/* it's from me, ignore it. */
 	if (isaddr.s_addr == myaddr.s_addr) {
 		printf("duplicate IP address!! sent from ethernet address: ");
-		printf("%x %x %x %x %x %x\n", ea->arp_xsha[0], ea->arp_xsha[1],
-			ea->arp_xsha[2], ea->arp_xsha[3],
-			ea->arp_xsha[4], ea->arp_xsha[5]);
+		printf("%x %x %x %x %x %x\n", ea->arp_sha[0], ea->arp_sha[1],
+			ea->arp_sha[2], ea->arp_sha[3],
+			ea->arp_sha[4], ea->arp_sha[5]);
 		itaddr = myaddr;
-		if (ntohs(ea->arp_op) == ARPOP_REQUEST)
+		if (ntohs(ea->arp_op) == ARPOP_REQUEST) {
+			bcopy((caddr_t)ac->ac_enaddr, (caddr_t)ea->arp_sha,
+			    sizeof(ea->arp_sha));
 			goto reply;
+		}
 		goto out;
 	}
 	ARPTAB_LOOK(at, isaddr.s_addr);
 	if (at) {		/* XXX ? - can overwrite ATF_PERM */
-		at->at_enaddr = arp_sha(ea);
+		bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
+		    sizeof(ea->arp_sha));
 		at->at_flags |= ATF_COM;
 		if (at->at_hold) {
 			mhold = at->at_hold;
@@ -254,7 +263,8 @@ arpinput(ac, m)
 	} else if (itaddr.s_addr == myaddr.s_addr) {
 		/* ensure we have a table entry */
 		at = arptnew(&isaddr);
-		at->at_enaddr = arp_sha(ea);
+		bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
+		    sizeof(ea->arp_sha));
 		at->at_flags |= ATF_COM;
 	}
 	if (ntohs(ea->arp_op) != ARPOP_REQUEST)
@@ -264,20 +274,26 @@ arpinput(ac, m)
 		if (itaddr.s_addr != myaddr.s_addr)
 			goto out;	/* if I am not the target */
 		at = arptnew(&myaddr);
-		at->at_enaddr = ac->ac_enaddr;
+		bcopy((caddr_t)ac->ac_enaddr, (caddr_t)at->at_enaddr,
+		   sizeof(at->at_enaddr));
 		at->at_flags |= ATF_COM;
 	} 
 	if (itaddr.s_addr != myaddr.s_addr && (at->at_flags & ATF_PUBL) == 0)
 		goto out;
 		
+	bcopy((caddr_t)at->at_enaddr, (caddr_t)ea->arp_sha,
+	    sizeof(ea->arp_sha));
 reply:
-	arp_tha(ea) = arp_sha(ea);
-	arp_tpa(ea) = arp_spa(ea);
-	arp_sha(ea) = at->at_enaddr;
-	arp_spa(ea) = itaddr;
+	bcopy((caddr_t)ea->arp_sha, (caddr_t)ea->arp_tha,
+	    sizeof(ea->arp_sha));
+	bcopy((caddr_t)ea->arp_spa, (caddr_t)ea->arp_tpa,
+	    sizeof(ea->arp_spa));
+	bcopy((caddr_t)&itaddr, (caddr_t)ea->arp_spa,
+	    sizeof(ea->arp_spa));
 	ea->arp_op = htons(ARPOP_REPLY);
 	eh = (struct ether_header *)sa.sa_data;
-	eh->ether_dhost = arp_tha(ea);
+	bcopy((caddr_t)ea->arp_tha, (caddr_t)eh->ether_dhost,
+	    sizeof(eh->ether_dhost));
 	eh->ether_type = ETHERTYPE_ARP;
 	sa.sa_family = AF_UNSPEC;
 	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa);
@@ -308,7 +324,7 @@ arptfree(at)
  * from the bucket if there is no room.
  * This always succeeds since no bucket can be completely filled
  * with permanent entries (except from arpioctl when testing whether
- * another permanent entry).
+ * another permanent entry will fit).
  */
 struct arptab *
 arptnew(addr)
@@ -324,7 +340,7 @@ arptnew(addr)
 		timeout(arptimer, (caddr_t)0, hz);
 	}
 	at = &arptab[ARPTAB_HASH(addr->s_addr) * ARPTAB_BSIZ];
-	for (n = 0 ; n < ARPTAB_BSIZ ; n++,at++) {
+	for (n = 0; n < ARPTAB_BSIZ; n++,at++) {
 		if (at->at_flags == 0)
 			goto out;	 /* found an empty entry */
 		if (at->at_flags & ATF_PERM)
@@ -335,7 +351,7 @@ arptnew(addr)
 		}
 	}
 	if (ato == NULL)
-		return(NULL);
+		return (NULL);
 	at = ato;
 	arptfree(at);
 out:
@@ -388,7 +404,8 @@ arpioctl(cmd, data)
 				arptfree(tat);
 			}
 		}
-		at->at_enaddr = *(struct ether_addr *)ar->arp_ha.sa_data;
+		bcopy((caddr_t)ar->arp_ha.sa_data, (caddr_t)at->at_enaddr,
+		    sizeof(at->at_enaddr));
 		at->at_flags = ATF_COM | ATF_INUSE |
 			(ar->arp_flags & (ATF_PERM|ATF_PUBL));
 		at->at_timer = 0;
@@ -399,7 +416,8 @@ arpioctl(cmd, data)
 		break;
 
 	case SIOCGARP:		/* get entry */
-		*(struct ether_addr *)ar->arp_ha.sa_data = at->at_enaddr;
+		bcopy((caddr_t)at->at_enaddr, (caddr_t)ar->arp_ha.sa_data,
+		    sizeof(at->at_enaddr));
 		ar->arp_flags = at->at_flags;
 		break;
 	}
