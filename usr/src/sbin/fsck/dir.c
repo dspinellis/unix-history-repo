@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -137,8 +137,6 @@ fsck_readdir(idesc)
 		dp = (struct direct *)(bp->b_un.b_buf + idesc->id_loc);
 		if (dircheck(idesc, dp))
 			goto dpok;
-		idesc->id_loc += DIRBLKSIZ;
-		idesc->id_filesize -= DIRBLKSIZ;
 		fix = dofix(idesc, "DIRECTORY CORRUPTED");
 		bp = getdirblk(idesc->id_blkno, blksiz);
 		dp = (struct direct *)(bp->b_un.b_buf + idesc->id_loc);
@@ -149,6 +147,8 @@ fsck_readdir(idesc)
 		dp->d_name[0] = '\0';
 		if (fix)
 			dirty(bp);
+		idesc->id_loc += DIRBLKSIZ;
+		idesc->id_filesize -= DIRBLKSIZ;
 		return (dp);
 	}
 dpok:
