@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.12	(Berkeley)	83/05/06";
+static char sccsid[] = "@(#)utilities.c	3.13	(Berkeley)	83/05/19";
 #endif
 
 #include "restore.h"
@@ -77,8 +77,9 @@ renameit(from, to)
 	char *from, *to;
 {
 	if (rename(from, to) < 0) {
-		fprintf(stderr, "Warning: cannot rename %s to %s\n", from, to);
-		perror("rename");
+		fprintf(stderr, "Warning: cannot rename %s to %s", from, to);
+		(void) fflush(stderr);
+		perror("");
 		return;
 	}
 	vprintf(stdout, "rename %s to %s\n", from, to);
@@ -161,17 +162,19 @@ linkit(existing, new, type)
 	if (type == SYMLINK) {
 		if (symlink(existing, new) < 0) {
 			fprintf(stderr,
-				"Warning: cannot create symbolic link %s->%s\n",
+				"Warning: cannot create symbolic link %s->%s",
 				new, existing);
-			perror("symlink");
+			(void) fflush(stderr);
+			perror("");
 			return;
 		}
 	} else if (type == HARDLINK) {
 		if (link(existing, new) < 0) {
 			fprintf(stderr,
-				"Warning: cannot create hard link %s->%s\n",
+				"Warning: cannot create hard link %s->%s",
 				new, existing);
-			perror("link");
+			(void) fflush(stderr);
+			perror("");
 			return;
 		}
 	} else {
@@ -332,7 +335,7 @@ reply(question)
 	fprintf(stderr, "%s? ", question);
 	do	{
 		fprintf(stderr, "[yn] ");
-		fflush(stderr);
+		(void) fflush(stderr);
 		c = getc(terminal);
 		while (c != '\n' && getc(terminal) != '\n')
 			/* void */;
