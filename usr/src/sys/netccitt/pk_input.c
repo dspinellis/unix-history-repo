@@ -1,6 +1,6 @@
 /*
  * Copyright (c) University of British Columbia, 1984
- * Copyright (c) 1990 The Regents of the University of California.
+ * Copyright (c) 1991 The Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -206,7 +206,8 @@ struct x25config *xcp;
 	 *  previous connect request is now complete.
 	 */
 	case CALL_ACCEPTED + SENT_CALL: 
-		call_accepted (lcp, xp, m -> m_len);
+		MCHTYPE(m, MT_CONTROL);
+		call_accepted (lcp, m);
 		break;
 
 	/* 
@@ -230,7 +231,12 @@ struct x25config *xcp;
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CLEAR_CONFIRM);
 		pk_output (lcp);
 		pk_clearcause (pkp, xp);
+		if (lcp -> lcd_upper) {
+			MCHTYPE(m, MT_CONTROL);
+			lcp -> lcd_upper (lcp, m);
+		}
 		pk_close (lcp);
+		lcp = 0;
 		break;
 
 	/* 
@@ -521,8 +527,7 @@ struct x25config *xcp;
 				"packet arrived on unassigned lcn");
 		break;
 	}
-	if (so == 0 && lcp && lcp -> lcd_upper &&
-	    (lcdstate == SENT_CALL || lcdstate == DATA_TRANSFER)) {
+	if (so == 0 && lcp && lcp -> lcd_upper && lcdstate == DATA_TRANSFER) {
 		if (ptype != DATA && ptype != INTERRUPT)
 			MCHTYPE(m, MT_CONTROL);
 		lcp -> lcd_upper (lcp, m);
@@ -709,12 +714,14 @@ struct socket *so;
 }
 
 static
-call_accepted (lcp, xp, len)
+call_accepted (lcp, m)
 struct pklcd *lcp;
-struct x25_packet *xp;
+struct mbuf *m;
 {
 	register struct x25_calladdr *ap;
 	register octet *fcp;
+	struct x25_packet *xp = mtod (m, struct x25_packet *);
+	int len = m -> m_len;
 
 	lcp -> lcd_state = DATA_TRANSFER;
 	if (lcp -> lcd_so)
@@ -729,6 +736,8 @@ struct x25_packet *xp;
 			parse_facilities (fcp, lcp -> lcd_ceaddr);
 	}
 	pk_assoc (lcp -> lcd_pkp, lcp, lcp -> lcd_ceaddr);
+	if (lcp -> lcd_so == 0 && lcp -> lcd_upper)
+		lcp -> lcd_upper(lcp, m);
 }
 
 static
