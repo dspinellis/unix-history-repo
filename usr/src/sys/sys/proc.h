@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)proc.h	7.14 (Berkeley) %G%
+ *	@(#)proc.h	7.15 (Berkeley) %G%
  */
 
 /*
@@ -117,7 +117,7 @@ struct kinfo_proc {
 		struct	session *e_sess;	/* session pointer */
 		pid_t	e_pgid;			/* process group id */
 		short	e_jobc;			/* job control counter */
-		dev_t	e_tdev;			/* controlling tty */
+		dev_t	e_tdev;			/* controlling tty dev */
 		pid_t	e_tpgid;		/* tty process group id */
 		struct	session *e_tsess;	/* tty session pointer */
 #define	WMESGLEN	7
@@ -126,7 +126,10 @@ struct kinfo_proc {
 		short	e_xrssize;		/* text rss */
 		short	e_xccount;		/* text references */
 		short	e_xswrss;
-		long	e_spare[8];
+		long	e_flag;
+#define	EPROC_CTTY	0x01	/* controlling tty vnode active */
+#define	EPROC_SLEADER	0x02	/* session leader */
+		long	e_spare[7];
 	} kp_eproc;
 };
 
