@@ -1,5 +1,5 @@
 /*
-char id_dfe[] = "@(#)dfe.c	1.4";
+char id_dfe[] = "@(#)dfe.c	1.5";
  *
  * direct formatted external i/o
  */
@@ -23,7 +23,7 @@ s_rdfe(a) cilist *a;
 	doned = rd_ned;
 	dotab = y_tab;
 	dorevert = doend = donewrec = y_rnew;
-	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,rdfe)
+	if(pars_f()) err(errflag,F_ERFMT,rdfe)
 	fmt_bg();
 	return(OK);
 }
@@ -40,7 +40,7 @@ s_wdfe(a) cilist *a;
 	doned = w_ned;
 	dotab = y_tab;
 	dorevert = doend = donewrec = y_wnew;
-	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,wdfe)
+	if(pars_f()) err(errflag,F_ERFMT,wdfe)
 	fmt_bg();
 	return(OK);
 }

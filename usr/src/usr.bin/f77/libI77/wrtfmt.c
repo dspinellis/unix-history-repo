@@ -1,5 +1,5 @@
 /*
-char id_wrtfmt[] = "@(#)wrtfmt.c	1.8";
+char id_wrtfmt[] = "@(#)wrtfmt.c	1.9";
  *
  * formatted write routines
  */
@@ -8,6 +8,7 @@ char id_wrtfmt[] = "@(#)wrtfmt.c	1.8";
 #include "format.h"
 
 extern char *icvt();
+extern char *s_init;
 
 #define abs(x) (x<0?-x:x)
 
@@ -22,18 +23,21 @@ w_ed(p,ptr,len) char *ptr; struct syl *p; ftnlen len;
 	case L:
 		return(wrt_L(ptr,p->p1));
 	case A:
-		p->p1 = len;	/* cheap trick */
+		return(wrt_AW(ptr,len,len));
 	case AW:
 		return(wrt_AW(ptr,p->p1,len));
 	case D:
+		return(wrt_E(ptr,p->p1,p->p2,2,len,'d'));
 	case DE:
-		return(wrt_E(ptr,p->p1,p->p2,p->p3,len,'d'));
+		return(wrt_E(ptr,p->p1,(p->p2)&0xff,((p->p2)>>8)&0xff,len,'d'));
 	case E:
+		return(wrt_E(ptr,p->p1,p->p2,2,len,'e'));
 	case EE:
-		return(wrt_E(ptr,p->p1,p->p2,p->p3,len,'e'));
+		return(wrt_E(ptr,p->p1,(p->p2)&0xff,((p->p2)>>8)&0xff,len,'e'));
 	case G:
+		return(wrt_G(ptr,p->p1,p->p2,2,len));
 	case GE:
-		return(wrt_G(ptr,p->p1,p->p2,p->p3,len));
+		return(wrt_G(ptr,p->p1,(p->p2)&0xff,((p->p2)>>8)&0xff,len));
 	case F:
 		return(wrt_F(ptr,p->p1,p->p2,len));
 	default:
@@ -66,9 +70,9 @@ w_ned(p,ptr) char *ptr; struct syl *p;
 		tab = YES;
 		return(OK);
 	case APOS:
-		return(wrt_AP(p->p1));
+		return(wrt_AP(&s_init[p->p1]));
 	case H:
-		return(wrt_H(p->p1,p->p2));
+		return(wrt_H(p->p1,&s_init[p->p2]));
 	default:
 		return(errno=F_ERFMT);
 	}

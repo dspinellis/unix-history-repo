@@ -1,5 +1,5 @@
 /*
-char id_iio[] = "@(#)iio.c	1.5";
+char id_iio[] = "@(#)iio.c	1.6";
  *
  * internal (character array) i/o
  */
@@ -111,7 +111,7 @@ c_fi(a) icilist *a;
 	icend = a->iciunit + a->icirnum*a->icirlen;
 	errflag = a->icierr;
 	endflag = a->iciend;
-	if(pars_f(fmtbuf)) err(errflag,F_ERFMT,"ifio")
+	if(pars_f()) err(errflag,F_ERFMT,"ifio")
 	fmt_bg();
 	return(OK);
 }
