@@ -1,4 +1,4 @@
-/*	param.h	4.29	83/02/10	*/
+/*	param.h	4.30	83/02/21	*/
 
 /*
  * Macine type dependent parameters.
@@ -122,7 +122,7 @@
  */
 #define	MAXBSIZE	8192
 #define	DEV_BSIZE	512
-#define BLKDEV_IOSIZE	4096
+#define BLKDEV_IOSIZE	2048
 #define MAXFRAG 	8
 
 /*
