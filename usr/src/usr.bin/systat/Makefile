@@ -1,15 +1,15 @@
-#       Makefile     1.6     85/04/28
+#       Makefile     1.7     85/04/29
 DESTDIR=
 INCPATH=
 CFLAGS= -O
 SRCS=	cmds.c cmdtab.c disks.c fetch.c iostat.c \
-	keyboard.c main.c mbufs.c pigs.c swap.c kre.c
+	keyboard.c kre.c main.c mbufs.c netstat.c pigs.c swap.c
 OBJS=	cmds.o cmdtab.o disks.o fetch.o iostat.o \
-	keyboard.o main.o mbufs.o pigs.o swap.o kre.o
+	keyboard.o kre.o main.o mbufs.o netstat.o pigs.o swap.o
 LIBS=   -lcurses -ltermlib -lm
 
 systat: ${OBJS}
-	${CC} -o systat ${OBJS} ${LIBS}
+	${CC} -o systat -O ${OBJS} ${LIBS}
 
 install: systat
 	install -s systat ${DESTDIR}/usr/local/systat
