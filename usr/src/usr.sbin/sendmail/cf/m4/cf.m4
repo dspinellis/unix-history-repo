@@ -86,6 +86,7 @@ POPDIVERT`'dnl')
 define(`LOCAL_USER', `PUSHDIVERT(5)CL$1
 POPDIVERT`'dnl')
 define(`MASQUERADE_AS', `define(`MASQUERADE_NAME', $1)')
+define(`_OPTINS', `ifdef(`$1', `$2$1$3')')
 
 m4wrap(`include(`../m4/proto.m4')')
 
@@ -119,4 +120,4 @@ define(`confMIME_FORMAT_ERRORS', `True')
 define(`confFORWARD_PATH', `$z/.forward.$w:$z/.forward')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	8.17 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	8.18 (Berkeley) %G%')
