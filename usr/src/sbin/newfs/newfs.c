@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -475,7 +475,7 @@ main(argc, argv)
 	if (realsectorsize != DEV_BSIZE)
 		pp->p_size *= DEV_BSIZE / realsectorsize;
 #endif
-	if (!Nflag && bcmp(pp, &oldpartition, sizeof(oldpartition)))
+	if (!Nflag && memcmp(pp, &oldpartition, sizeof(oldpartition)))
 		rewritelabel(special, fso, lp);
 	if (!Nflag)
 		close(fso);

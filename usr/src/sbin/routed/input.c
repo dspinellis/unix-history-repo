@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -164,8 +164,7 @@ rip_input(from, rip, size)
 		if ((ifp = if_iflookup(from)) == 0 || (ifp->int_flags &
 		    (IFF_BROADCAST | IFF_POINTOPOINT | IFF_REMOTE)) == 0 ||
 		    ifp->int_flags & IFF_PASSIVE) {
-			if (bcmp((char *)from, (char *)&badfrom,
-			    sizeof(badfrom)) != 0) {
+			if (memcmp(from, &badfrom, sizeof(badfrom)) != 0) {
 				syslog(LOG_ERR,
 				  "packet from unknown router, %s",
 				  (*afswitch[from->sa_family].af_format)(from));
@@ -207,7 +206,7 @@ rip_input(from, rip, size)
 			}
 			if (n->rip_metric == 0 ||
 			    (unsigned) n->rip_metric > HOPCNT_INFINITY) {
-				if (bcmp((char *)from, (char *)&badfrom2,
+				if (memcmp(from, &badfrom2,
 				    sizeof(badfrom2)) != 0) {
 					syslog(LOG_ERR,
 					    "bad metric (%d) from %s\n",
