@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.52	83/03/03	*/
+/*	kern_clock.c	4.53	83/05/21	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -13,10 +13,6 @@
 #include "../h/proc.h"
 #include "../h/vm.h"
 #include "../h/text.h"
-#ifdef MUSH
-#include "../h/quota.h"
-#include "../h/share.h"
-#endif
 
 #ifdef vax
 #include "../vax/mtpr.h"
@@ -196,11 +192,6 @@ hardclock(regs)
 		p->p_cpticks++;
 		if (++p->p_cpu == 0)
 			p->p_cpu--;
-#ifdef MUSH
-		p->p_quota->q_cost += (p->p_nice > NZERO ?
-		    (shconsts.sc_tic * ((2*NZERO)-p->p_nice)) / NZERO :
-		    shconsts.sc_tic) * (((int)avenrun[0]+2)/3);
-#endif
 		if ((p->p_cpu&3) == 0) {
 			(void) setpri(p);
 			if (p->p_pri >= PUSER)

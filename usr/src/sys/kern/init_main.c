@@ -1,4 +1,4 @@
-/*	init_main.c	4.50	83/05/18	*/
+/*	init_main.c	4.51	83/05/21	*/
 
 #include "../machine/pte.h"
 
@@ -199,24 +199,6 @@ main(regs)
 		 */
 		return;
 	}
-#ifdef MUSH
-	/*
-	 * start MUSH daemon
-	 *			pid == 3
-	 */
-	if (newproc(0)) {
-#ifdef vax
-		expand(clrnd((int)btoc(szmcode)), 0);
-		(void) swpexpand(u.u_dsize, 0, &u.u_dmap, &u.u_smap);
-		(void) copyout((caddr_t)mcode, (caddr_t)0, (unsigned)szmcode);
-		/*
-		 * Return goes to loc. 0 of user mush
-		 * code just copied out.
-		 */
-		return;
-#endif
-	}
-#endif
 	proc[0].p_szpt = 1;
 	sched();
 }
