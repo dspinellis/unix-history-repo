@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_comp.c	6.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_comp.c	6.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -41,7 +41,7 @@ dn_expand(msg, eomorig, comp_dn, exp_dn, length)
 
 	dn = exp_dn;
 	cp = comp_dn;
-	eom = exp_dn + length - 1;
+	eom = exp_dn + length;
 	/*
 	 * fetch next label in domain name
 	 */
@@ -156,8 +156,11 @@ dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
 				if ((c = *dn++) == '\0')
 					break;
 			}
-			if (cp >= eob)
+			if (cp >= eob) {
+				if (msg != NULL)
+					*lpp = NULL;
 				return (-1);
+			}
 			*cp++ = c;
 		} while ((c = *dn++) != '\0');
 		/* catch trailing '.'s but not '..' */
@@ -165,12 +168,18 @@ dn_comp(exp_dn, comp_dn, length, dnptrs, lastdnptr)
 			cp--;
 			break;
 		}
-		if (l <= 0 || l > MAXLABEL)
+		if (l <= 0 || l > MAXLABEL) {
+			if (msg != NULL)
+				*lpp = NULL;
 			return (-1);
+		}
 		*sp = l;
 	}
-	if (cp >= eob)
+	if (cp >= eob) {
+		if (msg != NULL)
+			*lpp = NULL;
 		return (-1);
+	}
 	*cp++ = '\0';
 	return (cp - comp_dn);
 }
@@ -228,6 +237,8 @@ dn_find(exp_dn, msg, dnptrs, lastdnptr)
 			switch (n & INDIR_MASK) {
 			case 0:		/* normal case, n == len */
 				while (--n >= 0) {
+					if (*dn == '.')
+						goto next;
 					if (*dn == '\\')
 						dn++;
 					if (*dn++ != *cp++)
