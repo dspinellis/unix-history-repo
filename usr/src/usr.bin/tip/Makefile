@@ -1,4 +1,4 @@
-#	Makefile	4.3	82/01/06
+#	Makefile	4.4	82/01/06
 #
 # makefile for intermachine communications package
 #
@@ -48,11 +48,11 @@ all:	tip aculog
 
 install: all
 	cp tip ${BIN}/tip
-	chmod 4711 ${BIN}/tip
 	chown ${OWNER} ${BIN}/tip
+	chmod 4711 ${BIN}/tip
 	cp aculog /etc/aculog
-	chmod 4711 /etc/aculog
 	chown ${OWNER} /etc/aculog
+	chmod 4711 /etc/aculog
 #	cp /dev/null ${ADM}/aculog
 	chown ${OWNER} ${ADM}/aculog
 	chmod 600 ${ADM}/aculog
