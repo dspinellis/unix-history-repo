@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.11 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,7 +25,6 @@
 #include "../ufs/inode.h"
 #include "../ufs/fs.h"
 
-struct	vnode *cache_lookup();
 struct	nchstats nchstats;
 int	dirchk = 1;
 
@@ -113,14 +112,21 @@ ufs_lookup(vp, ndp)
 	 * check the name cache to see if the directory/name pair
 	 * we are looking for is known already.
 	 */
-	if (vdp = cache_lookup(ndp)) {
+	if (error = cache_lookup(ndp)) {
+		int vpid;	/* capability number of vnode */
+
+		if (error == ENOENT)
+			return (error);
 		/*
 		 * Get the next vnode in the path.
-		 * See comment above `IUNLOCK' code for
+		 * See comment below starting `Step through' for
 		 * an explaination of the locking protocol.
 		 */
 		pdp = dp;
-		dp = VTOI(vdp);
+		if (!(ndp->ni_vp == ndp->ni_rdir && ndp->ni_isdotdot))
+			dp = VTOI(ndp->ni_vp);
+		vdp = ITOV(dp);
+		vpid = vdp->v_id;
 		if (pdp == dp) {
 			VREF(vdp);
 		} else if (ndp->ni_isdotdot) {
@@ -130,8 +136,16 @@ ufs_lookup(vp, ndp)
 			igrab(dp);
 			IUNLOCK(pdp);
 		}
-		ndp->ni_vp = vdp;
-		return (0);
+		/*
+		 * Check that the capability number did not change
+		 * while we were waiting for the lock.
+		 */
+		if (vpid == vdp->v_id)
+			return (0);
+		iput(dp);
+		ILOCK(pdp);
+		dp = pdp;
+		ndp->ni_vp = NULL;
 	}
 
 	/*
@@ -331,6 +345,11 @@ searchloop:
 		if (!lockparent)
 			IUNLOCK(dp);
 	}
+	/*
+	 * Insert name into cache (as non-existent) if appropriate.
+	 */
+	if (ndp->ni_makeentry)
+		cache_enter(ndp);
 	return (ENOENT);
 
 found:
@@ -371,7 +390,7 @@ found:
 		 * Return pointer to current entry in ndp->ni_offset,
 		 * and distance past previous entry (if there
 		 * is a previous entry in this block) in ndp->ni_count.
-		 * Save directory inode pointer in ndp->ni_pdir for dirremove().
+		 * Save directory inode pointer in ndp->ni_dvp for dirremove().
 		 */
 		if ((ndp->ni_offset&(DIRBLKSIZ-1)) == 0)
 			ndp->ni_count = 0;
