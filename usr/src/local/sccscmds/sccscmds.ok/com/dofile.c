@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
-# include	<ndir.h>
+# include	<dir.h>
 
-SCCSID(@(#)dofile.c	1.3);
+SCCSID(@(#)dofile.c	1.4);
 
 int	nfiles;
 char	had_dir;
