@@ -4,45 +4,19 @@
  * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
- * Jan-Simon Pendry.
+ * the UCLA Ficus project.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgement:
- *	This product includes software developed by the University of
- *	California, Berkeley and its contributors.
- * 4. Neither the name of the University nor the names of its contributors
- *    may be used to endorse or promote products derived from this software
- *    without specific prior written permission.
+ * %sccs.include.redist.c%
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
- * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
- * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
+ *	@(#)umap.h	1.2 (Berkeley) %G%
  *
- *	@(#)lofs.h	1.1 (Berkeley) 6/3/92
- *
- * $Id: lofs.h,v 1.8 1992/05/30 10:05:43 jsp Exp jsp $
+ * @(#)null_vnops.c       1.5 (Berkeley) 7/10/92
  */
 
 #define MAPFILEENTRIES 64
 #define GMAPFILEENTRIES 16
 #define NOBODY 32767
-#define UMAPGROUP 65534
+#define NULLGROUP 65534
 
 struct umap_args {
 	char		*target;	/* Target of loopback  */
@@ -78,6 +52,7 @@ extern int umap_node_create __P((struct mount *mp, struct vnode *target, struct 
 
 #define	MOUNTTOUMAPMOUNT(mp) ((struct umap_mount *)((mp)->mnt_data))
 #define	VTOUMAP(vp) ((struct umap_node *)(vp)->v_data)
+#define UMAPTOV(xp) ((xp)->umap_vnode)
 #ifdef UMAPFS_DIAGNOSTIC
 extern struct vnode *umap_checkvp __P((struct vnode *vp, char *fil, int lno));
 #define	UMAPVPTOLOWERVP(vp) umap_checkvp((vp), __FILE__, __LINE__)

@@ -4,19 +4,18 @@
  * All rights reserved.
  *
  * This code is derived from software donated to Berkeley by
- * Jan-Simon Pendry.
+ * the UCLA Ficus project.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)umap_vfsops.c	1.1 (Berkeley) %G%
+ *	@(#)umap_vfsops.c	1.2 (Berkeley) %G%
  *
- * @(#)lofs_vfsops.c	1.2 (Berkeley) 6/18/92
- * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
+ * @(#)null_vfsops.c       1.5 (Berkeley) 7/10/92
  */
 
 /*
- * Null Layer
- * (See umap_vnops.c for a description of what this does.)
+ * Umap Layer
+ * (See mount_umap(8) for a descritpion of this layer.)
  */
 
 #include <sys/param.h>
@@ -67,7 +66,7 @@ umapfs_mount(mp, path, data, ndp, p)
 		return (error);
 
 	/*
-	 * Find target node
+	 * Find lower node
 	 */
 	NDINIT(ndp, LOOKUP, FOLLOW|WANTPARENT|LOCKLEAF,
 		UIO_USERSPACE, args.target, p);
@@ -75,7 +74,7 @@ umapfs_mount(mp, path, data, ndp, p)
 		return (error);
 
 	/*
-	 * Sanity check on target vnode
+	 * Sanity check on lower vnode
 	 */
 	lowerrootvp = ndp->ni_vp;
 #ifdef UMAPFS_DIAGNOSTIC
@@ -84,10 +83,6 @@ umapfs_mount(mp, path, data, ndp, p)
 	vrele(ndp->ni_dvp);
 	ndp->ni_dvp = 0;
 
-	/*
-	 * NEEDSWORK: Is this really bad, or just not
-	 * the way it's been?
-	 */
 	if (lowerrootvp->v_type != VDIR) {
 		vput(lowerrootvp);
 		return (EINVAL);
@@ -101,32 +96,37 @@ umapfs_mount(mp, path, data, ndp, p)
 				M_UFSMNT, M_WAITOK);	/* XXX */
 
 	/*
-	 * Save reference to underlying target FS
+	 * Save reference to underlying FS
 	 */
 	amp->umapm_vfs = lowerrootvp->v_mount;
 
 	/* 
 	 * Now copy in the number of entries and maps for umap mapping.
 	 */
-
 	amp->info_nentries = args.nentries;
 	amp->info_gnentries = args.gnentries;
 	error = copyin(args.mapdata, (caddr_t)amp->info_mapdata, 
-	    8*args.nentries);
+	    2*sizeof(int)*args.nentries);
 	if (error) return (error);
+
+#ifdef UMAP_DIAGNOSTIC
 	printf("umap_mount:nentries %d\n",args.nentries);
-	for (i=0; i<args.nentries;i++)
+	for (i = 0; i < args.nentries; i++)
 		printf("   %d maps to %d\n", amp->info_mapdata[i][0],
 	 	    amp->info_mapdata[i][1]);
+#endif
 
 	error = copyin(args.gmapdata, (caddr_t)amp->info_gmapdata, 
-	    8*args.nentries);
+	    2*sizeof(int)*args.nentries);
 	if (error) return (error);
+
+#ifdef UMAP_DIAGNOSTIC
 	printf("umap_mount:gnentries %d\n",args.gnentries);
-	for (i=0; i<args.gnentries;i++)
+	for (i = 0; i < args.gnentries; i++)
 		printf("	group %d maps to %d\n", 
 		    amp->info_gmapdata[i][0],
 	 	    amp->info_gmapdata[i][1]);
+#endif
 
 
 	/*
@@ -135,7 +135,7 @@ umapfs_mount(mp, path, data, ndp, p)
 	 */
 	error = umap_node_create(mp, lowerrootvp, &vp);
 	/*
-	 * Unlock the node (either the target or the alias)
+	 * Unlock the node (either the lower or the alias)
 	 */
 	VOP_UNLOCK(vp);
 	/*
@@ -165,7 +165,7 @@ umapfs_mount(mp, path, data, ndp, p)
 	    &size);
 	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 #ifdef UMAPFS_DIAGNOSTIC
-	printf("umapfs_mount: target %s, alias at %s\n",
+	printf("umapfs_mount: lower %s, alias at %s\n",
 		mp->mnt_stat.f_mntfromname, mp->mnt_stat.f_mntonname);
 #endif
 	return (0);
@@ -227,14 +227,7 @@ umapfs_unmount(mp, mntflags, p)
 		return (error);
 
 #ifdef UMAPFS_DIAGNOSTIC
-	/*
-	 * Flush any remaining vnode references
-	 */
-	umap_node_flushmp (mp);
-#endif
-
-#ifdef UMAPFS_DIAGNOSTIC
-	vprint("alias root of target", umapm_rootvp);
+	vprint("alias root of lower", umapm_rootvp);
 #endif	 
 	/*
 	 * Release reference on underlying root vnode
