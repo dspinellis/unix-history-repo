@@ -1,0 +1,70 @@
+.\" Copyright (c) 1983, 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)syslogd.8	6.9 (Berkeley) %G%
+.\"
+.TH SYSLOGD 8 ""
+.UC 5
+.SH NAME
+syslogd \- log systems messages
+.SH SYNOPSIS
+.nf
+.ft B
+syslogd [\-f config_file] [\-m mark_interval] [\-p log_socket]
+.fi
+.ft R
+.SH DESCRIPTION
+.I Syslogd
+reads and logs messages to the system console, log files, other
+machines and/or users as specified by its configuration file.
+The options are as follows:
+.TP
+.I -f
+Specify the pathname of an alternate configuration file;
+the default is ``/etc/syslog.conf''.
+.TP
+.I \-m
+Select the number of minutes between ``mark'' messages;
+the default is 20 minutes.
+.TP
+.I \-p
+Specify the pathname of an alternate log socket;
+the default is ``/dev/log''.
+.PP
+.I Syslogd
+reads its configuration file when it starts up and whenever it
+receives a hangup signal.
+For information on the format of the configuration file,
+see
+.IR syslog.conf (5).
+.PP
+.I Syslogd
+reads messages from the UNIX domain socket ``/dev/log'',
+from an Internet domain socket specified in ``/etc/services'',
+and from the special device ``/dev/klog'' (to read kernel messages).
+.PP
+.I Syslogd
+creates the file ``/var/run/syslog.pid'', and stores its process
+id there.
+This can be used to kill or reconfigure
+.IR syslogd .
+.PP
+The message sent to
+.I syslogd
+should consist of a single line.
+The message can contain a priority code, which should be a preceding
+decimal number in angle braces, for example, ``<5>''.
+This priority code should map into the priorities defined in the
+include file ``<sys/syslog.h>''.
+.SH FILES
+.ta \w'/etc/syslog.conf    'u
+.nf
+/etc/syslog.conf	The configuration file.
+/var/run/syslog.pid	The process id of current \fIsyslogd\fP.
+/dev/log	Name of the UNIX domain datagram log socket.
+/dev/klog	The kernel log device.
+.fi
+.SH SEE ALSO
+logger(1), syslog(3), services(5), syslog.conf(5)

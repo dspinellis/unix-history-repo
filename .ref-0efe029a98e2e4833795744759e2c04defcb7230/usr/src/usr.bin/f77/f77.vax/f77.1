@@ -1,0 +1,289 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)f77.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt F77 1
+.Os BSD 4
+.Sh NAME
+.Nm f77
+.Nd Fortran 77 compiler
+.Sh SYNOPSIS
+.Nm f77
+.Op option
+\&...
+.Ar file ...
+.Sh DESCRIPTION
+.Nm F77
+is the UNIX Fortran 77 compiler.
+It accepts several types of arguments:
+.Pp
+Arguments whose names end with `.f' are taken to be
+Fortran 77 source programs;
+they are compiled, and
+each object program is left on the file in the current directory
+whose name is that of the source with `.o' substituted
+for `.f'.
+.Pp
+Arguments whose names end with `.F' are also taken to be Fortran 77 source
+programs; these are first processed by the C preprocessor before being
+compiled by
+.Nm f77 .
+.Pp
+Arguments whose names end with `.r' or `.e' are taken to be Ratfor
+or EFL source programs respectively; these are first transformed by the
+appropriate preprocessor, then compiled by
+.Nm f77 .
+.Pp
+Arguments whose names end with `.c' or `.s' are taken to be C or assembly
+source programs and are compiled or assembled, producing a `.o' file.
+.Pp
+The following options have the same meaning as in
+.Xr cc  1  .
+See
+.Xr ld  1
+for load-time options.
+.Tw Fl
+.Tp Fl c
+Suppress loading and produce `.o' files for each source
+file.
+.Tp Fl g
+Produce additional symbol table information for
+.Xr dbx  1
+and pass the
+.Fl lg
+flag to
+.Xr ld  1
+so that on abnormal terminations, the memory image is written
+to file
+.Pa core  .
+Incompatible with
+.Fl O  .
+.Tc Fl o
+.Ws
+.Ar output
+.Cx
+Name the final output file
+.Ar output
+instead of
+.Sq Pa a.out .
+.Tp Fl p
+Prepare object files for profiling, see
+.Xr prof  1  .
+.Tp Fl pg
+Causes the compiler to produce counting code in the manner of
+.Fl p ,
+but invokes a run-time recording mechanism that keeps more extensive
+statistics and produces a
+.Pa gmon.out
+file at normal termination. An execution profile can then be generated
+by use of
+.Xr gprof  1  .
+.Tp Fl w
+Suppress all warning messages.
+If the option is `\-w66', only Fortran 66 compatibility warnings are suppressed.
+.Tc Fl D
+.Ar name =def
+.Cx
+.Tc Fl D
+.Ar name
+.Cx
+Define the
+.Ar name
+to the C preprocessor, as if by `#define'. If no definition is given, the name
+is defined as "1". (`.F' suffix files only).
+.Tc Fl I
+.Ar dir
+.Cx
+`#include' files whose names do not begin with `/' are always sought
+first in the directory of the
+.Ar file
+argument, then in directories named in
+.Fl I
+options, then in directories on a standard list. (`.F' suffix files only).
+.Tp Fl O
+Invoke an
+object-code optimizer.
+Incompatible with
+.Fl g  .
+.Tp Fl S
+Compile the named programs, and leave the
+assembler-language output on corresponding files suffixed `.s'.
+(No `.o' is created.).
+.Pp
+The following options are peculiar to
+.Nm f77  .
+.Tp Fl d
+Used for debugging the compiler.
+.Tp Fl i2
+On machines which support short integers, make the default integer constants
+and variables short.
+.Fl i4
+is the standard value of this option). All logical quantities will be short.
+.Tp Fl q
+Suppress printing of file names and program unit names during compilation.
+.Tp Fl m
+Apply the M4 preprocessor to each `.r' file before transforming
+it with the Ratfor or EFL preprocessor.
+.Tp Fl onetrip
+.Tp Fl 1
+Compile DO loops that are performed at least once if reached.
+(Fortran 77 DO loops are not performed at all if the upper limit is smaller than the lower limit.)
+.Tp Fl r8
+Treat all floating point variables,
+constants, functions and intrinsics
+as double precision and all complex
+quantities as double complex.
+.Tp Fl u
+Make the default type of a variable `undefined' rather than using the default Fortran rules.
+.Tp Fl v
+Print the version number of the compiler, and the name of each pass as it
+executes.
+.Tp Fl C
+Compile code to check that subscripts are within declared array bounds.
+For multi-dimensional arrays, only the equivalent linear subscript is checked.
+.Tp Fl F
+Apply the C preprocessor to `.F' files, and the EFL, or Ratfor preprocessors
+to `.e' and `.r' files, put the
+result in the file with the suffix changed to `.f', but do not compile.
+.Tc Fl E
+.Ar x
+.Cx
+Use the string
+.Ar x
+as an EFL option in processing `.e' files.
+.Tc Fl R
+.Ar x
+.Cx
+Use the string
+.Ar x
+as a Ratfor option in processing `.r' files.
+.Tc Fl N
+.Op Cm qxscn
+.Ar nnn
+.Cx
+Make static tables in the compiler bigger. The compiler will complain
+if it overflows its tables and suggest you apply one or more of these
+flags. These flags have the following meanings:
+.Tw Ds
+.Tp Cm r q
+Maximum number of equivalenced variables. Default is 150.
+.Tp Cm x
+Maximum number of external names (common block names, subroutine and
+function names). Default is 200.
+.Tp Cm s
+Maximum number of statement numbers. Default is 401.
+.Tp Cm c
+Maximum depth of nesting for control statements (e.g. DO loops). Default is
+20.
+.Tp Ar n
+Maximum number of identifiers. Default is 1009.
+.Tp
+.Tp Fl U
+Do not convert upper case letters to lower case. The default is to convert
+Fortran programs to lower case except within character string constants.
+.Tp
+.Pp
+Other arguments
+are taken
+to be either loader option arguments, or F77-compatible
+object programs, typically produced by an earlier
+run,
+or perhaps libraries of F77-compatible routines.
+These programs, together with the results of any
+compilations specified, are loaded (in the order
+given) to produce an executable program with name
+.Sq Pa a.out .
+.Pp
+Programs compiled with
+.Nm f77
+produce memory dumps in file
+.Pa core
+upon abnormal termination if the
+.Sq Fl
+flag was specified during loading.
+If the environment variable
+.Ev f77_dump_flag
+is set to a value beginning with
+.Sq Ar y
+or
+.Sq Ar n  ,
+dumps for abnormal terminations are respectively forced or
+suppressed.
+.Sh FILES
+.Dw /usr/lib/libI77_p.a
+.Di L
+.Dp file.[fFresc]
+input file
+.Dp Pa file.o
+object file
+.Dp Pa a.out
+loaded output
+.Dp Pa /usr/lib/f77pass1
+compiler
+.Dp Pa /libexec/f1
+pass 2
+.Dp Pa /libexec/c2
+optional optimizer
+.Dp Pa /usr/bin/cpp
+C preprocessor
+.Dp Pa /usr/lib/libF77.a
+intrinsic function library
+.Dp Pa /usr/lib/libI77.a
+Fortran I/O library
+.Dp Pa /usr/lib/libU77.a
+UNIX interface library
+.Dp Pa /usr/lib/libm.a
+math library
+.Dp Pa /usr/lib/libc.a
+C library, see section 3
+.Dp Pa /usr/lib/libF77_p.a
+profiling intrinsic function library
+.Dp Pa /usr/lib/libI77_p.a
+profiling Fortran I/O library
+.Dp Pa /usr/lib/libU77_p.a
+profiling UNIX interface library
+.Dp Pa /usr/lib/libm_p.a
+profiling math library
+.Dp Pa /usr/lib/libc_p.a
+profiling C library, see section 3
+.Dp Pa mon.out
+file produced for analysis by
+.Xr prof 1 .
+.Dp Pa gmon.out
+file produced for analysis by
+.Xr gprof 1 .
+.Dp
+.Sh SEE ALSO
+.Xr fpr 1 ,
+.Xr fsplit 1 ,
+.Xr ld 1 ,
+.Xr ar 1 ,
+.Xr ranlib 1 ,
+.Xr dbx 1 ,
+.Xr intro 3f
+.Xr efl 1 ,
+.Xr ratfor 1 ,
+.Xr struct 1 ,
+.Xr prof 1 ,
+.Xr gprof 1 ,
+.Xr cc 1
+.br
+S. I. Feldman, P. J. Weinberger, J. Berkman,
+.Em A Portable Fortran 77 Compiler
+.br
+D. L. Wasley, J. Berkman,
+.Em Introduction to the f77 I/.Xr O Library
+.Sh DIAGNOSTICS
+The diagnostics produced by
+.Nm f77
+itself are intended to be
+self-explanatory.
+Occasional messages may be produced by the loader.
+.Sh HISTORY
+.Nm F77
+appeared in Version 7 AT&T Unix.
+.Sh BUGS
+Files longer than about 50,000 lines must be split up to be compiled.

@@ -1,0 +1,139 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)nfsd.8	5.6 (Berkeley) %G%
+.\"
+.TH NFSD 8 ""
+.UC 7
+.SH NAME
+nfsd \- remote NFS server
+.SH SYNOPSIS
+.B nfsd
+[
+.B \-u
+.I msk,mtch,numprocs
+]
+[
+.B \-t
+.I msk,mtch,hostadr1,hostadr2,...
+]
+[
+.I numprocs
+]
+.SH DESCRIPTION
+.I Nfsd
+runs on a server machine to service
+.SM NFS
+requests from client machines.
+At least one
+.I nfsd
+must be running for a machine to operate as a server.
+The options
+.B \-u
+and
+.B \-t
+are used to indicate which transport protocols are to be served.
+.TP
+.B \-u
+Serve UDP NFS clients.
+.TP
+.B \-t
+Serve TCP NFS clients.
+.TP
+.I "msk, mtch"
+These arguments permit restriction of NFS services
+to a subset of the host addresses. The
+.I msk
+and
+.I mtch
+are applied to the client host address as follows:
+.sp
+if ((
+.I host_address
+&
+.I msk
+) ==
+.I mtch
+)
+.br
+   - service the client request
+.br
+else
+.br
+   - drop the request
+.TP
+.I hostadr1,...
+You may also specify zero or more specific host addresses to be accepted
+as well as ones that pass the
+.I msk, mtch
+test above.
+This may only be done for transport protocols that are connection based, such
+as TCP.
+For the internet domain,
+.I msk, mtch
+and
+.I hostadrs'
+are specified in internet
+.I dot
+notation.
+.TP
+.I numprocs
+Specifies how many servers to fork off. This may only be specified for
+non-connection based protocols such as UDP.
+.LP
+If neither
+.I \-u
+or
+.I \-t
+are specified,
+.I numprocs
+servers for UDP accepting requests from all clients are started.
+If
+.I numprocs
+is not specified, it defaults to 1.
+.LP
+For example:
+.sp
+nfsd \-u 255.255.255.0,131.104.48.0,4 \-t 255.255.0.0,131.104.0.0,131.102.31.2
+.IP "- "
+Serves UDP and TCP transports. For UDP,
+it runs 4 daemons that accept requests
+from any client on subnet 131.104.48.
+For TCP, it accepts connections from any client on network 131.104
+plus the client with the address 131.102.31.2.
+.LP
+nfsd \-u 255.255.240.0,131.104.0.0,6 \-t 0,0
+.IP "- "
+Serves UDP and TCP transports.
+For UDP, it runs 6 daemons that accept requests from clients with
+addresses in the range 131.104.0.x - 131.104.15.x.
+For TCP, it accepts connections from any client.
+.LP
+nfsd \-u 0,0,4
+.IP "- "
+Serves any UDP client with 4 servers, only.
+.LP
+nfsd 4
+.IP "- "
+Serves any UDP client with 4 servers, only. (Compatibility)
+.LP
+A server should typically run enough daemons to handle
+the maximum level of concurrency from its clients,
+typically four to six.
+.PP
+.I Nfsd
+listens for service requests at the port indicated in the
+.SM NFS
+server specification; see
+``Network File System Protocol Specification, RFC1094''
+.SH SEE ALSO
+.IR nfsstat (1),
+.IR nfssvc (2),
+.IR mountd (8),
+.IR portmap (8)
+.SH BUGS
+The client host address restrictions specified here are unrelated to
+the mount restrictions specified in /etc/exports for
+.IR mountd (8).

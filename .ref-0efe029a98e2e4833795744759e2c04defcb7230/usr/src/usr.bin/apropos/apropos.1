@@ -1,0 +1,84 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)apropos.1	6.9 (Berkeley) %G%
+.\"
+.Dd 
+.Dt APROPOS 1
+.Sh NAME
+.Nm apropos
+.Nd locate commands by keyword lookup
+.Sh SYNOPSIS
+.Nm apropos
+.Op Fl M Ar path
+.Op Fl m Ar path
+.Ar keyword ...
+.Sh DESCRIPTION
+.Nm Apropos
+shows which manual pages contain instances of any of the given
+.Ar keyword(s)
+in their title line.
+Each word is considered separately and case of letters is ignored.
+Words which are part of other words are considered; when looking for
+\*(Lqcompile\*(Rq,
+.Nm apropos
+will also list all instances of \*(Lqcompiler\*(Rq.
+.Pp
+If the line output by
+.Nm apropos
+starts
+.Li \*(Lqname(section) ...\*(Rq
+you can enter
+.Li \*(Lqman section name\*(Rq
+to get
+its documentation.
+.Pp
+The options are as follows:
+.Tp Fl M
+Override the list of standard directories where
+.Nm apropos
+searches for a database named
+.Pa whatis.db .
+The supplied
+.Ar path
+must be a colon (\*(Lq:\*(Rq) separated list of directories.
+This search path may also be set using the environment variable
+.Ev MANPATH .
+.Tp Fl m
+Augment the list of standard directories where
+.Nm apropos
+searches for its database.
+The supplied
+.Ar path
+must be a colon (\*(Lq:\*(Rq) separated list of directories.
+These directories will be searched before the standard directories
+or the directories supplied with the
+.Fl M
+option or the
+.Ev MANPATH
+environmental variable are searched.
+.Sh ENVIRONMENT
+.Tw MANPATH
+.Tp Ev MANPATH
+The standard search path used by
+.Xr man 1
+may be overridden by specifying a path in the
+.Ev MANPATH
+environmental variable.
+The format of the path is a colon (\*(Lq:\*(Rq) separated list of directories.
+.Tp
+.Sh FILES
+.Dw whatis.db
+.Di L
+.Dp Pa whatis.db
+name of the apropos database
+.Dp
+.Sh SEE ALSO
+.Xr man 1 ,
+.Xr whatis 1 ,
+.Xr whereis 1
+.Sh HISTORY
+.Nm apropos
+appeared in 3 BSD.

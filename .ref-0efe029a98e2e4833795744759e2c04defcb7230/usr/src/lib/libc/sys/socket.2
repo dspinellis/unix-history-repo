@@ -1,0 +1,195 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)socket.2	6.7 (Berkeley) %G%
+.\"
+.TH SOCKET 2 ""
+.UC 5
+.SH NAME
+socket \- create an endpoint for communication
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.PP
+.ft B
+s = socket(domain, type, protocol)
+int s, domain, type, protocol;
+.fi
+.SH DESCRIPTION
+.I Socket
+creates an endpoint for communication and returns a descriptor.
+.PP
+The
+.I domain
+parameter specifies a communications domain within which
+communication will take place; this selects the protocol family
+which should be used.
+The protocol family generally is the same as the address family
+for the addresses supplied in later operations on the socket.
+These families are defined in the include file
+.IR <sys/socket.h> .
+The currently understood formats are
+.PP
+.RS
+.nf
+.ta 1.25i 1.75i
+PF_UNIX	(UNIX internal protocols),
+PF_INET	(ARPA Internet protocols),
+PF_NS	(Xerox Network Systems protocols), and
+PF_IMPLINK	(IMP \*(lqhost at IMP\*(rq link layer).
+.fi
+.RE
+.PP
+The socket has the indicated
+.I type,
+which specifies the semantics of communication.  Currently
+defined types are:
+.PP
+.RS
+.nf
+SOCK_STREAM
+SOCK_DGRAM
+SOCK_RAW
+SOCK_SEQPACKET
+SOCK_RDM
+.fi
+.RE
+.PP
+A SOCK_STREAM type provides sequenced, reliable,
+two-way connection based byte streams.
+An out-of-band data transmission mechanism may be supported.
+A SOCK_DGRAM socket supports
+datagrams (connectionless, unreliable messages of
+a fixed (typically small) maximum length).
+A SOCK_SEQPACKET socket may provide a sequenced, reliable,
+two-way connection-based data transmission path for datagrams
+of fixed maximum length; a consumer may be required to read
+an entire packet with each read system call.
+This facility is protocol specific, and presently implemented
+only for PF_NS.
+SOCK_RAW sockets provide access to internal network protocols and interfaces.
+The types SOCK_RAW,
+which is available only to the super-user, and
+SOCK_RDM, which is planned,
+but not yet implemented, are not described here.
+.PP
+The
+.I protocol
+specifies a particular protocol to be used with the socket.
+Normally only a single protocol exists to support a particular
+socket type within a given protocol family.  However, it is possible
+that many protocols may exist, in which case a particular protocol
+must be specified in this manner.  The protocol number to use is
+particular to the \*(lqcommunication domain\*(rq in which communication
+is to take place; see
+.IR protocols (3N).
+.PP
+Sockets of type SOCK_STREAM
+are full-duplex byte streams, similar
+to pipes.  A stream socket must be in a
+.I connected
+state before any data may be sent or received
+on it.  A connection to another socket is created with a
+.IR connect (2)
+call.  Once connected, data may be transferred using
+.IR read (2)
+and
+.IR write (2)
+calls or some variant of the 
+.IR send (2)
+and
+.IR recv (2)
+calls.  When a session has been completed a
+.IR close (2)
+may be performed.
+Out-of-band data may also be transmitted as described in
+.IR send (2)
+and received as described in
+.IR recv (2).
+.PP
+The communications protocols used to implement a
+SOCK_STREAM insure that data
+is not lost or duplicated.  If a piece of data for which the
+peer protocol has buffer space cannot be successfully transmitted
+within a reasonable length of time, then
+the connection is considered broken and calls
+will indicate an error with
+\-1 returns and with ETIMEDOUT as the specific code
+in the global variable errno.
+The protocols optionally keep sockets \*(lqwarm\*(rq by
+forcing transmissions
+roughly every minute in the absence of other activity.
+An error is then indicated if no response can be
+elicited on an otherwise
+idle connection for a extended period (e.g. 5 minutes).
+A SIGPIPE signal is raised if a process sends
+on a broken stream; this causes naive processes,
+which do not handle the signal, to exit.
+.PP
+SOCK_SEQPACKET sockets employ the same system calls
+as SOCK_STREAM sockets.  The only difference
+is that 
+.IR read (2)
+calls will return only the amount of data requested,
+and any remaining in the arriving packet will be discarded.
+.PP
+SOCK_DGRAM and SOCK_RAW
+sockets allow sending of datagrams to correspondents
+named in
+.IR send (2)
+calls.  Datagrams are generally received with
+.IR recvfrom (2),
+which returns the next datagram with its return address.
+.PP
+An 
+.IR fcntl (2)
+call can be used to specify a process group to receive
+a SIGURG signal when the out-of-band data arrives.
+It may also enable non-blocking I/O
+and asynchronous notification of I/O events
+via SIGIO.
+.PP
+The operation of sockets is controlled by socket level
+.IR options .
+These options are defined in the file
+.RI < sys/socket.h >.
+.IR Setsockopt (2)
+and
+.IR getsockopt (2)
+are used to set and get options, respectively.
+.SH "RETURN VALUE
+A \-1 is returned if an error occurs, otherwise the return
+value is a descriptor referencing the socket.
+.SH "ERRORS
+The \fIsocket\fP call fails if:
+.TP 20
+[EPROTONOSUPPORT]
+The protocol type or the specified protocol is not supported
+within this domain.
+.TP 20
+[EMFILE]
+The per-process descriptor table is full.
+.TP 20
+[ENFILE]
+The system file table is full.
+.TP 20
+[EACCESS]
+Permission to create a socket of the specified type and/or protocol
+is denied.
+.TP 20
+[ENOBUFS]
+Insufficient buffer space is available.
+The socket cannot be created until sufficient resources are freed.
+.SH SEE ALSO
+accept(2), bind(2), connect(2), getsockname(2), getsockopt(2),
+ioctl(2), listen(2), read(2), recv(2),
+select(2), send(2), shutdown(2), socketpair(2), write(2)
+.br
+``An Introductory 4.3BSD Interprocess Communication Tutorial.''
+(reprinted in UNIX Programmer's Supplementary Documents Volume 1, PS1:7)
+``An Advanced 4.3BSD Interprocess Communication Tutorial.''
+(reprinted in UNIX Programmer's Supplementary Documents Volume 1, PS1:8)

@@ -1,0 +1,84 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)timedc.8	6.5 (Berkeley) %G%
+.\"
+.TH TIMEDC 8 ""
+.UC 6
+.ad
+.SH NAME
+timedc \- timed control program
+.SH SYNOPSIS
+.B timedc
+[ command [ argument ... ] ]
+.SH DESCRIPTION
+.I Timedc
+is used to control the operation of the \fItimed\fP program.
+It may be used to:
+.IP \(bu
+measure the differences between machines' clocks,
+.IP \(bu
+find the location where the master time server is running,
+.IP \(bu
+enable or disable tracing of messages received by \fItimed\fP, and
+.IP \(bu
+perform various debugging actions.
+.PP
+Without any arguments,
+.I timedc
+will prompt for commands from the standard input.
+If arguments are supplied,
+.IR timedc
+interprets the first argument as a command and the remaining
+arguments as parameters to the command.  The standard input
+may be redirected causing
+.I timedc
+to read commands from a file.
+Commands may be abbreviated;
+recognized commands are:
+.TP
+? [ command ... ]
+.TP
+help [ command ... ]
+.br
+Print a short description of each command specified in the argument list,
+or, if no arguments are given, a list of the recognized commands.
+.TP
+clockdiff host ...
+.br
+Compute the differences between the clock of the host machine
+and the clocks of the machines given as arguments.
+.TP
+trace { on | off }
+.br
+Enable or disable the tracing of incoming messages to \fItimed\fP
+in the file /var/log/timed.log.
+.TP
+quit
+.br
+Exit from timedc.
+.PP
+Other commands may be included for use in testing and debugging
+.IR timed ;
+the help command and
+the program source may be consulted for details.
+.SH FILES
+.nf
+.ta \w'/var/log/masterlog       'u
+/var/log/timed.log		tracing file for timed
+/var/log/timed.masterlog	log file for master timed
+.fi
+.SH "SEE ALSO"
+date(1), adjtime(2), icmp(4), timed(8), 
+.br
+\fITSP: The Time Synchronization Protocol for UNIX 4.3BSD\fP, 
+R. Gusella and S. Zatti
+.SH DIAGNOSTICS
+.nf
+.ta \w'?Ambiguous command      'u
+?Ambiguous command	abbreviation matches more than one command
+?Invalid command	no match found
+?Privileged command	command can be executed by root only
+.fi

@@ -1,0 +1,45 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)worms.6	6.4 (Berkeley) %G%
+.\"
+.UC 7
+.TH WORMS 6 ""
+.UC 4
+.SH NAME
+worms  \-  animate worms on a display terminal
+.SH SYNOPSIS
+.B worms
+[
+.B \-ft
+] [
+.B \-length
+# ] [
+.B \-number
+# ]
+.SH DESCRIPTION
+.ad b
+Brian Horn (cithep!bdh) showed me a
+.I TOPS-20
+program on the DEC-2136 machine called
+.IR WORM ,
+and suggested that I write a similar program that would run under
+.IR Unix .
+I did, and no apologies.
+.PP
+The options are as follows:
+.TP
+.I -f
+makes a ``field'' for the worm(s) to eat.
+.TP
+.I -t
+causes each worm to leave a trail behind it.
+.PP
+You can figure out the rest by yourself.
+.SH AUTHOR
+Eric P. Scott
+.SH BUGS
+The lower-right-hand character position will not be updated properly
+on a terminal that wraps at the right margin.

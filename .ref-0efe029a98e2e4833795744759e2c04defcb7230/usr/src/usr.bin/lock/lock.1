@@ -1,0 +1,43 @@
+.\" Copyright (c) 1987, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)lock.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LOCK 1
+.Sh NAME
+.Nm lock
+.Nd reserve a terminal
+.Sh SYNOPSIS
+.Nm lock
+.Op Fl p
+.Op Fl t Ar timeout
+.Sh DESCRIPTION
+.Nm Lock
+requests a password from the user, reads it again for verification
+and then will normally not relinquish the terminal until the password is
+repeated.
+There are two other conditions under which it will terminate: it
+will timeout after some interval of time and it may be killed by someone
+with the appropriate permission.
+.Po
+Options:
+.Pp
+.Tw Fl
+.Tc Fl t
+.Ws
+.Ar timeout
+.Cx
+The time limit (default 15 minutes) is changed to
+.Ar timeout
+minutes.
+.Tp Fl p
+Causes
+.Nm lock
+to use the user's current password instead of requesting another one.
+.Tp
+.Sh HISTORY
+.Nm Lock
+appeared in 3 BSD.

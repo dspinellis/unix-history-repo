@@ -1,0 +1,46 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)whois.1	6.5 (Berkeley) %G%
+.\"
+.TH WHOIS 1 ""
+.UC 6
+.SH NAME
+whois \- Internet user name directory service
+.SH SYNOPSIS
+.nf
+.ft B
+whois [ \-h hostname ] name ...
+.ft R
+.fi
+.SH DESCRIPTION
+.I Whois
+is used to look up records in the Network Information Center (NIC)
+database.
+.PP
+The options are as follows:
+.TP
+\-h
+Use the specified host instead of the default NIC (nic.ddn.mil).
+.PP
+The operands specified to
+.I whois
+are concatenated together (separated by white-space) and presented to
+the
+.I whois
+server.
+.PP
+The default action, unless directed otherwise with a special
+.IR name ,
+is to do a very broad search, looking for matches to
+.I name
+in all types of records and most fields (name, nicknames, hostname, net
+address, etc.) in the database.
+For more information as to what
+.I name
+operands have special meaning, and how to guide the search, use
+the special name ``help''.
+.SH SEE ALSO
+RFC 812: Nicname/Whois

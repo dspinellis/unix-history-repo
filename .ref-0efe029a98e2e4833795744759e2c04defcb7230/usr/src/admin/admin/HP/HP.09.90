@@ -1,0 +1,119 @@
+.\"	@(#)HP.09.90	1.2	90/08/03
+.if n \{\
+.ND
+.rm CH
+.ll 7i
+.nr LL 7i
+.ad l
+.\}
+.HE
+.nr PS 11
+.nr VS 13
+.nr LL 6i
+.nr OI 0.5i
+.in 0.5i
+.ps 11p
+.ti 5i
+August 1, 1990
+.LP
+.nf
+Dr. John Limb
+IAG, Building 46G
+Hewlett-Packard Company
+19046 Pruneridge Ave.
+Cupertino, CA 95014
+.sp 1
+.LP
+Dear Dr. Limb,
+.PP
+I am writing to you in my role as the head of operating
+system and networking research for the \s-1UNIX\s0 project in the Computer
+Science Division of the University of California, Berkeley, known as
+the Computer Systems Research Group (\s-1CSRG\s0).
+In the past year funding for our group has been provided by
+Hewlett-Packard and the Open Software Foundation (\s-1OSF\s0).
+As the period of that funding is drawing to a close,
+we are hopeful that you will renew your support for the coming year
+so that we can continue our work at the university.
+A gift on the order of $120,000 would provide roughly
+a quarter of the budget needed by \s-1CSRG\s0
+for salaries and benefits, maintenance and network access fees,
+travel and other expenses.
+.PP
+The goal of the \s-1CSRG\s0 project
+is to use leading edge research ideas in a stable and reliable
+implementation that solves current problems in operating systems research.
+The project also includes incorporation of network protocols and other
+subsystems into the operating system while maintaining consistency
+with the existing system call interface.
+The resulting system is widely used by other
+researchers in operating systems and network protocols.
+The most recent two releases, \s-14.2BSD\s0
+and \s-14.3BSD\s0, provide the
+core of the standard networking and/or operating system software for
+essentially all vendors of \s-1UNIX\s0-based workstations and minicomputers.
+\s-14.3BSD\s0-based network support is included in the systems being
+released by both \s-1OSF\s0 and \s-1AT&T\s0.
+.PP
+\s-1CSRG\s0 includes four full-time research staff (Mike Karels,
+Keith Bostic, Marc Tietelbaum, and myself),
+and one three-quarter-time programmer on loan
+from another group (Keith Sklower).
+In addition, two full-time administrative and secretarial people
+handle licensing and software distribution as well as office support.
+.PP
+\s-1CSRG\s0 has just made a test release, \s-14.3BSD-R\s0eno,
+that includes major new facilities.
+It has a new filesystem interface that extends the old interface
+to allow greater flexibility and performance.
+Under the interface, we have included a freely redistributable
+version of \s-1NFS\s0 that has already been adopted by \s-1OSF/1\s0.
+We have also developed a memory based filesystem to provide a very
+fast temporary filesystem (/tmp).
+The released system integrates an implementation of the
+\s-1ISO OSI\s0 networking protocols into the existing
+socket interface and internal network architecture.
+Both filesystem and networking interfaces improve on previous
+work with better support for caching in layered architectures.
+These caching techniques are based on work done by Van
+Jacobson at the Lawrence Berkeley Laboratory.
+Some of Van's work has been incorporated into the test release,
+the rest will be incorporated in the future.
+The system also includes an \s-1IEEE\s0 P1003.1 \s-1(POSIX)\s0 standard
+operating system interface integrated with the existing system
+interface in such a way that both interfaces are fully supported and
+interoperate fully.
+Finally, we have integrated the University of Utah's support for
+the HP 300 series machines into our current source base.
+.PP
+We have several new projects for the coming year.
+We are working on a revised internal network
+architecture incorporating the best features of both the existing
+socket support and the ``streams'' layering of the Ninth Edition
+research version of \s-1UNIX\s0.
+We expect to more easily incorporate Van's work into this framework.
+We will also consider the applicability of Van's
+techniques in the \s-1OSI\s0 protocol suite.
+The system is expected to include a new
+virtual memory system derived from that of the
+public domain portion of the Mach operating system
+from \s-1CMU\s0 and incorporated into \s-14.3BSD\s0 by the University of Utah.
+We expect that the products of this work will become the interfaces and
+implementations of choice for other operating systems and networking
+researchers in the near future.
+Finally we plan to broaden our base of hardware support to the HP 800
+line of machines.
+For this purpose we are requesting the donation of two HP 800's;
+one 832 server and one 834 workstation.
+.sp 2
+.in +1.5i
+Sincerely,
+.sp .65i
+Dr. Marshall Kirk McKusick
+.in -1.5i
+.sp 2
+.nf
+cc:	Mike Karels
+.fi
+.sp
+MKM/tl

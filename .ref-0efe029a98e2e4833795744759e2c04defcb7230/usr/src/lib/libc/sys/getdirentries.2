@@ -1,0 +1,123 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getdirentries.2	6.2 (Berkeley) %G%
+.\"
+.TH GETDIRENTRIES 2 ""
+.UC 7
+.SH NAME
+getdirentries \- get directory entries in a filesystem independent format
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/dirent.h>
+.LP
+.ft B
+cc = getdirentries(fd, buf, nbytes, basep)
+int cc, fd;
+char *buf;
+int nbytes;
+long *basep;
+.fi
+.SH DESCRIPTION
+.I Getdirentries
+reads directory entries from the directory
+referenced by the file descriptor
+.I fd
+into the buffer pointed to by
+.IR buf ,
+in a filesystem independent format.
+Up to
+.I nbytes
+of data will be transferred.
+.I Nbytes
+must be greater than or equal to the
+block size associated with the file,
+see
+.IR stat(2) .
+Some filesystems may not support
+.I getdirentries
+with buffers smaller than this size.
+.PP
+The data in the buffer is a series of
+.I dirent
+structures each containing the following entries:
+.PP
+.RS
+.ta +\w'unsigned\0short\0'u +\w'd_name[MAXNAMELEN + 1];\0'u
+.nf
+unsigned long	d_fileno;
+unsigned short	d_reclen;
+unsigned short	d_namlen;
+char    	d_name[MAXNAMELEN + 1];	/* see below */
+.fi
+.RE
+.PP
+The
+.I d_fileno
+entry is a number which is unique for each
+distinct file in the filesystem.
+Files that are linked by hard links (see
+.IR link(2) )
+have the same
+.IR d_fileno .
+The
+.I d_reclen
+entry is the length, in bytes, of the directory record.
+The
+.I d_name
+entry contains a null terminated file name.
+The
+.I d_namlen
+entry specifies the length of the file name excluding the null byte.
+Thus the actual size of
+.I d_name
+may vary from 1 to \fBMAXNAMELEN + 1\fP.
+.PP
+Entries may be separated by extra space.
+The
+.I d_reclen
+entry may be used as an offset from the start of a
+.I dirent
+structure to the next structure, if any.
+.PP
+The actual number of bytes transferred is returned.
+The current position pointer associated with
+.I fd
+is set to point to the next block of entries.
+The pointer may not advance by the number of bytes returned by
+.IR getdirentries .
+A value of zero is returned when
+the end of the directory has been reached.
+.PP
+.I Getdirentries
+writes the position of the block read into the location pointed to by
+.IR basep .
+Alternatively, the current position pointer may be set and retrieved by
+.IR lseek(2) .
+The current position pointer should only be set to a value returned by
+.I lseek(2) ,
+a value returned in the location pointed to by
+.I basep ,
+or zero.
+.SH RETURN VALUE
+If successful, the number of bytes actually transferred is returned.
+Otherwise, a \-1 is returned and the global variable
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.I Getdirentries
+will fail if one or more of the following are true:
+.TP 15
+EBADF
+\fIfd\fP is not a valid file descriptor open for reading.
+.TP 15
+EFAULT
+Either \fIbuf\fP or \fIbasep\fP point outside the allocated address space.
+.TP 15
+EIO
+An I/O error occurred while reading from or writing to the file system.
+.SH "SEE ALSO"
+open(2), lseek(2)

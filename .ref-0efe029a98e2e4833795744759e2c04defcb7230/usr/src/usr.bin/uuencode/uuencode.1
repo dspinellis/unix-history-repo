@@ -1,0 +1,62 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)uuencode.1	6.8 (Berkeley) %G%
+.\"
+.TH UUENCODE 1 "%Q"
+.UC 4
+.SH NAME
+uuencode, uudecode \- encode/decode a binary file
+.SH SYNOPSIS
+.B uuencode
+[ file ] name
+.br
+.B uudecode
+[ file ... ]
+.SH DESCRIPTION
+.I Uuencode
+and
+.I uudecode
+are used to transmit binary files over transmission mediums
+that do not support other than simple ASCII data.
+.PP
+.I Uuencode
+reads
+.I file
+(or by default the standard input) and writes an encoded version
+to the standard output.
+The encoding uses only printing ASCII characters and includes the
+mode of the file and the operand
+.I name
+for use by
+.IR uudecode .
+.PP
+.I Uudecode
+transforms
+.I uuencoded
+files (or by default, the standard input) into the original form.
+The resulting file is named
+.IR name
+and will have the mode of the original file except that setuid
+and execute bits are not retained.
+.I Uudecode
+ignores any leading and trailing lines.
+.SH EXAMPLES
+The following example packages up a source tree, compresses it,
+uuencodes it and mails it to a user on another system.
+When
+.I uudecode
+is run on the target system, the file ``src_tree.tar.Z'' will be
+created which may then be uncompressed and extracted into the original
+tree.
+.sp
+.in +5
+tar cf - src_tree | compress | uuencode src_tree.tar.Z | mail sys1!sys2!user
+.sp
+.SH SEE ALSO
+compress(1), mail(1), uucp(1), uuencode.format(5)
+.SH BUGS
+The encoded form of the file is expanded by 35% (3 bytes become 4 plus
+control information).

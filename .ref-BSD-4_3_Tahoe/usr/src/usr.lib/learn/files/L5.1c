@@ -1,0 +1,26 @@
+#print
+The "?" may appear anywhere in the name.
+For example you can type
+  a?bc
+to match the list of names
+  axbc, aybc, a3bc
+and so forth.
+But the number of characters must always agree.
+How many of the following file names
+are matched by "x?xx"?
+  x1xx, y1xx, x1xxa, xxx
+Type "answer N" where N is the number of matching names.
+You can experiment in the current directory to
+check your answer before typing it.
+#create x1xx
+#create x1xxa
+#create y1xx
+#create xxx
+#copyin
+#user
+#uncopyin
+#match 1
+#log
+#next
+5.1d 0
+5.1e 5

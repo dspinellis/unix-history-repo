@@ -1,0 +1,371 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)stty.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt STTY 1
+.Os BSD 4.4
+.Sh NAME
+.Nm stty
+.Nd Set the options for a terminal.
+.Sh SYNOPSIS
+.Nm stty
+.Op Fl a Ar \&| Fl g
+.Nm stty
+.Op arguments
+.De
+.Sh DESCRIPTION
+The stty utility sets or reports on terminal I/O
+characteristics for the device that is its standard input.
+Without options or arguments specified, it reports the
+settings of certain characteristics, usually those that differ
+from implementation-defined defaults.
+Otherwise it modifies
+the terminal state according to the specified arguments.
+Some combinations of arguments are mutually
+exclusive on some terminal types.
+.Pp
+The following options are available:
+.Tw Ds
+.Tp Fl a
+Write to standard output all the current settings
+for the terminal.
+.Tp Fl g
+Write to standard output the current settings in an
+unspecified form that can be used as arguments to
+another stty utility on the same system.
+.Tp
+.Pp
+The following arguments are available to set the terminal
+characteristics:
+.Tw Fl
+.Tc Cm parenb
+.Ws
+.Pf \&( Fl parenb )
+.Cx
+Enable (disable) parity generation
+and detection.
+.Tc Cm parodd
+.Ws
+.Pf \&( Fl parodd )
+.Cx
+Select odd (even) parity.
+.Tp Cm cs5 cs6 cs7 cs8
+Select character size, if possible.
+.Tp Ar number
+Set terminal baud rate to the
+number given, if possible.
+If the
+baud rate is set to zero, modem
+control is no longer
+asserted.
+.Tc Cm ispeed
+.Ws
+.Ar number
+.Cx
+Set terminal input baud rate to the
+number given, if possible.
+If the
+input baud rate is set to zero, the
+input baud rate is set to the
+value of the output baud
+rate.
+.Tc Cm ospeed
+.Ws
+.Ar number
+.Cx
+Set terminal output baud rate to
+the number given, if possible.
+If
+the output baud rate is set to
+zero, modem control is
+no longer asserted.
+.Tc Cm hupcl
+.Ws
+.Pf \&( Fl hupcl )
+.Cx
+Stop asserting modem control
+(do not stop asserting modem control) on last close.
+.Tc Cm hup
+.Ws
+.Pf \&( Fl hup )
+.Cx
+Same as hupcl
+.Ws
+.Pf \&( Fl hupcl).
+.Tc Cm cstopb
+.Ws
+.Pf \&( Fl cstopb )
+.Cx
+Use two (one) stop bits per character.
+.Tc Cm cread
+.Ws
+.Pf \&( Fl cread )
+.Cx
+Enable (disable) the receiver.
+.Tc Cm clocal
+.Ws
+.Pf \&( Fl clocal )
+.Cx
+Assume a line without (with) modem
+control.
+.Tc Cm ignbrk
+.Ws
+.Pf \&( Fl ignbrk )
+.Cx
+Ignore (do not ignore) break on
+input.
+.Tc Cm brkint
+.Ws
+.Pf \&( Fl brkint )
+.Cx
+Signal (do not signal) INTR on
+break.
+.Tc Cm ignpar
+.Ws
+.Pf \&( Fl ignpar )
+.Cx
+Ignore (do not ignore) parity
+errors.
+.Tc Cm parmrk
+.Ws
+.Pf \&( Fl parmrk )
+.Cx
+Mark (do not mark) parity errors.
+.Tc Cm inpck
+.Ws
+.Pf \&( Fl inpck )
+.Cx
+Enable (disable) input parity
+checking.
+.Tc Cm istrip
+.Ws
+.Pf \&( Fl istrip )
+.Cx
+Strip (do not strip) input characters
+to seven bits.
+.Tc Cm inlcr
+.Ws
+.Pf \&( Fl inlcr )
+.Cx
+Map (do not map) NL to CR on input.
+.Tc Cm igncr
+.Ws
+.Pf \&( Fl igncr )
+.Cx
+Ignore (do not ignore) CR on input.
+.Tc Cm icrnl
+.Ws
+.Pf \&( Fl icrnl )
+.Cx
+Map (do not map) CR to NL on input.
+.Tc Cm ixon
+.Ws
+.Pf \&( Fl ixon )
+.Cx
+Enable (disable) START/STOP output
+control.
+Output from the system is
+stopped when the system receives
+STOP and started when the system
+receives START.
+.Tc Cm ixoff
+.Ws
+.Pf \&( Fl ixoff )
+.Cx
+Request that the system send (not
+send) START/STOP characters when
+the input queue is nearly
+empty/full.
+.Tc Cm opost
+.Ws
+.Pf \&( Fl opost )
+.Cx
+Post-process output (do not
+post-process output; ignore all other
+output modes).
+.Tc Cm isig
+.Ws
+.Pf \&( Fl isig )
+.Cx
+Enable (disable) the checking of
+characters against the special control
+characters INTR, QUIT, and
+SUSP.
+.Tc Cm icanon
+.Ws
+.Pf \&( Fl icanon )
+.Cx
+Enable (disable) canonical input
+(ERASE and KILL processing).
+.Tc Cm iexten
+.Ws
+.Pf \&( Fl iexten )
+.Cx
+Enable (disable) any implementation
+defined special control characters
+not currently controlled by icanon,
+isig, or ixon.
+.Tc Cm echo
+.Ws
+.Pf \&( Fl echo )
+.Cx
+Echo back (do not echo back) every
+character typed.
+.Tc Cm echoe
+.Ws
+.Pf \&( Fl echoe )
+.Cx
+The ERASE character shall (shall
+not) visually erase the last character
+in the current line from the
+display, if possible.
+.Tc Cm echok
+.Ws
+.Pf \&( Fl echok )
+.Cx
+Echo (do not echo) NL after KILL
+character.
+.Tc Cm echonl
+.Ws
+.Pf \&( Fl echonl )
+.Cx
+Echo (do not echo) NL, even if echo
+is disabled.
+.Tc Cm noflsh
+.Ws
+.Pf \&( Fl noflsh )
+.Cx
+Disable (enable) flush after INTR,
+QUIT, SUSP.
+.Tc Cm control-character
+.Ws
+.Ar string
+.Cx
+Set control-character to string.
+If string is a single character,
+the control character is set to
+that character.
+If string is the
+two character sequence "^-" or the
+string "undef" the control character
+is set to {_POSIX_VDISABLE} if
+it is in effect for the device; if
+{_POSIX_VDISABLE} is not in effect
+for the device, it is an
+error.
+.Pp
+Recognized control-characters:
+.Ds I
+.Cw character Subscript
+.Cl control-	POSIX.1
+.Cl character	Subscript	Description
+.Cl _________	_________	_______________
+.Cl eof	VEOF	EOF character
+.Cl eol	VEOL	EOL character
+.Cl erase	VERASE	ERASE character
+.Cl intr	VINTR	INTR character
+.Cl kill	VKILL	KILL character
+.Cl quit	VQUIT	QUIT character
+.Cl susp	VSUSP	SUSP character
+.Cl start	VSTART	START character
+.Cl stop	VSTOP	STOP character
+.Cw
+.De
+.Tp Cm saved settings
+Set the current terminal
+characteristics to the saved settings
+produced by the -g option.
+.Tc Cm min
+.Ws
+.Ar number
+.Cx
+time number
+Set the value of min or time to
+number.
+MIN and TIME are used in
+Non-Canonical mode input processing
+(-icanon).
+.Tc Cm evenp
+.Ws
+.Cx or 
+.Ws
+.Cm parity
+.Cx
+Enable parenb and cs7; disable
+parodd.
+.Tp Cm oddp
+Enable parenb, cs7, and parodd.
+.Tp Fl parity , evenp ,  oddp
+Disable parenb, and set cs8.
+.Tc Cm nl
+.Ws
+.Pf \&( Fl nl )
+.Cx
+Enable (disable) icrnl.
+In addition
+-nl unsets inlcr and igncr.
+.Tp Cm ek
+Reset ERASE and KILL characters
+back to system defaults.
+.Tp Cm sane
+Resets all modes to some reasonable,
+unspecified, values.
+.Tp
+.Pp
+If the -g option is specified, stty writes to standard output
+the current settings in a form that can be used as arguments
+to another instance of stty on the same system.
+.Pp
+If the -a option is specified, all of the information as
+described in arguments is written to standard output.
+Unless
+otherwise specified, this information shall be displayed as
+<space>-separated tokens in an unspecified format, on one or
+more lines, with an unspecified number of tokens per line.
+Additional information may be displayed as well.
+.Pp
+If no options are specified, an unspecified subset of the
+information displayed for the -a option is displayed.
+.Pp
+If the terminal input speed and output speed are the same,
+the speed information is displayed as follows:
+.Pp
+.Ds I
+"speed %d baud;", <speed>
+.De
+.Pp
+Otherwise speeds are displayed as:
+.Pp
+.Ds I
+"ispeed %d baud; ospeed %d baud;", <ispeed>, <ospeed>
+.De
+.Pp
+Control characters are displayed as:
+.Pp
+.Ds I
+"%s = %s;", <control-character name>, <value>
+.De
+.Pp
+where value is either the character, or some visual
+representation of the character if it is non-printing, or
+the string "<undef>" if the character is disabled.
+.Pp
+The
+.Nm stty
+utility exits with one of the following values:
+.Tw Ds
+.Tp Li \&0
+The terminal options were read or set successfully.
+.Tp Li \&>0
+An error occurred.
+.Tp
+.Sh SEE ALSO
+.Xr stty 4
+.Sh STANDARDS
+The
+.Nm stty
+function is expected to be POSIX 1003.2 compatible.

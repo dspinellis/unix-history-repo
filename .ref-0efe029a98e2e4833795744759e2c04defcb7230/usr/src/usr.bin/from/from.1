@@ -1,0 +1,61 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)from.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FROM 1
+.Os BSD 4
+.Sh NAME
+.Nm from
+.Nd tell who is mail from?
+.Sh SYNOPSIS
+.Nm from
+.Op Fl s Ar sender
+.Op Fl f Ar file
+.Op Ar user
+.Sh DESCRIPTION
+.Nm From
+prints
+out the mail header lines from your mailbox.
+.Pp
+Options:
+.Tw Fl
+.Tc Fl f
+.Ws
+.Ar file
+.Cx
+The supplied file
+is examined instead of the your mailbox.
+If the
+.Fl f
+option is used, the
+.Ar user
+argument should not be used.
+.Tc Fl s
+.Ws
+.Ar sender
+.Cx
+Only mail from addresses containing
+the
+supplied string are printed.
+.Tp
+.Pp
+If
+.Ar user
+is given, the
+.Sf Ar user 's
+mailbox, is examined instead of your own mailbox.
+.Sh FILES
+.Dw /var/mail/*
+.Di L
+.Dp Pa /var/mail/*
+.Dp
+.Sh SEE ALSO
+.Xr biff 1 ,
+.Xr mail 1
+.Sh HISTORY
+.Nm From
+appeared in 3 BSD.

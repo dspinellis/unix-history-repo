@@ -1,0 +1,40 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)setreuid.2	6.3 (Berkeley) %G%
+.\"
+.TH SETREUID 2 ""
+.UC 4
+.SH NAME
+setreuid \- set real and effective user ID's
+.SH SYNOPSIS
+.ft B
+.nf
+setreuid(ruid, euid)
+int ruid, euid;
+.fi
+.ft R
+.SH DESCRIPTION
+The real and effective user ID's of the
+current process are set according to the arguments.
+If
+.I ruid
+or 
+.I euid
+is \-1, the current uid is filled in by the system.
+Unprivileged users may change the real user
+ID to the effective user ID and vice-versa; only the super-user may
+make other changes.
+.SH "RETURN VALUE
+Upon successful completion, a value of 0 is returned.  Otherwise,
+a value of \-1 is returned and \fIerrno\fP is set to indicate the error.
+.SH "ERRORS
+.TP 15
+[EPERM]
+The current process is not the super-user and a change
+other than changing the effective user-id to the real user-id
+was specified.
+.SH "SEE ALSO"
+getuid(2), setregid(2), setuid(3)

@@ -1,0 +1,87 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)sigsetops.3	6.1 (Berkeley) %G%
+.\"
+.TH SIGSETOPS 3 ""
+.UC 7
+.SH NAME
+sigsetops, sigemptyset, sigfillset, sigaddset, sigdelset, sigismember \- manipulate signal masks
+.SH SYNOPSIS
+.nf
+.B #include <signal.h>
+
+.B sigemptyset(set);
+.B sigset_t *set;
+
+.B sigfillset(set);
+.B sigset_t *set;
+
+.B sigaddset(set, signo);
+.B sigset_t *set;
+.B int signo;
+
+.B sigdelset(set, signo);
+.B sigset_t *set;
+.B int signo;
+
+.B sigismember(set, signo);
+.B sigset_t *set;
+.B int signo;
+
+.SH DESCRIPTION
+These functions manipulate signal mask stored in a
+.IR sigset_t .
+They are provided as macros, but actual functions are available
+if their names are undefined (with #undef
+.IR name ).
+.PP
+The
+.I sigemptyset
+function initializes a signal set to be empty.
+The
+.I sigfillset
+function initializes a signal set to contain all of the known signals.
+One of these routines must be used to initialize a signal set
+before its use by the other functions.
+.PP
+The
+.I sigaddset
+function adds a specified signal
+.I signo
+to a signal set.
+The
+.I sigdelset
+function deletes a specified signal
+.I signo
+from a signal set.
+.PP
+The
+.I sigismember
+function tests whether a specified signal
+.I signo
+is contained in a signal set.
+.SH "RETURN VALUE
+The
+.I sigismember
+function returnes 1
+if the signal is a member of the set,
+a 0 otherwise.
+The other functions return 0 upon success.
+A \-1 return value
+indicates an error occurred and
+.I errno
+is set to indicated the reason.
+The current implementation does not detect any errors.
+.SH ERRORS
+These functions could fail if one of the following occurs:
+.TP 15
+[EINVAL]
+.I signo
+has an invalid value.
+.SH STANDARDS
+These functions are defined by POSIX.1.
+.SH "SEE ALSO"
+kill(2), sigaction(2), sigsetops(2), sigsuspend(2)

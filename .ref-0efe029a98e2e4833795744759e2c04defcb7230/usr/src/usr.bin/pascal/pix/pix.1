@@ -1,0 +1,63 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)pix.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PIX 1
+.UC
+.Sh NAME
+.Nm pix
+.Nd Pascal interpreter and executor
+.Sh SYNOPSIS
+.Nm pix
+.Op Fl blnpstuwz
+.Op Fl i Ar name ...
+.Ar name.p
+.Op Ar argument ...
+.Sh DESCRIPTION
+.Nm Pix
+is a `load and go' version of Pascal which combines
+the functions of the interpreter code translator
+.Nm pi
+and the executor
+.Nm px  .
+It uses
+.Nm pi
+to translate the program in the file
+.Pa name.p
+and, if there were no fatal errors during translation,
+causes the resulting interpreter code
+to be executed by
+.Nm px
+with the specified arguments.
+A temporary file is used for the object code;
+the file
+.Pa obj
+is neither created nor destroyed.
+.Sh FILES
+.Dw /usr/lib/how_pix
+.Di L
+.Dp Pa /usr/ucb/pi
+Pascal translator
+.Dp Pa /usr/ucb/px
+Pascal executor
+.Dp Pa /tmp/pix*
+temporary
+.Dp Pa /usr/lib/how_pix
+basic explanation
+.Dp
+.Sh SEE ALSO
+.Em Berkeley Pascal User'.Xr s Manual
+.br
+.Xr pi 1 ,
+.Xr px 1
+.Sh DIAGNOSTICS
+For a basic explanation do
+.Pp
+.Dl Nm pix
+.Sh HISTORY
+.Nm Pix
+appeared in 3 BSD.

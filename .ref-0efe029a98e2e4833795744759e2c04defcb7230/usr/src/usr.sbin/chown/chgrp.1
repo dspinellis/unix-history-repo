@@ -1,0 +1,75 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)chgrp.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CHGRP 1
+.Os BSD 4.2
+.Sh NAME
+.Nm chgrp
+.Nd change group
+.Sh SYNOPSIS
+.Nm chgrp
+.Op Fl Rf
+.Ar group
+.Ar files ...
+.Sh DESCRIPTION
+The chgrp utility sets the group ID of the file named by each
+.Ar file
+operand to the
+.Ar group
+ID specified by the group operand.
+.Pp
+Options:
+.Tw Ds
+.Tp Fl R
+Recursively change file group IDs.
+For each
+.Ar file
+operand that names a directory, chgrp changes the
+group of the directory and all files in the file
+hierarchy below it.
+When symbolic links are encountered, their group is changed,
+but they are not traversed.
+.Tp Fl f
+The force option ignores errors, except for usage errors and doesn't
+query about strange modes (unless user does not have proper permissions).
+.Tp
+.Pp
+Operands:
+.Tw Ds
+.Tp Ar group
+The
+.Ar group
+can be either a group name from the group database, or a numeric
+group ID.
+.Tp Ar file
+A pathname of a file whose group ID is to be modified.
+.Tp
+.Pp
+The user invoking
+must belong
+to the specified group and be the owner of the file, or be the super-user.
+.Pp
+The
+.Nm chgrp
+utility exits 0 on success, and >0 if an error occurs.
+.Sh FILES
+.Dw /etc/group
+.Di L
+.Dp Pa /etc/group
+Group ID file
+.Dp
+.Sh SEE ALSO
+.Xr chown 2 ,
+.Xr chown 8 ,
+.Xr group 5 ,
+.Xr passwd 5
+.Sh STANDARDS
+The
+.Nm chgrp
+function is expected to be POSIX 1003.2 compatible.
+This manual page is derived from the POSIX 1003.2 manual page.

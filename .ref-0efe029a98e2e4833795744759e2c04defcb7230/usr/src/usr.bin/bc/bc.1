@@ -1,0 +1,189 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)bc.1	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt BC 1
+.Os ATT 7th
+.Sh NAME
+.Nm bc
+.Nd arbitrary-precision arithmetic language and calculator
+.Sh SYNOPSIS
+.Nm bc
+.Op Fl c
+.Op Fl l
+.Ar
+.Sh DESCRIPTION
+.Nm Bc
+is an interactive processor for a language which resembles
+C but provides unlimited precision arithmetic.
+It takes input from any files given, then reads
+the standard input.
+The
+.Tp Fl l
+allow specification
+of an arbitrary precision math library.
+.Tp Fl c
+.Nm Bc
+is actually a preprocessor for
+.Ar dc 1 ,
+which it invokes automatically, unless the
+.Fl c
+compile only.
+option is present.
+In this case the
+.Ar dc
+input is sent to the standard output instead.
+.Tp 
+.Pp
+The syntax for
+.Nm bc
+programs is as follows;
+L means letter a-z,
+E means expression, S means statement.
+.Pp
+Comments
+.Ds I
+are enclosed in /* and */.
+.De
+.Pp
+Names
+.Ds I
+simple variables: L
+array elements: L [ E ]
+The words `ibase', `obase', and `scale'
+.De
+.Pp
+Other operands
+.Ds I
+arbitrarily long numbers with optional sign and decimal point.
+\&( E \&)
+sqrt ( E )
+length ( E )	number of significant decimal digits
+scale ( E )	number of digits right of decimal point
+L ( E , ... , E )
+.De
+.Pp
+Operators
+.Ds I
+\&+  \-  *  /  %  ^ (% is remainder; ^ is power)
+\&++   \-\-         (prefix and postfix; apply to names)
+\&==  <=  >=  !=  <  >
+\&=  +=  \-=  *=  /=  %=  ^=
+.De
+.Pp
+Statements
+.Ds I
+E
+{ S ; ... ; S }
+if ( E ) S
+while ( E ) S
+for ( E ; E ; E ) S
+null statement
+break
+quit
+.De
+.Pp
+Function definitions
+.Ds I
+define L ( L ,..., L ) {
+	auto L, ... , L
+	S; ... S
+	return ( E )
+}
+.De
+.Pp
+Functions in
+.Fl l
+math library
+.Dw j(n,x)
+.Dp s(x)
+sine
+.Dp c(x)
+cosine
+.Dp e(x)
+exponential
+.Dp l(x)
+log
+.Dp a(x)
+arctangent
+.Dp j(n,x)
+Bessel function
+.Dp
+.Pp
+All function arguments are passed by value.
+.Pp
+The value of a statement that is an expression is printed
+unless the main operator is an assignment.
+Either semicolons or newlines may separate statements.
+Assignment to
+.Ar scale
+influences the number of digits to be retained on arithmetic
+operations in the manner of
+.Xr dc 1 .
+Assignments to
+.Ar ibase
+or
+.Ar obase
+set the input and output number radix respectively.
+.Pp
+The same letter may be used as an array, a function,
+and a simple variable simultaneously.
+All variables are global to the program.
+`Auto' variables are pushed down during function calls.
+When using arrays as function arguments
+or defining them as automatic variables
+empty square brackets must follow the array name.
+.Pp
+For example
+.Pp
+.Ds I
+scale = 20
+define e(x){
+	auto a, b, c, i, s
+	a = 1
+	b = 1
+	s = 1
+	for(i=1; 1==1; i++){
+		a = a*x
+		b = b*i
+		c = a/b
+		if(c == 0) return(s)
+		s = s+c
+	}
+}
+.De
+.Pp
+.fi
+defines a function to compute an approximate value of
+the exponential function and
+.Pp
+.Dl for(i=1; i<=10; i++) e(i)
+.Pp
+prints approximate values of the exponential function of
+the first ten integers.
+.Sh FILES
+.\" /usr/lib/lib.b	mathematical library
+.Dw Dc(1)
+.Di L
+.Dp Pa dc(1)	desk calculator proper
+.Dp
+.Sh SEE ALSO
+.Xr dc 1
+.br
+L. L. Cherry and R. Morris,
+.Em BC \- An arbitrary precision desk-calculator language
+.Sh HISTORY
+The
+.Nm bc
+command appeared in Version 7 AT&T UNIX.
+.Sh BUGS
+No &&, \(or\\(or, or ! operators.
+.br
+.Ql For
+statement must have all three E's.
+.br
+.Ql Quit
+is interpreted when read, not when executed.

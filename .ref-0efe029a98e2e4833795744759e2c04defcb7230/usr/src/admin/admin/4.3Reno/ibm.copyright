@@ -1,0 +1,78 @@
+.\"	@(#)ibm.copyright	5.1 (Berkeley) %G%
+.if n \{\
+.ND
+.rm CH
+.ll 6.5i
+.nr LL 7i
+.ad l
+.\}
+.so HEADERS
+.HE D
+.nr PS 11
+.nr VS 13
+.nr LL 6.5i
+.nr OI 0.5i
+.in 0.5i
+.ps 10p
+.nf
+Computer Systems Research Group
+457 Evans Hall
+Dept of EECS
+Berkeley, CA 94720
+.LP
+Dear Colleague,
+.PP
+A revised version of the 4.3BSD-Reno distribution has commenced with
+the following shipment numbers.
+For the VAX architecture, shipment number 23 at 6250 bpi, and shipment
+number 8 at 1600 bpi.
+For the Tahoe architecture, shipment number 1 at 6250 bpi, and shipment
+number 2 at 1600 bpi.
+This note describes the revision that was made so that sites receiving
+an earlier version can apply it to their release.
+System sources on newer tapes have already been updated.
+.PP
+A file in the ISO networking code was distributed with an incorrect
+copyright notice.
+The file ``/sys/netiso/if_un.eg'' contains a copyright notice stating that
+it is licensed by IBM Corporation.
+The file has been contributed to the University of California by IBM,
+and may be used and redistributed as specified by the following copyright
+notice and the standard Berkeley License.
+.PP
+The first ninety-seven (97) lines of the file should be replaced with
+the following copyright notice:
+.sp
+.nf
+.vs 10p
+.ps 9p
+/*
+ * Copyright IBM Corporation 1987, 1990
+ *
+ * All Rights Reserved
+ *
+ * Permission to use, copy, modify, and distribute this software and its
+ * documentation for any purpose and without fee is hereby granted,
+ * provided that the above copyright notice appear in all copies and that
+ * both that copyright notice and this permission notice appear in
+ * supporting documentation, and that the name of IBM not be
+ * used in advertising or publicity pertaining to distribution of the
+ * software without specific, written prior permission.
+ *
+ * IBM DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+ * ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR USE.
+ * IN NO EVENT SHALL IBM BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL
+ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
+ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
+ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+ * THIS SOFTWARE.
+ *
+ *	@(#)if_un.eg	7.1 (Berkeley) 10/29/90
+ */
+.vs
+.ps
+.sp 1
+.in +1.5i
+Sincerely,
+.sp .65 i
+Keith Bostic

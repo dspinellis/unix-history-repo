@@ -1,0 +1,18 @@
+#print
+In this directory is a file named "airport"
+whose second line says "xx" where it should say
+"ne".  Edit the file, change those letters, and
+rewrite the file.  Then type "ready".
+#create Ref
+idlewild
+newark
+laguardia
+#create airport
+idlewild
+xxwark
+laguardia
+#user
+#cmp airport Ref
+#log
+#next
+30.2e 5

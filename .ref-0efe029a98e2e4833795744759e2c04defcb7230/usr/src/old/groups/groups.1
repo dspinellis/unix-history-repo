@@ -1,0 +1,44 @@
+.\" Copyright (c) 1983 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)groups.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GROUPS 1
+.Os BSD 4.2
+.Sh NAME
+.Nm groups
+.Nd show group memberships
+.Sh SYNOPSIS
+.Nm groups
+.Op Ar user
+.Sh DESCRIPTION
+The
+.Nm groups
+command shows the groups to which you or the optionally specified
+user belong.
+Each user belongs to a group specified in the password file
+.Pa /etc/passwd
+and possibly to other groups as specified in the file
+.Pa /etc/group .
+If you do not own a file but belong to the group which it is owned
+by then you are granted group access to the file.
+.Pp
+When a new file is created it is given
+the group of the containing directory.
+.Sh SEE ALSO
+.Xr group 5 ,
+.Xr setgroups 2
+.Sh FILES
+.Dw /etc/passwd
+.Di L
+.Dp Pa /etc/passwd
+.Dp Pa /etc/group
+.Dp
+.Sh HISTORY
+.Nm Group
+appeared in 4.2 BSD.
+.Sh BUGS
+More groups should be allowed.

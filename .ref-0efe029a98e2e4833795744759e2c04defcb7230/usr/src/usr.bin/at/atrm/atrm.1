@@ -1,0 +1,71 @@
+.\" Copyright (c) 1985, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)atrm.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ATRM 1
+.Os BSD 4.3
+.Sh NAME
+.Nm atrm
+.Nd remove jobs spooled by
+.Xr at 1
+.Sh SYNOPSIS
+.Nm atrm
+.Op Fl f
+.Op Fl i
+.Op Fl
+.Cx [
+.Op Ar job #
+.Op Ar name
+.Cx ...
+.Cx ]
+.Cx
+.Sh DESCRIPTION
+.Nm Atrm
+removes jobs that were created with the
+.Xr at 1
+command.
+.Pp
+Options available are:
+.Pp
+.Tp Fl f
+all information regarding the
+removal of the specified jobs is suppressed.
+.Tp Fl i
+.Nm atrm
+asks if a job should be removed; a response of 'y' causes the job to be removed.
+.Tp Fl
+all jobs belonging to the person invoking
+.Nm atrm
+are removed.
+.Tp
+.Pp
+If a
+.Ar job
+number(s) is specified,
+.Nm atrm
+attempts to remove only that
+.Ar job
+number(s).
+.Pp
+If a user(s) name is specified, all
+jobs belonging to that user(s) are removed.
+This form of invoking
+.Nm atrm
+is useful only to the super-user.
+.Sh FILES
+.Dw /usr/spool/at
+.Di L
+.Dp Pa /usr/spool/at
+spool area
+.Dp
+.Sh SEE ALSO
+.Xr at 1 ,
+.Xr atq 1 ,
+.Xr cron 8
+.Sh HISTORY
+.Nm Atrm
+appeared in the 4.3 BSD release.

@@ -1,0 +1,149 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)boot_hp300.8	5.1 (Berkeley) %G%
+.\"
+.TH REBOOT 8 ""
+.UC 7
+.SH NAME
+reboot \- UNIX bootstrapping procedures
+.SH SYNOPSIS
+.B reboot
+[
+.B \-d
+] [
+.B \-n
+] [
+.B \-q
+] [
+.B \-s
+]
+.SH DESCRIPTION
+.PP
+UNIX is started by placing it at the beginning of physical memory
+and transferring to the entry point.
+Since the system is not reenterable,
+it is necessary to read it in from disk or tape
+each time it is to be bootstrapped.
+.PP
+.B Rebooting a running system.
+When a UNIX is running and a reboot is desired,
+.IR shutdown (8)
+is normally used.
+If there are no users then
+.B reboot
+can be used.
+Reboot causes the disks to be synced and allows the system
+to perform other shutdown activities such as resynchronizing
+hardware time-of-day clocks.
+A multi-user reboot (as described below) is then initiated.
+This causes a system to be
+booted and an automatic disk check to be performed.  If all this succeeds
+without incident, the system is then brought up for many users.
+.PP
+Options to reboot are:
+.TP
+.B \-d
+option forces a memory dump to the swap area (see
+.IR crash (8v))
+before rebooting.
+This can be used if the system is in a funny state that you would
+like to ``snapshot'' and analyze later.
+.TP
+.B \-n
+option avoids the sync.  It can be used if a disk or the processor
+is on fire. 
+.TP
+.B \-q
+reboots quickly and ungracefully, without shutting down running
+processes first.
+.TP
+.B \-s
+option reboots to single user mode.
+.PP
+.I Reboot
+normally logs the reboot using
+.IR syslog (8)
+and places a shutdown record in the login accounting file (see
+.IR utmp (5).
+These actions are inhibited if the
+.B \-n
+or
+.B \-q
+options are present.
+.PP
+.B "Power fail and crash recovery."
+Normally, the system will reboot itself at power-up or after crashes.
+An automatic consistency check of the file systems will be performed,
+and unless this fails, the system will resume multi-user operations.
+.PP
+.B "Cold starts."
+On an HP300, the boot procedure uses the boot rom to load a boot program
+from an LIF format directory at the beginning of an attached disk.
+The /usr/mdec directory contains a disk boot program ``bootrd''
+which should be placed in a new pack automatically by
+.IR newfs (8)
+when the ``a'' partition file system on the pack is created.
+.PP
+This
+.I boot
+program
+finds the corresponding file on the given device 
+.RI ( vmunix
+by default),
+loads that file into memory,
+and starts the program at the entry address specified in the program header.
+.PP
+The boot program can be interrupted by typing `^C' (ctrl-C).
+This will force the boot program to interactively prompt for a system to boot.
+If not interrupted, it will boot from the device from which the boot
+program itself was loaded.
+.PP
+The file specifications used for an interactive boot are of the form:
+.IP
+device(unit,minor)
+.PP
+where
+.I device
+is the type of the device to be searched,
+.I unit
+is 8 * the hpib number plus the unit number of the disk or tape,
+and
+.I minor
+is the disk partition or tape file number.
+Normal line editing characters can be used when typing the file specification.
+Currently, ``rd'' is the only valid
+.I device
+specifier.
+.PP
+For example,
+to boot from the `a' file system of unit 0 on HP-IB 2,
+type \*(lqrd(16,0)vmunix\*(rq
+to the boot prompt.
+For tapes, the minor device number gives a file offset.
+.PP
+In an emergency, the bootstrap methods described in the paper
+``Installing 4.3bsd on the HP300''
+can be used to boot from a distribution tape.
+.SH FILES
+.ta \w'/usr/mdec/installboot   'u
+/vmunix	system code
+.br
+/usr/mdec/bootrd	LIF format boot block
+.br
+/usr/mdec/installboot	program to install boot blocks
+.SH "SEE ALSO"
+crash(8V),
+fsck(8),
+halt(8),
+init(8),
+newfs(8),
+rc(8),
+shutdown(8),
+syslogd(8)

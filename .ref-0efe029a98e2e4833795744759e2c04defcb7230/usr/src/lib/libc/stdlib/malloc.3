@@ -1,0 +1,141 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)malloc.3	6.4 (Berkeley) %G%
+.\"
+.TH MALLOC 3  ""
+.UC 4
+.SH NAME
+malloc, free, realloc, calloc, alloca \- memory allocator
+.SH SYNOPSIS
+.nf
+.B char *malloc(size)
+.B unsigned size;
+.PP
+.B free(ptr)
+.B char *ptr;
+.PP
+.B char *realloc(ptr, size)
+.B char *ptr;
+.B unsigned size;
+.PP
+.B char *calloc(nelem, elsize)
+.B unsigned nelem, elsize;
+.PP
+.B char *alloca(size)
+.B int size;
+.fi
+.SH DESCRIPTION
+.I Malloc
+and
+.I free
+provide a general-purpose memory allocation package.
+.I Malloc
+returns a pointer to a block of at least
+.I size
+bytes beginning on a word boundary.
+.PP
+The argument to
+.I free
+is a pointer to a block previously allocated by
+.IR malloc ;
+this space is made available for further allocation,
+but its contents are left undisturbed.
+.PP
+Needless to say, grave disorder will result if the space assigned by
+.I malloc
+is overrun or if some random number is handed to
+.IR free .
+.PP
+.I Malloc
+maintains multiple lists of free blocks according to size,
+allocating space from the appropriate list.
+It calls
+.I sbrk
+(see
+.IR brk (2))
+to get more memory from the system when there is no
+suitable space already free.
+.PP
+.I Realloc
+changes the size of the block pointed to by
+.I ptr
+to
+.I size
+bytes and returns a pointer to the (possibly moved) block.
+The contents will be unchanged up to the lesser of the new and old sizes.
+If
+.I ptr
+is null,
+.I realloc
+simply returns the value of
+.I malloc
+called with an argument of
+.IR size .
+.PP
+In order to be compatible with older versions,
+.I realloc
+also works if
+.I ptr
+points to a block freed since the last call of
+.I malloc, realloc
+or
+.IR calloc ;
+sequences of
+.I free, malloc
+and
+.I realloc
+were previously used to attempt storage compaction.
+This procedure is no longer recommended.
+.PP
+.I Calloc
+allocates space for an array of
+.I nelem
+elements of size
+.I elsize.
+The space is initialized to zeros.
+.PP
+.I Alloca
+allocates 
+.I size
+bytes of space in the stack frame of the caller.
+This temporary space is automatically freed on
+return.
+.PP
+Each of the allocation routines returns a pointer
+to space suitably aligned (after possible pointer coercion)
+for storage of any type of object.
+If the space is of
+.I pagesize
+or larger, the memory returned will be page-aligned.
+.SH SEE ALSO
+brk(2),
+pagesize(2)
+.SH DIAGNOSTICS
+.I Malloc, realloc
+and
+.I calloc
+return a null pointer (0) if there is no available memory or if the arena
+has been detectably corrupted by storing outside the bounds of a block.
+.I Malloc
+may be recompiled to check the arena very stringently on every transaction;
+those sites with a source code license may check the source code to see
+how this can be done.
+.SH BUGS
+When
+.I realloc
+returns 0, the block pointed to by
+.I ptr
+may be destroyed.
+.PP
+The current implementation of
+.I malloc
+does not always fail gracefully when system
+memory limits are approached.
+It may fail to allocate memory when larger free blocks could be broken
+up, or when limits are exceeded because the size is rounded up.
+It is optimized for sizes that are powers of two.
+.PP
+.I Alloca
+is machine dependent; its use is discouraged.

@@ -1,0 +1,103 @@
+.\" Copyright (c) 1981, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)mt.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Os BSD 4.4
+.Dt MT 1
+.Os BSD 4
+.Sh NAME
+.Nm mt
+.Nd magnetic tape manipulating program
+.Sh SYNOPSIS
+.Nm mt
+.Op Fl f Ar tapename
+.Ar command
+.Op Ar count
+.Sh DESCRIPTION
+.Nm Mt
+is used to give commands to a magnetic tape drive.
+If a tape name is not specified, the environment variable
+.Ev TAPE
+is used;  if
+.Ev TAPE
+does not exist,
+.Nm mt
+uses the device
+.Pa /dev/rmt12 .
+Note
+that
+.Ar tapename
+must reference a raw (not block) tape device.
+By default
+.Nm mt
+performs the requested operation once.  Operations
+may be performed multiple times by specifying
+.Ar count  .
+.Pp
+The available commands are listed below.  Only as many
+characters as are required to uniquely identify a command
+need be specified.
+.Tp Cm eof , weof
+Write
+.Ar count
+end-of-file marks at the current position on the tape.
+.Tp Cm fsf
+Forward space
+.Ar count
+files.
+.Tp Cm fsr
+Forward space
+.Ar count
+records.
+.Tp Cm bsf
+Back space
+.Ar count
+files.
+.Tp Cm bsr
+Back space
+.Ar count
+records.
+.Tp Cm rewind
+Rewind the tape
+(Count is ignored).
+.Tp Cm offline , rewoffl
+Rewind the tape and place the tape unit off-line
+(Count is ignored).
+.Tp Cm status
+Print status information about the tape unit.
+.Tp
+.Pp
+.Nm Mt
+returns a 0 exit status when the operation(s) were successful,
+1 if the command was unrecognized, and 2 if an operation failed.
+.Sh ENVIRONMENT
+If the following environment variable exists, it is utilized by
+.Nm mt .
+.Tw Fl
+.Tp Ev TAPE
+.Nm Mt
+checks the
+.Ev TAPE
+environment variable if the
+argument
+.Ar tapename
+is not given.
+.Sh FILES
+.Dw /dev/rmt*
+.Di L
+.Dp Pa /dev/rmt*
+Raw magnetic tape interface
+.Dp
+.Sh SEE ALSO
+.\".Xr mtio 4 ,
+.Xr dd 1 ,
+.Xr ioctl 2 ,
+.Xr environ 7
+.Sh HISTORY
+.Nm Mt
+appeared in 4.3 BSD.
+.\" mt.1: mtio(4) missing

@@ -1,0 +1,49 @@
+hp300/hp300/autoconf.c		standard
+hp300/hp300/clock.c		standard clock
+hp300/hp300/conf.c		standard
+hp300/hp300/cons.c		standard
+hp300/hp300/dkbad.c		standard
+hp300/hp300/in_cksum.c		optional inet
+hp300/hp300/kgdb_stub.c		optional kgdb
+hp300/hp300/machdep.c		standard config-dependent
+hp300/hp300/mem.c		standard
+hp300/hp300/ns_cksum.c		optional ns
+hp300/hp300/oc_cksum.s		optional inet
+hp300/hp300/pmap.c		standard
+hp300/hp300/sys_machdep.c	standard
+hp300/hp300/trap.c		standard
+hp300/hp300/vm_machdep.c	standard
+hp300/dev/dma.c			standard
+hp300/dev/cd.c			optional cd
+hp300/dev/fd.c			optional fd
+hp300/dev/ite.c			optional ite
+hp300/dev/ite_subr.c		optional ite
+hp300/dev/ite_tc.c		optional ite
+hp300/dev/ite_gb.c		optional ite
+hp300/dev/ite_rb.c		optional ite
+hp300/dev/ite_dv.c		optional ite
+hp300/dev/grf.c			optional grf
+hp300/dev/grf_tc.c		optional grf
+hp300/dev/grf_gb.c		optional grf
+hp300/dev/grf_rb.c		optional grf
+hp300/dev/grf_dv.c		optional grf
+hp300/dev/hil.c			standard
+hp300/dev/hil_keymaps.c		standard
+hp300/dev/hpib.c		optional hpib
+hp300/dev/nhpib.c		optional hpib
+hp300/dev/fhpib.c		optional hpib
+hp300/dev/rd.c			optional rd
+hp300/dev/ct.c			optional ct
+hp300/dev/if_le.c		optional le
+hp300/dev/ppi.c			optional ppi
+hp300/dev/dca.c			optional dca
+hp300/dev/dcm.c			optional dcm
+hp300/dev/scsi.c		optional scsi
+hp300/dev/sd.c			optional sd
+hp300/hpux/hpux_compat.c	optional hpuxcompat
+hp300/hpux/hpux_net.c		optional hpuxcompat
+hp300/hpux/hpux_sig.c		optional hpuxcompat
+hp300/hpux/hpux_syscalls.c	optional hpuxcompat
+hp300/hpux/hpux_sysent.c	optional hpuxcompat
+hp300/hpux/hpux_tty.c		optional hpuxcompat
+thisisfor_in_proto.c		optional hy

@@ -1,0 +1,252 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)ld.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LD 1
+.Os BSD 4
+.Sh NAME
+.Nm ld
+.Nd link editor
+.Sh SYNOPSIS
+.Nm ld
+.Op  option
+\&...
+.Ar file ...
+.Sh DESCRIPTION
+.Nm Ld
+combines several
+object programs into one, resolves external
+references, and searches libraries.
+In the simplest case several object
+.Ar files
+are given, and
+.Nm ld
+combines them, producing
+an object module which can be either executed or
+become the input for a further
+.Nm ld
+run.
+(In the latter case, the
+.Fl r
+option must be given
+to preserve the relocation bits.)
+The output of
+.Nm ld
+is left on
+.Pa a.out  .
+This file is made executable
+only if no errors occurred during the load.
+.Pp
+The argument routines are concatenated in the order
+specified.  The entry point of the output is the
+beginning of the first routine (unless the
+.Fl e
+option is specified).
+.Pp
+If any argument is a library, it is searched exactly once
+at the point it is encountered in the argument list.
+Only those routines defining an unresolved external
+reference are loaded.
+If a routine from a library
+references another routine in the library,
+and the library has not been processed by
+.Xr ranlib  1  ,
+the referenced routine must appear after the
+referencing routine in the library.
+Thus the order of programs within libraries
+may be important.
+The first member of a library
+should be a file named `\_\^\_.SYMDEF',
+which is understood to be a dictionary for the library as produced by
+.Xr ranlib  1  ;
+the dictionary is searched iteratively to satisfy as many references as
+possible.
+.Pp
+The symbols `\_etext', `\_edata' and `\_end'
+(`etext', `edata' and `end' in C)
+are reserved, and if referred to,
+are set to the first location above the program,
+the first location above initialized data,
+and the first location above all data respectively.
+It is erroneous to define these symbols.
+.Pp
+.Nm Ld
+understands several options.
+Except for
+.Fl l  ,
+they should appear before the file names.
+.Tw Ds
+.Tp Fl A
+This option specifies incremental loading, i.e.
+linking is to be done in a manner so that the resulting object
+may be read into an already executing program.
+The next argument is the name of a file whose symbol table will be
+taken as a basis on which to define additional symbols.
+Only newly linked material will be entered into the text and
+data portions of
+.Xr a.out ,
+but the new symbol table will reflect
+every symbol defined before and after the incremental load.
+This argument must appear before any other object file in the argument list.
+The
+.Fl T
+option may be used as well, and will be taken to mean that the
+newly linked segment will commence at the corresponding address
+(which must be a multiple of 1024).
+The default value is the old value of _end.
+.Tp Fl D
+Take the next argument as a hexadecimal number and pad the data segment
+with zero bytes to the indicated length.
+.Tp Fl d
+Force definition of common storage
+even if the
+.Fl r
+flag is present.
+.Tp Fl e
+The following argument is taken to be the
+name of the entry point of the loaded
+program; location 0 is the default.
+.Tc Fl L
+.Ar dir
+.Cx
+Add
+.Ar dir
+to the list of directories in which libraries are searched for.
+Directories specified with
+.Fl L
+are searched before the standard directories.
+.Tc Fl l
+.Ar x
+.Cx
+This
+option is an abbreviation for the library name
+.Sq Pa libx.a,
+where
+.Ar x
+is a string.
+.Nm Ld
+searches for libraries first in any directories
+specified with
+.Fl L
+options, then in the standard directories
+.Pa /lib ,
+.Pa /usr/lib ,
+and
+.Pa /usr/local/lib .
+A library is searched when its name is encountered,
+so the placement of a
+.Fl l
+is significant.
+.Tp Fl M
+produce a primitive load map, listing the names of the files
+which will be loaded.
+.Tp Fl N
+Do not make the text portion read only or sharable.  (Use "magic number" 0407.)
+.Tp Fl n
+Arrange (by giving the output file a 0410 "magic number") that
+when the output file is executed,
+the text portion will be read-only and shared
+among all users executing the file.
+This involves moving the data areas up to the first
+possible 1024 byte boundary following the
+end of the text.
+.Tp Fl o
+The
+.Ar name
+argument after
+.Fl o
+is used as the name of the
+.Nm ld
+output file, instead of
+.Pa a.out  .
+.Tp Fl r
+Generate relocation bits in the output file
+so that it can be the subject of another
+.Nm ld
+run.
+This flag also prevents final definitions from being
+given to common symbols,
+and suppresses the `undefined symbol' diagnostics.
+.Tp Fl S
+`Strip' the output by removing all symbols except locals and globals.
+.Tp Fl s
+`Strip' the output, that is, remove the symbol table
+and relocation bits to save space (but impair the
+usefulness of the debuggers).
+This information can also be removed by
+.Xr strip  1  .
+.Tp Fl T
+The next argument is a hexadecimal number which sets the text segment origin.
+The default origin is 0.
+.Tp Fl t
+("trace")  Print the name of each file as it is processed.
+.Tp Fl u
+Take the following argument as a symbol and enter
+it as undefined in the symbol table.  This is useful
+for loading wholly from a library, since initially the symbol
+table is empty and an unresolved reference is needed
+to force the loading of the first routine.
+.Tp Fl X
+Save local symbols
+except for those whose names begin with `L'.
+This option is used by
+.Xr cc  1
+to discard internally-generated labels while
+retaining symbols local to routines.
+.Tp Fl x
+Do not preserve local
+(non-.globl) symbols in the output symbol table; only enter
+external symbols.
+This option saves some space in the output file.
+.Tc Fl y
+.Ar sym
+.Cx
+Indicate each file in which
+.Ar sym
+appears, its type and whether the file defines or references it.
+Many such options may be given to trace many symbols.
+(It is usually necessary to begin
+.Ar sym
+with an `_', as external C, FORTRAN and Pascal variables begin
+with underscores.)
+.Tp Fl z
+Arrange for the process to be loaded on
+demand from the resulting executable file (413 format)
+rather than preloaded.
+This is the default.
+Results in a 1024 byte header on the output file followed by
+a text and data segment each of which have size a multiple of 1024 bytes
+(being padded out with nulls in the file if necessary).
+With this format the first few BSS segment symbols may actually appear
+(from the output of
+.Xr size  1  )
+to live in the data segment;
+this to avoid wasting the space resulting from data segment size roundup.
+.Tp
+.Sh FILES
+.Dw /usr/local/lib/lib*.a
+.Di L
+.Dp Pa /usr/lib/lib*.a
+libraries
+.Dp Pa /usr/local/lib/lib*.a
+more libraries
+.Dp Pa a.out
+output file
+.Dp
+.Sh SEE ALSO
+.Xr as 1 ,
+.Xr ar 1 ,
+.Xr cc 1 ,
+.Xr ranlib 1
+.Sh HISTORY
+.Nm Ld
+appeared in Version 6 AT&T Unix.
+.Sh BUGS
+There is no way to force data to be page aligned.
+.Nm Ld
+pads images which are to be demand loaded from
+the file system to the next
+page boundary to avoid a bug in the system.

@@ -1,0 +1,88 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getlogin.2	6.1 (Berkeley) %G%
+.\"
+.TH GETLOGIN 2 ""
+.UC 5
+.SH NAME
+getlogin, setlogin \- get/set login name
+.SH SYNOPSIS
+.nf
+.ft B
+char *getlogin()
+.PP
+.ft B
+setlogin(name)
+char *name;
+.fi
+.SH DESCRIPTION
+The
+.I getlogin
+routine
+returns the login name of the user associated with the current session,
+as previously set by
+.IR setlogin .
+The name is normally associated with a login shell
+at the time a session is created,
+and is inherited by all processes descended from the login shell.
+(This is true even if some of those processes assume another user ID,
+for example when
+.IR su (1)
+is used.)
+.PP
+.I Setlogin
+sets the login name of the user associated with the current session to
+.IR name .
+This call is restricted to the super-user, and
+is normally used only when a new session is being created on behalf
+of the named user
+(for example, at login time, or when a remote shell is invoked).
+.SH "RETURN VALUE
+If a call to
+.I getlogin
+succeeds, it returns a pointer to a null-terminated string in a static buffer.
+If the name has not been set, it returns NULL.
+If a call to
+.I setlogin
+succeeds, a value of 0 is returned.  If
+.I setlogin
+fails, then a value of \-1 is returned and an error code is
+placed in the global location \fIerrno\fP.
+.SH "ERRORS
+The following errors may be returned by these calls:
+.TP 15
+[EFAULT]
+The \fIname\fP parameter gave an
+invalid address.
+.TP 15
+[EINVAL]
+The \fIname\fP parameter
+pointed to a string that was too long.
+Login names are limited to MAXLOGNAME (from
+.IR <sys/param.h> )
+characters, currently 12.
+.TP 15
+[EPERM]
+The caller tried to set the login name and was not the super-user.
+.SH SEE ALSO
+setsid(2)
+.SH BUGS
+Login names are limited in length by
+.IR setlogin .
+However, lower limits are placed on login names elsewhere in the system
+(UT_NAMESIZE in
+.IR <utmp.h> ).
+.PP
+In earlier versions of the system,
+.I getlogin
+failed unless the process was associated with a login terminal.
+The current implementation (using
+.IR setlogin )
+allows getlogin to succeed even when the process has no controlling terminal.
+In earlier versions of the system, the value returned by
+.I getlogin
+could not be trusted without checking the user ID.
+Portable programs should probably still make this check.

@@ -1,0 +1,11 @@
+whereis v
+whereis p
+whatis p
+whereis T
+whatis includes.T
+whereis OT
+whatis included.OT
+whereis Blah
+stop in Blah
+run
+where

@@ -1,0 +1,101 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)esis.4	6.1 (Berkeley) %G%
+.\"
+.TH TP 4 ""
+.UC 5
+.SH NAME
+es-is \- End System to Intermediate System Routing Protocol
+.SH SYNOPSIS
+.B "pseudo-device ether"
+.SH DESCRIPTION
+The ES-IS routing protocol is used to dynamically map between ISO NSAP
+addresses and ISO SNPA addresses; to permit End and Intermediate Systems
+to learn of each other's existence; and to allow Intermediate Systems
+to inform End Systems of (potentially) better routes to use when 
+forwarding NPDUs to a particular destination.
+.PP
+The mapping between NSAP addresses and SNPA addresses is accomplished by
+transmitting hello PDUs between the cooperating Systems. These PDUs
+are transmitted whenever the \fIconfiguration\fR timer expires.
+When a hello PDU is received, the SNPA
+address that it conveys is stored in the routing table for as long as the
+\fIholding time\fR in the PDU suggests. The default \fIholding time\fR
+(120 seconds) placed in the hello PDU, the configuration timer value,
+and the system type (End System or Intermediate System) may be changed by
+issuing an SIOCSSTYPE ioctl(), which is defined in /sys/netiso/iso_snpac.h.
+.PP
+The protocol behaves differently depending on whether the System is
+configured as an End System or an Intermediate System.
+.SH "END SYSTEM OPERATION"
+When an interface requests a mapping for an address not in the cache,
+the SNPA of any known Intermediate System is returned. If an Intermediate
+System is not known, then the \fIall end systems\fR multicast address
+is returned. It is assumed that the intended recipient of the NPDU will
+immediately transmit a hello PDU back to the originator of the NPDU.
+.PP
+If an NPDU is forwarded by the End System, a redirect PDU will not be
+generated.
+However, redirect PDUs received will be processed. This processing
+consists of adding an entry in the routing table. If the
+redirect is towards an Intermediate System, then an entry is made in the
+routing table as well.
+The entry in the routing table will may mark the
+NSAP address contained in the redirect PDU as the gateway for the destination
+system (if an NET is supplied), or will create a route with
+the NSAP address as the
+destination and the SNPA address (embodied as a link-level sockaddr) as the
+gateway.
+.PP
+If the System is configured as an End System, it will report all the
+NSAPs that have been configured using the ifconfig command, and no others.
+It is possible to have more than one NSAP assigned to a given interface,
+and it is also possible to have the same NSAP assigned to multiple
+interfaces.
+However, any NSAP containing an NSEL that is consistent with the
+nsellength option (default one) of any interface will be accepted as
+an NSAP for this System.
+.SH "INTERMEDIATE SYSTEM OPERATION"
+When an interface requests a mapping for an address not in the routing table,
+an error is returned.
+.PP
+When an NPDU is forwarded out on the same interface that the NPDU arrived upon,
+a redirect PDU is generated.
+.SH "MANUAL ROUTING TABLE MODIFICATION"
+.PP
+To facilitate communications with systems which do not use ES-IS,
+one may add a route whose destination is a sockaddr_iso containing
+the NSAP in question, and the gateway being a link-level sockaddr,
+either by writing a special purpose program, or using the
+.IR route (8)
+command e.g.:
+.nf
+
+	route add -iface -osi 49.0.4.8.0.2b.b.83.bf -link qe0:8.0.2b.b.83.bf
+.fi
+.PP
+If the
+System is configured as an End System and has a single network interface
+which does not support multicast reception,
+it is necessary to manually configure the location of an IS,
+using the route command in a similar way.
+There, the destination address should be ``default'' (spelled 
+out literally as 7 ascii characters), and the gateway should be
+once again be a link-level sockaddr specifying the SNPA of the IS.
+.SH SEE ALSO
+un(4), iso(4F), route(8), ifconfig(8C)
+.br
+``End system to Intermediate system routing exchange protocol
+for use in conjunction with the Protocol for providing the 
+connectionless-mode network service'' (ISO 9542).
+.SH BUGS
+Redirect PDUs do not contain options from the forwarded NPDU which generated
+the redirect. The multicast address used on the 802.3 network is taken from
+the NBS December 1987 agreements. This multicast address is not compatible
+with the 802.5 (Token Ring) multicast addresses format. Therefore, broadcast
+addresses are used on the 802.5 subnetwork.
+Researchers at the University of Wisconsin are constructing an implementation
+of the IS-IS routing protocol.

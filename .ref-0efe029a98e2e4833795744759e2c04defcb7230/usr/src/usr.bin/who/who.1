@@ -1,0 +1,40 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)who.1	6.3 (Berkeley) %G%
+.\"
+.TH WHO 1 "%Q"
+.AT 3
+.SH NAME
+who \- who is on the system
+.SH SYNOPSIS
+.B who
+[ who-file ] [
+.B "am I"
+]
+.SH DESCRIPTION
+\fIWho,\fP without any argument, reads the /var/run/utmp file,
+and lists the login name, terminal name, and login time for each
+user currently logged into the system.  If a single argument is
+given, \fIwho\fP uses that file instead of /var/run/utmp.  Typically,
+that file will be /var/log/wtmp, which contains a record of all
+the logins, logouts, crashes, shutdowns and time changes since it
+was created.  In either case, each login will be listed with the
+user name, the terminal name (with "/dev/" suppressed), login date
+and time, and, if applicable, the host logged in from.
+.PP
+If /var/log/wtmp is being used as the file, the user name may be empty
+or one of the special characters '|', '}' and '~'.  Logouts produce
+an output line without any user name.  For more information on the
+special characters, see utmp(5).
+.PP
+With two arguments, as in `who am I' (and also `who are you'),
+\fIwho\fP tells you who you are logged in as.
+.SH FILES
+.DT
+/var/run/utmp
+.br
+/var/log/wtmp
+.SH "SEE ALSO"
+last(1), users(1), getuid(2), utmp(5)

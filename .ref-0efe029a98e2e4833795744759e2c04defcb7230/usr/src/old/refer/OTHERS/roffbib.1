@@ -1,0 +1,144 @@
+.\" Copyright (c) 1983, 1990 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)roffbib.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ROFFBIB 1
+.Os BSD 4.2
+.Sh NAME
+.Nm roffbib
+.Nd run off bibliographic database
+.Sh SYNOPSIS
+.Nm roffbib
+.Op Fl e
+.Op Fl h
+.Op Fl n
+.Op Fl o
+.Op Fl r
+.Op Fl s
+.Oo
+.Op Fl T Ar term
+.Oo
+.Op Fl x
+.Op Fl m Ar mac
+.Op Fl V
+.Op Fl Q
+.Ar
+.Sh DESCRIPTION
+.Nm Roffbib
+is a shell script which prints out all records in a bibliographic database,
+in bibliography format rather than as footnotes or endnotes.
+Generally it is used in conjunction with
+.Xr sortbib  :
+.Pp
+.Dl sortbib  database \&| roffbib
+.Pp
+.Nm Roffbib
+accepts most of the options understood by
+.Xr nroff  1  ,
+such as the
+.Fl T
+flag to specify terminal type.
+.Pp
+If abstracts or comments are entered in the database following the %X field key,
+.Nm roffbib
+will format them into paragraphs for an annotated bibliography.
+Several %X fields may be given if several
+annotation paragraphs are desired.
+.Pp
+Options exclusive to
+.Nm roffbib :
+.Tp Fl x
+Suppresses the printing of %X abstracts.
+.Tp Fl V
+Send output to the Versatec (use vtroff).
+.Tp Fl Q
+Queue the output to the default troff device.
+.Tp
+.Pp
+If neither the
+.Fl Q
+or
+.Fl V
+flags are given,
+.Nm
+sends the output to the standard output.
+The default macros for
+.Nm
+are in 
+.Pa /usr/share/tmac/tmac.bib .
+These can be over ridden by
+specifying a user-defined set with the
+.Fl m
+option.
+.Pp
+Four command-line registers control formatting style
+of the bibliography, much like the number registers of
+.Xr ms  7  .
+The command-line argument
+.Cx Fl r
+.Ar N1
+.Cx
+will number
+the references starting at one  1 .
+The flag
+.Cx Fl r
+.Ar V2
+.Cx
+will double space the biblio\%graphy,
+while
+.Cx Fl r
+.Ar V1
+.Cx
+will double space references
+but single space annotation paragraphs.
+The line length can be changed from the default 6.5 inches
+to 6 inches with the
+.Cx Fl r
+.Ar L6i
+.Cx
+argument,
+and the page offset can be set from the default of 0
+to one inch by specifying
+.Cx Fl r
+.Ar O1i
+.Cx
+(capital O, not zero).
+Note: with the
+.Fl V
+and
+.Fl Q
+flags
+the default page offset is already one inch.
+.Pp
+.Nm Roffbib
+is limited, but it is a good script to copy and adopt
+for one's own needs, as it does demonstrate usage of
+.Xr refer 1 .
+.Sh FILES
+.Dw /usr/share/tmac/tmac.bib
+.Di L
+.Dp Pa /usr/bin/roffbib
+.Nm
+script.
+.Dp Pa /usr/share/tmac/tmac.bib
+file of macros used by
+.Xr nroff 1
+and
+.Xr troff 1
+.Dp
+.Sh SEE ALSO
+.Xr refer 1 ,
+.Xr addbib 1 ,
+.Xr sortbib 1 ,
+.Xr indxbib 1 ,
+.Xr lookbib 1
+.Sh HISTORY
+.Nm Roffbib
+appeared in 4.2 BSD.
+.Sh BUGS
+Users have to rewrite macros
+to create customized formats.

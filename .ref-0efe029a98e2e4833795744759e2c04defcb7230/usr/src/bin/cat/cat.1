@@ -1,0 +1,92 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)cat.1	6.12 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CAT 1
+.Os BSD 3
+.Sh NAME
+.Nm cat
+.Nd concatenate and print files
+.Sh SYNOPSIS
+.Nm cat
+.Op Fl benstuv
+.Op Fl
+.Ar
+.Sh DESCRIPTION
+The
+.Nm cat
+utility reads files sequentially, writing them to the standard output.
+The
+.Ar file
+operands are processed in command line order.
+A single dash represents standard input.
+.Pp
+The options are as follows:
+.Tw Ds
+.Tp Fl b
+Implies the
+.Fl n
+option but doesn't number blank lines.
+.Tp Fl e
+Implies the
+.Fl v
+option, and displays a dollar sign (``$'') at the end of each line
+as well.
+.Tp Fl n
+Number the
+.Ar output
+lines, starting at 1.
+.Tp Fl s
+Squeeze multiple adjacent empty lines, causing the output to be
+single spaced.
+.Tp Fl t
+Implies the
+.Fl v
+option, and displays tab characters as ``^I'' as well.
+.Tp Fl u
+The
+.Fl u
+option guarantees that the output is unbuffered.
+.Tp Fl v
+Displays non-printing characters so they are visible.
+Control characters print line ``^X'' for control-X; the delete
+character (octal 0177) prints as ``^?''.
+Non-ascii characters (with the high bit set) are printed as
+`.`M-'' (for meta) followed by the character for the low 7 bits.
+.Tp
+.Pp
+.Nm Cat
+is useful for getting files into a pipe, for instance, to sort
+two files together,
+the command
+.Pp
+.Dl cat file1 file2 | sort > sfile
+.Pp
+reads the contents of
+file1 and file2 sequentially, pipes it all to sort and places the
+newly sorted data in file3.
+.Pp
+Because of the shell language mechanism used to perform output
+redirection, the command ``cat file1 file 2 > file1'' will cause
+.P original data in file1 to be destroyed!
+.Pp
+.Nm Cat
+The cat utility exits 0 on success, and >0 if an error
+occurs.
+.Sh SEE ALSO
+.Xr head 1 ,
+.Xr more 1 ,
+.Xr pr 1 ,
+.Xr tail 1
+.Pp
+Rob Pike,
+.Em UNIX Style, or cat -v Considered Harmful
+USENIX Summer Conference Proceedings, 1983.
+.Sh HISTORY
+The
+.Nm
+command appeared in Version 7 AT&T UNIX.

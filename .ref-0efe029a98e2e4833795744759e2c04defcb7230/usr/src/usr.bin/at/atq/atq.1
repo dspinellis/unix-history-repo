@@ -1,0 +1,56 @@
+.\" Copyright (c) 1985, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)atq.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ATQ 1
+.Os BSD 4.3
+.Sh NAME
+.Nm atq
+.Nd display the
+.Xr at 1
+job queue
+.Sh SYNOPSIS
+.Nm atq
+.Op Fl c
+.Op Fl n
+.Op Ar name ...
+.Sh DESCRIPTION
+.Nm Atq
+displays the queue of jobs, created by the
+.Xr at 1
+command,
+which are currently awaiting execution.
+With no flags, the queue is sorted in the order that
+the jobs will be executed.
+.Pp
+Options available are:
+.Pp
+.Tw Ds
+.Tp Fl c
+the queue is sorted by the time that the
+.Li at
+command was given.
+.Tp Fl n
+only the total number of files that are currently
+in the queue are printed.
+.Tp
+.Pp
+If a name(s) is provided, only those files belonging to that user(s) are
+displayed.
+.Sh FILES
+.Dw /var/spool/at
+.Di L
+.Dp Pa /var/spool/at
+spool area
+.Dp
+.Sh SEE ALSO
+.Xr at 1 ,
+.Xr atrm 1 ,
+.Xr cron 8
+.Sh HISTORY
+.Nm Atq
+appeared in the 4.3 BSD release.

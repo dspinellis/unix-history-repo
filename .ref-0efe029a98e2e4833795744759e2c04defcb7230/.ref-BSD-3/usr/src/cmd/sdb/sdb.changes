@@ -1,0 +1,27 @@
+ed - docomm.c << -*-END-*-
+231a
+		integ = atoi(args);
+.
+w
+q
+-*-END-*-
+ed - symt.c << -*-END-*-
+417c
+		finit(adrtofilep(procp->paddr)->sfilename);
+.
+69c
+			q = filep->sfilename;
+			for (p=fp; *q; *p++ = *q++) ;
+			*p = 0;
+			if (stat(filework, &stbuf) == -1)
+.
+w
+q
+-*-END-*-
+ed - version.c << -*-END-*-
+2c
+	error("Version 2.5+");
+.
+w
+q
+-*-END-*-

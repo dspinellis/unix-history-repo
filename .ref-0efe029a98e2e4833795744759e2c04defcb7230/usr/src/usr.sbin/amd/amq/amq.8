@@ -1,0 +1,94 @@
+.\" $Id: amq.8,v 5.2 90/06/23 22:21:16 jsp Rel $
+.\" Copyright (c) 1990 Jan-Simon Pendry
+.\" Copyright (c) 1990 Imperial College of Science, Technology & Medicine
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Jan-Simon Pendry at Imperial College, London.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)amq.8	5.1 (Berkeley) %G%
+.\"
+.TH AMQ 8 ""
+.SH NAME
+amq \- automounter query tool
+.SH SYNOPSIS
+.B amq
+[
+.BI \-h " hostname"
+] [
+.B \-f
+] [
+.B \-m
+] [
+.B \-s
+] [
+.B \-u
+]
+[
+.I directory
+] .\|.\|.
+.SH DESCRIPTION
+.B Amq
+provides a simple way of determining the current state of
+.B amd
+program.
+Communication is by
+.SM RPC.
+Three modes of operation are supported by the current protocol.
+By default a list of mount points and auto-mounted filesystems
+is output.
+An alternative host can be specified using the
+.I \-h
+option.
+.LP
+If directory names are given, as output by default,
+then per-filesystem information is displayed.
+.SH OPTIONS
+The
+.I \-h
+option specifies an alternate host to query.
+By default the local host is used.  In an
+.SM HP-UX
+cluster, the root server is queried by default, since
+that is the system on which the automounter is normally run.
+.LP
+The
+.I \-f
+option asks the automounter to flush the internal
+mount map cache.
+The
+.I \-m
+option asks the automounter to provide a list of mounted filesystems,
+including the number of references to each filesystem and any error
+which occured while mounting.
+The
+.I \-s
+option asks the automounter to provide system-wide mount statistics.
+.LP
+The
+.I \-u
+option asks the automounter to unmount the named filesystems
+instead of providing information about them.  Unmounts are requested,
+not forced.  They merely cause the mounted filesystem to timeout,
+which will be picked up by
+.BR amd 's
+main scheduler thus causing the normal timeout action to be taken.
+.SH FILES
+.PD 0
+.TP 20
+.B amq.x
+.SM RPC
+protocol description.
+.SH CAVEATS
+.B Amq
+uses a Sun registered
+.SM RPC
+program number (300019 decimal) which may not
+be in the /etc/rpc database.
+.SH "SEE ALSO"
+.BR amd (8)
+.SH AUTHOR
+Jan-Simon Pendry <jsp@doc.ic.ac.uk>, Department of Computing, Imperial College, London, UK.

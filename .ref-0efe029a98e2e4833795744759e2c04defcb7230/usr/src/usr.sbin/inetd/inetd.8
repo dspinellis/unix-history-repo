@@ -1,0 +1,137 @@
+.\" Copyright (c) 1985 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)inetd.8	6.6 (Berkeley) %G%
+.\"
+.TH INETD 8 ""
+.UC 6
+.SH NAME
+inetd \- internet ``super\-server''
+.SH SYNOPSIS
+.B inetd
+[
+.B \-d
+] [ configuration file ]
+.SH DESCRIPTION
+.I Inetd
+should be run at boot time by
+.IR /etc/rc.local .
+It then listens for connections on certain
+internet sockets.  When a connection is found on one
+of its sockets, it decides what service the socket
+corresponds to, and invokes a program to service the request.
+After the program is
+finished, it continues to listen on the socket (except in some cases which
+will be described below).  Essentially,
+.I inetd
+allows running one daemon to invoke several others,
+reducing load on the system.
+.PP
+Upon execution,
+.I inetd
+reads its configuration information from a configuration
+file which, by default, is
+.IR /etc/inetd.conf .
+There must be an entry for each field of the configuration
+file, with entries for each field separated by a tab or
+a space.  Comments are denoted by a ``#'' at the beginning
+of a line.  There must be an entry for each field.  The
+fields of the configuration file are as follows:
+.br
+	service name
+.br
+	socket type
+.br
+	protocol
+.br
+	wait/nowait
+.br
+	user
+.br
+	server program
+.br
+	server program arguments
+.PP
+The
+.I service name
+entry is the name of a valid service in
+the file
+.IR /etc/services/ .
+For ``internal'' services (discussed below), the service
+name
+.I must
+be the official name of the service (that is, the first entry in
+.IR /etc/services ).
+.PP
+The
+.I socket type
+should be one of ``stream'', ``dgram'', ``raw'', ``rdm'', or ``seqpacket'',
+depending on whether the socket is a stream, datagram, raw,
+reliably delivered message, or sequenced packet socket.
+.PP
+The
+.I protocol
+must be a valid protocol as given in
+.IR /etc/protocols .
+Examples might be ``tcp'' or ``udp''.
+.PP
+The
+.I wait/nowait
+entry is applicable to datagram sockets only (other sockets should
+have a ``nowait'' entry in this space).  If a datagram server connects
+to its peer, freeing the socket so
+.I inetd
+can received further messages on the socket, it is said to be
+a ``multi-threaded'' server, and should use the ``nowait''
+entry.  For datagram servers which process all incoming datagrams
+on a socket and eventually time out, the server is said to be
+``single-threaded'' and should use a ``wait'' entry.  ``Comsat'' (``biff'')
+and ``talk'' are both examples of the latter type of
+datagram server.
+.I Tftpd
+is an exception; it is a datagram server that establishes pseudo-connections.
+It must be listed as ``wait'' in order to avoid a race;
+the server reads the first packet, creates a new socket,
+and then forks and exits to allow
+.I inetd
+to check for new service requests to spawn new servers.
+.PP
+The
+.I user
+entry should contain the user name of the user as whom the server
+should run.  This allows for servers to be given less permission
+than root.
+The
+.I server program
+entry should contain the pathname of the program which is to be
+executed by
+.I inetd
+when a request is found on its socket.  If
+.I inetd
+provides this service internally, this entry should
+be ``internal''.
+.PP
+The arguments to the server program should be just as they
+normally are, starting with argv[0], which is the name of
+the program.  If the service is provided internally, the
+word ``internal'' should take the place of this entry.
+.PP
+.I Inetd
+provides several ``trivial'' services internally by use of
+routines within itself.  These services are ``echo'',
+``discard'', ``chargen'' (character generator), ``daytime''
+(human readable time), and ``time'' (machine readable time,
+in the form of the number of seconds since midnight, January
+1, 1900).  All of these services are tcp based.  For
+details of these services, consult the appropriate RFC
+from the Network Information Center.
+.PP
+.I Inetd
+rereads its configuration file when it receives a hangup signal, SIGHUP.
+Services may be added, deleted or modified when the configuration file
+is reread.
+.SH "SEE ALSO"
+comsat(8), fingerd(8), ftpd(8), rexecd(8), rlogind(8), rshd(8),
+telnetd(8), tftpd(8)

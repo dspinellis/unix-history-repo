@@ -1,0 +1,70 @@
+.\" Copyright (c) 1988, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)diction.1	4.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DICTION 1
+.Os BSD 4.4
+.Sh NAME
+.Nm diction , explain
+.Nd print wordy sentences; thesaurus for diction
+.Sh SYNOPSIS
+.Nm diction
+.Op Fl ml
+.Op Fl mm
+.Op Fl n
+.Op Fl f Ar pfile
+.Ar file \&...
+.Nm explain
+.Pp
+.Sh DESCRIPTION
+.Nm Diction
+finds all sentences in a document that contain phrases
+from a data base of bad or wordy diction.
+Each phrase is bracketed with
+.Sq [\|] .
+Because
+.Nm diction
+runs
+.Xr deroff 1
+before looking at the text, formatting
+header files should be included as part of the input.
+.Tw Ds
+.Tp Fl mm
+The default macro package,
+.Fl ms ,
+may be overridden with the flag
+.Fl mm .
+.Tp Fl ml
+causes
+.Xr deroff 1
+to skip lists, should be used if the document contains many lists of
+non-sentences.
+.Tc Fl f
+.Ws
+.Ar pfile.
+.Cx
+Use
+.Ar pfile
+as a pattern file in addition to the default file.
+.Tp Fl n
+Suppress usage of default file.
+.Tp
+.Pp
+.Nm Explain
+is an interactive thesaurus for the phrases found by diction.
+.Sh SEE ALSO
+.Xr deroff 1
+.Sh HISTORY
+.Nm Diction
+appeared in 4.0 BSD.
+.Sh BUGS
+Use of non-standard formatting macros may cause
+incorrect sentence breaks.
+In particular,
+.Nm diction
+doesn't grok
+.Fl me .

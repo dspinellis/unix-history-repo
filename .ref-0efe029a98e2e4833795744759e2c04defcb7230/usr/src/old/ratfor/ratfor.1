@@ -1,0 +1,73 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)ratfor.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt RATFOR 1
+.Os ATT 7th
+.Sh NAME
+.Nm ratfor
+.Nd rational Fortran dialect
+.Sh SYNOPSIS
+.Nm ratfor
+.Op Ar option ...
+.Op Ar filename ...
+.Sh DESCRIPTION
+.Nm Ratfor
+converts a rational dialect of Fortran into ordinary irrational Fortran.
+.Nm Ratfor
+provides control flow constructs essentially identical to those in C:
+.Tw Fl
+.Tp statement grouping:
+{ statement; statement; statement }
+.Tp decision-making:
+.Ds I
+if (condition) statement { else statement }
+switch (integer value) {
+\tcase integer:	statement
+\t...
+\t[default]: statement
+}
+.De
+.Tp loops:
+.Ds L
+while (condition) statement
+for (expression; condition; expression) statement
+do limits statement
+repeat statement [until (condition)]
+break
+next
+.De
+.Tp
+.Pp
+and some syntactic sugar to make programs easier to read and write:
+.Tw Fl
+.Tp free form input:
+multiple statements/line; automatic continuation
+.Tp comments:
+# this is a comment
+.Tp translation of relationals:
+>, >=, etc., become .GT., .GE., etc.
+.Tp return (expression)
+returns expression to caller from function
+.Tp define:
+define name replacement
+.Tp include:
+include filename
+.Tp
+.Pp
+.Nm Ratfor
+is best used with
+.Xr f77  1  .
+.Sh SEE ALSO
+.Xr f77 1
+.br
+B. W. Kernighan and P. J. Plauger,
+.Em Software Tools ,
+Addison-Wesley,
+1976.
+.Sh HISTORY
+.Nm Ratfor
+appeared in Version 7 AT&T UNIX.

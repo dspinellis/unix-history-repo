@@ -1,0 +1,129 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getgrent.3	6.5 (Berkeley) %G%
+.\"
+.TH GETGRENT 3  ""
+.AT 3
+.SH NAME
+getgrent, getgrnam, getgrgid, setgroupent, setgrfile, setgrent,
+endgrent \- get group file entry
+.SH SYNOPSIS
+.nf
+.B #include <grp.h>
+.PP
+.B struct group *getgrent()
+.PP
+.B struct group *getgrnam(name)
+.B char *name;
+.PP
+.B struct group *getgrgid(gid)
+.B gid_t gid;
+.PP
+.B setgroupent(stayopen)
+.B int stayopen;
+.PP
+.B void setgrfile(name)
+.B char *name;
+.PP
+.B setgrent()
+.PP
+.B void endgrent()
+.fi
+.SH DESCRIPTION
+.I Getgrent,
+.I getgrgid
+and
+.I getgrnam
+each return a pointer to a structure containing the broken-out fields
+of a line in the group file.  This structure is defined by the include
+file
+.IR < grp.h >,
+and contains the following fields:
+.PP
+.RS
+.nf
+struct group {
+	char		*gr_name;		/* group name */
+	char		*gr_passwd;	/* group password */
+	gid_t	gr_gid;		/* group id */
+	char		**gr_mem;		/* group members */
+};
+.ft R
+.ad
+.fi
+.RE
+.PP
+These fields are more completely described in
+.IR group (5).
+.PP
+.I Getgrnam
+and
+.I getgrgid
+search the group database for a matching group name or group id,
+respectively, returning the first one encountered.  Identical group
+names or group gids may result in undefined behavior.
+.PP
+.I Getgrent
+sequentially reads the group database and is intended for programs
+that wish to step through the complete list of groups.
+.PP
+All three routines will open the group file for reading, if necesssary.
+.PP
+.I Setgrfile
+changes the default group file to
+.IR file ,
+thus allowing the use of alternate group files.
+.PP
+.I Setgroupent
+opens the file, or rewinds it if it is already open.  If
+.I stayopen
+is non-zero, file descriptors are left open, significantly speeding
+up subsequent calls.  This functionality is unnecessary for
+.I getgrent
+as it doesn't close its file descriptors by default.  It should also
+be noted that it is dangerous for long-running programs to use this
+functionality as the group file may be updated.
+.PP
+.I Setgrent
+is identical to
+.I setgroupent
+with an argument of zero.
+.PP
+.I Endgrent
+closes any open files.
+.PP
+.PP
+.SH FILES
+/etc/group
+.SH "SEE ALSO"
+ getpwent(3), group(5)
+.SH DIAGNOSTICS
+The routines
+.IR getgrent ,
+.IR getgrnam ,
+and
+.IR getgrgid ,
+return a null pointer on EOF or error.
+.I Setgroupent
+and
+.I setgrent
+return 0 on failure, 1 on success.
+.I Endgrent
+and
+.I setgrfile
+have no return value.
+.SH BUGS
+All information is contained in a static buffer which is overwritten
+by each new call.  It must be copied elsewhere to be retained.
+.PP
+The routines
+.IR getgrent ,
+.IR endgrent ,
+.IR setgroupent ,
+and
+.IR setgrent
+are fairly useless in a networked environment and should be
+avoided, if possible.

@@ -1,0 +1,75 @@
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)ns.3	6.4 (Berkeley) %G%
+.\"
+.TH NS 3 ""
+.UC 6
+.SH NAME
+ns_addr, ns_ntoa \- Xerox NS(tm)  address conversion routines
+.SH SYNOPSIS
+.nf
+.B "#include <sys/types.h>
+.B "#include <netns/ns.h>
+.PP
+.B "struct ns_addr ns_addr(cp)
+.B "char *cp;
+.PP
+.B "char *ns_ntoa(ns)
+.B "struct ns_addr ns;
+.fi
+.SH DESCRIPTION
+The routine
+.I ns_addr
+interprets character strings representing
+XNS addresses, returning binary information suitable
+for use in system calls.
+.I ns_ntoa
+takes XNS addresses and returns ASCII
+strings representing the address in a
+notation in common use in the Xerox Development Environment:
+.nf
+	<network number>.<host number>.<port number>
+.fi
+Trailing zero fields are suppressed, and each number is printed in hexadecimal,
+in a format suitable for input to 
+.IR ns_addr .
+Any fields lacking super-decimal digits will have a
+trailing ``H'' appended.
+.PP
+Unfortunately, no universal standard exists for representing XNS addresses.
+An effort has been made to insure that
+.I ns_addr
+be compatible with most formats in common use.
+It will first separate an address into 1 to 3 fields using a single delimiter
+chosen from
+period (``.''),
+colon (``:'') or pound-sign (``#'').
+Each field is then examined for byte separators (colon or period).
+If there are byte separators, each subfield separated is taken to be
+a small hexadecimal number, and the entirety is taken as a network-byte-ordered
+quantity to be zero extended in the high-network-order bytes.
+Next, the field is inspected for hyphens, in which case
+the field is assumed to be a number in decimal notation
+with hyphens separating the millenia.
+Next, the field is assumed to be a number:
+It is interpreted
+as hexadecimal if there is a leading ``0x'' (as in C),
+a trailing ``H'' (as in Mesa), or there are any super-decimal digits present.
+It is interpreted as octal is there is a leading ``0''
+and there are no super-octal digits.
+Otherwise, it is converted as a decimal number.
+.SH "SEE ALSO"
+hosts(5), networks(5),
+.SH DIAGNOSTICS
+None (see BUGS).
+.SH BUGS
+The string returned by
+.I ns_ntoa
+resides in a static memory area.
+.br
+.I ns_addr
+should diagnose improperly formed input, and there should be an unambiguous
+way to recognize this.

@@ -1,0 +1,74 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)intro.2	6.2 (Berkeley) %G%
+.\"
+.sh 1 Variables
+.pp
+Many variables which are used to describe the terminal environment
+are available to the programmer. They are:
+.TS
+expand;
+lw(6m) lw(8n) lw(50n).
+type	name	description
+_
+WINDOW *	curscr	T{
+.fi
+current version of the screen (terminal screen).
+T}
+WINDOW *	stdscr	T{
+standard screen.  Most updates are usually done here.
+T}
+char *	Def\*_term	T{
+default terminal type if type cannot be determined
+T}
+bool	My\*_term	T{
+use the terminal specification in \fIDef\*_term\fR as terminal,
+irrelevant of real terminal type
+T}
+char *	ttytype	T{
+full name of the current terminal.
+T}
+int	LINES	T{
+number of lines on the terminal
+T}
+int	COLS	T{
+number of columns on the terminal
+T}
+int	ERR	T{
+error flag returned by routines on a fail.
+T}
+int	OK	T{
+error flag returned by routines when things go right.
+T}
+.TE
+.pp
+There are also several
+.q #define
+constants and types
+which are of general usefulness:
+.sp
+.ev 1
+.ta 11n
+.(b L
+.nf
+reg	storage class ``register'' (\fIe.g.\fP, \fIreg int i;\fR\|)
+bool	boolean type, actually a ``char'' (\fIe.g.\fP, \fIbool doneit;\fR\|)
+TRUE	boolean ``true'' flag (1).
+FALSE	boolean ``false'' flag (0).
+.fi
+.ev
+.)b
+.lp

@@ -1,0 +1,273 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" the Systems Programming Group of the University of Utah Computer
+.\" Science Department.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)hil.4	5.1 (Berkeley) %G%
+.\"
+.TH HIL 4 ""
+.UC 7
+.SH NAME
+hil \- Human Interface Link device driver
+.SH DESCRIPTION
+The Human Interface Link (HIL) is the interface used by the Series
+300 computers to connect devices such as keyboards, mice, control knobs,
+and ID modules to the machine. 
+.PP
+Special files /dev/hil[1-7] refer to physical HIL devices 1 through 7.
+/dev/hil0 refers to the ``loop'' pseudo-device and is used for the queue
+allocation commands described below.
+In the current implementation,
+there can only be one keyboard and it must be the first device (hil1).
+.PP
+The device file that corresponds to a particular HIL device is determined
+by the order of the devices on the loop. For instance, if the ID module
+is the second physical device on the loop, then /dev/hil2 is the special
+file that should be used for communication with the module.
+.PP
+Communication with an HIL device is begun with an
+.I open
+system call.
+A process may open a device already opened by another process unless
+the process is operating in HP-UX compatibility mode
+in which case it requires exclusive use of the device, or
+another process has the device open and is using HP-UX style
+device access (see
+.SM HILIOCHPUX
+below).
+.PP
+Input data from a device are obtained in one of two ways.
+Processes may use an HP-UX style interface in which the \fIread\fP(2)
+system call is used to get fixed-size input packets,
+or they can use a
+.I "shared-queue"
+interface.
+The shared-queue interface avoids the system call overhead associated with
+the HP-UX read interface by sharing a region of memory between the system
+and a user process.
+This region consists of a circular list of 255 event packets,
+and a header containing the size of the queue, and its head and tail indices.
+The system deposits event data at the tail of the queue,
+a process extracts it from the head.
+Extracting an event is done by copying it from the queue and then updating
+the head appropriately (i.e. head = (head + 1) % qsize).
+It is up to the process to ensure that packets are removed from the
+queue quickly enough to prevent the queue from filling.
+The system, when it determines that the queue is full,
+will ignore future packets from the device.
+Devices are \fImapped\fP to queues via an ioctl.
+More than one device can be mapped to a single queue and one device can
+be mapped to several queues.
+Queues are implicitly unmapped by a \fIfork\fP(2) and thus,
+cannot be shared between processes.
+.PP
+Choosing the type of interface is done on a per device basis using
+an ioctl, but each device can only have one interface at any given time.
+.PP
+.I Select
+may be used with either interface to detect when input data are present.
+With the read interface, selecting indicates when there is input for a
+given device.
+With the shared-queue interface, selecting on the loop pseudo-device (hil0)
+indicates when data are present from any device on any queue
+while selecting on an individual device indicates when data are present
+for that device on any queue.
+.PP
+.I Close
+shuts down the file descriptor associated with the HIL device.
+The last close (system-wide) of any device removes that device
+from all queues it was mapped to while the last close of the loop
+pseudo-device unmaps all devices and deallocates all queues.
+.PP
+.IR Ioctl (2)
+is used to control the HIL device.
+The ioctl commands (see <hpdev/hilioctl.h>)
+listed below are separated into two groups.
+The first are those which provide functions identical to HP-UX.
+Refer to \fIhil\fP(7) in the HP-UX documentation for more
+complete descriptions of these ioctls.
+The second set of ioctls are specific to this implementation and are
+primarily related to the shared-queue interface.
+.TP 10
+HILIOCID
+Identify and Describe
+.sp
+The device will return up to 11 bytes of information describing the
+type and characteristics of the device.
+At the very least, 2 bytes of information,
+the device ID, and the Describe Record Header will be returned.
+Identical to the HP-UX
+.SM HILID
+ioctl.
+.TP
+HILIOCSC
+Report Security Code
+.sp
+Request the security code record from a device. The security code can
+vary from 1 byte to 15, and is only supported by some HIL devices.
+Identical to the HP-UX
+.SM HILSC
+ioctl.
+.TP
+HILIOCRN
+Report Name
+.sp
+An ascii string of up to 15 bytes in length that describes the device
+is returned.
+Identical to the HP-UX
+.SM HILRN
+ioctl.
+.TP
+HILIOCRS
+Report Status
+.sp
+An ascii string of up to 15 bytes in length that describes the current
+status of the device is returned.
+Identical to the HP-UX
+.SM HILRS
+ioctl.
+.TP
+HILIOCED
+Extended Describe
+.sp
+Additional information of up to 15 bytes is returned describing the device.
+This ioctl is similar to HILIOCID, which must be used first
+to determine if the device supports extended describe.
+Identical to the HP-UX
+.SM HILED
+ioctl.
+.TP
+HILIOCAROFF
+Disable Auto Repeat
+.sp
+Turn off auto repeat on the keyboard while it is cooked mode.
+Identical to the HP-UX
+.SM HILDKR
+ioctl.
+.TP
+HILIOCAR1
+Enable Auto Repeat
+.sp
+Turn on auto repeat on the keyboard while it is in raw mode.
+The repeat rate is set to 1/30th of a second.
+Identical to the HP-UX
+.SM HILER1
+ioctl.
+.TP
+HILIOCAR2
+Enable Auto Repeat
+.sp
+Turn on auto repeat on the keyboard while it is in raw mode.
+The repeat rate is set to 1/60th of a second.
+Identical to the HP-UX
+.SM HILER2
+ioctl.
+.PP
+The following ioctls are specific to this implementation:
+.TP 13
+HILIOCBEEP
+Beep
+.sp
+Generate a keyboard beep as defined by
+.IR arg .
+.I Arg
+is a pointer to two bytes of information,
+the first is the duration of the beep (microseconds),
+the second is the frequency of the beep.
+.TP 13
+HILIOCALLOCQ
+Allocate Queue
+.sp
+Allocate and map into user space,
+an HILQ structure as defined in <hpdev/hilioctl.h>.
+.I Arg
+is a pointer to a
+.I hilqinfo
+structure (also described in <hpdev/hilioctl.h>)
+consisting of a
+.I qid
+and an
+.I addr .
+If
+.I addr
+is non-zero it specifies where in the address space to map the queue.
+If zero, the system will select a convenient location and fill in
+.IR addr .
+.I Qid
+is filled in by the system and
+is a small integer used to uniquely identify this queue.
+This ioctl can only be issued to the loop pseudo-device.
+.TP 14
+HILIOCFREEQ
+Free Queue
+.sp
+Release a previously allocated HIL event queue,
+unmapping it from the user's address space.
+.I Arg
+should point to a
+.I hilqinfo
+structure which contains the
+.I qid
+of the queue to be released.
+All devices that are currently mapped to the queue are unmapped.
+This ioctl can only be issued to the loop pseudo-device.
+.TP 14
+HILIOCMAPQ
+Map Device to Queue
+.sp
+Maps this device to a previously allocated HIL event queue.
+.I Arg
+is a pointer to an integer containing the
+.I qid
+of the queue.
+Once a device is mapped to a queue,
+all event information generated by the device will be placed
+into the event queue at the tail.
+.TP 14
+HILIOCUNMAPQ
+Unmap Device from Queue
+.sp
+Unmap this device from a previously allocated HIL event queue.
+.I Arg
+is a pointer to an integer containing the
+.I qid
+for the queue.
+Future events from the device are no longer placed on the event queue.
+.TP 14
+HILIOCHPUX
+Use HP-UX Read Interface
+.sp
+Use HP-UX semantics for gathering data from this device.
+Instead of placing input events for the device on a queue,
+they are placed, in HP-UX format, into a buffer from which they
+can be obtained via \fIread\fP(2).
+This interface is provided for backwards compatibility.
+Refer to the HP-UX documentation for a description of the event packet.
+.SH ERRORS
+.TP 15
+[ENODEV]
+no such HIL loop device.
+.TP 15
+[ENXIO]
+HIL loop is inoperative.
+.TP 15
+[EBUSY]
+Another HP-UX process has the device open, or another BSD process has the
+device open, and is using it in HP-UX mode.
+.TP 15
+[EINVAL]
+Invalid ioctl specification.
+.TP 15
+[EMFILE]
+No more shared queues available.
+.SH FILES
+.ta \w'/dev/hil[1-7]  'u
+/dev/hil0	HIL loop pseudo device.
+.br
+/dev/hil1	HIL keyboard device.
+.br
+/dev/hil[2-7]	Individual HIL loop devices.

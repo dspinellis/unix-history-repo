@@ -1,0 +1,133 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)rcmd.3	6.10 (Berkeley) %G%
+.\"
+.TH RCMD 3 ""
+.UC 5
+.SH NAME
+rcmd, rresvport, ruserok \- routines for returning a stream to a remote command
+.SH SYNOPSIS
+.nf
+.PP
+.B "rem = rcmd(ahost, inport, locuser, remuser, cmd, fd2p);"
+.B char **ahost;
+.B int inport;
+.B "char *locuser, *remuser, *cmd;"
+.B int *fd2p;
+.PP
+.B s = rresvport(port);
+.B int *port;
+.PP
+.B "ruserok(rhost, superuser, ruser, luser);"
+.B char *rhost;
+.B int superuser;
+.B char *ruser, *luser;
+.fi
+.SH DESCRIPTION
+.I Rcmd
+is a routine used by the super-user to execute a command on
+a remote machine using an authentication scheme based
+on reserved port numbers.
+.I Rresvport
+is a routine which returns a descriptor to a socket
+with an address in the privileged port space.
+.I Ruserok
+is a routine used by servers
+to authenticate clients requesting service with
+.IR rcmd .
+All three functions are present in the same file and are used
+by the
+.IR rshd (8)
+server (among others).
+.PP
+.I Rcmd
+looks up the host
+.I *ahost
+using
+.IR gethostbyname (3),
+returning \-1 if the host does not exist.
+Otherwise
+.I *ahost
+is set to the standard name of the host
+and a connection is established to a server
+residing at the well-known Internet port
+.IR inport .
+.PP
+If the connection succeeds,
+a socket in the Internet domain of type SOCK_STREAM
+is returned to the caller, and given to the remote
+command as 
+.B stdin
+and
+.BR stdout .
+If
+.I fd2p
+is non-zero, then an auxiliary channel to a control
+process will be set up, and a descriptor for it will be placed
+in
+.IR *fd2p .
+The control process will return diagnostic
+output from the command (unit 2) on this channel, and will also
+accept bytes on this channel as being UNIX signal numbers, to be
+forwarded to the process group of the command.
+If
+.I fd2p
+is 0, then the 
+.B stderr
+(unit 2 of the remote
+command) will be made the same as the 
+.B stdout
+and no
+provision is made for sending arbitrary signals to the remote process,
+although you may be able to get its attention by using out-of-band data.
+.PP
+The protocol is described in detail in
+.IR rshd (8).
+.PP
+The
+.I rresvport
+routine is used to obtain a socket with a privileged
+address bound to it.  This socket is suitable for use
+by 
+.I rcmd
+and several other routines.  Privileged Internet ports are those
+in the range 0 to 1023.  Only the super-user
+is allowed to bind an address of this sort to a socket.
+.PP
+.I Ruserok
+takes a remote host's name, as returned by the
+.IR gethostbyaddr (3)
+routine, two user names and a flag indicating whether
+the local user's name is that of the super-user.  Then,
+if the user is
+.B NOT
+the super-user, it checks the files
+.IR /etc/hosts.equiv .
+If that lookup is not done, or is unsuccessful, the
+.I .rhosts
+in the local user's home directory is checked to see if the request for
+service is allowed.  If this file is owned by anyone other than the
+user or the super-user, or if it is writeable by anyone other than the
+owner, the check automatically fails.  A 0 is returned if the machine
+name is listed in the ``hosts.equiv'' file, or the host and remote
+user name are found in the ``.rhosts'' file; otherwise
+.I ruserok
+returns \-1.
+If the local domain (as obtained from \fIgethostname\fP\|(2))
+is the same as the remote domain, only the machine name need be specified.
+.SH SEE ALSO
+rlogin(1), rsh(1), intro(2), rexec(3), rexecd(8), rlogind(8), rshd(8)
+.SH DIAGNOSTICS
+.I Rcmd
+returns a valid socket descriptor on success.
+It returns -1 on error and prints a diagnostic message on the standard error.
+.PP
+.I Rresvport
+returns a valid, bound socket descriptor on success.
+It returns -1 on error with the global value
+.I errno
+set according to the reason for failure.
+The error code EAGAIN is overloaded to mean ``All network ports in use.''

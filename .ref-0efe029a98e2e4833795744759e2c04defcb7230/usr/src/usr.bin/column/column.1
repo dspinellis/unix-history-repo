@@ -1,0 +1,72 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)column.1	5.7 (Berkeley) %G%
+.\"
+.Dd 
+.Os BSD 4.4
+.Dt COLUMN 1
+.Sh NAME
+.Nm column
+.Nd columnate lists
+.Sh SYNOPSIS
+.Nm column
+.Oo
+.Op Fl t Ar x
+.Op Fl s Ar sep
+.Op Fl c Ar columns
+.Oo
+.Cx
+.Ar
+.Sh DESCRIPTION
+The
+.Nm column
+utility formats its input into multiple columns.
+Rows are filled before columns.
+Input is taken from
+.Ar file
+operands, or, by default, from the standard input.
+Empty lines are ignored.
+.Pp
+The options are as follows:
+.Tw Ds
+.Tp Fl c
+Output is formatted for a display
+.Ar columns
+wide.
+.Tp Fl s
+Specify a set of characters to be used to delimit columns for the
+.Fl t
+option.
+.Tp Fl t
+Determine the number of columns the input contains and create a table.
+Columns are delimited by whitespace, by default, or by the characters
+supplied using the
+.Fl s
+option.
+Useful for pretty-printing displays.
+.Tp Fl x
+Fill columns before filling rows.
+.Tp
+.Pp
+.Nm Column
+exits 0 on success, >0 if an error occurred.
+.Sh ENVIRONMENT
+.Tw Fl
+.Tp Ev COLUMNS
+The environment variable
+.Ev COLUMNS
+is used to determine the size of
+the screen if no other information is available.
+.Sh EXAMPLES
+.Dl (printf \&"PERM LINKS OWNER SIZE MONTH DAY HH:MM/YEAR NAME\en\&"\ \&; \e
+.Dl ls -l \&| sed 1d) \&| column -t
+.Sh SEE ALSO
+.Xr colrm 1 ,
+.Xr ls 1 ,
+.Xr paste 1 ,
+.Xr sort 1
+.Sh HISTORY
+4.3 Reno BSD.

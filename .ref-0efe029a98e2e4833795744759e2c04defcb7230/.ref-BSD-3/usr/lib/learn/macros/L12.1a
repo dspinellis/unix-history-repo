@@ -1,0 +1,100 @@
+#print
+With a TM you want a cover sheet.  The cover sheet doesn't look too
+nice when printed on a computer terminal, but you should
+know how to set it up so that you can put it on the typesetter,
+which does an attractive job of imitating the official  printed
+form.  Basically you must make two changes to get a cover sheet
+with normal formatting.  First, you should add to each .AU line
+the author's room number and extension.  For example,
+  .AU "MH 2C-569" "6377"
+  M. E. Lesk
+indicates that Lesk's room is MH 2C-569 and his extension is 6377.
+The room number is enclosed in quotes to indicate that it is one
+unit, even though it contains a blank.  The quotes around
+the extension are harmless but unnecessary.  Also, you
+must add the command
+  .CS 1 2 3 4 5 6
+after the ".AE" line.  The six numbers are (from left to right)
+the number of pages of text, number of pages of "other",
+the total number of pages, the number of references, the number
+of figures and the number of tables.  Try editing
+the usual file "decl" to indicate that Mr. Jefferson's
+room number is MH 2A-111 and his extension is 1776.
+Request a cover sheet with the above meaningless numbers,
+just to see where they go.  Then run off the document again.
+#create Ref
+.TM 75-1776-1 12345 12345
+.TL
+Declaration of Independence
+.AU "MH 2A-111" 1776
+Thomas Jefferson
+.AI
+The Continental Congress
+Philadelphia, Pa. 19104
+.AB
+This paper describes advances in scattering theory
+of colonies from mother countries.
+.AE
+.CS 1 2 3 4 5 6
+.PP
+When in the course of human events, it becomes
+necessary for one people to dissolve the political bands which have
+connected them with another, and to assume among the 
+powers of the earth the separate and equal station to which
+the laws of Nature and of Nature's God entitle them, a decent
+respect to the opinions of mankind requires that they should
+declare the causes which impel them to the separation.
+.PP
+We hold these truths to be self-evident, that all men
+are created equal, that they are endowed by their creator
+with certain unalienable rights, that among these are life, liberty,
+and the pursuit of happiness.  That to secure these rights,
+governments are instituted among men, deriving their just
+powers from the consent of the governed.  That whenever
+any form of government becomes destructive of these ends,
+it is the right of the people to alter or to abolish it, and
+to institute new government, laying its foundation on such
+principles and organizing its powers in such form, as to them
+shall seem most likely to effect their safety and happiness.
+#once nroff -ms Ref >X1 &
+#create decl
+.TM 75-1776-1 12345 12345
+.TL
+Declaration of Independence
+.AU
+Thomas Jefferson
+.AI
+The Continental Congress
+Philadelphia, Pa. 19104
+.AB
+This paper describes advances in scattering theory
+of colonies from mother countries.
+.AE
+.PP
+When in the course of human events, it becomes
+necessary for one people to dissolve the political bands which have
+connected them with another, and to assume among the 
+powers of the earth the separate and equal station to which
+the laws of Nature and of Nature's God entitle them, a decent
+respect to the opinions of mankind requires that they should
+declare the causes which impel them to the separation.
+.PP
+We hold these truths to be self-evident, that all men
+are created equal, that they are endowed by their creator
+with certain unalienable rights, that among these are life, liberty,
+and the pursuit of happiness.  That to secure these rights,
+governments are instituted among men, deriving their just
+powers from the consent of the governed.  That whenever
+any form of government becomes destructive of these ends,
+it is the right of the people to alter or to abolish it, and
+to institute new government, laying its foundation on such
+principles and organizing its powers in such form, as to them
+shall seem most likely to effect their safety and happiness.
+#copyout
+#user
+#uncopyout
+tail -132 .ocopy >X2
+#cmp X1 X2
+#log
+#next
+13.1a 10

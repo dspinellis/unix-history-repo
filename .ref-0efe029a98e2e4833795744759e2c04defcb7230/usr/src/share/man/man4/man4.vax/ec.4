@@ -1,0 +1,90 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)ec.4	6.6 (Berkeley) %G%
+.\"
+.TH EC 4 ""
+.UC 5
+.SH NAME
+ec \- 3Com 10 Mb/s Ethernet interface
+.SH SYNOPSIS
+.B "device ec0 at uba0 csr 161000 vector ecrint eccollide ecxint flags 0"
+.SH DESCRIPTION
+The
+.I ec
+interface provides access to a 10 Mb/s Ethernet network through
+a 3com controller.
+.PP
+The hardware has 32 kilobytes of dual-ported memory on the UNIBUS. 
+This memory
+is used for internal buffering by the board, and the interface code reads
+the buffer contents directly through the UNIBUS.
+The address of this memory is given in the \fIflags\fP field
+in the configuration file.
+The first interface normally has its memory at Unibus address 0.
+.PP
+Each of the host's network addresses
+is specified at boot time with an SIOCSIFADDR
+ioctl.  The
+.I ec
+interface employs the address resolution protocol described in
+.IR arp (4)
+to dynamically map between Internet and Ethernet addresses on the local
+network.
+.PP
+The interface normally tries to use a ``trailer'' encapsulation
+to minimize copying data on input and output.
+The use of trailers is negotiated with ARP.
+This negotiation may be disabled, on a per-interface basis,
+by setting the IFF_NOTRAILERS
+flag with an SIOCSIFFLAGS ioctl.
+.PP
+The interface software implements an exponential backoff algorithm
+when notified of a collision on the cable.  This algorithm utilizes
+a 16-bit mask and the VAX-11's interval timer in calculating a series
+of random backoff values.  The algorithm is as follows:
+.TP 5
+1.
+Initialize the mask to be all 1's.
+.TP 5
+2.
+If the mask is zero, 16 retries have been made and we give
+up.
+.TP 5
+3.
+Shift the mask left one bit and formulate a backoff by
+masking the interval timer with the smaller of the complement of this mask
+and a 5-bit mask, resulting in a pseudo-random number between 0 and 31.
+This produces the number of slot times to delay,
+where a slot is 51 microseconds.
+.TP 5
+4.
+Use the value calculated in step 3 to delay before retransmitting
+the packet.
+The delay is done in a software busy loop.
+.SH DIAGNOSTICS
+.BR "ec%d: send error" .
+After 16 retransmissions using the
+exponential backoff algorithm described above, the packet
+was dropped.
+.PP
+.BR "ec%d: input error (offset=%d)" .
+The hardware indicated an error
+in reading a packet off the cable or an illegally sized packet.
+The buffer offset value is printed for debugging purposes.
+.PP
+.BR "ec%d: can't handle af%d" .
+The interface was handed
+a message with addresses formatted in an unsuitable address
+family; the packet was dropped.
+.SH SEE ALSO
+netintro(4), inet(4), arp(4)
+.SH BUGS
+The hardware is not capable of talking to itself.  The software
+implements local sending and broadcast by sending such packets to the
+loop interface.  This is a kludge.
+.PP
+Backoff delays are done in a software busy loop.  This can degrade the
+system if the network experiences frequent collisions.

@@ -1,0 +1,92 @@
+.\"	@(#)NISTreport.06.90	1.1	90/08/24
+.\" *troff -me
+.sp 2
+.ce 100
+\fB\s+2Interim Report on Operating Systems Research
+in the Berkeley UNIX Project\s-2\fP
+April 1, 1990 \- June 30, 1990
+.sp 2
+Susan L. Graham
+Domenico Ferrari
+Marshall Kirk McKusick
+Michael J. Karels
+Keith Sklower
+.ce 0
+.sp 2
+.pp
+Berkeley continued to  participate in the POSIX Standardization effort
+that most recently involved attending the April POSIX meeting.
+At this meeting we made a submission
+to ANSI concerning the IS-IS routing protocol.
+The submission was a suggestion concerning a way
+to compress lists of host identifiers on Local Area Networks,
+thus making it more practical to run the protocol over
+moderate capacity lines.
+The suggestion will be forwarded to other
+ISO member bodies as an ``expert contribution''.
+.pp
+We concluded our initial development of X.25 support for CLNP and CONS.
+The implementation was done so that it can
+gracefully co-exist with IP over public
+data networks and the DDN,
+and should work over a variety of drivers,
+(including front end processors).
+We added support for the UBC socket interface to X.25
+(for which there is already an ISODE driver for TP0).
+.pp
+We continued to test our recent revisions to the routing layer
+that permit link-level access for ISO IS-IS, and included revised
+code that does CLNP over IP encapsulation.
+We have successfully exchanged IP-encoded
+CLNP echo requests with the NSFnet Backbone,
+that were then routed to various nodes within the NSFnet Backbone.
+We have revised the ESIS code to make use of the kernel routing
+data base, instead of its own private cache, in part to ease
+the construction of a user-level IS-IS daemon.
+.pp
+We tested the ESIS code to make sure that it correctly
+generated and processed redirects.
+Some last minute changes included further enhancements to ESIS
+done in collaboration with the University of Wisconsin
+(required for construction of an IS-IS implementation).
+The changes provided a means of intercepting all transport
+connection requests destined for a given NSAP,
+to make it possible to construct a transport service bridge.
+During the process of installing the transport intercept,
+another couple of the COS failures were fixed.
+.pp
+We received a list of conformance test failures for the ISO TP4
+implementation and corrected many of them.
+.pp
+We completed the first phase of our structural reorganization
+of the kernel that reduces the number of global variables
+(important for security considerations).
+We formalized several major interfaces to improve modularity.
+.pp
+The end of the quarter was spent gathering together
+a formal test release of Berkeley UNIX which we called 4.3BSD-Reno.
+This work included finishing up and documenting the projects that we have
+done and putting together a coherent test release.
+.pp
+There were some last minute fixes to the 4.3BSD-Reno release,
+contributed by the Ultrix engineering group after interoperability
+testing with their DECNET phase V routers, and FTAM implementation.
+.pp
+The 6.6 version of ISODE was also compiled almost without incident.
+We received the very latest version of ISODE, and made sure that it
+compiled and ran under 4.3BSD-Reno.
+Regrettably, this took a weeks time, and consequently had to be
+shipped separately.
+.pp
+The project has managed to secure some non-DARPA continuation funding.
+However, this funding is significantly below our previous funding
+and as a consequence our group will probably have to be sized down.
+In particular, our current funding groups are not very interested
+in ISO development.
+So, although we have managed to continue our ISO work in the short term,
+it is not clear how long this effort can be continued.
+If NIST is still interested in further ISO work,
+then they should take action to see that it gets done.
+We are interested in continuing the ISO work;
+should this be impossible, we recommend that further ISO work
+start with the 4.3BSD-Reno and ISODE version 6.6 distributions.

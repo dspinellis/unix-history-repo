@@ -1,0 +1,100 @@
+The following list are people and organizations that have contributed
+source code that will be part of the 4.4BSD release.  Each person or
+organization listed in the first group provided a large subsystem, the
+second, a specific program or library routine.
+
+@	386 support			William Jolitz
+@	ANSI C library support		Chris Torek
+	Autoconfiguration		Robert Elz
+	C library documentation		American National Standards Committee X3
+	CCI 6/32 support		Computer Consoles Inc.
+	GCC				The Free Software Foundation
+@	HP300 support			Systems Programming Group; University
+					of Utah Computer Science Department.
+	Job control			Jim Kulp
+	Kerberos			Project Athena, MIT
+	NFS automounter			Jan Pendry
+	NFS support			Rick Macklem
+	Network device drivers		Micom-Interlan, Excelan
+	Quota support			Robert Elz
+	RPC support			Sun Microsystems Inc.
+@	Stdio				Chris Torek
+	System documentation		IEEE (POSIX)
+	Transport/Network OSI layers	IBM Corp., and the University of Wisconsin
+	VAX 3000 support		Mt. Xinu and Tom Ferrin
+	VAX BI support			Chris Torek
+	VAX device support		Digital Equipment Corp.
+	X11				Project Athena, MIT
+
+	cal(1)				Kim Letkeman
+	cat(1)				Kevin Fall
+	col(1)				Michael Rendell
+@	comm(1)				Case Larsen
+	compress(1)			James A. Woods, Spencer Thomas and Joseph Orost
+	cp(1)				David Hitz
+	cut(1)				Adam S. Moskowitz and Marciano Pitargue
+	des(1)				Phil Karn, Jim Gillogly and Richard Outerbridge
+	du(1)				Chris Newcomb
+	emacs(1)			Richard Stallman
+	find(1)				Cimarron Taylor
+	finger(1)			Tony Nardo
+	fold(1)				Kevin Ruddy
+	fpr(1)				Robert Corbett
+	fsplit(1)			Jerry Berkman and Asa Romberger
+	gprof(1)			Peter Kessler
+	indent(1)			David Willcox, Eric Schmidt, James Gosling and Sun Microsystems
+	jove(1)				Jonathon Payne
+	lex(1)				Vern Paxson
+	locate(1)			James A. Woods
+@	ls(1)				Michael Fischbein
+@	m4(1)				Ozan Yigit
+	mail(1)				Kurt Schoens
+@	make(1)				Adam de Boor
+	mh(1)				Rand Corporation
+	mv(1)				Ken Smith
+	news(1)				Rick Adams (and a cast of thousands)
+@	nm(1)				Hans Huebner
+	paste(1)			Adam S. Moskowitz
+	patch(1)			Larry Wall
+	rcs(1)				Walter F. Tichy
+	tn3270(1)			Gregory Minshall
+	tsort(1)			Michael Rendell
+@	unifdef(1)			Dave Yost
+@	uniq(1)				Case Larsen
+@	uuq(1)				Lou Salkind and Rick Adams
+@	who(1)				Michael Fischbein
+@	window(1)			Edward Wang
+	write(1)			Craig Leres and Jef Poskanzer
+	xargs(1)			John B. Roll Jr.
+	yacc(1)				Robert Paul Corbett
+
+	bitstring(3)			Paul Vixie
+	ctime(3) (timezone support)	Arthur David Olson
+	fnmatch(3)			Guido van Rossum
+	glob(3)				Guido van Rossum
+	lsearch(3)			Roger L. Snyder
+@	nsaddr(3)			J.Q. Johnson
+
+	arithmetic(6)			Eamonn McManus
+	atc(6)				Ed James
+	bcd(6)				Steve Hayman
+@	caesar(6)			Rick Adams
+@	ching(6)			Guy Harris
+	factor(6)			Landon Curt Noll
+@	fortune(6)			Ken Arnold
+	hack(6)				Andries Brouwer (and a cast of thousands)
+	phantasia(6)			Edward Estes
+	primes(6)			Landon Curt Noll
+	rogue(6)			Timothy C. Stoehr
+	wump(6)				Dave Taylor
+
+@	arp(8)				Sun Microsystems Inc.
+	clri(8)				Rich $alz
+@	disklabel(8)			Symmetric Computer Systems
+	mknod(8)			Kevin Fall
+	ping(8)				Mike Muuss
+	sendmail(8)			Eric Allman
+	slip(8)				Rick Adams
+@	traceroute(8)			Van Jacobson
+@	uucpd(8)			Rick Adams
+@	uusnap(8)			Randy King and Rick Adams

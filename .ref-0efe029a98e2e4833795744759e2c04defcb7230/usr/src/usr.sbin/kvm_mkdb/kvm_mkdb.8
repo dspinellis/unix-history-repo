@@ -1,0 +1,28 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)kvm_mkdb.8	1.2 (Berkeley) %G%
+.\"
+.TH kvm_mkdb 8 ""
+.UC 7
+.SH NAME
+kvm_mkdb \- create kernel database
+.SH SYNOPSIS
+.B kvm_mkdb
+.SH DESCRIPTION
+.I kvm_mkdb
+creates a database in /var/run containing information about /vmunix and
+possibly other fairly static information about the current system.
+Various library routines consult this database.
+The only information currently stored is the kernel namelist, which is
+used by the
+.IR kvm_nlist (3)
+function.
+.SH FILES
+/vmunix
+.br
+/var/run/kvm_vmunix.{dir,pag}
+.SH SEE ALSO
+kvm_nlist(3)

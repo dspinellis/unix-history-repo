@@ -1,0 +1,306 @@
+.\" Copyright (c) 1987 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Computer Consoles Inc.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)mpcctab.4	6.4 (Berkeley) %G%
+.\"
+.TH MPCCTAB 4 ""
+.UC 7
+.SH NAME
+mpcctab \- MPCC configuration file
+.SH DESCRIPTION
+The file \fBmpcctab\fR is used to configure CCI's Multi-Protocol 
+Communication Controller (MPCC).
+The controller provides high-speed
+synchronous communications for the \s-1POWER 6\s+1 family
+of computers.
+This file determines the MPCC board 
+configurations. You can download either a synchronous , bisync or
+an asynchronous protocol to an MPCC board.
+See \fIdlmpcc\fR(8)
+for details.
+.LP
+A \fBmpcctab\fR file is supplied
+with each MPCC release; however, 
+you can modify this file or create your own file 
+by using one of the \s-1UNIX\s+1 text editors.
+.LP
+The contents of the file 
+consists of entries that describe supported communication 
+protocols and their unique attributes. The protocols supported are
+X.25, SNA,  ASYNC, and BISYNC.
+For ASYNC two different entries are possible in the 
+\fIprocol\fR field - if 16 port MPCC async is configured, then ASYNC is 
+entered; 32 port MPCC async is specified by entering 32PORT.
+This file must reside in the directory
+\fB/etc/mpcc\fR. 
+.SH Entry Line Format
+An entry line consists of an \fIitem identifier\fR followed by 
+variable width arguments separated by colons. There are three 
+item identifiers: MPCC, PROTOCOL, PORT. The MPCC line in this file
+identifies the board number. The PROTOCOL line identifies
+the specific communication protocol.
+The PORT line describes
+the port for the immediately preceding protocol. The number
+of arguments  for the PROTOCOL and PORT lines,
+and the arguments themselves, 
+are protocol dependent. See the individual
+argument descriptions for details.
+.LP
+Notes: Use upper case letters for clarity when specifying the item 
+identifier and the protocol name. Make sure that you enter
+the argument values in the order specified below. Also, use comments 
+liberally, and indicate comment lines by placing a 
+pound sign (\fB#\fR) in column one. 
+.LP
+The item identifiers and their corresponding line
+formats, with valid argument values, follow:
+.LP
+\fBMPCC Line\fR
+.LP
+Format:
+.RS
+.LP
+\fBMPCC:\fIbdno\fB:\fR[\fBFCCS,\fIportno\fR\fB,\fItimer\fR]\fB:\fR[\fBSOC,\fIportno\fR]
+.RE 
+.LP 
+Argument Explanations: 
+.RS
+.IP \fIbdno\fR 8
+Specifies the board number.
+.IP \fBFCCS\fR 8
+FCCS is a fault-tolerant support system that allows backup ports
+to assume the functions of failed ports.
+For example,
+if port 0 fails for any reason,
+another port may be configured to assume the duties of the failed port.
+The keyword \fBFCCS\fR identifies this feature and must be
+followed by the list of fail-safe port numbers and a time increment,
+described below.
+This feature is optional.
+.IP \fBSOC\fR 8
+An FCCS port can also be an SOC (Switch On Close) port,
+meaning that the port will switch when it is closed.
+And as with FCCS, the port will switch if it fails.
+This feature is optional.
+.IP \fIportno\fR 8
+Portno is a list of port numbers,
+separated by commas,
+specifying the primary ports you want protected by backup ports.
+FCCS boards have either 4 primary and 4 backup ports,
+or 8 primary and 8 backup ports.
+The valid port numbers are
+.B 0
+through
+.B 3
+for the 4-port version,
+and
+.B 0
+through
+.B 7
+for the 8-port version.
+.IP
+Each of the ports has a switched connector.
+If the board fails for any reason,
+the traffic on these ports is automatically routed
+through the switched connector.
+These connectors must be cabled to secondary ports on the other FCCS
+connector panels.
+The secondary ports are numbered 8 through 11 on the 4-port version and
+8 through 15 on the 8-port version.
+Only the primary ports need be designated in the FCCS configuration line,
+however all ports must be identified as described in the PORT Line section
+below.
+.if n .bp
+.IP \fItime\fR 8
+Specifies the time period for the sentinel relay timer. 
+Each board resets its sentinel timer after the specified
+time period. If the
+board fails, and therefore can't set the timer, then control
+is passed automatically to another board, which continues 
+the current processing. This feature ensures PerpetualProcessing
+and is transparent to the user. The valid range of values
+in milliseconds is from \fB50\fR to \fB5950\fR in 
+50 millisecond increments.
+.LP
+.RE
+\fBPROTOCOL Line\fR 
+.LP
+Format:
+.LP
+.RS
+\fBPROTOCOL:\fIprocol\fB:\fIdepargs\fR
+.LP
+.RE
+Argument Explanations:
+.RS
+.IP \fIprocol\fR 10
+Specifies the protocol you want associated with the 
+board specified in the previous \fBMPCC\fR line. 
+.IP \fIdepargs\fR 10
+Specifies the protocol-dependent protocol attributes. X.25  and SNA have ten (10)
+arguments,
+ASYNC has just one (1) argument, and BISYNC has no arguments.
+.LP
+.cu
+X.25 Dependent Attributes
+.LP
+Note: You must be familiar with the 
+X.25 CCITT Yellow Book (1980) 
+in order to understand the following values.
+.IP \fIN1\fR 8
+Specifies the maximum frame size in bytes.
+.IP \fIN2\fR 8
+Specifies the retry count.
+.IP \fIT1\fR 8
+Specifies the retry timer in milliseconds.
+.IP \fIT2\fR 8
+Specifies the response delay timer in milliseconds.
+.IP \fIT3\fR 8
+Specifies the inactive link timer in milliseconds.
+.IP \fIT4\fR 8
+Specifies the idle channel timer in milliseconds.
+.IP \fIK\fR 8
+Specifies the Level 2 window size.
+.if n .bp
+.IP \fIxid1\fR 8
+Specifies the destination type in the XID command. It must be a number
+from 1-5:
+.nf
+
+        1 = AXE
+        2 = CTSS
+        3 = DEX
+        4 = DMS
+        5 = WESCOM
+.fi
+.IP \fIxid2\fR 8
+Specifies the destination identity in the XID command. It can be three to 
+nine ASCII characters.
+.IP \fIxid3\fR 8
+Specifies the additional information in the XID command. It can be any
+ASCII string up to 20 characters long.
+.LP
+.cu
+ASYNC and 32PORT Dependent Attribute
+.IP \fIbufsize\fR 10
+Specifies the size of the transmit/receive buffers in bytes.
+.RE
+.LP
+\fBPORT Line\fR
+.LP
+Format:
+.LP
+.RS
+\fBPORT:\fIportno\fB:\fIprocol\fB:\fIdepargs\fR
+.RE
+.LP
+Argument Explanations:
+.RS
+.IP \fIportno\fR 10
+Specifies the port number of the previously specified board.
+.IP \fIprocol\fR 10
+Specifies the protocol. You must state the same protocol
+as you stated in the preceding PROTOCOL line.
+.IP \fIdepargs\fR 10
+Specifies the protocol-dependent port attributes. X.25 has
+fourteen (14) arguments. ASYNC, 32PORT and BISYNC have none. SNA has 14
+fixed arguments.
+.LP
+.cu
+X.25 Dependent Arguments
+.LP
+Note: You must be familiar with the X.25 CCITT Yellow
+Book (1980) in order to understand the following values.
+.IP \fIixmitbuf\fR 12
+Specifies the number of transmit buffers allocated
+for I frames.
+.IP \fIsuxmitbuf\fR 12
+Specifies the number of transmit buffers allocated for
+S/U frames.
+.IP \fIirecvbuf\fR 12
+Specifies the number of receive buffers allocated for
+I frames.
+.IP \fIsurecvbuf\fR 12
+Specifies the number of receive buffers allocated for
+S/U frames.
+.IP \fIxmito\fR 12
+Specifies the Level 1 transmit timeout.
+This argument should be \fB0\fR so that Level 1 calculates timeout from
+the baud rate.
+.IP \fIrts\fR 12
+Specifies the modem control value
+for rts. Valid values are \fB1\fR which equals 
+\fBassert\fR, \fB2\fR which equals \fBdrop\fR, and \fB3\fR 
+which equals \fBauto\fR.
+.IP \fIdtr\fR 12
+Specifies the modem control value for dtr. 
+Valid values are \fB1\fR which equals
+\fBassert\fR, and \fB2\fR which equals \fBdrop\fR.
+.IP \fIlineidle\fR 12
+Specifies the line state between transmissions. 
+Valid values are \fB0\fR which specifies a flag
+fill, and \fB1\fR which specifies a mark fill.
+.IP \fIrcvadr\fR 12
+Specifies the port configuration. A \fB1\fR makes the port
+a DCE, while a \fB3\fR makes the port a DTE.
+.IP \fImask\fR 12
+Specifies the data link receive mask. This argument must be
+\fB3\fR.
+.IP \fIxmtrty\fR 12
+Specifies the number of data link retries after a transmit
+timeout. This argument should be zero since upper levels of X25 do retries.
+.IP \fIbaud\fR 12
+Specifies the baud rate of a transmission. All standard rates
+are supported. Some common rate values are \fB0\fR equals a modem,
+\fB13\fR equals 9600, and \fB26\fR equals 56KB. See the header file
+\fBmp_port.h\fR for other values.
+.IP \fIencode\fR 12
+Specifies the physical data encoding. A \fB0\fR indicates NRZ, and a \fB1\fR
+indicates NRZI.
+.IP \fItrace\fR 12
+Specifies the data link receive trace mode. This argument must be \fB0\fR.
+.RE
+.if n .bp
+.SH EXAMPLE
+The following entry configures five MPCC boards: one for X.25,
+ASYNC, 32PORT, BISYNC and SNA. Each has two ports.
+.nf
+
+MPCC:0
+PROTOCOL:X25:272:2:6000:1000:30000:20000:8:2:ccice1:remote
+PORT:0:X25:8:16:8:16:0:1:1:0:1:3:0:0:0:0
+PORT:1:X25:8:16:8:16:0:1:1:0:3:3:0:0:0:0
+
+MPCC:1
+PROTOCOL:ASYNC:128
+PORT:0:ASYNC
+PORT:1:ASYNC
+
+MPCC:2
+PROTOCOL:32PORT:128
+PORT:0:32PORT
+PORT:1:32PORT
+
+MPCC:3
+PROTOCOL:BISYNC
+PORT:0:BISYNC
+PORT:1:BISYNC
+
+MPCC:4
+PROTOCOL:SNA:272:4:800:200:20000:20000:8:2:acey:deucy
+PORT:0:SNA:8:10:10:24:5:3:1:0:193:193:1:0:0:0
+PORT:1:SNA:8:10:10:24:5:3:1:0:193:193:1:0:0:0
+.fi
+.SH FILES
+/etc/mpcctab
+/etc/mpcca
+/etc/mpccb
+/etc/mpcc32
+/etc/mpccx
+.SH SEE ALSO
+dlmpcc(8)

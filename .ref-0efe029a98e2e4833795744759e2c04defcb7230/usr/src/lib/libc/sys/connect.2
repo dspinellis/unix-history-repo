@@ -1,0 +1,126 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)connect.2	6.8 (Berkeley) %G%
+.\"
+.TH CONNECT 2 ""
+.UC 5
+.SH NAME
+connect \- initiate a connection on a socket
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.PP
+.ft B
+connect(s, name, namelen)
+int s;
+struct sockaddr *name;
+int namelen;
+.fi
+.SH DESCRIPTION
+The parameter
+.I s
+is a socket.
+If it is of type SOCK_DGRAM,
+then this call specifies the peer with which the socket is to be associated;
+this address is that to which datagrams are to be sent,
+and the only address from which datagrams are to be received.
+If the socket is of type SOCK_STREAM,
+then this call attempts to make a connection to
+another socket.
+The other socket is specified by
+.I name,
+which is an address in the communications space of the socket.
+Each communications space interprets the
+.I name
+parameter in its own way.
+Generally, stream sockets may successfully
+.I connect
+only once; datagram sockets may use
+.I connect
+multiple times to change their association.
+Datagram sockets may dissolve the association
+by connecting to an invalid address, such as a null address.
+.SH "RETURN VALUE
+If the connection or binding succeeds, then 0 is returned.
+Otherwise a \-1 is returned, and a more specific error
+code is stored in \fIerrno\fP.
+.SH "ERRORS
+The call fails if:
+.TP 20
+[EBADF]
+.I S
+is not a valid descriptor.
+.TP 20
+[ENOTSOCK]
+.I S
+is a descriptor for a file, not a socket.
+.TP 20
+[EADDRNOTAVAIL]
+The specified address is not available on this machine.
+.TP 20
+[EAFNOSUPPORT]
+Addresses in the specified address family cannot be used with this socket.
+.TP 20
+[EISCONN]
+The socket is already connected.
+.TP 20
+[ETIMEDOUT]
+Connection establishment timed out without establishing a connection.
+.TP 20
+[ECONNREFUSED]
+The attempt to connect was forcefully rejected.
+.TP 20
+[ENETUNREACH]
+The network isn't reachable from this host.
+.TP 20
+[EADDRINUSE]
+The address is already in use.
+.TP 20
+[EFAULT]
+The \fIname\fP parameter specifies an area outside
+the process address space.
+.TP 20
+[EINPROGRESS]
+The socket is non-blocking 
+and the connection cannot
+be completed immediately.
+It is possible to
+.IR select (2)
+for completion by selecting the socket for writing.
+.TP 20
+[EALREADY]
+The socket is non-blocking
+and a previous connection attempt
+has not yet been completed.
+.PP
+The following errors are specific to connecting names in the UNIX domain.
+These errors may not apply in future versions of the UNIX IPC domain.
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
+.TP 15
+[ENOENT]
+The named socket does not exist.
+.TP 15
+[EACCES]
+Search permission is denied for a component of the path prefix.
+.TP 15
+[EACCES]
+Write access to the named socket is denied.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.SH SEE ALSO
+accept(2), select(2), socket(2), getsockname(2)

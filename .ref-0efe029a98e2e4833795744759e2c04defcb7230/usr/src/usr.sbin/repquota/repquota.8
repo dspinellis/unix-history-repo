@@ -1,0 +1,72 @@
+.\" Copyright (c) 1983, 1990 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Robert Elz at The University of Melbourne.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)repquota.8	6.5 (Berkeley) %G%
+.\"
+.TH REPQUOTA 8 ""
+.UC 5
+.SH NAME
+repquota \- summarize quotas for a file system
+.SH SYNOPSIS
+.B repquota
+[
+.B \-v
+] [
+.B \-g
+] [
+.B \-u
+]
+filesystem ...
+.br
+.B repquota
+[
+.B \-v
+] [
+.B \-g
+] [
+.B \-u
+]
+.B \-a
+.br
+.SH DESCRIPTION
+.I Repquota
+prints a summary of the disk usage and quotas for the
+specified file systems.
+If the \fI-a\fP flag is used,
+.I repquota
+prints the quotas of all the filesystems listed in
+.IR /etc/fstab .
+.PP
+By default both user and group quotas are printed if they exist.
+The optional \fI-g\fP flag specifies that only group quotas should be printed.
+The optional \fI-u\fP flag specifies that only user quotas should be printed.
+Specifying both \fI-g\fP and \fI-u\fP is equivalent to the default.
+.PP
+For each user or group, the current
+number files and amount of space (in kilobytes) is
+printed, along with any quotas created with
+.IR edquota (8).
+If the \fI-v\fP flag is specified,
+a header line is printed preceding each filesystems quotas.
+.PP
+Only members of the operator group or the super-user may
+use this command.
+.SH FILES
+.DT
+\fIquota.user\fP	at the filesystem root with user quotas
+.br
+\fIquota.group\fP	at the filesystem root with group quotas
+.br
+/etc/fstab	for file system names and locations
+.SH SEE ALSO
+quota(1),
+quotactl(2),
+fstab(5),
+edquota(8), quotacheck(8), quotaon(8)
+.SH DIAGNOSTICS
+Various messages about inaccessible files; self-explanatory.

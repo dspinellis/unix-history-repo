@@ -1,0 +1,51 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)uuxqt.8	6.3 (Berkeley) %G%
+.\"
+.TH UUXQT 8 ""
+.UC 6
+.SH NAME
+uuxqt \- \s-1UUCP\s+1 execution file interpreter
+.SH SYNOPSIS
+.B /usr/lib/uucp/uuxqt
+[
+.BI \-x debug
+]
+.SH DESCRIPTION
+.I Uuxqt
+interprets
+.I "execution files"
+created on a remote system via
+.IR uux (1)
+and transferred to the local system via
+.IR uucico (8).
+When a user uses
+.I uux
+to request remote command execution, it is
+.I uuxqt
+that actually executes the command. 
+Normally,
+.I uuxqt
+is forked from
+.I uucico
+to process queued execution files;
+for debugging, it may also be run manually by the \s-1UUCP\s+1 administrator.
+.PP
+.I Uuxqt
+runs in its own subdirectory,
+.IR /var/spool/uucp/XTMP .
+It copies intermediate files to this directory when necessary.
+.SH FILES
+.ta \w'/var/spool/uucp/LCK/LCK.XQT   'u
+.nf
+/usr/lib/uucp/L.cmds	Remote command permissions list
+/usr/lib/uucp/USERFILE	Remote directory tree permissions list
+/var/spool/uucp/LOGFILE	UUCP system activity log
+/var/spool/uucp/LCK/LCK.XQT	\fIUuxqt\fP lock file
+/var/spool/uucp/X./	Incoming execution file directory
+/var/spool/uucp/XTMP	\fIUuxqt\fP running directory
+.fi
+.SH SEE ALSO
+uucp(1), uux(1), L.cmds(5), USERFILE(5), uucico(8)

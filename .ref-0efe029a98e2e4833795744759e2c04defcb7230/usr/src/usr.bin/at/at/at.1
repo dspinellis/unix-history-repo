@@ -1,0 +1,196 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)at.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt AT 1
+.Os BSD 4
+.Sh NAME
+.Nm at
+.Nd schedule execution of commands `at' a given time
+.Sh SYNOPSIS
+.Nm at
+.Op Fl c
+.Op Fl s
+.Op Fl m
+.Ar time
+.Op Ar day
+.Op Ar command_file
+.Sh DESCRIPTION
+.Nm At
+schedules execution of commands at the specified
+.Ar time .
+The commands may be given to
+.Nm
+via the
+.Ar command_file
+or accepted from the standard input.
+.Nm At
+will pass these commands to the appropriate
+shell at the requested time. While awaiting
+execution, the jobs reside in a spool directory
+and may be examined by the
+.Xr atq 1
+program.
+.Pp
+Options available:
+.Pp
+.Tp Fl c
+.Ar Command_file
+contains
+.Xr csh 1
+commands.
+.Tp Fl s
+.Ar Command_file
+contains
+.Xr sh 1
+commands.
+.Tp Fl m
+Mail will be sent to the user after the job
+has been run. If errors occur during execution of the job, then
+a copy of the error diagnostics will be sent to the user. If
+no errors occur, then a short message is sent informing the
+user that no errors occurred.
+.Tp
+.Pp
+If a
+.Ar command_file
+is not specified,
+.Nm at
+prompts for commands from standard input until a
+.Ql \&^D
+is typed.
+.Pp
+The format of the spool file is as follows:
+A four line header that includes the owner of the job, the name of the job,
+the shell used to run the job, and whether mail will be
+sent after the job is executed. The header is followed by a
+.Nm cd
+command to the current directory and a
+.Nm umask
+command to set the modes on any files created by the job.
+Then
+.Nm at
+copies all relevant environment variables to the spool file.
+When the script is run, it uses the user and group ID
+of the creator of the spool file.
+.Pp
+The
+.Ar time
+is either a 24 hour military time
+.Em hhmm,
+where
+.Em hh
+is hour and
+.Em mm
+is minutes, or the traditional 12 hour time
+with qualifying options:
+.Df I
+.Dp Li am , a
+am
+.Dp Li pm , p
+pm
+.Dp Li n
+noon
+.Dp Li m
+midnight
+.Dp
+.De
+The time can be abbreviated as shown below in EXAMPLES.
+.Pp
+A
+.Ar day
+of the week may be specified by the first two
+letters of its name. A week (7 days) may be specified by 
+the argument
+.Em week .
+If a month name is given, the following argument is expected to
+be the day (numeric).
+.Sh ENVIRONMENT
+If a shell is not specified,
+the current environment variable
+.Ev SHELL
+is used.
+.Sh EXAMPLES
+.Pp
+.Tw Ar
+.Tp Li at 10p
+Execute at 10pm today, or tomorrow
+if 10pm has past. Use the shell
+found in the environment variable
+.Ev SHELL.
+.Tp Li at -c -m 1705 mo
+Execute at 5:05pm on Monday using
+.Xr csh 1
+and send mail upon completion or
+termination of the job.
+.Tp Li at -s -m 1200n week
+Use
+.Xr sh 1 ,
+send mail upon completetion, start at noon o'clock,
+one week from today.
+.Tp Li at -s 8a apr 1
+Ideally this would be given late in March.  The
+commands would be run at 8 am on April first, using
+the
+.Xr sh 1 .
+.Tp
+.Sh ERRORS
+Errors must be collected via the
+.Fl m
+option or by redirecting the standard output
+from inside the
+.Ar command_file.
+.Sh FILES
+.Dw /var/spool/at/yy.ddd.hhhh.*
+.Di L
+.Dp Pa /var/spool/at
+spooling area
+.Dp Pa /var/spool/at/yy.ddd.hhhh.*
+job file
+.Dp Pa /var/spool/at/past
+directory where jobs are executed from
+.Dp Pa /var/spool/at/lasttimedone
+last time atrun was run
+.Dp Pa /var/libexec/atrun
+executor (run by
+.Xr cron 8 )
+.Dp
+.Sh SEE ALSO
+.Xr atq 1 ,
+.Xr atrm 1 ,
+.Xr calendar 1 ,
+.Xr cron 8
+.Xr sleep 1 ,
+.Sh DIAGNOSTICS
+Complains about various syntax errors and times out of range.
+.Sh HISTORY
+.Nm At
+appeared in Version 7 AT&T UNIX.
+.Sh BUGS
+The queueing mechanism
+.Pa /usr/libexec/atrun ,
+is scheduled by
+.Xr cron 8 .
+Frequency with which
+.Xr cron 8
+runs
+.Pa /usr/libexec/atrun
+is site dependent.
+If it is run infrequently, a job may
+fall thru the cracks.
+.Pp
+There are known problems attempting to specify
+a time of 2400 hours to
+.Nm at .
+.Pp
+If the system crashes, mail is not sent to the user informing them that
+the job was not completed.
+.Pp
+Sometimes old spool files are not removed from the directory
+.Pa /var/spool/at/past .
+This is usually due to a system crash,
+and requires that they be removed by hand.

@@ -1,0 +1,57 @@
+.nr _0 \n(c.
+.\" This version has had comments stripped; an unstripped version is available.
+.de (z
+.@D 4 \\$1 \\$2
+.@(
+.nr ?T 0
+..
+.de )z
+.sp \\n(zsu
+.@)
+.rr _0
+.if !\\n(?b \
+.	nr dn +(\\n(ppu*\\n($ru)/2u+\\n(zsu
+.ie ((\\n(dn+\n(.V)>=\\n(.t):(\\n(?a) \
+\{\
+.	nr ?a 1
+.	ds |x |t
+.\}
+.el \
+\{\
+.	nr ?b 1
+.	nr _b +\\n(dnu
+.	ch @f -\\n(_bu
+.	ds |x |b
+.\}
+.da \\*(|x
+.nf
+.ls 1
+.nr ?k 1
+\!.if \\\\n(nl>(\\\\n(tm+2v) .ne \\n(dnu-\\n(zsu
+.eo
+.cc @
+@|k
+@cc
+.ec
+.nr ?k 0
+.rm |k
+.da
+.in 0
+.ls 1
+.xl \\n($lu
+.ev
+..
+.de @k
+.ev 1
+.nf
+.ls 1
+.in 0
+.sp \\n(zsu
+.\\$1
+.ec
+.br
+.rm \\$1
+.ev
+.nr ?T 0
+..
+.nr c. \n(_0

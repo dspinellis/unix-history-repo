@@ -1,0 +1,61 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)adduser.8	6.7 (Berkeley) %G%
+.\"
+.TH ADDUSER 8 ""
+.UC 4
+.SH NAME
+adduser \- procedure for adding new users
+.SH DESCRIPTION
+A new user must choose a login name, which must not already appear in
+.IR /etc/passwd or
+.IR /etc/aliases .
+It must also not begin with the hyphen (``-'') character.
+It is strongly recommended that it be all lower-case, and not contain
+the dot (``.'') character, as that tends to confuse mailers.
+An account can be added by editing a line into the passwd file; this
+must be done with the password file locked e.g. by using
+.IR chpass (1)
+or
+.IR vipw (8).
+.PP
+A new user is given a group and user id.
+Login's and user id's should be unique across the system, and often across
+a group of systems, since they are used to control file access.
+Typically, users working on similar projects will be put in the same groups.
+At the University of California, Berkeley, we have groups for system staff,
+faculty, graduate students, and special groups for large projects.
+.PP
+A skeletal account for a new user \*(lqernie\*(rq might look like:
+.IP
+ernie::25:30::0:0:Ernie Kovacs,508 Evans Hall,x7925,642-8202:/a/users/ernie:/bin/csh
+.PP
+For a description of each of these fields, see
+.IR passwd (5).
+.PP
+It is useful to give new users some help in getting started, supplying
+them with a few skeletal files such as
+.I \&.profile
+if they use \*(lq/bin/sh\*(rq, or
+.I \&.cshrc
+and
+.I \&.login
+if they use \*(lq/bin/csh\*(rq.
+The directory
+\*(lq/usr/share/skel\*(rq contains skeletal definitions of such files.
+New users should be given copies of these files which, for instance,
+use
+.IR tset (1)
+automatically at each login.
+.SH FILES
+.ta 2i
+/etc/master.passwd	user database
+.br
+/usr/share/skel	skeletal login directory
+.SH SEE ALSO
+chpass(1), finger(1), passwd(1), aliases(5), passwd(5), mkpasswd(8), vipw(8)
+.SH BUGS
+User information should (and eventually will) be stored elsewhere.

@@ -1,0 +1,120 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)graph.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GRAPH 1
+.Os ATT 7th
+.Sh NAME
+.Nm graph
+.Nd draw a graph
+.Sh SYNOPSIS
+.Nm graph
+.Op option
+\&...
+.Sh DESCRIPTION
+.Nm Graph
+with no options takes pairs of numbers from the
+standard input as abscissas and
+ordinates of a graph.
+Successive points are connected by straight lines.
+The graph is encoded on the standard output
+for display by the
+.Xr plot 1
+filters.
+.Pp
+If the coordinates of a point are followed by
+a nonnumeric string, that string is printed as a
+label beginning on the point.
+Labels may be surrounded with quotes "...", in
+which case they may be empty or contain blanks
+and numbers;
+labels never contain newlines.
+.Pp
+The following options are recognized,
+each as a separate argument.
+.Tw Fl
+.Tp Fl a
+Supply abscissas automatically (they are missing from
+the input); spacing is given by the next
+argument (default 1).
+A second optional argument is the starting point for
+automatic abscissas (default 0 or lower limit given by
+.Fl x  ) .
+.Tp Fl b
+Break (disconnect) the graph after each label in the input.
+.Tp Fl c
+Character string given by next argument
+is default label for each point.
+.Tp Fl g
+Next argument is grid style,
+0 no grid, 1 frame with ticks, 2 full grid (default).
+.Tp Fl l
+Next argument is label for graph.
+.Tp Fl m
+Next argument is mode (style)
+of connecting lines:
+0 disconnected, 1 connected (default).
+Some devices give distinguishable line styles
+for other small integers.
+.Tp Fl s
+Save screen, don't erase before plotting.
+.Tc Fl x
+.Ws
+.Op Ar l
+.Cx
+If
+.Ar l
+is present, x axis is logarithmic.
+Next 1 (or 2) arguments are lower (and upper)
+.Ar x
+limits.
+Third argument, if present, is grid spacing on
+.Ar x
+axis.
+Normally these quantities are determined automatically.
+.Tc Fl y
+.Ws
+.Op Ar l
+.Cx
+Similarly for
+.Ar y  .
+.Tp Fl h
+Next argument is fraction of space for height.
+.Tp Fl w
+Similarly for width.
+.Tp Fl r
+Next argument is fraction of space to move right before plotting.
+.Tp Fl u
+Similarly to move up before plotting.
+.Tp Fl t
+Transpose horizontal and vertical axes.
+(Option
+.Fl x
+now applies to the vertical axis.)
+.Tp
+.Pp
+A legend indicating grid range is produced
+with a grid unless the
+.Fl s
+option is present.
+.Pp
+If a specified lower limit exceeds the upper limit,
+the axis
+is reversed.
+.Sh SEE ALSO
+.Xr spline 1 ,
+.Xr plot 1
+.Sh HISTORY
+.Nm Plot
+appeared in Version 6 AT&T Unix.
+.Sh BUGS
+.Nm Graph
+stores all points internally and drops those for which
+there isn't room.
+.Pp
+Segments that run out of bounds are dropped, not windowed.
+.Pp
+Logarithmic axes may not be reversed.

@@ -1,0 +1,170 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\"
+.\"     @(#)addbib.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Os BSD 4.2
+.Dt ADDBIB 1
+.Sh NAME
+.Nm addbib
+.Nd create or extend bibliographic database
+.Sh SYNOPSIS
+.Nm addbib
+.Op Fl p Ar promptfile
+.Op Fl a
+.Ar database
+.Sh DESCRIPTION
+When this program starts up, answering
+.Ql y
+to the initial
+.Ql Instructions?
+prompt yields directions;
+typing
+.Ql n
+or
+.Ql RETURN
+skips them.
+.Nm Addbib
+then prompts for various bibliographic fields,
+reads responses from the terminal,
+and sends output records to a
+.Ar database .
+A null response (just
+.Ql RETURN )
+means to leave out that field.
+A minus sign
+.Ql \-
+means to go back to the previous field.
+A trailing backslash allows a field to be continued on the next line.
+The repeating
+.Ql Continue?
+prompt allows the user
+either to resume by typing
+.Ql y
+or
+.Ql RETURN ,
+to quit the current session by typing
+.Ql n
+or
+.Ql q ,
+or to edit the
+.Ar database
+with any system editor (.e.g.
+.Xr vi ,
+.Xr ex ,
+.Xr edit ,
+.Xr ed ) .
+.Pp
+The
+.Fl a
+option suppresses prompting for an abstract;
+asking for an abstract is the default.
+Abstracts are ended with a
+.Ql CTRL-d .
+The
+.Fl p
+option causes
+.Nm addbib
+to use a new prompting skeleton, defined in
+.Ar promptfile .
+This file should contain prompt strings, a tab,
+and the key-letters to be written to the
+.Ar database .
+.Pp
+The most common key-letters and their meanings are given below.
+.Nm Addbib
+insulates you from these key-letters,
+since it gives you prompts in English,
+but if you edit the bibliography file later on,
+you will need to know this information.
+.Dw \&%Y,Z
+.Dp \&%A
+Author's name
+.Dp \&%B
+Book containing article referenced
+.Dp \&%C
+City (place of publication)
+.Dp \&%D
+Date of publication
+.Dp \&%E
+Editor of book containing article referenced
+.Dp \&%F
+Footnote number or label (supplied by
+.Xr refer )
+.Dp \&%G
+Government order number
+.Dp \&%H
+Header commentary, printed before reference
+.Dp \&%I
+Issuer (publisher)
+.Dp \&%J
+Journal containing article
+.Dp \&%K
+Keywords to use in locating reference
+.Dp \&%L
+Label field used by
+.Fl k
+option of
+.Xr refer
+.Dp \&%M
+Memorandum label
+.Dp \&%N
+Number within volume
+.Dp \&%O
+Other commentary, printed at end of reference
+.Dp \&%P
+Page number(s)
+.Dp \&%Q
+Corporate or Foreign Author (unreversed)
+.Dp \&%R
+Report, paper, or thesis (unpublished)
+.Dp \&%S
+Series title
+.Dp \&%T
+Title of article or book
+.Dp \&%V
+Volume number
+.Dp \&%X
+Abstract \(em used by
+.Xr roffbib ,
+not by
+.Xr refer
+.Dp \&%Y,Z
+ignored by
+.Xr refer
+.Dp
+.Pp
+Except for `A', each field should be given just once.
+Only relevant fields should be supplied.
+.Sh EXAMPLES
+.Dw \&%Y,Z
+.Dp %A
+Bill Tuthill
+.Dp %T
+Refer \(em A Bibliography System
+.Dp %I
+Computing Services
+.Dp %C
+Berkeley
+.Dp %D
+1982
+.Dp %O
+\s-1UNX\s0 4.3.5.
+.Dp
+.Sh FILES
+.Dw promptfile
+.Di L
+.Dp Pa promptfile
+optional file to define prompting
+.Sh SEE ALSO
+.Xr refer 1 ,
+.Xr sortbib 1 ,
+.Xr roffbib 1 ,
+.Xr indxbib 1 ,
+.Xr lookbib 1
+.Sh HISTORY
+appeared in 4.2 BSD.
+.Sh AUTHORS
+Al Stangenberger, Bill Tuthill

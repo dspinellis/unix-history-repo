@@ -1,0 +1,961 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)sh.1	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SH 1
+.Os ATT 7th
+.Sh NAME
+.Nm sh
+.Nd shell command interpreter
+.Sh SYNOPSIS
+.Nm sh
+.Op Fl ceiknrstuvx
+.Op arg
+.Ar ...
+.Sh DESCRIPTION
+.Nm Sh
+is a command programming language that executes commands read from a terminal
+or a file. The shell this page describes is called the
+.Em Bourne
+shell.
+.Pp
+Command line options:
+.Pp
+If the first character of argument 0 if
+.Fl ,
+commands are read from
+.Pa $HOME/.profile ,
+if such a file exists.
+The following flags are interpreted by the shell when it is invoked.
+.Tw Fl
+.Tp Cx Fl c
+.Cx \&\ \&
+.Ar string
+.Cx
+Commands are read from
+.Ar string.
+.Tp Fl s
+If the
+.Fl s
+flag is present or if no arguments remain
+then commands are read from the standard input.
+Shell output is written to file descriptor 2.
+.Tp Fl i
+If the
+.Fl i
+flag is present or
+if the shell input and output are attached to a terminal (as told by
+.Xr getty  )
+then this shell is
+.Em interactive .
+In this case the terminate signal SIGTERM (see
+.Xr sigvec  2  )
+is ignored (so that 'kill 0'
+does not kill an interactive shell) and the interrupt signal
+SIGINT is caught and ignored (so that
+.Xr wait
+is interruptible).
+In all cases SIGQUIT is ignored by the shell.
+.Tp
+.Pp
+This next set of options can be used on the command line invoking
+the
+.Nm sh
+or set with the interactive command
+.Ic set .
+.Tp Fl e
+If non interactive, exit immediately if a command fails.
+.Tp Fl k
+All keyword arguments are placed in the environment for a command,
+not just those that precede the command name.
+.Tp Fl n
+Read commands but do not execute them.
+.Tp Fl t
+Exit after reading and executing one command.
+.Tp Fl u
+Treat unset variables as an error when substituting.
+.Tp Fl v
+Print shell input lines as they are read.
+.Tp Fl x
+Print commands and their arguments as they are executed.
+.Tp Fl
+Turn off the
+.Fl x
+and
+.Fl v
+options.
+.Tp
+.Ss Commands .
+A
+.Em simple-command
+is a sequence of non blank
+.Em words
+separated by blanks (a blank is a
+.Em tab
+or a
+.Em space  ) .
+The first word specifies the name of the command to be executed.
+Except as specified below the remaining words are passed as arguments
+to the invoked command.
+The command name is passed as argument 0 (see
+.Xr execve  2  ) .
+The
+.Em value
+of a simple-command is its exit status
+if it terminates normally or
+.Cx Li 200+
+.Em status
+.Cx
+if it terminates abnormally (see
+.Ar sigvec  2
+for a list of status values).
+.Pp
+A
+.Em pipeline
+is a sequence of one or more
+.Em commands
+separated by
+.Sq Nm \&|  .
+The standard output of each command but the last is connected by a
+.Xr pipe  2
+to the standard input of the next command.
+Each command is run as a separate process;
+the shell waits for the last command to terminate.
+.Pp
+A
+.Em list
+is a sequence of one or more
+.Em pipelines
+separated by
+.Nm \&; ,
+.Nm \&& ,
+.Nm \&&&
+or
+.Nm \&|
+or
+.Nm \&|\&|
+and optionally terminated by
+.Nm \&;
+or
+.Nm \&& .
+.Nm \&;
+and
+.Nm \&&
+have equal precedence which is lower than that of
+.Nm \&&&
+and
+.Nm \&|\&| ,
+.Nm &&
+and
+.Nm \&|\&| ,
+also have equal precedence.
+A semicolon causes sequential execution; an ampersand causes the preceding
+.Em pipeline
+to be executed without waiting for it to finish.  The symbol
+.Nm \&&&
+.Pq Nm \&|\&|
+causes the
+.Em list
+following to be executed only if the preceding
+.Em pipeline
+returns a zero (non zero) value.  Newlines may appear in a
+.Em list ,
+instead of semicolons, to delimit commands.
+.Pp
+A
+.Em command
+is either a simple-command or one of the following.
+The value returned by a command is that of the
+last simple-command executed in the command.
+.Tw Fl
+.Tp Cx Ic for
+.Cx \&\ \&
+.Ar name
+.Cx \&\ \&
+.Op Ic in Ar word ...
+.Cx \&\ \&
+.Ic do
+.Cx \&\ \&
+.Ar list
+.Cx \&\ \&
+.Ic  done
+.Cx
+Each time a
+.Ic for
+command is executed
+.Ar name
+is set to the next word in the
+.Ic for
+word list.
+If
+.Ic in
+.Ar word \&...
+is omitted,
+.Ic in
+.Dq Ic \&$@
+is assumed.  Execution ends when there are no more words in the list.
+.Tp Cx Ic case
+.Cx \&\ \&
+.Ar word
+.Cx \&\ \&
+.Ic in
+.Cx \&\ \&[
+.Ar pattern
+.Cx \&\ \&
+.Op Ar \&| pattern ...
+.Cx \&\ \&
+.Ic \&)
+.Cx \&\ \&
+.Ar list
+.Cx \&\ \&
+.Ic \&;;
+.Cx \&]\ \& ...
+.Ar esac
+.Cx
+A
+.Ic case
+command executes the
+.Ar list
+associated with the first pattern that matches
+.Ar word .
+The form of the patterns is the same as that used for file name generation.
+.Tp Cx Ic if
+.Cx \&\ \&
+.Ar list
+.Cx \&\ \&
+.Ic then
+.Cx \&\ \&
+.Ar list
+.Cx \&\ \&
+.Op Ic elif Ar list Ic then Ar list
+.Cx \&\ \&
+.Cx \&...
+.Cx \&\ \&
+.Op Ic else Ar list
+.Cx \&\ \&
+.Ic fi
+.Cx
+The
+.Ar list
+following
+.Ic if
+is executed and if it returns zero the
+.Ar list
+following
+.Ic then
+is executed.  Otherwise, the
+.Ar list
+following
+.Ic elif
+is executed and if its value is zero the
+.Ar list
+following
+.Ic then
+is executed.  Failing that the
+.Ic else
+.Ar list
+is executed.
+.Tp Cx Ic  while
+.Cx \&\ \&
+.Ar list
+.Cx \&\ \&
+.Op Ic  do Ar list
+.Cx \&\ \&
+.Ic  done
+.Cx
+A
+.Ic while
+command repeatedly executes the
+.Ic  while
+.Ar list
+and if its value is zero executes the
+.Ic do
+.Ar list ;
+otherwise the loop terminates.  The value returned by a
+.Ic while
+command is that of the last executed command in the
+.Ic do
+.Ar list .
+.Ic until
+may be used in place of
+.Ic while
+to negate the loop termination test.
+.Tp Pq Ar list
+Execute
+.Ar list
+in a subshell.
+.Tp Cx \&{
+.Ar list
+.Cx \&}
+.Cx
+.Ar list
+is simply executed.
+.Tp
+.Pp
+The following words are only recognized as the first word of a command
+and when not quoted.
+.Df I
+.Nm if then else elif fi case in esac
+.Nm for while until do done \&{ \&}
+.De
+.Pp
+.Ss Command substitution 
+The standard output from a command enclosed in a pair of back quotes
+.Pq Ic \&``
+may be used as part or all of a word; trailing newlines are removed.
+.Pp
+.Ss Parameter substitution .
+The character
+.Ic \&$
+is used to introduce substitutable parameters.
+Positional parameters may be assigned values by
+.Ic set  .
+Variables may be set by writing
+.Pp
+.Df I
+.Ar name=value
+.Op Ar name=value
+\&...
+.De
+.Pp
+.Tp Cx Ic \&$
+.Cx \&\ \&
+.Sy \&{
+.Ar parameter
+.Sy \&}
+.Cx
+A
+.Ar parameter
+is a sequence of letters, digits or underscores (a
+.Ar name  ) ,
+a digit, or any of the characters
+.Nm \&* \&@ \&# \&? \&\- \&$ \&!\ 
+The value, if any, of the parameter is substituted.
+The braces are required only when
+.Ar parameter
+is followed by a letter, digit, or underscore
+that is not to be interpreted as part of its name.  If
+.Ar parameter
+is a digit, it is a positional parameter.  If
+.Ar parameter
+is
+.Ic \&*
+or
+.Ic \&@
+then all the positional parameters, starting with
+.Ic $1 ,
+are substituted separated by spaces.
+.Ic $0
+is set from argument zero when the shell is invoked.
+.Tp Cx Ic \&$
+.Cx \&\ \&
+.Sy \&{
+.Ar parameter 
+.Fl
+.Ar word
+.Sy \&}
+.Cx
+If
+.Ar parameter
+is set, substitute its value; otherwise substitute
+.Ar word .
+.Tp Cx Ic \&$
+.Cx \&\ \&
+.Sy \&{
+.Ar parameter
+.Ic \&=
+.Ar word
+.Cx \&\ \&
+.Sy \&}
+.Cx
+If
+.Ar parameter
+is not set, set it to
+.Ar word ;
+the value of the parameter is then substituted.
+Positional parameters may not be assigned to in this way.
+.Tp Cx Ic \&$
+.Cx \&\ \&
+.Sy \&{
+.Ar parameter 
+.Ic \&?
+.Ar word
+.Sy \&}
+.Cx
+If
+.Ar parameter
+is set, substitute its value; otherwise, print
+.Ar word
+and exit from the shell.  If
+.Ar word
+is omitted, a standard message is printed.
+.Tp Cx Ic \&$
+.Cx \&\ \&
+.Sy \&{
+.Ar parameter
+.Ic \&+
+.Ar word
+.Sy \&}
+.Cx
+If
+.Ar parameter
+is set, substitute
+.Ar word ;
+otherwise substitute nothing.
+.Tp
+.Pp
+In the above
+.Ar word
+is not evaluated unless it is to be used as the substituted string.
+(So that, for example, echo ${d\-\'pwd\'} will only execute
+.Ar pwd
+if
+.Ar d
+is unset.)
+.Pp
+The following
+.Ar parameters
+are automatically set by the shell.
+.Pp
+.Dw Ds
+.Dp Ic \&#
+The number of positional parameters in decimal.
+.Dp Fl
+Options supplied to the shell on invocation or by
+.Ar set  .
+.Dp Ic \&?
+The value returned by the last executed command in decimal.
+.Dp Ic \&$
+The process number of this shell.
+.Dp Ic \&!
+The process number of the last background command invoked.
+.Dp
+.De
+.Pp
+The following
+.Ar parameters
+are used but not set by the shell.
+.Pp
+.Ds I
+.Tp Ev HOME
+The default argument (home directory) for the
+.Ic cd
+command.
+.Tp Ev PATH
+The search path for commands (see
+.Ar execution  ) .
+.Tp Ev MAIL
+If this variable is set to the name of
+a mail file, the shell informs the user of
+the arrival of mail in the specified file.
+.Tp Ev PS1
+Primary prompt string, by default '$ '.
+.Tp Ev PS2
+Secondary prompt string, by default '> '.
+.Tp Ev IFS
+Internal field separators, normally
+.Em space  ,
+.Em tab ,
+and
+.Em newline  .
+.Ev IFS
+is ignored if
+.Nm sh
+is running as root or if the effective user id differs from the real user id.
+.Tp
+.De
+.Ss Blank interpretation .
+After parameter and command substitution,
+any results of substitution are scanned for internal field separator
+characters (those found in
+.Cx Ic $
+.Ev IFS )
+.Cx
+and split into distinct arguments where such characters are found.
+Explicit null arguments ("" or \'\') are retained.
+Implicit null arguments (those resulting from
+.Em parameters
+that have no values) are removed.
+.Pp
+.Ss File name generation .
+Following substitution, each command word is scanned for the characters
+.Ic \&* ,
+.Ic \&?
+and
+.Ic \&[ .
+If one of these characters appears, the word is regarded as a pattern.
+The word is replaced with alphabetically sorted file names that match the
+pattern.  If no file name is found that matches the pattern,
+the word is left unchanged.  The character
+.Ic \&.
+at the start of a file name or immediately following a
+.Ic \&/ ,
+and the character
+.Ic \&/ ,
+must be matched explicitly.
+.Dp Ic \&*\&
+Matches any string, including the null string.
+.Dp Ic \&?
+Matches any single character.
+.Dp Ic \&[...]
+Matches any one of the characters enclosed.
+A pair of characters separated by
+.Fl
+matches any character lexically between the pair.
+.Dp
+.Pp
+.Ss Quoting .
+The following characters have a special meaning to the shell
+and cause termination of a word unless quoted.
+.Pp
+.Df I
+.Sy \&; \&& \&( \&) \&| \&< \&>
+.Sy newline  space  tab
+.De
+.Pp
+A character may be
+.Ar quoted
+by preceding it with a
+.Sq Sy \e .
+.Sy \enewline
+is ignored.
+All characters enclosed between a pair of quote marks
+.Pq Sq ,
+except a single quote, are quoted.  Inside double quotes
+.Pq Dq
+parameter and command substitution occurs and
+.Sy \e
+quotes the characters
+.Sy \e\' "
+and
+.Sy \&$ .
+.Pp
+.Dq \&$*
+is equivalent to
+.Dq Sy $1 $2 \&...
+whereas
+.br
+.Dq Sy $@
+is equivalent to
+.Dq Sy $1 
+.Dq Sy $2 
+\&...\ .
+.Pp
+.Ss Prompting .
+When used interactively, the shell prompts with the value of
+.Ev PS1
+before reading a command.
+If at any time a newline is typed and further input is needed
+to complete a command, the secondary prompt
+.Cx Sy $
+.Ev PS2
+.Cx
+is issued.
+.Pp
+.Ss Input/Output .
+Before a command is executed its input and output
+may be redirected using a special notation interpreted by the shell.
+The following may appear anywhere in a simple-command
+or may precede or follow a
+.Ar command
+and are not passed on to the invoked command.
+Substitution occurs before
+.Ar word
+or
+.Ar digit
+is used.
+.Tw Ic
+.Tp Cx Ic \&<
+.Cx \&\ \&
+.Ar word
+.Cx
+Use file
+.Ar word
+as standard input (file descriptor 0).
+.Tp Cx Ic \&>
+.Cx \&\ \&
+.Ar word
+.Cx
+Use file
+.Ar word
+as standard output (file descriptor 1).
+If the file does not exist, it is created;
+otherwise it is truncated to zero length.
+.Tp Cx Ic \&>\&>
+.Cx \&\ \&
+.Ar word
+.Cx
+Use file
+.Ar word
+as standard output.
+If the file exists, output is appended (by seeking to the end);
+otherwise the file is created.
+.Tp Cx Ic \&<\&<
+.Cx \&\ \&
+.Ar word
+.Cx
+The shell input is read up to a line the same as
+.Ar word  ,
+or end of file.
+The resulting document becomes the standard input.
+If any character of
+.Ar word
+is quoted, no interpretation is placed upon the characters of the document;
+otherwise, parameter and command substitution occurs,
+.Sy \enewline
+is ignored, and
+.Sy \e
+is used to quote the characters
+.Sy \&$ \&\'
+and the first character of
+.Ar word .
+.Tp Cx Ic \&<\&&
+.Cx \&\ \&
+.Ar digit
+.Cx
+The standard input is duplicated from file descriptor
+.Ar digit ;
+see
+.Xr dup  2  .
+Similarly for the standard output using
+.Ic \&> .
+.Tp Ic \&<\&&\-
+The standard input is closed.
+Similarly for the standard output using
+.Ic \&> .
+.Tp
+.Pp
+If one of the above is preceded by a digit, the
+file descriptor created is that specified by the digit
+(instead of the default 0 or 1).  For example,
+.Pp
+.Dl \&... 2>&1
+.Pp
+creates file descriptor 2 to be a duplicate
+of file descriptor 1.
+.Pp
+If a command is followed by
+.Ic \&&
+then the default standard input for the command is the empty file
+.Pq Pa dev/null .
+Otherwise, the environment for the execution of a command contains the
+file descriptors of the invoking shell as modified by input
+output specifications.
+.Pp
+.Ss Environment
+The environment is a list of name-value pairs that is passed to
+an executed program in the same way as a normal argument list; see
+.Xr execve  2
+and
+.Xr environ  7  .
+The shell interacts with the environment in several ways.
+On invocation, the shell scans the environment and creates a
+.Ar parameter
+for each name found, giving it the corresponding value.
+Executed commands inherit the same environment.
+If the user modifies the values of these
+.Ar parameters
+or creates new ones, none of these affects the environment unless the
+.Ic export
+command is used to bind the shell's
+.Ar parameter
+to the environment.
+The environment seen by any executed command is thus composed
+of any unmodified name-value pairs originally inherited by the shell,
+plus any modifications or additions, all of which must be noted in
+.Ic export
+commands.
+.Pp
+The environment for any
+.Ar simple-command
+may be augmented by prefixing it with one or more assignments to
+.Ar parameters .
+Thus these two lines are equivalent
+.Pp
+.Dl TERM=450 cmd args
+.Dl (export TERM; TERM=450; cmd args)
+.Pp
+If the
+.Fl k
+flag is set,
+.Ar all
+keyword arguments are placed in the environment,
+even if they occur after the command name.
+The following prints 'a=b c' and 'c':
+.Pp
+.Ds I
+echo a=b c
+set \-k
+echo a=b c
+.De
+.Pp
+.Ss Signals .
+The INTERRUPT and QUIT signals for an invoked
+command are ignored if the command is followed by
+.Ic \&& ;
+otherwise signals have the values inherited by the shell from its parent.
+(But see also
+.Ic trap . )
+.Pp
+.Ss Execution .
+Each time a command is executed the above substitutions are carried out.
+Except for the 'special commands' listed below a new process is created and
+an attempt is made to execute the command via an
+.Xr execve  2  .
+.Pp
+The shell parameter
+.Cx Ic \&$
+.Ev $PATH
+.Cx
+defines the search path for the directory containing the command.
+Each alternative directory name is separated by a colon
+.Pq Sy \&: .
+The default path is
+.Pa :/bin:/usr/bin .
+If the command name contains a
+.Sy / ,
+the search path is not used.
+Otherwise, each directory in the path is searched for an executable file.
+If the file has execute permission but is not an
+.Pa a.out
+file, it is assumed to be a file containing shell commands.
+A subshell (i.e., a separate process) is spawned to read it.
+A parenthesized command is also executed in a subshell.
+.Pp
+.Ss Special commands .
+The following commands are executed in the shell process
+and except where specified
+no input output redirection is permitted for such commands.
+.Tw Fl
+.Tp Ic \&#
+For non-interactive shells, everything following the
+.Ic \&#
+is treated as a comment, i.e. the rest of the line is ignored.
+For interactive shells, the
+.Ic \&#
+has no special effect.
+.Tp Ic \&:\&
+No effect; the command does nothing.
+.Tp Cx Ic \&.\&
+.Ar  file
+.Cx
+Read and execute commands from
+.Ar file
+and return.  The search path
+.Cx Ic \&$
+.Ev PATH
+.Cx
+is used to find the directory containing
+.Ar file  .
+.Tp Cx Ic break
+.Cx \&\ \&
+.Op Ar n
+.Cx
+Exit from the enclosing
+.Ic for
+or
+.Ic while
+loop, if any.
+If
+.Ar n
+is specified, break
+.Ar n
+levels.
+.Tp Cx Ic continue
+.Cx \&\ \&
+.Op Ar n
+.Cx
+Resume the next iteration of the enclosing
+.Ic for
+or
+.Ic while
+loop.  If
+.Ar n
+is specified, resume at the
+.Cx Ar n
+.Cx \'th
+.Cx
+enclosing loop.
+.Tp Cx Ic cd
+.Cx \&\ \&
+.Op Ar arg
+.Cx
+Change the current directory to
+.Ar arg .
+The shell parameter
+.Cx Sy \&$
+.Ev $HOME
+.Cx
+is the default
+.Ar arg  .
+.Tp Cx Ic eval
+.Cx \&\ \&
+.Op Ar arg  \&...
+.Cx
+The arguments are read as input to the shell
+and the resulting command(s) executed.
+.Tp Cx Ic exec
+.Cx \&\ \&
+.Op Ar arg  \&...
+.Cx
+The command specified by the arguments is executed in place of this shell
+without creating a new process.
+Input output arguments may appear and if no other
+arguments are given cause the shell input output to be modified.
+.Tp Cx Ic exit
+.Cx \&\ \&
+.Op Ar n
+.Cx
+Causes a non interactive shell to exit with the exit status specified by
+.Ar n .
+If
+.Ar n
+is omitted, the exit status is that of the last command executed.
+(An end of file will also exit from the shell.)
+.Tp Cx Ic export
+.Cx \&\ \&
+.Op Ar name ...
+.Cx
+The given names are marked for automatic export to the
+.Ar environment
+of subsequently-executed commands.
+If no arguments are given, a list of exportable names is printed.
+.Tp Cx Ic login
+.Cx \&\ \&
+.Op Ar arg ...
+.Cx
+Equivalent to 'exec login arg ...'.
+.Tp Cx Ic read
+.Cx \&\ \&
+.Ar name \&...
+.Cx
+One line is read from the standard input;
+successive words of the input are assigned to the variables
+.Ar name
+in order, with leftover words to the last variable.
+The return code is 0 unless the end-of-file is encountered.
+.Tp Cx Ic readonly
+.Cx \&\ \&
+.Op Ar name \&...
+.Cx
+The given names are marked readonly and
+the values of the these names may not be changed
+by subsequent assignment.
+If no arguments are given, a list of all readonly names is printed.
+.Tp Cx Ic set
+.Cx \&\ \&
+.Op Fl eknptuvx
+.Cx \&\ \&
+.Op Ar arg ...
+.Cx
+The set flags are described in the options section at the beginning
+of this man page.
+The current set of flags may be found in
+.Ic \&$\- .
+.Pp
+Remaining arguments after the flag are positional
+parameters and are assigned, in order, to
+.Ic \&$1 ,
+.Ic \&$2 ,
+etc.  If no arguments are given, the values of all names are printed.
+.Tp Ic shift
+The positional parameters from
+.Ic \&$2 ...
+are renamed
+.Ic $1 ...
+.Tp Ic times
+Print the accumulated user and system times for processes run from the shell.
+.Tp Cx Ic trap
+.Cx \&\ \&
+.Op Ar arg
+.Cx \&\ \&
+.Op Ar n
+.Cx \&\ \& \&...
+.Cx
+.Ar Arg
+is a command to be read and executed when the shell receives signal(s)
+.Ar n .
+(Note that
+.Ar arg
+is scanned once when the trap is set and once when the trap is taken.)
+Trap commands are executed in order of signal number.  If
+.Ar arg
+is absent, all trap(s)
+.Ar n
+are reset to their original values.
+If
+.Ar arg
+is the null
+string, this signal is ignored by the shell and by invoked commands.
+If
+.Ar n
+is 0, the command
+.Ar arg
+is executed on exit from the shell, otherwise upon receipt of signal
+.Ar n
+as numbered in
+.Xr sigvec  2  .
+.Ic Trap
+with no arguments prints a list of commands associated with each signal number.
+.Tp Cx Ic umask
+.Cx \&\ \&
+.Op Ar nnn
+.Cx
+The user file creation mask is set to the octal value
+.Ar nnn
+(see
+.Xr umask  2  ) .
+If
+.Ar nnn
+is omitted, the current value of the mask is printed.
+.Tp Cx Ic wait
+.Cx \&\ \&
+.Op Ar n
+.Cx
+Wait for the specified process and report its termination status.  If
+.Ar n
+is not given, all currently active child processes are waited for.
+The return code from this command is that of the process waited for.
+.Tp
+.Sh FILES
+.Dw (longest file name here)
+.Di L
+.Dp Pa $HOME/.profile
+.Dp Pa /tmp/sh*
+.Dp Pa /dev/null
+.Dp
+.Sh SEE ALSO
+.Xr csh 1 ,
+.Xr test 1 ,
+.Xr execve 2 ,
+.Xr environ 7
+.Sh DIAGNOSTICS
+Errors detected by the shell, such as syntax errors cause the shell
+to return a non zero exit status.
+If the shell is being used non interactively
+then execution of the shell file is abandoned.
+Otherwise, the shell returns the exit status of
+the last command executed (see also
+.Ic exit  ) .
+.Sh HISTORY
+The
+.Nm Sh
+shell appeared in Version 6 AT&Y UNIX.
+.SH BUGS
+If
+.Ic \&<\&<
+is used to provide standard input to an asynchronous
+process invoked by
+.Ic \&& ,
+the shell gets mixed up about naming the input document.
+A garbage file
+.Pa /tmp/sh*
+is created, and the shell complains about
+not being able to find the file by another name.
+.\" .Sh ENVIRONMENT
+.\" /usr/src/bin/sh/defs.h:STRING		*setenv();
+.\" /usr/src/bin/sh/name.c:STRING	*setenv()
+.\" /usr/src/bin/sh/service.c:		xecenv=setenv();

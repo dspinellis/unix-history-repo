@@ -1,0 +1,19 @@
+#
+# $Id: Makefile.bsd44,v 5.2 90/06/23 22:20:39 jsp Rel $
+#
+# Copyright (c) 1989 Jan-Simon Pendry
+# Copyright (c) 1989 Imperial College of Science, Technology & Medicine
+# Copyright (c) 1989 The Regents of the University of California.
+# All rights reserved.
+#
+# This code is derived from software contributed to Berkeley by
+# Jan-Simon Pendry at Imperial College, London.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)Makefile.bsd44	5.1 (Berkeley) %G%
+#
+# Extra Makefile definitions for 4.4 BSD
+#
+
+RPCLIB = -lrpc

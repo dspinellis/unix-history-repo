@@ -1,0 +1,254 @@
+.\" Copyright (c) 1986, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" James A. Woods, derived from original work by Spencer Thomas
+.\" and Joseph Orost.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)compress.1	6.8 (Berkeley) %G%
+.\"
+.Dd 
+.Dt COMPRESS 1
+.Os BSD 4.3
+.Sh NAME
+.Nm compress ,
+.Nm uncompress ,
+.Nm zcat
+.Nd compress and expand data
+.Sh SYNOPSIS
+.Nm compress
+.Op Fl f
+.Op Fl v
+.Op Fl c
+.Op Fl b Ar bits
+.Ar
+.br
+.Nm uncompress
+.Op Fl f
+.Op Fl v
+.Op Fl c
+.Ar
+.br
+.Nm zcat
+.Ar
+.Sh DESCRIPTION
+.Nm Compress
+reduces the size of the named files using adaptive Lempel-Ziv coding.
+Whenever possible,
+each
+.Ar file
+is replaced by one with the extension
+.Ar \&.Z ,
+while keeping the same ownership modes, access and modification times.
+If no files are specified, the standard input is compressed to the
+standard output.
+Compressed files can be restored to their original form using
+.Nm uncompress
+or
+.Nm zcat
+.Tw Ds
+.Tp Fl f
+Force compression of
+.Ar file ,
+even if it does not actually shrink
+or the corresponding
+.Ar file.Z
+file already exists.
+Except when run in the background under
+.Pa /bin/sh ,
+if
+.Fl f
+is not given the user is prompted as to whether an existing
+.Ar file.Z
+file should be overwritten.
+.Pp
+.Tp Fl c
+(``cat'') makes
+.Nm compress/uncompress
+write to the standard output; no files are changed.
+The nondestructive behavior of
+.Nm zcat
+is identical to that of
+.Nm uncompress
+.Fl c.
+.Tp Fl b
+Specify
+.Ar bits
+code limit (see below).
+.Tp Fl v
+Print the percentage reduction of each file.
+.Tp
+.Pp
+.Nm Compress
+uses the modified Lempel-Ziv algorithm popularized in
+"A Technique for High Performance Data Compression",
+Terry A. Welch,
+.Em IEEE Computer ,
+vol. 17, no. 6 (June 1984), pp. 8-19.
+Common substrings in the file are first replaced by 9-bit codes 257 and up.
+When code 512 is reached, the algorithm switches to 10-bit codes and
+continues to use more bits until the
+limit specified by the
+.Fl b
+flag is reached (default 16).
+.Ar Bits
+must be between 9 and 16.  The default can be changed in the source to allow
+.Nm compress
+to be run on a smaller machine.
+.Pp
+After the
+.Ar bits
+limit is attained,
+.Nm compress
+periodically checks the compression ratio.  If it is increasing,
+.Nm compress
+continues to use the existing code dictionary.  However,
+if the compression ratio decreases,
+.Nm compress
+discards the table of substrings and rebuilds it from scratch.  This allows
+the algorithm to adapt to the next "block" of the file.
+.Pp
+Note that the
+.Fl b
+flag is omitted for
+.Ar uncompress
+since the
+.Ar bits
+parameter specified during compression
+is encoded within the output, along with
+a magic number to ensure that neither decompression of random data nor
+recompression of compressed data is attempted.
+.Pp
+.ne 8
+The amount of compression obtained depends on the size of the
+input, the number of
+.Ar bits
+per code, and the distribution of common substrings.
+Typically, text such as source code or English
+is reduced by 50\-60%.
+Compression is generally much better than that achieved by
+Huffman coding (as used in
+.Xr pack ) ,
+or adaptive Huffman coding (as
+used in
+.Xr compact ) ,
+and takes less time to compute.
+.Pp
+If an error occurs, exit status is 1, else
+if the last file was not compressed because it became larger, the status
+is 2; else the status is 0.
+.Sh DIAGNOSTICS
+Usage: compress
+.Op Fl fvc
+.Op Fl b Ar maxbits
+.Ar
+.Dl Invalid options were specified on the command line.
+.Pp
+Missing maxbits
+.Df I
+Maxbits must follow
+.Fl b .
+.De
+.Pp
+.Ar file :
+not in compressed format
+.Df I
+The file specified to
+.Ar uncompress
+has not been compressed.
+.De
+.Pp
+.Ar file :
+compressed with
+.Ar xx
+bits, can only handle
+.Ar yy
+bits
+.Df I
+.Ar File
+was compressed by a program that could deal with
+more
+.Ar bits
+than the compress code on this machine.
+Recompress the file with smaller
+.Ar bits .
+.De
+.Pp
+.Ar file :
+already has .Z suffix -- no change
+.Df I
+The file is assumed to be already compressed.
+Rename the file and try again.
+.De
+.Pp
+.Ar file :
+filename too long to tack on .Z
+.Df I
+The file cannot be compressed because its name is longer than
+12 characters.
+Rename and try again.
+This message does not occur on BSD systems.
+.De
+.Pp
+.Ar file
+already exists; do you wish to overwrite (y or n)?
+.Df I
+Respond "y" if you want the output file to be replaced; "n" if not.
+.De
+.Pp
+uncompress: corrupt input
+.Df I
+A SIGSEGV violation was detected which usually means that the input file is
+corrupted.
+.De
+.Pp
+Compression:
+.Em xx.xx%
+.Df I
+Percentage of the input saved by compression.
+(Relevant only for
+.Fl v . )
+.De
+.Pp
+-- not a regular file: unchanged
+.Df I
+When the input file is not a regular file,
+(e.g. a directory), it is
+left unaltered.
+.De
+.Pp
+-- has
+.Ar xx
+other links: unchanged
+.Df I
+The input file has links; it is left unchanged.  See
+.Xr ln 1
+for more information.
+.De
+.Pp
+-- file unchanged
+.Df I
+No savings is achieved by
+compression.  The input remains virgin.
+.De
+.Pp
+.Sh FILES
+.Tw file.Z
+.Tp Pa file.Z
+compressed file is file.Z
+.Tp
+.Sh HISTORY
+Appeared in 4.3 BSD.
+.Sh "BUGS"
+Although compressed files are compatible between machines with large memory,
+.Cx Fl b
+.Ar 12
+.Cx
+should be used for file transfer to architectures with
+a small process data space (64KB or less, as exhibited by the DEC PDP
+series, the Intel 80286, etc.)
+.Pp
+.Nm Compress
+should be more flexible about the existence of the `.Z' suffix.

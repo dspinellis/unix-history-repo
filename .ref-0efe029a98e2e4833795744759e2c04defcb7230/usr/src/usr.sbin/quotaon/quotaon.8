@@ -1,0 +1,122 @@
+.\" Copyright (c) 1983, 1990 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Robert Elz at The University of Melbourne.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)quotaon.8	6.6 (Berkeley) %G%
+.\"
+.TH QUOTAON 8 ""
+.UC 5
+.SH NAME
+quotaon, quotaoff \- turn filesystem quotas on and off
+.SH SYNOPSIS
+.B quotaon
+[
+.B \-g
+] [
+.B \-u
+] [
+.B \-v
+]
+filesystem ...
+.br
+.B quotaon
+[
+.B \-g
+] [
+.B \-u
+] [
+.B \-v
+]
+.B \-a
+.br
+.B quotaoff
+[
+.B \-g
+] [
+.B \-u
+] [
+.B \-v
+]
+filesystem ...
+.br
+.B quotaoff
+[
+.B \-g
+] [
+.B \-u
+] [
+.B \-v
+]
+.B \-a
+.br
+.SH DESCRIPTION
+.I Quotaon
+announces to the system that disk quotas should be enabled on one or more
+filesystems.
+The filesystems specified must have entries in
+.I /etc/fstab
+and be mounted.
+.I Quotaon
+expects each filesystem to have quota files named
+.I quota.user
+and
+.I quota.group
+which are located at the root of the associated file system.
+These defaults may be overridden in
+.I /etc/fstab .
+By default both user and group quotas are enabled.
+The optional \fI-g\fP flag specifies that only group quotas should be enabled.
+The optional \fI-u\fP flag specifies that only user quotas should be enabled.
+Specifying both \fI-g\fP and \fI-u\fP is equivalent to the default.
+.PP
+If the
+.B \-a
+flag is supplied in place of any filesystem names,
+.I quotaon
+will enable all the filesystems indicated in
+.I /etc/fstab
+to be read-write with disk quotas.
+By default only the types of quotas listed in
+.I /etc/fstab
+are enabled.
+The optional \fI-g\fP flag specifies that only group quotas listed in
+.I /etc/fstab
+should be enabled.
+The optional \fI-u\fP flag specifies that only user quotas listed in
+.I /etc/fstab
+should be enabled.
+Specifying both \fI-g\fP and \fI-u\fP is equivalent to the default.
+.PP
+.I Quotaoff
+announces to the system that the specified filesystems should have
+any disk quotas turned off.
+If the
+.B \-a
+flag is supplied in place of any filesystem names,
+.I quotaoff
+will turn off quotas on all the filesystems indicated in
+.I /etc/fstab
+to be read-write with disk quotas.
+The \fI-g\fP and \fI-u\fP flags work analogously with quotaon.
+.PP
+The \fI-v\fP flag causes
+.I quotaon
+and
+.I quotaoff
+to print a message for each filesystem where quotas are turned on or off.
+.SH FILES
+.DT
+\fIquota.user\fP	at the filesystem root with user quotas
+.br
+\fIquota.group\fP	at the filesystem root with group quotas
+.br
+/etc/fstab	filesystem table
+.SH "SEE ALSO"
+quota(1),
+quotactl(2),
+fstab(5),
+edquota(8), quotacheck(8), repquota(8)

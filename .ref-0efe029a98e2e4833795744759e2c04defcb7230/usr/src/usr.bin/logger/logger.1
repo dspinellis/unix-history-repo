@@ -1,0 +1,78 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)logger.1	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt LOGGER 1
+.Os BSD 4.3
+.Sh NAME
+.Nm logger
+.Nd make entries in the system log
+.Sh SYNOPSIS
+.Nm logger
+.Op Fl is
+.Op Fl f Ar file
+.Op Fl p Ar pri
+.Op Fl t Ar tag
+.Op Ar message ...
+.Sh DESCRIPTION
+.Nm Logger
+provides a shell command interface to the
+.Xr syslog  3
+system log module.
+.Pp
+Options:
+.Pp
+.Tw Fl
+.Tp Fl i
+Log the process id of the logger process
+with each line.
+.Tp Fl s
+Log the message to standard error, as well as the system log.
+.Tc Fl f
+.Ws
+.Ar file
+.Cx
+Log the specified file.
+.Tc Fl p
+.Ws
+.Ar pri
+.Cx
+Enter the message with the specified priority.
+The priority may be specified numerically or as a ``facility.level''
+pair.
+For example, ``\-p local3.info'' logs the message(s) as
+.Sf Ar info rmational
+level in the
+.Ar local3
+facility.
+The default is ``user.notice.''
+.Tc Fl t
+.Ws
+.Ar tag
+.Cx
+Mark every line in the log with the specified
+.Ar tag  .
+.Tp Ar message
+Write the message to log; if not specified, and the
+.Fl f
+flag is not
+provided, standard input is logged.
+.Tp
+.Pp
+The
+.Nm logger
+utility exits 0 on success, and >0 if an error occurs.
+.Sh EXAMPLES
+.Pp
+.Dl logger System rebooted
+.Pp
+.Dl logger \-p local0.notice \-t HOSTIDM \-f /dev/idmc
+.Sh SEE ALSO
+.Xr syslog 3 ,
+.Xr syslogd 8
+.Sh STANDARDS
+The logger function is expected to be POSIX 1003.2 compatible.

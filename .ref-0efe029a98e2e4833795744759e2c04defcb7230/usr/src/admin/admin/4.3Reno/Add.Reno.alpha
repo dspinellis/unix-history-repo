@@ -1,0 +1,93 @@
+.\"	@(#)Add.Reno.alpha	1.3	89/11/03
+.ND
+.ce 4
+ADDENDUM NUMBER TWO TO FOURTH BERKELEY
+SOFTWARE DISTRIBUTION LICENSE (4/86) AGREEMENT BETWEEN
+THE REGENTS OF THE UNIVERSITY OF CALIFORNIA
+AND THE LICENSEE
+.sp 1
+.PP
+The above-referenced License Agreement (``Agreement'')
+entered into between The Regents of the University of California
+(``Regents'') and the below-named Licensee controls Licensee's use
+of release 4.3 of Regents' Fourth Berkeley Software Distribution
+(``4BSD'') which was distributed upon execution of the Agreement.
+Pursuant to the provisions of Article 2, ``Fees,'' of the Agreement,
+release 4.4BSD alpha of 4BSD, which is an update of release 4.3,
+is hereby made available to Licensee under the same terms and
+conditions set forth in the Agreement,
+except that the distribution fee for release
+4.4BSD alpha is four hundred dollars ($400.00).
+.sp 0.5
+.LP
+(1) Purpose of this release
+.PP
+A source code copy of the 4.4BSD alpha release software (``Code'')
+is being provided to Licensee
+so that Licensee can assist the Computer Systems Research Group
+(``CSRG'') at The University of California at Berkeley in its
+development and release engineering efforts.
+.sp 0.5
+.LP
+(2) Restrictions on distribution of this release
+.PP
+In addition to the terms of the 4.3BSD License Agreement,
+other than as expressly provided in this Addendum,
+the use of the Code is further restricted
+to internal non-commercial use only.
+Licensee may make the Code available to other organizations
+that are assisting Licensee in the alpha testing,
+provided that those organizations have appropriate AT&T source licenses,
+agree to use the Code only for their own internal use,
+and do not distribute the Code or binaries derived from the Code
+in their own products.
+The provisions of this Clause 2 shall automatically terminate
+as of the date the Regents make 4.4BSD
+generally available, but in no event later than August 1, 1990.
+The other terms of this Addendum and the 4BSD License
+Agreement shall remain in effect.
+.sp 0.5
+.LP
+(3) Reporting requirements and external code releases
+.PP
+Licensee commits to supply CSRG with bug reports and fixes to
+the Code from its own organization and those
+that it receives from those organizations that are
+participating with Licensee in this alpha test release.
+Notwithstanding the provision of Clause 2 above,
+the Code may be used in the development of a product to be
+externally released by Licensee and the participating organizations,
+provided that such external release is not made prior to August 1, 1990
+and further provided that prior to any such external release being
+made, any portions of the Code or binaries derived from the Code
+to be externally released are upgraded to the same level as the
+code made generally available by Berkeley as of June 30, 1990.
+.PP
+All code from the Berkeley releases available as of June 30, 1990
+used in the development of an external release
+must be upgraded to the same level as the code in the final
+4.4BSD release for any external releases of its product
+made by Licensee or any participating organization no later than
+the next general release of such product.
+.sp 0.5
+.PP
+IN WITNESS WHEREOF, Regents and Licensee have executed this
+Amendment Number Two on the dates specified below.  The 
+effective date of this amendment shall be the date of execution by
+Regents.
+.TS
+expand tab(~);
+cw(2.9375i) cw(0.75i) cw(2.9375i).
+THE REGENTS OF THE UNIVERSITY~~
+\v'-10p'\l'2.9375i'~~\l'2.9375i'
+\v'-7p'OF CALIFORNIA~~
+\v'-17p'\l'2.9375i'~~\l'2.9375i'
+\v'-15p'(LICENSOR)~~(LICENSEE)
+.T&
+lw(2.9375i) cw(0.75i) lw(2.9375i).
+By\l'2.75i'~~By\l'2.75i'
+~
+Title\l'2.625i'~~Title\l'2.625i'
+~
+Date\l'2.625i'~~Date\l'2.625i'
+.TE

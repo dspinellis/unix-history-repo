@@ -1,0 +1,29 @@
+.\" Copyright (c) 1985, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)newaliases.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NEWALIASES 1
+.Os BSD 4
+.Sh NAME
+.Nm newaliases
+.Nd rebuild the data base for the mail aliases file
+.Sh SYNOPSIS
+.Nm newaliases
+.Sh DESCRIPTION
+.Nm Newaliases
+rebuilds the random access data base for the mail aliases file
+.Pa /etc/aliases .
+It must be run each time
+.Pa /etc/aliases
+is changed in order
+for the change to take effect.
+.Sh SEE ALSO
+.\" .Xr aliases 5 ,
+.Xr sendmail 8
+.Sh HISTORY
+.Nm Newaliases
+appeared in 4.0 BSD.

@@ -1,0 +1,49 @@
+% cat testdiv2.c
+main() {
+	int i;
+	i = div2(-1);
+	printf("-1/2 = %d\n", i);
+}
+div2(i) {
+	int j;
+	j = i>>1;
+	return(j);
+}
+
+% cc -g testdiv2.c
+
+% a.out
+-1/2 = -1
+
+% sdb
+No core image			# Warning message from sdb
+*/^div2				# Search for procedure "div2"
+6: div2(i) {			# It starts at line 6
+*z				# Print the next few lines
+6: div2(i) {
+7: 	int j;
+8: 	j = i>>1;
+9: 	return(j);
+10: }
+*div2:b				# Place a breakpoint at beginning of div2
+div2:8 b			# Sdb echoes proc name and line number
+*r				# Run the procedure
+Breakpoint at			# Execution stops just before line 8
+div2:8: 	j = i>>1;
+*t				# Print trace of subroutine calls
+div2(-1)   [testdiv2.c:8]
+main(1,2147483380,2147483388)   [testdiv2.c:3]
+*i/				# Print i
+-1
+*s				# Single step
+div2:9: 	return(j);	# Execution stops just before line 9
+*j/				# Print j
+-1
+*8d				# Delete the breakpoint
+*div2(1)/			# Try running div2 with different args
+0
+*div2(-2)/
+-1
+*div2(-3)/
+-2
+*q				# Exit sdb

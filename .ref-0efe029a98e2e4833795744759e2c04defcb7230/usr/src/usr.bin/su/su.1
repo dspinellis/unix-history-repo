@@ -1,0 +1,103 @@
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)su.1	6.11 (Berkeley) %G%
+.\"
+.TH SU 1 ""
+.UC
+.SH NAME
+su \- substitute user id
+.SH SYNOPSIS
+.nf
+.ft B
+su [ -Kflm ] [ login ]
+.ft R
+.nf
+.SH DESCRIPTION
+.I Su
+requests the Kerberos password for
+.I login
+(or for ``\fIlogin\fP.root'', if no login is provided), and switches to
+that user and group ID after obtaining a Kerberos ticket granting ticket.
+A shell is then invoked.
+.I Su
+will resort to the local password file to find the password for
+.I login
+if there is a Kerberos error.
+If
+.I su
+is executed by root, no password is requested and a shell
+with the appropriate user ID is invoked; no additional Kerberos tickets
+are obtained.
+.PP
+By default, the environment is unmodified with the exception of
+.IR USER ,
+.IR HOME ,
+and
+.IR SHELL .
+.I HOME
+and
+.I SHELL
+are set to the target login's default values.
+.I USER
+is set to the target login, unless the target login has a user ID of 0,
+in which case it is unmodified.
+The invoked shell is the target login's.
+This is the traditional behavior of
+.IR su .
+.PP
+The options are as follows:
+.TP
+\-K
+Do not attempt to use Kerberos to authenticate the user.
+.TP
+\-f
+If the invoked shell is
+.IR csh (1),
+this option prevents it from reading the ``.cshrc'' file.
+.TP
+\-l
+Simulate a full login.
+The environment is discarded except for
+.IR HOME ,
+.IR SHELL ,
+.IR PATH ,
+.IR TERM ,
+and
+.IR USER .
+.I HOME
+and
+.I SHELL
+are modified as above.
+.I USER
+is set to the target login.
+.I PATH
+is set to ``/bin:/usr/bin''.
+.I TERM
+is imported from your current environment.
+The invoked shell is the target login's, and
+.I su
+will change directory to the target login's home directory.
+.TP
+\-m
+Leave the environment unmodified.
+The invoked shell is your login shell, and no directory changes are made.
+As a security precaution, if the target user's shell is a non-standard
+shell (as defined by \fIgetusershell\fP(3)) and the caller's real uid is
+non-zero,
+.I su
+will fail.
+.PP
+The \-l and \-m options are mutually exclusive; the last one specified
+overrides any previous ones.
+.PP
+Only users in group 0 (normally ``wheel'') can
+.I su
+to ``root''.
+.PP
+By default (unless the prompt is reset by a startup file) the super-user
+prompt is set to ``#'' to remind one of its awesome power.
+.SH "SEE ALSO"
+csh(1), login(1), sh(1), kinit(1), kerberos(1), passwd(5), group(5), environ(7)

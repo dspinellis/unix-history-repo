@@ -1,0 +1,41 @@
+#!/bin/sh -
+#
+# Copyright (c) 1990 The Regents of the University of California.
+# All rights reserved.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)buildboot	1.6 (Berkeley) %G%
+#
+
+boot=dk2b			# partition to build bootstrap FS on
+boottype=xfd			# type of ${boot} partition
+bootmnt=/tmp/mini		# mount point
+DISTROOT=/nbsd			# place to get programs from
+
+date
+umount /dev/${boot}
+newfs -s 1500 ${boot} ${boottype}
+fsck /dev/r${boot}
+
+mkdir ${bootmnt};
+mount /dev/${boot} ${bootmnt}
+
+# HCX-9 programs (HCX-7 too?; not positive this is right, either)
+#cp -p $DISTROOT/stand/copy ${bootmnt}
+#cp -p $DISTROOT/stand/vdformat ${bootmnt}
+#cp -p $DISTROOT/boot ${bootmnt}
+# END HCX-9 programs
+
+# TAHOE programs
+cp -p $DISTROOT/stand/copy ${bootmnt}
+cp -p $DISTROOT/stand/vdformat ${bootmnt}
+cp -p $DISTROOT/boot ${bootmnt}
+cp -p $DISTROOT/wcs ${bootmnt}
+cp -p $DISTROOT/fppwcs ${bootmnt}
+# END TAHOE programs
+
+sync
+umount /dev/${boot}
+fsck /dev/r${boot}
+date

@@ -1,0 +1,54 @@
+.lg 0
+.ps 12
+.ft 3
+Chess, 18 point only
+.sp
+.ps 10
+.vs 12
+Note: This font has problems. There is no way to get a white king with
+a white background. (This is supposed to be @ but it doesn't work.)
+Use a white king on a black background instead.
+The corner characters look awful.
+.sp .5i
+.ps 18
+.vs 18
+.ft 1
+.ft ch
+.cs ch 36
+
+   2777777774
+   9 1 1 G 15
+   91 1 1 K 5
+   9 k 1 1 15
+   91 1 1 1 5
+   9 I 1 1 15
+   9aJ1 1 1 5
+   9 1A1 1 15
+   91 1 1 1 5
+   8333333336
+
+   `abcdefghijklmnopqrstuvwxyz
+   @ABCDEFGHIJKLMNOPQRSTUVWXYZ
+   0123456789
+
+.de ra
+\f2 \\$1 \f1 \\$1     \f2 \\$2 \f1 \\$2
+.br
+..
+.ra ` @
+.ra a A
+.ra b B
+.ra c C
+.ra d D
+.ra e E
+.ra f F
+.ra g G
+.ra h H
+.ra i I
+.ra j J
+.ra k K
+.ra 0 1
+.ra 2 3
+.ra 4 5
+.ra 6 7
+.ra 8 9

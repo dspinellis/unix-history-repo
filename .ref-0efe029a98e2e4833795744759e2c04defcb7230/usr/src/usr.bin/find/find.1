@@ -1,0 +1,463 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)find.1	6.17 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FIND 1
+.Os BSD 4.4
+.Sh NAME
+.Nm find
+.Nd walk a file hierarchy
+.Sh SYNOPSIS
+.Nm find
+.Op Fl drsx
+.Op Ar path
+.Ar expression
+.Nm find
+.Op Fl drsx
+.Op Fl f Ar path
+.Ar expression
+.Sh DESCRIPTION
+.Nm Find
+recursively descends the directory tree for each
+.Ar path
+listed, evaluating an
+.Ar expression
+(composed of the ``primaries'' and ``operands'' listed below) in terms
+of each file in the tree.
+.Pp
+The options are as follows:
+.Pp
+.Tw Ds
+.Tp Fl d
+The
+.Fl d
+option causes
+.Nm find
+to perform a depth\-first traversal, i.e. directories
+are visited in post\-order and all entries in a directory will be acted
+on before the directory itself.
+By default,
+.Nm find
+visits directories in pre\-order, i.e. before their contents.
+Note, the default is
+.Ar not
+a breadth\-first traversal.
+.Tp Fl f
+The
+.Fl f
+option specifies a file hierarchy for
+.Nm find
+to traverse.
+If no
+.Fl f
+option is specified, the first operand after the options is
+expected to be the file hierarchy to be traversed.
+.Tp Fl r
+The
+.Fl r
+option permits
+.Nm find
+to execute the utility specified for the
+.Ic exec
+and
+.Ic ok
+primaries from other than the directory where
+.Nm find
+was executed.
+.Nm Find
+may then change directories during the file hierarchy walk, meaning
+that
+.Nm find
+can traverse hierarchies with path names longer than those directly
+resolvable by the kernel.
+This usually results in a performance improvement as well.
+.Tp Fl s
+The
+.Fl s
+option causes the file information and file type (see
+.Xr stat  2  ) ,
+returned for each symbolic link to be those of the file referenced by the
+link, not the link itself.
+If the referenced file does not exist, the file information and type will
+be for the link itself.
+.Tp Fl x
+The
+.Fl x
+option prevents
+.Nm find
+from descending into directories that have a device number different
+than that of the file from which the descent began.
+.Tp
+.Sh PRIMARIES
+.Tw Ds
+.Tp Cx Ic atime
+.Cx \&\ \&
+.Ar n
+.Cx
+True if the difference between the file last access time and the time
+.Nm find
+was started, rounded up to the next full 24\-hour period, is
+.Ar n
+24\-hour periods.
+.Tp Cx Ic ctime
+.Cx \&\ \&
+.Ar n
+.Cx
+True if the difference between the time of last change of file status
+information and the time
+.Nm find
+was started, rounded up to the next full 24\-hour period, is
+.Ar n
+24\-hour periods.
+.Tp Cx Ic exec
+.Cx \&\ \&
+.Ar utility
+.Cx \&\ \&
+.Op argument ... ;
+.Cx
+True if the program named
+.Ar utility
+returns a zero value as its exit status.
+Optional arguments may be passed to the utility.
+The expression must be terminated by a semicolon (``;'').
+If the string ``{}'' appears anywhere in the utility name or the
+arguments it is replaced by the pathname of the current file.
+Utility will be executed in the directory from which
+.Nm find
+was executed.
+.Tp Cx Ic fstype
+.Cx \&\ \&
+.Ar type
+.Cx
+True if the file is contained in a file system of type
+.Ar type .
+Currently supported types are ``local'', ``mfs'', ``nfs'', ``pc'' and
+``ufs''.
+The type ``local'' is not a specific file system type, but matches
+any file system physically mounted on the system where the
+.Nm find
+is being executed.
+.Tp Cx Ic group
+.Cx \&\ \&
+.Ar gname
+.Cx
+True if the file belongs to the group
+.Ar gname  .
+If
+.Ar gname
+is numeric and there is no such group name, then
+.Ar gname
+is treated as a group id.
+.Tp Cx Ic inum
+.Cx \&\ \&
+.Ar n
+.Cx
+True if the file has inode number
+.Ar n  .
+.Tp Cx Ic links
+.Cx \&\ \&
+.Ar n
+.Cx
+True if the file has
+.Ar n
+links.
+.Tp Ic ls
+This primary always evaluates to true.
+The following information for the current file is written to standard output:
+its inode number, size in 512\-byte blocks, file permissions, number of hard
+links, owner, group, size in bytes, last modification time, and pathname.
+If the file is a block or character special file, the major and minor numbers
+will be displayed instead of the size in bytes.
+If the file is a symbolic link, the pathname of the linked\-to file will be
+displayed preceded by ``\->''.
+The format is identical to that produced by ``ls \-dgils''.
+.Tp Cx Ic mtime
+.Cx \&\ \&
+.Ar n
+.Cx
+True if the difference between the file last modification time and the time
+.Nm find
+was started, rounded up to the next full 24\-hour period, is
+.Ar n
+24\-hour periods.
+.Tp Cx Ic \&ok
+.Cx \&\ \&
+.Ar utility
+.Ws
+.Op argument ... ;
+.Cx
+The
+.Ic \&ok
+primary is identical to the
+.Ic exec
+primary with the exception that
+.Nm find
+requests user affirmation for the execution of the utility by printing
+a message to the terminal and reading a response.
+If the response is other than ``y'' the command is not executed and the
+value of the
+.Ar \&ok
+expression is false.
+.Tp Cx Ic name
+.Cx \&\ \&
+.Ar pattern
+.Cx
+True if the last component of the pathname being examined matches
+.Ar pattern  .
+Special shell pattern matching characters (``['', ``]'', ``*'', and ``?'')
+may be used as part of
+.Ar pattern  .
+These characters may be matched explicitly by escaping them with a
+backslash (``\e'').
+.Tp Cx Ic newer
+.Cx \&\ \&
+.Ar file
+.Cx
+True if the current file has a more recent last modification time than
+.Ar file  .
+.Tp Ic nouser
+True if the file belongs to an unknown user.
+.Tp Ic nogroup
+True if the file belongs to an unknown group.
+.Tp Cx Ic perm
+.Cx \&\ \&
+.Op Fl
+.Ar mode
+.Cx
+The
+.Ar mode
+may be either symbolic (see
+.Xr chmod  1  )
+or an octal number.
+If the mode is symbolic, a starting value of zero is assumed and the
+mode sets or clears permissions without regard to the process' file mode
+creation mask.
+If the mode is octal, only bits 07777 of the file's mode bits participate
+in the comparison.
+If the mode is preceded by a dash (``\-''), this primary evaluates to true
+if at least all of the bits in the mode are set in the file's mode bits.
+If the mode is not preceded by a dash, this primary evaluates to true if
+the bits in the mode exactly match the file's mode bits.
+Note, the first character of a symbolic mode may not be a dash (``\-'').
+.Tp Ic print
+This primary always evaluates to true.
+It prints the pathname of the current file to standard output.
+The expression is appended to the user specified expression if neither
+.Ic exec  ,
+.Ic ls ,
+or
+.Ic \&ok
+is specified.
+.Tp Ic prune
+This primary always evaluates to true.
+It causes
+.Nm find
+to not descend into the current file.
+.Tp Cx Ic size
+.Cx \&\ \&
+.Ar n
+.Op Cm c
+.Cx
+True if the file's size, rounded up, in 512\-byte blocks is
+.Ar n  .
+If
+.Ar n
+is followed by a ``c'', then the primary is true if the
+file's size is
+.Ar n
+bytes.
+.Tp Cx Ic type
+.Cx \&\ \&
+.Ar t
+.Cx
+True if the file is of the specified type.
+Possible file types are as follows:
+.Pp
+.Df I
+.Tw Ds
+.Tp Cm b
+block special
+.Tp Cm c
+character special
+.Tp Cm d
+directory
+.Tp Cm f
+regular file
+.Tp Cm l
+symbolic link
+.Tp Cm p
+FIFO
+.Tp Cm s
+socket
+.Tp
+.De
+.Pp
+.Tp Cx Ic user
+.Cx \&\ \&
+.Ar uname
+.Cx
+True if the file belongs to the user
+.Ar uname  .
+If
+.Ar uname
+is numeric and there is no such user name, then
+.Ar uname
+is treated as a user id.
+.Tp
+.Pp
+All primaries which take a numeric argument allow the number to be
+preceded by a plus sign (``+'') or a minus sign (``\-'').
+A preceding plus sign means ``more than
+.Ar n  ' ' ,
+a preceding minus sign means ``less than
+.Ar n  ' '
+and neither means ``exactly
+.Ar n  ' ' .
+.Sh OPERATORS
+The primaries may be combined using the following operators.
+The operators are listed in order of decreasing precedence.
+.Di L
+.Dp Cx Ic \&(
+.Ar expression
+.Cx \&)
+.Cx
+This evaluates to true if the parenthesized expression evaluates to
+true.
+.Pp
+.Dp Cx Ic \&!
+.Cx \&\ \&
+.Ar expression
+.Cx
+This is the unary NOT operator.
+It evaluates to true if the expression is false.
+.Pp
+.Dp Cx Ar expression
+.Cx \&\ \&
+.Ic and
+.Cx \&\ \&
+.Ar expression
+.Cx
+.Dp Cx Ar expression expression
+.Cx
+The
+.Ic and
+operator is the logical AND operator.
+As it is implied by the juxtaposition of two expressions it does not
+have to be specified.
+The expression evaluates to true if both expressions are true.
+The second expression is not evaluated if the first expression is false.
+.Pp
+.Dp Cx Ar expression
+.Cx \&\ \&
+.Ic or
+.Cx \&\ \&
+.Ar expression
+.Cx
+The
+.Ic or
+operator is the logical OR operator.
+The expression evaluates to true if either the first or the second expression
+is true.
+The second expression is not evaluated if the first expression is true.
+.Dp
+.Pp
+All operands and primaries must be separate arguments to
+.Nm find  .
+Primaries which themselves take arguments expect each argument
+to be a separate argument to
+.Nm find  .
+.Sh EXAMPLES
+.Pp
+The following examples are shown as given to the shell:
+.Tw findx
+.Tp Li find  /  \e!  name  "*.c"  print
+Print out a list of all the files whose names do not end in ``.c''.
+.Tp Li find  /  newer  ttt  user  wnj  print
+Print out a list of all the files owned by user ``wnj'' that are newer
+than the file ``ttt''.
+.Tp Li find  /  \e!  \e(  newer  ttt  user  wnj  \e)  print
+Print out a list of all the files which are not both newer than ``ttt''
+and owned by ``wnj''.
+.Tp Li find  /  \e(  newer  ttt  or  user wnj  \e)  print
+Print out a list of all the files that are either owned by ``wnj'' or
+that are newer than ``ttt''.
+.Tp
+.Sh SEE ALSO
+.Xr chmod 1 ,
+.Xr sh 1 ,
+.Xr test 1 ,
+.Xr stat 2 ,
+.Xr umask 2 ,
+.Xr getpwent 3 ,
+.Xr getgrent 3 ,
+.Xr strmode 3
+.Sh STANDARDS
+The
+.Nm find
+utility syntax is a replacement for the syntax specified by the POSIX
+1003.2 standard.
+The standard syntax is also supported; see the COMPATIBILITY section
+below for details.
+.Pp
+The
+.Fl s
+option as well as the primaries
+.Ic inum
+and
+.Ic ls
+are extensions to the POSIX standard.
+.Sh COMPATIBILITY
+The traditional, and standardized, syntax for
+.Nm find
+is as follows.
+All of the primaries are preceded by a dash (``\-''), i.e. the
+primary ``group'' is specified as ``\-group''.
+The
+.Fl d  ,
+.Fl s ,
+and
+.Fl x
+options are implemented using the primaries ``\-depth'', ``\-follow'',
+and ``\-xdev''.
+These primaries always evaluate to true.
+The operator ``or'' is implemented as ``\-o'', and the operator
+``and'' is implemented as ``\-a''.
+The set of file trees to be traversed are specified as the first operands
+to
+.Nm find  .
+The first operand beginning with a dash (``\-''), exclamation point (``!'')
+or left parenthesis (``('') is assumed to be the beginning of the expression
+and the end of the files to be traversed.
+.Pp
+The
+.Nm find
+syntax was changed for two reasons.
+The first is that the ``\-depth'', ``\-follow'' and ``\-xdev'' primaries
+are really global variables that take effect before the traversal begins.
+This causes some legal expressions to have unexpected results.
+An example is the expression ``\-print \-o \-depth''.
+As \-print always evaluates to true, the standard order of evaluation
+implies that \-depth would never be evaluated.
+This is not the case.
+.Pp
+The second reason is that traversing file trees with names beginning with
+a dash, exclamation point or left parenthesis was impossible.
+.Pp
+Historic implementations of the 
+.Ic exec
+and
+.Ic ok
+primaries did not replace the string ``{}'' in the utility name or the
+utility arguments unless it appeared without any other characters.
+This version replaces it no matter where in the utility name or arguments
+it appears.
+.Sh BUGS
+The special characters used by
+.Nm find
+are also special characters to many shell programs.
+In particular, the characters ``*'', ``['', ``]'', ``?'', ``('', ``)'',
+``!'', ``\e'' and ``;'' may have to be escaped from the shell.

@@ -1,0 +1,59 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)nfsstat.1	5.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NFSSTAT 1
+.Os BSD 4.4
+.Sh NAME
+.Nm nfsstat
+.Nd report NFS statistics
+.Sh SYNOPSIS
+.Nm nfsstat
+.Ob
+.Ar interval
+.Op Ar system Op Ar corefile
+.Oe
+.Sh DESCRIPTION
+.Nm Nfsstat
+delves into the system and normally reports certain statistics kept about
+.Li NFS
+client and server activity.
+If
+.Ar interval
+is specified, then successive lines are summaries over the last
+.Ar interval
+seconds.
+The command
+.Dq Li nfsstat 5
+will print what
+.Li NFS
+is doing every five seconds.
+.Pp
+A second argument is taken
+to be the file containing the system's namelist.
+Otherwise,
+.Pa /vmunix
+is used.
+A third argument tells
+.Nm nfsstat
+where to look for
+.Pa core  .
+Otherwise,
+.Pa /dev/kmem
+is used.
+.Sh FILES
+.Dw /dev/kmem
+.Di L
+.Dp Pa /dev/kmem
+.Dp Pa /vmunix
+.Dp
+.Sh SEE ALSO
+.Xr netstat  1  ,
+.Xr vmstat  1
+.Sh HISTORY
+.Nm Nfsstat
+appears in 4.4 BSD.

@@ -1,0 +1,198 @@
+.\" Copyright (c) 1988, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)chpass.1	5.9 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CHPASS 1
+.Os BSD 4.4
+.Sh NAME
+.Nm chpass
+.Nd add or change user database information
+.Sh SYNOPSIS
+chpass
+.Op Fl a Ar list
+.Op Fl s Ar shell
+.Op user
+.Sh DESCRIPTION
+.Nm Chpass
+allows editing of the user database information associated
+with
+.Ar user
+or, by default, the current user.
+The information is formatted and supplied to an editor for changes.
+.Pp
+Only the information that the user is allowed to change is displayed.
+.Pp
+The options are as follows:
+.Tw Ds
+.Tp Fl a
+The super-user is allowed to directly supply a user database
+entry, in the format specified by
+.Xr passwd 5 ,
+as an argument.
+This argument must be a colon (``:'') separated list of all the
+user database fields, although they may be empty.
+.Tp Fl s
+The
+.Fl s
+option attempts to change the user's shell to
+.Ar newsh .
+.Tp
+.Pp
+Possible display items are as follows:
+.Pp
+.Dw Home\ Directory:
+.Dp Login:
+user's login name
+.Dp Password:
+user's encrypted password
+.Dp Uid:
+user's id
+.Dp Gid:
+user's login group id
+.Dp Change:
+password change time
+.Dp Expire:
+account expiration time
+.Dp Class:
+user's general classification
+.Dp Home Directory:
+user's home directory
+.Dp Shell:
+user's login shell
+.Dp Full Name:
+user's real name
+.Dp Location:
+user's normal location
+.Dp Home Phone:
+user's home phone
+.Dp Office Phone:
+user's office phone
+.Dp
+.Pp
+The
+.Ar login
+field is the user name used to access the computer account.
+.Pp
+The
+.Ar password
+field contains the encrypted form of the user's password.
+.Pp
+The
+.Ar uid
+field is the number associated with the
+.Ar login
+field.
+Both of these fields should be unique across the system (and often
+across a group of systems) as they control file access.
+.Pp
+While it is possible to have multiple entries with identical login names
+and/or identical user id's, it is usually a mistake to do so.  Routines
+that manipulate these files will often return only one of the multiple
+entries, and that one by random selection.
+.Pp
+The
+.Ar group
+field is the group that the user will be placed in at login.
+Since this system supports multiple groups (see
+.Xr groups 1 )
+this field currently has little special meaning.
+This field may be filled in with either a number or a group name (see
+.Xr group 5 ) .
+.Pp
+The
+.Ar change
+field is the date by which the password must be changed.
+.Pp
+The
+.Ar expire
+field is the date on which the account expires.
+.Pp
+Both the
+.Ar change
+and
+.Ar expire
+fields should be entered in the form ``month day year'' where
+.Ar month
+is the month name (the first three characters are sufficient),
+.Ar day
+is the day of the month, and
+.Ar year
+is the year.
+.bp
+The
+.Ar class
+field is currently unused.  In the near future it will be a key to
+a
+.Xr termcap 5
+style database of user attributes.
+.Pp
+The user's
+.Ar home directory
+is the full UNIX path name where the user
+will be placed at login.
+.Pp
+The
+.Ar shell
+field is the command interpreter the user prefers.
+If the
+.Ar shell
+field is empty, the Bourne shell,
+.Pa /bin/sh ,
+is assumed.
+When altering a login shell, and not the super-user, the user
+may not change from a non-standard shell or to a non-standard
+shell.
+Non-standard is defined as a shell not found in
+.Pa /etc/shells .
+.Pp
+The last four fields are for storing the user's
+.Ar full name , office location ,
+and
+.Ar home
+and
+.Ar work telephone
+numbers.
+.Pp
+Once the information has been verified,
+.Nm chpass
+uses
+.Xr mkpasswd 8
+to update the user database.  This is run in the background, and,
+at very large sites could take several minutes.  Until this update
+is completed, the password file is unavailable for other updates
+and the new information will not be available to programs.
+.Sh ENVIRONMENT
+The
+.Xr vi 1
+editor will be used unless the environment variable EDITOR is set to
+an alternate editor.
+When the editor terminates, the information is re-read and used to
+update the user database itself.
+Only the user, or the super-user, may edit the information associated
+with the user.
+.Sh FILES
+.Dw /etc/master.passwd
+.Di L
+.Dp Pa /etc/master.passwd
+The user database
+.Dp Pa /etc/shells
+The list of approved shells
+.Dp
+.Sh SEE ALSO
+.Xr login 1 ,
+.Xr finger 1 ,
+.Xr getusershell 3 ,
+.Xr passwd 5 ,
+.Xr mkpasswd 8 ,
+.Xr vipw 8
+.Pp
+Robert Morris and Ken Thompson,
+.Ar UNIX Password security
+.Sh HISTORY
+First release 4.3 Reno BSD.
+.Sh BUGS
+User information should (and eventually will) be stored elsewhere.

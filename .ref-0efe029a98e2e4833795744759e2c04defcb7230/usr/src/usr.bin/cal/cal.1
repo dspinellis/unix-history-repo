@@ -1,0 +1,56 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Kim Letkeman.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)cal.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CAL 1
+.Os BSD 4.4
+.Sh NAME
+.Nm cal
+.Nd displays a calendar
+.Sh SYNOPSIS
+.Nm cal
+.Op Fl jy
+.Op Ar month Op Ar year
+.Sh DESCRIPTION
+.Nm Cal
+displays a simple calendar.
+If arguments are not specified,
+the current month is displayed.
+The options are as follows:
+.Tw Ds
+.Tp Fl j
+Display julian dates (days one-based, numbered from January 1).
+.Tp Fl y
+Display a calendar for the current year.
+.Tp
+.Pp
+A single parameter specifies the year (1 - 9999) to be displayed;
+note the year must be fully specified: ``cal 89'' will
+.Em not
+display a calendar for 1989.
+Two parameters denote the month (1 - 12) and year.
+If no parameters are specified, the current month's calendar is
+displayed.
+.Pp
+A year starts on Jan 1.
+.Pp
+The Gregorian Reformation is assumed to have occurred
+in 1972 on the 3rd of September.
+By this time, most countries had recognized the reformation (although
+a few did not recognize it until the early 1900's.)
+Ten days following that date were eliminated by
+the reformation, so the calendar for that month is a bit unusual.
+.Sh HISTORY
+A
+.Nm
+command appeared in Version 6 AT&T UNIX.  The
+.Nm
+command this man page describes is
+derived from code contributed by Kim Letkeman.

@@ -1,0 +1,168 @@
+.TH PXP 1 4/8/79
+.UC
+.SH NAME
+pxp \- Pascal execution profiler
+.SH SYNOPSIS
+.B pxp
+[
+.B  \-acdefjnstuw_
+] [
+.B \-23456789
+] [
+.B \-z
+[ name ... ] ] name.p
+.SH DESCRIPTION
+.I Pxp
+can be used to obtain execution profiles of Pascal programs or
+as a pretty-printer.
+To produce an execution profile all that is necessary is to translate
+the program specifying the
+.B z
+option to
+.I pi
+or
+.I pix,
+to execute the program,
+and to then issue the command
+.DT
+.PP
+	\fBpxp \-z\fR name.p
+.PP
+A reformatted listing is output if none of the
+.BR c ,
+.BR t ,
+or
+.B  z
+options are specified;
+thus
+.PP
+	\fBpxp\fR old.p > new.p
+.PP
+places a pretty-printed version of the program in `old.p' in the file `new.p'.
+.PP
+The use of the following options of
+.I pxp
+is discussed in sections 2.6, 5.4, 5.5 and 5.10 of the
+.IR "Berkeley Pascal User's Manual" "."
+.TP 6
+.B  \-a
+Print the bodies of all procedures and functions in the profile;
+even those which were never executed.
+.TP 6
+.B  \-c
+Extract profile data from the file
+.IR core .
+.TP 6
+.B  \-d
+Include declaration parts in a profile.
+.TP 6
+.B  \-e
+Eliminate
+.B include
+directives when reformatting a file;
+the
+.B include
+is replaced by the reformatted contents of the specified
+file.
+.TP 6
+.B  \-f
+Fully parenthesize expressions.
+.TP 6
+.B  \-j
+Left justify all procedures and functions.
+.TP 6
+.B  \-n
+Eject a new page 
+as each file is included;
+in profiles, print a blank line at the top of the page.
+.TP 6
+.B  \-s
+Strip comments from the input text.
+.TP 6
+.B  \-t
+Print a table summarizing
+.B  procedure
+and
+.B  function
+call counts.
+.TP 6
+.B  \-u
+Card image mode; only the first 72 characters of input lines
+are used.
+.TP 6
+.B  \-w
+Suppress warning diagnostics.
+.TP 6
+.B  \-z
+Generate an execution profile.
+If no
+.IR name \|s,
+are given the profile is of the entire program.
+If a list of names is given, then only any specified
+.BR procedure s
+or
+.BR function s
+and the contents of any specified
+.B include
+files will appear in the profile.
+.TP 6
+.B  \-\_
+Underline keywords.
+.TP 6
+.BI \- d
+With
+.I  d
+a digit, 2 \(<=
+.IR d ""
+\(<= 9,
+causes
+.I pxp
+to use
+.IR d ""
+spaces as the basic indenting unit.
+The default is 4.
+.SH FILES
+.DT
+name.p		input file
+.br
+name.i		include file(s)
+.br
+pmon.out		profile data
+.br
+core			profile data source with
+.B  \-c
+.br
+/usr/lib/how_pxp	information on basic usage
+.br
+.ne 8
+.SH "SEE ALSO"
+Berkeley Pascal User's Manual
+.br
+pi(1),
+px(1)
+.ne 5
+.SH DIAGNOSTICS
+For a basic explanation do
+.IP
+.DT
+.B	pxp
+.PP
+Error diagnostics include
+`No profile data in file'
+with the
+.B c
+option if the
+.B z
+option was not enabled to
+.I pi;
+`Not a Pascal system core file'
+if the core is not from a
+.I px
+execution;
+`Program and count data do not correspond'
+if the program was changed after compilation, before profiling;
+or if the wrong program is specified.
+.SH AUTHOR
+William Joy
+.SH BUGS
+Does not place multiple statements per line.

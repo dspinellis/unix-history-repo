@@ -1,0 +1,160 @@
+.\" Copyright (c) 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)sort.1	6.5 (Berkeley) %G%
+.\"
+.TH SORT 1 "
+.AT 3
+.SH NAME
+sort \- sort or merge files
+.SH SYNOPSIS
+.B sort
+[
+.I -mubdfinrtx
+]
+[ \fB+\fIpos1 \fR [ \fB\-\fIpos2 \fR]
+] ...
+[ 
+.B \-o 
+name ] [
+.B \-T
+directory ] [ name ] ...
+.SH DESCRIPTION
+.I Sort
+sorts lines of all the named files together and writes the result on
+the standard output.  The name `\-' means the standard input.
+If no input files are named, the standard input is sorted.
+.LP
+The default sort key is an entire line.
+Default ordering is lexicographic by bytes in machine collating sequence.
+The ordering is affected globally by the following options,
+one or more of which may appear.
+.TP 5
+.B  b
+Ignore leading blanks (spaces and tabs) in field comparisons.
+.TP 5
+.B  d
+`Dictionary' order: only letters, digits and blanks
+are significant in comparisons.
+.TP 5
+.B  f
+Fold upper case letters onto lower case.
+.TP 5
+.B  i
+Ignore characters outside the ASCII range 040-0176 in nonnumeric comparisons.
+.TP 5
+.B  n
+An initial numeric string, consisting of optional blanks, optional minus sign,
+and zero or more digits with optional decimal point,
+is sorted by arithmetic value.  (Note that \fB-0\fP is considered equal
+to \fB0\fP.) Option
+.B n
+implies option
+.B b.
+.TP 5
+.B  r
+Reverse the sense of comparisons.
+.TP 5
+.BI t x
+`Tab character' separating fields is
+.IR x .
+.LP
+The notation
+.BI + "pos1 " "\-\fIpos2"
+restricts a sort key to a field beginning at
+.I pos1
+and ending just before
+.IR pos2 .
+.I Pos1
+and
+.I pos2
+each have the form
+.IB m . n\fR,
+optionally followed by one or more of the flags
+.B bdf\&inr,
+where
+.I m
+tells a number of fields to skip from the beginning of the line and
+.I n
+tells a number of characters to skip further.
+If any flags are present they override all the global
+ordering options for this key.  If the
+.B b
+option is in effect
+.I n
+is counted from the first nonblank in the field;
+.B b
+is attached independently to 
+.IR pos2 .
+A missing \&\fB.\fIn\fR means .0; a missing
+.BI \- pos2
+means the end of the line.  Under the
+.BI \-t x
+option, fields are strings separated by
+.IR x ;
+otherwise fields are nonempty nonblank strings separated by blanks.
+.LP
+When there are multiple sort keys, later keys
+are compared only after all earlier keys compare equal.
+Lines that otherwise compare equal are ordered with all bytes significant.
+.LP
+These option arguments are also understood:
+.TP 5
+.B c
+Check that the input file is sorted according to the ordering rules;
+give no output unless the file is out of sort.
+.TP 5
+.B  m
+Merge only, the input files are already sorted.
+.TP 5
+.B  o
+The next argument is the name of an output file
+to use instead of the standard output.
+This file may be the same as one of the inputs.
+.TP 5
+.B T
+The next argument is the name of a directory in which temporary files
+should be made.
+.TP 5
+.B  u
+Suppress all but one in each set of equal lines.
+Ignored bytes and bytes outside keys do not participate in this comparison.
+.SH EXAMPLES
+.LP
+Print in alphabetical order all the unique spellings in a list of words.
+Capitalized words differ from uncapitalized.
+.LP
+.ti +8
+sort \-u +0f +0 list
+.LP
+Print the password file
+.RI ( passwd (5))
+sorted by user id number (the 3rd colon-separated field).
+.LP
+.ti +8
+sort \-t: +2n /etc/passwd
+.LP
+Print the first instance of each month in an already sorted file
+of (month day) entries.
+The options
+.B \-um
+with just one input file make the choice of a
+unique representative from a set of equal lines predictable.
+.LP
+.ti +8
+sort \-um +0 \-1 dates
+.SH FILES
+/usr/tmp/stm*, /tmp/*	first and second tries for
+temporary files
+.SH "SEE ALSO"
+uniq(1),
+comm(1),
+rev(1),
+join(1)
+.SH DIAGNOSTICS
+Comments and exits with nonzero status for various trouble
+conditions and for disorder discovered under option
+.BR \-c .
+.SH BUGS
+Very long lines are silently truncated.

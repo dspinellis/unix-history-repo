@@ -1,0 +1,45 @@
+.\" Copyright (c) 1987 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Computer Consoles Inc.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)enpload.8	5.3 (Berkeley) %G%
+.\"
+.TH ENPLOAD 8 ""
+.UC 5
+.SH NAME
+enpload \- download firmware and initialize a CMC Ethernet controller
+.SH SYOPNSIS
+.B enpload
+.I device
+[
+.I files
+]
+.SH DESCRIPTION
+.I Enpload
+is used to download firmware and initialize a CMC
+ENP-20 Ethernet controller.
+The
+.I device
+specified is a character device used to access the on-board
+RAM which hosts the controllers operating firmware;
+the
+.I files
+arguments specify the firmware file(s) to load into this memory.
+After
+.I enpload
+deposits the specified firmware it starts the board running.
+If no firmware is specified the board is just restarted.
+.I Enpload
+must be run before a CMC controller can be used by the
+system.
+.SH FILES
+.ta \w'/dev/enp?ram    'u
+/dev/enp?ram	special files for accessing ENP-20 memory
+.br
+/etc/enpcode	link-level firmware
+.SH "SEE ALSO"
+enp(4), ifconfig(8C), rc(8)

@@ -1,0 +1,62 @@
+.\" Copyright (c) 1983 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)hdh.4	6.3 (Berkeley) %G%
+.\"
+.TH HDH 4 ""
+.UC 6
+.SH NAME
+hdh \- ACC IF-11/HDH IMP interface
+.SH SYNOPSIS
+.B "pseudo-device imp"
+.br
+.B "device hdh0 at uba0 csr 166740 vector hdhintr"
+.SH DESCRIPTION
+The 
+.I hdh
+device provides an HDLC Host (HDH)
+interface to an IMP.  It is normally used when participating
+in the DARPA Internet.  The controller itself is not accessible
+to users, but instead provides the hardware support to the IMP
+interface described in
+.IR imp (4).
+When configuring, the 
+.I imp
+pseudo-device must also be included.
+.SH DIAGNOSTICS
+.BR "hdh%d: not alive" .
+The initialization routine was entered even though the device
+did not autoconfigure.  This indicates a system problem.
+.PP
+.BR "hdh%d: cannot get chan %d uba resources" .
+Insufficient UNIBUS resources existed to initialize the device.
+This is likely to be a shortage of UNIBUS mapping registers.
+.PP
+.BR "hdh%d: LINE UP" .
+This indicates that both the HDLC and HDH protocols have declared the
+link to the IMP alive.
+.PP
+.BR "hdh%d: LINE DOWN" .
+This indicates that the link to the IMP has died.
+.PP
+.BR "hdh%d: HOST SEQUENCE ERROR"
+.br
+.BR "hdh%d: IMP SEQUENCE ERROR"
+.br
+.BR "hdh%d: HOST DATA ERROR"
+.br
+.BR "hdh%d: TIMEOUT"
+.br
+These errors indicate that an HDH protocol error has been detected.
+.PP
+.BR "hdh%d: cannot get supervisor cmnd buffer" .
+This error indicates that an
+.I mbuf
+could not be allocated to send a command to the IF-11/HDH.
+.PP
+Any other error message from hdh%d: indicates a serious error
+detected by either the driver or the IF-11/HDH firmware.
+.SH "SEE ALSO"
+netintro(4)

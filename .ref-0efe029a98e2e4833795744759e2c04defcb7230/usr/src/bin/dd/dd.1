@@ -1,0 +1,189 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)dd.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt DD 1
+.Os BSD 4.4
+.Sh NAME
+.Nm dd
+.Nd convert and copy a file
+.Sh SYNOPSIS
+.Nm dd
+.Op options \&...
+.Sh DESCRIPTION
+The
+.Nm
+utility copies the specified input file to the specified
+output with possible conversions.
+.Pp
+The following options are available:
+.Tw Fl
+.Tc Ic if=
+.Ar file
+.Cx
+Input pathname; standard input is
+default.
+.Tc Ic of=
+.Ar file
+.Cx
+Output pathname; standard output is
+default.
+.Tc Ic ibs=
+.Ar n
+.Cx
+Input block size
+.Va n
+bytes (default is
+512 bytes).
+.Tc Ic obs=
+.Ar n
+.Cx
+Output block size (default is 512 bytes).
+.Tc Ic bs=
+.Ar n
+.Cx
+Set both input and output block size,
+superseding
+.Ic ibs
+and
+.Ic obs .
+.Tc Ic cbs=
+.Ar n
+.Cx
+Conversion buffer size
+.Tc Ic skip=
+.Ar n
+.Cx
+Skip
+.Va n
+input blocks (each block is the
+size of
+.Ic ibs )
+before starting copy.
+.Tc Ic seek=
+.Ar n
+.Cx
+Seek n blocks (each block is the size of
+obs) from beginning of output file before
+copying.
+.Tc Ic count=
+.Ar n
+.Cx
+Copy only
+.Va n
+input blocks.
+.Tc Ic conv=
+.Ar value
+.Oo
+.Op \&, Ar value \&...
+.Cx
+.Oo
+Where values are comma-separated symbols
+from the following list.
+.Tw Fl
+.Tp Ic block
+Convert variable length records to fixed
+length.
+Read characters into the
+.Ic cbs
+buffer, delete a trailing <newline>, and
+pad to the length of the
+.Ic cbs
+buffer with
+<space>s.
+.Ic block
+and
+.Ic unblock
+are mutually
+exclusive.
+.Tp Ic unblock
+Convert fixed length records to variable
+length.
+Read a number of characters
+equal to the size of the
+.Ic cbs
+buffer,
+delete all trailing <blank>s, and append
+a <newline>.
+.Tp Ic lcase
+Map characters in the alpha character
+classification from class upper to the
+corresponding value in class lower.
+.Ic lcase
+and
+.Ic ucase
+are mutually exclusive.
+.Tp Ic ucase
+Map characters in the alpha character
+classification from class lower to the
+corresponding value in class upper.
+.Tp Ic swab
+Swap every pair of bytes
+.Tp Ic noerror
+Do not stop processing on an error.
+.Tp Ic sync
+Pad every input block to the size of
+.Ic ibs
+buffer, appending <space> characters.
+.Tp
+.Tp
+.Pp
+Where sizes are specified, a decimal number of bytes is
+expected.
+A size can end with
+.Cm k
+or
+.Cm b
+to specify multiplication
+by 1024 or 512, respectively.
+A pair of sizes can be
+separated by
+.Cm x
+to indicate a product.
+.Pp
+If the option
+.Ic if=
+is not specified, the standard input is used.
+.Pp
+The input files can be any file type and
+on completion,
+.Nm
+writes the number of input and output
+blocks, full and partial counts, to the standard error.
+.Pp
+A partial block may be caused by a read or write operation
+transferring less than
+.Ic ibs
+bytes.
+Only bytes read
+have conversions, as specified by the options, applied to
+them.
+.Pp
+For
+.Li SIGINT ,
+the
+.Nm
+utility writes status information to
+standard error before exiting.
+It takes the default action
+for all other signals.
+.Pp
+The
+.Nm
+utility exits 0 on success, and >0 if an error occurs.
+.Pp
+If an error is detected, and the noerror option has not
+been supplied, the cause is reported and the
+.Nm
+utility
+aborts the copy of the file.
+.Sh SEE ALSO
+.Xr tr 1
+.Sh STANDARDS
+The
+.Nm
+function is expected to be POSIX 1003.2 compatible.

@@ -1,0 +1,176 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)cpio.1	5.5 (Berkeley) %G%
+.\"
+.\"	@(#)cpio.1	5.3 (Berkeley) 3/29/88
+.\"
+.Dd 
+.Dt CPIO 1
+.Os BSD 4.4
+.Sh NAME
+.Nm cpio
+.Nd copy file archives in and out
+.Sh SYNOPSIS
+.Nm cpio
+.Fl o
+.Op Fl acBv
+.br
+.Nm cpio
+.Fl i
+.Op Fl BcdmrtuvfsSb6
+.Op Ar patterns
+.br
+.Nm cpio
+.Fl p
+.Op Fl adlmruv
+.Ar directory
+.Sh DESCRIPTION
+.Nm Cpio
+has three functional modes; copy out, copy in and pass.
+.Pp
+Functional Options:
+.Tw Ds
+.Tp Fl o
+Copy out \- reads the standard input to obtain a list
+of path names and copies those files onto the standard
+output together with path name and status information.
+Output is padded to a 512-byte boundary.
+.Pp
+.Tp Fl i
+Copy in \- extracts files from the standard input,
+which is assumed to be the product of a previous
+.Nm cpio
+.Fl o .
+Only files with names that match patterns are selected.
+Patterns are given in the name-generating notation of
+.Xr sh 1 .
+In patterns, meta-characters
+.Sq Li \&? ,
+.Sq Li \&* ,
+and
+.Sq Li [...]
+match the
+slash
+.Sq Li \&/
+character.  Multiple patterns may be specified and
+if no patterns are specified, the default for patterns is
+.Sq Li \&*
+(i.e., select all files).  The extracted files are
+conditionally created and copied into the current directory
+tree based upon the options described below.  The
+permissions of the files will be those of the previous
+.Nm cpio
+.Fl o .
+The owner and group of the files will be that of the
+current user unless the user is super-user, which causes
+.Nm cpio
+to retain the owner and group of the files of the
+previous
+.Nm cpio
+.Fl o .
+.Pp
+.Tp Fl p
+Pass \- reads the standard input to obtain a list of
+path names of files that are conditionally created and
+copied into the destination directory tree based upon the
+options described below.
+.Tp
+.Pp
+Options for the above functional options:
+.Tw Ds
+.Tp Fl a
+Reset access times of input files after they have been
+copied.
+.Tp Fl B
+Input/output is to be blocked 5,120 bytes to the record
+(does not apply to the pass options; meaningful only
+with data directed to or from
+.Pa /dev/rmt/??).
+.Tp Fl d
+Directories are to be created as needed.
+.Tp Fl c
+Write header information in ASCII character form for
+portability.
+.Tp Fl r
+Interactively rename files.  If the user types a null
+line, the files is skipped.
+.Tp Fl t
+Print a table of contents of the input.  No files are
+created.
+.Tp Fl u
+Copy unconditionally (normally, an older file will not
+replace a newer file with the same name).
+.Tp Fl v
+Verbose: causes a list of file names to be printed.
+When used with the t option, the table of contents
+looks like the output of an
+.Ql ls -l
+command (see
+.Xr ls 1 ) .
+.Tp Fl l
+Whenever possible, link files rather than copying them.
+Usable only with the
+.Fl p
+option.
+.Tp Fl m
+Retain previous file modification time.  This option is
+ineffective on directories that are being copied.
+.Tp Fl f
+Copy in all files except those in patterns.
+.Tp Fl s
+Swap bytes.  Use only with the
+.Fl i
+option.
+.Tp Fl S
+Swap halfwords.  Use only with the
+.Fl i
+option.
+.Tp Fl b
+halfwords.  Use only with the
+.Fl i
+option.
+.Tp Fl 6
+Process an old (i.e., UNIX System Sixth Edition format)
+file.  Only useful with
+.Fl i
+(copy in).
+.Tp
+.Sh EXAMPLES
+The first example below copies the contents of a directory
+into an archive; the second duplicates a directory
+hierarchy:
+.Pp
+.Dl ls  \&| cpio -o >/dev/rmt/0m
+.Pp
+.Dl cd olddir
+.Dl find . -depth -print \&|  cpio -pdl newdir
+.Pp
+The trivial case
+.Pp
+.Dl find . -depth -print \&|  cpio -oB >/dev/fmt/0m
+.Pp
+can be handled more efficiently by:
+.Pp
+.Dl find . -cpio /dev/rmt/0m
+.Pp
+.Sh SEE ALSO
+.Xr ar 1 ,
+.Xr find 1 ,
+.Xr ls 1 ,
+.Xr cpio 4
+.Sh HISTORY
+The
+.Nm cpio
+command appeared in System V AT&T UNIX.  This program is derived
+from the System V AT&T sources which were contributed to the public
+domain by AT&T.
+.Sh BUGS
+Path names are restricted to 128 characters.  If there are
+too many unique linked files, the program runs out of memory
+to keep track of them and, thereafter, linking information
+is lost.  Only the super-user can copy special files.  The
+.Fl B
+option does not work with certain magnetic tape drives.

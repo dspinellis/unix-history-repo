@@ -1,0 +1,39 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)gcore.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GCORE 1
+.Os BSD 4.2
+.Sh NAME
+.Nm gcore
+.Nd get core images of running processes
+.Sh SYNOPSIS
+.Nm gcore
+.Ar process\-id ...
+.Sh DESCRIPTION
+.Nm Gcore
+creates a core image of each specified process,
+suitable for use with
+.Xr adb  1
+or
+.Xr dbx  1  .
+.Sh FILES
+.Dw core.<process-id>
+.Di L
+.Dp Pa core.<process-id>
+core images
+.Dp
+.Sh HISTORY
+.Nm Gcore
+appeared in 4.2 BSD.
+.Sh BUGS
+Paging activity that occurs while
+.Nm gcore
+is running may cause the program
+to become confused.
+For best results,
+the desired processes should be stopped.

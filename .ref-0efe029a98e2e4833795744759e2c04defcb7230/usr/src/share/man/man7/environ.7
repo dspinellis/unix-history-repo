@@ -1,0 +1,122 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)environ.7	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ENVIRON 7
+.Os BSD 4.2
+.Sh NAME
+.Nm environ
+.Nd user environment
+.Sh SYNOPSIS
+.Ar extern char **environ ;
+.Sh DESCRIPTION
+An array of strings called the
+.Ar environment
+is made available by
+.Xr execve  2
+when a process begins.  By convention these strings have the form
+.Dq Ar name=value .
+The following names are used by various commands:
+.Tw Fl
+.Tp Ev EXINIT
+A startup list of commands read by
+.Xr ex  1  ,
+.Xr edit  1 ,
+and
+.Xr vi  1  .
+.Tp Ev HOME
+A user's login directory, set by
+.Xr login  1
+from the password file
+.Xr passwd  5  .
+.Tp Ev PATH
+The sequence of directories, separated by colons, searched by
+.Xr csh  1  ,
+.Xr sh  1 ,
+.Xr system  3  ,
+.Xr execvp  3 ,
+etc, when looking for an executable file.
+PATH is set to ``:/usr/ucb:/bin:/usr/bin'' initially by
+.Xr login  1  .
+.Tp Ev PRINTER
+The name of the default printer to be used by
+.Xr lpr  1  ,
+.Xr lpq  1 ,
+and
+.Xr lprm  1  .
+.Tp Ev SHELL
+The full pathname of the user's login shell.
+.Tp Ev TERM
+The kind of terminal for which output is to be prepared.
+This information is used by commands, such as
+.Xr nroff  1
+or
+.Xr plot 1
+which may exploit special terminal capabilities.  See
+.Pa /usr/share/misc/termcap
+.Pq Xr tmercap 5
+for a list of terminal types.
+.Tp Ev TERMCAP
+The string describing the terminal in TERM, or, if
+it begins with a '/', the name of the termcap file.
+See
+.Ev TERMPATH
+below,
+.Xr termcap  5  ,
+and
+.Xr termcap  .
+.Tp Ev TERMPATH
+A sequence of pathnames of termcap files, separated by colons or spaces,
+which are searched for terminal descriptions in the order listed.  Having
+no
+.Ev TERMPATH
+is equivalent to a
+.Ev TERMPATH
+of
+.Dq Pa $HOME/.termcap:/etc/termcap .
+.Ev TERMPATH
+is ignored if
+.Ev TERMCAP
+contains a full pathname.
+.Tp Ev USER
+The login name of the user.
+.Tp
+.Pp
+Further names may be placed in the environment by the
+.Xr export
+command and
+.Ar name=value
+arguments in
+.Xr sh  1  ,
+or by the
+.Xr setenv
+command if you use
+.Xr csh  1  .
+It is unwise to change certain
+.Xr sh  1
+variables that are frequently exported by
+.Pa .profile
+files, such as
+.Ev MAIL ,
+.Ev PS1 ,
+.Ev PS2 ,
+and
+.Ev IFS ,
+unless you know what you are doing.
+.Sh SEE ALSO
+.Xr csh 1 ,
+.Xr ex 1 ,
+.Xr login 1 ,
+.Xr sh 1 ,
+.Xr execve 2 ,
+.Xr execle 3 ,
+.Xr system 3 ,
+.Xr termcap 3 ,
+.Xr termcap 5
+.Sh HISTORY
+.Nm Environ
+appeared in 4.2 BSD.

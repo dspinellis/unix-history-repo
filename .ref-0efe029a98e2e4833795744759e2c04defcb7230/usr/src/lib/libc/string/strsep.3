@@ -1,0 +1,61 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strsep.3	5.1 (Berkeley) %G%
+.\"
+.TH STRSEP 3 ""
+.UC 7
+.SH NAME
+strsep \- separate strings
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+char *
+strsep(char **stringp, char *delim);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Strsep
+locates in the null-terminated string at
+.I *stringp
+the first occurence of any character in
+.I delim
+and replaces this with a '\e0',
+records the location of the immediate following character in
+.IR *stringp ,
+then returns the original value of
+.IR *stringp .
+If no delimiter characters are found,
+.B strsep
+sets
+.I *stringp
+to NULL;
+if
+.I *stringp
+is initially NULL,
+.B strsep
+returns NULL.
+.SH EXAMPLES
+The following uses
+.I strsep
+to parse strings containing runs of white space,
+making up an argument vector:
+.sp
+.nf
+.RS
+char inputstring[100];
+char **argv[51], **ap = argv, *p, *val;
+.I "/* set up inputstring */"
+for (p = inputstring; p != NULL; ) {
+    while ((val = strsep(&p, " \et")) != NULL && *val == '\e0');
+    *ap++ = val;
+}
+*ap = 0;
+.RE

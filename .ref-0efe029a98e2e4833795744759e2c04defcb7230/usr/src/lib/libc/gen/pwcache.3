@@ -1,0 +1,53 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)pwcache.3	5.3 (Berkeley) %G%
+.\"
+.TH PWCACHE 3 ""
+.UC 7
+.SH NAME
+pwcache \- cache password and group entries
+.SH SYNOPSIS
+.ft B
+.nf
+user_from_uid(uid, nouser)
+uid_t uid;
+int nouser;
+
+group_from_gid(gid, nogroup)
+gid_t gid;
+int nogroup;
+.fi
+.ft R
+.SH DESCRIPTION
+.ft B
+This interface is not part of the C library.
+It has been placed in the Berkeley utility library, libutil, as it is
+used by several standard utilities.
+.ft R
+.PP
+The
+.I user_from_uid
+function returns the user name associated with the argument uid.
+The user name is cached so that multiple calls with the same uid 
+do not require additional calls to
+.IR getpwuid (3).
+If there is no user associated with the uid, a pointer is returned
+to an ASCII representation of the uid, unless the argument
+.I nouser
+is non-zero, in which case a NULL pointer is returned.
+.PP
+The
+.I group_from_gid
+function returns the group name associated with the argument gid.
+The group name is cached so that multiple calls with the same gid
+do not require additional calls to
+.IR getgrgid (3).
+If there is no group associated with the gid, a pointer is returned
+to an ASCII representation of the gid, unless the argument
+.I nogroup
+is non-zero, in which case a NULL pointer is returned.
+.SH SEE ALSO
+getgrgid(3), getpwuid(3)

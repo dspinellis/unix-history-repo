@@ -1,0 +1,33 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)wc.1	6.1 (Berkeley) %G%
+.\"
+.TH WC 1 ""
+.UC 4
+.SH NAME
+wc \- word count
+.SH SYNOPSIS
+.B wc
+[
+.B \-lwc
+] 
+[ name ... ]
+.SH DESCRIPTION
+.PP
+.I Wc
+counts lines, words and characters 
+in the named files, or in the standard input if no name appears.
+A word is a maximal string of characters delimited by spaces, tabs or newlines.
+.PP
+If an argument beginning with one of ``lwc'' is present,
+the specified counts (lines, words, or characters)
+are selected by the letters
+.BR l ,
+.BR w ,
+or
+.BR c .
+The default is
+.BR \-lwc .
+.SH BUGS

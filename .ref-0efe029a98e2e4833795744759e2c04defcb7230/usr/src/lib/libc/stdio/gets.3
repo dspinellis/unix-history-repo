@@ -1,0 +1,54 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)gets.3	6.4 (Berkeley) %G%
+.\"
+.TH GETS 3  ""
+.AT 3
+.SH NAME
+gets - get a line from stdin
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+
+char *gets(s)
+char *s;
+.ft R
+.SH DESCRIPTION
+.ft B
+This interface is obsoleted by fgets(3).
+As it makes no effort to avoid overwriting its buffer, 
+it's a clear security problem.
+.br
+It is available from the compatibility library, libcompat.
+.ft R
+.PP
+The
+.I gets
+function reads characters from the input stream pointed to by
+.IR stdin ,
+into the array pointed to by
+.IR s ,
+until end-of-file is encountered or a new-line character is read.
+Any newline character is discarded, and a null character is written
+immediately after the last character read into the array.
+.PP
+The
+.I gets
+function returns
+.I s
+if successful.
+If end-of-file is encountered and no characters have been read into
+the array, the contents of the array remain unchanged and a null
+pointer is returned.
+If a read error occurrs during the operation, the array contents
+are indeterminate and a null pointer is returned.
+.SH "SEE ALSO"
+getc(3), ferror(3) fread(3), scanf(3)
+.SH STANDARDS
+The
+.I gets
+function is ANSI C compatible.

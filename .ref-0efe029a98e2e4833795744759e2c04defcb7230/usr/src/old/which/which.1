@@ -1,0 +1,29 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)which.1	6.1 (Berkeley) %G%
+.\"
+.TH WHICH 1 ""
+.UC
+.SH NAME
+which \- locate a program file including aliases and paths (\fIcsh\fR only)
+.SH SYNOPSIS
+.B which
+[ name ] ...
+.SH DESCRIPTION
+.I Which
+takes a list of names and looks for the files which would be
+executed had these names been given as commands.
+Each argument is expanded if it is aliased,
+and searched for along the user's path.
+Both aliases and path are taken from the user's \&.cshrc file.
+.SH FILES
+.ta 1i
+~/\&.cshrc	source of aliases and path values
+.SH DIAGNOSTICS
+A diagnostic is given for names which are aliased to more than a single
+word,
+or if an executable file with the argument name was not found in the path.
+.SH BUGS
+Must be executed by a csh, since only csh's know about aliases.

@@ -1,0 +1,65 @@
+.\"	@(#)tac.1	1.3 %G%
+.\"
+.TH TAC 1 ""
+.SH NAME
+tac \- concatenate and print files in reverse
+.SH SYNOPSIS
+.B tac
+[
+.B \-string
+] [
+.B +string
+] [ file ... ]
+.SH DESCRIPTION
+.I Tac
+reads each
+.I file
+in sequence
+and writes it on the standard output, reversed by the file segments
+delimited by
+.I string.
+.I \-string
+specifies segments bounded on the left by
+.I string,
+while
+.I +string
+specifies right-bounded segments.
+The default is
+.I +\en
+(print lines in reverse order).
+If no input
+.I file
+is given, or if the argument `-'
+is encountered,
+.I tac
+reads from the standard input.  Note that in this case
+.I tac
+stores the entire standard input in a temporary
+file before it outputs anything, so for large input it is slow.
+.SH EXAMPLES
+.RS
+tac '-\e
+.br
+From\ ' /var/mail/$USER
+.RE
+prints out one's mail messages, most recent first.
+.PP
+.RS
+tac file
+.RE
+prints the file in reverse, line by line, and:
+.PP
+.RS
+tac /var/log/messages | egrep 'hp.*hard'
+.RE
+prints out the hard errors on MASSBUS disk drives, most recent first.
+.SH SEE ALSO
+cat(1), rev(1), tail(1), tmail(1)
+.SH BUGS
+.I Tac
+doesn't handle multiple argument files exactly right, and it's
+also unclear in which order they should be processed.
+.br
+If invoked as `tac < file', 
+.I tac
+uses a temp file but it doesn't have to.

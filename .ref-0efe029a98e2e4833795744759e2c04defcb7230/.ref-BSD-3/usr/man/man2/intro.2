@@ -1,0 +1,275 @@
+.TH INTRO 2 
+.de en
+.HP
+\\$1  \\$2  \\$3
+.br
+..
+.SH NAME
+intro, errno \- introduction to system calls and error numbers
+.SH SYNOPSIS
+.B #include <errno.h>
+.SH DESCRIPTION
+Section 2 of this manual
+lists all the entries into the system.
+Most of these calls have an error return.
+.pg
+An error condition is indicated by an otherwise
+impossible returned value.
+Almost always this is \(mi1;
+the individual sections specify the details.
+An error number is also made available
+in the external variable
+.IR errno .
+.I Errno
+is not cleared on successful calls, so it should be tested only
+after an error has occurred.
+.PP
+There is a table of messages
+associated with each error, and a routine for printing the
+message;
+See
+.IR perror (3).
+The possible error numbers
+are not recited with each writeup in section 2, since many
+errors are possible for most of the calls.
+Here is a list of the error numbers,
+their names as defined in <errno.h>,
+and the messages available using
+.IR perror .
+.en 0 \h'\w'EIO'u' "Error 0
+Unused.
+.en 1 EPERM "Not owner
+Typically this error indicates
+an attempt to modify a file in some way forbidden
+except to its owner or super-user.
+It is also returned for attempts
+by ordinary users to do things
+allowed only to the super-user.
+.en 2 ENOENT "No such file or directory
+This error occurs when a file name is specified
+and the file should exist but doesn't, or when one
+of the directories in a path name does not exist.
+.en 3 ESRCH "No such process
+The process whose number was given to
+.I signal
+and
+.I ptrace
+does not exist, or is already dead.
+.en 4 EINTR "Interrupted system call
+An asynchronous signal (such as interrupt or quit),
+which the user has elected to catch,
+occurred during a system call.
+If execution is resumed
+after processing the signal,
+it will appear as if the interrupted system call
+returned this error condition.
+.en 5 EIO "I/O error
+Some physical I/O error occurred during a
+.I read
+or
+.IR write .
+This error may in some cases occur
+on a call following the one to which it actually applies.
+.en 6 ENXIO "No such device or address
+I/O on a special file refers to a subdevice which does not
+exist,
+or beyond the limits of the device.
+It may also occur when, for example, a tape drive
+is not dialled in or no disk pack is loaded on a drive.
+.en 7 E2BIG "Arg list too long
+An argument list longer than 5120 bytes
+is presented to
+.IR exec .
+.en 8 ENOEXEC "Exec format error
+A request is made to execute a file
+which, although it has the appropriate permissions,
+does not start with a valid magic number, see
+.IR a.out (5).
+.en 9 EBADF "Bad file number
+Either a file descriptor refers to no
+open file,
+or a read (resp. write) request is made to
+a file which is open only for writing (resp. reading).
+.en 10 ECHILD "No children
+.I Wait
+and the process has no
+living or unwaited-for children.
+.en 11 EAGAIN "No more processes
+In a
+.I fork,
+the system's process table is full
+or the user is not allowed to create any more
+processes.
+.en 12 ENOMEM "Not enough core
+During an
+.I exec
+or
+.I break,
+a program asks for more core than the system is able to supply.
+This is not a temporary condition; the maximum core size
+is a system parameter.
+The error may also occur if the arrangement
+of text, data, and stack segments
+requires too many segmentation registers.
+.en 13 EACCES "Permission denied
+An attempt was made to access a file in a way forbidden
+by the protection system.
+.en 14 EFAULT "Bad address
+The system encountered a hardware fault in attempting to
+access the arguments of a system call.
+.en 15 ENOTBLK "Block device required
+A plain file was mentioned where a block device was required,
+e.g. in
+.IR mount .
+.en 16 EBUSY "Mount device busy
+An attempt to mount a device that was already mounted or
+an attempt was made to dismount a device
+on which there is an active file
+directory.
+(open file, current directory, mounted-on file, active text segment).
+.en 17 EEXIST "File exists
+An existing file was mentioned in an inappropriate context,
+e.g.
+.IR link .
+.en 18 EXDEV "Cross-device link
+A link to a file on another device
+was attempted.
+.en 19 ENODEV "No such device
+An attempt was made to apply an inappropriate
+system call to a device;
+e.g. read a write-only device.
+.en 20 ENOTDIR "Not a directory
+A non-directory was specified where a directory
+is required,
+for example in a path name or
+as an argument to
+.IR chdir .
+.en 21 EISDIR "Is a directory
+An attempt to write on a directory.
+.en 22 EINVAL "Invalid argument
+Some invalid argument:
+dismounting a non-mounted
+device,
+mentioning an unknown signal in
+.I signal,
+reading or writing a file for which
+.I seek
+has generated a negative pointer.
+Also set by math functions, see 
+.IR intro (3).
+.en 23 ENFILE "File table overflow
+The system's table of open files is full,
+and temporarily no more
+.I opens
+can be accepted.
+.en 24 EMFILE "Too many open files
+Customary configuration limit is 20 per process.
+.en 25 ENOTTY "Not a typewriter
+The file mentioned in
+.I stty
+or
+.I gtty
+is not a terminal or one of the other
+devices to which these calls apply.
+.en 26 ETXTBSY "Text file busy
+An attempt to execute a pure-procedure
+program which is currently open for writing
+(or reading!).
+Also an attempt to open for writing a pure-procedure
+program that is being executed.
+.en 27 EFBIG "File too large
+The size of a file exceeded the maximum (about
+.if t 10\u\s-29\s+2\d
+.if n 1.0E9
+bytes).
+.en 28 ENOSPC "No space left on device
+During a
+.I write
+to an ordinary file,
+there is no free space left on the device.
+.en 29 ESPIPE "Illegal seek
+An
+.I lseek
+was issued to a pipe.
+This error should also be issued for
+other non-seekable devices.
+.en 30 EROFS "Read-only file system
+An attempt to modify a file or directory
+was made
+on a device mounted read-only.
+.en 31 EMLINK "Too many links
+An attempt to make more than 32767 links to a file.
+.en 32 EPIPE "Broken pipe
+A write on a pipe for which there is no process
+to read the data.
+This condition normally generates a signal;
+the error is returned if the signal is ignored.
+.en 33 EDOM "Math argument
+The argument of a function in the math package (3M)
+is out of the domain of the function.
+.en 34 ERANGE "Result too large
+The value of a function in the math package (3M)
+is unrepresentable within machine precision.
+.SH SEE ALSO
+intro(3)
+.SH "ASSEMBLER (PDP-11)"
+.B as /usr/include/sys.s file ...
+.PP
+The PDP11 assembly language interface is given for each
+system call.
+The assembler symbols are defined in `/usr/include/sys.s'.
+.PP
+Return values appear in registers r0 and r1;
+it is unwise to count on these registers being preserved
+when no value is expected.
+An erroneous call is always
+indicated by turning on the c-bit of the condition codes.
+The error number is returned in r0.
+The presence of an error is most easily tested
+by the instructions
+.I bes
+and
+.I bec
+(`branch on error set (or clear)').
+These are synonyms for
+the
+.I bcs
+and
+.I bcc
+instructions.
+.PP
+On the Interdata 8/32, the system call arguments
+correspond well to the arguments of the C routines.
+The sequence is:
+.IP
+.nf
+la	%2,errno
+l	%0,&callno
+svc	0,args
+.fi
+.PP
+Thus register 2 points to a word into which the error number will be
+stored as needed; it is cleared if no error occurs.
+Register 0 contains the system call number; the nomenclature
+is identical to that on the PDP11.
+The argument of the
+.I svc
+is the address of the arguments, laid out in storage
+as in the C calling sequence.
+The return value is in register 2 (possibly 3 also, as in
+.IR pipe )
+and is \-1 in case of error.
+The overflow bit in the program status word is also
+set when errors occur.
+.PP
+On the VAX-11 a system call follows exactly the same conventions as a
+C procedure.  Namely, register
+.B ap
+points to a long word containing the number of arguments, and the
+arguments follow in successive long words.  Values are returned in registers
+.B r0
+and
+.BR r1 .
+An error is indicated by setting the C (carry) bit in the processor status
+word; the error number is placed in
+.BR r0 .

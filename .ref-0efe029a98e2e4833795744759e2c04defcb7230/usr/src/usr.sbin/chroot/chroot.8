@@ -1,0 +1,34 @@
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)chroot.8	5.2 (Berkeley) %G%
+.\"
+.TH CHROOT 8 ""
+.UC 6
+.SH NAME
+chroot \- change root directory
+.SH SYNOPSIS
+.B chroot newroot [ command ]
+.SH DESCRIPTION
+The
+.I chroot
+command changes its root directory to the supplied directory
+.I newroot
+and exec's
+.IR command ,
+if supplied, or an interactive copy of your shell (as specified
+by the environmental variable
+.IR SHELL )
+if not.
+.I /bin/sh
+is used if
+.I SHELL
+is not specified.
+.PP
+Note,
+.I command
+or the shell are run as your real-user-id.
+.SH "SEE ALSO"
+chdir(2), chroot(2), environ(7)

@@ -1,0 +1,42 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)memcmp.3	5.2 (Berkeley) %G%
+.\"
+.TH MEMCMP 3 ""
+.UC 7
+.SH NAME
+memcmp \- compare byte string
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+int
+memcmp(const void *b1, const void *b2, size_t len);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Memcmp
+compares byte string
+.I b1
+against byte string
+.IR b2 ,
+returning zero if they are identical,
+otherwise returning the difference between the first two differing bytes
+(treated as unsigned char values, so that '\e200' is greater than \&'\e0',
+e.g.).
+Both strings are assumed to be
+.I len
+bytes long.
+Zero-length strings are always identical.
+.SH SEE ALSO
+bcmp(3), strcasecmp(3), strcmp(3), strcoll(3), strxfrm(3)
+.SH STANDARDS
+.I Memcmp
+conforms to ANSI X3.159-1989 (``ANSI C'').

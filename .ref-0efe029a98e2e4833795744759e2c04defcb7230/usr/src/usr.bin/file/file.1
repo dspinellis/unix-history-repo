@@ -1,0 +1,40 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)file.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt FILE 1
+.Os BSD 4.4
+.Sh NAME
+.Nm file
+.Nd identify file content
+.Sh SYNOPSIS
+.Nm file
+.Ar
+.Sh DESCRIPTION
+.Nm File
+tests the given argument(s) and reports
+the content type(s). 
+If
+the file type is text,
+it attempts to determine
+the type of text (e.g.
+.Xr csh 1
+commands or C code)
+.Pp
+As several tests
+are used and
+.Nm file
+stops testing on the first successful one,
+it can make mistakes.
+.Pp
+.Nm File
+does not recognize Pascal or LISP.
+.\" .Sh ENVIRONMENT
+.Sh HISTORY
+A
+.Nm file
+command appeared in Version 6 AT&T UNIX.

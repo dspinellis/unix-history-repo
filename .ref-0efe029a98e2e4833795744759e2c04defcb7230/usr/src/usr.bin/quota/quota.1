@@ -1,0 +1,105 @@
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Robert Elz at The University of Melbourne.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)quota.1	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt QUOTA 1
+.Os BSD 4.2
+.Sh NAME
+.Nm quota
+.Nd display disk usage and limits
+.Sh SYNOPSIS
+.Nm quota
+.Op Fl g
+.Op Fl u
+.Op Fl v Li \&| Fl q
+.Nm quota
+.Op Fl u
+.Op Fl v Li \&| Fl q
+.Ar user
+.Nm quota
+.Op Fl g
+.Op Fl v Li \&| Fl q
+.Ar group
+.Sh DESCRIPTION
+.Nm Quota
+displays users' disk usage and limits.
+By default only the user quotas are printed.
+.Pp
+Options:
+.Pp
+.Tw Ds
+.Tp Fl g
+Print group quotas for the group 
+of which the user is a member.
+The optional
+.Fl u
+flag is equivalent to the default.
+.Tp Fl v
+.Nm quota
+will display quotas on filesystems
+where no storage is allocated.
+.Tp Fl q
+Print a more terse message,
+containing only information
+on filesystems where usage is over quota.
+.Tp
+.Pp
+Specifying both
+.Fl g
+and
+.Fl u
+displays both the user quotas and the group quotas (for
+the user).
+.Pp
+Only the super-user may use the
+.Fl u
+flag and the optional
+.Ar user
+argument to view the limits of other users.
+Non-super-users can use the the
+.Fl g
+flag and optional
+.Ar group
+argument to view only the limits of groups of which they are members.
+.Pp
+The
+.Fl q
+flag takes precedence over the
+.Fl v
+flag.
+.Pp
+.Nm Quota
+reports the quotas of all the filesystems listed in
+.Pa /etc/fstab .
+If
+.Nm quota
+exits with a non-zero status, one or more filesystems
+are over quota.
+.Sh FILES
+.Dw quota.group
+.Di L
+.Dp Pa quota.user
+located at the filesystem root with user quotas
+.Dp Pa quota.group
+located at the filesystem root with group quotas
+.Dp Pa /etc/fstab
+to find filesystem names and locations
+.Dp
+.Sh HISTORY
+.Nm Quota
+appeared in 4.2 BSD.
+.Sh SEE ALSO
+.Xr quotactl 2 ,
+.Xr fstab 5 ,
+.Xr edquota 8 ,
+.Xr quotacheck 8 ,
+.Xr quotaon 8 ,
+.Xr repquota 8

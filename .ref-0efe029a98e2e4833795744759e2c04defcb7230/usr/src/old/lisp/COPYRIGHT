@@ -1,0 +1,11 @@
+This entire subtree is copyright The Regents of the University of California.
+The following copyright notice applies to all files found here.  None of these
+files contain AT&T proprietary source code.
+______________________________________________________________________________
+
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */

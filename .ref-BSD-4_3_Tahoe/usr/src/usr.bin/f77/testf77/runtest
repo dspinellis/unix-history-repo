@@ -1,0 +1,1 @@
+sh testf77 tests | tee output/tests.res

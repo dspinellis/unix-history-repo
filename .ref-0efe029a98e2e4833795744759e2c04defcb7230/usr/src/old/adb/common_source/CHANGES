@@ -1,0 +1,57 @@
+de-Bourned; reformatted to Joy Normal Form
+
+old SDB relics clobbered
+
+linted
+
+some work done to prepare for /proc and discarding of ptrace
+interface.  Reading sequences of bytes using ptrace is now done
+portably, and considerably more efficiently for commands that
+repeatedly fetch objects smaller than an `int' (e.g., `l' command, `s'
+and `S' formats).
+
+adb used to accept 0t, 00t, 0<overflow-to-0>t, etc as decimal, and so
+forth.  now only the advertised sequences (and their uppercase
+counterparts) are accepted: 0x, 0X, 0t, 0T, 0o, 0O.
+
+"unexpected ')'" error is gone; you now get "bad command".
+
+fixed crash if you asked for <expr> # 0
+
+fixed crash on input like 0.999999999999999999999999999999999999999
+
+some expressions using variable 0 may behave differently.  In
+particular, it used to be that `8000=C;<0=X' would first print ^@, then
+print 8000.  Now the =C truncates, so that you get 0 instead of 8000.
+
+finally got rid of that stupid
+	_foo:
+	_foo:	0
+output format.  _foo appears exactly once now.  (This may need some
+further work.)
+
+reenabled the 1, 2, and 4 formats (not that 2 and 4 are needed, as they
+are the same as w and W).  To get these you must write \1, \2, or \4,
+or the code will assume (as it used to) that these are prefix counts.
+
+the VAX instruction decoder will now print comments in some questionable
+situations that sometimes arise when attempting to print data as
+instructions.  Previously it would print nonsense and rely upon the
+user to discover it as nonsense.
+
+fixed radix code (previously everything that was not hex was decimal)
+
+expression>pc now works as an alternate method for changing the pc
+(the usual expr:r, expr:s, expr:c formats still work).
+
+fixed annoying VAX feature that printed clrl/clrf instructions as
+clrf instructions, and likewise for mova and pusha: now l is preferred
+to f, q to d, etc., when two instructions have the same opcode.
+
+8a format no longer prints dot 9 times.  I doubt anyone will miss this...
+
+radix code now works more the old tahoe adb: a negative radix tells
+adb to print negative numbers with leading `-'; else all are assumed
+unsigned.  The new (internal and external) `v' and `V' formats print
+in the current radix, but always signed (used by, e.g., the vax
+instruction disassembler, for fp offsets).

@@ -1,0 +1,112 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)unvis.3	1.2 (Berkeley) %G%
+.\"
+.TH UNVIS 3 ""
+.UC 7
+.SH NAME
+unvis, strunvis - decode a visual representation of characters
+.SH SYNOPSIS
+.nf
+.ft B
+#include <vis.h>
+
+int unvis(cp, c, astate, flag)
+u_char *cp, c;
+int *astate, flag;
+
+int strunvis(dst, src)
+char *dst, *src;
+
+.ft R
+.fi
+.SH DESCRIPTION
+.I Unvis
+and
+.I strunvis
+are used to decode a visual representation of characters, as produced
+by the vis(3) function, back into
+its original form.  Unvis is called with successive characters in c 
+until a valid
+sequence is recognized, at which time the decoded character is
+available at the character pointed to by cp.  Strunvis decodes the
+characters pointed to by src into the buffer pointed to by dst.
+.LP
+.I Strunvis
+simply copies src to dst, decoding any escape sequences along the way,
+and returns the number of characters placed into dst, or -1 if an
+invalid escape sequence was detected.  The size of dst should be
+equal to the size of src (that is, no expansion takes place during
+decoding).
+.LP
+.I Unvis
+implements a state machine that can be used to decode an arbitrary
+stream of bytes.  All state associated with the bytes being decoded
+is stored outside the
+.I unvis
+function (that is, a pointer to the state is passed in), so
+calls decoding different streams can be freely intermixed.  To
+start decoding a stream of bytes, first initialize an integer
+to zero.  Call unvis with each successive byte, along with a pointer
+to this integer, and a pointer to an destination character.
+.I Vis
+has several return codes that must be handled properly.  They are:
+.TP 
+0 (zero)
+Another character is necessary; nothing has been recognized yet.
+.TP
+UNVIS_VALID	
+A valid character has been recognized and is available at the location
+pointed to by cp.
+.TP
+UNVIS_VALIDPUSH
+A valid character has been recognized and is available at the location
+pointed to by cp; however, the character currently passed in should
+be passed in again.
+.TP
+UNVIS_NOCHAR
+A valid sequence was detected, but no character was produced.  This
+return code is necessary to indicate a logical break between characters.
+.TP
+UNVIS_SYNBAD
+An invalid esacpe sequence was detected, or the decoder is in an
+unknown state.  The decoder is placed into the starting state.
+.LP
+When all bytes in the stream have been processed, call
+.I unvis
+one more time with flag set to
+.B UNVIS_END
+to extract any remaining character (the character passed in is ignored).
+.LP
+The following code fragment illustrates a proper use of
+.IR unvis .
+.PP
+.nf
+int state = 0;
+char out;
+
+while ((ch = getchar()) != EOF) {
+again:
+	switch(unvis(&out, ch, &state, 0)) {
+	case 0:
+	case UNVIS_NOCHAR:
+		break;
+	case UNVIS_VALID:
+		(void) putchar(out);
+		break;
+	case UNVIS_VALIDPUSH:
+		(void) putchar(out);
+		goto again;
+	case UNVIS_SYNBAD:
+		(void)fprintf(stderr, "bad sequence!\n");
+		exit(1);
+	}
+}
+if (unvis(&out, (char)0, &state, UNVIS_END) == UNVIS_VALID)
+	(void) putchar(out);
+.fi
+.SH "SEE ALSO"
+vis(1)

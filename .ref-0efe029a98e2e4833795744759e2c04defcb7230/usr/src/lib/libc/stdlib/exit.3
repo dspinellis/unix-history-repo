@@ -1,0 +1,48 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)exit.3	6.4 (Berkeley) %G%
+.\"
+.TH EXIT 3 ""
+.UC 5
+.SH NAME
+exit \- perform normal program termination
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdlib.h>
+
+void
+exit(status)
+int status;
+.fi
+.SH DESCRIPTION
+.I Exit
+terminates a process.
+.PP
+Before termination it performs the following functions in the
+order listed:
+.RS
+.PP
+Call the functions registered with the
+.IR atexit (3)
+function, in the reverse order of their registration.
+.PP
+Flush all open output streams.
+.PP
+Close all open streams.
+.PP
+Unlink all files created with the
+.IR tmpfile (3)
+function.
+.RE
+.PP
+.I Exit
+never returns.
+.SH "SEE ALSO"
+exit(2), atexit(3), intro(3), tmpfile(3)
+.SH STANDARDS
+.B Exit
+conforms to ANSI X3.159-1989 (``ANSI C'').

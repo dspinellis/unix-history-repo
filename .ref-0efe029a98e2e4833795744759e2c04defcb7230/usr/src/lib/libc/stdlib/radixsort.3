@@ -1,0 +1,81 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)radixsort.3	5.4 (Berkeley) %G%
+.\"
+.TH radixsort 3 ""
+.SH NAME
+radixsort \- radix sort
+.SH SYNOPSIS
+.nf
+.ft B
+#include <limits.h>
+#include <stdlib.h>
+
+radixsort(u_char **base, int nmemb, u_char *table, u_char endbyte);
+.ft R
+.fi
+.SH DESCRIPTION
+.I Radixsort
+is a modified radix sort.
+.PP
+The
+.I radixsort
+function sorts an array of
+.I nmemb
+pointers to byte strings, the initial member of which is referenced
+by
+.IR base .
+The byte strings may contain any values; the end of each string
+is denoted by the user-specified value
+.IR endbyte .
+The contents of the array are sorted in ascending order according
+to the ASCII order of the byte strings they reference.
+.PP
+Applications may specify a sort order by providing the
+.IR table
+argument.
+If non-NULL,
+.I table
+must reference an array of UCHAR_MAX + 1 bytes which contains the sort
+weight of each possible byte value.
+The end-of-string byte must have a sort weight of 0.
+More than one byte may have the same sort weight.
+.I Table
+is useful for applications which wish to sort different characters
+equally; for example, providing a table with the same weights
+for A-Z as for a-z will result in a case-insensitive sort.
+.PP
+.I Radixsort
+is stable, that is, if two elements compare as equal, their order in
+the sorted array is unchanged.
+.PP
+.I Radixsort
+is a variant of most-significant-byte radix sorting; in particular, see
+D.E. Knuth's Algorithm R and section 5.2.5, exercise 10.
+.I Radixsort
+takes linear time relative to the number of bytes in the strings.
+.SH SEE ALSO
+sort(1), qsort(3)
+.sp
+Knuth, D.E. [1968]. "The Art of Computer Programming Vol. 3:
+Sorting and Searching", pp. 170-178.
+.br
+Paige, R. [1987]. "Three Partition Refinement Algorithms", 
+SIAM J. Comput. Vol. 16, No. 6.
+.SH "RETURN VALUES"
+Upon successful completion 0 is returned.
+Otherwise, \-1 is returned and the global variable 
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.I Radixsort
+may fail and set
+.I errno
+for any of the errors specified for the library routine
+.IR malloc (3).
+.SH BUGS
+.I Nmemb
+must be less than the maximum integer, INT_MAX.

@@ -1,0 +1,79 @@
+.\" Copyright (c) 1987, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)cmp.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt CMP 1
+.Os BSD 4.4
+.Sh NAME
+.Nm cmp
+.Nd compare two files
+.Sh SYNOPSIS
+.Nm cmp
+.Op Fl l Li \&| Fl s
+.Ar file1 file2
+.Sh DESCRIPTION
+The cmp utility compares two files of any type and
+writes the results to the standard output.
+Under default options,
+.Nm
+is silent
+if the files are the same; if they
+differ, the byte and line
+number at which the first difference occurred is reported.
+Bytes and
+lines are numbered beginning with one.
+.Pp
+The following options are available:
+.Tw Ds
+.Tp Fl l
+Print the byte number (decimal) and the differing
+byte values (octal) for each difference, respectively.
+.Tp Fl s
+Print nothing for differing files; return exit
+status only.
+.Tp
+.Pp
+The following operands are available:
+.Tw file1
+.Tp Ar file1
+A pathname of the first file to be compared.
+If
+.Ar file1
+is
+.Sq Fl ,
+the standard input is used.
+.Tp Ar file2
+A pathname of the second file to be compared.
+.Tp
+.Pp
+The
+.Nm cmp
+utility exits with one of the following values:
+.Tw Ds
+.Tp 0
+The files are identical.
+.Tp 1
+The files are different; this includes the case
+where one file is identical to the first part of
+the other.
+In the latter case, if the
+.Fl s
+option has
+not been specified, cmp writes to standard error
+that EOF was reached in the shorter file (before
+any differences were found).
+.Tp >1
+An error occurred.
+.Tp
+.Sh SEE ALSO
+.Xr diff 1 ,
+.Xr diff3 1
+.Sh STANDARDS
+The
+.Nm cmp
+function is expected to be POSIX 1003.2 compatible.
+This manual page is derived from the POSIX 1003.2 manual page.

@@ -1,0 +1,122 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)as.1	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt AS 1
+.Os BSD 4
+.Sh NAME
+.Nm as
+.Nd VAX-11 assembler
+.Sh SYNOPSIS
+.Nm as
+.Op Fl \&a Ar val
+.Op Fl \&d Ar bytes
+.Op Fl \&L
+.Op Fl \&W
+.Op Fl \&V
+.Op Fl \&J
+.Op Fl \&R
+.Op Fl \&t Ar directory
+.Op Fl \&o Ar outfile
+.Op Ar source_file ...
+.Sh DESCRIPTION
+The
+.Nm as
+assembler produces an object file from the given source files
+or from the standard input.
+.Tp Fl a
+Specifies the alignment
+.Ar value
+of procedures and data blocks.
+It is given as a power of two; thus an alignment of 3
+causes alignment on an eight byte boundary.
+The default is
+.Cx Fl a
+.Li 2
+.Cx ,
+.Cx
+the minumum value is
+.Li 1 ,
+the maximum value
+.Li 16 .
+.Tp Fl d
+Displacement offset in bytes for displacement values
+not defined in the first pass or unspecified in the assembly language.
+Possible values are
+.Li 1 , 2 ,
+or
+.Li 4 .
+The default is
+.Cx Fl d
+.Li 4
+.Cx ,
+.Cx
+if
+.Fl d
+is not given.
+.Tp Fl L
+Save defined labels beginning with a
+\*(LqL\*(Rq, which are normally discarded
+to save space in the resultant symbol table.
+The compilers generate such temporary labels.
+.Tp Fl V
+Use virtual memory for some intermediate storage,
+rather than a temporary file.
+.Tp Fl W
+Do not complain about errors.
+.Tp Fl J
+Use long branches to resolve jumps when byte-displacement branches are
+insufficient.  This must be used when a compiler-generated assembly contains
+branches of more than 32k bytes.
+.Tp Fl R
+Make initialized data segments read-only, by concatenating them to
+the text segments.
+This obviates the need to run editor scripts on assembly
+code to make initialized data read-only and shared.
+.Tp Fl t
+Specifies a directory to receive the temporary file, other than
+the default /tmp.
+.Tp
+.Pp
+Symbols remaining undefined upon completion are assumed global
+.Pp
+Output is either placed in
+.Ar outfile,
+if given, or sent
+placed in
+.Pa a.out .
+.Sh FILES
+.Dw /tmp/as*
+.Di L
+.Dp Pa tmp/as\(**
+default temporary files
+.Dp Pa a.out
+default resultant object file
+.Dp
+.Sh SEE ALSO
+.Xr a.out 5 ,
+.Xr adb 1 ,
+.Xr dbx 1 ,
+.Xr ld 1 ,
+.Xr nm 1
+.Pp
+Auxiliary documentation
+.Em Assembler Reference Manual .
+.Sh AUTHORS
+John F. Reiser
+.br
+Robert R. Henry
+.Sh HISTORY
+.Nm As
+appeared
+in Version 6 AT&T UNIX.  The version decsribed here is derived from
+Version 7 AT&T
+.Nm as .
+.Sh BUGS
+.Fl J
+should be eliminated; the assembler should automatically choose among
+byte, word and long branches.

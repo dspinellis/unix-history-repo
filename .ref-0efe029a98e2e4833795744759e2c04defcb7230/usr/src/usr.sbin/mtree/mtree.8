@@ -1,0 +1,197 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)mtree.8	5.7 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MTREE 8
+.Os BSD 4.4
+.Sh NAME
+.Nm mtree
+.Nd map a directory hierarchy
+.Sh SYNOPSIS
+.Nm mtree
+.Op Fl cderux
+.Op Fl f Ar spec
+.Op Fl p Ar path
+.Sh DESCRIPTION
+.Nm Mtree
+compares a directory hierarchy against a specification for a
+directory hierarchy.
+By default, the specification is read from the standard input.
+.Nm Mtree
+verifies that the tree rooted in the current directory matches the
+specification.
+.Pp
+Messages are written to standard output for any files whose
+characteristics do not match those of the specification, or which are
+missing from either the specification or the tree.
+.Pp
+The options are as follows:
+.Tp Fl c
+Print a specification for the tree to standard output.
+.Tp Fl d
+Ignore everything except directory type files.
+.Tp Fl e
+Don't object to files that are in the tree but not in the specification.
+.Tp Fl f
+Read the specification from
+.Ar file  ,
+instead of from standard input.
+.Tp Fl p
+Traverse the tree rooted in
+.Ar path  ,
+instead of the current directory.
+.Tp Fl r
+Remove any files in the tree that are not described in the
+specification.
+.Tp Fl u
+Modify the owner, group, and permissions of existing files to match
+the specification, as well as create any missing directories.
+Owner, group, and permissions must all be specified for missing
+directories to be created.
+.Tp Fl x
+Don't descend below any mount points.
+.Tp
+.Pp
+Specifications are mostly composed of ``keywords'', i.e. strings that
+that specify values relating to files.
+No keywords have default values, and if a keyword has no set value no
+checks based on it are performed.
+.Pp
+Currently supported keywords are as follows:
+.Tw Cm
+.Tp Cm cksum
+The checksum of the file using the algorithm specified by
+the program
+.Xr cksum  1  .
+.Tp Cm ignore
+Causes the hierarchy below the file to be ignored.
+.Tp Cm group
+The group of the file; may be either numeric or symbolic.
+.Tp Cm mode
+The current file's permissions as an absolute (octal) or symbolic
+value (see
+.Xr chmod  1  ) .
+.Tp Cm nlink
+The number of hard links the file is expected to have.
+.Tp Cm owner
+The owner of the file; may be either numeric or symbolic.
+.Tp Cm size
+The size, in bytes, of the file.
+.Tp Cm link
+The file a symbolic link is expected to reference.
+.Tp Cm time
+The last modification time of the file.
+.Tp Cm type
+The type of the file; may be set to any one of the following:
+.Tw Cm
+.Tp Cm block
+block special device
+.Tp Cm char
+character special device
+.Tp Cm dir
+directory
+.Tp Cm fifo
+fifo
+.Tp Cm file
+regular file
+.Tp Cm link
+symbolic link
+.Tp Cm socket
+socket
+.Tp
+.Tp
+.Pp
+There are four types of lines in a specification.
+.Pp
+The first type of line sets a ``global'' value for a keyword, and
+consists of a leading ``/set'' followed by whitespace, followed by
+sets of keyword/value pairs, separated by whitespace.
+Keyword/value pairs consist of a keyword, followed by a equals sign
+(``=''), followed by a value, without intervening whitespace.
+Once a keyword has been set, its value remains unchanged until either
+set again or unset.
+.Pp
+The second type of line unsets keywords and consists of a leading
+``/unset'', followed by whitespace, followed by one or more keywords,
+separated by whitespace.
+.Pp
+The third type of line is a file specification and consists of a file
+name, followed by whitespace, followed by zero or more whitespace
+separated keyword/value pairs.
+The file name may be preceded by any number of whitespace characters.
+The file name may contain any of the standard file name matching
+characters (``['', ``]'', ``?'' or ``*''), in which case files
+in the hierarchy will be associated with the first pattern that
+they match.
+.Pp
+Each of the keyword/value pairs consist of a keyword, followed by an
+equals sign (``=''), followed by the keyword's value, without intervening
+whitespace.
+These values override, without changing, the global value of the
+corresponding keyword.
+.Pp
+All paths are relative.
+Specifying a directory will cause subsequent files to be searched
+for in that directory hierarchy.
+Which brings us to the last type of line in a specification: a line
+containing only the string
+.Dq Nm \&..
+causes the current directory
+path to ascend one level.
+.Pp
+Empty lines and lines whose first non-whitespace character is a hash
+mark (``#'') are ignored.
+.Pp
+.Nm Mtree
+exits with a status of 0 on success and >0 if an error occurred or the
+tree did not match the specification.
+.Sh FILES
+.Dw /etc/mtree
+.Di L
+.Dp Pa /etc/mtree
+system specification directory
+.Dp
+.Sh SEE ALSO
+.Xr chmod 1 ,
+.Xr chown 1 ,
+.Xr chgrp 1 ,
+.Xr cksum 1 ,
+.Xr find 1 ,
+.Xr stat 2 ,
+.Xr fts 3 ,
+.Xr mkproto 8
+.Sh BUGS
+The
+.Cm cksum
+keyword is not yet implemented.
+.Pp
+The
+.Cm time
+keyword should be specifiable in human readable terms.
+.Sh EXAMPLE
+.Ds I
+#	  fs: /a/staff/rick/mybin
+#	  by: rick
+#	date: Fri May 25 12:26:57 1990
+.sp
+/set group=staff mode=0555 nlink=1 owner=rick type=file
+[ 		nlink=2 size=6144
+adb		size=53248
+df		group=operator mode=02555 size=20480
+ps		group=kmem mode=02555 size=54272
+rcp		owner=root mode=04555 size=79872
+test		nlink=2 size=6144
+.sp
+/set group=wheel mode=0444 nlink=1 owner=rick type=file
+manpages	type=dir mode=0775 nlink=2 size=1024
+adb.man	size=9473
+df.man	size=5263
+tar.man	size=3324
+\&..
+.De
+.Sh HISTORY
+4.3 Reno BSD.

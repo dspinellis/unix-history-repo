@@ -1,0 +1,54 @@
+.TH DUMPLABEL 8L "UKC \- %G%" "Unix Programmer's Manual"
+.SH NAME
+dumplabel \- file system dump labeller and label print
+.SH SYNOPSIS
+.B /etc/dumplabel
+[
+.B \-f
+tapename ] [
+.B \-r
+] [
+.B \-l
+label-stem ] [ label-spec ]
+.SH DESCRIPTION
+The program
+.I dumplabel
+allows initial labelling of tapes to be used for file system dumps by the
+.IR dump (8)
+program.
+If the 
+.B f
+switch is given, the following argument is used as the device which
+is to be used for labelling (default /dev/rmt8).
+The
+.B r
+switch rewinds the tape and puts the tape offline after each label is made.
+These optional arguments may be followed by one or more tape label specificiations.
+If none specifications
+are present, the tape is opened, the header read and the label printed.
+.PP
+The label specification is similar in style to the arguments for the dump program.
+The 
+.B l
+argument gives the label stem, with an optional `%s' being used to show
+the position in the string which is replaced by the variable section
+given by the remaining program arguments.
+For example
+.IP
+dumplabel -l TA%s 000,100-103,aaa,NAA-NAC
+.PP
+will generate TA000, TA100, TA101, TA102, TA103, TAaaa, TANAA, TANAB and TANAC.
+If the
+.B l
+switch is omitted, then the label is taken from the program argument.
+This means that
+.IP
+dumplabel -l sources
+.PP
+is equivalent to
+.IP
+dumplabel sources
+.PP
+Labels are limited to 15 characters.
+.SH "SEE ALSO"
+dump(8), restore(8), dumpdev(8), dumpall(8)

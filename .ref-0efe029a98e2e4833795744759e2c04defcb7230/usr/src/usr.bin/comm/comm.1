@@ -1,0 +1,67 @@
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)comm.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Os BSD 4.4
+.Dt COMM 1
+.Sh NAME
+.Nm comm
+.Nd select or reject lines common to two files
+.Sh SYNOPSIS
+.Nm comm
+.Op Fl 123
+.Ar file1 file2
+.Sh DESCRIPTION
+The
+.Nm comm
+utility reads
+.Ar file1
+and
+.Ar file2 ,
+which should be
+sorted lexically, and produces three text
+columns as output: lines only in
+.Ar file1 ;
+lines only in
+.Ar file2 ;
+and lines in both files.
+.Pp
+The filename
+.Sq Fl
+means the standard input.
+.Pp
+The following options are available:
+.Tw Ds
+.Tp Fl 1
+Suppress printing of column 1.
+.Tp Fl 2
+Suppress printing of column 2.
+.Tp Fl 3
+Suppress printing of column 3.
+.Tp
+.Pp
+Each column will have a number of tab characters prepended to it
+equal to the number of lower numbered columns that are being printed.
+For example, if column number two is being suppressed, lines printed
+in column number one will not have any tabs preceding them, and lines
+printed in column number three will have one.
+.Pp
+.Nm Comm
+assumes that the files are lexically sorted; all characters
+participate in line comparisons.
+.Pp
+.Nm Comm
+exits 0 on success, >0 if an error occurred.
+.Sh SEE ALSO
+.Xr cmp 1 ,
+.Xr diff 1 ,
+.Xr sort 1 ,
+.Xr uniq 1
+.Sh STANDARDS
+The
+.Nm comm
+function is expected to be POSIX 1003.2 compatible.

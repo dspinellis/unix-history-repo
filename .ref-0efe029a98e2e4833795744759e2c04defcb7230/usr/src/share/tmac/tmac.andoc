@@ -1,0 +1,20 @@
+.\"
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)tmac.andoc	5.4 (Berkeley) %G%
+.\"
+.de Dd
+.rn Dd xX
+.so /usr/share/tmac/tmac.doc
+.Dd \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8
+.rm xX
+..
+.de TH
+.rn TH xX
+.so /usr/share/tmac/tmac.an.old
+.TH \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8
+.rm xX
+..

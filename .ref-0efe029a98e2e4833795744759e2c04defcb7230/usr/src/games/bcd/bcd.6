@@ -1,0 +1,25 @@
+.\" Copyright (c) 1988 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)bcd.6	6.7 (Berkeley) %G%
+.\"
+.TH "BCD" 6 ""
+.UC 7
+.SH NAME
+bcd \- format input as punch cards
+.br
+ppt \- format input as paper tape
+.br
+morse \- format input as morse code
+.SH SYNOPSIS
+\fBbcd\fP [string ...]
+.br
+\fBppt\fP [string ...]
+.br
+\fBmorse\fP [-s] [string ...]
+.SH DESCRIPTION
+\fIBcd\fP, \fIppt\fP and \fImorse\fP convert command line arguments, if
+provided, or standard input into a form familiar to old-timers.  The
+\fI-s\fP option for morse produces dots and dashes rather than words.

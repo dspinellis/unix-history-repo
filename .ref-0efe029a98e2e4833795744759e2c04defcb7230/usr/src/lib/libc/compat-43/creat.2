@@ -1,0 +1,30 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)creat.2	6.8 (Berkeley) %G%
+.\"
+.TH CREAT 2 ""
+.UC 4
+.SH NAME
+creat \- create a new file
+.SH SYNOPSIS
+.nf
+.ft B
+creat(path, mode)
+char *path;
+mode_t mode;
+.ft R
+.fi
+.SH DESCRIPTION
+.B "This interface is made obsolete by open(2).
+.PP
+.I Creat
+is the same as:
+.sp
+.RS
+open(path, O_WRONLY | O_CREAT | O_WRONLY, mode);
+.RE
+.SH "SEE ALSO"
+open(2)

@@ -1,0 +1,41 @@
+#print
+As I said, '.' is set to the last line touched
+by any command in the editor.  So if you type
+  3p
+. will be set to line 3; and then 
+  .p
+will print the same line.
+Try that - 
+with the usual trailer, the commands should be
+
+3p
+.p
+w
+q
+ready
+The file is the same as before.
+#create Ref
+3p
+.p
+w
+q
+#create file
+george washington
+john adams
+thomas jefferson
+james madison
+james monroe
+john quincy adams
+#pipe
+#copyin
+ed file
+#user
+#uncopyin
+#unpipe
+tail -4  .copy >X1
+#cmp X1 Ref
+#log
+#next
+8.1a 10
+8.2a 6
+7.2c 2

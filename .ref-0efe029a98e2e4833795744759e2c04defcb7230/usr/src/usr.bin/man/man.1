@@ -1,0 +1,130 @@
+.\" Copyright (c) 1989, 1990 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"     @(#)man.1	6.12 (Berkeley) %G%
+.\"
+.TH MAN 1 "%Q"
+.UC 4
+.SH NAME
+man \- display the on-line manual pages
+.SH SYNOPSIS
+.nf
+.ft B
+man [ -achw ] [ -M path ] [ -m path ] [ section ] name ...
+.ft R
+.fi
+.SH DESCRIPTION
+.I Man
+displays the UNIX manual pages entitled
+.IR name .
+.PP
+The options are as follows:
+.TP
+a
+Display all of the manual pages for a specified
+.I section
+and
+.I name
+combination.
+(Normally, only the first manual page found is displayed.)
+.TP
+c
+Copy the manual page to the standard output instead of using
+.IR more (1)
+to paginate it.
+This is done by default if the standard output is not a terminal device.
+.TP
+h
+Display only the ``SYNOPSIS'' lines of the requested manual pages.
+.TP
+M
+Override the list of standard directories which
+.I man
+searches for manual pages.
+The supplied
+.I path
+must be a colon (``:'') separated list of directories.
+This search path may also be set using the environment variable
+.IR MANPATH .
+The subdirectories to be searched as well as their search order
+is specified by the ``_subdir'' line in the
+.I man
+configuration file.
+.TP
+m
+Augment the list of standard directories which
+.I man
+searches for manual pages.
+The supplied
+.I path
+must be a colon (``:'') separated list of directories.
+These directories will be searched before the standard directories or
+the directories specified using the
+.I M
+option or the
+.I MANPATH
+environment variable.
+.TP
+.I w
+List the pathnames of the manual pages which
+.I man
+would display for the specified
+.I section
+and
+.I name
+combination.
+.PP
+The optional
+.I section
+restricts the directories that
+.I man
+will search.
+The
+.I man
+configuration file (see
+.IR man_conf (5))
+specifies the possible
+.I section
+values that are currently available.
+If only a single argument is specified or if the first argument is
+not a valid section,
+.I man
+assumes that the argument is the name of a manual page to be displayed.
+.SH ENVIRONMENT
+.TP
+MACHINE
+As some manual pages are intended only for use on certain architectures,
+.I man
+searches certain directories applicable to the current machine.
+.I Man's
+determination of the current machine type may be overridden by setting
+the environment variable MACHINE to the name of an architecture (see
+.IR machine (1)).
+Machine specific areas are checked before general areas.
+.TP
+MANPATH
+The standard search path used by
+.I man
+may be overridden by specifying a path in the MANPATH environment
+variable.
+The format of the path is a colon (``:'') separated list of directories.
+The subdirectories to be searched as well as their search order
+is specified by the ``_subdir'' line in the
+.I man
+configuration file.
+.TP
+PAGER
+Any value of the environment variable
+.I PAGER
+will be used instead of the standard pagination program
+.IR more (1).
+.SH FILES
+/etc/man.conf	man configuration file (see
+.IR man_conf (5))
+.SH "SEE ALSO"
+apropos(1), machine(1), whatis(1), whereis(1), man_conf(5)
+.SH BUGS
+The on-line manual pages are, by necessity, forgiving toward stupid
+display devices, causing some manual pages to not be as good as their
+typeset counterparts.

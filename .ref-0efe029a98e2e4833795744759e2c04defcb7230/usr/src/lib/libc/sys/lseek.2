@@ -1,0 +1,83 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)lseek.2	6.4 (Berkeley) %G%
+.\"
+.TH LSEEK 2 ""
+.UC 4
+.SH NAME
+lseek \- move read/write pointer
+.SH SYNOPSIS
+.nf
+.ft B
+#include <unistd.h>
+
+pos = lseek(d, offset, whence)
+off_t pos;
+int d;
+off_t offset;
+int whence;
+.fi
+.ft R
+.SH DESCRIPTION
+The descriptor 
+.I d
+refers to a file or device open for reading and/or writing.
+.I Lseek
+sets the file pointer of
+.I d
+as follows:
+.IP
+If
+.I whence
+is SEEK_SET, the pointer is set to
+.I offset
+bytes.
+.IP
+If
+.I whence
+is SEEK_CUR, the pointer is set to its current location plus
+.IR offset .
+.IP
+If
+.I whence
+is SEEK_END, the pointer is set to the size of the
+file plus
+.IR offset .
+.PP
+Upon successful completion, the resulting pointer location
+as measured in bytes from beginning of the file is returned.
+Some devices are incapable of seeking.  The value of the pointer
+associated with such a device is undefined.
+.SH NOTES
+Seeking far beyond the end of a file, then writing,
+creates a gap or \*(lqhole\*(rq, which occupies no
+physical space and reads as zeros.
+.SH "RETURN VALUE
+Upon successful completion,
+the current file pointer value is returned.
+Otherwise,
+a value of \-1 is returned and \fIerrno\fP is set to indicate
+the error.
+.SH "ERRORS
+.I Lseek
+will fail and the file pointer will remain unchanged if:
+.TP 15
+[EBADF]
+.I Fildes
+is not an open file descriptor.
+.TP 15
+[ESPIPE]
+.I Fildes
+is associated with a pipe or a socket.
+.TP 15
+[EINVAL]
+.I Whence
+is not a proper value.
+.SH "SEE ALSO"
+dup(2), open(2)
+.SH BUGS
+This document's use of
+.I whence
+is incorrect English, but maintained for historical reasons.

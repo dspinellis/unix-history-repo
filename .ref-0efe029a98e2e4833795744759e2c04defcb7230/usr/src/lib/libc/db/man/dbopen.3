@@ -1,0 +1,684 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)dbopen.3	5.12 (Berkeley) %G%
+.\"
+.TH DB 3  ""
+.UC 7
+.SH NAME
+btree_open, hash_open, recno_open \- database access methods
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <db.h>
+
+DB *
+btree_open(const char *file, int flags, int mode, const BTREEINFO * openinfo);
+
+DB *
+hash_open(const char *file, int flags, int mode, const HASHINFO * openinfo);
+
+DB *
+recno_open(const char *file, int flags, int mode, const RECNOINFO * openinfo);
+.ft R
+.fi
+.SH DESCRIPTION
+.IR Btree_open ,
+.IR hash_open ,
+and
+.I recno_open
+are access method interfaces to database files in btree, hashed, and
+flat-file formats, respectively.
+The btree format is a representation of a sorted, balanced tree structure.
+The hashed format is an extensible, dynamic hashing scheme.
+The flat-file format is a UNIX file with fixed or variable length
+lines.
+These formats are described in more detail below.
+.PP
+Access to all file types is based on key/data pairs.
+.PP
+Each routine opens
+.I file
+for reading and/or writing.
+Databases never intended to be preserved on disk may be created by setting
+the file parameter to NULL.
+The
+.I flags
+and
+.I mode arguments
+are as specified to the
+.IR open (2)
+routine, however, only the O_CREAT, O_EXCL, O_RDONLY, O_RDWR, O_TRUNC
+and O_WRONLY flags are meaningful.
+The argument
+.I openinfo
+is a pointer to an access method specific structure described below.
+.PP
+The open routines return a pointer to a DB structure on success and NULL
+on error.
+The DB structure contains at least the following fields:
+.PP
+typedef struct {
+.RS
+void *openinfo;
+.br
+int (*close)(const DB *db);
+.br
+int (*delete)(const DB *db, const DBT *key);
+.br
+int (*get)(const DB *db, DBT *key, DBT *data);
+.br
+int (*put)(const DB *db, const DBT *key, const DBT *data, u_long flag);
+.br
+int (*seq)(const DB *db, DBT *key, DBT *data, u_long flag);
+.br
+int (*sync)(const DB *db);
+.RE
+} DB;
+.PP
+The elements of this structure consist of a pointer to an access method
+specific structure and a set of routines which perform various functions.
+All of these routines take a pointer to a structure as returned by
+one of the open routines, one or more pointers to key/data structures,
+and, optionally, a flag value.
+.TP
+openinfo
+A pointer to an internal structure specific to the access method.
+.TP
+close
+A pointer to a routine to flush any cached information to disk, free any
+allocated resources, and close the database file.
+Since key/data pairs may be cached in memory, failing to close the
+file with a
+.I close
+routine may result in inconsistent or lost information.
+.I Close
+routines return -1 on error (setting
+.IR errno )
+and 0 on success.
+.TP
+delete
+A pointer to a routine to remove key/data pairs from the database.
+.I Delete
+routines return -1 on error (setting
+.IR errno ),
+0 on success, and 1 if the specified
+.I key
+was not in the file.
+.TP
+get
+A pointer to a routine which is the interface for keyed retrieval from
+the database.
+The address and length of the data associated with the specified
+.I key
+are returned in the structure referenced by
+.IR data .
+.I Get
+routines return -1 on error (setting
+.IR errno ),
+0 on success, and 1 if the
+.I key
+was not in the file.
+.TP
+put
+A pointer to a routine to store key/data pairs in the database.
+.IP
+The parameter
+.I flag
+must be set to one of the following values:
+.RS
+.TP
+R_IAFTER
+Append the data immediately after the data referenced by
+.IR key ,
+creating a new key/data pair.
+(This implies that the access method is able to create new keys,
+i.e. the keys are ordered and independent, for example, record numbers.
+Applicable only to the
+.B RECNO
+access method.)
+.TP
+R_IBEFORE
+Insert the data immediately before the data referenced by
+.IR key ,
+creating a new key/data pair.
+(This implies that the access method is able to create new keys,
+i.e. the keys are ordered and independent, for example, record numbers.
+Applicable only to the
+.B RECNO
+access method.)
+.TP
+R_NOOVERWRITE
+Enter the new key/data pair only if the key does not previously exist.
+.TP
+R_PUT
+Enter the new key/data pair and replace any previously existing key.
+.RE
+.IP
+.I Put
+routines return -1 on error (setting
+.IR errno ),
+0 on success, and 1 if the R_NOOVERWRITE
+.I flag
+was set and the key already exists in the file.
+.TP
+seq
+A pointer to a routine which is the interface for sequential
+retrieval from the database.
+The address and length of the key are returned in the structure
+referenced by
+.IR key ,
+and the address and length of the data are returned in the
+structure referenced
+by
+.IR data .
+.IP
+Sequential key/data pair retrieval may begin at any time, and the
+position of the ``cursor'' is not affected by calls to the
+.IR delete ,
+.IR get ,
+.IR put ,
+or
+.I sync
+routines.
+Modifications to the database during a sequential scan will be reflected
+in the scan, i.e. records inserted behind the cursor will not be returned
+while records inserted in front of the cursor will be returned.
+.IP
+The flag value must be set to one of the following values:
+.RS
+.TP
+R_CURSOR
+The data associated with the specified key is returned.
+This differs from the
+.I get
+routines in that it sets the ``cursor'' to the location of the
+key as well.
+(This implies that the access method has a implicit order which does
+not change.
+Applicable only to the
+.B BTREE
+and
+.B RECNO
+access methods.)
+.TP
+R_FIRST
+The first key/data pair of the database is returned.
+.TP
+R_LAST
+The last key/data pair of the database is returned.
+(This implies that the access method has a implicit order which does
+not change.
+Applicable only to the
+.B BTREE
+and
+.B RECNO
+access methods.)
+.TP
+R_NEXT
+Retrieve the key/data pair immediately after the key/data pair most recently
+retrieved using the
+.I seq
+routine.
+The cursor is moved to the returned key/data pair.
+If
+.I flag
+is set to R_NEXT the first time the
+.I seq
+routine is called, the first key/data pair of the database is returned.
+.TP
+R_PREV
+Retrieve the key/data pair immediately before the key/data pair most recently
+retrieved using the
+.I seq
+routine.
+The cursor is moved to the returned key/data pair.
+If
+.I flag
+is set to R_PREV the first time the
+.I seq
+routine is called, the last key/data pair of the database is returned.
+(This implies that the access method has a implicit order which does
+not change.
+Applicable only to the
+.B BTREE
+and
+.B RECNO
+access methods.)
+.RE
+.IP
+.I Seq
+routines return -1 on error (setting
+.IR errno ),
+0 on success, 1 if there are no more key/data pairs available.
+If the
+.B RECNO
+access method is being used, and if the database file is a character special
+file and no complete key/data pairs are currently available, the
+.I seq
+routines return 2.
+.TP
+sync
+A pointer to a routine to flush any cached information to disk.
+If the database is in memory only, the
+.I sync
+routine has no effect and will always succeed.
+.I Sync
+routines return -1 on error (setting
+.IR errno )
+and 0 on success.
+.SH "KEY/DATA PAIRS"
+Access to all file types is based on key/data pairs.
+Both keys and data are represented by the following data structure:
+.PP
+typedef struct {
+.RS
+u_char *data;
+.br
+size_t size;
+.RE
+} DBT;
+.PP
+The elements of the DBT structure are defined as follows:
+.TP
+data
+A pointer to a byte string.
+.TP
+size
+The length of the byte string.
+.PP
+Key/data strings must fit into available memory.
+.SH BTREE
+One of the access methods is a btree: a sorted, balanced tree structure
+with associated key/data pairs.
+.PP
+The access method specific data structure provided to
+.I btree_open
+is as follows:
+.PP
+typedef struct {
+.RS
+u_long flags;
+.br
+u_int psize;
+.br
+u_int cachesize;
+.br
+int (*compare)(const void *, const void *);
+.br
+int lorder;
+.RE
+} BTREEINFO;
+.PP
+The elements of this structure are defined as follows:
+.TP
+flags
+The flag value is specified by
+.IR or 'ing
+any of the following values:
+.RS
+.TP
+R_DUP
+If the key already exists in the file, create an entry with a duplicate
+key, i.e. one with the same key and different data as another entry.
+(This implies that keys are not required to be unique.)
+Note, the order of retrieval of key/data pairs with duplicate keys is
+undefined.
+.RE
+.TP
+cachesize
+A suggested maximum size, in bytes, of the memory cache.
+Setting this value to zero specifies that an appropriate amount of memory
+should be used.
+Since every search examines the root page of the tree, caching the most
+recently used pages substantially improves access time.
+In addition, physical writes are delayed as long as possible, so a moderate
+cache can reduce the number of I/O operations significantly.
+Obviously, using a cache increases the likelihood of corruption or lost data
+if the system crashes while a tree is being modified, however, caching 10
+pages decreases the creation time of a large tree by between two and three
+orders of magnitude.
+.TP
+compare
+Compare is a user defined comparison function.
+It must return an integer less than, equal to, or greater than zero if the
+first argument is considered to be respectively less than, equal to, or
+greater than the second.
+The same comparison function must be used on a given tree every time it
+is opened.
+If no comparison function is specified,
+.IR strcmp (3)
+is used.
+.TP
+lorder
+The byte order for 4-byte integers in the stored database metadata.
+The number should represent the order as an integer; for example, 
+big endian order would be the number 4,321.
+If
+.I lorder
+is 0 (no order is specified) the current host order is used.
+If the  file already exists, the specified value is ignored and the
+value specified when the tree was created is used.
+(Obviously, portability of the data forming the key/data pairs is the
+concern of the application program.)
+.TP
+psize
+Page size is the size in bytes of the pages used for nodes in the tree.
+If the  file already exists, the specified value is ignored and the
+value specified when the tree was created is used.
+If
+.I psize
+is zero, an appropriate page size is chosen (based on the system memory
+and/or file system constraints), but will never be less than 512 bytes.
+.PP
+If the pointer to the
+.I openinfo
+data structure is NULL, the
+.I btree_open
+routine will use appropriate values.
+.PP
+If the database file already exists, and the O_TRUNC flag is not specified
+to
+.IR btree_open ,
+the parameter
+.I psize
+ignored.
+.PP
+Key structures may reference byte strings of slightly less than one-half the
+tree's page size only (see
+.IR psize ).
+Data structures may reference byte strings of essentially unlimited length.
+.PP
+Searches, insertions, and deletions in a btree will all complete in
+O lg N.
+.PP
+Forward sequential scans of a tree are from the least key to the greatest.
+.PP
+Space freed up by deleting key/data pairs from a btree is never reclaimed,
+although it is normally made available for reuse.
+The exception to this is that space occupied by large data items (those
+greater than one quarter the size of a page) is neither reclaimed nor reused.
+This means that the btree storage structure is grow-only.
+The only solutions are to avoid excessive deletions, or to create a fresh
+tree periodically from a scan of an existing one.
+.SH HASH
+One of the access methods is hashed access and storage.
+The access method specific data structure provided to
+.I hash_open
+is as follows:
+.sp
+typedef struct {
+.RS
+int bsize;
+.br
+u_int cachesize;
+.br
+int ffactor;
+.br
+int nelem;
+.br
+u_long (*hash)(const void *, const size_t);
+.br
+int lorder;
+.RE
+} HASHINFO;
+.PP
+The elements of this structure are defined as follows:
+.TP
+bsize
+.I Bsize
+defines the hash table bucket size, and is, by default, 256 bytes.
+It may be preferable to increase the page size for disk-resident tables and
+tables with large data items.
+.TP
+cachesize
+A suggested maximum size, in bytes, of the memory cache.
+Setting this value to zero specifies that an appropriate amount of memory
+should be used.
+.TP
+ffactor
+.I Ffactor
+indicates a desired density within the hash table.
+It is an approximation of the number of keys allowed to accumulate in any
+one bucket, determining when the hash table grows or shrinks.
+The default value is 8.
+.TP
+hash
+.I Hash
+is a user defined hash function.
+Since no hash function performs equally well on all possible data, the
+user may find that the built-in hash function does poorly on a particular
+data set.
+User specified hash functions must take two arguments (a pointer to a byte
+string and a length) and return an u_long to be used as the hash value.
+.TP
+lorder
+The byte order for 4-byte integers in the stored database metadata.
+The number should represent the order as an integer; for example, 
+big endian order would be the number 4,321.
+If
+.I lorder
+is 0 (no order is specified) the current host order is used.
+If the  file already exists, the specified value is ignored and the
+value specified when the tree was created is used.
+(Obviously, portability of the data forming the key/data pairs is the
+concern of the application program.)
+.TP
+nelem
+.I Nelem
+is an estimate of the final size of the hash table.
+If not set, the default value is 1.
+If not set or set too low, hash tables will expand gracefully as keys
+are entered, although a slight performance degradation may be noticed.
+.PP
+If the pointer to the
+.I openinfo
+data structure is NULL, the
+.I hash_open
+routine will use appropriate values.
+.PP
+If the hash table already exists, and the O_TRUNC flag is not
+specified to
+.IR hash_open ,
+the parameters
+.IR bsize ,
+.IR ffactor ,
+and
+.I nelem
+are ignored.
+.PP
+If a hash function is specified,
+.I hash_open
+will attempt to determine if the hash function specified is the same as
+the one with which the database was created, and will fail if it is not.
+.PP
+Both key and data structures may reference byte strings of essentially
+unlimited length.
+.PP
+Backward compatible interfaces to the routines described in
+.IR dbm (3),
+.IR hsearch (3),
+and
+.IR ndbm (3)
+are provided, however, these interfaces are not compatible with
+previous file formats.
+.SH RECNO
+One of the access methods is either variable or fixed-length records,
+the former delimited by a specific byte value.
+The access method specific data structure provided to
+.I recno_open
+is as follows:
+.sp
+typedef struct {
+.RS
+u_long flags;
+.br
+u_int cachesize;
+.br
+size_t reclen;
+.br
+u_char bval;
+.RE
+} RECNOINFO;
+.PP
+The elements of this structure are defined as follows:
+.TP
+flags
+The flag value is specified by
+.IR or 'ing
+any of the following values:
+.RS
+.TP
+R_FIXEDLEN
+The records are fixed-length, not byte delimited.
+The structure element
+.I reclen
+specifies the length of the record, and the structure element
+.I bval
+is used as the pad character.
+.TP
+R_SNAPSHOT
+This flag requires that a snapshot of the file be taken when
+.I recno_open
+is called, instead of permitting any unmodified records to be
+read from the original file.
+.RE
+.TP
+cachesize
+A suggested maximum size, in bytes, of the memory cache.
+Setting this value to zero specifies that an appropriate amount of memory
+should be used.
+.TP
+reclen
+The length of a fixed-length record.
+.TP
+bval
+The delimiting byte to be used to mark the end of a record for
+variable-length records, and the pad character for fixed-length
+records.
+.PP
+Variable-length and fixed-length data files require
+.I key
+structures to reference the following structure:
+.sp
+typedef struct {
+.RS
+u_long length;
+.br
+u_long number;
+.br
+u_long offset;
+.br
+u_char valid;
+.RE
+} RECNOKEY;
+.PP
+The elements of this structure are defined as follows:
+.TP
+length
+The length of the record.
+.TP
+number
+The record number.
+.TP
+offset
+The offset in the file at which the record is located.
+.TP
+valid
+A flag value which indicates the validity of the other fields in the
+structure.
+The flag value is specified by
+.IR or 'ing
+one or more of the following values:
+.RS
+.TP
+R_LENGTH
+The record length is valid.
+.TP
+R_NUMBER
+The record number is valid.
+.TP
+R_OFFSET
+The byte offset is valid.
+.RE
+.PP
+If the record retrieval is successful, the record number, byte offset and
+record length are set in the RECNOKEY structure referenced by the caller's
+.I key
+structure.
+.PP
+Data structures may reference byte strings of essentially unlimited length.
+.SH ERRORS
+The
+.I open
+routines may fail and set
+.I errno
+for any of the errors specified for the library routines
+.IR open (2)
+and
+.IR malloc (3)
+or the following:
+.TP
+[EINVAL]
+A parameter has been specified (hash function, pad byte etc.) that is
+incompatible with the current file specification or there is a mismatch
+between the version number of file and the software.
+.TP
+[EBADFORMAT]
+A file used by one of the
+.I open
+routines is incorrectly formatted.
+.PP
+The
+.I close
+routines may fail and set
+.I errno
+for any of the errors specified for the library routines
+.IR close (2),
+.IR read (2),
+.IR write (2),
+.IR free (3),
+or
+.IR fsync (2).
+.PP
+The
+.IR delete ,
+.IR get ,
+.I put
+and
+.I seq
+routines may fail and set
+.I errno
+for any of the errors specified for the library routines
+.IR read (2),
+.IR write (2),
+.IR free (3)
+or
+.IR malloc (3).
+.PP
+The
+.I sync
+routines may fail and set
+.I errno
+for any of the errors specified for the library routine
+.IR fsync (2).
+.SH "SEE ALSO"
+.IR "Dynamic Hash Tables" ,
+Per-Ake Larson, Communications of the ACM, April 1988.
+.sp
+.IR "A New Hash Package for UNIX" ,
+Margo Seltzer, USENIX Proceedings, Winter 1991.
+.SH BUGS
+The typedef DBT is a mnemonic for ``data base thang'', and was used
+because noone could think of a reasonable name that wasn't already used.
+.PP
+Btrees should reclaim unused pages automatically, and key lengths should
+be unbounded.
+.PP
+None of the access methods provide any form of concurrent access,
+locking, or transactions.
+.PP
+Only big and little endian byte order is supported.

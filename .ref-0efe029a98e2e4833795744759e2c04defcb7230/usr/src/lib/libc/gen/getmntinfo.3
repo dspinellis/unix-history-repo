@@ -1,0 +1,68 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getmntinfo.3	6.4 (Berkeley) %G%
+.\"
+.TH GETMNTINFO 3 ""
+.UC 7
+.SH NAME
+getmntinfo - get information about mounted file systems
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/mount.h>
+.LP
+.ft B
+int getmntinfo(mntbufp, flags)
+struct statfs **mntbufp;
+int flags
+.fi
+.ft R
+.SH DESCRIPTION
+.I Getmntinfo
+returns an array of
+.I statfs
+structures describing each currently mounted file system (see
+.IR statfs (2)).
+.PP
+.I Getmntinfo
+passes its
+.I flags
+parameter transparently to
+.IR getfsstat (2).
+.SH "RETURN VALUE"
+On successful completion,
+.I getmntinfo
+returns a count of the number of elements in the array.
+The pointer to the array is stored into
+.IR mntbufp .
+.PP
+If an error occurs, zero is returned and the external variable
+.I errno
+is set to indicate the error.
+Although the pointer 
+.I mntbufp
+will be unmodified, any information previously returned by 
+.I getmntinfo
+will be lost.
+.SH BUGS
+All information is contained in a static area,
+so it must be copied if it is to be saved.
+.PP
+The memory allocated by
+.I getmntinfo
+cannot be
+.IR free 'd
+by the application.
+.SH ERRORS
+.I Getmntinfo
+may fail and set errno for any of the errors specified for the library 
+routines
+.IR getfsstat (2)
+or 
+.IR malloc (3).
+.SH SEE ALSO
+getfsstat(2), statfs(2), mount(2), mount(8)

@@ -1,0 +1,106 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)mkstr.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt MKSTR 1
+.Sh NAME
+.Nm mkstr
+.Nd create an error message file by massaging C source
+.Sh SYNOPSIS
+.Nm mkstr
+.Op Fl
+.Ar messagefile
+.Ar prefix file ...
+.Sh DESCRIPTION
+.Nm Mkstr
+creates files containing error messages extracted from C source,
+and restructures the same C source, to utilize the created error message
+file.
+The intent of
+.Nm mkstr
+was to reduce the size of large programs and
+reduce swapping (see BUGS section below).
+.Pp
+.Nm Mkstr
+processes each of the specified
+.Ar files ,
+placing a restructured version of the input in a file whose name
+consists of the specified
+.Ar prefix
+and the original name.
+A typical usage of
+.Nm mkstr
+is
+.Pp
+.Dl mkstr pistrings xx *.c
+.Pp
+This command causes all the error messages from the C source
+files in the current directory to be placed in the file
+.Ar pistrings
+and restructured copies of the sources to be placed in
+files whose names are prefixed with
+.Ar xx .
+.Pp
+Options:
+.Tw Ds
+.Tp Fl
+Error messages are placed at the end of the specified
+message file for recompiling part of a large
+.Nm mkstr
+ed
+program.
+.Tp
+.Pp
+.Nm mkstr
+finds error messages in the source by
+searching for the string
+.Li \&`error("'
+in the input stream.
+Each time it occurs, the C string starting at the
+.Sq \&"\&
+is stored
+in the message file followed by a null character and a new-line character;
+The new source is restructured with
+.Xr lseek 2
+pointers into the error message file for retrieval.
+.Ds I
+char efilname = "/usr/lib/pi_strings";
+int efil = -1;
+
+error(a1, a2, a3, a4)
+\&{
+	char buf[256];
+
+	if (efil < 0) {
+		efil = open(efilname, 0);
+		if (efil < 0) {
+oops:
+			perror(efilname);
+			exit 1 ;
+		}
+	}
+	if (lseek(efil, (long) a1, 0) \ read(efil, buf, 256) <= 0)
+		goto oops;
+	printf(buf, a2, a3, a4);
+}
+.De
+.Sh SEE ALSO
+.Xr lseek 2 ,
+.Xr xstr 1
+.Sh HISTORY
+.Nm Mkstr
+appeared in 3 BSD.
+.Sh BUGS
+.Nm mkstr
+was intended for the limited architecture of the PDP 11 family.
+Very few programs in 4.4 BSD actually use it. The pascal interpreter,
+.Xr pi 1
+and the editor,
+.Xr ex 1
+are two programs that are built this way.
+It is not an efficient method, the error messages
+should be stored in the program text.

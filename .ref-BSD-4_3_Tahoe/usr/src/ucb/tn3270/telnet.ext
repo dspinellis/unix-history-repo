@@ -1,0 +1,35 @@
+/*
+ *	@(#)telnet.ext	3.1  10/29/86
+ */
+
+/*
+ * Definitions of external routines and variables from ../telnet.c.
+ */
+
+extern int
+#if defined(unix)
+	HaveInput,
+#endif /* defined(unix) */
+	tout,
+	tin;
+
+extern char	*transcom;
+
+extern int
+	netflush(),
+	quit(),
+	TtyChars(),
+	DataToNetwork(),
+	DataToTerminal(),
+	suspend();
+
+extern void
+	outputPurge(),
+	EmptyTerminal(),
+	StringToTerminal(),
+	_putchar(),
+	ExitString(),
+	ExitPerror(),
+	setconnmode(),
+	setcommandmode(),
+	command();
