@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	6.3	83/11/06	*/
+/*	udp_usrreq.c	6.3	83/11/14	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -31,7 +31,7 @@ udp_init()
 	udb.inp_next = udb.inp_prev = &udb;
 }
 
-int	udpcksum = 1;
+int	udpcksum = 0;
 struct	sockaddr_in udp_in = { AF_INET };
 
 udp_input(m0)
@@ -65,14 +65,14 @@ udp_input(m0)
 			udpstat.udps_badlen++;
 			goto bad;
 		}
-		m_adj(m, ((struct ip *)ui)->ip_len - len);
+		m_adj(m, len - ((struct ip *)ui)->ip_len);
 		/* (struct ip *)ui->ip_len = len; */
 	}
 
 	/*
 	 * Checksum extended UDP header and data.
 	 */
-	if (udpcksum) {
+	if (udpcksum && ui->ui_sum) {
 		ui->ui_next = ui->ui_prev = 0;
 		ui->ui_x1 = 0;
 		ui->ui_len = htons((u_short)len);
@@ -196,7 +196,8 @@ udp_output(inp, m0)
 	 * Stuff checksum and output datagram.
 	 */
 	ui->ui_sum = 0;
-	ui->ui_sum = in_cksum(m, sizeof (struct udpiphdr) + len);
+	if ((ui->ui_sum = in_cksum(m, sizeof (struct udpiphdr) + len)) == 0)
+		ui->ui_sum = -1;
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = MAXTTL;
 	so = inp->inp_socket;
