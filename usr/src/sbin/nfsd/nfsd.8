@@ -13,12 +13,15 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)nfsd.8	5.2 (Berkeley) %G%
+.\"	@(#)nfsd.8	5.3 (Berkeley) %G%
 .\"
 .TH NFSD 8 ""
 .UC 7
 .SH NAME
 nfsd \- remote NFS server
+[
+.B numservers
+]
 .SH SYNOPSIS
 .B /sbin/nfsd
 .SH DESCRIPTION
@@ -26,6 +29,9 @@ nfsd \- remote NFS server
 is the server for 
 .SM NFS
 requests from other client machines.
+A host should typically run enough servers to handle
+the maximum level of concurrency from its clients,
+typically four to six.
 .I Nfsd
 listens for service requests at the port indicated in the
 .SM NFS
