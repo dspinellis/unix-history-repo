@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.40 (Berkeley) %G%
+.\"	@(#)op.me	8.41 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.40
+Version 8.41
 .sp
 For Sendmail Version 8.7
 .)l
@@ -3155,6 +3155,7 @@ Eol	The end-of-line string for this mailer
 Maxsize	The maximum message length to this mailer
 Linelimit	The maximum line length in the message body
 Directory	The working directory for the mailer
+Userid	The default user and group id to run as
 .)b
 Only the first character of the field name is checked.
 .pp
@@ -3318,6 +3319,7 @@ when delivering network mail.
 The normal behaviour is required by most local mailers,
 which will not allow the envelope sender address
 to be set unless the mailer is running as daemon.
+This flag is overridden by the `S' flag.
 .ip p
 Use the route-addr style reverse-path in the SMTP
 .q "MAIL FROM:"
@@ -3347,10 +3349,11 @@ where
 .i sendmail
 ran as root.
 This could be used to avoid forged addresses.
-This flag is suppressed if given from an
-.q unsafe
-environment
-(e.g, a user's mail.cf file).
+If the
+.b U=
+field is also specified,
+this flag causes the user id to always be set to that user and group
+(instead of leaving it as root).
 .ip u
 Upper case should be preserved in user names
 for this mailer.
@@ -3484,6 +3487,31 @@ refuse to execute if they cannot read the home directory.
 Since the queue directory is not normally readable by normal users
 .i csh
 scripts as recipients can fail.
+.pp
+The Userid
+specifies the default user and group id to run as,
+overriding the
+.b u
+and
+.b g
+options (q.v.).
+If the
+.b S
+mailer flag is also specified,
+this is the user and group to run as in all circumstances.
+This may be given as
+.i user.group
+to set both the user and group id;
+either may be an integer or a symbolic name to be looked up
+in the
+.i passwd
+and
+.i group
+files respectively.
+If only a symbolic user name is specified,
+the group id in the
+.i passwd
+file for that user is used as the group id.
 .sh 3 "H \*- define header"
 .pp
 The format of the header lines that
@@ -6267,6 +6295,10 @@ line has a
 .q D=
 field that lets you change into a temporary directory while that mailer
 is running.
+It also has a
+.q U=
+field to allow you to set the user and group id to be used
+when running the mailer.
 .sh 2 "New Options"
 .pp
 Several new options have been added,
@@ -6342,6 +6374,8 @@ If the EHLO (extended hello)
 command fails,
 .i sendmail
 falls back to old SMTP.
+.ip A
+Try the user part of addresses for this mailer as aliases.
 .ip b
 Ensure that there is a blank line at the end of all messages.
 .ip c
@@ -6353,8 +6387,25 @@ Never use the null sender as the envelope sender,
 even when running SMTP.
 Although this violates RFC 1123,
 it may be necessary when you must deal with some obnoxious old hosts.
+.ip k
+Turn off the loopback check in the HELO protocol;
+doing this may cause mailer loops.
+.ip o
+Always run the mailer as the recipient of the message.
+.ip w
+This user should have a passwd file entry.
+.ip 5
+Try ruleset 5 if no local aliases.
 .ip 7
 Strip all output to 7 bits.
+.ip :
+Check for :include: files.
+.ip |
+Check for |program addresses.
+.ip /
+Check for /file addresses.
+.ip @
+Check this user against the user database.
 .sh 2 "New Pre-Defined Macros"
 .pp
 The following macros are pre-defined:
@@ -6924,7 +6975,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.40
+.\"Version 8.41
 .\".ce 0
 .bp 2
 .rs
