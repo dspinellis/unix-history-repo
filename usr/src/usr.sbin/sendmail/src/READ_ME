@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.55 (Berkeley) %G%
+#	@(#)READ_ME	8.56 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -437,6 +437,10 @@ SunOS 4.x (Solaris 1.x)
 Solaris 2.x (SunOS 5.x)
 	To compile for Solaris, be sure you use -DSOLARIS.
 
+	To the best of my knowledge, Solaris does not have the
+	gethostbyname problem described above.  However, it does
+	have another one:
+
 	From a correspondent:
 
 	   For solaris 2.2, I have 
@@ -447,8 +451,29 @@ Solaris 2.x (SunOS 5.x)
 	   qualified host name. I think "files" has to be before "dns"
 	   in /etc/nsswitch.conf during bootup.
 
-	To the best of my knowledge, Solaris does not have the
-	gethostbyname problem described above.
+	From another correspondent:
+
+	   When running sendmail under Solaris, the gethostbyname()
+	   hack in conf.c which should perform proper canonicalization
+	   of host names could fail.  Result: the host name is not
+	   canonicalized despite the hack, and you'll have to define $j
+	   and $m in sendmail.cf somewhere.
+
+	   The reason could be that /etc/nsswitch.conf is improperly
+	   configured (at least from sendmail's point of view).  For
+	   example, the line
+
+		hosts:      files nisplus dns
+
+	   will make gethostbyname() look in /etc/hosts first, then ask
+	   nisplus, then dns.  However, if /etc/hosts does not contain
+	   the full canonicalized hostname, then no amount of
+	   gethostbyname()s will work.
+
+	   Solution (or rather, a workaround): Ask nisplus first, then
+	   dns, then local files:
+
+		hosts:      nisplus dns [NOTFOUND=return] files
 
 	The Solaris "syslog" function is apparently limited to something
 	about 90 characters because of a kernel limitation.  If you have
@@ -781,4 +806,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.55, last update %G% 09:06:08)
+(Version 8.56, last update %G% 09:03:00)
