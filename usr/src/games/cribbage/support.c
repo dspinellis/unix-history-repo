@@ -119,7 +119,6 @@ char		*s;
 
 	j = scorehand(h, turnover, CINHAND, FALSE, FALSE);
 	prhand(h, CINHAND, Compwin, FALSE);
-	Hasread = FALSE;
 	msg("My %s scores %d", s, (j == 0 ? 19 : j));
 	return chkscr(&cscore, j);
 }
