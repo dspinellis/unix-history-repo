@@ -1,4 +1,4 @@
-/*	param.h	4.32	83/05/18	*/
+/*	param.h	4.33	83/05/21	*/
 
 /*
  * Machine type dependent parameters.
@@ -124,8 +124,14 @@
  */
 #define	MAXBSIZE	8192
 #define	DEV_BSIZE	512
+#define	DEV_BSHIFT	9		/* log2(DEV_BSIZE) */
 #define BLKDEV_IOSIZE	2048
 #define MAXFRAG 	8
+
+#define	btodb(bytes)	 		/* calculates (bytes / DEV_BSIZE) */ \
+	((unsigned)(bytes) >> DEV_BSHIFT)
+#define	dbtob(db)			/* calculates (db * DEV_BSIZE) */ \
+	((unsigned)(db) << DEV_BSHIFT)
 
 /*
  * Map a ``block device block'' to a file system block.
