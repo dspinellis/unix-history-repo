@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -690,6 +690,7 @@ _rewrite(pvp, ruleset)
 	register char **rvp;		/* rewrite vector pointer */
 	register struct match *mlp;	/* cur ptr into mlist */
 	register struct rewrite *rwr;	/* pointer to current rewrite rule */
+	int ruleno;			/* current rule number */
 	int subr;			/* subroutine number if >= 0 */
 	bool dolookup;			/* do host aliasing */
 	char *npvp[MAXATOM+1];		/* temporary space for rebuild */
@@ -731,6 +732,7 @@ _rewrite(pvp, ruleset)
 	**  Run through the list of rewrite rules, applying any that match.
 	*/
 
+	ruleno = 1;
 	for (rwr = RewriteRules[ruleset]; rwr != NULL; )
 	{
 		int loopcount = 0;
@@ -780,7 +782,7 @@ _rewrite(pvp, ruleset)
 		nloops = 0;
 		extend_match = FALSE;
 
-		while ((ap = *avp) != NULL || *rvp != NULL)
+		if (++loopcount > 100)
 		{
 			if (nloops++ > 400)
 			{
@@ -789,13 +791,18 @@ _rewrite(pvp, ruleset)
 				mlp = mlist - 1; /* force rule failure */
 				break;
 			}
-			if (++loopcount > 100)
+			syserr("554 Infinite loop in ruleset %d, rule %d",
+				ruleset, ruleno);
+			if (tTd(21, 1))
 			{
-				syserr("554 Infinite loop in ruleset %d", ruleset);
 				printf("workspace: ");
 				printav(pvp);
-				break;
 			}
+			break;
+		}
+
+		while ((ap = *avp) != NULL || *rvp != NULL)
+		{
 			rp = *rvp;
 
 			if (tTd(21, 35))
@@ -1083,6 +1090,7 @@ backup:
 			if (tTd(21, 10))
 				printf("----- rule fails\n");
 			rwr = rwr->r_next;
+			ruleno++;
 			nmatches = 0;
 			continue;
 		}
@@ -1108,6 +1116,7 @@ backup:
 		{
 			rvp++;
 			rwr = rwr->r_next;
+			ruleno++;
 			nmatches = 0;
 		}
 		else if ((*rp & 0377) == CANONHOST)
