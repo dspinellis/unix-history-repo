@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)more.c	4.18 (Berkeley) 84/05/24";
+static	char *sccsid = "@(#)more.c	4.18 (Berkeley) 84/06/07";
 #endif
 
 /*
@@ -39,7 +39,7 @@ static	char *sccsid = "@(#)more.c	4.18 (Berkeley) 84/05/24";
 #define ESC	'\033'
 #define QUIT	'\034'
 
-struct sgttyb 	otty, savetty;
+struct sgttyb	otty, savetty;
 long		file_pos, file_size;
 int		fnum, no_intty, no_tty, slow_tty;
 int		dum_opt, dlines, onquit(), end_it();
@@ -100,7 +100,7 @@ char *argv[];
     register char	*p;
     register char	ch;
     register int	left;
-    int			prnames = 0; 
+    int			prnames = 0;
     int			initopt = 0;
     int			srchopt = 0;
     int			clearit = 0;
@@ -167,7 +167,7 @@ char *argv[];
 	    signal(SIGTSTP, onsusp);
 	    catch_susp++;
 	}
-	stty (2, &otty);
+	stty (fileno(stderr), &otty);
     }
     if (no_intty) {
 	if (no_tty)
@@ -434,7 +434,7 @@ register int num_lines;
 	if (hard && promptlen > 0)
 		erase (0);
 	if (noscroll && num_lines >= dlines)
-	{ 
+	{
 	    if (clreol)
 		home();
 	    else
@@ -890,7 +890,7 @@ register FILE *f;
 	errors = 0;
     if (MBIT == RAW && slow_tty) {
 	otty.sg_flags |= MBIT;
-	stty(2, &otty);
+	stty(fileno(stderr), &otty);
     }
     for (;;) {
 	nlines = number (&comchar);
@@ -1043,7 +1043,7 @@ endsw:
     notell++;
     if (MBIT == RAW && slow_tty) {
 	otty.sg_flags &= ~MBIT;
-	stty(2, &otty);
+	stty(fileno(stderr), &otty);
     }
     return (retval);
 }
@@ -1202,7 +1202,7 @@ register int n;
 			    if (clreol) {
 				home ();
 				cleareol ();
-			    } 
+			    }
 			    else
 				doclear ();
 		    }
@@ -1210,9 +1210,9 @@ register int n;
 			kill_line ();
 			if (noscroll)
 			    if (clreol) {
-			        home (); 
+			        home ();
 			        cleareol ();
-			    } 
+			    }
 			    else
 				doclear ();
 			pr (Line);
@@ -1325,9 +1325,23 @@ initterm ()
     char	*clearptr, *padstr;
     int		ldisc;
     char	*term;
+    int		tgrp;
 
     setbuf(stdout, obuf);
-    if (!(no_tty = gtty(1, &otty))) {
+retry:
+    if (!(no_tty = gtty(fileno(stdout), &otty))) {
+	/*
+	 * Wait until we're in the foreground before we get the
+	 * save the terminal modes.
+	 */
+	if (ioctl(fileno(stdout), TIOCGPGRP, &tgrp) < 0) {
+	    perror("ioctl");
+	    exit(1);
+	}
+	if (tgrp != getpgrp(0)) {
+	    kill(0, SIGTTOU);
+	    goto retry;
+	}
 	if ((term = getenv("TERM")) == 0 || tgetent(buf, term) <= 0) {
 	    dumb++; ul_opt = 0;
 	}
@@ -1366,7 +1380,7 @@ initterm ()
 	    if ((ULexit = tgetstr("ue", &clearptr)) == NULL &&
 		(!*chUL) && (ULexit = tgetstr("se", &clearptr)) == NULL)
 		ULexit = "";
-	    
+
 	    if (padstr = tgetstr("pc", &clearptr))
 		PC = *padstr;
 	    Home = tgetstr("ho",&clearptr);
@@ -1382,8 +1396,8 @@ initterm ()
 	if ((shell = getenv("SHELL")) == NULL)
 	    shell = "/bin/sh";
     }
-    no_intty = gtty(0, &otty);
-    gtty(2, &otty);
+    no_intty = gtty(fileno(stdin), &otty);
+    gtty(fileno(stderr), &otty);
     savetty = otty;
     ospeed = otty.sg_ospeed;
     slow_tty = ospeed < B1200;
@@ -1572,14 +1586,14 @@ set_tty ()
 {
 	otty.sg_flags |= MBIT;
 	otty.sg_flags &= ~ECHO;
-	stty(2, &otty);
+	stty(fileno(stderr), &otty);
 }
 
 reset_tty ()
 {
     otty.sg_flags |= ECHO;
     otty.sg_flags &= ~MBIT;
-    stty(2, &savetty);
+    stty(fileno(stderr), &savetty);
 }
 
 rdline (f)
