@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.7 (Berkeley) 87/04/11";
+static char sccsid[] = "@(#)bugfiler.c	5.8 (Berkeley) 87/04/11";
 #endif not lint
 
 /*
@@ -36,26 +36,26 @@ main(argc, argv)
 	register int	ch;		/* getopts char */
 	int	do_ack,			/* acknowledge bug report */
 		do_redist;		/* redistribut BR */
-	char	*argfolder,		/* folder name provided */
+	char	*argversion,		/* folder name provided */
 		*strcpy();
 	struct passwd	*getpwnam();
 
 	do_ack = do_redist = YES;
-	argfolder = NULL;
-	while ((ch = getopt(argc, argv, "af:r")) != EOF)
+	argversion = NULL;
+	while ((ch = getopt(argc, argv, "av:r")) != EOF)
 		switch((char)ch) {
 		case 'a':
 			do_ack = NO;
 			break;
-		case 'f':
-			argfolder = optarg;
+		case 'v':
+			argversion = optarg;
 			break;
 		case 'r':
 			do_redist = NO;
 			break;
 		case '?':
 		default:
-			error("usage: bugfiler [-ar] [-f folder]", CHN);
+			error("usage: bugfiler [-ar] [-v version]", CHN);
 		}
 
 	if (!(pwd = getpwnam(BUGS_ID)))
@@ -73,8 +73,8 @@ main(argc, argv)
 	make_copy();			/* save copy in case */
 	gethead(do_redist);
 
-	if (argfolder)			/* specific folder requested */
-		(void)strcpy(dir, argfolder);
+	if (argversion)			/* specific folder requested */
+		(void)strcpy(dir, argversion);
 
 	process();
 
