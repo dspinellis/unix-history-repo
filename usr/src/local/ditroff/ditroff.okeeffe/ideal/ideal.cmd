@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	ideal.cmd	(CWI)	1.3	85/05/02
+#	ideal.cmd	(CWI)	1.4	87/04/01
 #
 IDDIR=/usr/lib/ditroff/ideal
 filter=t
@@ -34,9 +34,9 @@ do
 done
 case $filter in
 	p)	$IDDIR/ideal $iflags | $IDDIR/pfilt ;;
-	4)	$IDDIR/ideal $iflags >/tmp/id`getuid`
-		$IDDIR/4filt /tmp/id`getuid`
-		rm /tmp/id`getuid` ;;
+	4)	$IDDIR/ideal $iflags >/tmp/id$$
+		$IDDIR/4filt /tmp/id$$
+		rm /tmp/id$$ ;;
 	n)	$IDDIR/ideal $iflags ;;
 	t)	case $sflags in
 		s)	$IDDIR/ideal $iflags | $IDDIR/idsort | $IDDIR/tfilt $fflags ;;
