@@ -1,4 +1,4 @@
-/*	hp.c	4.48	82/05/24	*/
+/*	hp.c	4.49	82/06/05	*/
 
 #ifdef HPDEBUG
 int	hpdebug;
@@ -278,9 +278,16 @@ hpattach(mi, slave)
 			break;
 
 #ifdef CAD
+		/*
+		 * AMPEX 9300, SI Combination needs a have the drive cleared
+		 * before we start.  We do not know why, but tests show
+		 * that the recalibrate fixes the problem.
+		 */
 		case SI9766:
 			printf("hp%d: 9776/9300\n", mi->mi_unit);
 			mi->mi_type = HPDT_RM05;
+			hpaddr->hpcs1 = HP_RECAL|HP_GO;
+			DELAY(100000);
 			break;
 
 		case SI9762:
