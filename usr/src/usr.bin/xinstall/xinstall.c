@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -84,20 +84,8 @@ main(argc, argv)
 
 	no_target = stat(to_name = argv[argc - 1], &to_sb);
 	if (!no_target && (to_sb.st_mode & S_IFMT) == S_IFDIR) {
-		for (; *argv != to_name; ++argv) {
-			if (stat_from(argv, &from_sb)) {
-				fprintf(stderr, "install: can't find %s.\n",
-				    *argv);
-				exit(1);
-			}
-			if ((from_sb.st_mode & S_IFMT) != S_IFREG) {
-				fprintf(stderr,
-				    "install: %s isn't a regular file.\n",
-				    *argv);
-				exit(1);
-			}
+		for (; *argv != to_name; ++argv)
 			install(*argv, to_name, 1);
-		}
 		exit(0);
 	}
 
@@ -105,21 +93,17 @@ main(argc, argv)
 	if (argc != 2)
 		usage();
 
-	if (stat_from(argv, &from_sb)) {
-		fprintf(stderr, "install: can't find %s.\n", *argv);
-		exit(1);
-	}
 	if (!no_target) {
-		if ((to_sb.st_mode & S_IFMT) != S_IFREG) {
-			fprintf(stderr, "install: %s isn't a regular file.\n",
-			    to_name);
+		if (stat(*argv, &from_sb)) {
+			fprintf(stderr, "install: can't find %s.\n", *argv);
 			exit(1);
 		}
-		if (to_sb.st_dev == from_sb.st_dev &&
-		    to_sb.st_ino == from_sb.st_ino) {
-			fprintf(stderr,
-			    "install: %s and %s are the same file.\n",
-			    *argv, to_name);
+		if ((to_sb.st_mode & S_IFMT) != S_IFREG) {
+			fprintf(stderr, "install: %s isn't a regular file.\n", to_name);
+			exit(1);
+		}
+		if (to_sb.st_dev == from_sb.st_dev && to_sb.st_ino == from_sb.st_ino) {
+			fprintf(stderr, "install: %s and %s are the same file.\n", *argv, to_name);
 			exit(1);
 		}
 		/* unlink now... avoid ETXTBSY errors later */
@@ -137,11 +121,20 @@ install(from_name, to_name, isdir)
 	char *from_name, *to_name;
 	int isdir;
 {
+	struct stat from_sb;
 	int devnull, from_fd, to_fd;
 	char *C, *rindex();
 
 	/* if try to install NULL file to a directory, fails */
 	if (isdir || strcmp(from_name, _PATH_DEVNULL)) {
+		if (stat(from_name, &from_sb)) {
+			fprintf(stderr, "install: can't find %s.\n", from_name);
+			exit(1);
+		}
+		if ((from_sb.st_mode & S_IFMT) != S_IFREG) {
+			fprintf(stderr, "install: %s isn't a regular file.\n", from_name);
+			exit(1);
+		}
 		/* build the target path */
 		if (isdir) {
 			(void)sprintf(pathbuf, "%s/%s", to_name, (C = rindex(from_name, '/')) ? ++C : from_name);
@@ -185,25 +178,6 @@ install(from_name, to_name, isdir)
 		error(from_name);
 		exit(1);
 	}
-}
-
-/*
- * Find the location of the file to be installed.
- */
-stat_from(name, stbp)
-	char **name;
-	struct stat *stbp;
-{
-	char *newname;
-
-	newname = (char *)genbuildname(*name);
-	if (stat(newname, stbp) >= 0) {
-		*name = newname;
-		return (0);
-	}
-	if (stat(*name, stbp) < 0)
-		return (-1);
-	return (0);
 }
 
 /*
