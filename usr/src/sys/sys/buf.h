@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)buf.h	7.2 (Berkeley) %G%
+ *	@(#)buf.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -64,11 +64,6 @@ struct buf
 	struct  proc *b_proc;		/* proc doing physical or swap I/O */
 	int	(*b_iodone)();		/* function called by iodone */
 	int	b_pfcent;		/* center page when swapping cluster */
-#if defined(tahoe)
-#define	MAXBPTE	32			/* must be >=KLMAX */
-	long	b_upte[MAXBPTE+1];	/* user pte's for swap/raw I/O */
-	int	b_ptecnt;		/* number of user pte's in b_upte */
-#endif
 };
 
 #define	BQUEUES		4		/* number of free buffer queues */
@@ -137,9 +132,6 @@ unsigned minphys();
 #define	B_HEAD		0x040000	/* a buffer header, not a buffer */
 #define	B_BAD		0x100000	/* bad block revectoring in progress */
 #define	B_CALL		0x200000	/* call b_iodone from iodone */
-#if defined(tahoe)
-#define B_NOT1K		0x400000	/* I/O is through intermediate buffer */
-#endif
 
 /*
  * Insq/Remq for the buffer hash lists.
