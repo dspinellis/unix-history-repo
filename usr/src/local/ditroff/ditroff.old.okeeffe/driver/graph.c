@@ -1,4 +1,4 @@
-/* graph.c	1.7	83/07/09
+/* graph.c	1.8	83/11/22
  *
  *	This file contains the functions for producing the graphics
  *   images in the varian/versatec drivers for ditroff.
@@ -18,6 +18,7 @@
 
 extern int hpos;
 extern int vpos;
+extern int output;
 extern vgoto();
 extern point();
 
@@ -51,7 +52,7 @@ drawline(dh, dv)
 register int dh;
 register int dv;
 {
-    HGtline (hpos, vpos, hpos + dh, vpos + dv);
+    if (output) HGtline (hpos, vpos, hpos + dh, vpos + dv);
     hmot (dh);					/* new position is at */
     vmot (dv);					/* the end of the line */
 }
@@ -69,7 +70,7 @@ register int dv;
 drawcirc(d)
 register int d;
 {			/* 0.0 is the angle to sweep the arc: = full circle */
-    HGArc (hpos + d/2, vpos, hpos, vpos, 0.0);
+    if (output) HGArc (hpos + d/2, vpos, hpos, vpos, 0.0);
     hmot (d);			/* new postion is the right of the circle */
 }
 
@@ -112,7 +113,7 @@ int vd;
 
     hmot (hd);		/* end position is the right-hand side of the ellipse */
 
-    do {
+    if (output) do {
 	yk = (int) (k1 * sqrt((double) (k2 + (bx -= 8) * (x += 2))));
 
 	HGtline (x-2, oldy1, x, y = vpos + yk);    /* top half of ellipse */
@@ -151,7 +152,7 @@ register int pdv;
 				/* "normalize" and round */
     angle += (angle < 0.0)  ?  360.5 : 0.5;
 
-    HGArc(hpos + cdh, vpos + cdv, hpos, vpos, (int) angle);
+    if (output) HGArc(hpos + cdh, vpos + cdv, hpos, vpos, (int) angle);
     hmot(cdh + pdh);
     vmot(cdv + pdv);
 }
@@ -207,10 +208,12 @@ int pic;
     }
     npts--;	/* npts must point to the last coordinate in x and y */
 				/* now, actually DO the curve */
-    if (pic)
-	picurve(x, y, npts);
-    else
-	HGCurve(x, y, npts);
+    if (output) {
+	if (pic)
+	    picurve(x, y, npts);
+	else
+	    HGCurve(x, y, npts);
+    }
 }
 
 
