@@ -3,7 +3,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mbuf.h	8.1 (Berkeley) %G%
+ *	@(#)mbuf.h	7.19 (Berkeley) %G%
  */
 
 #ifndef M_WAITOK
@@ -334,18 +334,20 @@ int	max_linkhdr;			/* largest link-level header */
 int	max_protohdr;			/* largest protocol header */
 int	max_hdr;			/* largest link+protocol header */
 int	max_datalen;			/* MHLEN - max_hdr */
+extern	int mbtypes[];			/* XXX */
+
+struct	mbuf *m_copym __P((struct mbuf *, int, int, int));
+struct	mbuf *m_free __P((struct mbuf *));
 struct	mbuf *m_get __P((int, int));
-struct	mbuf *m_gethdr __P((int, int));
 struct	mbuf *m_getclr __P((int, int));
+struct	mbuf *m_gethdr __P((int, int));
+struct	mbuf *m_prepend __P((struct mbuf *, int, int));
+struct	mbuf *m_pullup __P((struct mbuf *, int));
 struct	mbuf *m_retry __P((int, int));
 struct	mbuf *m_retryhdr __P((int, int));
-struct	mbuf *m_free __P((struct mbuf *));
-void	m_freem __P((struct mbuf *));
-struct	mbuf *m_copym __P((struct mbuf *, int, int, int));
-struct	mbuf *m_pullup __P((struct mbuf *, int));
-struct	mbuf *m_prepend __P((struct mbuf *, int, int));
 int	m_clalloc __P((int, int));
-extern	int mbtypes[];			/* XXX */
+void	m_copyback __P((struct mbuf *, int, int, caddr_t));
+void	m_freem __P((struct mbuf *));
 
 #ifdef MBTYPES
 int mbtypes[] = {				/* XXX */
