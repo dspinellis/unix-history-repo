@@ -125,8 +125,8 @@ ttywait(tp)
 {
 	register int s = spl5();
 
-	while (tp->t_outq.c_cc && tp->t_state&TS_CARR_ON
-	    && tp->t_oproc) {		/* kludge for pty */
+	while ((tp->t_outq.c_cc || tp->t_state&TS_BUSY) &&
+	    tp->t_state&TS_CARR_ON && tp->t_oproc) {	/* kludge for pty */
 		(*tp->t_oproc)(tp);
 		tp->t_state |= TS_ASLEEP;
 		sleep((caddr_t)&tp->t_outq, TTOPRI);
