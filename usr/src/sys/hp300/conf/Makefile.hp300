@@ -1,4 +1,4 @@
-#	@(#)Makefile.hp300	7.10 (Berkeley) %G%
+#	@(#)Makefile.hp300	7.11 (Berkeley) %G%
 #
 # Makefile for 4.4 BSD
 #
@@ -67,8 +67,12 @@ NORMAL_S_C=	${CPP} ${COPTS} ${PARAM} $< | ${AS} -o $@
 SYSTEM_OBJ=	locore.o ${OBJS} param.o ioconf.o
 #SYSTEM_DEP=	Makefile symbols.sort ${SYSTEM_OBJ}
 SYSTEM_DEP=	Makefile ${SYSTEM_OBJ}
-SYSTEM_LD_HEAD=	@echo loading $@; rm -f $@
-SYSTEM_LD=	@strip=-x; [ X${DEBUG} = X-g ] && strip=-X; \
+SYSTEM_LD_HEAD=	rm -f $@
+SYSTEM_LD=	@if [ X${DEBUG} = X-g ]; \
+		then strip=-X; \
+		else strip=-x; \
+		fi; \
+		echo ${LD} $$strip -n -o $@ -e start '$${SYSTEM_OBJ}' vers.o; \
 		${LD} $$strip -n -o $@ -e start ${SYSTEM_OBJ} vers.o
 #SYSTEM_LD_TAIL= @echo rearranging symbols;\
 #		symorder symbols.sort $@;\
@@ -84,7 +88,7 @@ newvers:
 	${CC} $(CFLAGS) -c vers.c
 
 clean:
-	rm -f eddep *vmunix tags *.o locore.i [a-z]*.s \
+	rm -f eddep *vmunix vmunix.gdb tags *.o locore.i [a-z]*.s \
 		Errs errs linterrs makelinks
 
 lint: /tmp param.c
