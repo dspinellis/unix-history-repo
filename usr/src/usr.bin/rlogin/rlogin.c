@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -120,14 +120,19 @@ main(argc, argv)
 	}
 
 #ifdef KERBEROS
-#define	OPTIONS	"8Lde:k:l:x"
+#define	OPTIONS	"8KLde:k:l:x"
 #else
-#define	OPTIONS	"8Lde:l:"
+#define	OPTIONS	"8KLde:l:"
 #endif
 	while ((ch = getopt(argc - argoff, argv + argoff, OPTIONS)) != EOF)
 		switch(ch) {
 		case '8':
 			eight = 1;
+			break;
+		case 'K':
+#ifdef KERBEROS
+			use_kerberos = 0;
+#endif
 			break;
 		case 'L':
 			litout = 1;
@@ -175,17 +180,19 @@ main(argc, argv)
 	if (!user)
 		user = pw->pw_name;
 
+	sp = NULL;
 #ifdef KERBEROS
-	sp = getservbyname((encrypt ? "eklogin" : "klogin"), "tcp");
-	if(sp == NULL) {
-		use_kerberos = 0;
-		warning("can't get entry for %s/tcp service",
-		    encrypt ? "eklogin" : "klogin");
-		sp = getservbyname("login", "tcp");
+	if (use_kerberos) {
+		sp = getservbyname((encrypt ? "eklogin" : "klogin"), "tcp");
+		if (sp == NULL) {
+			use_kerberos = 0;
+			warning("can't get entry for %s/tcp service",
+			    encrypt ? "eklogin" : "klogin");
+		}
 	}
-#else
-	sp = getservbyname("login", "tcp");
 #endif
+	if (sp == NULL)
+		sp = getservbyname("login", "tcp");
 	if (sp == NULL) {
 		(void)fprintf(stderr, "rlogin: login/tcp: unknown service.\n");
 		exit(1);
