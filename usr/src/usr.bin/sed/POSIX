@@ -1,0 +1,178 @@
+#	@(#)POSIX	5.1 (Berkeley) %G%
+
+	Comments on the IEEE P1003.2 Draft 11.2 September 1991
+
+		   Part 2: Shell and Utilities
+		Section 4.55: sed - Stream editor
+
+In the following paragraphs, `wrong' means `inconsistent with historic
+practice'.  Many of the comments refer to undocumented inconsistencies
+between the historical versions of sed and the POSIX standard.  All the
+comments are notes taken while implementing a POSIX-compatible version
+of sed, and should not be interpreted as official opinions or criticism
+towards the POSIX committee.  Many are insignificant, pedantic and even
+wrong.
+		Diomidis Spinellis <dds@doc.ic.ac.uk>
+
+[Some are significant and right, too.  -- Keith Bostic]
+
+1. For the text argument of the a command it is not specified if lines are
+   stripped from their initial blanks or not.  There are some hints in D2
+   11335-11337 and in D2 11512-11514, but nothing concrete.  Historical
+   practice is to strip the blanks, i.e.:
+
+	#!/bin/sed -f
+	a\
+		foo\
+		bar
+
+   produces:
+
+	foo
+	bar
+
+2. In the s command we assume that the w file is the last flag.  This is
+   historical practice, but not specified in the standard.
+
+3. In the s command the standard does not specify that a space must follow
+   w.  Also the standard does not specify that any number of spaces after
+   the w command are allowed and removed.
+
+4. The specification of the a command is wrong.  With the current
+   specification both of these scripts should produce the same output:
+
+	#!/bin/sed -f
+	d
+	a\
+	hello
+
+	#!/bin/sed -f
+	a\
+	hello
+	d
+
+5. The specification of the c command in conjunction with the specification
+   of the default operation (D2 11293-11299) is wrong.  The default operation
+   specifies that a newline is printed after the pattern space.  This is not
+   the case when the pattern space has been deleted by a c command.
+
+6. The rule for the l command differs from historic practice.  Table 2-15
+   includes the various escape sequences including \\.  Is this meant by
+   the standard?  Furthermore some versions of sed print two digit octal
+   numbers.  Why does the standard require a three digit octal number?
+   Normally the pattern space does not end with a newline.  Will an implict
+   \n be printed?  Finaly the standard does not specify that a newline must
+   follow the '$' sign (it seems logical to me).
+
+7. The specification for ! does not specify that for a single command the
+   command must not contain an address specification whereas the command
+   list can contain address specifications.
+
+8. The standard does not specify what happens with consequitive ! commands
+   (e.g. /foo/!!!p)  Current implementations allow any number of !'s without
+   changing behaviour.  It seems logical that each one should reverse the
+   default behaviour.
+
+9. The ; command separator is not allowed for the commands a c i w r : b t
+   # and at the end of a w flag in the s command.
+
+10. The standard does not specify that if an end of file occurs on the
+    execution of the n command the program terminates (e.g.
+
+	sed -e '
+	n
+	i\
+	hello
+	' </dev/null
+
+    will not produce any output.
+
+11. The standard does not specify that the q command causes all lines that
+    have been appended to be output and that the pattern space is printed
+    before exiting.
+
+12. Historic implementations ignore comments in the text of the i and a
+    commands.
+
+13. The historic implementation does not consider the last line of a file
+    to match $ if a null file follows:
+
+	sed -n -e '$p' /usr/dict/words /dev/null
+
+    will not print anything.
+
+14. Historical implementations do not output the change text of a c command
+    in the case of an address range whose second line number is greater than
+    the first (e.g. 3,1).  The standard seems to imply otherwise.
+
+15. Historical implementations output the c text on EVERY line not included
+    in the two address range in the case of a negation '!'.
+
+16. The standard does not specify that the p flag at the s command will
+    write the pattern space plus a newline on the standard output
+
+17. The standard does not specify whether address ranges are checked and
+    reset if a command is not executed due to a jump.  The following
+    program can behave in two different ways depending on whether the range
+    operator is reset at line 6 or not.  This is important in the case of
+    pattern matches.
+
+	sed -n -e '
+	4,8b
+	s/^/XXX/p
+	1,6 {
+		p
+	}'
+
+18. Historical implementations allow an output suppressing #n at the
+    beginning of -e arguments as well.
+
+19. POSIX does not specify whether more than one numeric flag is
+    allowed on the s command
+
+20. Existing versions of sed have the undocumented feature of allowing
+    a semicolon to delimit commands.  It is not specified in the standard.
+
+21. The standard does not specify whether a script is mandatory.  The
+    sed implementations I tested behave differently with ls | sed (no
+    output) and ls | sed - e'' (behaves like cat).
+
+22. The requirement to open all wfiles from the beginning makes sed behave
+    nonintuitively when the w commands are preceded by addresses or are
+    within conditional blocks.
+
+23. The rule specified in lines 11412-11413 of the standard does not
+    seem consistent with existing practice.  The sed implementations I
+    tested copied the rfile on standard output every time the r command was
+    executed and not before reading a line of input.  The wording should be
+    changed to be consistent with the 'a' command i.e.
+
+24. The standard does not specify how excape sequences other than \n
+    and \D (where D is the delimiter character) are to be treated.   A
+    strict interpretation would be that they should be treated literaly.
+    In the sed implementations I have tried the \ is simply ingored.
+
+25. The standard specifies in line 11304 that an address can be empty.
+    This is wrong since it implied that constructs like ,d or 1,d or ,5d
+    are allowed.  The sed implementation I tested do not allow them.
+
+26. The b t and : commands ignore leading white space, but not trailing
+    white space.  This is not specified in the standard.
+
+27. Although the standard specifies that reading from files that do not
+    exist from within the script must not terminate the script; it does not
+    specify what happens if a write command fails.
+
+28. In the sed implementation I tested the \n construct for newlines
+    works on both strings of a y command.  This is not specified in the
+    standard.
+
+29. The standard does not specify if the "nth occurrence" of a regular
+    expression in a substitute command is an overlapping or a
+    non-overlappoin one.  I.e.  what is the result of s/a*/A/2 on the
+    pattern "aaaaa aaaaa".  (It crashes the implementation of sed I
+    tested.)
+
+30. Existing implementations of sed ignore the regular expression
+    delimiter characters within character classes.  This is not specified
+    in the standard.
