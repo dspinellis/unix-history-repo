@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.40 (Berkeley) %G%
+ *	@(#)tty.c	7.41 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,46 +42,74 @@ char ttybuf[] = "ttybuf";
  * indicates parity, the 7th bit indicates the character
  * is an alphameric or underscore (for ALTWERASE), and the 
  * low 6 bits indicate delay type.  If the low 6 bits are 0
- * then the character needs no special processing on output.
+ * then the character needs no special processing on output;
+ * classes other than 0 might be translated or (not currently)
+ * require delays.
  */
+#define	PARITY(c)	(partab[c] & 0x80)
+#define	ISALPHA(c)	(partab[(c)&TTY_CHARMASK] & 0x40)
+#define	CCLASSMASK	0x3f
+#define	CCLASS(c)	(partab[c] & CCLASSMASK)
+
+#define	E	0x00	/* even parity */
+#define	O	0x80	/* odd parity */
+#define	ALPHA	0x40	/* alpha or underscore */
+
+#define	NO	ORDINARY
+#define	NA	ORDINARY|ALPHA
+#define	CC	CONTROL
+#define	BS	BACKSPACE
+#define	NL	NEWLINE
+#define	TB	TAB
+#define	VT	VTAB
+#define	CR	RETURN
 
 char partab[] = {
-	0001,0201,0201,0001,0201,0001,0001,0201,	/* nul - bel */
-	0202,0004,0003,0201,0005,0206,0201,0001,	/* bs - si */
-	0201,0001,0001,0201,0001,0201,0201,0001,	/* dle - etb */
-	0001,0201,0201,0001,0201,0001,0001,0201,	/* can - us */
-	0200,0000,0000,0200,0000,0200,0200,0000,	/* sp - ' */
-	0000,0200,0200,0000,0200,0000,0000,0200,	/* ( - / */
-	0100,0300,0300,0100,0300,0100,0100,0300,	/* 0 - 7 */
-	0300,0100,0000,0200,0000,0200,0200,0000,	/* 8 - ? */
-	0200,0100,0100,0300,0100,0300,0300,0100,	/* @ - G */
-	0100,0300,0300,0100,0300,0100,0100,0300,	/* H - O */
-	0100,0300,0300,0100,0300,0100,0100,0300,	/* P - W */
-	0300,0100,0100,0200,0000,0200,0200,0300,	/* X - _ */
-	0000,0300,0300,0100,0300,0100,0100,0300,	/* ` - g */
-	0300,0100,0100,0300,0100,0300,0300,0100,	/* h - o */
-	0300,0100,0100,0300,0100,0300,0300,0100,	/* p - w */
-	0100,0300,0300,0000,0200,0000,0000,0201,	/* x - del */
+	E|CC, O|CC, O|CC, E|CC, O|CC, E|CC, E|CC, O|CC,	/* nul - bel */
+	O|BS, E|TB, E|NL, O|CC, E|VT, O|CR, O|CC, E|CC, /* bs - si */
+	O|CC, E|CC, E|CC, O|CC, E|CC, O|CC, O|CC, E|CC, /* dle - etb */
+	E|CC, O|CC, O|CC, E|CC, O|CC, E|CC, E|CC, O|CC, /* can - us */
+	O|NO, E|NO, E|NO, O|NO, E|NO, O|NO, O|NO, E|NO, /* sp - ' */
+	E|NO, O|NO, O|NO, E|NO, O|NO, E|NO, E|NO, O|NO, /* ( - / */
+	E|NA, O|NA, O|NA, E|NA, O|NA, E|NA, E|NA, O|NA, /* 0 - 7 */
+	O|NA, E|NA, E|NO, O|NO, E|NO, O|NO, O|NO, E|NO, /* 8 - ? */
+	O|NO, E|NA, E|NA, O|NA, E|NA, O|NA, O|NA, E|NA, /* @ - G */
+	E|NA, O|NA, O|NA, E|NA, O|NA, E|NA, E|NA, O|NA, /* H - O */
+	E|NA, O|NA, O|NA, E|NA, O|NA, E|NA, E|NA, O|NA, /* P - W */
+	O|NA, E|NA, E|NA, O|NO, E|NO, O|NO, O|NO, O|NA, /* X - _ */
+	E|NO, O|NA, O|NA, E|NA, O|NA, E|NA, E|NA, O|NA, /* ` - g */
+	O|NA, E|NA, E|NA, O|NA, E|NA, O|NA, O|NA, E|NA, /* h - o */
+	O|NA, E|NA, E|NA, O|NA, E|NA, O|NA, O|NA, E|NA, /* p - w */
+	E|NA, O|NA, O|NA, E|NO, O|NO, E|NO, E|NO, O|CC, /* x - del */
 	/*
-	 * meta chars
+	 * "meta" chars; should be settable per charset.
+	 * For now, treat all as normal characters.
 	 */
-	0001,0201,0201,0001,0201,0001,0001,0201,	/* nul - bel */
-	0202,0004,0003,0201,0005,0206,0201,0001,	/* bs - si */
-	0201,0001,0001,0201,0001,0201,0201,0001,	/* dle - etb */
-	0001,0201,0201,0001,0201,0001,0001,0201,	/* can - us */
-	0200,0000,0000,0200,0000,0200,0200,0000,	/* sp - ' */
-	0000,0200,0200,0000,0200,0000,0000,0200,	/* ( - / */
-	0100,0300,0300,0100,0300,0100,0100,0300,	/* 0 - 7 */
-	0300,0100,0000,0200,0000,0200,0200,0000,	/* 8 - ? */
-	0200,0100,0100,0300,0100,0300,0300,0100,	/* @ - G */
-	0100,0300,0300,0100,0300,0100,0100,0300,	/* H - O */
-	0100,0300,0300,0100,0300,0100,0100,0300,	/* P - W */
-	0300,0100,0100,0200,0000,0200,0200,0300,	/* X - _ */
-	0000,0300,0300,0100,0300,0100,0100,0300,	/* ` - g */
-	0300,0100,0100,0300,0100,0300,0300,0100,	/* h - o */
-	0300,0100,0100,0300,0100,0300,0300,0100,	/* p - w */
-	0100,0300,0300,0000,0200,0000,0000,0201,	/* x - del */
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
+	NA,   NA,   NA,   NA,   NA,   NA,   NA,   NA,
 };
+#undef	NO
+#undef	NA
+#undef	CC
+#undef	BS
+#undef	NL
+#undef	TB
+#undef	VT
+#undef	CR
 
 extern struct tty *constty;		/* temporary virtual console */
 
@@ -111,7 +139,7 @@ ttychars(tp)
 
 /*
  *
- * Wait for output to drain, then flush input waiting.
+ * Flush tty after output has drained.
  */
 ttywflush(tp)
 	struct tty *tp;
@@ -147,8 +175,15 @@ ttywait(tp)
 	return (error);
 }
 
+#define	flushq(qq) { \
+	register struct clist *q = qq; \
+	if (q->c_cc) \
+		ndflush(q, q->c_cc); \
+}
+
 /*
- * Flush all TTY queues
+ * Flush TTY read and/or write queues,
+ * notifying anyone waiting.
  */
 ttyflush(tp, rw)
 	register struct tty *tp;
@@ -157,23 +192,23 @@ ttyflush(tp, rw)
 
 	s = spltty();
 	if (rw & FREAD) {
-		while (getc(&tp->t_canq) >= 0)
-			;
-		ttwakeup(tp);
-	}
-	if (rw & FWRITE) {
-		wakeup((caddr_t)&tp->t_outq); /* XXX? what about selwakeup? */
-		tp->t_state &= ~TS_TTSTOP;
-		(*cdevsw[major(tp->t_dev)].d_stop)(tp, rw);
-		while (getc(&tp->t_outq) >= 0)
-			;
-	}
-	if (rw & FREAD) {
-		while (getc(&tp->t_rawq) >= 0)
-			;
+		flushq(&tp->t_canq);
+		flushq(&tp->t_rawq);
 		tp->t_rocount = 0;
 		tp->t_rocol = 0;
 		tp->t_state &= ~TS_LOCAL;
+		ttwakeup(tp);
+	}
+	if (rw & FWRITE) {
+		tp->t_state &= ~TS_TTSTOP;
+		(*cdevsw[major(tp->t_dev)].d_stop)(tp, rw);
+		flushq(&tp->t_outq);
+		wakeup((caddr_t)&tp->t_outq);
+		if (tp->t_wsel) {
+			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
+			tp->t_wsel = 0;
+			tp->t_state &= ~TS_WCOLL;
+		}
 	}
 	splx(s);
 }
@@ -205,12 +240,6 @@ ttyblock(tp)
 	}
 }
 
-/*
- * Start output on the typewriter. It is used from the top half
- * after some characters have been put on the output queue,
- * from the interrupt routine to transmit the next
- * character.
- */
 ttstart(tp)
 	struct tty *tp;
 {
@@ -233,7 +262,10 @@ ttrstrt(tp)				/* XXX */
 
 
 /*
- * Common code for tty ioctls.
+ * Common code for ioctls on tty devices.
+ * Called after line-discipline-specific ioctl
+ * has been called to do discipline-specific functions
+ * and/or reject any of these ioctl commands.
  */
 /*ARGSUSED*/
 ttioctl(tp, com, data, flag)
@@ -608,7 +640,7 @@ win:
 }
 
 /*
- * Initial open of tty, or (re)entry to line discipline.
+ * Initial open of tty, or (re)entry to standard tty line discipline.
  */
 ttyopen(dev, tp)
 	dev_t dev;
@@ -640,7 +672,9 @@ ttylclose(tp)
 }
 
 /*
- * clean tp on last close
+ * Handle close() on a tty line: flush and set to initial state,
+ * bumping generation number so that pending read/write calls
+ * can detect recycling of the tty.
  */
 ttyclose(tp)
 	register struct tty *tp;
@@ -739,13 +773,7 @@ ttypend(tp)
 }
 
 /*
- *
- *
- * Place a character on raw TTY input queue,
- * putting in delimiters and waking up top
- * half as needed.  Also echo if required.
- * The arguments are the character and the
- * appropriate tty structure.
+ * Process input of a single character received on a tty.
  */
 ttyinput(c, tp)
 	register c;
@@ -808,7 +836,7 @@ ttyinput(c, tp)
 	 * In tandem mode, check high water mark.
 	 */
 	if ((tp->t_state&TS_TYPEN) == 0 && (iflag&ISTRIP))
-		c &= 0177;
+		c &= ~0x80;
 
 	/*
 	 * Extensions to POSIX input modes which aren't controlled
@@ -934,20 +962,16 @@ startoutput:
 }
 
 /*
- * Put character on TTY output queue, adding delays,
- * expanding tabs, and handling the CR/NL bit.
- * This is called both from the top half for output,
- * and from interrupt level for echoing.
- * The arguments are the character and the tty structure.
- * Returns < 0 if putc succeeds, otherwise returns char to resend
+ * Output a single character on a tty, doing output processing
+ * as needed (expanding tabs, newline processing, etc.).
+ * Returns < 0 if putc succeeds, otherwise returns char to resend.
  * Must be recursive.
  */
 ttyoutput(c, tp)
 	register c;
 	register struct tty *tp;
 {
-	register short *colp;
-	register ctype;
+	register int col;
 	if (!(tp->t_oflag&OPOST)) {
 		if (tp->t_lflag&FLUSHO) 
 			return (-1);
@@ -959,8 +983,7 @@ ttyoutput(c, tp)
 	}
 	c &= 0377;
 	/*
-	 * Turn tabs to spaces as required
-	 *
+	 * Do tab expansion if OXTABS is set.
 	 * Special case if we have external processing, we don't
 	 * do the tab expansion because we'll probably get it
 	 * wrong.  If tab expansion needs to be done, let it
@@ -986,7 +1009,8 @@ ttyoutput(c, tp)
 	tp->t_outcc++;
 #ifdef notdef
 	/*
-	 * turn <nl> to <cr><lf> if desired.
+	 * Newline translation: if ONLCR is set,
+	 * translate newline into "\r\n".
 	 */
 #endif
 	if ((tp->t_lflag&FLUSHO) == 0 && putc(c, &tp->t_outq))
@@ -994,39 +1018,37 @@ ttyoutput(c, tp)
 	if ((tp->t_lflag&FLUSHO) == 0 && putc(c, &tp->t_outq))
 		return (c);
 
-	colp = &tp->t_col;
-	ctype = partab[c];
-	switch (ctype&077) {
+	col = tp->t_col;
+	switch (CCLASS(c)) {
 
 	case ORDINARY:
-		(*colp)++;
+		col++;
 
 	case CONTROL:
 		break;
 
 	case BACKSPACE:
-		if (*colp)
-			(*colp)--;
+		if (col > 0)
+			col--;
 		break;
 
 	case NEWLINE:
-		*colp = 0;
+		col = 0;
 		break;
 
 	case TAB:
-		*colp |= 07;
-		(*colp)++;
+		col = (col + 8) &~ 0x7;
 		break;
 
 	case RETURN:
-		*colp = 0;
+		col = 0;
 	}
+	tp->t_col = col;
 	return (-1);
 }
 
 /*
- * Called from device's read routine after it has
- * calculated the tty-structure given as argument.
+ * Process a read call on a tty device.
  */
 ttread(tp, uio, flag)
 	register struct tty *tp;
@@ -1187,8 +1209,7 @@ ttycheckoutq(tp, wait)
 }
 
 /*
- * Called from the device's write routine after it has
- * calculated the tty-structure given as argument.
+ * Process a write call on a tty device.
  */
 ttwrite(tp, uio, flag)
 	register struct tty *tp;
@@ -1281,7 +1302,7 @@ loop:
 				ce = cc;
 			else {
 				ce = cc - scanc((unsigned)cc, (u_char *)cp,
-				   (u_char *)partab, 077);
+				   (u_char *)partab, CCLASSMASK);
 				/*
 				 * If ce is zero, then we're processing
 				 * a special character through ttyoutput.
@@ -1394,7 +1415,7 @@ ttyrub(c, tp)
 		/* if tab or newline was escaped  - XXX - not 8bit */
 		if (c == ('\t'|TTY_QUOTE) || c == ('\n'|TTY_QUOTE))
 			ttyrubo(tp, 2);
-		else switch (partab[c&=0377]&077) {
+		else switch (CCLASS(c &= TTY_CHARMASK)) {
 
 		case ORDINARY:
 #ifdef notdef
@@ -1441,7 +1462,7 @@ ttyrub(c, tp)
 		default:
 			/* XXX */
 			printf("ttyrub: would panic c = %d, val = %d\n",
-				c, partab[c&=0377]&077);
+				c, CCLASS(c));
 			/*panic("ttyrub");*/
 		}
 	} else if (tp->t_lflag&ECHOPRT) {
@@ -1536,6 +1557,9 @@ ttyoutstr(cp, tp)
 		(void) ttyoutput(c, tp);
 }
 
+/*
+ * Wake up any readers on a tty.
+ */
 ttwakeup(tp)
 	register struct tty *tp;
 {
@@ -1770,9 +1794,10 @@ tputchar(c, tp)
 }
 
 /*
- * Sleep on chan.
- *
- * Return ERESTART if tty changed while we napped.
+ * Sleep on chan, returning ERESTART if tty changed
+ * while we napped and returning any errors (e.g. EINTR/ETIMEDOUT)
+ * reported by tsleep.  If the tty is revoked, restarting a pending
+ * call will redo validation done at the start of the call.
  */
 ttysleep(tp, chan, pri, wmesg, timo)
 	struct tty *tp;
