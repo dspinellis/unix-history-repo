@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)snake.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)snake.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -27,7 +27,9 @@ static char sccsid[] = "@(#)snake.c	5.9 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
+#include <fcntl.h>
 #include <pwd.h>
+#include <errno.h>
 #include "snake.h"
 #include "pathnames.h"
 
@@ -347,7 +349,7 @@ mainloop()
 				pr("You have won with $%d.\n",cashvalue);
 				fflush(stdout);
 				logit("won");
-				post(cashvalue,0);
+				post(cashvalue,1);
 				length(moves);
 				done();
 			}
@@ -443,40 +445,45 @@ int	iscore, flag;
 	/*
 	 * Neg uid, 0, and 1 cannot have scores recorded.
 	 */
-	if ((uid=getuid()) > 1 && (rawscores=open(_PATH_RAWSCORES,2))>=0) {
-		/* Figure out what happened in the past */
-		read(rawscores, &allbscore, sizeof(short));
-		read(rawscores, &allbwho, sizeof(short));
+	if ((uid = getuid()) <= 1) {
+		pr("No saved scores for uid %d.\n", uid);
+		return(1);
+	}
+	if ((rawscores = open(_PATH_RAWSCORES, O_RDWR|O_CREAT, 0644)) < 0) {
+		pr("No score file %s: %s.\n", _PATH_RAWSCORES,
+		    strerror(errno));
+		return(1);
+	}
+	/* Figure out what happened in the past */
+	read(rawscores, &allbscore, sizeof(short));
+	read(rawscores, &allbwho, sizeof(short));
+	lseek(rawscores, ((long)uid)*sizeof(short), 0);
+	read(rawscores, &oldbest, sizeof(short));
+	if (!flag)
+		return (score > oldbest ? 1 : 0);
+
+	/* Update this jokers best */
+	if (score > oldbest) {
 		lseek(rawscores, ((long)uid)*sizeof(short), 0);
-		read(rawscores, &oldbest, sizeof(short));
-		if (flag) return (score > oldbest ? 1 : 0);
-
-		/* Update this jokers best */
-		if (score > oldbest) {
-			lseek(rawscores, ((long)uid)*sizeof(short), 0);
-			write(rawscores, &score, sizeof(short));
-			pr("You bettered your previous best of $%d\n", oldbest);
-		} else
-			pr("Your best to date is $%d\n", oldbest);
-
-		/* See if we have a new champ */
-		p = getpwuid(allbwho);
-		if (p == NULL || score > allbscore) {
-			lseek(rawscores, (long)0, 0);
-			write(rawscores, &score, sizeof(short));
-			write(rawscores, &uid, sizeof(short));
-			if (p != NULL)
-				pr("You beat %s's old record of $%d!\n",
-				    p->pw_name, allbscore);
-			else
-				pr("You set a new record!\n");
-		} else
-			pr("The highest is %s with $%d\n",
-			    p->pw_name, allbscore);
-		close(rawscores);
+		write(rawscores, &score, sizeof(short));
+		pr("You bettered your previous best of $%d\n", oldbest);
 	} else
-		if (!flag)
-			pr("Unable to post score.\n");
+		pr("Your best to date is $%d\n", oldbest);
+
+	/* See if we have a new champ */
+	p = getpwuid(allbwho);
+	if (p == NULL || score > allbscore) {
+		lseek(rawscores, (long)0, 0);
+		write(rawscores, &score, sizeof(short));
+		write(rawscores, &uid, sizeof(short));
+		if (allbwho)
+			pr("You beat %s's old record of $%d!\n",
+			    p->pw_name, allbscore);
+		else
+			pr("You set a new record!\n");
+	} else
+		pr("The highest is %s with $%d\n", p->pw_name, allbscore);
+	close(rawscores);
 	return (1);
 }
 
@@ -678,7 +685,7 @@ struct point *ps;{
 		pchar(ps,' ');
 		delay(1);
 	}
-	if (post(cashvalue,1)) {
+	if (post(cashvalue,0)) {
 		apr(point(&x,ps->col-1,ps->line-1),"   \ro.o\r\\_/");
 		delay(6);
 		apr(point(&x,ps->col-1,ps->line-1),"   \ro.-\r\\_/");
