@@ -4,6 +4,10 @@ PRINT = lpr -p
 ALLC = apilib.c api_bsd.c api_exch.c
 ALLH = apilib.h api_exch.h
 
+ALLPRINT = ${ALLH} ${ALLC}
+
+ALLSOURCE = ${ALLPRINT}
+
 ALLO = apilib.o api_bsd.o api_exch.o
 
 apilib.a: ${ALLO}
@@ -11,12 +15,22 @@ apilib.a: ${ALLO}
 	ar cr $@ ${ALLO}
 	ranlib $@
 
+clean:
+	-/bin/rm ${ALLO} errs apilib.a
+
+action:
+	${ACTION}
+
 test:	apilib.a test.o
 	${CC} ${CFLAGS} -o $@ test.o apilib.a
 
 print:
-	${PRINT} ${ALLH} ${ALLC}
+	${PRINT} ${ALLPRINT}
 
+
+sourcelist:
+	for i in ${ALLSOURCE}; \
+		do (echo ${DIRPATH}/$$i); done
 
 depend:
 	grep '^#include' ${ALLC} | grep -v '<' | \
