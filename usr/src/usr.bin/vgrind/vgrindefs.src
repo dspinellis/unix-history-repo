@@ -80,3 +80,22 @@ ratfor|rat|r:\
 	else elsedef enddef filedes for function goto if ifdef ifelse\
 	ifnotdef include incr integer linepointer next opeq pointer\
 	real repeat return select string subroutine substr until:
+modula2|mod2|m2:\
+	:pb=(^\d?(procedure|function|module)\d\p\d|\(|;|\:):\
+	:bb=\d(begin|case|for|if|loop|record|repeat|while|with)\d:\
+	:be=\dend|;:\
+	:cb={:ce=}:\
+	:ab=\(*:ae=*\):\
+	:sb=":se=":\
+	:oc:\
+	:kw=and array begin by case const\
+	definition div do else elsif end exit export\
+	for from if implementation import in\
+	loop mod module not of or pointer procedure qualified\
+	record repeat return set then to type\
+	until var while with:
+yacc|Yacc|y:\
+	:cb=/*:ce=*/:sb=":se=\e":lb=':le=\e':tl:\
+	:kw=%{ %} %% %union %token %type\
+	#else #endif #if #ifdef #ifndef #include #undef # define else endif\
+	if ifdef ifndef include undef:
