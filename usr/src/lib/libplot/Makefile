@@ -1,9 +1,20 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1989 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	4.12	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	4.13 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -12,6 +23,7 @@ ALL=	libf77plot libplot lib300 lib300s lib4013 lib4014 lib450 libvt0 \
 	libplotimagen libplotgrn
 SUBDIRS=tf77 plot t4013 t4014 t300 t300s t450 vt0 aed bitgraph dumb gigi \
 	hp2648 hp7221 imagen grn
+MAN=	plot.0
 
 all: ${ALL}
 
@@ -63,27 +75,24 @@ libplotimagen: FRC
 libplotgrn: FRC
 	cd grn; make ${MFLAGS}
 
-clean: FRC
+clean:
 	rm -f ${ALL} core
 	for i in ${SUBDIRS}; do \
 		(cd $$i; make ${MFLAGS} clean); \
 	done
 
-depend: FRC
-	for i in ${SUBDIRS}; do \
-		(cd $$i; make ${MFLAGS} depend); \
-	done
+cleandir: clean
+	rm -f ${MAN} tags .depend
 
-install: FRC
+depend lint tags: FRC
+	for i in ${SUBDIRS}; do \
+		(cd $$i; make ${MFLAGS} $@); done
+
+install: ${MAN}
 	for i in ${ALL}; do \
 		install -o bin -g bin -m 644 $$i ${DESTDIR}/usr/lib/$$i.a; \
 		ranlib ${DESTDIR}/usr/lib/$$i.a; \
 	done
+	install -c -o bin -g bin -m 444 plot.0 ${DESTDIR}/usr/man/cat3
 
-tags: FRC
-	for i in ${SUBDIRS}; do \
-		(cd $$i; make ${MFLAGS} tags); \
-	done
-
-lint:
 FRC:
