@@ -214,8 +214,16 @@ retry:
 	signal(SIGCHLD,fault);
 	signal(SIGTSTP,SIG_IGN);
 	signal(SIGTTIN,SIG_IGN);
-	setpgrp(pid,pid);
-	set_ttygrp(pid);
+	if (setpgrp(pid,pid) == -1) {
+		fputs(j_no_start,output);
+		return(-1);
+	}
+	if (set_ttygrp(pid) == -1) {
+		setpgrp(pid, savepgrp);	/* screwed if this fails */
+		fputs(j_no_start,output);
+		return(-1);
+	}
+		
 	return(0);
 }
 
