@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -407,8 +407,8 @@ subdir(lp)
 		(void)printf("%s:\n", path);
 
 	if (chdir(lp->name)) {
-		(void)fprintf(stderr, "ls: %s: %s\n",
-		    lp->name, strerror(errno));
+		(void)fprintf(stderr, "ls: %s: %s\n", lp->name,
+		     strerror(errno));
 		return;
 	}
 	if (num = tabdir(lp, &stats, &names))
@@ -439,8 +439,8 @@ tabdir(lp, s_stats, s_names)
 	 */
 #define	DEFNUM	256
 	maxentry = DEFNUM;
-	*s_stats = stats = (LS *)emalloc((u_int)DEFNUM * sizeof(LS));
-	*s_names = names = emalloc((u_int)lp->lstat.st_size);
+	stats = (LS *)emalloc((u_int)DEFNUM * sizeof(LS));
+	names = emalloc((u_int)lp->lstat.st_size);
 
 	if (!(dirp = opendir(f_specialdir ? lp->name : "."))) {
 		(void)fprintf(stderr, "ls: %s: %s\n", lp->name,
@@ -459,7 +459,7 @@ tabdir(lp, s_stats, s_names)
 				continue;
 		}
 		if (cnt == maxentry) {
-			maxentry += DEFNUM;
+			maxentry *= 2;
 			if (!(stats = (LS *)realloc((char *)stats,
 			    (u_int)maxentry * sizeof(LS))))
 				nomem();
@@ -498,6 +498,8 @@ tabdir(lp, s_stats, s_names)
 			maxlen = dp->d_namlen;
 		++cnt;
 	}
+	*s_stats = stats;
+	*s_names = names;
 	stats[0].lstat.st_btotal = blocks;
 	stats[0].lstat.st_maxlen = maxlen;
 	closedir(dirp);
