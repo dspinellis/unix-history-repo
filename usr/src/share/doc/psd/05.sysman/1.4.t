@@ -3,17 +3,17 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.4.t	8.3 (Berkeley) %G%
+.\"	@(#)1.4.t	8.4 (Berkeley) %G%
 .\"
 .Sh 2 "Timers
 .Sh 3 "Real time
 .PP
-The system's notion of the current time in Coordinated Universal Time
+The system's notion of the current time is in Coordinated Universal Time
 (UTC, previously GMT) and the current time
-zone is set and returned by the call by the calls:
+zone is set and returned by the calls:
 .DS
 .Fd settimeofday 2 "set date and time
-settimeofday(tvp, tzp);
+settimeofday(tp, tzp);
 struct timeval *tp;
 struct timezone *tzp;
 .DE
@@ -48,8 +48,8 @@ The precision of the system clock is hardware dependent.
 Earlier versions of UNIX contained only a 1-second resolution version
 of this call, which remains as a library routine:
 .DS
-time(tvsec)
-result long *tvsec;
+time(tvsec);
+result time_t *tvsec;
 .DE
 returning only the tv_sec field from the
 .Fn gettimeofday
@@ -114,13 +114,13 @@ getitimer(which, value);
 int which; result struct itimerval *value;
 .DE
 The \fIit_value\fP specifies the time until the next signal;
-the \fIit_interval\fP specified a new interval that should
+the \fIit_interval\fP specifies a new interval that should
 be loaded into the timer on each expiration.
 The third argument to
 .Fn setitimer
 specifies an optional structure
 to receive the previous contents of the interval timer.
-A timer can be disabled by specifying a timer value of 0.
+A timer can be disabled by setting \fIit_value\fP and \fIit_interval\fP to 0.
 .PP
 The system rounds argument timer intervals to be not less than the
 resolution of its clock.  This clock resolution can be determined
@@ -145,5 +145,5 @@ execution statistics for a process:
 profil(samples, size, offset, scale);
 result char *samples; int size, offset, scale;
 .DE
-This call begins sampling of the program counter,
+This call begins sampling the program counter,
 with statistics maintained in the user-provided buffer.

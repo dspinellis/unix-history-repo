@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.4.t	8.3 (Berkeley) %G%
+.\"	@(#)2.4.t	8.4 (Berkeley) %G%
 .\"
 .Sh 2 "Terminals and Devices
 .Sh 3 "Terminals
@@ -24,7 +24,8 @@ for a login session.
 A controlling terminal is associated with a session (see section
 .Xr 1.1.4 ).
 A controlling terminal has a foreground process group, which must be
-a member of the session with which the terminal is associated.
+a member of the session with which the terminal is associated (see section
+.Xr 1.1.5 ).
 Members of the foreground process group are allowed to read from and write to
 the terminal and change the terminal settings; other process groups from
 the session may be stopped upon attempts to do these operations.
@@ -92,20 +93,21 @@ be requested in a read without losing information.
 When the terminal is in canonical mode, editing of an input line
 is performed.  Editing facilities allow deletion of the previous
 character or word, or deletion of the current input line. 
-In addition, a special character may be used to reprint the current
-input line after some number of editing operations have been applied.
+In addition,
+a special character may be used to reprint the current input line.
 Certain other characters are also interpreted specially.
-Flow control is provided by \fIstop output\fP
+Flow control is provided by the \fIstop output\fP
 and \fIstart output\fP control characters.
 Output may be flushed with the \fIflush output\fP character;
-and a \fIliteral character\fP may be used to force literal input
-of the immediately following character in the input line.
+and the \fIliteral character\fP may be used to force the following
+character into the input line, regardless of any special meaning
+it may have.
 .PP
 In noncanonical mode input processing, input bytes are not assembled into
 lines, and erase and kill processing does not occur.
 All input is passed through to the
 reading process immediately and without interpretation.
-Signals may be enabled; here
+Signals and flow control may be enabled; here
 the handler interprets input only by looking
 for characters that cause interrupts or output flow control;
 all other characters are made available.
@@ -131,8 +133,8 @@ and expanding tabs.
 Structured devices are typified by disks and magnetic
 tapes, but may represent any random-access device.
 The system performs read-modify-write type buffering actions on block
-devices to allow them to be read and written in a totally random
-access fashion like ordinary files.
+devices to allow them to be read and written in random access
+fashion like ordinary files.
 Filesystems are normally mounted on block devices.
 .Sh 3 "Unstructured devices
 .PP

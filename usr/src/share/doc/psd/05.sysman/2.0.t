@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.0.t	8.3 (Berkeley) %G%
+.\"	@(#)2.0.t	8.4 (Berkeley) %G%
 .\"
 .Sh 1 "System facilities
 .LP
@@ -15,17 +15,17 @@ space.  Operations on files and other named objects in a filesystem are
 always specified relative to such a context.
 .IP "Files
 .br
-Files are used to store uninterpreted sequence of bytes on which
-random access \fIreads\fP and \fIwrites\fP may occur.
-Pages from files may also be mapped into process address space.
+Files are used to store uninterpreted sequences of bytes,
+which may be \fIread\fP and \fIwritten\fP randomly.
+Pages from files may also be mapped into the process address space.
 A directory may be read as a file if permitted by the underlying
 storage facility,
 though it is usually accessed using
 .Fn getdirentries
 (see section
 .Xr 2.2.3.1 ).
-(Local filesystems permit directories to be read, although most
-NFS implementations do not allow reading of directories.)
+(Local filesystems permit directories to be read,
+although most NFS implementations do not allow reading of directories.)
 .IP "Communications domains
 .br
 A communications domain represents
@@ -46,11 +46,11 @@ wide variety of communications domains.  Sockets can have different
 increasing the flexibility of the model.
 .IP "Terminals and other devices
 .br
-Devices include
-terminals, providing input editing and interrupt generation
-and output flow control and editing, magnetic tapes,
-disks and other peripherals.  They often support the generic
-\fIread\fP and \fIwrite\fP operations as well as a number of \fIioctl\fP\|s.
+Devices include terminals (providing input editing, interrupt
+generation, output flow control, and editing), magnetic tapes,
+disks, and other peripherals.
+They normally support the generic
+\fIread\fP and \fIwrite\fP operations as well as a number of \fIioctl\fP\|'s.
 .IP "Processes
 .br
 Process descriptors provide facilities for control and debugging of

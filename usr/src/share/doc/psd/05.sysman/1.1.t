@@ -3,13 +3,13 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.1.t	8.4 (Berkeley) %G%
+.\"	@(#)1.1.t	8.5 (Berkeley) %G%
 .\"
 .Sh 2 "Processes and protection
 .Sh 3 "Host identifiers
 .PP
-Each host has associated with it a 32-bit host ID, and a host
-name of up to MAXHOSTNAMELEN (64) characters (as defined in
+Each host has associated with it an integer host ID, and a host
+name of up to MAXHOSTNAMELEN (256) characters (as defined in
 \fI<sys/param.h>\fP).
 These identifiers are set (by a privileged user) and retrieved using the
 .Fn sysctl
@@ -20,7 +20,7 @@ For convenience and backward compatibility,
 the following library routines are provided:
 .DS
 .Fd sethostid 1 "set host identifier
-sethostid(hostid)
+sethostid(hostid);
 long hostid;
 .DE
 .DS
@@ -30,12 +30,12 @@ result long hostid;
 .DE
 .DS
 .Fd sethostname 2 "set host name
-sethostname(name, len)
+sethostname(name, len);
 char *name; int len;
 .DE
 .DS
 .Fd gethostname 2 "get host name
-len = gethostname(buf, buflen)
+len = gethostname(buf, buflen);
 result int len; result char *buf; int buflen;
 .DE
 .Sh 3 "Process identifiers
@@ -80,7 +80,7 @@ The
 call returns twice, once in the parent process, where
 \fIpid\fP is the process identifier of the child,
 and once in the child process where \fIpid\fP is 0.
-The parent-child relationship induces a hierarchical structure on
+The parent-child relationship imposes a hierarchical structure on
 the set of processes in the system.
 .PP
 For processes that are forking solely for the purpose of
@@ -108,14 +108,14 @@ A process may terminate by executing an
 call:
 .DS
 .Fd exit 1 "terminate a process
-exit(status)
+exit(status);
 int status;
 .DE
-returning 8 bits of exit status to its parent.
+The lower 8 bits of exit status are available to its parent.
 .PP
 When a child process exits or
 terminates abnormally, the parent process receives
-information about any
+information about the
 event which caused termination of the child process.
 The interface allows the parent to wait for a particular process,
 process group, or any direct descendent and
@@ -136,8 +136,8 @@ A process can overlay itself with the memory image of another process,
 passing the newly created process a set of parameters, using the call:
 .DS
 .Fd execve 3 "execute a new program
-execve(name, argv, envp)
-char *name, **argv, **envp;
+execve(name, argv, envp);
+char *name, *argv[], *envp[];
 .DE
 The specified \fIname\fP must be a file which is in a format recognized
 by the system, either a binary executable file or a file which causes
@@ -153,15 +153,16 @@ saved group ID.
 .PP
 Each process in the system has associated with it three user IDs:
 a \fIreal user ID\fP, an \fIeffective user ID\fP, and a \fIsaved user ID\fP,
-all 32-bit unsigned integers (type \fBuid_t\fP).
+all unsigned integral types (\fBuid_t\fP).
 Each process has a \fIreal group ID\fP
 and a set of \fIaccess group IDs\fP,
 the first of which is the \fIeffective group ID\fP.
-The group IDs are 32-bit unsigned integers (type \fBgid_t\fP).
-Each process may be in several different access groups, with the maximum
-concurrent number of access groups a system compilation parameter,
-the constant NGROUPS in the file \fI<sys/param.h>\fP,
-guaranteed to be at least eight.
+The group IDs are unsigned integral types (\fBgid_t\fP).
+Each process may be in multiple access groups.
+The maximum concurrent number of access groups is a system compilation
+parameter,
+represented by the constant NGROUPS in the file \fI<sys/param.h>\fP.
+It is guaranteed to be at least 16.
 .LP
 The real group ID is used in process accounting and in testing whether
 the effective group ID may be changed; it is not otherwise used for
@@ -222,7 +223,7 @@ gid_t gid;
 .DE
 .DS
 .Fd setgroups 2 "set access group set
-setgroups(gidsetsize, gidset)
+setgroups(gidsetsize, gidset);
 int gidsetsize; gid_t gidset[gidsetsize];
 .DE
 The
@@ -268,8 +269,9 @@ The session is created with the call:
 pid = setsid();
 result pid_t pid;
 .DE
-All subsequent processes created by the user that do not call
-.Fn setsid
+All subsequent processes created by the user
+(that do not call
+.Fn setsid )
 will be part of the session.
 The session also has a login name associated with it
 which is set using the privileged call:
@@ -284,9 +286,9 @@ The login name can be retrieved using the call:
 name = getlogin();
 result char *name;
 .DE
-Unlike earlier systems, the return value of
+Unlike historic systems, the value returned by
 .Fn getlogin
-can be trusted.
+is stored in the kernel and can be trusted.
 .Sh 3 "Process groups
 .PP
 Each process in the system is also associated with a \fIprocess
@@ -306,8 +308,8 @@ When a process is in a specific process group it may receive
 software interrupts affecting the group, causing the group to
 suspend or resume execution or to be interrupted or terminated.
 In particular, a system terminal has a process group and only processes
-which are in the process group of the terminal may read from the
-terminal, allowing arbitration of terminals among several different jobs.
+which are in the process group of the terminal may read from the terminal,
+allowing arbitration of a terminal among several different jobs.
 .LP
 The process group associated with a process may be changed by the
 .Fn setpgid
@@ -315,9 +317,10 @@ call:
 .DS
 .Fd setpgid 2 "set process group
 setpgid(pid, pgrp);
-int pid, pgrp;
+pid_t pid, pgrp;
 .DE
 Newly created processes are assigned process IDs distinct from all
 processes and process groups, and the same process group as their
-parent.  A normal (unprivileged) process may set its process group equal
-to its process ID or to the value of any process group within its session.
+parent.
+Any process may set its process group equal to its process ID or
+to the value of any process group within its session.

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.3.t	8.3 (Berkeley) %G%
+.\"	@(#)2.3.t	8.4 (Berkeley) %G%
 .\"
 .Sh 2 "Interprocess communications
 .Sh 3 "Interprocess communication primitives
@@ -37,6 +37,7 @@ The basic set of socket types is defined in \fI<sys/socket.h>\fP:
 l s
 l l.
 Standard socket types
+_
 SOCK_DGRAM	/* datagram */
 SOCK_STREAM	/* virtual circuit */
 SOCK_RAW	/* raw socket */
@@ -207,7 +208,7 @@ and
 The call:
 .DS
 .Fd pipe 1 "create descriptor pair for interprocess communication
-pipe(pv)
+pipe(pv);
 result int pv[2];
 .DE
 creates a pair of SOCK_STREAM sockets in the PF_LOCAL domain,
@@ -386,12 +387,12 @@ and
 calls are used to control options:
 .DS
 .Fd getsockopt 5 "get options on socket
-getsockopt(s, level, optname, optval, optlen)
+getsockopt(s, level, optname, optval, optlen);
 int s, level, optname; result void *optval; result int *optlen;
 .DE
 .DS
 .Fd setsockopt 5 "set options on socket
-setsockopt(s, level, optname, optval, optlen)
+setsockopt(s, level, optname, optval, optlen);
 int s, level, optname; void *optval; int optlen;
 .DE
 The option \fIoptname\fP is interpreted at the indicated
@@ -441,14 +442,14 @@ based on one from the XEROX NS family and layered on
 top of IP could be implemented to fill this gap.
 .Sh 4 "Socket naming
 .PP
-Sockets in the Internet domain have names composed of the 32-bit
-Internet address, and a 16-bit port number.
+Sockets in the Internet domain have names composed of a 32-bit
+Internet address and a 16-bit port number.
 Options may be used to
 provide IP source routing or security options.
 The 32-bit address is composed of network and host parts;
 the network part is variable in size and is frequency encoded.
 The host part may optionally be interpreted as a subnet field
-plus the host on subnet; this is is enabled by setting a network address
+plus the host on the subnet; this is is enabled by setting a network address
 mask at boot time.
 .Sh 4 "Access rights transmission
 .PP

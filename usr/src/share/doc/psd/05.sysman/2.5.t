@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.5.t	8.3 (Berkeley) %G%
+.\"	@(#)2.5.t	8.4 (Berkeley) %G%
 .\"
 .Sh 2 "Process debugging
 .Sh 3 "Traditional debugging
@@ -26,26 +26,27 @@ Generally, pid is the process ID of the traced process,
 which must be a child (no more distant descendant)
 of the tracing process.
 A process being traced behaves normally until it
-encounters some signal whether internally generated like
+encounters a signal (whether internally generated like
 ``illegal instruction'' or externally generated
-like ``interrupt.''
+like ``interrupt'').
 Then the traced process enters a stopped state
 and its parent is notified via
 .Fn wait .
 When the child is in the stopped state,
 its core image can be examined and modified using
 .Fn ptrace .
-If desired, another ptrace request can then cause
-the child either to terminate or to continue,
-possibly ignoring the signal.
+Another ptrace request can then cause the child either to terminate
+or to continue, possibly ignoring the signal.
 .PP
 A more general interface is also provided in 4.4BSD;
 the \fImount_procfs\fP filesystem attaches an instance of
 the process name space to the global filesystem name space.
 The conventional mount point is \fI/proc\fP.
-The root of the process filesystem contains an entry for each active process.
-These processes are visible as a directory whose name is the process' pid.
-In addition, the special entry curproc references the current process.
+The root of the process filesystem contains an entry for each active
+process.
+These processes are visible as directories named by the process' ID.
+In addition, the special entry \fIcurproc\fP references the current
+process.
 Each directory contains several files, including a \fIctl\fP file.
 The debugger finds (or creates) the process that it wants to
 debug and then issues an attach command via the \fIctl\fP file.

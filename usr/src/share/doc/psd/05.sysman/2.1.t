@@ -1,18 +1,18 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.1.t	8.3 (Berkeley) %G%
+.\"	@(#)2.1.t	8.4 (Berkeley) %G%
 .\"
 .Sh 2 "Generic operations
 .PP
 Many system abstractions support the
-operations
 .Fn read ,
 .Fn write ,
 and
-.Fn ioctl .
+.Fn ioctl
+operations.
 We describe the basics of these common primitives here.
 Similarly, the mechanisms whereby normally synchronous operations
 may occur in a non-blocking or asynchronous fashion are
@@ -29,12 +29,12 @@ They have the form:
 .DS
 .Fd read 3 "read input
 cc = read(fd, buf, nbytes);
-result int cc; int fd; result caddr_t buf; int nbytes;
+result ssize_t cc; int fd; result void *buf; size_t nbytes;
 .DE
 .DS
 .Fd write 3 "write output
 cc = write(fd, buf, nbytes);
-result int cc; int fd; caddr_t buf; int nbytes;
+result ssize_t cc; int fd; void *buf; size_t nbytes;
 .DE
 The
 .Fn read
@@ -52,13 +52,12 @@ call transfers data from the buffer to the
 object defined by \fIfd\fP.  Depending on the type of \fIfd\fP,
 it is possible that the
 .Fn write
-call will accept some portion
-of the provided bytes; the user should resubmit the other bytes
-in a later request in this case.
+call will accept only a portion of the provided bytes;
+the user should resubmit the other bytes in a later request.
 Error returns because of interrupted or otherwise incomplete operations
-are possible, in which case no data have been transferred.
+are possible, in which case no data will have been transferred.
 .PP
-Scattering of data on input or gathering of data for output
+Scattering of data on input, or gathering of data for output
 is also possible using an array of input/output vector descriptors.
 The type for the descriptors is defined in \fI<sys/uio.h>\fP as:
 .DS
@@ -66,26 +65,27 @@ The type for the descriptors is defined in \fI<sys/uio.h>\fP as:
 l s s s
 l l l l.
 struct iovec {
-	caddr_t	iov_base;	/* base of a component */
-	int	iov_len;	/* length of a component */
+	char	*iov_base;	/* base of a component */
+	size_t	iov_len;	/* length of a component */
 };
 .TE
+.DE
 .LP
 The \fIiov_base\fP field should be treated as if its type were
 ``void *'' as POSIX and other versions of the structure may use
 that type.
 Thus, pointer arithmetic should not use this value without a cast.
-.DE
+.LP
 The calls using an array of \fIiovec\fP structures are:
 .DS
 .Fd readv 3 "read gathered input
 cc = readv(fd, iov, iovlen);
-result int cc; int fd; struct iovec *iov; int iovlen;
+result ssize_t cc; int fd; struct iovec *iov; int iovlen;
 .DE
 .DS
 .Fd writev 3 "write scattered output
 cc = writev(fd, iov, iovlen);
-result int cc; int fd; struct iovec *iov; int iovlen;
+result ssize_t cc; int fd; struct iovec *iov; int iovlen;
 .DE
 Here \fIiovlen\fP is the count of elements in the \fIiov\fP array.
 .Sh 3 "Input/output control
@@ -96,12 +96,12 @@ operation:
 .DS
 .Fd ioctl 3 "control device
 ioctl(fd, request, buffer);
-int fd, request; caddr_t buffer;
+int fd; u_long request; caddr_t buffer;
 .DE
 This operation causes the specified \fIrequest\fP to be performed
 on the object \fIfd\fP.  The \fIrequest\fP parameter specifies
 whether the argument buffer is to be read, written, read and written,
-or is not needed, and also the size of the buffer, as well as the
+or is not used, and also the size of the buffer, as well as the
 request.
 Different descriptor types and subtypes within descriptor types
 may use distinct
@@ -111,7 +111,8 @@ operations on terminals control flushing of input and output
 queues and setting of terminal parameters; operations on
 disks cause formatting operations to occur; operations on tapes
 control tape positioning.
-The names for basic control operations are defined in \fI<sys/ioctl.h>\fP.
+The names for basic control operations are defined by \fI<sys/ioctl.h>\fP,
+or more specifically by files it includes.
 .Sh 3 "Non-blocking and asynchronous operations
 .PP
 A process that wishes to do non-blocking operations on one of

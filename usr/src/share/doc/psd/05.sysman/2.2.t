@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.2.t	8.4 (Berkeley) %G%
+.\"	@(#)2.2.t	8.5 (Berkeley) %G%
 .\"
 .Sh 2 "Filesystem
 .Sh 3 "Overview
@@ -11,7 +11,7 @@
 The filesystem abstraction provides access to a hierarchical
 filesystem structure.
 The filesystem contains directories (each of which may contain
-other sub-directories) as well as files and references to other
+sub-directories) as well as files and references to other
 objects such as devices and inter-process communications sockets.
 .PP
 Each file is organized as a linear array of bytes.  No record
@@ -22,15 +22,13 @@ If permitted by the underlying storage mechanism,
 the user may read the data in a directory as though
 it were an ordinary file to determine the names of the contained files,
 but only the system may write into the directories.
-The filesystem stores only a small amount of ownership, protection and usage
-information with a file.
 .Sh 3 "Naming
 .PP
 The filesystem calls take \fIpath name\fP arguments.
 These consist of a zero or more component \fIfile names\fP
 separated by ``/\^'' characters, where each file name
-is up to NAME_MAX (255) ASCII characters excluding null and ``/\^''.
-Each pathname is up to PATH_MAX (1024) ASCII characters excluding null.
+is up to NAME_MAX (255) characters excluding null and ``/\^''.
+Each pathname is up to PATH_MAX (1024) characters excluding null.
 .PP
 Each process always has two naming contexts: one for the
 root directory of the filesystem and one for the
@@ -45,7 +43,7 @@ context.
 The file name ``.'' in each directory refers to that directory.
 The file name ``..'' in each directory refers to
 the parent directory of that directory.
-The parent directory of the root of the filesystem is always that directory.
+The parent directory of the root of the filesystem is itself.
 .LP
 The calls:
 .DS
@@ -60,7 +58,7 @@ int fd;
 .DE
 .DS
 .Fd chroot 1 "change root directory
-chroot(path)
+chroot(path);
 char *path;
 .DE
 change the current working directory or root directory context of a process.
@@ -109,19 +107,19 @@ Although directories can be read as files,
 the usual interface is to use the call:
 .DS
 .Fd getdirentries 4 "get directory entries in a filesystem independent format
-getdirentries(fd, buf, nbytes, basep)
+getdirentries(fd, buf, nbytes, basep);
 int fd; char *buf; int nbytes; long *basep;
 .DE
 The
 .Fn getdirentries
 system call returns a canonical array of directory entries
-in a filesystem independent format described in \fI<dirent.h>\fP.
+in the filesystem independent format described in \fI<dirent.h>\fP.
 Application programs usually use the library routines
 .Fn opendir ,
 .Fn readdir ,
 and
 .Fn closedir
-that provide a more convenient interface to
+which provide a more convenient interface than
 .Fn getdirentries .
 The \fIfts\fP package is provided
 for recursive directory traversal.
@@ -165,12 +163,11 @@ on the open file.  The operations will be checked against the user's
 access rights to the file before allowing the
 .Fn open
 to succeed.
-Specifying O_APPEND causes writes to automatically append to the file.
+Specifying O_APPEND causes all writes to be appended to the file.
 Specifying O_TRUNC causes the file to be truncated when opened.
-The flag O_CREAT causes the file to be created if it does not
-exist, owned by the current user
-and the group of the containing directory.
-The protection for the new file is specified in \fImode\fP
+The flag O_CREAT causes the file to be created if it does not exist,
+owned by the current user and the group of the containing directory.
+The permissions for the new file are specified in \fImode\fP
 as the OR of the appropriate permissions as defined in \fI<sys/stat.h>\fP:
 .DS
 .TS
@@ -187,15 +184,20 @@ S_IRWXO	/* RWX for other */
 S_IROTH	/* R for other */
 S_IWOTH	/* W for other */
 S_IXOTH	/* X for other */
+S_ISUID	/* set user id */
+S_ISGID /* set group id */
+S_ISTXT /* sticky bit */
 .TE
 .DE
 .LP
-Historically, the file mode has been used as a three digit octal number.
-Each digit encodes read access as 4, write access as 2 and execute
-access as 1, or'ed together.  The 0700 bits describe owner
-access, the 070 bits describe the access rights for processes in the same
-group as the file, and the 07 bits describe the access rights
-for other processes.
+Historically, the file mode has been used as a four digit octal number.
+The bottom three digits encode read access as 4, write access as 2 and
+execute access as 1, or'ed together.
+The 0700 bits describe owner access, the 070 bits describe the access
+rights for processes in the same group as the file, and the 07 bits
+describe the access rights for other processes.
+The 7000 bits encode set user ID as 4000, set group ID as 2000, and the
+sticky bit as 1000.
 The mode specified to
 .Fn open
 is modified by 
@@ -208,14 +210,15 @@ oldmask = umask(newmask);
 result mode_t oldmask; mode_t newmask;
 .DE
 .PP
-If the open specifies to create the file with O_EXCL
-and the file already exists, then the
+If the O_EXCL flag is set, and the file already exists, then the
 .Fn open
 will fail without affecting the file in any way.
 This mechanism provides a simple exclusive access facility.
-If the file exists but is a symbolic link, the open will fail
-regardless of the existence of the file specified by the link.
-The O_SHLOCK and O_EXLOCK allow the file to be atomically
+For security reasons,
+if the O_EXCL flag is set and the file is a symbolic link,
+the open will fail regardless of the existence of the file
+referenced by the link.
+The O_SHLOCK and O_EXLOCK flags allow the file to be atomically
 .Fn open 'ed
 and
 .Fn flock 'ed;
@@ -233,7 +236,8 @@ operations.
 Devices are identified by their ``major'' and ``minor''
 device numbers.  The major device number determines the kind
 of peripheral it is, while the minor device number indicates
-one of possibly many peripherals of that kind.
+either one of possibly many peripherals of that kind, or special
+characteristics of the peripheral.
 Structured devices have all operations done internally
 in ``block'' quantities while unstructured devices
 may have input and output done in varying units, and
@@ -258,8 +262,8 @@ Fifo's can be created in the filesystem using the call:
 mkfifo(path, mode);
 char *path; mode_t mode;
 .DE
-The \fImode\fP parameter is used solely specify the access permissions
-on the newly created fifo.
+The \fImode\fP parameter is used solely to specify the access
+permissions of the newly created fifo.
 .Sh 4 "Links and renaming
 .PP
 Links allow multiple names for a file to exist.
@@ -306,8 +310,9 @@ call:
 len = readlink(path, buf, bufsize);
 result int len; char *path; result char *buf; int bufsize;
 .DE
-This call returns, in \fIbuf\fP, the null-terminated string
-substituted into pathnames passing through \fIpath\fP\|.
+This call returns, in \fIbuf\fP, the string substituted into
+pathnames passing through \fIpath\fP\|.
+(This string is not NULL terminated.)
 .LP
 Atomic renaming of filesystem resident objects is possible with the
 .Fn rename
@@ -319,6 +324,10 @@ char *oldname, *newname;
 .DE
 where both \fIoldname\fP and \fInewname\fP must be
 in the same filesystem.
+If either \fIoldname\fP or \fInewname\fP is a directory,
+then the other also must be a directory for the
+.Fn rename
+to succeed.
 If \fInewname\fP exists and is a directory, then it must be empty.
 .Sh 4 "File, device, and fifo removal
 .LP
@@ -345,11 +354,11 @@ char *path;
 Subsequent operations on any descriptors open at the time of the
 .Fn revoke
 fail, with the exceptions that a
-.Fn read
-from a character device file which has been
-revoked returns a count of zero (end of file), and a
 .Fn close
-call will succeed.
+call will succeed, and a
+.Fn read
+from a character device file which has been revoked returns a count
+of zero (end of file).
 If the file is a special file for a device which is open,
 the device close function is called as if all open references
 to the file had been closed.
@@ -380,7 +389,7 @@ type, protection, ownership, access times,
 size, and a count of hard links.
 If the file is a symbolic link, then the status of the link
 itself (rather than the file the link references)
-may be found using the
+may be obtained using the
 .Fn lstat
 call:
 .DS
@@ -389,37 +398,36 @@ lstat(path, stb);
 char *path; result struct stat *stb;
 .DE
 .PP
-Newly created files are assigned the user-id of the
-process that created it and the group-id of the directory
-in which it was created.  The ownership of a file may
-be changed by either of the calls:
+Newly created files are assigned the user ID of the process that created
+them and the group ID of the directory in which they were created.
+The ownership of a file may be changed by either of the calls:
 .DS
 .Fd chown 3 "change owner and group of a file
 chown(path, owner, group);
-char *path; int owner, group;
+char *path; uid_t owner; gid_t group;
 .DE
 .DS
 .Fd fchown 3 "change owner and group of a file
 fchown(fd, owner, group);
-int fd, owner, group;
+int fd, uid_t owner; gid_t group;
 .DE
 .PP
 In addition to ownership, each file has three levels of access
 protection associated with it.  These levels are owner relative,
-group relative, and global (all users and groups).  Each level
-of access has separate indicators for read permission, write
-permission, and execute permission.
+group relative, and other.
+Each level of access has separate indicators for read permission,
+write permission, and execute permission.
 The protection bits associated with a file may be set by either
 of the calls:
 .DS
 .Fd chmod 2 "change mode of file
 chmod(path, mode);
-char *path; int mode;
+char *path; mode_t mode;
 .DE
 .DS
 .Fd fchmod 2 "change mode of file
 fchmod(fd, mode);
-int fd, mode;
+int fd, mode_t mode;
 .DE
 where \fImode\fP is a value indicating the new protection
 of the file, as listed in section
@@ -459,11 +467,11 @@ the system is in single-user mode.
 Finally, the access and modify times on a file may be set by the call:
 .DS
 .Fd utimes 2 "set file access and modification times
-utimes(path, tvp)
+utimes(path, tvp);
 char *path; struct timeval *tvp[2];
 .DE
 This is particularly useful when moving files between media,
-to preserve relationships between the times the file was modified.
+to preserve file access and modification times.
 .Sh 3 "Checking accessibility
 .PP
 A process running with
@@ -477,13 +485,13 @@ call:
 accessible = access(path, how);
 result int accessible; char *path; int how;
 .DE
-Here \fIhow\fP is constructed by or'ing the following bits, defined
+\fIHow\fP is constructed by OR'ing the following bits, defined
 in \fI<unistd.h>\fP:
 .DS
 .TS
 l l.
 F_OK	/* file exists */
-X_OK	/* file is executable */
+X_OK	/* file is executable/searchable */
 W_OK	/* file is writable */
 R_OK	/* file is readable */
 .TE
@@ -496,18 +504,18 @@ The
 .Fn pathconf
 and
 .Fn fpathconf
-functions provides a method for applications to determine the current
+functions provide a method for applications to determine the current
 value of a configurable system limit or option variable associated
 with a pathname or file descriptor:
 .DS
 .Fd pathconf 2 "get configurable pathname variables
-ans = pathconf(path, name)
-result int ans; char *path; int name;
+ans = pathconf(path, name);
+result long ans; char *path; int name;
 .DE
 .DS
 .Fd fpathconf 2 "get configurable pathname variables
-ans = fpathconf(fd, name)
-result int ans; int fd, name;
+ans = fpathconf(fd, name);
+result long ans; int fd, name;
 .DE
 For
 .Fn pathconf ,
@@ -534,7 +542,7 @@ call may be used:
 oldoffset = lseek(fd, offset, type);
 result off_t oldoffset; int fd; off_t offset; int type;
 .DE
-where \fItype\fP is given in \fI<sys/unistd.h>\fP as one of:
+where \fItype\fP is defined by \fI<unistd.h>\fP as one of:
 .DS
 .TS
 l l.
@@ -546,10 +554,11 @@ SEEK_END	/* set file offset to EOF plus offset */
 The call ``lseek(fd, 0, SEEK_CUR)''
 returns the current offset into the file.
 .PP
-Files may have ``holes'' in them.  Holes are void areas in the
-linear extent of the file where data has never been
-written.  These may be created by seeking to
-a location in a file past the current end-of-file and writing.
+Files may have ``holes'' in them.
+Holes are areas in the linear extent of the file where data has never
+been written.
+These may be created by seeking to a location in a file past the
+current end-of-file and writing.
 Holes are treated by the system as zero valued bytes.
 .LP
 A file may be extended or truncated with either of the calls:
@@ -571,14 +580,13 @@ in the system buffer cache.
 The call:
 .DS
 .Fd fsync 1 "synchronize in-core state of a file with that on disk
-fsync(fd)
+fsync(fd);
 int fd;
 .DE
 ensures that the contents of a file are committed to disk
 before returning.
 This feature is used by applications such as editors that
-want to ensure the integrity of a new file before
-deleting the backup copy.
+want to ensure the integrity of a new file before continuing.
 .Sh 3 "Locking
 .PP
 The filesystem provides basic facilities that allow cooperating processes
@@ -609,7 +617,7 @@ flock(fd, how);
 int fd, how;
 .DE
 where the \fIhow\fP parameter is formed from bits
-defined in \fI<sys/fcntl.h>\fP:
+defined in \fI<fcntl.h>\fP:
 .DS
 .TS
 l l.
@@ -631,8 +639,8 @@ Advisory locks held by a process are automatically deleted when
 the process terminates.
 .Sh 3 "Disk quotas
 .PP
-As an optional facility, each local filesystem may be requested to
-impose limits on a user's or a group's disk usage.
+As an optional facility, each local filesystem can impose limits on a
+user's or group's disk usage.
 Two quantities are limited: the total amount of disk space which
 a user or group may allocate in a filesystem and the total number of files
 a user or group may create in a filesystem.  Quotas are expressed as
@@ -649,11 +657,11 @@ The
 call enables, disables and manipulates filesystem quotas:
 .DS
 .Fd quotactl 4 "manipulate filesystem quotas
-quotactl(path, cmd, id, addr)
+quotactl(path, cmd, id, addr);
 char *path; int cmd; int id; char *addr;
 .DE
 A quota control command given by cmd operates on the given filename path
-for the given user id. The address of an optional command specific data
+for the given user ID. The address of an optional command specific data
 structure, addr, may be given.
 The supported commands include:
 .DS
@@ -680,7 +688,7 @@ int flags, void *argstructp;
 is used by the NFS daemons to pass information into
 and out of the kernel and also to enter the kernel as a server daemon.
 The flags argument consists of several bits that show what action is to
-be taken once in the kernel and the argstructp points to one of three
+be taken once in the kernel and \fIargstructp\fP points to one of three
 structures depending on which bits are set in flags.
 .LP
 The call:
@@ -748,7 +756,7 @@ For further information see the
 .Xr mount_portal (8)
 manual page.
 .IP \(bu
-The uid/gid remapping filesystem, used primary above NFS filesystems
+The uid/gid remapping filesystem, usually layered above NFS filesystems
 exported to an outside administrative domain.
 For further information see the
 .Xr mount_umap (8)

@@ -3,22 +3,22 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.5.t	8.4 (Berkeley) %G%
+.\"	@(#)1.5.t	8.5 (Berkeley) %G%
 .\"
 .Sh 2 Descriptors
 .Sh 3 "The reference table
 .PP
 Each process has access to resources through
 \fIdescriptors\fP.  Each descriptor is a handle allowing
-the process to reference objects such as files, devices
+processes to reference objects such as files, devices
 and communications links.
 .PP
 Rather than allowing processes direct access to descriptors, the system
 introduces a level of indirection, so that descriptors may be shared
 between processes.  Each process has a \fIdescriptor reference table\fP,
-containing pointers to the actual descriptors.  The descriptors
-themselves thus have multiple references, and are reference counted by the
-system.
+containing pointers to the actual descriptors.
+The descriptors themselves therefore may have multiple references,
+and are reference counted by the system.
 .PP
 Each process has a limited size descriptor reference table, where
 the current size is returned by the
@@ -29,7 +29,7 @@ call:
 nds = getdtablesize();
 result int nds;
 .DE
-and guaranteed to be at least 20.
+and guaranteed to be at least 64.
 The maximum number of descriptors is a resource limit (see section
 .Xr 1.6.3 ).
 The entries in the descriptor reference
@@ -62,8 +62,9 @@ A duplicate of a descriptor reference may be made by doing:
 new = dup(old);
 result int new; int old;
 .DE
-returning a copy of descriptor reference \fIold\fP indistinguishable from
-the original.  The \fInew\fP chosen by the system will be the
+returning a copy of descriptor reference \fIold\fP which is
+indistinguishable from the original.
+The value of \fInew\fP chosen by the system will be the
 smallest unused descriptor reference slot.
 A copy of a descriptor reference may be made in a specific slot
 by doing:
@@ -101,11 +102,12 @@ nds = select(nd, in, out, except, tvp);
 result int nds; int nd; result fd_set *in, *out, *except;
 struct timeval *tvp;
 
-FD_ZERO(&fdset);
-FD_SET(fd, &fdset);
 FD_CLR(fd, &fdset);
+FD_COPY(&fdset, &fdset2);
 FD_ISSET(fd, &fdset);
-int fd; fs_set fdset;
+FD_SET(fd, &fdset);
+FD_ZERO(&fdset);
+int fd; fs_set fdset, fdset2;
 .DE
 The
 .Fn select
@@ -125,7 +127,9 @@ such as
 .Fn read
 or
 .Fn receive
-is possible, or if a connection request may be accepted (see section
+is possible, or if a connection request may be accepted (see sections
+.Xr 2.1.3
+and
 .Xr 2.3.1.4 ).
 .IP \*(bu
 A descriptor selects for output if an output oriented operation
@@ -135,8 +139,10 @@ or
 .Fn send
 is possible, or if an operation
 that was ``in progress'', such as connection establishment,
-has completed (see section
-.Xr 2.1.3 ).
+has completed (see sections
+.Xr 2.1.3
+and
+.Xr 2.3.1.5 ).
 .IP \*(bu
 A descriptor selects for an exceptional condition if a condition
 that would cause a SIGURG signal to be generated exists (see section
@@ -144,8 +150,8 @@ that would cause a SIGURG signal to be generated exists (see section
 or other device-specific events have occurred.
 .LP
 For these tests, an operation is considered to be possible if a call
-to the operation would return without blocking even if the O_NONBLOCK
-flag were clear.
+to the operation would return without blocking (even if the O_NONBLOCK
+flag were not set).
 For example, a descriptor would test as ready for reading if a read
 call would return immediately with data, an end-of-file indication,
 or an error other than EWOULDBLOCK.
@@ -161,7 +167,7 @@ Options affecting I/O on a descriptor
 may be read and set by the call:
 .DS
 .Fd fcntl 3 "file control
-dopt = fcntl(d, cmd, arg)
+dopt = fcntl(d, cmd, arg);
 result int dopt; int d, cmd, arg;
 .DE
 .DS
@@ -169,12 +175,16 @@ result int dopt; int d, cmd, arg;
 l s
 l l.
 /* command values */
+F_DUPFD	/* return a new descriptor */
 F_GETFD	/* get file descriptor flags */
 F_SETFD	/* set file descriptor flags */
 F_GETFL	/* get file status flags */
 F_SETFL	/* set file status flags */
 F_GETOWN	/* get SIGIO/SIGURG proc/pgrp */
 F_SETOWN	/* set SIGIO/SIGURG proc/pgrp */
+F_GETLK	/* get blocking lock */
+F_SETLK	/* set or clear lock */
+F_SETLKW	/* set lock with wait */
 .TE
 .DE
 The F_SETFD \fIcmd\fP can be used to set the close-on-exec
@@ -189,9 +199,8 @@ The
 system call also provides POSIX-compliant byte-range locking on files.
 However the semantics of unlocking on every 
 .Fn close
-rather than last close makes them almost useless.
-Much better semantics, and faster locking are provided
-by the
+rather than last close makes them useless.
+Much better semantics and faster locking are provided by the
 .Fn flock
 system call (see section
 .Xr 2.2.7 ).
