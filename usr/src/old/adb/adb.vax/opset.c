@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)opset.c 4.2 %G%";
+static	char sccsid[] = "@(#)opset.c 4.3 %G%";
 #endif lint
 /*
  *	UNIX debugger
@@ -447,7 +447,7 @@ pcimmediate(mode, optype)
 	int	nbytes;
 
 	printc('$');
-	if (mode == OC_DAIREG){	/* PC absolute, always 4 bytes*/
+	if (mode == OC_CONS(OC_DAIREG, R_PC)){	/* PC absolute, always 4 bytes*/
 		dispaddress(snarfreloc(4), mode);
 		return;
 	}
