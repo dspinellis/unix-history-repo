@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_sig.c	7.14 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -277,7 +277,7 @@ osigvec()
 		    sizeof (vec)))
 			RETURN (error);
 		sv->sv_flags ^= SA_RESTART;	/* opposite of SV_INTERRUPT */
-		setsigvec(sig, sv);
+		setsigvec(sig, (struct sigaction *)sv);
 	}
 	RETURN (0);
 }
@@ -964,18 +964,23 @@ core()
 		vput(vp);
 		return (EFAULT);
 	}
-#ifdef MMAP
-	{ register int fd;
-	/* unmap funky devices in the user's address space */
-	for (fd = 0; fd < u.u_lastfile; fd++)
-		if (u.u_ofile[fd] && (u.u_pofile[fd] & UF_MAPPED))
-			munmapfd(fd);
-	}
+#ifdef MAPMEM
+	mmcore();
 #endif
 	VATTR_NULL(&vattr);
 	vattr.va_size = 0;
 	VOP_SETATTR(vp, &vattr, u.u_cred);
 	u.u_acflag |= ACORE;
+#ifdef HPUXCOMPAT
+	/*
+	 * BLETCH!  If we loaded from an HPUX format binary file
+	 * we have to dump an HPUX style user struct so that the
+	 * HPUX debuggers can grok it.
+	 */
+	if (u.u_pcb.pcb_flags & PCB_HPUXBIN)
+		error = hpuxdumpu(vp, ndp->ni_cred);
+	else
+#endif
 	error = vn_rdwr(UIO_WRITE, vp, (caddr_t)&u, ctob(UPAGES), (off_t)0,
 	    UIO_SYSSPACE, IO_NODELOCKED|IO_UNIT, ndp->ni_cred, (int *)0);
 	if (error == 0)
