@@ -1,4 +1,4 @@
-/*	if.c	4.22	82/10/20	*/
+/*	if.c	4.23	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -40,8 +40,8 @@ ifubareset(uban)
 	register struct ifnet *ifp;
 
 	for (ifp = ifnet; ifp; ifp = ifp->if_next)
-		if (ifp->if_ubareset)
-			(*ifp->if_ubareset)(uban);
+		if (ifp->if_reset)
+			(*ifp->if_reset)(uban);
 }
 #endif
 
