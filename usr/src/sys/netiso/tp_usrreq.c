@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
- *	@(#)tp_usrreq.c	7.12 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.13 (Berkeley) %G%
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -449,7 +449,7 @@ tp_usrreq(so, req, m, nam, controlp)
 		if (tpcb->tp_next == 0) {
 			tpcb->tp_next = tpcb->tp_prev = tpcb;
 			tpcb->tp_nextlisten = tp_listeners;
-			tp_listeners = tpcb->tp_nextlisten;
+			tp_listeners = tpcb;
 		}
 		IFDEBUG(D_TPISO)
 			if (tpcb->tp_state != TP_CLOSED)

@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.12 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.13 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -627,26 +627,27 @@ again:
 		} else {
 			register struct tp_pcb *t;
 
-			for (t = tp_intercepts; t ; t->tp_nextlisten) {
+			for (t = tp_intercepts; t ; t = t->tp_nextlisten) {
 				if (laddr->sa_family != t->tp_nlproto->nlp_afamily)
 					continue;
-				if ((*tpcb->tp_nlproto->nlp_cmpnetaddr)(
+				if ((*t->tp_nlproto->nlp_cmpnetaddr)(
 						t->tp_npcb, laddr, TP_LOCAL)) {
 							intercepted = 1;
 							goto check_duplicate_cr;
 				}
 			}
-			for (t = tp_listeners; t ; t->tp_nextlisten) {
-				if (bcmp(lsufxloc, t->tp_lsuffix, lsufxlen) != 0)
-					continue;
-				if (laddr->sa_family != t->tp_nlproto->nlp_afamily)
-					continue;
-			}
+			for (t = tp_listeners; t ; t = t->tp_nextlisten)
+				if (bcmp(lsufxloc, t->tp_lsuffix, lsufxlen) == 0 &&
+					laddr->sa_family == t->tp_nlproto->nlp_afamily)
+						break;
 			CHECK(t == 0, E_TP_NO_SESSION, ts_inv_sufx, respond,
 				(1 + 2 + (caddr_t)&hdr->_tpduf - (caddr_t)hdr))
 				/* _tpduf is the fixed part; add 2 to get the dref bits of 
 				 * the fixed part (can't take the address of a bit field) 
 				 */
+			IFDEBUG(D_TPINPUT)
+				printf("checking if dup CR\n");
+			ENDDEBUG
 		check_duplicate_cr:
 			tpcb = t;
 			for (t = tpcb->tp_next; t != tpcb; t = t->tp_next) {
@@ -758,7 +759,7 @@ again:
 				goto discard;
 			}
 			tpcb = sototpcb(so);
-			insque(parent_tpcb, tpcb);
+			insque(tpcb, parent_tpcb);
 
 			/*
 			 * Stash the addresses in the net level pcb 

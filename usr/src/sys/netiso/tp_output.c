@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_output.c,v 5.4 88/11/18 17:28:08 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_output.c,v $
- *	@(#)tp_output.c	7.6 (Berkeley) %G% *
+ *	@(#)tp_output.c	7.7 (Berkeley) %G% *
  *
  * In here is tp_ctloutput(), the guy called by [sg]etsockopt(),
  */
@@ -462,8 +462,8 @@ tp_ctloutput(cmd, so, level, optname, mp)
 			else
 				{error = EHOSTUNREACH; goto done; }
 		}
-		tp_intercepts = tpcb;
 		tpcb->tp_nextlisten = tp_intercepts;
+		tp_intercepts = tpcb;
 		break;
 
 	case TPOPT_MY_TSEL:
