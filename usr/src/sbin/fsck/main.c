@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -40,7 +40,7 @@ main(argc, argv)
 	extern int optind;
 
 	sync();
-	while ((ch = getopt(argc, argv, "cdpnNyYb:l:m:")) != EOF) {
+	while ((ch = getopt(argc, argv, "dpnNyYb:c:l:m:")) != EOF) {
 		switch (ch) {
 		case 'p':
 			preen++;
@@ -52,9 +52,9 @@ main(argc, argv)
 			break;
 
 		case 'c':
-			cvtflag++;
+			cvtlevel = argtoi('c', "conversion level", optarg, 10);
 			break;
-
+		
 		case 'd':
 			debug++;
 			break;
@@ -143,6 +143,7 @@ checkfilesys(filesys, mntpt, auxdata, child)
 	daddr_t n_ffree, n_bfree;
 	struct dups *dp;
 	struct zlncnt *zlnp;
+	int cylno;
 
 	if (preen && child)
 		(void)signal(SIGQUIT, voidquit);
@@ -243,6 +244,14 @@ checkfilesys(filesys, mntpt, auxdata, child)
 	if (fsmodified) {
 		(void)time(&sblock.fs_time);
 		sbdirty();
+	}
+	if (cvtlevel && sblk.b_dirty) {
+		/* 
+		 * Write out the duplicate super blocks
+		 */
+		for (cylno = 0; cylno < sblock.fs_ncg; cylno++)
+			bwrite(fswritefd, (char *)&sblock,
+			    fsbtodb(&sblock, cgsblock(&sblock, cylno)), SBSIZE);
 	}
 	ckfini();
 	free(blockmap);
