@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prof.c	7.4 (Berkeley) %G%
+ *	@(#)subr_prof.c	7.5 (Berkeley) %G%
  */
 
 #ifdef GPROF
@@ -120,12 +120,12 @@ mcount()
 	selfpc = (char *)0;
 	frompcindex = 0;
 #else
+	;				/* avoid label botch */
 #if defined(vax)
 	asm("	movl (sp), r11");	/* selfpc = ... (jsb frame) */
 	asm("	movl 16(fp), r10");	/* frompcindex =     (calls frame) */
 #endif
 #if defined(tahoe)
-	;				/* avoid label botch */
 	asm("	movl -8(fp),r12");	/* selfpc = callf frame */
 	asm("	movl (fp),r11");
 	asm("	movl -8(r11),r11");	/* frompcindex = 1 callf frame back */
