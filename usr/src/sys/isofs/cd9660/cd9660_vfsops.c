@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.8 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
