@@ -14,13 +14,13 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	8.11 (Berkeley) %G%')
+VERSIONID(`@(#)smtp.m4	8.12 (Berkeley) %G%')
 
 Msmtp,		P=[IPC], F=CONCAT(mDFMuX, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n,
 		ifdef(`_OLD_SENDMAIL_',, `L=990, ')A=IPC $h
 Mesmtp,		P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), S=11/31, R=ifdef(`_ALL_MASQUERADE_', `11/31', `21'), E=\r\n,
 		ifdef(`_OLD_SENDMAIL_',, `L=990, ')A=IPC $h
-Mrelay,		P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), S=11/31, R=0, E=\r\n,
+Mrelay,		P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), S=11/31, R=61, E=\r\n,
 		ifdef(`_OLD_SENDMAIL_',, `L=2040, ')A=IPC $h
 
 #
@@ -29,10 +29,7 @@ Mrelay,		P=[IPC], F=CONCAT(mDFMuXa, SMTP_MAILER_FLAGS), S=11/31, R=0, E=\r\n,
 S11
 R$+			$: $>51 $1			sender/recipient common
 R$* :; <@>		$@ $1 :;			list:; special case
-
-# handle unqualified names
-R$* < @ $* > $*		$@ $1 < @ $2 > $3		already qualified
-R$*			$@ $>61 $1
+R$*			$@ $>61 $1			qualify unqual'ed names
 
 
 #
@@ -61,10 +58,7 @@ R< @ $* > $*		$@ < @ $1 > $2			pass route-addr through
 R$=E < @ $=w . >	$@ $1 < @ $2 >			exposed user as is
 R$* < @ $=w . >		$: $1 < @ $M >			masquerade as domain
 R$* < @ >		$: $1 < @ $j >			in case $M undefined
-
-# handle unqualified names
-R$* < @ $* > $*		$@ $1 < @ $2 > $3		already qualified
-R$*			$@ $>61 $1
+R$*			$@ $>61 $1			qualify unqual'ed names
 
 
 #
@@ -93,6 +87,7 @@ ifdef(`_NO_UUCP_', `dnl',
 #
 S61
 
+R$* < @ $* > $*		$@ $1 < @ $2 > $3		already qualified
 R$=E			$@ $1 < @ $j>			show exposed names
 R$+			$: $1 < @ $M >			user w/o host
 R$+ <@>			$: $1 < @ $j >			in case $M undefined
