@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.17 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -179,6 +179,9 @@ char	**(*next)();	/* routine to return next entry in table */
 	register char **c, **found;
 	register int nmatches, longest;
 
+	if (name == 0) {
+	    return 0;
+	}
 	longest = 0;
 	nmatches = 0;
 	found = 0;
@@ -2026,7 +2029,7 @@ tn(argc, argv)
 		argc = margc;
 		argv = margv;
 	}
-	if (argc > 3) {
+	if ((argc < 2) || (argc > 3)) {
 		printf("usage: %s host-name [port]\n", argv[0]);
 		return 0;
 	}
