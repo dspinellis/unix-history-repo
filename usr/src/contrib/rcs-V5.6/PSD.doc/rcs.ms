@@ -1,3 +1,5 @@
+.\"	@(#)rcs.ms	8.2 (Berkeley) %G%
+.\"
 .\" Format this file with:
 .\" pic file | tbl | troff -ms
 .\"
@@ -16,14 +18,10 @@
 ..
 .de D(
 .DS
-.nr VS 12p
-.vs 12p
 .I
 ..
 .de D)
 .DE
-.nr VS 18p
-.vs 18p
 .R
 ..
 .de Id
@@ -69,8 +67,6 @@ An earlier version of this paper was published in
 .B 15 ,
 7 (July 1985), 637-654.
 .FE
-.nr VS 18p
-.LP
 .NH
 Introduction
 .PP
@@ -240,9 +236,7 @@ Both options update the identification markers in the working file
 .PP
 Besides the operations \fIci\fR and \fIco\fR, RCS provides the following
 commands:
-.sp 0
-.nr VS 12p
-.vs 12p
+.br
 .TS
 tab(%);
 li l.
@@ -298,8 +292,6 @@ Figure 1 is a partial reproduction of a log contained in revision 4.1 of
 the file \fIci.c\fR.  The log appears at the beginning of the file,
 and makes it easy to determine what the recent modifications were.
 .sp
-.nr VS 12p
-.vs 12p
 .ne 18
 .nf
 .in +0.5i
@@ -324,9 +316,6 @@ and makes it easy to determine what the recent modifications were.
 .ce 1
 Figure 1.  Log entries produced by the marker \*sLog\*s.
 .fi
-.nr VS 18p
-.vs 18p
-.sp 0
 .LP
 Since revisions are stored in the form of differences,
 each log message is
@@ -402,10 +391,8 @@ Revisions on the second branch would be numbered
 1.3.2.1, 1.3.2.2, and so on.
 The following steps create
 branch 1.3.1 and add revision 1.3.1.1:
-.sp 0
+.br
 .I
-.nr VS 12p
-.vs 12p
 .TS
 tab(%);
 l l l.
@@ -413,8 +400,6 @@ l l l.
      %edit  f.c% \*- change it
      %ci  \-r1.3.1  f.c% \*- check it in on branch 1.3.1
 .TE
-.nr VS 18p
-.vs 18p
 .R
 This sequence of commands transforms the tree of Figure 2 into
 the one in Figure 3.
@@ -970,9 +955,7 @@ to log the number of backward and forward deltas applied.
 The data were collected during a 13 month period
 from Dec. 1982 to Dec. 1983.
 Table I summarizes the results.
-.sp 0
-.nr VS 12p
-.vs 12p
+.br
 .TS
 center,box,tab(#);
 c|c|c|c|c s|c s
@@ -987,8 +970,6 @@ ci & co#11335#11527#1.02#594#(5%)#278#(2%)
 .TE
 .ce 1
 Table I.  Statistics for \fIco\fR and \fIci\fR operations.
-.nr VS 18p
-.vs 18p
 .PP
 The first two lines show statistics for check-out and check-in;
 the third line shows the combination.
@@ -1029,9 +1010,7 @@ on our two machines.  The goal was to determine the mean number of
 revisions per RCS file, as well as the space consumed by them.
 Table II shows the results.  (Tables I and II were produced at different
 times and are unrelated.)
-.sp 0
-.nr VS 12p
-.vs 12p
+.br
 .TS
 center,box,tab(#);
 c | c | c | c | c | c | c
@@ -1046,8 +1025,6 @@ Files with#1477# 4578#3.10#8074#6041#1.34
 .TE
 .ce 1
 Table II.  Statistics for RCS files.
-.nr VS 18p
-.vs 18p
 .PP
 The mean number of revisions per RCS file is 1.39.
 Columns 5 and 6 show the mean sizes (in bytes) of an RCS file
@@ -1239,8 +1216,6 @@ The list of people is too long to be
 reproduced here, but my sincere thanks for their help and
 goodwill goes to all of them.
 .sp
-.nr VS 12p
-.vs 12p
 .SH
 Appendix: Synopsis of RCS Operations
 .LP
@@ -1328,8 +1303,6 @@ intervention to select the correct alternative.
 \fIRlog\fR prints the log messages and other information in an RCS file.
 .bp
 .LP
-.nr VS 12p
-.vs 12p
 .]<
 .ds [F 1
 .]-
