@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -1023,18 +1023,17 @@ swapmode()
 
 	header = getbsize(&hlen, &blocksize);
 	if (!totalflag)
-		(void)printf("%-10s %4s %*s %10s %10s %10s\n",
-		    "Device", "Type", hlen, header,
-		    "Used", "Available", "Capacity");
+		(void)printf("%-11s %*s %8s %8s %8s  %s\n",
+		    "Device", hlen, header,
+		    "Used", "Avail", "Capacity", "Type");
 	div = blocksize / 512;
 	avail = npfree = 0;
 	for (i = 0; i < nswdev; i++) {
 		int xsize, xfree;
 
 		if (!totalflag)
-			(void)printf("/dev/%-5s %4s %*d ",
+			(void)printf("/dev/%-6s %*d ",
 			    devname(sw[i].sw_dev, S_IFBLK),
-			    (sw[i].sw_flags & SW_SEQUENTIAL) ? "Seq" : "Int",
 			    hlen, sw[i].sw_nblks / div);
 
 		/*
@@ -1054,9 +1053,11 @@ swapmode()
 		avail += xsize;
 		if (totalflag)
 			continue;
-		(void)printf("%10d %10d %9.0f%%\n", 
+		(void)printf("%8d %8d %5.0f%%    %s\n", 
 		    used / div, xfree / div,
-		    (double)used / (double)xsize * 100.0);
+		    (double)used / (double)xsize * 100.0,
+		    (sw[i].sw_flags & SW_SEQUENTIAL) ?
+			     "Sequential" : "Interleaved");
 	}
 
 	/* 
@@ -1069,7 +1070,7 @@ swapmode()
 		return;
 	}
 	if (npfree > 1) {
-		(void)printf("%-10s      %*d %10d %10d %9.0f%%\n",
+		(void)printf("%-11s %*d %8d %8d %5.0f%%\n",
 		    "Total", hlen, avail / div, used / div, nfree / div,
 		    (double)used / (double)avail * 100.0);
 	}
