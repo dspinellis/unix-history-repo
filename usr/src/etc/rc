@@ -1,4 +1,4 @@
-#	@(#)rc	5.31 (Berkeley) %G%
+#	@(#)rc	5.32 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -151,11 +151,18 @@ echo -n ' printer';		lpd
 
 echo -n ' portmap';		portmap
 echo -n ' mountd';		mountd
-echo -n ' nfsd';		nfsd -u -t
+echo -n ' nfsd';		nfsd -u -t 6
 echo -n ' nfsiod';		nfsiod 4
 
 echo -n ' sendmail';		sendmail -bd -q30m
 echo -n ' inetd';		inetd
+echo -n ' amd';
+	cd /; amd -l /var/log/amd -r -a /amd -p > /var/run/amd.pid \
+	/home /etc/amd-home \
+	&
+#	/n /etc/amd-n \
+#	/vol /etc/amd-vol \
+
 echo '.'
 
 sh /etc/rc.local
