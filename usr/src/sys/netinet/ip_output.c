@@ -1,4 +1,4 @@
-/*	ip_output.c	1.21	81/12/09	*/
+/*	ip_output.c	1.22	81/12/11	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -21,7 +21,7 @@ ip_output(m, opt)
 
 COUNT(IP_OUTPUT);
 	if (opt)				/* XXX */
-		m_free(opt);			/* XXX */
+		(void) m_free(opt);		/* XXX */
 	/*
 	 * Fill in IP header.
 	 */
