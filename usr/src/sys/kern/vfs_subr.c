@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.89 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.90 (Berkeley) %G%
  */
 
 /*
@@ -677,6 +677,13 @@ loop:
 		if ((flags & SKIPSYSTEM) && (vp->v_flag & VSYSTEM))
 			continue;
 		/*
+		 * If WRITECLOSE is set, only flush out regular file
+		 * vnodes open for writing.
+		 */
+		if ((flags & WRITECLOSE) &&
+		    (vp->v_writecount == 0 || vp->v_type != VREG))
+			continue;
+		/*
 		 * With v_usecount == 0, all we need to do is clear
 		 * out the vnode data structures and we are done.
 		 */
@@ -685,6 +692,7 @@ loop:
 			continue;
 		}
 		/*
+		 * If FORCECLOSE is set, forcibly close the vnode.
 		 * For block or character devices, revert to an
 		 * anonymous device. For all other files, just kill them.
 		 */
