@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * Copyright (c) 1991 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.33 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.34 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -14,12 +14,14 @@
 #include <sys/syslog.h>
 #include <sys/mount.h>
 
-#include <ufs/quota.h>
-#include <ufs/inode.h>
-#include <ufs/ufsmount.h>
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
+#include <ufs/ufs/ufsmount.h>
 
-#include <lfs/lfs.h>
-#include <lfs/lfs_extern.h>
+#include <ufs/lfs/lfs.h>
+#include <ufs/lfs/lfs_extern.h>
+
+extern u_long nextgennumber;
 
 /* Allocate a new inode. */
 /* ARGSUSED */
@@ -29,7 +31,7 @@ lfs_ialloc(pip, notused, cred, ipp)
 	int notused;
 	UCRED *cred;
 {
-	LFS *fs;
+	struct lfs *fs;
 	BUF *bp;
 	IFILE *ifp;
 	INODE *ip;
@@ -136,7 +138,7 @@ lfs_ifree(ip, notused1, notused2)
 {
 	BUF *bp;
 	IFILE *ifp;
-	LFS *fs;
+	struct lfs *fs;
 	ino_t ino;
 
 #ifdef ALLOCPRINT

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	5.8 (Berkeley) %G%
+ *	@(#)lfs.h	7.1 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -57,7 +57,6 @@ struct segment {
 };
 
 /* On-disk and in-memory super block. */
-typedef struct lfs LFS;
 struct lfs {
 #define	LFS_MAGIC	0xbedead
 	u_long	lfs_magic;		/* magic number */
