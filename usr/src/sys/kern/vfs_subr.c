@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.80 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.81 (Berkeley) %G%
  */
 
 /*
@@ -280,81 +280,6 @@ insmntque(vp, mp)
 }
 
 /*
- * Make sure all write-behind blocks associated
- * with mount point are flushed out (from sync).
- */
-mntflushbuf(mountp, flags)
-	struct mount *mountp;
-	int flags;
-{
-	USES_VOP_ISLOCKED;
-	register struct vnode *vp;
-
-	if ((mountp->mnt_flag & MNT_MPBUSY) == 0)
-		panic("mntflushbuf: not busy");
-loop:
-	for (vp = mountp->mnt_mounth; vp; vp = vp->v_mountf) {
-		if (VOP_ISLOCKED(vp))
-			continue;
-		if (vget(vp))
-			goto loop;
-		vflushbuf(vp, flags);
-		vput(vp);
-		if (vp->v_mount != mountp)
-			goto loop;
-	}
-}
-
-/*
- * Flush all dirty buffers associated with a vnode.
- */
-vflushbuf(vp, flags)
-	register struct vnode *vp;
-	int flags;
-{
-	register struct buf *bp;
-	struct buf *nbp;
-	int s;
-
-loop:
-	s = splbio();
-	for (bp = vp->v_dirtyblkhd; bp; bp = nbp) {
-		nbp = bp->b_blockf;
-		if ((bp->b_flags & B_BUSY))
-			continue;
-		if ((bp->b_flags & B_DELWRI) == 0)
-			panic("vflushbuf: not dirty");
-		bremfree(bp);
-		bp->b_flags |= B_BUSY;
-		splx(s);
-		/*
-		 * Wait for I/O associated with indirect blocks to complete,
-		 * since there is no way to quickly wait for them below.
-		 * NB: This is really specific to ufs, but is done here
-		 * as it is easier and quicker.
-		 */
-		if (bp->b_vp == vp || (flags & B_SYNC) == 0)
-			(void) bawrite(bp);
-		else
-			(void) bwrite(bp);
-		goto loop;
-	}
-	splx(s);
-	if ((flags & B_SYNC) == 0)
-		return;
-	s = splbio();
-	while (vp->v_numoutput) {
-		vp->v_flag |= VBWAIT;
-		sleep((caddr_t)&vp->v_numoutput, PRIBIO + 1);
-	}
-	splx(s);
-	if (vp->v_dirtyblkhd) {
-		vprint("vflushbuf: dirty", vp);
-		goto loop;
-	}
-}
-
-/*
  * Update outstanding I/O count and do wakeup if requested.
  */
 vwakeup(bp)
@@ -375,51 +300,32 @@ vwakeup(bp)
 }
 
 /*
- * Invalidate in core blocks belonging to closed or umounted filesystem
- *
- * Go through the list of vnodes associated with the file system;
- * for each vnode invalidate any buffers that it holds. Normally
- * this routine is preceeded by a bflush call, so that on a quiescent
- * filesystem there will be no dirty buffers when we are done. Binval
- * returns the count of dirty buffers when it is finished.
- */
-mntinvalbuf(mountp)
-	struct mount *mountp;
-{
-	register struct vnode *vp;
-	int dirty = 0;
-
-	if ((mountp->mnt_flag & MNT_MPBUSY) == 0)
-		panic("mntinvalbuf: not busy");
-loop:
-	for (vp = mountp->mnt_mounth; vp; vp = vp->v_mountf) {
-		if (vget(vp))
-			goto loop;
-		dirty += vinvalbuf(vp, 1);
-		vput(vp);
-		if (vp->v_mount != mountp)
-			goto loop;
-	}
-	return (dirty);
-}
-
-/*
  * Flush out and invalidate all buffers associated with a vnode.
  * Called with the underlying object locked.
  */
-vinvalbuf(vp, save)
+int
+vinvalbuf(vp, save, cred, p)
 	register struct vnode *vp;
 	int save;
+	struct ucred *cred;
+	struct proc *p;
 {
 	USES_VOP_BWRITE;
+	USES_VOP_FSYNC;
 	register struct buf *bp;
 	struct buf *nbp, *blist;
-	int s, dirty = 0;
+	int s, error;
 
+	if (save) {
+		if (error = VOP_FSYNC(vp, cred, MNT_WAIT, p))
+			return (error);
+		if (vp->v_dirtyblkhd != NULL)
+			panic("vinvalbuf: dirty bufs");
+	}
 	for (;;) {
-		if (blist = vp->v_dirtyblkhd)
+		if (blist = vp->v_cleanblkhd)
 			/* void */;
-		else if (blist = vp->v_cleanblkhd)
+		else if (blist = vp->v_dirtyblkhd)
 			/* void */;
 		else
 			break;
@@ -435,11 +341,6 @@ vinvalbuf(vp, save)
 			bremfree(bp);
 			bp->b_flags |= B_BUSY;
 			splx(s);
-			if (save && (bp->b_flags & B_DELWRI)) {
-				dirty++;
-				(void) VOP_BWRITE(bp);
-				break;
-			}
 			if (bp->b_vp != vp)
 				reassignbuf(bp, bp->b_vp);
 			else
@@ -449,7 +350,7 @@ vinvalbuf(vp, save)
 	}
 	if (vp->v_dirtyblkhd || vp->v_cleanblkhd)
 		panic("vinvalbuf: flush failed");
-	return (dirty);
+	return (0);
 }
 
 /*
@@ -704,7 +605,6 @@ void vrele(vp)
 	register struct vnode *vp;
 {
 	USES_VOP_INACTIVE;
-	struct proc *p = curproc;		/* XXX */
 
 #ifdef DIAGNOSTIC
 	if (vp == NULL)
@@ -738,7 +638,7 @@ void vrele(vp)
 	}
 	vp->v_freef = NULL;
 	vfreet = &vp->v_freef;
-	VOP_INACTIVE(vp, p);
+	VOP_INACTIVE(vp);
 }
 
 /*
@@ -844,7 +744,6 @@ vclean(vp, flags)
 	USES_VOP_RECLAIM;
 	int (**origops)();
 	int active;
-	struct proc *p = curproc;	/* XXX */
 
 	/*
 	 * Check to see if the vnode is in use.
@@ -870,7 +769,7 @@ vclean(vp, flags)
 	 */
 	VOP_LOCK(vp);
 	if (flags & DOCLOSE)
-		vinvalbuf(vp, 1);
+		vinvalbuf(vp, 1, NOCRED, NULL);
 	/*
 	 * Prevent any further operations on the vnode from
 	 * being passed through to the old file system.
@@ -896,12 +795,11 @@ vclean(vp, flags)
 			vop_close_a.a_desc = VDESC(vop_close);
 			vop_close_a.a_vp = vp;
 			vop_close_a.a_fflag = IO_NDELAY;
-			vop_close_a.a_p = p;
+			vop_close_a.a_p = NULL;
 			VOCALL(origops,VOFFSET(vop_close),&vop_close_a);
 		};
 		vop_inactive_a.a_desc = VDESC(vop_inactive);
 		vop_inactive_a.a_vp = vp;
-		vop_inactive_a.a_p = p;
 		VOCALL(origops,VOFFSET(vop_inactive),&vop_inactive_a);
 	}
 	/*
