@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -864,8 +864,8 @@ selectbits(pairp, st)
 }
 
 /*
- * Make all directories needed by `name'.  If `name' is a
- * directory itself on the tar tape (indicated by a trailing '/'),
+ * Make all directories needed by `name'.  If `name' is itself
+ * a directory on the tar tape (indicated by a trailing '/'),
  * return 1; else 0.
  */
 checkdir(name)
@@ -899,8 +899,8 @@ checkdir(name)
 				return (0);
 			}
 			chown(name, stbuf.st_uid, stbuf.st_gid);
-			if (pflag && cp[1] == '\0')
-				chmod(name, stbuf.st_mode & 0777);
+			if (pflag && cp[1] == '\0')	/* dir on the tape */
+				chmod(name, stbuf.st_mode & 07777);
 		}
 		*cp = '/';
 	}
@@ -1311,13 +1311,17 @@ getbuf()
 }
 
 /*
- * We are really keeping a directory stack, but since all the
- * elements of it share a common prefix, we can make do with one
- * string.  We keep only the current directory path, with an associated
- * array of mtime's, one for each '/' in the path.  A negative mtime
- * means no mtime.  The mtime's are offset by one (first index 1, not
- * 0) because calling this with the null string causes mtime[0] to be set.
+ * Save this directory and its mtime on the stack, popping and setting
+ * the mtimes of any stacked dirs which aren't parents of this one.
+ * A null directory causes the entire stack to be unwound and set.
  *
+ * Since all the elements of the directory "stack" share a common
+ * prefix, we can make do with one string.  We keep only the current
+ * directory path, with an associated array of mtime's, one for each
+ * '/' in the path.  A negative mtime means no mtime.  The mtime's are
+ * offset by one (first index 1, not 0) because calling this with a null
+ * directory causes mtime[0] to be set.
+ * 
  * This stack algorithm is not guaranteed to work for tapes created
  * with the 'r' option, but the vast majority of tapes with
  * directories are not.  This avoids saving every directory record on
