@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.30 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.31 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -1500,8 +1500,6 @@ moditype( ty ) TWORD ty; {
 
 	switch( ty ){
 
-	case TVOID:
-		return( MPTR );
 	case UNDEF:
 		return( MVOID );
 	case ENUMTY:
