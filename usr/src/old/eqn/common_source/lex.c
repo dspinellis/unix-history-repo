@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	4.2 %G%";
+static char sccsid[] = "@(#)lex.c	4.3 %G%";
 #endif
 
 #include "e.h"
@@ -27,10 +27,23 @@ gtc() {
 	}
 	fclose(curfile);
 	linect = 1;
-	if ((curfile=fopen(svargv[ifile], "r")) != NULL)
+	if (openinfile() == 0)
 		goto loop;
-	error(FATAL, "can't open file %s", svargv[ifile]);
 	return(EOF);
+}
+/*
+ *	open file indexed by ifile in svargv, return non zero if fail
+ */
+openinfile()
+{
+	if (strcmp(svargv[ifile], "-") == 0){
+		curfile = stdin;
+		return(0);
+	} else if ((curfile=fopen(svargv[ifile], "r")) != NULL){
+		return(0);
+	}
+	error(FATAL, "can't open file %s", svargv[ifile]);
+	return(1);
 }
 
 pbstr(str)

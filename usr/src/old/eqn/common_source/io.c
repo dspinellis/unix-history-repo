@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)io.c	4.3 %G%";
+static char sccsid[] = "@(#)io.c	4.4 %G%";
 #endif
 
 # include "e.h"
@@ -165,19 +165,21 @@ setfile(argc, argv) int argc; char *argv[]; {
 		case 'p': deltaps = atoi(&svargv[1][2]); break;
 		case 'f': gfont = svargv[1][2]; break;
 		case 'e': noeqn++; break;
+		case 0:	goto endargs; 
 		default: dbg = 1;
 		}
 		svargc--;
 		svargv++;
 	}
+  endargs:
 	ifile = 1;
 	linect = 1;
 	if (svargc <= 0) {
 		curfile = stdin;
 		svargv[1] = nullstr;
 	}
-	else if ((curfile = fopen(svargv[1], "r")) == NULL)
-		error( FATAL,"can't open file %s", svargv[1]);
+	else
+		openinfile();	/* opens up the first input file */
 }
 
 yyerror() {;}
