@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)5.t	8.1 (Berkeley) %G%
+.\"	@(#)5.t	5.4 (Berkeley) %G%
 .\"
 .\".ds RH "Advanced Topics
 .bp
@@ -906,7 +906,7 @@ center;
 l | l
 l | n.
 _
-Scope   Initial TTL
+Scope	Initial TTL
 =
 restricted to the same host	0
 restricted to the same subnet	1
