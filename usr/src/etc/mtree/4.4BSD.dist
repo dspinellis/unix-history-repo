@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.3 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.4 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -275,42 +275,6 @@ hide            gname=games uname=games mode=0700
 # ./usr/hosts
 hosts
 # ./usr/hosts
-..
-
-
-# ./usr/hpux
-hpux
-
-# ./usr/hpux/bin
-bin
-# ./usr/hpux/bin
-..
-
-
-# ./usr/hpux/lib
-lib
-
-# ./usr/hpux/lib/X
-X
-# ./usr/hpux/lib/X
-..
-
-# ./usr/hpux/lib
-..
-
-
-# ./usr/hpux/local
-local
-# ./usr/hpux/local
-..
-
-
-# ./usr/hpux/src
-src
-# ./usr/hpux/src
-..
-
-# ./usr/hpux
 ..
 
 
@@ -596,6 +560,18 @@ old
 # ./usr/old/bin
 bin
 # ./usr/old/bin
+..
+
+
+# ./usr/old/dict
+dict
+
+# ./usr/old/dict/papers
+papers
+# ./usr/old/dict/papers
+..
+
+# ./usr/old/dict
 ..
 
 
@@ -1452,12 +1428,6 @@ cat8
 ..
 
 
-# ./usr/share/me
-me
-# ./usr/share/me
-..
-
-
 # ./usr/share/misc
 misc
 # ./usr/share/misc
@@ -1467,12 +1437,6 @@ misc
 # ./usr/share/mk
 mk
 # ./usr/share/mk
-..
-
-
-# ./usr/share/ms
-ms
-# ./usr/share/ms
 ..
 
 
