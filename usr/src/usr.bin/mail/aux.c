@@ -10,7 +10,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	2.3 %G%";
+static char *SccsId = "@(#)aux.c	2.4 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -382,6 +382,7 @@ static	int	ssp = -1;		/* Top of file stack */
 struct sstack {
 	FILE	*s_file;		/* File we were in. */
 	int	s_cond;			/* Saved state of conditionals */
+	int	s_loading;		/* Loading .mailrc, etc. */
 } sstack[_NFILE];
 
 /*
@@ -409,6 +410,8 @@ source(name)
 	}
 	sstack[++ssp].s_file = input;
 	sstack[ssp].s_cond = cond;
+	sstack[ssp].s_loading = loading;
+	loading = 0;
 	cond = CANY;
 	input = fi;
 	sourcing++;
@@ -446,9 +449,10 @@ unstack()
 	if (cond != CANY)
 		printf("Unmatched \"if\"\n");
 	cond = sstack[ssp].s_cond;
+	loading = sstack[ssp].s_loading;
 	input = sstack[ssp--].s_file;
 	if (ssp < 0)
-		sourcing = 0;
+		sourcing = loading;
 	return(0);
 }
 
