@@ -219,7 +219,7 @@ main(argc, argv)
 				nusers++;
 		}
 		rewind(ut);
-		printf("  %d users", nusers);
+		printf("  %d user%s", nusers, nusers>1?"s":"");
 
 		/*
 		 * Print 1, 5, and 15 minute load averages.
