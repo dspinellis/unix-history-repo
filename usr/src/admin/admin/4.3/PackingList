@@ -1,3 +1,4 @@
+.\" @(#)PackingList	1.2 (CSRG - distribution) %G%
 .PO 2i
 .LP
 .PP
@@ -13,6 +14,7 @@ otherwise indicated:
 \l'.5i' 1- Distribution Cassette (full distribution only)
 \l'.5i' 1- Distribution Floppy (full distribution only)
 \l'.5i' 1- Installing and Operating 4.3BSD on the VAX
+\l'.5i' 1- Changes to the Kernel in 4.3BSD
 .ls 1
 .fi
 \l'.5i' 1- Performance Effects of Disk Subsystem Choices
