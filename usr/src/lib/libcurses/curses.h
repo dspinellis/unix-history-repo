@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.10 (Berkeley) %G%
+ *	@(#)curses.h	5.11 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -29,16 +29,16 @@
 #define	FALSE	(0)
 #endif
 
-#define	_puts(s)	tputs(s, 0, _putchar)
+#define	_puts(s)	tputs(s, 0, __cputchar)
 #define	_putchar(c)	__cputchar(c)
 
 /* Old-style terminal modes access. */
-#define	baudrate()	(cfgetospeed(origtermio))
+#define	baudrate()	(cfgetospeed(&origtermio))
 #define	crmode()	cbreak()
 #define	erasechar()	(origtermio.c_cc[VERASE])
 #define	killchar()	(origtermio.c_cc[VKILL])
 #define	nocrmode()	nocbreak()
-#define	ospeed		(cfgetospeed(origtermio))
+#define	ospeed		(cfgetospeed(&origtermio))
 #endif /* _CURSES_PRIVATE */
 
 extern int	 My_term;		/* Use Def_term regardless. */
