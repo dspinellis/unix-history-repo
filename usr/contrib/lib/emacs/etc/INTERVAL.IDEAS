@@ -1,0 +1,30 @@
+This idea comes from Andrew.  The basic part is to represent a division
+of the buffer into disjoint intervals by means of a binary tree.  Each
+interval has one node.  The tree has the effect of a large ordered
+collection of markers, but no Lisp_Marker objects appear in the tree.
+
+Each node has two subnodes, a left and a right, each of which can be
+nil instead.  The subnodes' intervals are disjoint from their parent's
+interval--the tree structure is for binary searching.
+
+Each node in the tree is implicitly associated with a region of the
+buffer, but I don't think it actually stores the positions; I think it
+has the length of that node, or perhaps its own length and separately
+the length of it plus all its subnodes.
+
+I forget the details of this, but the idea is that you can figure out
+the position of a node, or find the node containing a position, by
+examining just its superiors in the tree, and you can also update the
+tree for changes in the buffer by tracing just one path down the tree.
+So the amount of work for nearly any operation goes with the log of
+the number of intervals.
+
+If it is desirable to be able to subdivide the intervals, each interval
+can have another such tree dividing it into disjoint subintervals.  And
+subintervals can have trees, too.  So it becomes a tree of trees.
+
+The idea is to associate an alist with each interval or subinterval.
+The complete alist associated with any spot is the append of the
+alists of the containing intervals at all levels of subdivision,
+smallest ones first.  It would also be useful to get the bounds of the
+innermost interval.
