@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex.c	7.4 (Berkeley) %G%";
+static char *sccsid = "@(#)ex.c	7.5 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -321,8 +321,11 @@ main(ac, av)
 			commands(1,1);
 		else {
 			globp = 0;
-			if ((cp = getenv("HOME")) != 0 && *cp)
-				source(strcat(strcpy(genbuf, cp), "/.exrc"), 1);
+			if ((cp = getenv("HOME")) != 0 && *cp) {
+				(void) strcat(strcpy(genbuf, cp), "/.exrc");
+				if (iownit(genbuf))
+					source(genbuf, 1);
+			}
 		}
 		/*
 		 * Allow local .exrc too.  This loses if . is $HOME,
@@ -330,7 +333,8 @@ main(ac, av)
 		 * like putting a version command in .exrc.  Besides,
 		 * they should be using EXINIT, not .exrc, right?
 		 */
-		source(".exrc", 1);
+		 if (iownit(".exrc"))
+			source(".exrc", 1);
 	}
 	init();	/* moved after prev 2 chunks to fix directory option */
 
@@ -429,4 +433,19 @@ register char *p;
 		if (*p == '/')
 			r = p+1;
 	return(r);
+}
+
+/*
+ * Check ownership of file.  Return nonzero if it exists and is owned by the
+ * user or the option sourceany is used
+ */
+iownit(file)
+char *file;
+{
+	struct stat sb;
+
+	if (stat(file, &sb) == 0 && (value(SOURCEANY) || sb.st_uid == getuid()))
+		return(1);
+	else
+		return(0);
 }

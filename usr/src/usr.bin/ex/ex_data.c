@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_data.c	7.4 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_data.c	7.5 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -74,6 +74,7 @@ struct	option options[NOPTS + 1] = {
 	"shiftwidth",	"sw",	NUMERIC,	TABS,	TABS,	0,
 	"showmatch",	"sm",	ONOFF,		0,	0,	0,
 	"slowopen",	"slow",	ONOFF,		0,	0,	0,
+	"sourceany",	0,	ONOFF,		0,	0,	0,
 	"tabstop",	"ts",	NUMERIC,	TABS,	TABS,	0,
 	"taglength",	"tl",	NUMERIC,	0,	0,	0,
 	"tags",		"tag",	STRING,		0,	0,	tags,
