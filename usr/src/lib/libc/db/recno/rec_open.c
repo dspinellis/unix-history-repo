@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -92,7 +92,7 @@ __rec_open(fname, flags, mode, openinfo)
 	if (fname != NULL)
 		if (lseek(rfd, (off_t)0, SEEK_CUR) == -1 && errno == ESPIPE) {
 			SET(t, BTF_RDONLY);
-			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
+slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 				goto err;
 			t->bt_irec =
 			    ISSET(t, BTF_FIXEDLEN) ? __rec_fpipe : __rec_vpipe;
@@ -116,7 +116,7 @@ __rec_open(fname, flags, mode, openinfo)
 			}
 			if ((t->bt_smap = mmap(NULL, (size_t)sb.st_size,
 			    PROT_READ, 0, rfd, (off_t)0)) == (caddr_t)-1)
-				goto err;
+				goto slow;
 			t->bt_emap = t->bt_smap + sb.st_size;
 			t->bt_rfd = rfd;
 			t->bt_rfp = NULL;
