@@ -76,6 +76,7 @@ rexit(p, uap, retval)
 
 	exit(p, W_EXITCODE(uap->rval, 0));
 	/* NOTREACHED */
+	return(0);	/* XXX added to stop gcc from issuing warning */
 }
 
 /*
