@@ -14,9 +14,9 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
-MDIR=	${DESTDIR}/usr/man/cat3f
+MDIR=	${DESTDIR}/usr/share/man/cat3f
 OBJS=	abort.0 access.0 alarm.0 bessel.0 bit.0 chdir.0 chmod.0 etime.0 \
 	exit.0 fdate.0 flmin.0 flush.0 fork.0 fseek.0 getarg.0 getc.0 \
 	getcwd.0 getenv.0 getlog.0 getpid.0 getuid.0 getuid.0 hostnm.0 \
@@ -25,7 +25,7 @@ OBJS=	abort.0 access.0 alarm.0 bessel.0 bit.0 chdir.0 chmod.0 etime.0 \
 	signal.0 sleep.0 stat.0 system.0 time.0 topen.0 traper.0 trapov.0 \
 	trpfpe.0 ttynam.0 unlink.0 wait.0
 
-all clean depent lint tags:
+all clean depend lint tags:
 
 cleandir:
 	rm -f ${OBJS}
