@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.6	81/11/21	*/
+/*	uipc_pipe.c	4.7	81/11/22	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -31,7 +31,7 @@ piconnect(wso, rso)
 {
 
 COUNT(PICONNECT);
-	if (m_reserve(PIPSIZ/MSIZE) == 0) {
+	if (m_reserve(PIPSIZ*2/MSIZE) == 0) {
 		u.u_error = ENOBUFS;
 		return (0);
 	}
