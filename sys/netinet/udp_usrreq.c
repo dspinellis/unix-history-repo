@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)udp_usrreq.c	7.20 (Berkeley) 4/20/91
- *	$Id: udp_usrreq.c,v 1.5 1993/11/25 01:35:22 wollman Exp $
+ *	$Id: udp_usrreq.c,v 1.6 1993/12/19 00:52:55 wollman Exp $
  */
 
 #include "param.h"
@@ -56,7 +56,7 @@
 #include "udp.h"
 #include "udp_var.h"
 
-static struct	inpcb udb;
+struct   inpcb udb;     /* Can't be static, because of netstat want it */
 static struct	inpcb *udp_last_inpcb = &udb;
 
 static void udp_detach(struct inpcb *);
