@@ -1,0 +1,1076 @@
+-- ppp.my - PPP MIB
+
+-- $Header: /f/osi/snmp/RCS/ppp.my,v 7.2 91/02/28 17:17:15 mrose Exp $
+--
+-- 
+-- $Log:	ppp.my,v $
+-- Revision 7.2  91/02/28  17:17:15  mrose
+-- touch-up
+-- 
+-- Revision 7.1  91/02/22  09:43:48  mrose
+-- Interim 6.8
+-- 
+-- Revision 7.0  90/09/26  19:21:23  mrose
+-- *** empty log message ***
+-- 
+
+--
+--				  NOTICE
+--
+--    Acquisition, use, and distribution of this module and related
+--    materials are subject to the restrictions of a license agreement.
+--    Consult the Preface in the User's Manual for the full terms of
+--    this agreement.
+--
+--
+
+
+               RFCppp-MIB DEFINITIONS ::= BEGIN
+
+               IMPORTS
+                       experimental, OBJECT-TYPE, Counter, TimeTicks
+                           FROM RFC1155-SMI;
+
+               ppp                 OBJECT IDENTIFIER ::= { experimental 18 }
+
+               -- PPP Link Control Table
+
+               pppLinkControlTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF PppLinkControlEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { ppp 1 }
+
+               pppLinkControlEntry   OBJECT-TYPE
+                       SYNTAX  PppLinkControlEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       INDEX   { pppLinkControlIndex }
+                       ::= { pppLinkControlTable 1 }
+
+               PppLinkControlEntry ::= SEQUENCE {
+                       pppLinkControlIndex
+                               INTEGER,
+                       pppLinkCRCSize
+                               INTEGER,
+                       pppLinkRestartTimerValue
+                               INTEGER,
+                       pppLinkMaxRestarts
+                               INTEGER,
+                       pppLinkLocalMRU
+                               INTEGER,
+                       pppLinkRemoteMRU
+                               INTEGER,
+                       pppLinkLocalACCMap
+                               INTEGER,
+                       pppLinkRemoteACCMap
+                               INTEGER,
+                       pppLinkMagicLoopCount
+                               INTEGER,
+                       pppLinkCommand
+
+
+
+
+
+
+                               INTEGER
+                       }
+
+               pppLinkControlIndex  OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkControlEntry 1 }
+
+               pppLinkCRCSize  OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                   ppp-crc-16 (16),
+                                   ppp-crc-32 (32)
+                           }
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { pppLinkControlEntry 2 }
+
+               pppLinkRestartTimerValue OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { pppLinkControlEntry 3 }
+
+               pppLinkMaxRestarts OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { pppLinkControlEntry 4 }
+
+               pppLinkLocalMRU OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { pppLinkControlEntry 5 }
+
+               pppLinkRemoteMRU OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { pppLinkControlEntry 6 }
+
+               pppLinkLocalACCMap OBJECT-TYPE
+                       SYNTAX  OCTET STRING (SIZE (4))
+                       ACCESS  read-write
+
+
+
+
+
+
+                       STATUS  mandatory
+                       ::= { pppLinkControlEntry 7 }
+
+               pppLinkRemoteACCMap OBJECT-TYPE
+                       SYNTAX  OCTET STRING (SIZE (4))
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { pppLinkControlEntry 8 }
+
+               pppLinkMagicLoopCount OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { pppLinkControlEntry 9 }
+
+               pppLinkCommand OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                   no-op(1),
+                                   close(2)
+                               }
+                       ACCESS  read-write
+                       STATUS  mandatory
+                       ::= { pppLinkControlEntry 10 }
+
+               -- PPP Link Status Table
+
+               pppLinkStatusTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF PppLinkStatusEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { ppp 2 }
+
+               pppLinkStatusEntry   OBJECT-TYPE
+                       SYNTAX  PppLinkStatusEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       INDEX   { pppLinkStatusIndex }
+                       ::= { pppLinkStatusTable 1 }
+
+               PppLinkStatusEntry ::= SEQUENCE {
+                       pppLinkStatusIndex
+                               INTEGER,
+                       pppLinkVersion
+                               INTEGER,
+                       pppLinkCurrentState
+
+
+
+
+
+
+                               INTEGER,
+                       pppLinkPreviousState
+                               INTEGER,
+                       pppLinkChangeTime
+                               TimeTicks,
+                       pppLinkMagicNumber
+                               INTEGER,
+                       pppLinkLocalQualityPeriod
+                               INTEGER,
+                       pppLinkRemoteQualityPeriod
+                               INTEGER,
+                       pppLinkProtocolCompression
+                               INTEGER,
+                       pppLinkACCompression
+                               INTEGER,
+                       pppLinkMeasurementsValid
+                               INTEGER,
+                       pppLinkQuality
+                               INTEGER,
+                       pppLinkPhysical
+                               OBJECT IDENTIFIER
+                       }
+
+               pppLinkStatusIndex  OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 1 }
+
+               pppLinkVersion  OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 2 }
+
+               pppLinkCurrentState OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                    closed(1),
+                                    listen(2),
+                                    reqsent(3),
+                                    ackrecvd(4),
+                                    acksent(5),
+                                    open(6),
+                                    closing(7)
+                              }
+
+
+
+
+
+
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 3 }
+
+               pppLinkPreviousState OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                   closed(1),
+                                   listen(2),
+                                   reqsent(3),
+                                   ackrecvd(4),
+                                   acksent(5),
+                                   open(6),
+                                   closing(7)
+                              }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 4 }
+
+               pppLinkChangeTime OBJECT-TYPE
+                       SYNTAX  TimeTicks
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 5 }
+
+               pppLinkMagicNumber OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 6 }
+
+               pppLinkLocalQualityPeriod OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 7 }
+
+               pppLinkRemoteQualityPeriod OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 8 }
+
+               pppLinkProtocolCompression OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                   receive-only(1),
+
+
+
+
+
+
+                                   send-only(2),
+                                   receive-and-send(3),
+                                   none(4)
+                              }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 9 }
+
+               pppLinkACCompression OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                   receive-only(1),
+                                   send-only(2),
+                                   receive-and-send(3),
+                                   none(4)
+                               }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 10 }
+
+               pppLinkMeasurementsValid OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 11 }
+
+               pppLinkQuality OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                   good(1),
+                                   bad(2)
+                               }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 12 }
+
+               pppLinkPhysical OBJECT-TYPE
+                       SYNTAX  OBJECT IDENTIFIER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkStatusEntry 13 }
+
+               -- PPP Link Errors Table
+
+               pppLinkErrorsTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF PppLinkErrorsEntry
+                       ACCESS  not-accessible
+
+
+
+
+
+
+                       STATUS  mandatory
+                       ::= { ppp 3 }
+
+               pppLinkErrorsEntry   OBJECT-TYPE
+                       SYNTAX  PppLinkErrorsEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       INDEX   { pppLinkErrorsIndex }
+                       ::= { pppLinkErrorsTable 1 }
+
+               PppLinkErrorsEntry ::= SEQUENCE {
+                       pppLinkErrorsIndex
+                               INTEGER,
+                       pppLinkBadAddresses
+                               Counter,
+                       pppLinkLastBadAddress
+                               OCTET STRING,
+                       pppLinkBadControls
+                               Counter,
+                       pppLinkLastBadControl
+                               OCTET STRING,
+                       pppLinkLastUnknownProtocol
+                               OCTET STRING,
+                       pppLinkInvalidProtocols
+                               Counter,
+                       pppLinkLastInvalidProtocol
+                               OCTET STRING,
+                       pppLinkPacketTooLongs
+                               Counter,
+                       pppLinkBadCRCs
+                               Counter,
+                       pppLinkConfigTimeouts
+                               Counter,
+                       pppLinkTerminateTimeouts
+                               Counter
+                       }
+
+               pppLinkErrorsIndex  OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkErrorsEntry 1 }
+
+               pppLinkBadAddresses OBJECT-TYPE
+                       SYNTAX  Counter
+
+
+
+
+
+
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkErrorsEntry 2 }
+
+               pppLinkLastBadAddress OBJECT-TYPE
+                       SYNTAX  OCTET STRING
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkErrorsEntry 3 }
+
+               pppLinkBadControls OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkErrorsEntry 4 }
+
+               pppLinkLastBadControl OBJECT-TYPE
+                       SYNTAX  OCTET STRING
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkErrorsEntry 5 }
+
+               pppLinkLastUnknownProtocol OBJECT-TYPE
+                       SYNTAX  OCTET STRING
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkErrorsEntry 6 }
+
+               pppLinkInvalidProtocols OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkErrorsEntry 7 }
+
+               pppLinkLastInvalidProtocol OBJECT-TYPE
+                       SYNTAX  OCTET STRING
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkErrorsEntry 8 }
+
+               pppLinkPacketTooLongs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkErrorsEntry 9 }
+
+
+
+
+
+
+               pppLinkBadCRCs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkErrorsEntry 10 }
+
+               pppLinkConfigTimeouts OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkErrorsEntry 11 }
+
+               pppLinkTerminateTimeouts OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkErrorsEntry 12 }
+
+               -- PPP Link Quality Management Table
+
+               pppLinkQualityTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF PppLinkQualityEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { ppp 4 }
+
+               pppLinkQualityEntry   OBJECT-TYPE
+                       SYNTAX  PppLinkQualityEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       INDEX   { pppLinkQualityIndex }
+                       ::= { pppLinkQualityTable 1 }
+
+               PppLinkQualityEntry ::= SEQUENCE {
+                       pppLinkQualityIndex
+                               INTEGER,
+                       pppLinkInTxLQRs
+                               Counter,
+                       pppLinkInTxPackets
+                               Counter,
+                       pppLinkLastOutTxPackets
+                               Counter,
+                       pppLinkInTxOctets
+                               Counter,
+                       pppLinkLastOutTxOctets
+
+
+
+
+
+
+                               Counter,
+                       pppLinkInRxPackets
+                               Counter,
+                       pppLinkLastInRxPackets
+                               Counter,
+                       pppLinkInRxOctets
+                               Counter,
+                       pppLinkLastInRxOctets
+                               Counter
+                       }
+
+               pppLinkQualityIndex  OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkQualityEntry 1 }
+
+               pppLinkInTxLQRs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkQualityEntry 2 }
+
+               pppLinkInTxPackets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkQualityEntry 3 }
+
+               pppLinkLastOutTxPackets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkQualityEntry 4 }
+
+               pppLinkInTxOctets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkQualityEntry 5 }
+
+               pppLinkLastOutTxOctets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+
+
+
+
+
+
+                       ::= { pppLinkQualityEntry 6 }
+
+               pppLinkInRxPackets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkQualityEntry 7 }
+
+               pppLinkLastInRxPackets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkQualityEntry 8 }
+
+               pppLinkInRxOctets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkQualityEntry 9 }
+
+               pppLinkLastInRxOctets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLinkQualityEntry 10 }
+
+               -- PPP protocol tables
+
+               pppProtocolTables   OBJECT IDENTIFIER ::= { ppp 5 }
+
+
+               -- IP Over PPP Table
+
+               pppIPTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF PppIPEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { pppProtocolTables 1 }
+
+               pppIPEntry OBJECT-TYPE
+                       SYNTAX  PppIPEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       INDEX   { pppIPLinkNumber }
+                       ::= { pppIPTable 1 }
+
+
+
+
+
+
+               PppIPEntry ::= SEQUENCE {
+                       pppIPLinkNumber
+                               INTEGER,
+                       pppIPRejects
+                               Counter,
+                       pppIPInPackets
+                               Counter,
+                       pppIPInOctets
+                               Counter,
+                       pppIPOutPackets
+                               Counter,
+                       pppIPOutOctets
+                               Counter
+               }
+
+               pppIPLinkNumber OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPEntry 1 }
+
+               pppIPRejects OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPEntry 2 }
+
+               pppIPInPackets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPEntry 3 }
+
+               pppIPInOctets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPEntry 4 }
+
+               pppIPOutPackets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPEntry 5 }
+
+
+
+
+
+
+
+               pppIPOutOctets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPEntry 6 }
+
+
+               -- IP Control Protocol Table
+
+               pppIPCPTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF PppIPCPEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { pppProtocolTables 2 }
+
+               pppIPCPEntry OBJECT-TYPE
+                       SYNTAX  PppIPCPEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       INDEX   { pppIPCPLinkNumber }
+                       ::= { pppIPCPTable 1 }
+
+               PppIPCPEntry ::= SEQUENCE {
+                       pppIPCPLinkNumber
+                               INTEGER,
+                       pppIPCPRejects
+                               Counter,
+                       pppIPCPInPackets
+                               Counter,
+                       pppIPCPInOctets
+                               Counter,
+                       pppIPCPOutPackets
+                               Counter,
+                       pppIPCPOutOctets
+                               Counter,
+                       pppIPCPCompressionType
+                               INTEGER
+                       }
+
+               pppIPCPLinkNumber OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPCPEntry 1 }
+
+
+
+
+
+
+
+               pppIPCPRejects OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPCPEntry 2 }
+
+               pppIPCPInPackets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPCPEntry 3 }
+
+               pppIPCPInOctets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPCPEntry 4 }
+
+               pppIPCPOutPackets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPCPEntry 5 }
+
+               pppIPCPOutOctets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPCPEntry 6 }
+
+               pppIPCPCompressionType OBJECT-TYPE
+                       SYNTAX  INTEGER {
+                                    none(1),
+                                    van-jacobson-compressed-tcp(2)
+                               }
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppIPCPEntry 7 }
+
+
+               -- Link Control Protocol table
+
+               pppLCPTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF PppLCPEntry
+                       ACCESS  not-accessible
+
+
+
+
+
+
+                       STATUS  mandatory
+                       ::= { pppProtocolTables 3 }
+
+               pppLCPEntry OBJECT-TYPE
+                       SYNTAX  PppLCPEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       INDEX   { pppLCPLinkNumber }
+                       ::= { pppLCPTable 1 }
+
+               PppLCPEntry ::= SEQUENCE {
+                       pppLCPLinkNumber
+                               INTEGER,
+                       pppLCPRejects
+                               Counter,
+                       pppLCPInPackets
+                               Counter,
+                       pppLCPInOctets
+                               Counter,
+                       pppLCPOutPackets
+                               Counter,
+                       pppLCPOutOctets
+                               Counter,
+                       pppLCPOutCRs
+                               Counter,
+                       pppLCPInCRs
+                               Counter,
+                       pppLCPOutCAs
+                               Counter,
+                       pppLCPInCAs
+                               Counter,
+                       pppLCPOutCNs
+                               Counter,
+                       pppLCPInCNs
+                               Counter,
+                       pppLCPCOutRejs
+                               Counter,
+                       pppLCPCInRejs
+                               Counter,
+                       pppLCPOutTRs
+                               Counter,
+                       pppLCPInTRs
+                               Counter,
+                       pppLCPOutTAs
+                               Counter,
+
+
+
+
+
+
+                       pppLCPInTAs
+                               Counter,
+                       pppLCPOutCodeRejs
+                               Counter,
+                       pppLCPInCodeRejs
+                               Counter,
+                       pppLCPOutEchoReqs
+                               Counter,
+                       pppLCPInEchoReqs
+                               Counter,
+                       pppLCPOutEchoReps
+                               Counter,
+                       pppLCPInEchoReps
+                               Counter,
+                       pppLCPOutDiscReqs
+                               Counter,
+                       pppLCPInDiscReqs
+                               Counter
+               }
+
+               pppLCPLinkNumber OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 1 }
+
+               pppLCPRejects OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 2 }
+
+               pppLCPInPackets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 3 }
+
+               pppLCPInOctets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 4 }
+
+               pppLCPOutPackets OBJECT-TYPE
+
+
+
+
+
+
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 5 }
+
+               pppLCPOutOctets OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 6 }
+
+               pppLCPOutCRs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 7 }
+
+               pppLCPInCRs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 8 }
+
+               pppLCPOutCAs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 9 }
+
+               pppLCPInCAs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 10 }
+
+               pppLCPOutCNs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 11 }
+
+               pppLCPInCNs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+
+
+
+
+
+
+                       ::= { pppLCPEntry 12 }
+
+               pppLCPOutCRejs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 13 }
+
+               pppLCPInCRejs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 14 }
+
+               pppLCPOutTRs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 15 }
+
+               pppLCPInTRs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 16 }
+
+               pppLCPOutTAs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 17 }
+
+               pppLCPInTAs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 18 }
+
+               pppLCPOutCodeRejs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 19 }
+
+               pppLCPInCodeRejs OBJECT-TYPE
+
+
+
+
+
+
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 20 }
+
+               pppLCPOutEchoReqs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 21 }
+
+               pppLCPInEchoReqs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 22 }
+
+               pppLCPOutEchoReps OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 23 }
+
+               pppLCPInEchoReps OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 24 }
+
+               pppLCPOutDiscReqs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 25 }
+
+               pppLCPInDiscReqs OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppLCPEntry 26 }
+
+                       -- The Password Authentication Protocol Table
+
+               pppPAPTable OBJECT-TYPE
+                       SYNTAX  SEQUENCE OF PppPAPEntry
+
+
+
+
+
+
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       ::= { pppProtocolTables 4 }
+
+               pppPAPEntry OBJECT-TYPE
+                       SYNTAX  PppPAPEntry
+                       ACCESS  not-accessible
+                       STATUS  mandatory
+                       INDEX   { pppPAPLinkNumber }
+                       ::= { pppPAPTable 1 }
+
+               PppPAPEntry ::= SEQUENCE {
+                       pppPAPLinkNumber
+                               INTEGER,
+                       pppPAPInAuthenticates
+                               Counter,
+                       pppPAPOutAuthenticates
+                               Counter,
+                       pppPAPInAcks
+                               Counter,
+                       pppPAPOutAcks
+                               Counter,
+                       pppPAPInNaks
+                               Counter,
+                       pppPAPOutNaks
+                               Counter
+                       }
+
+               pppPAPLinkNumber OBJECT-TYPE
+                       SYNTAX  INTEGER
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppPAPEntry 1 }
+
+               pppPAPInAuthenticates OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppPAPEntry 2 }
+
+               pppPAPOutAuthenticates OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppPAPEntry 3 }
+
+
+
+
+
+
+               pppPAPInAcks OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppPAPEntry 4 }
+
+               pppPAPOutAcks OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppPAPEntry 5 }
+
+               pppPAPInNaks OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppPAPEntry 6 }
+
+               pppPAPOutNaks OBJECT-TYPE
+                       SYNTAX  Counter
+                       ACCESS  read-only
+                       STATUS  mandatory
+                       ::= { pppPAPEntry 7 }
+
+               -- OIDs for ifExtnsTestTable test-type
+
+               pppTests            OBJECT IDENTIFIER ::= { ppp 6 }
+
+               pppEchoTest         OBJECT IDENTIFIER ::= { pppTests 1 }
+
+               END
