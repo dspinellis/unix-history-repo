@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)insertln.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)insertln.c	5.8 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -31,6 +31,7 @@ winsertln(win)
 	if (win->orig == NULL)
 		temp = win->lines[win->maxy - 1];
 	for (y = win->maxy - 1; y > win->cury; --y) {
+		win->lines[y]->flags &= ~__ISPASTEOL;
 		if (win->orig == NULL)
 			win->lines[y] = win->lines[y - 1];
 		else
