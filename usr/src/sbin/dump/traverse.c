@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
+ * Copyright (c) 1980, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
@@ -310,7 +310,8 @@ bread(da, ba, cnt)
 	char *ba;
 	int	cnt;	
 {
-	int n;
+	int n, i;
+	extern int errno;
 
 loop:
 	if (lseek(fi, (long)(da * dev_bsize), 0) < 0){
@@ -333,8 +334,8 @@ loop:
 		cnt -= dev_bsize;
 		goto loop;
 	}
-	msg("(This should not happen)bread from %s [block %d]: count=%d, got=%d\n",
-		disk, da, cnt, n);
+	msg("read error from %s [block %d]: count=%d, got=%d, errno=%d\n",
+		disk, da, cnt, n, errno);
 	if (++breaderrors > BREADEMAX){
 		msg("More than %d block read errors from %d\n",
 			BREADEMAX, disk);
@@ -345,5 +346,17 @@ loop:
 			/*NOTREACHED*/
 		} else
 			breaderrors = 0;
+	}
+	/*
+	 * Zero buffer, then try to read each sector of buffer separately.
+	 */
+	bzero(ba, cnt);
+	for (i = 0; i < cnt; i += dev_bsize, ba += dev_bsize, da++) {
+		if (lseek(fi, (long)(da * dev_bsize), 0) < 0)
+			msg("bread: lseek2 fails!\n");
+		n = read(fi, ba, dev_bsize);
+		if (n != dev_bsize)
+			msg("    read error from %s [sector %d, errno %d]\n",
+			    disk, da, errno);
 	}
 }
