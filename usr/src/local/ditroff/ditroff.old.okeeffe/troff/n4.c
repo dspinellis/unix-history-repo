@@ -28,12 +28,14 @@ setn()
 	int	f;
 
 	f = nform = 0;
+	lgf++;					/* don't catch ligatures */
 	if ((i = cbits(ii = getch())) == '+')
 		f = 1;
 	else if (i == '-')
 		f = -1;
 	else 
 		ch = ii;
+	lgf--;					/* ok, catch `em again */
 	if (falsef)
 		f = 0;
 	if ((i = getsn()) == 0)
