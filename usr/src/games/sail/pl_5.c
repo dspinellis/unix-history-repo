@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_5.c	2.3 83/12/17";
+static	char *sccsid = "@(#)pl_5.c	2.4 83/12/17";
 #endif
 
 #include "player.h"
@@ -212,7 +212,9 @@ char buf;
 				(void) mvwaddstr(slot_w, 1, 0, "OBP");
 				makesignal(ms, "boarding the %s (%c%c)", to);
 			}
+			blockalarm();
 			(void) wrefresh(slot_w);
+			unblockalarm();
 		} else
 			Signal("Sending no crew sections.", (struct ship *)0);
 	}
