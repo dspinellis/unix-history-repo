@@ -189,13 +189,13 @@ yyparse()
 				else
 					ungetc (ch, source);
 				layoutpos = layout;
-				sprintf (layoutpos, "%4ld  ", lineno);
+				(void)sprintf (layoutpos, "%4ld  ", lineno);
 				layoutpos += 6;
 				long_out (dotp->e_xvalue);
 				if (dotp->e_xvalue >= datbase)
-					sprintf (layoutpos," *  ");
+					(void)sprintf (layoutpos," *  ");
 				else
-					sprintf (layoutpos,"    ");
+					(void)sprintf (layoutpos,"    ");
 				layoutpos += 4;
 			}
 			shift;
@@ -483,7 +483,7 @@ restlab:
 		outs(spacebuf, space_value);
 	}
 	if (liston && (passno == 2))
-		sprintf (layoutpos, "****");
+		(void)sprintf (layoutpos, "****");
 	break;
 
 	/*
@@ -598,7 +598,7 @@ restlab:
 					int i;
 					for (i = 0;i < mystrlen; i++)
 					{
-						sprintf (layoutpos, "%02x",
+						(void)sprintf (layoutpos, "%02x",
 						stringp->sd_string[i]);
 						layoutpos += 2;
 					}
@@ -616,7 +616,7 @@ restlab:
 						int k;
 						for (k = 0;k < nread; k++)
 						{
-							sprintf (layoutpos,
+							(void)sprintf (layoutpos,
 							 "%02x", yytext[k]);
 							layoutpos += 2;
 						}
