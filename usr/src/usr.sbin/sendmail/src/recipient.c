@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.5	%G%";
+static char SccsId[] = "@(#)recipient.c	3.6	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -169,14 +169,18 @@ recipient(a)
 	if (!bitset(QDONTSEND, a->q_flags) && a->q_mailer == MN_LOCAL)
 	{
 		char buf[MAXNAME];
+		register char *p;
 
 		strcpy(buf, a->q_user);
 		stripquotes(buf, TRUE);
 
 		/* see if this is to a file */
-		if (index(buf, '/') != NULL)
+		if ((p = rindex(buf, '/')) != NULL)
 		{
-			if (access(buf, 2) < 0)
+			/* check if writable or creatable */
+			if ((access(buf, 0) >= 0) ?
+			    (access(buf, 2) < 0) :
+			    (*p = '\0', access(buf, 3) < 0))
 			{
 				a->q_flags |= QBADADDR;
 				giveresponse(EX_CANTCREAT, TRUE, m);
