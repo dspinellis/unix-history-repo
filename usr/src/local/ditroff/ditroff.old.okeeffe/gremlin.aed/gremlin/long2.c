@@ -1,6 +1,4 @@
-
-
-/* long2.c -
+/* @(#)long2.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -107,7 +105,7 @@ char *Editfile;
 
 static char badarg[10] = "bad args";
 
-
+
 LGFont(line)
 char *line;
 /*
@@ -143,7 +141,7 @@ char *line;
     }
 }  /* end LGFont */
 
-
+
 LGJust(line)
 char *line;
 /*
@@ -186,7 +184,7 @@ char *line;
     }
 }  /* end LGJust */
 
-
+
 LGSize(line)
 char *line;
 /*
@@ -242,7 +240,7 @@ char *line;
     Consume = FALSE;
 }  /* end LGAlign */
 
-
+
 LGIncludeSet(line)
 char *line;
 /*
@@ -284,7 +282,7 @@ char *line;
 } /* end LGIncludeSet */
 
 
-
+
 LGMenu(line)
 char *line;
 /*
@@ -336,7 +334,7 @@ char *line;
     CHANGED = TRUE;
 }  /* end LGMenu */
 
-
+
 LGRead(line)
 char *line;
 /*
@@ -389,7 +387,7 @@ char *line;
     CHANGED = TRUE;
 }  /* end LGRead */
 
-
+
 LGEdit(line)
 char *line;
 /*
@@ -478,7 +476,7 @@ static restorepoints()
     BACKPOINT = pl1;
 }  /* end restorepoints */
 
-
+
 LGUndo(line)
 char *line;
 /* 
@@ -557,7 +555,7 @@ char *line;
     Consume = FALSE;
 }  /* LGUndo */
 
-
+
 LGWrite(line)
 char *line;
 /*
@@ -656,7 +654,7 @@ char *line;
     (void) fclose(fp);
 }  /* end LGWrite */;
 
-
+
 LGQuit(line)
 char *line;
 /*
@@ -701,7 +699,7 @@ LGHAdjust()
     Consume = FALSE;
 }
 
-
+
 LGVAdjust()
 /*
  * Vertical adjust -
@@ -726,7 +724,7 @@ LGVAdjust()
 }
 
 
-
+
 static sign(x)
 float x;
 /*
@@ -821,7 +819,7 @@ char *line;
     CHANGED = TRUE;
 }  /* end LGMirror */
 
-
+
 LGPath(line)
 char *line;
 /*

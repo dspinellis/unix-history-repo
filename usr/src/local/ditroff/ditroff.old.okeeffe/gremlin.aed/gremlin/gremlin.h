@@ -1,5 +1,4 @@
-
-/* gremlin.h -
+/* @(#)gremlin.h	1.2	%G%
  *
  *
  * This file contains standard definitions used by the gremlin program.

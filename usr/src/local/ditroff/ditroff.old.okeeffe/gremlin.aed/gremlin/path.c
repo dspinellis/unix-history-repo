@@ -1,5 +1,4 @@
-
-/* path.c
+/* @(#)path.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -42,7 +41,7 @@ static char *realname[NTILDE]  = {NULL, NULL, NULL, NULL, NULL,
     NULL, NULL, NULL, NULL, NULL};
 static int discard = 0;
 
-
+
 int
 PConvertTilde(psource, pdest, size)
 char **psource;			/* Pointer to a pointer to the source string */
@@ -158,7 +157,7 @@ int *size;			/* Pointer to no. bytes available at pdest */
     return TRUE;
 }
 
-
+
 int
 PSetPath(string)
 char *string;			/* Pointer to a string that is to become
@@ -220,7 +219,7 @@ char *string;			/* Pointer to a string that is to become
     return result;
 }
 
-
+
 char *
 PGetPath()
 
@@ -238,7 +237,7 @@ PGetPath()
     return path;
 }
 
-
+
 FILE *
 POpen(file, prealname, search)
 char *file;			/* Name of the file to be opened. */

@@ -1,5 +1,4 @@
-
-/* menu.c -
+/* @(#)menu.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -46,7 +45,7 @@ extern float PX, PY;            /* X and Y of last points specified */
 #define columns 2
 #define border 395
 
-
+
 /* bytewise definitions of menu symbols (special fonts), left to right,
  * top to bottom.  See textcommand array for corresponding commands.
  */
@@ -206,7 +205,7 @@ MNIcon()
 	(void) fflush(display);
 };   /* end Icon */
 
-
+
 MNInitMenu(orientation)
 int orientation;		/* orientation of work space */
 /*
@@ -259,7 +258,7 @@ int orientation;		/* orientation of work space */
 	}   /* end for */;
 }   /* end initmenu */
 
-
+
 MNDisplayMenu()
 /*
  *      This routine displays the menu defined by initmenu
@@ -310,7 +309,7 @@ MNDisplayMenu()
 	GRVector(&bord1, &bord2, bordstyle);
 } /* end displaymenu */;
 
-
+
 char *MNFindMenuItem(x,y)
 int x, y;
 /*
@@ -371,7 +370,7 @@ int sym;
 	MNHighLt(sym, eraseany);
 }
 
-
+
 MNInterpretCursor(button, cx, cy)
 int cx, cy, button;
 /* 

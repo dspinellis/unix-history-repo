@@ -1,5 +1,4 @@
-
-/* long1.c -
+/* @(#)long1.c	1.2	%G%
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -93,7 +92,7 @@ extern int lnum[], fnum[];
 
 int bang;
 
-
+
 /*      The following are defined to allow creation of the command
  * lookup table.
  */
@@ -174,7 +173,7 @@ static (*(lrtns[]))() = {
     LGWrite,			/* write file */
     LGPoint};			/* create point from cursor */
   
-
+
 int
 LGLookup(str, table, next)
 char str[];			/* Pointer to a string to be looked up */
@@ -259,7 +258,7 @@ int *next;
     }
 }
 
-
+
 LGCommand(command)
 char *command;
 
@@ -293,7 +292,7 @@ char *command;
 	if (index == -2) error("not a command.");
     }
 }
-
+
 static char badarg[10] = "bad args";
 static char noset[15] = "no current set";
 
@@ -327,7 +326,7 @@ int *index;
 	return(result);
 }  /* end GetNumParm */
 
-
+
 LGOpoint(line)
 char *line;
 /*
@@ -361,7 +360,7 @@ char *line;
 	LGPoint(line);
 }  /* end LGOpoint */
 
-
+
 LGPoint(line)
 char *line;
 /*
@@ -423,7 +422,7 @@ CP()
 	GRBlankPoints();
 }  /* end CP */
 
-
+
 LGClearPoints(line)
 char *line;
 /*
@@ -480,7 +479,7 @@ char *line;
 	Consume = FALSE;
 }  /* end DeletePoint */
 
-
+
 LGShowPoints(line)
 char *line;
 /*
@@ -514,7 +513,7 @@ char *line;
 	Consume = FALSE;
 } /* end ShowPoints */
 
-
+
 LGText(line)
 char *line;
 /*      This routine implements the text commands.  It first looks
@@ -564,7 +563,7 @@ char *line;
 }  /* end LGText */
 
 
-
+
 LGBrush(line)
 char *line;
 /*
@@ -598,7 +597,7 @@ char *line;
 }  /* end LGBrush */
 
 
-
+
 LGMBrush(line)
 char *line;
 /*
@@ -642,7 +641,7 @@ char *line;
 	CHANGED = TRUE;
 } /* end MBrush */
 
-
+
 LGMFont(line)
 char *line;
 /*
@@ -687,7 +686,7 @@ char *line;
 	CHANGED = TRUE;
 } /* end MFont */
 
-
+
 LGMSize(line)
 char *line;
 /*
@@ -741,7 +740,7 @@ char *line;
 	CHANGED = TRUE;
 } /* end MSize */
 
-
+
 LGMText(line)
 char *line;
 /*      This routine allows modification of text by replacing 
@@ -782,7 +781,7 @@ char *line;
     }  /* end while */
     CHANGED = TRUE;
 }  /* end LGMText */
-
+
 LGMPoint(line)
 char *line;
 /*
@@ -839,7 +838,7 @@ char *line;
 	}  /* end if !DBNullelt */
 }  /* end MPOINT */
 
-
+
 LGGripe(line)
 char *line;
 /*
@@ -868,7 +867,7 @@ char *line;
 	Consume = FALSE;
 }  /* end Little Point */
 
-
+
 SetOrient(orient)
 int orient;
 /*
@@ -915,7 +914,7 @@ char *line;
     SHUpdate();
 }  /* end Orient */
 
-
+
 LGSave(line)
 char *line;
 /*
