@@ -35,8 +35,8 @@ install: $(TARGET_LIB)
 	if [ -d ${INSTALL_DIR} ]; then true; \
 	else mkdir ${INSTALL_DIR}; \
 	fi
-	install -c -m 555 ${.CURDIR}/${TARGET_LIB} ${INSTALL_DIR}
-	install -c -m 555 ${LIBIBERTY} ${INSTALL_DIR}
+	install -c -m 444 ${.CURDIR}/${TARGET_LIB} ${INSTALL_DIR}
+	install -c -m 444 ${LIBIBERTY} ${INSTALL_DIR}
 	if [ -d ${INCLUDE_INSTALL} ]; then true; \
 	else mkdir ${INCLUDE_INSTALL}; \
 	fi
