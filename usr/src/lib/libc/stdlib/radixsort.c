@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)radixsort.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)radixsort.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -54,31 +54,27 @@ int __rsshell_increments[] = { 4, 1, 0, 0, 0, 0, 0, 0 };
  * Stackp points to context structures, where each structure schedules a
  * partitioning.  Radixsort exits when the stack is empty.
  *
- * If the buckets are placed on the stack randomly, the worst case is when:
- *
- *	(nbuckets - 1) contain (npartitions + 1) elements, with the last
- *	bucket containing (nelements - ((npartitions + 1) * (nbuckets - 1))
- *	keys.
- *
- * In this case, stack growth is bounded by:
+ * If the buckets are placed on the stack randomly, the worst case is when
+ * all the buckets but one contain (NPARTITION + 1) elements and the bucket
+ * pushed on the stack last contains the rest of the elements.  In this case,
+ * stack growth is bounded by:
  *
  *	(nelements / (npartitions + 1)) - 1
  *
- * Therefore, we force the largest bucket to be pushed on the stack first.
- * Then the worst case is when:
+ * This is a very large number.  By forcing the largest bucket to be pushed
+ * on the stack first the worst case is when all but two buckets each contain
+ * (NPARTITION + 1) elements, with the remaining elements split equally between
+ * the first and last buckets pushed on the stack.  In this case, stack growth
+ * is bounded when:
  *
- * 	(nbuckets - 2) buckets contain (npartitions + 1) elements, with
- *	the remaining elements split equally between the first bucket
- *	pushed and the last bucket pushed.
- *
- * In this case, stack growth is bounded when:
- *	
- *	for (partition_cnt = 0; nelements > npartitions; ++partition_cnt) 
+ *	for (partition_cnt = 0; nelements > npartitions; ++partition_cnt)
  *		nelements =
  *		    (nelements - (npartitions + 1) * (nbuckets - 2)) / 2;
  * The bound is:
  *
  *	limit = partition_cnt * (nbuckets - 1);
+ *
+ * This is a much smaller number.
  */
 typedef struct _stack {
 	u_char **bot;
@@ -91,7 +87,6 @@ typedef struct _stack {
 	stackp->indx = indx; \
 	++stackp; \
 }
-
 #define	STACKPOP { \
 	if (stackp == stack) \
 		break; \
@@ -127,19 +122,19 @@ radixsort(l1, nmemb, tab, endbyte)
 	if (nmemb <= 1)
 		return(0);
 
-	/* 
+	/*
 	 * T1 is the constant part of the equation, the number of elements
 	 * represented on the stack between the top and bottom entries.
-	 * Don't round as the divide by 2 rounds down (correct for value
-	 * being subtracted).  The nelem value has to be rounded up before
-	 * each divide because we want an upper bound.
-	 */	
+	 * It doesn't get rounded as the divide by 2 rounds down (correct
+	 * for a value being subtracted).  T2, the nelem value, has to be
+	 * rounded up before each divide because we want an upper bound;
+	 * this could overflow if nmemb is the maximum int.
+	 */
 	t1 = ((__rspartition + 1) * (UCHAR_MAX - 2)) >> 1;
-	for (i = 0, t2 = nmemb; t2 > __rspartition; i += UCHAR_MAX - 1) 
+	for (i = 0, t2 = nmemb; t2 > __rspartition; i += UCHAR_MAX - 1)
 		t2 = (++t2 >> 1) - t1;
 	if (i) {
-		if (!(stack = stackp =
-		    (CONTEXT *)malloc(i * sizeof(CONTEXT)))) 
+		if (!(stack = stackp = (CONTEXT *)malloc(i * sizeof(CONTEXT))))
 			return(-1);
 	} else
 		stack = stackp = NULL;
