@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "dump.h"
@@ -19,6 +19,7 @@ char	(*tblock)[TP_BSIZE];	/* pointer to malloc()ed buffer for tape */
 int	writesize;		/* size of malloc()ed buffer for tape */
 long	lastspclrec = -1;	/* tape block number of last written header */
 int	trecno = 0;		/* next record to write in current block */
+extern	long blocksperfile;	/* number of blocks per output file */
 extern int ntrec;		/* blocking factor on tape */
 extern int cartridge;
 extern int read(), write();
@@ -120,16 +121,15 @@ void
 tperror()
 {
 	if (pipeout) {
-		msg("Tape write error on %s\n", tape);
+		msg("write error on %s\n", tape);
 		quit("Cannot recover\n");
 		/* NOTREACHED */
 	}
-	msg("Tape write error %d feet into tape %d\n", asize/120L, tapeno);
-	broadcast("TAPE ERROR!\n");
+	msg("write error %d blocks into volume %d\n", blockswritten, tapeno);
+	broadcast("DUMP WRITE ERROR!\n");
 	if (!query("Do you want to restart?"))
 		dumpabort();
-	msg("This tape will rewind.  After it is rewound,\n");
-	msg("replace the faulty tape with a new one;\n");
+	msg("Closing this volume.  Prepare to restart with new media;\n");
 	msg("this dump volume will be rewritten.\n");
 	killall();
 	nogripe = 1;
@@ -171,7 +171,8 @@ flusht()
 	trecno = 0;
 	asize += tenths;
 	blockswritten += ntrec;
-	if (!pipeout && asize > tsize) {
+	if (!pipeout && (blocksperfile ?
+	    (blockswritten >= blocksperfile) : (asize > tsize))) {
 		close_rewind();
 		otape();
 	}
@@ -210,10 +211,10 @@ close_rewind()
 {
 	trewind();
 	if (!nogripe) {
-		msg("Change Tapes: Mount tape #%d\n", tapeno+1);
-		broadcast("CHANGE TAPES!\7\7\n");
+		msg("Change Volumes: Mount volume #%d\n", tapeno+1);
+		broadcast("CHANGE DUMP VOLUMES!\7\7\n");
 	}
-	while (!query("Is the new tape mounted and ready to go?"))
+	while (!query("Is the new volume mounted and ready to go?"))
 		if (query("Do you want to abort?")) {
 			dumpabort();
 			/*NOTREACHED*/
@@ -315,7 +316,7 @@ otape()
 		while ((to = pipeout ? 1 : creat(tape, 0666)) < 0)
 #endif RDUMP
 		    {
-			msg("Cannot open tape \"%s\".\n", tape);
+			msg("Cannot open output \"%s\".\n", tape);
 			if (!query("Do you want to retry the open?"))
 				dumpabort();
 		}
