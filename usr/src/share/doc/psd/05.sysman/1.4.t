@@ -1,14 +1,15 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.4.t	8.2 (Berkeley) %G%
+.\"	@(#)1.4.t	8.3 (Berkeley) %G%
 .\"
 .Sh 2 "Timers
 .Sh 3 "Real time
 .PP
-The system's notion of the current Greenwich time and the current time
+The system's notion of the current time in Coordinated Universal Time
+(UTC, previously GMT) and the current time
 zone is set and returned by the call by the calls:
 .DS
 .Fd settimeofday 2 "set date and time
@@ -40,6 +41,9 @@ struct timezone {
 };
 .TE
 .DE
+This timezone information is present only for historical reasons
+and is unused by the current system.
+.LP
 The precision of the system clock is hardware dependent.
 Earlier versions of UNIX contained only a 1-second resolution version
 of this call, which remains as a library routine:
@@ -53,7 +57,8 @@ call.
 .LP
 The
 .Fn adjtime
-system calls allows for small changes in time without abrupt changes:
+system calls allows for small changes in time without abrupt changes
+by skewing the rate at which time advances:
 .DS
 .Fd adjtime 2 "synchronization of the system clock
 adjtime(delta, olddelta);

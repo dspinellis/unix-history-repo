@@ -1,24 +1,24 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.3.t	8.2 (Berkeley) %G%
+.\"	@(#)2.3.t	8.3 (Berkeley) %G%
 .\"
 .Sh 2 "Interprocess communications
 .Sh 3 "Interprocess communication primitives
 .Sh 4 "Communication domains
 .PP
 The system provides access to an extensible set of 
-communication \fIdomains\fP.  A communication domain
+communication \fIdomains\fP.  A communication domain (or protocol family)
 is identified by a manifest constant defined in the
 file \fI<sys/socket.h>\fP.
-Important standard domains supported by the system are the ``UNIX''
-domain (AF_UNIX) for communication within the system, the ``Internet''
-domain (AF_INET) for communication in the DARPA Internet,
-the ISO family of protocols (AF_ISO and AF_CCITT) for providing
+Important standard domains supported by the system are the local (``UNIX'')
+domain (PF_LOCAL or PF_UNIX) for communication within the system,
+the ``Internet'' domain (PF_INET) for communication in the DARPA Internet,
+the ISO family of protocols (PF_ISO and PF_CCITT) for providing
 a check-off box on the list of your system capabilities,
-and the ``NS'' domain (AF_NS) for communication
+and the ``NS'' domain (PF_NS) for communication
 using the Xerox Network Systems protocols.
 Other domains can be added to the system.
 .Sh 4 "Socket types and protocols
@@ -61,7 +61,7 @@ The SOCK_STREAM type models connection-based virtual circuits: two-way
 byte streams with no record boundaries.
 Connection setup is required before data communication may begin.
 The SOCK_SEQPACKET type models a connection-based,
-full-duplex, reliable, sequenced packet exchange;
+full-duplex, reliable, exchange preserving message boundaries;
 the sender is notified if messages are lost, and messages are never
 duplicated or presented out-of-order.
 Users of the last two abstractions may use the facilities for
@@ -192,7 +192,7 @@ call\(dg:
 .FS
 \(dg 4.4BSD supports
 .Fn socketpair
-creation only in the ``UNIX'' communication domain.
+creation only in the PF_LOCAL communication domain.
 .FE
 .DS
 .Fd socketpair 4 "create a pair of connected sockets
@@ -210,7 +210,7 @@ The call:
 pipe(pv)
 result int pv[2];
 .DE
-creates a pair of SOCK_STREAM sockets in the UNIX domain,
+creates a pair of SOCK_STREAM sockets in the PF_LOCAL domain,
 with pv[0] only writable and pv[1] only readable.
 .Sh 4 "Sending and receiving data
 .LP
@@ -302,7 +302,7 @@ The data in the \fImsg_control\fP buffer is composed of
 an array of variable length messages
 used for additional information with or about a datagram
 not expressible by flags.  The format is a sequence
-of message elements headed by cmsghdr structures:
+of message elements headed by \fIcmsghdr\fP structures:
 .DS
 .TS
 l s s s
@@ -315,11 +315,20 @@ struct cmsghdr {
 };
 .TE
 .DE
+The following macros are provided for use with the \fImsg_control\fP buffer:
+.DS
+.TS
+l l.
+CMSG_FIRSTHDR(mhdr)	/* given msghdr, return first cmsghdr */
+CMSG_NXTHDR(mhdr, cmsg)	/* given msghdr and cmsghdr, return next cmsghdr */
+CMSG_DATA(cmsg)	/* given cmsghdr, return associated data pointer */
+.TE
+.DE
 Access rights to be sent along with the message are specified
 in one of these
-\fIcmsghdr\fP structures, with type SCM_RIGHTS.
-In the ``UNIX'' domain these are an array of integer descriptors,
-taken from the sending process and duplicated in the receiver.
+\fIcmsghdr\fP structures, with level SOL_SOCKET and type SCM_RIGHTS.
+In the PF_LOCAL domain these are an array of integer descriptors,
+copied from the sending process and duplicated in the receiver.
 .LP
 This structure is used in the operations
 .Fn sendmsg
@@ -392,14 +401,15 @@ the software operating at the specified \fIlevel\fP.  The \fIlevel\fP
 SOL_SOCKET is reserved to indicate options maintained
 by the socket facilities.  Other \fIlevel\fP values indicate
 a particular protocol which is to act on the option request;
-these values are normally interpreted as a ``protocol number''.
-.Sh 3 "UNIX domain
+these values are normally interpreted as a ``protocol number''
+within the protocol family.
+.Sh 3 "PF_LOCAL domain
 .PP
-This section describes briefly the properties of the UNIX communications
-domain.
+This section describes briefly the properties of the PF_LOCAL (``UNIX'')
+communications domain.
 .Sh 4 "Types of sockets
 .PP
-In the UNIX domain,
+In the local domain,
 the SOCK_STREAM abstraction provides pipe-like
 facilities, while SOCK_DGRAM provides (usually)
 reliable message-style communications.

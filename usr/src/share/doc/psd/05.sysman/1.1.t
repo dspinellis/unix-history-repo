@@ -1,20 +1,21 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.1.t	8.2 (Berkeley) %G%
+.\"	@(#)1.1.t	8.3 (Berkeley) %G%
 .\"
 .Sh 2 "Processes and protection
-.Sh 3 "Host and process identifiers
+.Sh 3 "Host identifiers
 .PP
-Each host has associated with it a 32-bit host id, and a host
+Each host has associated with it a 32-bit host ID, and a host
 name of up to MAXHOSTNAMELEN (64) characters (as defined in
 \fI<sys/param.h>\fP).
 These identifiers are set (by a privileged user) and retrieved using the
 .Fn sysctl
 interface described in section
 .Xr 1.7.1 .
+The host ID is seldom used (or set), and is deprecated.
 For convenience and backward compatibility,
 the following library routines are provided:
 .DS
@@ -37,13 +38,14 @@ char *name; int len;
 len = gethostname(buf, buflen)
 result int len; result char *buf; int buflen;
 .DE
+.Sh 3 "Process identifiers
 Each host runs a set of \fIprocesses\fP.
 Each process is largely independent of other processes,
 having its own protection domain, address space, timers, and
 an independent set of references to system or user implemented objects.
 .PP
 Each process in a host is named by an integer
-called the \fIprocess id\fP.  This number is
+called the \fIprocess ID\fP.  This number is
 in the range 1-30000
 and is returned by the
 .Fn getpid
@@ -51,10 +53,10 @@ routine:
 .DS
 .Fd getpid 0 "get process identifier
 pid = getpid();
-result int pid;
+result pid_t pid;
 .DE
 On each host this identifier is guaranteed to be unique;
-in a multi-host environment, the (hostid, process id) pairs are
+in a multi-host environment, the (hostid, process ID) pairs are
 guaranteed unique.
 The parent process identifier can be obtained using the
 .Fn getppid
@@ -62,7 +64,7 @@ routine:
 .DS
 .Fd getppid 0 "get parent process identifier
 pid = getppid();
-result int pid;
+result pid_t pid;
 .DE
 .Sh 3 "Process creation and termination
 .LP
@@ -71,7 +73,7 @@ existing process:
 .DS
 .Fd fork 0 "create a new process
 pid = fork();
-result int pid;
+result pid_t pid;
 .DE
 The
 .Fn fork
@@ -89,7 +91,7 @@ system call provides a faster interface:
 .DS
 .Fd vfork 0 "create a new process
 pid = vfork();
-result int pid;
+result pid_t pid;
 .DE
 Like
 .Fn fork ,
@@ -98,6 +100,8 @@ the
 call returns twice, once in the parent process, where
 \fIpid\fP is the process identifier of the child,
 and once in the child process where \fIpid\fP is 0.
+The parent process is suspended until the child process calls
+either \fIexecve\fP or \fIexit\fP.
 .LP
 A process may terminate by executing an
 .Fn exit
@@ -138,28 +142,37 @@ char *name, **argv, **envp;
 The specified \fIname\fP must be a file which is in a format recognized
 by the system, either a binary executable file or a file which causes
 the execution of a specified interpreter program to process its contents.
-If the set-user-id mode bit is set,
-the effective user-id is set to the owner of the file;
-if the set-group-id mode bit is set,
-the effective group-id is set to the group of the file.
-Whether changed or not, the effective user-id is copied to the
-saved user-id and the effective group-id is copied to the
-saved group-id.
-.Sh 3 "User and group ids
+If the set-user-ID mode bit is set,
+the effective user ID is set to the owner of the file;
+if the set-group-ID mode bit is set,
+the effective group ID is set to the group of the file.
+Whether changed or not, the effective user ID is then copied to the
+saved user Id, and the effective group Id is copied to the
+saved group Id.
+.Sh 3 "User and group IDs
 .PP
-Each process in the system has associated with it two user-id's:
-a \fIreal user id\fP and a \fIeffective user id\fP, both 32-bit
-unsigned integers (type \fBuid_t\fP).
-Each process has an \fIreal accounting group id\fP
-and a set of \fIaccess group id's\fP
-the first of which is the \fIeffective accounting group id\fP.
-The group id's are 32-bit unsigned integers (type \fBgid_t\fP).
+Each process in the system has associated with it three user IDs:
+a \fIreal user ID\fP, a \fIeffective user ID\fP, and a \fIsaved user ID\fP,
+all 32-bit unsigned integers (type \fBuid_t\fP).
+Each process has a \fIreal group ID\fP
+and a set of \fIaccess group IDs\fP,
+the first of which is the \fIeffective group ID\fP.
+The group IDs are 32-bit unsigned integers (type \fBgid_t\fP).
 Each process may be in several different access groups, with the maximum
 concurrent number of access groups a system compilation parameter,
 the constant NGROUPS in the file \fI<sys/param.h>\fP,
 guaranteed to be at least eight.
 .LP
-The real and effective user ids associated with a process are returned by:
+The real group ID is used in process accounting and in testing whether
+the effective group ID may be changed; it is not otherwise used for
+access control.
+The members of the access group ID set are used for access control.
+Because the first member of the set is the effective group ID, which
+is changed when executing a set-group-ID program, that element is normally
+duplicated in the set so that access privileges for the original group
+are not lost when using a set-group-ID program.
+.LP
+The real and effective user IDs associated with a process are returned by:
 .DS
 .Fd getuid 0 "get real user identifier
 ruid = getuid();
@@ -170,7 +183,7 @@ result uid_t ruid;
 euid = geteuid();
 result uid_t euid;
 .DE
-the real and effective accounting group ids by:
+the real and effective group IDs by:
 .DS
 .Fd getgid 0 "get real group identifier
 rgid = getgid();
@@ -181,7 +194,7 @@ result gid_t rgid;
 egid = getegid();
 result gid_t egid;
 .DE
-The access group id set is returned by a
+The access group ID set is returned by a
 .Fn getgroups
 call:
 .DS
@@ -190,7 +203,7 @@ ngroups = getgroups(gidsetsize, gidset);
 result int ngroups; int gidsetsize; result gid_t gidset[gidsetsize];
 .DE
 .LP
-The user and group id's
+The user and group IDs
 are assigned at login time using the
 .Fn setuid ,
 .Fn setgid ,
@@ -212,16 +225,24 @@ gid_t gid;
 setgroups(gidsetsize, gidset)
 int gidsetsize; gid_t gidset[gidsetsize];
 .DE
-These calls are restricted to the super-user.
 The
 .Fn setuid
-call sets the real, effective, and saved user-id's, while the
+call sets the real, effective, and saved user IDs,
+and is permitted only if the specified \fIuid\fP is the current real user ID
+or if the caller is the super-user.
+The
 .Fn setgid
-call sets the real, effective, and saved group id's.
+call sets the real, effective, and saved group IDs;
+it is permitted only if the specified \fIgid\fP is the current real group ID
+or if the caller is the super-user.
+The
+.Fn setgroups
+call sets the access group ID set, and is restricted to the super-user.
+.LP
 The
 .Fn seteuid
-routine allows any process to set its effective user-id to either its
-real or saved user-id:
+routine allows any process to set its effective user ID to either its
+real or saved user ID:
 .DS
 .Fd seteuid 1 "set effective user identifier
 seteuid(uid);
@@ -229,8 +250,8 @@ uid_t uid;
 .DE
 The
 .Fn setegid
-routine allows any process to set its effective group-id to either its
-real or saved group-id:
+routine allows any process to set its effective group ID to either its
+real or saved group ID:
 .DS
 .Fd setegid 1 "set effective group identifier
 setegid(gid);
@@ -247,7 +268,9 @@ The session is created with the call:
 pid = setsid();
 result pid_t pid;
 .DE
-All subsequent processes created by the user will be part of the session.
+All subsequent processes created by the user that do not call
+.Fn setsid
+will be part of the session.
 The session also has a login name associated with it
 which is set using the privileged call:
 .DS
@@ -261,12 +284,16 @@ The login name can be retrieved using the call:
 name = getlogin();
 result char *name;
 .DE
+Unlike earlier systems, the return value of
+.Fn getlogin
+can be trusted.
 .Sh 3 "Process groups
 .PP
-Each process in the system is also normally associated with a \fIprocess
+Each process in the system is also associated with a \fIprocess
 group\fP.  The group of processes in a process group is sometimes
 referred to as a \fIjob\fP and manipulated by high-level system
 software (such as the shell).
+All members of a process group are members of the same session.
 The current process group of a process is returned by the
 .Fn getpgrp
 call:
@@ -290,7 +317,7 @@ call:
 setpgid(pid, pgrp);
 int pid, pgrp;
 .DE
-Newly created processes are assigned process id's distinct from all
+Newly created processes are assigned process IDs distinct from all
 processes and process groups, and the same process group as their
 parent.  A normal (unprivileged) process may set its process group equal
-to its process id or to the value of any process group within its session.
+to its process ID or to the value of any process group within its session.

@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.6.t	8.2 (Berkeley) %G%
+.\"	@(#)1.6.t	8.3 (Berkeley) %G%
 .\"
 .Sh 2 "Resource controls
 .Sh 3 "Process priorities
@@ -11,7 +11,10 @@
 The system gives CPU scheduling priority to processes that have not used
 CPU time recently.  This tends to favor interactive processes and
 processes that execute only for short periods.
-It is possible to determine the priority currently
+The instantaneous scheduling priority is a function of CPU usage
+and a settable priority value used in adjusting the instantaneous
+priority with CPU usage or inactivity.
+It is possible to determine the settable priority factor currently
 assigned to a process (PRIO_PROCESS),
 process group (PRIO_PGRP),
 or the processes of a specified user (PRIO_USER),
@@ -44,7 +47,7 @@ The
 .Fn getrusage
 call returns information describing the resources utilized by the
 current process (RUSAGE_SELF),
-or all its terminated child processes (RUSAGE_CHILDREN):
+or all its terminated descendent processes (RUSAGE_CHILDREN):
 .DS
 .Fd getrusage 2 "get information about resource utilization
 getrusage(who, rusage)
