@@ -1,15 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)gio.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)gio.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include "pk.h"
 #include <setjmp.h>
 
-extern	time_t	time();
-
 jmp_buf Failbuf;
 
+int Retries = 0;
 struct pack *Pk;
 
 pkfail()
@@ -97,6 +96,7 @@ FILE *fp1;
 	if(setjmp(Failbuf))
 		return FAIL;
 	bytes = 0L;
+	Retries = 0;
 #ifdef USG
 	time(&t1.time);
 	t1.millitm = 0;
@@ -129,6 +129,8 @@ FILE *fp1;
 	sprintf(text, "sent data %ld bytes %ld.%02d secs",
 				bytes, (long)t2.time, mil/10);
 	sysacct(bytes, t2.time - t1.time);
+	if (Retries > 0) 
+		sprintf((char *)text+strlen(text)," %d retries", Retries);
 	DEBUG(1, "%s\n", text);
 	syslog(text);
 	return SUCCESS;
@@ -147,6 +149,7 @@ FILE *fp2;
 	if(setjmp(Failbuf))
 		return FAIL;
 	bytes = 0L;
+	Retries = 0;
 #ifdef USG
 	time(&t1.time);
 	t1.millitm = 0;
@@ -180,6 +183,8 @@ FILE *fp2;
 	sprintf(text, "received data %ld bytes %ld.%02d secs",
 				bytes, (long)t2.time, mil/10);
 	sysacct(bytes, t2.time - t1.time);
+	if (Retries > 0) 
+		sprintf((char *)text+strlen(text)," %d retries", Retries);
 	DEBUG(1, "%s\n", text);
 	syslog(text);
 	return SUCCESS;

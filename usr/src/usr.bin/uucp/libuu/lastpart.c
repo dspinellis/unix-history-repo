@@ -1,11 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)lastpart.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)lastpart.c	5.4 (Berkeley) %G%";
 #endif
 
-/*******
- *	char *
- *	lastpart(file)	find last part of file name
- *	char *file;
+#include "uucp.h"
+
+/*LINTLIBRARY*/
+
+/*
+ *	find last part of file name
  *
  *	return - pointer to last part
  */
@@ -15,11 +17,10 @@ lastpart(file)
 register char *file;
 {
 	register char *c;
-	char *rindex();
 
 	c = rindex(file, '/');
-	if (c)
-		return c + 1;
+	if (c++)
+		return c;
 	else
 		return file;
 }

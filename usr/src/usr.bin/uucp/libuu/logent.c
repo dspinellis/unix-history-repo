@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)logent.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)logent.c	5.5 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -12,12 +12,12 @@ static char sccsid[] = "@(#)logent.c	5.4 (Berkeley) %G%";
 #include <fcntl.h>
 #endif
 
-extern	time_t	time();
-
 static FILE *Lp = NULL;
 static FILE *Sp = NULL;
 static Ltried = 0;
 static Stried = 0;
+
+/*LINTLIBRARY*/
 
 /*
  *	make log entry
@@ -199,7 +199,7 @@ char *text;
 #else !USG
 	fprintf(Sp, "(%d/%d-%02d:%02d) ", tp->tm_mon + 1,
 		tp->tm_mday, tp->tm_hour, tp->tm_min);
-	fprintf(Sp, "(%ld.%02d) %s\n", clock.time, clock.millitm/10, text);
+	fprintf(Sp, "(%ld.%02u) %s\n", clock.time, clock.millitm/10, text);
 #endif !USG
 
 	/* Position at end and flush */
