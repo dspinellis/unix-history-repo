@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pt_file.c	8.2 (Berkeley) %G%
+ *	@(#)pt_file.c	8.3 (Berkeley) %G%
  *
  * $Id: pt_file.c,v 1.1 1992/05/25 21:43:09 jsp Exp jsp $
  */
@@ -35,7 +35,7 @@ int *fdp;
 	int fd;
 	char pbuf[MAXPATHLEN];
 	int error;
-	int gidset[NGROUPS];
+	gid_t gidset[NGROUPS];
 	int i;
 
 	pbuf[0] = '/';
