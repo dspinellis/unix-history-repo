@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)dd.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)dd.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <signal.h>
 
@@ -329,7 +329,7 @@ loop:
 		} else
 			nifr++;
 		ip = ibuf;
-		c = (ibc>>1) & ~1;
+		c = ibc >> 1;
 		if(cflag&SWAB && c)
 		do {
 			a = *ip++;
