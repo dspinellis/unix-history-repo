@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	7.6 (Berkeley) %G%
+ *	@(#)conf.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -189,10 +189,10 @@ dev_type_open(fdopen);
 cdev_decl(pm);
 #define	cdev_pm_init(c,n) { \
 	dev_init(c,n,open), dev_init(c,n,close), \
-	(dev_type_read((*))) enodev, (dev_type_write((*))) enodev, \
+	(dev_type_read((*))) nullop, (dev_type_write((*))) nullop, \
 	dev_init(c,n,ioctl), (dev_type_stop((*))) enodev, \
-	(dev_type_reset((*))) enodev, 0, dev_init(c,n,select), \
-	(dev_type_map((*))) enodev, 0 }
+	(dev_type_reset((*))) nullop, 0, dev_init(c,n,select), \
+	dev_init(c,n,map), 0 }
 
 cdev_decl(rz);
 
