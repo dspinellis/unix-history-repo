@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.39	%G%
+**	@(#)sendmail.h	3.40	%G%
 */
 
 
@@ -21,13 +21,14 @@
 **	There shouldn't be much need to change these....
 */
 
-# define MAXLINE	256	/* maximum line length */
-# define MAXNAME	128	/* maximum length of a name */
-# define MAXFIELD	2500	/* maximum total length of a header field */
-# define MAXPV		40	/* maximum # of parms to mailers */
-# define MAXHOP		30	/* maximum value of HopCount */
-# define MAXATOM	15	/* max atoms per address */
-# define MAXMAILERS	10	/* maximum mailers known to system */
+# define MAXLINE	256		/* max line length */
+# define MAXNAME	128		/* max length of a name */
+# define MAXFIELD	2500		/* max total length of a hdr field */
+# define MAXPV		40		/* max # of parms to mailers */
+# define MAXHOP		30		/* max value of HopCount */
+# define MAXATOM	15		/* max atoms per address */
+# define MAXMAILERS	10		/* maximum mailers known to system */
+# define SPACESUB	('.'|0200)	/* substitution for <lwsp> */
 
 /* values for ArpaMode -- these are ordered!! */
 # define ARPA_NONE	0	/* not in arpanet mode */
