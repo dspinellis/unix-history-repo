@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -487,9 +487,12 @@ dotimes()
 pct(top, bot)
 	long top, bot;
 {
+	long ans;
+
 	if (bot == 0)
 		return(0);
-	return((top * 100) / bot);
+	ans = (quad_t)top * 100 / bot;
+	return (ans);
 }
 
 #define	PCT(top, bot) pct((long)(top), (long)(bot))
