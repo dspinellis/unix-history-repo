@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.7 83/11/22";
+static	char *sccsid = "@(#)lcmd1.c	3.8 83/11/23";
 #endif
 
 #include "defs.h"
@@ -66,10 +66,8 @@ struct value *v;
 	v->v_num = selwin ? selwin->ww_id : -1;
 	if (arg_select[0].arg_vtype == V_ERR)
 		return;
-	if ((w = window[arg_select[0].arg_num]) == 0) {
-		error("%d: No such window.", arg_select[0].arg_num);
+	if ((w = vtowin(&arg_select[0].arg_val)) == 0)
 		return;
-	}
 	setselwin(w);
 }
 
@@ -111,7 +109,7 @@ struct value *v;
 }
 
 struct lcmd_arg arg_terse[] = {
-	{ "flag",	1,	ARG_NUM },
+	{ "flag",	1,	ARG_ANY },
 	{ 0,		0,	0 }
 };
 
@@ -122,9 +120,9 @@ struct value *v;
 	v->v_num = terse;
 	terse = vtobool(&arg_terse[0].arg_val, 1, terse);
 	if (!terse && v->v_num)
-		wwdelete(cmdwin);
-	else if (!v->v_num && terse)
 		wwadd(cmdwin, &wwhead);
+	else if (!v->v_num && terse)
+		wwdelete(cmdwin);
 	reframe();
 }
 
