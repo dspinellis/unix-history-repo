@@ -1,4 +1,4 @@
-/*	remcap.c	4.4	81/07/11	*/
+/*	remcap.c	4.5	81/07/13	*/
 /* Copyright (c) 1979 Regents of the University of California */
 #ifndef BUFSIZ
 #define	BUFSIZ	1024
@@ -6,7 +6,9 @@
 #define MAXHOP	32	/* max number of tc= indirections */
 
 #include <ctype.h>
+#ifdef VMUNIX
 #include "local/uparm.h"
+#endif
 /*
  * remcap - routines for dealing with the remote host data base
  *

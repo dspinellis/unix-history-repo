@@ -1,4 +1,4 @@
-/*	tip.c	4.5	81/07/11	*/
+/*	tip.c	4.6	81/07/13	*/
 /*
  * tip - Unix link to other systems
  *  tip [-v] [-speed] system-name
@@ -150,7 +150,9 @@ char *argv[];
 	 */
 	ioctl(0, TIOCGETP, (char *)&defarg);
 	ioctl(0, TIOCGETC, (char *)&defchars);
+#ifdef VMUNIX
 	ioctl(0, TIOCGETD, (char *)&odisc);
+#endif
 	arg = defarg;
 	arg.sg_flags = ANYP | CBREAK;
 	tchars = defchars;
