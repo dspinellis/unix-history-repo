@@ -1,0 +1,3 @@
+Munstr	unstr.c	/^main(ac, av)$/
+getargs	unstr.c	/^getargs(av)$/
+order_unstr	unstr.c	/^order_unstr(tbl)$/
