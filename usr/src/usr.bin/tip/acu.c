@@ -1,4 +1,4 @@
-/*	acu.c	4.1	81/05/09	*/
+/*	acu.c	4.2	81/10/02	*/
 #include "tip.h"
 #include <setjmp.h>
 
@@ -99,7 +99,7 @@ connect()
 				;
 			*cp = '\0';
 			
-			if (conflag = (*acu->acu_dialer)(phnum)) {
+			if (conflag = (*acu->acu_dialer)(phnum, CU)) {
 				fclose(fd);
 				logent(value(HOST), phnum, acu->acu_name,
 					"call completed");
