@@ -1,0 +1,5 @@
+140a
+		/* file was found - try compatability mode here */
+		compat(p, &t[0], xecenv);
+		/* otherwise assume a shell file */
+.
