@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.32 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.33 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -307,7 +307,7 @@ close(p, uap, retval)
  * Return status information about a file descriptor.
  */
 /* ARGSUSED */
-fstat(p, uap, retval)
+ofstat(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		int	fd;
@@ -349,7 +349,7 @@ fstat(p, uap, retval)
  * Return status information about a file descriptor.
  */
 /* ARGSUSED */
-fqstat(p, uap, retval)
+fstat(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		int	fd;
