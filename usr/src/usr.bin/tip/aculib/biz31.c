@@ -1,10 +1,11 @@
-/*	biz31.c	4.4	81/11/29	*/
+/*	biz31.c	4.5	83/06/15	*/
 #include "tip.h"
 
 #if BIZ1031
 #define MAXRETRY	3		/* sync up retry count */
 #define DISCONNECT	"\21\25\11\24"	/* disconnection string */
 
+static char *sccsid = "@(#)biz31.c	4.5 %G%";
 static int sigALRM();
 static int timeout = 0;
 

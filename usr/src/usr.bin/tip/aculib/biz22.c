@@ -1,9 +1,10 @@
-/*	biz22.c	4.1	81/11/29	*/
+/*	biz22.c	4.2	83/06/15	*/
 #include "tip.h"
 
 #if BIZ1022
 #define DISCONNECT	"\20\04"	/* disconnection string */
 
+static char *sccsid = "@(#)biz22.c	4.2 %G%";
 static int sigALRM();
 static int timeout = 0;
 
@@ -138,3 +139,4 @@ detect(s)
 	signal(SIGALRM, SIG_DFL);
 	return (1);
 }
+#endif
