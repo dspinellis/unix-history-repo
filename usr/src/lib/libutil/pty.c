@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)pty.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)pty.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -46,8 +46,8 @@ openpty(amaster, aslave, name, termp, winp)
 					return (-1);	/* out of ptys */
 			} else {
 				line[5] = 't';
-				(void) fchown(master, getuid(), ttygid);
-				(void) fchmod(master, S_IRUSR|S_IWUSR|S_IWGRP);
+				(void) chown(line, getuid(), ttygid);
+				(void) chmod(line, S_IRUSR|S_IWUSR|S_IWGRP);
 				(void) revoke(line);
 				if ((slave = open(line, O_RDWR, 0)) != -1) {
 					*amaster = master;
