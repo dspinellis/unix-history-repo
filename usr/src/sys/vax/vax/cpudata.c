@@ -1,4 +1,4 @@
-/*	cpudata.c	4.1	81/03/13	*/
+/*	cpudata.c	4.2	81/03/21	*/
 
 #include "../h/param.h"
 #include "../h/pte.h"
@@ -26,17 +26,26 @@ caddr_t	umaddr750[2] = {
 	(caddr_t) UMEM750(0), (caddr_t) UMEM750(1),
 };
 #endif
+#if VAX730
+caddr_t	umaddr730[1] = {
+	(caddr_t) UMEM730
+};
+#endif
 
 #if VAX750
 /*
  * Information to patch around the stupidity of configuration
- * registers not returning types on some of the 11/750 slots.
+ * registers not returning types on some of the processors.
  */
 short	nexty750[NNEX750] = {
 	NEX_MEM16,	NEX_MEM16,	NEX_MEM16,	NEX_MEM16,
 	NEX_MBA,	NEX_MBA,	NEX_MBA,	NEX_MBA,
 	NEX_UBA0,	NEX_UBA1,	NEX_ANY,	NEX_ANY,
 	NEX_ANY,	NEX_ANY,	NEX_ANY,	NEX_ANY
+};
+short	nexty730[NNEX730] = {
+	NEX_MEM16,	NEX_ANY,	NEX_ANY,	NEX_ANY,
+	NEX_ANY,	NEX_ANY,	NEX_ANY,	NEX_ANY,
 };
 #endif
 
@@ -46,6 +55,9 @@ struct percpu percpu[] = {
 #endif
 #if VAX750
 	VAX_750, NNEX750, NEX750, umaddr750, NBDP750, 0, nexty750,
+#endif
+#if VAX730
+	VAX_730, NNEX730, NEX730, umaddr730, NBDP730, 0, nexty730,
 #endif
 	0,
 };
