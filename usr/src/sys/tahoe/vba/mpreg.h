@@ -1,4 +1,4 @@
-/*	mpreg.h	1.1	87/11/17	*/
+/*	mpreg.h	1.2	87/12/22	*/
 
 /*
  * MPCC Asynchronous Communications Interface.
@@ -393,13 +393,13 @@ struct bdcf {
 
 
 /* These ioctls are for the dlmpcc command */
-#define MPIOPORTMAP         _IOW(m,1, struct protports)
-#define MPIOHILO            _IOW(m,3, short)
-#define MPIOENDCODE         _IO(m,4)
-#define MPIOASYNCNF         _IOW(m,7, struct abdcf)
-#define MPIOENDDL           _IO(m,10)
-#define MPIOSTARTDL         _IO(m,11)
-#define MPIORESETBOARD      _IO(m,12)
+#define MPIOPORTMAP         _IOW('m',1, struct protports)
+#define MPIOHILO            _IOW('m',3, short)
+#define MPIOENDCODE         _IO('m',4)
+#define MPIOASYNCNF         _IOW('m',7, struct abdcf)
+#define MPIOENDDL           _IO('m',10)
+#define MPIOSTARTDL         _IO('m',11)
+#define MPIORESETBOARD      _IO('m',12)
 
 /*      mpdlwrite opcode defines        */
 

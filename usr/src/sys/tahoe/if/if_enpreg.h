@@ -1,4 +1,4 @@
-/*	if_enpreg.h	1.3	86/12/15	*/
+/*	if_enpreg.h	1.4	87/12/22	*/
 
 /*	Copyright (c) 1984 by Communication Machinery Corporation
  *
@@ -196,8 +196,8 @@ struct enpdevice {
 /*
  * Download ioctl definitions
  */
-#define ENPIOGO		_IO(S,1)		/* start the enp */
-#define ENPIORESET	_IO(S,2)		/* reset the enp */
+#define ENPIOGO		_IO('S',1)		/* start the enp */
+#define ENPIORESET	_IO('S',2)		/* reset the enp */
 
 /*
  * The ENP Data Buffer Structure
