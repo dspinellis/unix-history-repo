@@ -1,5 +1,5 @@
 /*
- *	@(#)kdb_opset.c	7.4 (Berkeley) %G%
+ *	@(#)kdb_opset.c	7.5 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
@@ -7,19 +7,19 @@
 /*
  * Instruction printing.
  */
-REGLIST reglist [] = {
-	"p1lr",	&pcb.pcb_p1lr,	"p1br",	(int *)&pcb.pcb_p1br,
-	"p0lr",	&pcb.pcb_p0lr,	"p0br",	(int *)&pcb.pcb_p0br,
-	"ksp",	&pcb.pcb_ksp,	"esp",	&pcb.pcb_esp,
-	"ssp",	&pcb.pcb_ssp,	"psl",	&pcb.pcb_psl,
-	"pc",	&pcb.pcb_pc,	"usp",	&pcb.pcb_usp,
-	"fp",	&pcb.pcb_fp,	"ap",	&pcb.pcb_ap,
-	"r11",	&pcb.pcb_r11,	"r10",	&pcb.pcb_r10,
-	"r9",	&pcb.pcb_r9,	"r8",	&pcb.pcb_r8,
-	"r7",	&pcb.pcb_r7,	"r6",	&pcb.pcb_r6,
-	"r5",	&pcb.pcb_r5,	"r4",	&pcb.pcb_r4,
-	"r3",	&pcb.pcb_r3,	"r2",	&pcb.pcb_r2,
-	"r1",	&pcb.pcb_r1,	"r0",	&pcb.pcb_r0,
+REGLIST kdbreglist [] = {
+	"p1lr",	&kdbpcb.pcb_p1lr,	"p1br",	(int *)&kdbpcb.pcb_p1br,
+	"p0lr",	&kdbpcb.pcb_p0lr,	"p0br",	(int *)&kdbpcb.pcb_p0br,
+	"ksp",	&kdbpcb.pcb_ksp,	"esp",	&kdbpcb.pcb_esp,
+	"ssp",	&kdbpcb.pcb_ssp,	"psl",	&kdbpcb.pcb_psl,
+	"pc",	&kdbpcb.pcb_pc,	"usp",	&kdbpcb.pcb_usp,
+	"fp",	&kdbpcb.pcb_fp,	"ap",	&kdbpcb.pcb_ap,
+	"r11",	&kdbpcb.pcb_r11,	"r10",	&kdbpcb.pcb_r10,
+	"r9",	&kdbpcb.pcb_r9,	"r8",	&kdbpcb.pcb_r8,
+	"r7",	&kdbpcb.pcb_r7,	"r6",	&kdbpcb.pcb_r6,
+	"r5",	&kdbpcb.pcb_r5,	"r4",	&kdbpcb.pcb_r4,
+	"r3",	&kdbpcb.pcb_r3,	"r2",	&kdbpcb.pcb_r2,
+	"r1",	&kdbpcb.pcb_r1,	"r0",	&kdbpcb.pcb_r0,
 };
 
 /*
@@ -277,12 +277,12 @@ static	char	insoutfmt[2];	/* how to format the relocated symbols */
 static savevar(val)
 	long	val;
 {
-	var[argno] = val;
+	kdbvar[argno] = val;
 	insoutvar[argno] = val;
 }
 
 /* ARGSUSED */
-printins(Idsp, ins)
+kdbprintins(Idsp, ins)
 	u_char	ins;
 	int	Idsp;
 {
@@ -316,17 +316,17 @@ printins(Idsp, ins)
 		}
 	}
 	if (ioptab[mapchar][ins] == 0){
-		printf("<undefined operator byte>: %x", ins);
+		kdbprintf("<undefined operator byte>: %x", ins);
 		goto ret;
 	}
 	ip = &insttab[ioptab[mapchar][ins] - 1];
-	printf("%s\t", ip->iname);
+	kdbprintf("%s\t", ip->iname);
 
 	for (ap = ip->argtype, argno = 0; argno < ip->nargs; argno++, ap++) {
 		savevar(0x80000000);	/* an illegal symbol */
 		optype = *ap;
 		if (argno != 0)
-			printc(',');
+			kdbprintc(',');
 		indexreg = 0;
 		indexed = 0;
 		do{
@@ -344,7 +344,7 @@ printins(Idsp, ins)
 			}
 			indexreg = operandout(mode, optype);
 			if (indexed)
-				printf("[%s]", indexed);
+				kdbprintf("[%s]", indexed);
 			indexed = indexreg;
 		} while(indexed);
 	}
@@ -361,7 +361,7 @@ printins(Idsp, ins)
 	}
    ret: ;
 
-	dotinc = incp;
+	kdbdotinc = incp;
 }
 
 casebody(base, limit)
@@ -376,8 +376,8 @@ casebody(base, limit)
 	argno = 0;
 	baseincp = incp;
 	for (i = 0; i <= limit; i++) {
-		printc(EOR);
-		printf("    %R:  ", i + base);
+		kdbprintc(EOR);
+		kdbprintf("    %R:  ", i + base);
 		valuep = snarfreloc(OSIZE, 0);
 		advincp = incp;
 		incp = baseincp;
@@ -433,7 +433,7 @@ snarfuchar()
 	/*
 	 *	assert: bchkget and inkdot don't have side effects
 	 */
-	back = (u_char)bchkget(inkdot(incp), idsp);
+	back = (u_char)kdbbchkget(kdbinkdot(incp), idsp);
 	incp += 1;
 	return(back);
 }
@@ -462,35 +462,35 @@ char *operandout(mode, optype)
 	case OC_INDEX:
 		return(r);		/* will be printed later */
 	case OC_REG:
-		printf("%s", r);
+		kdbprintf("%s", r);
 		return(0);
 	case OC_DREG:
-		printf("(%s)", r);
+		kdbprintf("(%s)", r);
 		return(0);
 	case OC_ADREG:
-		printf("-(%s)", r);
+		kdbprintf("-(%s)", r);
 		return(0);
 	case OC_DAIREG:
-		printc('*');
+		kdbprintc('*');
 	case OC_AIREG:
 		if (regnumber == R_PC){
 			pcimmediate(mode, optype);
 		} else {
-			printf("(%s)+", r);
+			kdbprintf("(%s)+", r);
 		}
 		return(0);
 	case OC_DBDISP:
-		printc('*');
+		kdbprintc('*');
 	case OC_BDISP:
 		nbytes = 1;
 		break;
 	case OC_DWDISP:
-		printc('*');
+		kdbprintc('*');
 	case OC_WDISP:
 		nbytes = 2;
 		break;
 	case OC_DLDISP:
-		printc('*');
+		kdbprintc('*');
 	case OC_LDISP:
 		nbytes = 4;
 		break;
@@ -514,15 +514,15 @@ dispaddress(valuep, mode)
 	case OC_DLDISP:
 		if (regnumber == R_PC){
 			/* PC offset addressing */
-			valuep->num_ulong[0] += inkdot(incp);
+			valuep->num_ulong[0] += kdbinkdot(incp);
 		}
 	}
 	if (regnumber == R_PC)
-		psymoff(valuep->num_ulong[0], type, &insoutfmt[0]);
+		kdbpsymoff(valuep->num_ulong[0], type, &insoutfmt[0]);
 	else {				/* } */
-		printf(LPRMODE, valuep->num_ulong[0]);
-		printf(insoutfmt);
-		printf("(%s)", insregname(regnumber));
+		kdbprintf(LPRMODE, valuep->num_ulong[0]);
+		kdbprintf(insoutfmt);
+		kdbprintf("(%s)", insregname(regnumber));
 	}
 	savevar((long)valuep->num_ulong[0]);
 }
@@ -552,10 +552,10 @@ shortliteral(mode, optype)
 	case TYPD:
 	case TYPG:
 	case TYPH:
-		printf("$%s", fltimm[mode]);
+		kdbprintf("$%s", fltimm[mode]);
 		break;
 	default:
-		printf("$%r", mode);
+		kdbprintf("$%r", mode);
 		break;
 	}
 }
@@ -566,7 +566,7 @@ pcimmediate(mode, optype)
 {
 	int	nbytes;
 
-	printc('$');
+	kdbprintc('$');
 	if (mode == OC_CONS(OC_DAIREG, R_PC)){	/* PC absolute, always 4 bytes*/
 		dispaddress(snarfreloc(4), mode);
 		return;
@@ -592,15 +592,15 @@ bignumprint(nbytes, optype)
 	valuep = snarf(nbytes);
 	switch(A_TYPEXT(optype)){
 	case TYPF:	
-		printf("0f%f", valuep->num_num.numFf_float.Ff_value);
+		kdbprintf("0f%f", valuep->num_num.numFf_float.Ff_value);
 		break;
 	case TYPD:
-		printf("0d%f", valuep->num_num.numFd_float.Fd_value);
+		kdbprintf("0d%f", valuep->num_num.numFd_float.Fd_value);
 		break;
 	case TYPG:
-		printf("0g::"); goto qprint;
+		kdbprintf("0g::"); goto qprint;
 	case TYPH:
-		printf("0h::"); goto qprint;
+		kdbprintf("0h::"); goto qprint;
 	case TYPQ:
 	case TYPO:
 	qprint:
@@ -610,9 +610,9 @@ bignumprint(nbytes, optype)
 				ch &= 0x0F;
 				if ( ! (leading_zero &= (ch == 0) ) ){
 					if (ch <= 0x09)
-						printc(ch + '0');
+						kdbprintc(ch + '0');
 					else
-						printc(ch - 0x0A + 'a');
+						kdbprintc(ch - 0x0A + 'a');
 				}
 			}
 		}
