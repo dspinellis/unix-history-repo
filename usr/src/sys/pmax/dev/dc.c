@@ -4,10 +4,15 @@
  *
  * This code is derived from software contributed to Berkeley by
  * Ralph Campbell.
+ *	@(#)dz.c	7.9 (Berkeley) 6/28/90
+ */
+
+/*
+ *  devDC7085.c --
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dc.c	7.2 (Berkeley) %G%
+ *	@(#)dc.c	7.3 (Berkeley) %G%
  *
  * devDC7085.c --
  *
@@ -53,8 +58,9 @@
  * Driver information for auto-configuration stuff.
  */
 int	dcprobe();
+void	dcintr();
 struct	driver dcdriver = {
-	"dc", dcprobe, 0, 0,
+	"dc", dcprobe, 0, 0, dcintr,
 };
 
 #define	NDCLINE 	(NDC*4)
@@ -100,6 +106,9 @@ struct speedtab dcspeedtab[] = {
 	2400,	LPR_B2400,
 	4800,	LPR_B4800,
 	9600,	LPR_B9600,
+#ifdef DS5000
+	19200,	LPR_B19200,
+#endif
 	-1,	-1
 };
 
@@ -379,7 +388,8 @@ dcprobe(cp)
 		dc_timer = 1;
 		timeout(dcscan, (caddr_t)0, hz);
 	}
-	printf("dc%d at nexus0 csr 0x%x\n", cp->pmax_unit, cp->pmax_addr);
+	printf("dc%d at nexus0 csr 0x%x priority %d\n",
+		cp->pmax_unit, cp->pmax_addr, cp->pmax_pri);
 	if (cp->pmax_unit == 0) {
 		int s;
 
@@ -486,174 +496,6 @@ dcwrite(dev, uio, flag)
 
 	tp = &dc_tty[minor(dev)];
 	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
-}
-
-/*
- * Check for interrupts from all devices.
- */
-dcintr()
-{
-	register struct pdma *p;
-	register unsigned csr;
-	register int unit;
-
-	for (unit = 0, p = dcpdma; p < &dcpdma[NDCLINE]; unit += 4, p += 4) {
-		while ((csr = p->p_addr->dc_csr) & (CSR_RDONE | CSR_TRDY)) {
-			if (csr & CSR_RDONE)
-				dcrint(unit);
-			if (csr & CSR_TRDY)
-				dcxint(&dc_tty[unit + ((csr >> 8) & 03)]);
-		}
-	}
-}
-
-dcrint(unit)
-	register int unit;
-{
-	register dcregs *dcaddr;
-	register struct tty *tp;
-	register int c, cc;
-	register struct tty *tp0;
-	int overrun = 0;
-
-	dcaddr = dcpdma[unit].p_addr;
-	tp0 = &dc_tty[unit];
-	while ((c = dcaddr->dc_rbuf) < 0) {	/* char present */
-		cc = c & 0xff;
-		tp = tp0 + ((c >> 8) & 03);
-		if ((c & RBUF_OERR) && overrun == 0) {
-			log(LOG_WARNING, "dc%d,%d: silo overflow\n", unit >> 2,
-				(c >> 8) & 03);
-			overrun = 1;
-		}
-		/* the keyboard requires special translation */
-		if (tp == &dc_tty[KBD_PORT]) {
-			static u_char shiftDown;
-			static u_char ctrlDown;
-			static u_char lastChar;
-
-#ifdef DEBUG
-			if (cc == LK_DO)
-				panic("dcrint");
-			debugChar = cc;
-
-#endif
-			if (dcDivertXInput) {
-#ifdef DEBUG
-				if (cc == KEY_F1) {
-					dcDivertXInput = 0;
-					continue;
-				}
-#endif
-				pmKbdEvent(cc);
-				continue;
-			}
-
-			switch (cc) {
-			case KEY_REPEAT:
-				cc = lastChar;
-				goto done;
-
-			case KEY_UP:
-				shiftDown = 0;
-				ctrlDown = 0;
-				continue;
-
-			case KEY_SHIFT:
-				if (ctrlDown)
-					shiftDown = 0;
-				else
-					shiftDown = 1;
-				continue;
-
-			case KEY_CONTROL:
-				if (shiftDown)
-					ctrlDown = 0;
-				else
-					ctrlDown = 1;
-				continue;
-
-			case LK_POWER_ERROR:
-			case LK_KDOWN_ERROR:
-			case LK_INPUT_ERROR:
-			case LK_OUTPUT_ERROR:
-				log(LOG_WARNING,
-					"dc0,0: keyboard error, code=%x\n", cc);
-				continue;
-			}
-			if (shiftDown)
-				cc = shiftedAscii[cc];
-			else
-				cc = unshiftedAscii[cc];
-			if (cc >= KBD_NOKEY) {
-				/*
-				 * A function key was typed - ignore it.
-				 */
-				continue;
-			}
-			if (cc >= 'a' && cc <= 'z') {
-				if (ctrlDown)
-					cc = cc - 'a' + '\1'; /* ^A */
-				else if (shiftDown)
-					cc = cc - 'a' + 'A';
-			} else if (ctrlDown) {
-				if (cc >= '[' && cc <= '_')
-					cc = cc - '@';
-				else if (cc == ' ' || cc == '@')
-					cc = '\0';
-			}
-			lastChar = cc;
-		done:
-			;
-		} else if (tp == &dc_tty[MOUSE_PORT]) {
-			register MouseReport *newRepPtr;
-			static MouseReport currentRep;
-
-			newRepPtr = &currentRep;
-			newRepPtr->byteCount++;
-			if (cc & MOUSE_START_FRAME) {
-				/*
-				 * The first mouse report byte (button state).
-				 */
-				newRepPtr->state = cc;
-				if (newRepPtr->byteCount > 1)
-					newRepPtr->byteCount = 1;
-			} else if (newRepPtr->byteCount == 2) {
-				/*
-				 * The second mouse report byte (delta x).
-				 */
-				newRepPtr->dx = cc;
-			} else if (newRepPtr->byteCount == 3) {
-				/*
-				 * The final mouse report byte (delta y).
-				 */
-				newRepPtr->dy = cc;
-				newRepPtr->byteCount = 0;
-				if (newRepPtr->dx != 0 || newRepPtr->dy != 0) {
-					/*
-					 * If the mouse moved,
-					 * post a motion event.
-					 */
-					pmMouseEvent(newRepPtr);
-				}
-				pmMouseButtons(newRepPtr);
-			}
-			continue;
-		}
-		if (!(tp->t_state & TS_ISOPEN)) {
-			wakeup((caddr_t)&tp->t_rawq);
-#ifdef PORTSELECTOR
-			if (!(tp->t_state & TS_WOPEN))
-#endif
-				continue;
-		}
-		if (c & RBUF_FERR)
-			cc |= TTY_FE;
-		if (c & RBUF_PERR)
-			cc |= TTY_PE;
-		(*linesw[tp->t_line].l_rint)(cc, tp);
-	}
-	DELAY(10);
 }
 
 /*ARGSUSED*/
@@ -768,6 +610,114 @@ dcparam(tp, t)
 	dcaddr->dc_lpr = lpr;
 	MachEmptyWriteBuffer();
 	return (0);
+}
+
+/*
+ * Check for interrupts from all devices.
+ */
+void
+dcintr(unit)
+	register int unit;
+{
+	register dcregs *dcaddr;
+	register unsigned csr;
+
+	unit <<= 2;
+	dcaddr = dcpdma[unit].p_addr;
+	while ((csr = dcaddr->dc_csr) & (CSR_RDONE | CSR_TRDY)) {
+		if (csr & CSR_RDONE)
+			dcrint(unit);
+		if (csr & CSR_TRDY)
+			dcxint(&dc_tty[unit + ((csr >> 8) & 03)]);
+	}
+}
+
+dcrint(unit)
+	register int unit;
+{
+	register dcregs *dcaddr;
+	register struct tty *tp;
+	register int c, cc;
+	register struct tty *tp0;
+	int overrun = 0;
+
+	dcaddr = dcpdma[unit].p_addr;
+	tp0 = &dc_tty[unit];
+	while ((c = dcaddr->dc_rbuf) < 0) {	/* char present */
+		cc = c & 0xff;
+		tp = tp0 + ((c >> 8) & 03);
+		if ((c & RBUF_OERR) && overrun == 0) {
+			log(LOG_WARNING, "dc%d,%d: silo overflow\n", unit >> 2,
+				(c >> 8) & 03);
+			overrun = 1;
+		}
+		/* the keyboard requires special translation */
+		if (tp == &dc_tty[KBD_PORT]) {
+#ifdef KADB
+			if (cc == LK_DO) {
+				spl0();
+				kdbpanic();
+				return;
+			}
+#endif
+#ifdef DEBUG
+			debugChar = cc;
+#endif
+			if (dcDivertXInput) {
+				pmKbdEvent(cc);
+				return;
+			}
+			if ((cc = dcMapChar(cc)) < 0)
+				return;
+		} else if (tp == &dc_tty[MOUSE_PORT]) {
+			register MouseReport *newRepPtr;
+			static MouseReport currentRep;
+
+			newRepPtr = &currentRep;
+			newRepPtr->byteCount++;
+			if (cc & MOUSE_START_FRAME) {
+				/*
+				 * The first mouse report byte (button state).
+				 */
+				newRepPtr->state = cc;
+				if (newRepPtr->byteCount > 1)
+					newRepPtr->byteCount = 1;
+			} else if (newRepPtr->byteCount == 2) {
+				/*
+				 * The second mouse report byte (delta x).
+				 */
+				newRepPtr->dx = cc;
+			} else if (newRepPtr->byteCount == 3) {
+				/*
+				 * The final mouse report byte (delta y).
+				 */
+				newRepPtr->dy = cc;
+				newRepPtr->byteCount = 0;
+				if (newRepPtr->dx != 0 || newRepPtr->dy != 0) {
+					/*
+					 * If the mouse moved,
+					 * post a motion event.
+					 */
+					pmMouseEvent(newRepPtr);
+				}
+				pmMouseButtons(newRepPtr);
+			}
+			return;
+		}
+		if (!(tp->t_state & TS_ISOPEN)) {
+			wakeup((caddr_t)&tp->t_rawq);
+#ifdef PORTSELECTOR
+			if (!(tp->t_state & TS_WOPEN))
+#endif
+				return;
+		}
+		if (c & RBUF_FERR)
+			cc |= TTY_FE;
+		if (c & RBUF_PERR)
+			cc |= TTY_PE;
+		(*linesw[tp->t_line].l_rint)(cc, tp);
+	}
+	DELAY(10);
 }
 
 dcxint(tp)
@@ -890,20 +840,49 @@ dcmctl(dev, bits, how)
 	register dcregs *dcaddr;
 	register int unit, mbits;
 	int b, s;
+#ifdef DS5000
+	register int msr;
+#endif
 
 	unit = minor(dev);
 	b = 1 << (unit & 03);
 	dcaddr = dcpdma[unit].p_addr;
 	s = spltty();
 	/* only channel 2 has modem control (what about line 3?) */
-	if ((unit & 03) == 2) {
+	switch (unit & 03) {
+	case 2:
 		mbits = 0;
 		if (dcaddr->dc_tcr & TCR_DTR2)
 			mbits |= DML_DTR;
+#ifdef DS3100
 		if (dcaddr->dc_msr & MSR_DSR2)
 			mbits |= DML_DSR | DML_CAR;
-	} else
+#endif
+#ifdef DS5000
+		msr = dcaddr->dc_msr;
+		if (msr & MSR_CD2)
+			mbits |= DML_CAR;
+		if (msr & MSR_DSR2)
+			mbits |= DML_DSR;
+#endif
+		break;
+
+#ifdef DS5000
+	case 3:
+		mbits = 0;
+		if (dcaddr->dc_tcr & TCR_DTR3)
+			mbits |= DML_DTR;
+		msr = dcaddr->dc_msr;
+		if (msr & MSR_CD3)
+			mbits |= DML_CAR;
+		if (msr & MSR_DSR3)
+			mbits |= DML_DSR;
+		break;
+#endif
+
+	default:
 		mbits = DML_DTR | DML_DSR | DML_CAR;
+	}
 	switch (how) {
 	case DMSET:
 		mbits = bits;
@@ -921,11 +900,21 @@ dcmctl(dev, bits, how)
 		(void) splx(s);
 		return (mbits);
 	}
-	if ((unit & 03) == 2) {
+	switch (unit & 03) {
+	case 2:
 		if (mbits & DML_DTR)
 			dcaddr->dc_tcr |= TCR_DTR2;
 		else
 			dcaddr->dc_tcr &= ~TCR_DTR2;
+		break;
+
+#ifdef DS5000
+	case 3:
+		if (mbits & DML_DTR)
+			dcaddr->dc_tcr |= TCR_DTR3;
+		else
+			dcaddr->dc_tcr &= ~TCR_DTR3;
+#endif
 	}
 	if ((mbits & DML_DTR) && (dcsoftCAR[unit >> 2] & b))
 		dc_tty[unit].t_state |= TS_CARR_ON;
@@ -1066,9 +1055,9 @@ dcKBDPutc(c)
 /*
  * ----------------------------------------------------------------------------
  *
- * dcKBDGetc --
+ * dcDebugGetc --
  *
- *	Read a character from the keyboard.
+ *	Read a character from the keyboard if one is ready (i.e., don't wait).
  *
  * Results:
  *	A character read from the mouse, -1 if none were ready.
@@ -1079,7 +1068,7 @@ dcKBDPutc(c)
  * ----------------------------------------------------------------------------
  */
 int
-dcKBDGetc()
+dcDebugGetc()
 {
 	register dcregs *dcaddr;
 	register int c;
@@ -1101,6 +1090,128 @@ dcKBDGetc()
 	return (c & 0xff);
 }
 #endif
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * dcKBDGetc --
+ *
+ *	Read a character from the keyboard.
+ *
+ * Results:
+ *	A character read from the keyboard.
+ *
+ * Side effects:
+ *	None.
+ *
+ * ----------------------------------------------------------------------------
+ */
+int
+dcKBDGetc()
+{
+	register dcregs *dcaddr;
+	register int c;
+	int s;
+
+	dcaddr = dcpdma[KBD_PORT].p_addr;
+	if (!dcaddr)
+		return (-1);
+	s = spltty();
+	for (;;) {
+		if (!(dcaddr->dc_csr & CSR_RDONE))
+			continue;
+		c = dcaddr->dc_rbuf;
+		DELAY(10);
+		if (((c >> 8) & 03) != KBD_PORT)
+			continue;
+		if ((c = dcMapChar(c & 0xff)) >= 0)
+			break;
+	}
+	splx(s);
+	return (c);
+}
+
+/*
+ * ----------------------------------------------------------------------------
+ *
+ * dcMapChar --
+ *
+ *	Map characters from the keyboard to ASCII. Return -1 if there is
+ *	no valid mapping.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Remember state of shift and control keys.
+ *
+ * ----------------------------------------------------------------------------
+ */
+static int
+dcMapChar(cc)
+	int cc;
+{
+	static u_char shiftDown;
+	static u_char ctrlDown;
+	static u_char lastChar;
+
+	switch (cc) {
+	case KEY_REPEAT:
+		cc = lastChar;
+		goto done;
+
+	case KEY_UP:
+		shiftDown = 0;
+		ctrlDown = 0;
+		return (-1);
+
+	case KEY_SHIFT:
+		if (ctrlDown)
+			shiftDown = 0;
+		else
+			shiftDown = 1;
+		return (-1);
+
+	case KEY_CONTROL:
+		if (shiftDown)
+			ctrlDown = 0;
+		else
+			ctrlDown = 1;
+		return (-1);
+
+	case LK_POWER_ERROR:
+	case LK_KDOWN_ERROR:
+	case LK_INPUT_ERROR:
+	case LK_OUTPUT_ERROR:
+		log(LOG_WARNING,
+			"dc0,0: keyboard error, code=%x\n", cc);
+		return (-1);
+	}
+	if (shiftDown)
+		cc = shiftedAscii[cc];
+	else
+		cc = unshiftedAscii[cc];
+	if (cc >= KBD_NOKEY) {
+		/*
+		 * A function key was typed - ignore it.
+		 */
+		return (-1);
+	}
+	if (cc >= 'a' && cc <= 'z') {
+		if (ctrlDown)
+			cc = cc - 'a' + '\1'; /* ^A */
+		else if (shiftDown)
+			cc = cc - 'a' + 'A';
+	} else if (ctrlDown) {
+		if (cc >= '[' && cc <= '_')
+			cc = cc - '@';
+		else if (cc == ' ' || cc == '@')
+			cc = '\0';
+	}
+	lastChar = cc;
+done:
+	return (cc);
+}
 
 /*
  * ----------------------------------------------------------------------------
