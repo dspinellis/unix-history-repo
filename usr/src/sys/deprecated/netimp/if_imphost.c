@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.7	82/03/12	*/
+/*	if_imphost.c	4.8	82/03/15	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -60,6 +60,7 @@ COUNT(HOSTENTER);
 	addr.s_lh = 0;
 	mprev = &hosts;
 	while (m = *mprev) {
+		mprev = &m->m_next;
 		hp = &mtod(m, struct hmbuf *)->hm_hosts[hash];
 		if (hp->h_refcnt == 0) {
 			if (hp0 == 0)
@@ -68,7 +69,6 @@ COUNT(HOSTENTER);
 		}
 	        if (hp->h_addr.s_addr == addr.s_addr)    
 			goto foundhost;
-		mprev = &m->m_next;
 	}
 
 	/*

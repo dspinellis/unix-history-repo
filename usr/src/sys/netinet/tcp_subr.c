@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.17	82/03/13	*/
+/*	tcp_subr.c	4.18	82/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -93,7 +93,7 @@ tcp_respond(tp, ti, ack, seq, flags)
 	int flags;
 {
 	struct mbuf *m;
-	int win = 0;
+	int win = 0, tlen;
 
 COUNT(TCP_RESPOND);
 	if (tp)
@@ -103,10 +103,11 @@ COUNT(TCP_RESPOND);
 		if (m == 0)
 			return;
 		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct tcpiphdr);
+		m->m_len = sizeof (struct tcpiphdr) + 1;
 		*mtod(m, struct tcpiphdr *) = *ti;
 		ti = mtod(m, struct tcpiphdr *);
 		flags = TH_ACK;
+		tlen = 1;
 	} else {
 		m = dtom(ti);
 		m_freem(m->m_next);
@@ -117,10 +118,11 @@ COUNT(TCP_RESPOND);
 		xchg(ti->ti_dst.s_addr, ti->ti_src.s_addr, u_long);
 		xchg(ti->ti_dport, ti->ti_sport, u_short);
 #undef xchg
+		tlen = 0;
 	}
 	ti->ti_next = ti->ti_prev = 0;
 	ti->ti_x1 = 0;
-	ti->ti_len = sizeof (struct tcphdr);
+	ti->ti_len = sizeof (struct tcphdr) + tlen;
 	ti->ti_seq = seq;
 	ti->ti_ack = ack;
 #if vax
@@ -137,9 +139,9 @@ COUNT(TCP_RESPOND);
 #endif
 	ti->ti_urp = 0;
 	ti->ti_sum = in_cksum(m, sizeof(struct tcpiphdr));
-	((struct ip *)ti)->ip_len = sizeof(struct tcpiphdr);
+	((struct ip *)ti)->ip_len = sizeof (struct tcpiphdr) + tlen;
 	((struct ip *)ti)->ip_ttl = TCP_TTL;
-	(void) ip_output(m, (struct mbuf *)0);
+	(void) ip_output(m, (struct mbuf *)0, 0);
 }
 
 /*

@@ -1,4 +1,4 @@
-/*	ip_output.c	1.25	82/02/18	*/
+/*	ip_output.c	1.26	82/03/15	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -11,9 +11,10 @@
 #include "../net/ip.h"
 #include "../net/ip_var.h"
 
-ip_output(m, opt)
+ip_output(m, opt, allowbroadcast)
 	struct mbuf *m;
 	struct mbuf *opt;
+	int allowbroadcast;
 {
 	register struct ip *ip = mtod(m, struct ip *);
 	register struct ifnet *ifp;
@@ -39,6 +40,9 @@ COUNT(IP_OUTPUT);
 		if (ifp == 0)
 			goto bad;
 	}
+	if (!allowbroadcast && ifp->if_broadaddr.s_addr != 0 &&
+	    ifp->if_broadaddr.s_addr == ip->ip_dst.s_addr)
+		goto bad;
 
 	/*
 	 * If small enough for interface, can just send directly.

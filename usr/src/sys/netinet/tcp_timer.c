@@ -1,4 +1,4 @@
-/* tcp_timer.c 4.15 82/02/25 */
+/* tcp_timer.c 4.16 82/03/15 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -50,7 +50,7 @@ COUNT(TCP_FASTTIMO);
  */
 tcp_slowtimo()
 {
-	register struct inpcb *ip;
+	register struct inpcb *ip, *ipnxt;
 	register struct tcpcb *tp;
 	int s = splnet();
 	register int i;
@@ -64,19 +64,25 @@ COUNT(TCP_SLOWTIMO);
 		splx(s);
 		return;
 	}
-	for (; ip != &tcb; ip = ip->inp_next) {
+	while (ip != &tcb) {
 		tp = intotcpcb(ip);
 		if (tp == 0)
 			continue;
+		ipnxt = ip->inp_next;
 		for (i = 0; i < TCPT_NTIMERS; i++) {
-			if (tp->t_timer[i] && --tp->t_timer[i] == 0)
+			if (tp->t_timer[i] && --tp->t_timer[i] == 0) {
 				(void) tcp_usrreq(tp->t_inpcb->inp_socket,
 				    PRU_SLOWTIMO, (struct mbuf *)0,
 				    (caddr_t)i);
+				if (ipnxt->inp_prev != ip)
+					goto tpgone;
+			}
 		}
 		tp->t_idle++;
 		if (tp->t_rtt)
 			tp->t_rtt++;
+tpgone:
+		ip = ipnxt;
 	}
 	tcp_iss += TCP_ISSINCR/PR_SLOWHZ;		/* increment iss */
 	splx(s);
@@ -161,11 +167,11 @@ printf("rexmt set to %d\n", tp->t_timer[TCPT_REXMT]);
 			tcp_drop(tp, ETIMEDOUT);
 			return;
 		}
-		if (tp->t_inpcb->inp_socket->so_options & SO_NOKEEPALIVE)
-			tp->t_idle = 0;
-		else
+		if (tp->t_inpcb->inp_socket->so_options & SO_KEEPALIVE)
 			tcp_respond(tp,
 			    tp->t_template, tp->rcv_nxt, tp->snd_una-1, 0);
+		else
+			tp->t_idle = 0;
 		tp->t_timer[TCPT_KEEP] = TCPTV_KEEP;
 		return;
 

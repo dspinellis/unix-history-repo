@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.60	82/03/13	*/
+/*	tcp_input.c	1.61	82/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,9 +21,7 @@
 #include "../net/tcp_debug.h"
 #include "../errno.h"
 
-#ifdef notdef
 int	tcpprintfs = 0;
-#endif
 int	tcpcksum = 1;
 struct	sockaddr_in tcp_in = { AF_INET };
 struct	tcpiphdr tcp_saveti;
@@ -80,7 +78,8 @@ COUNT(TCP_INPUT);
 #endif
 		if (ti->ti_sum = in_cksum(m, len)) {
 			tcpstat.tcps_badsum++;
-			printf("tcp cksum %x\n", ti->ti_sum);
+			if (tcpprintfs)
+				printf("tcp cksum %x\n", ti->ti_sum);
 			goto drop;
 		}
 	}
@@ -94,7 +93,8 @@ COUNT(TCP_INPUT);
 		tcpstat.tcps_badoff++;
 		goto drop;
 	}
-	ti->ti_len = tlen - off;
+	tlen -= off;
+	ti->ti_len = tlen;
 	if (off > sizeof (struct tcphdr)) {
 		if ((m = m_pullup(m, sizeof (struct ip) + off)) == 0) {
 			tcpstat.tcps_hdrops++;
@@ -116,7 +116,7 @@ COUNT(TCP_INPUT);
 	tiflags = ti->ti_flags;
 
 	/*
-	 * drop IP header
+	 * Drop TCP and IP headers.
 	 */
 	off += sizeof (struct ip);
 	m->m_off += off;
@@ -317,7 +317,8 @@ trimthenstep6:
 					tiflags &= ~TH_URG;
 				todrop--;
 			}
-			if (todrop > ti->ti_len)
+			if (todrop > ti->ti_len ||
+			    todrop == ti->ti_len && (tiflags&TH_FIN) == 0)
 				goto dropafterack;
 			m_adj(m, todrop);
 			ti->ti_seq += todrop;
@@ -336,7 +337,7 @@ trimthenstep6:
 		 */
 		todrop = (ti->ti_seq+ti->ti_len) - (tp->rcv_nxt+tp->rcv_wnd);
 		if (todrop > 0) {
-			if (todrop > ti->ti_len)
+			if (todrop >= ti->ti_len)
 				goto dropafterack;
 			m_adj(m, -todrop);
 			ti->ti_len -= todrop;
@@ -681,10 +682,11 @@ step6:
 
 dropafterack:
 	/*
-	 * Generate an ACK dropping incoming segment.
-	 * Make ACK reflect our state.
+	 * Generate an ACK dropping incoming segment if it occupies
+	 * sequence space, where the ACK reflects our state.
 	 */
-	if (tiflags & TH_RST)
+	if ((tiflags&TH_RST) ||
+	    tlen == 0 && (tiflags&(TH_SYN|TH_FIN)) == 0)
 		goto drop;
 	tcp_respond(tp, ti, tp->rcv_nxt, tp->snd_nxt, TH_ACK);
 	return;
@@ -703,7 +705,8 @@ dropwithreset:
 	else {
 		if (tiflags & TH_SYN)
 			ti->ti_len++;
-		tcp_respond(tp, ti, ti->ti_seq+ti->ti_len, (tcp_seq)0, TH_RST|TH_ACK);
+		tcp_respond(tp, ti, ti->ti_seq+ti->ti_len, (tcp_seq)0,
+		    TH_RST|TH_ACK);
 	}
 	return;
 

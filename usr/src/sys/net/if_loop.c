@@ -1,4 +1,4 @@
-/*	if_loop.c	4.5	81/12/22	*/
+/*	if_loop.c	4.6	82/03/15	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -39,13 +39,21 @@ looutput(ifp, m0, pf)
 	int pf;
 {
 	int s = splimp();
+	register struct ifqueue *ifq;
 
 	ifp->if_opackets++;
 	switch (pf) {
 
 #ifdef INET
 	case PF_INET:
-		IF_ENQUEUE(&ipintrq, m0);
+		ifq = &ipintrq;
+		if (IF_QFULL(ifq)) {
+			IF_DROP(ifq);
+			(void) m_freem(m0);
+			splx(s);
+			return (0);
+		}
+		IF_ENQUEUE(ifq, m0);
 		setipintr();
 		break;
 #endif
@@ -53,7 +61,7 @@ looutput(ifp, m0, pf)
 	default:
 		splx(s);
 		printf("lo%d: can't encapsulate pf%d\n", ifp->if_unit, pf);
-		m_freem(m0);
+		(void) m_freem(m0);
 		return (0);
 	}
 	ifp->if_ipackets++;

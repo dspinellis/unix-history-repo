@@ -1,4 +1,4 @@
-/*	if.c	4.9	82/03/09	*/
+/*	if.c	4.10	82/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,13 +6,18 @@
 #include "../net/in_systm.h"
 #include "../net/if.h"
 
+int	ifqmaxlen = IFQ_MAXLEN;
+
 ifinit()
 {
 	register struct ifnet *ifp;
 
 	for (ifp = ifnet; ifp; ifp = ifp->if_next)
-		if (ifp->if_init)
+		if (ifp->if_init) {
 			(*ifp->if_init)();
+			if (ifp->if_snd.ifq_maxlen == 0)
+				ifp->if_snd.ifq_maxlen = ifqmaxlen;
+		}
 }
 
 ifubareset(uban)
