@@ -1,4 +1,4 @@
-/*	conf.c	1.6	86/11/25	*/
+/*	conf.c	1.7	87/02/19	*/
 
 #include "param.h"
 #include "systm.h"
@@ -12,12 +12,13 @@ int	nodev();
 
 #include "dk.h"
 #if NVD > 0
-int	vdopen(),vdstrategy(),vdread(),vdwrite(),vddump(),vdsize();
+int	vdopen(),vdstrategy(),vdread(),vdwrite(),vdioctl(),vddump(),vdsize();
 #else
 #define	vdopen		nodev
 #define	vdstrategy	nodev
 #define	vdread		nodev
 #define	vdwrite		nodev
+#define	vdioctl		nodev
 #define	vddump		nodev
 #define	vdsize		0
 #endif
@@ -184,7 +185,7 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nulldev,	0,
 	seltrue,	nodev,
 	vdopen,		nulldev,	vdread,		vdwrite,	/*5*/
-	nodev,		nodev,		nulldev,	0,
+	vdioctl,	nodev,		nulldev,	0,
 	seltrue,	nodev,
 	nodev,		nulldev,	nodev,		nodev,		/*6*/
 	nodev,		nodev,		nulldev,	0,
