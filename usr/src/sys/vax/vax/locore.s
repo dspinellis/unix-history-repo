@@ -1,4 +1,4 @@
-/*	locore.s	4.31	81/02/27	*/
+/*	locore.s	4.32	81/03/02	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -86,11 +86,13 @@ SCBVEC(powfail):
 SCBVEC(chme): SCBVEC(chms): SCBVEC(chmu):
 	PUSHR; PANIC("CHM? in kernel");
 SCBVEC(stray):
-	PUSHR; PRINTF(0,"Stray interrupt\n"); POPR;
+	PUSHR; PRINTF(0, "stray scb interrupt\n"); POPR;
 	rei
+SCBVEC(cmrd):
+	PUSHR; calls $0,_memerr; POPR; rei
 SCBVEC(wtime):
-	PUSHR; pushl 6*4(sp); PRINTF(1,"Write timeout %x\n"); POPR;
-	PANIC("Write timeout");		/* should be rei? */
+	PUSHR; pushl 6*4(sp); PRINTF(1,"write timeout %x\n"); POPR;
+	PANIC("wtimo");
 
 #if NMBA > 0
 #if VAX780
@@ -303,12 +305,12 @@ _/**/mname:	.globl	_/**/mname;		\
 
 	.data
 	.align	2
-	SYSMAP(Sysmap	,Sysbase	,SYSPTSIZE/4	)
+	SYSMAP(Sysmap	,Sysbase	,SYSPTSIZE	)
 	SYSMAP(UMBAbeg	,umbabeg	,0		)
 	SYSMAP(Nexmap	,nexus		,16*NNEXUS	)
 	SYSMAP(UMEMmap	,umem		,16*MAXNUBA	)
 	SYSMAP(UMBAend	,umbaend	,0		)
-	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE/4	)
+	SYSMAP(Usrptmap	,usrpt		,USRPTSIZE	)
 	SYSMAP(Forkmap	,forkutl	,UPAGES		)
 	SYSMAP(Xswapmap	,xswaputl	,UPAGES		)
 	SYSMAP(Xswap2map,xswap2utl	,UPAGES		)
@@ -339,12 +341,15 @@ _cpu:	.long	0
 	.globl	start
 start:
 	.word	0
+/* set system control block base and system page table params */
 	mtpr	$_scb-0x80000000,$SCBB
-	mtpr	$_Sysmap-0x80000000,$SBR	## GROT ??
-	mtpr	$_Syssize,$SLR			## GROT ??
-	mtpr	$_Sysmap,$P0BR			## GROT ??
-	mtpr	$_Syssize,$P0LR			## GROT ??
-	movl	$_intstack+NISP*NBPG,sp		# set ISP
+	mtpr	$_Sysmap-0x80000000,$SBR
+	mtpr	$_Syssize,$SLR
+/* double map the kernel into the virtual user addresses of phys mem */
+	mtpr	$_Sysmap,$P0BR
+	mtpr	$_Syssize,$P0LR
+/* set ISP and get cpu type */
+	movl	$_intstack+NISP*NBPG,sp
 	mfpr	$SID,r0
 	movab	_cpu,r1
 	extzv	$24,$8,r0,(r1)
@@ -382,8 +387,8 @@ start:
 /* make kernel text space read-only */
 	movab	_etext+NBPG-1,r1; bbcc $31,r1,0f; 0: ashl $-PGSHIFT,r1,r1
 1:	bisl3	$PG_V|PG_KR,r2,_Sysmap[r2]; aoblss r1,r2,1b
-/* make kernel data, bss */
-	movab	_end+NBPG-1,r1; bbcc	$31,r1,0f; 0:; ashl $-PGSHIFT,r1,r1
+/* make kernel data, bss, read-write */
+	movab	_end+NBPG-1,r1; bbcc $31,r1,0f; 0:; ashl $-PGSHIFT,r1,r1
 1:	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]; aoblss r1,r2,1b
 /* now go to mapped mode */
 	mtpr	$1,$TBIA; mtpr $1,$MAPEN; jmp *$0f; 0:
@@ -444,9 +449,7 @@ start:
 	movab	_end+NBPG-1,r0; bbcc $31,r0,0f; 0:; ashl $-PGSHIFT,r0,-(sp)
 	addl2	$UPAGES+1,(sp); calls $1,_main
 /* proc[1] == /etc/init now running here; run icode */
-	pushl	$PSL_CURMOD|PSL_PRVMOD
-	pushl	$0
-	rei
+	pushl	$PSL_CURMOD|PSL_PRVMOD; pushl $0; rei
 
 /* signal trampoline code: it is known that this code takes exactly 12 bytes */
 /* in ../h/pcb.h and in the movc3 above */
