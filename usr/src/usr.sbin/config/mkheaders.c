@@ -1,5 +1,5 @@
 /*
- *	mkheaders.c	1.4	81/02/26
+ *	mkheaders.c	1.5	81/02/26
  * Make all the .h files for the optional entries
  */
 
@@ -80,6 +80,10 @@ int count;
     if (inf == NULL)
     {
 	outf = fopen(file, "w");
+	if (outf == NULL) {
+	    perror(file);
+	    exit(1);
+	}
 	fprintf(outf, "#define %s %d\n", name, count);
 	fclose(outf);
 	return;
@@ -117,6 +121,10 @@ int count;
 	fl_head = fl;
     }
     outf = fopen(file, "w");
+    if (outf == NULL) {
+	perror(file);
+	exit(1);
+    }
     for (fl = fl_head; fl != NULL; fl = fl->f_next)
     {
 	fprintf(outf, "#define %s %d\n", fl->f_fn, fl->f_type);

@@ -1,5 +1,5 @@
 %{
-/*	lang.l	1.3	81/02/25	*/
+/*	lang.l	1.4	81/02/26	*/
 
 #include <ctype.h>
 #include "y.tab.h"
@@ -107,6 +107,6 @@ char *str;
 {
 	int num;
 
-	sscanf(str, "%x", &num);
+	sscanf(str+2, "%x", &num);
 	return num;
 }

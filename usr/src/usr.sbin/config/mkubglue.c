@@ -1,6 +1,6 @@
 /*
  * Make the uba interrupt file ubglue.s
- *	mkubglue.c	1.2	81/02/26
+ *	mkubglue.c	1.3	81/02/26
  */
 #include <stdio.h>
 #include "config.h"
@@ -12,6 +12,10 @@ ubglue()
     register struct device *dp, *mp;
 
     fp = fopen(path("ubglue.s"), "w");
+    if (fp == NULL) {
+	perror(path("ubglue.s"));
+	exit(1);
+    }
     for (dp = dtab ; dp != NULL; dp = dp->d_next)
     {
 	mp = dp->d_conn;
