@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs_vfsops.c	1.1 (Berkeley) %G%
+ *	@(#)lofs_vfsops.c	1.2 (Berkeley) %G%
  *
  * $Id: lofs_vfsops.c,v 1.9 1992/05/30 10:26:24 jsp Exp jsp $
  */
@@ -294,7 +294,7 @@ lofs_sync(mp, waitfor)
 struct mount *mp;
 int waitfor;
 {
-	return VFS_SYNC(VFSTOLOFS(mp)->looped_vfs, waitfor);
+	return (0);
 }
 
 lofs_fhtovp(mp, fhp, setgen, vpp)
