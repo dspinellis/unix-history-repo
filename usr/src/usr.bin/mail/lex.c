@@ -8,7 +8,7 @@
  * Lexical processing of commands.
  */
 
-static char *SccsId = "@(#)lex.c	1.5 %G%";
+static char *SccsId = "@(#)lex.c	1.6 %G%";
 
 /*
  * Set up editing on the given file name.
@@ -483,7 +483,13 @@ announce(pr)
 	extern char *version;
 	register struct message *mp;
 
-	vec[0] = 1;
+	for (mp = &message[0]; mp < &message[msgCount]; mp++)
+		if (mp->m_flag & MNEW)
+			break;
+	if (mp < &message[msgCount])
+		vec[0] = mp - &message[0] + 1;
+	else
+		vec[0] = 1;
 	vec[1] = 0;
 	if (pr && value("quiet") == NOSTR)
 		printf(greeting, version);
