@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.23 (Berkeley) %G%
+.\"	@(#)2.t	6.24 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -77,9 +77,15 @@ image of
 .IP 5)
 A
 .Xr tar
-image of the rest of
+image of
 .Pn /usr/src
+except sys and contrib
 .IP 6)
+A
+.Xr tar
+image of
+.Pn /usr/src/contrib
+.IP 7)
 (8mm Exabyte tape distributions only)
 A
 .Xr tar
@@ -1426,7 +1432,6 @@ and
 .Pn /usr :
 .br
 .ne 5
-.DS
 .TS
 lw(2i) l.
 \fB#\fP \fImount -u /dev/\*(Dk#a /\fP	(read-write mount root filesystem)
@@ -1458,7 +1463,6 @@ lw(2i) l.
 \fB#\fP \fIrm -r /usr/*\fP	(remove excess bootstrap binaries)
 \fB#\fP \fImount /dev/\*(Dk#p /usr\fP	(remount /usr)
 .TE
-.DE
 If no disk label has been installed on the disk, the
 .Xr newfs
 command will require a third argument to specify the disk type,
@@ -1499,17 +1503,11 @@ you will start by creating and mounting it:
 .LP
 First you will extract the kernel source:
 .DS
-\fB#\fP \fImkdir /usr/src/sys\fP
-\fB#\fP \fIchmod 755 /usr/src/sys\fP
-\fB#\fP \fIcd /usr/src/sys\fP
+\fB#\fP \fIcd /usr/src\fP
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP	(extract the kernel sources)
+(this takes about 15-30 minutes)
 .DE
-.PP
-If you are using 6250bpi tapes, the second reel of the
-distribution is no longer needed; you should now mount the third
-reel instead.  The installation procedure continues from this
-point on the 8mm tape.
 .PP
 The next tar file contains the sources for the utilities.
 It is extracted as follows:
@@ -1519,6 +1517,23 @@ lw(2i) l.
 \fB#\fP \fIcd /usr/src\fP
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xpbf 40 /dev/rmt12\fP 	(extract the utility source)
+(this takes about 30-60 minutes)
+.TE
+.DE
+.PP
+If you are using 6250bpi tapes, the second reel of the
+distribution is no longer needed; you should now mount the third
+reel instead.  The installation procedure continues from this
+point on the 8mm tape.
+.PP
+The next tar file contains the sources for the contributed software.
+It is extracted as follows:
+.DS
+.TS
+lw(2i) l.
+\fB#\fP \fIcd /usr/src\fP
+\fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
+\fB#\fP \fItar xpbf 40 /dev/rmt12\fP 	(extract the contributed software source)
 (this takes about 30-60 minutes)
 .TE
 .DE
@@ -1534,6 +1549,7 @@ format.  As distributed, X11R5 should be placed in
 \fB#\fP \fIcd /usr/src\fP
 \fB#\fP \fImt -f /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP	(extract the X11R5 source)
+(this takes about 30-60 minutes)
 .DE
 Many of the X11 utilities search using the path
 .Pn /usr/X11 ,
