@@ -37,10 +37,12 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00079
+ * CURRENT PATCH LEVEL:         2       00080
  * --------------------         -----   ----------------------
  *
  * 10 Feb 93	Jordan K. Hubbard	Added select entry for com driver
+ * 10 Feb 93    Julian Elischer		Add empty table entries
+ *					so we can allocate numbers
  */
 static char rcsid[] = "$Header: /usr/src/sys.386bsd/i386/i386/RCS/conf.c,v 1.2 92/01/21 14:21:57 william Exp Locker: toor $";
 
@@ -123,6 +125,18 @@ struct bdevsw	bdevsw[] =
 	  wtdump,	wtsize,		B_TAPE },
 	{ asopen,	asclose,	asstrategy,	asioctl,	/*4*/
 	  asdump,	assize,		NULL },
+	{ enxio,	enxio,		enxio,		enxio,		/*5*/
+	  enxio,	NULL,		NULL },
+	{ enxio,	enxio,		enxio,		enxio,		/*6*/
+	  enxio,	NULL,		NULL },
+	{ enxio,	enxio,		enxio,		enxio,		/*7*/
+	  enxio,	NULL,		NULL },
+	{ enxio,	enxio,		enxio,		enxio,		/*8*/
+	  enxio,	NULL,		NULL },
+	{ enxio,	enxio,		enxio,		enxio,		/*9*/
+	  enxio,	NULL,		NULL },
+	{ enxio,	enxio,		enxio,		enxio,		/*A*/
+	  enxio,	NULL,		NULL },
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
@@ -220,8 +234,62 @@ struct cdevsw	cdevsw[] =
 	  pcioctl,	nullop,		nullop,		&pccons,
 	  ttselect,	pcmmap,		NULL },
 	{ asopen,	asclose,	rawread,	rawwrite,	/*D*/
-	  asioctl,	enodev,		nullop,		NULL,
+	  asioctl,	enodev,		nullop,		NULL,	/* scsi disk*/
 	  seltrue,	enodev,		asstrategy },
+	{ enxio,	enxio,		enxio,		enxio,		/*E*/
+	  enxio,	enxio,		enxio,		NULL,	/* scsi tape*/
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*F*/
+	  enxio,	enxio,		enxio,		NULL,	/* scsi cdrom*/
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*10*/
+	  enxio,	enxio,		enxio,		NULL,	/* lpr*/
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*11*/
+	  enxio,	enxio,		enxio,		NULL,	/* scsi 'changer'*/
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*12*/
+	  enxio,	enxio,		enxio,		NULL,	/* scsi generic */
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*13*/
+	  enxio,	enxio,		enxio,		NULL,	/* xten power ctrlr*/
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*14*/
+	  enxio,	enxio,		enxio,		NULL,	/* soundblaster?*/
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*15*/
+	  enxio,	enxio,		enxio,		NULL,
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*16*/
+	  enxio,	enxio,		enxio,		NULL,
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*17*/
+	  enxio,	enxio,		enxio,		NULL,
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*18*/
+	  enxio,	enxio,		enxio,		NULL,
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*19*/
+	  enxio,	enxio,		enxio,		NULL,
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*1A*/
+	  enxio,	enxio,		enxio,		NULL,
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*1B*/
+	  enxio,	enxio,		enxio,		NULL,
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*1C*/
+	  enxio,	enxio,		enxio,		NULL,
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*1D*/
+	  enxio,	enxio,		enxio,		NULL,
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*1E*/
+	  enxio,	enxio,		enxio,		NULL,
+	  enxio,	enxio,		enxio },
+	{ enxio,	enxio,		enxio,		enxio,		/*1F*/
+	  enxio,	enxio,		enxio,		NULL,
+	  enxio,	enxio,		enxio },
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
