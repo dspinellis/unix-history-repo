@@ -1,0 +1,4 @@
+
+The i386 architecture does not compile in 4.4BSD, although
+there are only a few unresolved symbols representing routines
+that need to be written.
