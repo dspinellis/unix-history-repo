@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.1 83/10/31";
+static	char *sccsid = "@(#)dr_1.c	2.2 83/11/01";
 #endif
 
 #include "driver.h"
@@ -45,26 +45,20 @@ char **argv;
 	windspeed = cc->windspeed;
 	winddir = cc->winddir;
 	for (;;) {
+		sleep(7);
 		Sync();
 		next();
 		unfoul();
 		checkup();
 		prizecheck();
 		moveall();
-		/*
-		readpos();
-		*/
 		thinkofgrapples();
 		boardcomp();
 		compcombat();
-		/*
-		readpos();
-		*/
 		resolve();
 		reload();
 		checksails();
 		Sync();
-		sleep(7);
 	}
 }
 
