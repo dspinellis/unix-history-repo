@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_disksubr.c	7.5 (Berkeley) %G%
+ *	@(#)ufs_disksubr.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -141,7 +141,7 @@ readdisklabel(dev, strat, lp)
 		lp->d_partitions[0].p_size = 0x1fffffff;
 	lp->d_partitions[0].p_offset = 0;
 
-	bp = geteblk(lp->d_secsize);
+	bp = geteblk((int)lp->d_secsize);
 	bp->b_dev = dev;
 	bp->b_blkno = LABELSECTOR;
 	bp->b_bcount = lp->d_secsize;
@@ -207,6 +207,8 @@ setdisklabel(olp, nlp, openmask)
 			npp->p_cpg = opp->p_cpg;
 		}
 	}
+ 	nlp->d_checksum = 0;
+ 	nlp->d_checksum = dkcksum(nlp);
 	*olp = *nlp;
 	return (0);
 }
@@ -235,7 +237,7 @@ writedisklabel(dev, strat, lp)
 			return (EXDEV);			/* not quite right */
 		labelpart = 0;
 	}
-	bp = geteblk(lp->d_secsize);
+	bp = geteblk((int)lp->d_secsize);
 	bp->b_dev = makedev(major(dev), dkminor(dkunit(dev), labelpart));
 	bp->b_blkno = LABELSECTOR;
 	bp->b_bcount = lp->d_secsize;
@@ -245,18 +247,27 @@ writedisklabel(dev, strat, lp)
 	if (bp->b_flags & B_ERROR) {
 		error = u.u_error;		/* XXX */
 		u.u_error = 0;
-		goto bad;
+		goto done;
 	}
-	dlp = (struct disklabel *)(bp->b_un.b_addr + LABELOFFSET);
-	*dlp = *lp;
-	bp->b_flags = B_WRITE;
-	(*strat)(bp); biowait(bp);
-	biowait(bp);
-	if (bp->b_flags & B_ERROR) {
-		error = u.u_error;		/* XXX */
-		u.u_error = 0;
+	for (dlp = (struct disklabel *)bp->b_un.b_addr;
+	    dlp <= (struct disklabel *)
+	      (bp->b_un.b_addr + lp->d_secsize - sizeof(*dlp));
+	    dlp = (struct disklabel *)((char *)dlp + sizeof(long))) {
+		if (dlp->d_magic == DISKMAGIC && dlp->d_magic2 == DISKMAGIC &&
+		    dkcksum(dlp) == 0) {
+			*dlp = *lp;
+			bp->b_flags = B_WRITE;
+			(*strat)(bp);
+			biowait(bp);
+			if (bp->b_flags & B_ERROR) {
+				error = u.u_error;		/* XXX */
+				u.u_error = 0;
+			}
+			goto done;
+		}
 	}
-bad:
+	error = ESRCH;
+done:
 	brelse(bp);
 	return (error);
 }
