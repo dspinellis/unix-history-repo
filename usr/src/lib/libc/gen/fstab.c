@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fstab.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstab.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/errno.h>
@@ -102,7 +102,7 @@ fstabscan()
 			return(1);
 
 bad:		/* no way to distinguish between EOF and syntax error */
-		write(EBADFORMAT);
+		write(EFTYPE);
 	}
 	/* NOTREACHED */
 }

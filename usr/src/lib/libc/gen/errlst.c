@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)errlst.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)errlst.c	5.9 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 char *sys_errlist[] = {
@@ -107,7 +107,7 @@ char *sys_errlist[] = {
 
 	"No locks available",			/* 77 - ENOLCK */
 	"Function not implemented",		/* 78 - ENOSYS */
-	"Incorrect format",			/* 79 - EBADFORMAT */
+	"Inappropriate file type or format",	/* 79 - EFTYPE */
 };
 int errno;
 int sys_nerr = { sizeof sys_errlist/sizeof sys_errlist[0] };
