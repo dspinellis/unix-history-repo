@@ -1,4 +1,4 @@
-/*	ht.c	4.6	81/12/01	*/
+/*	ht.c	4.7	82/03/07	*/
 
 /*
  * TM03/TU?? tape driver
@@ -9,6 +9,7 @@
 #include "../h/inode.h"
 #include "../h/pte.h"
 #include "../h/mbareg.h"
+#include "../h/fs.h"
 #include "saio.h"
 #include "savax.h"
 
