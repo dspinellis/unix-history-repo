@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)query.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)query.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -48,16 +48,29 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int cc, count, bits;
+	extern char *optarg;
+	extern int optind;
+	int ch, cc, count, bits;
 	struct sockaddr from;
 	int fromlen = sizeof(from), size = 32*1024;
 	struct timeval shorttime;
-	
-	if (argc < 2) {
-usage:
-		printf("usage: query [ -n ] hosts...\n");
+
+	while ((ch = getopt(argc, argv, "n")) != EOF)
+		switch((char)ch) {
+		case 'n':
+			nflag++;
+			break;
+		case '?':
+		default:
+			goto usage;
+		}
+	argv += optind;
+
+	if (!*argv) {
+usage:		printf("usage: query [-n] hosts...\n");
 		exit(1);
 	}
+
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0) {
 		perror("socket");
@@ -66,21 +79,9 @@ usage:
 	if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size)) < 0)
 		perror("setsockopt SO_RCVBUF");
 
-	argv++, argc--;
-	if (*argv[0] == '-') {
-		switch (argv[0][1]) {
-		case 'n':
-			nflag++;
-			break;
-		default:
-			goto usage;
-		}
-		argc--, argv++;
-	}
-	while (argc > 0) {
-		query(*argv);
+	while (*argv) {
+		query(*argv++);
 		count++;
-		argv++, argc--;
 	}
 
 	/*
@@ -125,8 +126,9 @@ query(host)
 	router.sin_addr.s_addr = inet_addr(host);
 	if (router.sin_addr.s_addr == -1) {
 		hp = gethostbyname(host);
-		if (hp == 0) {
-			printf("%s: unknown\n", host);
+		if (hp == NULL) {
+			fprintf(stderr, "query: %s: ", host);
+			herror((char *)NULL);
 			exit(1);
 		}
 		bcopy(hp->h_addr, &router.sin_addr, hp->h_length);
