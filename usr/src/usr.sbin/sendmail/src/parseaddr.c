@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.29	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.30	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -462,6 +462,24 @@ toktype(c)
 /*
 **  REWRITE -- apply rewrite rules to token vector.
 **
+**	This routine is an ordered production system.  Each rewrite
+**	rule has a LHS (called the pattern) and a RHS (called the
+**	rewrite); 'rwr' points the the current rewrite rule.
+**
+**	For each rewrite rule, 'avp' points the address vector we
+**	are trying to match against, and 'pvp' points to the pattern.
+**	If pvp points to a special match value (MATCHANY, MATCHONE,
+**	MATCHCLASS) then the address in avp matched is saved away
+**	in the match vector (pointed to by 'mvp').
+**
+**	When a match between avp & pvp does not match, we try to
+**	back out.  If we back up over a MATCHONE or a MATCHCLASS
+**	we must also back out the match in mvp.  If we reach a
+**	MATCHANY we just extend the match and start over again.
+**
+**	When we finally match, we rewrite the address vector
+**	and try over again.
+**
 **	Parameters:
 **		pvp -- pointer to token vector.
 **
@@ -488,7 +506,6 @@ rewrite(pvp, ruleset)
 	register char *ap;		/* address pointer */
 	register char *rp;		/* rewrite pointer */
 	register char **avp;		/* address vector pointer */
-	char **avfp;			/* first word in current match */
 	register char **rvp;		/* rewrite vector pointer */
 	struct rewrite *rwr;		/* pointer to current rewrite rule */
 	struct match mlist[MAXMATCH];	/* stores match on LHS */
@@ -521,7 +538,7 @@ rewrite(pvp, ruleset)
 
 		/* try to match on this rule */
 		mlp = mlist;
-		for (rvp = rwr->r_lhs, avfp = avp = pvp; *avp != NULL; )
+		for (rvp = rwr->r_lhs, avp = pvp; *avp != NULL; )
 		{
 			ap = *avp;
 			rp = *rvp;
@@ -537,20 +554,6 @@ rewrite(pvp, ruleset)
 				register STAB *s;
 				register int class;
 
-			  case MATCHONE:
-				/* match exactly one token */
-				mlp->first = mlp->last = avp++;
-				mlp++;
-				avfp = avp;
-				break;
-
-			  case MATCHANY:
-				/* match any number of tokens */
-				mlp->first = avfp;
-				mlp->last = avp++;
-				mlp++;
-				break;
-
 			  case MATCHCLASS:
 				/* match any token in a class */
 				class = rp[1];
@@ -564,10 +567,13 @@ rewrite(pvp, ruleset)
 				if (s == NULL || (s->s_class & (1 << class)) == 0)
 					goto fail;
 
-				/* mark match */
+				/* explicit fall-through */
+
+			  case MATCHONE:
+			  case MATCHANY:
+				/* match exactly one token */
 				mlp->first = mlp->last = avp++;
 				mlp++;
-				avfp = avp;
 				break;
 
 			  default:
@@ -575,7 +581,6 @@ rewrite(pvp, ruleset)
 				if (!sameword(rp, ap))
 					goto fail;
 				avp++;
-				avfp = avp;
 				break;
 			}
 
@@ -590,14 +595,15 @@ rewrite(pvp, ruleset)
 				rp = *rvp;
 				if (*rp == MATCHANY)
 				{
-					avfp = mlp->first;
+					/* extend binding and continue */
+					mlp[-1].last = avp++;
+					rvp++;
 					break;
 				}
-				else if (*rp == MATCHONE || *rp == MATCHCLASS)
+				avp--;
+				if (*rp == MATCHONE || *rp == MATCHCLASS)
 				{
 					/* back out binding */
-					avp--;
-					avfp = avp;
 					mlp--;
 				}
 			}
@@ -633,6 +639,20 @@ rewrite(pvp, ruleset)
 					register char **pp;
 
 					m = &mlist[rp[1] - '1'];
+# ifdef DEBUG
+					if (Debug > 13)
+					{
+						printf("$%c:", rp[1]);
+						pp = m->first;
+						do
+						{
+							printf(" %x=\"", *pp);
+							fflush(stdout);
+							printf("%s\"", *pp);
+						} while (pp++ != m->last);
+						printf("\n");
+					}
+# endif DEBUG
 					pp = m->first;
 					do
 					{
