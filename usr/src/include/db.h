@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)db.h	8.3 (Berkeley) %G%
+ *	@(#)db.h	8.4 (Berkeley) %G%
  */
 
 #ifndef _DB_H_
@@ -19,12 +19,12 @@
 #define	RET_SUCCESS	 0
 #define	RET_SPECIAL	 1
 
-#define	MAX_PAGE_NUMBER	ULONG_MAX	/* >= # of pages in a file */
-typedef u_long	pgno_t;
-#define	MAX_PAGE_OFFSET	USHRT_MAX	/* >= # of bytes in a page */
-typedef u_short	indx_t;
-#define	MAX_REC_NUMBER	ULONG_MAX	/* >= # of records in a tree */
-typedef u_long	recno_t;
+#define	MAX_PAGE_NUMBER	0xffffffff	/* >= # of pages in a file */
+typedef u_int32_t	pgno_t;
+#define	MAX_PAGE_OFFSET	65535		/* >= # of bytes in a page */
+typedef u_int16_t	indx_t;
+#define	MAX_REC_NUMBER	0xffffffff	/* >= # of records in a tree */
+typedef u_int32_t	recno_t;
 
 /* Key/data structure -- a Data-Base Thang. */
 typedef struct {
@@ -65,9 +65,9 @@ typedef enum { DB_BTREE, DB_HASH, DB_RECNO } DBTYPE;
 #define	DB_SHMEM	0x40000000	/* Use shared memory. */
 #define	DB_TXN		0x80000000	/* Do transactions. */
 #else
-#define	DB_LOCK		0x00002000	/* Do locking. */
-#define	DB_SHMEM	0x00004000	/* Use shared memory. */
-#define	DB_TXN		0x00008000	/* Do transactions. */
+#define	DB_LOCK		    0x2000	/* Do locking. */
+#define	DB_SHMEM	    0x4000	/* Use shared memory. */
+#define	DB_TXN		    0x8000	/* Do transactions. */
 #endif
 
 /* Access method description structure. */
@@ -89,15 +89,16 @@ typedef struct __db {
 /* Structure used to pass parameters to the btree routines. */
 typedef struct {
 #define	R_DUP		0x01	/* duplicate keys */
-	u_long	 flags;
-	int	 cachesize;	/* bytes to cache */
-	int	 maxkeypage;	/* maximum keys per page */
-	int	 minkeypage;	/* minimum keys per page */
-	int	 psize;		/* page size */
-				/* comparison, prefix functions */
-	int	 (*compare)	__P((const DBT *, const DBT *));
-	int	 (*prefix)	__P((const DBT *, const DBT *));
-	int	 lorder;	/* byte order */
+	u_long	flags;
+	u_int	cachesize;	/* bytes to cache */
+	int	maxkeypage;	/* maximum keys per page */
+	int	minkeypage;	/* minimum keys per page */
+	u_int	psize;		/* page size */
+	int	(*compare)	/* comparison function */
+	    __P((const DBT *, const DBT *));
+	size_t	(*prefix)	/* prefix function */
+	    __P((const DBT *, const DBT *));
+	int	lorder;		/* byte order */
 } BTREEINFO;
 
 #define	HASHMAGIC	0x061561
@@ -105,13 +106,13 @@ typedef struct {
 
 /* Structure used to pass parameters to the hashing routines. */
 typedef struct {
-	int	 bsize;		/* bucket size */
-	int	 ffactor;	/* fill factor */
-	int	 nelem;		/* number of elements */
-	int	 cachesize;	/* bytes to cache */
-				/* hash function */
-	int	 (*hash) __P((const void *, size_t));
-	int	 lorder;	/* byte order */
+	u_int	bsize;		/* bucket size */
+	u_int	ffactor;	/* fill factor */
+	u_int	nelem;		/* number of elements */
+	u_int	cachesize;	/* bytes to cache */
+	u_int32_t		/* hash function */
+		(*hash) __P((const void *, size_t));
+	int	lorder;		/* byte order */
 } HASHINFO;
 
 /* Structure used to pass parameters to the record routines. */
@@ -119,36 +120,37 @@ typedef struct {
 #define	R_FIXEDLEN	0x01	/* fixed-length records */
 #define	R_NOKEY		0x02	/* key not required */
 #define	R_SNAPSHOT	0x04	/* snapshot the input */
-	u_long	 flags;
-	int	 cachesize;	/* bytes to cache */
-	int	 psize;		/* page size */
-	int	 lorder;	/* byte order */
-	size_t	 reclen;	/* record length (fixed-length records) */
-	u_char	 bval;		/* delimiting byte (variable-length records */
+	u_long	flags;
+	u_int	cachesize;	/* bytes to cache */
+	u_int	psize;		/* page size */
+	int	lorder;		/* byte order */
+	size_t	reclen;		/* record length (fixed-length records) */
+	u_char	bval;		/* delimiting byte (variable-length records */
 	char	*bfname;	/* btree file name */ 
 } RECNOINFO;
 
+#ifdef __DBINTERFACE_PRIVATE
 /*
- * Little endian <==> big endian long swap macros.
- *	BLSWAP		swap a memory location
- *	BLPSWAP		swap a referenced memory location
- *	BLSWAP_COPY	swap from one location to another
+ * Little endian <==> big endian 32-bit swap macros.
+ *	M_32_SWAP	swap a memory location
+ *	P_32_SWAP	swap a referenced memory location
+ *	P_32_COPY	swap from one location to another
  */
-#define BLSWAP(a) {							\
-	u_long _tmp = a;						\
+#define	M_32_SWAP(a) {							\
+	u_int32_t _tmp = a;						\
 	((char *)&a)[0] = ((char *)&_tmp)[3];				\
 	((char *)&a)[1] = ((char *)&_tmp)[2];				\
 	((char *)&a)[2] = ((char *)&_tmp)[1];				\
 	((char *)&a)[3] = ((char *)&_tmp)[0];				\
 }
-#define	BLPSWAP(a) {							\
-	u_long _tmp = *(u_long *)a;					\
+#define	P_32_SWAP(a) {							\
+	u_int32_t _tmp = *(u_int32_t *)a;				\
 	((char *)a)[0] = ((char *)&_tmp)[3];				\
 	((char *)a)[1] = ((char *)&_tmp)[2];				\
 	((char *)a)[2] = ((char *)&_tmp)[1];				\
 	((char *)a)[3] = ((char *)&_tmp)[0];				\
 }
-#define	BLSWAP_COPY(a, b) {						\
+#define	P_32_COPY(a, b) {						\
 	((char *)&(b))[0] = ((char *)&(a))[3];				\
 	((char *)&(b))[1] = ((char *)&(a))[2];				\
 	((char *)&(b))[2] = ((char *)&(a))[1];				\
@@ -156,25 +158,26 @@ typedef struct {
 }
 
 /*
- * Little endian <==> big endian short swap macros.
- *	BSSWAP		swap a memory location
- *	BSPSWAP		swap a referenced memory location
- *	BSSWAP_COPY	swap from one location to another
+ * Little endian <==> big endian 16-bit swap macros.
+ *	M_16_SWAP	swap a memory location
+ *	P_16_SWAP	swap a referenced memory location
+ *	P_16_COPY	swap from one location to another
  */
-#define BSSWAP(a) {							\
-	u_short _tmp = a;						\
+#define	M_16_SWAP(a) {							\
+	u_int16_t _tmp = a;						\
 	((char *)&a)[0] = ((char *)&_tmp)[1];				\
 	((char *)&a)[1] = ((char *)&_tmp)[0];				\
 }
-#define BSPSWAP(a) {							\
-	u_short _tmp = *(u_short *)a;					\
+#define	P_16_SWAP(a) {							\
+	u_int16_t _tmp = *(u_int16_t *)a;				\
 	((char *)a)[0] = ((char *)&_tmp)[1];				\
 	((char *)a)[1] = ((char *)&_tmp)[0];				\
 }
-#define BSSWAP_COPY(a, b) {						\
+#define	P_16_COPY(a, b) {						\
 	((char *)&(b))[0] = ((char *)&(a))[1];				\
 	((char *)&(b))[1] = ((char *)&(a))[0];				\
 }
+#endif
 
 __BEGIN_DECLS
 DB *dbopen __P((const char *, int, int, DBTYPE, const void *));
