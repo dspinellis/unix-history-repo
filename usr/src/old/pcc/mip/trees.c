@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.19 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.20 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -1339,14 +1339,14 @@ opact( p )  NODE *p; {
 
 	if( ((mt1 | mt2) & MVOID) &&
 	    o != COMOP &&
+	    o != COLON &&
+	    !(o == QUEST && (mt1 & MVOID) == 0) &&
 	    !(o == CAST && (mt1 & MVOID)) ){
 		/* if lhs of RETURN is void, grammar will complain */
 		if( o != RETURN )
 			uerror( "value of void expression used" );
 		return( NCVT );
 		}
-	mt1 &= ~MVOID;
-	mt2 &= ~MVOID;
 	mt12 = mt1 & mt2;
 
 	switch( o ){
@@ -1433,6 +1433,7 @@ opact( p )  NODE *p; {
 		else if( (mt1&MINT) && (mt2&MPTR) ) return( TYPR+PUN );
 		else if( (mt1&MPTR) && (mt2&MINT) ) return( TYPL+PUN );
 		else if( mt12 & MSTR ) return( NCVT+TYPL+OTHER );
+		else if( mt12 == MVOID ) return( NCVT+TYPL );
 		break;
 
 	case ASSIGN:
