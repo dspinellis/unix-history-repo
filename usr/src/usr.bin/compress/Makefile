@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 # if you have bugs in your C compiler dont use -O
 COMFLAGS=-DBSD4_2 -O -DSACREDMEM=256000
@@ -15,7 +15,7 @@ USERMEM:
 	sh usermem.sh > USERMEM
 
 install: compress
-	cp compress $(BIN)
+	install -s compress $(BIN)
 	rm -f $(BIN)/uncompress $(BIN)/zcat
 	ln $(BIN)/compress $(BIN)/uncompress
 	ln $(BIN)/compress $(BIN)/zcat
