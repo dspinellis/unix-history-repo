@@ -1,16 +1,17 @@
 /* 
- * Copyright (c) 1987 Carnegie-Mellon University
  * Copyright (c) 1991 Regents of the University of California.
  * All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
- * The Mach Operating System project at Carnegie-Mellon University.
+ * the Systems Programming Group of the University of Utah Computer
+ * Science Department and William Jolitz of UUNET Technologies Inc.
  *
- * The CMU software License Agreement specifies the terms and conditions
- * for use and redistribution.
+ * %sccs.include.redist.c%
  *
- * This version by William Jolitz for UUNET Technologies, Inc.
- *
+ *	@(#)pmap.c	7.6 (Berkeley)	%G%
+ */
+
+/*
  * Derived from hp300 version by Mike Hibler, this version by William
  * Jolitz uses a recursive map [a pde points to the page directory] to
  * map the page tables using the pagetables themselves. This is done to
@@ -18,7 +19,6 @@
  * space, and to reduce the cost of memory to each process.
  *
  *	Derived from: hp300/@(#)pmap.c	7.1 (Berkeley) 12/5/90
- *	@(#)pmap.c	7.6	%G%
  */
 
 /*
