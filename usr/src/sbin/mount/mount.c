@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -334,18 +334,9 @@ prmount(spec, name, flags)
 	char *spec, *name;
 	long flags;
 {
-	register char *root;
 
 	if (opflags & ISBGRND)
 		return;
-	/*
-	 * trim trailing /'s and find last component of name
-	 */
-	for (root = index(spec, '\0'); *--root == '/';)
-		/* void */;
-	*++root = '\0';
-	if (root = rindex(spec, '/'))
-		spec = root + 1;
 	printf("%s on %s", spec, name);
 	if (flags & M_RDONLY)
 		printf(" (read-only)");
