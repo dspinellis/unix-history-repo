@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -52,7 +52,7 @@ lint: FRC
 	lint ${CFLAGS} ${SRCS}
 	lint ${CFLAGS} fmt.c head.c
 
-tags: xhead.c FRC
+tags: FRC
 	ctags ${SRCS}
 	ctags -a fmt.c
 	sort -o tags tags
