@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)time.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)time.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,10 @@ settimes()
  * prefix to another command
  */
 void
-dotime()
+/*ARGSUSED*/
+dotime(v, t)
+    Char **v;
+    struct command *t;
 {
     struct timeval timedol;
     struct rusage ru1, ruch;
@@ -56,8 +59,10 @@ dotime()
  * donice is only called when it on the line by itself or with a +- value
  */
 void
-donice(v)
-    register Char **v;
+/*ARGSUSED*/
+donice(v, t)
+    Char **v;
+    struct command *t;
 {
     register Char *cp;
     int     nval = 0;
@@ -118,7 +123,7 @@ prusage(r0, r1, e, b)
 
     for (; *cp; cp++)
 	if (*cp != '%')
-	    xputchar(*cp);
+	    (void) fputc(*cp, cshout);
 	else if (cp[1])
 	    switch (*++cp) {
 
@@ -137,71 +142,73 @@ prusage(r0, r1, e, b)
 	    case 'P':		/* percent time spent running */
 		/* check if it did not run at all */
 		i = (ms == 0) ? 0 : (t * 1000 / ms);
-		xprintf("%ld.%01ld%%", i / 10, i % 10);	/* nn.n% */
+		/* nn.n% */
+		(void) fprintf(cshout, "%ld.%01ld%%", i / 10, i % 10);
 		break;
 
 	    case 'W':		/* number of swaps */
 		i = r1->ru_nswap - r0->ru_nswap;
-		xprintf("%ld", i);
+		(void) fprintf(cshout, "%ld", i);
 		break;
 
 	    case 'X':		/* (average) shared text size */
-		xprintf("%ld", t == 0 ? 0L : (r1->ru_ixrss - r0->ru_ixrss) / t);
+		(void) fprintf(cshout, "%ld", t == 0 ? 0L : 
+			       (r1->ru_ixrss - r0->ru_ixrss) / t);
 		break;
 
 	    case 'D':		/* (average) unshared data size */
-		xprintf("%ld", t == 0 ? 0L :
+		(void) fprintf(cshout, "%ld", t == 0 ? 0L :
 			(r1->ru_idrss + r1->ru_isrss -
 			 (r0->ru_idrss + r0->ru_isrss)) / t);
 		break;
 
 	    case 'K':		/* (average) total data memory used  */
-		xprintf("%ld", t == 0 ? 0L :
+		(void) fprintf(cshout, "%ld", t == 0 ? 0L :
 			((r1->ru_ixrss + r1->ru_isrss + r1->ru_idrss) -
 			 (r0->ru_ixrss + r0->ru_idrss + r0->ru_isrss)) / t);
 		break;
 
 	    case 'M':		/* max. Resident Set Size */
-		xprintf("%ld", r1->ru_maxrss / 2L);
+		(void) fprintf(cshout, "%ld", r1->ru_maxrss / 2L);
 		break;
 
 	    case 'F':		/* page faults */
-		xprintf("%ld", r1->ru_majflt - r0->ru_majflt);
+		(void) fprintf(cshout, "%ld", r1->ru_majflt - r0->ru_majflt);
 		break;
 
 	    case 'R':		/* page reclaims */
-		xprintf("%ld", r1->ru_minflt - r0->ru_minflt);
+		(void) fprintf(cshout, "%ld", r1->ru_minflt - r0->ru_minflt);
 		break;
 
 	    case 'I':		/* FS blocks in */
-		xprintf("%ld", r1->ru_inblock - r0->ru_inblock);
+		(void) fprintf(cshout, "%ld", r1->ru_inblock - r0->ru_inblock);
 		break;
 
 	    case 'O':		/* FS blocks out */
-		xprintf("%ld", r1->ru_oublock - r0->ru_oublock);
+		(void) fprintf(cshout, "%ld", r1->ru_oublock - r0->ru_oublock);
 		break;
 
 	    case 'r':		/* socket messages recieved */
-		xprintf("%ld", r1->ru_msgrcv - r0->ru_msgrcv);
+		(void) fprintf(cshout, "%ld", r1->ru_msgrcv - r0->ru_msgrcv);
 		break;
 
 	    case 's':		/* socket messages sent */
-		xprintf("%ld", r1->ru_msgsnd - r0->ru_msgsnd);
+		(void) fprintf(cshout, "%ld", r1->ru_msgsnd - r0->ru_msgsnd);
 		break;
 
 	    case 'k':		/* number of signals recieved */
-		xprintf("%ld", r1->ru_nsignals - r0->ru_nsignals);
+		(void) fprintf(cshout, "%ld", r1->ru_nsignals-r0->ru_nsignals);
 		break;
 
 	    case 'w':		/* num. voluntary context switches (waits) */
-		xprintf("%ld", r1->ru_nvcsw - r0->ru_nvcsw);
+		(void) fprintf(cshout, "%ld", r1->ru_nvcsw - r0->ru_nvcsw);
 		break;
 
 	    case 'c':		/* num. involuntary context switches */
-		xprintf("%ld", r1->ru_nivcsw - r0->ru_nivcsw);
+		(void) fprintf(cshout, "%ld", r1->ru_nivcsw - r0->ru_nivcsw);
 		break;
 	    }
-    xputchar('\n');
+    (void) fputc('\n', cshout);
 }
 
 static void
@@ -211,7 +218,7 @@ pdeltat(t1, t0)
     struct timeval td;
 
     tvsub(&td, t1, t0);
-    xprintf("%d.%01d", td.tv_sec, td.tv_usec / 100000);
+    (void) fprintf(cshout, "%d.%01d", td.tv_sec, td.tv_usec / 100000);
 }
 
 void
@@ -234,4 +241,50 @@ tvsub(tdiff, t1, t0)
     tdiff->tv_usec = t1->tv_usec - t0->tv_usec;
     if (tdiff->tv_usec < 0)
 	tdiff->tv_sec--, tdiff->tv_usec += 1000000;
+}
+
+#define  P2DIG(i) (void) fprintf(cshout, "%d%d", (i) / 10, (i) % 10)
+
+void
+psecs(l)
+    long    l;
+{
+    register int i;
+
+    i = l / 3600;
+    if (i) {
+	(void) fprintf(cshout, "%d:", i);
+	i = l % 3600;
+	P2DIG(i / 60);
+	goto minsec;
+    }
+    i = l;
+    (void) fprintf(cshout, "%d", i / 60);
+minsec:
+    i %= 60;
+    (void) fputc(':', cshout);
+    P2DIG(i);
+}
+
+void
+pcsecs(l)			/* PWP: print mm:ss.dd, l is in sec*100 */
+    long    l;
+{
+    register int i;
+
+    i = l / 360000;
+    if (i) {
+	(void) fprintf(cshout, "%d:", i);
+	i = (l % 360000) / 100;
+	P2DIG(i / 60);
+	goto minsec;
+    }
+    i = l / 100;
+    (void) fprintf(cshout, "%d", i / 60);
+minsec:
+    i %= 60;
+    (void) fputc(':', cshout);
+    P2DIG(i);
+    (void) fputc('.', cshout);
+    P2DIG((int) (l % 100));
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dol.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)dol.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -665,8 +665,9 @@ Dtestq(c)
  * Unit 0 should have been closed before this call.
  */
 void
+/*ARGSUSED*/
 heredoc(term)
-    Char   *term;
+    Char *term;
 {
     register int c;
     Char   *Dv[2];

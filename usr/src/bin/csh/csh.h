@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)csh.h	5.15 (Berkeley) %G%
+ *	@(#)csh.h	5.16 (Berkeley) %G%
  */
 
 /*
@@ -28,7 +28,7 @@
 #define	FSHTTY	15		/* /dev/tty when manip pgrps */
 #define	FSHIN	16		/* Preferred desc for shell input */
 #define	FSHOUT	17		/* ... shell output */
-#define	FSHDIAG	18		/* ... shell diagnostics */
+#define	FSHERR	18		/* ... shell diagnostics */
 #define	FOLDSTD	19		/* ... old std input */
 
 #ifdef PROF
@@ -64,6 +64,9 @@ typedef void *ptr_t;
 #define xcalloc(n, s)	calloc(n, s)
 #define xfree(p)	free(p)
 #endif				/* SYSMALLOC */
+
+#include <stdio.h>
+FILE *cshin, *cshout, *csherr;
 
 #define	isdir(d)	((d.st_mode & S_IFMT) == S_IFDIR)
 
@@ -133,23 +136,6 @@ int     tpgrp;			/* Terminal process group */
 /* If tpgrp is -1, leave tty alone! */
 int     opgrp;			/* Initial pgrp and tty pgrp */
 
-/*
- * These are declared here because they want to be
- * initialized in sh.init.c (to allow them to be made readonly)
- */
-
-extern struct biltins {
-    char   *bname;
-    void    (*bfunct) ();
-    short   minargs, maxargs;
-}       bfunc[];
-extern int nbfunc;
-
-extern struct srch {
-    char   *s_name;
-    short   s_value;
-}       srchn[];
-extern int nsrchn;
 
 /*
  * To be able to redirect i/o for builtins easily, the shell moves the i/o
@@ -159,10 +145,10 @@ extern int nsrchn;
  * The desired initial values for these descriptors are defined in
  * local.h.
  */
-short   SHIN;			/* Current shell input (script) */
-short   SHOUT;			/* Shell output */
-short   SHDIAG;			/* Diagnostic output... shell errs go here */
-short   OLDSTD;			/* Old standard input (def for cmds) */
+int   SHIN;			/* Current shell input (script) */
+int   SHOUT;			/* Shell output */
+int   SHERR;			/* Diagnostic output... shell errs go here */
+int   OLDSTD;			/* Old standard input (def for cmds) */
 
 /*
  * Error control
@@ -219,7 +205,7 @@ struct Bin {
     off_t   Bfseekp;		/* Seek pointer */
     off_t   Bfbobp;		/* Seekp of beginning of buffers */
     off_t   Bfeobp;		/* Seekp of end of buffers */
-    short   Bfblocks;		/* Number of buffer blocks */
+    int     Bfblocks;		/* Number of buffer blocks */
     Char  **Bfbuf;		/* The array of buffer blocks */
 }       B;
 
@@ -316,9 +302,27 @@ struct command {
 #define	t_dcdr	R.T_dcdr
     Char  **t_dcom;		/* Command/argument vector 	 */
     struct command *t_dspr;	/* Pointer to ()'d subtree 	 */
-    short   t_nice;
+    int   t_nice;
 };
 
+
+/*
+ * These are declared here because they want to be
+ * initialized in sh.init.c (to allow them to be made readonly)
+ */
+
+extern struct biltins {
+    char   *bname;
+    void    (*bfunct) __P((Char **, struct command *));
+    short   minargs, maxargs;
+}       bfunc[];
+extern int nbfunc;
+
+extern struct srch {
+    char   *s_name;
+    short   s_value;
+}       srchn[];
+extern int nsrchn;
 
 /*
  * The keywords for the parser
@@ -388,7 +392,7 @@ Char  **alvec;			/* The (remnants of) alias vector */
 /*
  * Filename/command name expansion variables
  */
-short   gflag;			/* After tglob -> is globbing needed? */
+int   gflag;			/* After tglob -> is globbing needed? */
 
 #define MAXVARLEN 30		/* Maximum number of char in a variable name */
 
@@ -422,7 +426,6 @@ struct Hist {
     struct wordent Hlex;
     int     Hnum;
     int     Href;
-    long    Htime;
     struct Hist *Hnext;
 }       Histlist;
 
@@ -455,8 +458,7 @@ Char    HISTSUB;		/* auto-substitute character */
 #define str2short(a) 		(a)
 #define blk2short(a) 		saveblk(a)
 #define short2blk(a) 		saveblk(a)
-#define short2str(a) 		(a)
-#define short2qstr(a)		(a)
+#define short2str(a) 		trim(a)
 #else
 #define Strchr(a, b)		s_strchr(a, b)
 #define Strrchr(a, b) 		s_strrchr(a, b)

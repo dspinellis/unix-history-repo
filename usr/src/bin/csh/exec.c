@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -74,11 +74,13 @@ static void	texec __P((Char *, Char **));
 static int	hashname __P((Char *));
 
 void
-doexec(t)
-    register struct command *t;
+/*ARGSUSED*/
+doexec(v, t)
+    Char **v;
+    struct command *t;
 {
     register Char *dp, **pv, **av, *sav;
-    register struct varent *v;
+    register struct varent *pathv;
     register bool slash;
     register int hashval = 0, hashval1, i;
     Char   *blk[2];
@@ -108,8 +110,8 @@ doexec(t)
     expath = Strsave(pv[0]);
     Vexpath = expath;
 
-    v = adrof(STRpath);
-    if (v == 0 && expath[0] != '/') {
+    pathv = adrof(STRpath);
+    if (pathv == 0 && expath[0] != '/') {
 	blkfree(pv);
 	pexerr();
     }
@@ -151,7 +153,7 @@ doexec(t)
      */
     SHIN = 0;
     SHOUT = 1;
-    SHDIAG = 2;
+    SHERR = 2;
     OLDSTD = 0;
     /*
      * We must do this AFTER any possible forking (like `foo` in glob) so that
@@ -162,10 +164,10 @@ doexec(t)
      * If no path, no words in path, or a / in the filename then restrict the
      * command search.
      */
-    if (v == 0 || v->vec[0] == 0 || slash)
+    if (pathv == 0 || pathv->vec[0] == 0 || slash)
 	pv = justabs;
     else
-	pv = v->vec;
+	pv = pathv->vec;
     sav = Strspl(STRslash, *av);/* / command name for postpending */
     Vsav = sav;
     if (havhash)
@@ -323,9 +325,9 @@ texec(sf, st)
 
 /*ARGSUSED*/
 void
-execash(t, kp)
-    char  **t;
-    register struct command *kp;
+execash(v, t)
+    Char  **v;
+    register struct command *t;
 {
     if (chkstop == 0 && setintr)
 	panystop(0);
@@ -333,9 +335,9 @@ execash(t, kp)
     (void) signal(SIGINT, parintr);
     (void) signal(SIGQUIT, parintr);
     (void) signal(SIGTERM, parterm);	/* if doexec loses, screw */
-    lshift(kp->t_dcom, 1);
+    lshift(t->t_dcom, 1);
     exiterr = 1;
-    doexec(kp);
+    doexec(NULL, t);
     /* NOTREACHED */
 }
 
@@ -344,31 +346,32 @@ xechoit(t)
     Char  **t;
 {
     if (adrof(STRecho)) {
-	flush();
-	haderr = 1;
-	blkpr(t), xputchar('\n');
-	haderr = 0;
+	(void) fflush(csherr);
+	blkpr(csherr, t);
+	(void) fputc('\n', csherr);
     }
 }
 
-/*VARARGS0*/
 void
-dohash()
+/*ARGSUSED*/
+dohash(v, t)
+    Char **v;
+    struct command *t;
 {
     DIR    *dirp;
     register struct dirent *dp;
     register int cnt;
     int     i = 0;
-    struct varent *v = adrof(STRpath);
+    struct varent *pathv = adrof(STRpath);
     Char  **pv;
     int     hashval;
 
     havhash = 1;
     for (cnt = 0; cnt < sizeof xhash; cnt++)
 	xhash[cnt] = 0;
-    if (v == 0)
+    if (pathv == 0)
 	return;
-    for (pv = v->vec; *pv; pv++, i++) {
+    for (pv = pathv->vec; *pv; pv++, i++) {
 	if (pv[0][0] != '/')
 	    continue;
 	dirp = opendir(short2str(*pv));
@@ -390,17 +393,23 @@ dohash()
 }
 
 void
-dounhash()
+/*ARGSUSED*/
+dounhash(v, t)
+    Char **v;
+    struct command *t;
 {
     havhash = 0;
 }
 
 void
-hashstat()
+/*ARGSUSED*/
+hashstat(v, t)
+    Char **v;
+    struct command *t;
 {
     if (hits + misses)
-	xprintf("%d hits, %d misses, %d%%\n",
-		hits, misses, 100 * hits / (hits + misses));
+	(void) fprintf(cshout, "%d hits, %d misses, %d%%\n",
+		       hits, misses, 100 * hits / (hits + misses));
 }
 
 /*

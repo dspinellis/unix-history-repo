@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	5.6 (Berkeley) %G%
+ *	@(#)proc.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -44,7 +44,7 @@ struct process {
 #define	PAWAITED	(1<<7)	/* top level is waiting for it */
 #define	PFOREGND	(1<<8)	/* started in shells pgrp */
 #define	PDUMPED		(1<<9)	/* process dumped core */
-#define	PDIAG		(1<<10)	/* diagnostic output also piped out */
+#define	PERR		(1<<10)	/* diagnostic output also piped out */
 #define	PPOU		(1<<11)	/* piped output */
 #define	PREPORTED	(1<<12)	/* status has been reported */
 #define	PINTERRUPTED	(1<<13)	/* job stopped via interrupt signal */

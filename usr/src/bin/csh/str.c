@@ -6,8 +6,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
+
+#define MALLOC_INCR	128
 
 /*
  * tc.str.c: Short string package
@@ -62,7 +64,6 @@ short2blk(src)
     return (sdst);
 }
 
-#define MALLOC_INCR	1024
 Char   *
 str2short(src)
     register char *src;
@@ -95,46 +96,6 @@ str2short(src)
     return (sdst);
 }
 
-char   *
-short2qstr(src)
-    register Char *src;
-{
-    static char *sdst = NULL;
-    static size_t dstsize = 0;
-    register char *dst, *edst;
-
-    if (src == NULL)
-	return (NULL);
-
-    if (sdst == NULL) {
-	dstsize = MALLOC_INCR;
-	sdst = (char *) xmalloc((size_t) dstsize * sizeof(char));
-    }
-    dst = sdst;
-    edst = &dst[dstsize];
-    while (*src) {
-	if (*src & QUOTE) {
-	    *dst++ = '\\';
-	    if (dst == edst) {
-		dstsize += MALLOC_INCR;
-		sdst = (char *) xrealloc((ptr_t) sdst,
-					 (size_t) dstsize * sizeof(char));
-		edst = &sdst[dstsize];
-		dst = &edst[-MALLOC_INCR];
-	    }
-	}
-	*dst++ = (char) *src++;
-	if (dst == edst) {
-	    dstsize += MALLOC_INCR;
-	    sdst = (char *) xrealloc((ptr_t) sdst,
-				     (size_t) dstsize * sizeof(char));
-	    edst = &sdst[dstsize];
-	    dst = &edst[-MALLOC_INCR];
-	}
-    }
-    *dst = 0;
-    return (sdst);
-}
 char   *
 short2str(src)
     register Char *src;
@@ -370,7 +331,7 @@ s_strend(cp)
     return (cp);
 }
 
-#ifdef NOTUSED
+# ifdef NOTUSED
 Char   *
 s_strstr(s, t)
     register Char *s, *t;
@@ -386,6 +347,46 @@ s_strstr(s, t)
     } while (*s++ != '\0');
     return (NULL);
 }
-#endif
-
+# endif
 #endif				/* SHORT_STRINGS */
+
+char   *
+short2qstr(src)
+    register Char *src;
+{
+    static char *sdst = NULL;
+    static size_t dstsize = 0;
+    register char *dst, *edst;
+
+    if (src == NULL)
+	return (NULL);
+
+    if (sdst == NULL) {
+	dstsize = MALLOC_INCR;
+	sdst = (char *) xmalloc((size_t) dstsize * sizeof(char));
+    }
+    dst = sdst;
+    edst = &dst[dstsize];
+    while (*src) {
+	if (*src & QUOTE) {
+	    *dst++ = '\\';
+	    if (dst == edst) {
+		dstsize += MALLOC_INCR;
+		sdst = (char *) xrealloc((ptr_t) sdst,
+					 (size_t) dstsize * sizeof(char));
+		edst = &sdst[dstsize];
+		dst = &edst[-MALLOC_INCR];
+	    }
+	}
+	*dst++ = (char) *src++;
+	if (dst == edst) {
+	    dstsize += MALLOC_INCR;
+	    sdst = (char *) xrealloc((ptr_t) sdst,
+				     (size_t) dstsize * sizeof(char));
+	    edst = &sdst[dstsize];
+	    dst = &edst[-MALLOC_INCR];
+	}
+    }
+    *dst = 0;
+    return (sdst);
+}

@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -68,6 +68,10 @@ bool    tellwhat = 0;
 
 extern char **environ;
 
+static int	readf __P((void *, char *, int));
+static fpos_t	seekf __P((void *, fpos_t, int));
+static int	writef __P((void *, const char *, int));
+static int	closef __P((void *));
 static int	srccat __P((Char *, Char *));
 static int	srcfile __P((char *, bool, bool));
 static void	phup __P((int));
@@ -86,6 +90,9 @@ main(argc, argv)
     register char **tempv;
     struct sigvec osv;
 
+    cshin = stdin;
+    cshout = stdout;
+    csherr = stderr;
 
     settimes();			/* Immed. estab. timing base */
 
@@ -154,6 +161,19 @@ main(argc, argv)
      * prefer to use these.
      */
     initdesc();
+    (void) fclose(cshin);
+    (void) fclose(cshout);
+    (void) fclose(csherr);
+    if (!(cshin  = funopen((void *) &SHIN,  readf, writef, seekf, closef)))
+	exit(1);
+    if (!(cshout = funopen((void *) &SHOUT, readf, writef, seekf, closef)))
+	exit(1);
+    if (!(csherr = funopen((void *) &SHERR, readf, writef, seekf, closef)))
+	exit(1);
+    (void) setvbuf(cshin,  NULL, _IOLBF, 0);
+    (void) setvbuf(cshout, NULL, _IOLBF, 0);
+    (void) setvbuf(csherr, NULL, _IOLBF, 0);
+
 
     /*
      * Initialize the shell variables. ARGV and PROMPT are initialized later.
@@ -220,9 +240,9 @@ main(argc, argv)
      * Note that processing of -v/-x is actually delayed till after script
      * processing.
      * 
-     * We set the first character of our name to be '-' if we are a shell running
-     * interruptible commands.  Many programs which examine ps'es use this to
-     * filter such shells out.
+     * We set the first character of our name to be '-' if we are a shell
+     * running interruptible commands.  Many programs which examine ps'es 
+     * use this to filter such shells out.
      */
     argc--, tempv++;
     while (argc > 0 && (tcp = tempv[0])[0] == '-' && *++tcp != '\0' && !batch) {
@@ -332,7 +352,7 @@ main(argc, argv)
 		SHIN = FSHOUT;
 		break;
 	    case 2:
-		SHIN = FSHDIAG;
+		SHIN = FSHERR;
 		break;
 	    default:
 		stderror(ERR_SYSTEM, tempv[0], strerror(errno));
@@ -342,6 +362,7 @@ main(argc, argv)
 	prompt = 0;
 	 /* argc not used any more */ tempv++;
     }
+
     intty = isatty(SHIN);
     intty |= intact;
     if (intty || (intact && isatty(SHOUT))) {
@@ -396,8 +417,8 @@ main(argc, argv)
 	     * Wait till in foreground, in case someone stupidly runs csh &
 	     * dont want to try to grab away the tty.
 	     */
-	    if (isatty(FSHDIAG))
-		f = FSHDIAG;
+	    if (isatty(FSHERR))
+		f = FSHERR;
 	    else if (isatty(FSHOUT))
 		f = FSHOUT;
 	    else if (isatty(OLDSTD))
@@ -433,8 +454,9 @@ main(argc, argv)
 	    }
 	    if (tpgrp == -1) {
 notty:
-		xprintf("Warning: no access to tty (%s).\n", strerror(errno));
-		xprintf("Thus no job control in this shell.\n");
+		(void) fprintf(csherr, "Warning: no access to tty (%s).\n", 
+			       strerror(errno));
+		(void) fprintf(csherr, "Thus no job control in this shell.\n");
 	    }
 	}
     }
@@ -459,7 +481,7 @@ notty:
 	    (void) srcfile(_PATH_DOTCSHRC, 0, 0);
 #endif
 	    if (!fast && !arginp && !onelflg)
-		dohash();
+		dohash(NULL, NULL);
 #ifdef _PATH_DOTLOGIN
 	    if (loginsh)
 		(void) srcfile(_PATH_DOTLOGIN, 0, 0);
@@ -470,10 +492,10 @@ notty:
 	(void) srccat(value(STRhome), STRsldotcshrc);
 
 	if (!fast && !arginp && !onelflg && !havhash)
-	    dohash();
+	    dohash(NULL, NULL);
         if (loginsh)
 	      (void) srccat(value(STRhome), STRsldotlogin);
-	dosource(loadhist);
+	dosource(loadhist, NULL);
     }
 
     /*
@@ -497,13 +519,13 @@ notty:
      */
     if (intty) {
 	if (loginsh) {
-	    xprintf("logout\n");
+	    (void) fprintf(cshout, "logout\n");
 	    (void) close(SHIN);
 	    child = 1;
 	    goodbye();
 	}
 	else {
-	    xprintf("exit\n");
+	    (void) fprintf(cshout, "exit\n");
 	}
     }
     rechist();
@@ -612,7 +634,7 @@ srcunit(unit, onlyown, hflg)
     bool    otell = cantell;
 
     struct Bin saveB;
-    sigset_t omask;
+    volatile sigset_t omask;
     jmp_buf oldexit;
 
     /* The (few) real local variables */
@@ -723,9 +745,9 @@ rechist()
 	SHOUT = fp;
 	(void) Strcpy(buf, value(STRsavehist));
 	dumphist[2] = buf;
-	dohist(dumphist);
-	(void) close(fp);
+	dohist(dumphist, NULL);
 	SHOUT = ftmp;
+	(void) close(fp);
 	didfds = oldidfds;
     }
 }
@@ -754,7 +776,7 @@ goodbye()
 void
 exitstat()
 {
-
+    Char *s;
 #ifdef PROF
     monitor(0);
 #endif
@@ -764,7 +786,8 @@ exitstat()
      * unwarrantedly (sic).
      */
     child = 1;
-    xexit(getn(value(STRstatus)));
+    s = value(STRstatus);
+    xexit(s ? getn(s) : 0);
 }
 
 /*
@@ -799,7 +822,7 @@ void
 pintr1(wantnl)
     bool    wantnl;
 {
-    register Char **v;
+    Char **v;
     sigset_t omask;
 
     omask = sigblock((sigset_t) 0);
@@ -807,13 +830,13 @@ pintr1(wantnl)
 	(void) sigsetmask(omask & ~sigmask(SIGINT));
 	if (pjobs) {
 	    pjobs = 0;
-	    xprintf("\n");
-	    dojobs(jobargv);
+	    (void) fprintf(cshout, "\n");
+	    dojobs(jobargv, NULL);
 	    stderror(ERR_NAME | ERR_INTR);
 	}
     }
     (void) sigsetmask(omask & ~sigmask(SIGCHLD));
-    draino();
+    (void) fpurge(cshout);
     (void) endpwent();
 
     /*
@@ -831,8 +854,8 @@ pintr1(wantnl)
 	reset();
     }
     else if (intty && wantnl) {
-	(void) putraw('\r');
-	(void) putraw('\n');
+	(void) fputc('\r', cshout);
+	(void) fputc('\n', cshout);
     }
     stderror(ERR_SILENT);
 }
@@ -851,19 +874,20 @@ pintr1(wantnl)
  * Note that if catch is not set then we will unwind on any error.
  * If an end-of-file occurs, we return.
  */
+static struct command *savet = NULL;
 void
 process(catch)
     bool    catch;
 {
     jmp_buf osetexit;
-    struct command *t;
+    struct command *t = savet;
 
+    savet = NULL;
     getexit(osetexit);
     for (;;) {
 	pendjob();
 	paraml.next = paraml.prev = &paraml;
 	paraml.word = STRNULL;
-	t = 0;
 	(void) setexit();
 	justpr = enterhist;	/* execute if not entering history */
 
@@ -877,14 +901,15 @@ process(catch)
 	 * For the sake of reset()
 	 */
 	freelex(&paraml);
-	freesyn(t);
-	t = 0;
+	if (savet)
+	    freesyn(savet), savet = NULL;
 
 	if (haderr) {
 	    if (!catch) {
 		/* unwind */
 		doneinp = 0;
 		resexit(osetexit);
+		savet = t;
 		reset();
 	    }
 	    haderr = 0;
@@ -915,7 +940,7 @@ process(catch)
 	     */
 	    if (fseekp == feobp)
 		printprompt();
-	    flush();
+	    (void) fflush(cshout);
 	}
 	if (seterr) {
 	    xfree((ptr_t) seterr);
@@ -927,9 +952,7 @@ process(catch)
 	 * is a lexical error then we forego history echo.
 	 */
 	if (lex(&paraml) && !seterr && intty || adrof(STRverbose)) {
-	    haderr = 1;
-	    prlex(&paraml);
-	    haderr = 0;
+	    prlex(csherr, &paraml);
 	}
 
 	/*
@@ -966,36 +989,40 @@ process(catch)
 	/*
 	 * Parse the words of the input into a parse tree.
 	 */
-	t = syntax(paraml.next, &paraml, 0);
+	savet = syntax(paraml.next, &paraml, 0);
 	if (seterr)
 	    stderror(ERR_OLD);
 
-	execute(t, (tpgrp > 0 ? tpgrp : -1), NULL, NULL);
+	execute(savet, (tpgrp > 0 ? tpgrp : -1), NULL, NULL); 
 
 	/*
 	 * Made it!
 	 */
 	freelex(&paraml);
-	freesyn(t);
+	freesyn((struct command *) savet), savet = NULL;
     }
     resexit(osetexit);
+    savet = t;
 }
 
 void
-dosource(t)
-    register Char **t;
+/*ARGSUSED*/
+dosource(v, t)
+    Char **v;
+    struct command *t;
+
 {
     register Char *f;
     bool    hflg = 0;
     Char    buf[BUFSIZ];
 
-    t++;
-    if (*t && eq(*t, STRmh)) {
-	if (*++t == NULL)
+    v++;
+    if (*v && eq(*v, STRmh)) {
+	if (*++v == NULL)
 	    stderror(ERR_NAME | ERR_HFLAG);
 	hflg++;
     }
-    (void) Strcpy(buf, *t);
+    (void) Strcpy(buf, *v);
     f = globone(buf, G_ERROR);
     (void) strcpy((char *) buf, short2str(f));
     xfree((ptr_t) f);
@@ -1042,9 +1069,10 @@ mailchk()
 	    loginsh && !new)
 	    continue;
 	if (cnt == 1)
-	    xprintf("You have %smail.\n", new ? "new " : "");
+	    (void) fprintf(cshout, "You have %smail.\n", new ? "new " : "");
 	else
-	    xprintf("%s in %s.\n", new ? "New mail" : "Mail", short2str(*vp));
+	    (void) fprintf(cshout, "%s in %s.\n", new ? "New mail" : "Mail", 
+			   short2str(*vp));
     }
     chktim = t;
 }
@@ -1083,6 +1111,50 @@ gethdir(home)
 }
 
 /*
+ * When didfds is set, we do I/O from 0, 1, 2 otherwise from 15, 16, 17
+ * We alsocheck if the shell has already chenged the decriptor to point to
+ * 0, 1, 2 when didfds is set.
+ */
+#define DESC(a) (*((int *) (a)) - (didfds && *((int *) a) >= FSHIN ? FSHIN : 0))
+
+static int
+readf(oreo, buf, siz)
+    void *oreo;
+    char *buf;
+    int siz;
+{
+    return read(DESC(oreo), buf, siz);
+}
+
+
+static int
+writef(oreo, buf, siz)
+    void *oreo;
+    const char *buf;
+    int siz;
+{
+    return write(DESC(oreo), buf, siz);
+}
+
+static fpos_t
+seekf(oreo, off, whence)
+    void *oreo;
+    fpos_t off;
+    int whence;
+{
+    return lseek(DESC(oreo), off, whence);
+}
+
+
+static int
+closef(oreo)
+    void *oreo;
+{
+    return close(DESC(oreo));
+}
+
+
+/*
  * Move the initial descriptors to their eventual
  * resting places, closin all other units.
  */
@@ -1093,7 +1165,7 @@ initdesc()
     didfds = 0;			/* 0, 1, 2 aren't set up */
     (void) ioctl(SHIN = dcopy(0, FSHIN), FIOCLEX, NULL);
     (void) ioctl(SHOUT = dcopy(1, FSHOUT), FIOCLEX, NULL);
-    (void) ioctl(SHDIAG = dcopy(2, FSHDIAG), FIOCLEX, NULL);
+    (void) ioctl(SHERR = dcopy(2, FSHERR), FIOCLEX, NULL);
     (void) ioctl(OLDSTD = dcopy(SHIN, FOLDSTD), FIOCLEX, NULL);
     closem();
 }
@@ -1142,17 +1214,18 @@ printprompt()
     if (!whyles) {
 	for (cp = value(STRprompt); *cp; cp++)
 	    if (*cp == HIST)
-		xprintf("%d", eventno + 1);
+		(void) fprintf(cshout, "%d", eventno + 1);
 	    else {
 		if (*cp == '\\' && cp[1] == HIST)
 		    cp++;
-		xputchar(*cp | QUOTE);
+		(void) fputc(*cp | QUOTE, cshout);
 	    }
     }
     else
 	/*
 	 * Prompt for forward reading loop body content.
 	 */
-	xprintf("? ");
-    flush();
+	(void) fprintf(cshout, "? ");
+    (void) fflush(cshout);
 }
+

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -151,18 +151,19 @@ lex(hp)
 }
 
 void
-prlex(sp0)
+prlex(fp, sp0)
+    FILE *fp;
     struct wordent *sp0;
 {
     register struct wordent *sp = sp0->next;
 
     for (;;) {
-	xprintf("%s", short2str(sp->word));
+	(void) fprintf(fp, "%s", short2str(sp->word));
 	sp = sp->next;
 	if (sp == sp0)
 	    break;
 	if (sp->word[0] != '\n')
-	    xputchar(' ');
+	    (void) fputc(' ', fp);
     }
 }
 
@@ -1295,14 +1296,15 @@ reread:
 		    tpgrp != ctpgrp) {
 		    (void) tcsetpgrp(FSHTTY, tpgrp);
 		    (void) killpg((pid_t) ctpgrp, SIGHUP);
-		    xprintf("Reset tty pgrp from %d to %d\n", ctpgrp, tpgrp);
+		    (void) fprintf(csherr, "Reset tty pgrp from %d to %d\n", 
+				   ctpgrp, tpgrp);
 		    goto reread;
 		}
 		if (adrof(STRignoreeof)) {
 		    if (loginsh)
-			xprintf("\nUse \"logout\" to logout.\n");
+			(void) fprintf(csherr,"\nUse \"logout\" to logout.\n");
 		    else
-			xprintf("\nUse \"exit\" to leave csh.\n");
+			(void) fprintf(csherr,"\nUse \"exit\" to leave csh.\n");
 		    reset();
 		}
 		if (chkstop == 0)
