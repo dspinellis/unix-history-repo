@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dca.c	7.4 (Berkeley) %G%
+ *	@(#)dca.c	7.5 (Berkeley) %G%
  */
 
 #include "dca.h"
@@ -157,19 +157,17 @@ dcaopen(dev, flag)
 	if ((dcasoftCAR & (1 << unit)) || (dcamctl(dev, 0, DMGET) & MSR_DCD))
 		tp->t_state |= TS_CARR_ON;
 	(void) spltty();
-	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&
+	while ((flag&O_NONBLOCK) == 0 && (tp->t_cflag&CLOCAL) == 0 &&
 	       (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
-		if ((error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
-				   ttopen, 0)) ||
-		    (error = ttclosed(tp))) {
-			tp->t_state &= ~TS_WOPEN;
-			(void) spl0();
-			return (error);
-		}
+		if (error = ttysleep(tp, (caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		    ttopen, 0))
+			break;
 	}
 	(void) spl0();
-	return ((*linesw[tp->t_line].l_open)(dev, tp));
+	if (error == 0)
+		error = (*linesw[tp->t_line].l_open)(dev, tp);
+	return (error);
 }
  
 /*ARGSUSED*/

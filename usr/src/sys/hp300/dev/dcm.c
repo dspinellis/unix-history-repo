@@ -11,7 +11,7 @@
  *
  * from: $Hdr: dcm.c 1.17 89/10/01$
  *
- *	@(#)dcm.c	7.5 (Berkeley) %G%
+ *	@(#)dcm.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -286,25 +286,22 @@ dcmopen(dev, flag)
 	else if (dcmmctl(dev, MO_OFF, DMGET) & MI_CD)
 		tp->t_state |= TS_CARR_ON;
 	(void) spltty();
-	while (!(flag&O_NONBLOCK) && !(tp->t_cflag&CLOCAL) &&
+	while ((flag&O_NONBLOCK) == 0 && (tp->t_cflag&CLOCAL) == 0 &&
 	       (tp->t_state & TS_CARR_ON) == 0) {
 		tp->t_state |= TS_WOPEN;
-		if ((error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
-				   ttopen, 0)) ||
-		    (error = ttclosed(tp))) {
-			tp->t_state &= ~TS_WOPEN;
-			(void) spl0();
-			return (error);
-		}
+		if (error = ttysleep(tp, (caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		    ttopen, 0))
+			break;
 	}
 	(void) spl0();
-
 #ifdef DEBUG
 	if (dcmdebug & DDB_OPENCLOSE)
 		printf("dcmopen: u %x st %x fl %x\n",
 			unit, tp->t_state, tp->t_flags);
 #endif
-	return ((*linesw[tp->t_line].l_open)(dev, tp));
+	if (error == 0)
+		error = (*linesw[tp->t_line].l_open)(dev, tp);
+	return (error);
 }
  
 /*ARGSUSED*/
