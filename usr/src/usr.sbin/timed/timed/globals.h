@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-/*	@(#)globals.h	2.3	(Berkeley)	%G%	*/
+/*	@(#)globals.h	2.4	(Berkeley)	%G%	*/
 
 #include <sys/param.h>
 #include <stdio.h>
@@ -19,11 +19,16 @@
 extern int errno;
 extern int sock;
 
-#define RANGE		20
-#define MSGS 		5
-#define TRIALS		10
-#define SAMPLEINTVL	240	
-#define MAXSEQ 		30000
+#define SAMPLEINTVL	240		/* synch() freq for master, sec */
+#define	MAXADJ		20		/* max correction (sec) for adjtime */
+/*
+ * Parameters for network time measurement
+ * of each host using ICMP timestamp requests.
+ */
+#define RANGE		20		/* best expected round-trip time, ms */
+#define MSGS 		5		/* # of timestamp replies to average */
+#define TRIALS		10		/* max # of timestamp echos sent */
+
 #define MINTOUT		360
 #define MAXTOUT		900
 
@@ -35,13 +40,17 @@ extern int sock;
 #define OFF	0
 #define ON	1
 
-#define SLAVE 	1
-#define MASTER	2
-#define IGNORE	4
-#define ALL	(SLAVE|MASTER|IGNORE)
+/*
+ * Global and per-network states.
+ */
+#define NOMASTER 	0		/* no master on any network */
+#define SLAVE 		1
+#define MASTER		2
+#define IGNORE		4
+#define ALL		(SLAVE|MASTER|IGNORE)
 #define SUBMASTER	(SLAVE|MASTER)
 
-#define NHOSTS		30	/* max number of hosts controlled by timed */
+#define NHOSTS		100	/* max number of hosts controlled by timed */
 
 struct host {
 	char *name;
