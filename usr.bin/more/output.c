@@ -82,7 +82,7 @@ put_line()
 		{
 		case UL_CHAR:
 			ul_enter();
-			column += ul_width +1;
+			column += ul_width; /* +1; XXX */
 			break;
 		case UE_CHAR:
 			ul_exit();
@@ -90,7 +90,7 @@ put_line()
 			break;
 		case BO_CHAR:
 			bo_enter();
-			column += bo_width +1;
+			column += bo_width; /*  +1; XXX */
 			break;
 		case BE_CHAR:
 			bo_exit();
