@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_tb.c	7.4 (Berkeley) %G%
+ *	@(#)tty_tb.c	7.5 (Berkeley) %G%
  */
 
 #include "tb.h"
@@ -14,7 +14,6 @@
  * supplies binary coordinate data.
  */
 #include "param.h"
-#include "dir.h"
 #include "user.h"
 #include "tablet.h"
 #include "tty.h"
@@ -130,7 +129,7 @@ tbread(tp, uio)
 
 	if ((tp->t_state&TS_CARR_ON) == 0)
 		return (EIO);
-	ret = uiomove(&tbp->rets, tc->tbc_uiosize, UIO_READ, uio);
+	ret = uiomove(&tbp->rets, tc->tbc_uiosize, uio);
 	if (tc->tbc_flags&TBF_POL)
 		tbp->rets.polpos.p_key = ' ';
 	return (ret);

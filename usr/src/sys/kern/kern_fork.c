@@ -1,25 +1,35 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)kern_fork.c	7.5 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)kern_fork.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "map.h"
-#include "dir.h"
 #include "user.h"
 #include "kernel.h"
 #include "proc.h"
-#include "inode.h"
+#include "vnode.h"
 #include "seg.h"
 #include "vm.h"
 #include "text.h"
 #include "file.h"
 #include "acct.h"
-#include "quota.h"
+#include "../ufs/quota.h"
 
 #include "machine/reg.h"
 #include "machine/pte.h"
@@ -169,7 +179,7 @@ again:
 #endif
 	rpp->p_stat = SIDL;
 	timerclear(&rpp->p_realtimer.it_value);
-	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGI|SOUSIG));
+	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGV|SOUSIG));
 	if (isvfork) {
 		rpp->p_flag |= SVFORK;
 		rpp->p_ndx = rip->p_ndx;
@@ -242,9 +252,10 @@ again:
 			continue;
 		fp->f_count++;
 	}
-	u.u_cdir->i_count++;
+	u.u_cdir->v_count++;
 	if (u.u_rdir)
-		u.u_rdir->i_count++;
+		u.u_rdir->v_count++;
+	crhold(u.u_cred);
 
 	/*
 	 * This begins the section where we must prevent the parent

@@ -11,13 +11,11 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- *	@(#)uipc_usrreq.c	7.10 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
-#include "dir.h"
 #include "user.h"
-#include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"
 #include "socket.h"
@@ -27,6 +25,7 @@
 #include "inode.h"
 #include "file.h"
 #include "stat.h"
+#include "mbuf.h"	/* XXX must appear after mount.h */
 
 /*
  * Unix communications domain.
@@ -401,7 +400,7 @@ unp_connect(so, nam)
 			return (EMSGSIZE);
 	} else
 		*(mtod(nam, caddr_t) + nam->m_len) = 0;
-	ndp->ni_nameiop = LOOKUP | FOLLOW;
+	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
 	ndp->ni_segflg = UIO_SYSSPACE;
 	ip = namei(ndp);
 	if (ip == 0) {
@@ -587,16 +586,18 @@ unp_internalize(rights)
 {
 	register struct file **rp;
 	int oldfds = rights->m_len / sizeof (int);
-	register int i;
+	register int i, fd;
 	register struct file *fp;
 
 	rp = mtod(rights, struct file **);
-	for (i = 0; i < oldfds; i++)
-		if (getf(*(int *)rp++) == 0)
+	for (i = 0; i < oldfds; i++) {
+		fd = *(int *)rp++;
+		if ((unsigned)fd >= NOFILE || u.u_ofile[fd] == NULL)
 			return (EBADF);
+	}
 	rp = mtod(rights, struct file **);
 	for (i = 0; i < oldfds; i++) {
-		fp = getf(*(int *)rp);
+		fp = u.u_ofile[*(int *)rp];
 		*rp++ = fp;
 		fp->f_count++;
 		fp->f_msgcount++;

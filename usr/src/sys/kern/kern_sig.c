@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.7 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -302,7 +302,6 @@ killpg1(signo, pgid, all)
 gsignal(pgid, sig)
 {
 	register struct pgrp *pgrp;
-	register struct proc *p;
 
 	if (!pgid)
 		return;

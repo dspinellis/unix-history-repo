@@ -1,37 +1,57 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)kern_acct.c	7.4 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)kern_acct.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
-#include "inode.h"
-#include "fs.h"
+#include "vnode.h"
+#include "mount.h"
 #include "kernel.h"
 #include "acct.h"
 #include "uio.h"
+#include "syslog.h"
+
+/*
+ * Values associated with enabling and disabling accounting
+ */
+int	acctsuspend = 2;	/* stop accounting when < 2% free space left */
+int	acctresume = 4;		/* resume when free space risen to > 4% */
+struct	timeval chk = { 15, 0 };/* frequency to check space for accounting */
 
 /*
  * SHOULD REPLACE THIS WITH A DRIVER THAT CAN BE READ TO SIMPLIFY.
  */
-struct	inode *acctp;
-struct	inode *savacctp;
+struct	vnode *acctp;
+struct	vnode *savacctp;
 
 /*
  * Perform process accounting functions.
  */
 sysacct()
 {
-	register struct inode *ip;
+	register struct vnode *vp;
 	register struct a {
 		char	*fname;
 	} *uap = (struct a *)u.u_ap;
 	register struct nameidata *ndp = &u.u_nd;
+	extern int acctwatch();
+	struct vnode *oacctp;
 
 	if (u.u_error = suser(u.u_cred, &u.u_acflag))
 		return;
@@ -40,70 +60,79 @@ sysacct()
 		savacctp = NULL;
 	}
 	if (uap->fname==NULL) {
-		if (ip = acctp) {
+		if (vp = acctp) {
 			acctp = NULL;
-			irele(ip);
+			vrele(vp);
+			untimeout(acctwatch, (caddr_t)&chk);
 		}
 		return;
 	}
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
-	ip = namei(ndp);
-	if (ip == NULL)
+	if (u.u_error = namei(ndp))
 		return;
-	if ((ip->i_mode&IFMT) != IFREG) {
+	vp = ndp->ni_vp;
+	if (vp->v_type != VREG) {
 		u.u_error = EACCES;
-		iput(ip);
+		vrele(vp);
 		return;
 	}
-	if (ip->i_fs->fs_ronly) {
+	if (vp->v_mount->m_flag & M_RDONLY) {
 		u.u_error = EROFS;
-		iput(ip);
+		vrele(vp);
 		return;
 	}
-	if (acctp && (acctp->i_number != ip->i_number ||
-	    acctp->i_dev != ip->i_dev))
-		irele(acctp);
-	acctp = ip;
-	iunlock(ip);
+	oacctp = acctp;
+	acctp = vp;
+	if (oacctp)
+		vrele(oacctp);
+	acctwatch(&chk);
 }
 
-int	acctsuspend = 2;	/* stop accounting when < 2% free space left */
-int	acctresume = 4;		/* resume when free space risen to > 4% */
+/*
+ * Periodically check the file system to see if accounting
+ * should be turned on or off.
+ */
+acctwatch(resettime)
+	struct timeval *resettime;
+{
+	struct statfs sb;
 
-struct	acct acctbuf;
+	if (savacctp) {
+		(void)VFS_STATFS(savacctp->v_mount, &sb);
+		if (sb.f_bavail > acctresume * sb.f_blocks / 100) {
+			acctp = savacctp;
+			savacctp = NULL;
+			log(LOG_NOTICE, "Accounting resumed\n");
+			return;
+		}
+	}
+	if (acctp == NULL)
+		return;
+	(void)VFS_STATFS(acctp->v_mount, &sb);
+	if (sb.f_bavail <= acctsuspend * sb.f_blocks / 100) {
+		savacctp = acctp;
+		acctp = NULL;
+		log(LOG_NOTICE, "Accounting suspended\n");
+	}
+	timeout(acctwatch, (caddr_t)resettime, hzto(resettime));
+}
+
 /*
  * On exit, write a record on the accounting file.
  */
 acct()
 {
-	register int i;
-	register struct inode *ip;
-	register struct fs *fs;
 	register struct rusage *ru;
-	off_t siz;
+	struct vnode *vp;
 	struct timeval t;
+	int i;
+	struct acct acctbuf;
 	register struct acct *ap = &acctbuf;
 
-	if (savacctp) {
-		fs = savacctp->i_fs;
-		if (freespace(fs, fs->fs_minfree + acctresume) > 0) {
-			acctp = savacctp;
-			savacctp = NULL;
-			printf("Accounting resumed\n");
-		}
-	}
-	if ((ip = acctp) == NULL)
+	if ((vp = acctp) == NULL)
 		return;
-	fs = acctp->i_fs;
-	if (freespace(fs, fs->fs_minfree + acctsuspend) <= 0) {
-		savacctp = acctp;
-		acctp = NULL;
-		printf("Accounting suspended\n");
-		return;
-	}
-	ilock(ip);
 	bcopy(u.u_comm, ap->ac_comm, sizeof(ap->ac_comm));
 	ru = &u.u_ru;
 	ap->ac_utime = compress(ru->ru_utime.tv_sec, ru->ru_utime.tv_usec);
@@ -127,14 +156,8 @@ acct()
 	else
 		ap->ac_tty = NODEV;
 	ap->ac_flag = u.u_acflag;
-	siz = ip->i_size;
-	u.u_error = 0;				/* XXX */
-	u.u_error =
-	    rdwri(UIO_WRITE, ip, (caddr_t)ap, sizeof (acctbuf), siz,
-		1, (int *)0);
-	if (u.u_error)
-		itrunc(ip, (u_long)siz);
-	iunlock(ip);
+	u.u_error = vn_rdwr(UIO_WRITE, vp, (caddr_t)ap, sizeof (acctbuf),
+		(off_t)0, UIO_SYSSPACE, IO_UNIT|IO_APPEND, u.u_cred, (int *)0);
 }
 
 /*

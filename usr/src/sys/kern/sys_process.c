@@ -1,23 +1,19 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.5 (Berkeley) %G%
+ *	@(#)sys_process.c	7.6 (Berkeley) %G%
  */
 
 #define IPCREG
 #include "param.h"
-#include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
-#include "inode.h"
+#include "vnode.h"
 #include "text.h"
 #include "seg.h"
-#include "vm.h"
 #include "buf.h"
-#include "acct.h"
 #include "ptrace.h"
 
 #include "machine/reg.h"
@@ -100,6 +96,8 @@ procxmt()
 	register int i;
 	register *p;
 	register struct text *xp;
+	struct vattr vattr;
+	struct vnode *vp;
 
 	if (ipc.ip_lock != u.u_procp->p_pid)
 		return (0);
@@ -132,7 +130,9 @@ procxmt()
 		 * If text, must assure exclusive use
 		 */
 		if (xp = u.u_procp->p_textp) {
-			if (xp->x_count!=1 || xp->x_iptr->i_mode&ISVTX)
+			vp = xp->x_vptr;
+			VOP_GETATTR(vp, &vattr, u.u_cred);
+			if (xp->x_count!=1 || (vattr.va_mode & VSVTX))
 				goto error;
 			xp->x_flag |= XTRC;
 		}

@@ -1,15 +1,25 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)kern_exit.c	7.6 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)kern_exit.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "map.h"
-#include "dir.h"
 #include "user.h"
 #include "kernel.h"
 #include "proc.h"
@@ -17,7 +27,7 @@
 #include "wait.h"
 #include "vm.h"
 #include "file.h"
-#include "inode.h"
+#include "vnode.h"
 #include "tty.h"
 #include "syslog.h"
 #include "malloc.h"
@@ -103,23 +113,24 @@ exit(rv)
 			u.u_ttyp->t_pgid = 0;
 		}
 	}
-	ilock(u.u_cdir);
-	iput(u.u_cdir);
+	VOP_LOCK(u.u_cdir);
+	vput(u.u_cdir);
 	if (u.u_rdir) {
-		ilock(u.u_rdir);
-		iput(u.u_rdir);
+		VOP_LOCK(u.u_rdir);
+		vput(u.u_rdir);
 	}
 	u.u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
 	acct();
 #ifdef QUOTA
 	qclean();
 #endif
+	crfree(u.u_cred);
 #ifdef KTRACE
 	/* 
 	 * release trace file
 	 */
 	if (p->p_tracep)
-		irele(p->p_tracep);
+		vrele(p->p_tracep);
 #endif
 	/*
 	/*

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_log.c	7.2 (Berkeley) %G%
+ *	@(#)subr_log.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -11,7 +11,6 @@
  */
 
 #include "param.h"
-#include "dir.h"
 #include "user.h"
 #include "proc.h"
 #include "ioctl.h"
@@ -98,7 +97,7 @@ logread(dev, uio)
 		if (l == 0)
 			break;
 		error = uiomove((caddr_t)&msgbuf.msg_bufc[msgbuf.msg_bufr],
-			(int)l, UIO_READ, uio);
+			(int)l, uio);
 		if (error)
 			break;
 		msgbuf.msg_bufr += l;
