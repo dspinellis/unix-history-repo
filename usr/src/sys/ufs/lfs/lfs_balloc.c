@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.35 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.36 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -115,7 +115,15 @@ lfs_bmaparray(vp, bn, bnp, ap, nump)
 	fs = ip->i_lfs;
 	devvp = VFSTOUFS(vp->v_mount)->um_devvp;
 
-	for (bp = NULL, ++xap; daddr && --num; ++xap) {
+	for (bp = NULL, ++xap; --num; ++xap) {
+		/*
+		 * If we were called explicitly then we don't want to create
+		 * indirect blocks.  Since BMAP calls pass NULL for the ap,
+		 * we can use that to detect if we are called from BMAP or not.
+		 */
+		if (daddr == 0 && ap != NULL)
+			break;
+
 		/* If looking for a meta-block, break out when we find it. */
 		metalbn = xap->in_lbn;
 		if (metalbn == bn)
@@ -138,6 +146,18 @@ lfs_bmaparray(vp, bn, bnp, ap, nump)
 		bp = getblk(vp, metalbn, fs->lfs_bsize);
 		if (bp->b_flags & (B_DONE | B_DELWRI)) {
 			trace(TR_BREADHIT, pack(vp, size), metalbn);
+		} else if (!daddr) {
+			/* Need to create an indirect block */
+			trace(TR_BREADMISS, pack(vp, size), metalbn);
+			bzero(bp->b_un.b_addr, fs->lfs_bsize);
+			*bnp = UNASSIGNED;
+			ip->i_blocks += fsbtodb(fs, 1);
+			fs->lfs_bfree -= fsbtodb(fs, 1);
+			daddr = bp->b_un.b_daddr[xap->in_off];
+			if (error = VOP_BWRITE(bp))
+				return (error);
+			bp = NULL;
+			continue;
 		} else {
 			trace(TR_BREADMISS, pack(vp, size), metalbn);
 			bp->b_blkno = daddr;
@@ -261,7 +281,7 @@ lfs_balloc(vp, iosize, lbn, bpp)
 	struct inode *ip;
 	struct lfs *fs;
 	daddr_t daddr;
-	int error, newblock;
+	int error;
 
 	ip = VTOI(vp);
 	fs = ip->i_lfs;
@@ -272,15 +292,18 @@ lfs_balloc(vp, iosize, lbn, bpp)
 	 * we're writing an entire block.  Note, if the daddr is unassigned,
 	 * the block might still have existed in the cache.  If it did, make
 	 * sure we don't count it as a new block or zero out its contents.
+	 * Note that we always call bmap, even if it's a new block beyond
+	 * the end of file. The reason is so that we can allocate any new
+	 * indirect blocks that are necessary.
 	 */
-	newblock = ip->i_size <= lbn << fs->lfs_bshift;
-	if (!newblock && (error = VOP_BMAP(vp, lbn, NULL, &daddr)))
+
+	*bpp = NULL;
+	if (error = VOP_BMAP(vp, lbn, NULL, &daddr))
 		return (error);
 
-	if (newblock || daddr == UNASSIGNED || iosize == fs->lfs_bsize) {
+	if (daddr == UNASSIGNED || iosize == fs->lfs_bsize) {
 		*bpp = bp = getblk(vp, lbn, fs->lfs_bsize);
-		if (newblock ||
-		    daddr == UNASSIGNED && !(bp->b_flags & B_CACHE)) {
+		if (daddr == UNASSIGNED && !(bp->b_flags & B_CACHE)) {
 			ip->i_blocks += btodb(fs->lfs_bsize);
 			fs->lfs_bfree -= btodb(fs->lfs_bsize);
 			if (iosize != fs->lfs_bsize)
