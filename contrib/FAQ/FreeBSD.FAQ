@@ -5,7 +5,7 @@
    Please mail all suggestions and additions to FreeBSD-FAQ@freefall.cdrom.com
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.6 1994/04/18 20:47:28 wollman Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.7 1994/04/19 10:33:39 jkh Exp $
 
 
 Table of Contents
@@ -293,6 +293,19 @@ There is support for the following cards:
 
 (*)The `ep' driver is known to have some problems; see the
 /usr/src/KNOWNBUGS file for more details.
+
+
+2.0.11:	I have a 386/486sx/486SLC machine without a math co-processor.
+	Will this cause me any problems?
+
+Generally no, but there are circumstances where you will take a hit,
+either in performance or accuracy of the math emulation code (see
+section 4.0.1).  In particular, drawing arcs in X will be VERY slow.
+It is highly recommended that you lay out the $50 or so for a math
+co-processor; it's well worth it.  NOTE:  Some math co-processors
+are better than others.  It pains us to say it, but nobody ever got
+fired for buying Intel.  Unless you're sure it works with FreeBSD,
+beware of clones.
 
 
 3.0 Commercial Applications
