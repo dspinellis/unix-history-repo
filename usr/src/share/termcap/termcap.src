@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.10 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.11 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -401,25 +401,28 @@ MT|cit80|cit 80|Citoh 80:\
 	:co#80:li#24:am:cl=\E[;H\EJ:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
 	:ce=\EK:cd=\EJ:is=\E>:ks=\E[?1h\E=:ke=\E[?1l\E>:\
 	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:
-# AlternateCIT 101 - vt 100 emulator, the termcap has been modified to remove
-#           the delay times and do an auto tab set rather than the indirect
-#           file used in vt100.
+# From mtxinu!sybase!tim (Tim Wood) Fri Sep 27 09:39:12 PDT 1985
+# Alternate cit101 (vt100 em) file used in vt100.
 #	    Uses 23 lines so can run citsys (like h19sys).
+#	24 May 85 (mtxinu!sybase!tim) - removed 2-byte limit on 'cm' cursor
+#	  coordinates otherwise there is garbling on long lines in 
+#	  co#132 mode; also added support for multipage	memory on the Itoh.
 MU|citc|Citoh fast vt100:\
-	:co#80:li#23:am:cl=\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:co#80:li#23:am:cl=\E[;H\E[2J:bs:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
 	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
 	:ks=\E[?1h\E=:ke=\E[?1l\E>:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
-	:vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:\
-	:dc=\E[P:al=\E[L:im=:ei=:dl=\E[M:ic=\E[@:
-MV|cita:\
-	:co#80:li#23:am:cl=\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+        :vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:\
+	:dc=\E[P:al=\E[L:im=:ei=:dl=\E[M:ic=\E[@:vs=\E7\E[U:ve=\E[V\E8:xn:
+MV|cita|:\
+	:co#80:li#23:am:cl=\E[;H\E[2J:bs:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
 	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
-	:ks=\E[?1h\E=:ke=\E[?1l\E>:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
-	:vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:
-MW|cit101:li#24:vb@:tc=cita
-MX|cit101b:li#24:tc=cita
+	:ks=\E[?1h\E=:ke=\E[?1l\E>:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:vs=\E7\E[U:ve=\E[V\E8:\
+        :vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:xn:
+MW|cit101:li#24:vb@:tc=citc
+MX|cit101b:li#24:tc=citc
 Mh|cit500|cit-500|cit 500:\
 	:co#80:li#40:cl=50\E[;H\E[2J:bs:am:cm=5\E[%i%2;%2H:nd=2\E[C:up=2\E[A:\
 	:ce=3\E[K:cd=50\E[J:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:\
