@@ -1,0 +1,84 @@
+
+The disk is laid out in segments.  Each segment is composed of one or more
+groups of:
+	0 or more data blocks
+	0 or more inode blocks
+	A segment summary
+
+The data blocks and the inode blocks grow toward the middle of the segment.
+
+________________________________________________________
+|                                            |         |
+|                                            | Segment |
+| Data Blocks  --->        <--- Inode Blocks | Summary |
+|                                            |         |
+|____________________________________________|_________|
+
+XXX
+Show how segment summary blocks are chained and where they're stored
+by the segment writing code.
+
+Segment Summary - detail
+
+_________________________________________
+|                                        |
+|    (SEGSUM) Segment Summary Header     |
+|----------------------------------------|
+|    (FINFO-1)                           |
+|       .        0 or more file info     |
+|       .        structures which        |
+|       .        identify the blocks     |
+|                in the segment.         |
+|    (FINFO-N)                           |
+|________________________________________|
+
+The file system is described by a super-block which is replicated and occurs
+as the first block of the first segment as well as the first block of several 
+other segments.  (The maximum number of super-blocks is MAXNUMSB).  Each
+super-block maintains a list of the disk addresses of all the super-blocks.
+The super-block maintains a small amount of checkpoint information; enough to
+find the inode for the file which contains the segment usage table and the
+list of IFILE entries.
+
+Inodes are packed page_size/sizeof(inode) to a block and move around the file
+system at will.  They are accessed through the ifile (inode number IFILE_NUM)
+which contains 2 data structures:
+
+1. Segment Usage Table (struct SEGUSE) -- this keeps track of how much space
+   is available and the last modified time of each segment.  Its size is
+   determined at file system creation time.
+
+2. Ifile Table (struct IFILE) -- an array of IFILE structures which describe
+   the status of each inode in the file system (what its current version is,
+   whether it is currently allocated or not, its last access time, and the
+   disk address of the inode for that inumber). Grows in units of 1 page.  If
+   the disk address is 0, then the inode is not currently allocated and the
+   nextfree field maintains a free list of IFILE entries.
+
+The structure of the ifile is as follows:
+_________________________________________________________
+|          |                                             |
+| Segment  |  array of (IFILE structures)                |
+| Usage    |                                             |
+| Table    |                                             |
+| (fixed   |                                             |
+|    size) |                                             |
+|__________|_____________________________________________|
+
+Some differences from the Sprite LFS implementation.
+
+1. The LFS implementation placed the ifile metadata and the super block
+   at fixed locations.  This implementation replicates the super block
+   and puts each at a fixed location.  The checkpoint data is divided into
+   two parts -- just enough information to find the IFILE is stored in
+   two of the super blocks and is toggled as in the Sprite implementation.
+   The remaining checkpoint information is treated as a regular file, which
+   means that the segment usage table and the ifile meta-data are stored in
+   normal log segments.
+
+2. Sprite LFS distinguishes between different types of blocks in the segment.
+   In general, we don't.
+
+3. Sprite LFS traverses the IFILE looking for free blocks.  We maintain a free
+   list threaded through the IFILE entries.
+
