@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	6.2 (Berkeley) %G%
+ *	@(#)READ_ME	6.3 (Berkeley) %G%
  */
 
 THIS IS AN ALPHA VERSION OF SENDMAIL.  DON'T EVEN THINK ABOUT USING IT
@@ -55,10 +55,16 @@ you to get this make from Net2 (available on many public FTP archives).
 Failing that, some directories have a "Makefile.dist" that will work on
 older versions of make (but don't have the niceties included).
 
+Similar comments apply to the man pages -- they use the new Berkeley
+-mandoc macros instead of the -man macros.  You can get these from
+Net2 as well.
+
 IF YOU WANT TO RUN THE NEW BERKELEY DB SOFTWARE:  ****  DO NOT  ****
 use the version that was on the Net2 tape -- it has a number of
 nefarious bugs that were bad enough when I got them; you shouldn't have
 to go through the same thing.  Instead, get a new version via public
 FTP from okeeffe.CS.Berkeley.EDU, file pub/db.tar.Z.  This software
 is highly recommended; it gets rid of several stupid limits, it's much
-faster, and the interface is nicer to animals and plants.
+faster, and the interface is nicer to animals and plants.  You will
+also probably find that you have to add -I/where/you/put/db/include
+to the sendmail makefile to get db.h to work properly.
