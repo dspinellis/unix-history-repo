@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.10 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -81,7 +81,8 @@ savemail(e)
 	if (e->e_from.q_paddr == NULL)
 	{
 		e->e_sender = "Postmaster";
-		if (parseaddr(e->e_sender, &e->e_from, 0, '\0', NULL, e) == NULL)
+		if (parseaddr(e->e_sender, &e->e_from,
+			      RF_COPYPARSE|RF_SENDERADDR, '\0', NULL, e) == NULL)
 		{
 			syserr("553 Cannot parse Postmaster!");
 			ExitStat = EX_SOFTWARE;
@@ -224,14 +225,12 @@ savemail(e)
 			if (ExitStat == EX_CONFIG || ExitStat == EX_SOFTWARE)
 			{
 				(void) sendtolist("postmaster",
-					  (ADDRESS *) NULL,
-					  &e->e_errorqueue, e);
+					  NULLADDR, &e->e_errorqueue, e);
 			}
 			if (strcmp(e->e_from.q_paddr, "<>") != 0)
 			{
 				(void) sendtolist(e->e_from.q_paddr,
-					  (ADDRESS *) NULL,
-					  &e->e_errorqueue, e);
+					  NULLADDR, &e->e_errorqueue, e);
 			}
 
 			/*
@@ -447,7 +446,7 @@ returntosender(msg, sendbody)
 	}
 
 	/* mark statistics */
-	markstats(ee, (ADDRESS *) NULL);
+	markstats(ee, NULLADDR);
 
 	/* should check for delivery errors here */
 	return (0);

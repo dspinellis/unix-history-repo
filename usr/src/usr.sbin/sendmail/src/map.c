@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -372,7 +372,8 @@ ndbm_map_open(map, mode)
 	MAP *map;
 	int mode;
 {
-	DBM *dbm;
+	register DBM *dbm;
+	struct stat st;
 
 	if (tTd(38, 2))
 		printf("ndbm_map_open(%s, %d)\n", map->map_file, mode);
@@ -391,6 +392,8 @@ ndbm_map_open(map, mode)
 	map->map_db1 = (void *) dbm;
 	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
 		aliaswait(map, ".pag");
+	if (fstat(dbm_dirfno(dbm), &st) >= 0)
+		map->map_mtime = st.st_mtime;
 	return TRUE;
 }
 
@@ -547,6 +550,7 @@ bt_map_open(map, mode)
 	DB *db;
 	int i;
 	int omode;
+	struct stat st;
 	char buf[MAXNAME];
 
 	if (tTd(38, 2))
@@ -592,6 +596,11 @@ bt_map_open(map, mode)
 	if (mode == O_RDWR)
 		(void) db->sync(db, 0);
 
+#ifndef OLD_NEWDB
+	if (fstat(db->fd(db), &st) >= 0)
+		map->map_mtime = st.st_mtime;
+#endif
+
 	map->map_db2 = (void *) db;
 	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
 		aliaswait(map, ".db");
@@ -611,6 +620,7 @@ hash_map_open(map, mode)
 	DB *db;
 	int i;
 	int omode;
+	struct stat st;
 	char buf[MAXNAME];
 
 	if (tTd(38, 2))
@@ -655,6 +665,11 @@ hash_map_open(map, mode)
 	/* try to make sure that at least the database header is on disk */
 	if (mode == O_RDWR)
 		(void) db->sync(db, 0);
+
+#ifndef OLD_NEWDB
+	if (fstat(db->fd(db), &st) >= 0)
+		map->map_mtime = st.st_mtime;
+#endif
 
 	map->map_db2 = (void *) db;
 	if (mode == O_RDONLY && bitset(MF_ALIAS, map->map_mflags))
@@ -992,6 +1007,7 @@ stab_map_open(map, mode)
 	int mode;
 {
 	FILE *af;
+	struct stat st;
 
 	if (tTd(38, 2))
 		printf("stab_map_open(%s)\n", map->map_file);
@@ -1006,6 +1022,9 @@ stab_map_open(map, mode)
 	if (af == NULL)
 		return FALSE;
 	readaliases(map, af, TRUE);
+
+	if (fstat(fileno(af), &st) >= 0)
+		map->map_mtime = st.st_mtime;
 	fclose(af);
 
 	return TRUE;
