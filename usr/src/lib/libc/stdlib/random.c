@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)random.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)random.c	5.4 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include	<stdio.h>
@@ -176,6 +176,7 @@ srandom( x )
     unsigned		x;
 {
     	register  int		i, j;
+	long random();
 
 	if(  rand_type  ==  TYPE_0  )  {
 	    state[ 0 ] = x;
