@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: autoconf.c 1.25 89/10/07$
+ * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
  *
- *	@(#)autoconf.c	7.4 (Berkeley) %G%
+ *	@(#)autoconf.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -31,7 +31,9 @@
 #include "sys/dmap.h"
 #include "sys/reboot.h"
 
+#include "../include/vmparam.h"
 #include "../include/cpu.h"
+#include "pte.h"
 #include "isr.h"
 #include "../dev/device.h"
 #include "../dev/grfioctl.h"
@@ -46,9 +48,13 @@ int	cold;		    /* if 1, still working on cold-start */
 int	dkn;		    /* number of iostat dk numbers assigned so far */
 int	cpuspeed = MHZ_8;   /* relative cpu speed */
 struct	isr isrqueue[NISR];
-struct	hp_hw sc_table[MAX_CTLR];
+struct	hp_hw sc_table[MAXCTLRS];
 
-extern	int internalhpib;
+/* XXX must be allocated statically because of early console init */
+struct	map extiomap[EIOMAPSIZE/16];
+
+extern	caddr_t internalhpib;
+extern	char *extiobase;
 
 #ifdef DEBUG
 int	acdebug = 0;
@@ -74,15 +80,15 @@ configure()
 	 * to match it with an ioconf.c table entry.
 	 */
 	for (hw = sc_table; hw->hw_type; hw++) {
-		if (hw->hw_type & CONTROLLER)
+		if (HW_ISCTLR(hw))
 			found = find_controller(hw);
 		else
 			found = find_device(hw);
 #ifdef DEBUG
 		if (!found) {
-			int sc = addrtosc((u_int)hw->hw_addr);
+			int sc = patosc(hw->hw_pa);
 
-			printf("unconfigured %s ", hw->hw_name);
+			printf("unconfigured card id %x ", hw->hw_id);
 			if (sc < 256)
 				printf("at sc%d\n", sc);
 			else
@@ -114,8 +120,8 @@ configure()
 	(strcmp((d)->d_name, (s)) == 0)
 
 #define same_hw_ctlr(hw, hc) \
-	((hw)->hw_type == HPIB && dr_type((hc)->hp_driver, "hpib") || \
-	 (hw)->hw_type == SCSI && dr_type((hc)->hp_driver, "scsi"))
+	(HW_ISHPIB(hw) && dr_type((hc)->hp_driver, "hpib") || \
+	 HW_ISSCSI(hw) && dr_type((hc)->hp_driver, "scsi"))
 
 find_controller(hw)
 	register struct hp_hw *hw;
@@ -127,8 +133,8 @@ find_controller(hw)
 
 #ifdef DEBUG
 	if (acdebug)
-		printf("find_controller: hw: %s at sc%d (%x), type %x...",
-		       hw->hw_name, hw->hw_sc, hw->hw_addr, hw->hw_type);
+		printf("find_controller: hw: id%x at sc%d (%x), type %x...",
+		       hw->hw_id, hw->hw_sc, hw->hw_kva, hw->hw_type);
 #endif
 	sc = hw->hw_sc;
 	match_c = NULL;
@@ -152,7 +158,7 @@ find_controller(hw)
 		 * Wildcard; possible match so remember first instance
 		 * but continue looking for exact match.
 		 */
-		if ((int)hc->hp_addr == WILD_CARD_CTLR && match_c == NULL)
+		if (hc->hp_addr == NULL && match_c == NULL)
 			match_c = hc;
 	}
 #ifdef DEBUG
@@ -177,11 +183,11 @@ find_controller(hw)
 	 */
 	hc = match_c;
 	oaddr = hc->hp_addr;
-	hc->hp_addr = hw->hw_addr;
+	hc->hp_addr = hw->hw_kva;
 	if ((*hc->hp_driver->d_init)(hc)) {
 		hc->hp_alive = 1;
 		printf("%s%d", hc->hp_driver->d_name, hc->hp_unit);
-		sc = addrtosc((u_int)hc->hp_addr);
+		sc = patosc(hw->hw_pa);
 		if (sc < 256)
 			printf(" at sc%d,", sc);
 		else
@@ -206,8 +212,8 @@ find_device(hw)
 
 #ifdef DEBUG
 	if (acdebug)
-		printf("find_device: hw: %s at sc%d (%x), type %x...",
-		       hw->hw_name, hw->hw_sc, hw->hw_addr, hw->hw_type);
+		printf("find_device: hw: id%x at sc%d (%x), type %x...",
+		       hw->hw_id, hw->hw_sc, hw->hw_kva, hw->hw_type);
 #endif
 	match_d = NULL;
 	for (hd = hp_dinit; hd->hp_driver; hd++) {
@@ -222,9 +228,9 @@ find_device(hw)
 		 * (i.e. no longer the select code).  Gotta perform a
 		 * slightly different check for an exact match.
 		 */
-		if (hw->hw_type == BITMAP && hd->hp_addr >= (caddr_t)IOBASE) {
+		if (HW_ISDEV(hw, D_BITMAP) && hd->hp_addr >= intiobase) {
 			/* must be an exact match */
-			if (hd->hp_addr == hw->hw_addr) {
+			if (hd->hp_addr == hw->hw_kva) {
 				match_d = hd;
 				break;
 			}
@@ -267,11 +273,11 @@ find_device(hw)
 	 */
 	hd = match_d;
 	oaddr = hd->hp_addr;
-	hd->hp_addr = hw->hw_addr;
+	hd->hp_addr = hw->hw_kva;
 	if ((*hd->hp_driver->d_init)(hd)) {
 		hd->hp_alive = 1;
 		printf("%s%d", hd->hp_driver->d_name, hd->hp_unit);
-		sc = addrtosc((u_int)hd->hp_addr);
+		sc = patosc(hw->hw_pa);
 		if (sc < 256)
 			printf(" at sc%d", sc);
 		else
@@ -482,28 +488,55 @@ find_busslaves(hc, maxslaves)
 	}
 }
 
-sctoaddr(addr)
-	register int addr;
+caddr_t
+sctopa(sc)
+	register int sc;
 {
-	if (addr == 7 && internalhpib)
+	register caddr_t addr;
+
+	if (sc == 7 && internalhpib)
 		addr = internalhpib;
-	else if (addr < 32)
-		addr = IOV(EXTIOBASE + (addr * IOCARDSIZE));
+	else if (sc < 32)
+		addr = (caddr_t) (DIOBASE + sc * DIOCSIZE);
+	else if (sc >= 132)
+		addr = (caddr_t) (DIOIIBASE + (sc - 132) * DIOIICSIZE);
 	else
-		addr = IOV(addr);
+		addr = 0;
 	return(addr);
 }
 
-addrtosc(addr)
-	register u_int addr;
+patosc(addr)
+	register caddr_t addr;
 {
-	if (addr == internalhpib)
-		addr = 7;
-	else if (addr >= IOV(IOBASE)) {
-		addr = UNIOV(addr);
-		if (addr >= EXTIOBASE)
-			addr = (addr - EXTIOBASE) / IOCARDSIZE;
-	}
+	if (addr == (caddr_t)0x478000)
+		return(7);
+	if (addr >= (caddr_t)DIOBASE && addr < (caddr_t)DIOTOP)
+		return(((unsigned)addr - DIOBASE) / DIOCSIZE);
+	if (addr >= (caddr_t)DIOIIBASE && addr < (caddr_t)DIOIITOP)
+		return(((unsigned)addr - DIOIIBASE) / DIOIICSIZE + 132);
+	return((int)addr);
+}
+
+caddr_t
+sctova(sc)
+	register int sc;
+{
+	register struct hp_hw *hw;
+
+	for (hw = sc_table; hw->hw_type; hw++)
+		if (sc == hw->hw_sc)
+			return(hw->hw_kva);
+	return((caddr_t)sc);
+}
+
+vatosc(addr)
+	register caddr_t addr;
+{
+	register struct hp_hw *hw;
+
+	for (hw = sc_table; hw->hw_type; hw++)
+		if (addr == hw->hw_kva)
+			return(hw->hw_sc);
 	return((int)addr);
 }
 
@@ -513,77 +546,100 @@ same_hw_device(hw, hd)
 {
 	int found = 0;
 
-	switch (hw->hw_type) {
-	case HPIB:
-	case RD:
-	case PPI:
-	case CT:
+	switch (hw->hw_type & ~B_MASK) {
+	case C_HPIB:
 		found = dr_type(hd->hp_driver, "hpib");
 		break;
-	case BITMAP:
-		found = dr_type(hd->hp_driver, "grf");
-		break;
-	case NET:
-		found = dr_type(hd->hp_driver, "le");
-		break;
-	case COMMDCA:
-		found = dr_type(hd->hp_driver, "dca");
-		break;
-	case COMMDCL:
-		found = dr_type(hd->hp_driver, "dcl");
-		break;
-	case COMMDCM:
-		found = dr_type(hd->hp_driver, "dcm");
-		break;
-	case SCSI:
+	case C_SCSI:
 		found = dr_type(hd->hp_driver, "scsi");
 		break;
-	case FPA:    /* Unsupported so far */
-	case VME:
-	case FLINK:
-	case MISC:
+	case D_BITMAP:
+		found = dr_type(hd->hp_driver, "grf");
+		break;
+	case D_LAN:
+		found = dr_type(hd->hp_driver, "le");
+		break;
+	case D_COMMDCA:
+		found = dr_type(hd->hp_driver, "dca");
+		break;
+	case D_COMMDCL:
+		found = dr_type(hd->hp_driver, "dcl");
+		break;
+	case D_COMMDCM:
+		found = dr_type(hd->hp_driver, "dcm");
+		break;
+	default:
 		break;
 	}
 	return(found);
 }
 
+char notmappedmsg[] = "WARNING: no space to map IO card, ignored\n";
+
+/*
+ * Scan the IO space looking for devices.
+ */
 find_devs()
 {
 	short sc;
 	u_char *id_reg;
-	register int addr;
+	register caddr_t addr;
 	register struct hp_hw *hw;
+	int didmap, sctop;
 
 	/*
-	 * XXX record actual address of internal HP-IB if present.
+	 * Initialize IO resource map for iomap().
 	 */
-	if (internalhpib)
-		internalhpib = IOV(INTERNALHPIB);
-
+	rminit(extiomap, (long)EIOMAPSIZE, (long)1, "extio", EIOMAPSIZE/16);
 	hw = sc_table;
-	for (sc = -1; sc < 32; sc++) {
+	/*
+	 * Probe all select codes + internal display addr
+	 */
+	sctop = machineid == HP_320 ? 32 : 256;
+	for (sc = -1; sc < sctop; sc++) {
 		/*
-		 * Probe all select codes + internal display addr
+		 * Invalid select codes
 		 */
-		if (sc == -1)
-			addr = IOV(GRFIADDR);
-		else
-			addr = sctoaddr(sc);
-		if (badaddr((caddr_t)addr))
+		if (sc >= 32 && sc < 132)
 			continue;
 
+		if (sc == -1) {
+			hw->hw_pa = (caddr_t) GRFIADDR;
+			addr = (caddr_t) IIOV(hw->hw_pa);
+			didmap = 0;
+		} else if (sc == 7 && internalhpib) {
+			hw->hw_pa = (caddr_t) 0x478000;
+			addr = internalhpib = (caddr_t) IIOV(hw->hw_pa);
+			didmap = 0;
+		} else {
+			hw->hw_pa = sctopa(sc);
+			addr = iomap(hw->hw_pa, NBPG);
+			if (addr == 0) {
+				printf(notmappedmsg);
+				continue;
+			}
+			didmap = 1;
+		}
+		if (badaddr(addr)) {
+			if (didmap)
+				iounmap(addr, NBPG);
+			continue;
+		}
 		id_reg = (u_char *) addr;
-		hw->hw_id = id_reg[1] & 0xff;
+		if (sc >= 132)
+			hw->hw_size = (id_reg[0x101] + 1) * 0x100000;
+		else
+			hw->hw_size = DIOCSIZE;
+		hw->hw_kva = addr;
+		hw->hw_id = id_reg[1];
 		hw->hw_sc = sc;
-		hw->hw_addr = (char *) addr;
 		/*
 		 * Internal HP-IB on some machines (345/375) doesn't return
 		 * consistant id info so we use the info gleaned from the
 		 * boot ROMs SYSFLAG.
 		 */
 		if (sc == 7 && internalhpib) {
-			hw->hw_name = "98624A";
-			hw->hw_type = HPIB;
+			hw->hw_type = C_HPIB;
 			hw++;
 			continue;
 		}
@@ -594,146 +650,218 @@ find_devs()
 		/* Null device? */
 		case 0:
 			break;
+		/* 98644A */
 		case 2:
-		case 128+2:
-			hw->hw_name = "98626A";
-			hw->hw_type = COMMDCA;
+		case 2+128:
+			hw->hw_type = D_COMMDCA;
 			break;
+		/* 98622A */
 		case 3:
-			hw->hw_name = "98622A";
-			hw->hw_type = MISC;
+			hw->hw_type = D_MISC;
 			break;
+		/* 98623A */
 		case 4:
-			hw->hw_name = "98623A";
-			hw->hw_type = MISC;
+			hw->hw_type = D_MISC;
 			break;
+		/* 98642A */
 		case 5:
-		case 128+5:
-			hw->hw_name = "98642A";
-			hw->hw_type = COMMDCM;
+		case 5+128:
+			hw->hw_type = D_COMMDCM;
 			break;
+		/* 345/375 builtin parallel port */
 		case 6:
-			hw->hw_name = "Parallel Port";
-			hw->hw_type = PPORT;
+			hw->hw_type = D_PPORT;
 			break;
+		/* 98625A */
 		case 7:
-		case 39:
-		case 71:
-		case 103:
-			hw->hw_name = "98265A";
-			hw->hw_type = SCSI;
+		case 7+32:
+		case 7+64:
+		case 7+96:
+			hw->hw_type = C_SCSI;
 			break;
+		/* 98625B */
 		case 8:
-			hw->hw_name = "98625B";
-			hw->hw_type = HPIB;
+			hw->hw_type = C_HPIB;
 			break;
+		/* 98287A */
 		case 9:
-			hw->hw_name = "98287A";
-			hw->hw_type = KEYBOARD;
+			hw->hw_type = D_KEYBOARD;
 			break;
+		/* 98635A */
 		case 10:
-			hw->hw_name = "98635A";
-			hw->hw_type = FPA;
+			hw->hw_type = D_FPA;
 			break;
+		/* timer */
 		case 11:
-			hw->hw_name = "Timer";
-			hw->hw_type = MISC;
+			hw->hw_type = D_MISC;
 			break;
+		/* 98640A */
 		case 18:
-			hw->hw_name = "98640A";
-			hw->hw_type = MISC;
+			hw->hw_type = D_MISC;
 			break;
+		/* 98643A */
 		case 21:
-			hw->hw_name = "98643A";
-			hw->hw_type = NET;
+			hw->hw_type = D_LAN;
 			break;
+		/* 98659A */
 		case 22:
-			hw->hw_name = "98659A";
-			hw->hw_type = MISC;
+			hw->hw_type = D_MISC;
 			break;
+		/* 237 display */
 		case 25:
-			hw->hw_name = "237";
-			hw->hw_type = BITMAP;
+			hw->hw_type = D_BITMAP;
 			break;
+		/* quad-wide card */
 		case 26:
-			hw->hw_name = "Quad";
-			hw->hw_type = MISC;
+			hw->hw_type = D_MISC;
+			hw->hw_size *= 4;
+			sc += 3;
 			break;
+		/* 98253A */
 		case 27:
-			hw->hw_name = "98253A";
-			hw->hw_type = MISC;
+			hw->hw_type = D_MISC;
 			break;
+		/* 98627A */
 		case 28:
-			hw->hw_name = "98627A";
-			hw->hw_type = BITMAP;
+			hw->hw_type = D_BITMAP;
 			break;
+		/* 98633A */
 		case 29:
-			hw->hw_name = "98633A";
-			hw->hw_type = BITMAP;
+			hw->hw_type = D_BITMAP;
 			break;
+		/* 98259A */
 		case 30:
-			hw->hw_name = "98259A";
-			hw->hw_type = MISC;
+			hw->hw_type = D_MISC;
 			break;
+		/* 8741 */
 		case 31:
-			hw->hw_name = "8741";
-			hw->hw_type = MISC;
+			hw->hw_type = D_MISC;
 			break;
+		/* 98577A */
 		case 49:
-			hw->hw_name = "98577A";
-			hw->hw_type = VME;
-			sc++;
-			break;
-		case 52:
-		case 128+52:
-			hw->hw_name = "98628A";
-			hw->hw_type = COMMDCL;
-			break;
-		case 57:
-			hw->hw_type = BITMAP;
-			hw->hw_id2 = id_reg[0x15];
-			switch (hw->hw_id2) {
-			case 1:
-				hw->hw_name = "98700 ";
-				break;
-			case 2:
-				hw->hw_name = "TOPCAT";
-				break;
-			case 4:
-				hw->hw_name = "98720 ";
+			hw->hw_type = C_VME;
+			if (sc < 132) {
+				hw->hw_size *= 2;
 				sc++;
+			}
+			break;
+		/* 98628A */
+		case 52:
+		case 52+128:
+			hw->hw_type = D_COMMDCL;
+			break;
+		/* bitmap display */
+		case 57:
+			hw->hw_type = D_BITMAP;
+			hw->hw_secid = id_reg[0x15];
+			switch (hw->hw_secid) {
+			/* 98700/98710 */
+			case 1:
 				break;
+			/* 98544-547 topcat */
+			case 2:
+				break;
+			/* 98720/721 */
+			case 4:
+				if (sc < 132) {
+					hw->hw_size *= 2;
+					sc++;
+				}
+				break;
+			/* 98548-98556 catseye */
 			case 5:
 			case 6:
 			case 7:
 			case 9:
-				hw->hw_name = "CATSEYE";
 				break;
+			/* 98730/731 */
 			case 8:
-				hw->hw_name = "98730 ";
-				sc++;
+				if (sc < 132) {
+					hw->hw_size *= 2;
+					sc++;
+				}
 				break;
+			/* 987xx */
 			default:
-				hw->hw_name = "987xx ";
 				break;
 			}
 			break;
+		/* 98644A */
 		case 66:
-		case 128+66:
-			hw->hw_name = "98644A";
-			hw->hw_type = COMMDCA;
+		case 66+128:
+			hw->hw_type = D_COMMDCA;
 			break;
+		/* 98624A */
 		case 128:
-			hw->hw_name = "98624A";
-			hw->hw_type = HPIB;
+			hw->hw_type = C_HPIB;
 			break;
 		default:
-			hw->hw_name = "DEFAULT";
-			hw->hw_type = MISC;
+			hw->hw_type = D_MISC;
 			break;
 		}
+		/*
+		 * Re-map to proper size
+		 */
+		if (didmap) {
+			iounmap(addr, NBPG);
+			addr = iomap(hw->hw_pa, hw->hw_size);
+			if (addr == 0) {
+				printf(notmappedmsg);
+				continue;
+			}
+			hw->hw_kva = addr;
+		}
+		/*
+		 * Encode bus type
+		 */
+		if (sc >= 132)
+			hw->hw_type |= B_DIOII;
+		else
+			hw->hw_type |= B_DIO;
 		hw++;
 	}
+}
+
+/*
+ * Allocate/deallocate a cache-inhibited range of kernel virtual address
+ * space mapping the indicated physical address range [pa - pa+size)
+ */
+caddr_t
+iomap(pa, size)
+	caddr_t pa;
+	int size;
+{
+	int ix, npf;
+	caddr_t kva;
+
+#ifdef DEBUG
+	if (((int)pa & PGOFSET) || (size & PGOFSET))
+		panic("iomap: unaligned");
+#endif
+	npf = btoc(size);
+	ix = rmalloc(extiomap, npf);
+	if (ix == 0)
+		return(0);
+	kva = extiobase + ctob(ix-1);
+	physaccess(kva, pa, size, PG_RW|PG_CI);
+	return(kva);
+}
+
+iounmap(kva, size)
+	caddr_t kva;
+	int size;
+{
+	int ix;
+
+#ifdef DEBUG
+	if (((int)kva & PGOFSET) || (size & PGOFSET))
+		panic("iounmap: unaligned");
+	if (kva < extiobase || kva >= extiobase + ctob(EIOMAPSIZE))
+		panic("iounmap: bad address");
+#endif
+	physunaccess(kva, size);
+	ix = btoc(kva - extiobase) + 1;
+	rmfree(extiomap, btoc(size), ix);
 }
 
 #if NCD > 0
@@ -805,7 +933,7 @@ swapconf()
 	dumpconf();
 }
 
-#define	DOSWAP			/* Change swdevt, argdev, and dumpdev too */
+#define	DOSWAP			/* Change swdevt and dumpdev too */
 u_long	bootdev;		/* should be dev_t, but not until 32 bits */
 
 static	char devname[][2] = {
@@ -903,13 +1031,11 @@ setroot()
 		return;
 
 	/*
-	 * If argdev and dumpdev were the same as the old primary swap
-	 * device, move them to the new primary swap device.
+	 * If dumpdev was the same as the old primary swap
+	 * device, move it to the new primary swap device.
 	 */
 	if (temp == dumpdev)
 		dumpdev = swdevt[0].sw_dev;
-	if (temp == argdev)
-		argdev = swdevt[0].sw_dev;
 #endif
 }
 
