@@ -1,4 +1,4 @@
-/*	boot.c	7.1	89/05/01	*/
+/*	boot.c	7.2	89/05/24	*/
 
 #include "machine/mtpr.h"
 
@@ -18,6 +18,7 @@
  */
 
 #define	DEV_DFLT	1		/* vd/dk */
+/*#define	DEV_DFLT	2		/* hd */
 
 char line[100];
 
