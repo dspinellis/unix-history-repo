@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 M4=	m4
 #M4=	/usr/src/usr.bin/m4/obj/m4
@@ -10,7 +10,7 @@ RM=	rm -f
 
 .mc.cf:
 	$(RM) $@
-	$(M4) $< > $@
+	(cd ${.CURDIR} && $(M4) $< > obj/$@)
 	$(CHMOD) $(ROMODE) $@
 
 ALL=	cs-hidden.cf cs-exposed.cf \
@@ -22,8 +22,10 @@ ALL=	cs-hidden.cf cs-exposed.cf \
 
 all: $(ALL)
 
-clean:
+clean cleandir:
 	$(RM) $(ALL) core
+
+depend install: 
 
 # this is overkill, but....
 M4FILES=../domain/cs.exposed.m4 \
@@ -47,3 +49,5 @@ M4FILES=../domain/cs.exposed.m4 \
 	../ostype/ultrix4.1.m4 \
 
 $(ALL):  $(M4FILES)
+
+.include <bsd.prog.mk>
