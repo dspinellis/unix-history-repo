@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -824,7 +824,7 @@ char *host;
 	/*
 	 * set up standard paths before forking to login
 	 */
-#ifdef	BSD >43
+#if	BSD >43
 	if (setsid() < 0)
 		fatalperror(net, "setsid");
 	if (ioctl(t, TIOCSCTTY, (char *)0) < 0)
