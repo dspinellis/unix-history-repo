@@ -1,4 +1,4 @@
-/* @(#)system.c	4.1 (Berkeley) %G% */
+/* @(#)system.c	4.2 (Berkeley) %G% */
 #include	<signal.h>
 
 system(s)
