@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-char version[] = "@(#)main.c 1.1 %G%";
+char version[] = "@(#)main.c 1.2 %G%";
 
 /*	Modified to include h option (recursively extract all files within
  *	a subtree) and m option (recreate the heirarchical structure of
@@ -11,7 +11,7 @@ char version[] = "@(#)main.c 1.1 %G%";
  *	a single tape.
  */
 
-/* static char *sccsid = "@(#)restor.c	4.1 (Berkeley) 10/1/80"; */
+/* static char *sccsid = "@(#)restor.c	4.3 (Berkeley) 6/3/81"; */
 
 #define MAXINO	3000
 #define BITS	8
@@ -192,7 +192,7 @@ char	*argv[];
 	register k;
 	ino_t	d;
 #ifndef STANDALONE
-	int	xtrfile(), skip();
+	int	xtrfile(), skip(), null();
 #endif
 	int	rstrfile(), rstrskip();
 	struct dinode *ip, *ip1;
@@ -352,7 +352,7 @@ checkdone:
 					goto done;
 				}
 			}
-			gethead(&spcl);
+			getfile(d, null, null, spcl.c_dinode.di_size);
 done:
 			;
 		}
