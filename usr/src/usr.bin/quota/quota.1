@@ -1,16 +1,13 @@
 .\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\"
 .\" This code is derived from software contributed to Berkeley by
 .\" Robert Elz at The University of Melbourne.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)quota.1	6.7 (Berkeley) %G%
+.\"	@(#)quota.1	6.8 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt QUOTA 1
 .Os BSD 4.2
@@ -21,14 +18,14 @@
 .Nm quota
 .Op Fl g
 .Op Fl u
-.Op Fl v Li \&| Fl q
+.Op Fl v | Fl q
 .Nm quota
 .Op Fl u
-.Op Fl v Li \&| Fl q
+.Op Fl v | Fl q
 .Ar user
 .Nm quota
 .Op Fl g
-.Op Fl v Li \&| Fl q
+.Op Fl v | Fl q
 .Ar group
 .Sh DESCRIPTION
 .Nm Quota
@@ -37,22 +34,22 @@ By default only the user quotas are printed.
 .Pp
 Options:
 .Pp
-.Tw Ds
-.Tp Fl g
+.Bl -tag -width Ds
+.It Fl g
 Print group quotas for the group 
 of which the user is a member.
 The optional
 .Fl u
 flag is equivalent to the default.
-.Tp Fl v
+.It Fl v
 .Nm quota
 will display quotas on filesystems
 where no storage is allocated.
-.Tp Fl q
+.It Fl q
 Print a more terse message,
 containing only information
 on filesystems where usage is over quota.
-.Tp
+.El
 .Pp
 Specifying both
 .Fl g
@@ -86,18 +83,19 @@ If
 exits with a non-zero status, one or more filesystems
 are over quota.
 .Sh FILES
-.Dw quota.group
-.Di L
-.Dp Pa quota.user
+.Bl -tag -width quota.group -compact
+.It Pa quota.user
 located at the filesystem root with user quotas
-.Dp Pa quota.group
+.It Pa quota.group
 located at the filesystem root with group quotas
-.Dp Pa /etc/fstab
+.It Pa /etc/fstab
 to find filesystem names and locations
-.Dp
+.El
 .Sh HISTORY
-.Nm Quota
-appeared in 4.2 BSD.
+The
+.Nm quota
+command appeared in
+.Bx 4.2 .
 .Sh SEE ALSO
 .Xr quotactl 2 ,
 .Xr fstab 5 ,

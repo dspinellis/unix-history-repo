@@ -3,15 +3,18 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mset.1	4.5 (Berkeley) %G%
+.\"	@(#)mset.1	4.6 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt MSET 1
 .Os BSD 4.3
 .Sh NAME
 .Nm mset
-.Nd retrieve ASCII to IBM 3270 keyboard map
+.Nd retrieve
+.Tn ASCII
+to
+.Tn IBM
+3270 keyboard map
 .Sh SYNOPSIS
 .Nm mset
 .Op Fl picky
@@ -20,7 +23,11 @@
 .Sh DESCRIPTION
 .Nm Mset
 retrieves mapping information
-for the ASCII keyboard to IBM 3270 terminal
+for the
+.Tn ASCII
+keyboard to
+.Tn IBM
+3270 terminal
 special functions.
 Normally, these mappings are found
 in
@@ -43,8 +50,9 @@ is invoked.
 To do this, place the following command in your
 .Pa .login
 file:
-.Pp
-.Dl set noglob; setenv MAP3270 "\(gamset\(ga"; unset noglob
+.Bd -literal -offset indent
+set noglob; setenv MAP3270 "\(gamset\(ga"; unset noglob
+.Ed
 .Pp
 If the
 .Ar keyboardname
@@ -86,8 +94,8 @@ The arguments to
 .Nm mset
 are:
 .Pp
-.Tw Fl
-.Tp Fl picky
+.Bl -tag -width Fl
+.It Fl picky
 When processing the various
 .Pa map3270
 entries (for the user's keyboard,
@@ -100,7 +108,7 @@ the
 argument causes
 .Nm mset
 to issue warning messages about these unknown entries.
-.Tp Fl shell
+.It Fl shell
 If the
 .Pa map3270
 entry is longer than the shell's 1024 environmental variable
@@ -124,9 +132,10 @@ variable length limit.
 To set these variables, place the following command in your
 .Pa .login
 file:
-.Pp
-.Dl mset -shell > tmp ; source tmp ; /bin/rm tmp
-.Tp Ar keyboardname
+.Bd -literal -offset indent
+mset -shell > tmp ; source tmp ; /bin/rm tmp
+.Ed
+.It Ar keyboardname
 When searching for the
 .Pa map3270
 entry that matches the user's keyboard,
@@ -139,15 +148,15 @@ or
 .Ev TERM
 environmental variables.
 .Sh FILES
-.Dw /usr/share/misc/map3270
-.Di L
-.Dp Pa /usr/share/misc/map3270
+.Bl -tag -width /usr/share/misc/map3270 -compact
+.It Pa /usr/share/misc/map3270
 keyboard mapping for known keyboards
-.Dp
-.Sh ENVIRONMENT
+.El
 .Sh SEE ALSO
 .Xr tn3270 1 ,
 .Xr map3270 5
 .Sh HISTORY
+The
 .Nm mset
-appeared in 4.3 BSD.
+command appeared in
+.Bx 4.3 .

@@ -7,9 +7,8 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)paste.1	5.5 (Berkeley) %G%
+.\"	@(#)paste.1	5.6 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt PASTE 1
 .Os
@@ -32,10 +31,8 @@ still contain data, the file is treated as if it were an endless source
 of empty lines.
 .Pp
 The options are as follows:
-.Tw Fl
-.Tp Cx Fl d 
-.Ar list
-.Cx
+.Bl -tag -width Fl
+.It Fl d  Ar list 
 Use one or more of the provided characters to replace the newline
 characters instead of the default tab.
 The characters in
@@ -54,33 +51,34 @@ begins selecting characters from the beginning of
 again.
 .Pp
 The following special characters can also be used in list:
-.Tw Ds
-.Tp Li \en
+.Pp
+.Bl -tag -width flag -compact
+.It Li \en
 newline character
-.br
-.Tp Li \et
+.It Li \et
 tab character
-.br
-.Tp Li \e\e
+.It Li \e\e
 backslash character
-.br
-.Tp Li \e0
+.It Li \e0
 Empty string (not a null character).
+.El
 .Pp
 Any other character preceded by a backslash is equivalent to the
 character itself.
-.Tp
-.Tp Fl s
+.It Fl s
 Concatenate all of the lines of each separate input file in command line
 order.
 The newline character of every line except the last line in each input
 file is replaced with the tab character, unless otherwise specified by
 the -d option.
-.Tp
+.El
 .Pp
-If ``-'' is specified for one or more of the input files, the standard
+If
+.Ql Fl
+is specified for one or more of the input files, the standard
 input is used; standard input is read one line at a time, circularly,
-for each instance of ``-''.
+for each instance of
+.Ql Fl .
 .Pp
 The
 .Nm paste
@@ -90,4 +88,6 @@ utility exits 0 on success, and >0 if an error occurs.
 .Sh STANDARDS
 The
 .Nm paste
-function is expected to be POSIX 1003.2 compatible.
+utility is expected to be
+.St -p1003.2
+compatible.

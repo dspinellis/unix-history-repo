@@ -3,15 +3,15 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tn3270.1	4.5 (Berkeley) %G%
+.\"	@(#)tn3270.1	4.6 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt TN3270 1
 .Os BSD 4.3
 .Sh NAME
 .Nm tn3270
-.Nd full-screen remote login to IBM VM/CMS
+.Nd full-screen remote login to
+.Tn IBM VM/CMS
 .Sh SYNOPSIS
 .Nm tn3270
 .Op Fl d
@@ -21,20 +21,29 @@
 .Sh DESCRIPTION
 .Nm Tn3270
 permits a full-screen, full-duplex connection
-from a UNIX
+from a
+.Tn UNIX
 machine
-to an IBM (or compatible) machine.
+to an
+.Tn IBM
+(or compatible) machine.
 .Nm Tn3270
 gives the appearance of being logged in
 to the remote machine
-from an IBM 3270 terminal.
+from an
+.Tn IBM
+3270 terminal.
 Of course, you must have an account on the machine
 to which you connect in order to log in.
 .Nm Tn3270
 looks to the user in many respects
-like the Yale ASCII Terminal Communication System II.
+like the Yale
+.Tn ASCII
+Terminal Communication System II.
 .Nm Tn3270
-is actually a modification of the Arpanet TELNET user interface (see
+is actually a modification of the Arpanet
+.Tn TELNET
+user interface (see
 .Xr telnet  1  )
 which will, in certain circumstances, interpret and generate
 raw 3270 control streams.
@@ -42,36 +51,39 @@ raw 3270 control streams.
 The flags to
 .Nm tn3270
 are as follows:
-.Tw Fl
-.Tp Fl d
+.Bl -tag -width Fl
+.It Fl d
 Turn on socket-level tracing (for super-user only)
-.Ct Fl n
-.Ar filename
-.Cx
+.Fl n Ns Ar filename
 Specify a file to receive network trace data
 output (from commands "toggle netdata" and
 "toggle options", see
 .Xr telnet 1 ) ;
 the default is for output
 to be directed to the standard error file.
-.Ct Fl t
-.Ar commandname
-.Cx
-Specify a UNIX
-command to process IBM 4994 style transparent mode
-data received from the remote IBM machine.
-.Tp Ar sysname
+.Fl t Ns Ar commandname
+Specify a
+.Tn UNIX
+command to process
+.Tn IBM
+4994 style transparent mode
+data received from the remote
+.Tn IBM
+machine.
+.It Ar sysname
 The name of the remote system.  If the remote name
 is NOT specified, the user will be prompted for a
 command (see below).
-.Tp Ar port
+.It Ar port
 The port to connect to on the remote system.
 Normally,
 .Nm tn3270
 attempts to connect to the
-standard TELNET port (port
+standard
+.Tn TELNET
+port (port
 23) on the remote machine.
-.Tp
+.El
 .Pp
 When
 .Nm tn3270
@@ -99,20 +111,20 @@ If the terminal does have at least 80 columns and at least 24 lines,
 the following table describes the emulation:
 .Pp
 .ne 7v
-.Ds C
-.Cw (rows*columns)
-.Cl minimum_size	emulated
-.Cl (rows*columns)	terminal
-.Cl --------------	------------
-.Cl 27*132	3278 model 5
-.Cl 43*80	3278 model 4
-.Cl 32*80	3278 model 3
-.Cl 24*80	3278 model 2.
-.Cw
-.De
+.Bd -filled -offset center
+.Bl -column (rows*columns)
+.It minimum_size	emulated
+.It (rows*columns)	terminal
+.It --------------	------------
+.It 27*132	3278 model 5
+.It 43*80	3278 model 4
+.It 32*80	3278 model 3
+.It 24*80	3278 model 2.
+.El
+.Ed
 .Pp
-.Pp
-Emulation of the 3270 terminal is done in the UNIX
+Emulation of the 3270 terminal is done in the
+.Tn UNIX
 process.
 This emulation involves mapping
 3270-style commands from the host
@@ -126,7 +138,9 @@ file to do this.
 The emulation also involves simulating the special 3270 keyboard keys
 (program function keys, etc.)
 by mapping sequences of keystrokes
-from the ASCII keyboard into appropriate 3270 control strings.
+from the
+.Tn ASCII
+keyboard into appropriate 3270 control strings.
 This mapping is terminal dependent and is specified
 in a description file,
 .Pa /usr/share/misc/map3270 ,
@@ -139,7 +153,9 @@ or in an environment variable
 .Ev MAP3270B ,
 and so on - see
 .Xr mset  1  ) .
-Any special function keys on the ASCII keyboard are used whenever possible.
+Any special function keys on the
+.Tn ASCII
+keyboard are used whenever possible.
 If an entry for the user's terminal
 is not found,
 .Nm tn3270
@@ -152,13 +168,25 @@ uses a default keyboard mapping
 .Xr map3270  5  ) .
 .Pp
 The first character of each special keyboard mapping sequence
-is either an ASCII escape (ESC),
-a control character, or an ASCII delete (DEL).
+is either an
+.Tn ASCII
+escape
+.Pq Tn ESC ,
+a control character, or an
+.Tn ASCII
+delete
+.Pq Tn DEL .
 If the user types an unrecognized function key sequence,
 .Nm tn3270
-sends an ASCII bell (BEL), or a visual bell if
+sends an
+.Tn ASCII
+bell
+.Pq Tn BEL ,
+or a visual bell if
 defined in the user's termcap entry, to the user's terminal
-and nothing is sent to the IBM host.
+and nothing is sent to the
+.Tn IBM
+host.
 .Pp
 If
 .Nm tn3270
@@ -173,11 +201,14 @@ all the commands of
 .Xr telnet  1  ,
 plus one additional command:
 .Pp
-.Tw Ar
-.Tp Ic transcom
-Specify UNIX
-command for IBM 4994 style transparent mode processing.
-.Tp
+.Bl -tag -width Ar
+.It Ic transcom
+Specify
+.Tn UNIX
+command for
+.Tn IBM
+4994 style transparent mode processing.
+.El
 .Pp
 .Nm Tn3270
 command mode may also be entered, after connecting to a host, by typing
@@ -198,36 +229,48 @@ While in command mode, any host login session is still alive
 but temporarily suspended.
 The host login session may be resumed by entering an empty line
 (press the
-.Li RETURN
+.Tn RETURN
 key)
 in response to the command prompt.
 A session may be terminated by logging off the foreign host,
 or by typing ``quit'' or ``close'' while in local command mode.
 .Sh FILES
-.Dw /usr/share/misc/termcap
-.Di L
-.Dp Pa /usr/share/misc/termcap
-.br
-.Dp Pa /usr/share/misc/map3270
-.Dp
-.Sh AUTHOR
-Greg Minshall
+.Bl -tag -width /usr/share/misc/termcap -compact
+.It Pa /usr/share/misc/termcap
+.It Pa /usr/share/misc/map3270
+.El
+.\" .Sh AUTHOR
+.\" Greg Minshall
 .Sh NOTES
-The IBM 4994 style transparent mode command is invoked when
+The
+.Tn IBM
+4994 style transparent mode command is invoked when
 .Nm tn3270
-receives IBM 4994 style transparent output from the remote host.
+receives
+.Tn IBM
+4994 style transparent output from the remote host.
 Output and input pipes are created for communication between the two
 processes.
 The pipes are closed when a 3270 clear command is received from the remote
 hosts, signalling the end of transparent mode output.
-Transparent mode is necessary for sending ASCII control characters over the
-3270 terminal connection; ASCII graphics terminal support is accomplished this
+Transparent mode is necessary for sending
+.Tn ASCII
+control characters over the
+3270 terminal connection;
+.Tn ASCII
+graphics terminal support is accomplished this
 way.
 Developers of
 .Ic transcom
 commands should note that the
 .Ic transcom
-stdin pipe end will be in CBREAK mode, with ECHO and CRMOD turned off.
+stdin pipe end will be in
+.Dv CBREAK
+mode, with
+.Dv ECHO
+and
+.Dv CRMOD
+turned off.
 .Sh ENVIRONMENT
 .Nm Tn3270
 checks the following environment variables:
@@ -249,13 +292,16 @@ and
 .Xr termcap 3 ,
 .Xr termcap 5 ,
 .Xr map3270 5 ,
-.br
-.Em Yale ASCII Terminal Communication
-.Em System II Program Description/Operator's Manual
-.Pq IBM SB30-1911
+.Rs
+.%T "Yale ASCII Terminal Communication"
+.%B "System II Program Description/Operator's Manual"
+.%R IBM SB30-1911
+.Re
 .Sh HISTORY
-.Nm
-appeared in 4.3 BSD.
+The
+.Nm tn3270
+command appeared in
+.Bx 4.3 .
 .Sh BUGS
 Tn3270 is slow and uses system resources prodigiously.
 .Pp

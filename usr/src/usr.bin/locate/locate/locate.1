@@ -1,12 +1,10 @@
 .\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)locate.1	5.4 (Berkeley) %G%
+.\"	@(#)locate.1	5.5 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt LOCATE 1
 .Os
@@ -36,16 +34,18 @@ including slashes (``/'').
 As a special case, a pattern containing no globbing characters (``foo'')
 is matched as though it were ``*foo*''.
 .Sh FILES
-.Dw /var/db/locate.database
-.Di L
-.Dp Pa /var/db/locate.database
-.Dp
+.Bl -tag -width /var/db/locate.database -compact
+.It Pa /var/db/locate.database
+.El
 .Sh SEE ALSO
 .Xr find 1 ,
 .Xr fnmatch 3
-.br
+.Pp
 Paper in February,
 1983 issue of the USENIX publication
 .Sy ;login: .
 .Sh HISTORY
-4.4 BSD.
+The
+.Nm locate
+command is
+.Ud .
