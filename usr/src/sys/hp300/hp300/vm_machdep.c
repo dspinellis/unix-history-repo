@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
  *
- *	@(#)vm_machdep.c	8.3 (Berkeley) %G%
+ *	@(#)vm_machdep.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -275,3 +275,92 @@ vunmapbuf(bp)
 	bp->b_data = bp->b_saveaddr;
 	bp->b_saveaddr = NULL;
 }
+
+#ifdef MAPPEDCOPY
+u_int mappedcopysize = 4096;
+
+mappedcopyin(fromp, top, count)
+	register char *fromp, *top;
+	register int count;
+{
+	register vm_offset_t kva, upa;
+	register int off, len;
+	int alignable;
+	pmap_t upmap;
+	extern caddr_t CADDR1;
+
+	kva = (vm_offset_t) CADDR1;
+	off = (vm_offset_t)fromp & PAGE_MASK;
+	alignable = (off == ((vm_offset_t)top & PAGE_MASK));
+	upmap = vm_map_pmap(&curproc->p_vmspace->vm_map);
+	while (count > 0) {
+		/*
+		 * First access of a page, use fubyte to make sure
+		 * page is faulted in and read access allowed.
+		 */
+		if (fubyte(fromp) == -1)
+			return (EFAULT);
+		/*
+		 * Map in the page and bcopy data in from it
+		 */
+		upa = pmap_extract(upmap, trunc_page(fromp));
+		if (upa == 0)
+			panic("mappedcopyin");
+		len = min(count, PAGE_SIZE-off);
+		pmap_enter(kernel_pmap, kva, upa, VM_PROT_READ, TRUE);
+		if (len == PAGE_SIZE && alignable && off == 0)
+			copypage(kva, top);
+		else
+			bcopy((caddr_t)(kva+off), top, len);
+		fromp += len;
+		top += len;
+		count -= len;
+		off = 0;
+	}
+	pmap_remove(kernel_pmap, kva, kva+PAGE_SIZE);
+	return (0);
+}
+
+mappedcopyout(fromp, top, count)
+	register char *fromp, *top;
+	register int count;
+{
+	register vm_offset_t kva, upa;
+	register int off, len;
+	int alignable;
+	pmap_t upmap;
+	extern caddr_t CADDR2;
+
+	kva = (vm_offset_t) CADDR2;
+	off = (vm_offset_t)top & PAGE_MASK;
+	alignable = (off == ((vm_offset_t)fromp & PAGE_MASK));
+	upmap = vm_map_pmap(&curproc->p_vmspace->vm_map);
+	while (count > 0) {
+		/*
+		 * First access of a page, use subyte to make sure
+		 * page is faulted in and write access allowed.
+		 */
+		if (subyte(top, *fromp) == -1)
+			return (EFAULT);
+		/*
+		 * Map in the page and bcopy data out to it
+		 */
+		upa = pmap_extract(upmap, trunc_page(top));
+		if (upa == 0)
+			panic("mappedcopyout");
+		len = min(count, PAGE_SIZE-off);
+		pmap_enter(kernel_pmap, kva, upa,
+			   VM_PROT_READ|VM_PROT_WRITE, TRUE);
+		if (len == PAGE_SIZE && alignable && off == 0)
+			copypage(fromp, kva);
+		else
+			bcopy(fromp, (caddr_t)(kva+off), len);
+		fromp += len;
+		top += len;
+		count -= len;
+		off = 0;
+	}
+	pmap_remove(kernel_pmap, kva, kva+PAGE_SIZE);
+	return (0);
+}
+#endif
