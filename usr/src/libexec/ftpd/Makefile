@@ -14,9 +14,9 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
-CFLAGS=	-O
+CFLAGS=	-O -DSETPROCTITLE
 LIBC=	/lib/libc.a
 SRCS=	ftpd.c ftpcmd.c glob.c logwtmp.c popen.c vers.c
 OBJS=	ftpd.o ftpcmd.o glob.o logwtmp.o popen.o vers.o
