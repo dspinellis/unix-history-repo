@@ -1,4 +1,8 @@
-/*	3.def.h	4.2	83/08/11	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)3.def.h	4.3 (Berkeley) %G%
+ */
 
 #define RECURSE(p,v,r)	{ for (r = 0; r < CHILDNUM(v); ++r) if (DEFINED(LCHILD(v,r))) p(LCHILD(v,r)); if (DEFINED(RSIB(v))) p(RSIB(v)); }
 

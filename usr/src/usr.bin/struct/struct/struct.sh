@@ -1,7 +1,10 @@
-#! /bin/sh
+#!/bin/sh -
 #
-#	@(#)struct.sh	4.3	(Berkeley)	89/05/10
+# %sccs.include.proprietary.sh%
 #
+#	@(#)struct.sh	4.4 (Berkeley) %G%
+#
+
 trap "rm -f /tmp/struct*$$" 0 1 2 3 13 15
 files=no
 for i

@@ -1,4 +1,8 @@
-/*	b.h	4.2	83/08/11	*/
+/*-
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)b.h	5.1 (Berkeley) %G%
+ */
 
 extern int xxindent, xxval, newflag, xxmaxchars, xxbpertab;
 extern int xxlineno;		/* # of lines already output */
