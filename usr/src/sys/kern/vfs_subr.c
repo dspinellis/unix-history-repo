@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.77 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.78 (Berkeley) %G%
  */
 
 /*
@@ -12,6 +12,7 @@
  */
 
 #include <sys/param.h>
+#include <sys/systm.h>
 #include <sys/proc.h>
 #include <sys/mount.h>
 #include <sys/time.h>
@@ -137,6 +138,31 @@ getvfs(fsid)
 		mp = mp->mnt_next;
 	} while (mp != rootfs);
 	return ((struct mount *)0);
+}
+
+/*
+ * Get a new unique fsid
+ */
+void
+getnewfsid(mp, mtype)
+	struct mount *mp;
+	int mtype;
+{
+static u_short xxxfs_mntid;
+
+	fsid_t tfsid;
+
+	mp->mnt_stat.f_fsid.val[0] = makedev(nblkdev + 11, 0);	/* XXX */
+	mp->mnt_stat.f_fsid.val[1] = mtype;
+	if (xxxfs_mntid == 0)
+		++xxxfs_mntid;
+	tfsid.val[0] = makedev(nblkdev, xxxfs_mntid);
+	tfsid.val[1] = mtype;
+	while (getvfs(&tfsid)) {
+		tfsid.val[0]++;
+		xxxfs_mntid++;
+	}
+	mp->mnt_stat.f_fsid.val[0] = tfsid.val[0];
 }
 
 /*
