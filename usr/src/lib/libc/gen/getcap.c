@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getcap.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)getcap.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -216,18 +216,19 @@ getent(cap, len, db_array, fd, name, depth, nfield)
 		 */
 
 		if (fd >= 0) {
-			(void)lseek(fd, 0L, L_SET);
+			(void)lseek(fd, (off_t)0, L_SET);
 			myfd = 0;
 		} else {
-			sprintf(pbuf, "%s.db", *db_p);
+			(void)snprintf(pbuf, sizeof(pbuf), "%s.db", *db_p);
 			if ((capdbp = dbopen(pbuf, O_RDONLY, 0, DB_HASH, 0))
 			     != NULL) {
 				free(record);
 				retval = cdbget(capdbp, &record, name);
 				if (capdbp->close(capdbp) < 0)
 					return (-2);
-				*cap = malloc (strlen(record) + 1);
-				strcpy(*cap, record);
+				*len = strlen(record);
+				*cap = malloc(*len + 1);
+				memmove(*cap, record, *len + 1);
 				return (retval);
 			} else {
 				fd = open(*db_p, O_RDONLY, 0);
@@ -520,21 +521,17 @@ cdbget(capdbp, bp, name)
 			return (-1);
 		}
 
+		/* If not an index to another record, leave. */
 		if (((char *)data.data)[0] != SHADOW)
 			break;
 
-		key.data = data.data + 1;
+		key.data = (char *)data.data + 1;
 		key.size = data.size - 1;
 	}
 	
-	*bp = &((char *)(data.data))[1];
-
-	if (((char *)(data.data))[0] == TCERR)
-		return (1);
-	else
-		return (0);
+	*bp = (char *)data.data + 1;
+	return (((char *)(data.data))[0] == TCERR ? 1 : 0);
 }
-
 
 /*
  * Cgetmatch will return 0 if name is one of the names of the capability
