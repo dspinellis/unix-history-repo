@@ -11,14 +11,13 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
  * w - print system status (who and what)
  *
  * This program is similar to the systat command on Tenex/Tops 10/20
- * It needs read permission on /dev/mem, /dev/kmem, and /dev/drum.
  */
 #include <sys/param.h>
 #include <nlist.h>
@@ -33,10 +32,7 @@ static char sccsid[] = "@(#)w.c	5.9 (Berkeley) %G%";
 #include <machine/pte.h>
 #include <sys/vm.h>
 #include <sys/tty.h>
-
-#define NMAX sizeof(utmp.ut_name)
-#define LMAX sizeof(utmp.ut_line)
-#define HMAX sizeof(utmp.ut_host)
+#include <paths.h>
 
 #define ARGWIDTH	33	/* # chars left on 80 col crt for args */
 
@@ -85,7 +81,7 @@ FILE	*ut;
 FILE	*bootfd;
 int	kmem;
 int	mem;
-int	swap;			/* /dev/kmem, mem, and swap */
+int	swap;			/* kmem, mem, and swap */
 int	nswap;
 int	dmmin, dmmax;
 dev_t	tty;
@@ -189,13 +185,13 @@ main(argc, argv)
 		argc--; argv++;
 	}
 
-	if ((kmem = open("/dev/kmem", 0)) < 0) {
-		fprintf(stderr, "No kmem\n");
+	if ((kmem = open(_PATH_KMEM, 0)) < 0) {
+		fprintf(stderr, "w: no %s.\n", _PATH_KMEM);
 		exit(1);
 	}
-	nlist("/vmunix", nl);
+	nlist(_PATH_UNIX, nl);
 	if (nl[0].n_type==0) {
-		fprintf(stderr, "No namelist\n");
+		fprintf(stderr, "w: no %s namelist.\n", _PATH_UNIX);
 		exit(1);
 	}
 
@@ -207,7 +203,7 @@ main(argc, argv)
 			ttywidth = win.ws_col;
 	}
 
-	ut = fopen("/etc/utmp","r");
+	ut = fopen(_PATH_UTMP, "r");
 	time(&now);
 	if (header) {
 		/* Print time of day */
@@ -284,7 +280,7 @@ main(argc, argv)
 		}
 		if (utmp.ut_name[0] == '\0')
 			continue;	/* that tty is free */
-		if (sel_user && strcmpn(utmp.ut_name, sel_user, NMAX) != 0)
+		if (sel_user && strncmp(utmp.ut_name, sel_user, UT_NAMESIZE) != 0)
 			continue;	/* we wanted only somebody else */
 
 		gettty();
@@ -343,7 +339,7 @@ gettty()
 	struct stat statbuf;
 
 	ttybuf[0] = 0;
-	strcpy(ttybuf, "/dev/");
+	strcpy(ttybuf, _PATH_DEV);
 	strcat(ttybuf, utmp.ut_line);
 	stat(ttybuf, &statbuf);
 	tty = statbuf.st_rdev;
@@ -359,14 +355,14 @@ putline()
 	int width = ttywidth - 1;
 
 	/* print login name of the user */
-	printf("%-*.*s ", NMAX, NMAX, utmp.ut_name);
-	width -= NMAX + 1;
+	printf("%-*.*s ", UT_NAMESIZE, UT_NAMESIZE, utmp.ut_name);
+	width -= UT_NAMESIZE + 1;
 
 	/* print tty user is on */
 	if (lflag && !prfrom) {
-		/* long form: all (up to) LMAX chars */
-		printf("%-*.*s", LMAX, LMAX, utmp.ut_line);
-		width -= LMAX;
+		/* long form: all (up to) UT_LINESIZE chars */
+		printf("%-*.*s", UT_LINESIZE, UT_LINESIZE, utmp.ut_line);
+		width -= UT_LINESIZE;
 	 } else {
 		/* short form: 2 chars, skipping 'tty' if there */
 		if (utmp.ut_line[0]=='t' && utmp.ut_line[1]=='t' && utmp.ut_line[2]=='y')
@@ -416,8 +412,8 @@ findidle()
 	long lastaction, diff;
 	char ttyname[20];
 
-	strcpy(ttyname, "/dev/");
-	strcatn(ttyname, utmp.ut_line, LMAX);
+	strcpy(ttyname, _PATH_DEV);
+	strncat(ttyname, utmp.ut_line, UT_LINESIZE);
 	stat(ttyname, &stbuf);
 	time(&now);
 	lastaction = stbuf.st_atime;
@@ -496,12 +492,12 @@ readpr()
 
 	Usrptma = (struct pte *) nl[X_USRPTMA].n_value;
 	usrpt = (struct pte *) nl[X_USRPT].n_value;
-	if((mem = open("/dev/mem", 0)) < 0) {
-		fprintf(stderr, "No mem\n");
+	if((mem = open(_PATH_MEM, 0)) < 0) {
+		fprintf(stderr, "w: no %s.\n", _PATH_MEM);
 		exit(1);
 	}
-	if ((swap = open("/dev/drum", 0)) < 0) {
-		fprintf(stderr, "No drum\n");
+	if ((swap = open(_PATH_DRUM, 0)) < 0) {
+		fprintf(stderr, "w: no %s\n", _PATH_DRUM);
 		exit(1);
 	}
 	/*
@@ -595,11 +591,11 @@ cont:
 		strcpy(pr[np].w_comm, up.u_comm);
 		/*
 		 * Get args if there's a chance we'll print it.
-		 * Cant just save pointer: getargs returns static place.
-		 * Cant use strcpyn: that crock blank pads.
+		 * Can't just save pointer: getargs returns static place.
+		 * Can't use strncpy, it blank pads.
 		 */
 		pr[np].w_args[0] = 0;
-		strcatn(pr[np].w_args,getargs(&pr[np]),ARGWIDTH);
+		strncat(pr[np].w_args,getargs(&pr[np]),ARGWIDTH);
 		if (pr[np].w_args[0]==0 || pr[np].w_args[0]=='-' && pr[np].w_args[1]<=' ' || pr[np].w_args[0] == '?') {
 			strcat(pr[np].w_args, " (");
 			strcat(pr[np].w_args, pr[np].w_comm);
