@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	7.3 (Berkeley) %G%
+ *	@(#)conf.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -120,7 +120,7 @@ int	mtioctl(),mtdump();
 
 #include "ra.h"
 #if NUDA > 0
-int	udopen(),ucclose(),udstrategy(),udread(),udwrite(),udioctl();
+int	udopen(),udclose(),udstrategy(),udread(),udwrite(),udioctl();
 int	udreset(),uddump(),udsize();
 #else
 #define	udopen		nodev
