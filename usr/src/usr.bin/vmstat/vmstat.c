@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)vmstat.c	4.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)vmstat.c	4.5 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/vm.h>
@@ -135,7 +135,7 @@ char **argv;
 	read(mf, &hz, sizeof hz);
 	for (i = 0; i < DK_NDRIVE; i++)
 	{
-		strcpy(dr_name[i], "DK");
+		strcpy(dr_name[i], "xx");
 		dr_unit[i] = i;
 	}
 	read_names();
@@ -149,9 +149,9 @@ reprint:
 	lines = 20;
 	/* s1 = z; */
 printf("\
- procs     memory            page        swap  %s %s %s %s  faults          cpu\n\
- r b w   avm  fre  re at pi po fr  de  sr i o  %-2d %-2d %-2d %-2d  in  sy  cs us sy id\n\
-", dr_name[0], dr_name[1], dr_name[2], dr_name[3], dr_unit[0], dr_unit[1], dr_unit[2], dr_unit[3]);
+ procs     memory            page        swap         disk  faults          cpu\n\
+ r b w   avm  fre  re at pi po fr  de  sr i o  %c%d %c%d %c%d %c%d  in  sy  cs us sy id\n\
+", dr_name[0][0], dr_unit[0], dr_name[1][0], dr_unit[1], dr_name[2][0], dr_unit[2], dr_name[3][0], dr_unit[3]);
 loop:
 	lseek(mf, (long)nl[X_CPTIME].n_value, 0);
  	read(mf, s.time, sizeof s.time);
