@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)uuencode.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)uuencode.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -89,7 +89,7 @@ encode()
 		ch = ENC(n);
 		if (putchar(ch) == EOF)
 			break;
-		for (p = buf; n; n -= 3, p += 3) {
+		for (p = buf; n > 0; n -= 3, p += 3) {
 			ch = *p >> 2;
 			ch = ENC(ch);
 			if (putchar(ch) == EOF)
