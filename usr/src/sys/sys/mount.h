@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.27 (Berkeley) %G%
+ *	@(#)mount.h	7.28 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -178,6 +178,9 @@ typedef struct fhandle	fhandle_t;
 /*
  * Arguments to mount UFS-based filesystems
  */
+#ifndef KERNEL
+#include <sys/ucred.h>
+#endif
 struct ufs_args {
 	char	*fspec;		/* block special device to mount */
 	int	exflags;	/* export related flags */
