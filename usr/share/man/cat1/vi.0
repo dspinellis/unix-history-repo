@@ -1,0 +1,95 @@
+VI(1)                        BSD Reference Manual                        VI(1)
+
+NNAAMMEE
+     vvii, vviieeww - screen oriented (visual) display editor based on ex
+
+SSYYNNOOPPSSIISS
+     vvii [--RR] [--ll] [--rr] [--tt _t_a_g] [--ww _n] [++_c_o_m_m_a_n_d] _n_a_m_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     VVii (visual) is a display oriented text editor based on ex(1).  Ex and vvii
+     run the same code; it is possible to get to the command mode of ex from
+     within vvii and vice-versa.
+
+     VViieeww is the same as ``vi -R'', e.g. run in read-only mode.
+
+     Available options:
+
+     --RR         Read only. Changes to the file may not be written out.
+
+     --ll         Sets options for editing LISP source (options sshhoowwmmaattcchh and
+                lliisspp).
+
+     --rr         In the event of an editor or system crash, the --rr option will
+                retrieve the last saved version of the specified file, or if
+                no file is specified, a list of saved files is printed.
+
+     --tt _t_a_g     If tags are used (see ctags(1))  the editor is postioned at
+                _t_a_g.
+
+     --ww_n        The default window size is set to _n.
+
+     ++_c_o_m_m_a_n_d   Enter the file with _c_o_m_m_a_n_d_. Useful for positioning on a
+                string or line number.
+
+     The _V_i _Q_u_i_c_k _R_e_f_e_r_e_n_c_e card and the _I_n_t_r_o_d_u_c_t_i_o_n _t_o _D_i_s_p_l_a_y _E_d_i_t_i_n_g _w_i_t_h
+     _V_i provide full details on using vvii.
+
+EENNVVIIRROONNMMEENNTT
+     The vvii command uses the following environment variables.
+
+     EXINIT      User specified startup values for ex and vvii. Usually speci-
+                 fied in the file _~_/_._e_x_r_c
+
+     HOME        Default directory to search for the file _~_/_._e_x_r_c
+
+     SHELL       Shell used for _e_s_c_a_p_e_d commands (with the ex ::!! command).
+
+     TERM        Terminal type used to lookup terminal capabilities from the
+                 file _/_u_s_r_/_s_h_a_r_e_/_m_i_s_c_/_t_e_r_m_c_a_p.
+
+     TERMCAP     If set, specifies an alternate termcap file.
+
+FFIILLEESS
+     /usr/libexec/ex?.?strings   error messages
+     /usr/libexec/ex?.?recover   recover command
+     /usr/libexec/ex?.?preserve  preserve command
+     /usr/share/misc/termcap     describes capabilities of terminals
+     ~/.exrc                     editor startup file
+     /tmp/Ex_n_n_n_n_n                editor temporary
+     /tmp/Rx_n_n_n_n_n                named buffer temporary
+     /var/preserve               preservation directory
+
+SSEEEE AALLSSOO
+     awk(1),  ed(1),  grep(1),  sed(1),  grep(1),  vi(1),  termcap(5),  envi-
+     ron(7)
+
+     _V_i _Q_u_i_c_k _R_e_f_e_r_e_n_c_e _C_a_r_d.
+
+     _A_n _I_n_t_r_o_d_u_c_t_i_o_n _t_o _D_i_s_p_l_a_y _E_d_i_t_i_n_g _w_i_t_h _V_i.
+
+BBUUGGSS
+     Software tabs using ^^TT work only immediately after the aauuttooiinnddeenntt.
+
+     Left and right shifts on intelligent terminals don't make use of insert
+     and delete character operations in the terminal.
+
+     The wwrraappmmaarrggiinn option can be fooled since it looks at output columns when
+     blanks are typed.  If a long word passes through the margin and onto the
+     next line without a break, then the line won't be broken.
+
+     Insert/delete within a line can be slow if tabs are present on intelli-
+     gent terminals, since the terminals need help in doing this correctly.
+
+     Saving text on deletes in the named buffers is somewhat inefficient.
+
+     The ssoouurrccee command does not work when executed as ::ssoouurrccee; there is no
+     way to use the ::aappppeenndd, ::cchhaannggee, and ::iinnsseerrtt commands, since it is not
+     possible to give more than one line of input to a :: escape.  To use these
+     on a ::gglloobbaall you must QQ to ex command mode, execute them, and then reen-
+     ter the screen editor with vvii or ooppeenn.
+
+HHIISSTTOORRYY
+     The vvii command appeared in 3.0BSD.
+
+3rd Berkeley Distribution        June 18, 1993                               2
