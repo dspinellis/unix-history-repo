@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_output.c,v 5.4 88/11/18 17:28:08 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_output.c,v $
- *	@(#)tp_output.c	7.7 (Berkeley) %G% *
+ *	@(#)tp_output.c	7.8 (Berkeley) %G% *
  *
  * In here is tp_ctloutput(), the guy called by [sg]etsockopt(),
  */
@@ -272,11 +272,16 @@ tp_consistency( tpcb, cmd, param )
 	}
 
 	if ((error==0) && (cmd & TP_FORCE)) {
-		tpcb->tp_tpdusize = param->p_tpdusize;
+		/* Enforce Negotation rules below */
+		if (tpcb->tp_tpdusize > param->p_tpdusize)
+			tpcb->tp_tpdusize = param->p_tpdusize;
 		tpcb->tp_class = param->p_class;
-		tpcb->tp_use_checksum = param->p_use_checksum;
-		tpcb->tp_xpd_service = param->p_xpd_service;
-		tpcb->tp_xtd_format = param->p_xtd_format;
+		if (tpcb->tp_use_checksum || param->p_use_checksum)
+			tpcb->tp_use_checksum = 1;
+		if (!tpcb->tp_xpd_service || !param->p_xpd_service)
+			tpcb->tp_xpd_service = 0;
+		if (!tpcb->tp_xtd_format || !param->p_xtd_format)
+			tpcb->tp_xtd_format = 0;
 	}
 
 done:
