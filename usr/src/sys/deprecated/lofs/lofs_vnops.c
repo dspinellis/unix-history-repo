@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lofs_vnops.c	8.1 (Berkeley) %G%
+ *	@(#)lofs_vnops.c	8.2 (Berkeley) %G%
  *
  * $Id: lofs_vnops.c,v 1.11 1992/05/30 10:05:43 jsp Exp jsp $
  */
@@ -53,11 +53,11 @@
 	(nd) = v.vnp; \
 }
 
-
 /*
  * vp is the current namei directory
  * ndp is the name to locate in that directory...
  */
+int
 lofs_lookup(ap)
 	struct vop_lookup_args /* {
 		struct vnode * a_dvp;
@@ -71,11 +71,6 @@ lofs_lookup(ap)
 	int error;
 	int flag = ap->a_cnp->cn_nameiop /*& OPMASK*/;
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_lookup(ap->a_dvp = %x->%x, \"%s\", op = %d)\n",
-		dvp, LOFSVP(dvp), ap->a_cnp->cn_nameptr, flag);
-#endif
-
 	/*
 	 * (ap->a_dvp) was locked when passed in, and it will be replaced
 	 * with the target vnode, BUT that will already have been
@@ -84,9 +79,6 @@ lofs_lookup(ap)
 	 */
 	targetdvp = LOFSVP(dvp);
 	/*VREF(targetdvp);*/
-#ifdef LOFS_DIAGNOSTIC
-	vprint("lofs VOP_LOOKUP", targetdvp);
-#endif
 
 	/*
 	 * Call lookup on the looped vnode
@@ -96,14 +88,8 @@ lofs_lookup(ap)
 
 	if (error) {
 		*ap->a_vpp = NULLVP;
-#ifdef LOFS_DIAGNOSTIC
-		printf("lofs_lookup(%x->%x) = %d\n", dvp, LOFSVP(dvp), error);
-#endif
 		return (error);
 	}
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_lookup(%x->%x) = OK\n", dvp, LOFSVP(dvp));
-#endif
 
 	*ap->a_vpp = newvp;
 
@@ -114,19 +100,12 @@ lofs_lookup(ap)
 	 * return the aliased directory and vnode.
 	 */
 	if (newvp && newvp->v_type == VDIR && flag == LOOKUP) {
-#ifdef LOFS_DIAGNOSTIC
-		printf("lofs_lookup: found VDIR\n");
-#endif
 		/*
 		 * At this point, newvp is the vnode to be looped.
 		 * Activate a loopback and return the looped vnode.
 		 */
 		return (make_lofs(dvp->v_mount, ap->a_vpp));
 	}
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_lookup: not VDIR\n");
-#endif
 
 	return (0);
 }
@@ -136,6 +115,7 @@ lofs_lookup(ap)
  * ni_dvp references the locked directory.
  * ni_vp is NULL.
  */
+int
 lofs_mknod(ap)
 	struct vop_mknod_args /* {
 		struct vnode *a_dvp;
@@ -145,10 +125,6 @@ lofs_mknod(ap)
 	} */ *ap;
 {
 	int error;
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_mknod(vp = %x->%x)\n", ap->a_dvp, LOFSVP(ap->a_dvp));
-#endif
 
 	PUSHREF(xdvp, ap->a_dvp);
 	VREF(ap->a_dvp);
@@ -166,6 +142,7 @@ lofs_mknod(ap)
  * ni_dvp references the locked directory
  * ni_vp is NULL.
  */
+int
 lofs_create(ap)
 	struct vop_create_args /* {
 		struct vnode *a_dvp;
@@ -176,10 +153,6 @@ lofs_create(ap)
 {
 	int error;
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_create(ap->a_dvp = %x->%x)\n", ap->a_dvp, LOFSVP(ap->a_dvp));
-#endif
-
 	PUSHREF(xdvp, ap->a_dvp);
 	VREF(ap->a_dvp);
 
@@ -188,13 +161,10 @@ lofs_create(ap)
 	POP(xdvp, ap->a_dvp);
 	vrele(ap->a_dvp);
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_create(ap->a_dvp = %x->%x)\n", ap->a_dvp, LOFSVP(ap->a_dvp));
-#endif
-
 	return (error);
 }
 
+int
 lofs_open(ap)
 	struct vop_open_args /* {
 		struct vnode *a_vp;
@@ -204,13 +174,10 @@ lofs_open(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_open(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_OPEN(LOFSVP(ap->a_vp), ap->a_mode, ap->a_cred, ap->a_p);
+	return (VOP_OPEN(LOFSVP(ap->a_vp), ap->a_mode, ap->a_cred, ap->a_p));
 }
 
+int
 lofs_close(ap)
 	struct vop_close_args /* {
 		struct vnode *a_vp;
@@ -220,13 +187,10 @@ lofs_close(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_close(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_CLOSE(LOFSVP(ap->a_vp), ap->a_fflag, ap->a_cred, ap->a_p);
+	return (VOP_CLOSE(LOFSVP(ap->a_vp), ap->a_fflag, ap->a_cred, ap->a_p));
 }
 
+int
 lofs_access(ap)
 	struct vop_access_args /* {
 		struct vnode *a_vp;
@@ -236,13 +200,10 @@ lofs_access(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_access(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_ACCESS(LOFSVP(ap->a_vp), ap->a_mode, ap->a_cred, ap->a_p);
+	return (VOP_ACCESS(LOFSVP(ap->a_vp), ap->a_mode, ap->a_cred, ap->a_p));
 }
 
+int
 lofs_getattr(ap)
 	struct vop_getattr_args /* {
 		struct vnode *a_vp;
@@ -252,10 +213,6 @@ lofs_getattr(ap)
 	} */ *ap;
 {
 	int error;
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_getattr(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
 
 	/*
 	 * Get the stats from the underlying filesystem
@@ -271,6 +228,7 @@ lofs_getattr(ap)
 	return (0);
 }
 
+int
 lofs_setattr(ap)
 	struct vop_setattr_args /* {
 		struct vnode *a_vp;
@@ -280,13 +238,10 @@ lofs_setattr(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_setattr(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_SETATTR(LOFSVP(ap->a_vp), ap->a_vap, ap->a_cred, ap->a_p);
+	return (VOP_SETATTR(LOFSVP(ap->a_vp), ap->a_vap, ap->a_cred, ap->a_p));
 }
 
+int
 lofs_read(ap)
 	struct vop_read_args /* {
 		struct vnode *a_vp;
@@ -296,13 +251,10 @@ lofs_read(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_read(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_READ(LOFSVP(ap->a_vp), ap->a_uio, ap->a_ioflag, ap->a_cred);
+	return (VOP_READ(LOFSVP(ap->a_vp), ap->a_uio, ap->a_ioflag, ap->a_cred));
 }
 
+int
 lofs_write(ap)
 	struct vop_write_args /* {
 		struct vnode *a_vp;
@@ -312,13 +264,10 @@ lofs_write(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_write(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_WRITE(LOFSVP(ap->a_vp), ap->a_uio, ap->a_ioflag, ap->a_cred);
+	return (VOP_WRITE(LOFSVP(ap->a_vp), ap->a_uio, ap->a_ioflag, ap->a_cred));
 }
 
+int
 lofs_ioctl(ap)
 	struct vop_ioctl_args /* {
 		struct vnode *a_vp;
@@ -330,13 +279,10 @@ lofs_ioctl(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_ioctl(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_IOCTL(LOFSVP(ap->a_vp), ap->a_command, ap->a_data, ap->a_fflag, ap->a_cred, ap->a_p);
+	return (VOP_IOCTL(LOFSVP(ap->a_vp), ap->a_command, ap->a_data, ap->a_fflag, ap->a_cred, ap->a_p));
 }
 
+int
 lofs_select(ap)
 	struct vop_select_args /* {
 		struct vnode *a_vp;
@@ -347,13 +293,10 @@ lofs_select(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_select(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_SELECT(LOFSVP(ap->a_vp), ap->a_which, ap->a_fflags, ap->a_cred, ap->a_p);
+	return (VOP_SELECT(LOFSVP(ap->a_vp), ap->a_which, ap->a_fflags, ap->a_cred, ap->a_p));
 }
 
+int
 lofs_mmap(ap)
 	struct vop_mmap_args /* {
 		struct vnode *a_vp;
@@ -363,13 +306,10 @@ lofs_mmap(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_mmap(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_MMAP(LOFSVP(ap->a_vp), ap->a_fflags, ap->a_cred, ap->a_p);
+	return (VOP_MMAP(LOFSVP(ap->a_vp), ap->a_fflags, ap->a_cred, ap->a_p));
 }
 
+int
 lofs_fsync(ap)
 	struct vop_fsync_args /* {
 		struct vnode *a_vp;
@@ -380,15 +320,12 @@ lofs_fsync(ap)
 {
 	struct vnode *targetvp = LOFSVP(ap->a_vp);
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_fsync(ap->a_vp = %x->%x)\n", ap->a_vp, targetvp);
-#endif
-
 	if (targetvp)
-		return VOP_FSYNC(targetvp, ap->a_cred, ap->a_waitfor, ap->a_p);
+		return (VOP_FSYNC(targetvp, ap->a_cred, ap->a_waitfor, ap->a_p));
 	return (0);
 }
 
+int
 lofs_seek(ap)
 	struct vop_seek_args /* {
 		struct vnode *a_vp;
@@ -398,13 +335,10 @@ lofs_seek(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_seek(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_SEEK(LOFSVP(ap->a_vp), ap->a_oldoff, ap->a_newoff, ap->a_cred);
+	return (VOP_SEEK(LOFSVP(ap->a_vp), ap->a_oldoff, ap->a_newoff, ap->a_cred));
 }
 
+int
 lofs_remove(ap)
 	struct vop_remove_args /* {
 		struct vnode *a_dvp;
@@ -413,10 +347,6 @@ lofs_remove(ap)
 	} */ *ap;
 {
 	int error;
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_remove(ap->a_vp = %x->%x)\n", ap->a_dvp, LOFSVP(ap->a_dvp));
-#endif
 
 	PUSHREF(xdvp, ap->a_dvp);
 	VREF(ap->a_dvp);
@@ -438,6 +368,7 @@ lofs_remove(ap)
  * ni_dvp is the locked parent of the target.
  * ni_vp is NULL.
  */
+int
 lofs_link(ap)
 	struct vop_link_args /* {
 		struct vnode *a_vp;
@@ -446,10 +377,6 @@ lofs_link(ap)
 	} */ *ap;
 {
 	int error;
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_link(ap->a_tdvp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
 
 	PUSHREF(xdvp, ap->a_vp);
 	VREF(ap->a_vp);
@@ -462,6 +389,7 @@ lofs_link(ap)
 	return (error);
 }
 
+int
 lofs_rename(ap)
 	struct vop_rename_args  /* {
 		struct vnode *a_fdvp;
@@ -479,23 +407,12 @@ lofs_rename(ap)
 #endif
 	int error;
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename(fdvp = %x->%x)\n", ap->a_fdvp, LOFSVP(ap->a_fdvp));
-	/*printf("lofs_rename(tdvp = %x->%x)\n", tndp->ni_dvp, LOFSVP(tndp->ni_dvp));*/
-#endif
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - switch source dvp\n");
-#endif
 	/*
 	 * Switch source directory to point to lofsed vnode
 	 */
 	PUSHREF(fdvp, ap->a_fdvp);
 	VREF(ap->a_fdvp);
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - switch source vp\n");
-#endif
 	/*
 	 * And source object if it is lofsed...
 	 */
@@ -508,9 +425,6 @@ lofs_rename(ap)
 	}
 
 #ifdef notdef
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - switch source start vp\n");
-#endif
 	/*
 	 * And source startdir object if it is lofsed...
 	 */
@@ -523,9 +437,6 @@ lofs_rename(ap)
 	}
 #endif
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - switch target dvp\n");
-#endif
 	/*
  	 * Switch target directory to point to lofsed vnode
 	 */
@@ -537,9 +448,6 @@ lofs_rename(ap)
 		tdvp = 0;
 	}
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - switch target vp\n");
-#endif
 	/*
 	 * And target object if it is lofsed...
 	 */
@@ -552,9 +460,6 @@ lofs_rename(ap)
 	}
 
 #ifdef notdef
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - switch target start vp\n");
-#endif
 	/*
 	 * And target startdir object if it is lofsed...
 	 */
@@ -567,16 +472,6 @@ lofs_rename(ap)
 	}
 #endif
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - VOP_RENAME(%x, %x, %x, %x)\n",
-		ap->a_fdvp, ap->a_fvp, ap->a_tdvp, ap->a_tvp);
-	vprint("ap->a_fdvp", ap->a_fdvp);
-	vprint("ap->a_fvp", ap->a_fvp);
-	vprint("ap->a_tdvp", ap->a_tdvp);
-	if (ap->a_tvp) vprint("ap->a_tvp", ap->a_tvp);
-	DELAY(16000000);
-#endif
-
 	error = VOP_RENAME(ap->a_fdvp, ap->a_fvp, ap->a_fcnp, ap->a_tdvp, ap->a_tvp, ap->a_tcnp);
 
 	/*
@@ -584,9 +479,6 @@ lofs_rename(ap)
 	 */
  
 #ifdef notdef
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - restore target startdir\n");
-#endif
 
 	if (tsvp) {
 		if (tndp->ni_startdir)
@@ -595,18 +487,10 @@ lofs_rename(ap)
 	}
 #endif
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - restore target vp\n");
-#endif
-
 	if (tvp) {
 		ap->a_tvp = tvp;
 		vrele(ap->a_tvp);
 	}
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - restore target dvp\n");
-#endif
 
 	if (tdvp) {
 		ap->a_tdvp = tdvp;
@@ -614,9 +498,6 @@ lofs_rename(ap)
 	}
 
 #ifdef notdef
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - restore source startdir\n");
-#endif
 
 	if (fsvp) {
 		if (fndp->ni_startdir)
@@ -625,19 +506,10 @@ lofs_rename(ap)
 	}
 #endif
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - restore source vp\n");
-#endif
-
-
 	if (fvp) {
 		ap->a_fvp = fvp;
 		vrele(ap->a_fvp);
 	}
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rename - restore source dvp\n");
-#endif
 
 	POP(fdvp, ap->a_fdvp);
 	vrele(ap->a_fdvp);
@@ -649,6 +521,7 @@ lofs_rename(ap)
  * ni_dvp is the locked (alias) parent.
  * ni_vp is NULL.
  */
+int
 lofs_mkdir(ap)
 	struct vop_mkdir_args /* {
 		struct vnode *a_dvp;
@@ -661,10 +534,6 @@ lofs_mkdir(ap)
 	struct vnode *dvp = ap->a_dvp;
 	struct vnode *xdvp;
 	struct vnode *newvp;
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_mkdir(vp = %x->%x)\n", dvp, LOFSVP(dvp));
-#endif
 
 	xdvp = dvp;
 	dvp = LOFSVP(xdvp);
@@ -694,6 +563,7 @@ lofs_mkdir(ap)
  * ni_dvp is the locked parent.
  * ni_vp is the entry to be removed.
  */
+int
 lofs_rmdir(ap)
 	struct vop_rmdir_args /* {
 		struct vnode *a_dvp;
@@ -704,10 +574,6 @@ lofs_rmdir(ap)
 	struct vnode *vp = ap->a_vp;
 	struct vnode *dvp = ap->a_dvp;
 	int error;
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_rmdir(dvp = %x->%x)\n", dvp, LOFSVP(dvp));
-#endif
 
 	PUSHREF(xdvp, dvp);
 	VREF(dvp);
@@ -728,6 +594,7 @@ lofs_rmdir(ap)
  * ni_dvp is the locked parent.
  * ni_vp is NULL.
  */
+int
 lofs_symlink(ap)
 	struct vop_symlink_args /* {
 		struct vnode *a_dvp;
@@ -738,10 +605,6 @@ lofs_symlink(ap)
 	} */ *ap;
 {
 	int error;
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("VOP_SYMLINK(vp = %x->%x)\n", ap->a_dvp, LOFSVP(ap->a_dvp));
-#endif
 
 	PUSHREF(xdvp, ap->a_dvp);
 	VREF(ap->a_dvp);
@@ -754,6 +617,7 @@ lofs_symlink(ap)
 	return (error);
 }
 
+int
 lofs_readdir(ap)
 	struct vop_readdir_args /* {
 		struct vnode *a_vp;
@@ -762,13 +626,10 @@ lofs_readdir(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_readdir(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_READDIR(LOFSVP(ap->a_vp), ap->a_uio, ap->a_cred);
+	return (VOP_READDIR(LOFSVP(ap->a_vp), ap->a_uio, ap->a_cred));
 }
 
+int
 lofs_readlink(ap)
 	struct vop_readlink_args /* {
 		struct vnode *a_vp;
@@ -777,16 +638,13 @@ lofs_readlink(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_readlink(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_READLINK(LOFSVP(ap->a_vp), ap->a_uio, ap->a_cred);
+	return (VOP_READLINK(LOFSVP(ap->a_vp), ap->a_uio, ap->a_cred));
 }
 
 /*
  * Anyone's guess...
  */
+int
 lofs_abortop(ap)
 	struct vop_abortop_args /* {
 		struct vnode *a_dvp;
@@ -804,16 +662,13 @@ lofs_abortop(ap)
 	return (error);
 }
 
+int
 lofs_inactive(ap)
 	struct vop_inactive_args /* {
 		struct vnode *a_vp;
 	} */ *ap;
 {
 	struct vnode *targetvp = LOFSVP(ap->a_vp);
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_inactive(ap->a_vp = %x->%x)\n", ap->a_vp, targetvp);
-#endif
 
 #ifdef DIAGNOSTIC
 	{ extern int prtactive;
@@ -828,6 +683,7 @@ lofs_inactive(ap)
 	}
 }
 
+int
 lofs_reclaim(ap)
 	struct vop_reclaim_args /* {
 		struct vnode *a_vp;
@@ -835,9 +691,6 @@ lofs_reclaim(ap)
 {
 	struct vnode *targetvp;
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_reclaim(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
 	remque(LOFSP(ap->a_vp));
 	targetvp = LOFSVP(ap->a_vp);
 	if (targetvp) {
@@ -849,6 +702,7 @@ lofs_reclaim(ap)
 	return (0);
 }
 
+int
 lofs_lock(ap)
 	struct vop_lock_args /* {
 		struct vnode *a_vp;
@@ -866,20 +720,12 @@ lofs_lock(ap)
 		return (ENOENT);
 	targetvp = LOFSVP(ap->a_vp);
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_lock(ap->a_vp = %x->%x)\n", ap->a_vp, targetvp);
-	/*vprint("lofs_lock ap->a_vp", ap->a_vp);
-	if (targetvp)
-		vprint("lofs_lock ->ap->a_vp", targetvp);
-	else
-		printf("lofs_lock ->ap->a_vp = NIL\n");*/
-#endif
-
 	if (targetvp && (error = VOP_LOCK(targetvp)))
 		return (error);
 	return (0);
 }
 
+int
 lofs_unlock(ap)
 	struct vop_unlock_args /* {
 		struct vnode *a_vp;
@@ -887,15 +733,12 @@ lofs_unlock(ap)
 {
 	struct vnode *targetvp = LOFSVP(ap->a_vp);
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_unlock(ap->a_vp = %x->%x)\n", ap->a_vp, targetvp);
-#endif
-
 	if (targetvp)
 		return (VOP_UNLOCK(targetvp));
 	return (0);
 }
 
+int
 lofs_bmap(ap)
 	struct vop_bmap_args /* {
 		struct vnode *a_vp;
@@ -906,23 +749,16 @@ lofs_bmap(ap)
 	} */ *ap;
 {
 
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_bmap(ap->a_vp = %x->%x)\n", ap->a_vp, LOFSVP(ap->a_vp));
-#endif
-
-	return VOP_BMAP(LOFSVP(ap->a_vp), ap->a_bn, ap->a_vpp, ap->a_bnp, ap->a_runp);
+	return (VOP_BMAP(LOFSVP(ap->a_vp), ap->a_bn, ap->a_vpp, ap->a_bnp, ap->a_runp));
 }
 
+int
 lofs_strategy(ap)
 	struct vop_strategy_args /* {
 		struct buf *a_bp;
 	} */ *ap;
 {
 	int error;
-
-#ifdef LOFS_DIAGNOSTIC
-	printf("lofs_strategy(vp = %x->%x)\n", ap->a_bp->b_vp, LOFSVP(ap->a_bp->b_vp));
-#endif
 
 	PUSHREF(vp, ap->a_bp->b_vp);
 
@@ -933,6 +769,7 @@ lofs_strategy(ap)
 	return (error);
 }
 
+int
 lofs_print(ap)
 	struct vop_print_args /* {
 		struct vnode *a_vp;
@@ -947,6 +784,7 @@ lofs_print(ap)
 	return (0);
 }
 
+int
 lofs_islocked(ap)
 	struct vop_islocked_args /* {
 		struct vnode *a_vp;
@@ -959,6 +797,7 @@ lofs_islocked(ap)
 	return (0);
 }
 
+int
 lofs_advlock(ap)
 	struct vop_advlock_args /* {
 		struct vnode *a_vp;
@@ -969,13 +808,14 @@ lofs_advlock(ap)
 	} */ *ap;
 {
 
-	return VOP_ADVLOCK(LOFSVP(ap->a_vp), ap->a_id, ap->a_op, ap->a_fl, ap->a_flags);
+	return (VOP_ADVLOCK(LOFSVP(ap->a_vp), ap->a_id, ap->a_op, ap->a_fl, ap->a_flags));
 }
 
 /*
  * LOFS directory offset lookup.
  * Currently unsupported.
  */
+int
 lofs_blkatoff(ap)
 	struct vop_blkatoff_args /* {
 		struct vnode *a_vp;
@@ -992,6 +832,7 @@ lofs_blkatoff(ap)
  * LOFS flat namespace allocation.
  * Currently unsupported.
  */
+int
 lofs_valloc(ap)
 	struct vop_valloc_args /* {
 		struct vnode *a_pvp;
@@ -1009,6 +850,7 @@ lofs_valloc(ap)
  * Currently unsupported.
  */
 /*void*/
+int
 lofs_vfree(ap)
 	struct vop_vfree_args /* {
 		struct vnode *a_pvp;
@@ -1023,6 +865,7 @@ lofs_vfree(ap)
 /*
  * LOFS file truncation.
  */
+int
 lofs_truncate(ap)
 	struct vop_truncate_args /* {
 		struct vnode *a_vp;
@@ -1041,6 +884,7 @@ lofs_truncate(ap)
 /*
  * LOFS update.
  */
+int
 lofs_update(ap)
 	struct vop_update_args /* {
 		struct vnode *a_vp;
@@ -1058,6 +902,7 @@ lofs_update(ap)
 /*
  * LOFS bwrite
  */
+int
 lofs_bwrite(ap)
 	struct vop_bwrite_args /* {
 		struct buf *a_bp;
