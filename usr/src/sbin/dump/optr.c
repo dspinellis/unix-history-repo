@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optr.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)optr.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -397,7 +397,7 @@ getfstab()
 		    _PATH_FSTAB, strerror(errno));
 		return;
 	}
-	while (fs = getfsent()) {
+	while ((fs = getfsent()) != NULL) {
 		if (strcmp(fs->fs_type, FSTAB_RW) &&
 		    strcmp(fs->fs_type, FSTAB_RO) &&
 		    strcmp(fs->fs_type, FSTAB_RQ))
