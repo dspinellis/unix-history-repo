@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.58 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.59 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1193,7 +1193,6 @@ ufs_mkdir(ndp, vap)
 	struct nameidata *ndp;
 	struct vattr *vap;
 {
-	struct proc *p = curproc;		/* XXX */
 	register struct inode *ip, *dp;
 	struct inode *tip;
 	struct vnode *dvp;
@@ -1276,15 +1275,8 @@ ufs_mkdir(ndp, vap)
 	 * the parent directory.
 	 */
 	if (error = direnter(ip, ndp)) {
-		ndp->ni_nameiop &= ~(MODMASK | OPMASK);
-		ndp->ni_nameiop |= LOOKUP | LOCKLEAF | NOCACHE;
-		error = namei(ndp, p);
-		if (!error) {
-			iput(dp);
-			dp = VTOI(ndp->ni_vp);
-			dp->i_nlink--;
-			dp->i_flag |= ICHG;
-		}
+		dp->i_nlink--;
+		dp->i_flag |= ICHG;
 	}
 bad:
 	/*
