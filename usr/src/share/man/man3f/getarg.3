@@ -1,0 +1,41 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)getarg.3	4.1 (Berkeley) %G%
+.\"
+.TH GETARG 3F
+.UC 4
+.SH NAME
+getarg, iargc \- command arguments to Fortran
+.SH SYNOPSIS
+.nf
+.B subroutine getarg( argno, string )
+.B integer argno
+.B character *(*) string
+.PP
+.B iargc()
+.fi
+.SH DESCRIPTION
+These procedures permit Fortran programs to access the command arguments.
+The integer function
+.B iargc
+returns the number of command arguments.
+The subroutine
+.B getarg
+stores the nth command argument in its second argument.
+The string is truncated or padded with blanks,
+in accord with the rules of Fortran character assignment.
+.PP
+The command
+       go arg1 argument2
+.br
+will return 2 as the value of
+.B iargc.
+If \fBs\fR is declared character\(**4,
+then
+      call getarg(2, s)
+.br
+will put \*(lqargu\*(rq in \fBs\fR.
+.SH "SEE ALSO"
+exec(2)
