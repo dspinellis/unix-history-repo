@@ -1,17 +1,18 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
+/*-
+ * Copyright (c) 1980 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)extern.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)extern.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
-# include	<curses.h>
-# include	"deck.h"
-# include	"cribbage.h"
+#include <curses.h>
+
+#include "deck.h"
+#include "cribbage.h"
 
 bool	explain		= FALSE;	/* player mistakes explained */
 bool	iwon		= FALSE;	/* if comp won last game */
