@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)mount.8	6.17 (Berkeley) %G%
+.\"     @(#)mount.8	6.18 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT 8
@@ -15,19 +15,18 @@
 .Sh SYNOPSIS
 .Nm mount
 .Op Fl afrwu
-.Op Fl t Ar nfs | ufs | external_type
+.Op Fl t Ar ufs | lfs | external_type
 .Nm mount
 .Op Fl frwu
-.Ar special| node
+.Ar special | node
 .Nm mount
 .Op Fl frwu
-.Op Fl t Ar nfs | ufs | external_type
-.Op | Ar external_type
+.Op Fl t Ar ufs | lfs | external_type
 .Op Fl o Ar options
 .Ar special node
 .Nm umount
 .Op Fl af
-.Op Fl t Ar nfs | ufs | external_type
+.Op Fl t Ar ufs | lfs | external_type
 .Nm umount
 .Op Fl f
 .Ar special | node
@@ -101,13 +100,19 @@ to the file system should be done synchronously.
 .El
 .It Fl r
 The file system object is to be mounted read-only.
-.It Fl t Ar "nfs \\*(Ba ufs \\*(Ba external type"
+.It Fl t Ar "ufs \\*(Ba lfs \\*(Ba external type"
 The argument following the
 .Fl t
 is used to indicate the file system type.
 The type
 .Ar ufs
 is the default.
+The \fI-t\fP option can be used
+to indicate that the actions should only be taken on
+filesystems of the specified type.
+More than one type may be specified in a comma separated list.
+The list of filesystem types can be prefixed with ``no'' to
+specify the filesystem types on which no action should be taken.
 For example, the
 .Nm mount
 command:
@@ -126,6 +131,8 @@ mount will attempt to execute a program in
 where
 .Em XXX
 is replaced by the type name.
+For example, nfs filesystems are mounted by the program
+.Pa /sbin/mount_nfs .
 .It Fl u
 The
 .Fl u
@@ -172,66 +179,14 @@ causes mount to attempt to execute:
 /sbin/mount_mfs -F 8 -N -s 4000 /dev/dk0b /tmp
 .Ed
 .Pp
-The following list can be used to override
-the defaults for an nfs mount:
-.Bl -tag -width indent
-.It hard
-.Tn I/O
-system calls will retry until the server responds (default)
-.It soft
-.Tn I/O
-system calls will fail and return errno after
-.Em retrans
-request
-retransmissions
-.It spongy
-Soft semantics for the stat, lookup, fsstat, readlink and readdir
-filesystem operations and hard semantics for the others.
-This option is meant to be similar to hard,
-except that processes will not be hung forever when
-they trip over mount points to dead servers.
-.It bg
-If the first mount request times out, do retries in background
-.It intr
-.Tn I/O
-system calls can be interrupted.
-.It noconn
-Do not connect the socket.
-Used for
-.Tn UDP
-servers that send replies from a
-socket other than the nfs server socket.
-.It tcp
-Use
-.Tn TCP
-transport instead of
-.Tn UDP .
-.It rsize=#
-Set read size to
-.Ar #
-bytes.
-.It wsize=#
-Set write size to
-.Ar #
-bytes.
-.It retry=#
-Set mount retry count to
-.Ar # .
-.It retrans=#
-Set retransmission count for nfs rpc's to
-.Ar # .
-.It timeo=#
-Set initial nfs timeout to
-.Ar #
-in 0.1 sec intervals.
-.El
+The options specific to NFS filesystems are described in the
+.Xr mount_nfs 8
+manual page.
 .Pp
 .Nm Umount
 removes the
 .Ar special
-device
-grafted
-at point
+device grafted at point
 .Ar node
 from file system tree.
 .Pp
@@ -246,7 +201,7 @@ but all other files return errors if further accesses are attempted.
 The root file system cannot be forcibly unmounted.
 .It Fl a
 All of the file systems described in
-.Xr fstab
+.Xr fstab 5
 are unmounted.
 .It Fl t
 Is used to indicate the actions should only be taken on
