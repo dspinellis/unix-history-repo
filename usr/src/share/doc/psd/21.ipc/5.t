@@ -1,9 +1,9 @@
-.\" Copyright (c) 1986 The Regents of the University of California.
+.\" Copyright (c) 1986, 1993 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)5.t	5.1 (Berkeley) %G%
+.\"	@(#)5.t	5.2 (Berkeley) %G%
 .\"
 .\".ds RH "Advanced Topics
 .bp
@@ -319,7 +319,7 @@ The server then sends an out of band message
 to the client process to signal a flush of data at the real terminal
 and on the intervening data buffered in the network.
 .PP
-Under 4.3BSD, the name of the slave side of a pseudo-terminal is of the form
+Under 4.4BSD, the name of the slave side of a pseudo-terminal is of the form
 \fI/dev/ttyxy\fP, where \fIx\fP is a single letter
 starting at `p' and continuing to `t'.
 \fIy\fP is a hexadecimal digit (i.e., a single
@@ -526,7 +526,7 @@ to return a stream socket in with a privileged port number:
 .DS
 int lport = IPPORT_RESERVED \- 1;
 int s;
-...
+\&...
 s = rresvport(&lport);
 if (s < 0) {
 	if (errno == EAGAIN)
@@ -578,6 +578,68 @@ be sure any other sockets with the same local address and
 port do not have the same foreign address and port.
 If the association already exists, the error EADDRINUSE is returned.
 .NH 2
+Socket Options
+.PP
+It is possible to set and get a number of options on sockets
+via the \fIsetsockopt\fP and \fIgetsockopt\fP system calls.
+These options include such things as marking a socket for
+broadcasting, not to route, to linger on close, etc.
+In addition, there are protocol-specific options for IP and TCP,
+as described in
+.IR ip (4),
+.IR tcp (4),
+and in the section on multicasting below.
+.PP
+The general forms of the calls are:
+.DS
+setsockopt(s, level, optname, optval, optlen);
+.DE
+and
+.DS
+getsockopt(s, level, optname, optval, optlen);
+.DE
+.PP
+The parameters to the calls are as follows: \fIs\fP
+is the socket on which the option is to be applied.
+\fILevel\fP specifies the protocol layer on which the
+option is to be applied; in most cases this is
+the ``socket level'', indicated by the symbolic constant
+SOL_SOCKET, defined in \fI<sys/socket.h>.\fP
+The actual option is specified in \fIoptname\fP, and is
+a symbolic constant also defined in \fI<sys/socket.h>\fP.
+\fIOptval\fP and \fIOptlen\fP point to the value of the
+option (in most cases, whether the option is to be turned
+on or off), and the length of the value of the option,
+respectively.
+For \fIgetsockopt\fP, \fIoptlen\fP is
+a value-result parameter, initially set to the size of
+the storage area pointed to by \fIoptval\fP, and modified
+upon return to indicate the actual amount of storage used.
+.PP
+An example should help clarify things.  It is sometimes
+useful to determine the type (e.g., stream, datagram, etc.)
+of an existing socket; programs
+under \fIinetd\fP (described below) may need to perform this
+task.  This can be accomplished as follows via the
+SO_TYPE socket option and the \fIgetsockopt\fP call:
+.DS
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int type, size;
+
+size = sizeof (int);
+
+if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *) &type, &size) < 0) {
+	...
+}
+.DE
+After the \fIgetsockopt\fP call, \fItype\fP will be set
+to the value of the socket type, as defined in
+\fI<sys/socket.h>\fP.  If, for example, the socket were
+a datagram socket, \fItype\fP would have the value
+corresponding to SOCK_DGRAM.
+.NH 2
 Broadcasting and determining network configuration
 .PP
 By using a datagram socket, it is possible to send broadcast
@@ -593,6 +655,9 @@ it is desired to find a resource on a local network without prior
 knowledge of its address,
 or important functions such as routing require that information
 be sent to all accessible neighbors.
+.PP
+Multicasting is an alternative to broadcasting.
+Setting up IP multicast sockets is described in the next section.
 .PP
 To send a broadcast message, a datagram socket 
 should be created:
@@ -633,7 +698,7 @@ To determine the list of addresses for all reachable neighbors
 requires knowledge of the networks to which the host is connected.
 Since this information should
 be obtained in a host-independent fashion and may be impossible
-to derive, 4.3BSD provides a method of
+to derive, 4.4BSD provides a method of
 retrieving this information from the system data structures.
 The SIOCGIFCONF \fIioctl\fP call returns the interface
 configuration of a host in the form of a
@@ -766,61 +831,318 @@ Received broadcast messages contain the senders address
 and port, as datagram sockets are bound before
 a message is allowed to go out.
 .NH 2
-Socket Options
+IP Multicasting
 .PP
-It is possible to set and get a number of options on sockets
-via the \fIsetsockopt\fP and \fIgetsockopt\fP system calls.
-These options include such things as marking a socket for
-broadcasting, not to route, to linger on close, etc.
-The general forms of the calls are:
+IP multicasting is the transmission of an IP datagram to a "host
+group", a set of zero or more hosts identified by a single IP
+destination address.  A multicast datagram is delivered to all
+members of its destination host group with the same "best-efforts"
+reliability as regular unicast IP datagrams, i.e., the datagram is
+not guaranteed to arrive intact at all members of the destination
+group or in the same order relative to other datagrams.
+.PP
+The membership of a host group is dynamic; that is, hosts may join
+and leave groups at any time.  There is no restriction on the
+location or number of members in a host group.  A host may be a
+member of more than one group at a time.  A host need not be a member
+of a group to send datagrams to it.
+.PP
+A host group may be permanent or transient.  A permanent group has a
+well-known, administratively assigned IP address.  It is the address,
+not the membership of the group, that is permanent; at any time a
+permanent group may have any number of members, even zero.  Those IP
+multicast addresses that are not reserved for permanent groups are
+available for dynamic assignment to transient groups which exist only
+as long as they have members.
+.PP
+In general, a host cannot assume that datagrams sent to any host
+group address will reach only the intended hosts, or that datagrams
+received as a member of a transient host group are intended for the
+recipient.  Misdelivery must be detected at a level above IP, using
+higher-level identifiers or authentication tokens.  Information
+transmitted to a host group address should be encrypted or governed
+by administrative routing controls if the sender is concerned about
+unwanted listeners.
+.PP
+IP multicasting is currently supported only on AF_INET sockets of type
+SOCK_DGRAM and SOCK_RAW, and only on subnetworks for which the interface
+driver has been modified to support multicasting.
+.PP
+The next subsections describe how to send and receive multicast datagrams.
+.NH 3 
+Sending IP Multicast Datagrams
+.PP
+To send a multicast datagram, specify an IP multicast address in the range
+224.0.0.0 to 239.255.255.255 as the destination address
+in a
+.IR sendto (2)
+call.
+.PP
+The definitions required for the multicast-related socket options are
+found in \fI<netinet/in.h>\fP.
+All IP addresses are passed in network byte-order.
+.PP
+By default, IP multicast datagrams are sent with a time-to-live (TTL) of 1,
+which prevents them from being forwarded beyond a single subnetwork.  A new
+socket option allows the TTL for subsequent multicast datagrams to be set to
+any value from 0 to 255, in order to control the scope of the multicasts:
 .DS
-setsockopt(s, level, optname, optval, optlen);
+u_char ttl;
+setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
 .DE
-and
+Multicast datagrams with a TTL of 0 will not be transmitted on any subnet,
+but may be delivered locally if the sending host belongs to the destination
+group and if multicast loopback has not been disabled on the sending socket
+(see below).  Multicast datagrams with TTL greater than one may be delivered
+to more than one subnet if there are one or more multicast routers attached
+to the first-hop subnet.  To provide meaningful scope control, the multicast
+routers support the notion of TTL "thresholds", which prevent datagrams with
+less than a certain TTL from traversing certain subnets.  The thresholds
+enforce the following convention:
+.TS
+center;
+l | l
+l | n.
+_
+Scope   Initial TTL
+=
+restricted to the same host	0
+restricted to the same subnet	1
+restricted to the same site	32
+restricted to the same region	64
+restricted to the same continent	128
+unrestricted	255
+_
+.TE
+"Sites" and "regions" are not strictly defined, and sites may be further
+subdivided into smaller administrative units, as a local matter.
+.PP
+An application may choose an initial TTL other than the ones listed above.
+For example, an application might perform an "expanding-ring search" for a
+network resource by sending a multicast query, first with a TTL of 0, and
+then with larger and larger TTLs, until a reply is received, perhaps using
+the TTL sequence 0, 1, 2, 4, 8, 16, 32.
+.PP
+The multicast router
+.IR mrouted (8),
+refuses to forward any
+multicast datagram with a destination address between 224.0.0.0 and
+224.0.0.255, inclusive, regardless of its TTL.  This range of addresses is
+reserved for the use of routing protocols and other low-level topology
+discovery or maintenance protocols, such as gateway discovery and group
+membership reporting.
+.PP
+The address 224.0.0.0 is
+guaranteed not to be assigned to any group, and 224.0.0.1 is assigned
+to the permanent group of all IP hosts (including gateways).  This is
+used to address all multicast hosts on the directly connected
+network.  There is no multicast address (or any other IP address) for
+all hosts on the total Internet.  The addresses of other well-known,
+permanent groups are published in the "Assigned Numbers" RFC,
+which is available from the InterNIC.
+.PP
+Each multicast transmission is sent from a single network interface, even if
+the host has more than one multicast-capable interface.  (If the host is
+also serving as a multicast router,
+a multicast may be \fIforwarded\fP to interfaces
+other than originating interface, provided that the TTL is greater than 1.)
+The default interface to be used for multicasting is the primary network
+interface on the system.
+A socket option
+is available to override the default for subsequent transmissions from a
+given socket:
 .DS
-getsockopt(s, level, optname, optval, optlen);
+struct in_addr addr;
+setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, &addr, sizeof(addr));
 .DE
+where "addr" is the local IP address of the desired outgoing interface.
+An address of INADDR_ANY may be used to revert to the default interface.
+The local IP address of an interface can be obtained via the SIOCGIFCONF
+ioctl.  To determine if an interface supports multicasting, fetch the
+interface flags via the SIOCGIFFLAGS ioctl and see if the IFF_MULTICAST
+flag is set.  (Normal applications should not need to use this option; it
+is intended primarily for multicast routers and other system services
+specifically concerned with internet topology.)
+The SIOCGIFCONF and SIOCGIFFLAGS ioctls are described in the previous section.
 .PP
-The parameters to the calls are as follows: \fIs\fP
-is the socket on which the option is to be applied.
-\fILevel\fP specifies the protocol layer on which the
-option is to be applied; in most cases this is
-the ``socket level'', indicated by the symbolic constant
-SOL_SOCKET, defined in \fI<sys/socket.h>.\fP
-The actual option is specified in \fIoptname\fP, and is
-a symbolic constant also defined in \fI<sys/socket.h>\fP.
-\fIOptval\fP and \fIOptlen\fP point to the value of the
-option (in most cases, whether the option is to be turned
-on or off), and the length of the value of the option,
-respectively.
-For \fIgetsockopt\fP, \fIoptlen\fP is
-a value-result parameter, initially set to the size of
-the storage area pointed to by \fIoptval\fP, and modified
-upon return to indicate the actual amount of storage used.
+If a multicast datagram is sent to a group to which the sending host itself
+belongs (on the outgoing interface), a copy of the datagram is, by default,
+looped back by the IP layer for local delivery.  Another socket option gives
+the sender explicit control over whether or not subsequent datagrams are
+looped back:
+.DS
+u_char loop;
+setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+.DE
+where \f2loop\f1 is set to 0 to disable loopback,
+and set to 1 to enable loopback.
+This option
+improves performance for applications that may have no more than one
+instance on a single host (such as a router demon), by eliminating
+the overhead of receiving their own transmissions.  It should generally not
+be used by applications for which there may be more than one instance on a
+single host (such as a conferencing program) or for which the sender does
+not belong to the destination group (such as a time querying program).
 .PP
-An example should help clarify things.  It is sometimes
-useful to determine the type (e.g., stream, datagram, etc.)
-of an existing socket; programs
-under \fIinetd\fP (described below) may need to perform this
-task.  This can be accomplished as follows via the
-SO_TYPE socket option and the \fIgetsockopt\fP call:
+A multicast datagram sent with an initial TTL greater than 1 may be delivered
+to the sending host on a different interface from that on which it was sent,
+if the host belongs to the destination group on that other interface.  The
+loopback control option has no effect on such delivery.
+.NH 3 
+Receiving IP Multicast Datagrams
+.PP
+Before a host can receive IP multicast datagrams, it must become a member
+of one or more IP multicast groups.  A process can ask the host to join
+a multicast group by using the following socket option:
+.DS
+struct ip_mreq mreq;
+setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq))
+.DE
+where "mreq" is the following structure:
+.DS
+struct ip_mreq {
+    struct in_addr imr_multiaddr; /* \fImulticast group to join\fP */
+    struct in_addr imr_interface; /* \fIinterface to join on\fP */
+}
+.DE
+Every membership is associated with a single interface, and it is possible
+to join the same group on more than one interface.  "imr_interface" should
+be INADDR_ANY to choose the default multicast interface, or one of the
+host's local addresses to choose a particular (multicast-capable) interface.
+Up to IP_MAX_MEMBERSHIPS (currently 20) memberships may be added on a
+single socket.
+.PP
+To drop a membership, use:
+.DS
+struct ip_mreq mreq;
+setsockopt(sock, IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
+.DE
+where "mreq" contains the same values as used to add the membership.  The
+memberships associated with a socket are also dropped when the socket is
+closed or the process holding the socket is killed.  However, more than
+one socket may claim a membership in a particular group, and the host
+will remain a member of that group until the last claim is dropped.
+.PP
+The memberships associated with a socket do not necessarily determine which
+datagrams are received on that socket.  Incoming multicast packets are
+accepted by the kernel IP layer if any socket has claimed a membership in the
+destination group of the datagram; however, delivery of a multicast datagram
+to a particular socket is based on the destination port (or protocol type, for
+raw sockets), just as with unicast datagrams.  To receive multicast datagrams
+sent to a particular port, it is necessary to bind to that local port,
+leaving the local address unspecified (i.e., INADDR_ANY).
+.PP
+More than one process may bind to the same SOCK_DGRAM UDP port if the
+.I bind
+call is preceded by:
+.DS
+int on = 1;
+setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+.DE
+In this case, every incoming multicast or broadcast UDP datagram destined to
+the shared port is delivered to all sockets bound to the port.  For backwards
+compatibility reasons, this does not apply to incoming
+unicast datagrams.  Unicast
+datagrams are never delivered to more than one socket, regardless of
+how many sockets are bound to the datagram's destination port.  SOCK_RAW
+sockets do not require the SO_REUSEADDR option to share a single IP protocol
+type.
+.PP
+A final multicast-related extension is independent of IP:  two new ioctls,
+SIOCADDMULTI and SIOCDELMULTI, are available to add or delete link-level
+(e.g., Ethernet) multicast addresses accepted by a particular interface.
+The address to be added or deleted is passed as a sockaddr structure of
+family AF_UNSPEC, within the standard ifreq structure.
+.PP
+These ioctls are
+for the use of protocols other than IP, and require superuser privileges.
+A link-level multicast address added via SIOCADDMULTI is not automatically
+deleted when the socket used to add it goes away; it must be explicitly
+deleted.  It is inadvisable to delete a link-level address that may be
+in use by IP.
+.NH 3
+Sample Multicast Program
+.PP
+The following program sends or receives multicast packets.
+If invoked with one argument, it sends a packet containing the current
+time to an arbitrarily-chosen multicast group and UDP port.
+If invoked with no arguments, it receives and prints these packets.
+Start it as a sender on just one host and as a receiver on all the other hosts.
 .DS
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <time.h>
+#include <stdio.h>
 
-int type, size;
+#define EXAMPLE_PORT    60123
+#define EXAMPLE_GROUP   "224.0.0.250"
 
-size = sizeof (int);
+main(argc)
+    int argc;
+{
+    struct sockaddr_in addr;
+    int addrlen, fd, cnt;
+    struct ip_mreq mreq;
+    char message[50];
 
-if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *) &type, &size) < 0) {
-	...
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0) {
+        perror("socket");
+        exit(1);
+    }
+
+    bzero(&addr, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons(EXAMPLE_PORT);
+    addrlen = sizeof(addr);
+
+    if (argc > 1) {     /* Send */
+        addr.sin_addr.s_addr = inet_addr(EXAMPLE_GROUP);
+        while (1) {
+            time_t t = time(0);
+            sprintf(message, "time is %-24.24s", ctime(&t));
+            cnt = sendto(fd, message, sizeof(message), 0,
+                    (struct sockaddr *)&addr, addrlen);
+            if (cnt < 0) {
+                perror("sendto");
+                exit(1);
+            }
+            sleep(5);
+        }
+    } else {            /* Receive */
+        if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+            perror("bind");
+            exit(1);
+        }
+
+        mreq.imr_multiaddr.s_addr = inet_addr(EXAMPLE_GROUP);
+        mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+        if (setsockopt(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+                    &mreq, sizeof(mreq)) < 0) {
+            perror("setsockopt mreq");
+            exit(1);
+        }
+
+        while (1) {
+            cnt = recvfrom(fd, message, sizeof(message), 0,
+                            (struct sockaddr *)&addr, &addrlen);
+            if (cnt <= 0) {
+		    if (cnt == 0) {
+			break;
+		    }
+                    perror("recvfrom");
+                    exit(1);
+            } 
+            printf("%s: message = \e"%s\e"\en",
+                    inet_ntoa(addr.sin_addr), message);
+        }
+    }
 }
 .DE
-After the \fIgetsockopt\fP call, \fItype\fP will be set
-to the value of the socket type, as defined in
-\fI<sys/socket.h>\fP.  If, for example, the socket were
-a datagram socket, \fItype\fP would have the value
-corresponding to SOCK_DGRAM.
+.\"----------------------------------------------------------------------
 .NH 2
 NS Packet Sequences
 .PP
@@ -1137,8 +1459,29 @@ simulate PEX fully is left as an exercise for the reader.
 .NH 2
 Inetd
 .PP
-One of the daemons provided with 4.3BSD is \fIinetd\fP, the
-so called ``internet super-server.''  \fIInetd\fP is invoked at boot
+One of the daemons provided with 4.4BSD is \fIinetd\fP, the
+so called ``internet super-server.''  
+Having one daemon listen for requests for many daemons
+instead of having each daemon listen for its own requests
+reduces the number of idle daemons and simplies their implementation.
+.I Inetd
+handles
+two types of services: standard and TCPMUX.
+A standard service has a well-known port assigned to it and
+is listed in
+.I /etc/services
+(see \f2services\f1(5));
+it may be a service that implements an official Internet standard or is a
+BSD-specific service.
+TCPMUX services are nonstandard and do not have a
+well-known port assigned to them.
+They are invoked from
+.I inetd
+when a program connects to the "tcpmux" well-known port and specifies
+the service name.
+This is useful for adding locally-developed servers.
+.PP
+\fIInetd\fP is invoked at boot
 time, and determines from the file \fI/etc/inetd.conf\fP the
 servers for which it is to listen.  Once this information has been
 read and a pristine environment created, \fIinetd\fP proceeds
@@ -1186,3 +1529,106 @@ While the \fIgetpeername\fP call is especially useful when
 writing programs to run with \fIinetd\fP, it can be used
 under other circumstances.  Be warned, however, that \fIgetpeername\fP will
 fail on UNIX domain sockets.
+.PP
+Standard TCP
+services are assigned unique well-known port numbers in the range of
+0 to 1023 by the
+Internet Assigned Numbers Authority (IANA@ISI.EDU).
+The limited number of ports in this range are
+assigned to official Internet protocols.
+The TCPMUX service allows you to add
+locally-developed protocols without needing an official TCP port assignment.
+The TCPMUX protocol described in RFC-1078 is simple:
+.QP
+``A TCP client connects to a foreign host on TCP port 1.  It sends the
+service name followed by a carriage-return line-feed <CRLF>.
+The service name is never case sensitive. 
+The server replies with a
+single character indicating positive ("+") or negative ("\-")
+acknowledgment, immediately followed by an optional message of
+explanation, terminated with a <CRLF>.  If the reply was positive,
+the selected protocol begins; otherwise the connection is closed.''
+.LP
+In 4.4BSD, the TCPMUX service is built into
+.IR inetd ,
+that is,
+.IR inetd
+listens on TCP port 1 for requests for TCPMUX services listed
+in \f2inetd.conf\f1.
+.IR inetd (8)
+describes the format of TCPMUX entries for \f2inetd.conf\f1.
+.PP
+The following is an example TCPMUX server and its \f2inetd.conf\f1 entry.
+More sophisticated servers may want to do additional processing
+before returning the positive or negative acknowledgement.
+.DS
+#include <sys/types.h>
+#include <stdio.h>
+
+main()
+{
+        time_t t;
+
+        printf("+Go\er\en");
+        fflush(stdout);
+        time(&t);
+        printf("%d = %s", t, ctime(&t));
+        fflush(stdout);
+}
+.DE
+The \f2inetd.conf\f1 entry is:
+.DS
+tcpmux/current_time stream tcp nowait nobody /d/curtime curtime
+.DE
+Here's the portion of the client code that handles the TCPMUX handshake:
+.DS
+char line[BUFSIZ];
+FILE *fp;
+ ...
+
+/* Use stdio for reading data from the server */
+fp = fdopen(sock, "r");
+if (fp == NULL) {
+    fprintf(stderr, "Can't create file pointer\en");
+    exit(1);
+}
+
+/* Send service request */
+sprintf(line, "%s\er\en", "current_time");
+if (write(sock, line, strlen(line)) < 0) {
+    perror("write");
+    exit(1);
+}
+
+/* Get ACK/NAK response from the server */
+if (fgets(line, sizeof(line), fp) == NULL) {
+    if (feof(fp)) {
+        die();
+    } else {
+        fprintf(stderr, "Error reading response\en");
+        exit(1);
+    }
+}
+
+/* Delete <CR> */
+if ((lp = index(line, '\r')) != NULL) {
+    *lp = '\0';
+}
+
+switch (line[0]) {
+    case '+':
+            printf("Got ACK: %s\en", &line[1]);
+            break;
+    case '-':
+            printf("Got NAK: %s\en", &line[1]);
+            exit(0);
+    default:
+            printf("Got unknown response: %s\en", line);
+            exit(1);
+}
+
+/* Get rest of data from the server */
+while ((fgets(line, sizeof(line), fp)) != NULL) {
+    fputs(line, stdout);
+}
+.DE
