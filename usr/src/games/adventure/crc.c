@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1993 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * James W. Williams of the University of Maryland.
@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)crc.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)crc.c	8.1 (Berkeley) %G%";
 static char ORIGINAL_sccsid[] = "@(#)crc.c	5.2 (Berkeley) 4/4/91";
 #endif /* not lint */
 
