@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)field.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)field.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -35,18 +35,27 @@ p_login(p, pw, ep)
 	struct entry *ep;
 {
 	if (!*p) {
-		fprintf(stderr, "chpass: empty login field");
+		(void)fprintf(stderr, "chpass: empty login field");
 		return(1);
 	}
 	if (*p == '-') {
-		fprintf(stderr,
+		(void)fprintf(stderr,
 		    "chpass: login names may not begin with a hyphen.\n");
 		return(1);
 	}
 	if (!(pw->pw_name = strdup(p))) {
-		fprintf(stderr, "chpass: can't save entry");
+		(void)fprintf(stderr, "chpass: can't save entry");
 		return(1);
 	}
+	if (index(p, '.'))
+		(void)fprintf(stderr,
+		    "chpass: \'.\' is dangerous in a login name.\n");
+	for (; *p; ++p)
+		if (isupper(*p)) {
+			(void)fprintf(stderr,
+			    "chpass: upper-case letters are dangerous in a login name.\n");
+			break;
+		}
 	return(0);
 }
 
@@ -59,7 +68,7 @@ p_passwd(p, pw, ep)
 	if (!*p)
 		pw->pw_passwd = "";	/* "NOLOGIN"; */
 	else if (!(pw->pw_passwd = strdup(p))) {
-		fprintf(stderr, "chpass: can't save password entry");
+		(void)fprintf(stderr, "chpass: can't save password entry");
 		return(1);
 	}
 	
@@ -75,16 +84,16 @@ p_uid(p, pw, ep)
 	int id;
 
 	if (!*p) {
-		fprintf(stderr, "chpass: empty uid field");
+		(void)fprintf(stderr, "chpass: empty uid field");
 		return(1);
 	}
 	if (!isdigit(*p)) {
-		fprintf(stderr, "chpass: illegal uid");
+		(void)fprintf(stderr, "chpass: illegal uid");
 		return(1);
 	}
 	id = atoi(p);
 	if ((u_int)id > USHRT_MAX) {
-		fprintf(stderr, "chpass: %d > max uid value (%d)",
+		(void)fprintf(stderr, "chpass: %d > max uid value (%d)",
 		    id, USHRT_MAX);
 		return(1);
 	}
@@ -102,12 +111,12 @@ p_gid(p, pw, ep)
 	int id;
 
 	if (!*p) {
-		fprintf(stderr, "chpass: empty gid field");
+		(void)fprintf(stderr, "chpass: empty gid field");
 		return(1);
 	}
 	if (!isdigit(*p)) {
 		if (!(gr = getgrnam(p))) {
-			fprintf(stderr, "chpass: unknown group %s", p);
+			(void)fprintf(stderr, "chpass: unknown group %s", p);
 			return(1);
 		}
 		pw->pw_gid = gr->gr_gid;
@@ -115,7 +124,7 @@ p_gid(p, pw, ep)
 	}
 	id = atoi(p);
 	if ((u_int)id > USHRT_MAX) {
-		fprintf(stderr, "chpass: %d > max gid value (%d)",
+		(void)fprintf(stderr, "chpass: %d > max gid value (%d)",
 		    id, USHRT_MAX);
 		return(1);
 	}
@@ -132,7 +141,7 @@ p_class(p, pw, ep)
 	if (!*p)
 		pw->pw_class = "";
 	else if (!(pw->pw_class = strdup(p))) {
-		fprintf(stderr, "chpass: can't save entry");
+		(void)fprintf(stderr, "chpass: can't save entry");
 		return(1);
 	}
 	
@@ -147,7 +156,7 @@ p_change(p, pw, ep)
 {
 	if (!atot(p, &pw->pw_change))
 		return(0);
-	fprintf(stderr, "chpass: illegal date for change field");
+	(void)fprintf(stderr, "chpass: illegal date for change field");
 	return(1);
 }
 
@@ -159,7 +168,7 @@ p_expire(p, pw, ep)
 {
 	if (!atot(p, &pw->pw_expire))
 		return(0);
-	fprintf(stderr, "chpass: illegal date for expire field");
+	(void)fprintf(stderr, "chpass: illegal date for expire field");
 	return(1);
 }
 
@@ -172,7 +181,7 @@ p_gecos(p, pw, ep)
 	if (!*p)
 		ep->save = "";
 	else if (!(ep->save = strdup(p))) {
-		fprintf(stderr, "chpass: can't save entry");
+		(void)fprintf(stderr, "chpass: can't save entry");
 		return(1);
 	}
 	return(0);
@@ -185,11 +194,11 @@ p_hdir(p, pw, ep)
 	struct entry *ep;
 {
 	if (!*p) {
-		fprintf(stderr, "chpass: empty home directory field");
+		(void)fprintf(stderr, "chpass: empty home directory field");
 		return(1);
 	}
 	if (!(pw->pw_dir = strdup(p))) {
-		fprintf(stderr, "chpass: can't save entry");
+		(void)fprintf(stderr, "chpass: can't save entry");
 		return(1);
 	}
 	return(0);
@@ -214,7 +223,8 @@ p_shell(p, pw, ep)
 			/* only admin can set "restricted" shells */
 			if (!uid)
 				break;
-			fprintf(stderr, "chpass: %s: non-standard shell", p);
+			(void)fprintf(stderr,
+			    "chpass: %s: non-standard shell", p);
 			return(1);
 		}
 		if (!strcmp(p, sh))
@@ -226,7 +236,7 @@ p_shell(p, pw, ep)
 		}
 	}
 	if (!(pw->pw_shell = strdup(p))) {
-		fprintf(stderr, "chpass: can't save entry");
+		(void)fprintf(stderr, "chpass: can't save entry");
 		return(1);
 	}
 	return(0);
