@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)inode.h	7.23 (Berkeley) %G%
+ *	@(#)inode.h	7.24 (Berkeley) %G%
  */
 
 #include <ufs/ufs/dinode.h>
@@ -35,7 +35,6 @@ struct inode {
 	struct	vnode *i_devvp;	/* vnode for block I/O */
 	u_long	i_flag;		/* see below */
 	dev_t	i_dev;		/* device where inode resides */
-	short	i_pad;
 	ino_t	i_number;	/* the identity of the inode */
 	union {			/* associated filesystem */
 		struct	fs *fs;		/* FFS */
@@ -132,13 +131,13 @@ struct inode {
 	if ((ip)->i_flag&(IUPD|IACC|ICHG)) { \
 		(ip)->i_flag |= IMOD; \
 		if ((ip)->i_flag&IACC) \
-			(ip)->i_atime = (t1)->tv_sec; \
+			(ip)->i_atime.tv_sec = (t1)->tv_sec; \
 		if ((ip)->i_flag&IUPD) { \
-			(ip)->i_mtime = (t2)->tv_sec; \
+			(ip)->i_mtime.tv_sec = (t2)->tv_sec; \
 			INCRQUAD((ip)->i_modrev); \
 		} \
 		if ((ip)->i_flag&ICHG) \
-			(ip)->i_ctime = time.tv_sec; \
+			(ip)->i_ctime.tv_sec = time.tv_sec; \
 		(ip)->i_flag &= ~(IACC|IUPD|ICHG); \
 	} \
 }
