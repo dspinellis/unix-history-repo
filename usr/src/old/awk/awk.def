@@ -1,10 +1,12 @@
-/*	awk.def	4.2	83/02/09	*/
+/*	awk.def	4.3	83/12/09	*/
 
 #define hack	int
 #define	AWKFLOAT	float
 #define	xfree(a)	{ if(a!=NULL) { yfree(a); a=NULL;} }
 #define	strfree(a)	{ if(a!=NULL && a!=EMPTY) { yfree(a);} a=EMPTY; }
 #define yfree free
+#define	isnull(x)	((x) == EMPTY || (x) == NULL)
+
 #ifdef	DEBUG
 #	define	dprintf	if(dbg)printf
 #else
