@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.78 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.79 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -600,6 +600,9 @@ R$* $=O $* < @ $=w . >	$@ $>97 $1 $2 $3		...@here -> ...
 R$*			$: $>98 $1
 
 # short circuit local delivery so forwarded email works
+ifdef(`_MAILER_usenet_',
+`R$+ . USENET < @ $=w . >	$#usenet $: $1		handle usenet specially',
+	`dnl')
 R$* < @ $=w . >		$: < $R @ $H > $1 < @ $2 . >	if both relay & hub ...
 R<$+ @ $+ > $* < $+ >	$: $>_SET_95_ < $H > $3 < $4 >	... send direct to hub
 R<$* @ $* > $* < $+ >	$: $3 < $4 >
