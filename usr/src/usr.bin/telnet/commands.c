@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -925,7 +925,7 @@ char	*argv[];
 {
     if (connected) {
 	printf("Connected to %s.\n", hostname);
-	if (argc < 2) {
+	if ((argc < 2) || strcmp(argv[1], "notmuch")) {
 	    printf("Operating in %s.\n",
 				modelist[getconnmode()].modedescriptions);
 	    if (localchars) {
@@ -943,6 +943,10 @@ char	*argv[];
 	printf("Escape character is '%s'.\n", control(escape));
     }
 #   if defined(unix)
+    if ((argc >= 2) && !strcmp(argv[1], "everything")) {
+	printf("SIGIO received %d time%s.\n",
+				sigiocount, (sigiocount == 1)? "":"s");
+    }
     if (In3270 && transcom) {
        printf("Transparent mode command is '%s'.\n", transcom);
     }

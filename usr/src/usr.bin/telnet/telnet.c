@@ -75,7 +75,8 @@ int
 	netdata,	/* Print out network data flow */
 	crlf,		/* Should '\r' be mapped to <CR><LF> (or <CR><NUL>)? */
 #if	defined(TN3270)
-	noasynch = 0,	/* User specified "-noasynch" on command line */
+	noasynchtty = 0,/* User specified "-noasynch" on command line */
+	noasynchnet = 0,/* User specified "-noasynch" on command line */
 	askedSGA = 0,	/* We have talked about suppress go ahead */
 #endif	/* defined(TN3270) */
 	telnetport,
@@ -145,10 +146,6 @@ init_telnet()
     ClearArray(myopts);
 
     connected = In3270 = ISend = donebinarytoggle = 0;
-
-#if	defined(unix) && defined(TN3270)
-    HaveInput = 0;
-#endif	/* defined(unix) && defined(TN3270) */
 
     SYNCHing = 0;
 
