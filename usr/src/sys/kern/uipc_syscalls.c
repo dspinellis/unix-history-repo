@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	6.2	83/09/25	*/
+/*	uipc_syscalls.c	6.3	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -359,7 +359,7 @@ sendit(s, mp, flags)
 		return;
 	auio.uio_iov = mp->msg_iov;
 	auio.uio_iovcnt = mp->msg_iovlen;
-	auio.uio_segflg = 0;
+	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = 0;
 	iov = mp->msg_iov;
@@ -505,7 +505,7 @@ recvit(s, mp, flags, namelenp, rightslenp)
 		return;
 	auio.uio_iov = mp->msg_iov;
 	auio.uio_iovcnt = mp->msg_iovlen;
-	auio.uio_segflg = 0;
+	auio.uio_segflg = UIO_USERSPACE;
 	auio.uio_offset = 0;			/* XXX */
 	auio.uio_resid = 0;
 	iov = mp->msg_iov;

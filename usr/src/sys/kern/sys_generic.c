@@ -1,4 +1,4 @@
-/*	sys_generic.c	6.1	83/07/29	*/
+/*	sys_generic.c	6.2	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -114,7 +114,7 @@ rwuio(uio, rw)
 		return;
 	}
 	uio->uio_resid = 0;
-	uio->uio_segflg = 0;
+	uio->uio_segflg = UIO_USERSPACE;
 	iov = uio->uio_iov;
 	for (i = 0; i < uio->uio_iovcnt; i++) {
 		if (iov->iov_len < 0) {

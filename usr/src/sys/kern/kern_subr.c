@@ -1,4 +1,4 @@
-/*	kern_subr.c	6.1	83/07/29	*/
+/*	kern_subr.c	6.2	84/07/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,8 +28,8 @@ uiomove(cp, n, rw, uio)
 			cnt = n;
 		switch (uio->uio_segflg) {
 
-		case 0:
-		case 2:
+		case UIO_USERSPACE:
+		case UIO_USERISPACE:
 			if (rw == UIO_READ)
 				error = copyout(cp, iov->iov_base, cnt);
 			else
@@ -38,7 +38,7 @@ uiomove(cp, n, rw, uio)
 				return (error);
 			break;
 
-		case 1:
+		case UIO_SYSSPACE:
 			if (rw == UIO_READ)
 				bcopy((caddr_t)cp, iov->iov_base, cnt);
 			else
@@ -75,16 +75,16 @@ again:
 	}
 	switch (uio->uio_segflg) {
 
-	case 0:
+	case UIO_USERSPACE:
 		if (subyte(iov->iov_base, c) < 0)
 			return (EFAULT);
 		break;
 
-	case 1:
+	case UIO_SYSSPACE:
 		*iov->iov_base = c;
 		break;
 
-	case 2:
+	case UIO_USERISPACE:
 		if (suibyte(iov->iov_base, c) < 0)
 			return (EFAULT);
 		break;
@@ -117,15 +117,15 @@ again:
 	}
 	switch (uio->uio_segflg) {
 
-	case 0:
+	case UIO_USERSPACE:
 		c = fubyte(iov->iov_base);
 		break;
 
-	case 1:
+	case UIO_SYSSPACE:
 		c = *iov->iov_base & 0377;
 		break;
 
-	case 2:
+	case UIO_USERISPACE:
 		c = fuibyte(iov->iov_base);
 		break;
 	}
