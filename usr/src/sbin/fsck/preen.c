@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)preen.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)preen.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -248,42 +248,43 @@ startdisk(dk, checkit)
 }
 
 char *
-blockcheck(name)
-	char *name;
+blockcheck(origname)
+	char *origname;
 {
 	struct stat stslash, stblock, stchar;
-	char *raw;
+	char *newname, *raw;
 	int retried = 0;
 
 	hotroot = 0;
 	if (stat("/", &stslash) < 0) {
 		perror("/");
 		printf("Can't stat root\n");
-		return (0);
+		return (origname);
 	}
+	newname = origname;
 retry:
-	if (stat(name, &stblock) < 0) {
-		perror(name);
-		printf("Can't stat %s\n", name);
-		return (0);
+	if (stat(newname, &stblock) < 0) {
+		perror(newname);
+		printf("Can't stat %s\n", newname);
+		return (origname);
 	}
 	if ((stblock.st_mode & S_IFMT) == S_IFBLK) {
 		if (stslash.st_dev == stblock.st_rdev)
 			hotroot++;
-		raw = rawname(name);
+		raw = rawname(newname);
 		if (stat(raw, &stchar) < 0) {
 			perror(raw);
 			printf("Can't stat %s\n", raw);
-			return (name);
+			return (origname);
 		}
 		if ((stchar.st_mode & S_IFMT) == S_IFCHR) {
 			return (raw);
 		} else {
 			printf("%s is not a character device\n", raw);
-			return (name);
+			return (origname);
 		}
 	} else if ((stblock.st_mode & S_IFMT) == S_IFCHR && !retried) {
-		name = unrawname(name);
+		newname = unrawname(newname);
 		retried++;
 		goto retry;
 	}
@@ -291,7 +292,7 @@ retry:
 	 * Not a block or character device, just return name and
 	 * let the user decide whether to use it.
 	 */
-	return (name);
+	return (origname);
 }
 
 char *
