@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.24 (Berkeley) %G%
+		@(#)README	6.25 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -148,6 +148,8 @@ USENET_MAILER_PATH	[/usr/lib/news/inews] The name of the program
 USENET_MAILER_FLAGS	[rlsDFMmn] The mailer flags for the usenet mailer.
 USENET_MAILER_ARGS	[-m -h -n] The command line arguments for the
 			usenet mailer.
+SMTP_MAILER_FLAGS	[undefined] Flags added to SMTP mailer.
+UUCP_MAILER_FLAGS	[undefined] Flags added to UUCP mailer.
 HOSTMAP_SPEC		[dbm -o /etc/hostmap] The value for the builtin
 			hostmap key definition.  You can redefine this
 			to change the class, flags, and filename of
