@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)read.2	6.8 (Berkeley) %G%
+.\"     @(#)read.2	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt READ 2
@@ -108,7 +108,7 @@ any data arrived by the delivery of a signal.
 The pointer associated with
 .Fa d
 was negative.
-.It Bq Er EWOULDBLOCK
+.It Bq Er EAGAIN
 The file was marked for non-blocking I/O,
 and no data were ready to be read.
 .El

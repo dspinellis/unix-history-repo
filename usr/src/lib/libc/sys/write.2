@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)write.2	6.7 (Berkeley) %G%
+.\"     @(#)write.2	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt WRITE 2
@@ -129,7 +129,7 @@ The user's quota of disk blocks on the file system
 containing the file has been exhausted.
 .It Bq Er EIO
 An I/O error occurred while reading from or writing to the file system.
-.It Bq Er EWOULDBLOCK
+.It Bq Er EAGAIN
 The file was marked for non-blocking I/O,
 and no data could be written immediately.
 .El
