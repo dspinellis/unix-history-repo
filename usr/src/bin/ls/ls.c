@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.70 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.71 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -36,7 +36,6 @@ char	*group_from_gid __P((u_int, int));
 char	*user_from_uid __P((u_int, int));
 
 static void	 display __P((FTSENT *, FTSENT *));
-static char	*flags_from_fid __P((u_long));
 static int	 mastercmp __P((const FTSENT **, const FTSENT **));
 static void	 traverse __P((int, char **, int));
 
@@ -391,7 +390,8 @@ display(p, list)
 				if ((glen = strlen(group)) > maxgroup)
 					maxgroup = glen;
 				if (f_flags) {
-					flags = flags_from_fid(sp->st_flags);
+					flags =
+					    flags_to_string(sp->st_flags, "-");
 					if ((flen = strlen(flags)) > maxflags)
 						maxflags = flen;
 				} else
@@ -484,36 +484,4 @@ mastercmp(a, b)
 			return (sortfcn(*a, *b));
 	else
 		return (sortfcn(*a, *b));
-}
-
-static char *
-flags_from_fid(flags)
-	u_long flags;
-{
-	static char buf[20];
-	register int comma;
-	register char *p;
-
-	p = buf;
-	if (flags & ARCHIVED) {
-		(void)strcpy(p, "arch");
-		p += sizeof("arch") - 1;
-		comma = 1;
-	} else
-		comma = 0;
-	if (flags & NODUMP) {
-		if (comma++)
-			*p++ = ',';
-		(void)strcpy(p, "nodump");
-		p += sizeof("nodump") - 1;
-	}
-	if (flags & IMMUTABLE) {
-		if (comma++)
-			*p++ = ',';
-		(void)strcpy(p, "nochg");
-		p += sizeof("nochg") - 1;
-	}
-	if (!comma)
-		(void)strcpy(p, "-");
-	return (buf);
 }
