@@ -1,13 +1,4 @@
-
-WEB ---- (introduction provided by jaw@riacs) -------------------------
-
-Welcome to Webster's Second International, all 234,936 words worth.
-The 1934 copyright has elapsed, according to the supplier.  The
-supplemental 'web2a' list contains hyphenated terms as well as assorted
-noun and adverbial phrases.  The wordlist makes a dandy 'grep' victim.
-
-     -- James A. Woods    {ihnp4,hplabs}!ames!jaw    (or jaw@riacs)
-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#	@(#)README	1.8 (Berkeley) %G%
 
 All files and subdirectories of /usr/share/dict are recommended for
 rdisting except web2 and web2a (because of their size), and some of
@@ -86,8 +77,6 @@ FILES and subdirectories of /usr/share/dict:
     hlista   -- hashed list, formed from files {words,american,special/4bsd}.
     hlistb   -- hashed list, formed from files {words,british,special/4bsd}.
     hstop    -- hashed list, formed from file "stop".
-    web2     -- words from Webster's 2nd International (see WEB below).
-    web2a    -- compounds and phrases from same source.
     README   -- this file
     papers/  -- an (out-of-date specialized) bibliographical database,
 	used as the default by the program "refer".
