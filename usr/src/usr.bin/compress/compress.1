@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)compress.1	6.9 (Berkeley) %G%
+.\"     @(#)compress.1	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt COMPRESS 1
@@ -139,7 +139,7 @@ If an error occurs, exit status is 1;
 if the last file was not compressed because it became larger, the status
 is 2; otherwise the status is 0.
 .Sh DIAGNOSTICS
-.Bl -tag -width 4n
+.Bl -tag -width flag
 .It "Usage: compress [-fvc] [-b maxbits] [file ...]"
 Invalid options were specified on the command line.
 .It "Missing maxbits"
@@ -151,7 +151,8 @@ The file specified to
 has not been compressed.
 .It Xo
 .Ar file : No "compressed with"
-.Ar \&xx No "bits, can only handle" Ar \&yy No bits
+.Ar \&xx No "bits, can only handle"
+.Ar \&yy No bits
 .Xc
 .Ar File
 was compressed by a program that could deal with
@@ -167,7 +168,9 @@ Rename the file and try again.
 The file cannot be compressed because its name is longer than
 12 characters.
 Rename and try again.
-This message does not occur on BSD systems.
+This message does not occur on
+.Bx
+systems.
 .It Ar file No "already exists; do you wish to overwrite (y or n)?"
 Respond "y" if you want the output file to be replaced; "n" if not.
 .It "uncompress: corrupt input"
