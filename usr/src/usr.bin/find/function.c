@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -96,7 +96,7 @@ f_atime(plan, entry)
 {
 	extern time_t now;
 
-	COMPARE((now - entry->fts_statb.st_atime +
+	COMPARE((now - entry->fts_statp->st_atime +
 	    SECSPERDAY - 1) / SECSPERDAY, plan->t_data);
 }
  
@@ -124,7 +124,7 @@ f_ctime(plan, entry)
 {
 	extern time_t now;
 
-	COMPARE((now - entry->fts_statb.st_ctime +
+	COMPARE((now - entry->fts_statp->st_ctime +
 	    SECSPERDAY - 1) / SECSPERDAY, plan->t_data);
 }
  
@@ -297,8 +297,8 @@ f_fstype(plan, entry)
 	char *p, save[2];
 
 	/* Only check when we cross mount point. */
-	if (first || curdev != entry->fts_statb.st_dev) {
-		curdev = entry->fts_statb.st_dev;
+	if (first || curdev != entry->fts_statp->st_dev) {
+		curdev = entry->fts_statp->st_dev;
 
 		/*
 		 * Statfs follows symlinks; find wants the link's file system,
@@ -412,7 +412,7 @@ f_group(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(entry->fts_statb.st_gid == plan->g_data);
+	return(entry->fts_statp->st_gid == plan->g_data);
 }
  
 PLAN *
@@ -447,7 +447,7 @@ f_inum(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	COMPARE(entry->fts_statb.st_ino, plan->i_data);
+	COMPARE(entry->fts_statp->st_ino, plan->i_data);
 }
  
 PLAN *
@@ -472,7 +472,7 @@ f_links(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	COMPARE(entry->fts_statb.st_nlink, plan->l_data);
+	COMPARE(entry->fts_statp->st_nlink, plan->l_data);
 }
  
 PLAN *
@@ -498,7 +498,7 @@ f_ls(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	printlong(entry->fts_path, entry->fts_accpath, &entry->fts_statb);
+	printlong(entry->fts_path, entry->fts_accpath, entry->fts_statp);
 	return(1);
 }
  
@@ -523,7 +523,7 @@ f_mtime(plan, entry)
 {
 	extern time_t now;
 
-	COMPARE((now - entry->fts_statb.st_mtime + SECSPERDAY - 1) /
+	COMPARE((now - entry->fts_statp->st_mtime + SECSPERDAY - 1) /
 	    SECSPERDAY, plan->t_data);
 }
  
@@ -575,7 +575,7 @@ f_newer(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(entry->fts_statb.st_mtime > plan->t_data);
+	return(entry->fts_statp->st_mtime > plan->t_data);
 }
  
 PLAN *
@@ -607,7 +607,7 @@ f_nogroup(plan, entry)
 {
 	char *group_from_gid();
 
-	return(group_from_gid(entry->fts_statb.st_gid, 1) ? 1 : 0);
+	return(group_from_gid(entry->fts_statp->st_gid, 1) ? 1 : 0);
 }
  
 PLAN *
@@ -631,7 +631,7 @@ f_nouser(plan, entry)
 {
 	char *user_from_uid();
 
-	return(user_from_uid(entry->fts_statb.st_uid, 1) ? 1 : 0);
+	return(user_from_uid(entry->fts_statp->st_uid, 1) ? 1 : 0);
 }
  
 PLAN *
@@ -679,7 +679,7 @@ f_perm(plan, entry)
 {
 	mode_t mode;
 
-	mode = entry->fts_statb.st_mode &
+	mode = entry->fts_statp->st_mode &
 	    (S_ISUID|S_ISGID|S_ISTXT|S_IRWXU|S_IRWXG|S_IRWXO);
 	if (plan->flags == F_ATLEAST)
 		return((plan->m_data | mode) == mode);
@@ -773,8 +773,8 @@ f_size(plan, entry)
 {
 	off_t size;
 
-	size = divsize ? (entry->fts_statb.st_size + FIND_SIZE - 1) /
-	    FIND_SIZE : entry->fts_statb.st_size;
+	size = divsize ? (entry->fts_statp->st_size + FIND_SIZE - 1) /
+	    FIND_SIZE : entry->fts_statp->st_size;
 	COMPARE(size, plan->o_data);
 }
  
@@ -805,7 +805,7 @@ f_type(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return((entry->fts_statb.st_mode & S_IFMT) == plan->m_data);
+	return((entry->fts_statp->st_mode & S_IFMT) == plan->m_data);
 }
  
 PLAN *
@@ -859,7 +859,7 @@ f_user(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	return(entry->fts_statb.st_uid == plan->u_data);
+	return(entry->fts_statp->st_uid == plan->u_data);
 }
  
 PLAN *
