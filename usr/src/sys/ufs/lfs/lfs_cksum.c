@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_cksum.c	7.2 (Berkeley) %G%
+ *	@(#)lfs_cksum.c	7.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -27,7 +27,9 @@ cksum(str, len)
 	register u_long sum;
 	
 	len &= ~(sizeof(u_short) - 1);
-	for (sum = 0; len; len -= sizeof(u_short))
-		sum ^= *((u_short *)str)++;
+	for (sum = 0; len; len -= sizeof(u_short)) {
+		sum ^= *(u_short *)str;
+		++(u_short *)str;
+	}
 	return (sum);
 }
