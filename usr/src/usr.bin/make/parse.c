@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parse.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -201,6 +201,7 @@ static int ParseClearPath __P((Lst));
 static void ParseDoDependency __P((char *));
 static int ParseAddCmd __P((GNode *, char *));
 static int ParseReadc __P((void));
+static void ParseUnreadc __P((int));
 static int ParseHasCommands __P((GNode *));
 static void ParseDoInclude __P((char *));
 #ifdef SYSVINCLUDE
@@ -1911,6 +1912,33 @@ ParseReadc()
     return EOF;
 }
 
+
+/*-
+ *---------------------------------------------------------------------
+ * ParseUnreadc  --
+ *	Put back a character to the current file 
+ *
+ * Results:
+ *	None.
+ *
+ * Side Effects:
+ *---------------------------------------------------------------------
+ */
+static void
+ParseUnreadc(c)
+    int c;
+{
+    if (curFILE) {
+	ungetc(c, curFILE);
+	return;
+    }
+    if (curPTR) {
+	*--(curPTR->ptr) = c;
+	return;
+    }
+}
+
+
 /* ParseSkipLine():
  *	Grab the next line
  */
@@ -2016,7 +2044,7 @@ ParseReadLine ()
     for (;;) {
 	c = ParseReadc();
 
-	if ((c == '\t') || (c == '.')) {
+	if (c == '\t') {
 	    ignComment = ignDepOp = TRUE;
 	    break;
 	} else if (c == '\n') {
@@ -2057,7 +2085,7 @@ test_char:
 		} else {
 		    /*
 		     * Check for comments, semiNL's, etc. -- easier than
-		     * ungetc(c, curFILE); continue;
+		     * ParseUnreadc(c); continue;
 		     */
 		    goto test_char;
 		}
@@ -2078,7 +2106,7 @@ test_char:
 		     * harm, since the newline remains in the buffer and the
 		     * whole line is ignored.
 		     */
-		    ungetc('\t', curFILE);
+		    ParseUnreadc('\t');
 		    goto line_read;
 		} 
 		break;
