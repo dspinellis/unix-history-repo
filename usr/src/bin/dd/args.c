@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)args.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)args.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -42,7 +42,7 @@ static struct arg {
 	u_int set, noset;
 } args[] = {
 	"bs",		f_bs,		C_BS,		C_BS|C_IBS|C_OBS,
-	"cbs",		f_cbs,		C_CBS,		0,
+	"cbs",		f_cbs,		C_CBS,		C_CBS,
 	"conv",		f_conv,		0,		0,
 	"count",	f_count,	C_COUNT,	C_COUNT,
 	"files",	f_files,	C_FILES,	C_FILES,
@@ -57,7 +57,7 @@ static struct arg {
 static char *oper;
 
 /*
- * args -- parse old JCL syntax of dd.
+ * args -- parse JCL syntax of dd.
  */
 void
 jcl(argv)
@@ -69,7 +69,6 @@ jcl(argv)
 	static int c_arg __P((const void *, const void *));
 
 	in.dbsz = out.dbsz = 512;
-	cfunc = def;
 
 	while (oper = *++argv) {
 		if ((arg = index(oper, '=')) == NULL)
@@ -105,18 +104,44 @@ jcl(argv)
 			warn("bs supersedes ibs and obs");
 	}
 
-	/* Cbs has to be set for block/unblock to be specified. */
+	/*
+	 * Ascii/ebcdic and cbs implies block/unblock.
+	 * Block/unblock requires cbs and vice-versa.
+	 */
 	if (ddflags & (C_BLOCK|C_UNBLOCK)) {
+		if (!(ddflags & C_CBS))
+			err("record operations require cbs");
 		if (cbsz == 0)
-			err("block operations require cbs");
-	} else 
-		if (cbsz != 0)
-			warn("cbs ignored if not doing block operation");
+			err("cbs cannot be zero");
+		cfunc = ddflags & C_BLOCK ? block : unblock;
+	} else if (ddflags & C_CBS) {
+		if (ddflags & (C_ASCII|C_EBCDIC)) {
+			if (ddflags & C_ASCII) {
+				ddflags |= C_UNBLOCK;
+				cfunc = unblock;
+			} else {
+				ddflags |= C_BLOCK;
+				cfunc = block;
+			}
+		} else
+			err("cbs meaningless if not doing record operations");
+		if (cbsz == 0)
+			err("cbs cannot be zero");
+	} else
+		cfunc = def;
 
 	if (in.dbsz == 0 || out.dbsz == 0)
 		err("buffer sizes cannot be zero");
 
-
+	/*
+	 * Read, write and seek calls take ints as arguments.  Seek sizes
+	 * could be larger if we wanted to do it in stages or check only
+	 * regular files, but it's probably not worth it.
+	 */
+	if (in.dbsz > INT_MAX || out.dbsz > INT_MAX)
+		err("buffer sizes cannot be greater than %d", INT_MAX);
+	if (in.offset > INT_MAX / in.dbsz || out.offset > INT_MAX / out.dbsz)
+		err("seek offsets cannot be larger than %d", INT_MAX);
 }
 
 static int
@@ -145,12 +170,12 @@ f_count(arg)
 	char *arg;
 {
 	cpy_cnt = (u_int)get_bsz(arg);
-	if (!cpy_cnt)				/* Well, that was quick. */
+	if (!cpy_cnt)
 		terminate(0);
 }
 
 static void
-f_files(arg)					/* POSIX extension */
+f_files(arg)
 	char *arg;
 {
 	files_cnt = (int)get_bsz(arg);
@@ -200,34 +225,25 @@ f_skip(arg)
 	in.offset = (u_int)get_bsz(arg);
 }
 
-static void f_ascii __P((void));
-static void f_block __P((void));
-static void f_ebcdic __P((void));
-static void f_ibm __P((void));
-static void f_oldascii __P((void));
-static void f_oldebcdic __P((void));
-static void f_oldibm __P((void));
-static void f_unblock __P((void));
-
 static struct conv {
 	char *name;
-	void (*f) __P((void));
 	u_int set, noset;
+	u_char *ctab;
 } clist[] = {
-	"ascii",	f_ascii,	C_UNBLOCK,	C_BLOCK,
-	"block",	f_block,	C_BLOCK,	C_UNBLOCK,
-	"ebcdic",	f_ebcdic,	C_BLOCK,	C_UNBLOCK,
-	"ibm",		f_ibm,		C_BLOCK,	C_UNBLOCK,
-	"lcase",	NULL,		C_LCASE,	C_UCASE,
-	"noerror",	NULL,		C_NOERROR,	0,
-	"notrunc",	NULL,		C_NOTRUNC,	0,
-	"oldascii",	f_oldascii,	C_UNBLOCK,	C_BLOCK,
-	"oldebcdic",	f_oldebcdic,	C_BLOCK,	C_UNBLOCK,
-	"oldibm",	f_oldibm,	C_BLOCK,	C_UNBLOCK,
-	"swab",		NULL,		C_SWAB,		0,
-	"sync",		NULL,		C_SYNC,		0,
-	"ucase",	NULL,		C_UCASE,	C_LCASE,
-	"unblock",	f_unblock,	C_UNBLOCK,	C_BLOCK,
+	"ascii",	C_ASCII,	C_EBCDIC,	e2a_POSIX,
+	"block",	C_BLOCK,	C_UNBLOCK,	NULL,
+	"ebcdic",	C_EBCDIC,	C_ASCII,	a2e_POSIX,
+	"ibm",		C_EBCDIC,	C_ASCII,	a2ibm_POSIX,
+	"lcase",	C_LCASE,	C_UCASE,	NULL,
+	"noerror",	C_NOERROR,	0,		NULL,
+	"notrunc",	C_NOTRUNC,	0,		NULL,
+	"oldascii",	C_ASCII,	C_EBCDIC,	e2a_32V,
+	"oldebcdic",	C_EBCDIC,	C_ASCII,	a2e_32V,
+	"oldibm",	C_EBCDIC,	C_ASCII,	a2ibm_32V,
+	"swab",		C_SWAB,		0,		NULL,
+	"sync",		C_SYNC,		0,		NULL,
+	"ucase",	C_UCASE,	C_LCASE,	NULL,
+	"unblock",	C_UNBLOCK,	C_BLOCK,	NULL,
 };
 
 static void
@@ -247,8 +263,8 @@ f_conv(arg)
 		if (ddflags & cp->noset)
 			err("%s: illegal conversion combination", tmp.name);
 		ddflags |= cp->set;
-		if (cp->f)
-			(*cp->f)();
+		if (cp->ctab)
+			ctab = cp->ctab;
 	}
 }
 
@@ -259,79 +275,14 @@ c_conv(a, b)
 	return (strcmp(((struct conv *)a)->name, ((struct conv *)b)->name));
 }
 
-static void
-f_ascii()					/* POSIX extension */
-{
-	extern u_char e2a_POSIX[];
-
-	ctab = e2a_POSIX;
-	cfunc = unblock;
-}
-
-static void
-f_block()
-{
-	cfunc = block;
-}
-
-static void
-f_ebcdic()					/* POSIX extension */
-{
-	extern u_char a2e_POSIX[];
-
-	ctab = a2e_POSIX;
-	cfunc = block;
-}
-
-static void
-f_ibm()						/* POSIX extension */
-{
-	extern u_char a2ibm_POSIX[];
-
-	ctab = a2ibm_POSIX;
-	cfunc = block;
-}
-
-static void
-f_oldascii()
-{
-	extern u_char e2a_32V[];
-
-	ctab = e2a_32V;
-	cfunc = unblock;
-}
-
-static void
-f_oldebcdic()
-{
-	extern u_char a2e_32V[];
-	ctab = a2e_32V;
-	cfunc = block;
-}
-
-static void
-f_oldibm()
-{
-	extern u_char a2ibm_32V[];
-
-	ctab = a2ibm_32V;
-	cfunc = block;
-}
-
-static void
-f_unblock()
-{
-	cfunc = unblock;
-}
-
 /*
  * Convert an expression of the following forms to an unsigned long.
  * 	1) A positive decimal number.
- *	2) A positive decimal number followed by a k (mult by 1024).
- *	3) A positive decimal number followed by a b (mult by 512).
- *	4) A positive decimal number followed by a w (mult by sizeof int)
- *	   (POSIX extension for backwards compatibility).
- *	5) Two or more positive decimal numbers (with/without k,b or w).
+ *	2) A positive decimal number followed by a b (mult by 512).
+ *	3) A positive decimal number followed by a k (mult by 1024).
+ *	4) A positive decimal number followed by a m (mult by 512).
+ *	5) A positive decimal number followed by a w (mult by sizeof int)
+ *	6) Two or more positive decimal numbers (with/without k,b or w).
  *	   seperated by x (also * for backwards compatibility), specifying
  *	   the product of the indicated values.
  */
@@ -370,7 +321,7 @@ get_bsz(val)
 			goto erange;
 		++expr;
 		break;
-	case 'w':				/* POSIX extension. */
+	case 'w':
 		t = num;
 		num *= sizeof(int);
 		if (t > num)

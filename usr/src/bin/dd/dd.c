@@ -16,7 +16,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dd.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)dd.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -38,7 +38,8 @@ static void dd_close __P((void));
 static void dd_in __P((void));
 static void setup __P((void));
 
-struct	io_desc in, out;	/* input/output state */
+IO	in, out;		/* input/output state */
+STAT	st;			/* statistics */
 void	(*cfunc)();		/* conversion function */
 u_long	cpy_cnt;		/* # of blocks to copy */
 u_int	ddflags;		/* conversion options */
@@ -157,17 +158,7 @@ setup()
 	 * built-in tables.
 	 */
 	if (ddflags & (C_LCASE|C_UCASE))
-		if (ddflags & C_BLOCK)
-			if (ddflags & C_LCASE) {
-				for (cnt = 0; cnt < 0377; ++cnt)
-					if (isupper(cnt))
-						ctab[cnt] = ctab[tolower(cnt)];
-			} else {
-				for (cnt = 0; cnt < 0377; ++cnt)
-					if (islower(cnt))
-						ctab[cnt] = ctab[toupper(cnt)];
-			}
-		else if (ddflags & C_UNBLOCK)
+		if (ddflags & C_ASCII)
 			if (ddflags & C_LCASE) {
 				for (cnt = 0; cnt < 0377; ++cnt)
 					if (isupper(ctab[cnt]))
@@ -177,11 +168,18 @@ setup()
 					if (islower(ctab[cnt]))
 						ctab[cnt] = toupper(ctab[cnt]);
 			}
-		else {
-			extern u_char l2u[], u2l[];
-
+		else if (ddflags & C_EBCDIC)
+			if (ddflags & C_LCASE) {
+				for (cnt = 0; cnt < 0377; ++cnt)
+					if (isupper(cnt))
+						ctab[cnt] = ctab[tolower(cnt)];
+			} else {
+				for (cnt = 0; cnt < 0377; ++cnt)
+					if (islower(cnt))
+						ctab[cnt] = ctab[toupper(cnt)];
+			}
+		else
 			ctab = ddflags & C_LCASE ? u2l : l2u;
-		}
 }
 
 static void
@@ -190,7 +188,7 @@ dd_in()
 	register int flags, n;
 
 	for(flags = ddflags;;) {
-		if (cpy_cnt && (in.f_stats + in.p_stats) >= cpy_cnt)
+		if (cpy_cnt && (st.in_full + st.in_part) >= cpy_cnt)
 			return;
 
 		/*
@@ -237,12 +235,12 @@ dd_in()
 
 			/* Read errors count as full blocks. */
 			in.dbcnt += in.dbrcnt = in.dbsz;
-			++in.f_stats;
+			++st.in_full;
 
 		/* Handle full input blocks. */
 		} else if (n == in.dbsz) {
 			in.dbcnt += in.dbrcnt = n;
-			++in.f_stats;
+			++st.in_full;
 
 		/* Handle partial input blocks. */
 		} else if (n != in.dbsz) {
@@ -251,12 +249,12 @@ dd_in()
 				in.dbcnt += in.dbrcnt = in.dbsz;
 			else
 				in.dbcnt += in.dbrcnt = n;
-			++in.p_stats;
+			++st.in_part;
 		}
 
 		if (ddflags & C_SWAB) {
 			if ((n = in.dbcnt) & 1) {
-				warn("%s: odd swab count", in.name);
+				++st.swab;
 				--n;
 			}
 			swab(in.dbp, in.dbp, n);
@@ -326,14 +324,14 @@ dd_out(force)
 			outp += nw = write(out.fd, outp, cnt);
 			if (nw == n) {
 				if (n != out.dbsz)
-					++out.p_stats;
+					++st.out_part;
 				else
-					++out.f_stats;
+					++st.out_full;
 				break;
 			}
 			if (nw < 0)
 				err("%s: %s", out.name, strerror(errno));
-			++out.p_stats;
+			++st.out_part;
 			if (nw == cnt)
 				break;
 			if (out.flags & ISCHR && !warned) {
