@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_de.c	6.14 (Berkeley) %G%
+ *	@(#)if_de.c	6.15 (Berkeley) %G%
  */
 #include "de.h"
 #if NDE > 0
@@ -149,7 +149,6 @@ deattach(ui)
 	register struct de_softc *ds = &de_softc[ui->ui_unit];
 	register struct ifnet *ifp = &ds->ds_if;
 	register struct dedevice *addr = (struct dedevice *)ui->ui_addr;
-	int csr0;
 
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "de";
@@ -161,34 +160,19 @@ deattach(ui)
 	 * the pcbb buffer onto the Unibus.
 	 */
 	addr->pcsr0 = PCSR0_RSET;
-	while ((addr->pcsr0 & PCSR0_INTR) == 0)
-		;
-	csr0 = addr->pcsr0;
-	addr->pchigh = csr0 >> 8;
-	if (csr0 & PCSR0_PCEI)
-		printf("de%d: reset failed, csr0=%b csr1=%b\n", ui->ui_unit,
-		    csr0, PCSR0_BITS, addr->pcsr1, PCSR1_BITS);
+	(void)dewait(ui, "reset");
+
 	ds->ds_ubaddr = uballoc(ui->ui_ubanum, (char *)&ds->ds_pcbb,
 		sizeof (struct de_pcbb), 0);
 	addr->pcsr2 = ds->ds_ubaddr & 0xffff;
 	addr->pcsr3 = (ds->ds_ubaddr >> 16) & 0x3;
 	addr->pclow = CMD_GETPCBB;
-	while ((addr->pcsr0 & PCSR0_INTR) == 0)
-		;
-	csr0 = addr->pcsr0;
-	addr->pchigh = csr0 >> 8;
-	if (csr0 & PCSR0_PCEI)
-		printf("de%d: pcbb failed, csr0=%b csr1=%b\n", ui->ui_unit,
-		    csr0, PCSR0_BITS, addr->pcsr1, PCSR1_BITS);
+	(void)dewait(ui, "pcbb");
+
 	ds->ds_pcbb.pcbb0 = FC_RDPHYAD;
 	addr->pclow = CMD_GETCMD;
-	while ((addr->pcsr0 & PCSR0_INTR) == 0)
-		;
-	csr0 = addr->pcsr0;
-	addr->pchigh = csr0 >> 8;
-	if (csr0 & PCSR0_PCEI)
-		printf("de%d: read addr failed, csr0=%b csr1=%b\n", ui->ui_unit,
-		    csr0, PCSR0_BITS, addr->pcsr1, PCSR1_BITS);
+	(void)dewait(ui, "read addr ");
+
 	ubarelse(ui->ui_ubanum, &ds->ds_ubaddr);
 	if (dedebug)
 		printf("de%d: addr=%d:%d:%d:%d:%d:%d\n", ui->ui_unit,
@@ -243,7 +227,6 @@ deinit(unit)
 	int s;
 	struct de_ring *rp;
 	int incaddr;
-	int csr0;
 
 	/* not yet, if address still unknown */
 	if (ifp->if_addrlist == (struct ifaddr *)0)
@@ -269,13 +252,7 @@ deinit(unit)
 	addr->pcsr2 = incaddr & 0xffff;
 	addr->pcsr3 = (incaddr >> 16) & 0x3;
 	addr->pclow = CMD_GETPCBB;
-	while ((addr->pcsr0 & PCSR0_INTR) == 0)
-		;
-	csr0 = addr->pcsr0;
-	addr->pchigh = csr0 >> 8;
-	if (csr0 & PCSR0_PCEI)
-		printf("de%d: pcbb failed, csr0=%b csr1=%b\n", ui->ui_unit,
-		    csr0, PCSR0_BITS, addr->pcsr1, PCSR1_BITS);
+	(void)dewait(ui, "pcbb");
 
 	/* set the transmit and receive ring header addresses */
 	incaddr = ds->ds_ubaddr + UDBBUF_OFFSET;
@@ -295,26 +272,14 @@ deinit(unit)
 	ds->ds_udbbuf.b_rrlen = NRCV;
 
 	addr->pclow = CMD_GETCMD;
-	while ((addr->pcsr0 & PCSR0_INTR) == 0)
-		;
-	csr0 = addr->pcsr0;
-	addr->pchigh = csr0 >> 8;
-	if (csr0 & PCSR0_PCEI)
-		printf("de%d: wtring failed, csr0=%b csr1=%b\n", ui->ui_unit,
-		    csr0, PCSR0_BITS, addr->pcsr1, PCSR1_BITS);
+	(void)dewait(ui, "wtring");
 
 	/* initialize the mode - enable hardware padding */
 	ds->ds_pcbb.pcbb0 = FC_WTMODE;
 	/* let hardware do padding - set MTCH bit on broadcast */
 	ds->ds_pcbb.pcbb2 = MOD_TPAD|MOD_HDX;
 	addr->pclow = CMD_GETCMD;
-	while ((addr->pcsr0 & PCSR0_INTR) == 0)
-		;
-	csr0 = addr->pcsr0;
-	addr->pchigh = csr0 >> 8;
-	if (csr0 & PCSR0_PCEI)
-		printf("de%d: wtmode failed, csr0=%b csr1=%b\n", ui->ui_unit,
-		    csr0, PCSR0_BITS, addr->pcsr1, PCSR1_BITS);
+	(void)dewait(ui, "wtmode");
 
 	/* set up the receive and transmit ring entries */
 	ifxp = &ds->ds_ifw[0];
@@ -337,12 +302,12 @@ deinit(unit)
 	s = splimp();
 	ds->ds_rindex = ds->ds_xindex = ds->ds_xfree = ds->ds_nxmit = 0;
 	ds->ds_if.if_flags |= IFF_RUNNING;
+	destart(unit);				/* queue output packets */
 	addr->pclow = PCSR0_INTE;		/* avoid interlock */
-	addr->pclow = CMD_START | PCSR0_INTE;
-	ds->ds_flags |= DSF_RUNNING;
+	ds->ds_flags |= DSF_RUNNING;		/* need before de_setaddr */
 	if (ds->ds_flags & DSF_SETADDR)
 		de_setaddr(ds->ds_addr, unit);
-	destart(unit);				/* queue output packets */
+	addr->pclow = CMD_START | PCSR0_INTE;
 	splx(s);
 }
 
@@ -467,7 +432,8 @@ deintr(unit)
 	destart(unit);
 
 	if (csr0 & PCSR0_RCBI) {
-		log(LOG_WARNING, "de%d: buffer unavailable\n", unit);
+		if (dedebug)
+			log(LOG_WARNING, "de%d: buffer unavailable\n", unit);
 		addr->pclow = PCSR0_INTE|CMD_PDMD;
 	}
 }
@@ -803,9 +769,8 @@ de_setaddr(physaddr, unit)
 	int unit;
 {
 	register struct de_softc *ds = &de_softc[unit];
-	register struct uba_device *ui = deinfo[unit];
+	struct uba_device *ui = deinfo[unit];
 	register struct dedevice *addr= (struct dedevice *)ui->ui_addr;
-	int csr0;
 	
 	if (! (ds->ds_flags & DSF_RUNNING))
 		return;
@@ -813,17 +778,31 @@ de_setaddr(physaddr, unit)
 	bcopy(physaddr, &ds->ds_pcbb.pcbb2, 6);
 	ds->ds_pcbb.pcbb0 = FC_WTPHYAD;
 	addr->pclow = PCSR0_INTE|CMD_GETCMD;
+	if (dewait(ui, "address change") == 0) {
+		ds->ds_flags |= DSF_SETADDR;
+		bcopy(physaddr, ds->ds_addr, 6);
+	}
+}
+
+/*
+ * Await completion of the named function
+ * and check for errors.
+ */
+dewait(ui, fn)
+	register struct uba_device *ui;
+	char *fn;
+{
+	register struct dedevice *addr = (struct dedevice *)ui->ui_addr;
+	register csr0;
+
 	while ((addr->pcsr0 & PCSR0_INTR) == 0)
 		;
 	csr0 = addr->pcsr0;
 	addr->pchigh = csr0 >> 8;
 	if (csr0 & PCSR0_PCEI)
-		printf("de%d: address change failed, csr0=%b csr1=%b\n", 
-		    ui->ui_unit, csr0, PCSR0_BITS, 
+		printf("de%d: %s failed, csr0=%b csr1=%b\n", 
+		    ui->ui_unit, fn, csr0, PCSR0_BITS, 
 		    addr->pcsr1, PCSR1_BITS);
-	else {
-		ds->ds_flags |= DSF_SETADDR;
-		bcopy(physaddr, ds->ds_addr, 6);
-	}
+	return (csr0 & PCSR0_PCEI);
 }
 #endif
