@@ -2,9 +2,10 @@ set history=1000
 set path=(/sbin /usr/sbin /bin /usr/bin)
 
 # directory stuff: cdpath/cd/back
-set cdpath=(/sys /usr/src/{bin,sbin,usr.{bin,sbin},pgrm,lib,libexec,share,contrib,local,devel,games,old,})
+set cdpath=(/sys /usr/src/{bin,sbin,usr.{bin,sbin},lib,libexec,share,contrib,local,games,old})
 alias	cd	'set old=$cwd; chdir \!*'
 alias	h	history -r
+alias	hup	'kill -HUP `cat /var/run/\!$.pid`'
 alias	j	jobs -l
 alias	ll	ls -lg
 alias	ls	ls -g
