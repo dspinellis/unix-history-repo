@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_machdep.c	7.7 (Berkeley) %G%
+ *	@(#)kdb_machdep.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -122,7 +122,6 @@ kdb_trap(apsl)
 	int code, retval;
 	static int prevtype = -1, prevcode;
 	extern char *trap_type[];
-	extern int TRAP_TYPES;
 
 	/*
 	 * Allow panic if the debugger is not enabled.
@@ -130,11 +129,18 @@ kdb_trap(apsl)
 	if ((boothowto&RB_KDB) == 0)
 		return (0);
 	locr0 = apsl - PS;
-	type = locr0[TYPE], code = locr0[CODE];
+	type = locr0[TYPE];
+	/*
+	 * If we were invoked from kernel stack and are now back
+	 * on the interrupt stack, restore the saved type and code.
+	 * If we return, trap will have the correct type.
+	 */
 	if (type == T_KDBTRAP && prevtype != -1) {
-		type = prevtype, code = prevcode;
+		locr0[TYPE] = type = prevtype;
+		locr0[CODE] = prevcode;
 		prevtype = -1;
 	}
+	code = locr0[CODE];
 	if (type != T_TRCTRAP && type != T_BPTFLT) {
 		/*
 		 * Catch traps from kdbpeek and kdbpoke and perform
@@ -172,7 +178,14 @@ kdb_trap(apsl)
 	retval = kdb(type, code, noproc ? (struct proc *)0 : u.u_procp);
 	cnpoll(kdbactive = 0);
 	setpcb(locr0);
-	return (retval);
+	/*
+	 * Return 1 (return from trap) if this was a kdb trap
+	 * (from breakpoint, keyboard or panic)
+	 * unless a panic has been requested (kdb returns 0).
+	 * Otherwise, return 0 (panic because of trap).
+	 */
+	return ((type == T_KDBTRAP && retval != 0) ||
+	    type == T_TRCTRAP || type == T_BPTFLT);
 }
 
 static	char *codenames[] = {
