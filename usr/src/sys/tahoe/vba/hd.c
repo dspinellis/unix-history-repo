@@ -1,7 +1,7 @@
 /*
  *  Driver for HCX Disk Controller (HDC)
  *
- *	@(#)hd.c	7.1 (Berkeley) %G%
+ *	@(#)hd.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -183,7 +183,7 @@ int	dev;		/* the major/minor device number.
 	printf("\nhdc: resetting controller #%d.\n", hc->ctlr);
 	HDC_REGISTER(soft_reset_reg) = 0;
 	DELAY(1000000);
-	mtpr(0,PADC);
+	mtpr(PADC, 0);
 
 	/*
 	 * If the drive has not been initialized yet, abort the dump.
@@ -361,7 +361,7 @@ register mcb_type	*mcb;		/* mcb to send to the hdc
 	timeout = 15000;
 	while (TRUE) {
 		DELAY(1000);
-		mtpr(0,PADC);
+		mtpr(PADC, 0);
 		if ( (master->mcs & MCS_DONE) &&
 		    !(master->mcs & MCS_FATALERROR ) ) break;
 		timeout--;
@@ -464,8 +464,8 @@ int	ctlr;		/* the hdc controller number.
 
 	bp->b_resid = 0;
 	if (master->mcs & (MCS_SOFTERROR | MCS_FATALERROR) ) {
-		mtpr( (caddr_t) master, P1DC );
-		mtpr( (caddr_t) &master->xstatus[HDC_XSTAT_SIZE]-1, P1DC );
+		mtpr(P1DC, (caddr_t)master);
+		mtpr(P1DC, (caddr_t)&master->xstatus[HDC_XSTAT_SIZE]-1);
 		if (master->mcs & MCS_FATALERROR) {
 			bp->b_flags |= B_ERROR;
 			bp->b_error = EIO;
@@ -956,7 +956,7 @@ register struct vba_ctlr	*vba_ctlr;	/* vba controller information
 
 	HDC_REGISTER(module_id_reg) = (unsigned long) vtoph(0,id);
 	DELAY(10000);
-	mtpr(0,PADC);
+	mtpr(PADC, 0);
 
 	/*
 	 * hdc's are reset and downloaded by the console processor.
@@ -986,44 +986,6 @@ register struct vba_ctlr	*vba_ctlr;	/* vba controller information
 	HDC_REGISTER(soft_reset_reg) = 0;
 	DELAY(1000000);
 	return TRUE;
-}
-
-/*************************************************************************
-*  Procedure:	hdread
-*
-*  Description: Character read routine. This procedure is called by the
-*               inode read/write routine 'ino_rw'.
-*
-*  Returns:     Error status returned by 'physio'.
-**************************************************************************/
-
-int
-hdread(dev, uio)
-
-dev_t		dev;	/* Device type. Major/minor dev#.
-			 */
-int		*uio;	/* Pointer to a uio structure describing
-			 * a read request: buffer address;
-			 * sector offset; no. of sectors; etc.
-			 */
-{
-	hdc_unit_type	*hu;	/* hdc unit information   */
-
-	hu = &hdc_units[ HDC_UNIT(dev) ];
-
-	/*
-	 * 'physio' builds the buf structure, locks the user pages, calls
-	 * 'hdstrategy' to do the read, waits until i/o is complete (iodone),
-	 * then deallocates the buf structure and unlocks the pages.
-	 */
-
-	return physio(
-		hdstrategy,	/* hdc's strategy routine	    */
-		&hu->raw_buf,	/* physio builds a buf struct here  */
-		dev,		/* major/minor device number	    */
-		B_READ,		/* read the buffer 		    */
-		minphys,	/* routine to set max transfer size */
-		uio);		/* describes the transfer request   */
 }
 
 /*************************************************************************
@@ -1373,21 +1335,21 @@ got:    asm("got:");
 			procp = (struct proc *) &proc[2] ;
 		else
 			procp = bp->b_proc;
-		if (bp->b_flags & B_READ) mtpr(vaddr,P1DC);
+		if (bp->b_flags & B_READ)
+			mtpr(P1DC, vaddr);
 		bc = min( bcremain, (NBPG-(vaddr&(NBPG-1))) );
 		mcb->chain[0].ta = vtoph(procp,vaddr);
 		mcb->chain[0].lwc = bc/4;
-		bcremain -= bc;
-		i = 0;
-		while (bcremain>0) {
-	        	vaddr += bc;
-			if (bp->b_flags & B_READ) mtpr(vaddr,P1DC);
-			bc = min(bcremain,NBPG);
+		for (bcremain -= bc, i = 0; bcremain > 0;) {
+			vaddr += bc;
+			if (bp->b_flags & B_READ)
+				mtpr(P1DC, vaddr);
+			bc = min(bcremain, NBPG);
 			mcb->chain[i].lwc |= LWC_DATA_CHAIN;
 			i++;
 			mcb->chain[i].ta = vtoph(procp,vaddr);
 			mcb->chain[i].lwc= bc/4;
-	        	bcremain -= bc;
+			bcremain -= bc;
 		}
 	}
 
@@ -1460,41 +1422,22 @@ errcom:	bp->b_flags |= B_ERROR;
 	iodone(bp);
 }
 
-/*************************************************************************
-*  Procedure:	hdwrite
-*
-*  Description:	Character device write routine. It is called by the
-*               inode read/write routine 'ino_rw'.
-*
-*  Returns:     The error status returned by 'physio'.
-**************************************************************************/
-
-int
-hdwrite(dev, uio)
-
-
-dev_t		dev;	/* Device type. Major/minor dev#.
-			 */
-int		*uio;	/* Pointer to a uio structure describing
-			 * a write request: buffer address;
-			 * sector offset; no. of sectors; etc.
-			 */
+hdread(dev, uio)
+	dev_t dev;
+	int *uio;
 {
-	hdc_unit_type	*hu;	/* hdc unit information   */
+	hdc_unit_type	*hu;
 
-	hu = &hdc_units[ HDC_UNIT(dev) ];
+	hu = &hdc_units[HDC_UNIT(dev)];
+	return(physio(hdstrategy, &hu->raw_buf, dev, B_READ, minphys, uio));
+}
 
-	/*
-	 * 'physio' builds the buf structure, locks the user pages, calls
-	 * 'hdstrategy' to do the write, waits until i/o is complete
-	 * (iodone), deallocates the buf structure, and unlocks the pages.
-	 */
+hdwrite(dev, uio)
+	dev_t dev;
+	int *uio;
+{
+	hdc_unit_type	*hu;
 
-	return physio(
-		hdstrategy,	/* hdc's strategy routine	    */
-		&hu->raw_buf,	/* physio builds a buf struct here  */
-		dev,		/* major/minor device number	    */
-		B_WRITE,	/* write the buffer		    */
-		minphys,	/* routine to set max transfer size */
-		uio);		/* describes the transfer request   */
+	hu = &hdc_units[HDC_UNIT(dev)];
+	return(physio(hdstrategy, &hu->raw_buf, dev, B_WRITE, minphys, uio));
 }
