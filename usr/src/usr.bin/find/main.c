@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -95,10 +95,18 @@ main(argc, argv)
 		ftsoptions |= FTS_LOGICAL;
 	}
 
-	/* Find first option to delimit the file list. */
-	for (; *argv != NULL; *p++ = *argv++)
-		if (option(*argv))
+	/*
+	 * Find first option to delimit the file list.  The first argument
+	 * that starts with a -, or is a ! or a ( must be interpreted as a
+	 * part of the find expression, according to POSIX .2.
+	 */
+	for (; *argv != NULL; *p++ = *argv++) {
+		if (argv[0][0] == '-')
 			break;
+		if ((argv[0][0] == '!' || argv[0][0] == '(') &&
+		    argv[0][1] == '\0')
+			break;
+	}
 
 	if (p == start)
 		usage();
