@@ -1,4 +1,4 @@
-#	@(#)Makefile	7.30 (Berkeley) %G%
+#	@(#)Makefile	7.31 (Berkeley) %G%
 
 # Things that can be turned off to save space:
 #	LISPCODE (-l flag, showmatch and lisp options)
@@ -46,7 +46,7 @@ strings.o: strings
 
 .include <bsd.prog.mk>
 
-${SUBDIR} .depend: ex_vars.h
+${OBJS} ${SUBDIR} .depend: ex_vars.h
 ${OBJS}: strings
 strings:
 	touch strings
