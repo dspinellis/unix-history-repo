@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.4	%G%	*/
+/*	vfs_syscalls.c	4.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -226,6 +226,7 @@ sumount()
 	return;
 
 found:
+	stillopen = 0;
 	for(ip = &inode[0]; ip < &inode[NINODE]; ip++)
 		if (ip->i_number != 0 && dev == ip->i_dev) {
 			u.u_error = EBUSY;
