@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.3	6.2 (Berkeley) %G%
+.\"	@(#)intro.3	6.3 (Berkeley) %G%
 .\"
 .TH INTRO 3 ""
 .UC 4
@@ -116,6 +116,7 @@ acos	sin.3m	trigonometric functions
 alarm	alarm.3c	schedule signal after specified time
 alarm	alarm.3f	execute a subroutine after a specified time
 alloca	malloc.3	memory allocator
+and	bit.3f	bitwise and
 arc	plot.3f	f77 interface to plot(3x)
 arc	plot.3x	graphics interface
 asctime	ctime.3	convert date and time to ASCII
@@ -129,7 +130,6 @@ atol	atof.3	convert ASCII to numbers
 bcmp	bstring.3	bit and byte string operations
 bcopy	bstring.3	bit and byte string operations
 bessel	bessel.3f	bessel functions of two kinds for integer orders
-bit	bit.3f	and, or, xor, not, rshift, lshift bitwise functions
 box	plot.3f	f77 interface to plot(3x)
 bzero	bstring.3	bit and byte string operations
 cabs	hypot.3m	Euclidean distance
@@ -327,6 +327,7 @@ log	exp.3m	exponential, logarithm, power, square root
 log10	exp.3m	exponential, logarithm, power, square root
 long	long.3f	integer object conversion
 longjmp	setjmp.3	non-local goto
+lshift	bit.3f	left shift
 lstat	stat.3f	get file status
 ltime	time.3f	return system time
 malloc	malloc.3	memory allocator
@@ -341,12 +342,14 @@ move	plot.3x	graphics interface
 nextkey	dbm.3x	data base subroutines
 nice	nice.3c	set program priority
 nlist	nlist.3	get entries from name list
+not	bit.3f	bitwise complement
 ntohl	byteorder.3n	convert values between host and network byte order
 ntohs	byteorder.3n	convert values between host and network byte order
 opendir	directory.3	directory operations
 openlog	syslog.3	control system log
 openpl	plot.3f	f77 interface to plot(3x)
 openpl	plot.3x	graphics interface
+or	bit.3f	bitwise or
 pause	pause.3c	stop until signal
 pclose	popen.3	initiate I/O to/from a process
 perror	perror.3	system error messages
@@ -381,6 +384,7 @@ rexec	rexec.3x	return stream to a remote command
 rindex	index.3f	tell about character objects
 rindex	string.3	string operations
 rresvport	rcmd.3x	routines for returning a stream to a remote command
+rshift	bit.3f	right shift
 ruserok	rcmd.3x	routines for returning a stream to a remote command
 scandir	scandir.3	scan a directory
 scanf	scanf.3s	formatted input conversion
@@ -429,6 +433,7 @@ strncat	string.3	string operations
 strncmp	string.3	string operations
 strncpy	string.3	string operations
 stty	stty.3c	set and get terminal state (defunct)
+symlnk	symlnk.3f	make a symbolic link
 swab	swab.3	swap bytes
 sys_errlist	perror.3	system error messages
 sys_nerr	perror.3	system error messages
@@ -470,6 +475,7 @@ varargs	varargs.3	variable argument list
 vlimit	vlimit.3c	control maximum system resource consumption
 vtimes	vtimes.3c	get information about resource utilization
 wait	wait.3f	wait for a process to terminate
+xor	bit.3f	bitwise exclusive or
 y0	j0.3m	bessel functions
 y1	j0.3m	bessel functions
 yn	j0.3m	bessel functions
