@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.19 84/04/06";
+static	char *sccsid = "@(#)lcmd1.c	3.20 84/04/06";
 #endif
 
 #include "defs.h"
@@ -108,7 +108,8 @@ struct lcmd_arg arg_label[] = {
 
 /*ARGSUSED*/
 l_label(v, a)
-register struct value *v, *a;
+struct value *v;
+register struct value *a;
 {
 	struct ww *w;
 
@@ -174,7 +175,8 @@ register struct value *v, *a;
 
 /*ARGSUSED*/
 l_write(v, a)
-register struct value *v, *a;
+struct value *v;
+register struct value *a;
 {
 	char buf[20];
 	struct ww *w;
@@ -194,7 +196,8 @@ register struct value *v, *a;
 
 /*ARGSUSED*/
 l_close(v, a)
-register struct value *v, *a;
+struct value *v;
+register struct value *a;
 {
 	struct ww *w;
 
