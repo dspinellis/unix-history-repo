@@ -1,6 +1,6 @@
 #ifndef lint
 static char Notice[] = "Copyright (c) 1985 Adobe Systems Incorporated";
-static char sccsid[] = "@(#)enscript.c	1.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)enscript.c	1.7 (Berkeley) %G%";
 static char *RCSID = "$Header: enscript.c,v 1.7 89/03/12 01:31:55 van Exp $";
 
 #endif
@@ -117,7 +117,7 @@ private FlushShow();
 #define FSIZEMAX 256		/* number of chars per font */
 
 /* the layout of a font information block */
-private struct font {
+struct font {
 	char    name[100];	/* PostScript font name */
 	int     dsize;		/* size */
 	int     Xwid[FSIZEMAX];	/* X widths for each character */
@@ -146,7 +146,6 @@ private int LPTsimulate = FALSE;/* an lpt should be simulated */
 private int Lines = 0;		/* max lines per page */
 private int LinesLeft = 66;	/* lines left on page when in LPT mode */
 private int LineMax = 64;	/* ? */
-private int col;		/* column number on current line */
 private int SeenText = TRUE;	/* true if seen some text on this page */
 private int OutOnly = FALSE;	/* PS file only wanted */
 private int Rotated = FALSE;	/* pages to be rotated landscape */
@@ -325,7 +324,15 @@ private VOID ScanFont ()
 		VOIDC   fclose (FontData);
 	}
 
-	TabWidth = fonts[Roman].Xwid['0'] * 8;	/* 8 * figure width */
+	/*
+	 * Tab width is problematical for proportionally-spaced fonts.
+	 * Attempt to make tabs wide enough that things hand-tabulated
+	 * for monospaced fonts still fit in columns.
+	 */
+	if (fonts[Roman].Xwid['0'] == fonts[Roman].Xwid['M'])
+		TabWidth = fonts[Roman].Xwid['0'] * 8;	/* 8 * figure width */
+	else
+		TabWidth = fonts[Roman].Xwid['0'] * 10;	/* 10 * figure width */
 	BSWidth = fonts[Roman].Xwid[' '];	/* space width */
 
 	UperLine = (fonts[Roman].dsize + 1) * UperPt;
@@ -456,7 +463,6 @@ ShowChar (c)
 			ShowChar ((c >> 6) + '0');
 			ShowChar (((c >> 3) & 07) + '0');
 			ShowChar ((c & 07) + '0');
-			col += 3;
 		}
 		level--;
 		return;
@@ -479,9 +485,7 @@ ShowChar (c)
 				if (pagepending)
 					InitPage ();
 			}
-			col = 1;
 			ShowChar(c);
-			col++;
 			level--;
 			return;
 		}
@@ -686,7 +690,6 @@ CopyFile ()
 {
 	register int c;
 
-	col = 1;
 	if (OutFile == 0) {
 		if (OutOnly) {
 			OutFile = PipeOut ? stdout : fopen (OutName, "w");
@@ -755,7 +758,6 @@ CopyFile ()
 			if (pagepending)
 				InitPage ();
 			ShowChar (c);
-			col++;
 		} else
 			switch (c) {
 			case 010:	/* backspace */
@@ -776,7 +778,6 @@ CopyFile ()
 					LinesLeft = LineMax;
 				if ((dY < minY) || (--LinesLeft <= 0))
 					PageEject ();
-				col = 1;
 				break;
 			case 033:	/* escape */
 				switch (c = getchar ()) {
@@ -843,20 +844,17 @@ CopyFile ()
 				}
 			case 014:	/* form feed ^L */
 				PageEject ();
-				col = 1;
 				break;
 			case 011:	/* tab ^I */
 				if (pagepending)
 					InitPage ();
-				col = (col - 1) / 8 * 8 + 9;
-				dX = lX + (col - 1) / 8 * TabWidth;
+				dX += TabWidth - (dX % TabWidth);
 				break;
 			default:	/* other control character, take your
 					 * chances */
 				if (pagepending)
 					InitPage ();
 				ShowChar (c);
-				col++;
 			}
 	ClosePage ();
 }
