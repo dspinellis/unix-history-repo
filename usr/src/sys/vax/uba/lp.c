@@ -1,4 +1,4 @@
-/*	lp.c	6.1	83/07/29	*/
+/*	lp.c	6.2	84/08/02	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -313,7 +313,7 @@ lptout(dev)
 		timeout(lptout, (caddr_t)dev, 2*hz);	/* so don't sweat */
 		return;
 	}
-	if ((sc->sc_state&OPEN) == 0) {
+	if ((sc->sc_state&OPEN) == 0 && sc->sc_outq.c_cc == 0) {
 		sc->sc_state &= ~TOUT;		/* no longer open */
 		lpaddr->lpsr = 0;
 		return;
