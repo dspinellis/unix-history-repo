@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_output.c	7.17 (Berkeley) %G%
+ *	@(#)ip_output.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -29,10 +29,10 @@
 #include "../net/route.h"
 
 #include "in.h"
-#include "in_pcb.h"
 #include "in_systm.h"
-#include "in_var.h"
 #include "ip.h"
+#include "in_pcb.h"
+#include "in_var.h"
 #include "ip_var.h"
 
 #ifdef vax
@@ -60,6 +60,7 @@ ip_output(m0, opt, ro, flags)
 	int len, off, error = 0;
 	struct route iproute;
 	struct sockaddr_in *dst;
+	struct in_ifaddr *ia;
 
 if ((m->m_flags & M_PKTHDR) == 0)
 panic("ip_output no HDR");
@@ -108,7 +109,6 @@ panic("ip_output no HDR");
 	 * short circuit routing lookup.
 	 */
 	if (flags & IP_ROUTETOIF) {
-		struct in_ifaddr *ia;
 
 		ia = (struct in_ifaddr *)ifa_ifwithdstaddr((struct sockaddr *)dst);
 		if (ia == 0)
@@ -128,6 +128,7 @@ panic("ip_output no HDR");
 				error = ENETUNREACH;
 			goto bad;
 		}
+		ia = (struct in_ifaddr *)ro->ro_rt->rt_ifa;
 		ro->ro_rt->rt_use++;
 		if (ro->ro_rt->rt_flags & RTF_GATEWAY)
 			dst = (struct sockaddr_in *)ro->ro_rt->rt_gateway;
@@ -137,15 +138,8 @@ panic("ip_output no HDR");
 	 * If source address not specified yet, use address
 	 * of outgoing interface.
 	 */
-	if (ip->ip_src.s_addr == INADDR_ANY) {
-		register struct in_ifaddr *ia;
-
-		for (ia = in_ifaddr; ia; ia = ia->ia_next)
-			if (ia->ia_ifp == ifp) {
-				ip->ip_src = IA_SIN(ia)->sin_addr;
-				break;
-			}
-	}
+	if (ip->ip_src.s_addr == INADDR_ANY)
+		ip->ip_src = IA_SIN(ia)->sin_addr;
 #endif
 	/*
 	 * Look for broadcast address and
@@ -177,7 +171,8 @@ panic("ip_output no HDR");
 		ip->ip_off = htons((u_short)ip->ip_off);
 		ip->ip_sum = 0;
 		ip->ip_sum = in_cksum(m, hlen);
-		error = (*ifp->if_output)(ifp, m, (struct sockaddr *)dst);
+		error = (*ifp->if_output)(ifp, m,
+				(struct sockaddr *)dst, ro->ro_rt);
 		goto done;
 	}
 	ipstat.ips_fragmented++;
@@ -258,7 +253,7 @@ sendorfree:
 		m->m_nextpkt = 0;
 		if (error == 0)
 			error = (*ifp->if_output)(ifp, m,
-			    (struct sockaddr *)dst);
+			    (struct sockaddr *)dst, ro->ro_rt);
 		else
 			m_freem(m);
 	}
