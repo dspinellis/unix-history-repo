@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.56 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.57 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -50,7 +50,11 @@ chompheader(line, def, hdrp, e)
 	char buf[MAXNAME + 1];
 
 	if (tTd(31, 6))
-		printf("chompheader: %s\n", line);
+	{
+		printf("chompheader: ");
+		xputs(line);
+		printf("\n");
+	}
 
 	headeronly = hdrp != NULL;
 	if (!headeronly)
