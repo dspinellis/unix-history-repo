@@ -1,0 +1,1 @@
+char    *distcomps =    "distcomps";

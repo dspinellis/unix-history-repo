@@ -1,0 +1,1 @@
+char    *current =      "cur";
