@@ -1,4 +1,4 @@
-/*	acu.c	4.2	81/10/02	*/
+/*	acu.c	4.3	81/11/16	*/
 #include "tip.h"
 #include <setjmp.h>
 
@@ -130,7 +130,7 @@ static int
 acuabort(s)
 {
 	signal(s, SIG_IGN);
-	longjmp(jmpbuf);
+	longjmp(jmpbuf, 1);
 }
 
 static acu_t *
