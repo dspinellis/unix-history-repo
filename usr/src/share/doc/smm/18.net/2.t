@@ -2,10 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.t	6.2 (Berkeley) %G%
+.\"	@(#)2.t	6.3 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH Overview
+.br
+.ne 2i
 .NH
 \s+2Overview\s0
 .PP
@@ -54,5 +56,3 @@ these cases examples have been drawn from the Internet [Cerf78]
 protocol family.  Later sections cover routing issues,
 the design of the raw socket interface and other
 miscellaneous topics.
-.\".ds RH Goals
-'ne 2i

@@ -2,9 +2,11 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.t	6.2 (Berkeley) %G%
+.\"	@(#)1.t	6.3 (Berkeley) %G%
 .\"
 .\".ds RH Introduction
+.br
+.ne 2i
 .NH
 \s+2Introduction\s0
 .PP
@@ -35,5 +37,3 @@ The remainder of this document
 provides a description of the system internals,
 avoiding, when possible, those portions which are utilized only
 by the interprocess communication facilities.
-.\".ds RH Overview
-'ne 2i

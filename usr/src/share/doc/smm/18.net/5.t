@@ -2,10 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)5.t	6.2 (Berkeley) %G%
+.\"	@(#)5.t	6.3 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH "Memory management
+.br
+.ne 2i
 .NH
 \s+2Memory management\s0
 .PP
@@ -82,7 +84,7 @@ n = m_free(m);
 .br
 MFREE(m,n);
 .IP
-The routine f\Im_free\fP and the macro \fIMFREE\fP
+The routine \fIm_free\fP and the macro \fIMFREE\fP
 each free a single mbuf, \fIm\fP, and any associated external storage area,
 placing a pointer to its successor in the chain it heads, if any, in \fIn\fP.
 .IP "m_freem(m);"
@@ -152,5 +154,4 @@ data area to a pointer to the mbuf,
 Mbufs are used for dynamically allocated data structures such as
 sockets as well as memory allocated for packets and headers.  Statistics are
 maintained on mbuf usage and can be viewed by users using the
-\fInetstat\fP(1) program.
-'ne 2i
+\fInetstat\fP\|(1) program.

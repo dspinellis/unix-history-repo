@@ -2,10 +2,12 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)6.t	6.2 (Berkeley) %G%
+.\"	@(#)6.t	6.3 (Berkeley) %G%
 .\"
 .nr H2 1
 .\".ds RH "Internal layering
+.br
+.ne 2i
 .NH
 \s+2Internal layering\s0
 .PP
@@ -470,7 +472,7 @@ Consequently a common set of utility routines for dealing
 with the UNIBUS has been developed.  Each UNIBUS interface
 utilizes a structure of the following form:
 .DS
-.ta \w'#define 'u +\w'caddr_t    'u +\w'pte ifu_wmap[IF_MAXNUBAMR];    'u
+.ta \w'#define 'u +\w'ifw_xtofree 'u +\w'pte ifu_wmap[IF_MAXNUBAMR];    'u
 struct	ifubinfo {
 	short	iff_uban;			/* uba number */
 	short	iff_hlen;			/* local net header length */
@@ -481,7 +483,7 @@ struct	ifubinfo {
 Additional structures are associated with each receive and transmit buffer,
 normally one each per interface; for read,
 .DS
-.ta \w'#define 'u +\w'caddr_t    'u +\w'pte ifu_wmap[IF_MAXNUBAMR];    'u
+.ta \w'#define 'u +\w'ifw_xtofree 'u +\w'pte ifu_wmap[IF_MAXNUBAMR];    'u
 struct	ifrw {
 	caddr_t	ifrw_addr;			/* virt addr of header */
 	short	ifrw_bdp;			/* unibus bdp */
@@ -494,7 +496,7 @@ struct	ifrw {
 .DE
 and for write,
 .DS
-.ta \w'#define 'u +\w'caddr_t    'u +\w'pte ifu_wmap[IF_MAXNUBAMR];    'u
+.ta \w'#define 'u +\w'ifw_xtofree 'u +\w'pte ifu_wmap[IF_MAXNUBAMR];    'u
 struct	ifxmt {
 	struct	ifrw ifrw;
 	caddr_t	ifw_base;			/* virt addr of buffer */
@@ -503,12 +505,12 @@ struct	ifxmt {
 	short	ifw_xswapd;			/* mask of clusters swapped */
 	short	ifw_nmr;			/* number of entries in wmap */
 };
-.ta \w'#define 'u +\w'ifw_proto      'u
+.ta \w'#define 'u +\w'ifw_xtofree 'u +\w'pte ifu_wmap[IF_MAXNUBAMR];    'u
 #define	ifw_addr	ifrw.ifrw_addr
 #define	ifw_bdp	ifrw.ifrw_bdp
 #define	ifw_flags	ifrw.ifrw_flags
 #define	ifw_info	ifrw.ifrw_info
-#define	ifw_proto       ifrw.ifrw_proto
+#define	ifw_proto	ifrw.ifrw_proto
 #define	ifw_mr	ifrw.ifrw_mr
 .DE
 One of each of these structures is conveniently packaged for interfaces
@@ -633,4 +635,3 @@ Any other mbufs which contained non-page-sized
 data portions are copied to the I/O space and then freed.
 Pages mapped from a previous output operation (no longer needed)
 are unmapped.
-'ne 2i

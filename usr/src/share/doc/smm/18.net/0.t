@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	6.2 (Berkeley) %G%
+.\"	@(#)0.t	6.3 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
@@ -141,7 +141,6 @@ Revised
 .sp .5v
 .nf
 .B References
-.\".ds RH Introduction
 .bp
 .de _d
 .if t .ta .6i 2.1i 2.6i
