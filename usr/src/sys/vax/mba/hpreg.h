@@ -1,4 +1,4 @@
-/*	hpreg.h	4.11	82/05/20	*/
+/*	hpreg.h	4.12	83/01/27	*/
 
 struct hpdevice
 {
@@ -109,7 +109,7 @@ struct hpdevice
 #define	HPER2_DPE	0000010		/* data parity error */
 
 #define	HPER2_BITS \
-"\10\20BSE\17SKI\16OPE\15IVC\14LSC\13LBC\10DVC\5SSE\4DPE"
+"\10\20BSE\17SKI\16OPE\15IVC\14LSC\13LBC\10DVC\6SSE\4DPE"
 #define	HPER2_HARD    (HPER2_OPE)
 
 /* hpof */
