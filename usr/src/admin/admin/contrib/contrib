@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.42 (Berkeley) %G%
+.\"	@(#)contrib	5.43 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -152,6 +152,7 @@ bib(1)	Dain Samples
 bib(1)	Gary M. Levin
 bib(1)	Timothy A. Budd
 bitstring(3)	Paul Vixie
+bpf(4)	Steven McCanne
 btree(3)	Mike Olson
 byte-range locking	Scooter Morris
 caesar(6)	John Eldridge
@@ -235,6 +236,7 @@ join(1)	Steve Hayman
 jove(1)	Jonathon Payne
 kermit(1)	Columbia University
 kvm(3)	Peter Shipley
+kvm(3)	Steven McCanne
 larn(6)	Noah Morgan
 lastcomm(1)	Len Edmondson
 lex(1)	Vern Paxson
@@ -267,7 +269,6 @@ named/bind(8)	Douglas Terry
 named/bind(8)	Kevin Dunlap
 news(1)	Rick Adams (and a cast of thousands)
 nm(1)	Hans Huebner
-packet filter	Steven McCanne
 pascal(1)	Kirk McKusick
 pascal(1)	Peter Kessler
 paste(1)	Adam S. Moskowitz
