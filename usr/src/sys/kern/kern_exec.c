@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exec.c	7.2 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -56,10 +56,9 @@ execve()
 	struct inode *ip;
 	swblk_t bno;
 	char cfname[MAXCOMLEN + 1];
-#define	SHSIZE	32
-	char cfarg[SHSIZE];
+	char cfarg[MAXINTERP];
 	union {
-		char	ex_shell[SHSIZE];	/* #! and name of interpreter */
+		char	ex_shell[MAXINTERP];	/* #! and interpreter name */
 		struct	exec ex_exec;
 	} exdata;
 	register struct nameidata *ndp = &u.u_nd;
@@ -140,7 +139,7 @@ execve()
 			goto bad;
 		}
 		cp = &exdata.ex_shell[2];		/* skip "#!" */
-		while (cp < &exdata.ex_shell[SHSIZE]) {
+		while (cp < &exdata.ex_shell[MAXINTERP]) {
 			if (*cp == '\t')
 				*cp = ' ';
 			else if (*cp == '\n') {
@@ -165,7 +164,7 @@ execve()
 			while (*cp == ' ')
 				cp++;
 			if (*cp)
-				bcopy((caddr_t)cp, (caddr_t)cfarg, SHSIZE);
+				bcopy((caddr_t)cp, (caddr_t)cfarg, MAXINTERP);
 		}
 		indir = 1;
 		iput(ip);
