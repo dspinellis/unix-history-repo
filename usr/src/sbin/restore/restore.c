@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)restore.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -23,9 +23,8 @@ listfile(name, ino, type)
 {
 	long descend = hflag ? GOOD : FAIL;
 
-	if (BIT(ino, dumpmap) == 0) {
+	if (TSTINO(ino, dumpmap) == 0)
 		return (descend);
-	}
 	vprintf(stdout, "%s", type == LEAF ? "leaf" : "dir ");
 	fprintf(stdout, "%10d\t%s\n", ino, name);
 	return (descend);
@@ -45,7 +44,7 @@ addfile(name, ino, type)
 	long descend = hflag ? GOOD : FAIL;
 	char buf[100];
 
-	if (BIT(ino, dumpmap) == 0) {
+	if (TSTINO(ino, dumpmap) == 0) {
 		dprintf(stdout, "%s: not on the tape\n", name);
 		return (descend);
 	}
@@ -86,9 +85,8 @@ deletefile(name, ino, type)
 	long descend = hflag ? GOOD : FAIL;
 	struct entry *ep;
 
-	if (BIT(ino, dumpmap) == 0) {
+	if (TSTINO(ino, dumpmap) == 0)
 		return (descend);
-	}
 	ep = lookupino(ino);
 	if (ep != NIL)
 		ep->e_flags &= ~NEW;
@@ -124,7 +122,7 @@ removeoldleaves()
 		ep = lookupino(i);
 		if (ep == NIL)
 			continue;
-		if (BIT(i, clrimap))
+		if (TSTINO(i, clrimap))
 			continue;
 		for ( ; ep != NIL; ep = ep->e_links) {
 			dprintf(stdout, "%s: REMOVE\n", myname(ep));
@@ -175,7 +173,7 @@ nodeupdates(name, ino, type)
 	 *
 	 * Check to see if the file is on the tape.
 	 */
-	if (BIT(ino, dumpmap))
+	if (TSTINO(ino, dumpmap))
 		key |= ONTAPE;
 	/*
 	 * Check to see if the name exists, and if the name is a link.
@@ -466,7 +464,7 @@ findunreflinks()
 	vprintf(stdout, "Find unreferenced names.\n");
 	for (i = ROOTINO; i < maxino; i++) {
 		ep = lookupino(i);
-		if (ep == NIL || ep->e_type == LEAF || BIT(i, dumpmap) == 0)
+		if (ep == NIL || ep->e_type == LEAF || TSTINO(i, dumpmap) == 0)
 			continue;
 		for (np = ep->e_entries; np != NIL; np = np->e_sibling) {
 			if (np->e_flags == 0) {

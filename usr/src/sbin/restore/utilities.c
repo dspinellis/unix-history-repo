@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -291,7 +291,7 @@ dirlookup(name)
 	ino_t ino;
 
 	ino = psearch(name);
-	if (ino == 0 || BIT(ino, dumpmap) == 0)
+	if (ino == 0 || TSTINO(ino, dumpmap) == 0)
 		fprintf(stderr, "%s is not on tape\n", name);
 	return (ino);
 }
