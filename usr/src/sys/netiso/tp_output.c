@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_output.c	7.14 (Berkeley) %G%
+ *	@(#)tp_output.c	7.15 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -261,9 +261,8 @@ tp_consistency( tpcb, cmd, param )
 	}
 
 	if ((error==0) && (cmd & TP_FORCE)) {
+		long dusize = ((long)param->p_ptpdusize) << 7;
 		/* Enforce Negotation rules below */
-		if (tpcb->tp_tpdusize > param->p_tpdusize)
-			tpcb->tp_tpdusize = param->p_tpdusize;
 		tpcb->tp_class = param->p_class;
 		if (tpcb->tp_use_checksum || param->p_use_checksum)
 			tpcb->tp_use_checksum = 1;
@@ -271,8 +270,19 @@ tp_consistency( tpcb, cmd, param )
 			tpcb->tp_xpd_service = 0;
 		if (!tpcb->tp_xtd_format || !param->p_xtd_format)
 			tpcb->tp_xtd_format = 0;
+		if (dusize) {
+			if (tpcb->tp_l_tpdusize > dusize)
+				tpcb->tp_l_tpdusize = dusize;
+			if (tpcb->tp_ptpdusize == 0 ||
+				tpcb->tp_ptpdusize > param->p_ptpdusize)
+				tpcb->tp_ptpdusize = param->p_ptpdusize;
+		} else {
+			if (param->p_tpdusize != 0 &&
+				tpcb->tp_tpdusize > param->p_tpdusize)
+				tpcb->tp_tpdusize = param->p_tpdusize;
+			tpcb->tp_l_tpdusize = 1 << tpcb->tp_tpdusize;
+		}
 	}
-	tpcb->tp_l_tpdusize = 1 << tpcb->tp_tpdusize;
 done:
 
 	IFTRACE(D_CONN)

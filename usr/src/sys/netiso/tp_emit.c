@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_emit.c	7.12 (Berkeley) %G%
+ *	@(#)tp_emit.c	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -287,6 +287,19 @@ tp_emit(dutype,	tpcb, seq, eot, data)
 					 |	(tpcb->tp_xpd_service? TPAO_USE_TXPD: 0);
 					ADDOPTION(TPP_addl_opt, hdr, 1, x);
 
+					if ((tpcb->tp_l_tpdusize ^ (1 << tpcb->tp_tpdusize)) != 0) {
+						u_short size_s = tpcb->tp_l_tpdusize >> 7;
+						u_char size_c = size_s;
+						ASSERT(tpcb->tp_l_tpdusize < 65536 * 128);
+						if (dutype == CR_TPDU_type)
+							tpcb->tp_ptpdusize = size_s;
+						if (size_s < 256) {
+							ADDOPTION(TPP_ptpdu_size, hdr, 1, size_c);
+						} else {
+							size_s = htons(size_s);
+							ADDOPTION(TPP_ptpdu_size, hdr, 2, size_s);
+						}
+					}
 				}
 					
 				if( (dutype == CR_TPDU_type) && (tpcb->tp_class != TP_CLASS_0)){

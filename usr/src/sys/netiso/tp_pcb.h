@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_pcb.h	7.19 (Berkeley) %G%
+ *	@(#)tp_pcb.h	7.20 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -208,6 +208,7 @@ struct tp_pcb {
 #define	tp_dont_change_params _tp_param.p_dont_change_params
 #define	tp_netservice _tp_param.p_netservice
 #define	tp_version _tp_param.p_version
+#define	tp_ptpdusize _tp_param.p_ptpdusize
 
 	int					tp_l_tpdusize;
 		/* whereas tp_tpdusize is log2(the negotiated max size)
