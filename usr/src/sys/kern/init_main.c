@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	8.13 (Berkeley) %G%
+ *	@(#)init_main.c	8.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -223,6 +223,7 @@ main(framep)
 	/* Mount the root file system. */
 	if ((*mountroot)())
 		panic("cannot mount root");
+	mountlist.cqh_first->mnt_flag |= MNT_ROOTFS;
 
 	/* Get the vnode for '/'.  Set fdp->fd_fd.fd_cdir to reference it. */
 	if (VFS_ROOT(mountlist.cqh_first, &rootvnode))
