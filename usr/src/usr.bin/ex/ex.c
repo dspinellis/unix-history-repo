@@ -143,7 +143,7 @@ main(ac, av)
 	ruptible = signal(SIGINT, SIG_IGN) == SIG_DFL;
 	if (signal(SIGTERM, SIG_IGN) == SIG_DFL)
 		signal(SIGTERM, onhup);
-#ifdef TIOCLGET
+#ifdef SIGTSTP
 	if (signal(SIGTSTP, SIG_IGN) == SIG_DFL)
 		signal(SIGTSTP, onsusp), dosusp++;
 #endif
@@ -468,7 +468,7 @@ setrupt()
 #else
 		signal(SIGINT, inopen ? vintr : onintr);
 #endif
-#ifdef TIOCLGET
+#ifdef SIGTSTP
 		if (dosusp)
 			signal(SIGTSTP, onsusp);
 #endif

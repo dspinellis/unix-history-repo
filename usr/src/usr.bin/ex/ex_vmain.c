@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vmain.c	5.2 %G%";
+static char *sccsid = "@(#)ex_vmain.c	5.3 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -849,7 +849,7 @@ gogo:
 			vsave();
 			goto doinit;
 
-#ifdef TIOCLGET
+#ifdef SIGTSTP
 		/*
 		 * ^Z:	suspend editor session and temporarily return
 		 * 	to shell.  Only works on Berkeley tty driver.

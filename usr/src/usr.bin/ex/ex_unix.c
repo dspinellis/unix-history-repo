@@ -1,5 +1,5 @@
 /* Copyright (c) 1979 Regents of the University of California */
-static char *sccsid = "@(#)ex_unix.c	5.1 %G%";
+static char *sccsid = "@(#)ex_unix.c	5.2 %G%";
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_tty.h"
@@ -131,7 +131,7 @@ unixex(opt, up, newstdin, mode)
 	ttymode f;
 
 	signal(SIGINT, SIG_IGN);
-#ifdef TIOCLGET
+#ifdef SIGTSTP
 	if (dosusp)
 		signal(SIGTSTP, SIG_DFL);
 #endif
@@ -207,7 +207,7 @@ unixwt(c, f)
 {
 
 	waitfor();
-#ifdef TIOCLGET
+#ifdef SIGTSTP
 	if (dosusp)
 		signal(SIGTSTP, onsusp);
 #endif
