@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)optim.c	4.1 (Berkeley) %G%";
+static char *sccsid ="@(#)optim.c	4.2 (Berkeley) %G%";
 # include "mfile1"
 
 # define SWAP(p,q) {sp=p; p=q; q=sp;}
@@ -59,9 +59,7 @@ optim(p) register NODE *p; {
 		break;
 
 	case UNARY AND:
-		if( LO(p) != NAME ) cerror( "& error" );
-
-		if( !andable(p->in.left) ) return(p);
+		if( LO(p) != NAME || !andable(p->in.left) ) return(p);
 
 		LO(p) = ICON;
 
