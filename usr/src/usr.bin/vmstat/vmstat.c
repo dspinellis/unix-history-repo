@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)vmstat.c	4.14 (Berkeley) %G%";
+static	char *sccsid = "@(#)vmstat.c	4.15 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -9,7 +9,7 @@ static	char *sccsid = "@(#)vmstat.c	4.14 (Berkeley) %G%";
 #include <nlist.h>
 #include <sys/buf.h>
 #include <sys/dir.h>
-#include <sys/nami.h>
+#include <sys/namei.h>
 #ifdef vax
 #include <vaxuba/ubavar.h>
 #include <vaxmba/mbavar.h>
@@ -49,15 +49,19 @@ struct nlist nl[] = {
 	{ "_phz" },
 #define X_NCHSTATS	14
 	{ "_nchstats" },
+#define	X_INTRNAMES	15
+	{ "_intrnames" },
+#define	X_EINTRNAMES	16
+	{ "_eintrnames" },
+#define	X_INTRCNT	17
+	{ "_intrcnt" },
+#define	X_EINTRCNT	18
+	{ "_eintrcnt" },
 #ifdef vax
-#define X_MBDINIT	15
+#define X_MBDINIT	19
 	{ "_mbdinit" },
-#define X_UBDINIT	16
+#define X_UBDINIT	20
 	{ "_ubdinit" },
-#endif
-#ifdef sun
-#define X_MBDINIT	15
-	{ "_mbdinit" },
 #endif
 	{ "" },
 };
@@ -98,22 +102,20 @@ int	zero;
 int	deficit;
 double	etime;
 int 	mf;
+time_t	now, boottime;
+int	printhdr();
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	time_t now;
 	int lines;
 	extern char *ctime();
 	register i,j;
-	int iter, nintv;
-	time_t boottime;
+	int iter, nintv, iflag = 0;
 	double f1, f2;
 	long t;
-	extern char _sobuf[];
 
-	setbuf(stdout, _sobuf);
 	nlist("/vmunix", nl);
 	if(nl[0].n_type == 0) {
 		printf("no /vmunix namelist\n");
@@ -150,8 +152,12 @@ main(argc, argv)
 			dosum();
 			exit(0);
 
+		case 'i':
+			iflag++;
+			break;
+
 		default:
-			fprintf(stderr, "usage: vmstat [ -fs ] [ interval ] [ count]\n");
+			fprintf(stderr, "usage: vmstat [ -fsi ] [ interval ] [ count]\n");
 			exit(1);
 		}
 	}
@@ -179,13 +185,15 @@ main(argc, argv)
 		printf("Time makes no sense... namelist must be wrong.\n");
 		exit(1);
 	}
+	if (iflag) {
+		dointr(nintv);
+		exit(0);
+	}
+	signal(SIGCONT, printhdr);
 reprint:
 	lines = 20;
 	/* s1 = z; */
-printf("\
- procs     memory                       page      disk  faults          cpu\n\
- r b w   avm  fre  re at  pi  po  fr  de  sr %c%d %c%d %c%d %c%d  in  sy  cs us sy id\n",
- dr_name[0][0], dr_unit[0], dr_name[1][0], dr_unit[1], dr_name[2][0], dr_unit[2], dr_name[3][0], dr_unit[3]);
+	printhdr();
 loop:
 	lseek(mf, (long)nl[X_CPTIME].n_value, 0);
  	read(mf, s.time, sizeof s.time);
@@ -254,6 +262,14 @@ contin:
 	}
 }
 
+printhdr()
+{
+printf("\
+ procs     memory                       page      disk  faults          cpu\n\
+ r b w   avm  fre  re at  pi  po  fr  de  sr %c%d %c%d %c%d %c%d  in  sy  cs us sy id\n",
+ dr_name[0][0], dr_unit[0], dr_name[1][0], dr_unit[1], dr_name[2][0], dr_unit[2], dr_name[3][0], dr_unit[3]);
+}
+
 dotimes()
 {
 
@@ -304,6 +320,7 @@ dosum()
 	printf("%9d pages freed by the clock daemon\n", sum.v_dfree / CLSIZE);
 	printf("%9d cpu context switches\n", sum.v_swtch);
 	printf("%9d device interrupts\n", sum.v_intr);
+	printf("%9d software interrupts\n", sum.v_soft);
 	printf("%9d pseduo-dma dz interrupts\n", sum.v_pdma);
 	printf("%9d traps\n", sum.v_trap);
 	printf("%9d system calls\n", sum.v_syscall);
@@ -363,6 +380,36 @@ pct(top, bot)
 	if (bot == 0)
 		return (0);
 	return ((top * 100) / bot);
+}
+
+dointr(nintv)
+{
+	int nintr, inttotal;
+	long *intrcnt;
+	char *intrname, *malloc();
+
+	nintr = (nl[X_EINTRCNT].n_value - nl[X_INTRCNT].n_value) / sizeof(long);
+	intrcnt = (long *) malloc(nl[X_EINTRCNT].n_value -
+		nl[X_INTRCNT].n_value);
+	intrname = malloc(nl[X_EINTRNAMES].n_value - nl[X_INTRNAMES].n_value);
+	if (intrcnt == NULL || intrname == NULL) {
+		fprintf(stderr, "vmstat: out of memory\n");
+		exit(9);
+	}
+	lseek(mf, (long)nl[X_INTRCNT].n_value, 0);
+	read(mf, intrcnt, nintr * sizeof (long));
+	lseek(mf, (long)nl[X_INTRNAMES].n_value, 0);
+	read(mf, intrname, nl[X_EINTRNAMES].n_value - nl[X_INTRNAMES].n_value);
+	printf("interrupt      total      rate\n");
+	inttotal = 0;
+	while (nintr--) {
+		if (*intrcnt)
+			printf("%-12s %8ld %8ld\n", intrname,
+			    *intrcnt, *intrcnt / nintv);
+		intrname += strlen(intrname) + 1;
+		inttotal += *intrcnt++;
+	}
+	printf("Total        %8ld %8ld\n", inttotal, inttotal / nintv);
 }
 
 #define steal(where, var) lseek(mf, where, 0); read(mf, &var, sizeof var);
