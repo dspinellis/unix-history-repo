@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)conf.c	7.8 (Berkeley) %G%
+ *      @(#)conf.c	7.9 (Berkeley) %G%
  */
 
 #include "sys/param.h"
@@ -59,12 +59,14 @@ int	ttselect	__P((dev_t, int, struct proc *));
 bdev_decl(no);	/* dummy declarations */
 
 #include "ct.h"
+#include "st.h"
 #include "rd.h"
 #include "sd.h"
 #include "cd.h"
 #include "vn.h"
 
 bdev_decl(ct);
+bdev_decl(st);
 bdev_decl(rd);
 bdev_decl(sd);
 bdev_decl(cd);
@@ -79,6 +81,7 @@ struct bdevsw	bdevsw[] =
 	bdev_disk_init(NSD,sd),	/* 4: scsi disk */
 	bdev_disk_init(NCD,cd),	/* 5: concatenated disk driver */
 	bdev_disk_init(NVN,vn),	/* 6: vnode disk driver (swap to files) */
+	bdev_tape_init(NST,st),	/* 7: exabyte tape */
 };
 
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
@@ -183,6 +186,7 @@ cdev_decl(log);
 	dev_init(c,n,select), (dev_type_map((*))) enodev, 0 }
 
 cdev_decl(ct);
+cdev_decl(st);
 cdev_decl(sd);
 cdev_decl(rd);
 
@@ -287,7 +291,7 @@ struct cdevsw	cdevsw[] =
 	cdev_disk_init(NCD,cd),		/* 17: concatenated disk */
 	cdev_clock_init(NCLOCK,clock),	/* 18: mapped clock */
 	cdev_vn_init(NVN,vn),		/* 19: vnode disk */
-	cdev_notdef(),			/* 20 */
+	cdev_tape_init(NST,st),		/* 20: exabyte tape */
 	cdev_fd_init(1,fd),		/* 21: file descriptor pseudo-dev */
 	cdev_bpf_init(NBPFILTER,bpf),	/* 22: berkeley packet filter */
 };
