@@ -1,0 +1,28 @@
+Gated is not included in this distribution for two reasons.  The first
+is because it is constantly updated and any version included here would
+probably be out of date by the time you received the 4.4BSD distribution.
+The second is that the licensing terms of gated are somewhat different
+than those of 4.4BSD.
+
+We encourage you to obtain gated, it is available without cost via the
+methods listed below.  Distribution of gated outside your organization
+requires a no-cost license, but within your organization there are no
+restrictions.
+
+Gated is available for anonymous FTP from gated.cornell.edu in the
+pub/gated directory.  At the time of this writing, the current version
+is pub/gated/gated-R3_0Beta_1.tar.Z; check the pub/gated/README file
+for more information.
+
+Gated is also available via gopher from gated.cornell.edu at the
+default gopher port, 70, in the `Gated Distribution Directory'.  It is
+also possible to retrieve gated via e-mail, for more information send
+a message to gated-people-archive@gated.cornell.edu with a subject
+line of `help'.
+
+If you are unable to obtain gated via one of these methods or wish
+information on licensing, contact the developers via e-mail
+(gated@gated.cornell.edu) or me directly at +1 607 255 6460.
+
+                                        Jeffrey C Honig
+                                        April 29, 1993
