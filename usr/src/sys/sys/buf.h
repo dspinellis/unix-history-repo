@@ -4,11 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)buf.h	7.19 (Berkeley) %G%
+ *	@(#)buf.h	7.20 (Berkeley) %G%
  */
 
 #ifndef _BUF_H_
 #define	_BUF_H_
+#include <sys/queue.h>
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -32,12 +33,12 @@
 
 struct buf {
 	volatile long	b_flags;	/* too much goes here to describe */
-	struct	buf *b_forw, **b_back;	/* hash chain (2 way street) */
-	struct	buf *b_blockf, **b_blockb;/* associated vnode */
-	struct	buf *b_actf, **b_actb;	/* position on free list if not BUSY */
+	struct 	queue_entry b_hash;	/* hash chain */
+	struct 	queue_entry b_vnbufs;	/* associated vnode */
+	struct 	queue_entry b_freelist;	/* position on free list if not BUSY */
+	struct	buf *b_actf, **b_actb;  /* device driver I/O queue when BUSY */
 	long	b_bcount;		/* transfer count */
 	long	b_bufsize;		/* size of allocated buffer */
-#define	b_active b_bcount		/* driver queue head: drive active */
 	short	b_error;		/* returned after I/O */
 	dev_t	b_dev;			/* major+minor device name */
 	union {
@@ -56,7 +57,6 @@ struct buf {
 	long	b_blksize;		/* size of device blocks */
 #endif SECSIZE
 	long	b_resid;		/* words not transferred after error */
-#define	b_errcnt b_resid		/* while i/o in progress: # retries */
 	struct  proc *b_proc;		/* proc doing physical or swap I/O */
 	void	(*b_iodone)();		/* function called by iodone */
 	struct	vnode *b_vp;		/* vnode for dev */
@@ -69,6 +69,12 @@ struct buf {
 	int	b_validoff;		/* offset in buffer of valid region */
 	int	b_validend;		/* offset of end of valid region */
 };
+
+/*
+ * Defines for device drivers.
+ */
+#define	b_active b_bcount		/* driver queue head: drive active */
+#define	b_errcnt b_resid		/* while i/o in progress: # retries */
 
 #ifdef KERNEL
 struct	buf *buf;		/* the buffer pool itself */
