@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)atq.c	1.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)atq.c	1.3	(Berkeley)	%G%";
 #endif not lint
 
 /*
@@ -153,8 +153,6 @@ char **namelist;
 	int numfiles = 0;			/* number of files owned by a
 						   certain person(s) */
 	char **ptr;				/* scratch pointer */
-	struct stat stbuf;			/* buffer for file stats */
-	
 
 
 	/*
@@ -164,14 +162,11 @@ char **namelist;
 	 * don't double the number of files owned by him/her.
 	 */
 	for (i = 0; i < numentries ; i++) {
-		if ((stat(queue[i]->d_name, &stbuf)) < 0) {
-			continue;
-		}
 		ptr = namelist;
 		entryfound = 0;
 
 		while (*ptr) {
-			if (getid(*ptr) == stbuf.st_uid)
+			if (isowner(*ptr,queue[i]->d_name))
 				++entryfound;
 			++ptr;
 		}
@@ -194,10 +189,10 @@ char **namelist;
 	int printrank();			/* print the rank of a job */
 	int plastrun();				/* print the last time the 
 						   spooling area was updated */
+	int powner();				/* print the name of the owner
+						   of the job */
 	int getid();				/* get uid of a person */
 	char **ptr;				/* scratch pointer */
-	char *getname();			/* get the login name of a 
-						   person using their uid */
 	struct stat stbuf;			/* buffer for file stats */
 
 
@@ -229,7 +224,7 @@ char **namelist;
 			entryfound = 0;
 
 			while (*ptr) {
-				if (getid(*ptr) == stbuf.st_uid)
+				if (isowner(*ptr,queue[i]->d_name))
 					++entryfound;
 				++ptr;
 			}
@@ -238,7 +233,7 @@ char **namelist;
 		}
 		printrank(rank++);
 		printdate(queue[i]->d_name);
-		printf("%-10.9s",getname(stbuf.st_uid));
+		powner(queue[i]->d_name);
 		printf("%5d",stbuf.st_ino);
 		printjobname(queue[i]->d_name);
 	}
@@ -246,22 +241,62 @@ char **namelist;
 }
 
 /*
- * Get the full login name of a person using his/her user id.
+ * See if "name" owns "job".
  */
-char *
-getname(uid)
-int uid;
+isowner(name,job)
+char *name;
+char *job;
 {
-	struct passwd *pwdinfo;			/* password info structure */
-	
+	char buf[30];			/* buffer for 1st line of spoolfile 
+					   header */
+	FILE *infile;			/* I/O stream to spoolfile */
 
-	if ((pwdinfo = getpwuid(uid)) == 0) {
-		perror(uid);
-		exit(1);
+	if ((infile = fopen(job,"r")) == NULL) {
+		fprintf(stderr,"Couldn't open spoolfile");
+		perror(job);
+		return(0);
 	}
-	return(pwdinfo->pw_name);
+
+	if (fscanf(infile,"# owner: %s\n",buf) != 1) {
+		fclose(infile);
+		return(0);
+	}
+
+	fclose(infile);
+	return((strcmp(name,buf) == 0) ? 1 : 0);
+}
+
+/*
+ * Print the owner of the job. This is stored on the first line of the
+ * spoolfile. If we run into trouble getting the name, we'll just print "???".
+ */
+powner(file)
+char *file;
+{
+	char owner[80];				/* the owner */
+	FILE *infile;				/* I/O stream to spoolfile */
+
+	/*
+	 * Open the job file and grab the first line.
+	 */
+
+	if ((infile = fopen(file,"r")) == NULL) {
+		printf("%-10.9s","???");
+		return;
+	}
+
+	if (fscanf(infile,"# owner: %s",owner) != 1) {
+		printf("%-10.9s","???");
+		fclose(infile);
+		return;
+	}
+
+	fclose(infile);
+	printf("%-10.9s",owner);
+
 }
 	
+
 /*
  * Get the uid of a person using his/her login name. Return -1 if no
  * such account name exists.
@@ -417,20 +452,27 @@ int year, dayofyear, *month, *day;
 printjobname(file)
 char *file;
 {
-	char *ch;				/* char ptr */
+	char *ptr;				/* scratch pointer */
 	char jobname[80];			/* the job name */
 	FILE *filename;				/* job file in spooling area */
 
 	/*
-	 * Open the job file and grab the first line.
+	 * Open the job file and grab the second line.
 	 */
 	printf("   ");
 
 	if ((filename = fopen(file,"r")) == NULL) {
 		printf("%.27s\n", "???");
-		fclose(filename);
 		return;
 	}
+	/*
+	 * We'll yank the first line into the buffer temporarily.
+	 */
+	fgets(jobname,80,filename);
+
+	/*
+	 * Now get the job name.
+	 */
 	if (fscanf(filename,"# jobname: %s",jobname) != 1) {
 		printf("%.27s\n", "???");
 		fclose(filename);
@@ -442,13 +484,16 @@ char *file;
 	 * Put a pointer at the begining of the line and remove the basename
 	 * from the job file.
 	 */
-	ch = jobname;
-	if ((ch = (char *)rindex(jobname,'/')) != 0)
-		++ch;
+	ptr = jobname;
+	if ((ptr = (char *)rindex(jobname,'/')) != 0)
+		++ptr;
 	else 
-		ch = jobname;
+		ptr = jobname;
 
-	printf("%.27s\n",ch);
+	if (strlen(ptr) > 23)
+		printf("%.23s ...\n",ptr);
+	else
+		printf("%.27s\n",ptr);
 }
 
 /*
