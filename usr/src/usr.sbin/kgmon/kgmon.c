@@ -1,11 +1,11 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	4.1 82/06/21";
+static char sccsid[] = "@(#)kgmon.c	4.2 82/12/24";
 #endif
 
 #include <sys/param.h>
-#include <sys/pte.h>
+#include <machine/pte.h>
 #include <stdio.h>
 #include <nlist.h>
 #include <ctype.h>

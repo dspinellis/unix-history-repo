@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)w.c	4.8 (Berkeley) %G%";
+static char *sccsid = "@(#)w.c	4.9 (Berkeley) %G%";
 /*
  * w - print system status (who and what)
  *
@@ -14,7 +14,7 @@ static char *sccsid = "@(#)w.c	4.8 (Berkeley) %G%";
 #include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
-#include <sys/pte.h>
+#include <machine/pte.h>
 #include <sys/vm.h>
 
 #define NMAX sizeof(utmp.ut_name)
