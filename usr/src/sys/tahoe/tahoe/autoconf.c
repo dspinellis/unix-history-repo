@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.2 (Berkeley) %G%
+ *	@(#)autoconf.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -419,10 +419,7 @@ swapconf()
 			    (swp->sw_nblks == 0 || swp->sw_nblks > nblks))
 				swp->sw_nblks = nblks;
 		}
-	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize)
-		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;
-	if (dumplo < 0)
-		dumplo = 0;
+	dumpconf();
 }
 #else SECSIZE
 swapconf()
