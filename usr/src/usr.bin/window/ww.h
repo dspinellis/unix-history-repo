@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.23 83/12/17	
+ *	@(#)ww.h	3.24 84/01/11	
  */
 
 #include <stdio.h>
@@ -178,6 +178,7 @@ int wwnupdate, wwnupdline, wwnupdmiss, wwnmajline, wwnmajmiss;
 	:nd=\\EC:ta=^I:pt:up=\\EA:"
 #define WWT_REV		"se=\\Eq:so=\\Ep:"
 #define WWT_UL		"ue=\\Es:us=\\Er:"
+#define WWT_GRP		"ae=\\EG:as=\\EF:"
 
 	/* our functions */
 struct ww *wwopen();

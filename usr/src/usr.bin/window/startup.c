@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)startup.c	3.7 83/12/06";
+static	char *sccsid = "@(#)startup.c	3.8 84/01/11";
 #endif
 
 #include "defs.h"
@@ -39,13 +39,14 @@ bad:
 
 setvars()
 {
-	/* use a good ordering to balance the tree */
-	(void) var_setnum("ncol", wwncol);
+	/* try to use a good ordering to balance the tree */
 	(void) var_setnum("nrow", wwnrow);
+	(void) var_setnum("ncol", wwncol);
 	(void) var_setnum("availmodes", wwavailmodes);
 	(void) var_setnum("baud", wwbaud);
 	(void) var_setnum("m_rev", WWM_REV);
 	(void) var_setnum("m_blk", WWM_BLK);
 	(void) var_setnum("m_ul", WWM_UL);
+	(void) var_setnum("m_grp", WWM_GRP);
 	(void) var_setstr("term", wwterm);
 }
