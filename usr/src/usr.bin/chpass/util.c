@@ -16,17 +16,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/time.h>
 #include <tzfile.h>
-#include </usr/src/include/pwd.h>
+#include <pwd.h>
 #include <stdio.h>
 #include <chpass.h>
 #include <strings.h>
 #include <ctype.h>
+#include "pathnames.h"
 
 static int dmsize[] =
 	{ -1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
@@ -121,7 +122,7 @@ print(fp, pw)
 		fprintf(fp, "Class: %s\n", pw->pw_class);
 		fprintf(fp, "Home directory: %s\n", pw->pw_dir);
 		fprintf(fp, "Shell: %s\n",
-		    *pw->pw_shell ? pw->pw_shell : "/bin/sh");
+		    *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
 	}
 	else {
 		/* only admin can change "restricted" shells */
@@ -130,8 +131,8 @@ print(fp, pw)
 			if (!(p = getusershell()))
 				break;
 			else if (!strcmp(pw->pw_shell, p)) {
-				fprintf(fp, "Shell: %s\n",
-				    *pw->pw_shell ? pw->pw_shell : "/bin/sh");
+				fprintf(fp, "Shell: %s\n", *pw->pw_shell ?
+				    pw->pw_shell : _PATH_BSHELL);
 				break;
 			}
 	}

@@ -16,16 +16,17 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)field.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)field.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include </usr/src/include/pwd.h>
+#include <pwd.h>
 #include <grp.h>
 #include <strings.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <chpass.h>
+#include "pathnames.h"
 
 /* ARGSUSED */
 p_login(p, pw, ep)
@@ -191,7 +192,7 @@ p_shell(p, pw, ep)
 	char *getusershell();
 
 	if (!*p) {
-		pw->pw_shell = "/bin/sh";
+		pw->pw_shell = _PATH_BSHELL;
 		return(0);
 	}
 	setusershell();

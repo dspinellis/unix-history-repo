@@ -22,10 +22,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chroot.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)chroot.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
+#include "pathnames.h"
 
 main(argc, argv)
 	int argc;
@@ -46,7 +47,7 @@ main(argc, argv)
 		fatal(argv[2]);
 	} else {
 		if (!(shell = getenv("SHELL")))
-			shell = "/bin/sh";
+			shell = _PATH_BSHELL;
 		execlp(shell, shell, "-i", (char *)NULL);
 		fatal(shell);
 	}
