@@ -1,8 +1,21 @@
 #ifndef lint
-static	char *sccsid = "@(#)lookup.c	4.3 (Berkeley) 83/10/10";
+static	char *sccsid = "@(#)lookup.c	4.4 (Berkeley) 84/02/09";
 #endif
 
 #include "defs.h"
+
+	/* symbol types */
+#define VAR	1
+#define CONST	2
+
+struct syment {
+	int	s_type;
+	char	*s_name;
+	struct	namelist *s_value;
+	struct	syment *s_next;
+};
+
+static struct syment *hashtab[HASHSIZE];
 
 /*
  * Define a variable from a command line argument.
@@ -11,7 +24,8 @@ define(name)
 	char *name;
 {
 	register char *cp, *s;
-	register struct block *bp, *value;
+	register struct namelist *nl;
+	struct namelist *value;
 
 	if (debug)
 		printf("define(%s)\n", name);
@@ -20,13 +34,13 @@ define(name)
 	if (cp == NULL)
 		value = NULL;
 	else if (cp[1] == '\0') {
-		*cp++ = '\0';
+		*cp = '\0';
 		value = NULL;
 	} else if (cp[1] != '(') {
 		*cp++ = '\0';
-		value = makeblock(NAME, cp);
+		value = makenl(name);
 	} else {
-		bp = NULL;
+		nl = NULL;
 		*cp++ = '\0';
 		do
 			cp++;
@@ -48,95 +62,69 @@ define(name)
 			default:
 				continue;
 			}
-			if (bp == NULL)
-				value = bp = makeblock(NAME, cp);
+			if (nl == NULL)
+				value = nl = makenl(cp);
 			else {
-				bp->b_next = makeblock(NAME, cp);
-				bp = bp->b_next;
+				nl->n_next = makenl(cp);
+				nl = nl->n_next;
 			}
 			if (*s == '\0')
 				break;
 			cp = s;
 		}
 	}
-	bp = makeblock(VAR, name);
-	bp->b_args = value;
-	(void) lookup(bp->b_name, bp, 1);
+	(void) lookup(name, REPLACE, value);
 }
-
-static struct block *hashtab[HASHSIZE];
 
 /*
  * Lookup name in the table and return a pointer to it.
- * Insert == 0 - just do lookup, return NULL if not found.
- * insert == 1 - insert name with value, error if already defined.
- * insert == 2 - replace name with value if not entered with insert == 1.
+ * LOOKUP - just do lookup, return NULL if not found.
+ * INSERT - insert name with value, error if already defined.
+ * REPLACE - insert or replace name with value.
  */
 
-struct block *
-lookup(name, value, insert)
+struct namelist *
+lookup(name, action, value)
 	char *name;
-	struct block *value;
-	int insert;
+	int action;
+	struct namelist *value;
 {
 	register unsigned n;
 	register char *cp;
-	register struct block *b, *f;
+	register struct syment *s;
 
 	if (debug)
-		printf("lookup(%s, %x, %d)\n", name, value, insert);
+		printf("lookup(%s, %d, %x)\n", name, action, value);
 
 	n = 0;
 	for (cp = name; *cp; )
 		n += *cp++;
 	n %= HASHSIZE;
 
-	for (b = hashtab[n]; b != NULL; b = b->b_next) {
-		if (strcmp(name, b->b_name))
+	for (s = hashtab[n]; s != NULL; s = s->s_next) {
+		if (strcmp(name, s->s_name))
 			continue;
-		if (insert) {
-			if (b->b_type == NAME) {
-				warn("%s redefined\n", name);
-				f = b->b_args;
-				b->b_args = value->b_args;
-				value->b_args = f;
-			} else if (value->b_type == VAR)
+		if (action != LOOKUP) {
+			if (s->s_type == CONST)
 				fatal("%s redefined\n", name);
+			if (action == INSERT) {
+				warn("%s redefined\n", name);
+				s->s_value = value;
+			}
 		}
-		return(b);
+		return(s->s_value);
 	}
 
-	if (!insert)
+	if (action == LOOKUP)
 		fatal("%s not defined", name);
 
-	value->b_next = hashtab[n];
-	hashtab[n] = value;
-	return(value);
-}
-
-/*
- * Make a block for lists of variables, commands, etc.
- */
-struct block *
-makeblock(type, name)
-	int type;
-	register char *name;
-{
-	register char *cp;
-	register struct block *bp;
-
-	bp = ALLOC(block);
-	if (bp == NULL)
+	s = ALLOC(syment);
+	if (s == NULL)
 		fatal("ran out of memory\n");
-	bp->b_type = type;
-	bp->b_next = bp->b_args = NULL;
-	if (type == NAME || type == VAR) {
-		bp->b_name = cp = malloc(strlen(name) + 1);
-		if (cp == NULL)
-			fatal("ran out of memory\n");
-		while (*cp++ = *name++)
-			;
-	} else
-		bp->b_name = NULL;
-	return(bp);
+	s->s_next = hashtab[n];
+	hashtab[n] = s;
+	s->s_type = action == INSERT ? VAR : CONST;
+	s->s_name = name;
+	s->s_value = value;
+	return(value);
 }

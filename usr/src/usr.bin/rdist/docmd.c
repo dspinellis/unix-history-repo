@@ -1,84 +1,117 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.12 (Berkeley) 84/01/04";
+static	char *sccsid = "@(#)docmd.c	4.13 (Berkeley) 84/02/09";
 #endif
 
 #include "defs.h"
+#include <setjmp.h>
 
-FILE	*lfp;		/* log file for recording files updated */
-struct	block *special;	/* list of special commands */
+FILE	*lfp;			/* log file for recording files updated */
+struct	subcmd *special;	/* list of special commands */
+jmp_buf	env;
+
+int	cleanup();
+int	lostconn();
+
+/*
+ * Do the commands in cmds (initialized by yyparse).
+ */
+docmds(argc, argv)
+	int argc;
+	char **argv;
+{
+	register struct cmd *c;
+	extern struct cmd *cmds;
+
+	signal(SIGHUP, cleanup);
+	signal(SIGINT, cleanup);
+	signal(SIGQUIT, cleanup);
+	signal(SIGTERM, cleanup);
+
+	for (c = cmds; c != NULL; c = c->c_next) {
+		switch (c->c_type) {
+		case ARROW:
+			doarrow(c->c_files, c->c_name, c->c_cmds);
+			break;
+		case DCOLON:
+			dodcolon(c->c_files, c->c_name, c->c_cmds);
+			break;
+		default:
+			fatal("illegal command type %d\n", c->c_type);
+		}
+	}
+	closeconn();
+}
 
 /*
  * Process commands for sending files to other machines.
  */
-dohcmds(files, hosts, cmds)
-	struct block *files, *hosts, *cmds;
+doarrow(files, host, cmds)
+	struct namelist *files;
+	char *host;
+	struct subcmd *cmds;
 {
-	register struct block *h, *f, *c;
-	register char **cpp;
+	register struct namelist *f;
+	register struct subcmd *sc;
 	int n, ddir;
 
 	if (debug)
-		printf("dohcmds(%x, %x, %x)\n", files, hosts, cmds);
+		printf("doarrow(%x, %s, %x)\n", files, host, cmds);
 
-	files = expand(files, E_VARS|E_SHELL);
 	if (files == NULL) {
 		error("no files to be updated\n");
-		return;
-	}
-	hosts = expand(hosts, E_VARS|E_SHELL);
-	if (hosts == NULL) {
-		error("empty list of hosts to be updated\n");
 		return;
 	}
 	if (!mkexceptlist(cmds))
 		return;
 	special = cmds;
 
-	ddir = files->b_next != NULL;
+	ddir = files->n_next != NULL;	/* destination is a directory */
 
-	for (h = hosts; h != NULL; h = h->b_next) {
-		if (!qflag)
-			printf("updating host %s\n", h->b_name);
-		if (!nflag) {
-			if (!makeconn(h->b_name))
-				continue;
-			if ((lfp = fopen(tmpfile, "w")) == NULL) {
-				fatal("cannot open %s\n", tmpfile);
-				exit(1);
-			}
+	if (!nflag) {
+		if (setjmp(env) != 0)
+			goto done;
+		signal(SIGPIPE, lostconn);
+		if (!makeconn(host))
+			return;
+		if ((lfp = fopen(tmpfile, "w")) == NULL) {
+			fatal("cannot open %s\n", tmpfile);
+			exit(1);
 		}
-		for (f = files; f != NULL; f = f->b_next) {
-			if (filec) {
-				for (cpp = filev; *cpp; cpp++)
-					if (!strcmp(f->b_name, *cpp))
-						goto found;
-				if (!nflag)
-					(void) fclose(lfp);
-				continue;
-			}
-		found:
-			n = 0;
-			for (c = cmds; c != NULL; c = c->b_next) {
-				if (c->b_type != INSTALL)
-					continue;
-				n++;
-				install(f->b_name, c->b_name,
-					c->b_name == NULL ? 0 : ddir,
-					c->b_options);
-			}
-			if (n == 0)
-				install(f->b_name, NULL, 0, options);
-		}
-		if (!nflag) {
-			/* signal end of connection */
-			(void) write(rem, "\2\n", 2);
-			(void) close(rem);
-			(void) fclose(lfp);
-		}
-		for (c = cmds; c != NULL; c = c->b_next)
-			if (c->b_type == NOTIFY)
-				notify(tmpfile, h->b_name, c->b_args, 0);
 	}
+	for (f = files; f != NULL; f = f->n_next) {
+#ifdef notdef
+		if (filec) {
+			register char **cpp;
+
+			for (cpp = filev; *cpp; cpp++)
+				if (!strcmp(f->b_name, *cpp))
+					goto found;
+			if (!nflag)
+				(void) fclose(lfp);
+			continue;
+		}
+	found:
+#endif
+		n = 0;
+		for (sc = cmds; sc != NULL; sc = sc->sc_next) {
+			if (sc->sc_type != INSTALL)
+				continue;
+			n++;
+			install(f->n_name, sc->sc_name,
+				sc->sc_name == NULL ? 0 : ddir, sc->sc_options);
+		}
+		if (n == 0)
+			install(f->n_name, NULL, 0, options);
+	}
+done:
+	if (!nflag) {
+		(void) signal(SIGPIPE, SIG_DFL);
+		(void) fclose(lfp);
+		lfp = NULL;
+	}
+	for (sc = cmds; sc != NULL; sc = sc->sc_next)
+		if (sc->sc_type == NOTIFY)
+			notify(tmpfile, host, sc->sc_args, 0);
 	if (!nflag)
 		(void) unlink(tmpfile);
 }
@@ -90,10 +123,17 @@ makeconn(rhost)
 	char *rhost;
 {
 	register char *ruser, *cp;
+	static char *cur_host = NULL;
 	int n;
 	extern char user[];
 
-	(void) sprintf(buf, "/usr/local/rdist -Server%s", qflag ? " -q" : "");
+	if (debug)
+		printf("makeconn(%s)\n", rhost);
+
+	if (cur_host != NULL && strcmp(cur_host, rhost) == 0)
+		return;
+
+	closeconn();
 
 	ruser = rindex(rhost, '.');
 	if (ruser != NULL) {
@@ -102,9 +142,12 @@ makeconn(rhost)
 			return(0);
 	} else
 		ruser = user;
+	if (!qflag)
+		printf("updating host %s\n", rhost);
+	cur_host = rhost;
+	(void) sprintf(buf, "/usr/local/rdist -Server%s", qflag ? " -q" : "");
 
 	if (debug) {
-		printf("makeconn(%s)\n", rhost);
 		printf("luser = %s, ruser = %s\n", user, ruser);
 		printf("buf = %s\n", buf);
 	}
@@ -131,6 +174,25 @@ makeconn(rhost)
 	}
 	error("connection failed: version numbers don't match\n");
 	return(0);
+}
+
+/*
+ * Signal end of previous connection.
+ */
+closeconn()
+{
+	if (rem >= 0) {
+		(void) write(rem, "\2\n", 2);
+		(void) close(rem);
+		rem = -1;
+	}
+}
+
+lostconn()
+{
+	fflush(stdout);
+	fprintf(stderr, "rdist: lost connection\n");
+	longjmp(env, 1);
 }
 
 okname(name)
@@ -160,52 +222,50 @@ extern	char target[], *tp;
 /*
  * Process commands for comparing files to time stamp files.
  */
-dofcmds(files, stamp, cmds)
-	struct block *files, *stamp, *cmds;
+dodcolon(files, stamp, cmds)
+	struct namelist *files;
+	char *stamp;
+	struct subcmd *cmds;
 {
-	register struct block *b;
+	register struct subcmd *sc;
+	register struct namelist *f;
 	register char **cpp;
 	struct timeval tv[2];
 	struct timezone tz;
 	struct stat stb;
 
 	if (debug)
-		printf("dofcmds()\n");
+		printf("dodcolon()\n");
 
-	files = expand(files, E_ALL);
 	if (files == NULL) {
 		error("no files to be updated\n");
-		return;
-	}
-	stamp = expand(stamp, E_ALL);
-	if (stamp == NULL || stamp->b_next != NULL) {
-		error("Only one time stamp file allowed\n");
 		return;
 	}
 	if (!mkexceptlist(cmds))
 		return;
 
-	if (stat(stamp->b_name, &stb) < 0) {
-		error("%s: %s\n", stamp->b_name, sys_errlist[errno]);
+	if (stat(stamp, &stb) < 0) {
+		error("%s: %s\n", stamp, sys_errlist[errno]);
 		return;
 	}
 	if (debug)
-		printf("%s: %d\n", stamp->b_name, stb.st_mtime);
+		printf("%s: %d\n", stamp, stb.st_mtime);
 	if (!nflag) {
 		lastmod = stb.st_mtime;
 		(void) gettimeofday(&tv[0], &tz);
 		tv[1] = tv[0];
-		(void) utimes(stamp->b_name, tv);
+		(void) utimes(stamp, tv);
 		if (options & VERIFY)
 			tfp = NULL;
 		else if ((tfp = fopen(tmpfile, "w")) == NULL) {
-			error("%s: %s\n", stamp->b_name, sys_errlist[errno]);
+			error("%s: %s\n", stamp, sys_errlist[errno]);
 			return;
 		}
 	} else
 		tfp = NULL;
 
-	for (b = files; b != NULL; b = b->b_next) {
+	for (f = files; f != NULL; f = f->n_next) {
+#ifdef notdef
 		if (filec) {
 			for (cpp = filev; *cpp; cpp++)
 				if (!strcmp(b->b_name, *cpp))
@@ -213,15 +273,16 @@ dofcmds(files, stamp, cmds)
 			continue;
 		}
 	found:
+#endif
 		tp = NULL;
-		cmptime(b->b_name);
+		cmptime(f->n_name);
 	}
 
 	if (tfp != NULL)
 		(void) fclose(tfp);
-	for (b = cmds; b != NULL; b = b->b_next)
-		if (b->b_type == NOTIFY)
-			notify(tmpfile, NULL, b->b_args, lastmod);
+	for (sc = cmds; sc != NULL; sc = sc->sc_next)
+		if (sc->sc_type == NOTIFY)
+			notify(tmpfile, NULL, sc->sc_args, lastmod);
 	if (!nflag && !(options & VERIFY))
 		(void) unlink(tmpfile);
 }
@@ -322,7 +383,7 @@ rcmptime(st)
  */
 notify(file, rhost, to, lmod)
 	char *file, *rhost;
-	register struct block *to;
+	register struct namelist *to;
 	time_t lmod;
 {
 	register int fd, len;
@@ -367,17 +428,17 @@ notify(file, rhost, to, lmod)
 	 */
 	fprintf(pf, "From: rdist (Remote distribution program)\n");
 	fprintf(pf, "To:");
-	if (!any('@', to->b_name) && rhost != NULL)
-		fprintf(pf, " %s@%s", to->b_name, rhost);
+	if (!any('@', to->n_name) && rhost != NULL)
+		fprintf(pf, " %s@%s", to->n_name, rhost);
 	else
-		fprintf(pf, " %s", to->b_name);
-	to = to->b_next;
+		fprintf(pf, " %s", to->n_name);
+	to = to->n_next;
 	while (to != NULL) {
-		if (!any('@', to->b_name) && rhost != NULL)
-			fprintf(pf, ", %s@%s", to->b_name, rhost);
+		if (!any('@', to->n_name) && rhost != NULL)
+			fprintf(pf, ", %s@%s", to->n_name, rhost);
 		else
-			fprintf(pf, ", %s", to->b_name);
-		to = to->b_next;
+			fprintf(pf, ", %s", to->n_name);
+		to = to->n_next;
 	}
 	putc('\n', pf);
 	if (rhost != NULL)
@@ -393,49 +454,52 @@ notify(file, rhost, to, lmod)
 	(void) pclose(pf);
 }
 
-struct	block *except;		/* list of files to exclude */
+struct	namelist *except;		/* list of files to exclude */
 
 /*
  * Return true if name is in the list.
  */
 inlist(list, file)
-	struct block *list;
+	struct namelist *list;
 	char *file;
 {
-	register struct block *c;
+	register struct namelist *nl;
 
-	for (c = list; c != NULL; c = c->b_next)
-		if (!strcmp(file, c->b_name))
+	for (nl = list; nl != NULL; nl = nl->n_next)
+		if (!strcmp(file, nl->n_name))
 			return(1);
 	return(0);
 }
 
 /*
- * Build the exception list from an unexpanded list of commands.
+ * Build the exception list from the EXCEPT commands.
  */
 mkexceptlist(cmds)
-	struct block *cmds;
+	struct subcmd *cmds;
 {
-	register struct block *f, *a, *c;
+	register struct subcmd *sc;
+	register struct namelist *el, *nl;
 
 	if (debug)
 		printf("mkexceptlist()\n");
 
-	except = f = NULL;
-	for (c = cmds; c != NULL; c = c->b_next) {
-		if (c->b_type != EXCEPT)
+	except = el = NULL;
+	for (sc = cmds; sc != NULL; sc = sc->sc_next) {
+		if (sc->sc_type != EXCEPT)
 			continue;
-		for (a = c->b_args; a != NULL; a = a->b_next) {
-			if (f == NULL)
-				except = f = expand(makeblock(NAME, a->b_name), E_ALL);
-			else
-				f->b_next = expand(makeblock(NAME, a->b_name), E_ALL);
-			while (f->b_next != NULL)
-				f = f->b_next;
+		for (nl = sc->sc_args; nl != NULL; nl = nl->n_next) {
+			if (el == NULL)
+				except = el = makenl(nl->n_name);
+			else {
+				el->n_next = makenl(nl->n_name);
+				el = el->n_next;
+			}
 		}
 	}
-	if (debug)
+	if (debug) {
+		printf("except = ");
 		prnames(except);
+	}
 	return(1);
 }
 
