@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.73 (Berkeley) %G%
+#	@(#)READ_ME	8.74 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -648,13 +648,15 @@ A/UX
 	compiled easily.
 
 DG/UX
-	Apparently, /bin/mail doesn't work properly for delivery on
-	DG/UX -- the person who has this working, Douglas Anderson
-	<dlander@afterlife.ncsc.mil>, used procmail instead.  The
-	problem is that DG/UX /bin/mail requires that an environment
-	variable be set (_FORCE_MAIL_LOCAL_=yes); sendmail has no
-	mechanism for this.  Several people report that procmail works
-	beautifully.
+	Doug Anderson <dlander@afterlife.ncsc.mil> has successfully run
+	V8 on the DG/UX 5.4.2 and 5.4R3.x platforms under heavy usage.
+	Originally, the DG /bin/mail program wasn't compatible with
+	the V8 sendmail, since the DG /bin/mail requires the environment
+	variable "_FORCE_MAIL_LOCAL_=yes" be set.  Version 8.7 now includes
+	this in the environment before invoking the local mailer.  Some
+	have used procmail to avoid this problem in the past.  It works
+	but some have experienced file locking problems with their DG/UX
+	ports of procmail.
 
 Apollo DomainOS
 	If you are compiling on Apollo, you will have to create an empty
@@ -900,4 +902,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.73, last update %G% 14:29:32)
+(Version 8.74, last update %G% 07:05:13)
