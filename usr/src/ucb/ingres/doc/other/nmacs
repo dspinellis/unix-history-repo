@@ -1,0 +1,65 @@
+.de sh			*** section heading
+.if \\n(.$ .@d \\$1
+.ds @@ #\\n(#0
+.nr \\*(@@ +1
+.ds @n \\n(#1
+.if \\n(#2 .as @n .\\n(#2
+.if \\n(#3 .as @n .\\n(#3
+.if \\n(#4 .as @n .\\n(#4
+.if \\n(#5 .as @n .\\n(#5
+.if \\n(#6 .as @n .\\n(#6
+.if !\\n(#0 .in 0
+.if \\n(#0 .@p
+..
+.de @d			change section depth
+.nr #0 \\$1
+.if \\n(#0 .if !\\n(#1 .nr #1 0
+.if !\\n(#0 .nr #1 0
+.if \\n(#0-1 .if !\\n(#2 .nr #2 0
+.if !\\n(#0-1 .nr #2 0
+.if \\n(#0-2 .if !\\n(#3 .nr #3 0
+.if !\\n(#0-2 .nr #3 0
+.if \\n(#0-3 .if !\\n(#4 .nr #4 0
+.if !\\n(#0-3 .nr #4 0
+.if \\n(#0-4 .if !\\n(#5 .nr #5 0
+.if !\\n(#0-4 .nr #5 0
+.if \\n(#0-5 .if !\\n(#6 .nr #6 0
+.if !\\n(#0-5 .nr #6 0
+..
+.de @p			print section heading
+.in \\n(#i*\\n(#0u
+.sp
+.ti -\\n(#i
+\\*(@n\&.\ \ \c
+..
+.de up			*** move up heading number (2.1.1 -> 2.2)
+.sh -1
+..
+.de ux			*** heading up, no increment (2.1.1 -> 2.1)
+.nr _9 \\n(#0-1
+.if \\n(.$ .nr _9 +1
+.if \\n(.$ .nr _9 \\$1
+.@d \\n(_9
+.in \\n(#i*\\n(#0u
+..
+.de dn			*** move down heading number (2.1.1 -> 2.1.1.1)
+.sh +1
+..
+.de gs			*** get section number
+.ds ,\\$1 \\*(@n
+..
+.nr #i 4
+.de PS			*** space after a section title
+.sp 1
+..
+.po 5
+.de @h
+'sp 3
+'tl \\*(HE
+'sp 2
+..
+.de @f
+'bp
+..
+.wh 0 @h
+.wh -6 @f
