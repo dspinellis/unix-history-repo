@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)bmd.c	8.1 (Berkeley) %G%
+ *	@(#)bmd.c	8.2 (Berkeley) %G%
  */
 /*
 
@@ -224,6 +224,7 @@ bmd_escape_1(c)
 bmdinit()
 {
 	volatile register struct bmd_rfcnt *bmd_rfcnt = (struct bmd_rfcnt *) 0xB1000000;
+	volatile register long *bmd_bmsel = (long *)0xB1040000;
 	register struct bmd_softc *bp = &bmd_softc;
 	register struct bmd_linec *bq;
 	register int i;
@@ -263,7 +264,9 @@ bmdinit()
 	bp->bc_esc = &bp->bc_escseq[0];
 	bp->bc_escape = bmd_escape;
 
+	*bmd_bmsel = 0xff;				/* all planes */
 	bmd_erase_screen((u_long *) bp->bc_waddr);	/* clear screen */
+	*bmd_bmsel = 0x01;				/* 1 plane */
 
 							/* turn on  cursole */
 	bmd_reverse_char(bp->bc_raddr,
