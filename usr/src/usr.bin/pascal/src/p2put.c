@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.5 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.6 %G%";
 
     /*
      *	functions to help pi put out
@@ -30,7 +30,7 @@ puttext( string )
     {
 	int	length = str4len( string );
 
-	if ( cgenflg )
+	if ( !CGENNING )
 	    return;
 	p2word( TOF77( P2FTEXT , length , 0 ) );
 #	ifdef DEBUG
@@ -63,7 +63,7 @@ putprintf( format , incomplete , arg1 , arg2 , arg3 , arg4 , arg5 )
 	static char	ppbuffer[ BUFSIZ ];
 	static char	*ppbufp = ppbuffer;
 
-	if ( cgenflg )
+	if ( !CGENNING )
 	    return;
 	sprintf( ppbufp , format , arg1 , arg2 , arg3 , arg4 , arg5 );
 	ppbufp = &( ppbuffer[ strlen( ppbuffer ) ] );
@@ -163,7 +163,7 @@ putleaf( op , lval , rval , type , name )
     int		type;
     char	*name;
     {
-	if ( cgenflg )
+	if ( !CGENNING )
 	    return;
 	switch ( op ) {
 	    default:
@@ -220,7 +220,7 @@ putRV( name , level , offset , type )
 	char	extname[ BUFSIZ ];
 	char	*printname;
 
-	if ( cgenflg )
+	if ( !CGENNING )
 	    return;
 	if (level == cbn && whereis(offset) == REGVAR) {
 	    putleaf( P2REG , 0 , (-offset) >> 1 , type , 0 );
@@ -258,7 +258,7 @@ putLV( name , level , offset , type )
     char		extname[ BUFSIZ ];
     char		*printname;
 
-    if ( cgenflg )
+    if ( !CGENNING )
 	return;
     if ( ( level <= 1 ) && ( name != 0 ) ) {
 	if ( name[0] != '_' ) {
@@ -309,7 +309,7 @@ putCON8( value )
 	int	label;
 	char	name[ BUFSIZ ];
 
-	if ( cgenflg )
+	if ( !CGENNING )
 	    return;
 	putprintf( "	.data" , 0 );
 	putprintf( "	.align 2" , 0 );
@@ -337,7 +337,7 @@ putCONG( string , length , required )
 	int	pad;
 	int	others;
 
-	if ( cgenflg )
+	if ( !CGENNING )
 	    return;
 	putprintf( "	.data" , 0 );
 	label = getlab();
@@ -494,7 +494,7 @@ putop( op , type )
     {
 	extern char	*p2opnames[];
 	
-	if ( cgenflg )
+	if ( !CGENNING )
 	    return;
 	p2word( TOF77( op , 0 , type ) );
 #	ifdef DEBUG
@@ -518,7 +518,7 @@ putstrop( op , type , size , alignment )
     {
 	extern char	*p2opnames[];
 	
-	if ( cgenflg )
+	if ( !CGENNING )
 	    return;
 	p2word( TOF77( op , 0 , type ) );
 	p2word( size );

@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)put.c 1.12 %G%";
+static char sccsid[] = "@(#)put.c 1.13 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -45,7 +45,7 @@ put(a)
 	 * etc.
 	 */
 	oldlc = lc;
-	if (cgenflg < 0)
+	if ( !CGENNING )
 		/*
 		 * code disabled - do nothing
 		 */
@@ -148,7 +148,7 @@ put(a)
 
 #ifdef	DEBUG
 			if ( opt( 'k' ) )
-			    printf ( ")#%5d\tCON8\t%22.14e\n" ,
+			    printf ( "%5d\tCON8\t%22.14e\n" ,
 					lc - HEADER_BYTES ,
 					* ( ( double * ) &p[1] ) );
 #endif
@@ -225,7 +225,7 @@ around:
 		case O_CASE1:
 #ifdef DEBUG
 			if (opt('k'))
-				printf(")#%5d\tCASE1\t%d\n"
+				printf("%5d\tCASE1\t%d\n"
 					, lc - HEADER_BYTES, p[1]);
 #endif
 			/*
@@ -252,7 +252,7 @@ around:
 		case O_CASE2:
 #ifdef DEBUG
 			if (opt('k'))
-				printf(")#%5d\tCASE2\t%d\n"
+				printf("%5d\tCASE2\t%d\n"
 					, lc - HEADER_BYTES , p[1]);
 #endif
 			word(p[1]);
@@ -334,7 +334,7 @@ around:
 				n--;
 #ifdef DEBUG
 			if (opt('k')) {
-				printf(")#%5d\t%s", lc - HEADER_BYTES, cp+1);
+				printf("%5d\t%s", lc - HEADER_BYTES, cp+1);
 				if (suboppr)
 					printf(":%d", suboppr);
 				for ( i = 2, lp = (long *)&p[1]; i < n 
@@ -357,7 +357,7 @@ around:
 	}
 #ifdef DEBUG
 	if (opt('k')) {
-		printf(")#%5d\t%s", lc - HEADER_BYTES, cp+1);
+		printf("%5d\t%s", lc - HEADER_BYTES, cp+1);
 		if (suboppr)
 			printf(":%d", suboppr);
 		if (string)
@@ -396,7 +396,7 @@ listnames(ap)
 	register unsigned w;
 	register char *strptr;
 
-	if (cgenflg < 0)
+	if ( !CGENNING )
 		/* code is off - do nothing */
 		return(NIL);
 	if (ap->class != TYPE)
@@ -496,8 +496,8 @@ getnext(next, new)
 	if (next == NIL)
 		return("");
 #ifdef OBJ
-	if (opt('k') && cgenflg >= 0)
-		printf(")#%5d\t\t\"%s\"\n", lc-HEADER_BYTES, next->symbol);
+	if (opt('k') && CGENNING )
+		printf("%5d\t\t\"%s\"\n", lc-HEADER_BYTES, next->symbol);
 #endif OBJ
 	return(next->symbol);
 }
@@ -513,14 +513,14 @@ putspace(n)
 {
 	register i;
 
-	if (cgenflg < 0)
+	if ( !CGENNING )
 		/*
 		 * code disabled - do nothing
 		 */
 		return(lc);
 #ifdef DEBUG
 	if (opt('k'))
-		printf(")#%5d\t.=.+%d\n", lc - HEADER_BYTES, n);
+		printf("%5d\t.=.+%d\n", lc - HEADER_BYTES, n);
 #endif
 	for (i = even(n); i > 0; i -= 2)
 		word(0);
@@ -535,14 +535,14 @@ putstr(sptr, padding)
 	register char *strptr = sptr;
 	register int pad = padding;
 
-	if (cgenflg < 0)
+	if ( !CGENNING )
 		/*
 		 * code disabled - do nothing
 		 */
 		return(lc);
 #ifdef DEBUG
 	if (opt('k'))
-		printf(")#%5d\t\t\"%s\"\n", lc-HEADER_BYTES, strptr);
+		printf("%5d\t\t\"%s\"\n", lc-HEADER_BYTES, strptr);
 #endif
 	if (pad == 0) {
 		do	{
@@ -656,13 +656,13 @@ patchfil(loc, value, words)
 	register i;
 	int val;
 
-	if (cgenflg < 0)
+	if ( !CGENNING )
 		return;
 	if (loc > (unsigned) lc)
 		panic("patchfil");
 #ifdef DEBUG
 	if (opt('k'))
-		printf(")#\tpatch %u %D\n", loc - HEADER_BYTES, value);
+		printf("\tpatch %u %D\n", loc - HEADER_BYTES, value);
 #endif
 	val = value;
 	do {
