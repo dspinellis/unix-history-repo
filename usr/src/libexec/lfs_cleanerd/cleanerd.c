@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cleanerd.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)cleanerd.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -122,13 +122,14 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	FS_INFO	*lfp, *fsp;
+	FS_INFO	*fsp;
 	struct statfs *lstatfsp;	/* file system stats */
 	struct timeval timeout;		/* sleep timeout */
 	fsid_t fsid;
-	int count;			/* number of file systems */
-	int i, nclean;
+	int i;
 	int opt, cmd_err;
+	char *fs_name;			/* name of filesystem to clean */
+	extern int optind;
 
 	cmd_err = 0;
 	while ((opt = getopt(argc, argv, "sm")) != EOF) {
@@ -143,29 +144,35 @@ main(argc, argv)
 				++cmd_err;
 		}
 	}
-	if (cmd_err)
-		err(1, "usage: lfs_cleanerd [-su]");
+	argc -= optind;
+	argv += optind;
+	if (cmd_err || (argc != 1))
+		err(1, "usage: lfs_cleanerd [-sm] fs_name");
+
+	fs_name = argv[0];
 
 	signal (SIGINT, sig_report);
 	signal (SIGUSR1, sig_report);
 	signal (SIGUSR2, sig_report);
-	count = fs_getmntinfo(&lstatfsp, MOUNT_LFS);
+	if (fs_getmntinfo(&lstatfsp, fs_name, MOUNT_LFS) == 0) {
+		/* didn't find the filesystem */
+		err(1, "lfs_cleanerd: filesystem %s isn't an LFS!", fs_name);
+	}
 
 	timeout.tv_sec = 5*60; /* five minutes */
 	timeout.tv_usec = 0;
 	fsid.val[0] = 0;
 	fsid.val[1] = 0;
 
-	for (fsp = get_fs_info(lstatfsp, count, do_mmap); ;
-	    reread_fs_info(fsp, count, do_mmap)) {
-		for (nclean = 0, lfp = fsp, i = 0; i < count; ++lfp, ++i)
-			nclean += clean_loop(lfp);
+	for (fsp = get_fs_info(lstatfsp, do_mmap); ;
+	    reread_fs_info(fsp, do_mmap)) {
 		/*
-		 * If some file systems were actually cleaned, run again
+		 * clean the filesystem, and, if it needed cleaning
+		 * (i.e. it returned nonzero) try it again
 		 * to make sure that some nasty process hasn't just
 		 * filled the disk system up.
 		 */
-		if (nclean)
+		if (clean_loop(fsp))
 			continue;
 
 #ifdef VERBOSE
