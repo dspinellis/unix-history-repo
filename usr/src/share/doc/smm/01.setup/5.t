@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)5.t	6.3 (Berkeley) %G%
+.\"	@(#)5.t	6.4 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -44,12 +44,16 @@ how to configure your system to use the Internet networking support.
 \*(B3 also supports the Xerox Network Systems (NS) protocols.
 IDP and SPP are implemented in the kernel,
 and other protocols such as Courier run at the user level.
+\*(B3 provides some support for the ISO OSI protocols CLNP
+TP4, and ESIS.  User level process
+complete the application protocols such as X.400 and X.500.
 .NH 2
 System configuration
 .PP
 To configure the kernel to include the Internet communication
 protocols, define the INET option.
 Xerox NS support is enabled with the NS option.
+ISO OSI support is enabled with the ISO option.
 In either case, include the pseudo-devices
 ``pty'', and ``loop'' in your machine's configuration
 file.  
@@ -124,6 +128,14 @@ Note that the use of trailer link-level is now negotiated between \*(B3 hosts
 using ARP,
 and it is thus no longer necessary to disable the use of trailers
 with \fIifconfig\fP.
+.PP
+The OSI equivalent to ARP is ESIS (End System to Intermediate System Routeing
+Protocol); running this protocol is mandatory, however one can manually add
+translations for machines that do not participate by use of the
+.IR route (8C)
+command.
+Additional information is provided in the manual page describing
+.IR ESIS (4).
 .PP
 To use the pseudo terminals just configured, device
 entries must be created in the /dev directory.  To create 32
