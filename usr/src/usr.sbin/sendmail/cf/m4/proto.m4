@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.9 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.10 (Berkeley) %G%)
 
 
 ##################
@@ -210,9 +210,12 @@ undivert(3)dnl
 undivert(4)dnl
 
 # resolve remotely connected UUCP links
-R$* < @ $=V . UUCP > $*		$#smtp $@ $V $: $1<@$2.UUCP>$3
-R$* < @ $=W . UUCP > $*		$#smtp $@ $W $: $1<@$2.UUCP>$3
-R$* < @ $=X . UUCP > $*		$#smtp $@ $X $: $1<@$2.UUCP>$3
+ifdef(`_CLASS_V_',
+`R$* < @ $=V . UUCP > $*		$#smtp $@ $V $: $1<@$2.UUCP>$3', `dnl')
+ifdef(`_CLASS_W_',
+`R$* < @ $=W . UUCP > $*		$#smtp $@ $W $: $1<@$2.UUCP>$3', `dnl')
+ifdef(`_CLASS_X_',
+`R$* < @ $=X . UUCP > $*		$#smtp $@ $X $: $1<@$2.UUCP>$3', `dnl')
 
 # resolve fake top level domains by forwarding to other hosts
 ifdef(`BITNET_RELAY',
