@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.18	82/10/17	*/
+/*	sys_generic.c	5.19	82/10/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,6 +21,7 @@
 #endif
 #include "../h/descrip.h"
 #include "../h/uio.h"
+#include "../h/cmap.h"
 
 /*
  * Read system call.
@@ -200,8 +201,7 @@ rwip(ip, uio, rw)
 	struct buf *bp;
 	struct fs *fs;
 	daddr_t lbn, bn;
-	register int on, type;
-	register unsigned n;
+	register int n, on, type;
 	int size;
 	long bsize;
 	extern int mem_no;

@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	4.40	82/10/17	*/
+/*	vfs_syscalls.c	4.41	82/10/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -234,7 +234,7 @@ link()
 	}
 	ip->i_nlink++;
 	ip->i_flag |= ICHG;
-	iupdat(ip, time, time, 1);
+	iupdat(ip, &time, &time, 1);
 	iunlock(ip);
 	u.u_dirp = (caddr_t)uap->linkname;
 	xp = namei(uchar, 1, 0);
@@ -481,7 +481,7 @@ stat1(ip, ub)
 {
 	struct stat ds;
 
-	IUPDAT(ip, time, time, 0);
+	IUPDAT(ip, &time, &time, 0);
 	/*
 	 * Copy from inode table
 	 */
@@ -732,7 +732,7 @@ outime()
 sync()
 {
 
-	update(0);
+	update();
 }
 
 flock()
@@ -869,7 +869,7 @@ maknode(mode)
 	/*
 	 * Make sure inode goes to disk before directory entry.
 	 */
-	iupdat(ip, time, time, 1);
+	iupdat(ip, &time, &time, 1);
 	direnter(ip);
 	if (u.u_error) {
 		/*

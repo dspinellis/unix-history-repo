@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.27	82/10/17	*/
+/*	vfs_lookup.c	4.28	82/10/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -564,7 +564,7 @@ direnter(ip)
 		ep->d_reclen = dsize;
 		ep = (struct direct *)((char *)ep + dsize);
 	}
-	bcopy((caddr_t)&u.u_dent, (caddr_t)ep, newentrysize);
+	bcopy((caddr_t)&u.u_dent, (caddr_t)ep, (u_int)newentrysize);
 	bwrite(bp);
 	u.u_pdir->i_flag |= IUPD|ICHG;
 	iput(u.u_pdir);
@@ -610,10 +610,10 @@ blkatoff(ip, offset, res)
 	char **res;
 {
 	register struct fs *fs = ip->i_fs;
-	int lbn = lblkno(fs, offset);
+	daddr_t lbn = lblkno(fs, offset);
 	int base = blkoff(fs, offset);
 	int bsize = blksize(fs, ip, lbn);
-	int bn = fsbtodb(fs, bmap(ip, lbn, B_WRITE, base, bsize));
+	daddr_t bn = fsbtodb(fs, bmap(ip, lbn, B_WRITE, base, bsize));
 	register struct buf *bp;
 
 	if (u.u_error)

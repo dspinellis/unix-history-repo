@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	2.16	82/10/17	*/
+/*	ffs_alloc.c	2.17	82/10/19	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -985,7 +985,7 @@ update()
 			continue;
 		ip->i_flag |= ILOCKED;
 		ip->i_count++;
-		iupdat(ip, time, time, 0);
+		iupdat(ip, &time, &time, 0);
 		iput(ip);
 	}
 	updlock = 0;
