@@ -1,4 +1,4 @@
-/*	time.h	4.2	83/05/21	*/
+/*	time.h	4.3	83/06/10	*/
 
 /*
  * Structure returned by gettimeofday(2) system call,
@@ -19,6 +19,8 @@ struct timezone {
 
 /*
  * Operations on timevals.
+ *
+ * NB: timercmp does not work for >= or <=.
  */
 #define	timerisset(tvp)		((tvp)->tv_sec || (tvp)->tv_usec)
 #define	timercmp(tvp, uvp, cmp)	\
