@@ -1151,6 +1151,11 @@ create_process (process, new_argv)
 	/* First, disconnect its current controlling terminal.  */
 #ifdef HAVE_SETSID
 	setsid ();
+#ifdef TIOCSCTTY
+	/* Make the pty's terminal the controlling terminal.  */
+	if (pty_flag && (ioctl (xforkin, TIOCSCTTY, 0) < 0))
+	  abort ();
+#endif
 #else /* not HAVE_SETSID */
 #ifdef USG
 	/* It's very important to call setpgrp() here and no time
