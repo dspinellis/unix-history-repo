@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)netstat.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)netstat.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -20,8 +20,8 @@ static char sccsid[] = "@(#)netstat.c	5.3 (Berkeley) %G%";
 
 #include <net/route.h>
 #include <netinet/in_systm.h>
-#include <netinet/in_pcb.h>
 #include <netinet/ip.h>
+#include <netinet/in_pcb.h>
 #include <netinet/ip_icmp.h>
 #include <netinet/icmp_var.h>
 #include <netinet/ip_var.h>
