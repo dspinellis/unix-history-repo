@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.6 82/12/05";
+static char sccsid[] = "@(#)inet.c	4.7 82/12/18";
 #endif
 
 #include <sys/types.h>
@@ -190,15 +190,12 @@ inetprint(in, port, proto)
 
 	sprintf(line, "%.10s.", inetname(*in));
 	cp = index(line, '\0');
-#if vax || pdp11
-	port = ntohs((u_short)port);
-#endif
 	if (!nflag && port)
 		sp = getservbyport(port, proto);
 	if (sp || port == 0)
 		sprintf(cp, "%.8s", sp ? sp->s_name : "*");
 	else
-		sprintf(cp, "%d", port);
+		sprintf(cp, "%d", ntohs((u_short)port));
 	printf(" %-18.18s", line);
 }
 
