@@ -2,15 +2,21 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sticky.8	6.1 (Berkeley) %G%
+.\"	@(#)sticky.8	6.2 (Berkeley) %G%
 .\"
 .TH STICKY 8 ""
 .UC 4
 .SH NAME
-sticky \- executable files with persistent text
+sticky \- persistent text and append-only directories
 .SH DESCRIPTION
-While the `sticky bit', mode 01000 (see
-.IR chmod (2)),
+The
+.I "sticky bit"
+(file mode bit 01000, see
+.IR chmod (2))
+is used to indicate special treatment
+for certain executable files and directories.
+.SH "STICKY TEXT EXECUTABLE FILES"
+While the `sticky bit'
 is set on a sharable executable file,
 the text of that file will not be removed from the system swap area.
 Thus the file does not have to be fetched from the file system
@@ -20,14 +26,15 @@ original text cannot be overwritten in the file system,
 nor can the file be deleted.
 (Directory entries can be removed so long as one link remains.)
 .PP
-Sharable files are made by the
+Sharable executable files are made by the
 .B \-n
 and
 .B \-z
 options of
 .IR ld (1).
 .PP
-To replace a sticky file that has been used do:
+To replace a sticky text executable file that has been used,
+perform the following steps:
 (1) Clear the sticky bit with
 .IR chmod (1).
 (2) Execute the old program to flush the swapped copy.
@@ -41,10 +48,37 @@ and
 .IR chown (2).
 (4) Set the sticky bit again.
 .PP
-Only the super-user can set the sticky bit.
-.SH BUGS
-Are self-evident.
+Only the super-user can set the sticky bit
+on a sharable executable file.
+.SH "STICKY DIRECTORIES"
+A directory whose `sticky bit' is set
+becomes an append-only directory, or, more accurately,
+a directory in which the deletion of files is restricted.
+A file in a sticky directory may only be removed or renamed
+by a user if the user has write permission for the directory and
+the user is the owner of the file, the owner of the directory,
+or the super-user.
+This feature is usefully applied to directories such as /tmp
+which must be publicly writable but
+should deny users the license to arbitrarily
+delete or rename each others' files.
 .PP
-Is largely unnecessary on the VAX; matters only for large programs that
-will page heavily to start, since text pages are normally cached incore
+Any user may create a sticky directory.
+See
+.IR chmod (1)
+for details about modifying file modes.
+.SH BUGS
+Sticky text executable files are
+largely unnecessary on the VAX.
+The sticky attribute is useful only for large programs that
+will page heavily to start, since text pages are normally cached in core
 as long as possible after all instances of a text image exit.
+.PP
+Since the text areas of sticky text executables are stashed in the swap area,
+abuse of the feature can cause a system to run out of swap.
+.PP
+Neither
+.IR open (2)
+nor
+.IR mkdir (2)
+will create a file with the sticky bit set.
