@@ -2,18 +2,18 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lp.4	4.1 (Berkeley) %G%
+.\"	@(#)lp.4	5.1 (Berkeley) %G%
 .\"
-.TH LP 4 4/1/81
+.TH LP 4 "27 July 1983"
 .UC 4
 .SH NAME
 lp \- line printer
 .SH SYNOPSIS
-device lp0 at uba0 csr 0177514 vector lpintr
+.B "device lp0 at uba0 csr 0177514 vector lpintr"
 .SH DESCRIPTION
 .I Lp
 provides the interface to any of the standard
-DEC line printers.
+DEC line printers on an LP-11 parallel interface.
 When it is opened or closed, a suitable number
 of page ejects is generated.
 Bytes written are printed.
@@ -56,15 +56,12 @@ the following table:
 .PP
 The driver correctly interprets
 carriage returns, backspaces, tabs, and form feeds.
-Lines longer than 132 characters are truncated
-(This is a parameter in the driver).
+Lines longer than the maximum page width are truncated.
+The default page width is 132 columns.
+This may be overridden by specifying, for example, ``flags 256'' .
 .SH FILES
 /dev/lp
 .SH "SEE ALSO"
 lpr(1)
 .SH DIAGNOSTICS
 None.
-.SH BUGS
-Although the driver supports multiple printers this has never
-been tried.  In any case user-level software support for multiple printers
-is not available.
