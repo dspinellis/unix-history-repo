@@ -18,9 +18,10 @@
 
 */
 #include <errno.h>
+#include <stdio.h>
 #include <fcntl.h>
 #include <memory.h>
-#include <stdio.h>
+#include <pwd.h>
 #include <string.h>
 #include <signal.h>
 #include <varargs.h>
@@ -171,7 +172,13 @@ short v[];
 	return U.l;
 }
 
+static	usage(), chkswfile(), getname(), bintochar(), chkhdr(), gethdr();
+static	ckname(), openout(), breread(), bread(), bwrite(), eomchgreel();
+static	postml(), pentry(), nmatch(), gmatch(), umatch(), set_time();
+static	chgreel(), missdir(), pwd(), fperr(), fperrno();
+
 main(argc, argv)
+int argc;
 char **argv;
 {
 	register ct;
@@ -579,7 +586,8 @@ ckverbose:
 static
 usage()
 {
-	(void) fprintf("Usage: %s\n     %s\n     %s\n     %s\n       %s\n",
+	(void) fprintf(stderr,
+	    "Usage: %s\n     %s\n     %s\n     %s\n       %s\n",
 	    "cpio -o[acvB] <name-list >collection",
 	    "cpio -o[acvB] -Ocollection <name-list",
 	    "cpio -i[cdmrstuvfB6] [ pattern ... ] <collection",
@@ -1139,11 +1147,8 @@ static
 pentry(namep)		/* print verbose table of contents */
 register char *namep;
 {
-
 	static short lastid = -1;
-#include <pwd.h>
 	static struct passwd *pw;
-	struct passwd *getpwuid();
 	static char tbuf[32];
 	char *ctime();
 
@@ -1314,6 +1319,7 @@ time_t atime, mtime;
 
 static
 chgreel(x, fl, rv)
+	int x, fl, rv;
 {
 	register f;
 	char str[BUFSIZ];
@@ -1485,29 +1491,4 @@ register unsigned	count;
 	}
 
 	return  savedto;
-}
-
-extern int _doprnt();
-
-/*VARARGS2*/
-int
-vfprintf(iop, format, ap)
-FILE *iop;
-char *format;
-va_list ap;
-{
-	register int count;
-
-	if (!(iop->_flag | _IOWRT)) {
-		/* if no write flag */
-		if (iop->_flag | _IORW) {
-			/* if ok, cause read-write */
-			iop->_flag |= _IOWRT;
-		} else {
-			/* else error */
-			return EOF;
-		}
-	}
-	count = _doprnt(format, ap, iop);
-	return(ferror(iop)? EOF: count);
 }
