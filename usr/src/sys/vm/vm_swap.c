@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	7.25 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.26 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -70,13 +70,13 @@ swapinit()
 	/*
 	 * Now set up swap buffer headers.
 	 */
-	bswlist.av_forw = sp;
+	bswlist.b_actf = sp;
 	for (i = 0; i < nswbuf - 1; i++, sp++) {
-		sp->av_forw = sp + 1;
+		sp->b_actf = sp + 1;
 		sp->b_rcred = sp->b_wcred = p->p_ucred;
 	}
 	sp->b_rcred = sp->b_wcred = p->p_ucred;
-	sp->av_forw = NULL;
+	sp->b_actf = NULL;
 }
 
 void
