@@ -564,7 +564,8 @@ cspace(sp, p, len, spflag)
 	 * need two extra bytes, one for the newline, one for a terminating
 	 * NULL.
 	 */
-	tlen = sp->len + len + spflag == APPENDNL ? 2 : 1;
+/*	tlen = sp->len + len + spflag == APPENDNL ? 2 : 1; */
+	tlen = sp->len + len + (spflag == APPENDNL ? 2 : 1);  /* XXX */
 	if (tlen > sp->blen) {
 		sp->blen = tlen + 1024;
 		sp->space = sp->back = xrealloc(sp->back, sp->blen);
