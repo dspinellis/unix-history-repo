@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.13,
+version 3.14,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -178,8 +178,6 @@ and hopefully UUCP mail
 ARPANET mail
 [Crocker77a, Postel77]
 was also required.
-.np
-Because of time constraints,
 .np
 Reliability, in the sense of guaranteeing
 that every message is correctly delivered
@@ -652,9 +650,9 @@ but
 .i \euser
 is different from either of them.
 .pp
-The rewriting rules control remaining parsing
-(disclaimer: some special processing is done
-after rewriting local names; see below).
+The rewriting rules control remaining parsing.
+(Disclaimer: some special processing is done
+after rewriting local names; see below.)
 Parentheses, angle brackets, and double quotes
 must be properly balanced and nested.
 .sh 2 "Simple Mail Transfer Protocol"
@@ -693,7 +691,7 @@ is scanned for two special cases.
 If prefixed by a vertical bar (\c
 .q \^|\^ )
 the rest of the address is processed as a shell command.
-If the user name contains slash marks (\c
+If the user name begins with a slash mark (\c
 .q /\^ )
 the name is used as a file name,
 instead of a login name.
@@ -800,8 +798,11 @@ a flag is set to invoke the return-to-sender function
 after all delivery completes.
 .sh 2 "Exit Status"
 .pp
-An exit status is returned that corresponds to the system standard
-used by the other mailers.
+.i Sendmail
+defines a set of standard exit status codes
+that should be returned by mailers.
+These are in turn returned by
+.i sendmail .
 .sh 2 "Queued Messages"
 .pp
 If the mailer gave a
@@ -889,6 +890,13 @@ exists in the sender's home directory,
 that file is read as a configuration file
 after the system configuration file.
 The primary use of this is to add header lines.
+This could also be used to adjust the full name by
+defining the
+.b x
+macro; e.g.,
+.(b
+DxEric Allman in Outer Space
+.)b
 .sh 2 "Configuration File Description"
 .pp
 The configuration file is formatted
@@ -915,9 +923,7 @@ Please note that this is intended as an example only.
 .hl
 .sz -2
 .re
-##########################################
-# sendmail configuration file
-##########################################
+##### sendmail configuration file
 .sp \n(psu
 ### local hosts on various nets
 DABerkeley
@@ -960,7 +966,7 @@ M\&berk	/usr/net/bin/sendberkmail	fxs	$B:$f	...berk\&mail -m $h -h $c -t $u
 # arpanet mail
 M\&arpa	/usr/lib/mailers/arpa	sAu	$f@$A	...arpa\&mail $f $h $u
 # uucp mail
-M\&uucp	/usr/bin/uux	rsDxm	$U!$f	...uucp\&mail - $h!rmail ($u)
+M\&uucp	/usr/bin/uux	rsDxmU	$U!$f	...uucp\&mail - $h!rmail ($u)
 .sp \n(psu
 ### rewriting rules
 .ta \w'R\&CSVAX:$-h!$+u  'u +\w'$#berk$@ing70$:$+u@$+h  'u
@@ -1142,7 +1148,14 @@ as above for the transfer to Ing70, but:
 $f	IngVAX:eric
 $g	IngVAX:eric@Berkeley
 .)b
-for transfer to the ARPANET.
+for transfer to the ARPANET\**.
+.(f
+\**When this is actually sent to the ARPANET,
+this will appear as
+IngVAX.eric@Berkeley.
+The translation of the colon to a period is performed
+by the mailer that queues ARPANET mail.
+.)f
 .pp
 The
 .b $x
@@ -1356,7 +1369,25 @@ This mailer wants an ARPANET standard header
 and
 .b D
 flags).
+.ip U
+This mailer is a UUCP mailer that wants leading from lines
+of the form:
+.(b
+From sender <date> remote from sysname
+.)b
+instead of the more reasonable:
+.(b
+From sysname!sender <date>
+.)b
+A compilation flag must be on to include this code.
 .ls
+.lp
+There should always be at least one flag,
+since every message should include either a
+.b x
+or a
+.b F
+flag.
 .sh 3 "S \*- use rewriting set"
 .(b
 .b S \c
@@ -1523,6 +1554,12 @@ string which should produce a single string.
 We will now follow the configuration file
 in figure 2
 through in detail.
+This example is from a version of the configuration file
+for the IngVAX machine at Berkeley.
+IngVAX had no interesting network connections.
+Ing70 had an ARPANET connection,
+and CSVAX had a UUCP connection.
+All of these machines were tied together via BerkNet.
 .sh 3 "Macro definitions"
 .(b
 DABerkeley
@@ -1641,14 +1678,16 @@ The classes will be used in the patterns of the rewriting rules
 as described below.
 .sh 3 "Mailer definitions"
 .(b
-.sz -2
+.if n .in 0
+.if t .sz -2
 .ta \w'M\&local  'u +\w'/usr/net/bin/sendberkmail  'u +\w'rlsAmn  'u +\w'$f@$A  'u
 M\&local	/bin/mail	rlsAmn	$f	...localmail -d $u
 M\&prog	/bin/csh	lA	$f	...progmail -fc $u
 M\&berk	/usr/net/bin/sendberkmail	fxs	$B:$f	...berkmail -m $h -h $c -t $u
 M\&arpa	/usr/lib/mailers/arpa	sAu	$f@$A	...arpamail $f $h $u
-M\&uucp	/usr/bin/uux	rsDxm	$U!$f	...uucpmail - $h!rmail ($u)
-.sz
+M\&uucp	/usr/bin/uux	rsDxmU	$U!$f	...uucpmail - $h!rmail ($u)
+.if n .in
+.if t .sz
 .)b
 Five mailers are known in the configuration file.
 There
@@ -1667,7 +1706,11 @@ can deliver to multiple recipients at once,
 and does not want a UNIX-style
 .q From
 line since it will add one itself.
-The translated from address is the same as the raw from address,
+The translated
+.q from
+address is the same as the raw
+.q from
+address,
 since no network hops are made.
 The argument vector has a program name,
 a
@@ -1742,6 +1785,8 @@ a
 .q Full-Name:
 line,
 and with multiple users listed.
+Since UUCP is a relic of the (not so) distant past,
+it requires ugly header lines.
 .pp
 If
 .q $u
@@ -1780,11 +1825,16 @@ Carets are changed to exclamation points
 for UUCP addresses in the fifth rule.
 The sixth rule deletes loops out into UUCP land
 and back to us \*- noting that we will be left on CSVAX.
-Multiple BerkNet hosts are deleted in rule seven \*-
+The seventh rule does forwarding of UUCP mail to the CSVAX.
+Multiple BerkNet hosts are deleted in rule eight \*-
 this can occur internally quite easily
 as a side effect of a rewriting rule.
-Rule eight deletes local BerkNet hosts.
-The last two rules resolve BerkNet and local mail.
+Rule nine deletes local BerkNet hosts.
+The last two rules resolve BerkNet and local mail
+by turning them into the canonical form:
+.(b
+$#\fInet\fP$@\fIhost\fP$:\fIuser\fP
+.)b
 .pp
 Consider the following examples.
 The numbers to the left are the rule that is being applied
@@ -2531,10 +2581,10 @@ flag must be used.
 If set,
 the
 .i syslog
-routine in use at some Berkeley sites is used.
-This logs an informational log record
+routine in use at some sites is used.
+This makes an informational log record
 for each message processed,
-and logs a higher priority log record
+and makes a higher priority log record
 for internal system errors.
 .ip QUEUE
 This flag should be set to compile in the queueing code.
@@ -2571,8 +2621,10 @@ of UNIX-style
 lines.
 .nr ii 5n
 .pp
-If you want to enable special processing of other headers,
-you will have to add them to the
+Not all header semantics are defined in the configuration file.
+Header lines that should only be included by certain mailers
+(as well as other more obscure semantics)
+must be specified in the
 .i HdrInfo
 table in
 .i conf.c .
