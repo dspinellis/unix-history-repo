@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)testdb.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)testdb.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -64,9 +64,13 @@ testdb()
 		goto close;
 	if (rec.data == 0 || rec.size != sizeof(struct nlist))
 		goto close;
-	bcopy((char *)rec.data, (char *)&nitem, sizeof(nitem));
+	bcopy(rec.data, &nitem, sizeof(nitem));
+	/*
+	 * Theoretically possible for lseek to be seeking to -1.  Not
+	 * that it's something to lie awake nights about, however.
+	 */
 	errno = 0;
-	if (lseek(kd, (off_t)nitem.n_value, 0) == -1 && errno != 0)
+	if (lseek(kd, (off_t)nitem.n_value, SEEK_SET) == -1 && errno != 0)
 		goto close;
 	cc = read(kd, kversion, sizeof(kversion));
 	if (cc < 0 || cc != sizeof(kversion))
