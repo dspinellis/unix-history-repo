@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)local2.c	1.5 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.6 (Berkeley) %G%";
 # include "mfile2"
 # include "ctype.h"
 # ifdef FORT
@@ -611,7 +611,7 @@ shumul( p ) register NODE *p; {
 	    ( p->in.left->in.op == REG && p->in.right->in.op == ICON ) &&
 	    p->in.right->in.name[0] == '\0' )
 		{
-		switch (p->in.left->in.type)
+		switch (p->in.type)
 			{
 			case CHAR|PTR:
 			case UCHAR|PTR:
@@ -636,7 +636,7 @@ shumul( p ) register NODE *p; {
 				break;
 
 			default:
-				if ( ISPTR(p->in.left->in.type) ) {
+				if ( ISPTR(p->in.type) ) {
 					o = 4;
 					break;
 					}
@@ -745,13 +745,13 @@ adrput( p ) register NODE *p; {
 				adrput( p->in.left );
 				}
    tbl */
-			printf("%s(%s)%s", (p->in.left->in.op==INCR ? "" : "-"),
-				rnames[p->in.left->in.left->tn.rval], 
-				(p->in.left->in.op==INCR ? "+" : "") );
-			p->in.op = OREG;
-			p->tn.rval = p->in.left->in.left->tn.rval;
 			q = p->in.left;
-			p->tn.lval = (p->in.left->in.op == INCR ? -p->in.left->in.right->tn.lval : 0);
+			printf("%s(%s)%s", (q->in.op==INCR ? "" : "-"),
+				rnames[q->in.left->tn.rval], 
+				(q->in.op==INCR ? "+" : "") );
+			p->in.op = OREG;
+			p->tn.rval = q->in.left->tn.rval;
+			p->tn.lval = (q->in.op == INCR ? -q->in.right->tn.lval : 0);
 #ifndef FLEXNAMES
 			p->in.name[0] = '\0';
 #else
