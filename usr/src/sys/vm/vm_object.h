@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_object.h	7.5 (Berkeley) %G%
+ *	@(#)vm_object.h	7.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -108,7 +108,7 @@ vm_object_t	kmem_object;
  *	Declare procedures that operate on VM objects.
  */
 
-void	vm_object_init __P((void));
+void	vm_object_init __P((vm_size_t));
 void	vm_object_terminate __P((vm_object_t));
 vm_object_t	vm_object_allocate __P((vm_size_t));
 void	vm_object_reference __P((vm_object_t));
