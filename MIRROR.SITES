@@ -1,16 +1,16 @@
 
 The FreeBSD software is being mirrored at the following locations:
 
-Country		Site/Directory
-=======		=====================================================
+Country		Site/Directory				Maintainer
+=======		======================================	===================
 
 Austria		ftp.tu-graz.ac.at:/pub/FreeBSD
 Finland		ftp.funet.fi:/pub/unix/FreeBSD
 Germany		ftp.informatik.tu-muenchen.de:/pub/comp/os/bsd/FreeBSD
 Germany		ftp.uni-duisburg.de:/pub/unix/FreeBSD
 Hong Kong	ftp.cs.cuhk.hk:/pub/FreeBSD
-Netherlands	ftp.nl.net:/pub/os/FreeBSD
+Netherlands	ftp.nl.net:/pub/os/FreeBSD		<pauls@inter.nl.net>
 UK		src.doc.ic.ac.uk:/packages/FreeBSD
 
 
-$Id$
+$Id: MIRROR.SITES,v 1.1 1994/01/22 07:08:23 rgrimes Exp $
