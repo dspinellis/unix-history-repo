@@ -39,6 +39,7 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 
 #include "../ctlr/hostctlr.h"
 #include "../ctlr/inbound.ext"
+#include "../ctlr/oia.h"
 #include "../ctlr/options.ext"
 #include "../ctlr/outbound.ext"
 #include "../ctlr/screen.h"
@@ -593,6 +594,13 @@ void
 #endif	/* defined(NOT43) */
 	(*TryToSend)() = FastScreen;
 
+void
+ScreenOIA(oia)
+OIA *oia;
+{
+}
+
+
 /* InitTerminal - called to initialize the screen, etc. */
 
 void
