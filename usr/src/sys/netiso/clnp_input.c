@@ -26,21 +26,21 @@ SOFTWARE.
  */
 /* $Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $ */
 /* $Source: /var/src/sys/netiso/RCS/clnp_input.c,v $ */
-/*	@(#)clnp_input.c	7.4 (Berkeley) %G% */
+/*	@(#)clnp_input.c	7.5 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_input.c,v 5.1 89/02/09 16:20:32 hagens Exp $";
 #endif lint
 
-#include "../h/types.h"
-#include "../h/param.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
-#include "../h/time.h"
+#include "types.h"
+#include "param.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "errno.h"
+#include "time.h"
 
 #include "../net/if.h"
 #include "../net/iftypes.h"

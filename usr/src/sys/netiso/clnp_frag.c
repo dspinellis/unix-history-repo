@@ -33,14 +33,14 @@ static char *rcsid = "$Header: /var/src/sys/netiso/RCS/clnp_frag.c,v 5.1 89/02/0
 
 #ifdef ISO
 
-#include "../h/types.h"
-#include "../h/param.h"
-#include "../h/mbuf.h"
-#include "../h/domain.h"
-#include "../h/protosw.h"
-#include "../h/socket.h"
-#include "../h/socketvar.h"
-#include "../h/errno.h"
+#include "types.h"
+#include "param.h"
+#include "mbuf.h"
+#include "domain.h"
+#include "protosw.h"
+#include "socket.h"
+#include "socketvar.h"
+#include "errno.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
@@ -742,7 +742,7 @@ struct clnp_fragl	*cfh;		/* fragment header */
 }
 #ifdef	TROLL
 static int troll_cnt;
-#include "../h/time.h"
+#include "time.h"
 /*
  * FUNCTION:		troll_random
  *
