@@ -44,7 +44,7 @@
 #	define NULL 0
 #endif
 
-extern char *malloc();
+void *malloc();
 #define mem_alloc(bsize)	malloc(bsize)
 #define mem_free(ptr, bsize)	free(ptr)
 
