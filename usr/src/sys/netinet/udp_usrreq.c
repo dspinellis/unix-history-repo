@@ -32,7 +32,7 @@ udp_init()
 	udb.inp_next = udb.inp_prev = &udb;
 }
 
-int	udpcksum = 0;
+int	udpcksum = 1;
 struct	sockaddr_in udp_in = { AF_INET };
 
 udp_input(m0)
@@ -197,8 +197,11 @@ udp_output(inp, m0)
 	 * Stuff checksum and output datagram.
 	 */
 	ui->ui_sum = 0;
-	if ((ui->ui_sum = in_cksum(m, sizeof (struct udpiphdr) + len)) == 0)
+	if (udpcksum) {
+	    if ((ui->ui_sum = in_cksum(m, sizeof (struct udpiphdr) + len)) == 0)
 		ui->ui_sum = -1;
+	} else
+		ui->ui_sum = 0;
 	((struct ip *)ui)->ip_len = sizeof (struct udpiphdr) + len;
 	((struct ip *)ui)->ip_ttl = MAXTTL;
 	so = inp->inp_socket;
