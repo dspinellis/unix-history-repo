@@ -1,16 +1,20 @@
-Warning:	The fortunes contained in the fortune database have
-		been collected haphazardly from a caphony of sources,
-		in number so huge it boggles the mind.  It is
-		impossible to do any meaningful quality control on
-		attributions, or lack thereof, or exactness of the
-		quote.  Since this database is not used for profit, and
-		since entire works are not published, it falls under
-		fair use, as we understand it.  However, if any
-		half-assed idiot decides to make a profit off of this,
-		they will need to double check it all, and nobody not
-		involved of such an effort makes any warranty that
-		anything in here bears any relation to the real world
-		of literature, law, or other bizzarrity.
+Warning:
+	The fortunes contained in the fortune database have been
+	collected haphazardly from a cacophony of sources, in number so
+	huge it boggles the mind.  It is impossible to do any
+	meaningful quality control on attributions, or lack thereof, or
+	exactness of the quote.  Since this database is not used for
+	profit, and since entire works are not published, it falls
+	under fair use, as we understand it.  However, if any
+	half-assed idiot decides to make a profit off of this, they
+	will need to double check it all, and nobody not involved of
+	such an effort makes any warranty that anything in the database
+	bears any relation to the real world of literature, law, or
+	other bizzarrity.
+
+This file describes the format for fortunes in the database.  This is
+done in detail to make it easier to keep track of things.  Any rule
+given here may be broken to make a better joke.
 
 [All examples are indented by one tab stop -- KCRCA]
 
@@ -22,7 +26,7 @@ Numbers should be given in parentheses, e.g.,
 
 Attributions are two tab stops, followed by two hyphens, followed by a
 space, followed by the attribution, and are *not* preceded by blank
-lines.  Book, journal, movie, and all other titles are in quotes, .e.g,
+lines.  Book, journal, movie, and all other titles are in quotes, e.g.,
 
 	$100 invested at 7% interest for 100 years will become $100,000, at
 	which time it will be worth absolutely nothing.
@@ -36,7 +40,7 @@ on a line which lines up below the first text of the attribution, e.g.,
 
 Single paragraph fortunes are in left justified (non-indented)
 paragraphs unless they fall into another category listed below (see
-examle above).  Longer fortunes should also be in left justified
+example above).  Longer fortunes should also be in left justified
 paragraphs, but if this makes it too long, try indented paragraphs,
 with indentations of either one tab stop or 5 chars.  Indentations of
 less than 5 are too hard to read.
@@ -63,7 +67,8 @@ underlines preceding the word, e.g., "__^H^Hhi ____^H^H^H^Hthere".
 
 No fortune should run beyond 72 characters on a single line without
 good justification (er, no pun intended).  And no right margin
-justification, either.  Sorry.
+justification, either.  Sorry.  For BSD people, there is a program
+called "fmt" which can make this kind of formatting easier.
 
 Definitions are given with the word or phrase left justified, followed
 by the part of speech (if appropriate) and a colon.  The definition
@@ -76,14 +81,13 @@ e.g.,
 
 Quotes are sometimes put around statements which are funnier or make
 more sense if they are understood as being spoken, rather than written,
-communication, e.g,
+communication, e.g.,
 
 	"All my friends and I are crazy.  That's the only thing that keeps us
 	sane."
 
-Elipses are always surrounded by spaces, except when next to
-puncuation, and are three dots, unless there is a good reason not to.
-(In fact, all these rules can be broken if they make a good joke.)
+Ellipses are always surrounded by spaces, except when next to
+punctuation, and are three dots long.
 
 	"... all the modern inconveniences ..."
 			-- Mark Twain
@@ -111,9 +115,9 @@ even single quotes masquerading as double quotes are to be used, e.g.,
 don't say ``hi there'' or `hi there' or 'hi there', but "hi there".
 However, you *can* say "I said, `hi there'".
 
-A long poem or song can be ordered as follows in order to make it
-fit on a screen (fortunes should be 19 lines or less if at all
-possible):
+A long poem or song can be ordered as follows in order to make it fit
+on a screen (fortunes should be 19 lines or less if at all possible)
+(numbers here are stanza numbers):
 
 	11111111111111111111
 	11111111111111111111
@@ -133,8 +137,22 @@ Anything which would not make it onto network prime time programming
 should *not* go into "scene".  Also, anything which would only get on
 if some discredited kind of guy said it should *not* go in scene.
 Fortunes containing "shit", "fuck", "cock" (not the male version of a
-chicken, obviously, but "penis"), "cunt", "pussy", and such like are
-*obscene*.  Political opinions are supposed to be in "obscene", too.
-Antyhing which is blatantly racist, mysoginist, or homophobic, should
-not be in either, since they are not really funny unless *you* are
-racist, mysoginist, or homophobic.
+chicken, obviously, but the slang for penis), "cunt", "pussy", and such
+like are "obscene".  Political opinions are supposed to be in
+"obscene", too.  Anything which assumes as a world view blatantly
+racist, mysogynist, or homophobic ideas should not be in either, since
+they are not really funny unless *you* are racist, mysogynist, or
+homophobic.
+
+The point of this is that people have should have a reasonable
+expectation that, should they just run "fortune", they will not be
+offended.  We know that some people take offense at anything, but
+normal people do have opinions, too, and have a right not to have their
+sensibilities offended by a program which is supposed to be
+entertaining.  People who run "fortune -o" or "fortune -a" are saying,
+in effect, that they are willing to have their sensibilities tweaked.
+However, they should not have their personal worth seriously (i.e., not
+in jest) assaulted.  Jokes which depend for their humor on racist,
+mysogynist (sexist), or homophobic stereotypes *do* seriously assault
+individual personal worth, and in an general entertainment medium we
+should be able to get by without it.
