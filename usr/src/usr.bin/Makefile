@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.2 (Berkeley) %G%
+#	@(#)Makefile	8.3 (Berkeley) %G%
 
 SUBDIR=	apply apropos ar at banner basename bc bdes biff cal calendar \
 	cap_mkdb checknr chflags chpass cksum col colcrt colrm column \
@@ -8,7 +8,7 @@ SUBDIR=	apply apropos ar at banner basename bc bdes biff cal calendar \
 	join jot kdump ktrace lam last lastcomm learn leave locate \
 	lock logger login logname lorder m4 mail make man mesg mkdep \
 	mkfifo mklocale mkstr more msgs mt netstat nfsstat nice nm nohup \
-	pagesize passwd paste plot pr printenv printf ptx quota \
+	pagesize passwd paste patch plot pr printenv printf ptx quota \
 	ranlib rdist renice rev rlogin rs rsh ruptime rwho sccs \
 	script sed shar showmount size soelim sort spell spline split \
 	strings strip struct su talk tcopy tee telnet tftp time tip \
