@@ -1,21 +1,9 @@
-#include	<stdio.h>
+static char *sccsid = "@(#)ctags.c	4.2 (Berkeley) 10/3/80";
+#include <stdio.h>
+#include <ctype.h>
 
 /*
- *	This program examines each of its arguments for C function
- * definitions, and puts them in a file "tags" for use by the editor
- * (and anyone else who wants to).
- */
-
-/*
- *	program history:
- *	ken arnold wrote this program.  ask him.
- *	brought over to the vax by peter b. kessler 7/79
- *	who disavows any knowledge of its actions,
- *	except for the stuff related to the construction
- *	of the search patterns.
- *	Some additional enhancements made by Mark Horton, involving
- *	the options and special treatment of "main", "}" at beginning
- *	of line, and a few bug fixes.
+ * ctags
  */
 
 #define	reg	register
@@ -35,15 +23,13 @@
 struct	nd_st {			/* sorting structure			*/
 	char	*func;			/* function name		*/
 	char	*file;			/* file name			*/
+	int	lno;			/* for -x option		*/
 	char	*pat;			/* search pattern		*/
 	logical	been_warned;		/* set if noticed dup		*/
 	struct	nd_st	*left,*right;	/* left and right sons		*/
 };
 
 long	ftell();
-#ifdef DEBUG
-char	*unctrl();
-#endif
 typedef	struct	nd_st	NODE;
 
 logical	number,				/* T if on line starting with #	*/
@@ -54,10 +40,9 @@ logical	number,				/* T if on line starting with #	*/
 	_wht[0177],_etk[0177],_itk[0177],_btk[0177],_gd[0177];
 
 char	searchar = '?';			/* use ?...? searches 		*/
-#define	MAXPATTERN	50		/* according to bill		*/
 
 int	lineno;				/* line number of current line */
-char	line[256],		/* current input line			*/
+char	line[4*BUFSIZ],		/* current input line			*/
 	*curfile,		/* current input file name		*/
 	*outfile= "tags",	/* output file				*/
 	*white	= " \f\t\n",	/* white chars				*/
@@ -72,6 +57,9 @@ int	file_num;		/* current file number			*/
 int	aflag;			/* -a: append to tags */
 int	uflag;			/* -u: update tags */
 int	wflag;			/* -w: suppress warnings */
+int	xflag;			/* -x: create cxref style output */
+
+char	lbuf[BUFSIZ];
 
 FILE	*inf,			/* ioptr for current input file		*/
 	*outf;			/* ioptr for tags file			*/
@@ -80,6 +68,8 @@ long	lineftell;		/* ftell after getc( inf ) == '\n' 	*/
 
 NODE	*head;			/* the head of the sorted binary tree	*/
 
+char	*savestr();
+char	*rindex();
 main(ac,av)
 int	ac;
 char	*av[];
@@ -99,7 +89,9 @@ char	*av[];
 				case 'w':
 					wflag++;
 					break;
-
+				case 'x':
+					xflag++;
+					break;
 				default:
 					goto usage;
 			}
@@ -119,31 +111,40 @@ char	*av[];
 	for (file_num = 1; file_num < ac; file_num++)
 		find_funcs(av[file_num]);
 
+	if (xflag) {
+		put_funcs(head);
+		exit(0);
+	}
 	if (uflag) {
 		for (i=1; i<ac; i++) {
-			sprintf(cmd, "mv %s OTAGS ; fgrep -v '\t%s\t' OTAGS > %s ; rm OTAGS", outfile, av[i], outfile);
+			sprintf(cmd,
+				"mv %s OTAGS;fgrep -v '\t%s\t' OTAGS >%s;rm OTAGS",
+				outfile, av[i], outfile);
 			system(cmd);
 		}
 		aflag++;
 	}
-
-	if ((outf = fopen(outfile, aflag ? "a" : "w")) == NULL) {
+	outf = fopen(outfile, aflag ? "a" : "w");
+	if (outf == NULL) {
 		perror(outfile);
 		exit(1);
 	}
-	put_funcs(head);	/* put the data in "tags"		*/
+	put_funcs(head);
+	fclose(outf);
+	if (uflag) {
+		sprintf(cmd, "sort %s -o %s", outfile, outfile);
+		system(cmd);
+	}
 	exit(0);
 }
 
 /*
- *	This routine sets up the boolean psuedo-functions which work
+ * This routine sets up the boolean psuedo-functions which work
  * by seting boolean flags dependent upon the corresponding character
-
  * Every char which is NOT in that string is not a white char.  Therefore,
  * all of the array "_wht" is set to FALSE, and then the elements
  * subscripted by the chars in "white" are set to TRUE.  Thus "_wht"
  * of a char is TRUE if it is the string "white", else FALSE.
- * It also open up the "tags" output file.
  */
 init()
 {
@@ -168,175 +169,170 @@ init()
 }
 
 /*
- *	This program opens the specified file and calls the function
- * which finds the function defenitions.
+ * This routine opens the specified file and calls the function
+ * which finds the function definitions.
  */
 find_funcs(file)
 char	*file;
 {
+	char *cp;
 
 	if ((inf=fopen(file,"r")) == NULL) {
 		perror(file);
 		return;
 	}
-
-	curfile = (char *) calloc(strlen(file)+1,1);
-	strcpy(curfile, file);
-	lineno = 1;
-	C_funcs();		/* find the C-style functions		*/
+	curfile = savestr(file);
+	cp = rindex(file, '.');
+	if (cp && (cp[1] != 'c' || cp[1] != 'h') && cp[2] == 0) {
+		if (PF_funcs(inf) == 0) {
+			rewind(inf);
+			C_funcs();
+		}
+	} else
+		C_funcs();
 	fclose(inf);
 }
 
+pfnote(name, ln)
+	char *name;
+{
+	register char *fp;
+	register NODE *np;
+	char nbuf[BUFSIZ];
+
+	if ((np = (NODE *) malloc(sizeof (NODE))) == NULL) {
+		fprintf(stderr, "ctags: too many functions to sort\n");
+		put_funcs(head);
+		free_tree(head);
+		head = np = (NODE *) malloc(sizeof (NODE));
+	}
+	if (xflag == 0 && !strcmp(name, "main")) {
+		fp = rindex(curfile, '/');
+		if (fp == 0)
+			fp = curfile;
+		else
+			fp++;
+		sprintf(nbuf, "M%s", fp);
+		fp = rindex(nbuf, '.');
+		if (fp && fp[2] == 0)
+			*fp = 0;
+		name = nbuf;
+	}
+	np->func = savestr(name);
+	np->file = curfile;
+	np->lno = ln;
+	np->left = np->right = 0;
+	if (xflag == 0) {
+		lbuf[50] = 0;
+		strcat(lbuf, "$");
+		lbuf[50] = 0;
+	}
+	np->pat = savestr(lbuf);
+	if (head == NULL)
+		head = np;
+	else
+		add_node(np, head);
+}
+
 /*
- *	This routine finds functions in C syntax and adds them
+ * This routine finds functions in C syntax and adds them
  * to the list.
  */
 C_funcs()
 {
+	register int c;
+	register char *token, *tp;
+	int incomm, inquote, inchar, midtoken, level;
+	char *sp;
+	char tok[BUFSIZ];
 
-	reg	char	c,		/* current input char		*/
-			*token,		/* start of current token	*/
-			*tp;		/* end of current token		*/
-	logical	incom,			/* T if inside a comment	*/
-		inquote,		/* T if inside a quoted string	*/
-		inchar,			/* T if inside a single char '	*/
-		midtoken;		/* T if in middle of token	*/
-	char	*sp;			/* current input char		*/
-	char	tok[100];
-	long	insub;			/* level of "{}"s deep		*/
-
-	/*
-	 * init boolean flags, counters, and pointers
-	 */
-
-	number = gotone = midtoken = inquote = inchar = incom = FALSE;
-	insub = 0L;
+	lineno = 1;
+	number = gotone = midtoken = inquote = inchar = incomm = FALSE;
+	level = 0;
 	sp = tp = token = line;
-#ifdef DEBUG
-	printf("           t  s c m q c g n\n");
-	printf("     s  t  k  u o i u h o u\n");
-	printf(" c   p  p  n  b m d o r t m\n");
-#endif
-	while ((*sp=c=getc(inf)) != EOF) {
-#ifdef DEBUG
-		printf("%2.2s: ",unctrl(c));
-		printf("%2.2s ",unctrl(*sp));
-		printf("%2.2s ",unctrl(*tp));
-		printf("%2.2s ",unctrl(*token));
-		printf("%2ld %d %d %d %d %d %d\n",insub,incom,midtoken,inquote,inchar,gotone,number);
-#endif
-		/*
-		 * action based on mixture of character type, *sp,
-		 * and logical flags
-		 */
-
+	for (;;) {
+		*sp=c=getc(inf);
+		if (feof(inf))
+			break;
+		if (c == '\n')
+			lineno++;
 		if (c == '\\') {
 			c = *++sp = getc(inf);
-			/*
-			 * Handling of backslash is very naive.
-			 * We do, however, turn escaped newlines
-			 * into spaces.
-			 */
 			if (c = '\n')
 				c = ' ';
-		}
-		else if (incom) {
+		} else if (incomm) {
 			if (c == '*') {
-				while ((*++sp=c=getc(inf)) == '*') {
-#ifdef DEBUG
-					printf("%2.2s- ",unctrl(c));
-					printf("%2.2s ",unctrl(*sp));
-					printf("%2.2s ",unctrl(*tp));
-					printf("%2.2s ",unctrl(*token));
-					printf("%2ld %d %d %d %d %d %d\n",insub,incom,midtoken,inquote,inchar,gotone,number);
-#endif
+				while ((*++sp=c=getc(inf)) == '*')
 					continue;
-				}
-#ifdef DEBUG
-				printf("%2.2s- ",unctrl(c));
-				printf("%2.2s ",unctrl(*sp));
-				printf("%2.2s ",unctrl(*tp));
-				printf("%2.2s ",unctrl(*token));
-				printf("%2ld %d %d %d %d %d %d\n",insub,incom,midtoken,inquote,inchar,gotone,number);
-#endif
+				if (c == '\n')
+					lineno++;
 				if (c == '/')
-					incom = FALSE;
+					incomm = FALSE;
 			}
-		}
-		else if (inquote) {
+		} else if (inquote) {
 			/*
 			 * Too dumb to know about \" not being magic, but
 			 * they usually occur in pairs anyway.
 			 */
-			if ( c == '"' )
+			if (c == '"')
 				inquote = FALSE;
 			continue;
-		     }
-		else if (inchar) {
-			if ( c == '\'' )
+		} else if (inchar) {
+			if (c == '\'')
 				inchar = FALSE;
 			continue;
-		     }
-		else if (c == '"')
+		} else switch (c) {
+		case '"':
 			inquote = TRUE;
-		else if (c == '\'')
+			continue;
+		case '\'':
 			inchar = TRUE;
-		else if (c == '/')
+			continue;
+		case '/':
 			if ((*++sp=c=getc(inf)) == '*')
-				incom = TRUE;
+				incomm = TRUE;
 			else
-				ungetc(*sp,inf);
-		else if (c == '#' && sp == line)
-			number = TRUE;
-		else if (c == '{')
-			insub++;
-		else if (c == '}')
+				ungetc(*sp, inf);
+			continue;
+		case '#':
 			if (sp == line)
-				/*
-				 * Kludge to get back in sync after getting confused.
-				 * We really shouldn't be looking at indenting style,
-				 * but tricking with the preprocessor can get us off,
-				 * and most people indent this way anyway.
-				 * This resets level of indenting to zero if '}' is
-				 * found at beginning of line.
-				 */
-				insub = 0;
+				number = TRUE;
+			continue;
+		case '{':
+			level++;
+			continue;
+		case '}':
+			if (sp == line)
+				level = 0;	/* reset */
 			else
-				insub--;
-		else if (!insub && !inquote && !inchar && !gotone) {
+				level--;
+			continue;
+		}
+		if (!level && !inquote && !incomm && gotone == 0) {
 			if (midtoken) {
 				if (endtoken(c)) {
+					int pfline = lineno;
 					if (start_func(&sp,token,tp)) {
 						strncpy(tok,token,tp-token+1);
 						tok[tp-token+1] = 0;
-						add_func(tok);
+						getline();
+						pfnote(tok, pfline);
 						gotone = TRUE;
 					}
 					midtoken = FALSE;
 					token = sp;
-				}
-				else if (intoken(c))
+				} else if (intoken(c))
 					tp++;
-			}
-			else if (begtoken(c)) {
+			} else if (begtoken(c)) {
 				token = tp = sp;
 				midtoken = TRUE;
 			}
 		}
-
-		/*
-		 * move on to next char, and set flags accordingly
-		 */
-
 		sp++;
-		if (c == '\n') {
+		if (c == '\n' || sp > &line[sizeof (line) - BUFSIZ]) {
 			tp = token = sp = line;
-			lineftell = ftell( inf );
-#ifdef DEBUG
-			printf("lineftell saved as %ld\n",lineftell);
-#endif
+			lineftell = ftell(inf);
 			number = gotone = midtoken = inquote = inchar = FALSE;
-			lineno++;
 		}
 	}
 }
@@ -358,16 +354,18 @@ char	**lp,*token,*tp;
 	sp = *lp;
 	c = *sp;
 	bad = FALSE;
-	if (!number)		/* space is not allowed in macro defs	*/
+	if (!number) {		/* space is not allowed in macro defs	*/
 		while (iswhite(c)) {
 			*++sp = c = getc(inf);
-#ifdef DEBUG
-			printf("%2.2s:\n",unctrl(c));
-#endif
+			if (c == '\n') {
+				lineno++;
+				if (sp > &line[sizeof (line) - BUFSIZ])
+					goto ret;
+			}
 		}
 	/* the following tries to make it so that a #define a b(c)	*/
 	/* doesn't count as a define of b.				*/
-	else {
+	} else {
 		logical	define;
 
 		define = TRUE;
@@ -390,6 +388,11 @@ badone:			bad = TRUE;
 		goto badone;
 	firsttok = FALSE;
 	while ((*++sp=c=getc(inf)) != ')') {
+		if (c == '\n') {
+			lineno++;
+			if (sp > &line[sizeof (line) - BUFSIZ])
+				goto ret;
+		}
 		/*
 		 * This line used to confuse ctags:
 		 *	int	(*oldhup)();
@@ -399,107 +402,34 @@ badone:			bad = TRUE;
 		 */
 		if (begtoken(c) || c=='/') firsttok++;
 		else if (!iswhite(c) && !firsttok) goto badone;
-#ifdef DEBUG
-		printf("%2.2s:\n",unctrl(c));
-#endif
 	}
-#ifdef DEBUG
-	printf("%2.2s:\n",unctrl(c));
-#endif
 	while (iswhite(*++sp=c=getc(inf)))
-#ifdef DEBUG
-		printf("%2.2s:\n",unctrl(c))
-#endif
-		;
-#ifdef DEBUG
-	printf("%2.2s:\n",unctrl(c));
-#endif
+		if (c == '\n') {
+			lineno++;
+			if (sp > &line[sizeof (line) - BUFSIZ])
+				break;
+		}
 ret:
 	*lp = --sp;
+	if (c == '\n')
+		lineno--;
 	ungetc(c,inf);
 	return !bad && isgood(c);
 }
 
-/*
- *	This routine adds a function to the list
- */
-add_func(token)
-char *token;
+getline()
 {
-	reg	char	*fp,*pp;
-	reg	NODE	*np;
+	long saveftell = ftell( inf );
+	register char *cp;
 
-	if ((np = (NODE *) calloc(1,sizeof (NODE))) == NULL) {
-		printf("too many functions to sort\n");
-		put_funcs(head);
-		free_tree(head);
-		head = np = (NODE *) calloc(1,sizeof (NODE));
-	}
-	if (strcmp(token,"main") == 0) {
-		/*
-		 * Since there are so many directories with lots of
-		 * misc. complete programs in them, main tends to get
-		 * redefined a lot. So we change all mains to instead
-		 * refer to the name of the file, without leading
-		 * pathname components and without a trailing .c.
-		 */
-		fp = curfile;
-		for (pp=curfile; *pp; pp++)
-			if (*pp == '/')
-				fp = pp+1;
-		*token = 'M';
-		strcpy(token+1, fp);
-		pp = &token[strlen(token)-2];
-		if (*pp == '.')
-			*pp = 0;
-	}
-	fp = np->func = (char *) calloc(strlen(token)+1,sizeof (char));
-	np->file = curfile;
-	strcpy(fp, token);
-	{	/*
-		 * this change to make the whole line the pattern
-		 */
-	    long	saveftell = ftell( inf );
-	    int		patlen;
-	    char	ch;
-
-	    patlen = 0;
-	    fseek( inf , lineftell , 0 );
-#ifdef DEBUG
-	    printf("saveftell=%ld, lseek back to %ld\n",saveftell,lineftell);
-#endif
-	    ch = getc( inf );
-	    while ( ch != '\n' && ch != searchar && patlen < MAXPATTERN ) {
-		patlen ++;
-		ch = getc( inf );
-	    }
-	    pp = np -> pat = (char *) calloc( patlen + 2 , sizeof( char ) );
-	    fseek( inf , lineftell , 0 );
-	    ch = getc( inf );
-	    while ( patlen -- ) {
-		*pp ++ = ch;
-		ch = getc( inf );
-	    }
-	    if ( ch == '\n' )
-		*pp ++ = '$';
-	    *pp = '\0';
-	    fseek( inf , saveftell , 0 );
-#ifdef DEBUG
-	    printf("seek back to %ld, ftell is now %ld\n",saveftell,ftell(inf));
-#endif
-	}
-#ifdef DEBUG
-	printf("\"%s\"\t\"%s\"\t\"%s\"\n",np->func,np->file,np->pat);
-#endif
-	if (head == NULL)
-		head = np;
-	else
-		add_node(np,head);
+	fseek( inf , lineftell , 0 );
+	fgets(lbuf, sizeof lbuf, inf);
+	cp = rindex(lbuf, '\n');
+	if (cp)
+		*cp = 0;
+	fseek(inf, saveftell, 0);
 }
 
-/*
- *	This routine cfrees the entire tree from the node down.
- */
 free_tree(node)
 NODE	*node;
 {
@@ -511,105 +441,224 @@ NODE	*node;
 	}
 }
 
-/*
- *	This routine finds the node where the new function node
- * should be added.
- */
-add_node(node,cur_node)
-NODE	*node,*cur_node;
+add_node(node, cur_node)
+	NODE *node,*cur_node;
 {
-
-	reg	int	dif;
+	register int dif;
 
 	dif = strcmp(node->func,cur_node->func);
-#ifdef DEBUG
-	printf("strcmp(\"%s\",\"%s\") == %d\n",node->func,cur_node->func,dif);
-#endif
 	if (dif == 0) {
 		if (node->file == cur_node->file) {
 			if (!wflag) {
-				fprintf(stderr,"Duplicate function in file \"%s\", line %d: %s\n",node->file,lineno,node->func);
-				fprintf(stderr,"Second entry ignored\n");
+fprintf(stderr,"Duplicate function in file %s, line %d: %s\n",
+    node->file,lineno,node->func);
+fprintf(stderr,"Second entry ignored\n");
 			}
 			return;
 		}
-		else {
-			if (!cur_node->been_warned)
-				if (!wflag)
-					fprintf(stderr,"Duplicate function name in files %s and %s: %s (Warning only)\n",
-						node->file, cur_node->file, node->func);
-			cur_node->been_warned = TRUE;
-		}
-	}
-	if (dif < 0)
+		if (!cur_node->been_warned)
+			if (!wflag)
+fprintf(stderr,"Duplicate function in files %s and %s: %s (Warning only)\n",
+    node->file, cur_node->file, node->func);
+		cur_node->been_warned = TRUE;
+		return;
+	} 
+	if (dif < 0) {
 		if (cur_node->left != NULL)
 			add_node(node,cur_node->left);
-		else {
-#ifdef DEBUG
-			printf("adding to left branch\n");
-#endif
+		else
 			cur_node->left = node;
-		}
+		return;
+	}
+	if (cur_node->right != NULL)
+		add_node(node,cur_node->right);
 	else
-		if (cur_node->right != NULL)
-			add_node(node,cur_node->right);
-		else {
-#ifdef DEBUG
-			printf("adding to right branch\n");
-#endif
-			cur_node->right = node;
-		}
+		cur_node->right = node;
 }
 
-/*
- *	This routine puts the functions in the file.
- */
 put_funcs(node)
-NODE	*node;
+reg NODE	*node;
 {
+	reg char	*sp;
 
 	if (node == NULL)
 		return;
 	put_funcs(node->left);
-	fprintf(outf,"%s\t%s\t%c^%s%c\n",node->func,node->file
-	       ,searchar,node->pat,searchar);
+	if (xflag == 0) {
+		fprintf(outf, "%s\t%s\t%c^", node->func, node->file ,searchar);
+		for (sp = node->pat; *sp; sp++)
+			if (*sp == '\\')
+				fprintf(outf, "\\\\");
+			else
+				putc(*sp, outf);
+		fprintf(outf, "%c\n", searchar);
+	}
+	else
+		fprintf(stdout, "%-16s%4d %-16s %s\n",
+		    node->func, node->lno, node->file, node->pat);
 	put_funcs(node->right);
 }
 
-#ifdef DEBUG
-char *
-unctrl(c)
-char c;
+char	*dbp = lbuf;
+int	pfcnt;
+
+PF_funcs(fi)
+	FILE *fi;
 {
-	static char buf[3];
-	if (c>=' ' && c<='~') {
-		buf[0] = c;
-		buf[1] = 0;
-	} else if (c > '~') {
-		buf[0] = '^';
-		buf[1] = '?';
-		buf[2] = 0;
-	} else if (c < 0) {
-		buf[0] = buf[1] = '?';
-		buf[2] = 0;
-	} else {
-		buf[0] = '\\';
-		buf[2] = 0;
-		switch(c) {
-		case '\b':
-			buf[1] = 'b';
+
+	lineno = 0;
+	pfcnt = 0;
+	while (fgets(lbuf, sizeof(lbuf), fi)) {
+		lineno++;
+		dbp = lbuf;
+		if ( *dbp == '%' ) dbp++ ;	/* Ratfor escape to fortran */
+		while (isspace(*dbp))
+			dbp++;
+		if (*dbp == 0)
+			continue;
+		switch (*dbp |' ') {
+
+		case 'i':
+			if (tail("integer"))
+				takeprec();
 			break;
-		case '\t':
-			buf[1] = 't';
+		case 'r':
+			if (tail("real"))
+				takeprec();
 			break;
-		case '\n':
-			buf[1] = 'n';
+		case 'l':
+			if (tail("logical"))
+				takeprec();
 			break;
-		default:
-			buf[0] = '^';
-			buf[1] = c + 64;
+		case 'c':
+			if (tail("complex") || tail("character"))
+				takeprec();
+			break;
+		case 'd':
+			if (tail("double")) {
+				while (isspace(*dbp))
+					dbp++;
+				if (*dbp == 0)
+					continue;
+				if (tail("precision"))
+					break;
+				continue;
+			}
+			break;
+		}
+		while (isspace(*dbp))
+			dbp++;
+		if (*dbp == 0)
+			continue;
+		switch (*dbp|' ') {
+
+		case 'f':
+			if (tail("function"))
+				getit();
+			continue;
+		case 's':
+			if (tail("subroutine"))
+				getit();
+			continue;
+		case 'p':
+			if (tail("program")) {
+				getit();
+				continue;
+			}
+			if (tail("procedure"))
+				getit();
+			continue;
 		}
 	}
-	return(buf);
+	return (pfcnt);
 }
-#endif
+
+tail(cp)
+	char *cp;
+{
+	register int len = 0;
+
+	while (*cp && (*cp&~' ') == ((*(dbp+len))&~' '))
+		cp++, len++;
+	if (*cp == 0) {
+		dbp += len;
+		return (1);
+	}
+	return (0);
+}
+
+takeprec()
+{
+
+	while (isspace(*dbp))
+		dbp++;
+	if (*dbp != '*')
+		return;
+	dbp++;
+	while (isspace(*dbp))
+		dbp++;
+	if (!isdigit(*dbp)) {
+		--dbp;		/* force failure */
+		return;
+	}
+	do
+		dbp++;
+	while (isdigit(*dbp));
+}
+
+getit()
+{
+	register char *cp;
+	char c;
+	char nambuf[BUFSIZ];
+
+	for (cp = lbuf; *cp; cp++)
+		;
+	*--cp = 0;	/* zap newline */
+	while (isspace(*dbp))
+		dbp++;
+	if (*dbp == 0 || !isalpha(*dbp))
+		return;
+	for (cp = dbp+1; *cp && (isalpha(*cp) || isdigit(*cp)); cp++)
+		continue;
+	c = cp[0];
+	cp[0] = 0;
+	strcpy(nambuf, dbp);
+	cp[0] = c;
+	pfnote(nambuf, lineno);
+	pfcnt++;
+}
+
+char *
+savestr(cp)
+	char *cp;
+{
+	register int len;
+	register char *dp;
+
+	len = strlen(cp);
+	dp = (char *)malloc(len+1);
+	strcpy(dp, cp);
+	return (dp);
+}
+
+/*
+ * Return the ptr in sp at which the character c last
+ * appears; NULL if not found
+ *
+ * Identical to v7 rindex, included for portability.
+ */
+
+char *
+rindex(sp, c)
+register char *sp, c;
+{
+	register char *r;
+
+	r = NULL;
+	do {
+		if (*sp == c)
+			r = sp;
+	} while (*sp++);
+	return(r);
+}
