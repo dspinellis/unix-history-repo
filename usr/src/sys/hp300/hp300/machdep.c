@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machdep.c 1.74 92/12/20$
  *
- *	@(#)machdep.c	8.6 (Berkeley) %G%
+ *	@(#)machdep.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1103,13 +1103,16 @@ dumpconf()
 {
 	int nblks;
 
-	dumpsize = physmem;
+	/*
+	 * XXX include the final RAM page which is not included in physmem.
+	 */
+	dumpsize = physmem + 1;
 	if (dumpdev != NODEV && bdevsw[major(dumpdev)].d_psize) {
 		nblks = (*bdevsw[major(dumpdev)].d_psize)(dumpdev);
 		if (dumpsize > btoc(dbtob(nblks - dumplo)))
 			dumpsize = btoc(dbtob(nblks - dumplo));
 		else if (dumplo == 0)
-			dumplo = nblks - btodb(ctob(physmem));
+			dumplo = nblks - btodb(ctob(dumpsize));
 	}
 	/*
 	 * Don't dump on the first CLBYTES (why CLBYTES?)
