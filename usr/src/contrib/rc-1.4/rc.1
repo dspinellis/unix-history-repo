@@ -1,0 +1,1880 @@
+.\" rc.1
+.\"-------
+.\" Man page portability notes
+.\"
+.\" These are some notes on conventions to maintain for greatest
+.\" portability of this man page to various other versions of
+.\" nroff.
+.\"
+.\" When you want a \ to appear in the output, use \e in the man page.
+.\" (NOTE this comes up in the rc grammar, where to print out '\n' the
+.\" man page must contain '\en'.)
+.\"
+.\" Evidently not all versions of nroff allow the omission of the
+.\" terminal " on a macro argument.  Thus what could be written
+.\"
+.\" .Cr "exec >[2] err.out
+.\"
+.\" in true nroffs must be written
+.\"
+.\" .Cr "exec >[2] err.out"
+.\"
+.\" instead.
+.\"
+.\" Use symbolic font names (e.g. R, I, B) instead of the standard
+.\" font positions 1, 2, 3.  Note that for Xf to work the standard
+.\" font names must be single characters.
+.\"
+.\" Not all man macros have the RS and RE requests (I altered the Ds
+.\" and De macros and the calls to Ds accordingly).
+.\"
+.\" Thanks to Michael Haardt (u31b3hs@cip-s01.informatik.rwth-aachen.de)
+.\" for pointing out these problems.
+.\"
+.\" Note that sentences should end at the end of a line.  nroff and
+.\" troff will supply the correct intersentence spacing, but only if
+.\" the sentences end at the end of a line.  Explicit spaces, if given,
+.\" are apparently honored and the normal intersentence spacing is
+.\" supressed.
+.\"
+.\" DaviD W. Sanderson
+.\"-------
+.\" Dd	distance to space vertically before a "display"
+.\" These are what n/troff use for interparagraph distance
+.\"-------
+.if t .nr Dd .4v
+.if n .nr Dd 1v
+.\"-------
+.\" Ds	begin a display, indented .5 inches from the surrounding text.
+.\"
+.\" Note that uses of Ds and De may NOT be nested.
+.\"-------
+.de Ds
+.\" .RS \\$1
+.sp \\n(Ddu
+.in +0.5i
+.nf
+..
+.\"-------
+.\" De	end a display (no trailing vertical spacing)
+.\"-------
+.de De
+.fi
+.in
+.\" .RE
+..
+.\"-------
+.\" I stole the Xf macro from the -man macros on my machine (originally
+.\" "}S", I renamed it so that it won't conflict).
+.\"-------
+.\" Set Cf to the name of the constant width font.
+.\" It will be "C" or "(CW", typically.
+.\" NOTEZ BIEN the lines defining Cf must have no trailing white space:
+.\"-------
+.if t .ds Cf C
+.if n .ds Cf R
+.\"-------
+.\" Rc - Alternate Roman and Courier
+.\"-------
+.de Rc
+.Xf R \\*(Cf \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.\"-------
+.\" Ic - Alternate Italic and Courier
+.\"-------
+.de Ic
+.Xf I \\*(Cf \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.\"-------
+.\" Bc - Alternate Bold and Courier
+.\"-------
+.de Bc
+.Xf B \\*(Cf \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.\"-------
+.\" Cr - Alternate Courier and Roman
+.\"-------
+.de Cr
+.Xf \\*(Cf R \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.\"-------
+.\" Ci - Alternate Courier and Italic
+.\"-------
+.de Ci
+.Xf \\*(Cf I \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.\"-------
+.\" Cb - Alternate Courier and Bold
+.\"-------
+.de Cb
+.Xf \\*(Cf B \& "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.\"-------
+.\" Xf - Alternate fonts
+.\"
+.\" \$1 - first font
+.\" \$2 - second font
+.\" \$3 - desired word with embedded font changes, built up by recursion
+.\" \$4 - text for first font
+.\" \$5 - \$9 - remaining args
+.\"
+.\" Every time we are called:
+.\"
+.\" If		there is something in \$4
+.\" then	Call ourself with the fonts switched,
+.\"		with a new word made of the current word (\$3) and \$4
+.\"		rendered in the first font,
+.\"		and with the remaining args following \$4.
+.\" else	We are done recursing.  \$3 holds the desired output
+.\"		word.  We emit \$3, change to Roman font, and restore
+.\"		the point size to the default.
+.\" fi
+.\"
+.\" Use Xi to add a little bit of space after italic text.
+.\"-------
+.de Xf
+.ds Xi
+.\"-------
+.\" I used to test for the italic font both by its font position
+.\" and its name.  Now just test by its name.
+.\"
+.\" .if "\\$1"2" .if !"\\$5"" .ds Xi \^
+.\"-------
+.if "\\$1"I" .if !"\\$5"" .ds Xi \^
+.\"-------
+.\" This is my original code to deal with the recursion.
+.\" Evidently some nroffs can't deal with it.
+.\"-------
+.\" .ie !"\\$4"" \{\
+.\" .	Xf \\$2 \\$1 "\\$3\\f\\$1\\$4\\*(Xi" "\\$5" "\\$6" "\\$7" "\\$8" "\\$9"
+.\" .\}
+.\" .el \{\\$3
+.\" .	ft R	\" Restore the default font, since we don't know
+.\" .		\" what the last font change was.
+.\" .	ps 10	\" Restore the default point size, since it might
+.\" .		\" have been changed by an argument to this macro.
+.\" .\}
+.\"-------
+.\" Here is more portable (though less pretty) code to deal with
+.\" the recursion.
+.\"-------
+.if !"\\$4"" .Xf \\$2 \\$1 "\\$3\\f\\$1\\$4\\*(Xi" "\\$5" "\\$6" "\\$7" "\\$8" "\\$9"
+.if "\\$4"" \\$3\fR\s10
+..
+.TH RC 1 "28 April 1991"
+.SH NAME
+rc \- shell
+.SH SYNOPSIS
+.B rc
+.RB [ \-eixvldnpo ]
+.RB [ \-c
+.IR command ]
+.RI [ arguments ]
+.SH DESCRIPTION
+.I rc
+is a command interpreter and programming language similar to
+.IR sh (1).
+It is based on the AT&T Plan 9 shell of the same name.
+The shell offers a C-like syntax (much more so than the C shell),
+and a powerful mechanism for manipulating variables.
+It is reasonably small and reasonably fast,
+especially when compared to contemporary shells.
+Its use is intended to be interactive,
+but the language lends itself well to scripts.
+.SH OPTIONS
+.TP
+.Cr \-e
+If the
+.Cr \-e
+option is present, then
+.I rc
+will exit if the exit status of a command is false (nonzero).
+.I rc
+will not exit, however, if a conditional fails, e.g., an
+.Cr if()
+command.
+.TP
+.Cr \-i
+If the
+.Cr \-i
+option is present or if the input to
+.I rc
+is from a terminal (as determined by
+.IR isatty (3))
+then
+.I rc
+will be in
+.I interactive
+mode.
+That is, a prompt (from
+.Cr $prompt(1)\^ )
+will be printed before an
+input line is taken, and
+.I rc
+will ignore the signals
+.Cr SIGINT
+and
+.Cr SIGQUIT .
+.TP
+.Cr \-x
+This option will make
+.I rc
+print every command on standard error before it is executed.
+It can be useful for debugging
+.I rc
+scripts.
+.TP
+.Cr \-v
+This option will echo input to
+.I rc
+on standard error as it is read.
+.TP
+.Cr \-l
+If the
+.Cr \-l
+option is present, or if
+.IR rc 's
+.Cr argv[0][0]
+is a dash
+.Rc ( \- ),
+then
+.I rc
+will behave as a login shell.
+That is, it will try to run commands present in
+.Cr $home/.rcrc ,
+if this file exists, before reading any other input.
+.TP
+.Cr \-d
+This flag causes
+.I rc
+not to ignore
+.Cr SIGQUIT
+or
+.Cr SIGTERM .
+Thus
+.I rc
+can be made to dump core if sent
+.Cr SIGQUIT .
+This option is only useful for debugging
+.IR rc .
+.TP
+.Cr \-n
+This flag causes
+.I rc
+to read its input and parse it, but not to execute any commands.
+This is useful for syntax checking on scripts.
+If used in combination with the
+.Cr \-x
+option,
+.I rc
+will print each command as it is parsed in a form similar to the one
+used for exporting functions into the environment.
+.TP
+.Cr \-p
+This flag prevents
+.I rc
+from initializing shell functions from the environment.
+This allows
+.I rc
+to run in a protected mode, whereby it becomes more difficult for
+an
+.I rc
+script to be subverted by placing false commands in the environment.
+(Note that this presence of this option does NOT mean that it is safe to
+run setuid
+.I rc
+scripts; the usual caveats about the setuid bit still apply.)
+.TP
+.Cr \-o
+This flag prevents the usual practice of trying to open
+.Cr /dev/null
+on file descriptors 0, 1, and 2, if any of those descriptors
+are inherited closed.
+.TP
+.Cr \-c
+If
+.Cr \-c
+is present, commands are executed from the immediately following
+argument.
+Any further arguments to
+.I rc
+are placed in
+.Cr $* .
+.PP
+.SH COMMANDS
+A simple command is a sequence of words, separated by white space
+(space and tab) characters that ends with a newline, semicolon
+.Rc ( ; ),
+or ampersand
+.Rc ( & ).
+The first word of a command is the name of that command.
+If the name begins with
+.Cr / ,
+.Cr ./ ,
+or
+.Cr ../ ,
+then the name is used as an absolute path
+name referring to an executable file.
+Otherwise, the name of the command is looked up in a table
+of shell functions, builtin commands,
+or as a file in the directories named by
+.Cr $path .
+.SS "Background Tasks"
+A command ending with a
+.Cr &
+is run in the background; that is,
+the shell returns immediately rather than waiting for the command to
+complete.
+Background commands have
+.Cr /dev/null
+connected to their standard input unless an explicit redirection for
+standard input is used.
+.SS "Subshells"
+A command prefixed with an at-sign
+.Rc ( @ )
+is executed in a subshell.
+This insulates the parent shell from the effects
+of state changing operations such as a
+.B cd
+or a variable assignment.
+For example:
+.Ds
+.Cr "@ {cd ..; make}"
+.De
+.PP
+will run
+.IR make (1)
+in the parent directory
+.Rc ( .. ),
+but leaves the shell running in the current directory.
+.SS "Line continuation"
+A long logical line may be continued over several physical lines by
+terminating each line (except the last) with a backslash
+.Rc ( \e ).
+The backslash-newline sequence is treated as a space.
+A backslash is not otherwise special to
+.IR rc .
+(In addition,
+inside quotes a backslash loses its special meaning
+even when it is followed by a newline.)
+.SS Quoting
+.IR rc
+interprets several characters specially; special characters
+automatically terminate words.
+The following characters are special:
+.Ds
+.Cr "# ; & | ^ $ = \` ' { } ( ) < >"
+.De
+.PP
+The single quote
+.Rc ( ' )
+prevents special treatment of any character other than itself.
+All characters, including control characters, newlines,
+and backslashes between two quote characters are treated as an
+uninterpreted string.
+A quote character itself may be quoted by placing two quotes in a row.
+The minimal sequence needed to enter the quote character is
+.Cr '''' .
+The empty string is represented by
+.Cr '' .
+Thus:
+.Ds
+.Cr "echo 'What''s the plan, Stan?'"
+.De
+.PP
+prints out
+.Ds
+.Cr "What's the plan, Stan?"
+.De
+.PP
+The number sign
+.Rc ( # )
+begins a comment in
+.IR rc .
+All characters up to but not including the next newline are ignored.
+Note that backslash continuation does not work inside a comment,
+i.e.,
+the backslash is ignored along with everything else.
+.SS Grouping
+Zero or more commands may be grouped within braces
+.Rc (`` { ''
+and
+.Rc `` } ''),
+and are then treated as one command.
+Braces do not otherwise define scope;
+they are used only for command grouping.
+In particular, be wary of the command:
+.Ds
+.Cr "for (i) {"
+.Cr "    command"
+.Cr "} | command"
+.De
+.PP
+Since pipe binds tighter than
+.Cr for ,
+this command does not perform what the user expects it to.
+Instead, enclose the whole
+.Cr for
+statement in braces:
+.Ds
+.Cr "{for (i) command} | command"
+.De
+.PP
+Fortunately,
+.IR rc 's
+grammar is simple enough that a (confident) user can
+understand it by examining the skeletal
+.IR yacc (1)
+grammar
+at the end of this man page (see the section entitled
+.BR GRAMMAR ).
+.SS "Input and output"
+.PP
+The standard output may be redirected to a file with
+.Ds
+.Cr "command > file"
+.De
+.PP
+and the standard input may be taken from a file with
+.Ds
+.Cr "command < file"
+.De
+.PP
+File descriptors other than 0 and 1 may be specified also.
+For example, to redirect standard error to a file, use:
+.Ds
+.Cr "command >[2] file"
+.De
+.PP
+In order to duplicate a file descriptor, use
+.Ci >[ n = m ]\fR.
+Thus to redirect both standard output and standard error
+to the same file, use
+.Ds
+.Cr "command > file >[2=1]"
+.De
+.PP
+To close a file descriptor that may be open, use
+.Ci >[ n =]\fR.
+For example, to
+close file descriptor 7:
+.Ds
+.Cr "command >[7=]"
+.De
+.PP
+In order to place the output of a command at the end of an already
+existing file, use:
+.Ds
+.Cr "command >> file"
+.De
+.PP
+If the file does not exist, then it is created.
+.PP
+``Here documents'' are supported as in
+.I sh
+with the use of
+.Ds
+.Cr "command << 'eof-marker'"
+.De
+.PP
+If the end-of-file marker is enclosed in quotes,
+then no variable substitution occurs inside the here document.
+Otherwise, every variable is substituted
+by its space-separated-list value (see
+.BR "Flat Lists" ,
+below),
+and if a
+.Cr ^
+character follows a variable name, it is deleted.
+This allows the unambiguous use of variables adjacent to text, as in
+.Ds
+.Cr $variable^follow
+.De
+To include a literal
+.Cr $
+in a here document when an unquoted end-of-file marker is being used,
+enter it as
+.Cr $$ .
+.PP
+Additionally,
+.I rc
+supports ``here strings'', which are like here documents,
+except that input is taken directly from a string on the command line.
+Its use is illustrated here:
+.Ds
+.Cr "cat <<< 'this is a here string' | wc"
+.De
+.PP
+(This feature enables
+.I rc
+to export functions using here documents into the environment;
+the author does not expect users to find this feature useful.)
+.SS Pipes
+Two or more commands may be combined in a pipeline by placing the
+vertical bar
+.Rc ( \||\| )
+between them.
+The standard output (file descriptor 1)
+of the command on the left is tied to the standard input (file
+descriptor 0) of the command on the right.
+The notation
+.Ci |[ n = m ]
+indicates that file descriptor
+.I n
+of the left process is connected to
+file descriptor
+.I m
+of the right process.
+.Ci |[ n ]
+is a shorthand for
+.Ci |[ n =0]\fR.
+As an example, to pipe the standard error of a command to
+.IR wc (1),
+use:
+.Ds
+.Cr "command |[2] wc"
+.De
+.PP
+The exit status of a pipeline is considered true if and only if every
+command in the pipeline exits true.
+.SS "Commands as Arguments"
+Some commands, like
+.IR cmp (1)
+or
+.IR diff (1),
+take their arguments on the command
+line, and do not read input from standard input.
+It is convenient
+sometimes to build nonlinear pipelines so that a command like
+.I cmp
+can read the output of two other commands at once.
+.I rc
+does it like this:
+.Ds
+.Cr "cmp <{command} <{command}"
+.De
+.PP
+compares the output of the two commands in braces.
+A note: since this form of
+redirection is implemented with some kind of pipe, and since one cannot
+.IR lseek (2)
+on a pipe, commands that use
+.IR lseek (2)
+will hang.
+For example,
+most versions of
+.IR diff (1)
+use
+.IR lseek (2)
+on their inputs.
+.PP
+Data can be sent down a pipe to several commands using
+.IR tee (1)
+and the output version of this notation:
+.Ds
+.Cr "echo hi there | tee >{sed 's/^/p1 /'} >{sed 's/^/p2 /'}"
+.De
+.SH "CONTROL STRUCTURES"
+The following may be used for control flow in
+.IR rc :
+.SS "If-else Statements"
+.PD 0
+.sp
+.Ci "if (" test ") {"
+.br
+.I  "    cmd"
+.br
+.TP
+.Ci "} else " cmd
+The
+.I test
+is executed, and if its return status is zero, the first
+command is executed, otherwise the second is.
+Braces are not mandatory around the commands.
+However, an
+.Cr else
+statement is valid only if it
+follows a close-brace on the same line.
+Otherwise, the
+.Cr if
+is taken to be a simple-if:
+.Ds
+.Cr "if (test)"
+.Cr "    command"
+.De
+.PD
+.SS "While and For Loops"
+.TP
+.Ci "while (" test ) " cmd"
+.I rc
+executes the
+.I test
+and performs the command as long as the
+.I test
+is true.
+.TP
+.Ci "for (" var " in" " list" ) " cmd"
+.I rc
+sets
+.I var
+to each element of
+.I list
+(which may contain variables and backquote substitutions) and runs
+.IR cmd .
+If
+.Rc `` in
+.IR list ''
+is omitted, then
+.I rc
+will set
+.I var
+to each element of
+.Cr $*
+(excluding
+.Cr $0 ).
+For example:
+.Ds
+.Cr "for (i in \`{ls -F | grep '\e*$' | sed 's/\e*$//'}) { commands }"
+.De
+.TP
+\&
+will set
+.Cr $i
+to the name of each file in the current directory that is
+executable.
+.SS "Switch"
+.TP
+.Ci "switch (" list ") { case" " ..." " }"
+.I rc
+looks inside the braces after a
+.Cr switch
+for statements beginning with the word
+.Cr case .
+If any of the patterns following
+.Cr case
+match the list supplied to
+.Cr switch ,
+then the commands up until the next
+.Cr case
+statement are executed.
+The metacharacters
+.Cr "*" ,
+.Cr [
+or
+.Cr ?
+should not be quoted;
+matching is performed only against the strings in
+.IR list ,
+not against file names.
+(Matching for case statements is the same as for the
+.Cr ~
+command.)
+.SS "Logical Operators"
+There are a number of operators in
+.I rc
+which depend on the exit status of a command.
+.Ds
+.Cr "command && command"
+.De
+.PP
+executes the first command and then executes the second command if and only if
+the first command exits with a zero exit status (``true'' in Unix).
+.Ds
+.Cr "command || command"
+.De
+.PP
+executes the first command executing the second command if and only if
+the second command exits with a nonzero exit status (``false'' in Unix).
+.Ds
+.Cr "! command"
+.De
+.PP
+negates the exit status of a command.
+.SH "PATTERN MATCHING"
+There are two forms of pattern matching in
+.IR rc .
+One is traditional shell globbing.
+This occurs in matching for file names in argument lists:
+.Ds
+.Cr "command argument argument ..."
+.De
+.PP
+When the characters
+.Cr "*" ,
+.Cr [
+or
+.Cr ?
+occur in an argument or command,
+.I rc
+looks at the
+argument as a pattern for matching against files.
+(Contrary to the behavior other shells exhibit,
+.I rc
+will only perform pattern matching if a metacharacter occurs unquoted and
+literally in the input.
+Thus,
+.Ds
+.Cr "foo='*'"
+.Cr "echo $foo"
+.De
+.PP
+will always echo just a star.
+In order for non-literal metacharacters to be expanded, an
+.Cr eval
+statement must be used in order to rescan the input.)
+Pattern matching occurs according to the following rules: a
+.Cr *
+matches any number (including zero) of
+characters.
+A
+.Cr ?
+matches any single character, and a
+.Cr [
+followed by a
+number of characters followed by a
+.Cr ]
+matches a single character in that
+class.
+The rules for character class matching are the same as those for
+.IR ed (1),
+with the exception that character class negation is achieved
+with the tilde
+.Rc ( ~ ),
+not the caret
+.Rc ( ^ ),
+since the caret already means
+something else in
+.IR rc .
+.PP
+.I rc
+also matches patterns against strings with the
+.Cr ~
+command:
+.Ds
+.Cr "~ subject pattern pattern ..."
+.De
+.PP
+.Cr ~
+sets
+.Cr $status
+to zero if and only if a supplied pattern matches any
+single element of the subject list.
+Thus
+.Ds
+.Cr "~ foo f*"
+.De
+.PP
+sets status to zero, while
+.Ds
+.Cr "~ (bar baz) f*"
+.De
+.PP
+sets status to one.
+The null list is matched by the null list, so
+.Ds
+.Cr "~ $foo ()"
+.De
+.PP
+checks to see whether
+.Cr $foo
+is empty or not.
+This may also be achieved
+by the test
+.Ds
+.Cr "~ $#foo 0"
+.De
+.PP
+Note that inside a
+.Cr ~
+command
+.I rc
+does not match patterns against file
+names, so it is not necessary to quote the characters
+.Cr "*" ,
+.Cr [
+and
+.Cr "?" .
+However,
+.I rc
+does expand the glob the subject against filenames if it contains
+metacharacters.
+Thus, the command
+.Ds
+.Cr "~ * ?"
+.De
+.PP
+returns true if any of the files in the current directory have a
+single-character name.
+(Note that if the
+.Cr ~
+command is given a list as its first
+argument, then a successful match against any of the elements of that
+list will cause
+.Cr ~
+to return true.
+For example:
+.Ds
+.Cr "~ (foo goo zoo) z*"
+.De
+.PP
+is true.)
+.SH "LISTS AND VARIABLES"
+The primary data structure in
+.IR rc
+is the list, which is a sequence of words.
+Parentheses are used to group lists.
+The empty list is represented by
+.Cr "()" .
+Lists have no hierarchical structure;
+a list inside another list is expanded so the
+outer list contains all the elements of the inner list.
+Thus, the following are all equivalent
+.Ds
+.Cr "one two three"
+
+.Cr "(one two three)"
+
+.Cr "((one) () ((two three)))"
+.De
+.PP
+Note that the null string,
+.Cr "''" ,
+and the null list,
+.Cr "()" ,
+are two very
+different things.
+Assigning the null string to variable is a valid
+operation, but it does not remove its definition.
+For example,
+if
+.Cr $a
+is set to
+.Cr "''" ,
+then
+.Cr "$#a" ,
+returns a 1.
+.SS "List Concatenation"
+Two lists may be joined by the concatenation operator
+.Rc ( ^ ).
+A single word is treated as a list of length one, so
+.Ds
+.Cr "echo foo^bar"
+.De
+.PP
+produces the output
+.Ds
+.Cr foobar
+.De
+.PP
+For lists of more than one element,
+concatenation works according to the following rules:
+if the two lists have the same number of elements,
+then concatenation is pairwise:
+.Ds
+.Cr "echo (a\- b\- c\-)^(1 2 3)"
+.De
+.PP
+produces the output
+.Ds
+.Cr "a\-1 b\-2 c\-3"
+.De
+.PP
+Otherwise, one of the lists must have a single element,
+and then the concatenation is distributive:
+.Ds
+.Cr "cc \-^(O g c) (malloc alloca)^.c"
+.De
+.PP
+has the effect of performing the command
+.Ds
+.Cr "cc \-O \-g \-c malloc.c alloca.c"
+.De
+.SS "Free Carets"
+.I rc
+inserts carets (concatenation operators) for free in certain situations,
+in order to save some typing on the user's behalf.
+For
+example, the above example could also be typed in as:
+.Ds
+.Cr "opts=(O g c) files=(malloc alloca) cc \-$opts $files.c"
+.De
+.PP
+.I rc
+takes care to insert a free-caret between the
+.Rc `` \- ''
+and
+.Cr "$opts" ,
+as well
+as between
+.Cr $files
+and
+.Cr ".c" .
+The rule for free carets is as follows:  if
+a word or keyword is immediately
+followed by another word, keyword, dollar-sign or
+backquote, then
+.I rc
+inserts a caret between them.
+.SS "Variables"
+A list may be assigned to a variable, using the notation:
+.Ds
+.Ic var " = " list
+.De
+.PP
+Any sequence of non-special characters, except a sequence including
+only digits, may be used as a variable name.
+All user-defined variables are exported into the environment.
+.PP
+The value of a variable is referenced with the notation:
+.Ds
+.Ci $ var
+.De
+.PP
+Any variable which has not been assigned a value returns the null list,
+.Cr "()" ,
+when referenced.
+In addition, multiple references are allowed:
+.Ds
+.Cr a=foo
+.Cr b=a
+.Cr "echo $$b"
+.De
+.PP
+prints
+.Ds
+.Cr foo
+.De
+.PP
+A variable's definition may also be removed by
+assigning the null list to a variable:
+.Ds
+.Ic var =()
+.De
+.PP
+For ``free careting'' to work correctly,
+.I rc
+must make certain assumptions
+about what characters may appear in a variable name.
+.I rc
+assumes that a variable name consists only of alphanumeric characters,
+underscore
+.Rc ( \|_\| )
+and star
+.Rc ( * ).
+To reference a variable with other
+characters in its name, quote the variable name.
+Thus:
+.Ds
+.Cr "echo $'we$Ird\Variab!le'"
+.De
+.SS "Local Variables"
+Any number of variable assignments may be made local to a single
+command by typing:
+.Ds
+.Cr "a=foo b=bar ... command"
+.De
+.PP
+The command may be a compound command, so for example:
+.Ds
+.Cr "path=. ifs=() {"
+.Cr "    " ...
+.Cr }
+.De
+.PP
+sets
+.Cr path
+to
+.Cr .
+and removes
+.Cr ifs
+for the duration of one long compound command.
+.SS "Variable Subscripts"
+Variables may be subscripted with the notation
+.Ds
+.Ci $var( n )
+.De
+.PP
+where
+.I n
+is a list of integers (origin 1).
+The list of subscripts need
+not be in order or even unique.
+Thus, if
+.Ds
+.Cr "a=(one two three)"
+.De
+.PP
+then
+.Ds
+.Cr "echo $a(3 3 3)"
+.De
+.PP
+prints
+.Ds
+.Cr "three three three"
+.De
+.PP
+If
+.I n
+references a nonexistent element, then
+.Ci $var( n )
+returns the null list.
+The notation
+.Ci "$" n\fR,
+where
+.I n
+is an integer, is a shorthand for
+.Ci $*( n )\fR.
+Thus,
+.IR rc 's
+arguments may be referred to as
+.Cr "$1" ,
+.Cr "$2" ,
+and so on.
+.PP
+Note also that the list of subscripts may be given by any of
+.IR rc 's
+list operations:
+.Ds
+.Cr "$var(\`{awk 'BEGIN{for(i=1;i<=10;i++)print i;exit; }'})"
+.De
+.PP
+returns the first 10 elements of
+.Cr $var .
+.PP
+To count the number of elements in a variable, use
+.Ds
+.Cr $#var
+.De
+.PP
+This returns a single-element list, with the number of elements in
+.Cr $var .
+.SS "Flat Lists"
+In order to create a single-element list from a multi-element list,
+with the components space-separated, use
+.Ds
+.Cr $^var
+.De
+.PP
+This is useful when the normal list concatenation rules need to be
+bypassed.
+For example, to append a single period at the end of
+.Cr $path ,
+use:
+.Ds
+.Cr "echo $^path."
+.De
+.SS "Backquote Substitution"
+A list may be formed from the output of a command by using backquote
+substitution:
+.Ds
+.Cr "\`{ command }"
+.De
+.PP
+returns a list formed from the standard output of the command in braces.
+.Cr $ifs
+is used to split the output into list elements.
+By default,
+.Cr $ifs
+has the value space-tab-newline.
+The braces may be omitted if the command is a single word.
+Thus
+.Cr \`ls
+may be used instead of
+.Cr "\`{ls}" .
+This last feature is useful when defining functions that expand
+to useful argument lists.
+A frequent use is:
+.Ds
+.Cr "fn src { echo *.[chy] }"
+.De
+.PP
+followed by
+.Ds
+.Cr "wc \`src"
+.De
+.PP
+(This will print out a word-count of all C source files in the current
+directory.)
+.PP
+In order to override the value of
+.Cr $ifs
+for a single backquote
+substitution, use:
+.Ds
+.Cr "\`\` (ifs-list) { command }"
+.De
+.PP
+.Cr $ifs
+will be temporarily ignored and the command's output will be split as specified by
+the list following the double backquote.
+For example:
+.Ds
+.Cr "\`\` ($nl :) {cat /etc/passwd}"
+.De
+.PP
+splits up
+.Cr /etc/passwd
+into fields, assuming that
+.Cr $nl
+contains a newline
+as its value.
+.SH "SPECIAL VARIABLES"
+Several variables are known to
+.I rc
+and are treated specially.
+.TP
+.Cr *
+The argument list of
+.IR rc .
+.Cr "$1, $2,"
+etc. are the same as
+.Cr $*(1) ,
+.Cr $*(2) ,
+etc.
+The variable
+.Cr $0
+holds the value of
+.Cr argv[0]
+with which
+.I rc
+was invoked.
+Additionally,
+.Cr $0
+is set to the name of a function for the duration of
+the execution of that function, and
+.Cr $0
+is also set to the name of the
+file being interpreted for the duration of a
+.Cr .
+command.
+.TP
+.Cr apid
+The process ID of the last process started in the background.
+.TP
+.Cr apids
+The process IDs of any background processes which are outstanding
+or which have died and have not been waited for yet.
+.TP
+.Cr cdpath
+A list of directories to search for the target of a
+.B cd
+command.
+The empty string stands for the current directory.
+Note that if the
+.Cr $cdpath
+variable does not contain the current directory, then the current
+directory will not be searched; this allows directory searching to
+begin in a directory other than the current directory.
+Note also that an assignment to
+.Cr $cdpath
+causes an automatic assignment to
+.Cr $CDPATH ,
+and vice-versa.
+.TP
+.Cr history
+.Cr $history
+contains the name of a file to which commands are appended as
+.I rc
+reads them.
+This facilitates the use of a stand-alone history program
+(such as
+.IR history (1))
+which parses the contents of the history file and presents them to
+.I rc
+for reinterpretation.
+If
+.Cr $history
+is not set, then
+.I rc
+does not append commands to any file.
+.TP
+.Cr home
+The default directory for the builtin
+.B cd
+command and is the directory
+in which
+.I rc
+looks to find its initialization file,
+.Cr .rcrc ,
+if
+.I rc
+has been started up as a login shell.
+Like
+.Cr $cdpath
+and
+.Cr $CDPATH ,
+.Cr $home
+and
+.Cr $HOME
+are aliased to each other.
+.TP
+.Cr ifs
+The internal field separator, used for splitting up the output of
+backquote commands for digestion as a list.
+.TP
+.Cr path
+This is a list of directories to search in for commands.
+The empty string stands for the current directory.
+Note that like
+.Cr $cdpath
+and
+.Cr $CDPATH ,
+.Cr $path
+and
+.Cr $PATH
+are aliased to each other.
+If
+.Cr $path
+or
+.Cr $PATH
+is not set at startup time,
+.Cr $path
+assumes a default value suitable for your system.
+This is typically
+.Cr "(/usr/ucb /usr/bin /bin .)"
+.TP
+.Cr pid
+The process ID of the currently running
+.IR rc .
+.TP
+.Cr prompt
+This variable holds the two prompts (in list form, of course) that
+.I rc
+prints.
+.Cr $prompt(1)
+is printed before each command is read, and
+.Cr $prompt(2)
+is printed when input is expected to continue on the next
+line.
+.I rc
+sets
+.Cr $prompt
+to
+.Cr "('; ' '')"
+by default.
+The reason for this is that it enables an
+.I rc
+user to grab commands from previous lines using a
+mouse, and to present them to
+.I rc
+for re-interpretation; the semicolon
+prompt is simply ignored by
+.IR rc .
+The null
+.Cr $prompt(2)
+also has its
+justification:  an
+.I rc
+script, when typed interactively, will not leave
+.Cr $prompt(2) 's
+on the screen,
+and can therefore be grabbed by a mouse and placed
+directly into a file for use as a shell script, without further editing
+being necessary.
+.TP
+.Cr prompt " (function)"
+If this function is set, then it gets executed every time
+.I rc
+is about to print
+.Cr "$prompt(1)" .
+.TP
+.Cr status
+The exit status of the last command.
+If the command exited with a numeric value,
+that number is the status.
+If the died with a signal,
+the status is the name of that signal; if a core file
+was created, the string
+.Rc `` +core ''
+is appended.
+The value of
+.Cr $status
+for a pipeline is a list, with one entry,
+as above, for each process in the pipeline.
+For example, the command
+.Ds
+.Cr "ls | wc"
+.De
+.TP
+\&
+usually sets
+.Cr $status
+to
+.Cr "(0 0)" .
+.PP
+The values of
+.Cr "$path" ,
+.Cr "$cdpath" ,
+and
+.Cr $home
+are derived from the environment
+values of
+.Cr "$PATH" ,
+.Cr "$CDPATH" ,
+and
+.Cr "$HOME" .
+Otherwise, they are derived from
+the environment values of
+.Cr $path ,
+.Cr $cdpath
+and
+.Cr $home .
+This is for compatibility with other Unix programs, like
+.IR sh (1).
+.Cr $PATH
+and
+.Cr $CDPATH
+are assumed to be colon-separated lists.
+.SH FUNCTIONS
+.I rc
+functions are identical to
+.I rc
+scripts, except that they are stored
+in memory and are automatically exported into the environment.
+A shell function is declared as:
+.Ds
+.Cr "fn name { commands }"
+.De
+.PP
+.I rc
+scans the definition until the close-brace, so the function can
+span more than one line.
+The function definition may be removed by typing
+.Ds
+.Cr "fn name"
+.De
+.PP
+(One or more names may be specified.
+With an accompanying definition, all names receive the same definition.
+This is sometimes useful
+for assigning the same signal handler to many signals.
+Without a definition, all named functions are deleted.)
+When a function is executed,
+.Cr $*
+is set to the arguments to that
+function for the duration of the command.
+Thus a reasonable definition for
+.Cr "l" ,
+a shorthand for
+.IR ls (1),
+could be:
+.Ds
+.Cr "fn l { ls -FC $* }"
+.De
+.PP
+but not
+.Ds
+.Cr "fn l { ls -FC }"
+.De
+.SH "INTERRUPTS AND SIGNALS"
+.I rc
+recognizes a number of signals, and allows the user to define shell
+functions which act as signal handlers.
+.I rc
+by default traps
+.Cr SIGINT
+when it is in interactive mode.
+.Cr SIGQUIT
+and
+.Cr SIGTERM
+are ignored, unless
+.I rc
+has been invoked with the
+.Cr \-d
+flag.
+However, user-defined signal handlers may be written for these and
+all other signals.
+The way to define a signal handler is to
+write a function by the name of the signal in lower case.
+Thus:
+.Ds
+.Cr "fn sighup { echo hangup; rm /tmp/rc$pid.*; exit }"
+.De
+.PP
+In addition to Unix signals,
+.I rc
+recognizes the artificial signal
+.Cr SIGEXIT
+which occurs as
+.I rc
+is about to exit.
+.PP
+In order to remove a signal handler's definition,
+remove it as though it were a regular function.
+For example:
+.Ds
+.Cr "fn sigint"
+.De
+.PP
+returns the handler of
+.Cr SIGINT
+to the default value.
+In order to ignore a signal, set the signal handler's value to
+.Cr "{}" .
+Thus:
+.Ds
+.Cr "fn sigint {}"
+.De
+.PP
+causes SIGINT to be ignored by the shell.
+Only signals that are being ignored are passed on to programs run by
+.IR rc ;
+signal functions are not exported.
+.PP
+On System V-based Unix systems,
+.I rc
+will not allow you to trap
+.Cr SIGCLD .
+.SH "BUILTIN COMMANDS"
+Builtin commands execute in the context of the shell, but otherwise
+behave exactly like other commands.
+Although
+.BR ! ,
+.B ~
+and
+.B @
+are not strictly speaking builtin commands,
+they can usually be used as such.
+.TP
+\&\fB.\fR [\fB\-i\fR] \fIfile \fR[\fIarg ...\fR]
+Reads
+.I file
+as input to
+.IR rc
+and executes its contents.
+With a
+.Cr \-i
+flag, input is interactive.
+Thus from within a shell script,
+.Ds
+.Cr ". \-i /dev/tty"
+.De
+.TP
+\&
+does the ``right'' thing.
+.TP
+.B break
+Breaks from the innermost
+.Cr for
+or
+.Cr while ,
+as in C.
+It is an error to invoke
+.B break
+outside of a loop.
+(Note that there is no
+.B break
+keyword between commands in
+.Cr switch
+statements, unlike C.)
+.TP
+\fBbuiltin \fIcommand \fR[\fIarg ...\fR]
+Executes the command ignoring any function definition of the
+same name.
+This command is present to allow functions with the
+same names as builtins to use the underlying builtin or binary.
+.TP
+\fBcd \fR[\fIdirectory\fR]
+Changes the current directory to
+.IR directory .
+The variable
+.Cr $cdpath
+is searched for possible locations of
+.IR directory ,
+analogous to the searching of
+.Cr $path
+for executable files.
+With no argument,
+.B cd
+changes the current directory to
+.Cr "$home" .
+.TP
+\fBecho \fR[\fB\-n\fR] [\fB\-\|\-\fR] [\fIarg ...\fR]
+Prints its arguments to standard output, terminated by a newline.
+Arguments are separated by spaces.
+If the first argument is
+.Cr "\-n"
+no final newline is printed.
+If the first argument is
+.Cr "\-\|\-" ,
+then all other arguments are echoed literally.
+This is used for echoing a literal
+.Cr "\-n" .
+.TP
+\fBeval \fR[\fIlist\fR]
+Concatenates the elements of
+.I list
+with spaces and feeds the resulting string to
+.I rc
+for re-scanning.
+This is the only time input is rescanned in
+.IR rc .
+.TP
+\fBexec \fR[\fIarg ...\fR]
+Replaces
+.I rc
+with the given command.
+If the exec contains only redirections,
+then these redirections apply to the current shell
+and the shell does not exit.
+For example,
+.Ds
+.Cr "exec >[2] err.out"
+.De
+.TP
+\&
+places further output to standard error in the file
+.IR err.out .
+.TP
+\fBexit \fR[\fIstatus\fR]
+Cause the current shell to exit with the given exit
+.IR status .
+If no argument is given, the current value of
+.Cr $status
+is used.
+.TP
+\fBlimit \fR[\fB\-h\fR] [\fIresource \fR[\fIvalue\fR]]
+Similar to the
+.IR csh (1)
+.B limit
+builtin, this command operates upon the
+BSD-style limits of a process.
+The
+.Cr \-h
+flag displays/alters the hard
+limits.
+The resources which can be shown or altered are
+.BR cputime ,
+.BR filesize ,
+.BR datasize ,
+.BR stacksize ,
+.B coredumpsize
+and
+.BR memoryuse .
+For
+example:
+.Ds
+.Cr "limit coredumpsize 0"
+.De
+.TP
+\&
+disables core dumps.
+.TP
+.B newpgrp
+Puts
+.I rc
+into a new process group.
+This builtin is useful for making
+.I rc
+behave like a job-control shell in a hostile environment.
+One example is the NeXT Terminal program, which implicitly assumes
+that each shell it forks will put itself into a new process group.
+.TP
+\fBreturn \fR[\fIn\fR]
+Returns from the current function, with status
+.IR n ,
+where
+.IR n
+is a single value or a list of possible exit statuses.
+Thus it is legal to have
+.Ds
+.Cr "return (sigpipe 1 2 3)"
+.De
+.TP
+\&
+(This is commonly used to allow a function to return with the exit status
+of a previously executed pipeline of commands.)
+If
+.IR n
+is omitted, then
+.Cr $status
+is left unchanged.
+It is an error to invoke
+.B return
+when not inside a function.
+.TP
+\fBshift \fR[\fIn\fR]
+Deletes
+.I n
+elements from the beginning of
+.Cr $*
+and shifts the other
+elements down by
+.IR n .
+.I n
+defaults to 1.
+(Note that
+.Cr $0
+is not affected by
+.BR shift .)
+.TP
+\fBumask \fR[\fImask\fR]
+Sets the current umask (see
+.IR umask (2))
+to the octal
+.IR mask .
+If no argument is present, the current mask value is printed.
+.TP
+\fBwait \fR[\fIpid\fR]
+Waits for the specified
+.IR pid ,
+which must have been started by
+.IR rc .
+If no
+.I pid
+is specified,
+.I rc
+waits for any child process to exit.
+.TP
+\fBwhatis \fR[\fB\-s\fR] [\fB\-\|\-\fR] [\fIname ...\fR]
+Prints a definition of the named objects.
+For variables, their values
+are printed; for functions, their definitions are; and for executable
+files, path names are printed.
+Without arguments,
+.B whatis
+prints the values of all shell variables and functions.
+With a
+.Cr \-s
+argument,
+.B whatis
+also prints out a list of available signals and their handlers (if any).
+Note that
+.B whatis
+output is suitable for input to
+.IR rc ;
+by saving the output of
+.B whatis
+in a file, it should be possible to recreate the state of
+.I rc
+by sourcing this file with a
+.Cr .
+command.
+Another note:
+.Cr "whatis -s > file"
+cannot be used to store the state of
+.IR rc 's
+signal handlers in a file, because builtins with redirections
+are run in a subshell, and
+.I rc
+always restores signal handlers to their default value after a
+.Cr fork() .
+.TP
+\&
+Since
+.B whatis
+uses
+.IR getopt (3)
+to parse its arguments, you can use the special argument
+.Cr "\-\|\-"
+to terminate its options.
+This allows you to use names beginning with a dash, such as
+the
+.IR history (1)
+commands.
+For example,
+.Ds
+.Cr "whatis \-\|\- \-p"
+.De
+.SH GRAMMAR
+Here is
+.IR rc 's
+grammar, edited to remove semantic actions.
+.Ds
+.ft \*(Cf
+%term ANDAND BACKBACK BANG CASE COUNT DUP ELSE END FLAT FN FOR IF IN
+%term OROR PIPE REDIR SUB SUBSHELL SWITCH TWIDDLE WHILE WORD HUH
+
+%left WHILE ')' ELSE
+%left ANDAND OROR '\en'
+%left BANG SUBSHELL
+%left PIPE
+%right '$'
+%left SUB
+
+%start rc
+
+%%
+
+rc: line end
+	| error end
+
+end: END /* EOF */ | '\en'
+
+cmdsa: cmd ';' | cmd '&'
+
+line: cmd | cmdsa line
+
+body: cmd | cmdsan body
+
+cmdsan: cmdsa | cmd '\en'
+
+brace: '{' body '}'
+
+paren: '(' body ')'
+
+assign: first '=' word
+
+epilog: /* empty */ | redir epilog
+
+redir: DUP | REDIR word
+
+case: CASE words ';' | CASE words '\en'
+
+cbody: cmd | case cbody | cmdsan cbody
+
+iftail: cmd	%prec ELSE
+	| brace ELSE optnl cmd
+
+cmd	: /* empty */	%prec WHILE
+	| simple
+	| brace epilog
+	| IF paren optnl iftail
+	| FOR '(' word IN words ')' optnl cmd
+	| FOR '(' word ')' optnl cmd
+	| WHILE paren optnl cmd	
+	| SWITCH '(' word ')' optnl '{' cbody '}'
+	| TWIDDLE optcaret word words
+	| cmd ANDAND optnl cmd
+	| cmd OROR optnl cmd
+ 	| cmd PIPE optnl cmd
+	| redir cmd	%prec BANG
+	| assign cmd	%prec BANG
+	| BANG optcaret cmd
+	| SUBSHELL optcaret cmd
+	| FN words brace
+	| FN words
+
+optcaret: /* empty */ | '^'
+
+simple: first | simple word | simple redir
+
+first: comword | first '^' sword
+
+sword: comword | keyword
+
+word: sword | word '^' sword
+
+comword: '$' sword
+	| '$' sword SUB words ')'
+	| COUNT sword
+	| FLAT sword
+	| '`' sword
+	| '`' brace
+	| BACKBACK word	brace | BACKBACK word sword
+	| '(' words ')'
+	| REDIR brace
+	| WORD
+
+keyword: FOR | IN | WHILE | IF | SWITCH
+	| FN | ELSE | CASE | TWIDDLE | BANG | SUBSHELL
+
+words: /* empty */ | words word
+
+optnl: /* empty */ | optnl '\en'
+.ft R
+.De
+.SH FILES
+.Cr $HOME/.rcrc ,
+.Cr /tmp/rc* ,
+.Cr /dev/null
+.SH CREDITS
+.I rc
+was written by Byron Rakitzis, with valuable help
+from Paul Haahr, Hugh Redelmeier and David Sanderson.
+The design of this shell has been copied from the
+.I rc
+that Tom Duff wrote at Bell Labs.
+.SH BUGS
+On systems that support
+.Cr /dev/fd ,
+.Cr <{foo}
+style redirection is implemented that way.
+However, on other systems it is implemented with named pipes,
+and it is sometimes
+possible to foil
+.I rc
+into removing the FIFO it places in
+.Cr /tmp
+prematurely, or it is even possible to cause
+.I rc
+to hang.
+.PP
+The functionality of
+.B shift
+should be available for variables other than
+.Cr "$*" .
+.PP
+.B echo
+is built in only for performance reasons, which is a bad idea.
+.PP
+There should be a way to avoid exporting a variable.
+.PP
+The
+.Cr $^var
+notation for flattening should allow for using an arbitrary
+separating character, not just space.
+.PP
+Bug reports should be mailed to
+.Cr "byron@archone.tamu.edu" .
+.SH INCOMPATIBILITIES
+Here is a list of features which distinguish this incarnation of
+.I rc
+from the one described in the Bell Labs manual pages:
+.PP
+The treatment of
+.Cr if - else
+is different in the v10
+.IR rc :
+that version uses an
+.Cr "if not"
+clause which gets executed
+if the preceding
+.Cr if
+test does not succeed.
+.PP
+Backquotes are slightly different in v10
+.IR rc :
+a backquote must always be followed by a left-brace.
+This restriction is not present for single-word commands in this
+.IR rc .
+.PP
+The following are all new with this version of
+.IR rc :
+The
+.Cr \-n
+option,
+the list flattening operator,
+here strings (they facilitate exporting of functions
+with here documents into the environment),
+the
+.B return
+and
+.B break
+keywords,
+the
+.B echo
+builtin,
+the support for the GNU
+.IR readline (3)
+library and
+the support for the
+.Cr prompt
+function.
+This
+.I rc
+also sets
+.Cr $0
+to the name of a function being executed/file
+being sourced.
+.SH "SEE ALSO"
+``rc \(em A Shell for Plan 9 and UNIX Systems'',
+Unix Research System,
+10th Edition,
+vol. 2. (Saunders College Publishing)
+(This paper is also distributed with this
+.I rc
+in PostScript form.)
+.PP
+.IR history (1)
