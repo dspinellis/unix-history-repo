@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.6 (Berkeley) %G%
+ *	@(#)tty.c	7.7 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -222,13 +222,9 @@ ttrstrt(tp)
 ttstart(tp)
 	register struct tty *tp;
 {
-	register s;
 
-	s = spltty();
-	if ((tp->t_state & (TS_TIMEOUT|TS_TTSTOP|TS_BUSY)) == 0 &&
-	    tp->t_oproc)		/* kludge for pty */
+	if (tp->t_oproc)		/* kludge for pty */
 		(*tp->t_oproc)(tp);
-	splx(s);
 }
 
 /*
@@ -1338,6 +1334,10 @@ loop:
 	 * in acquiring new space.
 	 */
 	while (uio->uio_resid > 0) {
+		if (tp->t_outq.c_cc > hiwat) {
+			cc = 0;
+			goto ovhiwat;
+		}
 		/*
 		 * Grab a hunk of data from the user.
 		 */
@@ -1355,8 +1355,6 @@ loop:
 		error = uiomove(cp, cc, UIO_WRITE, uio);
 		if (error)
 			break;
-		if (tp->t_outq.c_cc > hiwat)
-			goto ovhiwat;
 		if (tp->t_flags&FLUSHO)
 			continue;
 		/*
@@ -1458,22 +1456,22 @@ loop:
 	return (error);
 
 ovhiwat:
-	s = spltty();
 	if (cc != 0) {
 		uio->uio_iov->iov_base -= cc;
 		uio->uio_iov->iov_len += cc;
 		uio->uio_resid += cc;
 		uio->uio_offset -= cc;
 	}
+	ttstart(tp);
+	s = spltty();
 	/*
-	 * This can only occur if FLUSHO
-	 * is also set in t_flags.
+	 * This can only occur if FLUSHO is set in t_flags,
+	 * or if ttstart/oproc is synchronous (or very fast).
 	 */
 	if (tp->t_outq.c_cc <= hiwat) {
 		splx(s);
 		goto loop;
 	}
-	ttstart(tp);
 	if (tp->t_state&TS_NBIO) {
 		splx(s);
 		if (uio->uio_resid == cnt)
