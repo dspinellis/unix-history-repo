@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -450,17 +450,20 @@ errstring(errno)
 		(void) sprintf(buf, "Connection refused by %s", CurHostName);
 		return (buf);
 
+	  case EOPENTIMEOUT:
+		return "Timeout on file open";
+
 # ifdef NAMED_BIND
-	  case HOST_NOT_FOUND + MAX_ERRNO:
+	  case HOST_NOT_FOUND + E_DNSBASE:
 		return ("Name server: host not found");
 
-	  case TRY_AGAIN + MAX_ERRNO:
+	  case TRY_AGAIN + E_DNSBASE:
 		return ("Name server: host name lookup failure");
 
-	  case NO_RECOVERY + MAX_ERRNO:
+	  case NO_RECOVERY + E_DNSBASE:
 		return ("Name server: non-recoverable error");
 
-	  case NO_DATA + MAX_ERRNO:
+	  case NO_DATA + E_DNSBASE:
 		return ("Name server: no data known for name");
 # endif
 	}

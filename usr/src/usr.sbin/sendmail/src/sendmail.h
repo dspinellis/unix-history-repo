@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.7 (Berkeley) %G%
+ *	@(#)sendmail.h	8.8 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.7		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.8		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -662,10 +662,6 @@ EXTERN char	OpMode;		/* operation mode, see below */
 /*
 **  Additional definitions
 */
-
-
-/* Offset used to ensure that name server error * codes are unique */
-#define	MAX_ERRNO	100
 
 
 /*

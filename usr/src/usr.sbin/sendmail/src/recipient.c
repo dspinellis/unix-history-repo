@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -699,7 +699,9 @@ include(fname, forwarding, ctladdr, sendq, e)
 		ctladdr->q_flags |= QQUEUEUP;
 		errno = 0;
 		usrerr("451 open timeout on %s", fname);
-		return ETIMEDOUT;
+
+		/* return pseudo-error code */
+		return EOPENTIMEOUT;
 	}
 	ev = setevent((time_t) 60, includetimeout, 0);
 
