@@ -1,4 +1,4 @@
-OBJS = main.o y.tab.o lex.yy.o mkioconf.o mkmakefile.o mkubglue.o mkheaders.o
+OBJS = y.tab.o main.o lex.yy.o mkioconf.o mkmakefile.o mkubglue.o mkheaders.o
 CFLAGS=-w
 LDFLAGS=-ll
 
@@ -15,3 +15,6 @@ lex.yy.c: config.l
 
 clean:
 	rm -f $(OBJS) lex.yy.c y.tab.c y.tab.h config
+
+install:
+	cp config /etc/config
