@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)wait.h	7.16 (Berkeley) %G%
+ *	@(#)wait.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -76,15 +76,16 @@ union wait {
 	 */
 	struct {
 #if BYTE_ORDER == LITTLE_ENDIAN 
-		unsigned short	w_Termsig:7;	/* termination signal */
-		unsigned short	w_Coredump:1;	/* core dump indicator */
-		unsigned short	w_Retcode:8;	/* exit code if w_termsig==0 */
+		unsigned int	w_Termsig:7,	/* termination signal */
+				w_Coredump:1,	/* core dump indicator */
+				w_Retcode:8,	/* exit code if w_termsig==0 */
+				w_Filler:16;	/* upper bits filler */
 #endif
 #if BYTE_ORDER == BIG_ENDIAN 
-		unsigned short	w_Filler;	/* upper bits filler */
-		unsigned char	w_Retcode;	/* exit code if w_termsig==0 */
-		unsigned char	w_Coredump:1;	/* core dump indicator */
-		unsigned char	w_Termsig:7;	/* termination signal */
+		unsigned int	w_Filler:16,	/* upper bits filler */
+				w_Retcode:8,	/* exit code if w_termsig==0 */
+				w_Coredump:1,	/* core dump indicator */
+				w_Termsig:7;	/* termination signal */
 #endif
 	} w_T;
 	/*
@@ -94,12 +95,14 @@ union wait {
 	 */
 	struct {
 #if BYTE_ORDER == LITTLE_ENDIAN 
-		unsigned short	w_Stopval:8;	/* == W_STOPPED if stopped */
-		unsigned short	w_Stopsig:8;	/* signal that stopped us */
-#else
-		unsigned short	w_Filler;	/* upper bits filler */
-		unsigned char	w_Stopsig;	/* signal that stopped us */
-		unsigned char	w_Stopval;	/* == W_STOPPED if stopped */
+		unsigned int	w_Stopval:8,	/* == W_STOPPED if stopped */
+				w_Stopsig:8,	/* signal that stopped us */
+				w_Filler:16;	/* upper bits filler */
+#endif
+#if BYTE_ORDER == BIG_ENDIAN 
+		unsigned int	w_Filler:16,	/* upper bits filler */
+				w_Stopsig:8,	/* signal that stopped us */
+				w_Stopval:8;	/* == W_STOPPED if stopped */
 #endif
 	} w_S;
 };
