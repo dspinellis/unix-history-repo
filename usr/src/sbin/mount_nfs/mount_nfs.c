@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_nfs.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_nfs.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -262,12 +262,12 @@ main(argc, argv)
 	if (!getnfsargs(spec, nfsargsp))
 		exit(1);
 	if (mount(MOUNT_NFS, name, flags, nfsargsp))
-		err("mount: %s: %s\n", name, strerror(errno));
+		err("mount: %s: %s", name, strerror(errno));
 	if (nfsargsp->flags & (NFSMNT_NQNFS | NFSMNT_KERB)) {
 		if ((opflags & ISBGRND) == 0) {
 			if (i = fork()) {
 				if (i == -1)
-					err("nqnfs 1: %s\n", strerror(errno));
+					err("nqnfs 1: %s", strerror(errno));
 				exit(0);
 			}
 			(void) setsid();
@@ -454,7 +454,7 @@ getnfsargs(spec, nfsargsp)
 				opflags &= ~BGRND;
 				if (i = fork()) {
 					if (i == -1)
-						err("nqnfs 2: %s\n",
+						err("nqnfs 2: %s",
 						    strerror(errno));
 					exit(0);
 				}
