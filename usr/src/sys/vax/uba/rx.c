@@ -1,4 +1,4 @@
-/*	rx.c	4.15	83/04/15	*/
+/*	rx.c	4.16	83/04/26	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -65,8 +65,8 @@ struct buf	rxutab[NRX];	/* per drive buffers */
 /* per-drive data */
 struct rx_softc {
 	int	sc_flags;	/* drive status flags */
-#define	RXF_TRKZERO	0x01	/* start mapping on track 0 */
-#define	RXF_DIRECT	0x02	/* use direct sector mapping */
+#define	RXF_DIRECT	0x01	/* if set: use direct sector mapping */
+#define	RXF_TRKONE	0x02	/* if set: start mapping on track 1 */
 #define	RXF_DBLDEN	0x04	/* use double density */
 #define	RXF_DEVTYPE	0x07	/* mapping flags */
 #define	RXF_LOCK	0x10	/* exclusive use */
@@ -153,7 +153,6 @@ rxattach(ui)
 /*ARGSUSED1*/
 rxopen(dev, flag)
 	dev_t dev;
-	int flag;
 { 
 	register int unit = RXUNIT(dev);
 	register struct rx_softc *sc;
@@ -169,7 +168,7 @@ rxopen(dev, flag)
 		 * lock the device while an open 
 		 * is in progress
 		 */
-		sc->sc_flags = (minor(dev) & RXF_DEVTYPE) || RXF_LOCK;
+		sc->sc_flags = (minor(dev) & RXF_DEVTYPE) | RXF_LOCK;
 		sc->sc_csbits = RX_INTR;
 		sc->sc_csbits |= ui->ui_slave == 0 ? RX_DRV0 : RX_DRV1;
 
@@ -191,7 +190,7 @@ rxopen(dev, flag)
 		if (rxwstart++ == 0) {
 			rxc = &rx_ctlr[ui->ui_mi->um_ctlr];
 			rxc->rxc_tocnt = 0;
-			timeout(rxtimo(), (caddr_t)0, hz);  /* start watchdog */
+			timeout(rxwatch, (caddr_t)0, hz);  /* start watchdog */
 		}
 #ifdef RXDEBUG
 		printf("rxopen: csbits=0x%x\n", sc->sc_csbits);
@@ -208,12 +207,13 @@ rxopen(dev, flag)
 /*ARGSUSED1*/
 rxclose(dev, flag)
 	dev_t dev;
-	int flag;
 {
 	register struct rx_softc *sc = &rx_softc[RXUNIT(dev)];
 
 	--sc->sc_open;
+#ifdef RXDEBUG
 	printf("rxclose: dev=0x%x, sc_open=%d\n", dev, sc->sc_open);
+#endif
 }
 
 rxstrategy(bp)
@@ -317,7 +317,7 @@ rxmap(bp, psector, ptrack)
 	ptoff = 0;
 	if (sc->sc_flags & RXF_DIRECT)
 		ptoff = 77;
-	if (sc->sc_flags & RXF_TRKZERO)
+	if (sc->sc_flags & RXF_TRKONE)
 		ptoff++;
 	if (lt + ptoff < 77)
 		ls = ((ls << 1) + (ls >= 13) + (6*lt)) % 26;
@@ -542,13 +542,13 @@ rxintr(ctlr)
 		goto rdone;
 
 	case RXS_RDERR:
-		bp = bp->b_back;		/* kludge, see 'rderr:' */
+		bp = bp->b_back;
 		rxmap(bp, &sector, &track);
 		printf("rx%d: hard error, trk %d psec %d ",
 			unit, track, sector);
 		printf("cs=%b, db=%b, err=", MASKREG(er->rxcs), 
 			RXCS_BITS, MASKREG(er->rxdb), RXES_BITS);
-		printf("0x%x, 0x%x, 0x%x, 0x%x\n", MASKREG(er->rxxt[0]),
+		printf("%x, %x, %x, %x\n", MASKREG(er->rxxt[0]),
 			MASKREG(er->rxxt[1]), MASKREG(er->rxxt[2]), 
 			MASKREG(er->rxxt[3]));
 		goto done;
@@ -680,7 +680,7 @@ rdone:
 
 /*ARGSUSED*/
 
-rxtimo()
+rxwatch()
 {
 	register struct uba_device *ui;
 	register struct uba_ctlr *um;
@@ -690,23 +690,26 @@ rxtimo()
 
 	for (i=0; i<NRX; i++) {
 		ui = rxdinfo[i];
-		sc = &rx_softc[i];
-		um = ui->ui_mi;
 		if (ui == 0 || ui->ui_alive == 0)
 			continue;
-		if ((sc->sc_open == 0) && (um->um_tab.b_active == 0)) {
+		sc = &rx_softc[i];
+		if ((sc->sc_open == 0) && (rxutab[i].b_active == 0)) {
 			sc->sc_csbits = 0;
 			continue;
 		}
 		dopen++;
+		um = ui->ui_mi;
 		rxc = &rx_ctlr[um->um_ctlr];
-		if (++rxc->rxc_tocnt < RX_MAXTIMEOUT) {
-			printf("fx%d: timeout\n", um->um_ctlr);
-			rxintr(um->um_ctlr);
+		if (++rxc->rxc_tocnt >= RX_MAXTIMEOUT) {
+			rxc->rxc_tocnt = 0;
+			if (um->um_tab.b_active) {	
+				printf("rx%d: timeout\n", i);/* for debugging */
+				rxintr(um->um_ctlr);
+			}
 		}
 	}
 	if (dopen)
-		timeout(rxtimo(), (caddr_t)0, hz);
+		timeout(rxwatch, (caddr_t)0, hz);
 	else
 		rxwstart = 0;
 }
@@ -765,35 +768,41 @@ rxwrite(dev, uio)
 
 /*
  * Control routine:
- * processes three kinds of requests:
+ * processes four kinds of requests:
  *
  *	(1) Set density (i.e., format the diskette) according to 
- *		  that specified by the open device.
+ *		  that specified data parameter
  *	(2) Arrange for the next sector to be written with a deleted-
  *		  data mark.
  *	(3) Report whether the last sector read had a deleted-data mark
+ *	(4) Report the density of the diskette in the indicated drive
+ *	    (since the density it automatically determined by the driver,
+ *	     this is the only way to let an application program know the
+ *	     density)
  *
  * Requests relating to deleted-data marks can be handled right here.
  * A "set density" (format) request, however, must additionally be 
  * processed through "rxstart", just like a read or write request.
  */
+
 /*ARGSUSED3*/
 rxioctl(dev, cmd, data, flag)
 	dev_t dev;
-	int cmd;
 	caddr_t data;
-	int flag;
 {   
 	int unit = RXUNIT(dev);
 	struct rx_softc *sc = &rx_softc[unit];
 
-	switch (cmd) {
+	switch (cmd&RXIOC_MASK) {
 
 	case RXIOC_FORMAT:
+#ifdef notdef	/* temporarily removed (the flag argument is */
+		/* is actually always zero at this point) */
 		if ((flag&FWRITE) == 0)
 			return (EBADF);
+#endif
 		if (sc->sc_open > 1 )
-			return(EBUSY);
+			return (EBUSY);
 		sc->sc_csbits |= *(int *)data ? RX_DDEN : RX_SDEN;
 		return (rxformat(dev));
 
