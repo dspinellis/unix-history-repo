@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -16,6 +16,13 @@ static char sccsid[] = "@(#)lex.c	5.2 (Berkeley) %G%";
  * University of Utah CS Dept modification history:
  *
  * $Log:	lex.c,v $
+ * Revision 5.4  86/01/07  14:01:13  donn
+ * Fix the scanning for character constants in gettok() so that it handles
+ * the case when an error has occurred and there is no closing quote.
+ * 
+ * Revision 5.3  85/11/25  00:24:06  donn
+ * 4.3 beta
+ * 
  * Revision 5.2  85/08/10  04:45:41  donn
  * Jerry Berkman's changes to ifdef 66 code and handle -r8/double flag.
  * 
@@ -743,7 +750,7 @@ char *i, *j, *n1, *p;
 		{
 		++nextch;
 		p = token;
-		while(*nextch != MYQUOTE)
+		while(nextch <= lastch && *nextch != MYQUOTE)
 			*p++ = *nextch++;
 		++nextch;
 		toklen = p - token;
