@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.34	82/03/15	*/
+/*	tcp_output.c	4.35	82/03/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -52,7 +52,7 @@ tcp_output(tp)
 COUNT(TCP_OUTPUT);
 
 	/*
-	 * Determine length of data that can be transmitted,
+	 * Determine length of data that should be transmitted,
 	 * and flags that will be used.
 	 * If there is some data or critical controls (SYN, RST)
 	 * to send, then transmit; otherwise, investigate further.
@@ -63,11 +63,28 @@ COUNT(TCP_OUTPUT);
 		return (0);			/* past FIN */
 	if (len > tp->t_maxseg)
 		len = tp->t_maxseg;
+
 	flags = tcp_outflags[tp->t_state];
 	if (tp->snd_nxt + len < tp->snd_una + so->so_snd.sb_cc)
 		flags &= ~TH_FIN;
-	if (len || (flags & (TH_SYN|TH_RST|TH_FIN)))
+	if (flags & (TH_SYN|TH_RST|TH_FIN))
 		goto send;
+	if (SEQ_GT(tp->snd_up, tp->snd_una))
+		goto send;
+
+	/*
+	 * Sender silly window avoidance.  If can send all data,
+	 * a maximum segment, at least 1/4 of window do it,
+	 * or are forced, do it; otherwise don't bother.
+	 */
+	if (len) {
+		if (len == tp->t_maxseg || off+len >= so->so_snd.sb_cc)
+			goto send;
+		if (len * 4 >= tp->snd_wnd)		/* a lot */
+			goto send;
+		if (tp->t_force)
+			goto send;
+	}
 
 	/*
 	 * Send if we owe peer an ACK.
@@ -203,8 +220,14 @@ printf("tp %x send OOBDATA seq %x data %x\n", tp->t_oobseq, tp->t_oobc);
 noopt:
 	ti->ti_flags = flags;
 	win = sbspace(&so->so_rcv);
+	if (win < so->so_rcv.sb_hiwat / 4)	/* avoid silly window */
+		win = 0;
 	if (win > 0)
+#if vax
 		ti->ti_win = htons((u_short)win);
+#else
+		ti->ti_win = win;
+#endif
 	if (SEQ_GT(tp->snd_up, tp->snd_nxt)) {
 		ti->ti_urp = tp->snd_up - tp->snd_nxt;
 #if vax
