@@ -1,17 +1,17 @@
-#	Makefile	4.16	86/02/12
+#	Makefile	4.17	86/03/27
 #
 DESTDIR=
 CFLAGS=	-O
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	ansi apl bib courier cpm dsh help hyper icon jove kermit learn mh \
-	mkmf patch rcs sccstorcs spms sunrpc tac tools
+SUBDIR=	ansi apl bib courier cpm dsh help hyper icon jove kermit mh \
+	mkmf np100 patch rcs spms sunrpc tac tools
 #
 # Special purpose software that requires custom installation,
 # or may not be needed by all sites
 #
-OPTDIR=	B dipress mmdf news notes pathalias rn sumacc umodem xns X
+OPTDIR=	B dipress mmdf news notes pathalias pup rn sumacc umodem xns X
 
 all:	${SUBDIR}
 
