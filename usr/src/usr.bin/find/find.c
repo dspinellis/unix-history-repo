@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)find.c	4.12 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.13 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -551,7 +551,7 @@ doex(com)
 	register char *na;
 	static char *nargv[50];
 	static ccode;
-	register int w, pid, (*sigint)(), (*sigquit)(), cantexec;
+	register int w, pid, omask;
 
 	ccode = np = 0;
 	while (na=Argv[com++]) {
@@ -562,11 +562,6 @@ doex(com)
 	}
 	nargv[np] = 0;
 	if (np==0) return(9);
-	/*
-	 * This is a kludge, but the alternative is to reserve
-	 * some exit code (e.g. 0xff) to denote inability to exec.
-	 */
-	cantexec = 0;
 	switch (pid = vfork()) {
 	case -1:
 		perror("find: Can't fork");
@@ -576,22 +571,22 @@ doex(com)
 	case 0:
 		chdir(Home);
 		execvp(nargv[0], nargv, np);
-		cantexec = 1;	/* XXX */
-		_exit(1);
+		write(2, "find: Can't execute ", 20);
+		perror(nargv[0]);
+		/*
+		 * Kill ourselves; our exit status will be a suicide
+		 * note indicating we couldn't do the "exec".
+		 */
+		kill(getpid(), SIGUSR1);
 		break;
 
 	default:
-		sigint = signal(SIGINT, SIG_IGN);
-		sigquit = signal(SIGQUIT, SIG_IGN);
+		omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT));
 		while ((w = wait(&ccode)) != pid && w != -1)
 			;
-		signal(SIGQUIT, sigquit);
-		signal(SIGINT, sigint);
-		if (cantexec) {	/* XXX */
-			fprintf(stderr, "find: Can't execute ");
-			perror(nargv[0]);
+		(void) sigsetmask(omask);
+		if ((ccode & 0177) == SIGUSR1)
 			exit(1);
-		}
 		return (ccode != 0 ? 0 : 1);
 	}
 }
