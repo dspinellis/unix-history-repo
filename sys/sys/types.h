@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)types.h	7.17 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: types.h,v 1.2 1993/10/16 17:18:12 rgrimes Exp $
  */
 
 #ifndef _TYPES_H_
@@ -116,7 +116,7 @@ typedef	struct fd_set {
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
 #define	FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
 
-#if defined(__STDC__) && defined(KERNEL)
+#if defined(__STDC__)
 /*
  * Forward structure declarations for function prototypes.
  * We include the common structures that cross subsystem boundaries here;
