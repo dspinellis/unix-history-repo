@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.19	(Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.20	(Berkeley) %G%";
 #endif
 
 extern int errno;
@@ -549,7 +549,7 @@ char *type, *dev;
 		open("/dev/null",0);
 		dup(fildes[1]); dup(fildes[1]);
 		setuid(geteuid());	/* for chown(uid()) in acu program */
-		execl(DIALINOUT, "acu", type, dev, 0);
+		execl(DIALINOUT, "acu", type, dev, Rmtname, (char *)0);
 		exit(-1);
 	}
 	if (pid<0)
