@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)intro.5	6.6 (Berkeley) %G%
+.\"	@(#)intro.5	6.7 (Berkeley) %G%
 .\"
 .sh 1 "Character Output and Scrolling"
 .pp
@@ -11,7 +11,7 @@ The character output policy deals with the following problems.  First,
 where is the location of the cursor after a character is printed, and 
 secondly, when does the screen scroll if scrolling is enabled.
 .pp
-In the normal case the chracters are output as expected, with the cursor 
+In the normal case the characters are output as expected, with the cursor 
 occupying the position of the next character to be output.  However, when the
 cursor is on the last column of the line, the cursor will remain on that 
 position after the last character on the line is output and will only assume
@@ -44,7 +44,7 @@ These routines are obsolete and exist only for backward compatibility.  If
 you wish to use the information in the 
 .Vn origtermio
 structure, you should use the
-.I tsetattr(3) 
+.i tsetattr(3) 
 routines.
 .sh 1 "Subwindows"
 .pp
