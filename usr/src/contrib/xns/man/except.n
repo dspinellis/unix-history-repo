@@ -1,0 +1,198 @@
+.TH EXCEPT 3 Stanford
+.SH NAME
+(except) raise, raise_sys() \- C exception handling
+.SH SYNOPSIS
+.B #include <xnscourier/except.h>
+.sp
+.B raise(code, msg)
+.br
+.B int code;
+.br
+.B char *msg;
+.sp
+.B raise_sys()
+.sp
+cc ... \-lexcept
+.SH "EXTENDED C SYNTAX"
+.B DURING
+statement1
+.B HANDLER
+statement2
+.B END_HANDLER
+.sp
+.B E_RETURN(
+expression
+.B )
+.sp
+.B E_RETURN_VOID
+.SH DESCRIPTION
+The macros and functions in this package provide a limited amount
+of exception handling for programming in C.  They provide the
+ability to associate an exception handler to be invoked if an
+exception is raised during the execution of a statement.
+.PP
+C syntax is extended by several macros that allow the programmer
+to associate an exception handler with a statement.  The ``syntax''
+for this is:
+.sp
+.nf
+DURING statement1 HANDLER statement2 END_HANDLER
+.fi
+.sp
+Either or both statement may be a compound statement.
+If an exception is raised using the
+.IR raise ()
+function during
+.I statement1
+(or during any functions called by
+.IR statement1 ),
+the stack will be unwound and
+.I statement2
+will be invoked in the current context.  However, if the exception
+handler is redeclared in a
+.I dynamically
+enclosed statement, the current exception handler will be inactive during
+the execution of the enclosed statement.
+.PP
+During the execution of
+.IR statement2 ,
+two predefined values may be used:
+.IR Exception.Code ,
+an integer, is the value of
+.I code
+passed to the 
+.IR raise ()
+call which invoked the handler, and
+.IR Exception.Message
+is the value of
+.IR msg .
+It is up to the user to define the values used for the exception
+codes; by convention, small positive integers are interpreted
+as Unix error codes.
+.PP
+As an example of the use of this package, the following ``toy'' code
+computes the quotient of variables f1 and f2, unless f2 is 0.0:
+.sp
+.nf
+	DURING {
+	    if (f2 == 0.0)
+	    	raise(DIVIDE_BY_ZERO, "Division by zero attempted");
+	    quotient = f1/ f2;
+	} HANDLER
+	    switch (Exception.Code) {
+	    case DIVIDE_BY_ZERO:
+	    	return(HUGE);
+		break;
+	    default:
+	    	printf("Unexpected error %s\\n", Exception.Message);
+	    }
+	END_HANDLER
+.fi
+.PP
+If a handler does not want to take responsibility for an exception,
+it can ``pass the buck'' to the dynamically enclosing exception
+handler by use of the
+.I RERAISE
+macro, which simply raises the exception that invoked the handler.
+Of course, it is possible that there is no higher-level handler.
+The programmer can control the action in this case by setting the
+external int
+.I ExceptMode
+to some (bit-wise OR'd) combination of the following constants:
+.IP "EX_MODE_REPORT" 1.5i
+Print a message on stderr if an exception is not caught.  If this
+is not set, no message is printed.
+.IP "EX_MODE_ABORT" 1.5i
+Calls the
+.IR abort (3)
+routine if an exception is not caught.  If this is not set,
+.IR exit (3)
+is called, with the exception code as an argument.
+.PP
+The default value for
+.I ExceptMode
+is zero.
+.SH RESTRICTIONS
+.B THESE RESTRICTIONS ARE IMPORTANT;
+YOU WILL SUFFER IF YOU DISOBEY THEM.
+.PP
+During the execution of
+.IR statement1,
+no transfers out of the statement are allowed, except as noted here.
+Execution of a compound
+.I statement1 
+must ``run off the end'' of the block.  This means that
+.I statement1
+may not include a
+.B return
+or
+.BR goto ,
+or a
+.B break
+or
+.B continue
+that would affect a loop enclosing the
+.I DURING ... END_HANDLER
+block.  The
+.I statement1
+may include a call to
+.IR raise ()
+(but not
+.IR RERAISE ),
+.IR exit (3),
+and any statement at all may be used in a function called.
+.PP
+If you wish to use a
+.B return
+within
+.IR statement1 ,
+you must instead use
+.I E_RETURN()
+to return a value,
+or
+.I E_RETURN_VOID
+if the enclosing function is declared
+.BR void .
+These two macros may be used
+.I only
+in the (lexically) outermost
+.I statement1
+of a function, and nowhere else.
+.PP
+There are no restrictions on what may be done inside the
+.I statement2
+part of a handler block, except that it is subject to the
+above constraints if it is lexically enclosed in the
+.I statement1
+part of another handler.
+.PP
+As an aid to Unix programmers, the
+.IR raise_sys ()
+function is provided.  It is used exactly as
+.IR raise ()
+is, except that it uses the global
+.IR errno (3)
+to produce the exception code and message.
+.SH SEE ALSO
+errno(3), setjmp(3)
+.SH AUTHOR
+Jeffrey Mogul (Stanford)
+.SH BUGS
+Due to a limitation of the
+.IR setjmp (3)
+implementation,
+.B register
+variables which are actually stored in registers (and this is not
+always easy to determine, and especially is not portable) are restored
+to the values they had upon entering
+.I statement1
+when the handler
+.RI ( statement2 )
+is invoked.  All other data keeps whatever values they were assigned
+during the (interrupted) execution of
+.IR statement1 .
+A good rule to follow is that you should not rely on the values of
+variables declared
+.B register
+(in the current block) after an exception has been caught.
+
