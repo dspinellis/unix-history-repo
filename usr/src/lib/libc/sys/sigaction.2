@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sigaction.2	6.6 (Berkeley) %G%
+.\"	@(#)sigaction.2	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SIGACTION 2
@@ -202,7 +202,7 @@ The following is a list of all signals
 with names as in the include file
 .Aq Pa signal.h :
 .Bl -column SIGVTALARMXX "create core imagexxx"
-.It Sy "  NAME  " "	  Default Action  " "	              Description"
+.It Sy "  NAME  " "	Default Action  " "	Description"
 .It Dv SIGHUP No "	terminate process" "	terminal line hangup"
 .It Dv SIGINT No "	terminate process" "	interrupt program"
 .It Dv SIGQUIT No "	create core image" "	quit program"
@@ -268,7 +268,7 @@ Here
 .Fa sig
 is the signal number, into which the hardware faults and traps are
 mapped.
-.Em Code
+.Fa Code
 is a parameter that is either a constant
 or the code provided by
 the hardware.
@@ -295,11 +295,11 @@ address space.
 is not a valid signal number.
 .It Bq Er EINVAL
 An attempt is made to ignore or supply a handler for
-.Em SIGKILL
+.Dv SIGKILL
 or
-.Dv SIGSTOP
+.Dv SIGSTOP .
 .El
-.Sh STANDARD
+.Sh STANDARDS
 The
 .Nm sigaction
 function is defined by

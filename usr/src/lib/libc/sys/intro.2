@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)intro.2	6.15 (Berkeley) %G%
+.\"     @(#)intro.2	6.16 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INTRO 2
@@ -385,8 +385,11 @@ integer called a process ID.  The range of this ID is from 0 to 30000.
 .It  Parent process ID
 A new process is created by a currently active process; (see
 .Xr fork 2 ) .
-The parent process ID of a process is the process ID of its creator.
-.It  Process Group ID
+The parent process ID of a process is initially the process ID of its creator.
+If the creating process exits,
+the parent process ID of each child is set to the ID of a system process,
+.Xr init .
+.It  Process Group
 Each active process is a member of a process group that is identified by
 a non-negative integer called the process group ID.  This is the process
 ID of the group leader.  This grouping permits the signaling of related
@@ -400,11 +403,18 @@ A session is created by a successful call to
 .Xr setsid 2 ,
 which causes the caller to become the only member of the only process
 group in the new session.
-The process is known as the session leader.
+.It Session leader
+A process that has created a new session by a successful call to
+.Xr setsid 2 ,
+is known as a session leader.
 Only a session leader may acquire a terminal as its controlling terminal (see
 .Xr termios 4 ) .
-A session leader with a controlling terminal is known as a controlling process.
-.It  "Tty Process Group ID"
+.It Controlling process
+A session leader with a controlling terminal is a controlling process.
+.It Controlling terminal
+A terminal that is associated with a session is known as the controlling
+terminal for that session and its members.
+.It  "Terminal Process Group ID"
 A terminal may be acquired by a session leader as its controlling terminal.
 Once a terminal is associated with a session, any of the process groups
 within the session may be placed into the foreground by setting
@@ -415,6 +425,21 @@ to arbitrate between multiple jobs contending for the same terminal;
 .Xr csh 1
 and
 .Xr tty 4 ) .
+.It  "Orphaned Process Group"
+A process group is considered to be
+.Em orphaned
+if it is not under the control of a job control shell.
+More precisely, a process group is orphaned
+when none of its members has a parent process that is in the same session
+as the group,
+but is in a different process group.
+Note that when a process exits, the parent process for its children
+is changed to be
+.Xr init ,
+which is in a separate session.
+Not all members of an orphaned process group are necessarily orphaned
+processes (those whose creating process has exited).
+The process group of a session leader is orphaned by definition.
 .It "Real User ID and Real Group ID"
 Each user on the system is identified by a positive integer
 termed the real user ID.
@@ -446,7 +471,7 @@ By convention, the effective group ID (the first member of the group access
 list) is duplicated, so that the execution of a set-group-ID program
 does not result in the loss of the original (real) group ID.
 .Pp
-The group access list is a set of group ID's
+The group access list is a set of group IDs
 used only in determining resource accessibility.  Access checks
 are performed as described below in ``File Access Permissions''.
 .It  "Saved Set User ID and Saved Set Group ID"
@@ -467,7 +492,7 @@ A process is recognized as a
 .Em super-user
 process and is granted special privileges if its effective user ID is 0.
 .It  Special Processes
-The processes with a process ID's of 0, 1, and 2 are special.
+The processes with process IDs of 0, 1, and 2 are special.
 Process 0 is the scheduler.  Process 1 is the initialization process
 .Xr init ,
 and is the ancestor of every other process in the system.
