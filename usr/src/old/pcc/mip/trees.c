@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)trees.c	4.1 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.2 (Berkeley) %G%";
 # include "mfile1"
 
 	    /* corrections when in violation of lint */
@@ -1185,10 +1185,16 @@ opact( p )  NODE *p; {
 		{  return( NCVT+OTHER ); }
 	case INIT:
 	case CM:
+		return( 0 );
+
 	case NOT:
 	case CBRANCH:
+		if( mt1 & MSTR ) break;
+		return( 0 );
+
 	case ANDAND:
 	case OROR:
+		if( (mt1 & MSTR) || (mt2 & MSTR) ) break;
 		return( 0 );
 
 	case MUL:
