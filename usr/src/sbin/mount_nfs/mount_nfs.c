@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_nfs.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_nfs.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -110,7 +110,6 @@ main(argc, argv)
 	register struct nfs_args *nfsargsp;
 	struct nfs_args nfsargs;
 	struct nfsd_cargs ncd;
-	struct stat sb;
 	int flags, i, nfssvc_flag, num;
 	char *name, *p, *spec;
 #ifdef KERBEROS
@@ -262,10 +261,6 @@ main(argc, argv)
 
 	if (!getnfsargs(spec, nfsargsp))
 		exit(1);
-	if (stat(name, &sb) < 0)
-		err("%s: %s", name, strerror(errno));
-	if (!S_ISDIR(sb.st_mode))
-		err("%s: not a directory", name);
 	if (mount(MOUNT_NFS, name, flags, nfsargsp))
 		err("mount: %s: %s\n", name, strerror(errno));
 	if (nfsargsp->flags & (NFSMNT_NQNFS | NFSMNT_KERB)) {
