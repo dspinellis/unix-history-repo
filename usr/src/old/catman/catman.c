@@ -1,8 +1,8 @@
-static char *sccsid = "@(#)catman.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)catman.c	4.2 (Berkeley) %G%";
 # include	<stdio.h>
-# include	<sys/types.h>
-# include	<dir.h>
+# include	<sys/param.h>
 # include	<stat.h>
+# include	<dir.h>
 # include	<ctype.h>
 
 # define	reg	register
@@ -15,18 +15,23 @@ char		buf[BUFSIZ],
 		nflag = 0,
 		wflag = 0;
 
+char		*rindex();
+
 main(ac, av)
 int	ac;
 char	*av[]; {
 
-	reg char	*tsp, *msp, *csp, *man, *cat, *sp;
-	reg FILE	*mdir, *inf;
+	reg char	*tsp, *msp, *csp, *sp;
+	reg FILE	*inf;
+	reg DIR		*mdir;
 	reg long	time;
 	reg char	*sections;
 	reg int		exstat = 0;
 	reg bool	changed = 0;
-	static struct dir	dir;
-	static struct stat	sbuf;
+	static char	man[MAXNAMLEN+6] = "manx/";
+	static char	cat[MAXNAMLEN+6] = "catx/";
+	reg struct direct *dir;
+	struct stat	sbuf;
 
 	while (ac > 1) {
 		av++;
@@ -54,16 +59,14 @@ usage:
 	if (wflag)
 		goto whatis;
 	chdir("/usr/man");
-	man = "manx/xxxxxxxxxxxxxx";
-	cat = "catx/xxxxxxxxxxxxxx";
 	msp = &man[5];
 	csp = &cat[5];
 	umask(0);
 	for (sp = sections; *sp; sp++) {
 		man[3] = cat[3] = *sp;
 		*msp = *csp = '\0';
-		if ((mdir = fopen(man, "r")) == NULL) {
-			fprintf(stderr, "fopen:");
+		if ((mdir = opendir(man)) == NULL) {
+			fprintf(stderr, "opendir:");
 			perror(man);
 			exstat = 1;
 			continue;
@@ -75,20 +78,20 @@ usage:
 		}
 		if ((sbuf.st_mode & 0777) != 0777)
 			chmod(cat, 0777);
-		while (fread((char *) &dir, sizeof dir, 1, mdir) > 0) {
-			if (dir.d_ino == 0 || dir.d_name[0] == '.')
+		while ((dir = readdir(mdir)) != NULL) {
+			if (dir->d_ino == 0 || dir->d_name[0] == '.')
 				continue;
 			/*
 			 * make sure this is a man file, i.e., that it
 			 * ends in .[0-9] or .[0-9][a-z]
 			 */
-			tsp = rindex(dir.d_name, '.');
+			tsp = rindex(dir->d_name, '.');
 			if (tsp == NULL)
 				continue;
 			if (!isdigit(*++tsp) || ((*++tsp && !isalpha(*tsp)) || *++tsp))
 				continue;
 
-			strncpy(msp, dir.d_name, DIRSIZ);
+			strcpy(msp, dir->d_name);
 			if ((inf = fopen(man, "r")) == NULL) {
 				perror(man);
 				exstat = 1;
@@ -100,7 +103,7 @@ usage:
 				continue;
 			}
 			fclose(inf);
-			strncpy(csp, dir.d_name, DIRSIZ);
+			strcpy(csp, dir->d_name);
 			if (stat(cat, &sbuf) >= 0) {
 				time = sbuf.st_mtime;
 				stat(man, &sbuf);
@@ -112,7 +115,7 @@ usage:
 			SYSTEM(buf);
 			changed = 1;
 		}
-		fclose(mdir);
+		closedir(mdir);
 	}
 	if (changed && !nflag) {
 whatis:
