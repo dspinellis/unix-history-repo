@@ -4,9 +4,12 @@
 # import/ checkout.  These need to be made by the Makefiles, this
 # is just here as a stop gap solution.
 #
-# $Header: /home/cvs/386BSD/src/FixLinks,v 1.2 1993/06/20 12:02:09 rgrimes Exp $
+# $Header: /home/cvs/386BSD/src/FixLinks,v 1.3 1993/06/21 19:47:32 root Exp $
 #
 # $Log: FixLinks,v $
+# Revision 1.3  1993/06/21  19:47:32  root
+# Added rcs -> ../gnu/rcs
+#
 # Revision 1.2  1993/06/20  12:02:09  rgrimes
 # Put back in the ones that usr.bin/Makefile should do, it needs fixed
 # as it does not work for a make obj.
@@ -39,11 +42,3 @@ pushd share/doc/usd/10.etiq ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
 pushd share/doc/usd/09.newsread ; ln -s ../../smm/10.newsop/tmac.n tmac.n ; popd
 pushd games/chess ; ln -s DOCUMENTATION/MAN-PAGE chess.6 ; popd
 pushd games/fortune/datfiles ; ln -s fortunes-o.real.rot13 fortunes-o ; popd
-pushd usr.bin ; ln -s ../gnu/bc bc ; popd
-pushd usr.bin ; ln -s ../gnu/gawk awk ; popd
-pushd usr.bin ; ln -s ../gnu/gcc1 gcc1 ; popd
-pushd usr.bin ; ln -s ../gnu/gcc2 gcc2 ; popd
-pushd usr.bin ; ln -s ../gnu/groff groff ; popd
-pushd usr.bin ; ln -s ../gnu/gzip gzip ; popd
-pushd usr.bin ; ln -s ../gnu/tar tar ; popd
-pushd usr.bin ; ln -s ../gnu/rcs rcs ; popd
