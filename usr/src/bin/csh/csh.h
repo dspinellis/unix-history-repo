@@ -3,12 +3,11 @@
  * All rights reserved.  The Berkeley Software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)csh.h	5.6 (Berkeley) %G%
+ *	@(#)sh.h	5.6 (Berkeley) 2/25/91
  */
-
+#include <sys/param.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/signal.h>
 #include <errno.h>
@@ -123,8 +122,8 @@ jmp_buf	reslab;
 #define	setexit()	((void) setjmp(reslab))
 #define	reset()		longjmp(reslab, 0)
 	/* Should use structure assignment here */
-#define	getexit(a)	copy((char *)(a), (char *)reslab, sizeof reslab)
-#define	resexit(a)	copy((char *)reslab, ((char *)(a)), sizeof reslab)
+#define	getexit(a)	bcopy((char *)reslab, (char *)(a), sizeof reslab)
+#define	resexit(a)	bcopy(((char *)(a)), (char *)reslab, sizeof reslab)
 
 char	*gointr;		/* Label for an onintr transfer */
 sig_t	parintr;		/* Parents interrupt catch */
@@ -342,7 +341,6 @@ short	gflag;				/* After tglob -> is globbing needed? */
  */
 char	**gargv;			/* Pointer to the (stack) arglist */
 short	gargc;				/* Number args in gargv */
-short	gnleft;
 
 /*
  * Variables for command expansion.
@@ -389,6 +387,7 @@ char	HISTSUB;			/* auto-substitute character */
 }
 char	*alloctmp;
 #define xalloc(i) ((alloctmp = malloc(i)) ? alloctmp : (char *)nomem(i))
+#define xrealloc(p, i) ((alloctmp = realloc(p, i)) ? alloctmp : (char *)nomem(i))
 
 char	*Dfix1();
 char	**blkcat();
@@ -397,6 +396,7 @@ char	**blkend();
 char	**blkspl();
 char	*calloc();
 char	*malloc();
+char	*realloc();
 char	*cname();
 char	**copyblk();
 char	**dobackp();
@@ -417,7 +417,7 @@ struct	passwd *getpwnam();
 struct	wordent *gethent();
 struct	wordent *getsub();
 char	*getwd();
-char	**glob();
+char	**globall();
 char	*globone();
 char	*index();
 struct	biltins *isbfunc();
