@@ -1,4 +1,4 @@
-/*static	char sccsid[] = "@(#)c2.h 4.3 %G%";*/
+/*static	char sccsid[] = "@(#)c2.h 4.4 %G%";*/
 /* @(#)c2.h 1.19 80/08/26 13:39:07 */
 /*
  * Header for object code improver
@@ -98,7 +98,7 @@
 #define T(a,b) (a|((b)<<8))
 #define U(a,b) (a|((b)<<4))
 
-#define C2_ASIZE 64
+#define C2_ASIZE 128
 
 struct optab {
 	char	opstring[7];
