@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -387,15 +387,17 @@ extractfile(name)
 	char *name;
 {
 	int mode;
-	time_t timep[2];
+	struct timeval timep[2];
 	struct entry *ep;
 	extern int xtrlnkfile(), xtrlnkskip();
 	extern int xtrfile(), xtrskip();
 
 	curfile.name = name;
 	curfile.action = USING;
-	timep[0] = curfile.dip->di_atime;
-	timep[1] = curfile.dip->di_mtime;
+	timep[0].tv_sec = curfile.dip->di_atime;
+	timep[0].tv_usec = 0;
+	timep[1].tv_sec = curfile.dip->di_mtime;
+	timep[1].tv_usec = 0;
 	mode = curfile.dip->di_mode;
 	switch (mode & IFMT) {
 
@@ -448,7 +450,7 @@ extractfile(name)
 		(void) chown(name, curfile.dip->di_uid, curfile.dip->di_gid);
 		(void) chmod(name, mode);
 		skipfile();
-		utime(name, timep);
+		utimes(name, timep);
 		return (GOOD);
 
 	case IFREG:
@@ -468,7 +470,7 @@ extractfile(name)
 		(void) fchmod(ofile, mode);
 		getfile(xtrfile, xtrskip);
 		(void) close(ofile);
-		utime(name, timep);
+		utimes(name, timep);
 		return (GOOD);
 	}
 	/* NOTREACHED */
@@ -873,7 +875,7 @@ gethead(buf)
 	buf->c_magic = NFS_MAGIC;
 
 good:
-	j = buf->c_dinode.di_ic.ic_size.val;
+	j = buf->c_dinode.di_qsize.val;
 	i = j[1];
 	if (buf->c_dinode.di_size == 0 &&
 	    (buf->c_dinode.di_mode & IFMT) == IFDIR && Qcvt==0) {
