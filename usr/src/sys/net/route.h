@@ -1,4 +1,4 @@
-/*	route.h	6.1	83/07/29	*/
+/*	route.h	6.2	84/05/30	*/
 
 /*
  * Kernel resident routing tables.
@@ -60,7 +60,12 @@ struct	rtstat {
 	else \
 		(rt)->rt_refcnt--;
 
-#define	RTHASHSIZ	7
+#define	RTHASHSIZ	8
+#if	(RTHASHSIZ & (RTHASHSIZ - 1)) == 0
+#define RTHASHMOD(h)	((h) & (RTHASHSIZ - 1))
+#else
+#define RTHASHMOD(h)	((h) % RTHASHSIZ)
+#endif
 struct	mbuf *rthost[RTHASHSIZ];
 struct	mbuf *rtnet[RTHASHSIZ];
 struct	rtstat	rtstat;
