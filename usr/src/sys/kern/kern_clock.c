@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.21	81/04/28	*/
+/*	kern_clock.c	4.22	81/06/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -115,7 +115,7 @@ hardclock(pc, ps)
 		pp->p_cpticks++;
 		if(++pp->p_cpu == 0)
 			pp->p_cpu--;
-		if(pp->p_cpu % 16 == 0) {
+		if(pp->p_cpu % 4 == 0) {
 			(void) setpri(pp);
 			if (pp->p_pri >= PUSER)
 				pp->p_pri = pp->p_usrpri;
@@ -141,13 +141,25 @@ hardclock(pc, ps)
 }
 
 /*
- * SCHMAG is the constant in the digital decay cpu
- * usage priority assignment.  Each second we multiply
- * the previous cpu usage estimate by SCHMAG.  At 9/10
- * it tends to decay away all knowledge of previous activity
- * in about 10 seconds.
+ * The digital decay cpu usage priority assignment is scaled to run in
+ * time as expanded by the 1 minute load average.  Each second we
+ * multiply the the previous cpu usage estimate by
+ *		nrscale*avenrun[0]
+ * The following relates the load average to the period over which
+ * cpu usage is 90% forgotten:
+ *	loadav 1	 5 seconds
+ *	loadav 5	24 seconds
+ *	loadav 10	47 seconds
+ *	loadav 20	93 seconds
+ * This is a great improvement on the previous algorithm which
+ * decayed the priorities by a constant, and decayed away all knowledge
+ * of previous activity in about 20 seconds.  Under heavy load,
+ * the previous algorithm degenerated to round-robin with poor response
+ * time when there was a high load average.
  */
-#define	SCHMAG	9/10
+#define	ave(a,b) ((int)(((int)(a*b))/(b+1)))
+int	nrscale = 2;
+double	avenrun[];
 
 /*
  * Constant for decay filter for cpu usage field
@@ -209,10 +221,16 @@ softclock(pc, ps)
 	}
 
 	/*
-	 * Run paging daemon and reschedule every 1/4 sec.
+	 * Run paging daemon every 1/4 sec.
 	 */
 	if (lbolt % (hz/4) == 0) {
 		vmpago();
+	}
+
+	/*
+	 * Reschedule every 1/10 sec.
+	 */
+	if (lbolt % (hz/10) == 0) {
 		runrun++;
 		aston();
 	}
@@ -309,15 +327,18 @@ softclock(pc, ps)
 			 * is a weighted estimate of cpu time consumed.
 			 * A process which consumes cpu time has this
 			 * increase regularly.  We here decrease it by
-			 * a fraction (SCHMAG is 90%), giving a digital
-			 * decay filter which damps out in about 10 seconds.
+			 * a fraction based on load average giving a digital
+			 * decay filter which damps out in about 5 seconds
+			 * when seconds are measured in time expanded by the
+			 * load average.
 			 *
 			 * If a process is niced, then the nice directly
 			 * affects the new priority.  The final priority
 			 * is in the range 0 to 255, to fit in a character.
 			 */
 			pp->p_cpticks = 0;
-			a = (pp->p_cpu & 0377)*SCHMAG + pp->p_nice - NZERO;
+			a = ave((pp->p_cpu & 0377), avenrun[0]*nrscale) +
+			     pp->p_nice - NZERO;
 			if (a < 0)
 				a = 0;
 			if (a > 255)
