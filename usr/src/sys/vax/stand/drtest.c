@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)drtest.c	7.2 (Berkeley) %G%
+ *	@(#)drtest.c	7.3 (Berkeley) %G%
  */
 
 /*
