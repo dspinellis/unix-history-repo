@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sig.c	7.39 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.40 (Berkeley) %G%
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -1007,6 +1007,7 @@ coredump(p)
 	sprintf(name, "core.%s", p->p_comm);
 	nd.ni_dirp = name;
 	nd.ni_segflg = UIO_SYSSPACE;
+	nd.ni_cnd.cn_proc = p;
 	if (error = vn_open(&nd, p, O_CREAT|FWRITE, 0644))
 		return (error);
 	vp = nd.ni_vp;
