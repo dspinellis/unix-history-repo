@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.5	(Berkeley)	%G%
+#	@(#)Makefile	4.6	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -32,8 +32,9 @@ ${STD}:
 install:
 	for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-	for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/etc/$$i); done
-	for i in ${STD} ${NSTD}; do (install $$i ${DESTDIR}/etc/$$i); done
+	for i in ${SCRIPT}; do (install -c $$i.sh ${DESTDIR}/usr/lib/$$i); done
+	for i in ${STD} ${NSTD}; do (install $$i ${DESTDIR}/usr/lib/$$i); done
+	install -c lib.b ${DESTDIR}/usr/lib/lib.b
 
 clean:
 	rm -f a.out core *.s *.o
