@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)radix.c	7.3 (Berkeley) %G%
+ *	@(#)radix.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -24,9 +24,12 @@
 #include "param.h"
 #include "radix.h"
 #endif
-struct radix_node_head *radix_node_head;
+struct radix_node_head *mask_rnhead;
+#define rn_maskhead mask_rnhead->rnh_treetop
 struct radix_mask *rn_mkfreelist;
-#define rn_maskhead radix_node_head->rnh_treetop
+struct radix_node_head *radix_node_head;
+#undef Bcmp
+#define Bcmp(a, b, l) (l == 0 ? 0 : bcmp((caddr_t)(a), (caddr_t)(b), (u_long)l))
 /*
  * The data structure for the keys is a radix tree with one way
  * branching removed.  The index rn_b at an internal node n represents a bit
@@ -73,7 +76,6 @@ rn_search(v, head)
 	return x;
 };
 
-#ifdef notdef
 struct radix_node *
 rn_search_m(v, head, m)
 	struct radix_node *head;
@@ -90,7 +92,6 @@ rn_search_m(v, head, m)
 	}
 	return x;
 };
-#endif
 
 
 static int gotOddMasks;
@@ -142,11 +143,13 @@ on1:
 		 * a route to a net.
 		 */
 		cp3 = matched_off + t->rn_mask;
+		cp2 = matched_off + t->rn_key;
 		for (; cp < cplim; cp++)
 			if ((*cp2++ ^ *cp) & *cp3++)
 				break;
 		if (cp == cplim)
 			return t;
+		cp = matched_off + v;
 	    }
 	} while (t = t->rn_dupedkey);
 	t = saved_t;
@@ -297,6 +300,33 @@ rn_addroute(v, netmask, head, treenodes)
 			maskduplicated = 1;
 			netmask = x->rn_key;
 			b = -1 - x->rn_b;
+		} else {
+			maskduplicated = 0;
+			R_Malloc(x, struct radix_node *, MAXKEYLEN + 2 * sizeof (*x));
+			if (x == 0)
+				return (0);
+			Bzero(x, MAXKEYLEN + 2 * sizeof (*x));
+			cp = (caddr_t)(x + 2);
+			Bcopy(netmask, cp, mlen);
+			netmask = cp;
+			x = rn_insert(netmask, rn_maskhead, &maskduplicated, x);
+			/*
+			 * Calculate index of mask.
+			 */
+			cplim = netmask + vlen;
+			for (cp = netmask + head->rn_off; cp < cplim; cp++)
+				if (*(u_char *)cp != 0xff)
+					break;
+			b = (cp - netmask) << 3;
+			if (cp != cplim) {
+				if (*cp != 0) {
+					gotOddMasks = 1;
+					for (j = 0x80; j; b++, j >>= 1)  
+						if ((j & *cp) == 0)
+							break;
+				}
+			}
+			x->rn_b = -1 - b;
 		}
 	}
 	/*
@@ -304,11 +334,11 @@ rn_addroute(v, netmask, head, treenodes)
 	 */
 	saved_tt = tt = rn_insert(v, head, &keyduplicated, treenodes);
 	if (keyduplicated) {
-		if (tt->rn_mask == netmask)
-			return (0);
-		for (; tt->rn_dupedkey; tt = tt->rn_dupedkey)
+		do {
 			if (tt->rn_mask == netmask)
 				return (0);
+			t = tt;
+		} while (tt = tt->rn_dupedkey);
 		/*
 		 * If the mask is not duplicated, we wouldn't
 		 * find it among possible duplicate key entries
@@ -319,55 +349,23 @@ rn_addroute(v, netmask, head, treenodes)
 		 * It is an unfortunate pain having to relocate
 		 * the head of the list.
 		 */
-		tt->rn_dupedkey = treenodes;
-		tt = treenodes;
+		t->rn_dupedkey = tt = treenodes;
 #ifdef RN_DEBUG
 		t=tt+1; tt->rn_info = rn_nodenum++; t->rn_info = rn_nodenum++;
 		tt->rn_twin = t; tt->rn_ybro = rn_clist; rn_clist = tt;
 #endif
 		t = saved_tt;
-		tt->rn_key = t->rn_key;
-		tt->rn_b = t->rn_b;
+		tt->rn_key = (caddr_t) v;
+		tt->rn_b = -1;
 		tt->rn_flags = t->rn_flags & ~RNF_ROOT;
 	}
 	/*
 	 * Put mask in tree.
 	 */
-	if (netmask == 0)
-		goto on1;
-	if (maskduplicated == 0) {
-		R_Malloc(x, struct radix_node *, MAXKEYLEN + 2 * sizeof (*x));
-		if (x == 0)
-			return (0);
-		Bzero(x, MAXKEYLEN + 2 * sizeof (*x));
-		cp = (caddr_t)(x + 2);
-		Bcopy(netmask, cp, mlen);
-		netmask = cp;
-		x = rn_insert(netmask, rn_maskhead, &maskduplicated, x);
-		/*
-		 * Calculate index of mask.
-		 */
-		cplim = netmask + vlen;
-		for (cp = netmask + head->rn_off; cp < cplim; cp++)
-			if (*(u_char *)cp != 0xff)
-				break;
-		b = (cp - netmask) << 3;
-		if (cp != cplim) {
-			if (*cp != 0) {
-				gotOddMasks = 1;
-				for (j = 0x80; j; b++, j >>= 1)  
-					if ((j & *cp) == 0)
-						break;
-			}
-		}
-		x->rn_b = -1 - b;
+	if (netmask) {
+		tt->rn_mask = netmask;
+		tt->rn_b = x->rn_b;
 	}
-	/*
-	 * Set up usual parameters
-	 */
-	tt->rn_mask = netmask;
-	tt->rn_b = x->rn_b;
-on1:
 	t = saved_tt->rn_p;
 	b_leaf = -1 - t->rn_b;
 	if (t->rn_r == saved_tt) x = t->rn_l; else x = t->rn_r;
@@ -379,7 +377,7 @@ on1:
 				Bzero(m, sizeof *m);
 				m->rm_b = x->rn_b;
 				m->rm_mask = x->rn_mask;
-				t->rn_mklist = m;
+				x->rn_mklist = t->rn_mklist = m;
 			}
 		}
 	} else if (x->rn_mklist) {
@@ -444,7 +442,7 @@ rn_delete(v, netmask, head)
 	register struct radix_node *t, *p, *x = head;
 	register struct radix_node *tt = rn_search(v, x);
 	int b, head_off = x->rn_off, vlen =  * (u_char *) v;
-	struct radix_mask *m, **mp;
+	struct radix_mask *m, *saved_m, **mp;
 	struct radix_node *dupedkey, *saved_tt = tt;
 
 	if (tt == 0 ||
@@ -460,9 +458,13 @@ rn_delete(v, netmask, head)
 			if (tt == 0)
 				return (0);
 	}
-	if (tt->rn_mask == 0)
+	if (tt->rn_mask == 0 || (saved_m = m = tt->rn_mklist) == 0)
 		goto on1;
-	if ((m = tt->rn_mklist) && --m->rm_refs >= 0)
+	if (m->rm_mask != tt->rn_mask) {
+		printf("rn_delete: inconsistent annotation\n");
+		goto on1;
+	}
+	if (--m->rm_refs >= 0)
 		goto on1;
 	b = -1 - tt->rn_b;
 	t = saved_tt->rn_p;
@@ -473,15 +475,13 @@ rn_delete(v, netmask, head)
 		t = t->rn_p;
 	} while (b <= t->rn_b && x != head);
 	for (mp = &x->rn_mklist; m = *mp; mp = &m->rm_mklist)
-		if (m->rm_mask == tt->rn_mask)
-			break;
-	if (m) {
-		if (m->rm_refs < 0) {
+		if (m == saved_m) {
 			*mp = m->rm_mklist;
 			MKFree(m);
+			break;
 		}
-	} else
-		printf("rn_delete: couldn't find our mask\n");
+	if (m == 0)
+		printf("rn_delete: couldn't find our annotation\n");
 on1:
 	/*
 	 * Eliminate us from tree
@@ -532,7 +532,11 @@ on1:
 		} else {
 			for (m = t->rn_mklist; m;) {
 				struct radix_mask *mm = m->rm_mklist;
-				MKFree(m);
+				if (m == x->rn_mklist && (--(m->rm_refs) < 0)) {
+					x->rn_mklist = 0;
+					MKFree(m);
+				} else
+					printf("rn_delete: Orphaned mask\n");
 				m = mm;
 			}
 		}
@@ -591,6 +595,7 @@ int off;
 			*head = 0;
 			return (0);
 		}
+		mask_rnhead = radix_node_head;
 	}
 	rnh->rnh_next = radix_node_head->rnh_next;
 	if (radix_node_head != rnh)
