@@ -1,4 +1,4 @@
-/*	saio.h	4.4	%G%	*/
+/*	saio.h	4.5	%G%	*/
 
 /*
  * header file for standalone package
@@ -19,8 +19,13 @@ struct	iob {
 	daddr_t	i_bn;
 	char	*i_ma;
 	int	i_cc;
-	char	i_buf[BSIZE];
+	char	i_buf[MAXBSIZE];
+	union {
+		struct fs ui_fs;
+		char dummy[SBSIZE];
+	} i_un;
 };
+#define i_fs i_un.ui_fs
 
 #define F_READ	01
 #define F_WRITE	02
@@ -47,7 +52,7 @@ struct devsw devsw[];
 
 #define	NBUFS	4
 
-char	b[NBUFS][BSIZE];
+char	b[NBUFS][MAXBSIZE];
 daddr_t	blknos[NBUFS];
 
 #define NFILES	4
