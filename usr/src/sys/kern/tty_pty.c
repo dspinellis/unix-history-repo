@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty_pty.c	7.17 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.18 (Berkeley) %G%
  */
 
 /*
@@ -60,6 +60,7 @@ int ptydebug = 0;
 ptsopen(dev, flag)
 	dev_t dev;
 {
+	struct proc *p = curproc;
 	register struct tty *tp;
 	int error;
 
@@ -78,7 +79,7 @@ ptsopen(dev, flag)
 		tp->t_cflag = TTYDEF_CFLAG;
 		tp->t_ispeed = tp->t_ospeed = TTYDEF_SPEED;
 		ttsetwater(tp);		/* would be done in xxparam() */
-	} else if (tp->t_state&TS_XCLUDE && u.u_uid != 0)
+	} else if (tp->t_state&TS_XCLUDE && p->p_ucred->cr_uid != 0)
 		return (EBUSY);
 	if (tp->t_oproc)			/* Ctrlr still around. */
 		tp->t_state |= TS_CARR_ON;
@@ -110,19 +111,20 @@ ptsread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
 {
+	struct proc *p = curproc;
 	register struct tty *tp = &pt_tty[minor(dev)];
 	register struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
 	int error = 0;
 
 again:
 	if (pti->pt_flags & PF_REMOTE) {
-		while (isbackground(u.u_procp, tp)) {
-			if ((u.u_procp->p_sigignore & sigmask(SIGTTIN)) ||
-			    (u.u_procp->p_sigmask & sigmask(SIGTTIN)) ||
-			    u.u_procp->p_pgrp->pg_jobc == 0 ||
-			    u.u_procp->p_flag&SVFORK)
+		while (isbackground(p, tp)) {
+			if ((p->p_sigignore & sigmask(SIGTTIN)) ||
+			    (p->p_sigmask & sigmask(SIGTTIN)) ||
+			    p->p_pgrp->pg_jobc == 0 ||
+			    p->p_flag&SPPWAIT)
 				return (EIO);
-			pgsignal(u.u_procp->p_pgrp, SIGTTIN, 1);
+			pgsignal(p->p_pgrp, SIGTTIN, 1);
 			if (error = ttysleep(tp, (caddr_t)&lbolt, 
 			    TTIPRI | PCATCH, ttybg, 0))
 				return (error);
@@ -205,7 +207,7 @@ ptcwakeup(tp, flag)
 			pti->pt_selw = 0;
 			pti->pt_flags &= ~PF_WCOLL;
 		}
-if (ptydebug) printf("WAKEUP c_cf %d\n", u.u_procp->p_pid);
+if (ptydebug) printf("WAKEUP c_cf %d\n", curproc->p_pid);
 		wakeup((caddr_t)&tp->t_rawq.c_cf);
 	}
 }
@@ -341,6 +343,7 @@ ptcselect(dev, rw)
 	dev_t dev;
 	int rw;
 {
+	struct proc *curp = curproc;
 	register struct tty *tp = &pt_tty[minor(dev)];
 	struct pt_ioctl *pti = &pt_ioctl[minor(dev)];
 	struct proc *p;
@@ -371,7 +374,7 @@ ptcselect(dev, rw)
 		if ((p = pti->pt_selr) && p->p_wchan == (caddr_t)&selwait)
 			pti->pt_flags |= PF_RCOLL;
 		else
-			pti->pt_selr = u.u_procp;
+			pti->pt_selr = curp;
 		break;
 
 
@@ -390,7 +393,7 @@ ptcselect(dev, rw)
 		if ((p = pti->pt_selw) && p->p_wchan == (caddr_t)&selwait)
 			pti->pt_flags |= PF_WCOLL;
 		else
-			pti->pt_selw = u.u_procp;
+			pti->pt_selw = curp;
 		break;
 
 	}
@@ -563,9 +566,6 @@ ptyioctl(dev, cmd, data, flag)
 		case TIOCSETA:
 		case TIOCSETAW:
 		case TIOCSETAF:
-		case JUNK_TIOCSETAS:	/* XXX */
-		case JUNK_TIOCSETAWS:	/* XXX */
-		case JUNK_TIOCSETAFS:	/* XXX */
 			while (getc(&tp->t_outq) >= 0)
 				;
 			break;
@@ -615,9 +615,6 @@ ptyioctl(dev, cmd, data, flag)
 		case TIOCSETA:
 		case TIOCSETAW:
 		case TIOCSETAF:
-		case JUNK_TIOCSETAS:	/* XXX */
-		case JUNK_TIOCSETAWS:	/* XXX */
-		case JUNK_TIOCSETAFS:	/* XXX */
 		case TIOCSETP:
 		case TIOCSETN:
 #ifdef	COMPAT_43
