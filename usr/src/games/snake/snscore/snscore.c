@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)snscore.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)snscore.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -45,7 +45,6 @@ main()
 			}
 			players[noplayers].uids = uid;
 			players[noplayers].scores = score;
-			/* This is faster if passwd is sorted by uid. */
 			p = getpwuid(uid);
 			if (p == NULL)
 				continue;
@@ -75,20 +74,4 @@ main()
 			j = i+2;
 	}
 	exit(0);
-}
-
-struct passwd *
-getpwuid(uid)
-register uid;
-{
-	register struct passwd *p;
-	struct passwd *getpwent();
-
-	while( (p = getpwent()) && p->pw_uid != uid );
-	if (p->pw_uid == uid)
-		return(p);
-	setpwent();
-	while( (p = getpwent()) && p->pw_uid != uid );
-	endpwent();
-	return(p);
 }
