@@ -1,0 +1,50 @@
+reading symbolic information ...
+
+Quit in kill at 0x11c
+0000011c  bgequ	110
+
+Quit in kill at 0x11c
+0000011c  bgequ	110
+in catch
+in secondcatch
+back in catch
+back in main
+
+execution completed
+in catch
+in secondcatch
+back in catch
+back in main
+
+execution completed
+[3] stop in catch
+[3] stopped in catch at line 19
+   19       printf("in catch\n");
+stopped in catch at line 19
+   19       printf("in catch\n");
+[5] stop in secondcatch
+[5] stopped in secondcatch at line 28
+   28       printf("in secondcatch\n");
+in catch
+in secondcatch
+back in catch
+back in main
+
+execution completed
+HUP QUIT KILL ALRM TSTP CONT CHLD WINCH
+
+Quit in kill at 0x11c
+0000011c  bgequ	110
+[3] stopped in catch at line 19
+   19       printf("in catch\n");
+
+Quit in kill at 0x11c
+0000011c  bgequ	110
+[5] stopped in secondcatch at line 28
+   28       printf("in secondcatch\n");
+in catch
+in secondcatch
+back in catch
+back in main
+
+execution completed
