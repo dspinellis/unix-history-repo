@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.3 82/11/14";
+static char sccsid[] = "@(#)rlogin.c	4.4 82/11/15";
 #endif
 
 #include <stdio.h>
@@ -24,7 +24,7 @@ int	eight;
 char	*speeds[] =
     { "0", "50", "75", "110", "134", "150", "200", "300",
       "600", "1200", "1800", "2400", "4800", "9600", "19200", "38400" };
-char	term[64];
+char	term[64] = "dumb";
 
 main(argc, argv)
 	int argc;
@@ -77,7 +77,9 @@ another:
 		exit(1);
 	}
 	cc = 0;
-	strcpy(term, getenv("TERM"));
+	cp = getenv("TERM");
+	if (cp)
+		strcpy(term, cp);
 	if (gtty(0, &ttyb)==0) {
 		strcat(term, "/");
 		strcat(term, speeds[ttyb.sg_ospeed]);
