@@ -18,12 +18,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
-
-/*
- * User-level command processor.
- */
 
 #include <sys/param.h>
 #include <stdio.h>
@@ -57,42 +53,32 @@ static int last_mca;		/* The previous mca */
 static int number;		/* The number typed by the user */
 static int wsearch;		/* Search for matches (1) or non-matches (0) */
 
-/*
- * Reset command buffer (to empty).
- */
-cmd_reset()
-{
-	cp = cmdbuf;
-}
+#define	CMD_RESET	cp = cmdbuf	/* reset command buffer to empty */
+#define	CMD_EXEC	lower_left(); flush()
 
-/*
- * Backspace in command buffer.
- */
+/* backspace in command buffer. */
 static
 cmd_erase()
 {
+	/*
+	 * backspace past beginning of the string: this usually means
+	 * abort the command.
+	 */
 	if (cp == cmdbuf)
-		/*
-		 * Backspace past beginning of the string:
-		 * this usually means abort the command.
-		 */
 		return(1);
 
+	/* erase an extra character, for the carat. */
 	if (CONTROL_CHAR(*--cp)) {
-		/*
-		 * Erase an extra character, for the carat.
-		 */
 		backspace();
 		--cmd_col;
 	}
+
 	backspace();
 	--cmd_col;
 	return(0);
 }
 
-/*
- * Set up the display to start a new multi-character command.
- */
+/* set up the display to start a new multi-character command. */
 start_mca(action, prompt)
 	int action;
 	char *prompt;
@@ -105,7 +91,7 @@ start_mca(action, prompt)
 }
 
 /*
- * Process a single character of a multi-character command, such as
+ * process a single character of a multi-character command, such as
  * a number, or the pattern of a search command.
  */
 static
@@ -147,32 +133,9 @@ cmd_char(c)
 	return(0);
 }
 
-/*
- * Return the number currently in the command buffer.
- */
-	static int
-cmd_int()
-{
-	*cp = '\0';
-	cp = cmdbuf;
-	return (atoi(cmdbuf));
-}
-
-/*
- * Move the cursor to lower left before executing a command.
- * This looks nicer if the command takes a long time before
- * updating the screen.
- */
-static
-cmd_exec()
-{
-	lower_left();
-	flush();
-}
-
 prompt()
 {
-	extern int terseprompt, linenums;
+	extern int linenums;
 	extern char *current_name, *firstsearch, *next_name;
 	off_t len, pos, ch_length(), position(), forw_line();
 	char pbuf[40];
@@ -221,14 +184,13 @@ prompt()
 		so_exit();
 		longprompt = 0;
 	}
-	else if (terseprompt)
-		putchr(':');
 	else {
 		so_enter();
 		putstr(current_name);
 		if (hit_eof)
 			if (next_name) {
-				(void)sprintf(pbuf, ": END (%s)", next_name);
+				(void)sprintf(pbuf, ": END (next file: %s)",
+				    next_name);
 				putstr(pbuf);
 			}
 			else
@@ -242,9 +204,7 @@ prompt()
 	return(1);
 }
 
-/*
- * Get command character.
- */
+/* get command character. */
 static
 getcc()
 {
@@ -275,9 +235,7 @@ getcc()
 	return(getchr());
 }
 
-/*
- * Execute a multicharacter command.
- */
+/* execute a multicharacter command. */
 static
 exec_mca()
 {
@@ -287,7 +245,7 @@ exec_mca()
 	char *glob();
 
 	*cp = '\0';
-	cmd_exec();
+	CMD_EXEC;
 	switch (mca) {
 	case A_F_SEARCH:
 		(void)search(1, cmdbuf, number, wsearch);
@@ -310,9 +268,7 @@ exec_mca()
 	}
 }
 
-/*
- * Add a character to a multi-character command.
- */
+/* add a character to a multi-character command. */
 static
 mca_char(c)
 	int c;
@@ -332,7 +288,9 @@ mca_char(c)
 			 * Not part of the number.
 			 * Treat as a normal command character.
 			 */
-			number = cmd_int();
+			*cp = '\0';
+			number = atoi(cmdbuf);
+			CMD_RESET;
 			mca = 0;
 			return(NO_MCA);
 		}
@@ -344,23 +302,14 @@ mca_char(c)
 	 * is terminated by a newline.
 	 */
 	if (c == '\n' || c == '\r') {
-		/*
-		 * Execute the command.
-		 */
 		exec_mca();
 		return(MCA_DONE);
 	}
-	/*
-	 * Append the char to the command buffer.
-	 */
+
+	/* append the char to the command buffer. */
 	if (cmd_char(c))
-		/*
-		 * Abort the multi-char command.
-		 */
 		return(MCA_DONE);
-	/*
-	 * Need another character.
-	 */
+
 	return(MCA_MORE);
 }
 
@@ -391,7 +340,7 @@ commands()
 		/*
 		 * Display prompt and accept a character.
 		 */
-		cmd_reset();
+		CMD_RESET;
 		if (!prompt()) {
 			next_file(1);
 			continue;
@@ -429,147 +378,81 @@ again:		if (sigs)
 				break;
 			}
 
-		/*
-		 * Decode the command character and decide what to do.
-		 */
-		switch (action = cmd_decode(c))
-		{
-		case A_DIGIT:
-			/*
-			 * First digit of a number.
-			 */
+		/* decode the command character and decide what to do. */
+		switch (action = cmd_decode(c)) {
+		case A_DIGIT:		/* first digit of a number */
 			start_mca(A_DIGIT, ":");
 			goto again;
-
-		case A_F_SCREEN:
-			/*
-			 * Forward one screen.
-			 */
-			if (number <= 0)
-				number = sc_window;
-			if (number <= 0)
+		case A_F_SCREEN:	/* forward one screen */
+			CMD_EXEC;
+			if (number <= 0 && (number = sc_window) <= 0)
 				number = sc_height - 1;
-			cmd_exec();
 			forward(number, 1);
 			break;
-
-		case A_B_SCREEN:
-			/*
-			 * Backward one screen.
-			 */
-			if (number <= 0)
-				number = sc_window;
-			if (number <= 0)
+		case A_B_SCREEN:	/* backward one screen */
+			CMD_EXEC;
+			if (number <= 0 && (number = sc_window) <= 0)
 				number = sc_height - 1;
-			cmd_exec();
 			backward(number, 1);
 			break;
-
-		case A_F_LINE:
-			/*
-			 * Forward N (default 1) line.
-			 */
-			if (number <= 0)
-				number = 1;
-			cmd_exec();
-			forward(number, 0);
+		case A_F_LINE:		/* forward N (default 1) line */
+			CMD_EXEC;
+			forward(number <= 0 ? 1 : number, 0);
 			break;
-
-		case A_B_LINE:
-			/*
-			 * Backward N (default 1) line.
-			 */
-			if (number <= 0)
-				number = 1;
-			cmd_exec();
-			backward(number, 0);
+		case A_B_LINE:		/* backward N (default 1) line */
+			CMD_EXEC;
+			backward(number <= 0 ? 1 : number, 0);
 			break;
-
-		case A_F_SCROLL:
-			/*
-			 * Forward N lines 
-			 * (default same as last 'd' or 'u' command).
-			 */
+		case A_F_SCROLL:	/* forward N lines */
+			CMD_EXEC;
 			if (number > 0)
 				scroll = number;
-			cmd_exec();
 			forward(scroll, 0);
 			break;
-
-		case A_B_SCROLL:
-			/*
-			 * Forward N lines 
-			 * (default same as last 'd' or 'u' command).
-			 */
+		case A_B_SCROLL:	/* backward N lines */
+			CMD_EXEC;
 			if (number > 0)
 				scroll = number;
-			cmd_exec();
 			backward(scroll, 0);
 			break;
-
-		case A_FREPAINT:
-			/*
-			 * Flush buffers, then repaint screen.
-			 * Don't flush the buffers on a pipe!
-			 */
-			if (!ispipe)
-			{
+		case A_FREPAINT:	/* flush buffers and repaint */
+			if (!ispipe) {
 				ch_init(0, 0);
 				clr_linenum();
 			}
-			/* FALLTHRU */
-
+			/* FALLTHROUGH */
 		case A_REPAINT:		/* repaint the screen */
-			cmd_exec();
+			CMD_EXEC;
 			repaint();
 			break;
-
-		case A_GOLINE:
-			/*
-			 * Go to line N, default beginning of file.
-			 */
+		case A_GOLINE:		/* go to line N, default 1 */
+			CMD_EXEC;
 			if (number <= 0)
 				number = 1;
-			cmd_exec();
 			jump_back(number);
 			break;
-
-		case A_PERCENT:
-			/*
-			 * Go to a specified percentage into the file.
-			 */
+		case A_PERCENT:		/* go to percent of file */
+			CMD_EXEC;
 			if (number < 0)
 				number = 0;
-			if (number > 100)
+			else if (number > 100)
 				number = 100;
-			cmd_exec();
 			jump_percent(number);
 			break;
-
-		case A_GOEND:
-			/*
-			 * Go to line N, default end of file.
-			 */
-			cmd_exec();
+		case A_GOEND:		/* go to line N, default end */
+			CMD_EXEC;
 			if (number <= 0)
 				jump_forw();
 			else
 				jump_back(number);
 			break;
-
 		case A_STAT:		/* print file name, etc. */
 			longprompt = 1;
 			continue;
-
 		case A_QUIT:		/* exit */
 			quit();
-
-		case A_F_SEARCH:
+		case A_F_SEARCH:	/* search for a pattern */
 		case A_B_SEARCH:
-			/*
-			 * Search for a pattern.
-			 * Accept chars of the pattern until \n.
-			 */
 			if (number <= 0)
 				number = 1;
 			start_mca(action, (action==A_F_SEARCH) ? "/" : "?");
@@ -578,100 +461,72 @@ again:		if (sigs)
 			c = getcc();
 			if (c == '!') {
 				/*
-				 * Invert the sense of the search.
-				 * Set wsearch to 0 and get a new
-				 * character for the start of the pattern.
+				 * Invert the sense of the search; set wsearch
+				 * to 0 and get a new character for the start
+				 * of the pattern.
 				 */
 				start_mca(action, 
-					(action==A_F_SEARCH) ? "!/" : "!?");
+				    (action == A_F_SEARCH) ? "!/" : "!?");
 				wsearch = 0;
 				c = getcc();
 			}
 			goto again;
-
-		case A_AGAIN_SEARCH:
-			/*
-			 * Repeat previous search.
-			 */
+		case A_AGAIN_SEARCH:		/* repeat previous search */
 			if (number <= 0)
 				number = 1;
 			if (wsearch)
 				start_mca(last_mca, 
-					(last_mca==A_F_SEARCH) ? "/" : "?");
+				    (last_mca == A_F_SEARCH) ? "/" : "?");
 			else
 				start_mca(last_mca, 
-					(last_mca==A_F_SEARCH) ? "!/" : "!?");
-			cmd_exec();
+				    (last_mca == A_F_SEARCH) ? "!/" : "!?");
+			CMD_EXEC;
 			(void)search(mca == A_F_SEARCH, (char *)NULL,
 			    number, wsearch);
 			break;
-
-		case A_HELP:
-			/*
-			 * Help.
-			 */
+		case A_HELP:			/* help */
 			lower_left();
 			clear_eol();
 			putstr("help");
-			cmd_exec();
+			CMD_EXEC;
 			help();
 			break;
-
-		case A_TAGFILE:		/* tag a new file; get the file name */
-			cmd_reset();
+		case A_TAGFILE:			/* tag a new file */
+			CMD_RESET;
 			start_mca(A_TAGFILE, "Tag: ");
 			c = getcc();
 			goto again;
-
-		case A_FILE_LIST:	/* show list of file names */
-			cmd_exec();
+		case A_FILE_LIST:		/* show list of file names */
+			CMD_EXEC;
 			showlist();
 			repaint();
 			break;
-
-		case A_EXAMINE:		/* edit a new file; get the file name */
-			cmd_reset();
+		case A_EXAMINE:			/* edit a new file */
+			CMD_RESET;
 			start_mca(A_EXAMINE, "Examine: ");
 			c = getcc();
 			goto again;
-
-		case A_VISUAL:
-			/*
-			 * Invoke an editor on the input file.
-			 */
-			if (ispipe)
-			{
+		case A_VISUAL:			/* invoke the editor */
+			if (ispipe) {
 				error("Cannot edit standard input");
 				break;
 			}
-			cmd_exec();
+			CMD_EXEC;
 			editfile();
 			ch_init(0, 0);
 			clr_linenum();
 			break;
-
-		case A_NEXT_FILE:
-			/*
-			 * Examine next file.
-			 */
+		case A_NEXT_FILE:		/* examine next file */
 			if (number <= 0)
 				number = 1;
 			next_file(number);
 			break;
-
-		case A_PREV_FILE:
-			/*
-			 * Examine previous file.
-			 */
+		case A_PREV_FILE:		/* examine previous file */
 			if (number <= 0)
 				number = 1;
 			prev_file(number);
 			break;
-
-		case A_SETMARK:
-			/*
-			 * Set a mark.
-			 */
+		case A_SETMARK:			/* set a mark */
 			lower_left();
 			clear_eol();
 			start_mca(A_SETMARK, "mark: ");
@@ -680,11 +535,7 @@ again:		if (sigs)
 				break;
 			setmark(c);
 			break;
-
-		case A_GOMARK:
-			/*
-			 * Go to a mark.
-			 */
+		case A_GOMARK:			/* go to mark */
 			lower_left();
 			clear_eol();
 			start_mca(A_GOMARK, "goto mark: ");
@@ -693,24 +544,21 @@ again:		if (sigs)
 				break;
 			gomark(c);
 			break;
-
 		case A_PREFIX:
 			/*
 			 * The command is incomplete (more chars are needed).
-			 * Display the current char so the user knows
-			 * what's going on and get another character.
+			 * Display the current char so the user knows what's
+			 * going on and get another character.
 			 */
 			if (mca != A_PREFIX)
-				start_mca(A_PREFIX, "& ");
-			if (CONTROL_CHAR(c))
-			{
+				start_mca(A_PREFIX, "");
+			if (CONTROL_CHAR(c)) {
 				putchr('^');
 				c = CARAT_CHAR(c);
 			}
 			putchr(c);
 			c = getcc();
 			goto again;
-
 		default:
 			bell();
 			break;
