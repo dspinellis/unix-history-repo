@@ -1,4 +1,4 @@
-/*	@(#)psdit.c	1.3 %G%	*/
+/*	@(#)psdit.c	1.4 %G%	*/
 #ifndef lint
 static char Notice[] = "Copyright (c) 1984, 1985 Adobe Systems Incorporated";
 static char *RCSID = "$Header: psdit.c,v 2.1 85/11/24 11:50:41 shore Rel $";
@@ -233,11 +233,10 @@ char	*ditdir = DitDir;
 
 char	*prog;		/* argv[0] - program name */
 
-/* For curve drawing */
+	/* for curve and polygon drawing */
 #define MAXPOINTS	200
-struct point {
-	double p_x, p_y;
-};
+double x[MAXPOINTS], y[MAXPOINTS];
+int numpoints;
 
 main(argc, argv)
 	int argc;
@@ -416,17 +415,13 @@ conv(fp)	/* convert a file */
 				drawarc(n, m, n1, m1);
 				break;
 			case '~': 	/* b-spline */
-				drawbspline(buf + 1);
-				break;
 			case 'g': 	/* gremlin curve */
-				drawcurve(buf + 1);
-				break;
 			case 'z': 	/* bezier cubic */
-				drawbezier(buf + 1);
+				drawcurve(buf);
 				break;
 			case 'p': 	/* filled polygon */
 			case 'P': 	/* bordered filled polygon */
-				drawpoly(buf + 1, *buf == 'p');
+				drawpoly(buf);
 				break;
 			case 't': 	/* line thickness */
 			case 's': 	/* line style */
@@ -678,7 +673,7 @@ includefile(filenm)
 			putchar('%');
 		}
 		firstch = (ch == '\n');
-	}			
+	}
 	fclose(inf);
 }
 #endif
@@ -1219,94 +1214,80 @@ drawline(dx, dy)	/* draw line from here to dx, dy */
 drawcurve(line)
 	char *line;
 {
-	struct point points[MAXPOINTS];
-	int npoints;
-
 	FlushShow(0);
 	MoveTo();
 	DoMove();
-	getpoints(line, points, &npoints);
-	printf("%d %d moveto\n", hpos, vpos);
-	makecurve(npoints, points, stdout);
+	getpoints(line + 1);
+	/* hpos and vpos won't be changed by curve drawing code */
+	hpos = x[numpoints];
+	vpos = y[numpoints];
+	switch (*line) {
+	case 'g':
+		IS_Initialize();
+		IS_Convert();
+		break;
+	case '~':
+		BS_Initialize();
+		BS_Convert();
+		break;
+	case 'z':
+		BZ_Offsets();
+		BZ_Convert();
+		break;
+	}
+	printf("Dstroke\n");
 }
 
-drawbspline(line)
+drawpoly(line)
 	char *line;
 {
-	struct point points[MAXPOINTS];
-	int npoints;
-
-	FlushShow(0);
-	MoveTo();
-	DoMove();
-	getpoints(line, points, &npoints);
-	makebspline(npoints, points, stdout);
-}
-
-drawbezier(line)
-	char *line;
-{
-	struct point points[MAXPOINTS];
-	int npoints;
-
-	FlushShow(0);
-	MoveTo();
-	DoMove();
-	getpoints(line, points, &npoints);
-	makebezier(npoints, points);
-}
-
-drawpoly(line, border)
-	register char *line;
-{
-	struct point points[MAXPOINTS];
-	int npoints;
 	int stipple;
 	register i;
+	register char *p;
 	int minx, miny, maxx, maxy;
 
 	FlushShow(0);
 	MoveTo();
 	DoMove();
-	for (; isspace(*line); line++)
+	for (p = line + 1; isspace(*p); p++)
 		;
-	for (stipple = 0; isdigit(*line);
-	     stipple = stipple * 10 + *line++ - '0')
+	for (stipple = 0; isdigit(*p);
+	     stipple = stipple * 10 + *p++ - '0')
 		;
-	getpoints(line, points, &npoints);
+	getpoints(p);
 	minx = maxx = hpos;
 	miny = maxy = vpos;
-	for (i = 0; i < npoints; i++) {
-		printf(" %lg %lg lineto\n", points[i].p_x, points[i].p_y);
-		if (points[i].p_x > maxx)
-			maxx = points[i].p_x;
-		if (points[i].p_x < minx)
-			minx = points[i].p_x;
-		if (points[i].p_y > maxy)
-			maxy = points[i].p_y;
-		if (points[i].p_y < miny)
-			miny = points[i].p_y;
+	for (i = 1; i <= numpoints; i++) {
+		printf(" %lg %lg lineto\n", x[i], y[i]);
+		if (x[i] > maxx)
+			maxx = x[i];
+		if (x[i] < minx)
+			minx = x[i];
+		if (y[i] > maxy)
+			maxy = y[i];
+		if (y[i] < miny)
+			miny = y[i];
 	}
 	printf("closepath %d %d %d %d %d D%c\n",
-	       stipple, minx, miny, maxx, maxy, border ? 'p' : 'P');
-	PSx = (hpos = points[npoints - 1].p_x) * PSmag;
-	PSy = (vpos = points[npoints - 1].p_y) * PSmag;
+	       stipple, minx, miny, maxx, maxy, *line);
+	/* XXX, hpos and vpos not changed? */
+	PSx = x[numpoints] * PSmag;
+	PSy = y[numpoints] * PSmag;
 }
 
-getpoints(s, points, npoints)
+getpoints(s)
 	register char *s;
-	struct point *points;
-	int *npoints;
 {
-	int x, y, neg;
 	int h = hpos, v = vpos;
 
-	*npoints = 0;
+	numpoints = 0;
 	for (;;) {
-		points->p_x = h;
-		points->p_y = v;
-		points++;
-		if (++*npoints >= MAXPOINTS)
+		int dh, dv, neg;
+
+		numpoints++;
+		x[numpoints] = h;
+		y[numpoints] = v;
+		if (numpoints >= MAXPOINTS - 2)	/* -2 for good measure */
 			break;
 		for (; isspace(*s); s++)
 			;
@@ -1314,22 +1295,22 @@ getpoints(s, points, npoints)
 			s++;
 		if (!isdigit(*s))
 			break;
-		for (x = 0; isdigit(*s); x = x * 10 + *s++ - '0')
+		for (dh = 0; isdigit(*s); dh = dh * 10 + *s++ - '0')
 			;
 		if (neg)
-			x = - x;
+			dh = - dh;
 		for (; isspace(*s); s++)
 			;
 		if (neg = *s == '-')
 			s++;
 		if (!isdigit(*s))
 			break;
-		for (y = 0; isdigit(*s); y = y * 10 + *s++ - '0')
+		for (dv = 0; isdigit(*s); dv = dv * 10 + *s++ - '0')
 			;
 		if (neg)
-			y = - y;
-		h += x;
-		v += y;
+			dv = - dv;
+		h += dh;
+		v += dv;
 	}
 }
 
@@ -1340,6 +1321,8 @@ drawcirc(d)
 	MoveTo();
 	DoMove();
 	printf("%d Dc\n", d);
+	hpos += d;
+	PSx = hpos * PSmag;
 }
 
 drawarc(dx1, dy1, dx2, dy2)
@@ -1576,26 +1559,9 @@ FlushShow(t)
 #define BC3		3*BC2
 #define BC4		8*BC2
 
-double Qx, Qy, x[MAXPOINTS], y[MAXPOINTS], h[MAXPOINTS], dx[MAXPOINTS],
+double Qx, Qy, h[MAXPOINTS], dx[MAXPOINTS],
 	dy[MAXPOINTS], d2x[MAXPOINTS], d2y[MAXPOINTS], d3x[MAXPOINTS],
 	d3y[MAXPOINTS];
-int numpoints = 0;
-
-/*
- * This routine copies the list of points into an array.
- */
-MakePoints(count, list)
-	struct point *list;
-{
-	register int i;
-
-	/* Assign points from list to array for convenience of processing */
-	for (i = 1; i <= count; i++) {
-		x[i] = list[i - 1].p_x;
-		y[i] = list[i - 1].p_y;
-	}
-	numpoints = count;
-} /* end MakePoints */
 
 /*
  * This routine converts each segment of a curve, P1, P2, P3, and P4
@@ -1626,6 +1592,8 @@ BezierSegment(x1, y1, x2, y2, x3, y3, x4, y4)
 
 	printf(" %lg %lg %lg %lg %lg %lg curveto\n",
 		V2x, V2y, V3x, V3y, x4, y4);
+	PSx = x4 * PSmag;
+	PSy = y4 * PSmag;
 } /* end BezierSegment */
 
 /*
@@ -1636,7 +1604,6 @@ BezierSegment(x1, y1, x2, y2, x3, y3, x4, y4)
  *
  * This is from Gremlin (called Paramaterize in gremlin),
  * with minor modifications (elimination of param list)
- *
  */
 IS_Parameterize()
 {
@@ -1649,7 +1616,7 @@ IS_Parameterize()
 		for (j = 1; j < i; j++) {
 			t1 = x[j + 1] - x[j];
 			t2 = y[j + 1] - y[j];
-			u[i] += (double) sqrt(t1 * t1 + t2 * t2);
+			u[i] += sqrt(t1 * t1 + t2 * t2);
 		}
 	}
 	for (i = 1; i < numpoints; i++)
@@ -1813,10 +1780,8 @@ IS_NaturalEnd(h, z, dz, d2z, d3z)
  * by Pattrick Baudelaire, Robert M. Flegal, and Robert F. Sproull,
  * Xerox PARC Tech Report No. 78CSL-059.
  */
-IS_Initialize(count, list)
-	struct point *list;
+IS_Initialize()
 {
-	MakePoints(count, list);
 	IS_Parameterize();
 
 	/* Solve for derivatives of the curve at each point
@@ -1858,23 +1823,13 @@ IS_Convert()
 } /* end IS_Convert */
 
 /*
- * This routine converts cubic interpolatory splines to Bezier cubics.
- */
-makecurve(count, list)
-	struct point *list;
-{
-	IS_Initialize(count, list);
-	IS_Convert();
-	printf("Dstroke\n");
-}
-
-/*
  * This routine computes a point in B-spline segment, given i, and u.
  * Details of this algorithm can be found in the tech. report cited below.
  */
-BS_ComputePoint(i, u)
+BS_ComputePoint(i, u, xp, yp)
 	int i;
 	float u;
+	double *xp, *yp;
 {
 	float u2, u3, b_2, b_1, b0, b1;
 	register i1, i_2, i_1;
@@ -1890,8 +1845,8 @@ BS_ComputePoint(i, u)
 	b0  = (1 + 3 * u + 3 * u2 - 3 * u3) / 6.0;
 	b1  = u3 / 6.0;
 
-	Qx = b_2 * x[i_2] + b_1 * x[i_1] + b0 * x[i] + b1 * x[i1];
-	Qy = b_2 * y[i_2] + b_1 * y[i_1] + b0 * y[i] + b1 * y[i1];
+	*xp = b_2 * x[i_2] + b_1 * x[i_1] + b0 * x[i] + b1 * x[i1];
+	*yp = b_2 * y[i_2] + b_1 * y[i_1] + b0 * y[i] + b1 * y[i1];
 } /* end BS_ComputePoint */
 
 /*
@@ -1910,26 +1865,22 @@ BS_ComputePoint(i, u)
  * Tech. Report CS-83-136, Computer Science Division,
  * University of California, Berkeley, 1984.
  */
-BS_Initialize(count, list)
-	struct point *list;
+BS_Initialize()
 {
 	register n_1, n1;
 
-	MakePoints(count, list);
-
 	n_1 = numpoints - 1;
 	n1  = numpoints + 1;
-
 	if (x[1] == x[numpoints] && y[1] == y[numpoints]) { /* closed curve */
 		x[0] = x[n_1];				/* V[0] */
 		y[0] = y[n_1];
 		x[n1] = x[2];				/* V[n+1] */
 		y[n1] = y[2];
 	} else {				/* end vertex interpolation */
-		x[0] = 2*x[1] - x[2];			/* V[0] */
-		y[0] = 2*y[1] - y[2];
-		x[n1] = 2*x[numpoints] - x[n_1];	/* V[n+1] */
-		y[n1] = 2*y[numpoints] - y[n_1];
+		x[0] = 2 * x[1] - x[2];			/* V[0] */
+		y[0] = 2 * y[1] - y[2];
+		x[n1] = 2 * x[numpoints] - x[n_1];	/* V[n+1] */
+		y[n1] = 2 * y[numpoints] - y[n_1];
 	}
 } /* end BS_Initialize */
 
@@ -1938,35 +1889,19 @@ BS_Initialize(count, list)
  */
 BS_Convert()
 {
-	double x1, y1, x2, y2, x3, y3;
+	double x1, y1, x2, y2, x3, y3, x4, y4;
 	register i;
 
 	for (i = 2; i <= numpoints; i++) {
-		BS_ComputePoint(i, 0.0);
-		x1 = Qx;
-		y1 = Qy;
-		BS_ComputePoint(i, 0.25);
-		x2 = Qx;
-		y2 = Qy;
-		BS_ComputePoint(i, 0.5);
-		x3 = Qx;
-		y3 = Qy;
-		BS_ComputePoint(i, 1.0);
-		BezierSegment(x1, y1, x2, y2, x3, y3, Qx, Qy);
+		BS_ComputePoint(i, 0.0, &x1, &y1);
+		BS_ComputePoint(i, 0.25, &x2, &y2);
+		BS_ComputePoint(i, 0.5, &x3, &y3);
+		BS_ComputePoint(i, 1.0, &x4, &y4);
+		if (i == 2)
+			printf("%lg %lg moveto\n", x1, y1);
+		BezierSegment(x1, y1, x2, y2, x3, y3, x4, y4);
 	}
 } /* end BS_Convert */
-
-/*
- * This routine converts B-spline to Bezier Cubics
- */
-makebspline(count, list)
-	struct point *list;
-{
-	BS_Initialize(count, list);
-	BS_ComputePoint(2, 0.0);
-	BS_Convert();
-	printf("Dstroke\n");
-}
 
 /*
  * This routine copies the offset between two consecutive control points
@@ -1975,28 +1910,23 @@ makebspline(count, list)
  * for i=1 to N-1, where N is the number of points given.
  * The starting end point (V[1]) is saved in (Qx, Qy).
  */
-BZ_Offsets(count, list)
-	struct point *list;
+BZ_Offsets()
 {
 	register i;
-	register double Lx, Ly;
 
 	/* Assign offsets btwn points to array for convenience of processing */
-	Qx = Lx = list[0].p_x;
-	Qy = Ly = list[0].p_y;
-	for (i = 1; i < count; i++) {
-		x[i] = list[i].p_x - Lx;
-		y[i] = list[i].p_y - Ly;
-		Lx = list[i].p_x;
-		Ly = list[i].p_y;
+	Qx = x[1];
+	Qy = y[1];
+	for (i = 1; i < numpoints; i++) {
+		x[i] = x[i + 1] - x[i];
+		y[i] = y[i + 1] - y[i];
 	}
-	numpoints = count;
 }
 
 /*
  * This routine contructs paths of piecewise continuous Bezier cubics
  * in PostScript based on the given set of control vertices.
- * Given 2 points, a stringht line is drawn.
+ * Given 2 points, a straight line is drawn.
  * Given 3 points V[1], V[2], and V[3], a Bezier cubic segment
  * of (V[1], (V[1]+V[2])/2, (V[2]+V[3])/2, V[3]) is drawn.
  * In the case when N (N >= 4) points are given, N-2 Bezier segments will
@@ -2017,6 +1947,8 @@ BZ_Convert()
 
 	if (numpoints == 2) {
 		printf(" %lg %lg rlineto\n", x[1], y[1]);
+		PSx += x[1] * PSmag;
+		PSy += y[1] * PSmag;
 		return;
 	}
 	if (numpoints == 3) {
@@ -2027,40 +1959,32 @@ BZ_Convert()
 		printf(" %lg %lg %lg %lg %lg %lg curveto\n",
 		       (Qx + x1) / 2.0, (Qy + y1) / 2.0, (x1 + x2) / 2.0,
 		       (y1 + y2) / 2.0, x2, y2);
+		PSx = x2 * PSmag;
+		PSy = y2 * PSmag;
 		return;
 	}
 	/* numpoints >= 4 */
 	Kx = Qx + x[1];
 	Ky = Qy + y[1];
-	x[1] = 2 * x[1];
-	y[1] = 2 * y[1];
-	i = numpoints - 1;
-	x[i] = 2 * x[i];
-	y[i] = 2 * y[i];
-	for (i = 1, i1 = 2; i <= numpoints - 2; i++, i1++) {
-		x1 = Qx + x[i]/3;
-		y1 = Qy + y[i]/3;
-		x2 = Qx + (3*x[i] + x[i1])/6;
-		y2 = Qy + (3*y[i] + y[i1])/6;
-		x3 = Kx + x[i1]/2;
-		y3 = Ky + y[i1]/2;
+	x[1] *= 2;
+	y[1] *= 2;
+	x[numpoints - 1] *= 2;
+	y[numpoints - 1] *= 2;
+	for (i = 1; i <= numpoints - 2; i++) {
+		i1 = i + 1;
+		x1 = Qx + x[i] / 3;
+		y1 = Qy + y[i] / 3;
+		x2 = Qx + (3 * x[i] + x[i1]) / 6;
+		y2 = Qy + (3 * y[i] + y[i1]) / 6;
+		x3 = Kx + x[i1] / 2;
+		y3 = Ky + y[i1] / 2;
 		printf(" %lg %lg %lg %lg %lg %lg curveto\n",
 			x1, y1, x2, y2, x3, y3);
 		Qx = x3;
 		Qy = y3;
-		Kx = Kx + x[i1];
-		Ky = Ky + y[i1];
+		Kx += x[i1];
+		Ky += y[i1];
 	}
+	PSx = x3 * PSmag;
+	PSy = y3 * PSmag;
 } /* end BZ_Convert */
-
-/*
- * This routine draws piecewise continuous Bezier cubics based on
- * the given list of control vertices.
- */
-makebezier(count, list)
-	struct point *list;
-{
-	BZ_Offsets(count, list);
-	BZ_Convert();
-	printf("Dstroke\n");
-}
