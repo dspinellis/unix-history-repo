@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)x25.h	7.3 (Berkeley) %G%
+ *	@(#)x25.h	7.4 (Berkeley) %G%
  */
 
 #ifdef KERNEL

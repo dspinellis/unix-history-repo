@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_usrreq.c	7.4 (Berkeley) %G%
+ *	@(#)pk_usrreq.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -125,7 +125,7 @@ struct mbuf *control;
 	case PRU_CONNECT: 
 		if (nam -> m_len == sizeof (struct x25_sockaddr))
 			old_to_new (nam);
-		error = pk_connect (lcp, nam);
+		error = pk_connect (lcp, nam, (struct sockaddr_25 *)0);
 		break;
 
 	/* 
@@ -252,6 +252,21 @@ release:
 	return (error);
 }
 
+/* 
+ * If you want to use UBC X.25 level 3 in conjunction with some
+ * other X.25 level 2 driver, have the ifp->if_ioctl routine
+ * assign pk_start to pkp -> pk_start when called with SIOCSIFCONF_X25.
+ */
+/* ARGSUSED */
+pk_start (lcp)
+register struct pklcd *lcp;
+{
+	extern int pk_send();
+
+	lcp -> lcp_downq.pq_put = pk_send;
+	return (pk_output(lcp));
+}
+
 /*ARGSUSED*/
 pk_control (so, cmd, data, ifp)
 struct socket *so;
@@ -262,6 +277,7 @@ register struct ifnet *ifp;
 	register struct ifreq_x25 *ifr = (struct ifreq_x25 *)data;
 	register struct ifaddr *ifa = 0;
 	register struct x25_ifaddr *ia = 0;
+	struct pklcd *dev_lcp = 0;
 	int error, s;
 	unsigned n;
 
@@ -290,10 +306,10 @@ register struct ifnet *ifp;
 		if (ifa == (struct ifaddr *)0) {
 			register struct mbuf *m;
 
-			m = m_getclr(M_WAIT, MT_IFADDR);
-			if (m == (struct mbuf *)NULL)
+			MALLOC(ia, struct x25_ifaddr *, sizeof (*ia),
+				M_IFADDR, M_WAITOK);
+			if (ia == 0)
 				return (ENOBUFS);
-			ia = mtod(m, struct x25_ifaddr *);
 			if (ifa = ifp->if_addrlist) {
 				for ( ; ifa->ifa_next; ifa = ifa->ifa_next)
 					;
@@ -310,17 +326,25 @@ register struct ifnet *ifp;
 		}
 		ia->ia_xcp = &(ifr->ifr_xc);
 		if (ia->ia_chan && (ia->ia_maxlcn != ia->xcp->xc_maxlcn)) {
+			pk_restart(&ia->ia_pkp, X25_RESTART_NETWORK_CONGESTION);
+			dev_lcp = ia->ia_chan[0];
 			free((caddr_t)ia->ia_chan, M_IFADDR);
-			ia->ia_ia_chan = 0;
+			ia->ia_chan = 0;
 		}
-		n = ia->ia_maxlcn * sizeof(struct pklcd *);
-		if (ia->ia_chan == 0)
+		if (ia->ia_chan == 0) {
+			n = ia->ia_maxlcn * sizeof(struct pklcd *);
 			ia->ia_chan = (struct pklcd **) malloc(n, M_IFADDR);
-		if (ia->ia_chan)
-			bzero((caddr_t)ia->ia_chan, n);
-		else {
-			ia->ia_xcp = &ia->ia_xc;
-			return (ENOBUFS);
+			if (ia->ia_chan) {
+				bzero((caddr_t)ia->ia_chan, n);
+				if (dev_lcp == 0)
+					dev_lcp = pk_attach((struct socket *)0);
+				ia->ia_chan = dev_lcp;
+			} else {
+				if (dev_lcp)
+					pk_close(dev_lcp);
+				ia->ia_xcp = &ia->ia_xc;
+				return (ENOBUFS);
+			}
 		}
 		/*
 		 * Give the interface a chance to initialize if this
@@ -459,8 +483,10 @@ register struct mbuf *m;
 		m_freem (m0);
 		return (EMSGSIZE);
 	}
-
- 	sbappendrecord (&lcp -> lcd_so -> so_snd, m0);
+	if (lcp -> lcd_so)
+		sbappendrecord (&lcp -> lcd_so -> so_snd, m0);
+	else
+		pq_appendrecord (&lcp -> lcd_downq, m0);
 	lcp -> lcd_template = 0;
 	lcp -> lcd_txcnt++;
 	pk_output (lcp);

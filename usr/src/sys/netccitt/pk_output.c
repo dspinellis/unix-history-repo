@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_output.c	7.2 (Berkeley) %G%
+ *	@(#)pk_output.c	7.3 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -144,7 +144,7 @@ register struct pklcd *lcp;
 		pk_trace (pkp -> pk_xcp, xp, "P-Out");
 
 		/* Pass the packet on down to the link layer */
-		(*pkp -> pk_output) (m, pkp -> pk_xcp);
+		(*pkp -> pk_lloutput) (m, pkp -> pk_xcp);
 	}
 }
 
@@ -168,8 +168,14 @@ struct pklcd *lcp;
 				lcp -> lcd_reset_condition)
 			return (NULL);
 
-		if (so == 0)
-			return (NULL);
+		if (so == 0) {
+			if ((m = lcp->lcd_downq.pq_data) == 0)
+				return (NULL);
+			lcp->lcd_downq.pq_data = m->m_nextpkt;
+			lcp->lcd_downq.pq_space += m->m_pkthdr.len;
+			m->m_nextpkt = 0;
+				return (m);
+		}
 
 		if ((m = so -> so_snd.sb_mb) == 0)
 			return (NULL);
@@ -177,22 +183,11 @@ struct pklcd *lcp;
 		n = m;
 		while (n) {
 			sbfree (&so -> so_snd, n);
-#ifndef BSD4_3
-			if ((int) n -> m_act == 1)
-				break;
-#endif
 			n = n -> m_next;
 		}
 
-#ifdef BSD4_3
  		so->so_snd.sb_mb = m->m_act;
  		m->m_act = 0;
-#else
-		if (n) {
-			so -> so_snd.sb_mb = n -> m_next;
-			n -> m_next = 0;
-		}
-#endif
 	}
 
 	return (m);

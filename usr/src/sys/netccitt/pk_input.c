@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_input.c	7.2 (Berkeley) %G%
+ *	@(#)pk_input.c	7.3 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -26,121 +26,17 @@
 #include "../netccitt/pk.h"
 #include "../netccitt/pk_var.h"
 
-struct pkcb *
-pk_newlink (xcp)
-struct x25config *xcp;
-{
-	register struct pkcb *pkp;
-	register struct mbuf *m;
-	register struct pklcd *lcp;
-	register struct protosw *pp;
-	register unsigned size;
-
-	if (xcp -> xc_ntnlen <= 0 || xcp -> xc_ntnlen > sizeof (xcp -> xc_ntn) * 2)
-		return ((struct pkcb *)0);
-#ifdef BSD4_3
-	pp = pffindproto (AF_CCITT, (int)xcp -> xc_lproto, 0);
-#else
-	pp = pffindproto (AF_CCITT, (int)xcp -> xc_lproto);
-#endif
-	if (pp == 0 || pp -> pr_output == 0) {
-		pk_message (0, xcp, "link level protosw error");
-		return ((struct pkcb *)0);
-	}
-
-	/*
-	 * Allocate a network control block structure
-	 */
-
-	size = sizeof (struct pkcb) + xcp->xc_maxlcn * sizeof (struct pklcd *);
-#ifdef sun
-	if (xcp -> xc_maxlcn < 1 || size > mclbytes) {
-#else
-	if (xcp -> xc_maxlcn < 1 || size > CLBYTES) {
-#endif
-		pk_message (0, xcp, "invalid maxlcn");
-		return ((struct pkcb *)0);
-	}
-	m = m_get (M_DONTWAIT, MT_PCB);
-	if (m == 0)
-		return ((struct pkcb *)0);
-	if (size > MLEN) {
-#ifdef sun
-		if (mclget (m) == 0) {
-			m_freem (m);
-			return ((struct pkcb *)0);
-		}
-#else
-#ifdef BSD4_3
-		MCLGET (m);
-		if (m -> m_len != CLBYTES) {
-			(void) m_free (m);
-			return ((struct pkcb *)0);
-		}
-#else
-		register struct mbuf *p;
-
-		MCLGET (p, 1);
-		if (p == 0) {
-			m_freem (m);
-			return ((struct pkcb *)0);
-		}
-		m -> m_off = (int)p - (int)m;
-#endif
-#endif
-	}
-	pkp = mtod (m, struct pkcb *);
-	bzero ((caddr_t)pkp, size);
-
-	/*
-	 * Allocate a logical channel descriptor for lcn 0
-	 */
-
-	m = m_getclr (M_DONTWAIT, MT_PCB);
-	if (m == 0) {
-		m_freem (dtom (pkp));
-		return ((struct pkcb *)0);
-	}
-	lcp = mtod (m, struct pklcd *);
-	lcp -> lcd_state = READY;
-	lcp -> lcd_pkp = pkp;
-	pkp -> pk_chan[0] = lcp;
-
-	pkp -> pk_output = pp -> pr_output;
-	pkp -> pk_xcp = xcp;
-	pkp -> pk_state = DTE_WAITING;
-	pkp -> pk_maxlcn = xcp -> xc_maxlcn;
-	pkp -> pk_next = pkcbhead;
-	pkcbhead = pkp;
-
-	/*
-	 * set defaults
-	 */
-
-	if (xcp -> xc_pwsize == 0)
-		xcp -> xc_pwsize = DEFAULT_WINDOW_SIZE;
-	if (xcp -> xc_psize == 0)
-		xcp -> xc_psize = X25_PS128;
-	return (pkp);
-}
-
 /* 
  *  This procedure is called by the link level whenever the link
  *  becomes operational, is reset, or when the link goes down. 
  */
 
-pk_ctlinput (code, xcp)
-struct x25config *xcp;
+pk_ctlinput (code, pkp)
+register struct pkcb *pkp;
 {
-	register struct pkcb *pkp;
 
-	for (pkp = pkcbhead; pkp; pkp = pkp -> pk_next)
-		if (pkp -> pk_xcp == xcp)
-			break;
-
-	if (pkp == 0 && (pkp = pk_newlink (xcp)) == 0)
+	if (pkp == 0)
 		return (EINVAL);
-
 	switch (code) {
 	case PRC_LINKUP: 
 		if (pkp -> pk_state == DTE_WAITING)
@@ -557,10 +453,10 @@ incoming_call (pkp, xp, len)
 struct pkcb *pkp;
 struct x25_packet *xp;
 {
-	register struct pklcd *lcp, *l;
+	register struct pklcd *lcp = 0, *l;
 	register struct sockaddr_x25 *sa;
 	register struct x25_calladdr *a;
-	register struct socket *so;
+	register struct socket *so = 0;
 	struct mbuf *m;
 	register int l1, l2;
 	char *e, *errstr = "server unavailable";
@@ -616,8 +512,12 @@ struct x25_packet *xp;
 			errstr = "incoming collect call refused";
 			break;
 		}
-		so = sonewconn (l -> lcd_so);
-		if (so == NULL) {
+		if (l -> lcd_so) {
+			if (so = sonewconn (l -> lcd_so, SO_ISCONNETED))
+				    lcp = (struct pklcd *) so -> so_pcb;
+		} else 
+			lcp = pk_attach((struct socket *) 0);
+		if (lcp == 0) {
 			/*
 			 * Insufficient space or too many unaccepted
 			 * connections.  Just throw the call away.
@@ -625,7 +525,7 @@ struct x25_packet *xp;
 			errstr = "server malfunction";
 			break;
 		}
-		lcp = (struct pklcd *) so -> so_pcb;
+		lcp -> lcd_upq.pq_put = lcp -> lcd_upq.pq_put;
 		lcp -> lcd_lcn = lcn;
 		lcp -> lcd_state = RECEIVED_CALL;
 		lcp -> lcd_craddr = sa;
@@ -634,7 +534,8 @@ struct x25_packet *xp;
 		pk_assoc (pkp, lcp, sa);
 		lcp -> lcd_template = pk_template (lcp -> lcd_lcn, X25_CALL_ACCEPTED);
 		pk_output (lcp);
-		soisconnected (so);
+		if (so)
+			soisconnected (so);
 		return;
 	}
 
