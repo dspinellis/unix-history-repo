@@ -6,9 +6,6 @@ all shar: ${MAN1}
 
 clean depend lint tags:
 
-cleandir:
-	rm -f ${MAN1}
-
 beforeinstall:
 	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
 	    ${.CURDIR}/shar.sh ${DESTDIR}/usr/bin/shar
