@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)printgprof.c	1.4 (Berkeley) %G%";
+    static	char *sccsid = "@(#)printgprof.c	1.5 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -10,6 +10,8 @@ printprof()
     nltype		**sortednlp;
     int			index;
 
+    printf( "\ngranularity: each sample hit covers %d byte(s)" , (long) scale );
+    printf( " for %.2f%% of %.2f seconds\n\n" , 100.0/totime , totime / HZ );
     actime = 0.0;
     flatprofheader();
 	/*
@@ -28,8 +30,6 @@ printprof()
 	flatprofline( np );
     }
     actime = 0.0;
-    printf( "\ngranularity: each sample hit covers %.1f bytes" , scale );
-    printf( " for %.2f%% of %.2f seconds\n" , 100.0/totime , totime / HZ );
 }
 
 timecmp( npp1 , npp2 )
@@ -51,6 +51,9 @@ timecmp( npp1 , npp2 )
 flatprofheader()
 {
     
+    if ( bflag ) {
+	printblurb( "flat.blurb" );
+    }
     printf( "%5.5s %7.7s %7.7s %7.7s %-8.8s\n" ,
 	    "%time" , "cumsecs" , "seconds" , "calls" , "name" );
 }
@@ -59,7 +62,7 @@ flatprofline( np )
     register nltype	*np;
 {
 
-    if ( zflg == 0 && np -> ncall == 0 && np -> time == 0 ) {
+    if ( zflag == 0 && np -> ncall == 0 && np -> time == 0 ) {
 	return;
     }
     actime += np -> time;
@@ -75,6 +78,10 @@ flatprofline( np )
 
 gprofheader()
 {
+
+    if ( bflag ) {
+	printblurb( "callg.blurb" );
+    }
     printf( "%6.6s %5.5s %7.7s %11.11s %7.7s/%-7.7s     %-8.8s\n" ,
 	"" , "" , "" , "" , "called" , "total" , "parents" , "" );
     printf( "%-6.6s %5.5s %7.7s %11.11s %7.7s+%-7.7s %-8.8s\t%5.5s\n" ,
@@ -142,7 +149,7 @@ printgprof()
     gprofheader();
     for ( index = 0 ; index < nname + cyclemax ; index ++ ) {
 	parentp = timesortnlp[ index ];
-	if ( zflg == 0 &&
+	if ( zflag == 0 &&
 	     parentp -> ncall == 0 &&
 	     parentp -> selfcalls == 0 &&
 	     parentp -> time == 0 &&
@@ -534,4 +541,26 @@ arccmp( thisp , thatp )
 	    return EQUALTO;
 	}
     }
+}
+
+printblurb( blurbname )
+    char	*blurbname;
+{
+    char	pathname[ BUFSIZ ];
+    FILE	*blurbfile;
+    int		input;
+
+#   ifndef BLURBLIB
+#	define BLURBLIB	"./"
+#   endif not BLURBLIB
+    sprintf( pathname , "%s%s" , BLURBLIB , blurbname );
+    blurbfile = fopen( pathname , "r" );
+    if ( blurbfile == NULL ) {
+	perror( pathname );
+	return;
+    }
+    while ( ( input = getc( blurbfile ) ) != EOF ) {
+	putchar( input );
+    }
+    fclose( blurbfile );
 }
