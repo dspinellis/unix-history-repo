@@ -1,4 +1,4 @@
-/*	autoconf.c	6.6	84/02/15	*/
+/*	autoconf.c	6.6	84/02/16	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -68,7 +68,7 @@ int	(*ubaintv[4])() =	{ Xua0int, Xua1int, Xua2int, Xua3int };
  * This allocates the space for the per-uba information,
  * such as buffered data path usage.
  */
-struct	uba_hd uba_hd[MAXNUBA];
+struct	uba_hd uba_hd[NUBA];
 
 /*
  * Determine mass storage and memory configuration for a machine.
@@ -144,7 +144,7 @@ probenexus(pcpu)
 		case NEX_MBA:
 			printf("mba%d at tr%d\n", nummba, nexnum);
 			if (nummba >= NMBA) {
-				printf("%d mba's", nummba);
+				printf("%d mba's", nummba++);
 				goto unconfig;
 			}
 #if NMBA > 0
@@ -158,9 +158,15 @@ probenexus(pcpu)
 		case NEX_UBA2:
 		case NEX_UBA3:
 			printf("uba%d at tr%d\n", numuba, nexnum);
-			if (numuba >= 4) {
-				printf("5 uba's");
+#if VAX_750
+			if (numuba >= 2 && cpu == VAX_750) {
+				printf("More than 2 UBA's");
 				goto unsupp;
+			}
+#endif
+			if (numuba >= NUBA) {
+				printf("%d uba's", numuba++);
+				goto unconfig;
 			}
 #if VAX780
 			if (cpu == VAX_780)
@@ -255,6 +261,10 @@ unconfig:
 			continue;
 		}
 	}
+	if (nummba > NMBA)
+		nummba = NMBA;
+	if (numuba > NUBA)
+		numuba = NUBA;
 }
 
 #if NMBA > 0
@@ -444,14 +454,8 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 #if NUBA > 1
 	else if (numuba == 1)
 		uhp->uh_vec = UNI1vec;
-	else {
-#if defined(VAX_750)
-		if (cpu == VAX_750)
-			printf("More than 2 UBA's not supported\n");
-		else
-#endif
-			uhp->uh_vec = (int(**)())calloc(512);
-	}
+	else
+		uhp->uh_vec = (int(**)())calloc(512);
 #endif
 	for (i = 0; i < 128; i++)
 		uhp->uh_vec[i] =
