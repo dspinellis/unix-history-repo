@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.26 (Berkeley) %G%
+#	@(#)Makefile	5.27 (Berkeley) %G%
 #
 # Doing a make install builds /usr/include
 #
@@ -29,12 +29,13 @@
 DESTDIR=
 SUBDIRS=arpa pascal protocols kerberos
 STD=	a.out.h ar.h assert.h ctype.h curses.h ndbm.h dirent.h disktab.h \
-	fcntl.h fstab.h ftw.h grp.h limits.h math.h memory.h mp.h mtab.h \
+	fcntl.h fstab.h ftw.h grp.h limits.h math.h memory.h mp.h \
 	netdb.h nlist.h paths.h pcc.h pwd.h ranlib.h regexp.h resolv.h \
 	setjmp.h sgtty.h stab.h stdarg.h stdio.h string.h strings.h \
 	struct.h sysexits.h time.h ttyent.h tzfile.h unistd.h utmp.h \
 	varargs.h vfont.h
-LINKS=	errno.h signal.h syslog.h termios.h
+SYSLINKS=	errno.h signal.h syslog.h termios.h
+MCHLINKS=	float.h frame.h
 
 SYSDIRS=	sys net netimp netinet netns ufs nfs
 TAHOEDIRS=	tahoe tahoemath tahoevba tahoeif
@@ -61,14 +62,16 @@ install: ${SHARED}
 	done
 	-cmp -s Makefile.install ${DESTDIR}/usr/include/Makefile || \
 	    install -c -m 444 Makefile.install ${DESTDIR}/usr/include/Makefile
-	-for i in ${LINKS}; do \
+	rm -f ${DESTDIR}/usr/include/machine
+	ln -s ./${MACHINE} ${DESTDIR}/usr/include/machine
+	-for i in ${SYSLINKS}; do \
 		rm -f ${DESTDIR}/usr/include/$$i; \
 		ln -s sys/$$i ${DESTDIR}/usr/include/$$i; \
 	done
-	rm -f ${DESTDIR}/usr/include/machine
-	ln -s ./${MACHINE} ${DESTDIR}/usr/include/machine
-	rm -f ${DESTDIR}/usr/include/frame.h
-	ln -s machine/frame.h ${DESTDIR}/usr/include/frame.h
+	-for i in ${MCHLINKS}; do \
+		rm -f ${DESTDIR}/usr/include/$$i; \
+		ln -s machine/$$i ${DESTDIR}/usr/include/$$i; \
+	done
 
 symlinks: ${MACHINE}.symlinks
 
