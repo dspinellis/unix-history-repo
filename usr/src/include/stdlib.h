@@ -31,6 +31,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)stdlib.h	5.13 (Berkeley) 6/4/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00145
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Richard Murphey		stddef.h patch for XFree86
  */
 
 #ifndef _STDLIB_H_
@@ -102,7 +109,9 @@ int	 setenv __P((const char *, const char *, int));
 #endif /* not ANSI */
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
-void	*alloca __P((size_t));	/* built-in for gcc */
+#ifndef alloca
+void	*alloca __P((size_t));
+#endif
 extern	 char *optarg;			/* getopt(3) external variables */
 extern	 int optind;
 extern	 int opterr;
