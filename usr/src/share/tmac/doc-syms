@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)doc-syms	5.7 (Berkeley) %G%
+.\"     @(#)doc-syms	5.8 (Berkeley) %G%
 .\"
 .\"     %beginstrip%
 .\" NS Ux macro - UNIX
@@ -25,13 +25,14 @@
 .\}
 .el .aZ
 ..
-.\" NS Bx macro -BSD UNIX (fix smaller nroff version)
+.\" NS Bx macro -BSD (fix smaller nroff version)
 .de Bx
 .nr cF \\n(.f
 .nr cZ \\n(.s
 .ds aa \&\f\\n(cF\s\\n(cZ
 .if \\n(aC==0 \{\
-.       ie \\n(.$==0 \&\\*(tNBSD\\*(aa \\*(tNUNIX\\*(aa
+.\" .       ie \\n(.$==0 \&\\*(tNBSD\\*(aa \\*(tNUNIX\\*(aa
+.       ie \\n(.$==0 \&\\*(tNBSD\\*(aa
 .       el .aV \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
 .\}
 .if "\\$1"-alpha" \{\
@@ -84,7 +85,7 @@
 .		el .aZ
 .	\}
 .	el \{\
-.	       as b1 \&\\*(tNBSD\\*(aa U\\*(tNNIX\\*(aa
+.	       as b1 \&\\*(tNBSD\\*(aa
 .	       nR
 .	\}
 .\}

@@ -1,14 +1,15 @@
-#	@(#)Makefile	6.14 (Berkeley) %G%
+#	@(#)Makefile	6.15 (Berkeley) %G%
 
 # Missing: tmac.a tmac.an.old tmac.cp tmac.r
 
 FILES=	tmac.andoc tmac.doc.old
 MSRCS=  doc doc-ditroff doc-common doc-nroff doc-syms
+
 LINKS=	${BINDIR}/tmac/tmac.andoc ${BINDIR}/tmac/tmac.an
 NOOBJ=	noobj
 
 # old macros not currently installed...
-OFILES=	tmac.an.v6compat tmac.an6n tmac.an6t tmac.a tmac.cp
+# OFILES=	tmac.a tmac.cp
 
 all clean cleandir depend lint tags:
 
