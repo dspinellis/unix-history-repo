@@ -1,7 +1,7 @@
 /*
  * Define global variables
  *
- * @(#)curses.c	1.3 (Berkeley) %G%
+ * @(#)curses.c	1.4 (Berkeley) %G%
  */
 # include	"curses.h"
 
@@ -28,7 +28,7 @@ FILE	*outf;			/* debug output file			*/
 SGTTY	_tty;			/* tty modes				*/
 
 bool	AM, BS, CA, DA, DB, EO, HC, HZ, IN, MI, MS, NC, NS, OS, UL, XB, XN,
-	XT, XX;
+	XT, XS, XX;
 char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL, *DM,
 	*DO, *ED, *EI, *K0, *K1, *K2, *K3, *K4, *K5, *K6, *K7, *K8,
 	*K9, *HO, *IC, *IM, *IP, *KD, *KE, *KH, *KL, *KR, *KS, *KU,
