@@ -1,0 +1,56 @@
+.TH CHMOD 2 
+.SH NAME
+chmod \- change mode of file
+.SH SYNOPSIS
+.B chmod(name, mode)
+.br
+.B char *name;
+.SH DESCRIPTION
+The file whose name
+is given as the null-terminated string pointed to by
+.I name
+has its mode changed to
+.IR mode .
+Modes are constructed by ORing together some
+combination of the following:
+.PP
+.RS
+ 04000 set user ID on execution
+ 02000 set group ID on execution
+ 01000 save text image after execution
+ 00400 read by owner
+ 00200 write by owner
+ 00100 execute (search on directory) by owner
+ 00070 read, write, execute (search) by group
+ 00007 read, write, execute (search) by others
+.RE
+.PP
+If an executable file is set up for sharing
+(\fB\-n\fR option of
+.IR ld (1))
+then mode 1000 prevents the system from
+abandoning the swap-space image of the program-text portion
+of the file when its last user
+terminates.
+Thus when the next user of the file executes it,
+the text need not be read from the file
+system but can simply be swapped in,
+saving time.
+Ability to set this bit is restricted to the super-user
+since swap space is consumed
+by the images; it is only worth while for heavily used commands.
+.PP
+Only the owner of a file (or the super-user) may change the mode.
+Only the super-user can set the 1000 mode.
+.SH "SEE ALSO"
+chmod(1)
+.SH DIAGNOSTIC
+Zero is returned if the mode is changed;
+\-1 is returned if
+.I name
+cannot be found or if current user
+is neither the owner of the file nor the super-user.
+.SH "ASSEMBLER (PDP-11)"
+(chmod = 15.)
+.br
+.B sys chmod; name; mode

@@ -1,0 +1,35 @@
+.TH LINK 2 
+.SH NAME
+link \- link to a file
+.SH SYNOPSIS
+.B link(name1, name2)
+.br
+.B char *name1, *name2;
+.SH DESCRIPTION
+A link
+to
+.I name1
+is created;
+the link has the name
+.IR name2 .
+Either name may be an arbitrary path name.
+.SH "SEE ALSO"
+ln(1), unlink(2)
+.SH DIAGNOSTICS
+Zero is returned when a link is made;
+\-1 is returned when
+.I name1
+cannot be found; when
+.I name2
+already exists; when the directory of
+.I name2
+cannot be written; when
+an attempt is made to link to a directory by a user
+other than the super-user;
+when an attempt is made to link
+to a file on another file system;
+when a file has too many links.
+.SH "ASSEMBLER (PDP-11)"
+(link = 9.)
+.br
+.B sys link; name1; name2
