@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.34 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -511,7 +511,10 @@ errhdr(fp, m, xdot)
 					fp, m);
 				printheader = FALSE;
 			}
-			sprintf(buf, "\t%s\n", q->q_paddr);
+			if (q->q_alias != NULL)
+				sprintf(buf, "\t%s\n", q->q_alias->q_paddr);
+			else
+				sprintf(buf, "\t%s\n", q->q_paddr);
 			putline(buf, fp, m);
 		}
 	}
