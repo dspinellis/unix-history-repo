@@ -1,4 +1,4 @@
-/*	hp.c	4.3	83/01/18	*/
+/*	hp.c	4.4	83/01/23	*/
 
 /*
  * RP??/RM?? disk driver
@@ -187,7 +187,7 @@ hpstrategy(io, func)
 	bytecnt = io->i_cc;
 	membase = io->i_ma;
 	startblock = io->i_bn;
-	hprecal = 1;
+	hprecal = 0;
 readmore:
 	bn = io->i_bn;
 	cn = bn/st->nspc;
@@ -243,6 +243,7 @@ readmore:
 	} else if (++io->i_errcnt > 27 ||
 		   er1 & HPER1_HARD ||
 		   (!ML11 && (er2 & HPER2_HARD))) {
+hard0:
 		io->i_error = EHER;
 		if ((mba->mba_sr & (MBSR_WCKUP | MBSR_WCKLWR)) != 0)
 			io->i_error = EWCK;
@@ -284,48 +285,46 @@ badsect:
 			io->i_error = EECC;
 			return(1);	
 		}
-	} else
-		io->i_active = 0;		/* force retry */
+	} 
+
+	if (ML11 && (io->i_errcnt >= 16))
+			goto hard0;
+
+	/* fall thru to retry */
 
 	hpaddr->hpcs1 = HP_DCLR|HP_GO;
 	while ((hpaddr->hpds & HPDS_DRY) == 0)
 		;
-	if (ML11) {
-		if (io->i_errcnt >= 16)
-			goto hard;
-	} else if (((io->i_errcnt&07) == 4) && (io->i_active == 0)) {
+	if (((io->i_errcnt&07) == 4) ) {
 		hpaddr->hpcs1 = HP_RECAL|HP_GO;
-		hprecal = 0;
-		goto nextrecal;
+		hprecal = 1;
+		goto try_again;
 	}
 	switch (hprecal) {
 
 	case 1:
 		hpaddr->hpdc = cn;
 		hpaddr->hpcs1 = HP_SEEK|HP_GO;
-		goto nextrecal;
+		hprecal++;
+		goto try_again;
 	case 2:
-		if (io->i_errcnt < 16 || (func & READ) == 0)
+		if (io->i_errcnt < 16 || (io->i_flgs & F_READ) == 0)
 			goto donerecal;
 		hpaddr->hpof = hp_offset[io->i_errcnt & 017]|HPOF_FMT22;
 		hpaddr->hpcs1 = HP_OFFSET|HP_GO;
-nextrecal:
 		hprecal++;
-		io->i_active = 1;
 		goto try_again;
 	donerecal:
 	case 3:
 		hprecal = 0;
-		io->i_active = 0;
 		goto try_again;
 	}
-	if (io->i_active) {
-		if (io->i_errcnt >= 16) {
-			hpaddr->hpcs1 = HP_RTC|HP_GO;
-			while (hpaddr->hpds & HPDS_PIP)
-				;
-		}
+	if (io->i_errcnt >= 16) {
+		hpaddr->hpcs1 = HP_RTC|HP_GO;
+		while (hpaddr->hpds & HPDS_PIP)
+			;
 	}
+	goto try_again;
 success:		 /* continue with the next block */
 	bn++;
 	if ((bn-startblock) * sectsiz < bytecnt) {
@@ -336,8 +335,8 @@ try_again:		/* re-read same block */
 		io->i_ma = membase + (io->i_bn - startblock)*sectsiz;
 		io->i_cc = bytecnt - (io->i_bn - startblock)*sectsiz;
 #ifdef HPDEBUG
-		printf("restart: bl %d, byte %d, mem 0x%x %d\n",
-			io->i_bn, io->i_cc, io->i_ma, io->i_ma);
+		printf("restart: bl %d, byte %d, mem 0x%x hprecal %d\n",
+			io->i_bn, io->i_cc, io->i_ma, hprecal);
 #endif
 		goto readmore;
 	}
