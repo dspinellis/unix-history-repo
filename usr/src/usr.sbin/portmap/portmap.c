@@ -1,13 +1,24 @@
-/*
- * Copyright (c) 1984 by Sun Microsystems, Inc.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)portmap.c	5.3 (Berkeley) %G%
+ * %sccs.include.redist.c%
  */
 
-/* @(#)portmap.c	2.3 88/08/11 4.0 RPCSRC */
 #ifndef lint
-static	char sccsid[] = "@(#)portmap.c 1.32 87/08/06 Copyr 1984 Sun Micro";
-#endif
+char copyright[] =
+"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)portmap.c	5.4 (Berkeley) %G%";
+#endif /* not lint */
+
+/*
+@(#)portmap.c	2.3 88/08/11 4.0 RPCSRC
+static char sccsid[] = "@(#)portmap.c 1.32 87/08/06 Copyr 1984 Sun Micro";
+*/
 
 /*
  * portmap.c, Implements the program,version to port number mapping for
