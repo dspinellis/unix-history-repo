@@ -14,18 +14,16 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)dev.c	7.5 (Berkeley) %G%
+ *	@(#)dev.c	7.6 (Berkeley) %G%
  */
 
 #include "sys/param.h"
-#include "sys/time.h"
-#include "sys/vnode.h"
 #include "ufs/inode.h"
 #include "ufs/fs.h"
 #include "saio.h"
 
 /*
- * NB: the value "io->i_ino.i_dev", used to offset the devsw[] array
+ * NB: the value "io->i_dev", used to offset the devsw[] array
  * in the routines below, is munged by the vaxstand Makefile to work
  * for certain boots.
  */
@@ -37,7 +35,7 @@ devread(io)
 
 	io->i_flgs |= F_RDDATA;
 	io->i_error = 0;
-	cc = (*devsw[io->i_ino.i_dev].dv_strategy)(io, READ);
+	cc = (*devsw[io->i_dev].dv_strategy)(io, READ);
 	io->i_flgs &= ~F_TYPEMASK;
 	return (cc);
 }
@@ -49,7 +47,7 @@ devwrite(io)
 
 	io->i_flgs |= F_WRDATA;
 	io->i_error = 0;
-	cc = (*devsw[io->i_ino.i_dev].dv_strategy)(io, WRITE);
+	cc = (*devsw[io->i_dev].dv_strategy)(io, WRITE);
 	io->i_flgs &= ~F_TYPEMASK;
 	return (cc);
 }
@@ -59,9 +57,9 @@ devopen(io)
 {
 	int ret;
 
-	if (!(ret = (*devsw[io->i_ino.i_dev].dv_open)(io)))
+	if (!(ret = (*devsw[io->i_dev].dv_open)(io)))
 		return (0);
-	printf("%s(%d,%d,%d,%d): ", devsw[io->i_ino.i_dev].dv_name,
+	printf("%s(%d,%d,%d,%d): ", devsw[io->i_dev].dv_name,
 		io->i_adapt, io->i_ctlr, io->i_unit, io->i_part);
 	switch(ret) {
 	case EIO:
@@ -97,7 +95,7 @@ devopen(io)
 devclose(io)
 	register struct iob *io;
 {
-	(*devsw[io->i_ino.i_dev].dv_close)(io);
+	(*devsw[io->i_dev].dv_close)(io);
 }
 
 devioctl(io, cmd, arg)
@@ -105,7 +103,7 @@ devioctl(io, cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
-	return ((*devsw[io->i_ino.i_dev].dv_ioctl)(io, cmd, arg));
+	return ((*devsw[io->i_dev].dv_ioctl)(io, cmd, arg));
 }
 
 /*ARGSUSED*/

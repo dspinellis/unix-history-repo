@@ -14,13 +14,11 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ls.c	7.6 (Berkeley) %G%
+ *	@(#)ls.c	7.7 (Berkeley) %G%
  */
 
 #include "sys/param.h"
-#include "sys/time.h"
-#include "sys/vnode.h"
-#include "ufs/inode.h"
+#include "ufs/dinode.h"
 #include "ufs/fs.h"
 #include "ufs/dir.h"
 #include "saio.h"
@@ -28,24 +26,26 @@
 
 main()
 {
-	struct inode *ip;
+	struct dinode *ip;
 	int fd;
 
 	for (;;) {
 		if ((fd = getfile("ls", 0)) == -1)
 			exit();
 		ip = &iob[fd - 3].i_ino;
-		if ((ip->i_mode & IFMT) != IFDIR) {
+		if ((ip->di_mode & IFMT) != IFDIR) {
 			printf("ls: not a directory\n");
 			continue;
 		}
-		if (ip->i_size == 0) {
+		if (ip->di_size == 0) {
 			printf("ls: zero length directory\n");
 			continue;
 		}
 		ls(fd);
 	}
 }
+
+#define CTRL(x)	(x&037)
 
 getfile(prompt, mode)
 	char *prompt;
