@@ -1,4 +1,4 @@
-/*	fs.h	4.5	82/11/13	*/
+/*	fs.h	4.6	83/01/02	*/
 
 /*
  * Each disk drive contains some number of file systems.
