@@ -9,7 +9,7 @@
 #undef isdigit
 
 /*
- * Sccs Id = "@(#)def.h	1.10 %G%";
+ * Sccs Id = "@(#)def.h	1.11 %G%";
  */
 
 /*
@@ -58,16 +58,17 @@ struct message {
  * flag bits.
  */
 
-#define	MUSED		1		/* entry is used, but this bit isn't */
-#define	MDELETED	2		/* entry has been deleted */
-#define	MSAVED		4		/* entry has been saved */
-#define	MTOUCH		8		/* entry has been noticed */
-#define	MPRESERVE	16		/* keep entry in sys mailbox */
-#define	MMARK		32		/* message is marked! */
-#define	MODIFY		64		/* message has been modified */
-#define	MNEW		128		/* message has never been seen */
-#define	MREAD		256		/* message has been read sometime. */
-#define	MSTATUS		512		/* message status has changed */
+#define	MUSED		(1<<0)		/* entry is used, but this bit isn't */
+#define	MDELETED	(1<<1)		/* entry has been deleted */
+#define	MSAVED		(1<<2)		/* entry has been saved */
+#define	MTOUCH		(1<<3)		/* entry has been noticed */
+#define	MPRESERVE	(1<<4)		/* keep entry in sys mailbox */
+#define	MMARK		(1<<5)		/* message is marked! */
+#define	MODIFY		(1<<6)		/* message has been modified */
+#define	MNEW		(1<<7)		/* message has never been seen */
+#define	MREAD		(1<<8)		/* message has been read sometime. */
+#define	MSTATUS		(1<<9)		/* message status has changed */
+#define	MBOX		(1<<10)		/* Send this to mbox, regardless */
 
 /*
  * Format of the command description table.
