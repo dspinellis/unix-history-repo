@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.10	%G%
+#	@(#)makefile	1.11	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
@@ -25,7 +25,7 @@ OBJECTS = dfe.o due.o iio.o sue.o sfe.o lread.o lwrite.o \
 	dofio.o douio.o dolio.o \
 	rdfmt.o wrtfmt.o fmt.o fmtlib.o \
 	backspace.o rewind.o open.o close.o endfile.o inquire.o \
-	dballoc.o yes_66.o err.o no_66.o util.o f_errlist.o
+	yes_66.o err.o no_66.o util.o f_errlist.o
 
 all:	$(LIB)
 
