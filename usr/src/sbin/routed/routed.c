@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.3 %G%";
+static char sccsid[] = "@(#)routed.c	4.4 %G%";
 #endif
 
 #include <sys/param.h>
@@ -57,14 +57,12 @@ main(argc, argv)
 	int cc;
 	struct sockaddr from;
 	
-#ifdef notdef
 	{   int t = open("/dev/tty", 2);
 	    if (t >= 0) {
 		ioctl(t, TIOCNOTTY, 0);
 		close(t);
 	    }
 	}
-#endif
 	if (trace) {
 		(void) freopen("/etc/routerlog", "a", stdout);
 		(void) dup2(fileno(stdout), 2);
