@@ -1,4 +1,4 @@
-/*	tcp_output.c	4.31	82/01/19	*/
+/*	tcp_output.c	4.32	82/03/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -43,10 +43,9 @@ tcp_output(tp)
 	register struct socket *so = tp->t_inpcb->inp_socket;
 	register int len;
 	struct mbuf *m0;
-	int off, flags;
+	int off, flags, win;
 	register struct mbuf *m;
 	register struct tcpiphdr *ti;
-	int win, force;
 	u_char *opt;
 	unsigned optlen = 0;
 
@@ -61,7 +60,7 @@ COUNT(TCP_OUTPUT);
 	off = tp->snd_nxt - tp->snd_una;
 	len = MIN(so->so_snd.sb_cc, tp->snd_wnd+tp->t_force) - off;
 	if (len < 0)
-		return;			/* past FIN */
+		return (0);			/* past FIN */
 	if (len > tp->t_maxseg)
 		len = tp->t_maxseg;
 	flags = tcp_outflags[tp->t_state];
