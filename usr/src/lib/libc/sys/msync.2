@@ -1,32 +1,49 @@
-.\" Copyright (c) 1991 Regents of the University of California.
+.\" Copyright (c) 1991, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)msync.2	6.1 (Berkeley) %G%
+.\"	@(#)msync.2	6.2 (Berkeley) %G%
 .\"
-.TH MSYNC 2 ""
-.UC 7
-.SH NAME
-msync \- synchronize a mapped region
-.SH SYNOPSIS
-.nf
-msync(addr, len)
-.B caddr_t addr;
-.B int len;
-.fi
-.SH DESCRIPTION
-.PP
-The \fImsync\fP system call
+.Dd 
+.Dt MSYNC 2
+.Os
+.Sh NAME
+.Nm msync
+.Nd synchronize a mapped region
+.Sh SYNOPSIS
+.Fn msync "caddr_t addr" "int len"
+.Sh DESCRIPTION
+The
+.Fn msync
+system call
 writes any modified pages back to the filesystem and updates
 the file modification time.
-If \fIlen\fP is 0, all modified pages within the region containing \fIaddr\fP
+If
+.Fa len
+is 0, all modified pages within the region containing
+.Fa addr
 will be flushed;
-if \fIlen\fP is non-zero, only the pages containing \fIaddr\fP and \fIlen\fP
+if
+.Fa len
+is non-zero, only the pages containing
+.Fa addr
+and
+.Fa len
 succeeding locations will be examined.
 Any required synchronization of memory caches
 will also take place at this time.
 Filesystem operations on a file that is mapped for shared modifications
-are unpredictable except after an \fImsync\fP.
-.SH "SEE ALSO"
-msync.2, munmap.2, mprotect.2, madvise.2, mincore.2
+are unpredictable except after an
+.Fn msync .
+.Sh SEE ALSO
+.Xr madvise 2 ,
+.Xr munmap 2 ,
+.Xr mprotect 2 ,
+.Xr mincore 2
+.Sh HISTORY
+The
+.Fn msync
+function call is
+.Ud .
+
