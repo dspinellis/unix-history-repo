@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -571,7 +571,7 @@ make_dinode(ino, dip, nblocks, saddr, lfsp)
 	int db_per_fb, i;
 
 	dip->di_nlink = 1;
-	dip->di_blocks = nblocks;
+	dip->di_blocks = nblocks << lfsp->lfs_fsbtodb;
 
 	/* If we ever need something longer than 32 bits, this changes */
 	dip->di_size = (dip->di_blocks << lfsp->lfs_bshift);
@@ -588,7 +588,7 @@ make_dinode(ino, dip, nblocks, saddr, lfsp)
 
 	/* Assign the block addresses for the ifile */
 	db_per_fb = 1 << lfsp->lfs_fsbtodb;
-	for (i = 0; i < dip->di_blocks; i++, saddr += db_per_fb)
+	for (i = 0; i < nblocks; i++, saddr += db_per_fb)
 		dip->di_db[i] = saddr;
 
 	return (saddr);
