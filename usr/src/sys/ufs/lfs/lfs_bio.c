@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	7.15 (Berkeley) %G%
+ *	@(#)lfs_bio.c	7.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -28,6 +28,7 @@
  * No write cost accounting is done.
  * This is almost certainly wrong for synchronous operations and NFS.
  */
+int	lfs_allclean_wakeup;		/* Cleaner wakeup address. */
 int	locked_queue_count;		/* XXX Count of locked-down buffers. */
 int	lfs_writing;			/* Set if already kicked off a writer
 					   because of buffer space */
@@ -59,6 +60,7 @@ lfs_bwrite(ap)
 		if (!LFS_FITS(fs, fsbtodb(fs, 1)) && !IS_IFILE(bp)) {
 			bp->b_flags |= B_INVAL;
 			brelse(bp);
+			wakeup(&lfs_allclean_wakeup);
 			return (ENOSPC);
 		}
 		ip = VTOI((bp)->b_vp);
