@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.2 (Berkeley) %G%
+ *	@(#)boot.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -43,6 +43,13 @@ char *how_to_info[] = {
 "RB_KDB		give control to kernel debugger",
 "RB_RDONLY	mount root fs read-only"
 };
+
+#define TAPE
+#ifdef TAPE /* A.Kojima */
+extern dev_t  rst0;
+extern dev_t nrst0;
+char *stcopyunix();
+#endif
 
 int
 how_to_boot(argc, argv)
@@ -119,6 +126,14 @@ boot(argc, argv)
 
 	printf("Booting %s\n", line);
 
+#ifdef TAPE /* A.Kojima */
+	if (!strcmp("st", argv[1])) {
+		io = argc < 3 ? 0 : *argv[2] - '0';
+		printf("boot tape file number:%d\n", io);
+		stbootunix(howto, devtype, io);
+		return;
+	}
+#endif
 	io = open(line, 0);
 	if (io >= 0) {
 		bootunix(howto, devtype, io);
@@ -228,4 +243,156 @@ shread:
 	printf("   Short read\n");
 	return(0);
 }
+
+#ifdef TAPE /* A.Kojima */
+int
+stbootunix(howto, devtype, skip)
+	register howto;		/* d7 contains boot flags */
+	register devtype;	/* d6 contains boot device */
+	register skip;		/* tape skip */
+{
+	register int i;
+	register char *load;	/* a5 contains load addr for unix */
+
+	/*
+	 * Tape rewind and skip
+	 */
+	st_rewind(rst0);
+	for (i = 0; i < skip; i++) {
+		st_skip(rst0);
+	}
+
+	load = stcopyunix();
+
+	st_rewind(rst0);
+
+	printf(" start 0x%x\n", load);
+	asm("	movl %0,d7" : : "d" (howto));
+	asm("	movl %0,d6" : : "d" (devtype));
+	asm("	movl %0,a5" : : "a" (kiff));
+	(*((int (*)()) load))();
+}
+
+char *
+stcopyunix()
+{
+
+	register int i;
+	register char *load;	/* a5 contains load addr for unix */
+	register char *addr;
+	u_char buf[0x400];
+
+	/*
+	 * Read a.out file header
+	 */
+
+	i = tread(/*io,*/ (char *)&header, sizeof(struct exec));
+	if (i != sizeof(struct exec) ||
+	    (header.a_magic != 0407 && header.a_magic != 0413 && header.a_magic != 0410)) {
+		printf("illegal magic number ... 0x%x\n");
+		printf("Bad format\n");
+		return(0);
+	}
+
+	load = addr = (char *) (header.a_entry & 0x00FFFFFF);
+
+	printf("%d", header.a_text);
+
+	i = 0x400 - i;
+	if (header.a_magic == 0413 && tread(buf, i) != i) { /* easy seek */
+		goto shread;
+	}
+
+	/*
+	 * Load TEXT Segment
+	 */
+
+	if (tread(/*io,*/ (char *)addr, header.a_text) != header.a_text)
+		goto shread;
+	addr += header.a_text;
+	if (header.a_magic == 0413 || header.a_magic == 0410)
+		while ((int)addr & CLOFSET)
+			*addr++ = 0;
+
+	/*
+	 * Load DATA Segment
+	 */
+
+	printf("+%d", header.a_data);
+	if (tread(/*io,*/ addr, header.a_data) != header.a_data)
+		goto shread;
+
+	/*
+	 * Clear BSS Segment
+	 */
+
+	addr += header.a_data;
+	printf("+%d", header.a_bss);
+	header.a_bss += 128*512;	/* slop */
+	for (i = 0; i < header.a_bss; i++)
+		*addr++ = 0;
+
+	return(load);
+
+shread:
+	printf("   Short read\n");
+	return(0);
+}
+
+int
+tread(addr, size)
+	int	addr;
+	int	size;
+{
+	static u_char	buf[512];
+	static int	head = 512;
+	static int	tail = 512;
+	int             req_size = size;
+	int		rest = tail - head;
+	
+	if (rest > 0) {
+		if (size <= rest) {
+			bcopy(&buf[head], addr, size);
+			head += size;
+			return size;
+		} else { /* size > rest */
+			bcopy(&buf[head], addr, rest);
+			addr += rest;
+			size -= rest;
+			if (tail != 512) {
+				head = 512;
+				tail = 512;
+				printf("tread() EOF 0\n");
+				return rest;
+			}
+		}
+	}
+
+	/* head = 0; */
+
+	while (size > 512) {
+		if ((tail = stread(rst0, addr, 512)) == 512) {
+			addr += 512;
+			size -= 512;
+		} else { /* eof ( tail < 512 ) */
+			size -= tail;
+			head = tail;
+			printf("tread() EOF 1\n");
+			return req_size - size;
+		}
+	}
+	tail = stread(rst0, buf, 512);
+	if (tail >= size) {
+		bcopy(buf, addr, size);
+		head = size;
+		return req_size;
+	} else {
+		bcopy(buf, addr, tail);
+		head = tail;
+		printf("tread() EOF 2\n");
+		return req_size - size;
+	}
+}
+
+#endif
 
