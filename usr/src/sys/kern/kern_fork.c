@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_fork.c	7.20 (Berkeley) %G%
+ *	@(#)kern_fork.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -20,7 +20,6 @@
 #include "file.h"
 #include "acct.h"
 #include "ktrace.h"
-#include "../ufs/quota.h"
 
 #include "machine/reg.h"
 #include "machine/pte.h"
