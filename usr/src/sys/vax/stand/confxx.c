@@ -1,4 +1,4 @@
-/*	confxx.c	4.2	82/12/17	*/
+/*	confxx.c	4.3	82/12/30	*/
 
 #include "../machine/pte.h"
 
@@ -10,15 +10,23 @@
 devread(io)
 	register struct iob *io;
 {
+	int error;
 
-	return( (*devsw[io->i_ino.i_dev].dv_strategy)(io, READ) );
+	io->i_flgs |= F_RDDATA;
+	error = (*devsw[io->i_ino.i_dev].dv_strategy)(io, READ);
+	io->i_flgs &= ~F_TYPEMASK;
+	return (error);
 }
 
 devwrite(io)
 	register struct iob *io;
 {
+	int error;
 
-	return( (*devsw[io->i_ino.i_dev].dv_strategy)(io, WRITE) );
+	io->i_flgs |= F_WRDATA;
+	error = (*devsw[io->i_ino.i_dev].dv_strategy)(io, WRITE);
+	io->i_flgs &= ~F_TYPEMASK;
+	return (error);
 }
 
 devopen(io)
@@ -35,16 +43,37 @@ devclose(io)
 	(*devsw[io->i_ino.i_dev].dv_close)(io);
 }
 
-nullsys()
+devioctl(io, cmd, arg)
+	register struct iob *io;
+	int cmd;
+	caddr_t arg;
+{
+
+	return ((*devsw[io->i_ino.i_dev].dv_ioctl)(io, cmd, arg));
+}
+
+/*ARGSUSED*/
+nullsys(io)
+	struct iob *io;
 {
 
 	;
 }
 
-int	nullsys();
-int	xxstrategy(), xxopen();
+/*ARGSUSED*/
+nullioctl(io, cmd, arg)
+	struct iob *io;
+	int cmd;
+	caddr_t arg;
+{
+
+	return (ECMD);
+}
+
+int	nullsys(), nullioctl();
+int	xxstrategy(), xxopen(), xxioctl();
 
 struct devsw devsw[] = {
-	"XX",	xxstrategy,	xxopen,		nullsys,
-	0,0,0,0
+	{ "XX",	xxstrategy,	xxopen,		nullsys,	xxioctl },
+	{ 0, 0, 0, 0, 0 }
 };

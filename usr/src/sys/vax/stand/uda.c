@@ -1,4 +1,4 @@
-/*	uda.c	4.4	82/12/17	*/
+/*	uda.c	4.5	82/12/30	*/
 
 /*
  * UDA50/RAxx disk device driver
@@ -131,4 +131,14 @@ udstrategy(io, func)
 	}
 	ubafree(io, ubinfo);
 	return(io->i_cc);
+}
+
+/*ARGSUSED*/
+udioctl(io, cmd, arg)
+	struct iob *io;
+	int cmd;
+	caddr_t arg;
+{
+
+	return (ECMD);
 }

@@ -1,4 +1,4 @@
-/*	rk.c	4.7	82/12/17	*/
+/*	rk.c	4.8	82/12/30	*/
 
 /*
  * RK611/RK07
@@ -90,4 +90,14 @@ rkwait(rkaddr)
 
 	while ((rkaddr->rkcs1 & RK_CRDY) == 0)
 		;
+}
+
+/*ARGSUSED*/
+rkioctl(io, cmd, arg)
+	struct iob *io;
+	int cmd;
+	caddr_t arg;
+{
+
+	return (ECMD);
 }
