@@ -2,13 +2,12 @@
  * Copyright (c) 1992 The Regents of the University of California
  * All rights reserved.
  *
- * This code is derived from the null layer of
- * John Heidemann from the UCLA Ficus project and
- * Jan-Simon Pendry's loopback file system.
+ * This code is derived from software contributed to Berkeley by
+ * John Heidemann of the UCLA Ficus project.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)null_vnops.c	1.6 (Berkeley) %G%
+ *	@(#)null_vnops.c	1.7 (Berkeley) %G%
  *
  * Ancestors:
  *	@(#)lofs_vnops.c	1.2 (Berkeley) 6/18/92
@@ -20,37 +19,122 @@
 /*
  * Null Layer
  *
+ * (See mount_null(8) for more information.)
+ *
  * The null layer duplicates a portion of the file system
  * name space under a new name.  In this respect, it is
  * similar to the loopback file system.  It differs from
  * the loopback fs in two respects:  it is implemented using
- * a bypass operation, and it's "null-node"s stack above
+ * a stackable layers techniques, and it's "null-node"s stack above
  * all lower-layer vnodes, not just over directory vnodes.
+ *
+ * The null layer has two purposes.  First, it serves as a demonstration
+ * of layering by proving a layer which does nothing.  (It actually
+ * does everything the loopback file system does, which is slightly
+ * more than nothing.)  Second, the null layer can serve as a prototype
+ * layer.  Since it provides all necessary layer framework,
+ * new file system layers can be created very easily be starting
+ * with a null layer.
+ *
+ * The remainder of this man page examines the null layer as a basis
+ * for constructing new layers.
+ *
+ *
+ * INSTANTIATING NEW NULL LAYERS
+ *
+ * New null layers are created with mount_null(8).
+ * Mount_null(8) takes two arguments, the pathname
+ * of the lower vfs (target-pn) and the pathname where the null
+ * layer will appear in the namespace (alias-pn).  After
+ * the null layer is put into place, the contents
+ * of target-pn subtree will be aliased under alias-pn.
+ *
+ *
+ * OPERATION OF A NULL LAYER
  *
  * The null layer is the minimum file system layer,
  * simply bypassing all possible operations to the lower layer
- * for processing there.  All but vop_getattr, _inactive, _reclaim,
- * and _print are bypassed.
+ * for processing there.  The majority of its activity centers
+ * on the bypass routine, though which nearly all vnode operations
+ * pass.
  *
- * Vop_getattr is not bypassed so that we can change the fsid being
- * returned.  Vop_{inactive,reclaim} are bypassed so that
+ * The bypass routine accepts arbitrary vnode operations for
+ * handling by the lower layer.  It begins by examing vnode
+ * operation arguments and replacing any null-nodes by their
+ * lower-layer equivlants.  It then invokes the operation
+ * on the lower layer.  Finally, it replaces the null-nodes
+ * in the arguments and, if a vnode is return by the operation,
+ * stacks a null-node on top of the returned vnode.
+ *
+ * Although bypass handles most operations, 
+ * vop_getattr, _inactive, _reclaim, and _print are not bypassed.
+ * Vop_getattr must change the fsid being returned.
+ * Vop_inactive and vop_reclaim are not bypassed so that
  * they can handle freeing null-layer specific data.
- * Vop_print is not bypassed for debugging.
+ * Vop_print is not bypassed to avoid excessive debugging
+ * information.
  *
  *
- * INVOKING OPERATIONS ON LOWER LAYERS
+ * INSTANTIATING VNODE STACKS
  *
- * 
- * NEEDSWORK: Describe methods to invoke operations on the lower layer
- * (bypass vs. VOP).
+ * Mounting associates the null layer with a lower layer,
+ * effect stacking two VFSes.  Vnode stacks are instead
+ * created on demand as files are accessed.
+ *
+ * The initial mount creates a single vnode stack for the
+ * root of the new null layer.  All other vnode stacks
+ * are created as a result of vnode operations on
+ * this or other null vnode stacks.
+ *
+ * New vnode stacks come into existance as a result of
+ * an operation which returns a vnode.  
+ * The bypass routine stacks a null-node above the new
+ * vnode before returning it to the caller.
+ *
+ * For example, imagine mounting a null layer with
+ * "mount_null /usr/include /dev/layer/null".
+ * Chainging directory to /dev/layer/null will assign
+ * the root null-node (which was created when the null layer was mounted).
+ * Now consider opening "sys".  A vop_lookup would be
+ * done on the root null-node.  This operation would bypass through
+ * to the lower layer which would return a vnode representing 
+ * the UFS "sys".  Null_bypass then builds a null-node
+ * aliasing the UFS "sys" and returns this to the caller.
+ * Later operations on the null-node "sys" will repeat this
+ * process when constructing other vnode stacks.
  *
  *
- * CREATING NEW FILESYSTEM LAYERS
+ * CREATING OTHER FILE SYSTEM LAYERS
  *
  * One of the easiest ways to construct new file system layers is to make
  * a copy of the null layer, rename all files and variables, and
  * then begin modifing the copy.  Sed can be used to easily rename
  * all variables.
+ *
+ * The umap layer is an example of a layer descended from the 
+ * null layer.
+ *
+ *
+ * INVOKING OPERATIONS ON LOWER LAYERS
+ *
+ * There are two techniques to invoke operations on a lower layer 
+ * when the operation cannot be completely bypassed.  Each method
+ * is appropriate in different situations.  In both cases,
+ * it is the responsibility of the aliasing layer to make
+ * the operation arguments "correct" for the lower layer
+ * by mapping an vnode arguments to the lower layer.
+ *
+ * The first approach is to call the aliasing layer's bypass routine.
+ * This method is most suitable when you wish to invoke the operation
+ * currently being hanldled on the lower layer.  It has the advantage
+ * the the bypass routine already must do argument mapping.
+ * An example of this is null_getattrs in the null layer.
+ *
+ * A second approach is to directly invoked vnode operations on
+ * the lower layer with the VOP_OPERATIONNAME interface.
+ * The advantage of this method is that it is easy to invoke
+ * arbitrary operations on the lower layer.  The disadvantage
+ * is that vnodes arguments must be manualy mapped.
  *
  */
 
@@ -133,7 +217,7 @@ null_bypass(ap)
 		/*
 		 * We're not guaranteed that any but the first vnode
 		 * are of our type.  Check for and don't map any
-		 * that aren't.  (Must map first vp or vclean fails.)
+		 * that aren't.  (We must always map first vp or vclean fails.)
 		 */
 		if (i && (*this_vp_p)->v_op != null_vnodeop_p) {
 			old_vps[i] = NULL;
@@ -185,25 +269,22 @@ null_bypass(ap)
 		 * XXX - even though some ops have vpp returned vp's,
 		 * several ops actually vrele this before returning.
 		 * We must avoid these ops.
-		 * (This should go away.)
+		 * (This should go away when these ops are regularized.)
 		 */
-		if (descp->vdesc_flags & VDESC_VPP_WILLRELE) {
-#ifdef NULLFS_DIAGNOSTIC
-			printf("null_bypass (%s), lowervpp->usecount = %d\n", vdesc->vdesc_name, (**vppp)->v_usecount);
-#endif
-			return (error);
-		}
+		if (descp->vdesc_flags & VDESC_VPP_WILLRELE)
+			goto out;
 		vppp = VOPARG_OFFSETTO(struct vnode***,
 				 descp->vdesc_vpp_offset,ap);
 		error = null_node_create(old_vps[0]->v_mount, **vppp, *vppp);
 	}
 
+ out:
 	return (error);
 }
 
 
 /*
- *  We handle getattr to change the fsid.
+ *  We handle getattr only to change the fsid.
  */
 int
 null_getattr(ap)
@@ -217,41 +298,11 @@ null_getattr(ap)
 	return 0;
 }
 
-/*
- * XXX - Ideally inactive does not release the lowervp
- * so the null_node can stay around in the cache and be reused.
- * Unfortunately, this currently causes "locking against self"
- * problems in the UFS, so currently AVOID_CACHING hacks
- * around the bug.
- */
-/* #define AVOID_CACHING */
 
 int
 null_inactive (ap)
 	struct vop_inactive_args *ap;
 {
-#ifdef AVOID_CACHING
-	struct vnode *vp = ap->a_vp;
-	struct null_node *xp = VTONULL(vp);
-	struct vnode *lowervp = xp->null_lowervp;
-
-	xp->null_lowervp = NULL;
-	remque(xp);
-	FREE(vp->v_data, M_TEMP);
-	vp->v_data = NULL;
-	vp->v_type = VBAD;   /* The node is clean (no reclaim needed). */
-	vrele (lowervp);
-#else
-#ifdef DIAGNOSTIC  /* NEEDSWORK: goes away */
-	if (VOP_ISLOCKED(NULLVPTOLOWERVP(ap->a_vp))) {
-		panic ("null_inactive: inactive's lowervp is locked.");
-	};
-#endif
-	/*
-	 * Remember we're inactive so we 
-	 * don't send locks through.
-	 */
-	VTONULL(ap->a_vp)->null_isinactive = 1;
 	/*
 	 * Do nothing (and _don't_ bypass).
 	 * Wait to vrele lowervp until reclaim,
@@ -260,11 +311,11 @@ null_inactive (ap)
 	 *
 	 * NEEDSWORK: Someday, consider inactive'ing
 	 * the lowervp and then trying to reactivate it
+	 * with capabilities (v_id)
 	 * like they do in the name lookup cache code.
 	 * That's too much work for now.
 	 */
 	return 0;
-#endif
 }
 
 int
@@ -275,58 +326,17 @@ null_reclaim (ap)
 	struct null_node *xp = VTONULL(vp);
 	struct vnode *lowervp = xp->null_lowervp;
 
-#ifdef AVOID_CACHING
-	return 0;
-#else
 	/*
-	 * Note: at this point, vp->v_op == dead_vnodeop_p,
+	 * Note: in vop_reclaim, vp->v_op == dead_vnodeop_p,
 	 * so we can't call VOPs on ourself.
 	 */
 	/* After this assignment, this node will not be re-used. */
-#ifdef DIAGNOSTIC
-	/* XXX - this is only a bug if it's locked by ourselves */
-	if (lowervp->v_usecount == 1 && VOP_ISLOCKED(lowervp)) {
-		panic("null_reclaim: lowervp is locked but must go away.");
-	};
-#endif
 	xp->null_lowervp = NULL;
 	remque(xp);
 	FREE(vp->v_data, M_TEMP);
 	vp->v_data = NULL;
 	vrele (lowervp);
 	return 0;
-#endif
-}
-
-int
-null_bmap (ap)
-	struct vop_bmap_args *ap;
-{
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_bmap(ap->a_vp = %x->%x)\n", ap->a_vp, NULLVPTOLOWERVP(ap->a_vp));
-#endif
-
-	return VOP_BMAP(NULLVPTOLOWERVP(ap->a_vp), ap->a_bn, ap->a_vpp, ap->a_bnp);
-}
-
-int
-null_strategy (ap)
-	struct vop_strategy_args *ap;
-{
-	int error;
-	struct vnode *savedvp;
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_strategy(vp = %x->%x)\n", ap->a_bp->b_vp, NULLVPTOLOWERVP(ap->a_bp->b_vp));
-#endif
-
-	savedvp = ap->a_bp->b_vp;
-
-	error = VOP_STRATEGY(ap->a_bp);
-
-	ap->a_bp->b_vp = savedvp;
-
-	return error;
 }
 
 
@@ -339,33 +349,57 @@ null_print (ap)
 	return 0;
 }
 
-#if 0
+
+/*
+ * XXX - vop_strategy must be hand coded because it has no
+ * vnode in its arguments.
+ * This goes away with a merged VM/buffer cache.
+ */
 int
-null_lock(ap)
-	struct vop_lock_args *ap;
+null_strategy (ap)
+	struct vop_strategy_args *ap;
 {
-	if (VTONULL(ap->a_vp)->null_isinactive)
-		return 0;
-	else return null_bypass(ap);
+	struct buf *bp = ap->a_bp;
+	int error;
+	struct vnode *savedvp;
+
+	savedvp = bp->b_vp;
+	bp->b_vp = NULLVPTOLOWERVP(bp->b_vp);
+
+	error = VOP_STRATEGY(bp);
+
+	bp->b_vp = savedvp;
+
+	return error;
 }
 
+
+/*
+ * XXX - like vop_strategy, vop_bwrite must be hand coded because it has no
+ * vnode in its arguments.
+ * This goes away with a merged VM/buffer cache.
+ */
 int
-null_unlock(ap)
-	struct vop_lock_args *ap;
+null_bwrite (ap)
+	struct vop_bwrite_args *ap;
 {
-	if (VTONULL(ap->a_vp)->null_isinactive)
-		return 0;
-	else return null_bypass(ap);
+	struct buf *bp = ap->a_bp;
+	int error;
+	struct vnode *savedvp;
+
+	savedvp = bp->b_vp;
+	bp->b_vp = NULLVPTOLOWERVP(bp->b_vp);
+
+	error = VOP_BWRITE(bp);
+
+	bp->b_vp = savedvp;
+
+	return error;
 }
-#endif
+
 
 /*
  * Global vfs data structures
- */
-/*
- * NEEDSWORK: strategy,bmap are hand coded currently.  They should
- * go away with a merged buffer/block cache.
- *
  */
 int (**null_vnodeop_p)();
 struct vnodeopv_entry_desc null_vnodeop_entries[] = {
@@ -375,13 +409,9 @@ struct vnodeopv_entry_desc null_vnodeop_entries[] = {
 	{ &vop_inactive_desc, null_inactive },
 	{ &vop_reclaim_desc, null_reclaim },
 	{ &vop_print_desc, null_print },
-#if 0
-	{ &vop_lock_desc, null_lock },
-	{ &vop_unlock_desc, null_unlock },
-#endif
 
-	{ &vop_bmap_desc, null_bmap },
 	{ &vop_strategy_desc, null_strategy },
+	{ &vop_bwrite_desc, null_bwrite },
 
 	{ (struct vnodeop_desc*)NULL, (int(*)())NULL }
 };

@@ -66,79 +66,10 @@ static struct null_node_cache *
 null_node_hash(lowervp)
 struct vnode *lowervp;
 {
+
 	return (&null_node_cache[NULL_NHASH(lowervp)]);
 }
 
-/*
- * Make a new null_node node.
- * Vp is the alias vnode, lofsvp is the lower vnode.
- * Maintain a reference to (lowervp).
- */
-static void
-null_node_alloc(vp, lowervp)
-	struct vnode *vp;
-	struct vnode *lowervp;
-{
-	struct null_node_cache *hd;
-	struct null_node *a;
-
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_node_alloc(%x, %x)\n", vp, lowervp);
-#endif
-
-	MALLOC(a, struct null_node *, sizeof(struct null_node), M_TEMP, M_WAITOK);
-	vp->v_type = lowervp->v_type;
-	a->null_vnode = vp;
-	vp->v_data = a;
-	VREF(lowervp);   /* Extra VREF will be vrele'd in null_node_create */
-	a->null_lowervp = lowervp;
-	hd = null_node_hash(lowervp);
-	insque(a, hd);
-
-#ifdef NULLFS_DIAGNOSTIC
-	vprint("null_node_alloc vp", vp);
-	vprint("null_node_alloc lowervp", lowervp);
-#endif
-}
-
-#ifdef NULLFS_DIAGNOSTIC
-/*
- * NEEDSWORK:  The ability to set lowervp to null here
- * implies that one can never count on lowervp staying null
- * (even if vp is locked).  This seems quite bad.  Think
- * about these things.
- */
-void
-null_node_flushmp (mp)
-	struct mount *mp;
-{
-	struct null_node_cache *ac;
-	int i = 0;
-	struct null_node *roota;
-
-	printf("null_node_flushmp (%x)\n", mp);
-
-	roota = VTONULL(MOUNTTONULLMOUNT(mp)->nullm_rootvp);
-
-	for (ac = null_node_cache; ac < null_node_cache + NNULLNODECACHE; ac++) {
-		struct null_node *a = ac->ac_forw;
-		while (a != (struct null_node *) ac) {
-			if (a != roota && NULLTOV(a)->v_mount == mp) {
-				struct vnode *vp = a->null_lowervp;
-				if (vp) {
-					a->null_lowervp = 0;
-					vprint("null_flushmp: would vrele", vp);
-					/*vrele(vp);*/
-					i++;
-				}
-			}
-			a = a->null_forw;
-		}
-	}
-	if (i > 0)
-		printf("null_node: vrele'd %d aliases\n", i);
-}
-#endif
 
 /*
  * XXX - this should go elsewhere.
@@ -183,10 +114,6 @@ null_node_find(mp, lowervp)
 	struct null_node *a;
 	struct vnode *vp;
 
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_node_find(mp = %x, lower = %x)\n", mp, lowervp);
-#endif
-
 	/*
 	 * Find hash base, and then search the (two-way) linked
 	 * list looking for a null_node structure which is referencing
@@ -197,37 +124,67 @@ null_node_find(mp, lowervp)
 loop:
 	for (a = hd->ac_forw; a != (struct null_node *) hd; a = a->null_forw) {
 		if (a->null_lowervp == lowervp && NULLTOV(a)->v_mount == mp) {
-#ifdef NULLFS_DIAGNOSTIC
-			printf("null_node_find(%x): found (%x,%x)->%x\n",
-				lowervp, mp, NULLTOV(a), lowervp);
-#endif
 			vp = NULLTOV(a);
 			/*
-			 * NEEDSWORK: Don't call the normal vget,
-			 * it will do a VOP_LOCK which is bypassed
-			 * and will lock against ourselves.
-			 * Unfortunately, we need vget for the VXLOCK
-			 * stuff.
+			 * We need vget for the VXLOCK
+			 * stuff, but we don't want to lock
+			 * the lower node.
 			 */
 			if (vget_nolock(vp)) {
 				printf ("null_node_find: vget failed.\n");
 				goto loop;
 			};
-			a->null_isinactive = 0;
 			return (vp);
 		}
 	}
 
-#ifdef NULLFS_DIAGNOSTIC
-	printf("null_node_find(%x, %x): NOT found\n", mp, lowervp);
-#endif
-
 	return NULL;
 }
 
-#if 1
-int null_node_create_barrier = 1;
-#endif
+
+/*
+ * Make a new null_node node.
+ * Vp is the alias vnode, lofsvp is the lower vnode.
+ * Maintain a reference to (lowervp).
+ */
+static int
+null_node_alloc(mp, lowervp, vpp)
+	struct mount *mp;
+	struct vnode *lowervp;
+	struct vnode **vpp;
+{
+	struct null_node_cache *hd;
+	struct null_node *xp;
+	struct vnode *othervp, *vp;
+	int error;
+
+	if (error = getnewvnode(VT_UFS, mp, null_vnodeop_p, vpp))
+		return (error);	/* XXX: VT_NULL above */
+	vp = *vpp;
+
+	MALLOC(xp, struct null_node *, sizeof(struct null_node), M_TEMP, M_WAITOK);
+	vp->v_type = lowervp->v_type;
+	xp->null_vnode = vp;
+	vp->v_data = xp;
+	xp->null_lowervp = lowervp;
+	/*
+	 * Before we insert our new node onto the hash chains,
+	 * check to see if someone else has beaten us to it.
+	 * (We could have slept in MALLOC.)
+	 */
+	if (othervp = null_node_find(lowervp)) {
+		FREE(xp, M_TEMP);
+		vp->v_type = VBAD;	/* node is discarded */
+		vp->v_usecount = 0;	/* XXX */
+		*vpp = othervp;
+		return 0;
+	};
+	VREF(lowervp);   /* Extra VREF will be vrele'd in null_node_create */
+	hd = null_node_hash(lowervp);
+	insque(xp, hd);
+	return 0;
+}
+
 
 /*
  * Try to find an existing null_node vnode refering
@@ -260,13 +217,12 @@ null_node_create(mp, lowervp, newvpp)
 #ifdef NULLFS_DIAGNOSTIC
 		printf("null_node_create: create new alias vnode\n");
 #endif
-		if (error = getnewvnode(VT_UFS, mp, null_vnodeop_p, &aliasvp))
-			return (error);	/* XXX: VT_NULL above */
 
 		/*
 		 * Make new vnode reference the null_node.
 		 */
-		null_node_alloc(aliasvp, lowervp);
+		if (error = null_node_alloc(mp, lowervp, &aliasvp))
+			return error;
 
 		/*
 		 * aliasvp is already VREF'd by getnewvnode()
@@ -275,13 +231,15 @@ null_node_create(mp, lowervp, newvpp)
 
 	vrele(lowervp);
 
+#ifdef DIAGNOSTIC
 	if (lowervp->v_usecount < 1) {
+		/* Should never happen... */
 		vprint ("null_node_create: alias ");
 		vprint ("null_node_create: lower ");
 		printf ("null_node_create: lower has 0 usecount.\n");
-		while (null_node_create_barrier) /* wait */ ;
 		panic ("null_node_create: lower has 0 usecount.");
 	};
+#endif
 
 #ifdef NULLFS_DIAGNOSTIC
 	vprint("null_node_create: alias", aliasvp);
@@ -292,7 +250,6 @@ null_node_create(mp, lowervp, newvpp)
 	return (0);
 }
 #ifdef NULLFS_DIAGNOSTIC
-int null_checkvp_barrier = 1;
 struct vnode *
 null_checkvp(vp, fil, lno)
 	struct vnode *vp;
@@ -341,3 +298,5 @@ null_checkvp(vp, fil, lno)
 	return a->null_lowervp;
 }
 #endif
+
+
