@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_subr.c	7.11 (Berkeley) %G%
+ *	@(#)kern_subr.c	7.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -76,10 +76,10 @@ ureadc(c, uio)
 	register struct iovec *iov;
 
 again:
-	if (uio->uio_iovcnt == 0)
+	if (uio->uio_iovcnt == 0 || uio->uio_resid == 0)
 		panic("ureadc");
 	iov = uio->uio_iov;
-	if (iov->iov_len <= 0 || uio->uio_resid <= 0) {
+	if (iov->iov_len == 0) {
 		uio->uio_iovcnt--;
 		uio->uio_iov++;
 		goto again;
