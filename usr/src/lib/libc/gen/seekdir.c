@@ -1,13 +1,13 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)seekdir.c 4.7 %G%";
+static char sccsid[] = "@(#)seekdir.c 4.8 %G%";
 
 #include <sys/param.h>
 #include <dir.h>
 
 /*
  * seek to an entry in a directory.
- * Only values returned by ``telldir'' should be passed to seekdir.
+ * Only values returned by "telldir" should be passed to seekdir.
  */
 void
 seekdir(dirp, loc)
@@ -22,10 +22,6 @@ seekdir(dirp, loc)
 		return;
 	base = loc & ~(DIRBLKSIZ - 1);
 	offset = loc & (DIRBLKSIZ - 1);
-	if (dirp->dd_loc != 0 && (curloc & ~(DIRBLKSIZ - 1)) == base) {
-		dirp->dd_loc = offset;
-		return;
-	}
 	lseek(dirp->dd_fd, base, 0);
 	dirp->dd_loc = 0;
 	while (dirp->dd_loc < offset) {
