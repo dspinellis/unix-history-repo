@@ -1,4 +1,4 @@
-/*	cgram.y	4.14	87/12/09	*/
+/*	cgram.y	4.15	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -97,7 +97,7 @@ arg_dcl_list:	   arg_dcl_list declaration
 stmt_list:	   stmt_list statement
 		|  /* empty */
 			={  bccode();
-			    locctr(PROG);
+			    (void) locctr(PROG);
 			    }
 		;
 
@@ -243,7 +243,7 @@ declarator:	   fdeclarator
 		|  COLON con_e
 			%prec CM
 			={  if( !(instruct&INSTRUCT) ) uerror( "field outside of structure" );
-			    falloc( stab, $2, -1, $<nodep>0 );  /* alignment or hole */
+			    (void) falloc( stab, $2, -1, $<nodep>0 );  /* alignment or hole */
 			    $$ = NIL;
 			    }
 		|  error
@@ -938,7 +938,7 @@ swend(){ /* end a switch block */
 
 	for( p = swbeg+1; p<swp; ++p ){
 		if( p->sval == (p-1)->sval ){
-			uerror( "duplicate case in switch, %d", tempi=p->sval );
+			uerror( "duplicate case in switch, %d", p->sval );
 			return;
 			}
 		}
