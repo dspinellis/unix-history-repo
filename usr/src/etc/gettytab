@@ -1,4 +1,4 @@
-#	@(#)gettytab	4.6 (Berkeley) 84/03/26
+#	@(#)gettytab	4.7 (Berkeley) 85/02/05
 
 #
 # Most of the table entries here are just copies of the
@@ -17,9 +17,12 @@ default:\
 #
 # Fixed speed entries
 #
-#	the "std.NNN" names are known to the special case
+#	The "std.NNN" names are known to the special case
 #	portselector code in getty, however they can
 #	be assigned to any table desired.
+#	The "NNN-baud" names are known to the special case
+#	autobaud code in getty, and likewise can
+#	be assigned to any table desired (hopefully the same speed).
 #
 a|std.110|110-baud:\
 	:nd#1:cd#1:uc:sp#110:
@@ -101,3 +104,11 @@ r|P1200|Plugboard-1200:\
 #
 s|Port Selector:\
 	:ps:sp#1200:
+
+#
+# Auto-baud speed detect entry for Micom 600.
+# Special code in getty will switch this out
+# to one of the NNN-baud entries.
+#
+A|Auto-baud:\
+	:ab:sp#2400:f0#040:
