@@ -1,4 +1,4 @@
-/*	trap.c	3.6	%G%	*/
+/*	trap.c	4.1	%G%	*/
 
 
 #include "../h/param.h"

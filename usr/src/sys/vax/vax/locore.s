@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.18	%G%
+#	locore.s		4.1	%G%
 #
 
 	.set	HIGH,31		# mask for total disable

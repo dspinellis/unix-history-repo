@@ -1,4 +1,4 @@
-/*	%H%	3.22	kern_clock.c	*/
+/*	%H%	4.1	kern_clock.c	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

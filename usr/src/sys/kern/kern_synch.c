@@ -1,4 +1,4 @@
-/*	kern_synch.c	3.16	%G%	*/
+/*	kern_synch.c	4.1	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
