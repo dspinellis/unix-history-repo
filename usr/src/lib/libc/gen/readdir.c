@@ -1,19 +1,9 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)readdir.c 4.3 %G%";
+static char sccsid[] = "@(#)readdir.c 4.4 %G%";
 
 #include <sys/param.h>
-#include <ndir.h>
-
-/*
- * read an old stlye directory entry and present it as a new one
- */
-#define	ODIRSIZ	14
-
-struct	olddirect {
-	ino_t	d_ino;
-	char	d_name[ODIRSIZ];
-};
+#include <dir.h>
 
 /*
  * get next entry in a directory.
@@ -22,8 +12,7 @@ struct direct *
 readdir(dirp)
 	register DIR *dirp;
 {
-	register struct olddirect *dp;
-	static struct direct dir;
+	register struct direct *dp;
 
 	for (;;) {
 		if (dirp->dd_loc == 0) {
@@ -36,15 +25,13 @@ readdir(dirp)
 			dirp->dd_loc = 0;
 			continue;
 		}
-		dp = (struct olddirect *)(dirp->dd_buf + dirp->dd_loc);
-		dirp->dd_loc += sizeof(struct olddirect);
+		dp = (struct direct *)(dirp->dd_buf + dirp->dd_loc);
+		if (dp->d_reclen <= 0 ||
+		    dp->d_reclen > DIRBLKSIZ + 1 - dirp->dd_loc)
+			return NULL;
+		dirp->dd_loc += dp->d_reclen;
 		if (dp->d_ino == 0)
 			continue;
-		dir.d_ino = dp->d_ino;
-		strncpy(dir.d_name, dp->d_name, ODIRSIZ);
-		dir.d_name[ODIRSIZ] = '\0'; /* insure null termination */
-		dir.d_namlen = strlen(dir.d_name);
-		dir.d_reclen = DIRSIZ(&dir);
-		return (&dir);
+		return (dp);
 	}
 }

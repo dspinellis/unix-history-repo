@@ -1,9 +1,9 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)seekdir.c 4.4 %G%";
+static char sccsid[] = "@(#)seekdir.c 4.5 %G%";
 
 #include <sys/param.h>
-#include <ndir.h>
+#include <dir.h>
 
 /*
  * seek to an entry in a directory.
