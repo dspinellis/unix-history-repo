@@ -1,11 +1,6 @@
 #!/bin/sh -
 #
-# Copyright (c) 1992 The Regents of the University of California.
-# All rights reserved.
-#
-# %sccs.include.redist.sh%
-#
-#	@(#)run.test	5.17 (Berkeley) %G%
+#	@(#)run.test	5.18 (Berkeley) %G%
 #
 
 # db regression tests
