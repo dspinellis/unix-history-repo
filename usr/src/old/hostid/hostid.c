@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)hostid.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)hostid.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -21,6 +21,7 @@ static char sccsid[] = "@(#)hostid.c	5.2 (Berkeley) %G%";
 
 extern	char *index();
 extern	unsigned long inet_addr();
+extern	long gethostid();
 
 main(argc, argv)
 	int argc;
@@ -28,7 +29,7 @@ main(argc, argv)
 {
 	register char *id;
 	u_long addr;
-	int hostid;
+	long hostid;
 	struct hostent *hp;
 
 	if (argc < 2) {
@@ -37,9 +38,7 @@ main(argc, argv)
 	}
 	id = argv[1];
 
-	if (isxdigit(id[0]) && index(id, '.') != NULL)
-		hostid = (int) inet_addr(id);
-	else {
+	if ((hostid = inet_addr(id)) == -1) {
 		if (*id == '0' && (id[1] == 'x' || id[1] == 'X'))
 			id += 2;
 		if (sscanf(id, "%x", &hostid) != 1) {
