@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.55.1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.81 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -490,7 +490,7 @@ main(argc, argv, envp)
 			break;
 
 		  case 'F':	/* set full name */
-			FullName = newstr(denlstring(optarg));
+			FullName = newstr(optarg);
 			break;
 
 		  case 'h':	/* hop count */
@@ -739,6 +739,10 @@ main(argc, argv, envp)
 		setsignal(SIGHUP, intsig);
 		break;
 	}
+
+	/* full names can't have newlines */
+	if (FullName != NULL && strchr(FullName, '\n') != NULL)
+		FullName = newstr(denlstring(FullName));
 
 	/* do heuristic mode adjustment */
 	if (Verbose)
