@@ -1,4 +1,4 @@
-/* tcp_subr.c 4.1 81/11/24 */
+/* tcp_subr.c 4.2 81/11/25 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -96,4 +96,98 @@ tcp_reflect(ti, ack, seq, flags)
 	((struct ip *)ti)->ip_len = sizeof(struct tcpiphdr);
 	((struct ip *)ti)->ip_ttl = MAXTTL;
 	ip_output(m);
+}
+
+struct tcpcb *
+tcp_newtcpcb(inp)
+	struct inpcb *inp;
+{
+	struct mbuf *m = m_getclr(0);
+	register struct tcpcb *tp;
+COUNT(TCP_NEWTCPCB);
+
+	if (m == 0)
+		return (0);
+	tp = mtod(m, struct tcpcb *);
+
+	/*
+	 * Make empty reassembly queue.
+	 */
+	tp->seg_next = tp->seg_prev = (struct tcpiphdr *)tp;
+
+	/*
+	 * Initialize sequence numbers and round trip retransmit timer.
+	 */
+	tp->t_xmtime = T_REXMT;
+	tp->snd_end = tp->seq_fin = tp->snd_nxt = tp->snd_hi = tp->snd_una =
+	    tp->iss = tcp_iss;
+	tp->snd_off = tp->iss + 1;
+	tcp_iss += (ISSINCR >> 1) + 1;
+
+	/*
+	 * Hook to inpcb.
+	 */
+	tp->t_inpcb = inp;
+	inp->inp_ppcb = (caddr_t)tp;
+	return (tp);
+}
+
+tcp_drop(tp, errno)
+	struct tcpcb *tp;
+	int errno;
+{
+	struct socket *so = tp->t_inpcb->inp_socket;
+
+COUNT(TCP_DROP);
+	if (TCPS_HAVERCVDSYN(tp->t_state) &&
+	    TCPS_OURFINISACKED(tp->t_state) == 0) {
+		tp->t_state = TCPS_CLOSED;
+		tcp_output(tp);
+	}
+	so->so_error = errno;
+	socantrcvmore(so);
+	socantsndmore(so);
+	tcp_close(tp);
+}
+
+tcp_close(tp)
+	register struct tcpcb *tp;
+{
+	register struct tcpiphdr *t;
+
+COUNT(TCP_CLOSE);
+	tcp_canceltimers(tp);
+	t = tp->seg_next;
+	for (; t != (struct tcpiphdr *)tp; t = (struct tcpiphdr *)t->ti_next)
+		m_freem(dtom(t));
+	if (tp->t_template) {
+		(void) m_free(dtom(tp->t_template));
+		tp->t_template = 0;
+	}
+	in_pcbfree(tp->t_inpcb);
+	(void) m_free(dtom(tp));
+}
+
+/*ARGSUSED*/
+tcp_sense(m)
+	struct mbuf *m;
+{
+
+COUNT(TCP_SENSE);
+	return (EOPNOTSUPP);
+}
+
+tcp_drain()
+{
+	register struct inpcb *ip;
+
+COUNT(TCP_DRAIN);
+}
+
+tcp_ctlinput(m)
+	struct mbuf *m;
+{
+
+COUNT(TCP_CTLINPUT);
+	m_freem(m);
 }
