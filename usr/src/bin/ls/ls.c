@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ls.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)ls.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -54,6 +54,8 @@ int f_listalldot;		/* list . and .. as well */
 int f_listdir;			/* list actual directory, not contents */
 int f_listdot;			/* list files beginning with . */
 int f_longform;			/* long listing format */
+int f_needstat;			/* if need to stat files */
+int f_newline;			/* if precede with newline */
 int f_nonprint;			/* show unprintables as ? */
 int f_recursive;		/* ls subdirectories also */
 int f_reversesort;		/* reverse whatever sort is used */
@@ -61,7 +63,9 @@ int f_singlecol;		/* use single column output */
 int f_size;			/* list size in short listing */
 int f_specialdir;		/* force params to be directories */
 int f_statustime;		/* use time of last mode change */
+int f_dirname;			/* if precede with directory name */
 int f_timesort;			/* sort by time vice name */
+int f_total;			/* if precede with "total" line */
 int f_type;			/* add type character for non-regular files */
 
 main(argc, argv)
@@ -181,7 +185,8 @@ main(argc, argv)
 		f_recursive = 0;
 
 	/* if need to stat files */
-	needstat = f_longform || f_recursive || f_timesort || f_size || f_type;
+	f_needstat = f_longform || f_recursive || f_timesort ||
+	    f_size || f_type;
 
 	/* select a sort function */
 	if (f_reversesort) {
@@ -326,19 +331,23 @@ doargs(argc, argv)
 		rstats[0].lstat.st_btotal = blocks;
 		rstats[0].lstat.st_maxlen = maxlen;
 		displaydir(rstats, regcnt);
+		f_newline = f_dirname = 1;
 	}
 	/* display directories */
 	if (dircnt) {
 		register char *p;
 
+		f_total = 1;
 		if (dircnt > 1) {
 			(void)getwd(top);
 			qsort((char *)dstats, dircnt, sizeof(LS), sortfcn);
+			f_dirname = 1;
 		}
 		for (cnt = 0; cnt < dircnt; ++dstats) {
 			for (endofpath = path, p = dstats->name;
 			    *endofpath = *p++; ++endofpath);
-			subdir(dstats, regcnt || cnt, regcnt || dircnt > 1);
+			subdir(dstats);
+			f_newline = 1;
 			if (++cnt < dircnt && chdir(top)) {
 				(void)fprintf(stderr, "ls: %s: %s\n",
 				    top, strerror(errno));
@@ -378,31 +387,23 @@ displaydir(stats, num)
 			if (endofpath != path && endofpath[-1] != '/')
 				*endofpath++ = '/';
 			for (; *endofpath = *p++; ++endofpath);
-			subdir(lp, 1, 1);
+			f_newline = f_dirname = f_total = 1;
+			subdir(lp);
 			*(endofpath = savedpath) = '\0';
 		}
 	}
 }
 
-subdir(lp, newline, tag)
+subdir(lp)
 	LS *lp;
-	int newline, tag;
 {
 	LS *stats;
 	int num;
 	char *names;
 
-	/*
-	 * this doesn't really belong here, but it's the only place that
-	 * everybody goes through; the `tag' variable is so that we don't
-	 * print the header for directories unless we're going to display
-	 * more directories, or we've already displayed files or directories.
-	 * The `newline' variable keeps us from inserting a newline before
-	 * we've displayed anything at all.
-	 */
-	if (newline)
+	if (f_newline)
 		(void)putchar('\n');
-	if (tag)
+	if (f_dirname)
 		(void)printf("%s:\n", path);
 
 	if (chdir(lp->name)) {
@@ -463,7 +464,7 @@ tabdir(lp, s_stats, s_names)
 			    (u_int)maxentry * sizeof(LS))))
 				nomem();
 		}
-		if (needstat && lstat(dp->d_name, &stats[cnt].lstat)) {
+		if (f_needstat && lstat(dp->d_name, &stats[cnt].lstat)) {
 			(void)fprintf(stderr, "ls: %s: %s\n",
 			    dp->d_name, strerror(errno));
 			if (errno == ENOENT)

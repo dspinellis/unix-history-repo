@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ls.h	5.6 (Berkeley) %G%
+ *	@(#)ls.h	5.7 (Berkeley) %G%
  */
 
 typedef struct _lsstruct {
@@ -44,4 +44,5 @@ extern int f_longform;		/* long listing format */
 extern int f_singlecol;		/* use single column output */
 extern int f_size;		/* list size in short listing */
 extern int f_statustime;	/* use time of last mode change */
+extern int f_total;		/* if precede with "total" line */
 extern int f_type;		/* add type character for non-regular files */
