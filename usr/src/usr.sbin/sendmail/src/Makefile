@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 #
 SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	deliver.c domain.c envelope.c err.c headers.c macro.c main.c \
@@ -26,7 +26,7 @@ OBJS=	alias.o arpadate.o clock.o collect.o conf.o convtime.o daemon.o \
 	stab.o stats.o sysexits.o trace.o usersmtp.o util.o
 MAN=	sendmail.0 newaliases.0 aliases.0
 
-CFLAGS=	-O -I. -I../include -DVMUNIX
+CFLAGS=	-O -I. -DVMUNIX
 
 GET=	sccs get
 DELTA=	sccs delta
