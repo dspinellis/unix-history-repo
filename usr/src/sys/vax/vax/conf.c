@@ -1,4 +1,4 @@
-/*	conf.c	4.64	83/03/19	*/
+/*	conf.c	4.65	83/03/28	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -150,6 +150,19 @@ int	tuopen(),tuclose(),tustrategy();
 #define	tustrategy	nodev
 #endif
 
+#include "rx.h"
+#if NFX > 0
+int	rxopen(),rxstrategy(),rxclose(),rxread(),rxwrite(),rxreset(),rxioctl();
+#else
+#define	rxopen		nodev
+#define rxstrategy	nodev
+#define	rxclose		nodev
+#define	rxread		nodev
+#define	rxwrite		nodev
+#define	rxreset		nulldev
+#define	rxioctl		nodev
+#endif
+
 int	swstrategy(),swread(),swwrite();
 
 struct bdevsw	bdevsw[] =
@@ -166,6 +179,7 @@ struct bdevsw	bdevsw[] =
 	udopen,		nulldev,	udstrategy,	uddump,	0,	/*9*/
 	utopen,		utclose,	utstrategy,	utdump,	B_TAPE,	/*10*/
 	idcopen,	nodev,		idcstrategy,	idcdump,0,	/*11*/
+	rxopen,		rxclose,	rxstrategy,	nodev,	0,	/*12*/
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
@@ -373,18 +387,6 @@ int	adopen(),adclose(),adioctl(),adreset();
 #define adclose nodev
 #define adioctl nodev
 #define adreset nodev
-#endif
-
-#include "rx.h"
-#if NFX > 0
-int	rxopen(),rxclose(),rxread(),rxwrite(),rxreset(),rxioctl();
-#else
-#define	rxopen		nodev
-#define	rxclose		nodev
-#define	rxread		nodev
-#define	rxwrite		nodev
-#define	rxreset		nulldev
-#define	rxioctl		nodev
 #endif
 
 int	ttselect(), seltrue();
