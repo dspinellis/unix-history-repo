@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)getopt.3	6.9 (Berkeley) %G%
+.\"	@(#)getopt.3	6.10 (Berkeley) %G%
 .\"
 .TH GETOPT 3 ""
 .UC 6
@@ -150,10 +150,43 @@ Written by Henry Spencer, working from a Bell Labs manual page.
 Modified by Keith Bostic to behave more like the System V version.
 .SH BUGS
 ``-'' may be specified as an option letter, however it should never
-have an argument associated with it.  This allows getopt to be used
-with programs that expect ``-'' as an option flag.  This practice is
-wrong, and should not be used in any current development, it is
+have an argument associated with it.  This allows \fIgetopt\fP to be
+used with programs that expect ``-'' as an option flag.  This practice
+is wrong, and should not be used in any current development, it is
 provided for backward compatibility \fBonly\fP.
+.PP
+It is possible to handle digits as option letters.  This allows
+\fIgetopt\fP to be used with programs that expect ``-#'' as an
+option flag. This practice is wrong, and should not be used in any
+current development, it is provided for backward compatibility
+\fBonly\fP.  The following code fragment, while not perfect, works
+fairly well.
+.RS
+.nf
+
+	int minlen;
+	char *p;
+
+	minlen = -1;
+	while ((c = getopt(argc, argv, "0123456789")) != EOF)
+		switch (c) {
+		case '0': case '1': case '2': case '3': case '4':
+		case '5': case '6': case '7': case '8': case '9':
+			if (minlen == -1) {
+				p = argv[optind - 1];
+				if (p[0] == '-' && p[1] == ch && !p[2])
+					minlen = atoi(++p);
+				else
+					minlen = atoi(argv[optind] + 1);
+			}
+			break;
+		}
+	}
+	\&.
+	\&.
+	\&.
+.RE
+.fi
 .PP
 Option arguments are allowed to begin with ``\-'';
 this is reasonable but reduces the amount of error checking possible.
