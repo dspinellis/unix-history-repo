@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.42 (Berkeley) %G%
+ *	@(#)conf.h	8.43 (Berkeley) %G%
  */
 
 /*
@@ -364,6 +364,7 @@ typedef int		pid_t;
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_FLOAT
 # endif
+# include <sys/sysmacros.h>
 #endif
 
 
