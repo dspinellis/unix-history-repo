@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.28 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -395,7 +395,10 @@ rebuildaliases(map, automatic)
 {
 	FILE *af;
 	bool nolock = FALSE;
-	sigfunc_t oldsigint;
+	sigfunc_t oldsigint, oldsigquit;
+#ifdef SIGTSTP
+	sigfunc_t oldsigtstp;
+#endif
 
 	if (!bitset(MCF_REBUILDABLE, map->map_class->map_cflags))
 		return;
@@ -440,7 +443,13 @@ rebuildaliases(map, automatic)
 		return;
 	}
 
+	/* avoid denial-of-service attacks */
+	resetlimits();
 	oldsigint = setsignal(SIGINT, SIG_IGN);
+	oldsigquit = setsignal(SIGQUIT, SIG_IGN);
+#ifdef SIGTSTP
+	oldsigtstp = setsignal(SIGTSTP, SIG_IGN);
+#endif
 
 	if (map->map_class->map_open(map, O_RDWR))
 	{
@@ -472,8 +481,12 @@ rebuildaliases(map, automatic)
 	if (bitset(MF_OPEN, map->map_mflags))
 		map->map_class->map_close(map);
 
-	/* restore the old signal */
+	/* restore the old signals */
 	(void) setsignal(SIGINT, oldsigint);
+	(void) setsignal(SIGQUIT, oldsigquit);
+#ifdef SIGTSTP
+	(void) setsignal(SIGTSTP, oldsigtstp);
+#endif
 }
 /*
 **  READALIASES -- read and process the alias file.

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.109 (Berkeley) %G%
+ *	@(#)conf.h	8.110 (Berkeley) %G%
  */
 
 /*
@@ -891,6 +891,9 @@ typedef int		pid_t;
 # define HASGETDTABLESIZE 1	/* has getdtablesize(2) call */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(2) call */
+# ifndef HASSETRLIMIT
+#  define HASSETRLIMIT	1	/* has setrlimit(2) call */
+# endif
 # ifndef HASFLOCK
 #  define HASFLOCK	1	/* has flock(2) call */
 # endif
@@ -928,6 +931,9 @@ typedef int		pid_t;
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define SYS5SETPGRP	1	/* use System V setpgrp(2) syscall */
 # define HASSETVBUF	1	/* we have setvbuf(3) in libc */
+# ifndef HASULIMIT
+#  define HASULIMIT	1	/* has the ulimit(2) syscall */
+# endif
 # ifndef LA_TYPE
 #  define LA_TYPE	LA_INT		/* assume integer load average */
 # endif
@@ -986,6 +992,14 @@ typedef int		pid_t;
 
 #ifndef HASFLOCK
 # define HASFLOCK	0	/* assume no flock(2) support */
+#endif
+
+#ifndef HASSETRLIMIT
+# define HASSETRLIMIT	0	/* assume no setrlimit(2) support */
+#endif
+
+#ifndef HASULIMIT
+# define HASULIMIT	0	/* assume no ulimit(2) support */
 #endif
 
 #ifndef OLD_NEWDB
