@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: cons.c 1.4 88/12/03$
  *
- *	@(#)cons.c	7.1 (Berkeley) %G%
+ *	@(#)cons.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,6 +34,10 @@ int itecnprobe(), itecninit(), itecngetc(), itecnputc();
 #if NDCA > 0
 int dcacnprobe(), dcacninit(), dcacngetc(), dcacnputc();
 #endif
+#include "dcm.h"
+#if NDCM > 0
+int dcmcnprobe(), dcmcninit(), dcmcngetc(), dcmcnputc();
+#endif
 
 struct	consdev constab[] = {
 #if NITE > 0
@@ -42,11 +46,12 @@ struct	consdev constab[] = {
 #if NDCA > 0
 	{ dcacnprobe,	dcacninit,	dcacngetc,	dcacnputc },
 #endif
+#if NDCM > 0
+	{ dcmcnprobe,	dcmcninit,	dcmcngetc,	dcmcnputc },
+#endif
 	{ 0 },
 };
 /* end XXX */
-
-extern	struct consdev constab[];
 
 struct	tty *constty = 0;	/* virtual console output device */
 struct	consdev *cn_tab;	/* physical console device info */

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.47 89/10/08$
  *
- *	@(#)locore.s	7.1 (Berkeley) %G%
+ *	@(#)locore.s	7.2 (Berkeley) %G%
  */
 
 	.text
@@ -730,19 +730,27 @@ start:
 	movl	#-1,a0@			| set to reflect 68030 PMMU
 	lea	_machineid,a0
 	addl	a5,a0
-	movl	#3,a0@			| type is at least a 360
 	movl	#0x80,IOBASE+MMUCMD	| set magic cookie
 	movl	IOBASE+MMUCMD,d0	| read it back
 	btst	#7,d0			| cookie still on?
-	jeq	Lstart1			| no, just a 360
+	jeq	Lnot370			| no, 360 or 375
 	movl	#0,IOBASE+MMUCMD	| clear magic cookie
 	movl	IOBASE+MMUCMD,d0	| read it back
 	btst	#7,d0			| still on?
 	jeq	Lisa370			| no, must be a 370
 	movl	#5,a0@			| yes, must be a 340
 	jra	Lstart1
+Lnot370:
+	movl	#3,a0@			| type is at least a 360
+	movl	#0,IOBASE+MMUCMD	| clear magic cookie2
+	movl	IOBASE+MMUCMD,d0	| read it back
+	btst	#16,d0			| still on?
+	jeq	Lstart1			| no, must be a 360
+	movl	#6,a0@			| yes, must be a 345/375
+	jra	Lhaspac
 Lisa370:
 	movl	#4,a0@			| set to 370
+Lhaspac:
 	lea	_ectype,a0
 	addl	a5,a0
 	movl	#-1,a0@			| also has a physical address cache
@@ -960,7 +968,12 @@ Lehighcode:
  * Should be running mapped from this point on
  */
 Lenab1:
+/* while the ROM scratch page is mapped, check for internal HP-IB in SYSFLAG */
+	btst	#5,0xfffffed2		| internal HP-IB?
+	jeq	Linitmem		| yes, have HP-IB continue normally
+	clrl	_internalhpib		| no, clear associated address
 /* init mem sizes */
+Linitmem:
 	movl	#MAXADDR,d1		| last page
 	moveq	#PGSHIFT,d2
 	lsrl	d2,d1			| convert to page (click) number
@@ -1064,20 +1077,12 @@ _icode:
 	trap	#0
 
 init:
-#ifdef COMPAT_UTAH
-	.asciz	"/etc/init"
-#else
 	.asciz	"/sbin/init"
-#endif
 	.even
 _initflags:
 	.long	0
 argv:
-#ifdef COMPAT_UTAH
-	.long	init+5-_icode
-#else
 	.long	init+6-_icode
-#endif
 	.long	_initflags-_icode
 	.long	0
 _szicode:
