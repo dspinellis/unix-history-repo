@@ -1,6 +1,6 @@
 	/* LINTLIBRARY */
 /*
- *	@(#)llib-port	1.4	(Berkeley)	%G%
+ *	@(#)llib-port	1.5	(Berkeley)	%G%
  */
 #include <stdio.h>
 	exit(s) {;}
@@ -38,7 +38,7 @@ int	fwrite( p, s, n, f ) char *p; FILE *f; {return(0);}
 	scanf( f ) char *f; {return(1); }
 	setbuf( f, b ) FILE *f; char *b; {;}
 	/* VARARGS */
-char	*sprintf( s, f ) char *s, *f; { return(s);}
+int	sprintf( s, f ) char *s, *f; { return(s);}
 	/* VARARGS */
 	sscanf( s, f ) char *s, *f; { return(1); }
 	ungetc( c, f ) FILE *f; {  return(c); }

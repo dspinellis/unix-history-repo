@@ -1,4 +1,4 @@
-/*	@(#)llib-lc	1.43 (Berkeley) %G%	*/
+/*	@(#)llib-lc	1.44 (Berkeley) %G%	*/
 
 /* LINTLIBRARY */
 
@@ -437,7 +437,7 @@ int	putw(w, f) FILE *f; { return 0;}
 	setbuffer( f, b, s ) FILE *f; char *b; {;}
 	setlinebuf( f ) FILE *f; {;}
 	/* VARARGS2 */
-char *	sprintf( s, f ) char *s, *f; { return(s);}
+int	sprintf( s, f ) char *s, *f; { return(s);}
 	/* VARARGS2 */
 	sscanf( s, f ) char *s, *f; { return(1); }
 	ungetc( c, f ) FILE *f; {  return(c); }
