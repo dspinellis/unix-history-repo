@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)e.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)e.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -136,6 +136,7 @@ e2(inputt, errnum)
 	if (fhtmp == NULL) {
 		ed_exit(5); /* unable to create buffer */
 	}
+	fwrite("R", sizeof(char), 1, fhtmp);
 	file_seek = 0;
 #endif
 #ifdef DBI
