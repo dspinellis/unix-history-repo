@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.58		%G%);
+SCCSID(@(#)main.c	3.59		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -452,7 +452,10 @@ main(argc, argv)
 	setsender(from);
 
 	if (!Daemon && argc <= 0 && !GrabTo)
+	{
 		usrerr("Usage: /etc/sendmail [flags] addr...");
+		finis();
+	}
 
 	/*
 	**  Process Hop count.
@@ -726,6 +729,7 @@ setsender(from)
 	register struct passwd *pw;
 	char *realname;
 	char cfbuf[40];
+	bool nofullname;
 
 	/*
 	**  Figure out the real user executing us.
@@ -737,9 +741,13 @@ setsender(from)
 		errno = 0;
 		p = getlogin();
 		errno = 0;
+		nofullname = (from != NULL);
 	}
 	else
+	{
 		p = from;
+		nofullname = FALSE;
+	}
 	if (p != NULL)
 	{
 		extern struct passwd *getpwnam();
@@ -757,6 +765,7 @@ setsender(from)
 		extern struct passwd *getpwuid();
 		int uid;
 
+		nofullname = TRUE;
 		uid = getruid();
 		pw = getpwuid(uid);
 		if (pw == NULL)
@@ -776,11 +785,11 @@ setsender(from)
 	/* run user's .mailcf file */
 	define('z', pw->pw_dir);
 	(void) expand("$z/.mailcf", cfbuf, &cfbuf[sizeof cfbuf - 1]);
-	if (safefile(cfbuf, getruid(), S_IREAD))
+	if (!nofullname && safefile(cfbuf, getruid(), S_IREAD))
 		readcf(cfbuf, FALSE);
 
 	/* extract full name from passwd file */
-	if ((FullName == NULL || FullName[0] == '\0') &&
+	if (!nofullname && (FullName == NULL || FullName[0] == '\0') &&
 	    pw != NULL && pw->pw_gecos != NULL)
 	{
 		char nbuf[MAXNAME];
@@ -840,21 +849,26 @@ initsys()
 	define('t', tbuf);
 	(void) strcpy(dbuf, ctime(&CurTime));
 	*index(dbuf, '\n') = '\0';
-	define('d', dbuf);
-	p =  newstr(arpadate(dbuf));
-	define('a', p);
+	if (macvalue('d') == NULL)
+		define('d', dbuf);
+	p = newstr(arpadate(dbuf));
+	if (macvalue('a') == NULL)
+		define('a', p);
 	define('b', p);
 
 	/* version */
 	define('v', Version);
 
 	/* tty name */
-	p = ttyname(2);
-	if (p != NULL)
+	if (macvalue('y') == NULL)
 	{
-		if (rindex(p, '/') != NULL)
-			p = rindex(p, '/') + 1;
-		strcpy(ybuf, p);
-		define('y', ybuf);
+		p = ttyname(2);
+		if (p != NULL)
+		{
+			if (rindex(p, '/') != NULL)
+				p = rindex(p, '/') + 1;
+			strcpy(ybuf, p);
+			define('y', ybuf);
+		}
 	}
 }
