@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	4.5 82/11/27";
+static char sccsid[] = "@(#)rlogin.c	4.6 82/12/05";
 #endif
 
 #include <sys/types.h>
@@ -30,8 +30,6 @@ char	*speeds[] =
 char	term[64] = "network";
 extern	int errno;
 int	lostpeer();
-
-#define	CTRL(c)	('c' & 037)
 
 main(argc, argv)
 	int argc;
@@ -280,10 +278,8 @@ reader()
 	register int cnt;
 
 	signal(SIGURG, oob);
-#ifdef notdef
 	{ int pid = -getpid();
 	  ioctl(rem, SIOCSPGRP, (char *)&pid); }
-#endif
 	for (;;) {
 		cnt = read(rem, rb, sizeof (rb));
 		if (cnt <= 0) {
