@@ -1,6 +1,6 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 PROG=	stty
-SRCS=	cchar.c gfmt.c modes.c print.c stty.c util.c
+SRCS=	cchar.c gfmt.c key.c modes.c print.c stty.c util.c
 
 .include <bsd.prog.mk>
