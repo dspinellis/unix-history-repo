@@ -1,4 +1,4 @@
-.\"	@(#)tapeinfo	1.1 (Berkeley) %G%
+.\"	@(#)tapeinfo	1.2 (Berkeley) %G%
 .\"
 .\" psroff -ms
 .\"
@@ -10,11 +10,13 @@
 Dear Colleague:
 .sp
 .PP
-We are delighted, at long last, to send your 4.4BSD-Lite distribution.
+We are delighted, at long last, to send you your copy of the
+4.4BSD-Lite distribution.
+.PP
 The 4.4BSD-Lite software is copyrighted by the University of California
 and others, but may be freely redistributed without fee.
-Recipients of this tape are not required to have a license
-from AT&T, Novell/USL, or The Regents of the University of California.
+Recipients of this tape need not have a previous license with AT&T,
+Novell/USL, or The Regents of the University of California.
 The distribution includes both software developed at Berkeley
 and much software contributed by authors outside Berkeley.
 The code in this distribution may be redistributed and used
@@ -24,37 +26,37 @@ described in the license and the source files are met.
 .PP
 .B "This distribution is a source distribution only,"
 .B "and does not contain program binaries for any architecture."
-You have received either a single Exabyte tape, or two 6250
+You have received either a single Exabyte tape, or two 6250,
 9-track tapes.
 The Exabyte tape contains a single \fBtar\fP(1) image of
 the distribution with a ``20b'' blocking factor.
 The 9-track distribution contains a single \fBtar\fP(1)
-archive on each tape, also with a ``20b'' blocking factor.
+archive on each tape, each with a ``20b'' blocking factor.
 The first tape contains everything on the distribution
 except \fI4.4BSD-Lite/usr/src/contrib\fP;
 the second tape contains \fI4.4BSD-Lite/usr/src/contrib\fP.
 Both tapes contain paths starting from 4.4BSD-Lite,
-so they can be extracted in either order.
+and may be extracted in any order.
 .PP
 Your distribution includes a single set of 4.4BSD manuals.
-Rather than typesetting the manuals ourselves,
-we have arranged to use the manuals being produced by O'Reilley.
+Rather than printing the manuals ourselves,
+we have arranged to use the manuals being produced by O'Reilly
+and Associates.
 Because of the delay between the release of the tape
 and the publication of the manuals, we do not expect to
 have manuals to ship until late June.
 Rather than hold up your distribution,
 we have shipped your tape now and will follow it up with
-a copy of the manuals when they are available.
-If you would prefer a photocopy of the 4.4BSD manuals
-that is available now instead of a copy of the O'Reilley
-manuals later, contact us at the address below,
-and we will arrange to ship it to you.
+a set of the manuals as soon as they are available.
+If you would prefer the immediately available, unbound, photocopy
+of the 4.4BSD manuals instead of a set of the O'Reilly manuals
+later, contact us at the address below, and we will arrange to ship
+one to you.
 .PP
 If you have questions about your distribution or have difficulty
 in reading your distribution tape,
-you may call Pauline Schwartz at (510) 642-7780,
-write to her, or contact her via electronic mail
-at pauline@cs.berkeley.edu.
+you may call Pauline Schwartz at +1-510-642-7780, write to her,
+or contact the distribution office at bsd-dist@cs.berkeley.edu.
 .sp 2
 .nf
 .in +2.5i
