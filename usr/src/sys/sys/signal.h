@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	7.18 (Berkeley) %G%
+ *	@(#)signal.h	7.19 (Berkeley) %G%
  */
 
 #ifndef	_SIGNAL_H_
@@ -144,13 +144,24 @@ struct	sigstack {
  * a non-standard exit is performed.
  */
 struct	sigcontext {
-	int	sc_onstack;		/* sigstack state to restore */
-	int	sc_mask;		/* signal mask to restore */
-	int	sc_sp;			/* sp to restore */
-	int	sc_fp;			/* fp to restore */
-	int	sc_ap;			/* ap to restore */
-	int	sc_pc;			/* pc to restore */
-	int	sc_ps;			/* psl to restore */
+#if defined(vax) || defined(tahoe) || defined(hp300) || defined(i386)
+	int	sc_onstack;	/* sigstack state to restore */
+	int	sc_mask;	/* signal mask to restore */
+	int	sc_sp;		/* sp to restore */
+	int	sc_fp;		/* fp to restore */
+	int	sc_ap;		/* ap to restore */
+	int	sc_pc;		/* pc to restore */
+	int	sc_ps;		/* psl to restore */
+#endif
+#if defined(mips)
+	int	sc_onstack;	/* sigstack state to restore */
+	int	sc_mask;	/* signal mask to restore */
+	int	sc_pc;		/* pc at time of signal */
+	int	sc_regs[34];	/* processor regs 0 to 31, mullo, mullhi */
+	int	sc_fpused;	/* fp has been used */
+	int	sc_fpregs[33];	/* fp regs 0 to 31 and csr */
+	int	sc_fpc_eir;	/* floating point exception instruction reg */
+#endif
 };
 
 /*
