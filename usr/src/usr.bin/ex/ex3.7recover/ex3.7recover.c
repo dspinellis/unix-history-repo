@@ -11,7 +11,7 @@ char *copyright =
 #endif not lint
 
 #ifndef lint
-static char *sccsid = "@(#)ex3.7recover.c	7.10 (Berkeley) %G%";
+static char *sccsid = "@(#)ex3.7recover.c	7.11 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
@@ -182,13 +182,8 @@ error(str, inf)
 {
 
 	fprintf(stderr, str, inf);
-#ifndef USG3TTY
-	gtty(2, &tty);
+	(void)ioctl(2, TIOCGETP, &tty);
 	if ((tty.sg_flags & RAW) == 0)
-#else
-	ioctl(2, TCGETA, &tty);
-	if (tty.c_lflag & ICANON)
-#endif
 		fprintf(stderr, "\n");
 	exit(1);
 }
