@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-char version[] = "@(#)main.c 2.9 %G%";
+char version[] = "@(#)main.c 2.10 %G%";
 #endif
 
 /*	Modified to include h option (recursively extract all files within
@@ -56,7 +56,8 @@ struct odirect {
 
 ino_t	ino;
 
-int	eflag = 0, hflag = 0, mflag = 0, cvtflag = 0, cvtdir = 0;
+int	eflag = 0, hflag = 0, mflag = 0, vflag = 0, yflag = 0;
+int	cvtflag = 0, cvtdir = 0;
 
 long	fssize;
 char	tapename[] = "/dev/rmt8";
@@ -172,12 +173,20 @@ nohost:
 		case 'm':
 			mflag++;
 			break;
+		case 'x':
+			command = *cp;
+			/* set verbose mode by default */
+		case 'v':
+			vflag++;
+			break;
+		case 'y':
+			yflag++;
+			break;
 		case 'r':
 		case 'R':
 			hflag++;
 			mflag++;
 		case 't':
-		case 'x':
 			command = *cp;
 			break;
 		default:
@@ -282,7 +291,7 @@ extractfiles(argc, argv)
 	pass1(1);  /* This sets the various maps on the way by */
 	while (argc--) {
 		if ((d = psearch(*argv)) == 0 || BIT(d,dumpmap) == 0) {
-			fprintf(stdout, "%s: not on tape\n", *argv++);
+			fprintf(stderr, "%s: not on tape\n", *argv++);
 			continue;
 		}
 		if (mflag)
@@ -386,7 +395,8 @@ again:
 				goto skipfile;
 			case IFCHR:
 			case IFBLK:
-				fprintf(stdout, "extract special file %s\n", name);
+				if (vflag)
+					fprintf(stdout, "extract special file %s\n", name);
 				if (mknod(name, mode, spcl.c_dinode.di_rdev)) {
 					fprintf(stderr, "%s: cannot create special file\n", name);
 					xp->x_flags |= XTRACTD;
@@ -397,14 +407,16 @@ again:
 				break;
 			case IFDIR:
 				if (mflag) {
-					fprintf(stdout, "extract directory %s\n", name);
+					if (vflag)
+						fprintf(stdout, "extract directory %s\n", name);
 					strncat(name, "/.", BUFSIZ);
 					checkdir(name);
 					chown(xp->x_name, spcl.c_dinode.di_uid, spcl.c_dinode.di_gid);
 					getfile(null, null, spcl.c_dinode.di_size);
 					break;
 				}
-				fprintf(stdout, "extract file %s\n", name);
+				if (vflag)
+					fprintf(stdout, "extract file %s\n", name);
 				if ((ofile = creat(name, 0666)) < 0) {
 					fprintf(stderr, "%s: cannot create file\n", name);
 					xp->x_flags |= XTRACTD;
@@ -422,7 +434,8 @@ again:
 				close(ofile);
 				break;
 			case IFLNK:
-				fprintf(stdout, "extract symbolic link %s\n", name);
+				if (vflag)
+					fprintf(stdout, "extract symbolic link %s\n", name);
 				uid = spcl.c_dinode.di_uid;
 				gid = spcl.c_dinode.di_gid;
 				lnkbuf[0] = '\0';
@@ -437,7 +450,8 @@ again:
 				chown(name, uid, gid);
 				break;
 			case IFREG:
-				fprintf(stdout, "extract file %s\n", name);
+				if (vflag)
+					fprintf(stdout, "extract file %s\n", name);
 				if ((ofile = creat(name, 0666)) < 0) {
 					fprintf(stderr, "%s: cannot create file\n", name);
 					xp->x_flags |= XTRACTD;
@@ -475,8 +489,9 @@ finished:
 			}
 			if (!mflag)
 				continue;
-			fprintf(stdout, "link %s to %s\n",
-				xp->x_linkedto->x_name, xp->x_name);
+			if (vflag)
+				fprintf(stdout, "link %s to %s\n",
+					xp->x_linkedto->x_name, xp->x_name);
 			if (link(xp->x_linkedto->x_name, xp->x_name) < 0)
 				fprintf(stderr, "link %s to %s failed\n",
 					xp->x_linkedto->x_name, xp->x_name);
@@ -608,7 +623,8 @@ getleaves(ino, pname)
 	char locname[BUFSIZ + 1];
 
 	if (BIT(ino, dumpmap) == 0) {
-		fprintf(stdout, "%s: not on the tape\n", pname);
+		if (vflag)
+			fprintf(stdout, "%s: not on the tape\n", pname);
 		return;
 	}
 	for (itp = inotab[INOHASH(ino)]; itp; itp = itp->t_next) {
@@ -873,16 +889,19 @@ readtape(b)
 #else
 		if ((i = read(mt, tbf, NTREC*TP_BSIZE)) < 0) {
 #endif
-			fprintf(stderr, "Tape read error, continue?");
-			do	{
-				fprintf(stderr, "[yn]\n");
-				c = getchar();
-				while (getchar() != '\n')
-					/* void */;
-			} while (c != 'y' && c != 'n');
+			fprintf(stderr, "Tape read error");
+			if (!yflag) {
+				fprintf(stderr, "continue?");
+				do	{
+					fprintf(stderr, "[yn]\n");
+					c = getchar();
+					while (getchar() != '\n')
+						/* void */;
+				} while (c != 'y' && c != 'n');
+				if (c == 'n')
+					done(1);
+			}
 			eflag++;
-			if (c == 'n')
-				done(1);
 			i = NTREC*TP_BSIZE;
 			blkclr(tbf, i);
 #ifdef RRESTOR
@@ -1180,7 +1199,7 @@ setdir(dev)
 	}
 	while ((fsp = getfsent()) != 0) {
 		if (strcmp(fsp->fs_spec, dev) == 0) {
-			printf("%s mounted on %s\n", dev, fsp->fs_file);
+			fprintf(stderr, "%s mounted on %s\n", dev, fsp->fs_file);
 			if (chdir(fsp->fs_file) >= 0)
 				return;
 			fprintf(stderr, "%s cannot chdir to %s\n",
@@ -1371,6 +1390,8 @@ allocxtr(ino, name, flags)
 			xtrcnt--;
 			break;
 		}
+	if (!vflag)
+		return;
 	if (xp->x_flags & XLINKED)
 		fprintf(stdout, "%s: linked to %s\n", xp->x_name, pxp->x_name);
 	else if (xp->x_flags & XISDIR)
