@@ -1,12 +1,15 @@
 #ifndef lint
-    static	char *sccsid = "@(#)gprof.c	1.12 (Berkeley) %G%";
+    static	char *sccsid = "@(#)gprof.c	1.13 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
 
 char	*whoami = "gprof";
 
-char	*defaultes[] = { "mcount" , "__mcleanup" , 0 };
+    /*
+     *	things which get -E excluded by default.
+     */
+char	*defaultEs[] = { "mcount" , "__mcleanup" , 0 };
 
 main(argc, argv)
     int argc;
@@ -38,13 +41,27 @@ main(argc, argv)
 		printf( "[main] debug = %d\n" , debug );
 #	    endif DEBUG
 	    break;
-	case 'e':
+	case 'E':
+	    ++argv;
+	    addlist( Elist , *argv );
+	    Eflag = TRUE;
+	    addlist( elist , *argv );
 	    eflag = TRUE;
-	    addelist( *++argv );
+	    break;
+	case 'e':
+	    addlist( elist , *++argv );
+	    eflag = TRUE;
+	    break;
+	case 'F':
+	    ++argv;
+	    addlist( Flist , *argv );
+	    Fflag = TRUE;
+	    addlist( flist , *argv );
+	    fflag = TRUE;
 	    break;
 	case 'f':
+	    addlist( flist , *++argv );
 	    fflag = TRUE;
-	    addflist( *++argv );
 	    break;
 	case 's':
 	    sflag = TRUE;
@@ -70,9 +87,11 @@ main(argc, argv)
 	/*
 	 *	turn off default functions
 	 */
-    for ( sp = &defaultes[0] ; *sp ; sp++ ) {
+    for ( sp = &defaultEs[0] ; *sp ; sp++ ) {
+	Eflag = TRUE;
+	addlist( Elist , *sp );
 	eflag = TRUE;
-	addelist( *sp );
+	addlist( elist , *sp );
     }
 	/*
 	 *	get information about a.out file.

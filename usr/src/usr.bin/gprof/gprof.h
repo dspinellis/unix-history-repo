@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)gprof.h	1.12 (Berkeley) %G% */
+    /* sccsid:  @(#)gprof.h	1.13 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -73,6 +73,9 @@ struct nl {
     double		childtime;	/* cumulative ticks in children */
     long		ncall;		/* how many times called */
     long		selfcalls;	/* how many calls to self */
+    double		propfraction;	/* what % of time propagates */
+    double		propself;	/* how much self time propagates */
+    double		propchild;	/* how much child time propagates */
     bool		printflag;	/* should this be printed? */
     int			index;		/* index in the graph list */
     int			toporder;	/* graph call chain top-sort order */
@@ -147,9 +150,23 @@ bool	bflag;				/* blurbs, too */
 bool	cflag;				/* discovered call graph, too */
 bool	dflag;				/* debugging options */
 bool	eflag;				/* specific functions excluded */
+bool	Eflag;				/* functions excluded with time */
 bool	fflag;				/* specific functions requested */
+bool	Fflag;				/* functions requested with time */
 bool	sflag;				/* sum multiple gmon.out files */
 bool	zflag;				/* zero time/called functions, too */
+
+    /*
+     *	structure for various string lists
+     */
+struct stringlist {
+    struct stringlist	*next;
+    char		*string;
+};
+struct stringlist	*elist;
+struct stringlist	*Elist;
+struct stringlist	*flist;
+struct stringlist	*Flist;
 
     /*
      *	register for pc relative addressing
@@ -238,4 +255,5 @@ int		totalcmp();
 #define	AOUTDEBUG	64
 #define	CALLSDEBUG	128
 #define	LOOKUPDEBUG	256
-#define	ANYDEBUG	512
+#define	PROPDEBUG	512
+#define	ANYDEBUG	1024

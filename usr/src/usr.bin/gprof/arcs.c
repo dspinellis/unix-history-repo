@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)arcs.c	1.7 (Berkeley) %G%";
+    static	char *sccsid = "@(#)arcs.c	1.8 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -89,6 +89,9 @@ doarcs()
 	} else {
 	    parentp -> selfcalls = 0;
 	}
+	parentp -> propfraction = 0.0;
+	parentp -> propself = 0.0;
+	parentp -> propchild = 0.0;
 	parentp -> printflag = FALSE;
 	parentp -> toporder = 0;
 	parentp -> cycleno = 0;
@@ -98,10 +101,6 @@ doarcs()
 	    findcalls( parentp , parentp -> value , (parentp+1) -> value );
 	}
     }
-	/*
-	 *	time for functions which print is accumulated here.
-	 */
-    printtime = 0.0;
 	/*
 	 *	topologically order things
 	 *	from each of the roots of the call graph
@@ -138,15 +137,18 @@ doarcs()
 	}
 #   endif DEBUG
 	/*
+	 *	starting from the topological top,
+	 *	propagate print flags to children.
+	 *	also, calculate propagation fractions.
+	 *	this happens before time propagation
+	 *	since time propagation uses the fractions.
+	 */
+    doflags();
+	/*
 	 *	starting from the topological bottom, 
 	 *	propogate children times up to parents.
 	 */
     dotime();
-	/*
-	 *	starting from the topological top,
-	 *	propagate print flags to children.
-	 */
-    doflags();
     printgprof();
 }
 
@@ -166,41 +168,29 @@ timepropagate( parentp )
     arctype	*arcp;
     nltype	*childp;
     double	share;
+    double	propshare;
 
+    if ( parentp -> propfraction == 0.0 ) {
+	return;
+    }
 	/*
 	 *	gather time from children of this parent.
 	 */
     for ( arcp = parentp -> children ; arcp ; arcp = arcp -> arc_childlist ) {
 	childp = arcp -> arc_childp;
-#	ifdef DEBUG
-	    if ( debug & ARCDEBUG ) {
-		printf( "[propagate] " );
-		printname( parentp );
-		printf( " calls " );
-		printname( childp );
-		printf( " %d (%d) times\n" ,
-			arcp -> arc_count , childp -> ncall );
-	    }
-#	endif DEBUG
 	if ( arcp -> arc_count == 0 ) {
 	    continue;
 	}
-	if ( childp -> ncall == 0 ) {
+	if ( childp == parentp ) {
 	    continue;
 	}
-	if ( childp == parentp ) {
+	if ( childp -> propfraction == 0.0 ) {
 	    continue;
 	}
 	if ( childp -> cyclehead != childp ) {
 	    if ( parentp -> cycleno == childp -> cycleno ) {
 		continue;
 	    }
-#	    ifdef DEBUG
-		if ( debug & ARCDEBUG ) {
-		    printf( "[propagate]\t it's a call into cycle %d\n" ,
-			    childp -> cycleno );
-		}
-#	    endif DEBUG
 	    if ( parentp -> toporder <= childp -> toporder ) {
 		fprintf( stderr , "[propagate] toporder botches\n" );
 	    }
@@ -211,42 +201,49 @@ timepropagate( parentp )
 		continue;
 	    }
 	}
+	if ( childp -> ncall == 0 ) {
+	    continue;
+	}
 	    /*
 	     *	distribute time for this arc
 	     */
-	arcp -> arc_time = childp -> time *
-			    ( ( (double) arcp -> arc_count ) /
-			    ( (double) childp -> ncall ) );
-	arcp -> arc_childtime = childp -> childtime *
-			    ( ( (double) arcp -> arc_count ) /
-			    ( (double) childp -> ncall ) );
+	arcp -> arc_time = childp -> time
+			        * ( ( (double) arcp -> arc_count ) /
+				    ( (double) childp -> ncall ) );
+	arcp -> arc_childtime = childp -> childtime
+			        * ( ( (double) arcp -> arc_count ) /
+				    ( (double) childp -> ncall ) );
 	share = arcp -> arc_time + arcp -> arc_childtime;
-#	ifdef DEBUG
-	    if ( debug & ARCDEBUG ) {
-		printf( "[propagate]\t " );
-		printname( childp );
-		printf( " time %8.2f + childtime %8.2f\n" ,
-		    childp -> time , childp -> childtime );
-		printf( "[propagate]\t this is %d arcs of the %d calls\n",
-		    arcp -> arc_count , childp -> ncall );
-		printf( "[propagate]\t so this gives %8.2f+%8.2f to %s\n" ,
-		    arcp -> arc_time , arcp -> arc_childtime ,
-		    parentp -> name );
-	    }
-#	endif DEBUG
 	parentp -> childtime += share;
 	    /*
-	     *	add this share to the cycle header, if any
+	     *	( 1 - propfraction ) gets lost along the way
+	     */
+	propshare = parentp -> propfraction * share;
+	    /*
+	     *	fix things for printing
+	     */
+	parentp -> propchild += propshare;
+	arcp -> arc_time *= parentp -> propfraction;
+	arcp -> arc_childtime *= parentp -> propfraction;
+	    /*
+	     *	add this share to the parent's cycle header, if any.
 	     */
 	if ( parentp -> cyclehead != parentp ) {
-#	    ifdef DEBUG
-		if ( debug & ARCDEBUG ) {
-		    printf( "[propagate]\t and to cycle %d\n" ,
-			    parentp -> cycleno );
-		}
-#	    endif DEBUG
 	    parentp -> cyclehead -> childtime += share;
+	    parentp -> cyclehead -> propchild += propshare;
 	}
+#	ifdef DEBUG
+	    if ( debug & PROPDEBUG ) {
+		printf( "[dotime] child \t" );
+		printname( childp );
+		printf( " with %f %f %d/%d\n" ,
+			childp -> time , childp -> childtime ,
+			arcp -> arc_count , childp -> ncall );
+		printf( "[dotime] parent\t" );
+		printname( parentp );
+		printf( "\n[dotime] share %f\n" , share );
+	    }
+#	endif DEBUG
     }
 }
 
@@ -290,9 +287,23 @@ cyclelink()
 	}
 	cycle += 1;
 	cyclenlp = &cyclenl[cycle];
-	cyclenlp -> cycleno = cycle;
-	cyclenlp -> cyclehead = cyclenlp;
-	cyclenlp -> cnext = nlp;
+        cyclenlp -> name = "";		/* the name */
+        cyclenlp -> value = 0;		/* the pc entry point */
+        cyclenlp -> time = 0.0;		/* ticks in this routine */
+        cyclenlp -> childtime = 0.0;	/* cumulative ticks in children */
+	cyclenlp -> ncall = 0;		/* how many times called */
+	cyclenlp -> selfcalls = 0;	/* how many calls to self */
+	cyclenlp -> propfraction = 0.0;	/* what % of time propagates */
+	cyclenlp -> propself = 0.0;	/* how much self time propagates */
+	cyclenlp -> propchild = 0.0;	/* how much child time propagates */
+	cyclenlp -> printflag = TRUE;	/* should this be printed? */
+	cyclenlp -> index = 0;		/* index in the graph list */
+	cyclenlp -> toporder = 0;	/* graph call chain top-sort order */
+	cyclenlp -> cycleno = cycle;	/* internal number of cycle on */
+	cyclenlp -> cyclehead = cyclenlp;	/* pointer to head of cycle */
+	cyclenlp -> cnext = nlp;	/* pointer to next member of cycle */
+	cyclenlp -> parents = 0;	/* list of caller arcs */
+	cyclenlp -> children = 0;	/* list of callee arcs */
 #	ifdef DEBUG
 	    if ( debug & CYCLEDEBUG ) {
 		printf( "[cyclelink] " );
@@ -311,70 +322,43 @@ cycletime()
 {
     int			cycle;
     nltype		*cyclenlp;
-    nltype		*parentp;
     nltype		*childp;
     arctype		*arcp;
-    long		ncall;
-    double		time;
-    long		callsamong;
+    nltype		*parentp;
 
     for ( cycle = 1 ; cycle <= ncycle ; cycle += 1 ) {
 	cyclenlp = &cyclenl[ cycle ];
-	    /*
-	     *	n-squaredly (in the size of the cycle)
-	     *	find all the call within the cycle 
-	     *	(including self-recursive calls)
-	     *	and remove them, thus making the cycle into
-	     *	`node' with calls only from the outside.
-	     *	note: that this doesn't deal with
-	     *	self-recursive calls outside cycles (sigh).
-	     */
-	callsamong = 0;
-	for ( parentp = cyclenlp->cnext; parentp; parentp = parentp->cnext ) {
-	    for ( childp = cyclenlp->cnext; childp; childp = childp -> cnext ) {
+	for ( childp = cyclenlp -> cnext ; childp ; childp = childp -> cnext ) {
+	    if ( childp -> propfraction == 0.0 ) {
+		    /*
+		     * all members have the same propfraction except those
+		     *	that were excluded with -E
+		     */
+		continue;
+	    }
+	    cyclenlp -> time += childp -> time;
+	    for ( arcp=childp->parents ; arcp ; arcp=arcp->arc_parentlist ) {
+		parentp = arcp -> arc_parentp;
 		if ( parentp == childp ) {
 		    continue;
 		}
-		arcp = arclookup( parentp , childp );
-		if ( arcp != 0 ) {
-		    callsamong += arcp -> arc_count;
-#		    ifdef DEBUG
-			if ( debug & CYCLEDEBUG ) {
-			    printf("[cyclelink] %s calls sibling %s %d times\n",
-				parentp -> name , childp -> name ,
-				arcp -> arc_count );
-			}
-#		    endif DEBUG
+		if ( parentp -> cyclehead == cyclenlp ) {
+		    cyclenlp -> selfcalls += arcp -> arc_count;
+		} else {
+		    cyclenlp -> ncall += arcp -> arc_count;
 		}
 	    }
 	}
-	    /*
-	     *	collect calls and time around the cycle,
-	     *	and save it in the cycle header.
-	     */
-	ncall = -callsamong;
-	time = 0.0;
-	for ( parentp = cyclenlp->cnext; parentp; parentp = parentp->cnext ) {
-	    ncall += parentp -> ncall;
-	    time += parentp -> time;
-	}
-#	ifdef DEBUG
-	    if ( debug & CYCLEDEBUG ) {
-		printf( "[cyclelink] cycle %d %f ticks in %d (%d) calls\n" ,
-			cycle , time , ncall , callsamong );
-	    }
-#	endif DEBUG
-	cyclenlp -> ncall = ncall;
-	cyclenlp -> selfcalls = callsamong;
-	cyclenlp -> time = time;
-	cyclenlp -> childtime = 0.0;
+	cyclenlp -> propself = cyclenlp -> propfraction * cyclenlp -> time;
     }
 }
 
     /*
      *	in one top to bottom pass over the topologically sorted namelist
-     *	set the print flags and sum up the time that will be shown in the
-     *	graph profile.
+     *	propagate:
+     *		printflag as the union of parents' printflags
+     *		propfraction as the sum of fractional parents' propfractions
+     *	and while we're here, sum time for functions.
      */
 doflags()
 {
@@ -387,44 +371,79 @@ doflags()
 	childp = topsortnlp[ index ];
 	    /*
 	     *	if we haven't done this function or cycle,
-	     *	calculate its printflag.
+	     *	inherit things from parent.
 	     *	this way, we are linear in the number of arcs
 	     *	since we do all members of a cycle (and the cycle itself)
 	     *	as we hit the first member of the cycle.
 	     */
 	if ( childp -> cyclehead != oldhead ) {
 	    oldhead = childp -> cyclehead;
-	    parentprint( childp );
+	    inheritflags( childp );
 	}
+#	ifdef DEBUG
+	    if ( debug & PROPDEBUG ) {
+		printf( "[doflags] " );
+		printname( childp );
+		printf( " inherits printflag %d and propfraction %f\n" ,
+			childp -> printflag , childp -> propfraction );
+	    }
+#	endif DEBUG
 	if ( ! childp -> printflag ) {
 		/*
-		 *	-f function says print the sucker
-		 *	-e function says don't print it (leave it non-printing)
-		 *	no -f's at all says print everything
+		 *	printflag is off
+		 *	it gets turned on by
+		 *	being on -f list,
+		 *	or there not being any -f list and not being on -e list.
 		 */
-	    if ( fflag && onflist( childp -> name ) ) {
+	    if (   onlist( flist , childp -> name )
+		|| ( !fflag && !onlist( elist , childp -> name ) ) ) {
 		childp -> printflag = TRUE;
-		printtime += childp -> time + childp -> childtime;
-		continue;
 	    }
-	    if ( eflag && onelist( childp -> name ) ) {
-		continue;
+	} else {
+		/*
+		 *	this function has printing parents:
+		 *	maybe someone wants to shut it up
+		 *	by putting it on -e list.  (but favor -f over -e)
+		 */
+	    if (  ( !onlist( flist , childp -> name ) )
+		&& onlist( elist , childp -> name ) ) {
+		childp -> printflag = FALSE;
 	    }
-	    if ( !fflag ) {
-		childp -> printflag = TRUE;
-		printtime += childp -> time + childp -> childtime;
-		continue;
-	    }
-	    continue;
 	}
-	    /*
-	     *	this function has printing parents:
-	     *	maybe someone wants to shut it up.
-	     */
-	if ( eflag && onelist( childp -> name ) ) {
-	    childp -> printflag = FALSE;
-	    continue;
+	if ( childp -> propfraction == 0.0 ) {
+		/*
+		 *	no parents to pass time to.
+		 *	collect time from children if
+		 *	its on -F list,
+		 *	or there isn't any -F list and its not on -E list.
+		 */
+	    if ( onlist( Flist , childp -> name )
+		|| ( !Fflag && !onlist( Elist , childp -> name ) ) ) {
+		    childp -> propfraction = 1.0;
+	    }
+	} else {
+		/*
+		 *	it has parents to pass time to, 
+		 *	but maybe someone wants to shut it up
+		 *	by puttting it on -E list.  (but favor -F over -E)
+		 */
+	    if (  !onlist( Flist , childp -> name )
+		&& onlist( Elist , childp -> name ) ) {
+		childp -> propfraction = 0.0;
+	    }
 	}
+	childp -> propself = childp -> time * childp -> propfraction;
+	printtime += childp -> propself;
+#	ifdef DEBUG
+	    if ( debug & PROPDEBUG ) {
+		printf( "[doflags] " );
+		printname( childp );
+		printf( " ends up with printflag %d and propfraction %f\n" ,
+			childp -> printflag , childp -> propfraction );
+		printf( "time %f propself %f\n" ,
+			childp -> time , childp -> propself );
+	    }
+#	endif DEBUG
     }
 }
 
@@ -433,47 +452,51 @@ doflags()
      *	(or outside parents of this cycle)
      *	have their print flags on and set the 
      *	print flag of the child (cycle) appropriately.
+     *	similarly, deal with propagation fractions from parents.
      */
-parentprint( childp )
+inheritflags( childp )
     nltype	*childp;
 {
     nltype	*headp;
-    nltype	*memp;
     arctype	*arcp;
+    nltype	*parentp;
+    nltype	*memp;
 
     headp = childp -> cyclehead;
     if ( childp == headp ) {
 	    /*
 	     *	just a regular child, check its parents
 	     */
-	for ( arcp = childp->parents ; arcp ; arcp = arcp->arc_parentlist ) {
-	    if ( arcp -> arc_parentp -> printflag ) {
-		childp -> printflag = TRUE;
-		break;
+	childp -> printflag = FALSE;
+	childp -> propfraction = 0.0;
+	for (arcp = childp -> parents ; arcp ; arcp = arcp -> arc_parentlist) {
+	    parentp = arcp -> arc_parentp;
+	    childp -> printflag |= parentp -> printflag;
+	    childp -> propfraction += parentp -> propfraction
+					* ( ( (double) arcp -> arc_count )
+					  / ( (double) childp -> ncall) );
+	}
+    } else {
+	    /*
+	     *	its a member of a cycle, look at all parents from 
+	     *	outside the cycle
+	     */
+	headp -> printflag = FALSE;
+	headp -> propfraction = 0.0;
+	for ( memp = headp -> cnext ; memp ; memp = memp -> cnext ) {
+	    for (arcp = memp->parents ; arcp ; arcp = arcp->arc_parentlist) {
+		if ( arcp -> arc_parentp -> cyclehead == headp ) {
+		    continue;
+		}
+		parentp = arcp -> arc_parentp;
+		headp -> printflag |= parentp -> printflag;
+		headp -> propfraction += parentp -> propfraction *
+					(arcp -> arc_count / headp -> ncall);
 	    }
 	}
-	return;
-    }
-	/*
-	 *	its a member of a cycle, look at all parents from 
-	 *	outside the cycle
-	 */
-    for ( memp = headp -> cnext ; memp ; memp = memp -> cnext ) {
-	for ( arcp = memp -> parents ; arcp ; arcp = arcp -> arc_parentlist ) {
-	    if ( arcp -> arc_parentp -> cyclehead == headp ) {
-		continue;
-	    }
-	    if ( arcp -> arc_parentp -> printflag ) {
-		goto set;
-	    }
+	for ( memp = headp ; memp ; memp = memp -> cnext ) {
+	    memp -> printflag = headp -> printflag;
+	    memp -> propfraction = headp -> propfraction;
 	}
-    }
-    return;
-	/*
-	 *	the cycle has a printing parent:  set the cycle
-	 */
-set:
-    for ( memp = headp ; memp ; memp = memp -> cnext ) {
-	memp -> printflag = TRUE;
     }
 }
