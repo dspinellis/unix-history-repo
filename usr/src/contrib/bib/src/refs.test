@@ -1,0 +1,94 @@
+%A Arvind
+%T foo bar
+
+%A F. L. DeRemer
+%A R. Jullig
+%T Tree-affix dendrogrammars for languages and compilers
+%B Semantics-Directed Compiler Generation
+%E N. D. Jones
+%I Springer Verlag
+%R LNCS 94
+%P 300-319
+%D 1981
+
+%A Harald Ganzinger
+%T Description of parameterized compiler modules
+%J GI: 11. Jahrestagung, Informatik Fachberichte 30,
+%I Springer
+%D 1981
+
+%A Harald Ganzinger
+%A Robert Giegerich
+%A Ulrich Moencke
+%A Reinhard Wilhelm
+%T A truly generative semantics-directed compiler generator
+%J Proceedings of the SIGPLAN '82 Symposium on Compiler Construction
+%C Boston
+%P 172-184
+%D June 1982
+
+%A H. Ganzinger
+%T On storage optimization for automatically generated compilers
+%I Springer Lecture Notes in Computer Science #67
+%D 1979
+%P 132-141
+
+%A R. Jullig
+%T Contextual constraint grammars: Their formal definition and implementation
+%I MS Report, Dept. of Computer Science, Univ. of California, Santa Cruz (in preparation)
+%K MS
+%D 1982
+
+%A D. E. Knuth
+%T Semantics of context-free languages
+%J Math. Systems Theory
+%V 2
+%P 127-145
+%D 1968
+
+%A Kai Koskimies
+%A Kari-Jouko Raiha
+%A Matti Sarjakoski
+%T Compiler construction using attribute grammars
+%J Proceedings of the SIGPLAN '82 Symposium on Compiler Construction
+%C Boston
+%P 153-159
+%D June 1982
+
+%A O. L. Madsen
+%T On defining semantics by means of extended attribute grammars
+%I Aarhus Univ.
+%R DAIMI IR-14
+%D 1979
+
+%A K.-J. Raiha
+%T On attribute grammars and their use in a compiler-writing system
+%I Dept. of Computer Science, Univ. of Helsinki
+%C Helsinki
+%R A-1977-4
+%D 1977
+
+%A K.-J. Raiha
+%T Experiences with the compiler writing system HLP
+%B Semantics-Directed Compiler Generation
+%E Neil D. Jones
+%I Springer Verlag
+%P 350-362
+%D 1980
+
+%A Kari-Jouko Raiha
+%T Dynamic allocation of space for attribute instances in multi-pass evaluators of attribute grammars
+%J Proceedings of the SIGPLAN '79 Symposium on Compiler Construction
+%C Denver
+%P 26-38
+%D June 1979
+
+%A K.-J. Raiha
+%A M. Saarinen
+%A E. Soisalon-Soininen
+%A M. Tienari
+%T The compiler writing system HLP (Helsinki Language Processor)
+%I Dept. of Computer Science, University of Helsinki
+%R A-1978-2
+%D 1978
+
