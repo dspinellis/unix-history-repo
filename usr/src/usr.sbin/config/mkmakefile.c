@@ -1,4 +1,4 @@
-/*	mkmakefile.c	1.27	83/05/18	*/
+/*	mkmakefile.c	1.28	83/06/16	*/
 
 /*
  * Build the makefile for the system, from
@@ -65,6 +65,8 @@ new_fent()
 	fp = (struct file_list *) malloc(sizeof *fp);
 	fp->f_needs = 0;
 	fp->f_next = 0;
+	fp->f_flags = 0;
+	fp->f_type = 0;
 	if (fcur == 0)
 		fcur = ftab = fp;
 	else
@@ -195,8 +197,7 @@ read_files()
 	register struct device *dp;
 	char *wd, *this, *needs, *devorprof;
 	char fname[32];
-	int nreqs;
-	int first = 1;
+	int nreqs, first = 1, configdep;
 
 	ftab = 0;
 	(void) strcpy(fname, "files");
@@ -207,7 +208,10 @@ openit:
 		exit(1);
 	}
 next:
-	/* filename	[ standard | optional dev* ] [ device-driver ] */
+	/*
+	 * filename	[ standard | optional ] [ config-dependent ]
+	 *	[ dev* | profiling-routine ] [ device-driver]
+	 */
 	wd = get_word(fp);
 	if (wd == (char *)EOF) {
 		(void) fclose(fp);
@@ -245,18 +249,22 @@ next:
 		    fname, this, tp->f_fn);
 	nreqs = 0;
 	devorprof = "";
+	configdep = 0;
 	needs = 0;
 	if (eq(wd, "standard"))
 		goto checkdev;
 	if (!eq(wd, "optional")) {
-		printf("%s: %s must be optional or standard\n",
-		    fname, this);
+		printf("%s: %s must be optional or standard\n", fname, this);
 		exit(1);
 	}
 nextopt:
 	next_word(fp, wd);
 	if (wd == 0)
 		goto doneopt;
+	if (eq(wd, "config-dependent")) {
+		configdep++;
+		goto nextopt;
+	}
 	devorprof = wd;
 	if (eq(wd, "device-driver") || eq(wd, "profiling-routine")) {
 		next_word(fp, wd);
@@ -276,22 +284,29 @@ nextopt:
 	tp->f_type = INVISIBLE;
 	tp->f_needs = needs;
 	goto next;
+
 doneopt:
 	if (nreqs == 0) {
 		printf("%s: what is %s optional on?\n",
 		    fname, this);
 		exit(1);
 	}
+
 checkdev:
 	if (wd) {
 		next_word(fp, wd);
-		if (wd != 0) {
+		if (wd) {
+			if (eq(wd, "config-dependent")) {
+				configdep++;
+				goto checkdev;
+			}
 			devorprof = wd;
 			next_word(fp, wd);
 		}
 	}
+
 save:
-	if (wd != 0) {
+	if (wd) {
 		printf("%s: syntax error describing %s\n",
 		    fname, this);
 		exit(1);
@@ -302,11 +317,14 @@ save:
 		tp = new_fent();
 	tp->f_fn = this;
 	if (eq(devorprof, "device-driver"))
-		tp->f_type = DEVICE;
+		tp->f_type = DRIVER;
 	else if (eq(devorprof, "profiling-routine"))
 		tp->f_type = PROFILING;
 	else
 		tp->f_type = NORMAL;
+	tp->f_flags = 0;
+	if (configdep)
+		tp->f_flags |= CONFIGDEP;
 	tp->f_needs = needs;
 	goto next;
 }
@@ -397,6 +415,7 @@ do_rules(f)
 {
 	register char *cp, *np, och, *tp;
 	register struct file_list *ftp;
+	char *extras;
 
 for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 	if (ftp->f_type == INVISIBLE)
@@ -410,13 +429,18 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		fprintf(f, "\t${AS} -o %so ../%ss\n\n", tp, np);
 		continue;
 	}
+	if (ftp->f_flags & CONFIGDEP)
+		extras = "${PARAM} ";
+	else
+		extras = "";
 	switch (ftp->f_type) {
 
 	case NORMAL:
 		switch (machine) {
 
 		case MACHINE_VAX:
-			fprintf(f, "\t${CC} -I. -c -S ${COPTS} ../%sc\n", np);
+			fprintf(f, "\t${CC} -I. -c -S ${COPTS} %s../%sc\n",
+				extras, np);
 			fprintf(f, "\t${C2} %ss | sed -f ../%s/asm.sed |",
 			    tp, machinename);
 			fprintf(f, " ${AS} -o %so\n", tp);
@@ -424,16 +448,18 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			break;
 
 		case MACHINE_SUN:
-			fprintf(f, "\t${CC} -I. -c -O ${COPTS} ../%sc\n\n", np);
+			fprintf(f, "\t${CC} -I. -c -O ${COPTS} %s../%sc\n\n",
+				extras, np);
 			break;
 		}
 		break;
 
-	case DEVICE:
+	case DRIVER:
 		switch (machine) {
 
 		case MACHINE_VAX:
-			fprintf(f, "\t${CC} -I. -c -S ${COPTS} ../%sc\n", np);
+			fprintf(f, "\t${CC} -I. -c -S ${COPTS} %s../%sc\n",
+				extras, np);
 			fprintf(f,"\t${C2} -i %ss | sed -f ../%s/asm.sed |",
 			    tp, machinename);
 			fprintf(f, " ${AS} -o %so\n", tp);
@@ -441,7 +467,8 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 			break;
 
 		case MACHINE_SUN:
-			fprintf(f, "\t${CC} -I. -c -O ${COPTS} ../%sc\n\n", np);
+			fprintf(f, "\t${CC} -I. -c -O ${COPTS} %s../%sc\n\n",
+				extras, np);
 		}
 		break;
 
@@ -456,7 +483,8 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		switch (machine) {
 
 		case MACHINE_VAX:
-			fprintf(f, "\t${CC} -I. -c -S %s ../%sc\n", COPTS, np);
+			fprintf(f, "\t${CC} -I. -c -S %s %s../%sc\n",
+				COPTS, extras, np);
 			fprintf(f, "\tex - %ss < ${GPROF.EX}\n", tp);
 			fprintf(f,
 			    "\tsed -f ../vax/asm.sed %ss | ${AS} -o %so\n",
@@ -472,7 +500,7 @@ for (ftp = ftab; ftp != 0; ftp = ftp->f_next) {
 		break;
 
 	default:
-		printf("Don't know rules for %s", np);
+		printf("Don't know rules for %s\n", np);
 		break;
 	}
 	*cp = och;
