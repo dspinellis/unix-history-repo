@@ -15,20 +15,14 @@ static char sccsid[] = "%Z% %M% %I% %E% %U%";
 #include <stdio.h>
 #include <syslog.h>
 #include <ctype.h>
+#include <sys/types.h>
 #include <grp.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 
-extern struct group *getgrnam();
-extern int errno;
-
- /* Path name of the access control file. */
-
-#ifndef	TABLE
-#define TABLE	"/etc/login.access"
-#endif
+#include "pathnames.h"
 
  /* Delimiters for fields and for lists of users, ttys or hosts. */
 
@@ -68,12 +62,12 @@ char   *from;
      * non-existing table means no access control.
      */
 
-    if (fp = fopen(TABLE, "r")) {
+    if (fp = fopen(_PATH_LOGACCESS, "r")) {
 	while (!match && fgets(line, sizeof(line), fp)) {
 	    lineno++;
 	    if (line[end = strlen(line) - 1] != '\n') {
 		syslog(LOG_ERR, "%s: line %d: missing newline or line too long",
-		       TABLE, lineno);
+		       _PATH_LOGACCESS, lineno);
 		continue;
 	    }
 	    if (line[0] == '#')
@@ -87,11 +81,13 @@ char   *from;
 		|| !(users = strtok((char *) 0, fs))
 		|| !(froms = strtok((char *) 0, fs))
 		|| strtok((char *) 0, fs)) {
-		syslog(LOG_ERR, "%s: line %d: bad field count", TABLE, lineno);
+		syslog(LOG_ERR, "%s: line %d: bad field count", _PATH_LOGACCESS,
+		       lineno);
 		continue;
 	    }
 	    if (perm[0] != '+' && perm[0] != '-') {
-		syslog(LOG_ERR, "%s: line %d: bad first field", TABLE, lineno);
+		syslog(LOG_ERR, "%s: line %d: bad first field", _PATH_LOGACCESS,
+		       lineno);
 		continue;
 	    }
 	    match = (list_match(froms, from, from_match)
@@ -99,7 +95,7 @@ char   *from;
 	}
 	(void) fclose(fp);
     } else if (errno != ENOENT) {
-	syslog(LOG_ERR, "cannot open %s: %m", TABLE);
+	syslog(LOG_ERR, "cannot open %s: %m", _PATH_LOGACCESS);
     }
     return (match == 0 || (line[0] == '+'));
 }
