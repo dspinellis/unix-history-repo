@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.2	(Berkeley)	82/10/24
+#	@(#)Makefile	1.3	(Berkeley)	85/05/03
 #
 CFLAGS = -O -w
 
@@ -10,7 +10,7 @@ all: libpw.a libwrt.a libPW.a
 
 install:
 
-libpw.a:	curdir.o fdfopen.o giveup.o lockit.o rename.o userdir.o\
+libpw.a:	curdir.o giveup.o lockit.o rename.o userdir.o\
 	username.o xalloc.o xcreat.o xlink.o xopen.o \
 	xpipe.o xunlink.o xmsg.o dname.o fatal.o setsig.o userexit.o
 
@@ -21,7 +21,7 @@ libpw.a:	clean.o syswrite.o alloca.o anystr.o bal.o cat.o imatch.o\
 
 libpw.a:
 	-rm -f libpw.a tmp.a
-	ar cr tmp.a curdir.o fdfopen.o giveup.o lockit.o rename.o userdir.o\
+	ar cr tmp.a curdir.o giveup.o lockit.o rename.o userdir.o\
 		username.o xalloc.o xcreat.o xlink.o xopen.o \
 		xpipe.o xunlink.o xmsg.o dname.o fatal.o setsig.o userexit.o
 	ar r tmp.a clean.o syswrite.o alloca.o anystr.o bal.o cat.o \
