@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	ksrvtgt
 CFLAGS+=-DKERBEROS -DDEBUG -I${.CURDIR}/../include
