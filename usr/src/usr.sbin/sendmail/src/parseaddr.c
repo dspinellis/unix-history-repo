@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.48 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -73,7 +73,7 @@ parseaddr(addr, a, copyf, delim, delimptr, e)
 	char *addr;
 	register ADDRESS *a;
 	int copyf;
-	char delim;
+	int delim;
 	char **delimptr;
 	register ENVELOPE *e;
 {

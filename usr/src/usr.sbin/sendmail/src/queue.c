@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.54 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.55 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.54 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.55 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1055,7 +1055,7 @@ readqf(e)
 			break;
 
 		  default:
-			syserr("readqf(%s:%d): bad line \"%s\"", e->e_id,
+			syserr("readqf: bad line \"%s\"", e->e_id,
 				LineNumber, bp);
 			break;
 		}
@@ -1293,7 +1293,7 @@ printqueue()
 char *
 queuename(e, type)
 	register ENVELOPE *e;
-	char type;
+	int type;
 {
 	static int pid = -1;
 	static char c0;
