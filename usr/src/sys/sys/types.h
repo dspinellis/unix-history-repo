@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	7.23 (Berkeley) %G%
+ *	@(#)types.h	7.24 (Berkeley) %G%
  */
 
 #ifndef _TYPES_H_
@@ -94,6 +94,7 @@ typedef	struct fd_set {
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
+#define	FD_COPY(f, t)	bcopy(f, t, sizeof(*(f)))
 #define	FD_ZERO(p)	bzero(p, sizeof(*(p)))
 
 #if defined(__STDC__) && defined(KERNEL)
