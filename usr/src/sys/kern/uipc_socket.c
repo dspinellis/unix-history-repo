@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.9	81/11/21	*/
+/*	uipc_socket.c	4.10	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -352,6 +352,7 @@ restart:
 			rcverr (EWOULDBLOCK);
 		sbunlock(&so->so_rcv);
 		sbwait(&so->so_rcv);
+		splx(s);
 		goto restart;
 	}
 	m = so->so_rcv.sb_mb;
@@ -381,6 +382,7 @@ restart:
 		s = splnet();
 		if (len == m->m_len) {
 			MFREE(m, n);
+			so->so_rcv.sb_mb = n;
 		} else {
 			m->m_off += len;
 			m->m_len -= len;
