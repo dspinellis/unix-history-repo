@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)gprof.h	5.14 (Berkeley) %G%
+ *	@(#)gprof.h	5.15 (Berkeley) %G%
  */
 
 #include <sys/types.h>
@@ -32,6 +32,9 @@
 #endif
 #if i386
 #   include "i386.h"
+#endif
+#if mips
+#   include "mips.h"
 #endif
 
 
