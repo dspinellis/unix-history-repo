@@ -20,6 +20,9 @@ vax/udiv.s		standard
 vax/ufs_machdep.c	standard
 vax/urem.s		standard
 vax/vm_machdep.c	standard
+vax/iidr.o		optional ii
+vax/iidrsys.o		optional ii
+vax/iidr_glob.o		optional ii
 vaxif/if_acc.c		optional acc imp device-driver
 vaxif/if_css.c		optional css imp device-driver
 vaxif/if_de.c		optional de device-driver
