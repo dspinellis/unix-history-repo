@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_open.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_open.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -132,6 +132,7 @@ __bt_open(fname, flags, mode, openinfo)
 	t->bt_order = NOT;
 	t->bt_cmp = b.compare;
 	t->bt_pfx = b.prefix;
+	t->bt_flags = 0;
 
 	dbp->type = DB_BTREE;
 	dbp->internal = t;
