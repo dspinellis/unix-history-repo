@@ -4,12 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfsnode.h	7.3 (Berkeley) %G%
+ *	@(#)mfsnode.h	7.4 (Berkeley) %G%
  */
 
 /*
- * This structure defines the control data for the memory
- * based file system.
+ * This structure defines the control data for the memory based file system.
  */
 
 struct mfsnode {
@@ -27,10 +26,7 @@ struct mfsnode {
 #define VTOMFS(vp)	((struct mfsnode *)(vp)->v_data)
 #define MFSTOV(mfsp)	((mfsp)->mfs_vnode)
 
-/*
- * Prototypes for MFS operations on vnodes.
- */
-int	mfs_badop();
+/* Prototypes for MFS operations on vnodes. */
 #define mfs_lookup ((int (*) __P(( \
 		struct vnode *vp, \
 		struct nameidata *ndp, \
@@ -44,16 +40,6 @@ int	mfs_badop();
 		struct vattr *vap, \
 		struct ucred *cred, \
 		struct proc *p))) mfs_badop)
-int	mfs_open __P((
-		struct vnode *vp,
-		int mode,
-		struct ucred *cred,
-		struct proc *p));
-int	mfs_close __P((
-		struct vnode *vp,
-		int fflag,
-		struct ucred *cred,
-		struct proc *p));
 #define mfs_access ((int (*) __P(( \
 		struct vnode *vp, \
 		int mode, \
@@ -79,13 +65,6 @@ int	mfs_close __P((
 		struct uio *uio, \
 		int ioflag, \
 		struct ucred *cred))) mfs_badop)
-int	mfs_ioctl __P((
-		struct vnode *vp,
-		int command,
-		caddr_t data,
-		int fflag,
-		struct ucred *cred,
-		struct proc *p));
 #define mfs_select ((int (*) __P(( \
 		struct vnode *vp, \
 		int which, \
@@ -142,24 +121,12 @@ int	mfs_ioctl __P((
 		struct ucred *cred))) mfs_badop)
 #define mfs_abortop ((int (*) __P(( \
 		struct nameidata *ndp))) mfs_badop)
-int	mfs_inactive __P((
-		struct vnode *vp,
-		struct proc *p));
 #define mfs_reclaim ((int (*) __P(( \
 		struct vnode *vp))) nullop)
 #define mfs_lock ((int (*) __P(( \
 		struct vnode *vp))) nullop)
 #define mfs_unlock ((int (*) __P(( \
 		struct vnode *vp))) nullop)
-int	mfs_bmap __P((
-		struct vnode *vp,
-		daddr_t bn,
-		struct vnode **vpp,
-		daddr_t *bnp));
-int	mfs_strategy __P((
-		struct buf *bp));
-int	mfs_print __P((
-		struct vnode *vp));
 #define mfs_islocked ((int (*) __P(( \
 		struct vnode *vp))) nullop)
 #define mfs_advlock ((int (*) __P(( \
