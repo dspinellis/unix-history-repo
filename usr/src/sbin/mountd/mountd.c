@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.18 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -919,7 +919,7 @@ do_opt(cpopt, ep, exflagsp, cr)
 		if (!strcmp(cpopt, "ro") || !strcmp(cpopt, "o")) {
 			*exflagsp |= MNT_EXRDONLY;
 		} else if ((!strcmp(cpopt, "root") || !strcmp(cpopt, "r") ||
-		    !(allflag = strcmp(cpopt, "allanon"))) && cpoptarg) {
+		    !(allflag = strcmp(cpopt, "all"))) && cpoptarg) {
 			parsecred(cpoptarg, cr);
 			if (allflag == 0)
 				*exflagsp |= MNT_EXPORTANON;
