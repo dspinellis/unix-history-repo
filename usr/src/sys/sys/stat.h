@@ -4,16 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stat.h	7.13 (Berkeley) %G%
+ *	@(#)stat.h	7.14 (Berkeley) %G%
  */
 
-#ifdef KERNEL
-struct ostat
-#else
 #include <sys/time.h>
-struct stat
-#endif
-{
+
+struct ostat {
 	u_short	st_dev;			/* inode's device */
 	ino_t	st_ino;			/* inode's number */
 	mode_t	st_mode;		/* inode protection mode */
@@ -22,21 +18,16 @@ struct stat
 	u_short	st_gid;			/* group ID of the file's group */
 	u_short	st_rdev;		/* device type */
 	long	st_size;		/* file size, in bytes */
-	struct	timeval st_atimeval;	/* time of last access */
-	struct	timeval st_mtimeval;	/* time of last data modification */
-	struct	timeval st_ctimeval;	/* time of last file status change */
+	struct	timespec st_atimespec;	/* time of last access */
+	struct	timespec st_mtimespec;	/* time of last data modification */
+	struct	timespec st_ctimespec;	/* time of last file status change */
 	long	st_blksize;		/* optimal blocksize for I/O */
 	long	st_blocks;		/* blocks allocated for file */
 	u_long	st_flags;		/* user defined flags for file */
 	u_long	st_gen;			/* file generation number */
 };
 
-#ifdef KERNEL
-struct stat
-#else
-struct qstat
-#endif
-{
+struct stat {
 	dev_t	st_dev;			/* inode's device */
 	ino_t	st_ino;			/* inode's number */
 	mode_t	st_mode;		/* inode protection mode */
@@ -44,19 +35,20 @@ struct qstat
 	uid_t	st_uid;			/* user ID of the file's owner */
 	gid_t	st_gid;			/* group ID of the file's group */
 	dev_t	st_rdev;		/* device type */
-	struct	timeval st_atimeval;	/* time of last access */
-	struct	timeval st_mtimeval;	/* time of last data modification */
-	struct	timeval st_ctimeval;	/* time of last file status change */
+	struct	timespec st_atimespec;	/* time of last access */
+	struct	timespec st_mtimespec;	/* time of last data modification */
+	struct	timespec st_ctimespec;	/* time of last file status change */
 	off_t	st_size;		/* file size, in bytes */
 	quad_t	st_blocks;		/* blocks allocated for file */
 	u_long	st_blksize;		/* optimal blocksize for I/O */
 	u_long	st_flags;		/* user defined flags for file */
 	u_long	st_gen;			/* file generation number */
-	long	st_spare[4];
+	long	st_lspare;
+	quad_t	st_qspare[2];
 };
-#define st_atime st_atimeval.tv_sec
-#define st_mtime st_mtimeval.tv_sec
-#define st_ctime st_ctimeval.tv_sec
+#define st_atime st_atimespec.ts_sec
+#define st_mtime st_mtimespec.ts_sec
+#define st_ctime st_ctimespec.ts_sec
 
 #define	S_ISUID	0004000			/* set user id on execution */
 #define	S_ISGID	0002000			/* set group id on execution */
@@ -138,10 +130,6 @@ int	stat __P((const char *, struct stat *));
 #ifndef _POSIX_SOURCE
 int	fchmod __P((int, mode_t));
 int	lstat __P((const char *, struct stat *));
-/* temporarily */
-int	lqstat __P((const char *, struct qstat *));
-int	fqstat __P((int, struct qstat *));
-int	qstat __P((const char *, struct qstat *));
 #endif /* not POSIX */
 __END_DECLS
 #endif
