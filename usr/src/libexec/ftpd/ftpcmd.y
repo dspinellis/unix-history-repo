@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ftpcmd.y	8.2 (Berkeley) %G%
+ *	@(#)ftpcmd.y	8.3 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -498,8 +498,8 @@ rcmd
 	| REST SP byte_size CRLF
 		{
 			fromname = (char *) 0;
-			restart_point = $3;
-			reply(350, "Restarting at %ld. %s", restart_point,
+			restart_point = $3;	/* XXX $3 is only "int" */
+			reply(350, "Restarting at %qd. %s", restart_point,
 			    "Send STORE or RETRIEVE to initiate transfer.");
 		}
 	;
@@ -632,10 +632,12 @@ pathname
 			 */
 			if (logged_in && $1 && *$1 == '~') {
 				glob_t gl;
-				int flags = GLOB_BRACE|GLOB_QUOTE|GLOB_TILDE;
+				int flags =
+				 GLOB_BRACE|GLOB_NOCHECK|GLOB_QUOTE|GLOB_TILDE;
 
 				memset(&gl, 0, sizeof(gl));
-				if (glob($1, flags, NULL, &gl)) {
+				if (glob($1, flags, NULL, &gl) ||
+				    gl.gl_pathc == 0) {
 					reply(550, "not found");
 					$$ = NULL;
 				} else {
