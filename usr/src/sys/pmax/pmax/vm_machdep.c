@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_machdep.c 1.21 91/04/06$
  *
- *	@(#)vm_machdep.c	7.1 (Berkeley) %G%
+ *	@(#)vm_machdep.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,7 +25,7 @@
 #include "vm/vm_kern.h"
 #include "vm/vm_page.h"
 
-#include "pte.h"
+#include "../include/pte.h"
 
 /*
  * Finish a fork operation, with process p2 nearly set up.
@@ -42,6 +42,7 @@ cpu_fork(p1, p2)
 	register struct user *up = p2->p_addr;
 	register pt_entry_t *pte;
 	register int i;
+	extern struct proc *machFPCurProcPtr;
 
 	p2->p_regs = up->u_pcb.pcb_regs;
 	p2->p_md.md_flags = p1->p_md.md_flags & (MDP_FPUSED | MDP_ULTRIX);
@@ -57,6 +58,13 @@ cpu_fork(p1, p2)
 		p2->p_md.md_upte[i] = pte->pt_entry & ~PG_G;
 		pte++;
 	}
+
+	/*
+	 * Copy floating point state from the FP chip if this process
+	 * has state stored there.
+	 */
+	if (p1 == machFPCurProcPtr)
+		MachSaveCurFPState(p1);
 
 	/*
 	 * Copy pcb and stack from proc p1 to p2. 
