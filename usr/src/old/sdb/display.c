@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)display.c 4.1 %G%";
+static	char sccsid[] = "@(#)display.c 4.2 %G%";
 #include "head.h"
 #include <a.out.h>
 #include <stab.h>
@@ -29,8 +29,9 @@ nextframe() {
 	callpc = get(frame+16, DSP);
 	argp = get(frame+8, DSP);
 	frame = get(frame+12, DSP) & EVEN;
-	if (callpc > 0x70000000) {  /* error handler kludge */
-		callpc = get(argp+12, DSP);
+	if (callpc > 0x70000000) {
+		/* error handler kludge */
+		callpc = get(frame+64, DSP);
 		argp = get(frame+8, DSP);
 		frame = get(frame+12, DSP) & EVEN;
 	}
