@@ -660,7 +660,7 @@ tchar i;
 	register int lf;
 
 		/* remember to map the font */
-	if ((lf = fontbase[fbits(i) > NFONT ? 0 : fbits(i)]->ligfont) == 0) {
+	if ((lf = fontbase[fbits(i) > nfonts ? 0 : fbits(i)]->ligfont) == 0) {
 		/* font lacks ligatures */
 		return(i);
 	}
