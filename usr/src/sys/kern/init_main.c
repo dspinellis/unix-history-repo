@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	7.58 (Berkeley) %G%
+ *	@(#)init_main.c	7.59 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -144,6 +144,10 @@ main()
 		    limit0.pl_rlimit[i].rlim_max = RLIM_INFINITY;
 	limit0.pl_rlimit[RLIMIT_NOFILE].rlim_cur = NOFILE;
 	limit0.pl_rlimit[RLIMIT_NPROC].rlim_cur = MAXUPRC;
+	i = ptoa(cnt.v_free_count);
+	limit0.pl_rlimit[RLIMIT_RSS].rlim_max = i;
+	limit0.pl_rlimit[RLIMIT_MEMLOCK].rlim_max = i;
+	limit0.pl_rlimit[RLIMIT_MEMLOCK].rlim_cur = i / 3;
 	limit0.p_refcnt = 1;
 
 	/*
