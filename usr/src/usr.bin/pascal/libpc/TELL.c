@@ -1,21 +1,23 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)TELL.c 1.2 %G%";
+static char sccsid[] = "@(#)TELL.c 1.3 %G%";
 
 #include "h00vars.h"
 
 /*
  * Find current location
  */
-long
+struct seekptr
 TELL(curfile)
 
 	register struct iorec	*curfile;
 {
-	long loc;
+	struct seekptr loc;
 
-	loc = ftell(curfile);
-	if ((curfile->funit | SYNC) == 0)
-		loc += 1;
+	if ((curfile->funit & FREAD) && (curfile->funit & SYNC) == 0) {
+		fseek(curfile->fbuf, -curfile->fsize, 1);
+		curfile->funit |= SYNC;
+	}
+	loc.cnt = ftell(curfile->fbuf);
 	return loc;
 }

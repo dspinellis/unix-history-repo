@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)SEEK.c 1.2 %G%";
+static char sccsid[] = "@(#)SEEK.c 1.3 %G%";
 
 #include "h00vars.h"
 
@@ -10,11 +10,11 @@ static char sccsid[] = "@(#)SEEK.c 1.2 %G%";
 SEEK(curfile, loc)
 
 	register struct iorec	*curfile;
-	long			loc;
+	struct seekptr		*loc;
 {
 	curfile->funit |= SYNC;
-	if (fseek(curfile->fbuf, loc, 0) == -1) {
-		PERROR("Could not reset ", curfile->pfname);
+	if (fseek(curfile->fbuf, loc->cnt, 0) == -1) {
+		PERROR("Could not seek ", curfile->pfname);
 		return;
 	}
 }
