@@ -4,7 +4,7 @@
 # include "useful.h"
 # include "userdbm.h"
 
-static char	SccsId[] =	"@(#)vacation.c	3.1	%G%";
+static char	SccsId[] =	"@(#)vacation.c	3.2	%G%";
 
 /*
 **  VACATION -- return a message to the sender when on vacation.
@@ -108,6 +108,7 @@ main(argc, argv)
 		sendmessage(buf, from);
 		/* never returns */
 	}
+	exit (EX_OK);
 }
 /*
 **  GETFROM -- read message from standard input and return sender
@@ -236,7 +237,7 @@ sendmessage(msgf, user)
 			syserr("No message to send");
 	}
 
-	execl("/usr/lib/sendmail", "sendmail", user, NULL);
+	execl("/usr/lib/sendmail", "sendmail", "-n", user, NULL);
 	syserr("Cannot exec /usr/lib/sendmail");
 }
 /*
