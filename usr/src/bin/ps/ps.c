@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ps.c	4.9 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.10 (Berkeley) %G%";
 /*
  * ps; VAX 4BSD version
  */
@@ -890,7 +890,7 @@ vpr(sp)
 	   ap->a_time > 99 ? 99 : ap->a_time, vp->v_majflt,
 	   ap->a_size/2, ap->a_rss/2);
 	if (ap->a_maxrss == (INFINITY/NBPG))
-		printf("   oo");
+		printf("   xx");
 	else
 		printf("%5d", ap->a_maxrss/2);
 	printf("%5d%4d%5.1f%5.1f",
@@ -958,7 +958,7 @@ state(ap)
 		nice = 'N';
 	else
 		nice = ' ';
-	anom = ap->a_flag & (SANOM|SUANOM) ? 'A' : ' ';
+	anom = (ap->a_flag&SUANOM) ? 'A' : ((ap->a_flag&SSEQL) ? 'S' : ' ');
 	res[0] = stat; res[1] = load; res[2] = nice; res[3] = anom;
 	return (res);
 }
