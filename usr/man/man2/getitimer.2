@@ -1,0 +1,81 @@
+.TH GETITIMER 2 2/12/83
+.SH NAME
+getitimer, setitimer \- get/set value of interval timer
+.SH SYNOPSIS
+.nf
+.ft B
+#include <time.h>
+.PP
+.ft B
+getitimer(which, value)
+int which;
+struct itimerval *value;
+.PP
+.ft B
+setitimer(which, value)
+int which;
+struct itimerval *value;
+.fi
+.SH DESCRIPTION
+The system provides each process with three interval timers,
+defined in
+.RI < time.h >
+as:
+.PP
+.nf
+.RS
+.DT
+#define	ITIMER_REAL   	0	/* real time intervals */
+#define	ITIMER_VIRTUAL	1	/* virtual time intervals */
+#define	ITIMER_PROF   	2	/* user and system virtual time */
+.RE
+.fi
+.PP
+The
+.I getitimer
+call returns the current value for the timer specified in
+.IR which ,
+while the
+.I setitimer
+call sets the value of a timer.  A timer may be disabled by
+setting it to a value of 0.
+.PP
+A timer value is defined by the 
+.I itimerval
+structure:
+.PP
+.nf
+.RS
+.DT
+struct itimerval {
+	struct	timeval itimer_interval;	/* timer interval */
+	struct	timeval itimer_value;	/* current value */
+};
+.RE
+.fi
+.PP
+The ITIMER_REAL timer decrements in real time.  A SIGALRM signal is
+delivered when this timer expires.
+.PP
+The ITIMER_VIRTUAL timer decrements in process virtual time.
+It runs only when the process is executing.  A SIGVTALRM signal
+is delivered when it expires.
+.PP
+Thee ITIMER_PROF timer decrements both in process virtual time and
+when the system is running on behalf of the process.  It is designed
+to be used by interpreters to statistically profile their executions.
+A SIGPROF signal is delivered when it expires.
+Because this signal may interrupt some in-progress system calls,
+programs must be prepared to deal with this interruption to run
+with this timer enabled.
+.SH "RETURN VALUE
+If the calls succeed, a value of 0 is returned.  If an error occurs,
+the value \-1 is returned, and a more precise error code is placed
+in the global variable \fIerrno\fP.
+.SH "ERRORS
+The possible errors are:
+.TP 15
+[EFAULT]
+The \fIvalue\fP structure specified a bad address.
+.SH "SEE ALSO"
+signal(2), getimeofday(2)
