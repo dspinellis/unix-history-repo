@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.41	83/06/21	*/
+/*	sys_generic.c	5.42	83/06/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -126,6 +126,7 @@ rwuio(uio, rw)
 			u.u_error = EINVAL;
 			return;
 		}
+		iov++;
 	}
 	count = uio->uio_resid;
 	uio->uio_offset = fp->f_offset;
