@@ -5,15 +5,8 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clas.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)clas.c	5.2 (Berkeley) %G%";
 #endif not lint
-
-/* Copyright (c) 1979 Regents of the University of California */
-
-#ifndef lint
-static	char sccsid[] = "@(#)clas.c 5.1 %G%";
-#endif
-
 #include "whoami.h"
 #include "0.h"
 #include "tree.h"
