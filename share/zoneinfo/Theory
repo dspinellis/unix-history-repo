@@ -1,4 +1,4 @@
-@(#)Theory	7.1
+@(#)Theory	7.2
 
 These time and date functions are much like the System V Release 2.0 (SVR2)
 time and date functions; there are a few additions and changes to extend
