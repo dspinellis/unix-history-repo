@@ -1,0 +1,44 @@
+#print
+You can make up addresses for the 'p' command
+using '.' for the current line when there are
+two addresses, also.  For example, you could
+print from the first line up to the present
+line with
+  1,.p
+and I suggest you try that now.  After
+that command, type the usual
+  w
+  q
+  ready
+#create Ref
+83
+broccoli
+mushrooms
+cauliflower
+squash
+carrots
+lettuce
+string beans
+peas
+lima beans
+83
+#create file
+broccoli
+mushrooms
+cauliflower
+squash
+carrots
+lettuce
+string beans
+peas
+lima beans
+#copyout
+#pipe
+ed file
+#user
+#unpipe
+#uncopyout
+#cmp .ocopy Ref
+#log
+#next
+9.2d 5

@@ -1,0 +1,192 @@
+%{
+#	include "defs"
+
+#ifdef SDB
+#	include <a.out.h>
+char *stabline();
+#	ifdef UCBVAXASM
+		char *stabdline();
+#	endif
+#endif
+
+static int nstars;
+static int ndim;
+static int vartype;
+static ftnint varleng;
+static struct { ptr lb, ub; } dims[MAXDIM+1];
+static struct Labelblock *labarray[MAXLABLIST];
+static int lastwasbranch = NO;
+static int thiswasbranch = NO;
+extern ftnint yystno;
+
+ftnint convci();
+double convcd();
+struct Addrblock *nextdata(), *mkbitcon();
+struct Constblock *mklogcon(), *mkaddcon(), *mkrealcon();
+struct Constblock *mkstrcon(), *mkcxcon();
+struct Listblock *mklist();
+struct Listblock *mklist();
+struct Impldoblock *mkiodo();
+struct Extsym *comblock();
+
+%}
+
+/* Specify precedences and associativies. */
+
+%left SCOMMA
+%nonassoc SCOLON
+%right SEQUALS
+%left SEQV SNEQV
+%left SOR
+%left SAND
+%left SNOT
+%nonassoc SLT SGT SLE SGE SEQ SNE
+%left SCONCAT
+%left SPLUS SMINUS
+%left SSTAR SSLASH
+%right SPOWER
+
+%%
+
+program:
+	| program stat SEOS
+	;
+
+stat:	  thislabel  entry
+		{ lastwasbranch = NO; }
+	| thislabel  spec
+	| thislabel  exec
+		{ if($1 && ($1->labelno==dorange))
+			enddo($1->labelno);
+		  if(lastwasbranch && thislabel==NULL)
+			warn("statement cannot be reached");
+		  lastwasbranch = thiswasbranch;
+		  thiswasbranch = NO;
+		  if($1)
+			{
+			if($1->labtype == LABFORMAT)
+				err("label already that of a format");
+			else
+				$1->labtype = LABEXEC;
+			}
+		}
+	| thislabel SINCLUDE filename
+		{ doinclude( $3 ); }
+	| thislabel  SEND  end_spec
+		{ lastwasbranch = NO;  endproc(); }
+	| thislabel SUNKNOWN
+		{ execerr("unclassifiable statement", 0);  flline(); };
+	| error
+		{ flline();  needkwd = NO;  inioctl = NO; 
+		  yyerrok; yyclearin; }
+	;
+
+thislabel:  SLABEL
+		{
+#ifdef SDB
+		char buff[10];
+		if( sdbflag )
+			{
+#	ifdef UCBVAXASM
+			p2pass( stabdline(N_SLINE, lineno) );
+#	else
+			sprintf(buff,"LL%d", ++dbglabel);
+			p2pass( stabline(0, N_SLINE, lineno, buff) );
+			p2pi("LL%d:\n", dbglabel);
+#	endif
+			}
+#endif
+
+		if(yystno != 0)
+			{
+			$$ = thislabel =  mklabel(yystno);
+			if( ! headerdone )
+				puthead(NULL, procclass);
+			if(thislabel->labdefined)
+				execerr("label %s already defined",
+					convic(thislabel->stateno) );
+			else	{
+				if(thislabel->blklevel!=0 && thislabel->blklevel<blklevel
+				    && thislabel->labtype!=LABFORMAT)
+					warn1("there is a branch to label %s from outside block",
+					      convic( (ftnint) (thislabel->stateno) ) );
+				thislabel->blklevel = blklevel;
+				thislabel->labdefined = YES;
+				if(thislabel->labtype != LABFORMAT)
+					putlabel(thislabel->labelno);
+				}
+			}
+		else    $$ = thislabel = NULL;
+		}
+	;
+
+entry:	  SPROGRAM new_proc progname
+		   {startproc($3, CLMAIN); }
+	| SBLOCK new_proc progname
+		{ if($3) NO66("named BLOCKDATA");
+		  startproc($3, CLBLOCK); }
+	| SSUBROUTINE new_proc entryname arglist
+		{ entrypt(CLPROC, TYSUBR, (ftnint) 0,  $3, $4); }
+	| SFUNCTION new_proc entryname arglist
+		{ entrypt(CLPROC, TYUNKNOWN, (ftnint) 0, $3, $4); }
+	| type SFUNCTION new_proc entryname arglist
+		{ entrypt(CLPROC, $1, varleng, $4, $5); }
+	| SENTRY entryname arglist
+		 { if(parstate==OUTSIDE || procclass==CLMAIN
+			|| procclass==CLBLOCK)
+				execerr("misplaced entry statement", 0);
+		  entrypt(CLENTRY, 0, (ftnint) 0, $2, $3);
+		}
+	;
+
+new_proc:
+		{ newproc(); }
+	;
+
+entryname:  name
+		{ $$ = newentry($1); }
+	;
+
+name:	  SNAME
+		{ $$ = mkname(toklen, token); }
+	;
+
+progname:		{ $$ = NULL; }
+	| entryname
+	;
+
+arglist:
+		{ $$ = 0; }
+	| SLPAR SRPAR
+		{ NO66(" () argument list");
+		  $$ = 0; }
+	| SLPAR args SRPAR
+		{$$ = $2; }
+	;
+
+args:	  arg
+		{ $$ = ($1 ? mkchain($1,0) : 0 ); }
+	| args SCOMMA arg
+		{ if($3) $1 = $$ = hookup($1, mkchain($3,0)); }
+	;
+
+arg:	  name
+		{ if($1->vstg!=STGUNKNOWN && $1->vstg!=STGARG)
+			dclerr("name declared as argument after use", $1);
+		  $1->vstg = STGARG;
+		}
+	| SSTAR
+		{ NO66("altenate return argument");
+		  $$ = 0;  substars = YES; }
+	;
+
+
+
+filename:   SHOLLERITH
+		{
+		char *s;
+		s = copyn(toklen+1, token);
+		s[toklen] = '\0';
+		$$ = s;
+		}
+	;

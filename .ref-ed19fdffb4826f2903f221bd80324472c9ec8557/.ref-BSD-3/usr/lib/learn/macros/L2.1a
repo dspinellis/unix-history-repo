@@ -1,0 +1,25 @@
+#print
+When you have some document typed in "-ms" style,
+you run it off on your terminal by saying:
+
+  nroff -ms file
+
+where "file" is the name of the file it is on.  For example,
+the file "decl" in this directory is in a suitable format
+for running off this way.  Do so.  Then type "ready".
+#create decl
+.PP
+When in the course of human events, it becomes
+necessary for one people to dissolve the political bands which have
+connected them with another, and to assume among the 
+powers of the earth the separate and equal station to which
+the laws of Nature and of Nature's God entitle them, a decent
+respect to the opinions of mankind requires that they should
+declare the causes which impel them to the separation.
+#copyin
+#user
+#uncopyin
+#match nroff -ms decl
+#log
+#next
+3.1a 10

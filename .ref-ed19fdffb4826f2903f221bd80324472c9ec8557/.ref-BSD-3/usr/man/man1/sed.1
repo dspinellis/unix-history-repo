@@ -1,0 +1,296 @@
+.TH SED 1 
+.SH NAME
+sed \- stream editor
+.SH SYNOPSIS
+.B sed
+[
+.B \-n
+]
+[
+.B \-e
+script ] [
+.B \-f
+sfile ] [ file ] ...
+.SH DESCRIPTION
+.I Sed
+copies the named
+.I files
+(standard input default) to the standard output,
+edited according to a script of commands.
+The
+.B \-f
+option causes the script to be taken from file
+.IR sfile ;
+these options accumulate.
+If there is just one
+.B \-e
+option and no
+.BR \-f 's,
+the flag
+.B \-e
+may be omitted.
+The
+.B \-n
+option suppresses the default output.
+.PP
+A script consists of editing commands, one per line,
+of the following form:
+.IP
+[address [, address] ] function [arguments]
+.PP
+In normal operation
+.I sed
+cyclically copies a line of input into a
+.I pattern space
+(unless there is something left after
+a `D' command),
+applies in sequence
+all commands whose
+.I addresses
+select that pattern space,
+and at the end of the script copies the pattern space
+to the standard output (except under
+.BR \-n )
+and deletes the pattern space.
+.PP
+An
+.I address
+is either a decimal number that counts
+input lines cumulatively across files, a `$' that
+addresses the last line of input, or a context address,
+`/regular expression/', in the style of
+.IR ed (1)
+modified thus:
+.IP
+The escape sequence `\en' matches a
+newline embedded in the pattern space.
+.PP
+A command line with no addresses selects every pattern space.
+.PP
+A command line with
+one address selects each pattern space that matches the address.
+.PP
+A command line with
+two addresses selects the inclusive range from the first
+pattern space that matches the first address through
+the next pattern space that matches 
+the second.
+(If the second address is a number less than or equal
+to the line number first selected, only one
+line is selected.)
+Thereafter the process is repeated, looking again for the
+first address.
+.PP
+Editing commands can be applied only to non-selected pattern
+spaces by use of the negation function `!' (below).
+.PP
+In the following list of functions the 
+maximum number of permissible addresses
+for each function is indicated in parentheses.
+.PP
+An argument denoted
+.I text
+consists of one or more lines,
+all but the last of which end with `\e' to hide the
+newline.
+Backslashes in text are treated like backslashes
+in the replacement string of an `s' command,
+and may be used to protect initial blanks and tabs
+against the stripping that is done on
+every script line.
+.PP
+An argument denoted
+.I rfile
+or
+.I wfile
+must terminate the command
+line and must be preceded by exactly one blank.
+Each
+.I wfile
+is created before processing begins.
+There can be at most 10 distinct
+.I wfile
+arguments.
+.TP
+(1)\|a\e
+.br
+.ns
+.TP
+.I text
+.br
+Append.
+Place
+.I text
+on the output before
+reading the next input line.
+.TP
+.RI (2)\|b " label"
+Branch to the `:' command bearing the
+.IR label .
+If
+.I label
+is empty, branch to the end of the script.
+.TP
+(2)\|c\e
+.br
+.ns
+.TP
+.I text
+.br
+Change.
+Delete the pattern space.
+With 0 or 1 address or at the end of a 2-address range, place
+.I text
+on the output.
+Start the next cycle.
+.TP
+(2)\|d
+Delete the pattern space.
+Start the next cycle.
+.TP
+(2)\|D
+Delete the initial segment of the 
+pattern space through the first newline.
+Start the next cycle.
+.TP
+(2)\|g
+Replace the contents of the pattern space
+by the contents of the hold space.
+.TP
+(2)\|G
+Append the contents of the hold space to the pattern space.
+.TP
+(2)\|h
+Replace the contents of the hold space by the contents of the pattern space.
+.TP
+(2)\|H
+Append the contents of the pattern space to the hold space.
+.TP
+(1)\|i\e
+.br
+.ns
+.TP
+.I text
+.br
+Insert.
+Place
+.I text
+on the standard output.
+.TP
+(2)\|n
+Copy the pattern space to the standard output.
+Replace the pattern space with the next line of input.
+.TP
+(2)\|N
+Append the next line of input to the pattern space
+with an embedded newline.
+(The current line number changes.)
+.TP
+(2)\|p
+Print.
+Copy the pattern space to the standard output.
+.TP
+(2)\|P
+Copy the initial segment of the pattern space through
+the first newline to the standard output.
+.TP
+(1)\|q
+Quit.
+Branch to the end of the script.
+Do not start a new cycle.
+.TP
+.RI (2)\|r " rfile"
+Read the contents of
+.IR rfile .
+Place them on the output before reading
+the next input line.
+.TP
+.RI (2)\|s /regular\ expression/replacement/flags
+Substitute the
+.I replacement
+string for instances of the
+.I regular expression
+in the pattern space.
+Any character may be used instead of `/'.
+For a fuller description see
+.IR ed (1).
+.I Flags
+is zero or more of
+.RS
+.TP
+g
+Global.
+Substitute for all nonoverlapping instances of the
+.I regular expression
+rather than just the
+first one.
+.TP
+p
+Print the pattern space if a replacement was made.
+.TP
+.RI w " wfile"
+Write.
+Append the pattern space to
+.I wfile
+if a replacement
+was made.
+.RE
+.TP
+.RI (2)\|t " label"
+Test.
+Branch to the `:' command bearing the
+.I label
+if any
+substitutions have been made since the most recent
+reading of an input line or execution of a `t'.
+If 
+.I label
+is empty, branch to the end of the script.
+.TP
+.RI (2)\|w " wfile"
+Write.
+Append the pattern space to
+.IR wfile .
+.TP
+.RI (2)\|x
+Exchange the contents of the pattern and hold spaces.
+.TP
+.RI (2)\|y /string1/string2/
+Transform.
+Replace all occurrences of characters in
+.I string1
+with the corresponding character in
+.I string2.
+The lengths of
+.I
+string1
+and
+.I string2
+must be equal.
+.TP
+.RI (2)! " function"
+Don't.
+Apply the
+.I function
+(or group, if
+.I function
+is `{') only to lines
+.I not
+selected by the address(es).
+.TP
+.RI (0)\|: " label"
+This command does nothing; it bears a
+.I label
+for `b' and `t' commands to branch to.
+.TP
+(1)\|=
+Place the current line number on the standard output as a line.
+.TP
+(2)\|{
+Execute the following commands through a matching `}'
+only when the pattern space is selected.
+.TP
+(0)\|
+An empty command is ignored.
+.SH SEE ALSO
+ed(1), grep(1), awk(1)

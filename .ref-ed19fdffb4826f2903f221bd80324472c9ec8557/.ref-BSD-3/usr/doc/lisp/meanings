@@ -1,0 +1,29 @@
+A - arithmetic
+Y - system stuff
+D - data base maniplation
+F - function and flow of control
+
+
+Big plan
+ title page
+ preface
+ Table of contents
+ 1st Movement (allegro non troppo)
+  *ch1 intro to franz, details of data structures
+       and description of notation
+  *ch2 data structure functions
+  *ch3 arithmetic functions
+  *ch4 special functions
+  *ch5 i/o functions
+   ch6 system functions and misc
+ 2nd Movement (Largo)
+  +ch7 the reader
+   ch8 garbage collection
+   ch9 arrays
+   ch10 exception handling
+ 3rd Movement (Scherzo)
+   ch11 the trace package
+   ch12 the compiler
+ Final Movement (allegro)
+   function index
+   concept index

@@ -1,0 +1,86 @@
+.TH MONITOR 3 
+.SH NAME
+monitor \- prepare execution profile
+.SH SYNOPSIS
+.B monitor(lowpc, highpc, buffer, bufsize, nfunc)
+.br
+.B
+int (*lowpc)( ), (*highpc)( );
+.br
+.B short buffer[ ];
+.SH DESCRIPTION
+An executable program created by
+`cc \-p' automatically includes calls for
+.I monitor
+with default parameters;
+.I monitor
+needn't be called explicitly
+except to gain fine control over profiling.
+.PP
+.I Monitor
+is an interface to
+.IR profil (2).
+.I Lowpc
+and
+.I highpc
+are the addresses of two functions;
+.I buffer
+is the address of a (user supplied)
+array of
+.I bufsize
+short integers.
+.I Monitor
+arranges to record a histogram of
+periodically sampled values of the program counter,
+and of counts of calls
+of certain functions, in the buffer.
+The lowest address sampled
+is that of
+.I lowpc
+and the highest is
+just below
+.IR highpc .
+At most
+.I nfunc
+call counts can be kept; only calls of functions
+compiled with the profiling option
+.B \-p
+of
+.IR cc (1)
+are recorded.
+For the results to be significant,
+especially where there are small, heavily
+used routines,
+it is suggested that the buffer be no more
+than a few times smaller than the range
+of locations sampled.
+.PP
+To profile the entire program,
+it is sufficient to use
+.PP
+	extern etext();
+.br
+	...
+.br
+	monitor((int)2, etext, buf, bufsize, nfunc);
+.PP
+.I Etext
+lies just above all the
+program text, see
+.IR end (3).
+.PP
+To stop execution monitoring and write the results
+on the file
+.I mon.out,
+use
+.PP
+	monitor(0);
+.LP
+then
+.IR prof (1)
+can be used
+to examine the results.
+.SH FILES
+mon.out
+.SH "SEE ALSO"
+prof(1), profil(2), cc(1)
