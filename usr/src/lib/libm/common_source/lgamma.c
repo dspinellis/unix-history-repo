@@ -6,142 +6,243 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lgamma.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)lgamma.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
-	C program for floating point log Gamma function
-
-	lgamma(x) computes the log of the absolute
-	value of the Gamma function.
-	The sign of the Gamma function is returned in the
-	external quantity signgam.
-
-	The coefficients for expansion around zero
-	are #5243 from Hart & Cheney; for expansion
-	around infinity they are #5404.
-
-	Calls log, floor and sin.
-*/
+#include <math.h>
+#include <errno.h>
 
 #include "mathimpl.h"
-#if defined(vax)||defined(tahoe)
-#include <errno.h>
-#endif	/* defined(vax)||defined(tahoe) */
 
-int	signgam = 0;
-static const double goobie = 0.9189385332046727417803297;  /* log(2*pi)/2 */
-static const double pi	   = 3.1415926535897932384626434;
+/* TRUNC sets trailing bits in a floating-point number to zero.
+ * ptrx points to the second half of the floating-point number.
+ * x1 is a temporary variable.
+*/
 
-#define M 6
-#define N 8
-static const double p1[] = {
-	0.83333333333333101837e-1,
-	-.277777777735865004e-2,
-	0.793650576493454e-3,
-	-.5951896861197e-3,
-	0.83645878922e-3,
-	-.1633436431e-2,
-};
-static const double p2[] = {
-	-.42353689509744089647e5,
-	-.20886861789269887364e5,
-	-.87627102978521489560e4,
-	-.20085274013072791214e4,
-	-.43933044406002567613e3,
-	-.50108693752970953015e2,
-	-.67449507245925289918e1,
-	0.0,
-};
-static const double q2[] = {
-	-.42353689509744090010e5,
-	-.29803853309256649932e4,
-	0.99403074150827709015e4,
-	-.15286072737795220248e4,
-	-.49902852662143904834e3,
-	0.18949823415702801641e3,
-	-.23081551524580124562e2,
-	0.10000000000000000000e1,
+#if defined(vax) || defined(tahoe)
+#define LSHFT_PLUS_1	(134217728.+1.)
+#define TRUNC(x, dummy, x1) x1 = x*LSHFT_PLUS_1, x -= x1, x += x1
+#else
+#define MASK 0xf8000000
+#define TRUNC(x, ptrx, dummy) *ptrx &= MASK
+#endif
+
+#define x0	0.461632144968362356785
+#define x0_lo	-.000000000000000015522348162858676890521
+#define a0_hi	-0.12148629053584961146
+#define a0_lo	3.07435645275902737e-18
+#define LEFT	(1.0 - (x0 + .25))
+#define RIGHT	(x0 - .218)
+#define lns2pi_hi 0.418945312500000
+#define lns2pi_lo -.000006779295327258219670263595
+
+#define UNDERFL (1e-1020 * 1e-1020)
+int signgam;
+
+#define r0	-0.02771227512955130520
+#define r1	-0.2980729795228150847
+#define r2	-0.3257411333183093394
+#define r3	-0.1126814387531706041
+#define r4	-0.01129130057170225562
+#define r5	-2.259650588213369095e-05
+#define s0	1.7144571600017144419
+#define s1	2.7864695046181946481
+#define s2	1.5645463655191798047
+#define s3	0.34858463899811098496
+#define s4	0.024677593453636563481
+
+#define p0     -7.721566490153286087127140e-02
+#define p1	2.077324848654884653970785e-01
+#define p2	3.474331160945523535787194e-01
+#define p3	1.724375677840324429295524e-01
+#define p4	3.546181984297784658205969e-02
+#define p5	2.866163630124151557532506e-03
+#define p6	6.143168512963655570532770e-05
+#define q0	1.000000000000000000000000e+00
+#define q1	1.485897307300750567469226e+00
+#define q2	8.336064915387758261556045e-01
+#define q3	2.185469782512070977585556e-01
+#define q4	2.671060746990048983840354e-02
+#define q5	1.296631961305647947057711e-03
+#define q6	1.484566091079246905938151e-05
+
+#define NP2 8
+double P2[] = {
+.0833333333333333148296162562474,
+-.00277777777774548123579378966497,
+.000793650778754435631476282786423,
+-.000595235082566672847950717262222,
+.000841428560346653702135821806252,
+-.00189773526463879200348872089421,
+.00569394463439411649408050664078,
+-.0144705562421428915453880392761
 };
 
-static double pos(), neg(), asym();
+static double neg_lgam __P((double));
+static double small_lgam __P((double));
+static double large_lgam __P((double));
 
 double
-lgamma(arg)
-double arg;
+lgamma(x)
+	double x;
 {
-
-	signgam = 1.;
-	if(arg <= 0.) return(neg(arg));
-	if(arg > 8.) return(asym(arg));
-	return(log(pos(arg)));
+	double zero = 0.0, one = 1.0;
+	double r;
+	signgam = 1;
+	if (!finite(x)) {
+		errno = EDOM;
+		if (x < 0)
+			x = -x;
+		else if (x > 0)
+			errno = ERANGE;
+		return (x);
+	}
+	if (x > 6 + RIGHT) {
+		if (x > 1.0e20)
+			return (x*(log(x)-one));
+		r = large_lgam(x);
+		return (r);
+	} else if (x > 1e-17)
+		return (small_lgam(x));
+	else if(x > -1e-17) {
+		if (x < 0)
+			signgam = -1, x = -x;
+		return (-log(x));
+	} else
+		return (neg_lgam(x));
 }
 
+/* Accurate to max(ulp(1/128) absolute, 2^-75 relative) error. */
 static double
-asym(arg)
-double arg;
+large_lgam(x)
+	double x;
 {
-	double n, argsq;
+	double z, p, x1;
 	int i;
+	long *pva, *pua;
+	struct Double t, u, v;
+	pua = (long *) &u.a, pua++;
+	pva = (long *) &v.a, pva++;
+	z = 1.0/(x*x);
+	for (p = P2[i = NP2-1]; --i >= 0;)
+		p = P2[i] + p*z;	/* error in approximation = 2.8e-18 */
 
-	argsq = 1./(arg*arg);
-	for(n=0,i=M-1; i>=0; i--){
-		n = n*argsq + p1[i];
+	p = p/x;			/* ulp = 1.7e-18; error < 1.6ulp */
+					/* 0 < frac < 1/64 (at x = 5.5) */
+	t = log__D(x);
+	t.a -= 1.0;
+	u.a = t.a + t.b;
+	TRUNC (u.a, pua, x1);		/* truncate u.a */
+	u.b = (t.a - u.a);
+	u.b += t.b;
+	x -= .5;
+	v.a = x;
+	TRUNC(v.a, pva, x1);		/* truncate v.a */
+	v.b = x - v.a;
+	t.a = v.a*u.a;			/* t = (x-.5)*(log(x)-1) */
+	t.b = v.b*u.a + x*u.b;
+	z = t.b + lns2pi_lo;		/* return t + lns2pi + p */
+	z += p; z += lns2pi_hi;
+	z += t.a;
+	return (z);
+}
+/* Good to < 1 ulp.  (provably .90 ulp; .87 ulp on 1,000,000 runs.)
+   It also has correct monotonicity.
+ */
+static double
+small_lgam(x)
+	double x;
+{
+	int xi;
+	double y, z, t, r = 0, p, q;
+	struct Double rr;
+
+	/* Do nasty area near the minimum.  No good for 1.25 < x < 2.5 */
+	if (x < 2.0 - LEFT && x > 1.0 + RIGHT) {
+		t = x - 1.0; t -= x0;
+		z = t - x0_lo;
+		p = r0+z*(r1+z*(r2+z*(r3+z*(r4+z*r5))));
+		q = s0+z*(s1+z*(s2+z*(s3+z*s4)));
+		r = t*(z*(p/q) - x0_lo) + a0_lo;
+		r += .5*t*t; r += a0_hi;
+		return (r);
 	}
-	return((arg-.5)*log(arg) - arg + goobie + n/arg);
+	xi = (x + .5);
+	y = x - xi;
+	rr.a = rr.b = 0;
+	if (y < -LEFT) {	/* necessary for 2.5 < x < 2.72.. */
+		t = y + (1.0 - x0);
+		z = t - x0_lo;
+		p = r0+z*(r1+z*(r2+z*(r3+z*(r4+z*r5))));
+		q = s0+z*(s1+z*(s2+z*(s3+z*s4)));
+		r = t*(z*(p/q) - x0_lo) + a0_lo;
+		r += .5*t*t;
+		q = a0_hi;
+		printf("(0)q = %.18lg r = %.18lg\n", q, r);
+	} else {
+		p = y*(p0+y*(p1+y*(p2+y*(p3+y*(p4+y*(p5+y*p6))))));
+		q = q0+y*(q1+y*(q2+y*(q3+y*(q4+y*(q5+y*q6)))));
+		r = p/q;
+		q = .5*y;
+		printf("(1)q = %.18lg r = %.18lg\n", q, r);
+	}
+	printf("y = %lg, r = %.18lg\n", y, r);
+	z = 1.0;
+	switch (xi) {
+	case 6:	z  = (y + 5);
+	case 5:	z *= (y + 4);
+	case 4:	z *= (y + 3);
+	case 3:	z *= (y + 2);
+		rr = log__D(z);
+		printf("%.21lg, %lg\n", rr.a, rr.b);
+		r += rr.b; q += r;
+		return(q + rr.a);
+	case 2:	return (q + r);
+
+	case 0: printf("r = %lg\n", r);
+		r -= log1p(x); printf("\t%lg\n", r);
+	default: rr = log__D(x);
+		r -= rr.b; printf("\t%lg\n", r);
+	}
+	if (q > .5 *rr.a) {
+		printf("q = %lg, rr = %lg, r = %lg\n", q, rr.a, r);
+		q -= rr.a;
+		return(r + q);
+	} else
+		printf("q = %lg, rr = %lg, r = %lg\n", q, rr.a, r);
+		return((r + q) - rr.a);
 }
 
+#define lpi_hi 1.1447298858494001638
+#define lpi_lo .0000000000000000102659511627078262
+/* Error: within 3.5 ulp for x < 171.  For large x, see lgamma. */
 static double
-neg(arg)
-double arg;
+neg_lgam(x)
+	double x;
 {
-	double t;
+	struct Double lg, lsine;
+	double y, z, one = 1.0, zero = 0.0;
 
-	arg = -arg;
-     /*
-      * to see if arg were a true integer, the old code used the
-      * mathematically correct observation:
-      * sin(n*pi) = 0 <=> n is an integer.
-      * but in finite precision arithmetic, sin(n*PI) will NEVER
-      * be zero simply because n*PI is a rational number.  hence
-      *	it failed to work with our newer, more accurate sin()
-      * which uses true pi to do the argument reduction...
-      *	temp = sin(pi*arg);
-      */
-	t = floor(arg);
-	if (arg - t  > 0.5e0)
-	    t += 1.e0;				/* t := integer nearest arg */
-#if defined(vax)||defined(tahoe)
-	if (arg == t) {
-	    return(infnan(ERANGE));		/* +INF */
+	z = floor(x + .5);
+	if (z == x) {
+		errno = EDOM;
+		return (one/zero);	/* convention: G(-(integer)) -> +oo */
 	}
-#endif	/* defined(vax)||defined(tahoe) */
-	signgam = (int) (t - 2*floor(t/2));	/* signgam =  1 if t was odd, */
-						/*            0 if t was even */
-	signgam = signgam - 1 + signgam;	/* signgam =  1 if t was odd, */
-						/*           -1 if t was even */
-	t = arg - t;				/*  -0.5 <= t <= 0.5 */
-	if (t < 0.e0) {
-	    t = -t;
-	    signgam = -signgam;
-	}
-	return(-log(arg*pos(arg)*sin(pi*t)/pi));
-}
+	y = ceil(x);
+	if (y*.5 == ceil(.5*y))
+		signgam = -1;
 
-static double
-pos(arg)
-double arg;
-{
-	double n, d, s;
-	register i;
+	x = -x;
+	z = fabs(x + z);	/* 0 < z <= .5 */
+	if (z < .25)
+		z = sin(M_PI*z);
+	else
+		z = cos(M_PI*(.5-z));
+	z = -log(z*x/M_PI);
 
-	if(arg < 2.) return(pos(arg+1.)/arg);
-	if(arg > 3.) return((arg-1.)*pos(arg-1.));
-
-	s = arg - 2.;
-	for(n=0,d=0,i=N-1; i>=0; i--){
-		n = n*s + p2[i];
-		d = d*s + q2[i];
-	}
-	return(n/d);
+	if (x > 6.5)
+		y -= large_lgam(x);
+	else
+		y = -small_lgam (x);
+	return (y + z);
 }
