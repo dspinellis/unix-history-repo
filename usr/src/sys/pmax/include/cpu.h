@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cpu.h	8.2 (Berkeley) %G%
+ *	@(#)cpu.h	8.3 (Berkeley) %G%
  */
 
 #ifndef _CPU_H_
@@ -25,10 +25,10 @@
  */
 #define	COPY_SIGCODE		/* copy sigcode above user stack in exec */
 
-#define	cpu_exec(p)	(p->p_md.md_ss_addr = 0) /* init single step */
-#define	cpu_wait(p)	/* nothing */
-#define cpu_setstack(p, ap) \
-	(p)->p_md.md_regs[SP] = ap
+#define	cpu_exec(p)		(p->p_md.md_ss_addr = 0) /* init single step */
+#define	cpu_wait(p)		/* nothing */
+#define cpu_setstack(p, ap)	(p)->p_md.md_regs[SP] = ap
+#define cpu_set_init_frame(p, fp) (p)->p_md.md_regs = fp
 
 /*
  * Arguments to hardclock and gatherstats encapsulate the previous
