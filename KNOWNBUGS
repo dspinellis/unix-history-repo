@@ -26,6 +26,10 @@ keyboard problems.
 	machine off the network.  (Though the machine will continue to run with
 	no network facilities)
 
+	Workaround: Try a "ifconfig ep0 down" and a "ifconfig ep0 up"
+	to get it running again.
+
+
 /sys/i386/boot
 	DO NOT ATTEMPT TO REBUILD THE BOOT BLOCKS.  There is currently
 	a problem in that the boot block code has grown and if you build
@@ -54,4 +58,14 @@ keyboard problems.
 	temporarily remove your extra memory and contact Buslogic for an
 	upgrade.
 
-$Id: KNOWNBUGS,v 1.7 1994/02/22 22:34:52 rgrimes Exp $
+/usr/bin/find
+	find doesn't work on CDROM's. You need to call find with the
+	"fstype isofs" argument to get it working. The bug seems to be 
+	in the "fts(3)" routines that find uses.
+
+/usr/bin/awk
+	awk dumps core for the following command line "awk '' blubber".
+	Problem is already known by the gawk maintainers and will be fixed
+	in the next release of gawk.
+
+$Id: KNOWNBUGS,v 1.8 1994/03/20 00:22:07 jkh Exp $
