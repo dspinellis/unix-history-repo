@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)busy.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)busy.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -36,7 +36,7 @@ char **argv;
 }
 
 #include <sys/types.h>
-#include <a.out.h>
+#include <nlist.h>
 
 struct	nlist nl[] = {
 	{ "_avenrun" },
