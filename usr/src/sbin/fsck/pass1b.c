@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1b.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1b.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -19,7 +19,7 @@ static  struct dups *duphead;
 pass1b()
 {
 	register int c, i;
-	register DINODE *dp;
+	register struct dinode *dp;
 	struct inodesc idesc;
 	ino_t inumber;
 
@@ -38,10 +38,9 @@ pass1b()
 			idesc.id_number = inumber;
 			if (statemap[inumber] != USTATE &&
 			    (ckinode(dp, &idesc) & STOP))
-				goto out1b;
+				return;
 		}
 	}
-out1b:;
 }
 
 pass1bcheck(idesc)
@@ -52,11 +51,11 @@ pass1bcheck(idesc)
 	daddr_t blkno = idesc->id_blkno;
 
 	for (nfrags = idesc->id_numfrags; nfrags > 0; blkno++, nfrags--) {
-		if (outrange(blkno, 1))
+		if (chkrange(blkno, 1))
 			res = SKIP;
 		for (dlp = duphead; dlp; dlp = dlp->next) {
 			if (dlp->dup == blkno) {
-				blkerr(idesc->id_number, "DUP", blkno);
+				blkerror(idesc->id_number, "DUP", blkno);
 				dlp->dup = duphead->dup;
 				duphead->dup = blkno;
 				duphead = duphead->next;

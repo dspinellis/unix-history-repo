@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass5.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass5.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -29,9 +29,9 @@ pass5()
 	register struct cg *newcg = (struct cg *)buf;
 	struct ocg *ocg = (struct ocg *)buf;
 
-	bzero((char *)newcg, fs->fs_cgsize);
+	bzero((char *)newcg, (int)fs->fs_cgsize);
 	newcg->cg_niblk = fs->fs_ipg;
-	switch (fs->fs_postblformat) {
+	switch ((int)fs->fs_postblformat) {
 
 	case FS_42POSTBLFMT:
 		basesize = (char *)(&ocg->cg_btot[0]) - (char *)(&ocg->cg_link);
@@ -146,7 +146,7 @@ pass5()
 		     d += fs->fs_frag, i += fs->fs_frag) {
 			frags = 0;
 			for (j = 0; j < fs->fs_frag; j++) {
-				if (getbmap(d + j))
+				if (testbmap(d + j))
 					continue;
 				setbit(cg_blksfree(newcg), i + j);
 				frags++;
@@ -173,7 +173,7 @@ pass5()
 			sbdirty();
 		}
 		if (cvtflag) {
-			bcopy((char *)newcg, (char *)cg, fs->fs_cgsize);
+			bcopy((char *)newcg, (char *)cg, (int)fs->fs_cgsize);
 			cgdirty();
 			continue;
 		}

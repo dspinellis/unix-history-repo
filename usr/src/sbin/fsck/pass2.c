@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -19,7 +19,7 @@ int	pass2check();
 
 pass2()
 {
-	register DINODE *dp;
+	register struct dinode *dp;
 	struct inodesc rootdesc;
 
 	bzero((char *)&rootdesc, sizeof(struct inodesc));
@@ -84,11 +84,11 @@ pass2()
 pass2check(idesc)
 	struct inodesc *idesc;
 {
-	register DIRECT *dirp = idesc->id_dirp;
+	register struct direct *dirp = idesc->id_dirp;
 	char *curpathloc;
 	int n, entrysize, ret = 0;
-	DINODE *dp;
-	DIRECT proto;
+	struct dinode *dp;
+	struct direct proto;
 	char namebuf[BUFSIZ];
 
 	/* 
@@ -98,14 +98,14 @@ pass2check(idesc)
 		goto chk1;
 	if (dirp->d_ino != 0 && strcmp(dirp->d_name, ".") == 0) {
 		if (dirp->d_ino != idesc->id_number) {
-			direrr(idesc->id_number, "BAD INODE NUMBER FOR '.'");
+			direrror(idesc->id_number, "BAD INODE NUMBER FOR '.'");
 			dirp->d_ino = idesc->id_number;
 			if (reply("FIX") == 1)
 				ret |= ALTERED;
 		}
 		goto chk1;
 	}
-	direrr(idesc->id_number, "MISSING '.'");
+	direrror(idesc->id_number, "MISSING '.'");
 	proto.d_ino = idesc->id_number;
 	proto.d_namlen = 1;
 	(void)strcpy(proto.d_name, ".");
@@ -126,7 +126,7 @@ pass2check(idesc)
 		bcopy((char *)&proto, (char *)dirp, entrysize);
 		idesc->id_entryno++;
 		lncntp[dirp->d_ino]--;
-		dirp = (DIRECT *)((char *)(dirp) + entrysize);
+		dirp = (struct direct *)((char *)(dirp) + entrysize);
 		bzero((char *)dirp, n);
 		dirp->d_reclen = n;
 		if (reply("FIX") == 1)
@@ -147,20 +147,20 @@ chk1:
 		dirp->d_reclen = n;
 		idesc->id_entryno++;
 		lncntp[dirp->d_ino]--;
-		dirp = (DIRECT *)((char *)(dirp) + n);
+		dirp = (struct direct *)((char *)(dirp) + n);
 		bzero((char *)dirp, n);
 		dirp->d_reclen = n;
 	}
 	if (dirp->d_ino != 0 && strcmp(dirp->d_name, "..") == 0) {
 		if (dirp->d_ino != idesc->id_parent) {
-			direrr(idesc->id_number, "BAD INODE NUMBER FOR '..'");
+			direrror(idesc->id_number, "BAD INODE NUMBER FOR '..'");
 			dirp->d_ino = idesc->id_parent;
 			if (reply("FIX") == 1)
 				ret |= ALTERED;
 		}
 		goto chk2;
 	}
-	direrr(idesc->id_number, "MISSING '..'");
+	direrror(idesc->id_number, "MISSING '..'");
 	if (dirp->d_ino != 0 && strcmp(dirp->d_name, ".") != 0) {
 		pfatal("CANNOT FIX, SECOND ENTRY IN DIRECTORY CONTAINS %s\n",
 			dirp->d_name);
@@ -179,14 +179,14 @@ chk2:
 	    dirp->d_name[0] == '.' &&
 	    idesc->id_entryno >= 2) {
 		if (dirp->d_namlen == 1) {
-			direrr(idesc->id_number, "EXTRA '.' ENTRY");
+			direrror(idesc->id_number, "EXTRA '.' ENTRY");
 			dirp->d_ino = 0;
 			if (reply("FIX") == 1)
 				ret |= ALTERED;
 			return (KEEPON | ret);
 		}
 		if (dirp->d_name[1] == '.') {
-			direrr(idesc->id_number, "EXTRA '..' ENTRY");
+			direrror(idesc->id_number, "EXTRA '..' ENTRY");
 			dirp->d_ino = 0;
 			if (reply("FIX") == 1)
 				ret |= ALTERED;
@@ -199,28 +199,29 @@ chk2:
 		*pathp = '\0';
 		errexit("NAME TOO LONG %s%s\n", pathname, dirp->d_name);
 	}
-	bcopy(dirp->d_name, pathp, dirp->d_namlen + 1);
+	bcopy(dirp->d_name, pathp, (int)dirp->d_namlen + 1);
 	pathp += dirp->d_namlen;
 	idesc->id_entryno++;
 	n = 0;
-	if (dirp->d_ino > imax || dirp->d_ino <= 0) {
-		direrr(dirp->d_ino, "I OUT OF RANGE");
+	if (dirp->d_ino > maxino || dirp->d_ino <= 0) {
+		direrror(dirp->d_ino, "I OUT OF RANGE");
 		n = reply("REMOVE");
 	} else {
 again:
 		switch (statemap[dirp->d_ino]) {
 		case USTATE:
-			direrr(dirp->d_ino, "UNALLOCATED");
+			direrror(dirp->d_ino, "UNALLOCATED");
 			n = reply("REMOVE");
 			break;
 
 		case DCLEAR:
 		case FCLEAR:
-			direrr(dirp->d_ino, "DUP/BAD");
+			direrror(dirp->d_ino, "DUP/BAD");
 			if ((n = reply("REMOVE")) == 1)
 				break;
 			dp = ginode(dirp->d_ino);
-			statemap[dirp->d_ino] = DIRCT(dp) ? DSTATE : FSTATE;
+			statemap[dirp->d_ino] =
+			    (dp->di_mode & IFMT) == IFDIR ? DSTATE : FSTATE;
 			lncntp[dirp->d_ino] = dp->di_nlink;
 			goto again;
 

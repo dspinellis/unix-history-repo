@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass4.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass4.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -40,7 +40,7 @@ pass4()
 						zlnp->zlncnt = zlnhead->zlncnt;
 						zlnp = zlnhead;
 						zlnhead = zlnhead->next;
-						free(zlnp);
+						free((char *)zlnp);
 						clri(&idesc, "UNREF", 1);
 						break;
 					}
@@ -74,16 +74,16 @@ pass4check(idesc)
 	daddr_t blkno = idesc->id_blkno;
 
 	for (nfrags = idesc->id_numfrags; nfrags > 0; blkno++, nfrags--) {
-		if (outrange(blkno, 1)) {
+		if (chkrange(blkno, 1)) {
 			res = SKIP;
-		} else if (getbmap(blkno)) {
+		} else if (testbmap(blkno)) {
 			for (dlp = duplist; dlp; dlp = dlp->next) {
 				if (dlp->dup != blkno)
 					continue;
 				dlp->dup = duplist->dup;
 				dlp = duplist;
 				duplist = duplist->next;
-				free(dlp);
+				free((char *)dlp);
 				break;
 			}
 			if (dlp == 0) {
