@@ -1,9 +1,7 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-DIR=	papers/nfs
-SRCS=	nfs-notes.me
+DIR=	smm/06.nfs
+SRCS=	0.t 1.t 2.t ref.t
 MACROS=	-me
 
-paper.${PRINTER}: ${SRCS}
-	${TBL} ${SRCS} | ${ROFF} > ${.TARGET}
 .include <bsd.doc.mk>
