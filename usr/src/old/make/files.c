@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.15 (Berkeley) 87/05/05";
+static	char *sccsid = "@(#)files.c	4.16 (Berkeley) 87/11/15";
 #include <fcntl.h>
 
 /* UNIX DEPENDENT PROCEDURES */
@@ -270,7 +270,7 @@ if(dirf == NULL)
 		firstod = od;
 		od->dirfc = dirf;
 		od->dirn = copys(dirname);
-		fcntl(dirf->dd_fd, F_SETFD, 1);
+		fcntl(dirfd(dirf), F_SETFD, 1);
 		}
 	}
 
