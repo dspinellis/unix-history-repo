@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fs.5	6.2 (Berkeley) %G%
+.\"	@(#)fs.5	6.3 (Berkeley) %G%
 .\"
 .TH FS 5 ""
 .UC 5
@@ -20,7 +20,8 @@ has a common format for certain vital information.
 Every such volume is divided into a certain number of blocks.
 The block size is a parameter of the file system.
 Sectors beginning at BBLOCK and continuing for BBSIZE are used to
-contain primary and secondary bootstrapping programs.
+contain a label and for some hardware
+primary and secondary bootstrapping programs.
 .PP
 The actual file system begins at sector SBLOCK with the
 .I "super block"
@@ -30,75 +31,89 @@ The layout of the super block as defined by the include file
 is:
 .PP
 .nf
-#define	FS_MAGIC	0x011954
-struct	fs {
-	struct	fs *fs_link;		/* linked list of file systems */
-	struct	fs *fs_rlink;		/*     used for incore super blocks */
-	daddr_t	fs_sblkno;		/* addr of super-block in filesys */
-	daddr_t	fs_cblkno;		/* offset of cyl-block in filesys */
-	daddr_t	fs_iblkno;		/* offset of inode-blocks in filesys */
-	daddr_t	fs_dblkno;		/* offset of first data after cg */
-	long	fs_cgoffset;		/* cylinder group offset in cylinder */
-	long	fs_cgmask;		/* used to calc mod fs_ntrak */
-	time_t 	fs_time;    		/* last time written */
-	long	fs_size;		/* number of blocks in fs */
-	long	fs_dsize;		/* number of data blocks in fs */
-	long	fs_ncg;			/* number of cylinder groups */
-	long	fs_bsize;		/* size of basic blocks in fs */
-	long	fs_fsize;		/* size of frag blocks in fs */
-	long	fs_frag;		/* number of frags in a block in fs */
+.ta \w'\ \ \ \ 'u +\w'daddr_t\ \ 'u +\w'fs_fsmnt[MAXMNTLEN];\ \ 'u
+#define	FS_MAGIC 0x011954
+struct fs {
+	struct	fs *fs_link;	/* linked list of file systems */
+	struct	fs *fs_rlink;	/*     used for incore super blocks */
+	daddr_t	fs_sblkno;	/* addr of super-block in filesys */
+	daddr_t	fs_cblkno;	/* offset of cyl-block in filesys */
+	daddr_t	fs_iblkno;	/* offset of inode-blocks in filesys */
+	daddr_t	fs_dblkno;	/* offset of first data after cg */
+	long	fs_cgoffset;	/* cylinder group offset in cylinder */
+	long	fs_cgmask;	/* used to calc mod fs_ntrak */
+	time_t 	fs_time;    	/* last time written */
+	long	fs_size;	/* number of blocks in fs */
+	long	fs_dsize;	/* number of data blocks in fs */
+	long	fs_ncg;	/* number of cylinder groups */
+	long	fs_bsize;	/* size of basic blocks in fs */
+	long	fs_fsize;	/* size of frag blocks in fs */
+	long	fs_frag;	/* number of frags in a block in fs */
 /* these are configuration parameters */
-	long	fs_minfree;		/* minimum percentage of free blocks */
-	long	fs_rotdelay;		/* num of ms for optimal next block */
-	long	fs_rps;			/* disk revolutions per second */
+	long	fs_minfree;	/* minimum percentage of free blocks */
+	long	fs_rotdelay;	/* num of ms for optimal next block */
+	long	fs_rps;	/* disk revolutions per second */
 /* these fields can be computed from the others */
-	long	fs_bmask;		/* ``blkoff'' calc of blk offsets */
-	long	fs_fmask;		/* ``fragoff'' calc of frag offsets */
-	long	fs_bshift;		/* ``lblkno'' calc of logical blkno */
-	long	fs_fshift;		/* ``numfrags'' calc number of frags */
+	long	fs_bmask;	/* ``blkoff'' calc of blk offsets */
+	long	fs_fmask;	/* ``fragoff'' calc of frag offsets */
+	long	fs_bshift;	/* ``lblkno'' calc of logical blkno */
+	long	fs_fshift;	/* ``numfrags'' calc number of frags */
 /* these are configuration parameters */
-	long	fs_maxcontig;		/* max number of contiguous blks */
-	long	fs_maxbpg;		/* max number of blks per cyl group */
+	long	fs_maxcontig;	/* max number of contiguous blks */
+	long	fs_maxbpg;	/* max number of blks per cyl group */
 /* these fields can be computed from the others */
-	long	fs_fragshift;		/* block to frag shift */
-	long	fs_fsbtodb;		/* fsbtodb and dbtofsb shift constant */
-	long	fs_sbsize;		/* actual size of super block */
-	long	fs_csmask;		/* csum block offset */
-	long	fs_csshift;		/* csum block number */
-	long	fs_nindir;		/* value of NINDIR */
-	long	fs_inopb;		/* value of INOPB */
-	long	fs_nspf;		/* value of NSPF */
-	long	fs_optim;		/* optimization preference, see below */
-	long	fs_sparecon[5];		/* reserved for future constants */
+	long	fs_fragshift;	/* block to frag shift */
+	long	fs_fsbtodb;	/* fsbtodb and dbtofsb shift constant */
+	long	fs_sbsize;	/* actual size of super block */
+	long	fs_csmask;	/* csum block offset */
+	long	fs_csshift;	/* csum block number */
+	long	fs_nindir;	/* value of NINDIR */
+	long	fs_inopb;	/* value of INOPB */
+	long	fs_nspf;	/* value of NSPF */
+/* yet another configuration parameter */
+	long	fs_optim;	/* optimization preference, see below */
+/* these fields are derived from the hardware */
+	long	fs_npsect;	/* # sectors/track including spares */
+	long	fs_interleave;	/* hardware sector interleave */
+	long	fs_trackskew;	/* sector 0 skew, per track */
+	long	fs_headswitch;	/* head switch time, usec */
+	long	fs_trkseek;	/* track-to-track seek, usec */
 /* sizes determined by number of cylinder groups and their sizes */
-	daddr_t fs_csaddr;		/* blk addr of cyl grp summary area */
-	long	fs_cssize;		/* size of cyl grp summary area */
-	long	fs_cgsize;		/* cylinder group size */
-/* these fields should be derived from the hardware */
-	long	fs_ntrak;		/* tracks per cylinder */
-	long	fs_nsect;		/* sectors per track */
-	long  	fs_spc;   		/* sectors per cylinder */
+	daddr_t fs_csaddr;	/* blk addr of cyl grp summary area */
+	long	fs_cssize;	/* size of cyl grp summary area */
+	long	fs_cgsize;	/* cylinder group size */
+/* these fields are derived from the hardware */
+	long	fs_ntrak;	/* tracks per cylinder */
+	long	fs_nsect;	/* sectors per track */
+	long  	fs_spc;   	/* sectors per cylinder */
 /* this comes from the disk driver partitioning */
-	long	fs_ncyl;   		/* cylinders in file system */
+	long	fs_ncyl;   	/* cylinders in file system */
 /* these fields can be computed from the others */
-	long	fs_cpg;			/* cylinders per group */
-	long	fs_ipg;			/* inodes per group */
-	long	fs_fpg;			/* blocks per group * fs_frag */
+	long	fs_cpg;	/* cylinders per group */
+	long	fs_ipg;	/* inodes per group */
+	long	fs_fpg;	/* blocks per group * fs_frag */
 /* this data must be re-computed after crashes */
 	struct	csum fs_cstotal;	/* cylinder summary information */
 /* these fields are cleared at mount time */
-	char   	fs_fmod;    		/* super block modified flag */
-	char   	fs_clean;    		/* file system is clean flag */
-	char   	fs_ronly;   		/* mounted read-only flag */
-	char   	fs_flags;   		/* currently unused flag */
+	char   	fs_fmod;    	/* super block modified flag */
+	char   	fs_clean;    	/* file system is clean flag */
+	char   	fs_ronly;   	/* mounted read-only flag */
+	char   	fs_flags;   	/* currently unused flag */
 	char	fs_fsmnt[MAXMNTLEN];	/* name mounted on */
 /* these fields retain the current block allocation info */
-	long	fs_cgrotor;		/* last cg searched */
-	struct	csum *fs_csp[MAXCSBUFS];/* list of fs_cs info buffers */
-	long	fs_cpc;			/* cyl per cycle in postbl */
-	short	fs_postbl[MAXCPG][NRPOS];/* head of blocks for each rotation */
-	long	fs_magic;		/* magic number */
-	u_char	fs_rotbl[1];		/* list of blocks for each rotation */
+	long	fs_cgrotor;	/* last cg searched */
+	struct	csum *fs_csp[MAXCSBUFS]; /* list of fs_cs info buffers */
+	long	fs_cpc;	/* cyl per cycle in postbl */
+	short	fs_opostbl[16][8];	/* old rotation block list head */
+	long	fs_sparecon[56];	/* reserved for future constants */
+	quad	fs_qbmask;	/* ~fs_bmask - for use with quad size */
+	quad	fs_qfmask;	/* ~fs_fmask - for use with quad size */
+	long	fs_postblformat;	/* format of positional layout tables */
+	long	fs_nrpos;	/* number of rotaional positions */
+	long	fs_postbloff;	/* (short) rotation block list head */
+	long	fs_rotbloff;	/* (u_char) blocks for each rotation */
+	long	fs_magic;	/* magic number */
+	u_char	fs_space[1];	/* list of blocks for each rotation */
 /* actually longer */
 };
 .fi
@@ -138,17 +153,13 @@ historically bad blocks were linked to inode 1,
 thus the root inode is 2 (inode 1 is no longer used for
 this purpose, however numerous dump tapes make this
 assumption, so we are stuck with it).
-The
-.I lost+found
-directory is given the next available
-inode when it is initially created by
-.IR mkfs .
 .LP
 .I fs_minfree
 gives the minimum acceptable percentage of file system
 blocks that may be free. If the freelist drops below this level
-only the super-user may continue to allocate blocks. This may
-be set to 0 if no reserve of free blocks is deemed necessary,
+only the super-user may continue to allocate blocks.
+.I Fs_minfree
+may be set to 0 if no reserve of free blocks is deemed necessary,
 however severe performance degradations will be observed if the
 file system is run at greater than 90% full; thus the default
 value of
@@ -157,7 +168,7 @@ is 10%.
 .LP
 Empirically the best trade-off between block fragmentation and
 overall disk utilization at a loading of 90% comes with a
-fragmentation of 4, thus the default fragment size is a fourth
+fragmentation of 8, thus the default fragment size is an eighth
 of the block size.
 .LP
 .I fs_optim
@@ -175,8 +186,8 @@ the file system defaults to optimizing for time.
 .IR limits :
 Each cylinder keeps track of the availability of blocks at different
 rotational positions, so that sequential blocks can be laid out
-with minimum rotational latency.  NRPOS is the number of rotational
-positions which are distinguished.  With NRPOS 8 the resolution of the
+with minimum rotational latency. With the default of 8 distinguished
+rotational positions, the resolution of the
 summary information is 2ms for a typical 3600 rpm drive.
 .LP
 .I fs_rotdelay
@@ -191,22 +202,12 @@ Each file system has a statically allocated number of inodes.
 An inode is allocated for each NBPI bytes of disk space.
 The inode allocation strategy is extremely conservative.
 .LP
-MAXIPG bounds the number of inodes per cylinder group, and
-is needed only to keep the structure simpler by having the
-only a single variable size element (the free bit map).
-.LP
-.B N.B.:
-MAXIPG must be a multiple of INOPB(fs).
-.LP
 MINBSIZE is the smallest allowable block size.
 With a MINBSIZE of 4096
 it is possible to create files of size
 2^32 with only two levels of indirection.
 MINBSIZE must be big enough to hold a cylinder group block,
 thus changes to (struct cg) must keep its size within MINBSIZE.
-MAXCPG is limited only to dimension an array in (struct cg);
-it can be made larger as long as that structure's size remains
-within the bounds dictated by MINBSIZE.
 Note that super blocks are never more than size SBSIZE.
 .LP
 The path name on which the file system is mounted is maintained in
@@ -214,7 +215,8 @@ The path name on which the file system is mounted is maintained in
 MAXMNTLEN defines the amount of space allocated in 
 the super block for this name.
 The limit on the amount of summary information per file system
-is defined by MAXCSBUFS. It is currently parameterized for a
+is defined by MAXCSBUFS.
+For a 4096 byte block size, it is currently parameterized for a
 maximum of two million cylinders.
 .LP
 Per cylinder group information is summarized in blocks allocated
@@ -231,7 +233,7 @@ the ``fs_cs'' macro to work.
 .LP
 .I Super block for a file
 .IR system :
-MAXBPC bounds the size of the rotational layout tables and
+The size of the rotational layout tables
 is limited by the fact that the super block is of size SBSIZE.
 The size of these tables is
 .B inversely
@@ -244,11 +246,11 @@ included before the rotational pattern repeats (
 The size of the rotational layout
 tables is derived from the number of bytes remaining in (struct fs).
 .LP
-MAXBPG bounds the number of blocks of data per cylinder group,
-and is limited by the fact that cylinder groups are at most one block.
-The size of the free block table
-is derived from the size of blocks and the number
-of remaining bytes in the cylinder group structure (struct cg).
+The number of blocks of data per cylinder group
+is limited because cylinder groups are at most one block.
+The inode and free block tables
+must fit into a single block after deducting space for
+the cylinder group structure (struct cg).
 .LP
 .IR Inode :
 The inode is the focus of all file activity in the
