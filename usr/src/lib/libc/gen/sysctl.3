@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.3	6.10 (Berkeley) %G%
+.\"	@(#)sysctl.3	6.11 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SYSCTL 3
@@ -93,7 +93,7 @@ listed here, and described in separate sections below.
 .It CTL\_DEBUG	sys/sysctl.h	Debugging
 .It CTL\_FS	sys/sysctl.h	File system
 .It CTL\_HW	sys/sysctl.h	Generic CPU, I/O
-.It CTL\_KERN	sys/sysctl.h	High kernel: processes, limits
+.It CTL\_KERN	sys/sysctl.h	High kernel limits
 .It CTL\_MACHDEP	sys/sysctl.h	Machine dependent
 .It CTL\_NET	sys/socket.h	Networking
 .It CTL\_USER	sys/sysctl.h	User-level
@@ -367,8 +367,12 @@ followed by the vnode itself
 .Va struct vnode .
 .El
 .Sh CTL_MACHDEP
-There are currently no second level names for the machine dependent
-interface.
+The set of variables defined is architecture dependent.
+Most architectures define at least the following variables.
+.Bl -column "CONSOLE_DEVICEXXX" "integerXXX" -offset indent
+.It Sy Pa Second level name	Type	Changeable
+.It Li CPU_CONSDEV	dev_t	no
+.El
 .Sh CTL_NET
 The string and integer information available for the CTL_NET level
 is detailed below.
