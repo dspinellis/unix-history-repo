@@ -1,29 +1,45 @@
-/* ip_input.c 1.12 81/11/08 */
+/* ip_input.c 1.13 81/11/15 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/clock.h"
 #include "../h/mbuf.h"
+#include "../h/protocol.h"
+#include "../h/protosw.h"
 #include "../net/inet_cksum.h"
 #include "../net/inet.h"
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
 #include "../net/ip.h"			/* belongs before inet.h */
+#include "../net/ip_var.h"
 #include "../net/ip_icmp.h"
 #include "../net/tcp.h"
+
+u_char	ip_protox[IPPROTO_MAX];
 
 /*
  * Ip initialization.
  */
 ip_init()
 {
+	register struct protosw *pr;
+	register int i;
+	int raw;
 
+	pr = pffindproto(PF_INET, IPPROTO_RAW);
+	if (pr == 0)
+		panic("ip_init");
+	for (i = 0; i < IPPROTO_MAX; i++)
+		ip_protox[i] = pr - protosw;
+	for (pr = protosw; pr <= protoswLAST; pr++)
+		if (pr->pr_family == PF_INET &&
+		    pr->pr_protocol && pr->pr_protocol != IPPROTO_RAW)
+			ip_protox[pr->pr_protocol] = pr - protosw;
 	ipq.next = ipq.prev = &ipq;
 	ip_id = time & 0xffff;
 }
 
-int	ipcksum = 1;
-
+u_char	ipcksum = 1;
 struct	ip *ip_reass();
 
 /*
@@ -121,9 +137,9 @@ found:
 	 * convert offset of this to bytes.
 	 */
 	ip->ip_len -= hlen;
-	ip->ip_mff = 0;
+	((struct ipasfrag *)ip)->ipf_mff = 0;
 	if (ip->ip_off & IP_MF)
-		ip->ip_mff = 1;
+		((struct ipasfrag *)ip)->ipf_mff = 1;
 	ip->ip_off <<= 3;
 
 	/*
@@ -131,8 +147,8 @@ found:
 	 * or if this is not the first fragment,
 	 * attempt reassembly; if it succeeds, proceed.
 	 */
-	if (ip->ip_mff || ip->ip_off) {
-		ip = ip_reass(ip, fp);
+	if (((struct ipasfrag *)ip)->ipf_mff || ip->ip_off) {
+		ip = ip_reass((struct ipasfrag *)ip, fp);
 		if (ip == 0)
 			return;
 		hlen = ip->ip_hl << 2;
@@ -140,33 +156,7 @@ found:
 	} else
 		if (fp)
 			(void) ip_freef(fp);
-
-	/*
-	 * Switch out to protocol specific routine.
-	 * SHOULD GO THROUGH PROTOCOL SWITCH TABLE
-	 */
-	switch (ip->ip_p) {
-
-	case IPPROTO_ICMP:
-		icmp_input(m);
-		break;
-
-	case IPPROTO_TCP:
-		if (hlen > sizeof (struct ip))
-			ip_stripoptions(ip, hlen);
-		tcp_input(m);
-		break;
-
-	case IPPROTO_UDP:
-		if (hlen > sizeof (struct ip))
-			ip_stripoptions(ip, hlen);
-		udp_input(m);
-		break;
-
-	default:
-		ri_input(m);
-		break;
-	}
+	(*protosw[ip_protox[ip->ip_p]].pr_input)(m);
 }
 
 /*
@@ -177,11 +167,11 @@ found:
  */
 struct ip *
 ip_reass(ip, fp)
-	register struct ip *ip;
+	register struct ipasfrag *ip;
 	register struct ipq *fp;
 {
 	register struct mbuf *m = dtom(ip);
-	register struct ip *q;
+	register struct ipasfrag *q;
 	struct mbuf *t;
 	int hlen = ip->ip_hl << 2;
 	int i, next;
@@ -205,15 +195,15 @@ ip_reass(ip, fp)
 		fp->ipq_ttl = IPFRAGTTL;
 		fp->ipq_p = ip->ip_p;
 		fp->ipq_id = ip->ip_id;
-		fp->ipq_next = fp->ipq_prev = (struct ip *)fp;
-		fp->ipq_src = ip->ip_src;
-		fp->ipq_dst = ip->ip_dst;
+		fp->ipq_next = fp->ipq_prev = (struct ipasfrag *)fp;
+		fp->ipq_src = ((struct ip *)ip)->ip_src;
+		fp->ipq_dst = ((struct ip *)ip)->ip_dst;
 	}
 
 	/*
 	 * Find a segment which begins after this one does.
 	 */
-	for (q = fp->ipq_next; q != (struct ip *)fp; q = q->ip_next)
+	for (q = fp->ipq_next; q != (struct ipasfrag *)fp; q = q->ipf_next)
 		if (q->ip_off > ip->ip_off)
 			break;
 
@@ -222,8 +212,8 @@ ip_reass(ip, fp)
 	 * our data already.  If so, drop the data from the incoming
 	 * segment.  If it provides all of our data, drop us.
 	 */
-	if (q->ip_prev != (struct ip *)fp) {
-		i = q->ip_prev->ip_off + q->ip_prev->ip_len - ip->ip_off;
+	if (q->ipf_prev != (struct ipasfrag *)fp) {
+		i = q->ipf_prev->ip_off + q->ipf_prev->ip_len - ip->ip_off;
 		if (i > 0) {
 			if (i >= ip->ip_len)
 				goto dropfrag;
@@ -237,30 +227,30 @@ ip_reass(ip, fp)
 	 * While we overlap succeeding segments trim them or,
 	 * if they are completely covered, dequeue them.
 	 */
-	while (q != (struct ip *)fp && ip->ip_off + ip->ip_len > q->ip_off) {
+	while (q != (struct ipasfrag *)fp && ip->ip_off + ip->ip_len > q->ip_off) {
 		i = (ip->ip_off + ip->ip_len) - q->ip_off;
 		if (i < q->ip_len) {
 			q->ip_len -= i;
 			m_adj(dtom(q), i);
 			break;
 		}
-		q = q->ip_next;
-		m_freem(dtom(q->ip_prev));
-		ip_deq(q->ip_prev);
+		q = q->ipf_next;
+		m_freem(dtom(q->ipf_prev));
+		ip_deq(q->ipf_prev);
 	}
 
 	/*
 	 * Stick new segment in its place;
 	 * check for complete reassembly.
 	 */
-	ip_enq(ip, q->ip_prev);
+	ip_enq(ip, q->ipf_prev);
 	next = 0;
-	for (q = fp->ipq_next; q != (struct ip *)fp; q = q->ip_next) {
+	for (q = fp->ipq_next; q != (struct ipasfrag *)fp; q = q->ipf_next) {
 		if (q->ip_off != next)
 			return (0);
 		next += q->ip_len;
 	}
-	if (q->ip_prev->ip_mff)
+	if (q->ipf_prev->ipf_mff)
 		return (0);
 
 	/*
@@ -271,7 +261,7 @@ ip_reass(ip, fp)
 	t = m->m_next;
 	m->m_next = 0;
 	m_cat(m, t);
-	while ((q = q->ip_next) != (struct ip *)fp)
+	while ((q = q->ipf_next) != (struct ipasfrag *)fp)
 		m_cat(m, dtom(q));
 
 	/*
@@ -282,14 +272,14 @@ ip_reass(ip, fp)
 	 */
 	ip = fp->ipq_next;
 	ip->ip_len = next;
-	ip->ip_src = fp->ipq_src;
-	ip->ip_dst = fp->ipq_dst;
+	((struct ip *)ip)->ip_src = fp->ipq_src;
+	((struct ip *)ip)->ip_dst = fp->ipq_dst;
 	remque(fp);
 	m_free(dtom(fp));
 	m = dtom(ip);
-	m->m_len += sizeof (struct ip);
-	m->m_off -= sizeof (struct ip);
-	return (ip);
+	m->m_len += sizeof (struct ipasfrag);
+	m->m_off -= sizeof (struct ipasfrag);
+	return ((struct ip *)ip);
 
 dropfrag:
 	m_freem(m);
@@ -304,10 +294,10 @@ struct ipq *
 ip_freef(fp)
 	struct ipq *fp;
 {
-	register struct ip *q;
+	register struct ipasfrag *q;
 	struct mbuf *m;
 
-	for (q = fp->ipq_next; q != (struct ip *)fp; q = q->ip_next)
+	for (q = fp->ipq_next; q != (struct ipasfrag *)fp; q = q->ipf_next)
 		m_freem(dtom(q));
 	m = dtom(fp);
 	fp = fp->next;
@@ -321,27 +311,26 @@ ip_freef(fp)
  * Like insque, but pointers in middle of structure.
  */
 ip_enq(p, prev)
-	register struct ip *p;
-	register struct ip *prev;
+	register struct ipasfrag *p, *prev;
 {
 COUNT(IP_ENQ);
 
-	p->ip_prev = prev;
-	p->ip_next = prev->ip_next;
-	prev->ip_next->ip_prev = p;
-	prev->ip_next = p;
+	p->ipf_prev = prev;
+	p->ipf_next = prev->ipf_next;
+	prev->ipf_next->ipf_prev = p;
+	prev->ipf_next = p;
 }
 
 /*
  * To ip_enq as remque is to insque.
  */
 ip_deq(p)
-	register struct ip *p;
+	register struct ipasfrag *p;
 {
 COUNT(IP_DEQ);
 
-	p->ip_prev->ip_next = p->ip_next;
-	p->ip_next->ip_prev = p->ip_prev;
+	p->ipf_prev->ipf_next = p->ipf_next;
+	p->ipf_next->ipf_prev = p->ipf_prev;
 }
 
 /*
@@ -351,7 +340,6 @@ COUNT(IP_DEQ);
  */
 ip_slowtimo()
 {
-	register struct ip *q;
 	register struct ipq *fp;
 	int s = splnet();
 COUNT(IP_SLOWTIMO);

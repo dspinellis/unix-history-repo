@@ -1,4 +1,4 @@
-/* in.h 4.2 81/11/08 */
+/* in.h 4.3 81/11/15 */
 
 /*
  * Constants and structures defined by the internet system,
@@ -14,6 +14,8 @@
 #define	IPPROTO_TCP		6		/* tcp */
 #define	IPPROTO_PUP		12		/* pup */
 #define	IPPROTO_UDP		17		/* user datagram protocol */
+
+#define	IPPROTO_MAX		256
 
 /*
  * Port/socket numbers: network standard functions

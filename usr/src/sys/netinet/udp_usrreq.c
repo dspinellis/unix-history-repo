@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	4.3	81/11/14	*/
+/*	udp_usrreq.c	4.4	81/11/15	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -11,28 +11,52 @@
 #include "../net/inet_host.h"
 #include "../net/inet_pcb.h"
 #include "../net/inet_systm.h"
+#include "../net/ip.h"
+#include "../net/ip_var.h"
 #include "../net/udp.h"
 #include "../net/udp_var.h"
 
 udp_init()
 {
 
-	udb.inp_next = udb.inp_prev = &udp;
+	udb.inp_next = udb.inp_prev = &udb;
 }
+
+int	udpcksum;
 
 udp_input(m)
 	struct mbuf *m;
 {
+	register struct udpiphdr *ui;
 	register struct inpcb *inp;
-	int raddr, rport;
-	int addr, port;
+	u_short lport, fport;
+	int ulen;
 
-	inp = inpcb_lookup(&udb, addr, port);
+	ui = mtod(m, struct udpiphdr *);
+	if (ui->ui_len > sizeof (struct ip))		/* XXX */
+		ip_stripoptions((struct ip *)ui);
+	ulen = ((struct ip *)ui)->ip_len;
+	ui->ui_len = htons(ulen);
+	ui->ui_prev = ui->ui_next = 0;
+	ui->ui_x1 = 0;
+	lport = ntohs(ui->ui_dport);
+	fport = ntohs(ui->ui_sport);
+	if (sizeof (struct udpiphdr) > m->m_len)
+	    { printf("udp header overflow\n"); m_freem(m); return; }
+	if (udpcksum) {
+		inet_cksum(m, sizeof (struct ip) + ulen);
+		if (ui->ui_sum) {
+			printf("udp cksum %x\n", ui->ui_sum);
+			m_freem(m);
+			return;
+		}
+	}
+	inp = inpcb_lookup(&ui->ui_src, fport, &ui->ui_dst, lport);
 	if (inp == 0)
-		goto bad;
-	/* sostuff(inp->inp_socket, m, raddr, rport); */
+		goto notwanted;
+	/* stuff on queue using some subroutine */
 	return;
-bad:
+notwanted:
 	m_freem(m);
 	/* gen icmp? */
 }
@@ -74,7 +98,7 @@ udp_usrreq(so, req, m, addr)
 	case PRU_ATTACH:
 		if (inp != 0)
 			return (EINVAL);
-		inp = in_pcballoc();
+		inp = inpcb_alloc();
 		if (inp == NULL)
 			return (ENOBUFS);
 		so->so_pcb = (caddr_t)inp;

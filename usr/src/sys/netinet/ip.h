@@ -1,4 +1,4 @@
-/* ip.h 1.7 81/11/14 */
+/* ip.h 1.8 81/11/15 */
 
 /*
  * Definitions for internet protocol version 4.

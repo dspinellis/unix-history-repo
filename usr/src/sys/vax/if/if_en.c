@@ -1,4 +1,4 @@
-/* if_en.c 4.7 81/11/14 */
+/* if_en.c 4.8 81/11/15 */
 
 #include "en.h"
 /*
@@ -9,10 +9,13 @@
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../net/inet.h"
+#include "../net/inet_pcb.h"
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
 #include "../net/ip.h"
+#include "../net/ip_var.h"
 #include "../net/tcp.h"			/* XXX */
+#include "../net/tcp_var.h"
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/buf.h"
@@ -384,7 +387,7 @@ COUNT(ENRINT);
 	switch (ip->ip_p) {
 
 	case IPPROTO_TCP:
-		hlen += ((struct tcpiphdr *)ip)->t_off * 4;
+		hlen += ((struct tcpiphdr *)ip)->ti_off << 2;
 		break;
 	}
 	MGET(m, 0);

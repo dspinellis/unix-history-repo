@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.27 81/11/14 */
+/* tcp_usrreq.c 1.28 81/11/15 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,6 +12,7 @@
 #include "../net/inet_systm.h"
 #include "../net/imp.h"
 #include "../net/ip.h"
+#include "../net/ip_var.h"
 #include "../net/tcp.h"
 #define TCPFSTAB
 #ifdef TCPDEBUG
@@ -142,7 +143,7 @@ COUNT(TCP_USRREQ);
 			tp = sototcpcb(so);
 		}
 		if (so->so_options & SO_ACCEPTCONN) {
-			inp->inp_lhost = h_make(&n_lhost);
+			inp->inp_lhost = in_hmake(&n_lhost);
 			in_pcbgenport(&tcb, inp);
 			nstate = LISTEN;
 		} else
@@ -333,7 +334,7 @@ tcp_disconnect(tp)
 
 	tcp_tcancel(tp);
 	t = tp->seg_next;
-	for (; t != (struct tcpiphdr *)tp; t = t->t_next)
+	for (; t != (struct tcpiphdr *)tp; t = (struct tcpiphdr *)t->ti_next)
 		m_freem(dtom(t));
 	tcp_drainunack(tp);
 	if (tp->t_template) {
@@ -494,11 +495,11 @@ COUNT(TDB_SETUP);
 	tdp->td_tim = 0;
 	tdp->td_new = -1;
 	if (n) {
-		tdp->td_sno = n->t_seq;
-		tdp->td_ano = n->t_ackno;
+		tdp->td_sno = n->ti_seq;
+		tdp->td_ano = n->ti_ackno;
 		tdp->td_wno = n->t_win;
-		tdp->td_lno = n->t_len;
-		tdp->td_flg = n->th_flags;
+		tdp->td_lno = n->ti_len;
+		tdp->td_flg = n->ti_flags;
 	} else
 		tdp->td_sno = tdp->td_ano = tdp->td_wno = tdp->td_lno =
 		    tdp->td_flg = 0;
