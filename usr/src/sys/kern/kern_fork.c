@@ -1,4 +1,4 @@
-/*	kern_fork.c	4.1	83/05/27	*/
+/*	kern_fork.c	4.2	83/06/02	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -131,7 +131,7 @@ retry:
 #endif
 	rpp->p_stat = SIDL;
 	timerclear(&rpp->p_realtimer.it_value);
-	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGI|SNUSIG));
+	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGI|SOUSIG));
 	if (isvfork) {
 		rpp->p_flag |= SVFORK;
 		rpp->p_ndx = rip->p_ndx;
@@ -152,9 +152,10 @@ retry:
 	rip->p_cptr = rpp;
 	rpp->p_time = 0;
 	rpp->p_cpu = 0;
-	rpp->p_siga0 = rip->p_siga0;
-	rpp->p_siga1 = rip->p_siga1;
-	/* take along any pending signals, like stops? */
+	rpp->p_sigmask = rip->p_sigmask;
+	rpp->p_sigcatch = rip->p_sigcatch;
+	rpp->p_sigignore = rip->p_sigignore;
+	/* take along any pending signals like stops? */
 	if (isvfork) {
 		rpp->p_tsize = rpp->p_dsize = rpp->p_ssize = 0;
 		rpp->p_szpt = clrnd(ctopt(UPAGES));

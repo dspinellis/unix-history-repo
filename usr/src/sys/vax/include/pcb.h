@@ -1,4 +1,4 @@
-/*	pcb.h	4.6	82/10/31	*/
+/*	pcb.h	4.7	83/06/02	*/
 
 /*
  * VAX process control block
@@ -38,7 +38,7 @@ struct pcb
 	int	pcb_szpt; 	/* number of pages of user page table */
 	int	pcb_cmap2;
 	int	*pcb_sswap;
-	int	pcb_sigc[3];
+	int	pcb_sigc[4];
 };
 
 #define	AST_NONE	0x04000000	/* ast level */

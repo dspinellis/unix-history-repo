@@ -1,4 +1,4 @@
-/*	kern_exec.c	4.1	83/05/27	*/
+/*	kern_exec.c	4.2	83/06/02	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -352,7 +352,7 @@ getxfile(ip, nargc, uid, gid)
 			sleep((caddr_t)u.u_procp, PZERO - 1);
 		u.u_procp->p_flag &= ~(SVFDONE|SKEEP);
 	}
-	u.u_procp->p_flag &= ~(SPAGI|SSEQL|SUANOM|SNUSIG);
+	u.u_procp->p_flag &= ~(SPAGI|SSEQL|SUANOM|SOUSIG);
 	u.u_procp->p_flag |= pagi;
 	u.u_dmap = u.u_cdmap;
 	u.u_smap = u.u_csmap;
@@ -402,34 +402,17 @@ setregs()
 {
 	register int (**rp)();
 	register int i, sigmask;
+	register struct proc *p = u.u_procp;
 
-	for (rp = &u.u_signal[1], sigmask = 1; rp < &u.u_signal[NSIG];
-	    sigmask <<= 1, rp++) {
-		switch (*rp) {
-
-		case SIG_IGN:
-		case SIG_DFL:
-		case SIG_HOLD:
-			continue;
-
-		default:
-			/*
-			 * Normal or deferring catch; revert to default.
-			 */
+	rp = &u.u_signal[1];
+	for (sigmask = 1; rp < &u.u_signal[NSIG]; sigmask <<= 1, rp++)
+		/* disallow masked signals to carry over? */
+		if (p->p_sigcatch & sigmask && (p->p_sigmask & sigmask) == 0) {
 			(void) spl6();
+			p->p_sigcatch &= ~sigmask;
 			*rp = SIG_DFL;
-			if ((int)*rp & 1)
-				u.u_procp->p_siga0 |= sigmask;
-			else
-				u.u_procp->p_siga0 &= ~sigmask;
-			if ((int)*rp & 2)
-				u.u_procp->p_siga1 |= sigmask;
-			else
-				u.u_procp->p_siga1 &= ~sigmask;
 			(void) spl0();
-			continue;
 		}
-	}
 #ifdef vax
 /*
 	for (rp = &u.u_ar0[0]; rp < &u.u_ar0[16];)
