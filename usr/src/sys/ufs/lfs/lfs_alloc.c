@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.52 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.53 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -70,12 +70,6 @@ lfs_valloc(ap)
 		ip = VTOI(vp);
 		blkno = lblkno(fs, ip->i_size);
 		bp = getblk(vp, blkno, fs->lfs_bsize);
-		if (!bp) {
-			uprintf("\n%s: no inodes left\n", fs->lfs_fsmnt);
-			log(LOG_ERR, "uid %d on %s: out of inodes\n",
-			    ap->a_cred->cr_uid, fs->lfs_fsmnt);
-			return (ENOSPC);
-		}
 		i = (blkno - fs->lfs_segtabsz - fs->lfs_cleansz) *
 		    fs->lfs_ifpb;
 		fs->lfs_free = i;
