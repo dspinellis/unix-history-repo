@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rcmd.c	4.8 %G%";
+static char sccsid[] = "@(#)rcmd.c	4.9 %G%";
 #endif
 
 #include <stdio.h>
@@ -40,13 +40,12 @@ retry:
 	bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
 	sin.sin_port = rport;
 	if (connect(s, (caddr_t)&sin, sizeof (sin), 0) < 0) {
+		(void) close(s);
 		if (errno == EADDRINUSE) {
-			close(s);
 			lport--;
 			goto retry;
 		}
 		if (errno == ECONNREFUSED && timo <= 16) {
-			(void) close(s);
 			sleep(timo);
 			timo *= 2;
 			goto retry;
@@ -61,11 +60,10 @@ retry:
 	} else {
 		char num[8];
 		int s2 = rresvport(&lport), s3;
+		int len = sizeof (from);
 
-		if (s2 < 0) {
-			(void) close(s);
-			return (-1);
-		}
+		if (s2 < 0)
+			goto bad;
 		listen(s2, 1);
 		(void) sprintf(num, "%d", lport);
 		if (write(s, num, strlen(num)+1) != strlen(num)+1) {
@@ -73,14 +71,12 @@ retry:
 			(void) close(s2);
 			goto bad;
 		}
-		{ int len = sizeof (from);
-		  s3 = accept(s2, &from, &len, 0);
-		  close(s2);
-		  if (s3 < 0) {
+		s3 = accept(s2, &from, &len, 0);
+		(void) close(s2);
+		if (s3 < 0) {
 			perror("accept");
 			lport = 0;
 			goto bad;
-		  }
 		}
 		*fd2p = s3;
 		from.sin_port = ntohs((u_short)from.sin_port);
@@ -132,11 +128,13 @@ rresvport(alport)
 			return (s);
 		if (errno != EADDRINUSE && errno != EADDRNOTAVAIL) {
 			perror("socket");
+			(void) close(s);
 			return (-1);
 		}
 		(*alport)--;
 		if (*alport == IPPORT_RESERVED/2) {
 			fprintf(stderr, "socket: All ports in use\n");
+			(void) close(s);
 			return (-1);
 		}
 	}
