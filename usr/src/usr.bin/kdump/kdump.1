@@ -1,0 +1,49 @@
+.TH KDUMP 1
+.SH NAME
+.I kdump
+\- display kernel trace data
+.SH SYNOPSIS
+.B kdump
+[
+.B -dnlT
+]
+.B -f 
+trfile ]
+[
+.B -t 
+trstr ]
+.SH DESCRIPTION
+.I Kdump
+displays kernel trace files produced with ktrace(1) in a human readable format.
+Without the -f flag, kdump reads the file "ktrace.data" in the current
+directory.
+Following is a description of the options:
+.br
+.TP
+.B \-d
+Display all numbers in decimal.
+.TP
+.B \-n
+Suppress ad hoc translations.  Normally kdump tries to decode many
+system calls into a more human readable format.  For example, ioctl
+values are replaced with the macro name and errno values are replaced
+with the sys_errlist string.  Suppressing this feature yields a more consistent
+output format and is more amenable to further processing.
+.TP
+.B \-l
+Loop reading end-of-file.
+.TP
+.B \-T
+Display timestamps.
+.TP
+.B \-t trstr
+See -t in ktrace(1).
+.TP
+.B \-f trfile
+See -t in ktrace(1).
+.TP
+.B \-m maxdata
+Display at most \fBmaxdata\fP bytes when decoding i/o.
+.SH SEE ALSO
+.IR ktrace(1)
+\- enable kernel process tracing.
