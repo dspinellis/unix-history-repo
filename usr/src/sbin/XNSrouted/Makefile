@@ -1,3 +1,10 @@
+#
+# Copyright (c) 1983 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	5.4 (Berkeley) %G%";
+#
 #	Makefile for Xerox Routing Information Protocol
 #	Daemon
 #
@@ -17,13 +24,6 @@ XNSrouted: ${OBJS}
 
 install: XNSrouted
 	install -s XNSrouted ${DESTDIR}/etc
-
-# The following can be deleted where not appropriate to use the kernel's
-# inline code expansions.
-#.c.o:
-#	${CC} -S ${CFLAGS} $*.c
-#	${C2} $*.s | sed -f ${ASMSCRIPT} | ${AS} -o $*.o
-#	rm -f $*.s
 
 clean:
 	rm -f XNSrouted *.o core a.out t.c linterrs typescript errs
