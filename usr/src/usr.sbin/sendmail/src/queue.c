@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.43 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.44 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.43 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.44 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -29,6 +29,8 @@ static char sccsid[] = "@(#)queue.c	8.43 (Berkeley) %G% (without queueing)";
 struct work
 {
 	char		*w_name;	/* name of control file */
+	char		*w_host;	/* name of recipient host */
+	bool		w_lock;		/* is message locked? */
 	long		w_pri;		/* priority of message, see below */
 	time_t		w_ctime;	/* creation time of message */
 	struct work	*w_next;	/* next in queue */
@@ -551,6 +553,8 @@ runqueue(forkflag)
 				(void) waitfor(pid);
 		}
 		free(w->w_name);
+		if (w->w_host)
+			free(w->w_host);
 		free((char *) w);
 	}
 
@@ -598,7 +602,7 @@ orderq(doall)
 	register int i;
 	WORK wlist[QUEUESIZE+1];
 	int wn = -1;
-	extern workcmpf();
+	int wc;
 
 	if (tTd(41, 1))
 	{
@@ -618,6 +622,8 @@ orderq(doall)
 
 		WorkQ = nw;
 		free(w->w_name);
+		if (w->w_host)
+			free(w->w_host);
 		free((char *) w);
 		w = nw;
 	}
@@ -704,6 +710,8 @@ orderq(doall)
 		}
 		w = &wlist[wn];
 		w->w_name = newstr(d->d_name);
+		w->w_host = NULL;
+		w->w_lock = !lockfile(fileno(cf), w->w_name, NULL, LOCK_SH|LOCK_NB);
 
 		/* make sure jobs in creation don't clog queue */
 		w->w_pri = 0x7fffffff;
@@ -713,7 +721,7 @@ orderq(doall)
 		i = NEED_P | NEED_T;
 		if (QueueLimitSender != NULL)
 			i |= NEED_S;
-		if (QueueLimitRecipient != NULL)
+		if (SortQueueByHost || QueueLimitRecipient != NULL)
 			i |= NEED_R;
 		while (i != 0 && fgets(lbuf, sizeof lbuf, cf) != NULL)
 		{
@@ -733,7 +741,10 @@ orderq(doall)
 				break;
 
 			  case 'R':
-				if (QueueLimitRecipient != NULL &&
+				if (w->w_host == NULL &&
+				    (p = strrchr(&lbuf[1], '@')) != NULL)
+					w->w_host = newstr(&p[1]);
+				if (QueueLimitRecipient == NULL ||
 				    strcontainedin(QueueLimitRecipient, &lbuf[1]))
 					i &= ~NEED_R;
 				break;
@@ -751,17 +762,74 @@ orderq(doall)
 		    bitset(NEED_R|NEED_S, i))
 		{
 			/* don't even bother sorting this job in */
+			free(w->w_name);
+			if (w->w_host)
+				free(w->w_host);
 			wn--;
 		}
 	}
 	(void) closedir(f);
 	wn++;
 
-	/*
-	**  Sort the work directory.
-	*/
+	wc = min(wn, QUEUESIZE);
 
-	qsort((char *) wlist, min(wn, QUEUESIZE), sizeof *wlist, workcmpf);
+	if (!SortQueueByHost)
+	{
+		extern workcmpf0();
+
+		/*
+		**  Simple sort based on queue priority only.
+		*/
+
+		qsort((char *) wlist, wc, sizeof *wlist, workcmpf0);
+	}
+	else
+	{
+		extern workcmpf1();
+		extern workcmpf2();
+
+		/*
+		**  Sort the work directory for the first time,
+		**  based on host name, lock status, and priority.
+		*/
+
+		qsort((char *) wlist, wc, sizeof *wlist, workcmpf1);
+
+		/*
+		**  If one message to host is locked, "lock" all messages
+		**  to that host.
+		*/
+
+		i = 0;
+		while (i < wc)
+		{
+			if (!wlist[i].w_lock)
+			{
+				i++;
+				continue;
+			}
+			w = &wlist[i];
+			while (++i < wc)
+			{
+				if (wlist[i].w_host == NULL &&
+				    w->w_host == NULL)
+					wlist[i].w_lock = TRUE;
+				else if (wlist[i].w_host != NULL &&
+					 w->w_host != NULL &&
+					 strcmp(wlist[i].w_host, w->w_host) == 0)
+					wlist[i].w_lock = TRUE;
+				else
+					break;
+			}
+		}
+
+		/*
+		**  Sort the work directory for the second time,
+		**  based on lock status, host name, and priority.
+		*/
+
+		qsort((char *) wlist, wc, sizeof *wlist, workcmpf2);
+	}
 
 	/*
 	**  Convert the work list into canonical form.
@@ -769,10 +837,12 @@ orderq(doall)
 	*/
 
 	WorkQ = NULL;
-	for (i = min(wn, QUEUESIZE); --i >= 0; )
+	for (i = wc; --i >= 0; )
 	{
 		w = (WORK *) xalloc(sizeof *w);
 		w->w_name = wlist[i].w_name;
+		w->w_host = wlist[i].w_host;
+		w->w_lock = wlist[i].w_lock;
 		w->w_pri = wlist[i].w_pri;
 		w->w_ctime = wlist[i].w_ctime;
 		w->w_next = WorkQ;
@@ -788,7 +858,7 @@ orderq(doall)
 	return (wn);
 }
 /*
-**  WORKCMPF -- compare function for ordering work.
+**  WORKCMPF0 -- simple priority-only compare function.
 **
 **	Parameters:
 **		a -- the first argument.
@@ -803,7 +873,7 @@ orderq(doall)
 **		none.
 */
 
-workcmpf(a, b)
+workcmpf0(a, b)
 	register WORK *a;
 	register WORK *b;
 {
@@ -811,11 +881,91 @@ workcmpf(a, b)
 	long pb = b->w_pri;
 
 	if (pa == pb)
-		return (0);
+		return 0;
 	else if (pa > pb)
-		return (1);
+		return 1;
 	else
-		return (-1);
+		return -1;
+}
+/*
+**  WORKCMPF1 -- first compare function for ordering work based on host name.
+**
+**	Sorts on host name, lock status, and priority in that order.
+**
+**	Parameters:
+**		a -- the first argument.
+**		b -- the second argument.
+**
+**	Returns:
+**		<0 if a < b
+**		 0 if a == b
+**		>0 if a > b
+**
+**	Side Effects:
+**		none.
+*/
+
+workcmpf1(a, b)
+	register WORK *a;
+	register WORK *b;
+{
+	int i;
+
+	/* host name */
+	if (a->w_host != NULL && b->w_host == NULL)
+		return 1;
+	else if (a->w_host == NULL && b->w_host != NULL)
+		return -1;
+	if (a->w_host != NULL && b->w_host != NULL &&
+	    (i = strcmp(a->w_host, b->w_host)))
+		return i;
+
+	/* lock status */
+	if (a->w_lock != b->w_lock)
+		return b->w_lock - a->w_lock;
+
+	/* job priority */
+	return a->w_pri - b->w_pri;
+}
+/*
+**  WORKCMPF2 -- second compare function for ordering work based on host name.
+**
+**	Sorts on lock status, host name, and priority in that order.
+**
+**	Parameters:
+**		a -- the first argument.
+**		b -- the second argument.
+**
+**	Returns:
+**		<0 if a < b
+**		 0 if a == b
+**		>0 if a > b
+**
+**	Side Effects:
+**		none.
+*/
+
+workcmpf2(a, b)
+	register WORK *a;
+	register WORK *b;
+{
+	int i;
+
+	/* lock status */
+	if (a->w_lock != b->w_lock)
+		return a->w_lock - b->w_lock;
+
+	/* host name */
+	if (a->w_host != NULL && b->w_host == NULL)
+		return 1;
+	else if (a->w_host == NULL && b->w_host != NULL)
+		return -1;
+	if (a->w_host != NULL && b->w_host != NULL &&
+	    (i = strcmp(a->w_host, b->w_host)))
+		return i;
+
+	/* job priority */
+	return a->w_pri - b->w_pri;
 }
 /*
 **  DOWORK -- do a work request.
@@ -1260,7 +1410,7 @@ printqueue()
 			errno = 0;
 			continue;
 		}
-		if (!lockfile(fileno(f), w->w_name, NULL, LOCK_SH|LOCK_NB))
+		if (w->w_lock)
 			printf("*");
 		else if (shouldqueue(w->w_pri, w->w_ctime))
 			printf("X");
