@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.42		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.43		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.42		%G%);
+SCCSID(@(#)queue.c	3.43		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -134,14 +134,13 @@ queueup(e, queueall)
 		fprintf(tfp, "H");
 		if (h->h_mflags != 0 && bitset(H_CHECK|H_ACHECK, h->h_flags))
 			mfdecode(h->h_mflags, tfp);
-		fprintf(tfp, "%s: ", h->h_field);
 		if (bitset(H_DEFAULT, h->h_flags))
 		{
 			(void) expand(h->h_value, buf, &buf[sizeof buf], e);
-			fprintf(tfp, "%s\n", buf);
+			fprintf(tfp, "%s: %s\n", h->h_field, buf);
 		}
 		else
-			fprintf(tfp, "%s\n", h->h_value);
+			commaize(h, h->h_value, tfp, e->e_oldstyle, NULL);
 	}
 
 	/*
