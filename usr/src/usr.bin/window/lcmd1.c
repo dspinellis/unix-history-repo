@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.18 84/04/05";
+static	char *sccsid = "@(#)lcmd1.c	3.19 84/04/06";
 #endif
 
 #include "defs.h"
@@ -37,12 +37,12 @@ register struct value *v, *a;
 	v->v_num = id + 1;
 }
 
-struct lcmd_arg arg_buffer[] = {
+struct lcmd_arg arg_nline[] = {
 	{ "nlines",	1,	ARG_NUM },
 	0
 };
 
-l_buffer(v, a)
+l_nline(v, a)
 register struct value *v, *a;
 {
 	v->v_num = nbufline;
@@ -72,7 +72,7 @@ register struct value *v, *a;
 
 struct lcmd_arg arg_debug[] = {
 	{ "flag",	1,	ARG_ANY },
-	{ 0,		0,	0 }
+	0
 };
 
 l_debug(v, a)
@@ -172,28 +172,25 @@ register struct value *v, *a;
 		v->v_num = 0;
 }
 
-struct lcmd_arg arg_write[] = {
-	{ "window",	1,	ARG_NUM },
-	{ "string",	1,	ARG_STR },
-	0
-};
-
 /*ARGSUSED*/
 l_write(v, a)
 register struct value *v, *a;
 {
+	char buf[20];
 	struct ww *w;
 
-	if ((w = vtowin(a)) == 0)
+	if ((w = vtowin(a++)) == 0)
 		return;
-	a++;
-	(void) write(w->ww_pty, a->v_str, strlen(a->v_str));
+	while (a->v_type != V_ERR) {
+		if (a->v_type == V_NUM) {
+			(void) sprintf(buf, "%d", a->v_num);
+			(void) write(w->ww_pty, buf, strlen(buf));
+		} else
+			(void) write(w->ww_pty, a->v_str, strlen(a->v_str));
+		if ((++a)->v_type != V_ERR)
+			(void) write(w->ww_pty, " ", 1);
+	}
 }
-
-struct lcmd_arg arg_close[] = {
-	{ "window",	1,	ARG_NUM },
-	0
-};
 
 /*ARGSUSED*/
 l_close(v, a)
@@ -201,10 +198,12 @@ register struct value *v, *a;
 {
 	struct ww *w;
 
-	if (a->v_type == V_ERR)
+	if (a->v_type == V_STR && str_match(a->v_str, "all", 1))
 		c_close((struct ww *)0);
-	else if ((w = vtowin(a)) != 0)
-		c_close(w);
+	else
+		for (; a->v_type != V_ERR; a++)
+			if ((w = vtowin(a)) != 0)
+				c_close(w);
 }
 
 struct lcmd_arg arg_cursormodes[] = {
@@ -255,10 +254,10 @@ register struct value *v;
 
 	switch (v->v_type) {
 	case V_ERR:
-		error("Window identifier required.");
+		error("No window specified.");
 		return 0;
 	case V_STR:
-		error("Number required for window identifier.");
+		error("%s: No such window.", v->v_str);
 		return 0;
 	}
 	if (v->v_num < 1 || v->v_num > NWINDOW
