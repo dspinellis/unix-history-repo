@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vm_meter.c	7.3 (Berkeley) %G%
+ *	@(#)vm_meter.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -152,14 +152,13 @@ loop:
 	}
 
 	/*
-	 * No one wants in, so nothing to do.
+	 * If something came ready after we checked it,
+	 * wantin will be set.  Otherwise,
+	 * no one wants in, so nothing to do.
 	 */
 	if (outpri == -20000) {
 		(void) splhigh();
-		if (wantin) {
-			wantin = 0;
-			sleep((caddr_t)&lbolt, PSWP);
-		} else {
+		if (wantin == 0) {
 			runout++;
 			sleep((caddr_t)&runout, PSWP);
 		}
