@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_proc.c	8.4 (Berkeley) %G%
+ *	@(#)kern_proc.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -27,20 +27,34 @@
  * Structure associated with user cacheing.
  */
 struct uidinfo {
-	struct	uidinfo *ui_next;
-	struct	uidinfo **ui_prev;
+	LIST_ENTRY(uidinfo) ui_hash;
 	uid_t	ui_uid;
 	long	ui_proccnt;
-} **uihashtbl;
-u_long	uihash;		/* size of hash table - 1 */
-#define	UIHASH(uid)	((uid) & uihash)
+};
+#define	UIHASH(uid)	(&uihashtbl[(uid) & uihash])
+LIST_HEAD(uihashhead, uidinfo) *uihashtbl;
+u_long uihash;		/* size of hash table - 1 */
 
 /*
- * Allocate a hash table.
+ * Other process lists
  */
-usrinfoinit()
+struct pidhashhead *pidhashtbl;
+u_long pidhash;
+struct pgrphashhead *pgrphashtbl;
+u_long pgrphash;
+struct proclist allproc;
+struct proclist zombproc;
+
+/*
+ * Initialize global process hashing structures.
+ */
+procinit()
 {
 
+	LIST_INIT(&allproc);
+	LIST_INIT(&zombproc);
+	pidhashtbl = hashinit(maxproc / 4, M_PROC, &pidhash);
+	pgrphashtbl = hashinit(maxproc / 4, M_PROC, &pgrphash);
 	uihashtbl = hashinit(maxproc / 16, M_PROC, &uihash);
 }
 
@@ -53,10 +67,11 @@ chgproccnt(uid, diff)
 	uid_t	uid;
 	int	diff;
 {
-	register struct uidinfo **uipp, *uip, *uiq;
+	register struct uidinfo *uip;
+	register struct uihashhead *uipp;
 
-	uipp = &uihashtbl[UIHASH(uid)];
-	for (uip = *uipp; uip; uip = uip->ui_next)
+	uipp = UIHASH(uid);
+	for (uip = uipp->lh_first; uip != 0; uip = uip->ui_hash.le_next)
 		if (uip->ui_uid == uid)
 			break;
 	if (uip) {
@@ -65,9 +80,7 @@ chgproccnt(uid, diff)
 			return (uip->ui_proccnt);
 		if (uip->ui_proccnt < 0)
 			panic("chgproccnt: procs < 0");
-		if (uiq = uip->ui_next)
-			uiq->ui_prev = uip->ui_prev;
-		*uip->ui_prev = uiq;
+		LIST_REMOVE(uip, ui_hash);
 		FREE(uip, M_PROC);
 		return (0);
 	}
@@ -77,11 +90,7 @@ chgproccnt(uid, diff)
 		panic("chgproccnt: lost user");
 	}
 	MALLOC(uip, struct uidinfo *, sizeof(*uip), M_PROC, M_WAITOK);
-	if (uiq = *uipp)
-		uiq->ui_prev = &uip->ui_next;
-	uip->ui_next = uiq;
-	uip->ui_prev = uipp;
-	*uipp = uip;
+	LIST_INSERT_HEAD(uipp, uip, ui_hash);
 	uip->ui_uid = uid;
 	uip->ui_proccnt = diff;
 	return (diff);
@@ -109,7 +118,7 @@ pfind(pid)
 {
 	register struct proc *p;
 
-	for (p = pidhash[PIDHASH(pid)]; p != NULL; p = p->p_hash)
+	for (p = PIDHASH(pid)->lh_first; p != 0; p = p->p_hash.le_next)
 		if (p->p_pid == pid)
 			return (p);
 	return (NULL);
@@ -124,8 +133,8 @@ pgfind(pgid)
 {
 	register struct pgrp *pgrp;
 
-	for (pgrp = pgrphash[PIDHASH(pgid)];
-	    pgrp != NULL; pgrp = pgrp->pg_hforw)
+	for (pgrp = PGRPHASH(pgid)->lh_first; pgrp != 0;
+	     pgrp = pgrp->pg_hash.le_next)
 		if (pgrp->pg_id == pgid)
 			return (pgrp);
 	return (NULL);
@@ -140,7 +149,6 @@ enterpgrp(p, pgid, mksess)
 	int mksess;
 {
 	register struct pgrp *pgrp = pgfind(pgid);
-	register struct proc **pp;
 	int n;
 
 #ifdef DIAGNOSTIC
@@ -160,7 +168,7 @@ enterpgrp(p, pgid, mksess)
 			panic("enterpgrp: new pgrp and pid != pgid");
 #endif
 		MALLOC(pgrp, struct pgrp *, sizeof(struct pgrp), M_PGRP,
-		       M_WAITOK);
+		    M_WAITOK);
 		if ((np = pfind(savepid)) == NULL || np != p)
 			return (ESRCH);
 		if (mksess) {
@@ -170,7 +178,7 @@ enterpgrp(p, pgid, mksess)
 			 * new session
 			 */
 			MALLOC(sess, struct session *, sizeof(struct session),
-				M_SESSION, M_WAITOK);
+			    M_SESSION, M_WAITOK);
 			sess->s_leader = p;
 			sess->s_count = 1;
 			sess->s_ttyvp = NULL;
@@ -188,10 +196,9 @@ enterpgrp(p, pgid, mksess)
 			pgrp->pg_session->s_count++;
 		}
 		pgrp->pg_id = pgid;
-		pgrp->pg_hforw = pgrphash[n = PIDHASH(pgid)];
-		pgrphash[n] = pgrp;
+		LIST_INIT(&pgrp->pg_members);
+		LIST_INSERT_HEAD(PGRPHASH(pgid), pgrp, pg_hash);
 		pgrp->pg_jobc = 0;
-		pgrp->pg_mem = NULL;
 	} else if (pgrp == p->p_pgrp)
 		return (0);
 
@@ -203,30 +210,11 @@ enterpgrp(p, pgid, mksess)
 	fixjobc(p, pgrp, 1);
 	fixjobc(p, p->p_pgrp, 0);
 
-	/*
-	 * unlink p from old process group
-	 */
-	for (pp = &p->p_pgrp->pg_mem; *pp; pp = &(*pp)->p_pgrpnxt) {
-		if (*pp == p) {
-			*pp = p->p_pgrpnxt;
-			break;
-		}
-	}
-#ifdef DIAGNOSTIC
-	if (pp == NULL)
-		panic("enterpgrp: can't find p on old pgrp");
-#endif
-	/*
-	 * delete old if empty
-	 */
-	if (p->p_pgrp->pg_mem == 0)
+	LIST_REMOVE(p, p_pglist);
+	if (p->p_pgrp->pg_members.lh_first == 0)
 		pgdelete(p->p_pgrp);
-	/*
-	 * link into new one
-	 */
 	p->p_pgrp = pgrp;
-	p->p_pgrpnxt = pgrp->pg_mem;
-	pgrp->pg_mem = p;
+	LIST_INSERT_HEAD(&pgrp->pg_members, p, p_pglist);
 	return (0);
 }
 
@@ -236,19 +224,9 @@ enterpgrp(p, pgid, mksess)
 leavepgrp(p)
 	register struct proc *p;
 {
-	register struct proc **pp = &p->p_pgrp->pg_mem;
 
-	for (; *pp; pp = &(*pp)->p_pgrpnxt) {
-		if (*pp == p) {
-			*pp = p->p_pgrpnxt;
-			break;
-		}
-	}
-#ifdef DIAGNOSTIC
-	if (pp == NULL)
-		panic("leavepgrp: can't find p in pgrp");
-#endif
-	if (!p->p_pgrp->pg_mem)
+	LIST_REMOVE(p, p_pglist);
+	if (p->p_pgrp->pg_members.lh_first == 0)
 		pgdelete(p->p_pgrp);
 	p->p_pgrp = 0;
 	return (0);
@@ -260,21 +238,11 @@ leavepgrp(p)
 pgdelete(pgrp)
 	register struct pgrp *pgrp;
 {
-	register struct pgrp **pgp = &pgrphash[PIDHASH(pgrp->pg_id)];
 
 	if (pgrp->pg_session->s_ttyp != NULL && 
 	    pgrp->pg_session->s_ttyp->t_pgrp == pgrp)
 		pgrp->pg_session->s_ttyp->t_pgrp = NULL;
-	for (; *pgp; pgp = &(*pgp)->pg_hforw) {
-		if (*pgp == pgrp) {
-			*pgp = pgrp->pg_hforw;
-			break;
-		}
-	}
-#ifdef DIAGNOSTIC
-	if (pgp == NULL)
-		panic("pgdelete: can't find pgrp on hash chain");
-#endif
+	LIST_REMOVE(pgrp, pg_hash);
 	if (--pgrp->pg_session->s_count == 0)
 		FREE(pgrp->pg_session, M_SESSION);
 	FREE(pgrp, M_PGRP);
@@ -316,7 +284,7 @@ fixjobc(p, pgrp, entering)
 	 * their process groups; if so, adjust counts for children's
 	 * process groups.
 	 */
-	for (p = p->p_cptr; p; p = p->p_osptr)
+	for (p = p->p_children.lh_first; p != 0; p = p->p_sibling.le_next)
 		if ((hispgrp = p->p_pgrp) != pgrp &&
 		    hispgrp->pg_session == mysession &&
 		    p->p_stat != SZOMB)
@@ -337,9 +305,10 @@ orphanpg(pg)
 {
 	register struct proc *p;
 
-	for (p = pg->pg_mem; p; p = p->p_pgrpnxt) {
+	for (p = pg->pg_members.lh_first; p != 0; p = p->p_pglist.le_next) {
 		if (p->p_stat == SSTOP) {
-			for (p = pg->pg_mem; p; p = p->p_pgrpnxt) {
+			for (p = pg->pg_members.lh_first; p != 0;
+			    p = p->p_pglist.le_next) {
 				psignal(p, SIGHUP);
 				psignal(p, SIGCONT);
 			}
@@ -348,28 +317,28 @@ orphanpg(pg)
 	}
 }
 
-#ifdef debug
-/* DEBUG */
+#ifdef DEBUG
 pgrpdump()
 {
 	register struct pgrp *pgrp;
 	register struct proc *p;
 	register i;
 
-	for (i=0; i<PIDHSZ; i++) {
-		if (pgrphash[i]) {
-		  printf("\tindx %d\n", i);
-		  for (pgrp=pgrphash[i]; pgrp; pgrp=pgrp->pg_hforw) {
-		    printf("\tpgrp %x, pgid %d, sess %x, sesscnt %d, mem %x\n",
-			pgrp, pgrp->pg_id, pgrp->pg_session,
-			pgrp->pg_session->s_count, pgrp->pg_mem);
-		    for (p=pgrp->pg_mem; p; p=p->p_pgrpnxt) {
-			printf("\t\tpid %d addr %x pgrp %x\n", 
-				p->p_pid, p, p->p_pgrp);
-		    }
-		  }
-
+	for (i = 0; i <= pgrphash; i++) {
+		if (pgrp = pgrphashtbl[i].lh_first) {
+			printf("\tindx %d\n", i);
+			for (; pgrp != 0; pgrp = pgrp->pg_hash.le_next) {
+				printf("\tpgrp %x, pgid %d, sess %x, sesscnt %d, mem %x\n",
+				    pgrp, pgrp->pg_id, pgrp->pg_session,
+				    pgrp->pg_session->s_count,
+				    pgrp->pg_members.lh_first);
+				for (p = pgrp->pg_members.lh_first; p != 0;
+				    p = p->p_pglist.le_next) {
+					printf("\t\tpid %d addr %x pgrp %x\n", 
+					    p->p_pid, p, p->p_pgrp);
+				}
+			}
 		}
 	}
 }
-#endif /* debug */
+#endif /* DEBUG */

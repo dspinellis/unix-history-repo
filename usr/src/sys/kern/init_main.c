@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	8.9 (Berkeley) %G%
+ *	@(#)init_main.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -88,13 +88,19 @@ main(framep)
 	cpu_startup();
 
 	/*
+	 * Initialize process and pgrp structures.
+	 */
+	procinit();
+
+	/*
 	 * Create process 0 (the swapper).
 	 */
-	allproc = (volatile struct proc *)p;
-	p->p_prev = (struct proc **)&allproc;
+	LIST_INSERT_HEAD(&allproc, p, p_list);
 	p->p_pgrp = &pgrp0;
-	pgrphash[0] = &pgrp0;
-	pgrp0.pg_mem = p;
+	LIST_INSERT_HEAD(PGRPHASH(0), &pgrp0, pg_hash);
+	LIST_INIT(&pgrp0.pg_members);
+	LIST_INSERT_HEAD(&pgrp0.pg_members, p, p_pglist);
+
 	pgrp0.pg_session = &session0;
 	session0.s_count = 1;
 	session0.s_leader = p;
@@ -149,10 +155,8 @@ main(framep)
 	p->p_sigacts = &p->p_addr->u_sigacts;
 
 	/*
-	 * Initialize per uid information structure and charge
-	 * root for one process.
+	 * Charge root for one process.
 	 */
-	usrinfoinit();
 	(void)chgproccnt(0, 1);
 
 	rqinit();

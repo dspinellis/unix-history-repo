@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	8.4 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -508,7 +508,7 @@ sysctl_file(where, sizep)
 	/*
 	 * followed by an array of file structures
 	 */
-	for (fp = filehead; fp != NULL; fp = fp->f_filef) {
+	for (fp = filehead.lh_first; fp != 0; fp = fp->f_list.le_next) {
 		if (buflen < sizeof(struct file)) {
 			*sizep = where - start;
 			return (ENOMEM);
@@ -543,10 +543,10 @@ sysctl_doproc(name, namelen, where, sizep)
 
 	if (namelen != 2 && !(namelen == 1 && name[0] == KERN_PROC_ALL))
 		return (EINVAL);
-	p = (struct proc *)allproc;
+	p = allproc.lh_first;
 	doingzomb = 0;
 again:
-	for (; p != NULL; p = p->p_next) {
+	for (; p != 0; p = p->p_list.le_next) {
 		/*
 		 * Skip embryonic processes.
 		 */
@@ -601,7 +601,7 @@ again:
 		needed += sizeof(struct kinfo_proc);
 	}
 	if (doingzomb == 0) {
-		p = zombproc;
+		p = zombproc.lh_first;
 		doingzomb++;
 		goto again;
 	}

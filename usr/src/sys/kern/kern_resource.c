@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_resource.c	8.5 (Berkeley) %G%
+ *	@(#)kern_resource.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -56,21 +56,19 @@ getpriority(curp, uap, retval)
 			pg = curp->p_pgrp;
 		else if ((pg = pgfind(uap->who)) == NULL)
 			break;
-		for (p = pg->pg_mem; p != NULL; p = p->p_pgrpnxt) {
+		for (p = pg->pg_members.lh_first; p != 0;
+		     p = p->p_pglist.le_next)
 			if (p->p_nice < low)
 				low = p->p_nice;
-		}
 		break;
 	}
 
 	case PRIO_USER:
 		if (uap->who == 0)
 			uap->who = curp->p_ucred->cr_uid;
-		for (p = (struct proc *)allproc; p != NULL; p = p->p_next) {
-			if (p->p_ucred->cr_uid == uap->who &&
-			    p->p_nice < low)
+		for (p = allproc.lh_first; p != 0; p = p->p_list.le_next)
+			if (p->p_ucred->cr_uid == uap->who && p->p_nice < low)
 				low = p->p_nice;
-		}
 		break;
 
 	default:
@@ -116,7 +114,7 @@ setpriority(curp, uap, retval)
 			pg = curp->p_pgrp;
 		else if ((pg = pgfind(uap->who)) == NULL)
 			break;
-		for (p = pg->pg_mem; p != NULL; p = p->p_pgrpnxt) {
+		for (p = pg->pg_members.lh_first; p != 0; p = p->p_pglist.le_next) {
 			error = donice(curp, p, uap->prio);
 			found++;
 		}
@@ -126,7 +124,7 @@ setpriority(curp, uap, retval)
 	case PRIO_USER:
 		if (uap->who == 0)
 			uap->who = curp->p_ucred->cr_uid;
-		for (p = (struct proc *)allproc; p != NULL; p = p->p_next)
+		for (p = allproc.lh_first; p != 0; p = p->p_list.le_next)
 			if (p->p_ucred->cr_uid == uap->who) {
 				error = donice(curp, p, uap->prio);
 				found++;
