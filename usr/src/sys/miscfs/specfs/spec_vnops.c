@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.24 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -31,6 +31,15 @@
 #include "ioctl.h"
 #include "file.h"
 #include "disklabel.h"
+
+/* symbolic sleep message strings for devices */
+char	devopn[] = "devopn";
+char	devio[] = "devio";
+char	devwait[] = "devwait";
+char	devin[] = "devin";
+char	devout[] = "devout";
+char	devioc[] = "devioc";
+char	devcls[] = "devcls";
 
 int	spec_lookup(),
 	spec_open(),
@@ -395,7 +404,7 @@ spec_close(vp, flag, cred)
 {
 	dev_t dev = vp->v_rdev;
 	int (*cfunc)();
-	int error, mode;
+	int mode;
 
 	switch (vp->v_type) {
 
@@ -439,15 +448,7 @@ spec_close(vp, flag, cred)
 		panic("spec_close: not special");
 	}
 
-	if (setjmp(&u.u_qsave)) {
-		/*
-		 * If device close routine is interrupted,
-		 * must return so closef can clean up.
-		 */
-		error = EINTR;
-	} else
-		error = (*cfunc)(dev, flag, mode);
-	return (error);
+	return ((*cfunc)(dev, flag, mode));
 }
 
 /*
