@@ -1,18 +1,24 @@
 /*
  * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
 "@(#) Copyright (c) 1980 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lastcomm.c	5.4 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)lastcomm.c	5.5 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
  * last command
@@ -20,13 +26,11 @@ static char sccsid[] = "@(#)lastcomm.c	5.4 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/acct.h>
 #include <sys/file.h>
-
-#include <stdio.h>
-#include <pwd.h>
 #include <sys/stat.h>
 #include <utmp.h>
 #include <struct.h>
 #include <ctype.h>
+#include <stdio.h>
 
 struct	acct buf[DEV_BSIZE / sizeof (struct acct)];
 
@@ -121,16 +125,16 @@ char *
 flagbits(f)
 	register int f;
 {
-	register int i = 0;
 	static char flags[20];
+	char *p, *strcpy();
 
-#define BIT(flag, ch)	flags[i++] = (f & flag) ? ch : ' '
+#define	BIT(flag, ch)	if (f & flag) *p++ = ch;
+	p = strcpy(flags, "-    ");
 	BIT(ASU, 'S');
 	BIT(AFORK, 'F');
 	BIT(ACOMPAT, 'C');
 	BIT(ACORE, 'D');
 	BIT(AXSIG, 'X');
-	flags[i] = '\0';
 	return (flags);
 }
 
@@ -151,62 +155,36 @@ ok(argv, acp)
 
 /* should be done with nameserver or database */
 
+#include <pwd.h>
+
 struct	utmp utmp;
-
-#define NUID	2048
 #define	NMAX	(sizeof (utmp.ut_name))
+#define SCPYN(a, b)	strncpy(a, b, NMAX)
 
-char	names[NUID][NMAX+1];
-char	outrangename[NMAX+1];
-int	outrangeuid = -1;
+#define NCACHE	64		/* power of 2 */
+#define CAMASK	NCACHE - 1
 
 char *
 getname(uid)
 	uid_t uid;
 {
+	extern int _pw_stayopen;
+	static struct ncache {
+		uid_t	uid;
+		char	name[NMAX+1];
+	} c_uid[NCACHE];
 	register struct passwd *pw;
-	static init;
-	struct passwd *getpwent();
+	register struct ncache *cp;
 
-	if (uid < NUID && names[uid][0])
-		return (&names[uid][0]);
-	if (uid == outrangeuid)
-		return (outrangename);
-	if (init == 2) {
-		if (uid < NUID)
-			return (0);
-		setpwent();
-		while (pw = getpwent()) {
-			if (pw->pw_uid != uid)
-				continue;
-			outrangeuid = pw->pw_uid;
-			strncpy(outrangename, pw->pw_name, NMAX);
-			endpwent();
-			return (outrangename);
-		}
-		endpwent();
-		return (0);
-	}
-	if (init == 0)
-		setpwent(), init = 1;
-	while (pw = getpwent()) {
-		if (pw->pw_uid < 0 || pw->pw_uid >= NUID) {
-			if (pw->pw_uid == uid) {
-				outrangeuid = pw->pw_uid;
-				strncpy(outrangename, pw->pw_name, NMAX);
-				return (outrangename);
-			}
-			continue;
-		}
-		if (names[pw->pw_uid][0])
-			continue;
-		strncpy(names[pw->pw_uid], pw->pw_name, NMAX);
-		if (pw->pw_uid == uid)
-			return (&names[uid][0]);
-	}
-	init = 2;
-	endpwent();
-	return (0);
+	_pw_stayopen = 1;
+	cp = c_uid + (uid & CAMASK);
+	if (cp->uid == uid && *cp->name)
+		return(cp->name);
+	if (!(pw = getpwuid(uid)))
+		return((char *)0);
+	cp->uid = uid;
+	SCPYN(cp->name, pw->pw_name);
+	return(cp->name);
 }
 
 #include <sys/dir.h>
