@@ -3,23 +3,25 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)appen.C	6.3 (Berkeley) %G%
+.\"	@(#)appen.C	6.4 (Berkeley) %G%
 .\"
-.ie t .oh '\*(Ln Appendix C''PS1:18-%'
-.eh 'PS1:18-%''\*(Ln Appendix C'
-.el .he ''\fIAppendix C\fR''
+.ie t .oh '\*(Ln Appendix A''PS1:18-%'
+.eh 'PS1:18-%''\*(Ln Appendix A'
+.el .he ''\fIAppendix A\fR''
 .bp
 .(x
 .ti 0
-.b "Appendix C"
+.b "Appendix A"
 .)x
 .sh 1 "Examples" 1
 .pp
 Here we present a few examples
 of how to use the package.
 They attempt to be representative,
-though not comprehensive.
-.sh 1 "Screen Updating"
+though not comprehensive.  Further examples can be found in the games section
+of the source tree and in various utilities that use the screen such as 
+.i systat(1) .
+.sh 2 "Screen Updating"
 .pp
 The following examples are intended to demonstrate
 the basic structure of a program
@@ -30,13 +32,28 @@ and are therefore usually not included.
 It is hoped that the data structure definitions
 give enough of an idea to allow understanding
 of what the relevant portions do.
-The rest is left as an exercise to the reader,
-and will not be on the final.
-.sh 2 "Twinkle"
+.sh 3 "Simple Character Output"
+.pp
+This program demonstrates how to set up a window and output characters to it.
+Also, it demonstrates how one might control the output to the window.  If
+you run this program, you will get a demonstration of the character output
+chracteristics discussed in the above Character Output section.
+.(l I
+.so t2.gr
+.)l
+.sh 3 "A Small Screen Manipulator"
+.pp
+The next example follows the lines of the previous one but extends then to 
+demonstrate the various othe uses of the package.  Make sure you understand 
+how this program works as it encompasses most of anything you will
+need to do with the package.
+.(l I
+.so t3.gr
+.)l
+.sh 3 "Twinkle"
 .pp
 This is a moderately simple program which prints
-pretty patterns on the screen
-that might even hold your interest for 30 seconds or more.
+patterns on the screen.
 It switches between patterns of asterisks,
 putting them on one by one in random order,
 and then taking them off in the same fashion.
@@ -46,7 +63,7 @@ as is demonstrated below.
 .(l I
 .so twinkle1.gr
 .)l
-.sh 2 "Life"
+.sh 3 "Life"
 .pp
 This program fragment models the famous computer pattern game of life
 (Scientific American, May, 1974).
@@ -62,7 +79,7 @@ It also demonstrates some of the input routines.
 .(l I
 .so life.gr
 .)l
-.sh 1 "Motion optimization"
+.sh 2 "Motion optimization"
 .pp
 The following example shows how motion optimization
 is written on its own.
@@ -71,7 +88,7 @@ regard for what is already there
 usually do not need the overhead of both space and time
 associated with screen updating.
 They should instead use motion optimization.
-.sh 2 "Twinkle"
+.sh 3 "Twinkle"
 .pp
 The
 .b twinkle
