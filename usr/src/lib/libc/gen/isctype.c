@@ -29,6 +29,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00027
+ * --------------------         -----   ----------------------
+ *
+ * 02 Aug 92	Wiljo Heinen		Fixed toupper()/tolower() range check
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
@@ -119,12 +126,14 @@ isxdigit(c)
 tolower(c)
 	int c;
 {
-	return((c) - 'A' + 'a');
+/* was:	return((c) - 'A' + 'a');*/
+	return ( isupper(c) ? c - 'A' + 'a' : c);
 }
 
 #undef toupper
 toupper(c)
 	int c;
 {
-	return((c) - 'a' + 'A');
+/* was:	return((c) - 'a' + 'A');*/
+	return ( islower(c) ? c - 'a' + 'A' : c);
 }
