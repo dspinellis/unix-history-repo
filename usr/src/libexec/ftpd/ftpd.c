@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -970,62 +970,47 @@ checkuser(name)
 
 myoob()
 {
-	char mark, *cp;
-	int aflag = 0, count = 0, iacflag = 0, c;
+	int aflag = 0, count = 0, iacflag = 0, atmark;
+	char c, *cp;
 
 	if (!transflag) {
 		for (;;) {
-			if (ioctl(fileno(stdin), SIOCATMARK, &mark) < 0) {
+			if (ioctl(fileno(stdin), SIOCATMARK, &atmark) < 0) {
 				perror("ioctl");
 				break;
 			}
-			if (mark) {
+			if (atmark)
 				break;
-			}
-			read(fileno(stdin), &mark, 1);
-			c = 0377 & mark;
+			read(fileno(stdin), &c, 1);
 		}
-		recv(fileno(stdin), &mark, 1, MSG_OOB);
-		c = 0377 & mark;
-		read(fileno(stdin), &mark, 1);
+		recv(fileno(stdin), &c, 1, MSG_OOB);
+		read(fileno(stdin), &c, 1);
 		return;
 	}
 	for (;;) {
-		if (ioctl(fileno(stdin), SIOCATMARK, &mark) < 0) {
+		if (ioctl(fileno(stdin), SIOCATMARK, &atmark) < 0) {
 			perror("ioctl");
 			break;
 		}
-		if (mark) {
+		if (atmark)
 			break;
-		}
-		read(fileno(stdin), &mark, 1);
-		c = 0377 & mark;
-		if (c == IAC) {
+		read(fileno(stdin), &c, 1);
+		if (c == IAC || c == IP)
 			aflag++;
-		}
-		else if (c == IP) {
-			aflag++;
-		}
 	}
-	recv(fileno(stdin), &mark, 1, MSG_OOB);
-	c = 0377 & mark;
-	if (c == IAC) {
+	recv(fileno(stdin), &c, 1, MSG_OOB);
+	if (c == IAC)
 		aflag++;
-	}
-	read(fileno(stdin), &mark, 1);
-	c = 0377 & mark;
-	if (c == DM) {
+	read(fileno(stdin), &c, 1);
+	if (c == DM)
 		aflag++;
-	}
-	if (aflag != 4) {
+	if (aflag != 4)
 		return;
-	}
 	cp = tmpline;
 	(void) getline(cp, 7, stdin);
 	upper(cp);
-	if (strcmp(cp, "ABOR\r\n")) {
+	if (strcmp(cp, "ABOR\r\n"))
 		return;
-	}
 	tmpline[0] = '\0';
 	reply(426,"Transfer aborted. Data connection closed.");
 	reply(226,"Abort successful");
