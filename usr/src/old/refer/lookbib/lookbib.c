@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)lookbib.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)lookbib.c	4.5 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -10,7 +10,7 @@ int argc;
 char **argv;
 {
 	FILE *fp, *hfp, *fopen(), *popen();
-	char s[BUFSIZ], hunt[64], *sprintf();
+	char s[BUFSIZ], hunt[64];
 	int instructions = 1;
 
 	if (strcmp(argv[1],"-n") == 0)
@@ -34,9 +34,9 @@ char **argv;
 		perror("lookbib: /dev/tty");
 		exit(1);
 	}
-	sprintf(s, "%s.ia", argv[1]);
+	(void)sprintf(s, "%s.ia", argv[1]);
 	if (access(s, 0) == -1) {
-		sprintf (s, "%s", argv[1]);
+		(void)sprintf (s, "%s", argv[1]);
 		if (access(s, 0) == -1) {
 			perror(s);
 			fprintf(stderr, "\tNeither index file %s.ia ", s);
@@ -44,7 +44,7 @@ char **argv;
 			exit(1);
 		}
 	}
-	sprintf(hunt, "/usr/lib/refer/hunt %s", argv[1]);
+	(void)sprintf(hunt, "/usr/lib/refer/hunt %s", argv[1]);
 
 	if (instructions && isatty(fileno(fp)))
 	{
