@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)init.8	6.1 (Berkeley) %G%
+.\"	@(#)init.8	6.2 (Berkeley) %G%
 .\"
 .TH INIT 8 ""
 .UC 4
@@ -44,6 +44,7 @@ executes a command for each terminal specified in the file.
 This command will usually be
 .IR /etc/getty .
 .I Getty
+opens and initializes the terminal line,
 reads the user's name and invokes
 .I login
 to log in the user and execute the Shell.
@@ -84,7 +85,7 @@ in
 but is no longer there is terminated;
 a new process is created for each added line;
 lines unchanged in the file are undisturbed.
-Thus it is possible to drop or add phone lines without
+Thus it is possible to drop or add terminal lines without
 rebooting the system by changing the
 .I ttys
 file and sending a
@@ -121,10 +122,11 @@ If, at bootstrap time, the
 process cannot be located, the system will loop in user mode at location
 0x13.
 .SH DIAGNOSTICS
-\fBinit: \fR\fItty\fR\|\fB: cannot open\fR.  A terminal which is turned
-on in the \fIrc\fR file cannot be opened, likely because the requisite
-lines are either not configured into the system or the associated device
-was not attached during boot-time system configuration.
+\fB/etc/getty\fP \fIgettyargs\fP\fB failing, sleeping\fP.
+A process being started to service a line is exiting quickly
+each time it is started.
+This is often caused by a ringing or noisy terminal line.
+.I Init will sleep for 30 seconds, then continue trying to start the process.
 .LP
 \fBWARNING: Something is hung (wont die); ps axl advised\fR.  A process
 is hung and could not be killed when the system was shutting down.

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)implogd.8	6.1 (Berkeley) %G%
+.\"	@(#)implogd.8	6.2 (Berkeley) %G%
 .\"
 .TH IMPLOGD 8C ""
 .UC 5
@@ -15,7 +15,7 @@ implogd \- IMP logger process
 ]
 .SH DESCRIPTION
 .I Implogd
-is program which logs messages from the IMP,
+is program which logs error messages from the IMP,
 placing them in the file
 .IR /usr/adm/implog .
 .PP
@@ -42,11 +42,9 @@ field set to 0).
 The logging process will catch only those message from
 the IMP which are not processed by a protocol module,
 e.g. IP.  This implies the log should contain only
-status information such as ``IMP going down'' messages
+status information such as ``IMP going down'' messages,
+``host down'' and other error messages,
 and, perhaps, stray NCP messages.
 .SH "SEE ALSO"
 imp(4P),
 implog(8C)
-.SH BUGS
-The messages should probably be sent to the system error
-logging process instead of maintaining yet another log file.

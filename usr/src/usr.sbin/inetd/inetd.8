@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)inetd.8	6.2 (Berkeley) %G%
+.\"	@(#)inetd.8	6.3 (Berkeley) %G%
 .\"
 .TH INETD 8 ""
 .UC 6
@@ -61,7 +61,7 @@ the file
 For ``internal'' services (discussed below), the service
 name
 .I must
-be the official name of the service (that is, the left-most entry in
+be the official name of the service (that is, the first entry in
 .IR /etc/services ).
 .PP
 The
@@ -86,9 +86,16 @@ can received further messages on the socket, it is said to be
 a ``multi-threaded'' server, and should use the ``nowait''
 entry.  For datagram servers which process all incoming datagrams
 on a socket and eventually time out, the server is said to be
-``single-threaded'' and should use a ``wait'' entry.  ``Rwho''
+``single-threaded'' and should use a ``wait'' entry.  ``Comsat'' (``biff'')
 and ``talk'' are both examples of the latter type of
 datagram server.
+.I Tftpd
+is an exception; it is a datagram server that establishes pseudo-connections.
+It must be listed as ``wait'' in order to avoid a race;
+the server reads the first packet, creates a new socket,
+and then forks and exits to allow
+.I inetd
+to check for new service requests to spawn new servers.
 .PP
 The
 .I user
@@ -121,4 +128,4 @@ details of these services, consult the appropriate RFC
 from the Network Information Center.
 .SH "SEE ALSO"
 comsat(8C), ftpd(8C), rexecd(8C), rlogind(8C), rshd(8C),
-rwhod(8C), telnetd(8C), tftpd(8C)
+telnetd(8C), tftpd(8C)
