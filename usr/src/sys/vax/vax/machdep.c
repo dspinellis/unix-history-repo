@@ -1,4 +1,4 @@
-/*	machdep.c	3.31	%G%	*/
+/*	machdep.c	3.32	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -16,7 +16,7 @@
 #include "../h/cons.h"
 #include "../h/reboot.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.31) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.32) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -103,8 +103,10 @@ clkinit(base)
 	int year = YRREF;
 
 	if (base < 5*SECYR) {
-		printf("WARNING: the date is silly; reset it!\n");
-		base = 6*SECYR + 212*SECDAY + SECDAY/2;
+		printf("WARNING: silly date in file system");
+		time = 6*SECYR + 212*SECDAY + SECDAY/2;
+		clkset();
+		goto check;
 	}
 	/*
 	 * Have been told that VMS keeps time internally with base TODRZERO.
@@ -304,6 +306,7 @@ dorti()
 	sp += 4;
 	u.u_ar0[PS] |= PSL_CURMOD|PSL_PRVMOD;
 	u.u_ar0[PS] &= ~PSL_USERCLR;
+	u.u_ar0[SP] = (int)sp;
 }
 
 /*
