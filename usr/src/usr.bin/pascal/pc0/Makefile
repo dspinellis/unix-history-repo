@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.16 %G%"
+SCCSID = "@(#)Makefile 1.17 %G%"
 WHOAMI = pc
 INSTALLNAME = $(DESTDIR)/usr/lib/pc0
 VERSION = 2.0
@@ -25,7 +25,7 @@ SRCS =	ato.c \
 	main.c nl.c proc.c put.c \
 	rec.c rval.c stkrval.c\
 	stat.c string.c subr.c \
-	tree.c type.c var.c \
+	tmps.c tree.c type.c var.c \
 	TRdata.c \
 	treen.c yycopy.c \
 	yycosts.c yyerror.c yyget.c yyid.c yylex.c yymain.c yyoptions.c \
@@ -43,7 +43,7 @@ OBJS =	ato.o \
 	main.o nl.o proc.o put.o \
 	rec.o rval.o stkrval.o\
 	stat.o string.o subr.o \
-	tree.o type.o var.o \
+	tmps.o tree.o type.o var.o \
 	TRdata.o \
 	treen.o yycopy.o \
 	y.tab.o \
@@ -174,6 +174,22 @@ fdec.o: objfmt.h
 fdec.o: align.h
 fdec.o: pc.h
 fdec.o: pcops.h
+fend.o: whoami.h
+fend.o: 0.h
+fend.o: tree.h
+fend.o: opcode.h
+fend.o: objfmt.h
+fend.o: align.h
+fend.o: pc.h
+fend.o: pcops.h
+fhdr.o: whoami.h
+fhdr.o: 0.h
+fhdr.o: tree.h
+fhdr.o: opcode.h
+fhdr.o: objfmt.h
+fhdr.o: align.h
+fhdr.o: pc.h
+fhdr.o: pcops.h
 flvalue.o: whoami.h
 flvalue.o: 0.h
 flvalue.o: tree.h
@@ -278,6 +294,8 @@ string.o: 0.h
 string.o: send.h
 subr.o: whoami.h
 subr.o: 0.h
+tmps.o: whoami.h
+tmps.o: 0.h
 tree.o: whoami.h
 tree.o: 0.h
 type.o: whoami.h
