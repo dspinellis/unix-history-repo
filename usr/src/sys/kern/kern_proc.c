@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.8	%H%	*/
+/*	kern_proc.c	3.9	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -145,7 +145,8 @@ badarg:
 			if ((nc&BMASK) == 0) {
 				if (bp)
 					brelse(bp);
-				bp = bread(swapdev, (daddr_t)(dbtofsb(swplo+bno)+(nc>>BSHIFT)));
+				bp = bread(swapdev,
+				    (daddr_t)(dbtofsb(swplo+bno)+(nc>>BSHIFT)));
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				cp = bp->b_un.b_addr;
