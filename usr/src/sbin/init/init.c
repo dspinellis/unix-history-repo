@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -576,8 +576,17 @@ single_user()
 	} while (wpid != pid);
 
 	if (!WIFEXITED(status)) {
-		warning("single user shell terminated abnormally, restarting");
-		return (state_func_t) single_user;
+		if (WTERMSIG(status) == SIGKILL) { 
+			/* 
+			 *  reboot(8) killed shell? 
+			 */
+			warning("single user shell terminated.");
+			sleep(STALL_TIMEOUT);
+			_exit(0);
+		} else {	
+			warning("single user shell terminated, restarting");
+			return (state_func_t) single_user;
+		}
 	}
 
 	runcom_mode = FASTBOOT;
