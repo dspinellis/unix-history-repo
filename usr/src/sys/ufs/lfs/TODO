@@ -1,19 +1,22 @@
-#	@(#)TODO	5.2 (Berkeley) %G%
+#	@(#)TODO	5.3 (Berkeley) %G%
 
 TODO:  =======================
 
 Keith:
-	XXX The problem is that the IFILE vnode isn't getting entered into
-	    the vnode cache (nor is the underlying inode being placed into
-	    the inode cache).  Q: Should the underlying inode be in the
-	    inode cache (does it get flushed)?  Q: Should the mount code
-	    update the ifile inode slot to reflect the current disk address?
-
-	Move utils into main-line source.
+	Fix i_block increment for indirect blocks.
+	If the file system is tar'd, extracted on top of another LFS, the
+		IFILE ain't worth diddly.  Is the cleaner writing the IFILE?
+		If not, let's make it read-only.
+	Delete unnecessary source from utils in main-line source tree.
+	Make sure that we're counting meta blocks in the inode i_block count.
+	Overlap the version and nextfree fields in the IFILE
+	Talk to Kirk about vinvalbuf:
+		Why writing blocks that are no longer useful?
+		Are the semantics of close such that blocks have to be flushed?
+		How specify in the buf chain the blocks that don't need
+		to be written?  (Different numbering of indirect blocks.)
 
 Margo:
-	See if lfs_mountfs can just call lfs_vget for IFILE vnode
-		by minor hack to lfs_itod.
 	Unmount; not doing a bgetvp (VHOLD) in lfs_newbuf call.
 	Document in the README file where the checkpoint information is
 		on disk.
