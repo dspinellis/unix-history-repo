@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.27 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -22,12 +22,11 @@ static char sccsid[] = "@(#)w.c	5.26 (Berkeley) %G%";
  */
 #include <sys/param.h>
 #include <utmp.h>
+#include <sys/time.h>
 #include <sys/stat.h>
-#include <sys/user.h>
 #include <sys/proc.h>
+#include <sys/user.h>
 #include <sys/ioctl.h>
-#include <machine/pte.h>
-#include <sys/vm.h>
 #include <sys/tty.h>
 #include <nlist.h>
 #include <kvm.h>
@@ -35,6 +34,14 @@ static char sccsid[] = "@(#)w.c	5.26 (Berkeley) %G%";
 #include <paths.h>
 #include <string.h>
 #include <stdio.h>
+
+#ifdef SPPWAIT
+#define NEWVM
+#endif
+#ifndef NEWVM
+#include <machine/pte.h>
+#include <sys/vm.h>
+#endif
 
 char	*program;
 int	ttywidth;		/* width of tty */
