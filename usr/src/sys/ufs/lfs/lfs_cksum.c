@@ -8,6 +8,7 @@
  */
 
 #include <sys/param.h>
+#include <sys/vnode.h>
 
 #include <ufs/lfs/lfs.h>
 #include <ufs/lfs/lfs_extern.h>
