@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.74 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.75 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -553,9 +553,7 @@ ffs_vget(mp, ino, vpp)
 		 * be misleading to leave it on its hash chain. It will be
 		 * returned to the free list by ufs_iput().
 		 */
-		remque(ip);
-		ip->i_forw = ip;
-		ip->i_back = ip;
+		ufs_ihashrem(ip);
 
 		/* Unlock and discard unneeded inode. */
 		ufs_iput(ip);
