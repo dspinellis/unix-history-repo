@@ -13,6 +13,7 @@ kdb/kdb_sym.c		optional kadb
 kdb/kdb_trap.c		optional kadb
 net/af.c		standard
 net/if.c		standard
+net/if_ethersubr.c	standard
 net/if_loop.c		optional loop
 net/if_sl.c		optional sl
 net/raw_cb.c		standard
@@ -116,3 +117,49 @@ kern/vm_sw.c		standard
 kern/vm_swap.c		standard
 kern/vm_swp.c		standard
 kern/vm_text.c		standard
+netiso/clnp_debug.c	optional iso
+netiso/clnp_er.c	optional iso
+netiso/clnp_frag.c	optional iso
+netiso/clnp_input.c	optional iso
+netiso/clnp_options.c	optional iso
+netiso/clnp_output.c	optional iso
+netiso/clnp_raw.c	optional iso
+netiso/clnp_subr.c	optional iso
+netiso/clnp_timer.c	optional iso
+netiso/esis.c		optional iso
+netiso/iso.c		optional iso
+netiso/iso_chksum.c	optional iso
+netiso/iso_pcb.c	optional iso
+netiso/iso_proto.c	optional iso
+netiso/iso_snpac.c	optional iso
+netiso/iso_usrreq.c	optional iso
+netiso/tp_astring.c	optional iso
+netiso/tp_astring.c	optional tpip
+netiso/tp_cons.c	optional iso
+netiso/tp_driver.c	optional iso
+netiso/tp_driver.c	optional tpip
+netiso/tp_emit.c	optional iso
+netiso/tp_emit.c	optional tpip
+netiso/tp_inet.c	optional iso
+netiso/tp_inet.c	optional tpip
+netiso/tp_input.c	optional iso
+netiso/tp_input.c	optional tpip
+netiso/tp_iso.c		optional iso
+netiso/tp_meas.c	optional iso
+netiso/tp_meas.c	optional tpip
+netiso/tp_output.c	optional iso
+netiso/tp_output.c	optional tpip
+netiso/tp_pcb.c		optional iso
+netiso/tp_pcb.c		optional tpip
+netiso/tp_subr.c	optional iso
+netiso/tp_subr.c	optional tpip
+netiso/tp_subr2.c	optional iso
+netiso/tp_subr2.c	optional tpip
+netiso/tp_timer.c	optional iso
+netiso/tp_timer.c	optional tpip
+netiso/tp_trace.c	optional iso
+netiso/tp_trace.c	optional tpip
+netiso/tp_usrreq.c	optional iso
+netiso/tp_usrreq.c	optional tpip
+netiso/if_cons.c	optional argoxtwentyfive device-driver
+netiso/if_eon.c		optional eon
