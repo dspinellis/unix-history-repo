@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)USERFILE.5	6.1 (Berkeley) %G%
+.\"	@(#)USERFILE.5	6.2 (Berkeley) %G%
 .\"
 .TH USERFILE 5 ""
 .UC 6
@@ -93,7 +93,7 @@ and
 .I system
 null, for example
 .IP
-.B ,  /usr/spool/uucppublic
+.B ,  /var/spool/uucppublic
 .PP	
 can be used to conveniently specify the paths for both "no match" cases
 if lines earlier in
@@ -112,7 +112,7 @@ the following strategy is used to determine the current
 .TP
 1)
 If the process is attached to a terminal, a login entry exists in
-.IR /etc/utmp ,
+.IR /var/run/utmp ,
 and the UID for the
 .I utmp
 name matches the current real UID, then
@@ -155,7 +155,7 @@ The \s-1UUCP\s0 utilities
 and
 .IR uuxqt )
 always have access to the \s-1UUCP\s0 spool files in
-.IR /usr/spool/uucp ,
+.IR /var/spool/uucp ,
 regardless of pathnames in
 .IR USERFILE .
 .PP
@@ -203,7 +203,7 @@ erroneously check \s-1UUCP\s0 spool files against the
 .I USERFILE
 pathname permissions.
 Hence, on these systems it is necessary to specify
-.I /usr/spool/uucp
+.I /var/spool/uucp
 as a valid path on the
 .I USERFILE
 line used by
