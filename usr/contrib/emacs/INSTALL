@@ -1,0 +1,539 @@
+GNU Emacs Installation Guide
+Copyright (c) 1985 Richard M. Stallman
+
+   Permission is granted to anyone to make or distribute verbatim copies
+   of this document as received, in any medium, provided that the
+   copyright notice and permission notice are preserved,
+   and that the distributor grants the recipient permission
+   for further redistribution as permitted by this notice.
+
+   Permission is granted to distribute modified versions
+   of this document, or of portions of it,
+   under the above conditions, provided also that they
+   carry prominent notices stating who last changed them,
+   and that any new or changed statements about me (Richard Stallman)
+   or my activities are approved by me.
+
+
+PREPARATION
+
+0) Make sure your system has enough swapping space allocated
+ to handle a program whose pure code is 400k bytes or
+ and whose data area is at least 150k and can reach 600k
+ bytes or much more.  If the swapping space is insufficient, you
+ will get an error in the command temacs -l loadup inc dump,
+ found in $BUILD/src/ymakefile, or possibly when running the
+ final dumped Emacs.
+ 
+1) Choose a place in the file structure for the main directory
+ of Emacs code to reside.  This will ultimately have
+ subdirectories named info, lisp, etc, etc.  Call this name
+ $EMACS.  Let $BUILD stand for the name the directory has now.
+
+2) Copy $BUILD/src/config.h.dist to config.h, and edit it to
+ set the right options for your system.  The file
+ $BUILD/etc/MACHINES may help you decide what to put there.
+
+3) Copy $BUILD/src/paths.h.dist to paths.h, and edit it to
+ contain the correct directory names: $EMACS/lisp for the
+ directory for Lisp libraries, and $EMACS/etc for the
+ directory for executables and text files.
+
+ Emacs will use these names once it has been built.
+ During building, Emacs searches the directory ../lisp for
+ Lisp files before the directories specified in paths.h, and
+ executable files are found in ../etc.  So the main Emacs
+ directory $BUILD can be anywhere while Emacs is built, but
+ must be renamed to $EMACS afterwards in order for Emacs to
+ work properly.
+
+4) Look at $BUILD/lisp/paths.el; if some of those values
+ are not right for your system, create a file
+ $BUILD/lisp/site-init.el containing Lisp code to override them.
+ You would use the Lisp function `setq'.  For example,
+
+     (setq news-inews-program "/usr/bin/inews")
+
+ is how you would override the default value of the
+ variable news-inews-program (which is "/usr/local/inews").
+
+5) Put into $BUILD/lisp/site-init.el any Lisp code
+ you want loaded into Emacs before it is dumped out.
+
+ This file is nonexistent in the distribution.
+ You do not need to create it, if you have nothing
+ to put in it.
+
+6) Decide what compiler switches to use.
+ You might want to replace the `-g' in the file $BUILD/src/ymakefile
+ with `-O'.  If you are not running on 4.2 on a vax,
+ it is possible that no debugger you have will be able
+ to run Emacs with its symbol table, so you might as well
+ use `-O' instead.  If you do have a debugger that works,
+ it is probably best to use `-g' so that you are not
+ helpless in the face of a problem.
+
+7) Refer to the file $BUILD/etc/TERMS for information on
+ fields you may wish to add to various termcap entries.
+
+BUILDING GNU EMACS
+The steps below are done by the shell script `build-install'.
+
+1) Cd to $BUILD/etc and run `make'.
+ This creates files named `ctags' and `etags' and `loadst'
+ and `make-docfile' and `digest-doc' and `test-distrib'.
+
+2) Cd to $BUILD/src and Run `make'
+ This refers to files in the $BUILD/lisp and $BUILD/etc subdirectories
+ using names ../lisp and ../etc.
+
+ This creates a file $BUILD/src/xemacs which is the runnable Emacs,
+ assigning it a new version number by incrementing the version
+ stored in $BUILD/lisp/version.el.
+
+ It also creates a file in $BUILD/etc, whose name is
+ DOC followed by the current Emacs version.
+ This file contains documentation strings for all the
+ functions in Emacs.  Each time you run make to make a new xemacs,
+ a new DOC file with a new name is made.  You must keep
+ the DOC file for an Emacs version as long as you keep using
+ that Emacs version.
+
+
+INSTALLATION
+The steps below are done by the shell script `build-install'.
+
+0) mv $BUILD $EMACS   if $BUILD and $EMACS are not the same.
+ This moves the main Emacs directory to the name you have told
+ Emacs (via paths.h) it is going to have.
+
+1) Move the file $EMACS/xemacs to /usr/local/bin/emacs,
+ or some other name in users' search paths.
+ `xemacs' has an alternate name $EMACS/src/emacs-EMACSVERSION;
+ you may wish to make a symbolic link
+ named /usr/local/bin/emacs pointing to that alternate name,
+ as an easy way of installing different versions.
+
+ You can delete $EMACS/src/temacs.
+
+3) Move the programs ctags and etags from $EMACS/etc
+ to /usr/local/bin.  These programs are run by users as shell commands.
+
+ The program $EMACS/etc/loadst is invoked by Emacs when appropriate.
+
+ The programs $EMACS/etc/make-docfile and $EMACS/etc/test-distrib
+ are not used any more; they were used in building Emacs.
+
+ $EMACS/etc/digest-doc can be used to convert DOC into a
+ file for users to read.  There is no important reason to move it.
+
+4) The files in $EMACS/src subdirectory, except for xemacs,
+ are not used by Emacs once it is built.
+
+
+LOSSAGES
+Known possible problems building and running GNU Emacs
+
+* In the 4.3bsd distribution, you will get some spurious warning messages
+saying `BSD redefined' or `BSD4_3 redefined' from the C compiler while
+building Emacs.  These are due to a last minute surprise in the 4.3
+header files which we did not have time to correct for.  For now,
+please disregard the messages.
+
+* Watch out for .emacs files and EMACSLOADPATH environment vars
+
+These control the actions of Emacs.
+~/.emacs is your Emacs init file.
+EMACSLOADPATH overrides which directories the function
+"load" will search.
+
+If you observe strange problems, check for these and get rid
+of them, then try again.
+
+* Fatal signal in the command  temacs -l loadup inc dump
+
+This has been known to happen due to insufficient swapping
+space available on the machine.
+
+On 68000's, it has also happened because of bugs in the
+subroutine `alloca'.  Verify that `alloca' works right, even
+for large blocks (many pages).
+
+* test-distrib says that the distribution has been clobbered
+* or, temacs prints "Command key out of range 0-127"
+* or, temacs runs and dumps xemacs, but xemacs totally fails to work.
+* or, temacs gets errors dumping xemacs
+
+This can be because the .elc files have been garbled.  Do not be
+fooled by the fact that most of a .elc file is text: these are
+binary files and can contain all 256 byte values.
+
+In particular `shar' cannot be used for transmitting GNU Emacs.
+It typically truncates "lines".  What appear to be "lines" in
+a binary file can of course be of any length.  Even once `shar'
+itself is made to work correctly, `sh' discards null characters
+when unpacking the shell archive.
+
+I have also seen character \177 changed into \377.  I do not know
+what transfer means caused this problem.  Various network
+file transfer programs are suspected of clobbering the high bit.
+
+The only verified ways to transfer GNU Emacs are `tar'
+and rcp or internet ftp between two Unix systems, or chaosnet
+cftp using raw mode.
+
+If you have a copy of Emacs that has been damaged in its
+nonprinting characters, you can fix them:
+
+ 1) Record the names of all the .elc files.
+ 2) Delete all the .elc files.
+ 3) Recompile alloc.c with a value of PURESIZE twice as large.
+     You might as well save the old alloc.o.
+ 4) Remake xemacs.  It should work now.
+ 5) Running xemacs, do Meta-x byte-compile-file repeatedly
+  to recreate all the .elc files that used to exist.
+ 6) Reinstall the old alloc.o (undoing changes to alloc.c if any)
+  and remake temacs.
+ 7) Remake xemacs.  It should work now, with valid .elc files.
+
+* temacs prints "Pure Lisp storage exhausted"
+
+This means that the Lisp code loaded from the .elc and .el
+files during  temacs -l loadup inc dump  took up more
+space than was allocated.
+
+This could be caused by
+ 1) adding code to the preloaded Lisp files
+ 2) adding more preloaded files in loadup.el
+ 3) having a site-init.el which loads files.
+   Note that ANY site-init.el is nonstandard;
+   if you have received Emacs from some other site
+   and it contains a site-init.el file, consider
+   deleting that file.
+ 4) getting the wrong .el or .elc files
+   (not from the directory you expected).
+ 5) deleting some .elc files that are supposed to exist.
+   This would cause the source files (.el files) to be
+   loaded instead.  They take up more room, so you lose.
+
+* Changes made to .el files do not take effect.
+
+You may have forgotten to recompile them into .elc files.
+Then the old .elc files will be loaded, and your changes
+will not be seen.  To fix this, do M-x byte-recompile-directory
+and specify the directory that contains the Lisp files.
+
+* The dumped Emacs (xemacs) crashes when run, trying to write pure data.
+
+Two causes have been seen for such problems.
+
+1) On a system where getpagesize is not a system call, it is defined
+as a macro.  If the definition (in both unexec.c and malloc.c) is wrong,
+it can cause problems like this.  You might be able to find the correct
+value in the man page for a.out (5).
+
+2) Some systems allocate variables declared static among the
+initialized variables.  Emacs makes all initialized variables in most
+of its files pure after dumping, but the variables declared static and
+not initialized are not supposed to be pure.  On these systems you
+may need to add "#define static" to the m- or the s- file.
+
+* rmail gets error getting new mail
+
+rmail gets new mail from /usr/spool/mail/$USER using a program
+called movemail.  This program interlocks with /bin/mail using
+the protocol defined by /bin/mail, which involves creating a
+lock file.  It must be able to write in /usr/spool/mail
+in order to do this.
+
+You may have to change config.h to #define MAIL_USE_FLOCK
+if your system is configured to use flock to interlock
+access to mail files.
+
+* Emacs spontaneously displays "I-search: " at the bottom of the screen.
+
+This means that Control-S/Control-Q "flow control" is being used.
+C-s/C-q flow control is bad for Emacs editors because it takes away
+C-s and C-q as user commands.  Since editors do not output long streams
+of text without user commands, there is no need for a user-issuable
+"stop output" command in an editor; therefore, a properly designed
+flow control mechanism would transmit all possible input characters
+without interference.  Designing such a mechanism is easy, for a person
+with at least half a brain.
+
+There are three possible reasons why flow control could be taking place:
+
+  1) Terminal has not been told to disable flow control
+  2) Insufficient padding for the terminal in use
+  3) Some sort of terminal concentrator or line switch is responsible
+
+First of all, many terminals have a set-up mode which controls
+whether they generate flow control characters.  This must be
+set to "no flow control" in order for Emacs to work.  Sometimes
+there is an escape sequence that the computer can send to turn
+flow control off and on.  If so, perhaps the termcap `ti' string
+should turn flow control off, and the `te' string should turn it on.
+
+Once the terminal has been told "no flow control", you may find it
+needs more padding.  The amount of padding Emacs sends is controlled
+by the termcap entry for the terminal in use, and by the output baud
+rate as known by the kernel.  The shell command `stty' will print
+your output baud rate; `stty' with suitable arguments will set it if
+it is wrong.  Setting to a higher speed causes increased padding.  If
+the results are wrong for the correct speed, there is probably a
+problem in the termcap entry.  You must speak to a local Unix wizard
+to fix this.  Perhaps you are just using the wrong terminal type.
+
+For terminals that lack a "no flow control" mode, sometimes just
+giving lots of padding will prevent actual generation of flow control
+codes.  You might as well try it.
+
+If you are really unlucky, your terminal is connected to the computer
+through a concentrator which sends flow control to the computer, or it
+insists on sending flow control itself no matter how much padding you
+give it.  You are screwed!  You should replace the terminal or
+concentrator with a properly designed one.  In the mean time,
+some drastic measures can make Emacs semi-work.
+
+One drastic measure to ignore C-s and C-q, while sending enough
+padding that the terminal will not really lose any output.
+Ignoring C-s and C-q can be done by using keyboard-translate-table
+to map them into an undefined character such as C-^ or C-\.  Sending
+lots of padding is done by changing the termcap entry.
+
+An even more drastic measure is to make Emacs understand flow control.
+Do (set-input-mode nil t).  Emacs will then interpret C-s and C-q as
+flow control commands.  You will lose the ability to use them for
+Emacs commands.  Also, as a consequence of using CBREAK mode, the
+terminal's Meta-key, if any, will not work, and C-g will be liable to
+cause a loss of output which will produce garbage on the screen.  You
+can use keyboard-translate-table to map two other input characters
+(such as C-^ and C-\) into C-s and C-q, so that you can still search
+and quote.
+
+I have no intention of ever redisigning the Emacs command set for
+the assumption that terminals use C-s/C-q flow control.  This
+flow control technique is a bad design, and terminals that need
+it are bad merchandise and should not be purchased.  If you can
+get some use out of GNU Emacs on inferior terminals, I am glad,
+but I will not make Emacs worse for properly designed systems
+for the sake of inferior systems.
+
+* Control-S and Control-Q commands are ignored completely.
+
+For some reason, your system is using brain-damaged ^S/^Q flow
+control despite Emacs's attempts to turn it off.  Perhaps your
+terminal is connected to the computer through a concentrator
+that wants to use flow control.
+
+You should first try to tell the concentrator not to use flow control.
+If you succeed in this, try making the terminal work without
+flow control, as described in the preceding section.
+
+If that line of approach is not successful, map some other characters
+into C-s and C-q using keyboard-translate-table.  I suggest C-^ and
+C-\.
+
+* Screen is updated wrong, but only on one kind of terminal.
+
+This could mean that the termcap entry you are using for that
+terminal is wrong, or it could mean that Emacs has a bug handing
+the combination of features specified for that terminal.
+
+The first step in tracking this down is to record what characters
+Emacs is sending to the terminal.  Execute the Lisp expression
+(open-termscript "./emacs-script") to make Emacs write all
+terminal output into the file ~/emacs-script as well; then do
+what makes the screen update wrong, and look at the file
+and decode the characters using the manual for the terminal.
+There are several possibilities:
+
+1) The characters sent are correct, according to the terminal manual.
+
+In this case, there is no obvious bug in Emacs, and most likely you
+need more padding, or possibly the terminal manual is wrong.
+
+2) The characters sent are incorrect, due to an obscure aspect
+ of the terminal behavior not described in an obvious way
+ by termcap.
+
+This case is hard.  It will be necessary to think of a way for
+Emacs to distinguish between terminals with this kind of behavior
+and other terminals that behave subtly differently but are
+classified the same by termcap; or else find an algorithm for
+Emacs to use that avoids the difference.  Such changes must be
+tested on many kinds of terminals.
+
+3) The termcap entry is wrong.
+
+See the file TERMS in this directory for information on changes
+that are known to be needed in commonly used termcap entries
+for certain terminals.
+
+4) The characters sent are incorrect, and clearly cannot be
+ right for any terminal with the termcap entry you were using.
+
+This is unambiguously an Emacs bug, and can probably be fixed
+in termcap.c, tparam.c, term.c, scroll.c, cm.c or dispnew.c.
+
+* Output from Control-V is slow.
+
+On many bit-map terminals, scrolling operations are fairly slow.
+Often the termcap entry for the type of terminal in use fails
+to inform Emacs of this.  The two lines at the bottom of the screen
+before a Control-V command are supposed to appear at the top after
+the Control-V command.  If Emacs thinks scrolling the lines is fast,
+it will scroll them to the top of the screen.
+
+If scrolling is slow but Emacs thinks it is fast, the usual reason is
+that the termcap entry for the terminal you are using does not
+specify any padding time for the `al' and `dl' strings.  Emacs
+concludes that these operations take only as much time as it takes to
+send the commands at whatever line speed you are using.  You must
+fix the termcap entry to specify, for the `al' and `dl', as much
+time as the operations really take.
+
+Currently Emacs thinks in terms of serial lines which send characters
+at a fixed rate, so that any operation which takes time for the
+terminal to execute must also be padded.  With bit-map terminals
+operated across networks, often the network provides some sort of
+flow control so that padding is never needed no matter how slow
+an operation is.  You must still specify a padding time if you want
+Emacs to realize that the operation takes a long time.  This will
+cause padding characters to be sent unnecessarily, but they do
+not really cost much.  They will be transmitted while the scrolling
+is happening and then discarded quickly by the terminal.
+
+Most bit-map terminals provide commands for inserting or deleting
+multiple lines at once.  Define the `AL' and `DL' strings in the
+termcap entry to say how to do these things, and you will have
+fast output without wasted padding characters.  These strings should
+each contain a single %-spec saying how to send the number of lines
+to be scrolled.  These %-specs are like those in the termcap
+`cm' string.
+
+You should also define the `IC' and `DC' strings if your terminal
+has a command to insert or delete multiple characters.  These
+take the number of positions to insert or delete as an argument.
+
+A `cs' string to set the scrolling region will reduce the amount
+of motion you see on the screen when part of the screen is scrolled.
+
+* You type Control-H (Backspace) expecting to delete characters.
+
+Put `stty dec' in your .login file and your problems will disappear
+after a day or two.
+
+The choice of Backspace for erasure was based on confusion, caused by
+the fact that backspacing causes erasure (later, when you type another
+character) on most display terminals.  But it is a mistake.  Deletion
+of text is not the same thing as backspacing followed by failure to
+overprint.  I do not wish to propagate this confusion by conforming
+to it.
+
+For this reason, I believe `stty dec' is the right mode to use,
+and I have designed Emacs to go with that.  If there were a thousand
+other control characters, I would define Control-h to delete as well;
+but there are not very many other control characters, and I think
+that providing the most mnemonic possible Help character is more
+important than adapting to people who don't use `stty dec'.
+
+If you are obstinate about confusing buggy overprinting with deletion,
+you can redefine Backspace in your .emacs file:
+  (global-set-key "\b" 'delete-backward-char)
+You may then wish to put the function  help-command  on some
+other key.  I leave to you the task of deciding which key.
+
+* ld complains because `alloca' is not defined on your system.
+
+Alloca is a library function in 4.2bsd, which is used very heavily by
+GNU Emacs.  Use of malloc instead is very difficult, as you would have
+to arrange for the storage to be freed, and do so even in the case of
+a longjmp happening inside a subroutine.  Many subroutines in Emacs
+can do longjmp.
+
+If your system does not support alloca, try defining the symbol
+C_ALLOCA in the m-...h file for that machine.  This will enable the use
+in Emacs of a portable simulation for alloca.  But you will find that
+Emacs's performance and memory use improve if you write a true
+alloca in assembler language.
+
+alloca (N) should return the address of an N-byte block of memory
+added dynamically to the current stack frame.
+
+* Vax C compiler bugs affecting Emacs.
+
+You may get one of these problems compiling Emacs:
+
+   foo.c line nnn: compiler error: no table entry for op STASG
+   foo.c: fatal error in /lib/ccom
+
+These are due to bugs in the C compiler; the code is valid C.
+Unfortunately, the bugs are unpredictable: the same construct
+may compile properly or trigger one of these bugs, depending
+on what else is in the source file being compiled.  Even changes
+in header files that should not affect the file being compiled
+can affect whether the bug happens.  In addition, sometimes files
+that compile correctly on one machine get this bug on another machine.
+
+As a result, it is hard for me to make sure this bug will not affect
+you.  I have attempted to find and alter these constructs, but more
+can always appear.  However, I can tell you how to deal with it if it
+should happen.  The bug comes from having an indexed reference to an
+array of Lisp_Objects, as an argument in a function call:
+  Lisp_Object *args;
+  ...
+   ... foo (5, args[i], ...)...
+putting the argument into a temporary variable first, as in
+  Lisp_Object *args;
+  Lisp_Object tem;
+  ...
+   tem = args[i];
+   ... foo (r, tem, ...)...
+causes the problem to go away.
+The `contents' field of a Lisp vector is an array of Lisp_Objects,
+so you may see the problem happening with indexed references to that.
+
+* 68000 C compiler problems
+
+Various 68000 compilers have different problems.
+These are some that have been observed.
+
+** Using value of assignment expression on union type loses.
+This means that  x = y = z;  or  foo (x = z);  does not work
+if x is of type Lisp_Object.
+
+** "cannot reclaim" error.
+
+This means that an expression is too complicated.  You get the correct
+line number in the error message.  The code must be rewritten with
+simpler expressions.
+
+** XCONS, XSTRING, etc macros produce incorrect code.
+
+If temacs fails to run at all, this may be the cause.
+Compile this test program and look at the assembler code:
+
+struct foo { char x; unsigned int y : 24; };
+
+lose (arg)
+     struct foo arg;
+{
+  test ((int *) arg.y);
+}
+
+If the code is incorrect, your compiler has this problem.
+In the XCONS, etc., macros in lisp.h you must replace (a).u.val with
+((a).u.val + coercedummy) where coercedummy is declared as int.
+
+This problem will not happen if the m-...h file for your type
+of machine defines NO_UNION_TYPE.  That is the recommended setting now.
+
+* C compilers lose on returning unions
+
+I hear that some C compilers cannot handle returning
+a union type.  Most of the functions in GNU Emacs return
+type Lisp_Object, which is currently defined as a union.
+
+This problem will not happen if the m-...h file for your type
+of machine defines NO_UNION_TYPE.  That is the recommended setting now.
