@@ -35,7 +35,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)machdep.c	7.4 (Berkeley) 6/3/91
- *	$Id: machdep.c,v 1.43 1994/05/29 07:23:40 davidg Exp $
+ *	$Id: machdep.c,v 1.44 1994/06/01 01:58:08 davidg Exp $
  */
 
 #include "npx.h"
@@ -1002,7 +1002,7 @@ extern idtvec_t
 	IDTVEC(rsvd1), IDTVEC(rsvd2), IDTVEC(rsvd3), IDTVEC(rsvd4),
 	IDTVEC(rsvd5), IDTVEC(rsvd6), IDTVEC(rsvd7), IDTVEC(rsvd8),
 	IDTVEC(rsvd9), IDTVEC(rsvd10), IDTVEC(rsvd11), IDTVEC(rsvd12),
-	IDTVEC(rsvd13), IDTVEC(rsvd14), IDTVEC(rsvd14), IDTVEC(syscall);
+	IDTVEC(rsvd13), IDTVEC(rsvd14), IDTVEC(syscall);
 
 int _gsel_tss;
 
