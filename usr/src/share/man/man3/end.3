@@ -1,6 +1,6 @@
-.\"	@(#)end.3	4.1 (Berkeley) %G%
+.\"	@(#)end.3	5.1 (Berkeley) %G%
 .\"
-.TH END 3 
+.TH END 3  "19 January 1983"
 .AT 3
 .SH NAME
 end, etext, edata \- last locations in program
@@ -11,9 +11,8 @@ end, etext, edata \- last locations in program
 .B extern edata;
 .fi
 .SH DESCRIPTION
-These names refer neither to routines
-nor to locations with interesting contents.
-The address of
+These names refer neither to routines nor to locations with interesting
+contents.  The address of
 .I etext
 is the first address above the program text,
 .I edata
@@ -21,11 +20,9 @@ above the initialized data region, and
 .I end
 above the uninitialized data region.
 .PP
-When execution begins, the program break
-coincides with
+When execution begins, the program break coincides with
 .I end,
-but it is reset by
-the routines
+but it is reset by the routines
 .IR brk (2),
 .IR malloc (3), 
 standard input/output
@@ -35,8 +32,7 @@ the profile
 option of 
 .IR cc (1),
 etc.
-The current value of the program break
-is reliably returned by `sbrk(0)',
+The current value of the program break is reliably returned by `sbrk(0)',
 see
 .IR brk (2).
 .SH "SEE ALSO"
