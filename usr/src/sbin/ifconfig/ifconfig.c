@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -324,8 +324,8 @@ setsnpaoffset(val)
 }
 
 #define	IFFBITS \
-"\020\1UP\2BROADCAST\3DEBUG\4LOOPBACK\5POINTOPOINT\6NOTRAILERS\7RUNNING\10NOARP\
-"
+"\020\1UP\2BROADCAST\3DEBUG\4LOOPBACK\5POINTOPOINT\6NOTRAILERS\7RUNNING\
+\10NOARP\11PROMISC\12ALLMULTI\13OACTIVE\14SIMPLEX"
 
 /*
  * Print the status of the interface.  If an address family was
