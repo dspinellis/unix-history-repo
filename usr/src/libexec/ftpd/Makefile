@@ -1,4 +1,9 @@
-#	@(#)Makefile	4.2	%G%
+#
+# Copyright (c) 1983 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	5.1 (Berkeley) %G%
 #
 ALL=	ftpd.o ftpcmd.o glob.o vers.o
 DESTDIR=
