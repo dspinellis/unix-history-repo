@@ -1,4 +1,4 @@
-#	Makefile	4.4	84/08/25
+#	Makefile	4.5	84/08/26
 
 CFLAGS=-O
 DESTDIR=
@@ -19,4 +19,4 @@ install:
 	install -c -m 755 ccat.sh ${DESTDIR}/usr/ucb/ccat
 
 clean:
-	rm -f compact.o uncompact.o tree.o
+	rm -f compact uncompact compact.o uncompact.o tree.o
