@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	3.4		%G%);
+SCCSID(@(#)envelope.c	3.5		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -115,17 +115,10 @@ dropenvelope(e)
 	}
 
 	/*
-	**  See if this message has timed out
-	*/
-
-	if (bitset(EF_TIMEOUT, e->e_flags) && queueit)
-		timeout(e);
-
-	/*
 	**  Arrange to send error messages if there are fatal errors.
 	*/
 
-	if (bitset(EF_FATALERRS, e->e_flags))
+	if (bitset(EF_FATALERRS|EF_TIMEOUT, e->e_flags))
 		savemail(e);
 
 	/*

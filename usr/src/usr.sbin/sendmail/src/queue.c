@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.62		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.63		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.62		%G%);
+SCCSID(@(#)queue.c	3.63		%G%);
 
 /*
 **  Work queue.
@@ -467,7 +467,6 @@ dowork(w)
 		(void) alarm(0);
 		CurEnv->e_flags &= ~EF_FATALERRS;
 		QueueRun = TRUE;
-		SendMode = SM_DELIVER;
 		ErrorMode = EM_MAIL;
 		CurEnv->e_id = &w->w_name[2];
 # ifdef LOG
@@ -502,15 +501,6 @@ dowork(w)
 		/* do the delivery */
 		if (!bitset(EF_FATALERRS, CurEnv->e_flags))
 			sendall(CurEnv, SM_DELIVER);
-
-		/* if still not sent, perhaps we should time out.... */
-# ifdef DEBUG
-		if (tTd(40, 3))
-			printf("curtime=%ld, TimeOut=%ld\n", curtime(),
-					     CurEnv->e_ctime + TimeOut);
-# endif DEBUG
-		if (curtime() > CurEnv->e_ctime + TimeOut)
-			CurEnv->e_flags |= EF_TIMEOUT;
 
 		/* finish up and exit */
 		finis();
@@ -618,40 +608,6 @@ readqf(e, full)
 	}
 
 	FileName = NULL;
-}
-/*
-**  TIMEOUT -- process timeout on queue file.
-**
-**	Parameters:
-**		e -- the envelope that timed out.
-**
-**	Returns:
-**		none.
-**
-**	Side Effects:
-**		Returns a message to the sender saying that this
-**		message has timed out.
-*/
-
-timeout(e)
-	register ENVELOPE *e;
-{
-	char buf[MAXLINE];
-	extern char *pintvl();
-
-# ifdef DEBUG
-	if (tTd(40, 3))
-		printf("timeout(%s)\n", e->e_id);
-# endif DEBUG
-	e->e_to = NULL;
-	message(Arpa_Info, "Message has timed out");
-
-	/* return message to sender */
-	(void) sprintf(buf, "Cannot send mail for %s", pintvl(TimeOut, FALSE));
-	(void) returntosender(buf, &e->e_from, TRUE);
-
-	/* arrange to remove files from queue */
-	e->e_flags |= EF_CLRQUEUE;
 }
 /*
 **  PRINTQUEUE -- print out a representation of the mail queue
