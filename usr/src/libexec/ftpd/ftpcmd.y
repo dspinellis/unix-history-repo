@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ftpcmd.y	5.26 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.27 (Berkeley) %G%
  */
 
 /*
@@ -15,24 +15,28 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+
 #include <netinet/in.h>
 #include <arpa/ftp.h>
+
 #include <signal.h>
 #include <setjmp.h>
 #include <syslog.h>
 #include <time.h>
 #include <pwd.h>
+#include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include "extern.h"
 
 extern	struct sockaddr_in data_dest;
 extern	int logged_in;
@@ -51,7 +55,6 @@ extern	char *globerr;
 extern	int usedefault;
 extern  int transflag;
 extern  char tmpline[];
-char	**ftpglob();
 
 static	int cmd_type;
 static	int cmd_form;
@@ -435,7 +438,8 @@ cmd:		USER SP username CRLF
 			if ($2 && $4 != NULL) {
 				struct stat stbuf;
 				if (stat((char *) $4, &stbuf) < 0)
-					perror_reply(550, "%s", (char *) $4);
+					reply(550, "%s: %s",
+					    (char *)$4, strerror(errno));
 				else if ((stbuf.st_mode&S_IFMT) != S_IFREG) {
 					reply(550, "%s: not a plain file.",
 						(char *) $4);
@@ -723,7 +727,15 @@ struct tab sitetab[] = {
 	{ NULL,   0,    0,    0,	0 }
 };
 
-struct tab *
+static char	*copy __P((char *));
+static void	 help __P((struct tab *, char *));
+static struct tab *
+		 lookup __P((struct tab *, char *));
+static void	 sizecmd __P((char *));
+static void	 toolong __P((int));
+static int	 yylex __P((void));
+
+static struct tab *
 lookup(p, cmd)
 	register struct tab *p;
 	char *cmd;
@@ -743,6 +755,7 @@ lookup(p, cmd)
 char *
 getline(s, n, iop)
 	char *s;
+	int n;
 	register FILE *iop;
 {
 	register c;
@@ -816,7 +829,8 @@ getline(s, n, iop)
 }
 
 static void
-toolong()
+toolong(signo)
+	int signo;
 {
 
 	reply(421,
@@ -827,13 +841,14 @@ toolong()
 	dologout(1);
 }
 
+static int
 yylex()
 {
 	static int cpos, state;
 	register char *cp, *cp2;
 	register struct tab *p;
 	int n;
-	char c, *copy();
+	char c;
 
 	for (;;) {
 		switch (state) {
@@ -1044,6 +1059,7 @@ yylex()
 	}
 }
 
+void
 upper(s)
 	register char *s;
 {
@@ -1054,7 +1070,7 @@ upper(s)
 	}
 }
 
-char *
+static char *
 copy(s)
 	char *s;
 {
@@ -1067,6 +1083,7 @@ copy(s)
 	return (p);
 }
 
+static void
 help(ctab, s)
 	struct tab *ctab;
 	char *s;
@@ -1131,8 +1148,9 @@ help(ctab, s)
 		    c->name, c->help);
 }
 
+static void
 sizecmd(filename)
-char *filename;
+	char *filename;
 {
 	switch (type) {
 	case TYPE_L:
