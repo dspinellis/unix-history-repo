@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)deliver.c	5.13 (Berkeley) %G%";
+static char	SccsId[] = "@(#)deliver.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 # include <signal.h>
@@ -363,7 +363,13 @@ deliver(e, firstto)
 	{
 # ifdef MXDOMAIN
 		expand("\001w", buf, &buf[sizeof buf - 1], e);
-		if ((Nmx = getmxrr(host, MxHosts, MAXMXHOSTS, buf)) < 0)
+		if (host[0] == '[')
+		{
+			Nmx = 1;
+			MxHosts[0] = host;
+			rcode = EX_OK;
+		}
+		else if ((Nmx = getmxrr(host, MxHosts, MAXMXHOSTS, buf)) < 0)
 		{
 			/*
 			 * Map errors into standard values
