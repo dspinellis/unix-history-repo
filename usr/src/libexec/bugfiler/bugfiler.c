@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.3 (Berkeley) 85/11/04";
+static char sccsid[] = "@(#)bugfiler.c	5.4 (Berkeley) 86/03/26";
 #endif not lint
 
 /*
@@ -33,11 +33,13 @@ static char sccsid[] = "@(#)bugfiler.c	5.3 (Berkeley) 85/11/04";
 #define	BUGS_NAME	"4bsd-bugs"
 #endif
 #ifndef BUGS_HOME
-#define	BUGS_HOME	"@ucbarpa.BERKELEY.EDU"
+#define	BUGS_HOME	"@ucbvax.BERKELEY.EDU"
 #endif
 #define	MAILCMD		"/usr/lib/sendmail -i -t"
 
-char	unixtomh[] = "/ra/bugs/bin/unixtomh";
+#ifndef UNIXTOMH
+#define UNIXTOMH	"/usr/lib/unixtomh"
+#endif
 char	*bugperson = "bugs";
 char	*maildir = "mail";
 char	ackfile[] = ".ack";
@@ -129,7 +131,7 @@ main(argc, argv)
 			close(pfd[0]);
 			dup2(pfd[1], 1);
 			close(pfd[1]);
-			execl(unixtomh, "unixtomh", 0);
+			execl(UNIXTOMH, "unixtomh", 0);
 			_exit(127);
 		}
 		close(pfd[1]);
