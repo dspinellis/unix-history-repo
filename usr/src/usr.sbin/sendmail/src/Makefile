@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.3 (Berkeley) %G%
+#	@(#)Makefile	8.4 (Berkeley) %G%
 
 PROG=	sendmail
 
@@ -21,7 +21,7 @@ SRCS=	alias.c arpadate.c clock.c collect.c conf.c convtime.c daemon.c \
 	util.c version.c
 DPADD=	
 LDADD=	
-MAN1=	newaliases.0
+MAN1=	mailq.0 newaliases.0
 MAN5=	aliases.0
 MAN8=	sendmail.0 
 LINKS=	/usr/sbin/sendmail /usr/bin/newaliases \
