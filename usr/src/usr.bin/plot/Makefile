@@ -1,10 +1,10 @@
-#	Makefile	4.6	85/09/21
+#	Makefile	4.7	85/11/11
 #
 CFLAGS=	-O
 ALL=	tek t4013 t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
-	hpplot hp7221plot implot debug atoplot plottoa
+	hpplot hp7221plot implot atoplot plottoa
 
-all:	${ALL}
+all:	${ALL} debug
 
 tek:	driver.o
 	cc -o tek  driver.o -l4014 -lm
@@ -55,17 +55,8 @@ debug: debug.o
 	cc -o debug debug.o
 
 install: all
-	install -s tek ${DESTDIR}/usr/bin
-	install -s t4013 ${DESTDIR}/usr/bin
-	install -s t300 ${DESTDIR}/usr/bin
-	install -s t300s ${DESTDIR}/usr/bin
-	install -s t450 ${DESTDIR}/usr/bin
-	install -s aedplot $(DESTDIR)/usr/bin
-	install -s bgplot ${DESTDIR}/usr/bin
-	install -s crtplot ${DESTDIR}/usr/bin
-	install -s dumbplot ${DESTDIR}/usr/bin
-	install -s gigiplot ${DESTDIR}/usr/bin
-	install -s hpplot ${DESTDIR}/usr/bin
+	-for i in ${ALL}; do \
+		(install -s $$i ${DESTDIR}/usr/bin/$$i); done
 	install -c plot.sh ${DESTDIR}/usr/bin/plot
 
 clean:
