@@ -1,4 +1,4 @@
-/*	cgram.y	4.8	87/05/01	*/
+/*	cgram.y	4.9	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -70,17 +70,7 @@ external_def:	   data_def
 		;
 data_def:
 		   oattributes  SM
-			={
-			    if ($1->in.type != STRTY &&
-				$1->in.type != UNIONTY &&
-				$1->in.type != ENUMTY &&
-				(curclass != SNULL ||
-				$1->in.type != INT ||
-				$1->fn.cdim != 0 ||
-				$1->fn.csiz != INT))
-					werror("null declaration");
-			    $1->in.op = FREE;
-			}
+			={  $1->in.op = FREE; }
 		|  oattributes init_dcl_list  SM
 			={  $1->in.op = FREE; }
 		|  oattributes fdeclarator {
@@ -585,16 +575,10 @@ switchpart:	   SWITCH  LP  e  RP
 			    case INT:	case UNSIGNED:
 			    case MOE:	case ENUMTY:
 				    break;
-			    case FLOAT:	case DOUBLE:
-				    if (pflag)
-					werror("switch (double) muffed by 4.[12]bsd");
-				    /*FALLTHROUGH*/
 			    default:
 				werror("switch expression not type int");
 				q = makety( q, INT, q->fn.cdim, q->fn.csiz );
 				}
-			    if (hflag && q->in.op == ICON)
-				werror( "constant in switch" );
 			    ecomp( buildtree( FORCE, q, NIL ) );
 			    branch( $$ = getlab() );
 			    swstart();
@@ -721,7 +705,11 @@ term:		   term INCOP
 			={  $$=buildtree(CALL,$1,$2); }
 		|  term STROP NAME
 			={  if( $2 == DOT ){
-				if( notlval( $1 ) )uerror("structure reference must be addressable");
+				if( notlval( $1 ) &&
+				    !($1->in.op == UNARY MUL &&
+				      ($1->in.left->in.op == STCALL ||
+				       $1->in.left->in.op == UNARY STCALL)) )
+				    uerror("structure reference must be addressable");
 				$1 = buildtree( UNARY AND, $1, NIL );
 				}
 			    idname = $3;
@@ -742,12 +730,7 @@ term:		   term INCOP
 				defid( q, EXTERN );
 				}
 			    $$=buildtree(NAME,NIL,NIL);
-			    {
-				extern int	nsizeof;
-
-				if (nsizeof == 0)
-					stab[$1].suse = -lineno;
-			    }
+			    stab[$1].suse = -lineno;
 			}
 		|  ICON
 			={  $$=bcon(0);
