@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)opset.c 4.6 %G%";
+static	char sccsid[] = "@(#)opset.c 4.7 %G%";
 #endif /* lint */
 /*
  *	UNIX debugger
@@ -475,9 +475,15 @@ bignumprint(nbytes, optype)
 	valuep = snarf(nbytes);
 	switch(A_TYPEXT(optype)){
 	case TYPF:	
+		if ((valuep->num_num.numFf_float.Ff_ushort[0] & 0xff80) == 0x8000) {
+			printf("0f::"); goto qprint;
+		}
 		printf("0f%f", valuep->num_num.numFf_float.Ff_value);
 		break;
 	case TYPD:
+		if ((valuep->num_num.numFd_float.Fd_ushort[0] & 0xff80) == 0x8000) {
+			printf("0d::"); goto qprint;
+		}
 		printf("0d%f", valuep->num_num.numFd_float.Fd_value);
 		break;
 	case TYPG:
