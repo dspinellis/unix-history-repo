@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chgrp.1	6.7 (Berkeley) %G%
+.\"     @(#)chgrp.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHGRP 1
@@ -16,7 +16,7 @@
 .Nd change group
 .Sh SYNOPSIS
 .Nm chgrp
-.Op Fl Rf
+.Op Fl HRfh
 .Ar group
 .Ar files ...
 .Sh DESCRIPTION
@@ -28,6 +28,9 @@ ID specified by the group operand.
 .Pp
 Options:
 .Bl -tag -width Ds
+.It Fl H
+When encountering a symbolic link on the command line, follow it.  All other
+symbolic links encountered in the traversal are not followed.
 .It Fl R
 Recursively change file group IDs.
 For each
@@ -40,7 +43,17 @@ but they are not traversed.
 .It Fl f
 The force option ignores errors, except for usage errors and doesn't
 query about strange modes (unless user does not have proper permissions).
+.It Fl h
+When encountering a symbolic link anywhere in the traversal, follow it.
 .El
+.Pp
+The group of a symbolic link is immutable, so that unless the 
+.Fl h
+or
+.Fl H
+flags are set,
+.Nm chgrp
+on a symbolic link is a no-op.
 .Pp
 Operands:
 .Bl -tag -width group
@@ -69,7 +82,8 @@ Group ID file
 .Xr chown 2 ,
 .Xr chown 8 ,
 .Xr group 5 ,
-.Xr passwd 5
+.Xr passwd 5 ,
+.Xr fts 3
 .Sh STANDARDS
 The
 .Nm chgrp
