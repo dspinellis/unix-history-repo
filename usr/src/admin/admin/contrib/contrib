@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.12 (Berkeley) %G%
+.\"	@(#)contrib	5.13 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -76,6 +76,9 @@ l l l l.
 386 device drivers	Carnegie-Mellon University Mach project
 386 device drivers	Don Ahn, Sean Fagin, Tim Tucker
 HCX device drivers	Harris Corp.
+Kernel enhancements	Robert Elz, Peter Ivanov, Ian Johnstone,
+	Piers Lauder, John Lions, Tim Long,
+	Chris Maltby, Greg Rose, John Wainwright 
 adventure(6)	Will Crowther, Don Woods, Jim Gillogly
 ar(1)	Hugh A. Smith
 arithmetic(6)	Eamonn McManus
