@@ -1,4 +1,4 @@
-/*	machdep.c	3.19	%G%	*/
+/*	machdep.c	3.20	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,7 +14,7 @@
 #include "../h/psl.h"
 #include "../h/uba.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.19) %H% \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.20) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -89,41 +89,87 @@ sysphys()
 }
 
 /*
- * Start clock
+ * Initialze the clock, based on the time base which is, e.g.
+ * from a filesystem.  Base provides the time to within six months,
+ * and the time of year clock provides the rest.
  */
-clkstart()
-{
-
-	mtpr(NICR, -16667);	/* 16.667 milli-seconds */
-	mtpr(ICCS, ICCS_RUN+ICCS_IE+ICCS_TRANS+ICCS_INT+ICCS_ERR);
-}
-
-clkreld()
-{
-
-	mtpr(ICCS, ICCS_RUN+ICCS_IE+ICCS_INT+ICCS_ERR);
-}
-
 clkinit(base)
-time_t base;
+	time_t base;
 {
+	register unsigned todr = mfpr(TODR);
 	long deltat;
+	int year = YRREF;
 
-	for (time = ((unsigned)mfpr(TODR))/100; time < base - SECYR/2; time += SECYR)
-		;
-	clkset();
+	/*
+	 * Have been told that VMS keeps time internally with base TODRZERO.
+	 * If this is correct, then this routine and VMS should maintain
+	 * the same date, and switching shouldn't be painful.
+	 */
+	if (todr < TODRZERO) {
+		printf("WARNING: todr too small (battery backup failed?)");
+		time = base;
+		/*
+		 * Believe the time in the file system for lack of
+		 * anything better, resetting the TODR.
+		 */
+		clkset();
+		goto check;
+	}
+	/*
+	 * Sneak to within 6 month of the time in the filesystem,
+	 * by starting with the time of the year suggested by the TODR,
+	 * and advancing through succesive years.  Adding the number of
+	 * seconds in the current year takes us to the end of the current year
+	 * and then around into the next year to the same position.
+	 */
+	for (time = (todr-TODRZERO)/100; time < base-SECYR/2; time += SECYR) {
+		if (LEAPYEAR(year))
+			time += SECDAY;
+		year++;
+	}
+
+	/*
+	 * See if we gained/lost two or more days;
+	 * if so, assume something is amiss.
+	 */
 	deltat = time - base;
 	if (deltat < 0)
 		deltat = -deltat;
-	if (deltat >= 2*SECDAY)
-		printf("warning: %s %d days; check the date\n",
-		    time < base ? "lost" : "gained", deltat / SECDAY);
+	if (deltat < 2*SECDAY)
+		return;
+	printf("WARNING: clock %s %d days",
+	    time < base ? "lost" : "gained", deltat / SECDAY);
+check:
+	printf(" -- CHECK AND RESET THE DATE!\n");
 }
 
+/*
+ * Reset the TODR based on the time value; used when the TODR
+ * has a preposterous value and also when the time is reset
+ * by the stime system call.  Also called when the TODR goes past
+ * TODRZERO + 100*(SECYEAR+2*SECDAY) (e.g. on Jan 2 just after midnight)
+ * to wrap the TODR around.
+ */
 clkset()
 {
+	int year = YRREF;
+	unsigned secyr;
+	unsigned yrtime = time;
 
-	mtpr(TODR, ((unsigned)time%SECYR)*100);
+	/*
+	 * Whittle the time down to an offset in the current year,
+	 * by subtracting off whole years as long as possible.
+	 */
+	for (;;) {
+		secyr = SECYR;
+		if (LEAPYEAR(year))
+			secyr += SECDAY;
+		if (yrtime < secyr)
+			break;
+		yrtime -= secyr;
+		year++;
+	}
+	mtpr(TODR, TODRZERO + yrtime*100);
 }
 
 #ifdef PGINPROF
@@ -265,7 +311,8 @@ memchk()
 	register int c = mcr[2];
 
 	if (c & MERLOG) {
-		printf("MEMERR: %X\n", c);
+		printf("MEMERR: mcra %X mcrb %X mcrc %X\n", mcr[0],
+		    mcr[1], c);
 		mcr[2] = (MERLOG|MHIERR);
 	}
 	if (memintvl > 0)
@@ -292,7 +339,7 @@ tbiscl(v)
 		addr += NBPG;
 	}
 }
-
+  
 int	hangcnt;
 
 unhang()
