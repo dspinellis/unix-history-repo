@@ -63,11 +63,13 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00137
+ * CURRENT PATCH LEVEL:         3       00147
  * --------------------         -----   ----------------------
  *
  * 22 Jan 93	Paul Mackerras		Fixed bug where pages got lost
  * 08 Apr 93	Yuval Yarom		Several VM system fixes
+ * 20 Apr 93	Paul Kranenburg		Detect and prevent kernel deadlocks in
+ *					VM system
  *
  */
 
@@ -556,6 +558,14 @@ vm_page_t vm_page_alloc(object, offset)
 
 	spl = splimp();				/* XXX */
 	simple_lock(&vm_page_queue_free_lock);
+	if (	object != kernel_object &&
+		object != kmem_object	&&
+		vm_page_free_count <= vm_page_free_reserved) {
+
+		simple_unlock(&vm_page_queue_free_lock);
+		splx(spl);
+		return(NULL);
+	}
 	if (queue_empty(&vm_page_queue_free)) {
 		simple_unlock(&vm_page_queue_free_lock);
 		splx(spl);

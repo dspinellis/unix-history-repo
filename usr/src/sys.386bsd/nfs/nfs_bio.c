@@ -34,6 +34,14 @@
  * SUCH DAMAGE.
  *
  *	@(#)nfs_bio.c	7.19 (Berkeley) 4/16/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00147
+ * --------------------         -----   ----------------------
+ *
+ * 20 Apr 93	Paul Kranenburg		Detect and prevent kernel deadlocks in
+ *					VM system
  */
 
 #include "param.h"
@@ -245,6 +253,7 @@ nfs_write(vp, uio, ioflag, cred)
 	 */
 	biosize = VFSTONFS(vp->v_mount)->nm_rsize;
 	np->n_flag |= NMODIFIED;
+	vnode_pager_uncache(vp);
 	do {
 		nfsstats.biocache_writes++;
 		lbn = uio->uio_offset / biosize;
