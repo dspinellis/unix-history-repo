@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 
 # reorder gives an editor command for most common terminals
 # (in reverse order from n'th to 1'st most commonly used)
@@ -25,5 +25,4 @@ install: maninstall
 
 depend lint tags:
 
-.include <bsd.own.mk>
-.include <bsd.man.mk>
+.include <bsd.prog.mk>
