@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.19 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -136,8 +136,9 @@ loop:
 	/*
 	 * Insert the nfsnode in the hash queue for its new file handle
 	 */
-	np->n_flag = NLOCKED;
+	np->n_flag = 0;
 	insque(np, nh);
+	nfs_lock(vp);
 	bcopy((caddr_t)fhp, (caddr_t)&np->n_fh, NFSX_FH);
 	np->n_attrstamp = 0;
 	np->n_sillyrename = (struct sillyrename *)0;
@@ -245,7 +246,7 @@ nfs_lock(vp)
 		if (np->n_lockholder == u.u_procp->p_pid)
 			panic("locking against myself");
 		np->n_lockwaiter = u.u_procp->p_pid;
-		sleep((caddr_t)np, PINOD);
+		(void) sleep((caddr_t)np, PINOD);
 	}
 	np->n_lockwaiter = 0;
 	np->n_lockholder = u.u_procp->p_pid;
@@ -270,6 +271,18 @@ nfs_unlock(vp)
 		np->n_flag &= ~NWANT;
 		wakeup((caddr_t)np);
 	}
+}
+
+/*
+ * Check for a locked nfsnode
+ */
+nfs_islocked(vp)
+	struct vnode *vp;
+{
+
+	if (VTONFS(vp)->n_flag & NLOCKED)
+		return (1);
+	return (0);
 }
 
 /*
