@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_var.h	7.4 (Berkeley) %G%
+ *	@(#)tcp_var.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -20,7 +20,7 @@ struct tcpcb {
 	short	t_timer[TCPT_NTIMERS];	/* tcp timers */
 	short	t_rxtshift;		/* log(2) of rexmt exp. backoff */
 	short	t_rxtcur;		/* current retransmit value */
-	short	t_unused;		/* XXX */
+	short	t_dupacks;		/* consecutive dup acks recd */
 	u_short	t_maxseg;		/* maximum segment size */
 	char	t_force;		/* 1 if forcing out a byte */
 	u_char	t_flags;
@@ -57,19 +57,23 @@ struct tcpcb {
 	tcp_seq	snd_max;		/* highest sequence number sent
 					 * used to recognize retransmits
 					 */
-/* congestion control (for source quench) */
+/* congestion control (for slow start, source quench, retransmit after loss) */
 	u_short	snd_cwnd;		/* congestion-controlled window */
+	u_short snd_ssthresh;		/* snd_cwnd size threshhold for
+					 * for slow start exponential to
+					 * linear switch */
 /*
  * transmit timing stuff.
  * srtt and rttvar are stored as fixed point; for convenience in smoothing,
  * srtt has 3 bits to the right of the binary point, rttvar has 2.
+ * "Variance" is actually smoothed difference.
  */
 	short	t_idle;			/* inactivity time */
 	short	t_rtt;			/* round trip time */
-	u_short max_rcvd;		/* most peer has sent into window */
 	tcp_seq	t_rtseq;		/* sequence number being timed */
 	short	t_srtt;			/* smoothed round-trip time */
 	short	t_rttvar;		/* variance in round-trip time */
+	u_short max_rcvd;		/* most peer has sent into window */
 	u_short	max_sndwnd;		/* largest window peer has offered */
 /* out-of-band data */
 	char	t_oobflags;		/* have some */
