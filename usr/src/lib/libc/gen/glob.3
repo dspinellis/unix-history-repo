@@ -5,7 +5,7 @@
 .\" Guido van Rossum.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)glob.3	5.4 (Berkeley) %G%
+.\"     @(#)glob.3	5.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GLOB 3
@@ -148,12 +148,6 @@ Each pathname that is a directory that matches
 .Fa pattern
 has a slash
 appended.
-.It Dv GLOB_NOSORT
-By default, the pathnames are sorted in ascending
-.Tn ASCII
-order;
-this flag prevents that sorting (speeding up
-.Fn glob ) .
 .It Dv GLOB_NOCHECK
 If
 .Fa pattern
@@ -167,6 +161,22 @@ pathnames set to 0.
 If
 .Dv GLOB_QUOTE
 is set, its effect is present in the pattern returned.
+.It Dv GLOB_NOMAGIC
+Is the same as 
+.Dv GLOB_NOCHECK 
+but it only appends the
+.Fa pattern
+if it does not contain any of the special characters ``*'', ``?'' or ``[''.
+.Dv GLOB_NOMAGIC 
+is provided to simplify implementing the historic
+.Xr csh 1
+globbing behavior and should probably not be used anywhere else.
+.It Dv GLOB_NOSORT
+By default, the pathnames are sorted in ascending
+.Tn ASCII
+order;
+this flag prevents that sorting (speeding up
+.Fn glob ) .
 .It Dv GLOB_QUOTE
 Use the backslash
 .Pq Ql \e

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)glob.h	5.6 (Berkeley) %G%
+ *	@(#)glob.h	5.7 (Berkeley) %G%
  */
 
 #ifndef _GLOB_H_
@@ -22,17 +22,17 @@ typedef struct {
 	char **gl_pathv;	/* list of paths matching pattern */
 } glob_t;
 
-#define	GLOB_APPEND	0x01	/* append to output from previous call */
-#define	GLOB_DOOFFS	0x02	/* use gl_offs */
-#define	GLOB_ERR	0x04	/* return on error */
+#define	GLOB_APPEND	0x001	/* append to output from previous call */
+#define	GLOB_DOOFFS	0x002	/* use gl_offs */
+#define	GLOB_ERR	0x004	/* return on error */
+#define	GLOB_MARK	0x008	/* append / to matching directories */
+#define	GLOB_NOCHECK	0x010	/* return pattern itself if nothing matches */
+#define	GLOB_NOSORT	0x020	/* don't sort */
+
 #ifndef _POSIX_SOURCE
-#define	GLOB_MAGCHAR	0x08	/* pattern had globbing characters */
-#endif
-#define	GLOB_MARK	0x10	/* append / to matching directories */
-#define	GLOB_NOCHECK	0x20	/* return pattern itself if nothing matches */
-#define	GLOB_NOSORT	0x40	/* don't sort */
-#ifndef _POSIX_SOURCE
-#define	GLOB_QUOTE	0x80	/* quote special chars with \ */
+#define	GLOB_MAGCHAR	0x040	/* pattern had globbing characters */
+#define	GLOB_NOMAGIC	0x080	/* GLOB_NOCHECK without magic chars (csh) */
+#define	GLOB_QUOTE	0x100	/* quote special chars with \ */
 #endif
 
 #define	GLOB_NOSPACE	(-1)	/* malloc call failed */
@@ -41,8 +41,8 @@ typedef struct {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-int glob __P((const char *, int, int (*)(char *, int), glob_t *));
-void globfree __P((glob_t *));
+int	glob __P((const char *, int, int (*)(char *, int), glob_t *));
+void	globfree __P((glob_t *));
 __END_DECLS
 
 #endif /* !_GLOB_H_ */
