@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)crash.8	6.2 (Berkeley) %G%
+.\"	@(#)crash.8	6.3 (Berkeley) %G%
 .\"
 .TH CRASH 8V ""
 .UC 4
@@ -48,13 +48,13 @@ or the system is attempting to use the wrong device as root filesystem.
 Usually, an alternate copy of the system binary or an alternate root
 filesystem can be used to bring up the system to investigate.
 .TP
-.B Can't exec /etc/init
+.B Can't exec /sbin/init
 This is not a panic message, as reboots are likely to be futile.
 Late in the bootstrap procedure, the system was unable to locate
 and execute the initialization process,
 .IR init (8).
 The root filesystem is incorrect or has been corrupted, or the mode
-or type of /etc/init forbids execution.
+or type of /sbin/init forbids execution.
 .TP
 .B IO err in push
 .ns
