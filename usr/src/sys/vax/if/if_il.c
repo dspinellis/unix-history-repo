@@ -215,13 +215,15 @@ ilinit(unit)
 
 	/*
 	 * Turn off source address insertion (it's faster this way),
-	 * and set board online.
+	 * and set board online.  Former doesn't work if board is
+	 * already online (happens on ubareset), so we put it offline
+	 * first.
 	 */
 	s = splimp();
-	addr->il_csr = ILC_CISA;
+	addr->il_csr = ILC_OFFLINE;
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
-	addr->il_csr = ILC_ONLINE;
+	addr->il_csr = ILC_CISA;
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
 	/*
@@ -231,7 +233,6 @@ ilinit(unit)
 	 * Receive bcr is not a muliple of 4 so buffer
 	 * chaining can't happen.
 	 */
-	s = splimp();
 	addr->il_csr = ILC_ONLINE;
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
