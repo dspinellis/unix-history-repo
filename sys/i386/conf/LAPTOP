@@ -1,7 +1,7 @@
 #
 # LAPTOP -- Minimal machine with IDE drives.
 #
-#	$Id: GENERICAH,v 1.35 1994/06/08 00:30:31 phk Exp $
+#	$Id: LAPTOP,v 1.1 1994/06/14 15:28:17 jkh Exp $
 #
 
 machine		"i386"
@@ -48,6 +48,9 @@ device		npx0	at isa? port "IO_NPX" irq 13 vector npxintr
 device		sio0	at isa? port "IO_COM1" tty irq 4 vector siointr
 device		lpt0	at isa? port? tty irq 7 vector lptintr
 device		psm0	at isa? port "IO_KBD" tty irq 12 vector psmintr
+
+# IBM/National PCMCIA ethernet cards
+device ze0 at isa? port 0x300 net irq 5 iomem 0xd8000 vector zeintr
 
 # The digital speaker driver (/dev/pcaudio).  Might as well since we almost
 # certainly won't have a sound card!

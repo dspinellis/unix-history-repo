@@ -4,7 +4,7 @@
 #
 #	This kernel is NOT MEANT to be runnable!
 #
-#	$Id: LINT,v 1.77 1994/06/08 00:30:33 phk Exp $
+#	$Id: LINT,v 1.78 1994/06/13 02:48:49 sean Exp $
 #
 
 machine		"i386"
@@ -142,6 +142,8 @@ device is0 at isa? port 0x280 net irq 10 drq 7 vector isintr
 device ep0 at isa? port 0x300 net irq 10 vector epintr
 #driver for the 3c501
 device el0 at isa? port 0x300 net irq 9 vector elintr
+# IBM/National PCMCIA ethernet cards
+device ze0 at isa? port 0x300 net irq 5 iomem 0xd8000 vector zeintr
 
 #special cased above:
 #controller	isa0

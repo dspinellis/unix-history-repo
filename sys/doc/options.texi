@@ -16,7 +16,7 @@
 @c %**end of header
 
 @ifinfo
-$Id: options.texi,v 1.8 1994/06/08 01:38:31 phk Exp $
+$Id: options.texi,v 1.9 1994/06/08 23:42:06 phk Exp $
 
 This file documents the configuration options available in the FreeBSD
 operating system.
@@ -919,6 +919,16 @@ that provided in FreeBSD 1.0.
 @cindex Quarter-Inch-Cartridge (QIC) tape drives
 This driver supports Archive QIC-02 and Wangtek QIC-02 and QIC-36
 cartridge tape controllers.
+
+@item device ze0 at isa? port 0x300 net irq 5 iomem 0xd8000 vector zeintr
+@findex ze
+@cindex Ethernet
+@cindex Network Interfaces
+@cindex PCMCIA
+@cindex PCMCIA Ethernet Cards
+This driver supports certain PCMCIA ethernet cards.  It was originally
+written for the IBM Credit Card Adapter and has also been tested
+with the National Semi `InfoMover' PCMCIA card.
 @end table
 
 @node EISA, MCA, ISA, Devices
