@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.54 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.55 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -351,7 +351,7 @@ ufs_unmount(mp, mntflags, p)
 		for (i = 0; i < MAXQUOTAS; i++) {
 			if (ump->um_quotas[i] == NULLVP)
 				continue;
-			quotaoff(mp, i);
+			quotaoff(p, mp, i);
 		}
 		/*
 		 * Here we fall through to vflush again to ensure
@@ -434,7 +434,7 @@ ufs_quotactl(mp, cmds, uid, arg, p)
 	case Q_QUOTAOFF:
 		if (vfs_busy(mp))
 			return (0);
-		error = quotaoff(mp, type);
+		error = quotaoff(p, mp, type);
 		vfs_unbusy(mp);
 		return (error);
 
