@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uusnap.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)uusnap.c	5.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)uusnap.c	5.5 (Berkeley) %G%";
 #else
 #include <sys/dir.h>
 #endif
+#include <ctype.h>
 
 #ifndef	SYSBUF
 char SYSBUF[BUFSIZ];
@@ -151,8 +152,12 @@ char *dnam, *prfx, fchr;
 		strcpy(fnam, &dentp->d_name[plen]);
 		fnamlen = strlen(fnam);
 		if(flen > 0) {
+			char c;
 			fnamlen -= flen;
-			if (type == DATTYPE && (fnam[fnamlen] != 'S' && fnam[fnamlen] != 'B')) {
+			c = fnam[fnamlen];
+			if (islower(c))
+				c = toupper(c);
+			if (type == DATTYPE && (c != 'S' && c != 'B')) {
 				fnamlen -= 2;	/* For Honey DanBer */
 				fnam[fnamlen] = NULL;
 			} else {
@@ -193,6 +198,7 @@ char *sdir;
 	register DIR *dirp;
 	register FILE *st;
 	struct stat stbuf;
+	long atol();
 
 	if (chdir(sdir) < 0) {
 		perror(sdir);
@@ -271,9 +277,9 @@ char *sdir;
 		tp = index(tp+1, ' ');
 		sys[csys].st_count = atoi(tp+1);
 		tp = index(tp+1, ' ');
-		sys[csys].st_lastime = (time_t)atol(tp+1);
+		sys[csys].st_lastime = atol(tp+1);
 		tp = index(tp+1, ' ');
-		sys[csys].st_retry = (time_t)atol(tp+1);
+		sys[csys].st_retry = atol(tp+1);
 	}
 }
 /*
