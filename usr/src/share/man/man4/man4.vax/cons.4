@@ -1,0 +1,42 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)cons.4	4.1 (Berkeley) %G%
+.\"
+.TH CONS 4 4/1/81
+.UC 4
+.SH NAME
+cons \- VAX-11 console interface
+.SH DESCRIPTION
+The console is available to the processor through the console registers.
+It acts like a normal terminal, except that when the local functions are
+not disabled, control-P puts the console in local console mode (where
+the prompt is ``>>>'').  The operation of the console in this mode varies
+slightly per-processor.
+.PP
+On an 11/780 you can return to the conversational mode using the command
+``se t p'' if the processor is still running or ``continue'' if it is halted.
+The latter command may be abbreviated ``c''.
+If you hit the break key on the console, then the console will go into ODT
+(console debugger mode).  Hit a ``P'' (upper-case letter p)
+to get out of this mode.
+.PP
+On an 11/750
+..or an 11/730
+the processor is halted whenever the console is not in conversational mode,
+and typing ``C'' returns to conversational mode.
+When in console mode on an 11/750 which has a remote diagnosis module,
+a ^D will put you in remote diagnosis mode, where the prompt will be ``RDM>''.
+The command ``ret'' will return from remote diagnosis mode to local console
+mode.
+.PP
+With the above proviso's the console works like any other UNIX terminal.
+.SH FILES
+/dev/console
+.SH "SEE ALSO"
+tty(4), reboot(8)
+.br
+VAX Hardware Handbook
+.SH DIAGNOSTICS
+None.
