@@ -1,4 +1,34 @@
-#	@(#)README	7.3 (Berkeley) %G%
+#	@(#)README	7.4 (Berkeley) %G%
+
+The file system is reasonably stable, but incomplete.  There is no cleaner
+on the 4.4BSD-Alpha tape.  Therefore, LFS is currently a "write-once" file
+system.  The cleaner system calls are all implemented and appear to work,
+although there are places where performance can be improved dramatically
+(see comments in lfs_syscalls.c).
+
+Missing Functionality:
+	We currently do no block accounting when blocks are written.  Since
+	allocation is not performed until blocks in the buffer cache are
+	written to disk, it is possible to return success on a write, only
+	to discover later that there is insufficient space get the block
+	on disk.
+
+	We intend to support multiple block sizes rather than fragments.
+	This is not implemented.
+
+	Since blocks are laid out contiguously, we can miss rotations reading
+	sequentially.  We need to read in contiguous blocks to avoid that.
+	See McVoy's Winter 1991 Usenix paper for details on how to do that.
+
+Known Bugs:
+	The vrele of the ifile inode in lfs_unmount should be moved to
+	immediately before the call to vgone (so that if VFS_SYNC returns
+	busy and we break out, we end up the correct usecount for the
+	ifile inode (fs->lfs_ivnode).
+
+----------
+Design Details (a more complete design has been submitted to the January 1993
+Usenix Conference):
 
 The disk is laid out in segments.  The first segment starts 8K into the
 disk (the first 8K is used for boot information).  Each segment is composed
@@ -26,7 +56,7 @@ blocks described by the summary.  Additionally, the summary is checksummed
 and timestamped.  Both of these are intended for recovery; the former is
 to make it easy to determine that it *is* a summary block and the latter
 is to make it easy to determine when recovery is finished for partially
-written segments.
+written segments.  These checksums are also used by the cleaner.
 
 	Summary block (detail)
 	________________
@@ -36,6 +66,7 @@ written segments.
 	| timestamp    |
 	| FINFO count  |
 	| inode count  |
+	| flags        |
 	|______________|
 	|   FINFO-1    | 0 or more file info structures, identifying the
 	|     .        | blocks in the segment.
@@ -50,16 +81,17 @@ written segments.
 	|______________|
 
 Inode blocks are blocks of on-disk inodes in the same format as those in
-the FFS.  They are packed page_size / sizeof(inode) to a block.  Data blocks
-are exactly as in the FFS.  Both inodes and data blocks move around the
-file system at will.
+the FFS.  However, spare[0] contains the inode number of the inode so we
+can find a particular inode on a page.  They are packed page_size /
+sizeof(inode) to a block.  Data blocks are exactly as in the FFS.  Both
+inodes and data blocks move around the file system at will.
 
 The file system is described by a super-block which is replicated and
 occurs as the first block of the first and other segments.  (The maximum
 number of super-blocks is MAXNUMSB).  Each super-block maintains a list
 of the disk addresses of all the super-blocks.  The super-block maintains
 a small amount of checkpoint information, essentially just enough to find
-the inode for the IFILE.
+the inode for the IFILE (fs->lfs_idaddr).
 
 The IFILE is visible in the file system, as inode number IFILE_INUM.  It
 contains information shared between the kernel and various user processes.
