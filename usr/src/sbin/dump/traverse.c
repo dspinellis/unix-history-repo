@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -138,7 +138,7 @@ mapdirs(maxino, tapesize)
 	long *tapesize;
 {
 	register struct	dinode *dp;
-	register int i, dirty;
+	register int i, isdir;
 	register char *map;
 	register ino_t ino;
 	long filesize;
@@ -146,18 +146,19 @@ mapdirs(maxino, tapesize)
 
 	for (map = dumpdirmap, ino = 0; ino < maxino; ) {
 		if ((ino % NBBY) == 0)
-			dirty = *map++;
+			isdir = *map++;
 		else
-			dirty >>= 1;
+			isdir >>= 1;
 		ino++;
-		if ((dirty & 1) == 0 || TSTINO(ino, dumpinomap))
+		if ((isdir & 1) == 0 || TSTINO(ino, dumpinomap))
 			continue;
 		dp = getino(ino);
 		filesize = dp->di_size;
 		for (ret = 0, i = 0; filesize > 0 && i < NDADDR; i++) {
 			if (dp->di_db[i] != 0)
 				ret |= searchdir(ino, dp->di_db[i],
-					dblksize(sblock, dp, i), filesize);
+					(long)dblksize(sblock, dp, i),
+					filesize);
 			if (ret & HASDUMPEDFILE)
 				filesize = 0;
 			else
@@ -169,10 +170,8 @@ mapdirs(maxino, tapesize)
 			ret |= dirindir(ino, dp->di_ib[i], i, &filesize);
 		}
 		if (ret & HASDUMPEDFILE) {
-			if (!TSTINO(ino, dumpinomap)) {
-				SETINO(ino, dumpinomap);
-				*tapesize += blockest(dp);
-			}
+			SETINO(ino, dumpinomap);
+			*tapesize += blockest(dp);
 			change = 1;
 			continue;
 		}
@@ -236,7 +235,7 @@ searchdir(ino, blkno, size, filesize)
 	long filesize;
 {
 	register struct direct *dp;
-	register long loc;
+	register long loc, ret = 0;
 	char dblk[MAXBSIZE];
 
 	bread(fsbtodb(sblock, blkno), dblk, (int)size);
@@ -257,12 +256,18 @@ searchdir(ino, blkno, size, filesize)
 			if (dp->d_name[1] == '.' && dp->d_name[2] == '\0')
 				continue;
 		}
-		if (TSTINO(dp->d_ino, dumpinomap))
-			return (HASDUMPEDFILE);
-		if (TSTINO(dp->d_ino, dumpdirmap))
-			return (HASSUBDIRS);
+		if (TSTINO(dp->d_ino, dumpinomap)) {
+			ret |= HASDUMPEDFILE;
+			if (ret & HASSUBDIRS)
+				break;
+		}
+		if (TSTINO(dp->d_ino, dumpdirmap)) {
+			ret |= HASSUBDIRS;
+			if (ret & HASDUMPEDFILE)
+				break;
+		}
 	}
-	return (0);
+	return (ret);
 }
 
 /*
