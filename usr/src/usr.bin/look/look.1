@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)look.1	8.1 (Berkeley) %G%
+.\"     @(#)look.1	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt LOOK 1
@@ -14,6 +14,7 @@
 .Sh SYNOPSIS
 .Nm look
 .Op Fl df
+.Op Fl t Ar termchar
 .Ar string
 .Op Ar file
 .Sh DESCRIPTION
@@ -44,6 +45,13 @@ Dictionary character set and order, i.e. only alphanumeric characters
 are compared.
 .It Fl f
 Ignore the case of alphabetic characters.
+.It Fl t
+Specify a string termination character, i.e. only the characters
+in
+.Ar string
+up to and including the first occurrence of
+.Ar termchar
+are compared.
 .El
 .Pp
 The
