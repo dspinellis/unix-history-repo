@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7preserve.c	7.8	%G%";
+static char *sccsid = "@(#)ex3.7preserve.c	7.9	%G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/param.h>
@@ -243,7 +243,7 @@ format:
 		if (i == 0) {
 			if (name)
 				ignore(unlink(name));
-			notify(H.Uid, H.Savedfile, (int) name);
+			notify(H.Uid, H.Savedfile, (int) name, H.Time);
 			return (0);
 		}
 		if (write(1, buf, i) != i) {
@@ -300,42 +300,64 @@ whoops:
 /*
  * Notify user uid that his file fname has been saved.
  */
-notify(uid, fname, flag)
+notify(uid, fname, flag, time)
 	int uid;
 	char *fname;
+	time_t	time;
 {
 	struct passwd *pp = getpwuid(uid);
 	register FILE *mf;
-	char cmd[BUFSIZ];
+	char	cmd[BUFSIZ];
+	char	hostname[128];
+	char	croak[128];
+	char	*timestamp, *ctime();
 
 	if (pp == NULL)
 		return;
+	gethostname(hostname, sizeof(hostname));
+	timestamp = ctime(&time);
+	timestamp[16] = 0;	/* blast from seconds on */
 	sprintf(cmd, "/bin/mail %s", pp->pw_name);
 	mf = popen(cmd, "w");
 	if (mf == NULL)
 		return;
 	setbuf(mf, cmd);
+	/*
+	 *	flag says how the editor croaked:
+	 * "the editor was killed" is perhaps still not an ideal
+	 * error message.  Usually, either it was forcably terminated
+	 * or the phone was hung up, but we don't know which.
+	 */
+	sprintf(croak, flag
+		? "the system went down"
+		: "the editor was killed");
 	if (fname[0] == 0) {
 		fprintf(mf,
-"A copy of an editor buffer of yours was saved when %s.\n",
-		flag ? "the system went down" : "the editor was killed");
+"Subject: editor saved ``LOST''\n");
 		fprintf(mf,
-"No name was associated with this buffer so it has been named \"LOST\".\n");
-	} else
+"You were editing a file without a name\n");
 		fprintf(mf,
-"A copy of an editor buffer of your file \"%s\"\nwas saved when %s.\n", fname,
-		/*
-		 * "the editor was killed" is perhaps still not an ideal
-		 * error message.  Usually, either it was forcably terminated
-		 * or the phone was hung up, but we don't know which.
-		 */
-		flag ? "the system went down" : "the editor was killed");
+"at <%s> on the machine ``%s'' when %s.\n", timestamp, hostname, croak);
+		fprintf(mf,
+"Since the file had no name, it has been named \"LOST\".\n");
+	} else {
+		fprintf(mf,
+"Subject: editor saved ``%s''\n", fname);
+		fprintf(mf,
+"You were editing the file \"%s\"\n", fname);
+		fprintf(mf,
+"at <%s> on the machine ``%s''\n", timestamp, hostname);
+		fprintf(mf,
+"when %s.\n", croak);
+	}
 	fprintf(mf,
-"This buffer can be retrieved using the \"recover\" command of the editor.\n");
+"\nYou can retrieve most of your changes to this file\n");
 	fprintf(mf,
-"An easy way to do this is to give the command \"ex -r %s\".\n",fname);
+"using the \"recover\" command of the editor.\n");
 	fprintf(mf,
-"This works for \"edit\" and \"vi\" also.\n");
+"An easy way to do this is to give the command \"vi -r %s\".\n", fname);
+	fprintf(mf,
+"This method also works using \"ex\" and \"edit\".\n");
 	pclose(mf);
 }
 
