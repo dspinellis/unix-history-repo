@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printval.c 1.3 %G%";
+static char sccsid[] = "@(#)printval.c 1.4 %G%";
 
 /*
  * Print out the value at the top of the stack using the given type.
@@ -21,6 +21,7 @@ SYM *s;
     SYM *t;
     ADDRESS a;
     int len;
+    double r;
 
     if (s->class == REF) {
 	s = s->type;
@@ -48,7 +49,7 @@ SYM *s;
 
 	case RANGE:
 	    if (s == t_real) {
-		printf("%g", pop(double));
+		printreal(pop(double));
 	    } else if (s == t_char) {
 		printf("'%c'", pop(char));
 	    } else if (s == t_boolean) {
@@ -187,4 +188,29 @@ SYM *a;
     }
     sp = newsp;
     printf(")");
+}
+
+/*
+ * Print out the value of a real number.
+ * Pascal notation is somewhat different that what one gets
+ * from "%g" in printf.
+ */
+
+LOCAL printreal(r)
+double r;
+{
+    extern char *index();
+    char *p, buf[256];
+
+    sprintf(buf, "%g", r);
+    if (buf[0] == '.') {
+	printf("0%s", buf);
+    } else if (buf[0] == '-' && buf[1] == '.') {
+	printf("-0%s", &buf[1]);
+    } else {
+	printf("%s", buf);
+    }
+    if (index(buf, '.') == NIL) {
+	printf(".0");
+    }
 }
