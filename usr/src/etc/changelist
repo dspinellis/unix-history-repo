@@ -1,0 +1,47 @@
+#	@(#)changelist	5.1 (Berkeley) %G%
+#
+# List of files which the security script backs up and checks
+# for modifications.
+
+/etc/Distfile
+/etc/aliases
+/etc/changelist
+/etc/crontab
+/etc/csh.cshrc
+/etc/csh.login
+/etc/daily
+/etc/distfile
+/etc/exports
+/etc/fstab
+/etc/ftpusers
+/etc/group
+/etc/hosts.equiv
+/etc/mail.rc
+/etc/master.passwd
+/etc/monthly
+/etc/named.boot
+/etc/netstart
+/etc/networks
+/etc/nfsstart
+/etc/passwd
+/etc/printcap
+/etc/protocols
+/etc/rc
+/etc/rc.local
+/etc/remote
+/etc/security
+/etc/sendmail.cf
+/etc/sendmail.cw
+/etc/services
+/etc/shells
+/etc/slip.hosts
+/etc/slip.login
+/etc/start-amd
+/etc/syslog.conf
+/etc/ttys
+/etc/weekly
+/root/.cshrc
+/root/.klogin
+/root/.login
+/root/.profile
+/root/.rhosts
