@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -122,22 +122,23 @@ main(argc, argv)
 	struct sockaddr_in from;
 	int on = 1, fromlen;
 
-#if	defined(DEBUG)
-	{
+	if ((argc > 1) && (strcmp(argv[1], "-debug") == 0)) {
 	    int s, ns, foo;
 	    struct servent *sp;
 	    static struct sockaddr_in sin = { AF_INET };
 
-	    sp = getservbyname("telnet", "tcp");
-	    if (sp == 0) {
-		    fprintf(stderr, "telnetd: tcp/telnet: unknown service\n");
-		    exit(1);
-	    }
-	    sin.sin_port = sp->s_port;
 	    argc--, argv++;
-	    if (argc > 0) {
-		    sin.sin_port = atoi(*argv);
+	    if (argc > 1) {
+		    sin.sin_port = atoi(argv[1]);
 		    sin.sin_port = htons((u_short)sin.sin_port);
+	    } else {
+		sp = getservbyname("telnet", "tcp");
+		if (sp == 0) {
+			fprintf(stderr,
+				"telnetd: tcp/telnet: unknown service\n");
+			exit(1);
+		}
+		sin.sin_port = sp->s_port;
 	    }
 
 	    s = socket(AF_INET, SOCK_STREAM, 0);
@@ -162,7 +163,6 @@ main(argc, argv)
 	    dup2(ns, 0);
 	    close(s);
 	}
-#endif	/* defined(DEBUG) */
 	openlog("telnetd", LOG_PID | LOG_ODELAY, LOG_DAEMON);
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
@@ -209,6 +209,23 @@ ttloop()
 	pfrontp = pbackp = ptyobuf;
 	telrcv();
     }
+}
+
+/*
+ * getterminalspeed
+ *
+ *     Ask the other end to send along its terminal speed.
+ * subopt does the rest.  Interlocked so it can't happen during
+ * getterminaltype.
+ */
+
+void
+getterminalspeed()
+{
+  static char sbuf[] = { IAC, SB, TELOPT_TSPEED, TELQUAL_SEND, IAC, SE };
+
+  bcopy(sbuf, nfrontp, sizeof sbuf);
+  nfrontp += sizeof sbuf;
 }
 
 /*
@@ -295,6 +312,7 @@ gotpty:
 	ioctl(t, TIOCSETP, &b);
 	ioctl(p, TIOCGETP, &b);
 	b.sg_flags &= ~ECHO;
+	b.sg_ospeed = b.sg_ispeed = B9600;
 	ioctl(p, TIOCSETP, &b);
 	hp = gethostbyaddr(&who->sin_addr, sizeof (struct in_addr),
 		who->sin_family);
@@ -307,7 +325,7 @@ gotpty:
 	pty = p;
 
 	/*
-	 * get terminal type.
+	 * get terminal type and size.
 	 */
 	getterminaltype();
 
@@ -428,6 +446,19 @@ telnet(f, p)
 	if (!myopts[TELOPT_SGA]) {
 	    dooption(TELOPT_SGA);
 	}
+	if (!hisopts[TELOPT_NAWS]) {
+	   willoption(TELOPT_NAWS);
+	   hisopts[TELOPT_NAWS] = OPT_NO;
+	}
+	if (!hisopts[TELOPT_TSPEED]) {
+	   willoption(TELOPT_TSPEED);
+	   hisopts[TELOPT_TSPEED] = OPT_NO;
+	}
+	if (!hisopts[TELOPT_LFLOW]) {
+	   willoption(TELOPT_LFLOW);
+	   hisopts[TELOPT_LFLOW] = OPT_NO;
+	}
+
 	/*
 	 * Is the client side a 4.2 (NOT 4.3) system?  We need to know this
 	 * because 4.2 clients are unable to deal with TCP urgent data.
@@ -495,7 +526,6 @@ telnet(f, p)
 		 */
 		if (nfrontp - nbackp || pcc > 0) {
 			FD_SET(f, &obits);
-			FD_SET(p, &xbits);
 		} else {
 			FD_SET(p, &ibits);
 		}
@@ -507,6 +537,7 @@ telnet(f, p)
 		if (!SYNCHing) {
 			FD_SET(f, &xbits);
 		}
+		FD_SET(p, &xbits);
 		if ((c = select(16, &ibits, &obits, &xbits,
 						(struct timeval *)0)) < 1) {
 			if (c == -1) {
@@ -599,29 +630,31 @@ telnet(f, p)
 		/*
 		 * Something to read from the pty...
 		 */
-		if (FD_ISSET(p, &xbits)) {
-			if (read(p, ptyibuf, 1) != 1) {
-				break;
-			}
-		}
-		if (FD_ISSET(p, &ibits)) {
+		if (FD_ISSET(p, &ibits) || FD_ISSET(p, &xbits)) {
 			pcc = read(p, ptyibuf, BUFSIZ);
 			if (pcc < 0 && errno == EWOULDBLOCK)
 				pcc = 0;
 			else {
 				if (pcc <= 0)
 					break;
-				/* Skip past "packet" */
+				if (ptyibuf[0] & TIOCPKT_FLUSHWRITE) {
+					netclear();     /* clear buffer back */
+					*nfrontp++ = IAC;
+					*nfrontp++ = DM;
+					neturg = nfrontp-1; /* off by one XXX */
+				}
+				if (hisopts[TELOPT_LFLOW] &&
+				    (ptyibuf[0] &
+				      (TIOCPKT_NOSTOP|TIOCPKT_DOSTOP))) {
+					sprintf(nfrontp,"%c%c%c%c%c%c",
+					    IAC, SB, TELOPT_LFLOW,
+					    ptyibuf[0] & TIOCPKT_DOSTOP ? 1 : 0,
+					    IAC, SE);
+					nfrontp += 6;
+				}
 				pcc--;
 				ptyip = ptyibuf+1;
-			}
-		}
-		if (ptyibuf[0] & TIOCPKT_FLUSHWRITE) {
-			netclear();	/* clear buffer back */
-			*nfrontp++ = IAC;
-			*nfrontp++ = DM;
-			neturg = nfrontp-1;  /* off by one XXX */
-			ptyibuf[0] = 0;
+                       }
 		}
 
 		while (pcc > 0) {
@@ -781,6 +814,7 @@ telrcv()
 			 */
 			case SB:
 				state = TS_SB;
+				SB_CLEAR();
 				continue;
 
 			case WILL:
@@ -832,6 +866,8 @@ telrcv()
 			if (hisopts[c] != OPT_YES)
 				willoption(c);
 			state = TS_DATA;
+			if (c == TELOPT_TSPEED)
+				getterminalspeed();
 			continue;
 
 		case TS_WONT:
@@ -895,6 +931,9 @@ willoption(option)
 		fmt = doopt;
 		break;
 
+	case TELOPT_NAWS:
+	case TELOPT_TSPEED:
+	case TELOPT_LFLOW:
 	case TELOPT_SGA:
 		fmt = doopt;
 		break;
@@ -1005,6 +1044,23 @@ int option;
     nfrontp += sizeof (wont) - 2;
 }
 
+char *ttyspeeds[] = {
+	"0", "50", "75", "110", "134", "150", "200", "300",
+	"600", "1200", "1800", "2400", "4800", "9600", "19200", "38400" };
+#define NUMSPEEDS sizeof ttyspeeds/sizeof ttyspeeds[0]
+
+string2speed(s)
+  char *s;
+{
+  int i;
+
+  for (i = 0; i < NUMSPEEDS; i++)
+    if (strcmp(s, ttyspeeds[i]) == 0)
+      return(i);
+
+  return(0);
+}
+
 /*
  * suboption()
  *
@@ -1014,6 +1070,8 @@ int option;
  *	Currently we recognize:
  *
  *	Terminal type is
+ *	Terminal size
+ *	Terminal speed is
  */
 
 suboption()
@@ -1044,7 +1102,70 @@ suboption()
 	terminaltype = terminalname;
 	break;
     }
+    case TELOPT_NAWS: {
+	struct winsize win;
+	char c;
 
+#define SB_GETCHAR(c) \
+	{ if ((c = SB_GET()) == IAC && SB_GET() != IAC) return; }
+
+	ioctl(pty, TIOCGWINSZ, &win);
+	settimer(ttypesubopt);
+
+	syslog(LOG_INFO, "%x %x %x %x",
+	subpointer[0],subpointer[1],subpointer[2],subpointer[3]);
+	SB_GETCHAR(c);
+	win.ws_col = c << 8;
+	SB_GETCHAR(c);
+	win.ws_col |= c;
+	SB_GETCHAR(c);
+	win.ws_row = c << 8;
+	SB_GETCHAR(c);
+	win.ws_row |= c;
+	syslog(LOG_INFO, "col %d row %d", win.ws_col, win.ws_row);
+	ioctl(pty, TIOCSWINSZ, &win);
+	break;
+    }
+    case TELOPT_TSPEED: {
+	char speeds[41],*cp=speeds;
+	struct sgttyb b;
+	int ispeed,ospeed;
+	char *ispeeds,*ospeeds;
+
+	if (SB_GET() != TELQUAL_IS) {
+	    return;             /* ??? XXX but, this is the most robust */
+	}
+
+	ispeeds = NULL;
+	ospeeds = speeds;
+	ispeed = 0;
+	ospeed = 0;
+	while ((cp < (speeds + sizeof speeds-1)) && !SB_EOF()) {
+	    register int c;
+
+	    c = SB_GET();
+	    if (c == ',') {
+		c = 0;
+		ispeeds = cp+1;
+	    }
+	    *cp++ = c;    /* accumulate name */
+	}
+	*cp = 0;
+
+	if (ispeeds)
+	    ispeed = string2speed(ispeeds);
+	if (ospeeds)
+	    ospeed = string2speed(ospeeds);
+
+	if (ispeed && ospeed) {
+	    ioctl(pty, TIOCGETP, &b);
+	    b.sg_ospeed = ospeed;
+	    b.sg_ispeed = ispeed;
+	    ioctl(pty, TIOCSETP, &b);
+	}
+
+	break;
+    }
     default:
 	;
     }
