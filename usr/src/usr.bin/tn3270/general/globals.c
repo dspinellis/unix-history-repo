@@ -32,14 +32,14 @@ static	char	sccsid[] = "@(#)globals.c	3.1  10/29/86";
 #include	"../ctlr/dctype.h"
 #include	"../ctlr/options.h"
 #include	"../ctlr/screen.h"
-#include	"../keyboard/state.h"
+#include	"../ascii/state.h"
 
 
 #define DEFINING_INSTANCES
 
 #include	"globals.h"
 
-#include	"../general.h"
+#include	"../general/general.h"
 
 #if	defined(SLOWSCREEN)
 
