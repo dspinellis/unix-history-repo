@@ -1,4 +1,4 @@
-/*	tip.c	4.6	81/07/13	*/
+/*	tip.c	4.7	81/08/16	*/
 /*
  * tip - Unix link to other systems
  *  tip [-v] [-speed] system-name
@@ -315,8 +315,9 @@ escape()
 			(*p->e_func)(gch);
 			return(0);
 		}
-
-	write(FD, &c, 1);
+	/* ESCAPE ESCAPE forces ESCAPE */
+	if (c != gch)
+		write(FD, &c, 1);
 	return(gch);
 }
 
