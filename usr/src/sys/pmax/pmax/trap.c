@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.32 91/04/06$
  *
- *	@(#)trap.c	8.4 (Berkeley) %G%
+ *	@(#)trap.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1294,7 +1294,8 @@ pmax_errintr()
 static void
 kn02_errintr()
 {
-	u_int erradr, chksyn;
+	u_int erradr, chksyn, physadr;
+	int i;
 
 	erradr = *(u_int *)MACH_PHYS_TO_UNCACHED(KN02_SYS_ERRADR);
 	chksyn = *(u_int *)MACH_PHYS_TO_UNCACHED(KN02_SYS_CHKSYN);
@@ -1303,15 +1304,33 @@ kn02_errintr()
 
 	if (!(erradr & KN02_ERR_VALID))
 		return;
+	/* extract the physical word address and compensate for pipelining */
+	physadr = erradr & KN02_ERR_ADDRESS;
+	if (!(erradr & KN02_ERR_WRITE))
+		physadr = (physadr & ~0xfff) | ((physadr & 0xfff) - 5);
+	physadr <<= 2;
 	printf("%s memory %s %s error at 0x%x\n",
 		(erradr & KN02_ERR_CPU) ? "CPU" : "DMA",
 		(erradr & KN02_ERR_WRITE) ? "write" : "read",
 		(erradr & KN02_ERR_ECCERR) ? "ECC" : "timeout",
-		(erradr & KN02_ERR_ADDRESS));
+		physadr);
 	if (erradr & KN02_ERR_ECCERR) {
 		*(u_int *)MACH_PHYS_TO_UNCACHED(KN02_SYS_CHKSYN) = 0;
 		MachEmptyWriteBuffer();
 		printf("ECC 0x%x\n", chksyn);
+
+		/* check for a corrected, single bit, read error */
+		if (!(erradr & KN02_ERR_WRITE)) {
+			if (physadr & 0x4) {
+				/* check high word */
+				if (chksyn & KN02_ECC_SNGHI)
+					return;
+			} else {
+				/* check low word */
+				if (chksyn & KN02_ECC_SNGLO)
+					return;
+			}
+		}
 	}
 	panic("Mem error interrupt");
 }
