@@ -1,4 +1,4 @@
-/*	conf.c	4.12	%G%	*/
+/*	conf.c	4.13	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -427,26 +427,6 @@ dev_t	swapdev = makedev(4, 0);
 
 extern struct user u;
 
-#if VAX==780
-/*
- * This is stupid, and will go away soon.
- */
-int	mbanum[] = {	/* mba number of major device */
-	0,		/* disk */
-	1,		/* tape */
-	9999999,	/* unused */
-	9999999,	/* unused */
-	0,		/* disk, raw */
-	1,		/* tape, raw */
-};
-
-extern	struct pte MBA0map[], MBA1map[];
-
-struct	mba_info mbainfo[] = {
-	MBA0,	PHYSMBA0,	MBA0map,
-	MBA1,	PHYSMBA1,	MBA1map
-};
-#endif
 #ifdef	CHAOS
 int cdevpath = 1 << CHAOSDEV;
 #endif
