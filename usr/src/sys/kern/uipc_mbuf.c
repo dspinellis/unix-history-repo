@@ -1,4 +1,4 @@
-/* uipc_mbuf.c 1.2 81/10/23 */
+/* mbuf.c 1.2 81/10/23 */
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -7,8 +7,8 @@
 #include "../h/pte.h"
 #include "../h/cmap.h"
 #include "../h/map.h"
+#include "../h/mbuf.h"
 #include "../bbnnet/net.h"
-#include "../bbnnet/mbuf.h"
 #include "../bbnnet/tcp.h"
 #include "../bbnnet/ip.h"
 #include "../h/vm.h"
@@ -234,4 +234,22 @@ COUNT(MTOPHYS);
 	pte = &Netmap[i];
 	addr = (pte->pg_pfnum << PGSHIFT) | ((int)m & PGOFSET);
 	return (addr);
+}
+
+m_cat(m, n)
+	register struct mbuf *m, *n;
+{
+
+	while (m->m_next)
+		m = m->m_next;
+	while (n)
+		if (m->m_off + m->m_len + n->m_len <= MMAXOFF) {
+			bcopy(mtod(n), mtod(m) + m->m_len, n->m_len);
+			m->m_len += n->m_len;
+			n = m_free(n);
+		} else {
+			m->m_next = n;
+			m = n;
+			n = m->m_next;
+		}
 }

@@ -1,391 +1,499 @@
-/* ip_input.c 1.8 81/10/27 */
+/* ip_input.c 1.7 81/10/28 */
 
 #include "../h/param.h"
-#include "../bbnnet/net.h"
-#include "../bbnnet/mbuf.h"
-#include "../bbnnet/tcp.h"
-#include "../bbnnet/ip.h"
-#include "../bbnnet/ucb.h"
 #include "../h/systm.h"
+#include "../h/clock.h"
+#include "../h/mbuf.h"
+#include "../inet/inet.h"
+#include "../inet/inet_systm.h"
+#include "../inet/imp.h"
+#include "../inet/ip.h"			/* belongs before inet.h */
+#include "../inet/ip_icmp.h"
+#include "../inet/tcp.h"
 
-int nosum = 0;
+int	nosum = 0;
 
-ip_input(mp)
-struct mbuf *mp;
+struct	ip *ip_reass();
+
+/*
+ * Ip input routines.
+ */
+
+/*
+ * Ip input routine.  Checksum and byte swap header.  If fragmented
+ * try to reassamble.  If complete and fragment queue exists, discard.
+ * Process options.  Pass to next level.
+ */
+ip_input(m0)
+	struct mbuf *m0;
 {
+	register int i;
 	register struct ip *ip, *q;
 	register struct ipq *fp;
-	register struct mbuf *m;
-	register i;
-	struct mbuf *n;
+	register struct mbuf *m = m0;
 	int hlen;
-	struct ip *p, *savq;
-	struct ipq *ip_findf();
 
 COUNT(IP_INPUT);
-	ip = (struct ip *)((int)mp + mp->m_off);        /* ->ip hdr */
+	/*
+	 * Check header and byteswap.
+	 */
+	ip = mtod(m, struct ip *);
+	if ((hlen = ip->ip_hl << 2) > m->m_len) {
+		printf("ip hdr ovflo\n");
+		m_freem(m);
+		return;
+	}
+	i = ip->ip_sum;
+	ip->ip_sum = 0;
+#ifdef vax
+	if (hlen == sizeof (struct ip)) {
+		asm("movl r10,r0; movl (r0)+,r1; addl2 (r0)+,r1");
+		asm("adwc (r0)+,r1; adwc (r0)+,r1; adwc (r0)+,r1");
+		asm("adwc $0,r1; ashl $-16,r1,r0; addw2 r0,r1");
+		asm("adwc $0,r1");		/* ### */
+		asm("mcoml r1,r1; movzwl r1,r1; subl2 r1,r11");
+	} else
+#endif
+		i -= cksum(m, hlen);
+	if (i) {
+		netstat.ip_badsum++;
+		if (!nosum) {
+			m_freem(m);
+			return;
+		}
+	}
+	ip->ip_len = ntohs(ip->ip_len);
+	ip->ip_id = ntohs(ip->ip_id);
+	ip->ip_off = ntohs(ip->ip_off);
 
-	/* make sure header does not overflow mbuf */
+	/*
+	 * Check that the amount of data in the buffers
+	 * is as at least much as the IP header would have us expect.
+	 * Trim mbufs if longer than we expect.
+	 * Drop packet if shorter than we expect.
+	 */
+	i = 0;
+	for (; m != NULL; m = m->m_next)
+		i += m->m_len;
+	m = m0;
+	if (i != ip->ip_len) {
+		if (i < ip->ip_len) {
+			printf("ip_input: short packet\n");
+			m_freem(m);
+			return;
+		}
+		m_adj(m, ip->ip_len - i);
+	}
 
-	if ((hlen = ip->ip_hl << 2) > mp->m_len) {
-		printf("ip header overflow\n");
-		m_freem(mp);
+	/*
+	 * Process options and, if not destined for us,
+	 * ship it on.
+	 */
+	if (hlen > sizeof (struct ip))
+		ip_dooptions(ip, hlen);
+	if (ip->ip_dst.s_addr != n_lhost.s_addr) {
+		if (--ip->ip_ttl == 0) {
+			icmp_error(ip, ICMP_TIMXCEED);
+			return;
+		}
+		ip_output(dtom(ip));
 		return;
 	}
 
-	i = (unsigned short)ip->ip_sum;
-	ip->ip_sum = 0;
-
-	if (i != (unsigned short)cksum(mp, hlen)) {     /* verify checksum */
-		netstat.ip_badsum++;
-		if (!nosum) {
-        	  	m_freem(mp);
-        		return;
-		}
-	}
-	ip_bswap(ip);
-	fp = netcb.n_ip_head ? ip_findf(ip) : 0;
+	/*
+	 * Look for queue of fragments
+	 * of this datagram.
+	 */
+	for (fp = ipq.next; fp != &ipq; fp = fp->next)
+		if (ip->ip_id == fp->ipq_id &&
+		    ip->ip_src.s_addr == fp->ipq_src.s_addr &&
+		    ip->ip_dst.s_addr == fp->ipq_dst.s_addr &&
+		    ip->ip_p == fp->ipq_p)
+			goto found;
+	fp = 0;
+found:
 
 	/*
-	 * adjust message length to remove any padding
+	 * Adjust ip_len to not reflect header,
+	 * set ip_mff if more fragments are expected,
+	 * convert offset of this to bytes.
 	 */
-	for (i=0, m=mp; m != NULL; m = m->m_next) {
-		i += m->m_len;
-		n = m;
-	}
-	i -= ip->ip_len;
-
-	if (i != 0)
-        	if (i > (int)n->m_len)
-        		m_adj(mp, -i);
-        	else
-        		n->m_len -= i;
-
-	ip->ip_len -= hlen;     /* length of data */
-  	ip->ip_mff = ((ip->ip_off & ip_mf) ? TRUE : FALSE);
+	ip->ip_len -= hlen;
+	ip->ip_mff = 0;
+	if (ip->ip_off & IP_MF)
+		ip->ip_mff = 1;
 	ip->ip_off <<= 3;
-	if (ip->ip_mff || ip->ip_off)
-		goto fragged;
-	if (fp != NULL) {
-		q = fp->iqx.ip_next;
-		while (q != (struct ip *)fp) {
-			m_freem(dtom(q));
-			q = q->ip_next;
-		}
-		ip_freef(fp);           /* free header */
-	}
-	if (hlen > sizeof (struct ip))
-		ip_opt(ip, hlen);
+
+	/*
+	 * If datagram marked as having more fragments
+	 * or if this is not the first fragment,
+	 * attempt reassembly; if it succeeds, proceed.
+	 */
+	if (ip->ip_mff || ip->ip_off) {
+		ip = ip_reass(ip, fp);
+		if (ip == 0)
+			return;
+		hlen = ip->ip_hl << 2;
+		m = dtom(ip);
+	} else
+		if (fp)
+			(void) ip_freef(fp);
+
+	/*
+	 * Switch out to protocol specific routine.
+	 * SHOULD GO THROUGH PROTOCOL SWITCH TABLE
+	 */
 	switch (ip->ip_p) {
 
-	case TCPROTO:
-		tcp_input(mp);
+	case IPPROTO_ICMP:
+		icmp_input(m);
+		break;
+
+	case IPPROTO_TCP:
+		if (hlen > sizeof (struct ip))
+			ip_stripoptions(ip, hlen);
+		tcp_input(m);
+		break;
+
+	case IPPROTO_UDP:
+		if (hlen > sizeof (struct ip))
+			ip_stripoptions(ip, hlen);
+		udp_input(m);
 		break;
 
 	default:
-		raw_input(mp, ip->ip_p, UIP);
+		raw_input(m);
 		break;
 	}
-	return;
-
-fragged:
-	/* -> msg buf beyond ip hdr if not first fragment */
-
-	if (ip->ip_off != 0) {
-		mp->m_off += hlen;
-		mp->m_len -= hlen;
-	}
-
-	if (fp == NULL) {               /* first fragment of datagram in */
-
-	/* set up reass.q header: enq it, set up as head of frag
-	   chain, set a timer value, and move in ip header */
-
-		if ((m = m_get(1)) == NULL) {   /* allocate an mbuf */
-			m_freem(mp);
-			return;
-		}
-
-		fp = (struct ipq *)((int)m + MMINOFF);
-		fp->iqx.ip_next = fp->iqx.ip_prev = (struct ip *)fp;
-		bcopy(ip, &fp->iqh, min(MLEN-28, hlen));
-		fp->iqh.ip_ttl = MAXTTL;
-		fp->iq_next = NULL;
-		fp->iq_prev = netcb.n_ip_tail;
-		if (netcb.n_ip_head != NULL)
-			netcb.n_ip_tail->iq_next = fp;
-		else
-			netcb.n_ip_head = fp;
-		netcb.n_ip_tail = fp;
-	}
-
-	/***********************************************************
-	*                                                          *
-	*              merge fragment into reass.q                 *
-	*    algorithm:   match  start  and  end  bytes  of new    *
-	*    fragment  with  fragments  on  the  queue.   if   no  *
-	*    overlaps  are  found,  add  new  frag. to the queue.  *
-	*    otherwise, adjust start and end of new frag.  so  no  *
-	*    overlap   and   add  remainder  to  queue.   if  any  *
-	*    fragments are completely covered by the new one,  or  *
-	*    if  the  new  one is completely duplicated, free the  *
-	*    fragments.                                            *
-	*                                                          *
-	***********************************************************/
-
-	q = fp->iqx.ip_next;    /* -> top of reass. chain */
-	ip->ip_end = ip->ip_off + ip->ip_len - 1;
-
-	/* skip frags which new doesn't overlap at end */
-
-	while ((q != (struct ip *)fp) && (ip->ip_off > q->ip_end))
-		q = q->ip_next;
-
-	if (q == (struct ip *)fp)               /* frag at end of chain */
-		ip_enq(ip, fp->iqx.ip_prev);
-	
-	else {
-		if (ip->ip_end < q->ip_off)     /* frag doesn't overlap any on chain */
-			ip_enq(ip, q->ip_prev);
-
-		/* new overlaps beginning of next frag only */
-
-		else if (ip->ip_end < q->ip_end) {
-			if ((i = ip->ip_end - q->ip_off + 1) < ip->ip_len) {
-				ip->ip_len -= i;
-				ip->ip_end -= i;
-				m_adj(mp, -i);
-				ip_enq(ip, q->ip_prev);
-			} else
-				m_freem(mp);
-
-		/* new overlaps end of previous frag */
-
-		} else {
-
-			savq = q;
-			if (ip->ip_off <= q->ip_off) {  /* complete cover */
-				savq = q->ip_prev;
-				ip_deq(q);
-				m_freem(dtom(q));
-			
-			} else {                        /* overlap */
-				if ((i = q->ip_end - ip->ip_off + 1) < ip->ip_len) {
-					ip->ip_off += i;
-					ip->ip_len -= i;
-					m_adj(mp, i);
-				} else
-					ip->ip_len = 0;
-			}
-
-		/* new overlaps at beginning of successor frags */
-
-			q = savq->ip_next;
-			while ((q != (struct ip *)fp) && (ip->ip_len != 0) &&
-				(q->ip_off < ip->ip_end))
-
-				/* complete cover */
-
-				if (q->ip_end <= ip->ip_end) {
-					p = q->ip_next;
-					ip_deq(q);
-					m_freem(dtom(q));
-					q = p;
-
-				} else {        /* overlap */
-
-					if ((i = ip->ip_end - q->ip_off + 1) < ip->ip_len) {
-						ip->ip_len -= i;
-						ip->ip_end -= i;
-						m_adj(mp, -i);
-					} else
-						ip->ip_len = 0;
-					break;
-				}
-
-		/* enqueue whatever is left of new before successors */
-
-			if (ip->ip_len != 0)
-				ip_enq(ip, savq);
-			else
-				m_freem(mp);
-		}
-	}
-
-	/* check for completed fragment reassembly */
-
-	if ((i = ip_done(fp)) == 0)
-		return;
-
-	p = fp->iqx.ip_next;            /* -> top mbuf */
-	m = dtom(p);
-	p->ip_len = i;                  /* total data length */
-	ip_opt(p, p->ip_hl << 2);       /* option processing */
-	ip_mergef(fp);                  /* cleanup frag chain */
-
-	/* copy src/dst internet address to header mbuf */
-
-	bcopy(&fp->iqh.ip_src, &p->ip_src, 2*sizeof(struct socket));
-	ip_freef(fp);                   /* dequeue header */
-	i = p->ip_p;
-	if (i == TCPROTO)
-		tcp_input(m);
-	else
-		raw_input(m, i, UIP);
 }
 
-ip_done(p)
-	register struct ip *p;
-{
-	register struct ip *q;
-	register next;
-
-COUNT(IP_DONE);
-	q = p->ip_next;
-
-	if (q->ip_off != 0)
-		return(0);
-	do {
-		next = q->ip_end + 1;
-		q = q->ip_next;
-	} while ((q != p) && (q->ip_off == next));
-
-	if ((q == p) && !(q->ip_prev->ip_mff))        /* all fragments in */
-		return(next);                         /* total data length */
-	else
-		return(0);
-}
-
-ip_mergef(p)    /* merge mbufs of fragments of completed datagram */
-register struct ip *p;
-{
-	register struct mbuf *m, *n;
-	register struct ip *q;
-	int dummy;
-
-COUNT(IP_MERGEF);
-	q = p->ip_next;                         /* -> bottom of reass chain */
-	n = (struct mbuf *)&dummy;              /* dummy for init assignment */
-
-	while (q != p) {        /* through chain */
-
-	        n->m_next = m = dtom(q);
-		while (m != NULL)
-			if (m->m_len != 0) {
-				n = m;
-				m = m->m_next;
-			} else                  /* free null mbufs */
-				n->m_next = m = m_free(m);
-		q = q->ip_next;
-	}
-}
-
-
-ip_freef(fp)	        /* deq and free reass.q header */
-register struct ipq *fp;
-{
-COUNT(IP_FREEF);
-	if (fp->iq_prev != NULL)
-		(fp->iq_prev)->iq_next = fp->iq_next;
-	else
-		netcb.n_ip_head = fp->iq_next;
-	if (fp->iq_next != NULL)
-		(fp->iq_next)->iq_prev = fp->iq_prev;
-	else
-		netcb.n_ip_tail = fp->iq_prev;
-	m_free(dtom(fp));
-}
-
-struct ipq *
-ip_findf(p)         /* does fragment reass chain w/this hdr exist? */
-register struct ip *p;
-{
+/*
+ * Take incoming datagram fragment and try to
+ * reassamble it into whole datagram.  If a chain for
+ * reassembly of this datagram already exists, then it
+ * is given as fp; otherwise have to make a chain.
+ */
+struct ip *
+ip_reass(ip, fp)
+	register struct ip *ip;
 	register struct ipq *fp;
-
-COUNT(IP_FINDF);
-	for (fp = netcb.n_ip_head; (fp != NULL && (
-			p->ip_src.s_addr != fp->iqh.ip_src.s_addr ||
-			p->ip_dst.s_addr != fp->iqh.ip_dst.s_addr ||
-			p->ip_id != fp->iqh.ip_id ||
-			p->ip_p != fp->iqh.ip_p)); fp = fp->iq_next);
-	return(fp);
-}
-
-ip_opt(ip, hlen)        /* process ip options */
-struct ip *ip;
-int hlen;
 {
-	register char *p, *q;
-	register i, len;
-	register struct mbuf *m;
+	register struct mbuf *m = dtom(ip);
+	register struct ip *q;
+	struct mbuf *t;
+	int hlen = ip->ip_hl << 2;
+	int i, next;
 
-COUNT(IP_OPT);
-	p = q = (char *)((int)ip + sizeof(struct ip));  /* -> at options */
-	
-	if ((i = hlen - sizeof(struct ip)) > 0) {       /* any options */
+	/*
+	 * Presence of header sizes in mbufs
+	 * would confuse code below.
+	 */
+	m->m_off += hlen;
+	m->m_len -= hlen;
 
-/*      *** IP OPTION PROCESSING ***
-
-		while (i > 0)
-
-  			switch (*q++) {
-			case 0:
-			case 1:
-				i--;
-				break;
-
-			default:
-				i -= *q;
-				q += *q;
-			}
-*/              q += i;
-		m = dtom(q);
-		len = (int)m + m->m_off + m->m_len - (int)q;
-		bcopy((caddr_t)q, (caddr_t)p, len);    /* remove options */
-		m->m_len -= i;
+	/*
+	 * If first fragment to arrive, create a reassembly queue.
+	 */
+	if (fp == 0) {
+		if ((t = m_get(1)) == NULL)
+			goto dropfrag;
+		t->m_off = MMINOFF;
+		fp = mtod(t, struct ipq *);
+		insque(fp, &ipq);
+		fp->ipq_ttl = IPFRAGTTL;
+		fp->ipq_p = ip->ip_p;
+		fp->ipq_id = ip->ip_id;
+		fp->ipq_next = fp->ipq_prev = (struct ip *)fp;
+		fp->ipq_src = ip->ip_src;
+		fp->ipq_dst = ip->ip_dst;
 	}
+
+	/*
+	 * Find a segment which begins after this one does.
+	 */
+	for (q = fp->ipq_next; q != (struct ip *)fp; q = q->ip_next)
+		if (q->ip_off > ip->ip_off)
+			break;
+
+	/*
+	 * If there is a preceding segment, it may provide some of
+	 * our data already.  If so, drop the data from the incoming
+	 * segment.  If it provides all of our data, drop us.
+	 */
+	if (q->ip_prev != (struct ip *)fp) {
+		i = q->ip_prev->ip_off + q->ip_prev->ip_len - ip->ip_off;
+		if (i > 0) {
+			if (i >= ip->ip_len)
+				goto dropfrag;
+			m_adj(dtom(ip), i);
+			ip->ip_off += i;
+			ip->ip_len -= i;
+		}
+	}
+
+	/*
+	 * While we overlap succeeding segments trim them or,
+	 * if they are completely covered, dequeue them.
+	 */
+	while (q != (struct ip *)fp && ip->ip_off + ip->ip_len > q->ip_off) {
+		i = (ip->ip_off + ip->ip_len) - q->ip_off;
+		if (i < q->ip_len) {
+			q->ip_len -= i;
+			m_adj(dtom(q), i);
+			break;
+		}
+		q = q->ip_next;
+		m_freem(dtom(q->ip_prev));
+		ip_deq(q->ip_prev);
+	}
+
+	/*
+	 * Stick new segment in its place;
+	 * check for complete reassembly.
+	 */
+	ip_enq(ip, q->ip_prev);
+	next = 0;
+	for (q = fp->ipq_next; q != (struct ip *)fp; q = q->ip_next) {
+		if (q->ip_off != next)
+			return (0);
+		next += q->ip_len;
+	}
+	if (q->ip_prev->ip_mff)
+		return (0);
+
+	/*
+	 * Reassembly is complete; concatenate fragments.
+	 */
+	q = fp->ipq_next;
+	m = dtom(q);
+	t = m->m_next;
+	m->m_next = 0;
+	m_cat(m, t);
+	while ((q = q->ip_next) != (struct ip *)fp)
+		m_cat(m, dtom(q));
+
+	/*
+	 * Create header for new ip packet by
+	 * modifying header of first packet;
+	 * dequeue and discard fragment reassembly header.
+	 * Make header visible.
+	 */
+	ip = fp->ipq_next;
+	ip->ip_len = next;
+	ip->ip_src = fp->ipq_src;
+	ip->ip_dst = fp->ipq_dst;
+	remque(fp);
+	m_free(dtom(fp));
+	m = dtom(ip);
+	m->m_len += sizeof (struct ip);
+	m->m_off -= sizeof (struct ip);
+	return (ip);
+
+dropfrag:
+	m_freem(m);
+	return (0);
 }
 
+/*
+ * Free a fragment reassembly header and all
+ * associated datagrams.
+ */
+struct ipq *
+ip_freef(fp)
+	struct ipq *fp;
+{
+	register struct ip *q;
+	struct mbuf *m;
+
+	for (q = fp->ipq_next; q != (struct ip *)fp; q = q->ip_next)
+		m_freem(dtom(q));
+	m = dtom(fp);
+	fp = fp->next;
+	remque(fp->prev);
+	m_free(m);
+	return (fp);
+}
+
+/*
+ * Put an ip fragment on a reassembly chain.
+ * Like insque, but pointers in middle of structure.
+ */
 ip_enq(p, prev)
-register struct ip *p;
-register struct ip *prev;
+	register struct ip *p;
+	register struct ip *prev;
 {
 COUNT(IP_ENQ);
+
 	p->ip_prev = prev;
 	p->ip_next = prev->ip_next;
 	prev->ip_next->ip_prev = p;
 	prev->ip_next = p;
 }
 
+/*
+ * To ip_enq as remque is to insque.
+ */
 ip_deq(p)
-register struct ip *p;
+	register struct ip *p;
 {
 COUNT(IP_DEQ);
+
 	p->ip_prev->ip_next = p->ip_next;
 	p->ip_next->ip_prev = p->ip_prev;
 }
 
-ip_timeo()      /* frag reass.q timeout routine */
+/*
+ * IP timer processing;
+ * if a timer expires on a reassembly
+ * queue, discard it.
+ */
+ip_timeo()
 {
 	register struct ip *q;
 	register struct ipq *fp;
 	int s = splnet();
-
 COUNT(IP_TIMEO);
-	timeout(ip_timeo, 0, hz);       /* reschedule every second */
 
-	/* search through reass.q */
-
-	for (fp = netcb.n_ip_head; fp != NULL; fp = fp->iq_next)
-
-		if (--(fp->iqx.ip_ttl) == 0) {  /* time to die */
-
-			q = fp->iqx.ip_next;    /* free mbufs assoc. w/chain */
-			while (q != (struct ip *)fp) {
-				m_freem(dtom(q));
-				q = q->ip_next;
-			}
-			ip_freef(fp);           /* free header */
-		}
+	for (fp = &ipq; fp; )
+		if (--fp->ipq_ttl == 0)
+			fp = ip_freef(fp);
+		else
+			fp = fp->next;
+	timeout(ip_timeo, 0, hz);
 	splx(s);
+}
+
+/*
+ * Do option processing on a datagram,
+ * possibly discarding it if bad options
+ * are encountered.
+ */
+ip_dooptions(ip)
+	struct ip *ip;
+{
+	register u_char *cp;
+	int opt, optlen, cnt, s;
+	struct inet_addr *sp;
+
+	cp = (u_char *)(ip + 1);
+	cnt = (ip->ip_hl << 2) - sizeof (struct ip);
+	for (; cnt > 0; cnt -= optlen, cp += optlen) {
+		opt = cp[0];
+		if (opt == IPOPT_EOL)
+			break;
+		if (opt == IPOPT_NOP)
+			optlen = 1;
+		else
+			optlen = cp[1];
+		switch (opt) {
+
+		default:
+			break;
+
+		case IPOPT_LSRR:
+		case IPOPT_SSRR:
+			if (cp[2] < 4 || cp[2] > optlen - 3)
+				break;
+			sp = (struct inet_addr *)(cp+cp[2]);
+			if (n_lhost.s_addr == *(u_long *)sp) {
+				if (opt == IPOPT_SSRR) {
+					/* make sure *sp directly accessible*/
+				}
+				ip->ip_dst = *sp;
+				*sp = n_lhost;
+				cp[2] += 4;
+			}
+			break;
+
+		case IPOPT_TS:
+			if (cp[2] < 5)
+				goto bad;
+			if (cp[2] > cp[1] - 3) {
+				if ((cp[3] & 0xf0) == 0xf0)
+					goto bad;
+				cp[3] += 0x10;
+				break;
+			}
+			sp = (struct inet_addr *)(cp+cp[2]);
+			switch (cp[3] & 0xf) {
+
+			case IPOPT_TS_TSONLY:
+				break;
+
+			case IPOPT_TS_TSANDADDR:
+				if (cp[2] > cp[1] - 7)
+					goto bad;
+				break;
+
+			case IPOPT_TS_PRESPEC:
+				if (*(u_long *)sp != n_lhost.s_addr)
+					break;
+				if (cp[2] > cp[1] - 7)
+					goto bad;
+				cp[1] += 4;
+				break;
+
+			default:
+				goto bad;
+			}
+			s = spl6();
+			*(int *)sp = (time % SECDAY) * 1000 + (lbolt*1000/hz);
+			splx(s);
+			cp[1] += 4;
+		}
+	}
+	return (0);
+bad:
+	/* SHOULD FORCE ICMP MESSAGE */
+	return (-1);
+}
+
+/*
+ * Strip out IP options, e.g. before passing
+ * to higher level protocol in the kernel.
+ */
+ip_stripoptions(ip)
+	struct ip *ip;
+{
+	register int i;
+	register struct mbuf *m;
+	char *op;
+	int olen;
+COUNT(IP_OPT);
+
+	olen = (ip->ip_hl<<2) - sizeof (struct ip);
+	op = (caddr_t)ip + olen;
+	m = dtom(++ip);
+	i = m->m_len - (sizeof (struct ip) + olen);
+	bcopy((caddr_t)ip+olen, (caddr_t)ip, i);
+	m->m_len -= i;
+}
+
+/* stubs */
+
+icmp_error(ip, error)
+{
+
+	m_freem(dtom(ip));
+}
+
+icmp_input(m)
+	struct mbuf *m;
+{
+
+	printf("icmp_input %x\n", m);
+}
+
+udp_input(m)
+	struct mbuf *m;
+{
+
+	printf("udp_input %x\n", m);
+}
+
+raw_input(m)
+	struct mbuf *m;
+{
+
+	printf("raw_input %x\n", m);
 }
