@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)more.c	4.20 (Berkeley) 84/09/17";
+static	char *sccsid = "@(#)more.c	4.21 (Berkeley) 84/12/24";
 #endif
 
 /*
@@ -12,12 +12,12 @@ static	char *sccsid = "@(#)more.c	4.20 (Berkeley) 84/09/17";
 */
 
 #include <stdio.h>
+#include <sys/types.h>
 #include <ctype.h>
 #include <signal.h>
 #include <errno.h>
 #include <sgtty.h>
 #include <setjmp.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 
 #define HELPFILE	"/usr/lib/more.help"
@@ -54,6 +54,8 @@ int		Currline;	/* Line we are currently at */
 int		startup = 1;
 int		firstf = 1;
 int		notell = 1;
+int		docrterase = 0;
+int		docrtkill = 0;
 int		bad_so;	/* True if overwriting does not turn off standout */
 int		inwait, Pause, errors;
 int		within;	/* true if we are within a file,
@@ -1353,17 +1355,24 @@ initterm ()
     static char	clearbuf[TBUFSIZ];
     char	*clearptr, *padstr;
     int		ldisc;
+    int		lmode;
     char	*term;
     int		tgrp;
 
 retry:
     if (!(no_tty = gtty(fileno(stdout), &otty))) {
+	if (ioctl(fileno(stdout), TIOCLGET, &lmode) < 0) {
+	    perror("TIOCLGET");
+	    exit(1);
+	}
+	docrterase = ((lmode & LCRTERA) != 0);
+	docrtkill = ((lmode & LCRTKIL) != 0);
 	/*
-	 * Wait until we're in the foreground before we get the
-	 * save the terminal modes.
+	 * Wait until we're in the foreground before we save the
+	 * the terminal modes.
 	 */
 	if (ioctl(fileno(stdout), TIOCGPGRP, &tgrp) < 0) {
-	    perror("ioctl");
+	    perror("TIOCGPGRP");
 	    exit(1);
 	}
 	if (tgrp != getpgrp(0)) {
@@ -1458,7 +1467,13 @@ readch ()
 }
 
 static char BS = '\b';
+static char *BSB = "\b \b";
 static char CARAT = '^';
+#define ERASEONECHAR \
+    if (docrterase) \
+	write (2, BSB, sizeof(BSB)); \
+    else \
+	write (2, &BS, sizeof(BS));
 
 ttyin (buf, nmax, pchar)
 char buf[];
@@ -1482,11 +1497,11 @@ char pchar;
 	else if ((ch == otty.sg_erase) && !slash) {
 	    if (sptr > buf) {
 		--promptlen;
-		write (2, &BS, 1);
+		ERASEONECHAR
 		--sptr;
 		if ((*sptr < ' ' && *sptr != '\n') || *sptr == RUBOUT) {
 		    --promptlen;
-		    write (2, &BS, 1);
+		    ERASEONECHAR
 		}
 		continue;
 	    }
@@ -1506,6 +1521,9 @@ char pchar;
 		putchar (pchar);
 		if (eraseln)
 		    erase (1);
+		else if (docrtkill)
+		    while (promptlen-- > 1)
+			write (2, BSB, sizeof(BSB));
 		promptlen = 1;
 	    }
 	    sptr = buf;
@@ -1513,7 +1531,7 @@ char pchar;
 	    continue;
 	}
 	if (slash && (ch == otty.sg_kill || ch == otty.sg_erase)) {
-	    write (2, &BS, 1);
+	    ERASEONECHAR
 	    --sptr;
 	}
 	if (ch != '\\')
