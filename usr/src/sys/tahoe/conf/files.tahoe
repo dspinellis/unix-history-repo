@@ -123,6 +123,10 @@ tahoebsc/bscpsm.c	optional vbsc device-driver
 tahoebsc/bsctr.c	optional vbsc device-driver
 tahoeif/if_ace.c	optional ace device-driver
 tahoeif/if_enp.c	optional enp device-driver
+tahoeif/if_ex.c		optional ex device-driver
+tahoeif/if_vba.c	optional inet device-driver
+tahoeif/if_vba.c	optional ns device-driver
+tahoeif/if_vba.c	optional iso device-driver
 tahoeif/if_hy.notreally.c	optional hy device-driver
 tahoemath/fpe.c		optional fpe
 tahoemath/Kaddd.s	optional fpe
@@ -155,3 +159,4 @@ tahoevba/mp.c		optional mp device-driver
 tahoevba/vba.c		optional vba device-driver
 tahoevba/vd.c		optional dk device-driver
 tahoevba/vx.c		optional vx device-driver
+tahoevba/hd.c		optional hd device-driver
