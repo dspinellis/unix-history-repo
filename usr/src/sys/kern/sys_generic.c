@@ -1,11 +1,10 @@
-/*	sys_generic.c	5.5	82/08/01	*/
+/*	sys_generic.c	5.6	82/08/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/tty.h"
-#include "../h/fcntl.h"
 #include "../h/file.h"
 #include "../h/inode.h"
 #include "../h/buf.h"
@@ -103,7 +102,7 @@ write()
 		u.u_error = sosend(fp->f_socket, (struct sockaddr *)0);
 	else {
 		ip = fp->f_inode;
-		if (fp->f_flag & O_APPEND)
+		if (fp->f_flag&FAPPEND)
 			fp->f_offset = ip->i_size;
 		u.u_offset = fp->f_offset;
 		if ((ip->i_mode&IFMT) == IFREG) {
@@ -152,7 +151,7 @@ ioctl()
 	}
 	com = uap->cmd;
 
-#ifndef ONLYNEWIOCTLS
+#ifndef NOCOMPAT
 	/*
 	 * Map old style ioctl's into new for the
 	 * sake of backwards compatibility (sigh).
@@ -185,7 +184,7 @@ ioctl()
 		u.u_error = EFAULT;
 		return;
 	}
-	if ((com&IOC_IN) && size) {
+	if (com&IOC_IN && size) {
 		if (copyin(uap->cmarg, (caddr_t)data, size)) {
 			u.u_error = EFAULT;
 			return;
@@ -229,8 +228,9 @@ returndata:
 	 * Copy any data to user, size was
 	 * already set and checked above.
 	 */
-	if ((com&IOC_OUT) && size && copyout(data, uap->cmarg, size))
-		u.u_error = EFAULT;
+	if (u.u_error == 0 && com&IOC_OUT)
+		if (size && copyout(data, uap->cmarg, size))
+			u.u_error = EFAULT;
 }
 
 /*
@@ -326,9 +326,6 @@ readi(ip)
 		ip->i_lastr = lbn;
 		n = MIN(n, size - bp->b_resid);
 		if (n != 0) {
-#ifdef UNFAST
-			iomove(bp->b_un.b_addr + on, n, B_READ);
-#else
 			if (u.u_segflg != 1) {
 				if (copyout(bp->b_un.b_addr+on, u.u_base, n)) {
 					u.u_error = EFAULT;
@@ -341,7 +338,6 @@ readi(ip)
 			u.u_count -= n;
 bad:
 			;
-#endif
 		}
 		if (n + on == bsize || u.u_offset == ip->i_size)
 			bp->b_flags |= B_AGE;
@@ -423,9 +419,6 @@ writei(ip)
 			bp = getblk(dev, bn, size);
 		else
 			bp = bread(dev, bn, size);
-#ifdef UNFAST
-		iomove(bp->b_un.b_addr + on, n, B_WRITE);
-#else
 		if (u.u_segflg != 1) {
 			if (copyin(u.u_base, bp->b_un.b_addr + on, n)) {
 				u.u_error = EFAULT;
@@ -438,7 +431,6 @@ writei(ip)
 		u.u_count -= n;
 bad:
 		;
-#endif
 		if (u.u_error != 0)
 			brelse(bp);
 		else {
