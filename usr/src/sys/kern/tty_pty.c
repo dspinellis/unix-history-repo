@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.10	81/11/18	*/
+/*	tty_pty.c	4.11	82/01/13	*/
 
 /*
  * Pseudo-teletype Driver
@@ -39,7 +39,7 @@ struct	pt_ioctl {
 
 /*ARGSUSED*/
 ptsopen(dev, flag)
-dev_t dev;
+	dev_t dev;
 {
 	register struct tty *tp;
 
@@ -65,7 +65,7 @@ dev_t dev;
 }
 
 ptsclose(dev)
-dev_t dev;
+	dev_t dev;
 {					/* Close slave part of PTY */
 	register struct tty *tp;
 
@@ -74,7 +74,7 @@ dev_t dev;
 }
 
 ptsread(dev)
-dev_t dev;
+	dev_t dev;
 {
 	register struct tty *tp;
 
@@ -86,7 +86,7 @@ dev_t dev;
 }
 
 ptswrite(dev)
-dev_t dev;
+	dev_t dev;
 {
 	register struct tty *tp;
 
@@ -169,10 +169,12 @@ ptcselect(dev)
 	struct pt_ioctl *pti;
 	struct proc *p;
 
-	if ((tp->t_state&(CARR_ON|ISOPEN)) == 0)
+	if ((tp->t_state&(CARR_ON|ISOPEN)) == 0) {
 		return (1);
-	if (tp->t_outq.c_cc)
+}
+	if (tp->t_outq.c_cc) {
 		return (1);
+}
 	pti = &pt_ioctl[minor(dev)];
 	if ((p = pti->pti_selr) && p->p_wchan == (caddr_t)&selwait)
 		pti->pti_flags |= PTCRCOLL;
