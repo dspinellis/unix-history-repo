@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	8.5 (Berkeley) %G%
+ *	@(#)vm_mmap.c	8.6 (Berkeley) %G%
  */
 
 /*
@@ -182,6 +182,7 @@ mmap(p, uap, retval)
 	 */
 	addr = (vm_offset_t) uap->addr;
 	if (((flags & MAP_FIXED) && (addr & PAGE_MASK)) ||
+	    ((flags & MAP_ANON) == 0 && (pos & PAGE_MASK)) ||
 	    (ssize_t)uap->len < 0 || ((flags & MAP_ANON) && uap->fd != -1))
 		return (EINVAL);
 	size = (vm_size_t) round_page(uap->len);
@@ -261,7 +262,7 @@ mmap(p, uap, retval)
 		}
 	}
 	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot, maxprot,
-	    flags, handle, (vm_offset_t)uap->pos);
+	    flags, handle, pos);
 	if (error == 0)
 		*retval = (int)addr;
 	return (error);
