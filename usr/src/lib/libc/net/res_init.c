@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_init.c	6.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	6.13 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -131,8 +131,11 @@ res_init()
 		    if ((*cp == '\0') || (*cp == '\n'))
 			    continue;
 		    if ((_res.nsaddr_list[nserv].sin_addr.s_addr =
-			inet_addr(cp)) == (unsigned)-1) 
+			inet_addr(cp)) == (unsigned)-1) {
+			    _res.nsaddr_list[nserv].sin_addr.s_addr
+				= INADDR_ANY;
 			    continue;
+		    }
 		    _res.nsaddr_list[nserv].sin_family = AF_INET;
 		    _res.nsaddr_list[nserv].sin_port = htons(NAMESERVER_PORT);
 		    nserv++;
