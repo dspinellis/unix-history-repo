@@ -14,19 +14,22 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.1 (Berkeley) %G%
+#	@(#)Makefile	1.2 (Berkeley) %G%
 #
 
-SRCS=	0.t 1.t A.gt
+SRCS=	0.t 1.t A.t
 MACROS=	-ms
 PRINTER=Plz
 TROFF=	ditroff -${PRINTER}
 REFER=	/a/staff/mckusick/book/ref/refer -m -n -e -l -s -p ref.bib
 GRIND=	vgrind -f
 
-paper.${PRINTER}: ${SRCS}
+paper.${PRINTER}: ${SRCS} ref.bib.ia A.gt
 	${REFER} ${SRCS} | ${TROFF} ${MACROS} -t tmac.srefs - | \
 		psdit >paper.${PRINTER}
+
+ref.bib.ia: ref.bib
+	indxbib ref.bib
 
 A.gt: A.t
 	${GRIND} <A.t >A.gt
@@ -35,7 +38,7 @@ print: paper.${PRINTER}
 	lpr -${PRINTER} paper.${PRINTER}
 
 clean:
-	rm -f *.spell errs Errs make.out paper.${PRINTER}
+	rm -f A.gt *.spell errs Errs make.out paper.${PRINTER} ref.bib.i?
 
 spell: ${SRCS}
 	@for i in ${SRCS}; do \
