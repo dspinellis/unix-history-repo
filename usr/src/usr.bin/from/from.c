@@ -1,4 +1,5 @@
-static char *sccsid = "@(#)from.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)from.c	4.2 (Berkeley) %G%";
+
 #include <stdio.h>
 #include <ctype.h>
 #include <pwd.h>
@@ -6,8 +7,8 @@ static char *sccsid = "@(#)from.c	4.1 (Berkeley) %G%";
 struct	passwd *getpwuid();
 
 main(argc, argv)
-int argc;
-register char **argv;
+	int argc;
+	register char **argv;
 {
 	char lbuf[BUFSIZ];
 	char lbuf2[BUFSIZ];
@@ -28,8 +29,7 @@ register char **argv;
 			if (isupper(*name))
 				*name = tolower(*name);
 
-	}
-	else
+	} else
 		sender = NULL;
 	if (chdir("/usr/spool/mail") < 0)
 		exit(1);
@@ -48,12 +48,11 @@ register char **argv;
 	}
 	if (freopen(name, "r", stdin) == NULL)
 		exit(0);
-	while(fgets(lbuf, sizeof lbuf, stdin) != NULL)
+	while (fgets(lbuf, sizeof lbuf, stdin) != NULL)
 		if (lbuf[0] == '\n' && stashed) {
 			stashed = 0;
 			printf("%s", lbuf2);
-		}
-		else if (bufcmp(lbuf, "From ", 5) &&
+		} else if (strncmp(lbuf, "From ", 5) == 0 &&
 		    (sender == NULL || match(&lbuf[4], sender))) {
 			strcpy(lbuf2, lbuf);
 			stashed = 1;
@@ -63,18 +62,8 @@ register char **argv;
 	exit(0);
 }
 
-bufcmp (b1, b2, n)
-register char *b1, *b2;
-register int n;
-{
-	while (n-- > 0)
-		if (*b1++ != *b2++)
-			return (0);
-	return (1);
-}
-
 match (line, str)
-register char *line, *str;
+	register char *line, *str;
 {
 	register char ch;
 
