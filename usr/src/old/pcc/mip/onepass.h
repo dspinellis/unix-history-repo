@@ -1,4 +1,4 @@
-/*	onepass.h	4.1	85/03/19	*/
+/*	onepass.h	4.2	87/12/10	*/
 
 #ifndef _ONEPASS_
 #define	_ONEPASS_
@@ -12,7 +12,9 @@
 #define where where2
 #define xdebug x2debug
 #define tdebug t2debug
+#ifndef deflab
 #define deflab def2lab
+#endif
 #define edebug e2debug
 #define eprint e2print
 #define getlab get2lab
