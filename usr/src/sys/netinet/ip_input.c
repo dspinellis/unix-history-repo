@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_input.c	7.6.1.4 (Berkeley) %G%
+ *	@(#)ip_input.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -651,9 +651,13 @@ ip_dooptions(m)
 			bcopy((caddr_t)(&ip->ip_dst), (caddr_t)&ipaddr.sin_addr,
 			    sizeof(ipaddr.sin_addr));
 			/*
-			 * locate outgoing interface
+			 * locate outgoing interface; if we're the destination,
+			 * use the incoming interface (should be same).
 			 */
-			if ((ia = ip_rtaddr(ipaddr.sin_addr)) == 0) {
+			if ((ia =
+			   (struct in_ifaddr *)ifa_ifwithaddr(
+			      (struct sockaddr *)&ipaddr)) == 0 &&
+			    (ia = ip_rtaddr(ipaddr.sin_addr)) == 0) {
 				type = ICMP_UNREACH;
 				code = ICMP_UNREACH_HOST;
 				goto bad;
