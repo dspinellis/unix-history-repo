@@ -1,0 +1,134 @@
+.TH EMACSTOOL 1
+.SH NAME
+.I emacstool 
+\- run emacs under Sun windows with function-key and mouse support.
+.SH SYNOPSIS
+.I emacstool
+[{window_args} {-rc run_command_path} args ... ]
+.SH TYPICAL USAGE
+In ~/.suntools or ~/.rootmenu include a line like this:
+.br
+"Emacstool"     emacstool -WI emacs.icon -f emacstool-init
+.SH DESCRIPTION
+.B  Emacstool
+creates a SunView frame and a tty subwindow within which mouse events
+and function keys are translated to ASCII sequences which Emacs can
+parse.  The translated input events are sent to the process running in
+the tty subwindow, which is typically GNU Emacs.  Emacstool thereby
+allows GNU Emacs users to make full use of the mouse and function keys.
+GNU Emacs can be loaded with functions to interpret the mouse and
+function-key events to make a truely fine screen oriented editor for
+the Sun Workstation.
+.PP
+(Note that GNU Emacs has a special interface to the X window system as
+well.  The X window system has many technical advantages, it is an
+industry standard, and it is also free software.  The Free Software
+Foundation urges you to try X windows, and distributes a free copy of
+X on Emacs distribution tapes.)
+.PP
+Function keys are translated to a sequence of the form
+`^X*[a-o][lrt]'.  The last character is `l', `r', or `t' corresponding
+to whether the key is among the Left, Right, or Top function keys.
+The third character indicates which button of the group
+was pressed.  Thus, the function key in the lower right corner will
+transmit the sequence `^X*or'.  In addition, the [lrt] is affected by
+the Control, Meta, and Shift keys.  Unshifted Control keys will be
+non-alphabetic: C-l is [,], C-r is [2], C-t is [4].
+.PP 
+Mouse buttons are encoded as `^X^@([124] x y)\\n'.  ^X^@ is the
+standard GNU Emacs mouse event prefix, it is followed by a list
+indicating the button pressed and the character row and column of the
+point in the window where the mouse cursor is, and followed by a
+newline character.  In GNU Emacs, the ^X^@ dispatches to a
+mouse event handler which then reads the following list.
+.SH OPTIONS
+.B Emacstool
+supports all the standard window arguments, including font and icon 
+specifiers.  
+.PP
+By default, Emacstool runs the program 
+.I emacs
+in the created subwindow.  
+The value of the environment variable 
+.I EMACSTOOL
+can be used to override this if your version of 
+.B Emacs
+is not accessible on your search path by the name 
+.I Emacs.
+In addition, the run command can be set by the 
+.I pathname 
+following the last occurence of the
+.I \-rc
+flag.
+This is convenient for using Emacstool to run on remote machines.
+.PP
+All other command line arguments not used by the window system are passed
+as arguments to the program that runs in the Emacstool window.
+.PP
+For example: 
+.PP
+local% (emacstool -rc rlogin remote -8 &)&
+.PP
+will create an Emacstool window logged in to a machine named
+.I remote.
+If Emacs is run from this window, 
+Emacstool will encode mouse and function keys, and send them to rlogin.
+If Emacs is run from this shell on the remote machine, it will see
+the mouse and function keys properly.
+However, since the remote host does not have access to the screen,
+the cursor cannot be changed, menus will not appear, and the selection
+buffer (STUFF) is limited.
+.SH Using With GNU Emacs:
+The GNU Emacs files
+lisp/term/sun.el,
+lisp/sun-mouse.el, 
+lisp/sun-fns.el, 
+and 
+src/sunfns.c
+provide emacs support for the Emacstool and function keys.
+Emacstool will automatically set the TERM environment variable to be "sun"
+and unset the environment variable TERMCAP.  That is, these variables will
+not be inherited from the shell that starts Emacstool.
+Since the terminal type is
+.I SUN
+(that is, the environment variable TERM is set to 
+.I SUN), 
+Emacs will automatically load the file lisp/term/sun.
+This, in turn, will ensure that sun-mouse.el is autoloaded when any mouse
+events are detected.  It is suggested that 
+.I sun-mouse 
+and
+.I sun-fns
+be loaded in your site-init.el file, so that they will always be loaded
+when running on a Sun workstation.
+.PP
+In addition, Emacstool sets the environment variable IN_EMACSTOOL = "t".
+Lisp code in your ~/.emacs can use (getenv "IN_EMACSTOOL")
+to determine whether to do Emacstool specific initalization.
+Sun.el uses this to automatically call emacstool-init (getenv "IN_EMACSTOOL")
+is defined.
+.PP
+The file src/sunfns.c defines several useful functions for emacs on
+the Sun.  Among these are procedures to pop-up SunView 
+.I menus, 
+put and get from the SunView
+.I STUFF
+buffer, and a procedure for changing the cursor 
+.I icon.
+If you want to define or edit cursor icons, 
+there is a rudimentary mouse driven icon editor in the file
+lisp/sun-cursors.el.  Try invoking (sc:edit-cursor)
+.SH BUGS
+It takes a few milliseconds to create a menu before it pops up.
+.SH ENVIRONMENT VARIABLES
+EMACSTOOL
+IN_EMACSTOOL
+TERM
+TERMCAP
+.SH FILES
+.DT
+emacs
+.SH "SEE ALSO"
+emacs(1)
+ .../etc/SUN-SUPPORT
+ .../lisp/term/sun.el
