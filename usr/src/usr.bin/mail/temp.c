@@ -8,7 +8,7 @@
  * Give names to all the temporary files that we will need.
  */
 
-static char *SccsId = "@(#)temp.c	1.1 %G%";
+static char *SccsId = "@(#)temp.c	1.2 %G%";
 
 char	tempMail[14];
 char	tempQuit[14];
@@ -20,7 +20,7 @@ char	tempMesg[14];
 tinit()
 {
 	register char *cp, *cp2;
-	char uname[9];
+	char uname[PATHSIZE];
 	register int err = 0;
 	register int pid;
 
