@@ -1,4 +1,4 @@
-/*	defs.h	4.3	82/05/26	*/
+/*	defs.h	4.4	82/05/31	*/
 
 /*
  * Internal data structure definitions for
@@ -57,7 +57,7 @@ struct rt_entry {
 #define	RTS_DELRT	0x1		/* delete pending */
 #define	RTS_CHGRT	0x2		/* change command pending */
 #define	RTS_ADDRT	0x4		/* add command pending */
-#define	RTS_SILENT	0x8		/* don't send to router */
+#define	RTS_HIDDEN	0x8		/* don't send to router */
 
 struct	rthash nethash[ROUTEHASHSIZ], hosthash[ROUTEHASHSIZ];
 struct	rt_entry *rtlookup();
