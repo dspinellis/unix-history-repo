@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -153,9 +153,12 @@ another:
 	}
 	(void) setuid(getuid());
 	omask = sigblock(mask(SIGINT)|mask(SIGQUIT)|mask(SIGTERM));
-	signal(SIGINT, sendsig);
-	signal(SIGQUIT, sendsig);
-	signal(SIGTERM, sendsig);
+	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
+		signal(SIGINT, sendsig);
+	if (signal(SIGQUIT, SIG_IGN) != SIG_IGN)
+		signal(SIGQUIT, sendsig);
+	if (signal(SIGTERM, SIG_IGN) != SIG_IGN)
+		signal(SIGTERM, sendsig);
         pid = fork();
         if (pid < 0) {
 		perror("fork");
