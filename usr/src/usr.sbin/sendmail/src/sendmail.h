@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.23	%G%
+**	@(#)sendmail.h	3.24	%G%
 */
 
 
@@ -40,7 +40,7 @@ struct address
 	char		*q_host;	/* host name */
 	short		q_mailer;	/* mailer to use */
 	short		q_rmailer;	/* real mailer (before mapping) */
-	short		q_flags;	/* status flags, see below */
+	u_short		q_flags;	/* status flags, see below */
 	char		*q_home;	/* home dir (local mailer only) */
 	struct address	*q_next;	/* chain */
 };
@@ -78,7 +78,7 @@ struct mailer
 {
 	char	*m_name;	/* symbolic name of this mailer */
 	char	*m_mailer;	/* pathname of the mailer to use */
-	short	m_flags;	/* status flags, see below */
+	u_long	m_flags;	/* status flags, see below */
 	short	m_badstat;	/* the status code to use on unknown error */
 	char	*m_from;	/* pattern for From: header */
 	char	**m_argv;	/* template argument vector */
@@ -98,6 +98,7 @@ typedef struct mailer	MAILER;
 # define M_NEEDFROM	000400	/* need arpa-style From: line */
 # define M_NEEDDATE	001000	/* need arpa-style Date: line */
 # define M_MSGID	002000	/* need Message-Id: field */
+# define M_FINAL	004000	/* mailing will effect final delivery */
 # define M_USR_UPPER	010000	/* preserve user case distinction */
 # define M_HST_UPPER	020000	/* preserve host case distinction */
 # define M_FULLNAME	040000	/* want Full-Name field */
@@ -123,8 +124,8 @@ struct header
 	char		*h_field;	/* the name of the field */
 	char		*h_value;	/* the value of that field */
 	struct header	*h_link;	/* the next header */
-	short		h_flags;	/* status bits, see below */
-	short		h_mflags;	/* m_flags bits needed */
+	u_short		h_flags;	/* status bits, see below */
+	u_long		h_mflags;	/* m_flags bits needed */
 };
 
 typedef struct header	HDR;
@@ -140,8 +141,8 @@ extern HDR	*Header;	/* head of header list */
 struct hdrinfo
 {
 	char	*hi_field;	/* the name of the field */
-	short	hi_flags;	/* status bits, see below */
-	short	hi_mflags;	/* m_flags needed for this field */
+	u_short	hi_flags;	/* status bits, see below */
+	u_short	hi_mflags;	/* m_flags needed for this field */
 };
 
 extern struct hdrinfo	HdrInfo[];
@@ -153,6 +154,7 @@ extern struct hdrinfo	HdrInfo[];
 # define H_USED		00010	/* indicates that this has been output */
 # define H_CHECK	00020	/* check h_mflags against m_flags */
 # define H_ACHECK	00040	/* ditto, but always (not just default) */
+# define H_FORCE	00100	/* force this field, even if default */
 
 
 /*
