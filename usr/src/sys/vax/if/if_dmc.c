@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.11	82/04/11	*/
+/*	if_dmc.c	4.12	82/04/16	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -128,7 +128,7 @@ COUNT(DMCATTACH);
 	sc->sc_if.if_init = dmcinit;
 	sc->sc_if.if_output = dmcoutput;
 	sc->sc_if.if_ubareset = dmcreset;
-	sc->sc_ifuba.ifuba_flags = UBA_NEEDBDP;
+	sc->sc_ifuba.ifuba_flags = UBA_NEEDBDP | UBA_CANTWAIT;
 	if_attach(&sc->sc_if);
 }
 

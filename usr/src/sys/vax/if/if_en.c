@@ -1,4 +1,4 @@
-/*	if_en.c	4.56	82/04/11	*/
+/*	if_en.c	4.57	82/04/16	*/
 
 #include "en.h"
 #include "imp.h"
@@ -117,7 +117,7 @@ COUNT(ENATTACH);
 	es->es_if.if_init = eninit;
 	es->es_if.if_output = enoutput;
 	es->es_if.if_ubareset = enreset;
-	es->es_ifuba.ifu_flags = UBA_NEEDBDP | UBA_NEED16;
+	es->es_ifuba.ifu_flags = UBA_NEEDBDP | UBA_NEED16 | UBA_CANTWAIT;
 	if_attach(&es->es_if);
 #if NIMP == 0
 	/* here's one for you john baby.... */
