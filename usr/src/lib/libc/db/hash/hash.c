@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)hash.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)hash.c	5.21 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -409,7 +409,10 @@ hash_sync(dbp)
 static int
 flush_meta()
 {
-	HASHHDR *whdrp, whdr;
+	HASHHDR *whdrp;
+#if BYTE_ORDER == LITTLE_ENDIAN
+	HASHHDR whdr;
+#endif
 	int fp, i, wsize;
 
 	if (!hashp->save_file)
