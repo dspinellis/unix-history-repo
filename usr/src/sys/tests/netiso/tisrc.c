@@ -1,15 +1,15 @@
 /*
- * Copyright (c) 1988, 1990 Regents of the University of California.
+ * Copyright (c) 1989, 1990 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 #ifndef lint
-static char sccsid[] = "@(#)tisrc.c	7.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tisrc.c	7.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
- * This is a test program to be a source for TP4 connections.
+ * This is a test program to be a source for ISO transport.
  */
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -33,18 +33,21 @@ static char sccsid[] = "@(#)tisrc.c	7.1 (Berkeley) %G%";
 
 struct	iso_addr eon = {20, 0x47, 0, 6, 3, 0, 0, 0, 25 /*EGP for Berkeley*/};
 struct  sockaddr_iso to_s = { sizeof(to_s), AF_ISO }, *to = &to_s;
+struct  sockaddr_iso old_s = { sizeof(to_s), AF_ISO }, *old = &old_s;
 fd_set	readfds, writefds, exceptfds;
 long size, count = 10;
 int verbose = 1, selectp, type = SOCK_SEQPACKET, nobuffs, errno, playtag = 0;
-int verify = 0;
+int verify = 0, dgramp = 0, debug = 0;
 short portnumber = 3000;
 char your_it[] = "You're it!";
-char *port, *conndata, data_msg[2048];
+char *Servername, *conndata, data_msg[2048];
+char Serverbuf[128];
+char name[128];
 struct iovec iov[1] = {data_msg};
 union {
     struct {
 	    struct cmsghdr	cmhdr;
-	    char		cmdata[128 - sizeof (struct cmsghdr)];
+	    char		cmdata[128 - sizeof(struct cmsghdr)];
     } cm;
     char data[128];
 } cm;
@@ -56,7 +59,6 @@ char *argv[];
 {
 	register char **av = argv;
 	register char *cp;
-	struct iso_addr iso_addr();
 	u_long len;
 	int handy;
 
@@ -64,7 +66,7 @@ char *argv[];
 		av++;
 		if(strcmp(*av,"Servername")==0) {
 			av++;
-			port = *av;
+			Servername = *av;
 			argc--;
 		} else if(strcmp(*av,"conndata")==0) {
 			av++;
@@ -72,7 +74,7 @@ char *argv[];
 			argc--;
 		} else if(strcmp(*av,"host")==0) {
 			av++;
-			to_s.siso_addr = iso_addr(*av);
+			to_s.siso_addr = *iso_addr(*av);
 			argc--;
 		} else if(strcmp(*av,"port")==0) {
 			av++;
@@ -96,38 +98,48 @@ char *argv[];
 			bcopy((char *)&l, &to_s.siso_data[15], 4);
 		}
 	}
-	if (port) {
-		to_s.siso_tlen = strlen(port);
-		len =  1 + to_s.siso_nlen + strlen(port)
-				+ sizeof(*to) - sizeof(struct iso_addr);
-		if (len > sizeof(*to)) {
-			to = (struct sockaddr_iso *)malloc(len);
-			bzero(to, len);
-			*to = to_s;
-			to->siso_len = len;
-		}
-		bcopy(port, TSEL(to), strlen(port));
-	} else {
-		to_s.siso_tlen = sizeof(portnumber);
-		portnumber = htons(portnumber);
-		bcopy((char *)&portnumber, TSEL(to), sizeof(portnumber));
-	}
-
+	maketoaddr();
 	tisrc();
 }
+
+maketoaddr()
+{
+	if (Servername) {
+		int tlen = strlen(Servername);
+		int len =  tlen + TSEL(to) - (caddr_t) to;
+		if (len < sizeof(*to)) len = sizeof(*to);
+		if (len > to->siso_len) {
+			if (old != &old_s) free(old);
+			old = (struct sockaddr_iso *)malloc(len);
+			*old = *to; /* We dont care if all old tsel is copied*/
+			old->siso_len = len;
+			if (to != &to_s) free(to);
+			to = (struct sockaddr_iso *)malloc(len);
+		}
+		bcopy(Servername, TSEL(old), tlen);
+	} else {
+		old->siso_tlen = sizeof(portnumber);
+		portnumber = htons(portnumber);
+		bcopy((char *)&portnumber, TSEL(old), sizeof(portnumber));
+	}
+	bcopy(old, to, old->siso_len);
+}
+
 
 tisrc() {
 	int x, s, pid, on = 1, flags = 8, n;
 
+	if (dgramp) type = SOCK_DGRAM;
 	try(socket, (AF_ISO, type, 0),"");
 	s = x;
 
-	/*try(setsockopt, (s, SOL_SOCKET, SO_DEBUG, &on, sizeof (on)), "");*/
-
-	if (conndata) doconndata(s);
-
-	try(connect, (s, (struct sockaddr *) to, to->siso_len), "");
-
+	if (debug)
+		try(setsockopt, (s, SOL_SOCKET, SO_DEBUG, &on, sizeof on), "");
+	if (dgramp == 0) {
+		if (conndata)
+			doconndata(s);
+		try(connect, (s, (struct sockaddr *) to, to->siso_len), "");
+	}
 	if (selectp) {
 		FD_ZERO(&writefds); FD_SET(s, &writefds);
 		select(1, &writefds, 0, 0, 0);
@@ -169,35 +181,28 @@ int s, flags;
 {
 	int fd, buflen;
 	char *buf;
-	struct sockaddr *to;
 	int x, saved_x;
 
 	msg.msg_flags = flags;
 	if (verbose) {
-		unsigned short *zp, *zlim;
 		if (msg.msg_controllen) {
-			zp = (unsigned short *)&(cm.cm.cmhdr.cmsg_len);
 			printf("(CMessage Type is %x) ", cm.cm.cmhdr.cmsg_type);
-			printf("CMsg data: ");
-			x = msg.msg_controllen;
-			zlim = zp + ((x + 1) / 2);
-			while (zp < zlim) printf("%x ", *zp++);
-			putchar ('\n');
+			dumpit("CMsg data:\n", &msg.msg_control, msg.msg_controllen);
 		}
 		if (iov->iov_len) {
 			printf("sending: %s %s",
 			(flags & MSG_OOB ? "(OOB Data)" : ""),
 				(flags & MSG_EOR ? "(Record Mark)" : ""));
-			x = localsize;
-			zp = (unsigned short *)data_msg;
-			zlim = zp + ((x + 1) / 2);
-			while (zp < zlim) printf("%x ", *zp++);
-			putchar ('\n');
+			dumpit("data: ", data_msg, localsize);
 		}
 	}
 	if (verify) {
 		buflen = iov->iov_len;
 		bcopy(iov->iov_base, dupbuf, buflen);
+	}
+	if (dgramp) {
+		msg.msg_name = (caddr_t)to;
+		msg.msg_namelen = to->siso_len;
 	}
 	try(sendmsg, (s, &msg, flags), " put_record ");
 	saved_x = x;
@@ -205,11 +210,36 @@ int s, flags;
 		iov->iov_len = buflen;
 		iov->iov_base = dupbuf;
 		try(recvmsg, (s, &msg, flags), " put_record ");
+		if (dgramp) {
+			if (msg.msg_namelen)
+				dumpit("from: ", to, msg.msg_namelen);
+			msg.msg_namelen = old->siso_len;
+		}
 		printf("verify got %d\n", x);
 		buflen -= x;
 	}
+	bcopy(old, to, old->siso_len);
 	msg.msg_control = 0;
 	return (saved_x);
+}
+dumpit(what, where, n)
+char *what; unsigned short *where; int n;
+{
+	unsigned short *s = where;
+	unsigned short *z = where + (n+1)/2;
+	int count = 0;
+	if (verbose == 0)
+		return;
+	printf(what);
+	while(s < z) {
+		count++;
+		printf("%x ",*s++);
+		if ((count & 15) == 0)
+			putchar('\n');
+	}
+	if (count & 15)
+		putchar('\n');
+	fflush(stdout);
 }
 int *datasize = &iov->iov_len;
 char *cp, *cplim;
@@ -234,13 +264,28 @@ doconndata(s)
 	put_record(s, 0);
 }
 
-
+get_altbuf(addrbuf)
+char *addrbuf;
+{
+	if (dgramp == 0) {
+		printf("illegal option for stream\n");
+		return 1;
+	}
+	return (scanf("%s", addrbuf) == EOF ? 1 : 0);
+}
 
 get_record(flags)
 int *flags;
 {
-	int factor = 1, x = 0;
+	int factor = 1, x = 0, newaddr = 0;
+	static repeatcount, repeatsize;
 	char workbuf[10240];
+	char addrbuf[128];
+
+	if (repeatcount > 0) {
+		repeatcount--;
+		return;
+	}
 
 	*flags = 0;
 	*datasize = 0;
@@ -252,7 +297,29 @@ int *flags;
 		x = scanf("%s", workbuf);
 		if (x == EOF)
 			break;
-		if (strcmp(workbuf, "disc") == 0)
+		if (strcmp(workbuf, "host") == 0) {
+			if (get_altbuf(addrbuf))
+				break;
+			to->siso_addr = *iso_addr(addrbuf);
+			newaddr = 1;
+		} else if (strcmp(workbuf, "Servername") == 0) {
+			if (get_altbuf(Serverbuf))
+				break;
+			Servername = Serverbuf;
+			newaddr = 1;
+		} else if (strcmp(workbuf, "port") == 0) {
+			x = scanf("%hd", &portnumber);
+			if (x == EOF)
+				break;
+			Servername = 0;
+			newaddr = 1;
+		} else if (strcmp(workbuf, "repeat") == 0) {
+			x = scanf("%d", &repeatcount);
+			if (repeatcount <= 0) repeatcount = 1;
+			repeatcount--;
+			if (x == EOF)
+				break;
+		} else if (strcmp(workbuf, "disc") == 0)
 			x = get_control_data(TPOPT_DISC_DATA);
 		else if (strcmp(workbuf, "cfrm") == 0)
 			x = get_control_data(TPOPT_CFRM_DATA);
@@ -277,11 +344,13 @@ int *flags;
 			*datasize = localsize;
 			if (datasize != &iov->iov_len) {
 				*datasize += sizeof(cm.cm.cmhdr);
-				cm.cm.cmhdr.cmsg_len = *datasize;
+				repeatsize = cm.cm.cmhdr.cmsg_len = *datasize;
 			}
 			break;
 		}
 	}
 	errno = 0;
+	if (newaddr)
+		maketoaddr();
 	return (x);
 }
