@@ -1,4 +1,4 @@
-/*	mt.c	4.13	82/10/17	*/
+/*	mt.c	4.14	82/10/20	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -557,8 +557,7 @@ mtioctl(dev, cmd, data, flag)
 			if (bp->b_flags&B_ERROR)
 				break;
 		}
-		geterror(bp);		/* XXX */
-		return (u.u_error);	/* XXX */
+		return (geterror(bp));
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;

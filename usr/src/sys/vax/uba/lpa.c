@@ -1,4 +1,4 @@
-/*	lpa.c	4.8	82/10/17	*/
+/*	lpa.c	4.9	82/10/20	*/
 
 #include "lpa.h"
 #if NLPA > 0
@@ -293,10 +293,13 @@ lpamcode(lpaaddr, sc, uio)
 {
 	short v, r;
 	register int mcaddr;
+	int error;
 
 	mcaddr = 0;
 	while (uio->uio_resid) {
-		uiomove(&v, 2, UIO_WRITE, uio);	/* get next microcode word */
+		error = uiomove(&v, 2, UIO_WRITE, uio);
+		if (error)
+			break;
 		lpaaddr->lcim = 0;		/* load microcode word */
 		lpaaddr->lrda = mcaddr;
 		lpaaddr->lms = v;
@@ -316,7 +319,7 @@ lpamcode(lpaaddr, sc, uio)
 	sc->sc_flag |= MCODE;
 	lpaaddr->lcim |= IIE;
 	lpaaddr->lcos |= OIE;
-	return (0);
+	return (error);
 TRACER("MCODE\n");
 }
 

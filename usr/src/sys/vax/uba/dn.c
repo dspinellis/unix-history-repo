@@ -1,4 +1,4 @@
-/*	dn.c	4.11	82/10/17	*/
+/*	dn.c	4.12	82/10/20	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -133,7 +133,7 @@ dnwrite(dev, uio)
 	if (error)
 		return (error);
 	while ((*dnreg & (PWI|ACR|DSS)) == 0 && cc >= 0) {
-		spl4();
+		(void) spl4();
 		if ((*dnreg & PND) == 0 || cc == 0)
 			sleep((caddr_t)dnreg, DNPRI);
 		else switch(*cp) {

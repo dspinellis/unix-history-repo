@@ -1,4 +1,4 @@
-/*	ht.c	4.33	82/10/20	*/
+/*	ht.c	4.34	82/10/20	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -507,8 +507,7 @@ htioctl(dev, cmd, data, flag)
 			if ((bp->b_flags&B_ERROR) || sc->sc_dsreg&HTDS_BOT)
 				break;
 		}
-		geterror(bp);		/* XXX */
-		return (u.u_error);	/* XXX */
+		return (geterror(bp));	
 
 	case MTIOCGET:
 		mtget = (struct mtget *)data;

@@ -1,4 +1,4 @@
-/*	systm.h	4.29	82/10/20	*/
+/*	systm.h	4.30	82/10/20	*/
 
 /*
  * Random set of variables
@@ -49,8 +49,10 @@ dev_t	argdev;			/* device for argument lists */
 
 extern	int icode[];		/* user init code */
 extern	int szicode;		/* its size */
+#ifdef MUSH
 extern	int mcode[];		/* MUSH: startup code */
 extern	int szmcode;		/* & its size */
+#endif
 
 dev_t	getmdev();
 daddr_t	bmap();

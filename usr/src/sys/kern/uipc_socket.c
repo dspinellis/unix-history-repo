@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.56	82/10/17	*/
+/*	uipc_socket.c	4.57	82/10/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -131,12 +131,13 @@ soclose(so, exiting)
 	int exiting;
 {
 	int s = splnet();		/* conservative */
+	int error;
 
 	if (so->so_options & SO_ACCEPTCONN) {
 		while (so->so_q0 != so)
-			soclose(so->so_q0, 1);
+			(void) soclose(so->so_q0, 1);
 		while (so->so_q != so)
-			soclose(so->so_q, 1);
+			(void) soclose(so->so_q, 1);
 	}
 	if (so->so_pcb == 0)
 		goto discard;
@@ -144,22 +145,19 @@ soclose(so, exiting)
 		so->so_options |= SO_KEEPALIVE;
 	if (so->so_state & SS_ISCONNECTED) {
 		if ((so->so_state & SS_ISDISCONNECTING) == 0) {
-			u.u_error = sodisconnect(so, (struct sockaddr *)0);
-			if (u.u_error) {
+			error = sodisconnect(so, (struct sockaddr *)0);
+			if (error) {
 				if (exiting)
 					goto drop;
 				splx(s);
-				return;
+				return (error);
 			}
 		}
 		if ((so->so_options & SO_DONTLINGER) == 0) {
 			if ((so->so_state & SS_ISDISCONNECTING) &&
 			    (so->so_state & SS_NBIO) &&
-			    exiting == 0) {
-				u.u_error = EINPROGRESS;
-				splx(s);
-				return;
-			}
+			    exiting == 0)
+				return (EINPROGRESS);
 			/* should use tsleep here, for at most linger */
 			while (so->so_state & SS_ISCONNECTED)
 				sleep((caddr_t)&so->so_timeo, PZERO+1);
@@ -167,17 +165,18 @@ soclose(so, exiting)
 	}
 drop:
 	if (so->so_pcb) {
-		u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_DETACH,
+		error = (*so->so_proto->pr_usrreq)(so, PRU_DETACH,
 		    (struct mbuf *)0, (struct mbuf *)0, (struct socketopt *)0);
-		if (exiting == 0 && u.u_error) {
+		if (exiting == 0 && error) {
 			splx(s);
-			return;
+			return (error);
 		}
 	}
 discard:
 	so->so_state |= SS_NOFDREF;
 	sofree(so);
 	splx(s);
+	return (0);
 }
 
 /*ARGSUSED*/
@@ -261,7 +260,7 @@ sosend(so, nam, uio, flags)
 {
 	struct mbuf *top = 0;
 	register struct mbuf *m, **mp = &top;
-	register u_int len;
+	register int len;
 	int error = 0, space, s;
 
 	if (sosendallatonce(so) && uio->uio_resid > so->so_snd.sb_hiwat)
@@ -370,7 +369,7 @@ soreceive(so, aname, uio, flags)
 	int flags;
 {
 	register struct mbuf *m, *n;
-	u_int len;
+	int len;
 	int eor, s, error = 0, moff, tomark;
 
 	if (flags & SOF_OOB) {
@@ -378,7 +377,7 @@ soreceive(so, aname, uio, flags)
 		error = (*so->so_proto->pr_usrreq)(so, PRU_RCVOOB,
 		    m, (struct mbuf *)0, (struct socketopt *)0);
 		if (error)
-			return;
+			return (error);
 		len = uio->uio_resid;
 		do {
 			if (len > m->m_len)

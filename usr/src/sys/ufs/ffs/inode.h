@@ -1,4 +1,4 @@
-/*	inode.h	4.16	82/10/20	*/
+/*	inode.h	4.17	82/10/20	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -90,7 +90,6 @@ int	ninode;			/* number of slots in the table */
 struct	inode *rootdir;			/* pointer to inode of root directory */
 
 struct	inode *ialloc();
-struct	inode *ifind();
 struct	inode *iget();
 struct	inode *owner();
 struct	inode *maknode();
