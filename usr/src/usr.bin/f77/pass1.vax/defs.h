@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	5.3 (Berkeley) %G%
+ *	@(#)defs.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -379,7 +379,7 @@ struct Constblock
 	field vclass;
 	field vstg;
 	expptr vleng;
-	union Constant const;
+	union Constant constant;
 	};
 
 
