@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.112 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.113 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -126,7 +126,7 @@ sendall(e, mode)
 			printaddr(&e->e_from, FALSE);
 		}
 		e->e_from.q_flags |= QDONTSEND;
-		(void) recipient(&e->e_from, &e->e_sendqueue, e);
+		(void) recipient(&e->e_from, &e->e_sendqueue, 0, e);
 	}
 
 	/*
@@ -852,8 +852,19 @@ deliver(firstto, editfcn)
 		{
 			rcode = mailfile(user, ctladdr, e);
 			giveresponse(rcode, m, NULL, ctladdr, e);
+			e->e_nsent++;
 			if (rcode == EX_OK)
+			{
 				to->q_flags |= QSENT;
+				if (bitnset(M_LOCALMAILER, m->m_flags) &&
+				    (e->e_receiptto != NULL ||
+				     bitset(QPINGONSUCCESS, to->q_flags)))
+				{
+					to->q_flags |= QREPORT;
+					fprintf(e->e_xfp, "%s... Successfully delivered\n",
+						to->q_paddr);
+				}
+			}
 			to->q_statdate = curtime();
 			continue;
 		}

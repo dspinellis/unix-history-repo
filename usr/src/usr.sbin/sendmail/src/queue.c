@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.54 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.55 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.54 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.55 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1168,11 +1168,11 @@ readqf(e)
 				break;
 			q->q_alias = ctladdr;
 			q->q_flags |= qflags;
-			(void) recipient(q, &e->e_sendqueue, e);
+			(void) recipient(q, &e->e_sendqueue, 0, e);
 			break;
 
 		  case 'E':		/* specify error recipient */
-			(void) sendtolist(&bp[1], ctladdr, &e->e_errorqueue, e);
+			(void) sendtolist(&bp[1], ctladdr, &e->e_errorqueue, 0, e);
 			break;
 
 		  case 'H':		/* header */
