@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #define DKTYPENAMES
@@ -36,6 +36,7 @@ setup(dev)
 		errexit("Can't stat root\n");
 	rootdev = statb.st_dev;
 	if (stat(dev, &statb) < 0) {
+		perror(dev);
 		printf("Can't stat %s\n", dev);
 		return (0);
 	}
@@ -51,6 +52,7 @@ setup(dev)
 	if (rootdev == statb.st_rdev)
 		hotroot++;
 	if ((dfile.rfdes = open(dev, O_RDONLY)) < 0) {
+		perror(dev);
 		printf("Can't open %s\n", dev);
 		return (0);
 	}
@@ -213,6 +215,7 @@ readsb(listerr)
 	getblk(&asblk, cgsblock(&sblock, sblock.fs_ncg - 1), sblock.fs_sbsize);
 	if (asblk.b_errs != NULL)
 		return (0);
+	altsblock.fs_fsbtodb = sblock.fs_fsbtodb;
 	altsblock.fs_link = sblock.fs_link;
 	altsblock.fs_rlink = sblock.fs_rlink;
 	altsblock.fs_time = sblock.fs_time;
@@ -233,8 +236,13 @@ readsb(listerr)
 		sizeof sblock.fs_csp);
 	bcopy((char *)sblock.fs_fsmnt, (char *)altsblock.fs_fsmnt,
 		sizeof sblock.fs_fsmnt);
-	if (bcmp((char *)&sblock, (char *)&altsblock, (int)sblock.fs_sbsize))
-		{ badsb(listerr, "TRASHED VALUES IN SUPER BLOCK"); return (0); }
+	bcopy((char *)sblock.fs_sparecon, (char *)altsblock.fs_sparecon,
+		sizeof sblock.fs_sparecon);
+	if (bcmp((char *)&sblock, (char *)&altsblock, (int)sblock.fs_sbsize)) {
+		badsb(listerr,
+		"VALUES IN SUPER BLOCK DISAGREE WITH THOSE IN FIRST ALTERNATE");
+		return (0);
+	}
 	return (1);
 #	undef altsblock
 }
@@ -310,7 +318,6 @@ calcsb(dev, devfd, fs)
 	return (1);
 }
 
-#ifdef byioctl
 struct disklabel *
 getdisklabel(s, fd)
 	char *s;
@@ -319,60 +326,9 @@ getdisklabel(s, fd)
 	static struct disklabel lab;
 
 	if (ioctl(fd, DIOCGDINFO, (char *)&lab) < 0) {
+		pwarn("");
 		perror("ioctl (GDINFO)");
-		fatal("%s: can't read disk label", s);
+		errexit("%s: can't read disk label", s);
 	}
 	return (&lab);
 }
-#else byioctl
-char specname[64];
-char boot[BBSIZE];
-
-struct disklabel *
-getdisklabel(s, fd)
-	char *s;
-	int	fd;
-{
-	char *cp;
-	u_long magic = htonl(DISKMAGIC);
-	register struct disklabel *lp;
-	int cfd;
-
-	/*
-	 * Make name for 'c' partition.
-	 */
-	strcpy(specname, s);
-	cp = specname + strlen(specname) - 1;
-	if (!isdigit(*cp))
-		*cp = 'c';
-	cfd = open(specname, O_RDONLY);
-	if (cfd < 0) {
-		perror(specname);
-		exit(2);
-	}
-
-	if (read(cfd, boot, BBSIZE) < BBSIZE) {
-		perror(specname);
-		exit(2);
-	}
-	close(cfd);
-	for (lp = (struct disklabel *)(boot + LABELOFFSET);
-	    lp <= (struct disklabel *)(boot + BBSIZE -
-	    sizeof(struct disklabel));
-	    lp = (struct disklabel *)((char *)lp + 128))
-		if (lp->d_magic == magic && lp->d_magic2 == magic)
-			break;
-	if (lp > (struct disklabel *)(boot + BBSIZE -
-	    sizeof(struct disklabel)) ||
-	    lp->d_magic != magic || lp->d_magic2 != magic ||
-	    dkcksum(lp) != 0) {
-		printf("Bad pack magic number %s\n",
-			"(label is damaged, or pack is unlabeled)");
-		exit(1);
-	}
-#if ENDIAN != BIG
-	swablabel(lp);
-#endif
-	return (lp);
-}
-#endif byioctl

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -81,8 +81,7 @@ main(argc, argv)
 	if (argc) {
 		while (argc-- > 0) {
 			hotroot = 0;
-			name = blockcheck(*argv++);
-			checkfilesys(name);
+			checkfilesys(*argv++);
 		}
 		exit(0);
 	}
@@ -263,29 +262,32 @@ blockcheck(name)
 
 	hotroot = 0;
 	if (stat("/", &stslash) < 0){
+		perror("/");
 		printf("Can't stat root\n");
 		return (0);
 	}
 retry:
 	if (stat(name, &stblock) < 0){
+		perror(name);
 		printf("Can't stat %s\n", name);
 		return (0);
 	}
 	if ((stblock.st_mode & S_IFMT) == S_IFBLK) {
+		if (stslash.st_dev == stblock.st_rdev) {
+			hotroot++;
+			return (name);
+		}
 		raw = rawname(name);
 		if (stat(raw, &stchar) < 0){
+			perror(raw);
 			printf("Can't stat %s\n", raw);
-			return (0);
+			return (name);
 		}
-		if ((stchar.st_mode & S_IFMT) == S_IFCHR) {
-			if (stslash.st_dev == stblock.st_rdev) {
-				hotroot++;
-				raw = unrawname(name);
-			}
+		if ((stchar.st_mode & S_IFMT) == S_IFCHR)
 			return (raw);
-		} else {
+		else {
 			printf("%s is not a character device\n", raw);
-			return (0);
+			return (name);
 		}
 	} else if ((stblock.st_mode & S_IFMT) == S_IFCHR) {
 		if (looped) {
