@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ex.c	6.9 (Berkeley) %G%
+ *	@(#)if_ex.c	6.10 (Berkeley) %G%
  */
 
 
@@ -106,15 +106,17 @@ struct	ex_softc {
 	struct	stat_array xs_xsa;	/* EXOS writes stats here */
 	/* end mapped area */
 #define	INCORE_BASE(p)	(((u_long)(&(p)->xs_h2xhdr)) & 0xFFFFFFF0)
-#define	RVAL_OFF(n)	((u_long)(&(ex_softc[0].n)) - INCORE_BASE(&ex_softc[0]))
-#define	LVAL_OFF(n)	((u_long)(ex_softc[0].n) - INCORE_BASE(&ex_softc[0]))
-#define	H2XHDR_OFFSET	RVAL_OFF(xs_h2xhdr)
-#define	X2HHDR_OFFSET	RVAL_OFF(xs_x2hhdr)
-#define	H2XENT_OFFSET	LVAL_OFF(xs_h2xent)
-#define	X2HENT_OFFSET	LVAL_OFF(xs_x2hent)
-#define	CM_OFFSET	RVAL_OFF(xs_cm)
-#define	SA_OFFSET	RVAL_OFF(xs_xsa)
-#define	INCORE_SIZE	RVAL_OFF(xs_end)
+#define	RVAL_OFF(unit, n) \
+	((u_long)(&(ex_softc[unit].n)) - INCORE_BASE(&ex_softc[unit]))
+#define	LVAL_OFF(unit, n) \
+	((u_long)(ex_softc[unit].n) - INCORE_BASE(&ex_softc[unit]))
+#define	H2XHDR_OFFSET(unit)	RVAL_OFF(unit, xs_h2xhdr)
+#define	X2HHDR_OFFSET(unit)	RVAL_OFF(unit, xs_x2hhdr)
+#define	H2XENT_OFFSET(unit)	LVAL_OFF(unit, xs_h2xent)
+#define	X2HENT_OFFSET(unit)	LVAL_OFF(unit, xs_x2hent)
+#define	CM_OFFSET(unit)		RVAL_OFF(unit, xs_cm)
+#define	SA_OFFSET(unit)		RVAL_OFF(unit, xs_xsa)
+#define	INCORE_SIZE(unit)	RVAL_OFF(unit, xs_end)
 	int	xs_end;			/* place holder */
 } ex_softc[NEX];
 
@@ -177,7 +179,7 @@ exattach(ui)
 	register struct ifnet *ifp = &xs->xs_if;
 	register struct exdevice *addr = (struct exdevice *)ui->ui_addr;
 	register struct ex_msg *bp;
-
+	int unit = ui->ui_unit;
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "ex";
 	ifp->if_mtu = ETHERMTU;
@@ -185,7 +187,8 @@ exattach(ui)
 	/*
 	 * Temporarily map queues in order to configure EXOS
 	 */
-	xs->xs_ubaddr = uballoc(ui->ui_ubanum, INCORE_BASE(xs), INCORE_SIZE, 0);
+	xs->xs_ubaddr = uballoc(ui->ui_ubanum, INCORE_BASE(xs),
+		INCORE_SIZE(unit), 0);
 	exconfig(ui, 0);			/* without interrupts */
 	if (xs->xs_cm.cm_cc) goto badconf;
 
@@ -268,7 +271,7 @@ exinit(unit)
 			return;
 		}
 		xs->xs_ubaddr = uballoc(ui->ui_ubanum, INCORE_BASE(xs),
-			INCORE_SIZE, 0);
+			INCORE_SIZE(unit), 0);
 	}
 	exconfig(ui, 4);		/* with vectored interrupts*/
 	/*
@@ -353,10 +356,10 @@ exconfig(ui, itype)
 	cm->cm_nmcast = 0xFF;
 	cm->cm_nhost = 1;
 	cm->cm_h2xba = P_UNIADDR(xs->xs_ubaddr);
-	cm->cm_h2xhdr = H2XHDR_OFFSET;
+	cm->cm_h2xhdr = H2XHDR_OFFSET(unit);
 	cm->cm_h2xtyp = 0;		/* should never wait for rqst buffer */
 	cm->cm_x2hba = cm->cm_h2xba;
-	cm->cm_x2hhdr = X2HHDR_OFFSET;
+	cm->cm_x2hhdr = X2HHDR_OFFSET(unit);
 	cm->cm_x2htyp = itype;		/* 0 for none, 4 for vectored */
 	for (i=0; (addr != ex_cvecs[i].xc_csraddr); i++)
 #ifdef DEBUG
@@ -378,7 +381,7 @@ exconfig(ui, itype)
 	}
 	xs->xs_h2xhdr =
 		xs->xs_h2xent[NH2X-1].mb_link =
-		(u_short)H2XENT_OFFSET;
+		(u_short)H2XENT_OFFSET(unit);
 	xs->xs_h2xnext =
 		xs->xs_h2xent[NH2X-1].mb_next =
 		xs->xs_h2xent;
@@ -393,7 +396,7 @@ exconfig(ui, itype)
 	}
 	xs->xs_x2hhdr =
 		xs->xs_x2hent[NX2H-1].mb_link =
-		(u_short)X2HENT_OFFSET;
+		(u_short)X2HENT_OFFSET(unit);
 	xs->xs_x2hnext =
 		xs->xs_x2hent[NX2H-1].mb_next =
 		xs->xs_x2hent;
@@ -406,7 +409,7 @@ exconfig(ui, itype)
 	shiftreg = (u_long)0x0000FFFF;
 	for (i = 0; i < 8; i++) {
 		if (i == 4)
-			shiftreg = P_UNIADDR(xs->xs_ubaddr) + CM_OFFSET;
+			shiftreg = P_UNIADDR(xs->xs_ubaddr) + CM_OFFSET(unit);
 		while (addr->xd_portb & EX_UNREADY)
 			;
 		addr->xd_portb = (u_char)(shiftreg & 0xFF);
@@ -818,7 +821,7 @@ exwatch(unit)
 	bp->mb_ns.ns_rsrv = 0;
 	bp->mb_ns.ns_nobj = 8;		/* read all 8 stats objects */
 	bp->mb_ns.ns_xobj = 0;		/* starting with the 1st one */
-	bp->mb_ns.ns_bufp = P_UNIADDR(xs->xs_ubaddr) + SA_OFFSET;
+	bp->mb_ns.ns_bufp = P_UNIADDR(xs->xs_ubaddr) + SA_OFFSET(unit);
 	bp->mb_status |= MH_EXOS;
 	addr->xd_portb = EX_NTRUPT;
 exspnd:
