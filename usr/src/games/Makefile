@@ -59,6 +59,7 @@ clean:
 	cd games.${MACHINE}; make ${MFLAGS} DESTDIR=${DESTDIR} clean
 
 depend:
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
 	for i in ${STD} ${NSTD}; do \
 	    cc -M ${INCPATH} $$i.c | sed 's/\.o//' | \
 	    awk ' { if ($$1 != prev) \
