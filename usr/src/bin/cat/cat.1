@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)cat.1	6.12 (Berkeley) %G%
+.\"     @(#)cat.1	6.13 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CAT 1
@@ -74,8 +74,9 @@ Because of the shell language mechanism used to perform output
 redirection, the command ``cat file1 file 2 > file1'' will cause
 .P original data in file1 to be destroyed!
 .Pp
-.Nm Cat
-The cat utility exits 0 on success, and >0 if an error
+The
+.Nm cat
+utility exits 0 on success, and >0 if an error
 occurs.
 .Sh SEE ALSO
 .Xr head 1 ,
