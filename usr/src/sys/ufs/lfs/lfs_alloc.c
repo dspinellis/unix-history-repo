@@ -1,4 +1,4 @@
-/*	lfs_alloc.c	2.11	82/09/06	*/
+/*	lfs_alloc.c	2.12	82/10/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -1034,9 +1034,9 @@ update(flag)
 	 * Write back each (modified) inode.
 	 */
 	for (ip = inode; ip < inodeNINODE; ip++) {
-		if ((ip->i_flag & ILOCK) != 0 || ip->i_count == 0)
+		if ((ip->i_flag & ILOCKED) != 0 || ip->i_count == 0)
 			continue;
-		ip->i_flag |= ILOCK;
+		ip->i_flag |= ILOCKED;
 		ip->i_count++;
 		iupdat(ip, &time.tv_sec, &time.tv_sec, 0);
 		iput(ip);
