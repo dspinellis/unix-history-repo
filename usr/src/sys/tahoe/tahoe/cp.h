@@ -1,4 +1,4 @@
-/*	cp.h	1.2	86/12/06	*/
+/*	cp.h	1.3	87/02/16	*/
 
 /*
  * Tahoe console processor interface
@@ -41,6 +41,16 @@ struct	cpdcb_i {		/* Structure for input */
 #define	CPREAD	2		/* read device or register */
 #define	CPSTTY	3		/* set terminal configuration */
 #define	CPBOOT	4		/* reboot system */
+
+/*
+ *	CP specific locations
+ */
+#define	CPBFLG	0xc0000500	/* System bootflag flags */
+#define	CPYFLG	0xc0000504	/* Copy of the Y flag */
+#define	CPOPTS	0xc0000508	/* copy of CP options */
+#define CPRSRV	0xc000050c	/* reserved for CP usage */
+#define	CPBDEV	0xc0000510	/* Bootstrap device, saved on boot */
+#define	CPEDEV	0xc000052f	/* End of device name */
 
 #if !defined(LOCORE) && defined(KERNEL)
 struct	cphdr *cnlast;		/* last command sent to cp */
