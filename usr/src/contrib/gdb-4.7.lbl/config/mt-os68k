@@ -1,0 +1,2 @@
+ALL= all.cross
+INSTALL_TARGET= install.cross
