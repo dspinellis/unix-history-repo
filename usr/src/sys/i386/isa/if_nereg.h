@@ -1,6 +1,14 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)if_nereg.h	7.1 (Berkeley) %G%
+ */
+
 /*
  * NE2000 Ethernet Card registers
- * @(#)if_nereg.h	1.1 (Berkeley) %G%
  */
 
 /* The NE2000 uses a DS8390 Ethernet controller in at the beginning of

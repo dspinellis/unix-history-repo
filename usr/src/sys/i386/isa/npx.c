@@ -1,9 +1,15 @@
-/*
- * Copyright (c) 1990 W. Jolitz
- * @(#)npx.c	1.4 (Berkeley) %G%
+/*-
+ * Copyright (c) 1990 William Jolitz.
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)npx.c	7.1 (Berkeley) %G%
  */
+
 #include "npx.h"
-#if	NNPX > 0
+#if NNPX > 0
 
 #include "param.h"
 #include "systm.h"
