@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -239,11 +239,13 @@ main(argc, argv)
 	(void) alarm(TIMERINTVL);
 	(void) unlink(LogName);
 
+	bzero((char *)&sunx, sizeof(sunx));
 	sunx.sun_family = AF_UNIX;
 	(void) strncpy(sunx.sun_path, LogName, sizeof sunx.sun_path);
 	funix = socket(AF_UNIX, SOCK_DGRAM, 0);
 	if (funix < 0 || bind(funix, (struct sockaddr *) &sunx,
-	    sizeof(sunx.sun_family)+strlen(sunx.sun_path)) < 0 ||
+	    sizeof(sunx.sun_family)+sizeof(sunx.sun_len)+
+	    strlen(sunx.sun_path)) < 0 ||
 	    chmod(LogName, 0666) < 0) {
 		(void) sprintf(line, "cannot create %s", LogName);
 		logerror(line);
