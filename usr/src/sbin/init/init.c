@@ -1,3 +1,4 @@
+static	char *sccsid = "@(#)init.c	4.3 (Berkeley) %G%";
 #include <signal.h>
 #include <sys/types.h>
 #include <utmp.h>
@@ -39,7 +40,7 @@ struct	tab
 int	fi;
 int	mergflag;
 char	tty[20];
-jmp_buf	sjbuf;
+jmp_buf	sjbuf, shutpass;
 
 int	reset();
 char	*strcpy(), *strcat();
@@ -60,7 +61,8 @@ main()
 	for(EVER) {
 		oldhowto = howto;
 		howto = RB_SINGLE;
-		shutdown();
+		if (setjmp(shutpass) == 0)
+			shutdown();
 		if (oldhowto & RB_SINGLE)
 			single();
 		if (runcom(oldhowto) == 0) 
@@ -69,6 +71,8 @@ main()
 		multiple();
 	}
 }
+
+int	shutreset();
 
 shutdown()
 {
@@ -81,13 +85,37 @@ shutdown()
 		term(p);
 		p->line[0] = 0;
 	}
-	signal(SIGALRM, reset);
-	alarm(60);
+	signal(SIGALRM, shutreset);
+	alarm(30);
 	for(i=0; i<5; i++)
 		kill(-1, SIGKILL);
 	while(wait((int *)0) != -1)
 		;
 	alarm(0);
+	shutend();
+}
+
+char shutfailm[] = "WARNING: Something is hung (wont die); ps axl advised\n";
+
+shutreset()
+{
+	int status;
+
+	if (fork() == 0) {
+		int ct = open(ctty, 1);
+		write(ct, shutfailm, sizeof (shutfailm));
+		sleep(5);
+		exit(1);
+	}
+	sleep(5);
+	shutend();
+	longjmp(shutpass, 1);
+}
+
+shutend()
+{
+	register i;
+
 	signal(SIGALRM, SIG_DFL);
 	for(i=0; i<10; i++)
 		close(i);
@@ -343,5 +371,3 @@ reset()
 {
 	longjmp(sjbuf, 1);
 }
-
-
