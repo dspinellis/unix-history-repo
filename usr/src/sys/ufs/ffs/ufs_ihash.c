@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_ihash.c	7.3 (Berkeley) %G%
+ *	@(#)ufs_ihash.c	7.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -44,7 +44,7 @@ ufs_ihashinit()
 	ihashtbl = (union ihash *)malloc((u_long)ihashsize,
 	    M_UFSMNT, M_WAITOK);
 	for (ihash = 1; ihash <= ihashsize / sizeof *ihp; ihash <<= 1)
-		/* void */;
+		continue;
 	ihash = (ihash >> 1) - 1;
 	for (ihp = &ihashtbl[ihash]; ihp >= ihashtbl; ihp--) {
 		ihp->ih_head[0] = ihp;
