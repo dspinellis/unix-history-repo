@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)csh.c	4.20 (Berkeley) %G%";
+static	char *sccsid = "@(#)csh.c	4.21 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -82,9 +82,7 @@ main(c, av)
 		set1("path", saveblk(pathlist), &shvhed);
 	else
 		importpath(cp);
-	if ((cp = getenv("SHELL")) == NOSTR)
-		cp = SHELLPATH;
-	set("shell", savestr(cp));
+	set("shell", SHELLPATH);
 
 	doldol = putn(getpid());		/* For $$ */
 	shtemp = strspl("/tmp/sh", doldol);	/* For << */
