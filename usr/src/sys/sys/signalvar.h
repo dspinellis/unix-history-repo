@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signalvar.h	7.4 (Berkeley) %G%
+ *	@(#)signalvar.h	7.5 (Berkeley) %G%
  */
 
 #ifndef	_SIGNALVAR_H_		/* tmp for user.h */
@@ -26,18 +26,16 @@ struct	sigacts {
 	sigset_t ps_sigintr;		/* signals that interrupt syscalls */
 	sigset_t ps_oldmask;		/* saved mask from before sigpause */
 	int	ps_flags;		/* signal flags, below */
-	struct	sigstack ps_sigstack;	/* sp & on stack state variable */
+	struct	sigaltstack ps_sigstk;	/* sp & on stack state variable */
 	int	ps_sig;			/* for core dump/debugger XXX */
 	int	ps_code;		/* for core dump/debugger XXX */
 	int	ps_addr;		/* for core dump/debugger XXX */
 	sigset_t ps_usertramp;		/* SunOS compat; libc sigtramp XXX */
 };
 
-#define	ps_onstack	ps_sigstack.ss_onstack
-#define	ps_sigsp	ps_sigstack.ss_sp
-
 /* signal flags */
-#define	SA_OLDMASK	0x01		/* need to restore mask before pause */
+#define	SAS_OLDMASK	0x01		/* need to restore mask before pause */
+#define	SAS_ALTSTACK	0x02		/* have alternate signal stack */
 
 /* additional signal action values, used only temporarily/internally */
 #define	SIG_CATCH	(void (*)())2
