@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mount.h	7.22 (Berkeley) 6/3/91
- *	$Id: mount.h,v 1.4 1993/10/16 17:17:14 rgrimes Exp $
+ *	$Id: mount.h,v 1.5 1993/10/24 04:28:11 rgrimes Exp $
  */
+
+#ifndef _SYS_MOUNT_H_
+#define _SYS_MOUNT_H_ 1
 
 typedef quad fsid_t;			/* file system id type */
 
@@ -219,7 +222,7 @@ struct mfs_args {
 	caddr_t	base;		/* base address of file system in memory */
 	u_long size;		/* size of file system */
 };
-#endif MFS
+#endif /* MFS */
 
 #ifdef NFS
 /*
@@ -262,7 +265,7 @@ struct nfs_args {
 #define	NFSMNT_SPONGY	0x0400	/* spongy mount (soft for stat and lookup) */
 #define	NFSMNT_COMPRESS	0x0800	/* Compress nfs rpc xdr */
 #define	NFSMNT_LOCKBITS	(NFSMNT_SCKLOCK | NFSMNT_WANTSCK)
-#endif NFS
+#endif /* NFS */
 
 #ifdef PCFS
 /*
@@ -283,8 +286,8 @@ void	vfs_remove __P((struct mount *mp)); /* remove a vfs from mount list */
 int	vfs_lock __P((struct mount *mp));   /* lock a vfs */
 void	vfs_unlock __P((struct mount *mp)); /* unlock a vfs */
 struct	mount *getvfs __P((fsid_t *fsid));  /* return vfs given fsid */
-struct	mount *rootfs;			    /* ptr to root mount structure */
-struct	vfsops *vfssw[];		    /* mount filesystem type table */
+extern struct	mount *rootfs;	/* ptr to root mount structure */
+extern struct	vfsops *vfssw[]; /* mount filesystem type table */
 
 #else /* KERNEL */
 
@@ -301,3 +304,4 @@ int	unmount __P((const char *, int));
 __END_DECLS
 
 #endif /* KERNEL */
+#endif /* _SYS_MOUNT_H_ */

@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)map.h	7.5 (Berkeley) 5/7/91
- *	$Id$
+ *	$Id: map.h,v 1.1 1993/10/08 11:28:05 rgrimes Exp $
  */
+
+#ifndef _SYS_MAP_H_
+#define _SYS_MAP_H_ 1
 
 /*
  * Resource allocation maps.
@@ -72,3 +75,4 @@ struct mapent {
 struct	map *kmemmap, *mbmap, *swapmap;
 int	nswapmap;
 #endif
+#endif /* _SYS_MAP_H_ */

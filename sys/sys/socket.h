@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)socket.h	7.13 (Berkeley) 4/20/91
- *	$Id$
+ *	$Id: socket.h,v 1.2 1993/10/16 17:17:43 rgrimes Exp $
  */
+
+#ifndef _SYS_SOCKET_H_
+#define _SYS_SOCKET_H_ 1
 
 /*
  * Definitions related to sockets: types, address families, options.
@@ -259,3 +262,4 @@ int	socketpair __P((int, int, int, int *));
 __END_DECLS
 
 #endif	/* !KERNEL */
+#endif /* _SYS_SOCKET_H_ */

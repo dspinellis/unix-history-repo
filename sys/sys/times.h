@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)times.h	7.6 (Berkeley) 3/9/91
- *	$Id$
+ *	$Id: times.h,v 1.2 1993/10/16 17:18:01 rgrimes Exp $
  */
+
+#ifndef _SYS_TIMES_H_
+#define _SYS_TIMES_H_ 1
 
 #include <machine/ansi.h>
 
@@ -55,3 +58,4 @@ __BEGIN_DECLS
 clock_t	times __P((struct tms *));
 __END_DECLS
 #endif
+#endif /* _SYS_TIMES_H_ */

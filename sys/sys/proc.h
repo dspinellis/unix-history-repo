@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)proc.h	7.28 (Berkeley) 5/30/91
- *	$Id$
+ *	$Id: proc.h,v 1.2 1993/10/16 17:17:20 rgrimes Exp $
  */
 
 #ifndef _PROC_H_
@@ -233,7 +233,7 @@ extern	struct pgrp *pgrphash[];	/* in param.c */
 struct 	pgrp *pgfind();			/* find process group by id */
 struct	proc *zombproc, *allproc;	/* lists of procs in various states */
 extern	struct proc proc0;		/* process slot for swapper */
-struct	proc *initproc, *pageproc;	/* process slots for init, pager */
+extern	struct	proc *initproc, *pageproc; /* process slots for init, pager */
 extern	struct proc *curproc;		/* current running proc */
 extern	int nprocs, maxproc;		/* current and max number of procs */
 
@@ -243,7 +243,7 @@ struct	prochd {
 	struct	proc *ph_rlink;
 } qs[NQS];
 
-int	whichqs;		/* bit mask summarizing non-empty qs's */
+extern	int whichqs;		/* bit mask summarizing non-empty qs's */
 #endif	/* KERNEL */
 
 #endif	/* !_PROC_H_ */

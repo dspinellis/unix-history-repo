@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode.h	7.39 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: vnode.h,v 1.3 1993/10/16 17:18:27 rgrimes Exp $
  */
+
+#ifndef _SYS_VNODE_H_
+#define _SYS_VNODE_H_ 1
 
 #ifndef KERNEL
 #include <machine/endian.h>
@@ -332,3 +335,4 @@ extern	struct vnode *rootdir;		/* root (i.e. "/") vnode */
 extern	long desiredvnodes;		/* number of vnodes desired */
 extern	struct vattr va_null;		/* predefined null vattr structure */
 #endif
+#endif /* _SYS_VNODE_H_ */

@@ -31,38 +31,42 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kernel.h	7.4 (Berkeley) 2/15/91
- *	$Id: kernel.h,v 1.2 1993/10/16 17:16:56 rgrimes Exp $
+ *	$Id: kernel.h,v 1.3 1993/10/24 06:23:11 paul Exp $
  */
+
+#ifndef _SYS_KERNEL_H_
+#define _SYS_KERNEL_H_ 1
 
 /* Global variables for the kernel. */
 long rmalloc();
 
 /* 1.1 */
-long hostid;
-char hostname[MAXHOSTNAMELEN];
-int hostnamelen;
-char domainname[MAXHOSTNAMELEN];
-int domainnamelen;
+extern long hostid;
+extern char hostname[MAXHOSTNAMELEN];
+extern int hostnamelen;
+extern char domainname[MAXHOSTNAMELEN];
+extern int domainnamelen;
 
 /* 1.2 */
-struct timeval boottime;
-struct timeval time;
-struct timezone tz;			/* XXX */
+extern struct timeval boottime;
+extern struct timeval time;
+extern struct timezone tz;	/* XXX */
 
-int hz;					/* clock frequency */
-int phz;				/* alternate clock's frequency */
-int tick;
-int lbolt;				/* once a second sleep address */
-int realitexpire();
+extern int hz;			/* clock frequency */
+extern int phz;			/* alternate clock's frequency */
+extern int tick;		/* usec per clock tick */
+extern int lbolt;		/* once a second sleep address */
+int realitexpire();		/* XXX why is this here? */
 
-fixpt_t	averunnable[3];
+extern fixpt_t	averunnable[3];
 #if defined(COMPAT_43) && (defined(vax) || defined(tahoe))
-double	avenrun[3];
+extern double	avenrun[3];
 #endif /* COMPAT_43 */
 
 #ifdef GPROF
-u_long s_textsize;
-int profiling;
-u_short *kcount;
-char *s_lowpc;
+extern u_long s_textsize;
+extern int profiling;
+extern u_short *kcount;
+extern char *s_lowpc;
 #endif
+#endif /* _SYS_KERNEL_H_ */

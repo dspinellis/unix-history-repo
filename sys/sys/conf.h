@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)conf.h	7.9 (Berkeley) 5/5/91
- *	$Id$
+ *	$Id: conf.h,v 1.2 1993/10/16 17:16:30 rgrimes Exp $
  */
+
+#ifndef _SYS_CONF_H_
+#define _SYS_CONF_H_ 1
 
 /*
  * Definitions of device driver entry switches
@@ -56,7 +59,7 @@ struct bdevsw {
 };
 
 #ifdef KERNEL
-struct bdevsw bdevsw[];
+extern struct bdevsw bdevsw[];
 #endif
 
 struct cdevsw {
@@ -77,7 +80,7 @@ struct cdevsw {
 };
 
 #ifdef KERNEL
-struct cdevsw cdevsw[];
+extern struct cdevsw cdevsw[];
 
 /* symbolic sleep message strings */
 extern char devopn[], devio[], devwait[], devin[], devout[];
@@ -98,7 +101,7 @@ struct linesw {
 };
 
 #ifdef KERNEL
-struct linesw linesw[];
+extern struct linesw linesw[];
 #endif
 
 struct swdevt {
@@ -109,5 +112,6 @@ struct swdevt {
 };
 
 #ifdef KERNEL
-struct swdevt swdevt[];
+extern struct swdevt swdevt[];
 #endif
+#endif /* _SYS_CONF_H_ */

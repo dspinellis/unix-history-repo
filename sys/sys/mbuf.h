@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mbuf.h	7.14 (Berkeley) 12/5/90
- *	$Id$
+ *	$Id: mbuf.h,v 1.2 1993/10/16 17:17:09 rgrimes Exp $
  */
+
+#ifndef _SYS_MBUF_H_
+#define _SYS_MBUF_H_ 1
 
 #ifndef M_WAITOK
 #include "malloc.h"
@@ -345,13 +348,13 @@ struct mbstat {
 #ifdef	KERNEL
 extern	struct mbuf *mbutl;		/* virtual address of mclusters */
 extern	char *mclrefcnt;		/* cluster reference counts */
-struct	mbstat mbstat;
-int	nmbclusters;
-union	mcluster *mclfree;
-int	max_linkhdr;			/* largest link-level header */
-int	max_protohdr;			/* largest protocol header */
-int	max_hdr;			/* largest link+protocol header */
-int	max_datalen;			/* MHLEN - max_hdr */
+extern struct	mbstat mbstat;
+extern int	nmbclusters;
+extern union	mcluster *mclfree;
+extern int	max_linkhdr;			/* largest link-level header */
+extern int	max_protohdr;			/* largest protocol header */
+extern int	max_hdr;	/* largest link+protocol header */
+extern int	max_datalen;			/* MHLEN - max_hdr */
 struct	mbuf *m_get(), *m_gethdr(), *m_getclr(), *m_retry(), *m_retryhdr();
 struct	mbuf *m_free(), *m_copym(), *m_pullup(), *m_prepend();
 int	m_clalloc();
@@ -381,3 +384,4 @@ int mbtypes[] = {				/* XXX */
 };
 #endif
 #endif
+#endif /* _SYS_MBUF_H_ */

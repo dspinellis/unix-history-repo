@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)file.h	7.10 (Berkeley) 6/4/91
- *	$Id$
+ *	$Id: file.h,v 1.2 1993/10/16 17:16:47 rgrimes Exp $
  */
+
+#ifndef _SYS_FILE_H_
+#define _SYS_FILE_H_ 1
 
 #include <sys/fcntl.h>
 #include <sys/unistd.h>
@@ -72,3 +75,4 @@ extern int maxfiles;		/* kernel limit on number of open files */
 extern int nfiles;		/* actual number of open files */
 
 #endif /* KERNEL */
+#endif /* _SYS_FILE_H_ */

@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)unpcb.h	7.6 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: unpcb.h,v 1.2 1993/10/16 17:18:19 rgrimes Exp $
  */
+
+#ifndef _SYS_UNPCB_H_
+#define _SYS_UNPCB_H_ 1
 
 /*
  * Protocol control block for an active
@@ -72,3 +75,4 @@ struct	unpcb {
 };
 
 #define	sotounpcb(so)	((struct unpcb *)((so)->so_pcb))
+#endif /* _SYS_UNPCB_H_ */

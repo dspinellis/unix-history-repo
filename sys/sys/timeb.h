@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)timeb.h	7.2 (Berkeley) 5/5/91
- *	$Id$
+ *	$Id: timeb.h,v 1.2 1993/10/16 17:18:00 rgrimes Exp $
  */
+
+#ifndef _SYS_TIMEB_H_
+#define _SYS_TIMEB_H_ 1
 
 /* The ftime(2) system call structure -- deprecated. */
 struct timeb {
@@ -41,3 +44,4 @@ struct timeb {
 	short	timezone;		/* minutes west of CUT */
 	short	dstflag;		/* DST == non-zero */
 };
+#endif /* _SYS_TIMEB_H_ */

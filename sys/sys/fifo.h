@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)fifo.h	7.1 (Berkeley) 4/15/91
- *	$Id$
+ *	$Id: fifo.h,v 1.2 1993/10/16 17:16:45 rgrimes Exp $
  */
+
+#ifndef _SYS_FIFO_H_
+#define _SYS_FIFO_H_ 1
 
 #ifdef FIFO
 /*
@@ -179,3 +182,4 @@ int	fifo_advlock __P((
 		struct flock *fl,
 		int flags));
 #endif /* FIFO */
+#endif /* _SYS_FIFO_H_ */

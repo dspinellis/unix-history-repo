@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ucred.h	7.5 (Berkeley) 2/5/91
- *	$Id$
+ *	$Id: ucred.h,v 1.2 1993/10/16 17:18:14 rgrimes Exp $
  */
 
 #ifndef _UCRED_H_
@@ -54,6 +54,6 @@ struct ucred {
 struct ucred *crget();
 struct ucred *crcopy();
 struct ucred *crdup();
-#endif KERNEL
+#endif /* KERNEL */
 
 #endif /* !_UCRED_H_ */

@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)errno.h	7.13 (Berkeley) 2/19/91
- *	$Id$
+ *	$Id: errno.h,v 1.2 1993/10/16 17:16:41 rgrimes Exp $
  */
+
+#ifndef _SYS_ERRNO_H_
+#define _SYS_ERRNO_H_ 1
 
 #ifndef KERNEL
 extern int errno;			/* global error number */
@@ -152,3 +155,4 @@ extern int errno;			/* global error number */
 #define	ERESTART	-1		/* restart syscall */
 #define	EJUSTRETURN	-2		/* don't modify regs, just return */
 #endif
+#endif /* _SYS_ERRNO_H_ */

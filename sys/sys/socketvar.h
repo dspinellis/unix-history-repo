@@ -31,8 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)socketvar.h	7.17 (Berkeley) 5/5/91
- *	$Id$
+ *	$Id: socketvar.h,v 1.2 1993/10/16 17:17:45 rgrimes Exp $
  */
+
+#ifndef _SYS_SOCKETVAR_H_
+#define _SYS_SOCKETVAR_H_ 1
 
 /*
  * Kernel structure per socket.
@@ -181,7 +184,7 @@ struct socket {
 #define	sowwakeup(so)	sowakeup((so), &(so)->so_snd)
 
 #ifdef KERNEL
-u_long	sb_max;
+extern u_long	sb_max;
 /* to catch callers missing new second argument to sonewconn: */
 #define	sonewconn(head, connstatus)	sonewconn1((head), (connstatus))
 struct	socket *sonewconn1 __P((struct socket *head, int connstatus));
@@ -198,3 +201,4 @@ int	soo_ioctl __P((struct file *fp, int com, caddr_t data, struct proc *p));
 int	soo_select __P((struct file *fp, int which, struct proc *p));
 int 	soo_close __P((struct file *fp, struct proc *p));
 #endif
+#endif /* _SYS_SOCKETVAR_H_ */
