@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.13 (Berkeley) %G%
+ *	@(#)curses.h	5.14 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
@@ -58,6 +58,7 @@ extern char	*Def_term;		/* Default terminal type. */
 typedef struct __line {
 	struct __line *next, *prev;	/* Next line, previous line. */
 #define	__ISDIRTY	0x01		/* Line is dirty. */
+#define __ISPASTEOL	0x02		/* Cursor is past end of line */
 	u_int flags;
 	u_int hash;			/* Hash value for the line. */
 	size_t firstch, lastch;		/* First and last changed columns. */
@@ -100,7 +101,7 @@ extern char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,
 		*K7, *K8, *K9, *HO, *IC, *IM, *IP, *KD, *KE, *KH, *KL,
 		*KR, *KS, *KU, *LL, *MA, *ND, *NL, *RC, *SC, *SE, *SF,
 		*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VS,
-		*VE,
+		*VE, *al, *dl, *sf, *sr,
 		*AL_PARM, *DL_PARM, *UP_PARM, *DOWN_PARM, *LEFT_PARM,
 		*RIGHT_PARM;
 
@@ -249,6 +250,7 @@ void	 __set_subwin __P((WINDOW *, WINDOW *));
 void	 __swflags __P((WINDOW *));
 void	 __TRACE __P((const char *, ...));
 int	 waddbytes __P((WINDOW *, char *, int));
+char	*tscroll __P((const char *, int));
 
 /* Private #defines. */
 #define	min(a,b)	(a < b ? a : b)
@@ -259,6 +261,7 @@ extern int	 __echoit;
 extern int	 __endwin;
 extern int	 __pfast;
 extern int	 __rawmode;
+extern int	 __noqch;
 #endif
 
 /* Termcap functions. */
