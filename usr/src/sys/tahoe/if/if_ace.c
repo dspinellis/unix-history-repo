@@ -1,4 +1,4 @@
-/*	if_ace.c	1.4	86/01/20	*/
+/*	if_ace.c	1.5	86/01/21	*/
 
 /*
  * ACC VERSAbus Ethernet controller
@@ -286,13 +286,8 @@ again:
 	 * For security, it might be wise to zero out the added bytes,
 	 * but we're mainly interested in speed at the moment.
 	 */
-#ifdef notdef
 	if (len - sizeof (struct ether_header) < ETHERMIN)
 		len = ETHERMIN + sizeof (struct ether_header);
-#else
-	if (len - 14 < ETHERMIN)
-		len = ETHERMIN + 14;
-#endif
 	if (++is->is_txnext > SEG_MAX) 
 		is->is_txnext = is->is_segboundry;
 	is->is_if.if_opackets++;
@@ -386,24 +381,15 @@ again:
 	} else
 		is->is_stats.rx_datagrams++;
 	ace = (struct ether_header *)rxseg->rx_data;
-#ifdef notdef
 	len -= sizeof (struct ether_header);
-#else
-	len -= 14;
-#endif
 	/*
 	 * Deal with trailer protocol: if type is trailer
 	 * get true type from first 16-bit word past data.
 	 * Remember that type was trailer by setting off.
 	 */
 	ace->ether_type = ntohs((u_short)ace->ether_type);
-#ifdef notdef
 #define	acedataaddr(ace, off, type) \
     ((type)(((caddr_t)(((char *)ace)+sizeof (struct ether_header))+(off))))
-#else
-#define	acedataaddr(ace, off, type) \
-    ((type)(((caddr_t)(((char *)ace)+14)+(off))))
-#endif
 	if (ace->ether_type >= ETHERTYPE_TRAIL &&
 	    ace->ether_type < ETHERTYPE_TRAIL+ETHERTYPE_NTRAILER) {
 		off = (ace->ether_type - ETHERTYPE_TRAIL) * 512;
@@ -566,11 +552,7 @@ gottype:
 	 * allocate another.
 	 */
 	if (m->m_off > MMAXOFF ||
-#ifdef notdef
 	    MMINOFF + sizeof (struct ether_header) > m->m_off) { 
-#else
-	    MMINOFF + 14 > m->m_off) { 
-#endif
 		m = m_get(M_DONTWAIT, MT_HEADER);
 		if (m == 0) {
 			error = ENOBUFS;
@@ -578,19 +560,10 @@ gottype:
 		}
 		m->m_next = m0;
 		m->m_off = MMINOFF;
-#ifdef notdef
 		m->m_len = sizeof (struct ether_header);
-#else
-		m->m_len = 14;
-#endif
 	} else {
-#ifdef notdef
 		m->m_off -= sizeof (struct ether_header);
 		m->m_len += sizeof (struct ether_header);
-#else
-		m->m_off -= 14;
-		m->m_len += 14;
-#endif
 	}
 	ace = mtod(m, struct ether_header *);
 	bcopy((caddr_t)edst, (caddr_t)ace->ether_dhost, sizeof (edst));
@@ -691,22 +664,14 @@ aceget(rxbuf, totlen, off0, ifp)
 	struct mbuf *top = 0, **mp = &top;
 	int len, off = off0;
 
-#ifdef notdef
 	cp = rxbuf + sizeof (struct ether_header);
-#else
-	cp = rxbuf + 14;
-#endif
 	while (totlen > 0) {
 		MGET(m, M_DONTWAIT, MT_DATA);
 		if (m == 0)
 			goto bad;
 		if (off) {
 			len = totlen - off;
-#ifdef notdef
 			cp = rxbuf + sizeof (struct ether_header) + off;
-#else
-			cp = rxbuf + 14 + off;
-#endif
 		} else
 			len = totlen;
 		if (ifp)
@@ -767,11 +732,7 @@ aceget(rxbuf, totlen, off0, ifp)
 		}
 		off += len;
 		if (off == totlen) {
-#ifdef notdef
 			cp = rxbuf + sizeof (struct ether_header);
-#else
-			cp = rxbuf + 14;
-#endif
 			off = 0;
 			totlen = off0;
 		}
