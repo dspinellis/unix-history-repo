@@ -1,22 +1,24 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.9 82/10/10";
+static char sccsid[] = "@(#)telnetd.c	4.10 82/11/14";
 #endif
 
 /*
  * Stripped-down telnet server.
  */
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+
 #include <stdio.h>
 #include <signal.h>
 #include <errno.h>
 #include <sgtty.h>
 #include <wait.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <net/in.h>
 #include <netdb.h>
+
 #include "telnet.h"
 
-#define	INFINITY	10000000
 #define	BELL		'\07'
 
 char	hisopts[256];
@@ -42,7 +44,6 @@ extern	int errno;
 char	line[] = "/dev/ptyp0";
 
 struct	sockaddr_in sin = { AF_INET };
-int	options = SO_ACCEPTCONN|SO_KEEPALIVE;
 
 main(argc, argv)
 	char *argv[];
@@ -58,8 +59,6 @@ main(argc, argv)
 	}
 	sin.sin_port = sp->s_port;
 	argc--, argv++;
-	if (argc > 0 && !strcmp(argv[0], "-d"))
-		options |= SO_DEBUG, argc--, argv++;
 	if (argc > 0) {
 		sin.sin_port = atoi(*argv);
 		if (sin.sin_port <= 0) {
@@ -67,7 +66,7 @@ main(argc, argv)
 			exit(1);
 		}
 	}
-	sin.sin_port = htons(sin.sin_port);
+	sin.sin_port = htons((u_short)sin.sin_port);
 #ifndef DEBUG
 	if (fork())
 		exit(0);
@@ -83,24 +82,32 @@ main(argc, argv)
 	  }
 	}
 #endif
+again:
+	s = socket(0, SOCK_STREAM, 0, 0);
+	if (s < 0) {
+		perror("telnetd: socket");;
+		sleep(5);
+		goto again;
+	}
+	while (bind(s, (caddr_t)&sin, sizeof (sin), 0) < 0) {
+		perror("telnetd: bind");
+		sleep(5);
+	}
+	listen(s, 10);
 	for (;;) {
-		errno = 0;
-		if ((s = socket(SOCK_STREAM, 0, &sin, options)) < 0) {
-			perror("socket");
-			sleep(5);
-			continue;
-		}
-		if (accept(s, 0) < 0) {
+		int s2;
+
+		s2 = accept(s, (caddr_t)0, 0);
+		if (s2 < 0) {
 			perror("accept");
-			close(s);
 			sleep(1);
 			continue;
 		}
 		if ((pid = fork()) < 0)
 			printf("Out of processes\n");
 		else if (pid == 0)
-			doit(s);
-		close(s);
+			doit(s2);
+		close(s2);
 		while (wait3(status, WNOHANG, 0) > 0)
 			continue;
 	}
@@ -202,7 +209,7 @@ telnet(f, p)
 			ibits |= (1 << f);
 		if (ncc < 0 && pcc < 0)
 			break;
-		select(32, &ibits, &obits, INFINITY);
+		select(16, &ibits, &obits, 0, 0);
 		if (ibits == 0 && obits == 0) {
 			sleep(5);
 			continue;
@@ -393,7 +400,7 @@ telrcv()
 			continue;
 
 		default:
-			printf("netser: panic state=%d\n", state);
+			printf("telnetd: panic state=%d\n", state);
 			exit(1);
 		}
 	}
@@ -560,7 +567,9 @@ cleanup()
 
 	rmut();
 	vhangup();
+#ifndef notdef
 	ioctl(net, SIOCDONE, &how);
+#endif
 	kill(0, SIGKILL);
 	exit(1);
 }

@@ -1,25 +1,27 @@
-/*	tftpd.c	4.3	82/10/08	*/
+/*	tftpd.c	4.4	82/11/14	*/
 
 /*
  * Trivial file transfer protocol server.
  */
 #include <sys/types.h>
-#include <net/in.h>
 #include <sys/socket.h>
-#include <signal.h>
 #include <sys/ioctl.h>
+
+#include <netinet/in.h>
+
+#include <signal.h>
 #include <stat.h>
 #include <stdio.h>
 #include <wait.h>
 #include <errno.h>
 #include <ctype.h>
 #include <netdb.h>
+
 #include "tftp.h"
 
 extern	int errno;
 struct	sockaddr_in sin = { AF_INET };
 int	f;
-int	options;
 char	buf[BUFSIZ];
 
 main(argc, argv)
@@ -36,7 +38,7 @@ main(argc, argv)
 		fprintf(stderr, "tftpd: udp/tftp: unknown service\n");
 		exit(1);
 	}
-	sin.sin_port = htons(sp->s_port);
+	sin.sin_port = htons((u_short)sp->s_port);
 #ifndef DEBUG
 	if (fork())
 		exit(0);
@@ -52,36 +54,37 @@ main(argc, argv)
 	  }
 	}
 #endif
-	argc--, argv++;
-	if (argc > 0 && !strcmp(argv[0], "-d"))
-		options |= SO_DEBUG;
 	for (;;) {
-		errno = 0;
-		f = socket(SOCK_DGRAM, 0, &sin, options);
+		int fromlen;
+
+		f = socket(0, SOCK_DGRAM, 0, 0);
 		if (f < 0) {
-			perror("socket");
+			perror("tftpd: socket");
+			close(f);
+			sleep(5);
+			continue;
+		}
+		while (bind(f, (caddr_t)&sin, sizeof (sin), 0) < 0) {
+			perror("tftpd: bind");
+			close(f);
 			sleep(5);
 			continue;
 		}
 again:
-		n = receive(f, &from, buf, sizeof (buf));
+		fromlen = sizeof (from);
+		n = recvfrom(f, buf, sizeof (buf), (caddr_t)&from, &fromlen, 0);
 		if (n <= 0) {
 			if (n < 0)
-				perror("receive");
+				perror("tftpd: recvfrom");
 			goto again;
 		}
 		tp = (struct tftphdr *)buf;
-#if vax || pdp11
 		tp->th_opcode = ntohs(tp->th_opcode);
-#endif
 		if (tp->th_opcode == RRQ || tp->th_opcode == WRQ)
 			if (fork() == 0)
 				tftp(&from, tp, n);
 		(void) close(f);
-#ifdef notdef
 		while (wait3(status, WNOHANG, 0) > 0)
-#else
-		while (wait3(status, 0, 0) > 0)
 			continue;
 	}
 }
@@ -118,7 +121,7 @@ tftp(client, tp, size)
 	register struct formats *pf;
 	char *filename, *mode;
 
-	if (connect(f, client) < 0) {
+	if (connect(f, (caddr_t)client, sizeof (*client), 0) < 0) {
 		perror("connect");
 		exit(1);
 	}
@@ -241,8 +244,8 @@ again:
 		}
 		alarm(0);
 #if vax || pdp11
-		tp->th_opcode = ntohs(tp->th_opcode);
-		tp->th_block = ntohs(tp->th_block);
+		tp->th_opcode = ntohs((u_short)tp->th_opcode);
+		tp->th_block = ntohs((u_short)tp->th_block);
 #endif
 		if (tp->th_opcode == ERROR)
 			break;
@@ -288,8 +291,8 @@ again:
 		}
 		alarm(0);
 #if vax || pdp11
-		tp->th_opcode = ntohs(tp->th_opcode);
-		tp->th_block = ntohs(tp->th_block);
+		tp->th_opcode = ntohs((u_short)tp->th_opcode);
+		tp->th_block = ntohs((u_short)tp->th_block);
 #endif
 		if (tp->th_opcode == ERROR)
 			break;

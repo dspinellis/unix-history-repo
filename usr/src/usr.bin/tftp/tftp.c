@@ -1,15 +1,18 @@
-/*	tftp.c	4.2	82/08/17	*/
+/*	tftp.c	4.3	82/11/14	*/
 
 /*
  * TFTP User Program -- Protocol Machines
  */
 #include <sys/types.h>
-#include <net/in.h>
 #include <sys/socket.h>
+
+#include <netinet/in.h>
+
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
 #include <setjmp.h>
+
 #include "tftp.h"
 
 extern	int errno;
@@ -44,6 +47,7 @@ sendfile(fd, name)
 	register int block = 0, size, n, amount = 0;
 	struct sockaddr_in from;
 	time_t start = time(0), delta;
+	int fromlen;
 
 	size = makerequest(WRQ, name) - 4;
 	timeout = 0;
@@ -63,12 +67,14 @@ sendfile(fd, name)
 rexmt:
 		if (trace)
 			tpacket("sent", tp, size + 4);
-		if (send(f, &sin, buf, size + 4) != size + 4) {
+		n = sendto(f, buf, size + 4, (caddr_t)&sin, sizeof (sin), 0);
+		if (n != size + 4) {
 			perror("send");
 			break;
 		}
 again:
-		n = receive(f, &from, buf, sizeof (buf));
+		fromlen = sizeof (from);
+		n = recvfrom(f, buf, sizeof (buf), (caddr_t)&from, &fromlen, 0);
 		if (n <= 0) {
 			if (n == 0)
 				goto again;
@@ -81,6 +87,7 @@ again:
 		alarm(0);
 		if (trace)
 			tpacket("received", tp, n);
+		/* should verify packet came from server */
 #if vax || pdp11
 		tp->th_opcode = ntohs(tp->th_opcode);
 		tp->th_block = ntohs(tp->th_block);
@@ -115,6 +122,7 @@ recvfile(fd, name)
 	register int block = 1, n, size, amount = 0;
 	struct sockaddr_in from;
 	time_t start = time(0), delta;
+	int fromlen;
 
 	size = makerequest(RRQ, name);
 	timeout = 0;
@@ -131,12 +139,12 @@ recvfile(fd, name)
 rexmt:
 		if (trace)
 			tpacket("sent", tp, size);
-		if (send(f, &sin, buf, size) != size) {
+		if (sendto(f, buf, size, (caddr_t)&sin, sizeof (sin), 0) != size) {
 			perror("send");
 			break;
 		}
 again:
-		n = receive(f, &from, buf, sizeof (buf));
+		n = recvfrom(f, buf, sizeof (buf), (caddr_t)&from, &fromlen, 0);
 		if (n <= 0) {
 			if (n == 0)
 				goto again;
@@ -149,6 +157,7 @@ again:
 		alarm(0);
 		if (trace)
 			tpacket("received", tp, n);
+		/* should verify client address */
 #if vax || pdp11
 		tp->th_opcode = ntohs(tp->th_opcode);
 		tp->th_block = ntohs(tp->th_block);
@@ -170,7 +179,7 @@ again:
 	alarm(0);
 	tp->th_opcode = htons((u_short)ACK);
 	tp->th_block = htons((u_short)block);
-	(void) send(f, &sin, buf, 4);
+	(void) sendto(f, buf, 4, &sin, sizeof (sin), 0);
 	(void) close(fd);
 	if (amount > 0) {
 		delta = time(0) - start;

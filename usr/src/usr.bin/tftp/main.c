@@ -1,11 +1,13 @@
-/*	main.c	4.2	82/10/08	*/
+/*	main.c	4.3	82/11/14	*/
 
 /*
  * TFTP User Program -- Command Interface.
  */
 #include <sys/types.h>
-#include <net/in.h>
 #include <sys/socket.h>
+
+#include <netinet/in.h>
+
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
@@ -13,9 +15,8 @@
 #include <ctype.h>
 #include <netdb.h>
 
-struct	sockaddr_in sin = { AF_INET };
+struct	sockaddr_in sin;
 int	f;
-int	options;
 int	trace;
 int	verbose;
 int	connected;
@@ -75,12 +76,7 @@ main(argc, argv)
 		fprintf(stderr, "tftp: udp/tftp: unknown service\n");
 		exit(1);
 	}
-	sin.sin_port = htons(sp->s_port);
-	if (argc > 1 && !strcmp(argv[1], "-d")) {
-		options |= SO_DEBUG;
-		argc--, argv++;
-	}
-	f = socket(SOCK_DGRAM, 0, 0, options);
+	f = socket(0, SOCK_DGRAM, 0, 0);
 	if (f < 0) {
 		perror("socket");
 		exit(3);
@@ -120,9 +116,11 @@ setpeer(argc, argv)
 	}
 	host = gethostbyname(argv[1]);
 	if (host) {
+		sin.sin_family = host->h_addrtype;
 		bcopy(host->h_addr, &sin.sin_addr, host->h_length);
 		hostname = host->h_name;
 	} else {
+		sin.sin_family = AF_INET;
 		sin.sin_addr.s_addr = inet_addr(argv[1]);
 		if (sin.sin_addr.s_addr == -1) {
 			connected = 0;
@@ -141,9 +139,7 @@ setpeer(argc, argv)
 			return;
 		}
 	}
-#if vax || pdp11
-	sin.sin_port = htons(sin.sin_port);
-#endif
+	sin.sin_port = htons((u_short)sin.sin_port);
 	connected = 1;
 }
 
@@ -228,7 +224,7 @@ put(argc, argv)
 			printf("%s: Unknown host.\n", cp);
 			return;
 		}
-		bcopy(hp->h_addr, &sin.sin_addr, hp->h_length);
+		bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
 		sin.sin_family = hp->h_addrtype;
 		connected = 1;
 		hostname = hp->h_name;
@@ -311,7 +307,7 @@ get(argc, argv)
 				printf("%s: Unknown host.\n", argv[n]);
 				continue;
 			}
-			bcopy(hp->h_addr, &sin.sin_addr, hp->h_length);
+			bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
 			sin.sin_family = hp->h_addrtype;
 			connected = 1;
 			hostname = hp->h_name;
@@ -474,7 +470,6 @@ quit()
 
 /*
  * Help command.
- * Call each command handler with argc == 0 and argv[0] == name.
  */
 help(argc, argv)
 	int argc;
