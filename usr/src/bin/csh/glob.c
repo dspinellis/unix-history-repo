@@ -5,11 +5,10 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)glob.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)glob.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
-#include "sh.char.h"
 #include <sys/dir.h>
 
 /*
@@ -24,6 +23,11 @@ bool	noglob;
 bool	nonomatch;
 char	*entp;
 char	**sortbas;
+int	argcmp();
+
+#define sort()	qsort((char *)sortbas, &gargv[gargc] - sortbas, \
+		      sizeof(*sortbas), argcmp), sortbas = &gargv[gargc]
+
 
 char **
 glob(v)
@@ -108,20 +112,12 @@ acollect(as)
 		sort();
 }
 
-sort()
+static
+argcmp(a1, a2)
+	char **a1, **a2;
 {
-	register char **p1, **p2, *c;
-	char **Gvp = &gargv[gargc];
 
-	p1 = sortbas;
-	while (p1 < Gvp-1) {
-		p2 = p1;
-		while (++p2 < Gvp)
-			if (strcmp(*p1, *p2) > 0)
-				c = *p1, *p1 = *p2, *p2 = c;
-		p1++;
-	}
-	sortbas = Gvp;
+	 return (strcmp(*a1, *a2));
 }
 
 expand(as)
@@ -148,7 +144,7 @@ expand(as)
 			gpathp = strend(gpath);
 		}
 	}
-	while (!cmap(*cs, _GLOB)) {
+	while (!isglob(*cs)) {
 		if (*cs == 0) {
 			if (!globbed)
 				Gcat(gpath, "");
@@ -510,7 +506,7 @@ tglob(t)
 		else if (*p == '{' && (p[1] == '\0' || p[1] == '}' && p[2] == '\0'))
 			continue;
 		while (c = *p++)
-			if (cmap(c, _GLOB))
+			if (isglob(c))
 				gflag |= c == '{' ? 2 : 1;
 	}
 }
