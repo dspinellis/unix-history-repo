@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	5.20 (Berkeley) %G%
+ *	@(#)conf.h	5.21 (Berkeley) %G%
  */
 
 /*
@@ -48,6 +48,7 @@
 # define SETPROCTITLE	1	/* munge argv to display current status */
 # define NAMED_BIND	1	/* use Berkeley Internet Domain Server */
 # define USERDB		1	/* look in user database */
+/* # define LOCKF	1	/* use System V lockf instead of flock */
 
 /*
 **  Older systems don't have this error code -- it should be in
