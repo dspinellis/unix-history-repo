@@ -27,7 +27,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -63,16 +63,13 @@ public int	force_logfile = 0;
 public char *	namelogfile = NULL;
 #endif
 
-#if EDITOR
 public char *	editor;
-#endif
 
 #if TAGS
 extern char *	tagfile;
 extern char *	tagpattern;
 extern int	tagoption;
 #endif
-
 
 /*
  * Edit a new file.
@@ -333,11 +330,9 @@ main(argc, argv)
 		argv[0][1] != '\0')
 		scan_option(*argv++);
 
-#if EDITOR
 	editor = getenv("EDITOR");
 	if (editor == NULL || *editor == '\0')
 		editor = EDIT_PGM;
-#endif
 
 	/*
 	 * Set up list of files to be examined.
