@@ -1,67 +1,137 @@
-.\" Copyright (c) 1985 The Regents of the University of California.
+.\" Copyright (c) 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.proprietary.roff%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)uniq.1	6.2 (Berkeley) %G%
+.\"     @(#)uniq.1	6.3 (Berkeley) %G%
 .\"
-.TH UNIQ 1 ""
-.AT 3
-.SH NAME
-uniq \- report repeated lines in a file
-.SH SYNOPSIS
-.B uniq
-[
-.B \-udc
-[
-.BR + n
-] [
-.BR \- n
-]
-] [ input [ output ] ]
-.SH DESCRIPTION
-.I Uniq
-reads the input file comparing adjacent lines.
-In the normal case, the second and succeeding copies of repeated lines are
-removed; the remainder is written on the output file.
-Note that repeated lines must be adjacent in order to be found; see
-.IR  sort (1).
+.Dd 
+.Dt UNIQ 1
+.Os
+.Sh NAME
+.Nm uniq
+.Nd Report or filter out repeated lines in a file.
+.Sh SYNOPSIS
+.Nm uniq
+.Op Fl c | Fl d | Fl u
+.Op Fl f Ar fields
+.Op Fl s Ar chars
+.Oo
+.Ar input_file
+.Op Ar output_file
+.Oc
+.Pp
+Deprecated Version:
+.Pp
+.Nm uniq
+.Op Fl cdu
+.Op Fl Ns Ar n
+.Op Cm \(pl Ns Ar n
+.Oo
+.Ar input_file
+.Op Ar output_file
+.Oc
+.Sh DESCRIPTION
+The
+.Nm uniq
+utility reads an input file or the standard input
+comparing adjacent
+lines, and writes one copy of each input line on the output.
+The second and succeeding copies of repeated adjacent input
+lines are not written.
+Repeated lines in the input are not detected if they are
+not adjacent, so it is important to
+.Xr sort 1
+the files first.
+.Pp
+The following options are available:
+.Bl -tag -width Ds
+.It Fl c
+Precede each output line with a count of the number
+of times the line occurred in the input. For example:
+.Bd -literal -offset indent
+duplicate_count line_number
+.Ed
+.Pp
+where the duplicate count is a blank padded field of
+up to four digits followed by a space.
+.It Fl d
+Suppress the writing of lines that are not repeated
+in the input.
+.It Fl f Ar fields
+Ignore the first fields on each input line when
+doing comparisons, where fields is a positive
+decimal integer.
+A field is a string of non-blank
+characters separated from adjacent fields
+by blanks.
+.It Fl s Ar chars
+Ignore the first chars characters when doing
+comparisons, where chars is a positive decimal
+integer.
+If specified in conjunction with the
+.Fl f
+option, the first chars characters after the first
+fields fields will be ignored.
+.It Fl u
+Suppress the writing of lines that are repeated in
+the input.
+.It Fl Ns Ar n
+(Deprecated; replaced by
+.Fl f ) .
+Ignore the first n
+fields on each input line when doing comparisons,
+where n is a number.
+A field is a string of non-blank
+characters separated from adjacent fields
+by blanks.
+.It Cm \&\(pl Ns Ar n
+(Deprecated; replaced by
+.Fl s ) .
+Ignore the first
+.Ar m
+characters when doing comparisons, where
+.Ar m
+is a
+number.
+.El
+.Pp
+The following operands are available:
+.Bl -tag -width output_filex
+.It Ar input_file
+A pathname of the input file.
 If the
-.B \-u
-flag is used, just the lines that are not repeated
-in the original file are output.  The
-.B \-d
-option specifies that one copy of just the repeated lines is to be written.
-The normal mode output is the union of the
-.B \-u
-and
-.B \-d
-mode outputs.
-.PP
+.Ar input_file
+operand is not specified, the standard input is
+used.
+.It Ar output_file
+A pathname of the output file.
+This name shall
+always be different from
+.Ar input_file.
+If the
+.Ar output_file
+operand is not specified, the standard
+output is used.  If
+.Ar output_file
+is created and an error occurs or a sugnal is caught the
+.Ar output_file
+is not removed.
+.El
+.\" .Pp
+.\" The following environment variables affect the execution of
+.\" uniq:
+.\" .Tl Em LC_CTYPE
+.\" The locale for character classification, used to
+.\" determine the characters constituting a blank in
+.\" the current locale.
+.Pp
 The
-.B \-c
-option supersedes
-.B \-u
-and
-.B \-d
-and generates an output report in default style
-but with each line preceded by a count of the number of times it occurred.
-.PP
+.Xr uniq
+utility exits 0 on success, and >0 if an error occurs.
+.Sh STANDARDS
 The
-.I n
-arguments specify skipping an initial portion of each line in the comparison:
-.TP 8
-.BI \- n
-The first
-.IR n 
-fields together with any blanks before each are ignored.
-A field is defined as a string of non-space, non-tab characters
-separated by tabs and spaces from its neighbors.
-.TP 8
-.BI + n
-The first
-.IR n 
-characters are ignored.  Fields are skipped before characters.
-.PP
-.SH "SEE ALSO"
-sort(1), comm(1)
+.Xr uniq
+utility is expected to be
+.St -p1003.2
+compatible.
