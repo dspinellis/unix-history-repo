@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)yyput.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)yyput.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "whoami.h"
@@ -149,7 +149,7 @@ yygetline(efile, seekp, eline, eseqid)
 			    (void) fclose( yygetunit );
 			yygetfile = efile;
 			yygetunit = fopen( yygetfile , "r" );
-			if (yygetunit < 0)
+			if (yygetunit == 0)
 oops:
 				perror(yygetfile), pexit(DIED);
 		} 

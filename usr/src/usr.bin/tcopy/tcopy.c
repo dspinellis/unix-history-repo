@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tcopy.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -198,11 +198,11 @@ r1:		guesslen = 0;
 	exit(0);
 }
 
-static
 verify(inp, outp, outb)
 	register int inp, outp;
 	register char *outb;
 {
+	extern int errno;
 	register int eot, inmaxblk, inn, outmaxblk, outn;
 	register char *inb;
 	char *getspace();
@@ -247,7 +247,6 @@ r2:		if (inn != outn)
 	exit(1);
 }
 
-static
 intr()
 {
 	if (record)
@@ -260,7 +259,7 @@ intr()
 	exit(1);
 }
 
-static char *
+char *
 getspace(blk)
 	int blk;
 {
@@ -273,7 +272,6 @@ getspace(blk)
 	return(bp);
 }
 
-static
 writeop(fd, type)
 	int fd, type;
 {
@@ -287,7 +285,6 @@ writeop(fd, type)
 	}
 }
 
-static
 usage()
 {
 	fputs("usage: tcopy [-cv] [-s maxblk] src [dest]\n", stderr);

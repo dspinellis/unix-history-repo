@@ -79,7 +79,7 @@ ${OBJS}:
 lint:
 	cd ${SRCDIR}; lint -I. -I${BINDIR} ${SRCS} ${BINDIR}/*.c
 
-y.tab.h: ${SRCDIR}/pas.y ${SRCDIR}/gram
+y.tab.h y.tab.c: ${SRCDIR}/pas.y ${SRCDIR}/gram
 	${RM} y.tab.h y.tab.c
 	${EYACC} ${SRCDIR}/pas.y > /dev/null
 	ex - y.tab.c <${SRCDIR}/gram
@@ -128,7 +128,9 @@ install: a.out
 	install -c -m 664 ${ERRORSTRINGS} ${LIBDIR}/${ERRORSTRINGS}
 	install -s -m 775 a.out ${INSTALLNAME}
 
-depend: ${SRCS} opcode.h y.tab.h
+# Make depend must make clean first, since otherwise VPATH screws up
+# which sources we 'make depend' from, if there are any .c's lying around.
+depend: clean ${SRCS} opcode.h y.tab.h
 	mkdep ${CFLAGS} -I. ${SRCS}
 
 # DO NOT DELETE THIS LINE -- mkdep uses it.
