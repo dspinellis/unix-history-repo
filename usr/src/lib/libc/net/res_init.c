@@ -1,11 +1,12 @@
-#ifndef lint
-static char sccsid[] = "@(#)res_init.c	4.4 (Berkeley) %G%";
-#endif
-
 /*
- * Copyright (c) 1985 Regents of the University of California
- *	All Rights Reserved
+ * Copyright (c) 1985 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
  */
+
+#ifndef lint
+static char sccsid[] = "@(#)res_init.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 #include <sys/types.h>
 #include <sys/socket.h>
