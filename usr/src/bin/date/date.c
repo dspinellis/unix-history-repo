@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	4.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -134,6 +134,7 @@ setthetime(p)
 		lt->tm_mon = ATOI2(p);
 		if (lt->tm_mon > 12)
 			badformat();
+		--lt->tm_mon;			/* time struct is 0 - 11 */
 		/* FALLTHROUGH */
 	case 6:					/* dd */
 		lt->tm_mday = ATOI2(p);
