@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mtab_bsd.c	8.1 (Berkeley) %G%
+ *	@(#)mtab_bsd.c	8.2 (Berkeley) %G%
  *
  * $Id: mtab_bsd.c,v 5.2.2.1 1992/02/09 15:10:13 jsp beta $
  *
@@ -29,12 +29,16 @@ struct statfs *mp;
 
 	new_mp->mnt_fsname = strdup(mp->f_mntfromname);
 	new_mp->mnt_dir = strdup(mp->f_mntonname);
+#if BSD >= 199506
+	ty = mp->f_fstypename;
+#else
 	switch (mp->f_type) {
 	case MOUNT_UFS:  ty = MTAB_TYPE_UFS; break;
 	case MOUNT_NFS:  ty = MTAB_TYPE_NFS; break;
 	case MOUNT_MFS:  ty = MTAB_TYPE_MFS; break;
 	default:  ty = "unknown"; break;
 	}
+#endif
 	new_mp->mnt_type = strdup(ty);
 	new_mp->mnt_opts = strdup("unset");
 	new_mp->mnt_freq = 0;
