@@ -442,7 +442,7 @@ Var_Append (name, val, ctxt)
 
 	if (DEBUG(VAR)) {
 	    printf("%s:%s = %s\n", ctxt->name, name,
-		   Buf_GetAll(v->val, (int *)NULL));
+		   (char *) Buf_GetAll(v->val, (int *)NULL));
 	}
 
 	if (v->flags & VAR_FROM_ENV) {
@@ -1899,7 +1899,7 @@ static int
 VarPrintVar (v)
     Var            *v;
 {
-    printf ("%-16s = %s\n", v->name, Buf_GetAll(v->val, (int *)NULL));
+    printf ("%-16s = %s\n", v->name, (char *) Buf_GetAll(v->val, (int *)NULL));
     return (0);
 }
 
