@@ -1,0 +1,528 @@
+
+
+
+EMACS(1)               BSD Reference Manual              EMACS(1)
+
+
+NNAAMMEE
+       emacs - GNU project Emacs
+
+SSYYNNOOPPSSIISS
+       eemmaaccss [ _c_o_m_m_a_n_d_-_l_i_n_e _s_w_i_t_c_h_e_s ] [ _f_i_l_e _._._.  ]
+
+DDEESSCCRRIIPPTTIIOONN
+       _G_N_U _E_m_a_c_s is a new version of _E_m_a_c_s_, written by the author
+       of the original (PDP-10)  _E_m_a_c_s_,  Richard  Stallman.   Its
+       user functionality encompasses everything other _E_m_a_c_s edi-
+       tors do, and it is easily  extensible  since  its  editing
+       commands are written in Lisp.
+
+       _E_m_a_c_s  has an extensive interactive help facility, but the
+       facility assumes that you know  how  to  manipulate  _E_m_a_c_s
+       windows  and buffers.  CTRL-h (backspace or CTRL-h) enters
+       the Help facility.  Help Tutorial (CTRL-h t)  requests  an
+       interactive  tutorial which can teach beginners the funda-
+       mentals of _E_m_a_c_s in a few minutes.  Help  Apropos  (CTRL-h
+       a)  helps you find a command given its functionality, Help
+       Character (CTRL-h c) describes a given character's effect,
+       and  Help Function (CTRL-h f) describes a given Lisp func-
+       tion specified by name.
+
+       _E_m_a_c_s_'_s Undo can undo several  steps  of  modification  to
+       your  buffers,  so it is easy to recover from editing mis-
+       takes.
+
+       _G_N_U _E_m_a_c_s_'_s many  special  packages  handle  mail  reading
+       (RMail)  and  sending  (Mail),  outline editing (Outline),
+       compiling (Compile), running subshells within  _E_m_a_c_s  win-
+       dows  (Shell),  running a Lisp read-eval-print loop (Lisp-
+       Interaction-Mode), and automated psychotherapy (Doctor).
+
+       There is an extensive reference manual, but users of other
+       Emacses should have little trouble adapting even without a
+       copy.  Users new to _E_m_a_c_s will be able to use  basic  fea-
+       tures  fairly  rapidly  by studying the tutorial and using
+       the self-documentation features.
+
+       Emacs Options
+
+       The following options are of general interest:
+
+       _f_i_l_e    Edit _f_i_l_e_.
+
+       ++_n_u_m_b_e_r Go to the line specified by _n_u_m_b_e_r (do not  insert
+               a space between the "+" sign and the number).
+
+       --qq      Do not load an init file.
+
+
+
+
+4th Berkeley Distribution1990 November 13                       1
+
+
+
+
+
+
+
+
+EMACS(1)               BSD Reference Manual              EMACS(1)
+
+
+       --uu _u_s_e_r Load _u_s_e_r_'_s init file.
+
+       --tt _f_i_l_e Use  specified  _f_i_l_e  as  the  terminal instead of
+               using stdin/stdout.  This must be the first  argu-
+               ment specified in the command line.
+
+       The following options are lisp-oriented (these options are
+       processed in the order encountered):
+
+       --ff _f_u_n_c_t_i_o_n
+               Execute the lisp function _f_u_n_c_t_i_o_n_.
+
+       --ll _f_i_l_e Load the lisp code in the file _f_i_l_e_.
+
+       The following options are useful when running _E_m_a_c_s  as  a
+       batch editor:
+
+       --bbaattcchh _c_o_m_m_a_n_d_f_i_l_e
+               Edit  in  batch  mode  using the commands found in
+               _c_o_m_m_a_n_d_f_i_l_e_.  The editor  will  send  messages  to
+               stdout.   This  option  must  be  the first in the
+               argument list.
+
+       --kkiillll   Exit _E_m_a_c_s while in batch mode.
+
+       Using Emacs with X
+
+       _E_m_a_c_s has been tailored to work well  with  the  X  window
+       system.   If  you  run _E_m_a_c_s from under X windows, it will
+       create its own X window to display in.  You will  probably
+       want  to  start the editor as a background process so that
+       you can continue using your original window.
+
+       _E_m_a_c_s can be started with the following X switches:
+
+       --rrnn _n_a_m_e
+               Specifies the program name which  should  be  used
+               when   looking   up   defaults  in  the  user's  X
+               resources.  This must be the first  option  speci-
+               fied in the command line.
+
+       --wwnn _n_a_m_e
+               Specifies the name which should be assigned to the
+               _E_m_a_c_s window.
+
+       --rr      Display the _E_m_a_c_s window in reverse video.
+
+       --ii      Use the "kitchen sink" bitmap icon when iconifying
+               the _E_m_a_c_s window.
+
+
+
+
+
+4th Berkeley Distribution1990 November 13                       2
+
+
+
+
+
+
+
+
+EMACS(1)               BSD Reference Manual              EMACS(1)
+
+
+       --ffoonntt _f_o_n_t_, --ffnn _f_o_n_t
+               Set  the  _E_m_a_c_s window's font to that specified by
+               _f_o_n_t_.  You will find the various _X  fonts  in  the
+               _/_u_s_r_/_l_i_b_/_X_1_1_/_f_o_n_t_s  directory.   Note  that  _E_m_a_c_s
+               will only accept fixed width fonts.  Under the X11
+               Release  4  font-naming conventions, any font with
+               the value "m" or "c" in the eleventh field of  the
+               font  name  is  a  fixed width font.  Furthermore,
+               fonts whose name are of the form _w_i_d_t_hx_h_e_i_g_h_t  are
+               generally  fixed width, as is the font _f_i_x_e_d.  See
+               _x_l_s_f_o_n_t_s(1) for more information.
+
+               When you specify a font, be sure to  put  a  space
+               between the switch and the font name.
+
+       --bb _p_i_x_e_l_s
+               Set  the _E_m_a_c_s window's border width to the number
+               of pixels specified by _p_i_x_e_l_s_.   Defaults  to  one
+               pixel on each side of the window.
+
+       --iibb _p_i_x_e_l_s
+               Set the window's internal border width to the num-
+               ber of pixels specified by  _p_i_x_e_l_s_.   Defaults  to
+               one pixel of padding on each side of the window.
+
+
+       --ww _g_e_o_m_e_t_r_y_, --ggeeoommeettrryy _g_e_o_m_e_t_r_y
+               Set the _E_m_a_c_s window's width, height, and position
+               as specified.  The geometry  specification  is  in
+               the  standard X format; see _X(1) for more informa-
+               tion.  The width and height are specified in char-
+               acters; the default is 80 by 24.
+
+
+       --ffgg _c_o_l_o_r
+               On color displays, sets the color of the text.
+
+               See  the  file  _/_u_s_r_/_l_i_b_/_X_1_1_/_r_g_b_._t_x_t for a list of
+               valid color names.
+
+       --bbgg _c_o_l_o_r
+               On color displays, sets the color of the  window's
+               background.
+
+       --bbdd _c_o_l_o_r
+               On  color displays, sets the color of the window's
+               border.
+
+       --ccrr _c_o_l_o_r
+               On color displays, sets the color of the  window's
+               text cursor.
+
+
+
+4th Berkeley Distribution1990 November 13                       3
+
+
+
+
+
+
+
+
+EMACS(1)               BSD Reference Manual              EMACS(1)
+
+
+       --mmss _c_o_l_o_r
+               On  color displays, sets the color of the window's
+               mouse cursor.
+
+       --dd _d_i_s_p_l_a_y_n_a_m_e_, --ddiissppllaayy _d_i_s_p_l_a_y_n_a_m_e
+               Create the _E_m_a_c_s window on the  display  specified
+               by  _d_i_s_p_l_a_y_n_a_m_e.   Must be the first option speci-
+               fied in the command line.
+
+       --nnww     Tells _E_m_a_c_s not to use its special interface to X.
+               If you use this switch when invoking _E_m_a_c_s from an
+               _x_t_e_r_m(1) window, display is done in  that  window.
+               This  must  be  the  first option specified in the
+               command line.
+
+       You can set _X default values for  your  _E_m_a_c_s  windows  in
+       your  _._X_r_e_s_o_u_r_c_e_s  file  (see _x_r_d_b(1)).  Use the following
+       format:
+
+              emacs.keyword:value
+
+       where _v_a_l_u_e specifies the default value of _k_e_y_w_o_r_d_.  _E_m_a_c_s
+       lets you set default values for the following keywords:
+
+       ffoonntt ((class FFoonntt))
+               Sets the window's text font.
+
+       rreevveerrsseeVViiddeeoo ((class RReevveerrsseeVViiddeeoo))
+               If  _r_e_v_e_r_s_e_V_i_d_e_o_'_s  value is set to _o_n_, the window
+               will be displayed in reverse video.
+
+       bbiittmmaappIIccoonn ((class BBiittmmaappIIccoonn))
+               If _b_i_t_m_a_p_I_c_o_n_'_s value is set  to  _o_n_,  the  window
+               will iconify into the "kitchen sink."
+
+       bboorrddeerrWWiiddtthh ((class BBoorrddeerrWWiiddtthh))
+               Sets the window's border width in pixels.
+
+       iinntteerrnnaallBBoorrddeerr ((class BBoorrddeerrWWiiddtthh))
+               Sets the window's internal border width in pixels.
+
+       ffoorreeggrroouunndd ((class FFoorreeggrroouunndd))
+               For color displays, sets the window's text  color.
+
+       bbaacckkggrroouunndd ((class BBaacckkggrroouunndd))
+               For  color  displays, sets the window's background
+               color.
+
+       bboorrddeerrCCoolloorr ((class BBoorrddeerrCCoolloorr))
+               For color displays, sets the color of the window's
+               border.
+
+
+
+4th Berkeley Distribution1990 November 13                       4
+
+
+
+
+
+
+
+
+EMACS(1)               BSD Reference Manual              EMACS(1)
+
+
+       ccuurrssoorrCCoolloorr ((class FFoorreeggrroouunndd))
+               For color displays, sets the color of the window's
+               text cursor.
+
+       ppooiinntteerrCCoolloorr ((class FFoorreeggrroouunndd))
+               For color displays, sets the color of the window's
+               mouse cursor.
+
+       ggeeoommeettrryy ((class GGeeoommeettrryy))
+               Sets   the   geometry  of  the  _E_m_a_c_s  window  (as
+               described above).
+
+       ttiittllee ((class TTiittllee))
+               Sets the title of the _E_m_a_c_s window.
+
+       iiccoonnNNaammee ((class TTiittllee))
+               Sets the icon name for the _E_m_a_c_s window icon.
+
+       If you try to set color values while  using  a  black  and
+       white  display,  the window's characteristics will default
+       as follows: the foreground color will be set to black, the
+       background  color  will  be set to white, the border color
+       will be set to grey, and the text and mouse  cursors  will
+       be set to black.
+
+       Using the Mouse
+
+       The  following  lists  the  mouse  button bindings for the
+       _E_m_a_c_s window under X11.
+
+       MOUSE BUTTON         FUNCTION
+       left                 Set point.
+       middle               Paste text.
+       right                Cut text into X cut buffer.
+       SHIFT-middle         Cut text into X cut buffer.
+       SHIFT-right          Paste text.
+       CTRL-middle          Cut text into X cut buffer  and  kill
+                            it.
+       CTRL-right           Select  this  window,  then  split it
+                            into two  windows.   Same  as  typing
+                            CTRL-x 2.
+       CTRL-SHIFT-left      X  buffer  menu--hold the buttons and
+                            keys down, wait for menu  to  appear,
+                            select  buffer,  and  release.   Move
+                            mouse out of menu and release to can-
+                            cel.
+       CTRL-SHIFT-middle    X  help  menu--pop up index card menu
+                            for Emacs help.
+       CTRL-SHIFT-right     Select window with mouse, and  delete
+                            all  other  windows.   Same as typing
+                            CTRL-x 1.
+
+
+
+4th Berkeley Distribution1990 November 13                       5
+
+
+
+
+
+
+
+
+EMACS(1)               BSD Reference Manual              EMACS(1)
+
+
+MMAANNUUAALLSS
+       You can order printed copies of the GNU Emacs  Manual  for
+       $15.00/copy  postpaid  from  the Free Software Foundation,
+       which develops GNU software  (contact  them  for  quantity
+       prices on the manual).  Their address is:
+           Free Software Foundation
+           675 Mass Ave.
+           Cambridge, MA 02139
+       Your  local Emacs maintainer might also have copies avail-
+       able.  As with all software  and  publications  from  FSF,
+       everyone is permitted to make and distribute copies of the
+       Emacs manual.  The  TeX  source  to  the  manual  is  also
+       included in the Emacs source distribution.
+
+
+FFIILLEESS
+       /usr/local/emacs/src - C source files and object files
+
+       /usr/local/emacs/lisp  -  Lisp  source  files and compiled
+       files  that  define  most  editing  commands.   Some   are
+       preloaded;  others are autoloaded from this directory when
+       used.
+
+       /usr/local/emacs/man - sources  for  the  Emacs  reference
+       manual.
+
+       /usr/local/emacs/etc - various programs that are used with
+       GNU Emacs, and some files of information.
+
+       /usr/local/emacs/etc/DOC.* -  contains  the  documentation
+       strings  for  the Lisp primitives and preloaded Lisp func-
+       tions of GNU Emacs.  They are stored here  to  reduce  the
+       size of Emacs proper.
+
+       /usr/local/emacs/etc/DIFF  discusses  GNU Emacs vs. Twenex
+       Emacs;
+       /usr/local/emacs/etc/CCADIFF discusses GNU Emacs  vs.  CCA
+       Emacs;
+       /usr/local/emacs/etc/GOSDIFF   discusses   GNU  Emacs  vs.
+       Gosling Emacs.
+       /usr/local/emacs/etc/SERVICE lists people offering various
+       services  to  assist  users of GNU Emacs, including educa-
+       tion, troubleshooting, porting and customization.
+       These files also have information useful to anyone wishing
+       to  write  programs  in the Emacs Lisp extension language,
+       which has not yet been fully documented.
+
+       /usr/local/emacs/info - files for the  Info  documentation
+       browser (a subsystem of Emacs) to refer to.  Currently not
+       much of Unix is documented here, but the complete text  of
+       the  Emacs  reference  manual  is included in a convenient
+
+
+
+4th Berkeley Distribution1990 November 13                       6
+
+
+
+
+
+
+
+
+EMACS(1)               BSD Reference Manual              EMACS(1)
+
+
+       tree structured form.
+
+       /usr/local/emacs/lock - holds lock files that are made for
+       all files being modified in Emacs, to prevent simultaneous
+       modification of one file by two users.
+
+       /usr/local/emacs/cpp - the GNU cpp,  needed  for  building
+       Emacs  on  certain versions of Unix where the standard cpp
+       cannot handle long names for macros.
+
+       /usr/local/emacs/shortnames - facilities  for  translating
+       long  names  to short names in C code, needed for building
+       Emacs on certain versions of Unix  where  the  C  compiler
+       cannot handle long names for functions or variables.
+
+       /usr/lib/X11/rgb.txt - list of valid X color names.
+
+
+BBUUGGSS
+       There  is a mailing list, bug-gnu-emacs@prep.ai.mit.edu on
+       the  internet   (ucbvax!prep.ai.mit.edu!bug-gnu-emacs   on
+       UUCPnet),  for reporting Emacs bugs and fixes.  But before
+       reporting something as a bug, please try to be  sure  that
+       it really is a bug, not a misunderstanding or a deliberate
+       feature.  We ask you to read the section ``Reporting Emacs
+       Bugs''  near the end of the reference manual (or Info sys-
+       tem) for hints on how and  when  to  report  bugs.   Also,
+       include the version number of the Emacs you are running in
+       _e_v_e_r_y bug report that you send in.
+
+       Do not expect a personal answer to a bug report.  The pur-
+       pose  of  reporting bugs is to get them fixed for everyone
+       in the next release, if  possible.   For  personal  assis-
+       tance,  look in the SERVICE file (see above) for a list of
+       people who offer it.
+
+       Please do not send anything but bug reports to this  mail-
+       ing  list.   Send requests to be added to mailing lists to
+       the  special  list  info-gnu-emacs-request@prep.ai.mit.edu
+       (or the corresponding UUCP address).  For more information
+       about    Emacs    mailing    lists,    see    the     file
+       /usr/local/emacs/etc/MAILINGLISTS.   Bugs tend actually to
+       be fixed if they can be isolated, so it is in your  inter-
+       est  to  report them in such a way that they can be easily
+       reproduced.
+
+       Bugs that I know about are: shell will not work with  pro-
+       grams running in Raw mode on some Unix versions.
+
+UUNNRREESSTTRRIICCTTIIOONNSS
+       _E_m_a_c_s  is free; anyone may redistribute copies of _E_m_a_c_s to
+
+
+
+4th Berkeley Distribution1990 November 13                       7
+
+
+
+
+
+
+
+
+EMACS(1)               BSD Reference Manual              EMACS(1)
+
+
+       anyone under the terms stated in the _E_m_a_c_s General  Public
+       License,  a  copy  of which accompanies each copy of _E_m_a_c_s
+       and which also appears in the reference manual.
+
+       Copies of _E_m_a_c_s may sometimes be  received  packaged  with
+       distributions of Unix systems, but it is never included in
+       the scope of any license  covering  those  systems.   Such
+       inclusion violates the terms on which distribution is per-
+       mitted.  In fact, the primary purpose of the General  Pub-
+       lic License is to prohibit anyone from attaching any other
+       restrictions to redistribution of _E_m_a_c_s_.
+
+       Richard Stallman encourages  you  to  improve  and  extend
+       _E_m_a_c_s_,  and  urges  that you contribute your extensions to
+       the GNU library.  Eventually GNU (Gnu's Not Unix) will  be
+       a  complete  replacement for Berkeley Unix.  Everyone will
+       be able to use the GNU system for free.
+
+SSEEEE AALLSSOO
+       X(1), xlsfonts(1), xterm(1), xrdb(1)
+
+AAUUTTHHOORRSS
+       _E_m_a_c_s was written by Richard Stallman and the  Free  Soft-
+       ware  Foundation.   Joachim  Martillo  and  Robert Krawitz
+       added the X features.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4th Berkeley Distribution1990 November 13                       8
+
+
+
+
+
