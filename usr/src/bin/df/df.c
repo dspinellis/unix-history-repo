@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)df.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)df.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 #include <sys/param.h>
@@ -68,6 +68,8 @@ char **argv;
 			perror(FSTAB), exit(1);
 		while (!feof(f)){
 			fscanf(f, FSTABFMT, FSTABARG(&fs));
+			if (strcmp(fs.fs_type, "rw") && strcmp(fs.fs_type, "ro"))
+				continue;
 			if (root[0] == 0)
 				strcpy(root, fs.fs_spec);
 			dfree(fs.fs_spec);
