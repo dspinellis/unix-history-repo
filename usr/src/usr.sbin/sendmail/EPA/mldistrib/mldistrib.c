@@ -1,3 +1,4 @@
+#include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <sysexits.h>
@@ -12,6 +13,7 @@ typedef char		BOOL;
 
 enum copymode {RETAIN, DISCARD};
 char *myname;
+int  debug;
 
 main(argc, argv)
 	int argc;
@@ -36,6 +38,13 @@ main(argc, argv)
 	argc--, argv++;
 	while (*argv[0] == '-')
 	{
+		if (strcmp(argv[0], "-d") == 0)
+		{
+			debug++;
+			argv++;
+			argc--;
+			continue;
+		}
 		if (next_opt >= &mailer_opts[MAXMAILOPTS])
 		{
 			fprintf(stderr,
@@ -64,7 +73,8 @@ main(argc, argv)
 		continue;
 
 	/* open the connection to the mailer */
-	mailfp = openmailer(ml_owner, mailer_opts, argv);
+	mailfp = openmailer(ml_owner, next_opt - mailer_opts, mailer_opts,
+	    argc, argv);
 
 	/* output the Resent-xxx: fields */
 	fprintf(mailfp, "Resent-To:	%s\n", ml_name);
@@ -117,7 +127,7 @@ main(argc, argv)
 
 		  case 's':
 		  case 'S':
-			if sameword(p, "sender", 7))
+			if (sameword(p, "sender", 7))
 				mode = DISCARD;
 			break;
 
@@ -155,7 +165,7 @@ main(argc, argv)
 	copybody(stdin, mailfp);
 
 	/* clean up the connection */
-	exit (pclose(mailfp));
+	exit (my_pclose(mailfp));
 }
 
 
@@ -165,39 +175,54 @@ main(argc, argv)
 */
 
 FILE *
-openmailer(from, opt, argv)
+openmailer(from, nopts, opts, argc, argv)
 	char *from;
-	char **opt, **argv;
+	int nopts, argc;
+	char **opts, **argv;
 {
-	register char *bp;
+	register char **argp;
 	register FILE *mailfp;
-	char buf[10000];
+	char **args;
+	char *name;
+	static char mailer[] = _PATH_SENDMAIL;
 	extern int strlen();
+	extern FILE *my_popen();
+	extern char *malloc(), *rindex();
 
-	bp = buf;
-	(void) sprintf(bp, "%s -f %s -oi", _PATH_SENDMAIL, from);
-	bp += strlen(bp);
-
-	while (*opt != CHARNULL)
+	/*
+	 * allocate space for argv; 4 args below, a null,
+	 * and options and arguments from caller.
+	 */
+	args = (char **) malloc((nopts + argc + 5) * sizeof(char *));
+	if (args == (char **) NULL)
 	{
-		(void) sprintf(bp, " %s", *opt++);
-		bp += strlen(bp);
-		if (bp >= buf + sizeof(buf)) {
-			fprintf(stderr, "%s: options list too long\n", myname);
-			exit(EX_SOFTWARE);
-		}
+		fprintf(stderr,
+		    "%s: arg list too long; can't allocate memory!?\n", myname);
+		exit(EX_SOFTWARE);
 	}
-	while (*argv != CHARNULL)
-	{
-		(void) sprintf(bp, " %s", *argv++);
-		bp += strlen(bp);
-		if (bp >= buf + sizeof(buf)) {
-			fprintf(stderr, "%s: arg list too long\n", myname);
-			exit(EX_SOFTWARE);
-		}
-	}
+	argp = args;
+	if ((name = rindex(mailer, '/')) != CHARNULL)
+		name++;
+	else
+		name = mailer;
+	*argp++ = name;
+	*argp++ = "-f";
+	*argp++ = from;
+	*argp++ = "-oi";
+	bcopy((char *) opts, (char *) argp, nopts * sizeof(*opts));
+	argp += nopts;
+	bcopy((char *) argv, (char *) argp, argc * sizeof(*argv));
+	argp += argc;
+	*argp = CHARNULL;
 
-	mailfp = popen(buf, "w");
+	if (debug) {
+		printf("| %s, args:\n", _PATH_SENDMAIL);
+		for (argp = args; *argp; argp++)
+			printf("  %s\n", *argp);
+		printf("--------\n");
+		return (stdout);
+	}
+	mailfp = my_popen(mailer, args, "w");
 	if (mailfp == NULL)
 	{
 		fprintf(stderr, "%s: Unable to popen %s\n", myname,
@@ -347,4 +372,97 @@ sameword(test, pat, len)
 		return (FALSE);
 	}
 	return (TRUE);
+}
+
+
+
+/*
+ * from libc popen:
+static char sccsid[] = "@(#)popen.c	5.12 (Berkeley) 4/6/90";
+ *
+ * This code is derived from software written by Ken Arnold and
+ * published in UNIX Review, Vol. 6, No. 8.
+ *
+ * modified to avoid sh, be safe for setuid/setgid programs,
+ * and simplified to support only one popen'ed stream.
+ */
+
+
+#include <sys/signal.h>
+#include <sys/wait.h>
+#include <errno.h>
+#include <unistd.h>
+/*
+#include <stdio.h>
+#include <paths.h>
+*/
+
+static pid_t pid;
+
+FILE *
+my_popen(program, args, type)
+	char *program, *type;
+	char **args;
+{
+	FILE *iop;
+	int pdes[2];
+	char *malloc();
+
+	if (*type != 'r' && *type != 'w' || type[1])
+		return(NULL);
+
+	if (pipe(pdes) < 0)
+		return(NULL);
+	switch (pid = vfork()) {
+	case -1:			/* error */
+		(void)close(pdes[0]);
+		(void)close(pdes[1]);
+		return(NULL);
+		/* NOTREACHED */
+	case 0:				/* child */
+		if (*type == 'r') {
+			if (pdes[1] != STDOUT_FILENO) {
+				(void)dup2(pdes[1], STDOUT_FILENO);
+				(void)close(pdes[1]);
+			}
+			(void)close(pdes[0]);
+		} else {
+			if (pdes[0] != STDIN_FILENO) {
+				(void)dup2(pdes[0], STDIN_FILENO);
+				(void)close(pdes[0]);
+			}
+			(void)close(pdes[1]);
+		}
+		execv(program, args);
+		_exit(127);
+		/* NOTREACHED */
+	}
+	/* parent; assume fdopen can't fail...  */
+	if (*type == 'r') {
+		iop = fdopen(pdes[0], type);
+		(void)close(pdes[1]);
+	} else {
+		iop = fdopen(pdes[1], type);
+		(void)close(pdes[0]);
+	}
+	return (iop);
+}
+
+my_pclose(iop)
+	FILE *iop;
+{
+	extern int errno;
+	register int fdes;
+	int omask;
+	int pstat;
+	pid_t wpid, waitpid();
+
+	(void)fclose(iop);
+	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
+	do {
+		wpid = waitpid(pid, &pstat, 0);
+	} while (wpid == -1 && errno == EINTR);
+	(void)sigsetmask(omask);
+	pid = 0;
+	return (pid == -1 ? -1 : pstat);
 }
