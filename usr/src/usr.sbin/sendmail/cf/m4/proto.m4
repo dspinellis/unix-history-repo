@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.72 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.73 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -83,6 +83,12 @@ ifdef(`BITNET_RELAY',
 `#  BITNET relay host
 DB`'BITNET_RELAY
 CPBITNET
+
+')dnl
+ifdef(`DECNET_RELAY',
+# DECnet relay host
+DC`'DECNET_RELAY
+CPDECNET
 
 ')dnl
 ifdef(`FAX_RELAY',
@@ -418,7 +424,7 @@ R$@			$@ <@>
 # strip group: syntax (not inside angle brackets!) and trailing semicolon
 R$*			$: $1 <@>			mark addresses
 R$* < $* > $* <@>	$: $1 < $2 > $3			unmark <addr>
-R$* :: $* <@>		$: $1 :: $2			unmark host::addr
+R$* :: $* <@>		$: $1 :: $2			unmark node::addr
 R:include: $* <@>	$: :include: $1			unmark :include:...
 R$* : $* <@>		$: $2				strip colon if marked
 R$* <@>			$: $1				unmark
@@ -455,8 +461,13 @@ ifdef(`_NO_UUCP_', `dnl',
 `# convert old-style addresses to a domain-based address
 R$- ! $+		$@ $>96 $2 < @ $1 .UUCP >	resolve uucp names
 R$+ . $- ! $+		$@ $>96 $3 < @ $1 . $2 >		domain uucps
-R$+ ! $+		$@ $>96 $2 < @ $1 .UUCP >	uucp subdomains')
-
+R$+ ! $+		$@ $>96 $2 < @ $1 .UUCP >	uucp subdomains
+')
+ifdef(`DECNET_RELAY',
+`# convert node::user addresses into a domain-based address
+R$- :: $+		$@ $>96 $2 < @ $1 .DECNET >	resolve DECnet names
+',
+	`dnl')
 # if we have % signs, take the rightmost one
 R$* % $*		$1 @ $2				First make them all @s.
 R$* @ $* @ $*		$1 % $2 @ $3			Undo all but the last.
