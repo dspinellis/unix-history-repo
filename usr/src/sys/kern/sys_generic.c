@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.39	83/06/12	*/
+/*	sys_generic.c	5.40	83/06/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -417,22 +417,4 @@ selwakeup(p, coll)
 			p->p_flag &= ~SSEL;
 		splx(s);
 	}
-}
-
-fstat()
-{
-	register struct file *fp;
-	register struct a {
-		int	fdes;
-		struct	stat *sb;
-	} *uap;
-	struct stat ub;
-
-	uap = (struct a *)u.u_ap;
-	fp = getf(uap->fdes);
-	if (fp == 0)
-		return;
-	u.u_error = (*fp->f_ops->fo_stat)(fp, &ub);
-	if (u.u_error == 0)
-		u.u_error = copyout(&ub, uap->sb, sizeof (ub));
 }
