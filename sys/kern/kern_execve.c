@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: kern_execve.c,v 1.11 1993/12/19 00:51:23 wollman Exp $
+ *	$Id: kern_execve.c,v 1.12 1993/12/20 19:31:17 wollman Exp $
  */
 
 #include "param.h"
@@ -56,7 +56,7 @@
 #include "machine/reg.h"
 
 int exec_extract_strings __P((struct image_params *));
-caddr_t exec_copyout_strings __P((struct image_params *));
+int *exec_copyout_strings __P((struct image_params *));
 
 /*
  * execsw_set is constructed for us by the linker.  Each of the items
@@ -75,7 +75,8 @@ execve(p, uap, retval)
 	int *retval;
 {
 	struct nameidata nd, *ndp;
-	char *stringbase, *stringp, *stack_base;
+	char *stringbase, *stringp;
+	int *stack_base;
 	int error, resid, len, i;
 #if 0
 	char image_header[256];
@@ -228,16 +229,14 @@ interpret:
 	 * Copy out strings (args and env) and initialize stack base
 	 */
 	stack_base = exec_copyout_strings(iparams);
-	p->p_vmspace->vm_minsaddr = stack_base;
-	p->p_regs[SP] = (int) stack_base;
+	p->p_vmspace->vm_minsaddr = (char *)stack_base;
 
-	p->p_vmspace->vm_ssize = (((caddr_t)USRSTACK - stack_base) >> PAGE_SHIFT) + 1;
+	p->p_vmspace->vm_ssize = (((caddr_t)USRSTACK - (char *)stack_base) >> PAGE_SHIFT) + 1;
 
 	/*
 	 * Stuff argument count as first item on stack
 	 */
-	p->p_regs[SP] -= sizeof(int);
-	*(int *)(p->p_regs[SP]) = iparams->argc;
+	*(--stack_base) = iparams->argc;
 
 	/* close files on exec, fixup signals */
 	fdcloseexec(p);
@@ -282,7 +281,7 @@ interpret:
 	p->p_acflag &= ~AFORK;
 
 	/* Set entry address */
-	setregs(p, iparams->entry_addr);
+	setregs(p, iparams->entry_addr, stack_base);
 
 	/*
 	 * free various allocated resources
@@ -409,13 +408,14 @@ exec_extract_strings(iparams)
  *	new arg and env vector tables. Return a pointer to the base
  *	so that it can be used as the initial stack pointer.
  */
-caddr_t
+int *
 exec_copyout_strings(iparams)
 	struct image_params *iparams;
 {
 	int argc, envc;
 	char **vectp;
-	char *stack_base, *stringp, *destp;
+	char *stringp, *destp;
+	int *stack_base;
 	int vect_table_size, string_table_size;
 
 	/*
@@ -433,7 +433,7 @@ exec_copyout_strings(iparams)
 	/*
 	 * vectp also becomes our initial stack base
 	 */
-	stack_base = (caddr_t)vectp;
+	stack_base = (int *)vectp;
 
 	stringp = iparams->stringbase;
 	argc = iparams->argc;
