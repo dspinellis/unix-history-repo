@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,9 +40,10 @@ static char sccsid[] = "@(#)pstat.c	5.29 (Berkeley) %G%";
 #include <sys/conf.h>
 #include <sys/vm.h>
 #include <machine/pte.h>
+#include <sys/kinfo.h>
 
-#include <kvm.h>
 #include <nlist.h>
+#include <kvm.h>
 #include <stdio.h>
 #include "pathnames.h"
 
@@ -55,32 +56,33 @@ char	*fcore	= NULL;
 struct nlist nl[] = {
 #define	STEXT	0
 	{ "_text" },
-#define	SCONS	1
-	{ "_cons" },
-#define	SPROC	2
+#define	SPROC	1
 	{ "_proc" },
-#define	SFIL	3
+#define	SFIL	2
 	{ "_file" },
-#define	SWAPMAP	4
+#define	SWAPMAP	3
 	{ "_swapmap" },
-#define	SNPROC	5
+#define	SNPROC	4
 	{ "_nproc" },
-#define	SNTEXT	6
+#define	SNTEXT	5
 	{ "_ntext" },
-#define	SNFILE	7
+#define	SNFILE	6
 	{ "_nfile" },
-#define	SNSWAPMAP 8
+#define	SNSWAPMAP 7
 	{ "_nswapmap" },
-#define	SPTY	9
-	{ "_pt_tty" },
-#define	SDMMIN	10
+#define	SDMMIN	8
 	{ "_dmmin" },
-#define	SDMMAX	11
+#define	SDMMAX	9
 	{ "_dmmax" },
-#define	SNSWDEV	12
+#define	SNSWDEV	10
 	{ "_nswdev" },
-#define	SSWDEVT	13
+#define	SSWDEVT	11
 	{ "_swdevt" },
+#define NLMANDATORY SSWDEVT	/* names up to here are mandatory */
+#define	SCONS	12
+	{ "_cons" },
+#define	SPTY	13
+	{ "_pt_tty" },
 #define	SNPTY	14
 	{ "_npty" },
 #ifdef vax
@@ -129,7 +131,7 @@ struct nlist nl[] = {
 #define	SDCM	(SNPTY+3)
 	{ "_dcm_tty" },
 #define	SNDCM	(SNPTY+4)
-	{ "_dcm_cnt" },
+	{ "_ndcm" },
 #define	SDCL	(SNPTY+5)
 	{ "_dcl_tty" },
 #define	SNDCL	(SNPTY+6)
@@ -161,13 +163,15 @@ off_t	mkphys();
 
 char	*Program;
 
+#define V(x)	(void *)(x)
+
 main(argc, argv)
 	int argc;
 	char **argv;
 {
 	extern char *optarg;
 	extern int optind;
-	int ch;
+	int ch, ret;
 
         Program = argv[0];
 	while ((ch = getopt(argc, argv, "TafvikptU:sxnu")) != EOF)
@@ -220,14 +224,25 @@ main(argc, argv)
 	if (argc > 0)
 		fnlist = argv[0];
 	if (kvm_openfiles(fnlist, fcore, NULL) == -1) {
-		syserror("kvm_openfiles: %s", kvm_geterr());
+		error("kvm_openfiles: %s", kvm_geterr());
 		exit(1);
 	}
-	if (kvm_nlist(nl) != 0) {
-		syserror("kvm_nlist: %s", kvm_geterr());
-		/*
-		exit(1);
-		*/
+	if ((ret = kvm_nlist(nl)) != 0) {
+		int i, quit = 0;
+
+		if (ret == -1) {
+			error("kvm_nlist: %s", kvm_geterr());
+			exit(1);
+		}
+		for (i = 0; i <= NLMANDATORY; i++) {
+			if (!nl[i].n_value) {
+				quit = 1;
+				error("undefined symbol: %s\n",
+					nl[i].n_name);
+			}
+		}
+		if (quit)
+			exit(1);
 	}
 	if (!(filf | totflg | vnof | prcf | txtf | ttyf | usrf | swpf)) {
 		printf("pstat: one or more of -[aivxptfsU] is required\n");
@@ -364,20 +379,16 @@ vnode_print(avnode, vp)
 		*fp++ = 'R';
 	if (flag & VTEXT)
 		*fp++ = 'T';
+	if (flag & VSYSTEM)
+		*fp++ = 'S';
 	if (flag & VXLOCK)
 		*fp++ = 'L';
 	if (flag & VXWANT)
 		*fp++ = 'W';
-	if (flag & VEXLOCK)
-		*fp++ = 'E';
-	if (flag & VSHLOCK)
-		*fp++ = 'S';
-	if (flag & VLWAIT)
-		*fp++ = 'T';
-	if (flag & VALIASED)
-		*fp++ = 'A';
 	if (flag & VBWAIT)
 		*fp++ = 'B';
+	if (flag & VALIASED)
+		*fp++ = 'A';
 	if (flag == 0)
 		*fp++ = '-';
 	*fp = '\0';
@@ -503,7 +514,7 @@ getmnt(maddr)
 		error("out of memory");
 		exit(1);
 	}
-	if (kvm_read((off_t)maddr, &mt->mount, sizeof(struct mount)) != 
+	if (kvm_read(V(maddr), &mt->mount, sizeof(struct mount)) != 
 	    sizeof(struct mount)) {
 		error("can't read mount table at %x", maddr);
 		return (NULL);
@@ -657,7 +668,7 @@ loadvnodes(avnodes)
 	}
 	if (copysize % sizeof (struct e_vnode)) {
 		error("vnode size mismatch");
-		error(1);
+		exit(1);
 	}
 	*avnodes = copysize / sizeof (struct e_vnode);
 
@@ -666,11 +677,11 @@ loadvnodes(avnodes)
 
 u_long
 getword(loc)
-	off_t loc;
+	int loc;
 {
 	u_long word;
 
-	kvm_read(loc, &word, sizeof (word));
+	kvm_read(V(loc), &word, sizeof (word));
 	return (word);
 }
 
@@ -821,7 +832,7 @@ dotty()
 	}
 #ifndef hp300
 	printf("1 cons\n");
-	kvm_read((long)nl[SCONS].n_value, tty, sizeof(*tty));
+	kvm_read(V(nl[SCONS].n_value), tty, sizeof(*tty));
 	printf(mesg);
 	ttyprt(&tty[0], 0);
 #endif
@@ -869,9 +880,9 @@ doqdss()
 	int nqd;
 	register struct tty *tp;
 
-	kvm_read((long)nl[SNQD].n_value, &nqd, sizeof(nqd));
+	kvm_read(V(nl[SNQD].n_value), &nqd, sizeof(nqd));
 	printf("%d qd\n", nqd);
-	kvm_read((long)nl[SQD].n_value, tty, nqd * sizeof(struct tty) * 4);
+	kvm_read((V(nl[SQD].n_value), tty, nqd * sizeof(struct tty) * 4);
 	printf(mesg);
 	for (tp = tty; tp < &tty[nqd * 4]; tp += 4)
 		ttyprt(tp, tp - tty);
@@ -887,7 +898,7 @@ char *name;
 
 	if (tty == (struct tty *)0) 
 		return;
-	kvm_read((long)nl[number].n_value, &ntty, sizeof(ntty));
+	kvm_read(V(nl[number].n_value), &ntty, sizeof(ntty));
 	printf("%d %s lines\n", ntty, name);
 	if (ntty > ttyspace) {
 		ttyspace = ntty;
@@ -896,7 +907,7 @@ char *name;
 			return;
 		}
 	}
-	kvm_read((long)nl[type].n_value, tty, ntty * sizeof(struct tty));
+	kvm_read(V(nl[type].n_value), tty, ntty * sizeof(struct tty));
 	printf(mesg);
 	for (tp = tty; tp < &tty[ntty]; tp++)
 		ttyprt(tp, tp - tty);
@@ -977,6 +988,10 @@ struct tty *atp;
 	}
 }
 
+/*
+ * The user structure is going away.  What's left here won't
+ * be around for long.
+ */
 dousr()
 {
 	register struct user *up;
@@ -1018,7 +1033,6 @@ dousr()
 	printf("ar0\t%#x\n", up->u_ar0);
 	printf("sizes\ttext %d data %d stack %d\n", 
 		up->u_tsize, up->u_dsize, up->u_ssize);
-	/* DMAPS */
 	printf("ssave");
 	for (i=0; i<sizeof(label_t)/sizeof(int); i++) {
 		if (i%5==0)
@@ -1060,30 +1074,6 @@ dousr()
 		up->u_sigstack.ss_sp, up->u_sigstack.ss_onstack);
 	printf("sig\t%#x\n", up->u_sig);
 	printf("code\t%#x\n", up->u_code);
-	printf("file");
-	for (i=0; i<NOFILE; i++) {
-		if (i % 6 == 0)
-			printf("\t");
-		printf("%#11x", up->u_ofile[i]);
-		if (i % 6 == 5)
-			printf("\n");
-	}
-	if (i % 6)
-		printf("\n");
-	printf("pofile");
-	for (i=0; i<NOFILE; i++) {
-		if (i % 6 == 0)
-			printf("\t");
-		printf("%#11x", up->u_pofile[i]);
-		if (i % 6 == 5)
-			printf("\n");
-	}
-	if (i % 6)
-		printf("\n");
-	printf("lastfile\t%d\n", up->u_lastfile);
-	printf("cmask\t%#o\n", up->u_cmask);
-	/* RUSAGES */
-	/* TIMERS */
 	printf("start\t%ld secs %ld usecs\n", 
 		up->u_start.tv_sec, up->u_start.tv_usec);
 	printf("acflag\t%#x\n", up->u_acflag);
@@ -1099,7 +1089,6 @@ dousr()
 	for (i = 0; i < sizeof(up->u_cru)/sizeof(int); i++)
 		printf("%ld ", ip[i]);
 	printf("\n");
-	/* NAMEI */
 }
 
 oatoi(s)
@@ -1218,13 +1207,13 @@ doswap()
 		fprintf(stderr, "can't allocate memory for swdevt table\n");
 		exit(1);
 	}
-	kvm_read(nl[SSWDEVT].n_value, swdevt,
+	kvm_read(V(nl[SSWDEVT].n_value), swdevt,
 		nswdev * sizeof (struct swdevt));
-	kvm_read(getword(nl[SPROC].n_value), proc,
+	kvm_read(V(getword(nl[SPROC].n_value)), proc,
 		nproc * sizeof (struct proc));
-	kvm_read(getword(nl[STEXT].n_value), xtext,
+	kvm_read(V(getword(nl[STEXT].n_value)), xtext,
 		ntext * sizeof (struct text));
-	kvm_read(getword(nl[SWAPMAP].n_value), swapmap,
+	kvm_read(V(getword(nl[SWAPMAP].n_value)), swapmap,
 		nswapmap * sizeof (struct map));
 
 	swapmap->m_name = "swap";
