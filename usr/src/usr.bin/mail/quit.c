@@ -9,7 +9,7 @@
  * Termination processing.
  */
 
-static char *SccsId = "@(#)quit.c	1.2 %G%";
+static char *SccsId = "@(#)quit.c	1.3 %G%";
 
 /*
  * Save all of the undetermined messages at the top of "mbox"
@@ -19,7 +19,7 @@ static char *SccsId = "@(#)quit.c	1.2 %G%";
 
 quit()
 {
-	int mcount, p, modify;
+	int mcount, p, modify, autohold;
 	FILE *ibuf, *obuf, *fbuf, *rbuf;
 	register struct message *mp;
 	register int c;
@@ -86,8 +86,11 @@ quit()
 		if ((mp->m_flag & MTOUCH) == 0)
 			mp->m_flag |= MDELETED;
 	}
+	autohold = value("hold") != NOSTR;
 	modify = 0;
 	for (c = 0, p = 0, mp = &message[0]; mp < &message[msgCount]; mp++) {
+		if ((mp->m_flag & (MSAVED|MDELETED)) == 0 && autohold)
+			mp->m_flag |= MPRESERVE;
 		if ((mp->m_flag & (MSAVED|MDELETED|MPRESERVE)) == 0)
 			c++;
 		if ((mp->m_flag & MPRESERVE) || (mp->m_flag & MTOUCH) == 0)
