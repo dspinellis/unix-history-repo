@@ -11,7 +11,7 @@
  */
 
 #ifdef notdef
-static char sccsid[] = "@(#)send.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.9 (Berkeley) %G%";
 #endif /* notdef */
 
 #include "rcv.h"
@@ -251,12 +251,13 @@ mail1(hp)
 	if ((mtf = collect(hp)) == NULL)
 		return(-1);
 	hp->h_seq = 1;
-	if (intty && value("askcc") != NOSTR)
-		grabh(hp, GCC);
-	else if (intty) {
-		printf("EOT\n");
-		(void) fflush(stdout);
-	}
+	if (value("interactive") != NOSTR)
+		if (value("askcc") != NOSTR)
+			grabh(hp, GCC);
+		else {
+			printf("EOT\n");
+			(void) fflush(stdout);
+		}
 
 	/*
 	 * Now, take the user names from the combined

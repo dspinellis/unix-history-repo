@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)glob.h	5.6 (Berkeley) %G%
+ *	@(#)glob.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -40,8 +40,6 @@ int	image;				/* File descriptor for image of msg */
 FILE	*input;				/* Current command input file */
 char	*editfile;			/* Name of file being edited */
 char	*sflag;				/* Subject given from non tty */
-int	outtty;				/* True if standard output a tty */
-int	intty;				/* True if standard input a tty */
 char	mbox[PATHSIZE];			/* Name of mailbox file */
 char	mailname[PATHSIZE];		/* Name of system mailbox */
 int	uid;				/* The invoker's user id */
