@@ -1,8 +1,9 @@
 #!/bin/sh -
 #
-#	@(#)netstart	5.7 (Berkeley) %G%
+#	@(#)netstart	5.8 (Berkeley) %G%
 
 routedflags=-q
+timedflags=YES
 rwhod=NO
 
 # myname is my symbolic name
