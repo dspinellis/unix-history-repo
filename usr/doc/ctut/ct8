@@ -1,0 +1,260 @@
+.NH
+Bit Operators
+.PP
+C has several operators for logical bit-operations.
+For example,
+.E1
+x = x & 0177;
+.E2
+forms the bit-wise 
+.UC AND
+of
+.UL x
+and 0177,
+effectively retaining only the last seven bits of 
+.UL x\*.
+Other operators are
+.E1
+.ft R
+\(or	inclusive OR
+^	(circumflex) exclusive OR
+.tr+~
++	(tilde) 1's complement
+.tr++
+!	logical NOT
+<<	left shift (as in x<<2)
+>>	right shift	(arithmetic on PDP\(hy11; logical on H6070, IBM360)
+.E2
+.NH
+Assignment Operators
+.PP
+An unusual feature of C
+is that the normal binary operators like
+`+', `\(mi', etc.
+can be combined with the assignment operator `='
+to form new assignment operators.
+For example,
+.E1
+x =- 10;
+.E2
+uses the assignment operator `=\(mi' to decrement 
+.UL x
+by 10,
+and
+.E1
+x =& 0177
+.E2
+forms the
+.UC AND
+of 
+.UL x
+and 0177.
+This convention is a useful notational shortcut,
+particularly if
+.UL x
+is a complicated expression.
+The classic example is summing an array:
+.E1
+for( sum=i=0; i<n; i\*+ )
+	sum =+ array[i];
+.E2
+But the spaces around the operator are critical!
+For instance,
+.E1
+x = -10;
+.E2
+sets
+.UL x
+to
+\(mi10, while
+.E1
+x =- 10;
+.E2
+subtracts 10 from
+.UL x\*.
+When no space is present,
+.E1
+x=-10;
+.E2
+also decreases 
+.UL x
+by 10.
+This is quite contrary to the experience of most programmers.
+In particular, watch out for things like
+.E1
+c=\**s\*+;
+y=&x[0];
+.E2
+both of which are almost certainly not what you wanted.
+Newer versions of various compilers are courteous enough to warn you about the ambiguity.
+.PP
+Because all other operators in an expression are evaluated
+before the assignment operator,
+the order of evaluation should be watched carefully:
+.E1
+x = x<<y | z;
+.E2
+means
+``shift
+.UL x
+left
+.UL y
+places,
+then
+.UC OR
+with
+.UL z,
+and store in
+.UL x\*.''
+But
+.E1
+x =<< y | z;
+.E2
+means
+``shift
+.UL x
+left by
+.UL y|z
+places'',
+which is rather different.
+.NH
+Floating Point
+.PP
+We've skipped over floating point so far,
+and the treatment here will be hasty.
+C has single and double precision numbers
+(where the precision depends on the machine at hand).
+For example,
+.E1
+	double sum;
+	float avg, y[10];
+	sum = 0\*.0;
+	for( i=0; i<n; i\*+ )
+		sum =+ y[i];
+	avg = sum/n;
+.E2
+forms the sum and average of the array
+.UL y\*.
+.PP
+All floating arithmetic is done in double precision.
+Mixed mode arithmetic is legal;
+if an arithmetic operator in an expression
+has both operands
+.UL int
+or
+.UL char,
+the arithmetic done is integer, but
+if one operand is
+.UL int
+or
+.UL char
+and the other is
+.UL float
+or
+.UL double,
+both operands are converted to
+.UL double\*.
+Thus if
+.UL i
+and
+.UL j
+are
+.UL int
+and
+.UL x
+is
+.UL float,
+.E1
+(x+i)/j		converts i and j to float
+x + i/j		does i/j integer, then converts
+.E2
+Type conversion
+may be made by assignment;
+for instance,
+.E1
+	int m, n;
+	float x, y;
+	m = x;
+	y = n;
+.E2
+converts
+.UL x
+to integer
+(truncating toward zero),
+and
+.UL n
+to floating point.
+.PP
+Floating constants are just like those in Fortran or PL/I,
+except that the exponent letter is `e' instead of `E'.
+Thus:
+.E1
+	pi = 3\*.14159;
+	large = 1\*.23456789e10;
+.E2
+.PP
+.UL printf
+will format floating point numbers:
+.UL ``%w\*.df''
+in the format string will print the corresponding variable
+in a field
+.UL w
+digits wide, with
+.UL d
+decimal places.
+An
+.UL e
+instead of an
+.UL f
+will produce exponential notation.
+.NH
+Horrors! goto's and labels
+.PP
+C has 
+a
+.UL goto
+statement and labels, so you can branch about
+the way you used to.
+But most of the time
+.UL goto's
+aren't needed.
+(How many have we used up to this point?)
+The code can almost always be more clearly expressed by
+.UL for/while,
+.UL if/else,
+and compound statements.
+.PP
+One use of
+.UL goto's
+with some legitimacy is in a program
+which
+contains a long loop,
+where a
+.UL while(1)
+would be too extended.
+Then you might write
+.E1
+   mainloop:
+	\*.\*.\*.
+	goto mainloop;
+.E2
+Another use is to implement a
+.UL break
+out of more than one level of
+.UL for
+or 
+.UL while\*.
+.UL goto's
+can only branch to labels within the same function.
+.NH
+Acknowledgements
+.PP
+I am indebted to a veritable host of readers who made
+valuable criticisms on several drafts of this tutorial.
+They ranged in experience from complete beginners
+through several implementors of C compilers
+to the C language designer himself.
+Needless to say, this is a wide enough spectrum of opinion
+that no one is satisfied (including me);
+comments and suggestions are still welcome,
+so that some future version might be improved.

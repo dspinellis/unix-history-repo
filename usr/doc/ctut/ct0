@@ -1,0 +1,126 @@
+.if t .ll 6i
+.if n .ll 60
+.de h
+'sp 2
+.tl 'C Tutorial'- % -''
+'sp 3
+..
+.de f
+'bp
+..
+.wh -6 f
+.br
+.wh 0 h
+.	PP - paragraph
+.de PP
+.ne 2
+.if t .sp 0.3
+.if n .sp
+.ti +5n
+.ul 0
+.ce 0
+.ft R
+..
+.	DS - display.
+.de DS
+.nf
+.nr oi \\n(.i
+.if t .sp 0.5
+.if n .sp 1
+.if t .in +0.5i
+.if n .in +8
+..
+.	DE - display end
+.de DE
+.if n .in \\n(oi
+.if t .in \\n(oiu
+.if t .sp 0.5
+.if n .sp 1
+.fi
+..
+.	IP - indented paragraph
+.de IP
+.if t .sp 0.3
+.if n .sp
+.ne 3
+.in +5n
+.if n .ta 5+1
+.if t .ta 5n
+.ti -5n
+\\$1\t\c
+..
+.	SH - (unnumbered) section heading
+.de SH
+.sp 1
+.ne 7
+.ft B
+.if n .ul 1000
+..
+.tr |\(or
+.ds . \s16.\s0
+.ds | \(or\|\(or
+.ds + \fR++\fP
+.ds = \fR==\fP
+.ds * \s14\v'.35m'*\v'-.35m'\s0
+.fp 3 G
+.		UL - identifiers, etc.
+.de UL
+\fG\\$1\fP
+..
+.		WS - white space
+.de WS
+.sp \\$1
+..
+.		UC - make upper case smaller
+.de UC
+.if t \s-2\\$1\s+2
+.if n \\$1
+..
+.		E1 - begin a block
+.de E1
+.br
+.lg 0
+.if n .sp
+.if t .sp 5p
+.nf
+.if n .in 5
+.if t .in .5i
+.if t .tr '\(fm
+.if t .ss 15
+.if t .tr -\(mi
+.if t .tr _\(ru
+.ft G
+.if t .ta .5i 1i 1.5i 2i 2.5i 3i 3.5i
+.if n .ta 8 16 24 32 40 48
+..
+.		E2 - end a block
+.de E2
+.br
+.tr ''
+.tr --
+.tr __
+.tr ~
+.in
+.lg
+.ft R
+.fi
+.if t .sp 5p
+.if n .sp
+.if t .ss 12
+..
+.		SP - add extra space
+.de SP
+.if t .sp 5p
+.if n .sp
+..
+.ds CF "
+.ds LH C Tutorial
+.tr ~
+.de NH
+.sp 1
+.ne 4
+.ft G
+.if n .ul 1000
+.nr SN \\n(SN+1
+\\n(SN.   \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8 \\$9
+..

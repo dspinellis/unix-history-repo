@@ -1,0 +1,358 @@
+.H1
+Writing text out as a file \(mi the Write command ``w''
+.H2
+.PG
+It's likely that we'll want to save our text for later use.
+To write out the contents of the buffer onto a file,
+we use the
+.ul
+write
+command
+.X1
+w
+.X2
+followed by the filename we want to write on.
+This will copy the buffer's contents
+onto the specified file
+(destroying any previous information on the file).
+To save
+the text on a file named ``junk'', for example, type
+.X1
+w junk
+.X2
+Leave a space between ``w'' and the file name.
+.ul
+Ed
+will respond by printing
+the number of characters it wrote out.
+In our case,
+.ul
+ed
+would respond with
+.X1
+68
+.X2
+(Remember that blanks and the newline character at the end of each
+line are included in the character count.)
+Writing a file just makes a copy of the text \(mi the
+buffer's contents are not disturbed, so we can go on adding
+lines to it.
+This is an important point.
+.ul
+Ed
+at all times works on a copy
+of a file, not the file itself.
+No change in the contents
+of a file takes place until you give a ``w'' command.
+(Writing out the text onto a file from time to time as it is being
+created is a good idea, since if the system crashes or if you make some horrible mistake, you will lose
+all the text in the buffer but any text that was written onto
+a file is relatively safe.)
+.H1
+Leaving ed \(mi the Quit command ``q''
+.H2
+.PG
+To terminate a session with
+.ul
+ed,
+save the text you're working on
+by writing it onto a file using the ``w'' command,
+and then type the command
+.X1
+q
+.X2
+which
+stands for
+.ul
+quit.
+The system will respond with ``%''.
+At
+this point your buffer vanishes, with all its text,
+which is why you want to write it out before quitting.
+.H1
+Exercise 1:
+.H2
+.PG
+Enter
+.ul
+ed
+and
+create some text using
+.X1
+a
+.li
+. . . text . . .
+.li
+\fB.\fR
+.X2
+Write it out using ``w''.
+Then leave
+.ul
+ed
+with the ``q'' command, and print the file,
+to see that everything worked.
+(To print a file, say
+.X1
+pr filename
+.X2
+or
+.X1
+cat filename
+.X2
+in response to ``%''.
+Try both.)
+.H1
+Reading text from a file \(mi the Edit command ``e''
+.H2
+.PG
+A common way to get text into the buffer is to read it
+from a file in the file system.
+This is what you do to edit text
+that you saved with the 
+``w''
+command in a previous session.
+The
+.ul
+edit
+command ``e''
+fetches the entire contents of a file into the buffer.
+So if we had saved the three lines
+``Now is the time'', etc.,
+with a ``w'' command in an earlier session,
+the 
+.ul
+ed
+command
+.X1
+e junk
+.X2
+would fetch the entire contents of the file ``junk''
+into the buffer, and respond
+.X1
+68
+.X2
+which is the number of characters in ``junk''.
+.ul
+If anything was already in the buffer, it is deleted first.
+.PG
+If we use the ``e'' command to read a file into the buffer,
+then we need not use a file name after a subsequent ``w'' command;
+.ul
+ed
+remembers the last file name used in an ``e'' command,
+and ``w'' will write on this file.
+Thus a common way to operate is
+.X1
+ed
+e file
+[editing session]
+w
+q
+.X2
+.PG
+You can find out at any time what file name
+.ul
+ed
+is remembering by typing the 
+.ul
+file
+command ``f''.
+In our case,
+if we typed
+.X1
+f
+.X2
+.ul
+ed
+would reply
+.X1
+junk
+.X2
+.H1
+Reading text from a file \(mi the Read command ``r''
+.H2
+.PG
+Sometimes we want to read a file into the buffer
+without destroying anything that is already there.
+This is done by the
+.ul
+read
+command ``r''.
+The command
+.X1
+r junk
+.X2
+will read the file ``junk'' into the buffer;
+it adds it
+to the end of whatever is already in the buffer.
+So if we do a read after
+an edit:
+.X1
+e junk
+r junk
+.X2
+the buffer will contain
+.ul
+two
+copies of the text (six lines).
+.X1
+Now is the time
+for all good men
+to come to the aid of their party.
+Now is the time
+for all good men
+to come to the aid of their party.
+.X2
+Like the ``w'' and ``e'' commands, ``r'' prints the
+number of characters read in, after the reading operation is complete.
+.PG
+Generally speaking, ``r'' is much less used than ``e''.
+.H1
+Exercise 2:
+.H2
+.PG
+Experiment with the ``e'' command \(mi
+try reading and printing various files.
+You may get an error ``?'',
+typically because you spelled the file name wrong.
+Try alternately reading and appending to see that they work
+similarly.
+Verify that
+.X1
+ed filename
+.X2
+is exactly equivalent to
+.X1
+ed
+e filename
+.X2
+What does
+.X1
+f filename
+.X2
+do?
+.H1
+Printing the contents of the buffer \(mi the Print command ``p''
+.H2
+.PG
+To
+.ul
+print
+or list the contents of the buffer (or parts
+of it) on the terminal, we use the print command
+.X1
+p
+.X2
+The way this is done is as follows.
+We specify the lines where
+we want printing to begin and where we want it to end,
+separated by a comma, and
+followed by the letter ``p''.
+Thus to print the first two lines of the buffer, for
+example, (that is, lines 1 through 2) we say
+.X1
+1,2p	(starting line=1, ending line=2 p)
+.X2
+.ul
+Ed
+will respond with
+.X1
+Now is the time
+for all good men
+.X2
+.PG
+Suppose we want to print
+.ul
+all
+the lines in the buffer.
+We could use ``1,3p'' as above if we knew there were exactly
+3 lines in the buffer.
+But in general, we don't
+know how many there are, so what do we use for the ending
+line number?
+.ul
+Ed
+provides a shorthand symbol for ``line number of
+last line in buffer'' \(mi the dollar sign ``$''.
+Use it this
+way:
+.X1
+1,$p
+.X2
+This will print
+.ul
+all
+the lines in the buffer (line 1 to last line.)
+If you want to stop the printing before it is finished,
+push the DEL or Delete key;
+.ul
+ed
+will type
+.X1
+?
+.X2
+and wait for the next command.
+.PG
+To print the
+.ul
+last
+line of the buffer, we could use
+.X1
+$,$p
+.X2
+but
+.ul
+ed
+lets us abbreviate this to
+.X1
+$p
+.X2
+We can print any single line by typing the line
+number followed by a ``p''.
+Thus
+.X1
+1p
+.X2
+produces the response
+.X1
+Now is the time
+.X2
+which is the first line of the buffer.
+.PG
+In fact,
+.ul
+ed
+lets us abbreviate even further:
+we can print any single line by typing
+.ul
+just
+the line number \(mi no need to type the letter ``p''.
+So if we say
+.X1
+$
+.X2
+.ul
+ed
+will print the last line of the buffer for us.
+.PG
+We can also use ``$'' in combinations like
+.X1
+$\(mi1,$p
+.X2
+which prints the last two lines of the buffer.
+This helps when we want to see how far we got in typing.
+.H1
+Exercise 3:
+.H2
+.PG
+.H2
+As before, create some text using the append command and
+experiment with the ``p'' command.
+You will find, for example,
+that you can't print line 0 or a line beyond
+the end of the buffer, and that attempts
+to print a buffer in reverse order by saying
+.X1
+3,1p
+.X2
+don't work.
