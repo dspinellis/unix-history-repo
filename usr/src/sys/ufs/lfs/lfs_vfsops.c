@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)lfs_vfsops.c	6.13 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	6.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,7 +34,7 @@ smount()
 	u.u_error = getmdev(&dev, uap->fspec);
 	if (u.u_error)
 		return;
-	ndp->ni_nameiop = LOOKUP | NOCACHE | FOLLOW;
+	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = (caddr_t)uap->freg;
 	ip = namei(ndp);
@@ -139,6 +139,7 @@ found:
 	mp->m_dev = dev;
 	if (ip) {
 		ip->i_flag |= IMOUNT;
+		cacheinval(ip);
 		iunlock(ip);
 	}
 	return (fs);
