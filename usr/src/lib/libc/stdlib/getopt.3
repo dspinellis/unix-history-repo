@@ -8,7 +8,7 @@
 .\" software without specific prior written permission. This software
 .\" is provided ``as is'' without express or implied warranty.
 .\"
-.\"	@(#)getopt.3	6.5 (Berkeley) %G%
+.\"	@(#)getopt.3	6.6 (Berkeley) %G%
 .\"
 .TH GETOPT 3 ""
 .UC 6
@@ -141,12 +141,11 @@ char **argv;
 Written by Henry Spencer, working from a Bell Labs manual page.
 Modified by Keith Bostic to behave more like the System V version.
 .SH BUGS
-It is not obvious how
-`\-'
-standing alone should be treated;  this version treats it as
-a non-option argument, which is not always right.
+``-'' may be specified as an option letter, however it should never have
+an argument associated with it.  This allows getopt to be used with
+programs that think that ``-'' means standard input.
 .PP
-Option arguments are allowed to begin with `\-';
+Option arguments are allowed to begin with ``\-'';
 this is reasonable but reduces the amount of error checking possible.
 .PP
 .I Getopt
