@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.148		%G%);
+SCCSID(@(#)deliver.c	3.149		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -674,7 +674,18 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	**	In this case we don't actually fork.  We must be
 	**	running SMTP for this to work.  We will return a
 	**	zero pid to indicate that we are running IPC.
+	**  We also handle a debug version that just talks to stdin/out.
 	*/
+
+#ifdef DEBUG
+	/* check for Local Person Communication -- not for mortals!!! */
+	if (strcmp(m->m_mailer, "[LPC]") == 0)
+	{
+		*pmfile = stdout;
+		*prfile = stdin;
+		return (0);
+	}
+#endif DEBUG
 
 	if (strcmp(m->m_mailer, "[IPC]") == 0)
 	{

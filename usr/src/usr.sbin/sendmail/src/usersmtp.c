@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.41		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.42		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.41		%G%);
+SCCSID(@(#)usersmtp.c	3.42		%G%);
 
 
 
@@ -24,7 +24,13 @@ char	SmtpReplyBuffer[MAXLINE];	/* buffer for replies */
 FILE	*SmtpOut;			/* output file */
 FILE	*SmtpIn;			/* input file */
 int	SmtpPid;			/* pid of mailer */
-bool	SmtpClosing;			/* set on a forced close */
+
+/* following represents the state of the SMTP connection */
+int	SmtpState;			/* connection state, see below */
+
+#define SMTP_CLOSED	0		/* connection is closed */
+#define SMTP_OPEN	1		/* connection is open for business */
+#define SMTP_SSD	2		/* service shutting down */
 /*
 **  SMTPINIT -- initialize SMTP.
 **
@@ -53,8 +59,13 @@ smtpinit(m, pvp)
 	**  Open the connection to the mailer.
 	*/
 
+#ifdef DEBUG
+	if (SmtpState == SMTP_OPEN)
+		syserr("smtpinit: already open");
+#endif DEBUG
+
 	SmtpIn = SmtpOut = NULL;
-	SmtpClosing = FALSE;
+	SmtpState = SMTP_CLOSED;
 	SmtpPid = openmailer(m, pvp, (ADDRESS *) NULL, TRUE, &SmtpOut, &SmtpIn);
 	if (SmtpPid < 0)
 	{
@@ -65,6 +76,7 @@ smtpinit(m, pvp)
 # endif DEBUG
 		return (ExitStat);
 	}
+	SmtpState = SMTP_OPEN;
 
 	/*
 	**  Get the greeting message.
@@ -258,11 +270,11 @@ smtpquit(name, m)
 		return;
 
 	/* send the quit message if not a forced quit */
-	if (!SmtpClosing)
+	if (SmtpState == SMTP_OPEN || SmtpState == SMTP_SSD)
 	{
 		smtpmessage("QUIT", m);
 		(void) reply(m);
-		if (SmtpClosing)
+		if (SmtpState == SMTP_CLOSED)
 			return;
 	}
 
@@ -270,6 +282,7 @@ smtpquit(name, m)
 	(void) fclose(SmtpIn);
 	(void) fclose(SmtpOut);
 	SmtpIn = SmtpOut = NULL;
+	SmtpState = SMTP_CLOSED;
 
 	/* and pick up the zombie */
 	i = endmailer(SmtpPid, name);
@@ -311,7 +324,7 @@ reply(m)
 			(void) fflush(CurEnv->e_xfp);	/* for debugging */
 
 		/* if we are in the process of closing just give the code */
-		if (SmtpClosing)
+		if (SmtpState == SMTP_CLOSED)
 			return (SMTPCLOSING);
 
 		/* get the line from the other side */
@@ -330,7 +343,7 @@ reply(m)
 # ifdef LOG
 			syslog(LOG_ERR, "%s", &MsgBuf[4]);
 # endif LOG
-			SmtpClosing = TRUE;
+			SmtpState = SMTP_CLOSED;
 			smtpquit("reply error", m);
 			return (-1);
 		}
@@ -354,11 +367,11 @@ reply(m)
 			continue;
 
 		/* reply code 421 is "Service Shutting Down" */
-		if (r == SMTPCLOSING)
+		if (r == SMTPCLOSING && SmtpState != SMTP_SSD)
 		{
 			/* send the quit protocol */
+			SmtpState = SMTP_SSD;
 			smtpquit("SMTP Shutdown", m);
-			SmtpClosing = TRUE;
 		}
 
 		return (r);
@@ -391,7 +404,7 @@ smtpmessage(f, m, a, b, c)
 		nmessage(Arpa_Info, ">>> %s", buf);
 	else if (CurEnv->e_xfp != NULL)
 		fprintf(CurEnv->e_xfp, ">>> %s\n", buf);
-	if (!SmtpClosing)
+	if (SmtpOut != NULL)
 		fprintf(SmtpOut, "%s%s", buf, m->m_eol);
 }
 
