@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dev_mkdb.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)dev_mkdb.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -87,7 +87,7 @@ main(argc, argv)
 	key.size = sizeof(bkey);
 	data.data = buf;
 	while (dp = readdir(dirp)) {
-		if (stat(dp->d_name, &sb)) {
+		if (lstat(dp->d_name, &sb)) {
 			(void)fprintf(stderr,
 			    "dev_mkdb: %s: %s\n", dp->d_name, strerror(errno));
 			continue;
