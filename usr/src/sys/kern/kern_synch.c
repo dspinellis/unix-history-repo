@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.14	81/06/11	*/
+/*	kern_synch.c	4.15	81/11/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -43,8 +43,8 @@ caddr_t chan;
 	hp = &slpque[HASH(chan)];
 	rp->p_link = *hp;
 	*hp = rp;
-	if(pri > PZERO) {
-		if(ISSIG(rp)) {
+	if (pri > PZERO) {
+		if (ISSIG(rp)) {
 			if (rp->p_wchan)
 				unsleep(rp);
 			rp->p_stat = SRUN;
@@ -56,7 +56,7 @@ caddr_t chan;
 		rp->p_stat = SSLEEP;
 		(void) spl0();
 		swtch();
-		if(ISSIG(rp))
+		if (ISSIG(rp))
 			goto psig;
 	} else {
 		rp->p_stat = SSLEEP;
@@ -69,10 +69,9 @@ out:
 
 	/*
 	 * If priority was low (>PZERO) and
-	 * there has been a signal,
-	 * execute non-local goto to
-	 * the qsav location.
-	 * (see trap1/trap.c)
+	 * there has been a signal, execute non-local goto through
+	 * u.u_qsav, aborting the system call in progress (see trap.c)
+	 * (or finishing a tsleep, see below)
 	 */
 psig:
 	longjmp(u.u_qsav);
@@ -86,9 +85,13 @@ psig:
  * Return	TS_OK if chan was awakened normally
  *		TS_TIME if timeout occurred
  *		TS_SIG if asynchronous signal occurred
+ *
+ * SHOULD HAVE OPTION TO SLEEP TO ABSOLUTE TIME OR AN
+ * INCREMENT IN MILLISECONDS!
  */
 tsleep(chan, pri, seconds)
-caddr_t chan;
+	caddr_t chan;
+	int pri, seconds;
 {
 	label_t lqsav;
 	register struct proc *pp;
@@ -122,14 +125,14 @@ caddr_t chan;
 	else
 		pp->p_clktim = 0;
 	splx(n);
-	return(rval);
+	return (rval);
 }
 
 /*
  * Remove a process from its wait queue
  */
 unsleep(p)
-register struct proc *p;
+	register struct proc *p;
 {
 	register struct proc **hp;
 	register s;
@@ -149,7 +152,7 @@ register struct proc *p;
  * Wake up all processes sleeping on chan.
  */
 wakeup(chan)
-register caddr_t chan;
+	register caddr_t chan;
 {
 	register struct proc *p, **q, **h;
 	int s;
@@ -169,7 +172,7 @@ restart:
 				p->p_stat = SRUN;
 				if (p->p_flag & SLOAD)
 					setrq(p);
-				if(p->p_pri < curpri) {
+				if (p->p_pri < curpri) {
 					runrun++;
 					aston();
 				}
@@ -206,9 +209,9 @@ rqinit()
  * arrange for it to be swapped in if necessary.
  */
 setrun(p)
-register struct proc *p;
+	register struct proc *p;
 {
-	register s;
+	register int s;
 
 	s = spl6();
 	switch (p->p_stat) {
@@ -232,12 +235,12 @@ register struct proc *p;
 	if (p->p_flag & SLOAD)
 		setrq(p);
 	splx(s);
-	if(p->p_pri < curpri) {
+	if (p->p_pri < curpri) {
 		runrun++;
 		aston();
 	}
 	if ((p->p_flag&SLOAD) == 0) {
-		if(runout != 0) {
+		if (runout != 0) {
 			runout = 0;
 			wakeup((caddr_t)&runout);
 		}
@@ -252,22 +255,22 @@ register struct proc *p;
  * than the currently running process.
  */
 setpri(pp)
-register struct proc *pp;
+	register struct proc *pp;
 {
-	register p;
+	register int p;
 
 	p = (pp->p_cpu & 0377)/4;
 	p += PUSER + 2*(pp->p_nice - NZERO);
 	if (pp->p_rssize > pp->p_maxrss && freemem < desfree)
 		p += 2*4;	/* effectively, nice(4) */
-	if(p > 127)
+	if (p > 127)
 		p = 127;
-	if(p < curpri) {
+	if (p < curpri) {
 		runrun++;
 		aston();
 	}
 	pp->p_usrpri = p;
-	return(p);
+	return (p);
 }
 
 /*
@@ -276,6 +279,7 @@ register struct proc *pp;
  * It returns 1 in the new process, 0 in the old.
  */
 newproc(isvfork)
+	int isvfork;
 {
 	register struct proc *p;
 	register struct proc *rpp, *rip;
@@ -290,23 +294,22 @@ newproc(isvfork)
 	 */
 retry:
 	mpid++;
-	if(mpid >= 30000) {
+	if (mpid >= 30000) {
 		mpid = 0;
 		goto retry;
 	}
-	for(rpp = proc; rpp < procNPROC; rpp++) {
-		if(rpp->p_stat == NULL && p==NULL)
+	for (rpp = proc; rpp < procNPROC; rpp++) {
+		if (rpp->p_stat == NULL && p==NULL)
 			p = rpp;
 		if (rpp->p_pid==mpid || rpp->p_pgrp==mpid)
 			goto retry;
 	}
-	if ((rpp = p)==NULL)
+	if ((rpp = p) == NULL)
 		panic("no procs");
 
 	/*
-	 * make proc entry for new proc
+	 * Make a proc table entry for the new process.
 	 */
-
 	rip = u.u_procp;
 	rpp->p_stat = SIDL;
 	rpp->p_clktim = 0;
@@ -350,42 +353,56 @@ retry:
 	n = PIDHASH(rpp->p_pid);
 	p->p_idhash = pidhash[n];
 	pidhash[n] = rpp - proc;
-
-	/*
-	 * make duplicate entries
-	 * where needed
-	 */
-
 	multprog++;
 
+	/*
+	 * Increase reference counts on shared objects.
+	 */
 	for(n=0; n<NOFILE; n++)
-		if(u.u_ofile[n] != NULL) {
+		if (u.u_ofile[n] != NULL)
 			u.u_ofile[n]->f_count++;
-			if(!isvfork && u.u_vrpages[n])
-				u.u_ofile[n]->f_inode->i_vfdcnt++;
-		}
-
 	u.u_cdir->i_count++;
 	if (u.u_rdir)
 		u.u_rdir->i_count++;
+
 	/*
 	 * Partially simulate the environment
 	 * of the new process so that when it is actually
 	 * created (by copying) it will look right.
+	 * This begins the section where we must prevent the parent
+	 * from being swapped.
 	 */
-
-	rip->p_flag |= SKEEP;	/* prevent parent from being swapped */
-
+	rip->p_flag |= SKEEP;
 	if (procdup(rpp, isvfork))
 		return (1);
 
+	/*
+	 * Make child runnable and add to run queue.
+	 */
 	(void) spl6();
 	rpp->p_stat = SRUN;
 	setrq(rpp);
 	(void) spl0();
-	/* SSWAP NOT NEEDED IN THIS CASE AS u.u_pcb.pcb_sswap SUFFICES */
+
+	/*
+	 * Cause child to take a non-local goto as soon as it runs.
+	 * On older systems this was done with SSWAP bit in proc
+	 * table; on VAX we use u.u_pcb.pcb_sswap so don't need
+	 * to do rpp->p_flag |= SSWAP.  Actually do nothing here.
+	 */
 	/* rpp->p_flag |= SSWAP; */
+
+	/*
+	 * Now can be swapped.
+	 */
 	rip->p_flag &= ~SKEEP;
+
+	/*
+	 * If vfork make chain from parent process to child
+	 * (where virtal memory is temporarily).  Wait for
+	 * child to finish, steal virtual memory back,
+	 * and wakeup child to let it die.
+	 */
 	if (isvfork) {
 		u.u_procp->p_xlink = rpp;
 		u.u_procp->p_flag |= SNOVM;
@@ -396,17 +413,14 @@ retry:
 		uaccess(rpp, Vfmap, &vfutl);
 		u.u_procp->p_xlink = 0;
 		vpassvm(rpp, u.u_procp, &vfutl, &u, Vfmap);
-		for (n = 0; n < NOFILE; n++)
-			if (vfutl.u_vrpages[n]) {
-				if ((u.u_vrpages[n] = vfutl.u_vrpages[n] - 1) == 0)
-					if (--u.u_ofile[n]->f_inode->i_vfdcnt < 0)
-						panic("newproc i_vfdcnt");
-				vfutl.u_vrpages[n] = 0;
-			}
 		u.u_procp->p_flag &= ~SNOVM;
 		rpp->p_ndx = rpp - proc;
 		rpp->p_flag |= SVFDONE;
 		wakeup((caddr_t)rpp);
 	}
+
+	/*
+	 * 0 return means parent.
+	 */
 	return (0);
 }
