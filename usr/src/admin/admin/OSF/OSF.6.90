@@ -1,4 +1,5 @@
-.\"	@(#)OSF.6.90	1.1	90/06/28
+.\"	@(#)OSF.6.90	1.2	90/08/03
+.so HEADERS
 .if n \{\
 .ND
 .rm CH
@@ -16,35 +17,30 @@
 .ti 4i
 .nf
 June 29, 1990
+.sp
 .LP
 .nf
 Dr. Ira Goldstein
 Open Software Foundation
 11 Cambridge Center
 Cambridge, MA 02142
-.sp 1
-.LP
-.nf
-Dr. Marshall Kirk McKusick
-Computer Systems Research Group
-Computer Science Division
-Department of Electrical Engineering and Computer Science
-University of California, Berkeley
-Berkeley, CA 94720
-.sp .5
-+1-415-642-4948
-.sp .5
-email: mckusick@Berkeley.EDU
 .sp 2
 .LP
 Dear Dr. Goldstein,
 .PP
-We have prepared a test distribution of our current system
-called 4.3BSD-Reno that we are distributing to all our test sites.
-This is the distribution that we promised to make available
-for use in OSF-1 in our agreement with you.
-Please let me know to whom we should send the tape so that
-I can ensure that OSF's copy gets sent as soon as possible.
+We have completed the test distribution of our current system,
+named 4.3BSD-Reno, that we are making available to all of our
+licensees.
+This is the distribution that we agreed to make available
+for use in OSF-1.
+Please let me know to whom we should send the tape to ensure
+that OSF's copy can be sent as soon as possible.
+.PP
+As OSF has contributed both financially and technically to
+the BSD effort, we would like to provide the tape at no
+cost to you.
+We appreciate both your and OSF's contributions in making
+this distribution possible!
 .sp 2
 .in +1.5i
 Sincerely,
