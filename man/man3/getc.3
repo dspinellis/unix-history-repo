@@ -1,0 +1,59 @@
+.pa 1
+.he 'GETC, GETW, FOPEN (III)'3/15/72'GETC, GETW, FOPEN (III)'
+.ti 0
+NAME		getw, getc, fopen  --  buffered input
+.sp
+.ti 0
+SYNOPSIS	mov	$filename,r0
+.br
+jsr	r5,fopen; iobuf
+
+jsr	r5,getc; iobuf
+.br
+(character in r0)
+
+jsr	r5,getw; iobuf
+.br
+(word in r0)
+.sp
+.ti 0
+DESCRIPTION	These routines are used to provide a buffered input
+facility.
+iobuf_____ is the address of a 518(10) byte buffer area whose
+contents are maintained by these routines.  Its format is:
+.sp
+.nf
+ioptr:	.=.+2		/ file descriptor
+	.=.+2		/ characters left in buffer
+	.=.+2		/ ptr to next character
+	.=.+512.	/ the buffer
+.sp
+.fi
+fopen_____ may be called initially to open the file.  On return,
+the error bit (c-bit) is set if the open failed.
+If fopen_____ is never called, get___ will read from the standard
+input file.
+.sp
+getc____ returns the next byte from the file in r0.  The
+error bit is set on end of file or a read error.
+.sp
+getw____ returns the next word in r0.  getc____ and getw____
+may be used alternately; there are no odd/even
+problems.
+.sp
+iobuf_____ must be provided by the user; it must be on a word boundary.
+
+To reuse the same buffer for another file, it is sufficient
+to close the original file and call fopen_____ again.
+.sp
+.ti 0
+FILES		kept in /lib/liba.a
+.sp
+.ti 0
+SEE ALSO	open(II), read(II), putc(III)
+.sp
+.ti 0
+DIAGNOSTICS	c-bit set on EOF or error
+.sp
+.ti 0
+BUGS		--
