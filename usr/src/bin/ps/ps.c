@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.9 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -77,7 +77,7 @@ char *nl_names[] = {
 #define X_KERNELMAP	20
 	"_mbmap",
 #define X_MBMAP		21
-	"_nch",
+	"_namecache",
 #define X_NCH		22
 	"_quota",
 #define X_QUOTA		23
