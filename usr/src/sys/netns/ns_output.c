@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_output.c	6.5 (Berkeley) %G%
+ *	@(#)ns_output.c	6.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -68,12 +68,23 @@ ns_output(m0, ro, flags)
 		 */
 		if (flags & NS_ROUTETOIF) {
 			struct ns_ifaddr *ia;
+			struct ifaddr *ifa_ifwithdstaddr();
+
 			ia = ns_iaonnetof(idp->idp_dna.x_net);
 			if (ia == 0) {
 				error = ENETUNREACH;
 				goto bad;
 			}
 			ifp = ia->ia_ifp;
+			if (ifp->if_flags & IFF_POINTOPOINT) {
+				ia = (struct ns_ifaddr *)
+					ifa_ifwithdstaddr(&ro->ro_dst);
+				if (ia == 0) {
+					error = ENETUNREACH;
+					goto bad;
+				}
+				ifp = ia->ia_ifp;
+			}
 			goto gotif;
 		}
 		rtalloc(ro);
