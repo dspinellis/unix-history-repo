@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.41		%G%);
+SCCSID(@(#)readcf.c	3.42		%G%);
 
 /*
 **  READCF -- read control file.
@@ -624,7 +624,7 @@ setoption(opt, val, safe, sticky)
 		ival = atoi(val);
 	else if (index("F", opt) != NULL)
 		ival = atooct(val);
-	else if (index("acfimosv", opt) != NULL)
+	else if (index("acDfimosv", opt) != NULL)
 		bval = atobool(val);
 	else if (index("be", opt) != NULL)
 		/* do nothing */ ;
@@ -670,6 +670,9 @@ setoption(opt, val, safe, sticky)
 		  case MD_QUEUE:	/* queue only */
 		  case MD_VERIFY:	/* verify only */
 		  case MD_TEST:		/* test addresses */
+		  case MD_PRINT:	/* print queue contents */
+		  case MD_INITALIAS:	/* initialize alias database */
+		  case MD_FREEZE:	/* freeze config file */
 			break;
 
 		  default:
@@ -680,6 +683,10 @@ setoption(opt, val, safe, sticky)
 
 	  case 'c':		/* don't connect to "expensive" mailers */
 		NoConnect = bval;
+		break;
+
+	  case 'D':		/* rebuild alias database as needed */
+		AutoRebuild = bval;
 		break;
 
 	  case 'e':		/* set error processing mode */
