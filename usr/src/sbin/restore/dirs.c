@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -88,7 +88,7 @@ static struct inotab	*allocinotab __P((ino_t, struct dinode *, long));
 static void		 dcvt __P((struct odirect *, struct direct *));
 static void		 flushent __P((void));
 static struct inotab	*inotablookup __P((ino_t));
-static RST_DIR		*opendirfile __P((char *));
+static RST_DIR		*opendirfile __P((const char *));
 static void		 putdir __P((char *, long));
 static void		 putent __P((struct direct *));
 static void		 rst_seekdir __P((RST_DIR *, long, long));
@@ -247,18 +247,18 @@ treescan(pname, ino, todo)
  */
 struct direct *
 pathsearch(pathname)
-	char *pathname;
+	const char *pathname;
 {
 	ino_t ino;
 	struct direct *dp;
-	char *name, buffer[MAXPATHLEN];
+	char *path, *name, buffer[MAXPATHLEN];
 
 	strcpy(buffer, pathname);
-	pathname = buffer;
+	path = buffer;
 	ino = ROOTINO;
-	while (*pathname == '/')
-		pathname++;
-	while ((name = strsep(&pathname, "/")) != NULL && *name != NULL) {
+	while (*path == '/')
+		path++;
+	while ((name = strsep(&path, "/")) != NULL && *name != NULL) {
 		if ((dp = searchdir(ino, name)) == 0)
 			return (NULL);
 		ino = dp->d_ino;
@@ -476,7 +476,7 @@ rst_readdir(dirp)
  */
 RST_DIR *
 rst_opendir(name)
-	char *name;
+	const char *name;
 {
 	struct inotab *itp;
 	RST_DIR *dirp;
@@ -499,7 +499,7 @@ rst_closedir(dirp)
 	RST_DIR *dirp;
 {
 
-	close(dirp->dd_fd);
+	(void)close(dirp->dd_fd);
 	free(dirp);
 	return;
 }
@@ -520,7 +520,7 @@ rst_telldir(dirp)
  */
 static RST_DIR *
 opendirfile(name)
-	char *name;
+	const char *name;
 {
 	register RST_DIR *dirp;
 	register int fd;
