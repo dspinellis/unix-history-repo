@@ -5,8 +5,8 @@
 
 SRCS+=	alarm.c assert.c clock.c crypt.c ctermid.c ctime.c ctype_.c \
 	directory.c difftime.c disklabel.c err.c errlst.c exec.c \
-	fnmatch.c frexp.c fstab.c fts.c getcwd.c getgrent.c getlogin.c \
-	getmntinfo.c getpass.c getpwent.c getsubopt.c getttyent.c \
+	fnmatch.c frexp.c fstab.c fts.c getcap.c getcwd.c getgrent.c \
+	getlogin.c getmntinfo.c getpass.c getpwent.c getsubopt.c getttyent.c \
 	getusershell.c glob.c infinity.c initgroups.c isatty.c isctype.c \
 	isinf.c mktemp.c nice.c nlist.c pause.c popen.c psignal.c raise.c \
 	setjmperr.c setmode.c setrgid.c setruid.c siginterrupt.c \
@@ -38,10 +38,10 @@ SRCS+=	udiv.s urem.s
 
 MAN3+=	gen/alarm.3 gen/clock.3 gen/crypt.3 gen/ctermid.3 gen/ctime.3 \
 	gen/ctype.3 gen/directory.3 gen/err.3 gen/exec.3 gen/fnmatch.3 \
-	gen/frexp.3 gen/fts.3 gen/getcwd.3 gen/getdiskbyname.3 gen/getfsent.3 \
-	gen/getgrent.3 gen/getmntinfo.3 gen/getpass.3 gen/getpwent.3 \
-	gen/getsubopt.3 gen/getttyent.3 gen/getusershell.3 gen/glob.3 \
-	gen/initgroups.3 gen/isalnum.3 gen/isalpha.3 gen/isascii.3 \
+	gen/frexp.3 gen/fts.3 gen/getcwd.3 gen/getcap.3 gen/getdiskbyname.3 \
+	gen/getfsent.3 gen/getgrent.3 gen/getmntinfo.3 gen/getpass.3 \
+	gen/getpwent.3 gen/getsubopt.3 gen/getttyent.3 gen/getusershell.3 \
+	gen/glob.3 gen/initgroups.3 gen/isalnum.3 gen/isalpha.3 gen/isascii.3 \
 	gen/iscntrl.3 gen/isdigit.3 gen/isgraph.3 gen/isinf.3 gen/islower.3 \
 	gen/isprint.3 gen/ispunct.3 gen/isspace.3 gen/isupper.3 gen/isxdigit.3 \
 	gen/ldexp.3 gen/modf.3 gen/nice.3 gen/nlist.3 gen/pause.3 gen/popen.3 \
@@ -64,6 +64,10 @@ MLINKS+=exec.3 execl.3 exec.3 execle.3 exec.3 execlp.3 exec.3 execv.3 \
 	exec.3 execvp.3
 MLINKS+=isinf.3 isnan.3
 MLINKS+=getcwd.3 getwd.3
+MLINKS+=getcap.3 cgetent.3 getcap.3 cgetset.3 getcap.3 cgetmatch.3 \
+	getcap.3 cgetcap.3 getcap.3 cgetnum.3 getcap.3 cgetstr.3 \
+	getcap.3 cgetustr.3 getcap.3 cgetfirst.3 getcap.3 cgetnext.3 \
+	getcap.3 cgetclose.3
 MLINKS+=getfsent.3 endfsent.3 getfsent.3 getfsfile.3 getfsent.3 getfsspec.3 \
 	getfsent.3 getfstype.3 getfsent.3 setfsent.3
 MLINKS+=getgrent.3 endgrent.3 getgrent.3 setgroupent.3 getgrent.3 getgrgid.3 \
