@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.15 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.16 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -2131,7 +2131,7 @@ zd|abm85|Kimtron ABM 85:\
 	:cl=\E*:cd=\Ey:dl=\ER:al=\EE:ce=\Et:dc=\EW:im=\EQ:ei=\Er:\
 	:cm=\E=%+ %+ :do=^J:nd=^L:up=^K:bt=\EI:\
 	:kh=^^:kb=^H:kd=^J:ku=^K:kd=^J:kl=^H:kr=^L:\
-	:so=\Ej:se=\Ek:sg#1:us=\El:ue=\Em:ug#1:\
+	:so=\Ej:se=\Ek:sg#1:us=\El:ue=\Em:ug#1:
 # Kimtron ABM 85H added by Dual Systems.
 # Some notes about the 85h entries:
 # 1) there are several firmware revs of 85H in the world. Use o85h for
@@ -2151,14 +2151,17 @@ zd|abm85|Kimtron ABM 85:\
 #    are selected, the entries :sg@: and :ug@: should be removed.
 # 6) auto new-line should be on (selectable from setup mode only)
 #
+# From fair@ucbarpa  Sun Oct 27 07:21:05 1985
+zE|kt7|kt-7|Kimtron kt-7:\
+	:tc=abm85h:
 ze|85h|85H|abm85h|Kimtron ABM 85H, 85H mode:\
-	:is=\EC\EN\EX^T^N\EA\Ea\E%\E9\Ee\Er\En\E"\E}\E'\E(\Ef^M\EG0\Ed:\
-	:im=\EZ:kd=^V:so=\EG4:se=\EG0:us=\EG8:ue=\EG0:vb@:vs=\El:ve=\Ek:\
-	:mh=\E):mr=\EG4:me=\E(\EG0:sg@:ug@:tc=abm85:
+	:is=\EC\EN\EX^T^N\EA\Ea\E%\E9\Ee\Er\En\E"\E}\E'\E(\Ef^M\EG0\Ed\E.4\El:\
+	:im=\EZ:kd=^V:so=\EG4:se=\EG0:us=\EG8:ue=\EG0:vb@:vs=\E.2:ve=\E.4:\
+	:mh=\E):mr=\EG4:me=\E(\EG0:sg@:ug@:ds=\Ee:fs=^M:hs:ts=\Eg\Ef:tc=abm85:
 zf|85e|85E|abm85e|Kimtron ABM 85H, 920E mode:\
 	:is=\EC\EX\EA\E%\E9\Ee\Er\En\E"\E}\E'\E(\Ef^M\Ek\Eq\Em:\
 	:mh=\E):mr=\Ej:me=\E(\Ek:im=\EZ:sg@:ug@:vb@:tc=abm85:
-zg|o85h|oabm85h:Kimtron ABM 85H, old firmware rev.:\
+zg|o85h|oabm85h|Kimtron ABM 85H, old firmware rev.:\
 	:is=\E}\EC\EX\Ee\En\E%\Er\E(\Ek\Em\Eq\Ed\ET\EC\E9\EF:\
 	:im=\EZ:sg@:ug@:vb=\200\200\200^G\200\200\200:\
 	:mh=\E):mr=\Ej:me=\E(\Ek:tc=abm85:
