@@ -1,5 +1,5 @@
 /*
- *	@(#)kdb.c	7.4 (Berkeley) %G%
+ *	@(#)kdb.c	7.5 (Berkeley) %G%
  *
  * KDB50/MSCP device driver
  */
@@ -7,7 +7,6 @@
 /*
  * TODO
  *	rethink BI software interface
- *	performance: would testing contiguity in kdbmap be worthwhile?
  *	write bad block forwarding code
  */
 
@@ -87,12 +86,12 @@ struct kdbinfo {
 	 * for which this is true (PTEs in Sysmap and Usrptmap), but
 	 * other transfers may have PTEs that are scattered in physical
 	 * space.  Ki_map maps a physically contiguous PTE space used
-	 * for these tranfsers.
+	 * for these transfers.
 	 */
 #define KI_MAPSIZ	(NCMD + 2)
 	struct	map *ki_map;		/* resource map */
 #define KI_PTES		256
-	struct	pte *ki_pte;		/* contiguous PTE space */
+	struct	pte ki_pte[KI_PTES];	/* contiguous PTE space */
 	long	ki_ptephys;		/* phys address of &ki_pte[0] */
 
 	struct	mscp_info ki_mi;	/* MSCP info (per mscpvar.h) */
@@ -284,21 +283,21 @@ kdbconfig(kdbnum, va, pa, vec)
 	 * Set up local KDB status.
 	 */
 	ki = &kdbinfo[kdbnum];
-	ki->ki_kdb = (struct kdb_regs *) va;
-	ki->ki_physkdb = (struct kdb_regs *) pa;
+	ki->ki_kdb = (struct kdb_regs *)va;
+	ki->ki_physkdb = (struct kdb_regs *)pa;
 	ki->ki_vec = vec;
 	ki->ki_map =
-	    (struct map *) malloc((u_long)(KI_MAPSIZ * sizeof(struct map)),
+	    (struct map *)malloc((u_long)(KI_MAPSIZ * sizeof(struct map)),
 	    M_DEVBUF, M_NOWAIT);
-	ki->ki_pte =
-	    (struct pte *) malloc((u_long)(KI_PTES * sizeof (struct pte)),
-	    M_DEVBUF, M_NOWAIT);
-	if (ki->ki_map == NULL || ki->ki_pte == NULL)
+	if (ki->ki_map == NULL) {
+		printf("kdb%d: cannot get memory for ptes\n", kdbnum);
 		return;
-	bzero((caddr_t) ki->ki_map, KI_MAPSIZ * sizeof (struct map));
-	bzero((caddr_t) ki->ki_pte, KI_PTES * sizeof (struct pte));
+	}
+	ki->ki_ptephys = PHYS(long, ki->ki_pte); /* kvtophys(ki->ki_pte) */
 	ki->ki_flags = KDB_ALIVE;
-	ki->ki_ptephys = kvtophys(ki->ki_pte);
+
+	/* THE FOLLOWING IS ONLY NEEDED TO CIRCUMVENT A BUG IN rminit */
+	bzero((caddr_t)ki->ki_map, KI_MAPSIZ * sizeof(struct map));
 
 	rminit(ki->ki_map, (long)KI_PTES, (long)1, "kdb", KI_MAPSIZ);
 
@@ -431,7 +430,7 @@ gotit:
 			/*
 			 * In service, or something else equally unusable.
 			 */
-			printf("kdb%d: unit %d off line: ", ki->ki_ctlr,
+			printf("kdb%d: unit %d off line:", ki->ki_ctlr,
 				mp->mscp_unit);
 			mscp_printevent(mp);
 			goto try_another;
@@ -439,7 +438,7 @@ gotit:
 		break;
 
 	default:
-		printf("kdb%d: unable to get unit status: ", ki->ki_ctlr);
+		printf("kdb%d: unable to get unit status:", ki->ki_ctlr);
 		mscp_printevent(mp);
 		return (0);
 	}
@@ -509,7 +508,7 @@ kdbattach(ui)
 {
 
 	if (kdbwstart == 0) {
-		timeout(kdbwatch, (caddr_t) 0, hz);
+		timeout(kdbwatch, (caddr_t)0, hz);
 		kdbwstart++;
 	}
 	if (ui->ui_dk >= 0)
@@ -617,14 +616,14 @@ kdbopen(dev, flag)
 		 * 10 second timeouts in kdbprobe() and kdbslave().
 		 */
 		ki->ki_flags |= KDB_DOWAKE;
-		timeout(wakeup, (caddr_t) &ki->ki_flags, 10 * hz);
-		sleep((caddr_t) &ki->ki_flags, PRIBIO);
+		timeout(wakeup, (caddr_t)&ki->ki_flags, 10 * hz);
+		sleep((caddr_t)&ki->ki_flags, PRIBIO);
 		if (ki->ki_state != ST_RUN) {
 			splx(s);
 			printf("kdb%d: controller hung\n", ui->ui_ctlr);
 			return (EIO);
 		}
-		untimeout(wakeup, (caddr_t) &ki->ki_flags);
+		untimeout(wakeup, (caddr_t)&ki->ki_flags);
 	}
 	if ((ui->ui_flags & UNIT_ONLINE) == 0) {
 		/*
@@ -665,7 +664,7 @@ kdb_bringonline(ui, nosleep)
 		mp = mscp_getcp(&ki->ki_mi, MSCP_WAIT);
 	mp->mscp_opcode = M_OP_ONLINE;
 	mp->mscp_unit = ui->ui_slave;
-	mp->mscp_cmdref = (long) &ui->ui_flags;
+	mp->mscp_cmdref = (long)&ui->ui_flags;
 	*mp->mscp_addr |= MSCP_OWN | MSCP_INT;
 	i = ki->ki_kdb->kdb_ip;
 
@@ -675,11 +674,11 @@ kdb_bringonline(ui, nosleep)
 			if (todr() > i)
 				return (-1);
 	} else {
-		timeout(wakeup, (caddr_t) &ui->ui_flags, 10 * hz);
-		sleep((caddr_t) &ui->ui_flags, PRIBIO);
+		timeout(wakeup, (caddr_t)&ui->ui_flags, 10 * hz);
+		sleep((caddr_t)&ui->ui_flags, PRIBIO);
 		if ((ui->ui_flags & UNIT_ONLINE) == 0)
 			return (-1);
-		untimeout(wakeup, (caddr_t) &ui->ui_flags);
+		untimeout(wakeup, (caddr_t)&ui->ui_flags);
 	}
 	return (0);	/* made it */
 }
@@ -862,7 +861,7 @@ copy2:
 #endif /* notdef */
 	kdbstats.ks_copies++;
 	i = npf + 1;
-	if ((a = rmalloc(ki->ki_map, (long) i)) == 0) {
+	if ((a = rmalloc(ki->ki_map, (long)i)) == 0) {
 		kdbstats.ks_mapwait++;
 		return (-1);
 	}
@@ -910,19 +909,17 @@ loop:
 		goto out;
 
 	/*
-	 * Service the drive at the head of the queue.  We take exactly
-	 * one transfer from this drive, then move it to the end of the
-	 * controller queue, so as to get more drive overlap.
+	 * Service the drive at the head of the queue.  It may not
+	 * need anything; eventually this will finish up the close
+	 * protocol, but that is yet to be implemented here.
 	 */
 	if ((dp = ki->ki_tab.b_actf) == NULL)
 		goto out;
-
-	/*
-	 * Get the first request from the drive queue.  There must be
-	 * one, or something is rotten.
-	 */
-	if ((bp = dp->b_actf) == NULL)
-		panic("kdbstart: bp==NULL\n");
+	if ((bp = dp->b_actf) == NULL) {
+		dp->b_active = 0;
+		ki->ki_tab.b_actf = dp->b_forw;
+		goto loop;
+	}
 
 	if (ki->ki_kdb->kdb_sa & KDB_ERR) {	/* ctlr fatal error */
 		kdbsaerror(ki);
@@ -1093,7 +1090,7 @@ initfailed:
 			ki->ki_state = ST_IDLE;
 			if (ki->ki_flags & KDB_DOWAKE) {
 				ki->ki_flags &= ~KDB_DOWAKE;
-				wakeup((caddr_t) &ki->ki_flags);
+				wakeup((caddr_t)&ki->ki_flags);
 			}
 			return;
 		}
@@ -1238,7 +1235,7 @@ kdbctlrdone(mi, mp)
 	}
 	if (ki->ki_flags & KDB_DOWAKE) {
 		ki->ki_flags &= ~KDB_DOWAKE;
-		wakeup((caddr_t) &ki->ki_flags);
+		wakeup((caddr_t)&ki->ki_flags);
 	}
 }
 
@@ -1282,9 +1279,9 @@ kdbonline(ui, mp)
 {
 	register int type;
 
-	wakeup((caddr_t) &ui->ui_flags);
+	wakeup((caddr_t)&ui->ui_flags);
 	if ((mp->mscp_status & M_ST_MASK) != M_ST_SUCCESS) {
-		printf("kdb%d: attempt to bring %s%d on line failed: ",
+		printf("kdb%d: attempt to bring %s%d on line failed:",
 			ui->ui_ctlr, kdbdriver.ud_dname, ui->ui_unit);
 		mscp_printevent(mp);
 		return (MSCP_FAILED);
@@ -1322,7 +1319,7 @@ kdbgotstatus(ui, mp)
 {
 
 	if ((mp->mscp_status & M_ST_MASK) != M_ST_SUCCESS) {
-		printf("kdb%d: attempt to get status for %s%d failed: ",
+		printf("kdb%d: attempt to get status for %s%d failed:",
 			ui->ui_ctlr, kdbdriver.ud_dname, ui->ui_unit);
 		mscp_printevent(mp);
 		return (MSCP_FAILED);
@@ -1399,7 +1396,7 @@ kdbioctl(dev, cmd, flag, data)
 		 * Return the microcode revision for the KDB50 running
 		 * this drive.
 		 */
-		*(int *) data = kdbinfo[kdbdinfo[unit]->ui_ctlr].ki_micro;
+		*(int *)data = kdbinfo[kdbdinfo[unit]->ui_ctlr].ki_micro;
 		break;
 
 	case KDBIOCGSIZE:
@@ -1407,7 +1404,7 @@ kdbioctl(dev, cmd, flag, data)
 		 * Return the size (in 512 byte blocks) of this
 		 * disk drive.
 		 */
-		*(daddr_t *) data = ra_dsize[unit];
+		*(daddr_t *)data = ra_dsize[unit];
 		break;
 
 	default:
@@ -1447,7 +1444,7 @@ kdbwatch()
 	register struct kdbinfo *ki;
 	register int i;
 
-	timeout(kdbwatch, (caddr_t) 0, hz);	/* every second */
+	timeout(kdbwatch, (caddr_t)0, hz);	/* every second */
 	for (i = 0, ki = kdbinfo; i < NKDB; i++, ki++) {
 		if ((ki->ki_flags & KDB_ALIVE) == 0)
 			continue;
@@ -1513,10 +1510,10 @@ kdbdump(dev)
 	k->kdb_sw = KDB_ERR;
 	if (kdbdumpwait(k, KDB_STEP2))
 		return (EFAULT);
-	k->kdb_sw = (int) &kd->kd_ca.ca_rspdsc;
+	k->kdb_sw = (int)&kd->kd_ca.ca_rspdsc;
 	if (kdbdumpwait(k, KDB_STEP3))
 		return (EFAULT);
-	k->kdb_sw = ((int) &kd->kd_ca.ca_rspdsc) >> 16;
+	k->kdb_sw = ((int)&kd->kd_ca.ca_rspdsc) >> 16;
 	if (kdbdumpwait(k, KDB_STEP4))
 		return (EFAULT);
 	k->kdb_sw = KDB_GO;
@@ -1526,8 +1523,8 @@ kdbdump(dev)
 	 * controller characteristics and bring the drive on line.
 	 * Note that all uninitialised locations in kd_cmd are zero.
 	 */
-	kd->kd_ca.ca_rspdsc = (long) &kd->kd_rsp.mscp_cmdref;
-	kd->kd_ca.ca_cmddsc = (long) &kd->kd_cmd.mscp_cmdref;
+	kd->kd_ca.ca_rspdsc = (long)&kd->kd_rsp.mscp_cmdref;
+	kd->kd_ca.ca_cmddsc = (long)&kd->kd_cmd.mscp_cmdref;
 	/* kd->kd_cmd.mscp_sccc.sccc_ctlrflags = 0; */
 	/* kd->kd_cmd.mscp_sccc.sccc_version = 0; */
 	if (kdbdumpcmd(M_OP_SETCTLRC, k, kd, ui->ui_ctlr))
