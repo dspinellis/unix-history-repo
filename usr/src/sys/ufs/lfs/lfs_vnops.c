@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.87 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.88 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -19,11 +19,12 @@
 #include <sys/conf.h>
 #include <sys/mount.h>
 #include <sys/vnode.h>
-#include <sys/specdev.h>
-#include <sys/fifo.h>
 #include <sys/malloc.h>
 
 #include <vm/vm.h>
+
+#include <miscfs/specfs/specdev.h>
+#include <miscfs/fifofs/fifo.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -189,51 +190,52 @@ lfs_read(ap)
 		struct ucred *a_cred;
 	} */ *ap;
 {
+	register struct vnode *vp = ap->a_vp;
+	register struct inode *ip = VTOI(vp);
 	register struct uio *uio = ap->a_uio;
-	register struct inode *ip = VTOI(ap->a_vp);
-	register struct lfs *fs;				/* LFS */
+	register struct lfs *fs;
 	struct buf *bp;
 	daddr_t lbn, bn, rablock;
-	int size, error = 0;
-	long n, on, type;
 	off_t diff;
+	int error = 0, size;
+	long n, on;
 
-#ifdef VERBOSE
-	printf("lfs_read: ino %d\n", ip->i_number);
-#endif
 #ifdef DIAGNOSTIC
+	int type;
 	if (uio->uio_rw != UIO_READ)
-		panic("ufs_read mode");
+		panic("lfs_read mode");
 	type = ip->i_mode & IFMT;
 	if (type != IFDIR && type != IFREG && type != IFLNK)
-		panic("ufs_read type");
+		panic("lfs_read type");
+	if (type == IFLNK && (int)ip->i_size < vp->v_mount->mnt_maxsymlinklen)
+		panic("read short symlink");
 #endif
 	if (uio->uio_resid == 0)
 		return (0);
-	if (uio->uio_offset < 0)
-		return (EINVAL);
+	fs = ip->i_lfs;
+	if (uio->uio_offset < 0 ||
+	    (u_quad_t)uio->uio_offset + uio->uio_resid > fs->lfs_maxfilesize)
+		return (EFBIG);
 	ip->i_flag |= IACC;
-
-	fs = ip->i_lfs;						/* LFS */
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
-		n = MIN((unsigned)(fs->lfs_bsize - on), uio->uio_resid);
+		n = min((unsigned)(fs->lfs_bsize - on), uio->uio_resid);
 		diff = ip->i_size - uio->uio_offset;
 		if (diff <= 0)
 			return (0);
 		if (diff < n)
 			n = diff;
-		size = blksize(fs);				/* LFS */
+		size = blksize(fs);
 		rablock = lbn + 1;
-		if (ap->a_vp->v_lastr + 1 == lbn &&
+		if (vp->v_lastr + 1 == lbn &&
 		    lblktosize(fs, rablock) < ip->i_size)
 			error = breadn(ITOV(ip), lbn, size, &rablock,
 				&size, 1, NOCRED, &bp);
 		else
 			error = bread(ITOV(ip), lbn, size, NOCRED, &bp);
-		ap->a_vp->v_lastr = lbn;
-		n = MIN(n, size - bp->b_resid);
+		vp->v_lastr = lbn;
+		n = min(n, size - bp->b_resid);
 		if (error) {
 			brelse(bp);
 			return (error);
@@ -270,9 +272,6 @@ lfs_write(ap)
 	int n, on, flags, newblock;
 	int size, resid, error = 0;
 
-#ifdef VERBOSE
-	printf("lfs_write ino %d\n", ip->i_number);
-#endif
 #ifdef DIAGNOSTIC
 	if (uio->uio_rw != UIO_WRITE)
 		panic("lfs_write mode");
@@ -311,6 +310,9 @@ lfs_write(ap)
 	resid = uio->uio_resid;
 	osize = ip->i_size;
 	fs = ip->i_lfs;						/* LFS */
+	if (uio->uio_offset < 0 ||
+	    (u_quad_t)uio->uio_offset + uio->uio_resid > fs->lfs_maxfilesize)
+		return (EFBIG);
 	flags = 0;
 #ifdef NOTLFS
 	if (ioflag & IO_SYNC)
@@ -319,7 +321,7 @@ lfs_write(ap)
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
-		n = MIN((unsigned)(fs->lfs_bsize - on), uio->uio_resid);
+		n = min((unsigned)(fs->lfs_bsize - on), uio->uio_resid);
 		if (error = lfs_balloc(vp, n, lbn, &bp))
 			break;
 		if (uio->uio_offset + n > ip->i_size) {
@@ -328,7 +330,7 @@ lfs_write(ap)
 		}
 		size = blksize(fs);
 		(void) vnode_pager_uncache(vp);
-		n = MIN(n, size - bp->b_resid);
+		n = min(n, size - bp->b_resid);
 		error = uiomove(bp->b_un.b_addr + on, n, uio);
 #ifdef NOTLFS							/* LFS */
 		if (ioflag & IO_SYNC)
