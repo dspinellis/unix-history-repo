@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	4.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	4.27 (Berkeley) %G%";
 #endif
 
 /*
@@ -749,7 +749,7 @@ dologout(status)
 	int wtmp;
 
 	if (!logged_in)
-		return;
+		_exit(status);
 	seteuid(0);
 	wtmp = open("/usr/adm/wtmp", O_WRONLY|O_APPEND);
 	if (wtmp >= 0) {
