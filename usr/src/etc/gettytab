@@ -1,4 +1,4 @@
-#	@(#)gettytab	4.5 (Berkeley) 83/08/08
+#	@(#)gettytab	4.6 (Berkeley) 84/03/26
 
 #
 # Most of the table entries here are just copies of the
@@ -61,6 +61,9 @@ d110|Dial-110:\
 4|Console|Console Decwriter II:\
 	:nd@:cd@:rw:tc=300-baud:
 
+e|Console-1200|Console Decwriter III:\
+	:fd@:nd@:cd@:rw:tc=1200-baud:
+
 i|Interdata console:\
 	:uc:sp#0:
 
@@ -71,9 +74,9 @@ l|lsi chess terminal:\
 # Fast dialup terminals, 1200/300 rotary (can start either way)
 #
 3|D1200|Fast-Dial-1200:\
-	:nx=D300:tc=1200-baud:
+	:nx=D300:im=\r\n\r\n4.2 BSD UNIX (%h) (%t)\r\n\r\r\n\r:tc=1200-baud:
 5|D300|Fast-Dial-300:\
-	:nx=D1200:tc=300-baud:
+	:nx=D1200:im=\r\n\r\n4.2 BSD UNIX (%h) (%t)\r\n\r\r\n\r:tc=300-baud:
 
 #
 # Wierdo special case for fast crt's with hardcopy devices
