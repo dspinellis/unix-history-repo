@@ -11,7 +11,7 @@
 #					enable msgs
 #
 
-SUBDIR=	ar awk biff basename cal calendar \
+SUBDIR=	ar awk bc biff basename cal calendar \
 	checknr chpass cksum cmp col colcrt colrm column comm compress \
 	cpio crontab ctags cut diff diff3 dirname du egrep elvis elvisrecover \
 	env error expand false fgrep file find finger fmt fold fpr from fsplit \
@@ -34,7 +34,10 @@ SUBDIR=	ar awk biff basename cal calendar \
 
 awk::
 	@rm -f awk
-	ln -s ../gnu/gawk awk
+	ln -s ../gnu/gawk .
+bc::
+	@rm -f bc
+	ln -s ../gnu/bc .
 gcc1::
 	@rm -f gcc1
 	ln -s ../gnu/gcc1 .
