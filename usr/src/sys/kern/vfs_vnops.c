@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.21 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -329,7 +329,6 @@ vn_ioctl(fp, com, data)
 	case VFIFO:
 	case VCHR:
 	case VBLK:
-		u.u_r.r_val1 = 0;
 		error = VOP_IOCTL(vp, com, data, fp->f_flag, u.u_cred);
 		if (error == 0 && com == TIOCSCTTY) {
 			u.u_procp->p_session->s_ttyvp = vp;
