@@ -1,5 +1,5 @@
 /*
-char id_lread[] = "@(#)lread.c	1.11";
+char id_lread[] = "@(#)lread.c	1.12";
  *
  * list directed read
  */
@@ -13,12 +13,12 @@ char id_lread[] = "@(#)lread.c	1.11";
 #define EX 8
 #define D 16
 #define EIN 32
-#define isblnk(x)	(ltab[x+1]&B)
-#define issep(x)	(ltab[x+1]&SP)
-#define isapos(x)	(ltab[x+1]&AP)
-#define isexp(x)	(ltab[x+1]&EX)
+#define isblnk(x)	(ltab[x+1]&B)	/* space, tab, newline */
+#define issep(x)	(ltab[x+1]&SP)	/* space, tab, newline, comma */
+#define isapos(x)	(ltab[x+1]&AP)	/* apost., quote mark, \02 */
+#define isexp(x)	(ltab[x+1]&EX)	/* d, e, D, E */
 #define isdigit(x)	(ltab[x+1]&D)
-#define endlinp(x)	(ltab[x+1]&EIN)
+#define endlinp(x)	(ltab[x+1]&EIN)	/* EOF, newline, / */
 
 #define GETC(x) (x=(*getn)())
 
@@ -29,8 +29,8 @@ LOCAL int ltype;
 int l_read(),t_getc(),ungetc();
 
 LOCAL char ltab[128+1] =
-{		EIN, /* offset one for EOF */
-/*   0- 15 */	0,0,AP,0,0,0,0,0,0,B,SP|B|EIN,0,0,0,0,0, /* ^B,TAB,NEWLINE */
+{			EIN, 		/* offset one for EOF */
+/*   0- 15 */	0,0,AP,0,0,0,0,0,0,SP|B,SP|B|EIN,0,0,0,0,0, /* ^B,TAB,NEWLINE */
 /*  16- 31 */	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 /*  32- 47 */	SP|B,0,AP,0,0,0,0,AP,0,0,0,0,SP,0,0,EIN, /* space,",',comma,/ */
 /*  48- 63 */	D,D,D,D,D,D,D,D,D,D,0,0,0,0,0,0,	/* digits 0-9 */
@@ -209,21 +209,30 @@ l_R(flg) int flg;
 	int i,ch,sign=0;
 	a=b=c=d=0;
 	da=db=dc=dd=0;
-	if(flg && lr_comm()) return(OK);
-	da=rd_int(&a);	/* repeat count ? */
-	if(GETC(ch)=='*')
+
+	if( flg )		/* real */
 	{
-		if (a <= 0.) return(F_ERNREP);
-		lcount=(int)a;
-		if (nullfld()) return(OK);	/* could be R* */
-		db=rd_int(&b);	/* whole part of number */
+		if(lr_comm()) return(OK);
+		da=rd_int(&a);	/* repeat count ? */
+		if(GETC(ch)=='*')
+		{
+			if (a <= 0.) return(F_ERNREP);
+			lcount=(int)a;
+			if (nullfld()) return(OK);	/* could be R* */
+			db=rd_int(&b);	/* whole part of number */
+		}
+		else
+		{	(*ungetn)(ch,cf);
+			db=da;
+			b=a;
+			lcount=1;
+		}
 	}
-	else
-	{	(*ungetn)(ch,cf);
-		db=da;
-		b=a;
-		lcount=1;
+	else		   /* complex */
+	{
+		db=rd_int(&b);
 	}
+
 	if(GETC(ch)=='.' && isdigit(GETC(ch)))
 	{	(*ungetn)(ch,cf);
 		dc=rd_int(&c);	/* fractional part of number */
@@ -313,7 +322,7 @@ l_L()
 		lx=0;
 		break;
 	default:
-		if(isblnk(ch) || issep(ch))
+		if(issep(ch))
 		{	(*ungetn)(ch,cf);
 			lx=0;
 			return(OK);
@@ -322,7 +331,7 @@ l_L()
 		else	err(errflag,F_ERLIO,"logical not T or F");
 	}
 	ltype=TYLOGICAL;
-	while(!issep(GETC(ch)) && !isblnk(ch) && !endlinp(ch));
+	while(!issep(GETC(ch)) && !endlinp(ch));
 	(*ungetn)(ch,cf);
 	return(OK);
 }
@@ -336,7 +345,7 @@ l_CHAR()
 	if(n=get_repet()) return(n);		/* get repeat count */
 	if (nullfld()) return(OK);		/* could be R* */
 	if(isapos(GETC(ch))) quote=ch;
-	else if(isblnk(ch) || issep(ch) || ch==EOF || ch=='\n')
+	else if(issep(ch) || ch==EOF || ch=='\n')
 	{	if(ch==EOF) return(EOF);
 		(*ungetn)(ch,cf);
 		return(OK);
@@ -352,7 +361,7 @@ l_CHAR()
 	if(lchar==NULL) err(errflag,F_ERSPACE,lrd)
 	for(i=0;;)
 	{	while( ( (quote && GETC(ch)!=quote) ||
-			(!quote && !issep(GETC(ch)) && !isblnk(ch) && !endlinp(ch)) )
+			(!quote && !issep(GETC(ch)) && !endlinp(ch)) )
 			&& ch!='\n' && ch!=EOF && ++i<size )
 				*p++ = ch;
 		if(i==size)
@@ -407,7 +416,7 @@ nullfld()	/* look for null field following a repeat count */
 {
 	int	ch;
 
-	while(isblnk(GETC(ch)));
+	GETC(ch);
 	(*ungetn)(ch,cf);
 	if (issep(ch) || endlinp(ch))
 		return(YES);
