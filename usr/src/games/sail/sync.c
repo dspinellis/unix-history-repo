@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sync.c	2.5 84/02/23";
+static	char *sccsid = "@(#)sync.c	2.6 84/04/28";
 #endif
 
 #include "externs.h"
@@ -106,7 +106,7 @@ int a, b, c, d;
 Sync()
 {
 	int (*sig1)(), (*sig2)();
-	int n;
+	register n;
 	int type, shipnum, isstr, a, b, c, d;
 	char buf[80];
 	char erred = 0;
@@ -114,7 +114,7 @@ Sync()
 
 	sig1 = signal(SIGHUP, SIG_IGN);
 	sig2 = signal(SIGINT, SIG_IGN);
-	for (n = 0; n < 30; n++) {
+	for (n = TIMEOUT; --n >= 0;) {
 #ifdef LOCK_EX
 		if (flock(fileno(sync_fp), LOCK_EX|LOCK_NB) >= 0)
 			break;
@@ -126,9 +126,9 @@ Sync()
 		if (errno != EEXIST)
 			return -1;
 #endif
-		sleep(2);
+		sleep(1);
 	}
-	if (n >= 30)
+	if (n <= 0)
 		return -1;
 	(void) fseek(sync_fp, sync_seek, 0);
 	for (;;) {

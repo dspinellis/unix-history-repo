@@ -1,5 +1,5 @@
 /*
- * sccsid = "@(#)machdep.h	2.4 %G%";
+ * sccsid = "@(#)machdep.h	2.5 %G%";
  */
 #define LOGFILE "/usr/games/lib/saillog"
 #define DRIVER1 "driver"
@@ -7,6 +7,8 @@
 #define DRIVER3 "/usr/public/.driver"
 #define DRIVERNAME "driver"
 #define SETUID			/* player and driver run setuid */
+
+#define TIMEOUT 300		/* Sync() time out */
 
 #define BUFSIZE 4096
 
