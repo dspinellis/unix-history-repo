@@ -7,9 +7,10 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)boot.c	7.1 (Berkeley) %G%
+ *	@(#)boot.c	7.2 (Berkeley) %G%
  */
 
+#include "param.h"
 #include "reboot.h"
 #include "exec.h"
 
@@ -24,8 +25,9 @@ char	line[1024];
  * This gets arguments from the PROM, calls other routines to open
  * and load the program to boot, and then transfers execution to that
  * new program.
- * Argv[0] should be something like "rz(0,0,0)vmunix"
- * The argument "-a" means we were invoked by the 'auto' command from the prom.
+ * Argv[0] should be something like "rz(0,0,0)vmunix" on a DECstation 3100.
+ * Argv[0,1] should be something like "boot 5/rz0/vmunix" on a DECstation 5000.
+ * The argument "-a" means vmunix should do an automatic reboot.
  */
 void
 main(argc, argv, argenv)
@@ -35,14 +37,18 @@ main(argc, argv, argenv)
 {
 	register char *cp;
 	int howto, entry;
+	char *boot = "boot";
 
-	for (entry = 0; entry < argc; entry++)
-		printf("%d: '%s'\n", entry, argv[entry]);
 #ifdef JUSTASK
-	howto = RB_ASKNAME | RB_SINGLE;
+	howto = RB_ASKNAME;
 #else
-	howto = (argc > 1 && strcmp(argv[1], "-a") == 0) ?
-		0 : RB_SINGLE;
+	if (argc > 0 && strcmp(argv[0], boot) == 0) {
+		argc--;
+		argv++;
+		argv[0] = getenv(boot);
+		printf("boot '%s'\n", argv[0]); /* XXX */
+	}
+	howto = 0;
 	for (cp = argv[0]; *cp; cp++) {
 		if (*cp == ')' && cp[1]) {
 			cp = argv[0];
@@ -60,12 +66,14 @@ fnd:
 			if (line[0] == '\0')
 				continue;
 			cp = line;
+			argv[0] = cp;
+			argc = 1;
 		} else
 			printf("Boot: %s\n", cp);
 		entry = loadfile(cp);
 		if (entry != -1)
 			break;
-		howto = RB_ASKNAME | RB_SINGLE;
+		howto = RB_ASKNAME;
 	}
 #ifndef TEST
 	Boot_Transfer(argc, argv, argenv, entry);
