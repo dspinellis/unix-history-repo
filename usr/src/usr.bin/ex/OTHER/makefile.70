@@ -1,4 +1,4 @@
-VERSION=3.6
+VERSION=3.7
 #
 # Ex skeletal makefile for version 7, USGS Overlay 11/70 system
 #
@@ -97,7 +97,7 @@ tags:	/tmp
 strings.o: strings
 	${XSTR}
 	${CC} -c -S xs.c
-#	ed - <:rofix xs.s
+#	ed - <rofix xs.s
 	${AS} -o strings.o xs.s
 	rm xs.s
 	

@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	7.2	%G%";
+static char *sccsid = "@(#)ex_io.c	7.3	%G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -277,10 +277,10 @@ gscan()
 /*
  * Parse one filename into file.
  */
+struct glob G;
 getone()
 {
 	register char *str;
-	struct glob G;
 
 	if (getargs() == 0)
 		error("Missing filename");
@@ -620,7 +620,7 @@ edfile()
 /*
  * Extract the next line from the io stream.
  */
-static	char *nextip;
+char *nextip;
 
 getfile()
 {

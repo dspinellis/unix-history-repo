@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_v.c	7.1	%G%";
+static char *sccsid = "@(#)ex_v.c	7.2	%G%";
 #include "ex.h"
 #include "ex_re.h"
 #include "ex_tty.h"
@@ -50,10 +50,15 @@ static char *sccsid = "@(#)ex_v.c	7.1	%G%";
 /*
  * Enter open mode
  */
+#ifdef u370
+char	atube[TUBESIZE+LBSIZE];
+#endif
 oop()
 {
 	register char *ic;
+#ifndef u370
 	char atube[TUBESIZE + LBSIZE];
+#endif
 	ttymode f;	/* mjm: was register */
 
 	ovbeg();
@@ -153,7 +158,9 @@ ovend(f)
 vop()
 {
 	register int c;
+#ifndef u370
 	char atube[TUBESIZE + LBSIZE];
+#endif
 	ttymode f;	/* mjm: was register */
 
 	if (!CA && UP == NOSTR) {

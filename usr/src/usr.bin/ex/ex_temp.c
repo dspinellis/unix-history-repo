@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_temp.c	7.2	%G%";
+static char *sccsid = "@(#)ex_temp.c	7.3	%G%";
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_vis.h"
@@ -368,7 +368,7 @@ struct	rbuf {
 	short	rb_prev;
 	short	rb_next;
 	char	rb_text[BUFSIZ - 2 * sizeof (short)];
-} *rbuf;
+} *rbuf, KILLrbuf, putrbuf, YANKrbuf, regrbuf;
 #ifdef VMUNIX
 short	rused[256];
 #else
@@ -440,10 +440,9 @@ int	shread();
 KILLreg(c)
 	register int c;
 {
-	struct rbuf arbuf;
 	register struct strreg *sp;
 
-	rbuf = &arbuf;
+	rbuf = &KILLrbuf;
 	sp = mapreg(c);
 	rblock = sp->rg_first;
 	sp->rg_first = sp->rg_last = 0;
@@ -473,14 +472,13 @@ int	getREG();
 putreg(c)
 	char c;
 {
-	struct rbuf arbuf;
 	register line *odot = dot;
 	register line *odol = dol;
 	register int cnt;
 
 	deletenone();
 	appendnone();
-	rbuf = &arbuf;
+	rbuf = &putrbuf;
 	rnleft = 0;
 	rblock = 0;
 	rnext = mapreg(c)->rg_first;
@@ -556,7 +554,6 @@ getREG()
 YANKreg(c)
 	register int c;
 {
-	struct rbuf arbuf;
 	register line *addr;
 	register struct strreg *sp;
 	char savelb[LBSIZE];
@@ -567,7 +564,7 @@ YANKreg(c)
 		KILLreg(c);
 	strp = sp = mapreg(c);
 	sp->rg_flags = inopen && cursor && wcursor;
-	rbuf = &arbuf;
+	rbuf = &YANKrbuf;
 	if (sp->rg_last) {
 		regio(sp->rg_last, read);
 		rnleft = sp->rg_nleft;
@@ -646,10 +643,9 @@ char c;
 char *buf;
 int buflen;
 {
-	struct rbuf arbuf;
 	register char *p, *lp;
 
-	rbuf = &arbuf;
+	rbuf = &regrbuf;
 	rnleft = 0;
 	rblock = 0;
 	rnext = mapreg(c)->rg_first;

@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-/* sccs id:	@(#)ex_tune.h	7.2	%G%  */
+/* sccs id:	@(#)ex_tune.h	7.3	%G%  */
 /*
  * Definitions of editor parameters and limits
  */
@@ -38,9 +38,15 @@
 #define	ESIZE		512
 #define CRSIZE		1024
 #else
+#ifdef u370
+#define LBSIZE		4096
+#define ESIZE		512
+#define CRSIZE		4096
+#else
 #define	LBSIZE		512		/* Line length */
 #define	ESIZE		128		/* Size of compiled re */
 #define CRSIZE		512
+#endif
 #endif
 #define	RHSSIZE		256		/* Size of rhs of substitute */
 #define	NBRA		9		/* Number of re \( \) pairs */
