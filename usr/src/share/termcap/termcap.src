@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.29	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.30	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -119,7 +119,7 @@ Aj|aj830|aj832|aj|anderson jacobson:\
 	:le=^H:bs:hc:hd=\E9:hu=\E8:os:up=\E7:
 # From cbosg!ucbvax!pur-ee!cincy!chris Thu Aug 20 09:09:18 1981
 # This is incomplete, but it's a start.
-An|5520|nec|spinwriter|nec 5520|:\
+An|5520|nec|spinwriter|nec 5520:\
 	:ct=\E3:st=\E1:cr=^M:do=^J:nl=^J:bl=^G:\
 	:kb=^h:le=^H:bs:co#132:ff=^L:hc:hu=\E]s\E9\E]W:hd=\E]s\n\E]W:\
 	:os:ta=^I:pt:up=\E9:
@@ -436,7 +436,7 @@ MU|citc|Citoh fast vt100:\
 	:ks=\E[?1h\E=:ke=\E[?1l\E>:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:\
         :vb=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l:\
 	:dc=\E[P:al=\E[L:im=:ei=:dl=\E[M:ic=\E[@:
-MV|cita|:\
+MV|cita:\
 	:co#80:li#23:am:cl=\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
 	:is=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g:\
@@ -2109,7 +2109,7 @@ z3|wind50:\
 z4|cad68-3|cgc3|cad68 basic monitor transparent mode size 3 chars:\
 	:am:bs:cl=^Z:co#73:ho=\036:li#36:nd=^L:up=^K:
 z5|cad68-2|cgc2|cad68 basic monitor transparent mode size 2 chars:\
-	:am:bs:cl=^Z:co#85:ho=\036:li#39:nd=^L:up=^K:
+	:am:bs:cl=^Z:co#85:ho=\036:li#39:nd=^L:up=^K:\
 	:kl=\E3:kr=\E4:ku=\E1:kd=\E2:k1=\E5:k2=\E6:k3=\E7:k4=\E8:\
 	:so=\Em\014:se=\Em\003:
 z6|v50|visual 50:\
