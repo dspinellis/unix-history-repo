@@ -8,15 +8,21 @@
 /* from "@(#)look_up.c	5.1 (Berkeley) 6/6/85"; */
 
 #ifndef lint
-static char sccsid[] = "@(#)look_up.c	6.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)look_up.c	6.5 (Berkeley) %G%";
 #endif not lint
 
 #include "talk_ctl.h"
+#include <machine/endian.h>
+#include <string.h>
+#include <unistd.h>
 
+int	look_for_invite __P((CTL_RESPONSE *));
+void	swapresponse __P((CTL_RESPONSE *));
 
 /*
  * See if the local daemon has a invitation for us
  */
+int
 check_local()
 {
 	CTL_RESPONSE response;
@@ -58,10 +64,10 @@ again:
 /*
  * Look for an invitation on 'machine'
  */
+int
 look_for_invite(response)
 	CTL_RESPONSE *response;
 {
-	struct in_addr machine_addr;
 
 	current_state = "Checking for invitation on caller's machine";
 	ctl_transact(his_machine_addr, msg, LOOK_UP, response);
@@ -85,7 +91,7 @@ look_for_invite(response)
 #define swapshort(a) (((a << 8) | ((unsigned short) a >> 8)) & 0xffff)
 #define swaplong(a) ((swapshort(a) << 16) | (swapshort(((unsigned)a >> 16))))
 
-#ifdef sun
+#if BYTE_ORDER == BIG_ENDIAN
 struct ctl_response_vax {
 	char type;
 	char answer;
@@ -94,6 +100,7 @@ struct ctl_response_vax {
 	struct sockaddr_in addr;
 };
 
+void
 swapresponse(rsp)
 	CTL_RESPONSE *rsp;
 {
@@ -112,7 +119,7 @@ swapresponse(rsp)
 }
 #endif
 
-#ifdef vax
+#if BYTE_ORDER == LITTLE_ENDIAN
 struct ctl_response_sun {
 	char type;
 	char answer;
@@ -124,6 +131,7 @@ struct ctl_response_sun {
 	short sin_addr1;
 };
 
+void
 swapresponse(rsp)
 	CTL_RESPONSE *rsp;
 {

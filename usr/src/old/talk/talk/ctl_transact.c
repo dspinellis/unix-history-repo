@@ -11,6 +11,7 @@ static char sccsid[] = "@(#)ctl_transact.c	5.1 (Berkeley) 6/6/85";
 
 #include "talk_ctl.h"
 #include <sys/time.h>
+#include <unistd.h>
 
 #define CTL_WAIT 2	/* time to wait for a response, in seconds */
 
@@ -19,6 +20,7 @@ static char sccsid[] = "@(#)ctl_transact.c	5.1 (Berkeley) 6/6/85";
  * not recieved an acknowledgement within a reasonable amount
  * of time
  */
+void
 ctl_transact(target, msg, type, response)
 	struct in_addr target;
 	CTL_MSG msg;
@@ -57,7 +59,7 @@ ctl_transact(target, msg, type, response)
 				p_error("Error on write to talk daemon");
 			}
 			read_mask = ctl_mask;
-			if ((nready = select(32, &read_mask, 0, 0, &wait)) < 0) {
+			if ((nready = select(32, (fd_set *)&read_mask, 0, 0, &wait)) < 0) {
 				if (errno == EINTR)
 					continue;
 				p_error("Error waiting for daemon response");
@@ -79,7 +81,7 @@ ctl_transact(target, msg, type, response)
 			read_mask = ctl_mask;
 			/* an immediate poll */
 			timerclear(&wait);
-			nready = select(32, &read_mask, 0, 0, &wait);
+			nready = select(32, (fd_set *)&read_mask, 0, 0, &wait);
 		} while (nready > 0 && response->type != type);
 	} while (response->type != type);
 }
