@@ -1,4 +1,0 @@
-cc -s -O sno?.c
-cmp a.out /usr/bin/sno
-cp a.out /usr/bin/sno
-rm *.o a.out

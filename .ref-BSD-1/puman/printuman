@@ -1,9 +1,0 @@
-pr printuman
-: cp /etc/motd motd
-makefigs
-pr bugs
-ls -cs | pr -t
-ls -l | pr -t
-pr makefigs
-nroff contents.n
-soelim puman[012345A].n | tbl | nroff

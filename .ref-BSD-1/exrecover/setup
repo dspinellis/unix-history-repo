@@ -1,7 +1,0 @@
-rm *.h
-mkdir /usr/preserve
-chmod 700 /usr/preserve
-: quot /usr/preserve 1000
-chown root /usr/preserve
-echo Put a command \"/usr/lib/expreserve -a\" in /etc/rc if you clean /tmp there.
-echo You are now ready to \"makepreserve\" and \"makerecover\"

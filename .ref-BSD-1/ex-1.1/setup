@@ -1,6 +1,0 @@
-mkdir /usr/lib/how_ex
-chown bin /usr/lib/how_ex
-chmod 755 /usr/lib/how_ex
-cptree how_ex /usr/lib/how_ex
-: chownall -nbin /usr/lib/how_ex
-echo Be sure to \"setup\" etc also

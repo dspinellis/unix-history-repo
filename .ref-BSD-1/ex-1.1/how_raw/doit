@@ -1,5 +1,0 @@
-: loop
-if $1x = x exit
-nroff $1 | ssp >../how_ex/$1
-shift
-goto loop

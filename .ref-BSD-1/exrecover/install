@@ -1,8 +1,0 @@
-cp exrecover /usr/lib
-chown root /usr/lib/exrecover
-chmod 4711 /usr/lib/exrecover
-echo New exrecover installed
-cp expreserve /usr/lib
-chown root /usr/lib/expreserve
-chmod 4711 /usr/lib/expreserve
-echo New expreserve installed

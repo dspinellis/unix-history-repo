@@ -1,9 +1,0 @@
-These are the routines for manipulating the editor data bases.
-They live in ../s7/libX.a
-The program "Ttyn.c" is actually made by the program "makeTtyn"
-in ../s6... it produces a hashed version of "ttyn" called "Ttyn"
-which is useful because it runs much faster... it is however
-dependent on the structure of your /dev/.
-If you want the editor and ashell to start faster you can have them
-call a version of Ttyn which you can make using the program 
-makeTtyn for your system.

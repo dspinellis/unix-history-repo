@@ -1,9 +1,0 @@
-November 17, 1977
-
-To have a fully functioning recovery mechanism you should
-place a command of the form
-	/usr/lib/expreserve -a
-in /etc/rc if you clean out the directory /tmp there.
-For full security, exrecover and expreserve should be setuid root
-and the directory /usr/preserve should be mode 700.
-If you don't need or want this, change "install" and "setup".

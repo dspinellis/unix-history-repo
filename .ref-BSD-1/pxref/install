@@ -1,6 +1,0 @@
-cp a.out /usr/bin/pxref
-cp obj /usr/lib/pxref
-chown bin /usr/bin/pxref /usr/lib/pxref
-chmod 711 /usr/bin/pxref
-chmod 644 /usr/lib/pxref
-rm -f a.out obj

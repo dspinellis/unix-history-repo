@@ -1,2 +1,0 @@
-cc -O pxref.c
-pi -pbt pxref.p

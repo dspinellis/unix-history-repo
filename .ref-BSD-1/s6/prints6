@@ -1,3 +1,0 @@
-rm a.out x xx
-pr [a-h]*
-pr [i-z]*

@@ -1,9 +1,0 @@
-chdir ../ex-1.1
-cc -c -O ex_io.c ex_pack.c
-mvall ex_io.o ex_pack.o ../exrecover
-chdir ../exrecover
-cpall ../ex-1.1/ex.h ../ex-1.1/ex_io.h ../ex-1.1/ex_vars.h .
-cc -O exrecover.c ex_io.o ex_pack.o -o exrecover
-rm ex*.h
-rm ex_io.o ex_pack.o
-echo \"install\" when you have a \"recover\" and a \"preserve\"

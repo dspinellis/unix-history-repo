@@ -1,1 +1,0 @@
-ncc -c -f -O *.c > output

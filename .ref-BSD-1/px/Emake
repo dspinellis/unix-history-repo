@@ -1,9 +1,0 @@
-ed - Edata
-1,$s/^/#define /
-w E.h
-q
-ed - Edata
-1,$s/ / = /
-1,$s/$/./
-w E.s
-q

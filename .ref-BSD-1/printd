@@ -1,6 +1,0 @@
-tbl -ms READ_ME | nroff
-pr */READ_ME
-cd ex-1.1
-pr SETUP SYSDEP
-nroff -ms NOTE
-nroff -ms CORRECTIONS

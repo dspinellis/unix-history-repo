@@ -1,2 +1,0 @@
-cp a.out /usr/bin/ashell
-echo New ashell installed

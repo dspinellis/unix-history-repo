@@ -1,5 +1,0 @@
-cd ../s6
-cc -n -O pascals.c -o /usr/bin/pascals -s
-cd ../pcs
-pi -pbt pascals.p
-mv obj /usr/lib/pascals

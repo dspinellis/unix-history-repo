@@ -1,4 +1,0 @@
-relvec (ptr)
-{
-free(ptr);
-}

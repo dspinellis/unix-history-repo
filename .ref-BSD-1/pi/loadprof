@@ -1,1 +1,0 @@
-ld -X -i ../assubs/mcrt0.o lib ../opcodes/TRdata.o -lc -l

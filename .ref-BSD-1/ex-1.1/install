@@ -1,7 +1,0 @@
-rm /usr/bin/ex /usr/bin/edit
-cp a.out /usr/bin/ex
-ln /usr/bin/ex /usr/bin/edit
-chmod 711 /usr/bin/ex
-chown bin /usr/bin/ex
-cp ex1.1strings /usr/lib
-echo New ex installed
