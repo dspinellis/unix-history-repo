@@ -1,4 +1,4 @@
-/*	hpreg.h	4.9	81/08/31	*/
+/*	hpreg.h	4.10	82/02/08	*/
 
 struct hpdevice
 {
@@ -125,3 +125,8 @@ struct hpdevice
 #define	HPOF_M800	0240		/*  -800 uinches */
 #define	HPOF_P1200	060		/* +1200 uinches */
 #define	HPOF_M1200	0260		/* -1200 uinches */
+
+/* hpmr */
+#define	HPMR_SZ		0174000		/* ML11 system size */
+#define	HPMR_ARRTYP	0002000		/* ML11 array type */
+#define	HPMR_TRT	0001400		/* ML11 transfer rate */
