@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -23,17 +23,19 @@ static char sccsid[] = "@(#)rcp.c	5.34 (Berkeley) %G%";
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 
-#include <signal.h>
-#include <netdb.h>
+#include <ctype.h>
 #include <dirent.h>
-#include <fcntl.h>
-#include <pwd.h>
 #include <errno.h>
-#include <unistd.h>
+#include <fcntl.h>
+#include <netdb.h>
+#include <pwd.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "pathnames.h"
 #include "extern.h"
 
@@ -387,16 +389,16 @@ syserr:			err("%s: %s", name, strerror(errno));
 			 * Make it compatible with possible future
 			 * versions expecting microseconds.
 			 */
-			amt = snprintf(buf, sizeof(buf), "T%ld 0 %ld 0\n",
+			(void)snprintf(buf, sizeof(buf), "T%ld 0 %ld 0\n",
 			    stb.st_mtimespec.ts_sec, stb.st_atimespec.ts_sec);
-			(void)write(rem, buf, amt);
+			(void)write(rem, buf, strlen(buf));
 			if (response() < 0)
 				goto next;
 		}
 #define	MODEMASK	(S_ISUID|S_ISGID|S_ISTXT|S_IRWXU|S_IRWXG|S_IRWXO)
-		amt = snprintf(buf, sizeof(buf), "C%04o %qd %s\n",
+		(void)snprintf(buf, sizeof(buf), "C%04o %qd %s\n",
 		    stb.st_mode & MODEMASK, stb.st_size, last);
-		(void)write(rem, buf, amt);
+		(void)write(rem, buf, strlen(buf));
 		if (response() < 0)
 			goto next;
 		if ((bp = allocbuf(&buffer, fd, BUFSIZ)) == NULL) {
@@ -439,7 +441,6 @@ rsource(name, statp)
 {
 	DIR *dirp;
 	struct dirent *dp;
-	int amt;
 	char *last, *vect[1], path[MAXPATHLEN];
 
 	if (!(dirp = opendir(name))) {
@@ -452,17 +453,17 @@ rsource(name, statp)
 	else
 		last++;
 	if (pflag) {
-		amt = snprintf(path, sizeof(path), "T%ld 0 %ld 0\n",
+		(void)snprintf(path, sizeof(path), "T%ld 0 %ld 0\n",
 		    statp->st_mtimespec.ts_sec, statp->st_atimespec.ts_sec);
-		(void)write(rem, path, amt);
+		(void)write(rem, path, strlen(path));
 		if (response() < 0) {
 			closedir(dirp);
 			return;
 		}
 	}
-	amt = snprintf(path, sizeof(path),
+	(void)snprintf(path, sizeof(path),
 	    "D%04o %d %s\n", statp->st_mode & MODEMASK, 0, last);
-	(void)write(rem, path, amt);
+	(void)write(rem, path, strlen(path));
 	if (response() < 0) {
 		closedir(dirp);
 		return;
@@ -681,8 +682,10 @@ bad:			err("%s: %s", np, strerror(errno));
 			}
 		}
 		if (count != 0 && wrerr == NO &&
-		    write(ofd, bp->buf, count) != count)
+		    (j = write(ofd, bp->buf, count)) != count) {
 			wrerr = YES;
+			wrerrno = j >= 0 ? EIO : errno; 
+		}
 		if (ftruncate(ofd, size)) {
 			err("can't truncate %s: %s", np, strerror(errno));
 			wrerr = DISPLAYED;
@@ -751,7 +754,7 @@ again:
 			goto again;
 		}
 	} else {
-		rem = rcmd(host, sp->s_port, locuser, user, bp, 0);
+		rem = rcmd(host, port, locuser, user, bp, 0);
 	}
 	return (rem);
 }
