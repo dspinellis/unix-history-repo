@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)termios.h	7.18 (Berkeley) %G%
+ *	@(#)termios.h	7.19 (Berkeley) %G%
  */
 
 /*
@@ -104,9 +104,7 @@
 #define CREAD		0x00000800	/* enable receiver */
 #define PARENB		0x00001000	/* parity enable */
 #define PARODD		0x00002000	/* odd parity, else even */
-#ifndef _POSIX_SOURCE
 #define HUPCL		0x00004000	/* hang up on last close */
-#endif
 #define CLOCAL		0x00008000	/* ignore modem status lines */
 #ifndef _POSIX_SOURCE
 #define CCTS_OFLOW	0x00010000	/* CTS flow control of output */
