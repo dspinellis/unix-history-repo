@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.40 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.41 (Berkeley) %G%
  */
 
 /*
@@ -208,6 +208,7 @@ struct vnode *vfreeh, **vfreet;
 extern struct vnodeops dead_vnodeops, spec_vnodeops;
 extern void vclean();
 long numvnodes;
+struct vattr va_null;
 
 /*
  * Initialize the vnode structures and initialize each file system type.
@@ -223,6 +224,7 @@ vfsinit()
 	/*
 	 * Initialize each file system type.
 	 */
+	vattr_null(&va_null);
 	for (vfsp = &vfssw[0]; vfsp <= &vfssw[MOUNT_MAXTYPE]; vfsp++) {
 		if (*vfsp == NULL)
 			continue;
