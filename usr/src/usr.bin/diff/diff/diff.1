@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)diff.1	6.7 (Berkeley) %G%
+.\"     @(#)diff.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt DIFF 1
@@ -17,7 +17,7 @@
 .Op Fl biwt
 .Ar file1 file2
 .Nm diff
-.Op Fl D Ar string
+.Op Fl D Ns Ar string
 .Op Fl biw
 .Ar file1 file2
 .Nm diff
@@ -26,6 +26,7 @@
 .Op Fl s
 .Op Fl cefhn
 .Op Fl biwt
+.Op Fl S Ns Ar name
 .Ar dir1 dir2
 .Sh DESCRIPTION
 The
@@ -90,7 +91,7 @@ produces a script similar to that of
 but in the opposite order and with a count of changed lines on each
 insert or delete command.  This is the form used by
 .Xr rcsdiff  1  .
-.It D Ns Ar string
+.It Fl D Ns Ar string
 creates a merged version of
 .Ar file1
 and
@@ -146,7 +147,7 @@ recursively to common subdirectories encountered.
 causes
 .Nm diff
 to report files which are the same, which are otherwise not mentioned.
-.It S Ns Ar name
+.It Fl S Ns Ar name
 re-starts a directory
 .Nm diff
 in the middle beginning with file
