@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 1987 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1987 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif not lint
+
+#ifndef lint
+static char sccsid[] = "@(#)sidebyside.c	1.2 (Berkeley) %G%";
+#endif not lint
+
 #include <stdio.h>
 /*
  * sidebyside -- make wide listings by placing pages side by side
