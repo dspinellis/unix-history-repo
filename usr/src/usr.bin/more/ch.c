@@ -20,7 +20,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ch.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ch.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -382,7 +382,7 @@ ch_length()
 {
 	if (ispipe)
 		return (ch_fsize);
-	return ((POSITION)(lseek(file, (offset_t)0, 2)));
+	return ((POSITION)(lseek(file, (off_t)0, L_XTND)));
 }
 
 /*
