@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -80,7 +80,6 @@ chompheader(line, def, e)
 	while (isascii(*--p) && isspace(*p))
 		continue;
 	*++p = '\0';
-	makelower(fname);
 
 	/* strip field value on front */
 	if (*fvalue == ' ')
@@ -89,7 +88,7 @@ chompheader(line, def, e)
 	/* see if it is a known type */
 	for (hi = HdrInfo; hi->hi_field != NULL; hi++)
 	{
-		if (strcmp(hi->hi_field, fname) == 0)
+		if (strcasecmp(hi->hi_field, fname) == 0)
 			break;
 	}
 
@@ -105,7 +104,7 @@ chompheader(line, def, e)
 	p = "resent-from";
 	if (!bitset(EF_RESENT, e->e_flags))
 		p += 7;
-	if (!def && !bitset(EF_QUEUERUN, e->e_flags) && strcmp(fname, p) == 0)
+	if (!def && !bitset(EF_QUEUERUN, e->e_flags) && strcasecmp(fname, p) == 0)
 	{
 		if (e->e_from.q_paddr != NULL &&
 		    strcmp(fvalue, e->e_from.q_paddr) == 0)
@@ -115,7 +114,7 @@ chompheader(line, def, e)
 	/* delete default value for this header */
 	for (hp = &e->e_header; (h = *hp) != NULL; hp = &h->h_link)
 	{
-		if (strcmp(fname, h->h_field) == 0 &&
+		if (strcasecmp(fname, h->h_field) == 0 &&
 		    bitset(H_DEFAULT, h->h_flags) &&
 		    !bitset(H_FORCE, h->h_flags))
 			h->h_value = NULL;
@@ -174,7 +173,8 @@ hvalue(field, e)
 
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
-		if (!bitset(H_DEFAULT, h->h_flags) && strcmp(h->h_field, field) == 0)
+		if (!bitset(H_DEFAULT, h->h_flags) &&
+		    strcasecmp(h->h_field, field) == 0)
 			return (h->h_value);
 	}
 	return (NULL);
@@ -248,8 +248,6 @@ eatheader(e, full)
 	msgid = "<none>";
 	for (h = e->e_header; h != NULL; h = h->h_link)
 	{
-		extern char *capitalize();
-
 		/* do early binding */
 		if (bitset(H_DEFAULT, h->h_flags) && h->h_value != NULL)
 		{
@@ -262,7 +260,7 @@ eatheader(e, full)
 		}
 
 		if (tTd(32, 1))
-			printf("%s: %s\n", capitalize(h->h_field), h->h_value);
+			printf("%s: %s\n", h->h_field, h->h_value);
 
 		/* count the number of times it has been processed */
 		if (bitset(H_TRACE, h->h_flags))
@@ -279,7 +277,7 @@ eatheader(e, full)
 
 		/* save the message-id for logging */
 		if (full && h->h_value != NULL &&
-		    strcmp(h->h_field, "message-id") == 0)
+		    strcasecmp(h->h_field, "message-id") == 0)
 		{
 			msgid = h->h_value;
 		}
@@ -713,9 +711,8 @@ putheader(fp, m, e)
 		{
 			/* vanilla header line */
 			register char *nlp;
-			extern char *capitalize();
 
-			(void) sprintf(obuf, "%s: ", capitalize(h->h_field));
+			(void) sprintf(obuf, "%s: ", h->h_field);
 			while ((nlp = strchr(p, '\n')) != NULL)
 			{
 				*nlp = '\0';
@@ -761,7 +758,6 @@ commaize(h, p, fp, oldstyle, m, e)
 	int opos;
 	bool firstone = TRUE;
 	char obuf[MAXLINE + 3];
-	extern char *capitalize();
 
 	/*
 	**  Output the address list translated by the
@@ -772,7 +768,7 @@ commaize(h, p, fp, oldstyle, m, e)
 		printf("commaize(%s: %s)\n", h->h_field, p);
 
 	obp = obuf;
-	(void) sprintf(obp, "%s: ", capitalize(h->h_field));
+	(void) sprintf(obp, "%s: ", h->h_field);
 	opos = strlen(h->h_field) + 2;
 	obp += opos;
 
