@@ -3,23 +3,23 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	8.1 (Berkeley) %G%
+.\"	@(#)2.t	8.2 (Berkeley) %G%
 .\"
 .\".ds RH "Basics
-.bp
 .nr H1 2
 .nr H2 0
 .\" The next line is a major hack to get around internal changes in the groff
 .\" implementation of .NH.
 .nr nh*hl 1
-.bp
 .LG
+.sp 2
 .B
 .ce
 2. BASICS
 .sp 2
 .R
 .NL
+.pl -1
 .PP
 The basic building block for communication is the \fIsocket\fP.
 A socket is an endpoint of communication to which a name may
@@ -127,6 +127,7 @@ simulated at the user level.  More information on this topic
 can be found in section 5.
 .NH 2
 Socket creation
+.pl -1
 .PP
 To create a socket the \fIsocket\fP system call is used:
 .DS
