@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.12 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -24,6 +24,7 @@
 #include "buf.h"
 #include "mount.h"
 #include "vnode.h"
+#include "../ufs/quota.h"
 #include "../ufs/inode.h"
 #include "../ufs/ufsmount.h"
 #include "../ufs/mfsnode.h"
@@ -38,6 +39,7 @@ int mfs_mount();
 int mfs_start();
 int ufs_unmount();
 int ufs_root();
+int ufs_quotactl();
 int mfs_statfs();
 int ufs_sync();
 int ufs_fhtovp();
@@ -49,6 +51,7 @@ struct vfsops mfs_vfsops = {
 	mfs_start,
 	ufs_unmount,
 	ufs_root,
+	ufs_quotactl,
 	mfs_statfs,
 	ufs_sync,
 	ufs_fhtovp,
