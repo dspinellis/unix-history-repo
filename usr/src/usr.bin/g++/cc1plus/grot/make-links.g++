@@ -1,0 +1,88 @@
+#!/bin/sh
+# Script to make links for GNU C++
+#   Copyright (C) 1988 Free Software Foundation, Inc.
+
+#This file is part of GNU CC.
+
+#GNU CC is free software; you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation; either version 1, or (at your option)
+#any later version.
+
+#GNU CC is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with GNU CC; see the file COPYING.  If not, write to
+#the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+#
+# Shell script to create proper links to machine-dependent files in
+# preparation for compiling g++.  Also, files borrowed verbatim from
+# GNU CC have their links made by this program.
+#
+# Usage: config.g++ [vint] machine
+#
+# If make-links.g++ succeeds, it leaves its status in links.status.
+# If make-links.g++ fails after disturbing the status quo, 
+# 	links.status is removed.
+#
+
+if [ xx${DIR} = xx ]
+then
+	DIR="../gcc"
+fi
+if [ xx${CDIR} = xx ]
+then
+	CDIR="${DIR}/config"
+fi
+
+progname=$0
+remove=rm
+make_directory=mkdir
+change_directory=cd
+hard_link=ln
+symbolic_link='ln -s'
+
+#for Test
+#remove="echo rm"
+#hard_link="echo ln"
+#symbolic_link="echo ln -s"
+
+borrowed_files="obstack.c obstack.h rtl.c rtlanal.c expmed.c explow.c \
+  fold-const.c optabs.c sdbout.c symout.c emit-rtl.c jump.c cse.c loop.c \
+  flow.c stupid.c combine.c regclass.c local-alloc.c global-alloc.c \
+  reload.c reload1.c caller-save.c final.c recog.c rtl.h rtl.def \
+  machmode.def real.h c-tree.h symseg.h recog.h regs.h \
+  hard-reg-set.h gdbfiles.h basic-block.h reload.h conditions.h \
+  output.h move-if-change stddef.h assert.h gvarargs.h
+  limits.h typeclass.h"
+
+borrowed_made_files="insn-emit.c insn-peep.c insn-recog.c insn-extract.c \
+  insn-output.c insn-flags.h insn-config.h insn-codes.h"
+
+$remove -f config
+$symbolic_link ${CDIR} ./config 2>/dev/null || $hard_link ${CDIR} ./config
+if [ ! -r ${CDIR} ]
+then
+	echo "$progname: unable to link \`${CDIR}'."
+	exit 1
+fi
+echo "Linked \`${CDIR}'."
+
+while [ -n "$borrowed_files" ]
+do
+	set $borrowed_files; file=$1; shift; borrowed_files=$*
+	$remove -f $file
+	$symbolic_link ${DIR}/$file . 2>/dev/null || $hard_link ${DIR}/$file .
+	if [ ! -r $file ]
+	then
+		echo "$progname: unable to link \`${DIR}/$file'."
+		exit 1
+	fi
+	echo "Linked \`${DIR}/$file'."
+done
+
+exit 0
