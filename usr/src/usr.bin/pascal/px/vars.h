@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)vars.h 1.4 %G%"; */
+/* static char sccsid[] = "@(#)vars.h 1.5 %G%"; */
 
 #include <stdio.h>
 
@@ -75,11 +75,15 @@ extern syserr();
 extern liberr();
 
 /*
- * stack routines
+ * stack routines and structures
  */
+struct sze8 {
+	char element[8];
+};
 extern short pop2();
 extern long pop4();
 extern double pop8();
+extern struct sze8 popsze8();
 extern char *pushsp();
 
 /*
