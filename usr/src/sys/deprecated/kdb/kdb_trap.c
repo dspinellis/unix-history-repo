@@ -1,4 +1,4 @@
-/*	kdb_trap.c	7.3	86/11/20	*/
+/*	kdb_trap.c	7.4	86/11/23	*/
 
 /*
  * Trap handler - command loop entry point.
@@ -35,7 +35,7 @@ kdb(type, code, curproc)
 	switch (setexit()) {
 
 	case SINGLE:
-		pcb.pcb_psl |= TBIT;
+		setsstep();		/* hardware single step */
 		/* fall thru... */
 	case CONTIN:
 		return (1);

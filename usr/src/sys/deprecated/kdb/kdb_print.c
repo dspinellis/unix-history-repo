@@ -1,4 +1,4 @@
-/*	kdb_print.c	7.3	86/11/20	*/
+/*	kdb_print.c	7.4	86/11/23	*/
 
 #include "../kdb/defs.h"
 
@@ -16,23 +16,7 @@ char	lastc;
 /* breakpoints */
 BKPTR	bkpthead;
 
-REGLIST reglist[] = {
-	"p2lr",	&pcb.pcb_p2lr,	"p2br",	(int *)&pcb.pcb_p2br,
-	"p1lr",	&pcb.pcb_p1lr,	"p1br",	(int *)&pcb.pcb_p1br,
-	"p0lr",	&pcb.pcb_p0lr,	"p0br",	(int *)&pcb.pcb_p0br,
-	"ksp",	&pcb.pcb_ksp,	"hfs",	&pcb.pcb_hfs,
-	"psl",	&pcb.pcb_psl,	"pc",	&pcb.pcb_pc,
-	"ach",	&pcb.pcb_ach,	"acl",	&pcb.pcb_acl,
-	"usp",	&pcb.pcb_usp,	"fp",	&pcb.pcb_fp,
-	"r12",	&pcb.pcb_r12,	"r11",	&pcb.pcb_r11,
-	"r10",	&pcb.pcb_r10,	"r9",	&pcb.pcb_r9,
-	"r8",	&pcb.pcb_r8,	"r7",	&pcb.pcb_r7,
-	"r6",	&pcb.pcb_r6,	"r5",	&pcb.pcb_r5,
-	"r4",	&pcb.pcb_r4,	"r3",	&pcb.pcb_r3,
-	"r2",	&pcb.pcb_r2,	"r1",	&pcb.pcb_r1,
-	"r0",	&pcb.pcb_r0,
-	0
-};
+extern	REGLIST reglist[];
 
 /* general printing routines ($) */
 
@@ -91,64 +75,62 @@ printtrace(modif)
 
 	case 'c': case 'C':
 		if (adrflg) {
-			frame=adrval;
-			callpc=get(frame-8,DSP);
+			frame = adrval;
+			callpc = getprevpc(frame);
 		} else {
 			frame = pcb.pcb_fp;
 			callpc = pcb.pcb_pc;
 		}
-		lastframe=0;
+		lastframe = NOFRAME;
 		ntramp = 0;
-		while (cntval-- && frame!=0) {
+		while (cntval-- && frame != NOFRAME) {
 			char *name;
 
 			chkerr();
 			/* check for pc in pcb (signal trampoline code) */
-			if (MAXSTOR < callpc &&
-			   callpc < MAXSTOR+ctob(UPAGES)) {
+			if (issignalpc(callpc)) {
 				name = "sigtramp";
 				ntramp++;
 			} else {
 				ntramp = 0;
-				findsym(callpc,ISYM);
+				findsym(callpc, ISYM);
 				if (cursym)
 					name = cursym->n_un.n_name;
 				else
 					name = "?";
 			}
 			printf("%s(", name);
-			narg = ((get(frame-4, DSP)&0xffff)-4)/4;
+			narg = getnargs(frame);
 			argp = frame;
 			if (ntramp != 1)
-				for (;;) {
-					if (narg==0)
-						break;
-					printf("%R", get(argp += 4, DSP));
-					if (--narg!=0)
+				while (narg) {
+					printf("%R",
+					    get(argp = nextarg(argp), DSP));
+					if (--narg != 0)
 						printc(',');
 				}
 			printf(") at ");
 			psymoff(callpc, ISYM, "\n");
 
 			if (modif=='C') {
-				while (localsym(frame,argp)) {
-					word=get(localval,DSP);
+				while (localsym(frame, argp)) {
+					word = get(localval, DSP);
 					printf("%8t%s:%10t",
 					    cursym->n_un.n_name);
 					if (errflg) {
 						printf("?\n");
-						errflg=0;
+						errflg = 0;
 					} else
-						printf("%R\n",word);
+						printf("%R\n", word);
 				}
 			}
 			if (ntramp != 1) {
-				callpc = get(frame-8, DSP);
+				callpc = getprevpc(frame);
 				lastframe = frame;
-				frame = get(frame, DSP)&ALIGN;
+				frame = getprevframe(frame);
 			} else
-				callpc = get(lastframe+44, DSP);
-			if (frame == 0 || (!adrflg && !INSTACK(frame)))
+				callpc = getsignalpc(lastframe);
+			if (!adrflg && !INSTACK(frame))
 				break;
 		}
 		break;
@@ -201,13 +183,12 @@ printregs(c)
 	register REGPTR	p;
 	ADDR v;
 
-	for (p=reglist; p->rname; p++) {
-		if (c!='R' && p->rkern!=&pcb.pcb_psl)
+	for (p = reglist; p->rname; p++) {
+		if (c != 'R' && ishiddenreg(p))
 			continue;
-		c = 'R';
 		v = *p->rkern;
 		printf("%s%6t%R %16t", p->rname, v);
-		valpr(v,(p->rkern==&pcb.pcb_pc?ISYM:DSYM));
+		valpr(v, p->rkern == &pcb.pcb_pc ? ISYM : DSYM);
 		printc(EOR);
 	}
 	printpc();
@@ -219,9 +200,9 @@ getreg(regnam)
 	register char *regptr;
 	char *olp;
 
-	olp=lp;
-	for (p=reglist; p->rname; p++) {
-		regptr=p->rname;
+	olp = lp;
+	for (p = reglist; p->rname; p++) {
+		regptr = p->rname;
 		if (regnam == *regptr++) {
 			while (*regptr)
 				if (readchar() != *regptr++) {
@@ -229,12 +210,12 @@ getreg(regnam)
 					break;
 				}
 			if (*regptr)
-				lp=olp;
+				lp = olp;
 			else
-				return((int)p->rkern);
+				return ((int)p->rkern);
 		}
 	}
-	lp=olp;
+	lp = olp;
 	return (-1);
 }
 
