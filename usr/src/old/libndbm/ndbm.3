@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ndbm.3	6.2 (Berkeley) %G%
+.\"	@(#)ndbm.3	6.3 (Berkeley) %G%
 .\"
 .TH NDBM 3X  ""
 .UC 6
@@ -26,7 +26,7 @@ DBM *dbm_open(file, flags, mode)
     int flags, mode;
 .PP
 .ft B
-dbm_close(db)
+void dbm_close(db)
     DBM *db;
 .PP
 .ft B
@@ -35,13 +35,13 @@ datum dbm_fetch(db, key)
     datum key;
 .PP
 .ft B
-dbm_store(db, key, content, flags)
+int dbm_store(db, key, content, flags)
     DBM *db;
     datum key, content;
     int flags;
 .PP
 .ft B
-dbm_delete(db, key)
+int dbm_delete(db, key)
     DBM *db;
     datum key;
 .PP
@@ -54,11 +54,11 @@ datum dbm_nextkey(db)
     DBM *db;
 .PP
 .ft B
-datum dbm_error(db)
+int dbm_error(db)
     DBM *db;
 .PP
 .ft B
-datum dbm_clearerr(db)
+int dbm_clearerr(db)
     DBM *db;
 .SH DESCRIPTION
 These functions maintain key/content pairs in a data base.
@@ -124,7 +124,7 @@ This code will traverse the data base:
 .I Dbm_error
 returns non-zero when an error has occured reading or writing the database.
 .I Dbm_clearerr
-Resets the error condition on the named database.
+resets the error condition on the named database.
 .SH DIAGNOSTICS
 All functions that return an
 .I int
