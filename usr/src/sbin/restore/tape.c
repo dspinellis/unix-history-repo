@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.15	(Berkeley)	83/05/06";
+static char sccsid[] = "@(#)tape.c	3.16	(Berkeley)	83/05/14";
 #endif
 
 #include "restore.h"
@@ -34,10 +34,10 @@ static int	pathlen;
 setinput(source)
 	char *source;
 {
-#ifdef RRESTOR
 	char *host;
-	char *index();
 
+	terminal = stdin;
+#ifdef RRESTOR
 	host = source;
 	magtape = index(host, ':');
 	if (magtape == 0) {
@@ -50,9 +50,7 @@ nohost:
 		done(1);
 	setuid(getuid());	/* no longer need or want root privileges */
 #else
-	if (strcmp(source, "-") != 0) {
-		terminal = stdin;
-	} else {
+	if (strcmp(source, "-") == 0) {
 		/*
 		 * Since input is coming from a pipe we must establish
 		 * our own connection to the terminal.
