@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fcntl.2	6.8 (Berkeley) %G%
+.\"     @(#)fcntl.2	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FCNTL 2
@@ -100,7 +100,7 @@ and
 .Dv F_SETFL
 flags are as follows:
 .Bl -tag -width F_GETOWNX
-.It Dv O_NDELAY
+.It Dv O_NONBLOCK
 Non-blocking I/O; if no data is available to a
 .Xr read
 call, or if a
