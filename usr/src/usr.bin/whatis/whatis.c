@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whatis.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)whatis.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -39,6 +39,7 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	ENTRY *ep;
+	TAG *tp;
 	int ch, rv;
 	char *beg, *conffile, **p, *p_augment, *p_path;
 
@@ -80,10 +81,9 @@ main(argc, argv)
 		whatis(argv, p_path, 1);
 	else {
 		config(conffile);
-		ep = getlist("_whatdb");
-		if (ep != NULL)
-			ep = ep->list.qe_next;
-		for (; ep != NULL; ep = ep->list.qe_next)
+		ep = (tp = getlist("_whatdb")) == NULL ?
+		   NULL : tp->list.tqh_first;
+		for (; ep != NULL; ep = ep->q.tqe_next)
 			whatis(argv, ep->s, 0);
 	}
 
