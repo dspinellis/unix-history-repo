@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)main.c	2.11.1.2	(Berkeley)	%G%";
+char version[] = "@(#)main.c	2.17	(Berkeley)	%G%";
 
 #include <stdio.h>
 #include <ctype.h>
