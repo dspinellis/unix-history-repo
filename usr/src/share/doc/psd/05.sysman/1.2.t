@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.2.t	6.9 (Berkeley) %G%
+.\"	@(#)1.2.t	6.10 (Berkeley) %G%
 .\"
 .sh "Memory management\(dg
 .NH 3
@@ -67,6 +67,7 @@ Protection and sharing options are defined in \fI<sys/mman.h>\fP as:
 #define MAP_FIXED	0x0020	/* map addr must be exactly as requested */
 #define MAP_INHERIT	0x0040	/* region is retained after exec */
 #define MAP_HASSEMAPHORE	0x0080	/* region may contain semaphores */
+#define MAP_NOPREALLOC	0x0100	/* do not preallocate space */
 .DE
 The cpu-dependent size of a page is returned by the
 \fIgetpagesize\fP system call:
@@ -91,7 +92,7 @@ in which case the exact address will be used or the call will fail.
 The actual amount mapped is returned in \fIlen\fP.
 The \fIaddr\fP, \fIlen\fP, and \fIpos\fP parameters
 must all be multiples of the pagesize.
-A successful \fImmap\fP will \fImunmap\fP any previous mapping
+A successful \fImmap\fP will delete any previous mapping
 in the allocated address range.
 The parameter \fIprot\fP specifies the accessibility
 of the mapped pages.
@@ -118,6 +119,14 @@ or device to which swapping should be done.
 The MAP_INHERIT flag allows a region to be inherited after an \fIexec\fP.
 The MAP_HASSEMAPHORE flag allows special handling for
 regions that may contain semaphores.
+The MAP_NOPREALLOC flag allows processes to allocate regions whose
+virtual address space, if fully allocated,
+would exceed the available memory plus swap resources.
+Such regions may get a SIGSEGV signal if they page fault and resources
+are not available to service their request;
+typically they would free up some resources via \fIunmap\fP so that
+when they return from the signal the page
+fault could be successfully completed.
 .PP
 A facility is provided to synchronize a mapped region with the file
 it maps; the call
