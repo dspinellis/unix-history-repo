@@ -1,0 +1,19 @@
+# $Header: Distfile,v 1.46 93/04/19 18:38:08 root Exp $
+# $Source: /a1/var.local/adm/named/RCS/Distfile,v $
+
+SERVERS = ( )
+ARCH = titan
+
+FILES = (	restart.named setup.secondary
+		cache.db hacks.db named.boot.secondary
+		named.boot.hesiod setup.hesiod
+	)
+
+BINARIES = (	mips/named{-xfer,}	)
+
+# Make the master files last because "special" keys on it.
+
+( ${FILES} ${ARCH} ) -> ( ${SERVERS} )
+	install /etc/wrl.named/. ;
+	special ( named.boot.secondary ${ARCH}/named )
+		"/etc/wrl.named/restart.named" ;
