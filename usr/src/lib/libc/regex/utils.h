@@ -8,13 +8,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)utils.h	5.3 (Berkeley) %G%
+ *	@(#)utils.h	5.4 (Berkeley) %G%
  */
 
 /* utility definitions */
 #define	DUPMAX		_POSIX2_RE_DUP_MAX	/* xxx is this right? */
 #define	INFINITY	(DUPMAX+1)
-#define	NC		(CHAR_MAX-CHAR_MIN+1)
+#define	NC		((CHAR_MAX)-(CHAR_MIN)+1)
 
 typedef unsigned char uchar;
 
