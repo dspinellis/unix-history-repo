@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.36 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.37 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.36 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.37 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -278,9 +278,13 @@ getrequests()
 			(void) setsignal(SIGCHLD, SIG_DFL);
 			DisConnected = FALSE;
 
+			setproctitle("startup with %s",
+				anynet_ntoa(&RealHostAddr));
+
 			/* determine host name */
 			p = hostnamebyanyaddr(&RealHostAddr);
 			RealHostName = newstr(p);
+			setproctitle("startup with %s", p);
 
 #ifdef LOG
 			if (LogLevel > 11)
