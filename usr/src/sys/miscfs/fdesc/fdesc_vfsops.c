@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vfsops.c	7.3 (Berkeley) %G%
+ *	@(#)fdesc_vfsops.c	7.4 (Berkeley) %G%
  *
  * $Id: fdesc_vfsops.c,v 1.9 1993/04/06 15:28:33 jsp Exp $
  */
@@ -77,7 +77,8 @@ fdesc_mount(mp, path, data, ndp, p)
 	printf("fdesc_mount: root vp = %x\n", rvp);
 #endif
 	fmp->f_root = rvp;
-	mp->mnt_flag |= MNT_LOCAL;
+	/* XXX -- don't mark as local to work around fts() problems */
+	/*mp->mnt_flag |= MNT_LOCAL;*/
 	mp->mnt_data = (qaddr_t) fmp;
 	getnewfsid(mp, MOUNT_FDESC);
 
