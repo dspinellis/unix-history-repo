@@ -2,7 +2,7 @@
  *	Copyright (c) 1982 Regents of the University of California
  */
 #ifndef lint
-static char sccsid[] = "@(#)asjxxx.c 4.9 %G%";
+static char sccsid[] = "@(#)asjxxx.c 4.10 %G%";
 #endif not lint
 
 #include	<stdio.h>
@@ -154,7 +154,8 @@ jalign(xp, sp)
 	 *
 	 *	Currently, the loader guarantees full word alignment.
 	 *	So, ridiculous aligns are caught here and converted
-	 *	to a .align 2, if possible.
+	 *	to a .align (maxalign), if possible, where maxalign
+	 *	is set in the command line, and defaults to 2.
 	 */
 	if (   ( (xp->e_xtype & XTYPE) != XABS)
 	    || (xp->e_xvalue < 0)
@@ -163,14 +164,14 @@ jalign(xp, sp)
 		yyerror("Illegal `align' argument");
 		return;
 	}
-	if (xp->e_xvalue > 2){
+	if (xp->e_xvalue > maxalign){
 		if (passno == 1){
 			yywarning(".align %d is NOT preserved by the loader",
 				xp->e_xvalue);
-			yywarning(".align %d converted to .align 2",
-				xp->e_xvalue);
+			yywarning(".align %d converted to .align %d",
+				xp->e_xvalue, maxalign);
 		}
-		xp->e_xvalue = 2;
+		xp->e_xvalue = maxalign;
 	}
 	flushfield(NBPW/4);
 	if (passno == 1) {

@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.20 %G%
+ *	@(#)as.h 4.21 %G%
  */
 #define	reg	register
 
@@ -434,6 +434,7 @@ struct strdesc *savestr();
 
 	extern	int	curlen;			/*current literal storage size*/
 	extern	int	d124;			/*current pointer storage size*/
+	extern	int	maxalign;		/*maximum .align allowed*/
 	
 	struct	symtab	**lookup();		/*argument in yytext*/
 	struct 	symtab	*symalloc();
