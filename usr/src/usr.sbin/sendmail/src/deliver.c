@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.60 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.61 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -282,7 +282,6 @@ sendenvelope(e, mode)
 #endif
 
 	oldverbose = Verbose;
-	e->e_statmsg = NULL;
 	switch (mode)
 	{
 	  case SM_VERIFY:
