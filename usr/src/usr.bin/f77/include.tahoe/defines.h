@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)defines.h	5.3 (Berkeley) %G%
+ */
+
 #define INTERDATA 2
 #define GCOS 3
 #define PDP11 4
