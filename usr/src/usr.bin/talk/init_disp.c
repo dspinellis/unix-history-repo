@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init_disp.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)init_disp.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -16,7 +16,9 @@ static char sccsid[] = "@(#)init_disp.c	8.1 (Berkeley) %G%";
 
 #include <sys/ioctl.h>
 #include <sys/ioctl_compat.h>
+
 #include <signal.h>
+#include <err.h>
 #include "talk.h"
 
 /* 
@@ -28,7 +30,8 @@ init_display()
 	void sig_sent();
 	struct sigvec sigv;
 
-	initscr();
+	if (initscr() == NULL)
+		errx(1, "Terminal type unset or lacking necessary features.");
 	(void) sigvec(SIGTSTP, (struct sigvec *)0, &sigv);
 	sigv.sv_mask |= sigmask(SIGALRM);
 	(void) sigvec(SIGTSTP, &sigv, (struct sigvec *)0);
