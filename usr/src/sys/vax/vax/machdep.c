@@ -1,4 +1,4 @@
-/*	machdep.c	4.4	%G%	*/
+/*	machdep.c	4.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -76,10 +76,6 @@ startup(firstaddr)
 	for (i = 0; i < NBUF * CLSIZE; i++)
 		*(int *)pte++ = PG_V | PG_KW | unixsize++;
 	mtpr(TBIA, 1);
-#ifdef ERNIE
-	if (coresw)
-		maxmem = 4096;
-#endif
 
 	/*
 	 * Initialize maps.
