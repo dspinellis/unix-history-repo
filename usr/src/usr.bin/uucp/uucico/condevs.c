@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -252,9 +252,11 @@ register char *flds[];
 	register FILE *dfp;
 	struct Devices dev;
 	int retval = CF_NODEV;
+	char nobrand[MAXPH];
 
 	exphone(flds[F_PHONE], phone);
 	devSel[0] = '\0';
+	nobrand[0] = '\0';
 	DEBUG(4, "Dialing %s\n", phone);
 	dfp = fopen(DEVFILE, "r");
 	ASSERT(dfp != NULL, "Can't open", DEVFILE, 0);
@@ -284,32 +286,29 @@ register char *flds[];
 				logent("Acuopn","No 'brand' name on ACU");
 				continue;
 			}
-			for(cd = condevs; cd->CU_meth != NULL; cd++) {
-				if (snccmp(flds[F_LINE], cd->CU_meth) == SAME
-					&& snccmp(dev.D_brand, cd->CU_brand) == SAME)
-					break;
-			}
-			if (cd->CU_meth == NULL) {
-				logent(dev.D_brand,"unsupported ACU type");
+			if (snccmp(dev.D_brand, cd->CU_brand) != SAME) {
+				strncpy(nobrand, dev.D_brand, sizeof nobrand);
 				continue;
 			}
 
-			if (acustatus < 1)
-				acustatus = 1;	/* has been found */
 			if (mlock(dev.D_line) == FAIL) {
 				acustatus++;
 				continue;
 			}
+			if (acustatus < 1)
+				acustatus = 1;	/* has been found */
 #ifdef DIALINOUT
 #ifdef ALLACUINOUT
-			if (
+			if (1) {
 #else !ALLACUINOUT
-			if (snccmp("inout", dev.D_calldev) == SAME &&
+			if (snccmp("inout", dev.D_calldev) == SAME) {
 #endif !ALLACUINOUT
-				disable(dev.D_line) == FAIL) {
+				if (disable(dev.D_line) == FAIL) {
 					delock(dev.D_line);
 					continue;
-			}
+				}
+			}  else
+				reenable();
 #endif DIALINOUT
 
 			DEBUG(4, "Using %s\n", cd->CU_brand);
@@ -327,8 +326,12 @@ register char *flds[];
 		}
 	}
 	fclose(dfp);
-	if (acustatus == 0)
-		logent("L-devices", "No appropriate ACU");
+	if (acustatus == 0) {
+		if (nobrand[0])
+			logent(nobrand, "unsupported ACU type");
+		else
+			logent("L-devices", "No appropriate ACU");
+	}
 	if (acustatus == 1)
 		logent("DEVICE", "NO");
 	return retval;
@@ -442,7 +445,7 @@ register char *dev;
 
 reenable()
 {
-	if (enbdev[0] == NULL)
+	if (enbdev[0] == '\0')
 		return;
 	DEBUG(4, "Reenable %s\n", enbdev);
 	(void) enbcall("enable", enbdev);
