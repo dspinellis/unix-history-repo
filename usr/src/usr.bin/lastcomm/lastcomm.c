@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)lastcomm.c	4.13 (Berkeley) %G%";
+static char *sccsid = "@(#)lastcomm.c	4.14 (Berkeley) %G%";
 #endif
 
 /*
@@ -49,11 +49,12 @@ main(argc, argv)
 			register char *cp;
 			time_t x;
 
-			acp->ac_comm[10] = '\0';
-			if (*acp->ac_comm == '\0')
+			if (acp->ac_comm[0] == '\0')
 				strcpy(acp->ac_comm, "?");
-			for (cp = acp->ac_comm; *cp; cp++)
-				if (iscntrl(*cp))
+			for (cp = &acp->ac_comm[0];
+			     cp < &acp->ac_comm[fldsiz(acct, ac_comm)] && *cp;
+			     cp++)
+				if (!isascii(*cp) || iscntrl(*cp))
 					*cp = '?';
 			if (argc > 1 && !ok(argc, argv, acp))
 				continue;
@@ -110,7 +111,7 @@ ok(argc, argv, acp)
 	for (j = 1; j < argc; j++)
 		if (strcmp(getname(acp->ac_uid), argv[j]) &&
 		    strcmp(getdev(acp->ac_tty), argv[j]) &&
-		    strcmp(acp->ac_comm, argv[j]))
+		    strncmp(acp->ac_comm, argv[j], fldsiz(acct, ac_comm)))
 			break;
 	return (j == argc);
 }
