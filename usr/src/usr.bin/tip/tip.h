@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tip.h	5.2 (Berkeley) %G%
+ *	@(#)tip.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -112,17 +112,22 @@ typedef
 typedef
 	union {
 		int	zz_number;
-		short	zz_boolean;
-		char	zz_character;
+		short	zz_boolean[2];
+		char	zz_character[4];
 		int	*zz_address;
 	}
 	zzhack;
 
 #define value(v)	vtable[v].v_value
 
-#define boolean(v)	((((zzhack *)(&(v))))->zz_boolean)
 #define number(v)	((((zzhack *)(&(v))))->zz_number)
-#define character(v)	((((zzhack *)(&(v))))->zz_character)
+#ifdef vax
+#define boolean(v)	((((zzhack *)(&(v))))->zz_boolean[0])
+#define character(v)	((((zzhack *)(&(v))))->zz_character[0])
+#else
+#define boolean(v)	((((zzhack *)(&(v))))->zz_boolean[1])
+#define character(v)	((((zzhack *)(&(v))))->zz_character[3])
+#endif
 #define address(v)	((((zzhack *)(&(v))))->zz_address)
 
 /*
