@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.7 (Berkeley) %G%";
 #endif
 
 /*
@@ -9,6 +9,8 @@ static char sccsid[] = "@(#)main.c	4.6 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 
+#include <arpa/ftp.h>
+
 #include <signal.h>
 #include <stdio.h>
 #include <errno.h>
@@ -16,7 +18,6 @@ static char sccsid[] = "@(#)main.c	4.6 (Berkeley) %G%";
 #include <netdb.h>
 #include <pwd.h>
 
-#include "ftp.h"
 #include "ftp_var.h"
 
 int	intr();
