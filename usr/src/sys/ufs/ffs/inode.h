@@ -1,4 +1,4 @@
-/*	inode.h	4.8	81/11/08	*/
+/*	inode.h	4.9	81/11/14	*/
 
 /*
  * The I node is the focus of all file activity in UNIX.
@@ -21,16 +21,20 @@ struct inode {
 	short	i_gid;		/* group of owner */
 	off_t	i_size;		/* size of file */
 	union {
-		struct {
-			daddr_t	I_addr[NADDR];	/* if normal file/directory */
-			daddr_t	I_lastr;	/* last read (read-ahead) */
+		struct i_f {
+			daddr_t	if_addr[NADDR];	/* if normal file/directory */
+			daddr_t	if_lastr;	/* last read (read-ahead) */
 		} i_f;
-#define	i_addr	i_f.I_addr
-#define	i_lastr	i_f.I_lastr
-		struct {
-			daddr_t	I_rdev;		/* i_addr[0] */
+		struct i_d {
+			daddr_t	id_rdev;	/* i_addr[0] */
 		} i_d;
-#define	i_rdev	i_d.I_rdev
+		struct i_s {
+			struct	socket *is_socket;
+		} i_s;
+#define	i_addr		i_f.if_addr
+#define	i_lastr		i_f.if_lastr
+#define	i_rdev		i_d.id_rdev
+#define	i_socket	i_s.is_socket
 	} i_un;
 /* end read from disk */
 	short	i_XXXXXX;	/* ### */
@@ -63,10 +67,13 @@ struct	inode *namei();
 
 /* modes */
 #define	IFMT	0170000		/* type of file */
-#define		IFDIR	0040000	/* directory */
-#define		IFCHR	0020000	/* character special */
-#define		IFBLK	0060000	/* block special */
-#define		IFREG	0100000	/* regular */
+#define		IFCHR		0020000		/* character special */
+#define		IFDIR		0040000		/* directory */
+#define		IFBLK		0060000		/* block special */
+#define		IFREG		0100000		/* regular */
+#define		IFSYMREG	0110000		/* regular symbolic link */
+#define		IFSYMDIR	0130000		/* directory symbolic link */
+#define		IFPORTAL	0140000		/* portal */
 #define	ISUID	04000		/* set user id on execution */
 #define	ISGID	02000		/* set group id on execution */
 #define	ISVTX	01000		/* save swapped text even after use */

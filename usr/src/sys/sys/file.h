@@ -1,4 +1,4 @@
-/*	file.h	4.9	81/11/08	*/
+/*	file.h	4.10	81/11/14	*/
 
 /*
  * One file structure is allocated
@@ -8,11 +8,11 @@
  * file.
  */
 struct	file {
-	short	f_flag;		/* read/write and type (socket or inode) */
-	short	f_count;	/* reference count */
+	short	f_flag;			/* see below */
+	short	f_count;		/* reference count */
+	struct	inode *f_inode;		/* inode */
 	union {
 		struct f_in {
-			struct inode *fi_inode;
 			off_t fi_offset;
 		} f_in;
 		struct f_so {
@@ -21,13 +21,11 @@ struct	file {
 	} f_un;
 };
 #define f_offset	f_un.f_in.fi_offset
-#define	f_inode		f_un.f_in.fi_inode
 #define	f_socket	f_un.f_so.fs_socket
 
 #ifdef	KERNEL
 struct	file *file, *fileNFILE;
 int	nfile;
-
 struct	file *getf();
 struct	file *falloc();
 #endif
@@ -37,3 +35,4 @@ struct	file *falloc();
 #define	FREAD		0x1		/* descriptor read/receive'able */
 #define	FWRITE		0x2		/* descriptor write/send'able */
 #define	FSOCKET		0x4		/* descriptor of a socket */
+#define	FPORTAL		0x8		/* descriptor of a portal */

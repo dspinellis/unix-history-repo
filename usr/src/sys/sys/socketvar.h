@@ -1,4 +1,4 @@
-/* socketvar.h 4.2 81/11/08 */
+/* socketvar.h 4.3 81/11/14 */
 
 /*
  * Kernel structure per socket.
@@ -9,13 +9,15 @@
 struct socket {
 	short	so_type;		/* generic type, see socket.h */
 	short	so_options;		/* from socket call, see socket.h */
+	short	so_state;		/* internal state flags SS_*, below */
+	short	so_isfilerefd;		/* no file table reference */
 	caddr_t	so_pcb;			/* protocol control block */
 	struct	protosw *so_proto;	/* protocol handle */
 	struct	sockbuf {
-		short	sb_cc;		/* characters in buffer */
-		short	sb_hiwat;	/* max chars for buffer */
-		short	sb_mbcnt;	/* # mbufs in use */
-		short	sb_mbmax;	/* max # mbufs to use */
+		short	sb_cc;		/* actual chars in buffer */
+		short	sb_hiwat;	/* max actual char count */
+		short	sb_mbcnt;	/* chars of mbufs used */
+		short	sb_mbmax;	/* max chars of mbufs to use */
 		short	sb_lowat;	/* low water mark (not used yet) */
 		short	sb_timeo;	/* timeout (not used yet) */
 		struct	mbuf *sb_mb;	/* the mbuf chain */
@@ -33,5 +35,69 @@ struct socket {
 };
 
 /*
- * Option bits and socket types are defined in socket.h.
+ * Socket state bits.
  */
+#define	SS_USERGONE		0x01	/* no file table ref any more */
+#define	SS_ISCONNECTED		0x02	/* socket connected to a peer */
+#define	SS_ISCONNECTING		0x03	/* in process of connecting to peer */
+#define	SS_ISDISCONNECTING	0x04	/* in process of disconnecting */
+#define	SS_CANTSENDMORE		0x08	/* can't send more data to peer */
+#define	SS_CANTRCVMORE		0x10	/* can't receive more data from peer */
+#define	SS_CONNAWAITING		0x20	/* connections awaiting acceptance */
+
+/*
+ * Macros for sockets and socket buffering.
+ */
+
+/* how much space is there in a socket buffer (so->so_snd or so->so_rcv) */
+#define	sbspace(sb) \
+    (MIN((sb)->sb_hiwat-(sb)->sb_cc, ((sb)->sb_mbmax-(sb)->sb_mbcnt)))
+
+/* do we have to send all at once on a socket? */
+#define	sosendallatonce(so) \
+    (((so)->so_options & SO_NBIO) || ((so)->so_proto->pr_flags & PR_ATOMIC))
+
+/* can we read something from so? */
+#define	soreadable(so) \
+    ((so)->so_rcv.sb_cc || ((so)->so_state & (SS_CANTRCVMORE|SS_CONNAWAITING)))
+
+/* adjust counters in sb reflecting allocation of m */
+#define	sballoc(sb, m) { \
+	(sb)->sb_cc += (m)->m_len; \
+	(sb)->sb_mbcnt += MSIZE; \
+	if ((m)->m_off > MMAXOFF) \
+		(sb)->sb_mbcnt += PGSIZE; \
+}
+
+/* adjust counters in sb reflecting freeing of m */
+#define	sbfree(sb, m) { \
+	(sb)->sb_cc -= (m)->m_len; \
+	(sb)->sb_mbcnt -= MSIZE; \
+	if ((m)->m_off > MMAXOFF) \
+		(sb)->sb_mbcnt -= PGSIZE; \
+}
+
+/* set lock on sockbuf sb */
+#define sblock(sb) { \
+	while ((sb)->sb_flags & SB_LOCK) { \
+		(sb)->sb_flags |= SB_WANT; \
+		sleep((caddr_t)&(sb)->sb_flags, PZERO+1); \
+	} \
+	(sb)->sb_flags |= SB_LOCK; \
+}
+
+/* release lock on sockbuf sb */
+#define	sbunlock(sb) { \
+	(sb)->sb_flags &= ~SB_LOCK; \
+	if ((sb)->sb_flags & SB_WANT) { \
+		(sb)->sb_flags &= ~SB_WANT; \
+		wakeup((caddr_t)&(sb)->sb_flags); \
+	} \
+}
+
+#define	sorwakeup(so)	sbwakeup(&(so)->so_rcv)
+#define	sowwakeup(so)	sbwakeup(&(so)->so_snd)
+
+#ifdef KERNEL
+struct	mbuf *sb_copy();
+#endif
