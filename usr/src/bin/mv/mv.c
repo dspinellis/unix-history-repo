@@ -1,4 +1,5 @@
-static	char *sccsid = "@(#)mv.c	4.5 (Berkeley) 82/02/11";
+static	char *sccsid = "@(#)mv.c	4.6 (Berkeley) 82/10/23";
+
 /*
  * mv file1 file2
  */
@@ -12,7 +13,7 @@ static	char *sccsid = "@(#)mv.c	4.5 (Berkeley) 82/02/11";
 #define	DOTDOT	".."
 #define	DELIM	'/'
 #define SDELIM "/"
-#define	MAXN	100
+#define	MAXN	300
 #define MODEBITS 07777
 #define ROOTINO 2
 
@@ -65,7 +66,7 @@ register char *argv[];
 	}
 	if (argc < 3)
 		goto usage;
-	if (stat(argv[1], &s1) < 0) {
+	if (lstat(argv[1], &s1) < 0) {
 		fprintf(stderr, "mv: cannot access %s\n", argv[1]);
 		return(1);
 	}
@@ -94,7 +95,7 @@ char *source, *target;
 	int	status;
 	char	buf[MAXN];
 
-	if (stat(source, &s1) < 0) {
+	if (lstat(source, &s1) < 0) {
 		fprintf(stderr, "mv: cannot access %s\n", source);
 		return(1);
 	}
@@ -107,7 +108,7 @@ char *source, *target;
 			sprintf(buf, "%s/%s", target, dname(source));
 			target = buf;
 		}
-		if (stat(target, &s2) >= 0) {
+		if (lstat(target, &s2) >= 0) {
 			if ((s2.st_mode & S_IFMT) == S_IFDIR) {
 				fprintf(stderr, "mv: %s is a directory\n", target);
 				return(1);
@@ -139,7 +140,21 @@ char *source, *target;
 			}
 		}
 	}
-	if (link(source, target) < 0) {
+	if ((s1.st_mode & S_IFMT) == S_IFLNK) {
+		register m;
+		char symln[MAXN];
+
+		if (readlink(source, symln, sizeof (symln)) < 0) {
+			perror(source);
+			return (1);
+		}
+		m = umask(~(s1.st_mode & MODEBITS));
+		if (symlink(symln, target) < 0) {
+			perror(target);
+			return (1);
+		}
+		umask(m);
+	} else if (link(source, target) < 0) {
 		i = fork();
 		if (i == -1) {
 			fprintf(stderr, "mv: try again\n");
