@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mbuf.h	6.7 (Berkeley) %G%
+ *	@(#)mbuf.h	6.8 (Berkeley) %G%
  */
 
 /*
@@ -103,7 +103,7 @@ struct mbuf {
 	  splx(ms); \
 	  if (m_want) { \
 		  m_want = 0; \
-		  wakeup((caddr_t)mfree); \
+		  wakeup((caddr_t)&mfree); \
 	  } \
 	}
 
@@ -124,7 +124,7 @@ extern	struct pte Mbmap[];		/* page tables to map Netutl */
 struct	mbstat mbstat;
 int	nmbclusters;
 struct	mbuf *mfree, *mclfree;
-char	mclrefcnt[NMBCLUSTERS];
+char	mclrefcnt[NMBCLUSTERS + 1];
 int	m_want;
 struct	mbuf *m_get(),*m_getclr(),*m_free(),*m_more(),*m_copy(),*m_pullup();
 caddr_t	m_clalloc();
