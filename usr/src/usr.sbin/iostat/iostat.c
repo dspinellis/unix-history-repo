@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)iostat.c	4.14 (Berkeley) 86/10/19";
+static	char *sccsid = "@(#)iostat.c	4.15 (Berkeley) 87/01/12";
 #endif
 
 /*
@@ -105,7 +105,7 @@ main(argc, argv)
 	iter = 0;
 	for (argc--, argv++; argc > 0 && argv[0][0] == '-'; argc--, argv++)
 		;
-	if (nl[DK_NDRIVE].n_value == 0) {
+	if (nl[X_DK_NDRIVE].n_value == 0) {
 		printf("dk_ndrive undefined in system\n");
 		exit(1);
 	}
