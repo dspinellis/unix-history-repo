@@ -40,6 +40,8 @@ double	avenrun[3];		/* load average, of runnable procs */
  * Setup the paging constants for the clock algorithm.
  * Called after the system is initialized and the amount of memory
  * and number of paging devices is known.
+ *
+ * Threshold constants are defined in ../machine/vmparam.h.
  */
 setupclock()
 {
@@ -52,47 +54,18 @@ setupclock()
 	 *	minfree		is minimal amount of free memory which is
 	 *			tolerable.
 	 */
-
-#ifdef vax
-	/*
-	 * Strategy of 4/22/81:
-	 *	lotsfree is 1/4 of memory free.
-	 *	desfree is 200k bytes, but at most 1/8 of memory
-	 *	minfree is 64k bytes, but at most 1/2 of desfree
-	 */
 	if (lotsfree == 0)
-		lotsfree = LOOPPAGES / 4;
+		lotsfree = LOOPPAGES / LOTSFREEFRACT;
 	if (desfree == 0) {
-		desfree = (200*1024) / NBPG;
-		if (desfree > LOOPPAGES / 8)
-			desfree = LOOPPAGES / 8;
+		desfree = DESFREE / NBPG;
+		if (desfree > LOOPPAGES / DESFREEFRACT)
+			desfree = LOOPPAGES / DESFREEFRACT;
 	}
 	if (minfree == 0) {
-		minfree = (64*1024) / NBPG;
-		if (minfree > desfree/2)
-			minfree = desfree / 2;
+		minfree = MINFREE / NBPG;
+		if (minfree > desfree / MINFREEFRACT)
+			minfree = desfree / MINFREEFRACT;
 	}
-#endif
-#ifdef sun
-	/*
-	 * Strategy of 3/17/83:
-	 *	lotsfree is 1/8 of memory free.
-	 *	desfree is 100k bytes, but at most 1/16 of memory
-	 *	minfree is 32k bytes, but at most 1/2 of desfree
-	 */
-	if (lotsfree == 0)
-		lotsfree = LOOPPAGES / 8;
-	if (desfree == 0) {
-		desfree = (100*1024) / NBPG;
-		if (desfree > LOOPPAGES / 16)
-			desfree = LOOPPAGES / 16;
-	}
-	if (minfree == 0) {
-		minfree = (32*1024) / NBPG;
-		if (minfree > desfree/2)
-			minfree = desfree / 2;
-	}
-#endif
 	/*
 	 * Maxpgio thresholds how much paging is acceptable.
 	 * This figures that 2/3 busy on an arm is all that is
@@ -108,12 +81,6 @@ setupclock()
 	 *	<=1m	2m	3m	4m	8m
 	 * 	5s	10s	15s	20s	40s
 	 */
-#ifdef vax
-#define	LOTSOFMEM	2
-#endif
-#ifdef sun
-#define	LOTSOFMEM	4
-#endif
 	if (nswdev == 1 && physmem*NBPG > LOTSOFMEM*1024*(1024-16))
 		printf("WARNING: should run interleaved swap with >= %dMb\n",
 		    LOTSOFMEM);
@@ -129,12 +96,6 @@ setupclock()
 	 */
 	if (slowscan == 0)
 		slowscan = 2 * fastscan;
-#ifdef notdef
-	printf("slowscan %d, fastscan %d, maxpgio %d\n",
-	    slowscan, fastscan, maxpgio);
-	printf("lotsfree %d, desfree %d, minfree %d\n",
-	    lotsfree, desfree, minfree);
-#endif
 }
 
 /*
