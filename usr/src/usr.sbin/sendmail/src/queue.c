@@ -16,10 +16,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-static char	SccsId[] = "@(#)queue.c	5.2 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.3 (Berkeley) %G%	(no queueing)";
 # else QUEUE
 
-static char	SccsId[] = "@(#)queue.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.3 (Berkeley) %G%";
 
 /*
 **  Work queue.
@@ -601,7 +601,7 @@ printqueue()
 			continue;
 		}
 		printf("%7s", w->w_name + 2);
-		strcpy(lf, w->w_name);
+		(void) strcpy(lf, w->w_name);
 		lf[0] = 'l';
 		if (stat(lf, &st) >= 0)
 			printf("*");
@@ -616,7 +616,7 @@ printqueue()
 			switch (buf[0])
 			{
 			  case 'M':	/* error message */
-				strcpy(message, &buf[1]);
+				(void) strcpy(message, &buf[1]);
 				break;
 
 			  case 'S':	/* sender name */
@@ -631,7 +631,7 @@ printqueue()
 				break;
 
 			  case 'T':	/* creation time */
-				sscanf(&buf[1], "%ld", &submittime);
+				(void) sscanf(&buf[1], "%ld", &submittime);
 				break;
 
 			  case 'D':	/* data file name */
@@ -643,7 +643,7 @@ printqueue()
 		if (submittime == (time_t) 0)
 			printf(" (no control file)");
 		printf("\n");
-		fclose(f);
+		(void) fclose(f);
 	}
 }
 
@@ -697,9 +697,9 @@ queuename(e, type)
 			c2 = 'A' - 1;
 		}
 		(void) sprintf(qf, "qfAA%05d", pid);
-		strcpy(lf, qf);
+		(void) strcpy(lf, qf);
 		lf[0] = 'l';
-		strcpy(nf, qf);
+		(void) strcpy(nf, qf);
 		nf[0] = 'n';
 
 		while (c1 < '~' || c2 < 'Z')

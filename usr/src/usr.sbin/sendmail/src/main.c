@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char	SccsId[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 # define  _DEFINE
@@ -125,8 +125,8 @@ main(argc, argv, envp)
 			ConfFile = &p[2];
 			if (ConfFile[0] == '\0')
 				ConfFile = "sendmail.cf";
-			setgid(getrgid());
-			setuid(getruid());
+			(void) setgid(getrgid());
+			(void) setuid(getruid());
 			break;
 		}
 		else if (strncmp(p, "-bz", 3) == 0)
@@ -343,8 +343,8 @@ main(argc, argv, envp)
 	{
 	  case MD_FREEZE:
 		/* this is critical to avoid forgeries of the frozen config */
-		setgid(getgid());
-		setuid(getuid());
+		(void) setgid(getgid());
+		(void) setuid(getuid());
 
 		/* freeze the configuration */
 		freeze(FreezeFile);
@@ -438,7 +438,7 @@ main(argc, argv, envp)
 				m->m_maxsize);
 			for (j = '\0'; j <= '\177'; j++)
 				if (bitnset(j, m->m_flags))
-					putchar(j);
+					(void) putchar(j);
 			printf(" E=");
 			xputs(m->m_eol);
 			printf("\n");
@@ -469,7 +469,7 @@ main(argc, argv, envp)
 			extern char *DelimChar;
 
 			printf("> ");
-			fflush(stdout);
+			(void) fflush(stdout);
 			if (fgets(buf, sizeof buf, stdin) == NULL)
 				finis();
 			for (p = buf; isspace(*p); *p++)
