@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	2.13 85/04/25";
+static	char *sccsid = "@(#)dr_1.c	2.14 85/04/26";
 #endif
 
 #include "driver.h"
@@ -388,49 +388,47 @@ next()
 				[sizeof bestship->file->captain - 1] = 0;
 			log(bestship);
 		}
-		sync_close(1);
-		exit(0);
+		return -1;
 	}
 	Write(W_TURN, SHIP(0), 0, turn, 0, 0, 0);
-	if (turn % 7 == 0) {
-		if (die() >= cc->windchange || !windspeed) {
+	if (turn % 7 == 0 && (die() >= cc->windchange || !windspeed)) {
+		switch (die()) {
+		case 1:
+			winddir = 1;
+			break;
+		case 2:
+			break;
+		case 3:
+			winddir++;
+			break;
+		case 4:
+			winddir--;
+			break;
+		case 5:
+			winddir += 2;
+			break;
+		case 6:
+			winddir -= 2;
+			break;
+		}
+		if (winddir > 8)
+			winddir -= 8;
+		if (winddir < 1)
+			winddir += 8;
+		if (windspeed)
 			switch (die()) {
 			case 1:
-				winddir = 1;
-				break;
 			case 2:
-				break;
-			case 3:
-				winddir++;
-				break;
-			case 4:
-				winddir--;
+				windspeed--;
 				break;
 			case 5:
-				winddir += 2;
-				break;
 			case 6:
-				winddir -= 2;
+				windspeed++;
 				break;
 			}
-			if (winddir > 8)
-				winddir -= 8;
-			if (winddir < 1)
-				winddir += 8;
-			if (windspeed)
-				switch (die()) {
-				case 1:
-				case 2:
-					windspeed--;
-					break;
-				case 5:
-				case 6:
-					windspeed++;
-					break;
-				}
-			else
-				windspeed++;
-			Write(W_WIND, SHIP(0), 0, winddir, windspeed, 0, 0);
-		}
+		else
+			windspeed++;
+		Write(W_WIND, SHIP(0), 0, winddir, windspeed, 0, 0);
 	}
+	return 0;
 }
