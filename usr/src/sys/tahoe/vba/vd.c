@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vd.c	7.6 (Berkeley) %G%
+ *	@(#)vd.c	7.7 (Berkeley) %G%
  */
 
 #include "dk.h"
@@ -76,6 +76,8 @@ struct vdsoftc {
 #define	VD_STARTED	0x2	/* start command issued */
 #define	VD_DOSEEKS	0x4	/* should overlap seeks */
 #define	VD_SCATGATH	0x8	/* can do scatter-gather commands (correctly) */
+#define	VD_LOCKED	0x10	/* locked for direct controller access */
+#define	VD_WAIT		0x20	/* someone needs direct controller access */
 	u_short	vd_type;	/* controller type */
 	u_short	vd_wticks;	/* timeout */
 	struct	mdcb vd_mdcb;	/* master command block */
@@ -413,20 +415,24 @@ vdinit(dev, flags)
 			dk->dk_state = OPENRAW;
 		}
 #ifdef COMPAT_42
+		vdlock(vi->ui_ctlr);
 		if (vdmaptype(vi, lp))
 			dk->dk_state = OPEN;
+		vdunlock(vi->ui_ctlr);
 #endif
 	} else {
 		/*
 		 * Now that we have the label, configure
 		 * the correct drive parameters.
 		 */
+		vdlock(vi->ui_ctlr);
 		if (vdreset_drive(vi))
 			dk->dk_state = OPEN;
 		else {
 			dk->dk_state = CLOSED;
 			error = ENXIO;
 		}
+		vdunlock(vi->ui_ctlr);
 	}
 #ifndef SECSIZE
 	vd_setsecsize(dk, lp);
@@ -734,6 +740,42 @@ setupaddr:
 	VDGO(vm->um_addr, vd->vd_mdcbphys, vd->vd_type);
 }
 
+/*
+ * Wait for controller to finish current operation
+ * so that direct controller accesses can be done.
+ */
+vdlock(ctlr)
+{
+	register struct vba_ctlr *vm = vdminfo[ctlr];
+	register struct vdsoftc *vd = &vdsoftc[ctlr];
+	int s;
+
+	s = spl7();
+	while (vm->um_tab.b_active || vd->vd_flags & VD_LOCKED) {
+		vd->vd_flags |= VD_WAIT;
+		sleep((caddr_t)vd, PRIBIO);
+	}
+	vd->vd_flags |= VD_LOCKED;
+	splx(s);
+}
+
+/*
+ * Continue normal operations after pausing for 
+ * munging the controller directly.
+ */
+vdunlock(ctlr)
+{
+	register struct vba_ctlr *vm = vdminfo[ctlr];
+	register struct vdsoftc *vd = &vdsoftc[ctlr];
+
+	vd->vd_flags &= ~VD_LOCKED;
+	if (vd->vd_flags & VD_WAIT) {
+		vd->vd_flags &= ~VD_WAIT;
+		wakeup((caddr_t)vd);
+	} else if (vm->um_tab.b_actf || vm->um_tab.b_seekf)
+		vdstart(vm);
+}
+
 #define	DONTCARE (DCBS_DSE|DCBS_DSL|DCBS_TOP|DCBS_TOM|DCBS_FAIL|DCBS_DONE)
 /*
  * Handle a disk interrupt.
@@ -843,7 +885,10 @@ vdintr(ctlr)
 	 * If there are devices ready to
 	 * transfer, start the controller.
 	 */
-	if (vm->um_tab.b_actf || vm->um_tab.b_seekf)
+	if (vd->vd_flags & VD_WAIT) {
+		vd->vd_flags &= ~VD_WAIT;
+		wakeup((caddr_t)vd);
+	} else if (vm->um_tab.b_actf || vm->um_tab.b_seekf)
 		vdstart(vm);
 }
 
