@@ -1,0 +1,155 @@
+.\" Copyright (c) 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)doc-ditroff	1.1 (Berkeley) %G%
+.\"
+.\" tmac.mdoc-ditroff
+.\"
+.\"     %beginstrip%
+.ds aD \fI\s10
+.ds aR \f(CO\s10
+.ds cM \f(CB\s10
+.ds eM \fI\s10
+.ds eR \fC\s10
+.ds eV \fC\s10
+.ds fA \f(CO\s10
+.ds fD \f(CB\s10
+.ds fL \f(CB\s10
+.ds fN \f(CB\s10
+.ds fT \f(CO\s10
+.ds Hs \fR\s10
+.ds iC \f(CB\s10
+.ds lI \fC
+.ds lP \fR\|(\|\fP\s10
+.ds lp \fR(\|\fP\s10
+.ds rP \fR\|)\|\fP\s10
+.ds rp \fR\|)\|\fP\s10
+.ds lB \fR\^[\^\fP\s10
+.ds rB \fR\^]\fP\s10
+.ds mL \fB\s10
+.ds nM \f(CB\s10
+.ds nO \fR\s10
+.ds pA \fC\s10
+.ds Pu \fR[.,:;(\^)[\^]\fR]
+.ds rA \fR\s10
+.ds rT \f(CO\s10
+.ds sH \fB\s9
+.ds sY \fB\s10
+.ds sX \fR\s10
+.ds tN \fR\s10
+.ds vA \fI\s10
+.ds Vs \fR\s10
+.ds vT \f(CB\s10
+.ds xR \fC\s10
+.tr *\(**
+.nr sI \w'\fC,'u*5
+.nr Ti \n(sIu
+.nr Pp .5v
+.ds lS \0
+.nr lS \w'\0'u
+.nr dI 6n
+.de pL
+.\" .nr Hm .2i is for xproof
+.\" .nr Hm .5i is for troff
+.nr Hm .5i
+.nr Fm .5i
+.nr ll 5.5i
+.ll 5.5i
+.nr lt 5.5i
+.lt 5.5i
+.nr po 1.56i
+.po 1.56i
+.nr dV .5v
+..
+.ds <= \(<=
+.ds >= \(>=
+.ds Lq \&``
+.ds Rq \&''
+.ds ua \(ua
+.ds aa \(aa
+.ds ga \(ga
+.ds sR \(aa
+.ds sL \(ga
+.ds q \&"
+.\"
+.de hK
+.nr % 1
+.ds hT \\*(dT
+.if !"\\*(cH"Null" \{\
+.       ie !"\\*(gP"Null" .as hT \|(\|\\*(cH\\*(gP\|)
+.       el .as hT \\|(\\|\\*(cH\\|)
+.\}
+.if "\\*(cH"Null" \{\
+.	if !"\\*(gP"Null" .as hT \&\|(\|\\*(gP\|)
+.\}
+.wh 0 hM
+.wh -1.25i fM
+'bp
+.em lM
+..
+.\"
+.nr fW \w'\fC0'
+.de sW
+.nr sW \w'\fC\\$1'
+.ie \\n(sW>=\\n(fW \{\
+.       ie \\n(sW%\\n(fW .nr sW (\\n(sW/\\n(fW)+1
+.       el .nr sW \\n(sW/\\n(fW
+.\}
+.el \{\
+.	ie \\n(sW>0 .nr sW 1
+.	el .nr sW 0
+.\}
+..
+.\"
+.de aW
+.nr sW \w'\fC\\*(A\\$1'
+.ie \\n(sW>=\\n(fW \{\
+.       ie \\n(sW%\\n(fW .nr sW (\\n(sW/\\n(fW)+1
+.       el .nr sW \\n(sW/\\n(fW
+.\}
+.el \{\
+.	ie \\n(sW>0 .nr sW 1
+.	el .nr sW 0
+.\}
+..
+.\" NS Ql macro - Quoted literal define
+.de Ql
+.if \\n(aC==0  \{\
+.	ds mN Ql
+.       ds A1 \\$1
+.       ds A2 \\$2
+.       ds A3 \\$3
+.       ds A4 \\$4
+.       ds A5 \\$5
+.       ds A6 \\$6
+.       ds A7 \\$7
+.       ds A8 \\$8
+. 	nr fV \\n(.$
+. 	fV
+.\}
+.nr aP+1
+.aW \\n(aP
+.nr aP-1
+.if \\n(sW>2 .Li
+.if \\n(sW<=2 \{\
+.\" Db on
+.	aY
+.	ds A1 Li
+.	ds A2 \\$1
+.	ds A3 \\$2
+.	ds A4 \\$3
+.	ds A5 \\$4
+.	ds A6 \\$5
+.	ds A7 \\$6
+.	ds A8 \\$7
+.	ds A9 \\$8
+. 	nr fV \\n(.$+1
+.	fV
+.	ds qL \&\\*(sL
+.	ds qR \&\\*(sR
+.	En
+.\" Db off
+.\}
+..
