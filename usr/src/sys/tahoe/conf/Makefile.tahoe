@@ -1,4 +1,4 @@
-#	@(#)Makefile.tahoe	1.15 (Berkeley) %G%
+#	@(#)Makefile.tahoe	1.16 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -77,7 +77,7 @@ trap.o cons.o: Makefile
 
 assym.s: ../h/param.h ../tahoe/pte.h ../h/buf.h ../h/vmparam.h \
     ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../tahoevba/vbaparam.h \
-    ../h/proc.h ../h/msgbuf.h ../tahoe/scb.h ../machine/vmparam.h
+    ../h/proc.h ../h/msgbuf.h ../tahoe/scb.h machine/vmparam.h
 	${CC} ${INCLUDES} -DKERNEL ${IDENT} ${PARAM} ../tahoe/genassym.c
 	./a.out >assym.s; rm -f a.out
 
