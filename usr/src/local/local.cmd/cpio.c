@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)cpio.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)cpio.c	4.3	(Berkeley)	%G%";
 #endif not lint
 
 /*	cpio	COMPILE:	cc -O cpio.c -s -i -o cpio 
@@ -459,7 +459,7 @@ long t;
 
 chartobin()
 {
-	sscanf(Chdr,"%6o%6ho%6ho%6ho%6ho%6ho%6ho%6ho%11lo%6ho%11lo",
+	sscanf(Chdr,"%6ho%6ho%6ho%6ho%6ho%6ho%6ho%6ho%11lo%6ho%11lo",
 		&Hdr.h_magic,&Hdr.h_dev,&Hdr.h_ino,&Hdr.h_mode,&Hdr.h_uid,
 		&Hdr.h_gid,&Hdr.h_nlink,&Hdr.h_rdev,&Longtime,&Hdr.h_namesize,
 		&Longfile);
