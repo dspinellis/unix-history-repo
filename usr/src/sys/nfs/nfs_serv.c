@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.7 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -195,7 +195,8 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq)
 	u_long xid;
 {
 	register struct nfsv2_fattr *fp;
-	register struct nameidata *ndp = &u.u_nd;
+	struct nameidata nami;
+	register struct nameidata *ndp = &nami;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -203,6 +204,7 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq)
 	long len;
 	struct vattr va, *vap = &va;
 
+	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
@@ -552,14 +554,15 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq)
 	register struct nfsv2_fattr *fp;
 	struct vattr va;
 	register struct vattr *vap = &va;
-	register struct nameidata *ndp = &u.u_nd;
+	struct nameidata nami;
+	register struct nameidata *ndp = &nami;
 	nfsm_srvars;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
 	long len;
 
-	ndp->ni_vp = ndp->ni_dvp = (struct vnode *)0;
+	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
@@ -628,13 +631,15 @@ nfsrv_remove(mrep, md, dpos, cred, xid, mrq)
 	struct ucred *cred;
 	long xid;
 {
-	register struct nameidata *ndp = &u.u_nd;
+	struct nameidata nami;
+	register struct nameidata *ndp = &nami;
 	nfsm_srvars;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
 	long len;
 
+	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
@@ -675,15 +680,15 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq)
 {
 	register struct nameidata *ndp;
 	nfsm_srvars;
-	struct nameidata tond;
+	struct nameidata nami, tond;
 	struct vnode *fvp, *tvp, *tdvp;
 	nfsv2fh_t fnfh, tnfh;
 	fhandle_t *ffhp, *tfhp;
 	long len, len2;
 	int rootflg = 0;
 
-	ndp = &u.u_nd;
-	ndp->ni_vp = ndp->ni_dvp = (struct vnode *)0;
+	ndp = &nami;
+	ndinit(ndp);
 	ffhp = &fnfh.fh_generic;
 	tfhp = &tnfh.fh_generic;
 	nfsm_srvmtofh(ffhp);
@@ -703,7 +708,9 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq)
 	nfsm_srvstrsiz(len2, NFS_MAXNAMLEN);
 	if (rootflg)
 		cred->cr_uid = 0;
-	nddup(ndp, &tond);
+	ndinit(&tond);
+	crhold(cred);
+	tond.ni_cred = cred;
 	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE;
 	error = nfs_namei(&tond, tfhp, len2, &md, &dpos);
 	tdvp = tond.ni_dvp;
@@ -732,12 +739,14 @@ out:
 		VOP_ABORTOP(&tond);
 		VOP_ABORTOP(ndp);
 	} else {
+		VREF(ndp->ni_cdir);
 		VREF(tond.ni_cdir);
 		error = VOP_RENAME(ndp, &tond);
+		vrele(ndp->ni_cdir);
 		vrele(tond.ni_cdir);
 	}
 out1:
-	ndrele(ndp);
+	crfree(cred);
 	nfsm_reply(0);
 	return (error);
 nfsmout:
@@ -754,13 +763,15 @@ nfsrv_link(mrep, md, dpos, cred, xid, mrq)
 	struct ucred *cred;
 	long xid;
 {
-	register struct nameidata *ndp = &u.u_nd;
+	struct nameidata nami;
+	register struct nameidata *ndp = &nami;
 	nfsm_srvars;
 	struct vnode *vp, *xp;
 	nfsv2fh_t nfh, dnfh;
 	fhandle_t *fhp, *dfhp;
 	long len;
 
+	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	dfhp = &dnfh.fh_generic;
 	nfsm_srvmtofh(fhp);
@@ -803,7 +814,8 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq)
 	long xid;
 {
 	struct vattr va;
-	register struct nameidata *ndp = &u.u_nd;
+	struct nameidata nami;
+	register struct nameidata *ndp = &nami;
 	register struct vattr *vap = &va;
 	nfsm_srvars;
 	struct vnode *vp;
@@ -811,7 +823,7 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq)
 	fhandle_t *fhp;
 	long len, tlen, len2;
 
-	ndp->ni_vp = ndp->ni_dvp = (struct vnode *)0;
+	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
@@ -860,14 +872,15 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq)
 	struct vattr va;
 	register struct vattr *vap = &va;
 	register struct nfsv2_fattr *fp;
-	register struct nameidata *ndp = &u.u_nd;
+	struct nameidata nami;
+	register struct nameidata *ndp = &nami;
 	nfsm_srvars;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
 	long len;
 
-	ndp->ni_vp = ndp->ni_dvp = (struct vnode *)0;
+	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
@@ -928,13 +941,15 @@ nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq)
 	struct ucred *cred;
 	long xid;
 {
-	register struct nameidata *ndp = &u.u_nd;
+	struct nameidata nami;
+	register struct nameidata *ndp = &nami;
 	nfsm_srvars;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
 	long len;
 
+	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);

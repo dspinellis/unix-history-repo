@@ -260,17 +260,18 @@ struct rpc_replyhead {
  * We must search through the list of received datagrams matching them
  * with outstanding requests using the xid, until ours is found.
  */
-nfs_udpreply(so, mntp, repl, myrep)
+nfs_udpreply(so, mntp, myrep)
 	register struct socket *so;
 	struct nfsmount *mntp;
-	struct nfsreq *repl, *myrep;
+	struct nfsreq *myrep;
 {
 	register struct mbuf *m;
 	register struct nfsreq *rep;
 	register int error = 0, s;
 	struct protosw *pr = so->so_proto;
 	struct mbuf *nextrecord;
-	struct sockaddr_in *sad, *sad2;
+	struct sockaddr_in *saddr;
+	u_long inaddr;
 	struct rpc_replyhead replyh;
 	struct mbuf *mp;
 	char *cp;
@@ -278,16 +279,23 @@ nfs_udpreply(so, mntp, repl, myrep)
 	int found;
 
 restart:
-	/* Already received, bye bye */
-	if (myrep->r_mrep != NULL)
-		return (0);
-	/* If a soft mount and we have run out of retries */
-	if (myrep->r_retry == 0 && myrep->r_timer == 0)
-		return (ETIMEDOUT);
 	nfs_sblock(&so->so_rcv);
+	/* Already received, bye bye */
+	if (myrep->r_mrep != NULL) {
+		sbunlock(&so->so_rcv);
+		return (0);
+	}
+	/* If a soft mount and we have run out of retries */
+	if (myrep->r_retry == 0 && myrep->r_timer == 0) {
+		sbunlock(&so->so_rcv);
+		return (ETIMEDOUT);
+	}
 	s = splnet();
 
-	if (so->so_rcv.sb_cc == 0) {
+	m = so->so_rcv.sb_mb;
+	if (m == 0) {
+		if (so->so_rcv.sb_cc)
+			panic("nfs_soreply 1");
 		if (so->so_error) {
 			error = so->so_error;
 			so->so_error = 0;
@@ -300,9 +308,6 @@ restart:
 		splx(s);
 		goto restart;
 	}
-	m = so->so_rcv.sb_mb;
-	if (m == 0)
-		panic("nfs_soreply 1");
 	nextrecord = m->m_nextpkt;
 
 	/*
@@ -311,11 +316,8 @@ restart:
 	 */
 	if (m->m_type != MT_SONAME)
 		panic("nfs reply SONAME");
-	sad = mtod(m, struct sockaddr_in *);
-	sad2 = mtod(mntp->nm_sockaddr, struct sockaddr_in *);
-	found = 0;
-	if (sad->sin_addr.s_addr != sad2->sin_addr.s_addr)
-		goto dropit;
+	saddr = mtod(m, struct sockaddr_in *);
+	inaddr = saddr->sin_addr.s_addr;
 	sbfree(&so->so_rcv, m);
 	MFREE(m, so->so_rcv.sb_mb);
 	m = so->so_rcv.sb_mb;
@@ -326,9 +328,10 @@ restart:
 		MFREE(m, so->so_rcv.sb_mb);
 		m = so->so_rcv.sb_mb;
 	}
-	if (m)
+	if (m) {
 		m->m_nextpkt = nextrecord;
-	else {
+	} else {
+		so->so_rcv.sb_mb = nextrecord;
 		sbunlock(&so->so_rcv);
 		splx(s);
 		goto restart;
@@ -354,15 +357,17 @@ restart:
 				mp = mp->m_next;
 		}
 	}
+	found = 0;
 	if (replyh.r_rep != rpc_reply || mp == NULL)
 		goto dropit;
 	/*
 	 * Loop through the request list to match up the reply
 	 * Iff no match, just drop the datagram
 	 */
-	rep = repl;
-	while (!found && rep) {
-		if (rep->r_mrep == NULL && replyh.r_xid == rep->r_xid) {
+	rep = nfsreqh.r_next;
+	while (!found && rep != &nfsreqh) {
+		if (rep->r_mrep == NULL && replyh.r_xid == rep->r_xid &&
+		    inaddr == rep->r_inaddr) {
 			/* Found it.. */
 			rep->r_mrep = m;
 			while (m) {
@@ -380,8 +385,12 @@ restart:
 	}
 	/* Iff not matched to request, drop it */
 dropit:
-	if (!found)
+	if (!found) {
 		sbdroprecord(&so->so_rcv);
+	} else if (so->so_rcv.sb_flags & SB_WAIT) {
+		so->so_rcv.sb_flags &= ~SB_WAIT;
+		wakeup((caddr_t)&so->so_rcv.sb_cc);
+	}
 	sbunlock(&so->so_rcv);
 	splx(s);
 	goto restart;
@@ -416,6 +425,8 @@ nfs_request(vp, mreq, xid, mp, mrp, mdp, dposp)
 	register int len;
 	struct nfsmount *mntp;
 	struct mbuf *md;
+	struct sockaddr_in *saddr;
+	struct nfsreq *reph;
 	caddr_t dpos;
 	char *cp2;
 	int t1;
@@ -427,6 +438,8 @@ nfs_request(vp, mreq, xid, mp, mrp, mdp, dposp)
 	MALLOC(rep, struct nfsreq *, sizeof(struct nfsreq), M_NFSREQ, M_WAITOK);
 	rep->r_xid = xid;
 	rep->r_mntp = mntp;
+	saddr = mtod(mntp->nm_sockaddr, struct sockaddr_in *);
+	rep->r_inaddr = saddr->sin_addr.s_addr;
 	rep->r_vp = vp;
 	if (mntp->nm_flag & NFSMNT_SOFT)
 		rep->r_retry = mntp->nm_retrans;
@@ -444,12 +457,17 @@ nfs_request(vp, mreq, xid, mp, mrp, mdp, dposp)
 	m = NFSMCOPY(mreq, 0, M_COPYALL, M_WAIT);
 
 	/* Chain it into list of outstanding requests */
+	reph = &nfsreqh;
 	s = splnet();
-	rep->r_next = nfsreqh.r_next;
-	if (rep->r_next != NULL)
-		rep->r_next->r_prev = rep;
-	nfsreqh.r_next = rep;
-	rep->r_prev = &nfsreqh;
+	if (reph->r_prev == NULL) {
+		reph->r_next = rep;
+		rep->r_prev = reph;
+	} else {
+		reph->r_prev->r_next = rep;
+		rep->r_prev = reph->r_prev;
+	}
+	reph->r_prev = rep;
+	rep->r_next = reph;
 	splx(s);
 
 	/*
@@ -458,12 +476,11 @@ nfs_request(vp, mreq, xid, mp, mrp, mdp, dposp)
 	 */
 	if (m != NULL)
 		error = nfs_udpsend(mntp->nm_so, (struct mbuf *)0, m, 0, len);
-	error = nfs_udpreply(mntp->nm_so, mntp, nfsreqh.r_next, rep);
+	error = nfs_udpreply(mntp->nm_so, mntp, rep);
 
 	s = splnet();
 	rep->r_prev->r_next = rep->r_next;
-	if (rep->r_next != NULL)
-		rep->r_next->r_prev = rep->r_prev;
+	rep->r_next->r_prev = rep->r_prev;
 	splx(s);
 	m_freem(rep->r_mreq);
 	mrep = md = rep->r_mrep;
@@ -677,7 +694,7 @@ nfs_timer()
 
 	s = splnet();
 	rep = nfsreqh.r_next;
-	while (rep != NULL) {
+	while (rep && rep != &nfsreqh) {
 		if (rep->r_timer > 0)
 			rep->r_timer--;
 		else if (rep->r_mrep == NULL && rep->r_retry > 0) {
@@ -717,5 +734,5 @@ nfs_sbwait(sb)
 	struct sockbuf *sb;
 {
 	sb->sb_flags |= SB_WAIT;
-	sleep((caddr_t)&sb->sb_cc, PZERO-1);
+	sleep((caddr_t)&sb->sb_cc, PZERO-2);
 }

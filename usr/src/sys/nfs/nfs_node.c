@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_node.c	7.4 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -171,7 +171,7 @@ loop:
 	/*
 	 * Flush out any associated bio buffers that might be lying about
 	 */
-	if (vp->v_type == VREG && (np->n_flag & NMODIFIED) == 0) {
+	if (vp->v_type == VREG && (np->n_flag & NBUFFERED)) {
 		np->n_flag |= NLOCKED;
 		nfs_blkflush(vp, (daddr_t)0, np->n_size, TRUE);
 	}
@@ -244,17 +244,15 @@ nfs_inactive(vp)
 		panic("nfs_inactive NULL vp");
 	if (vp->v_count == 0) {
 		np = VTONFS(vp);
+		nfs_lock(vp);
 		sp = np->n_sillyrename;
 		np->n_sillyrename = (struct sillyrename *)0;
-		nfs_lock(vp);
 		if (sp) {
-printf("in silltren inact\n");
 			/*
 			 * Remove the silly file that was rename'd earlier
 			 */
 			ndp = &sp->s_namei;
 			if (!nfs_nget(vp->v_mount, &sp->s_fh, &dnp)) {
-printf("got the dir\n");
 				ndp->ni_dvp = NFSTOV(dnp);
 				nfs_removeit(ndp);
 				nfs_nput(ndp->ni_dvp);
@@ -270,11 +268,10 @@ printf("got the dir\n");
 		 */
 		s = splnet();
 		rep = nfsreqh.r_next;
-		while (rep) {
+		while (rep && rep != &nfsreqh) {
 			if (rep->r_vp == vp) {
 				rep->r_prev->r_next = rep2 = rep->r_next;
-				if (rep->r_next != NULL)
-					rep->r_next->r_prev = rep->r_prev;
+				rep->r_next->r_prev = rep->r_prev;
 				m_freem(rep->r_mreq);
 				if (rep->r_mrep != NULL)
 					m_freem(rep->r_mrep);

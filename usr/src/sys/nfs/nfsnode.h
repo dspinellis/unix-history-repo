@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsnode.h	7.2 (Berkeley) %G%
+ *	@(#)nfsnode.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -42,6 +42,7 @@ struct nfsnode {
 	daddr_t	n_lastr;	/* Last block read for read ahead */
 	u_long	n_size;		/* Current size of file */
 	time_t	n_mtime;	/* Prev modify time to maintain data cache consistency*/
+	int	n_error;	/* Save write error value */
 };
 
 #define	n_forw		n_chain[0]
@@ -65,6 +66,9 @@ extern struct vnodeops nfsv2chr_vnodeops; /* vnode operations for chr devices */
 /*
  * Flags for n_flag
  */
-#define	NLOCKED		0x1
-#define	NWANT		0x2
-#define NMODIFIED	0x4
+#define	NLOCKED		0x1	/* Lock the node for other local accesses */
+#define	NWANT		0x2	/* Want above lock */
+#define	NMODIFIED	0x4	/* Might have a modified buffer in bio */
+#define	NBUFFERED	0x8	/* Might have a buffer in bio */
+#define	NPAGEDON	0x10	/* Might have associated memory pages */
+#define	NWRITEERR	0x20	/* Flag write errors so close will know */
