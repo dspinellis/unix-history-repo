@@ -50,7 +50,7 @@ CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 LINTFLAGS	= -hbxaz
 
 # The source files...
-ALLH =	extern.h
+ALLH =	defines.h externs.h general.h types.h
 
 ALLC =	commands.c main.c network.c sys_bsd.c sys_dos.c telnet.c \
 		terminal.c utilities.c
