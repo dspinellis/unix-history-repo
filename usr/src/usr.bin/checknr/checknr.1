@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)checknr.1	6.5 (Berkeley) %G%
+.\"     @(#)checknr.1	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHECKNR 1
@@ -13,10 +13,10 @@
 .Nd check nroff/troff files
 .Sh SYNOPSIS
 .Nm checknr
+.Op Fl a Ns Ar \&.x1.y1.x2.y2. ... \&.xn.yn
+.Op Fl c Ns Ar \&.x1.x2.x3 ... \&.xn
 .Op Fl s
 .Op Fl f
-.Op Fl \&a Ar \&.x1.y1.x2.y2. ... \&.xn.yn
-.Op Fl \&c Ar \&.x1.x2.x3 ... \&.xn
 .Ar file
 .Sh DESCRIPTION
 .Nm Checknr
@@ -30,22 +30,10 @@ and unknown commands.
 If no files are specified,
 .Nm checknr
 checks the standard input.
-Delimiters checked are:
-.Pp
-.Df I
-.Bu
-Font changes using \efx ... \efP.
-.Bu
-Size changes using \esx ... \es0.
-.Bu
-Macros that come in open ... close forms, for example,
-the .TS and .TE macros which must always come in pairs.
-.Tp
-.De
 .Pp
 Options:
-.Tw Ds
-.Tp Fl a
+.Bl -tag -width Ds
+.It Fl a
 Add additional pairs of macros to the list of known macros.
 This must be followed by groups of six characters, each group defining
 a pair of macros.
@@ -55,33 +43,62 @@ the first macro name,
 another period,
 and the second macro name.
 For example, to define a pair .BS and .ES, use
-.Ql \-a.BS.ES
-.Pp
-.Tp Fl c
+.Sq Li \-a.BS.ES
+.It Fl c
 Define commands which would otherwise be complained about
 as undefined.
-.Tp Fl f
+.It Fl f
 Request
 .Nm checknr
-to ignore \ef font changes.
-.Tp Fl s
-Ignore \es size changes.
-.Tp
+to ignore
+.Ql\ef
+font changes.
+.It Fl s
+Ignore
+.Ql \es
+size changes.
+.El
+.Pp
+Delimiters checked are:
+.Bl -enum
+.It
+Font changes using \efx ... \efP.
+.It
+Size changes using \esx ... \es0.
+.It
+Macros that come in open ... close forms, for example,
+the .TS and .TE macros which must always come in pairs.
+.El
 .Pp
 .Nm Checknr
 is intended for use on documents that are prepared with
 .Nm checknr
 in mind, much the same as
 .Xr lint 1 .
-It expects a certain document writing style for \ef and \es commands,
-in that each \efx must be terminated with \efP and
-each \esx must be terminated with \es0.
+It expects a certain document writing style for
+.Ql \ef
+and
+.Ql \es
+commands,
+in that each
+.Ql \efx
+must be terminated with
+.Ql \efP
+and
+each
+.Ql \esx
+must be terminated with
+.Ql \es0 .
 While it will work to directly go into the next font or explicitly
 specify the original font or point size,
 and many existing documents actually do this,
 such a practice will produce complaints from
 .Nm checknr .
-Since it is probably better to use the \efP and \es0 forms anyway,
+Since it is probably better to use the
+.Ql \efP
+and
+.Ql \es0
+forms anyway,
 you should think of this as a contribution to your document
 preparation style.
 .Pp
@@ -98,11 +115,11 @@ macro packages.
 .Xr ms 7 ,
 .Xr me 7
 .Sh DIAGNOSTICS
-.Ds L
+.Bd -ragged -compact
 Complaints about unmatched delimiters.
 Complaints about unrecognized commands.
 Various complaints about the syntax of commands.
-.De
+.Ed
 .Sh BUGS
 There is no way to define a 1 character macro name using
 .Fl a .
@@ -110,5 +127,7 @@ There is no way to define a 1 character macro name using
 Does not correctly recognize certain reasonable constructs,
 such as conditionals.
 .Sh HISTORY
+The
 .Nm
-appeared in 4.0 BSD.
+command appeared in 
+.Bx 4.0 .

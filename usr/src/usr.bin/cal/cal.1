@@ -6,11 +6,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)cal.1	6.7 (Berkeley) %G%
+.\"     @(#)cal.1	6.8 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CAL 1
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm cal
 .Nd displays a calendar
@@ -24,15 +24,17 @@ displays a simple calendar.
 If arguments are not specified,
 the current month is displayed.
 The options are as follows:
-.Tw Ds
-.Tp Fl j
+.Bl -tag -width Ds
+.It Fl j
 Display julian dates (days one-based, numbered from January 1).
-.Tp Fl y
+.It Fl y
 Display a calendar for the current year.
-.Tp
+.El
 .Pp
 A single parameter specifies the year (1 - 9999) to be displayed;
-note the year must be fully specified: ``cal 89'' will
+note the year must be fully specified:
+.Dq Li cal 89
+will
 .Em not
 display a calendar for 1989.
 Two parameters denote the month (1 - 12) and year.

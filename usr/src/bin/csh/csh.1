@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)csh.1	6.15 (Berkeley) %G%
+.\"     @(#)csh.1	6.16 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CSH 1
@@ -13,7 +13,7 @@
 .Nd a shell (command interpreter) with C-like syntax
 .Sh SYNOPSIS
 .Nm csh
-.Op Fl cef\^instvVxX
+.Op Fl bcefinstvVxX
 .Op arg ...
 .Sh DESCRIPTION
 The
@@ -30,67 +30,70 @@ and a C-like syntax. It is used both as an interactive
 login shell and a shell script command processor.
 .Ss Argument list processing
 If the first argument (argument 0) to the shell is
-.Sq Fl
+.Ql Fl
 then this
 is a login shell.
 The flag arguments are interpreted as follows:
-.Tw 5n
-.Tp Fl b
+.Bl -tag -width 5n
+.It Fl b
 This flag forces a ``break'' from option processing, causing any further
 shell arguments to be treated as non-option arguments.
 The remaining arguments will not be interpreted as shell options.
 This may be used to pass options to a shell script without confusion
 or possible subterfuge.
 The shell will not run a set-user ID script without this option.
-.Tp Fl c
+.It Fl c
 Commands are read from the (single) following argument which must
 be present.
 Any remaining arguments are placed in
 .Ar argv .
-.Tp Fl e
+.It Fl e
 The shell exits if any invoked command terminates abnormally
 or yields a non-zero exit status.
-.Tp Fl f
+.It Fl f
 The shell will start faster, because it will neither search for nor
 execute commands from the file
 .Pa \&.cshrc
 in the invoker's home directory.
-.Tp Fl i
+.It Fl i
 The shell is interactive and prompts for its top-level input,
 even if it appears to not be a terminal.
 Shells are interactive without this option if their inputs
 and outputs are terminals.
-.Tp Fl n
+.It Fl n
 Commands are parsed, but not executed.
 This aids in syntactic checking of shell scripts.
-.Tp Fl s
+.It Fl s
 Command input is taken from the standard input.
-.Tp Fl t
+.It Fl t
 A single line of input is read and executed.
-A `\e' may be used to escape the newline at the end of this
+A
+.Ql \e
+may be used to escape the newline at the end of this
 line and continue onto another line.
-.Tp Fl v
+.It Fl v
 Causes the
 .Ar verbose
 variable to be set, with the effect
 that command input is echoed after history substitution.
-.Tp Fl x
+.It Fl x
 Causes the
 .Ar echo
 variable to be set, so that commands are echoed immediately before execution.
-.Tp Fl V
+.It Fl V
 Causes the
 .Ar verbose
 variable to be set even before
-.Pa \&.cshrc is executed.
-.Tp Fl X
+.Pa .cshrc
+is executed.
+.It Fl X
 Is to
 .Fl x
 as
 .Fl V
 is to
 .Fl v .
-.Tp
+.El
 .Pp
 After processing of flag arguments, if arguments remain but none of the
 .Fl c ,
@@ -131,15 +134,15 @@ file, and to also invoke
 .Xr tset  1
 there.
 .Pp
-In the normal case, the shell will then begin reading commands from the
+In the normal case, the shell will begin reading commands from the
 terminal, prompting with `% '.
 Processing of arguments and the use of the shell to process files
 containing command scripts will be described later.
 .Pp
-The shell then repeatedly performs the following actions:
+The shell repeatedly performs the following actions:
 a line of command input is read and broken into
 .Ar words  .
-This sequence of words is placed on the command history list and then parsed.
+This sequence of words is placed on the command history list and parsed.
 Finally each command in the current line is executed.
 .Pp
 When a login shell terminates it executes commands from the files
@@ -159,7 +162,7 @@ These parser metacharacters may be made part of other words, or prevented their
 special meaning, by preceding them with `\e'.
 A newline preceded by a `\e' is equivalent to a blank.
 .Pp
-In addition strings enclosed in matched pairs of quotations,
+Strings enclosed in matched pairs of quotations,
 `\*(aa', `\*(ga' or `"',
 form parts of a word; metacharacters in these strings, including blanks
 and tabs, do not form separate words.
@@ -200,11 +203,10 @@ a table of current jobs, printed by the
 command, and assigns them small integer numbers.  When
 a job is started asynchronously with `&', the shell prints a line which looks
 like:
-.Pp
-.Df I
+.Bd -filled -offset indent
 .Op 1
 1234
-.De
+.Ed
 .Pp
 indicating that the job which was started asynchronously was job number
 1 and had one (top-level) process, whose process id was 1234.
@@ -214,11 +216,15 @@ If you are running a job and wish to do something else you may hit the key
 (control-Z) which sends a STOP signal to the current job.
 The shell will then normally indicate that the job has been `Stopped',
 and print another prompt.  You can then manipulate the state of this job,
-putting it in the background with the
+putting it in the
+.Em background
+with the
 .Ar bg
 command, or run some other
 commands and then eventually bring the job back into the foreground with
-the foreground command
+the
+.Em foreground
+command
 .Ar fg  .
 A
 .Nm ^Z
@@ -311,24 +317,22 @@ prefixes, when they are input from the terminal followed by
 the escape character (the escape key, or control-[)
 For example,
 if the current directory looks like
-.Ds I
-.Cw DSC.NEW chaosnet cmtest mbox
-.Cl DSC.OLD	bin	cmd	lib	xmpl.c
-.Cl DSC.NEW	chaosnet	cmtest	mail	xmpl.o
-.Cl bench	class	dev	mbox	xmpl.out
-.Cw
-.De
+.Bd -literal -offset indent
+DSC.OLD  bin      cmd      lib      xmpl.c
+DSC.NEW  chaosnet cmtest   mail     xmpl.o
+bench    class    dev      mbox     xmpl.out
+.Ed
 .Pp
 and the input is
 .Pp
-.Dl \&% vi ch<escape>
+.Dl % vi ch<escape>
 .Pp
 .Nm csh
 will complete the prefix ``ch''
 to the only matching file name ``chaosnet'', changing the input
 line to
 .Pp
-.Dl \&% vi chaosnet
+.Dl % vi chaosnet
 .Pp
 However, given
 .Pp
@@ -337,7 +341,7 @@ However, given
 .Nm csh
 will only expand the input to
 .Pp
-.Dl \&% vi DSC.
+.Dl % vi DSC.
 .Pp
 and will sound the terminal bell to indicate that the expansion is
 incomplete, since there are two file names matching the prefix ``D''.
@@ -348,11 +352,11 @@ If a partial file name is followed by the end-of-file character
 will list all file names matching the prefix.  For example,
 the input
 .Pp
-.Dl \&% vi D<control-D>
+.Dl % vi D<control-D>
 .Pp
 causes all files beginning with ``D'' to be listed:
 .Pp
-.Dl \&DSC.NEW	DSC.OLD
+.Dl DSC.NEW	DSC.OLD
 .Pp
 while the input line remains unchanged.
 .Pp
@@ -361,11 +365,11 @@ expand partial user names, if the word to be completed
 (or listed) begins with the character ``~''.  For example,
 typing
 .Pp
-.Dl \&cd ~ro<escape>
+.Dl cd ~ro<escape>
 .Pp
 may produce the expansion
 .Pp
-.Dl \&cd ~root
+.Dl cd ~root
 .Pp
 The use of the terminal bell to signal errors or multiple matches
 can be inhibited by setting the variable
@@ -381,15 +385,15 @@ list of suffixes to be ignored.  Thus, if
 is set by
 the command
 .Pp
-.Dl \&% set fignore = (.o .out)
+.Dl % set fignore = (.o .out)
 .Pp
 then typing
 .Pp
-.Dl \&% vi x<escape>
+.Dl % vi x<escape>
 .Pp
 would result in the completion to
 .Pp
-.Dl \&% vi xmpl.c
+.Dl % vi xmpl.c
 .Pp
 ignoring the files "xmpl.o" and "xmpl.out".
 However, if the only completion possible requires not ignoring these
@@ -430,13 +434,12 @@ Commands are numbered sequentially from 1.
 For definiteness, consider the following output from the
 .Ar history
 command:
-.Pp
-.DT
-.Pp
-.Dl \&\09  write michael
-.Dl 10  ex write.c
-.Dl 11  cat oldwrite.c
-.Dl 12  diff *write.c
+.Bd -literal -offset indent
+\09  write michael
+10  ex write.c
+11  cat oldwrite.c
+12  diff *write.c
+.Ed
 .Pp
 The commands are shown with their event numbers.
 It is not usually necessary to use event numbers, but the current event
@@ -462,40 +465,35 @@ the first (usually command) word being 0, the second word (first argument)
 being 1, etc.
 The basic word designators are:
 .Pp
-.Dw Ds
-.Dp \&0
+.Bl -tag -width Ds -compact -offset indent
+.It \&0
 first (command) word
-.Dp Ar n
-.Cx Ar n
-.Cx \'th
-.Cx
+.It Ar n
+.Ar n Ns \'th
 argument
-.Dp \*(ua
+.It \*(ua
 first argument,  i.e. `1'
-.Dp $
+.It $
 last argument
-.Dp %
+.It %
 word matched by (immediately preceding)
-.Cx \&?
-.Ar s
-.Cx \?
-.Cx
+.No \&? Ns Ar s Ns \?
 search
-.Dp Ar \&x\-y
+.It Ar \&x\-y
 range of words
-.Dp Ar \&\-y
+.It Ar \&\-y
 abbreviates
 .Ar `\&0\-y\'
-.Dp \&*
+.It *
 abbreviates `\*(ua\-$', or nothing if only 1 word in event
-.Dp Ar x\&*
+.It Ar x*
 abbreviates
 .Ar `x\-$\'
-.Dp Ar x\-
+.It Ar x\-
 like
-.Ar `x\&*\'
+.Ar `x*\'
 but omitting word `$'
-.Dp
+.El
 .Pp
 The `:' separating the event specification from the word designator
 can be omitted if the argument selector begins with a `\*(ua', `$', `*'
@@ -503,36 +501,32 @@ can be omitted if the argument selector begins with a `\*(ua', `$', `*'
 After the optional word designator can be
 placed a sequence of modifiers, each preceded by a `:'.
 The following modifiers are defined:
-.Dw Ds
-.Dp h
+.Pp
+.Bl -tag -width Ds -compact -offset indent
+.It h
 Remove a trailing pathname component, leaving the head.
-.Dp r
+.It r
 Remove a trailing `.xxx' component, leaving the root name.
-.Dp e
+.It e
 Remove all but the extension `.xxx' part.
-.Dp Cx s/
-.Ar l
-.Cx \/
-.Ar r
-.Cx \/
-.Cx
+.It s Ns Ar /l/r/
 Substitute
 .Ar l
 for
 .Ar r
-.Dp t
+.It t
 Remove all leading pathname components, leaving the tail.
-.Dp \&&
+.It \&&
 Repeat the previous substitution.
-.Dp g
+.It g
 Apply the change globally, prefixing the above, e.g. `g&'.
-.Dp p
+.It p
 Print the new command line but do not execute it.
-.Dp q
+.It q
 Quote the substituted words, preventing further substitutions.
-.Dp x
+.It x
 Like q, but break into words at blanks, tabs and newlines.
-.Dp
+.El
 .Pp
 Unless preceded by a `g' the modification is applied only to the first
 modifiable word.  With substitutions, it is an error for no word to be
@@ -550,12 +544,13 @@ The character `&' in the right hand side is replaced by the text from
 the left.
 A `\e' quotes `&' also.
 A null
-.Ar l  " "
+.Ar l
+(" ")
 uses the previous string either from a
-.Ar l  " "
+.Ar l
 or from a
 contextual scan string
-.Ar s  " "
+.Ar s
 in `!?
 .Ar s
 \?'.
@@ -623,7 +618,7 @@ Other loops are detected and cause an error.
 .Pp
 Note that the mechanism allows aliases to introduce parser metasyntax.
 Thus we can `alias print \'pr \e!* \&| lpr\'' to make a command which
-.Ar pr 's
+.Ar pr \'s
 its arguments to the line printer.
 .Ss Variable substitution
 The shell maintains a set of variables, each of which has as value a list
@@ -661,9 +656,9 @@ is executed, variable substitution
 is performed keyed by `$' characters.
 This expansion can be prevented by preceding the `$' with a `\e' except
 within `"'s where it
-.Ar always
+.Em always
 occurs, and within `\''s where it
-.Ar never
+.Em never
 occurs.
 Strings quoted by `\*(ga' are interpreted later (see
 .Nm "Command substitution"
@@ -689,10 +684,10 @@ by a blank and quoted to prevent later command or filename substitution.
 The following metasequences are provided for introducing variable values into
 the shell input.
 Except as noted, it is an error to reference a variable which is not set.
-.Dw Ds
-.Di L
-.Dp $name
-.Dp ${name}
+.Pp
+.Bl -tag -width Ds -compact -offset indent
+.It $name
+.It ${name}
 Are replaced by the words of the value of variable
 .Ar name ,
 each separated by a blank.
@@ -709,14 +704,8 @@ that value is returned (but
 .Nm :
 modifiers and the other forms
 given below are not available in this case).
-.Pp
-.Dp Cx $name
-.Op selector
-.Cx
-.Dp Cx ${name
-.Op selector
-.Cx }
-.Cx
+.It $name Ns Op selector
+.It ${name Ns Op selector Ns }
 May be used to select only some of the words from the value of
 .Ar name .
 The selector is subjected to `$' substitution and may consist of a single
@@ -727,60 +716,42 @@ If the last member of a range is omitted it defaults to `$#name'.
 The selector `*' selects all words.
 It is not an error for a range to be empty if the second argument is omitted
 or in range.
-.Pp
-.Dp $#name
-.Dp ${#name}
+.It $#name
+.It ${#name}
 Gives the number of words in the variable.
 This is useful for later use in a
-.Cx `$argv
-.Op selector
-.Cx \' .
-.Cx
-.Pp
-.Dp $0
+`$argv[selector]'.
+.It $0
 Substitutes the name of the file from which command input is being read.
 An error occurs if the name is not known.
-.Pp
-.Dp $number
-.Dp ${number}
+.It $number
+.It ${number}
 Equivalent to
-.Cx `$argv
-.Op number
-.Cx \' .
-.Cx
-.Pp
-.Dp $*
+`$argv[number]'.
+.It $*
 Equivalent to
-.Cx `$argv
-.Op *
-.Cx \' .
-.Cx
+`$argv[*]'.
 The modifiers `:e', `:h', `:t', `:r', `:q' and `:x' may be applied to
 the substitutions above as may `:gh', `:gt' and `:gr'.
 If braces `{' '}' appear in the command form then the modifiers
 must appear within the braces.
 The current implementation allows only one `:' modifier on each `$' expansion.
-.Dp
+.El
 .Pp
 The following substitutions may not be modified with `:' modifiers.
-.Pp
-.Dw Ds
-.Di L
-.Dp $?name
-.Dp ${?name}
+.Bl -tag -width Ds -compact -offset indent
+.It $?name
+.It ${?name}
 Substitutes the string `1' if name is set, `0' if it is not.
-.Pp
-.Dp $?0
+.It $?0
 Substitutes `1' if the current input filename is known, `0' if it is not.
-.Pp
-.Dp $$
+.It $$
 Substitute the (decimal) process number of the (parent) shell.
-.Pp
-.Dp $<
+.It $<
 Substitutes a line from the standard
 input, with no further interpretation thereafter.  It can be used
 to read from the keyboard in a shell script.
-.Dp
+.El
 .Ss Command and filename substitution
 The remaining substitutions, command and filename substitution,
 are applied selectively to the arguments of builtin commands.
@@ -854,15 +825,14 @@ As a special case `{', `}' and `{}' are passed undisturbed.
 .Ss Input/output
 The standard input and standard output of a command may be redirected
 with the following syntax:
-.Dw Ds
-.Di L
-.Dp < name
+.Pp
+.Bl -tag -width Ds -compact -offset indent
+.It < name
 Open file
 .Ar name
 (which is first variable, command and filename expanded) as the standard
 input.
-.Pp
-.Dp << word
+.It << word
 Read the shell input up to a line which is identical to
 .Ar word .
 .Ar Word
@@ -878,11 +848,10 @@ Commands which are substituted have all blanks, tabs, and newlines
 preserved, except for the final newline which is dropped.
 The resultant text is placed in an anonymous temporary file which
 is given to the command as standard input.
-.Pp
-.Dp > name
-.Dp >! name
-.Dp >& name
-.Dp >&! name
+.It > name
+.It >! name
+.It >& name
+.It >&! name
 The file
 .Ar name
 is used as standard output.
@@ -900,11 +869,10 @@ The forms involving `&' route the diagnostic output into the specified
 file as well as the standard output.
 .Ar Name
 is expanded in the same way as `<' input filenames are.
-.Pp
-.Dp >> name
-.Dp >>& name
-.Dp >>! name
-.Dp >>&! name
+.It >> name
+.It >>& name
+.It >>! name
+.It >>&! name
 Uses file
 .Ar name
 as standard output like `>' but places output at the end of the file.
@@ -913,7 +881,7 @@ If the variable
 is set, then it is an error for the file not to exist unless
 one of the `!' forms is given.
 Otherwise similar to `>'.
-.Dp
+.El
 .Pp
 A command receives the environment in which the shell was
 invoked as modified by the input-output parameters and
@@ -932,7 +900,7 @@ rather the standard input
 remains as the original standard input of the shell.  If this is a terminal
 and if the process attempts to read from the terminal, then the process
 will block and the user will be notified (see
-.Ar Jobs
+.Sx Jobs
 above).
 .Pp
 Diagnostic output may be directed through a pipe with the standard output.
@@ -949,11 +917,10 @@ and
 .Ar while
 commands.
 The following operators are available:
-.Pp
-.Ds I
-\&|\&|  &&  \&| *(ua  &  ==  !=  =~  !~  <=  >=  <  >
-<<  >>  +  \-  *  /  %  !  ~  (  )
-.De
+.Bd -ragged -offset indent
+\&|\&|  &&  \&| *(ua  &  ==  !=  =~  !~  <=  >=
+<  > <<  >>  +  \-  *  /  %  !  ~  (  )
+.Ed
 .Pp
 Here the precedence increases to the right,
 `==' `!=' `=~' and `!~', `<=' `>=' `<' and `>', `<<' and `>>', `+' and `\-',
@@ -964,10 +931,7 @@ The operators `=~' and `!~' are like `!=' and `==' except that the right
 hand side is a
 .Ar pattern
 (containing, e.g. `*'s, `?'s and instances of
-.Cx `
-.Op ...
-.Cx \' )
-.Cx
+`[...]'
 against which the left hand operand is matched.  This reduces the
 need for use of the
 .Ar switch
@@ -990,8 +954,7 @@ and file enquiries of the form
 where
 .Ic l
 is one of:
-.Pp
-.Ds I
+.Bd -ragged -offset indent
 r	read access
 w	write access
 x	execute access
@@ -1000,7 +963,7 @@ o	ownership
 z	zero size
 f	plain file
 d	directory
-.De
+.Ed
 .Pp
 The specified name is command and filename expanded and then tested
 to see if it has the specified relationship to the real user.
@@ -1043,17 +1006,11 @@ non-seekable inputs.)
 Builtin commands are executed within the shell.
 If a builtin command occurs as any component of a pipeline
 except the last then it is executed in a subshell.
-.Dw Ds
-.Di L
-.Dp Ic alias
-.Dp Cx Ic alias
-.Cx \&\ \&
-.Cx Ar name
-.Cx
-.Dp Cx Ic alias
-.Cx \&\ \&
-.Ar name wordlist
-.Cx
+.Pp
+.Bl -tag -width Ds -compact -offset indent
+.It Ic alias
+.It Ic alias Ar name
+.It Ic alias Ar name wordlist
 The first form prints all aliases.
 The second form prints the alias for name.
 The final form assigns the specified
@@ -1068,7 +1025,7 @@ is not allowed to be
 or
 .Ar unalias .
 .Pp
-.Dp Ic alloc
+.It Ic alloc
 Shows the amount of dynamic memory acquired, broken down into used and
 free memory.
 With an argument shows the number of free and used blocks in each size
@@ -1076,14 +1033,12 @@ category.  The categories start at size 8 and double at each step.
 This command's output may vary across system types, since
 systems other than the VAX may use a different memory allocator.
 .Pp
-.Dp Ic bg
-.Dp Cx Ic bg \&%
-.Ar job ...
-.Cx
+.It Ic bg
+.It Ic bg \&% Ns Ar job ...
 Puts the current or specified jobs into the background, continuing them
 if they were stopped.
 .Pp
-.Dp Ic break
+.It Ic break
 Causes execution to resume after the
 .Ic end
 of the nearest enclosing
@@ -1093,30 +1048,21 @@ or
 The remaining commands on the current line are executed.
 Multi-level breaks are thus possible by writing them all on one line.
 .Pp
-.Dp Ic breaksw
+.It Ic breaksw
 Causes a break from a
 .Ic switch ,
 resuming after the
 .Ic endsw .
 .Pp
-.Dp Cx Ic case
-.Cx \&\ \&
-.Ar label :
-.Cx
+.It Ic case Ar label :
 A label in a
 .Ic switch
 statement as discussed below.
 .Pp
-.Dp Ic cd
-.Dp Cx Ic cd
-.Cx \&\ \&
-.Ar name
-.Cx
-.Dp Ic chdir
-.Dp Cx Ic chdir
-.Cx \&\ \&
-.Ar name
-.Cx
+.It Ic cd
+.It Ic cd Ar name
+.It Ic chdir
+.It Ic chdir Ar name
 Change the shell's working directory to directory
 .Ar name .
 If no argument is given then change to the home directory of the user.
@@ -1133,14 +1079,14 @@ Finally, if all else fails but
 is a shell variable whose value begins with `/', then this
 is tried to see if it is a directory.
 .Pp
-.Dp Ic continue
+.It Ic continue
 Continue execution of the nearest enclosing
 .Ic while
 or
 .Ic foreach .
 The rest of the commands on the current line are executed.
 .Pp
-.Dp Ic default :
+.It Ic default :
 Labels the default case in a
 .Ic switch
 statement.
@@ -1148,29 +1094,21 @@ The default should come after all
 .Ic case
 labels.
 .Pp
-.Dp Ic dirs
+.It Ic dirs
 Prints the directory stack; the top of the stack is at the left,
 the first directory in the stack being the current directory.
 .Pp
-.Dp Cx Ic echo
-.Cx \&\ \&
-.Ar  wordlist
-.Cx
-.Dp Cx Ic echo
-.Cx \&\ \&
-.Fl n
-.Cx \&\ \&
-.Ar wordlist
-.Cx
+.It Ic echo Ar  wordlist
+.It Ic echo Fl n Ar wordlist
 The specified words are written to the shells standard output, separated
 by spaces, and terminated with a newline unless the
 .Fl n
 option is specified.
 .Pp
-.Dp Ic else
-.Dp Ic end
-.Dp Ic endif
-.Dp Ic endsw
+.It Ic else
+.It Ic end
+.It Ic endif
+.It Ic endsw
 See the description of the
 .Ic foreach ,
 .Ic if ,
@@ -1179,10 +1117,7 @@ and
 .Ic while
 statements below.
 .Pp
-.Dp Cx Ic eval
-.Cx \&\ \&
-.Ar arg ...
-.Cx
+.It Ic eval Ar arg ...
 (As in
 .Xr sh  1  . )
 The arguments are read as input to the shell and the resulting
@@ -1194,36 +1129,25 @@ parsing occurs before these substitutions.  See
 for an example of using
 .Ic eval .
 .Pp
-.Dp Cx Ic exec
-.Cx \&\ \&
-.Ar command
-.Cx
+.It Ic exec Ar command
 The specified command is executed in place of the current shell.
 .Pp
-.Dp Ic exit
-.Dp Cx Ic exit
-.Cx \&\ \&
-.Ar (expr )
-.Cx
+.It Ic exit
+.It Ic exit Ar (expr )
 The shell exits either with the value of the
 .Ic status
 variable (first form) or with the value of the specified
 .Ic expr
 (second form).
 .Pp
-.Dp Ic fg
-.Dp Cx Ic fg \&%
-.Ar job ...
-.Cx
+.It Ic fg
+.It Ic fg \&% Ar job ...
 Brings the current or specified jobs into the foreground, continuing them if
 they were stopped.
 .Pp
-.Dp Cx Ic foreach
-.Cx \&\ \&
-.Ar name (wordlist)
-.Cx
-.Dp ...
-.Dp Ic end
+.It Ic foreach Ar name (wordlist)
+.It ...
+.It Ic end
 The variable
 .Ic name
 is successively set to each member of
@@ -1246,10 +1170,7 @@ When this command is read from the terminal, the loop is read up once
 prompting with `?' before any statements in the loop are executed.
 If you make a mistake typing in a loop at the terminal you can rub it out.
 .Pp
-.Dp Cx Ic glob
-.Cx \&\ \&
-.Ar wordlist
-.Cx
+.It Ic glob Ar wordlist
 Like
 .Ic echo
 but no `\e' escapes are recognized and words are delimited
@@ -1257,10 +1178,7 @@ by null characters in the output.
 Useful for programs which wish to use the shell to filename expand a list
 of words.
 .Pp
-.Dp Cx Ic goto
-.Cx \&\ \&
-.Ar word
-.Cx
+.It Ic goto Ar word
 The specified
 .Ic word
 is filename and command expanded to yield a string of the form `label'.
@@ -1269,12 +1187,10 @@ and searches for a line of the form `label:'
 possibly preceded by blanks or tabs.
 Execution continues after the specified line.
 .Pp
-.Dp Ic hashstat
+.It Ic hashstat
 Print a statistics line indicating how effective the internal hash
 table has been at locating commands (and avoiding
-.Cx Ic exec
-.Cx 's ) .
-.Cx
+.Ic exec Ns \'s ) .
 An
 .Ic exec
 is attempted for each component of the
@@ -1282,23 +1198,10 @@ is attempted for each component of the
 where the hash function indicates a possible hit, and in each component
 which does not begin with a `/'.
 .Pp
-.Dp Ic history
-.Dp Cx Ic history
-.Cx \&\ \&
-.Ar n
-.Cx
-.Dp Cx Ic history
-.Cx \&\ \&
-.Fl r
-.Cx \&\ \&
-.Ar n
-.Cx
-.Dp Cx Ic history
-.Cx \&\ \&
-.Fl h
-.Cx \&\ \&
-.Ar n
-.Cx
+.It Ic history
+.It Ic history Ar n
+.It Ic history Fl r Ar n
+.It Ic history Fl h Ar n
 Displays the history event list; if
 .Ar n
 is given only the
@@ -1315,13 +1218,7 @@ This is used to produce files suitable for sourceing using the \-h
 option to
 .Ic source  .
 .Pp
-.Dp Cx Ic if
-.Cx \&\ \&
-.Cx \&(
-.Ar expr
-.Cx \&)
-.Cx
-.Ar command
+.It Ic if Pq Ar expr No command
 If the specified expression evaluates true, then the single
 .Ar command
 with arguments is executed.
@@ -1330,7 +1227,7 @@ Variable substitution on
 happens early, at the same
 time it does for the rest of the
 .Ic if
-.Ar command .
+command.
 .Ar Command
 must be a simple command, not
 a pipeline, a command list, or a parenthesized command list.
@@ -1340,27 +1237,13 @@ is false, when command is
 .Sy not
 executed (this is a bug).
 .Pp
-.Dp Cx Ic if
-.Cx \&\ \&
-.Cx \&(
-.Ar expr
-.Cx \&)
-.Cx \&\ \&
-.Ar then 
-.Cx
-.Dp ...
-.Dp Cx Ic else if
-.Cx \&\ \&
-.Cx \&(
-.Ar expr2
-.Cx \&)
-.Cx \&\ \&
-.Ic then
-.Cx
-.Dp ...
-.Dp Ic else
-.Dp ...
-.Dp Ic endif
+.It Ic if ( Ar expr ) Ic then
+.It ...
+.It Ic else if ( Ar expr2 ) Ic then
+.It ...
+.It Ic else
+.It ...
+.It Ic endif
 If the specified
 .Ar expr
 is true then the commands to the first
@@ -1389,31 +1272,16 @@ the
 must appear alone on its input line or after an
 .Ic else . )
 .Pp
-.Dp Ic jobs
-.Dp Cx Ic jobs
-.Cx \&\ \&
-.Fl l
-.Cx
+.It Ic jobs
+.It Ic jobs Fl l
 Lists the active jobs; given the
 .Fl l
 options lists process id's in addition to the normal information.
 .Pp
-.Dp Cx Ic kill  %
-.Ar job
-.Cx
-.Dp Cx Ic kill
-.Cx \&\ \&
-.Ar pid
-.Cx
-.Dp Cx Ic kill
-.Cx \&\ \&
-.Fl sig
-.Ar pid ...
-.Cx
-.Dp Cx Ic kill
-.Cx \&\ \&
-.Fl l
-.Cx
+.It Ic kill % Ar job
+.It Ic kill Ar pid
+.It Ic kill Fl sig Ar pid ...
+.It Ic kill Fl l
 Sends either the TERM (terminate) signal or the
 specified signal to the specified jobs or processes.
 Signals are either given by number or by names (as given in
@@ -1425,31 +1293,12 @@ send a signal to the current job.
 If the signal being sent is TERM (terminate) or HUP (hangup),
 then the job or process will be sent a CONT (continue) signal as well.
 .Pp
-.Dp Ic limit
-.Dp Cx Ic limit
-.Cx \&\ \&
-.Ar resource
-.Cx
-.Dp Cx Ic limit
-.Cx \&\ \&
-.Ar resource maximum-use
-.Cx
-.Dp Cx Ic limit
-.Cx \&\ \&
-.Fl h
-.Cx
-.Dp Cx Ic limit
-.Cx \&\ \&
-.Fl h
-.Cx \&\ \&
-.Ar resource
-.Cx
-.Dp Cx Ic limit
-.Cx \&\ \&
-.Fl h
-.Cx \&\ \&
-.Ar resource maximum-use
-.Cx
+.It Ic limit
+.It Ic limit Ar resource
+.It Ic limit Ar resource maximum-use
+.It Ic limit Fl h
+.It Ic limit Fl h Ar resource
+.It Ic limit Fl h Ar resource maximum-use
 Limits the consumption by the current process and each process
 it creates to not individually exceed
 .Ar maximum-use
@@ -1503,31 +1352,22 @@ For both
 names and scale factors, unambiguous prefixes
 of the names suffice.
 .Pp
-.Dp Ic login
+.It Ic login
 Terminate a login shell, replacing it with an instance of
 .Pa /bin/login.
 This is one way to log off, included for compatibility with
 .Xr sh  1  .
 .Pp
-.Dp Ic logout
+.It Ic logout
 Terminate a login shell.
 Especially useful if
 .Ic ignoreeof
 is set.
 .Pp
-.Dp Ic nice
-.Dp Cx Ic nice
-.Cx \&\ \&
-.Ar +number
-.Cx
-.Dp Cx Ic nice
-.Cx \&\ \&
-.Ar command
-.Cx
-.Dp Cx Ic nice
-.Cx \&\ \&
-.Ar +number command
-.Cx
+.It Ic nice
+.It Ic nice Ar +number
+.It Ic nice Ar command
+.It Ic nice Ar +number command
 The first form sets the
 scheduling priority
 for this shell to 4.
@@ -1545,40 +1385,26 @@ placed on commands in simple
 .Ic if
 statements apply.
 .Pp
-.Dp Ic nohup
-.Dp Cx Ic nohup
-.Cx \&\ \&
-.Ar command
-.Cx
+.It Ic nohup
+.It Ic nohup Ar command
 The first form can be used in shell scripts to cause hangups to be
 ignored for the remainder of the script.
 The second form causes the specified command to be run with hangups
 ignored.
 All processes detached with `&' are effectively
-.Cx Ic nohup
-.Cx \'ed .
-.Cx
+.Ic nohup Ns \'ed .
 .Pp
-.Dp Ic notify
-.Dp Cx Ic notify %
-.Cx \&\ \&
-.Ar job ...
-.Cx
+.It Ic notify
+.It Ic notify % Ar job ...
 Causes the shell to notify the user asynchronously when the status of the
 current or specified jobs changes; normally notification is presented
 before a prompt.  This is automatic if the shell variable
 .Ic notify
 is set.
 .Pp
-.Dp Ic onintr
-.Dp Cx Ic onintr
-.Cx \&\ \&
-.Fl
-.Cx
-.Dp Cx Ic onintr
-.Cx \&\ \&
-.Ar label
-.Cx
+.It Ic onintr
+.It Ic onintr Fl
+.It Ic onintr Ar label
 Control the action of the shell on interrupts.
 The first form restores the default action of the shell on interrupts
 which is to terminate shell scripts or to return to the terminal command
@@ -1594,34 +1420,19 @@ being ignored, all forms of
 have no meaning and interrupts
 continue to be ignored by the shell and all invoked commands.
 .Pp
-.Dp Ic popd
-.Dp Cx Ic popd
-.Cx \&\ \&
-.Ar +n
-.Cx
+.It Ic popd
+.It Ic popd Ar +n
 Pops the directory stack, returning to the new top directory.
 With an argument
-.Cx `+
-.Ar n
-.Cx \'
-.Cx
+.Ns \`+ Ar n Ns \'
 discards the
-.Cx Ar n
-.Cx \'
-.Cx th
-.Cx
+.Ar n Ns \'th
 entry in the stack.
 The elements of the directory stack are numbered from 0 starting at the top.
 .Pp
-.Dp Ic pushd
-.Dp Cx Ic pushd
-.Cx \&\ \&
-.Ar name
-.Cx
-.Dp Cx Ic pushd
-.Cx \&\ \&
-.Ar n
-.Cx
+.It Ic pushd
+.It Ic pushd Ar name
+.It Ic pushd Ar n
 With no arguments,
 .Ic pushd
 exchanges the top two elements of the directory stack.
@@ -1636,15 +1447,12 @@ and pushes the old current working directory
 .Ic csw )
 onto the directory stack.
 With a numeric argument, rotates the
-.Cx Ar n
-.Cx \'
-.Cx th
-.Cx
+.Ar n Ns \'th
 argument of the directory
 stack around to be the top element and changes to it.  The members
 of the directory stack are numbered from the top starting at 0.
 .Pp
-.Dp Ic rehash
+.It Ic rehash
 Causes the internal hash table of the contents of the directories in
 the
 .Ic path
@@ -1655,10 +1463,7 @@ while you are logged in.  This should only be necessary if you add
 commands to one of your own directories, or if a systems programmer
 changes the contents of one of the system directories.
 .Pp
-.Dp Cx Ic repeat
-.Cx \&\ \&
-.Ar count command
-.Cx
+.It Ic repeat Ar count command
 The specified
 .Ar command
 which is subject to the same restrictions
@@ -1674,25 +1479,11 @@ I/O redirections occur exactly once, even if
 .Ar count
 is 0.
 .Pp
-.Dp Ic set
-.Dp Cx Ic set
-.Cx \&\ \&
-.Ar name
-.Cx
-.Dp Cx Ic set
-.Cx \&\ \&
-.Ar name=word
-.Cx
-.Dp Cx Ic set
-.Cx \&\ \&
-.Ar name
-.Op index
-.Ar =word
-.Cx
-.Dp Cx Ic set
-.Cx \&\ \&
-.Ar name=(wordlist)
-.Cx
+.It Ic set
+.It Ic set Ar name
+.It Ic set Ar name Ns =word
+.It Ic set Ar name[index] Ns =word
+.It Ic set Ar name Ns =(wordlist)
 The first form of the command shows the value of all shell variables.
 Variables which have other than a single word as value print as a parenthesized
 word list.
@@ -1705,9 +1496,7 @@ to the single
 .Ic word .
 The fourth form sets
 the
-.Cx Ar index
-.Cx \'th
-.Cx
+.Ar index Ns 'th
 component of name to word;
 this component must already exist.
 The final form sets
@@ -1720,15 +1509,9 @@ These arguments may be repeated to set multiple values in a single set command.
 Note however, that variable expansion happens for all arguments before any
 setting occurs.
 .Pp
-.Dp Ic setenv
-.Dp Cx Ic setenv
-.Cx \&\ \&
-.Ar name value
-.Cx
-.Dp Cx Ic setenv
-.Cx \&\ \&
-.Ar name
-.Cx
+.It Ic setenv
+.It Ic setenv Ar name value
+.It Ic setenv Ar name
 The first form lists all current environment variables.
 The last form sets the value of environment variable
 .Ar name
@@ -1753,32 +1536,19 @@ there is no need to use
 .Ic setenv
 for these.
 .Pp
-.Dp Ic shift
-.Dp Cx Ic shift
-.Cx \&\ \&
-.Ar variable
-.Cx
+.It Ic shift
+.It Ic shift Ar variable
 The members of
 .Ic argv
 are shifted to the left, discarding
-.Cx Ic argv
-.Op 1  .
-.Cx
+.Ic argv Bq 1 .
 It is an error for
 .Ic argv
 not to be set or to have less than one word as value.
 The second form performs the same function on the specified variable.
 .Pp
-.Dp Cx Ic source
-.Cx \&\ \&
-.Ar name
-.Cx
-.Dp Cx Ic source
-.Cx \&\ \&
-.Fl h
-.Cx \&\ \&
-.Ar name
-.Cx
+.It Ic source Ar name
+.It Ic source Fl h Ar name
 The shell reads commands from
 .Ic name .
 .Ic Source
@@ -1795,34 +1565,26 @@ commands is not placed on the history list;
 the \-h option causes the commands to be placed in the
 history list without being executed.
 .Pp
-.Dp Ic stop
-.Dp Cx Ic stop %
-.Ar job ...
-.Cx
+.It Ic stop
+.It Ic stop % Ns Ar job ...
 Stops the current or specified job which is executing in the background.
 .Pp
-.Dp Ic suspend
+.It Ic suspend
 Causes the shell to stop in its tracks, much as if it had been sent a stop
 signal with
 .Ic ^Z .
 This is most often used to stop shells started by
 .Xr su  1 .
 .Pp
-.Dp Cx Ic switch
-.Cx \&\ \&
-.Ar (string)
-.Cx
-.Dp Cx Ic case
-.Cx \&\ \&
-.Ar str1 :
-.Cx
-.Dp \&...
-.Dp Ic breaksw
-.Dp \&...
-.Dp Ic default :
-.Dp \&...
-.Dp Ic breaksw
-.Dp Ic endsw
+.It Ic switch Ar (string)
+.It Ic case Ar str1 :
+.It \ \ \ \ \&...
+.It Ic \ \ \ \ breaksw
+.It \ \ \ \ \&...
+.It Ic default :
+.It \ \ \ \ \&...
+.It Ic \ \ \ \ breaksw
+.It Ic endsw
 Each case label is successively matched, against the specified
 .Ar string
 which is first command and filename expanded.
@@ -1841,11 +1603,8 @@ If no label matches and there is no default, execution continues after
 the
 .Ic endsw .
 .Pp
-.Dp Ic time
-.Dp Cx Ic time
-.Cx \&\ \&
-.Ar command
-.Cx
+.It Ic time
+.It Ic time Ar command
 With no argument, a summary of time used by this shell and its children
 is printed.
 If arguments are given
@@ -1855,45 +1614,28 @@ as described under the
 variable is printed.  If necessary, an extra shell is created to print the time
 statistic when the command completes.
 .Pp
-.Dp Ic umask
-.Dp Cx Ic umask
-.Cx \&\ \&
-.Ar value
-.Cx
+.It Ic umask
+.It Ic umask Ar value
 The file creation mask is displayed (first form) or set to the specified
 value (second form).  The mask is given in octal.  Common values for
 the mask are 002 giving all access to the group and read and execute
 access to others or 022 giving all access except no write access for
 users in the group or others.
 .Pp
-.Dp Cx Ic unalias
-.Cx \&\ \&
-.Ar pattern
-.Cx
+.It Ic unalias Ar pattern
 All aliases whose names match the specified pattern are discarded.
 Thus all aliases are removed by `unalias *'.
 It is not an error for nothing to be
 .Ic unaliased .
 .Pp
-.Dp Ic unhash
+.It Ic unhash
 Use of the internal hash table to speed location of executed programs
 is disabled.
 .Pp
-.Dp Ic unlimit
-.Dp Cx Ic unlimit
-.Cx \&\ \&
-.Ar  resource
-.Cx
-.Dp Cx Ic unlimit 
-.Cx \&\ \&
-.Fl h
-.Cx
-.Dp Cx Ic unlimit 
-.Cx \&\ \&
-.Fl h
-.Cx \&\ \&
-.Ar resource
-.Cx
+.It Ic unlimit
+.It Ic unlimit Ar  resource
+.It Ic unlimit Fl h
+.It Ic unlimit Fl h Ar resource
 Removes the limitation on
 .Ar resource  .
 If no
@@ -1905,38 +1647,29 @@ limitations are removed.  If
 is given, the corresponding hard limits are removed.  Only the
 super-user may do this.
 .Pp
-.Dp Cx Ic unset
-.Cx \&\ \&
-.Ar pattern 
-.Cx
+.It Ic unset Ar pattern
 All variables whose names match the specified pattern are removed.
 Thus all variables are removed by `unset *'; this has noticeably
 distasteful side-effects.
 It is not an error for nothing to be
 .Ic unset .
 .Pp
-.Dp Cx Ic unsetenv
-.Cx \&\ \&
-.Ar pattern
-.Cx
+.It Ic unsetenv Ar pattern
 Removes all variables whose name match the specified pattern from the
 environment.  See also the
 .Ic setenv
 command above and
 .Xr printenv  1  .
 .Pp
-.Dp Ic wait
+.It Ic wait
 All background jobs are waited for.
 It the shell is interactive, then an interrupt can disrupt the wait,
 at which time the shell prints names and job numbers of all jobs
 known to be outstanding.
 .Pp
-.Dp Cx Ic while
-.Cx \&\ \&
-.Ar (expr)
-.Cx
-.Dp \&...
-.Dp Ic end
+.It Ic while Ar (expr)
+.It \&...
+.It Ic end
 While the specified expression evaluates non-zero, the commands between
 the
 .Ic while
@@ -1954,31 +1687,15 @@ Prompting occurs here the first time through the loop as for the
 .Ic foreach
 statement if the input is a terminal.
 .Pp
-.Dp Cx Ic %
-.Cx \&\ \&
-.Ar job
-.Cx
+.It Ic % Ar job
 Brings the specified job into the foreground.
 .Pp
-.Dp Cx Ic %
-.Cx \&\ \&
-.Ar job
-.Cx \&\ \&
-.Ic &
-.Cx
+.It Ic % Ar job Ic &
 Continues the specified job in the background.
 .Pp
-.Dp Ic @
-.Dp Cx Ic @
-.Cx \&\ \&
-.Ar name = expr
-.Cx
-.Dp Cx Ic @
-.Cx \&\ \&
-.Ar name
-.Op index
-.Cx\&\ = expr
-.Cx
+.It Ic @
+.It Ic @ Ns Ar name Ns = expr
+.It Ic @ Ns Ar name[index] Ns = expr
 The first form prints the values of all the shell variables.
 The second form sets the specified
 .Ar name
@@ -1989,20 +1706,15 @@ this part of the expression must be placed within `(' `)'.
 The third form assigns the value of
 .Ar expr
 to the
-.Cx Ar index
-.Cx \'th
-.Cx
+.Ar index Ns 'th
 argument of
 .Ar name .
 Both
 .Ar name
 and its
-.Cx Ar index
-.Cx \'th
-.Cx
+.Ar index Ns 'th
 component must already exist.
-.Cx \&\ \&
-.Dp
+.El
 .Pp
 The operators `*=', `+=', etc are available as in C.
 The space separating the name from the assignment operator is optional.
@@ -2056,19 +1768,20 @@ as inferior
 processes will import the definition of
 .Ar path
 from the environment, and re-export it if you then change it.
-.Tp Ic argv
+.Bl -tag -width histchars
+.It Ic argv
 Set to the arguments to the shell, it is from this variable that
 positional parameters are substituted, i.e. `$1' is replaced by
 `$argv[1]',
 etc.
-.Tp Ic cdpath
+.It Ic cdpath
 Gives a list of alternate directories searched to find subdirectories
 in
 .Ar chdir
 commands.
-.Tp Ic cwd
+.It Ic cwd
 The full pathname of the current directory.
-.Tp Ic echo
+.It Ic echo
 Set when the
 .Fl x
 command line option is given.
@@ -2077,15 +1790,15 @@ to be echoed just before it is executed.
 For non-builtin commands all expansions occur before echoing.
 Builtin commands are echoed before command and filename substitution,
 since these substitutions are then done selectively.
-.Tp Ic filec
+.It Ic filec
 Enable file name completion.
-.Tp Ic histchars
+.It Ic histchars
 Can be given a string value to change the characters used in history
 substitution.  The first character of its value is used as the
 history substitution character, replacing the default character `!'.
 The second character of its value replaces the character `\(ua' in
 quick substitutions.
-.Tp Ic history
+.It Ic history
 Can be given a numeric value to control the size of the history list.
 Any command which has been referenced in this many events will not be
 discarded.
@@ -2093,19 +1806,16 @@ Too large values of
 .Ar history
 may run the shell out of memory.
 The last executed command is always saved on the history list.
-.Tp Ic home
+.It Ic home
 The home directory of the invoker, initialized from the environment.
 The filename expansion of
-.Cx `
-.Pa ~
-.Cx \'
-.Cx
+.Sq Pa ~
 refers to this variable.
-.Tp Ic ignoreeof
+.It Ic ignoreeof
 If set the shell ignores
 end-of-file from input devices which are terminals.
 This prevents shells from accidentally being killed by control-D's.
-.Tp Ic mail
+.It Ic mail
 The files where the shell checks for mail.
 This is done after each command completion which will result in a prompt,
 if a specified interval has elapsed.
@@ -2119,33 +1829,31 @@ than the default, which is 10 minutes.
 .Pp
 If multiple mail files are specified, then the shell says
 `New mail in
-.Cx Ar name
-.Cx \'
-.Cx
+.Ar name Ns '
 when there is mail in the file
 .Ar name .
-.Tp Ic noclobber
+.It Ic noclobber
 As described in the section on
-.Ar Input/output ,
+.Sx Input/output ,
 restrictions are placed on output redirection to insure that
 files are not accidentally destroyed, and that `>>' redirections
 refer to existing files.
-.Tp Ic noglob
+.It Ic noglob
 If set, filename expansion is inhibited.
 This is most useful in shell scripts which are not dealing with filenames,
 or after a list of filenames has been obtained and further expansions
 are not desirable.
-.Tp Ic nonomatch
+.It Ic nonomatch
 If set, it is not an error for a filename expansion to not match any
 existing files; rather the primitive pattern is returned.
 It is still an error for the primitive pattern to be malformed, i.e.
 `echo ['
 still gives an error.
-.Tp Ic notify
+.It Ic notify
 If set, the shell notifies asynchronously of job completions.  The
 default is to rather present job completions just before printing
 a prompt.
-.Tp Ic path
+.It Ic path
 Each word of the path variable specifies a directory in which
 commands are to be sought for execution.
 A null word specifies the current directory.
@@ -2166,16 +1874,16 @@ variable after reading
 and each time the
 .Ar path
 variable is reset.  If new commands are added to these directories
-while the shell is active, it may be necessary to give the
-.Ar rehash
+while the shell is active, it may be necessary to do a
+.Ic rehash
 or the commands may not be found.
-.Tp Ic prompt
+.It Ic prompt
 The string which is printed before each command is read from
 an interactive terminal input.
 If a `!' appears in the string it will be replaced by the current event number
 unless a preceding `\e' is given.
 Default is `% ', or `# ' for the super-user.
-.Tp Ic savehist
+.It Ic savehist
 Is given a numeric value to control the number of entries of the
 history list that are saved in ~/.history when the user logs out.
 Any command which has been referenced in this many events will be saved.
@@ -2184,31 +1892,31 @@ enabling history to be saved across logins.
 Too large values of
 .Ar savehist
 will slow down the shell during start up.
-.Tp Ic shell
+.It Ic shell
 The file in which the shell resides.
 This is used in forking shells to interpret files which have execute
 bits set, but which are not executable by the system.
 (See the description of
-.Em Non-builtin Command Execution
+.Sx Non-builtin Command Execution
 below.)
 Initialized to the (system-dependent) home of the shell.
-.Tp Ic status
+.It Ic status
 The status returned by the last command.
 If it terminated abnormally, then 0200 is added to the status.
 Builtin commands which fail return exit status `1',
 all other builtin commands set status `0'.
-.Tp Ic time
+.It Ic time
 Controls automatic timing of commands.
 If set, then any command which takes more than this many cpu seconds
 will cause a line giving user, system, and real times and a utilization
 percentage which is the ratio of user plus system times to real time
 to be printed when it terminates.
-.Tp Ic verbose
+.It Ic verbose
 Set by the
 .Fl v
 command line option, causes the words of each command to be printed
 after history substitution.
-.Tp
+.El
 .Ss Non-builtin command execution
 When a command to be executed is found to not be a builtin command
 the shell attempts to execute the command via
@@ -2304,21 +2012,20 @@ I.I.A.S.A, Laxenburg, Austria,
 with different syntax than that used now.  File name completion
 code written by Ken Greer, HP Labs.
 .Sh FILES
-.Dw /etc/passwd
-.Di L
-.Dp Pa ~/.cshrc
+.Bl -tag -width /etc/passwd -compact
+.It Pa ~/.cshrc
 Read at beginning of execution by each shell.
-.Dp Pa ~/.login
+.It Pa ~/.login
 Read by login shell, after `.cshrc' at login.
-.Dp Pa ~/.logout
+.It Pa ~/.logout
 Read by login shell, at logout.
-.Dp Pa /bin/sh
+.It Pa /bin/sh
 Standard shell, for shell scripts not starting with a `#'.
-.Dp Pa /tmp/sh*
+.It Pa /tmp/sh*
 Temporary file for `<<'.
-.Dp Pa /etc/passwd
+.It Pa /etc/passwd
 Source of home directories for `~name'.
-.Dp
+.El
 .Sh LIMITATIONS
 Word lengths \-
 Words can be no longer than 1024 characters.
@@ -2348,19 +2055,23 @@ substitutions on a single line to 20.
 .Em An introduction to the C shell
 .Sh HISTORY
 .Nm Csh
-Appeared in  3 BSD.  It
+appeared in
+.Bx 3 .
+It
 was a first implementation of a command language interpreter
 incorporating a history mechanism (see
-.Nm History Substitutions ) ,
+.Sx History Substitutions ) ,
 job control facilities (see
-.Nm Jobs ) ,
+.Sx Jobs ) ,
 interactive file name
 and user name completion (see
-.Nm File Name Completion ) ,
+.Sx File Name Completion ) ,
 and a C-like syntax.
 There are now many shells which also have these mechanisms, plus
-a few more (and maybe some bugs too), which are available thru
-the internet, or as contributed software such as the
+a few more (and maybe some bugs too), which are available thru the
+usenet, or with
+.Bx
+as contributed software like the
 .Xr ksh korn\ shell .
 .Sh BUGS
 When a command is restarted from a stop,

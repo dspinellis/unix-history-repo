@@ -3,32 +3,32 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)calendar.1	6.10 (Berkeley) %G%
+.\"     @(#)calendar.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
-.\"
 .Dt CALENDAR 1
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm calendar
 .Nd reminder service
 .Sh SYNOPSIS
 .Nm calendar
-.Op  \-a
+.Op Fl a
 .Sh DESCRIPTION
 .Nm Calendar
 checks the current directory for a file named named
-.Li calendar
+.Pa calendar
 and displays lines that begin with either today's date
 or tomorrow's.
 On Fridays, events on Friday through Monday are displayed.
 .Pp
 The following options are available:
-.Tp Fl a
+.Bl -tag -width Ds
+.It Fl a
 Process the ``calendar'' files of all users and mail the results
 to them.
 This requires super-user privileges.
-.Tp
+.El
 .Pp
 A month and day should begin lines.
 They may be entered in almost any format, either numeric or as character
@@ -51,53 +51,52 @@ If the shared file is not referenced by a full pathname,
 searches in the current (or home) directory first, and then in the
 directory
 .Pa /usr/share/calendar .
-Empty lines and lines protected by the C commenting syntax (/* ... */)
+Empty lines and lines protected by the C commenting syntax
+.Pq Li /* ... */
 are ignored.
 .Pp
 Some possible calendar entries:
-.Pp
-.Ds I
+.Bd -ragged -offset indent
 #include	<calendar.usholiday>
 #include	<calendar.birthday>
 
 6/15		... June 15 (if ambiguous, will default to month/day).
-Jun. 15	... June 15.
-15 June	... June 15.
+Jun. 15		... June 15.
+15 June		... June 15.
 Thursday	... Every Thursday.
 June		... Every June 1st.
 15 *		... 15th of every month.
-.De
-.Pp
+.Ed
 .Sh FILES
 The following default calendar files are provided:
-.Dw calendar.christian
-.Di L
-.Dp Pa calendar.birthday
+.Pp
+.Bl -tag -width calendar.christian -compact
+.It Pa calendar.birthday
 Births and deaths of famous (and not-so-famous) people.
-.Dp Pa calendar.christian
+.It Pa calendar.christian
 Christian holidays.
 This calendar should be updated yearly by the local system administrator
 so that roving holidays are set correctly for the current year.
-.Dp Pa calendar.computer
+.It Pa calendar.computer
 Days of special significance to computer people.
-.Dp Pa calendar.history
+.It Pa calendar.history
 Everything  else,  mostly  U. S. historical events.
-.Dp Pa calendar.holiday
+.It Pa calendar.holiday
 Other  holidays,  including  the  not-well-known,  obscure, and
 .Em really
 obscure.
-.Dp Pa calendar.judaic
+.It Pa calendar.judaic
 Jewish holidays.
 This calendar should be updated yearly by the local system administrator
 so that roving holidays are set correctly for the current year.
-.Dp Pa calendar.music
+.It Pa calendar.music
 Musical  events,  births, and deaths.
-Strongly  oriented  toward  rock ' n' roll.
-.Dp Pa calendar.usholiday
+Strongly  oriented  toward  rock 'n' roll.
+.It Pa calendar.usholiday
 U.S. holidays.
 This calendar should be updated yearly by the local system administrator
 so that roving holidays are set correctly for the current year.
-.Dp
+.El
 .Sh SEE ALSO
 .Xr at 1 ,
 .Xr cpp 1 ,
@@ -116,8 +115,8 @@ A
 command appeared in Version 7 AT&T UNIX.
 The version of
 .Nm calendar
-released with this man page
-is unrelated.
+released with this manual
+is new and unrelated to the former.
 .Sh BUGS
 .Nm Calendar
 doesn't handle events that move around from year to year, i.e.

@@ -3,23 +3,20 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)column.1	5.7 (Berkeley) %G%
+.\"     @(#)column.1	5.8 (Berkeley) %G%
 .\"
 .Dd 
-.Os BSD 4.4
+.Os
 .Dt COLUMN 1
 .Sh NAME
 .Nm column
 .Nd columnate lists
 .Sh SYNOPSIS
 .Nm column
-.Oo
-.Op Fl t Ar x
-.Op Fl s Ar sep
-.Op Fl c Ar columns
-.Oo
-.Cx
-.Ar
+.Op Fl c Ns Ar columns
+.Op Fl s Ns Ar sep
+.Op Fl tx
+.Op Ar
 .Sh DESCRIPTION
 The
 .Nm column
@@ -31,35 +28,36 @@ operands, or, by default, from the standard input.
 Empty lines are ignored.
 .Pp
 The options are as follows:
-.Tw Ds
-.Tp Fl c
+.Bl -tag -width Ds
+.It Fl c
 Output is formatted for a display
 .Ar columns
 wide.
-.Tp Fl s
+.It Fl s
 Specify a set of characters to be used to delimit columns for the
 .Fl t
 option.
-.Tp Fl t
+.It Fl t
 Determine the number of columns the input contains and create a table.
-Columns are delimited by whitespace, by default, or by the characters
+Columns are delimited with whitespace, by default, or with the characters
 supplied using the
 .Fl s
 option.
 Useful for pretty-printing displays.
-.Tp Fl x
+.It Fl x
 Fill columns before filling rows.
-.Tp
+.El
 .Pp
 .Nm Column
 exits 0 on success, >0 if an error occurred.
 .Sh ENVIRONMENT
-.Tw Fl
-.Tp Ev COLUMNS
+.Bl -tag -width COLUMNS
+.It Ev COLUMNS
 The environment variable
 .Ev COLUMNS
 is used to determine the size of
 the screen if no other information is available.
+.El
 .Sh EXAMPLES
 .Dl (printf \&"PERM LINKS OWNER SIZE MONTH DAY HH:MM/YEAR NAME\en\&"\ \&; \e
 .Dl ls -l \&| sed 1d) \&| column -t
@@ -69,4 +67,7 @@ the screen if no other information is available.
 .Xr paste 1 ,
 .Xr sort 1
 .Sh HISTORY
-4.3 Reno BSD.
+The
+.Nm
+command appeared in 
+.Bx 4.3 Reno .

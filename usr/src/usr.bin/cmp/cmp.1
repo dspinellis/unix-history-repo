@@ -3,11 +3,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)cmp.1	6.4 (Berkeley) %G%
+.\"     @(#)cmp.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CMP 1
-.Os BSD 4.4
+.Os
 .Sh NAME
 .Nm cmp
 .Nd compare two files
@@ -28,35 +28,35 @@ Bytes and
 lines are numbered beginning with one.
 .Pp
 The following options are available:
-.Tw Ds
-.Tp Fl l
+.Bl -tag -width Ds
+.It Fl l
 Print the byte number (decimal) and the differing
 byte values (octal) for each difference, respectively.
-.Tp Fl s
+.It Fl s
 Print nothing for differing files; return exit
 status only.
-.Tp
+.El
 .Pp
 The following operands are available:
-.Tw file1
-.Tp Ar file1
+.Bl -tag -width file1
+.It Ar file1
 A pathname of the first file to be compared.
 If
 .Ar file1
 is
 .Sq Fl ,
 the standard input is used.
-.Tp Ar file2
+.It Ar file2
 A pathname of the second file to be compared.
-.Tp
+.El
 .Pp
 The
 .Nm cmp
 utility exits with one of the following values:
-.Tw Ds
-.Tp 0
+.Bl -tag -width 4n
+.It 0
 The files are identical.
-.Tp 1
+.It 1
 The files are different; this includes the case
 where one file is identical to the first part of
 the other.
@@ -66,9 +66,9 @@ option has
 not been specified, cmp writes to standard error
 that EOF was reached in the shorter file (before
 any differences were found).
-.Tp >1
+.It >1
 An error occurred.
-.Tp
+.El
 .Sh SEE ALSO
 .Xr diff 1 ,
 .Xr diff3 1

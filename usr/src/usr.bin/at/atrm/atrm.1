@@ -1,9 +1,10 @@
 .\" Copyright (c) 1985, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
+.\"     @(#)atrm.1	6.4 (Berkeley) 7/24/90
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)atrm.1	6.4 (Berkeley) %G%
+.\"     @(#)atrm.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ATRM 1
@@ -17,12 +18,8 @@
 .Op Fl f
 .Op Fl i
 .Op Fl
-.Cx [
-.Op Ar job #
-.Op Ar name
-.Cx ...
-.Cx ]
-.Cx
+.Oo Op Ar job #
+.Op Ar name ... Oc
 .Sh DESCRIPTION
 .Nm Atrm
 removes jobs that were created with the
@@ -30,18 +27,20 @@ removes jobs that were created with the
 command.
 .Pp
 Options available are:
-.Pp
-.Tp Fl f
+.Bl -tag -width Ds
+.It Fl f
 all information regarding the
 removal of the specified jobs is suppressed.
-.Tp Fl i
+.It Fl i
 .Nm atrm
-asks if a job should be removed; a response of 'y' causes the job to be removed.
-.Tp Fl
+asks if a job should be removed; a response of
+.Ql y
+causes the job to be removed.
+.It Fl
 all jobs belonging to the person invoking
 .Nm atrm
 are removed.
-.Tp
+.El
 .Pp
 If a
 .Ar job
@@ -57,15 +56,16 @@ This form of invoking
 .Nm atrm
 is useful only to the super-user.
 .Sh FILES
-.Dw /usr/spool/at
-.Di L
-.Dp Pa /usr/spool/at
+.Bl -tag -width /usr/spool/at -compact
+.It Pa /usr/spool/at
 spool area
-.Dp
+.El
 .Sh SEE ALSO
 .Xr at 1 ,
 .Xr atq 1 ,
 .Xr cron 8
 .Sh HISTORY
-.Nm Atrm
-appeared in the 4.3 BSD release.
+The
+.Nm
+command appeared in 
+.Bx 4.3 .

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)at.1	6.4 (Berkeley) %G%
+.\"     @(#)at.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt AT 1
@@ -14,8 +14,8 @@
 .Sh SYNOPSIS
 .Nm at
 .Op Fl c
-.Op Fl s
 .Op Fl m
+.Op Fl s
 .Ar time
 .Op Ar day
 .Op Ar command_file
@@ -37,24 +37,24 @@ and may be examined by the
 program.
 .Pp
 Options available:
-.Pp
-.Tp Fl c
+.Bl -tag -width Ds
+.It Fl c
 .Ar Command_file
 contains
 .Xr csh 1
 commands.
-.Tp Fl s
+.It Fl s
 .Ar Command_file
 contains
 .Xr sh 1
 commands.
-.Tp Fl m
+.It Fl m
 Mail will be sent to the user after the job
 has been run. If errors occur during execution of the job, then
 a copy of the error diagnostics will be sent to the user. If
 no errors occur, then a short message is sent informing the
 user that no errors occurred.
-.Tp
+.El
 .Pp
 If a
 .Ar command_file
@@ -72,8 +72,7 @@ sent after the job is executed. The header is followed by a
 command to the current directory and a
 .Nm umask
 command to set the modes on any files created by the job.
-Then
-.Nm at
+.Nm At
 copies all relevant environment variables to the spool file.
 When the script is run, it uses the user and group ID
 of the creator of the spool file.
@@ -88,17 +87,18 @@ is hour and
 .Em mm
 is minutes, or the traditional 12 hour time
 with qualifying options:
-.Df I
-.Dp Li am , a
+.Pp
+.Bl -tag -width "am , a" -offset 12n -compact
+.It Li am , a
 am
-.Dp Li pm , p
+.It Li pm , p
 pm
-.Dp Li n
+.It Li n
 noon
-.Dp Li m
+.It Li m
 midnight
-.Dp
-.De
+.El
+.Pp
 The time can be abbreviated as shown below in EXAMPLES.
 .Pp
 A
@@ -106,7 +106,7 @@ A
 of the week may be specified by the first two
 letters of its name. A week (7 days) may be specified by 
 the argument
-.Em week .
+.Ar week .
 If a month name is given, the following argument is expected to
 be the day (numeric).
 .Sh ENVIRONMENT
@@ -115,29 +115,28 @@ the current environment variable
 .Ev SHELL
 is used.
 .Sh EXAMPLES
-.Pp
-.Tw Ar
-.Tp Li at 10p
+.Bl -tag -width Ds
+.It Li at 10p
 Execute at 10pm today, or tomorrow
 if 10pm has past. Use the shell
 found in the environment variable
 .Ev SHELL.
-.Tp Li at -c -m 1705 mo
+.It Li at -c -m 1705 mo
 Execute at 5:05pm on Monday using
 .Xr csh 1
 and send mail upon completion or
 termination of the job.
-.Tp Li at -s -m 1200n week
+.It Li at -s -m 1200n week
 Use
 .Xr sh 1 ,
 send mail upon completetion, start at noon o'clock,
 one week from today.
-.Tp Li at -s 8a apr 1
+.It Li at -s 8a apr 1
 Ideally this would be given late in March.  The
 commands would be run at 8 am on April first, using
 the
 .Xr sh 1 .
-.Tp
+.El
 .Sh ERRORS
 Errors must be collected via the
 .Fl m
@@ -145,20 +144,19 @@ option or by redirecting the standard output
 from inside the
 .Ar command_file.
 .Sh FILES
-.Dw /var/spool/at/yy.ddd.hhhh.*
-.Di L
-.Dp Pa /var/spool/at
+.Bl -tag -width /var/spool/at/yy.ddd.hhhh.* -compact
+.It Pa /var/spool/at
 spooling area
-.Dp Pa /var/spool/at/yy.ddd.hhhh.*
+.It Pa /var/spool/at/yy.ddd.hhhh.*
 job file
-.Dp Pa /var/spool/at/past
+.It Pa /var/spool/at/past
 directory where jobs are executed from
-.Dp Pa /var/spool/at/lasttimedone
+.It Pa /var/spool/at/lasttimedone
 last time atrun was run
-.Dp Pa /var/libexec/atrun
+.It Pa /var/libexec/atrun
 executor (run by
 .Xr cron 8 )
-.Dp
+.El
 .Sh SEE ALSO
 .Xr atq 1 ,
 .Xr atrm 1 ,
@@ -167,19 +165,11 @@ executor (run by
 .Xr sleep 1 ,
 .Sh DIAGNOSTICS
 Complains about various syntax errors and times out of range.
-.Sh HISTORY
-.Nm At
-appeared in Version 7 AT&T UNIX.
 .Sh BUGS
 The queueing mechanism
 .Pa /usr/libexec/atrun ,
 is scheduled by
 .Xr cron 8 .
-Frequency with which
-.Xr cron 8
-runs
-.Pa /usr/libexec/atrun
-is site dependent.
 If it is run infrequently, a job may
 fall thru the cracks.
 .Pp
@@ -194,3 +184,7 @@ Sometimes old spool files are not removed from the directory
 .Pa /var/spool/at/past .
 This is usually due to a system crash,
 and requires that they be removed by hand.
+.Sh HISTORY
+An
+.Nm
+command appeared in Version 7 AT&T UNIX.

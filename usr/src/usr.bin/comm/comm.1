@@ -3,10 +3,10 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)comm.1	6.4 (Berkeley) %G%
+.\"     @(#)comm.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
-.Os BSD 4.4
+.Os
 .Dt COMM 1
 .Sh NAME
 .Nm comm
@@ -31,18 +31,18 @@ lines only in
 and lines in both files.
 .Pp
 The filename
-.Sq Fl
+.Ql Fl
 means the standard input.
 .Pp
 The following options are available:
-.Tw Ds
-.Tp Fl 1
+.Bl -tag -width Ds
+.It Fl 1
 Suppress printing of column 1.
-.Tp Fl 2
+.It Fl 2
 Suppress printing of column 2.
-.Tp Fl 3
+.It Fl 3
 Suppress printing of column 3.
-.Tp
+.El
 .Pp
 Each column will have a number of tab characters prepended to it
 equal to the number of lower numbered columns that are being printed.
@@ -64,4 +64,4 @@ exits 0 on success, >0 if an error occurred.
 .Sh STANDARDS
 The
 .Nm comm
-function is expected to be POSIX 1003.2 compatible.
+command is expected to be POSIX 1003.2 compatible.

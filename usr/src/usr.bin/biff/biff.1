@@ -3,34 +3,35 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)biff.1	6.4 (Berkeley) %G%
+.\"     @(#)biff.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt BIFF 1
 .Os BSD 4
 .Sh NAME
 .Nm biff
-.Nd be\ notified\ if mail arrives and who it is from
+.Nd "be notified if mail arrives and who it is from"
 .Sh SYNOPSIS
 .Nm biff
-.Op Cm yn
+.Op Cm ny
 .Sh DESCRIPTION
 .Nm Biff
 informs the system whether you want to be notified when mail arrives
 during the current terminal session.
-The command
 .Pp
-.Dl biff y
+Options supported by
+.Nm biff :
+.Bl -tag -width 4n
+.It Cm n
+Disables notification.
+.It Cm y
+Enables notification.
+.El
 .Pp
-enables notification; the command
-.Pp
-.Dl biff n
-.Pp
-disables it.
 When mail notification is enabled, the header and first few lines of
 the message will be printed on your screen whenever mail arrives.
 A
-.Ql biff y
+.Dq Li biff y
 command is often included in the file
 .Pa \&.login
 or
@@ -53,5 +54,7 @@ variable of
 .Xr sh 1 ,
 .Xr comsat 8
 .Sh HISTORY
-.Nm biff
-appeared in the 4.0 BSD release.
+The
+.Nm
+command appeared in 
+.Bx 4.0 .

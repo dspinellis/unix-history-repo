@@ -1,9 +1,10 @@
 .\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
+.\"     @(#)cp.1	6.11 (Berkeley) 7/24/90
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)cp.1	6.11 (Berkeley) %G%
+.\"     @(#)cp.1	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CP 1
@@ -36,8 +37,20 @@ If
 detects an attempt to copy a file to itself, the copy will fail.
 .Pp
 The following options are available:
-.Tw Ds
-.Tp Fl f
+.Bl -tag -width 4n
+.It Fl R
+If
+.Ar source_file
+designates a directory,
+.Nm cp
+copies the directory and the entire subtree connected at that point.
+This option also causes symbolic links to be copied, rather than
+indirected through, and for
+.Nm cp
+to create special files rather than copying them as normal files.
+Created directories have the same mode as the corresponding source
+directory, unmodified by the process' umask.
+.It Fl f
 For each existing destination pathname, remove it and
 create a new file, without prompting for confirmation
 regardless of its permissions.
@@ -46,14 +59,14 @@ regardless of its permissions.
 option is ignored if the
 .Fl f
 option is specified.)
-.Tp Fl h
+.It Fl h
 Forces
 .Nm cp
 to follow symbolic links.
 Provided for the
 .Fl R
 option which does not follow symbolic links by default.
-.Tp Fl i
+.It Fl i
 Causes
 .Nm cp
 to write a prompt to standard error before copying a file that would
@@ -61,7 +74,7 @@ overwrite an existing file.
 If the response from the standard input begins with the character
 .Sq Li y ,
 the file is copied if permissions allow the copy.
-.Tp Fl p
+.It Fl p
 Causes
 .Nm cp
 to preserve in the copy as many of the modification time, access time,
@@ -80,19 +93,7 @@ If the source file has both the set user ID and set group ID bits
 on and either the user ID or group ID cannot be preserved, neither
 the set user ID or set group ID bits are preserved in the copy's
 permissions.
-.Tp Fl R
-If
-.Ar source_file
-designates a directory,
-.Nm cp
-copies the directory and the entire subtree connected at that point.
-This option also causes symbolic links to be copied, rather than
-indirected through, and for
-.Nm cp
-to create special files rather than copying them as normal files.
-Created directories have the same mode as the corresponding source
-directory, unmodified by the process' umask.
-.Tp
+.El
 .Pp
 For each destination file that already exists, its contents are
 overwritten if permissions allow, but its mode, user ID, and group
@@ -128,4 +129,4 @@ exits 0 on success, >0 if an error occurred.
 .Sh HISTORY
 The
 .Nm cp
-command appeared in Version 6 AT&T UNIX.
+command is expected to be POSIX 1003.2 compatible.
