@@ -1,8 +1,0 @@
-This is version of MIT's xditview from X11R4 modified to work better
-with groff.  You will need X11R4 in order to install it.  You will
-probably need to edit the Makefile.  Then just do a make and make
-install.  The make install runs xtotroff to generate the groff font
-files; it must be able to connect to an R4 server, so make sure the
-DISPLAY environment variable is set correctly when you do the make
-install.  The modified version probably won't work with ditroff, so
-you by default it's installed as gxditview.

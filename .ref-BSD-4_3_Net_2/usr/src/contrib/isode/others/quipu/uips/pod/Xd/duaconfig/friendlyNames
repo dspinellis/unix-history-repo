@@ -1,8 +1,0 @@
-#
-#
-#
-c, countryName:
-o, organizationName:
-ou, organizationalUnit:
-cn, commonName, sn, surname:
-l, locality:

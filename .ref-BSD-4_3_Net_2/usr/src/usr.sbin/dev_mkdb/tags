@@ -1,3 +1,0 @@
-Mdev_mkdb	dev_mkdb.c	/^main(argc, argv)$/
-error	dev_mkdb.c	/^error(n)$/
-usage	dev_mkdb.c	/^usage()$/

@@ -1,8 +1,0 @@
-#!/bin/sh
-
-echo "removing old EDB.gdbm files..."
-find "$1" -name EDB.gdbm -exec /bin/rm -f {}  \;
-
-echo "making edb files into dbm files..."
-find "$1" -name EDB -print -exec edb2dbm {} \;
-

@@ -1,8 +1,0 @@
-Mvpsf	vpsf.c	/^main(argc, argv)$/
-clear	vpsf.c	/^clear(cp, i)$/
-cutmark	vpsf.c	/^cutmark(o)$/
-oflush	vpsf.c	/^oflush()$/
-outchar	vpsf.c	/^outchar(c)$/
-process	vpsf.c	/^process()$/
-putline	vpsf.c	/^putline(n)$/
-set_up	vpsf.c	/^set_up()$/

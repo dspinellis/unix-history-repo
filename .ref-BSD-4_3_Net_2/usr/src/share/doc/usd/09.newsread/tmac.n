@@ -1,1 +1,0 @@
-../../smm/10.newsop/tmac.n

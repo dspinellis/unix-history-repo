@@ -1,2 +1,0 @@
-Mclri	clri.c	/^main(argc, argv)$/
-error	clri.c	/^error()$/

@@ -1,9 +1,0 @@
-Mvacation	vacation.c	/^main(argc, argv)$/
-junkmail	vacation.c	/^junkmail()$/
-nsearch	vacation.c	/^nsearch(name, str)$/
-readheaders	vacation.c	/^readheaders()$/
-recent	vacation.c	/^recent()$/
-sendmessage	vacation.c	/^sendmessage(myname)$/
-setinterval	vacation.c	/^setinterval(interval)$/
-setreply	vacation.c	/^setreply()$/
-usage	vacation.c	/^usage()$/

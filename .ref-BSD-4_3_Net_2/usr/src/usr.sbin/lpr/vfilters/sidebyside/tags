@@ -1,7 +1,0 @@
-Msidebyside	sidebyside.c	/^main(argc, argv)$/
-clear	sidebyside.c	/^clear(cp, i)$/
-cutmark	sidebyside.c	/^cutmark(o)$/
-oflush	sidebyside.c	/^oflush()$/
-outchar	sidebyside.c	/^outchar(c)$/
-process	sidebyside.c	/^process()$/
-putline	sidebyside.c	/^putline(cp)$/

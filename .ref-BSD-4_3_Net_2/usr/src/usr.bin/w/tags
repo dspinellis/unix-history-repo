@@ -1,9 +1,0 @@
-Mw	w.c	/^main(argc, argv)$/
-TESTAB	proc_compare.c	/^#define	TESTAB(a, b)	((a)<<1 | (b))$/
-attime	attime.c	/^attime(started)$/
-error	w.c	/^error(va_alist)$/
-isrun	proc_compare.c	/^#define isrun(p)	(((p)->p_stat == SRUN) || ((p)->p/
-proc_compare	proc_compare.c	/^proc_compare(p1, p2)$/
-prttime	attime.c	/^prttime(tim, tail)$/
-ttystat	w.c	/^ttystat(line)$/
-usage	w.c	/^#define usage()	fprintf(stderr, "usage: %s: %s\\n"/

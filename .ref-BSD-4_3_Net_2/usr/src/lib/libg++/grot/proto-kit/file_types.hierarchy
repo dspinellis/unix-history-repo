@@ -1,7 +1,0 @@
-root	Substrate
-set	<cache>	Whole	Partial
-set	<storage>	Simple
-children	Substrate	Unix	Immediate	<storage>
-children	Unix	Directory	Immediate	<storage>
-children	Directory	Immediate	<storage>
-children	<storage>	<cache>

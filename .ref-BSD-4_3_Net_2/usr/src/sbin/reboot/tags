@@ -1,3 +1,0 @@
-Mreboot	reboot.c	/^main(argc, argv)$/
-dingdong	reboot.c	/^dingdong()$/
-setalarm	reboot.c	/^setalarm(n)$/

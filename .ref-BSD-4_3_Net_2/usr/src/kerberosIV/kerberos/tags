@@ -1,9 +1,0 @@
-Mkerberos	kerberos.c	/^main(argc, argv)$/
-check_db_age	kerberos.c	/^static void check_db_age()$/
-check_princ	kerberos.c	/^check_princ(p_name, instance, lifetime, p)$/
-hang	kerberos.c	/^hang()$/
-kerb_err_reply	kerberos.c	/^kerb_err_reply(client, pkt, err, string)$/
-kerberos	kerberos.c	/^kerberos(client, pkt)$/
-set_tgtkey	kerberos.c	/^set_tgtkey(r)$/
-setup_disc	kerberos.c	/^setup_disc()$/
-usage	kerberos.c	/^static void usage()$/

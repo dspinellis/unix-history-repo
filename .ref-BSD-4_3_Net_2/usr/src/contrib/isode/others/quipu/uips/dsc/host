@@ -1,3 +1,0 @@
-cn=Dir
-masterDSA= c=GB@cn=YOUR DSA NAME HERE
-objectClass= applicationProcess & top & quipuNonLeafObject

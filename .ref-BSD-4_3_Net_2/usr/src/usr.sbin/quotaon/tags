@@ -1,6 +1,0 @@
-Mquotaon	quotaon.c	/^main(argc, argv)$/
-hasquota	quotaon.c	/^hasquota(fs, type, qfnamep)$/
-oneof	quotaon.c	/^oneof(target, list, cnt)$/
-quotaonoff	quotaon.c	/^quotaonoff(fs, offmode, type, qfpathname)$/
-readonly	quotaon.c	/^readonly(fs)$/
-usage	quotaon.c	/^usage(whoami)$/

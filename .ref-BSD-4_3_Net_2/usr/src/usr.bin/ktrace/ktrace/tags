@@ -1,8 +1,0 @@
-Mktrace	ktrace.c	/^main(argc, argv)$/
-error	ktrace.c	/^error(name)$/
-getpoints	subr.c	/^getpoints(s)$/
-rpid	ktrace.c	/^rpid(p)$/
-timevaladd	subr.c	/^timevaladd(t1, t2)$/
-timevalfix	subr.c	/^timevalfix(t1)$/
-timevalsub	subr.c	/^timevalsub(t1, t2)$/
-usage	ktrace.c	/^usage()$/

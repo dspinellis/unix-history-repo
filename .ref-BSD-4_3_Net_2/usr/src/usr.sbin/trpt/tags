@@ -1,6 +1,0 @@
-Mtrpt	trpt.c	/^main(argc, argv)$/
-dotrace	trpt.c	/^dotrace(tcpcb)$/
-klseek	trpt.c	/^klseek(fd, base, off)$/
-numeric	trpt.c	/^numeric(c1, c2)$/
-pf	trpt.c	/^#define	pf(flag, string) { \\$/
-tcp_trace	trpt.c	/^tcp_trace(act, ostate, atp, tp, ti, req)$/
