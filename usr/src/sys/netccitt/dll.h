@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) Dirk Husemann, Computer Science Department IV, 
  * 		 University of Erlangen-Nuremberg, Germany, 1990, 1991, 1992
- * Copyright (c) 1992   Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dll.h	7.1 (Berkeley) %G%
+ *	@(#)dll.h	8.1 (Berkeley) %G%
  */
 
 /* 

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)igmp.c	7.4 (Berkeley) %G%
+ *	@(#)igmp.c	8.1 (Berkeley) %G%
  */
 
 /* Internet Group Management Protocol (IGMP) routines. */

@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_timer.h	7.9 (Berkeley) %G%
+ *	@(#)tcp_timer.h	8.1 (Berkeley) %G%
  */
 
 /*

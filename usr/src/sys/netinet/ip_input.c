@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1982, 1986, 1988, 1993 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_input.c	7.29 (Berkeley) %G%
+ *	@(#)ip_input.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)igmp_var.h	7.2 (Berkeley) %G%
+ *	@(#)igmp_var.h	8.1 (Berkeley) %G%
  */
 
 /*

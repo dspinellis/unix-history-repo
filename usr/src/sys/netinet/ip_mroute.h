@@ -1,14 +1,14 @@
 /*
  * Copyright (c) 1989 Stephen Deering.
- * Copyright (c) 1992 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Stephen Deering of Stanford University.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ip_mroute.h	7.3 (Berkeley) %G%
+ *	@(#)ip_mroute.h	8.1 (Berkeley) %G%
  */
 
 /*

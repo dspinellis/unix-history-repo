@@ -1,7 +1,7 @@
 /*
  * Copyright (c) University of British Columbia, 1984
- * Copyright (c) 1990, 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * the Laboratory for Computation Vision and the Computer Science Department
@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk.h	7.10 (Berkeley) %G%
+ *	@(#)pk.h	8.1 (Berkeley) %G%
  */
 
 /*

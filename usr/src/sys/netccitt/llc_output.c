@@ -1,8 +1,8 @@
 /* 
  * Copyright (C) Dirk Husemann, Computer Science Department IV, 
  * 		 University of Erlangen-Nuremberg, Germany, 1990, 1991, 1992
- * Copyright (c) 1992   Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  * 
  * This code is derived from software contributed to Berkeley by
  * Dirk Husemann and the Computer Science Department (IV) of
@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)llc_output.c	7.1 (Berkeley) %G%
+ *	@(#)llc_output.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
