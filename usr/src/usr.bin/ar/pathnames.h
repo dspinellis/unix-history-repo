@@ -1,12 +1,12 @@
-/*
- * Copyright (c) 1989 The Regents of the University of California.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
- * %sccs.include.redist.c%
+ * This code is derived from software contributed to Berkeley by
+ * Hugh Smith at The University of Guelph.
  *
- *	@(#)pathnames.h	5.2 (Berkeley) %G%
+ *	@(#)pathnames.h	5.3 (Berkeley) %G%
  */
 
-#define	_PATH_TMP1	"/tmp/vXXXXX"
-#define	_PATH_TMP2	"/tmp/v1XXXXX"
-#define	_PATH_TMP3	"/tmp/v2XXXXX"
+#define	_NAME_ARTMP	"ar.XXXXXX"
+#define	_PATH_ARTMP	"/tmp/ar.XXXXXX"
