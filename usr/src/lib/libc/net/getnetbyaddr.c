@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getnetbyaddr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)getnetbyaddr.c	5.4 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include <netdb.h>
@@ -14,7 +14,8 @@ extern int _net_stayopen;
 
 struct netent *
 getnetbyaddr(net, type)
-	register int net, type;
+	register long net;
+	register int type;
 {
 	register struct netent *p;
 
