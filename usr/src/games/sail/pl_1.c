@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_1.c	2.1 83/10/31";
+static	char *sccsid = "@(#)pl_1.c	2.2 83/11/01";
 #endif
 
 #include "player.h"
@@ -81,6 +81,10 @@ reprint:
 	cc = &scene[game];
 	ls = cc->ship + cc->vessels;
 
+	(void) signal(SIGHUP, choke);
+	(void) signal(SIGINT, choke);
+	(void) signal(SIGQUIT, choke);
+
 	active = sync_exists(game);
 	if (sync_open() < 0) {
 		perror("sail: syncfile");
@@ -121,7 +125,7 @@ reprint:
 			people = 0;
 			goto reprint;
 		}
-		if (!randomize) {
+		if (randomize) {
 			player = sp - cc->ship;
 		} else {
 			printf("%s\n\n", cc->name);
@@ -158,9 +162,6 @@ reprint:
 	mf = ms->file;
 	mc = ms->specs;
 
-	(void) signal(SIGHUP, choke);
-	(void) signal(SIGINT, choke);
-	(void) signal(SIGQUIT, choke);
 	(void) signal(SIGCHLD, child);
 
 	Write(W_BEGIN, ms, 0, 0, 0, 0, 0);
@@ -235,7 +236,7 @@ leave(conditions)
 int conditions;
 {
 	FILE *fp;
-	int people;
+	int persons;
 	float net;
 	char message[60];
 	register int n;
@@ -248,14 +249,9 @@ int conditions;
 	(void) signal(SIGCHLD, SIG_IGN);
 
 	if (conditions != -1) {
-		(void) sprintf(message,"Captain %s relinquishing.",
-			mf->captain);
-		Write(W_SIGNAL, ms, 1, (int)message, 0, 0, 0);
-		Write(W_END, ms, 0, 0, 0, 0, 0);
-
 		if (fp = fopen(LOGFILE, "r+")) {
 			net = (float)mf->points / mc->pts;
-			people = getw(fp);
+			persons = getw(fp);
 			n = fread((char *)log, sizeof(struct logs), 10, fp);
 			for (; n < 10; n++)
 				log[n].l_name[0]
@@ -264,10 +260,10 @@ int conditions;
 					= log[n].l_gamenum
 					= log[n].l_netpoints = 0;
 			rewind(fp);
-			if (people < 0)
+			if (persons < 0)
 				(void) putw(1, fp);
 			else
-				(void) putw(people + 1, fp);
+				(void) putw(persons + 1, fp);
 			for (n = 0; n < 10; n++)
 				if (net > (float) log[n].l_netpoints / scene[log[n].l_gamenum].ship[log[n].l_shipnum].specs->pts) {
 					(void) fwrite((char *)log,
@@ -318,7 +314,12 @@ int conditions;
 					conditions);
 			}
 		}
+		(void) sprintf(message,"Captain %s relinquishing.",
+			mf->captain);
+		Write(W_SIGNAL, ms, 1, (int)message, 0, 0, 0);
+		Write(W_END, ms, 0, 0, 0, 0, 0);
 		Sync();
+		sync_close(people == 0);
 	}
 	cleanupscreen();
 	exit(0);
