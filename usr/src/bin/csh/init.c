@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)init.c 4.2 %G%";
+static	char *sccsid = "@(#)init.c 4.3 %G%";
 
 #include "sh.local.h"
 
@@ -32,7 +32,9 @@ extern	int dolet();
 extern	int dolimit();
 extern	int dologin();
 extern	int dologout();
+#ifdef NEWGRP
 extern	int donewgrp();
+#endif
 extern	int donice();
 extern	int donotify();
 extern	int donohup();
@@ -114,7 +116,9 @@ struct	biltins {
 	"limit",	dolimit,	0,	3,
 	"login",	dologin,	0,	1,
 	"logout",	dologout,	0,	0,
+#ifdef NEWGRP
 	"newgrp",	donewgrp,	1,	1,
+#endif
 	"nice",		donice,		0,	INF,
 	"nohup",	donohup,	0,	INF,
 	"notify",	donotify,	0,	INF,

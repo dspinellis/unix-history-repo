@@ -1,5 +1,5 @@
 #
-#	Makefile	4.1	%G%
+#	Makefile	4.2	%G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -12,7 +12,7 @@ RM=	-rm
 CXREF=	/usr/ucb/cxref
 VGRIND=	csh /usr/ucb/vgrind
 CTAGS=	/usr/ucb/ctags
-LIBES=	-ljobs
+LIBES=
 SCCS=	/usr/local/sccs
 
 # strings.o must be last in OBJS since it can change when previous files compile
