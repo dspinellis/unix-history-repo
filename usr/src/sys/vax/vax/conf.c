@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	6.6 (Berkeley) %G%
+ *	@(#)conf.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -430,6 +430,21 @@ int	adopen(),adclose(),adioctl(),adreset();
 
 int	logopen(),logclose(),logread(),logioctl(),logselect();
 
+#include "dhu.h"
+#if NDHU > 0
+int dhuopen(),dhuclose(),dhuread(),dhuwrite(),dhuioctl(),dhustop(),dhureset();
+struct tty dhu_tty[];
+#else
+#define dhuopen nodev
+#define dhuclose nodev
+#define dhuread nodev
+#define dhuwrite nodev
+#define dhuioctl nodev
+#define dhustop nodev
+#define dhureset nulldev
+#define dhu_tty 0
+#endif
+
 int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] =
@@ -537,6 +552,9 @@ struct cdevsw	cdevsw[] =
 	logopen,	logclose,	logread,	nodev,		/* 33 */
 	logioctl,	nodev,		nulldev,	0,
 	logselect,	nodev,
+	dhuopen,        dhuclose,       dhuread,        dhuwrite,       /* 34 */
+	dhuioctl,       dhustop,        dhureset,       dhu_tty,
+	ttselect,       nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
