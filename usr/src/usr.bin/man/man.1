@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)man.1	4.1 (Berkeley) %G%
+.\"	@(#)man.1	5.1 (Berkeley) %G%
 .\"
-.TH MAN 1
+.TH MAN 1 "18 January 1983"
 .UC 4
 .SH NAME
 man \- find manual information by keywords; print out the manual
@@ -30,7 +30,7 @@ title ...
 .SH DESCRIPTION
 .I Man
 is a program which gives information from the programmers manual.
-It can be asked form one line descriptions of commands specified by
+It can be asked for one line descriptions of commands specified by
 name, or for all commands whose description contains any of a set of
 keywords.  It can also provide on-line access to the sections of the
 printed manual.
@@ -60,10 +60,9 @@ If a section specifier is given
 looks in the that section of the manual for the given
 .I titles.
 .I Section
-is an arabic section number, i.e. 3,
-which may be followed by a single letter classifier, i.e. 1g
-indicating a graphics program in section 1.
-If
+is an Arabic section number (3 for instance).  The number may followed by
+a single letter classifier (1g for instance)
+indicating a graphics program in section 1.  If
 .I section
 is omitted,
 .I man
@@ -73,7 +72,7 @@ it finds, if any.
 .PP
 If the standard output is a teletype, or if the flag
 .B \-
-is given, then
+is given,
 .I man
 pipes its output through
 .IR cat (1)
@@ -81,8 +80,7 @@ with the option
 .B \-s
 to crush out useless blank lines,
 .IR ul (1)
-to create proper underlines for different terminals,
-and through
+to create proper underlines for different terminals, and through
 .IR more (1)
 to stop after each page on the screen.
 Hit a space to continue,
