@@ -6,24 +6,25 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ns_ntoa.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ns_ntoa.c	6.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <netns/ns.h>
+#include <stdio.h>
 
 char *
 ns_ntoa(addr)
-struct ns_addr addr;
+	struct ns_addr addr;
 {
 	static char obuf[40];
-	char *spectHex();
 	union { union ns_net net_e; u_long long_e; } net;
 	u_short port = htons(addr.x_port);
 	register char *cp;
 	char *cp2;
 	register u_char *up = addr.x_host.c_host;
 	u_char *uplim = up + 6;
+	static char *spectHex();
 
 	net.net_e = addr.x_net;
 	sprintf(obuf, "%lx", ntohl(net.long_e));
@@ -52,7 +53,7 @@ struct ns_addr addr;
 
 static char *
 spectHex(p0)
-char *p0;
+	char *p0;
 {
 	int ok = 0;
 	int nonzero = 0;

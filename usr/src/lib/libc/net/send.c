@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)send.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -15,7 +15,7 @@ static char sccsid[] = "@(#)send.c	5.2 (Berkeley) %G%";
 
 send(s, msg, len, flags)
 	int s, len, flags;
-	char *msg;
+	const void *msg;
 {
 	return(sendto(s, msg, len, flags, (struct sockaddr *)NULL, 0));
 }

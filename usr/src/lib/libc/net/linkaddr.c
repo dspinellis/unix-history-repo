@@ -6,12 +6,13 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)linkaddr.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)linkaddr.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <net/if_dl.h>
+#include <string.h>
 
 /* States*/
 #define NAMING	0
@@ -24,9 +25,10 @@ static char sccsid[] = "@(#)linkaddr.c	5.1 (Berkeley) %G%";
 #define DELIM	(4*2)
 #define LETTER	(4*3)
 
+void
 link_addr(addr, sdl)
-register char *addr;
-register struct sockaddr_dl *sdl;
+	register const char *addr;
+	register struct sockaddr_dl *sdl;
 {
 	register char *cp = sdl->sdl_data;
 	char *cplim = sdl->sdl_len + (char *)sdl;
@@ -84,7 +86,7 @@ static char hexlist[] = "0123456789abcdef";
 
 char *
 link_ntoa(sdl)
-register struct sockaddr_dl *sdl;
+	register const struct sockaddr_dl *sdl;
 {
 	static char obuf[64];
 	register char *out = obuf; 

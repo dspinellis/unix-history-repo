@@ -6,19 +6,20 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gethostnamadr.c	6.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)gethostnamadr.c	6.43 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <ctype.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <errno.h>
 #include <arpa/inet.h>
 #include <arpa/nameser.h>
+#include <netdb.h>
 #include <resolv.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
 
 #define	MAXALIASES	35
 #define	MAXADDRS	35
@@ -51,9 +52,7 @@ typedef union {
     char ac;
 } align;
 
-
 int h_errno;
-extern errno;
 
 static struct hostent *
 getanswer(answer, anslen, iquery)
@@ -82,8 +81,9 @@ getanswer(answer, anslen, iquery)
 	cp = answer->buf + sizeof(HEADER);
 	if (qdcount) {
 		if (iquery) {
-			if ((n = dn_expand((char *)answer->buf, eom,
-			     cp, bp, buflen)) < 0) {
+			if ((n = dn_expand((u_char *)answer->buf,
+			    (u_char *)eom, (u_char *)cp, (u_char *)bp,
+			    buflen)) < 0) {
 				h_errno = NO_RECOVERY;
 				return ((struct hostent *) NULL);
 			}
@@ -113,7 +113,8 @@ getanswer(answer, anslen, iquery)
 #endif
 	haveanswer = 0;
 	while (--ancount >= 0 && cp < eom) {
-		if ((n = dn_expand((char *)answer->buf, eom, cp, bp, buflen)) < 0)
+		if ((n = dn_expand((u_char *)answer->buf, (u_char *)eom,
+		    (u_char *)cp, (u_char *)bp, buflen)) < 0)
 			break;
 		cp += n;
 		type = _getshort(cp);
@@ -133,8 +134,9 @@ getanswer(answer, anslen, iquery)
 			continue;
 		}
 		if (iquery && type == T_PTR) {
-			if ((n = dn_expand((char *)answer->buf, eom,
-			    cp, bp, buflen)) < 0) {
+			if ((n = dn_expand((u_char *)answer->buf,
+			    (u_char *)eom, (u_char *)cp, (u_char *)bp,
+			    buflen)) < 0) {
 				cp += n;
 				continue;
 			}
@@ -260,7 +262,7 @@ gethostbyname(name)
 
 struct hostent *
 gethostbyaddr(addr, len, type)
-	char *addr;
+	const char *addr;
 	int len, type;
 {
 	int n;
@@ -391,7 +393,7 @@ found:
 
 struct hostent *
 _gethtbyaddr(addr, len, type)
-	char *addr;
+	const char *addr;
 	int len, type;
 {
 	register struct hostent *p;

@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)recv.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)recv.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -15,7 +15,7 @@ static char sccsid[] = "@(#)recv.c	5.2 (Berkeley) %G%";
 
 recv(s, buf, len, flags)
 	int s, len, flags;
-	char *buf;
+	void *buf;
 {
 	return(recvfrom(s, buf, len, flags, (struct sockaddr *)NULL, 0));
 }

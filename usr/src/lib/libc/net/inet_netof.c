@@ -6,11 +6,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_netof.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet_netof.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 /*
  * Return the network number from an internet
