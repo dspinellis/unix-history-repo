@@ -1,19 +1,32 @@
 #! /bin/sh
 #
-#	@(#)mkdep.sh	5.2	(Berkeley)	%G%
+#	@(#)mkdep.sh	5.3	(Berkeley)	%G%
 #
 
 if [ $# = 0 ] ; then
-	echo 'usage: mkdep flags file ...'
+	echo 'usage: mkdep [-p] [-f makefile] flags file ...'
 	exit 1
 fi
 
-if [ ! -w Makefile ]; then
-	echo 'mkdep: no writeable file "Makefile"'
+MAKE=Makefile			# default makefile name is "Makefile"
+case $1 in
+	# -f allows you to select a makefile name
+	-f)
+		MAKE=$2
+		shift; shift ;;
+
+	# the -p flag produces "program: program.c" style dependencies
+	# so .o's don't get produced
+	-p)
+		SED='-e s;\.o;;'
+		shift ;;
+esac
+
+if [ ! -w $MAKE ]; then
+	echo "mkdep: no writeable file \"$MAKE\""
 	exit 1
 fi
 
-CC="/bin/cc -M"
 TMP=/tmp/mkdep$$
 
 trap '/bin/rm -f $TMP ; exit 1' 1 2 3 13 15
@@ -28,7 +41,7 @@ cat << _EOF_ >> $TMP
 
 _EOF_
 
-$CC $* | sed -e 's, ./, ,g' | \
+/bin/cc -M $* | /bin/sed -e "s; \./;;g" $SED | \
 	awk ' { \
 		if ($1 != prev) { \
 			if (rec != "") \
