@@ -1,0 +1,348 @@
+COL_MAX	map.c	/^#define COL_MAX(res)	((res->objects.objects_val)->/
+COL_NAME	map.c	/^#define COL_NAME(res,i)	((res->objects.objects_val/
+EN_col	map.c	/^#define EN_col(col)	zo_data.objdata_u.en_data.en_c/
+KBYTES	stats.c	/^#define KBYTES(x)	(((x) + (ONE_K - 1)) \/ ONE_K)$/
+MAPDEF	conf.c	/^#define MAPDEF(name, ext, flags, parse, open, clos/
+MAX	domain.c	/^#define MAX(a, b)	((a) > (b) ? (a) : (b))$/
+Mmain	main.c	/^main(argc, argv, envp)$/
+PARTIAL_NAME	map.c	/^#define PARTIAL_NAME(x)	((x)[strlen(x) - 1] != '.'/
+REPLYCLASS	usersmtp.c	/^#define REPLYCLASS(r)	(((r) \/ 10) % 10)	\/* secon/
+REPLYTYPE	usersmtp.c	/^#define REPLYTYPE(r)	((r) \/ 100)		\/* first digit/
+__P	conf.c	/^setsid __P ((void))$/
+_udb_parsespec	udb.c	/^_udb_parsespec(udbspec, opt, maxopts)$/
+_udbx_init	udb.c	/^_udbx_init()$/
+addheader	headers.c	/^addheader(field, value, hdrlist)$/
+alias	alias.c	/^alias(a, sendq, aliaslevel, e)$/
+aliaslookup	alias.c	/^aliaslookup(name, pstat, e)$/
+aliaswait	alias.c	/^aliaswait(map, ext, isopen)$/
+allocaddr	parseaddr.c	/^allocaddr(a, flags, paddr)$/
+anynet_ntoa	daemon.c	/^anynet_ntoa(sap)$/
+arpadate	arpadate.c	/^arpadate(ud)$/
+atobool	util.c	/^atobool(s)$/
+atooct	util.c	/^atooct(s)$/
+auth_warning	main.c	/^auth_warning(e, msg, va_alist)$/
+authtimeout	daemon.c	/^authtimeout()$/
+bestmx_map_lookup	domain.c	/^bestmx_map_lookup(map, name, av, statp)$/
+bitintersect	util.c	/^bitintersect(a, b)$/
+bitzerop	util.c	/^bitzerop(map)$/
+bogus_map_lookup	map.c	/^bogus_map_lookup(map, key, args, pstat)$/
+bt_map_open	map.c	/^bt_map_open(map, mode)$/
+buffer_errors	err.c	/^buffer_errors()$/
+buildaddr	parseaddr.c	/^buildaddr(tv, a, flags, e)$/
+buildfname	util.c	/^buildfname(gecos, login, buf)$/
+cataddr	parseaddr.c	/^cataddr(pvp, evp, buf, sz, spacesub)$/
+checkcompat	conf.c	/^checkcompat(to, e)$/
+checkfd012	util.c	/^checkfd012(where)$/
+chompheader	headers.c	/^chompheader(line, def, hdrp, e)$/
+chownsafe	conf.c	/^chownsafe(fd)$/
+cleanstrcpy	util.c	/^cleanstrcpy(t, f, l)$/
+clearenvelope	envelope.c	/^clearenvelope(e, fullclear)$/
+closexscript	envelope.c	/^closexscript(e)$/
+clrdaemon	daemon.c	/^clrdaemon()$/
+clrevent	clock.c	/^clrevent(ev)$/
+collect	collect.c	/^collect(fp, smtpmode, requeueflag, hdrp, e)$/
+collecttimeout	collect.c	/^collecttimeout(timeout)$/
+commaize	headers.c	/^commaize(h, p, oldstyle, mci, e)$/
+convtime	convtime.c	/^convtime(p, units)$/
+copyheader	headers.c	/^copyheader(header)$/
+copyplist	util.c	/^copyplist(list, copycont)$/
+copyqueue	util.c	/^copyqueue(addr)$/
+crackaddr	headers.c	/^crackaddr(addr)$/
+curtime	util.c	/^curtime()$/
+datatimeout	usersmtp.c	/^datatimeout()$/
+db_map_close	map.c	/^db_map_close(map)$/
+db_map_lookup	map.c	/^db_map_lookup(map, name, av, statp)$/
+db_map_store	map.c	/^db_map_store(map, lhs, rhs)$/
+defcharset	mime.c	/^defcharset(e)$/
+define	macro.c	/^define(n, v, e)$/
+deliver	deliver.c	/^deliver(e, firstto)$/
+denlstring	util.c	/^denlstring(s, strict, logattacks)$/
+dequote_init	parseaddr.c	/^dequote_init(map, args)$/
+dequote_map	parseaddr.c	/^dequote_map(map, name, av, statp)$/
+dfopen	util.c	/^dfopen(filename, omode, cmode)$/
+dgux_inet_addr	conf.c	/^dgux_inet_addr(host)$/
+disconnect	main.c	/^disconnect(droplev, e)$/
+dns_getcanonname	domain.c	/^dns_getcanonname(host, hbsize, trymx, statp)$/
+dofork	deliver.c	/^dofork()$/
+dowork	queue.c	/^dowork(id, forkflag, requeueflag, e)$/
+dropenvelope	envelope.c	/^dropenvelope(e)$/
+dsntoexitstat	sysexits.c	/^dsntoexitstat(dsncode)$/
+dumpfd	util.c	/^dumpfd(fd, printclosed, logit)$/
+dumpstate	main.c	/^dumpstate(when)$/
+eatfrom	collect.c	/^eatfrom(fm, e)$/
+eatheader	headers.c	/^eatheader(e, full)$/
+emptyaddr	parseaddr.c	/^emptyaddr(a)$/
+endmailer	deliver.c	/^endmailer(mci, e, pv)$/
+endsleep	clock.c	/^endsleep()$/
+enoughdiskspace	conf.c	/^enoughdiskspace(msize)$/
+errbody	savemail.c	/^errbody(mci, e, separator)$/
+errstring	err.c	/^errstring(errnum)$/
+esmtp_check	usersmtp.c	/^esmtp_check(line, firstline, m, mci, e)$/
+expand	macro.c	/^expand(s, buf, bufsize, e)$/
+extract_canonname	map.c	/^extract_canonname(name, line, cbuf)$/
+fgetfolded	util.c	/^fgetfolded(buf, n, f)$/
+fileclass	readcf.c	/^fileclass(class, filename, fmt, safe, optional)$/
+finduser	recipient.c	/^finduser(name, fuzzyp)$/
+finis	main.c	/^finis()$/
+fixcrlf	util.c	/^fixcrlf(line, stripnl)$/
+flush_errors	err.c	/^flush_errors(print)$/
+fmtmsg	err.c	/^fmtmsg(eb, to, num, eno, fmt, ap)$/
+forward	alias.c	/^forward(user, sendq, aliaslevel, e)$/
+freediskspace	conf.c	/^freediskspace(dir, bsize)$/
+fsync	conf.c	/^fsync(fd)$/
+get_column	util.c	/^get_column(line, col, delim, buf)$/
+getauthinfo	daemon.c	/^getauthinfo(fd)$/
+getcanonname	map.c	/^getcanonname(host, hbsize, trymx)$/
+getcfname	conf.c	/^getcfname()$/
+getctladdr	recipient.c	/^getctladdr(a)$/
+getdtsize	conf.c	/^getdtsize()$/
+gethostalias	domain.c	/^gethostalias(host)$/
+getla	conf.c	/^getla()$/
+getloadavg	conf.c	/^int getloadavg( call_data )$/
+getmxrr	domain.c	/^getmxrr(host, mxhosts, droplocalhost, rcode)$/
+getopt	conf.c	/^getopt(nargc,nargv,ostr)$/
+getrequests	daemon.c	/^getrequests()$/
+giveresponse	deliver.c	/^giveresponse(stat, m, mci, ctladdr, xstart, e)$/
+grow_wlist	queue.c	/^grow_wlist()$/
+hard_syslog	conf.c	/^hard_syslog(pri, msg, va_alist)$/
+hash_map_open	map.c	/^hash_map_open(map, mode)$/
+helo_options	usersmtp.c	/^helo_options(line, firstline, m, mci, e)$/
+help	srvrsmtp.c	/^help(topic)$/
+hes_map_lookup	map.c	/^hes_map_lookup(map, name, av, statp)$/
+hes_udb_get	udb.c	/^hes_udb_get(key, info)$/
+holdsigs	conf.c	/^holdsigs()$/
+host_map_init	conf.c	/^host_map_init(map, args)$/
+host_map_lookup	daemon.c	/^host_map_lookup(map, name, av, statp)$/
+hostnamebyanyaddr	daemon.c	/^hostnamebyanyaddr(sap)$/
+hostsignature	deliver.c	/^hostsignature(m, host, e)$/
+hvalue	headers.c	/^hvalue(field, header)$/
+impl_map_close	map.c	/^impl_map_close(map)$/
+impl_map_lookup	map.c	/^impl_map_lookup(map, name, av, pstat)$/
+impl_map_open	map.c	/^impl_map_open(map, mode)$/
+impl_map_store	map.c	/^impl_map_store(map, lhs, rhs)$/
+include	recipient.c	/^include(fname, forwarding, ctladdr, sendq, aliasle/
+includetimeout	recipient.c	/^includetimeout()$/
+init_md	conf.c	/^init_md(argc, argv)$/
+init_vendor_macros	conf.c	/^init_vendor_macros(e)$/
+initgroups	conf.c	/^initgroups(name, basegid)$/
+inithostmaps	conf.c	/^inithostmaps()$/
+initmacros	main.c	/^initmacros(e)$/
+initmaps	map.c	/^initmaps(rebuild, e)$/
+initsys	envelope.c	/^initsys(e)$/
+inittimeouts	readcf.c	/^inittimeouts(val)$/
+intsig	main.c	/^intsig()$/
+invalidaddr	parseaddr.c	/^invalidaddr(addr, delimptr)$/
+isboundary	mime.c	/^isboundary(line, boundaries)$/
+isheader	headers.c	/^isheader(h)$/
+load_if_names	conf.c	/^load_if_names()$/
+local_hostname_length	conf.c	/^local_hostname_length(hostname)$/
+lockfile	conf.c	/^lockfile(fd, filename, ext, type)$/
+logdelivery	deliver.c	/^logdelivery(m, mci, stat, ctladdr, xstart, e)$/
+logsender	headers.c	/^logsender(e, msgid)$/
+loseqfile	queue.c	/^loseqfile(e, why)$/
+lower	util.c	/^lower(c)$/
+macid	macro.c	/^macid(p, ep)$/
+macname	macro.c	/^macname(n)$/
+macvalue	macro.c	/^macvalue(n, e)$/
+mail_esmtp_args	srvrsmtp.c	/^mail_esmtp_args(kp, vp, e)$/
+mailfile	deliver.c	/^mailfile(filename, ctladdr, sfflags, e)$/
+makeargv	readcf.c	/^makeargv(p)$/
+makeconnection	daemon.c	/^makeconnection(host, port, mci, usesecureport)$/
+makelower	util.c	/^makelower(p)$/
+makemailer	readcf.c	/^makemailer(line)$/
+makemapentry	readcf.c	/^makemapentry(line)$/
+map_init	map.c	/^map_init(s, rebuild)$/
+map_parseargs	map.c	/^map_parseargs(map, ap)$/
+map_rewrite	map.c	/^map_rewrite(map, s, slen, av)$/
+maplocaluser	parseaddr.c	/^maplocaluser(a, sendq, aliaslevel, e)$/
+markfailure	deliver.c	/^markfailure(e, q, mci, rcode)$/
+markstats	stats.c	/^markstats(e, to)$/
+mci_cache	mci.c	/^mci_cache(mci)$/
+mci_dump	mci.c	/^mci_dump(mci, logit)$/
+mci_dump_all	mci.c	/^mci_dump_all(logit)$/
+mci_flush	mci.c	/^mci_flush(doquit, allbut)$/
+mci_get	mci.c	/^mci_get(host, m)$/
+mci_scan	mci.c	/^mci_scan(savemci)$/
+mci_uncache	mci.c	/^mci_uncache(mcislot, doquit)$/
+message	err.c	/^message(msg, va_alist)$/
+mime8to7	mime.c	/^mime8to7(mci, header, e, boundaries, flags)$/
+mime_getchar	mime.c	/^mime_getchar(fp, boundaries, btp)$/
+mime_getchar_crlf	mime.c	/^mime_getchar_crlf(fp, boundaries, btp)$/
+mimeboundary	mime.c	/^mimeboundary(line, boundaries)$/
+munchstring	readcf.c	/^munchstring(p, delimptr)$/
+mxrand	domain.c	/^mxrand(host)$/
+myhostname	daemon.c	/^myhostname(hostbuf, size)$/
+ndbm_map_close	map.c	/^ndbm_map_close(map)$/
+ndbm_map_lookup	map.c	/^ndbm_map_lookup(map, name, av, statp)$/
+ndbm_map_open	map.c	/^ndbm_map_open(map, mode)$/
+ndbm_map_store	map.c	/^ndbm_map_store(map, lhs, rhs)$/
+newenvelope	envelope.c	/^newenvelope(e, parent)$/
+ni_map_lookup	map.c	/^ni_map_lookup(map, name, av, statp)$/
+ni_map_open	map.c	/^ni_map_open(map, mode)$/
+ni_propval	conf.c	/^ni_propval(keydir, keyprop, keyval, valprop, sepch/
+nis_getcanonname	map.c	/^nis_getcanonname(name, hbsize, statp)$/
+nis_map_lookup	map.c	/^nis_map_lookup(map, name, av, statp)$/
+nis_map_open	map.c	/^nis_map_open(map, mode)$/
+nisplus_default_domain	map.c	/^nisplus_default_domain()$/
+nisplus_getcanonname	map.c	/^nisplus_getcanonname(name, hbsize, statp)$/
+nisplus_map_lookup	map.c	/^nisplus_map_lookup(map, name, av, statp)$/
+nisplus_map_open	map.c	/^nisplus_map_open(map, mode)$/
+nmessage	err.c	/^nmessage(msg, va_alist)$/
+null_map_close	map.c	/^null_map_close(map)$/
+null_map_open	map.c	/^null_map_open(map, mode)$/
+null_map_store	map.c	/^null_map_store(map, key, val)$/
+obsolete	main.c	/^obsolete(argv)$/
+opendaemonsocket	daemon.c	/^opendaemonsocket(firsttime)$/
+openxscript	envelope.c	/^openxscript(e)$/
+orderq	queue.c	/^orderq(doall)$/
+parseaddr	parseaddr.c	/^parseaddr(addr, a, flags, delim, delimptr, e)$/
+pintvl	convtime.c	/^pintvl(intvl, brief)$/
+poststats	stats.c	/^poststats(sfile)$/
+prescan	parseaddr.c	/^prescan(addr, delim, pvpbuf, pvpbsize, delimptr, t/
+priencode	headers.c	/^priencode(p)$/
+printaddr	parseaddr.c	/^printaddr(a, follow)$/
+printav	util.c	/^printav(av)$/
+printctladdr	queue.c	/^printctladdr(a, tfp)$/
+printenvflags	envelope.c	/^printenvflags(e)$/
+printmailer	readcf.c	/^printmailer(m)$/
+printopenfds	util.c	/^printopenfds(logit)$/
+printqueue	queue.c	/^printqueue()$/
+printrules	readcf.c	/^printrules()$/
+printvrfyaddr	srvrsmtp.c	/^printvrfyaddr(a, last)$/
+prog_map_lookup	map.c	/^prog_map_lookup(map, name, av, statp)$/
+prog_open	util.c	/^prog_open(argv, pfd, e)$/
+pruneroute	savemail.c	/^pruneroute(addr)$/
+putbody	deliver.c	/^putbody(mci, e, separator)$/
+putenv	conf.c	/^putenv(str)$/
+puterrmsg	err.c	/^puterrmsg(msg)$/
+putfromline	deliver.c	/^putfromline(mci, e)$/
+putheader	headers.c	/^putheader(mci, h, e)$/
+putline	util.c	/^putline(l, mci)$/
+putoutmsg	err.c	/^putoutmsg(msg, holdmsg, heldmsg)$/
+putxline	util.c	/^putxline(l, mci, pxflags)$/
+queuename	queue.c	/^queuename(e, type)$/
+queueup	queue.c	/^queueup(e, queueall, announce)$/
+rcpt_esmtp_args	srvrsmtp.c	/^rcpt_esmtp_args(a, kp, vp, e)$/
+readaliases	alias.c	/^readaliases(map, af, announcestats, logstats)$/
+readcf	readcf.c	/^readcf(cfname, safe, e)$/
+readqf	queue.c	/^readqf(e)$/
+readtimeout	util.c	/^readtimeout(timeout)$/
+reapchild	conf.c	/^reapchild(sig)$/
+rebuildaliases	alias.c	/^rebuildaliases(map, automatic)$/
+recipient	recipient.c	/^recipient(a, sendq, aliaslevel, e)$/
+refuseconnections	conf.c	/^refuseconnections()$/
+releasesignal	conf.c	/^releasesignal(sig)$/
+remotename	parseaddr.c	/^remotename(name, m, flags, pstat, e)$/
+reply	usersmtp.c	/^reply(m, mci, e, timeout, pfunc)$/
+resetlimits	conf.c	/^resetlimits()$/
+returntosender	savemail.c	/^returntosender(msg, returnq, sendbody, e)$/
+rewrite	parseaddr.c	/^rewrite(pvp, ruleset, reclevel, e)$/
+rlsesigs	conf.c	/^rlsesigs()$/
+runinchild	srvrsmtp.c	/^runinchild(label, e)$/
+runqueue	queue.c	/^runqueue(forkflag)$/
+safefile	util.c	/^safefile(fn, uid, gid, uname, flags, mode, st)$/
+safefopen	util.c	/^safefopen(fn, omode, cmode, sff)$/
+sameaddr	parseaddr.c	/^sameaddr(a, b)$/
+savemail	savemail.c	/^savemail(e, sendbody)$/
+self_reference	recipient.c	/^self_reference(a, e)$/
+sendall	deliver.c	/^sendall(e, mode)$/
+sendenvelope	deliver.c	/^sendenvelope(e, mode)$/
+sendtoargv	recipient.c	/^sendtoargv(argv, e)$/
+sendtolist	recipient.c	/^sendtolist(list, ctladdr, sendq, aliaslevel, e)$/
+seq_map_close	map.c	/^seq_map_close(map)$/
+seq_map_lookup	map.c	/^seq_map_lookup(map, key, args, pstat)$/
+seq_map_parse	map.c	/^seq_map_parse(map, ap)$/
+seq_map_store	map.c	/^seq_map_store(map, key, val)$/
+setalias	alias.c	/^setalias(spec)$/
+setclass	readcf.c	/^setclass(class, str)$/
+setctluser	queue.c	/^setctluser(user)$/
+setdaemonoptions	daemon.c	/^setdaemonoptions(p)$/
+setdefaults	conf.c	/^setdefaults(e)$/
+setdefuser	conf.c	/^setdefuser()$/
+setevent	clock.c	/^setevent(intvl, func, arg)$/
+setoption	readcf.c	/^setoption(opt, val, safe, sticky, e)$/
+setproctitle	conf.c	/^setproctitle(fmt, va_alist)$/
+setsender	envelope.c	/^setsender(from, e, delimptr, internal)$/
+setsignal	conf.c	/^setsignal(sig, handler)$/
+settime	envelope.c	/^settime(e)$/
+settimeout	readcf.c	/^settimeout(name, val)$/
+setupmailers	conf.c	/^setupmailers()$/
+setupmaps	conf.c	/^setupmaps()$/
+setuserenv	main.c	/^setuserenv(envar, value)$/
+setvendor	conf.c	/^setvendor(vendor)$/
+sfgets	util.c	/^sfgets(buf, siz, fp, timeout, during)$/
+shorten_hostname	util.c	/^shorten_hostname(host)$/
+shortenstring	util.c	/^shortenstring(s, m)$/
+shouldqueue	conf.c	/^shouldqueue(pri, ctime)$/
+sighup	main.c	/^sighup()$/
+sigusr1	main.c	/^sigusr1()$/
+skipword	srvrsmtp.c	/^skipword(p, w)$/
+sleep	clock.c	/^sleep(intvl)$/
+sm_gethostbyaddr	conf.c	/^sm_gethostbyaddr(addr, len, type)$/
+sm_gethostbyname	conf.c	/^sm_gethostbyname(name)$/
+sm_getpwnam	conf.c	/^sm_getpwnam(user)$/
+sm_getpwuid	conf.c	/^sm_getpwuid(uid)$/
+smtp	srvrsmtp.c	/^smtp(e)$/
+smtpdata	usersmtp.c	/^smtpdata(m, mci, e)$/
+smtpinit	usersmtp.c	/^smtpinit(m, mci, e)$/
+smtpmailfrom	usersmtp.c	/^smtpmailfrom(m, mci, e)$/
+smtpmessage	usersmtp.c	/^smtpmessage(f, m, mci, va_alist)$/
+smtpprobe	usersmtp.c	/^smtpprobe(mci)$/
+smtpquit	usersmtp.c	/^smtpquit(m, mci, e)$/
+smtprcpt	usersmtp.c	/^smtprcpt(to, m, mci, e)$/
+smtprset	usersmtp.c	/^smtprset(m, mci, e)$/
+smtptodsn	savemail.c	/^smtptodsn(smtpstat)$/
+stab	stab.c	/^stab(name, type, op)$/
+stab_map_lookup	map.c	/^stab_map_lookup(map, name, av, pstat)$/
+stab_map_open	map.c	/^stab_map_open(map, mode)$/
+stab_map_store	map.c	/^stab_map_store(map, lhs, rhs)$/
+stabapply	stab.c	/^stabapply(func, arg)$/
+strcontainedin	util.c	/^strcontainedin(a, b)$/
+stripquotes	util.c	/^stripquotes(s)$/
+strstr	conf.c	/^strstr(big, little)$/
+strtol	conf.c	/^strtol(nptr, endptr, base)$/
+strtorwset	readcf.c	/^strtorwset(p, endp, stabmode)$/
+switch_map_find	conf.c	/^switch_map_find(service, maptype, mapreturn)$/
+switch_map_open	map.c	/^switch_map_open(map, mode)$/
+syserr	err.c	/^syserr(fmt, va_alist)$/
+tTflag	trace.c	/^tTflag(s)$/
+tTsetup	trace.c	/^tTsetup(vect, size, defflags)$/
+tell	conf.c	/^#define tell(s)	if (opterr) {fputs(*nargv,stderr);/
+testmodeline	main.c	/^testmodeline(line, e)$/
+text_getcanonname	map.c	/^text_getcanonname(name, hbsize, statp)$/
+text_map_lookup	map.c	/^text_map_lookup(map, name, av, statp)$/
+text_map_open	map.c	/^text_map_open(map, mode)$/
+tferror	collect.c	/^tferror(tf, e)$/
+tick	clock.c	/^tick(arg)$/
+toomany	readcf.c	/^toomany(id, maxcnt)$/
+transienterror	conf.c	/^transienterror(err)$/
+ttypath	conf.c	/^ttypath()$/
+udb_map_lookup	udb.c	/^udb_map_lookup(map, name, av, statp)$/
+udbexpand	udb.c	/^udbexpand(a, sendq, aliaslevel, e)$/
+udbmatch	udb.c	/^udbmatch(user, field)$/
+udbsender	udb.c	/^udbsender(sender)$/
+uname	conf.c	/^uname(name)$/
+unlockqueue	queue.c	/^unlockqueue(e)$/
+unsetenv	conf.c	/^unsetenv(name)$/
+user_map_lookup	map.c	/^user_map_lookup(map, key, av, statp)$/
+user_map_open	map.c	/^user_map_open(map, mode)$/
+username	conf.c	/^username()$/
+usershellok	conf.c	/^usershellok(user, shell)$/
+usrerr	err.c	/^usrerr(fmt, va_alist)$/
+vendor_post_defaults	conf.c	/^vendor_post_defaults(e)$/
+vendor_pre_defaults	conf.c	/^vendor_pre_defaults(e)$/
+vfprintf	conf.c	/^vfprintf(fp, fmt, ap)$/
+vsprintf	conf.c	/^vsprintf(s, fmt, ap)$/
+waitfor	util.c	/^waitfor(pid)$/
+wordinclass	macro.c	/^wordinclass(str, cl)$/
+workcmpf0	queue.c	/^workcmpf0(a, b)$/
+workcmpf1	queue.c	/^workcmpf1(a, b)$/
+workcmpf2	queue.c	/^workcmpf2(a, b)$/
+writable	recipient.c	/^writable(filename, ctladdr, flags)$/
+xalloc	util.c	/^xalloc(sz)$/
+xfclose	util.c	/^xfclose(fp, a, b)$/
+xputs	util.c	/^xputs(s)$/
+xtextify	savemail.c	/^xtextify(t)$/
+xtextok	savemail.c	/^xtextok(s)$/
+xunlink	util.c	/^xunlink(f)$/
+xuntextify	savemail.c	/^xuntextify(t)$/
