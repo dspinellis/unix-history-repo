@@ -1,0 +1,78 @@
+tmp=/tmp/toc$$
+trap "rm $tmp ; exit" 2 3 15
+if [ $# -eq 2 ]
+then
+	: create toc input file for one section only
+
+	> man0/tocx$1
+	for file in man$1/*.$1*
+	do
+		test -s $file \
+	&&	< $file grep '^\.TH' | grep local >/dev/null \
+	||	< $file sed -n '1p' | grep '^\.so' >/dev/null \
+	||	< $file grep '\\-' |
+		sed -n '1p' |
+		sed \
+			-e 's/.s-1//g' \
+			-e 's/.s0//g' \
+			-e 's/.s+1//g' \
+			-e 's/  *.-  */: /' \
+			-e "s/^/`basename $file | sed 's/\.\([^\.]*\)\$/(\1)/'` /" \
+			-e 's/$/./' \
+		>> man0/tocx$1
+	done
+else case $1 in
+	all )
+		:   tocx files for all sections and everything else
+
+		for x in 1 2 3 4 5 6 7 8
+			do
+			$0 $x $x
+			done
+		$0 t
+		;;
+	t )
+		:   permuted index and toc files
+
+		if [ ! -f man0/tocx1 ]
+		then
+			echo "tocx? files missing; must run tocrc all first"
+			exit
+		fi
+		sed \
+			-e 's/(1c)/(1C)/' \
+			-e 's/(1m)/(1M)/' \
+			-e 's/(1g)/(1G)/' \
+			-e 's/(3c)/(3C)/' \
+			-e 's/(3m)/(3M)/' \
+			-e 's/(3s)/(3S)/' \
+			-e '/"\."/d' \
+			man0/tocx? \
+		> cattoc
+
+		ptx -r -t -b break -f -w 108 -i ignore cattoc man0/ptxx
+		cd man0; troff -g ptx.in >t.ptx ; cd ..
+
+		for x in 1 2 3 4 5 6 7 8
+		do
+			< man0/tocx$x grep '^intro' >$tmp
+				sed \
+				-e '2,${' \
+				-e '/^intro/d' \
+				-e '}' \
+				-e 's/ .*://' \
+				-e 's/.$//' \
+				-e 's/(.*) /" "/' \
+				-e 's/.*/.xx "&"/' \
+				-e '/""/d' \
+				$tmp man0/tocx$x \
+			>man0/toc$x
+		done
+		cd man0; troff -g toc.in >t.toc ; cd ..
+		;;
+	* )
+		$0 $1 $1
+		;;
+	esac
+fi
+exit
