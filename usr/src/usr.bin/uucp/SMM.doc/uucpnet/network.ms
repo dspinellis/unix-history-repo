@@ -1,9 +1,9 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)network.ms	5.4 (Berkeley) %G%
+.\"	@(#)network.ms	5.5 (Berkeley) %G%
 .\"
-.EH 'SMM:21-%''A Dial-Up Network of \s-2UNIX\s+2 Systems'
-.OH 'Dial-Up Network of \s-2UNIX\s+2 Systems''SMM:21-%'
+.EH 'SMM:15-%''A Dial-Up Network of \s-2UNIX\s+2 Systems'
+.OH 'Dial-Up Network of \s-2UNIX\s+2 Systems''SMM:15-%'
 .if n .ls 2
 .ds RH Nowitz
 .ND "August 18, 1978"

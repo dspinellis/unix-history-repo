@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	6.4 (Berkeley) %G%
+.\"	@(#)0.t	6.5 (Berkeley) %G%
 .\"
 .EQ
 delim $$
@@ -11,8 +11,8 @@ delim $$
 .if n .ND
 .TL
 A Fast File System for UNIX*
-.EH 'SMM:14-%''A Fast File System for \s-2UNIX\s+2'
-.OH 'A Fast File System for \s-2UNIX\s+2''SMM:14-%'
+.EH 'SMM:05-%''A Fast File System for \s-2UNIX\s+2'
+.OH 'A Fast File System for \s-2UNIX\s+2''SMM:05-%'
 .AU
 Marshall Kirk McKusick, William N. Joy\(dg,
 Samuel J. Leffler\(dd, Robert S. Fabry

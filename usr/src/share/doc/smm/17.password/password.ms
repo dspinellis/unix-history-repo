@@ -1,10 +1,10 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)password.ms	6.2 (Berkeley) %G%
+.\"	@(#)password.ms	6.3 (Berkeley) %G%
 .\"
 .\" tbl mm ^ eqn ^ troff -ms
-.EH 'SMM:18-%''Password Security: A Case History'
-.OH 'Password Security: A Case History''SMM:18-%'
+.EH 'SMM:17-%''Password Security: A Case History'
+.OH 'Password Security: A Case History''SMM:17-%'
 .EQ
 delim $$
 .EN
