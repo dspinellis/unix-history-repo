@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_il.c	7.5 (Berkeley) %G%
+ *	@(#)if_il.c	7.6 (Berkeley) %G%
  */
 
 #include "il.h"
@@ -348,8 +348,7 @@ ilinit(unit)
 	    ((is->is_ifuba.ifu_r.ifrw_info >> 2) & IL_EUA)|ILC_RCV|IL_RIE;
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
-	is->is_if.if_flags = IFF_OACTIVE;
-	is->is_if.if_flags |= IFF_RUNNING;
+	is->is_if.if_flags |= IFF_RUNNING | IFF_OACTIVE;
 	is->is_flags |= ILF_RUNNING;
 	is->is_lastcmd = 0;
 	ilcint(unit);
