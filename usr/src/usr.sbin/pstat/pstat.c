@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.15 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -136,7 +136,7 @@ int	allflg;
 int	kflg;
 struct	pte *Usrptma;
 struct	pte *usrpt;
-u_long	getw();
+u_long	getword();
 off_t	mkphys();
 
 main(argc, argv)
@@ -257,9 +257,9 @@ doinode()
 	int ninode;
 
 	nin = 0;
-	ninode = getw(nl[SNINODE].n_value);
+	ninode = getword(nl[SNINODE].n_value);
 	xinode = (struct inode *)calloc(ninode, sizeof (struct inode));
-	ainode = (struct inode *)getw(nl[SINODE].n_value);
+	ainode = (struct inode *)getword(nl[SINODE].n_value);
 	if (ninode < 0 || ninode > 10000) {
 		fprintf(stderr, "number of inodes is preposterous (%d)\n",
 			ninode);
@@ -312,7 +312,7 @@ printf("   LOC      FLAGS    CNT DEVICE  RDC WRC  INO  MODE  NLK UID   SIZE/DEV\
 }
 
 u_long
-getw(loc)
+getword(loc)
 	off_t loc;
 {
 	u_long word;
@@ -340,9 +340,9 @@ dotext()
 	int ntx, ntxca;
 
 	ntx = ntxca = 0;
-	ntext = getw(nl[SNTEXT].n_value);
+	ntext = getword(nl[SNTEXT].n_value);
 	xtext = (struct text *)calloc(ntext, sizeof (struct text));
-	atext = (struct text *)getw(nl[STEXT].n_value);
+	atext = (struct text *)getword(nl[STEXT].n_value);
 	if (ntext < 0 || ntext > 10000) {
 		fprintf(stderr, "number of texts is preposterous (%d)\n",
 			ntext);
@@ -400,9 +400,9 @@ doproc()
 	register loc, np;
 	struct pte apte;
 
-	nproc = getw(nl[SNPROC].n_value);
+	nproc = getword(nl[SNPROC].n_value);
 	xproc = (struct proc *)calloc(nproc, sizeof (struct proc));
-	aproc = (struct proc *)getw(nl[SPROC].n_value);
+	aproc = (struct proc *)getword(nl[SPROC].n_value);
 	if (nproc < 0 || nproc > 10000) {
 		fprintf(stderr, "number of procs is preposterous (%d)\n",
 			nproc);
@@ -755,9 +755,9 @@ dofile()
 	static char *dtypes[] = { "???", "inode", "socket" };
 
 	nf = 0;
-	nfile = getw(nl[SNFILE].n_value);
+	nfile = getword(nl[SNFILE].n_value);
 	xfile = (struct file *)calloc(nfile, sizeof (struct file));
-	afile = (struct file *)getw(nl[SFIL].n_value);
+	afile = (struct file *)getword(nl[SFIL].n_value);
 	if (nfile < 0 || nfile > 10000) {
 		fprintf(stderr, "number of files is preposterous (%d)\n",
 			nfile);
@@ -821,8 +821,8 @@ doswap()
 	register struct text *xp;
 	int i, j;
 
-	nproc = getw(nl[SNPROC].n_value);
-	ntext = getw(nl[SNTEXT].n_value);
+	nproc = getword(nl[SNPROC].n_value);
+	ntext = getword(nl[SNTEXT].n_value);
 	if (nproc < 0 || nproc > 10000 || ntext < 0 || ntext > 10000) {
 		fprintf(stderr, "number of procs/texts is preposterous (%d, %d)\n",
 			nproc, ntext);
@@ -838,13 +838,13 @@ doswap()
 		fprintf(stderr, "can't allocate memory for text table\n");
 		exit(1);
 	}
-	nswapmap = getw(nl[SNSWAPMAP].n_value);
+	nswapmap = getword(nl[SNSWAPMAP].n_value);
 	swapmap = (struct map *)calloc(nswapmap, sizeof (struct map));
 	if (swapmap == NULL) {
 		fprintf(stderr, "can't allocate memory for swapmap\n");
 		exit(1);
 	}
-	nswdev = getw(nl[SNSWDEV].n_value);
+	nswdev = getword(nl[SNSWDEV].n_value);
 	swdevt = (struct swdevt *)calloc(nswdev, sizeof (struct swdevt));
 	if (swdevt == NULL) {
 		fprintf(stderr, "can't allocate memory for swdevt table\n");
@@ -852,16 +852,16 @@ doswap()
 	}
 	lseek(fc, mkphys((off_t)nl[SSWDEVT].n_value), L_SET);
 	read(fc, swdevt, nswdev * sizeof (struct swdevt));
-	lseek(fc, mkphys((off_t)getw(nl[SPROC].n_value)), 0);
+	lseek(fc, mkphys((off_t)getword(nl[SPROC].n_value)), 0);
 	read(fc, proc, nproc * sizeof (struct proc));
-	lseek(fc, mkphys((off_t)getw(nl[STEXT].n_value)), 0);
+	lseek(fc, mkphys((off_t)getword(nl[STEXT].n_value)), 0);
 	read(fc, xtext, ntext * sizeof (struct text));
-	lseek(fc, mkphys((off_t)getw(nl[SWAPMAP].n_value)), 0);
+	lseek(fc, mkphys((off_t)getword(nl[SWAPMAP].n_value)), 0);
 	read(fc, swapmap, nswapmap * sizeof (struct map));
 	swapmap->m_name = "swap";
 	swapmap->m_limit = (struct mapent *)&swapmap[nswapmap];
-	dmmin = getw(nl[SDMMIN].n_value);
-	dmmax = getw(nl[SDMMAX].n_value);
+	dmmin = getword(nl[SDMMIN].n_value);
+	dmmax = getword(nl[SDMMAX].n_value);
 	nswap = 0;
 	for (sw = swdevt; sw < &swdevt[nswdev]; sw++)
 		if (sw->sw_freed)
@@ -1145,7 +1145,7 @@ mkphys(addr)
 	addr >>= PGSHIFT;
 	addr &= PG_PFNUM;
 	addr *=  NBPW;
-	addr = getw(nl[SYSMAP].n_value + addr);
+	addr = getword(nl[SYSMAP].n_value + addr);
 	addr = ((addr & PG_PFNUM) << PGSHIFT) | o;
 	return(addr);
 }
