@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -967,8 +967,8 @@ getptyslave()
 	termbuf.c_iflag |= ICRNL;
 	termbuf.c_iflag &= ~IXOFF;
 # endif /* defined(USE_TERMIO) && !defined(CRAY) && (BSD <= 43) */
-	tty_rspeed(def_rspeed);
-	tty_tspeed(def_tspeed);
+	tty_rspeed((def_rspeed > 0) ? def_rspeed : 9600);
+	tty_tspeed((def_tspeed > 0) ? def_tspeed : 9600);
 # ifdef	LINEMODE
 	if (waslm)
 		tty_setlinemode(1);
