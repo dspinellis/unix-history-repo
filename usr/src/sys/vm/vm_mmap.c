@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.11 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -79,8 +79,19 @@ sstk(p, uap, retval)
 	return (EOPNOTSUPP);
 }
 
+struct mmap_args {
+	caddr_t	addr;
+	int	len;
+	int	prot;
+	int	flags;
+	int	fd;
+	long	pad;
+	off_t	pos;
+};
+
+#ifdef COMPAT_43
 int
-smmap(p, uap, retval)
+osmmap(p, uap, retval)
 	struct proc *p;
 	register struct args {
 		caddr_t	addr;
@@ -88,8 +99,55 @@ smmap(p, uap, retval)
 		int	prot;
 		int	flags;
 		int	fd;
-		off_t	pos;
+		off_t	pos;		/* XXX becomes long */
 	} *uap;
+	int *retval;
+{
+	struct mmap_args nargs;
+	static const char cvtbsdprot[8] = {
+		0,
+		PROT_EXEC,
+		PROT_WRITE,
+		PROT_EXEC|PROT_WRITE,
+		PROT_READ,
+		PROT_EXEC|PROT_READ,
+		PROT_WRITE|PROT_READ,
+		PROT_EXEC|PROT_WRITE|PROT_READ,
+	};
+#define	OMAP_ANON	0x0002
+#define	OMAP_COPY	0x0020
+#define	OMAP_SHARED	0x0010
+#define	OMAP_FIXED	0x0100
+#define	OMAP_INHERIT	0x0800
+
+	nargs.addr = uap->addr;
+	nargs.len = uap->len;
+	nargs.prot = cvtbsdprot[uap->prot&0x7];
+	nargs.flags = 0;
+	if (uap->flags & OMAP_ANON)
+		nargs.flags |= MAP_ANON;
+	if (uap->flags & OMAP_COPY)
+		nargs.flags |= MAP_COPY;
+	if (uap->flags & OMAP_SHARED)
+		nargs.flags |= MAP_SHARED;
+	else
+		nargs.flags |= MAP_PRIVATE;
+	if (uap->flags & OMAP_FIXED)
+		nargs.flags |= MAP_FIXED;
+	if (uap->flags & OMAP_INHERIT)
+		nargs.flags |= MAP_INHERIT;
+	nargs.fd = uap->fd;
+	if ((long)uap->pos == 0)	/* XXX */
+		uap->pos >>= 32;	/* XXX */
+	nargs.pos = uap->pos;
+	return (smmap(p, &nargs, retval));
+}
+#endif
+
+int
+smmap(p, uap, retval)
+	struct proc *p;
+	register struct mmap_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
@@ -99,7 +157,7 @@ smmap(p, uap, retval)
 	vm_size_t size;
 	vm_prot_t prot;
 	caddr_t handle;
-	int mtype, error;
+	int error;
 
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
@@ -108,23 +166,13 @@ smmap(p, uap, retval)
 		       uap->flags, uap->fd, uap->pos);
 #endif
 	/*
-	 * Make sure one of the sharing types is specified
-	 */
-	mtype = uap->flags & MAP_TYPE;
-	switch (mtype) {
-	case MAP_FILE:
-	case MAP_ANON:
-		break;
-	default:
-		return(EINVAL);
-	}
-	/*
 	 * Address (if FIXED) must be page aligned.
 	 * Size is implicitly rounded to a page boundary.
 	 */
 	addr = (vm_offset_t) uap->addr;
-	if ((uap->flags & MAP_FIXED) && (addr & PAGE_MASK) || uap->len < 0)
-		return(EINVAL);
+	if (((uap->flags & MAP_FIXED) && (addr & PAGE_MASK)) || uap->len < 0 ||
+	    ((uap->flags & MAP_ANON) && uap->fd != -1))
+		return (EINVAL);
 	size = (vm_size_t) round_page(uap->len);
 	/*
 	 * XXX if no hint provided for a non-fixed mapping place it after
@@ -136,21 +184,19 @@ smmap(p, uap, retval)
 	if (addr == 0 && (uap->flags & MAP_FIXED) == 0)
 		addr = round_page(p->p_vmspace->vm_daddr + MAXDSIZ);
 	/*
-	 * Mapping file or named anonymous, get fp for validation
-	 */
-	if (mtype == MAP_FILE || uap->fd != -1) {
-		if (((unsigned)uap->fd) >= fdp->fd_nfiles ||
-		    (fp = fdp->fd_ofiles[uap->fd]) == NULL)
-			return(EBADF);
-	}
-	/*
 	 * If we are mapping a file we need to check various
 	 * file/vnode related things.
 	 */
-	if (mtype == MAP_FILE) {
+	if (uap->flags & MAP_ANON)
+		handle = NULL;
+	else {
 		/*
+		 * Mapping file, get fp for validation.
 		 * Obtain vnode and make sure it is of appropriate type
 		 */
+		if (((unsigned)uap->fd) >= fdp->fd_nfiles ||
+		    (fp = fdp->fd_ofiles[uap->fd]) == NULL)
+			return(EBADF);
 		if (fp->f_type != DTYPE_VNODE)
 			return(EINVAL);
 		vp = (struct vnode *)fp->f_data;
@@ -166,21 +212,11 @@ smmap(p, uap, retval)
 		     (uap->prot & PROT_WRITE) && (fp->f_flag & FWRITE) == 0))
 			return(EACCES);
 		handle = (caddr_t)vp;
-	} else if (uap->fd != -1)
-		handle = (caddr_t)fp;
-	else
-		handle = NULL;
+	}
 	/*
 	 * Map protections to MACH style
 	 */
-	prot = VM_PROT_NONE;
-	if (uap->prot & PROT_READ)
-		prot |= VM_PROT_READ;
-	if (uap->prot & PROT_WRITE)
-		prot |= VM_PROT_WRITE;
-	if (uap->prot & PROT_EXEC)
-		prot |= VM_PROT_EXECUTE;
-
+	prot = uap->prot & VM_PROT_ALL;
 	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot,
 			uap->flags, handle, (vm_offset_t)uap->pos);
 	if (error == 0)
@@ -388,9 +424,7 @@ mincore(p, uap, retval)
 /*
  * Internal version of mmap.
  * Currently used by mmap, exec, and sys5 shared memory.
- * Handle is:
- *	MAP_FILE: a vnode pointer
- *	MAP_ANON: NULL or a file pointer
+ * Handle is either a vnode pointer or NULL for MAP_ANON.
  */
 int
 vm_mmap(map, addr, size, prot, flags, handle, foff)
@@ -425,7 +459,7 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 	 * gain a reference to ensure continued existance of the object.
 	 * (XXX the exception is to appease the pageout daemon)
 	 */
-	if ((flags & MAP_TYPE) == MAP_ANON)
+	if (flags & MAP_ANON)
 		type = PG_DFLT;
 	else {
 		vp = (struct vnode *)handle;
@@ -447,7 +481,7 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 	/*
 	 * Anonymous memory.
 	 */
-	if ((flags & MAP_TYPE) == MAP_ANON) {
+	if (flags & MAP_ANON) {
 		rv = vm_allocate_with_pager(map, addr, size, fitit,
 					    pager, (vm_offset_t)foff, TRUE);
 		if (rv != KERN_SUCCESS) {
@@ -469,7 +503,7 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 #endif
 	}
 	/*
-	 * Must be type MAP_FILE.
+	 * Must be a mapped file.
 	 * Distinguish between character special and regular files.
 	 */
 	else if (vp->v_type == VCHR) {
