@@ -1,14 +1,14 @@
 /*
  * Copyright (c) 1992 OMRON Corporation.
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * OMRON Corporation.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsi.c	7.1 (Berkeley) %G%
+ *	@(#)scsi.c	8.1 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,7 @@
 
 int scsi_device = 6;
 
-#define SENSBUFF 8					/* %G%P%$%97.1i%$%P$G%;%s%9%G!<%? */
+#define SENSBUFF 8					/* %G%P%$%98.1i%$%P$G%;%s%9%G!<%? */
 							/* $ND9$5$r#8%P%$%H0JFb$K8GDj$7$F */
 u_char	sensbuff[SENSBUFF];				/* #80J>e$OL50UL#$G$"$k!#         */
 

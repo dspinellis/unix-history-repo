@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 1988 University of Utah.
  * Copyright (c) 1992 OMRON Corporation.
- * Copyright (c) 1982, 1986, 1990, 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1982, 1986, 1990, 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * the Systems Programming Group of the University of Utah Computer
@@ -13,7 +13,7 @@
  * from: Utah $Hdr: machdep.c 1.63 91/04/24$
  * from: hp300/hp300/machdep.c   7.37 (Berkeley) 5/20/93
  *
- *	@(#)machdep.c	7.12 (Berkeley) %G%
+ *	@(#)machdep.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
