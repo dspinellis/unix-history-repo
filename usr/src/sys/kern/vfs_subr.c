@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.99 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.100 (Berkeley) %G%
  */
 
 /*
@@ -23,6 +23,9 @@
 #include <sys/buf.h>
 #include <sys/errno.h>
 #include <sys/malloc.h>
+
+#include <vm/vm.h>
+#include <sys/sysctl.h>
 
 #include <miscfs/specfs/specdev.h>
 
@@ -680,7 +683,8 @@ void holdrele(vp)
  * system error). If MNT_FORCE is specified, detach any active vnodes
  * that are found.
  */
-int busyprt = 0;	/* patch to print out busy vnodes */
+int busyprt = 0;	/* print out busy vnodes */
+struct ctldebug debug1 = { "busyprt", &busyprt };
 
 vflush(mp, skipvp, flags)
 	struct mount *mp;
