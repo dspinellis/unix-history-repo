@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -450,10 +450,8 @@ retry:
 		return (0);
 	}
 	if ((stblock.st_mode & S_IFMT) == S_IFBLK) {
-		if (stslash.st_dev == stblock.st_rdev) {
+		if (stslash.st_dev == stblock.st_rdev)
 			hotroot++;
-			return (name);
-		}
 		raw = rawname(name);
 		if (stat(raw, &stchar) < 0) {
 			perror(raw);
