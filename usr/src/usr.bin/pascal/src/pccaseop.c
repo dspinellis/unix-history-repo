@@ -1,6 +1,6 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pccaseop.c 1.11 %G%";
+static char sccsid[] = "@(#)pccaseop.c 1.12 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -253,16 +253,26 @@ directsw( ctab , count )
     j = ctab[1].cconst;
     while ( i <= count ) {
 	if ( j == ctab[ i ].cconst ) {
-	    putprintf( "	.word	" , 1 );
-	    putprintf( PREFIXFORMAT , 1 , LABELPREFIX , ctab[ i ].clabel );
-	    putprintf( "-" , 1 );
-	    putprintf( PREFIXFORMAT , 0 , LABELPREFIX , fromlabel );
+	    if (opt('J')) {
+		putprintf( "	.long	" , 1 );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , ctab[ i ].clabel );
+	    } else {
+		putprintf( "	.word	" , 1 );
+		putprintf( PREFIXFORMAT , 1 , LABELPREFIX , ctab[ i ].clabel );
+		putprintf( "-" , 1 );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , fromlabel );
+	    }
 	    i++;
 	} else {
-	    putprintf( "	.word	" , 1 );
-	    putprintf( PREFIXFORMAT , 1 , LABELPREFIX , ctab[ 0 ].clabel );
-	    putprintf( "-" , 1 );
-	    putprintf( PREFIXFORMAT , 0 , LABELPREFIX , fromlabel );
+	    if (opt('J')) {
+		putprintf( "	.long	" , 1 );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , ctab[ 0 ].clabel );
+	    } else {
+		putprintf( "	.word	" , 1 );
+		putprintf( PREFIXFORMAT , 1 , LABELPREFIX , ctab[ 0 ].clabel );
+		putprintf( "-" , 1 );
+		putprintf( PREFIXFORMAT , 0 , LABELPREFIX , fromlabel );
+	    }
 	}
 	j++;
     }
