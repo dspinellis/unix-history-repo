@@ -1,0 +1,70 @@
+XARGS(1)                     BSD Reference Manual                     XARGS(1)
+
+NNAAMMEE
+     xxaarrggss - construct argument list(s) and execute utility
+
+SSYYNNOOPPSSIISS
+     xxaarrggss [--tt] [[--xx]--nn _n_u_m_b_e_r] [--ss _s_i_z_e] [_u_t_i_l_i_t_y [_a_r_g_u_m_e_n_t_s _._._.]]
+
+DDEESSCCRRIIPPTTIIOONN
+     The xxaarrggss utility reads space, tab, newline and end-of-file delimited ar-
+     guments from the standard input and executes the specified _u_t_i_l_i_t_y with
+     them as arguments.
+
+     The utility and any arguments specified on the command line are given to
+     the _u_t_i_l_i_t_y upon each invocation, followed by some number of the argu-
+     ments read from standard input.  The _u_t_i_l_i_t_y is repeatedly executed until
+     standard input is exhausted.
+
+     Spaces, tabs and newlines may be embedded in arguments using single
+     (`` ' '') or double (``"'') quotes or backslashes (``\'').  Single quotes
+     escape all non-single quote characters, excluding newlines, up to the
+     matching single quote.  Double quotes escape all non-double quote charac-
+     ters, excluding newlines, up to the matching double quote.  Any single
+     character, including newlines, may be escaped by a backslash.
+
+     The options are as follows:
+
+     --nn _n_u_m_b_e_r
+             Set the maximum number of arguments taken from standard input for
+             each invocation of the utility.  An invocation of _u_t_i_l_i_t_y will
+             use less than _n_u_m_b_e_r standard input arguments if the number of
+             bytes accumulated (see the --ss option) exceeds the specified _s_i_z_e
+             or there are fewer than _n_u_m_b_e_r arguments remaining for the last
+             invocation of _u_t_i_l_i_t_y. The current default value for _n_u_m_b_e_r is
+             5000.
+
+     --ss _s_i_z_e
+             Set the maximum number of bytes for the command line length pro-
+             vided to _u_t_i_l_i_t_y. The sum of the length of the utility name and
+             the arguments passed to _u_t_i_l_i_t_y (including NULL terminators) will
+             be less than or equal to this number.  The current default value
+             for _s_i_z_e is ARG_MAX - 2048.
+
+     --tt      Echo the command to be executed to standard error immediately be-
+             fore it is executed.
+
+     --xx      Force xxaarrggss to terminate immediately if a command line containing
+             _n_u_m_b_e_r arguments will not fit in the specified (or default) com-
+             mand line length.
+
+     If no _u_t_i_l_i_t_y is specified, echo(1) is used.
+
+     Undefined behavior may occur if _u_t_i_l_i_t_y reads from the standard input.
+
+     The xxaarrggss utility exits immediately (without processing any further in-
+     put) if a command line cannot be assembled, _u_t_i_l_i_t_y cannot be invoked, an
+     invocation of the utility is terminated by a signal or an invocation of
+     the utility exits with a value of 255.
+
+     The xxaarrggss utility exits with a value of 0 if no error occurs.  If _u_t_i_l_i_t_y
+     cannot be invoked, xxaarrggss exits with a value of 127.  If any other error
+     occurs, xxaarrggss exits with a value of 1.
+
+SSEEEE AALLSSOO
+     echo(1),  find(1)
+
+SSTTAANNDDAARRDDSS
+     The xxaarrggss utility is expected to be IEEE Std1003.2 (``POSIX'') compliant.
+
+4.4BSD                           June 6, 1993                                2
