@@ -25,11 +25,11 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fortune.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)fortune.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
+# include	<machine/endian.h>
 # include	<sys/param.h>
-# include	<sys/types.h>
 # include	<sys/stat.h>
 # include	<sys/dir.h>
 # include	<stdio.h>
@@ -278,9 +278,9 @@ register char	**argv;
 	pat = NULL;
 
 # ifdef DEBUG
-	while ((ch = getopt(argc, argv, "aDfilm:osw")) != EOF)
+	while ((ch = getopt(argc, argv, "aDefilm:osw")) != EOF)
 #else
-	while ((ch = getopt(argc, argv, "afilm:osw")) != EOF)
+	while ((ch = getopt(argc, argv, "aefilm:osw")) != EOF)
 #endif /* DEBUG */
 		switch(ch) {
 		case 'a':		/* any fortune */
@@ -1229,7 +1229,8 @@ find_matches()
 {
 	Fort_len = maxlen_in_list(File_list);
 	DPRINTF(2, (stderr, "Maximum length is %d\n", Fort_len));
-	Fortbuf = do_malloc((unsigned int) Fort_len);
+	/* extra length, "%\n" is appended */
+	Fortbuf = do_malloc((unsigned int) Fort_len + 10);
 
 	Found_one = FALSE;
 	matches_in_list(File_list);
