@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atrun.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -32,7 +32,9 @@ static char sccsid[] = "@(#)atrun.c	5.3 (Berkeley) %G%";
 # include <sys/file.h>
 # include <sys/time.h>
 # include <sys/param.h>
+#ifdef notdef
 # include <sys/quota.h>
+#endif
 # include <sys/stat.h>
 # include <pwd.h>
 
@@ -148,8 +150,8 @@ char *spoolfile;
 	char mailvar[4];		/* send mail variable ("yes" or "no") */
 	char runfile[100];		/* file sent to forked shell for exec-
 					   ution */
-	char owner[16];			/* owner of job we're going to run */
-	char jobname[100];		/* name of job we're going to run */
+	char owner[128];		/* owner of job we're going to run */
+	char jobname[128];		/* name of job we're going to run */
 	char whichshell[100];		/* which shell should we fork off? */
 	struct passwd *pwdbuf;		/* password info of the owner of job */
 	struct stat errbuf;		/* stats on error file */
@@ -172,12 +174,17 @@ char *spoolfile;
 	}
 
 	/*
-	 * Grab the 3-line header out of the spoolfile.
+	 * Grab the 4-line header out of the spoolfile.
 	 */
-	fscanf(infile,"# owner: %s\n",owner);
-	fscanf(infile,"# jobname: %s\n",jobname);
-	fscanf(infile,"# shell: %s\n",shell);
-	fscanf(infile,"# notify by mail: %s\n",mailvar);
+	if (
+	    (fscanf(infile,"# owner: %127s%*[^\n]\n",owner) != 1) ||
+	    (fscanf(infile,"# jobname: %127s%*[^\n]\n",jobname) != 1) ||
+	    (fscanf(infile,"# shell: %3s%*[^\n]\n",shell) != 1) ||
+	    (fscanf(infile,"# notify by mail: %3s%*[^\n]\n",mailvar) != 1)
+	    ) {
+		fprintf(stderr, "%s: bad spool header\n", spoolfile);
+		exit(1);
+	}
 
 	/*
 	 * Check to see if we should send mail to the owner.
@@ -190,6 +197,11 @@ char *spoolfile;
 	 * of the job.
 	 */
 	pwdbuf = getpwnam(owner);
+	if (pwdbuf == NULL) {
+		fprintf(stderr, "%s: could not find owner in passwd file\n",
+		    spoolfile);
+		exit(1);
+	}
 	if (chown(spoolfile,pwdbuf->pw_uid,pwdbuf->pw_gid) == -1) {
 		perror(spoolfile);
 		exit(1);
@@ -297,7 +309,10 @@ char *spoolfile;
 	/*
 	 * Run the job as the owner of the jobfile
 	 */
+#ifdef notdef
+	/* This is no longer needed with the new, stripped-down quota system */
 	quota(Q_SETUID,jobbuf.st_uid,0,0);
+#endif
 	setgid(jobbuf.st_gid);
 	initgroups(getname(jobbuf.st_uid),jobbuf.st_gid);
 	setuid(jobbuf.st_uid);

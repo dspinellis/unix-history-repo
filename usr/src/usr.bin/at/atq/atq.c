@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atq.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)atq.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -51,7 +51,7 @@ static char *mthnames[12] = {
 	"Aug","Sep","Oct","Nov","Dec",
 };
 
-
+char *nullentry = NULL;			/* avoid 'namelist' NULL ptr problems */
 int numentries;				/* number of entries in spooling area */
 int namewanted = 0;			/* only print jobs belonging to a 
 					   certain person */
@@ -73,7 +73,7 @@ char **argv;
 	int printqueue();		/* print the queue */
 	int countfiles();		/* count the number of files in queue
 					   for a given person */
-	char **namelist;		/* array of specific name(s) requested*/
+	char **namelist = &nullentry;	/* array of specific name(s) requested*/
 
 
 	--argc, ++argv;
@@ -101,7 +101,7 @@ char **argv;
 	 * If a certain name (or names) is requested, set a pointer to the
 	 * beginning of the list.
 	 */
-	if (**argv) {
+	if (argc > 0) {
 		++namewanted;
 		namelist = argv;
 	}
@@ -259,17 +259,17 @@ isowner(name,job)
 char *name;
 char *job;
 {
-	char buf[30];			/* buffer for 1st line of spoolfile 
+	char buf[128];			/* buffer for 1st line of spoolfile 
 					   header */
 	FILE *infile;			/* I/O stream to spoolfile */
 
 	if ((infile = fopen(job,"r")) == NULL) {
-		fprintf(stderr,"Couldn't open spoolfile");
+		fprintf(stderr,"Couldn't open spoolfile ");
 		perror(job);
 		return(0);
 	}
 
-	if (fscanf(infile,"# owner: %s\n",buf) != 1) {
+	if (fscanf(infile,"# owner: %127s%*[^\n]\n",buf) != 1) {
 		fclose(infile);
 		return(0);
 	}
@@ -285,7 +285,7 @@ char *job;
 powner(file)
 char *file;
 {
-	char owner[80];				/* the owner */
+	char owner[10];				/* the owner */
 	FILE *infile;				/* I/O stream to spoolfile */
 
 	/*
@@ -294,10 +294,11 @@ char *file;
 
 	if ((infile = fopen(file,"r")) == NULL) {
 		printf("%-10.9s","???");
+		perror(file);
 		return;
 	}
 
-	if (fscanf(infile,"# owner: %s",owner) != 1) {
+	if (fscanf(infile,"# owner: %9s%*[^\n]\n",owner) != 1) {
 		printf("%-10.9s","???");
 		fclose(infile);
 		return;
@@ -465,7 +466,7 @@ printjobname(file)
 char *file;
 {
 	char *ptr;				/* scratch pointer */
-	char jobname[80];			/* the job name */
+	char jobname[28];			/* the job name */
 	FILE *filename;				/* job file in spooling area */
 
 	/*
@@ -475,17 +476,18 @@ char *file;
 
 	if ((filename = fopen(file,"r")) == NULL) {
 		printf("%.27s\n", "???");
+		perror(file);
 		return;
 	}
 	/*
-	 * We'll yank the first line into the buffer temporarily.
+	 * Skip over the first line.
 	 */
-	fgets(jobname,80,filename);
+	fscanf(filename,"%*[^\n]\n");
 
 	/*
 	 * Now get the job name.
 	 */
-	if (fscanf(filename,"# jobname: %s",jobname) != 1) {
+	if (fscanf(filename,"# jobname: %27s%*[^\n]\n",jobname) != 1) {
 		printf("%.27s\n", "???");
 		fclose(filename);
 		return;
