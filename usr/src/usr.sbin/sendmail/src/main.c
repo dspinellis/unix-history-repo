@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.35	%G%";
+static char	SccsId[] = "@(#)main.c	3.36	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -453,25 +453,9 @@ main(argc, argv)
 	if ((fullname == NULL || fullname[0] == '\0') &&
 	    pw != NULL && pw->pw_gecos != NULL)
 	{
-		register char *nb;
 		char nbuf[MAXNAME];
 
-		nb = nbuf;
-		p = pw->pw_gecos;
-		while (*p != '\0' && *p != ',' && *p != ';')
-		{
-			if (*p == '&')
-			{
-				(void) strcpy(nb, realname);
-				*nb = toupper(*nb);
-				while (*nb != '\0')
-					nb++;
-				p++;
-			}
-			else
-				*nb++ = *p++;
-		}
-		*nb = '\0';
+		buildfname(pw->pw_gecos, realname, nbuf);
 		if (ArpaMode == ARPA_NONE && from == NULL && nbuf[0] != '\0')
 			fullname = newstr(nbuf);
 	}

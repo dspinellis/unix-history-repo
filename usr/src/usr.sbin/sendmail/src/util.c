@@ -3,7 +3,7 @@
 # include "useful.h"
 # include <ctype.h>
 
-static char	SccsId[] = "@(#)util.c	3.7	%G%";
+static char	SccsId[] = "@(#)util.c	3.8	%G%";
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -337,6 +337,46 @@ clear(p, l)
 {
 	while (l-- > 0)
 		*p++ = 0;
+}
+/*
+**  BUILDFNAME -- build full name from gecos style entry.
+**
+**	This routine interprets the strange entry that would appear
+**	in the GECOS field of the password file.
+**
+**	Parameters:
+**		p -- name to build.
+**		login -- the login name of this user (for &).
+**		buf -- place to put the result.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		none.
+*/
+
+buildfname(p, login, buf)
+	register char *p;
+	char *login;
+	char *buf;
+{
+	register char *bp = buf;
+
+	while (*p != '\0' && *p != ',' && *p != ';')
+	{
+		if (*p == '&')
+		{
+			(void) strcpy(bp, login);
+			*bp = toupper(*bp);
+			while (*bp != '\0')
+				bp++;
+			p++;
+		}
+		else
+			*bp++ = *p++;
+	}
+	*bp = '\0';
 }
 /*
 **  SYSLOG -- fake entry to fool lint

@@ -3,7 +3,7 @@
 # include <sys/stat.h>
 # include "sendmail.h"
 
-static char SccsId[] = "@(#)recipient.c	3.13	%G%";
+static char SccsId[] = "@(#)recipient.c	3.14	%G%";
 
 /*
 **  SENDTO -- Designate a send list.
@@ -221,6 +221,11 @@ recipient(a)
 			}
 			else
 			{
+				if (strcmp(a->q_user, pw->pw_name) != 0)
+				{
+					a->q_user = newstr(pw->pw_name);
+					strcpy(buf, pw->pw_name);
+				}
 				a->q_home = newstr(pw->pw_dir);
 				a->q_uid = pw->pw_uid;
 				if (strcmp(buf, a->q_user) == 0)
@@ -250,9 +255,25 @@ struct passwd *
 finduser(name)
 	char *name;
 {
-	extern struct passwd *getpwnam();
+	extern struct passwd *getpwent();
+	register struct passwd *pw;
 
-	return (getpwnam(name));
+	setpwent();
+	while ((pw = getpwent()) != NULL)
+	{
+		char buf[MAXNAME];
+		register char *p;
+		extern bool sameword();
+
+		if (strcmp(pw->pw_name, name) == 0)
+			return (pw);
+		buildfname(pw->pw_gecos, pw->pw_name, buf);
+		for (p = buf; (p = index(p, ' ')) != NULL; )
+			*p++ = SPACESUB & 0177;
+		if (sameword(buf, name))
+			return (pw);
+	}
+	return (NULL);
 }
 /*
 **  WRITABLE -- predicate returning if the file is writable.
