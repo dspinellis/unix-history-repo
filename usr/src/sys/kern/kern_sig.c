@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.7	84/09/04	*/
+/*	kern_sig.c	6.8	84/11/20	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -495,13 +495,7 @@ run:
 	 * Raise priority to at least PUSER.
 	 */
 	if (p->p_pri > PUSER)
-		if ((p != u.u_procp || noproc) && p->p_stat == SRUN &&
-		    (p->p_flag & SLOAD)) {
-			remrq(p);
-			p->p_pri = PUSER;
-			setrq(p);
-		} else
-			p->p_pri = PUSER;
+		p->p_pri = PUSER;
 	setrun(p);
 out:
 	splx(s);
