@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.14 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.15 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -145,8 +145,7 @@ Aq|q101|qvt101|qvt-101|Qume 101 $310 special:\
 	:al=\EE:am:bt=\EI:ce=\Et:cl=\E*:dc=\EW:\
 	:dl=\ER:do=^J:ic=\EQ:ei=:im=:md=\E(:me=\EG0:mh=\E):\
 	:le=^H:bs:cm=\E=%+ %+ :cl=1^Z:co#80:ho=^^:li#24:ma=^K^P:nd=^L:ku=^K:\
-	:vs=\EM4\040\200\200\200:mr=\EG4:ms:\
-	:so=\EG4:se=\EG1:
+	:vs=\EM4\040\200\200\200:mr=\EG4:ms:so=\EG4:se=\EG1:
 # I suspect the xerox1720 is the same as the diablo 1620.
 Ax|x1720|x1700|1700|x1750|xerox 1720:\
 	:co#132:le=^H:bs:hc:os:pt:do=^J:ct=\E2:st=\E1:
@@ -524,33 +523,13 @@ Mu|sun|Sun Microsystems Workstation console:\
 	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:
-Mu|sun-e|Sun Microsystems Workstation console hacked for emacs:\
-	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:am:bs:mi:ms:pt:\
-	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
-	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
-	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:al=\E[L:dl=\E[M:dc=\E[P:\
+	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:\
 	:AL=\E[%dL:DL=\E[%dM:
 # From john@ucbrenoir  Tue Sep 24 13:14:44 1985
 Mu|sun-s|Sun Microsystems Workstation window with status line:\
-	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:am:bs:mi:ms:pt:\
-	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
-	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
-	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:\
-	:hs:ts=\E]l:fs=\E\\:ds=\E]l\E\\:
-Mu|sun-s-e|Sun Microsystems Workstation window with status hacked for emacs:\
-	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
-	:am:bs:mi:ms:pt:\
-	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
-	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
-	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
-	:al=\E[L:dl=\E[M:dc=\E[P:\
-	:hs:ts=\E]l:fs=\E\\:ds=\E]l\E\\:\
-	:AL=\E[%dL:DL=\E[%dM:
+	:hs:ts=\E]l:fs=\E\\:ds=\E]l\E\\:tc=sun:
+Mu|sun-e-s|sun-s-e|Sun Microsystems Workstation with status hacked for emacs:\
+	:hs:ts=\E]l:fs=\E\\:ds=\E]l\E\\:tc=sun-e:
 M0|sun-48|Sun 48-line window:\
 	:li#48:co#80:tc=sun:
 M1|sun-34|Sun 34-line window:\
@@ -563,7 +542,7 @@ M4|sun-12|Sun 12-line window:\
 	:li#12:co#80:tc=sun:
 M5|sun-1|Sun 1-line window for sysline:\
 	:li#1:co#80:es:hs:ts=\r:fs=\E[K:ds=^L:tc=sun:
-M6|sun-nic|sune|Sun Microsystems Workstation console without insert character:\
+M6|sun-e|sun-nic|sune|Sun Microsystems Workstation without insert character:\
 	:ic@:im@:ei@:tc=sun:
 Mv|virtual|VIRTUAL|cb unix virtual terminal:\
 	:do=^J:co#80:li#24:am:cl=\E\112:le=^H:bs:cm=\E\107%r%.%.:nd=\E\103:\
@@ -2025,6 +2004,23 @@ vh|tvi910+|910+|televideo 910+:\
 	:k4=^AD\r:k5=^AE\r:k6=^AF\r:k7=^AG\r:k8=^AH\r:k9=^AI\r:kb=^H:\
 	:kd=^J:kh=^^:kl=^H:kr=^L:ku=^K:li#24:ll=\E=7\040:ma=^K^P^L\040:\
 	:nd=^L:pt:se=\EG0:sg#1:so=\EG4:ue=\EG0:up=^K:us=\EG8:xn:
+# From fair@ucbarpa  Sun Oct 27 07:21:05 1985
+v6|ims950-b|bare ims950 no is:\
+	:is@:tc=ims950:
+v7|ims950-ns|ims950 w/no standout:\
+	:so@:se@:us@:ue@:tc=ims950:
+va|ims950|ims televideo 950 emulation:\
+	:k0@:k1@:k2@:k3@:k4@:k5@:k6@:k7@:k8@:k9@:kb@:kd@:kh@:kl@:ko@:kr@:ku@:\
+	:vb@:xn@:tc=tvi950:
+vd|ims950-rv|ims tvi950 rev video:\
+	:k0@:k1@:k2@:k3@:k4@:k5@:k6@:k7@:k8@:k9@:kb@:kd@:kh@:kl@:ko@:kr@:ku@:\
+	:vb@:xn@:tc=tvi950-rv:
+vx|ims-ansi|ultima2|ultimaII|IMS Ultima II:\
+	:pt:am:bs:co#80:li#24:\
+	:is=\E[0m\E[>14l\E[?1;?5;20l\E>\E[1m^M:if=/usr/lib/tabset/vt100:\
+	:cl=\E[;H\E[2J:cd=\E[0J:ce=\E[0K:cm=\E[%i%2;%2H:up=\EM:do=\ED:\
+	:ku=\E[A:kd=\E[B:kr=\E[C:kl=\E[D:kh=\E[H:\
+	:so=\E[7m:se=\E[0m\E[1m:us=\E[4m:ue=\E[0m\E[1m:sr=\EM:
 # # --------------------------------
 #
 # y: TELERAY
