@@ -1,4 +1,4 @@
-/* in_pcb.c 4.14 81/12/19 */
+/* in_pcb.c 4.15 81/12/21 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -128,6 +128,17 @@ COUNT(IN_PCBCONNECT);
 	inp->inp_faddr = sin->sin_addr;
 	inp->inp_fport = sin->sin_port;
 	return (0);
+}
+
+in_pcbconnaddr(inp, sp)
+	struct inpcb *inp;
+	struct sockaddr *sp;
+{
+	register struct sockaddr_in *sin = (struct sockaddr_in *)sp;
+
+	sin->sin_family = AF_INET;
+	sin->sin_port = inp->inp_fport;
+	sin->sin_addr = inp->inp_faddr;
 }
 
 in_pcbdisconnect(inp)
