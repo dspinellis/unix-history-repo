@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -450,7 +450,7 @@ main(argc, argv, envp)
 				*q++ = '\0';
 			if (*optarg != '\0')
 				define('r', newstr(optarg), CurEnv);
-			if (*q != '\0')
+			if (q != NULL && *q != '\0')
 				define('s', newstr(q), CurEnv);
 			break;
 

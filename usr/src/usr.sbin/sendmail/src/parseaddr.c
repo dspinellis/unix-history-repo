@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -459,7 +459,9 @@ prescan(addr, delim, pvpbuf)
 			if (bslashmode)
 			{
 				/* kludge \! for naive users */
-				if (c != '!')
+				if (cmntcnt > 0)
+					c = NOCHAR;
+				else if (c != '!')
 					*q++ = '\\';
 				bslashmode = FALSE;
 				if (cmntcnt > 0)
