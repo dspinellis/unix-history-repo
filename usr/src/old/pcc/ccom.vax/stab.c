@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)stab.c	1.11 (Berkeley) %G%";
+static char *sccsid ="@(#)stab.c	1.12 (Berkeley) %G%";
 #endif
 /*
  * Symbolic debugging info interface.
@@ -394,6 +394,9 @@ struct symtab *sym;
 	    break;
 	}
 	t = DECREF(t);
+	if (i == NILINDEX && ISARY(t)) {
+	    i = p->dimoff;
+	}
 	if (t == basictype) {
 	    typeid = typelookup(t, NILINDEX, strindex, strtag);
 	} else {
