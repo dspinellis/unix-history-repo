@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)cp.1	6.4 (Berkeley) %G%
+.\"	@(#)cp.1	6.5 (Berkeley) %G%
 .\"
 .TH CP 1 ""
 .UC 4
@@ -38,7 +38,8 @@ are copied into the target
 retaining their original filenames.
 If
 .I cp
-detects an attempt to copy a file to itself, the copy shall fail.
+detects an attempt to copy a file to itself, the copy will fail.
+.PP
 For each destination file that already exists, its contents are
 overwritten if permissions allow, but its mode, user ID, and group
 ID are unchanged.
@@ -53,10 +54,18 @@ The following options are available:
 Forces
 .I cp
 to follow symbolic links.
+Provided for the
+.I -r
+option which does not follow symbolic links by default.
 .TP
 .I -f
-Force existing destination pathnames to be removed before copying,
+Force existing destination pathnames to be truncated before copying,
 without prompting for confirmation.
+(The
+.I -i
+option is ignored if the
+.I -f
+option is specified.)
 .TP
 .I -i
 Causes
@@ -70,6 +79,7 @@ the file is copied if permissions allow the copy.
 Causes
 .I cp
 to preserve in the copy as many of the modification time, access time,
+.\" and file mode as allowed by permissions.
 file mode, user ID, and group ID as allowed by permissions.
 .TP
 .I -r
@@ -82,12 +92,8 @@ This option also causes symbolic links to be copied, rather than
 indirected through, and for
 .I cp
 to create special files rather than copying them as normal files.
-.PP
-The
-.I -i
-option is ignored if the
-.I -f
-option is specified.
+Created directories have the same mode as the corresponding source
+directory, unmodified by the process' file mode creation mask.
 .PP
 Symbolic links are followed unless the
 .I -r

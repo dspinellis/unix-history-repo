@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cp.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cp.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -40,16 +40,6 @@ static char sccsid[] = "@(#)cp.c	5.5 (Berkeley) %G%";
  * copy copies the data.  If "from" is a directory, copy creates the
  * corresponding "to" directory, and calls itself recursively on all of
  * the entries in the "from" directory.
- * 
- * Instead of handling directory entries in the order they appear on disk,
- * copy() does non-directory files before directory files.
- * 
- * There are two reasons to do directories last.  The first is efficiency.
- * Files tend to be in the same cylinder group as their parent, whereas
- * directories tend not to be. Copying files all at once reduces seeking.
- * 
- * Second, deeply nested tree's could use up all the file descriptors if we
- * didn't close one directory before recursivly starting on the next.
  */
 
 #include <sys/param.h>
@@ -72,11 +62,11 @@ typedef struct {
 char *path_append(), *path_basename();
 void path_restore();
 
-int exit_val, symfollow, my_umask;
+int exit_val, symfollow;
 int interactive_flag, preserve_flag, recursive_flag;
 char *buf;				/* I/O; malloc for best alignment. */
-char from_buf[MAXPATHLEN + 1],		/* Source path buffer. */
-     to_buf[MAXPATHLEN + 1];		/* Target path buffer. */
+char from_buf[MAXPATHLEN + 1],		/* source path buffer */
+     to_buf[MAXPATHLEN + 1];		/* target path buffer */
 path_t from = {from_buf, from_buf};
 path_t to = {to_buf, to_buf};
 
@@ -125,16 +115,13 @@ main(argc, argv)
 	if (force_flag)
 		interactive_flag = 0;
 
-	my_umask = umask(0);
-	(void)umask(my_umask);
-
 	buf = (char *)malloc(MAXBSIZE);
 	if (!buf) {
 		(void)fprintf(stderr, "cp: out of space.\n");
 		exit(1);
 	}
 
-	/* Consume last argument first. */
+	/* consume last argument first. */
 	if (!path_set(&to, argv[--argc]))
 		exit(exit_val);
 
@@ -156,7 +143,7 @@ main(argc, argv)
 
 	r = stat(to.p_path, &to_stat);
 	if (r == -1 && errno != ENOENT) {
-		error(to.p_path, "stat");
+		error(to.p_path);
 		exit(1);
 	}
 	if (r == -1 || type(to_stat) != S_IFDIR) {
@@ -175,13 +162,15 @@ main(argc, argv)
 		/*
 		 * Case (2).  Target is a directory.
 		 */
-		for (; argc; --argc, ++argv) {
+		for (;; ++argv) {
 			if (!path_set(&from, *argv))
 				continue;
 			old_to = path_append(&to, path_basename(&from), -1);
 			if (!old_to)
 				continue;
 			copy();
+			if (!--argc)
+				break;
 			path_restore(&to, old_to);
 		}
 	}
@@ -192,30 +181,33 @@ main(argc, argv)
 copy()
 {
 	struct stat from_stat, to_stat;
-	int statval;
+	int dne, statval;
 
 	statval = symfollow || !recursive_flag ?
 	    stat(from.p_path, &from_stat) : lstat(from.p_path, &from_stat);
 	if (statval == -1) {
-		error(from.p_path, "stat");
+		error(from.p_path);
 		return;
 	}
 
 	/* not an error, but need to remember it happened */
 	if (stat(to.p_path, &to_stat) == -1)
-		to_stat.st_ino = -1;
-	else if (to_stat.st_dev == from_stat.st_dev &&
-	    to_stat.st_ino == from_stat.st_ino) {
-		(void)fprintf(stderr,
-		    "cp: %s and %s are identical (not copied).\n",
-		    to.p_path, from.p_path);
-		exit_val = 1;
-		return;
+		dne = 1;
+	else {
+		if (to_stat.st_dev == from_stat.st_dev &&
+		    to_stat.st_ino == from_stat.st_ino) {
+			(void)fprintf(stderr,
+			    "cp: %s and %s are identical (not copied).\n",
+			    to.p_path, from.p_path);
+			exit_val = 1;
+			return;
+		}
+		dne = 0;
 	}
 
 	switch(type(from_stat)) {
 	case S_IFLNK:
-		copy_link(to_stat.st_ino != -1);
+		copy_link(!dne);
 		return;
 	case S_IFDIR:
 		if (!recursive_flag) {
@@ -225,12 +217,19 @@ copy()
 			exit_val = 1;
 			return;
 		}
-		if (to_stat.st_ino == -1) {
-			if (mkdir(to.p_path, 0777) < 0) {
-				error(to.p_path, "mkdir");
+		if (dne) {
+			/*
+			 * If the directory doesn't exist, create the new
+			 * one with the from file mode plus owner RWX bits,
+			 * modified by the umask.  Trade-off between being
+			 * able to write the directory (if from directory is
+			 * 555) and not causing a permissions race.  If the
+			 * umask blocks owner writes cp fails.
+			 */
+			if (mkdir(to.p_path, from_stat.st_mode|S_IRWXU) < 0) {
+				error(to.p_path);
 				return;
 			}
-			from_stat.st_mode &= ~my_umask;
 		}
 		else if (type(to_stat) != S_IFDIR) {
 			(void)fprintf(stderr, "cp: %s: not a directory.\n",
@@ -238,43 +237,54 @@ copy()
 			return;
 		}
 		copy_dir();
+		/*
+		 * If directory didn't exist, set it to be the same as
+		 * the from directory, umodified by the umask; arguably
+		 * wrong, but it's been that way forever.
+		 */
+		if (dne && !preserve_flag)
+			(void)chmod(to.p_path, from_stat.st_mode);
 		break;
 	case S_IFCHR:
 	case S_IFBLK:
+		/*
+		 * if recursive flag on, try and create the special device
+		 * otherwise copy the contents.
+		 */
 		if (recursive_flag) {
 			copy_special(&from_stat, &to_stat);
 			if (preserve_flag)
-				setfile(&from_stat);
+				setfile(&from_stat, 0);
 			return;
 		}
 		/* FALLTHROUGH */
 	default:
-		if (!copy_file(from_stat.st_mode))
-			return;
+		copy_file(&from_stat);
 	}
-	if (preserve_flag)
-		setfile(&from_stat);
 }
 
-copy_file(mode)
-	u_short mode;			/* permissions for new file. */
+copy_file(fs)
+	struct stat *fs;
 {
 	register int from_fd, to_fd, rcount, wcount;
 
-	from_fd = open(from.p_path, O_RDONLY, 0);
-	if (from_fd == -1) {
-		error(from.p_path, "open");
-		(void)close(from_fd);
-		return(0);
+	if ((from_fd = open(from.p_path, O_RDONLY, 0)) == -1) {
+		error(from.p_path);
+		return;
 	}
 
 	/*
-	 * In the interactive case, use O_EXCL to notice existing files. If
-	 * the file exists, verify with the user.
+	 * In the interactive case, use O_EXCL to notice existing files.
+	 * If the file exists, verify with the user.
+	 *
+	 * If the file DNE, create it with the mode of the from file modified
+	 * by the umask; arguably wrong but it makes copying executables work
+	 * right and it's been that way forever.  The other choice is 666
+	 * or'ed with the execute bits on the from file modified by the umask.
 	 */
 	to_fd = open(to.p_path,
 	    (interactive_flag ? O_EXCL : 0) | O_WRONLY | O_CREAT | O_TRUNC,
-	    mode);
+	    fs->st_mode);
 
 	if (to_fd == -1 && errno == EEXIST && interactive_flag) {
 		int checkch, ch;
@@ -284,35 +294,39 @@ copy_file(mode)
 		while (ch != '\n' && ch != EOF)
 			ch = getchar();
 		if (checkch != 'y')
-			return(0);
+			return;
 		/* try again. */
-		to_fd = open(to.p_path, O_WRONLY | O_CREAT | O_TRUNC, mode);
+		to_fd = open(to.p_path, O_WRONLY | O_CREAT | O_TRUNC,
+		    fs->st_mode);
 	}
 
 	if (to_fd == -1) {
-		error(to.p_path, "open");
+		error(to.p_path);
 		(void)close(from_fd);
-		return(0);
+		return;
 	}
 
 	while ((rcount = read(from_fd, buf, MAXBSIZE)) > 0) {
 		wcount = write(to_fd, buf, rcount);
 		if (rcount != wcount || wcount == -1) {
-			error(from.p_path, "write");
+			error(to.p_path);
 			break;
 		}
 	}
+	if (rcount < 0)
+		error(from.p_path);
+	if (preserve_flag)
+		setfile(fs, to_fd);
 	(void)close(from_fd);
 	(void)close(to_fd);
-	return(1);
 }
 
 copy_dir()
 {
 	struct stat from_stat;
-	char *old_from, *old_to;
 	struct direct *dp, **dir_list;
-	int dir_cnt, i;
+	register int dir_cnt, i;
+	char *old_from, *old_to;
 
 	dir_cnt = scandir(from.p_path, &dir_list, NULL, NULL);
 	if (dir_cnt == -1) {
@@ -321,45 +335,46 @@ copy_dir()
 		exit_val = 1;
 	}
 
-	/* Copy files first. */
+	/*
+	 * Instead of handling directory entries in the order they appear
+	 * on disk, do non-directory files before directory files.
+	 * There are two reasons to do directories last.  The first is
+	 * efficiency.  Files tend to be in the same cylinder group as
+	 * their parent, whereas directories tend not to be.  Copying files
+	 * all at once reduces seeking.  Second, deeply nested tree's
+	 * could use up all the file descriptors if we didn't close one
+	 * directory before recursivly starting on the next.
+	 */
+	/* copy files */
 	for (i = 0; i < dir_cnt; ++i) {
 		dp = dir_list[i];
 		if (dp->d_namlen <= 2 && dp->d_name[0] == '.'
-		    && (dp->d_name[1] == NULL || dp->d_name[1] == '.')) {
-			(void)free((char *)dp);
-			dir_list[i] = NULL;
-			continue;
-		}
+		    && (dp->d_name[1] == NULL || dp->d_name[1] == '.'))
+			goto done;
 		old_from = path_append(&from, dp->d_name, (int)dp->d_namlen);
-		if (!old_from) {
-			dir_list[i] = NULL;
-			(void)free((char *)dp);
-			continue;
-		}
+		if (!old_from)
+			goto done;
 
 		if (stat(from.p_path, &from_stat) < 0) {
-			error(dp->d_name, "stat");
+			error(dp->d_name);
+			path_restore(&from, old_from);
+			goto done;
+		}
+		if (type(from_stat) == S_IFDIR) {
 			path_restore(&from, old_from);
 			continue;
 		}
-
-		if (type(from_stat) != S_IFDIR) {
-			old_to = path_append(&to, dp->d_name,
-			    (int)dp->d_namlen);
-			if (!old_to) {
-				dir_list[i] = NULL;
-				(void)free((char *)dp);
-				continue;
-			}
+		old_to = path_append(&to, dp->d_name, (int)dp->d_namlen);
+		if (old_to) {
 			copy();
 			path_restore(&to, old_to);
-			dir_list[i] = NULL;
-			(void)free((char *)dp);
 		}
 		path_restore(&from, old_from);
+done:		dir_list[i] = NULL;
+		(void)free((char *)dp);
 	}
 
-	/* then copy directories. */
+	/* copy directories */
 	for (i = 0; i < dir_cnt; ++i) {
 		dp = dir_list[i];
 		if (!dp)
@@ -389,15 +404,15 @@ copy_link(exists)
 	char link[MAXPATHLEN];
 
 	if (readlink(from.p_path, link, sizeof(link)) == -1) {
-		error(from.p_path, "readlink");
+		error(from.p_path);
 		return;
 	}
 	if (exists && unlink(to.p_path)) {
-		error(to.p_path, "unlink");
+		error(to.p_path);
 		return;
 	}
 	if (symlink(link, to.p_path)) {
-		error(link, "symlink");
+		error(link);
 		return;
 	}
 }
@@ -406,37 +421,57 @@ copy_special(from_stat, to_stat)
 	struct stat *from_stat, *to_stat;
 {
 	if (to_stat->st_ino != -1 && unlink(to.p_path)) {
-		error(to.p_path, "unlink");
+		error(to.p_path);
 		return;
 	}
 	if (mknod(to.p_path, from_stat->st_mode,  from_stat->st_rdev)) {
-		error(to.p_path, "mknod");
+		error(to.p_path);
 		return;
 	}
 }
 
-setfile(fs)
-	struct stat *fs;
+setfile(fs, fd)
+	register struct stat *fs;
+	int fd;
 {
 	static struct timeval tv[2];
+	static int dochown = 1;
 
-	if (chown(to.p_path, fs->st_uid, fs->st_gid))
-		error(to.p_path, "chown");
-	if (chmod(to.p_path, fs->st_mode))
-		error(to.p_path, "chmod");
 	tv[0].tv_sec = fs->st_atime;
 	tv[1].tv_sec = fs->st_mtime;
 	if (utimes(to.p_path, tv))
-		error(to.p_path, "utimes");
+		error(to.p_path);
+	/*
+	 * Changing the ownership probably won't succeed, unless we're
+	 * root or POSIX_CHOWN_RESTRICTED is not set.  Try it last so
+	 * everything else gets set first.
+	 */
+	if (fd) {
+		if (fchmod(fd, fs->st_mode))
+			error(to.p_path);
+		if (dochown && fchown(fd, fs->st_uid, fs->st_gid) == -1)
+			if (errno == EPERM)
+				dochown = 0;
+			else
+				error(to.p_path);
+	} else {
+		if (chmod(to.p_path, fs->st_mode))
+			error(to.p_path);
+		if (dochown && chown(to.p_path, fs->st_uid, fs->st_gid) == -1)
+			if (errno == EPERM)
+				dochown = 0;
+			else
+				error(to.p_path);
+	}
 }
 
-error(s, call)
-	char *s, *call;
+error(s)
+	char *s;
 {
 	extern int errno;
 
 	exit_val = 1;
-	(void)fprintf(stderr, "cp: %s: %s: %s\n", call, s, strerror(errno));
+	(void)fprintf(stderr, "cp: %s: %s\n", s, strerror(errno));
 }
 
 /********************************************************************
@@ -467,7 +502,7 @@ path_set(p, string)
 	char *string;
 {
 	if (strlen(string) > MAXPATHLEN) {
-		fprintf(stderr, "cp: %s: name too long.\n", string);
+		(void)fprintf(stderr, "cp: %s: name too long.\n", string);
 		exit_val = 1;
 		return(0);
 	}
@@ -504,7 +539,7 @@ path_append(p, name, len)
 	 * The final "+ 1" accounts for the '/' between old path and name.
 	 */
 	if ((len + p->p_end - p->p_path + 1) > MAXPATHLEN) {
-		fprintf(stderr,
+		(void)fprintf(stderr,
 		    "cp: %s/%s: name too long.\n", p->p_path, name);
 		exit_val = 1;
 		return(0);
@@ -549,9 +584,7 @@ path_basename(p)
 	char *basename;
 
 	basename = rindex(p->p_path, '/');
-	if (!basename)
-		basename = p->p_path;
-	return(basename);
+	return(basename ? ++basename : p->p_path);
 }
 
 usage()
