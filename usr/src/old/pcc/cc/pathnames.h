@@ -14,13 +14,16 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
-#define	_PATH_AS	"/bin/as";
-#define	_PATH_C2	"/lib/c2";
-#define	_PATH_CCOM	"/lib/ccom";
-#define	_PATH_CPP	"/lib/cpp";
-#define	_PATH_CRT0	"/lib/crt0.o";
-#define	_PATH_LD	"/bin/ld";
-#define	_PATH_SCCOM	"/lib/sccom";
+#define	_PATH_AS	"/bin/as"
+#define	_PATH_C2	"/lib/c2"
+#define	_PATH_CCOM	"/lib/ccom"
+#define	_PATH_CPP	"/lib/cpp"
+#define	_PATH_CRT0	"/lib/crt0.o"
+#define	_PATH_GCRT0	"/usr/lib/gcrt0.o"
+#define	_PATH_LD	"/bin/ld"
+#define	_PATH_MCRT0	"/lib/mcrt0.o"
+#define	_PATH_SCCOM	"/lib/sccom"
+#define	_PATH_USRNEW	"/usr/new"
