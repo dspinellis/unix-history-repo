@@ -1,23 +1,18 @@
-
-/*
- * Copyright (c) 1989 The Regents of the University of California.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)registerd.c	1.7 (Berkeley) %G%";
+char copyright[] =
+"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)registerd.c	5.1 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -27,44 +22,42 @@ static char sccsid[] = "@(#)registerd.c	1.7 (Berkeley) %G%";
 #include <sys/param.h>
 #include <sys/file.h>
 #include <netinet/in.h>
-#include <stdio.h>
 #include <syslog.h>
 #include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
 #include <kerberosIV/krb_db.h>
-#include "pathnames.h"
+#include <stdio.h>
 #include "register_proto.h"
+#include "pathnames.h"
 
 #define	KBUFSIZ		(sizeof(struct keyfile_data))
-#define	CRYPT		0x00
+#define	RCRYPT		0x00
 #define	CLEAR		0x01
 
-char	*progname;
 struct	sockaddr_in	sin;
-char	msgbuf[BUFSIZ];
-
-int	die();
+char	*progname, msgbuf[BUFSIZ];
 
 main(argc, argv)
-char	**argv;
+	int argc;
+	char **argv;
 {
-	int	kf;
-	char	keyfile[MAXPATHLEN];
 	static	Key_schedule	schedule;
-	u_char	code;
-	char	keybuf[KBUFSIZ];
-	int	retval, sval;
-	struct	keyfile_data	*kfile;
 	static struct rlimit rl = { 0, 0 };
+	struct	keyfile_data	*kfile;
+	u_char	code;
+	int	kf, retval, sval;
+	char	keyfile[MAXPATHLEN], keybuf[KBUFSIZ];
+	void die();
+
+	progname = argv[0];		/* for the library routines */
 
 	openlog("registerd", LOG_PID, LOG_AUTH);
 
-	progname = argv[0];
+	(void)signal(SIGHUP, SIG_IGN);
+	(void)signal(SIGINT, SIG_IGN);
+	(void)signal(SIGTSTP, SIG_IGN);
+	(void)signal(SIGPIPE, die);
 
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGINT, SIG_IGN);
-	signal(SIGTSTP, SIG_IGN);
-	signal(SIGPIPE, die);
 	if (setrlimit(RLIMIT_CORE, &rl) < 0) {
 		syslog(LOG_ERR, "setrlimit: %m");
 		exit(1);
@@ -129,16 +122,17 @@ char	**argv;
 
 	} else {
 		retval = KFAILURE;
-		syslog(LOG_ERR, "couldn't read command code on Kerberos update");
+		syslog(LOG_ERR,
+		    "couldn't read command code on Kerberos update");
 	}
 
 	code = (u_char) retval; 
 	if (code != KSUCCESS) {
 		(void) sprintf(msgbuf, "%s", krb_err_txt[code]);
-		send_packet(msgbuf, CRYPT);
+		send_packet(msgbuf, RCRYPT);
 	} else {
 		(void) sprintf(msgbuf, "Update complete.");
-		send_packet(msgbuf, CRYPT);
+		send_packet(msgbuf, RCRYPT);
 	}
 	cleanup();
 	close(0);
@@ -262,7 +256,7 @@ send_packet(msg,flag)
 		syslog(LOG_ERR, "send_packet: invalid msg size");
 		return;
 	}
-	if (flag == CRYPT) {
+	if (flag == RCRYPT) {
 		if (des_write(0, msg, len) != len)
 			syslog(LOG_ERR, "couldn't write reply message");
 	} else if (flag == CLEAR) {
@@ -311,6 +305,7 @@ cleanup()
 	bzero(master_key_schedule, sizeof(master_key_schedule));
 }
 
+void
 die()
 {
 	syslog(LOG_ERR, "remote end died (SIGPIPE)");
