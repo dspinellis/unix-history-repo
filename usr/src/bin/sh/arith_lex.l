@@ -1,5 +1,20 @@
 %{
+/*-
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Kenneth Almquist.
+ *
+ * %sccs.include.redist.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)arith_lex.l	5.2 (Berkeley) %G%";
+#endif /* not lint */
+
 #include "y.tab.h"
+
 extern yylval;
 extern char *arith_buf, *arith_startbuf;
 int arith_wasoper;

@@ -39,6 +39,19 @@ expr:	ARITH_LPAREN expr ARITH_RPAREN = { $$ = $2; }
 	| ARITH_NUM
 	;
 %%
+/*-
+ * Copyright (c) 1993
+ *	The Regents of the University of California.  All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Kenneth Almquist.
+ *
+ * %sccs.include.redist.c%
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)arith.y	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "shell.h"
 #include "error.h"
