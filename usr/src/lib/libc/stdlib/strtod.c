@@ -1,5 +1,5 @@
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strtod.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)strtod.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /****************************************************************
@@ -88,7 +88,11 @@ static char sccsid[] = "@(#)strtod.c	5.1 (Berkeley) %G%";
  *	FLT_RADIX, FLT_ROUNDS, and DBL_MAX.
  */
 
+#if defined(i386) || defined(mips) && defined(MIPSEL)
+#define IEEE_8087
+#else
 #define IEEE_MC68k
+#endif
 
 #ifdef DEBUG
 #include "stdio.h"
