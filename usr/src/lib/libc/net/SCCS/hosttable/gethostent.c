@@ -1,4 +1,4 @@
-/*	gethostent.c	4.6	83/12/21	*/
+/*	gethostent.c	4.7	83/12/21	*/
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -19,8 +19,8 @@ static char line[BUFSIZ+1];
 static char hostaddr[MAXADDRSIZE];
 static struct hostent host;
 static char *host_aliases[MAXALIASES];
-int _stayopen = 0;
-extern DBM *db;		/* set by gethostbyname(), gethostbyaddr() */
+int _host_stayopen;
+DBM *_host_db;		/* set by gethostbyname(), gethostbyaddr() */
 static char *any();
 
 sethostent(f)
@@ -28,7 +28,7 @@ sethostent(f)
 {
 	if (hostf != NULL)
 		rewind(hostf);
-	_stayopen |= f;
+	_host_stayopen |= f;
 }
 
 endhostent()
@@ -37,11 +37,11 @@ endhostent()
 		fclose(hostf);
 		hostf = NULL;
 	}
-	if (db) {
-		ndbmclose(db);
-		db = (DBM *)NULL;
+	if (_host_db) {
+		ndbmclose(_host_db);
+		_host_db = (DBM *)NULL;
 	}
-	_stayopen = 0;
+	_host_stayopen = 0;
 }
 
 struct hostent *
