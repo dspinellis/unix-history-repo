@@ -109,7 +109,7 @@ main(argc, argv)
 		exit(1);
 	}
 
-	format = "%a %b %e %H:%M:%S %Z %Y\n";
+	format = "%a %b %e %H:%M:%S %Z %Y";
 
 	/* allow the operands in any order */
 	if (*argv && **argv == '+') {
@@ -126,7 +126,7 @@ main(argc, argv)
 		format = *argv + 1;
 
 	(void)strftime(buf, sizeof(buf), format, localtime(&tval));
-	(void)printf("%s", buf);
+	(void)printf("%s\n", buf);
 	exit(retval);
 }
 
