@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)iostat.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)iostat.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -92,7 +92,7 @@ char **dr_name;
 #include "names.c"				/* XXX */
 
 #define nlread(x, v) \
-	kvm_read(nl[x].n_value, (void *)&(v), sizeof(v))
+	kvm_read((void *)nl[x].n_value, (void *)&(v), sizeof(v))
 
 main(argc, argv)
 	int argc;
@@ -171,7 +171,7 @@ main(argc, argv)
 	(void)nlread(X_PHZ, phz);
 	if (phz)
 		hz = phz;
-	(void)kvm_read(nl[X_DK_WPMS].n_value, dk_wpms,
+	(void)kvm_read((void *)nl[X_DK_WPMS].n_value, dk_wpms,
 		dk_ndrive * sizeof(dk_wpms));
 
 	/*
@@ -228,19 +228,19 @@ main(argc, argv)
 			hdrcnt = 20;
 		}
 		(void)nlread(X_DK_BUSY, cur.dk_busy);
-		(void)kvm_read(nl[X_DK_TIME].n_value,
+		(void)kvm_read((void *)nl[X_DK_TIME].n_value,
 		    cur.dk_time, dk_ndrive * sizeof(long));
-		(void)kvm_read(nl[X_DK_XFER].n_value,
+		(void)kvm_read((void *)nl[X_DK_XFER].n_value,
 		    cur.dk_xfer, dk_ndrive * sizeof(long));
-		(void)kvm_read(nl[X_DK_WDS].n_value,
+		(void)kvm_read((void *)nl[X_DK_WDS].n_value,
 		    cur.dk_wds, dk_ndrive * sizeof(long));
-		(void)kvm_read(nl[X_DK_SEEK].n_value,
+		(void)kvm_read((void *)nl[X_DK_SEEK].n_value,
 		    cur.dk_seek, dk_ndrive * sizeof(long));
-		(void)kvm_read(nl[X_TK_NIN].n_value,
+		(void)kvm_read((void *)nl[X_TK_NIN].n_value,
 		    &cur.tk_nin, sizeof(cur.tk_nin));
-		(void)kvm_read(nl[X_TK_NOUT].n_value,
+		(void)kvm_read((void *)nl[X_TK_NOUT].n_value,
 		    &cur.tk_nout, sizeof(cur.tk_nout));
-		(void)kvm_read(nl[X_CP_TIME].n_value,
+		(void)kvm_read((void *)nl[X_CP_TIME].n_value,
 		    cur.cp_time, sizeof(cur.cp_time));
 		for (i = 0; i < dk_ndrive; i++) {
 			if (!dr_select[i])
