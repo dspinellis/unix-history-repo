@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sd.c	8.1 (Berkeley) %G%
+ *	@(#)sd.c	8.2 (Berkeley) %G%
  */
 
 /*
@@ -17,7 +17,7 @@
 #if NSD > 0
 
 #ifndef lint
-static char rcsid[] = "$Header: /usr/src/sys/hp300/dev/RCS/sd.c,v 1.4 92/12/26 13:26:40 mike Exp $";
+static char rcsid[] = "$Header: /sys.lite/hp300/dev/RCS/sd.c,v 1.2 1994/01/10 18:29:19 mike Exp mike $";
 #endif
 
 #include <sys/param.h>
@@ -71,6 +71,7 @@ struct	driver sddriver = {
 int sddebug = 1;
 #define SDB_ERROR	0x01
 #define SDB_PARTIAL	0x02
+#define SDB_CAPACITY	0x04
 #endif
 
 struct	sd_softc sd_softc[NSD];
@@ -113,12 +114,6 @@ static struct scsi_fmt_cdb inq = {
 	CMD_INQUIRY, 0, 0, 0, sizeof(inqbuf), 0
 };
 
-static u_char capbuf[8];
-struct scsi_fmt_cdb cap = {
-	10,
-	CMD_READ_CAPACITY, 0, 0, 0, 0, 0, 0, 0, 0, 0
-};
-
 static int
 sdident(sc, hd)
 	struct sd_softc *sc;
@@ -129,7 +124,7 @@ sdident(sc, hd)
 	register int i;
 	register int tries = 10;
 	char idstr[32];
-	int ismo = 0;
+	int isrm = 0;
 
 	ctlr = hd->hp_ctlr;
 	slave = hd->hp_slave;
@@ -141,7 +136,7 @@ sdident(sc, hd)
 	 */
 	while ((i = scsi_test_unit_rdy(ctlr, slave, unit)) != 0) {
 		if (i == -1 || --tries < 0) {
-			if (ismo)
+			if (isrm)
 				break;
 			/* doesn't exist or not a CCS device */
 			goto failed;
@@ -154,11 +149,14 @@ sdident(sc, hd)
 					   sizeof(sensebuf));
 			if (sp->class == 7)
 				switch (sp->key) {
-				/* not ready -- might be MO with no media */
+				/*
+				 * Not ready -- might be removable media
+				 * device with no media.  Assume as much,
+				 * if it really isn't, the inquiry commmand
+				 * below will fail.
+				 */
 				case 2:
-					if (sp->len == 12 &&
-					    sensebuf[12] == 10)	/* XXX */
-						ismo = 1;
+					isrm = 1;
 					break;
 				/* drive doing an RTZ -- give it a while */
 				case 6:
@@ -209,22 +207,11 @@ sdident(sc, hd)
 		bcopy("UNKNOWN", &idstr[0], 8);
 		bcopy("DRIVE TYPE", &idstr[8], 11);
 	}
-	i = scsi_immed_command(ctlr, slave, unit, &cap,
-			       (u_char *)&capbuf, sizeof(capbuf), B_READ);
-	if (i) {
-		if (i != STS_CHECKCOND ||
-		    bcmp(&idstr[0], "HP", 3) ||
-		    bcmp(&idstr[8], "S6300.650A", 11))
-			goto failed;
-		/* XXX unformatted or non-existant MO media; fake it */
-		sc->sc_blks = 318664;
-		sc->sc_blksize = 1024;
-	} else {
-		sc->sc_blks = *(u_int *)&capbuf[0];
-		sc->sc_blksize = *(int *)&capbuf[4];
-	}
-	/* return value of read capacity is last valid block number */
-	sc->sc_blks++;
+	if (inqbuf.qual & 0x80)
+		sc->sc_flags |= SDF_RMEDIA;
+
+	if (sdgetcapacity(sc, hd, NODEV) < 0)
+		goto failed;
 
 	switch (inqbuf.version) {
 	case 1:
@@ -239,19 +226,10 @@ sdident(sc, hd)
 		       inqbuf.type, inqbuf.qual, inqbuf.version);
 		break;
 	}
-	printf(", %d %d byte blocks\n", sc->sc_blks, sc->sc_blksize);
-	if (inqbuf.qual & 0x80)
-		sc->sc_flags |= SDF_RMEDIA;
-	if (sc->sc_blksize != DEV_BSIZE) {
-		if (sc->sc_blksize < DEV_BSIZE) {
-			printf("sd%d: need %d byte blocks - drive ignored\n",
-				unit, DEV_BSIZE);
-			goto failed;
-		}
-		for (i = sc->sc_blksize; i > DEV_BSIZE; i >>= 1)
-			++sc->sc_bshift;
-		sc->sc_blks <<= sc->sc_bshift;
-	}
+	if (sc->sc_blks)
+		printf(", %d %d byte blocks",
+		       sc->sc_blks >> sc->sc_bshift, sc->sc_blksize);
+	printf("\n");
 	sc->sc_wpms = 32 * (60 * DEV_BSIZE / 2);	/* XXX */
 	scsi_delay(0);
 	return(inqbuf.type);
@@ -290,6 +268,91 @@ sdreset(sc, hd)
 }
 
 /*
+ * Determine capacity of a drive.
+ * Returns -1 on a failure, 0 on success, 1 on a failure that is probably
+ * due to missing media.
+ */
+int
+sdgetcapacity(sc, hd, dev)
+	struct sd_softc *sc;
+	struct hp_device *hd;
+	dev_t dev;
+{
+	static struct scsi_fmt_cdb cap = {
+		10,
+		CMD_READ_CAPACITY, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	};
+	u_char capbuf[8];
+	struct buf tbuf;
+	int i;
+
+	if (dev == NODEV) {
+		i = scsi_immed_command(hd->hp_ctlr, hd->hp_slave, sc->sc_punit,
+				       &cap, capbuf, sizeof(capbuf), B_READ);
+	} else {
+		/*
+		 * XXX this is horrible
+		 */
+		if (sc->sc_format_pid)
+			panic("sdgetcapacity");
+		sc->sc_format_pid = curproc->p_pid;
+		bcopy((caddr_t)&cap, (caddr_t)&sdcmd[hd->hp_unit], sizeof cap);
+		tbuf.b_dev = dev;
+		tbuf.b_flags = B_READ | B_BUSY;
+		tbuf.b_un.b_addr = (caddr_t)capbuf;
+		tbuf.b_bcount = sizeof capbuf;
+		sdstrategy(&tbuf);
+		i = biowait(&tbuf) ? sdsense[hd->hp_unit].status : 0;
+		sc->sc_format_pid = 0;
+	}
+	if (i) {
+		if (i != STS_CHECKCOND || (sc->sc_flags & SDF_RMEDIA) == 0) {
+#ifdef DEBUG
+			if (sddebug & SDB_CAPACITY)
+				printf("sd%d: read_capacity returns %d\n",
+				       hd->hp_unit, i);
+#endif
+			return (-1);
+		}
+		/*
+		 * XXX assume unformatted or non-existant media
+		 */
+		sc->sc_blks = 0;
+		sc->sc_blksize = DEV_BSIZE;
+		sc->sc_bshift = 0;
+#ifdef DEBUG
+		if (sddebug & SDB_CAPACITY)
+			printf("sd%d: removable media not present\n",
+			       hd->hp_unit);
+#endif
+		return (1);
+	}
+	sc->sc_blks = *(u_int *)&capbuf[0];
+	sc->sc_blksize = *(int *)&capbuf[4];
+	sc->sc_bshift = 0;
+
+	/* return value of read capacity is last valid block number */
+	sc->sc_blks++;
+
+	if (sc->sc_blksize != DEV_BSIZE) {
+		if (sc->sc_blksize < DEV_BSIZE) {
+			printf("sd%d: need %d byte blocks - drive ignored\n",
+				hd->hp_unit, DEV_BSIZE);
+			return (-1);
+		}
+		for (i = sc->sc_blksize; i > DEV_BSIZE; i >>= 1)
+			++sc->sc_bshift;
+		sc->sc_blks <<= sc->sc_bshift;
+	}
+#ifdef DEBUG
+	if (sddebug & SDB_CAPACITY)
+		printf("sd%d: blks=%d, blksize=%d, bshift=%d\n", hd->hp_unit,
+		       sc->sc_blks, sc->sc_blksize, sc->sc_bshift);
+#endif
+	return (0);
+}
+
+/*
  * Read or constuct a disklabel
  */
 int
@@ -301,43 +364,83 @@ sdgetinfo(dev)
 	register struct disklabel *lp = &sc->sc_info.si_label;
 	register struct partition *pi;
 	char *msg, *readdisklabel();
+#ifdef COMPAT_NOLABEL
+	int usedefault = 1;
+
+	/*
+	 * For CD-ROM just define a single partition
+	 */
+	if (sc->sc_type == 5)
+		usedefault = 0;
+#endif
+
+	bzero((caddr_t)lp, sizeof *lp);
+	msg = NULL;
+
+	/*
+	 * If removable media or the size unavailable at boot time
+	 * (i.e. unformatted hard disk), attempt to set the capacity
+	 * now.
+	 */
+	if ((sc->sc_flags & SDF_RMEDIA) || sc->sc_blks == 0) {
+		switch (sdgetcapacity(sc, sc->sc_hd, dev)) {
+		case 0:
+			break;
+		case -1:
+			/*
+			 * Hard error, just return (open will fail).
+			 */
+			return (EIO);
+		case 1:
+			/*
+			 * XXX return 0 so open can continue just in case
+			 * the media is unformatted and we want to format it.
+			 * We set the error flag so they cannot do much else.
+			 */
+			sc->sc_flags |= SDF_ERROR;
+			msg = "unformatted/missing media";
+#ifdef COMPAT_NOLABEL
+			usedefault = 0;
+#endif
+			break;
+		}
+	}
 
 	/*
 	 * Set some default values to use while reading the label
-	 * or to use if there isn't a label.
+	 * (or to use if there isn't a label) and try reading it.
 	 */
-	bzero((caddr_t)lp, sizeof *lp);
-	lp->d_type = DTYPE_SCSI;
-	lp->d_secsize = DEV_BSIZE;
-	lp->d_nsectors = 32;
-	lp->d_ntracks = 20;
-	lp->d_ncylinders = 1;
-	lp->d_secpercyl = 32*20;
-	lp->d_npartitions = 3;
-	lp->d_partitions[2].p_offset = 0;
-	/* XXX we can open a device even without SDF_ALIVE */
-	if (sc->sc_blksize == 0)
-		sc->sc_blksize = DEV_BSIZE;
-	/* XXX ensure size is at least one device block */
-	lp->d_partitions[2].p_size =
-		roundup(LABELSECTOR+1, btodb(sc->sc_blksize));
-
-	/*
-	 * Now try to read the disklabel
-	 */
-	msg = readdisklabel(sdlabdev(dev), sdstrategy, lp);
-	if (msg == NULL)
-		return(0);
+	if (msg == NULL) {
+		lp->d_type = DTYPE_SCSI;
+		lp->d_secsize = DEV_BSIZE;
+		lp->d_nsectors = 32;
+		lp->d_ntracks = 20;
+		lp->d_ncylinders = 1;
+		lp->d_secpercyl = 32*20;
+		lp->d_npartitions = 3;
+		lp->d_partitions[2].p_offset = 0;
+		/* XXX we can open a device even without SDF_ALIVE */
+		if (sc->sc_blksize == 0)
+			sc->sc_blksize = DEV_BSIZE;
+		/* XXX ensure size is at least one device block */
+		lp->d_partitions[2].p_size =
+			roundup(LABELSECTOR+1, btodb(sc->sc_blksize));
+		msg = readdisklabel(sdlabdev(dev), sdstrategy, lp);
+		if (msg == NULL)
+			return (0);
+	}
 
 	pi = lp->d_partitions;
 	printf("sd%d: WARNING: %s, ", unit, msg);
 #ifdef COMPAT_NOLABEL
-	printf("using old default partitioning\n");
-	sdmakedisklabel(unit, lp);
-#else
+	if (usedefault) {
+		printf("using old default partitioning\n");
+		sdmakedisklabel(unit, lp);
+		return(0);
+	}
+#endif
 	printf("defining `c' partition as entire disk\n");
 	pi[2].p_size = sc->sc_blks;
-#endif
 	return(0);
 }
 
@@ -536,10 +639,6 @@ sdstrategy(bp)
 	register daddr_t bn;
 	register int sz, s;
 
-	if (sc->sc_flags & SDF_ERROR) {
-		bp->b_error = EIO;
-		goto bad;
-	}
 	if (sc->sc_format_pid) {
 		if (sc->sc_format_pid != curproc->p_pid) {	/* XXX */
 			bp->b_error = EPERM;
@@ -547,6 +646,10 @@ sdstrategy(bp)
 		}
 		bp->b_cylin = 0;
 	} else {
+		if (sc->sc_flags & SDF_ERROR) {
+			bp->b_error = EIO;
+			goto bad;
+		}
 		bn = bp->b_blkno;
 		sz = howmany(bp->b_bcount, DEV_BSIZE);
 		pinfo = &sc->sc_info.si_label.d_partitions[sdpart(bp->b_dev)];
@@ -705,15 +808,21 @@ sdstart(unit)
 		register struct buf *bp = sdtab[unit].b_actf;
 		register int sts;
 
-		sts = scsi_immed_command(hp->hp_ctlr, hp->hp_slave,
-					 sc->sc_punit, &sdcmd[unit],
-					 bp->b_un.b_addr, bp->b_bcount,
-					 bp->b_flags & B_READ);
-		sdsense[unit].status = sts;
-		if (sts & 0xfe) {
-			(void) sderror(unit, sc, hp, sts);
-			bp->b_flags |= B_ERROR;
-			bp->b_error = EIO;
+		sdtab[unit].b_errcnt = 0;
+		while (1) {
+			sts = scsi_immed_command(hp->hp_ctlr, hp->hp_slave,
+						 sc->sc_punit, &sdcmd[unit],
+						 bp->b_un.b_addr, bp->b_bcount,
+						 bp->b_flags & B_READ);
+			sdsense[unit].status = sts;
+			if ((sts & 0xfe) == 0 ||
+			    (sts = sderror(unit, sc, hp, sts)) == 0)
+				break;
+			if (sts > 0 || sdtab[unit].b_errcnt++ >= SDRETRY) {
+				bp->b_flags |= B_ERROR;
+				bp->b_error = EIO;
+				break;
+			}
 		}
 		sdfinish(unit, sc, bp);
 
@@ -731,19 +840,19 @@ sdgo(unit)
 	register int pad;
 	register struct scsi_fmt_cdb *cmd;
 
-	/*
-	 * Drive is in an error state, abort all operations
-	 */
-	if (sc->sc_flags & SDF_ERROR) {
-		bp->b_flags |= B_ERROR;
-		bp->b_error = EIO;
-		sdfinish(unit, sc, bp);
-		return;
-	}
 	if (sc->sc_format_pid) {
 		cmd = &sdcmd[unit];
 		pad = 0;
 	} else {
+		/*
+		 * Drive is in an error state, abort all operations
+		 */
+		if (sc->sc_flags & SDF_ERROR) {
+			bp->b_flags |= B_ERROR;
+			bp->b_error = EIO;
+			sdfinish(unit, sc, bp);
+			return;
+		}
 		cmd = bp->b_flags & B_READ? &sd_read_cmd : &sd_write_cmd;
 		*(int *)(&cmd->cdb[2]) = bp->b_cylin;
 		pad = howmany(bp->b_bcount, sc->sc_blksize);
