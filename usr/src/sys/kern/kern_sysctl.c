@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.36 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.37 (Berkeley) %G%
  */
 
 /*
@@ -249,8 +249,8 @@ hw_sysctl(name, namelen, oldp, oldlenp, newp, newlen, p)
 		return (sysctl_rdstring(oldp, oldlenp, newp, cpu_model));
 	case HW_NCPU:
 		return (sysctl_rdint(oldp, oldlenp, newp, 1));	/* XXX */
-	case HW_CPUSPEED:
-		return (sysctl_rdint(oldp, oldlenp, newp, cpuspeed));
+	case HW_BYTEORDER:
+		return (sysctl_rdint(oldp, oldlenp, newp, BYTE_ORDER));
 	case HW_PHYSMEM:
 		return (sysctl_rdint(oldp, oldlenp, newp, ctob(physmem)));
 	case HW_USERMEM:

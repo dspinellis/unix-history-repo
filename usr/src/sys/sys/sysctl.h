@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sysctl.h	7.22 (Berkeley) %G%
+ *	@(#)sysctl.h	7.23 (Berkeley) %G%
  */
 
 #ifndef _SYS_SYSCTL_H_
@@ -175,12 +175,12 @@ struct kinfo_proc {
 #define	HW_MACHINE	 1		/* string: machine class */
 #define	HW_MODEL	 2		/* string: specific machine model */
 #define	HW_NCPU		 3		/* int: number of cpus */
-#define	HW_CPUSPEED	 4		/* int: relative cpuspeed */
+#define	HW_BYTEORDER	 4		/* int: machine byte order */
 #define	HW_PHYSMEM	 5		/* int: total memory */
 #define	HW_USERMEM	 6		/* int: non-kernel memory */
 #define	HW_PAGESIZE	 7		/* int: software page size */
 #define	HW_DISKNAMES	 8		/* strings: disk drive names */
-#define	HW_DISKSTATS	 9		/* diskstats[] */
+#define	HW_DISKSTATS	 9		/* struct: diskstats[] */
 #define	HW_MAXID	10		/* number of valid hw ids */
 
 #define CTL_HW_NAMES { \
@@ -188,7 +188,7 @@ struct kinfo_proc {
 	{ "machine", CTLTYPE_STRING }, \
 	{ "model", CTLTYPE_STRING }, \
 	{ "ncpu", CTLTYPE_INT }, \
-	{ "cpuspeed", CTLTYPE_INT }, \
+	{ "byteorder", CTLTYPE_INT }, \
 	{ "physmem", CTLTYPE_INT }, \
 	{ "usermem", CTLTYPE_INT }, \
 	{ "pagesize", CTLTYPE_INT }, \
