@@ -1,4 +1,4 @@
-/*	vfs_syscalls.c	6.5	84/02/10	*/
+/*	vfs_syscalls.c	6.6	84/05/24	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -367,9 +367,11 @@ lseek()
 	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	fp = getinode(uap->fd);
-	if (fp == NULL)
+	GETF(fp, uap->fd);
+	if (fp->f_type != DTYPE_INODE) {
+		u.u_error = ESPIPE;
 		return;
+	}
 	switch (uap->sbase) {
 
 	case L_INCR:
@@ -1266,14 +1268,15 @@ struct file *
 getinode(fdes)
 	int fdes;
 {
-	register struct file *fp;
+	struct file *fp;
 
-	fp = getf(fdes);
-	if (fp == 0)
-		return (0);
+	if ((unsigned)fdes >= NOFILE || (fp = u.u_ofile[fdes]) == NULL) {
+		u.u_error = EBADF;
+		return ((struct file *)0);
+	}
 	if (fp->f_type != DTYPE_INODE) {
 		u.u_error = EINVAL;
-		return (0);
+		return ((struct file *)0);
 	}
 	return (fp);
 }
