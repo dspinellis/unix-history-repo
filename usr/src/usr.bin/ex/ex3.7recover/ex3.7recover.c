@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex3.7recover.c	7.2	%G%";
+static char *sccsid = "@(#)ex3.7recover.c	7.3	%G%";
 #include <stdio.h>	/* mjm: BUFSIZ: stdio = 512, VMUNIX = 1024 */
 #undef	BUFSIZ		/* mjm: BUFSIZ different */
 #undef	EOF		/* mjm: EOF and NULL effectively the same */
@@ -11,7 +11,8 @@ static char *sccsid = "@(#)ex3.7recover.c	7.2	%G%";
 #include "local/uparm.h"
 #include "sys/dir.h"
 
-char xstr[1];	/* make loader happy */
+char xstr[1];		/* make loader happy */
+short tfile = -1;	/* ditto */
 
 /*
  *
