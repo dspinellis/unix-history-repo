@@ -17,25 +17,35 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)20b.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)20b.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
-#define BSIZE	(20 * 512)
-main()
+#include <stdio.h>
+
+main(argc, argv)
+	int argc;
+	char **argv;
 {
+	register int bsize, cc, want;
 	register char *base, *current;
-	register int cc, want;
 	char *alloca();
 
-	base = alloca(BSIZE);
-	for (cc = BSIZE; cc > 0;) {
+	if (argc > 1) {
+		bsize = atoi(argv[1]);
+		if (bsize <= 0) {
+			fputs("20b: bad block size.\n", stderr);
+			exit(-1);
+		}
+	}
+	base = alloca(bsize);
+	for (cc = bsize; cc > 0;) {
 		current = base;
-		for (want = BSIZE; want > 0 && cc > 0; want -= cc) {
+		for (want = bsize; want > 0 && cc > 0; want -= cc) {
 			if ((cc = read(0, current, want)) < 0)
 				return(-1);
 			current += cc;
 		}
-		want = BSIZE - want;
+		want = bsize - want;
 		if (want && write(1, base, want) != want)
 			return(-1);
 	}
