@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)READ8.c 1.6 %G%";
+static char sccsid[] = "@(#)READ8.c 1.7 %G%";
 
 #include "h00vars.h"
 #include <errno.h>
@@ -21,7 +21,7 @@ READ8(curfile)
 	}
 	UNSYNC(curfile);
 	errno = 0;
-	retval = readreal(curfile->fbuf, &data);
+	retval = readreal(curfile, &data);
 	if (retval == EOF) {
 		ERROR("%s: Tried to read past end of file\n", curfile->pfname);
 		return;
@@ -41,8 +41,6 @@ READ8(curfile)
 		PERROR("Error encountered on real read ", curfile->pfname);
 		return;
 	}
-	curfile->funit &= ~EOLN;
-	curfile->funit |= SYNC;
 	return (data);
 }
 
@@ -62,14 +60,26 @@ READ8(curfile)
  *	side effects:
  *	      errno	may be set to ERANGE if atof() sets it.
  */
-readreal(filep, doublep)
-	FILE	*filep;
-	double	*doublep;
+readreal(curfile, doublep)
+	struct iorec	*curfile;
+	double		*doublep;
 {
-	char	sequence[BUFSIZ];	/* the character sequence */
+	FILE	*filep = curfile->fbuf;	/* current file variable */
 	char	*sequencep;		/* a pointer into sequence */
 	int	read;			/* return value from fscanf() */
+	char	sequence[BUFSIZ];	/* the character sequence */
 	double	atof();
+
+#define PUSHBACK(curfile, sequencep) \
+	if (ungetc(*--(sequencep), (curfile)->fbuf) != EOF) { \
+		*(sequencep) = '\0'; \
+	} else if ((curfile)->funit & SYNC) { \
+		(curfile)->funit &= ~SYNC; \
+		*(curfile)->fileptr = *(sequencep); \
+		*(sequencep) = '\0'; \
+	} else { \
+		return (0); \
+	}
 
 #define	RETURN_ON_EOF(read) \
 	if (read == EOF) \
@@ -124,19 +134,40 @@ readreal(filep, doublep)
 	 *	or
 	 *		"e" [ "+" | "-" ] digit {digits}
 	 */
-	AT_MOST_ONE(read, filep, "%[.]", sequencep);
-	if (read) {
-		AT_LEAST_ONE(read, filep, "%[0123456789]", sequencep);
-		AT_MOST_ONE(read, filep, "%[e]", sequencep);
-		if (read) {
-			AT_MOST_ONE(read, filep, "%[+-]", sequencep);
-			AT_LEAST_ONE(read, filep, "%[0123456789]", sequencep);
+	AT_MOST_ONE(read, filep, "%c", sequencep);
+	switch (sequencep[-1]) {
+	default:
+		PUSHBACK(curfile, sequencep);
+		goto convert;
+	case '.':
+		SOME(read, filep, "%[0123456789]", sequencep);
+		if (!read) {
+			PUSHBACK(curfile, sequencep);
+			goto convert;
 		}
-	} else {
-		EXACTLY_ONE(read, filep, "%[e]", sequencep);
-		AT_MOST_ONE(read, filep, "%[+-]", sequencep);
-		AT_LEAST_ONE(read, filep, "%[0123456789]", sequencep);
+		AT_MOST_ONE(read, filep, "%c", sequencep);
+		if (sequencep[-1] != 'e') {
+			PUSHBACK(curfile, sequencep);
+			goto convert;
+		}
+		/* fall through */
+	case 'e':
+		AT_MOST_ONE(read, filep, "%c", sequencep);
+		if (sequencep[-1] != '+' && sequencep[-1] != '-') {
+			PUSHBACK(curfile, sequencep);
+			SOME(read, filep, "%[0123456789]", sequencep);
+			if (!read)
+				PUSHBACK(curfile, sequencep);
+			goto convert;
+		}
+		SOME(read, filep, "%[0123456789]", sequencep);
+		if (!read) {
+			PUSHBACK(curfile, sequencep);
+			PUSHBACK(curfile, sequencep);
+		}
 	}
+
+convert:
 	/*
 	 * convert sequence to double
 	 */
