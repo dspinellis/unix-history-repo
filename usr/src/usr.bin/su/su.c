@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,6 +32,7 @@ static char sccsid[] = "@(#)su.c	5.11 (Berkeley) %G%";
 #include <stdio.h>
 #include <pwd.h>
 #include <grp.h>
+#include "pathnames.h"
 
 main(argc, argv)
 	int argc;
@@ -87,7 +88,7 @@ main(argc, argv)
 		if (pwd->pw_shell && *pwd->pw_shell)
 			shell = strcpy(shellbuf,  pwd->pw_shell);
 		else {
-			shell = "/bin/sh";
+			shell = _PATH_BSHELL;
 			iscsh = NO;
 		}
 
@@ -131,7 +132,7 @@ main(argc, argv)
 		shell = pwd->pw_shell;
 		iscsh = UNSET;
 	} else {
-		shell = "/bin/sh";
+		shell = _PATH_BSHELL;
 		iscsh = NO;
 	}
 
@@ -161,7 +162,7 @@ main(argc, argv)
 	if (!asme) {
 		if (fulllogin) {
 			p = getenv("TERM");
-			cleanenv[0] = "PATH=:/usr/ucb:/bin:/usr/bin";
+			cleanenv[0] = _PATH_SEARCHPATH;
 			cleanenv[1] = NULL;
 			environ = cleanenv;
 			(void)setenv("TERM", p, 1);
