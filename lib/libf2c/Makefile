@@ -1,7 +1,7 @@
 .PATH:	${.CURDIR}/../libF77 ${.CURDIR}/../libI77
 
 LIB=f2c
-CFLAGS+= -O -I.. -DIEEE_drem -DSkip_f2c_Undefs -DNON_ANSI_RW_MODES
+CFLAGS+= -DIEEE_drem -DSkip_f2c_Undefs -DNON_ANSI_RW_MODES
 
 MISC =	Version.c main.c s_rnge.c abort_.c getarg_.c iargc_.c getenv_.c\
 	signal_.c s_stop.c s_paus.c system_.c cabs.c\
