@@ -111,32 +111,29 @@
 
 #include "qd.h" 	/* # of QDSS's the system is configured for */
 
-#include "../machine/pte.h"	/* page table values */
-#include "../machine/mtpr.h"	/* VAX register access stuff */
+#include "../vax/pte.h"	/* page table values */
+#include "../vax/mtpr.h"	/* VAX register access stuff */
 
 #include "../h/param.h" 	/* general system params & macros */
 #include "../h/conf.h"		/* "linesw" tty driver dispatch */
 #include "../h/dir.h"		/* for directory handling */
 #include "../h/user.h"		/* user structure (what else?) */
-#include "../vaxuba/qdioctl.h"	/* ioctl call values */
+#include "qdioctl.h" 		/* ioctl call values */
 #include "../h/tty.h"
 #include "../h/map.h"		/* resource allocation map struct */
 #include "../h/buf.h"		/* buf structs */
 #include "../h/vm.h"		/* includes 'vm' header files */
-#include "../h/bk.h"		/* BKINPUT macro for line stuff */
 #include "../h/clist.h" 	/* char list handling structs */
 #include "../h/file.h"		/* file I/O definitions */
 #include "../h/uio.h"		/* write/read call structs */
 #include "../h/kernel.h"	/* clock handling structs */
-#include "../h/cpuconf.h"
-#include "../h/devio.h"
 #include "../vax/cpu.h" 	/* per cpu (pcpu) struct */
 
 #include "../vaxuba/ubareg.h"	/* uba & 'qba' register structs */
 #include "../vaxuba/ubavar.h"	/* uba structs & uba map externs */
 
-#include "../vaxuba/qduser.h"	/* definitions shared with my client */
-#include "../vaxuba/qdreg.h"	/* QDSS device register structures */
+#include "qduser.h"	/* definitions shared with my client */
+#include "qdreg.h"	/* QDSS device register structures */
 
 /*-----------------------------------------------------------
 * QDSS driver status flags for tracking operational state */
