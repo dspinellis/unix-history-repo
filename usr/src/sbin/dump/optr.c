@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optr.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)optr.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -429,12 +429,15 @@ fstabsearch(key)
 {
 	register struct pfstab *pf;
 	register struct fstab *fs;
+	char *rn;
 
 	for (pf = table; pf != NULL; pf = pf->pf_next) {
 		fs = pf->pf_fstab;
 		if (strcmp(fs->fs_file, key) == 0 ||
-		    strcmp(fs->fs_spec, key) == 0 ||
-		    strcmp(rawname(fs->fs_spec), key) == 0)
+		    strcmp(fs->fs_spec, key) == 0)
+			return (fs);
+		rn = rawname(fs->fs_spec);
+		if (rn != NULL && strcmp(rn, key) == 0)
 			return (fs);
 		if (key[0] != '/') {
 			if (*fs->fs_spec == '/' &&
