@@ -3,10 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.5 (Berkeley) %G%
+ *	@(#)param.h	7.6 (Berkeley) %G%
  */
 
-#define	BSD	43		/* 4.3 * 10, as cpp doesn't do floats */
+#define	BSD	198810		/* system version  (year & month) */
 #define BSD4_3	1
 
 /*
@@ -102,7 +102,8 @@
 
 /* CBLOCK is the size of a clist block, must be power of 2 */
 #define	CBLOCK	64
-#define	CBSIZE	(CBLOCK - sizeof(struct cblock *))	/* data chars/clist */
+#define CBQSIZE	(CBLOCK/NBBY)	/* quote bytes/cblock - can do better */
+#define	CBSIZE	(CBLOCK - sizeof(struct cblock *) - CBQSIZE) /* data chars/clist */
 #define	CROUND	(CBLOCK - 1)				/* clist rounding */
 
 /*

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ttychars.h	7.2 (Berkeley) %G%
+ *	@(#)ttychars.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -12,6 +12,7 @@
  */
 #ifndef _TTYCHARS_
 #define	_TTYCHARS_
+
 struct ttychars {
 	char	tc_erase;	/* erase last character */
 	char	tc_kill;	/* erase entire line */
@@ -29,22 +30,10 @@ struct ttychars {
 	char	tc_lnextc;	/* literal next character */
 };
 
-#define	CTRL(c)	(c&037)
+#ifdef KERNEL
+#include "ttydefaults.h"
+#else
+#include <sys/ttydefaults.h>
+#endif
 
-/* default special characters */
-#define	CERASE	0177
-#define	CKILL	CTRL('u')
-#define	CINTR	CTRL('c')
-#define	CQUIT	034		/* FS, ^\ */
-#define	CSTART	CTRL('q')
-#define	CSTOP	CTRL('s')
-#define	CEOF	CTRL('d')
-#define	CEOT	CEOF
-#define	CBRK	0377
-#define	CSUSP	CTRL('z')
-#define	CDSUSP	CTRL('y')
-#define	CRPRNT	CTRL('r')
-#define	CFLUSH	CTRL('o')
-#define	CWERASE	CTRL('w')
-#define	CLNEXT	CTRL('v')
 #endif

@@ -3,15 +3,17 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.h	7.1 (Berkeley) %G%
+ *	@(#)tty.h	7.2 (Berkeley) %G%
  */
 
 #ifdef KERNEL
 #include "ttychars.h"
 #include "ttydev.h"
+#include "termios.h"
 #else
 #include <sys/ttychars.h>
 #include <sys/ttydev.h>
+#include <sys/termios.h>
 #endif
 
 /*
@@ -40,7 +42,7 @@ struct tty {
 			struct	clist T_canq;
 		} t_t;
 #define	t_rawq	t_nu.t_t.T_rawq		/* raw characters or partial line */
-#define	t_canq	t_nu.t_t.T_canq		/* raw characters or partial line */
+#define	t_canq	t_nu.t_t.T_canq		/* canonicalized lines */
 		struct {
 			struct	buf *T_bufp;
 			char	*T_cp;
@@ -54,36 +56,36 @@ struct tty {
 	} t_nu;
 	struct	clist t_outq;		/* device */
 	int	(*t_oproc)();		/* device */
+	int	(*t_param)();		/* device */
 	struct	proc *t_rsel;		/* tty */
 	struct	proc *t_wsel;
-				caddr_t	T_LINEP;	/* ### */
+			caddr_t	T_LINEP;	/* ### */
 	caddr_t	t_addr;			/* ??? */
 	dev_t	t_dev;			/* device */
-	int	t_flags;		/* some of both */
+	int	t_flags;		/* (old) some of both */
 	int	t_state;		/* some of both */
-	short	t_pgrp;			/* tty */
+	struct session *t_session;	/* tty */
+	pid_t	t_pgid;			/* tty */
 	char	t_delct;		/* tty */
 	char	t_line;			/* glue */
 	char	t_col;			/* tty */
-	char	t_ispeed, t_ospeed;	/* device */
 	char	t_rocount, t_rocol;	/* tty */
-	struct	ttychars t_chars;	/* tty */
+	short	t_hiwat;		/* hi water mark */
+	short	t_lowat;		/* low water mark */
 	struct	winsize t_winsize;	/* window size */
-/* be careful of tchars & co. */
-#define	t_erase		t_chars.tc_erase
-#define	t_kill		t_chars.tc_kill
-#define	t_intrc		t_chars.tc_intrc
-#define	t_quitc		t_chars.tc_quitc
-#define	t_startc	t_chars.tc_startc
-#define	t_stopc		t_chars.tc_stopc
-#define	t_eofc		t_chars.tc_eofc
-#define	t_brkc		t_chars.tc_brkc
-#define	t_suspc		t_chars.tc_suspc
-#define	t_dsuspc	t_chars.tc_dsuspc
-#define	t_rprntc	t_chars.tc_rprntc
-#define	t_flushc	t_chars.tc_flushc
-#define	t_werasc	t_chars.tc_werasc
-#define	t_lnextc	t_chars.tc_lnextc
+	struct	termios t_termios;	/* termios state */
+#define	t_iflag		t_termios.c_iflag
+#define	t_oflag		t_termios.c_oflag
+#define	t_cflag		t_termios.c_cflag
+#define	t_lflag		t_termios.c_lflag
+#define	t_min		t_termios.c_min
+#define	t_time		t_termios.c_time
+#define	t_cc		t_termios.c_cc
+#define t_ispeed	t_termios.c_ispeed
+#define t_ospeed	t_termios.c_ospeed
+	long	t_cancc;		/* stats */
+	long	t_rawcc;
+	long	t_outcc;
 };
 
 #define	TTIPRI	28
@@ -95,11 +97,12 @@ struct tty {
 #define	OBUFSIZ	100
 #define	TTYHOG	255
 #ifdef KERNEL
-short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
-#define	TTHIWAT(tp)	tthiwat[(tp)->t_ospeed&TTMASK]
-#define	TTLOWAT(tp)	ttlowat[(tp)->t_ospeed&TTMASK]
+#define TTMAXHIWAT	roundup(2048, CBSIZE)
+#define TTMINHIWAT	roundup(100, CBSIZE)
+#define TTMAXLOWAT	256
+#define TTMINLOWAT	32
 extern	struct ttychars ttydefaults;
-#endif
+#endif /*KERNEL*/
 
 /* internal state bits */
 #define	TS_TIMEOUT	0x000001	/* delay timeout in progress */
@@ -119,13 +122,12 @@ extern	struct ttychars ttydefaults;
 #define	TS_ASYNC	0x004000	/* tty in async i/o mode */
 /* state for intra-line fancy editing work */
 #define	TS_BKSL		0x010000	/* state for lowercase \ work */
-#define	TS_QUOT		0x020000	/* last character input was \ */
 #define	TS_ERASE	0x040000	/* within a \.../ for PRTRUB */
 #define	TS_LNCH		0x080000	/* next character is literal */
 #define	TS_TYPEN	0x100000	/* retyping suspended input (PENDIN) */
-#define	TS_CNTTB	0x200000	/* counting tab width; leave FLUSHO alone */
+#define	TS_CNTTB	0x200000	/* counting tab width, leave FLUSHO alone */
 
-#define	TS_LOCAL	(TS_BKSL|TS_QUOT|TS_ERASE|TS_LNCH|TS_TYPEN|TS_CNTTB)
+#define	TS_LOCAL	(TS_BKSL|TS_ERASE|TS_LNCH|TS_TYPEN|TS_CNTTB)
 
 /* define partab character types */
 #define	ORDINARY	0

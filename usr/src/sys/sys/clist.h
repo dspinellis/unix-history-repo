@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)clist.h	7.1 (Berkeley) %G%
+ *	@(#)clist.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -11,6 +11,7 @@
  */
 struct cblock {
 	struct cblock *c_next;
+	char	c_quote[CBQSIZE];
 	char	c_info[CBSIZE];
 };
 #ifdef KERNEL
