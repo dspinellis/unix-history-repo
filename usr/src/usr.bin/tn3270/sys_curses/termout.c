@@ -833,9 +833,11 @@ TransStop()
 }
 
 void
-TransOut(buffer, count)
+TransOut(buffer, count, kind, control)
 unsigned char	*buffer;
 int		count;
+int		kind;		/* 0 or 5 */
+int		control;	/* To see if we are done */
 {
 #if	defined(unix)
     extern char *transcom;
@@ -892,6 +894,11 @@ int		count;
     }
 #endif	/* defined(unix) */
     (void) DataToTerminal(buffer, count);
+    if (control && (kind == 0)) {		/* Send in AID byte */
+	SendToIBM();
+    } else {
+	TransInput(1, kind);			/* Go get some data */
+    }
 }
 
 
