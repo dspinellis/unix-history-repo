@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)netstat.h	8.1 (Berkeley) %G%
+ *	@(#)netstat.h	8.2 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -12,8 +12,8 @@
 int	Aflag;		/* show addresses of protocol control block */
 int	aflag;		/* show all sockets (including servers) */
 int	dflag;		/* show i/f dropped packets */
+int	gflag;		/* show group (multicast) routing or stats */
 int	iflag;		/* show interfaces */
-int	Bflag;		/* show multicast tables (or multicast stats) */
 int	mflag;		/* show memory stats */
 int	nflag;		/* show addresses numerically */
 int	pflag;		/* show given protocol */

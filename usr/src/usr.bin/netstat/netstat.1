@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)netstat.1	8.3 (Berkeley) %G%
+.\"	@(#)netstat.1	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NETSTAT 1
@@ -18,7 +18,7 @@
 .Op Fl M Ar core
 .Op Fl N Ar system
 .Nm netstat
-.Op Fl Bhimnrs
+.Op Fl ghimnrs
 .Op Fl f Ar address_family
 .Op Fl M Ar core
 .Op Fl N Ar system
@@ -61,16 +61,17 @@ for debugging.
 With the default display,
 show the state of all sockets; normally sockets used by
 server processes are not shown.
-.It Fl B
-By default, show the IP Multicast virtual-interface and routing tables.
-If the
-.Fl s
-option is also present, show multicast routing statistics.
 .It Fl d
 With either interface display (option
 .Fl i
 or an interval, as described below),
 show the number of dropped packets.
+.It Fl g
+Show information related to multicast (group address) routing.
+By default, show the IP Multicast virtual-interface and routing tables.
+If the
+.Fl s
+option is also present, show multicast routing statistics.
 .It Fl h
 Show the state of the
 .Tn IMP

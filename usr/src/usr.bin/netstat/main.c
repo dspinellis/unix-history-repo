@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -206,16 +206,13 @@ main(argc, argv)
 		prog = argv[0];
 	af = AF_UNSPEC;
 
-	while ((ch = getopt(argc, argv, "AaBdf:I:iM:mN:np:rstuw:")) != EOF)
+	while ((ch = getopt(argc, argv, "Aadf:ghI:iM:mN:np:rstuw:")) != EOF)
 		switch(ch) {
 		case 'A':
 			Aflag = 1;
 			break;
 		case 'a':
 			aflag = 1;
-			break;
-		case 'B':
-			Bflag = 1;
 			break;
 		case 'd':
 			dflag = 1;
@@ -235,6 +232,9 @@ main(argc, argv)
 				    prog, optarg);
 				exit(1);
 			}
+			break;
+		case 'g':
+			gflag = 1;
 			break;
 		case 'I': {
 			char *cp;
@@ -358,7 +358,7 @@ main(argc, argv)
 			routepr(nl[N_RTREE].n_value);
 		exit(0);
 	}
-	if (Bflag) {
+	if (gflag) {
 		if (sflag)
 			mrt_stats(nl[N_MRTPROTO].n_value,
 			    nl[N_MRTSTAT].n_value);
@@ -466,7 +466,7 @@ usage()
 	(void)fprintf(stderr,
 "usage: %s [-Aan] [-f address_family] [-M core] [-N system]\n", prog);
 	(void)fprintf(stderr,
-"               [-himnrs] [-f address_family] [-M core] [-N system]\n");
+"               [-ghimnrs] [-f address_family] [-M core] [-N system]\n");
 	(void)fprintf(stderr,
 "               [-n] [-I interface] [-M core] [-N system] [-w wait]\n");
 	(void)fprintf(stderr,
