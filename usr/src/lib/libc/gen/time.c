@@ -16,24 +16,21 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)time.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)time.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-/*
- * Backwards compatible time call.
- */
 #include <sys/types.h>
 #include <sys/time.h>
 
-long
+time_t
 time(t)
 	time_t *t;
 {
 	struct timeval tt;
 
 	if (gettimeofday(&tt, (struct timezone *)0) < 0)
-		return (-1);
+		return(-1);
 	if (t)
 		*t = tt.tv_sec;
-	return (tt.tv_sec);
+	return(tt.tv_sec);
 }
