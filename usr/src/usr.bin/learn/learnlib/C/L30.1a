@@ -1,0 +1,45 @@
+#print
+Write a subroutine named "locn(s,c)" which expects two
+arguments: the first is a pointer to characters 's' which
+points to a null-terminated string, and the second
+is a character 'c' which is to be searched for in the
+string 's'.  If the character 'c' does not
+appear in the string return 0; otherwise return a pointer
+to the position of 'c' in the string. Name the program "locn.c";
+as usual, compile and test it and then type "ready".
+#once #create Ref
+0
+19
+0
+25
+0
+#once #create tzaqc.c
+char *alpha "abcdefghijklmnopqrstuvwxyz";
+main()
+{
+	extern char *locn();
+	printf("%d\n", locn(alpha, '+'));
+	printf("%d\n",locn(alpha, 't')-alpha);
+	printf("%d\n",locn(alpha, 'a')-alpha);
+	printf("%d\n",locn(alpha, 'z')-alpha);
+	printf("%d\n",locn("", 'z'));
+}
+#user
+cc tzaqc.c locn.o
+a.out  >value
+#cmp value Ref
+#succeed
+/* Try this: */
+
+char *
+locn (s, c)
+char *s;
+{
+	for( ; *s; s++)
+		if (*s == c)
+			return(s);
+	return(0);
+}
+#log
+#next
+31.1a 10
