@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vfsops.c	7.22 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -397,9 +397,7 @@ ufs_statfs(mp, sbp)
 		fs->fs_cstotal.cs_nffree;
 	sbp->f_bavail = (fs->fs_dsize * (100 - fs->fs_minfree) / 100) -
 		(fs->fs_dsize - sbp->f_bfree);
-	if (sbp->f_bavail < 0)
-		sbp->f_bavail = 0;
-	sbp->f_files =  fs->fs_ncg * fs->fs_ipg;
+	sbp->f_files =  fs->fs_ncg * fs->fs_ipg - ROOTINO;
 	sbp->f_ffree = fs->fs_cstotal.cs_nifree;
 	sbp->f_fsid = mp->m_fsid;
 	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)&sbp->f_mntonname[0], MNAMELEN);
