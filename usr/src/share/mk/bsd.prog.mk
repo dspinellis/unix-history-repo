@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.16 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.17 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -7,7 +7,7 @@
 .SUFFIXES: .out .o .c .y .l .s .8 .7 .6 .5 .4 .3 .2 .1 .0
 
 .8.0 .7.0 .6.0 .5.0 .4.0 .3.0 .2.0 .1.0:
-	nroff -man -h ${.IMPSRC} > ${.TARGET}
+	nroff -mandoc -h ${.IMPSRC} > ${.TARGET}
 
 CFLAGS+=${COPTS}
 
@@ -29,6 +29,7 @@ LIBM?=		/usr/lib/libm.a
 LIBMP?=		/usr/lib/libmp.a
 LIBPC?=		/usr/lib/libpc.a
 LIBPLOT?=	/usr/lib/libplot.a
+LIBRESOLV?=	/usr/lib/libresolv.a
 LIBRPC?=	/usr/lib/sunrpc.a
 LIBTERM?=	/usr/lib/libterm.a
 LIBUTIL?=	/usr/lib/libutil.a
@@ -144,10 +145,21 @@ lint: ${SRCS} _PROGSUBDIR
 .endif
 .endif
 
+.if !target(obj)
+.if defined(NOOBJ)
+obj: _PROGSUBDIR
+.else
+obj: _PROGSUBDIR
+	@cd ${.CURDIR}; rm -rf obj; \
+	here=`pwd`; dest=/usr/obj/`echo $$here | sed 's,/usr/src/,,'`; \
+	echo "$$here -> $$dest"; ln -s $$dest obj
+.endif
+.endif
+
 .if !target(tags)
 tags: ${SRCS} _PROGSUBDIR
 .if defined(PROG)
-	cd ${.CURDIR}; ctags -f /dev/stdout ${.ALLSRC} | \
+	-cd ${.CURDIR}; ctags -f /dev/stdout ${.ALLSRC} | \
 	    sed "s;\${.CURDIR}/;;" > tags
 .endif
 .endif

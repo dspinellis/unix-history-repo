@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.11 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.12 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -9,6 +9,12 @@ LINTLIBDIR?=	/usr/libdata/lint
 LIBGRP?=	bin
 LIBOWN?=	bin
 LIBMODE?=	444
+
+STRIP?=	-s
+
+BINGRP?=	bin
+BINOWN?=	bin
+BINMODE?=	555
 
 .MAIN: all
 
@@ -115,11 +121,11 @@ lint:
 .endif
 
 .if !target(tags)
-tags:
-	cd ${.CURDIR}; ctags -f /dev/stdout ${.ALLSRC:M*.c} | \
+tags: ${SRCS}
+	-cd ${.CURDIR}; ctags -f /dev/stdout ${.ALLSRC:M*.c} | \
 	    sed "s;\${.CURDIR}/;;" > tags
 .if !empty(SRCS:M*.s)
-	cd ${.CURDIR}; egrep -o "^ENTRY(.*)|^SYSCALL(.*)" ${.ALLSRC:M*.s} | \
+	-cd ${.CURDIR}; egrep -o "^ENTRY(.*)|^SYSCALL(.*)" ${.ALLSRC:M*.s} | \
 	    sed \
 	    "s;\([^:]*\):\([^(]*\)(\([^, )]*\)\(.*\);\3 \`pwd\`/\1 /^\2(\3\4$$/;" \
 	    >> tags; sort -o tags tags
@@ -127,3 +133,13 @@ tags:
 .endif
 
 .include <bsd.man.mk>
+.if !target(obj)
+.if defined(NOOBJ)
+obj:
+.else
+obj:
+	@cd ${.CURDIR}; rm -rf obj; \
+	here=`pwd`; dest=/usr/obj/`echo $$here | sed 's,/usr/src/,,'`; \
+	echo "$$here -> $$dest"; ln -s $$dest obj
+.endif
+.endif
