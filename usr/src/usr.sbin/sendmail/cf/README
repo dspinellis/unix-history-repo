@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	6.21 (Berkeley) %G%
+		@(#)README	6.22 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -663,7 +663,7 @@ confSAFE_QUEUE		True		Os	Commit all messages to disk
 						before forking.
 confMESSAGE_TIMEOUT	5d/4h		OT	Timeout for messages before
 						sending error/warning message.
-confTIME_ZONE		USE_SYSTEM	Oz	Time zone info -- can be
+confTIME_ZONE		USE_SYSTEM	Ot	Time zone info -- can be
 						USE_SYSTEM to use the system's
 						idea, USE_TZ to use the user's
 						TZ envariable, or something
