@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)wall.c	4.4 (Berkeley) 81/05/06";
+static char *sccsid = "@(#)wall.c	4.5 (Berkeley) 81/06/12";
 /*
  * wall.c - Broadcast a message to all users.
  *
@@ -12,6 +12,7 @@ static char *sccsid = "@(#)wall.c	4.4 (Berkeley) 81/05/06";
 #include <whoami.h>
 #include <signal.h>
 #define	USERS	128
+#define IGNOREUSER	"sleeper"
 
 char	mesg[3000];
 int	msize,sline;
@@ -61,7 +62,8 @@ char *argv[];
 		strncpy(who, utmp[sline].ut_name, sizeof(utmp[sline].ut_name));
 	for(i=0; i<USERS; i++) {
 		p = &utmp[i];
-		if(p->ut_name[0] == 0)
+		if ((p->ut_name[0] == 0) ||
+		    (strncmp (p->ut_name, IGNOREUSER, sizeof(p->ut_name)) == 0))
 			continue;
 	/***		this might be nice, but utmp gets so out of date !!
 		sleep(1);
