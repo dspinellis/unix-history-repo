@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,12 +40,13 @@ extern int errno;
 struct	ifreq		ifr, ridreq;
 struct	ifaliasreq	addreq;
 struct	iso_ifreq	iso_ridreq;
-struct	iso_aliasreq	iso_addreq = {"", {0,0,0,0,1}}; /* default nsellen = 1*/
+struct	iso_aliasreq	iso_addreq;
 struct	sockaddr_in	netmask;
 
 char	name[30];
 int	flags;
 int	metric;
+int	nsellength = 1;
 int	setaddr;
 int	setipdst;
 int	doalias;
@@ -123,17 +124,6 @@ struct afswtch {
 
 struct afswtch *afp;	/*the address family being set or asked about*/
 
-int testing = 0;
-Ioctl(a,b,c) {
-	int error = 0;
-	if (testing)
-		printf("would call ioctl with %x, %x, %x\n", a, b, c);
-	else
-		error = ioctl(a, b, c);
-	return error;
-}
-#define ioctl(a, b, c) Ioctl(a,b,c)
-
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -199,6 +189,8 @@ main(argc, argv)
 		}
 		argc--, argv++;
 	}
+	if (af == AF_ISO)
+		adjust_nsellength();
 	if (setipdst && af==AF_NS) {
 		struct nsip_req rq;
 		int size = sizeof(rq);
@@ -606,27 +598,45 @@ SISO(iso_addreq.ifra_mask), SISO(iso_addreq.ifra_dstaddr)};
 iso_getaddr(addr, which)
 char *addr;
 {
-	struct sockaddr_iso *siso = sisotab[which];
+	register struct sockaddr_iso *siso = sisotab[which];
 	struct iso_addr *iso_addr();
 	siso->siso_addr = *iso_addr(addr);
+
 	if (which == MASK) {
 		siso->siso_len = TSEL(siso) - (caddr_t)(siso);
 		siso->siso_nlen = 0;
 	} else {
-	    siso->siso_family = AF_ISO;
-	    siso->siso_len =  sizeof(*siso);
+		siso->siso_len = sizeof(*siso);
+		siso->siso_family = AF_ISO;
 	}
 }
 
 setnsellength(val)
 	char *val;
 {
-	register struct sockaddr_iso *siso = sisotab[ADDR];
-	int n = atoi(val);
+	nsellength = atoi(val);
+	if (nsellength < 0) {
+		fprintf(stderr, "Negative NSEL length is absurd\n");
+		exit (1);
+	}
 	if (afp == 0 || afp->af_af != AF_ISO) {
 		fprintf(stderr, "Setting NSEL length valid only for iso\n");
 		exit (1);
 	}
-	if (n >= 0)
-		siso->siso_tlen = n;
+}
+
+fixnsel(s)
+register struct sockaddr_iso *s;
+{
+	if (s->siso_family == 0)
+		return;
+	s->siso_nlen -= nsellength;
+	s->siso_tlen = nsellength;
+}
+
+adjust_nsellength()
+{
+	fixnsel(sisotab[RIDADDR]);
+	fixnsel(sisotab[ADDR]);
+	fixnsel(sisotab[DSTADDR]);
 }

@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)ifconfig.8	6.10 (Berkeley) %G%
+.\"	@(#)ifconfig.8	6.11 (Berkeley) %G%
 .\"
 .TH IFCONFIG 8 ""
 .UC 5
@@ -199,9 +199,9 @@ used for local identification, the remaining leading part of which is
 taken to be the NET (Network Entity Title).
 The default value is 1, which is conformant to US GOSIP.
 When an iso address is set in an ifconfig command,
-it is really the NET which is being specified.
-For example, in US GOSIP, 19 hex digits should be
-specified in the ISO NET to be assigned to the interface.
+it is really the NSAP which is being specified.
+For example, in US GOSIP, 20 hex digits should be
+specified in the ISO NSAP to be assigned to the interface.
 There is some evidence that a number different 1 may be useful
 for AFI 37 type addresses.
 .PP
