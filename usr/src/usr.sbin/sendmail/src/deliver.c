@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.47 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.48 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1415,24 +1415,45 @@ sendall(e, mode)
 		break;
 
 	  case SM_QUEUE:
+  queueonly:
 		e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
+		if (lockfp != NULL)
+			(void) fclose(lockfp);
 		return;
 
 	  case SM_FORK:
 		if (e->e_xfp != NULL)
 			(void) fflush(e->e_xfp);
+
+# ifdef LOCKF
+		/*
+		**  Since lockf has the interesting semantic that the
+		**  lock is lost when we close the file in the parent,
+		**  we'll risk losing the lock here by closing before
+		**  the fork, and then trying to get it back in the
+		**  child.
+		*/
+
+		if (lockfp != NULL)
+		{
+			(void) fclose(lockfp);
+			lockfp = NULL;
+		}
+# endif /* LOCKF */
+
 		pid = fork();
 		if (pid < 0)
 		{
-			mode = SM_DELIVER;
-			break;
+			goto queueonly;
 		}
 		else if (pid > 0)
 		{
 			/* be sure we leave the temp files to our child */
 			e->e_id = e->e_df = NULL;
+# ifndef LOCKF
 			if (lockfp != NULL)
 				(void) fclose(lockfp);
+# endif
 			return;
 		}
 
@@ -1445,24 +1466,19 @@ sendall(e, mode)
 
 # ifdef LOCKF
 		/*
-		**  When our parent closed lockfp, we lost the lock.
-		**  Try to get it back now.
+		**  Now try to get our lock back.
 		*/
 
-		if (lockfp != NULL)
+		lockfp = fopen(queuename(e, 'q'), "r+");
+		if (lockfp == NULL || lockf(fileno(lockfp), F_TLOCK, 0) < 0)
 		{
-			if (fseek(lockfp, 0, SEEK_SET) != 0 ||
-			    lockf(fileno(lockfp), F_TLOCK, 0) < 0)
-			{
-				/* oops....  lost it */
+			/* oops....  lost it */
 # ifdef LOG
-				if (LogLevel > 5)
-					syslog(LOG_NOTICE, "%s: lost lock",
-						CurEnv->e_id);
+			if (LogLevel > 5)
+				syslog(LOG_NOTICE, "%s: lost lock: %m",
+					CurEnv->e_id);
 # endif /* LOG */
-				fclose(lockfp);
-				exit(EX_OK);
-			}
+			exit(EX_OK);
 		}
 # endif /* LOCKF */
 
