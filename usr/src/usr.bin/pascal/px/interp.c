@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.4 %G%";
+static char sccsid[] = "@(#)interp.c 1.5 %G%";
 
 #include <math.h>
 #include "vars.h"
@@ -164,8 +164,7 @@ interpreter(base)
 			disableovrflo();
 			if (_runtst)
 				enableovrflo();
-			pc.cp += tl +		/* skip over proc hdr info */
-				 sizeof(struct hdr) - 4;
+			pc.cp += tl;		/* skip over proc hdr info */
 			stp->file = curfile;	/* save active file */
 			tcp = pushsp(tl1);	/* tcp = new top of stack */
 			blkclr(tl1, tcp);	/* zero stack frame */
