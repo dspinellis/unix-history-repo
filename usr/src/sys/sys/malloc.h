@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)malloc.h	7.17 (Berkeley) %G%
+ *	@(#)malloc.h	7.18 (Berkeley) %G%
  */
 
 #define KMEMSTATS
@@ -12,15 +12,15 @@
 /*
  * flags to malloc
  */
-#define M_WAITOK	0x0000
-#define M_NOWAIT	0x0001
+#define	M_WAITOK	0x0000
+#define	M_NOWAIT	0x0001
 
 /*
  * Types of memory to be allocated
  */
 #define	M_FREE		0	/* should be on free list */
-#define M_MBUF		1	/* mbuf */
-#define M_DEVBUF	2	/* device driver memory */
+#define	M_MBUF		1	/* mbuf */
+#define	M_DEVBUF	2	/* device driver memory */
 #define	M_SOCKET	3	/* socket structure */
 #define	M_PCB		4	/* protocol control block */
 #define	M_RTABLE	5	/* routing tables */
@@ -30,16 +30,16 @@
 #define	M_IFADDR	9	/* interface address */
 #define	M_SOOPTS	10	/* socket options */
 #define	M_SONAME	11	/* socket name */
-#define M_NAMEI		12	/* namei path name buffer */
-#define M_GPROF		13	/* kernel profiling buffer */
-#define M_IOCTLOPS	14	/* ioctl data buffer */
-#define M_SUPERBLK	15	/* super block data */
-#define M_CRED		16	/* credentials */
+#define	M_NAMEI		12	/* namei path name buffer */
+#define	M_GPROF		13	/* kernel profiling buffer */
+#define	M_IOCTLOPS	14	/* ioctl data buffer */
+#define	M_SUPERBLK	15	/* super block data */
+#define	M_CRED		16	/* credentials */
 #define	M_PGRP		17	/* process group header */
 #define	M_SESSION	18	/* session header */
-#define M_IOV		19	/* large iov's */
-#define M_MOUNT		20	/* vfs mount struct */
-#define M_FHANDLE	21	/* network file handle */
+#define	M_IOV		19	/* large iov's */
+#define	M_MOUNT		20	/* vfs mount struct */
+#define	M_FHANDLE	21	/* network file handle */
 #define	M_NFSREQ	22	/* NFS request header */
 #define	M_NFSMNT	23	/* NFS mount structure */
 #define	M_VNODE		24	/* Dynamically allocated vnodes */
@@ -48,8 +48,16 @@
 #define	M_UFSMNT	27	/* UFS mount structure */
 #define	M_MAPMEM	28	/* mapped memory descriptors */
 #define	M_SHM		29	/* SVID compatible shared memory segments */
-#define M_TEMP		49	/* misc temporary data buffers */
-#define M_LAST		50
+#define	M_VMMAP		30	/* VM map structures */
+#define	M_VMMAPENT	31	/* VM map entry structures */
+#define	M_VMOBJ		32	/* VM object structure */
+#define	M_VMOBJHASH	33	/* VM object hash structure */
+#define	M_VMPMAP	34	/* VM pmap */
+#define	M_VMPVENT	35	/* VM phys-virt mapping entry */
+#define	M_VMPAGER	36	/* XXX: VM pager struct */
+#define	M_VMPGDATA	37	/* XXX: VM pager private data */
+#define	M_TEMP		49	/* misc temporary data buffers */
+#define	M_LAST		50
 
 #define INITKMEMNAMES { \
 	"free",		/* 0 M_FREE */ \
@@ -82,8 +90,15 @@
 	"UFS mount",	/* 27 M_UFSMNT */ \
 	"mapmem",	/* 28 M_MAPMEM */ \
 	"shm",		/* 29 M_SHM */ \
-	0, 0, 0, 0, \
-	0, 0, 0, 0, 0, \
+	"VM map",	/* 30 M_VMMAP */ \
+	"VM mapent",	/* 31 M_VMMAPENT */ \
+	"VM object",	/* 32 M_VMOBJ */ \
+	"VM objhash",	/* 33 M_VMOBJHASH */ \
+	"VM pmap",	/* 34 M_VMPMAP */ \
+	"VM pvmap",	/* 35 M_VMPVENT */ \
+	"VM pager",	/* 36 M_VMPAGER */ \
+	"VM pgdata",	/* 37 M_VMPGDATA */ \
+	0, \
 	0, 0, 0, 0, 0, \
 	0, 0, 0, 0, 0, \
 	"temp",		/* 49 M_TEMP */ \
@@ -126,7 +141,7 @@ struct kmembuckets {
 };
 
 #ifdef KERNEL
-#define MINALLOCSIZE	(1 << MINBUCKET)
+#define	MINALLOCSIZE	(1 << MINBUCKET)
 #define BUCKETINDX(size) \
 	(size) <= (MINALLOCSIZE * 128) \
 		? (size) <= (MINALLOCSIZE * 8) \
@@ -171,12 +186,12 @@ struct kmembuckets {
  * Macro versions for the usual cases of malloc/free
  */
 #ifdef KMEMSTATS
-#define MALLOC(space, cast, size, type, flags) \
+#define	MALLOC(space, cast, size, type, flags) \
 	(space) = (cast)malloc((u_long)(size), type, flags)
 #define FREE(addr, type) free((caddr_t)(addr), type)
 
 #else /* do not collect statistics */
-#define MALLOC(space, cast, size, type, flags) { \
+#define	MALLOC(space, cast, size, type, flags) { \
 	register struct kmembuckets *kbp = &bucket[BUCKETINDX(size)]; \
 	long s = splimp(); \
 	if (kbp->kb_next == NULL) { \
@@ -209,4 +224,4 @@ extern char kmembase[];
 extern struct kmembuckets bucket[];
 extern qaddr_t malloc();
 extern void free();
-#endif KERNEL
+#endif /* KERNEL */
