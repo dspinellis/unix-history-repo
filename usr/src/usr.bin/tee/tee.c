@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)tee.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)tee.c	4.2 (Berkeley) %G%";
 /*
  * tee-- pipe fitting
  */
@@ -9,7 +9,7 @@ static char *sccsid = "@(#)tee.c	4.1 (Berkeley) %G%";
 #include <errno.h>
 #include <pagsiz.h>
 
-#define	BUFSIZ	BSIZE
+#define	BUFSIZ	1024
 int openf[20] = { 1 };
 int n = 1;
 int t = 0;
