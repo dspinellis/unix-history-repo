@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_sysctl.c	7.15 (Berkeley) %G%
+ *	@(#)kern_sysctl.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -202,7 +202,7 @@ fill_eproc(p, ep)
 	if ((p->p_flag&SCTTY) && 
 	     (tp = ep->e_sess->s_ttyp)) {
 		ep->e_tdev = tp->t_dev;
-		ep->e_tpgid = tp->t_pgrp ? tp->t_pgrp->pg_id : -1;
+		ep->e_tpgid = tp->t_pgrp ? tp->t_pgrp->pg_id : NO_PID;
 		ep->e_tsess = tp->t_session;
 	} else
 		ep->e_tdev = NODEV;
