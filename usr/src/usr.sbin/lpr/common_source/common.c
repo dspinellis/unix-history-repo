@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)common.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)common.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -114,28 +114,6 @@ retry:
 		return(-1);
 	}
 	return(s);
-}
-
-rresvport(alport)
-	int *alport;
-{
-	struct sockaddr_in sin;
-	int s;
-
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = 0;
-	s = socket(AF_INET, SOCK_STREAM, 0);
-	if (s < 0)
-		return(-1);
-	for (; *alport > IPPORT_RESERVED/2; (*alport)--) {
-		sin.sin_port = htons((u_short) *alport);
-		if (bind(s, (caddr_t)&sin, sizeof(sin), 0) >= 0)
-			return(s);
-		if (errno != EADDRINUSE && errno != EADDRNOTAVAIL)
-			break;
-	}
-	(void) close(s);
-	return(-1);
 }
 
 /*
