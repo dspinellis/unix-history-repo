@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)last.c	4.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)last.c	4.4 (Berkeley) %G%";
 /*
  * last
  */
@@ -19,6 +19,7 @@ static	char *sccsid = "@(#)last.c	4.3 (Berkeley) %G%";
 
 char	**argv;
 int	argc;
+int	nameargs;
 
 struct	utmp buf[128];
 char	ttnames[MAXTTYS][LMAX+1];
@@ -39,12 +40,20 @@ main(ac, av)
 	int print;
 	char * crmsg = (char *)0;
 	long crtime;
+	long outrec = 0;
+	long maxrec = 0x7fffffffL;
  
 	time(&buf[0].ut_time);
 	ac--, av++;
-	argc = ac;
+	nameargs = argc = ac;
 	argv = av;
 	for (i = 0; i < argc; i++) {
+		if (argv[i][0] == '-' && argv[i][1] >= '0' && argv[i][1] <= '9')
+		{
+			maxrec = atoi(argv[i]+1);
+			nameargs--;
+			continue;
+		}
 		if (strlen(argv[i])>2)
 			continue;
 		if (!strcmp(argv[i], "~"))
@@ -110,6 +119,8 @@ main(ac, av)
 						asctime(gmtime(&delta))+11);
 				}
 				fflush(stdout);
+				if (++outrec >= maxrec)
+					exit(0);
 			}
 			if (lineq(bp->ut_line, "~")) {
 				for (i = 0; i < MAXTTYS; i++)
@@ -149,13 +160,14 @@ want(bp)
 		strcpy(bp->ut_name, "reboot");		/* bandaid */
 	if (bp->ut_name[0] == 0)
 		return (0);
-	if (argc == 0)
+	if (nameargs == 0)
 		return (1);
 	av = argv;
-	for (ac = 0; ac < argc; ac++) {
+	for (ac = 0; ac < argc; ac++, av++) {
+		if (av[0][0] == '-')
+			continue;
 		if (nameq(*av, bp->ut_name) || lineq(*av, bp->ut_line))
 			return (1);
-		av++;
 	}
 	return (0);
 }
