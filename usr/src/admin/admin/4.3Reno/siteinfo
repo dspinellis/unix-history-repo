@@ -1,0 +1,53 @@
+.ps 11
+.vs 1.5v
+.ce 3
+Site Information Form
+July 1, 1985
+.b "PLEASE TYPE"
+.sp -3.5
+.in +4i
+.(l
+.TS
+box;
+cc
+ll.
+.ft B
+Tape Density
+
+1600  \(ci	6250  \(ci  
+.ft
+.TE
+.sp 2
+.)l
+.in -4i
+.ps 11
+.nf
+.ta \w'Mailing Address (no P.O. Boxes):'uR +.25i
+.nr l 6i
+	Organization:	\l'|\nlu'
+	No. of BSD Users:	\l'|\nlu'
+	Site Type (check one):	Educational\l'.25i' Governmental\l'.25i' Commercial\l'|\nlu'
+	Site Mailing Address:	\l'|\nlu'
+		\l'|\nlu'
+		\l'|\nlu'
+	Site Network Addresses:	(please specify complete path to UCBVAX)
+		Internet\l'|\nlu'
+		UUCP\l'|\nlu'
+		Other\l'|\nlu'
+.sp 1.5
+	Administrative Contact:	\l'|\nlu'
+	Mailing Address (no P.O. Boxes):	_\l'|\nlu'
+		\l'|\nlu'
+		\l'|\nlu'
+	Telephone:	\l'|\nlu'
+	Network Address:	\l'|\nlu'
+.sp 1.5
+	Technical Contact:	\l'|\nlu'
+	Mailing Address (no P.O. Boxes):	\l'|\nlu'
+		\l'|\nlu'
+		\l'|\nlu'
+	Telephone:	\l'|\nlu'
+	Network Address:	\l'|\nlu'
+.sp 1.5
+	Applications:	\l'|\nlu'
+	Comments:	\l'|\nlu'
