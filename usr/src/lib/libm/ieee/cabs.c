@@ -16,27 +16,6 @@ static char sccsid[] =
 "@(#)cabs.c	1.2 (Berkeley) 8/21/85; 1.7 (ucb.elefunt) %G%";
 #endif	/* not lint */
 
-/* CABS(Z)
- * RETURN THE ABSOLUTE VALUE OF THE COMPLEX NUMBER  Z = X + iY
- * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
- * CODED IN C BY K.C. NG, 11/28/84.
- * REVISED BY K.C. NG, 7/12/85.
- *
- * Required kernel function :
- *	hypot(x,y)
- *
- * Method :
- *	cabs(z) = hypot(x,y) .
- */
-
-double cabs(z)
-struct { double x, y;} z;
-{
-	double hypot();
-	return(hypot(z.x,z.y));
-}
-
-
 /* HYPOT(X,Y)
  * RETURN THE SQUARE ROOT OF X^2 + Y^2  WHERE Z=X+iY
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
@@ -113,7 +92,8 @@ r2p1lo =  1.2537167179050217666E-16   , /*Hex  2^-53   *  1.21165F626CDD5 */
 sqrt2  =  1.4142135623730951455E0     ; /*Hex  2^  0   *  1.6A09E667F3BCD */
 #endif	/* defined(vax)||defined(tahoe)	*/
 
-double hypot(x,y)
+double
+hypot(x,y)
 double x, y;
 {
 	static double zero=0, one=1, 
@@ -164,6 +144,33 @@ double x, y;
 	else if(y!=y) return(y);  /* x and y is NaN */
 #endif	/* !defined(vax)&&!defined(tahoe) */
 	else return(copysign(y,one));   /* y is INF */
+}
+
+/* CABS(Z)
+ * RETURN THE ABSOLUTE VALUE OF THE COMPLEX NUMBER  Z = X + iY
+ * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
+ * CODED IN C BY K.C. NG, 11/28/84.
+ * REVISED BY K.C. NG, 7/12/85.
+ *
+ * Required kernel function :
+ *	hypot(x,y)
+ *
+ * Method :
+ *	cabs(z) = hypot(x,y) .
+ */
+
+double
+cabs(z)
+struct { double x, y;} z;
+{
+	return hypot(z.x,z.y);
+}
+
+double
+z_abs(z)
+struct { double x,y;} *z;
+{
+	return hypot(z->x,z->y);
 }
 
 /* A faster but less accurate version of cabs(x,y) */
