@@ -56,12 +56,7 @@ SPECHDR=excmd.h options.h
 CLEANFILES+=${SPECHDR}
 LINKS=	${BINDIR}/vi ${BINDIR}/ex ${BINDIR}/vi ${BINDIR}/view
 
-all: .curses-stamp vi vi.1
-
-.curses-stamp:
-	@(cd ${.CURDIR}/curses; make obj)
-	@(cd ${.CURDIR}/curses; make)
-	touch -f .curses-stamp
+all: vi vi.1
 
 warn:: ${SRCS}
 	-(cd ${.CURDIR} && \
