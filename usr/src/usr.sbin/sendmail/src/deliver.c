@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.67.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.68 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1902,19 +1902,21 @@ logdelivery(m, mci, stat, ctladdr, e)
 		sprintf(bp, ", mailer=%s", m->m_name);
 		bp += strlen(bp);
 	}
+	syslog(LOG_INFO, "%s: %s", e->e_id, buf);
 
+	buf[0] = '\0';
 	if (mci != NULL && mci->mci_host != NULL)
 	{
 # ifdef DAEMON
 		extern SOCKADDR CurHostAddr;
 # endif
 
-		sprintf(bp, ", relay=%s", mci->mci_host);
+		sprintf(buf, ", relay=%s", mci->mci_host);
 
 # ifdef DAEMON
-		(void) strcat(bp, " [");
-		(void) strcat(bp, anynet_ntoa(&CurHostAddr));
-		(void) strcat(bp, "]");
+		(void) strcat(buf, " [");
+		(void) strcat(buf, anynet_ntoa(&CurHostAddr));
+		(void) strcat(buf, "]");
 # endif
 	}
 	else
@@ -1922,9 +1924,10 @@ logdelivery(m, mci, stat, ctladdr, e)
 		char *p = macvalue('h', e);
 
 		if (p != NULL && p[0] != '\0')
-			sprintf(bp, ", relay=%s", p);
+			sprintf(buf, ", relay=%s", p);
 	}
-	syslog(LOG_INFO, "%s: %s", e->e_id, buf);
+	if (buf[0] != '\0')
+		syslog(LOG_INFO, "%s: %s", e->e_id, buf);
 
 	syslog(LOG_INFO, "%s: stat=%s", e->e_id, shortenstring(stat, 63));
 #  endif /* short log buffer */
