@@ -65,7 +65,7 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  *
- * $Id: vm_pageout.c,v 1.19 1994/04/14 07:50:25 davidg Exp $
+ * $Id: vm_pageout.c,v 1.20 1994/04/20 07:07:15 davidg Exp $
  */
 
 /*
@@ -110,6 +110,7 @@ extern int swap_pager_ready();
 #define LOWATER ((2048*1024)/NBPG)
 
 #define VM_PAGEOUT_PAGE_COUNT 8
+int vm_pageout_page_count = VM_PAGEOUT_PAGE_COUNT;
 static vm_offset_t vm_space_needed;
 int vm_pageout_req_do_stats;
 int vm_pageout_do_stats;
@@ -191,7 +192,7 @@ vm_pageout_clean(m, sync)
 	ms[0] = m;
 
 	if( pager = object->pager) {
-		for(i=1;i<VM_PAGEOUT_PAGE_COUNT;i++) {
+		for(i=1;i<vm_pageout_page_count;i++) {
 			if( ms[i] = vm_page_lookup( object, offset+i*NBPG)) {
 				if( ((ms[i]->flags & (PG_CLEAN|PG_INACTIVE|PG_BUSY)) == PG_INACTIVE)
 					&& (ms[i]->wire_count == 0)
