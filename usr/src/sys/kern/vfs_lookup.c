@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	4.30	82/11/13	*/
+/*	vfs_lookup.c	4.31	82/11/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -651,13 +651,14 @@ dirremove()
 	register struct buf *bp;
 	struct direct *ep;
 
-	if (u.u_count == 0)
+	if (u.u_count == 0) {
 		/*
 		 * First entry in block: set d_ino to zero.
 		 */
+		u.u_dent.d_ino = 0;
 		(void) rdwri(UIO_WRITE, dp, (caddr_t)&u.u_dent,
 		    (int)DIRSIZ(&u.u_dent), u.u_offset, 1, (int *)0);
-	else {
+	} else {
 		/*
 		 * Collapse new free space into previous entry.
 		 */
