@@ -25,6 +25,7 @@ divert(-1)
 
 changecom()
 undefine(`format')
+undefine(`hpux')
 ifdef(`pushdef', `',
 	`errprint(`You need a newer version of M4, at least as new as
 System V or GNU')
@@ -119,4 +120,4 @@ define(`confMIME_FORMAT_ERRORS', `True')
 define(`confTRY_NULL_MX_LIST', `False')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	8.2 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	8.3 (Berkeley) %G%')
