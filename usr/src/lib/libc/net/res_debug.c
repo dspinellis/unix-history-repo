@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_debug.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_debug.c	5.19 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #if defined(lint) && !defined(DEBUG)
@@ -20,8 +20,7 @@ static char sccsid[] = "@(#)res_debug.c	5.18 (Berkeley) %G%";
 extern char *p_cdname(), *p_rr(), *p_type(), *p_class();
 extern char *inet_ntoa();
 
-#ifdef DEBUG
-static char *_opcodes[] = {
+char *_res_opcodes[] = {
 	"QUERY",
 	"IQUERY",
 	"CQUERYM",
@@ -40,7 +39,7 @@ static char *_opcodes[] = {
 	"ZONEREF",
 };
 
-static char *_rcodes[] = {
+char *_res_resultcodes[] = {
 	"NOERROR",
 	"FORMERR",
 	"SERVFAIL",
@@ -58,7 +57,6 @@ static char *_rcodes[] = {
 	"14",
 	"NOCHANGE",
 };
-#endif
 
 p_query(msg)
 	char *msg;
