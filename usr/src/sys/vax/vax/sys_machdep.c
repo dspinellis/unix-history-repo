@@ -1,4 +1,4 @@
-/*	sys_machdep.c	6.1	83/07/29	*/
+/*	sys_machdep.c	6.2	83/11/26	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -11,6 +11,7 @@
 #include "../h/kernel.h"
 #include "../h/mtio.h"
 #include "../h/buf.h"
+#include "../h/trace.h"
 
 #include "../vax/dkio.h"
 #include "../vax/pte.h"
