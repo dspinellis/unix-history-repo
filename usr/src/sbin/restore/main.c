@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.12	(Berkeley)	83/08/11";
+static char sccsid[] = "@(#)main.c	3.13	(Berkeley)	84/02/07";
 #endif
 
 /* Copyright (c) 1983 Regents of the University of California */
@@ -356,6 +356,12 @@ loop:
 		}
 		fprintf(stderr, "verbose mode on\n");
 		vflag++;
+		break;
+	/*
+	 * Just restore requested directory modes.
+	 */
+	case 'R':
+		setdirmodes();
 		break;
 	/*
 	 * Turn on debugging.
