@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)symbols.c 1.4 %G%";
+static char sccsid[] = "@(#)symbols.c 1.5 %G%";
 
 /*
  * Symbol management.
@@ -57,9 +57,10 @@ struct Symbol {
 	    long lower;
 	    long upper;
 	} rangev;
-	struct {		/* address of function value, code */
-	    int offset;
-	    Address beginaddr;
+	struct {
+	    int offset : 16;	/* offset for of function value */
+	    Boolean src : 16;	/* true if there is source line info */
+	    Address beginaddr;	/* address of function code */
 	} funcv;
 	struct {		/* variant record info */
 	    int size;
@@ -90,6 +91,8 @@ Symbol curfunc;
     s->class == FUNC or s->class == PROC or \
     s->class == MODULE or s->class == PROG \
 )
+
+#define nosource(f) (not (f)->symvalue.funcv.src)
 
 #include "tree.h"
 
