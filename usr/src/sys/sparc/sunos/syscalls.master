@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.1 (Berkeley) %G%
+	@(#)syscalls.master	7.2 (Berkeley) %G%
 ; System call name/number master file (or rather, slave, from SunOS).
 ; Processed to created sun_sysent.c, sun_syscalls.c and sun_syscall.h.
 
@@ -83,7 +83,7 @@
 61	STD	1 chroot
 62	STD	2 ofstat
 63	UNIMPL	0 nosys
-64	STD	0 getpagesize
+64	STD	0 ogetpagesize
 65	STD	3 sun_omsync
 66	STD	0 vfork
 67	OBSOL	0 vread
@@ -106,8 +106,8 @@
 84	COMPAT	0 wait
 85	STD	1 swapon
 86	STD	2 getitimer
-87	STD	2 gethostname
-88	STD	2 sethostname
+87	STD	2 ogethostname
+88	STD	2 osethostname
 89	STD	0 getdtablesize
 90	STD	2 dup2
 91	UNIMPL	2 getdopt
@@ -161,7 +161,7 @@
 139	STD	1 sigreturn
 140	STD	2 adjtime
 141	STD	3 ogetpeername
-142	STD	0 gethostid
+142	STD	0 ogethostid
 143	UNIMPL	1 old sethostid
 144	STD	2 getrlimit
 145	STD	2 setrlimit
