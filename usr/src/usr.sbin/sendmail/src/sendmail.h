@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.61 (Berkeley) %G%
+ *	@(#)sendmail.h	8.62 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.61		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.62		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -368,7 +368,7 @@ ENVELOPE
 	int		e_ntries;	/* number of delivery attempts */
 	dev_t		e_dfdev;	/* df file's device, for crash recov */
 	ino_t		e_dfino;	/* df file's ino, for crash recovery */
-	char		*e_macro[128];	/* macro definitions */
+	char		*e_macro[256];	/* macro definitions */
 };
 
 /* values for e_flags */
@@ -615,6 +615,7 @@ struct symtab
 		char		*sv_hostsig;	/* host signature */
 		MCI		sv_mci;		/* mailer connection info */
 		NAMECANON	sv_namecanon;	/* canonical name cache */
+		int		sv_macro;	/* macro name => id mapping */
 	}	s_value;
 };
 
@@ -630,6 +631,7 @@ typedef struct symtab	STAB;
 # define ST_MAP		6	/* mapping function */
 # define ST_HOSTSIG	7	/* host signature */
 # define ST_NAMECANON	8	/* cached canonical name */
+# define ST_MACRO	9	/* macro name to id mapping */
 # define ST_MCI		16	/* mailer connection info (offset) */
 
 # define s_class	s_value.sv_class
@@ -975,6 +977,8 @@ extern const char	*errstring __P((int));
 extern void		expand __P((char *, char *, char *, ENVELOPE *));
 extern void		define __P((int, char *, ENVELOPE *));
 extern char		*macvalue __P((int, ENVELOPE *));
+extern char		*macname __P((int));
+extern int		macid __P((char *, char **));
 extern char		**prescan __P((char *, int, char[], int, char **));
 extern int		rewrite __P((char **, int, int, ENVELOPE *));
 extern char		*fgetfolded __P((char *, int, FILE *));

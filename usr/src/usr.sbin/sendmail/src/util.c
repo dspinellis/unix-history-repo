@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.44 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -244,9 +244,16 @@ xputs(s)
 	{
 		if (!isascii(c))
 		{
-			if (c == MATCHREPL || c == MACROEXPAND)
+			if (c == MATCHREPL)
 			{
 				putchar('$');
+				continue;
+			}
+			if (c == MACROEXPAND)
+			{
+				putchar('$');
+				if (bitset(0200, *s))
+					printf("{%s}", macname(*s++ & 0377));
 				continue;
 			}
 			for (mp = MetaMacros; mp->metaname != '\0'; mp++)
