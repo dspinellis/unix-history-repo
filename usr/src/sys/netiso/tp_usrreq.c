@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_usrreq.c	7.25 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.26 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -660,11 +660,11 @@ tp_usrreq(so, req, m, nam, controlp)
 	IFDEBUG(D_REQUEST)
 		printf("%s, so 0x%x, tpcb 0x%x, error %d, state %d\n",
 			"returning from tp_usrreq", so, tpcb, error,
-			tpcb ? 0 : tpcb->tp_state);
+			tpcb ? tpcb->tp_state : 0);
 	ENDDEBUG
 	IFTRACE(D_REQUEST)
 		tptraceTPCB(TPPTusrreq, "END req so m state [", req, so, m, 
-			tpcb?0:tpcb->tp_state);
+			tpcb ? tpcb->tp_state : 0);
 	ENDTRACE
 	if (controlp) {
 		m_freem(controlp);
