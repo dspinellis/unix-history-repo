@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.23.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef sunos
@@ -133,14 +133,16 @@ alloctape()
 }
 
 void
-writerec(dp)
+writerec(dp, isspcl)
 	char *dp;
+	int isspcl;
 {
 
 	slp->req[trecno].dblk = (daddr_t)0;
 	slp->req[trecno].count = 1;
 	*(union u_spcl *)(*(nextblock)++) = *(union u_spcl *)dp;
-	lastspclrec = spcl.c_tapea;
+	if (isspcl)
+		lastspclrec = spcl.c_tapea;
 	trecno++;
 	spcl.c_tapea++;
 	if (trecno >= ntrec)
