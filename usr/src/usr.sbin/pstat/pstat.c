@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -94,6 +94,8 @@ struct nlist nl[] = {
 	{ "_ndmf" },
 #define	SNPTY	24
 	{ "_npty" },
+#define	SYSMAP	25
+	{ "_Sysmap" },
 	{ "" }
 };
 
@@ -232,7 +234,8 @@ doinode()
 	nin = 0;
 	ninode = getw(nl[SNINODE].n_value);
 	xinode = (struct inode *)calloc(ninode, sizeof (struct inode));
-	lseek(fc, (int)(ainode = (struct inode *)getw(nl[SINODE].n_value)), 0);
+	ainode = (struct inode *)getw(nl[SINODE].n_value);
+	lseek(fc, mkphys((int)ainode), 0);
 	read(fc, xinode, ninode * sizeof(struct inode));
 	for (ip = xinode; ip < &xinode[ninode]; ip++)
 		if (ip->i_count)
@@ -306,7 +309,8 @@ dotext()
 	ntx = 0;
 	ntext = getw(nl[SNTEXT].n_value);
 	xtext = (struct text *)calloc(ntext, sizeof (struct text));
-	lseek(fc, (int)(atext = (struct text *)getw(nl[STEXT].n_value)), 0);
+	atext = (struct text *)getw(nl[STEXT].n_value);
+	lseek(fc, mkphys((int)atext), 0);
 	read(fc, xtext, ntext * sizeof (struct text));
 	for (xp = xtext; xp < &xtext[ntext]; xp++)
 		if (xp->x_iptr!=NULL)
@@ -350,7 +354,8 @@ doproc()
 
 	nproc = getw(nl[SNPROC].n_value);
 	xproc = (struct proc *)calloc(nproc, sizeof (struct proc));
-	lseek(fc, (int)(aproc = (struct proc *)getw(nl[SPROC].n_value)), 0);
+	aproc = (struct proc *)getw(nl[SPROC].n_value);
+	lseek(fc, mkphys((int)aproc), 0);
 	read(fc, xproc, nproc * sizeof (struct proc));
 	np = 0;
 	for (pp=xproc; pp < &xproc[nproc]; pp++)
@@ -706,7 +711,8 @@ dofile()
 	nf = 0;
 	nfile = getw(nl[SNFILE].n_value);
 	xfile = (struct file *)calloc(nfile, sizeof (struct file));
-	lseek(fc, (int)(afile = (struct file *)getw(nl[SFIL].n_value)), 0);
+	afile = (struct file *)getw(nl[SFIL].n_value);
+	lseek(fc, (mkphys((int)afile)), 0);
 	read(fc, xfile, nfile * sizeof (struct file));
 	for (fp=xfile; fp < &xfile[nfile]; fp++)
 		if (fp->f_count)
@@ -1039,4 +1045,26 @@ done:
 	return;
 badrmfree:
 	printf("bad rmfree\n");
+}
+/*
+ * "addr"  is a kern virt addr and does not correspond
+ * To a phys addr after zipping out the high bit..
+ * since it was valloc'd in the kernel.
+ *
+ * We return the phys addr by simulating kernel vm (/dev/kmem)
+ * when we are reading a crash dump.
+ */
+mkphys(addr)
+{
+	register o;
+
+	if (!kflg)
+		return(addr);
+	o = addr & PGOFSET;
+	addr >>= PGSHIFT;
+	addr &= PG_PFNUM;
+	addr *=  NBPW;
+	addr = getw(nl[SYSMAP].n_value + addr);
+	addr = ((addr & PG_PFNUM) << PGSHIFT) | o;
+	return(addr);
 }
