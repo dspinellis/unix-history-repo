@@ -1,0 +1,90 @@
+igmp.o : igmp.c defs.h /usr/include/stdio.h /usr/include/sys/cdefs.h /usr/include/machine/ansi.h \
+  /usr/include/ctype.h /usr/include/errno.h /usr/include/syslog.h /usr/include/stdarg.h \
+  /usr/include/machine/stdarg.h /usr/include/signal.h /usr/include/machine/trap.h \
+  /usr/include/sys/types.h /usr/include/machine/types.h /usr/include/sys/param.h \
+  /usr/include/sys/syslimits.h /usr/include/sys/signal.h /usr/include/machine/param.h \
+  /usr/include/machine/endian.h /usr/include/machine/limits.h /usr/include/sys/socket.h \
+  /usr/include/sys/ioctl.h /usr/include/net/if.h /usr/include/sys/time.h /usr/include/time.h \
+  /usr/include/net/if_arp.h /usr/include/netinet/in.h /usr/include/netinet/in_systm.h \
+  /usr/include/netinet/ip.h /usr/include/netinet/igmp.h /usr/include/netinet/ip_mroute.h \
+  dvmrp.h vif.h route.h 
+inet.o : inet.c defs.h /usr/include/stdio.h /usr/include/sys/cdefs.h /usr/include/machine/ansi.h \
+  /usr/include/ctype.h /usr/include/errno.h /usr/include/syslog.h /usr/include/stdarg.h \
+  /usr/include/machine/stdarg.h /usr/include/signal.h /usr/include/machine/trap.h \
+  /usr/include/sys/types.h /usr/include/machine/types.h /usr/include/sys/param.h \
+  /usr/include/sys/syslimits.h /usr/include/sys/signal.h /usr/include/machine/param.h \
+  /usr/include/machine/endian.h /usr/include/machine/limits.h /usr/include/sys/socket.h \
+  /usr/include/sys/ioctl.h /usr/include/net/if.h /usr/include/sys/time.h /usr/include/time.h \
+  /usr/include/net/if_arp.h /usr/include/netinet/in.h /usr/include/netinet/in_systm.h \
+  /usr/include/netinet/ip.h /usr/include/netinet/igmp.h /usr/include/netinet/ip_mroute.h \
+  dvmrp.h vif.h route.h 
+kern.o : kern.c defs.h /usr/include/stdio.h /usr/include/sys/cdefs.h /usr/include/machine/ansi.h \
+  /usr/include/ctype.h /usr/include/errno.h /usr/include/syslog.h /usr/include/stdarg.h \
+  /usr/include/machine/stdarg.h /usr/include/signal.h /usr/include/machine/trap.h \
+  /usr/include/sys/types.h /usr/include/machine/types.h /usr/include/sys/param.h \
+  /usr/include/sys/syslimits.h /usr/include/sys/signal.h /usr/include/machine/param.h \
+  /usr/include/machine/endian.h /usr/include/machine/limits.h /usr/include/sys/socket.h \
+  /usr/include/sys/ioctl.h /usr/include/net/if.h /usr/include/sys/time.h /usr/include/time.h \
+  /usr/include/net/if_arp.h /usr/include/netinet/in.h /usr/include/netinet/in_systm.h \
+  /usr/include/netinet/ip.h /usr/include/netinet/igmp.h /usr/include/netinet/ip_mroute.h \
+  dvmrp.h vif.h route.h 
+config.o : config.c defs.h /usr/include/stdio.h /usr/include/sys/cdefs.h /usr/include/machine/ansi.h \
+  /usr/include/ctype.h /usr/include/errno.h /usr/include/syslog.h /usr/include/stdarg.h \
+  /usr/include/machine/stdarg.h /usr/include/signal.h /usr/include/machine/trap.h \
+  /usr/include/sys/types.h /usr/include/machine/types.h /usr/include/sys/param.h \
+  /usr/include/sys/syslimits.h /usr/include/sys/signal.h /usr/include/machine/param.h \
+  /usr/include/machine/endian.h /usr/include/machine/limits.h /usr/include/sys/socket.h \
+  /usr/include/sys/ioctl.h /usr/include/net/if.h /usr/include/sys/time.h /usr/include/time.h \
+  /usr/include/net/if_arp.h /usr/include/netinet/in.h /usr/include/netinet/in_systm.h \
+  /usr/include/netinet/ip.h /usr/include/netinet/igmp.h /usr/include/netinet/ip_mroute.h \
+  dvmrp.h vif.h route.h 
+main.o : main.c defs.h /usr/include/stdio.h /usr/include/sys/cdefs.h /usr/include/machine/ansi.h \
+  /usr/include/ctype.h /usr/include/errno.h /usr/include/syslog.h /usr/include/stdarg.h \
+  /usr/include/machine/stdarg.h /usr/include/signal.h /usr/include/machine/trap.h \
+  /usr/include/sys/types.h /usr/include/machine/types.h /usr/include/sys/param.h \
+  /usr/include/sys/syslimits.h /usr/include/sys/signal.h /usr/include/machine/param.h \
+  /usr/include/machine/endian.h /usr/include/machine/limits.h /usr/include/sys/socket.h \
+  /usr/include/sys/ioctl.h /usr/include/net/if.h /usr/include/sys/time.h /usr/include/time.h \
+  /usr/include/net/if_arp.h /usr/include/netinet/in.h /usr/include/netinet/in_systm.h \
+  /usr/include/netinet/ip.h /usr/include/netinet/igmp.h /usr/include/netinet/ip_mroute.h \
+  dvmrp.h vif.h route.h 
+route.o : route.c defs.h /usr/include/stdio.h /usr/include/sys/cdefs.h /usr/include/machine/ansi.h \
+  /usr/include/ctype.h /usr/include/errno.h /usr/include/syslog.h /usr/include/stdarg.h \
+  /usr/include/machine/stdarg.h /usr/include/signal.h /usr/include/machine/trap.h \
+  /usr/include/sys/types.h /usr/include/machine/types.h /usr/include/sys/param.h \
+  /usr/include/sys/syslimits.h /usr/include/sys/signal.h /usr/include/machine/param.h \
+  /usr/include/machine/endian.h /usr/include/machine/limits.h /usr/include/sys/socket.h \
+  /usr/include/sys/ioctl.h /usr/include/net/if.h /usr/include/sys/time.h /usr/include/time.h \
+  /usr/include/net/if_arp.h /usr/include/netinet/in.h /usr/include/netinet/in_systm.h \
+  /usr/include/netinet/ip.h /usr/include/netinet/igmp.h /usr/include/netinet/ip_mroute.h \
+  dvmrp.h vif.h route.h 
+vif.o : vif.c defs.h /usr/include/stdio.h /usr/include/sys/cdefs.h /usr/include/machine/ansi.h \
+  /usr/include/ctype.h /usr/include/errno.h /usr/include/syslog.h /usr/include/stdarg.h \
+  /usr/include/machine/stdarg.h /usr/include/signal.h /usr/include/machine/trap.h \
+  /usr/include/sys/types.h /usr/include/machine/types.h /usr/include/sys/param.h \
+  /usr/include/sys/syslimits.h /usr/include/sys/signal.h /usr/include/machine/param.h \
+  /usr/include/machine/endian.h /usr/include/machine/limits.h /usr/include/sys/socket.h \
+  /usr/include/sys/ioctl.h /usr/include/net/if.h /usr/include/sys/time.h /usr/include/time.h \
+  /usr/include/net/if_arp.h /usr/include/netinet/in.h /usr/include/netinet/in_systm.h \
+  /usr/include/netinet/ip.h /usr/include/netinet/igmp.h /usr/include/netinet/ip_mroute.h \
+  dvmrp.h vif.h route.h 
+mapper.o : mapper.c /usr/include/netdb.h /usr/include/sys/cdefs.h /usr/include/sys/time.h \
+  /usr/include/time.h /usr/include/machine/ansi.h defs.h /usr/include/stdio.h \
+  /usr/include/ctype.h /usr/include/errno.h /usr/include/syslog.h /usr/include/stdarg.h \
+  /usr/include/machine/stdarg.h /usr/include/signal.h /usr/include/machine/trap.h \
+  /usr/include/sys/types.h /usr/include/machine/types.h /usr/include/sys/param.h \
+  /usr/include/sys/syslimits.h /usr/include/sys/signal.h /usr/include/machine/param.h \
+  /usr/include/machine/endian.h /usr/include/machine/limits.h /usr/include/sys/socket.h \
+  /usr/include/sys/ioctl.h /usr/include/net/if.h /usr/include/net/if_arp.h /usr/include/netinet/in.h \
+  /usr/include/netinet/in_systm.h /usr/include/netinet/ip.h /usr/include/netinet/igmp.h \
+  /usr/include/netinet/ip_mroute.h dvmrp.h vif.h route.h 
+mrinfo.o : mrinfo.c /usr/include/netdb.h /usr/include/sys/cdefs.h /usr/include/sys/time.h \
+  /usr/include/time.h /usr/include/machine/ansi.h defs.h /usr/include/stdio.h \
+  /usr/include/ctype.h /usr/include/errno.h /usr/include/syslog.h /usr/include/stdarg.h \
+  /usr/include/machine/stdarg.h /usr/include/signal.h /usr/include/machine/trap.h \
+  /usr/include/sys/types.h /usr/include/machine/types.h /usr/include/sys/param.h \
+  /usr/include/sys/syslimits.h /usr/include/sys/signal.h /usr/include/machine/param.h \
+  /usr/include/machine/endian.h /usr/include/machine/limits.h /usr/include/sys/socket.h \
+  /usr/include/sys/ioctl.h /usr/include/net/if.h /usr/include/net/if_arp.h /usr/include/netinet/in.h \
+  /usr/include/netinet/in_systm.h /usr/include/netinet/ip.h /usr/include/netinet/igmp.h \
+  /usr/include/netinet/ip_mroute.h dvmrp.h vif.h route.h 
