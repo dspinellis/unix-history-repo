@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.31 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.32 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.31 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.32 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -591,6 +591,9 @@ getauthinfo(fd)
 	RealHostAddr = fa;
 
 #if IDENTPROTO
+	if (TimeOuts.to_ident == 0)
+		goto noident;
+
 	lalen = sizeof la;
 	if (fa.sa.sa_family != AF_INET ||
 	    getsockname(fd, &la.sa, &lalen) < 0 || lalen <= 0 ||
