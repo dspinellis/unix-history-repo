@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.5 (Berkeley) %G%
+ *	@(#)genassym.c	7.6 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -67,6 +67,7 @@ main()
 	printf("#define\tPMAP_HASH_SHIFT2 %d\n", PMAP_HASH_SHIFT2);
 	printf("#define\tPMAP_HASH_MASK1 0x%x\n", PMAP_HASH_MASK1);
 	printf("#define\tPMAP_HASH_MASK2 0x%x\n", PMAP_HASH_MASK2);
+	printf("#define\tVM_MIN_ADDRESS 0x%x\n", VM_MIN_ADDRESS);
 
 	printf("#define\tNBPW %d\n", NBPW);
 
