@@ -1,11 +1,11 @@
-/*	raw_cb.c	4.12	82/10/09	*/
+/*	raw_cb.c	4.13	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../h/mtpr.h"
+#include "../vax/mtpr.h"
 #include "../net/if.h"
 #include "../net/raw_cb.h"
 #include <errno.h>
@@ -61,7 +61,7 @@ raw_detach(rp)
 	so->so_pcb = 0;
 	sofree(so);
 	remque(rp);
-	(void) m_freem(dtom(rp));
+	m_freem(dtom(rp));
 }
 
 /*
@@ -70,6 +70,7 @@ raw_detach(rp)
 raw_disconnect(rp)
 	struct rawcb *rp;
 {
+
 	rp->rcb_flags &= ~RAW_FADDR;
 	if (rp->rcb_socket->so_state & SS_NOFDREF)
 		raw_detach(rp);
@@ -80,7 +81,6 @@ raw_bind(so, nam)
 	struct mbuf *nam;
 {
 	struct sockaddr *addr = mtod(nam, struct sockaddr *);
-	struct mbuf *m;
 	register struct rawcb *rp;
 
 	if (ifnet == 0)
