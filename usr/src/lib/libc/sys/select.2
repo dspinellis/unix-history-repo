@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)select.2	6.2 (Berkeley) %G%
+.\"	@(#)select.2	6.3 (Berkeley) %G%
 .\"
 .TH SELECT 2 ""
 .UC 5
@@ -11,35 +11,72 @@ select \- synchronous i/o multiplexing
 .SH SYNOPSIS
 .nf
 .ft B
+#include <sys/types.h>
 #include <sys/time.h>
 .PP
 .ft B
 nfound = select(nfds, readfds, writefds, exceptfds, timeout)
-int nfound, nfds, *readfds, *writefds, *exceptfds;
+int nfound, nfds;
+fd_set *readfds, *writefds, *exceptfds;
 struct timeval *timeout;
+.PP
+.ft B
+int fd;
+fd_set fdset;
+FD_SET(fd, &fdset)	
+FD_CLR(fd, &fdset)	
+FD_ISSET(fd, &fdset)	
+FD_ZERO(&fdset)	
 .fi
 .SH DESCRIPTION
 .I Select
-examines the i/o descriptors specified by the bit masks
+examines the i/o descriptor sets whose addresses are passed in
 .IR readfds ,
 .IR writefds ,
 and
 .I exceptfds
-to see if they are ready for reading, writing, or have an exceptional
+to see if some of their descriptors
+are ready for reading, are ready for writing, or have an exceptional
 condition pending, respectively.
-File descriptor 
-.I f
-is represented by the bit \*(lq1<<f\*(rq in
-the mask.
-.I Nfds
-desciptors are checked,
-i.e. the bits from 0 through
+The first
+.I nfds
+descriptors are checked in each set;
+i.e. the descriptors from 0 through
 .IR nfds -1
-in the masks are examined.
-.I Select
-returns, in place, a mask of those descriptors that are ready.
-The total number of bits set in all the masks is returned in
+in the descriptor sets are examined.
+On return,
+.I select
+replaces the given descriptor sets
+with subsets consisting of those descriptors that are ready.
+The total number of ready descriptors in all the sets is returned in
 .IR nfound .
+.PP
+Some macros are provided for manipulating descriptor sets.
+.I "FD_ZERO(&fdset)"
+initializes a descriptor set
+.I fdset
+to the null set.
+.I "FD_SET(fd, &fdset)"
+includes a particular descriptor
+.I fd
+in
+.IR fdset .
+.I "FD_CLR(fd, &fdset)"
+removes
+.I fd
+from
+.IR fdset .
+.I "FD_ISSET(fd, &fdset)"
+is nonzero if
+.I fd
+is a member of
+.IR fdset ,
+zero otherwise.
+The behavior of these macros is undefined if
+a descriptor value is less than zero or greater than or equal to
+.IR FD_SETSIZE ,
+which is normally at least equal
+to the maximum number of descriptors supported by the system.
 .PP
 If
 .I timeout
@@ -55,11 +92,11 @@ Any of
 .IR writefds ,
 and
 .I exceptfds
-may be given as 0 if no descriptors are of interest.
+may be given as zero pointers if no descriptors are of interest.
 .SH "RETURN VALUE
 .I Select
-returns the number of 'one' bits that are contained in
-the bit masks,
+returns the number of ready descriptors that are contained in
+the descriptor sets,
 or \-1 if an error occurred.
 If the time limit expires then
 .I select
@@ -68,17 +105,17 @@ returns 0.
 An error return from \fIselect\fP indicates:
 .TP 15
 [EBADF]
-One of the bit masks specified an invalid descriptor.
+One of the descriptor sets specified an invalid descriptor.
 .TP 15
 [EINTR]
 A signal was delivered before the time limit expired and
 before any of the selected events occurred.
 .TP 15
 [EINVAL]
-The specified time limit is unacceptable.  One of its components is
+The specified time limit is invalid.  One of its components is
 negative or too large.
 .SH SEE ALSO
 accept(2), connect(2), read(2), write(2), recv(2), send(2), getdtablesize(2)
 .SH BUGS
-The descriptor masks are always modified on return, even
+The descriptor sets are always modified on return, even
 if the call returns as the result of the timeout.
