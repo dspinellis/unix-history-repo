@@ -1,1 +1,0 @@
-ld -x low.o mch.o conf.o lib1 lib2
