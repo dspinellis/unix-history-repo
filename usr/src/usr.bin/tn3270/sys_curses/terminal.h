@@ -11,11 +11,11 @@
  * of us, here are some macros to deal with them.
  */
 
-#define TermAttributes(x)	(TermIsStartField(x)? Terminal[x].field&0xff : \
-				    Terminal[WhereTermAttrByte(x)].field&0xff)
-#define TermIsStartField(x)	(Terminal[x].field&ATTR_MASK)
-#define TermNewField(p,a)	(Terminal[p].field = (a)|ATTR_MASK)
-#define TermDeleteField(p)	(Terminal[p].field = 0)
+#define TermAttributes(x)	(TermIsStartField(x)? Terminal[x].data&0xff : \
+				    Terminal[WhereTermAttrByte(x)].data&0xff)
+#define TermIsStartField(x)	(Terminal[x].data&ATTR_MASK)
+#define TermNewField(p,a)	(Terminal[p].data = (a)|ATTR_MASK)
+#define TermDeleteField(p)	(Terminal[p].data = 0)
 #define TermIsNonDisplay(x)	\
 		    ((TermAttributes(x)&ATTR_DSPD_MASK) == ATTR_DSPD_NONDISPLAY)
 #define TermIsHighlighted(x) \

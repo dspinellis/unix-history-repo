@@ -379,7 +379,8 @@ SlowScreen()
 		}
 	    } else {
 		SetHighlightMode(pointer);
-		/* The following will terminate at least when we get back
+		/*
+		 * The following will terminate at least when we get back
 		 * to the original 'pointer' location (since we force
 		 * things to be equal).
 		 */
@@ -470,7 +471,7 @@ FastScreen()
 	columnsleft = NumberColumns-ScreenLineOffset(p-Host);
 
 	while (p <= upper) {
-	    if (p->field & ATTR_MASK) {	/* New field? */
+	    if (IsStartFieldPointer(p)) {	/* New field? */
 		Highest = HighestScreen();
 		Lowest = LowestScreen();
 		FastScreen();		/* Recurse */
@@ -505,14 +506,14 @@ FastScreen()
 	DoAttribute(fieldattr);	/* Set standout, non-display status */
 
 	while (p <= End) {
-	    if (p->field & ATTR_MASK) {	/* New field? */
+	    if (IsStartFieldPointer(p)) {	/* New field? */
 		if (tmp != tmpbuf) {
 		    *tmp++ = 0;			/* close out */
 		    addstr(tmpbuf);
 		    tmp = tmpbuf;
 		    tmpend = tmpbuf + NumberColumns - ScreenLineOffset(p-Host);
 		}
-		fieldattr = p->field;	/* Get attributes */
+		fieldattr = FieldAttributesPointer(p);	/* Get attributes */
 		DoAttribute(fieldattr);	/* Set standout, non-display */
 		*tmp++ = ' ';
 	    } else {
