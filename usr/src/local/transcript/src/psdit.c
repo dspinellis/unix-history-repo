@@ -1,4 +1,4 @@
-/*	@(#)psdit.c	1.4 %G%	*/
+/*	@(#)psdit.c	1.5 %G%	*/
 #ifndef lint
 static char Notice[] = "Copyright (c) 1984, 1985 Adobe Systems Incorporated";
 static char *RCSID = "$Header: psdit.c,v 2.1 85/11/24 11:50:41 shore Rel $";
@@ -129,6 +129,7 @@ int	font;		/* current font */
 int	resolution;	/* device resolution */
 int	minhoriz;	/* minimum horizontal motion */
 int	minvert;	/* minimum vertical motion */
+int	stipplefont;	/* current stipple font */
 
 int	onspecial;
 int	specfont;
@@ -436,8 +437,8 @@ conv(fp)	/* convert a file */
 			}
 			break;
 		case 'i':
-			fscanf(fp, "%d", &n);
-			printf("%d Di\n", n);
+			fscanf(fp, "%d", &stipplefont);
+			printf("%d i\n", stipplefont);
 			break;
 		case 's':
 			fscanf(fp, "%d", &n);
@@ -886,6 +887,7 @@ t_init()	/* "x i" - initialize device */
 	t_size(10);		/* start somewhere */
 	t_slant(0);
 	setfont(1);		/* set font */
+	stipplefont = 1;
 	printf("xi\n");
 	printf("%%%%EndProlog\n");
 }
@@ -955,8 +957,8 @@ t_page(n)	/* do whatever new page functions */
 			sayload(i, fontname[i].name, (char *) 0);
 	vpos = 0;
 	PSy = 0;
-	printf("%d s %d xH %d xS %d f\n",
-		fontsize, fontheight, fontslant, font);
+	printf("%d s %d xH %d xS %d f %d i\n",
+		fontsize, fontheight, fontslant, font, stipplefont);
 	if (nolist == 0)
 		return;
 	output = 0;
