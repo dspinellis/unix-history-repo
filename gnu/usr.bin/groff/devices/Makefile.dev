@@ -5,8 +5,8 @@
 
 .include "../../Makefile.cfg"
 
-DESTDIR?=	/usr/share/groff_font
-DEVICEDIR?=	$(fontdir)/dev$(DEVICE)
+FONTDIR?=	/usr/share/groff_font
+DEVICEDIR?=	$(FONTDIR)/dev$(DEVICE)
 FONTOWN?=	bin
 FONTGRP?=	bin
 FONTMODE?=	444
