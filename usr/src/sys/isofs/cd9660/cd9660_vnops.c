@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vnops.c	8.7 (Berkeley) %G%
+ *	@(#)cd9660_vnops.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -500,9 +500,14 @@ cd9660_readdir(ap)
 	ip = VTOI(ap->a_vp);
 	imp = ip->i_mnt;
 	
-	MALLOC(idp,struct isoreaddir *,sizeof(*idp),M_TEMP,M_WAITOK);
-	idp->saveent.d_namlen = 0;
-	idp->assocent.d_namlen = 0;
+	MALLOC(idp, struct isoreaddir *, sizeof(*idp), M_TEMP, M_WAITOK);
+	idp->saveent.d_namlen = idp->assocent.d_namlen = 0;
+	/*
+	 * XXX
+	 * Is it worth trying to figure out the type?
+	 */
+	idp->saveent.d_type = idp->assocent.d_type = idp->current.d_type =
+	    DT_UNKNOWN;
 	idp->uio = uio;
 	idp->eofflag = 1;
 	idp->cookies = ap->a_cookies;
