@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.22 84/01/16";
+static	char *sccsid = "@(#)cmd2.c	3.23 84/03/03";
 #endif
 
 #include "defs.h"
@@ -87,15 +87,15 @@ register struct ww *w;
 char *name;
 register char **list;
 {
-	(void) wwprintf(w, "%s:\n\n", name);
+	wwprintf(w, "%s:\n\n", name);
 	while (*list)
 		switch (more(w, 0)) {
 		case 0:
-			(void) wwputs(*list++, w);
-			(void) wwputc('\n', w);
+			wwputs(*list++, w);
+			wwputc('\n', w);
 			break;
 		case 1:
-			(void) wwprintf(w, "%s: (continued)\n\n", name);
+			wwprintf(w, "%s: (continued)\n\n", name);
 			break;
 		case 2:
 			return -1;
@@ -187,18 +187,25 @@ dostat()
 	}
 	wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\r\n");
 	wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\r\n",
-	(void) wwprintf(w, "nwrite\tnwritec\tnupdate\tnupdlin\tnupdmis\tnmajlin\tnmajmis\n");
-	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-		wwnwrite, wwnwritec,
+	wwprintf(w, "ttflush\twrite\terror\tzero\tchar\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
+		wwnflush, wwnwr, wwnwre, wwnwrz, wwnwrc);
+	wwprintf(w, "wwwrite\tattmpt\tchar\n");
+	wwprintf(w, "%d\t%d\t%d\n",
+		wwnwwr, wwnwwra, wwnwwrc);
+	wwprintf(w, "wwupdat\tline\tmiss\tmajor\tmiss\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
 		wwnupdate, wwnupdline, wwnupdmiss, wwnmajline, wwnmajmiss);
-	(void) wwprintf(w, "nsel\tnselz\tnsele\tnread\tnreadz\tnreade\tnreadc\n");
-	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-		wwnselect, wwnselectz, wwnselecte,
-		wwnread, wwnreadz, wwnreade, wwnreadc);
-	(void) wwprintf(w, "nwread\tnwreadz\tnwreade\tnwreadd\tnwreadc\tnwreadp\n");
-	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\n",
-		wwnwread, wwnwreadz, wwnwreade,
-		wwnwreadd, wwnwreadc, wwnwreadp);
+	wwprintf(w, "select\terror\tzero\n");
+	wwprintf(w, "%d\t%d\t%d\n",
+		wwnselect, wwnselecte, wwnselectz);
+	wwprintf(w, "read\terror\tzero\tchar\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\n",
+		wwnread, wwnreade, wwnreadz, wwnreadc);
+	wwprintf(w, "ptyread\terror\tzero\tcontrol\tdata\tchar\n");
+	wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\n",
+		wwnwread, wwnwreade, wwnwreadz,
+		wwnwreadp, wwnwreadd, wwnwreadc);
 	waitnl(w);
 	closewin(w);
 }

@@ -1,5 +1,5 @@
 /*
- *	@(#)tt.h	3.9 83/12/17
+ *	@(#)tt.h	3.10 84/03/03
  */
 
 /*
@@ -54,13 +54,24 @@ struct tt_tab tt_tab[];
 
 /*
  * Clean interface to termcap routines.
+ * Too may t's.
  */
 char tt_strings[1024];		/* string buffer */
 char *tt_strp;			/* pointer for it */
 
-int tt_pc();			/* just putchar() */
-int tt_sc();			/* *tt_strp++ = c */
-char *tt_xgetstr();		/* tgetstr() and expand delays */
+#define tttgetstr(s)	tgetstr((s), &tt_strp)
+char *ttxgetstr();		/* tgetstr() and expand delays */
 
-#define tt_tgetstr(s)	tgetstr((s), &tt_strp)
-#define tt_tputs(s, n)	tputs((s), (n), tt_pc)
+int tttputc();
+#define tttputs(s, n)	tputs((s), (n), tttputc)
+
+/*
+ * Buffered output without stdio.
+ * These variables have different meanings from the ww_ob* variabels.
+ * But I'm too lazy to think up different names.
+ */
+char tt_ob[512];
+char *tt_obp;
+char *tt_obe;
+#define ttputc(c)	(tt_obp < tt_obe ? *tt_obp++ = (c) \
+				: (ttflush(), *tt_obp++ = (c)))

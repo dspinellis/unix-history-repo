@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)tth19.c	3.11 83/12/17";
+static	char *sccsid = "@(#)tth19.c	3.12 84/03/03";
 #endif
 
 #include "ww.h"
@@ -33,7 +33,7 @@ extern char *gen_VE;
 
 int h19_msp10c;
 
-#define pc(c)	putchar('c')
+#define pc(c)	ttputc('c')
 #define esc()	pc(\033)
 #define PAD(ms10) { \
 	register i; \
@@ -89,7 +89,7 @@ register char c;
 		h19_setmodes(tt.tt_nmodes);
 	if (tt.tt_ninsert != tt.tt_insert)
 		h19_setinsert(tt.tt_ninsert);
-	putchar(c);
+	ttputc(c);
 	if (tt.tt_insert)
 		ICPAD();
 	if (++tt.tt_col == NCOL)
@@ -106,14 +106,14 @@ register n;
 		h19_setinsert(tt.tt_ninsert);
 	if (tt.tt_insert) {
 		while (--n >= 0) {
-			putchar(*p++);
+			ttputc(*p++);
 			ICPAD();
 			tt.tt_col++;
 		}
 	} else {
 		tt.tt_col += n;
 		while (--n >= 0)
-			putchar(*p++);
+			ttputc(*p++);
 	}
 	if (tt.tt_col == NCOL)
 		tt.tt_col = NCOL - 1;
@@ -151,8 +151,8 @@ register char row, col;
 	}
 	esc();
 	pc(Y);
-	putchar(' ' + row);
-	putchar(' ' + col);
+	ttputc(' ' + row);
+	ttputc(' ' + col);
 out:
 	tt.tt_col = col;
 	tt.tt_row = row;
@@ -161,7 +161,7 @@ out:
 h19_init()
 {
 	if (gen_VS)
-		fputs(gen_VS, stdout);
+		ttputs(gen_VS);
 	esc();
 	pc(w);
 	esc();
@@ -176,7 +176,7 @@ h19_end()
 	h19_setmodes(0);
 	h19_setinsert(0);
 	if (gen_VE)
-		fputs(gen_VE, stdout);
+		ttputs(gen_VE);
 	esc();
 	pc(v);
 }
@@ -210,8 +210,8 @@ tt_h19()
 	float cpms = (float) wwbaud / 10000;	/* char per ms */
 
 	h19_msp10c = 10 / cpms;			/* ms per 10 char */
-	gen_VS = tt_xgetstr("vs");
-	gen_VE = tt_xgetstr("ve");
+	gen_VS = ttxgetstr("vs");
+	gen_VE = ttxgetstr("ve");
 
 	tt.tt_init = h19_init;
 	tt.tt_end = h19_end;

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.21 84/03/02";
+static	char *sccsid = "@(#)ttgeneric.c	3.22 84/03/03";
 #endif
 
 #include "ww.h"
@@ -54,8 +54,7 @@ int gen_LI;
 int gen_UG;
 int gen_SG;
 
-#define pc(c) putchar('c')
-#define ps(s) fputs((s), stdout)
+#define ps(s) ttputs(s)
 
 gen_setinsert(new)
 char new;
@@ -107,7 +106,7 @@ gen_insline()
 	if (tt.tt_modes)			/* for concept 100 */
 		gen_setmodes(0);
 	if (gen_AL)
-		tt_tputs(gen_AL, gen_LI - tt.tt_row);
+		tttputs(gen_AL, gen_LI - tt.tt_row);
 }
 
 gen_delline()
@@ -115,7 +114,7 @@ gen_delline()
 	if (tt.tt_modes)			/* for concept 100 */
 		gen_setmodes(0);
 	if (gen_DL)
-		tt_tputs(gen_DL, gen_LI - tt.tt_row);
+		tttputs(gen_DL, gen_LI - tt.tt_row);
 }
 
 gen_putc(c)
@@ -127,12 +126,12 @@ register char c;
 		gen_setmodes(tt.tt_nmodes);
 	if (tt.tt_insert) {
 		if (gen_IC)
-			tt_tputs(gen_IC, gen_CO - tt.tt_col);
-		putchar(c);
+			tttputs(gen_IC, gen_CO - tt.tt_col);
+		ttputc(c);
 		if (gen_IP)
-			tt_tputs(gen_IP, gen_CO - tt.tt_col);
+			tttputs(gen_IP, gen_CO - tt.tt_col);
 	} else
-		putchar(c);
+		ttputc(c);
 	if (++tt.tt_col == gen_CO)
 		if (gen_AM)
 			tt.tt_col = 0, tt.tt_row++;
@@ -151,16 +150,16 @@ register n;
 	if (tt.tt_insert) {
 		while (--n >= 0) {
 			if (gen_IC)
-				tt_tputs(gen_IC, gen_CO - tt.tt_col);
-			putchar(*p++);
+				tttputs(gen_IC, gen_CO - tt.tt_col);
+			ttputc(*p++);
 			if (gen_IP)
-				tt_tputs(gen_IP, gen_CO - tt.tt_col);
+				tttputs(gen_IP, gen_CO - tt.tt_col);
 			tt.tt_col++;
 		}
 	} else {
 		tt.tt_col += n;
 		while (--n >= 0)
-			putchar(*p++);
+			ttputc(*p++);
 	}
 	if (tt.tt_col == gen_CO)
 		if (gen_AM)
@@ -244,7 +243,7 @@ gen_clreol()
 	if (tt.tt_modes)			/* for concept 100 */
 		gen_setmodes(0);
 	if (gen_CE)
-		tt_tputs(gen_CE, gen_CO - tt.tt_col);
+		tttputs(gen_CE, gen_CO - tt.tt_col);
 }
 
 gen_clreos()
@@ -252,7 +251,7 @@ gen_clreos()
 	if (tt.tt_modes)			/* for concept 100 */
 		gen_setmodes(0);
 	if (gen_CD)
-		tt_tputs(gen_CD, gen_LI - tt.tt_row);
+		tttputs(gen_CD, gen_LI - tt.tt_row);
 }
 
 gen_clear()
@@ -266,38 +265,38 @@ gen_clear()
 gen_delchar()
 {
 	if (gen_DC)
-		tt_tputs(gen_DC, gen_CO - tt.tt_col);
+		tttputs(gen_DC, gen_CO - tt.tt_col);
 }
 
 tt_generic()
 {
-	gen_CM = tt_xgetstr("cm");		/* may not work */
-	gen_IM = tt_xgetstr("im");
-	gen_IC = tt_tgetstr("ic");
-	gen_IP = tt_tgetstr("ip");
-	gen_EI = tt_xgetstr("ei");
-	gen_DC = tt_tgetstr("dc");
-	gen_AL = tt_tgetstr("al");
-	gen_DL = tt_tgetstr("dl");
-	gen_CE = tt_tgetstr("ce");
-	gen_CD = tt_tgetstr("cd");
-	gen_CL = tt_xgetstr("cl");
-	gen_VS = tt_xgetstr("vs");
-	gen_VE = tt_xgetstr("ve");
-	gen_TI = tt_xgetstr("ti");
-	gen_TE = tt_xgetstr("te");
-	gen_SO = tt_xgetstr("so");
-	gen_SE = tt_xgetstr("se");
-	gen_US = tt_xgetstr("us");
-	gen_UE = tt_xgetstr("ue");
-	gen_UP = tt_xgetstr("up");
-	gen_PC = tt_tgetstr("pc");
-	gen_BC = tt_xgetstr("bc");
-	gen_ND = tt_xgetstr("nd");
-	gen_HO = tt_xgetstr("ho");
-	gen_NL = tt_xgetstr("nl");
-	gen_AS = tt_xgetstr("as");
-	gen_AE = tt_xgetstr("ae");
+	gen_CM = ttxgetstr("cm");		/* may not work */
+	gen_IM = ttxgetstr("im");
+	gen_IC = tttgetstr("ic");
+	gen_IP = tttgetstr("ip");
+	gen_EI = ttxgetstr("ei");
+	gen_DC = tttgetstr("dc");
+	gen_AL = tttgetstr("al");
+	gen_DL = tttgetstr("dl");
+	gen_CE = tttgetstr("ce");
+	gen_CD = tttgetstr("cd");
+	gen_CL = ttxgetstr("cl");
+	gen_VS = ttxgetstr("vs");
+	gen_VE = ttxgetstr("ve");
+	gen_TI = ttxgetstr("ti");
+	gen_TE = ttxgetstr("te");
+	gen_SO = ttxgetstr("so");
+	gen_SE = ttxgetstr("se");
+	gen_US = ttxgetstr("us");
+	gen_UE = ttxgetstr("ue");
+	gen_UP = ttxgetstr("up");
+	gen_PC = tttgetstr("pc");
+	gen_BC = ttxgetstr("bc");
+	gen_ND = ttxgetstr("nd");
+	gen_HO = ttxgetstr("ho");
+	gen_NL = ttxgetstr("nl");
+	gen_AS = ttxgetstr("as");
+	gen_AE = ttxgetstr("ae");
 	gen_MI = tgetflag("mi");
 	gen_MS = tgetflag("ms");
 	gen_AM = tgetflag("am");

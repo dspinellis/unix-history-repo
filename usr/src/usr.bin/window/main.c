@@ -1,11 +1,13 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.14 83/12/06";
+static	char *sccsid = "@(#)main.c	3.15 84/03/03";
 #endif
 
 #include "defs.h"
+#include <sys/signal.h>
+#include <stdio.h>
 
-char escapec = CTRL(p);
 int nbufline = 48;			/* compatible */
+char escapec = CTRL(p);	
 
 #define next(a) (*++*(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
 
@@ -17,10 +19,6 @@ char **argv;
 	char fflag = 0;
 	char dflag = 0;
 	char xflag = 0;
-#ifndef O_4_1A
-	int wwchild();
-	char *rindex();
-	char *getenv();
 
 	if (p = rindex(*argv, '/'))
 		p++;
@@ -78,6 +76,7 @@ char **argv;
 		fprintf(stderr, "Can't open command window.\r\n");
 		goto bad;
 	}
+	cmdwin->ww_nointr = 1;
 	if (terse)
 		Whide(cmdwin->ww_win);
 	wwsetcurwin(cmdwin);
@@ -87,7 +86,7 @@ char **argv;
 	(void) signal(SIGCHLD, wwchild);
 	setvars();
 	if (fflag)
-		incmd = 1;
+		wwcurwin = 0;
 	else {
 		if (dflag || doconfig() < 0)
 			dodefault();

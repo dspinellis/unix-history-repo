@@ -1,9 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.14 84/01/16";
+static	char *sccsid = "@(#)wwinit.c	3.15 84/03/03";
 #endif
 
 #include "ww.h"
 #include "tt.h"
+#include <sys/signal.h>
+#include <fcntl.h>
 
 struct ww_tty wwoldtty;
 struct ww_tty wwwintty;
@@ -24,7 +26,6 @@ wwinit()
 	static char done = 0;
 	int kn;
 
-	setbuf(stdout, _sobuf);
 #ifndef O_4_1A
 	if (done)
 		return 0;
@@ -42,6 +43,7 @@ wwinit()
 	wwnewtty.ww_sgttyb.sg_flags |= CBREAK;
 	wwnewtty.ww_sgttyb.sg_flags &= ~(ECHO|CRMOD);
 	wwnewtty.ww_lmode |= LLITOUT;
+	wwnewtty.ww_fflags |= FASYNC;
 	if (wwsettty(0, &wwnewtty) < 0)
 		return -1;
 	if (Winit(2, 1) != 0)
@@ -71,6 +73,7 @@ wwinit()
 			addcap(cap);
 		}
 	}
+	(void) sigrelse(SIGIO);
 	return 0;
 }
 

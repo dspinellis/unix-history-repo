@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwtty.c	3.5 83/12/17";
+static	char *sccsid = "@(#)wwtty.c	3.6 84/03/03";
 #endif
 
 #include "ww.h"
+#include <fcntl.h>
 
 wwgettty(d, t)
 register struct ww_tty *t;
@@ -16,6 +17,8 @@ register struct ww_tty *t;
 	if (ioctl(d, TIOCLGET, &t->ww_lmode) < 0)
 		goto bad;
 	if (ioctl(d, TIOCGETD, &t->ww_ldisc) < 0)
+		goto bad;
+	if ((t->ww_fflags = fcntl(d, F_GETFL, 0)) < 0)
 		goto bad;
 	if (ioctl(d, TIOCGPGRP, &t->ww_pgrp) < 0)
 	return 0;

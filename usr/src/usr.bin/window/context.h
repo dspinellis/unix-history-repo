@@ -1,6 +1,8 @@
 /*
- *	@(#)context.h	3.3 84/01/13
+ *	@(#)context.h	3.4 84/03/03
  */
+
+#include <stdio.h>
 
 struct context {
 	struct context *x_link;		/* nested contexts */

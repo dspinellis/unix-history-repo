@@ -1,8 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.17 84/01/16";
+static	char *sccsid = "@(#)wwwrite.c	3.18 84/03/03";
 #endif
 
 #include "ww.h"
+#include "tt.h"
 
 wwwrite(w, p, n)
 register struct ww *w;
@@ -11,20 +12,15 @@ int n;
 {
 
 	if (w == 0 || w->ww_win == 0)
-	wwnwrite++;
-	wwnwritec += n;
 	if (hascursor = w->ww_hascursor)
 		wwcursor(w, 0);
 	while (n-- > 0) {
 			}
-			if (w->ww_cur.c >= w->ww_w.r) {
-				w->ww_cur.c = w->ww_w.l;
-				goto lf;
-			}
-			continue;
-		}
-		n--;
-		switch (w->ww_wstate) {
+			
+		chklf:
+			if (w->ww_cur.c >= w->ww_w.r)
+				goto crlf;
+		} else switch (w->ww_wstate) {
 		case 0:
 			switch (*p++) {
 			case '\n':
@@ -32,7 +28,6 @@ int n;
 				if (w->ww_refresh)
 					Wrefresh(1);
 				break;
-			case '\t':
 			case '\b':
 			case '\r':
 			case CTRL(g):

@@ -1,7 +1,6 @@
-/*	@(#)defs.h	3.8 84/01/16		*/
+/*	@(#)defs.h	3.9 84/03/03		*/
 
 #include "ww.h"
-#include <signal.h>
 #ifndef O_4_1A
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -19,12 +18,10 @@ struct ww *cmdwin;
 
 char *shell;			/* the shell program */
 char *shellname;		/* the shell program name (for argv[0]) */
-
-int nbufline;			/* number of lines in the buffer */
+int nbufline;			/* default buffer size for new windows */
+char escapec;			/* the escape character */
 
 	/* flags */
-char quit;
-char terse;
-char debug;
-char incmd;			/* in command mode */
-char escapec;			/* escape character */
+char quit;			/* quit command issued */
+char terse;			/* terse mode */
+char debug;			/* debug mode */

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)win.c	3.2 84/01/16";
+static	char *sccsid = "@(#)win.c	3.3 84/03/03";
 #endif
 
 #include "defs.h"
@@ -93,11 +93,13 @@ char *label;
 		return 0;
 	w->ww_mapnl = 1;
 	w->ww_hasframe = 1;
+	w->ww_nointr = 1;
 	w->ww_id = -1;
 	w->ww_center = 1;
 	(void) setlabel(w, label);
 	wwadd(w, framewin);
 	reframe();
+	wwupdate();
 	return w;
 }
 
@@ -117,16 +119,16 @@ struct ww *w;
 	(void) waitnl1(w, "[Type any key to continue]");
 }
 
-more(w, alway)
+more(w, always)
 register struct ww *w;
-char alway;
+char always;
 {
 	int c;
 
-	if (!alway && w->ww_cur.r < w->ww_w.b - 2)
+	if (!always && w->ww_cur.r < w->ww_w.b - 2)
 		return 0;
 	c = waitnl1(w, "[Type escape to abort, any other key to continue]");
-	(void) wwputs("\033E", w);
+	wwputs("\033E", w);
 	return c == CTRL([) ? 2 : 1;
 }
 
@@ -135,7 +137,7 @@ register struct ww *w;
 char *prompt;
 {
 	front(w, 0);
-	(void) wwprintf(w, "\033Y%c%c\033p%s\033q ",
+	wwprintf(w, "\033Y%c%c\033p%s\033q ",
 		w->ww_w.nr - 1 + ' ', ' ', prompt);	/* print on last line */
 	wwcurtowin(w);
 	while (wwpeekc() < 0)

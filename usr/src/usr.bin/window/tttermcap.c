@@ -1,24 +1,23 @@
 #ifndef lint
-static	char *sccsid = "@(#)tttermcap.c	3.2 83/12/17";
+static	char *sccsid = "@(#)tttermcap.c	3.3 84/03/03";
 #endif
 
-#include "ww.h"
 #include "tt.h"
 
 char *tgetstr();
 
-tt_pc(c)
+tttputc(c)
 {
-	putchar(c);
+	ttputc(c);
 }
 
-tt_sc(c)
+ttxputc(c)
 {
 	*tt_strp++ = c;
 }
 
 char *
-tt_xgetstr(str)
+ttxgetstr(str)
 char *str;
 {
 	char buf[100];
@@ -28,7 +27,7 @@ char *str;
 	if (str == 0)
 		return 0;
 	str = tt_strp;
-	tputs(buf, 1, tt_sc);
-	tt_sc(0);
+	tputs(buf, 1, ttxputc);
+	ttxputc(0);
 	return str;
 }

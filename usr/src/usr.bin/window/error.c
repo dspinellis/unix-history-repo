@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)error.c	3.6 84/01/13";
+static	char *sccsid = "@(#)error.c	3.7 84/03/03";
 #endif
 
 #include "defs.h"
@@ -33,7 +33,7 @@ char *fmt;
 		char buf[512];
 
 		if ((w = cx.x_errwin = openiwin(ERRLINES, buf)) == 0) {
-			(void) wwputs("Can't open error window.  ", cmdwin);
+			wwputs("Can't open error window.  ", cmdwin);
 			cx.x_noerr = 1;
 			return;
 		}

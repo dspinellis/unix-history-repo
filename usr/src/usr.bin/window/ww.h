@@ -1,7 +1,7 @@
-/*	@(#)ww.h	3.25 84/01/16		*/
+/*	@(#)ww.h	3.26 84/03/03		*/
 
-#include <stdio.h>
 #include <sgtty.h>
+#include <setjmp.h>
 #include "window.h"
 
 struct ww_dim {
@@ -35,6 +35,7 @@ struct ww_tty {
 	struct ltchars ww_ltchars;
 	int ww_lmode;
 	int ww_ldisc;
+	int ww_fflags;
 };
 
 union ww_char {
