@@ -1,18 +1,24 @@
-#	@(#)Makefile	7.4 (Berkeley) %G%
+#	@(#)Makefile	7.5 (Berkeley) %G%
 
 DESTDIR=/
 STAND=	../../stand
 INCPATH=-I../../sys -I../../  -I${STAND}
 VPATH=	${STAND}
+
 CC=	cc -traditional
 C2=	/usr/libexec/c2
 CPP=	cpp -traditional ${INCPATH} -DSTANDALONE -DAT386
-CFLAGS=	-DSTANDALONE -DAT386 -O ${INCPATH}
+
 RELOC=	70000
 RELOC2=	70200
-SRCS=	boot.c bootxx.c cga.c conf.c confxx.c copy.c dev.c fd.c fdbootblk.c \
-	getfile.c gets.c kbd.c prf.c printf.c srt0.c sys.c wd.c wdbootblk.c
-DRIVERS=kbd.o cga.o wd.o fd.o
+
+CFLAGS=	-DSTANDALONE -DAT386 -O ${INCPATH}
+
+DRIVERS=cga.c fd.c kbd.c wd.c
+SASRC=	bmap.c close.c dev.c getfile.c gets.c ioctl.c lseek.c open.c \
+	printf.c read.c sys.c write.c
+SRCS=	boot.c bootxx.c conf.c confxx.c copy.c fd.c fdbootblk.c prf.c \
+	srt0.c wdbootblk.c ${DRIVERS} ${SASRC}
 LIBS=	libsa.a ${DESTDIR}/usr/lib/libc.a
 
 BOOTBLOCKS= wdboot bootwd fdboot bootfd
@@ -23,13 +29,9 @@ STANDDIR= ${DESTDIR}/stand
 
 all: ${ALL}
 
-libsa.a: conf.o dev.o getfile.o gets.o prf.o printf.o sys.o \
-	${DRIVERS}
+libsa.a: conf.o prf.o ${DRIVERS:.c=.o} ${SASRC:.c=.o}
 	ar crv $@ $?
 	ranlib $@
-
-${DRIVERS}:
-	${CC} -c ${CFLAGS} $*.c
 
 # startups
 
