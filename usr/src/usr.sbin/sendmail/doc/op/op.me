@@ -1,6 +1,6 @@
 .ls 2
 .he 'Sendmail Installation and Operation Guide''%'
-.fo 'Version 3.13'DRAFT'Last Mod %G%'
+.fo 'Version 3.14'DRAFT'Last Mod %G%'
 .nr si 3n
 .de $0
 .(x
@@ -26,7 +26,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.13
+Version 3.14
 .)l
 .sp 3
 .pp
@@ -1722,6 +1722,7 @@ s	Sender's host name
 t	A numeric representation of the current time
 u	The recipient user
 v	The version number of sendmail
+w	The hostname of this site
 x	The full name of the sender
 y	The id of the sender's tty
 z	The home directory of the recipient
@@ -1840,6 +1841,10 @@ macro is set to be the version number of
 .i sendmail ;
 this is normally put in timestamps
 and has been proven extremely useful for debugging.
+The
+.b $w
+macro is set to the name of this host
+if it can be determined.
 The
 .b $c
 field is set to the
@@ -3585,7 +3590,7 @@ INSTALLATION AND OPERATION GUIDE
 Eric Allman
 Britton-Lee, Inc.
 .sp
-Version 3.13
+Version 3.14
 .ce 0
 .bp 1
 .ce
