@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)run.c	4.6 %G%";
+static char sccsid[] = "@(#)run.c	4.7 %G%";
 #endif
 
 #include "awk.def"
@@ -373,7 +373,7 @@ char *format(s,a) char *s; node *a;
 			break;
 		}
 		if (flag == 0) {
-			sprintf(p, "%s", fmt);
+			(void)sprintf(p, "%s", fmt);
 			p += strlen(p);
 			continue;
 		}
@@ -383,10 +383,10 @@ char *format(s,a) char *s; node *a;
 		a = a->nnext;
 		if (flag != 4)	/* watch out for converting to numbers! */
 			xf = getfval(x.optr);
-		if (flag==1) sprintf(p, fmt, xf);
-		else if (flag==2) sprintf(p, fmt, (long)xf);
-		else if (flag==3) sprintf(p, fmt, (int)xf);
-		else if (flag==4) sprintf(p, fmt, x.optr->sval==NULL ? "" : getsval(x.optr));
+		if (flag==1) (void)sprintf(p, fmt, xf);
+		else if (flag==2) (void)sprintf(p, fmt, (long)xf);
+		else if (flag==3) (void)sprintf(p, fmt, (int)xf);
+		else if (flag==4) (void)sprintf(p, fmt, x.optr->sval==NULL ? "" : getsval(x.optr));
 		tempfree(x);
 		p += strlen(p);
 		s++;
@@ -640,7 +640,7 @@ obj split(a,nnn) node **a;
 			while (*s!=' ' && *s!='\t' && *s!='\n' && *s!='\0');
 			temp = *s;
 			*s = '\0';
-			sprintf(num, "%d", n);
+			(void)sprintf(num, "%d", n);
 			if (isnumber(t))
 				setsymtab(num, tostring(t), atof(t), STR|NUM, ap->sval);
 			else
@@ -657,7 +657,7 @@ obj split(a,nnn) node **a;
 				s++;
 			temp = *s;
 			*s = '\0';
-			sprintf(num, "%d", n);
+			(void)sprintf(num, "%d", n);
 			if (isnumber(t))
 				setsymtab(num, tostring(t), atof(t), STR|NUM, ap->sval);
 			else

@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)pr.c	4.6 (Berkeley) %G%";
+static char *sccsid = "@(#)pr.c	4.7 (Berkeley) %G%";
 
 /*
  *   print file with headings
@@ -168,7 +168,6 @@ print(fp, argp)
 char *fp;
 char **argp;
 {
-	extern char *sprintf();
 	struct stat sbuf;
 	register sncol;
 	register char *sheader;
@@ -236,10 +235,10 @@ char **argp;
 				/* Assume a ff takes two blank lines at the
 				   top of the page. */
 				line = 2;
-				sprintf(linebuf, "%s %s  %s Page %d\n\n\n",
+				(void)sprintf(linebuf, "%s %s  %s Page %d\n\n\n",
 					cbuf+4, cbuf+20, header, page);
 			} else
-				sprintf(linebuf, "\n\n%s %s  %s Page %d\n\n\n",
+				(void)sprintf(linebuf, "\n\n%s %s  %s Page %d\n\n\n",
 					cbuf+4, cbuf+20, header, page);
 			for(cp=linebuf;*cp;) put(*cp++);
 		}

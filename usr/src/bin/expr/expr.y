@@ -127,7 +127,7 @@ char *arith(op, r1, r2) char *r1, *r2; {
 	case REM: i1 = i1 % i2; break;
 	}
 	rv = malloc(16);
-	sprintf(rv, "%D", i1);
+	(void)sprintf(rv, "%ld", i1);
 	return rv;
 }
 char *conj(op, r1, r2) char *r1, *r2; {
@@ -183,7 +183,7 @@ char *length(s) register char *s; {
 	while(*s++) ++i;
 
 	rv = malloc(8);
-	sprintf(rv, "%d", i);
+	(void)sprintf(rv, "%d", i);
 	return rv;
 }
 
@@ -194,7 +194,7 @@ char *index(s, t) char *s, *t; {
 	for(i = 0; s[i] ; ++i)
 		for(j = 0; t[j] ; ++j)
 			if(s[i]==t[j]) {
-				sprintf(rv = malloc(8), "%d", ++i);
+				(void)sprintf(rv = malloc(8), "%d", ++i);
 				return rv;
 			}
 	return "0";
@@ -204,7 +204,7 @@ char *match(s, p)
 {
 	register char *rv;
 
-	sprintf(rv = malloc(8), "%d", ematch(s, p));
+	(void)sprintf(rv = malloc(8), "%d", ematch(s, p));
 	if(nbra) {
 		rv = malloc(strlen(Mstring[0])+1);
 		strcpy(rv, Mstring[0]);
@@ -662,7 +662,7 @@ register	count;
 	return(1);
 }
 
-static char *sccsid = "@(#)expr.y	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)expr.y	4.6 (Berkeley) %G%";
 yyerror(s)
 
 {

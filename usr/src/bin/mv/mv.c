@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mv.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)mv.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -35,7 +35,6 @@ static char sccsid[] = "@(#)mv.c	5.4 (Berkeley) %G%";
 #define	ISDEV(st) \
 	(((st).st_mode&S_IFMT) == S_IFCHR || ((st).st_mode&S_IFMT) == S_IFBLK)
 
-char	*sprintf();
 char	*dname();
 struct	stat s1, s2;
 int	iflag = 0;	/* interactive mode */
@@ -107,7 +106,7 @@ movewithshortname(src, dest)
 			shortname);
 		return (1);
 	}
-	sprintf(target, "%s/%s", dest, shortname);
+	(void)sprintf(target, "%s/%s", dest, shortname);
 	return (move(src, target));
 }
 
@@ -291,8 +290,8 @@ Perror(s)
 	char *s;
 {
 	char buf[MAXPATHLEN + 10];
-	
-	sprintf(buf, "mv: %s", s);
+
+	(void)sprintf(buf, "mv: %s", s);
 	perror(buf);
 }
 
@@ -301,6 +300,6 @@ Perror2(s1, s2)
 {
 	char buf[MAXPATHLEN + 20];
 
-	sprintf(buf, "mv: %s: %s", s1, s2);
+	(void)sprintf(buf, "mv: %s: %s", s1, s2);
 	perror(buf);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)du.c	4.11 (Berkeley) %G%";
+static char *sccsid = "@(#)du.c	4.12 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -20,7 +20,7 @@ struct {
 int	mlx;
 
 long	descend();
-char	*index(), *rindex(), *strcpy(), *sprintf();
+char	*index(), *rindex(), *strcpy();
 
 #define	kb(n)	(howmany(dbtob(n), 1024))
 

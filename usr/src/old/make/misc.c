@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)misc.c	4.4 (Berkeley) 87/05/21";
+static	char *sccsid = "@(#)misc.c	4.5 (Berkeley) 87/10/22";
 #include "defs"
 
 FSTATIC struct nameblock *hashtab[HASHSIZE];
@@ -254,7 +254,7 @@ fatal1(s, t)
 char *s, *t;
 {
 char buf[BUFSIZ];
-sprintf(buf, s, t);
+(void)sprintf(buf, s, t);
 fatal(buf);
 }
 
@@ -281,7 +281,7 @@ char *s;
 char buf[50];
 extern int yylineno;
 
-sprintf(buf, "line %d: %s", yylineno, s);
+(void)sprintf(buf, "line %d: %s", yylineno, s);
 fatal(buf);
 }
 

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tar.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tar.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -107,7 +107,6 @@ char	*malloc();
 long	time();
 off_t	lseek();
 char	*mktemp();
-char	*sprintf();
 char	*strcat();
 char	*strcpy();
 char	*rindex();
@@ -337,7 +336,7 @@ dorep(argv)
 		if (tfile != NULL) {
 			char buf[200];
 
-			sprintf(buf,
+			(void)sprintf(buf,
 "sort +0 -1 +1nr %s -o %s; awk '$1 != prev {print; prev=$1}' %s >%sX; mv %sX %s",
 				tname, tname, tname, tname, tname, tname);
 			fflush(tfile);
@@ -494,10 +493,10 @@ putfile(longname, shortname, parent)
 			stbuf.st_size = 0;
 			tomodes(&stbuf);
 			strcpy(dblock.dbuf.name,buf);
-			sprintf(dblock.dbuf.chksum, "%6o", checksum());
+			(void)sprintf(dblock.dbuf.chksum, "%6o", checksum());
 			(void) writetape((char *)&dblock);
 		}
-		sprintf(newparent, "%s/%s", parent, shortname);
+		(void)sprintf(newparent, "%s/%s", parent, shortname);
 		if (chdir(shortname) < 0) {
 			perror(shortname);
 			return;
@@ -553,8 +552,8 @@ putfile(longname, shortname, parent)
 		if (vflag)
 			fprintf(vfile, "a %s symbolic link to %s\n",
 			    longname, dblock.dbuf.linkname);
-		sprintf(dblock.dbuf.size, "%11lo", 0L);
-		sprintf(dblock.dbuf.chksum, "%6o", checksum());
+		(void)sprintf(dblock.dbuf.size, "%11lo", 0L);
+		(void)sprintf(dblock.dbuf.chksum, "%6o", checksum());
 		(void) writetape((char *)&dblock);
 		break;
 
@@ -585,7 +584,7 @@ putfile(longname, shortname, parent)
 			if (found) {
 				strcpy(dblock.dbuf.linkname, lp->pathname);
 				dblock.dbuf.linkflag = '1';
-				sprintf(dblock.dbuf.chksum, "%6o", checksum());
+				(void)sprintf(dblock.dbuf.chksum, "%6o", checksum());
 				(void) writetape( (char *) &dblock);
 				if (vflag)
 					fprintf(vfile, "a %s link to %s\n",
@@ -607,7 +606,7 @@ putfile(longname, shortname, parent)
 		blocks = (stbuf.st_size + (TBLOCK-1)) / TBLOCK;
 		if (vflag)
 			fprintf(vfile, "a %s %ld blocks\n", longname, blocks);
-		sprintf(dblock.dbuf.chksum, "%6o", checksum());
+		(void)sprintf(dblock.dbuf.chksum, "%6o", checksum());
 		hint = writetape((char *)&dblock);
 		maxread = max(stbuf.st_blksize, (nblock * TBLOCK));
 		if ((bigbuf = malloc((unsigned)maxread)) == 0) {
@@ -934,11 +933,11 @@ register struct stat *sp;
 
 	for (cp = dblock.dummy; cp < &dblock.dummy[TBLOCK]; cp++)
 		*cp = '\0';
-	sprintf(dblock.dbuf.mode, "%6o ", sp->st_mode & 07777);
-	sprintf(dblock.dbuf.uid, "%6o ", sp->st_uid);
-	sprintf(dblock.dbuf.gid, "%6o ", sp->st_gid);
-	sprintf(dblock.dbuf.size, "%11lo ", sp->st_size);
-	sprintf(dblock.dbuf.mtime, "%11lo ", sp->st_mtime);
+	(void)sprintf(dblock.dbuf.mode, "%6o ", sp->st_mode & 07777);
+	(void)sprintf(dblock.dbuf.uid, "%6o ", sp->st_uid);
+	(void)sprintf(dblock.dbuf.gid, "%6o ", sp->st_gid);
+	(void)sprintf(dblock.dbuf.size, "%11lo ", sp->st_size);
+	(void)sprintf(dblock.dbuf.mtime, "%11lo ", sp->st_mtime);
 }
 
 checksum()

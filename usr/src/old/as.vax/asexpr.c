@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)asexpr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)asexpr.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -499,7 +499,7 @@ char *tok_to_name(token)
 		fixed = 1;
 	}
 	if (FIRSTTOKEN <= token && token <= LASTTOKEN){
-		sprintf(buf, "%s %s", tok_name[token]->tok_kind,
+		(void)sprintf(buf, "%s %s", tok_name[token]->tok_kind,
 			tok_name[token]->tok_name);
 		return(buf);
 	} else {
