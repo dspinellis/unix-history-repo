@@ -1,12 +1,12 @@
 #!/bin/sh -
 #
-#	@(#)weekly	5.16 (Berkeley) %G%
+#	@(#)weekly	5.17 (Berkeley) %G%
 #
 
 PATH=/bin:/sbin:/usr/sbin:/usr/bin:/usr/libexec
 export PATH
 
-host=`hostname -s`
+host=`hostname`
 echo "Subject: $host weekly run output"
 
 #echo ""

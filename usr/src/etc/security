@@ -1,15 +1,16 @@
 #!/bin/sh -
 #
-#	@(#)security	5.4 (Berkeley) %G%
+#	@(#)security	5.5 (Berkeley) %G%
 #
 PATH=/sbin:/bin:/usr/bin
 
-host=`hostname -s`
+host=`hostname`
 echo "Subject: $host security check output"
 
 LOG=/var/log
 TMP=/tmp/_secure.$$
 
+echo ""
 echo "Checking setuid files and devices:"
 find / \( ! -fstype local \) -a -prune -o \
 	\( -perm -u+s -o -perm -g+s -o ! -type f -a ! -type d \) \
