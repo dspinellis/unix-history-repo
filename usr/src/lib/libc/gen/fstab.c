@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fstab.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstab.c	5.12 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <fstab.h>
@@ -29,6 +29,29 @@ fstabscan()
 	for (;;) {
 		if (!(cp = fgets(line, sizeof(line), _fs_fp)))
 			return(0);
+/* OLD_STYLE_FSTAB */
+		if (!strpbrk(cp, " \t")) {
+			_fs_fstab.fs_spec = strtok(cp, ":\n");
+			_fs_fstab.fs_file = strtok((char *)NULL, ":\n");
+			_fs_fstab.fs_type = strtok((char *)NULL, ":\n");
+			if (_fs_fstab.fs_type) {
+				if (!strcmp(_fs_fstab.fs_type, FSTAB_XX))
+					continue;
+				_fs_fstab.fs_mntops = _fs_fstab.fs_type;
+				_fs_fstab.fs_vfstype =
+				    strcmp(_fs_fstab.fs_type, FSTAB_SW) ?
+				    "ufs" : "swap";
+				if (cp = strtok((char *)NULL, ":\n")) {
+					_fs_fstab.fs_freq = atoi(cp);
+					if (cp = strtok((char *)NULL, ":\n")) {
+						_fs_fstab.fs_passno = atoi(cp);
+						return(1);
+					}
+				}
+			}
+			goto bad;
+		}
+/* OLD_STYLE_FSTAB */
 		_fs_fstab.fs_spec = strtok(cp, " \t\n");
 		if (!_fs_fstab.fs_spec || *_fs_fstab.fs_spec == '#')
 			continue;
@@ -75,8 +98,8 @@ fstabscan()
 			continue;
 		if (cp != NULL)
 			return(1);
-	bad:
-		/* no way to distinguish between EOF and syntax error */
+
+bad:		/* no way to distinguish between EOF and syntax error */
 		(void)write(STDERR_FILENO, "fstab: ", 7);
 		(void)write(STDERR_FILENO, _PATH_FSTAB,
 		    sizeof(_PATH_FSTAB) - 1);
