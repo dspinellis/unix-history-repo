@@ -26,7 +26,7 @@ SOFTWARE.
  */
 /* $Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso_snpac.c,v $ */
-/*	@(#)iso_snpac.c	7.10 (Berkeley) %G% */
+/*	@(#)iso_snpac.c	7.11 (Berkeley) %G% */
 
 #ifndef lint
 static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $";
@@ -46,6 +46,7 @@ static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $"
 #include "errno.h"
 #include "ioctl.h"
 #include "kernel.h"
+#include "syslog.h"
 
 #include "../net/if.h"
 #include "../net/if_dl.h"
@@ -139,7 +140,7 @@ struct sockaddr *sa;
 	ENDDEBUG
 	if (rt->rt_flags & RTF_GATEWAY) {
 		if (recursing) {
-			log("llc_rtrequest: gateway route points to same type %x %x\n",
+			log(LOG_DEBUG, "llc_rtrequest: gateway route points to same type %x %x\n",
 				recursing, rt);
 		} else switch (req) {
 		case RTM_RESOLVE:
@@ -166,7 +167,7 @@ struct sockaddr *sa;
 			for (ifa = ifp->if_addrlist; ifa; ifa->ifa_next)
 				if ((sa = ifa->ifa_addr)->sa_family == AF_LINK) {
 					if (sa->sa_len > gate->sa.sa_len)
-						log("llc_rtrequest: cloning address too small\n");
+						log(LOG_DEBUG, "llc_rtrequest: cloning address too small\n");
 					else {
 						Bcopy(sa, gate, gate->sa.sa_len);
 						gate->sdl.sdl_alen = 0;
@@ -174,7 +175,7 @@ struct sockaddr *sa;
 					return;
 				}
 			if (ifa == 0)
-				log("llc_rtrequest: can't find LL ifaddr for iface\n");
+				log(LOG_DEBUG, "llc_rtrequest: can't find LL ifaddr for iface\n");
 			return;
 		}
 		/* FALLTHROUGH */
@@ -184,15 +185,15 @@ struct sockaddr *sa;
 		 * add with a LL address.
 		 */
 		if (gate->sdl.sdl_family != AF_LINK) {
-			log("llc_rtrequest: got non-link non-gateway route\n");
+			log(LOG_DEBUG, "llc_rtrequest: got non-link non-gateway route\n");
 			return;
 		}
 		if (lc != 0)
-			log("llc_rtrequest: losing old rt_llinfo\n");
+			log(LOG_DEBUG, "llc_rtrequest: losing old rt_llinfo\n");
 		R_Malloc(lc, struct llinfo_llc *, sizeof (*lc));
 		rt->rt_llinfo = (caddr_t)lc;
 		if (lc == 0) {
-			log("llc_rtrequest: malloc failed\n");
+			log(LOG_DEBUG, "llc_rtrequest: malloc failed\n");
 			return;
 		}
 		Bzero(lc, sizeof(*lc));
@@ -394,7 +395,7 @@ int					nsellength;	/* nsaps may differ only in trailing bytes */
 		if (sdl->sdl_family != AF_LINK || sdl->sdl_alen == 0) {
 			int old_sdl_len = sdl->sdl_len;
 			if (old_sdl_len < sizeof(*sdl)) {
-				log("snpac_add: cant make room for lladdr\n");
+				log(LOG_DEBUG, "snpac_add: cant make room for lladdr\n");
 				return (0);
 			}
 			zap_linkaddr(sdl, snpa, snpalen, index);
