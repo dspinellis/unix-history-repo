@@ -1,0 +1,15 @@
+.TH FROM UCB 2/24/79 UCB
+.SH NAME
+from \- who is my mail from?
+.SH SYNOPSIS
+from
+.SH DESCRIPTION
+.I From
+prints out the mail header lines in your mailbox file
+to show you who your mail is from
+.SH FILES
+/usr/spool/mail/*
+.SH "SEE ALSO"
+mail(1), Mail(UCB), prmail(UCB)
+.SH AUTHOR
+Bill Joy
