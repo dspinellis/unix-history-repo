@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_proc.c	7.13 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,9 +25,6 @@
 #include "ioctl.h"
 #include "tty.h"
 
-#include "machine/reg.h"
-#include "machine/psl.h"
-
 /*
  * Is p an inferior of the current process?
  */
@@ -35,8 +32,8 @@ inferior(p)
 	register struct proc *p;
 {
 
-	for (; p != u.u_procp; p = p->p_pptr)
-		if (p->p_ppid == 0)
+	for (; p != curproc; p = p->p_pptr)
+		if (p->p_pid == 0)
 			return (0);
 	return (1);
 }
@@ -74,7 +71,7 @@ pgfind(pgid)
 /*
  * Move p to a new or existing process group (and session)
  */
-pgmv(p, pgid, mksess)
+enterpgrp(p, pgid, mksess)
 	register struct proc *p;
 	pid_t pgid;
 {
@@ -85,9 +82,9 @@ pgmv(p, pgid, mksess)
 
 #ifdef DIAGNOSTIC
 	if (pgrp && mksess)	/* firewalls */
-		panic("pgmv: setsid into non-empty pgrp");
+		panic("enterpgrp: setsid into non-empty pgrp");
 	if (SESS_LEADER(p))
-		panic("pgmv: session leader attempted setpgrp");
+		panic("enterpgrp: session leader attempted setpgrp");
 #endif
 	if (pgrp == NULL) {
 		/*
@@ -95,7 +92,7 @@ pgmv(p, pgid, mksess)
 		 */
 #ifdef DIAGNOSTIC
 		if (p->p_pid != pgid)
-			panic("pgmv: new pgrp and pid != pgid");
+			panic("enterpgrp: new pgrp and pid != pgid");
 #endif
 		MALLOC(pgrp, struct pgrp *, sizeof(struct pgrp), M_PGRP,
 		       M_WAITOK);
@@ -113,8 +110,8 @@ pgmv(p, pgid, mksess)
 			p->p_flag &= ~SCTTY;
 			pgrp->pg_session = sess;
 #ifdef DIAGNOSTIC
-			if (p != u.u_procp)
-				panic("pgmv: mksession and p != u.u_procp");
+			if (p != curproc)
+				panic("enterpgrp: mksession and p != curproc");
 #endif
 		} else {
 			pgrp->pg_session = p->p_session;
@@ -144,7 +141,7 @@ pgmv(p, pgid, mksess)
 			*pp = p->p_pgrpnxt;
 			goto done;
 		}
-	panic("pgmv: can't find p on old pgrp");
+	panic("enterpgrp: can't find p on old pgrp");
 done:
 	/*
 	 * delete old if empty
@@ -162,7 +159,7 @@ done:
 /*
  * remove process from process group
  */
-pgrm(p)
+leavepgrp(p)
 	register struct proc *p;
 {
 	register struct proc **pp = &p->p_pgrp->pg_mem;
@@ -172,7 +169,7 @@ pgrm(p)
 			*pp = p->p_pgrpnxt;
 			goto done;
 		}
-	panic("pgrm: can't find p in pgrp");
+	panic("leavepgrp: can't find p in pgrp");
 done:
 	if (!p->p_pgrp->pg_mem)
 		pgdelete(p->p_pgrp);
@@ -266,33 +263,6 @@ orphanpg(pg)
 			return;
 		}
 	}
-}
-
-/*
- * init the process queues
- */
-pqinit()
-{
-	register struct proc *p;
-
-	/*
-	 * most procs are initially on freequeue
-	 *	nb: we place them there in their "natural" order.
-	 */
-
-	freeproc = NULL;
-	for (p = procNPROC; --p > proc; freeproc = p)
-		p->p_nxt = freeproc;
-
-	/*
-	 * but proc[0] is special ...
-	 */
-
-	allproc = p;
-	p->p_nxt = NULL;
-	p->p_prev = &allproc;
-
-	zombproc = NULL;
 }
 
 #ifdef debug
