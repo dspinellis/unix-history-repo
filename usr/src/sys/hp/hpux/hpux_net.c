@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_net.c 1.33 89/08/23$
  *
- *	@(#)hpux_net.c	7.3 (Berkeley) %G%
+ *	@(#)hpux_net.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -41,9 +41,9 @@
  * HPUX netioctl() to BSD syscall map.
  * Indexed by callno - MINBSDIPCCODE
  */
-extern int socket(), listen(), bind(), accept(), connect(), orecv();
-extern int osend(), shutdown(), getsockname(), sendto();
-extern int recvfrom(), getpeername();
+extern int socket(), listen(), bind(), oaccept(), connect(), orecv();
+extern int osend(), shutdown(), ogetsockname(), sendto();
+extern int orecvfrom(), ogetpeername();
 int hpuxgetsockopt(), hpuxsetsockopt();
 struct file *getsock();
 
@@ -52,12 +52,12 @@ struct hpuxtobsdipc {
 	int nargs;
 } hpuxtobsdipc[NUMBSDIPC] = {
 	socket,		3, /* 3ee */	listen,		2, /* 3ef */
-	bind,		3, /* 3f0 */	accept,		3, /* 3f1 */
+	bind,		3, /* 3f0 */	oaccept,	3, /* 3f1 */
 	connect,	3, /* 3f2 */	orecv,		4, /* 3f3 */
 	osend,		4, /* 3f4 */	shutdown,	2, /* 3f5 */
-	getsockname,	3, /* 3f6 */	hpuxsetsockopt,	5, /* 3f7 */
-	sendto,		6, /* 3f8 */	recvfrom,	6, /* 3f9 */
-	getpeername,	3, /* 3fa */	NULL,		0, /* 3fb */
+	ogetsockname,	3, /* 3f6 */	hpuxsetsockopt,	5, /* 3f7 */
+	sendto,		6, /* 3f8 */	orecvfrom,	6, /* 3f9 */
+	ogetpeername,	3, /* 3fa */	NULL,		0, /* 3fb */
 	NULL,		0, /* 3fc */	NULL,		0, /* 3fd */
 	NULL,		0, /* 3fe */	NULL,		0, /* 3ff */
 	NULL,		0, /* 400 */	NULL,		0, /* 401 */
