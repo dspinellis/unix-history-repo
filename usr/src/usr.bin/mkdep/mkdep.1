@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mkdep.1	5.1 (Berkeley) %G%
+.\"	@(#)mkdep.1	5.2 (Berkeley) %G%
 .\"
 .TH MKDEP 1 ""
 .UC 5
@@ -17,12 +17,14 @@ sources as arguments and constructs a set of include file dependencies.
 It attaches this dependency list to the end of the file \fIMakefile\fP.
 An example of its use in a Makefile might be:
 .nf
+.RS
 
 CFLAGS= -I../include -I.
 SRCS= file1.c file2.c
 
 depend:
 	mkdep ${CFLAGS} ${SRCS}
+.RE
 .PP
 where the macro SRCS is the list of C source files and the macro
 CFLAGS is the list of flags for the C compiler.
