@@ -218,10 +218,10 @@ main(argc, argv)
 	}
 	if (nflg)
 		printf("%s",
-"USER     CMD          PID   FD  DEV    INUM       MODE SZ|DV");
+"USER     CMD          PID   FD  DEV    INUM       MODE SZ|DV R/W");
 	else
 		printf("%s",
-"USER     CMD          PID   FD MOUNT      INUM MODE         SZ|DV");
+"USER     CMD          PID   FD MOUNT      INUM MODE         SZ|DV R/W");
 	if (checkfile && fsflg == 0)
 		printf(" NAME\n");
 	else
@@ -288,16 +288,16 @@ dofiles(kp)
 	 * root directory vnode, if one
 	 */
 	if (filed.fd_rdir)
-		vtrans(filed.fd_rdir, RDIR);
+		vtrans(filed.fd_rdir, RDIR, FREAD);
 	/*
 	 * current working directory vnode
 	 */
-	vtrans(filed.fd_cdir, CDIR);
+	vtrans(filed.fd_cdir, CDIR, FREAD);
 	/*
 	 * ktrace vnode, if one
 	 */
 	if (p->p_tracep)
-		vtrans(p->p_tracep, TRACE);
+		vtrans(p->p_tracep, TRACE, FREAD|FWRITE);
 	/*
 	 * open files
 	 */
@@ -322,7 +322,7 @@ dofiles(kp)
 			continue;
 		}
 		if (file.f_type == DTYPE_VNODE)
-			vtrans((struct vnode *)file.f_data, i);
+			vtrans((struct vnode *)file.f_data, i, file.f_flag);
 		else if (file.f_type == DTYPE_SOCKET) {
 			if (checkfile == 0)
 				socktrans((struct socket *)file.f_data, i);
@@ -336,14 +336,15 @@ dofiles(kp)
 }
 
 void
-vtrans(vp, i)
+vtrans(vp, i, flag)
 	struct vnode *vp;
 	int i;
+	int flag;
 {
 	extern char *devname();
 	struct vnode vn;
 	struct filestat fst;
-	char mode[15];
+	char rw[3], mode[15];
 	char *badtype = NULL, *filename, *getmnton();
 
 	filename = badtype = NULL;
@@ -422,9 +423,14 @@ vtrans(vp, i)
 	default:
 		printf(" %6d", fst.size);
 	}
+	rw[0] = '\0';
+	if (flag & FREAD)
+		strcat(rw, "r");
+	if (flag & FWRITE)
+		strcat(rw, "w");
+	printf(" %2s", rw);
 	if (filename && !fsflg)
-		printf(" %s", filename);
-		
+		printf("  %s", filename);
 	putchar('\n');
 }
 
