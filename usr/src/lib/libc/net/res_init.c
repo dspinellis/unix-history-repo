@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_init.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -39,7 +39,7 @@ res_init()
 	_res.options |= RES_INIT;
 	_res.nsaddr.sin_family = AF_INET;
 	_res.nsaddr.sin_addr.s_addr = INADDR_ANY;
-	_res.nsaddr.sin_port = HTONS(NAMESERVER_PORT);
+	_res.nsaddr.sin_port = htons(NAMESERVER_PORT);
 
 	/* first try reading the config file */
 	if ((fp = fopen(CONFFILE, "r")) != NULL) {
