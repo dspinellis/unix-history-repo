@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	7.17 (Berkeley) %G%
+ *	@(#)subr_prf.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -20,7 +20,9 @@
 #include "vnode.h"
 #include "file.h"
 #include "tty.h"
+#include "tprintf.h"
 #include "syslog.h"
+#include "malloc.h"
 
 #include "machine/mtpr.h"
 #ifdef KADB
@@ -96,7 +98,7 @@ printf(fmt, x1)
 
 	savintr = consintr, consintr = 0;	/* disable interrupts */
 #endif
-	prf(fmt, &x1, TOCONS | TOLOG, (caddr_t)0);
+	prf(fmt, &x1, TOCONS | TOLOG, (struct tty *)NULL);
 	if (!panicstr)
 		logwakeup();
 #if defined(tahoe)
@@ -115,39 +117,51 @@ uprintf(fmt, x1)
 	char *fmt;
 	unsigned x1;
 {
-	register struct tty *tp = u.u_procp->p_session->s_ttyp;
+	register struct proc *p = u.u_procp;
 
-	if (tp != NULL && tp->t_session == u.u_procp->p_session)
-		prf(fmt, &x1, TOTTY, (caddr_t)tp);
+	if (p->p_flag & SCTTY && p->p_session->s_ttyvp)
+		prf(fmt, &x1, TOTTY, p->p_session->s_ttyp);
+}
+
+tpr_t
+tprintf_open()
+{
+	register struct proc *p = u.u_procp;
+
+	if (p->p_flag & SCTTY && p->p_session->s_ttyvp) {
+		SESSHOLD(p->p_session);
+		return ((tpr_t)p->p_session);
+	} else
+		return ((tpr_t)NULL);
+}
+
+tprintf_close(sess)
+	tpr_t sess;
+{
+	if (sess)
+		SESSRELE(sess);
 }
 
 /*
- * tprintf prints on the specified terminal (console if none)
- * and logs the message.  It is designed for error messages from
- * single-open devices, and may be called from interrupt level
- * (does not sleep).
+ * tprintf prints on the controlling terminal associated
+ * with the given session.  
  */
 /*VARARGS2*/
-tprintf(vp, fmt, x1)
-	register caddr_t vp;
+tprintf(sess, fmt, x1)
+	register tpr_t sess;
 	char *fmt;
 	unsigned x1;
 {
-#ifdef notyet
-	int flags = TOTTY | TOLOG;
+	int flags = TOLOG;
 
 	logpri(LOG_INFO);
 
-	if (vp == NULL || 
-	    VOP_IOCTL(vp, TIOCCHECKOUTQ, &val, FWRITE, NOCRED) != 0 || 
-	    val == 0)
-		flags = TOLOG;
-	prf(fmt, &x1, flags, vp);
+	if (sess && sess->s_ttyvp && ttycheckoutq(sess->s_ttyp, 0))
+		flags |= TOTTY;
+	prf(fmt, &x1, flags, sess->s_ttyp);
 	logwakeup();
-#else
-	printf("tprintf called\n");
-#endif
 }
+
 
 /*
  * Log writes to the log buffer,
@@ -163,10 +177,10 @@ log(level, fmt, x1)
 	extern int log_open;
 
 	logpri(level);
-	prf(fmt, &x1, TOLOG, (caddr_t)0);
+	prf(fmt, &x1, TOLOG, (struct tty *)NULL);
 	splx(s);
 	if (!log_open)
-		prf(fmt, &x1, TOCONS, (caddr_t)0);
+		prf(fmt, &x1, TOCONS, (struct tty *)NULL);
 	logwakeup();
 }
 
@@ -174,9 +188,9 @@ logpri(level)
 	int level;
 {
 
-	putchar('<', TOLOG, (caddr_t)0);
-	printn((u_long)level, 10, TOLOG, (caddr_t)0);
-	putchar('>', TOLOG, (caddr_t)0);
+	putchar('<', TOLOG, (struct tty *)NULL);
+	printn((u_long)level, 10, TOLOG, (struct tty *)NULL);
+	putchar('>', TOLOG, (struct tty *)NULL);
 }
 
 /*VARARGS1*/
@@ -186,17 +200,17 @@ addlog(fmt, x1)
 {
 	register s = splhigh();
 
-	prf(fmt, &x1, TOLOG, (caddr_t)0);
+	prf(fmt, &x1, TOLOG, (struct tty *)NULL);
 	splx(s);
 	if (!log_open)
-		prf(fmt, &x1, TOCONS, (caddr_t)0);
+		prf(fmt, &x1, TOCONS, (struct tty *)NULL);
 	logwakeup();
 }
 
-prf(fmt, adx, flags, where)
+prf(fmt, adx, flags, ttyp)
 	register char *fmt;
 	register u_int *adx;
-	caddr_t where;
+	struct tty *ttyp;
 {
 	register int b, c, i;
 	char *s;
@@ -206,7 +220,7 @@ loop:
 	while ((c = *fmt++) != '%') {
 		if (c == '\0')
 			return;
-		putchar(c, flags, where);
+		putchar(c, flags, ttyp);
 	}
 again:
 	c = *fmt++;
@@ -227,54 +241,54 @@ again:
 	case 'o': case 'O':
 		b = 8;
 number:
-		printn((u_long)*adx, b, flags, where);
+		printn((u_long)*adx, b, flags, ttyp);
 		break;
 	case 'c':
 		b = *adx;
 #if BYTE_ORDER == LITTLE_ENDIAN
 		for (i = 24; i >= 0; i -= 8)
 			if (c = (b >> i) & 0x7f)
-				putchar(c, flags, where);
+				putchar(c, flags, ttyp);
 #endif
 #if BYTE_ORDER == BIG_ENDIAN
 		if (c = (b & 0x7f))
-			putchar(c, flags, where);
+			putchar(c, flags, ttyp);
 #endif
 		break;
 	case 'b':
 		b = *adx++;
 		s = (char *)*adx;
-		printn((u_long)b, *s++, flags, where);
+		printn((u_long)b, *s++, flags, ttyp);
 		any = 0;
 		if (b) {
 			while (i = *s++) {
 				if (b & (1 << (i-1))) {
-					putchar(any ? ',' : '<', flags, where);
+					putchar(any ? ',' : '<', flags, ttyp);
 					any = 1;
 					for (; (c = *s) > 32; s++)
-						putchar(c, flags, where);
+						putchar(c, flags, ttyp);
 				} else
 					for (; *s > 32; s++)
 						;
 			}
 			if (any)
-				putchar('>', flags, where);
+				putchar('>', flags, ttyp);
 		}
 		break;
 
 	case 's':
 		s = (char *)*adx;
 		while (c = *s++)
-			putchar(c, flags, where);
+			putchar(c, flags, ttyp);
 		break;
 
 	case 'r':
 		s = (char *)*adx++;
-		prf(s, (u_int *)*adx, flags, where);
+		prf(s, (u_int *)*adx, flags, ttyp);
 		break;
 
 	case '%':
-		putchar('%', flags, where);
+		putchar('%', flags, ttyp);
 		break;
 	}
 	adx++;
@@ -285,16 +299,16 @@ number:
  * Printn prints a number n in base b.
  * We don't use recursion to avoid deep kernel stacks.
  */
-printn(n, b, flags, where)
+printn(n, b, flags, ttyp)
 	u_long n;
-	caddr_t where;
+	struct tty *ttyp;
 {
 	char prbuf[11];
 	register char *cp;
 
 	if (b == -10) {
 		if ((int)n < 0) {
-			putchar('-', flags, where);
+			putchar('-', flags, ttyp);
 			n = (unsigned)(-(int)n);
 		}
 		b = -b;
@@ -305,7 +319,7 @@ printn(n, b, flags, where)
 		n /= b;
 	} while (n);
 	do
-		putchar(*--cp, flags, where);
+		putchar(*--cp, flags, ttyp);
 	while (cp > prbuf);
 }
 
@@ -353,24 +367,24 @@ tablefull(tab)
  * are saved in msgbuf for inspection later.
  */
 /*ARGSUSED*/
-putchar(c, flags, where)
+putchar(c, flags, ttyp)
 	register int c;
-	caddr_t where;
+	struct tty *ttyp;
 {
 	extern int msgbufmapped;
 
 	if (panicstr)
 		constty = 0;
-	if ((flags & TOCONS) && where == 0 && constty) {
-		where = (caddr_t)constty;
+	if ((flags & TOCONS) && ttyp == NULL && constty) {
+		ttyp = constty;
 		flags |= TOTTY;
 	}
 	if ((flags & TOCONS) && panicstr == 0 && tp == 0 && constty) {
 		tp = constty;
 		flags |= TOTTY;
 	}
-	if ((flags & TOTTY) && where && tputchar(c, (struct tty *)where) < 0 &&
-	    (flags & TOCONS) && (struct tty *)where == constty)
+	if ((flags & TOTTY) && ttyp && tputchar(c, ttyp) < 0 &&
+	    (flags & TOCONS) && ttyp == constty)
 		constty = 0;
 	if ((flags & TOLOG) && c != '\0' && c != '\r' && c != 0177 &&
 	    msgbufmapped) {
