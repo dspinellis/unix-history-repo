@@ -75,22 +75,22 @@ print:
 	@pr [a-ln-x]*.c
 #	@pr putn.s treen.s yycopy.s
 
-depend:	
+depend:
 	ls *.c | sed 's;^\([a-zA-Z0-9.]*\)\.c;\1.o: &;' >makedep
 	cd ${SRCDIR}; ls ${SRCSRC} | sed \
 		-e 's;^\([a-zA-Z0-9.]*\)\.c;\1.o: ${SRCDIR}/&;' \
 		>>${BINDIR}/makedep
-	/bin/grep '^#[ 	]*include' *.h ${SRCDIR}/*.h | sed \
+	grep '^#[ 	]*include' *.h ${SRCDIR}/*.h | sed \
 		-e '/<.*>/d' \
 		-e 's;\(.*\):[^"]*"\([^"]*\)".*;\1: \2;' >>makedep
-	cd ${SRCDIR}; /bin/grep '^#[ 	]*include' ${SRCSRC} | sed \
+	cd ${SRCDIR}; grep '^#[ 	]*include' ${SRCSRC} | sed \
 		-e '/<.*>/d' \
 		-e 's;:[^"]*"\([^"]*\)".*;: ${SRCDIR}/\1;' \
 		-e 's;^\([a-zA-Z0-9.]*\)\.c;\1.o;' \
 		-e 's;: ${SRCDIR}/0.h;: 0.h;' \
 		-e 's;: ${SRCDIR}/whoami.h;: whoami.h;' \
 		-e 's;: ${SRCDIR}/opcode.h;: opcode.h;' >>${BINDIR}/makedep
-	/bin/grep '^#[ 	]*include' *.c | sed \
+	grep '^#[ 	]*include' *.c | sed \
 		-e '/<.*>/d' \
 		-e 's;:[^"]*"\([^"]*\)".*;: ${SRCDIR}/\1;' \
 		-e 's;^\([a-zA-Z0-9.]*\)\.c;\1.o;' \
@@ -130,7 +130,6 @@ stat.o: stat.c
 type.o: type.c
 var.o: var.c
 version.o: version.c
-y.tab.o: y.tab.c
 yycomm.o: yycomm.c
 yyerror.o: yyerror.c
 yymain.o: yymain.c
@@ -165,6 +164,7 @@ nl.o: 0.h
 nl.o: opcode.h
 nl.o: ../src/objfmt.h
 string.o: whoami.h
+string.o: ../src/align.h
 string.o: 0.h
 string.o: ../src/send.h
 subr.o: whoami.h
@@ -251,11 +251,6 @@ type.o: 0.h
 type.o: ../src/tree.h
 var.o: 0.h
 var.o: ../src/tree.h
-y.tab.o: whoami.h
-y.tab.o: 0.h
-y.tab.o: ../src/tree_ty.h
-y.tab.o: ../src/yy.h
-y.tab.o: ../src/tree.h
 yycomm.o: whoami.h
 yycomm.o: 0.h
 yycomm.o: ../src/yy.h
