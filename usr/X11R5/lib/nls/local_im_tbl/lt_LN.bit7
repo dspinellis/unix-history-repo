@@ -1,0 +1,151 @@
+# $XConsortium: lt_LN.bit7,v 1.4 91/12/27 15:10:49 rws Exp $
+#
+#	Conversion file for Local Input Method
+#
+# The format of this file follows.
+#
+#	<from>[<from>...]	[<to>[<to>...]]	[{to_string}[{to_string}...]
+#  or
+#	<from>[<from>...]	Command
+#  or
+#	InitialState		OnState/OffState
+#
+#  from : Input keysym
+#  to_keysym : Output keysym
+#  to_string : Output string
+#  Command : Special commad (NoFilter/ConvertOn/ConvertOff)
+#  InitialState : Initial state (default is OnState)
+
+<Shift_L>			NoFilter
+<Shift_R>			NoFilter
+<Control_L>			NoFilter
+<Control_R>			NoFilter
+<Caps_Lock>			NoFilter
+<Shift_Lock>			NoFilter
+<Meta_L>			NoFilter
+<Meta_R>			NoFilter
+<Alt_L>				NoFilter
+<Alt_R>				NoFilter
+<Super_L>			NoFilter
+<Super_R>			NoFilter
+<Hyper_L>			NoFilter
+<Hyper_R>			NoFilter
+<Execute>			ConvertOn
+<Execute>			ConvertOff
+<backslash><backslash>		<backslash>	{\E-A\x5c}
+<backslash><space>		<nobreakspace>	{\E-A\xa0}
+<backslash><exclam>		<exclamdown>	{\E-A\xa1}
+<backslash><Mod1><C>		<cent>       	{\E-A\xa2}
+<backslash><Mod1><p>		<sterling>	{\E-A\xa3}
+<backslash><Mod1><c>		<currency>	{\E-A\xa4}
+<backslash><Mod1><y>		<yen>		{\E-A\xa5}
+<backslash><Mod1><b>		<brokenbar>	{\E-A\xa6}
+<backslash><Mod1><s>		<section>	{\E-A\xa7}
+<backslash><quotedbl>		<diaeresis>	{\E-A\xa8}
+<backslash><Mod1><r>		<copyright>	{\E-A\xa9}
+<backslash><Mod1><a>		<ordfeminine>	{\E-A\xaa}
+<backslash><less>		<guillemotleft>	{\E-A\xab}
+<backslash><Mod1><n>		<notsign>	{\E-A\xac}
+<backslash><Mod1><h>		<hyphen>	{\E-A\xad}
+<backslash><Mod1><R>		<registered>	{\E-A\xae}
+<backslash><Mod1><m>		<macron>	{\E-A\xaf}
+
+<backslash><Mod1><d>		<degree>	{\E-A\xb0}
+<backslash><plus><minus>	<plusminus>	{\E-A\xb1}
+<backslash><Mod1><2>		<twosuperior>	{\E-A\xb2}
+<backslash><Mod1><3>		<threesuperior> {\E-A\xb3}
+<backslash><apostrophe>		<acute>		{\E-A\xb4}
+<backslash><Mod1><u>		<mu>		{\E-A\xb5}
+<backslash><Mod1><P>		<paragraph>	{\E-A\xb6}
+<backslash><period>		<periodcentered>	{\E-A\xb7}
+<backslash><Mod1><S>		<cedilla>	{\E-A\xb8}
+<backslash><Mod1><1>		<onesuperior>	{\E-A\xb9}
+<backslash><Mod1><o>		<masculine>	{\E-A\xba}
+<backslash><greater>		<guillemotright>	{\E-A\xbb}
+<backslash><1><slash><4>	<onequarter>	{\E-A\xbc}
+<backslash><1><slash><2>	<onehalf>	{\E-A\xbd}
+<backslash><3><slash><4>	<threequarters>	{\E-A\xbe}
+<backslash><question>		<questiondown>	{\E-A\xbf}
+
+<grave><A>			<Agrave>	{\E-A\xc0}
+<apostrophe><A>			<Aacute>	{\E-A\xc1}
+<asciicircum><A>		<Acircumflex>	{\E-A\xc2}
+<asciitilde><A>			<Atilde>	{\E-A\xc3}
+<quotedbl><A>			<Adiaeresis>	{\E-A\xc4}
+<backslash><o><A>		<Aring>		{\E-A\xc5}
+<backslash><A><E>		<AE>		{\E-A\xc6}
+<backslash><S><C>		<Ccedilla>	{\E-A\xc7}
+<grave><E>			<Egrave>	{\E-A\xc8}
+<apostrophe><E>			<Eacute>	{\E-A\xc9}
+<asciicircum><E>		<Ecircumflex>	{\E-A\xca}
+<quotedbl><E>			<Ediaeresis>	{\E-A\xcb}
+<grave><I>			<Igrave>	{\E-A\xcc}
+<apostrophe><I>			<Iacute>	{\E-A\xcd}
+<asciicircum><I>		<Icircumflex>	{\E-A\xce}
+<quotedbl><I>			<Idiaeresis>	{\E-A\xcf}
+
+<backslash><D>			<Eth>		{\E-A\xd0}
+<asciitilde><N>			<Ntilde>	{\E-A\xd1}
+<grave><O>			<Ograve>	{\E-A\xd2}
+<apostrophe><O>			<Oacute>	{\E-A\xd3}
+<asciicircum><O>		<Ocircumflex>	{\E-A\xd4}
+<asciitilde><O>			<Otilde>	{\E-A\xd5}
+<quotedbl><O>			<Odiaeresis>	{\E-A\xd6}
+<backslash><X>			<multiply>	{\E-A\xd7}
+<backslash><O><slash>		<Ooblique>	{\E-A\xd8}
+<grave><U>			<Ugrave>	{\E-A\xd9}
+<apostrophe><U>			<Uacute>	{\E-A\xda}
+<asciicircum><U>		<Ucircumflex>	{\E-A\xdb}
+<quotedbl><U>			<Udiaeresis>	{\E-A\xdc}
+<apostrophe><Y>			<Yacute>	{\E-A\xdd}
+<backslash><P>			<Thorn>		{\E-A\xde}
+<backslash><s><s>		<ssharp>	{\E-A\xdf}
+
+<grave><a>			<agrave>	{\E-A\xe0}
+<apostrophe><a>			<aacute>	{\E-A\xe1}
+<asciicircum><a>		<acircumflex>	{\E-A\xe2}
+<asciitilde><a>			<atilde>	{\E-A\xe3}
+<quotedbl><a>			<adiaeresis>	{\E-A\xe4}
+<backslash><o><a>		<aring>		{\E-A\xe5}
+<backslash><a><e>		<ae>		{\E-A\xe6}
+<backslash><s><c>		<ccedilla>	{\E-A\xe7}
+<grave><e>			<egrave>	{\E-A\xe8}
+<apostrophe><e>			<eacute>	{\E-A\xe9}
+<asciicircum><e>		<ecircumflex>	{\E-A\xea}
+<quotedbl><e>			<ediaeresis>	{\E-A\xeb}
+<grave><i>			<igrave>	{\E-A\xec}
+<apostrophe><i>			<iacute>	{\E-A\xed}
+<asciicircum><i>		<icircumflex>	{\E-A\xee}
+<quotedbl><i>			<idiaeresis>	{\E-A\xef}
+
+<backslash><d>			<eth>		{\E-A\xf0}
+<asciitilde><n>			<ntilde>	{\E-A\xf1}
+<grave><o>			<ograve>	{\E-A\xf2}
+<apostrophe><o>			<oacute>	{\E-A\xf3}
+<asciicircum><o>		<ocircumflex>	{\E-A\xf4}
+<asciitilde><o>			<otilde>	{\E-A\xf5}
+<quotedbl><o>			<odiaeresis>	{\E-A\xf6}
+<backslash><slash>		<division>	{\E-A\xf7}
+<backslash><o><slash>		<oslash>	{\E-A\xf8}
+<grave><u>			<ugrave>	{\E-A\xf9}
+<apostrophe><u>			<uacute>	{\E-A\xfa}
+<asciicircum><u>		<ucircumflex>	{\E-A\xfb}
+<quotedbl><u>			<udiaeresis>	{\E-A\xfc}
+<apostrophe><y>			<yacute>	{\E-A\xfd}
+<backslash><p>			<thorn>		{\E-A\xfe}
+<quotedbl><y>			<ydiaeresis>	{\E-A\xff}
+
+# BackSpace		
+# Clear		
+# Escape		
+# Cancel		
+# Break		
+# <space>              0x020
+
+# <quotedbl>           "
+# <apostrophe>         '
+# <quoteright>         0x027	
+# <backslash>          0x05c
+# <asciicircum>        0x05e
+# <grave>              0x060
+# <asciitilde>         0x07e

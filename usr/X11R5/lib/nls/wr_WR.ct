@@ -1,0 +1,91 @@
+#
+# $XConsortium: wr_WR.ct,v 1.6 91/06/29 20:02:13 xguest Exp $
+#
+# Copyright 1990, 1991 by OMRON Corporation, NTT Software Corporation,
+#                      and Nippon Telegraph and Telephone Corporation
+# Copyright 1991 by the Massachusetts Institute of Technology
+#
+# Permission to use, copy, modify, distribute, and sell this software and its
+# documentation for any purpose is hereby granted without fee, provided that
+# the above copyright notice appear in all copies and that both that
+# copyright notice and this permission notice appear in supporting
+# documentation, and that the names of OMRON, NTT Software, NTT, and M.I.T.
+# not be used in advertising or publicity pertaining to distribution of the
+# software without specific, written prior permission. OMRON, NTT Software,
+# NTT, and M.I.T. make no representations about the suitability of this
+# software for any purpose.  It is provided "as is" without express or
+# implied warranty.
+#
+# OMRON, NTT SOFTWARE, NTT, AND M.I.T. DISCLAIM ALL WARRANTIES WITH REGARD
+# TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+# AND FITNESS, IN NO EVENT SHALL OMRON, NTT SOFTWARE, NTT, OR M.I.T. BE
+# LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES 
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+#	Authors: Li Yuhong		OMRON Corporation
+#		 Hiroshi Kuribayashi	OMRON Corporation
+#   
+########################################################################
+#
+#	  Locale Name: wr_WR.ct
+#   
+#  This is definition of locale of compound text for multiple languages.
+#  Now this definition contains the languages: English, Latin, Japanese,
+#  Chinese and Korean.
+#  If you want to include more languages or change to anothers, you should
+#  modifiy the category XLC_FONTSET to specify other fonts of languages
+#
+XLC_ALL
+wr_WR.ct
+END XLC_ALL
+
+XLC_ENCODING
+COMPOUND_TEXT
+END XLC_ENCODING
+
+XLC_FONTSET
+# left half of latin-1 (ISO8859.1)
+iso8859-1:GL
+# right half of latin-1 (ISO8859.1)
+iso8859-1:GR
+# ROMAN: left half of jisx 0201
+jisx0201.1976-0:GL
+# KATAKANA: right half of jisx 0201
+jisx0201.1976-0:GR
+# HANZI
+gb2312.1980-0:GL
+# KANJI
+jisx0208.1983-0:GL
+# HANJA
+ksc5601.1987-0:GL
+END XLC_FONTSET
+
+XLC_CODESET
+#
+# type:CS0_mblen:CS1_mblen:CS2_mblen:CS3_mblen:CS4_mblen:CS5_mblen...
+#
+F:1:1:1:1:2:2:2
+\033(B
+\033-A
+\033(J
+\033)I
+\033$(A
+\033$(B
+\033$(C
+# ASCII
+(20=20:7f)
+# right half of latin-1
+(a0=a0:ff)
+# ROMAN
+(20=20:7e)
+# KATAKANA
+(A1=a1:df)
+# HANZI
+(2121=2121:7e7e)
+# KANJI
+(2121=2121:7e7e)
+# HANJA 
+(2121=2121:7e7e)
+END XLC_CODESET
