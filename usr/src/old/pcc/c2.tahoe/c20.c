@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)c20.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)c20.c	1.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -55,6 +55,7 @@ char **argv;
 	while (argc>0) {/* get flags */
 		if (**argv=='-') {
 			switch ((*argv)[1]) {
+			case 'a': aobflag++; break;
 			case 'n': nflag++; break;
 			case 'd': debug++; break;
 			case 'f': fortflg++; break;
@@ -87,6 +88,7 @@ char **argv;
 			rmove();
 		} while (nchange || jumpsw());
 		addaob();
+		interleave();
 		output();
 		if (niter > maxiter)
 			maxiter = niter;
