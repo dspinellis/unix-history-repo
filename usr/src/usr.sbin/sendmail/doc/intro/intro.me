@@ -21,7 +21,7 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.16,
+version 3.17,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
@@ -2483,9 +2483,15 @@ Normally
 suppresses the sender
 if in a group being sent to.
 .ip \-o
-Assume that header lines containing recepient names in the message
-will have addresses separated by spaces
-rather than by commas.
+Assume that the headers are already in new format,
+i.e.,
+there are commas between names and spaces are to be preserved.
+If this flag is not given,
+an adaptive algorithm is used:
+if any recipient address contains a comma, parenthesis,
+or angle bracket,
+it will be assumed that commas already exist.
+This flag is required in certain rare cases.
 Headers are always output with commas between the names.
 .ip \-i
 Don't take a dot to end a message.
@@ -2538,15 +2544,21 @@ don't connect immediately.
 This requires that queueing be compiled in,
 since it will depend on a sender process to
 actually send the mail.
-.ip \-q
+.ip \-q\&time
 Try to execute the queued up mail.
+If the time is given,
+a sendmail will run through the queue at the specified interval
+to deliver queued mail;
+otherwise, it only runs once.
 .ip \-p
 Verify as much about the addresses and message as possible
 and then politely run in background.
 .ip \-D
 Run as a daemon.
-This automatically runs SMTP.
-This is not completely supported yet.
+This should always be used with the
+.b \-as
+flag,
+as it runs on the SMTP port.
 .ip \-T\&time
 Set timeout interval for mail that cannot be sent.
 .ip \-Q\&dir
