@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -429,9 +429,9 @@ main(argc, argv)
 		maxcontig = MAX(1, MIN(MAXPHYS, MAXBSIZE) / bsize);
 	if (density == 0)
 		density = NFPI * fsize;
-	if (minfree < 10 && opt != FS_OPTSPACE) {
+	if (minfree < MINFREE && opt != FS_OPTSPACE) {
 		fprintf(stderr, "Warning: changing optimization to space ");
-		fprintf(stderr, "because minfree is less than 10%%\n");
+		fprintf(stderr, "because minfree is less than %d%%\n", MINFREE);
 		opt = FS_OPTSPACE;
 	}
 	if (trackspares == -1) {
@@ -627,6 +627,7 @@ usage()
 	fprintf(stderr, "where fsoptions are:\n");
 	fprintf(stderr,
 	    "\t-N do not create file system, just print out parameters\n");
+	fprintf(stderr, "\t-O create a 4.3BSD format filesystem\n");
 	fprintf(stderr, "\t-S sector size\n");
 #ifdef COMPAT
 	fprintf(stderr, "\t-T disktype\n");
