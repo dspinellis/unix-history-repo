@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)expand.c	4.2 (Berkeley) 83/09/27";
+static	char *sccsid = "@(#)expand.c	4.3 (Berkeley) 83/10/10";
 #endif
 
 #include "defs.h"
@@ -17,6 +17,7 @@ char	*entp;
 char	**sortbase;
 
 char	*index();
+struct block *copy();
 
 /*
  * Take a list of names and expand any macros, etc.
@@ -27,17 +28,22 @@ expand(list, noshexp)
 	int noshexp;
 {
 	register struct block *prev, *bp, *tp;
-	register char *cp, *s;
+	register char *cp;
 	register int n;
-	char *var, *tail;
+	char *tail;
 	int c;
 	char pathbuf[BUFSIZ];
 	char *argvbuf[GAVSIZ];
 
+	if (debug) {
+		printf("expand(%x, %d)\nlist = ", list, noshexp);
+		prnames(list);
+	}
+
 	for (prev = NULL, bp = list; bp != NULL; prev = bp, bp = bp->b_next) {
 	again:
 		cp = index(bp->b_name, '$');
-		if (cp == NULL || cp != bp->b_name && cp[-1] == '\\')
+		if (cp == NULL)
 			continue;
 		*cp++ = '\0';
 		if (*cp == '\0')
@@ -55,24 +61,26 @@ expand(list, noshexp)
 			*tail = '\0';
 		}
 		tp = lookup(cp, NULL, 0);
+		if (c != '\0')
+			*tail = c;
 		if ((tp = tp->b_args) != NULL) {
-			struct block *first = tp;
+			struct block *first = bp;
 
-			if (prev == NULL)
-				list = tp;
-			else
-				prev->b_next = tp;
-			if (c)
-				*tail = c;
-			makestr(tp, bp->b_name, tail);
-			while (tp->b_next != NULL) {
-				tp = tp->b_next;
-				makestr(tp, bp->b_name, tail);
+			for (bp = prev; tp != NULL; tp = tp->b_next) {
+				if (bp == NULL)
+					list = bp = copy(tp, first->b_name, tail);
+				else {
+					bp->b_next = copy(tp, first->b_name, tail);
+					bp = bp->b_next;
+				}
 			}
-			tp->b_next = bp->b_next;
-			free(bp->b_name);
-			free(bp);
-			bp = first;
+			bp->b_next = first->b_next;
+			free(first->b_name);
+			free(first);
+			if (prev == NULL)
+				bp = list;
+			else
+				bp = prev->b_next;
 			goto again;
 		} else {
 			if (prev == NULL)
@@ -91,6 +99,11 @@ expand(list, noshexp)
 
 	if (noshexp)
 		return(list);
+
+	if (debug) {
+		printf("shexpand ");
+		prnames(list);
+	}
 
 	path = pathp = pathbuf;
 	*pathp = '\0';
@@ -126,24 +139,28 @@ expand(list, noshexp)
 }
 
 /*
- * Concat head, bp->b_name, and tail
+ * Return a new NAME block named "head, bp->b_name, tail"
  */
-makestr(bp, head, tail)
+struct block *
+copy(bp, head, tail)
 	struct block *bp;
 	char *head, *tail;
 {
 	register int n;
 	register char *cp;
+	register struct block *np;
 
-	if (!*head && !*tail)
-		return;
+	np = ALLOC(block);
+	if (np == NULL)
+		fatal("ran out of memory\n");
+	np->b_type = NAME;
+	np->b_next = bp->b_args = NULL;
 	n = strlen(bp->b_name) + strlen(head) + strlen(tail) + 1;
-	cp = (char *) malloc(n);
+	np->b_name = cp = malloc(n);
 	if (cp == NULL)
 		fatal("ran out of memory");
 	sprintf(cp, "%s%s%s", head, bp->b_name, tail);
-	free(bp->b_name);
-	bp->b_name = cp;
+	return(np);
 }
 
 /*
@@ -153,7 +170,6 @@ makestr(bp, head, tail)
 expsh(s)
 	register char *s;
 {
-	register int i;
 	register int oargc = argc;
 
 	if (!strcmp(s, "{") || !strcmp(s, "{}")) {
@@ -232,7 +248,6 @@ matchdir(pattern)
 	struct stat stb;
 	register struct direct *dp;
 	DIR *dirp;
-	register int cnt;
 
 	dirp = opendir(path);
 	if (dirp == NULL) {
@@ -499,13 +514,13 @@ Cat(s1, s2)
 	register char *s1, *s2;
 {
 	int len = strlen(s1) + strlen(s2) + 1;
-	register char *s, *ep;
+	register char *s;
 
 	nleft -= len;
 	if (nleft <= 0 || ++argc >= GAVSIZ)
 		fatal("Arguments too long\n");
 	argv[argc] = 0;
-	argv[argc - 1] = s = (char *) malloc(len);
+	argv[argc - 1] = s = malloc(len);
 	if (s == NULL)
 		fatal("ran out of memory\n");
 	while (*s++ = *s1++ & TRIM)
@@ -527,8 +542,10 @@ addpath(c)
 
 /*
  * Expand file names beginning with `~' into the
- * user's home directory path name.
+ * user's home directory path name. Return a pointer in buf to the
+ * part corresponding to `file'.
  */
+char *
 exptilde(buf, file)
 	char buf[];
 	register char *file;
@@ -539,7 +556,7 @@ exptilde(buf, file)
 
 	if (*file != '~') {
 		strcpy(buf, file);
-		return;
+		return(buf);
 	}
 	file++;
 	if (*file == '\0' || *file == '/') {
@@ -554,10 +571,10 @@ exptilde(buf, file)
 			s3 = NULL;
 		pw = getpwnam(file);
 		if (pw == NULL) {
-			fatal("unknown user %s\n", file);
+			error("unknown user %s\n", file);
 			if (s3 != NULL)
 				*s3 = '/';
-			return;
+			return(NULL);
 		}
 		if (s3 != NULL)
 			*s3 = '/';
@@ -565,9 +582,10 @@ exptilde(buf, file)
 	}
 	for (s1 = buf; *s1++ = *s2++; )
 		;
-	if (s3 == NULL)
-		return;
 	s1--;
+	if (s3 == NULL)
+		return(s1);
 	while (*s1++ = *s3++)
 		;
+	return(s1 - 1);
 }

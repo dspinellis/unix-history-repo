@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.2 (Berkeley) 83/09/27";
+static	char *sccsid = "@(#)main.c	4.3 (Berkeley) 83/10/10";
 #endif
 
 #include "defs.h"
@@ -147,7 +147,7 @@ doupdate(nargs, args)
 	char *args[];
 {
 	struct block *bp, *files, *hosts, *cmds, *prev;
-	int i, firsttime = 1;
+	int i;
 	char *pos, dest[BUFSIZ];
 
 	if (nargs < 2)

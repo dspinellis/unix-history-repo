@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static	char *sccsid = "@(#)gram.y	4.2 (Berkeley) 83/09/27";
+static	char *sccsid = "@(#)gram.y	4.3 (Berkeley) 83/10/10";
 #endif
 
 #include "defs.h"
@@ -17,16 +17,17 @@ struct	block *lastc;
 %term DCOLON 5
 %term NAME 6
 %term INSTALL 7
-%term VERIFY 8
-%term NOTIFY 9
-%term EXCEPT 10
+%term NOTIFY 8
+%term EXCEPT 9
+%term OPTION 10
 
-%union
-	{
+%union {
 	struct block *blk;
-	}
+	int intval;
+}
 
-%type <blk> NAME, INSTALL, VERIFY, NOTIFY, EXCEPT, namelist, names, cmdlist, cmd
+%type <blk> NAME, INSTALL, NOTIFY, EXCEPT, namelist, names, cmdlist, cmd
+%type <intval> OPTION, options
 
 %%
 
@@ -83,19 +84,15 @@ cmdlist:	  /* VOID */ {
 		}
 		;
 
-cmd:		  INSTALL NAME = {
+cmd:		  INSTALL options NAME = {
 			register struct block *b;
 
-		inst_name:
-			b = expand($2, 0);
+			$1->b_options = $2;
+			b = expand($3, 0);
 			if (b == NULL || b->b_next != NULL)
 				fatal("exactly one name allowed\n");
 			$1->b_name = b->b_name;
-			free($2);
 			$$ = $1;
-		}
-		| VERIFY NAME = {
-			goto inst_name;
 		}
 		| NOTIFY namelist = {
 			$1->b_args = expand($2, 1);
@@ -104,6 +101,13 @@ cmd:		  INSTALL NAME = {
 		| EXCEPT namelist = {
 			$1->b_args = expand($2, 0);
 			$$ = $1;
+		}
+		;
+options:	  /* VOID */ = {
+			$$ = 0;
+		}
+		| options OPTION = {
+			$$ |= $2;
 		}
 		;
 
@@ -117,8 +121,7 @@ yylex()
 	static char yytext[INMAX];
 	register int c;
 	register char *cp1, *cp2;
-	register struct block *bp;
-	static char quotechars[] = "[]{}*?";
+	static char quotechars[] = "[]{}*?$";
 	
 again:
 	switch (c = getc(fin)) {
@@ -158,9 +161,6 @@ again:
 		ungetc(c, fin);
 		c = ':';
 	}
-	/*
-	 * Start of a name.
-	 */
 	cp1 = yytext;
 	cp2 = &yytext[INMAX - 1];
 	for (;;) {
@@ -185,17 +185,30 @@ again:
 		}
 	}
 	*cp1 = '\0';
+	if (yytext[0] == '-' && yytext[2] == '\0') {
+		switch (yytext[1]) {
+		case 'v':
+			yylval.intval = VERIFY;
+			return(OPTION);
+
+		case 'w':
+			yylval.intval = WHOLE;
+			return(OPTION);
+
+		case 'y':
+			yylval.intval = YOUNGER;
+			return(OPTION);
+		}
+	}
 	if (!strcmp(yytext, "install"))
 		c = INSTALL;
-	else if (!strcmp(yytext, "verify"))
-		c = VERIFY;
 	else if (!strcmp(yytext, "notify"))
 		c = NOTIFY;
 	else if (!strcmp(yytext, "except"))
 		c = EXCEPT;
 	else
 		c = NAME;
-	yylval.blk = bp = makeblock(c, yytext);
+	yylval.blk = makeblock(c, yytext);
 	return(c);
 }
 

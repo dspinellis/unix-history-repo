@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lookup.c	4.2 (Berkeley) 83/09/27";
+static	char *sccsid = "@(#)lookup.c	4.3 (Berkeley) 83/10/10";
 #endif
 
 #include "defs.h"
@@ -17,9 +17,12 @@ define(name)
 		printf("define(%s)\n", name);
 
 	cp = index(name, '=');
-	if (cp == NULL || cp[1] == '\0')
+	if (cp == NULL)
 		value = NULL;
-	else if (cp[1] != '(') {
+	else if (cp[1] == '\0') {
+		*cp++ = '\0';
+		value = NULL;
+	} else if (cp[1] != '(') {
 		*cp++ = '\0';
 		value = makeblock(NAME, cp);
 	} else {
@@ -99,13 +102,6 @@ lookup(name, value, insert)
 				value->b_args = f;
 			} else if (value->b_type == VAR)
 				fatal("%s redefined\n", name);
-			while (f = value->b_next) {
-				value->b_next = f->b_next;
-				free(f->b_name);
-				free(f);
-			}
-			free(value->b_name);
-			free(value);
 		}
 		return(b);
 	}
@@ -135,7 +131,7 @@ makeblock(type, name)
 	bp->b_type = type;
 	bp->b_next = bp->b_args = NULL;
 	if (type == NAME || type == VAR) {
-		bp->b_name = cp = (char *) malloc(strlen(name) + 1);
+		bp->b_name = cp = malloc(strlen(name) + 1);
 		if (cp == NULL)
 			fatal("ran out of memory\n");
 		while (*cp++ = *name++)
