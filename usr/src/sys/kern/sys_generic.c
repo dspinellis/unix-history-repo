@@ -42,19 +42,19 @@ readv()
 	register struct a {
 		int	fdes;
 		struct	iovec *iovp;
-		int	iovcnt;
+		unsigned iovcnt;
 	} *uap = (struct a *)u.u_ap;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
 
-	if (uap->iovcnt <= 0 || uap->iovcnt > sizeof(aiov)/sizeof(aiov[0])) {
+	if (uap->iovcnt > sizeof(aiov)/sizeof(aiov[0])) {
 		u.u_error = EINVAL;
 		return;
 	}
 	auio.uio_iov = aiov;
 	auio.uio_iovcnt = uap->iovcnt;
 	u.u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov,
-	    (unsigned)(uap->iovcnt * sizeof (struct iovec)));
+	    uap->iovcnt * sizeof (struct iovec));
 	if (u.u_error)
 		return;
 	rwuio(&auio, UIO_READ);
@@ -68,7 +68,7 @@ write()
 	register struct a {
 		int	fdes;
 		char	*cbuf;
-		int	count;
+		unsigned count;
 	} *uap = (struct a *)u.u_ap;
 	struct uio auio;
 	struct iovec aiov;
@@ -85,19 +85,19 @@ writev()
 	register struct a {
 		int	fdes;
 		struct	iovec *iovp;
-		int	iovcnt;
+		unsigned iovcnt;
 	} *uap = (struct a *)u.u_ap;
 	struct uio auio;
 	struct iovec aiov[16];		/* XXX */
 
-	if (uap->iovcnt <= 0 || uap->iovcnt > sizeof(aiov)/sizeof(aiov[0])) {
+	if (uap->iovcnt > sizeof(aiov)/sizeof(aiov[0])) {
 		u.u_error = EINVAL;
 		return;
 	}
 	auio.uio_iov = aiov;
 	auio.uio_iovcnt = uap->iovcnt;
 	u.u_error = copyin((caddr_t)uap->iovp, (caddr_t)aiov,
-	    (unsigned)(uap->iovcnt * sizeof (struct iovec)));
+	    uap->iovcnt * sizeof (struct iovec));
 	if (u.u_error)
 		return;
 	rwuio(&auio, UIO_WRITE);
