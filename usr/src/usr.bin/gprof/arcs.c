@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arcs.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)arcs.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "gprof.h"
@@ -26,7 +26,6 @@ addarc( parentp , childp , count )
     nltype	*childp;
     long	count;
 {
-    arctype		*calloc();
     arctype		*arcp;
 
 #   ifdef DEBUG
@@ -49,7 +48,7 @@ addarc( parentp , childp , count )
 	arcp -> arc_count += count;
 	return;
     }
-    arcp = calloc( 1 , sizeof *arcp );
+    arcp = (arctype *)calloc( 1 , sizeof *arcp );
     arcp -> arc_parentp = parentp;
     arcp -> arc_childp = childp;
     arcp -> arc_count = count;
