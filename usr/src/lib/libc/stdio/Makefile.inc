@@ -1,27 +1,17 @@
-#	@(#)Makefile.inc	5.2 (Berkeley) %G%
+#	@(#)Makefile.inc	5.3 (Berkeley) %G%
 
 # stdio sources
 .PATH: ${.CURDIR}/${MACHINE}/stdio ${.CURDIR}/stdio
 
 SRCS+=	clrerr.c fclose.c fdopen.c feof.c ferror.c fflush.c fgetc.c \
-	fgetline.c fgetpos.c fileno.c findfp.c flags.c fopen.c fprintf.c \
-	fpurge.c fputc.c fread.c freopen.c fscanf.c fseek.c fsetpos.c \
-	ftell.c funopen.c fvwrite.c fwalk.c fwrite.c getc.c getchar.c \
-	gets.c getw.c makebuf.c perror.c printf.c putc.c putchar.c putw.c \
-	refill.c remove.c rewind.c rget.c scanf.c setbuf.c setbuffer.c \
-	setvbuf.c snprintf.c sprintf.c sscanf.c stdio.c tempnam.c tmpfile.c \
-	tmpnam.c ungetc.c vfprintf.c vfscanf.c vprintf.c vsnprintf.c \
-	vsprintf.c wbuf.c wsetup.c
-
-.if   (${MACHINE} == "hp300")
-SRCS+=	fgets.c fputs.c puts.c
-.elif (${MACHINE} == "i386")
-SRCS+=	fgets.c fputs.c puts.c
-.elif (${MACHINE} == "tahoe")
-SRCS+=	fgets.c fputs.c puts.c
-.elif (${MACHINE} == "vax")
-SRCS+=	fgets.s fputs.s puts.s
-.endif
+	fgetline.c fgetpos.c fgets.c fileno.c findfp.c flags.c fopen.c \
+	fprintf.c fpurge.c fputc.c fputs.c fread.c freopen.c fscanf.c \
+	fseek.c fsetpos.c ftell.c funopen.c fvwrite.c fwalk.c fwrite.c \
+	getc.c getchar.c gets.c getw.c makebuf.c perror.c printf.c putc.c \
+	putchar.c puts.c putw.c refill.c remove.c rewind.c rget.c scanf.c \
+	setbuf.c setbuffer.c setvbuf.c snprintf.c sprintf.c sscanf.c \
+	stdio.c tempnam.c tmpfile.c tmpnam.c ungetc.c vfprintf.c vfscanf.c \
+	vprintf.c vsnprintf.c vsprintf.c wbuf.c wsetup.c
 
 MAN3+=	fclose.0 ferror.0 fflush.0 fgets.0 fopen.0 fread.0 fseek.0 getc.0 \
 	gets.0 perror.0 printf.0 putc.0 puts.0 scanf.0 setbuf.0 stdio.0 \
