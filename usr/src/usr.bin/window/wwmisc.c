@@ -1,22 +1,23 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwmisc.c	1.1 83/07/12";
+static	char *sccsid = "@(#)wwmisc.c	1.2 83/07/17";
 #endif
 
 #include "ww.h"
 
-struct ww *_wwcurrent = 0;
+struct ww *wwhead = 0;
+struct ww *curwin = 0;
 
 wwsetcurrent(wp)
 register struct ww *wp;
 {
-	_wwcurrent = wp;
+	curwin = wp;
 }
 
 wwhaschildren()
 {
 	register struct ww *wp;
 
-	for (wp = _wwhead; wp; wp = wp->ww_next)
+	for (wp = wwhead; wp; wp = wp->ww_next)
 		if (wp->ww_state == WW_HASPROC)
 			return 1;
 	return 0;
