@@ -1,0 +1,384 @@
+.TH host 1 "09 February 1993"
+.SH NAME
+host \- query nameserver about hosts and domains
+.SH SYNOPSIS 
+.na
+.nf
+\fBhost\fP [\fB\-v\fP] [\fB\-a\fP] [\fB\-t\fP \fIquerytype\fP] [\fIoptions\fP]  \fIname\fP  [\fIserver\fP] 
+.br
+\fBhost\fP [\fB\-v\fP] [\fB\-a\fP] [\fB\-t\fP \fIquerytype\fP] [\fIoptions\fP]  \fB\-l\fP \fIdomain\fP  [\fIserver\fP] 
+.br
+\fBhost\fP [\fB\-v\fP] [\fIoptions\fP]  \fB\-H\fP [\fB\-D\fP] [\fB\-E\fP] [\fB\-G\fP] \fIdomain\fP
+.br
+\fBhost\fP [\fB\-v\fP] [\fIoptions\fP]  \fB\-C\fP \fIdomain\fP
+.br
+\fBhost\fP [\fB\-v\fP] [\fIoptions\fP]  \fB\-A\fP \fIhost\fP
+.SH DESCRIPTION 
+.I host
+looks for information about Internet hosts or domains.
+It gets this information from a set of interconnected servers
+that are spread across the world.
+By default, it simply converts between host names and Internet
+addresses. However, with the \fB\-t\fP, \fB\-a\fP and \fB\-v\fP
+options, it can be used to find all of the information about hosts
+or domains that is maintained by the domain nameserver system.
+.PP
+The arguments can be either host names (domain names) or numeric
+Internet addresses.
+.PP
+A numeric Internet address consists of four decimal numbers
+separated by dots, e.g. \fB192.16.199.1\fP
+.br
+The default action is to look up the associated host name.
+.PP
+A host name or domain name consists of names separated by dots,
+e.g. \fBnikhefh.nikhef.nl\fP
+.br
+The default action is to look up all of its Internet addresses.
+.PP
+For single names without a trailing dot, the local domain is
+automatically tacked on the end.
+Thus a user in domain "nikhef.nl" can say "host nikhapo",
+and it will actually look up "nikhapo.nikhef.nl".
+In all other cases, the name is tried unchanged.
+Single names with trailing dot are considered top-level domain
+specifications.
+.PP
+Note that the usual convention for any name that does not end with
+a trailing dot is to try first with the local domain appended.
+This convention is not used by this program.
+.PP
+The actual suffix to tack on the end is usually obtained by looking
+at the results of a "hostname" call, and using everything starting
+after the first dot, if defined.
+This can be overridden by specifying the local domain in the
+file \fB/etc/resolv.conf\fP.  (See below for a description of
+how to customize the host name lookup.) 
+.SH ARGUMENTS
+The first argument is normally the host name (domain name) for which
+you want to look up the requested information.
+If the first argument is an Internet address, an "inverse query" is
+done to look up its associated host name.
+.PP
+If the \fB\-l\fP option is given, the first argument is a domain (zone)
+name for which a complete listing is given. The program enters a
+special domain listing mode which has several variants (see below).
+.PP
+The second argument is optional.  It allows you to specify a particular
+server to query.  If you don't specify this argument, default servers
+are used, as defined by \fB/etc/resolv.conf\fP.
+.SH OPTIONS
+There are a number of options that can be used before the specified
+argument.  Some of these options are meaningful only to the people
+who have to maintain the domain database.
+The first options are the regularly used ones.
+.TP 4
+.B \-v
+causes printout to be in a "verbose" format.
+This is the official domain master file format, which is documented in
+the man page for \fInamed\fP.  Without this option, output still follows
+this format in general terms, but TTL and class fields are not shown.
+In addition, the verbose option prints extra information about the
+various actions that are taken.
+Note that \fB\-vv\fP is "very verbose".
+.TP
+.BI \-t " querytype"
+allows you to specify a particular type of information to be looked up.
+Supported types are listed below.
+The wildcard may be written as either \fBany\fP or \fB*\fP.
+Types may be given in upper or lower case.
+The default is type \fBA\fP in host lookups,
+and \fBA\fP, \fBNS\fP, and \fBPTR\fP in domain listings.
+.TP
+.B \-a
+is equivalent to \fB\-t any\fP.
+Note that this gives you "anything available" and not "all defined data"
+if a non-authoritative server is queried.
+.SH SPECIAL MODES
+The following options put the program in a special mode.
+.TP 4
+.BI \-l " domain"
+causes a listing of a complete domain.
+.sp
+E.g. the command
+.br
+	\fBhost \-l nikhef.nl\fP
+.br
+will give a listing of all hosts in the "nikhef.nl" domain.
+The \fB\-t\fP option is used to filter what information is
+presented, as you would expect. The default is address
+information from A records, supplemented with data from PTR
+and NS records.
+.sp
+The command
+.br
+	\fBhost \-v \-a \-l nikhef.nl\fP
+.br
+will give a complete download of the zone data for "nikhef.nl",
+in the official master file format.
+.TP 4
+.B \-H
+can be specified instead of the \fB\-l\fP option. It will print
+the count of the unique hostnames encountered within the domain.
+It will not count pseudo names like "localhost", nor addresses
+associated with domain names itself. Also not counted are the
+so called "glue records" that are necessary to define nameservers
+for the domain and its subdomains.
+.sp
+By default, this option will not print any resource records.
+.sp
+Combined with the \fB\-S\fP option, it will give a complete
+statistics survey of the domain.
+.sp
+The host count may be affected by duplicate hosts (see below).
+To compute the most realistic value, subtract the duplicate
+host count from the host count.
+.TP
+.B \-G
+implies \fB\-H\fP, but lists the names of gateway hosts.
+These are the hosts that have more than one address.
+Gateway hosts are not checked for duplicate addresses.
+.TP
+.B \-E
+implies \fB\-H\fP, but lists the names of extrazone hosts.
+An extrazone host in domain "foo.bar" is of the form
+"host.xxx.foo.bar" where "xxx.foo.bar" is not defined as
+a separate subdomain with an NS record.
+This may be intentional, but also may be an error.
+.TP
+.B \-D
+implies \fB\-H\fP, but lists the names of duplicate hosts.
+These are hosts with only one address, which is known to
+have been defined also for another host with a different name,
+possibly even in a different domain.
+This may be intentional, but also may be an error.
+.TP
+.B \-C
+can be specified instead of the \fB\-l\fP option. It causes the SOA
+records for the specified domain to be compared as found at each of
+the authoritative nameservers for the domain. Discrepancies, such as
+different serial numbers, are reported. Nameserver recursion is
+turned off, and it will be checked whether the answers are really
+authoritative.
+.TP
+.B \-A
+enters a special address check mode.
+.sp
+If the first argument is a host name, its addresses will be retrieved,
+and for each of the addresses it will be checked whether they map back
+to the given host.
+.sp
+If the first argument is a dotted quad Internet address, its name will
+be retrieved, and it will be checked whether the given address is listed
+among the known addresses belonging to that host.
+.SH SPECIAL OPTIONS
+The following options apply only to the special domain listing modes.
+.TP 4
+.BI \-L " level"
+Recursively generate domain listings up to this level deep.
+.TP
+.B \-S
+prints statistics about resource records found during zone listings
+of domains.
+.TP
+.B \-p
+causes the primary nameserver of a domain to be contacted for zone
+transfers during domain listings. Normally, zone transfers are obtained
+from any one of the authoritative servers that responds.  Note that
+a specific server given on the command line overrules this option.
+.SH COMMON OPTIONS
+The following options can be used in both normal mode and domain
+listing mode.
+.TP 4
+.B \-T
+prints the time-to-live values during non-verbose output.
+By default the TTL is shown only in verbose mode.
+It also prints the preference value for MX records.
+.TP
+.B \-d
+turns on debugging.  Network transactions are shown in detail.
+Note that \fB\-dd\fP prints even more debugging output.
+.TP
+.B \-e
+excludes information about hosts that are not residing within
+in the given domain during zone listings, such as some glue records.
+For normal queries, it suppresses the printing of additional
+information and nameserver records.
+.TP
+.BI \-f " filename"
+writes resource record output to given file as well as to standard output.
+.TP
+.B \-i
+generates an inverse query for the \fBin-addr.arpa\fP domain
+in case a numeric address was specified for the host or domain.
+Useful primarily for domain listing mode, since for numeric host
+lookups such inverse query is done anyway.
+.TP
+.B \-q
+be quiet and suppress various warning messages. Serious error
+messages are not suppressed.
+.SH OTHER OPTIONS
+The following options are used only in special circumstances.
+.TP 4
+.BI \-c " class"
+allows you to specify a particular class. Supported are
+\fBIN\fP, \fBCHAOS\fP, \fBHS\fP, and the wildcard \fBany\fP or \fB*\fP.
+The default class is \fBIN\fP.
+.TP
+.B \-m
+is equivalent to \fB\-t mailb\fP.
+In addition, \fBMR\fP and \fBMG\fP records will be recursively
+expanded into \fBMB\fP records.
+.TP
+.B \-r
+causes nameserver recursion to be turned off in the request.
+This means that the nameserver will return only data it has
+currently cached in its own database.
+It will not ask other servers for more information.
+Note that nameserver recursion is always turned off when checking
+SOA records using the \fB\-C\fP option.
+.TP
+.B \-u
+forces the use of virtual circuits instead of datagrams when issuing
+nameserver queries. This is slower, but potentially more reliable.
+Note that a virtual circuit is automatically chosen in case a query
+exceeds the maximum datagram packet size. A zone transfer is always
+done via a virtual circuit.
+.TP
+.B \-w
+causes the program to wait forever for a response.  Normally it will
+time out after some 10 seconds per nameserver address tried.
+.TP
+.BI \-s " seconds"
+specifies a new nameserver timeout value. The program will wait
+for a nameserver reply in two attempts of this number of seconds.
+Normally it does 2 attempts of 5 seconds per nameserver address tried.
+The actual timeout algorithm is slightly more complicated, extending
+the timeout value dynamically depending on the number of tries and
+the number of nameserver addresses.
+.SH QUERYTYPES
+The following querytypes are supported.
+.TP 10
+.B A
+Host address (dotted quad)
+.TP
+.B NS
+Authoritative nameserver (domain)
+.TP
+.B MD
+Mail destination (domain)
+.TP
+.B MF
+Mail forwarder (domain)
+.TP
+.B CNAME
+Canonical name for an alias (domain)
+.TP
+.B SOA
+Marks the start of a zone of authority
+(nameserver, mailbox, serial, refresh, retry, expiration, default)
+.TP
+.B MB
+Mailbox domain name (domain)
+.TP
+.B MG
+Mail group member (domain)
+.TP
+.B MR
+Mail rename domain name (domain)
+.TP
+.B NULL
+Null resource record (no format or data)
+.TP
+.B WKS
+Well-known service description (address, protocol, list of services)
+.TP
+.B PTR
+Domain name pointer (domain)
+.TP
+.B HINFO
+Host information (CPU type, OS type)
+.TP
+.B MINFO
+Mailbox or mail list information (request domain, error domain)
+.TP
+.B MX
+Mail exchanger (preference, domain)
+.TP
+.B TXT
+Descriptive text (string)
+.TP
+.B UINFO
+User information (string)
+.TP
+.B UID
+User identification (number)
+.TP
+.B GID
+Group identification (number)
+.TP
+.B UNSPEC
+Unspecified binary data (data)
+.TP
+.B ANY
+Matches any of the above information.
+.TP
+.B MAILB
+Matches any of types \fBMB\fP, \fBMR\fP, \fBMG\fP, or \fBMINFO\fP.
+.TP
+.B MAILA
+Matches any of types \fBMD\fP, or \fBMF\fP.
+.PP
+The following types have been defined recently in RFC1183, but
+are not yet in general use. They are recognized by this program.
+.TP 10
+.B RP
+Responsible person (mb domain, txt domain)
+.TP
+.B AFSDB
+AFS database location (type, domain)
+.TP
+.B X25
+X25 address (address string)
+.TP
+.B ISDN
+ISDN address (address string, optional subaddress string)
+.TP
+.B RT
+Route through host (preference, domain)
+.SH CUSTOMIZING HOST NAME LOOKUP
+In general, if the name supplied by the user does not have any dots
+in it, a default domain is appended to the end.  This domain can be
+defined in \fB/etc/resolv.conf\fP, but is normally derived by taking
+the local hostname after its first dot.
+.PP
+The user can override this, and specify a different default domain,
+using the environment variable \fILOCALDOMAIN\fP.
+.PP
+In addition, the user can supply his own single-word abbreviations
+for host names. They should be in a file consisting of one line per
+abbreviation. Each line contains an abbreviation, white space, and
+then the full host name. The name of this file must be specified by
+the environment variable \fIHOSTALIASES\fP.
+.SH SPECIAL CONSIDERATIONS
+The complete set of resource information about a requested host
+is available from an authoritative nameserver only. Therefore,
+if you query another server with the "-a" option, only a subset
+of the data may be presented, since this option asks for any data
+that the latter server currently knows about, not all data that
+may possibly exist.  Note that the "-v" option shows whether an
+answer is authoritative or not.
+.PP
+When listing a domain with the "-l" option, information will be fetched
+from authoritative nameservers for that domain. This is implemented by
+doing a complete zone transfer and then filtering out the information
+the you have asked for.
+Note that direct contact with such nameservers must be possible for
+this option to work.
+This option should be used only if it is absolutely necessary.
+.SH AUTHOR
+This program is originally from Rutgers University.
+.br
+Extensively rewritten by Eric Wassenaar, Nikhef-H, <e07@nikhef.nl>
+.SH "SEE ALSO"
+named(8), resolver(4), resolver(3)
