@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -109,9 +109,8 @@ int	SYNCHing = 0;		/* we are in TELNET SYNCH mode */
 int	flushout = 0;		/* flush output */
 int	autoflush = 0;		/* flush output when interrupting? */
 int	autosynch = 0;		/* send interrupt characters with SYNCH? */
-int	localsigs = 0;		/* we recognize interrupt/quit */
-int	donelclsigs = 0;	/* the user has set "localsigs" */
-int	doechocharrecognition = 1;	/* in line mode recognize echo toggle */
+int	localchars = 0;		/* we recognize interrupt/quit */
+int	donelclchars = 0;	/* the user has set "localchars" */
 int	dontlecho = 0;		/* do we suppress local echoing right now? */
 
 char	line[200];
@@ -331,7 +330,103 @@ netflush(fd)
 	nbackp = nfrontp = netobuf;
     }
 }
+
+/*
+ * nextitem()
+ *
+ *	Return the address of the next "item" in the TELNET data
+ * stream.  This will be the address of the next character if
+ * the current address is a user data character, or it will
+ * be the address of the character following the TELNET command
+ * if the current address is a TELNET IAC ("I Am a Command")
+ * character.
+ */
 
+char *
+nextitem(current)
+char	*current;
+{
+    if ((*current&0xff) != IAC) {
+	return current+1;
+    }
+    switch (*(current+1)&0xff) {
+    case DO:
+    case DONT:
+    case WILL:
+    case WONT:
+	return current+3;
+    case SB:		/* loop forever looking for the SE */
+	{
+	    register char *look = current+2;
+
+	    for (;;) {
+		if ((*look++&0xff) == IAC) {
+		    if ((*look++&0xff) == SE) {
+			return look;
+		    }
+		}
+	    }
+	}
+    default:
+	return current+2;
+    }
+}
+/*
+ * netclear()
+ *
+ *	We are about to do a TELNET SYNCH operation.  Clear
+ * the path to the network.
+ *
+ *	Things are a bit tricky since we may have sent the first
+ * byte or so of a previous TELNET command into the network.
+ * So, we have to scan the network buffer from the beginning
+ * until we are up to where we want to be.
+ *
+ *	A side effect of what we do, just to keep things
+ * simple, is to clear the urgent data pointer.  The principal
+ * caller should be setting the urgent data pointer AFTER calling
+ * us in any case.
+ */
+
+netclear()
+{
+    register char *thisitem, *next;
+    char *good;
+#define	wewant(p)	((nfrontp > p) && ((*p&0xff) == IAC) && \
+				((*(p+1)&0xff) != EC) && ((*(p+1)&0xff) != EL))
+
+    thisitem = netobuf;
+
+    while ((next = nextitem(thisitem)) <= nbackp) {
+	thisitem = next;
+    }
+
+    /* Now, thisitem is first before/at boundary. */
+
+    good = netobuf;	/* where the good bytes go */
+
+    while (nfrontp > thisitem) {
+	if (wewant(thisitem)) {
+	    int length;
+
+	    next = thisitem;
+	    do {
+		next = nextitem(next);
+	    } while (wewant(next) && (nfrontp > next));
+	    length = next-thisitem;
+	    bcopy(thisitem, good, length);
+	    good += length;
+	    thisitem = next;
+	} else {
+	    thisitem = nextitem(thisitem);
+	}
+    }
+
+    nbackp = netobuf;
+    nfrontp = good;		/* next byte to be sent */
+    neturg = 0;
+}
+
 /*
  * Send as much data as possible to the terminal.
  */
@@ -370,7 +465,7 @@ deadpeer()
 
 intr()
 {
-    if (localsigs) {
+    if (localchars) {
 	intp();
 	return;
     }
@@ -380,7 +475,7 @@ intr()
 
 intr2()
 {
-    if (localsigs) {
+    if (localchars) {
 	sendbrk();
 	return;
     }
@@ -503,10 +598,10 @@ mode(f)
 		 * If user hasn't specified one way or the other,
 		 * then default to not trapping signals.
 		 */
-		if (!donelclsigs) {
-			localsigs = 0;
+		if (!donelclchars) {
+			localchars = 0;
 		}
-		if (localsigs) {
+		if (localchars) {
 			notc2 = notc;
 			notc2.t_intrc = ntc.t_intrc;
 			notc2.t_quitc = ntc.t_quitc;
@@ -533,10 +628,10 @@ mode(f)
 		 * If user hasn't specified one way or the other,
 		 * then default to trapping signals.
 		 */
-		if (!donelclsigs) {
-			localsigs = 1;
+		if (!donelclchars) {
+			localchars = 1;
 		}
-		if (localsigs) {
+		if (localchars) {
 			notc2.t_brkc = nltc.t_flushc;
 			noltc2.t_flushc = -1;
 		} else {
@@ -618,11 +713,16 @@ telnet()
 	register int c;
 	int tin = fileno(stdin);
 	int on = 1;
+	fd_set ibits, obits, xbits;
 
 	tout = fileno(stdout);
 	setconnmode();
 	scc = 0;
 	tcc = 0;
+	FD_ZERO(&ibits);
+	FD_ZERO(&obits);
+	FD_ZERO(&xbits);
+
 	ioctl(net, FIONBIO, (char *)&on);
 #if	defined(xxxSO_OOBINLINE)
 	setsockopt(net, SOL_SOCKET, SO_OOBINLINE, on, sizeof on);
@@ -631,15 +731,9 @@ telnet()
 		willoption(TELOPT_SGA);
 	}
 	for (;;) {
-		fd_set ibits, obits, xbits;
-
 		if (scc < 0 && tcc < 0) {
 			break;
 		}
-
-		FD_ZERO(&ibits);
-		FD_ZERO(&obits);
-		FD_ZERO(&xbits);
 
 		if (((globalmode < 4) || flushline) && NETBYTES()) {
 			FD_SET(net, &obits);
@@ -674,6 +768,7 @@ telnet()
 		 * Any urgent data?
 		 */
 		if (FD_ISSET(net, &xbits)) {
+		    FD_CLR(net, &xbits);
 		    SYNCHing = 1;
 		    ttyflush();	/* flush already enqueued data */
 		}
@@ -684,6 +779,7 @@ telnet()
 		if (FD_ISSET(net, &ibits)) {
 			int canread;
 
+			FD_CLR(net, &ibits);
 			if (scc == 0) {
 			    sbp = sibuf;
 			}
@@ -760,6 +856,7 @@ telnet()
 		 * Something to read from the tty...
 		 */
 		if (FD_ISSET(tin, &ibits)) {
+			FD_CLR(tin, &ibits);
 			if (tcc == 0) {
 			    tbp = tibuf;	/* nothing left, reset */
 			}
@@ -786,8 +883,7 @@ telnet()
 				tcc = 0;
 				flushline = 1;
 				break;
-			} else if ((globalmode >= 4) && doechocharrecognition &&
-							(sc == echoc)) {
+			} else if ((globalmode >= 4) && (sc == echoc)) {
 				if (tcc > 0 && strip(*tbp) == echoc) {
 					tbp++;
 					tcc--;
@@ -800,7 +896,7 @@ telnet()
 					break;
 				}
 			}
-			if (localsigs) {
+			if (localchars) {
 				if (sc == ntc.t_intrc) {
 					intp();
 					break;
@@ -849,12 +945,15 @@ telnet()
 		}
 		if (((globalmode < 4) || flushline) &&
 		    FD_ISSET(net, &obits) && (NETBYTES() > 0)) {
+			FD_CLR(net, &obits);
 			netflush(net);
 		}
 		if (scc > 0)
 			telrcv();
-		if (FD_ISSET(tout, &obits) && (TTYBYTES() > 0))
+		if (FD_ISSET(tout, &obits) && (TTYBYTES() > 0)) {
+			FD_CLR(tout, &obits);
 			ttyflush();
+		}
 	}
 	setcommandmode();
 }
@@ -1116,14 +1215,13 @@ struct sendlist {
 dosynch(s)
 struct sendlist *s;
 {
-    /* XXX We really should purge the buffer to the network */
+    netclear();			/* clear the path to the network */
     NET2ADD(IAC, DM);
     neturg = NETLOC()-1;	/* Some systems are off by one XXX */
 }
 
 doflush()
 {
-    /* This shouldn't really be here... */
     NET2ADD(IAC, DO);
     NETADD(TELOPT_TM);
     printoption("SENT", doopt, TELOPT_TM);
@@ -1156,32 +1254,33 @@ sendbrk()
 
 
 #define	SENDQUESTION	-1
-#define	SEND2QUESTION	-2
 #define	SENDESCAPE	-3
 
 struct sendlist Sendlist[] = {
-    { "synch", SYNCH, "Perform Telnet 'Synch operation'", dosynch },
+    { "ao", AO, "Send Telnet Abort output" },
+    { "ayt", AYT, "Send Telnet 'Are You There'" },
     { "brk", BREAK, "Send Telnet Break" },
-	{ "break", BREAK, 0 },
+    { "ec", EC, "Send Telnet Erase Character" },
+    { "el", EL, "Send Telnet Erase Line" },
+    { "escape", SENDESCAPE, "Send current escape character" },
+    { "ga", GA, "Send Telnet 'Go Ahead' sequence" },
     { "ip", IP, "Send Telnet Interrupt Process" },
+    { "nop", NOP, "Send Telnet 'No operation'" },
+    { "synch", SYNCH, "Perform Telnet 'Synch operation'", dosynch },
+    { "?", SENDQUESTION, "Display send options" },
+    { 0 }
+};
+
+struct sendlist Sendlist2[] = {		/* some synonyms */
+	{ "break", BREAK, 0 },
+
 	{ "intp", IP, 0 },
 	{ "interrupt", IP, 0 },
 	{ "intr", IP, 0 },
-    { "ao", AO, "Send Telnet Abort output" },
-	{ "abort", AO, 0 },
-    { "ayt", AYT, "Send Telnet 'Are You There'" },
-	{ "are", AYT, 0 },
-	{ "hello", AYT, 0 },
-    { "ec", EC, "Send Telnet Erase Character" },
-    { "el", EL, "Send Telnet Erase Line" },
-    { "ga", GA, "Send Telnet 'Go Ahead' sequence" },
-	{ "go", GA, 0 },
-    { "nop", NOP, "Send Telnet 'No operation'" },
-    { "escape", SENDESCAPE, "Send current escape character" },
-    { "?", SENDQUESTION, "Display send options" },
+
 	{ "help", SENDQUESTION, 0 },
-    { "??", SEND2QUESTION, "Display all send options (including aliases)" },
-    { 0 }
+
+	{ 0 }
 };
 
 char **
@@ -1197,7 +1296,15 @@ struct sendlist *
 getsend(name)
 char *name;
 {
-    return (struct sendlist *) genget(name, (char **) Sendlist, getnextsend);
+    struct sendlist *sl;
+
+    if (sl = (struct sendlist *)
+				genget(name, (char **) Sendlist, getnextsend)) {
+	return sl;
+    } else {
+	return (struct sendlist *)
+				genget(name, (char **) Sendlist2, getnextsend);
+    }
 }
 
 sendcmd(argc, argv)
@@ -1208,12 +1315,13 @@ char	**argv;
     int count;		/* how many bytes we are going to need to send */
     int hadsynch;	/* are we going to process a "synch"? */
     int i;
+    int question = 0;	/* was at least one argument a question */
     struct sendlist *s;	/* pointer to current command */
 
     if (argc < 2) {
 	printf("need at least one argument for 'send' command\n");
 	printf("'send ?' for help\n");
-	return;
+	return 0;
     }
     /*
      * First, validate all the send arguments.
@@ -1228,15 +1336,14 @@ char	**argv;
 	if (s == 0) {
 	    printf("Unknown send argument '%s'\n'send ?' for help.\n",
 			argv[i]);
-	    return;
+	    return 0;
 	} else if (s == Ambiguous(struct sendlist *)) {
 	    printf("Ambiguous send argument '%s'\n'send ?' for help.\n",
 			argv[i]);
-	    return;
+	    return 0;
 	}
 	switch (s->what) {
 	case SENDQUESTION:
-	case SEND2QUESTION:
 	    break;
 	case SENDESCAPE:
 	    count += 1;
@@ -1256,7 +1363,7 @@ char	**argv;
 	printf("to process your request.  Nothing will be done.\n");
 	printf("('send synch' will throw away most data in the network\n");
 	printf("buffer, if this might help.)\n");
-	return;
+	return 0;
     }
     /* OK, they are all OK, now go through again and actually send */
     for (i = 1; i < argc; i++) {
@@ -1269,10 +1376,12 @@ char	**argv;
 	    (*s->routine)(s);
 	} else {
 	    switch (what = s->what) {
+	    case SYNCH:
+		dosynch();
+		break;
 	    case SENDQUESTION:
-	    case SEND2QUESTION:
 		for (s = Sendlist; s->name; s++) {
-		    if (s->help || (what == SEND2QUESTION)) {
+		    if (s->help) {
 			printf(s->name);
 			if (s->help) {
 			    printf("\t%s", s->help);
@@ -1280,6 +1389,7 @@ char	**argv;
 			printf("\n");
 		    }
 		}
+		question = 1;
 		break;
 	    case SENDESCAPE:
 		NETADD(escape);
@@ -1290,6 +1400,7 @@ char	**argv;
 	    }
 	}
     }
+    return !question;
 }
 
 /*
@@ -1297,18 +1408,10 @@ char	**argv;
  * to by the arguments to the "toggle" command.
  */
 
-lclsigs()
+lclchars()
 {
-    donelclsigs = 1;
-}
-
-/*VARARGS*/
-togcrmod()
-{
-    crmod = !crmod;
-    printf("Deprecated usage - please use 'toggle crmod' in the future.\n");
-    printf("%s map carriage return on output.\n", crmod ? "Will" : "Won't");
-    fflush(stdout);
+    donelclchars = 1;
+    return 1;
 }
 
 togdebug()
@@ -1318,13 +1421,12 @@ togdebug()
 									< 0) {
 	    perror("setsockopt (SO_DEBUG)");
     }
+    return 1;
 }
 
 
 
 int togglehelp();
-
-char	crmodhelp[] =	"toggle mapping of received carriage returns";
 
 struct togglelist {
     char	*name;		/* name of toggle */
@@ -1336,36 +1438,30 @@ struct togglelist {
 };
 
 struct togglelist Togglelist[] = {
-    { "localchars",
-	"toggle local recognition of control characters",
-	    lclsigs,
-		1,
-		    &localsigs,
-			"recognize interrupt/quit characters" },
-    { "echochar",
-	"toggle recognition of echo toggle character",
+    { "autoflush",
+	"toggle flushing of output when sending interrupt characters",
 	    0,
 		1,
-		    &doechocharrecognition,
-			"recognize echo toggle character" },
+		    &autoflush,
+			"flush output when sending interrupt characters" },
     { "autosynch",
 	"toggle automatic sending of interrupt characters in urgent mode",
 	    0,
 		1,
 		    &autosynch,
 			"send interrupt characters in urgent mode" },
-    { "autoflush",
-	"toggle automatic flushing of output when sending interrupt characters",
-	    0,
-		1,
-		    &autoflush,
-			"flush output when sending interrupt characters" },
     { "crmod",
-	crmodhelp,
+	"toggle mapping of received carriage returns",
 	    0,
 		1,
 		    &crmod,
 			"map carriage return on output" },
+    { "localchars",
+	"toggle local recognition of certain control characters",
+	    lclchars,
+		1,
+		    &localchars,
+			"recognize certain control characters" },
     { " ", "", 0, 1 },		/* empty line */
     { "debug",
 	"(debugging) toggle debugging",
@@ -1373,18 +1469,19 @@ struct togglelist Togglelist[] = {
 		1,
 		    &debug,
 			"turn on socket level debugging" },
-    { "options",
-	"(debugging) toggle viewing of options processing",
-	    0,
-		1,
-		    &showoptions,
-			"show option processing" },
     { "netdata",
 	"(debugging) toggle printing of hexadecimal network data",
 	    0,
 		1,
 		    &netdata,
 			"print hexadecimal representation of network traffic" },
+    { "options",
+	"(debugging) toggle viewing of options processing",
+	    0,
+		1,
+		    &showoptions,
+			"show option processing" },
+    { " ", "", 0, 1 },		/* empty line */
     { "?",
 	"display help information",
 	    togglehelp,
@@ -1405,6 +1502,7 @@ togglehelp()
 	    printf("%s\t%s\n", c->name, c->help);
 	}
     }
+    return 0;
 }
 
 char **
@@ -1428,13 +1526,14 @@ toggle(argc, argv)
 int	argc;
 char	*argv[];
 {
+    int retval = 1;
     char *name;
     struct togglelist *c;
 
     if (argc < 2) {
 	fprintf(stderr,
 	    "Need an argument to 'toggle' command.  'toggle ?' for help.\n");
-	return;
+	return 0;
     }
     argc--;
     argv++;
@@ -1444,9 +1543,11 @@ char	*argv[];
 	if (c == Ambiguous(struct togglelist *)) {
 	    fprintf(stderr, "'%s': ambiguous argument ('toggle ?' for help).\n",
 					name);
+	    return 0;
 	} else if (c == 0) {
 	    fprintf(stderr, "'%s': unknown argument ('toggle ?' for help).\n",
 					name);
+	    return 0;
 	} else {
 	    if (c->variable) {
 		*c->variable = !*c->variable;		/* invert it */
@@ -1454,10 +1555,11 @@ char	*argv[];
 							c->actionexplanation);
 	    }
 	    if (c->handler) {
-		(*c->handler)(c);
+		retval &= (*c->handler)(c);
 	    }
 	}
     }
+    return retval;
 }
 
 /*
@@ -1473,13 +1575,13 @@ struct setlist {
 struct setlist Setlist[] = {
     { "echo", 	"character to toggle local echoing on/off", &echoc },
     { "escape",	"character to escape back to telnet command mode", &escape },
-    { "\200", "" },
-    { "\200", "The following need 'localsigs' to be toggled true", 0 },
-    { "interrupt", "character to cause an Interrupt Process", &ntc.t_intrc },
-    { "quit",	"character to cause a Break", &ntc.t_quitc },
-    { "flush output", "character to cause an Abort Oubput", &nltc.t_flushc },
+    { " ", "" },
+    { " ", "The following need 'localchars' to be toggled true", 0 },
     { "erase",	"character to cause an Erase Character", &nttyb.sg_erase },
+    { "flushoutput", "character to cause an Abort Oubput", &nltc.t_flushc },
+    { "interrupt", "character to cause an Interrupt Process", &ntc.t_intrc },
     { "kill",	"character to cause an Erase Line", &nttyb.sg_kill },
+    { "quit",	"character to cause a Break", &ntc.t_quitc },
     { 0 }
 };
 
@@ -1508,20 +1610,27 @@ char	*argv[];
 
     /* XXX back we go... sigh */
     if (argc != 3) {
-	printf("Format is 'set Name Value', where 'Name' is one of:\n\n");
-	for (ct = Setlist; ct->name; ct++) {
-	    printf("%s\t%s\n", ct->name, ct->help);
+	if ((argc == 2) &&
+		    ((!strcmp(argv[1], "?")) || (!strcmp(argv[1], "help")))) {
+	    for (ct = Setlist; ct->name; ct++) {
+		printf("%s\t%s\n", ct->name, ct->help);
+	    }
+	    printf("?\tdisplay help information\n");
+	} else {
+	    printf("Format is 'set Name Value'\n'set ?' for help.\n");
 	}
-	return;
+	return 0;
     }
 
     ct = getset(argv[1]);
     if (ct == 0) {
 	fprintf(stderr, "'%s': unknown argument ('set ?' for help).\n",
 			argv[1]);
+	return 0;
     } else if (ct == Ambiguous(struct setlist *)) {
 	fprintf(stderr, "'%s': ambiguous argument ('set ?' for help).\n",
 			argv[1]);
+	return 0;
     } else {
 	if (strcmp("off", argv[2])) {
 	    value = special(argv[2]);
@@ -1531,6 +1640,7 @@ char	*argv[];
 	*(ct->charp) = value;
 	printf("%s character is '%s'.\n", ct->name, control(*(ct->charp)));
     }
+    return 1;
 }
 
 /*
@@ -1559,8 +1669,8 @@ docharmode()
 }
 
 struct cmd Modelist[] = {
-    { "line",		"line-by-line mode",		dolinemode, 1, 1 },
     { "character",	"character-at-a-time mode",	docharmode, 1, 1 },
+    { "line",		"line-by-line mode",		dolinemode, 1, 1 },
     { 0 },
 };
 
@@ -1591,16 +1701,19 @@ char	*argv[];
 	for (mt = Modelist; mt->name; mt++) {
 	    printf("%s\t%s\n", mt->name, mt->help);
 	}
-	return;
+	return 0;
     }
     mt = getmodecmd(argv[1]);
     if (mt == 0) {
 	fprintf(stderr, "Unknown mode '%s' ('mode ?' for help).\n", argv[1]);
+	return 0;
     } else if (mt == Ambiguous(struct cmd *)) {
 	fprintf(stderr, "Ambiguous mode '%s' ('mode ?' for help).\n", argv[1]);
+	return 0;
     } else {
 	(*mt->handler)();
     }
+    return 1;
 }
 
 /*
@@ -1621,7 +1734,9 @@ char	*argv[];
 			    printf(" %s.\n", tl->actionexplanation); \
 			}
 
-#define	doset(sl)	printf("[%s]\t%s.\n", control(*sl->charp), sl->name);
+#define	doset(sl)   if (sl->name && *sl->name != ' ') { \
+			printf("[%s]\t%s.\n", control(*sl->charp), sl->name); \
+		    }
 
     struct togglelist *tl;
     struct setlist *sl;
@@ -1630,6 +1745,7 @@ char	*argv[];
 	for (tl = Togglelist; tl->name; tl++) {
 	    dotog(tl);
 	}
+	printf("\n");
 	for (sl = Setlist; sl->name; sl++) {
 	    doset(sl);
 	}
@@ -1642,8 +1758,10 @@ char	*argv[];
 	    if ((sl == Ambiguous(struct setlist *)) ||
 				(tl == Ambiguous(struct togglelist *))) {
 		printf("?Ambiguous argument '%s'.\n", argv[i]);
+		return 0;
 	    } else if (!sl && !tl) {
 		printf("?Unknown argument '%s'.\n", argv[i]);
+		return 0;
 	    } else {
 		if (tl) {
 		    dotog(tl);
@@ -1654,6 +1772,7 @@ char	*argv[];
 	    }
 	}
     }
+    return 1;
 #undef	doset(sl)
 #undef	dotog(tl)
 }
@@ -1687,6 +1806,17 @@ setescape(argc, argv)
 		escape = arg[0];
 	printf("Escape character is '%s'.\n", control(escape));
 	fflush(stdout);
+	return 1;
+}
+
+/*VARARGS*/
+togcrmod()
+{
+    crmod = !crmod;
+    printf("Deprecated usage - please use 'toggle crmod' in the future.\n");
+    printf("%s map carriage return on output.\n", crmod ? "Will" : "Won't");
+    fflush(stdout);
+    return 1;
 }
 
 /*VARARGS*/
@@ -1698,6 +1828,7 @@ suspend()
 	ioctl(0, TIOCGETP, (char *)&ottyb);
 	ioctl(0, TIOCGETC, (char *)&otc);
 	ioctl(0, TIOCGLTC, (char *)&oltc);
+	return 1;
 }
 
 /*VARARGS*/
@@ -1714,13 +1845,15 @@ bye()
 		for (op = hisopts; op < &hisopts[256]; op++)
 			*op = 0;
 	}
+	return 1;
 }
 
 /*VARARGS*/
 quit()
 {
-	call(bye, "bye", 0);
+	(void) call(bye, "bye", 0);
 	exit(0);
+	/*NOTREACHED*/
 }
 
 /*
@@ -1735,7 +1868,7 @@ char	*argv[];
 	printf("Connected to %s.\n", hostname);
 	if (argc < 2) {
 	    printf("Operating in %s.\n", modedescriptions[getconnmode()]);
-	    if (localsigs) {
+	    if (localchars) {
 		printf("Catching signals locally.\n");
 	    }
 	}
@@ -1744,6 +1877,7 @@ char	*argv[];
     }
     printf("Escape character is '%s'.\n", control(escape));
     fflush(stdout);
+    return 1;
 }
 
 tn(argc, argv)
@@ -1754,7 +1888,7 @@ tn(argc, argv)
 
 	if (connected) {
 		printf("?Already connected to %s\n", hostname);
-		return;
+		return 0;
 	}
 	if (argc < 2) {
 		(void) strcpy(line, "Connect ");
@@ -1766,7 +1900,7 @@ tn(argc, argv)
 	}
 	if (argc > 3) {
 		printf("usage: %s host-name [port]\n", argv[0]);
-		return;
+		return 0;
 	}
 	sin.sin_addr.s_addr = inet_addr(argv[1]);
 	if (sin.sin_addr.s_addr != -1) {
@@ -1782,7 +1916,7 @@ tn(argc, argv)
 			hostname = host->h_name;
 		} else {
 			printf("%s: unknown host\n", argv[1]);
-			return;
+			return 0;
 		}
 	}
 	sin.sin_port = sp->s_port;
@@ -1794,7 +1928,7 @@ tn(argc, argv)
 				sin.sin_port = sp->s_port;
 			else {
 				printf("%s: bad port number\n", argv[2]);
-				return;
+				return 0;
 			}
 		} else {
 			sin.sin_port = atoi(argv[2]);
@@ -1812,7 +1946,7 @@ tn(argc, argv)
 		net = socket(AF_INET, SOCK_STREAM, 0);
 		if (net < 0) {
 			perror("telnet: socket");
-			return;
+			return 0;
 		}
 		if (debug &&
 				setsockopt(net, SOL_SOCKET, SO_DEBUG,
@@ -1838,7 +1972,8 @@ tn(argc, argv)
 			}
 			perror("telnet: connect");
 			signal(SIGINT, SIG_DFL);
-			return;
+			signal(SIGQUIT, SIG_DFL);
+			return 0;
 		}
 		connected++;
 	} while (connected == 0);
@@ -1847,6 +1982,7 @@ tn(argc, argv)
 		telnet();
 	fprintf(stderr, "Connection closed by foreign host.\n");
 	exit(1);
+	/*NOTREACHED*/
 }
 
 
@@ -1856,7 +1992,6 @@ char	openhelp[] =	"connect to a site";
 char	closehelp[] =	"close current connection";
 char	quithelp[] =	"exit telnet";
 char	zhelp[] =	"suspend telnet";
-char	escapehelp[] =	"set escape character";
 char	statushelp[] =	"print status information";
 char	helphelp[] =	"print help information";
 char	sendhelp[] =	"transmit special characters ('send ?' for more)";
@@ -1869,25 +2004,29 @@ char	modehelp[] =
 int	help();
 
 struct cmd cmdtab[] = {
-	{ "open",	openhelp,	tn,		1, 0 },
 	{ "close",	closehelp,	bye,		1, 1 },
-	{ "quit",	quithelp,	quit,		1, 0 },
-	{ "z",		zhelp,		suspend,	1, 0 },
-	{ "escape",	escapehelp,	setescape,	1, 0 },
-	{ "status",	statushelp,	status,		1, 0 },
-	{ "crmod",	crmodhelp,	togcrmod,	1, 0 },
-	{ "send",	sendhelp,	sendcmd,	1, 1 },
-	{ "transmit",	sendhelp,	sendcmd,	0, 1 },
-	{ "xmit",	sendhelp,	sendcmd,	0, 1 },
-	{ "set",	sethelp,	setcmd,		1, 0 },
-	{ "toggle",	togglestring,	toggle,		1, 0 },
 	{ "display",	displayhelp,	display,	1, 0 },
 	{ "mode",	modehelp,	modecmd,	1, 1 },
+	{ "open",	openhelp,	tn,		1, 0 },
+	{ "quit",	quithelp,	quit,		1, 0 },
+	{ "send",	sendhelp,	sendcmd,	1, 1 },
+	{ "set",	sethelp,	setcmd,		1, 0 },
+	{ "status",	statushelp,	status,		1, 0 },
+	{ "toggle",	togglestring,	toggle,		1, 0 },
+	{ "z",		zhelp,		suspend,	1, 0 },
 	{ "?",		helphelp,	help,		1, 0 },
-	{ "help",	helphelp,	help,		0, 0 },
 	0
 };
 
+char	crmodhelp[] =	"deprecated command -- use 'toggle crmod' instead";
+char	escapehelp[] =	"deprecated command -- use 'set escape' instead";
+
+struct cmd cmdtab2[] = {
+	{ "help",	helphelp,	help,		0, 0 },
+	{ "escape",	escapehelp,	setescape,	1, 0 },
+	{ "crmod",	crmodhelp,	togcrmod,	1, 0 },
+	0
+};
 
 /*
  * Help command.
@@ -1905,7 +2044,7 @@ help(argc, argv)
 				printf("%-*s\t%s\n", HELPINDENT, c->name,
 								    c->help);
 			}
-		return;
+		return 0;
 	}
 	while (--argc > 0) {
 		register char *arg;
@@ -1918,6 +2057,7 @@ help(argc, argv)
 		else
 			printf("%s\n", c->help);
 	}
+	return 0;
 }
 /*
  * Call routine with argc, argv set from args (terminated by 0).
@@ -1932,7 +2072,7 @@ call(routine, args)
 
 	for (argc = 0, argp = &args; *argp++ != 0; argc++)
 		;
-	(*routine)(argc, &args);
+	return (*routine)(argc, &args);
 }
 
 makeargv()
@@ -1970,7 +2110,13 @@ struct cmd *
 getcmd(name)
 char *name;
 {
-    return (struct cmd *) genget(name, (char **) cmdtab, getnextcmd);
+    struct cmd *cm;
+
+    if (cm = (struct cmd *) genget(name, (char **) cmdtab, getnextcmd)) {
+	return cm;
+    } else {
+	return (struct cmd *) genget(name, (char **) cmdtab2, getnextcmd);
+    }
 }
 
 command(top)
@@ -1979,10 +2125,12 @@ command(top)
 	register struct cmd *c;
 
 	setcommandmode();
-	if (!top)
+	if (!top) {
 		putchar('\n');
-	else
+	} else {
 		signal(SIGINT, SIG_DFL);
+		signal(SIGQUIT, SIG_DFL);
+	}
 	for (;;) {
 		printf("%s> ", prompt);
 		if (gets(line) == 0) {
@@ -2006,9 +2154,9 @@ command(top)
 			printf("?Need to be connected first.\n");
 			continue;
 		}
-		(*c->handler)(margc, margv);
-		if (c->handler != help)
+		if ((*c->handler)(margc, margv)) {
 			break;
+		}
 	}
 	if (!top) {
 		if (!connected) {
@@ -2039,7 +2187,9 @@ main(argc, argv)
 	ioctl(0, TIOCGLTC, (char *)&oltc);
 #if	defined(LNOFLSH)
 	ioctl(0, TIOCLGET, (char *)&autoflush);
-	autoflush &= LNOFLSH;
+	autoflush = !(autoflush&LNOFLSH);	/* if LNOFLSH, no autoflush */
+#else	/* LNOFLSH */
+	autoflush = 1;
 #endif	/* LNOFLSH */
 	ntc = otc;
 	ntc.t_eofc = -1;		/* we don't want to use EOF */
