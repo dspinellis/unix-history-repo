@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	6.14 (Berkeley) %G%
+ *	@(#)if_ether.c	6.15 (Berkeley) %G%
  */
 
 /*
@@ -291,7 +291,7 @@ in_arpinput(ac, m)
 		goto out;
 	}
 	ARPTAB_LOOK(at, isaddr.s_addr);
-	if (at && (at->at_flags & ATF_COM) == 0) {
+	if (at) {
 		bcopy((caddr_t)ea->arp_sha, (caddr_t)at->at_enaddr,
 		    sizeof(ea->arp_sha));
 		at->at_flags |= ATF_COM;
