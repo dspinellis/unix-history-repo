@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ndbm.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)ndbm.c	4.2 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -137,9 +137,10 @@ dbmdelete(db, key)
 	return (0);
 }
 
-dbmstore(db, key, dat)
+dbmstore(db, key, dat, replace)
 	register DBM *db;
 	datum key, dat;
+	int replace;
 {
 	register i;
 	datum item;
@@ -156,12 +157,11 @@ loop:
 		if (item.dptr == NULL)
 			break;
 		if (cmpdatum(key, item) == 0) {
-			return(0);
-/*
+			if (!replace)
+				return (1);
 			delitem(db->db_pagbuf, i);
 			delitem(db->db_pagbuf, i);
 			break;
-*/
 		}
 	}
 	i = additem(db->db_pagbuf, key);
