@@ -5,7 +5,7 @@
  * (aka Joel N. Chiappa)
  */
 
-#undef	NEW_BROADCAST		/* new plas for broadcast problem */
+#define	NEW_BROADCAST		/* new plas for broadcast problem */
 
 struct vv_header {
 	 /* the first two fields are required by the hardware */
