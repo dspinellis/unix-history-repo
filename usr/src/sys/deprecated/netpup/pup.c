@@ -1,4 +1,4 @@
-/*	pup.c	4.3	82/10/09	*/
+/*	pup.c	4.4	82/10/17	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -16,8 +16,6 @@ pup_hash(spup, hp)
 
 	hp->afh_nethash = spup->spup_addr.pp_net;
 	hp->afh_hosthash = spup->spup_addr.pp_host;
-	if (hp->afh_hosthash < 0)
-		hp->afh_hosthash = -hp->afh_hosthash;
 }
 
 pup_netmatch(spup1, spup2)
