@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.34		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.35		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.34		%G%);
+SCCSID(@(#)queue.c	3.35		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -90,8 +90,8 @@ queueup(e, queueall)
 	/* output name of sender */
 	fprintf(tfp, "S%s\n", e->e_from.q_paddr);
 
-	/* output timeout */
-	fprintf(tfp, "T%ld\n", TimeOut);
+	/* output creation time */
+	fprintf(tfp, "T%ld\n", e->e_ctime);
 
 	/* output message priority */
 	fprintf(tfp, "P%ld\n", e->e_msgpriority);
@@ -540,9 +540,10 @@ dowork(w)
 		/* if still not sent, perhaps we should time out.... */
 # ifdef DEBUG
 		if (tTd(40, 3))
-			printf("CurTime=%ld, TimeOut=%ld\n", CurTime, TimeOut);
+			printf("CurTime=%ld, TimeOut=%ld\n", CurTime,
+					     CurEnv->e_ctime + TimeOut);
 # endif DEBUG
-		if (CurEnv->e_queueup && CurTime > TimeOut)
+		if (CurEnv->e_queueup && CurTime > CurEnv->e_ctime + TimeOut)
 			timeout(w);
 
 		/* finish up and exit */
@@ -625,8 +626,8 @@ readqf(cf)
 				syserr("readqf: cannot open %s", CurEnv->e_df);
 			break;
 
-		  case 'T':		/* timeout */
-			(void) sscanf(&buf[1], "%ld", &TimeOut);
+		  case 'T':		/* init time */
+			(void) sscanf(&buf[1], "%ld", &CurEnv->e_ctime);
 			break;
 
 		  case 'P':		/* message priority */
@@ -668,7 +669,7 @@ timeout(w)
 	register WORK *w;
 {
 	char buf[MAXLINE];
-	extern char *TextTimeOut;
+	extern char *pintvl();
 
 # ifdef DEBUG
 	if (tTd(40, 3))
@@ -677,11 +678,11 @@ timeout(w)
 	message(Arpa_Info, "Message has timed out");
 
 	/* return message to sender */
-	(void) sprintf(buf, "Cannot send mail for %s", TextTimeOut);
+	(void) sprintf(buf, "Cannot send mail for %s", pintvl(TimeOut, FALSE));
 	(void) returntosender(buf, &CurEnv->e_from, TRUE);
 
 	/* arrange to remove files from queue */
-	CurEnv->e_queueup = FALSE;
+	CurEnv->e_dontqueue = TRUE;
 }
 
 # endif QUEUE
