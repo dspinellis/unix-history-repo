@@ -1,0 +1,21 @@
+#	@(#)README	7.1 (Berkeley) %G%
+
+The scripts needed to build a boot tape for 4.2 and beyond
+live here.  Before trying anything look at the scripts 
+
+	buildmini
+	get
+	maketape
+
+To construct a tape suitable for bootstrapping a system
+first find a spare file system for a ``mini root'' and
+patch the buildmini shell script to reflect its location.
+Second, decide where your ``distribution'' source is located
+and patch the get and maketape scripts.  Then do the following:
+	% buildmini
+	% maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
+This builds a distribution on one tape at 6250bpi, two tapes at 1600bpi.
+The tape drive  may be on a remote machine if the last optional arg is given.
+For 1600bpi, be sure and check whether /usr/src will fit on one tape.
+The current distribution is about 80+ megabytes and easily fits on one tape
+at 6250bpi with a blocking factor of 20.
