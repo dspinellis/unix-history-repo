@@ -1,1 +1,33 @@
-.so man3/exp.3m
+.TH SQRT 3M  "8 May 1985"
+.UC 4
+.SH NAME
+cbrt, sqrt \- cube root, square root
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.PP
+.B double cbrt(x)
+.B double x;
+.PP
+.B double sqrt(x)
+.B double x;
+.fi
+.SH DESCRIPTION
+.I Cbrt
+returns the cube root of
+.I x.
+.PP
+.I Sqrt
+returns the square root of 
+.I x.
+.SH SEE ALSO
+intro(3M)
+.SH DIAGNOSTICS
+.I Sqrt
+returns the reserved operand on the VAX when 
+.I x
+is negative;
+.I errno
+is set to EDOM.
+.SH AUTHOR
+W. Kahan
