@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_cluster.c	8.8 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -111,7 +111,7 @@ cluster_read(vp, filesize, lblkno, size, cred, bpp)
 		trace(TR_BREADHIT, pack(vp, size), lblkno);
 		flags |= B_ASYNC;
 		ioblkno = lblkno + (vp->v_ralen ? vp->v_ralen : 1);
-		alreadyincore = (int)incore(vp, ioblkno);
+		alreadyincore = incore(vp, ioblkno) != NULL;
 		bp = NULL;
 	} else {
 		/* Block wasn't in cache, case 3, 4, 5. */
