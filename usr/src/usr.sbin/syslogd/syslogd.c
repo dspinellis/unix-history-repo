@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -76,6 +76,7 @@ static char sccsid[] = "@(#)syslogd.c	5.35 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <strings.h>
+#include <unistd.h>
 #include "pathnames.h"
 
 char	*LogName = _PATH_LOG;
@@ -185,7 +186,7 @@ main(argc, argv)
 	char line[MSG_BSIZE + 1];
 	extern int optind;
 	extern char *optarg;
-	void die(), domark(), reapchild();
+	void die(), domark(), init(), reapchild();
 
 	while ((ch = getopt(argc, argv, "df:m:p:")) != EOF)
 		switch((char)ch) {
@@ -213,9 +214,9 @@ main(argc, argv)
 			exit(0);
 		for (i = 0; i < 10; i++)
 			(void) close(i);
-		(void) open("/", 0);
-		(void) dup2(0, 1);
-		(void) dup2(0, 2);
+		(void) open("/", O_RDONLY, 0);
+		(void) dup2(STDIN_FILENO, STDOUT_FILENO);
+		(void) dup2(STDIN_FILENO, STDERR_FILENO);
 		untty();
 	} else
 		setlinebuf(stdout);
@@ -262,7 +263,7 @@ main(argc, argv)
 		}
 		sin.sin_family = AF_INET;
 		sin.sin_port = LogPort = sp->s_port;
-		if (bind(finet, &sin, sizeof(sin)) < 0) {
+		if (bind(finet, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
 			logerror("bind");
 			if (!Debug)
 				die(0);
@@ -296,7 +297,7 @@ main(argc, argv)
 		errno = 0;
 		dprintf("readfds = %#x\n", readfds);
 		nfds = select(20, (fd_set *) &readfds, (fd_set *) NULL,
-				  (fd_set *) NULL, (struct timeval *) NULL);
+		    (fd_set *) NULL, (struct timeval *) NULL);
 		if (nfds == 0)
 			continue;
 		if (nfds < 0) {
@@ -319,7 +320,7 @@ main(argc, argv)
 		if (readfds & FDMASK(funix)) {
 			len = sizeof fromunix;
 			i = recvfrom(funix, line, MAXLINE, 0,
-				     (struct sockaddr *) &fromunix, &len);
+			    (struct sockaddr *) &fromunix, &len);
 			if (i > 0) {
 				line[i] = '\0';
 				printline(LocalHostName, line);
@@ -328,7 +329,8 @@ main(argc, argv)
 		}
 		if (readfds & inetm) {
 			len = sizeof frominet;
-			i = recvfrom(finet, line, MAXLINE, 0, &frominet, &len);
+			i = recvfrom(finet, line, MAXLINE, 0,
+			    (struct sockaddr *) &frominet, &len);
 			if (i > 0) {
 				extern char *cvthname();
 
@@ -352,7 +354,7 @@ untty()
 	int i;
 
 	if (!Debug) {
-		i = open(_PATH_TTY, O_RDWR);
+		i = open(_PATH_TTY, O_RDWR, 0);
 		if (i >= 0) {
 			(void) ioctl(i, (int) TIOCNOTTY, (char *)0);
 			(void) close(i);
@@ -466,6 +468,7 @@ logmsg(pri, msg, from, flags)
 	int fac, prilev;
 	int omask, msglen;
 	char *timestamp;
+	time_t time();
 
 	dprintf("logmsg: pri %o, flags %x, from %s, msg %s\n",
 	    pri, flags, from, msg);
@@ -499,7 +502,7 @@ logmsg(pri, msg, from, flags)
 	/* log the message to the particular outputs */
 	if (!Initialized) {
 		f = &consfile;
-		f->f_file = open(ctty, O_WRONLY);
+		f->f_file = open(ctty, O_WRONLY, 0);
 
 		if (f->f_file >= 0) {
 			untty();
@@ -571,31 +574,42 @@ fprintlog(f, flags, msg)
 	char *msg;
 {
 	struct iovec iov[6];
-	register struct iovec *v = iov;
+	register struct iovec *v;
 	register int l;
-	char line[MAXLINE + 1];
-	char repbuf[80];
+	char line[MAXLINE + 1], repbuf[80], greetings[200];
 
-	v->iov_base = f->f_lasttime;
-	v->iov_len = 15;
-	v++;
-	v->iov_base = " ";
-	v->iov_len = 1;
-	v++;
+	v = iov;
+	if (f->f_type == F_WALL) {
+		v->iov_base = greetings;
+		v->iov_len = sprintf(greetings,
+		    "\r\n\7Message from syslogd@%s at %.24s ...\r\n",
+		    f->f_prevhost, ctime(&now));
+		v++;
+		v->iov_base = "";
+		v->iov_len = 0;
+		v++;
+	} else {
+		v->iov_base = f->f_lasttime;
+		v->iov_len = 15;
+		v++;
+		v->iov_base = " ";
+		v->iov_len = 1;
+		v++;
+	}
 	v->iov_base = f->f_prevhost;
 	v->iov_len = strlen(v->iov_base);
 	v++;
 	v->iov_base = " ";
 	v->iov_len = 1;
 	v++;
+
 	if (msg) {
 		v->iov_base = msg;
 		v->iov_len = strlen(msg);
 	} else if (f->f_prevcount > 1) {
-		(void) sprintf(repbuf, "last message repeated %d times",
-		    f->f_prevcount);
 		v->iov_base = repbuf;
-		v->iov_len = strlen(repbuf);
+		v->iov_len = sprintf(repbuf, "last message repeated %d times",
+		    f->f_prevcount);
 	} else {
 		v->iov_base = f->f_prevline;
 		v->iov_len = f->f_prevlen;
@@ -612,9 +626,8 @@ fprintlog(f, flags, msg)
 
 	case F_FORW:
 		dprintf(" %s\n", f->f_un.f_forw.f_hname);
-		(void) sprintf(line, "<%d>%.15s %s", f->f_prevpri,
-			iov[0].iov_base, iov[4].iov_base);
-		l = strlen(line);
+		l = sprintf(line, "<%d>%.15s %s", f->f_prevpri,
+		    iov[0].iov_base, iov[4].iov_base);
 		if (l > MAXLINE)
 			l = MAXLINE;
 		if (sendto(finet, line, l, 0, &f->f_un.f_forw.f_addr,
@@ -652,7 +665,8 @@ fprintlog(f, flags, msg)
 			 * Check for EBADF on TTY's due to vhangup() XXX
 			 */
 			if (e == EBADF && f->f_type != F_FILE) {
-				f->f_file = open(f->f_un.f_fname, O_WRONLY|O_APPEND);
+				f->f_file = open(f->f_un.f_fname,
+				    O_WRONLY|O_APPEND, 0);
 				if (f->f_file < 0) {
 					f->f_type = F_UNUSED;
 					logerror(f->f_un.f_fname);
@@ -680,13 +694,6 @@ fprintlog(f, flags, msg)
 	f->f_prevcount = 0;
 }
 
-jmp_buf ttybuf;
-
-endtty()
-{
-	longjmp(ttybuf, 1);
-}
-
 /*
  *  WALLMSG -- Write a message to the world at large
  *
@@ -698,91 +705,43 @@ wallmsg(f, iov)
 	register struct filed *f;
 	struct iovec *iov;
 {
-	register char *p;
+	static int reenter;			/* avoid calling ourselves */
+	register FILE *uf;
 	register int i;
-	int ttyf, len;
-	FILE *uf;
-	static int reenter = 0;
 	struct utmp ut;
-	char greetings[200];
+	char *p, *ttymsg();
 
 	if (reenter++)
 		return;
-
-	/* open the user login file */
 	if ((uf = fopen(_PATH_UTMP, "r")) == NULL) {
 		/*
-		 * don't log, may not have mounted file systems yet
+		 * don't log, as may not have mounted file systems yet
 		 * logerror(_PATH_UTMP);
 		 */
 		reenter = 0;
 		return;
 	}
-
-	/*
-	 * Might as well fork instead of using nonblocking I/O
-	 * and doing notty().
-	 */
-	if (fork() == 0) {
-		(void) signal(SIGTERM, SIG_DFL);
-		(void) alarm(0);
-		(void) signal(SIGALRM, endtty);
-		(void) signal(SIGTTOU, SIG_IGN);
-		(void) sigsetmask(0);
-		(void) sprintf(greetings,
-		    "\r\n\7Message from syslogd@%s at %.24s ...\r\n",
-			iov[2].iov_base, ctime(&now));
-		len = strlen(greetings);
-
-		/* scan the user login file */
-		while (fread((char *) &ut, sizeof ut, 1, uf) == 1) {
-			/* is this slot used? */
-			if (ut.ut_name[0] == '\0')
-				continue;
-
-			/* should we send the message to this user? */
-			if (f->f_type == F_USERS) {
-				for (i = 0; i < MAXUNAMES; i++) {
-					if (!f->f_un.f_uname[i][0]) {
-						i = MAXUNAMES;
-						break;
-					}
-					if (strncmp(f->f_un.f_uname[i],
-					    ut.ut_name, UT_NAMESIZE) == 0)
-						break;
-				}
-				if (i >= MAXUNAMES)
-					continue;
-			}
-
-			/* compute the device name */
-			p = "/dev/12345678";
-			strncpy(&p[5], ut.ut_line, UT_NAMESIZE);
-
-			if (f->f_type == F_WALL) {
-				iov[0].iov_base = greetings;
-				iov[0].iov_len = len;
-				iov[1].iov_len = 0;
-			}
-			if (setjmp(ttybuf) == 0) {
-				(void) alarm(15);
-				/* open the terminal */
-				ttyf = open(p, O_WRONLY);
-				if (ttyf >= 0) {
-					struct stat statb;
-
-					if (fstat(ttyf, &statb) == 0 &&
-					    (statb.st_mode & S_IWRITE))
-						(void) writev(ttyf, iov, 6);
-					close(ttyf);
-					ttyf = -1;
-				}
-			}
-			(void) alarm(0);
+	/* NOSTRICT */
+	while (fread((char *) &ut, sizeof ut, 1, uf) == 1) {
+		if (ut.ut_name[0] == '\0')
+			continue;
+		if (f->f_type == F_WALL) {
+			if (p = ttymsg(iov, 6, ut.ut_line, 1))
+				logerror(p);
+			continue;
 		}
-		exit(0);
+		/* should we send the message to this user? */
+		for (i = 0; i < MAXUNAMES; i++) {
+			if (!f->f_un.f_uname[i][0])
+				break;
+			if (!strncmp(f->f_un.f_uname[i], ut.ut_name,
+			    UT_NAMESIZE)) {
+				if (p = ttymsg(iov, 6, ut.ut_line, 1))
+					logerror(p);
+				break;
+			}
+		}
 	}
-	/* close the user login file */
 	(void) fclose(uf);
 	reenter = 0;
 }
@@ -828,8 +787,9 @@ void
 domark()
 {
 	register struct filed *f;
+	time_t time();
 
-	now = time(0);
+	now = time((time_t *)NULL);
 	MarkSeq += TIMERINTVL;
 	if (MarkSeq >= MarkInterval) {
 		logmsg(LOG_INFO, "-- MARK --", LocalHostName, ADDDATE|MARK);
@@ -890,6 +850,7 @@ die(sig)
  *  INIT -- Initialize syslogd from configuration table
  */
 
+void
 init()
 {
 	register int i;
@@ -1081,7 +1042,8 @@ cfline(line, f)
 		if (pri < 0) {
 			char xbuf[200];
 
-			(void) sprintf(xbuf, "unknown priority name \"%s\"", buf);
+			(void) sprintf(xbuf, "unknown priority name \"%s\"",
+			    buf);
 			logerror(xbuf);
 			return;
 		}
@@ -1099,7 +1061,9 @@ cfline(line, f)
 				if (i < 0) {
 					char xbuf[200];
 
-					(void) sprintf(xbuf, "unknown facility name \"%s\"", buf);
+					(void) sprintf(xbuf,
+					    "unknown facility name \"%s\"",
+					    buf);
 					logerror(xbuf);
 					return;
 				}
@@ -1141,7 +1105,7 @@ cfline(line, f)
 
 	case '/':
 		(void) strcpy(f->f_un.f_fname, p);
-		if ((f->f_file = open(p, O_WRONLY|O_APPEND)) < 0) {
+		if ((f->f_file = open(p, O_WRONLY|O_APPEND, 0)) < 0) {
 			f->f_file = F_UNUSED;
 			logerror(p);
 			break;
