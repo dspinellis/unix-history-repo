@@ -1,0 +1,210 @@
+IP(4)                       BSD Programmer's Manual                      IP(4)
+
+NNAAMMEE
+     iipp - Internet Protocol
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+     ##iinncclluuddee <<nneettiinneett//iinn..hh>>
+
+     _i_n_t
+     ssoocckkeett(_A_F___I_N_E_T, _S_O_C_K___R_A_W, _p_r_o_t_o);
+
+DDEESSCCRRIIPPTTIIOONN
+     IP is the transport layer protocol used by the Internet protocol family.
+     Options may be set at the IP level when using higher-level protocols that
+     are based on IP (such as TCP and UDP). It may also be accessed through a
+     ``raw socket'' when developing new protocols, or special-purpose applica-
+     tions.
+
+     There are several IP -level setsockopt(2)/ getsockopt(2) options.
+     IP_OPTIONS may be used to provide IP options to be transmitted in the IP
+     header of each outgoing packet or to examine the header options on incom-
+     ing packets.  IP options may be used with any socket type in the Internet
+     family.  The format of IP options to be sent is that specified by the IP
+     protocol specification (RFC-791), with one exception: the list of ad-
+     dresses for Source Route options must include the first-hop gateway at
+     the beginning of the list of gateways.  The first-hop gateway address
+     will be extracted from the option list and the size adjusted accordingly
+     before use.  To disable previously specified options, use a zero-length
+     buffer:
+
+     setsockopt(s, IPPROTO_IP, IP_OPTIONS, NULL, 0);
+
+     IP_TOS and IP_TTL may be used to set the type-of-service and time-to-live
+     fields in the IP header for SOCK_STREAM and SOCK_DGRAM sockets. For exam-
+     ple,
+
+     int tos = IPTOS_LOWDELAY;       /* see <netinet/in.h> */
+     setsockopt(s, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
+
+     int ttl = 60;                   /* max = 255 */
+     setsockopt(s, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
+
+     If the IP_RECVDSTADDR option is enabled on a SOCK_DGRAM socket, the
+     recvmsg call will return the destination IP address for a UDP datagram.
+     The msg_control field in the msghdr structure points to a buffer that
+     contains a cmsghdr structure followed by the IP address.  The cmsghdr
+     fields have the following values:
+
+     cmsg_len = sizeof(struct in_addr)
+     cmsg_level = IPPROTO_IP
+     cmsg_type = IP_RECVDSTADDR
+
+   MMuullttiiccaasstt OOppttiioonnss
+
+     IP multicasting is supported only on AF_INET sockets of type SOCK_DGRAM
+     and SOCK_RAW, and only on networks where the interface driver supports
+     multicasting.
+
+     The IP_MULTICAST_TTL option changes the time-to-live (TTL) for outgoing
+     multicast datagrams in order to control the scope of the multicasts:
+
+     u_char ttl;     /* range: 0 to 255, default = 1 */
+     setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, &ttl, sizeof(ttl));
+
+     Datagrams with a TTL of 1 are not forwarded beyond the local network.
+     Multicast datagrams with a TTL of 0 will not be transmitted on any net-
+     work, but may be delivered locally if the sending host belongs to the
+     destination group and if multicast loopback has not been disabled on the
+     sending socket (see below).  Multicast datagrams with TTL greater than 1
+     may be forwarded to other networks if a multicast router is attached to
+     the local network.
+
+     For hosts with multiple interfaces, each multicast transmission is sent
+     from the primary network interface.  The IP_MULTICAST_IF option overrides
+     the default for subsequent transmissions from a given socket:
+
+     struct in_addr addr;
+     setsockopt(s, IPPROTO_IP, IP_MULTICAST_IF, &addr, sizeof(addr));
+
+     where "addr" is the local IP address of the desired interface or
+     INADDR_ANY to specify the default interface.  An interface's local IP ad-
+     dress and multicast capability can be obtained via the SIOCGIFCONF and
+     SIOCGIFFLAGS ioctls.  Normal applications should not need to use this op-
+     tion.
+
+     If a multicast datagram is sent to a group to which the sending host it-
+     self belongs (on the outgoing interface), a copy of the datagram is, by
+     default, looped back by the IP layer for local delivery.  The
+     IP_MULTICAST_LOOP option gives the sender explicit control over whether
+     or not subsequent datagrams are looped back:
+
+     u_char loop;    /* 0 = disable, 1 = enable (default) */
+     setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &loop, sizeof(loop));
+
+     This option improves performance for applications that may have no more
+     than one instance on a single host (such as a router demon), by eliminat-
+     ing the overhead of receiving their own transmissions.  It should gener-
+     ally not be used by applications for which there may be more than one in-
+     stance on a single host (such as a conferencing program) or for which the
+     sender does not belong to the destination group (such as a time querying
+     program).
+
+     A multicast datagram sent with an initial TTL greater than 1 may be de-
+     livered to the sending host on a different interface from that on which
+     it was sent, if the host belongs to the destination group on that other
+     interface.  The loopback control option has no effect on such delivery.
+
+     A host must become a member of a multicast group before it can receive
+     datagrams sent to the group.  To join a multicast group, use the
+     IP_ADD_MEMBERSHIP option:
+
+     struct ip_mreq mreq;
+     setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
+
+     where _m_r_e_q is the following structure:
+
+     struct ip_mreq {
+         struct in_addr imr_multiaddr; /* multicast group to join */
+         struct in_addr imr_interface; /* interface to join on */
+     }
+
+     imr_interface should be INADDR_ANY to choose the default multicast inter-
+     face, or the IP address of a particular multicast-capable interface if
+     the host is multihomed.  Membership is associated with a single inter-
+     face; programs running on multihomed hosts may need to to join the same
+     group on more than one interface.  Up to IP_MAX_MEMBERSHIPS (currently
+     20) memberships may be added on a single socket.
+
+     To drop a membership, use:
+
+     struct ip_mreq mreq;
+     setsockopt(s, IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
+
+     where _m_r_e_q contains the same values as used to add the membership.  Mem-
+     berships are dropped when the socket is closed or the process exits.
+
+   RRaaww IIPP SSoocckkeettss
+
+     Raw IP sockets are connectionless, and are normally used with the sendto
+     and recvfrom calls, though the connect(2) call may also be used to fix
+     the destination for future packets (in which case the read(2) or recv(2)
+     and write(2) or send(2) system calls may be used).
+
+     If _p_r_o_t_o is 0, the default protocol IPPROTO_RAW is used for outgoing
+     packets, and only incoming packets destined for that protocol are re-
+     ceived.  If _p_r_o_t_o is non-zero, that protocol number will be used on out-
+     going packets and to filter incoming packets.
+
+     Outgoing packets automatically have an IP header prepended to them (based
+     on the destination address and the protocol number the socket is created
+     with), unless the IP_HDRINCL option has been set.  Incoming packets are
+     received with IP header and options intact.
+
+     IP_HDRINCL indicates the complete IP header is included with the data and
+     may be used only with the SOCK_RAW type.
+
+     #include <netinet/ip.h>
+
+     int hincl = 1;                  /* 1 = on, 0 = off */
+     setsockopt(s, IPPROTO_IP, IP_HDRINCL, &hincl, sizeof(hincl));
+
+     Unlike previous BSD releases, the program must set all the fields of the
+     IP header, including the following:
+
+     ip->ip_v = IPVERSION;
+     ip->ip_hl = hlen >> 2;
+     ip->ip_id = 0;  /* 0 means kernel set appropriate value */
+     ip->ip_off = offset;
+     If the header source address is set to INADDR_ANY, the kernel will choose
+     an appropriate address.
+
+DDIIAAGGNNOOSSTTIICCSS
+     A socket operation may fail with one of the following errors returned:
+
+     [EISCONN]        when trying to establish a connection on a socket which
+                      already has one, or when trying to send a datagram with
+                      the destination address specified and the socket is al-
+                      ready connected;
+
+     [ENOTCONN]       when trying to send a datagram, but no destination ad-
+                      dress is specified, and the socket hasn't been connect-
+                      ed;
+
+     [ENOBUFS]        when the system runs out of memory for an internal data
+                      structure;
+
+     [EADDRNOTAVAIL]  when an attempt is made to create a socket with a net-
+                      work address for which no network interface exists.
+
+     [EACESS]         when an attempt is made to create a raw IP socket by a
+                      non-privileged process.
+
+     The following errors specific to IP may occur when setting or getting IP
+     options:
+
+
+     [EINVAL]         An unknown socket option name was given.
+
+     [EINVAL]         The IP option field was improperly formed; an option
+                      field was shorter than the minimum value or longer than
+                      the option buffer provided.
+
+SSEEEE AALLSSOO
+     getsockopt(2),  send(2),  recv(2),  intro(4),  icmp(4),  inet(4)
+
+HHIISSTTOORRYY
+     The iipp protocol appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                4

@@ -1,0 +1,53 @@
+CLTP(4)                     BSD Programmer's Manual                    CLTP(4)
+
+NNAAMMEE
+     ccllttpp - ISO Connectionless Transport Protocol
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+     ##iinncclluuddee <<nneettiissoo//iissoo..hh>>
+
+     _i_n_t
+     ssoocckkeett(_A_F___I_S_O, _S_O_C_K___D_G_R_A_M, _0);
+
+DDEESSCCRRIIPPTTIIOONN
+     CLTP is a simple, unreliable datagram protocol which is accessed via the
+     SOCK_DGRAM abstraction for the ISO protocol family.  CLTP sockets are
+     connectionless, and are normally used with the sendto and recvfrom calls,
+     though the connect(2) call may also be used to fix the destination for
+     future packets (in which case the recv(2) or read(2) and send(2) or
+     write(2) system calls may be used).
+
+     CLTP address formats are identical to those used by TP.  In particular
+     CLTP provides a service selector in addition to the normal ISO NSAP. Note
+     that the CLTP selector space is separate from the TP selector space (i.e.
+     a CLTP selector may not be ``connected'' to a TP selector).
+
+     Options at the CLNP network level may be used with CLTP; see clnp(4).
+
+DDIIAAGGNNOOSSTTIICCSS
+     A socket operation may fail with one of the following errors returned:
+
+     [EISCONN]        when trying to establish a connection on a socket which
+                      already has one, or when trying to send a datagram with
+                      the destination address specified and the socket is al-
+                      ready connected;
+
+     [ENOTCONN]       when trying to send a datagram, but no destination ad-
+                      dress is specified, and the socket hasn't been connect-
+                      ed;
+
+     [ENOBUFS]        when the system runs out of memory for an internal data
+                      structure;
+
+     [EADDRINUSE]     when an attempt is made to create a socket with a selec-
+                      tor which has already been allocated;
+
+     [EADDRNOTAVAIL]  when an attempt is made to create a socket with a net-
+                      work address for which no network interface exists.
+
+SSEEEE AALLSSOO
+     getsockopt(2),  recv(2),  send(2),  socket(2),  intro(4),  iso(4),
+     clnp(4)
+
+4.4BSD                           June 9, 1993                                1

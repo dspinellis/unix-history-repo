@@ -1,0 +1,13 @@
+INTRO(7)                     BSD Reference Manual                     INTRO(7)
+
+NNAAMMEE
+     iinnttrroo - miscellaneous information pages
+
+DDEESSCCRRIIPPTTIIOONN
+     This section contains miscellaneous documentation, mostly in the area of
+     text processing macro packages for troff(1).
+
+HHIISSTTOORRYY
+     iinnttrroo appeared in 4.2 BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

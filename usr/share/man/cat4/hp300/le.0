@@ -1,0 +1,41 @@
+LE(4)            BSD Programmer's Manual (HP300 Architecture)            LE(4)
+
+NNAAMMEE
+     llee - HP AMD 7990 LANCE Ethernet interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee llee00 aatt ssccooddee??
+
+DDEESSCCRRIIPPTTIIOONN
+     The llee interface provides access to a 10 Mb/s Ethernet network via the
+     AMD 7990 LANCE Ethernet chip set.
+
+     Each of the host's network addresses is specified at boot time with an
+     SIOCSIFADDR ioctl.  The le interface employs the address resolution pro-
+     tocol described in arp(4) to dynamically map between Internet and Ether-
+     net addresses on the local network.
+
+     The use of ``trailer'' encapsulation to minimize copying data on input
+     and output is supported by the interface but offers no advantage due to
+     the large HP page size.  The use of trailers is negotiated with ARP. This
+     negotiation may be disabled, on a per-interface basis, by setting the
+     IFF_NOTRAILERS flag with an SIOCSIFFLAGS ioctl.
+
+DDIIAAGGNNOOSSTTIICCSS
+     llee%%dd:: hhaarrddwwaarree aaddddrreessss %%ss..  This is a normal autoconfiguration message
+     noting the 6 byte physical ethernet address of the adapter.
+
+     ddee%%dd:: ccaann''tt hhaannddllee aaff%%dd..  The interface was handed a message with ad-
+     dresses formatted in an unsuitable address family; the packet was
+     dropped.
+
+     The following message indicate a possible hardware error performing the
+     indicated operation during autoconfiguration or initialization.
+
+     llee%%dd:: iinniitt ttiimmeeoouutt,, ssttaatt == 00xx%%xx..  The hardware did not respond to an ini-
+     tialize command during reset.  The reset procedure continues anyway.
+
+SSEEEE AALLSSOO
+     intro(4),  inet(4),  arp(4)
+
+4.4BSD                           June 9, 1993                                1

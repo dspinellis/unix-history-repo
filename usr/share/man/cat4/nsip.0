@@ -1,0 +1,52 @@
+NSIP(4)                     BSD Programmer's Manual                    NSIP(4)
+
+NNAAMMEE
+     nnssiipp - software network interface encapsulating NS packets in IP packets
+
+SSYYNNOOPPSSIISS
+     ooppttiioonnss NNSSIIPP
+     ##iinncclluuddee <<nneettnnss//nnss__iiff..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     The nnssiipp interface is a software mechanism which may be used to transmit
+     Xerox NS(tm) packets through otherwise uncooperative networks.  It func-
+     tions by prepending an IP header, and resubmitting the packet through the
+     UNIX IP machinery.
+
+     The super-user can advise the operating system of a willing partner by
+     naming an IP address to be associated with an NS address.  Presently, on-
+     ly specific hosts pairs are allowed, and for each host pair, an artifi-
+     cial point-to-point interface is constructed.  At some future date, IP
+     broadcast addresses or hosts may be paired with NS networks or hosts.
+
+     Specifically, a socket option of SO_NSIP_ROUTE is set on a socket of fam-
+     ily AF_NS, type SOCK_DGRAM, passing the following structure:
+
+     struct nsip_req {
+             struct sockaddr rq_ns;  /* must be ns format destination */
+             struct sockaddr rq_ip;  /* must be ip format gateway */
+             short rq_flags;
+     };
+
+DDIIAAGGNNOOSSTTIICCSS
+     nnssiipp%%dd:: ccaann''tt hhaannddllee aaff%%dd..  The interface was handed a message with ad-
+     dresses formatted in an unsuitable address family; the packet was
+     dropped.
+
+SSEEEE AALLSSOO
+     intro(4),  ns(4)
+
+HHIISSTTOORRYY
+     The nnssiipp interface appeared in 4.3BSD.
+
+BBUUGGSS
+     It is absurd to have a separate pseudo-device for each pt-to-pt link.
+     There is no way to change the IP address for an NS host once the the en-
+     capsulation interface is set up.  The request should honor flags of
+     RTF_GATEWAY to indicate remote networks, and the absence of RTF_UP should
+     be a clue to remove that partner.  This was intended to postpone the ne-
+     cessity of rewriting reverse ARP for the en(4) device, and to allow pass-
+     ing XNS packets through an Arpanet-Milnet gateway, to facilitate testing
+     between some co-operating universities.
+
+4.3 Berkeley Distribution        June 5, 1993                                1

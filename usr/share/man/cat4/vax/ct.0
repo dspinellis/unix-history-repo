@@ -1,0 +1,29 @@
+CT(4)             BSD Programmer's Manual (VAX Architecture)             CT(4)
+
+NNAAMMEE
+     cctt - C/A/T phototypesetter interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee cctt00 aatt uubbaa00 ccssrr 00116677776600 vveeccttoorr ccttiinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     This is an interface to either a Graphic Systems C/A/T phototypesetter or
+     an Autologic APS-Micro5 using a DR-11 C interface.
+
+     The cctt is a write only device.
+
+FFIILLEESS
+     /dev/cat
+
+DDIIAAGGNNOOSSTTIICCSS
+     None.
+
+SSEEEE AALLSSOO
+     troff(1)
+
+     _P_h_o_t_o_t_y_p_e_s_e_t_t_e_r _i_n_t_e_r_f_a_c_e _s_p_e_c_i_f_i_c_a_t_i_o_n.
+
+HHIISSTTOORRYY
+     The cctt driver appeared in 4.1BSD.
+
+4th Berkeley Distribution        June 5, 1993                                1

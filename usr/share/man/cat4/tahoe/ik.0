@@ -1,0 +1,80 @@
+IK(4)                       BSD Programmer's Manual                      IK(4)
+
+NNAAMMEE
+     iikk - Evans and Sutherland Picture System 300 graphics device interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee iikk00 aatt vvbbaa?? ccssrr 00xxffffffbb110000 vveeccttoorr iikkiinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     The iikk driver provides access to an Evans and Sutherland Picture System
+     300 through an Ikon DR-11W interface card.  Each two minor device numbers
+     are a different PS300; within a pair of device numbers the odd valued de-
+     vice is used for ``diagnostic'' purposes.   That is, for even numbered
+     minor devices, opening the device results in a PS300 ``attach'' request
+     being performed while for odd numbered minor devices the attach request
+     is not performed.
+
+     All operations between the host and the PS300 utilize DMA. The driver
+     currently supports only physical I/O operations when reading and writing;
+     this makes the device useless with standard Evans and Sutherland soft-
+     ware.
+
+     The interface provided by the interface is as UNIX-like as possible.
+     When a device is opened a PS300 attach request is automatically per-
+     formed.  When a device is closed a detach is performed.  Reads and writes
+     result in physical I/O requests, but hide all the details of the physical
+     I/O protocol.  This is programming style is completely different from the
+     VMS-oriented qio-style interface supplied by Evans and Sutherland.
+
+     Reads and writes to the device result in a physical I/O request to the
+     PS300. If a readv(2) or writev(2) call is used, each I/O request results
+     in a single physical I/O request (i.e. the scatter-gather facilities are
+     not supported).  In normal operation, the address used in a physical I/O
+     request is the current file offset as specified explicitly with lseek(2)
+     or implictly as a result of reading or writing the device.  To specify an
+     address to be used with each physical I/O request, the iikk driver inter-
+     prets the _i_o_v entries in a non-standard way.  If _i_o_v___l_e_n is zero, then
+     _i_o_v___b_a_s_e is interpreted as an address to be used in the physical I/O re-
+     quest.  If the address has the PSIO_SYNC flag or-d into it, the physical
+     I/O request is made as a ``write with sync''.  All addresses and data
+     presented to the driver should be in the byte order of the host; any byte
+     swapping required to converse with the PS300 is performed in the driv-
+     er/controller.
+
+     In addition to reading and writing, the following ioctl requests are
+     available:
+
+     PSIOLOOKUP    Perform a ``name lookup'' request.  The _p_s_l_o_o_k_u_p structure
+                   passed indicates the symbol name to be looked up and con-
+                   tains the address returned by the PS300. A zero address re-
+                   turn indicates the symbol was undefined.
+
+     PSIOGETERROR  In the event of an error, this request may be made to re-
+                   turn a more detailed and, sometimes PS300-specific, error
+                   code.
+
+FFIILLEESS
+     /dev/ik[0-7]    auto-attach devices
+     /dev/ik[0-7]d   diagnostic interfaces to devices
+
+DDIIAAGGNNOOSSTTIICCSS
+     iikk%%dd:: bbaadd ccmmdd %%xx..  An unknown or unsupported command was received by the
+     host.
+
+
+     iikk%%dd:: ssppuurriioouuss iinntteerrrruupptt,, ccooddee %%xx..  An unexpected interrupt was received
+     from the PS300; the attention code from the PS300 is printed.
+
+     iikk%%dd:: ttiimmeeoouutt..  A command failed to elicit a response within a reasonable
+     time; the PS300 probably crashed.
+
+HHIISSTTOORRYY
+     The Tahoe Version iikk driver appeared in 4.2BSD.
+
+BBUUGGSS
+     An invalid access (e.g. illegal address) to the PS300 can cause the PS300
+     to crash.  It is not always possible to unwedge the PS300 interface hard-
+     ware hung by an I/O request.
+
+4.2 Berkeley Distribution        June 5, 1993                                2

@@ -1,0 +1,16 @@
+NULL(4)                     BSD Programmer's Manual                    NULL(4)
+
+NNAAMMEE
+     nnuullll - the null device
+
+DDEESSCCRRIIPPTTIIOONN
+     The nnuullll device accepts and reads data as any ordinary (and willing) file
+     - but throws it away. The length of the nnuullll device is always zero.
+
+FFIILLEESS
+     /dev/null
+
+HHIISSTTOORRYY
+     A nnuullll device appeared in Version 7 AT&T UNIX.
+
+4.4BSD                           June 5, 1993                                1

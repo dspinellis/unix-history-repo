@@ -1,0 +1,40 @@
+NETWORKS(5)                 BSD Programmer's Manual                NETWORKS(5)
+
+NNAAMMEE
+     nneettwwoorrkkss - network name data base
+
+DDEESSCCRRIIPPTTIIOONN
+     The networks file contains information regarding the known networks which
+     comprise the DARPA Internet.  For each network a single line should be
+     present with the following information:
+
+           official network name
+           network number
+           aliases
+
+     Items are separated by any number of blanks and/or tab characters.  A
+     ``#'' indicates the beginning of a comment; characters up to the end of
+     the line are not interpreted by routines which search the file.  This
+     file is normally created from the official network data base maintained
+     at the Network Information Control Center (NIC), though local changes may
+     be required to bring it up to date regarding unofficial aliases and/or
+     unknown networks.
+
+     Network number may be specified in the conventional ``.''  (dot) notation
+     using the inet_network(3) routine from the Internet address manipulation
+     library, inet(3).  Network names may contain any printable character oth-
+     er than a field delimiter, newline, or comment character.
+
+FFIILLEESS
+     /etc/networks  The nneettwwoorrkkss file resides in _/_e_t_c.
+
+SSEEEE AALLSSOO
+     getnetent(3)
+
+BBUUGGSS
+     A name server should be used instead of a static file.
+
+HHIISSTTOORRYY
+     The nneettwwoorrkkss file format appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

@@ -1,0 +1,54 @@
+ENP(4)           BSD Programmer's Manual (Tahoe Architecture)           ENP(4)
+
+NNAAMMEE
+     eennpp - CMC 10 Mb/s Ethernet interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee eennpp00 aatt vvbbaa?? ccssrr 00xxffffff4400000000 vveeccttoorr eennppiinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     The eennpp interface provides access to a 10 Mb/s Ethernet network through a
+     CMC ENP-20 controller.
+
+     The hardware has 128 kilobytes of dual-ported memory on the VERSAbus.
+     This memory is used for internal buffering by the board, and the inter-
+     face code reads the buffer contents directly through the VERSAbus. The
+     address of this memory is derived from the address specified in the con-
+     figuration file.
+
+     Each of the host's network addresses is specified at boot time with an
+     SIOCSIFADDR ioctl(2).  The eennpp interface employs the address resolution
+     protocol described in arp(4) to dynamically map between Internet and Eth-
+     ernet addresses on the local network.
+
+     The interface normally tries to use a ``trailer'' encapsulation to mini-
+     mize copying data on input and output.  The use of trailers is negotiated
+     with ARP. This negotiation may be disabled, on a per-interface basis, by
+     setting the IFF_NOTRAILERS flag with an SIOCSIFFLAGS ioctl.
+
+     Associated with each interface is a character device which is used to
+     dowload, start, and reset the firmware in the controller.  Reading or
+     writing the ``ram device'' reads or writes the writable control store in
+     the controller.  Two ioctl(2) calls, ENPIOGO and ENPIORESET, are used to
+     start and reset the firmware.
+
+DDIIAAGGNNOOSSTTIICCSS
+     eennpp%%dd:: ccaann''tt hhaannddllee aaff%%dd..  The interface was handed a message with ad-
+     dresses formatted in an unsuitable address family; the packet was
+     dropped.
+
+SSEEEE AALLSSOO
+     intro(4),  inet(4),  arp(4),  enpload(8)
+
+HHIISSTTOORRYY
+     The eennpp driver appeared in 4.3BSD-Tahoe.
+
+BBUUGGSS
+     The hardware is not capable of talking to itself.  The software imple-
+     ments local sending and broadcast by sending such packets to the loop in-
+     terface.  This is a kludge.
+
+     The link level firmware does not support setting the board's Ethernet ad-
+     dress.
+
+4.3-Tahoe Berkeley Distribution  June 5, 1993                                1

@@ -1,0 +1,259 @@
+TTY(4)                      BSD Programmer's Manual                     TTY(4)
+
+NNAAMMEE
+     ttttyy - general terminal interface
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//iiooccttll..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     This section describes the interface to the terminal drivers in the sys-
+     tem.
+
+   TTeerrmmiinnaall SSppeecciiaall FFiilleess
+     Each hardware terminal port on the system usually has a terminal special
+     device file associated with it in the directory ``/dev/'' (for example,
+     ``/dev/tty03'').  When a user logs into the system on one of these hard-
+     ware terminal ports, the system has already opened the associated device
+     and prepared the line for normal interactive use (see getty(8).)  There
+     is also a special case of a terminal file that connects not to a hardware
+     terminal port, but to another program on the other side.  These special
+     terminal devices are called _p_t_y_s and provide the mechanism necessary to
+     give users the same interface to the system when logging in over a net-
+     work (using rlogin(1),  or telnet(1) for example.)  Even in these cases
+     the details of how the terminal file was opened and set up is already
+     handled by special software in the system.  Thus, users do not normally
+     need to worry about the details of how these lines are opened or used.
+     Also, these lines are often used for dialing out of a system (through an
+     out-calling modem), but again the system provides programs that hide the
+     details of accessing these terminal special files (see tip(2).)
+
+     When an interactive user logs in, the system prepares the line to behave
+     in a certain way (called a _l_i_n_e _d_i_s_c_i_p_l_i_n_e _)_, the particular details of
+     which is described in stty(1) at the command level, and in termios(4) at
+     the programming level.  A user may be concerned with changing settings
+     associated with his particular login terminal and should refer to the
+     preceding man pages for the common cases.  The remainder of this man page
+     is concerned with describing details of using and controlling terminal
+     devices at a low level, such as that possibly required by a program wish-
+     ing to provide features similar to those provided by the system.
+
+   LLiinnee ddiisscciipplliinneess
+     A terminal file is used like any other file in the system in that it can
+     be opened, read, and written to using standard system calls.  For each
+     existing terminal file, a software processing module called a _l_i_n_e
+     _d_i_s_c_i_p_l_i_n_e is associated with it.  The _l_i_n_e _d_i_s_c_i_p_l_i_n_e essentially glues
+     the low level device driver code with the high level generic interface
+     routines (such as read(2) and write(2)),  and is responsible for imple-
+     menting the semantics associated with the device.  When a terminal file
+     is first opened by a program, the default _l_i_n_e _d_i_s_c_i_p_l_i_n_e called the
+     termios line discipline is associated with the file.  This is the primary
+     line discipline that is used in most cases and provides the semantics
+     that users normally associate with a terminal.  When the termios line
+     discipline is in effect, the terminal file behaves and is operated ac-
+     cording to the rules described in termios(4).  Please refer to that man
+     page for a full description of the terminal semantics.  The operations
+     described here generally represent features common across all _l_i_n_e
+     _d_i_s_c_i_p_l_i_n_e_s however, some of these calls may not make sense in conjunc-
+     tion with a line discipline other than termios, and some may not be sup-
+     ported by the underlying hardware or (lack thereof, as in the case of
+     ptys).
+
+   TTeerrmmiinnaall FFiillee OOppeerraattiioonnss
+     All of the following operations are invoked using the ioctl(2) system
+     call.  Refer to that man page for a description of the _r_e_q_u_e_s_t and _a_r_g_p
+     parameter.  In addition to the ioctl _r_e_q_u_e_s_t_s defined here, the specific
+     line discipline in effect will define other _r_e_q_u_e_s_t_s specific to it (ac-
+     tually termios(4) defines them as function calls, not ioctl _r_e_q_u_e_s_t_s _._)
+     The following section lists the available ioctl requests.  The name of
+     the request and the typed _a_r_g_p parameter (if any) is listed along with a
+     description of its purpose.  For example, the first entry says
+
+           _T_I_O_C_S_E_T_D _i_n_t _*_l_d_i_s_c
+
+     and would be called on the terminal associated with file discriptor zero
+     by the following code fragment:
+
+             int ldisc;
+
+             ldisc = TTYDISC;
+             ioctl(0, TIOCSETD, &ldisc);
+
+   TTeerrmmiinnaall FFiillee RReeqquueesstt DDeessccrriippttiioonnss
+
+     TIOCSETD _i_n_t _*_l_d_i_s_c
+                 Change to the new line discipline pointed to by _l_d_i_s_c. The
+                 available line disciplines are listed in <sys/termios.h> and
+                 currently are:
+
+                 TTYDISC     Termios interactive line discipline.
+                 TABLDISC    Tablet line discipline.
+                 SLIPDISC    Serial IP line discipline.
+
+     TIOCGETD _i_n_t _*_l_d_i_s_c
+                 Return the current line discipline in the integer pointed to
+                 by _l_d_i_s_c.
+
+     TIOCSBRK _v_o_i_d
+                 Set the terminal hardware into BREAK condition.
+
+     TIOCCBRK _v_o_i_d
+                 Clear the terminal hardware BREAK condition.
+
+     TIOCSDTR _v_o_i_d
+                 Assert data terminal ready (DTR).
+
+     TIOCCDTR _v_o_i_d
+                 Clear data terminal ready (DTR).
+
+     TIOCGPGRP _i_n_t _*_t_p_g_r_p
+                 Return the current process group the terminal is associated
+                 with in the integer pointed to by _t_p_g_r_p. This is the underly-
+                 ing call that implements the termios(4) ttccggeettaattttrr() call.
+
+     TIOCSPGRP _i_n_t _*_t_p_g_r_p
+                 Associate the terminal with the process group (as an integer)
+                 pointed to by _t_p_g_r_p. This is the underlying call that imple-
+                 ments the termios(4) ttccsseettaattttrr() call.
+
+     TIOCGETA _s_t_r_u_c_t _t_e_r_m_i_o_s _*_t_e_r_m
+                 Place the current value of the termios state associated with
+                 the device in the termios structure pointed to by _t_e_r_m. This
+                 is the underlying call that implements the termios(4)
+                 ttccggeettaattttrr() call.
+
+     TIOCSETA _s_t_r_u_c_t _t_e_r_m_i_o_s _*_t_e_r_m
+                 Set the termios state associated with the device immediatly.
+                 This is the underlying call that implements the termios(4)
+                 ttccsseettaattttrr() call with the TCSANOW option.
+
+     TIOCSETAW _s_t_r_u_c_t _t_e_r_m_i_o_s _*_t_e_r_m
+                 First wait for any output to complete, then set the termios
+                 state associated with the device.  This is the underlying
+                 call that implements the termios(4) ttccsseettaattttrr() call with the
+                 TCSADRAIN option.
+
+     TIOCSETAF _s_t_r_u_c_t _t_e_r_m_i_o_s _*_t_e_r_m
+                 First wait for any output to complete, clear any pending in-
+                 put, then set the termios state associated with the device.
+                 This is the underlying call that implements the termios(4)
+                 ttccsseettaattttrr() call with the TCSAFLUSH option.
+
+     TIOCOUTQ _i_n_t _*_n_u_m
+                 Place the current number of characters in the output queue in
+                 the integer pointed to by _n_u_m.
+
+     TIOCSTI _c_h_a_r _*_c_p
+                 Simulate typed input.  Pretend as if the terminal recieved
+                 the character pointed to by _c_p.
+
+     TIOCNOTTY _v_o_i_d
+                 This call is obsolete but left for compatability.  In the
+                 past, when a process that didn't have a controlling terminal
+                 (see _T_h_e _C_o_n_t_r_o_l_l_i_n_g _T_e_r_m_i_n_a_l in termios(4))  first opened a
+                 terminal device, it acquired that terminal as its controlling
+                 terminal.  For some programs this was a hazard as they didn't
+                 want a controlling terminal in the first place, and this pro-
+                 vided a mechanism to disassociate the controlling terminal
+                 from the calling process.  It _m_u_s_t be called by opening the
+                 file _/_d_e_v_/_t_t_y and calling TIOCNOTTY on that file descriptor.
+
+                 The current system does not allocate a controlling terminal
+                 to a process on an ooppeenn() call: there is a specific ioctl
+                 called TIOSCTTY to make a terminal the controlling terminal.
+                 In addition, a program can ffoorrkk() and call the sseettssiidd() sys-
+                 tem call which will place the process into its own session -
+                 which has the effect of disassociating it from the control-
+                 ling terminal.  This is the new and prefered method for pro-
+                 grams to lose their controlling terminal.
+
+     TIOCSTOP _v_o_i_d
+                 Stop output on the terminal (like typing ^S at the keyboard).
+
+     TIOCSTART _v_o_i_d
+                 Start output on the terminal (like typing ^Q at the kay-
+                 board).
+
+     TIOCSCTTY _v_o_i_d
+                 Make the terminal the controlling terminal for the process
+                 (the process must not currently have a controlling terminal).
+
+     TIOCDRAIN _v_o_i_d
+                 Wait until all output is drained.
+
+     TIOCEXCL _v_o_i_d
+                 Set exclusive use on the terminal.  No further opens are per-
+                 mitted except by root.  Of course, this means that programs
+                 that are run by root (or setuid) will not obey the exclusive
+                 setting - which limits the usefullness of this feature.
+
+     TIOCNXCL _v_o_i_d
+                 Clear exclusive use of the terminal.  Further opens are per-
+                 mitted.
+
+     TIOCFLUSH _i_n_t _*_w_h_a_t
+                 If the value of the int pointed to by _w_h_a_t contains the FREAD
+                 bit as defined in <sys/file.h>, then all characters in the
+                 input queue are cleared.  If it contains the FWRITE bit, then
+                 all characters in the output queue are cleared.  If the value
+                 of the integer is zero, then it behaves as if both the FREAD
+                 and FWRITE bits were set (i.e. clears both queues).
+
+     TIOCGWINSZ _s_t_r_u_c_t _w_i_n_s_i_z_e _*_w_s
+                 Put the window size information associated with the terminal
+                 in the _w_i_n_s_i_z_e structure pointed to by _w_s. The window size
+                 structure contains the number of rows and columns (and pixels
+                 if appropiate) of the devices attached to the terminal.  It
+                 is set by user software and is the means by which most full-
+                 screen oriented programs determine the screen size.  The
+                 _w_i_n_s_i_z_e structure is defined in <sys/ioctl.h>.
+
+     TIOCSWINSZ _s_t_r_u_c_t _w_i_n_s_i_z_e _*_w_s
+                 Set the window size associated with the terminal to be the
+                 value in the _w_i_n_s_i_z_e structure pointed to by _w_s (see above).
+
+     TIOCCONS _i_n_t _*_o_n
+                 If _o_n points to a non-zero integer, redirect kernel console
+                 output (kernel printf's) to this terminal.  If _o_n points to a
+                 zero integer, redirect kernel console output back to the nor-
+                 mal console.  This is usually used on workstations to redi-
+                 rect kernel messages to a particular window.
+
+     TIOCMSET _i_n_t _*_s_t_a_t_e
+                 The integer pointed to by _s_t_a_t_e contains bits that correspond
+                 to modem state.  Following is a list of defined variables and
+                 the modem state they represent:
+
+                 TIOCM_LE   Line Enable.
+                 TIOCM_DTR  Data Terminal Ready.
+                 TIOCM_RTS  Request To Send.
+                 TIOCM_ST   Secondary Transmit.
+                 TIOCM_SR   Secondary Recieve.
+                 TIOCM_CTS  Clear To Send.
+                 TIOCM_CAR  Carrier Detect.
+                 TIOCM_CD   Carier Detect (synonym).
+                 TIOCM_RNG  Ring Indication.
+                 TIOCM_RI   Ring Indication (synonym).
+                 TIOCM_DSR  Data Set Ready.
+
+                 This call sets the terminal modem state to that represented
+                 by _s_t_a_t_e. Not all terminals may support this.
+
+     TIOCMGET _i_n_t _*_s_t_a_t_e
+                 Return the current state of the terminal modem lines as rep-
+                 resented above in the integer pointed to by _s_t_a_t_e.
+
+     TIOCMBIS _i_n_t _*_s_t_a_t_e
+                 The bits in the integer pointed to by _s_t_a_t_e represent modem
+                 state as described above, however the state is OR-ed in with
+                 the current state.
+
+     TIOCMBIC _i_n_t _*_s_t_a_t_e
+                 The bits in the integer pointed to by _s_t_a_t_e represent modem
+                 state as described above, however each bit which is on in
+                 _s_t_a_t_e is cleared in the terminal.
+
+SSEEEE AALLSSOO
+     getty(8),  ioctl(2),  pty(4),  stty(1),  termios(4)
+
+4th Berkeley Distribution       August 14, 1992                              4

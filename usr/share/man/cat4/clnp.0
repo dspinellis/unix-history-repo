@@ -1,0 +1,88 @@
+CLNP(4)                     BSD Programmer's Manual                    CLNP(4)
+
+NNAAMMEE
+     ccllnnpp - Connectionless-Mode Network Protocol
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+     ##iinncclluuddee <<nneettaarrggoo//iissoo..hh>>
+     ##iinncclluuddee <<nneettaarrggoo//ccllnnpp..hh>>
+
+     _i_n_t
+     ssoocckkeett(_A_F___I_S_O, _S_O_C_K___R_A_W, _0);
+
+DDEESSCCRRIIPPTTIIOONN
+     CLNP is the connectionless-mode network protocol used by the connection-
+     less-mode network service. This protocol is specified in ISO 8473.  It
+     may be accessed through a ``raw socket'' for debugging purposes only.
+     CLNP sockets are connectionless, and are normally used with the sendto
+     and recvfrom calls, though the connect(2) call may also be used to fix
+     the destination for future packets (in which case the read(2) or recv(2)
+     and write(2) or send(2) system calls may be used).
+
+     Outgoing packets automatically have a CLNP header prepended to them. In-
+     coming packets received by the user contain the full CLNP header.  The
+     following setsockopt options apply to CLNP:
+
+     CLNPOPT_FLAGS  Sets the flags which are passed to clnp when sending a
+                    datagram.  Valid flags are:
+
+                          CLNP_NO_SEG    Do not allow segmentation
+                          CLNP_NO_ER     Suppress ER pdus
+                          CLNP_NO_CKSUM  Do not generate the CLNP checksum
+
+     CLNPOPT_OPTS   Sets CLNP options. The options must be formatted exactly
+                    as specified by ISO 8473, section 7.5 ``Options Part.''
+                    Once an option has been set, it will be sent on all pack-
+                    ets until a different option is set.
+
+CCOONNGGEESSTTIIOONN EEXXPPEERRIIEENNCCEE BBIITT
+     Whenever a packet is transmitted, the globally unique quality of service
+     option is added to the packet. The sequencing preferred bit and the low
+     transit delay bit are set in this option.
+
+     If a packet is forwarded containing the globally unique quality of ser-
+     vice option, and the interface through which the packet will be transmit-
+     ted has a queue length greater than _c_o_n_g_e_s_t___t_h_r_e_s_h_o_l_d, then the conges-
+     tion experienced bit is set in the quality of service option.
+
+     The threshold value stored in _c_o_n_g_e_s_t___t_h_r_e_s_h_o_l_d may be tuned.
+
+     When a packet is received with the globally unique quality of service op-
+     tion present, and the congestion experienced bit is set, then the trans-
+     port congestion control function is called.
+
+DDIIAAGGNNOOSSTTIICCSS
+     A socket operation may fail with one of the following errors returned:
+
+     [EISCONN]        When trying to establish a connection on a socket which
+                      already has one, or when trying to send a datagram with
+                      the destination address specified and the socket is al-
+                      ready connected;
+
+     [ENOTCONN]       When trying to send a datagram, but no destination ad-
+                      dress is specified, and the socket hasn't been connect-
+
+                      ed;
+
+     [ENOBUFS]        When the system runs out of memory for an internal data
+                      structure;
+
+     [EADDRNOTAVAIL]  When an attempt is made to create a socket with a net-
+                      work address for which no network interface exists;
+
+     [EHOSTUNREACH]   When trying to send a datagram, but no route to the des-
+                      tination address exists.
+
+     [EINVAL]         When specifying unsupported options.
+
+SSEEEE AALLSSOO
+     send(2),  recv(2),  intro(4),  iso(4)
+
+BBUUGGSS
+     Packets are sent with the type code of 0x1d (technically an invalid pack-
+     et type) for lack of a better way to identify raw CLNP packets.
+
+     No more than MLEN bytes of options can be specified.
+
+4.4BSD                           June 9, 1993                                2

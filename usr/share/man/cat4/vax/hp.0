@@ -1,0 +1,250 @@
+HP(4)             BSD Programmer's Manual (VAX Architecture)             HP(4)
+
+NNAAMMEE
+     hhpp - MASSBUS disk interface
+
+SSYYNNOOPPSSIISS
+     ddiisskk hhpp00 aatt mmbbaa00 ddrriivvee 00
+
+DDEESSCCRRIIPPTTIIOONN
+     The hhpp driver is a generic Massbus disk driver which handles both the
+     standard DEC controllers and the Emulex SC750 and SC780 controllers.  It
+     is typical of a block-device disk driver; block I/O is described in
+     physio(4).
+
+     The script MAKEDEV(8) should be used to create the special files; if a
+     special file needs to be created by hand consult mknod(8).  It is recom-
+     mended as a security precaution to not create special files for devices
+     which may never be installed.
+
+     The first sector of each disk contains both a first-stage bootstrap pro-
+     gram and a disk label containing geometry information and partition lay-
+     outs (see disklabel(5).  This sector is normally write-protected, and
+     disk-to-disk copies should avoid copying this sector.  The label may be
+     updated with disklabel(8),  which can also be used to write-enable and
+     write-disable the sector.  The next 15 sectors contain a second-stage
+     bootstrap program.
+
+DDIISSKK SSUUPPPPOORRTT
+     This driver handles both standard DEC controllers and Emulex SC750 and
+     SC780 controllers.  During autoconfiguration or whenever a drive comes on
+     line for the first time, or when a drive is opened after all partitions
+     are closed, the first sector of the drive is examined for a disk label.
+     If a label is found, the geometry of the drive and the partition tables
+     are taken from it.  If no label is found, standard DEC drive types are
+     recognized according to the MASSBUS drive type register, and default par-
+     titions are used.  For the Emulex controller the drive type register
+     should be configured to indicate the drive is an RM02. When this is en-
+     countered, the driver checks the holding register to find out the disk
+     geometry and, based on this information, decides what the drive type is.
+
+     Special file names begin with `hp' and `rhp' for the block and character
+     files respectively. The second component of the name, a drive unit number
+     in the range of zero to seven, is represented by a `?' in the disk lay-
+     outs below.  The last component is the file system partition designated
+     by a letter from `a' to `h' and also corresponds to a minor device number
+     set: zero to seven, eight to 15, 16 to 23 and so forth for drive zero,
+     drive two and drive three respectively.  The following disks are support-
+     ed: RM03, RM05, RP06, RM80, RP05, RP07, ML11A, ML11B, CDC 9775, CDC 9730,
+     AMPEX Capricorn (32 sectors/track), FUJITSU Eagle (48 sectors/track),
+     FUJITSU 2361, and AMPEX 9300.  The default layout and size (in sectors)
+     of the partitions for these drives:
+
+     RM03 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyllss
+               hp?a     0            15884     0-99
+               hp?b     16000        33440     100-309
+               hp?c     0            131680    0-822
+               hp?d     49600        15884     309-408
+               hp?e     65440        55936     409-758
+               hp?f     121440       10080     759-822
+               hp?g     49600        82080     309-822
+
+     RM05 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyllss
+               hp?a     0            15884     0-26
+               hp?b     16416        33440     27-81
+               hp?c     0            500384    0-822
+               hp?d     341696       15884     562-588
+               hp?e     358112       55936     589-680
+               hp?f     414048       86176     681-822
+               hp?g     341696       158528    562-822
+               hp?h     49856        291346    82-561
+
+     RP06 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyllss
+               hp?a     0            15884     0-37
+               hp?b     15884        33440     38-117
+               hp?c     0            340670    0-814
+               hp?d     49324        15884     118-155
+               hp?e     65208        55936     156-289
+               hp?f     121220       219296    290-814
+               hp?g     49324        291192    118-814
+
+     RM80 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyllss
+               hp?a     0            15884     0-36
+               hp?b     16058        33440     37-114
+               hp?c     0            242606    0-558
+               hp?d     49910        15884     115-151
+               hp?e     68096        55936     152-280
+               hp?f     125888       120466    281-558
+               hp?g     49910        192510    115-558
+
+     RP05 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyllss
+               hp?a     0            15884     0-37
+               hp?b     15884        33440     38-117
+               hp?c     0            171798    0-410
+               hp?d     2242         15884     118-155
+               hp?e     65208        55936     156-289
+               hp?f     121220       50424     290-410
+               hp?g     2242         122320    118-410
+
+     RP07 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyllss
+               hp?a     0            15884     0-9
+               hp?b     16000        66880     10-51
+               hp?c     0            1008000   0-629
+               hp?d     376000       15884     235-244
+               hp?e     392000       307200    245-436
+               hp?f     699200       308600    437-629
+               hp?g     376000       631800    235-629
+               hp?h     83200        291346    52-234
+
+     CDC 9775 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyllss
+               hp?a     0            15884     0-12
+               hp?b     16640        66880     13-65
+               hp?c     0            1077760   0-841
+               hp?d     376320       15884     294-306
+               hp?e     392960       307200    307-546
+               hp?f     700160       377440    547-841
+               hp?g     376320       701280    294-841
+               hp?h     84480        291346    66-293
+
+     CDC 9730 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyllss
+               hp?a     0            15884     0-49
+               hp?b     16000        33440     50-154
+               hp?c     0            263360    0-822
+               hp?d     49600        15884     155-204
+               hp?e     65600        55936     205-379
+               hp?f     121600       141600    380-822
+               hp?g     49600        213600    155-822
+
+     AMPEX Capricorn partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyllss
+               hp?a     0            15884     0-31
+               hp?b     16384        33440     32-97
+               hp?c     0            524288    0-1023
+               hp?d     342016       15884     668-699
+               hp?e     358400       55936     700-809
+               hp?f     414720       109408    810-1023
+               hp?g     342016       182112    668-1023
+               hp?h     50176        291346    98-667
+
+     FUJITSU Eagle partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyllss
+               hp?a     0            15884     0-16
+               hp?b     16320        66880     17-86
+               hp?c     0            808320    0-841
+               hp?d     375360       15884     391-407
+               hp?e     391680       55936     408-727
+               hp?f     698880       109248    728-841
+               hp?g     375360       432768    391-841
+               hp?h     83520        291346    87-390
+
+     FUJITSU 2361 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyllss
+               hp?a     0            15884     0-12
+               hp?b     16640        66880     13-65
+               hp?c     0            1077760   0-841
+               hp?d     376320       15884     294-306
+               hp?e     392960       307200    307-546
+               hp?f     700160       377408    547-841
+               hp?g     363520       701248    294-841
+               hp?h     84480        291346    66-293
+
+     AMPEX 9300 partitions
+     ddiisskk      ssttaarrtt    lleennggtthh       ccyyll
+               hp?a     0            15884     0-26
+               hp?b     16416        33440     27-81
+               hp?c     0            495520    0-814
+               hp?d     341696       15884     562-588
+               hp?e     358112       55936     589-680
+               hp?f     414048       81312     681-814
+               hp?g     341696       153664    562-814
+               hp?h     49856        291346    82-561
+
+     The hp?a partition is normally used for the root file system, the hp?b
+     partition as a paging area, and the hp?c partition for pack-pack copying
+     (it maps the entire disk).  On disks larger than about 205 Megabytes, the
+     hp?h partition is inserted prior to the hp?d or hp?g partition; the hp?g
+     partition then maps the remainder of the pack.  All disk partition tables
+     are calculated using the diskpart(8) program.
+
+FFIILLEESS
+     /dev/hp[0-7][a-h]   block files
+     /dev/rhp[0-7][a-h]  raw files
+
+DDIIAAGGNNOOSSTTIICCSS
+     hhpp%%dd%%cc:: hhaarrdd eerrrroorr %%ssiinngg ffssbbnn %%dd [[ooff %%dd--%%dd]] ((hhpp%%dd bbnn %%dd ccnn %%dd ttnn %%dd ssnn
+     %%dd)) mmbbssrr==%%bb eerr11==%%bb eerr22==%%bb..  An unrecoverable error occurred during trans-
+     fer of the specified filesystem block number, which is a logical block
+     number on the indicated partition.  If the transfer involved multiple
+     blocks, the block range is printed as well.  The parenthesized fields
+     list the actual disk sector number relative to the beginning of the
+     drive, as well as the cylinder, track and sector number of the block.
+     The MASSBUS status register is printed in hexadecimal and with the error
+     bits decoded if any error bits other than MBEXC and DTABT are set.  In
+     any case the contents of the two error registers are also printed in oc-
+     tal and symbolically with bits decoded.  (Note that er2 is what old RP06
+     manuals would call RPER3; the terminology is that of the RM disks).  The
+     error was either unrecoverable, or a large number of retry attempts (in-
+     cluding offset positioning and drive recalibration) could not recover the
+     error.
+
+     hhpp%%dd:: wwrriittee lloocckkeedd..  The write protect switch was set on the drive when a
+     write was attempted.  The write operation is not recoverable.
+
+     hhpp%%dd:: nnoott rreeaaddyy ..  The drive was spun down or off line when it was ac-
+     cessed.  The I/O operation is not recoverable.
+
+     hhpp%%dd%%cc:: ssoofftt eecccc rreeaaddiinngg ffssbbnn %%dd [[ooff %%dd--%%dd]] ((hhpp%%dd bbnn %%dd ccnn %%dd ttnn %%dd ssnn
+     %%dd))..  A recoverable ECC error occurred on the specified sector of the
+     specified disk partition.  If the transfer involved multiple blocks, the
+     block range is printed as well.  The parenthesized fields list the actual
+     disk sector number relative to the beginning of the drive, as well as the
+     cylinder, track and sector number of the block.  This happens normally a
+     few times a week.  If it happens more frequently than this the sectors
+     where the errors are occurring should be checked to see if certain cylin-
+     ders on the pack, spots on the carriage of the drive or heads are indi-
+     cated.
+
+     hhpp%%dd:: 99777755 ((ddiirreecctt))..
+     hhpp%%dd:: 99773300 ((ddiirreecctt))..
+     hhpp%%dd:: 99330000..
+     hhpp%%dd:: 99776622..
+     hhpp%%dd:: ccaapprriiccoorrnn..
+     hhpp%%dd:: eeaaggllee..
+     hhpp%%dd:: 22336611..
+     hhpp%%dd:: nnttrraacckkss %%dd,, nnsseeccttoorrss %%dd:: uunnkknnoowwnn ddeevviiccee..  During autoconfiguration
+     one of the above messages may appear on the console indicating the appro-
+     priate drive type was recognized.  The last message indicates the drive
+     is of a unknown type.  In this case, the correct geometry is set, and one
+     partition is created that contains the entire drive.
+
+SSEEEE AALLSSOO
+     physio(4),  up(4),  disklabel(5),  MAKEDEV(8) disklabel(8) mknod(8)
+
+HHIISSTTOORRYY
+     The hhpp driver appeared in 4.0BSD.
+
+BBUUGGSS
+     DEC-standard error logging should be supported.
+
+     A program to analyze the logged error information (even in its present
+     reduced form) is needed.
+
+4th Berkeley Distribution        June 5, 1993                                4

@@ -1,0 +1,66 @@
+DCL(4)           BSD Programmer's Manual (HP300 Architecture)           DCL(4)
+
+NNAAMMEE
+     ddccll - HP 98628A communications link
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee ddccll00 aatt ssccooddee?? ffllaaggss 00xx11
+
+DDEESSCCRRIIPPTTIIOONN
+     The 98628A is a buffered EIA RS-232C (CCITT V.28) communications inter-
+     face.  It has one port with full modem control.
+
+     Input and output for each line may set to one of following baud rates; 0,
+     50, 75, 110, 134.5, 150, 200, 300, 600, 1200, 1800, 2400, 4800, 9600,
+     19200.
+
+     An optional argument _f_l_a_g_s may be set to 1 if the line should be treated
+     as hard-wired with carrier always present, or to 0 if modem control is
+     desired.
+
+     Use HP cable "98626 & 98628 opts.002, RS232-C DCE CABLE, 5061-4216" to
+     attach non-modem devices.  Use HP cable "98626 & 98628 opts.001, RS232-C
+     DTE CABLE, 5061-4215" to attach modems.
+
+     The 98628A has a 256 byte input silo and a 256 output silo. Input inter-
+     rupts happen on a per character basis.
+
+     The high water and low water marks in the kernel tty routines are com-
+     pletely inappropriate for a device like this with a large input buffer.
+     Don't use tandem mode if possible.  A fast system can handle input at
+     19.2K baud without receive overflow.
+
+     For output to devices that make heavy use of XON/XOFF a write size of
+     less then 256 will improve performance marginally.
+
+FFIILLEESS
+     /dev/ttyl[0-9]
+
+DDIIAAGGNNOOSSTTIICCSS
+     ddccll%%dd:: eerrrroorr 00xx%%xx RREESSEETT CCAARRDD..  Where the errors are encoded:
+
+           0x06 card failure
+           0x0d uart receive overflow
+           0x0e receive overflow
+           0x0f missing external clock
+           0x10 cts false too long
+           0x11 lost carrier
+           0x12 activity timeout
+           0x13 connection not established
+           0x19 illegal databits/parity
+           0x1a register address out of range
+           0x1b register value out of range
+           0x-- unknown error
+
+SSEEEE AALLSSOO
+     tty(4)
+
+BBUUGGSS
+     Breaks received at a faster rate then 1 break every second will be recog-
+     nized as a single break.
+
+     Console use is not supported.
+
+     The RS-422/423/499, MTS-DSN/DL modes of the card are not supported.
+
+4.4BSD                           June 9, 1993                                1

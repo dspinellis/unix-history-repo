@@ -1,0 +1,108 @@
+FSTAB(5)                    BSD Programmer's Manual                   FSTAB(5)
+
+NNAAMMEE
+     ffssttaabb - static information about the filesystems
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ffssttaabb..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     The file ffssttaabb contains descriptive information about the various file
+     systems.  ffssttaabb is only read by programs, and not written; it is the duty
+     of the system administrator to properly create and maintain this file.
+     Each filesystem is described on a separate line; fields on each line are
+     separated by tabs or spaces.  The order of records in ffssttaabb is important
+     because fsck(8),  mount(8),  and umount(8) sequentially iterate through
+     ffssttaabb doing their thing.
+
+     The first field, (_f_s___s_p_e_c), describes the block special device or remote
+     filesystem to be mounted.  For filesystems of type _u_f_s, the special file
+     name is the block special file name, and not the character special file
+     name.  If a program needs the character special file name, the program
+     must create it by appending a ``r'' after the last ``/'' in the special
+     file name.
+
+     The second field, (_f_s___f_i_l_e), describes the mount point for the filesys-
+     tem.  For swap partitions, this field should be specified as ``none''.
+
+     The third field, (_f_s___v_f_s_t_y_p_e), describes the type of the filesystem.  The
+     system currently supports four types of filesystems:
+
+           _u_f_s     a local UNIX filesystem
+
+           _m_f_s     a local memory-based UNIX filesystem
+
+           _n_f_s     a Sun Microsystems compatible ``Network File System''
+
+           _s_w_a_p    a disk partition to be used for swapping
+
+     The fourth field, (_f_s___m_n_t_o_p_s), describes the mount options associated
+     with the filesystem.  It is formatted as a comma separated list of op-
+     tions.  It contains at least the type of mount (see _f_s___t_y_p_e below) plus
+     any additional options appropriate to the filesystem type.
+
+     If the options ``userquota'' and/or ``groupquota'' are specified, the
+     filesystem is automatically processed by the quotacheck(8) command, and
+     user and/or group disk quotas are enabled with quotaon(8).  By default,
+     filesystem quotas are maintained in files named _q_u_o_t_a_._u_s_e_r and
+     _q_u_o_t_a_._g_r_o_u_p which are located at the root of the associated filesystem.
+     These defaults may be overridden by putting an equal sign and an alterna-
+     tive absolute pathname following the quota option.  Thus, if the user
+     quota file for _/_t_m_p is stored in _/_v_a_r_/_q_u_o_t_a_s_/_t_m_p_._u_s_e_r, this location can
+     be specified as:
+
+           userquota=/var/quotas/tmp.user
+
+     The type of the mount is extracted from the _f_s___m_n_t_o_p_s field and stored
+     separately in the _f_s___t_y_p_e field (it is not deleted from the _f_s___m_n_t_o_p_s
+     field).  If _f_s___t_y_p_e is ``rw'' or ``ro'' then the filesystem whose name is
+     given in the _f_s___f_i_l_e field is normally mounted read-write or read-only on
+     the specified special file.  If _f_s___t_y_p_e is ``sw'' then the special file
+     is made available as a piece of swap space by the swapon(8) command at
+     the end of the system reboot procedure.  The fields other than _f_s___s_p_e_c
+     and _f_s___t_y_p_e are unused.  If _f_s___t_y_p_e is specified as ``xx'' the entry is
+     ignored.  This is useful to show disk partitions which are currently un-
+     used.
+
+     The fifth field, (_f_s___f_r_e_q), is used for these filesystems by the dump(8)
+     command to determine which filesystems need to be dumped.  If the fifth
+     field is not present, a value of zero is returned and dump will assume
+     that the filesystem does not need to be dumped.
+
+     The sixth field, (_f_s___p_a_s_s_n_o), is used by the fsck(8) program to determine
+     the order in which filesystem checks are done at reboot time.  The root
+     filesystem should be specified with a _f_s___p_a_s_s_n_o of 1, and other filesys-
+     tems should have a _f_s___p_a_s_s_n_o of 2.  Filesystems within a drive will be
+     checked sequentially, but filesystems on different drives will be checked
+     at the same time to utilize parallelism available in the hardware.  If
+     the sixth field is not present or zero, a value of zero is returned and
+     fsck will assume that the filesystem does not need to be checked.
+
+     #define FSTAB_RW        "rw"    /* read-write device */
+     #define FSTAB_RO        "ro"    /* read-only device */
+     #define FSTAB_SW        "sw"    /* swap device */
+     #define FSTAB_XX        "xx"    /* ignore totally */
+
+     struct fstab {
+             char    *fs_spec;       /* block special device name */
+             char    *fs_file;       /* filesystem path prefix */
+             char    *fs_vfstype;    /* type of filesystem */
+             char    *fs_mntops;     /* comma separated mount options */
+             char    *fs_type;       /* rw, ro, sw, or xx */
+             int     fs_freq;        /* dump frequency, in days */
+             int     fs_passno;      /* pass number on parallel dump */
+     };
+
+     The proper way to read records from _f_s_t_a_b is to use the routines
+     getfsent(3),  getfsspec(3),  getfstype(3),  and getfsfile(3).
+
+FFIILLEESS
+     /etc/fstab  The file ffssttaabb resides in _/_e_t_c.
+
+SSEEEE AALLSSOO
+     getfsent(3)
+
+HHIISSTTOORRYY
+     The ffssttaabb file format appeared in 4.0BSD.
+
+4th Berkeley Distribution        June 5, 1993                                2

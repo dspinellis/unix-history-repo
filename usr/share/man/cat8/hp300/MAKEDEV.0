@@ -1,0 +1,45 @@
+MAKEDEV(8)                BSD System Manager's Manual               MAKEDEV(8)
+
+NNAAMMEE
+     MMAAKKEEDDEEVV - create system and device special files
+
+SSYYNNOOPPSSIISS
+     MMAAKKEEDDEEVV _d_e_v_i_c_e___n_a_m_e _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The shell script MMAAKKEEDDEEVV, found in the _/_d_e_v directory, is used to create
+     the common special files.  See special(8) for a more complete discussion
+     of special files.
+
+     MMAAKKEEDDEEVV takes any number of device names as arguments, where the names
+     are the common abbreviation for the device.  There are two special de-
+     vices, _s_t_d and _l_o_c_a_l. The former creates the standard devices for the ar-
+     chitecture.  The latter is for devices specific to the local site, and
+     executes the shell file _M_A_K_E_D_E_V_._l_o_c_a_l.
+
+     The HP300 supports the following devices.  Where a device name is fol-
+     lowed by a hash sign `#', the hash sign must be replaced by a unit num-
+     ber.
+     _s_t_d     the standard devices (_c_o_n_s_o_l_e, _d_r_u_m, _f_d_/_*, _k_l_o_g, _k_m_e_m, _m_e_m, _n_u_l_l,
+             _s_t_d_e_r_r, _s_t_d_i_n, _s_t_d_o_u_t, _t_t_y).
+     _l_o_c_a_l   configuration specific devices.
+     _c_t_#     HP300 HP-IB cartridge tape.
+     _c_d_#     ``concatenated'' pseudo-disks.
+     _r_d_#     HP300 HP-IB disks
+     _s_d_#     HP300 SCSI disks.
+     _v_n_d_#    ``file'' pseudo-disks.
+     _d_c_a_#    HP200/300 single port serial interface.
+     _d_c_m_#    HP200/300 4 port serial mux interface.
+     _p_t_y_#    set of 16 master and slave pseudo terminals.
+     _f_l_o_g_#   kernel logging device.
+     _g_r_f_#    raw interface to HP300 graphics devices.
+     _i_t_e_#    terminal emulator interface to HP300 graphics devices.
+     _h_i_l     HP300 HIL input devices.
+
+FFIILLEESS
+     /dev  The special file directory.
+
+SSEEEE AALLSSOO
+     mknod(1),  intro(4),  config(8),  special(8)
+
+ 4.3                             June 5, 1993                                1

@@ -1,0 +1,98 @@
+DIR(5)                      BSD Programmer's Manual                     DIR(5)
+
+NNAAMMEE
+     ddiirr, ddiirreenntt - directory file format
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<ssyyss//ddiirr..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     Directories provide a convienent hierarchical method of grouping files
+     while obscuring the underlying details of the storage medium.  A directo-
+     ry file is differentiated from a plain file by a flag in its inode(5) en-
+     try.  It consists of records (directory entries) each of which contain
+     information about a file and a pointer to the file itself.  Directory en-
+     tries may contain other directories as well as plain files; such nested
+     directories are refered to as subdirectories.  A hierarchy of directories
+     and files is formed in this manner and is called a file system (or ref-
+     ered to as a file system tree).
+
+     Each directory file contains two special directory entries; one is a
+     pointer to the directory itself called dot `.' and the other a pointer to
+     its parent directory called dot-dot `..'. Dot and dot-dot are valid path-
+     names, however, the system root directory `/', has no parent and dot-dot
+     points to itself like dot.
+
+     File system nodes are ordinary directory files on which has been grafted
+     a file system object, such as a physical disk or a partitioned area of
+     such a disk.  (See mount(1) and mount(8).)
+
+     The directory entry format is defined in the file <dirent.h>:
+
+     #ifndef _DIRENT_H_
+     #define _DIRENT_H_
+
+     /*
+     * A directory entry has a struct dirent at the front of it, containing its
+     * inode number, the length of the entry, and the length of the name
+     * contained in the entry.  These are followed by the name padded to a 4
+     * byte boundary with null bytes.  All names are guaranteed null terminated.
+     * The maximum length of a name in a directory is MAXNAMLEN.
+     */
+
+     struct dirent {
+             u_long  d_fileno;       /* file number of entry */
+             u_short d_reclen;       /* length of this record */
+             u_short d_namlen;       /* length of string in d_name */
+     #ifdef _POSIX_SOURCE
+             char    d_name[MAXNAMLEN + 1];  /* maximum name length */
+     #else
+     #define MAXNAMLEN       255
+             char    d_name[MAXNAMLEN + 1];  /* maximum name length */
+     #endif
+
+     };
+
+     #ifdef _POSIX_SOURCE
+     typedef void *  DIR;
+     #else
+
+     #define d_ino           d_fileno        /* backward compatibility */
+
+     /* definitions for library routines operating on directories. */
+     #define DIRBLKSIZ       1024
+
+     /* structure describing an open directory. */
+     typedef struct _dirdesc {
+             int     dd_fd;    /* file descriptor associated with directory */
+             long    dd_loc;   /* offset in current buffer */
+             long    dd_size;  /* amount of data returned by getdirentries */
+             char    *dd_buf;  /* data buffer */
+             int     dd_len;   /* size of data buffer */
+             long    dd_seek;  /* magic cookie returned by getdirentries */
+     } DIR;
+
+     #define dirfd(dirp)     ((dirp)->dd_fd)
+
+     #ifndef NULL
+     #define NULL    0
+     #endif
+
+     #endif /* _POSIX_SOURCE */
+
+     #ifndef KERNEL
+
+     #include <sys/cdefs.h>
+
+     #endif /* !KERNEL */
+
+     #endif /* !_DIRENT_H_ */
+
+SSEEEE AALLSSOO
+     fs(5) inode(5)
+
+HHIISSTTOORRYY
+     A ddiirr file format appeared in Version 7 AT&T UNIX.
+
+4.2 Berkeley Distribution        June 5, 1993                                2

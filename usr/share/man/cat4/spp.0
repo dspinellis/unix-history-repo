@@ -1,0 +1,116 @@
+SPP(4)                      BSD Programmer's Manual                     SPP(4)
+
+NNAAMMEE
+     sspppp - Xerox Sequenced Packet Protocol
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+     ##iinncclluuddee <<nneettnnss//nnss..hh>>
+     ##iinncclluuddee <<nneettnnss//sspp..hh>>
+
+     _i_n_t
+     ssoocckkeett(_A_F___N_S, _S_O_C_K___S_T_R_E_A_M, _0);
+
+     _i_n_t
+     ssoocckkeett(_A_F___N_S, _S_O_C_K___S_E_Q_P_A_C_K_E_T, _0);
+
+DDEESSCCRRIIPPTTIIOONN
+     The SPP protocol provides reliable, flow-controlled, two-way transmission
+     of data.  It is a byte-stream protocol used to support the SOCK_STREAM
+     abstraction.  SPP uses the standard NS(tm) address formats.
+
+     Sockets utilizing the SPP protocol are either ``active'' or ``passive''.
+     Active sockets initiate connections to passive sockets.  By default SPP
+     sockets are created active; to create a passive socket the listen(2) sys-
+     tem call must be used after binding the socket with the bind(2) system
+     call.  Only passive sockets may use the accept(2) call to accept incoming
+     connections.  Only active sockets may use the connect(2) call to initiate
+     connections.
+
+     Passive sockets may ``underspecify'' their location to match incoming
+     connection requests from multiple networks.  This technique, termed
+     ``wildcard addressing'', allows a single server to provide service to
+     clients on multiple networks.  To create a socket which listens on all
+     networks, the NS address of all zeroes must be bound.  The SPP port may
+     still be specified at this time; if the port is not specified the system
+     will assign one.  Once a connection has been established the socket's ad-
+     dress is fixed by the peer entity's location.   The address assigned the
+     socket is the address associated with the network interface through which
+     packets are being transmitted and received.  Normally this address corre-
+     sponds to the peer entity's network.
+
+     If the SOCK_SEQPACKET socket type is specified, each packet received has
+     the actual 12 byte sequenced packet header left for the user to inspect:
+
+           struct sphdr {
+                   u_char          sp_cc;  /* connection control */
+           #define SP_EM   0x10            /* end of message */
+                   u_char          sp_dt;  /* datastream type */
+                   u_short         sp_sid;
+                   u_short         sp_did;
+                   u_short         sp_seq;
+                   u_short         sp_ack;
+                   u_short         sp_alo;
+           };
+
+     This facilitates the implementation of higher level Xerox protocols which
+     make use of the data stream type field and the end of message bit.  Con-
+     versely, the user is required to supply a 12 byte header, the only part
+     of which inspected is the data stream type and end of message fields.
+
+     For either socket type, packets received with the Attention bit sent are
+     interpreted as out of band data.  Data sent with ``send(..., ..., ...,
+     MSG_OOB'') cause the attention bit to be set.
+
+DDIIAAGGNNOOSSTTIICCSS
+
+     A socket operation may fail with one of the following errors returned:
+
+     [EISCONN]        when trying to establish a connection on a socket which
+                      already has one;
+
+     [ENOBUFS]        when the system runs out of memory for an internal data
+                      structure;
+
+     [ETIMEDOUT]      when a connection was dropped due to excessive retrans-
+                      missions;
+
+     [ECONNRESET]     when the remote peer forces the connection to be closed;
+
+     [ECONNREFUSED]   when the remote peer actively refuses connection estab-
+                      lishment (usually because no process is listening to the
+                      port);
+
+     [EADDRINUSE]     when an attempt is made to create a socket with a port
+                      which has already been allocated;
+
+     [EADDRNOTAVAIL]  when an attempt is made to create a socket with a net-
+                      work address for which no network interface exists.
+
+SSOOCCKKEETT OOPPTTIIOONNSS
+     SO_DEFAULT_HEADERS  when set, this determines the data stream type and
+                         whether the end of message bit is to be set on every
+                         ensuing packet.
+
+     SO_MTU              This specifies the maximum ammount of user data in a
+                         single packet.  The default is 576 bytes - size-
+                         of(struct spidp).  This quantity affects windowing -
+                         increasing it without increasing the amount of
+                         buffering in the socket will lower the number of un-
+                         read packets accepted.  Anything larger than the de-
+                         fault will not be forwarded by a bona fide XEROX
+                         product internetwork router.  The data argument for
+                         the setsockopt call must be an unsigned short.
+
+SSEEEE AALLSSOO
+     intro(4),  ns(4)
+
+HHIISSTTOORRYY
+     The sspppp protocol appeared in 4.3BSD.
+
+BBUUGGSS
+     There should be some way to reflect record boundaries in a stream.  For
+     stream mode, there should be an option to get the data stream type of the
+     record the user process is about to receive.
+
+4.3 Berkeley Distribution        June 5, 1993                                2

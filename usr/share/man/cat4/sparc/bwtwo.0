@@ -1,0 +1,16 @@
+BWTWO(4)         BSD Programmer's Manual (SPARC Architecture)         BWTWO(4)
+
+NNAAMMEE
+     bbwwttwwoo - monochromatic frame buffer
+
+SSYYNNOOPPSSIISS
+     bbwwttwwoo** aatt ssbbuuss?? sslloott ?? ooffffsseett ??
+
+DDEESSCCRRIIPPTTIIOONN
+     The bbwwttwwoo is a memory based black and white frame buffer.  It supports
+     the minimal ioctl's needed to run X11.
+
+SSEEEE AALLSSOO
+     cgthree(4)
+
+4.4BSD                           June 9, 1993                                1

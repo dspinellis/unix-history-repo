@@ -1,0 +1,33 @@
+PPI(4)           BSD Programmer's Manual (HP300 Architecture)           PPI(4)
+
+NNAAMMEE
+     ppppii - HP-IB printer/plotter interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee ppppii00 aatt hhppiibb00 ssllaavvee 55
+
+DDEESSCCRRIIPPTTIIOONN
+     The ppppii interface provides a means of communication with HP-IB printers
+     and plotters.
+
+     Special files _p_p_i_0 through _p_p_i_7 are used to access the devices, with the
+     digit at the end of the filename referring to the bus address of the de-
+     vice.  Current versions of the autoconf code can not probe for these de-
+     vices, so the device entry in the configuration file must be fully quali-
+     fied.
+
+     The device files appear as follows:
+
+           "crw-rw-rw-  1 root      11,   0 Dec 21 11:22 /dev/ppi"
+
+DDIIAAGGNNOOSSTTIICCSS
+     None.
+
+SSEEEE AALLSSOO
+     hpib(4).
+
+BBUUGGSS
+     This driver is very primitive, it handshakes data out byte by byte.  It
+     should use DMA if possible.
+
+4.4BSD                           June 9, 1993                                1

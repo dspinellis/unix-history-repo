@@ -1,0 +1,16 @@
+CGTHREE(4)       BSD Programmer's Manual (SPARC Architecture)       CGTHREE(4)
+
+NNAAMMEE
+     ccggtthhrreeee - 8-bit color frame buffer
+
+SSYYNNOOPPSSIISS
+     ccggtthhrreeee** aatt ssbbuuss?? sslloott ?? ooffffsseett ??
+
+DDEESSCCRRIIPPTTIIOONN
+     The ccggtthhrreeee is a memory based color frame buffer.  It supports the mini-
+     mal ioctl's needed to run X11.
+
+SSEEEE AALLSSOO
+     bwtwo(4)
+
+4.4BSD                           June 9, 1993                                1

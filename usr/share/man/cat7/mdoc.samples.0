@@ -1,0 +1,1467 @@
+MDOC.SAMPLES(7)              BSD Reference Manual              MDOC.SAMPLES(7)
+
+NNAAMMEE
+     mmddoocc..ssaammpplleess - tutorial sampler for writing BSD manuals with --mmddoocc
+
+SSYYNNOOPPSSIISS
+     mmaann mmddoocc..ssaammpplleess
+
+DDEESSCCRRIIPPTTIIOONN
+     A tutorial sampler for writing BSD manual pages with the --mmddoocc macro
+     package, a _c_o_n_t_e_n_t-based and _d_o_m_a_i_n-based formatting package for
+     troff(1).  Its predecessor, the -man(7) package, addressed page layout
+     leaving the manipulation of fonts and other typesetting details to the
+     individual author.  In --mmddoocc, page layout macros make up the _p_a_g_e
+     _s_t_r_u_c_t_u_r_e _d_o_m_a_i_n which consists of macros for titles, section headers,
+     displays and lists. Essentially items which affect the physical position
+     of text on a formatted page.  In addition to the page structure domain,
+     there are two more domains, the manual domain and the general text do-
+     main.  The general text domain is defined as macros which perform tasks
+     such as quoting or emphasizing pieces of text.  The manual domain is de-
+     fined as macros that are a subset of the day to day informal language
+     used to describe commands, routines and related BSD files.  Macros in the
+     manual domain handle command names, command line arguments and options,
+     function names, function parameters, pathnames, variables, cross refer-
+     ences to other manual pages, and so on.  These domain items have value
+     for both the author and the future user of the manual page.  It is hoped
+     the consistency gained across the manual set will provide easier transla-
+     tion to future documentation tools.
+
+     Through out the UNIX manual pages, a manual entry is simply referred to
+     as a man page, regardless of actual length and without sexist intention.
+
+GGEETTTTIINNGG SSTTAARRTTEEDD
+     Since a tutorial document is normally read when a person desires to use
+     the material immediately, the assumption has been made that the user of
+     this document may be impatient.  The material presented in the remained
+     of this document is outlined as follows:
+
+           1.   TROFF IDIOSYNCRASIES
+                      Macro Usage.
+                      Passing Space Characters in an Argument.
+                      Trailing Blank Space Characters (a warning).
+                      Escaping Special Characters.
+
+           2.   THE ANATOMY OF A MAN PAGE
+                      A manual page template.
+
+           3.   INTRODUCTION OF TITLE MACROS.
+
+           4.   INTRODUCTION OF MANUAL AND GENERAL TEXT DOMAINS.
+                      What's in a name....
+                      General Syntax.
+
+           5.   MANUAL DOMAIN
+                      Addresses.
+                      Arguments.
+                      Configuration Declarations (section four only).
+                      Command Modifier .
+                      Defined Variables.
+                      Errno's (Section two only).
+                      Environment Variables.
+                      Function Argument.
+                      Function Declaration.
+
+
+                      Flags.
+                      Functions (library routines).
+                      Function Types.
+                      Interactive Commands.
+                      Literals.
+                      Names.
+                      Options.
+                      Pathnames.
+                      Variables.
+                      Cross References.
+
+           6.   GENERAL TEXT DOMAIN
+                      AT&T Macro.
+                      BSD Macro.
+                      UNIX Macro.
+                      Emphasis Macro.
+                      Enclosure/Quoting Macros
+                                  Angle Bracket Quote/Enclosure.
+                                  Bracket Quotes/Enclosure.
+                                  Double Quote macro/Enclosure.
+                                  Parenthesis Quote/Enclosure.
+                                  Single Quotes/Enclosure.
+                                  Prefix Macro.
+                      Extended  Arguments.
+                      No-Op or Normal Text Macro.
+                      No Space Macro.
+                      Section Cross References.
+                      Symbolic Macro.
+                      References and Citations.
+                      Trade Names (Acronyms and Type Names).
+
+           7.   PAGE STRUCTURE DOMAIN
+                      Section Headers.
+                      Paragraphs and Line Spacing.
+                      Keeps.
+                      Displays.
+                      Lists and Columns.
+
+           8.   PREDEFINED STRINGS
+
+           9.   DIAGNOSTICS
+
+           10.  FORMATTING WITH GROFF, TROFF AND NROFF
+
+           11.  BUGS
+
+TTRROOFFFF IIDDIIOOSSYYNNCCRRAASSIIEESS
+     The --mmddoocc package attempts to simplify the process of writing a man page.
+     Theoretically, one should not have to learn the dirty details of troff(1)
+     to use --mmddoocc; however, there are a few limitations which are unavoidable
+     and best gotten out of the way.  And, too, be forewarned, this package is
+     _n_o_t fast.
+
+   MMaaccrroo UUssaaggee
+     As in troff(1),  a macro is called by placing a `.' (dot character) at
+     the beginning of a line followed by the two character name for the macro.
+     Arguments may follow the macro separated by spaces.  It is the dot char-
+     acter at the beginning of the line which causes troff(1) to interpret the
+     next two characters as a macro name.  To place a `.' (dot character) at
+     the beginning of a line in some context other than a macro invocation,
+     precede the `.' (dot) with the `\&' escape sequence.  The `\&' translates
+     literally to a zero width space, and is never displayed in the output.
+
+     In general, troff(1) macros accept up to nine arguments, any extra argu-
+     ments are ignored.  Most macros in --mmddoocc accept nine arguments and, in
+     limited cases, arguments may be continued or extended on the next line
+     (See _E_x_t_e_n_s_i_o_n_s). A few macros handle quoted arguments (see _P_a_s_s_i_n_g _S_p_a_c_e
+     _C_h_a_r_a_c_t_e_r_s _i_n _a_n _A_r_g_u_m_e_n_t below).
+
+     Most of the --mmddoocc general text domain and manual domain macros are spe-
+     cial in that their argument lists are _p_a_r_s_e_d for callable macro names.
+     This means an argument on the argument list which matches a general text
+     or manual domain macro name and is determined to be callable will be exe-
+     cuted or called when it is processed.  In this case the argument, al-
+     though the name of a macro, is not preceded by a `.' (dot).  It is in
+     this manner that many macros are nested; for example the option macro,
+     `.Op', may _c_a_l_l the flag and argument macros, `Fl' and `Ar', to specify
+     an optional flag with an argument:
+
+           [--ss _b_y_t_e_s]         is produced by .Op Fl s Ar bytes
+
+     To prevent a two character string from being interpreted as a macro name,
+     precede the string with the escape sequence `\&':
+
+           [Fl s Ar bytes]    is produced by .Op \&Fl s \&Ar bytes
+
+     Here the strings `Fl' and `Ar' are not interpreted as macros.  Macros
+     whose argument lists are parsed for callable arguments are referred to as
+     parsed and macros which may be called from an argument list are referred
+     to as callable through out this document and in the companion quick ref-
+     erence manual mdoc(7).  This is a technical _f_a_u_x _p_a_s as almost all of the
+     macros in --mmddoocc are parsed, but as it was cumbersome to constantly refer
+     to macros as being callable and being able to call other macros, the term
+     parsed has been used.
+
+   PPaassssiinngg SSppaaccee CChhaarraacctteerrss iinn aann AArrgguummeenntt
+     Sometimes it is desirable to give as one argument a string containing one
+     or more blank space characters.  This may be necessary to defeat the nine
+     argument limit or to specify arguments to macros which expect particular
+     arrangement of items in the argument list.  For example, the function
+     macro `.Fn' expects the first argument to be the name of a function and
+     any remaining arguments to be function parameters.  As ANSI C stipulates
+     the declaration of function parameters in the parenthesized parameter
+     list, each parameter is guaranteed to be at minimum a two word string.
+     For example, _i_n_t _f_o_o.
+
+     There are two possible ways to pass an argument which contains an embed-
+     ded space.  _I_m_p_l_e_m_e_n_t_a_t_i_o_n _n_o_t_e: Unfortunately, the most convenient way
+     of passing spaces in between quotes by reassigning individual arguments
+     before parsing was fairly expensive speed wise and space wise to imple-
+     ment in all the macros for AT&T troff.  It is not expensive for groff but
+     for the sake of portability, has been limited to the following macros
+     which need it the most:
+
+           Cd    Configuration declaration (section 4 _S_Y_N_O_P_S_I_S)
+           Bl    Begin list (for the width specifier).
+           Em    Emphasized text.
+           Fn    Functions (sections two and four).
+           It    List items.
+           Li    Literal text.
+           Sy    Symbolic text.
+           %B    Book titles.
+           %J    Journal names.
+           %O    Optional notes for a reference.
+           %R    Report title (in a reference).
+           %T    Title of article in a book or journal.
+
+     One way of passing a string containing blank spaces is to use the hard or
+     unpaddable space character `\ ', that is, a blank space preceded by the
+     escape character `\'. This method may be used with any macro but has the
+     side effect of interfering with the adjustment of text over the length of
+     a line.  Troff sees the hard space as if it were any other printable
+     character and cannot split the string into blank or newline separated
+     pieces as one would expect.  The method is useful for strings which are
+     not expected to overlap a line boundary.  For example:
+
+           ffeettcchh(_c_h_a_r _*_s_t_r)  is created by `.Fn fetch char\ *str'
+
+           ffeettcchh(_c_h_a_r _*_s_t_r)  can also be created by `.Fn fetch "*char *str"'
+
+     If the `\' or quotes were omitted, `.Fn' would see three arguments and
+     the result would be:
+
+           ffeettcchh(_c_h_a_r, _*_s_t_r)
+
+     For an example of what happens when the parameter list overlaps a newline
+     boundary, see the _B_U_G_S section.
+
+   TTrraaiilliinngg BBllaannkk SSppaaccee CChhaarraacctteerrss
+     Troff can be confused by blank space characters at the end of a line.  It
+     is a wise preventive measure to globally remove all blank spaces from
+     <blank-space><end-of-line> character sequences.  Should the need arise to
+     force a blank character at the end of a line, it may be forced with an
+     unpaddable space and the `\&' escape character.  For example,
+     `string\ \&'.
+
+   EEssccaappiinngg SSppeecciiaall CChhaarraacctteerrss
+     Special characters like the newline character `\n', are handled by re-
+     placing the `\' with `\e' (e.g.  `\en') to preserve the backslash.
+
+TTHHEE AANNAATTOOMMYY OOFF AA MMAANN PPAAGGEE
+     The body of a man page is easily constructed from a basic template found
+     in the file:
+
+           .\" /usr/share/misc/man.template:
+           .\" The following six lines are required.
+           .Dd Month day, year
+           .Os OPERATING_SYSTEM [version/release]
+           .Dt DOCUMENT_TITLE [section number] [volume]
+           .Sh NAME
+           .Sh SYNOPSIS
+           .Sh DESCRIPTION
+           .\" The following requests should be uncommented and
+           .\" used where appropriate.  This next request is
+           .\" for sections 2 and 3 function return values only.
+           .\" .Sh RETURN VALUES
+           .\" This next request is for sections 1, 6, 7 & 8 only
+           .\" .Sh ENVIRONMENT
+           .\" .Sh FILES
+           .\" .Sh EXAMPLES
+           .\" This next request is for sections 1, 6, 7 & 8 only
+           .\"     (command return values (to shell) and
+           .\"       fprintf/stderr type diagnostics)
+           .\" .Sh DIAGNOSTICS
+           .\" The next request is for sections 2 and 3 error
+           .\" and signal handling only.
+           .\" .Sh ERRORS
+           .\" .Sh SEE ALSO
+           .\" .Sh STANDARDS
+           .\" .Sh HISTORY
+           .\" .Sh AUTHORS
+           .\" .Sh BUGS
+
+     The first items in the template are the macros (.Dd, .Os, .Dt); the docu-
+     ment date, the operating system the man page or subject source is devel-
+     oped or modified for, and the man page title (_i_n _u_p_p_e_r _c_a_s_e) along with
+     the section of the manual the page belongs in.  These macros identify the
+     page, and are discussed below in _T_I_T_L_E _M_A_C_R_O_S.
+
+     The remaining items in the template are section headers (.Sh); of which
+     _N_A_M_E, _S_Y_N_O_P_S_I_S and _D_E_S_C_R_I_P_T_I_O_N are mandatory.  The headers are discussed
+     in _P_A_G_E _S_T_R_U_C_T_U_R_E _D_O_M_A_I_N, after presentation of _M_A_N_U_A_L _D_O_M_A_I_N. Several
+     content macros are used to demonstrate page layout macros; reading about
+     content macros before page layout macros is recommended.
+
+TTIITTLLEE MMAACCRROOSS
+     The title macros are the first portion of the page structure domain, but
+     are presented first and separate for someone who wishes to start writing
+     a man page yesterday.  Three header macros designate the document title
+     or manual page title, the operating system, and the date of authorship.
+     These macros are one called once at the very beginning of the document
+     and are used to construct the headers and footers only.
+
+     .Dt DOCUMENT_TITLE section# [volume]
+             The document title is the subject of the man page and must be in
+             CAPITALS due to troff limitations.  The section number may be
+             1, ..., 8, and if it is specified, the volume title may be omit-
+             ted.  A volume title may be arbitrary or one of the following:
+
+                   AMD    UNIX Ancestral Manual Documents
+                   SMM    UNIX System Manager's Manual
+                   URM    UNIX Reference Manual
+                   PRM    UNIX Programmer's Manual
+
+             The default volume labeling is URM for sections 1, 6, and 7; SMM
+             for section 8; PRM for sections 2, 3, 4, and 5.
+
+     .Os operating_system release#
+             The name of the operating system should be the common acronym,
+             e.g.  BSD or ATT. The release should be the standard release
+             nomenclature for the system specified, e.g. 4.3, 4.3+Tahoe, V.3,
+             V.4.  Unrecognized arguments are displayed as given in the page
+             footer.  For instance, a typical footer might be:
+
+                   .Os BSD 4.3
+
+             or for a locally produced set
+
+                   .Os CS Department
+
+             The Berkeley default, `.Os' without an argument, has been defined
+             as BSD Experimental in the site specific file
+             _/_u_s_r_/_s_r_c_/_s_h_a_r_e_/_t_m_a_c_/_d_o_c_-_c_o_m_m_o_n. It really should default to
+             LOCAL. Note, if the `.Os' macro is not present, the bottom left
+             corner of the page will be ugly.
+
+     .Dd month day, year
+             The date should be written formally:
+
+                   January 25, 1989
+
+MMAANNUUAALL DDOOMMAAIINN
+   WWhhaatt''ss iinn aa nnaammee......
+     The manual domain macro names are derived from the day to day informal
+     language used to describe commands, subroutines and related files.
+     Slightly different variations of this language are used to describe the
+     three different aspects of writing a man page.  First, there is the de-
+     scription of --mmddoocc macro request usage.  Second is the description of a
+     UNIX command _w_i_t_h --mmddoocc macros and third, the description a command to a
+     user in the verbal sense; that is, discussion of a command in the text of
+     a man page.
+
+     In the first case, troff(1) macros are themselves a type of command; the
+     general syntax for a troff command is:
+
+           .Va argument1 argument2 ... argument9
+
+     The `.Va' is a macro command or request, and anything following it is an
+     argument to be processed.  In the second case, the description of a UNIX
+     command using the content macros is a bit more involved; a typical
+     _S_Y_N_O_P_S_I_S command line might be displayed as:
+
+           ffiilltteerr [--ffllaagg] _i_n_f_i_l_e _o_u_t_f_i_l_e
+
+     Here, ffiilltteerr is the command name and the bracketed string --ffllaagg is a _f_l_a_g
+     argument designated as optional by the option brackets.  In --mmddoocc terms,
+     _i_n_f_i_l_e and _o_u_t_f_i_l_e are called _a_r_g_u_m_e_n_t_s. The macros which formatted the
+     above example:
+
+           .Nm filter
+           .Op Fl flag
+           .Ar infile outfile
+
+     In the third case, discussion of commands and command syntax includes
+     both examples above, but may add more detail.  The arguments _i_n_f_i_l_e and
+     _o_u_t_f_i_l_e from the example above might be referred to as _o_p_e_r_a_n_d_s or _f_i_l_e
+     _a_r_g_u_m_e_n_t_s. Some command line argument lists are quite long:
+
+           mmaakkee  [--eeiikknnqqrrssttvv] [--DD _v_a_r_i_a_b_l_e] [--dd _f_l_a_g_s] [--ff _m_a_k_e_f_i_l_e]
+                 [--II _d_i_r_e_c_t_o_r_y] [--jj _m_a_x___j_o_b_s] [_v_a_r_i_a_b_l_e_=_v_a_l_u_e] [_t_a_r_g_e_t _._._.]
+
+     Here one might talk about the command mmaakkee and qualify the argument
+     _m_a_k_e_f_i_l_e, as an argument to the flag, --ff, or discuss the optional file
+     operand _t_a_r_g_e_t. In the verbal context, such detail can prevent confusion,
+     however the --mmddoocc package does not have a macro for an argument _t_o a
+     flag.  Instead the `Ar' argument macro is used for an operand or file ar-
+     gument like _t_a_r_g_e_t as well as an argument to a flag like _v_a_r_i_a_b_l_e. The
+     make command line was produced from:
+
+           .Nm make
+           .Op Fl eiknqrstv
+           .Op Fl D Ar variable
+           .Op Fl d Ar flags
+           .Op Fl f Ar makefile
+           .Op Fl I Ar directory
+           .Op Fl j Ar max_jobs
+           .Op Ar variable=value
+           .Bk -words
+           .Op Ar target ...
+           .Ek
+
+     The `.Bk' and `.Ek' macros are explained in _K_e_e_p_s.
+
+   GGeenneerraall SSyynnttaaxx
+     The manual domain and general text domain macros share a similar syntax
+     with a few minor deviations: `.Ar', `.Fl', `.Nm', and `.Pa' differ only
+     when called without arguments; `.Fn' and `.Xr' impose an order on their
+     argument lists and the `.Op' and `.Fn' macros have nesting limitations.
+     All content macros are capable of recognizing and properly handling punc-
+     tuation, provided each punctuation character is separated by a leading
+     space.  If an request is given:
+
+           .Li sptr, ptr),
+
+     The result is:
+
+           sptr, ptr),
+
+     The punctuation is not recognized and all is output in the literal font.
+     If the punctuation is separated by a leading white space:
+
+           .Li sptr , ptr ) ,
+
+     The result is:
+
+           sptr, ptr),
+
+     The punctuation is now recognized and is output in the default font dis-
+     tinguishing it from the strings in literal font.
+
+     To remove the special meaning from a punctuation character escape it with
+     `\&'. Troff is limited as a macro language, and has difficulty when pre-
+     sented with a string containing a member of the mathematical, logical or
+     quotation set:
+
+                 {+,-,/,*,%,<,>,<=,>=,=,==,&,`,',"}
+
+     The problem is that troff may assume it is supposed to actually perform
+     the operation or evaluation suggested by the characters.  To prevent the
+     accidental evaluation of these characters, escape them with `\&'. Typical
+     syntax is shown in the first content macro displayed below, `.Ad'.
+
+   AAddddrreessss MMaaccrroo
+     The address macro identifies an address construct of the form ad-
+     dr1[,addr2[,addr3]].
+
+           Usage: .Ad address ... { . , ; : ( ) [ ]}
+                   .Ad addr1           _a_d_d_r_1
+                   .Ad addr1 .         _a_d_d_r_1.
+                   .Ad addr1 , file2   _a_d_d_r_1, _f_i_l_e_2
+                   .Ad f1 , f2 , f3 :  _f_1, _f_2, _f_3:
+                   .Ad addr ) ) ,      _a_d_d_r)),
+
+     It is an error to call .Ad without arguments.  .Ad is callable by other
+     macros and is parsed.
+
+   AArrgguummeenntt MMaaccrroo
+     The .Ar argument macro may be used whenever a command line argument is
+     referenced.
+
+           Usage: .Ar argument ... { . , ; : ( ) [ ]}
+                    .Ar              _f_i_l_e _._._.
+                    .Ar file1        _f_i_l_e_1
+                    .Ar file1 .      _f_i_l_e_1.
+                    .Ar file1 file2  _f_i_l_e_1 _f_i_l_e_2
+                    .Ar f1 f2 f3 :   _f_1 _f_2 _f_3:
+                    .Ar file ) ) ,   _f_i_l_e)),
+
+     If .Ar is called without arguments `_f_i_l_e _._._.' is assumed.  The .Ar macro
+     is parsed and is callable.
+
+   CCoonnffiigguurraattiioonn DDeeccllaarraattiioonn ((sseeccttiioonn ffoouurr oonnllyy))
+     The `.Cd' macro is used to demonstrate a config(8) declaration for a de-
+     vice interface in a section four manual.  This macro accepts quoted argu-
+     ments (double quotes only).
+
+           ddeevviiccee llee00 aatt ssccooddee??  produced by: `.Cd device le0 at scode?'.
+
+   CCoommmmaanndd MMooddiiffiieerr
+     The command modifier is identical to the `.Fl' (flag) command with the
+     exception the `.Cm' macro does not assert a dash in front of every argu-
+     ment.  Traditionally flags are marked by the preceding dash, some com-
+     mands or subsets of commands do not use them.  Command modifiers may also
+     be specified in conjunction with interactive commands such as editor com-
+     mands.  See _F_l_a_g_s.
+
+
+   DDeeffiinneedd VVaarriiaabblleess
+     A variable which is defined in an include file is specified by the macro
+     `.Dv'.
+
+           Usage: .Dv defined_variable ... { . , ; : ( ) [ ]}
+                   .Dv MAXHOSTNAMELEN  MAXHOSTNAMELEN
+                   .Dv TIOCGPGRP )     TIOCGPGRP)
+
+     It is an error to call `.Dv' without arguments.  `.Dv' is parsed and is
+     callable.
+
+   EErrrrnnoo''ss ((SSeeccttiioonn ttwwoo oonnllyy))
+     The `.Er' errno macro specifies the error return value for section two
+     library routines.  The second example below shows `.Er' used with the
+     `.Bq' general text domain macro, as it would be used in a section two
+     manual page.
+
+           Usage: .Er ERRNOTYPE ... { . , ; : ( ) [ ]}
+                   .Er ENOENT      ENOENT
+                   .Er ENOENT ) ;  ENOENT);
+                   .Bq Er ENOTDIR  [ENOTDIR]
+
+     It is an error to call `.Er' without arguments.  The `.Er' macro is
+     parsed and is callable.
+
+   EEnnvviirroonnmmeenntt VVaarriiaabblleess
+     The `.Ev' macro specifies a environment variable.
+
+           Usage: .Ev argument ... { . , ; : ( ) [ ]}
+                   .Ev DISPLAY        DISPLAY
+                   .Ev PATH .         PATH.
+                   .Ev PRINTER ) ) ,  PRINTER)),
+
+     It is an error to call `.Ev' without arguments.  The `.Ev' macro is
+     parsed and is callable.
+
+   FFuunnccttiioonn AArrgguummeenntt
+     The `.Fa' macro is used to refer to function arguments (parameters) out-
+     side of the _S_Y_N_O_P_S_I_S section of the manual or inside the _S_Y_N_O_P_S_I_S section
+     should a parameter list be too long for the `.Fn' macro and the enclosure
+     macros `.Fo' and `.Fc' must be used.  `.Fa' may also be used to refer to
+     structure members.
+
+           Usage: .Fa function_argument ... { . , ; : ( ) [ ]}
+                   .Fa d_namlen ) ) ,  _d___n_a_m_l_e_n)),
+                   .Fa iov_len         _i_o_v___l_e_n
+
+     It is an error to call `.Fa' without arguments.  `.Fa' is parsed and is
+     callable.
+
+   FFuunnccttiioonn DDeeccllaarraattiioonn
+     The `.Fd' macro is used in the _S_Y_N_O_P_S_I_S section with section two or three
+     functions.  The `.Fd' macro does not call other macros and is not
+     callable by other macros.
+
+           Usage: .Fd include_file (or defined variable)
+
+     In the _S_Y_N_O_P_S_I_S section a `.Fd' request causes a line break if a function
+     has already been presented and a break has not occurred.  This leaves a
+     nice vertical space in between the previous function call and the decla-
+     ration for the next function.
+
+   FFllaaggss
+     The `.Fl' macro handles command line flags.  It prepends a dash, `-', to
+     the flag.  For interactive command flags, which are not prepended with a
+     dash, the `.Cm' (command modifier) macro is identical, but with out the
+     dash.
+
+           Usage: .Fl argument ... { . , ; : ( ) [ ]}
+                   .Fl           --
+                   .Fl cfv       --ccffvv
+                   .Fl cfv .     --ccffvv.
+                   .Fl s v t     --ss --vv --tt
+                   .Fl - ,       ----,
+                   .Fl xyz ) ,   --xxyyzz),
+
+     The `.Fl' macro without any arguments results in a dash representing
+     stdin/stdout.  Note that giving `.Fl' a single dash, will result in two
+     dashes.  The `.Fl' macro is parsed and is callable.
+
+   FFuunnccttiioonnss ((lliibbrraarryy rroouuttiinneess))
+     The .Fn macro is modeled on ANSI C conventions.
+
+     Usage: .Fn [type] function [[type] parameters ... { . , ; : ( ) [ ]}]
+     .Fn getchar                             ggeettcchhaarr()
+     .Fn strlen ) ,                          ssttrrlleenn()),
+     .Fn "int align" "const * char *sptrs",  iinntt aalliiggnn(_c_o_n_s_t _* _c_h_a_r _*_s_p_t_r_s),
+
+     It is an error to call `.Fn' without any arguments.  The `.Fn' macro is
+     parsed and is callable, note that any call to another macro signals the
+     end of the `.Fn' call (it will close-parenthesis at that point).
+
+     For functions that have more than eight parameters (and this is rare),
+     the macros `.Fo' (function open) and `.Fc' (function close) may be used
+     with `.Fa' (function argument) to get around the limitation. For example:
+
+           .Fo "int res_mkquery"
+           .Fa "int op"
+           .Fa "char *dname"
+           .Fa "int class"
+           .Fa "int type"
+           .Fa "char *data"
+           .Fa "int datalen"
+           .Fa "struct rrec *newrr"
+           .Fa "char *buf"
+           .Fa "int buflen"
+           .Fc
+
+     Produces:
+
+           iinntt rreess__mmkkqquueerryy(_i_n_t _o_p, _c_h_a_r _*_d_n_a_m_e, _i_n_t _c_l_a_s_s, _i_n_t _t_y_p_e,
+           _c_h_a_r _*_d_a_t_a, _i_n_t _d_a_t_a_l_e_n, _s_t_r_u_c_t _r_r_e_c _*_n_e_w_r_r, _c_h_a_r _*_b_u_f, _i_n_t _b_u_f_l_e_n)
+
+     The `.Fo' and `.Fc' macros are parsed and are callable.  In the _S_Y_N_O_P_S_I_S
+     section, the function will always begin at the beginning of line.  If
+     there is more than one function presented in the _S_Y_N_O_P_S_I_S section and a
+     function type has not been given, a line break will occur, leaving a nice
+     vertical space between the current function name and the one prior.  At
+     the moment, `.Fn' does not check its word boundaries against troff line
+     lengths and may split across a newline ungracefully.  This will be fixed
+     in the near future.
+
+   FFuunnccttiioonn TTyyppee
+     This macro is intended for the _S_Y_N_O_P_S_I_S section.  It may be used anywhere
+     else in the man page without problems, but its main purpose is to present
+     the function type in kernel normal form for the _S_Y_N_O_P_S_I_S of sections two
+     and three (it causes a page break allowing the function name to appear on
+     the next line).
+
+           Usage: .Ft type ... { . , ; : ( ) [ ]}
+
+                   .Ft struct stat  _s_t_r_u_c_t _s_t_a_t
+
+     The `.Ft' request is not callable by other macros.
+
+   IInntteerraaccttiivvee CCoommmmaannddss
+     The `.Ic' macro designates an interactive or internal command.
+
+           Usage: .Li argument ... { . , ; : ( ) [ ]}
+                   .Ic :wq                  ::wwqq
+                   .Ic do while {...}       ddoo wwhhiillee {{......}}
+                   .Ic setenv , unsetenv    sseetteennvv, uunnsseetteennvv
+
+     It is an error to call `.Ic' without arguments.  The `.Ic' macro is
+     parsed and is callable.
+
+   LLiitteerraallss
+     The `.Li' literal macro may be used for special characters, variable con-
+     stants, anything which should be displayed as it would be typed.
+
+           Usage: .Li argument ... { . , ; : ( ) [ ]}
+                   .Li \en          \n
+                   .Li M1 M2 M3 ;   M1 M2 M3;
+                   .Li cntrl-D ) ,  cntrl-D),
+                   .Li 1024 ...     1024 ...
+
+     The `.Li' macro is parsed and is callable.
+
+   NNaammee MMaaccrroo
+     The `.Nm' macro is used for the document title or subject name.  It has
+     the peculiarity of remembering the first argument it was called with,
+     which should always be the subject name of the page.  When called without
+     arguments, `.Nm' regurgitates this initial name for the sole purpose of
+     making less work for the author.  Note: a section two or three document
+     function name is addressed with the `.Nm' in the _N_A_M_E section, and with
+     `.Fn' in the _S_Y_N_O_P_S_I_S and remaining sections.  For interactive commands,
+     such as the `while' command keyword in csh(1),  the `.Ic' macro should be
+     used.  While the `.Ic' is nearly identical to `.Nm', it can not recall
+     the first argument it was invoked with.
+
+           Usage: .Nm argument ... { . , ; : ( ) [ ]}
+                   .Nm mdoc.sample  mmddoocc..ssaammppllee
+                   .Nm \-mdoc       --mmddoocc.
+                   .Nm foo ) ) ,    ffoooo)),
+                   .Nm              mmddoocc..ssaammpplleess
+
+     The `.Nm' macro is parsed and is callable.
+
+   OOppttiioonnss
+     The `.Op' macro places option brackets around the any remaining arguments
+     on the command line, and places any trailing punctuation outside the
+     brackets.  The macros `.Oc' and `.Oo' may be used across one or more
+     lines.
+
+           Usage: .Op options ... { . , ; : ( ) [ ]}
+           .Op                                []
+           .Op Fl k                           [--kk]
+           .Op Fl k ) .                       [--kk]).
+           .Op Fl k Ar kookfile               [--kk _k_o_o_k_f_i_l_e]
+           .Op Fl k Ar kookfile ,             [--kk _k_o_o_k_f_i_l_e],
+           .Op Ar objfil Op Ar corfil         [_o_b_j_f_i_l [_c_o_r_f_i_l]]
+           .Op Fl c Ar objfil Op Ar corfil ,  [--cc _o_b_j_f_i_l [_c_o_r_f_i_l]],
+           .Op word1 word2                    [word1 word2]
+
+     The `.Oc' and `.Oo' macros:
+
+           .Oo
+           .Op Fl k Ar kilobytes
+           .Op Fl i Ar interval
+           .Op Fl c Ar count
+           .Oc
+
+     Produce: [[--kk _k_i_l_o_b_y_t_e_s] [--ii _i_n_t_e_r_v_a_l] [--cc _c_o_u_n_t]]
+
+     The macros `.Op', `.Oc' and `.Oo' are parsed and are callable.
+
+   PPaatthhnnaammeess
+     The `.Pa' macro formats path or file names.
+
+           Usage: .Pa pathname { . , ; : ( ) [ ]}
+                   .Pa /usr/share         _/_u_s_r_/_s_h_a_r_e
+                   .Pa /tmp/fooXXXXX ) .  _/_t_m_p_/_f_o_o_X_X_X_X_X).
+
+     The `.Pa' macro is parsed and is callable.
+
+   VVaarriiaabblleess
+     Generic variable reference:
+
+           Usage: .Va variable ... { . , ; : ( ) [ ]}
+                   .Va count           _c_o_u_n_t
+                   .Va settimer,       _s_e_t_t_i_m_e_r,
+                   .Va int *prt ) :    _i_n_t _*_p_r_t):
+                   .Va char s ] ) ) ,  _c_h_a_r _s])),
+
+     It is an error to call `.Va' without any arguments.  The `.Va' macro is
+     parsed and is callable.
+
+   MMaannuuaall PPaaggee CCrroossss RReeffeerreenncceess
+     The `.Xr' macro expects the first argument to be a manual page name, and
+     the second argument, if it exists, to be either a section page number or
+     punctuation.  Any remaining arguments are assumed to be punctuation.
+
+           Usage: .Xr man_page [1,...,8] { . , ; : ( ) [ ]}
+                   .Xr mdoc          mdoc
+                   .Xr mdoc ,        mdoc,
+                   .Xr mdoc 7        mdoc(7)
+                   .Xr mdoc 7 ) ) ,  mdoc(7))),
+
+     The `.Xr' macro is parsed and is callable.  It is an error to call `.Xr'
+     without any arguments.
+
+GGEENNEERRAALL TTEEXXTT DDOOMMAAIINN
+   AATT&&TT MMaaccrroo
+           Usage: .At [v6 | v7 | 32v | V.1 | V.4] ... { . , ; : ( ) [ ]}
+                   .At         AT&T UNIX
+                   .At v6 .    Version 6 AT&T UNIX.
+
+     The `.At' macro is _n_o_t parsed and _n_o_t callable. It accepts at most two
+     arguments.
+
+   BBSSDD MMaaccrroo
+           Usage: .Bx [Version/release] ... { . , ; : ( ) [ ]}
+                   .Bx          BSD
+                   .Bx 4.3 .    4.3BSD.
+
+     The `.Bx' macro is parsed and is callable.
+
+   UUNNIIXX MMaaccrroo
+           Usage: .Ux ... { . , ; : ( ) [ ]}
+                   .Ux          UNIX
+
+     The `.Ux' macro is parsed and is callable.
+
+
+   EEmmpphhaassiiss MMaaccrroo
+     Text may be stressed or emphasized with the `.Em' macro.  The usual font
+     for emphasis is italic.
+
+           Usage: .Em argument ... { . , ; : ( ) [ ]}
+                   .Em does not          _d_o_e_s _n_o_t
+                   .Em exceed 1024 .     _e_x_c_e_e_d _1_0_2_4.
+                   .Em vide infra ) ) ,  _v_i_d_e _i_n_f_r_a)),
+
+     The `.Em' macro is parsed and is callable.  It is an error to call `.Em'
+     without arguments.
+
+   EEnncclloossuurree aanndd QQuuoottiinngg MMaaccrrooss
+     The concept of enclosure is similar to quoting.  The object being to en-
+     close one or more strings between a pair of characters like quotes or
+     parentheses.  The terms quoting and enclosure are used interchangeably
+     throughout this document.  Most of the one line enclosure macros end end
+     in small letter `q' to give a hint of quoting, but there are a few irreg-
+     ularities.  For each enclosure macro there is also a pair of open and
+     close macros which end in small letters `o' and `c' respectively.  These
+     can be used across one or more lines of text and while they have nesting
+     limitations, the one line quote macros can be used inside of them.
+
+           _Q_u_o_t_e     _C_l_o_s_e    _O_p_e_n   _F_u_n_c_t_i_o_n                  _R_e_s_u_l_t
+           .Aq      .Ac      .Ao     Angle Bracket Enclosure   <string>
+           .Bq      .Bc      .Bo     Bracket Enclosure         [string]
+           .Dq      .Dc      .Do     Double Quote              ``string''
+                    .Ec      .Eo     Enclose String (in XX)    XXstringXX
+           .Pq      .Pc      .Po     Parenthesis Enclosure     (string)
+           .Ql                       Quoted Literal            `st' or string
+           .Qq      .Qc      .Qo     Straight Double Quote     "string"
+           .Sq      .Sc      .So     Single Quote              `string'
+
+     Except for the irregular macros noted below, all of the quoting macros
+     are parsed and callable.  All handle punctuation properly, as long as it
+     is presented one character at a time and separated by spaces.  The quot-
+     ing macros examine opening and closing punctuation to determine whether
+     it comes before or after the enclosing string. This makes some nesting
+     possible.
+
+     .Ec, .Eo  These macros expect the first argument to be the opening and
+               closing strings respectively.
+
+     .Ql       The quoted literal macro behaves differently for troff than
+               nroff.  If formatted with nroff,  a quoted literal is always
+               quoted. If formatted with troff, an item is only quoted if the
+               width of the item is less than three constant width characters.
+               This is to make short strings more visible where the font
+               change to literal (constant width) is less noticeable.
+
+     .Pf       The prefix macro is not callable, but it is parsed:
+
+                     .Pf ( Fa name2
+                              becomes (_n_a_m_e_2.
+
+               The `.Ns' (no space) macro performs the analogous suffix func-
+               tion.
+
+     Examples of quoting:
+           .Aq                         <>
+           .Aq Ar ctype.h ) ,          <_c_t_y_p_e_._h>),
+           .Bq                         []
+           .Bq Em Greek , French .     [_G_r_e_e_k, _F_r_e_n_c_h].
+
+
+           .Dq                         ``''
+           .Dq string abc .            ``string abc''.
+           .Dq '^[A-Z]'                ``'^[A-Z]'''
+           .Ql man mdoc                `man mdoc'
+           .Qq                         ""
+           .Qq string ) ,              "string"),
+           .Qq string Ns ),            "string),"
+           .Sq                         `'
+           .Sq string                  `string'
+
+     For a good example of nested enclosure macros, see the `.Op' option
+     macro.  It was created from the same underlying enclosure macros as those
+     presented in the list above.  The `.Xo' and `.Xc' extended argument list
+     macros were also built from the same underlying routines and are a good
+     example of --mmddoocc macro usage at its worst.
+
+   NNoo--OOpp oorr NNoorrmmaall TTeexxtt MMaaccrroo
+     The macro .No is a hack for words in a macro command line which should
+     _n_o_t be formatted and follows the conventional syntax for content macros.
+
+   NNoo SSppaaccee MMaaccrroo
+     The `.Ns' macro eliminates unwanted spaces in between macro requests.  It
+     is useful for old style argument lists where there is no space between
+     the flag and argument:
+
+           .Op Fl I Ns Ar directory    produces [--II_d_i_r_e_c_t_o_r_y]
+
+     Note: the `.Ns' macro always invokes the `.No' macro after eliminating
+     the space unless another macro name follows it.  The macro `.Ns' is
+     parsed and is callable.
+
+   SSeeccttiioonn CCrroossss RReeffeerreenncceess
+     The `.Sx' macro designates a reference to a section header within the
+     same document.  It is parsed and is callable.
+
+                   .Sx FILES     _F_I_L_E_S
+
+   SSyymmbboolliicc
+     The symbolic emphasis macro is generally a boldface macro in either the
+     symbolic sense or the traditional English usage.
+
+           Usage: .Sy symbol ... { . , ; : ( ) [ ]}
+                   .Sy Important Notice   IImmppoorrttaanntt NNoottiiccee
+
+     The `.Sy' macro is parsed and is callable.  Arguments to `.Sy' may be
+     quoted.
+
+   RReeffeerreenncceess aanndd CCiittaattiioonnss
+     The following macros make a modest attempt to handle references.  At
+     best, the macros make it convenient to manually drop in a subset of refer
+     style references.
+
+           .Rs     Reference Start.  Causes a line break and begins collection
+                   of reference information until the reference end macro is
+                   read.
+           .Re     Reference End.  The reference is printed.
+           .%A     Reference author name, one name per invocation.
+           .%B     Book title.
+           .%C     City/place.
+           .%D     Date.
+           .%J     Journal name.
+           .%N     Issue number.
+           .%O     Optional information.
+           .%P     Page number.
+
+
+           .%R     Report name.
+           .%T     Title of article.
+           .%V     Volume(s).
+
+     The macros beginning with `%' are not callable, and are parsed only for
+     the trade name macro which returns to its caller.  (And not very pre-
+     dictably at the moment either.)  The purpose is to allow trade names to
+     be pretty printed in troff/ditroff  output.
+
+   TTrraaddee NNaammeess ((oorr AAccrroonnyymmss aanndd TTyyppee NNaammeess))
+     The trade name macro is generally a small caps macro for all upper case
+     words longer than two characters.
+
+           Usage: .Tn symbol ... { . , ; : ( ) [ ]}
+                   .Tn DEC    DEC
+                   .Tn ASCII  ASCII
+
+     The `.Tn' macro is parsed and is callable by other macros.
+
+   EExxtteennddeedd AArrgguummeennttss
+     The .Xo and .Xc macros allow one to extend an argument list on a macro
+     boundary.  Argument lists cannot be extended within a macro which expects
+     all of its arguments on one line such as `.Op'.
+
+     Here is an example of `.Xo' using the space mode macro to turn spacing
+     off:
+
+           .Sm off
+           .It Xo Sy I Ar operation
+           .No \en Ar count No \en
+           .Xc
+           .Sm on
+
+     Produces
+
+           II_o_p_e_r_a_t_i_o_n\n_c_o_u_n_t\n
+
+     Another one:
+
+           .Sm off
+           .It Cm S No / Ar old_pattern Xo
+           .No / Ar new_pattern
+           .No / Op Cm g
+           .Xc
+           .Sm on
+
+     Produces
+
+           SS/_o_l_d___p_a_t_t_e_r_n/_n_e_w___p_a_t_t_e_r_n/[gg]
+
+     Another example of `.Xo' and using enclosure macros: Test the value of an
+     variable.
+
+           .It Xo
+           .Ic .ifndef
+           .Oo \&! Oc Ns Ar variable
+           .Op Ar operator variable ...
+           .Xc
+
+     Produces
+
+           ..iiffnnddeeff [!]_v_a_r_i_a_b_l_e [_o_p_e_r_a_t_o_r _v_a_r_i_a_b_l_e _._._.]
+
+     All of the above examples have used the `.Xo' macro on the argument list
+     of the `.It' (list-item) macro.  The extend macros are not used very of-
+     ten, and when they are it is usually to extend the list-item argument
+     list.  Unfortunately, this is also where the extend macros are the most
+     finicky.  In the first two examples, spacing was turned off; in the
+     third, spacing was desired in part of the output but not all of it.  To
+     make these macros work in this situation make sure the `.Xo' and `.Xc'
+     macros are placed as shown in the third example.  If the `.Xo' macro is
+     not alone on the `.It' argument list, spacing will be unpredictable.  The
+     `.Ns' (no space macro) must not occur as the first or last macro on a
+     line in this situation.  Out of 900 manual pages (about 1500 actual
+     pages) currently released with BSD only fifteen use the `.Xo' macro.
+
+PPAAGGEE SSTTRRUUCCTTUURREE DDOOMMAAIINN
+   SSeeccttiioonn HHeeaaddeerrss
+     The first three `.Sh' section header macros list below are required in
+     every man page.  The remaining section headers are recommended at the
+     discretion of the author writing the manual page.  The `.Sh' macro can
+     take up to nine arguments.  It is parsed and but is not callable.
+
+     .Sh NAME      The `.Sh NAME' macro is mandatory.  If not specified, the
+                   headers, footers and page layout defaults will not be set
+                   and things will be rather unpleasant.  The _N_A_M_E section
+                   consists of at least three items.  The first is the `.Nm'
+                   name macro naming the subject of the man page.  The second
+                   is the Name Description macro, `.Nd', which separates the
+                   subject name from the third item, which is the description.
+                   The description should be the most terse and lucid possi-
+                   ble, as the space available is small.
+
+     .Sh SYNOPSIS  The _S_Y_N_O_P_S_I_S section describes the typical usage of the
+                   subject of a man page.  The  macros required are either
+                   `.Nm', `.Cd', `.Fn', (and possibly `.Fo', `.Fc', `.Fd',
+                   `.Ft' macros).  The function name macro `.Fn' is required
+                   for manual page sections 2 and 3, the command and general
+                   name macro `.Nm' is required for sections 1, 5, 6, 7, 8.
+                   Section 4 manuals require a `.Nm, .Fd' or a `.Cd' configu-
+                   ration device usage macro.  Several other macros may be
+                   necessary to produce the synopsis line as shown below:
+
+                         ccaatt [--bbeennssttuuvv] [--] _f_i_l_e _._._.
+
+                   The following macros were used:
+
+                         .Nm cat
+                         .Op Fl benstuv
+                         .Op Fl
+                         .Ar
+
+                   NNoottee: The macros `.Op', `.Fl', and `.Ar' recognize the pipe
+                   bar character `|', so a command line such as:
+
+                         .Op Fl a | Fl b
+
+                   will not go orbital.  Troff normally interprets a | as a
+                   special operator.  See _P_R_E_D_E_F_I_N_E_D _S_T_R_I_N_G_S for a usable |
+                   character in other situations.
+
+     .Sh DESCRIPTION
+                   In most cases the first text in the _D_E_S_C_R_I_P_T_I_O_N section is
+                   a brief paragraph on the command, function or file, fol-
+                   lowed by a lexical list of options and respective explana-
+                   tions.  To create such a list, the `.Bl' begin-list, `.It'
+                   list-item and `.El' end-list macros are used (see _L_i_s_t_s _a_n_d
+                   _C_o_l_u_m_n_s below).
+
+     The following `.Sh' section headers are part of the preferred manual page
+     layout and must be used appropriately to maintain consistency.  They are
+
+     listed in the order in which they would be used.
+
+     .Sh ENVIRONMENT
+               The _E_N_V_I_R_O_N_M_E_N_T section should reveal any related environment
+               variables and clues to their behavior and/or usage.
+
+     .Sh EXAMPLES
+               There are several ways to create examples.  See the _E_X_A_M_P_L_E_S
+               section below for details.
+
+     .Sh FILES
+               Files which are used or created by the man page subject should
+               be listed via the `.Pa' macro in the _F_I_L_E_S section.
+
+     .Sh SEE ALSO
+               References to other material on the man page topic and cross
+               references to other relevant man pages should be placed in the
+               _S_E_E _A_L_S_O section.  Cross references are specified using the
+               `.Xr' macro.  At this time refer(1) style references are not
+               accommodated.
+
+     .Sh STANDARDS
+               If the command, library function or file adheres to a specific
+               implementation such as IEEE Std1003.2 (``POSIX'') or ANSI C
+               X3.159-1989 (``ANSI C '') this should be noted here.  If the
+               command does not adhere to any standard, its history should be
+               noted in the _H_I_S_T_O_R_Y section.
+
+     .Sh HISTORY
+               Any command which does not adhere to any specific standards
+               should be outlined historically in this section.
+
+     .Sh AUTHORS
+               Credits, if need be, should be placed here.
+
+     .Sh DIAGNOSTICS
+               Diagnostics from a command should be placed in this section.
+
+     .Sh ERRORS
+               Specific error handling, especially from library functions (man
+               page sections 2 and 3) should go here.  The `.Er' macro is used
+               to specify an errno.
+
+     .Sh BUGS  Blatant problems with the topic go here...
+
+     User specified `.Sh' sections may be added, for example, this section was
+     set with:
+
+                   .Sh PAGE LAYOUT MACROS
+
+   PPaarraaggrraapphhss aanndd LLiinnee SSppaacciinngg..
+
+     .Pp     The .Pp paragraph command may be used to specify a line space
+             where necessary.  The macro is not necessary after a `.Sh' or
+             `.Ss' macro or before a `.Bl' macro.  (The `.Bl' macro asserts a
+             vertical distance unless the -compact flag is given).
+
+   KKeeeeppss
+     The only keep that is implemented at this time is for words.  The macros
+     are `.Bk' (begin-keep) and `.Ek' (end-keep).  The only option that `.Bl'
+     accepts is --wwoorrddss and is useful for preventing line breaks in the middle
+     of options.  In the example for the make command line arguments (see
+     _W_h_a_t_'_s _i_n _a _n_a_m_e), the keep prevented nroff from placing up the flag and
+     the argument on separate lines.  (Actually, the option macro used to pre-
+     vent this from occurring, but was dropped when the decision (religious)
+     was made to force right justified margins in troff as options in general
+     look atrocious when spread across a sparse line.  More work needs to be
+     done with the keep macros, a --lliinnee option needs to be added.)
+
+   EExxaammpplleess aanndd DDiissppllaayyss
+     There are five types of displays, a quickie one line indented display
+     `.D1', a quickie one line literal display `.Dl', and a block literal,
+     block filled and block ragged which use the `.Bd' begin-display and `.Ed'
+     end-display macros.
+
+     .D1    (D-one) Display one line of indented text.  This macro is parsed,
+            but it is not callable.
+
+                  --llddgghhffssttrruu
+
+            The above was produced by: .Dl --llddgghhffssttrruu.
+
+     .Dl    (D-ell) Display one line of indented _l_i_t_e_r_a_l text.  The `.Dl' ex-
+            ample macro has been used throughout this file.  It allows the in-
+            dent (display) of one line of text.  Its default font is set to
+            constant width (literal) however it is parsed and will recognized
+            other macros.  It is not callable however.
+
+                  % ls -ldg /usr/local/bin
+
+            The above was produced by .Dl % ls -ldg /usr/local/bin.
+
+     .Bd    Begin-display.  The `.Bd' display must be ended with the `.Ed'
+            macro.  Displays may be nested within displays and lists.  `.Bd'
+            has the following syntax:
+
+                  .Bd display-type [-offset offset_value] [-compact]
+
+            The display-type must be one of the following four types and may
+            have an offset specifier for indentation: `.Bd'.
+
+            --rraaggggeedd           Display a block of text as typed, right (and
+                              left) margin edges are left ragged.
+            --ffiilllleedd           Display a filled (formatted) block.  The block
+                              of text is formatted (the edges are filled - not
+                              left unjustified).
+            --lliitteerraall          Display a literal block, useful for source code
+                              or simple tabbed or spaced text.
+            --ffiillee _f_i_l_e___n_a_m_e   The file name following the --ffiillee flag is read
+                              and displayed.  Literal mode is asserted and
+                              tabs are set at 8 constant width character in-
+                              tervals, however any troff/--mmddoocc  commands in
+                              file will be processed.
+            --ooffffsseett _s_t_r_i_n_g    If --ooffffsseett is specified with one of the follow-
+                              ing strings, the string is interpreted to indi-
+                              cate the level of indentation for the forthcom-
+                              ing block of text:
+
+                              _l_e_f_t        Align block on the current left mar-
+                                          gin, this is the default mode of
+                                          `.Bd'.
+                              _c_e_n_t_e_r      Supposedly center the block.  At
+                                          this time unfortunately, the block
+                                          merely gets left aligned about an
+                                          imaginary center margin.
+                              _i_n_d_e_n_t      Indents by one default indent value
+                                          or tab.  The default indent value is
+                                          also used for the `.D1' display so
+                                          one is guaranteed the two types of
+                                          displays will line up.  This indent
+                                          is normally set to 6n or about two
+                                          thirds of an inch (six constant
+
+                                          width characters).
+                              _i_n_d_e_n_t_-_t_w_o  Indents two times the default indent
+                                          value.
+                              _r_i_g_h_t       This _l_e_f_t aligns the block about two
+                                          inches from the right side of the
+                                          page.  This macro needs work and
+                                          perhaps may never do the right thing
+                                          by troff.
+
+     .Ed    End-display.
+
+   TTaaggggeedd LLiissttss aanndd CCoolluummnnss
+     There are several types of lists which may be initiated with the `.Bl'
+     begin-list macro.  Items within the list are specified with the `.It'
+     item macro and each list must end with the `.El' macro.  Lists may be
+     nested within themselves and within displays.  Columns may be used inside
+     of lists, but lists are unproven inside of columns.
+
+     In addition, several list attributes may be specified such as the width
+     of a tag, the list offset, and compactness (blank lines between items al-
+     lowed or disallowed).  Most of this document has been formatted with a
+     tag style list (--ttaagg). For a change of pace, the list-type used to pre-
+     sent the list-types is an over-hanging list (--oohhaanngg). This type of list
+     is quite popular with TeX users, but might look a bit funny after having
+     read many pages of tagged lists.  The following list types are accepted
+     by `.Bl':
+
+     --bbuulllleett
+     --iitteemm
+     --eennuumm
+     These three are the simplest types of lists.  Once the `.Bl' macro has
+     been given, items in the list are merely indicated by a line consisting
+     solely of the `.It' macro.  For example, the source text for a simple
+     enumerated list would look like:
+
+                 .Bl -enum -compact
+                 .It
+                 Item one goes here.
+                 .It
+                 And item two here.
+                 .It
+                 Lastly item three goes here.
+                 .El
+
+     The results:
+
+               1.   Item one goes here.
+               2.   And item two here.
+               3.   Lastly item three goes here.
+
+     A simple bullet list construction:
+
+                 .Bl -bullet -compact
+                 .It
+                 Bullet one goes here.
+                 .It
+                 Bullet two here.
+                 .El
+
+     Produces:
+               ++oo   Bullet one goes here.
+               ++oo   Bullet two here.
+
+
+
+     --ttaagg
+     --ddiiaagg
+     --hhaanngg
+     --oohhaanngg
+     --iinnsseett
+     These list-types collect arguments specified with the `.It' macro and
+     create a label which may be _i_n_s_e_t into the forth coming text, _h_a_n_g_e_d from
+     the forth coming text, _o_v_e_r_h_a_n_g_e_d from above and not indented or _t_a_g_g_e_d.
+     This list was constructed with the `--oohhaanngg' list-type.  The `.It' macro
+     is parsed only for the inset, hang and tag list-types and is not
+     callable.  Here is an example of inset labels:
+
+           _T_a_g The tagged list (also called a tagged paragraph) is the most
+           common type of list used in the Berkeley manuals.
+
+           _D_i_a_g Diag lists create section four diagnostic lists and are simi-
+           lar to inset lists except callable macros are ignored.
+
+           _H_a_n_g Hanged labels are a matter of taste.
+
+           _O_h_a_n_g Over hanging labels are nice when space is constrained.
+
+           _I_n_s_e_t Inset labels are useful for controlling blocks of paragraphs
+           and are valuable for converting --mmddoocc manuals to other formats.
+
+     Here is the source text which produced the above example:
+
+           .Bl -inset -offset indent
+           .It Em Tag
+           The tagged list (also called a tagged paragraph) is the
+           most common type of list used in the Berkeley manuals.
+           .It Em Diag
+           Diag lists create section four diagnostic lists
+           and are similar to inset lists except callable
+           macros are ignored.
+           .It Em Hang
+           Hanged labels are a matter of taste.
+           .It Em Ohang
+           Over hanging labels are nice when space is constrained.
+           .It Em Inset
+           Inset labels are useful for controlling blocks of
+           paragraphs and are valuable for converting
+           .Nm -mdoc
+           manuals to other formats.
+           .El
+
+     Here is a hanged list with just one item:
+
+           _H_a_n_g_e_d labels appear similar to tagged lists when the label is
+                   smaller than the label width.
+
+           _L_o_n_g_e_r _h_a_n_g_e_d _l_i_s_t _l_a_b_e_l_s blend in to the paragraph unlike tagged
+                   paragraph labels.
+
+     And the unformatted text which created it:
+
+           .Bl -hang -offset indent
+           .It Em Hanged
+           labels appear similar to tagged lists when the
+           label is smaller than the label width.
+           .It Em Longer hanged list labels
+           blend in to the paragraph unlike
+           tagged paragraph labels.
+           .El
+
+
+     The tagged list which follows uses an optional width specifier to control
+     the width of the tag.
+
+           SL      sleep time of the process (seconds blocked)
+           PAGEIN  number of disk I/O's resulting from references by the pro-
+                   cess to pages not loaded in core.
+           UID     numerical user-id of process owner
+           PPID    numerical id of parent of process process priority (non-
+                   positive when in non-interruptible wait)
+
+     The raw text:
+
+           .Bl -tag -width "PAGEIN" -compact -offset indent
+           .It SL
+           sleep time of the process (seconds blocked)
+           .It PAGEIN
+           number of disk
+           .Tn I/O Ns 's
+           resulting from references
+           by the process to pages not loaded in core.
+           .It UID
+           numerical user-id of process owner
+           .It PPID
+           numerical id of parent of process process priority
+           (non-positive when in non-interruptible wait)
+           .El
+
+     Acceptable width specifiers:
+
+           --wwiiddtthh _F_l     sets the width to the default width for a flag.  All
+                         callable macros have a default width value.  The
+                         `.Fl', value is presently set to ten constant width
+                         characters or about five sixth of an inch.
+
+           --wwiiddtthh _2_4_n    sets the width to 24 constant width characters or
+                         about two inches.  The `n' is absolutely necessary
+                         for the scaling to work correctly.
+
+           --wwiiddtthh _E_N_A_M_E_T_O_O_L_O_N_G
+                         sets width to the constant width length of the string
+                         given.
+
+           --wwiiddtthh _"_i_n_t _m_k_f_i_f_o_"
+                         again, the width is set to the constant width of the
+                         string given.
+
+     If a width is not specified for the tag list type, the first time `.It'
+     is invoked, an attempt is made to determine an appropriate width.  If the
+     first argument to `.It' is a callable macro, the default width for that
+     macro will be used as if the macro name had been supplied as the width.
+     However, if another item in the list is given with a different callable
+     macro name, a new and nested list is assumed.
+
+PPRREEDDEEFFIINNEEDD SSTTRRIINNGGSS
+     The following strings are predefined as may be used by preceding with the
+     troff string interpreting sequence `\*(xx' where _x_x is the name of the
+     defined string or as `\*x' where _x is the name of the string.  The inter-
+     preting sequence may be used any where in the text.
+
+           SSttrriinngg     NNrrooffff     TTrrooffff
+           <=         <=        <=
+           >=         >=        >=
+           Rq         ''        ''
+           Lq         ``        ``
+
+
+           ua         ^         ^
+           aa         '
+           ga         `         `
+           q          "         "
+           Pi         pi        pi
+           Ne         !=        !=
+           Le         <=        <=
+           Ge         >=        >=
+           Lt         <         >
+           Gt         >         <
+           Pm         +-        +-
+           If         infinity  infinity
+           Na         _N_a_N       _N_a_N
+           Ba         |         |
+
+     NNoottee: The string named `q' should be written as `\*q' since it is only
+     one char.
+
+DDIIAAGGNNOOSSTTIICCSS
+     The debugging facilities for --mmddoocc are limited, but can help detect sub-
+     tle errors such as the collision of an argument name with an internal
+     register or macro name.  (A what?)  A register is an arithmetic storage
+     class for troff with a one or two character name.  All registers internal
+     to --mmddoocc for troff and ditroff are two characters and of the form <up-
+     per_case><lower_case> such as `Ar', <lower_case><upper_case> as `aR' or
+     <upper or lower letter><digit> as `C1'. And adding to the muddle, troff
+     has its own internal registers all of which are either two lower case
+     characters or a dot plus a letter or meta-character character.  In one of
+     the introduction examples, it was shown how to prevent the interpretation
+     of a macro name with the escape sequence `\&'. This is sufficient for the
+     internal register names also.
+
+     If a non-escaped register name is given in the argument list of a request
+     unpredictable behavior will occur.  In general, any time huge portions of
+     text do not appear where expected in the output, or small strings such as
+     list tags disappear, chances are there is a misunderstanding about an ar-
+     gument type in the argument list.  Your mother never intended for you to
+     remember this evil stuff - so here is a way to find out whether or not
+     your arguments are valid: The `.Db' (debug) macro displays the interpre-
+     tation of the argument list for most macros.  Macros such as the `.Pp'
+     (paragraph) macro do not contain debugging information.  All of the
+     callable macros do, and it is strongly advised whenever in doubt, turn on
+     the `.Db' macro.
+
+           Usage: .Db [on | off]
+
+     An example of a portion of text with the debug macro placed above and be-
+     low an artificially created problem (a flag argument `aC' which should be
+     `\&aC' in order to work):
+
+           .Db on
+           .Op Fl aC Ar file )
+           .Db off
+
+     The resulting output:
+
+           DEBUGGING ON
+           DEBUG(argv) MACRO: `.Op'  Line #: 2
+                   Argc: 1  Argv: `Fl'  Length: 2
+                   Space: `'  Class: Executable
+                   Argc: 2  Argv: `aC'  Length: 2
+                   Space: `'  Class: Executable
+                   Argc: 3  Argv: `Ar'  Length: 2
+                   Space: `'  Class: Executable
+                   Argc: 4  Argv: `file'  Length: 4
+                   Space: ` '  Class: String
+                   Argc: 5  Argv: `)'  Length: 1
+                   Space: ` '  Class: Closing Punctuation or suffix
+                   MACRO REQUEST: .Op Fl aC Ar file )
+           DEBUGGING OFF
+
+     The first line of information tells the name of the calling macro, here
+     `.Op', and the line number it appears on.  If one or more files are in-
+     volved (especially if text from another file is included) the line number
+     may be bogus.  If there is only one file, it should be accurate.  The
+     second line gives the argument count, the argument (`Fl') and its length.
+     If the length of an argument is two characters, the argument is tested to
+     see if it is executable (unfortunately, any register which contains a
+     non-zero value appears executable).  The third line gives the space al-
+     lotted for a class, and the class type.  The problem here is the argument
+     aC should not be executable.  The four types of classes are string, exe-
+     cutable, closing punctuation and opening punctuation.  The last line
+     shows the entire argument list as it was read.  In this next example, the
+     offending `aC' is escaped:
+
+           .Db on
+           .Em An escaped \&aC
+           .Db off
+
+           DEBUGGING ON
+           DEBUG(fargv) MACRO: `.Em'  Line #: 2
+                   Argc: 1  Argv: `An'  Length: 2
+                   Space: ` '  Class: String
+                   Argc: 2  Argv: `escaped'  Length: 7
+                   Space: ` '  Class: String
+                   Argc: 3  Argv: `aC'  Length: 2
+                   Space: ` '  Class: String
+                   MACRO REQUEST: .Em An escaped &aC
+           DEBUGGING OFF
+
+     The argument `\&aC' shows up with the same length of 2 as the `\&' se-
+     quence produces a zero width, but a register named `\&aC' was not found
+     and the type classified as string.
+
+     Other diagnostics consist of usage statements and are self explanatory.
+
+GGRROOFFFF,, TTRROOFFFF AANNDD NNRROOFFFF
+     The --mmddoocc package does not need compatibility mode with groff.
+
+     The package inhibits page breaks, and the headers and footers which nor-
+     mally occur at those breaks with nroff,  to make the manual more effi-
+     cient for viewing on-line.  At the moment, groff with --TT_a_s_c_i_i does eject
+     the imaginary remainder of the page at end of file.  The inhibiting of
+     the page breaks makes nroff'd  files unsuitable for hardcopy.  There is a
+     register named `cR' which can be set to zero in the site dependent style
+     file _/_u_s_r_/_s_r_c_/_s_h_a_r_e_/_t_m_a_c_/_d_o_c_-_n_r_o_f_f to restore the old style behavior.
+
+FFIILLEESS
+     /usr/share/tmac/tmac.doc      manual macro package
+     /usr/share/man0/template.doc  template for writing a man page
+
+SSEEEE AALLSSOO
+     mdoc(7),  man(1),  troff(1)
+
+BBUUGGSS
+     Undesirable hyphenation on the dash of a flag argument is not yet re-
+     solved, and causes occasional mishaps in the _D_E_S_C_R_I_P_T_I_O_N section.  (line
+     break on the hyphen).
+
+     Predefined strings are not declared in documentation.
+
+
+     Section 3f has not been added to the header routines.
+
+     `.Nm' font should be changed in _N_A_M_E section.
+
+     `.Fn' needs to have a check to prevent splitting up if the line length is
+     too short.  Occasionally it separates the last parenthesis, and sometimes
+     looks ridiculous if a line is in fill mode.
+
+     The method used to prevent header and footer page breaks (other than the
+     initial header and footer) when using nroff occasionally places an un-
+     sightly partially filled line (blank) at the would be bottom of the page.
+
+     The list and display macros to not do any keeps and certainly should be
+     able to.
+
+4.4BSD                           June 9, 1993                               23

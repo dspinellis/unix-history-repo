@@ -1,0 +1,24 @@
+CONS(4)          BSD Programmer's Manual (HP300 Architecture)          CONS(4)
+
+NNAAMMEE
+     ccoonnss - HP300 console interface
+
+DDEESSCCRRIIPPTTIIOONN
+     This release supports a ``virtual'' console device used for _k_e_r_n_e_l _p_r_i_n_t_f
+     messages and accessed in user mode via _/_d_e_v_/_c_o_n_s_o_l_e. It is virtual in the
+     sense that it is attached to a hardware interface at boot time.  Current-
+     ly the choices are limited to: a bit-mapped display acting as an _i_n_t_e_r_n_a_l
+     _t_e_r_m_i_n_a_l _e_m_u_l_a_t_o_r ``ITE'', the builtin serial interface dca(4),  or a
+     null(4) console in that order.
+
+FFIILLEESS
+     /dev/console
+
+SSEEEE AALLSSOO
+     tty(4),  reboot(8)
+
+BBUUGGSS
+     You should be able to specify potential console devices at config(8)
+     time.
+
+4.4BSD                           June 9, 1993                                1

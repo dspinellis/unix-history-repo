@@ -1,0 +1,16 @@
+FORMAT(8)                 BSD System Manager's Manual                FORMAT(8)
+
+NNAAMMEE
+     ffoorrmmaatt - how to format disks and tapes
+
+DDEESSCCRRIIPPTTIIOONN
+     Currently, there are no ``native'' BSD media formatting utilities.  For-
+     matting of both disks and cartridge tapes must be done either standalone
+     or under HP-UX using the _m_e_d_i_a_i_n_i_t utility distributed by HP. Note that
+     HP-brand cartridge tapes come pre-formatted, and HP disks are supposed
+     to.
+
+HHIISSTTOORRYY
+     The ffoorrmmaatt utility first appeared in 4.4BSD.
+
+4.4BSD                           June 9, 1993                                1

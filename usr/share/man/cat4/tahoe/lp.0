@@ -1,0 +1,21 @@
+LP(4)            BSD Programmer's Manual (Tahoe Architecture)            LP(4)
+
+NNAAMMEE
+     llpp - line printer
+
+SSYYNNOOPPSSIISS
+     device lp on the VIOC-P
+
+DDEESSCCRRIIPPTTIIOONN
+     The llpp driver provides an interface to 4 serial printer lines.
+
+FFIILLEESS
+     /dev/lp
+
+SSEEEE AALLSSOO
+     lpr(1),  vioc(4)
+
+HHIISSTTOORRYY
+     The llpp driver appeared in 4.3BSD-Tahoe.
+
+4.3-Tahoe Berkeley Distribution  June 5, 1993                                1

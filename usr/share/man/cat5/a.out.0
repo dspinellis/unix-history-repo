@@ -1,0 +1,276 @@
+A.OUT(5)                    BSD Programmer's Manual                   A.OUT(5)
+
+NNAAMMEE
+     aa..oouutt - format of executable binary files
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<aa..oouutt..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     The include file <_a_._o_u_t_._h> declares three structures and several macros.
+     The structures describe the format of executable machine code files
+     (`binaries') on the system.
+
+     A binary file consists of up to 7 sections.  In order, these sections
+     are:
+
+     exec header       Contains parameters used by the kernel to load a binary
+                       file into memory and execute it, and by the link editor
+                       ld(1) to combine a binary file with other binary files.
+                       This section is the only mandatory one.
+
+     text segment      Contains machine code and related data that are loaded
+                       into memory when a program executes.  May be loaded
+                       read-only.
+
+     data segment      Contains initialized data; always loaded into writable
+                       memory.
+
+     text relocations  Contains records used by the link editor to update
+                       pointers in the text segment when combining binary
+                       files.
+
+     data relocations  Like the text relocation section, but for data segment
+                       pointers.
+
+     symbol table      Contains records used by the link editor to cross ref-
+                       erence the addresses of named variables and functions
+                       (`symbols') between binary files.
+
+     string table      Contains the character strings corresponding to the
+                       symbol names.
+
+     Every binary file begins with an _e_x_e_c structure:
+
+           struct exec {
+                   unsigned short  a_mid;
+                   unsigned short  a_magic;
+                   unsigned long   a_text;
+                   unsigned long   a_data;
+                   unsigned long   a_bss;
+                   unsigned long   a_syms;
+                   unsigned long   a_entry;
+                   unsigned long   a_trsize;
+                   unsigned long   a_drsize;
+           };
+
+     The fields have the following functions:
+
+     _a___m_i_d     Contains a bit pattern that identifies binaries that were built
+               for certain sub-classes of an architecture (`machine IDs') or
+               variants of the operating system on a given architecture.  The
+               kernel may not support all machine IDs on a given architecture.
+               The _a___m_i_d field is not present on some architectures; in this
+
+
+               case, the _a___m_a_g_i_c field has type _u_n_s_i_g_n_e_d _l_o_n_g.
+
+     _a___m_a_g_i_c   Contains a bit pattern (`magic number') that uniquely identi-
+               fies binary files and distinguishes different loading conven-
+               tions.  The field must contain one of the following values:
+
+               OMAGIC  The text and data segments immediately follow the head-
+                       er and are contiguous.  The kernel loads both text and
+                       data segments into writable memory.
+
+               NMAGIC  As with OMAGIC, text and data segments immediately fol-
+                       low the header and are contiguous.  However, the kernel
+                       loads the text into read-only memory and loads the data
+                       into writable memory at the next page boundary after
+                       the text.
+
+               ZMAGIC  The kernel loads individual pages on demand from the
+                       binary.  The header, text segment and data segment are
+                       all padded by the link editor to a multiple of the page
+                       size.  Pages that the kernel loads from the text seg-
+                       ment are read-only, while pages from the data segment
+                       are writable.
+
+     _a___t_e_x_t    Contains the size of the text segment in bytes.
+
+     _a___d_a_t_a    Contains the size of the data segment in bytes.
+
+     _a___b_s_s     Contains the number of bytes in the `bss segment' and is used
+               by the kernel to set the initial break (brk(2))  after the data
+               segment.  The kernel loads the program so that this amount of
+               writable memory appears to follow the data segment and initial-
+               ly reads as zeroes.
+
+     _a___s_y_m_s    Contains the size in bytes of the symbol table section.
+
+     _a___e_n_t_r_y   Contains the address in memory of the entry point of the pro-
+               gram after the kernel has loaded it; the kernel starts the exe-
+               cution of the program from the machine instruction at this ad-
+               dress.
+
+     _a___t_r_s_i_z_e  Contains the size in bytes of the text relocation table.
+
+     _a___d_r_s_i_z_e  Contains the size in bytes of the data relocation table.
+
+     The _a_._o_u_t_._h include file defines several macros which use an _e_x_e_c struc-
+     ture to test consistency or to locate section offsets in the binary file.
+
+     NN__BBAADDMMAAGG(_e_x_e_c)  Nonzero if the _a___m_a_g_i_c field does not contain a recog-
+                     nized value.
+
+     NN__TTXXTTOOFFFF(_e_x_e_c)  The byte offset in the binary file of the beginning of
+                     the text segment.
+
+     NN__SSYYMMOOFFFF(_e_x_e_c)  The byte offset of the beginning of the symbol table.
+
+     NN__SSTTRROOFFFF(_e_x_e_c)  The byte offset of the beginning of the string table.
+
+     Relocation records have a standard format which is described by the
+     _r_e_l_o_c_a_t_i_o_n___i_n_f_o structure:
+
+           struct relocation_info {
+                   int             r_address;
+                   unsigned int    r_symbolnum : 24,
+                                   r_pcrel : 1,
+                                   r_length : 2,
+                                   r_extern : 1,
+                                   : 4;
+           };
+
+     The _r_e_l_o_c_a_t_i_o_n___i_n_f_o fields are used as follows:
+
+     _r___a_d_d_r_e_s_s    Contains the byte offset of a pointer that needs to be link-
+                  edited.  Text relocation offsets are reckoned from the start
+                  of the text segment, and data relocation offsets from the
+                  start of the data segment.  The link editor adds the value
+                  that is already stored at this offset into the new value
+                  that it computes using this relocation record.
+
+     _r___s_y_m_b_o_l_n_u_m  Contains the ordinal number of a symbol structure in the
+                  symbol table (it is _n_o_t a byte offset).  After the link edi-
+                  tor resolves the absolute address for this symbol, it adds
+                  that address to the pointer that is undergoing relocation.
+                  (If the _r___e_x_t_e_r_n bit is clear, the situation is different;
+                  see below.)
+
+     _r___p_c_r_e_l      If this is set, the link editor assumes that it is updating
+                  a pointer that is part of a machine code instruction using
+                  pc-relative addressing.  The address of the relocated point-
+                  er is implicitly added to its value when the running program
+                  uses it.
+
+     _r___l_e_n_g_t_h     Contains the log base 2 of the length of the pointer in
+                  bytes; 0 for 1-byte displacements, 1 for 2-byte displace-
+                  ments, 2 for 4-byte displacements.
+
+     _r___e_x_t_e_r_n     Set if this relocation requires an external reference; the
+                  link editor must use a symbol address to update the pointer.
+                  When the _r___e_x_t_e_r_n bit is clear, the relocation is `local';
+                  the link editor updates the pointer to reflect changes in
+                  the load addresses of the various segments, rather than
+                  changes in the value of a symbol.  In this case, the content
+                  of the _r___s_y_m_b_o_l_n_u_m field is an _n___t_y_p_e value (see below);
+                  this type field tells the link editor what segment the relo-
+                  cated pointer points into.
+
+     Symbols map names to addresses (or more generally, strings to values).
+     Since the link-editor adjusts addresses, a symbol's name must be used to
+     stand for its address until an absolute value has been assigned.  Symbols
+     consist of a fixed-length record in the symbol table and a variable-
+     length name in the string table.  The symbol table is an array of _n_l_i_s_t
+     structures:
+
+           struct nlist {
+                   union {
+                           char    *n_name;
+                           long    n_strx;
+                   } n_un;
+                   unsigned char   n_type;
+                   char            n_other;
+                   short           n_desc;
+                   unsigned long   n_value;
+           };
+
+     The fields are used as follows:
+
+     _n___u_n_._n___s_t_r_x  Contains a byte offset into the string table for the name of
+                  this symbol.  When a program accesses a symbol table with
+                  the nlist(3) function, this field is replaced with the
+                  _n___u_n_._n___n_a_m_e field, which is a pointer to the string in memo-
+                  ry.
+
+     _n___t_y_p_e       Used by the link editor to determine how to update the sym-
+                  bol's value.  The _n___t_y_p_e field is broken down into three
+                  sub-fields using bitmasks.  The link editor treats symbols
+                  with the N_EXT type bit set as `external' symbols and per-
+                  mits references to them from other binary files.  The N_TYPE
+                  mask selects bits of interest to the link editor:
+
+                  N_UNDF  An undefined symbol.  The link editor must locate an
+                          external symbol with the same name in another binary
+                          file to determine the absolute value of this symbol.
+                          As a special case, if the _n___v_a_l_u_e field is nonzero
+                          and no binary file in the link-edit defines this
+                          symbol, the link-editor will resolve this symbol to
+                          an address in the bss segment, reserving an amount
+                          of bytes equal to _n___v_a_l_u_e. If this symbol is unde-
+                          fined in more than one binary file and the binary
+                          files do not agree on the size, the link editor
+                          chooses the greatest size found across all binaries.
+
+                  N_ABS   An absolute symbol.  The link editor does not update
+                          an absolute symbol.
+
+                  N_TEXT  A text symbol.  This symbol's value is a text ad-
+                          dress and the link editor will update it when it
+                          merges binary files.
+
+                  N_DATA  A data symbol; similar to N_TEXT but for data ad-
+                          dresses.  The values for text and data symbols are
+                          not file offsets but addresses; to recover the file
+                          offsets, it is necessary to identify the loaded ad-
+                          dress of the beginning of the corresponding section
+                          and subtract it, then add the offset of the section.
+
+                  N_BSS   A bss symbol; like text or data symbols but has no
+                          corresponding offset in the binary file.
+
+                  N_FN    A filename symbol.  The link editor inserts this
+                          symbol before the other symbols from a binary file
+                          when merging binary files.  The name of the symbol
+                          is the filename given to the link editor, and its
+                          value is the first text address from that binary
+                          file.  Filename symbols are not needed for link-
+                          editing or loading, but are useful for debuggers.
+
+                  The N_STAB mask selects bits of interest to symbolic debug-
+                  gers such as gdb(1);  the values are described in stab(5).
+
+     _n___o_t_h_e_r      This field is currently unused.
+
+     _n___d_e_s_c       Reserved for use by debuggers; passed untouched by the link
+                  editor.  Different debuggers use this field for different
+                  purposes.
+
+     _n___v_a_l_u_e      Contains the value of the symbol.  For text, data and bss
+                  symbols, this is an address; for other symbols (such as de-
+                  bugger symbols), the value may be arbitrary.
+
+     The string table consists of an _u_n_s_i_g_n_e_d _l_o_n_g length followed by null-
+     terminated symbol strings.  The length represents the size of the entire
+     table in bytes, so its minimum value (or the offset of the first string)
+     is always 4 on 32-bit machines.
+
+SSEEEE AALLSSOO
+     ld(1),  execve(2),  nlist(3),  core(5),  dbx(5),  stab(5)
+
+HHIISSTTOORRYY
+     The _a_._o_u_t_._h include file appeared in Version 7 AT&T UNIX.
+
+BBUUGGSS
+     Since not all of the supported architectures use the _a___m_i_d field, it can
+     be difficult to determine what architecture a binary will execute on
+     without examining its actual machine code.  Even with a machine identifi-
+     er, the byte order of the _e_x_e_c header is machine-dependent.
+
+     Nobody seems to agree on what _b_s_s stands for.
+
+     New binary file formats may be supported in the future, and they probably
+     will not be compatible at any level with this ancient format.
+
+4.4BSD                           June 5, 1993                                5

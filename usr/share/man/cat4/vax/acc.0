@@ -1,0 +1,50 @@
+ACC(4)            BSD Programmer's Manual (VAX Architecture)            ACC(4)
+
+NNAAMMEE
+     aacccc - ACC LH/DH IMP interface
+
+SSYYNNOOPPSSIISS
+     ppsseeuuddoo--ddeevviiccee iimmpp ddeevviiccee aacccc00 aatt uubbaa00 ccssrr 116677660000 vveeccttoorr aaccccrriinntt aaccccxxiinntt
+
+DDEESSCCRRIIPPTTIIOONN
+     The aacccc device provides a Local Host/Distant Host interface to an IMP. It
+     is normally used when participating in the DARPA Internet.  The con-
+     troller itself is not accessible to users, but instead provides the hard-
+     ware support to the IMP interface described in imp(4).  The configuration
+     entry for the imp must also include the _p_s_e_u_d_o_-_d_e_v_i_c_e as shown above.
+
+DDIIAAGGNNOOSSTTIICCSS
+     aacccc%%dd:: nnoott aalliivvee..  The initialization routine was entered even though the
+     device did not autoconfigure.  This indicates a system problem.
+
+     aacccc%%dd:: ccaann''tt iinniittiiaalliizzee..  Insufficient UNIBUS resources existed to ini-
+     tialize the device.  This is likely to occur when the device is run on a
+     buffered data path on an 11/750 and other network interfaces are also
+     configured to use buffered data paths, or when it is configured to use
+     buffered data paths on an 11/730 (which has none).
+
+     aacccc%%dd:: iimmpp ddooeessnn''tt rreessppoonndd,, iiccssrr==%%bb..  The driver attempted to initialize
+     the device, but the IMP failed to respond after 500 tries.  Check the ca-
+     bling.
+
+     aacccc%%dd:: ssttrraayy xxmmiitt iinntteerrrruupptt,, ccssrr==%%bb..  An interrupt occurred when no out-
+     put had previously been started.
+
+     aacccc%%dd:: oouuttppuutt eerrrroorr,, ooccssrr==%%bb,, iiccssrr==%%bb..  The device indicated a problem
+     sending data on output.
+
+     aacccc%%dd:: iinnppuutt eerrrroorr,, ccssrr==%%bb..  The device indicated a problem receiving da-
+     ta on input.
+
+     aacccc%%dd:: bbaadd lleennggtthh==%%dd..  An input operation resulted in a data transfer of
+     less than 0 or more than 1008 bytes of data into memory (according to the
+     word count register).  This should never happen as the maximum size of a
+     host-IMP message is 1008 bytes.
+
+SSEEEE AALLSSOO
+     netintro(4)
+
+HHIISSTTOORRYY
+     The aacccc interface appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

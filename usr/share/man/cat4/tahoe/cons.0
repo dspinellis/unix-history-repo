@@ -1,0 +1,43 @@
+CONS(4)          BSD Programmer's Manual (Tahoe Architecture)          CONS(4)
+
+NNAAMMEE
+     ccoonnss, CCPP, rreemmoottee - Tahoe console interface
+
+DDEESSCCRRIIPPTTIIOONN
+     The console is available to the processor through the console registers.
+     It acts like a normal terminal, except that a ``~~'' is used to transfer
+     commands to the console processor when the front panel key switch is in
+     the ``foo'' or ``bar'' position.  When the console processor is in con-
+     trol, a `#>' prompt is displayed.  To continue execution after halting
+     the machine with `~h', use `r'.
+
+     ~~hh      Halt the machine.
+
+     ~~bb      Force a reboot.
+
+     ~~rr      Continue execution after a ~~hh.
+
+     Refer to the Tahoe console processor handbook for the complete list of
+     facilities available through the console processor.
+
+     The CCPP device provides direct access to the console processor.  The
+     rreemmoottee device is a secondary console terminal used for remote diagnosis;
+     it is normally connected to a modem.
+
+FFIILLEESS
+     /dev/console
+     /dev/CP
+     /dev/remote
+
+DDIIAAGGNNOOSSTTIICCSS
+     None.
+
+SSEEEE AALLSSOO
+     kdb(4),  tty(4),  reboot(8)
+
+     _C_o_n_s_o_l_e _P_r_o_c_e_s_s_o_r _H_a_n_d_b_o_o_k.
+
+HHIISSTTOORRYY
+     The ccoonnss interface appeared in 4.3BSD-Tahoe.
+
+4.3-Tahoe Berkeley Distribution  June 5, 1993                                1
