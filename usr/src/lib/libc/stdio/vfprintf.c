@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -19,13 +19,7 @@ static char sccsid[] = "@(#)vfprintf.c	5.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
-#define	GETARG(r) \
-	r = argsize&LONGINT ? va_arg(argp, long) : \
-	    argsize&SHORTINT ? va_arg(argp, short) : va_arg(argp, int);
-
-#define	MAXBUF		1024			/* should hold any number */
-#define	MAXEXP		10			/* should hold any exponent */
-
+#define	MAXBUF		120			/* should hold any number */
 #define	DEFPREC		6			/* default precision */
 
 #define	PUTC(ch, fd)	{++cnt; putc(ch, fd);}
@@ -33,6 +27,9 @@ static char sccsid[] = "@(#)vfprintf.c	5.4 (Berkeley) %G%";
 #define	LONGINT		0x01
 #define	LONGDBL		0x02
 #define	SHORTINT	0x04
+#define	GETARG(r) \
+	r = argsize&LONGINT ? va_arg(argp, long) : \
+	    argsize&SHORTINT ? va_arg(argp, short) : va_arg(argp, int);
 
 x_doprnt(fmt, argp, fp)
 	register char *fmt;
@@ -126,41 +123,64 @@ flags:		switch (*++fmt) {
 		case 'c':
 			PUTC(va_arg(argp, int), fp);
 			break;
+		case 'd':
+		case 'i':
+			GETARG(reg_long);
+			if (reg_long < 0) {
+				reg_ulong = -reg_long;
+				printsign = '-';
+			}
+			else {
+				reg_ulong = reg_long;
+			}
+			if (printsign)
+				PUTC(printsign, fp);
+			base = 10;
+			goto num1;
 		case 'E':
 		case 'e':
 			if (prec == -1)
 				prec = DEFPREC;
 			_double = va_arg(argp, double);
-			t = ecvt(_double, prec + 1, &decpt, &sign);
-			bp = buf;
+			t = fcvt(_double, prec + 1, &decpt, &sign);
+gise:			bp = buf;
 			*bp++ = *t ? *t++ : '0';
 			if (alternate || prec > 0)
 				*bp++ = '.';
 			while (prec--)
 				*bp++ = *t ? *t++ : '0';
 			*bp++ = *fmt;
-			*bp++ = (decpt > 0 || !_double) ? '+' : '-';
-			/* we know exponents <= 99 */
-			--decpt;
-			*bp++ = (int)decpt / 10 + '0';
-			*bp++ = (int)decpt % 10 + '0';
+			if (decpt > 0 || !_double) {
+				*bp++ = '+';
+				--decpt;
+			}
+			else {
+				*bp++ = '-';
+				decpt = -decpt + 1;
+			}
+			/* exponents <= 99 in ANSI X3J11 */
+			*bp++ = (int)(decpt / 10) + '0';
+			*bp++ = (int)(decpt % 10) + '0';
 			goto pbuf;
 		case 'f':
 			if (prec == -1)
 				prec = DEFPREC;
 			_double = va_arg(argp, double);
 			t = fcvt(_double, prec + 1, &decpt, &sign);
-			bp = buf;
+gisf:			bp = buf;
 			if (decpt >= 0)
 				for (;;) {
 					*bp++ = *t ? *t++ : '0';
 					if (!--decpt)
 						break;
 				}
-			if (alternate || prec > 0)
+			if (alternate || prec > 0) {
+				if (decpt < 0)
+					*bp++ = '0';
 				*bp++ = '.';
+			}
 			while (decpt++) {
-				*bp++ = *t ? *t++ : '0';
+				*bp++ = '0';
 				--prec;
 			}
 			while (prec--)
@@ -177,20 +197,26 @@ pbuf:			size = bp - buf;
 			for (; width > size; --width)
 				PUTC(padc, fp);
 			break;
-		case 'd':
-		case 'i':
-			GETARG(reg_long);
-			if (reg_long < 0) {
-				reg_ulong = -reg_long;
-				printsign = '-';
+		case 'G':
+		case 'g': {
+			int gotoe;
+
+			if (prec == -1)
+				prec = DEFPREC;
+			_double = va_arg(argp, double);
+			t = fcvt(_double, prec + 1, &decpt, &sign);
+			gotoe = decpt > prec;
+			if (!alternate) {
+				for (bp = t + prec + decpt; prec &&
+				    *--bp == '0'; --prec);
 			}
-			else {
-				reg_ulong = reg_long;
+			if (gotoe || decpt < -3) {
+				*fmt -= 2;
+				goto gise;
 			}
-			if (printsign)
-				PUTC(printsign, fp);
-			base = 10;
-			goto num1;
+			--*fmt;
+			goto gisf;
+		}
 		case 'n':
 			*(va_arg(argp, int *)) = cnt;
 			break;
