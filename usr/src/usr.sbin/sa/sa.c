@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)sa.c	4.11 (Berkeley) %G%";
+static char *sccsid = "@(#)sa.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -278,7 +278,7 @@ int	(*cmp)();
 int	pgdiv;
 #define	pgtok(x)	((x) / pgdiv)
 
-extern	tcmp(), ncmp(), bcmp(), dcmp(), Dcmp(), kcmp(), Kcmp();
+extern	tcmp(), ncmp(), bflgcmp(), dcmp(), Dcmp(), kcmp(), Kcmp();
 extern	double sum();
 
 main(argc, argv)
@@ -315,7 +315,7 @@ main(argc, argv)
 
 		case 'b':
 			bflg++;
-			cmp = bcmp;
+			cmp = bflgcmp;
 			break;
 
 		case 'l':
@@ -735,7 +735,7 @@ ncmp(p1, p2)
 	return(p2->p.count - p1->p.count);
 }
 
-bcmp(p1, p2)
+bflgcmp(p1, p2)
 	cell *p1, *p2;
 {
 	double f1, f2;
