@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwenviron.c	3.5 83/12/01";
+static	char *sccsid = "@(#)wwenviron.c	3.6 83/12/03";
 #endif
 
 #include "ww.h"
@@ -16,6 +16,7 @@ register struct ww *wp;
 	static char **termcap = 0;
 	static char *tbuf;
 	register i;
+	int pgrp = getpid();
 
 	i = open("/dev/tty", 0);
 	if (i < 0)
@@ -30,6 +31,9 @@ register struct ww *wp;
 	(void) dup2(i, 2);
 	for (i = wwdtablesize - 1; i > 2; i--)
 		(void) close(i);
+	if (ioctl(0, (int)TIOCSPGRP, &pgrp) < 0)
+		return;
+	(void) setpgrp(pgrp, pgrp);
 
 	/*
 	 * Do this only once if vfork().
