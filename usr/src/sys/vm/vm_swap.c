@@ -4,14 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_swap.c	7.15 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
 #include "systm.h"
 #include "buf.h"
 #include "conf.h"
-#include "user.h"
+#include "proc.h"
+#include "namei.h"
+#include "dmap.h"		/* XXX */
 #include "vnode.h"
 #include "specdev.h"
 #include "map.h"
@@ -20,6 +22,54 @@
 /*
  * Indirect driver for multi-controller paging.
  */
+
+/*
+ * Set up swap devices.
+ * Initialize linked list of free swap
+ * headers. These do not actually point
+ * to buffers, but rather to pages that
+ * are being swapped in and out.
+ */
+swapinit()
+{
+	register int i;
+	register struct buf *sp = swbuf;
+	struct swdevt *swp;
+	int error;
+
+	/*
+	 * Count swap devices, and adjust total swap space available.
+	 * Some of this space will not be available until a swapon()
+	 * system is issued, usually when the system goes multi-user.
+	 */
+	nswdev = 0;
+	nswap = 0;
+	for (swp = swdevt; swp->sw_dev; swp++) {
+		nswdev++;
+		if (swp->sw_nblks > nswap)
+			nswap = swp->sw_nblks;
+	}
+	if (nswdev == 0)
+		panic("swapinit");
+	if (nswdev > 1)
+		nswap = ((nswap + dmmax - 1) / dmmax) * dmmax;
+	nswap *= nswdev;
+	if (bdevvp(swdevt[0].sw_dev, &swdevt[0].sw_vp))
+		panic("swapvp");
+	if (error = swfree(&proc0, 0)) {
+		printf("swfree errno %d\n", error);	/* XXX */
+		panic("swapinit swfree 0");
+	}
+
+	/*
+	 * Now set up swap buffer headers.
+	 */
+	bswlist.av_forw = sp;
+	for (i = 0; i < nswbuf - 1; i++, sp++)
+		sp->av_forw = sp + 1;
+	sp->av_forw = NULL;
+}
+
 swstrategy(bp)
 	register struct buf *bp;
 {
@@ -39,7 +89,7 @@ swstrategy(bp)
 		bp->b_blkno += MINIROOTSIZE;
 #endif
 	sz = howmany(bp->b_bcount, DEV_BSIZE);
-	if (bp->b_blkno+sz > nswap) {
+	if (bp->b_blkno + sz > nswap) {
 		bp->b_flags |= B_ERROR;
 		biodone(bp);
 		return;
@@ -97,16 +147,18 @@ swapon(p, uap, retval)
 {
 	register struct vnode *vp;
 	register struct swdevt *sp;
-	register struct nameidata *ndp = &u.u_nd;
+	register struct nameidata *ndp;
 	dev_t dev;
 	int error;
+	struct nameidata nd;
 
-	if (error = suser(u.u_cred, &u.u_acflag))
+	if (error = suser(p->p_ucred, &p->p_acflag))
 		return (error);
+	ndp = &nd;
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->name;
-	if (error = namei(ndp))
+	if (error = namei(ndp, p))
 		return (error);
 	vp = ndp->ni_vp;
 	if (vp->v_type != VBLK) {
@@ -125,7 +177,7 @@ swapon(p, uap, retval)
 				return (EBUSY);
 			}
 			sp->sw_vp = vp;
-			if (error = swfree(sp - swdevt)) {
+			if (error = swfree(p, sp - swdevt)) {
 				vrele(vp);
 				return (error);
 			}
@@ -141,7 +193,8 @@ swapon(p, uap, retval)
  * space, which is laid out with blocks of dmmax pages circularly
  * among the devices.
  */
-swfree(index)
+swfree(p, index)
+	struct proc *p;
 	int index;
 {
 	register struct swdevt *sp;
@@ -154,7 +207,7 @@ swfree(index)
 
 	sp = &swdevt[index];
 	vp = sp->sw_vp;
-	if (error = VOP_OPEN(vp, FREAD|FWRITE, u.u_cred))
+	if (error = VOP_OPEN(vp, FREAD|FWRITE, p->p_ucred))
 		return (error);
 	sp->sw_freed = 1;
 	nblks = sp->sw_nblks;
