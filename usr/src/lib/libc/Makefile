@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 # All library objects contain sccsid strings by default; they may be
 # excluded as a space-saving measure.  To produce a library that does
@@ -24,12 +24,19 @@ AINC=	-I${.CURDIR}/${MACHINE}
 KQSRCS=	adddi3.c anddi3.c ashldi3.c ashrdi3.c cmpdi2.c divdi3.c iordi3.c \
 	lshldi3.c lshrdi3.c moddi3.c muldi3.c negdi2.c notdi2.c qdivrem.c \
 	subdi3.c ucmpdi2.c udivdi3.c umoddi3.c xordi3.c
+KSRCS=	bcmp.c ffs.c mcount.c rindex.c strcat.c strcmp.c strcpy.c \
+	strlen.c strncpy.c
 
-KSRCS=	bcmp.c ffs.c mcount.c strcat.c strcmp.c strcpy.c strlen.c strncpy.c
+libkern: libkern.gen libkern.${MACHINE}
 
-libkern: ${KQSRCS} ${KSRCS}
+libkern.gen: ${KQSRCS} ${KSRCS}
 	cp -p ${.CURDIR}/quad/quad.h ${.ALLSRC} /sys/libkern
-	
+
+libkern.${MACHINE}:: ${KMSRCS}
+.if defined(KMSRCS) && !empty(KMSRCS)
+	cp -p ${.ALLSRC} /sys/libkern/${MACHINE}
+.endif
+
 beforeinstall: tags
 	install -c -o bin -g bin -m 444 tags /var/db/libc.tags
 
