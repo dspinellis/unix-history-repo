@@ -1,0 +1,108 @@
+%    Copyright (C) 1991 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% Extract the ASCII text from a PostScript file.  Nothing is displayed.
+% Instead, lines are written to stdout as follows:
+%	F <height> - indicate font height
+%	S <x> <y> (<string>) - display a string
+%	P - end of page
+% <height> is an integer expressed in device pixels.
+% <x> and <y> are integer device coordinates.  <string> is a string
+% represented with the standard PostScript escape conventions.
+% The idea is similar to Glenn Reid's `distillery', only a lot more
+% simple-minded, and less robust.
+
+% Note that this code will only work properly if systemdict is writable.
+% For this reason, it is normally read in by gs_init.ps before
+% systemdict is made read-only.
+
+/QUIET true def
+systemdict wcheck { systemdict } { userdict } ifelse begin
+
+% Disable the display operators.
+
+/eofill { newpath } odef
+/erasepage { } odef
+/fill { newpath } odef
+/stroke { newpath } odef
+
+% Image and imagemask must read the input, but do nothing.
+
+/image { gsave nulldevice //image grestore } odef
+/imagemask { gsave nulldevice //imagemask grestore } odef
+
+% Redefine the end-of-page operators.
+
+/copypage { (P\n) //print } odef
+/showpage { copypage erasepage } odef
+
+% Redefine `show'.
+
+/.show.ident matrix def
+/.showfont
+ { 0 currentfont /FontBBox get dup 3 get exch 1 get sub
+   currentfont /FontMatrix get dtransform dtransform
+   exch abs exch abs max round
+   (F ) //print //.stdout exch write==only (\n) //print
+ } odef
+/.showstring
+ { gsave //.show.ident setmatrix
+   (S ) //print currentpoint
+   exch round dup //.stdout exch write==only ( ) //print
+   exch round dup //.stdout exch write==only ( ) //print
+   moveto dup //.stdout exch write==only (\n) //print
+   grestore stringwidth rmoveto
+ } odef
+/show
+ { .showfont .showstring
+ } odef
+
+% Redefine the other string display operators in terms of `show'.
+
+/.show1 { ( ) dup 0 3 index put exch pop .showstring } odef
+/ashow
+ { .showfont
+   { .show1 2 copy rmoveto } forall
+   exch neg exch neg rmoveto
+ } odef
+/widthshow
+ { .showfont
+   { 2 copy .show1 eq { 1 index 1 index rmoveto } if } forall
+   pop pop pop
+ }
+/awidthshow
+ { .showfont
+   { dup .show1 3 index eq { 4 index 4 index rmoveto } if
+     2 copy rmoveto
+   } forall
+   exch neg exch neg rmoveto
+   pop pop pop
+ }
+/kshow
+ { .showfont
+   { .show1 dup exec } forall pop
+ } odef
+
+% Redirect the printing operators.
+
+/.stdout (_temp_.out) (w) file def
+/.stderr (_temp_.err) (w) file def
+/print { //.stdout exch writestring } odef
+
+end
