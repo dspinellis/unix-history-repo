@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)state.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)state.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -30,6 +30,7 @@ char	subbuffer[100], *subpointer= subbuffer, *subend= subbuffer;
 			}
 #define	SB_GET()	((*subpointer++)&0xff)
 #define	SB_EOF()	(subpointer >= subend)
+#define	SB_LEN()	(subend - subpointer)
 
 
 
@@ -84,7 +85,7 @@ telrcv()
 			 * unix way of saying that (\r is only good
 			 * if CRMOD is set, which it normally is).
 			 */
-			if ((c == '\r') && (hisopts[TELOPT_BINARY] == OPT_NO)) {
+			if ((c == '\r') && his_state_is_wont(TELOPT_BINARY)) {
 				/*
 				 * If we are operating in linemode,
 				 * convert to local end-of-line.
@@ -108,10 +109,18 @@ gotiac:			switch (c) {
 			 * interrupt char; depending on the tty mode.
 			 */
 			case IP:
+#ifdef DIAGNOSTICS
+				if (diagnostic & TD_OPTIONS)
+					printoption("td: recv IAC", c);
+#endif /* DIAGNOSTICS */
 				interrupt();
 				break;
 
 			case BREAK:
+#ifdef DIAGNOSTICS
+				if (diagnostic & TD_OPTIONS)
+					printoption("td: recv IAC", c);
+#endif /* DIAGNOSTICS */
 				sendbrk();
 				break;
 
@@ -119,6 +128,10 @@ gotiac:			switch (c) {
 			 * Are You There?
 			 */
 			case AYT:
+#ifdef DIAGNOSTICS
+				if (diagnostic & TD_OPTIONS)
+					printoption("td: recv IAC", c);
+#endif /* DIAGNOSTICS */
 				(void) strcpy(nfrontp, "\r\n[Yes]\r\n");
 				nfrontp += 9;
 				break;
@@ -128,6 +141,10 @@ gotiac:			switch (c) {
 			 */
 			case AO:
 			    {
+#ifdef DIAGNOSTICS
+				if (diagnostic & TD_OPTIONS)
+					printoption("td: recv IAC", c);
+#endif /* DIAGNOSTICS */
 				ptyflush();	/* half-hearted */
 				init_termbuf();
 
@@ -141,6 +158,10 @@ gotiac:			switch (c) {
 				*nfrontp++ = IAC;
 				*nfrontp++ = DM;
 				neturg = nfrontp-1; /* off by one XXX */
+#ifdef DIAGNOSTICS
+				if (diagnostic & TD_OPTIONS)
+					printoption("td: send IAC", DM);
+#endif /* DIAGNOSTICS */
 				break;
 			    }
 
@@ -153,10 +174,16 @@ gotiac:			switch (c) {
 			    {
 				cc_t ch;
 
+#ifdef DIAGNOSTICS
+				if (diagnostic & TD_OPTIONS)
+					printoption("td: recv IAC", c);
+#endif /* DIAGNOSTICS */
 				ptyflush();	/* half-hearted */
 				init_termbuf();
-				ch = (c == EC) ? *slctab[SLC_EC].sptr :
-						 *slctab[SLC_EL].sptr;
+				if (c == EC)
+					ch = *slctab[SLC_EC].sptr;
+				else
+					ch = *slctab[SLC_EL].sptr;
 				if (ch != (cc_t)-1)
 					*pfrontp++ = (unsigned char)ch;
 				break;
@@ -166,6 +193,10 @@ gotiac:			switch (c) {
 			 * Check for urgent data...
 			 */
 			case DM:
+#ifdef DIAGNOSTICS
+				if (diagnostic & TD_OPTIONS)
+					printoption("td: recv IAC", c);
+#endif /* DIAGNOSTICS */
 				SYNCHing = stilloob(net);
 				settimer(gotDM);
 				break;
@@ -195,7 +226,7 @@ gotiac:			switch (c) {
 				state = TS_DONT;
 				continue;
 			case EOR:
-				if (hisopts[TELOPT_EOR])
+				if (his_state_is_will(TELOPT_EOR))
 					doeof();
 				break;
 
@@ -241,6 +272,11 @@ gotiac:			switch (c) {
 					 * then treat remaining stream as
 					 * another command sequence.
 					 */
+#ifdef	DIAGNOSTICS
+					SB_ACCUM(IAC);
+					SB_ACCUM(c);
+					subpointer -= 2;
+#endif
 					SB_TERM();
 					suboption();
 					state = TS_IAC;
@@ -249,6 +285,11 @@ gotiac:			switch (c) {
 				SB_ACCUM(c);
 				state = TS_SB;
 			} else {
+#ifdef	DIAGNOSTICS
+				SB_ACCUM(IAC);
+				SB_ACCUM(SE);
+				subpointer -= 2;
+#endif
 				SB_TERM();
 				suboption();	/* handle sub-option */
 				state = TS_DATA;
@@ -300,15 +341,7 @@ gotiac:			switch (c) {
 
 /*
  * The will/wont/do/dont state machines are based on Dave Borman's
- * Telnet option processing state machine.  We keep track of the full
- * state of the option negotiation with the following state variables
- *	myopts, hisopts - The last fully negotiated state for each
- *			side of the connection.
- *	mywants, hiswants - The state we wish to be in after a completed
- *			negotiation.  (hiswants is slightly misleading,
- *			this is more precisely the state I want him to
- *			be in.
- *	resp - We count the number of requests we have sent out.
+ * Telnet option processing state machine.
  *
  * These correspond to the following states:
  *	my_state = the last negotiated state
@@ -366,8 +399,8 @@ send_do(option, init)
 	int option, init;
 {
 	if (init) {
-		if ((do_dont_resp[option] == 0 && hisopts[option] == OPT_YES) ||
-		    hiswants[option] == OPT_YES)
+		if ((do_dont_resp[option] == 0 && his_state_is_will(option)) ||
+		    his_want_state_is_will(option))
 			return;
 		/*
 		 * Special case for TELOPT_TM:  We send a DO, but pretend
@@ -375,13 +408,21 @@ send_do(option, init)
 		 * we want to.
 		 */
 		if (option == TELOPT_TM)
-			hiswants[option] = OPT_NO;
+			set_his_want_state_wont(option);
 		else
-			hiswants[option] = OPT_YES;
+			set_his_want_state_will(option);
 		do_dont_resp[option]++;
 	}
 	(void) sprintf(nfrontp, doopt, option);
 	nfrontp += sizeof (dont) - 2;
+#ifdef DIAGNOSTICS
+	/*
+	 * Report sending option to other side.
+	 */
+	if (diagnostic & TD_OPTIONS) {
+		printoption("td: send do", option);
+	}
+#endif /* DIAGNOSTICS */
 }
 
 willoption(option)
@@ -393,13 +434,22 @@ willoption(option)
 	 * process input from peer.
 	 */
 
+#ifdef DIAGNOSTICS
+	/*
+	 * Report receiving option from other side.
+	 */
+	if (diagnostic & TD_OPTIONS) {
+		printoption("td: recv will", option);
+	}
+#endif /* DIAGNOSTICS */
+
 	if (do_dont_resp[option]) {
 		do_dont_resp[option]--;
-		if (do_dont_resp[option] && hisopts[option] == OPT_YES)
+		if (do_dont_resp[option] && his_state_is_will(option))
 			do_dont_resp[option]--;
 	}
 	if (do_dont_resp[option] == 0) {
-	    if (hiswants[option] != OPT_YES) {
+	    if (his_want_state_is_wont(option)) {
 		switch (option) {
 
 		case TELOPT_BINARY:
@@ -410,40 +460,10 @@ willoption(option)
 			break;
 
 		case TELOPT_ECHO:
+			/*
+			 * See comments below for more info.
+			 */
 			not42 = 0;	/* looks like a 4.2 system */
-#ifdef notdef
-			/*
-			 * Now, in a 4.2 system, to break them out of
-			 * ECHOing (to the terminal) mode, we need to
-			 * send a WILL ECHO.
-			 */
-			if (myopts[TELOPT_ECHO] == OPT_YES) {
-				send_will(TELOPT_ECHO, 1);
-			}
-#else
-			/*
-			 * "WILL ECHO".  Kludge upon kludge!
-			 * A 4.2 client is now echoing user input at
-			 * the tty.  This is probably undesireable and
-			 * it should be stopped.  The client will
-			 * respond WONT TM to the DO TM that we send to
-			 * check for kludge linemode.  When the WONT TM
-			 * arrives, linemode will be turned off and a
-			 * change propogated to the pty.  This change
-			 * will cause us to process the new pty state
-			 * in localstat(), which will notice that
-			 * linemode is off and send a WILL ECHO
-			 * so that we are properly in character mode and
-			 * all is well.
-			 */
-#endif
-			/*
-			 * Fool the state machine into sending a don't.
-			 * This also allows the initial echo sending
-			 * code to break out of the loop that it is
-			 * in.  (Look in telnet())
-			 */
-			hiswants[TELOPT_ECHO] = OPT_NO;
 			break;
 
 		case TELOPT_TM:
@@ -476,7 +496,7 @@ willoption(option)
 #endif	/* defined(LINEMODE) && defined(KLUDGELINEMODE) */
 			/*
 			 * We never respond to a WILL TM, and
-			 * we leave the state OPT_NO.
+			 * we leave the state WONT.
 			 */
 			return;
 
@@ -494,9 +514,74 @@ willoption(option)
 		case TELOPT_SGA:
 		case TELOPT_NAWS:
 		case TELOPT_TSPEED:
+		case TELOPT_XDISPLOC:
+		case TELOPT_ENVIRON:
 			changeok++;
 			break;
 
+#ifdef	LINEMODE
+		case TELOPT_LINEMODE:
+			/*
+			 * Local processing of 'will linemode' should
+			 * occur after placing 'do linemode' in the data
+			 * stream, because we may wish to send other
+			 * linemode related messages.  So, we duplicate
+			 * the other three lines of code here, and then
+			 * return.
+			 */
+			set_his_want_state_will(option);
+			send_do(option, 0);
+			set_his_state_will(option);
+# ifdef	KLUDGELINEMODE
+			/*
+			 * Note client's desire to use linemode.
+			 */
+			lmodetype = REAL_LINEMODE;
+# endif	/* KLUDGELINEMODE */
+			clientstat(TELOPT_LINEMODE, WILL, 0);
+			return;
+#endif	/* LINEMODE */
+
+		default:
+			break;
+		}
+		if (changeok) {
+			set_his_want_state_will(option);
+			send_do(option, 0);
+		} else {
+			do_dont_resp[option]++;
+			send_dont(option, 0);
+		}
+	    } else {
+		/*
+		 * Option processing that should happen when
+		 * we receive conformation of a change in
+		 * state that we had requested.
+		 */
+		switch (option) {
+		case TELOPT_ECHO:
+			not42 = 0;	/* looks like a 4.2 system */
+			/*
+			 * Egads, he responded "WILL ECHO".  Turn
+			 * it off right now!
+			 */
+			send_dont(option, 1);
+			/*
+			 * "WILL ECHO".  Kludge upon kludge!
+			 * A 4.2 client is now echoing user input at
+			 * the tty.  This is probably undesireable and
+			 * it should be stopped.  The client will
+			 * respond WONT TM to the DO TM that we send to
+			 * check for kludge linemode.  When the WONT TM
+			 * arrives, linemode will be turned off and a
+			 * change propogated to the pty.  This change
+			 * will cause us to process the new pty state
+			 * in localstat(), which will notice that
+			 * linemode is off and send a WILL ECHO
+			 * so that we are properly in character mode and
+			 * all is well.
+			 */
+			break;
 #ifdef	LINEMODE
 		case TELOPT_LINEMODE:
 # ifdef	KLUDGELINEMODE
@@ -506,55 +591,58 @@ willoption(option)
 			lmodetype = REAL_LINEMODE;
 # endif	/* KLUDGELINEMODE */
 			clientstat(TELOPT_LINEMODE, WILL, 0);
-			changeok++;
-			break;
 #endif	/* LINEMODE */
-
-		default:
-			break;
-		}
-		if (changeok) {
-			hiswants[option] = OPT_YES;
-			send_do(option, 0);
-		} else {
-			do_dont_resp[option]++;
-			send_dont(option, 0);
 		}
 	    }
 	}
-	hisopts[option] = OPT_YES;
+	set_his_state_will(option);
 }  /* end of willoption */
 
 send_dont(option, init)
 	int option, init;
 {
 	if (init) {
-		if ((do_dont_resp[option] == 0 && hisopts[option] == OPT_NO) ||
-		    hiswants[option] == OPT_NO)
+		if ((do_dont_resp[option] == 0 && his_state_is_wont(option)) ||
+		    his_want_state_is_wont(option))
 			return;
-		hiswants[option] = OPT_NO;
+		set_his_want_state_wont(option);
 		do_dont_resp[option]++;
 	}
 	(void) sprintf(nfrontp, dont, option);
 	nfrontp += sizeof (doopt) - 2;
+#ifdef DIAGNOSTICS
+	/*
+	 * Report sending option to other side.
+	 */
+	if (diagnostic & TD_OPTIONS) {
+		printoption("td: send dont", option);
+	}
+#endif /* DIAGNOSTICS */
 }
 
 wontoption(option)
 	int option;
 {
-	char *fmt = (char *)0;
-
 	/*
 	 * Process client input.
 	 */
 
+#ifdef DIAGNOSTICS
+	/*
+	 * Report receiving option from other side.
+	 */
+	if (diagnostic & TD_OPTIONS) {
+		printoption("td: recv wont", option);
+	}
+#endif /* DIAGNOSTICS */
+
 	if (do_dont_resp[option]) {
 		do_dont_resp[option]--;
-		if (do_dont_resp[option] && hisopts[option] == OPT_NO)
+		if (do_dont_resp[option] && his_state_is_wont(option))
 			do_dont_resp[option]--;
 	}
 	if (do_dont_resp[option] == 0) {
-	    if (hiswants[option] != OPT_NO) {
+	    if (his_want_state_is_will(option)) {
 		/* it is always ok to change to negative state */
 		switch (option) {
 		case TELOPT_ECHO:
@@ -574,9 +662,11 @@ wontoption(option)
 			 * If real linemode is supported, then client is
 			 * asking to turn linemode off.
 			 */
-			if (lmodetype == REAL_LINEMODE)
+			if (lmodetype != REAL_LINEMODE)
+				break;
+			lmodetype = KLUDGE_LINEMODE;
 # endif	/* KLUDGELINEMODE */
-				clientstat(TELOPT_LINEMODE, WONT, 0);
+			clientstat(TELOPT_LINEMODE, WONT, 0);
 			break;
 #endif	LINEMODE
 
@@ -587,7 +677,7 @@ wontoption(option)
 			 * as is.  Short circut the state machine to
 			 * achive this.
 			 */
-			hiswants[TELOPT_TM] = OPT_NO;
+			set_his_want_state_wont(TELOPT_TM);
 			return;
 
 		case TELOPT_LFLOW:
@@ -602,12 +692,36 @@ wontoption(option)
 			slctab[SLC_XOFF].defset.flag |= SLC_CANTCHANGE;
 			break;
 
+		/*
+		 * For options that we might spin waiting for
+		 * sub-negotiation, if the client turns off the
+		 * option rather than responding to the request,
+		 * we have to treat it here as if we got a response
+		 * to the sub-negotiation, (by updating the timers)
+		 * so that we'll break out of the loop.
+		 */
+		case TELOPT_TTYPE:
+			settimer(ttypesubopt);
+			break;
+
+		case TELOPT_TSPEED:
+			settimer(tspeedsubopt);
+			break;
+
+		case TELOPT_XDISPLOC:
+			settimer(xdisplocsubopt);
+			break;
+
+		case TELOPT_ENVIRON:
+			settimer(environsubopt);
+			break;
+
 		default:
 			break;
 		}
-		hiswants[option] = OPT_NO;
-		fmt = dont;
-		send_dont(option, 0);
+		set_his_want_state_wont(option);
+		if (his_state_is_will(option))
+			send_dont(option, 0);
 	    } else {
 		switch (option) {
 		case TELOPT_TM:
@@ -624,7 +738,7 @@ wontoption(option)
 		}
 	    }
 	}
-	hisopts[option] = OPT_NO;
+	set_his_state_wont(option);
 
 }  /* end of wontoption */
 
@@ -632,14 +746,22 @@ send_will(option, init)
 	int option, init;
 {
 	if (init) {
-		if ((will_wont_resp[option] == 0 && myopts[option] == OPT_YES)||
-		    mywants[option] == OPT_YES)
+		if ((will_wont_resp[option] == 0 && my_state_is_will(option))||
+		    my_want_state_is_will(option))
 			return;
-		mywants[option] = OPT_YES;
+		set_my_want_state_will(option);
 		will_wont_resp[option]++;
 	}
 	(void) sprintf(nfrontp, will, option);
 	nfrontp += sizeof (doopt) - 2;
+#ifdef DIAGNOSTICS
+	/*
+	 * Report sending option to other side.
+	 */
+	if (diagnostic & TD_OPTIONS) {
+		printoption("td: send will", option);
+	}
+#endif /* DIAGNOSTICS */
 }
 
 dooption(option)
@@ -651,12 +773,21 @@ dooption(option)
 	 * Process client input.
 	 */
 
+#ifdef DIAGNOSTICS
+	/*
+	 * Report receiving option from other side.
+	 */
+	if (diagnostic & TD_OPTIONS) {
+		printoption("td: recv do", option);
+	}
+#endif /* DIAGNOSTICS */
+
 	if (will_wont_resp[option]) {
 		will_wont_resp[option]--;
-		if (will_wont_resp[option] && myopts[option] == OPT_YES)
+		if (will_wont_resp[option] && my_state_is_will(option))
 			will_wont_resp[option]--;
 	}
-	if ((will_wont_resp[option] == 0) && (mywants[option] != OPT_YES)) {
+	if ((will_wont_resp[option] == 0) && (my_want_state_is_wont(option))) {
 		switch (option) {
 		case TELOPT_ECHO:
 #ifdef	LINEMODE
@@ -716,8 +847,8 @@ dooption(option)
 			 * pretend we sent a WONT.
 			 */
 			send_will(option, 0);
-			mywants[option] = OPT_NO;
-			myopts[option] = OPT_NO;
+			set_my_want_state_wont(option);
+			set_my_state_wont(option);
 			return;
 
 		case TELOPT_LINEMODE:
@@ -725,18 +856,20 @@ dooption(option)
 		case TELOPT_NAWS:
 		case TELOPT_TSPEED:
 		case TELOPT_LFLOW:
+		case TELOPT_XDISPLOC:
+		case TELOPT_ENVIRON:
 		default:
 			break;
 		}
 		if (changeok) {
-			mywants[option] = OPT_YES;
+			set_my_want_state_will(option);
 			send_will(option, 0);
 		} else {
 			will_wont_resp[option]++;
 			send_wont(option, 0);
 		}
 	}
-	myopts[option] = OPT_YES;
+	set_my_state_will(option);
 
 }  /* end of dooption */
 
@@ -744,14 +877,22 @@ send_wont(option, init)
 	int option, init;
 {
 	if (init) {
-		if ((will_wont_resp[option] == 0 && myopts[option] == OPT_NO) ||
-		    mywants[option] == OPT_NO)
+		if ((will_wont_resp[option] == 0 && my_state_is_wont(option)) ||
+		    my_want_state_is_wont(option))
 			return;
-		mywants[option] = OPT_NO;
+		set_my_want_state_wont(option);
 		will_wont_resp[option]++;
 	}
 	(void) sprintf(nfrontp, wont, option);
 	nfrontp += sizeof (wont) - 2;
+#ifdef DIAGNOSTICS
+	/*
+	 * Report sending option to other side.
+	 */
+	if (diagnostic & TD_OPTIONS) {
+		printoption("td: send wont", option);
+	}
+#endif /* DIAGNOSTICS */
 }
 
 dontoption(option)
@@ -760,13 +901,21 @@ dontoption(option)
 	/*
 	 * Process client input.
 	 */
+#ifdef DIAGNOSTICS
+	/*
+	 * Report receiving option from other side.
+	 */
+	if (diagnostic & TD_OPTIONS) {
+		printoption("td: recv dont", option);
+	}
+#endif /* DIAGNOSTICS */
 
 	if (will_wont_resp[option]) {
 		will_wont_resp[option]--;
-		if (will_wont_resp[option] && myopts[option] == OPT_NO)
+		if (will_wont_resp[option] && my_state_is_wont(option))
 			will_wont_resp[option]--;
 	}
-	if ((will_wont_resp[option] == 0) && (mywants[option] != OPT_NO)) {
+	if ((will_wont_resp[option] == 0) && (my_want_state_is_will(option))) {
 		switch (option) {
 		case TELOPT_BINARY:
 			init_termbuf();
@@ -812,10 +961,11 @@ dontoption(option)
 			break;
 		}
 
-		mywants[option] = OPT_NO;
-		send_wont(option, 0);
+		set_my_want_state_wont(option);
+		if (my_state_is_will(option))
+			send_wont(option, 0);
 	}
-	myopts[option] = OPT_NO;
+	set_my_state_wont(option);
 
 }  /* end of dontoption */
 
@@ -835,13 +985,23 @@ dontoption(option)
 suboption()
 {
     register int subchar;
+    extern void unsetenv();
 
+#ifdef DIAGNOSTICS
+	/*
+	 * Report receiving option from other side.
+	 */
+	if (diagnostic & TD_OPTIONS) {
+		netflush();	/* get rid of anything waiting to go out */
+		printsub("td: recv", subpointer, SB_LEN()+2);
+	}
+#endif	DIAGNOSTIC
     subchar = SB_GET();
     switch (subchar) {
     case TELOPT_TSPEED: {
 	register int xspeed, rspeed;
 
-	if (hisopts[TELOPT_TSPEED] == OPT_NO)	/* Ignore if option disabled */
+	if (his_state_is_wont(TELOPT_TSPEED))	/* Ignore if option disabled */
 		break;
 
 	settimer(tspeedsubopt);
@@ -863,9 +1023,9 @@ suboption()
     }  /* end of case TELOPT_TSPEED */
 
     case TELOPT_TTYPE: {		/* Yaaaay! */
-	static char terminalname[5+41] = "TERM=";
+	static char terminalname[41];
 
-	if (hisopts[TELOPT_TTYPE] == OPT_NO)	/* Ignore if option disabled */
+	if (his_state_is_wont(TELOPT_TTYPE))	/* Ignore if option disabled */
 		break;
 	settimer(ttypesubopt);
 
@@ -873,7 +1033,7 @@ suboption()
 	    return;		/* ??? XXX but, this is the most robust */
 	}
 
-	terminaltype = terminalname+sizeof("TERM=")-1;
+	terminaltype = terminalname;
 
 	while ((terminaltype < (terminalname + sizeof terminalname-1)) &&
 								    !SB_EOF()) {
@@ -893,7 +1053,7 @@ suboption()
     case TELOPT_NAWS: {
 	register int xwinsize, ywinsize;
 
-	if (hisopts[TELOPT_NAWS] == OPT_NO)	/* Ignore if option disabled */
+	if (his_state_is_wont(TELOPT_NAWS))	/* Ignore if option disabled */
 		break;
 
 	if (SB_EOF())
@@ -918,7 +1078,7 @@ suboption()
     case TELOPT_LINEMODE: {
 	register int request;
 
-	if (hisopts[TELOPT_LINEMODE] == OPT_NO)	/* Ignore if option disabled */
+	if (his_state_is_wont(TELOPT_LINEMODE))	/* Ignore if option disabled */
 		break;
 	/*
 	 * Process linemode suboptions.
@@ -960,7 +1120,7 @@ suboption()
 	mode = SB_GET();
 	switch (mode) {
 	case TELQUAL_SEND:
-	    if (myopts[TELOPT_STATUS] == OPT_YES)
+	    if (my_state_is_will(TELOPT_STATUS))
 		send_status();
 	    break;
 
@@ -973,6 +1133,71 @@ suboption()
 	break;
     }  /* end of case TELOPT_STATUS */
 
+    case TELOPT_XDISPLOC: {
+	if (SB_EOF() || SB_GET() != TELQUAL_IS)
+		return;
+	settimer(xdisplocsubopt);
+	subpointer[SB_LEN()] = '\0';
+	setenv("DISPLAY", subpointer, 1);
+	break;
+    }  /* end of case TELOPT_XDISPLOC */
+
+    case TELOPT_ENVIRON: {
+	register int c;
+	register char *cp, *varp, *valp;
+
+	if (SB_EOF())
+		return;
+	c = SB_GET();
+	if (c == TELQUAL_IS)
+		settimer(environsubopt);
+	else if (c != TELQUAL_INFO)
+		return;
+
+	while (!SB_EOF() && SB_GET() != ENV_VAR)
+		;
+
+	if (SB_EOF())
+		return;
+
+	cp = varp = subpointer;
+	valp = 0;
+
+	while (!SB_EOF()) {
+		switch (c = SB_GET()) {
+		case ENV_VALUE:
+			*cp = '\0';
+			cp = valp = subpointer;
+			break;
+
+		case ENV_VAR:
+			*cp = '\0';
+			if (valp)
+				setenv(varp, valp, 1);
+			else
+				unsetenv(varp);
+			cp = varp = subpointer;
+			valp = 0;
+			break;
+
+		case ENV_ESC:
+			if (SB_EOF())
+				break;
+			c = SB_GET();
+			/* FALL THROUGH */
+		default:
+			*cp++ = c;
+			break;
+		}
+	}
+	*cp = '\0';
+	if (valp)
+		setenv(varp, valp, 1);
+	else
+		unsetenv(varp);
+	break;
+    }  /* end of case TELOPT_ENVIRON */
+
     default:
 	break;
     }  /* end of switch */
@@ -983,9 +1208,9 @@ suboption()
 #define	ADD_DATA(c) { *ncp++ = c; if (c == SE) *ncp++ = c; }
 send_status()
 {
-	char statusbuf[256];
-	register char *ncp;
-	register int i;
+	unsigned char statusbuf[256];
+	register unsigned char *ncp;
+	register unsigned char i;
 
 	ncp = statusbuf;
 
@@ -997,13 +1222,13 @@ send_status()
 	ADD(TELQUAL_IS);
 
 	for (i = 0; i < NTELOPTS; i++) {
-		if (myopts[i] == OPT_YES) {
+		if (my_state_is_will(i)) {
 			ADD(WILL);
 			ADD_DATA(i);
 			if (i == IAC)
 				ADD(IAC);
 		}
-		if (hisopts[i] == OPT_YES) {
+		if (his_state_is_will(i)) {
 			ADD(DO);
 			ADD_DATA(i);
 			if (i == IAC)
@@ -1012,8 +1237,8 @@ send_status()
 	}
 
 #ifdef	LINEMODE
-	if (hisopts[TELOPT_LINEMODE] == OPT_YES) {
-		char *cp, *cpe;
+	if (his_state_is_will(TELOPT_LINEMODE)) {
+		unsigned char *cp, *cpe;
 		int len;
 
 		ADD(SB);
@@ -1041,4 +1266,17 @@ send_status()
 
 	writenet(statusbuf, ncp - statusbuf);
 	netflush();	/* Send it on its way */
+#ifdef DIAGNOSTICS
+	/*
+	 * Report sending status suboption.
+	 */
+	if (diagnostic & TD_OPTIONS) {
+		printsub("td: send", statusbuf, ncp - statusbuf);
+		netflush();	/* Send it on its way */
+	}
+#endif	DIAGNOSTIC
 }
+
+#ifdef	NO_SETENV
+#include "setenv.c"
+#endif

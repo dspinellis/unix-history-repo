@@ -1,16 +1,33 @@
 .\" Copyright (c) 1983 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)telnetd.8	6.6 (Berkeley) %G%
+.\"	@(#)telnetd.8	6.7 (Berkeley) %G%
 .\"
 .TH TELNETD 8 ""
 .UC 5
 .SH NAME
 telnetd \- DARPA TELNET protocol server
 .SH SYNOPSIS
-.B telnetd
+.B /etc/telnetd
+[\fB\-debug\fP [\fIport\fP]]
+[\fB\-l]
+[\fB\-D options\fP]
+[\fB\-D report\fP]
+[\fB\-D exercise\fP]
+[\fB\-D netdata\fP]
+[\fB\-D ptydata\fP]
 .SH DESCRIPTION
 .I Telnetd
 is a server which supports the DARPA standard
@@ -25,6 +42,24 @@ port as indicated by the
 .I /etc/services
 file (see
 .IR services (5)).
+If the \fB\-debug\fP may be used, to start up \fBtelnetd\fP
+manually, instead of through
+.IR inetd (8).
+If started up this way, \fIport\fP may be specified to
+run \fItelnetd\fP on an alternate TCP port number.
+.PP
+The \fB\-D\fP option may be used for debugging purposes.
+This allows \fItelnet\fR to print out debugging information
+to the connection, allowing the user to see what telnetd
+is doing.
+There are several modifiers:
+\fBoptions\fR prints information about the negotiation
+of \fBTELNET\fR options,
+\fBreport\fR prints the \fBoptions\fR information, plus
+some additional information about what processing is going on,
+\fBnetdata\fP displays the data stream received by \fItelnetd\fP,
+\fBptydata\fP displays data written to the pty, and
+\fBexercise\fR has not been implemented yet.
 .PP
 .I Telnetd
 operates by allocating a pseudo-terminal device (see
@@ -85,6 +120,7 @@ and
 .I Telnetd
 is willing to have the remote client
 .IR do :
+.IR linemode ,
 .IR binary ,
 .I terminal
 .IR type ,
@@ -94,6 +130,9 @@ is willing to have the remote client
 .IR size ,
 .I toggle flow
 .IR control ,
+.IR environment ,
+.I X display
+.IR location ,
 and
 .I suppress go
 .IR ahead .

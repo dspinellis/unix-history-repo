@@ -1,11 +1,12 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 
 PROG=	telnetd
+CFLAGS+=-DNEED_GETTOS -DLINEMODE -DKLUDGELINEMODE -DUSE_TERMIO -DDIAGNOSTICS
 SRCS=	get_date.c gettytab.c global.c slc.c state.c sys_term.c telnetd.c \
 	termstat.c utility.c
 DPADD=	${LIBUTIL} ${LIBTERM}
 LDADD=	-lutil -ltermcap
 MAN8=	telnetd.0
-.PATH:	${.CURDIR}/../getty
+.PATH:	/usr/src/libexec/getty
 
 .include <bsd.prog.mk>

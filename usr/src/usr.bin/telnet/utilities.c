@@ -2,29 +2,18 @@
  * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that: (1) source distributions retain this entire copyright
- * notice and comment, and (2) distributions including binaries display
- * the following acknowledgement:  ``This product includes software
- * developed by the University of California, Berkeley and its contributors''
- * in the documentation or other materials provided with the distribution
- * and in all advertising materials mentioning features or use of this
- * software. Neither the name of the University nor the names of its
- * contributors may be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	1.17 (Berkeley) 6/1/90";
+static char sccsid[] = "@(#)utilities.c	1.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
 #define	TELCMDS
 #include <arpa/telnet.h>
 #include <sys/types.h>
+#include <sys/time.h>
 
 #include <ctype.h>
 
@@ -265,8 +254,6 @@ char *slcnames[] = { SLC_NAMES };
 
 #ifdef	KERBEROS
 static char *authtypes[3] = { "NONE", "PRIVATE", "KERBEROS" };
-#else
-static char *authtypes[2] = { "NONE", "PRIVATE" };
 #endif
 
 void
@@ -315,7 +302,7 @@ int	length;			/* length of suboption data */
 	    fprintf(NetTrace, "TERMINAL-TYPE ");
 	    switch (pointer[1]) {
 	    case TELQUAL_IS:
-		fprintf(NetTrace, "IS \"%.*s\"", length-2, pointer+2);
+		fprintf(NetTrace, "IS \"%.*s\"", length-2, (char *)pointer+2);
 		break;
 	    case TELQUAL_SEND:
 		fprintf(NetTrace, "SEND");
@@ -335,13 +322,13 @@ int	length;			/* length of suboption data */
 	    switch (pointer[1]) {
 	    case TELQUAL_IS:
 		fprintf(NetTrace, " IS ");
-		fprintf(NetTrace, "%.*s", length-2, pointer+2);
+		fprintf(NetTrace, "%.*s", length-2, (char *)pointer+2);
 		break;
 	    default:
 		if (pointer[1] == 1)
 		    fprintf(NetTrace, " SEND");
 		else
-		    fprintf(NetTrace, " %d (unknown)");
+		    fprintf(NetTrace, " %d (unknown)", pointer[1]);
 		for (i = 2; i < length; i++)
 		    fprintf(NetTrace, " ?%d?", pointer[i]);
 		break;
@@ -360,7 +347,7 @@ int	length;			/* length of suboption data */
 	    case 1:
 		fprintf(NetTrace, " ON"); break;
 	    default:
-		fprintf(NetTrace, " %d (unknown)");
+		fprintf(NetTrace, " %d (unknown)", pointer[1]);
 	    }
 	    for (i = 2; i < length; i++)
 		fprintf(NetTrace, " ?%d?", pointer[i]);
@@ -378,14 +365,14 @@ int	length;			/* length of suboption data */
 	    }
 	    fprintf(NetTrace, " %d %d (%d)",
 		pointer[1], pointer[2],
-		(((unsigned int)pointer[1])<<8)|((unsigned int)pointer[2]));
+		(int)((((unsigned int)pointer[1])<<8)|((unsigned int)pointer[2])));
 	    if (length == 4) {
 		fprintf(NetTrace, " ?%d?", pointer[3]);
 		break;
 	    }
 	    fprintf(NetTrace, " %d %d (%d)",
 		pointer[3], pointer[4],
-		(((unsigned int)pointer[3])<<8)|((unsigned int)pointer[4]));
+		(int)((((unsigned int)pointer[3])<<8)|((unsigned int)pointer[4])));
 	    for (i = 5; i < length; i++)
 		fprintf(NetTrace, " ?%d?", pointer[i]);
 	    break;
@@ -497,6 +484,9 @@ int	length;			/* length of suboption data */
 						SLC_FLUSHOUT| SLC_LEVELBITS))
 			fprintf(NetTrace, "(0x%x)", pointer[i+SLC_FLAGS]);
 		    fprintf(NetTrace, " %d;", pointer[i+SLC_VALUE]);
+		    if ((pointer[i+SLC_VALUE] == IAC) &&
+			(pointer[i+SLC_VALUE+1] == IAC))
+				i++;
 		}
 		for (; i < length; i++)
 		    fprintf(NetTrace, " ?%d?", pointer[i]);
@@ -509,10 +499,12 @@ int	length;			/* length of suboption data */
 		    break;
 		}
 		{
-		    char tbuf[32];
-		    sprintf(tbuf, "%s%s%s",
+		    char tbuf[64];
+		    sprintf(tbuf, "%s%s%s%s%s",
 			pointer[2]&MODE_EDIT ? "|EDIT" : "",
 			pointer[2]&MODE_TRAPSIG ? "|TRAPSIG" : "",
+			pointer[2]&MODE_SOFT_TAB ? "|SOFT_TAB" : "",
+			pointer[2]&MODE_LIT_ECHO ? "|LIT_ECHO" : "",
 			pointer[2]&MODE_ACK ? "|ACK" : "");
 		    fprintf(NetTrace, "%s", tbuf[1] ? &tbuf[1] : "0");
 		}
@@ -539,7 +531,7 @@ int	length;			/* length of suboption data */
 		if (pointer[1] == TELQUAL_SEND)
 		    fprintf(NetTrace, " SEND");
 		else
-		    fprintf(NetTrace, " %d (unknown)");
+		    fprintf(NetTrace, " %d (unknown)", pointer[1]);
 		for (i = 2; i < length; i++)
 		    fprintf(NetTrace, " ?%d?", pointer[i]);
 		break;
@@ -557,7 +549,7 @@ int	length;			/* length of suboption data */
 		    case WONT:	cp = "WONT"; goto common2;
 		    common2:
 			i++;
-			if (TELOPT_OK(pointer[i]))
+			if (TELOPT_OK((int)pointer[i]))
 			    fprintf(NetTrace, " %s %s", cp, TELOPT(pointer[i]));
 			else
 			    fprintf(NetTrace, " %s %d", cp, pointer[i]);
@@ -607,6 +599,77 @@ int	length;			/* length of suboption data */
 	    break;
 	  }
 
+	case TELOPT_XDISPLOC:
+	    fprintf(NetTrace, "X-DISPLAY-LOCATION ");
+	    switch (pointer[1]) {
+	    case TELQUAL_IS:
+		fprintf(NetTrace, "IS \"%.*s\"", length-2, (char *)pointer+2);
+		break;
+	    case TELQUAL_SEND:
+		fprintf(NetTrace, "SEND");
+		break;
+	    default:
+		fprintf(NetTrace, "- unknown qualifier %d (0x%x).",
+				pointer[1], pointer[1]);
+	    }
+	    break;
+
+	case TELOPT_ENVIRON:
+	    fprintf(NetTrace, "ENVIRON ");
+	    switch (pointer[1]) {
+	    case TELQUAL_IS:
+		fprintf(NetTrace, "IS ");
+		goto env_common;
+	    case TELQUAL_SEND:
+		fprintf(NetTrace, "SEND ");
+		goto env_common;
+	    case TELQUAL_INFO:
+		fprintf(NetTrace, "INFO ");
+	    env_common:
+		{
+		    register int noquote = 2;
+		    for (i = 2; i < length; i++ ) {
+			switch (pointer[i]) {
+			case ENV_VAR:
+			    if (pointer[1] == TELQUAL_SEND)
+				goto def_case;
+			    fprintf(NetTrace, "\" VAR " + noquote);
+			    noquote = 2;
+			    break;
+
+			case ENV_VALUE:
+			    fprintf(NetTrace, "\" VALUE " + noquote);
+			    noquote = 2;
+			    break;
+
+			case ENV_ESC:
+			    fprintf(NetTrace, "\" ESC " + noquote);
+			    noquote = 2;
+			    break;
+
+			default:
+			def_case:
+			    if (isprint(pointer[i]) && pointer[i] != '"') {
+				if (noquote) {
+				    putc('"', NetTrace);
+				    noquote = 0;
+				}
+				putc(pointer[i], NetTrace);
+			    } else {
+				fprintf(NetTrace, "\" %03o " + noquote,
+							pointer[i]);
+				noquote = 2;
+			    }
+			    break;
+			}
+		    }
+		    if (!noquote)
+			putc('"', NetTrace);
+		    break;
+		}
+	    }
+	    break;
+
 	default:
 	    fprintf(NetTrace, "Unknown option ");
 	    for (i = 0; i < length; i++)
@@ -644,7 +707,7 @@ EmptyTerminal()
 #endif	/* defined(unix) */
     } else {
 	while (TTYBYTES()) {
-	    ttyflush(0);
+	    (void) ttyflush(0);
 #if	defined(unix)
 	    FD_SET(tout, &o);
 	    (void) select(tout+1, (fd_set *) 0, &o, (fd_set *) 0,
@@ -664,7 +727,7 @@ SetForExit()
     }
 #else	/* defined(TN3270) */
     do {
-	telrcv();			/* Process any incoming data */
+	(void)telrcv();			/* Process any incoming data */
 	EmptyTerminal();
     } while (ring_full_count(&netiring));	/* While there is any */
 #endif	/* defined(TN3270) */

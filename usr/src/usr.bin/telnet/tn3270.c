@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tn3270.c	1.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)tn3270.c	1.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -148,7 +148,7 @@ inputAvailable()
 void
 outputPurge()
 {
-    ttyflush(1);
+    (void) ttyflush(1);
 }
 
 
@@ -181,14 +181,14 @@ register int	count;			/* how much to send */
 
 	    FD_ZERO(&o);
 #endif	/* defined(unix) */
-	    ttyflush(0);
+	    (void) ttyflush(0);
 	    while (TTYROOM() == 0) {
 #if	defined(unix)
 		FD_SET(tout, &o);
 		(void) select(tout+1, (fd_set *) 0, &o, (fd_set *) 0,
 						(struct timeval *) 0);
 #endif	/* defined(unix) */
-		ttyflush(0);
+		(void) ttyflush(0);
 	    }
 	}
 	c = TTYROOM();
@@ -221,7 +221,7 @@ Push3270()
 	    }
 	}
 	if (Ifrontp+save < Ibuf+sizeof Ibuf) {
-	    telrcv();
+	    (void)telrcv();
 	}
     }
     return save != ring_full_count(&netiring);

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)externs.h	1.24 (Berkeley) %G%
+ *	@(#)externs.h	1.25 (Berkeley) %G%
  */
 
 #ifndef	BSD
@@ -17,7 +17,11 @@
 
 #include <stdio.h>
 #include <setjmp.h>
+#ifndef	FILIO_H
 #include <sys/ioctl.h>
+#else
+#include <sys/filio.h>
+#endif
 #ifdef	USE_TERMIO
 # ifndef	VINTR
 #  ifdef SYSV_TERMIO
@@ -27,8 +31,13 @@
 #   define termio termios
 #  endif
 # endif
-#else
+#endif
+#if defined(NO_CC_T) || !defined(USE_TERMIO)
+# if !defined(USE_TERMIO)
 typedef char cc_t;
+# else
+typedef unsigned char cc_t;
+# endif
 #endif
 
 #define	SUBBUFSIZE	256
@@ -73,11 +82,12 @@ extern int
 #endif	/* defined(unix) */
     debug;			/* Debug level */
 
-extern cc_t
-    echoc,		/* Toggle local echoing */
-    escape;		/* Escape to command mode */
+extern cc_t escape;	/* Escape to command mode */
+#ifdef	KLUDGELINEMODE
+extern cc_t echoc;	/* Toggle local echoing */
+#endif
 
-extern unsigned char
+extern char
     *prompt;		/* Prompt for command. */
 
 extern char
@@ -211,7 +221,7 @@ extern struct	sgttyb nttyb;
 # define termStartChar		ntc.t_startc
 # define termStopChar		ntc.t_stopc
 # define termForw1Char		ntc.t_brkc
-extern char termForw2Char;
+extern cc_t termForw2Char;
 
 # define termEofCharp		(cc_t *)&ntc.t_eofc
 # define termEraseCharp		(cc_t *)&nttyb.sg_erase
@@ -239,47 +249,50 @@ extern struct	termio new_tc;
 # define termQuitChar		new_tc.c_cc[VQUIT]
 
 # ifndef	VSUSP
-extern char termSuspChar;
+extern cc_t termSuspChar;
 # else
 #  define termSuspChar		new_tc.c_cc[VSUSP]
 # endif
-# ifndef	VDISCARD
-extern char termFlushChar;
+# if	!defined(VFLUSHO) && defined(VDISCARD)
+#  define VFLUSHO VDISCARD
+# endif
+# ifndef	VFLUSHO
+extern cc_t termFlushChar;
 # else
-#  define termFlushChar		new_tc.c_cc[VDISCARD]
+#  define termFlushChar		new_tc.c_cc[VFLUSHO]
 # endif
 # ifndef VWERASE
-extern char termWerasChar;
+extern cc_t termWerasChar;
 # else
 #  define termWerasChar		new_tc.c_cc[VWERASE]
 # endif
 # ifndef	VREPRINT
-extern char termRprntChar;
+extern cc_t termRprntChar;
 # else
 #  define termRprntChar		new_tc.c_cc[VREPRINT]
 # endif
 # ifndef	VLNEXT
-extern char termLiteralNextChar;
+extern cc_t termLiteralNextChar;
 # else
 #  define termLiteralNextChar	new_tc.c_cc[VLNEXT]
 # endif
 # ifndef	VSTART
-extern char termStartChar;
+extern cc_t termStartChar;
 # else
 #  define termStartChar		new_tc.c_cc[VSTART]
 # endif
 # ifndef	VSTOP
-extern char termStopChar;
+extern cc_t termStopChar;
 # else
 #  define termStopChar		new_tc.c_cc[VSTOP]
 # endif
 # ifndef	VEOL
-extern char termForw1Char;
+extern cc_t termForw1Char;
 # else
 #  define termForw1Char		new_tc.c_cc[VEOL]
 # endif
 # ifndef	VEOL2
-extern char termForw2Char;
+extern cc_t termForw2Char;
 # else
 #  define termForw2Char		new_tc.c_cc[VEOL]
 # endif

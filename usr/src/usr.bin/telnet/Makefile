@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 # TERMCAP	Define this if your system is termcap based,
 #		otherwise a terminfo based system is assumed.
@@ -22,8 +22,8 @@
 #		C libaray (but you do have rindex...)
 #
 PROG=	telnet
-CFLAGS+=-DTERMCAP -DSRCRT -DKLUDGELINEMODE -DUSE_TERMIO
-#CFLAGS+=-DTERMCAP -DSRCRT -DKLUDGELINEMODE -DUSE_TERMIO -DKERBEROS
+CFLAGS+=-DTERMCAP -DSRCRT -DKLUDGELINEMODE -DUSE_TERMIO -DNEED_GETTOS
+#CFLAGS+=-DTERMCAP -DSRCRT -DKLUDGELINEMODE -DUSE_TERMIO -DNEED_GETTOS -DKERBEROS
 LDADD=	-ltermcap
 #LDADD=	-ltermcap -ldes -lkrb
 DPADD=	${LIBTERMCAP}

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termstat.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)termstat.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -105,7 +105,7 @@ localstat()
 {
 	void netflush();
 
-#ifdef	defined(CRAY2) && defined(UNICOS5)
+#if	defined(CRAY2) && defined(UNICOS5)
 	/*
 	 * Keep track of that ol' CR/NL mapping while we're in the
 	 * neighborhood.
@@ -117,25 +117,25 @@ localstat()
 	 * Check for state of BINARY options.
 	 */
 	if (tty_isbinaryin()) {
-		if (hiswants[TELOPT_BINARY] == OPT_NO)
+		if (his_want_state_is_wont(TELOPT_BINARY))
 			send_do(TELOPT_BINARY, 1);
 	} else {
-		if (hiswants[TELOPT_BINARY] == OPT_YES)
+		if (his_want_state_is_will(TELOPT_BINARY))
 			send_dont(TELOPT_BINARY, 1);
 	}
 
 	if (tty_isbinaryout()) {
-		if (mywants[TELOPT_BINARY] == OPT_NO)
+		if (my_want_state_is_wont(TELOPT_BINARY))
 			send_will(TELOPT_BINARY, 1);
 	} else {
-		if (mywants[TELOPT_BINARY] == OPT_YES)
+		if (my_want_state_is_will(TELOPT_BINARY))
 			send_wont(TELOPT_BINARY, 1);
 	}
 
 	/*
 	 * Check for changes to flow control if client supports it.
 	 */
-	if (hisopts[TELOPT_LFLOW] == OPT_YES) {
+	if (his_state_is_will(TELOPT_LFLOW)) {
 		if (tty_flowmode() != flowmode) {
 			flowmode = tty_flowmode();
 			(void) sprintf(nfrontp, "%c%c%c%c%c%c", IAC, SB,
@@ -157,19 +157,6 @@ localstat()
 		uselinemode = 1;
 		tty_setlinemode(uselinemode);
 	}
-
-# ifdef	KLUDGELINEMODE
-	/*
-	 * If using kludge linemode and linemode is desired, it can't
-	 * be done if normal line editing is not available on the
-	 * pty.  This becomes the test for linemode on/off when
-	 * using kludge linemode.
-	 */
-	if (lmodetype == KLUDGE_LINEMODE && uselinemode && tty_israw()) {
-		uselinemode = 0;
-		tty_setlinemode(uselinemode);
-	}
-# endif	/* KLUDGELINEMODE */
 
 	/*
 	 * Do echo mode handling as soon as we know what the
@@ -206,6 +193,7 @@ localstat()
 # ifdef	KLUDGELINEMODE
 	/*
 	 * If using real linemode check edit modes for possible later use.
+	 * If we are in kludge linemode, do the SGA negotiation.
 	 */
 	if (lmodetype == REAL_LINEMODE) {
 # endif	/* KLUDGELINEMODE */
@@ -214,7 +202,16 @@ localstat()
 			useeditmode |= MODE_EDIT;
 		if (tty_istrapsig())
 			useeditmode |= MODE_TRAPSIG;
+		if (tty_issofttab())
+			useeditmode |= MODE_SOFT_TAB;
+		if (tty_islitecho())
+			useeditmode |= MODE_LIT_ECHO;
 # ifdef	KLUDGELINEMODE
+	} else if (lmodetype == KLUDGE_LINEMODE) {
+		if (tty_isediting() && uselinemode)
+			send_wont(TELOPT_SGA, 1);
+		else
+			send_will(TELOPT_SGA, 1);
 	}
 # endif	/* KLUDGELINEMODE */
 
@@ -357,6 +354,10 @@ register int code, parm1, parm2;
 					useeditmode |= MODE_EDIT;
 				if (tty_istrapsig)
 					useeditmode |= MODE_TRAPSIG;
+				if (tty_issofttab())
+					useeditmode |= MODE_SOFT_TAB;
+				if (tty_islitecho())
+					useeditmode |= MODE_LIT_ECHO;
 				(void) sprintf(nfrontp, "%c%c%c%c%c%c%c", IAC,
 					SB, TELOPT_LINEMODE, LM_MODE,
 							useeditmode, IAC, SE);
@@ -374,7 +375,7 @@ register int code, parm1, parm2;
 	
 	case LM_MODE:
 	    {
-		register int mode, sig, ack;
+		register int ack, changed;
 
 		/*
 		 * Client has sent along a mode mask.  If it agrees with
@@ -387,16 +388,18 @@ register int code, parm1, parm2;
 		 ack = (useeditmode & MODE_ACK);
 		 useeditmode &= ~MODE_ACK;
 
-		 if (useeditmode != editmode) {
-			mode = (useeditmode & MODE_EDIT);
-			sig = (useeditmode & MODE_TRAPSIG);
+		 if (changed = (useeditmode ^ editmode)) {
+			if (changed & MODE_EDIT)
+				tty_setedit(useeditmode & MODE_EDIT);
 
-			if (mode != (editmode & LM_MODE)) {
-				tty_setedit(mode);
-			}
-			if (sig != (editmode & MODE_TRAPSIG)) {
-				tty_setsig(sig);
-			}
+			if (changed & MODE_TRAPSIG)
+				tty_setsig(useeditmode & MODE_TRAPSIG);
+
+			if (changed & MODE_SOFT_TAB)
+				tty_setsofttab(useeditmode & MODE_SOFT_TAB);
+
+			if (changed & MODE_LIT_ECHO)
+				tty_setlitecho(useeditmode & MODE_LIT_ECHO);
 
 			set_termbuf();
 

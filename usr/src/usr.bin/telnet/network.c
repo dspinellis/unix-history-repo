@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)network.c	1.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)network.c	1.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -63,6 +63,7 @@ stilloob()
     if (value < 0) {
 	perror("select");
 	(void) quit();
+	/* NOTREACHED */
     }
     if (FD_ISSET(net, &excepts)) {
 	return 1;
@@ -119,7 +120,7 @@ netflush()
 	if (errno != ENOBUFS && errno != EWOULDBLOCK) {
 	    setcommandmode();
 	    perror(hostname);
-	    NetClose(net);
+	    (void)NetClose(net);
 	    ring_clear_mark(&netoring);
 	    longjmp(peerdied, -1);
 	    /*NOTREACHED*/

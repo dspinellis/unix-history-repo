@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.45 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -36,17 +36,37 @@ int	lowpty = 0, highpty;	/* low, high pty numbers */
 int debug = 0;
 char *progname;
 
+#if	defined(NEED_GETTOS)
+struct tosent {
+	char	*t_name;	/* name */
+	char	**t_aliases;	/* alias list */
+	char	*t_proto;	/* protocol */
+	int	t_tos;		/* Type Of Service bits */
+};
+
+struct tosent *
+gettosbyname(name, proto)
+char *name, *proto;
+{
+	static struct tosent te;
+	static char *aliasp = 0;
+
+	te.t_name = name;
+	te.t_aliases = &aliasp;
+	te.t_proto = proto;
+	te.t_tos = 020;	/* Low Delay bit */
+	return(&te);
+}
+#endif
+
 main(argc, argv)
 	char *argv[];
 {
 	struct sockaddr_in from;
 	int on = 1, fromlen;
-#ifdef IP_TOS
-	int tos;
-#ifdef CRAY
+#if	defined(HAS_IP_TOS) || defined(NEED_GETTOS)
 	struct tosent *tp;
-#endif
-#endif /* IP_TOS */
+#endif /* defined(HAS_IP_TOS) || defined(NEED_GETTOS) */
 
 	pfrontp = pbackp = ptyobuf;
 	netip = netibuf;
@@ -103,13 +123,8 @@ top:
 		if (**argv != '\0')
 			lowpty = atoi(*argv);
 		if ((lowpty > highpty) || (lowpty < 0) || (highpty > 32767)) {
-	usage:
-			fprintf(stderr, "Usage: telnetd [-debug] [-h] ");
-# ifdef	NEWINIT
-			fprintf(stderr, "[-Iinitid] ");
-# endif	/* NEWINIT */
-			fprintf(stderr, "[-l] [-r[lowpty]-[highpty]] [port]\n");
-			exit(1);
+			usage();
+			/* NOT REACHED */
 		}
 		goto top;
 	}
@@ -119,11 +134,15 @@ top:
 
 		*argv += 2;
 		if (**argv == '\0') {
-			if (argc < 2)
-				goto usage;
+			if (argc < 2) {
+				usage();
+				/* NOT REACHED */
+			}
 			argv++, argc--;
-			if (**argv == '\0')
-				goto usage;
+			if (**argv == '\0') {
+				usage();
+				/* NOT REACHED */
+			}
 		}
 		gen_id = *argv;
 		goto top;
@@ -131,27 +150,81 @@ top:
 # endif	/* NEWINIT */
 #endif	/* CRAY */
 
+#ifdef DIAGNOSTICS
+	/*
+	 * Check for desired diagnostics capabilities.
+	 */
+	if (argc > 0 && !strncmp(*argv, "-D", 2)) {
+		*argv += 2;
+		if (**argv == '\0') {
+			if (argc < 2) {
+				usage();
+				/* NOT REACHED */
+			}
+			argv++, argc--;
+			if (**argv == '\0') {
+				usage();
+				/* NOT REACHED */
+			}
+		}
+		if (!strcmp(*argv, "report")) {
+			diagnostic |= TD_REPORT|TD_OPTIONS;
+		} else if (!strcmp(*argv, "exercise")) {
+			diagnostic |= TD_EXERCISE;
+		} else if (!strcmp(*argv, "netdata")) {
+			diagnostic |= TD_NETDATA;
+		} else if (!strcmp(*argv, "ptydata")) {
+			diagnostic |= TD_PTYDATA;
+		} else if (!strcmp(*argv, "options")) {
+			diagnostic |= TD_OPTIONS;
+		} else {
+			usage();
+			/* NOT REACHED */
+		}
+		goto top;
+	}
+#endif /* DIAGNOSTICS */
+
+#ifdef BFTPDAEMON
+	/*
+	 * Check for bftp daemon
+	 */
+	if (argc > 0 && !strncmp(*argv, "-B", 2)) {
+		bftpd++;
+		goto top;
+	}
+#endif /* BFTPDAEMON */
+
+	if (argc > 0 && **argv == '-') {
+		fprintf(stderr, "telnetd: %s: unknown option\n", *argv+1);
+		usage();
+		/* NOT REACHED */
+	}
+
 	if (debug) {
 	    int s, ns, foo;
 	    struct servent *sp;
 	    static struct sockaddr_in sin = { AF_INET };
 
-	    if (argc > 0) {
+	    if (argc > 1) {
+		usage();
+		/* NOT REACHED */
+	    } else if (argc == 1) {
 		    if (sp = getservbyname(*argv, "tcp")) {
 			sin.sin_port = sp->s_port;
 		    } else {
 			sin.sin_port = atoi(*argv);
 			if ((int)sin.sin_port <= 0) {
 			    fprintf(stderr, "telnetd: %s: bad port #\n", *argv);
-			    exit(1);
+			    usage();
+			    /* NOT REACHED */
 			}
 			sin.sin_port = htons((u_short)sin.sin_port);
 		   }
 	    } else {
 		sp = getservbyname("telnet", "tcp");
 		if (sp == 0) {
-			fprintf(stderr,
-				"telnetd: tcp/telnet: unknown service\n");
+		    fprintf(stderr, "telnetd: tcp/telnet: unknown service\n");
 		    exit(1);
 		}
 		sin.sin_port = sp->s_port;
@@ -180,6 +253,9 @@ top:
 	    (void) dup2(ns, 0);
 	    (void) close(ns);
 	    (void) close(s);
+	} else if (argc > 0) {
+		usage();
+		/* NOT REACHED */
 	}
 
 	openlog("telnetd", LOG_PID | LOG_ODELAY, LOG_DAEMON);
@@ -193,20 +269,37 @@ top:
 		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
 	}
 
-#ifdef IP_TOS
-#ifdef CRAY
-	if (tp = gettosbyname("telnet", "tcp"))
-		tos = tp->t_tos;
-	else
-#endif /* CRAY */
-	tos = IPTOS_LOWDELAY;
-	if (setsockopt(0, IPPROTO_IP, IP_TOS, &tos, sizeof(int)) < 0)
+#if	defined(HAS_IP_TOS) || defined(NEED_GETTOS)
+	if ((tp = gettosbyname("telnet", "tcp")) &&
+	    (setsockopt(0, IPPROTO_IP, IP_TOS, &tp->t_tos, sizeof(int)) < 0))
 		syslog(LOG_WARNING, "setsockopt (IP_TOS): %m");
-#endif /* IP_TOS */
+#endif	/* defined(HAS_IP_TOS) || defined(NEED_GETTOS) */
 	net = 0;
 	doit(&from);
 	/* NOTREACHED */
 }  /* end of main */
+
+usage()
+{
+	fprintf(stderr, "Usage: telnetd [-debug] [-h]");
+#ifdef	NEWINIT
+	fprintf(stderr, " [-Iinitid]");
+#endif	/* NEWINIT */
+#ifdef DIAGNOSTICS
+	fprintf(stderr, " [-D (options|report|exercise|netdata|ptydata)]");
+#endif /* DIAGNOSTICS */
+#ifdef LINEMODE
+	fprintf(stderr, " [-l]");
+#endif
+#ifdef	CRAY
+	fprintf(stderr, " [-r[lowpty]-[highpty]]");
+#endif
+#ifdef BFTPDAEMON
+	fprintf(stderr, " [-B]");
+#endif /* BFTPDAEMON */
+	fprintf(stderr, " [port]\n");
+	exit(1);
+}
 
 void	cleanup();
 
@@ -225,32 +318,60 @@ getterminaltype()
     settimer(baseline);
     send_do(TELOPT_TTYPE, 1);
     send_do(TELOPT_TSPEED, 1);
-    while ((hiswants[TELOPT_TTYPE] != hisopts[TELOPT_TTYPE]) ||
-	   (hiswants[TELOPT_TSPEED] != hisopts[TELOPT_TSPEED])) {
+    send_do(TELOPT_XDISPLOC, 1);
+    send_do(TELOPT_ENVIRON, 1);
+    while (his_will_wont_is_changing(TELOPT_TTYPE) ||
+	   his_will_wont_is_changing(TELOPT_TSPEED) ||
+	   his_will_wont_is_changing(TELOPT_XDISPLOC) ||
+	   his_will_wont_is_changing(TELOPT_ENVIRON)) {
 	ttloop();
     }
-    if (hisopts[TELOPT_TSPEED] == OPT_YES) {
+    if (his_state_is_will(TELOPT_TSPEED)) {
 	static char sbbuf[] = { IAC, SB, TELOPT_TSPEED, TELQUAL_SEND, IAC, SE };
 
 	bcopy(sbbuf, nfrontp, sizeof sbbuf);
 	nfrontp += sizeof sbbuf;
     }
-    if (hisopts[TELOPT_TTYPE] == OPT_YES) {
+    if (his_state_is_will(TELOPT_XDISPLOC)) {
+	static char sbbuf[] = { IAC, SB, TELOPT_XDISPLOC, TELQUAL_SEND, IAC, SE };
+
+	bcopy(sbbuf, nfrontp, sizeof sbbuf);
+	nfrontp += sizeof sbbuf;
+    }
+    if (his_state_is_will(TELOPT_ENVIRON)) {
+	static char sbbuf[] = { IAC, SB, TELOPT_ENVIRON, TELQUAL_SEND, IAC, SE };
+
+	bcopy(sbbuf, nfrontp, sizeof sbbuf);
+	nfrontp += sizeof sbbuf;
+    }
+    if (his_state_is_will(TELOPT_TTYPE)) {
 
 	bcopy(ttytype_sbbuf, nfrontp, sizeof ttytype_sbbuf);
 	nfrontp += sizeof ttytype_sbbuf;
     }
-    if (hisopts[TELOPT_TSPEED] == OPT_YES) {
+    if (his_state_is_will(TELOPT_TSPEED)) {
 	while (sequenceIs(tspeedsubopt, baseline))
 	    ttloop();
     }
-    if (hisopts[TELOPT_TTYPE] == OPT_YES) {
+    if (his_state_is_will(TELOPT_XDISPLOC)) {
+	while (sequenceIs(xdisplocsubopt, baseline))
+	    ttloop();
+    }
+    if (his_state_is_will(TELOPT_ENVIRON)) {
+	while (sequenceIs(environsubopt, baseline))
+	    ttloop();
+    }
+    if (his_state_is_will(TELOPT_TTYPE)) {
 	char first[256], last[256];
 
 	while (sequenceIs(ttypesubopt, baseline))
 	    ttloop();
 
-	if (!terminaltypeok(&terminaltype[5])) {
+	/*
+	 * If the other side has already disabled the option, then
+	 * we have to just go with what we (might) have already gotten.
+	 */
+	if (his_state_is_will(TELOPT_TTYPE) && !terminaltypeok(terminaltype)) {
 	    (void) strncpy(first, terminaltype, sizeof(first));
 	    for(;;) {
 		/*
@@ -258,9 +379,10 @@ getterminaltype()
 		 */
 		(void) strncpy(last, terminaltype, sizeof(last));
 		_gettermname();
-		if (terminaltypeok(&terminaltype[5]))
+		if (terminaltypeok(terminaltype))
 		    break;
-		if (strncmp(last, terminaltype, sizeof(last)) == 0) {
+		if ((strncmp(last, terminaltype, sizeof(last)) == 0) ||
+		    his_state_is_wont(TELOPT_TTYPE)) {
 		    /*
 		     * We've hit the end.  If this is the same as
 		     * the first name, just go with it.
@@ -268,11 +390,11 @@ getterminaltype()
 		    if (strncmp(first, terminaltype, sizeof(first) == 0))
 			break;
 		    /*
-		     * Get the terminal name one more type, so that
+		     * Get the terminal name one more time, so that
 		     * RFC1091 compliant telnets will cycle back to
 		     * the start of the list.
 		     */
-		    _gettermname();
+		     _gettermname();
 		    if (strncmp(first, terminaltype, sizeof(first) != 0))
 			(void) strncpy(terminaltype, first, sizeof(first));
 		    break;
@@ -284,6 +406,13 @@ getterminaltype()
 
 _gettermname()
 {
+    /*
+     * If the client turned off the option,
+     * we can't send another request, so we
+     * just return.
+     */
+    if (his_state_is_wont(TELOPT_TTYPE))
+	return;
     settimer(baseline);
     bcopy(ttytype_sbbuf, nfrontp, sizeof ttytype_sbbuf);
     nfrontp += sizeof ttytype_sbbuf;
@@ -338,12 +467,12 @@ doit(who)
 	else
 		host = inet_ntoa(who->sin_addr);
 
+	init_env();
 	/*
 	 * get terminal type.
 	 */
 	getterminaltype();
-	if (terminaltype == NULL)
-		terminaltype = "TERM=network";
+	setenv("TERM", terminaltype ? terminaltype : "network", 1);
 
 	/*
 	 * Start up the login process on the slave side of the terminal
@@ -389,7 +518,7 @@ int f, p;
 	 * Rather than doing them slowly, one at a time, do them all
 	 * at once.
 	 */
-	if (!myopts[TELOPT_SGA])
+	if (my_state_is_wont(TELOPT_SGA))
 		send_will(TELOPT_SGA, 1);
 	/*
 	 * Is the client side a 4.2 (NOT 4.3) system?  We need to know this
@@ -404,11 +533,11 @@ int f, p;
 	send_do(TELOPT_ECHO, 1);
 
 #ifdef	LINEMODE
-	if (hisopts[TELOPT_LINEMODE] == OPT_NO) {
+	if (his_state_is_wont(TELOPT_LINEMODE)) {
 		/* Query the peer for linemode support by trying to negotiate
 		 * the linemode option.
 		 */
-		linemode = 1;
+		linemode = 0;
 		editmode = 0;
 		send_do(TELOPT_LINEMODE, 1);  /* send do linemode */
 	}
@@ -431,9 +560,25 @@ int f, p;
 	 * response, it will already have processed the DO ECHO.
 	 * Kludge upon kludge.
 	 */
-	while (hiswants[TELOPT_NAWS] != hisopts[TELOPT_NAWS])
+	while (his_will_wont_is_changing(TELOPT_NAWS))
 		ttloop();
 
+	/*
+	 * But...
+	 * The client might have sent a WILL NAWS as part of its
+	 * startup code; if so, we'll be here before we get the
+	 * response to the DO ECHO.  We'll make the assumption
+	 * that any implementation that understands about NAWS
+	 * is a modern enough implementation that it will respond
+	 * to our DO ECHO request; hence we'll do another spin
+	 * waiting for the ECHO option to settle down, which is
+	 * what we wanted to do in the first place...
+	 */
+	if (his_want_state_is_will(TELOPT_ECHO) &&
+	    his_state_is_will(TELOPT_NAWS)) {
+		while (his_will_wont_is_changing(TELOPT_ECHO))
+			ttloop();
+	}
 	/*
 	 * On the off chance that the telnet client is broken and does not
 	 * respond to the DO ECHO we sent, (after all, we did send the
@@ -444,7 +589,13 @@ int f, p;
 	 * respond because it believes that it is already in DO ECHO
 	 * mode, which we do not want.
 	 */
-	if (hiswants[TELOPT_ECHO] == OPT_YES) {
+	if (his_want_state_is_will(TELOPT_ECHO)) {
+#ifdef DIAGNOSTICS
+		if (diagnostic & TD_OPTIONS) {
+			sprintf(nfrontp, "td: simulating recv\r\n");
+			nfrontp += strlen(nfrontp);
+		}
+#endif /* DIAGNOSTICS */
 		willoption(TELOPT_ECHO);
 	}
 
@@ -453,7 +604,7 @@ int f, p;
 	 * will break stupid 4.2 telnets out of local terminal echo.
 	 */
 
-	if (!myopts[TELOPT_ECHO])
+	if (my_state_is_wont(TELOPT_ECHO))
 		send_will(TELOPT_ECHO, 1);
 
 	/*
@@ -519,9 +670,13 @@ int f, p;
 	termstat();
 #endif
 
+#ifdef	NO_SETSID
 	(void) setpgrp(0, 0);
-#ifdef	TCSETCTTY
-	ioctl(p, TCSETCTTY, 0);
+#else
+	(void) setsid();
+#endif
+#if	defined(TIOCSCTTY) && defined(CRAY)
+	ioctl(p, TIOCSCTTY, 0);
 #endif
 
 	/*
@@ -569,6 +724,13 @@ int f, p;
 	init_termbuf();
 	localstat();
 #endif	/* LINEMODE */
+
+#ifdef DIAGNOSTICS
+	if (diagnostic & TD_REPORT) {
+		sprintf(nfrontp, "td: Entering processing loop\r\n");
+		nfrontp += strlen(nfrontp);
+	}
+#endif /* DIAGNOSTICS */
 
 	for (;;) {
 		fd_set ibits, obits, xbits;
@@ -688,6 +850,15 @@ int f, p;
 			}
 			netip = netibuf;
 		    }
+#ifdef DIAGNOSTICS
+		    if (diagnostic & (TD_REPORT | TD_NETDATA)) {
+			    sprintf(nfrontp, "td: netread %d chars\r\n", ncc);
+			    nfrontp += strlen(nfrontp);
+		    }
+		    if (diagnostic & TD_NETDATA) {
+			    printdata("nd", netip, ncc);
+		    }
+#endif /* DIAGNOSTICS */
 		}
 
 		/*
@@ -727,7 +898,7 @@ int f, p;
 					neturg = nfrontp-1; /* off by one XXX */
 #endif
 				}
-				if (hisopts[TELOPT_LFLOW] &&
+				if (his_state_is_will(TELOPT_LFLOW) &&
 				    (ptyibuf[0] &
 				     (TIOCPKT_NOSTOP|TIOCPKT_DOSTOP))) {
 					(void) sprintf(nfrontp, "%c%c%c%c%c%c",
@@ -759,11 +930,11 @@ int f, p;
 				*nfrontp++ = c;
 #if	defined(CRAY2) && defined(UNICOS5)
 			else if (c == '\n' &&
-				     myopts[TELOPT_BINARY] == OPT_NO && newmap)
+				     my_state_is_wont(TELOPT_BINARY) && newmap)
 				*nfrontp++ = '\r';
 #endif	/* defined(CRAY2) && defined(UNICOS5) */
 			*nfrontp++ = c;
-			if ((c == '\r') && (myopts[TELOPT_BINARY] == OPT_NO)) {
+			if ((c == '\r') && (my_state_is_wont(TELOPT_BINARY))) {
 				if (pcc > 0 && ((*ptyip & 0377) == '\n')) {
 					*nfrontp++ = *ptyip++ & 0377;
 					pcc--;

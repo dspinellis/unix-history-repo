@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defines.h	1.9 (Berkeley) %G%
+ *	@(#)defines.h	1.10 (Berkeley) %G%
  */
 
 #define	settimer(x)	clocks.x = clocks.system++
@@ -31,3 +31,5 @@
 #define	MODE_LOCAL_CHARS(m)	((m)&(MODE_EDIT|MODE_TRAPSIG))
 #define	MODE_LOCAL_ECHO(m)	((m)&MODE_ECHO)
 #define	MODE_COMMAND_LINE(m)	((m)==-1)
+
+#define	CONTROL(x)	((x)&0x1f)		/* CTRL(x) is not portable */
