@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)redist.c	5.2 (Berkeley) 87/04/11";
+static char sccsid[] = "@(#)redist.c	5.3 (Berkeley) 87/04/11";
 #endif not lint
 
 #include <sys/file.h>
@@ -77,5 +77,4 @@ redist()
 		else
 			fputs(bfr, pf);
 	(void)pclose(pf);
-	(void)fclose(dfp);
 }
