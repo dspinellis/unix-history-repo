@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.6 %G%";
+static char sccsid[] = "@(#)fend.c 1.7 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -55,6 +55,7 @@ funcend(fp, bundle, endline)
 	    int		savlabel = getlab();
 	    int		toplabel = getlab();
 	    int		botlabel = getlab();
+	    int		proflabel = getlab();
 	    char	extname[ BUFSIZ ];
 #	endif PC
 
@@ -185,11 +186,13 @@ funcend(fp, bundle, endline)
 		/*
 		 *	call mcount for profiling
 		 */
-	    putprintf( "	moval	1f,r0" , 0 );
+	    putprintf( "	moval	" , 1 );
+	    putprintf( PREFIXFORMAT , 1 , LABELPREFIX , proflabel );
+	    putprintf( ",r0" , 0 );
 	    putprintf( "	jsb	mcount" , 0 );
 	    putprintf( "	.data" , 0 );
 	    putprintf( "	.align	2" , 0 );
-	    putprintf( "1:" , 0 );
+	    putlab( proflabel );
 	    putprintf( "	.long	0" , 0 );
 	    putprintf( "	.text" , 0 );
 	}
