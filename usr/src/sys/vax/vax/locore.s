@@ -1,4 +1,4 @@
-/*	locore.s	4.45	81/04/18	*/
+/*	locore.s	4.46	81/05/05	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -451,6 +451,8 @@ start:
 /* put signal trampoline code in u. area */
 1:	movab	_u,r0
 	movc3	$12,sigcode,PCB_SIGC(r0)
+/* save reboot flags in global _boothowto */
+	movl	r11,_boothowto
 /* calculate firstaddr, and call main() */
 	movab	_end+NBPG-1,r0; bbcc $31,r0,0f; 0:; ashl $-PGSHIFT,r0,-(sp)
 	addl2	$UPAGES+1,(sp); calls $1,_main
