@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.3	6.4 (Berkeley) %G%
+.\"	@(#)intro.3	6.5 (Berkeley) %G%
 .\"
 .TH INTRO 3F ""
 .UC 5
@@ -58,9 +58,9 @@ module.
 abort	abort.3f	abnormal termination
 access	access.3f	determine accessability of a file
 alarm	alarm.3f	execute a subroutine after a specified time
+and	bit.3f	bitwise and
 arc	plot.3f	f77 interface to plot(3x)
 bessel	bessel.3f	bessel functions of two kinds for integer orders
-bit	bit.3f	and, or, xor, not, rshift, lshift bitwise functions
 box	plot.3f	f77 interface to plot(3x)
 chdir	chdir.3f	change default directory
 chmod	chmod.3f	change mode of a file
@@ -121,11 +121,14 @@ link	link.3f	make a link to an existing file
 lnblnk	index.3f	tell about character objects
 loc	loc.3f	return the address of an object
 long	long.3f	integer object conversion
+lshift	bit.3f	left shift
 lstat	stat.3f	get file status
 ltime	time.3f	return system time
 malloc	malloc.3f	memory allocator
 move	plot.3f	f77 interface to plot(3x)
+not	bit.3f	bitwise complement
 openpl	plot.3f	f77 interface to plot(3x)
+or	bit.3f	bitwise or
 perror	perror.3f	get system error messages
 point	plot.3f	f77 interface to plot(3x)
 putc	putc.3f	write a character to a fortran logical unit
@@ -134,11 +137,13 @@ rand	rand.3f	return random values
 random	random.3f	better random number generator
 rename	rename.3f	rename a file
 rindex	index.3f	tell about character objects
+rshift	bit.3f	right shift
 short	long.3f	integer object conversion
 signal	signal.3f	change the action for a signal
 sleep	sleep.3f	suspend execution for an interval
 space	plot.3f	f77 interface to plot(3x)
 stat	stat.3f	get file status
+symlnk	symlnk.3f	make a symbolic link
 system	system.3f	execute a \s-2UNIX\s0 command
 tclose	topen.3f	f77 tape I/O
 time	time.3f	return system time
@@ -154,4 +159,5 @@ ttynam	ttynam.3f	find name of a terminal port
 twrite	topen.3f	f77 tape I/O
 unlink	unlink.3f	remove a directory entry
 wait	wait.3f	wait for a process to terminate
+xor	bit.3f	bitwise exclusive or
 .fi
