@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	4.18 83/07/01";
+static char sccsid[] = "@(#)rlogind.c	4.19 84/03/22";
 #endif
 
 #include <stdio.h>
@@ -138,18 +138,17 @@ doit(f, fromp)
 	if (c != 0)
 		exit(1);
 	alarm(0);
-	fromp->sin_port = htons((u_short)fromp->sin_port);
+	fromp->sin_port = ntohs((u_short)fromp->sin_port);
 	hp = gethostbyaddr(&fromp->sin_addr, sizeof (struct in_addr),
 		fromp->sin_family);
 	if (hp == 0) {
-		char buf[BUFSIZ], *cp = (char *)&fromp->sin_addr;
+		char buf[BUFSIZ];
 
 		fatal(f, sprintf(buf, "Host name for your address (%s) unknown",
 			ntoa(fromp->sin_addr)));
 	}
 	if (fromp->sin_family != AF_INET ||
-	    fromp->sin_port >= IPPORT_RESERVED ||
-	    hp == 0)
+	    fromp->sin_port >= IPPORT_RESERVED)
 		fatal(f, "Permission denied");
 	write(f, "", 1);
 	for (c = 'p'; c <= 's'; c++) {
@@ -169,7 +168,7 @@ doit(f, fromp)
 	fatal(f, "All network ports in use");
 	/*NOTREACHED*/
 gotpty:
-	dup2(f, 0);
+	netf = f;
 	line[strlen("/dev/")] = 't';
 #ifdef DEBUG
 	{ int tt = open("/dev/tty", 2);
@@ -190,11 +189,13 @@ gotpty:
 		fatalperror(f, "", errno);
 	if (pid) {
 		char pibuf[1024], fibuf[1024], *pbp, *fbp;
-		int pcc = 0, fcc = 0, on = 1;
+		register pcc = 0, fcc = 0;
+		int on = 1;
 /* FILE *console = fopen("/dev/console", "w");  */
 /* setbuf(console, 0); */
 
 /* fprintf(console, "f %d p %d\r\n", f, p); */
+		close(t);
 		ioctl(f, FIONBIO, &on);
 		ioctl(p, FIONBIO, &on);
 		ioctl(p, TIOCPKT, &on);
@@ -212,12 +213,15 @@ gotpty:
 					obits |= (1<<f);
 				else
 					ibits |= (1<<p);
-			if (fcc < 0 && pcc < 0)
-				break;
 /* fprintf(console, "ibits from %d obits from %d\r\n", ibits, obits); */
-			select(16, &ibits, &obits, 0, 0, 0);
+			if (select(16, &ibits, &obits, 0, 0) < 0) {
+				if (errno == EINTR)
+					continue;
+				fatalperror(f, "select", errno);
+			}
 /* fprintf(console, "ibits %d obits %d\r\n", ibits, obits); */
 			if (ibits == 0 && obits == 0) {
+				/* shouldn't happen... */
 				sleep(5);
 				continue;
 			}
@@ -239,13 +243,14 @@ gotpty:
 				if (pcc < 0 && errno == EWOULDBLOCK)
 					pcc = 0;
 				else if (pcc <= 0)
-					pcc = -1;
+					break;
 				else if (pibuf[0] == 0)
 					pbp++, pcc--;
 				else {
 					if (pibuf[0]&(TIOCPKT_FLUSHWRITE|
 						      TIOCPKT_NOSTOP|
 						      TIOCPKT_DOSTOP)) {
+					/* The following 3 lines do nothing. */
 						int nstop = pibuf[0] &
 						    (TIOCPKT_NOSTOP|
 						     TIOCPKT_DOSTOP);
@@ -259,6 +264,11 @@ gotpty:
 			}
 			if ((obits & (1<<f)) && pcc > 0) {
 				cc = write(f, pbp, pcc);
+				if (cc < 0 && errno == EWOULDBLOCK) {
+					/* also shouldn't happen */
+					sleep(5);
+					continue;
+				}
 /* fprintf(console, "%d of %d to f\r\n", cc, pcc); */
 				if (cc > 0) {
 					pcc -= cc;
@@ -315,9 +325,13 @@ fatalperror(f, msg, errno)
 	int errno;
 {
 	char buf[BUFSIZ];
+	extern int sys_nerr;
 	extern char *sys_errlist[];
 
-	(void) sprintf(buf, "%s: %s", msg, sys_errlist[errno]);
+	if ((unsigned) errno < sys_nerr)
+		(void) sprintf(buf, "%s: %s", msg, sys_errlist[errno]);
+	else
+		(void) sprintf(buf, "%s: Error %d", msg, errno);
 	fatal(f, buf);
 }
 
