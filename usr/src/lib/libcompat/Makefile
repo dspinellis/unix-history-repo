@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 
 LIB=compat
 CFLAGS+=-DLIBC_SCCS -DSYSLIBC_SCCS
@@ -19,7 +19,8 @@ MAN3+=	ftime.0 getpw.0 stty.0 vlimit.0 vtimes.0
 MLINKS+=stty.3 gtty.3
 
 # compat 4.3 sources
-SRCS+=	ecvt.c gcvt.c lsearch.c rexec.c ruserpass.c sibuf.c sobuf.c strout.c
+SRCS+=	ecvt.c gcvt.c lsearch.c regex.c rexec.c ruserpass.c sibuf.c \
+	sobuf.c strout.c
 
 .if	(${MACHINE} == "hp300")
 SRCS+=	insque.s remque.s
@@ -31,9 +32,10 @@ SRCS+=	nargs.s insque.s remque.s
 SRCS+=	nargs.s insque.s remque.s
 .endif
 
-MAN3+=	ecvt.0 insque.0 lsearch.0 rexec.0
+MAN3+=	ecvt.0 insque.0 lsearch.0 regex.0 rexec.0
 
 MLINKS+=ecvt.3 fcvt.3 ecvt.3 gcvt.3
 MLINKS+=insque.3 remque.3
+MLINKS+=regex.3 re_comp.3 regex.3 re_exec.3
 
 .include <bsd.lib.mk>
