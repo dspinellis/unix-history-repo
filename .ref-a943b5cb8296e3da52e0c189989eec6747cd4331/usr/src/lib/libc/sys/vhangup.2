@@ -1,0 +1,39 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)vhangup.2	6.2 (Berkeley) %G%
+.\"
+.TH VHANGUP 2 ""
+.UC 4
+.SH NAME
+vhangup \- virtually ``hangup'' the current control terminal
+.SH SYNOPSIS
+.B vhangup()
+.SH DESCRIPTION
+.I Vhangup
+is used by the initialization process
+.IR init (8)
+(among others) to arrange that users are given
+\*(lqclean\*(rq' terminals at login,
+by revoking access of the previous users' processes to the terminal.
+To effect this,
+.I vhangup
+searches the system tables for references to the control terminal
+of the invoking process, revoking access permissions
+on each instance of the terminal that it finds.
+Further attempts to access the terminal by the affected processes
+will yield i/o errors (EBADF).
+Finally,
+a hangup signal (SIGHUP) is sent to the process group of the
+control terminal.
+.SH SEE ALSO
+init (8)
+.SH BUGS
+Access to
+the control terminal via
+.B /dev/tty
+is still possible.
+.PP
+This call should be replaced by an automatic mechanism that
+takes place on process exit.

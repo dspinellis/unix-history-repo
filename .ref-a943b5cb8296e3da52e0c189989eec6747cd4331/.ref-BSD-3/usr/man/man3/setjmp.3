@@ -1,0 +1,41 @@
+.TH SETJMP 3
+.SH NAME
+setjmp, longjmp \- non-local goto
+.SH SYNOPSIS
+.B #include <setjmp.h>
+.PP
+.B setjmp(env)
+.br
+.B jmp_buf env;
+.PP
+.B longjmp(env, val)
+.br
+.B jmp_buf env;
+.SH DESCRIPTION
+These routines are useful for dealing with errors 
+and interrupts encountered in
+a low-level subroutine of a program.
+.PP
+.I Setjmp 
+saves its stack environment in
+.I env
+for later use by
+.I longjmp.
+It returns value 0.
+.PP
+.I Longjmp
+restores the environment saved by the last call of
+.IR setjmp .
+It then returns in such a way that execution
+continues as if the call of 
+.I setjmp
+had just returned the value
+.I val
+to the function that invoked
+.I setjmp,
+which must not itself have returned in the interim.
+All accessible data have values as of the time
+.I longjmp
+was called.
+.SH "SEE ALSO"
+signal(2)

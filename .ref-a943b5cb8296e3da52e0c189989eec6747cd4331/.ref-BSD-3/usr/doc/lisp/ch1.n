@@ -1,0 +1,384 @@
+.Lc F\s-2RANZ\s0\ L\s-2ISP\s0 1
+.sh 2
+.Fr \*[\(dg\*]
+was created as a tool to further research in Symbolic
+Algebraic Manipulation,
+Artificial Intelligence,
+and programming languages at the University of California
+at Berkeley.
+.(f
+\*[\(dg\*]It is rumored that this name has something to do with Franz
+Liszt [F\fIr\fPa\*:nts List] (1811-1886) a Hungarian composer
+and keyboard virtuoso. 
+These allegations have never been proven.
+.)f
+Its roots are in the PDP-11 Lisp system which originally came
+from Harvard.
+As it grew it adopted features of Maclisp and Lisp Machine Lisp
+which enables our work to be shared with colleagues at
+the Laboratory for Computer Science at M.I.T.
+It is written almost entirely in the programming language C.
+A small part is written in the assembly language for the current
+host machine, a VAX 11/780, and part is written in Lisp.
+Because 
+.Fr
+is written in C, it is portable and easy to comprehend.
+Any person with a good knowledge of C could understand the inner
+working of
+.Fr
+in no more than a week of study.
+.pp
+.Fr
+is capable of running large lisp programs in a timesharing enviroment,
+has facilities for arrays and user defined structures,
+has a user controlled reader with character and word macro  capabilities,
+and can interact directly with compiled Lisp and Fortran code.
+.sh 
+This document is a reference manual for the 
+.Fr
+system.
+It is not a Lisp primer or introduction to the language.
+Some parts will be of interest only to those maintaining 
+.Fr
+at their computer site.
+This document is divided into four Movements.
+In the first one we will attempt to describe the language of
+.Fr
+precisely and completely as it now stands (Opus 31, Sept. 1979).
+In the second Movement we will look at the reader, garbage collector,
+arrays and exception handling.
+In the third Movement we will look at several large support packages 
+written to help the 
+.Fr
+user, namely the trace package and compiler.
+Finally the fourth movement is  the index into the other movements.
+In the rest of this chapter we shall examine the data types of 
+.Fr .
+The conventions used in the description of the 
+.Fr
+functions will be given in section 1.4 -- it is very important that 
+these conventions are  understood.
+.sh 2 Data\ Types
+.Fr
+has ten data types.
+In this section we shall look in detail at each type and if a type is
+divisible we shall look inside it.
+There is a Lisp function
+.i type
+which will return the type name of a lisp object.
+This is the official 
+.Fr
+name for that type and we will use this name and this name only in 
+the manual to avoid confusing the reader.
+The types are listed in terms of importance rather than alphabetically.
+.sh 3 lispval - - 0
+This is the name we use to describe any lisp object.
+The function
+.i type
+will never return `lispval'.
+.sh 3 symbol
+This object corresponds to a variable in most other programming languages.
+It may have a value or may be `unbound'.
+A symbol may be 
+.i lambda 
+.i bound 
+meaning that its current value is stored
+away somewhere and the symbol  is given a new value for the duration of a 
+certain context.
+When the Lisp processor  leaves that context, the 
+symbol's current value is thrown
+away and its old value is restored.
+.sp .5v
+A symbol may also have a 
+.i function 
+.i binding .
+This function binding is static; it cannot be lambda bound.
+Whenever the symbol is used in the functional position of a Lisp expression
+the function binding of the symbol is examined (see \(sc X.Y for more
+details on  evaluation).
+.sp .5v
+A symbol may also have a 
+.i property 
+.i list ,
+another static data structure.
+The property list consists of a list of an even number of elements,
+considered to be grouped as pairs. 
+The first element of the pair is the 
+.i indicator 
+the second the value of
+that indicator.
+.sp .5v
+Each symbol has a print name 
+.i (pname) 
+which is how this symbol is accessed from input and refered to
+on  (printed) output.
+This is also used when one tests for equality of symbols using the
+function
+.i equal .
+.sp .5v
+A symbol also has a hashlink used to link symbols together in the
+oblist -- this field is inaccessable to the lisp user.
+.sp .5v
+Symbols are created by the reader and by the functions
+.i concat ,
+.i maknam
+and their derivatives.
+Most symbols live on 
+.Fr 's
+sole 
+.i oblist ,
+and therefore two symbols with the same print name are
+usually the  exact same object (they are
+.i eq ).
+A description of the oblist can be found in \(scX.Y.
+Symbols which are not on the oblist are said to be 
+.i uninterned.
+The function
+.i maknam
+creates uninterned symbols while 
+.i concat
+creates 
+.i interned 
+ones.
+.sp 1v
+.TS
+box center ; 
+c | c | c |  c .
+Subpart name	Get value	Set value	Type
+
+=
+value	eval	set	lispval
+		setq
+_
+property	plist	setplist	list or
+list	get	putprop	the symbol nil
+_
+function	getd	putd	binary or
+binding		def	list or nil
+_
+print name	get_pname		string
+_
+hash link
+.TE
+.sh 3 list
+A list cell has two parts, called the car and cdr.
+List cells are created by the function 
+.i cons .
+.sp 1v
+.TS
+box center ;
+c | c | c | c .
+Subpart name	Get value	Set value	Type
+
+=
+car	car	rplaca	lispval
+_
+cdr	cdr	rplacd	lispval
+.TE
+.sh 3 binary
+This type acts as a function header for machine coded functions.
+It is as close as most lisp users want to get to a machine coded
+function.
+It has two parts, a pointer to the start of the function and a
+symbol whose print name describes the 
+argument
+.i discipline .
+The discipline (either 
+.i lambda ,
+.i macro 
+or 
+.i nlambda )
+determines whether the arguments to this function will be evaluated
+by the caller
+before this function is called.
+Althought the type of the 
+.i entry 
+field of a binary type object is string,  the object pointed to
+by that field is not really a 
+string but is actually a sequence of machine instructions.
+.br
+Objects of type binary are created by 
+.i mfunction .
+.sp 1v
+.TS
+box center ;
+c | c | c | c .
+Subpart name	Get value	Set value	Type
+
+=
+entry	getentry		string
+_
+discipline	getdisc		symbol
+.TE
+.sh 3 fixnum
+A fixnum is an integer constant in the range \(mi2\*[31\*] to
+2\*[31\*]\(mi1.
+Small fixnums (-128 to 127) are stored in a special table so they needn't be
+allocated each time one is needed.
+.sh 3 flonum
+A flonum is a double precision real number in the range 
+\(+-2.9\(mu10\*[-37\*] to \(+-1.7\(mu10\*[38\*].
+There are approximately sixteen decimal digits of precision.
+.sh 3 bignum
+A bignum is an integer of potentially unbounded size.
+When integer arithmetic exceeds the limits mentioned above the calculation
+is automatically  done with bignums.
+Should calculation with bignums give a result which can be represented
+as a fixnum, then the fixnum representation will be used\*[\(dg\*].
+.(f
+\*[\(dg\*]The current algorithms for integer arithmetic operations will return
+(in certain cases) a result 
+between \(+-2\*[30\*] and 2\*[31\*] as a bignum although this
+could be represented as a fixnum.
+.)f
+This contraction is known as
+.i integer
+.i normalization .
+Many Lisp functions assume that integers are normalized.
+If the user chooses to rewrite the bignum package
+he should take
+this into account.
+.sp 5v
+The functions used for the extraction and modification of
+parts of bignums may change from what is shown in the table sometime in
+the future.
+.sp 1v
+.TS
+box center ;
+c | c | c | c .
+Subpart name	Get value	Set value	Type
+
+=
+i	car	rplaca	unboxed integer
+_
+CDR	cdr	rplacd	bignum or
+			the symbol nil
+.TE
+.sh 3 string
+A string is a null terminated sequence of characters.
+Strings  occur in the print names of atoms and the reader syntax
+may be modified to recognize strings in the input.
+The user is warned that strings are new to 
+.Fr
+and not all functions recognize them.
+.sh 3  port
+A port is a structure which the system I/O routines can reference to
+transfer data between the Lisp system and external media.
+Unlike other Lisp objects there are a very limited number of ports (20).
+.sh 3 array
+Arrays are rather complicated types and are fully described in
+\(sc X.Y.
+An array consists of a block of contiguous data, a function
+to reference that data and auxillary fields for use by the referencing
+function.
+Since an array's referencing function is created by the user, an array can
+have any form the user chooses (e.g. n-dimensional, triangular, or hash
+table).
+.br
+Arrays are created by the function
+.i marray .
+The functions for the extraction of parts of an array
+will most likely be changed from what is given 
+in the table in future releases
+of 
+.Fr .
+.sp 1v
+.TS
+box center ;
+c | c | c | c .
+Subpart name	Get value	Set value	Type
+
+=
+access function	getaccess	putaccess	binary or list
+_
+auxillary	getaux	putaux	lispval
+_
+data	arrayref	replace	block of contiguous
+		set	lispval
+_
+length	getlength	putlength	fixnum
+_
+delta	getdelta	putdelta	fixnum
+.TE
+.sh 3 value
+A value cell contains a pointer to a lispval.
+This type is used mainly by arrays 
+of any type of Lisp object.
+Value cells are created through the 
+.i segment
+function.
+.sh 2 Documentation Conventions.
+The conventions used in the following chapters were designed to
+give the maximum amount of information in a brief
+space.
+The first line of a function description contains the function
+name in \fBbold\ face\fP and then lists the arguments, if any.
+The arguments all have names which begin with a letter and an underscore.
+The letter gives the allowable type(s) for that argument according to
+this table.
+.sp 1v
+.TS
+box center ;
+c  | c 
+l | l .
+Letter	Allowable type(s)
+
+=
+g	any type
+_
+s	symbol (although nil may not be allowed)
+_
+l	list (although nil may be allowed)
+_
+n	number (fixnum, flonum, bignum)
+_
+i	integer (fixnum, bignum)
+_
+x	fixnum
+_
+b	bignum
+_
+u	function type (either binary or list whose car is lambda or lexpr)
+_
+y	binary
+_
+a	array
+_
+p	port (or nil)
+.TE
+
+In the first line of a function description 
+those arguments preceded by a quote mark are evaluated (usually 
+before the function is called).
+The quoting convention is used so that we can give a name to the result of
+evaluating the argument and we can describe the allowable types.
+As an example, if we did not use the quoting convention then a
+typical description would look like:
+.Lf add1 "arg"
+.Re
+one plus the result of evaluating arg, which must evaluate to a number.
+.sp 2v
+.in 0
+With the quoting convention we can describe this more simply as:
+.Lf add1 "'n_arg"
+.Re
+one plus n_arg.
+.sp 2v
+.in 0
+If an argument is not quoted it does not mean that that argument will
+not be evaluated, but rather that 
+if it is evaluated the time at which it is evaluated
+will be specifically mentioned in the function description.
+Optional arguments are surrounded by square brackets.
+An ellipsis means zero or more occurances of an argument of the 
+directly preceding
+type.
+.sh 2 The\ state\ of\ F\s-2RANZ\s0\ L\s-2ISP\s0
+.Fr
+is plagued by many functions which are rarely used and do very little.
+These functions are noted in the document as being liable to disappear
+in the future.
+They will be replaced by one or two all-purpose functions.
+.pp
+The lisp system was redesigned to make compiled lisp programs
+smaller and faster and preliminary tests show that this is indeed the case.

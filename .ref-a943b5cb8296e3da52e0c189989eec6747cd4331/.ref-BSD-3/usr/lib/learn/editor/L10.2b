@@ -1,0 +1,30 @@
+#print
+You can of course use "$" with other addresses.
+For example, print from the third line of this file
+through the end; then leave with the usual w, q, and ready.
+#create Ref
+IBM
+Sperry Rand Univac
+Control Data
+Honeywell
+80
+#create file
+Burroughts
+National Cash Register
+IBM
+Sperry Rand Univac
+Control Data
+Honeywell
+#copyout
+#pipe
+ed file
+#user
+#unpipe
+#uncopyout
+tail -5 .ocopy >X1
+#cmp X1 Ref
+#log
+#next
+10.3c 2
+10.2c 5
+10.1b 10

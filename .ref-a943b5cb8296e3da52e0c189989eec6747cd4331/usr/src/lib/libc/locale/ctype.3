@@ -1,0 +1,93 @@
+.\"	@(#)ctype.3	6.4 (Berkeley) %G%
+.\"
+.TH CTYPE 3  ""
+.AT 3
+.SH NAME
+isalpha, isupper, islower, isdigit, isxdigit, isalnum, isspace, ispunct, isprint, isgraph, iscntrl, isascii, toupper, tolower, toascii \- character classification macros
+.SH SYNOPSIS
+.B #include <ctype.h>
+.PP
+.B isalpha(c)
+.PP
+.B . . .
+.SH DESCRIPTION
+These macros classify ASCII-coded integer values
+by table lookup.
+Each is a predicate returning nonzero for true,
+zero for false.
+.I Isascii
+and
+.I toascii
+are defined on all integer values; the rest
+are defined only where 
+.I isascii
+is true and on the single non-ASCII value
+EOF (see
+.IR stdio (3S)).
+.TP 15n
+.I isalpha
+.I c
+is a letter
+.TP
+.I isupper
+.I c
+is an upper case letter
+.TP
+.I islower 
+.I c
+is a lower case letter
+.TP
+.I isdigit
+.I c
+is a digit
+.TP
+.I isxdigit
+.I c
+is a hex digit
+.TP
+.I isalnum
+.I c
+is an alphanumeric character
+.TP
+.I isspace
+.I c
+is a space, tab, carriage return, newline, vertical tab, or formfeed
+.TP
+.I ispunct
+.I c
+is a punctuation character (neither control nor alphanumeric)
+.TP
+.I isprint
+.I c
+is a printing character, code 040(8) (space) through 0176 (tilde)
+.TP
+.I isgraph
+.I c
+is a printing character, similar to
+.I isprint
+except false for space.
+.TP
+.I iscntrl
+.I c
+is a delete character (0177) or ordinary control character
+(less than 040).
+.TP
+.I isascii
+.I c
+is an ASCII character, code less than 0200
+.TP
+.I tolower
+.I c
+is converted to lower case.  Return value is undefined if not 
+.I isupper(c).
+.TP
+.I toupper
+.I c
+is converted to upper case.  Return value is undefined if not 
+.I islower(c).
+.TP
+.I toascii
+.I c
+is converted to be a valid ascii character.
+.SH "SEE ALSO"
+ascii(7)

@@ -1,0 +1,372 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)newcsh.1	4.1 (Berkeley) %G%
+.\"
+.TH NEWCSH 1 "4/1/81"
+.UC 4
+.bd S 3
+.SH NAME
+newcsh \- description of new csh features (over oldcsh)
+.SH SYNOPSIS
+.B csh
+\fIcsh-options\fR
+.SH SUMMARY
+This is a summary of features new in
+.IR csh (1)
+in this version of the system; an older version of
+.I csh
+is available as
+.I oldcsh.
+This newer
+.I csh
+has some new process control primitives and a few other new features.
+Users of
+.I csh
+must (and automatically) use the new terminal driver (summarized in
+.IR newtty(4)
+and completely described with the old in
+.IR tty (4))
+which allows generation of some new
+interrupt signals from the keyboard which tell jobs to stop,
+and arbitrates access to the terminal;
+on CRT's the command ``stty crt'' is
+normally placed in the
+.I .login
+file to be executed at login,
+to set other useful modes of this terminal driver.
+.PP
+.B "Jobs."
+.PP
+The most important new feature in this shell is the control of
+.I jobs.
+A job is associated with each pipeline, where a pipeline is either
+a simple command like ``date'', or a pipeline like ``who | wc''.
+The shell keeps a table of current jobs, and assigns them small
+integer numbers.
+When you start a job in the background, the shell prints a line
+which looks like:
+.PP
+\ \ \ \ [1] 1234
+.PP
+this indicating that the job which was started asynchronously with ``&''
+is job number 1 and has one (top-level) process, whose process id is 1234.
+The set of current jobs is listed by the
+.I jobs
+command.
+.PP
+If you are running a job and wish to do something else you may hit the
+key ^Z (control-Z) which sends a
+.I stop
+signal to the current job.  The shell will then normally indicate that
+the job has been ``Stopped'', and print another prompt.
+You can then
+put the job in the background with the command ``bg'', or run
+some other commands and then return the job to the foreground with
+``fg''.
+A ^Z takes effect immediately and is like an interrupt in that
+pending output and unread input are discarded when it is typed.
+There is another special key ^Y which does not generate a stop signal
+until a program attempts to
+.IR read (2)
+it.
+This can usefully be typed ahead when you have prepared some commands
+for a job which you wish to stop after it has read them.
+.PP
+A job being run in the background will stop if it tries to read
+from the terminal.  Background jobs are normally allowed to produce output,
+but this can be disabled by doing ``stty tostop''.  If you set this
+tty option, then background jobs will stop when they try to produce
+output like they do when they try to read input.
+.PP
+There are several ways to refer to jobs in the shell.  The character
+``%'' introduces a job name.  If you wish to refer to job number 1, you can
+name it as ``%1''.  Just naming a job brings it to the foreground; thus
+``%1'' is a synonym for ``fg %1'', bringing job 1 back into the foreground.
+Similarly saying ``%1 &'' resumes job 1 in the background.
+Jobs can also be named by prefixes of the string typed in to start them,
+if these prefixes are unambiguous, thus ``%ex'' would normally restart
+a suspended
+.IR ex (1)
+job, if there were only one suspended job whose name began with
+the string ``ex''.  It is also possible to say ``%?string''
+which specifies a job whose text contains
+.I string,
+if there is only one such job.
+.PP
+The shell also maintains a notion of the current and previous jobs.
+In output pertaining to jobs, the current job is marked with a ``+''
+and the previous job with a ``\-''.  The abbreviation ``%+'' refers
+to the current job and ``%\-'' refers to the previous job.  For close
+analogy with the
+.I history
+mechanism,
+``%%'' is also a synonym for the current job.
+.PP
+.B "Status reporting."
+.PP
+This shell learns immediately whenever a process changes state.
+It normally informs you whenever a job becomes blocked so that
+no further progress is possible, but only just before it prints
+a prompt.  This is done so that it does not otherwise disturb your work.
+If, however, you set the shell variable
+.I notify,
+the shell will notify you immediately of changes of status in background
+jobs.
+There is also a shell command
+.I notify
+which marks a single process so that its status changes will be immediately
+reported.  By default 
+.I notify
+marks the current process;
+simply say ``notify'' after starting a background job to mark it.
+.PP
+When you try to leave the shell while jobs are stopped, you will
+be warned that ``You have stopped jobs.''  You may use the ``jobs''
+command to see what they are.  If you do this or immediately try to
+exit again, the shell will not warn you a second time, and the suspended
+jobs will be unmercifully terminated.
+.PP
+.B "New builtin commands."
+.HP 5
+.B bg
+.br
+.ns
+.HP 5
+\fBbg\ %\fRjob\ ...
+.br
+Puts the current or specified jobs into the background, continuing them
+if they were stopped.
+.HP 5
+.B fg
+.br
+.ns
+.HP 5
+\fBfg\ %\fRjob\ ...
+.br
+Brings the current or specified jobs into the foreground, continuing them if
+they were stopped.
+.HP 5
+.B jobs
+.br
+.ns
+.HP 5
+.B "jobs \-l"
+.br
+Lists the active jobs; given the
+.B \-l
+options lists process id's in addition to the normal information.
+.HP 5
+\fBkill %\fRjob
+.br
+.ns
+.HP 5
+\fBkill\ \-\fRsig\ \fB%\fRjob\ ...
+.br
+.ns
+.HP 5
+\fBkill\fR\ pid
+.br
+.ns
+.HP 5
+\fBkill\ \-\fRsig\ pid\ ...
+.br
+.ns
+.HP 5
+\fBkill\ \-l\fR
+.br
+Sends either the TERM (terminate) signal or the
+specified signal to the specified jobs or processes.
+Signals are either given by number or by names (as given in
+.I /usr/include/signal.h,
+stripped of the prefix ``SIG'').
+The signal names are listed by ``kill \-l''.
+There is no default, saying just `kill' does not
+send a signal to the current job.
+If the signal being sent is TERM (terminate) or HUP (hangup),
+then the job or process will be sent a CONT (continue) signal as well.
+.HP 5
+.B notify
+.br
+.ns
+.HP 5
+\fBnotify\ %\fRjob\ ...
+.br
+Causes the shell to notify the user asynchronously when the status of the
+current or specified jobs changes; normally notification is presented
+before a prompt.  All jobs are marked ``notify'' if the shell variable
+``notify'' is set.
+.HP 5
+\fBstop\ %\fRjob\ ...
+.br
+Stops the specified job which is executing in the background.
+.HP 5
+\fB%\fRjob
+.br
+Brings the specified job into the foreground.
+.HP 5
+\fB%\fRjob \fB&\fR
+.br
+Continues the specified job in the background.
+.br
+.ne 5
+.PP
+.B "Process limitations."
+.PP
+The shell provides access to an experimental facility for limiting
+the consumption by a single process of system resources.
+The following commands control this facility:
+.HP 5
+\fBlimit\fR \fIresource\fR \fImaximum-use\fR
+.HP 5
+\fBlimit\fR \fIresource\fR
+.br
+.ns
+.HP
+\fBlimit\fR
+.br
+Limits the consumption by the current process and each process
+it creates to not individually exceed \fImaximum-use\fR on the
+specified \fIresource\fR.  If no \fImaximum-use\fR is given, then
+the current limit is printed; if no \fIresource\fR is given, then
+all limitations are given.
+.IP
+Resources controllable currently include \fIcputime\fR (the maximum
+number of cpu-seconds to be used by each process), \fIfilesize\fR
+(the largest single file which can be created), \fIdatasize\fR
+(the maximum growth of the data+stack region via
+.IR sbrk (2)
+beyond the end of the program text), \fIstacksize\fR (the maximum
+size of the automatically-extended stack region), and \fIcoredumpsize\fR
+(the size of the largest core dump that will be created).
+.IP
+The \fImaximum-use\fR may be given as a (floating point or integer)
+number followed by a scale factor.  For all limits other than \fIcputime\fR
+the default scale is ``k'' or ``kilobytes'' (1024 bytes);
+a scale factor of ``m'' or ``megabytes'' may also be used.
+For cputime the default scaling is ``seconds'', while ``m'' for minutes
+or ``h'' for hours, or a time of the form ``mm:ss'' giving minutes
+and seconds may be used.
+.IP
+For both \fIresource\fR names and scale factors, unambiguous prefixes
+of the names suffice.
+.HP 5
+\fBunlimit\fR \fIresource\fR
+.br
+.ns
+.HP 5
+\fBunlimit\fR
+.br
+Removes the limitation on \fIresource\fR.  If no \fIresource\fR
+is specified, then all \fIresource\fR limitations are removed.
+.ne 5
+.PP
+.B "Directory stack."
+.PP
+This shell now keeps track of the current directory (which is kept
+in the variable
+.I cwd)
+and also maintains a stack of directories, which is printed by the
+command
+.I dirs.
+You can change to a new directory and push down the old directory
+stack by using the command
+.I pushd
+which is otherwise like the 
+.I chdir
+command, changing to its argument.
+You can pop the directory stack by saying
+.I popd.
+Saying
+.I pushd
+with no arguments exchanges the top two elements of the directory stack.
+The elements of the directory stack are numbered from 1 starting at the top.
+Saying
+.I pushd
+with a argument ``+\fIn\fR'' rotates the directory stack to make that entry
+in the stack be at the top and changes to it.
+Giving
+.I popd
+a ``+\fIn\fR'' argument eliminates that argument from the directory stack.
+.PP
+.B "Miscellaneous."
+.PP
+This shell imports the environment variable USER into the variable
+.I user,
+TERM into
+.I term,
+and
+HOME into
+.I home,
+and exports these back into the environment whenever the normal
+shell variables are reset.
+The environment variable PATH is likewise handled; it is not
+necessary to worry about its setting other than in the file
+.I \&.cshrc
+as inferior
+.I csh
+processes will import the definition of
+.I path
+from the environment, and re-export it if you then change it.
+(It could be set once in the
+.I \&.login
+except that commands over the Berknet would not
+see the definition.)
+.PP
+There are new commands
+.I eval,
+which is like the eval of the Bourne shell
+.IR sh (1),
+and useful with
+.IR tset (1),
+and
+.I suspend
+which stops a shell (as though a ^Z had stopped it; since
+shells normally ignore ^Z signals, this command is necessary.)
+.PP
+There is a new variable
+.I cdpath;
+if set, then each directory in
+.I cdpath
+will be searched for a directory named in a
+.I chdir
+command if there is no such subdirectory of the current directory.
+.PP
+An
+.I unsetenv
+command removing environment variables has been added.
+.PP
+There is a new ``:'' modifier ``:e'', which yields the extension
+portion of a filename.  Thus if ``$a'' is ``file.c'', ``$a:e'' is ``c''.
+.PP
+There are two new operators in shell expressions ``!~'' and ``=~'' which
+are like the string operations ``!='' and ``=='' except that the right
+hand side is a
+.I pattern
+(containing, e.g. ``*''s, ``?''s and instances of ``[...]'')
+against which the left hand operand is matched.  This reduces the
+need for use of the
+.I switch
+statement in shell scripts when all that is really needed is pattern matching.
+.PP
+The form ``$<'' is new, and is replaced by a line from the standard
+input, with no further interpretation thereafter.  It may therefore
+be used to read from the keyboard in a shell script.
+.SH "SEE ALSO"
+csh(1), killpg(2), sigsys(2), signal(2), jobs(3), sigset(3), tty(4)
+.SH BUGS
+Command sequences of the form ``a ; b ; c'' are not handled gracefully
+when stopping is attempted.  If you suspend ``b'', the shell will then
+immediately execute ``c''.  This is especially noticeable if this
+expansion results from an
+.I alias.
+It suffices to place the sequence of commands in ()'s to force it to
+a subshell, i.e. ``( a ; b ; c )'', but see the next bug.
+.PP
+Shell builtin functions are not stoppable/restartable.
+.PP
+Control over output is primitive;
+perhaps this will inspire someone to work on a good virtual
+terminal interface.  In a virtual terminal interface much more
+interesting things could be done with output control.

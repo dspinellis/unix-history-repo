@@ -1,0 +1,131 @@
+	A substantial number of minor changes were made to ``uucp''
+at the end of February and early March, before Dave Nowitz returned
+to Piscataway. Changes made after March, 15, 1979, will be available through 
+stockroom category, ``uucp_changes''.  Any installation with a version
+of ``uucp'' obtained before March 15, should obtain the whole
+distribution afresh.
+
+	Most of the changes are relatively benign. See the file CHANGES
+for a list of what has been done.  PLEASE NOTE that there is one
+important difference between the present version and previous versions:
+there is a change to the file ``L-devices''. For each entry representing
+an ACU insert the string "ACU " at the beginning of the line; for each
+direct connection, insert "DIR ". This should take all of a minute.
+
+	Two short shell procedures, ``uutest'' and ``uucheck'' are
+included in the distribution. You may find them useful for administrative
+purposes. Put links to them in your personal bin directory. (On
+our system, they live in /usr/lib/uucp.)
+
+			PWB 1.2 SYSTEMS
+        There is a new stockroom category, called ``pwbuucp'', (made March 21)
+which gives additional information regarding installing uucp on PWB 1.2 
+systems.  This information is by courtesy of Brian Redman.
+
+			GENERAL  INSTRUCTIONS
+        Before running "uucp", you should change the define for "MYNAME"
+in "uucp.h" to whoever you are, and recompile.
+As delivered, "uucp" thinks that it is running on the ``usg'' system.
+
+NOTE - To export executable code:
+A new routine (uucpname.c) has been added which returns the local uucp name.
+If no action is taken, this routine will return the value
+of "MYNAME".  By defining "UNAME" as value 1 in "uucp.h", the value returned
+is determined by a call to "uname(&utsname)" where utsname is a structure
+which contains an element "nodename" - the uucpname for the local system.
+
+        Since all ACUs are not created equal, the last character which must
+be sent to the ACU may differ on your system.  The value "ACULAST" in
+"uucp.h" should be modified if necessary.
+
+        To run successfully you will need to provide working
+versions of the following files:
+
+  L-devices     entries for call-units and hard-wired connections
+  L-dialcodes   decodes abbreviations occurring in L.sys
+  L.sys         pertinent details about other systems that you
+                may call, as the result of prior agreement.
+  USERFILE      user accessibility information
+
+The information in these files is specific to each installation.
+The versions supplied are arbitrarily modified versions of files
+used on the Usg machine, and are provided only for your
+information.
+
+        As delivered, "uucp" is set up to use the following
+directories (contrary to some documentation):
+
+        /usr/src/cmd/uucp       source files
+        /usr/lib/uucp           executable programs and data files
+        /usr/spool/uucp         work-in-progress
+        /usr/lib/uucp/.XQTDIR      work area for "uuxqt"
+        /usr/spool/uucppublic   uucp public directory
+
+"/usr/bin/uucp (uux)" is linked to "/usr/lib/uucp/uucp (uux)".
+
+NOTE - some resent changes have moved some to the directories.
+The names appear in uucp.h and the "uucp.mk" file.
+(SPOOL, XQTDIR, PUBDIR, INSDIR, THISDIR)
+The login directory for the uucp login(s) should be the PUBDIR
+directory.
+
+	Note also that there is an array called "Cmds" in the file
+"uuxqt.c" which names the commands which may be executed at
+the request of a remote user, via "uux". You will most probably
+wish to modify the initialization of this array, to reflect the
+commands you are willing to allow on your system.
+
+	The ``mail'' command has been modified, so that it may
+only be used to send mail, when it is invoked under a name beginning
+with 'r'. (In the receive mode, it can be used to invoke a shell,
+thus creating a potential security hole.)
+When sending mail to a remote site, ``mail'' invokes the ``rmail''
+command at the remote site. Hence you should create an ``rmail''
+command by linking to ``/bin/mail", and ensure that ``Cmds''
+contains an entry for ``rmail'', but not ``mail''.
+
+        Note that other systems which may contact you via "uucp"
+will have to login using information that you supply. When UNIX/TS is
+delivered there is a user "uucp" (with no initial password) whose
+default shell is (and must be) "/usr/lib/uucp/uucico". If you
+wish to use "uucp" to contact other systems you will need to
+obtain username and password information from them in advance and
+to store this in "L.sys".  Since the file "L.sys" contains
+sensitive information about how to access other systems which are
+willing to converse with you, it is important that the "L.sys"
+file be properly protected. You will find that ensuring a high
+level of protection is not a trivial task. As a minimum you will
+need to set correctly the permissions on the file itself, its
+parent directory and every executable "set-uid-to-root" file in
+your whole system ... and then ensure that the root password is
+secure ... as a bare minimum.
+
+        The programs "uuclean" and "uulog" are provided for
+housekeeping.  These should be run frequently, e.g. by "cron".
+Prototypes of procedures that may be run by "cron" are provided
+here as the files "uudemon.*".  Note also that "uudemon.hr"
+starts up "uucico" to initiate transfers that have been delayed
+for some reason, or to poll passive systems for work.
+
+	Some installations may wish to use both the old and new
+versions of "uucp" concurrently for a while. This will be because some
+but not all of your correspondents have made the switch from the
+old to the new. The old version is no longer supported and the
+switch should be made as soon as possible. In the interim, you
+may replace the /usr/bin/uucp (which is linked to 
+/usr/lib/uucp/uucp) by a shell procedure such as:
+
+	for i in $*
+	do
+	    case $i in
+		old!* | dull!* | slow!* )
+		    /usr/lib/uucp/olduucp $*
+		    echo old uucp used
+		    exit;;
+	    esac
+	/usr/lib/uucp/uucp $*
+
+(This assumes that the old version of "uucp" has been moved to "olduucp".)
+
+For further information contact D. Nowitz (PY 6120) or 
+J. Lions (MH 5667) or U. Arazy (MH 7659).

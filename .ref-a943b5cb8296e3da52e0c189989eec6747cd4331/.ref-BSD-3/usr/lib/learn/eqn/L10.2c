@@ -1,0 +1,17 @@
+#print
+Does this sequence produce output with the equals signs
+lined up?
+  .EQ I
+  x mark = y
+  .EN
+  .EQ I
+  x+y mark = z
+  .EN
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+11.1a 10

@@ -1,0 +1,46 @@
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)mem.4	6.1 (Berkeley) %G%
+.\"
+.TH MEM 4 ""
+.UC 7
+.SH NAME
+mem, kmem \- main memory
+.SH DESCRIPTION
+.lg
+.I Mem
+is a special file that is an image of the main memory
+of the computer.
+It may be used, for example, to examine
+(and even to patch) the system.
+.PP
+Byte addresses in
+.I mem
+are interpreted as physical memory addresses.
+References to non-existent locations cause errors to be returned.
+.PP
+Examining and patching device registers is likely
+to lead to unexpected results when read-only or write-only
+bits are present.
+.PP
+The file
+.I kmem
+is the same as 
+.I mem
+except that kernel virtual memory
+rather than physical memory is accessed.
+.PP
+On TAHOE, the I/O page
+begins at physical address 0xfff00000 of
+.I kmem
+and per-process data for the current process
+begins at virtual 0xbffff000.
+.SH FILES
+/dev/mem,
+/dev/kmem
+.SH BUGS
+Memory files are accessed one byte
+at a time, an inappropiate method for some
+device registers.

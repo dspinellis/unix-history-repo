@@ -1,0 +1,31 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)putc.3	6.1 (Berkeley) %G%
+.\"
+.TH PUTC 3F ""
+.UC 5
+.SH NAME
+putc, fputc \- write a character to a fortran logical unit
+.SH SYNOPSIS
+.B integer function putc (char)
+.br
+.B character char
+.sp 1
+.B integer function fputc (lunit, char)
+.br
+.B character char
+.SH DESCRIPTION
+These funtions write a character to the file associated with a fortran logical
+unit bypassing normal fortran I/O.
+.I Putc
+writes to logical unit 6, normally connected to the control terminal output.
+.PP
+The value of each function will be zero unless some error occurred;
+a system error code otherwise. See perror(3F).
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+putc(3S), intro(2), perror(3F)

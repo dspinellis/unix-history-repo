@@ -1,0 +1,30 @@
+.TH COLRM 1 2/24/79
+.UC
+.SH NAME
+colrm \- remove columns from a file
+.SH SYNOPSIS
+.B colrm
+[
+startcol
+[
+endcol
+]
+]
+.SH DESCRIPTION
+.I Colrm
+removes selected columns from a file.
+Input is taken from standard input.
+Output is sent to standard output.
+.PP
+If called with one parameter the columns
+of each line will be removed starting with the specified column.
+If called with two parameters the columns from the first column
+to the last column will be removed.
+.PP
+Column numbering starts with column 1.
+.SH SEE\ ALSO
+expand(1)
+.SH AUTHOR
+Jeff Schriebman
+.SH BUGS
+Tabs are treated as one character and one column.

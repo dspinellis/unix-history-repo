@@ -1,0 +1,11 @@
+#print
+As an easier typing test, see if you can just get
+the word "management" in correctly.  Type it
+in response to "$" and then type "ready".
+#copyin
+#user
+#uncopyin
+#match management
+#log
+#next
+3.1a 10

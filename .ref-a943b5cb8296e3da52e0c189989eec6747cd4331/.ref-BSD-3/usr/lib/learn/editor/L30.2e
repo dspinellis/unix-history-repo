@@ -1,0 +1,24 @@
+#print
+Now edit the file named "town" and change
+the 'q' on the last line to a 'p'.  Rewrite the
+corrected file and type 'ready'.
+#create Ref
+south orange
+maplewood
+millburn
+short hills
+summit
+new providence
+#create town
+south orange
+maplewood
+millburn
+short hills
+summit
+new qrovidence
+#user
+#cmp town Ref
+#log
+#next
+30.2f 5
+31.1a 10

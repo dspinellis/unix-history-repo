@@ -1,0 +1,12 @@
+@(#)how_pxp	1.1 (Berkeley) %G%
+To profile a program do
+	pxp -z name.p
+after a translation specifying this option to pi and an execution, i.e.:
+	pi -z name.p
+	px
+or
+	pix -z name.p
+To use pxp to reformat a program you can use the command:
+	pxp name.p >newname.p
+The complete format for using pxp is
+	pxp [ -acdefjntuw_ ] [ -23456789 ] [ -z [ name ... ] ] name.p

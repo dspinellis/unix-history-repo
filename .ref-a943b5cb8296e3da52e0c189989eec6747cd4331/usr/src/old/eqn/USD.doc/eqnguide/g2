@@ -1,0 +1,532 @@
+.\"	@(#)g2	6.1 (Berkeley) %G%
+.\"
+.SC "Size and Font Changes"
+.PP
+By default, equations are set in 10-point type (the same size as this guide),
+with standard mathematical conventions
+to determine what characters are in roman and what in italic.
+Although 
+.UC EQN
+makes a valiant attempt to use
+esthetically pleasing sizes and fonts,
+it is not perfect.
+To change sizes and fonts, use
+.ul
+size n
+and
+.ul
+roman, italic, 
+.ul
+bold
+and
+.ul
+fat.
+Like
+.ul
+sub
+and
+.ul
+sup,
+size
+and font changes affect only the thing that follows
+them, and revert to the normal situation
+at the end of it. Thus
+.P1
+bold x y
+.P2
+is
+.EQ
+bold x y
+.EN
+and
+.P1
+size 14 bold x = y +
+   size 14 {alpha + beta}
+.P2
+gives
+.EQ
+size 14 bold x = y +
+   size 14 {alpha + beta}
+.EN
+As always, you can use braces if you want to affect something
+more complicated than a single letter.
+For example, you can change the size of an entire equation by
+.P1
+size 12 { ... }
+.P2
+.PP
+Legal sizes which may follow 
+.ul
+size
+are
+6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 28, 36.
+You can also change the size
+.ul
+by
+a given amount;
+for example, you can say
+.ul
+size~+2
+to make the size two points bigger,
+or
+.ul
+size~\(mi3
+to make it three points smaller.
+This has the advantage that you don't have
+to know what the current size is.
+.PP
+If you are using fonts other than roman, italic and bold,
+you can say
+.ul
+font X
+where 
+.ul
+X
+is a one character
+.UC TROFF
+name or number for the font.
+Since
+.UC EQN
+is tuned for roman, italic and bold,
+other fonts may not give quite as good an appearance.
+.PP
+The
+.ul
+fat 
+operation takes the current font and widens it by overstriking:
+.ul
+fat\ grad
+is
+$fat grad$ and
+.ul
+fat {x sub i}
+is
+$fat {x sub i}$.
+.PP
+If an entire document is to be in a non-standard size
+or font, it is a severe nuisance
+to have to write out a size and font change for each
+equation.
+Accordingly, you can set a ``global'' size or font
+which thereafter affects all equations.
+At the beginning of any equation, you might say, for instance,
+.P1
+^EQ
+gsize 16
+gfont R
+ ...
+^EN
+.P2
+to set the size to 16 and the font to roman thereafter.
+In place of R, you can use any of the
+.UC TROFF
+font names.
+The size after
+.ul
+gsize
+can be a relative change with + or \(mi.
+.PP
+Generally,
+.ul
+gsize
+and
+.ul
+gfont
+will appear at the beginning of a document
+but they can also appear
+thoughout a document: the global font and size
+can be changed as often as needed.
+For example, in a footnote\(dd
+.FS
+\(ddLike this one, in which we have a
+$gsize -2$few random
+expressions like $x sub i$ and $pi sup 2$.
+The sizes for these were set by the command
+.ul
+gsize~\(mi2.
+.FE $gsize +2$
+you will typically want the size of equations to match
+the size of the footnote text, which is two points smaller
+than the main text.
+Don't forget to reset the global size
+at the end of the footnote.
+.SC "Diacritical Marks"
+.PP
+To get funny marks on top of letters,
+there are several words:
+.P1
+.tr ^^
+.tr ~~
+.ta 1i
+x dot	$x dot$
+x dotdot	$x dotdot$
+x hat	$x hat$
+x tilde	$x tilde$
+x vec	$x vec$
+x dyad	$x dyad$
+x bar	$x bar$
+x under	$x under$
+.P2
+The diacritical mark is placed at the right height.
+The 
+.ul
+bar
+and
+.ul
+under
+are made the right length for the entire construct,
+as in $x+y+z bar$;
+other marks are centered.
+.SC "Quoted Text"
+.PP
+Any input entirely within quotes (\|"..."\|)
+is not subject to any of the font changes and spacing
+adjustments normally done by the equation setter.
+This provides a way to do your own spacing and adjusting if needed:
+.P1
+italic "sin(x)" + sin (x)
+.P2
+is
+.EQ
+italic "sin(x)" + sin (x)
+.EN
+.PP
+Quotes are also used to get braces and other
+.UC EQN
+keywords printed:
+.P1
+"{ size alpha }"
+.P2
+is
+.EQ
+"{ size alpha }"
+.EN
+and
+.P1
+roman "{ size alpha }"
+.P2
+is
+.EQ
+roman "{ size alpha }"
+.EN
+.PP
+The construction "" is often used as a place-holder
+when grammatically
+.UC EQN
+needs something, but you don't actually want anything in your output.
+For example, to make
+$"" sup 2 roman He$,
+you can't just type
+.ul
+sup 2 roman He
+because a
+.ul
+sup
+has to be a superscript
+.ul
+on
+something.
+Thus you must say
+.P1
+"" sup 2 roman He
+.P2
+.PP
+To get a literal quote
+use ``\\"''.
+.UC TROFF 
+characters like
+.ul
+\e(bs
+can appear unquoted, but more complicated things like
+horizontal and vertical motions with
+.ul
+\eh
+and
+.ul
+\ev
+should
+always
+be quoted.
+(If you've never heard of
+.ul
+\\h
+and
+.ul
+\\v,
+ignore this section.)
+.SC "Lining Up Equations"
+.PP
+Sometimes it's necessary to line up a series of equations
+at some horizontal position, often at an equals sign.
+This is done with two operations called
+.ul
+mark
+and
+.ul
+lineup.
+.PP
+The word
+.ul
+mark
+may appear once at any place in an equation.
+It remembers the horizontal position where it appeared.
+Successive equations can contain one occurrence of the word
+.ul
+lineup.
+The place where
+.ul
+lineup
+appears is made to line up
+with the place marked by the previous
+.ul
+mark
+if at all possible.
+Thus, for example,
+you can say
+.P1
+^EQ I
+x+y mark = z
+^EN
+^EQ I
+x lineup = 1
+^EN
+.P2
+to produce
+.EQ I
+x+y mark = z
+.EN
+.EQ I
+x lineup = 1
+.EN
+For reasons too complicated to talk about,
+when you use
+.UC EQN
+and
+`\(mims',
+use either
+.UC .EQ\ I
+or
+.UC .EQ\ L .
+mark
+and
+.ul
+lineup
+don't work with centered equations.
+Also bear in mind that 
+.ul
+mark
+doesn't look ahead;
+.P1
+x mark =1
+ ...
+x+y lineup =z
+.P2
+isn't going to work, because there isn't room
+for the
+.ul
+x+y
+part after the
+.ul
+mark
+remembers where the
+.ul
+x
+is.
+.SC "Big Brackets, Etc."
+.PP
+.tr ~
+To get big brackets [~],
+braces {~}, parentheses (~), and bars |~|
+around things, use the
+.ul
+left 
+and
+.ul
+right
+commands:
+.tr ~~
+.P1
+left { a over b + 1 right }
+ ~=~ left ( c over d right )
+ + left [ e right ]
+.P2
+is
+.EQ
+left { a over b + 1 right } ~=~ left ( c over d right ) + left [ e right ]
+.EN
+The resulting brackets are made big enough to cover whatever they enclose.
+Other characters can be used besides these,
+but the are not likely to look very good.
+One exception is the
+.ul
+floor
+and
+.ul
+ceiling 
+characters:
+.P1
+left floor x over y right floor 
+<= left ceiling a over b right ceiling
+.P2
+produces
+.EQ
+left floor x over y right floor 
+<= left ceiling a over b right ceiling
+.EN
+.PP
+Several warnings about brackets are in order.
+First, braces are typically bigger than brackets and parentheses,
+because they are made up of three, five, seven, etc., pieces,
+while brackets can be made up of two, three, etc.
+Second, big left and right parentheses often look poor,
+because the character set is poorly designed.
+.PP
+The
+.ul
+right
+part may be omitted:
+a ``left something'' need not have a
+corresponding 
+``right
+something''.
+If the
+.ul
+right
+part is omitted,
+put braces around the thing you want the left bracket
+to encompass.
+Otherwise, the resulting brackets may be too large.
+.PP
+If you want to omit the
+.ul
+left
+part, things are more complicated,
+because technically you can't have a
+.ul
+right
+without a corresponding
+.ul
+left.
+Instead you have to say
+.P1
+left "" ..... right )
+.P2
+for example.
+The
+.ul
+left ""
+means a ``left nothing''.
+This satisfies the rules without hurting your output.
+.SC "Piles"
+.PP
+There is a general facility for making vertical piles
+of things; it comes in several flavors.
+For example:
+.P1
+.tr ~~
+A ~=~ left [
+  pile { a above b above c }
+  ~~ pile { x above y above z }
+right ]
+.P2
+will make
+.EQ
+A ~=~ left [
+pile { a above b above c } ~~ pile { x above y above z }
+right ]
+.EN
+The elements of the pile (there can be as many as you want)
+are centered one above another, at the right height for
+most purposes.
+The keyword
+.ul
+above
+is used to separate the pieces;
+braces are used around the entire list.
+The elements of a pile can be as complicated as needed, even containing more piles.
+.PP
+Three other forms of pile exist:
+.ul
+lpile
+makes a pile with the elements left-justified;
+.ul
+rpile
+makes a right-justified pile;
+and
+.ul
+cpile
+makes a centered pile, just like
+.ul
+pile.
+The vertical spacing between the pieces
+is somewhat larger for
+.ul
+l-,
+.ul
+r-
+and
+.ul
+cpiles
+than it is for ordinary piles.
+.P1 2
+roman sign (x)~=~ 
+left {
+   lpile {1 above 0 above -1} 
+   ~~ lpile
+    {if~x>0 above if~x=0 above if~x<0}
+.P2
+makes
+.EQ
+roman sign (x)~=~ 
+left {
+   lpile {1 above 0 above -1} 
+   ~~ lpile
+    {if~x>0 above if~x=0 above if~x<0}
+.EN
+Notice the left brace
+without a matching right one.
+.SC Matrices
+.PP
+It is also possible to make matrices.
+For example, to make
+a neat array like
+.EQ
+matrix {
+  ccol { x sub i above y sub i }
+  ccol { x sup 2 above y sup 2 }
+}
+.EN
+you have to type
+.P1
+matrix {
+  ccol { x sub i above y sub i }
+  ccol { x sup 2 above y sup 2 }
+}
+.P2
+This produces a matrix with
+two centered columns.
+The elements of the columns are then listed just as for a pile,
+each element separated by the word
+.ul
+above.
+You can also use
+.ul
+lcol
+or
+.ul
+rcol
+to left or right adjust columns.
+Each column can be separately adjusted,
+and there can be as many columns as you like.
+.PP
+The reason for using a matrix instead of two adjacent piles, by the way,
+is that if the elements of the piles don't all have the same height,
+they won't line up properly.
+A matrix forces them to line up,
+because it looks at the entire structure before deciding what
+spacing to use.
+.PP
+A word of warning about matrices _
+.ul
+each column must have the same number of elements in it.
+The world will end if you get this wrong.

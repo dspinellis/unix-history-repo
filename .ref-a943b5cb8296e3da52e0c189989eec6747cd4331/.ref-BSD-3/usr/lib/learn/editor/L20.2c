@@ -1,0 +1,58 @@
+#print
+You can also change several lines, and you need not replace
+lines with the same number of lines.  You can put any amount
+of text between the 'c' command and the closing '.', and
+you can remove any number of lines from the file by specifying
+a range of addresses.  For example, 
+
+   2,5c
+   first
+   second
+   .
+would replace the FOUR lines 2,3,4 and 5 of the file with TWO
+new lines containing "first" and "second".  You can of course
+use more complicated addresses involving $ and . if you wish.
+This directory contains a file "oldrr".  Delete the last two
+lines and replace them by a line reading
+
+penn central
+
+and write the new version on a file named "newrr".  Then use "diff"
+to compare the old and new versions of the file.
+Eventually, type "ready".
+#create Ref
+maine central
+bangor and aroostook
+boston and maine
+grand trunk
+vermont central
+boston and albany
+new haven
+delaware and hudson
+new york, susquehanna, and western
+erie-lackawanna
+chessie system
+lehigh valley
+long island railroad
+penn central
+#create oldrr
+maine central
+bangor and aroostook
+boston and maine
+grand trunk
+vermont central
+boston and albany
+new haven
+delaware and hudson
+new york, susquehanna, and western
+erie-lackawanna
+chessie system
+lehigh valley
+long island railroad
+new york central
+pennsylvania
+#user
+#cmp newrr Ref
+#log
+#next
+21.1a 10
