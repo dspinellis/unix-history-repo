@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)chared.h	5.1 (Berkeley) %G%
+ *	@(#)chared.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -19,7 +19,7 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "editline.h"
+#include "histedit.h"
 
 #define EL_MAXMACRO 10
 

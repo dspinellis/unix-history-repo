@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)hist.h	5.1 (Berkeley) %G%
+ *	@(#)hist.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -16,8 +16,7 @@
 #ifndef _h_el_hist
 #define _h_el_hist
 
-#include "editline.h"
-#include "history.h"
+#include "histedit.h"
 
 typedef const HistEvent *	(*hist_fun_t) __P((ptr_t, int, ...));
 

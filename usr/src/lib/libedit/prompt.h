@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)prompt.h	5.1 (Berkeley) %G%
+ *	@(#)prompt.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -16,7 +16,7 @@
 #ifndef _h_el_prompt
 #define _h_el_prompt
 
-#include "editline.h"
+#include "histedit.h"
 
 typedef char * (*el_pfunc_t) __P((EditLine*));
 

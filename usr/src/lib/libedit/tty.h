@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.h	5.1 (Berkeley) %G%
+ *	@(#)tty.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -16,7 +16,7 @@
 #ifndef _h_el_tty
 #define _h_el_tty
 
-#include "editline.h"
+#include "histedit.h"
 #include <termios.h>
 
 /* Define our own since everyone gets it wrong! */
