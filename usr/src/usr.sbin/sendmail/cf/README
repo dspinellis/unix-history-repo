@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.35 (Berkeley) %G%
+		@(#)README	8.36 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -169,9 +169,17 @@ USENET_MAILER_ARGS	[-m -h -n] The command line arguments for the
 USENET_MAILER_MAX	[100000] The maximum size of messages that will
 			be accepted by the usenet mailer.
 SMTP_MAILER_FLAGS	[undefined] Flags added to SMTP mailer.  Default
-			flags are `mDFMUX' (and `a' for esmtp mailer).
+			flags are `mDFMUX' for all SMTP-based mailers; the
+			"esmtp" mailer adds `a' and "smtp8" adds `8'.
 SMTP_MAILER_MAX		[undefined] The maximum size of messages that will
-			be transported using the smtp or esmtp mailers.
+			be transported using the smtp, smtp8, or esmtp
+			mailers.
+SMTP_MAILER_ARGS	[IPC $h] The arguments passed to the smtp mailer.
+			About the only reason you would want to change this
+			would be to change the default port.
+ESMTP_MAILER_ARGS	[IPC $h] The arguments passed to the esmtp mailer.
+SMTP8_MAILER_ARGS	[IPC $h] The arguments passed to the smtp8 mailer.
+RELAY_MAILER_ARGS	[IPC $h] The arguments passed to the relay mailer.
 UUCP_MAILER_FLAGS	[undefined] Flags added to UUCP mailer.  Default
 			flags are `DFMhuU' (and `m' for suucp mailer, minus
 			`U' for uucp-dom mailer).
@@ -205,8 +213,10 @@ LOCAL_RELAY	The site that will handle unqualified names -- that
 		company- or department-wide alias database.  This
 		only works at small sites, and there are better
 		methods.
+LUSER_RELAY	The site that will handle lusers -- that is, apparently
+		local names that aren't local accounts or aliases.
 
-Each of these can be either ``mailer:hostname'' (in which case the
+Any of these can be either ``mailer:hostname'' (in which case the
 mailer is the internal mailer name, such as ``suucp'' and the hostname
 is the name of the host as appropriate for that mailer) or just a
 ``hostname'', in which case a default mailer type (usually ``relay'',
@@ -241,10 +251,14 @@ smtp		The Simple Mail Transport Protocol mailer.  This does
 		not hide hosts behind a gateway or another other
 		such hack; it assumes a world where everyone is
 		running the name server.  This file actually defines
-		three mailers: "smtp" for regular (old-style) SMTP to
+		four mailers: "smtp" for regular (old-style) SMTP to
 		other servers, "esmtp" for extended SMTP to other
-		servers, and "relay" for transmission to our
-		RELAY_HOST or MAILER_HUB.
+		servers, "smtp8" to do SMTP to other servers without
+		converting 8-bit data to MIME (essentially, this is
+		your statement that you know the other end is 8-bit
+		clean even if it doesn't say so), and "relay" for
+		transmission to our RELAY_HOST, LUSER_RELAY, or
+		MAILER_HUB.
 
 uucp		The Unix-to-Unix Copy Program mailer.  Actually, this
 		defines two mailers, "uucp-old" (a.k.a. "uucp") and
@@ -315,11 +329,14 @@ nocanonify	Don't pass addresses to $[ ... $] for canonification.
 		turn off the usual resolver options that do a similar
 		thing.
 
-notsticky	By default, email sent to "user@local.host" are marked
+stickydomain	If set, email sent to "user@local.host" are marked
 		as "sticky" -- that is, the local addresses aren't
 		matched against UDB and don't go through ruleset 5.
-		This features disables this treatment.  It would
-		normally be used on network gateway machines.
+		This is used if you want a set up where "user" is
+		not necessarily the same as "user@local.host", e.g.,
+		to make a distinct domain-wide namespace.  Prior to
+		8.7 this was the default, and notsticky was used to
+		turn this off.
 
 mailertable	Include a "mailer table" which can be used to override
 		routing for particular domains.  The argument of the
@@ -793,6 +810,21 @@ the host name.  For example, the first line above sends everything
 addressed to "anything.my.domain" to that same host name, but using
 the (presumably experimental) xnet mailer.
 
+In some cases you may want to temporarily turn off MX records,
+particularly on gateways.  For example, you may want to MX
+everything in a domain to one machine that then forwards it
+directly.  To do this, you might use the DNS configuration:
+
+	*.domain.	IN	MX	0	relay.machine
+
+and on relay.machine use the mailertable:
+
+	.domain		smtp:[gateway.domain]
+
+The [square brackets] turn off MX records for this host only.
+If you didn't do this, the mailertable would use the MX record
+again, which would give you an MX loop.
+
 
 +--------------------------------+
 | USING USERDB TO MAP FULL NAMES |
@@ -1101,7 +1133,8 @@ confCW_FILE		/etc/sendmail.cw	Name of file used to get the
 						class.
 confSMTP_MAILER		smtp		-	The mailer name used when
 						SMTP connectivity is required.
-						Either "smtp" or "esmtp".
+						One of "smtp", "smtp8", or
+						"esmtp".
 confLOCAL_MAILER	local		-	The mailer name used when
 						local connectivity is required.
 						Almost always "local".
@@ -1217,7 +1250,7 @@ MACROS
    I
    J
    K
-   L
+   L	Luser Relay
    M	Masquerade (who I claim to be)
    N
    O
