@@ -1,0 +1,41 @@
+.pa 1
+.he 'PROOF (I)'1/15/73'PROOF (I)'
+.ti 0
+NAME		proof -- compare two text files
+.sp
+.ti 0
+SYNOPSIS	proof_____
+oldfile newfile
+.sp
+.ti 0
+DESCRIPTION	proof_____
+lists
+those lines of
+.ul
+newfile
+that differ from corresponding lines in
+.ul
+oldfile.
+The line number in
+.ul
+newfile
+is given.
+When changes, insertions or deletions have
+been made the program attempts to resynchronize
+the text in the two files by finding a sequence of
+lines in both files that again agree.
+.sp
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	cmp(I)
+.sp
+.ti 0
+DIAGNOSTICS	yes,
+but they are undecipherable, e.g. "?1".
+.sp
+.ti 0
+BUGS		proof_____
+is still evolving.  Any bugs discovered or suggestions
+should be brought to ENP.

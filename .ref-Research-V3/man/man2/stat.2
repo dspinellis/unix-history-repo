@@ -1,0 +1,77 @@
+.pa 1
+.he 'STAT (II)'3/15/72'STAT (II)'
+.ti 0
+NAME		stat  --  get file status
+.sp
+.ti 0
+SYNOPSIS	sys stat; name; buf  / stat = 18.
+.sp
+.ti 0
+DESCRIPTION	name____ points to a null-terminated string naming
+a file; buf___ is the address of a 34(10) byte buffer
+into which information is placed concerning the file.
+It is unnecessary to have any
+permissions at all with respect to the file, but all directories
+leading to the file must be readable.
+.sp
+After stat____, buf___ has the following format:
+.sp
+.nf
+buf, +1		i-number
+.br
++2,+3		flags (see below)
+.br
++4		number of links
+.br
++5		user ID of owner
+.br
++6,+7		size in bytes
+.br
++8,+9		first indirect block or contents block
+.br
+.li
+...
+.br
++22,+23		eighth indirect block or contents block
+.br
++24,+25,+26,+27	creation time
+.br
++28,+29,+30,+31	modification time
+.br
++32,+33		unused
+.fi
+.sp
+The flags are as follows:
+.sp
+.in +3
+.nf
+100000	used (always on)
+040000	directory
+.nf
+020000	file has been modified (always on)
+.fi
+010000	large file
+.br
+000040	set user ID
+.br
+000020	executable
+.br
+000010	read, owner
+.br
+000004	write, owner
+.br
+000002	read, non-owner
+.br
+000001	write, non-owner
+.sp
+.in -3
+.fi
+.ti 0
+SEE ALSO	stat(I), fstat(II)
+.sp
+.ti 0
+DIAGNOSTICS	Error bit (c-bit)
+is set if the file cannot be found.
+.sp
+.ti 0
+BUGS		--

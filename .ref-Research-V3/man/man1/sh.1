@@ -1,0 +1,386 @@
+.pa 1
+.he 'SH (I)'1/15/73'SH (I)'
+.ti 0
+NAME		sh  --  shell (command interpreter)
+.sp
+.ti 0
+SYNOPSIS	sh__ [ name [ arg\d1\u ... [ arg\d9\u ] ] ]
+.sp
+.ti 0
+DESCRIPTION
+.br
+.in 8
+sh__
+is the standard command interpreter.
+It is the program which reads and arranges the execution of
+the command lines typed by most users.
+It may itself be called as a command to interpret
+files of commands.
+Before discussing the arguments to the shell
+used as a command, the structure of command
+lines themselves will be given.
+
+.ul
+Command lines
+.sp
+Command lines are sequences of commands separated by command
+delimiters.
+Each command is a sequence of non-blank command arguments
+separated by blanks.
+The
+first argument specifies the name of a command to be
+executed.  Except for certain types of special
+arguments discussed below, the arguments
+other than the command name are passed
+without interpretation to the invoked
+command.
+.sp
+If the first argument is the name of an executable
+file, it is invoked;
+otherwise the string "/bin/" is prepended to the argument.
+(In this way most standard commands,
+which reside in "/bin", are found.)
+If no such command is found,
+the string "/usr" is further prepended
+(to give "/usr/bin/command") and another attempt
+is made to execute the resulting
+file.
+(Certain "overflow" commands
+live in "/usr/bin".)  If
+the "/usr/bin" file exists, but is not
+executable, it is used by the shell as
+a command file.
+That is to say it is executed
+as though it were typed from the console.
+If all attempts fail, a diagnostic is printed.
+.sp
+The remaining non-special arguments are simply passed to the command
+without further interpretation by the shell.
+.sp
+.ul
+Command delimiters
+
+There are three command delimiters:  the new-line, ";", and "&".
+The semicolon ";" specifies sequential execution of the commands
+so separated; that is,
+.sp
+	coma; comb
+.sp
+causes the execution first of command coma____, then of comb____.
+The ampersand "&" causes simultaneous execution:
+.sp
+	coma & comb
+.sp
+causes coma____ to be called,
+followed immediately by comb____ without waiting for coma____ to finish.
+Thus coma____ and comb____
+execute simultaneously.  As a special case,
+.sp
+	coma &
+.sp
+causes coma____ to be executed and the shell immediately
+to request another command without waiting for coma____.
+.a
+.sp
+.ul
+Termination Reporting
+.sp
+If a command (not followed by "&") terminates abnormally,
+a message is printed.
+(All terminations other than exit and interrupt
+are considered abnormal.)
+The following is a list of the abnormal
+termination messages:
+.sp
+	Bus error
+	Trace/BPT trap
+	Illegal instruction
+	IOT trap
+	Power fail trap
+	EMT trap
+	Bad system call
+	Quit
+	PIR trap
+	Floating exception
+	Memory violation
+	Killed
+	User I/O
+	Error
+.sp
+If a core image is produced,
+" -- Core dumped" is appended to the appropriate message.
+.sp
+.ul
+Redirection of I/O
+
+Three character sequences cause the immediately following string
+to be interpreted as a special argument to the shell itself, not
+passed to the command.
+
+An argument of the form "<arg" causes the file arg___
+to be used as the standard input file of the given command.
+
+An argument of the form ">arg" causes file "arg" to be used
+as the standard output file for the given command.
+"Arg" is created if it did not exist, and in any case is truncated
+at the outset.
+
+An argument of the form ">>arg" causes file "arg" to be used as the
+standard output for the given command.  If "arg"
+did not exist, it is created; if it did exist,
+the command output is appended to the file.
+
+.ul
+Pipes and Filters
+
+A pipe____ is a channel such that information
+can be written into one end of the pipe by one program,
+and read at the other end by another program.
+(See pipe____ (II)).  A
+filter______ is a program which reads the standard
+input file, performs some transformation,
+and writes the result on the standard output file.
+By extending the syntax used
+for redirection of I/O, a command line can
+specify that the output produced by
+a command be passed via a pipe
+through another command which acts as a filter.
+For example:
+
+	command >filter>
+
+More generally, special arguments of the form
+
+	>f\d1\u>f\d2\u>...>
+
+specify that output is to be passed successively
+through the filters f\d1\u, f\d2\u, ...,
+and end up on the standard output stream.
+By saying instead
+
+	>f\d1\u>f\d2\u>...>file
+
+the output finally ends up in file____.  (The
+last ">" could also have been a ">>"
+to specify concatenation onto the end of file____.)
+
+In exactly analogous manner input filtering can
+be specified via one of
+
+	<f\d1\u<f\d2\u<...<
+	<f\d1\u<f\d2\u<...<file
+
+Both input and output filtering
+can be specified in the same command, though not in the same
+special argument.
+
+For example:
+
+	ls >pr>
+
+produces a listing of the current directory with
+page headings, while
+
+	ls >pr>xx
+
+puts the paginated listing into the file xx.
+
+If any of the filters needs arguments, quotes can be used
+to prevent the required blank characters from
+violating the blankless
+syntax of filters.
+For example:
+
+	ls >"pr -h 'My directory'">
+
+uses quotes twice, once to protect the entire pr__ command,
+once to protect the heading argument of pr__.
+(Quotes are discussed fully below.)
+
+.ul
+Generation of argument lists
+
+If any argument contains any of the characters "?",
+"*" or '[', it is treated specially as follows.
+The current directory is searched for files which match_____
+the given argument.
+
+The character "*" in an argument matches any string of characters
+in a file name (including the null string).
+
+The character "?" matches any
+single character in a file name.
+
+Square brackets "[...]" specify
+a class of characters which
+matches any single file-name character in the class.
+Within the brackets,
+each ordinary character is taken
+to be a member of the class.
+A pair of characters separated by "-" places
+in the class
+each character lexically greater than or equal to
+the first and less than or equal to the second
+member of the pair.
+
+Other characters match only the same character in
+the file name.
+
+For example, "*" matches all file names;
+"?" matches all one-character file names; "[ab]*.s" matches
+all file names beginning with "a" or "b" and ending with ".s";
+"?[zi-m]" matches all two-character file names ending
+with "z" or the letters "i" through "m".
+
+If the argument with "*" or "?" also contains a "/", a slightly
+different procedure is used:  instead of the current directory,
+the directory used is the one obtained
+by taking the argument up to the last "/" before a "*" or "?".
+The matching process matches the remainder of the argument
+after this "/"  against the files in the derived directory.
+For example: "/usr/dmr/a*.s" matches
+all files in directory "/usr/dmr" which begin
+with "a" and end with ".s".
+
+In any event, a list of names is obtained which match
+the argument.  This list is sorted into alphabetical order,
+and the resulting sequence of arguments replaces the
+single argument containing the "*", "[", or "?".
+The same process is carried out for each argument
+(the resulting lists are not___ merged)
+and finally the command is called with the resulting list of
+arguments.
+
+For example: directory /usr/dmr contains the files
+a1.s, a2.s, ..., a9.s.  From any directory, the command
+
+     as /usr/dmr/a?.s
+
+calls as__ with arguments
+/usr/dmr/a1.s, /usr/dmr/a2.s, ...
+/usr/dmr/a9.s
+in that order.
+.sp
+.ul
+.ul
+Quoting
+
+The character "\\" causes the immediately following character
+to lose any special meaning it may have to the shell;  in this
+way "<", ">", and other characters meaningful to the
+shell may be passed as part of arguments.
+A special case of this feature allows the continuation of commands
+onto more than one line:  a new-line preceded by "\\" is translated
+into a blank.
+.sp
+Sequences of characters enclosed in double (") or single (')
+quotes are also taken literally.
+.sp
+.ul
+Argument passing
+
+When the shell is invoked as a command, it has additional
+string processing capabilities.
+Recall that the form in which the shell is invoked is
+
+     sh [ name [ arg\d1\u ... [ arg\d9\u ] ] ]
+
+The name____ is the name of a file which will be read and
+interpreted.  If not given, this subinstance of the shell
+will continue to read the standard input file.
+
+In command lines in the file
+(not in command input),
+character sequences of the form "$n", where n_ is a digit 0, ..., 9,
+are replaced by the n_th argument to the invocation
+of the shell (arg\dn\u).
+"$0" is replaced by name____.
+
+.ul
+End of file
+
+An end-of-file in the shell's input causes it to exit.
+A side effect of this fact means that the way to
+log out from UNIX is to type an end of file.
+
+.ul
+Special commands
+
+Two commands are treated specially by the shell.
+
+"Chdir" is done without
+spawning a new process by executing the sys___ chdir_____
+primitive.
+
+"Login" is done by executing
+/bin/login without creating a new process.
+
+These peculiarities are inexorably imposed
+upon the shell by the basic structure
+of the UNIX process control system.
+It is a rewarding exercise to work
+out why.
+
+.ul
+Command file errors; interrupts
+
+Any shell-detected error, or an interrupt signal,
+during the execution of a command file
+causes the shell to cease execution of that file.
+
+.in 16
+.ti 0
+FILES		/etc/glob,
+which interprets "*", "?", and "[".
+.sp
+.ti 0
+SEE ALSO	"The UNIX Time-sharing System",
+which gives the theory of operation of the
+shell.
+.sp
+.ti 0
+DIAGNOSTICS
+.br
+.in 8
+"Input not found", when a command file is
+specified which cannot be read;
+.br
+"Arg count", if the number of arguments to the chdir pseudo-command
+is not exactly 1,
+or if "*", "?", or "[" is used inappropriately;
+.br
+"Bad directory", if the directory given in "chdir" cannot be
+switched to;
+.br
+"Try again", if no new process can be created to execute
+the specified command;
+.br
+""' imbalance", if single or double quotes are not matched;
+.br
+"Input file", if an argument after "<" cannot be read;
+.br
+"Output file", if an argument after ">" or ">>" cannot
+be written (or created);
+.br
+"Command not found", if the specified command cannot be executed.
+.br
+"No match", if no arguments are generated for a command
+which contains "*", "?", or "[".
+.br
+Termination messages described above.
+.sp
+.in 16
+.ti 0
+BUGS		If any argument contains a quoted "*",
+"?", or "[", then all instances of these characters
+must be quoted.
+This is because sh__ calls the glob____ routine whenever
+an unquoted "*", "?", or "[" is noticed;
+the fact that other instances of these characters occurred
+quoted is not noticed by glob____.
+
+When output is redirected,
+particularly through a filter,
+diagnostics tend to be
+sent down the pipe and are sometimes
+lost altogether.

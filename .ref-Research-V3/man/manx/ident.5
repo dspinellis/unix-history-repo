@@ -1,0 +1,37 @@
+.pa 1
+.he '6/12/72''IDENT (V)'
+.ti 0
+NAME		ident -- IDENT card file
+.sp
+.ti 0
+SYNOPSIS	--
+.sp
+.ti 0
+DESCRIPTION	ident_____
+is a file used to generate GECOS $IDENT
+cards by the off-line print program opr(I).
+There is one entry per line in the following
+style:
+
+	05:m1234,m789,name
+
+which causes the following $IDENT card to be generated:
+
+	$	IDENT	m1234,m789,name
+
+.sp
+.ti 0
+FILES		kept
+in /etc/ident.
+.sp
+.ti 0
+SEE ALSO	opr(I)
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		--
+.sp
+.ti 0
+OWNER		ken, dmr

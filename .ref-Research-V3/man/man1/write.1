@@ -1,0 +1,62 @@
+.pa 1
+.he 'WRITE (I)'3/15/72'WRITE (I)'
+.ti 0
+NAME		write  --  write to another user
+.sp
+.ti 0
+SYNOPSIS	write_____ user
+.sp
+.ti 0
+DESCRIPTION	write_____ copies lines from your typewriter to that of
+another user.  When first called, write_____ sends the message
+.sp
+     message from yourname...
+.sp
+The recipient of the message should write back at this point.
+Communication continues until an end of file is
+read from the typewriter or an interrupt is sent.
+At that point write_____ writes "EOT" on the other terminal.
+.sp
+Permission to write may be denied or granted by use of the mesg____
+command.
+At the outset writing is allowed.
+Certain commands, in particular roff____ and pr__, disallow
+messages in order to prevent messy output.
+
+If the character "!" is found at the beginning of a line,
+write_____ calls the mini-shell msh___ to execute the rest of the
+line as a command.
+
+The following protocol is suggested for using write_____:
+When you first write to another user, wait for him to
+write back before starting to send.
+Each party should end each message with a distinctive
+signal ("(o)" for "over" is conventional) that the other may reply.
+"(oo)" (for "over and out") is suggested when conversation
+is about to be terminated.
+
+.ti 0
+FILES		/tmp/utmp	to find user
+.br
+/etc/msh	to execute !
+.sp
+.ti 0
+SEE ALSO	mesg(I), msh(VII)
+.sp
+.ti 0
+DIAGNOSTICS	"user not logged in"; "permission denied".
+.sp
+.ti 0
+BUGS		write_____
+should check the mode of the other user's typewriter
+and refuse to proceed unless non-user
+write permission is given.
+Currently it is possible to write to another
+person with the same user-ID even though
+he has forbidden messages.
+
+write_____ should also allow specification of
+the typewriter name of a user who
+is logged in several times instead
+of picking out the instance with the
+lowest name.

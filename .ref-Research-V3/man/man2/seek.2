@@ -1,0 +1,42 @@
+.pa 1
+.he 'SEEK (II)'3/15/72'SEEK (II)'
+.ti 0
+NAME		seek  --  move read/write pointer
+.sp
+.ti 0
+SYNOPSIS	(file descriptor in r0)
+.br
+sys seek; offset; ptrname  / seek = 19.
+.a
+.sp
+.ti 0
+DESCRIPTION	The file
+descriptor refers to a file open for reading or writing.
+The read (resp. write) pointer for the file is set as follows:
+.in +3
+.sp
+if ptrname_______ is 0, the pointer is set to offset______.
+.sp
+if ptrname_______
+is 1, the pointer is set to its current location plus offset______.
+.sp
+if ptrname_______ is 2, the pointer is set to the size of the
+file plus offset______.
+.sp
+.in -3
+.sp
+.ti 0
+SEE ALSO	--
+.sp
+.ti 0
+DIAGNOSTICS	The error bit
+(c-bit) is set for an undefined file descriptor.
+.sp
+.ti 0
+BUGS		A file
+can conceptually be as large
+as 2**20 bytes.
+Clearly only 2**16 bytes can be addressed by
+seek____.
+The problem is most acute on the
+large special files.

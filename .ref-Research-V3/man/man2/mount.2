@@ -1,0 +1,38 @@
+.pa 1
+.he 'MOUNT (II)'3/15/72'MOUNT (II)'
+.ti 0
+NAME		mount  --  mount file system
+.sp
+.ti 0
+.nf
+SYNOPSIS	sys  mount; special; name  / mount = 21.
+.fi
+.sp
+.ti 0
+DESCRIPTION	mount_____
+announces to the system that a removable file system has
+been mounted on special file special_______;
+from now on, references to file name____ will refer to
+the root file on the newly mounted file system.
+Special_______ and name____ are pointers to null-terminated strings
+containing the appropriate path names.
+
+Name____ must exist already.  If it had contents,
+they are inaccessible while the file system
+is mounted.
+.sp
+.ti 0
+SEE ALSO	mount(I), umount(II)
+.sp
+.ti 0
+DIAGNOSTICS	Error bit
+(c-bit) set if: special_______ is inaccessible; name____
+does not exist;
+special_______ is already mounted;
+name____ is not on the RF;
+there are already four special files mounted.
+.sp
+.ti 0
+BUGS		At most
+four removable devices can be mounted at a time.
+This call should be restricted to the super-used.

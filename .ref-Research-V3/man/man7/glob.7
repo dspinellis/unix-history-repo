@@ -1,0 +1,36 @@
+.pa 1
+.he 'GLOB (VII)'6/15/72'GLOB (VII)'
+.ti 0
+NAME		glob  --  generate command arguments
+.sp
+.ti 0
+SYNOPSIS	/etc/glob
+.sp
+.ti 0
+DESCRIPTION	glob____
+is used to expand arguments to the shell containing "*", '[', or
+"?".  It is passed the argument list
+containing the metacharacters; glob____
+expands the list and calls the command itself.
+The actions of glob____ are detailed in
+the Shell writeup.
+.sp
+.ti 0
+FILES		found in /etc/glob
+.sp
+.ti 0
+SEE ALSO	sh(I)
+.sp
+.ti 0
+DIAGNOSTICS	"No match", "No command", "No directory"
+.sp
+.ti 0
+BUGS		If any of
+'*', '[', or '?' occurs both quoted and unquoted in the
+original command line,
+even the quoted metacharacters are expanded.
+
+glob____ gives the "No match" diagnostic only if
+no arguments at all result.
+This is never the case if there is any
+argument without a metacharacter.

@@ -1,0 +1,28 @@
+.pa 1
+.he 'EXIT (II)'3/15/72'EXIT (II)'
+.ti 0
+NAME		exit  --  terminate process
+.sp
+.ti 0
+SYNOPSIS	(status in r0)
+.br
+sys exit  / exit = 1
+.sp
+.ti 0
+DESCRIPTION	exit____
+is the normal means of terminating a process.
+Exit closes all the process' files and notifies the parent process
+if it is executing a wait____.
+The low byte of r0
+is available as status to the parent process.
+.sp
+This call can never return.
+.sp
+.ti 0
+SEE ALSO	wait(II)
+.sp
+.ti 0
+DIAGNOSTICS	-
+.sp
+.ti 0
+BUGS		--

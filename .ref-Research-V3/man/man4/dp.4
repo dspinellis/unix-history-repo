@@ -1,0 +1,32 @@
+.pa 1
+.he 'DP (IV)'3/15/72'DP (IV)'
+.ti 0
+NAME		dp -- dp-11 201 data-phone interface
+.sp
+.ti 0
+DESCRIPTION	dp?___
+is a 201 data-phone interface file.
+read____ and write_____ calls to dp?___
+are limited to a maximum of 400 bytes.
+Each write call is sent as a single record.
+Seven bits from each byte
+are written along with an eighth odd parity
+bit.
+The sync must be user supplied.
+Each read call returns characters received from a
+single record.
+Seven bits are returned unaltered; the eighth bit
+is set if the byte was not received in odd parity.
+A 20 second time out is set and a zero byte
+record is returned if nothing is received in that time.
+.sp
+.ti 0
+FILES		/dev/dp0	201 dataphone used to call GCOS
+.sp
+.ti 0
+SEE ALSO	dn(IV), gerts(III)
+.sp
+.ti 0
+BUGS		The dp__ file is
+GCOS oriented.
+It should be more flexible.

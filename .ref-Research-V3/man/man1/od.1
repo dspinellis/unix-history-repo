@@ -1,0 +1,74 @@
+.pa 1
+.he 'OD (I)'1/15/73'OD (I)'
+.ti 0
+NAME		od  --  octal dump
+.sp
+.ti 0
+SYNOPSIS	od__ [ -abcdho_______ ] [ file ] [ [+_]offset[._][b_] ]
+.sp
+.ti 0
+DESCRIPTION	od__
+dumps
+file____
+in
+one or more formats
+as
+selected by the first argument.
+(If the first argument is missing, -o__ is default.)
+The meanings of the format argument characters
+are:
+
+.in +5
+.ti -2
+a_ interprets words as PDP-11 instructions and
+dis-assembles the operation code.
+Unknown operation codes print as ???.
+
+.ti -2
+b_ interprets bytes in octal.
+
+.ti -2
+c_ interprets bytes in ascii.
+Unknown ascii characters are printed as \\?.
+
+.ti -2
+d_ interprets words in decimal.
+
+.ti -2
+h_ interprets words in hex.
+
+.ti -2
+o_ interprets words in octal.
+
+.in -5
+The file argument specifies which file is to be dumped.
+If no file argument is specified,
+the standard input is used.
+Thus od can be used as a filter.
+
+The offset argument specifies the offset
+in the file where dumping is to commence.
+This argument is normally interpreted
+as octal bytes.
+If '.' is appended, the offset is interpreted in
+decimal.
+If 'b' is appended, the offset is interpreted in blocks.
+(A block is 512 bytes.)
+If the file argument is omitted,
+the offset argument must be preceded by '+'.
+
+Dumping continues until an end-of-file
+condition or until
+halted by sending an interrupt signal.
+.sp
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	db(I)
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		--

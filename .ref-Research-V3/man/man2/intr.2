@@ -1,0 +1,31 @@
+.pa 1
+.he 'INTR (II)'3/15/72'INTR (II)'
+.ti 0
+NAME		intr  --  set interrupt handling
+.sp
+.ti 0
+SYNOPSIS	sys intr; arg  / intr = 27.
+.sp
+.ti 0
+DESCRIPTION	When arg___ is 0,
+interrupts (ASCII DELETE) are ignored.
+When arg___ is 1,
+interrupts cause their normal result, that is, force an exit____.
+When arg___ is a location within the program, control is
+transferred to that location when an interrupt occurs.
+.sp
+After an interrupt is caught, it is possible to resume
+execution by means of an rti___ instruction; however, great
+care must be exercised, since
+all I/O is terminated abruptly upon an interrupt.
+In particular, reads of the typewriter tend to return
+with 0 characters read, thus simulating an end of file.
+.sp
+.ti 0
+SEE ALSO	quit(II)
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		--

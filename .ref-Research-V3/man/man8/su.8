@@ -1,0 +1,34 @@
+.pa 1
+.he 'SU (VIII)'1/20/73'SU (VIII)'
+.ti 0
+NAME		su  --  become privileged user
+.sp
+.ti 0
+SYNOPSIS	su__
+.sp
+.ti 0
+DESCRIPTION	su
+allows one to become the super-user, who has
+all sorts of marvelous (and correspondingly dangerous) powers.
+In order for su to do its magic, the user must
+supply a password.
+If the password is correct, su
+will execute the shell with the UID set to
+that of the super-user.
+To restore normal UID privileges,
+type an end-of-file to the super-user shell.
+
+To remind the super-user of his responsibilities,
+the shell substitutes "#" for its usual prompt "%".
+.sp
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	sh(I)
+.sp
+.ti 0
+DIAGNOSTICS	"Sorry" if password is wrong
+.sp
+.ti 0
+BUGS		--

@@ -1,0 +1,119 @@
+.pa 1
+.he 'CREF (I)'2/5/1973'CREF (I)'
+.fi
+.in16
+.ti 0
+NAME		cref  --  make cross reference listing
+.sp
+.fi
+.in16
+.ti 0
+SYNOPSIS	cref____ [ -soi____ ] name1 ...
+.sp
+.fi
+.in16
+.ti 0
+DESCRIPTION	CREF makes a cross reference listing
+of files in assembler format (see AS(I)).  The files
+named as arguments in the command
+line are searched for symbols (defined as a succession
+of alphabetics, numerics, '.', or '_', beginning with
+an alphabetic, '.', or '_').
+.sp
+The output report is in four columns:
+.nf
+.sp
+(1)	(2)	(3)	(4)
+symbol	file	see	text as it appears in file
+		below
+.sp
+.fi
+The third column contains the line number in the file
+by default; the -s__ option
+will cause the most recent name symbol to appear there
+instead.
+.sp
+CREF uses either an ignore______ file or an only____ file.
+If the -i__ option is given, it will take the next
+file name to be an ignore______ file; if the -o__ option
+is given, the next file name will be taken as an only____ file.
+Ignore______ and only____
+files should be lists of symbols separated by new lines.
+If an ignore______ file is given, all the symbols in the file
+will be ignored in columns (1) and (3) of the output.
+If an only____ file is given, only symbols appearing in the
+file will appear in column (1), but column (3)
+will still contain the most recent name encountered.
+Only one of the options -i__ or
+-o__ may be used.
+The default setting
+is -i__;
+all symbols predefined in the assembler are ignored, except
+system call names, which are collected.
+.sp
+.fi
+.in16
+.ti 0
+FILES		Files t.0, t.1, t.2, t.3 are
+created (i.e. DESTROYED) in the working
+directory of anyone
+using cref____. This nuisance will be repaired soon.
+The output is left in file s.out_____ in the working directory.
+.sp
+/usr/lem/s.tab is the default ignore______ file.
+.sp
+.fi
+.in16
+.ti 0
+SEE ALSO	as(I)
+.sp
+.fi
+.in16
+.ti 0
+DIAGNOSTICS	"line too long" -- input line >131 characters
+.nf
+.sp
+"symbol too long" -- symbol >20 characters
+.sp
+"too many symbols" -- >10 symbols in line
+.sp
+"cannot open t.?" -- bug; see LEM
+.sp
+"cannot fork; examine t.out" -- can't start sort____
+.in 20
+.fi
+process; intermediate results are on files t.0___,
+t.1___,t.2___,t.3___.  These may be sorted independently
+and the results concatenated by the user.
+.sp
+.in 16
+"cannot sort" -- odd response from sort____; examine
+.in 20
+intermediate results, as above.
+.sp
+.in16
+.nf
+"impossible situation" -- system bug
+.sp
+"cannot open" file -- one of the input names
+.in 20
+.fi
+cannot be opened for reading.
+.in16
+.nf
+.sp
+.fi
+.in16
+.ti 0
+BUGS		The destruction of
+unsuspecting users' files should soon be fixed.
+A limitation that may eventually go away is the
+restriction to assembler language format. There
+should be options for FORTRAN, English, etc., lexical
+analysis.
+.sp
+File names longer than eight characters cause misalignment in
+the output if tabs are set at every eighth column.
+
+It should
+write on the standard output, not s.out.

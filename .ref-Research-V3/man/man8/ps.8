@@ -1,0 +1,77 @@
+.pa 1
+.he 'PS (VIII)'1/20/73'PS (VIII)'
+.ti 0
+NAME		ps -- process status
+.sp
+.ti 0
+SYNOPSIS	/usr/adm/ps [ -xlt____ ]
+.sp
+.ti 0
+DESCRIPTION
+.br
+.in 8
+ps__
+prints certain facts about active
+processes.
+The information is columnar and consists of:
+
+.in +3
+The (numerical) ID of the user associated
+with the process;
+
+The last character of the control typewriter of the process
+or "x" if there is no control typewriter;
+"x" lines are suppressed unless the "x" option
+is given.
+
+The number of 512-byte disk blocks holding the core
+image of the process;
+
+The process's unique ID (only with "l" option)
+
+The number of hours (mod 100) and minutes of system, disk, and
+user-process time accumulated by the process and
+all its terminated descendants (only with "t" option)
+
+An educated guess as to the command line which caused the
+process to be created.
+
+.in -3
+Some caveats:
+
+The guess as to the command name and arguments is obtained by examining
+the process's stack.
+The process is entitled to destroy this information.
+Also, only processes whose core images are on disk have
+visible names.
+The ps__ command in particular
+does not, nor does any other process which happens to
+be in core at the same time.
+ps__ tries to overcome this limitation by spawning
+a subprocess designed to take up the other core
+slot, and is usually successful.
+Because ps__ examines a dynamically changing data structure,
+it can produce incorrect results, for example if
+a process's core image moves between the time
+ps__ gets its disk address and reads its stack.
+
+Besides its utility for simple spying,
+ps__ is the only plausible
+way to find the process number of someone you are trying
+to kill (VIII).
+.sp
+.in 16
+.ti 0
+FILES		/dev/rf0,
+/sys/sys/unix (to get magic numbers).
+.sp
+.ti 0
+SEE ALSO	kill (VIII)
+.sp
+.ti 0
+DIAGNOSTICS	"Bad RF", if
+a bad swap address turns up;
+various missing-file diagnostics.
+.sp
+.ti 0
+BUGS		As described.

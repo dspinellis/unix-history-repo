@@ -1,0 +1,44 @@
+.pa 1
+.he 'DCHECK (VIII)'1/20/73'DCHECK (VIII)'
+.ti 0
+NAME		dcheck -- directory consistency check
+.sp
+.ti 0
+SYNOPSIS	dcheck______ [ -l__ ] [ device ]
+.sp
+.ti 0
+DESCRIPTION	dcheck______
+builds an image of the directory hierarchy
+of the specified device
+by reading all its directories (using physical I/O
+guided by the i-nodes on the device).
+A list entry is made for
+each file encountered.
+A second pass reads the i-nodes and for
+each file compares the number of links
+specified in its i-node
+with the number of entries actually seen.
+All discrepancies are noted.
+.sp
+If no device is specified,
+a default device is assumed.
+.sp
+The argument -l__ causes a complete
+listing of the file names on the device
+in i-node order.
+.sp
+.ti 0
+FILES		/dev/rk?
+.sp
+.ti 0
+SEE ALSO	check(VIII)
+.sp
+.ti 0
+DIAGNOSTICS	inconsistent i-numbers,
+unnamed files,
+unreachable files,
+loops in directory "hierarchy".
+.sp
+.ti 0
+BUGS		Unreachable files and loops are
+discovered only under the "-l" option.

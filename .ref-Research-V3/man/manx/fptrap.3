@@ -1,0 +1,94 @@
+.pa 1
+.he '3/15/72''FPTRAP (III)'
+.ti 0
+NAME		fptrap  --  PDP-11/45 floating point simulator
+.sp
+.ti 0
+.nf
+SYNOPSIS	.globl fptrap
+.br
+sys ilgins; fptrap
+.fi
+.sp
+.ti 0
+DESCRIPTION	fptrap______
+is a package which picks up instructions which are illegal
+for the PDP-11/20, and if they correspond to 11/45 floating
+point instructions, simulates their operation.
+The following instructions are supported:
+
+	cfcc
+	setf
+	seti
+	setd
+	setl
+.	ldfps	src		(not in assembler)
+.	stfps	dst		(not in assembler)
+	clrf	fdst
+	tstf	fsrc
+	absf	fdst
+	negf	fdst
+	mulf	fsrc,fr
+	modf	fsrc,fr
+	addf	fsrc,fr
+	movf	fsrc,fr	(=ldf)
+	movf	fr,fdst	(=stf)
+	subf	fsrc,fr
+	cmpf	fsrc,fr
+	divf	fsrc,fr
+.nf
+.	movei	fr,dst	(=stexp)  (not in assembler)
+.	movie	src,fr	(=ldexp)  (not in assembler)
+	movfi	fr,dst	(=stcfi)
+	movif	src,fr	(=ldcif)
+	movfo	fr,fdst	(=stcxy)
+	movof	fsrc,fr	(=ldcyx)
+.fi
+
+Here src___ and dst___ stand for source and destination, fsrc____
+and fdst____ for floating source and destination, and fr__ for
+floating register.
+Notice that the names of several of the opcodes have changed.
+The only strange instruction
+is movf____, which turns into stf___ if its source
+operand is a floating register, and into ldf___ if not.
+.sp
+The simulator sets the floating condition codes
+on both ldf___ and stf___.
+The 11/45 hardware does not set
+the fcc on stf.
+
+Short and long format for both floating point numbers
+and integers is supported.  Truncation mode is always in effect.
+Traps for overflow and other arithmetic errors are not supported.
+Illegal instructions or addresses cause a simulated trap
+so that a core image is produced.
+
+The condition code bits are maintained correctly.
+
+For floating-point source operands, immediate mode ((pc)+) is
+not supported, since the PDP-11/45
+handbook is not clear on what to do about it.
+
+After an arithmetic error the result is generally
+meaningless.
+
+The arithmetic is always done in double-precision, so exact
+but unrounded results are to be expected in single-precision
+mode.  Double precision results are probably less correct
+than the hardware will be.
+
+The lower parts of the floating registers become meaningless
+during single-precision operations.
+.sp
+.ti 0
+FILES		kept in /usr/lib/liba.a
+.sp
+.ti 0
+SEE ALSO	PDP-11/45 handbook, ilgins(II)
+.sp
+.ti 0
+DIAGNOSTICS	trap, c-bit, v-bit
+.sp
+.ti 0
+BUGS		see above
