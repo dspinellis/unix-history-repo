@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *      @(#)idp_usrreq.c	6.10 (Berkeley) %G%
+ *      @(#)idp_usrreq.c	6.11 (Berkeley) %G%
  */
 
 #include "param.h"
