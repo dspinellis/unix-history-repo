@@ -1,4 +1,4 @@
-.\"	@(#)stdarg.3	6.2 (Berkeley) %G%
+.\"	@(#)stdarg.3	6.3 (Berkeley) %G%
 .\"
 .TH VARARGS 3  ""
 .AT 3
@@ -122,6 +122,11 @@ The macros
 .I va_start
 and
 .I va_end
-may be arbitrarily complex,
-and thus may only be used where they could
+may be arbitrarily complex;
+for example,
+.I va_start
+might contain an opening brace,
+which is closed by a matching brace in
+.IR va_end .
+Thus, they should only be used where they could
 be placed within a single complex statement.
