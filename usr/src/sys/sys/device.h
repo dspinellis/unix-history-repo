@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)device.h	7.4 (Berkeley) %G%
+ *	@(#)device.h	7.5 (Berkeley) %G%
  *
  * from: $Header: device.h,v 1.6 92/06/11 17:56:45 torek Exp $ (LBL)
  */
