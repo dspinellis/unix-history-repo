@@ -13,12 +13,12 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)getenv.3	6.6 (Berkeley) %G%
+.\"	@(#)getenv.3	6.7 (Berkeley) %G%
 .\"
 .TH GETENV 3 ""
 .AT 3
 .SH NAME
-getenv, setenv, unsetenv \- manipulate environmental variables
+getenv, putenv, setenv, unsetenv \- manipulate environmental variables
 .SH SYNOPSIS
 .nf
 .B char *getenv(name)
@@ -27,6 +27,9 @@ getenv, setenv, unsetenv \- manipulate environmental variables
 .B setenv(name, value, overwrite)
 .B char *name, value;
 .B int overwrite;
+.PP
+.B putenv(string)
+.B char *string;
 .PP
 .B void unsetenv(name)
 .B char *name;
@@ -44,6 +47,11 @@ found, and \fIoverwrite\fP is non-zero, its value is changed to
 \fIvalue\fP.  \fISetenv\fP returns 0 on success and -1 on failure,
 where failure is caused by an inability to allocate space for the
 environment.
+.PP
+.I Putenv
+is provided for compatibility with System V.  It takes an argument
+of the form ``\fIname\fR=\fIvalue\fR'' and is the equivalent of calling
+\fIsetenv\fR(\fIname\fR, \fIvalue\fR, 1).
 .PP
 \fIUnsetenv\fP removes all occurrences of the string \fIname\fP from
 the environment.  There is no library provision for completely removing
