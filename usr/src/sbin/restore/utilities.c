@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.7	(Berkeley)	83/03/27";
+static char sccsid[] = "@(#)utilities.c	3.8	(Berkeley)	83/03/27";
 #endif
 
 #include "restore.h"
@@ -95,12 +95,10 @@ newnode(np)
 		badentry(np, "newnode: not a node");
 	cp = myname(np);
 	if (mkdir(cp, 0777) < 0) {
-		if (command == 'x') {
-			perror(cp);
-			return;
-		}
-		perror("newnode");
-		panic("Cannot make node %s\n", cp);
+		fprintf(stderr, "Warning: ");
+		fflush(stderr);
+		perror(cp);
+		return;
 	}
 	vprintf(stdout, "Make node %s\n", cp);
 }
