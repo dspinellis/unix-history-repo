@@ -1,4 +1,4 @@
-/*	ip_input.c	1.63	83/02/05	*/
+/*	ip_input.c	1.64	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,12 +6,13 @@
 #include "../h/domain.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include <errno.h>
-#include <time.h>
+#include "../h/errno.h"
+#include "../h/time.h"
 #include "../h/kernel.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
+
 #include "../netinet/in.h"
 #include "../netinet/in_pcb.h"
 #include "../netinet/in_systm.h"

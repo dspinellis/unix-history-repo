@@ -1,4 +1,4 @@
-/*	tcp_subr.c	4.39	83/01/17	*/
+/*	tcp_subr.c	4.40	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,11 +6,14 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/protosw.h"
-#include "../netinet/in.h"
+#include "../h/errno.h"
+
 #include "../net/route.h"
+#include "../net/if.h"
+
+#include "../netinet/in.h"
 #include "../netinet/in_pcb.h"
 #include "../netinet/in_systm.h"
-#include "../net/if.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/ip_icmp.h"
@@ -20,7 +23,6 @@
 #include "../netinet/tcp_timer.h"
 #include "../netinet/tcp_var.h"
 #include "../netinet/tcpip.h"
-#include <errno.h>
 
 /*
  * Tcp initialization

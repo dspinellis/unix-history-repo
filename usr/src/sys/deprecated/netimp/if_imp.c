@@ -1,4 +1,4 @@
-/*	if_imp.c	4.47	83/02/10	*/
+/*	if_imp.c	4.48	83/02/10	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -19,6 +19,7 @@
 #include "../h/vmmac.h"
 #include "../h/time.h"
 #include "../h/kernel.h"
+#include "../h/errno.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -27,6 +28,7 @@
 
 #include "../net/if.h"
 #include "../net/route.h"
+
 #include "../net/netisr.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
@@ -35,7 +37,6 @@
 /* define IMPLEADERS here to get leader printing code */
 #include "../netimp/if_imp.h"
 #include "../netimp/if_imphost.h"
-#include <errno.h>
 
 /*
  * IMP software status per interface.

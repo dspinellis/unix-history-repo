@@ -1,15 +1,17 @@
-/*	raw_usrreq.c	4.24	83/01/13	*/
+/*	raw_usrreq.c	4.25	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../vax/mtpr.h"
+#include "../h/errno.h"
+
 #include "../net/if.h"
 #include "../net/netisr.h"
 #include "../net/raw_cb.h"
-#include <errno.h>
+
+#include "../vax/mtpr.h"
 
 /*
  * Initialize raw connection block q.

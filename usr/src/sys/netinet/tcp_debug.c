@@ -1,4 +1,4 @@
-/*	tcp_debug.c	4.8	82/10/30	*/
+/*	tcp_debug.c	4.9	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,11 +7,14 @@
 #include "../h/socketvar.h"
 #define PRUREQUESTS
 #include "../h/protosw.h"
-#include "../netinet/in.h"
+#include "../h/errno.h"
+
 #include "../net/route.h"
+#include "../net/if.h"
+
+#include "../netinet/in.h"
 #include "../netinet/in_pcb.h"
 #include "../netinet/in_systm.h"
-#include "../net/if.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/tcp.h"
@@ -24,7 +27,6 @@
 #include "../netinet/tcpip.h"
 #define	TANAMES
 #include "../netinet/tcp_debug.h"
-#include <errno.h>
 
 int	tcpconsdebug = 0;
 /*

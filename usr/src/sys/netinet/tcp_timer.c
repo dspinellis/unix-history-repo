@@ -1,4 +1,4 @@
-/*	tcp_timer.c	4.30	83/01/17	*/
+/*	tcp_timer.c	4.31	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,10 +6,11 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/protosw.h"
-#include <errno.h>
+#include "../h/errno.h"
 
 #include "../net/if.h"
 #include "../net/route.h"
+
 #include "../netinet/in.h"
 #include "../netinet/in_pcb.h"
 #include "../netinet/in_systm.h"

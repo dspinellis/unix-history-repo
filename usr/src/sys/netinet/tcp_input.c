@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.88	83/02/08	*/
+/*	tcp_input.c	1.89	83/02/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,11 +6,14 @@
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../netinet/in.h"
+#include "../h/errno.h"
+
+#include "../net/if.h"
 #include "../net/route.h"
+
+#include "../netinet/in.h"
 #include "../netinet/in_pcb.h"
 #include "../netinet/in_systm.h"
-#include "../net/if.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netinet/tcp.h"
@@ -20,7 +23,6 @@
 #include "../netinet/tcp_var.h"
 #include "../netinet/tcpip.h"
 #include "../netinet/tcp_debug.h"
-#include <errno.h>
 
 int	tcpprintfs = 0;
 int	tcpcksum = 1;
