@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)table.h	5.2 (Berkeley) %G%
+ *	@(#)table.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -34,6 +34,7 @@ struct rt_entry {
 			short	rtu_state;
 			int	rtu_timer;
 			int	rtu_metric;
+			int	rtu_ifmetric;
 			struct	interface *rtu_ifp;
 		} rtu_entry;
 	} rt_rtu;
@@ -47,6 +48,7 @@ struct rt_entry {
 #define	rt_timer	rt_rtu.rtu_entry.rtu_timer	/* for invalidation */
 #define	rt_state	rt_rtu.rtu_entry.rtu_state	/* see below */
 #define	rt_metric	rt_rtu.rtu_entry.rtu_metric	/* cost of route */
+#define	rt_ifmetric	rt_rtu.rtu_entry.rtu_ifmetric	/* cost of route if */
 #define	rt_ifp		rt_rtu.rtu_entry.rtu_ifp	/* interface to take */
 
 #define	ROUTEHASHSIZ	32		/* must be a power of 2 */

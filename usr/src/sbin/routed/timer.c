@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)timer.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -43,13 +43,13 @@ again:
 			if (!(rt->rt_state & RTS_PASSIVE) &&
 			    (supplier || !(rt->rt_state & RTS_INTERFACE)))
 				rt->rt_timer += TIMER_RATE;
-			if (rt->rt_timer >= EXPIRE_TIME)
-				rt->rt_metric = HOPCNT_INFINITY;
 			if (rt->rt_timer >= GARBAGE_TIME) {
 				rt = rt->rt_back;
 				rtdelete(rt->rt_forw);
 				continue;
 			}
+			if (rt->rt_timer >= EXPIRE_TIME)
+				rtchange(rt, &rt->rt_router, HOPCNT_INFINITY);
 			if (rt->rt_state & RTS_CHANGED) {
 				rt->rt_state &= ~RTS_CHANGED;
 				/* don't send extraneous packets */
@@ -61,7 +61,8 @@ again:
 				msg->rip_nets[0].rip_dst.sa_family =
 				   htons(msg->rip_nets[0].rip_dst.sa_family);
 				msg->rip_nets[0].rip_metric =
-				   htonl(min(rt->rt_metric+1, HOPCNT_INFINITY));
+				   htonl(min(rt->rt_metric + rt->rt_ifmetric,
+				   HOPCNT_INFINITY));
 				toall(sendmsg);
 			}
 		}
