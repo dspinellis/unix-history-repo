@@ -1,0 +1,114 @@
+#
+# Cory Hall 11/70
+#
+.c.o:
+	${MKSTR} - ex2.0strings x $*.c
+	${CC} -E ${CFLAGS} x$*.c | ${XSTR} -c -
+	rm -f x$*.c
+	${CC} ${CFLAGS} -O -c x.c 
+	mv x.o $*.o
+BINDIR=	/usr/new
+LIBDIR=	/usr/lib
+FOLD=	/usr/new/fold
+AS=	-as
+XSTR=	/usr/new/xstr
+CFLAGS=	-DTABS=8 -I/usr/include/retrofit -t0 -t1 -DV6 -DQUOTA -DLISP -DCHDIR -DUCVISUAL
+MKSTR=	/usr/new/mkstr
+CXREF=	/usr/bin/cxref
+INCLUDE=/usr/include/retrofit
+PR=	/usr/new/pr
+CTAGS=	/usr/new/ctags
+OBJS=	ex.o ex_addr.o ex_cmds.o ex_cmds2.o ex_cmdsub.o ex_data.o ex_get.o \
+	ex_io.o ex_put.o ex_re.o ex_set.o ex_subr.o ex_temp.o ex_tty.o \
+	ex_v.o ex_vadj.o ex_vget.o ex_vmain.o ex_voperate.o \
+	ex_vops.o ex_vops2.o ex_vops3.o ex_vput.o ex_vwind.o \
+	11printf.o strings.o
+
+ca.out: ${OBJS}
+	${CC} -i ${OBJS} -ltermlib -lretro -lS -o ca.out
+
+tags:
+	${CTAGS} ex.c ex_*.c
+
+strings.o: strings
+	${XSTR}
+	${CC} -c xs.c
+	mv xs.o strings.o
+	
+cexrecover: cexrecover.o
+	${CC} -o cexrecover cexrecover.o -lretro -lS
+
+cexrecover.o:
+	${CC} ${CFLAGS} -c -O cexrecover.c
+
+cexpreserve: cexpreserve.o
+	${CC} -o cexpreserve cexpreserve.o -lretro -lS
+
+cexpreserve.o:
+	${CC} ${CFLAGS} -c cexpreserve.c
+
+clean:
+	rm a.out cexrecover cexpreserve ex2.0strings strings errs core trace
+	-rm *.o x*.[cs]
+
+install: ca.out
+	-chmod 755 ${DESTDIR}/${BINDIR}/ex
+	-${DESTDIR}/${BINDIR}/ex </dev/null
+	-rm -f ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/edit ${DESTDIR}/${BINDIR}/vi
+	cp ca.out ${DESTDIR}/${BINDIR}/ex
+	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/edit
+	ln ${DESTDIR}/${BINDIR}/ex ${DESTDIR}/${BINDIR}/vi
+	cp ex2.0strings ${DESTDIR}/${LIBDIR}/ex2.0strings
+
+installutil: cexrecover cexpreserve
+	cp cexrecover ${DESTDIR}/${LIBDIR}/ex2.0recover
+	cp cexpreserve ${DESTDIR}/${LIBDIR}/ex2.0preserve
+
+lint:
+	lint ex.c ex_?*.c
+	lint -u cexrecover.c
+	lint cexpreserve.c
+
+print:
+	@-rm x.c xs.c >/dev/null
+	@${PR} READ* BUGS
+	@${PR} makefile*
+	@(size -l a.out ; size *.o) | ${PR} -h sizes
+	@${PR} termcap
+	@${FOLD} /etc/ttycap | ${PR} -h /etc/ttycap
+	@${PR} -h errno.h ${INCLUDE}/errno.h
+	@${PR} -h pwd.h ${INCLUDE}/pwd.h
+	@${PR} -h setjmp.h ${INCLUDE}/setjmp.h
+	@${PR} -h sgtty.h ${INCLUDE}/sgtty.h
+	@${PR} -h signal.h ${INCLUDE}/signal.h
+	@${PR} -h sys/dir.h ${INCLUDE}/sys/dir.h
+	@${PR} -h sys/stat.h ${INCLUDE}/sys/stat.h
+	@${PR} -h sys/types.h ${INCLUDE}/sys/types.h
+	@ls -ls | ${PR}
+	@${CXREF} *.c | ${PR} -h XREF
+	@${PR} *.h *.c
+	
+printlong:
+	@-rm x.c xs.c >/dev/null
+	@${PR} -l88 READ* BUGS
+	@${PR} -l88 makefile*
+	@(size -l a.out ; size *.o) | ${PR} -l88 -h sizes
+	@${PR} -l88 termcap
+	@${FOLD} /etc/ttycap | ${PR} -l88 -h /etc/ttycap
+	@${PR} -l88 -h errno.h ${INCLUDE}/errno.h
+	@${PR} -l88 -h pwd.h ${INCLUDE}/pwd.h
+	@${PR} -l88 -h setjmp.h ${INCLUDE}/setjmp.h
+	@${PR} -l88 -h sgtty.h ${INCLUDE}/sgtty.h
+	@${PR} -l88 -h signal.h ${INCLUDE}/signal.h
+	@${PR} -l88 -h sys/dir.h ${INCLUDE}/sys/dir.h
+	@${PR} -l88 -h sys/stat.h ${INCLUDE}/sys/stat.h
+	@${PR} -l88 -h sys/types.h ${INCLUDE}/sys/types.h
+	@ls -ls | ${PR} -l88 
+	@${CXREF} *.c | ${PR} -l88 -h XREF
+	@${PR} -l88 *.h *.c
+	
+printvis:
+	@${PR} READ* BUGS
+	@${PR} makefile*
+	@${PR} ex_vis.h ex_v*.c
+	@${PR} termcap
