@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	6.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	6.31 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -927,13 +927,8 @@ commaize(h, p, fp, oldstyle, m, e)
 			obp += 2;
 		}
 
-		/* strip off quote bits as we output */
 		while ((c = *name++) != '\0' && obp < &obuf[MAXLINE])
-		{
-			if (bitnset(M_7BITS, m->m_flags))
-				c &= 0177;
 			*obp++ = c;
-		}
 		firstone = FALSE;
 		*p = savechar;
 	}
