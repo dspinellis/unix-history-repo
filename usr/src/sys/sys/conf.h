@@ -1,4 +1,4 @@
-/*	conf.h	4.8	81/10/17	*/
+/*	conf.h	4.9	82/10/17	*/
 
 /*
  * Declaration of block device
@@ -48,7 +48,7 @@ struct linesw
 	int	(*l_open)();
 	int	(*l_close)();
 	int	(*l_read)();
-	char	*(*l_write)();
+	int	(*l_write)();
 	int	(*l_ioctl)();
 	int	(*l_rint)();
 	int	(*l_rend)();
