@@ -1,4 +1,4 @@
-#	Makefile	4.6	83/07/02
+#	Makefile	4.7	83/08/14
 #
 #	as.h		Definitions for data structures
 #	asnumber.h	Definitions for all numbers: byte .. G format float
@@ -105,10 +105,7 @@ astoks.h: astoks.H astokfix.awk
 	awk -f astokfix.awk < astoks.H > astoks.h
 
 aspseudo.o:	as.h astoks.h aspseudo.c instrs.h instrs.as
-	$(CC) -S $(DFLAGS) aspseudo.c
-	sh ./:rofix aspseudo.s
-	$(AS) -o aspseudo.o aspseudo.s
-	rm aspseudo.s
+	$(CC) -c -R $(DFLAGS) aspseudo.c
 
 instrs.as: instrs
 	(echo FLAVOR AS ; cat instrs) | awk -f instrs > instrs.as
