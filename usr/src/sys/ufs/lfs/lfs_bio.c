@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	7.7 (Berkeley) %G%
+ *	@(#)lfs_bio.c	7.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -32,7 +32,7 @@ int	locked_queue_count;		/* XXX Count of locked-down buffers. */
 
 int
 lfs_bwrite(bp)
-	register BUF *bp;
+	register struct buf *bp;
 {
 	int s;
 #ifdef VERBOSE
