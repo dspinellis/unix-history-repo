@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 MDIR=	/usr/man/cat3
 SRCS=	abort.3 abs.3 alarm.3 asinh.3 assert.3 atof.3 \
@@ -211,6 +211,7 @@ install: FRC
 	ln ${DESTDIR}${MDIR}/rand.0 ${DESTDIR}${MDIR}/srand.0
 	ln ${DESTDIR}${MDIR}/sinh.0 ${DESTDIR}${MDIR}/tanh.0
 	ln ${DESTDIR}${MDIR}/ctime.0 ${DESTDIR}${MDIR}/timezone.0
+	ln ${DESTDIR}${MDIR}/ctime.0 ${DESTDIR}${MDIR}/tzset.0
 	ln ${DESTDIR}${MDIR}/ctype.0 ${DESTDIR}${MDIR}/toascii.0
 	ln ${DESTDIR}${MDIR}/ctype.0 ${DESTDIR}${MDIR}/tolower.0
 	ln ${DESTDIR}${MDIR}/ctype.0 ${DESTDIR}${MDIR}/toupper.0
