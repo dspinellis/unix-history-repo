@@ -1,4 +1,4 @@
-/*	param.c	4.15	82/11/13	*/
+/*	param.c	4.16	82/11/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -34,7 +34,7 @@ int	nproc = NPROC;
 int	ntext = 24 + MAXUSERS;
 int	ninode = (NPROC + 16 + MAXUSERS) + 32;
 int	nfile = 16 * (NPROC + 16 + MAXUSERS) / 10 + 32;
-int	ncallout = 16 + MAXUSERS;
+int	ncallout = 16 + NPROC;
 int	nclist = 100 + 16 * MAXUSERS;
 int	nport = NPROC / 2;
 int     nmbclusters = NMBCLUSTERS;
