@@ -1020,7 +1020,7 @@ sigexit(p, sig)
 		if (coredump(p) == 0)
 			sig |= WCOREFLAG;
 	}
-	exit(p, W_EXITCODE(0, sig));
+	kexit(p, W_EXITCODE(0, sig));
 	/* NOTREACHED */
 }
 

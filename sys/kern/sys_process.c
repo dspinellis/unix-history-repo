@@ -421,7 +421,7 @@ procxmt(p)
 	wakeup((caddr_t)&ipc);
 
 	if (rv == 2)
-		exit(p, 0); 	/*???*/
+		kexit(p, 0); 	/*???*/
 
 	return rv;
 }

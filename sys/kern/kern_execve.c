@@ -539,7 +539,7 @@ exec_abort:
 	vm_deallocate(&vs->vm_map, newframe, MAXSSIZ);
 	vput(ndp->ni_vp);
 	FREE(ndp->ni_pnbuf, M_NAMEI);
-	exit(p, W_EXITCODE(0, SIGABRT));
+	kexit(p, W_EXITCODE(0, SIGABRT));
 
 	/* NOTREACHED */
 	return(0);

@@ -65,7 +65,6 @@
 struct rexit_args {
 	int	rval;
 };
-
 /* ARGSUSED */
 volatile void
 rexit(p, uap, retval)
@@ -74,7 +73,7 @@ rexit(p, uap, retval)
 	int *retval;
 {
 
-	exit(p, W_EXITCODE(uap->rval, 0));
+	kexit(p, W_EXITCODE(uap->rval, 0));
 	/* NOTREACHED */
 }
 
@@ -84,7 +83,8 @@ rexit(p, uap, retval)
  * and parent's lists.  Save exit status and rusage for wait().
  * Check for child processes and orphan them.
  */
-exit(p, rv)
+volatile void
+kexit(p, rv)
 	register struct proc *p;
 	int rv;
 {
