@@ -3,13 +3,14 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 # Bug report processor and associated programs
 #
 
 CFLAGS = -O -I.
 DESTDIR=
+SRCS=	bugfiler.c error.c gethead.c process.c redist.c reply.c
 OBJS=	bugfiler.o error.o gethead.o process.o redist.o reply.o
 
 all: bugfiler
@@ -24,5 +25,11 @@ install: bugfiler sendbug.sh bugformat
 
 clean:
 	rm -f ${OBJS} core bugfiler
+
+tags:
+	ctags ${SRCS}
+
+lint:
+	lint ${CFLAGS} -chapbx ${SRCS}
 
 ${OBJS}: bug.h

@@ -5,17 +5,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)redist.c	5.1 (Berkeley) 86/11/25";
+static char sccsid[] = "@(#)redist.c	5.2 (Berkeley) 87/04/11";
 #endif not lint
 
 #include <sys/file.h>
 #include <stdio.h>
 #include <bug.h>
-
-extern HEADER	mailhead[];			/* mail headers */
-extern char	*distf,				/* redist temp file */
-		pfile[],			/* permanent bug file */
-		folder[];			/* system name */
 
 /*
  * redist --
@@ -24,64 +19,63 @@ extern char	*distf,				/* redist temp file */
  */
 redist()
 {
-	register char	*C1,		/* traveling chars */
+	extern FILE	*dfp;		/* dist file fp */
+	extern char	pfile[];	/* permanent bug file */
+	register char	*C1,
 			*C2;
-	register int	first = YES;	/* if first blank line */
-	FILE	*pf,			/* pipe pointer */
-		*dfp,			/* dist file fp */
+	register int	first;		/* if first blank line */
+	FILE	*pf,
 		*popen();
-	char	*index(), *mktemp();
+	char	*index();
 
-	if (!freopen(DIST_FILE,"r",stdin))
+	sprintf(bfr, "%s/%s", dir, DIST_FILE);
+	if (!freopen(bfr, "r", stdin))
 		return;
-
 	for (;;) {			/* get first part of entry */
 		if (!gets(bfr))
 			return;
-		if (*bfr == COMMENT || *bfr == ' ' || *bfr == '\t' || !(C1 = index(bfr,':')))
+		if (*bfr == COMMENT || *bfr == ' ' || *bfr == '\t' || !(C1 = index(bfr, ':')))
 			continue;
 		*C1 = EOS;
-		if (!strcmp(bfr,folder))
+		if (!strcmp(bfr, folder))
 			break;
 	}
 	for (++C1;*C1 && (*C1 == ' ' || *C1 == '\t');++C1);
 	if (!*C1)			/* if empty */
 		return;
 
-	if (!(pf = popen(MAIL_CMD,"w")))
-		error("sendmail pipe failed.",CHN);
+	if (!(pf = popen(MAIL_CMD, "w")))
+		error("sendmail pipe failed.", CHN);
 
-	fprintf(pf,"Reply-To: %s\n",BUGS_HOME);
+	fprintf(pf, "Reply-To: %s\n", BUGS_HOME);
 	if (mailhead[SUBJ_TAG].found)
-		fprintf(pf,"%s",mailhead[SUBJ_TAG].line);
+		fprintf(pf, "%s", mailhead[SUBJ_TAG].line);
 	else
-		fputs("Subject: Untitled Bug Report\n",pf);
-	fputs("Resent-To: ",pf);
+		fputs("Subject: Untitled Bug Report\n", pf);
+	fputs("Resent-To: ", pf);
 
 	/*
 	 * write out first entry, then succeeding entries
 	 * backward compatible, handles back slashes at end of line
 	 */
 	for (;;) {
-		if (C2 = index(C1,'\\'))
+		if (C2 = index(C1, '\\'))
 			*C2 = EOS;
-		fputs(C1,pf);
+		fputs(C1, pf);
 		if (!gets(bfr) || (*bfr != ' ' && *bfr != '\t'))
 			break;
 		for (C1 = bfr;*C1 && (*C1 == ' ' || *C1 == '\t');++C1);
 	}
-	fputs("\n",pf);
+	putc('\n', pf);
 
-	if (!(dfp = fopen(distf,"r")))
-		error("unable to read temporary file %s.",distf);
-	while (fgets(bfr,sizeof(bfr),dfp))
+	rewind(dfp);
+	for (first = YES;fgets(bfr, sizeof(bfr), dfp);)
 		if (*bfr == '\n' && first) {
 			first = NO;
-			fprintf(pf,"\n%sReference: %s\n",mailhead[INDX_TAG].line,pfile);
+			fprintf(pf, "\n%sReference: %s\n", mailhead[INDX_TAG].line, pfile);
 		}
 		else
-			fputs(bfr,pf);
-	fclose(dfp);
-	pclose(pf);
-	unlink(distf);
+			fputs(bfr, pf);
+	(void)pclose(pf);
+	(void)fclose(dfp);
 }

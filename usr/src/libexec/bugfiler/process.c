@@ -5,55 +5,51 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)process.c	5.2 (Berkeley) 87/01/28";
+static char sccsid[] = "@(#)process.c	5.3 (Berkeley) 87/04/11";
 #endif not lint
 
 #include <bug.h>
 #include <sys/file.h>
-#include <sys/dir.h>
 #include <sys/time.h>
 #include <stdio.h>
-
-extern HEADER	mailhead[];			/* mail headers */
-extern int	lfd;				/* lock file descriptor */
-extern char	dir[],				/* directory */
-		folder[];			/* sub-directory */
+#include <ctype.h>
 
 char	pfile[MAXPATHLEN];			/* permanent file name */
 
 /*
  * process --
- *	process a bug report
+ *	copy report to permanent file,
+ *	update summary file.
  */
 process()
 {
 	register int	rval;			/* read return value */
 	struct timeval	tp;			/* time of day */
-	struct timezone	tzp;
+	int	lfd;				/* lock file descriptor */
 	char	*ctime();
 
-	/* copy report to permanent file */
-	sprintf(pfile,"%s/%s/%d",dir,folder,getnext());
-	fprintf(stderr,"\t%s\n",pfile);
-	if (!(freopen(pfile,"w",stdout)))
-		error("unable to create permanent bug file %s.",pfile);
+	if (access(LOCK_FILE, R_OK) || (lfd = open(LOCK_FILE, O_RDONLY, 0)) < 0)
+		error("can't find lock file %s.", LOCK_FILE);
+	if (flock(lfd, LOCK_EX))
+		error("can't get lock.", CHN);
+	sprintf(pfile, "%s/%s/%d", dir, folder, getnext());
+	fprintf(stderr, "\t%s\n", pfile);
+	if (!(freopen(pfile, "w", stdout)))
+		error("can't create %s.", pfile);
 	rewind(stdin);
-	while ((rval = read(fileno(stdin),bfr,sizeof(bfr))) != ERR && rval)
-		write(fileno(stdout),bfr,rval);
-	REL_LOCK;
+	while ((rval = read(fileno(stdin), bfr, sizeof(bfr))) != ERR && rval)
+		if (write(fileno(stdout), bfr, rval) != rval)
+			error("write to %s failed.", pfile);
 
 	/* append information to the summary file */
-	sprintf(bfr,"%s/%s",dir,SUMMARY_FILE);
-	GET_LOCK;
-	if (!(freopen(bfr,"a",stdout)))
-		error("unable to append to summary file %s.",bfr);
-	else {
-		if (gettimeofday(&tp,&tzp))
-			error("unable to get time of day.",CHN);
-		printf("\n%s\t\t%s\t%s\t%s\tOwner: Bugs Bunny\n\tComment: Received\n",pfile,ctime(&tp.tv_sec),mailhead[INDX_TAG].line,mailhead[SUBJ_TAG].found ? mailhead[SUBJ_TAG].line : "Subject:\n");
-	}
-	REL_LOCK;
-	fclose(stdout);
+	sprintf(bfr, "%s/%s", dir, SUMMARY_FILE);
+	if (!(freopen(bfr, "a", stdout)))
+		error("can't append to summary file %s.", bfr);
+	if (gettimeofday(&tp, (struct timezone *)NULL))
+		error("can't get time of day.", CHN);
+	printf("\n%s\t\t%s\t%s\t%s\tOwner: Bugs Bunny\n\tComment: Received\n", pfile, ctime(&tp.tv_sec), mailhead[INDX_TAG].line, mailhead[SUBJ_TAG].found ? mailhead[SUBJ_TAG].line : "Subject:\n");
+	(void)flock(lfd, LOCK_UN);
+	(void)fclose(stdout);
 }
 
 /*
@@ -65,16 +61,22 @@ getnext()
 {
 	register struct direct	*d;		/* directory structure */
 	register DIR	*dirp;			/* directory pointer */
-	register int	n;			/* number values */
+	register int	highval,
+			newval;
+	register char	*C;
 
-	GET_LOCK;
-	sprintf(bfr,"%s/%s",dir,folder);
-	if (!(dirp = opendir(bfr))) {
-		REL_LOCK;
-		error("unable to read folder directory %s.",bfr);
-	}
-	for (n = 0;d = readdir(dirp);)
-		n = MAX(n,atoi(d->d_name));
+	sprintf(bfr, "%s/%s", dir, folder);
+	if (!(dirp = opendir(bfr)))
+		error("can't read folder directory %s.", bfr);
+	for (highval = 0;d = readdir(dirp);)
+		for (C = d->d_name;;++C)
+			if (!*C) {
+				if ((newval = atoi(d->d_name)) > highval)
+					highval = newval;
+				break;
+			}
+			else if (!isdigit(*C))
+				break;
 	closedir(dirp);
-	return(++n);
+	return(++highval);
 }
