@@ -9,7 +9,7 @@
 # software without specific written prior permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
 CFLAGS=	-O -DUNIX -DUNIX_BSD4_2
 LIBC=	/lib/libc.a
@@ -20,20 +20,20 @@ OBJS=	curses.o hit.o init.o inventory.o level.o machdep.o main.o \
 	message.o monster.o move.o object.o pack.o play.o random.o ring.o \
 	room.o save.o score.o spec_hit.o throw.o trap.o use.o zap.o
 
-all: pdrogue
+all: rogue
 
-pdrogue: ${OBJS} ${LIBC}
+rogue: ${OBJS} ${LIBC}
 	${CC} ${OBJS} -o $@ -lcurses -ltermlib
 
 clean: FRC
-	rm -f ${OBJS} core pdrogue
+	rm -f ${OBJS} core rogue
 
 depend: FRC
 	mkdep ${CFLAGS} ${SRCS}
 
 install: FRC
-	install -s -o games -g bin -m 4700 pdrogue ${DESTDIR}/usr/games/hide
-	(cd ${DESTDIR}/usr/games; rm -f pdrogue; ln -s dm pdrogue; chown games.bin pdrogue)
+	install -s -o games -g bin -m 4700 rogue ${DESTDIR}/usr/games/hide
+	(cd ${DESTDIR}/usr/games; rm -f rogue; ln -s dm rogue; chown games.bin rogue)
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS}
