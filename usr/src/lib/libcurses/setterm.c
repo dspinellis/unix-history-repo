@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setterm.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)setterm.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>
@@ -48,7 +48,6 @@ setterm(type)
 	static char genbuf[1024];
 	static char __ttytype[1024];
 	register int unknown;
-	int destcol, destline;
 	struct winsize win;
 	char *p;
 
@@ -109,10 +108,19 @@ setterm(type)
 		if (EI == NULL)
 			EI = "";
 	}
-	if (!GT)		/* If we can't tab, we can't backtab either. */
+
+	/* If we can't tab, we can't backtab, either. */
+	if (!GT)
 		BT = NULL;
 
-	if (tgoto(CM, destcol, destline)[0] == 'O') {
+	/*
+	 * Test for cursor motion capbility.
+	 *
+	 * XXX
+	 * This is truly stupid -- tgoto returns "OOPS" if it can't
+	 * do cursor motions.
+	 */
+	if (tgoto(CM, 0, 0)[0] == 'O') {
 		CA = 0;
 		CM = 0;
 	} else
