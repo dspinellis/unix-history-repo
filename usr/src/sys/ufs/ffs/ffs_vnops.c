@@ -1,4 +1,4 @@
-/*	ffs_vnops.c	4.48	83/01/11	*/
+/*	ffs_vnops.c	4.49	83/01/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -973,6 +973,13 @@ rename()
 			goto bad;
 		}
 		/*
+		 * Disallow rename(foo, foo/bar).
+		 */
+		if (dp->i_number == ip->i_number) {
+			error = EEXIST;
+			goto bad;
+		}
+		/*
 		 * Account for ".." in directory.
 		 * When source and destination have the
 		 * same parent we don't fool with the
@@ -994,6 +1001,11 @@ rename()
 			error = EXDEV;
 			goto bad;
 		}
+		/*
+		 * Short circuit rename(foo, foo).
+		 */
+		if (xp->i_number == ip->i_number)
+			goto bad;
 		/*
 		 * Target must be empty if a directory
 		 * and have no links to it.
