@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	6.17 (Berkeley) %G%
+ *	@(#)if_ether.c	6.18 (Berkeley) %G%
  */
 
 /*
@@ -369,7 +369,7 @@ reply:
 		ea->arp_pro = htons(ETHERTYPE_IPTRAILERS);
 	else if (proto == ETHERTYPE_IP &&
 	    (ac->ac_if.if_flags & IFF_NOTRAILERS) == 0)
-		mcopy = m_copy(m, 0, M_COPYALL);
+		mcopy = m_copy(m, 0, (int)M_COPYALL);
 	eh = (struct ether_header *)sa.sa_data;
 	bcopy((caddr_t)ea->arp_tha, (caddr_t)eh->ether_dhost,
 	    sizeof(eh->ether_dhost));

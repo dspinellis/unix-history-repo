@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in_pcb.c	6.14 (Berkeley) %G%
+ *	@(#)in_pcb.c	6.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -289,7 +289,7 @@ in_losing(inp)
 
 	if ((rt = inp->inp_route.ro_rt)) {
 		if (rt->rt_flags & RTF_DYNAMIC)
-			(void) rtrequest(SIOCDELRT, rt);
+			(void) rtrequest((int)SIOCDELRT, rt);
 		rtfree(rt);
 		inp->inp_route.ro_rt = 0;
 		/*
