@@ -1,4 +1,4 @@
-/*	hgraph.c	1.10	(Berkeley) 83/11/02
+/*	hgraph.c	1.11	(Berkeley) 83/12/08
  *
  *     This file contains the graphics routines for converting gremlin
  * pictures to troff input.
@@ -47,8 +47,8 @@ ELT *element;
     register POINT *p2;
     register int length;
 
-    if ( !DBNullelt(element) ) {
-	p1 = element->ptlist;		/* p1 always has first point */
+    if ( !DBNullelt(element) && !Nullpoint((p1 = element->ptlist))) {
+						/* p1 always has first point */
         if (TEXT(element->type)) {
             HGSetFont(element->brushf, element->size);
             HGPutText(element->type, *p1, element->textpt);
