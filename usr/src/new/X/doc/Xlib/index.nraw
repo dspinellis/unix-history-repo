@@ -1,0 +1,837 @@
+2	Definitions	Child Window
+2	Definitions	Parent Window
+2	Definitions	Stacking order
+2	XOpenTransparency	
+2	XClipMode	
+2	Definitions	Events
+2	Events	
+2	Definitions	Resource ID
+2	XSync	
+3	XPending	
+3	XNextEvent	
+3	XWindowEvent	
+3	XFlush	
+3	XSync	
+3	Resource ID	Window
+3	Resource ID	Font
+3	Resource ID	Pixmap
+3	Resource ID	Bitmap
+3	Resource ID	Cursor
+3	File	<X/X.h>
+3	Definitions	Status
+3	Error Handling	
+3	XChangeWindow	
+3	XRaiseWindow	
+3	XSync	
+3	Linking Against Xlib	
+3	File	<X/Xlib.h>
+3	File	<X/X.h>
+3	File	<sys/types.h>
+3	Unix Command	CC(1)
+3	File	<X/Xlib.h>
+3	Definitions	Bitmap
+3	Definitions	Pixmap
+4	Limitations	Bits per Pixel
+4	Definitions	Pixel values
+4	Definitions	Cursors
+4	Definitions	Locator
+4	Definitions	Bitmap
+4	Macro	BitmapSize()
+4	Definitions	Bit Order
+4	Definitions	Pixmap
+4	Definitions	XY-format
+4	Definitions	Z-format
+4	Macro	XYPixmapSize()
+4	Macro	BZPixmapSize()
+4	Macro	WZPixmapSize()
+4	Restrictions	Z-format
+4	Definitions	Tile Mode
+5	Macro	BlackPixel
+5	Macro	WhitePixel
+5	File	<X/X.h>
+5	Definitions	Coordinate System
+5	Definitions	X Axis
+5	Definitions	Y Axis
+5	Definitions	Window Size
+5	Definitions	XOpenDisplay
+5	XOpenDisplay	
+5	DISPLAY Environment Variable	
+5	Environment	DISPLAY
+6	Protocol	TCP
+6	Protocol	DECnet
+6	Definitions	Display
+6	Data Structures	Display
+6	File	<X/Xlib.h>
+6	Unix System Call	select
+6	Macro	dpyno()
+6	Macro	QLength()
+6	Macro	DisplayType()
+6	Macro	DisplayPlanes()
+6	Macro	DisplayCells()
+6	Macro	ProtocolVersion()
+6	Window	RootWindow
+6	RootWindow	
+6	Macro	RootWindow
+6	Macro	DisplayType()
+6	File	<X/X.h>
+6	Macro	DisplayName()
+6	Unix System Call	fork
+6	BlackPixmap	
+6	WhitePixmap	
+6	Pixmap	
+6	Macro	BlackPixmap
+6	Macro	WhitePixmap
+7	DisplayWidth	
+7	DisplayHeight	
+7	Definitions	DisplayWidth
+7	Definitions	DisplayHeight
+7	Data Structures	Display
+7	XSetDisplay	
+7	Definitions	XSetDisplay
+7	XCloseDisplay	
+7	Definitions	XCloseDisplay
+7	Resource ID	
+7	XCloseDisplay	
+7	Unix System Call	fork
+8	Definitions	Opaque Window
+8	Definitions	Transparent Window
+8	Tile Pixmaps	
+8	Resource ID's	Freeing
+8	Freeing	Resources
+8	Definitions	Tile Mode
+8	Definitions	Clip Mode
+8	Input	Transparent Window
+8	Parent Window	
+8	Output	On Transparent Windows
+8	XClipMode	
+8	Window	RootWindow
+8	RootWindow	
+8	Macro	RootWindow
+8	Window	Mapping to screen
+8	XMapWindow	
+8	Exposure Event	
+8	Definitions	XCreateWindow
+8	XCreateWindow	
+9	Window	Border
+9	Window	Background
+9	Macro	BlackPixmap
+9	Macro	WhitePixmap
+9	BlackPixmap	
+9	WhitePixmap	
+9	Window	Tile Mode
+9	Window	Clip Mode
+9	Icon	Creating Windows
+9	Window	Name
+9	XMapWindow	
+9	Cursor	Initial State
+9	XDefineCursor	
+9	Definitions	XCreateTransparency
+9	XCreateTransparency	
+10	Transparent Window	Clip Mode
+10	Transparent Window	Initial Cursor
+10	Transparent Window	Background
+10	Transparent Window	Border
+10	Transparent Window	Tile Mode
+10	Definitions	XDestroyWindow
+10	XDestroyWindow	
+10	Icon	Mapping Behavior
+10	XCloseDisplay	
+10	Unix System Call	fork
+10	Definitions	XDestroySubwindows
+10	XDestroySubwindows	
+10	XDestroySubwindows	
+11	XCreateWindow	
+11	XCreateTransparency	
+11	XCreateWindowBatch	
+11	Definitions	OpaqueFrame
+11	Data Structures	OpaqueFrame
+11	OpaqueFrame	
+11	Definitions	BatchFrame
+11	Data Structures	BatchFrame
+11	BatchFrame	
+11	Definitions	TransparentFrame
+11	Data Structures	TransparentFrame
+11	TransparentFrame	
+11	Definitions	XCreateWindows
+11	XCreateWindows	
+11	XCreateWindow	
+11	Definitions	XCreateTransparencies
+11	XCreateTransparencies	
+12	XCreateWindow	
+12	Definitions	XCreateWindowBatch
+12	XCreateWindowBatch	
+12	XCreateWindow	
+12	XCreateTransparency	
+12	Definitions	XCreate
+12	XCreate	
+13	XGeometry	
+13	XParseGeometry	
+13	XGrabMouse	
+13	Grabbing	Mouse
+13	XGetDefault	
+13	XGrabServer	
+13	Grabbing	Server
+14	Definitions	XCreateTerm
+14	XCreateTerm	
+14	XGeometry	
+14	XParseGeometry	
+15	XGrabMouse	
+15	Grabbing	Mouse
+15	XGetDefault	
+15	XGrabServer	
+15	Grabbing	Server
+15	XMapWindow	
+15	Exposure Events	
+15	XSelectInput	
+15	Definitions	XMapWindow
+15	XMapWindow	
+16	XMapWindow	
+16	ExposeWindow Event	
+16	XSelectInput	
+16	Definitions	XMapSubwindows
+16	XMapSubwindows	
+16	ExposeWindow Event	
+16	Definitions	XUnmapWindow
+16	XUnmapWindow	
+17	UnmapWindow Event	
+17	Definitions	XUnmapTransparent
+17	XUnmapTransparent	
+17	Menus	
+17	XPixmapSave	
+17	Definitions	XUnmapSubwindows
+17	XUnmapSubwindows	
+17	UnmapWindow Event	
+17	Definitions	XMoveWindow
+17	XMoveWindow	
+17	Exposure Events	
+18	Exposure Events	
+18	Definitions	XChangeWindow
+18	XChangeWindow	
+18	ExposeWindow Event	
+18	Definitions	XConfigureWindow
+18	XConfigureWindow	
+18	ExposeWindow Event	
+18	XChangeWindow	
+18	XMoveWindow	
+18	Definitions	XRaiseWindow
+18	XRaiseWindow	
+19	Exposure Events	
+19	Definitions	XLowerWindow
+19	XLowerWindow	
+19	Exposure Events	
+19	Definitions	XCircWindowUp
+19	XCircWindowUp	
+19	Exposure Events	
+19	Definitions	XCircWindowDown
+20	Definitions	XQueryWindow
+20	XQueryWindow	
+20	WindowInfo	
+20	File	<X/Xlib.h>
+20	Data Structures	WindowInfo
+20	Definitions	WindowInfo
+20	Icon	
+20	XSetIconWindow	
+20	Definitions	XQueryTree
+20	XQueryTree	
+21	Child Window	
+21	Parent Window	
+21	Definitions	XChangeBackground
+21	XChangeBackground	
+21	Window	Background
+21	Resource ID's	Freeing
+21	Freeing	Resources
+21	Definitions	XChangeBorder
+21	XChangeBorder	
+21	Resource ID's	Freeing
+21	Freeing	Resources
+21	Definitions	XTileAbsolute
+21	Definitions	XTileRelative
+21	XTileAbsolute	
+21	XTileRelative	
+22	Tile Mode	
+22	XClear	
+22	XTileFill	
+22	XDrawFilled	
+22	Definitions	XClipDrawThrough
+22	Definitions	XClipClipped
+22	XClipDrawThrough	
+22	XClipClipped	
+22	Clip Mode	
+22	XGrabServer	
+22	Window	Managers
+22	Grabbing	Server
+23	Definitions	XStoreName
+23	XStoreName	
+23	Window	Name
+23	XFetchName	
+23	Definitions	XFetchName
+23	XFetchName	
+23	Definitions	XSetResizeHint
+23	XSetResizeHint	
+23	Window	Resize Hint
+24	Definitions	XGetResizeHint
+24	XGetResizeHint	
+24	Window	Resize Hint
+24	Definitions	XSetIconWindow
+24	XSetIconWindow	
+24	Window	Icon Window
+24	Icons	
+24	Definitions	XClearIconWindow
+24	XClearIconWindow	
+24	ExposeWindow Event	
+24	Definitions	XQueryMouse
+24	XQueryMouse	
+24	Mouse	Position
+25	Definitions	XQueryMouseButtons
+25	XQueryMouseButtons	
+25	Mouse	Position and Buttons
+25	XQueryMouse	
+25	Definitions	XUpdateMouse
+25	XUpdateMouse	
+25	Mouse	Get Position
+25	Definitions	XWarpMouse
+25	XWarpMouse	
+25	Mouse	Moving the Mouse Cursor
+25	Definitions	XCondWarpMouse
+25	XCondWarpMouse	
+25	Mouse	Moving the Mouse Cursor
+26	Definitions	XInterpretLocator
+26	XInterpretLocator	
+26	Window	Conversion to Window Coordinates
+26	Definitions	Display Functions
+26	Definitions	Source
+26	Definitions	Destination
+26	File	<X/X.h>
+27	Pixel Values	
+27	Definitions	Plane Masks
+27	Macro	AllPlanes
+27	Definitions	Brush
+27	Definitions	XLine
+27	XLine	
+27	Line	Drawing
+28	Definitions	XDraw
+28	XDraw	
+28	Line	Drawing
+28	File	<X/X.h>
+28	Data Structures	Vertex
+28	Vertex	
+29	Vertex	Flags
+29	File	<X/X.h>
+29	Vertex	Flags
+29	VertexRelative	
+29	VertexDontDraw	
+29	VertexCurved	
+29	VertexStartClosed	
+29	VertexEndClosed	
+29	Display Functions	
+30	Definitions	XAppendVertex
+30	XAppendVertex	
+30	Definitions	XClearVertexFlag
+30	XClearVertexFlag	
+30	Macro	DashedLine
+30	Macro	DottedLine
+30	Macro	SolidLine
+30	Definitions	Patterns
+30	Patterns	
+30	Definitions	XMakePattern
+30	XMakePattern	
+30	Patterns	
+31	Definitions	XDrawPatterned
+31	Definitions	XDrawDashed
+31	XDrawPatterned	
+31	XDrawDashed	
+31	Patterns	
+31	XDraw	
+31	Definitions	XDrawTiled
+31	Definitions	XDrawFilled
+31	XDrawTiled	
+31	XDrawFilled	
+31	Polygons	
+31	Filled Polygons	
+31	XDraw	
+32	XQueryTileShape	
+32	Definitions	XQueryBrushShape
+32	XQueryBrushShape	
+32	Limitations	Brush Shape
+32	Definitions	XClear
+32	XClear	
+32	Window	Clearing the Window
+32	Definitions	XPixSet
+32	Definitions	XPixFill
+32	XPixSet	
+32	XPixFill	
+32	Icons	
+33	Definitions	XPixmapPut
+33	XPixmapPut	
+33	Pixmap	
+33	Limitiations	Tile Shape
+33	Definitions	XQueryTileShape
+33	XQueryTileShape	
+33	Definitions	XTileSet
+33	Definitions	XTileFill
+33	XTileSet	
+33	XTileFill	
+33	Tile Area	
+33	Definitions	XMoveArea
+33	XMoveArea	
+33	Definitions	XCopyArea
+33	XCopyArea	
+33	Window Raster Op	
+33	Raster Op	
+34	ExposeCopy Event	
+34	ExposeRegion Event	
+34	Definitions	XPixmapBitsPutXY
+34	XPixmapBitsPutXY	
+34	Definitions	XPixmapBitsPutZ
+34	XPixmapBitsPutZ	
+34	Raster Op to Screen	
+35	XY-Format Pixmap	
+35	Z-Format Pixmap	
+35	Icon	Display
+35	Definitions	XBitmapBitsPut
+35	XBitmapBitsPut	
+35	Icon	Display
+35	Definitions	XPixmapSave
+35	XPixmapSave	
+35	Saving Bits from Screen	
+36	Menus	
+36	XUnmapTransparent	
+36	Definitions	XPixmapGetXY
+36	XPixmapGetXY	
+36	Definitions	XPixmapGetZ
+36	XPixmapGetZ	
+36	Retrieving Bits from the Screen	
+37	Definitions	XStorePixmapXY
+37	Definitions	XStorePixmapZ
+37	XStorePixmapXY	
+37	XStorePixmapZ	
+37	Definitions	XStoreBitmap
+37	XStoreBitmap	
+37	XFreeBitmap	
+37	Definitions	XMakePixmap
+37	XMakePixmap	
+37	Definitions	XMakeTile
+37	XMakeTile	
+38	Definitions	XFreePixmap
+38	XFreePixmap	
+38	Definitions	XFreeBitmap
+38	XFreeBitmap	
+38	Definitions	XCharBitmap
+38	XCharBitmap	
+38	Resource ID's	Freeing
+38	Freeing	Resources
+39	XQueryCursorShape	
+39	Definitions	XStoreCursor
+39	XStoreCursor	
+39	Cursor Definition	
+39	Definitions	Cursor
+39	Resource ID's	Freeing
+39	Freeing	Resources
+39	Cursor	Limitations
+39	Limitations	Cursor
+39	Definitions	XQueryCursorShape
+39	XQueryCursorShape	
+39	XStoreCursor	
+39	Definitions	XFreeCursor
+39	XFreeCursor	
+40	Definitions	XCreateCursor
+40	XCreateCursor	
+40	Definitions	XDefineCursor
+40	XDefineCursor	
+40	Window	Define Cursor
+40	Definitions	XUndefineCursor
+40	XUndefineCursor	
+40	Window	Undefine Cursor
+41	Data Structures	Color
+41	Color	
+41	XGetHardwareColor	
+41	Read/Write Color Map Cells	
+41	XStoreColors	
+41	Definitions	XGetHardwareColor
+41	XGetHardwareColor	
+41	Color Allocation	
+41	Pixel Values	
+41	Color Map	
+41	Color Allocation	
+41	Allocation	Color Map
+41	Read-only Color Map Cells	
+42	Definitions	XGetColorCells
+42	XGetColorCells	
+42	Color Allocation	
+42	Definitions	XGetColor
+42	XGetColor	
+42	Color	Naming
+42	Color	Data Base
+42	File	/usr/lib/rgb.txt
+42	Definitions	XFreeColors
+42	XFreeColors	
+43	Color	Setting Cells
+43	Definitions	XStoreColors
+43	XStoreColors	
+43	Definitions	XStoreColor
+43	XStoreColor	
+43	Definitions	XQueryColor
+43	XQueryColor	
+43	Color	Getting Values
+43	Definitions	XQueryColors
+43	XQueryColors	
+43	Color	Parsing Command Lines
+43	Definitions	XParseColor
+43	XParseColor	
+44	Font Loading	
+44	XOpenFont	
+44	XCloseFont	
+44	FontInfo	
+44	Definitions	XOpenFont
+44	XOpenFont	
+44	XGetFont	
+44	XQueryFont	
+44	XFontWidths	
+44	Definitions	XCloseFont
+44	XCloseFont	
+45	XOpenFont	
+45	Definitions	XGetFont
+45	XGetFont	
+45	XFreeFont	
+45	Definitions	XQueryFont
+45	XQueryFont	
+45	Data Structures	FontInfo
+45	FontInfo	
+45	Definitions	XFreeFont
+45	XFreeFont	
+46	Definitions	XCharWidths
+46	XCharWidths	
+46	Definitions	XFontWidths
+46	XFontWidths	
+46	XFontWidths	
+46	XQueryFont	
+46	XFontWidths	
+46	XQueryWidth	
+46	Definitions	XQueryFont
+46	XQueryWidth	
+46	Definitions	XQueryFont
+47	FontInfo	
+47	Definitions	Font
+47	Fonts	
+47	XText	
+47	XTextWidth	
+47	Definitions	XText
+47	XText	
+47	XTextPad	
+47	Definitions	XTextPad
+47	Character Padding	
+47	Space Padding	
+47	Padding	Space
+47	Padding	Character
+48	XText	
+48	Definitions	XTextMask
+48	XTextMask	
+48	Definitions	XTextMaskPad
+48	XTextMaskPad	
+48	Mask Font	
+48	XTextMask	
+48	Access Control	
+48	Internet Addresses	
+48	DECnet Addresses	
+48	Authentication	
+49	Default Protection	
+49	File	/etc/X?.hosts
+49	Definitions	XAddHost
+49	XAddHost	
+49	File	<sys/socket.h>
+49	Definitions	XAddNode
+49	XAddNode	
+49	File	<netdnet/dn.h>
+49	Definitions	XRemoveHost
+49	XRemoveHost	
+49	File	<sys/socket.h>
+49	Definitions	XRemoveNode
+49	XRemoveNode	
+49	File	<netdnet/dn.h>
+50	Definitions	XGetHosts
+50	XGetHosts	
+50	File	<sys/socket.h>
+50	Definitions	XGetNodes
+50	XGetNodes	
+50	File	<netdnet/dn.h>
+50	Keyboard	Bell Volume
+50	Keyboard	Keyclick Volume
+50	Mouse	Programming
+50	File	/etc/ttys
+50	Definitions	XMouseControl
+50	XMouseControl	
+50	Mouse	Behavior
+51	Definitions	XFeepControl
+51	XFeepControl	
+51	Definitions	XFeep
+51	XFeep	
+51	Definitions	XKeyClickControl
+51	XKeyClickControl	
+51	Keyboard	Auto-Repeat
+51	Definitions	XAutoRepeatOn
+51	Definitions	XAutoRepeatOff
+51	XAutoRepeatOn	
+51	XAutoRepeatOff	
+51	Keyboard	Lock Key
+51	Definitions	XLockUpDown
+51	XLockUpDown	
+51	Definitions	XLockToggle
+51	XLockToggle	
+51	KeyPressed Events	
+52	Screen Saver	
+52	Definitions	XScreenSaver
+52	XScreenSaver	
+52	XGetDefault	
+52	Definitions	XGetDefault
+52	Default Options	
+52	File	$HOME/.Xdefaults
+52	XParseGeometry	
+52	Definitions	XParseGeometry
+52	Window	Initial Location
+53	XCreate	
+53	XCreateTerm	
+53	File	<X/Xlib.h>
+53	XGeometry	
+53	Definitions	Geometry
+53	Window	Initial Location
+53	Window	Computing Placement
+53	XCreate	
+53	XCreateTerm	
+53	XReadBitmapFile	
+53	Definitions	Bitmap file format
+53	Definitions	XReadBitmapFile
+54	Cut Buffers	
+54	Paste Buffers	
+54	Definitions	XStoreBytes
+54	XStoreBytes	
+54	XFetchBytes	
+54	Definitions	XFetchBytes
+54	XFetchBytes	
+55	Definitions	XRotateBuffers
+55	XRotateBuffers	
+55	Definitions	XStoreBuffer
+55	XStoreBuffer	
+55	Definitions	XFetchBuffer
+55	XFetchBuffer	
+55	Input Control	
+55	Output	Control
+55	Definitions	Event
+55	File	<X/Xlib.h>
+55	Definitions	XEvent
+56	File	<X/Xlib.h>
+56	Definitions	XCompressEvents
+56	XCompressEvents	
+56	Definitions	XExpandEvents
+56	XExpandEvents	
+56	Event Compression	
+56	Event	Types
+56	Definitions	XSelectInput
+56	XSelectInput	
+56	Event	Propagation
+56	File	<X/X.h>
+56	Event Types	EnterWindow
+56	Event Types	LeaveWindow
+56	Event Types	MouseMoved
+56	Event Types	ExposeWindow
+56	Event Types	ExposeRegion
+56	Event Types	ExposeCopy
+56	Event Types	ExposeRegion
+56	Event Types	MouseMoved
+56	Event Types	FocusChange
+56	Event Types	UnmapWindow
+56	Event Types	Keyboard
+56	Event Types	Button
+56	Key Event	
+56	Button Event	
+56	EnterWindow Event	
+56	LeaveWindow Event	
+56	MouseMoved Event	
+56	ExposeWindow Event	
+56	ExposeRegion Event	
+56	ExposeCopy Event	
+56	MouseMoved Event	
+56	Mouse	Event
+56	FocusChange Event	
+57	XSelectInput	
+57	XGrabMouse	
+57	Definitions	XFlush
+57	XFlush	
+57	XPending	
+57	XNextEvent	
+57	XWindowEvent	
+58	Definitions	XSync
+58	XSync	
+58	XError	
+58	XFlush	
+58	Definitions	XPending
+58	XPending	
+58	XNextEvent	
+58	XWindowEvent	
+58	XPending	
+58	Unix System Call	select
+58	XFlush	
+58	Macro	QLength
+58	Definitions	XNextEvent
+58	XEvent	
+58	Definitions	XPutBackEvent
+58	XPutBackEvent	
+59	Definitions	XPeekEvent
+59	XPeekEvent	
+59	Macro	QLength()
+59	Definitions	XWindowEvent
+59	XWindowEvent	
+59	XEvent	
+59	Definitions	XMaskEvent
+59	XMaskEvent	
+59	Definitions	XCheckWindowEvent
+59	XCheckWindowEvent	
+60	XEvent	
+60	Definitions	XCheckMaskEvent
+60	XCheckMaskEvent	
+60	Hash Lookup	
+60	Window	ID's
+60	Resource ID's	
+60	XId	
+60	Definitions	XId
+60	XId	
+60	XId	
+61	XAssocTable	
+61	Definitions	XCreateAssocTable
+61	XCreateAssocTable	
+61	XAssocTable	
+61	Definitions	XDestroyAssocTable
+61	XDestroyAssocTable	
+61	XAssocTable	
+61	Definitions	XMakeAssoc
+61	XMakeAssoc	
+61	XId	
+61	XAssocTable	
+61	Definitions	XLookUpAssoc
+61	XLookupAssoc	
+62	XId	
+62	XAssocTable	
+62	Definitions	XDeleteAssoc
+62	XDeleteAssoc	
+62	XId	
+62	Definitions	XGrabMouse
+62	XGrabMouse	
+62	Mouse	Grabbing
+62	XSelectInput	
+62	XSelectInput	
+62	Grabbing Error	
+63	Definitions	XGrabMouse
+63	XGrabMouse	
+63	Definitions	XGrabButton
+63	XGrabButton	
+63	Button Mask	
+63	XGrabMouse	
+63	Event Mask	
+64	Definitions	XUngrabButton
+64	XGrabButton	
+64	XGrabServer	
+64	Definitions	XGrabServer
+64	Grabbing	Server
+64	Menus	
+64	Window	Managers
+65	XFocusKeyboard	
+65	Definitions	XFocusKeyboard
+65	Input Focus	
+65	XFocusKeyboard	
+65	Definitions	XLookupMapping
+65	XLookupMapping	
+65	Keycode to Ascii Conversion	
+65	Keyboard	Customization
+65	File	$HOME/.Xkeymap
+65	File	/usr/lib/Xkeymap.txt
+66	XUseKeymap	
+66	Definitions	XRebindCode
+66	XRebindCode	
+66	Keyboard	Customization
+66	XLookupMapping	
+66	Definitions	XUseKeymap
+66	XUseKeymap	
+66	Keyboard	Customization
+67	File	<X/Xlib.h>
+67	Automatic Grabbing	
+67	Grabbing	Temporarily Button
+67	XGrabMouse	
+67	XGrabButton	
+67	Grabbing	Mouse
+67	Grabbing	Button
+67	XSelectInput	
+67	Data Structures	XEvent
+67	Data Structures	XKeyEvent
+67	Data Structures	XKeyOrButtonEvent
+67	Data Structures	XKeyPressedEvent
+67	Data Structures	XKeyReleasedEvent
+67	Data Structures	XButtonPressedEvent
+67	Data Structures	XButtonReleasedEvent
+67	Data Structures	XButtonButtonEvent
+68	Data Structures	XMouseOrCrossingEvent
+68	Data Structures	XEnterWindowEvent
+68	Data Structures	XLeaveWindowEvent
+68	Data Structures	XMouseMovedEvent
+68	XInterpretLocator	
+69	Event	Detail
+69	Key Mask	
+69	Button Mask	
+69	File	<X/Xkeyboard.h>
+69	Keyboard	Classification
+69	Macros	Keyboard
+69	XLookupMapping	
+70	ExposeWindow Event	
+70	ExposeRegion Event	
+70	XCopyArea	
+70	XMoveArea	
+71	XCopyArea	
+71	XMoveArea	
+71	Data Structures	XExposeEvent
+71	Data Structures	XExposeWindowEvent
+71	Data Structures	XExposeCopyEvent
+71	XCopyArea	
+71	Display Functions	
+72	Data Structures	XFocusChangeEvent
+72	Event Types	FocusChange
+72	FocusChange Event	
+72	Error Handlers	
+73	Definitions	XIOErrorHandler
+73	XIOErrorHandler	
+73	Definitions	XErrorHandler
+73	XErrorHandler	
+73	Data Structures	XErrorEvent
+73	Serial Number	
+73	File	<X/X.h>
+74	Error Numbers	
+74	Definitions	XErrDescrip
+74	XErrDescrip	
+76	Example Programs	xrefresh
+76	Examples of Use	XOpenDisplay
+76	Examples of Use	XCreateWindow
+76	Examples of Use	XMapWindow
+76	Examples of Use	XDestroyWindow
+76	Examples of Use	XFlush
+76	Examples of Use	DisplayWidth
+76	Examples of Use	DisplayHeight
+76	Examples of Use	BlackPixmap
+77	Example Programs	xrefresh
+77	Examples of Use	Color
+77	Examples of Use	XGetDefault
+77	Examples of Use	XOpenDisplay
+77	Examples of Use	XOpenFont
+77	Examples of Use	XParseColor
+77	Examples of Use	XGetHardwareColor
+77	Examples of Use	DisplayCells
+77	Examples of Use	XMakeTile
+77	Examples of Use	BlackPixmap
+77	Examples of Use	WhitePixmap
+77	Examples of Use	XStorePixmap
+77	Examples of Use	WhitePixel
+77	Examples of Use	BlackPixel
+77	Examples of Use	XMakeTile
+77	Examples of Use	OpaqueFrame
+77	Examples of Use	XCreate
+77	Examples of Use	XSelectInput
+77	Examples of Use	XMapWindow
+77	Examples of Use	XWindowEvent
+77	Examples of Use	XText
+77	Examples of Use	XStringWidth
