@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.8 (Berkeley) %G%
+ *	@(#)machdep.c	7.9 (Berkeley) %G%
  */
 
 #include "reg.h"
@@ -1288,4 +1288,34 @@ initcpu()
 	default:
 		break;
 	}
+}
+
+/*
+ * Return a reasonable approximation to a time-of-day register.
+ * More precisely, return a number that increases by one about
+ * once every ten milliseconds.
+ */
+todr()
+{
+	switch (cpu) {
+
+#if VAX8600 || VAX8200 || VAX780 || VAX750 || VAX730
+	case VAX_8600:
+	/* case VAX_8200: */
+	case VAX_780:
+	case VAX_750:
+	case VAX_730:
+		return (mfpr(TODR));
+#endif
+
+#if VAX630
+	case VAX_630:
+		/* XXX crude */
+		{ static int t; DELAY(10000); return (++t); }
+#endif
+
+	default:
+		panic("todr");
+	}
+	/* NOTREACHED */
 }
