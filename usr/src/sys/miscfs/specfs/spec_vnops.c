@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.54 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.55 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -521,6 +521,19 @@ spec_close(ap)
 	switch (vp->v_type) {
 
 	case VCHR:
+		/*
+		 * Hack: a tty device that is a controlling terminal
+		 * has a reference from the session structure.
+		 * We cannot easily tell that a character device is
+		 * a controlling terminal, unless it is the closing
+		 * process' controlling terminal.  In that case,
+		 * if the reference count is 2 (this last descriptor
+		 * plus the session), release the reference from the session.
+		 */
+		if (vp == ap->a_p->p_session->s_ttyvp && vcount(vp) == 2) {
+			vrele(vp);
+			ap->a_p->p_session->s_ttyvp = NULL;
+		}
 		/*
 		 * If the vnode is locked, then we are in the midst
 		 * of forcably closing the device, otherwise we only
