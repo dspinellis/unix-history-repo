@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.19 (Berkeley) %G%
+.\"	@(#)op.me	6.20 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.19
+Version 6.20
 .sp
 For Sendmail Version 6.27
 .)l
@@ -1204,6 +1204,20 @@ when this is done to watch what happens:
 .(b
 /usr/\*(SD/sendmail \-q \-v
 .)b
+.pp
+You can also limit the jobs to those with a particular queue identifier,
+sender, or recipient
+using one of the queue modifiers.
+For example,
+.q \-qRberkeley
+restricts the queue run to jobs that have the string
+.q berkeley
+somewhere in one of the recipient addresses.
+Similarly,
+.q \-qSstring
+limits the run to particular senders and
+.q \-qIstring
+limits it to particular identifiers.
 .sh 2 "Debugging"
 .pp
 There are a fairly large number of debug flags
@@ -5422,6 +5436,23 @@ If the time is given,
 a sendmail will run through the queue at the specified interval
 to deliver queued mail;
 otherwise, it only runs once.
+.ip \-q\fIXstring\fP
+Run the queue once,
+limiting the jobs to those matching
+.i Xstring .
+The key letter
+.i X
+can be
+.b I
+to limit based on queue identifier,
+.b R
+to limit based on recipient,
+or
+.b S
+to limit based on sender.
+A particular queued job is accepted if one of the corresponding addresses
+contains the indicated
+.i string .
 .ip \-t
 Read the header for
 .q To: ,
@@ -5697,7 +5728,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.19
+.\"Version 6.20
 .\".ce 0
 .pn 2
 .bp
