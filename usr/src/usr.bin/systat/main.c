@@ -1,7 +1,5 @@
-/*% cc -a % -lcurses -ltermlib -lm
- */
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.1 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)main.c	1.2 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
@@ -31,12 +29,15 @@ struct nlist nlst[] = {
         { "_dmmax" },
 #define X_NSWDEV        11
         { "_nswdev" },
+#define	X_SWDEVT	12
+	{ "_swdevt" },
         { "" }
 };
 
 int     kmem = -1;
 int     mem = -1;
 int     swap = -1;
+int	naptime = 5;
 
 int     die();
 int     display();
@@ -74,13 +75,29 @@ main(argc, argv)
 {
         char ch, line[80];
 
+	argc--, argv++;
+	while (argc > 0) {
+		if (argv[0][0] == '-') {
+			struct cmdtab *p;
+
+			for (p = cmdtab; *p->c_name; p++)
+				if (strcmp(p->c_name, &argv[0][1]) == 0)
+					break;
+			if (*p->c_name == 0) {
+				fprintf(stderr, "%s: unknown request\n",
+				    &argv[0][1]);
+				exit(1);
+			}
+			curcmd = p;
+		} else {
+			naptime = atoi(argv[1]);
+			if (naptime < 5)
+				naptime = 5;
+		}
+		argc--, argv++;
+	}
         nlist("/vmunix", nlst);
         (*curcmd->c_open)();
-        naptime = 5;
-        if (argc != 1)
-                naptime = atoi(argv[1]);
-        if (naptime < 5)
-                naptime = 5;
         signal(SIGINT, die);
         signal(SIGQUIT, die);
         signal(SIGTERM, die);
@@ -89,11 +106,13 @@ main(argc, argv)
         initscr();
         wnd = newwin(20, 70, 3, 5);
 
+#ifdef notdef
+        gethostname(hostname, sizeof (hostname));
+#endif
         lseek(kmem, nlst[X_CCPU].n_value, 0);
         read(kmem, &ccpu, sizeof (ccpu));
         lccpu = log(ccpu);
         (*curcmd->c_fetch)();
-        gethostname(hostname, sizeof (hostname));
         labels();
 
         known[0].k_uid = -1;
@@ -181,6 +200,13 @@ command(cmd)
                 status();
                 return;
         }
+	if (strcmp(cmd, "load") == 0) {
+		lseek(kmem, nlst[X_AVENRUN].n_value, L_SET);
+		read(kmem, &lave, sizeof (lave));
+		mvprintw(22, 0, "%4.1f", lave);
+		clrtoeol();
+		return;
+	}
         for (p = cmdtab; *p->c_name; p++)
                 if (strcmp(cmd, p->c_name) == 0)
                         break;
@@ -189,8 +215,8 @@ command(cmd)
                         return;
                 alarm(0);
                 curcmd = p;
-                wclear(wnd);
-                (*p->c_label)();
+		clear(); wclear(wnd);
+		labels();
                 display();
                 status();
                 return;
@@ -222,8 +248,10 @@ command(cmd)
                 status();
                 return;
         }
-        mvprintw(22, 0, "%s: Unknown command.", cmd);
-        clrtoeol();
+	if (*cmd) {
+		mvprintw(22, 0, "%s: Unknown command.", cmd);
+		clrtoeol();
+	}
 }
 
 status()
@@ -238,6 +266,7 @@ suspend()
 {
         int oldmask;
 
+	alarm(0);
         move(22, 0);
         refresh();
         echo();
@@ -251,6 +280,7 @@ suspend()
         noecho();
         move(22, col);
         wrefresh(curscr);
+	alarm(naptime);
 }
 
 labels()
