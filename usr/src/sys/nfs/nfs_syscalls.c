@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.9 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -90,58 +90,6 @@ getfh()
 		RETURN (error);
 	error = copyout((caddr_t)&fh, (caddr_t)uap->fhp, sizeof (fh));
 	RETURN (error);
-}
-
-/*
- * Mark a mount point in the filesystem exported
- */
-exportfs()
-{
-	register struct a {
-		char	*fname;
-		int	rootuid;
-		int	exflags;
-	} *uap = (struct a *)u.u_ap;
-	register struct nameidata *ndp = &u.u_nd;
-	register struct vnode *vp;
-	register struct mount *mp;
-	int error;
-
-	/*
-	 * Must be super user
-	 */
-	if (error = suser(u.u_cred, &u.u_acflag))
-		RETURN (error);
-	ndp->ni_nameiop = LOOKUP | LOCKLEAF | FOLLOW;	/* Or NOFOLLOW ?? */
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	if (error = namei(ndp))
-		RETURN (error);
-	vp = ndp->ni_vp;
-	if (vp->v_type != VDIR) {
-		vput(vp);
-		RETURN (ENOENT);
-	}
-	mp = vp->v_mount;
-
-	/*
-	 * If the filesystem has already been exported, just relax
-	 * security as required.
-	 * Otherwise export it with the given security
-	 */
-	if (mp->m_flag & M_EXPORTED) {
-		if (uap->rootuid == 0)
-			mp->m_exroot = 0;
-		if ((uap->exflags & M_EXRDONLY) == 0)
-			mp->m_flag &= ~M_EXRDONLY;
-	} else {
-		mp->m_exroot = uap->rootuid;
-		if (uap->exflags & M_EXRDONLY)
-			mp->m_flag |= M_EXRDONLY;
-		mp->m_flag |= M_EXPORTED;
-	}
-	vput(vp);
-	RETURN (0);
 }
 
 /*
