@@ -25,8 +25,8 @@ static void movetous(char *, int, int, int);
 static void movetothem(int, int, char *, int);
 #endif	/* defined(LINT_ARGS) */
 
-#define	access_api(foo,length)	(foo)
-#define	unaccess_api(foo,goo,length)
+#define	access_api(foo,length,copyin)	(foo)
+#define	unaccess_api(foo,goo,length,copyout)
 
 static void
 movetous(parms, es, di, length)
@@ -355,7 +355,8 @@ struct SREGS *sregs;
  * Copy Services.
  */
 
-copy_subroutine(target, source, parms, what_is_user)
+static
+copy_subroutine(target, source, parms, what_is_user, length)
 BufferDescriptor *target, *source;
 CopyStringParms *parms;
 int what_is_user;
@@ -368,7 +369,6 @@ int what_is_user;
 #define	SOURCE_PC		8
 #define	NO_FIELD_ATTRIBUTES	16
     int needtodo = 0;
-    int length;
     int access_length;
     char far *input;
     char far *output;
@@ -392,20 +392,20 @@ int what_is_user;
     if ((parms->copy_mode&COPY_MODE_FIELD_ATTRIBUTES) == 0) {
 	needtodo |= NO_FIELD_ATTRIBUTES;
     }
-    access_length = length = parms->source_end-source->begin;
+    access_length = length;
     if (what_is_user == USER_IS_TARGET) {
 	if (target->characteristics&CHARACTERISTIC_EAB) {
 	    access_length *= 2;
 	}
 	input = (char far *) &Host[source->begin];
 	access_pointer = target->buffer;
-	output = access_api(target->buffer, access_length);
+	output = access_api(target->buffer, access_length, 0);
     } else {
 	if (source->characteristics&CHARACTERISTIC_EAB) {
 	    access_length *= 2;
 	}
 	access_pointer = source->buffer;
-	input = access_api(source->buffer, access_length);
+	input = access_api(source->buffer, access_length, 1);
 	output = (char far *) &Host[target->begin];
     }
     while (length--) {
@@ -423,9 +423,9 @@ int what_is_user;
 	}
     }
     if (what_is_user == USER_IS_TARGET) {
-	unaccess_api(target->buffer, access_pointer, access_length);
+	unaccess_api(target->buffer, access_pointer, access_length, 1);
     } else {
-	unaccess_api(source->buffer, access_pointer, access_length);
+	unaccess_api(source->buffer, access_pointer, access_length, 0);
     }
 }
 
@@ -441,39 +441,55 @@ struct SREGS *sregs;
 
     movetous((char *)&parms, sregs->es, regs->x.di, sizeof parms);
 
+    length = 1+parms.source_end-source->begin;
     if ((parms.rc != 0) || (parms.function_id !=0)) {
 	parms.rc = 0x0c;
     } else if (target->session_id == 0) {	/* Target is buffer */
 	if (source->session_id != 23) {		/* A no-no */
 	    parms.rc = 0x2;
 	} else {
-	    if ((source->characteristics == target->characteristics) &&
-		    (source->session_type == target->session_type)) {
-		length = parms.source_end-source->begin;
-		if (source->characteristics&CHARACTERISTIC_EAB) {
-		    length *= 2;
-		}
-		movetothem( (int) FP_SEG(target->buffer),
-			(int) FP_OFF(target->buffer),
-			(char *)&Host[source->begin], length);
+	    if ((source->begin < 0) || (source->begin > highestof(Host))) {
+		parms.rc = 0x06;		/* invalid source definition */
 	    } else {
-		copy_subroutine(target, source, &parms, USER_IS_TARGET);
+		if ((source->begin+length) > highestof(Host)) {
+		    length = highestof(Host)-source->begin;
+		    parms.rc = 0x0f;	/* Truncate */
+		}
+	        if ((source->characteristics == target->characteristics) &&
+		    (source->session_type == target->session_type)) {
+		    if (source->characteristics&CHARACTERISTIC_EAB) {
+			length *= 2;
+		    }
+		    movetothem( (int) FP_SEG(target->buffer),
+			    (int) FP_OFF(target->buffer),
+			    (char *)&Host[source->begin], length);
+		} else {
+		    copy_subroutine(target, source, &parms,
+							USER_IS_TARGET, length);
+		}
 	    }
 	}
     } else if (source->session_id != 0) {
 	    parms.rc = 0xd;
     } else {
-	if ((source->characteristics == target->characteristics) &&
-		(source->session_type == target->session_type)) {
-	    length = parms.source_end-source->begin;
-	    if (source->characteristics&CHARACTERISTIC_EAB) {
-		length *= 2;
-	    }
-	    movetous((char *)&Host[target->begin],
-			(int) FP_SEG(source->buffer),
-			(int) FP_OFF(source->buffer), length);
+	if ((target->begin < 0) || (source->begin > highestof(Host))) {
+	    parms.rc = 0x07;		/* invalid source definition */
 	} else {
-	    copy_subroutine(target, source, &parms, USER_IS_SOURCE);
+	    if ((source->begin+length) > highestof(Host)) {
+		length = highestof(Host)-source->begin;
+		parms.rc = 0x0f;	/* Truncate */
+	    }
+	    if ((source->characteristics == target->characteristics) &&
+		    (source->session_type == target->session_type)) {
+		if (source->characteristics&CHARACTERISTIC_EAB) {
+		    length *= 2;
+		}
+		movetous((char *)&Host[target->begin],
+			    (int) FP_SEG(source->buffer),
+			    (int) FP_OFF(source->buffer), length);
+	    } else {
+		copy_subroutine(target, source, &parms, USER_IS_SOURCE, length);
+	    }
 	}
     }
     movetothem(sregs->es, regs->x.di, (char *)&parms, sizeof parms);
