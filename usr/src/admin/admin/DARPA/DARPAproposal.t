@@ -1,9 +1,12 @@
-.\"	@(#)DARPAproposal.t	1.5	87/06/08
+.\"	@(#)DARPAproposal.t	1.6	87/06/08
 .\" *troff -ms
 .rm CM
 .sp 2
-.ce 1
+.ce 2
 \fB\s+2Proposal for Continued UNIX Research at Berkeley\s-2\fP
+.ie 1 .ds DT 
+.el     .ds DT \n(mo/\n(dy/\n(yr
+\fBDRAFT of \*(DT\fP
 .sp 2
 .nf
 .ce 4
