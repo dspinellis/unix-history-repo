@@ -1,0 +1,10 @@
+bin	/usr/new/mh
+bboards	off
+etc	/usr/new/lib/mh
+mail	/usr/spool/mail
+manuals	new
+mts	sendmail/smtp
+options	BSD42 BSD43 BERK TTYD DUMB
+options	MHE NETWORK BIND RPATHS ATZ
+options	SBACKUP='"\\043"'
+pop	off
