@@ -4,13 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	8.20 (Berkeley) %G%
+ *	@(#)mount.h	8.21 (Berkeley) %G%
  */
 
 #ifndef KERNEL
 #include <sys/ucred.h>
 #endif
 #include <sys/queue.h>
+#include <sys/lock.h>
 #include <net/radix.h>
 #include <sys/socket.h>		/* XXX for AF_MAX */
 
@@ -66,6 +67,7 @@ struct mount {
 	struct vfsconf	*mnt_vfc;		/* configuration info */
 	struct vnode	*mnt_vnodecovered;	/* vnode we mounted on */
 	struct vnodelst	mnt_vnodelist;		/* list of vnodes this mount */
+	struct lock	mnt_lock;		/* mount structure lock */
 	int		mnt_flag;		/* flags */
 	int		mnt_maxsymlinklen;	/* max size of short symlink */
 	struct statfs	mnt_stat;		/* cache of filesystem stats */
@@ -107,22 +109,22 @@ struct mount {
 #define	MNT_VISFLAGMASK	0x0000ffff
 
 /*
- * filesystem control flags.
- *
- * MNT_MLOCK lock the mount entry so that name lookup cannot proceed
- * past the mount point.  This keeps the subtree stable during mounts
- * and unmounts.
+ * External filesystem control flags.
  */
 #define	MNT_UPDATE	0x00010000	/* not a real mount, just an update */
 #define	MNT_DELEXPORT	0x00020000	/* delete export host lists */
 #define	MNT_RELOAD	0x00040000	/* reload filesystem data */
 #define	MNT_FORCE	0x00080000	/* force unmount or readonly change */
-#define	MNT_MLOCK	0x00100000	/* lock so that subtree is stable */
-#define	MNT_MWAIT	0x00200000	/* someone is waiting for lock */
-#define MNT_MPBUSY	0x00400000	/* scan of mount point in progress */
-#define MNT_MPWANT	0x00800000	/* waiting for mount point */
+/*
+ * Internal filesystem control flags.
+ *
+ * MNT_UNMOUNT locks the mount entry so that name lookup cannot proceed
+ * past the mount point.  This keeps the subtree stable during mounts
+ * and unmounts.
+ */
 #define MNT_UNMOUNT	0x01000000	/* unmount in progress */
-#define MNT_WANTRDWR	0x02000000	/* want upgrade to read/write */
+#define	MNT_MWAIT	0x02000000	/* waiting for unmount to finish */
+#define MNT_WANTRDWR	0x04000000	/* upgrade to read/write requested */
 
 /*
  * Sysctl CTL_VFS definitions.
@@ -256,20 +258,20 @@ struct netexport {
 /*
  * exported vnode operations
  */
-int	vfs_export			    /* process mount export info */
-	  __P((struct mount *, struct netexport *, struct export_args *));
-struct	mount *vfs_getvfs __P((fsid_t *));      /* return vfs given fsid */
-struct	netcred *vfs_export_lookup	    /* lookup host in fs export list */
-	  __P((struct mount *, struct netexport *, struct mbuf *));
-void	vfs_getnewfsid __P((struct mount *));   /* create a unique fsid */
-int	vfs_lock __P((struct mount *));     /* lock a vfs */
-int	vfs_mountedon __P((struct vnode *));/* is a vfs mounted on vp */
-int	vfs_mountroot __P((void));	    /* find and mount root filesystem */
-int	vfs_rootmountalloc		    /* alloc root mount structure */
-	  __P((char *, char *, struct mount **));
-void	vfs_unlock __P((struct mount *));   /* unlock a vfs */
-void	vfs_unmountall __P((void));	    /* unmount all filesystems */
-extern	CIRCLEQ_HEAD(mntlist, mount) mountlist;	/* mounted filesystem list */
+int	vfs_busy __P((struct mount *, int, struct simplelock *, struct proc *));
+int	vfs_export __P((struct mount *, struct netexport *,
+	    struct export_args *));
+struct	netcred *vfs_export_lookup __P((struct mount *, struct netexport *,
+	    struct mbuf *));
+void	vfs_getnewfsid __P((struct mount *));
+struct	mount *vfs_getvfs __P((fsid_t *));
+int	vfs_mountedon __P((struct vnode *));
+int	vfs_mountroot __P((void));
+int	vfs_rootmountalloc __P((char *, char *, struct mount **));
+void	vfs_unbusy __P((struct mount *, struct proc *));
+void	vfs_unmountall __P((void));
+extern	CIRCLEQ_HEAD(mntlist, mount) mountlist;
+extern	struct simplelock mountlist_slock;
 
 #else /* !KERNEL */
 

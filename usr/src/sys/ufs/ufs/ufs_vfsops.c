@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vfsops.c	8.7 (Berkeley) %G%
+ *	@(#)ufs_vfsops.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -97,39 +97,41 @@ ufs_quotactl(mp, cmds, uid, arg, p)
 	type = cmds & SUBCMDMASK;
 	if ((u_int)type >= MAXQUOTAS)
 		return (EINVAL);
+	if (vfs_busy(mp, LK_NOWAIT, 0, p))
+		return (0);
 
 	switch (cmd) {
 
 	case Q_QUOTAON:
-		return (quotaon(p, mp, type, arg));
+		error = quotaon(p, mp, type, arg);
+		break;
 
 	case Q_QUOTAOFF:
-		if (vfs_busy(mp))
-			return (0);
 		error = quotaoff(p, mp, type);
-		vfs_unbusy(mp);
-		return (error);
+		break;
 
 	case Q_SETQUOTA:
-		return (setquota(mp, uid, type, arg));
+		error = setquota(mp, uid, type, arg);
+		break;
 
 	case Q_SETUSE:
-		return (setuse(mp, uid, type, arg));
+		error = setuse(mp, uid, type, arg);
+		break;
 
 	case Q_GETQUOTA:
-		return (getquota(mp, uid, type, arg));
+		error = getquota(mp, uid, type, arg);
+		break;
 
 	case Q_SYNC:
-		if (vfs_busy(mp))
-			return (0);
 		error = qsync(mp);
-		vfs_unbusy(mp);
-		return (error);
+		break;
 
 	default:
-		return (EINVAL);
+		error = EINVAL;
+		break;
 	}
-	/* NOTREACHED */
+	vfs_unbusy(mp, p);
+	return (error);
 #endif
 }
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.18 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.19 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -76,18 +76,15 @@ lfs_mountroot()
 		return (error);
 	if (error = lfs_mountfs(rootvp, mp, p)) {
 		mp->mnt_vfc->vfc_refcount--;
+		vfs_unbusy(mp, p);
 		free(mp, M_MOUNT);
 		return (error);
 	}
-	if (error = vfs_lock(mp)) {
-		(void)lfs_unmount(mp, 0, p);
-		mp->mnt_vfc->vfc_refcount--;
-		free(mp, M_MOUNT);
-		return (error);
-	}
+	simple_lock(&mountlist_slock);
 	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+	simple_unlock(&mountlist_slock);
 	(void)lfs_statfs(mp, &mp->mnt_stat, p);
-	vfs_unlock(mp);
+	vfs_unbusy(mp, p);
 	return (0);
 }
 

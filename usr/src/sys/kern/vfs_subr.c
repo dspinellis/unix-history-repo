@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	8.28 (Berkeley) %G%
+ *	@(#)vfs_subr.c	8.29 (Berkeley) %G%
  */
 
 /*
@@ -55,6 +55,7 @@ int	vttoif_tab[9] = {
 }
 TAILQ_HEAD(freelst, vnode) vnode_free_list;	/* vnode free list */
 struct mntlist mountlist;			/* mounted filesystem list */
+struct simplelock mountlist_slock;
 static struct simplelock mntid_slock;
 struct simplelock mntvnode_slock;
 static struct simplelock spechash_slock;
@@ -76,56 +77,30 @@ vntblinit()
 }
 
 /*
- * Lock a filesystem.
- * Used to prevent access to it while mounting and unmounting.
+ * Mark a mount point as busy. Used to synchronize access and to delay
+ * unmounting. Interlock is not released on failure.
  */
 int
-vfs_lock(mp)
-	register struct mount *mp;
+vfs_busy(mp, flags, interlkp, p)
+	struct mount *mp;
+	int flags;
+	struct simplelock *interlkp;
+	struct proc *p;
 {
+	int lkflags;
 
-	while (mp->mnt_flag & MNT_MLOCK) {
+	if (mp->mnt_flag & MNT_UNMOUNT) {
+		if (flags & LK_NOWAIT)
+			return (ENOENT);
 		mp->mnt_flag |= MNT_MWAIT;
-		tsleep((caddr_t)mp, PVFS, "vfslock", 0);
+		sleep((caddr_t)mp, PVFS);
+		return (ENOENT);
 	}
-	mp->mnt_flag |= MNT_MLOCK;
-	return (0);
-}
-
-/*
- * Unlock a locked filesystem.
- * Panic if filesystem is not locked.
- */
-void
-vfs_unlock(mp)
-	register struct mount *mp;
-{
-
-	if ((mp->mnt_flag & MNT_MLOCK) == 0)
-		panic("vfs_unlock: not locked");
-	mp->mnt_flag &= ~MNT_MLOCK;
-	if (mp->mnt_flag & MNT_MWAIT) {
-		mp->mnt_flag &= ~MNT_MWAIT;
-		wakeup((caddr_t)mp);
-	}
-}
-
-/*
- * Mark a mount point as busy.
- * Used to synchronize access and to delay unmounting.
- */
-int
-vfs_busy(mp)
-	register struct mount *mp;
-{
-
-	while (mp->mnt_flag & MNT_MPBUSY) {
-		mp->mnt_flag |= MNT_MPWANT;
-		tsleep((caddr_t)&mp->mnt_flag, PVFS, "vfsbusy", 0);
-	}
-	if (mp->mnt_flag & MNT_UNMOUNT)
-		return (1);
-	mp->mnt_flag |= MNT_MPBUSY;
+	lkflags = LK_SHARED;
+	if (interlkp)
+		lkflags |= LK_INTERLOCK;
+	if (lockmgr(&mp->mnt_lock, lkflags, interlkp, p))
+		panic("vfs_busy: unexpected lock failure");
 	return (0);
 }
 
@@ -134,17 +109,12 @@ vfs_busy(mp)
  * Panic if filesystem is not busy.
  */
 void
-vfs_unbusy(mp)
-	register struct mount *mp;
+vfs_unbusy(mp, p)
+	struct mount *mp;
+	struct proc *p;
 {
 
-	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
-		panic("vfs_unbusy: not busy");
-	mp->mnt_flag &= ~MNT_MPBUSY;
-	if (mp->mnt_flag & MNT_MPWANT) {
-		mp->mnt_flag &= ~MNT_MPWANT;
-		wakeup((caddr_t)&mp->mnt_flag);
-	}
+	lockmgr(&mp->mnt_lock, LK_RELEASE, NULL, p);
 }
 
 /*
@@ -159,6 +129,7 @@ vfs_rootmountalloc(fstypename, devname, mpp)
 	char *devname;
 	struct mount **mpp;
 {
+	struct proc *p = curproc;	/* XXX */
 	struct vfsconf *vfsp;
 	struct mount *mp;
 
@@ -169,6 +140,8 @@ vfs_rootmountalloc(fstypename, devname, mpp)
 		return (ENODEV);
 	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
 	bzero((char *)mp, (u_long)sizeof(struct mount));
+	lockinit(&mp->mnt_lock, PVFS, "vfslock", 0, 0);
+	(void)vfs_busy(mp, LK_NOWAIT, 0, p);
 	LIST_INIT(&mp->mnt_vnodelist);
 	mp->mnt_vfc = vfsp;
 	mp->mnt_op = vfsp->vfc_vfsops;
@@ -218,12 +191,16 @@ vfs_getvfs(fsid)
 {
 	register struct mount *mp;
 
+	simple_lock(&mountlist_slock);
 	for (mp = mountlist.cqh_first; mp != (void *)&mountlist;
 	     mp = mp->mnt_list.cqe_next) {
 		if (mp->mnt_stat.f_fsid.val[0] == fsid->val[0] &&
-		    mp->mnt_stat.f_fsid.val[1] == fsid->val[1])
+		    mp->mnt_stat.f_fsid.val[1] == fsid->val[1]) {
+			simple_unlock(&mountlist_slock);
 			return (mp);
+		}
 	}
+	simple_unlock(&mountlist_slock);
 	return ((struct mount *)0);
 }
 
@@ -941,11 +918,6 @@ vflush(mp, skipvp, flags)
 	struct vnode *vp, *nvp;
 	int busy = 0;
 
-#ifdef DIAGNOSTIC
-	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
-		panic("vflush: not busy");
-#endif
-
 	simple_lock(&mntvnode_slock);
 loop:
 	for (vp = mp->mnt_vnodelist.lh_first; vp; vp = nvp) {
@@ -1393,19 +1365,28 @@ vprint(label, vp)
 void
 printlockedvnodes()
 {
-	register struct mount *mp;
-	register struct vnode *vp;
+	struct proc *p = curproc;	/* XXX */
+	struct mount *mp, *nmp;
+	struct vnode *vp;
 
 	printf("Locked vnodes\n");
-	for (mp = mountlist.cqh_first; mp != (void *)&mountlist;
-	     mp = mp->mnt_list.cqe_next) {
+	simple_lock(&mountlist_slock);
+	for (mp = mountlist.cqh_first; mp != (void *)&mountlist; mp = nmp) {
+		if (vfs_busy(mp, LK_NOWAIT, &mountlist_slock, p)) {
+			nmp = mp->mnt_list.cqe_next;
+			continue;
+		}
 		for (vp = mp->mnt_vnodelist.lh_first;
 		     vp != NULL;
 		     vp = vp->v_mntvnodes.le_next) {
 			if (VOP_ISLOCKED(vp))
 				vprint((char *)0, vp);
 		}
+		simple_lock(&mountlist_slock);
+		nmp = mp->mnt_list.cqe_next;
+		vfs_unbusy(mp, p);
 	}
+	simple_unlock(&mountlist_slock);
 }
 #endif
 
@@ -1463,13 +1444,14 @@ int kinfo_vgetfailed;
  */
 /* ARGSUSED */
 int
-sysctl_vnode(where, sizep)
+sysctl_vnode(where, sizep, p)
 	char *where;
 	size_t *sizep;
+	struct proc *p;
 {
-	register struct mount *mp, *nmp;
+	struct mount *mp, *nmp;
 	struct vnode *nvp, *vp;
-	register char *bp = where, *savebp;
+	char *bp = where, *savebp;
 	char *ewhere;
 	int error;
 
@@ -1481,10 +1463,12 @@ sysctl_vnode(where, sizep)
 	}
 	ewhere = where + *sizep;
 		
+	simple_lock(&mountlist_slock);
 	for (mp = mountlist.cqh_first; mp != (void *)&mountlist; mp = nmp) {
-		nmp = mp->mnt_list.cqe_next;
-		if (vfs_busy(mp))
+		if (vfs_busy(mp, LK_NOWAIT, &mountlist_slock, p)) {
+			nmp = mp->mnt_list.cqe_next;
 			continue;
+		}
 		savebp = bp;
 again:
 		simple_lock(&mntvnode_slock);
@@ -1517,8 +1501,11 @@ again:
 			simple_lock(&mntvnode_slock);
 		}
 		simple_unlock(&mntvnode_slock);
-		vfs_unbusy(mp);
+		simple_lock(&mountlist_slock);
+		nmp = mp->mnt_list.cqe_next;
+		vfs_unbusy(mp, p);
 	}
+	simple_unlock(&mountlist_slock);
 
 	*sizep = bp - where;
 	return (0);
@@ -1560,10 +1547,14 @@ void
 vfs_unmountall()
 {
 	struct mount *mp, *nmp;
+	struct proc *p = curproc;	/* XXX */
 
+	/*
+	 * Since this only runs when rebooting, it is not interlocked.
+	 */
 	for (mp = mountlist.cqh_last; mp != (void *)&mountlist; mp = nmp) {
 		nmp = mp->mnt_list.cqe_prev;
-		(void) dounmount(mp, MNT_FORCE, &proc0);
+		(void) dounmount(mp, MNT_FORCE, p);
 	}
 }
 

@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_lookup.c	8.8 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -411,12 +411,11 @@ unionlookup:
 	 */
 	while (dp->v_type == VDIR && (mp = dp->v_mountedhere) &&
 	       (cnp->cn_flags & NOCROSSMOUNT) == 0) {
-		if (mp->mnt_flag & MNT_MLOCK) {
-			mp->mnt_flag |= MNT_MWAIT;
-			sleep((caddr_t)mp, PVFS);
+		if (vfs_busy(mp, 0, 0, p))
 			continue;
-		}
-		if (error = VFS_ROOT(dp->v_mountedhere, &tdp))
+		error = VFS_ROOT(mp, &tdp);
+		vfs_unbusy(mp, p);
+		if (error)
 			goto bad2;
 		vput(dp);
 		ndp->ni_vp = dp = tdp;

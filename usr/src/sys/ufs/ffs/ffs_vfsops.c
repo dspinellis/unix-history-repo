@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.30 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.31 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -80,21 +80,18 @@ ffs_mountroot()
 		return (error);
 	if (error = ffs_mountfs(rootvp, mp, p)) {
 		mp->mnt_vfc->vfc_refcount--;
+		vfs_unbusy(mp, p);
 		free(mp, M_MOUNT);
 		return (error);
 	}
-	if (error = vfs_lock(mp)) {
-		(void)ffs_unmount(mp, 0, p);
-		mp->mnt_vfc->vfc_refcount--;
-		free(mp, M_MOUNT);
-		return (error);
-	}
+	simple_lock(&mountlist_slock);
 	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+	simple_unlock(&mountlist_slock);
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
 	(void) copystr(mp->mnt_stat.f_mntonname, fs->fs_fsmnt, MNAMELEN - 1, 0);
 	(void)ffs_statfs(mp, &mp->mnt_stat, p);
-	vfs_unlock(mp);
+	vfs_unbusy(mp, p);
 	inittodr(fs->fs_time);
 	return (0);
 }
@@ -133,21 +130,15 @@ ffs_mount(mp, path, data, ndp, p)
 			flags = WRITECLOSE;
 			if (mp->mnt_flag & MNT_FORCE)
 				flags |= FORCECLOSE;
-			if (vfs_busy(mp))
-				return (EBUSY);
-			if (error = ffs_flushfiles(mp, flags, p)) {
-				vfs_unbusy(mp);
+			if (error = ffs_flushfiles(mp, flags, p))
 				return (error);
-			}
 			fs->fs_clean = 1;
 			fs->fs_ronly = 1;
 			if (error = ffs_sbupdate(ump, MNT_WAIT)) {
 				fs->fs_clean = 0;
 				fs->fs_ronly = 0;
-				vfs_unbusy(mp);
 				return (error);
 			}
-			vfs_unbusy(mp);
 		}
 		if ((mp->mnt_flag & MNT_RELOAD) &&
 		    (error = ffs_reload(mp, ndp->ni_cnd.cn_cred, p)))

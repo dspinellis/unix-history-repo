@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_quota.c	8.4 (Berkeley) %G%
+ *	@(#)ufs_quota.c	8.5 (Berkeley) %G%
  */
 #include <sys/param.h>
 #include <sys/kernel.h>
@@ -352,10 +352,6 @@ quotaon(p, mp, type, fname)
 		(void) vn_close(vp, FREAD|FWRITE, p->p_ucred, p);
 		return (EACCES);
 	}
-	if (vfs_busy(mp)) {
-		(void) vn_close(vp, FREAD|FWRITE, p->p_ucred, p);
-		return (EBUSY);
-	}
 	if (*vpp != vp)
 		quotaoff(p, mp, type);
 	ump->um_qflags[type] |= QTF_OPENING;
@@ -400,7 +396,6 @@ again:
 	ump->um_qflags[type] &= ~QTF_OPENING;
 	if (error)
 		quotaoff(p, mp, type);
-	vfs_unbusy(mp);
 	return (error);
 }
 
@@ -420,8 +415,6 @@ quotaoff(p, mp, type)
 	struct inode *ip;
 	int error;
 	
-	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
-		panic("quotaoff: not busy");
 	if ((qvp = ump->um_quotas[type]) == NULLVP)
 		return (0);
 	ump->um_qflags[type] |= QTF_CLOSING;
@@ -599,8 +592,6 @@ qsync(mp)
 	 * Check if the mount point has any quotas.
 	 * If not, simply return.
 	 */
-	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
-		panic("qsync: not busy");
 	for (i = 0; i < MAXQUOTAS; i++)
 		if (ump->um_quotas[i] != NULLVP)
 			break;

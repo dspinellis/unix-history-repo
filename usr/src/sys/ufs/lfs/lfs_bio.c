@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	8.8 (Berkeley) %G%
+ *	@(#)lfs_bio.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -106,7 +106,8 @@ lfs_bwrite(ap)
 void
 lfs_flush()
 {
-	register struct mount *mp;
+	register struct mount *mp, *nmp;
+	struct proc *p = curproc;	/* XXX */
 
 #ifdef DOSTATS
 	++lfs_stats.write_exceeded;
@@ -114,11 +115,14 @@ lfs_flush()
 	if (lfs_writing)
 		return;
 	lfs_writing = 1;
-	for (mp = mountlist.cqh_first; mp != (void *)&mountlist;
-	     mp = mp->mnt_list.cqe_next) {
-		/* The lock check below is to avoid races with unmount. */
+	simple_lock(&mountlist_slock);
+	for (mp = mountlist.cqh_first; mp != (void *)&mountlist; mp = nmp) {
+		if (vfs_busy(mp, LK_NOWAIT, &mountlist_slock, p)) {
+			nmp = mp->mnt_list.cqe_next;
+			continue;
+		}
 		if (mp->mnt_stat.f_type == lfs_mount_type &&
-		    (mp->mnt_flag & (MNT_MLOCK|MNT_RDONLY|MNT_UNMOUNT)) == 0 &&
+		    (mp->mnt_flag & MNT_RDONLY) == 0 &&
 		    !((((struct ufsmount *)mp->mnt_data))->ufsmount_u.lfs)->lfs_dirops ) {
 			/*
 			 * We set the queue to 0 here because we are about to
@@ -132,7 +136,11 @@ lfs_flush()
 #endif
 			lfs_segwrite(mp, 0);
 		}
+		simple_lock(&mountlist_slock);
+		nmp = mp->mnt_list.cqe_next;
+		vfs_unbusy(mp, p);
 	}
+	simple_unlock(&mountlist_slock);
 	lfs_writing = 0;
 }
 

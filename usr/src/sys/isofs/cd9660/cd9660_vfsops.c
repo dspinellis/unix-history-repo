@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.16 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -78,18 +78,15 @@ cd9660_mountroot()
 	args.flags = ISOFSMNT_ROOT;
 	if (error = iso_mountfs(rootvp, mp, p, &args)) {
 		mp->mnt_vfc->vfc_refcount--;
+		vfs_unbusy(mp, p);
 		free(mp, M_MOUNT);
 		return (error);
 	}
-	if (error = vfs_lock(mp)) {
-		(void)cd9660_unmount(mp, 0, p);
-		mp->mnt_vfc->vfc_refcount--;
-		free(mp, M_MOUNT);
-		return (error);
-	}
+	simple_lock(&mountlist_slock);
 	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+	simple_unlock(&mountlist_slock);
 	(void)cd9660_statfs(mp, &mp->mnt_stat, p);
-	vfs_unlock(mp);
+	vfs_unbusy(mp, p);
 	return (0);
 }
 
