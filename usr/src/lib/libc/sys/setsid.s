@@ -16,10 +16,10 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)setsid.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)setsid.s	5.2 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
 
 SYSCALL(setsid)
-	ret		#
+	ret		/* sid = setsid(); */

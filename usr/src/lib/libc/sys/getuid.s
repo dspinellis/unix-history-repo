@@ -16,10 +16,10 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)getuid.s	5.5 (Berkeley) %G%"
+	.asciz "@(#)getuid.s	5.6 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
 
 SYSCALL(getuid)
-	ret		# uid = getuid();
+	ret		/* uid = getuid(); */

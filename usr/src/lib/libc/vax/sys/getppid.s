@@ -16,11 +16,11 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)getppid.s	5.5 (Berkeley) %G%"
+	.asciz "@(#)getppid.s	5.6 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
 
 PSEUDO(getppid,getpid)
 	movl	r1,r0
-	ret		# ppid = getppid();
+	ret		/* ppid = getppid(); */

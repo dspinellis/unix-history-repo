@@ -16,11 +16,11 @@
  */
 
 #if defined(SYSLIBC_SCCS) && !defined(lint)
-	.asciz "@(#)geteuid.s	5.5 (Berkeley) %G%"
+	.asciz "@(#)geteuid.s	5.6 (Berkeley) %G%"
 #endif /* SYSLIBC_SCCS and not lint */
 
 #include "SYS.h"
 
 PSEUDO(geteuid,getuid)
 	movl	r1,r0
-	ret		# euid = geteuid();
+	ret		/* euid = geteuid(); */
