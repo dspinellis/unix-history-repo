@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -93,17 +93,6 @@ sendtolist(list, ctladdr, sendq, e)
 			ctladdr->q_flags |= QSELFREF;
 		al = a;
 		firstone = FALSE;
-	}
-
-	/* if this alias doesn't include itself, delete ctladdr */
-	if (ctladdr != NULL && !bitset(QSELFREF, ctladdr->q_flags))
-	{
-		if (tTd(25, 5))
-		{
-			printf("sendtolist: QDONTSEND ");
-			printaddr(ctladdr, FALSE);
-		}
-		ctladdr->q_flags |= QDONTSEND;
 	}
 
 	/* arrange to send to everyone on the local send list */
@@ -221,10 +210,12 @@ recipient(a, sendq, e)
 				printf("%s in sendq: ", a->q_paddr);
 				printaddr(q, FALSE);
 			}
-			if (!bitset(QDONTSEND, a->q_flags))
-				message(Arpa_Info, "duplicate suppressed");
 			if (!bitset(QPRIMARY, q->q_flags))
+			{
+				if (!bitset(QDONTSEND, a->q_flags))
+					message(Arpa_Info, "duplicate suppressed");
 				q->q_flags |= a->q_flags;
+			}
 			return (q);
 		}
 	}
@@ -678,6 +669,15 @@ include(fname, forwarding, ctladdr, sendq, e)
 		AliasLevel++;
 		sendtolist(buf, ctladdr, sendq, e);
 		AliasLevel--;
+	}
+	if (!bitset(QSELFREF, ctladdr->q_flags))
+	{
+		if (tTd(27, 5))
+		{
+			printf("include: QDONTSEND ");
+			printaddr(ctladdr, FALSE);
+		}
+		ctladdr->q_flags |= QDONTSEND;
 	}
 
 	(void) fclose(fp);
