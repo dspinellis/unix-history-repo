@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)pc.c	3.25 (Berkeley) %G%";
+static	char sccsid[] = "@(#)pc.c	3.26 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -464,7 +464,11 @@ dosys(cmd, argv, in, out)
 			printf(" >%s", out);
 		printf("\n");
 	}
-	pid = vfork();
+	/*
+	 * warning: vfork doesn't work here, because the call to signal() 
+	 * done by the child process destroys the parent's SIGINT handler.
+	 */
+	pid = fork();
 	if (pid < 0) {
 		fprintf(stderr, "pc: No more processes\n");
 		done();
