@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(@(#)proto.m4	2.13 (Berkeley) %G%)
+VERSIONID(@(#)proto.m4	2.14 (Berkeley) %G%)
 
 MAILER(local)dnl
 
@@ -219,13 +219,15 @@ R$* < @ [ $+ ] > $*	$#smtp $@ [$2] $: $1 @ [$2] $3	numeric internet spec
 
 #R@			$#error$:Invalid address	handle <> form
 
-ifdef(`NEWSENDMAIL',
+ifdef(`LOCAL_RELAY',
 `# now delete the local info -- note $=O to find characters that cause forwarding
 R< @ $j . > : $*	$@ $>7 $1			@here:... -> ...
 R$* $=O $* < @ $j . >	$@ $>7 $1 $2 $3			...@here -> ...
 
 # short circuit local delivery so forwarded email works
-R$+ < @ $j . >		$#local $: : $1			local address',
+ifdef(`NEWSENDMAIL',
+`R$+ < @ $j . >		$#local $: : $1			local address',
+`R$+ < @ $j . >		$#local $: $1			local address')',
 `# delete local info
 R$* < @ $j . > $*	$@ $>7 $1 $2')
 
