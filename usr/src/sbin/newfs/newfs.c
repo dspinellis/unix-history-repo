@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	4.13 %G%";
+static char sccsid[] = "@(#)newfs.c	4.14 %G%";
 #endif
 
 /*
