@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fclose.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)fclose.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <errno.h>
@@ -35,6 +35,7 @@ fclose(fp)
 		FREEUB(fp);
 	if (HASLB(fp))
 		FREELB(fp);
-	fp->_flags = 0;		/* release this FILE for reuse */
+	fp->_flags = 0;		/* Release this FILE for reuse. */
+	fp->_r = fp->_w = 0;	/* Mess up if reaccessed. */
 	return (r);
 }
