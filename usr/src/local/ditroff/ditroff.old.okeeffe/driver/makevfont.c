@@ -1,4 +1,6 @@
-/* Font description file producer for versatec fonts:  David Slattengren
+/*	makevfont.c	(Berkeley)	85/02/04	1.4
+ *
+ * Font description file producer for versatec fonts:  David Slattengren
  * Taken from vfontinfo by Andy Hertzfeld  4/79
  *
  *	Use:  makevfont [ -nNAME ]  [ -s -a -o -l -c -p# -r# -f# -ddir ]
@@ -54,7 +56,7 @@
 #include <ctype.h>
 #include <vfont.h>
 
-char 	sccsid[] = "@(#)makevfont.c	1.3	(Berkeley)	%G%";
+char 	sccsid[] = "@(#)makevfont.c	1.4	(Berkeley)	%G%";
 
 #define MAGICN		0436	/* font file magic number */
 #define PCNTUP		62	/* percent of maximum height for an ascender */
@@ -361,7 +363,8 @@ char **argv;
 			printf ("%s	\"\n", synonyms[2 * i + 1]);
 	    }
 	}
-    }
+    } /* for j */
+    exit(0);
 }
 
 

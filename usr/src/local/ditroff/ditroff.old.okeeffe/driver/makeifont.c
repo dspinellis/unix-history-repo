@@ -1,4 +1,6 @@
-/* Font description file producer for imagen fonts:  David Slattengren
+/*	makeifont.c	(Berkeley)	1.6	85/02/04
+ *
+ * Font description file producer for imagen fonts:  David Slattengren
  * Taken from vfontinfo by Andy Hertzfeld  4/79
  *
  *  Use:  makeifont [ -nNAME ]  [ -i -s -a -o -l -c ]  [ "-xs1,s2[;s1,s2...]" ]
@@ -55,7 +57,7 @@
 #include <ctype.h>
 #include "rst.h"
 
-char 	sccsid[] = "@(#)makeifont.c	1.5	(Berkeley)	%G%";
+char 	sccsid[] = "@(#)makeifont.c	1.6	(Berkeley)	%G%";
 
 #define PCNTUP		62	/* percent of maximum height for an ascender */
 #define PCNTDOWN	73	/* percent of maximum droop for a descender */
@@ -407,7 +409,8 @@ char **argv;
 			printf ("%s	\"\n", synonyms[2 * i + 1]);
 	    }
 	}
-    }
+    } /* for j */
+    exit(0);
 }
 
 
