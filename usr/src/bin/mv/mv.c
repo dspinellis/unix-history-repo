@@ -1,297 +1,238 @@
 /*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Ken Smith of The State University of New York at Buffalo.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1989 The Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mv.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mv.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
-/*
- * mv file1 file2
- */
 #include <sys/param.h>
-#include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
 #include <sys/file.h>
+#include <sys/errno.h>
 #include <stdio.h>
-#include <errno.h>
+#include <string.h>
+#include "pathnames.h"
 
-#define	DELIM	'/'
-#define MODEBITS 07777
-
-#define	ISDIR(st)	(((st).st_mode&S_IFMT) == S_IFDIR)
-#define	ISLNK(st)	(((st).st_mode&S_IFMT) == S_IFLNK)
-#define	ISREG(st)	(((st).st_mode&S_IFMT) == S_IFREG)
-#define	ISDEV(st) \
-	(((st).st_mode&S_IFMT) == S_IFCHR || ((st).st_mode&S_IFMT) == S_IFBLK)
-
-char	*dname();
-int	iflag = 0;	/* interactive mode */
-int	fflag = 0;	/* force overwriting */
-extern	unsigned errno;
+extern int errno;
+int fflg, iflg;
 
 main(argc, argv)
-	register int argc;
-	register char **argv;
+	int argc;
+	char **argv;
 {
+	extern char *optarg;
 	extern int optind;
-	struct stat st;
-	int ch, r;
-	char *dest;
+	register int baselen, exitval, len;
+	register char *p, *endp;
+	struct stat sbuf;
+	int ch;
+	char path[MAXPATHLEN + 1];
 
-	while ((ch = getopt(argc, argv, "-fi")) != EOF)
+	while (((ch = getopt(argc, argv, "-if")) != EOF))
 		switch((char)ch) {
-		case '-':
-			goto endarg;
-		case 'f':
-			fflag++;
-			break;
 		case 'i':
-			iflag++;
+			++iflg;
 			break;
+		case 'f':
+			++fflg;
+			break;
+		case '-':		/* undocumented; for compatibility */
+			goto endarg;
 		case '?':
 		default:
 			usage();
 		}
-endarg:	argv += optind;
-	argc -= optind;
+endarg:	argc -= optind;
+	argv += optind;
 
 	if (argc < 2)
 		usage();
-	dest = argv[argc - 1];
-	if (stat(dest, &st) >= 0 && ISDIR(st)) {
-		for (r = 0; --argc; ++argv)
-			r |= movewithshortname(*argv, dest);
-		exit(r);
-	}
-	if (argc != 2)
-		usage();
-	r = move(argv[0], argv[1]);
-	exit(r);
-}
 
-movewithshortname(src, dest)
-	char *src, *dest;
-{
-	register char *shortname;
-	char target[MAXPATHLEN + 1];
-
-	shortname = dname(src);
-	if (strlen(dest) + strlen(shortname) > MAXPATHLEN - 1) {
-		error("%s/%s: pathname too long", dest,
-			shortname);
-		return (1);
-	}
-	(void)sprintf(target, "%s/%s", dest, shortname);
-	return (move(src, target));
-}
-
-move(source, target)
-	char *source, *target;
-{
-	int targetexists;
-	struct stat s1, s2;
-
-	if (lstat(source, &s1) < 0) {
-		Perror2(source, "Cannot access");
-		return (1);
-	}
 	/*
-	 * First, try to rename source to destination.
-	 * The only reason we continue on failure is if
-	 * the move is on a nondirectory and not across
-	 * file systems.
+	 * if stat fails on target, it doesn't exist (or can't be accessed
+	 * by the user, doesn't matter which) try the move.  If target exists,
+	 * and isn't a directory, try the move.  More than 2 arguments is an
+	 * error.
 	 */
-	targetexists = lstat(target, &s2) >= 0;
-	if (targetexists) {
-		if (s1.st_dev == s2.st_dev && s1.st_ino == s2.st_ino) {
-			error("%s and %s are identical", source, target);
-			return (1);
-		}
-		if (!fflag && isatty(fileno(stdin)))
-			if (iflag) {
-				if (!query("remove %s? ", target))
-					return (1);
-			}
-			else if (access(target, W_OK) < 0 &&
-			    !query("override protection %o for %s? ",
-			    s2.st_mode & MODEBITS, target))
-				return (1);
+	if (stat(argv[argc - 1], &sbuf) || !S_ISDIR(sbuf.st_mode)) {
+		if (argc > 2)
+			usage();
+		exit(do_move(argv[0], argv[1]));
 	}
-	if (rename(source, target) >= 0)
-		return (0);
+
+	/* got a directory, move each file into it */
+	(void)strcpy(path, argv[argc - 1]);
+	baselen = strlen(path);
+	endp = &path[baselen];
+	*endp++ = '/';
+	++baselen;
+	for (exitval = 0; --argc; ++argv) {
+		if ((p = rindex(*argv, '/')) == NULL)
+			p = *argv;
+		else
+			++p;
+		if ((baselen + (len = strlen(p))) >= MAXPATHLEN)
+			(void)fprintf(stderr,
+			    "mv: %s: destination pathname too long\n", *argv);
+		else {
+			bcopy(p, endp, len + 1);
+			exitval |= do_move(*argv, path);
+		}
+	}
+	exit(exitval);
+}
+
+do_move(from, to)
+	char *from, *to;
+{
+	struct stat sbuf;
+	int ask, ch;
+
+	/*
+	 * Check access.  If interactive and file exists ask user if it
+	 * should be replaced.  Otherwise if file exists but isn't writable
+	 * make sure the user wants to clobber it.
+	 */
+	if (!fflg && !access(to, F_OK)) {
+		ask = 0;
+		if (iflg) {
+			(void)fprintf(stderr, "overwrite %s? ", to);
+			ask = 1;
+		}
+		else if (access(to, W_OK) && !stat(to, &sbuf)) {
+			(void)fprintf(stderr, "override mode %o on %s? ",
+			    sbuf.st_mode & 07777, to);
+			ask = 1;
+		}
+		if (ask) {
+			if ((ch = getchar()) != EOF && ch != '\n')
+				while (getchar() != '\n');
+			if (ch != 'y')
+				return(0);
+		}
+	}
+	if (!rename(from, to))
+		return(0);
 	if (errno != EXDEV) {
-		Perror2(errno == ENOENT && targetexists == 0 ? target : source,
-		    "rename");
-		return (1);
-	}
-	if (ISDIR(s1)) {
-		error("can't mv directories across file systems");
-		return (1);
-	}
-	if (targetexists && unlink(target) < 0) {
-		Perror2(target, "Cannot unlink");
-		return (1);
+		(void)fprintf(stderr,
+		    "mv: rename %s to %s: %s\n", from, to, strerror(errno));
+		return(1);
 	}
 	/*
-	 * File can't be renamed, try to recreate the symbolic
-	 * link or special device, or copy the file wholesale
-	 * between file systems.
+	 * if rename fails, and it's a regular file, do the copy
+	 * internally; otherwise, use cp and rm.
 	 */
-	if (ISLNK(s1)) {
-		register m;
-		char symln[MAXPATHLEN + 1];
-
-		m = readlink(source, symln, sizeof (symln) - 1);
-		if (m < 0) {
-			Perror(source);
-			return (1);
-		}
-		symln[m] = '\0';
-
-		(void) umask(~(s1.st_mode & MODEBITS));
-		if (symlink(symln, target) < 0) {
-			Perror(target);
-			return (1);
-		}
-		goto cleanup;
+	if (stat(from, &sbuf)) {
+		(void)fprintf(stderr,
+		    "mv: %s: %s\n", from, strerror(errno));
+		return(1);
 	}
-	(void) umask(0);
-	if (ISDEV(s1)) {
-		struct timeval tv[2];
+	return(S_ISREG(sbuf.st_mode) ?
+	    fastcopy(from, to, &sbuf) : copy(from, to));
+}
 
-		if (mknod(target, s1.st_mode, s1.st_rdev) < 0) {
-			Perror(target);
-			return (1);
-		}
+fastcopy(from, to, sbp)
+	char *from, *to;
+	struct stat *sbp;
+{
+	struct timeval tval[2];
+	static u_int blen;
+	static char *bp;
+	register int nread, from_fd, to_fd;
+	char *malloc();
 
-		tv[0].tv_sec = s1.st_atime;
-		tv[0].tv_usec = 0;
-		tv[1].tv_sec = s1.st_mtime;
-		tv[1].tv_usec = 0;
-		(void) utimes(target, tv);
-		goto cleanup;
+	if ((from_fd = open(from, O_RDONLY, 0)) < 0) {
+		(void)fprintf(stderr,
+		    "mv: %s: %s\n", from, strerror(errno));
+		return(1);
 	}
-	if (ISREG(s1)) {
-		register int fi, fo, n;
-		struct timeval tv[2];
-		char buf[MAXBSIZE];
-
-		fi = open(source, 0);
-		if (fi < 0) {
-			Perror(source);
-			return (1);
-		}
-
-		fo = creat(target, s1.st_mode & MODEBITS);
-		if (fo < 0) {
-			Perror(target);
-			close(fi);
-			return (1);
-		}
-
-		for (;;) {
-			n = read(fi, buf, sizeof buf);
-			if (n == 0) {
-				break;
-			} else if (n < 0) {
-				Perror2(source, "read");
-				close(fi);
-				close(fo);
-				return (1);
-			} else if (write(fo, buf, n) != n) {
-				Perror2(target, "write");
-				close(fi);
-				close(fo);
-				return (1);
-			}
-		}
-
-		close(fi);
-		close(fo);
-
-		tv[0].tv_sec = s1.st_atime;
-		tv[0].tv_usec = 0;
-		tv[1].tv_sec = s1.st_mtime;
-		tv[1].tv_usec = 0;
-		(void) utimes(target, tv);
-		goto cleanup;
+	if ((to_fd = open(to, O_WRONLY|O_CREAT|O_TRUNC, sbp->st_mode)) < 0) {
+		(void)fprintf(stderr,
+		    "mv: %s: %s\n", to, strerror(errno));
+		(void)close(from_fd);
+		return(1);
 	}
-	error("%s: unknown file type %o", source, s1.st_mode);
-	return (1);
-
-cleanup:
-	if (unlink(source) < 0) {
-		Perror2(source, "Cannot unlink");
-		return (1);
+	if (!blen && !(bp = malloc(blen = sbp->st_blksize))) {
+		(void)fprintf(stderr, "mv: %s: out of memory.\n", from);
+		return(1);
 	}
-	return (0);
+	while ((nread = read(from_fd, bp, blen)) > 0)
+		if (write(to_fd, bp, nread) != nread) {
+			(void)fprintf(stderr, "mv: %s: %s\n",
+			    to, strerror(errno));
+			goto err;
+		}
+	if (nread < 0) {
+		(void)fprintf(stderr, "mv: %s: %s\n", from, strerror(errno));
+err:		(void)unlink(to);
+		(void)close(from_fd);
+		(void)close(to_fd);
+		return(1);
+	}
+	(void)fchown(to_fd, sbp->st_uid, sbp->st_gid);
+	(void)fchmod(to_fd, sbp->st_mode);
+
+	(void)close(from_fd);
+	(void)close(to_fd);
+
+	tval[0].tv_sec = sbp->st_atime;
+	tval[1].tv_sec = sbp->st_mtime;
+	tval[0].tv_usec = tval[1].tv_usec = 0;
+	(void)utimes(to, tval);
+	(void)unlink(from);
+	return(0);
 }
 
-/*VARARGS*/
-query(prompt, a1, a2)
-	char *a1;
+copy(from, to)
+	char *from, *to;
 {
-	register int i, c;
+	int pid, status;
 
-	fprintf(stderr, prompt, a1, a2);
-	i = c = getchar();
-	while (c != '\n' && c != EOF)
-		c = getchar();
-	return (i == 'y');
-}
-
-char *
-dname(name)
-	register char *name;
-{
-	register char *p;
-
-	p = name;
-	while (*p)
-		if (*p++ == DELIM && *p)
-			name = p;
-	return name;
-}
-
-/*VARARGS*/
-error(fmt, a1, a2)
-	char *fmt;
-{
-
-	fprintf(stderr, "mv: ");
-	fprintf(stderr, fmt, a1, a2);
-	fprintf(stderr, "\n");
-}
-
-Perror(s)
-	char *s;
-{
-	char buf[MAXPATHLEN + 10];
-
-	(void)sprintf(buf, "mv: %s", s);
-	perror(buf);
-}
-
-Perror2(s1, s2)
-	char *s1, *s2;
-{
-	char buf[MAXPATHLEN + 20];
-
-	(void)sprintf(buf, "mv: %s: %s", s1, s2);
-	perror(buf);
+	if (!(pid = vfork())) {
+		execlp(_PATH_CP, "mv", "-pr", from, to);
+		(void)fprintf(stderr, "mv: can't exec %s.\n", _PATH_CP);
+		_exit(1);
+	}
+	(void)waitpid(pid, &status, 0);
+	if (!WIFEXITED(status) || WEXITSTATUS(status))
+		return(1);
+	if (!(pid = vfork())) {
+		execlp(_PATH_RM, "mv", "-rf", from);
+		(void)fprintf(stderr, "mv: can't exec %s.\n", _PATH_RM);
+		_exit(1);
+	}
+	(void)waitpid(pid, &status, 0);
+	return(!WIFEXITED(status) || WEXITSTATUS(status));
 }
 
 usage()
 {
-	fputs("usage: mv [-if] file1 file2 or mv [-if] file/directory ... directory\n", stderr);
+	(void)fprintf(stderr,
+"usage: mv [-if] src target;\n   or: mv [-if] src1 ... srcN directory\n");
 	exit(1);
 }
