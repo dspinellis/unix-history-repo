@@ -52,7 +52,6 @@ int	po;
 int	dfact = 1;
 int	dfactd = 1;
 int	res = 1;
-int	smnt = 0;	/* beginning of special fonts */
 int	ascii = ASCII;
 int	ptid = PTID;
 int	lg = LG;

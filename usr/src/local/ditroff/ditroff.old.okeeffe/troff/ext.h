@@ -168,7 +168,6 @@ extern	int	raw;
 extern	int	res;
 extern	int	setwdf;
 extern	int	sfont;
-extern	int	smnt;
 extern	int	spacesz;
 extern	int	spflg;
 extern	int	spread;

@@ -18,7 +18,6 @@ extern int eschar;
 extern int widthp;
 extern int ohc;
 extern int xfont;
-extern int smnt;
 extern int setwdf;
 extern char trtab[];
 extern int chbits;
@@ -84,7 +83,7 @@ int i,j[];
 {
 	register k;
 
-	if(((k = i-'0') >= 1) && (k <= 4) && (k != smnt))return(--k);
+	if(((k = i-'0') >= 1) && (k <= 4))return(--k);
 	for(k=0; j[k] != i; k++)if(j[k] == 0)return(-1);
 	return(k);
 }
