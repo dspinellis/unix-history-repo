@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)maps.c	1.5 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)maps.c	1.6 (Berkeley/CCI) %G%";
 #endif
 
 
@@ -50,8 +50,8 @@ short	flags;
 		if(access_dsk((char *)save,&dskaddr, VDOP_RD,
 		    lab->d_nsectors,1)& VDERR_HARD)
 			continue;
-		if(blkcmp((char *)scratch, (char *)save, bytes_trk) == true) {
-			blkcopy((char *)save, (char *)bad_map, bytes_trk);
+		if(bcmp((char *)scratch, (char *)save, bytes_trk) == true) {
+			bcopy((char *)save, (char *)bad_map, bytes_trk);
 			if(bad_map->bs_count <= MAX_FLAWS) {
 				for(i=0; i < bad_map->bs_count; i++) {
 					if(bad_map->list[i].bs_cyl >=
@@ -69,11 +69,11 @@ short	flags;
 					return true;
 				}
 			}
-			blkzero(bad_map, bytes_trk);
+			bzero(bad_map, bytes_trk);
 			bad_map->bs_id = 0;
 			bad_map->bs_max = MAX_FLAWS;
 		}
-		blkcopy((char *)save, (char *)scratch, bytes_trk);
+		bcopy((char *)save, (char *)scratch, bytes_trk);
 	}
 	return false;
 }
@@ -91,7 +91,7 @@ boolean read_bad_sector_map()
 	dskaddr.track = 0;
 	dskaddr.sector = 0;
 	/* start with nothing in map */
-	blkzero(bad_map, bytes_trk);
+	bzero(bad_map, bytes_trk);
 	bad_map->bs_id = 0;
 	bad_map->bs_max = MAX_FLAWS;
 	if (C_INFO->type == VDTYPE_SMDE) {
@@ -246,7 +246,7 @@ write_bad_sector_map()
 	dskaddr.cylinder = (lab->d_ncylinders - NUMMAP);
 	for(trk=0; trk < lab->d_ntracks; trk++) {
 		for(sec = 0; sec < lab->d_nsectors; sec++) {
-			blkcopy((char *)bs_map_space + (sec * lab->d_secsize),
+			bcopy((char *)bs_map_space + (sec * lab->d_secsize),
 			    (char *)scratch, lab->d_secsize);
 			dskaddr.track = trk;
 			dskaddr.sector = sec;

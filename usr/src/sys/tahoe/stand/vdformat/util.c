@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)util.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)util.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -109,36 +109,4 @@ unsigned int	block;
 		dskaddr.sector = -1;
 	}
 	return &dskaddr;
-}
-
-
-blkzero(addr, len)
-register char	*addr;
-register int	len;
-{
-	while(len--)
-		*(addr++) = (char)0;
-}
-
-
-blkcopy(from, to, len)
-register char	*from;
-register char	*to;
-register int	len;
-{
-	while(len--)
-		*(to++) = *(from++);
-}
-
-
-boolean blkcmp(a, b, len)
-register char	*a;
-register char	*b;
-register int	len;
-{
-	while(len--) {
-		if(*(a++) != *(b++))
-			return false;
-	}
-	return true;
 }
