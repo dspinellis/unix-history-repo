@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)netstat.1	6.2 (Berkeley) %G%
+.\"	@(#)netstat.1	6.3 (Berkeley) %G%
 .\"
 .TH NETSTAT 1 ""
 .UC 5
@@ -12,6 +12,9 @@ netstat \- show network status
 .B netstat
 [ 
 .B \-Aahimnrs
+] [
+.B \-f
+.I address_family
 ] [
 .B \-I
 .I interface
@@ -75,6 +78,19 @@ show per-protocol statistics
 .TP
 .B \-r
 show the routing tables
+.TP
+.BI \-f " address_family"
+will limit statistics or address control block reports to those
+of the specified
+.IR address\ family .
+The two address families
+.IR inet ,
+for
+.BR AF_INET and
+.IR ns ,
+for
+.BR AF_NS are
+recognized.
 .PP
 The arguments, 
 .I system
