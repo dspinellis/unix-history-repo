@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)init.c	4.8 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.9 (Berkeley) %G%";
 #include <signal.h>
 #include <sys/types.h>
 #include <utmp.h>
@@ -345,6 +345,7 @@ struct tab *p;
 	register pid;
 	time_t t;
 	int dowait = 0;
+	extern char *sys_errlist[];
 
 	time(&t);
 	p->gettycnt++;
@@ -365,6 +366,8 @@ struct tab *p;
 
 		signal(SIGTERM, SIG_DFL);
 		signal(SIGHUP, SIG_IGN);
+		strcpy(tty, dev);
+		strncat(tty, p->line, LINSIZ);
 		if (dowait) {
 			f = open("/dev/console", 1);
 			write(f, "init: ", 6);
@@ -377,8 +380,6 @@ struct tab *p;
 				close(f);
 			}
 		}
-		strcpy(tty, dev);
-		strncat(tty, p->line, LINSIZ);
 		chown(tty, 0, 0);
 		chmod(tty, 0622);
 		if (open(tty, 2) < 0) {
@@ -388,7 +389,11 @@ struct tab *p;
 				if (repcnt % 10 == 0) {
 					f = open("/dev/console", 1);
 					write(f, "init: ", 6);
-					errno = oerrno, perror(tty);
+					write(f, tty, strlen(tty));
+					write(f, ": ", 2);
+					write(f, sys_errlist[oerrno],
+						strlen(sys_errlist[oerrno]));
+					write(f, "\n", 1);
 					close(f);
 					if ((f = open("/dev/tty", 2)) >= 0) {
 						ioctl(f, TIOCNOTTY, 0);
