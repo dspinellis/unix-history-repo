@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.118 (Berkeley) %G%
+#	@(#)termcap.src	5.119 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -2116,6 +2116,9 @@ vs100t|tsim|vs100-tsim:\
 	:bs:cm=\EM%+ %+ :ho=\EH:do=^J:up=^K:cl=\EE:ce=\EL:cs=\ES%+ %+ :\
 	:so=\Eh:se=\Er:us=\Eu:ue=\Ev:al=\EI:Al=\E+%+ :dl=\ED:Dl=\E-%+ :\
 	:ic=\Ei:dc=\Ed:is=\ER:rs=\ER:am:cd=\EQ:pt:nd=\En:li#24:co#80:
+kterm|kterm kanji terminal emulator (X window system):\
+	:hs:es:ts=\E[?E\E[?%i%dT:fs=\E[?F:ds=\E[?H:\
+	:KJ:sc=\E7:rc=\E8:cs=\E[%i%d;%dr:TY=ascii:tc=xterm:
 # # --------------------------------
 #
 # h: HEWLETT PACKARD
