@@ -102,8 +102,8 @@ main(argc, argv)
 			continue;
 		}
 		if (fork() == 0) {
-			close(f);
 			signal(SIGCHLD, SIG_IGN);
+			close(f);
 			doit(g, &from);
 		}
 		close(g);
@@ -161,10 +161,8 @@ doit(f, fromp)
 	for (;;) {
 		char c;
 		if (read(f, &c, 1) != 1) {
-			int how = 1+1;
-
 			perror("rshd: read");
-			shutdown(f, &how);
+			shutdown(f, 1+1);
 			exit(1);
 		}
 		if (c == 0)
@@ -212,7 +210,7 @@ doit(f, fromp)
 		error("No remote directory.\n");
 		exit(1);
 	}
-	if (ruserok(hp->h_name, remuser, locuser) < 0) {
+	if (ruserok(hp->h_name, pwd->pw_uid == 0, remuser, locuser) < 0) {
 		error("Permission denied.\n");
 		exit(1);
 	}
@@ -244,6 +242,7 @@ doit(f, fromp)
 						killpg(pid, sig);
 				}
 				if (ready & (1<<pv[0])) {
+					errno = 0;
 					cc = read(pv[0], buf, sizeof (buf));
 					if (cc <= 0) {
 						shutdown(s, 1+1);
@@ -262,8 +261,8 @@ doit(f, fromp)
 		pwd->pw_shell = "/bin/sh";
 	(void) close(f);
 	initgroups(pwd->pw_name, pwd->pw_gid);
-	(void) setuid(pwd->pw_uid);
 	(void) setgid(pwd->pw_gid);
+	(void) setuid(pwd->pw_uid);
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
 	strncat(shell, pwd->pw_shell, sizeof(shell)-7);
