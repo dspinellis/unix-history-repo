@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dmf.c	6.9 (Berkeley) %G%
+ *	@(#)dmf.c	6.10 (Berkeley) %G%
  */
 
 #include "dmf.h"
@@ -392,7 +392,7 @@ dmfrint(dmf)
 			 	|| (tp->t_flags&(EVENP|ODDP))==ODDP )
 					continue;
 			if ((c & DMF_DO) && overrun == 0) {
-				log(KERN_RECOV, "dmf%d: silo overflow\n", dmf);
+				log(LOG_WARNING, "dmf%d: silo overflow\n", dmf);
 				overrun = 1;
 			}
 			if (c & DMF_FE)

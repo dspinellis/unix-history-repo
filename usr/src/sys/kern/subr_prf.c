@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_prf.c	6.8 (Berkeley) %G%
+ *	@(#)subr_prf.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -242,7 +242,7 @@ tablefull(tab)
 	char *tab;
 {
 
-	log(KERN_FAIL, "%s: table is full\n", tab);
+	log(LOG_ERR, "%s: table is full\n", tab);
 }
 
 /*

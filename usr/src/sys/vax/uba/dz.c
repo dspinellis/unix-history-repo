@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dz.c	6.8 (Berkeley) %G%
+ *	@(#)dz.c	6.9 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -270,7 +270,7 @@ dzrint(dz)
 			else
 				c = tp->t_intrc;
 		if (c&DZ_DO && overrun == 0) {
-			log(KERN_RECOV, "dz%d,%d: silo overflow\n", dz, (c>>8)&7);
+			log(LOG_WARNING, "dz%d,%d: silo overflow\n", dz, (c>>8)&7);
 			overrun = 1;
 		}
 		if (c&DZ_PE)	
