@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.36 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -30,6 +30,7 @@ static char sccsid[] = "@(#)passwd.c	4.35 (Berkeley) %G%";
 #include <sys/signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/wait.h>
 #include <errno.h>
 #include <pwd.h>
 #include <stdio.h>
@@ -254,12 +255,12 @@ getnewpasswd(pw, temp)
 makedb(file)
 	char *file;
 {
-	int status, pid, w;
+	union wait pstat;
+	pid_t pid, waitpid();
 
 	if (!(pid = vfork())) {
 		execl(_PATH_MKPASSWD, "mkpasswd", "-p", file, NULL);
 		_exit(127);
 	}
-	while ((w = wait(&status)) != pid && w != -1);
-	return(w == -1 || status);
+	return(waitpid(pid, &pstat, 0) == -1 ? -1 : pstat.w_status);
 }
