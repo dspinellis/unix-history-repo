@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	6.8 (Berkeley) %G%
+#	@(#)Makefile	6.9 (Berkeley) %G%
 #
 DESTDIR=/
 CFLAGS=	-O -I../h -DSTANDALONE ${COPTS} 
@@ -217,9 +217,11 @@ lint:
 	    grep -v 'struct/union .* never defined'
 
 install: ${ALL}
-	cp tpcopy ${DESTDIR}/tp/copy
-	cp tpboot ${DESTDIR}/tp/boot
-	cp tpformat ${DESTDIR}/tp/format
+	cp boot ${DESTDIR}/boot
+	cp format ${DESTDIR}/format
+	cp tpcopy ../dist/tp/copy
+	cp tpboot ../dist/tp/boot
+	cp tpformat ../dist/tp/format
 	cp boot a.out; strip a.out; \
 		dd if=a.out of=../floppy/boot bs=32 skip=1
 	cp 730boot a.out; strip a.out; \
