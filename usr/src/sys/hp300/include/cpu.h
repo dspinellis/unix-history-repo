@@ -11,14 +11,8 @@
  *
  * from: Utah $Hdr: cpu.h 1.13 89/06/23$
  *
- *	@(#)cpu.h	7.4 (Berkeley) %G%
+ *	@(#)cpu.h	7.5 (Berkeley) %G%
  */
-
-#ifdef notyet
-#include "../hp300/psl.h"
-#else
-#include "machine/psl.h"
-#endif
 
 /*
  * Exported definitions unique to hp300/68k cpu support.
@@ -53,8 +47,8 @@ typedef struct intrframe {
 	int	ps;
 } clockframe;
 
-#define	CLKF_USERMODE(framep)	USERMODE((framep)->ps)
-#define	CLKF_BASEPRI(framep)	BASEPRI((framep)->ps)
+#define	CLKF_USERMODE(framep)	(((framep)->ps & PSL_S) == 0)
+#define	CLKF_BASEPRI(framep)	(((framep)->ps & PSL_IPL7) == 0)
 #define	CLKF_PC(framep)		((framep)->pc)
 
 
@@ -64,7 +58,6 @@ typedef struct intrframe {
  */
 #define	need_resched()	{ want_resched++; aston(); }
 
-
 /*
  * Give a profiling tick to the current process from the softclock
  * interrupt.  On hp300, request an ast to send us through trap(),
@@ -72,6 +65,15 @@ typedef struct intrframe {
  */
 #define	profile_tick(p, framep)	{ (p)->p_flag |= SOWEUPC; aston(); }
 
+/*
+ * Notify the current process (p) that it has a signal pending,
+ * process as soon as possible.
+ */
+#define	signotify(p)	aston()
+
+#define aston() (astpending++)
+
+int	astpending;		/* need to trap before returning to user mode */
 int	want_resched;		/* resched() was called */
 
 
