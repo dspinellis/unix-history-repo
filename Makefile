@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.29 1993/12/16 01:30:15 ljo Exp $
+#	$Id: Makefile,v 1.30 1993/12/31 09:02:25 rgrimes Exp $
 #
 
 SUBDIR=
@@ -113,8 +113,8 @@ bootstrapld:	directories cleandist mk includes
 	@echo "--------------------------------------------------------------"
 	@echo " Building new shlib compiler tools"
 	@echo "--------------------------------------------------------------"
-	# These tools need built very eary do to a.out.h changes:
-	# possible ar needed too
+	# These tools need to be built very early due to a.out.h changes:
+	# It is possible that ar is needed
 	cd ${.CURDIR}/usr.bin/mkdep;	make -DNOPIC depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/usr.bin/nm;	make -DNOPIC depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/usr.bin/ranlib;	make -DNOPIC depend all install ${CLEANDIR} obj
