@@ -1,4 +1,4 @@
-/*	ioctl.h	4.8	81/08/31	*/
+/*	ioctl.h	4.9	81/10/17	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -35,7 +35,7 @@ struct ltchars {
 #define	LNOHANG 0000400		/* IIASA - don't send hangup on carrier drop */
 #define	LETXACK 0001000		/* IIASA - diablo style buffer hacking */
 #define	LCRTKIL	0002000		/* erase whole line on kill with " \b " */
-#define	LINTRUP 0004000		/* interrupt on every input char - SIGTINT */
+#define	L004000	0004000
 #define	LCTLECH	0010000		/* echo control characters as ^X */
 #define	LPENDIN	0020000		/* tp->t_rawq is waiting to be reread */
 #define	LDECCTQ 0040000		/* only ^Q starts after ^S */
@@ -60,8 +60,8 @@ struct ltchars {
 #define	TIOCGETP	(('t'<<8)|8)	/* get parameters - like old gtty */
 #define	TIOCSETP	(('t'<<8)|9)	/* set parameters - like old stty */
 #define	TIOCSETN	(('t'<<8)|10)	/* set params w/o flushing buffers */
-#define	TIOCEXCL	(('t'<<8)|13)	/* set exclusive use of tty */
-#define	TIOCNXCL	(('t'<<8)|14)	/* reset exclusive use of tty */
+/* 13 was EXCL */
+/* 14 was NEXCL */
 #define	TIOCFLUSH	(('t'<<8)|16)	/* flush buffers */
 #define	TIOCSETC	(('t'<<8)|17)	/* set special characters */
 #define	TIOCGETC	(('t'<<8)|18)	/* get special characters */
