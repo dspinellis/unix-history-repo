@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_sl.c	7.28 (Berkeley) %G%
+ *	@(#)if_sl.c	7.29 (Berkeley) %G%
  */
 
 /*
@@ -155,7 +155,12 @@ slattach()
 		sc->sc_if.if_next = NULL;
 		sc->sc_if.if_unit = i++;
 		sc->sc_if.if_mtu = SLMTU;
+#ifdef MULTICAST
+		sc->sc_if.if_flags =
+		    IFF_POINTOPOINT | SC_AUTOCOMP | IFF_MULTICAST;
+#else
 		sc->sc_if.if_flags = IFF_POINTOPOINT | SC_AUTOCOMP;
+#endif
 		sc->sc_if.if_type = IFT_SLIP;
 		sc->sc_if.if_ioctl = slioctl;
 		sc->sc_if.if_output = sloutput;
@@ -661,7 +666,10 @@ slioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	register struct ifaddr *ifa = (struct ifaddr *)data;
-	int s = splimp(), error = 0;
+#ifdef MULTICAST
+	register struct ifreq *ifr;
+#endif
+	register int s = splimp(), error = 0;
 
 	switch (cmd) {
 
@@ -676,6 +684,28 @@ slioctl(ifp, cmd, data)
 		if (ifa->ifa_addr->sa_family != AF_INET)
 			error = EAFNOSUPPORT;
 		break;
+
+#ifdef MULTICAST
+	case SIOCADDMULTI:
+	case SIOCDELMULTI:
+		ifr = (struct ifreq *)data;
+		if (ifr == 0) {
+			error = EAFNOSUPPORT;		/* XXX */
+			break;
+		}
+		switch (ifr->ifr_addr.sa_family) {
+
+#ifdef INET
+		case AF_INET:
+			break;
+#endif
+
+		default:
+			error = EAFNOSUPPORT;
+			break;
+		}
+		break;
+#endif
 
 	default:
 		error = EINVAL;

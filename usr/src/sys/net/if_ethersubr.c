@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_ethersubr.c	7.19 (Berkeley) %G%
+ *	@(#)if_ethersubr.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -68,8 +68,8 @@ ether_output(ifp, m0, dst, rt0)
 	register struct rtentry *rt;
 	struct mbuf *mcopy = (struct mbuf *)0;
 	register struct ether_header *eh;
-	int usetrailers, off, len = m->m_pkthdr.len;
-#define	ac ((struct arpcom *)ifp)
+	int off, len = m->m_pkthdr.len;
+	struct arpcom *ac = (struct arpcom *)ifp;
 
 	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING))
 		senderr(ENETDOWN);
@@ -101,24 +101,14 @@ ether_output(ifp, m0, dst, rt0)
 #ifdef INET
 	case AF_INET:
 		if (!arpresolve(ac, rt, m, (struct sockaddr_in *)dst,
-				edst, &usetrailers))
+				edst))
 			return (0);	/* if not yet resolved */
-		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1))
+		/* If broadcasting on a simplex interface, loopback a copy */
+		if ((m->m_flags & M_BCAST) && (ifp->if_flags & IFF_SIMPLEX))
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
 		off = m->m_pkthdr.len - m->m_len;
-		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
-		    (m->m_flags & M_EXT) == 0 &&
-		    m->m_data >= m->m_pktdat + 2 * sizeof (u_short)) {
-			type = ETHERTYPE_TRAIL + (off>>9);
-			m->m_data -= 2 * sizeof (u_short);
-			m->m_len += 2 * sizeof (u_short);
-			len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
-			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
-			goto gottrailertype;
-		}
 		type = ETHERTYPE_IP;
-		goto gottype;
+		break;
 #endif
 #ifdef NS
 	case AF_NS:
@@ -127,9 +117,10 @@ ether_output(ifp, m0, dst, rt0)
 		    (caddr_t)edst, sizeof (edst));
 		if (!bcmp((caddr_t)edst, (caddr_t)&ns_thishost, sizeof(edst)))
 			return (looutput(ifp, m, dst, rt));
-		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1))
+		/* If broadcasting on a simplex interface, loopback a copy */
+		if ((m->m_flags & M_BCAST) && (ifp->if_flags & IFF_SIMPLEX))
 			mcopy = m_copy(m, 0, (int)M_COPYALL);
-		goto gottype;
+		break;
 #endif
 #ifdef	ISO
 	case AF_ISO: {
@@ -144,7 +135,10 @@ ether_output(ifp, m0, dst, rt0)
 			    iso_snparesolve(ifp, (struct sockaddr_iso *)dst,
 					    (char *)edst, &snpalen))
 			goto bad; /* Not Resolved */
-		if ((ifp->if_flags & IFF_SIMPLEX) && (*edst & 1) &&
+		/* If broadcasting on a simplex interface, loopback a copy */
+		if (*edst & 1)
+			m->m_flags |= (M_BCAST|M_MCAST);
+		if ((m->m_flags & M_BCAST) && (ifp->if_flags & IFF_SIMPLEX) &&
 		    (mcopy = m_copy(m, 0, (int)M_COPYALL))) {
 			M_PREPEND(mcopy, sizeof (*eh), M_DONTWAIT);
 			if (mcopy) {
@@ -170,24 +164,14 @@ ether_output(ifp, m0, dst, rt0)
 				printf("%x ", edst[i] & 0xff);
 			printf("\n");
 		ENDDEBUG
-		} goto gottype;
+		} break;
 #endif	ISO
-#ifdef RMP
-	case AF_RMP:
-		/*
-		 *  This is IEEE 802.3 -- the Ethernet `type' field is
-		 *  really a `length' field.
-		 */
-		type = m->m_len;
- 		bcopy((caddr_t)dst->sa_data, (caddr_t)edst, sizeof(edst));
-		break;
-#endif
 
 	case AF_UNSPEC:
 		eh = (struct ether_header *)dst->sa_data;
  		bcopy((caddr_t)eh->ether_dhost, (caddr_t)edst, sizeof (edst));
 		type = eh->ether_type;
-		goto gottype;
+		break;
 
 	default:
 		printf("%s%d: can't handle af%d\n", ifp->if_name, ifp->if_unit,
@@ -195,18 +179,7 @@ ether_output(ifp, m0, dst, rt0)
 		senderr(EAFNOSUPPORT);
 	}
 
-gottrailertype:
-	/*
-	 * Packet to be sent as trailer: move first packet
-	 * (control information) to end of chain.
-	 */
-	while (m->m_next)
-		m = m->m_next;
-	m->m_next = m0;
-	m = m0->m_next;
-	m0->m_next = 0;
 
-gottype:
 	if (mcopy)
 		(void) looutput(ifp, mcopy, dst, rt);
 	/*
@@ -238,7 +211,7 @@ gottype:
 		(*ifp->if_start)(ifp);
 	splx(s);
 	ifp->if_obytes += len + sizeof (struct ether_header);
-	if (edst[0] & 1)
+	if (m->m_flags & M_MCAST)
 		ifp->if_omcasts++;
 	return (error);
 
@@ -421,3 +394,175 @@ ether_ifattach(ifp)
 			break;
 		}
 }
+
+#ifdef MULTICAST
+u_char	ether_ipmulticast_min[6] = { 0x01, 0x00, 0x5e, 0x00, 0x00, 0x00 };
+u_char	ether_ipmulticast_max[6] = { 0x01, 0x00, 0x5e, 0x7f, 0xff, 0xff };
+/*
+ * Add an Ethernet multicast address or range of addresses to the list for a
+ * given interface.
+ */
+int
+ether_addmulti(ifr, ac)
+	struct ifreq *ifr;
+	register struct arpcom *ac;
+{
+	register struct ether_multi *enm;
+	struct sockaddr_in *sin;
+	u_char addrlo[6];
+	u_char addrhi[6];
+	int s = splimp();
+
+	switch (ifr->ifr_addr.sa_family) {
+
+	case AF_UNSPEC:
+		bcopy(ifr->ifr_addr.sa_data, addrlo, 6);
+		bcopy(addrlo, addrhi, 6);
+		break;
+
+#ifdef INET
+	case AF_INET:
+		sin = (struct sockaddr_in *)&(ifr->ifr_addr);
+		if (sin->sin_addr.s_addr == INADDR_ANY) {
+			/*
+			 * An IP address of INADDR_ANY means listen to all
+			 * of the Ethernet multicast addresses used for IP.
+			 * (This is for the sake of IP multicast routers.)
+			 */
+			bcopy(ether_ipmulticast_min, addrlo, 6);
+			bcopy(ether_ipmulticast_max, addrhi, 6);
+		}
+		else {
+			ETHER_MAP_IP_MULTICAST(&sin->sin_addr, addrlo);
+			bcopy(addrlo, addrhi, 6);
+		}
+		break;
+#endif
+
+	default:
+		splx(s);
+		return (EAFNOSUPPORT);
+	}
+
+	/*
+	 * Verify that we have valid Ethernet multicast addresses.
+	 */
+	if ((addrlo[0] & 0x01) != 1 || (addrhi[0] & 0x01) != 1) {
+		splx(s);
+		return (EINVAL);
+	}
+	/*
+	 * See if the address range is already in the list.
+	 */
+	ETHER_LOOKUP_MULTI(addrlo, addrhi, ac, enm);
+	if (enm != NULL) {
+		/*
+		 * Found it; just increment the reference count.
+		 */
+		++enm->enm_refcount;
+		splx(s);
+		return (0);
+	}
+	/*
+	 * New address or range; malloc a new multicast record
+	 * and link it into the interface's multicast list.
+	 */
+	enm = (struct ether_multi *)malloc(sizeof(*enm), M_IFMADDR, M_NOWAIT);
+	if (enm == NULL) {
+		splx(s);
+		return (ENOBUFS);
+	}
+	bcopy(addrlo, enm->enm_addrlo, 6);
+	bcopy(addrhi, enm->enm_addrhi, 6);
+	enm->enm_ac = ac;
+	enm->enm_refcount = 1;
+	enm->enm_next = ac->ac_multiaddrs;
+	ac->ac_multiaddrs = enm;
+	ac->ac_multicnt++;
+	splx(s);
+	/*
+	 * Return ENETRESET to inform the driver that the list has changed
+	 * and its reception filter should be adjusted accordingly.
+	 */
+	return (ENETRESET);
+}
+
+/*
+ * Delete a multicast address record.
+ */
+int
+ether_delmulti(ifr, ac)
+	struct ifreq *ifr;
+	register struct arpcom *ac;
+{
+	register struct ether_multi *enm;
+	register struct ether_multi **p;
+	struct sockaddr_in *sin;
+	u_char addrlo[6];
+	u_char addrhi[6];
+	int s = splimp();
+
+	switch (ifr->ifr_addr.sa_family) {
+
+	case AF_UNSPEC:
+		bcopy(ifr->ifr_addr.sa_data, addrlo, 6);
+		bcopy(addrlo, addrhi, 6);
+		break;
+
+#ifdef INET
+	case AF_INET:
+		sin = (struct sockaddr_in *)&(ifr->ifr_addr);
+		if (sin->sin_addr.s_addr == INADDR_ANY) {
+			/*
+			 * An IP address of INADDR_ANY means stop listening
+			 * to the range of Ethernet multicast addresses used
+			 * for IP.
+			 */
+			bcopy(ether_ipmulticast_min, addrlo, 6);
+			bcopy(ether_ipmulticast_max, addrhi, 6);
+		}
+		else {
+			ETHER_MAP_IP_MULTICAST(&sin->sin_addr, addrlo);
+			bcopy(addrlo, addrhi, 6);
+		}
+		break;
+#endif
+
+	default:
+		splx(s);
+		return (EAFNOSUPPORT);
+	}
+
+	/*
+	 * Look up the address in our list.
+	 */
+	ETHER_LOOKUP_MULTI(addrlo, addrhi, ac, enm);
+	if (enm == NULL) {
+		splx(s);
+		return (ENXIO);
+	}
+	if (--enm->enm_refcount != 0) {
+		/*
+		 * Still some claims to this record.
+		 */
+		splx(s);
+		return (0);
+	}
+	/*
+	 * No remaining claims to this record; unlink and free it.
+	 */
+	for (p = &enm->enm_ac->ac_multiaddrs;
+	     *p != enm;
+	     p = &(*p)->enm_next)
+		continue;
+	*p = (*p)->enm_next;
+	free(enm, M_IFMADDR);
+	ac->ac_multicnt--;
+	splx(s);
+	/*
+	 * Return ENETRESET to inform the driver that the list has changed
+	 * and its reception filter should be adjusted accordingly.
+	 */
+	return (ENETRESET);
+}
+#endif

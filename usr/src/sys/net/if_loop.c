@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_loop.c	7.16 (Berkeley) %G%
+ *	@(#)if_loop.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -13,16 +13,19 @@
 
 #include "param.h"
 #include "systm.h"
+#include "kernel.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "errno.h"
 #include "ioctl.h"
 #include "machine/cpu.h"
+#include "time.h"
 
 #include "if.h"
 #include "if_types.h"
 #include "netisr.h"
 #include "route.h"
+#include "bpf.h"
 
 #ifdef	INET
 #include "netinet/in.h"
@@ -41,6 +44,8 @@
 #include "netiso/iso_var.h"
 #endif
 
+#include "bpfilter.h"
+
 #define	LOMTU	(1024+512)
 
 struct	ifnet loif;
@@ -52,13 +57,20 @@ loattach()
 
 	ifp->if_name = "lo";
 	ifp->if_mtu = LOMTU;
+#ifdef MULTICAST
+	ifp->if_flags = IFF_LOOPBACK | IFF_MULTICAST;
+#else
 	ifp->if_flags = IFF_LOOPBACK;
+#endif
 	ifp->if_ioctl = loioctl;
 	ifp->if_output = looutput;
 	ifp->if_type = IFT_LOOP;
 	ifp->if_hdrlen = 0;
 	ifp->if_addrlen = 0;
 	if_attach(ifp);
+#if NBPFILTER > 0
+	bpfattach(&ifp->if_bpf, ifp, DLT_NULL, sizeof(u_int));
+#endif
 }
 
 looutput(ifp, m, dst, rt)
@@ -72,6 +84,26 @@ looutput(ifp, m, dst, rt)
 
 	if ((m->m_flags & M_PKTHDR) == 0)
 		panic("looutput no HDR");
+	ifp->if_lastchange = time;
+#if NBPFILTER > 0
+	if (loif.if_bpf) {
+		/*
+		 * We need to prepend the address family as
+		 * a four byte field.  Cons up a dummy header
+		 * to pacify bpf.  This is safe because bpf
+		 * will only read from the mbuf (i.e., it won't
+		 * try to free it or keep a pointer a to it).
+		 */
+		struct mbuf m0;
+		u_int af = dst->sa_family;
+
+		m0.m_next = m;
+		m0.m_len = 4;
+		m0.m_data = (char *)&af;
+		
+		bpf_mtap(loif.if_bpf, &m0);
+	}
+#endif
 	m->m_pkthdr.rcvif = ifp;
 
 	if (rt && rt->rt_flags & RTF_REJECT) {
@@ -122,6 +154,7 @@ looutput(ifp, m, dst, rt)
 }
 
 /* ARGSUSED */
+void
 lortrequest(cmd, rt, sa)
 	int cmd;
 	struct rtentry *rt;
@@ -142,7 +175,10 @@ loioctl(ifp, cmd, data)
 	caddr_t data;
 {
 	register struct ifaddr *ifa;
-	int error = 0;
+#ifdef MULTICAST
+	register struct ifreq *ifr;
+#endif
+	register int error = 0;
 
 	switch (cmd) {
 
@@ -155,6 +191,28 @@ loioctl(ifp, cmd, data)
 		 * Everything else is done at a higher level.
 		 */
 		break;
+
+#ifdef MULTICAST
+	case SIOCADDMULTI:
+	case SIOCDELMULTI:
+		ifr = (struct ifreq *)data;
+		if (ifr == 0) {
+			error = EAFNOSUPPORT;		/* XXX */
+			break;
+		}
+		switch (ifr->ifr_addr.sa_family) {
+
+#ifdef INET
+		case AF_INET:
+			break;
+#endif
+
+		default:
+			error = EAFNOSUPPORT;
+			break;
+		}
+		break;
+#endif
 
 	default:
 		error = EINVAL;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_lereg.h	7.3 (Berkeley) %G%
+ *	@(#)if_lereg.h	7.4 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -48,8 +48,7 @@ struct lereg2 {
 	/* init block */
 	u_short	ler2_mode;		/* +0x0000 */
 	u_char	ler2_padr[6];		/* +0x0002 */
-	u_long	ler2_ladrf0;		/* +0x0008 */
-	u_long	ler2_ladrf1;		/* +0x000C */
+	u_long	ler2_ladrf[2];		/* +0x0008 */
 	u_short	ler2_rdra;		/* +0x0010 */
 	u_short	ler2_rlen;		/* +0x0012 */
 	u_short	ler2_tdra;		/* +0x0014 */

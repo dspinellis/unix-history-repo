@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.c	7.19 (Berkeley) %G%
+ *	@(#)if.c	7.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -71,13 +71,13 @@ if_attach(ifp)
 	struct ifnet *ifp;
 {
 	unsigned socksize, ifasize;
-	int namelen, unitlen, masklen;
+	int namelen, unitlen, masklen, ether_output();
 	char workbuf[12], *unitname;
 	register struct ifnet **p = &ifnet;
 	register struct sockaddr_dl *sdl;
 	register struct ifaddr *ifa;
 	static int if_indexlim = 8;
-	extern link_rtrequest(), ether_output();
+	extern void link_rtrequest();
 
 	while (*p)
 		p = &((*p)->if_next);
@@ -282,6 +282,7 @@ ifaof_ifpforaddr(addr, ifp)
  * Lookup an appropriate real ifa to point to.
  * This should be moved to /sys/net/link.c eventually.
  */
+void
 link_rtrequest(cmd, rt, sa)
 	int cmd;
 	register struct rtentry *rt;
@@ -483,6 +484,16 @@ ifioctl(so, cmd, data, p)
 			return (error);
 		ifp->if_metric = ifr->ifr_metric;
 		break;
+
+#ifdef MULTICAST
+	case SIOCADDMULTI:
+	case SIOCDELMULTI:
+		if (error = suser(p->p_ucred, &p->p_acflag))
+			return (error);
+		if (ifp->if_ioctl)
+			return (EOPNOTSUPP);
+		return ((*ifp->if_ioctl)(ifp, cmd, data));
+#endif
 
 	default:
 		if (so->so_proto == 0)

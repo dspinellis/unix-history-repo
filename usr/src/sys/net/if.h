@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if.h	7.17 (Berkeley) %G%
+ *	@(#)if.h	7.18 (Berkeley) %G%
  */
 
 /*
@@ -61,30 +61,31 @@ struct ifnet {
 	struct	ifnet *if_next;		/* all struct ifnets are chained */
 	struct	ifaddr *if_addrlist;	/* linked list of addresses per if */
         int	if_pcount;		/* number of promiscuous listeners */
+	caddr_t	if_bpf;			/* packet filter structure */
 	u_short	if_index;		/* numeric abbreviation for this if  */
 	short	if_unit;		/* sub-unit for lower level driver */
 	short	if_timer;		/* time 'til if_watchdog called */
 	short	if_flags;		/* up/down, broadcast, etc. */
 	struct	if_data {
 /* generic interface information */
-		short	ifi_mtu;	/* maximum transmission unit */
 		u_char	ifi_type;	/* ethernet, tokenring, etc */
 		u_char	ifi_addrlen;	/* media address length */
 		u_char	ifi_hdrlen;	/* media header length */
-		int	ifi_metric;	/* routing metric (external only) */
-		int	ifi_baudrate;	/* linespeed */
+		u_long	ifi_mtu;	/* maximum transmission unit */
+		u_long	ifi_metric;	/* routing metric (external only) */
+		u_long	ifi_baudrate;	/* linespeed */
 /* volatile statistics */
-		int	ifi_ipackets;	/* packets received on interface */
-		int	ifi_ierrors;	/* input errors on interface */
-		int	ifi_opackets;	/* packets sent on interface */
-		int	ifi_oerrors;	/* output errors on interface */
-		int	ifi_collisions;	/* collisions on csma interfaces */
-		int	ifi_ibytes;	/* total number of octets received */
-		int	ifi_obytes;	/* total number of octets sent */
-		int	ifi_imcasts;	/* packets received via multicast */
-		int	ifi_omcasts;	/* packets sent via multicast */
-		int	ifi_iqdrops;	/* dropped on input, this interface */
-		int	ifi_noproto;	/* destined for unsupported protocol */
+		u_long	ifi_ipackets;	/* packets received on interface */
+		u_long	ifi_ierrors;	/* input errors on interface */
+		u_long	ifi_opackets;	/* packets sent on interface */
+		u_long	ifi_oerrors;	/* output errors on interface */
+		u_long	ifi_collisions;	/* collisions on csma interfaces */
+		u_long	ifi_ibytes;	/* total number of octets received */
+		u_long	ifi_obytes;	/* total number of octets sent */
+		u_long	ifi_imcasts;	/* packets received via multicast */
+		u_long	ifi_omcasts;	/* packets sent via multicast */
+		u_long	ifi_iqdrops;	/* dropped on input, this interface */
+		u_long	ifi_noproto;	/* destined for unsupported protocol */
 		struct	timeval ifi_lastchange;/* last updated */
 	}	if_data;
 /* procedure handles */
@@ -99,8 +100,8 @@ struct ifnet {
 		__P((struct ifnet *));	/* (XXX not used; fake prototype) */
 	int	(*if_ioctl)		/* ioctl routine */
 		__P((struct ifnet *, int, caddr_t));
-	int	(*if_reset)		/* XXX; Unibus reset routine for vax */
-		__P((int, int));	/* new autoconfig will permit removal */
+	int	(*if_reset)	
+		__P((int));		/* new autoconfig will permit removal */
 	int	(*if_watchdog)		/* timer routine */
 		__P((int));
 	struct	ifqueue {
@@ -138,7 +139,6 @@ struct ifnet {
 #define	IFF_NOTRAILERS	0x20		/* avoid use of trailers */
 #define	IFF_RUNNING	0x40		/* resources allocated */
 #define	IFF_NOARP	0x80		/* no address resolution protocol */
-/* next two not supported now, but reserved: */
 #define	IFF_PROMISC	0x100		/* receive all packets */
 #define	IFF_ALLMULTI	0x200		/* receive all multicast packets */
 #define	IFF_OACTIVE	0x400		/* transmission in progress */
@@ -146,10 +146,12 @@ struct ifnet {
 #define	IFF_LINK0	0x1000		/* per link layer defined bit */
 #define	IFF_LINK1	0x2000		/* per link layer defined bit */
 #define	IFF_LINK2	0x4000		/* per link layer defined bit */
+#define	IFF_MULTICAST	0x8000		/* supports multicast */
 
 /* flags set internally only: */
 #define	IFF_CANTCHANGE \
-	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_RUNNING|IFF_OACTIVE|IFF_SIMPLEX)
+	(IFF_BROADCAST|IFF_POINTOPOINT|IFF_RUNNING|IFF_OACTIVE|\
+	    IFF_SIMPLEX|IFF_MULTICAST)
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)
@@ -201,13 +203,15 @@ struct ifaddr {
 	struct	sockaddr *ifa_netmask;	/* used to determine subnet */
 	struct	ifnet *ifa_ifp;		/* back-pointer to interface */
 	struct	ifaddr *ifa_next;	/* next address for interface */
-	int	(*ifa_rtrequest)();	/* check or clean routes (+ or -)'d */
+	void	(*ifa_rtrequest)();	/* check or clean routes (+ or -)'d */
 	u_short	ifa_flags;		/* mostly rt_flags for cloning */
 	short	ifa_refcnt;		/* extra to malloc for link info */
 	int	ifa_metric;		/* cost of going out this interface */
-/*	struct	rtentry *ifa_rt;	/* XXXX for ROUTETOIF ????? */
+#ifdef notdef
+	struct	rtentry *ifa_rt;	/* XXXX for ROUTETOIF ????? */
+#endif
 };
-#define IFA_ROUTE	RTF_UP		/* route installed */
+#define	IFA_ROUTE	RTF_UP		/* route installed */
 
 /*
  * Message format for use in obtaining information about interfaces
