@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -147,7 +147,7 @@ main(argc, argv, arge)
 		while (fs = getfsent()) {
 			if (BADTYPE(fs->fs_type))
 				continue;
-			if (badvfstype(fs->fs_vfstype, vfslist))
+			if (badvfsname(fs->fs_vfstype, vfslist))
 				continue;
 			/* `/' is special, it's always mounted */
 			if (!strcmp(fs->fs_file, "/"))
@@ -169,9 +169,12 @@ main(argc, argv, arge)
 				"mount: cannot get mount information\n");
 			exit(1);
 		}
-		for (i = 0; i < mntsize; i++)
+		for (i = 0; i < mntsize; i++) {
+			if (badvfstype(mntbuf[i].f_type, vfslist))
+				continue;
 			prmount(mntbuf[i].f_mntfromname, mntbuf[i].f_mntonname,
 				mntbuf[i].f_flags);
+		}
 		exit(0);
 	}
 
@@ -491,14 +494,29 @@ getmntpt(name)
 static int skipvfs;
 
 badvfstype(vfstype, vfslist)
-	char *vfstype;
+	long vfstype;
 	char **vfslist;
 {
 
 	if (vfslist == 0)
 		return(0);
 	while (*vfslist) {
-		if (strcmp(vfstype, *vfslist) == 0)
+		if (vfstype == getmnttype(*vfslist))
+			return(skipvfs);
+		vfslist++;
+	}
+	return (!skipvfs);
+}
+
+badvfsname(vfsname, vfslist)
+	char *vfsname;
+	char **vfslist;
+{
+
+	if (vfslist == 0)
+		return(0);
+	while (*vfslist) {
+		if (strcmp(vfsname, *vfslist) == 0)
 			return(skipvfs);
 		vfslist++;
 	}
