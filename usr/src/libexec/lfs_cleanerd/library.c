@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -353,6 +353,7 @@ add_blocks (fsp, bip, countp, sp, seg_buf, segaddr, psegaddr)
 			bip->bi_daddr = psegaddr;
 			bip->bi_segcreate = (time_t)(sp->ss_create);
 			bip->bi_bp = bp;
+			bip->bi_version = ifp->if_version;
 			psegaddr += db_per_block;
 			bp += page_size;
 			++bip;
@@ -408,12 +409,14 @@ add_inodes (fsp, bip, countp, sp, seg_buf, seg_addr)
 		bp->bi_segcreate = sp->ss_create;
 
 		if (inum == LFS_IFILE_INUM) {
+			bp->bi_version = 1;	/* Ifile version should be 1 */
 			bp++;
 			++(*countp);
 			PRINT_INODE(1, bp);
 		} else {
 			ifp = IFILE_ENTRY(lfsp, fsp->fi_ifilep, inum);
 			PRINT_INODE(ifp->if_daddr == *daddrp, bp);
+			bp->bi_version = ifp->if_version;
 			if (ifp->if_daddr == *daddrp) {
 				bp++;
 				++(*countp);
