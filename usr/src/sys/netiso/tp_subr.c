@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr.c	7.15 (Berkeley) %G%
+ *	@(#)tp_subr.c	7.16 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -145,8 +145,8 @@ register struct tp_pcb *tpcb;
 	if (tpcb->tp_rtt != 0) {
 		/*
 		 * rtt is the smoothed round trip time in machine clock ticks (hz).
-		 * it is stored as a fixed point number, unscaled (unlike the tcp
-		 * srtt.  The rationale here is that it is only significant to the
+		 * It is stored as a fixed point number, unscaled (unlike the tcp
+		 * srtt).  The rationale here is that it is only significant to the
 		 * nearest unit of slowtimo, which is at least 8 machine clock ticks
 		 * so there is no need to scale.  The smoothing is done according
 		 * to the same formula as TCP (rtt = rtt*7/8 + measured_rtt/8).
@@ -186,14 +186,13 @@ register struct tp_pcb *tpcb;
 	 * statistical, we have to test that we don't drop below
 	 * the minimum feasible timer (which is 2 ticks)."
 	 */
-	new = (((tpcb->tp_rtt + (tpcb->tp_rtv << 2)) * PR_SLOWHZ) + hz) / hz;
-	new = MAX(new + 1, tpcb->tp_peer_acktime);
-	new = MAX(new, 2);
+	TP_RANGESET(tpcb->tp_dt_ticks, TP_REXMTVAL(tpcb),
+		tpcb->tp_peer_acktime, 128 /* XXX */);
 	IFTRACE(D_RTT)
 		tptraceTPCB(TPPTmisc, "oldticks ,rtv, rtt, newticks",
 			old, rtv, rtt, new);
 	ENDTRACE
-	tpcb->tp_rxtcur = tpcb->tp_dt_ticks = new;
+	tpcb->tp_rxtcur = tpcb->tp_dt_ticks;
 }
 
 /*
@@ -351,8 +350,18 @@ tp_goodack(tpcb, cdt, seq, subseq)
 	if( cdt != 0 && old_fcredit == 0 ) {
 		tpcb->tp_sendfcc = 1;
 	}
-	if( cdt == 0 && old_fcredit != 0 ) {
-		IncStat(ts_zfcdt);
+	if (cdt == 0) {
+		if (old_fcredit != 0)
+			IncStat(ts_zfcdt);
+		/* The following might mean that the window shrunk */
+		if (tpcb->tp_timer[TM_data_retrans]) {
+			tpcb->tp_timer[TM_data_retrans] = 0;
+			tpcb->tp_timer[TM_sendack] = tpcb->tp_dt_ticks;
+			if (tpcb->tp_sndnxt != tpcb->tp_snduna) {
+				tpcb->tp_sndnxt = tpcb->tp_snduna;
+				tpcb->tp_sndnxt_m = 0;
+			}
+		}
 	}
 	tpcb->tp_fcredit = cdt;
 	bang |= (old_fcredit < cdt);
@@ -474,7 +483,7 @@ send:
 	 */
 	checkseq = tpcb->tp_sndnum;
 	if (idle && SEQ_LT(tpcb, tpcb->tp_sndnum, highseq))
-		checkseq = highseq;
+		checkseq = highseq; /* i.e. DON'T retain highest assigned packet */
 
 	while ((SEQ_LT(tpcb, tpcb->tp_sndnxt, highseq)) && m && cong_win > 0) {
 
