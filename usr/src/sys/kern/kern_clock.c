@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_clock.c	6.14 (Berkeley) %G%
+ *	@(#)kern_clock.c	6.15 (Berkeley) %G%
  */
 
 #include "../machine/reg.h"
@@ -20,8 +20,9 @@
 #include "vm.h"
 #include "text.h"
 
-#ifdef vax
+#if defined(vax)
 #include "../vax/mtpr.h"
+#include "../vax/clock.h"
 #endif
 
 #ifdef GPROF
@@ -52,22 +53,10 @@ int	adjtimedelta;
  *	time of day, system/user timing, timeouts, profiling on separate timers
  *	allocate more timeout table slots when table overflows.
  */
-#ifdef notdef
+
 /*
  * Bump a timeval by a small number of usec's.
  */
-bumptime(tp, usec)
-	register struct timeval *tp;
-	int usec;
-{
-
-	tp->tv_usec += usec;
-	if (tp->tv_usec >= 1000000) {
-		tp->tv_usec -= 1000000;
-		tp->tv_sec++;
-	}
-}
-#endif notdef
 #define BUMPTIME(t, usec) { \
 	register struct timeval *tp = (t); \
  \
@@ -132,9 +121,8 @@ hardclock(pc, ps)
 		/*
 		 * CPU was in system state.
 		 */
-		if (! noproc) {
+		if (!noproc)
 			BUMPTIME(&u.u_ru.ru_stime, tick);
-		}
 	}
 
 	/*
@@ -157,7 +145,10 @@ hardclock(pc, ps)
 		    itimerdecr(&u.u_timer[ITIMER_PROF], tick) == 0)
 			psignal(u.u_procp, SIGPROF);
 		s = u.u_procp->p_rssize;
-		u.u_ru.ru_idrss += s; u.u_ru.ru_isrss += 0;	/* XXX */
+		u.u_ru.ru_idrss += s;
+#ifdef notdef
+		u.u_ru.ru_isrss += 0;		/* XXX (haven't got this) */
+#endif
 		if (u.u_procp->p_textp) {
 			register int xrss = u.u_procp->p_textp->x_rssize;
 
@@ -252,7 +243,7 @@ gatherstats(pc, ps)
 	caddr_t pc;
 	int ps;
 {
-	int cpstate, s;
+	register int cpstate, s;
 
 	/*
 	 * Determine what state the cpu is in.
@@ -293,7 +284,7 @@ gatherstats(pc, ps)
 	 */
 	cp_time[cpstate]++;
 	for (s = 0; s < DK_NDRIVE; s++)
-		if (dk_busy&(1<<s))
+		if (dk_busy & (1 << s))
 			dk_time[s]++;
 }
 
@@ -313,7 +304,7 @@ softclock(pc, ps)
 		register int (*func)();
 		register int a, s;
 
-		s = spl7();
+		s = splhigh();
 		if ((p1 = calltodo.c_next) == 0 || p1->c_time > 0) {
 			splx(s);
 			break;
@@ -359,7 +350,7 @@ timeout(fun, arg, t)
 	register int t;
 {
 	register struct callout *p1, *p2, *pnew;
-	register int s = spl7();
+	register int s = splhigh();
 
 	if (t <= 0)
 		t = 1;
@@ -391,7 +382,7 @@ untimeout(fun, arg)
 	register struct callout *p1, *p2;
 	register int s;
 
-	s = spl7();
+	s = splhigh();
 	for (p1 = &calltodo; (p2 = p1->c_next) != 0; p1 = p2) {
 		if (p2->c_func == fun && p2->c_arg == arg) {
 			if (p2->c_next && p2->c_time > 0)
@@ -415,7 +406,7 @@ hzto(tv)
 {
 	register long ticks;
 	register long sec;
-	int s = spl7();
+	int s = splhigh();
 
 	/*
 	 * If number of milliseconds will fit in 32 bit arithmetic,
@@ -454,9 +445,11 @@ profil()
 	upp->pr_scale = uap->pcscale;
 }
 
+#ifdef COMPAT
 opause()
 {
 
 	for (;;)
 		sleep((caddr_t)&u, PSLEP);
 }
+#endif
