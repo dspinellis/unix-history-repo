@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)time.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)time.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -54,8 +54,7 @@ donice(v)
 		nval = 4;
 	else if (*v == 0 && any(cp[0], "+-"))
 		nval = getn(cp);
-	(void) setpriority(PRIO_PROCESS, 0,
-		getpriority(PRIO_PROCESS, 0) + nval);
+	(void) setpriority(PRIO_PROCESS, 0, nval);
 }
 
 ruadd(ru, ru2)
