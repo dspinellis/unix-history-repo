@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)finger.h	5.3 (Berkeley) %G%
+ *	@(#)finger.h	5.4 (Berkeley) %G%
  */
 
 #include <pwd.h>
