@@ -1,7 +1,7 @@
 /*
  * acct [ -w wtmp ] [ -d ] [ -p ] [ people ]
  */
-static char *sccsid = "@(#)ac.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)ac.c	4.4 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -13,7 +13,10 @@ static char *sccsid = "@(#)ac.c	4.3 (Berkeley) %G%";
 #define NMAX sizeof(ibuf.ut_name)
 #define LMAX sizeof(ibuf.ut_line)
 
+/*
 #define	TSIZE	1000
+*/
+#define TSIZE  6242
 #define	USIZE	500
 struct  utmp ibuf;
 
@@ -128,12 +131,31 @@ loop()
 		upall(0);
 		return;
 	}
+	/*
 	if (ibuf.ut_line[0]=='t')
 		i = (ibuf.ut_line[3]-'0')*10 + (ibuf.ut_line[4]-'0');
 	else
 		i = TSIZE-1;
 	if (i<0 || i>=TSIZE)
 		i = TSIZE-1;
+	*/
+
+	/*
+	 * Correction contributed by Phyllis Kantar @ Rand-unix
+	 *
+	 * Fixes long standing problem with tty names other than 00-99
+	 */
+	if (ibuf.ut_line[0]=='t') {
+		i = (ibuf.ut_line[3]-'0');
+		if(ibuf.ut_line[4])
+			i = i*79 + (ibuf.ut_line[4]-'0');
+	} else
+		i = TSIZE-1;
+	if (i<0 || i>=TSIZE) {
+		i = TSIZE-1;
+		printf("ac: Bad tty name: %s\n", ibuf.ut_line);
+	}
+
 	tp = &tbuf[i];
 	update(tp, 0);
 }
