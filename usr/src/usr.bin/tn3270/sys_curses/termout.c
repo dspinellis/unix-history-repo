@@ -744,9 +744,6 @@ BellOff()
 	delwin(bellwin);
 	bellwin = 0;
 	bellwinup = 0;
-	Lowest = MIN(Lowest, LINES/2);
-	Highest = MAX(Highest, (LINES/2)+3);
-	memset((char *)(Terminal+LINES/2), 0, (sizeof Terminal[0])*(3*COLS));
 	touchwin(stdscr);
 	DoARefresh();
     }
