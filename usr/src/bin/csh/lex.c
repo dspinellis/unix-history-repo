@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -80,7 +80,7 @@ static struct wordent *exclnxt = NULL;
 static int exclc = 0;
 
 /* "Globp" for alias resubstitution */
-static Char *alvecp = NULL;
+Char *alvecp = NULL;
 int aret = F_SEEK;
 
 /*
@@ -410,6 +410,7 @@ getdol()
 
     case '<':
     case '$':
+    case '!':
 	if (special)
 	    seterror(ERR_SPDOLLT);
 	*np = 0;
@@ -522,15 +523,49 @@ getdol()
 	 * -strike
 	 */
 
-	int     gmodflag = 0;
+	int     gmodflag = 0, amodflag = 0;
 
 	do {
 	    *np++ = c, c = getC(DOEXCL);
-	    if (c == 'g')
-		gmodflag++, *np++ = c, c = getC(DOEXCL);
+	    if (c == 'g' || c == 'a') {
+		if (c == 'g')
+		    gmodflag++;
+		else
+		    amodflag++;
+		*np++ = c; c = getC(DOEXCL);
+	    }
+	    if ((c == 'g' && !gmodflag) || (c == 'a' && !amodflag)) {
+		if (c == 'g')
+		    gmodflag++;
+		else
+		    amodflag++;
+		*np++ = c; c = getC(DOEXCL);
+	    }
 	    *np++ = c;
-	    if (!any("htrqxe", c)) {
-		if (gmodflag && c == '\n')
+	    /* scan s// [eichin:19910926.0512EST] */
+	    if (c == 's') {
+		int delimcnt = 2;
+		int delim = getC(0);
+		*np++ = delim;
+		
+		if (!delim || letter(delim)
+		    || Isdigit(delim) || any(" \t\n", delim)) {
+		    seterror(ERR_BADSUBST);
+		    break;
+		}	
+		while ((c = getC(0)) != (-1)) {
+		    *np++ = c;
+		    if(c == delim) delimcnt--;
+		    if(!delimcnt) break;
+		}
+		if(delimcnt) {
+		    seterror(ERR_BADSUBST);
+		    break;
+		}
+		c = 's';
+	    }
+	    if (!any("htrqxes", c)) {
+		if ((amodflag || gmodflag) && c == '\n')
 		    stderror(ERR_VARSYN);	/* strike */
 		seterror(ERR_VARMOD, c);
 		*np = 0;
@@ -668,14 +703,21 @@ getsub(en)
     int     delim;
     register int c;
     int     sc;
-    bool global = 0;
+    bool global;
     Char    orhsb[sizeof(rhsb) / sizeof(Char)];
 
     do {
 	exclnxt = 0;
+	global = 0;
 	sc = c = getC(0);
-	if (c == 'g')
-	    global++, sc = c = getC(0);
+	if (c == 'g' || c == 'a') {
+	    global |= (c == 'g') ? 1 : 2;
+	    sc = c = getC(0);
+	}
+	if (((c =='g') && !(global & 1)) || ((c == 'a') && !(global & 2))) {
+	    global |= (c == 'g') ? 1 : 2;
+	    sc = c = getC(0);
+	}
 
 	switch (c) {
 	case 'p':
@@ -684,7 +726,7 @@ getsub(en)
 
 	case 'x':
 	case 'q':
-	    global++;
+	    global |= 1;
 
 	    /* fall into ... */
 
@@ -800,24 +842,46 @@ dosub(sc, en, global)
     bool global;
 {
     struct wordent lexi;
-    bool    didsub = 0;
+    bool    didsub = 0, didone = 0;
     struct wordent *hp = &lexi;
     register struct wordent *wdp;
     register int i = exclc;
 
     wdp = hp;
     while (--i >= 0) {
-	register struct wordent *new;
+	register struct wordent *new = 
+		(struct wordent *) xcalloc(1, sizeof *wdp);
 
-	new = (struct wordent *) xcalloc(1, sizeof *wdp);
 	new->word = 0;
 	new->prev = wdp;
 	new->next = hp;
 	wdp->next = new;
 	wdp = new;
 	en = en->next;
-	wdp->word = (en->word && (global ||didsub == 0)) ?
-	    subword(en->word, sc, &didsub) : Strsave(en->word);
+	if (en->word) {
+	    Char *tword, *otword;
+
+	    if ((global & 1) || didsub == 0) {
+		tword = subword(en->word, sc, &didone);
+		if (didone)
+		    didsub = 1;
+		if (global & 2) {
+		    while (didone && tword != STRNULL) {
+			otword = tword;
+			tword = subword(otword, sc, &didone);
+			if (Strcmp(tword, otword) == 0) {
+			    xfree((ptr_t) otword);
+			    break;
+			}
+			else
+			    xfree((ptr_t) otword);
+		    }
+		}
+	    }
+	    else
+		tword = Strsave(en->word);
+	    wdp->word = tword;
+	}
     }
     if (didsub == 0)
 	seterror(ERR_MODFAIL);
@@ -835,6 +899,7 @@ subword(cp, type, adid)
     register Char *wp, *mp, *np;
     register int i;
 
+    *adid = 0;
     switch (type) {
 
     case 'r':
@@ -941,6 +1006,8 @@ domod(cp, type)
 		return (xp);
 	    }
 	return (Strsave(type == 'e' ? STRNULL : cp));
+    default:
+	break;
     }
     return (0);
 }

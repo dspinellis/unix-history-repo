@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dol.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)dol.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -56,6 +56,7 @@ static int dolcnt;		/* Count of further words */
 static Char dolmod[MAXMOD];	/* : modifier character */
 static int dolnmod;		/* Number of modifiers */
 static int dolmcnt;		/* :gx -> 10000, else 1 */
+static int dolwcnt;		/* :wx -> 10000, else 1 */
 
 static void	 Dfix2 __P((Char **));
 static Char	*Dpack __P((Char *, Char *));
@@ -260,10 +261,13 @@ Dword()
 		    /* Leave all text alone for later */
 		    *wp++ = c;
 		    break;
+
+		default:
+		    break;
 		}
 	    }
 	    if (c1 == '`')
-		*wp++ = '`', --i;
+		*wp++ = '`' /* i--; eliminated */;
 	    sofar = 1;
 	    if ((wp = Dpack(wbuf, wp)) == NULL)
 		return (1);
@@ -280,6 +284,9 @@ Dword()
 		break;
 	    }
 	    c |= QUOTE;
+	    break;
+
+	default:
 	    break;
 	}
 	if (done) {
@@ -374,8 +381,9 @@ Dgetdol()
     bool    dimen = 0, bitset = 0;
     char    tnp;
     Char    wbuf[BUFSIZ];
+    static Char *dolbang = NULL;
 
-    dolnmod = dolmcnt = 0;
+    dolnmod = dolmcnt = dolwcnt = 0;
     c = sc = DgetC(0);
     if (c == '{')
 	c = DgetC(0);		/* sc is { to take } later */
@@ -384,6 +392,16 @@ Dgetdol()
     else if (c == '?')
 	bitset++, c = DgetC(0);	/* $? tests existence */
     switch (c) {
+
+    case '!':
+	if (dimen || bitset)
+	    stderror(ERR_SYNTAX);
+	if (backpid != 0) {
+	    if (dolbang) 
+		xfree((ptr_t) dolbang);
+	    setDolp(dolbang = putn(backpid));
+	}
+	goto eatbrac;
 
     case '$':
 	if (dimen || bitset)
@@ -591,10 +609,46 @@ fixDolMod()
     c = DgetC(0);
     if (c == ':') {
 	do {
-	    c = DgetC(0), dolmcnt = 1;
-	    if (c == 'g')
-		c = DgetC(0), dolmcnt = 10000;
-	    if (!any("htrqxe", c))
+	    c = DgetC(0), dolmcnt = 1, dolwcnt = 1;
+	    if (c == 'g' || c == 'a') {
+		if (c == 'g')
+		    dolmcnt = 10000;
+		else
+		    dolwcnt = 10000;
+		c = DgetC(0);
+	    }
+	    if ((c == 'g' && dolmcnt != 10000) || 
+		(c == 'a' && dolwcnt != 10000)) {
+		if (c == 'g')
+		    dolmcnt = 10000;
+		else
+		    dolwcnt = 10000;
+		c = DgetC(0); 
+	    }
+
+	    if (c == 's') {	/* [eichin:19910926.0755EST] */
+		int delimcnt = 2;
+		int delim = DgetC(0);
+		dolmod[dolnmod++] = c;
+		dolmod[dolnmod++] = delim;
+		
+		if (!delim || letter(delim)
+		    || Isdigit(delim) || any(" \t\n", delim)) {
+		    seterror(ERR_BADSUBST);
+		    break;
+		}	
+		while ((c = DgetC(0)) != (-1)) {
+		    dolmod[dolnmod++] = c;
+		    if(c == delim) delimcnt--;
+		    if(!delimcnt) break;
+		}
+		if(delimcnt) {
+		    seterror(ERR_BADSUBST);
+		    break;
+		}
+		continue;
+	    }
+	    if (!any("htrqxes", c))
 		stderror(ERR_BADMOD, c);
 	    dolmod[dolnmod++] = c;
 	    if (c == 'q')
@@ -619,21 +673,93 @@ setDolp(cp)
 	return;
     }
     dp = cp = Strsave(cp);
-    for (i = 0; i < dolnmod; i++)
-	if ((dp = domod(cp, dolmod[i]))) {
-	    xfree((ptr_t) cp);
-	    cp = dp;
-	    dolmcnt--;
-	}
-	else {
+    for (i = 0; i < dolnmod; i++) {
+	/* handle s// [eichin:19910926.0510EST] */
+	if(dolmod[i] == 's') {
+	    int delim;
+	    Char *lhsub, *rhsub, *np;
+	    size_t lhlen = 0, rhlen = 0;
+	    int didmod = 0;
+		
+	    delim = dolmod[++i];
+	    if (!delim || letter(delim)
+		|| Isdigit(delim) || any(" \t\n", delim)) {
+		seterror(ERR_BADSUBST);
+		break;
+	    }
+	    lhsub = &dolmod[++i];
+	    while(dolmod[i] != delim && dolmod[++i]) {
+		lhlen++;
+	    }
+	    dolmod[i] = 0;
+	    rhsub = &dolmod[++i];
+	    while(dolmod[i] != delim && dolmod[++i]) {
+		rhlen++;
+	    }
+	    dolmod[i] = 0;
+
+	    do {
+		dp = Strstr(cp, lhsub);
+		if (dp) {
+		    np = (Char *) xmalloc((size_t)
+					  ((Strlen(cp) + 1 - lhlen + rhlen) *
+					  sizeof(Char)));
+		    (void) Strncpy(np, cp, dp - cp);
+		    (void) Strcpy(np + (dp - cp), rhsub);
+		    (void) Strcpy(np + (dp - cp) + rhlen, dp + lhlen);
+
+		    xfree((ptr_t) cp);
+		    dp = cp = np;
+		    didmod = 1;
+		} else {
+		    /* should this do a seterror? */
+		    break;
+		}
+	    }
+	    while (dolwcnt == 10000);
+	    /*
+	     * restore dolmod for additional words
+	     */
+	    dolmod[i] = rhsub[-1] = delim;
+	    if (didmod)
+		dolmcnt--;
+	    else
+		break;
+        } else {
+	    int didmod = 0;
+
+	    do {
+		if ((dp = domod(cp, dolmod[i]))) {
+		    didmod = 1;
+		    if (Strcmp(cp, dp) == 0) {
+			xfree((ptr_t) cp);
+			cp = dp;
+			break;
+		    }
+		    else {
+			xfree((ptr_t) cp);
+			cp = dp;
+		    }
+		}
+		else
+		    break;
+	    }
+	    while (dolwcnt == 10000);
 	    dp = cp;
-	    break;
+	    if (didmod)
+		dolmcnt--;
+	    else
+		break;
 	}
+    }
 
     if (dp) {
 	addla(dp);
 	xfree((ptr_t) dp);
     }
+    else
+	addla(cp);
+
     dolp = STRNULL;
     if (seterr)
 	stderror(ERR_OLD);
