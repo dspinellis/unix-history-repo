@@ -1,4 +1,4 @@
-/*	kern_descrip.c	5.21	82/12/28	*/
+/*	kern_descrip.c	5.22	83/01/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -352,21 +352,18 @@ selwakeup(p, coll)
 	register struct proc *p;
 	int coll;
 {
-	int s;
 
 	if (coll) {
 		nselcoll++;
 		wakeup((caddr_t)&selwait);
 	}
 	if (p) {
+		int s = spl6();
 		if (p->p_wchan == (caddr_t)&selwait)
 			setrun(p);
-		else {
-			s = spl6();
-			if (p->p_flag & SSEL)
-				p->p_flag &= ~SSEL;
-			splx(s);
-		}
+		else if (p->p_flag & SSEL)
+			p->p_flag &= ~SSEL;
+		splx(s);
 	}
 }
 
