@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_il.c	6.13 (Berkeley) %G%
+ *	@(#)if_il.c	6.14 (Berkeley) %G%
  */
 
 #include "il.h"
@@ -56,6 +56,7 @@ struct	uba_driver ildriver =
 	{ ilprobe, 0, ilattach, 0, ilstd, "il", ilinfo };
 #define	ILUNIT(x)	minor(x)
 int	ilinit(),iloutput(),ilioctl(),ilreset(),ilwatch();
+int	ildebug = 0;
 
 /*
  * Ethernet software status per interface.
@@ -140,10 +141,9 @@ ilattach(ui)
 	addr->il_csr = ((is->is_ubaddr >> 2) & IL_EUA)|ILC_STAT;
 	(void)ilwait(ui, "status");
 	ubarelse(ui->ui_ubanum, &is->is_ubaddr);
-#ifdef notdef
-	printf("il%d: module=%s firmware=%s\n", ui->ui_unit,
-		is->is_stats.ils_module, is->is_stats.ils_firmware);
-#endif
+	if (ildebug)
+		printf("il%d: module=%s firmware=%s\n", ui->ui_unit,
+			is->is_stats.ils_module, is->is_stats.ils_firmware);
  	bcopy((caddr_t)is->is_stats.ils_addr, (caddr_t)is->is_addr,
  	    sizeof (is->is_addr));
 	printf("il%d: hardware address %s\n", ui->ui_unit,
@@ -153,9 +153,6 @@ ilattach(ui)
 	ifp->if_ioctl = ilioctl;
 	ifp->if_reset = ilreset;
 	is->is_ifuba.ifu_flags = UBA_CANTWAIT;
-#ifdef notdef
-	is->is_ifuba.ifu_flags |= UBA_NEEDBDP;
-#endif
 	if_attach(ifp);
 }
 
