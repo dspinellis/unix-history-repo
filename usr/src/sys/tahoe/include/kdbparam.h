@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdbparam.h	7.7 (Berkeley) %G%
+ *	@(#)kdbparam.h	7.8 (Berkeley) %G%
  */
 
 #define DBNAME "kdb\n"
@@ -14,7 +14,7 @@
 #define	MAXSTOR (KERNBASE - ctob(UPAGES))
 
 #define	ENTRYMASK	1			/* check for entry masks */
-#define	ishiddenreg(p)	((p) <= &reglist[8])
+#define	ishiddenreg(p)	((p) <= &kdbreglist[8])
 
 #define BPT	0x30
 #define KCALL	0xcf
@@ -24,19 +24,19 @@
 #define	KDB_IPL		0xf	/* highest priority software interrupt */
 #define	setsoftkdb()	mtpr(SIRR, KDB_IPL)
 
-#define	clrsstep()	(pcb.pcb_psl &= ~TBIT)
-#define	setsstep()	(pcb.pcb_psl |= TBIT)
+#define	clrsstep()	(kdbpcb.pcb_psl &= ~TBIT)
+#define	setsstep()	(kdbpcb.pcb_psl |= TBIT)
 
 #define	SETBP(ins)	((BPT<<24) | ((ins) & 0xffffff))
 
-#define	getprevpc(fp)	get((off_t)(fp)-8, DSP)	/* pc of caller */
-#define	getprevframe(fp) (get((off_t)(fp), DSP)&~3)	/* fp of caller */
-#define	getnargs(fp)	(((get((off_t)(fp)-4, DSP)&0xffff)-4)/4)
+#define	getprevpc(fp)	kdbget((off_t)(fp)-8, DSP)	/* pc of caller */
+#define	getprevframe(fp) (kdbget((off_t)(fp), DSP)&~3)	/* fp of caller */
+#define	getnargs(fp)	(((kdbget((off_t)(fp)-4, DSP)&0xffff)-4)/4)
 #define	nextarg(ap)	((ap) + 4)		/* next argument in list */
 #define	NOFRAME		0			/* fp at top of call stack */
 
 #define	issignalpc(pc)	((unsigned)MAXSTOR < (pc) && (pc) < (unsigned)KERNBASE)
-#define	getsignalpc(fp)	get((off_t)(fp)+44, DSP)/* pc of caller before signal */
+#define	getsignalpc(fp)	kdbget((off_t)(fp)+44, DSP)/* pc of caller before signal */
 
 #define leng(a)		((long)((unsigned)(a)))
 #define shorten(a)	(((a) >> 16) & 0xffff)
