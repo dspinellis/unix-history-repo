@@ -1,4 +1,4 @@
-/*	vfs_lookup.c	6.6	84/02/15	*/
+/*	vfs_lookup.c	6.7	84/06/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -152,7 +152,7 @@ namei(func, flag, follow)
 	 */
 	nbp = geteblk(MAXPATHLEN);
 	for (cp = nbp->b_un.b_addr; *cp = (*func)(); ) {
-		if ((*cp&0377) == ('/'|0200) || (*cp&0200) && flag != LOOKUP) {
+		if ((*cp&0377) == ('/'|0200) || (*cp&0200) && flag != DELETE) {
 			u.u_error = EPERM;
 			goto bad;
 		}
@@ -255,7 +255,9 @@ dirloop2:
 			nchstats.ncs_miss++;
 			ncp = NULL;
 		} else {
-			if (*cp == '/' || docache) {
+			if (ncp->nc_id != ncp->nc_ip->i_id)
+				nchstats.ncs_falsehits++;
+			else if (*cp == '/' || docache) {
 
 				nchstats.ncs_goodhits++;
 
@@ -279,25 +281,29 @@ dirloop2:
 				dp = ncp->nc_ip;
 				if (dp == NULL)
 					panic("nami: null cache ino");
-				if (pdp != dp) {
+				if (pdp == dp)
+					dp->i_count++;
+				else if (dp->i_count) {
+					dp->i_count++;
 					ilock(dp);
-					dp->i_count++;
 					iunlock(pdp);
-				} else
-					dp->i_count++;
+				} else {
+					igrab(dp);
+					iunlock(pdp);
+				}
 
 				u.u_dent.d_ino = dp->i_number;
 				/* u_dent.d_reclen is garbage ... */
 
 				goto haveino;
-			}
+			} else
+				nchstats.ncs_badhits++;
 
 			/*
-			 * last segment and we are renaming or deleting
-			 * or otherwise don't want cache entry to exist
+			 * Last component and we are renaming or deleting,
+			 * the cache entry is invalid, or otherwise don't
+			 * want cache entry to exist.
 			 */
-
-			nchstats.ncs_badhits++;
 
 				/* remove from LRU chain */
 			*ncp->nc_prev = ncp->nc_nxt;
@@ -308,10 +314,6 @@ dirloop2:
 
 				/* remove from hash chain */
 			remque(ncp);
-
-				/* release ref on the inode */
-			irele(ncp->nc_ip);
-			ncp->nc_ip = NULL;
 
 				/* insert at head of LRU list (first to grab) */
 			ncp->nc_nxt = nchhead;
@@ -696,7 +698,7 @@ found:
 	 * all other cases where making a cache entry would be wrong
 	 * have already departed from the code sequence somewhere above.
 	 */
-	if (bcmp(u.u_dent.d_name, ".", 2) != 0 && !isdotdot && docache) {
+	if (docache) {
 		if (ncp != NULL)
 			panic("nami: duplicating cache");
 
@@ -714,18 +716,14 @@ found:
 				/* remove from old hash chain */
 			remque(ncp);
 
-				/* drop hold on inode (if we had one) */
-			if (ncp->nc_ip)
-				irele(ncp->nc_ip);
-
 				/* grab the inode we just found */
 			ncp->nc_ip = dp;
-			dp->i_count++;
 
 				/* fill in cache info */
 			ncp->nc_ino = pdp->i_number;	/* parents inum */
 			ncp->nc_dev = pdp->i_dev;	/* & device */
 			ncp->nc_idev = dp->i_dev;	/* our device */
+			ncp->nc_id = dp->i_id;		/* identifier */
 			ncp->nc_nlen = u.u_dent.d_namlen;
 			bcopy(u.u_dent.d_name, ncp->nc_name, ncp->nc_nlen);
 
