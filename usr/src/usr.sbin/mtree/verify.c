@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)verify.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)verify.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -34,8 +34,11 @@ vwalk()
 	register FTS *t;
 	register FTSENT *p;
 	register NODE *ep, *level;
+	char *argv[2];
 
-	if (!(t = ftsopen(".", ftsoptions, (int (*)())NULL))) {
+	argv[0] = ".";
+	argv[1] = (char *)NULL;
+	if (!(t = ftsopen(argv, ftsoptions, (int (*)())NULL))) {
 		(void)fprintf(stderr,
 		    "mtree: ftsopen: %s.\n", strerror(errno));
 		exit(1);
