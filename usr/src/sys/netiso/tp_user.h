@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_user.h,v 5.2 88/11/04 15:44:44 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_user.h,v $
- *	@(#)tp_user.h	7.6 (Berkeley) %G%
+ *	@(#)tp_user.h	7.7 (Berkeley) %G%
  *
  * These are the values a real-live user ;-) needs. 
  */
@@ -48,24 +48,24 @@ SOFTWARE.
 struct tp_conn_param {
 	/* PER CONNECTION parameters */
 	short	p_Nretrans; 
-	short p_dr_ticks;
+	short	p_dr_ticks;
 
-	short p_cc_ticks;
-	short p_dt_ticks;
+	short	p_cc_ticks;
+	short	p_dt_ticks;
 
-	short p_x_ticks;
-	short p_cr_ticks;
+	short	p_x_ticks;
+	short	p_cr_ticks;
 
-	short p_keepalive_ticks;
-	short p_sendack_ticks;
+	short	p_keepalive_ticks;
+	short	p_sendack_ticks;
 
-	short p_ref_ticks;
-	short p_inact_ticks;
+	short	p_ref_ticks;
+	short	p_inact_ticks;
 
-	short p_unused;	/* local credit fraction reported (>0) no longer used*/
-	short p_winsize;
+	short	p_unused;	/* was .. local credit fraction reported (>0) */
+	short	p_winsize;
 
-	u_char p_tpdusize; 	/* log 2 of size */
+	u_char	p_tpdusize; 	/* log 2 of size */
 
 	u_char	p_ack_strat;	/* see comments in tp_pcb.h */
 	u_char	p_rx_strat;	/* see comments in tp_pcb.h */
@@ -76,9 +76,10 @@ struct tp_conn_param {
 	u_char	p_use_nxpd; 	/* netwk expedited data: not implemented */
 	u_char	p_use_rcc;	/* receipt confirmation: not implemented */
 	u_char	p_use_efc;	/* explicit flow control: not implemented */
-	u_char	p_no_disc_indications; /* don't deliver indic on disc */
-	u_char	p_dont_change_params; /* use these params as they are */
+	u_char	p_no_disc_indications;	/* don't deliver indic on disc */
+	u_char	p_dont_change_params;	/* use these params as they are */
 	u_char	p_netservice;
+	u_char	p_version;	/* only here for checking */
 };
 
 /*
