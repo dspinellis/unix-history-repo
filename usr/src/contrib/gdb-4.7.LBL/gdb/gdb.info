@@ -1,0 +1,190 @@
+This is Info file ./gdb.info, produced by Makeinfo-1.47 from the input
+file gdb-all.texi.
+
+START-INFO-DIR-ENTRY
+* Gdb: (gdb).                   The GNU debugger.
+END-INFO-DIR-ENTRY
+   This file documents the GNU debugger GDB.
+
+   This is Edition 4.06, October 1992, of `Debugging with GDB: the GNU
+Source-Level Debugger' for GDB Version 4.7.
+
+   Copyright (C) 1988, 1989, 1990, 1991, 1992 Free Software Foundation,
+Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the section entitled "GNU General Public License" is included
+exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the section entitled "GNU General Public License"
+may be included in a translation approved by the Free Software
+Foundation instead of in the original English.
+
+Indirect:
+gdb.info-1: 1271
+gdb.info-2: 49872
+gdb.info-3: 97610
+gdb.info-4: 146587
+gdb.info-5: 196112
+gdb.info-6: 245146
+gdb.info-7: 293557
+gdb.info-8: 315033
+
+Tag Table:
+(Indirect)
+Node: Top1273
+Node: Summary2793
+Node: Free Software3788
+Node: Contributors4591
+Node: New Features8173
+Node: Sample Session12236
+Node: Invocation19127
+Node: Invoking GDB19561
+Node: File Options21454
+Node: Mode Options24327
+Node: Leaving GDB26417
+Node: Shell Commands27132
+Node: Commands27922
+Node: Command Syntax28530
+Node: Completion30355
+Node: Help34423
+Node: Running38185
+Node: Compilation38924
+Node: Starting40718
+Node: Arguments43902
+Node: Environment44890
+Node: Working Directory47536
+Node: Input/Output48270
+Node: Attach49874
+Node: Kill Process52089
+Node: Process Information53064
+Node: Stopping54323
+Node: Breakpoints55390
+Node: Set Breaks57396
+Node: Set Watchpoints63890
+Node: Exception Handling64720
+Node: Delete Breaks67276
+Node: Disabling68906
+Node: Conditions71551
+Node: Break Commands76332
+Node: Breakpoint Menus79821
+Node: Error in Breakpoints81525
+Node: Continuing and Stepping82428
+Node: Signals88568
+Node: Stack92202
+Node: Frames93607
+Node: Backtrace95881
+Node: Selection97612
+Node: Frame Info100099
+Node: Source102157
+Node: List103105
+Node: Search106583
+Node: Source Path107382
+Node: Machine Code110059
+Node: Data113003
+Node: Expressions114856
+Node: Variables116540
+Node: Arrays119086
+Node: Output formats121137
+Node: Memory123000
+Node: Auto Display127245
+Node: Print Settings130965
+Node: Value History136494
+Node: Convenience Vars138875
+Node: Registers141529
+Node: Floating Point Hardware146131
+Node: Languages146589
+Node: Setting147755
+Node: Manually148289
+Node: Automatically149440
+Node: Show150757
+Node: Checks151665
+Node: Type Checking153020
+Node: Range Checking155702
+Node: Support158049
+Node: C158986
+Node: C Operators159815
+Node: C Constants163834
+Node: Cplusplus expressions165390
+Node: C Defaults168016
+Node: C Checks168637
+Node: Debugging C169437
+Node: Debugging C plus plus169916
+Node: Modula-2171906
+Node: M2 Operators172793
+Node: Built-In Func/Proc175769
+Node: M2 Constants178511
+Node: M2 Defaults180099
+Node: Deviations180699
+Node: M2 Checks181789
+Node: M2 Scope182589
+Node: GDB/M2183601
+Node: Symbols184539
+Node: Altering190302
+Node: Assignment191282
+Node: Jumping193440
+Node: Signaling195447
+Node: Returning196114
+Node: Calling197306
+Node: Patching197794
+Node: GDB Files198884
+Node: Files199347
+Node: Symbol Errors209253
+Node: Targets212847
+Node: Active Targets213737
+Node: Target Commands215316
+Node: Remote218378
+Node: Remote Serial219617
+Node: stub contents221836
+Node: bootstrapping223956
+Node: debug session225833
+Node: protocol227451
+Node: i960-Nindy Remote230288
+Node: Nindy Startup231107
+Node: Nindy Options231793
+Node: Nindy reset233415
+Node: EB29K Remote233799
+Node: Comms (EB29K)234398
+Node: gdb-EB29K237598
+Node: Remote Log238962
+Node: ST2000 Remote239437
+Node: VxWorks Remote240646
+Node: VxWorks connection242218
+Node: VxWorks download243216
+Node: VxWorks attach244755
+Node: Hitachi H8/300 Remote245148
+Node: Controlling GDB249166
+Node: Prompt249789
+Node: Editing250390
+Node: History251157
+Node: Screen Size253640
+Node: Numbers254915
+Node: Messages/Warnings256057
+Node: Sequences259107
+Node: Define259667
+Node: Hooks261664
+Node: Command Files263091
+Node: Output264350
+Node: Emacs266731
+Node: GDB Bugs272695
+Node: Bug Criteria273409
+Node: Bug Reporting274163
+Node: Renamed Commands281364
+Node: Formatting Documentation283007
+Node: Installing GDB286263
+Node: Separate Objdir289614
+Node: Config Names292159
+Node: configure Options293559
+Node: Copying295881
+Node: Index315035
+
+End Tag Table
