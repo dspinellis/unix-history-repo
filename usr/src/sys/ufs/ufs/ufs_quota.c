@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_quota.c	7.9 (Berkeley) %G%
+ *	@(#)ufs_quota.c	7.10 (Berkeley) %G%
  */
 #include "param.h"
 #include "kernel.h"
@@ -580,14 +580,25 @@ qsync(mp)
 	register int i;
 
 	/*
-	 * Search vnodes associated with this mount point,
-	 * synchronizing any modified dquot structures.
+	 * Check if the mount point has any quotas.
+	 * If not, simply return.
 	 */
 	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
 		panic("qsync: not busy");
+	for (i = 0; i < MAXQUOTAS; i++)
+		if (ump->um_quotas[i] != NULLVP)
+			break;
+	if (i == MAXQUOTAS)
+		return (0);
+	/*
+	 * Search vnodes associated with this mount point,
+	 * synchronizing any modified dquot structures.
+	 */
 again:
 	for (vp = mp->mnt_mounth; vp; vp = nextvp) {
 		nextvp = vp->v_mountf;
+		if (VOP_ISLOCKED(vp))
+			continue;
 		if (vget(vp))
 			goto again;
 		for (i = 0; i < MAXQUOTAS; i++) {
