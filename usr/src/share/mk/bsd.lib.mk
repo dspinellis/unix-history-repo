@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.29 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.26.1.1 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -35,6 +35,13 @@ BINMODE?=	555
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
 
+.if (${MACHINE} == "mips")
+NOPROFILE=1
+.s.o:
+	${AS} ${CFLAGS:M-[ID]*} ${AINC} -o ${.TARGET} ${.IMPSRC}
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
+.else
 .s.o:
 	${CPP} -E ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
 	    ${AS} -o ${.TARGET}
@@ -46,6 +53,7 @@ BINMODE?=	555
 	    ${AS} -o ${.TARGET}
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
+.endif
 
 MANALL=	${MAN1} ${MAN2} ${MAN3} ${MAN4} ${MAN5} ${MAN6} ${MAN7} ${MAN8}
 manpages: ${MANALL}
@@ -66,7 +74,11 @@ OBJS+=	${SRCS:R:S/$/.o/g}
 lib${LIB}.a:: ${OBJS}
 	@echo building standard ${LIB} library
 	@rm -f lib${LIB}.a
+.if (${MACHINE} == "mips")
+	@${AR} cq lib${LIB}.a `lorder ${OBJS} | tsort` ${LDADD}
+.else
 	@${AR} cTq lib${LIB}.a `lorder ${OBJS} | tsort` ${LDADD}
+.endif
 	ranlib lib${LIB}.a
 
 POBJS+=	${OBJS:.o=.po}
