@@ -1,19 +1,19 @@
 #ifndef lint
-static char *sccsid = "@(#)ac.c	4.8 (Berkeley) %G%";
+static char *sccsid = "@(#)ac.c	4.9 (Berkeley) %G%";
 #endif
 /*
  * ac [ -w wtmp ] [ -d ] [ -p ] [ people ]
  */
 
-#include <stdio.h>
-#include <ctype.h>
-#include <utmp.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/timeb.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <utmp.h>
 
-#define NMAX sizeof(ibuf.ut_name)
-#define LMAX sizeof(ibuf.ut_line)
+#define NMAX UT_NAMESIZE
+#define LMAX UT_LINESIZE
 
 /*
 #define	TSIZE	1000
@@ -48,7 +48,7 @@ char **argv;
 	register i;
 	FILE *wf;
 
-	wtmp = "/usr/adm/wtmp";
+	wtmp = _PATH_WTMP;
 	while (--argc > 0 && **++argv == '-')
 	switch(*++*argv) {
 	case 'd':
