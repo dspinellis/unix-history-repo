@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)raw_cb.h	6.3 (Berkeley) %G%
+ *	@(#)raw_cb.h	6.4 (Berkeley) %G%
  */
 
 /*
@@ -18,6 +18,7 @@ struct rawcb {
 	struct	sockaddr rcb_laddr;	/* socket's address */
 	struct	sockproto rcb_proto;	/* protocol family, protocol */
 	caddr_t	rcb_pcb;		/* protocol specific stuff */
+	struct	mbuf *rcb_options;	/* protocol specific options */
 	struct	route rcb_route;	/* routing information */
 	short	rcb_flags;
 };

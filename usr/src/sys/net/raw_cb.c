@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)raw_cb.c	6.8 (Berkeley) %G%
+ *	@(#)raw_cb.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -81,6 +81,8 @@ raw_detach(rp)
 	so->so_pcb = 0;
 	sofree(so);
 	remque(rp);
+	if (rp->rcb_options)
+		m_freem(dtom(rp->rcb_options));
 	m_freem(dtom(rp));
 }
 
