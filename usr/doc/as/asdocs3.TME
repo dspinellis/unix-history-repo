@@ -1,0 +1,3966 @@
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ps \n(99
+.ft \n(98
+.EN
+.\"
+.\"	Copyright (c) 1982 Regents of the University of California
+.\"	%Z%%M% %I% %G%
+.\"
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ps \n(99
+.ft \n(98
+.EN
+.SH 1 "Pseudo-operations (Directives)"
+.pp
+The keywords listed below introduce directives or instructions,
+and influence the later behavior of the assembler for this statement.
+The metanotation
+.ce 1
+[ stuff ]
+.ce 0
+means that 0 or more instances of the given
+.q stuff
+may appear.
+.pp
+.b Boldface
+tokens must appear literally;
+words in
+.i italic
+words are substitutable.
+.pp
+The pseudo\-operations listed below
+are grouped into functional categories.
+.SH 2 "Interface to a Previous Pass"
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.ABORT\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 33 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.ABORT\f\n(31\h'|\n(41u'
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-3
+.in +2n
+.pp
+As soon as the assembler sees this directive,
+it ignores all further input
+(but it does read to the end of file),
+and aborts the assembly.
+No files are created.
+It is anticipated that this would be used in a pipe interconnected
+version of a compiler,
+where the first major syntax error would
+cause the compiler to issue this directive,
+saving unnecessary work in assembling code
+that would have to be discarded anyway.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.file\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 51 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.file\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-3
+.in +2n
+.pp
+This directive causes the assembler to think it is in file
+.i string ,
+so error messages reflect the proper source file.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.line\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 61 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.line\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-3
+.in +2n
+.pp
+This directive causes the assembler to think it is on line
+.i expression
+so error messages reflect the proper source file.
+.pp
+The only effect of assembling multiple files specified in the command string
+is to insert the
+.i file
+and
+.i line
+directives,
+with the appropriate values,
+at the beginning of the source from each file.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3#\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3#\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " 
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 81 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3#\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " 
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3#\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-4
+.in +2n
+.pp
+This is the only instance where a comment is meaningful to the assembler.
+The
+.q "#"
+.ul 1
+must
+be in the first column.
+This meta comment causes the assembler
+to believe it is on line
+.i expression .
+The second argument,
+if included,
+causes the assembler to believe it is in file
+.i string ,
+otherwise the current file name does not change.
+.SH 2 "Location Counter Control"
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.data\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.text\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w[ 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w[ 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 104 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.data\f\n(31\h'|\n(41u'[ 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.text\f\n(31\h'|\n(41u'[ 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-4
+.in +2n
+.pp
+These two pseudo-operations cause the
+assembler to begin assembling into the indicated text or data
+subsegment.
+If specified,
+the
+.i expression
+must be defined and absolute;
+an omitted
+.i expression
+is treated as zero.
+The effect of a
+.b .data
+directive is treated
+as a
+.b .text
+directive if the
+.b \-R
+assembly flag is set.
+Assembly starts in the
+.b ".text"
+0 subsegment.
+.pp
+The directives
+.b .align
+and
+.b .org
+also control the placement of the location counter.
+.sh 2 "Filled Data"
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.align\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "align\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "\^f\|ill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 139 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.align\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "align\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "\^f\|ill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-3
+.in +2n
+.pp
+The location counter is adjusted
+so that the
+.i expression
+lowest bits of the location counter become zero.
+This is done by
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "assembling from 0 to 
+.ps 10
+.ft 2
+.ds 12 "\f12\fP
+.ds 13 "align\|\*(USexpr
+.as 12 \v'-24u'\s-3\*(13\s+3\|\v'24u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " bytes,
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "taken from the low order byte of 
+.ps 10
+.ft 2
+.ds 12 "\^f\|ill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ".
+.ps \n(99
+.ft \n(98
+\*(11
+If present,
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "\^f\|ill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " must be absolute;
+.ps \n(99
+.ft \n(98
+\*(11
+otherwise it defaults to 0.
+Thus
+.q ".align 2"
+pads by null bytes to make the location counter
+evenly divisible by 4.
+The
+.i align_expr
+must be defined,
+absolute, nonnegative,
+and less than 16.
+.pp
+Warning:
+the subsegment concatenation convention
+and the current loader conventions
+may not preserve attempts at aligning
+to more than 2 low-order zero bits.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.org\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "org\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "\^f\|ill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 171 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.org\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "org\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "\^f\|ill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-3
+.in +2n
+.pp
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "The location counter is set equal to the value of 
+.ps 10
+.ft 2
+.ds 12 "org\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+which must be defined and absolute.
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "The value of the 
+.ps 10
+.ft 2
+.ds 12 "org\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+must be greater than the current value
+of the location counter.
+Space between the current value of the location counter
+and the desired value are filled with bytes taken from the
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "low order byte of 
+.ps 10
+.ft 2
+.ds 12 "\^f\|ill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+which must be absolute and defaults to 0.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.space\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "space\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "\^f\|ill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 187 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.space\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "space\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "\^f\|ill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-3
+.in +2n
+.pp
+The location counter is advanced by
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "space\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " bytes.
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "Space\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " must be defined and absolute.
+.ps \n(99
+.ft \n(98
+\*(11
+The space is filled in with bytes taken from the low order
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "byte of 
+.ps 10
+.ft 2
+.ds 12 "\^f\|ill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+which must be defined and absolute.
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "Fill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " defaults to 0.
+.ps \n(99
+.ft \n(98
+\*(11
+The
+.b .fill
+directive is a more general way to accomplish the
+.b .space
+directive.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.fill\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "rep\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "size\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "\^f\|ill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 206 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.fill\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "rep\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "size\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "\^f\|ill\|\*(USexpr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-3
+.in +2n
+.pp
+All three expressions must be absolute.
+.i fill\*(USexpr ,
+treated as an expression of size
+.i size\*(USexpr
+bytes,
+is assembled and replicated
+.i rep\*(USexpr
+times.
+The effect is to advance the current location counter
+.i rep\*(USexpr
+\(**
+.i size\*(USexpr
+bytes.
+.i size\*(USexpr
+must be between 1 and 8.
+.SH 2 "Symbol Definitions"
+.SH 2 "Initialized Data"
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.byte\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.word\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.int\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.long\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 233 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.byte\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.word\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.int\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.long\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ \fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-6
+.in +2n
+.pp
+The
+.i expression s
+in the comma-separated
+list are truncated to the size indicated by the key word:
+.(b
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \wkeyword
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.byte\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.word\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.int\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.long\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \wlength (bits)
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 31 0
+.nr 32 0
+.nr 38 \w8
+.if \n(31<\n(38 .nr 31 \n(38
+.nr 38 \w16
+.if \n(31<\n(38 .nr 31 \n(38
+.nr 38 \w32
+.if \n(31<\n(38 .nr 31 \n(38
+.nr 38 \w32
+.if \n(31<\n(38 .nr 31 \n(38
+.81
+.rm 81
+.nr 61 \n(31
+.nr 38 \n(61+\n(32
+.if \n(38>\n(81 .nr 81 \n(38
+.if \n(38<\n(81 .nr 61 +(\n(81-\n(38)/2
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr 61 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 252 file Input is too wide - \n(TW units
+.nr #I \n(.i
+.in +(\n(.lu-\n(TWu-\n(.iu)/2u
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'keyword\h'|\n(41u'length (bits)
+.nr 36 \n(.v
+.vs \n(.vu-\n(.sp
+\h'|0'\s\n(33\l'|\n(TWu\(ul'\s0
+.vs \n(36u
+.ta \n(80u \n(61u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.byte\f\n(31\h'|\n(41u'8
+.ta \n(80u \n(61u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.word\f\n(31\h'|\n(41u'16
+.ta \n(80u \n(61u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.int\f\n(31\h'|\n(41u'32
+.ta \n(80u \n(61u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.long\f\n(31\h'|\n(41u'32
+.fc
+.nr T. 1
+.T# 1
+.in \n(#Iu
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-10
+.in +2n
+.)b
+and assembled in successive locations.
+The
+.i expression s
+must be absolute.
+.pp
+Each
+.i expression
+may optionally be of the form:
+.(b
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80
+.nr 80 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " : 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr TW \n(80
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 268 file Input is too wide - \n(TW units
+.nr #I \n(.i
+.in +(\n(.lu-\n(TWu-\n(.iu)/2u
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " : 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.in \n(#Iu
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-4
+.)b
+In this case,
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "the value of 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " is truncated
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "to 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " bits,
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "and assembled in the next 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " bit field
+.ps \n(99
+.ft \n(98
+\*(11
+which fits in the natural data size being assembled.
+Bits which are skipped because a field does not fit are filled with zeros.
+Thus,
+.q "\fB.byte\fP 123"
+is equivalent to
+.q "\fB.byte\fP 8:123" ,
+and
+.q "\fB.byte\fP 3:1,2:1,5:1"
+assembles two bytes, containing the values 9 and 1.
+.pp
+.b NB:
+Bit field initialization with the colon operator is likely
+to disappear in future releases of the assembler.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.quad\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.octa\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.float\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.double\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.ffloat\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.dfloat\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.gfloat\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.hfloat\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 298 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.quad\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.octa\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.float\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.double\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.ffloat\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.dfloat\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.gfloat\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.hfloat\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ]
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-10
+.in +2n
+.pp
+These initialize Bignums (see \(sc3.2.2)
+in successive locations whose size is a function on the key word.
+The type of the Bignums
+(determined by the exponent field, or lack thereof)
+may not agree with type implied by the key word.
+The following table shows the key words,
+their size,
+and the data types for the Bignums they expect.
+.(b
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81 82 83
+.nr 80 0
+.nr 38 \wkeyword
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.quad\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.octa\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.float\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.ffloat\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.double\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.dfloat\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.gfloat\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.hfloat\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 38 \wformat
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wquad scalar
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \woctal scalar
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wF float
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wF float
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wD float
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wD float
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wG float
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 38 \wH float
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 82 0
+.nr 38 \wlength (bits)
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w64
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w128
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w32
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w32
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w64
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w64
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w64
+.if \n(82<\n(38 .nr 82 \n(38
+.nr 38 \w128
+.if \n(82<\n(38 .nr 82 \n(38
+.82
+.rm 82
+.nr 83 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \wvalid 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "(s)
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(83<\n(38 .nr 83 \n(38
+.nr 38 \wscalar
+.if \n(83<\n(38 .nr 83 \n(38
+.nr 38 \wscalar
+.if \n(83<\n(38 .nr 83 \n(38
+.nr 38 \wF, D and scalar
+.if \n(83<\n(38 .nr 83 \n(38
+.nr 38 \wF, D and scalar
+.if \n(83<\n(38 .nr 83 \n(38
+.nr 38 \wF, D and scalar
+.if \n(83<\n(38 .nr 83 \n(38
+.nr 38 \wF, D and scalar
+.if \n(83<\n(38 .nr 83 \n(38
+.nr 38 \wG scalar
+.if \n(83<\n(38 .nr 83 \n(38
+.nr 38 \wH scalar
+.if \n(83<\n(38 .nr 83 \n(38
+.83
+.rm 83
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr 42 \n(81+(3*\n(38)
+.nr 82 +\n(42
+.nr 43 \n(82+(3*\n(38)
+.nr 83 +\n(43
+.nr TW \n(83
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 325 file Input is too wide - \n(TW units
+.nr #I \n(.i
+.in +(\n(.lu-\n(TWu-\n(.iu)/2u
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u \n(82u \n(83u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'keyword\h'|\n(41u'format\h'|\n(42u'length (bits)\h'|\n(43u'valid 
+.ps 10
+.ft 2
+.ds 12 "number
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "(s)
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 36 \n(.v
+.vs \n(.vu-\n(.sp
+\h'|0'\s\n(33\l'|\n(TWu\(ul'\s0
+.vs \n(36u
+.ta \n(80u \n(81u \n(82u \n(83u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.quad\f\n(31\h'|\n(41u'quad scalar\h'|\n(42u'64\h'|\n(43u'scalar
+.ta \n(80u \n(81u \n(82u \n(83u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.octa\f\n(31\h'|\n(41u'octal scalar\h'|\n(42u'128\h'|\n(43u'scalar
+.ta \n(80u \n(81u \n(82u \n(83u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.float\f\n(31\h'|\n(41u'F float\h'|\n(42u'32\h'|\n(43u'F, D and scalar
+.ta \n(80u \n(81u \n(82u \n(83u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.ffloat\f\n(31\h'|\n(41u'F float\h'|\n(42u'32\h'|\n(43u'F, D and scalar
+.ta \n(80u \n(81u \n(82u \n(83u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.double\f\n(31\h'|\n(41u'D float\h'|\n(42u'64\h'|\n(43u'F, D and scalar
+.ta \n(80u \n(81u \n(82u \n(83u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.dfloat\f\n(31\h'|\n(41u'D float\h'|\n(42u'64\h'|\n(43u'F, D and scalar
+.ta \n(80u \n(81u \n(82u \n(83u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.gfloat\f\n(31\h'|\n(41u'G float\h'|\n(42u'64\h'|\n(43u'G scalar
+.ta \n(80u \n(81u \n(82u \n(83u 
+.nr 31 \n(.f
+.nr 35 1m
+\&\h'|\n(40u'\f3\&.hfloat\f\n(31\h'|\n(41u'H float\h'|\n(42u'128\h'|\n(43u'H scalar
+.fc
+.nr T. 1
+.T# 1
+.in \n(#Iu
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-14
+.in +2n
+.)b
+.pp
+.i As
+will correctly perform other floating point conversions while initializing,
+but issues a warning message.
+.i As
+performs all floating point initializations and conversions
+using only the facilities defined
+in the original (native) architecture.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.ascii\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.asciz\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "]
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 341 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.ascii\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "]
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.asciz\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " [ , 
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "]
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-4
+.in +2n
+.pp
+Each
+.i string
+in the list is assembled into successive locations,
+with the first letter in the string being placed
+into the first location, etc.
+The
+.b .ascii
+directive will not null pad the string;
+the
+.b .asciz
+directive will null pad the string.
+(Recall that strings are known by their length,
+and need not be terminated with a null,
+and that the \*(CL conventions for escaping are understood.)
+The
+.b .ascii
+directive is identical to:
+.br
+.b .byte
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 13 "\f10\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.b ,
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.b ,
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "\v'-.3m'\ .\ .\ .\ \v'.3m'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.br
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.comm\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 373 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.comm\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-3
+.in +2n
+.pp
+Provided the
+.i name
+is not defined elsewhere,
+its type is made
+.q "undefined external" ,
+and its value is
+.i expression .
+In fact the
+.i name
+behaves
+in the current assembly just like an
+undefined external.
+However,
+the link editor
+.i ld
+has been special-cased
+so that all external symbols which are not otherwise defined,
+and which have a non-zero value,
+are defined to lie in the bss segment,
+and enough space is left after the symbol to hold
+.i expression
+bytes.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.lcomm\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 402 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.lcomm\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-3
+.in +2n
+.pp
+.i expression
+bytes will be allocated in the bss segment and
+.i name
+assigned the location of the first byte,
+but the
+.i name
+is not declared
+as global and hence will be unknown to the link editor.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.globl\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 417 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.globl\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-3
+.in +2n
+.pp
+This statement makes the
+.i name
+external.
+If it is otherwise defined (by
+.b .set
+or by
+appearance as a label)
+it acts within the assembly exactly as if
+the
+.b .globl
+statement were not given;
+however,
+the link editor may be used
+to combine this object module with other modules referring to this symbol.
+.pp
+Conversely,
+if the given symbol is not defined
+within the current assembly,
+the link editor can combine the output of this assembly
+with that of others which define the symbol.
+The assembler makes all otherwise
+undefined symbols external.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.set\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 446 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.set\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-3
+.in +2n
+.pp
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "The (
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ")
+.ps \n(99
+.ft \n(98
+\*(11
+pair is entered into the symbol table.
+Multiple
+.b .set
+statements with the same name are legal;
+the most recent value replaces all previous values.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.lsym\&\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 459 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.lsym\&\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\fB,\fP 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-3
+.in +2n
+.pp
+A unique and otherwise unreferencable instance of the
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "(
+.ps 10
+.ft 2
+.ds 12 "name
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expression
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ")
+.ps \n(99
+.ft \n(98
+\*(11
+pair is created in the symbol table.
+The Fortran 77 compiler uses this mechanism to pass local symbol definitions
+to the link editor and debugger.
+.in -2n
+.TS
+.if \n+(b.=1 .nr d. \n(.c-\n(c.-1
+.de 35
+.ps \n(.s
+.vs \n(.vu
+.in \n(.iu
+.if \n(.u .fi
+.if \n(.j .ad
+.if \n(.j=0 .na
+..
+.nf
+.nr #~ 0
+.if n .nr #~ 0.6n
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.fc
+.nr 33 \n(.s
+.rm 80 81
+.nr 80 0
+.nr 38 \w\f3\&.stabs\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.stabn\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.nr 38 \w\f3\&.stabd\fP
+.if \n(80<\n(38 .nr 80 \n(38
+.80
+.rm 80
+.nr 81 0
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f13\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f14\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f13\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f14\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr 38 \w
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f13\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.if \n(81<\n(38 .nr 81 \n(38
+.81
+.rm 81
+.nr 38 1n
+.nr 79 0
+.nr 40 \n(79+(0*\n(38)
+.nr 80 +\n(40
+.nr 41 \n(80+(3*\n(38)
+.nr 81 +\n(41
+.nr TW \n(81
+.if t .if (\n(TW+\n(.o)>7.65i .tm Table at line 473 file Input is too wide - \n(TW units
+.fc  
+.nr #T 0-1
+.nr #a 0-1
+.eo
+.de T#
+.ds #d .d
+.if \(ts\n(.z\(ts\(ts .ds #d nl
+.mk ##
+.nr ## -1v
+.ls 1
+.ls
+..
+.ec
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.stabs\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "string
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f13\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f14\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.stabn\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f13\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f14\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.ta \n(80u \n(81u 
+.nr 31 \n(.f
+.nr 35 1m
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "\&\h'|\n(40u'\f3\&.stabd\f\n(31\h'|\n(41u'
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f13\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.fc
+.nr T. 1
+.T# 1
+.35
+.TE
+.if \n-(b.=0 .nr c. \n(.c-\n(d.-5
+.in +2n
+.pp
+The
+.i stab
+directives place symbols in the symbol table for the symbolic
+debugger,
+.i sdb \**.
+.(f
+\**Katseff, H.P.
+.i "Sdb: A Symbol Debugger."
+Bell Laboratories, Holmdel,
+NJ.  April 12, 1979.
+.br
+Katseff, H.P.
+.i "Symbol Table Format for Sdb",
+File 39394,
+Bell Laboratories, Holmdel, NJ. March 14, 1979.
+.)f
+A
+.q stab
+is a 
+.i s ymbol
+.i tab le
+entry.
+The
+.b .stabs
+is a string stab, the
+.b .stabn
+is a stab not having a string,
+and the
+.b .stabd
+is a 
+.q dot
+stab that implicitly references
+.q dot ,
+the current location counter.
+.pp
+The
+.i string
+in the
+.b .stabs
+directive is the name of a symbol.
+If the symbol name is zero,
+the
+.b .stabn
+directive may be used instead.
+.pp
+The other expressions are stored
+in the name list structure
+of the symbol table
+and preserved by the loader for reference by
+.i sdb ;
+the value of the expressions are peculiar to formats required by
+.i sdb .
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".nr ii \w'
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "\ \ 'u
+.ps \n(99
+.ft \n(98
+\*(11
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".ip 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+is used as a symbol table tag
+(nlist field
+.i n\*(UStype ).
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".ip 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+seems to always be zero
+(nlist field
+.i n\*(USother ).
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".ip 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f13\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+is used for either the
+source line number,
+or for a nesting level
+(nlist field
+.i n\*(USdesc ).
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 ".ip 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f14\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+is used as tag specific information
+(nlist field
+.i n\*(USvalue ).
+In the
+case of the
+.b .stabd
+directive, this expression is nonexistent, and
+is taken to be the value of the location counter
+at the following instruction.
+Since there is no associated name for a
+.b .stabd
+directive,
+it can
+only be used in circumstances where the name is zero.
+The effect of a
+.b .stabd
+directive can be achieved by one of the other
+.b .stab x
+directives in the following manner:
+.br
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ft 3
+.ds 12 ".stabn
+.ds 12 \f3\*(12\f2
+.ft 2
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f11\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f12\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ds 12 "expr
+.ds 13 "\f13\fP
+.as 12 \v'12u'\s-3\|\*(13\s+3\v'-12u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ", 
+.ps 10
+.ft 2
+.ft 1
+.ds 12 "LL
+.ds 12 \f1\*(12\f2
+.ft 2
+.ds 13 "n
+.as 12 "\*(13
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.br
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ft 1
+.ds 12 "LL
+.ds 12 \f1\*(12\f2
+.ft 2
+.ds 13 "n
+.as 12 "\*(13
+.ft 3
+.ds 13 "\f1:\fP
+.ds 13 \f3\*(13\f2
+.ft 2
+.as 12 "\|\*(13
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+.pp
+The
+.b .stabd
+directive is preferred,
+because it does not clog the symbol
+table with labels used only for the stab symbol entries.
