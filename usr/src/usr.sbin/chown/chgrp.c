@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)chgrp.c	4.3 82/03/31";
+static	char *sccsid = "@(#)chgrp.c	4.4 83/01/20";
 #endif
 
 /*
@@ -34,7 +34,7 @@ main(argc, argv)
 	}
 	uid = getuid();
 	if (isnumber(argv[0])) {
-		gid = atoi(argv[1]);
+		gid = atoi(argv[0]);
 		gr = getgrgid(gid);
 		if (uid && gr == NULL) {
 			printf("%s: unknown group\n", argv[0]);
