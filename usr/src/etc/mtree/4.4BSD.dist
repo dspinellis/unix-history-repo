@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.9 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.10 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -1507,10 +1507,10 @@ US               mode=0555
 spool
 
 # ./usr/spool/sockets
-sockets
+sockets	mode=777
 
 # ./usr/spool/sockets/X11
-X11
+X11	mode=777
 # ./usr/spool/sockets/X11
 ..
 
