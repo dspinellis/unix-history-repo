@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_dp.c	7.4 (Berkeley) %G%
+ *	@(#)if_dp.c	7.5 (Berkeley) %G%
  */
 
 #include "dp.h"
@@ -83,6 +83,10 @@ struct	dpstat {
 	long	down;
 	long	mchange;
 	long	timeout;
+	long	rsm;
+	long	rem;
+	long	rsmchr;
+	long	rga;
 } dpstat;
 /*
  * Pdma structures for fast interrupts.
@@ -124,7 +128,6 @@ struct dp_softc {
 #define dp_timeo dp_errors[1]
 #define dp_nobuf dp_errors[2]
 #define dp_disc  dp_errors[3]
-	struct timeval	dp_xt;			/* start of last transmission */
 	char	dp_obuf[DP_MTU+8];
 	char	dp_ibuf[DP_MTU+8];
 } dp_softc[NDP];
@@ -237,18 +240,16 @@ dpinit(unit)
 
 	addr->dpclr = DP_CLR;
 	DELAY(1000);
-	addr->dpclr = 0;
-	DELAY(1000);
-	/* DP_ATA = 0, DP_CHRM = 0,
+	/* DP_ATA = 0, DP_CHRM = 0, DP_SSLM = 1, (enable aborts),
 			    CRC = CCIIT, initially all ones, 2nd addr = 0 */
-	addr->dpsar = 0;
-	/* enable receive interrupt */
+	addr->dpsar = DP_SSLM | DP_IDLE;
+	addr->dpclr = 0;
+	/* enable receiver, receive interrupt, DTR, RTS */
 	addr->dprcsr = DP_RIE | DP_MIE | DP_RE | DP_DTR | DP_RTS;
 	dpstart(&dp->dp_if);
 	splx(s);
 }
 
-int dpMessy = 0;
 /*
  * Start output on interface.  Get another datagram
  * to send from the interface queue and map it to
@@ -260,7 +261,7 @@ dpstart(ifp)
 {
 	int s, unit = ifp->if_unit, error = 0, len;
 	register struct dp_softc *dp = &dp_softc[unit];
-	register struct dpdevice *addr = dp_addr;
+	register struct dpdevice *addr = dp->dp_addr;
 	register struct mbuf *m;
 	register char *cp;
 	char *cplim;
@@ -292,8 +293,7 @@ dpstart(ifp)
 		error = EINVAL;
 		goto out;
 	}
-	cp = dp->dp_obuf;
-	dppdma[2*unit].p_mem = cp + 1;
+	dppdma[2*unit].p_mem = 1 + (cp = dp->dp_obuf);
 	while (m) {
 		struct mbuf *n;
 		bcopy(mtod(m, caddr_t), (caddr_t)cp, m->m_len);
@@ -301,19 +301,17 @@ dpstart(ifp)
 		MFREE(m, n); m = n;
 	}
 	dppdma[2*unit].p_end = cp;
-	if (dpMessy)
-		printf("dp: len %d, start %x, end %x, first %x, next %x",
-			len, dp->dp_obuf, cp, *(int *)dp->dp_obuf,
-			1[(int *)dp->dp_obuf]);
 	dp->dp_if.if_flags |= IFF_OACTIVE;
 	dp->dp_ostate = DPS_ACTIVE;
 	dp->dp_if.if_collisions--;
-dp->dp_xt = time;
-	addr->dpclr = DP_XE | DP_XIE;
-	addr->dptdsr = DP_XSM | (0xff & dp->dp_obuf[0]);
+	addr->dpsar = DP_SSLM | DP_IDLE;
+	addr->dprcsr = DP_RIE | DP_MIE | DP_RE | DP_DTR | DP_RTS;
+	addr->dpclr = DP_XIE | DP_XE;
+	addr->dptdsr = DP_XSM | (0xff & *cp);
 out:
 	return (error);
 }
+long dp_rdsr;
 /*
  * Receive done or error interrupt
  */
@@ -322,17 +320,32 @@ register struct pdma *pdma;
 register struct dpdevice *addr;
 {
 	register struct dp_softc *dp = &dp_softc[unit];
-	short rdsr = addr->dprdsr, rcsr;
+	short rdsr = addr->dprdsr, rcsr = pdma->p_arg;
 
 	dpstat.rint++;
+dp_rdsr = rdsr;
 	splx(dp->dp_ipl);
+	if (rdsr & DP_RGA) {
+		/* DP_ATA = 0, DP_CHRM = 0, DP_SSLM = 1, (enable aborts),
+			    CRC = CCIIT, initially all ones, 2nd addr = 0 */
+		addr->dpsar = DP_SSLM | DP_IDLE;
+		addr->dprcsr = DP_RIE | DP_MIE | DP_RE | DP_DTR | DP_RTS;
+		dpstat.rga++;
+		return;
+	}
 	if (rdsr & DP_RSM) { /* Received Start of Message */
-		dp->dp_ibuf[0] = rdsr & DP_RBUF;
-		pdma->p_mem = dp->dp_ibuf + 1;
+		dpstat.rsm++;
+		pdma->p_mem = dp->dp_ibuf;
+		if (rcsr & DP_RDR) {
+		    dp->dp_ibuf[0] = rdsr & DP_RBUF;
+		    pdma->p_mem++;
+		    dpstat.rsmchr++;
+		}
 		dp->dp_flags &= ~DPF_FLUSH;
 		return;
 	}
 	if (rdsr & DP_REM) { /* Received End of Message */
+		dpstat.rem++;
 		if (rdsr & DP_REC || dp->dp_flags & DPF_FLUSH) {
 			dp->dp_if.if_ierrors++;
 		} else
@@ -346,12 +359,11 @@ register struct dpdevice *addr;
 		dp->dp_flags |= DPF_FLUSH;
 		return;
 	}
-	rcsr = pdma->p_arg;
 	if (rcsr & DP_MSC) {
 		dpstat.mchange++;
 		if (0 == (rcsr & DP_DSR)) {
 			log(LOG_DEBUG, "dp%d: lost modem\n", unit);
-			dpdown(unit);
+			/*dpdown(unit);*/
 		}
 		return;
 	}
@@ -359,7 +371,7 @@ register struct dpdevice *addr;
 	if (pdma->p_mem != pdma->p_end)
 		log("dp%d: unexplained receiver interrupt\n", unit);
 }
-struct timeval dp_xt;
+int dp_fill;
 
 /*
  * Transmit complete or error interrupt
@@ -388,6 +400,7 @@ register struct dpdevice *addr;
 			log("if_dp%d: misc error in dpxint\n", unit);
 			goto restart;
 		}
+		addr->dpclr = DP_XIE; /* &= ~DP_XE */
 		addr->dptdsr = DP_XEM;
 		dp->dp_ostate = DPS_XEM;
 		break;
@@ -395,13 +408,15 @@ register struct dpdevice *addr;
 	case DPS_XEM:
 		dp->dp_if.if_opackets++;
 		dp->dp_if.if_flags &= ~IFF_OACTIVE;
-s = splclock();
-dp_xt = time;
-timevalsub(&dp_xt, &dp->dp_xt);
-splx(s);
 		if (dp->dp_if.if_snd.ifq_len)
 			dpstart(&dp->dp_if);
 		else {
+			if (dp_fill) {
+				addr->dpsar = DP_IDLE|DP_SSLM;
+				addr->dptdsr = DP_XABO;
+			} else {
+				addr->dptdsr = 0;
+			}
 			addr->dpclr = 0;
 			dp->dp_ostate = DPS_IDLE;
 		}
