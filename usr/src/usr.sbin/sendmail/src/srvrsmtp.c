@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.19 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.20 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.19 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.20 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -111,7 +111,6 @@ smtp(e)
 	extern char *macvalue();
 	extern ADDRESS *recipient();
 
-	gotmail = FALSE;
 	if (OutChannel != stdout)
 	{
 		/* arrange for debugging output to go to remote host */
