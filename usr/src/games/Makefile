@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -56,19 +56,19 @@ clean:
 	rm -f ${STD} ${NSTD}
 
 depend:
-	cat </dev/null >x.c
 	for i in ${STD} ${NSTD}; do \
-		(echo $$i: $$i.c >>makedep; \
-		/bin/grep '^#[ 	]*include' x.c $$i.c | sed \
-			-e 's,<\(.*\)>,"/usr/include/\1",' \
-			-e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-			-e 's/\.c//' >>makedep); done
+	    cc -M ${INCPATH} $$i.c | sed 's/\.o//' | \
+	    awk ' { if ($$1 != prev) \
+		{ if (rec != "") print rec; rec = $$0; prev = $$1; } \
+		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
+		else rec = rec " " $$2 } } \
+		END { print rec } ' >> makedep; done
 	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
 	echo '$$r makedep' >>eddep
 	echo 'w' >>eddep
 	cp Makefile Makefile.bak
 	ed - Makefile < eddep
-	rm eddep makedep x.c
+	rm eddep makedep
 	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
 	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
 	echo '# see make depend above' >> Makefile
@@ -92,40 +92,31 @@ worms:
 
 # DO NOT DELETE THIS LINE -- make depend uses it
 
-arithmetic: arithmetic.c
-arithmetic: /usr/include/stdio.h
-arithmetic: /usr/include/signal.h
-btlgammon: btlgammon.c
-btlgammon: /usr/include/stdio.h
-banner: banner.c
-banner: /usr/include/stdio.h
+arithmetic: arithmetic.c /usr/include/stdio.h /usr/include/signal.h
+btlgammon: btlgammon.c /usr/include/stdio.h
+banner: banner.c /usr/include/stdio.h
 bcd: bcd.c
-cfscores: cfscores.c
-cfscores: /usr/include/pwd.h
-chess: chess.c
-chess: /usr/include/stdio.h
-fish: fish.c
-fish: /usr/include/stdio.h
+cfscores: cfscores.c /usr/include/pwd.h
+chess: chess.c /usr/include/stdio.h
+factor: factor.c
+fish: fish.c /usr/include/stdio.h
 number: number.c
-wump: wump.c
-wump: /usr/include/stdio.h
-wump: /usr/include/sgtty.h
-canfield: canfield.c
-canfield: /usr/include/curses.h
-canfield: /usr/include/ctype.h
-canfield: /usr/include/signal.h
-canfield: /usr/include/sys/types.h
-rain: rain.c
-rain: /usr/include/stdio.h
-rain: /usr/include/sgtty.h
+wump: wump.c /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+wump: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+canfield: canfield.c /usr/include/curses.h /usr/include/stdio.h
+canfield: /usr/include/sgtty.h /usr/include/sys/ioctl.h
+canfield: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+canfield: /usr/include/ctype.h /usr/include/signal.h /usr/include/sys/types.h
+primes: primes.c /usr/include/stdio.h /usr/include/math.h
+rain: rain.c /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
+rain: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 rain: /usr/include/signal.h
-worm: worm.c
-worm: /usr/include/ctype.h
-worm: /usr/include/curses.h
-worm: /usr/include/signal.h
-worms: worms.c
-worms: /usr/include/stdio.h
-worms: /usr/include/sgtty.h
+worm: worm.c /usr/include/ctype.h /usr/include/curses.h /usr/include/stdio.h
+worm: /usr/include/sgtty.h /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+worm: /usr/include/sys/ttydev.h /usr/include/signal.h
+worms: worms.c /usr/include/stdio.h /usr/include/sgtty.h
+worms: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
+worms: /usr/include/sys/ttydev.h /usr/include/signal.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
