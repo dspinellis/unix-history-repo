@@ -1,4 +1,4 @@
-$Id: options.doc,v 1.5 1994/05/30 18:34:55 guido Exp $
+$Id: options.doc,v 1.6 1994/05/31 08:55:12 jkh Exp $
 
    This file documents the configuration options available in the
 FreeBSD operating system.
@@ -468,13 +468,6 @@ options also apply to EISA systems.  The same goes for VESA Local Bus
      Allow devices on the ISA bus to share conflicting IRQ's.  This is
      often necessary for multiport serial cards which have several devices
      at the same IRQ.  Enable this only with caution!
-
-
-`options COM_BIDIR'
-     This option enables bi-directional support in the `sio' serial
-     driver.  This option is slated for removal, at which time
-     bi-directional support will always be enabled.  See the
-     `comcontrol' manual page for more information.
 
 `options COM_MULTIPORT'
      This option enables support in the `sio' serial driver for certain

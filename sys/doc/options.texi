@@ -10,7 +10,7 @@
 @c %**end of header
 
 @ifinfo
-$Id: options.texi,v 1.5 1994/05/30 18:34:57 guido Exp $
+$Id: options.texi,v 1.6 1994/05/31 08:55:13 jkh Exp $
 
 This file documents the configuration options available in the FreeBSD
 operating system.
@@ -713,15 +713,6 @@ your driver.
 Allow devices on the ISA bus to share conflicting IRQ's.  This is often
 necessary for multiport serial cards which have several devices at the
 same IRQ.  Enable this only with caution!
-
-@item options COM_BIDIR
-@findex COM_BIDIR
-@cindex Bi-directional serial ports
-@cindex Serial ports
-This option enables bi-directional support in the @samp{sio} serial
-driver.  This option is slated for removal, at which time bi-directional
-support will always be enabled.  See the @samp{comcontrol} manual page
-for more information.
 
 @item options COM_MULTIPORT
 @findex COM_MULTIPORT
