@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_subr.c	7.9 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -228,8 +228,6 @@ tcp_close(tp)
 	}
 	if (tp->t_template)
 		(void) m_free(dtom(tp->t_template));
-	if (tp->t_tcpopt)
-		(void) m_free(dtom(tp->t_tcpopt));
 	(void) m_free(dtom(tp));
 	inp->inp_ppcb = 0;
 	soisdisconnected(so);
