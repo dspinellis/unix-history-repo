@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)xinstall.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)xinstall.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -166,18 +166,22 @@ install(from_name, to_name, isdir)
 	 * chown may lose the setuid bits.
 	 */
 	if ((group || owner) &&
-	    fchown(to_fd, owner ? pp->pw_uid : -1, group ? gp->gr_gid : -1) ||
-	    fchmod(to_fd, mode)) {
+	    fchown(to_fd, owner ? pp->pw_uid : -1, group ? gp->gr_gid : -1)) {
 		serrno = errno;
 		(void)unlink(to_name);
-		err("%s: %s", to_name, strerror(serrno));
+		err("%s: chown/chgrp: %s", to_name, strerror(serrno));
+	}
+	if (fchmod(to_fd, mode)) {
+		serrno = errno;
+		(void)unlink(to_name);
+		err("%s: chmod: %s", to_name, strerror(serrno));
 	}
 
 	/* Always preserve the flags, except for the dump flag. */
 	if (fchflags(to_fd, from_sb.st_flags & ~NODUMP)) {
 		serrno = errno;
 		(void)unlink(to_name);
-		err("%s: %s", to_name, strerror(serrno));
+		err("%s: chflags: %s", to_name, strerror(serrno));
 	}
 
 	(void)close(to_fd);
