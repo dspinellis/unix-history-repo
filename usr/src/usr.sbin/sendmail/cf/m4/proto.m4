@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.32 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.33 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -82,6 +82,8 @@ C..
 ifdef(`_OLD_SENDMAIL_', `dnl',
 `# dequoting map
 Kdequote dequote')
+
+undivert(6)dnl
 
 ######################
 #   Special macros   #
@@ -306,7 +308,6 @@ HSubject:
 # H?l?Received-Date: $b
 H?M?Resent-Message-Id: <$t.$i@$j>
 H?M?Message-Id: <$t.$i@$j>
-undivert(6)dnl
 #
 ######################################################################
 ######################################################################
