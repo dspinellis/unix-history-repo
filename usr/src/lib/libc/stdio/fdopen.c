@@ -1,4 +1,4 @@
-/* @(#)fdopen.c	4.2 (Berkeley) %G% */
+/* @(#)fdopen.c	4.3 (Berkeley) %G% */
 /*
  * Unix routine to do an "fopen" on file descriptor
  * The mode has to be repeated because you can't query its
