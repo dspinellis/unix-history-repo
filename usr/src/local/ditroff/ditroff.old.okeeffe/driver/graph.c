@@ -1,4 +1,4 @@
-/* graph.c	1.8	83/11/22
+/* graph.c	1.9	83/11/30
  *
  *	This file contains the functions for producing the graphics
  *   images in the varian/versatec drivers for ditroff.
@@ -90,6 +90,8 @@ register int d;
  * Bugs:	Odd numbered horizontal axes are rounded up to even numbers.
  *----------------------------------------------------------------------------*/
 
+#define ELLIPSEDX	3
+
 drawellip(hd, vd)
 register int hd;
 int vd;
@@ -102,26 +104,33 @@ int vd;
     int k2, oldy1, oldy2;	/* oldy? are last y points drawn to */
 
 
-    hd = 2 * ((hd + 1) / 2);	/* don't accept odd diameters */
+    if (hd < ELLIPSEDX) {
+	if (output) HGtline(hpos, vpos, hpos + hd, vpos);
+	hmot(hd);
+	return;
+    }
 
     bx = 4 * (hpos + hd);
     x = hpos;
     k1 = vd / (2.0 * hd);
-    k2 = hd * hd - 4 * (hpos + hd/2) * (hpos + hd/2);
+    k2 = hd * hd - (2 * hpos + hd) * (2 * hpos + hd);
     oldy1 = vpos;
     oldy2 = vpos;
 
     hmot (hd);		/* end position is the right-hand side of the ellipse */
 
-    if (output) do {
-	yk = (int) (k1 * sqrt((double) (k2 + (bx -= 8) * (x += 2))));
+    if (output) {
+	while ((hd -= ELLIPSEDX) > 0) {
+	    yk=(int)(k1*sqrt((double)(k2+(bx-=(4*ELLIPSEDX))*(x+=ELLIPSEDX))));
 
-	HGtline (x-2, oldy1, x, y = vpos + yk);    /* top half of ellipse */
-	oldy1 = y;
-	HGtline (x-2, oldy2, x, y = vpos - yk);	  /* bottom half of ellipse */
-	oldy2 = y;
-
-    } while (hd -= 2);
+	    HGtline (x-ELLIPSEDX, oldy1, x, y = vpos + yk);	/* top half */
+	    oldy1 = y;
+	    HGtline (x-ELLIPSEDX, oldy2, x, y = vpos - yk);	/* bottom */
+	    oldy2 = y;
+	}
+	HGtline(x, oldy1, hpos, vpos);
+	HGtline(x, oldy2, hpos, vpos);
+    }
 }
 
 
@@ -251,8 +260,6 @@ int s;
  * Results:	Draws a curve delimited by (not through) the line segments
  *		traced by (xpoints, ypoints) point list.  This is the "Pic"
  *		style curve.
- *
- * Bugs:	does nothing yet....
  *----------------------------------------------------------------------------*/
 
 picurve (x, y, npts)
@@ -317,8 +324,9 @@ int npts;
 /*----------------------------------------------------------------------------
  * Routine:	line (xstart, ystart, xend, yend)
  *
- * Results:	Draws a one-pixel wide line from (x0, y0) to
- *		(x1, y1) using point(x,y) to place the dots.
+ * Results:	Draws a one-pixel wide line from (x0, y0) to (x1, y1)
+ *		using point(x,y) to place the dots.  Line style
+ *		is done in this routine by masking off unwanted dots.
  *----------------------------------------------------------------------------*/
 
 line(x0, y0, x1, y1)
