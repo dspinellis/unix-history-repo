@@ -1,11 +1,12 @@
-/*	param.c	4.6	81/10/29	*/
+/*	param.c	4.7	81/10/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #ifdef BBNNET
-#include "../bbnnet/net.h"
-#include "../bbnnet/imp.h"
-#include "../bbnnet/ucb.h"
+#include "../inet/inet.h"
+#include "../inet/inet_systm.h"
+#include "../inet/imp.h"
+#include "../h/socket.h"
 #endif BBNNET
 #include "../h/dir.h"
 #include "../h/user.h"
