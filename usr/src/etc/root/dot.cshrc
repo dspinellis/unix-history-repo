@@ -1,4 +1,3 @@
-alias mail Mail
 set history=1000
 set path=(/sbin /usr/sbin /bin /usr/bin /usr/local /usr/hosts /usr/contrib .)
 
@@ -22,3 +21,5 @@ alias	tset	'set noglob histchars=""; eval `\tset -s \!*`; unset noglob histchars
 if ($?prompt) then
 	set prompt="`hostname -s`# "
 endif
+
+umask 022
