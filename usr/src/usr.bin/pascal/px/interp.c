@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.3 %G%";
+static char sccsid[] = "@(#)interp.c 1.4 %G%";
 
 #include <math.h>
 #include "vars.h"
@@ -19,9 +19,11 @@ long	_lino = 0;
 int	_argc;
 char	**_argv;
 long	_mode;
-long	_nodump;
+long	_runtst = TRUE;
+long	_nodump = FALSE;
 long	_stlim = 500000;
 long	_stcnt = 0;
+long	_seed = 1;
 char	*_minptr = (char *)0x7fffffff;
 char	*_maxptr = (char *)0;
 long	*_pcpcount = (long *)0;
@@ -132,7 +134,6 @@ interpreter(base)
 	_display.frame[0].locvars += 8;	/* local offsets are negative */
 	*(struct iorec **)(_display.frame[0].locvars - 4) = OUTPUT;
 	*(struct iorec **)(_display.frame[0].locvars - 8) = INPUT;
-	enableovrflo();
 	stp = (struct stack *)pushsp(sizeof(struct stack));
 	_dp = &_display.frame[0];
 	pc.cp = base;
@@ -150,18 +151,21 @@ interpreter(base)
 			panic(PBADOP);
 			continue;
 		case O_NODUMP:
-			_nodump++;
-			disableovrflo();
+			_nodump = TRUE;
 			/* and fall through */
 		case O_BEG:
 			_dp += 1;		/* enter local scope */
 			stp->odisp = *_dp;	/* save old display value */
 			tl = *pc.ucp++;		/* tl = name size */
 			stp->entry = pc.hdrp;	/* pointer to entry info */
-			tl1 = *pc.lp++;		/* tl1 = local variable size */
-			pc.lp++;		/* skip over number of args */
-			_lino = *pc.usp++;	/* set new lino */
-			pc.cp += tl;		/* skip over name text */
+			tl1 = pc.hdrp->framesze;/* tl1 = size of frame */
+			_lino = pc.hdrp->offset;
+			_runtst = pc.hdrp->tests;
+			disableovrflo();
+			if (_runtst)
+				enableovrflo();
+			pc.cp += tl +		/* skip over proc hdr info */
+				 sizeof(struct hdr) - 4;
 			stp->file = curfile;	/* save active file */
 			tcp = pushsp(tl1);	/* tcp = new top of stack */
 			blkclr(tl1, tcp);	/* zero stack frame */
@@ -180,6 +184,10 @@ interpreter(base)
 			_lino = stp->lino;	/* restore lino, pc, dp */
 			pc.cp = stp->pc.cp;
 			_dp = stp->dp;
+			_runtst = stp->entry->tests;
+			disableovrflo();
+			if (_runtst)
+				enableovrflo();
 			popsp(stp->entry->framesze +	/* pop local vars */
 			      sizeof(struct stack) +	/* pop stack frame */
 			      stp->entry->nargs);	/* pop parms */
@@ -206,14 +214,16 @@ interpreter(base)
 			stp->pc.cp = pc.cp;
 			stp->dp = _dp;
 			pc.cp = tfp->entryaddr;	/* calc new entry point */
-			tpc.sp = pc.sp + 1;
-			tl -= tpc.hdrp->nargs;
-			if (tl != 0) {
-				if (tl > 0)
-					tl += sizeof(int) - 1;
-				else
-					tl -= sizeof(int) - 1;
-				ERROR(ENARGS, tl / sizeof(int));
+			if (_runtst) {
+				tpc.sp = pc.sp + 1;
+				tl -= tpc.hdrp->nargs;
+				if (tl != 0) {
+					if (tl > 0)
+						tl += sizeof(int) - 1;
+					else
+						tl -= sizeof(int) - 1;
+					ERROR(ENARGS, tl / sizeof(int));
+				}
 			}
 			_dp = &_display.frame[tfp->cbn];/* new display ptr */
 			blkcpy(sizeof(struct disp) * tfp->cbn,
@@ -297,10 +307,11 @@ interpreter(base)
 			continue;
 		case O_IF:
 			pc.cp++;
-			if (pop2())
+			if (pop2()) {
 				pc.sp++;
-			else
-				pc.cp += *pc.sp;
+				continue;
+			}
+			pc.cp += *pc.sp;
 			continue;
 		case O_REL2:
 			tl = pop2();
@@ -528,8 +539,10 @@ interpreter(base)
 				tl = *pc.usp++;
 			tl1 = pop2();		/* index */
 			tl2 = *pc.sp++;
-			SUBSC(tl1, tl2, *pc.usp++); /* range check */
 			pushaddr(popaddr() + (tl1 - tl2) * tl);
+			tl = *pc.usp++;
+			if (_runtst)
+				SUBSC(tl1, tl2, tl); /* range check */
 			continue;
 		case O_INX4:
 			tl = *pc.cp++;		/* tl has element size */
@@ -537,8 +550,10 @@ interpreter(base)
 				tl = *pc.usp++;
 			tl1 = pop4();		/* index */
 			tl2 = *pc.sp++;
-			SUBSC(tl1, tl2, *pc.usp++); /* range check */
 			pushaddr(popaddr() + (tl1 - tl2) * tl);
+			tl = *pc.usp++;
+			if (_runtst)
+				SUBSC(tl1, tl2, tl); /* range check */
 			continue;
 		case O_OFF:
 			tl = *pc.cp++;
@@ -1134,61 +1149,91 @@ interpreter(base)
 			pc.cp++;
 			tcp = (char *)pop4();	/* tcp = ptr to index var */
 			if (*tcp < pop4()) {	/* still going up */
-				*tcp += 1;	/* inc index var */
+				tl = *tcp + 1;	/* inc index var */
+				tl1 = *pc.sp++;	/* index lower bound */
+				tl2 = *pc.sp++;	/* index upper bound */
+				if (_runtst)
+					RANG4(tl, tl1, tl2);
+				*tcp = tl;	/* update index var */
 				pc.cp += *pc.sp;/* return to top of loop */
 				continue;
 			}
-			pc.sp++;		/* else fall through */
+			pc.sp += 3;		/* else fall through */
 			continue;
 		case O_FOR2U:
 			pc.cp++;
 			tsp = (short *)pop4();	/* tsp = ptr to index var */
 			if (*tsp < pop4()) {	/* still going up */
-				*tsp += 1;	/* inc index var */
+				tl = *tsp + 1;	/* inc index var */
+				tl1 = *pc.sp++;	/* index lower bound */
+				tl2 = *pc.sp++;	/* index upper bound */
+				if (_runtst)
+					RANG4(tl, tl1, tl2);
+				*tsp = tl;	/* update index var */
 				pc.cp += *pc.sp;/* return to top of loop */
 				continue;
 			}
-			pc.sp++;		/* else fall through */
+			pc.sp += 3;		/* else fall through */
 			continue;
 		case O_FOR4U:
 			pc.cp++;
 			tlp = (long *)pop4();	/* tlp = ptr to index var */
 			if (*tlp < pop4()) {	/* still going up */
-				*tlp += 1;	/* inc index var */
+				tl = *tlp + 1;	/* inc index var */
+				tl1 = *pc.lp++;	/* index lower bound */
+				tl2 = *pc.lp++;	/* index upper bound */
+				if (_runtst)
+					RANG4(tl, tl1, tl2);
+				*tlp = tl;	/* update index var */
 				pc.cp += *pc.sp;/* return to top of loop */
 				continue;
 			}
-			pc.sp++;		/* else fall through */
+			pc.sp += 5;		/* else fall through */
 			continue;
 		case O_FOR1D:
 			pc.cp++;
 			tcp = (char *)pop4();	/* tcp = ptr to index var */
 			if (*tcp > pop4()) {	/* still going down */
-				*tcp -= 1;	/* dec index var */
+				tl = *tcp - 1;	/* inc index var */
+				tl1 = *pc.sp++;	/* index lower bound */
+				tl2 = *pc.sp++;	/* index upper bound */
+				if (_runtst)
+					RANG4(tl, tl1, tl2);
+				*tcp = tl;	/* update index var */
 				pc.cp += *pc.sp;/* return to top of loop */
 				continue;
 			}
-			pc.sp++;		/* else fall through */
+			pc.sp += 3;		/* else fall through */
 			continue;
 		case O_FOR2D:
 			pc.cp++;
 			tsp = (short *)pop4();	/* tsp = ptr to index var */
 			if (*tsp > pop4()) {	/* still going down */
-				*tsp -= 1;	/* dec index var */
+				tl = *tsp - 1;	/* inc index var */
+				tl1 = *pc.sp++;	/* index lower bound */
+				tl2 = *pc.sp++;	/* index upper bound */
+				if (_runtst)
+					RANG4(tl, tl1, tl2);
+				*tsp = tl;	/* update index var */
 				pc.cp += *pc.sp;/* return to top of loop */
 				continue;
 			}
-			pc.sp++;		/* else fall through */
+			pc.sp += 3;		/* else fall through */
 			continue;
 		case O_FOR4D:
 			pc.cp++;
 			tlp = (long *)pop4();	/* tlp = ptr to index var */
 			if (*tlp > pop4()) {	/* still going down */
-				*tlp -= 1;	/* dec index var */
+				tl = *tlp - 1;	/* inc index var */
+				tl1 = *pc.lp++;	/* index lower bound */
+				tl2 = *pc.lp++;	/* index upper bound */
+				if (_runtst)
+					RANG4(tl, tl1, tl2);
+				*tlp = tl;	/* update index var */
 				pc.cp += *pc.sp;/* return to top of loop */
 				continue;
 			}
-			pc.sp++;		/* else fall through */
+			pc.sp += 5;		/* else fall through */
 			continue;
 		case O_READE:
 			pc.cp++;
@@ -1220,25 +1265,48 @@ interpreter(base)
 			continue;
 		case O_WRITEC:
 			pc.cp++;
-			WRITEC(curfile);
+			if (_runtst) {
+				WRITEC(curfile);
+				popargs(2);
+				continue;
+			}
+			fputc();
 			popargs(2);
 			continue;
 		case O_WRITES:
 			pc.cp++;
-			WRITES(curfile);
+			if (_runtst) {
+				WRITES(curfile);
+				popargs(4);
+				continue;
+			}
+			fwrite();
 			popargs(4);
 			continue;
 		case O_WRITEF:
-			WRITEF(curfile);
+			if (_runtst) {
+				WRITEF(curfile);
+				popargs(*pc.cp++);
+				continue;
+			}
+			fprintf();
 			popargs(*pc.cp++);
 			continue;
 		case O_WRITLN:
 			pc.cp++;
-			WRITLN(curfile);
+			if (_runtst) {
+				WRITLN(curfile);
+				continue;
+			}
+			fputc('\n', ACTFILE(curfile));
 			continue;
 		case O_PAGE:
 			pc.cp++;
-			PAGE(curfile);
+			if (_runtst) {
+				PAGE(curfile);
+				continue;
+			}
+			fputc('^L', ACTFILE(curfile));
 			continue;
 		case O_NAM:
 			pc.cp++;
@@ -1250,7 +1318,13 @@ interpreter(base)
 			if (tl == 0)
 				tl = *pc.usp++;
 			tl1 = pop4();
-			push4(MAX(tl1, tl, *pc.usp++));
+			if (_runtst) {
+				push4(MAX(tl1, tl, *pc.usp++));
+				continue;
+			}
+			tl1 -= tl;
+			tl = *pc.usp++;
+			push4(tl1 > tl ? tl1 : tl);
 			continue;
 		case O_MIN:
 			tl = *pc.cp++;
@@ -1364,7 +1438,11 @@ interpreter(base)
 			if (tl == 0)
 				tl = *pc.usp++;
 			tcp = popaddr();	/* ptr to ptr being new'ed */
-			NEWZ(tcp, tl);
+			if (_runtst) {
+				NEWZ(tcp, tl);
+				continue;
+			}
+			NEW(tcp, tl);
 			continue;
 		case O_DATE:
 			pc.cp++;
@@ -1393,7 +1471,11 @@ interpreter(base)
 			continue;
 		case O_LN:
 			pc.cp++;
-			push8(LN(pop8()));
+			if (_runtst) {
+				push8(LN(pop8()));
+				continue;
+			}
+			push8(log(pop8()));
 			continue;
 		case O_SIN:
 			pc.cp++;
@@ -1401,12 +1483,20 @@ interpreter(base)
 			continue;
 		case O_SQRT:
 			pc.cp++;
-			push8(SQRT(pop8()));
+			if (_runtst) {
+				push8(SQRT(pop8()));
+				continue;
+			}
+			push8(sqrt(pop8()));
 			continue;
 		case O_CHR2:
 		case O_CHR4:
 			pc.cp++;
-			push2(CHR(pop4()));
+			if (_runtst) {
+				push2(CHR(pop4()));
+				continue;
+			}
+			push2(pop4());
 			continue;
 		case O_ODD2:
 		case O_ODD4:
@@ -1418,42 +1508,72 @@ interpreter(base)
 			if (tl == 0)
 				tl = *pc.sp++;
 			tl1 = pop4();
-			push2(SUCC(tl1, tl, *pc.sp++));
+			if (_runtst) {
+				push2(SUCC(tl1, tl, *pc.sp++));
+				continue;
+			}
+			push2(tl1 + 1);
+			pc.sp++;
 			continue;
 		case O_SUCC24:
 			tl = *pc.cp++;
 			if (tl == 0)
 				tl = *pc.sp++;
 			tl1 = pop4();
-			push4(SUCC(tl1, tl, *pc.sp++));
+			if (_runtst) {
+				push4(SUCC(tl1, tl, *pc.sp++));
+				continue;
+			}
+			push4(tl1 + 1);
+			pc.sp++;
 			continue;
 		case O_SUCC4:
 			tl = *pc.cp++;
 			if (tl == 0)
 				tl = *pc.lp++;
 			tl1 = pop4();
-			push4(SUCC(tl1, tl, *pc.lp++));
+			if (_runtst) {
+				push4(SUCC(tl1, tl, *pc.lp++));
+				continue;
+			}
+			push4(tl1 + 1);
+			pc.lp++;
 			continue;
 		case O_PRED2:
 			tl = *pc.cp++;
 			if (tl == 0)
 				tl = *pc.sp++;
 			tl1 = pop4();
-			push2(PRED(tl1, tl, *pc.sp++));
+			if (_runtst) {
+				push2(PRED(tl1, tl, *pc.sp++));
+				continue;
+			}
+			push2(tl1 - 1);
+			pc.sp++;
 			continue;
 		case O_PRED24:
 			tl = *pc.cp++;
 			if (tl == 0)
 				tl = *pc.sp++;
 			tl1 = pop4();
-			push4(PRED(tl1, tl, *pc.sp++));
+			if (_runtst) {
+				push4(PRED(tl1, tl, *pc.sp++));
+				continue;
+			}
+			push4(tl1 - 1);
+			pc.sp++;
 			continue;
 		case O_PRED4:
 			tl = *pc.cp++;
 			if (tl == 0)
 				tl = *pc.lp++;
 			tl1 = pop4();
-			push4(PRED(tl1, tl, *pc.lp++));
+			if (_runtst) {
+				push4(PRED(tl1, tl, *pc.lp++));
+				continue;
+			}
+			push4(tl1 - 1);
+			pc.lp++;
 			continue;
 		case O_SEED:
 			pc.cp++;
