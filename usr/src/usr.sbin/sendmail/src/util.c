@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -370,7 +370,7 @@ buildfname(gecos, login, buf)
 	/* now fill in buf */
 	if (quoteit)
 		*bp++ = '"';
-	while (*p != '\0' && *p != ',' && *p != ';' && *p != '%')
+	for (p = gecos; *p != '\0' && *p != ',' && *p != ';' && *p != '%'; p++)
 	{
 		if (*p == '&')
 		{
@@ -378,10 +378,9 @@ buildfname(gecos, login, buf)
 			*bp = toupper(*bp);
 			while (*bp != '\0')
 				bp++;
-			p++;
 		}
 		else
-			*bp++ = *p++;
+			*bp++ = *p;
 	}
 	if (quoteit)
 		*bp++ = '"';
