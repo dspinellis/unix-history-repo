@@ -5,7 +5,7 @@
 #
 
 #
-# @(#)Makefile	2.9 85/04/23
+# @(#)Makefile	2.10 85/04/25
 #
 
 CTAGS = ctags -w
@@ -40,7 +40,7 @@ tags: $(CFILES) $(HFILES)
 $(CFILES) $(HFILES) $(OTHERFILES):
 	sccs get $@
 
-clean: 
+clean:
 	rm -f $(OBJS) $(JUNKFILES)
 
 install: sail sail.6 $(TARGET)/$(LOGFILE)
@@ -52,76 +52,25 @@ logfile $(TARGET)/$(LOGFILE):
 	chown $(SAILMASTER) $(TARGET)/$(LOGFILE)
 	chmod 644 $(TARGET)/$(LOGFILE)
 
-###
-assorted.o: externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h
-dr_1.o: driver.h externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h
-dr_2.o: driver.h externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h
-dr_3.o: driver.h externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h
-dr_4.o: externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h
-dr_5.o: externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h
-dr_main.o: driver.h externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h
-game.o: externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h
-globals.o: externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h
-lo_main.o: /usr/include/pwd.h externs.h /usr/include/stdio.h \
-	/usr/include/signal.h /usr/include/ctype.h /usr/include/setjmp.h \
-	machdep.h
-main.o: externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h
-misc.o: externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h \
-	/usr/include/sys/file.h
-parties.o: externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h
-pl_1.o: player.h /usr/include/curses.h /usr/include/stdio.h \
-	/usr/include/sgtty.h /usr/include/sys/ioctl.h \
-	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h externs.h \
-	/usr/include/signal.h /usr/include/ctype.h /usr/include/setjmp.h \
-	machdep.h /usr/include/sys/types.h /usr/include/sys/wait.h
-pl_2.o: player.h /usr/include/curses.h /usr/include/stdio.h \
-	/usr/include/sgtty.h /usr/include/sys/ioctl.h \
-	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h externs.h \
-	/usr/include/signal.h /usr/include/ctype.h /usr/include/setjmp.h \
-	machdep.h
-pl_3.o: player.h /usr/include/curses.h /usr/include/stdio.h \
-	/usr/include/sgtty.h /usr/include/sys/ioctl.h \
-	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h externs.h \
-	/usr/include/signal.h /usr/include/ctype.h /usr/include/setjmp.h \
-	machdep.h
-pl_4.o: player.h /usr/include/curses.h /usr/include/stdio.h \
-	/usr/include/sgtty.h /usr/include/sys/ioctl.h \
-	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h externs.h \
-	/usr/include/signal.h /usr/include/ctype.h /usr/include/setjmp.h \
-	machdep.h
-pl_5.o: player.h /usr/include/curses.h /usr/include/stdio.h \
-	/usr/include/sgtty.h /usr/include/sys/ioctl.h \
-	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h externs.h \
-	/usr/include/signal.h /usr/include/ctype.h /usr/include/setjmp.h \
-	machdep.h
-pl_6.o: player.h /usr/include/curses.h /usr/include/stdio.h \
-	/usr/include/sgtty.h /usr/include/sys/ioctl.h \
-	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h externs.h \
-	/usr/include/signal.h /usr/include/ctype.h /usr/include/setjmp.h \
-	machdep.h
-pl_7.o: player.h /usr/include/curses.h /usr/include/stdio.h \
-	/usr/include/sgtty.h /usr/include/sys/ioctl.h \
-	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h externs.h \
-	/usr/include/signal.h /usr/include/ctype.h /usr/include/setjmp.h \
-	machdep.h
-pl_main.o: player.h /usr/include/curses.h /usr/include/stdio.h \
-	/usr/include/sgtty.h /usr/include/sys/ioctl.h \
-	/usr/include/sys/ttychars.h /usr/include/sys/ttydev.h externs.h \
-	/usr/include/signal.h /usr/include/ctype.h /usr/include/setjmp.h \
-	machdep.h /usr/include/sys/types.h /usr/include/sys/wait.h
-sync.o: externs.h /usr/include/stdio.h /usr/include/signal.h \
-	/usr/include/ctype.h /usr/include/setjmp.h machdep.h \
-	/usr/include/sys/file.h /usr/include/sys/errno.h \
-	/usr/include/sys/types.h /usr/include/sys/stat.h
+main.o: externs.h machdep.h
+pl_main.o: player.h externs.h machdep.h
+pl_1.o: player.h externs.h machdep.h
+pl_2.o: player.h externs.h machdep.h
+pl_3.o: player.h externs.h machdep.h
+pl_4.o: player.h externs.h machdep.h
+pl_5.o: player.h externs.h machdep.h
+pl_6.o: player.h externs.h machdep.h
+pl_7.o: player.h externs.h machdep.h
+dr_main.o: driver.h externs.h machdep.h
+dr_1.o: driver.h externs.h machdep.h
+dr_2.o: driver.h externs.h machdep.h
+dr_3.o: driver.h externs.h machdep.h
+dr_4.o: externs.h machdep.h
+dr_5.o: externs.h machdep.h
+lo_main.o: externs.h machdep.h
+assorted.o: externs.h machdep.h
+game.o: externs.h machdep.h
+globals.o: externs.h machdep.h
+misc.o: externs.h machdep.h
+parties.o: externs.h machdep.h
+sync.o: externs.h machdep.h
