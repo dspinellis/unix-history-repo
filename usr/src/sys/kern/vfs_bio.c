@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_bio.c	7.22 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -41,7 +41,7 @@ bread(vp, blkno, size, cred, bpp)
 		panic("bread: size 0");
 	*bpp = bp = getblk(vp, blkno, size);
 	if (bp->b_flags&(B_DONE|B_DELWRI)) {
-		trace(TR_BREADHIT, pack(vp->v_mount->m_fsid[0], size), blkno);
+		trace(TR_BREADHIT, pack(vp, size), blkno);
 		return (0);
 	}
 	bp->b_flags |= B_READ;
@@ -52,7 +52,7 @@ bread(vp, blkno, size, cred, bpp)
 		bp->b_rcred = cred;
 	}
 	VOP_STRATEGY(bp);
-	trace(TR_BREADMISS, pack(vp->v_mount->m_fsid[0], size), blkno);
+	trace(TR_BREADMISS, pack(vp, size), blkno);
 	u.u_ru.ru_inblock++;		/* pay for read */
 	return (biowait(bp));
 }
@@ -87,12 +87,10 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 				bp->b_rcred = cred;
 			}
 			VOP_STRATEGY(bp);
-			trace(TR_BREADMISS, pack(vp->v_mount->m_fsid[0], size),
-			    blkno);
+			trace(TR_BREADMISS, pack(vp, size), blkno);
 			u.u_ru.ru_inblock++;		/* pay for read */
 		} else
-			trace(TR_BREADHIT, pack(vp->v_mount->m_fsid[0], size),
-			    blkno);
+			trace(TR_BREADHIT, pack(vp, size), blkno);
 	}
 
 	/*
@@ -103,8 +101,7 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 		rabp = getblk(vp, rablkno, rabsize);
 		if (rabp->b_flags & (B_DONE|B_DELWRI)) {
 			brelse(rabp);
-			trace(TR_BREADHITRA,
-			    pack(vp->v_mount->m_fsid[0], rabsize), rablkno);
+			trace(TR_BREADHITRA, pack(vp, rabsize), rablkno);
 		} else {
 			rabp->b_flags |= B_READ|B_ASYNC;
 			if (rabp->b_bcount > rabp->b_bufsize)
@@ -114,8 +111,7 @@ breada(vp, blkno, size, rablkno, rabsize, cred, bpp)
 				rabp->b_rcred = cred;
 			}
 			VOP_STRATEGY(rabp);
-			trace(TR_BREADMISSRA,
-			    pack(vp->v_mount->m_fsid[0], rabsize), rablkno);
+			trace(TR_BREADMISSRA, pack(vp, rabsize), rablkno);
 			u.u_ru.ru_inblock++;		/* pay in advance */
 		}
 	}
@@ -146,8 +142,7 @@ bwrite(bp)
 		u.u_ru.ru_oublock++;		/* noone paid yet */
 	else
 		reassignbuf(bp, bp->b_vp);
-	trace(TR_BWRITE,
-	    pack(bp->b_vp->v_mount->m_fsid[0], bp->b_bcount), bp->b_lblkno);
+	trace(TR_BWRITE, pack(bp->b_vp, bp->b_bcount), bp->b_lblkno);
 	if (bp->b_bcount > bp->b_bufsize)
 		panic("bwrite");
 	s = splbio();
@@ -218,8 +213,7 @@ brelse(bp)
 	register struct buf *flist;
 	register s;
 
-	trace(TR_BRELSE,
-	    pack(bp->b_vp->v_mount->m_fsid[0], bp->b_bufsize), bp->b_lblkno);
+	trace(TR_BRELSE, pack(bp->b_vp, bp->b_bufsize), bp->b_lblkno);
 	/*
 	 * If a process is waiting for the buffer, or
 	 * is waiting for a free buffer, awaken it.
@@ -456,8 +450,7 @@ loop:
 		(void) bawrite(bp);
 		goto loop;
 	}
-	trace(TR_BRELSE,
-	    pack(bp->b_vp->v_mount->m_fsid[0], bp->b_bufsize), bp->b_lblkno);
+	trace(TR_BRELSE, pack(bp->b_vp, bp->b_bufsize), bp->b_lblkno);
 	if (bp->b_vp)
 		brelvp(bp);
 	if (bp->b_rcred != NOCRED) {
