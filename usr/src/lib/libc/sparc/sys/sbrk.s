@@ -8,11 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- * from: $Header: sbrk.s,v 1.1 91/07/06 13:05:59 torek Exp $
+ * from: $Header: sbrk.s,v 1.3 92/07/02 00:56:49 torek Exp $
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)sbrk.s	5.1 (Berkeley) %G%"
+	.asciz "@(#)sbrk.s	5.2 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 #include "SYS.h"
@@ -31,7 +31,7 @@ ENTRY(sbrk)
 	mov	%o4, %o0			! copy for syscall
 	mov	SYS_break, %g1
 	t	ST_SYSCALL			! break(new_break)
-	bcc	1f				! if success,
+	bcc,a	1f				! if success,
 	 mov	%o3, %o0			!    set return value
 	ERROR()
 1:
