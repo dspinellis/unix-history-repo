@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vmstat.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)vmstat.c	5.10 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -26,6 +26,7 @@ static char sccsid[] = "@(#)vmstat.c	5.9 (Berkeley) %G%";
 #include <sys/namei.h>
 
 #include <machine/pte.h>
+#include <paths.h>
 
 static	int ut;
 
@@ -33,21 +34,21 @@ WINDOW *
 openkre()
 {
 
-	ut = open("/etc/utmp", O_RDONLY);
+	ut = open(_PATH_UTMP, O_RDONLY);
 	if (ut < 0)
 		error("No utmp");
-        return (stdscr);
+	return (stdscr);
 }
 
 closekre(w)
-        WINDOW *w;
+	WINDOW *w;
 {
 
 	(void) close(ut);
-        if (w == NULL)
-                return;
-        wclear(w);
-        wrefresh(w);
+	if (w == NULL)
+		return;
+	wclear(w);
+	wrefresh(w);
 }
 
 long	time();
@@ -160,7 +161,7 @@ initkre()
 	static int once = 0;
 
 	if (name[0].n_type == 0) {
-		nlist("/vmunix",name);
+		nlist(_PATH_UNIX,name);
 		if (name[0].n_type == 0) {
 			error("No namelist");
 			return(0);

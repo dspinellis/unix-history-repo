@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)swap.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)swap.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
@@ -16,18 +16,17 @@ static char sccsid[] = "@(#)swap.c	5.4 (Berkeley) %G%";
 #include <sys/conf.h>
 #include <sys/vmmac.h>
 #include <machine/pte.h>
+#include <paths.h>
 
 WINDOW *
 openswap()
 {
-
 	return (subwin(stdscr, LINES-5-1, 0, 5, 0));
 }
 
 closeswap(w)
 	WINDOW *w;
 {
-
 	if (w == NULL)
 		return;
 	wclear(w);
@@ -45,14 +44,14 @@ struct	swdevt *swdevt;
 int	colwidth;
 
 extern union {
-        struct  user user;
-        char    upages[UPAGES][NBPG];
+	struct  user user;
+	char    upages[UPAGES][NBPG];
 } user;
 #define u       user.user
 
 showswap()
 {
-        register int i, j;
+	register int i, j;
 	register struct proc *pp;
 	register struct text *xp;
 	register int row;
@@ -81,7 +80,7 @@ showswap()
 	row = swapdisplay(2, dmtext, 'X');
 	if (kprocp == NULL)
 		return;
-        for (i = 0, pp = kprocp; i < nproc; i++, pp++) {
+	for (i = 0, pp = kprocp; i < nproc; i++, pp++) {
 		if (pp->p_stat == 0 || pp->p_stat == SZOMB)
 			continue;
 		if (pp->p_flag & SSYS)
@@ -94,7 +93,7 @@ showswap()
 		if ((pp->p_flag & SLOAD) == 0)
 			vusize(pp);
 #endif
-        }
+	}
 	(void) swapdisplay(1+row, dmmax, 'X');
 }
 
@@ -168,47 +167,46 @@ dmtoindex(dm)
 
 static struct nlist nlst[] = {
 #define X_PROC          0
-        { "_proc" },
+	{ "_proc" },
 #define X_NPROC         1
-        { "_nproc" },
+	{ "_nproc" },
 #define X_USRPTMAP      2
-        { "_Usrptmap" },
+	{ "_Usrptmap" },
 #define X_USRPT         3
-        { "_usrpt" },
+	{ "_usrpt" },
 #define X_NSWAP         4
-        { "_nswap" },
+	{ "_nswap" },
 #define X_DMMIN         5
-        { "_dmmin" },
+	{ "_dmmin" },
 #define X_DMMAX         6
-        { "_dmmax" },
+	{ "_dmmax" },
 #define	X_DMTEXT	7
 	{ "_dmtext" },
 #define X_NSWDEV        8
-        { "_nswdev" },
+	{ "_nswdev" },
 #define	X_SWDEVT	9
 	{ "_swdevt" },
 #define	X_NTEXT		10
 	{ "_ntext" },
 #define	X_TEXT		11
 	{ "_text" },
-        { "" }
+	{ "" }
 };
 
 initswap()
 {
-
 	if (nlst[X_PROC].n_type == 0) {
-		nlist("/vmunix", nlst);
+		nlist(_PATH_UNIX, nlst);
 		if (nlst[X_PROC].n_type == 0) {
-			error("namelist on /vmunix failed");
+			error("namelist on %s failed", _PATH_UNIX);
 			return(0);
 		}
 	}
-        if (nswdev == 0) {
-                dmmin = getw(nlst[X_DMMIN].n_value);
-                dmmax = getw(nlst[X_DMMAX].n_value);
-                dmtext = getw(nlst[X_DMTEXT].n_value);
-                nswdev = getw(nlst[X_NSWDEV].n_value);
+	if (nswdev == 0) {
+		dmmin = getw(nlst[X_DMMIN].n_value);
+		dmmax = getw(nlst[X_DMMAX].n_value);
+		dmtext = getw(nlst[X_DMTEXT].n_value);
+		nswdev = getw(nlst[X_NSWDEV].n_value);
 		if (nswdev > MAXSWAPDEV)
 			nswdev = MAXSWAPDEV;
 		swdevt = (struct swdevt *)calloc(nswdev, sizeof (*swdevt));
@@ -216,17 +214,17 @@ initswap()
 		read(kmem, swdevt, nswdev * sizeof (struct swdevt));
 		ntext = getw(nlst[X_NTEXT].n_value);
 		textp = getw(nlst[X_TEXT].n_value);
-        }
-        if (procp == NULL) {
-                procp = getw(nlst[X_PROC].n_value);
-                nproc = getw(nlst[X_NPROC].n_value);
-        }
+	}
+	if (procp == NULL) {
+		procp = getw(nlst[X_PROC].n_value);
+		nproc = getw(nlst[X_NPROC].n_value);
+	}
 	if (xtext == NULL)
 		xtext = (struct text *)calloc(ntext, sizeof (struct text));
 	if (kprocp == NULL)
-                kprocp = (struct proc *)calloc(nproc, sizeof (struct proc));
-        if (usrpt != NULL)
-                return(1);
+		kprocp = (struct proc *)calloc(nproc, sizeof (struct proc));
+	if (usrpt != NULL)
+		return(1);
 	usrpt = (struct pte *)nlst[X_USRPT].n_value;
 	Usrptma = (struct pte *)nlst[X_USRPTMAP].n_value;
 	if (pt == NULL)
@@ -236,16 +234,15 @@ initswap()
 
 fetchswap()
 {
-
 	if (nlst[X_PROC].n_type == 0)
 		return;
 	if (kprocp == NULL) {
-                kprocp = (struct proc *)malloc(sizeof (*kprocp) * nproc);
+		kprocp = (struct proc *)malloc(sizeof (*kprocp) * nproc);
 		if (kprocp == NULL)
 			return;
 	}
-        lseek(kmem, procp, L_SET);
-        if (read(kmem, kprocp, sizeof (struct proc) * nproc) !=
+	lseek(kmem, procp, L_SET);
+	if (read(kmem, kprocp, sizeof (struct proc) * nproc) !=
 	    sizeof (struct proc) * nproc) {
 		error("couldn't read proc table");
 		return;

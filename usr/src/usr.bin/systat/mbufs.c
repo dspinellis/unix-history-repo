@@ -5,23 +5,22 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mbufs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mbufs.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
 #include <sys/mbuf.h>
+#include <paths.h>
 
 WINDOW *
 openmbufs()
 {
-
 	return (subwin(stdscr, LINES-5-1, 0, 5, 0));
 }
 
 closembufs(w)
 	WINDOW *w;
 {
-
 	if (w == NULL)
 		return;
 	wclear(w);
@@ -33,10 +32,9 @@ struct	mbstat *mb;
 
 labelmbufs()
 {
-
-        wmove(wnd, 0, 0); wclrtoeol(wnd);
-        mvwaddstr(wnd, 0, 10,
-           "/0   /5   /10  /15  /20  /25  /30  /35  /40  /45  /50  /55  /60");
+	wmove(wnd, 0, 0); wclrtoeol(wnd);
+	mvwaddstr(wnd, 0, 10,
+	    "/0   /5   /10  /15  /20  /25  /30  /35  /40  /45  /50  /55  /60");
 }
 
 char *mtnames[] = {
@@ -97,16 +95,15 @@ showmbufs()
 static struct nlist nlst[] = {
 #define	X_MBSTAT	0
 	{ "_mbstat" },
-        { "" }
+	{ "" }
 };
 
 initmbufs()
 {
-
 	if (nlst[X_MBSTAT].n_type == 0) {
-		nlist("/vmunix", nlst);
+		nlist(_PATH_UNIX, nlst);
 		if (nlst[X_MBSTAT].n_type == 0) {
-			error("namelist on /vmunix failed");
+			error("namelist on %s failed", _PATH_UNIX);
 			return(0);
 		}
 	}
@@ -117,7 +114,6 @@ initmbufs()
 
 fetchmbufs()
 {
-
 	if (nlst[X_MBSTAT].n_type == 0)
 		return;
 	lseek(kmem, nlst[X_MBSTAT].n_value, L_SET);

@@ -11,21 +11,22 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
+#include <paths.h>
 
 static struct nlist nlst[] = {
 #define X_CCPU          0
-        { "_ccpu" },
+	{ "_ccpu" },
 #define X_AVENRUN       1
-        { "_avenrun" },
+	{ "_avenrun" },
 #define	X_HZ		2
 	{ "_hz" },
 #define	X_PHZ		3
 	{ "_phz" },
-        { "" }
+	{ "" }
 };
 
 int     kmem = -1;
@@ -44,8 +45,8 @@ int     dellave;
 static	WINDOW *wload;			/* one line window for load average */
 
 main(argc, argv)
-        int argc;
-        char **argv;
+	int argc;
+	char **argv;
 {
 
 	argc--, argv++;
@@ -67,40 +68,40 @@ main(argc, argv)
 		}
 		argc--, argv++;
 	}
-        nlist("/vmunix", nlst);
+	nlist(_PATH_UNIX, nlst);
 	if (nlst[X_CCPU].n_type == 0) {
-		fprintf(stderr, "Couldn't namelist /vmunix.\n");
+		fprintf(stderr, "Couldn't namelist %s.\n", _PATH_UNIX);
 		exit(1);
 	}
-	kmemf = "/dev/kmem";
+	kmemf = _PATH_KMEM;
 	kmem = open(kmemf, O_RDONLY);
 	if (kmem < 0) {
 		perror(kmemf);
 		exit(1);
 	}
-	memf = "/dev/mem";
+	memf = _PATH_MEM;
 	mem = open(memf, O_RDONLY);
 	if (mem < 0) {
 		perror(memf);
 		exit(1);
 	}
-	swapf = "/dev/drum";
+	swapf = _PATH_DRUM;
 	swap = open(swapf, O_RDONLY);
 	if (swap < 0) {
 		perror(swapf);
 		exit(1);
 	}
-        signal(SIGINT, die);
-        signal(SIGQUIT, die);
-        signal(SIGTERM, die);
+	signal(SIGINT, die);
+	signal(SIGQUIT, die);
+	signal(SIGTERM, die);
 
-        /*
+	/*
 	 * Initialize display.  Load average appears in a one line
 	 * window of its own.  Current command's display appears in
 	 * an overlapping sub-window of stdscr configured by the display
 	 * routines to minimize update work by curses.
 	 */
-        initscr();
+	initscr();
 	CMDLINE = LINES - 1;
 	wnd = (*curcmd->c_open)();
 	if (wnd == NULL) {
@@ -113,56 +114,55 @@ main(argc, argv)
 		die();
 	}
 
-        gethostname(hostname, sizeof (hostname));
-        lseek(kmem, nlst[X_CCPU].n_value, L_SET);
-        read(kmem, &ccpu, sizeof (ccpu));
-        lccpu = log(ccpu);
+	gethostname(hostname, sizeof (hostname));
+	lseek(kmem, nlst[X_CCPU].n_value, L_SET);
+	read(kmem, &ccpu, sizeof (ccpu));
+	lccpu = log(ccpu);
 	hz = getw(nlst[X_HZ].n_value);
 	phz = getw(nlst[X_PHZ].n_value);
 	(*curcmd->c_init)();
 	curcmd->c_flags |= CF_INIT;
-        labels();
+	labels();
 
-        known[0].k_uid = -1;
+	known[0].k_uid = -1;
 	known[0].k_name[0] = '\0';
-        numknown = 1;
+	numknown = 1;
 	procs[0].pid = -1;
 	strcpy(procs[0].cmd, "<idle>");
 	numprocs = 1;
-        dellave = 0.0;
+	dellave = 0.0;
 
-        signal(SIGALRM, display);
-        sigtstpdfl = signal(SIGTSTP, suspend);
-        display();
-        noecho();
-        crmode();
+	signal(SIGALRM, display);
+	sigtstpdfl = signal(SIGTSTP, suspend);
+	display();
+	noecho();
+	crmode();
 	keyboard();
 	/*NOTREACHED*/
 }
 
 labels()
 {
-
 	if (curcmd->c_flags & CF_LOADAV) {
 		mvaddstr(2, 20,
 		    "/0   /1   /2   /3   /4   /5   /6   /7   /8   /9   /10");
 		mvaddstr(3, 5, "Load Average");
 	}
-        (*curcmd->c_label)();
+	(*curcmd->c_label)();
 #ifdef notdef
-        mvprintw(21, 25, "CPU usage on %s", hostname);
+	mvprintw(21, 25, "CPU usage on %s", hostname);
 #endif
-        refresh();
+	refresh();
 }
 
 display()
 {
-        register int i, j;
+	register int i, j;
 
-        /* Get the load average over the last minute. */
-        lseek(kmem, nlst[X_AVENRUN].n_value, L_SET);
+	/* Get the load average over the last minute. */
+	lseek(kmem, nlst[X_AVENRUN].n_value, L_SET);
 	read(kmem, avenrun, sizeof (avenrun));
-        (*curcmd->c_fetch)();
+	(*curcmd->c_fetch)();
 	if (curcmd->c_flags & CF_LOADAV) {
 		j = 5.0*avenrun[0] + 0.5;
 		dellave -= avenrun[0];
@@ -181,13 +181,13 @@ display()
 		if (j > 50)
 			wprintw(wload, " %4.1f", avenrun[0]);
 	}
-        (*curcmd->c_refresh)();
+	(*curcmd->c_refresh)();
 	if (curcmd->c_flags & CF_LOADAV)
 		wrefresh(wload);
-        wrefresh(wnd);
-        move(CMDLINE, col);
-        refresh();
-        alarm(naptime);
+	wrefresh(wnd);
+	move(CMDLINE, col);
+	refresh();
+	alarm(naptime);
 }
 
 load()
@@ -203,14 +203,12 @@ load()
 
 die()
 {
-
-        endwin();
-        exit(0);
+	endwin();
+	exit(0);
 }
 
 error(fmt, a1, a2, a3)
 {
-
 	mvprintw(CMDLINE, 0, fmt, a1, a2, a3);
 	clrtoeol();
 	refresh();
