@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.57 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.58 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1024,15 +1024,24 @@ tryhost:
 			if (fstat(i, &stbuf) < 0)
 			{
 				/* oops.... */
-				syserr("openmailer: fd %d not open", i);
-				(void) open("/dev/null", O_RDONLY, 0666);
+				int fd;
+
+				syserr("%s... openmailer(%s): fd %d not open",
+					e->e_to, m->m_name, i);
+				fd = open("/dev/null", O_RDONLY, 0666);
+				if (fd != i)
+				{
+					(void) dup2(fd, i);
+					(void) close(fd);
+				}
 			}
 		}
 
 		/* create a pipe to shove the mail through */
 		if (pipe(mpvect) < 0)
 		{
-			syserr("openmailer: pipe (to mailer)");
+			syserr("%s... openmailer(%s): pipe (to mailer)",
+				e->e_to, m->m_name);
 			if (tTd(11, 1))
 				printf("openmailer: NULL\n");
 			rcode = EX_OSERR;
@@ -1042,7 +1051,8 @@ tryhost:
 		/* if this mailer speaks smtp, create a return pipe */
 		if (clever && pipe(rpvect) < 0)
 		{
-			syserr("openmailer: pipe (from mailer)");
+			syserr("%s... openmailer(%s): pipe (from mailer)",
+				e->e_to, m->m_name);
 			(void) close(mpvect[0]);
 			(void) close(mpvect[1]);
 			if (tTd(11, 1))
@@ -1070,7 +1080,8 @@ tryhost:
 		if (pid < 0)
 		{
 			/* failure */
-			syserr("openmailer: cannot fork");
+			syserr("%s... openmailer(%s): cannot fork",
+				e->e_to, m->m_name);
 			(void) close(mpvect[0]);
 			(void) close(mpvect[1]);
 			if (clever)
@@ -1107,8 +1118,8 @@ tryhost:
 				(void) close(rpvect[0]);
 				if (dup2(rpvect[1], STDOUT_FILENO) < 0)
 				{
-					syserr("Cannot dup pipe %d for stdout",
-						rpvect[1]);
+					syserr("%s... openmailer(%s): cannot dup pipe %d for stdout",
+						e->e_to, m->m_name, rpvect[1]);
 					_exit(EX_OSERR);
 				}
 				(void) close(rpvect[1]);
@@ -1118,14 +1129,16 @@ tryhost:
 				/* put mailer output in transcript */
 				if (dup2(fileno(e->e_xfp), STDOUT_FILENO) < 0)
 				{
-					syserr("Cannot dup xscript %d for stdout",
+					syserr("%s... openmailer(%s): cannot dup xscript %d for stdout",
+						e->e_to, m->m_name,
 						fileno(e->e_xfp));
 					_exit(EX_OSERR);
 				}
 			}
 			if (dup2(STDOUT_FILENO, STDERR_FILENO) < 0)
 			{
-				syserr("Cannot dup stdout for stderr");
+				syserr("%s... openmailer(%s): cannot dup stdout for stderr",
+					e->e_to, m->m_name);
 				_exit(EX_OSERR);
 			}
 
@@ -1133,8 +1146,8 @@ tryhost:
 			(void) close(mpvect[1]);
 			if (dup2(mpvect[0], STDIN_FILENO) < 0)
 			{
-				syserr("Cannot dup pipe %d for stdin",
-					mpvect[0]);
+				syserr("%s... openmailer(%s): cannot dup pipe %d for stdin",
+					e->e_to, m->m_name, mpvect[0]);
 				_exit(EX_OSERR);
 			}
 			(void) close(mpvect[0]);
