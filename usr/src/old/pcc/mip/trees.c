@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.14 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.15 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -150,6 +150,9 @@ buildtree( o, l, r ) register NODE *l, *r; {
 		case GE:
 		case EQ:
 		case NE:
+			if( l->in.type == ENUMTY && r->in.type == ENUMTY )
+				chkpun( p );
+
 		case ANDAND:
 		case OROR:
 		case CBRANCH:
@@ -671,8 +674,7 @@ conval( p, o, q ) register NODE *p, *q; {
 		p->tn.lval -= val;
 		break;
 	case MUL:
-		if ( u ) p->tn.lval *= (unsigned) val;
-		else p->tn.lval *= val;
+		p->tn.lval *= val;
 		break;
 	case DIV:
 		if( val == 0 ) uerror( "division by 0" );
@@ -725,16 +727,16 @@ conval( p, o, q ) register NODE *p, *q; {
 		p->tn.lval = p->tn.lval >= val;
 		break;
 	case ULT:
-		p->tn.lval = p->tn.lval < (unsigned) val;
+		p->tn.lval = (p->tn.lval-val)<0;
 		break;
 	case ULE:
-		p->tn.lval = p->tn.lval <= (unsigned) val;
-		break;
-	case UGT:
-		p->tn.lval = p->tn.lval > (unsigned) val;
+		p->tn.lval = (p->tn.lval-val)<=0;
 		break;
 	case UGE:
-		p->tn.lval = p->tn.lval >= (unsigned) val;
+		p->tn.lval = (p->tn.lval-val)>=0;
+		break;
+	case UGT:
+		p->tn.lval = (p->tn.lval-val)>0;
 		break;
 	case EQ:
 		p->tn.lval = p->tn.lval == val;
@@ -769,12 +771,11 @@ chkpun(p) register NODE *p; {
 	t2 = p->in.right->in.type;
 
 	if( t1==ENUMTY || t2==ENUMTY ) { /* check for enumerations */
-		if( logop( p->in.op ) && p->in.op != EQ && p->in.op != NE ) {
-			uerror( "illegal comparison of enums" );
-			return;
-			}
-		if( t1==ENUMTY && t2==ENUMTY && p->in.left->fn.csiz==p->in.right->fn.csiz ) return;
-		werror( "enumeration type clash, operator %s", opst[p->in.op] );
+		if( logop( p->in.op ) && p->in.op != EQ && p->in.op != NE )
+			werror( "comparison of enums" );
+		if( t1==ENUMTY && t2==ENUMTY &&
+		    p->in.left->fn.csiz!=p->in.right->fn.csiz )
+			werror( "enumeration type clash, operator %s", opst[p->in.op] );
 		return;
 		}
 
@@ -1127,11 +1128,7 @@ tymatch(p)  register NODE *p; {
 	else if( t1==LONG || t2==LONG ) t = LONG;
 	else t = INT;
 
-#ifdef tahoe
-	if( asgop(o) ){
-#else
 	if( o == ASSIGN || o == CAST || o == RETURN ){
-#endif
 		tu = p->in.left->in.type;
 		t = t1;
 		}
@@ -1144,15 +1141,18 @@ tymatch(p)  register NODE *p; {
 	   are those involving FLOAT/DOUBLE, and those
 	   from LONG to INT and ULONG to UNSIGNED */
 
-#ifdef tahoe
-	if( t != t1 )
-#else
 	if( t != t1 && ! asgop(o) )
-#endif
 		p->in.left = makety( p->in.left, tu, 0, (int)tu );
 
-	if( t != t2 || o==CAST )
-		p->in.right = makety( p->in.right, tu, 0, (int)tu );
+	if( t != t2 || o==CAST)
+		if ( tu == ENUMTY ) {/* always asgop */
+			p->in.right = makety( p->in.right, INT, 0, INT );
+			p->in.right->in.type = tu;
+			p->in.right->fn.cdim = p->in.left->fn.cdim;
+			p->in.right->fn.csiz = p->in.left->fn.csiz;
+			}
+		else
+			p->in.right = makety( p->in.right, tu, 0, (int)tu );
 
 	if( asgop(o) ){
 		p->in.type = p->in.left->in.type;
@@ -1192,7 +1192,7 @@ makety( p, t, d, s ) register NODE *p; TWORD t; {
 		if (t == DOUBLE) {
 			p->in.op = DCON;
 			if (ISUNSIGNED(p->in.type))
-				p->dpn.dval = (unsigned CONSZ) p->tn.lval;
+				p->dpn.dval = /* (unsigned CONSZ) */ p->tn.lval;
 			else
 				p->dpn.dval = p->tn.lval;
 			p->in.type = p->fn.csiz = t;
@@ -1201,7 +1201,7 @@ makety( p, t, d, s ) register NODE *p; TWORD t; {
 		if (t == FLOAT) {
 			p->in.op = FCON;
 			if( ISUNSIGNED(p->in.type) ){
-				p->fpn.fval = (unsigned CONSZ) p->tn.lval;
+				p->fpn.fval = /* (unsigned CONSZ) */ p->tn.lval;
 				}
 			else {
 				p->fpn.fval = p->tn.lval;
@@ -1418,10 +1418,10 @@ opact( p )  NODE *p; {
 	case ASSIGN:
 	case RETURN:
 		if( mt12 & MSTR ) return( LVAL+NCVT+TYPL+OTHER );
+		else if( (mt1&MENU)||(mt2&MENU) ) return( LVAL+NCVT+TYPL+PTMATCH+PUN );
 	case CAST:
 		if(o==CAST && mt1==0)return(TYPL+TYMATCH);
-		if( mt12 & MDBI ) return( TYPL+LVAL+TYMATCH );
-		else if( (mt1&MENU)||(mt2&MENU) ) return( LVAL+NCVT+TYPL+PTMATCH+PUN );
+		else if( mt12 & MDBI ) return( TYPL+LVAL+TYMATCH );
 		else if( mt2 == 0 &&
 		        ( p->in.right->in.op == CALL ||
 			  p->in.right->in.op == UNARY CALL)) break;
@@ -1480,7 +1480,7 @@ moditype( ty ) TWORD ty; {
 		return( MVOID );
 	case ENUMTY:
 	case MOETY:
-		return( MENU );
+		return( MENU|MINT|MDBI|MPTI );  /* enums are ints */
 
 	case STRTY:
 	case UNIONTY:
@@ -1505,35 +1505,11 @@ moditype( ty ) TWORD ty; {
 		}
 	}
 
-int	nsizeof;
-
-static
-haseffects(p)
-register NODE *	p;
-{
-	register	o, ty;
-
-	o = p->in.op;
-	ty = optype(o);
-	if (ty == LTYPE)
-		return 0;
-	if (asgop(o) || callop(o))
-		return 1;
-	if (haseffects(p->in.left))
-		return 1;
-	if (ty == UTYPE)
-		return 0;
-	return haseffects(p->in.right);
-}
-
 NODE *
 doszof( p )  register NODE *p; {
 	/* do sizeof p */
 	int i;
 
-	--nsizeof;
-	if (haseffects(p))
-		werror( "operations in object of sizeof are skipped" );
 	/* whatever is the meaning of this if it is a bitfield? */
 	i = tsize( p->in.type, p->fn.cdim, p->fn.csiz )/SZCHAR;
 
@@ -1565,7 +1541,6 @@ eprint( p, down, a, b ) register NODE *p; int *a, *b; {
 	}
 # endif
 
-#ifndef PRTDCON
 prtdcon( p ) register NODE *p; {
 	int o = p->in.op, i;
 
@@ -1583,7 +1558,6 @@ prtdcon( p ) register NODE *p; {
 		p->in.op = NAME;
 		}
 	}
-#endif PRTDCON
 
 
 int edebug = 0;
