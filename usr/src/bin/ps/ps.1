@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ps.1	6.18 (Berkeley) %G%
+.\"     @(#)ps.1	6.19 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PS 1
@@ -13,7 +13,7 @@
 .Nd process status
 .Sh SYNOPSIS
 .Nm \&ps
-.Op Fl aChjlmrSTuvwx
+.Op Fl aCehjlmrSTuvwx
 .Op Fl M Ar core
 .Op Fl N Ar system
 .Op Fl O Ar fmt
@@ -49,6 +49,8 @@ Display information about other users' processes as well as your own.
 Change the way the cpu percentage is calculated by using a ``raw''
 cpu calculation that ignores ``resident'' time (this normally has
 no effect).
+.It Fl e
+Display the environment as well.
 .It Fl h
 Repeat the information header as often as necessary to guarantee one
 header per page of information.
