@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)fsck.h	5.12 (Berkeley) %G%
+ *	@(#)fsck.h	5.13 (Berkeley) %G%
  */
 
 #define	MAXDUP		10	/* limit on dup blks (per inode) */
@@ -164,10 +164,6 @@ ino_t	maxino;			/* number of inodes in file system */
 ino_t	lastino;		/* last inode in use */
 char	*statemap;		/* ptr to inode state table */
 short	*lncntp;		/* ptr to link count table */
-
-char	pathname[BUFSIZ];	/* current pathname */
-char	*pathp;			/* ptr to current position in pathname */
-char	*endpathname;		/* ptr to current end of pathname */
 
 ino_t	lfdir;			/* lost & found directory inode number */
 char	*lfname;		/* lost & found directory name */
