@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)mkfifo.1	5.6 (Berkeley) %G%
+.\"     @(#)mkfifo.1	5.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MKFIFO 1
@@ -37,13 +37,11 @@ requires write permission in the parent directory.
 .Nm Mkfifo
 exits 0 if successful, and >0 if an error occurred.
 .Sh STANDARDS
-.Nm Mkfifo is
+The
+.Nm mkfifo
+utility is expected to be
 .St -p1003.2
 compliant.
-.Pp
-This manual page derived from the
-.St p1003.2
-manual page.
 .Sh SEE ALSO
 .Xr mkdir 1 ,
 .Xr rm 1
