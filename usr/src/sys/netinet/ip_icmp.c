@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_icmp.c	6.14 (Berkeley) %G%
+ *	@(#)ip_icmp.c	6.15 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -37,10 +37,11 @@ int	icmpprintfs = 0;
  * Generate an error packet of type error
  * in response to bad packet ip.
  */
-/*VARARGS3*/
-icmp_error(oip, type, code, dest)
+/*VARARGS4*/
+icmp_error(oip, type, code, ifp, dest)
 	struct ip *oip;
 	int type, code;
+	struct ifnet *ifp;
 	struct in_addr dest;
 {
 	register unsigned oiplen = oip->ip_hl << 2;
@@ -53,7 +54,8 @@ icmp_error(oip, type, code, dest)
 	if (icmpprintfs)
 		printf("icmp_error(%x, %d, %d)\n", oip, type, code);
 #endif
-	icmpstat.icps_error++;
+	if (type != ICMP_REDIRECT)
+		icmpstat.icps_error++;
 	/*
 	 * Don't send error if not the first fragment of message.
 	 * Don't EVER error if the old packet protocol was ICMP.
@@ -110,7 +112,7 @@ icmp_error(oip, type, code, dest)
 	nip->ip_p = IPPROTO_ICMP;
 	/* icmp_send adds ip header to m_off and m_len, so we deduct here */
 	m->m_off += oiplen;
-	icmp_reflect(nip, in_ifaddr->ia_ifp);
+	icmp_reflect(nip, ifp);
 
 free:
 	m_freem(dtom(oip));
@@ -322,14 +324,12 @@ free:
  * Reflect the ip packet back to the source
  */
 icmp_reflect(ip, ifp)
-	struct ip *ip;
+	register struct ip *ip;
 	struct ifnet *ifp;
 {
 	register struct in_ifaddr *ia;
-	register u_char *cp;
-	int opt, optlen, cnt;
 	struct in_addr t;
-	struct in_addr *p, *q;
+	struct mbuf *m, *opts = 0, *ip_srcroute();
 
 	t = ip->ip_dst;
 	ip->ip_dst = ip->ip_src;
@@ -352,56 +352,28 @@ icmp_reflect(ip, ifp)
 		t = IA_SIN(ia)->sin_addr;
 	ip->ip_src = t;
 
-	/*
-	 * If the incoming packet was source-routed,
-	 * we need to reverse the route and set the next-hop destination.
-	 * We can dispense with the error checking
-	 * as ip_dooptions has been through here before.
-	 */
 	if ((ip->ip_hl << 2) > sizeof(struct ip)) {
-		cp = (u_char *)(ip + 1);
-		cnt = (ip->ip_hl << 2) - sizeof (struct ip);
-		for (; cnt > 0; cnt -= optlen, cp += optlen) {
-			opt = cp[IPOPT_OPTVAL];
-			if (opt == IPOPT_EOL)
-				break;
-			if (opt == IPOPT_NOP)
-				optlen = 1;
-			else
-				optlen = cp[IPOPT_OLEN];
-			if (opt == IPOPT_LSRR || opt == IPOPT_SSRR) {
-				p = (struct in_addr *)
-				    (cp + cp[IPOPT_OFFSET] - 1) - 1;
-				q = (struct in_addr *)(cp + IPOPT_MINOFF - 1);
-				/*
-				 * First switch the last route entry
-				 * (first hop for return) with ip_dst
-				 * (final hop on return).
-				 */
-				bcopy((caddr_t)p, (caddr_t)&t, sizeof(t));
-				bcopy((caddr_t)&ip->ip_dst, (caddr_t)p,
-				   sizeof(struct in_addr));
-				ip->ip_dst = t;
-				p--;
-				/*
-				 * Then reverse remaining route entries.
-				 */
-				while (p > q) {
-					bcopy((caddr_t)p, (caddr_t)&t,
-					    sizeof(struct in_addr));
-					bcopy((caddr_t)q, (caddr_t)p,
-					    sizeof(struct in_addr));
-					bcopy((caddr_t)&t, (caddr_t)q,
-					    sizeof(struct in_addr));
-					p--;
-					q++;
-				}
-				cp[IPOPT_OFFSET] = IPOPT_MINOFF;
-				break;
-			}
-		}
+		int optlen = (ip->ip_hl << 2) - sizeof(struct ip);
+
+		/*
+		 * Retrieve any source routing from the incoming packet
+		 * and strip out other options.  Adjust the IP
+		 * and mbuf lengths.  The length of the options is added
+		 * to the mbuf here, as it was already subtracted
+		 * in icmp_input, and ip_stripoptions will subtract it again.
+		 * Adjust the mbuf offset to point to the new location
+		 * of the icmp header.
+		 */
+		opts = ip_srcroute();
+		m = dtom(ip);
+		m->m_off -= optlen;
+		m->m_len += optlen;
+		ip->ip_len -= optlen;
+		ip_stripoptions(ip, (struct mbuf *)0);
 	}
-	icmp_send(ip);
+	icmp_send(ip, opts);
+	if (opts)
+		m_free(opts);
 }
 
 struct in_ifaddr *
@@ -420,8 +392,9 @@ ifptoia(ifp)
  * Send an icmp packet back to the ip level,
  * after supplying a checksum.
  */
-icmp_send(ip)
-	struct ip *ip;
+icmp_send(ip, opts)
+	register struct ip *ip;
+	struct mbuf *opts;
 {
 	register int hlen;
 	register struct icmp *icp;
@@ -438,7 +411,7 @@ icmp_send(ip)
 	if (icmpprintfs)
 		printf("icmp_send dst %x src %x\n", ip->ip_dst, ip->ip_src);
 #endif
-	(void) ip_output(m, (struct mbuf *)0, (struct route *)0, 0);
+	(void) ip_output(m, opts, (struct route *)0, 0);
 }
 
 n_time
