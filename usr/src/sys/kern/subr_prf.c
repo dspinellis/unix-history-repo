@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.4	%G%	*/
+/*	subr_prf.c	4.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -105,16 +105,18 @@ long x;
 }
 
 /*
- * Print an unsigned integer in base b.
+ * Print an integer in base b.  If the base is ten it is condidered a
+ * signed integer otherwise it is treated as unsigned.
  */
 printn(n, b, trace)
-long n;
+unsigned long n;
 {
-	register long a;
+	register unsigned long a;
+	register long a1 = n;
 
-	if (n<0) {	/* shouldn't happen */
+	if (b == 10 && a1 < 0) {
 		putchar('-', trace);
-		n = -n;
+		n = -a1;
 	}
 	if(a = n/b)
 		printn(a, b, trace);
