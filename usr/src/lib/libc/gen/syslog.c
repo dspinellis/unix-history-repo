@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)syslog.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.22 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -41,13 +41,14 @@ static char sccsid[] = "@(#)syslog.c	5.21 (Berkeley) %G%";
 #include <sys/signal.h>
 #include <sys/syslog.h>
 #include <sys/uio.h>
+#include <sys/wait.h>
 #include <netdb.h>
 #include <strings.h>
 #include <varargs.h>
+#include <paths.h>
 #include <stdio.h>
 
-#define	LOGNAME	"/dev/log"
-#define	CONSOLE	"/dev/console"
+#define	_PATH_LOGNAME	"/dev/log"
 
 static int	LogFile = -1;		/* fd for log */
 static int	connected;		/* have done connect */
@@ -140,8 +141,7 @@ vsyslog(pri, fmt, ap)
 	}
 
 	/* output the message to the local logger */
-	if (send(LogFile, tbuf, cnt, 0) >= 0 ||
-	    !(LogStat&LOG_CONS))
+	if (send(LogFile, tbuf, cnt, 0) >= 0 || !(LogStat&LOG_CONS))
 		return;
 
 	/* output the message to the console */
@@ -155,7 +155,7 @@ vsyslog(pri, fmt, ap)
 		(void)signal(SIGALRM, SIG_DFL);
 		sigsetmask((long)~sigmask(SIGALRM));
 		(void)alarm((u_int)5);
-		if ((fd = open(CONSOLE, O_WRONLY, 0)) < 0)
+		if ((fd = open(_PATH_CONSOLE, O_WRONLY, 0)) < 0)
 			return;
 		(void)alarm((u_int)0);
 		(void)strcat(tbuf, "\r");
@@ -165,7 +165,7 @@ vsyslog(pri, fmt, ap)
 		_exit(0);
 	}
 	if (!(LogStat & LOG_NOWAIT))
-		while ((cnt = wait((int *)0)) > 0 && cnt != pid);
+		(void)waitpid(pid, (union wait *)NULL, WSIGRESTART);
 }
 
 static struct sockaddr SyslogAddr;	/* AF_UNIX address of local logger */
@@ -183,7 +183,8 @@ openlog(ident, logstat, logfac)
 		LogFacility = logfac;
 	if (LogFile == -1) {
 		SyslogAddr.sa_family = AF_UNIX;
-		strncpy(SyslogAddr.sa_data, LOGNAME, sizeof SyslogAddr.sa_data);
+		strncpy(SyslogAddr.sa_data, _PATH_LOGNAME,
+		    sizeof(SyslogAddr.sa_data));
 		if (LogStat & LOG_NDELAY) {
 			LogFile = socket(AF_UNIX, SOCK_DGRAM, 0);
 			fcntl(LogFile, F_SETFD, 1);
