@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.12 (Berkeley) %G%";
 #endif
 
 /*
@@ -31,7 +31,7 @@ abort(argc, argv)
 			while ((c = *cp2++) && c != '|' && c != ':')
 				*cp1++ = c;
 			*cp1 = '\0';
-			abortpr();
+			abortpr(1);
 		}
 		return;
 	}
@@ -44,11 +44,11 @@ abort(argc, argv)
 			printf("unknown printer %s\n", printer);
 			continue;
 		}
-		abortpr();
+		abortpr(1);
 	}
 }
 
-abortpr()
+abortpr(dis)
 {
 	register FILE *fp;
 	struct stat stbuf;
@@ -65,23 +65,25 @@ abortpr()
 	/*
 	 * Turn on the owner execute bit of the lock file to disable printing.
 	 */
-	if (stat(line, &stbuf) >= 0) {
-		if (chmod(line, (stbuf.st_mode & 0777) | 0100) < 0)
-			printf("\tcannot disable printing\n");
-		else
-			printf("\tprinting disabled\n");
-	} else if (errno == ENOENT) {
-		if ((fd = open(line, O_WRONLY|O_CREAT, 0760)) < 0)
-			printf("\tcannot create lock file\n");
-		else {
-			(void) close(fd);
-			printf("\tprinting disabled\n");
-			printf("\tno daemon to abort\n");
+	if (dis) {
+		if (stat(line, &stbuf) >= 0) {
+			if (chmod(line, (stbuf.st_mode & 0777) | 0100) < 0)
+				printf("\tcannot disable printing\n");
+			else
+				printf("\tprinting disabled\n");
+		} else if (errno == ENOENT) {
+			if ((fd = open(line, O_WRONLY|O_CREAT, 0760)) < 0)
+				printf("\tcannot create lock file\n");
+			else {
+				(void) close(fd);
+				printf("\tprinting disabled\n");
+				printf("\tno daemon to abort\n");
+			}
+			return;
+		} else {
+			printf("\tcannot stat lock file\n");
+			return;
 		}
-		return;
-	} else {
-		printf("\tcannot stat lock file\n");
-		return;
 	}
 	/*
 	 * Kill the current daemon to stop printing now.
@@ -96,7 +98,7 @@ abortpr()
 		return;
 	}
 	(void) fclose(fp);
-	if (kill(pid = atoi(line), SIGINT) < 0)
+	if (kill(pid = atoi(line), SIGTERM) < 0)
 		printf("\tWarning: daemon (pid %d) not killed\n", pid);
 	else
 		printf("\tdaemon (pid %d) killed\n", pid);
@@ -481,7 +483,7 @@ quit(argc, argv)
 }
 
 /*
- * Startup the daemon.
+ * Kill and restart the daemon.
  */
 restart(argc, argv)
 	char *argv[];
@@ -503,6 +505,7 @@ restart(argc, argv)
 			while ((c = *cp2++) && c != '|' && c != ':')
 				*cp1++ = c;
 			*cp1 = '\0';
+			abortpr(0);
 			startpr(0);
 		}
 		return;
@@ -516,6 +519,7 @@ restart(argc, argv)
 			printf("unknown printer %s\n", printer);
 			continue;
 		}
+		abortpr(0);
 		startpr(0);
 	}
 }
@@ -576,7 +580,7 @@ startpr(enable)
 	 * Turn off the owner execute bit of the lock file to enable printing.
 	 */
 	if (enable && stat(line, &stbuf) >= 0) {
-		if (chmod(line, stbuf.st_mode & 0677) < 0)
+		if (chmod(line, stbuf.st_mode & (enable == 2)?0666:0677) < 0)
 			printf("\tcannot enable printing\n");
 		else
 			printf("\tprinting enabled\n");
@@ -905,4 +909,43 @@ doarg(job)
 		}
 	}
 	return(cnt);
+}
+
+/*
+ * Enable everything and start printer (undo `down').
+ */
+up(argc, argv)
+	char *argv[];
+{
+	register int c, status;
+	register char *cp1, *cp2;
+	char prbuf[100];
+
+	if (argc == 1) {
+		printf("Usage: up {all | printer ...}\n");
+		return;
+	}
+	if (argc == 2 && !strcmp(argv[1], "all")) {
+		printer = prbuf;
+		while (getprent(line) > 0) {
+			cp1 = prbuf;
+			cp2 = line;
+			while ((c = *cp2++) && c != '|' && c != ':')
+				*cp1++ = c;
+			*cp1 = '\0';
+			startpr(2);
+		}
+		return;
+	}
+	while (--argc) {
+		printer = *++argv;
+		if ((status = pgetent(line, printer)) < 0) {
+			printf("cannot open printer description file\n");
+			continue;
+		} else if (status == 0) {
+			printf("unknown printer %s\n", printer);
+			continue;
+		}
+		startpr(2);
+	}
 }
