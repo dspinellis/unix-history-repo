@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.35 92/01/22$
  *
- *	@(#)autoconf.c	7.6 (Berkeley) %G%
+ *	@(#)autoconf.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -1054,13 +1054,4 @@ setroot()
 	if (temp == dumpdev)
 		dumpdev = swdevt[0].sw_dev;
 #endif
-}
-
-strcmp(s1, s2)
-	register char *s1, *s2;
-{
-	while (*s1 == *s2++)
-		if (*s1++=='\0')
-			return (0);
-	return (*s1 - *--s2);
 }
