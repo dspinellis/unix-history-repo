@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.46 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -146,15 +146,13 @@ dropenvelope(e)
 		/* common code for error returns and return receipts */
 
 		/* test for returning the body */
-		if (!bitset(QHAS_RET_PARAM, q->q_flags))
+		if (bitset(QHAS_RET_PARAM, q->q_flags))
 		{
-			if (!bitset(EF_NORETURN, e->e_flags))
+			if (bitset(QRET_HDRS, q->q_flags))
+				return_no = TRUE;
+			else
 				return_yes = TRUE;
 		}
-		else if (bitset(QRET_HDRS, q->q_flags))
-			return_no = TRUE;
-		else
-			return_yes = TRUE;
 	}
 	if (return_no && !return_yes)
 		e->e_flags |= EF_NORETURN;
@@ -237,7 +235,8 @@ dropenvelope(e)
 */
 	if (e->e_receiptto == NULL)
 		e->e_receiptto = e->e_from.q_paddr;
-	if (success_return && strcmp(e->e_receiptto, "<>") != 0)
+	if (success_return && !failure_return &&
+	    strcmp(e->e_receiptto, "<>") != 0)
 	{
 		auto ADDRESS *rlist = NULL;
 
@@ -252,7 +251,7 @@ dropenvelope(e)
 	*/
 
 	if (failure_return && e->e_errormode != EM_QUIET)
-		savemail(e);
+		savemail(e, return_yes || (!return_no && e->e_class >= 0));
 
 	/*
 	**  Arrange to send warning messages to postmaster as requested.

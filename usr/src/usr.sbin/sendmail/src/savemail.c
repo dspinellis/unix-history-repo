@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.40 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.41 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -23,6 +23,8 @@ static char sccsid[] = "@(#)savemail.c	8.40 (Berkeley) %G%";
 **
 **	Parameters:
 **		e -- the envelope containing the message in error.
+**		sendbody -- if TRUE, also send back the body of the
+**			message; otherwise just send the header.
 **
 **	Returns:
 **		none
@@ -48,8 +50,9 @@ static char sccsid[] = "@(#)savemail.c	8.40 (Berkeley) %G%";
 # endif
 
 
-savemail(e)
+savemail(e, sendbody)
 	register ENVELOPE *e;
+	bool sendbody;
 {
 	register struct passwd *pw;
 	register FILE *fp;
@@ -258,7 +261,7 @@ savemail(e)
 				break;
 			}
 			if (returntosender(e->e_message, e->e_errorqueue,
-					   (e->e_class >= 0), e) == 0)
+					   sendbody, e) == 0)
 			{
 				state = ESM_DONE;
 				break;
@@ -281,8 +284,7 @@ savemail(e)
 				state = ESM_USRTMP;
 				break;
 			}
-			if (returntosender(e->e_message,
-					   q, (e->e_class >= 0), e) == 0)
+			if (returntosender(e->e_message, q, sendbody, e) == 0)
 			{
 				state = ESM_DONE;
 				break;
@@ -662,7 +664,7 @@ errbody(mci, e, separator, flags)
 	printheader = TRUE;
 	for (q = e->e_parent->e_sendqueue; q != NULL; q = q->q_next)
 	{
-		if (bitset(QBADADDR|QREPORT, q->q_flags))
+		if (bitset(QBADADDR|QREPORT|QRELAYED, q->q_flags))
 		{
 			if (printheader)
 			{
@@ -673,6 +675,8 @@ errbody(mci, e, separator, flags)
 			strcpy(buf, q->q_paddr);
 			if (bitset(QBADADDR, q->q_flags))
 				strcat(buf, "  (unrecoverable error)");
+			else if (bitset(QRELAYED, q->q_flags))
+				strcat(buf, "  (relayed to non-DSN-aware mailer)");
 			else if (bitset(QSENT, q->q_flags))
 				strcat(buf, "  (successfully delivered)");
 			else
@@ -881,12 +885,11 @@ errbody(mci, e, separator, flags)
 		}
 		else
 		{
-			putline("", mci);
 			(void) sprintf(buf, "--%s", e->e_msgboundary);
 			putline(buf, mci);
 			putline("Content-Type: message/rfc822", mci);
-			putline("", mci);
 		}
+		putline("", mci);
 		putheader(mci, e->e_parent->e_header, e->e_parent, pflags);
 		if (SendBody)
 			putbody(mci, e->e_parent, e->e_msgboundary, pflags);
