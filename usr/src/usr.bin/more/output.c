@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -56,7 +56,7 @@ put_line()
 		{
 		case UL_CHAR:
 			ul_enter();
-			column += ul_width;
+			column += ul_width +1;
 			break;
 		case UE_CHAR:
 			ul_exit();
@@ -64,7 +64,7 @@ put_line()
 			break;
 		case BO_CHAR:
 			bo_enter();
-			column += bo_width;
+			column += bo_width +1;
 			break;
 		case BE_CHAR:
 			bo_exit();
