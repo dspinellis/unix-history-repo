@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.121 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.122 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -285,6 +285,37 @@ main(argc, argv, envp)
 			ll += strlen(*av++) + 1;
 		}
 		putchar('\n');
+	}
+	if (tTd(0, 10))
+	{
+		int ll;
+		extern char *OsCompileOptions[];
+
+		printf("OS Defines:\t", Version);
+		av = OsCompileOptions;
+		ll = 7;
+		while (*av != NULL)
+		{
+			if (ll + strlen(*av) > 63)
+			{
+				putchar('\n');
+				ll = 0;
+			}
+			if (ll == 0)
+			{
+				putchar('\t');
+				putchar('\t');
+			}
+			putchar(' ');
+			printf("%s", *av);
+			ll += strlen(*av++) + 1;
+		}
+		putchar('\n');
+#ifdef _PATH_UNIX
+		printf("Unix path:\t  %s\n", _PATH_UNIX);
+#endif
+		printf("Config file:\t  %s\n", getcfname());
+		printf("Proc Id file:\t  %s\n", PidFile);
 	}
 
 	InChannel = stdin;
@@ -1000,7 +1031,7 @@ main(argc, argv, envp)
 	{
 		char dtype[200];
 
-		if (!tTd(0, 1))
+		if (!tTd(52, 100))
 		{
 			/* put us in background */
 			i = fork();
@@ -1328,7 +1359,7 @@ disconnect(droplev, e)
 	if (tTd(52, 1))
 		printf("disconnect: In %d Out %d, e=%x\n",
 			fileno(InChannel), fileno(OutChannel), e);
-	if (tTd(52, 5))
+	if (tTd(52, 100))
 	{
 		printf("don't\n");
 		return;

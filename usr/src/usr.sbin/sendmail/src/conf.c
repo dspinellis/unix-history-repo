@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.188 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.189 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -3631,6 +3631,55 @@ char	*CompileOptions[] =
 #endif
 #if XLA
 	"XLA",
+#endif
+	NULL
+};
+
+
+/*
+**  OS compile options.
+*/
+
+char	*OsCompileOptions[] =
+{
+#if HASFLOCK
+	"HASFLOCK",
+#endif
+#if HASGETUSERSHELL
+	"HASGETUSERSHELL",
+#endif
+#if HASINITGROUPS
+	"HASINITGROUPS",
+#endif
+#if HASLSTAT
+	"HASLSTAT",
+#endif
+#if HASSETREUID
+	"HASSETREUID",
+#endif
+#if HASSETSID
+	"HASSETSID",
+#endif
+#if HASSETVBUF
+	"HASSETVBUF",
+#endif
+#if HASUNAME
+	"HASUNAME",
+#endif
+#if IDENTPROTO
+	"IDENTPROTO",
+#endif
+#if IP_SRCROUTE
+	"IP_SRCROUTE",
+#endif
+#if SYS5SETPGRP
+	"SYS5SETPGRP",
+#endif
+#if SYSTEM5
+	"SYSTEM5",
+#endif
+#if USESETEUID
+	"USESETEUID",
 #endif
 	NULL
 };
