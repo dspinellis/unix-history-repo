@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)quota.h	7.7 (Berkeley) %G%
+ *	@(#)quota.h	7.8 (Berkeley) %G%
  */
 
 #ifndef _QUOTA_
@@ -45,11 +45,8 @@
 	"group",	/* GRPQUOTA */ \
 	"undefined", \
 };
-#ifndef KERNEL
-char *qfname = "quota";
-char *qfextension[] = INITQFNAMES;
-char *quotagroup = "operator";
-#endif
+#define QUOTAFILENAME "quota"
+#define QUOTAGROUP "operator"
 
 /*
  * Command definitions for the 'quotactl' system call.
