@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.31	82/06/26	*/
+/*	kern_clock.c	4.32	82/06/27	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -124,9 +124,10 @@ hardclock(pc, ps)
 		kcounts[k]++;
 #endif
 		cpstate = CP_SYS;
-		if (noproc)
-			cpstate = CP_IDLE;
-		else
+		if (noproc) {
+			if ((ps&PSL_IPL) != 0)
+				cpstate = CP_IDLE;
+		} else
 			u.u_vm.vm_stime++;
 	}
 	cp_time[cpstate]++;
@@ -305,8 +306,9 @@ softclock(pc, ps)
 		 * really want to run this code several times,
 		 * so squish out all multiples of hz here.
 		 */
-		time += lbolt / hz;
-		lbolt %= hz;
+		s = spl6();
+		time += lbolt / hz; lbolt %= hz;
+		splx(s);
 
 		/*
 		 * Wakeup lightning bolt sleepers.
