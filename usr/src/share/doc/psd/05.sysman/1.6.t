@@ -2,9 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.6.t	5.1 (Berkeley) %G%
+.\"	@(#)1.6.t	6.1 (Berkeley) %G%
 .\"
-.\" 1.6.t 5.1 86/05/08
 .sh "Resource controls
 .NH 3
 Process priorities

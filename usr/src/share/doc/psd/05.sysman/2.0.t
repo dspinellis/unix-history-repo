@@ -2,9 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.0.t	5.1 (Berkeley) %G%
+.\"	@(#)2.0.t	6.1 (Berkeley) %G%
 .\"
-.\" 2.0.t 5.1 86/05/08
 .ds ss 1
 .sh "System facilities
 This section discusses the system facilities that
@@ -23,7 +22,7 @@ random access \fIreads\fP and \fIwrites\fP may occur.
 Pages from files may also be mapped into process address space.
 A directory may be read as a file\(dg.
 .FS
-\(dg Support for mapping files is not included in the 4.2 release.
+\(dg Support for mapping files is not included in the 4.3 release.
 .FE
 .IP "Communications domains
 .br

@@ -2,9 +2,8 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)2.2.t	5.1 (Berkeley) %G%
+.\"	@(#)2.2.t	6.1 (Berkeley) %G%
 .\"
-.\" 2.2.t 5.1 86/05/08
 .sh "File system
 .NH 3
 Overview
@@ -146,7 +145,7 @@ block i/o devices.
 Portal creation\(dg
 .PP
 .FS
-\(dg The \fIportal\fP call is not implemented in 4.2BSD.
+\(dg The \fIportal\fP call is not implemented in 4.3BSD.
 .FE
 The call
 .DS
