@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.11 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.12 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.11 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.12 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -48,15 +48,17 @@ struct cmd
 # define CMDDATA	3	/* data -- send message text */
 # define CMDRSET	4	/* rset -- reset state */
 # define CMDVRFY	5	/* vrfy -- verify address */
-# define CMDHELP	6	/* help -- give usage info */
+# define CMDEXPN	6	/* expn -- expand address */
 # define CMDNOOP	7	/* noop -- do nothing */
 # define CMDQUIT	8	/* quit -- close connection and die */
 # define CMDHELO	9	/* helo -- be polite */
-# define CMDONEX	10	/* onex -- sending one transaction only */
-# define CMDVERB	11	/* verb -- go into verbose mode */
+# define CMDHELP	10	/* help -- give usage info */
+/* non-standard commands */
+# define CMDONEX	16	/* onex -- sending one transaction only */
+# define CMDVERB	17	/* verb -- go into verbose mode */
 /* debugging-only commands, only enabled if SMTPDEBUG is defined */
-# define CMDDBGQSHOW	12	/* showq -- show send queue */
-# define CMDDBGDEBUG	13	/* debug -- set debug mode */
+# define CMDDBGQSHOW	24	/* showq -- show send queue */
+# define CMDDBGDEBUG	25	/* debug -- set debug mode */
 
 static struct cmd	CmdTab[] =
 {
@@ -65,7 +67,7 @@ static struct cmd	CmdTab[] =
 	"data",		CMDDATA,
 	"rset",		CMDRSET,
 	"vrfy",		CMDVRFY,
-	"expn",		CMDVRFY,
+	"expn",		CMDEXPN,
 	"help",		CMDHELP,
 	"noop",		CMDNOOP,
 	"quit",		CMDQUIT,
@@ -94,11 +96,12 @@ smtp(e)
 	register struct cmd *c;
 	char *cmd;
 	static char *skipword();
-	bool hasmail;			/* mail command received */
 	auto ADDRESS *vrfyqueue;
 	ADDRESS *a;
 	char *sendinghost;
-	bool gothello;
+	bool hasmail;			/* mail command received */
+	bool gothello;			/* helo command received */
+	bool vrfy;			/* set if this is a vrfy command */
 	char inp[MAXLINE];
 	char cmdbuf[MAXLINE];
 	extern char Version[];
@@ -127,6 +130,7 @@ smtp(e)
 		QuickAbort = FALSE;
 		HoldErrs = FALSE;
 		LogUsrErrs = FALSE;
+		e->e_flags &= ~EF_VRFYONLY;
 
 		/* setup for the read */
 		e->e_to = NULL;
@@ -365,18 +369,22 @@ smtp(e)
 			break;
 
 		  case CMDVRFY:		/* vrfy -- verify address */
-			if (bitset(PRIV_NOVRFY|PRIV_NOEXPN, PrivacyFlags))
+		  case CMDEXPN:		/* expn -- expand address */
+			vrfy = c->cmdcode == CMDVRFY;
+			if (bitset(vrfy ? PRIV_NOVRFY : PRIV_NOEXPN,
+						PrivacyFlags))
 			{
 				message("502", "That's none of your business");
 				break;
 			}
 			else if (!gothello &&
-				 bitset(PRIV_NEEDVRFYHELO|PRIV_NEEDEXPNHELO, PrivacyFlags))
+				 bitset(vrfy ? PRIV_NEEDVRFYHELO : PRIV_NEEDEXPNHELO,
+						PrivacyFlags))
 			{
 				message("503", "I demand that you introduce yourself first");
 				break;
 			}
-			if (runinchild("SMTP-VRFY", e) > 0)
+			if (runinchild(vrfy ? "SMTP-VRFY" : "SMTP-EXPN", e) > 0)
 				break;
 			setproctitle("%s: %s", CurHostName, inp);
 #ifdef LOG
@@ -385,6 +393,8 @@ smtp(e)
 #endif
 			vrfyqueue = NULL;
 			QuickAbort = TRUE;
+			if (vrfy)
+				e->e_flags |= EF_VRFYONLY;
 			(void) sendtolist(p, (ADDRESS *) NULL, &vrfyqueue, e);
 			if (Errors != 0)
 			{
