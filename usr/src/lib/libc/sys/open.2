@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)open.2	6.3 (Berkeley) %G%
+.\"	@(#)open.2	6.4 (Berkeley) %G%
 .\"
 .TH OPEN 2 ""
 .UC 4
@@ -79,8 +79,10 @@ The new descriptor is set to remain open across
 system calls; see
 .IR close (2).
 .PP
-No process may have more than {OPEN_MAX} file descriptors open
-simultaneously.
+The system imposes a limit on the number of file descriptors
+open simultaneously by one process.
+.IR Getdtablesize (2)
+returns the current system limit.
 .SH "ERRORS
 The named file is opened unless one or more of the
 following are true:
@@ -126,7 +128,7 @@ The named file resides on a read-only file system,
 and the file is to be modified.
 .TP 15
 [EMFILE]
-{OPEN_MAX} file descriptors are currently open.
+The system limit for open file descriptors per process has already been reached.
 .TP 15
 [ENFILE]
 The system file table is full.
@@ -135,10 +137,6 @@ The system file table is full.
 The named file is a character special or block
 special file, and the device associated with this special file
 does not exist.
-.TP 15
-[ENXIO]
-The O_NDELAY flag is given, and the file is a communications device
-on which their is no carrier present.
 .TP 15
 [ENOSPC]
 O_CREAT is specified,
@@ -185,4 +183,5 @@ O_CREAT and O_EXCL were specified and the file exists.
 [EOPNOTSUPP]
 An attempt was made to open a socket (not currently implemented).
 .SH "SEE ALSO"
-chmod(2), close(2), dup(2), lseek(2), read(2), write(2), umask(2)
+chmod(2), close(2), dup(2), getdtablesize(2),
+lseek(2), read(2), write(2), umask(2)
