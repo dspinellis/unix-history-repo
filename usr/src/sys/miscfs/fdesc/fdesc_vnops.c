@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	1.1 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	1.2 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.7 1992/05/30 10:05:34 jsp Exp jsp $
  */
@@ -41,6 +41,8 @@ fdesc_lookup (ap)
 	struct vop_lookup_args *ap;
 {
 	/*USES_VOP_LOCK;*/
+	struct vnode **vpp = ap->a_vpp;
+	struct vnode *dvp = ap->a_dvp;
 	char *pname;
 	struct proc *p;
 	int nfiles;
@@ -50,16 +52,16 @@ fdesc_lookup (ap)
 
 #ifdef FDESC_DIAGNOSTIC
 	printf("fdesc_lookup(%x)\n", ap);
-	printf("fdesc_lookup(dp = %x, vpp = %x, cnp = %x)\n", ap->a_dvp, ap->a_vpp, ap->a_cnp);
+	printf("fdesc_lookup(dp = %x, vpp = %x, cnp = %x)\n", dvp, vpp, ap->a_cnp);
 #endif
 	pname = ap->a_cnp->cn_nameptr;
 #ifdef FDESC_DIAGNOSTIC
 	printf("fdesc_lookup(%s)\n", pname);
 #endif
 	if (ap->a_cnp->cn_namelen == 1 && *pname == '.') {
-		*ap->a_vpp = ap->a_dvp;
-		VREF(ap->a_dvp);	
-		/*VOP_LOCK(ap->a_dvp);*/
+		*vpp = dvp;
+		VREF(dvp);	
+		/*VOP_LOCK(dvp);*/
 		return (0);
 	}
 
@@ -76,11 +78,6 @@ fdesc_lookup (ap)
 #ifdef FDESC_DIAGNOSTIC
 	printf("fdesc_lookup: fd = %d, *pname = %x\n", fd, *pname);
 #endif
-	if (*pname == '/') {
-		error = ENOTDIR;
-		goto bad;
-	}
-
 	if (*pname != '\0') {
 		error = ENOENT;
 		goto bad;
@@ -94,20 +91,20 @@ fdesc_lookup (ap)
 #ifdef FDESC_DIAGNOSTIC
 	printf("fdesc_lookup: allocate new vnode\n");
 #endif
-	error = getnewvnode(VT_UFS, ap->a_dvp->v_mount, fdesc_vnodeop_p, &fvp);
+	error = getnewvnode(VT_UFS, dvp->v_mount, fdesc_vnodeop_p, &fvp);
 	if (error)
 		goto bad;
 	MALLOC(fvp->v_data, void *, sizeof(struct fdescnode), M_TEMP, M_WAITOK);
 	VTOFDESC(fvp)->f_fd = fd;
 	/*VTOFDESC(fvp)->f_isroot = 0;*/
-	*ap->a_vpp = fvp;
+	*vpp = fvp;
 #ifdef FDESC_DIAGNOSTIC
 	printf("fdesc_lookup: newvp = %x\n", fvp);
 #endif
 	return (0);
 
 bad:;
-	*ap->a_vpp = NULL;
+	*vpp = NULL;
 #ifdef FDESC_DIAGNOSTIC
 	printf("fdesc_lookup: error = %d\n", error);
 #endif
@@ -117,10 +114,12 @@ bad:;
 fdesc_open (ap)
 	struct vop_open_args *ap;
 {
+	struct vnode *vp = ap->a_vp;
+
 	/*
 	 * Can always open the root (modulo perms)
 	 */
-	if (ap->a_vp->v_flag & VROOT)
+	if (vp->v_flag & VROOT)
 		return (0);
 
 	/*
@@ -131,7 +130,7 @@ fdesc_open (ap)
 	 * actions in dupfdopen.  Other callers of vn_open or VOP_OPEN
 	 * will simply report the error.
 	 */
-	ap->a_p->p_dupfd = VTOFDESC(ap->a_vp)->f_fd;	/* XXX */
+	ap->a_p->p_dupfd = VTOFDESC(vp)->f_fd;	/* XXX */
 	return (ENODEV);
 }
 
@@ -185,40 +184,42 @@ fdesc_attr(fd, vap, cred, p)
 fdesc_getattr (ap)
 	struct vop_getattr_args *ap;
 {
+	struct vnode *vp = ap->a_vp;
+	struct vattr *vap = ap->a_vap;
 	unsigned fd;
 	int error;
 
-	if (ap->a_vp->v_flag & VROOT) {
+	if (vp->v_flag & VROOT) {
 #ifdef FDESC_DIAGNOSTIC
 		printf("fdesc_getattr: stat rootdir\n");
 #endif
-		bzero((caddr_t) ap->a_vap, sizeof(*ap->a_vap));
-		vattr_null(ap->a_vap);
-		ap->a_vap->va_type = VDIR;
-		ap->a_vap->va_mode = S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH;
-		ap->a_vap->va_nlink = 2;
-		ap->a_vap->va_uid = 0;
-		ap->a_vap->va_gid = 0;
-		ap->a_vap->va_fsid = ap->a_vp->v_mount->mnt_stat.f_fsid.val[0];
-		ap->a_vap->va_fileid = 2;
-		/* ap->a_vap->va_qsize = 0; */
-		ap->a_vap->va_size = DEV_BSIZE;
-		ap->a_vap->va_blocksize = DEV_BSIZE;
-		microtime(&ap->a_vap->va_atime);
-		ap->a_vap->va_mtime = ap->a_vap->va_atime;
-		ap->a_vap->va_ctime = ap->a_vap->va_ctime;
-		ap->a_vap->va_gen = 0;
-		ap->a_vap->va_flags = 0;
-		ap->a_vap->va_rdev = 0;
-		/* ap->a_vap->va_qbytes = 0; */
-		ap->a_vap->va_bytes = 0;
+		bzero((caddr_t) vap, sizeof(*vap));
+		vattr_null(vap);
+		vap->va_type = VDIR;
+		vap->va_mode = S_IRUSR|S_IXUSR|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH;
+		vap->va_nlink = 2;
+		vap->va_uid = 0;
+		vap->va_gid = 0;
+		vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0];
+		vap->va_fileid = 2;
+		/* vap->va_qsize = 0; */
+		vap->va_size = DEV_BSIZE;
+		vap->va_blocksize = DEV_BSIZE;
+		microtime(&vap->va_atime);
+		vap->va_mtime = vap->va_atime;
+		vap->va_ctime = vap->va_ctime;
+		vap->va_gen = 0;
+		vap->va_flags = 0;
+		vap->va_rdev = 0;
+		/* vap->va_qbytes = 0; */
+		vap->va_bytes = 0;
 		return (0);
 	}
 
-	fd = VTOFDESC(ap->a_vp)->f_fd;
-	error = fdesc_attr(fd, ap->a_vap, ap->a_cred, ap->a_p);
+	fd = VTOFDESC(vp)->f_fd;
+	error = fdesc_attr(fd, vap, ap->a_cred, ap->a_p);
 	if (error == 0)
-		ap->a_vp->v_type = ap->a_vap->va_type;
+		vp->v_type = vap->va_type;
 	return (error);
 }
 
@@ -274,16 +275,17 @@ fdesc_setattr (ap)
 fdesc_readdir (ap)
 	struct vop_readdir_args *ap;
 {
+	struct uio *uio = ap->a_uio;
 	struct filedesc *fdp;
 	int i;
 	int error;
 
 #define UIO_MX 16
 
-	fdp = ap->a_uio->uio_procp->p_fd;
-	i = ap->a_uio->uio_offset / UIO_MX;
+	fdp = uio->uio_procp->p_fd;
+	i = uio->uio_offset / UIO_MX;
 	error = 0;
-	while (ap->a_uio->uio_resid > 0) {
+	while (uio->uio_resid > 0) {
 		if (i >= fdp->fd_nfiles) {
 			*ap->a_eofflagp = 1;
 			break;
@@ -317,27 +319,29 @@ fdesc_readdir (ap)
 			/*
 			 * And ship to userland
 			 */
-			error = uiomove((caddr_t) dp, UIO_MX, ap->a_uio);
+			error = uiomove((caddr_t) dp, UIO_MX, uio);
 			if (error)
 				break;
 		}
 		i++;
 	}
 
-	ap->a_uio->uio_offset = i * UIO_MX;
+	uio->uio_offset = i * UIO_MX;
 	return (error);
 }
 
 fdesc_inactive (ap)
 	struct vop_inactive_args *ap;
 {
+	struct vnode *vp = ap->a_vp;
+
 	/*
 	 * Clear out the v_type field to avoid
 	 * nasty things happening in vgone().
 	 */
-	ap->a_vp->v_type = VNON;
+	vp->v_type = VNON;
 #ifdef FDESC_DIAGNOSTIC
-	printf("fdesc_inactive(%x)\n", ap->a_vp);
+	printf("fdesc_inactive(%x)\n", vp);
 #endif
 	return (0);
 }
