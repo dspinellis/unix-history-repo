@@ -1,4 +1,4 @@
-\"	@(#)postp.me	1.8 %G%
+\"	@(#)postp.me	1.9 %G%
 .EQ
 delim ##
 gsize 12
@@ -53,7 +53,7 @@ calls from a caller #r# to a callee #e#.
 Since we are assuming each call to a routine takes the
 average amount of time for all calls to that routine,
 the caller is accountable for
-#C sub e sup r# \(sl #C sub e#
+#C sub e sup r / C sub e#
 of the time spent by the callee.
 Let the #S sub e# be the #selftime# of a routine, #e#.
 The selftime of a routine can be determined from the
@@ -63,7 +63,7 @@ The total time, #T sub r#, we wish to account to a routine
 .EQ
 T sub r ~ = ~ {S sub r} ~ + ~
                    sum from {r ~ roman CALLS ~ e}
-                   {T sub e \(mu {{C sub e sup r} over {C sub e}}}
+                   {T sub e times {{C sub e sup r} over {C sub e}}}
 .EN
 where #r ~ roman CALLS ~ e# is a relation indicating all routines
 #e# called by a routine #r#.
