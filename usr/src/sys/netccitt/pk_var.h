@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pk_var.h	7.8 (Berkeley) %G%
+ *	@(#)pk_var.h	7.9 (Berkeley) %G%
  */
 
 
@@ -20,15 +20,20 @@
  */
 
 struct pklcd {
-	int	(*lcd_send)();		/* if X.25 front end, direct connect */
+	struct 	pklcd_q {
+		struct	pklcd_q *q_forw;	/* debugging chain */
+		struct	pklcd_q *q_back;	/* debugging chain */
+	} lcd_q;
 	int	(*lcd_upper)();		/* switch to socket vs datagram vs ...*/
 	caddr_t	lcd_upnext;		/* reference for lcd_upper() */
+	int	(*lcd_send)();		/* if X.25 front end, direct connect */
+	caddr_t lcd_downnext;		/* reference for lcd_send() */
 	short   lcd_lcn;		/* Logical channel number */
 	short   lcd_state;		/* Logical Channel state */
-        bool	lcd_intrconf_pending;	/* Interrupt confirmation pending */
-	octet	lcd_intrdata;		/* Octet of incoming intr data */
 	short   lcd_timer;		/* Various timer values */
 	short   lcd_dg_timer;		/* to reclaim idle datagram circuits */
+        bool	lcd_intrconf_pending;	/* Interrupt confirmation pending */
+	octet	lcd_intrdata;		/* Octet of incoming intr data */
 	char	lcd_retry;		/* Timer retry count */
 	char	lcd_rsn;		/* Seq no of last received packet */
 	char	lcd_ssn;		/* Seq no of next packet to send */
@@ -38,15 +43,16 @@ struct pklcd {
         bool	lcd_rnr_condition;	/* Remote in busy condition */
         bool	lcd_window_condition;	/* Output window size exceeded */
         bool	lcd_reset_condition;	/* True, if waiting reset confirm */
+	bool	lcd_rxrnr_condition;	/* True, if we have sent rnr */
 	char	lcd_packetsize;		/* Maximum packet size */
 	char	lcd_windowsize;		/* Window size - both directions */
         octet	lcd_closed_user_group;	/* Closed user group specification */
 	char	lcd_flags;		/* copy of sockaddr_x25 op_flags */
+	struct	mbuf *lcd_facilities;	/* user supplied facilities for cr */
 	struct	mbuf *lcd_template;	/* Address of response packet */
 	struct	socket *lcd_so;		/* Socket addr for connection */
 	struct	sockaddr_x25 *lcd_craddr;/* Calling address pointer */
 	struct	sockaddr_x25 *lcd_ceaddr;/* Called address pointer */
-	struct	mbuf *lcd_facilities;	/* user supplied facilities for cr */
 	time_t	lcd_stime;		/* time circuit established */
 	long    lcd_txcnt;		/* Data packet transmit count */
 	long    lcd_rxcnt;		/* Data packet receive count */
@@ -126,11 +132,11 @@ struct llinfo_x25 {
 #define LXF_RTHELD	0x2		/* this lcb references rtentry */
 #define LXF_LISTEN	0x4		/* accepting incoming calls */
 
-#ifdef KERNEL
+#if defined(KERNEL) && defined(CCITT)
 struct	pkcb *pkcbhead;		/* head of linked list of networks */
 struct	pklcd *pk_listenhead;
 struct	pklcd *pk_attach();
 
-char	*pk_name[], *pk_state[];
+extern char	*pk_name[], *pk_state[];
 int	pk_t20, pk_t21, pk_t22, pk_t23;
 #endif
