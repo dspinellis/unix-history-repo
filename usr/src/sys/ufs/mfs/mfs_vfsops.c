@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.13 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.14 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -80,10 +80,10 @@ mfs_mount(mp, path, data, ndp)
 	u_int size;
 	int error;
 
-	if (mp->m_flag & M_UPDATE) {
+	if (mp->mnt_flag & MNT_UPDATE) {
 		ump = VFSTOUFS(mp);
 		fs = ump->um_fs;
-		if (fs->fs_ronly && (mp->m_flag & M_RDONLY) == 0)
+		if (fs->fs_ronly && (mp->mnt_flag & MNT_RDONLY) == 0)
 			fs->fs_ronly = 0;
 		return (0);
 	}
@@ -110,11 +110,12 @@ mfs_mount(mp, path, data, ndp)
 	fs = ump->um_fs;
 	(void) copyinstr(path, fs->fs_fsmnt, sizeof(fs->fs_fsmnt) - 1, &size);
 	bzero(fs->fs_fsmnt + size, sizeof(fs->fs_fsmnt) - size);
-	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->m_stat.f_mntonname, MNAMELEN);
-	(void) copyinstr(args.name, mp->m_stat.f_mntfromname, MNAMELEN - 1,
+	bcopy((caddr_t)fs->fs_fsmnt, (caddr_t)mp->mnt_stat.f_mntonname,
+		MNAMELEN);
+	(void) copyinstr(args.name, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
 		&size);
-	bzero(mp->m_stat.f_mntfromname + size, MNAMELEN - size);
-	(void) mfs_statfs(mp, &mp->m_stat);
+	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
+	(void) mfs_statfs(mp, &mp->mnt_stat);
 	return (0);
 }
 
