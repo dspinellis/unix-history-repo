@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_pty.c	6.13 (Berkeley) %G%
+ *	@(#)tty_pty.c	6.14 (Berkeley) %G%
  */
 
 /*
@@ -227,6 +227,8 @@ ptcclose(dev)
 	register struct tty *tp;
 
 	tp = &pt_tty[minor(dev)];
+	if (tp->t_line)
+		(*linesw[tp->t_line].l_close)(tp);
 	if (tp->t_state & TS_ISOPEN)
 		gsignal(tp->t_pgrp, SIGHUP);
 	tp->t_state &= ~TS_CARR_ON;	/* virtual carrier gone */
