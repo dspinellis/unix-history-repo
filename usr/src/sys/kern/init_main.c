@@ -1,4 +1,4 @@
-/*	init_main.c	4.44	82/12/17	*/
+/*	init_main.c	4.45	83/01/16	*/
 
 #include "../machine/pte.h"
 
@@ -248,18 +248,24 @@ binit()
 	register struct buf *bp, *dp;
 	register int i;
 	struct swdevt *swp;
+	int base, residual;
 
 	for (dp = bfreelist; dp < &bfreelist[BQUEUES]; dp++) {
 		dp->b_forw = dp->b_back = dp->av_forw = dp->av_back = dp;
 		dp->b_flags = B_HEAD;
 	}
+	base = bufpages / nbuf;
+	residual = bufpages % nbuf;
 	for (i = 0; i < nbuf; i++) {
 		bp = &buf[i];
 		bp->b_dev = NODEV;
 		bp->b_bcount = 0;
 #ifndef sun
 		bp->b_un.b_addr = buffers + i * MAXBSIZE;
-		bp->b_bufsize = 2 * CLBYTES;
+		if (i < residual)
+			bp->b_bufsize = (base + 1) * CLBYTES;
+		else
+			bp->b_bufsize = base * CLBYTES;
 		binshash(bp, &bfreelist[BQ_AGE]);
 #else
 		bp->b_un.b_addr = (char *)0;
