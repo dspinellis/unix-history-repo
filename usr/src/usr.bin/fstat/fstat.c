@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fstat.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)fstat.c	5.36 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -120,7 +120,8 @@ int maxfiles;
  */
 #define KVM_READ(kaddr, paddr, len) (kvm_read((kaddr), (paddr), (len)) == (len))
 
-void dofiles(), getinetproto(), socktrans(), nfs_filestat(), ufs_filestat();
+int ufs_filestat(), nfs_filestat();
+void dofiles(), getinetproto(), socktrans();
 void usage(), vtrans();
 
 main(argc, argv)
@@ -394,13 +395,16 @@ vtrans(vp, i)
 	else
 		switch (vn.v_tag) {
 		case VT_UFS:
-			ufs_filestat(&vn, &fst);
+			if (!ufs_filestat(&vn, &fst))
+				badtype = "error";
 			break;
 		case VT_MFS:
-			ufs_filestat(&vn, &fst);
+			if (!ufs_filestat(&vn, &fst))
+				badtype = "error";
 			break;
 		case VT_NFS:
-			nfs_filestat(&vn, &fst);
+			if (!nfs_filestat(&vn, &fst))
+				badtype = "error";
 			break;
 		default: {
 			static char unknown[10];
@@ -460,33 +464,45 @@ vtrans(vp, i)
 	putchar('\n');
 }
 
-void
+int
 ufs_filestat(vp, fsp)
 	struct vnode *vp;
 	struct filestat *fsp;
 {
-	struct inode *ip = VTOI(vp);
+	struct inode inode;
 
-	fsp->fsid = ip->i_dev & 0xffff;
-	fsp->fileid = (long)ip->i_number;
-	fsp->mode = (mode_t)ip->i_mode;
-	fsp->size = (u_long)ip->i_size;
-	fsp->rdev = ip->i_rdev;
+	if (!KVM_READ(VTOI(vp), &inode, sizeof (inode))) {
+		dprintf(stderr, "can't read inode at %x for pid %d\n",
+			VTOI(vp), Pid);
+		return 0;
+	}
+	fsp->fsid = inode.i_dev & 0xffff;
+	fsp->fileid = (long)inode.i_number;
+	fsp->mode = (mode_t)inode.i_mode;
+	fsp->size = (u_long)inode.i_size;
+	fsp->rdev = inode.i_rdev;
+
+	return 1;
 }
 
-void
+int
 nfs_filestat(vp, fsp)
 	struct vnode *vp;
 	struct filestat *fsp;
 {
-	register struct nfsnode *np = VTONFS(vp);
+	struct nfsnode nfsnode;
 	register mode_t mode;
 
-	fsp->fsid = np->n_vattr.va_fsid;
-	fsp->fileid = np->n_vattr.va_fileid;
-	fsp->size = np->n_size;
-	fsp->rdev = np->n_vattr.va_rdev;
-	mode = (mode_t)np->n_vattr.va_mode;
+	if (!KVM_READ(VTONFS(vp), &nfsnode, sizeof (nfsnode))) {
+		dprintf(stderr, "can't read nfsnode at %x for pid %d\n",
+			VTONFS(vp), Pid);
+		return 0;
+	}
+	fsp->fsid = nfsnode.n_vattr.va_fsid;
+	fsp->fileid = nfsnode.n_vattr.va_fileid;
+	fsp->size = nfsnode.n_size;
+	fsp->rdev = nfsnode.n_vattr.va_rdev;
+	mode = (mode_t)nfsnode.n_vattr.va_mode;
 	switch (vp->v_type) {
 	case VREG:
 		mode |= S_IFREG;
@@ -511,6 +527,8 @@ nfs_filestat(vp, fsp)
 		break;
 	};
 	fsp->mode = mode;
+
+	return 1;
 }
 
 
