@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)date.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)date.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -121,6 +121,9 @@ setthetime(p)
 
 	if (t = index(p, '.')) {		/* .ss */
 		*t++ = '\0';
+		if (strlen(t) != 2)
+			badformat();
+		lt->tm_sec = ATOI2(t);
 		if (lt->tm_sec > 61)
 			badformat();
 	} else
