@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tn3270.c	1.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)tn3270.c	1.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,6 +40,7 @@ static char sccsid[] = "@(#)tn3270.c	1.17 (Berkeley) %G%";
 #if	defined(unix)
 int
 	HaveInput,		/* There is input available to scan */
+	cursesdata,		/* Do we dump curses data? */
 	sigiocount;		/* Number of times we got a SIGIO */
 
 char	tline[200];
@@ -281,6 +282,9 @@ char c;
 #if	defined(sun)		/* SunOS 4.0 bug */
     c &= 0x7f;
 #endif	/* defined(sun) */
+    if (cursesdata) {
+	Dump('>', &c, 1);
+    }
     if (!TTYROOM()) {
 	(void) DataToTerminal(&c, 1);
     } else {

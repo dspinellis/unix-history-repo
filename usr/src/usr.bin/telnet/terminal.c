@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)terminal.c	1.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)terminal.c	1.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <arpa/telnet.h>
@@ -29,6 +29,8 @@ static char sccsid[] = "@(#)terminal.c	1.14 (Berkeley) %G%";
 
 Ring	ttyoring, ttyiring;
 char	ttyobuf[2*BUFSIZ], ttyibuf[BUFSIZ];
+
+int termdata;			/* Debugging flag */
 
 char
     termEofChar,
@@ -81,6 +83,9 @@ int drop;
 	}
     }
     if (n > 0) {
+	if (termdata && n) {
+	    Dump('>', ttyoring.consume, n);
+	}
 	/*
 	 * If we wrote everything, and the full count is
 	 * larger than what we wrote, then write the
