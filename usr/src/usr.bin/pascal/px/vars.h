@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vars.h	5.1 (Berkeley) %G%
+ *	@(#)vars.h	5.2 (Berkeley) %G%
  */
 
 #include <stdio.h>
@@ -46,8 +46,13 @@
 #define MAXFILES	32
 #define PREDEF		2
 #ifdef ADDR32
+#ifndef tahoe
 #define STDLVL		((struct iorec *)(0x7ffffff1))
 #define GLVL		((struct iorec *)(0x7ffffff0))
+#else tahoe
+#define STDLVL		((struct iorec *)(0xbffffff1))
+#define GLVL		((struct iorec *)(0xbffffff0))
+#endif tahoe
 #endif ADDR32
 #ifdef ADDR16
 #define STDLVL		((struct iorec *)(0xfff1))
