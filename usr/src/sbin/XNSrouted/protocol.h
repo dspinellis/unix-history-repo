@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1985 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1985, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This file includes significant work done at Cornell University by
  * Bill Nesheim.  That work included by permission.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)protocol.h	5.6 (Berkeley) %G%
+ *	@(#)protocol.h	8.1 (Berkeley) %G%
  */
 
 /*
