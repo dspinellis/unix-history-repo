@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)subr_rmap.c	7.3 (Berkeley) %G%
+ *	@(#)subr_rmap.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -110,7 +110,7 @@ rmalloc(mp, size)
 			 * boundaries.
 			 */
 			if (mp == swapmap && nswdev > 1 &&
-			    (first = dmmax - bp->m_addr%dmmax) < bp->m_size) {
+			    (first = dmmax - bp->m_addr%dmmax) < size) {
 				if (bp->m_size - first < size)
 					continue;
 				addr = bp->m_addr + first;
