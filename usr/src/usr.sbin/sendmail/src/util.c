@@ -7,16 +7,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.10 (Berkeley) %G%";
 #endif /* not lint */
 
-# include <stdio.h>
-# include <pwd.h>
-# include <sys/types.h>
+# include "sendmail.h"
 # include <sys/stat.h>
 # include <sysexits.h>
-# include <errno.h>
-# include "sendmail.h"
 # include "conf.h"
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.

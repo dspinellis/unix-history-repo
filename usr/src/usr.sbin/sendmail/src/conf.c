@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.30 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -1037,7 +1037,6 @@ initgroups(name, basegid)
 #endif
 
 #if defined(HASUSTAT)
-# include <sys/types.h>
 # include <sys/stat.h>
 # include <ustat.h>
 #endif
