@@ -72,7 +72,7 @@ char **argv;
 				r = 0;
 				if(w<=0) {
 					stash(p);
-					return;
+					exit(0);
 				}
 			}
 			out[p++] = in[r++];
