@@ -1,10 +1,12 @@
-(Version 6.6 of %G%)
+(Version 6.7 of %G%)
 
-Database (keyed lookup) locking.
+*****	Database (keyed lookup) locking and rebuild.
 
-Find a good test suite and include in the distribution.
+*****	Extend UDB support for mailing lists: owner- equivalent and the like.
 
-cf/cf/Makefile.dist
+**	Find a good test suite and include in the distribution.
 
-WIN/3B support (non-atomic rename, no h_addr_list, others?) (Bruce Lilly
-<blilly!bruce@uu.psi.com>)
+***	cf/cf/Makefile.dist
+
+*	WIN/3B support (non-atomic rename, no h_addr_list, others?)
+	(Bruce Lilly <blilly!bruce@uu.psi.com>)
