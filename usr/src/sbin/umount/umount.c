@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -49,7 +49,6 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
-	register char *p1, *p2;
 
 	argc--, argv++;
 	sync();
@@ -87,7 +86,7 @@ umountall()
 {
 	struct fstab *fs, *allocfsent();
 
-	if ((fs = getfsent()) == 0)
+	if ((fs = getfsent()) == (struct fstab *)0)
 		return;
 	fs = allocfsent(fs);
 	umountall();
@@ -113,14 +112,14 @@ allocfsent(fs)
 	register char *cp;
 	char *malloc();
 
-	new = (struct fstab *)malloc(sizeof (*fs));
-	cp = malloc(strlen(fs->fs_file) + 1);
+	new = (struct fstab *)malloc((unsigned)sizeof (*fs));
+	cp = malloc((unsigned)strlen(fs->fs_file) + 1);
 	strcpy(cp, fs->fs_file);
 	new->fs_file = cp;
-	cp = malloc(strlen(fs->fs_type) + 1);
+	cp = malloc((unsigned)strlen(fs->fs_type) + 1);
 	strcpy(cp, fs->fs_type);
 	new->fs_type = cp;
-	cp = malloc(strlen(fs->fs_spec) + 1);
+	cp = malloc((unsigned)strlen(fs->fs_spec) + 1);
 	strcpy(cp, fs->fs_spec);
 	new->fs_spec = cp;
 	new->fs_passno = fs->fs_passno;
@@ -153,7 +152,6 @@ umountfs(name)
 	struct timeval pertry, try;
 	enum clnt_stat clnt_stat;
 	int so = RPC_ANYSOCK;
-	u_short tport;
 	char *hostp, *delimp;
 #endif
 
@@ -168,7 +166,8 @@ umountfs(name)
 		if ((name = getmntinfo(mntpt, MNTFROM)) == 0)
 			return (0);
 	} else {
-		fprintf(stderr, "%s: not a directory or special device\n");
+		fprintf(stderr, "%s: not a directory or special device\n",
+			name);
 		return (0);
 	}
 	if (umount(mntpt, MNT_NOFORCE) < 0) {
@@ -216,19 +215,19 @@ getmntinfo(name, what)
 	char *name;
 	int what;
 {
-	long mntsize, i;
-	struct statfs statfsbuf, *mntbuf;
+	int mntsize, i;
+	struct statfs *mntbuf;
 
-	if ((mntsize = getfsstat(0, 0)) < 0) {
+	if ((mntsize = getfsstat((struct statfs *)0, 0)) < 0) {
 		perror("umount");
 		return (0);
 	}
 	mntbuf = 0;
 	do {
 		if (mntbuf)
-			free(mntbuf);
+			free((char *)mntbuf);
 		i = (mntsize + 1) * sizeof(struct statfs);
-		if ((mntbuf = (struct statfs *)malloc(i)) == 0) {
+		if ((mntbuf = (struct statfs *)malloc((unsigned)i)) == 0) {
 			fprintf(stderr,
 				"no space for umount table buffer\n");
 			return (0);
