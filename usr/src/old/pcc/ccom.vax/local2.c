@@ -1,5 +1,5 @@
 # ifndef lint
-static char *sccsid ="@(#)local2.c	1.33 (Berkeley) %G%";
+static char *sccsid ="@(#)local2.c	1.34 (Berkeley) %G%";
 # endif
 
 # include "pass2.h"
@@ -485,11 +485,7 @@ sconv( p, forarg ) register NODE *p; {
 	if (p->in.op == ASSIGN)
 		l = getlr(p, 'L');
 	else if (p->in.op == SCONV) {
-#if defined(FORT) || defined(SPRECC)
 		m = r->in.type;
-#else
-		m = r->in.type==FLOAT ? DOUBLE : r->in.type;
-#endif
 		if (forarg)
 			l = makearg( m );
 		else
@@ -498,11 +494,7 @@ sconv( p, forarg ) register NODE *p; {
 		r = getlr(p, 'L');
 		}
 	else {		/* OPLTYPE */
-#if defined(FORT) || defined(SPRECC)
 		m = (r->in.type==FLOAT || r->in.type==DOUBLE ? r->in.type : INT);
-#else
-		m = (r->in.type==FLOAT || r->in.type==DOUBLE ? DOUBLE : INT);
-#endif
 		if (forarg)
 			l = makearg( m );
 		else
@@ -575,9 +567,17 @@ sconv( p, forarg ) register NODE *p; {
 			/*
 			 * Two steps are required.
 			 */
-			NODE *x = &resc[1];
+			NODE *x;
 
-			*x = *l;
+			if (forarg) {
+				x = resc;
+				x->in.type = l->in.type;
+				}
+			else {
+				x = &resc[1];
+				*x = *l;
+				}
+
 			if (tlen(x) > tlen(r) && ISUNSIGNED(r->in.type))
 				putstr("movz");
 			else
@@ -598,6 +598,19 @@ sconv( p, forarg ) register NODE *p; {
 	if ((r->in.type == UNSIGNED || r->in.type == ULONG) &&
 	    mixtypes(l, r)) {
 		int label1, label2;
+		NODE *x = NULL;
+
+#if defined(FORT) || defined(SPRECC)
+		if (forarg)
+#else
+		if (forarg || l == resc)
+#endif
+			{
+			/* compute in register, convert to double when done */
+			x = l;
+			l = resc;
+			l->in.type = x->in.type;
+			}
 
 		label1 = getlab();
 		label2 = getlab();
@@ -628,7 +641,74 @@ sconv( p, forarg ) register NODE *p; {
 		adrput(l);
 		printf("\nL%d:", label2);
 
-		goto cleanup;
+		if (!forarg && (l->in.type == DOUBLE || l != resc))
+			goto cleanup;
+		if (x != NULL) {
+			if (l == x) {
+				r = &resc[1];
+				*r = *l;
+				}
+			else {
+				r = l;
+				l = x;
+				}
+			l->in.type = DOUBLE;
+			}
+		putstr("\n\t");
+		}
+
+	if( (l->in.type == FLOAT || l->in.type == DOUBLE) &&
+	    (r->in.type == UCHAR || r->in.type == USHORT) ) {
+		/* skip unnecessary unsigned to floating conversion */
+#if defined(FORT) || defined(SPRECC)
+		if (forarg)
+#else
+		if (forarg || l == resc)
+#endif
+			l->in.type = DOUBLE;
+		putstr("movz");
+		prtype(r);
+		putstr("l\t");
+		adrput(r);
+		putchar(',');
+		adrput(resc);
+		putstr("\n\t");
+		if (l == resc) {
+			r = &resc[1];
+			*r = *l;
+			}
+		else
+			r = resc;
+		r->in.type = INT;
+		}
+
+#if defined(FORT) || defined(SPRECC)
+	if (forarg && l->in.type == FLOAT)
+#else
+	if ((forarg || l == resc) && l->in.type == FLOAT)
+#endif
+		{
+		/* perform an implicit conversion to double */
+		l->in.type = DOUBLE;
+		if (r->in.type != FLOAT &&
+		    r->in.type != CHAR &&
+		    r->in.type != SHORT) {
+			/* trim bits from the mantissa */
+			putstr("cvt");
+			prtype(r);
+			putstr("f\t");
+			adrput(r);
+			putchar(',');
+			adrput(resc);
+			putstr("\n\t");
+			if (l == resc) {
+				r = &resc[1];
+				*r = *l;
+				}
+			else
+				r = resc;
+			r->in.type = FLOAT;
+			}
 		}
 
 	if (!mixtypes(l,r)) {
@@ -1240,19 +1320,6 @@ optim2( p ) register NODE *p; {
 
 	case SCONV:
 		l = p->in.left;
-		if( (l->in.type == UCHAR || l->in.type == USHORT) &&
-		    (p->in.type == DOUBLE || p->in.type == FLOAT) ) {
-			/* we can convert to INT without loss of significance */
-			r = talloc();
-			*r = *p;
-			r->in.type = INT;
-			p->in.left = r;
-#if !defined(FORT) && !defined(SPRECC)
-			/* nothing to be 'gained' by a FLOAT conversion */
-			p->in.type = DOUBLE;
-#endif
-			return;
-			}
 #if defined(FORT) || defined(SPRECC)
 		if( p->in.type == FLOAT || p->in.type == DOUBLE ||
 		    l->in.type == FLOAT || l->in.type == DOUBLE )
@@ -1292,18 +1359,6 @@ optim2( p ) register NODE *p; {
 		     tlen(l) == tlen(r) ) {
 				p->in.right = r->in.left;
 				r->in.op = FREE;
-			}
-		else if( (r->in.type == UCHAR || r->in.type == USHORT) &&
-			 (p->in.type == DOUBLE || p->in.type == FLOAT) ) {
-			/* we can convert to INT without loss of significance */
-			l = talloc();
-			l->in.op = SCONV;
-			l->in.rall = NOPREF;
-			l->in.left = r;
-			l->in.right = NULL;
-			l->in.type = INT;
-			p->in.right = r;
-			return;
 			}
 		break;
 
