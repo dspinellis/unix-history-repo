@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)machdep.c	8.1 (Berkeley) %G%
+ *	@(#)machdep.c	7.22 (Berkeley) %G%
  */
 
 /* from: Utah $Hdr: machdep.c 1.63 91/04/24$ */
@@ -1197,7 +1197,7 @@ boot(howto)
 	/*NOTREACHED*/
 }
 
-int	dumpmag = 0x8fca0101;	/* magic number for savecore */
+int	dumpmag = (int)0x8fca0101;	/* magic number for savecore */
 int	dumpsize = 0;		/* also for savecore */
 long	dumplo = 0;
 
