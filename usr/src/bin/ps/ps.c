@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ps.c	4.17 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.18 (Berkeley) %G%";
 #endif
 
 /*
@@ -136,7 +136,7 @@ int	npr;
 int	cmdstart;
 int	twidth;
 char	*kmemf, *memf, *swapf, *nlistf;
-int	kmem, mem, swap;
+int	kmem, mem, swap = -1;
 int	rawcpu, sumcpu;
 
 int	pcbpf;
@@ -151,12 +151,7 @@ main(argc, argv)
 	int uid;
 	off_t procp;
 
-	if (chdir("/dev") < 0) {
-		perror("/dev");
-		exit(1);
-	}
 	twidth = 80;
-
 	if (ap = rindex(argv[0], '/'))
 		ap++;
 	else
@@ -243,9 +238,12 @@ main(argc, argv)
 		uflg++;
 		gflg++;
 	}
-
 	openfiles(argc, argv);
 	getkvars(argc, argv);
+	if (chdir("/dev") < 0) {
+		perror("/dev");
+		exit(1);
+	}
 	getdev();
 	uid = getuid();
 	printhdr();
@@ -259,8 +257,10 @@ main(argc, argv)
 		if (j > 8)
 			j = 8;
 		j *= sizeof (struct proc);
-		if (read(kmem, (char *)proc, j) != j)
+		if (read(kmem, (char *)proc, j) != j) {
 			cantread("proc table", kmemf);
+			exit(1);
+		}
 		procp += j;
 		for (j = j / sizeof (struct proc) - 1; j >= 0; j--) {
 			mproc = &proc[j];
@@ -343,9 +343,9 @@ openfiles(argc, argv)
 	char **argv;
 {
 
-	kmemf = "kmem";
+	kmemf = "/dev/kmem";
 	if (kflg)
-		kmemf = argc > 1 ? argv[1] : "/vmcore";
+		kmemf = argc > 2 ? argv[2] : "/vmcore";
 	kmem = open(kmemf, 0);
 	if (kmem < 0) {
 		perror(kmemf);
@@ -355,18 +355,20 @@ openfiles(argc, argv)
 		mem = kmem;
 		memf = kmemf;
 	} else {
-		memf = "mem";
+		memf = "/dev/mem";
 		mem = open(memf, 0);
 		if (mem < 0) {
 			perror(memf);
 			exit(1);
 		}
 	}
-	swapf = argc>2 ? argv[2]: "drum";
-	swap = open(swapf, 0);
-	if (swap < 0) {
-		perror(swapf);
-		exit(1);
+	if (kflg == 0 || argc > 3) {
+		swapf = argc>3 ? argv[3]: "/dev/drum";
+		swap = open(swapf, 0);
+		if (swap < 0) {
+			perror(swapf);
+			exit(1);
+		}
 	}
 }
 
@@ -375,7 +377,7 @@ getkvars(argc, argv)
 {
 	register struct nlist *nlp;
 
-	nlistf = argc > 3 ? argv[3] : "/vmunix";
+	nlistf = argc > 1 ? argv[1] : "/vmunix";
 	nlist(nlistf, nl);
 	if (nl[0].n_type == 0) {
 		fprintf(stderr, "%s: No namelist\n", nlistf);
@@ -384,8 +386,8 @@ getkvars(argc, argv)
 	if (kflg)
 		for (nlp = nl; nlp < &nl[sizeof (nl)/sizeof (nl[0])]; nlp++)
 			nlp->n_value = clear(nlp->n_value);
+	usrpt = (struct pte *)nl[X_USRPT].n_value;	/* don't clear!! */
 	Usrptma = (struct pte *)nl[X_USRPTMA].n_value;
-	usrpt = (struct pte *)nl[X_USRPT].n_value;
 	klseek(kmem, (long)nl[X_NSWAP].n_value, 0);
 	if (read(kmem, (char *)&nswap, sizeof (nswap)) != sizeof (nswap)) {
 		cantread("nswap", kmemf);
@@ -446,7 +448,7 @@ cantread(what, fromwhat)
 	char *what, *fromwhat;
 {
 
-	fprintf(stderr, "ps: error reading %s from %s", what, fromwhat);
+	fprintf(stderr, "ps: error reading %s from %s\n", what, fromwhat);
 }
 
 struct	direct *dbuf;
@@ -745,6 +747,8 @@ getu()
 
 	size = sflg ? ctob(UPAGES) : sizeof (struct user);
 	if ((mproc->p_flag & SLOAD) == 0) {
+		if (swap < 0)
+			return (0);
 		(void) lseek(swap, (long)ctob(mproc->p_swaddr), 0);
 		if (read(swap, (char *)&user.user, size) != size) {
 			fprintf(stderr, "ps: cant read u for pid %d from %s\n",
@@ -764,12 +768,12 @@ getu()
 		    mproc->p_pid, swapf);
 		return (0);
 	}
-	(void) lseek(mem,
+	klseek(mem,
 	    (long)ctob(apte.pg_pfnum+1) - (UPAGES+CLSIZE) * sizeof (struct pte),
 		0);
 	if (read(mem, (char *)arguutl, sizeof(arguutl)) != sizeof(arguutl)) {
 		printf("ps: cant read page table for u of pid %d from %s\n",
-		    mproc->p_pid, swapf);
+		    mproc->p_pid, kmemf);
 		return (0);
 	}
 	if (arguutl[0].pg_fod == 0 && arguutl[0].pg_pfnum)
@@ -780,7 +784,7 @@ getu()
 	ncl = (size + NBPG*CLSIZE - 1) / (NBPG*CLSIZE);
 	while (--ncl >= 0) {
 		i = ncl * CLSIZE;
-		(void) lseek(mem, (long)ctob(arguutl[CLSIZE+i].pg_pfnum), 0);
+		klseek(mem, (long)ctob(arguutl[CLSIZE+i].pg_pfnum), 0);
 		if (read(mem, user.upages[i], CLSIZE*NBPG) != CLSIZE*NBPG) {
 			printf("ps: cant read page %d of u of pid %d from %s\n",
 			    arguutl[CLSIZE+i].pg_pfnum, mproc->p_pid, memf);
@@ -803,6 +807,7 @@ getcmd()
 	char c;
 	int nbad;
 	struct dblock db;
+	char *file;
 
 	if (mproc->p_stat == SZOMB || mproc->p_flag&(SSYS|SWEXIT))
 		return ("");
@@ -811,16 +816,20 @@ getcmd()
 		return (savestr(cmdbuf));
 	}
 	if ((mproc->p_flag & SLOAD) == 0 || argaddr == 0) {
+		if (swap < 0)
+			goto retucomm;
 		vstodb(0, CLSIZE, &u.u_smap, &db, 1);
 		(void) lseek(swap, (long)ctob(db.db_base), 0);
 		if (read(swap, (char *)&argspac, sizeof(argspac))
 		    != sizeof(argspac))
 			goto bad;
+		file = swapf;
 	} else {
-		(void) lseek(mem, (long)argaddr, 0);
+		klseek(mem, (long)argaddr, 0);
 		if (read(mem, (char *)&argspac, sizeof (argspac))
 		    != sizeof (argspac))
 			goto bad;
+		file = memf;
 	}
 	ip = &argspac.argi[CLSIZE*NBPG/sizeof (int)];
 	ip -= 2;		/* last arg word and .long 0 */
@@ -864,8 +873,8 @@ getcmd()
 	return (savestr(cmdbuf));
 
 bad:
-	fprintf(stderr, "ps: error locating command name for pid %d\n",
-	    mproc->p_pid);
+	fprintf(stderr, "ps: error locating command name for pid %d from %s\n",
+	    mproc->p_pid, file);
 retucomm:
 	(void) strcpy(cmdbuf, " (");
 	(void) strncat(cmdbuf, u.u_comm, sizeof (u.u_comm));
