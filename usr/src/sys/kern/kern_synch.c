@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_synch.c	7.9 (Berkeley) %G%
+ *	@(#)kern_synch.c	7.10 (Berkeley) %G%
  */
 
 #include "machine/pte.h"
@@ -17,6 +17,7 @@
 #include "vm.h"
 #include "kernel.h"
 #include "buf.h"
+#include "tsleep.h"
 
 /*
  * Force switch among equal priority processes every 100ms.
@@ -211,6 +212,8 @@ struct slpque {
 } slpque[SQSIZE];
 
 /*
+ * XXX - redo comments once interface is set
+ * 
  * Give up the processor till a wakeup occurs
  * on chan, at which time the process
  * enters the scheduling queue at priority pri.
@@ -221,6 +224,128 @@ struct slpque {
  * premature return, and check that the reason for
  * sleeping has gone away.
  */
+
+/*
+ * interruptable sleep with longjmp processing.
+ * TEMPORARY UNTIL ALL CALLERS ARE TAUGHT TO UNWIND
+ */
+tsleep(chan, pri, wmesg, timeout)
+	caddr_t chan;
+	int pri;
+	char *wmesg;
+	int timeout;
+{
+	if (pri <= PZERO) 
+		panic("tsleep: pri <= PZERO");
+	if (isleep(chan, pri, wmesg, timeout) == EINTR)
+		longjmp(&u.u_qsave);
+}
+
+/*
+ * Interruptable sleep.
+ * Sleeps on chan for time of at most timo/hz seconds (0 means no timeout).
+ * Returns 0 if awakened, EINTR if a signal needs to be delivered,
+ * or EWOULDBLOCK if the timeout expires.
+ */
+isleep(chan, pri, wmesg, timo)
+	caddr_t chan;
+	int pri;
+	char *wmesg;
+	int timo;
+{
+	register struct proc *rp;
+	register struct slpque *qp;
+	register s;
+	extern int cold;
+	int endtsleep();
+
+	rp = u.u_procp;
+	s = splhigh();
+	if (cold || panicstr) {
+		/*
+		 * After a panic, or during autoconfiguration,
+		 * just give interrupts a chance, then just return;
+		 * don't run any other procs or panic below,
+		 * in case this is the idle process and already asleep.
+		 * The splnet should be spl0 if the network was being used
+		 * by the filesystem, but for now avoid network interrupts
+		 * that might cause another panic.
+		 */
+		(void) splnet();
+		splx(s);
+		return (0);
+	}
+#ifdef DIAGNOSTIC
+	if (chan==0 || rp->p_stat != SRUN || rp->p_rlink)
+		panic("isleep");
+#endif
+	rp->p_wchan = chan;
+	rp->p_wmesg = wmesg;
+	rp->p_slptime = 0;
+	rp->p_pri = pri;
+	qp = &slpque[HASH(chan)];
+	if (qp->sq_head == 0)
+		qp->sq_head = rp;
+	else
+		*qp->sq_tailp = rp;
+	*(qp->sq_tailp = &rp->p_link) = 0;
+	/*
+	 * If we stop in issig(), wakeup may already have happened
+	 * when we return (rp->p_wchan will then be 0).
+	 */
+	if (CURSIG(rp)) {
+		if (rp->p_wchan)
+			unsleep(rp);
+		rp->p_stat = SRUN;
+		splx(s);
+		return (EINTR);
+	}
+	if (rp->p_wchan == 0) {
+		splx(s);
+		return (0);
+	}
+	rp->p_stat = SSLEEP;
+	if (timo)
+		timeout(endtsleep, (caddr_t)rp, timo);
+	(void) spl0();
+	u.u_ru.ru_nvcsw++;
+	swtch();
+	curpri = rp->p_usrpri;
+	splx(s);
+	if (rp->p_flag & STIMO) {
+		rp->p_flag &= ~STIMO;
+		return (EWOULDBLOCK);
+	}
+	if (timo)
+		untimeout(endtsleep, (caddr_t)rp);
+	if (CURSIG(rp))
+		return (EINTR);
+	return (0);
+}
+
+/*
+ * Implement timeout for tsleep.
+ * If process hasn't been awakened (wchan non-zero),
+ * set timeout flag and undo the sleep.  If proc
+ * is stopped, just unsleep so it will remain stopped.
+ */
+endtsleep(p)
+	register struct proc *p;
+{
+	int s = splhigh();
+
+	if (p->p_wchan) {
+		if (p->p_stat == SSLEEP)
+			setrun(p);
+		else
+			unsleep(p);
+		p->p_flag |= STIMO;
+	}
+	splx(s);
+}
+
+int sleepdebug = 1;	/* XXX */
+
 sleep(chan, pri)
 	caddr_t chan;
 	int pri;
@@ -246,9 +371,12 @@ sleep(chan, pri)
 		splx(s);
 		return;
 	}
+#ifdef DIAGNOSTIC
 	if (chan==0 || rp->p_stat != SRUN || rp->p_rlink)
 		panic("sleep");
+#endif
 	rp->p_wchan = chan;
+	rp->p_wmesg = NULL;
 	rp->p_slptime = 0;
 	rp->p_pri = pri;
 	qp = &slpque[HASH(chan)];
@@ -258,11 +386,14 @@ sleep(chan, pri)
 		*qp->sq_tailp = rp;
 	*(qp->sq_tailp = &rp->p_link) = 0;
 	if (pri > PZERO) {
+		if (sleepdebug)
+			printf("sleep called with pri > PZERO, wchan: %x\n",
+				chan);
 		/*
 		 * If we stop in issig(), wakeup may already have happened
 		 * when we return (rp->p_wchan will then be 0).
 		 */
-		if (ISSIG(rp)) {
+		if (CURSIG(rp)) {
 			if (rp->p_wchan)
 				unsleep(rp);
 			rp->p_stat = SRUN;
@@ -275,7 +406,7 @@ sleep(chan, pri)
 		(void) spl0();
 		u.u_ru.ru_nvcsw++;
 		swtch();
-		if (ISSIG(rp))
+		if (CURSIG(rp))
 			goto psig;
 	} else {
 		rp->p_stat = SSLEEP;
@@ -335,8 +466,10 @@ wakeup(chan)
 	qp = &slpque[HASH(chan)];
 restart:
 	for (q = &qp->sq_head; p = *q; ) {
+#ifdef DIAGNOSTIC
 		if (p->p_rlink || p->p_stat != SSLEEP && p->p_stat != SSTOP)
 			panic("wakeup");
+#endif
 		if (p->p_wchan==chan) {
 			p->p_wchan = 0;
 			*q = p->p_link;
