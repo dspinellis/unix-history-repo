@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)lfs_vfsops.c	7.30 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.31 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -87,7 +87,7 @@ ufs_mountroot()
 	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
 		M_MOUNT, M_WAITOK);
 	mp->m_op = &ufs_vfsops;
-	mp->m_flag = 0;
+	mp->m_flag = M_RDONLY;
 	mp->m_exroot = 0;
 	mp->m_mounth = (struct vnode *)0;
 	error = mountfs(rootvp, mp);
@@ -218,6 +218,8 @@ mountfs(devvp, mp)
 	    M_WAITOK);
 	bcopy((caddr_t)bp->b_un.b_addr, (caddr_t)ump->um_fs,
 	   (u_int)fs->fs_sbsize);
+	if (fs->fs_sbsize < SBSIZE)
+		bp->b_flags |= B_INVAL;
 	brelse(bp);
 	bp = NULL;
 	fs = ump->um_fs;
@@ -334,6 +336,9 @@ ufs_unmount(mp, flags)
 
 	if (flags & MNT_FORCE)
 		return (EINVAL);
+	mntflushbuf(mp, 0);
+	if (mntinvalbuf(mp))
+		return (EBUSY);
 	ump = VFSTOUFS(mp);
 	if (error = vflush(mp, ITOV(ump->um_qinod), flags))
 		return (error);
@@ -456,15 +461,15 @@ ufs_sync(mp, waitfor)
 			continue;
 		VREF(vp);
 		VOP_LOCK(vp);
-		if (error = VOP_FSYNC(vp, 0, NOCRED, waitfor))
+		if (error = VOP_FSYNC(vp, 0, NOCRED, MNT_NOWAIT))
 			allerror = error;
 		vput(vp);
 	}
 	updlock = 0;
 	/*
-	 * Force stale buffer cache information to be flushed.
+	 * Force stale file system control information to be flushed.
 	 */
-	bflush(ump->um_devvp->v_mounton);
+	vflushbuf(ump->um_devvp, waitfor == MNT_WAIT ? B_SYNC : 0);
 	return (allerror);
 }
 
