@@ -16,7 +16,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)less.h	5.7 (Berkeley) %G%
+ *	@(#)less.h	5.8 (Berkeley) %G%
  */
 
 #define	RECOMP
@@ -69,3 +69,4 @@
 #define	A_STAT			24
 #define	A_VISUAL		25
 #define	A_TAGFILE		26
+#define	A_FILE_LIST		27

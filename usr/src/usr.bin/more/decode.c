@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)decode.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)decode.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -98,6 +98,7 @@ static char cmdtable[] = {
 	'q',0,				A_QUIT,
 	':','q',0,			A_QUIT,
 	':','t',0,			A_TAGFILE,
+	':', 'a', 0,			A_FILE_LIST,
 	'Z','Z',0,			A_QUIT,
 };
 

@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -163,7 +163,7 @@ putstr(s)
 }
 
 int cmdstack;
-static char return_to_continue[] = "  (press RETURN)";
+static char return_to_continue[] = "(press RETURN)";
 
 /*
  * Output a message in the lower left corner of the screen
@@ -197,12 +197,18 @@ error(s)
 	lower_left();
 	clear_eol();
 	so_enter();
-	putstr(s);
+	if (s) {
+		putstr(s);
+		putstr("  ");
+	}
 	putstr(return_to_continue);
 	so_exit();
 
-	if ((ch = getchr()) != '\n')
+	if ((ch = getchr()) != '\n') {
+		if (ch == 'q')
+			quit();
 		cmdstack = ch;
+	}
 	lower_left();
 
 	if (strlen(s) + sizeof(return_to_continue) + 

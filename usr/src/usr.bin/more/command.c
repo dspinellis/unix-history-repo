@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -518,10 +518,8 @@ again:		if (sigs)
 				clr_linenum();
 			}
 			/* FALLTHRU */
-		case A_REPAINT:
-			/*
-			 * Repaint screen.
-			 */
+
+		case A_REPAINT:		/* repaint the screen */
 			cmd_exec();
 			repaint();
 			break;
@@ -624,6 +622,12 @@ again:		if (sigs)
 			start_mca(A_TAGFILE, "Tag: ");
 			c = getcc();
 			goto again;
+
+		case A_FILE_LIST:	/* show list of file names */
+			cmd_exec();
+			showlist();
+			repaint();
+			break;
 
 		case A_EXAMINE:		/* edit a new file; get the file name */
 			cmd_reset();
@@ -739,4 +743,49 @@ editfile()
 	else
 		(void)sprintf(buf, "%s %s", editor, current_file);
 	lsystem(buf);
+}
+
+static
+showlist()
+{
+	extern int sc_width;
+	extern char **av;
+	register int indx, width;
+	int len;
+	char *p;
+
+	if (ac <= 0) {
+		error("No files provided as arguments.");
+		return;
+	}
+	for (width = indx = 0; indx < ac;) {
+		p = strcmp(av[indx], "-") ? av[indx] : "stdin";
+		len = strlen(p) + 1;
+		if (curr_ac == indx)
+			len += 2;
+		if (width + len + 1 >= sc_width) {
+			if (!width) {
+				if (curr_ac == indx)
+					putchr('[');
+				putstr(p);
+				if (curr_ac == indx)
+					putchr(']');
+				++indx;
+			}
+			width = 0;
+			putchr('\n');
+			continue;
+		}
+		if (width)
+			putchr(' ');
+		if (curr_ac == indx)
+			putchr('[');
+		putstr(p);
+		if (curr_ac == indx)
+			putchr(']');
+		width += len;
+		++indx;
+	}
+	putchr('\n');
+	error((char *)NULL);
 }
