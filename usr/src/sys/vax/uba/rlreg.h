@@ -1,4 +1,4 @@
-/*	rlreg.h	4.1	83/02/08	*/
+/*	rlreg.h	4.2	83/06/13	*/
 
 struct rldevice {
 	short	rlcs;		/* control status */
@@ -90,9 +90,6 @@ struct rldevice {
 
 /* mp_rhc */
 #define	RLMP_SA		0000077		/* sector address */
-#define	RLMP_HS		0000100		/* head select
-						0 upper head
-						1 lower head */
 #define	RLMP_CA		0177600		/* cylinder address */
 
 /* check these bits after a get status and reset */

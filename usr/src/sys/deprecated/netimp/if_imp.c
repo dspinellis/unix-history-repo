@@ -1,4 +1,4 @@
-/*	if_imp.c	4.50	83/06/13	*/
+/*	if_imp.c	4.51	83/06/13	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -89,7 +89,6 @@ impattach(ui, reset)
 {
 	struct imp_softc *sc = &imp_softc[ui->ui_unit];
 	register struct ifnet *ifp = &sc->imp_if;
-	struct sockaddr_in *sin;
 
 	/* UNIT COULD BE AMBIGUOUS */
 	ifp->if_unit = ui->ui_unit;
@@ -116,7 +115,7 @@ impinit(unit)
 	register struct imp_softc *sc = &imp_softc[unit];
 	struct sockaddr_in *sin;
 
-	sin = (struct sockaddr_in *)&sc->sc_if;
+	sin = (struct sockaddr_in *)&sc->imp_if.if_addr;
 	if (in_netof(sin->sin_addr) == 0)
 		return;
 	if ((*sc->imp_cb.ic_init)(unit) == 0) {
@@ -125,7 +124,7 @@ impinit(unit)
 		splx(s);
 		return;
 	}
-	sc->sc_if.if_flags |= IFF_RUNNING;
+	sc->imp_if.if_flags |= IFF_RUNNING;
 	sc->imp_state = IMPS_INIT;
 	impnoops(sc);
 	splx(s);

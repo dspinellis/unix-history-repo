@@ -1,30 +1,31 @@
-/*	rl.c	4.3	83/05/18	*/
+/*	rl.c	4.4	83/06/13	*/
 
 #include "rl.h"
 #if NRL > 0
 /*
  * UNIBUS RL02 disk driver
- * (not yet converted to 4.1c)
  */
+#include "../machine/pte.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#include "../h/cpu.h"
-#include "../h/nexus.h"
 #include "../h/dk.h"
+#include "../h/dkbad.h"
 #include "../h/buf.h"
 #include "../h/conf.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/map.h"
-#include "../h/pte.h"
-#include "../h/mtpr.h"
 #include "../h/vm.h"
-#include "../h/ubavar.h"
-#include "../h/ubareg.h"
 #include "../h/cmap.h"
+#include "../h/uio.h"
+#include "../h/kernel.h"
 
-#include "../h/rlreg.h"
+#include "../vax/cpu.h"
+#include "../vax/nexus.h"
+#include "../vaxuba/ubavar.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/rlreg.h"
 
 /* Pending Controller items and statistics */
 struct	rl_softc {
@@ -34,8 +35,8 @@ struct	rl_softc {
 } rl_softc[NHL];
 
 /* 
- * this struct is used to keep the state of the controller for the last
- * transfer done.  Since only one transfer can be done at a time per
+ * State of controller from last transfer.
+ * Since only one transfer can be done at a time per
  * controller, only allocate one for each controller.
  */
 struct	rl_stat {
@@ -47,17 +48,17 @@ struct	rl_stat {
 } rl_stat[NHL];
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
+/* Last cylinder not used. Saved for Bad Sector File */
 struct	size {
 	daddr_t	nblocks;
 	int	cyloff;
 } rl02_sizes[8] = {
-	14440,  	0,		/* A=cyl   0 thru 360 */
-	 6040,        361,		/* B=cyl 361 thru 511 */
-	20480,	        0,		/* C=cyl   0 thru 511 */
-	    0,          0,		/* D= Not Defined     */
-	    0,          0,		/* E= Not Defined     */
+	15884,		0,		/* A=cyl   0 thru 397 */
+	 4520,		398,		/* B=cyl 398 thru 510 */
+	   -1,		0,		/* C=cyl   0 thru 511 */
+	 4520,		398,		/* D=cyl 398 thru 510 */
 	    0,          0,		/* F= Not Defined     */
-	    0,          0,		/* G= Not Defined     */
+	20440,	        0,		/* G=cyl   0 thru 510 */
 	    0,          0,		/* H= Not Defined     */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
@@ -106,14 +107,14 @@ rlprobe(reg)
 
 #ifdef lint	
 	br = 0; cvec = br; br = cvec;
+	rlintr(0);
 #endif
-	((struct rldevice *)reg)->rlcs = RL_IE | RL_NOOP;  /* Enable intrpt */
-	DELAY(10);	/* Ensure interrupt takes place (10 microsec ) */
-	((struct rldevice *)reg)->rlcs &= ~RL_IE;  /* Disable intrpt */
+	((struct rldevice *)reg)->rlcs = RL_IE | RL_NOOP;
+	DELAY(10);
+	((struct rldevice *)reg)->rlcs &= ~RL_IE;
 	return (sizeof (struct rldevice));
 }
 
-/* Check that drive exists and is functional*/
 rlslave(ui, reg)
 	struct uba_device *ui;
 	caddr_t reg;
@@ -137,47 +138,41 @@ rlslave(ui, reg)
 		rladdr->rlda.getstat = RL_RESET;
 		rladdr->rlcs = (ui->ui_slave <<8) | RL_GETSTAT; /* Get status*/
 		rlwait(rladdr);
-	} while( (rladdr->rlmp.getstat&RLMP_STATUS) != RLMP_STATOK && ++ctr<8 );
-
-
+	} while ((rladdr->rlmp.getstat&RLMP_STATUS) != RLMP_STATOK && ++ctr<8);
 	if ((rladdr->rlcs & RL_DE) || (ctr >= 8))
-		return (0);			 /* Error return */
-	if ((rladdr->rlmp.getstat & RLMP_DT) == 0 ) {	/* NO RL01'S */
-		printf("rl01 drives not supported (drive %d)\n", ui->ui_slave );
+		return (0);
+	if ((rladdr->rlmp.getstat & RLMP_DT) == 0 ) {
+		printf("rl%d: rl01's not supported\n", ui->ui_slave);
 		return(0);
 	}
 	return (1);
 }
 
-/* Initialize controller */
 rlattach(ui)
 	register struct uba_device *ui;
 {
 	register struct rldevice *rladdr;
 
 	if (rlwstart == 0) {
-		timeout(rlwatch, (caddr_t)0, hz);   /* Watch for lost intr */
+		timeout(rlwatch, (caddr_t)0, hz);
 		rlwstart++;
 	}
 	/* Initialize iostat values */
 	if (ui->ui_dk >= 0)
 		dk_mspw[ui->ui_dk] = .000003906;   /* 16bit transfer time? */
 	rlip[ui->ui_ctlr][ui->ui_slave] = ui;
-	rl_softc[ui->ui_ctlr].rl_ndrive++;	   /* increment device/ctrl */
+	rl_softc[ui->ui_ctlr].rl_ndrive++;
 	rladdr = (struct rldevice *)ui->ui_addr;
-
 	/* reset controller */
 	rladdr->rlda.getstat = RL_RESET;	/* SHOULD BE REPEATED? */
 	rladdr->rlcs = (ui->ui_slave << 8) | RL_GETSTAT; /* Reset DE bit */
 	rlwait(rladdr);
-
-	/* Determine disk posistion */
+	/* determine disk posistion */
 	rladdr->rlcs = (ui->ui_slave << 8) | RL_RHDR;
 	rlwait(rladdr);
-
 	/* save disk drive posistion */
 	rl_stat[ui->ui_ctlr].rl_cyl[ui->ui_slave] =
-		(rladdr->rlmp.readhdr & 0177700) >> 6;
+	     (rladdr->rlmp.readhdr & 0177700) >> 6;
 	rl_stat[ui->ui_ctlr].rl_dn = -1;
 }
  
@@ -185,7 +180,7 @@ rlopen(dev)
 	dev_t dev;
 {
 	register int unit = minor(dev) >> 3;
-	register struct uba_device *mi;
+	register struct uba_device *ui;
 
 	if (unit >= NRL || (ui = rldinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
@@ -198,33 +193,31 @@ rlstrategy(bp)
 	register struct uba_device *ui;
 	register int drive;
 	register struct buf *dp;
-	int partition = minor(bp->b_dev) & 07;
+	int partition = minor(bp->b_dev) & 07, s;
 	long bn, sz;
 
-	sz = (bp->b_bcount+511) >> 9;	/* Blocks to transfer */
-
-	drive = dkunit(bp);		/* Drive number */
+	sz = (bp->b_bcount+511) >> 9;
+	drive = dkunit(bp);
 	if (drive >= NRL)
 		goto bad;
-	ui = rldinfo[drive];		/* Controller uba_device */
+	ui = rldinfo[drive];
 	if (ui == 0 || ui->ui_alive == 0)
 		goto bad;
 	if (bp->b_blkno < 0 ||
 	    (bn = dkblock(bp))+sz > rl02.sizes[partition].nblocks)
 		goto bad;
-
 	/* bn is in 512 byte block size */
 	bp->b_cylin = bn/rl02.nbpc + rl02.sizes[partition].cyloff;
-	(void) spl5();
+	s = spl5();
 	dp = &rlutab[ui->ui_unit];
 	disksort(dp, bp);
 	if (dp->b_active == 0) {
-		(void) rlustart(ui);
+		rlustart(ui);
 		bp = &ui->ui_mi->um_tab;
 		if (bp->b_actf && bp->b_active == 0)
-			(void) rlstart(ui->ui_mi);
+			rlstart(ui->ui_mi);
 	}
-	(void) spl0();
+	splx(s);
 	return;
 
 bad:
@@ -246,22 +239,22 @@ rlustart(ui)
 	register struct uba_ctlr *um;
 	register struct rldevice *rladdr;
 	daddr_t bn;
-	short cyl, sn, hd, diff;
+	short hd, diff;
 
 	if (ui == 0)
-		return (0);
+		return;
 	um = ui->ui_mi;
-	dk_busy &= ~(1<<ui->ui_dk);	/* Kernel define, drives busy */
+	dk_busy &= ~(1 << ui->ui_dk);
 	dp = &rlutab[ui->ui_unit];
 	if ((bp = dp->b_actf) == NULL)
-		goto out;
+		return;
 	/*
 	 * If the controller is active, just remember
 	 * that this device has to be positioned...
 	 */
 	if (um->um_tab.b_active) {
 		rl_softc[um->um_ctlr].rl_softas |=  1<<ui->ui_slave;
-		return (0);
+		return;
 	}
 	/*
 	 * If we have already positioned this drive,
@@ -269,7 +262,7 @@ rlustart(ui)
 	 */
 	if (dp->b_active)
 		goto done;
-	dp->b_active = 1;	/* Posistioning drive */
+	dp->b_active = 1;	/* positioning drive */
 	rladdr = (struct rldevice *)um->um_addr;
 
 	/*
@@ -278,24 +271,17 @@ rlustart(ui)
 	 */
 	bn = dkblock(bp);		/* Block # desired */
 	/*
-	 * these next two look funky... but we need to map
-	 * 512 byte logical disk blocks to 256 byte sectors.
-	 * (rl02's are stupid).
+	 * Map 512 byte logical disk blocks
+	 * to 256 byte sectors (rl02's are stupid).
 	 */
-	sn = (bn % rl02.nbpt) << 1;	/* Sector # desired */
 	hd = (bn / rl02.nbpt) & 1;	/* Get head required */
-
 	diff = (rl_stat[um->um_ctlr].rl_cyl[ui->ui_slave] >> 1) - bp->b_cylin;
 	if ( diff == 0 && (rl_stat[um->um_ctlr].rl_cyl[ui->ui_slave] & 1) == hd)
 		goto done;		/* on cylinder and head */
-
-search:
 	/*
 	 * Not at correct position.
 	 */
-
 	rl_stat[um->um_ctlr].rl_cyl[ui->ui_slave] = (bp->b_cylin << 1) | hd;
-
 	if (diff < 0)
 		rladdr->rlda.seek = -diff << 7 | RLDA_HGH | hd << 4;
 	else
@@ -310,10 +296,6 @@ search:
 		dk_seek[ui->ui_dk]++;
 	}
 	rlwait(rladdr);
-
-	/*
-	 * fall through since we are now at the correct cylinder
-	 */
 done:
 	/*
 	 * Device is ready to go.
@@ -329,8 +311,6 @@ done:
 		um->um_tab.b_actl = dp;
 		dp->b_active = 2;	/* Request on ready queue */
 	}
-out:
-	return (0);
 }
 
 /*
@@ -347,15 +327,12 @@ rlstart(um)
 	short sn, cyl, cmd;
 
 loop:
-	/*
-	 * Pull a request off the controller queue
-	 */
 	if ((dp = um->um_tab.b_actf) == NULL) {
 		st->rl_dn = -1;
 		st->rl_cylnhd = 0;
 		st->rl_bleft = 0;
 		st->rl_bpart = 0;
-		return (0);
+		return;
 	}
 	if ((bp = dp->b_actf) == NULL) {
 		um->um_tab.b_actf = dp->b_forw;
@@ -363,7 +340,7 @@ loop:
 	}
 	/*
 	 * Mark controller busy, and
-	 * determine destinationst.
+	 * determine destination.
 	 */
 	um->um_tab.b_active++;
 	ui = rldinfo[dkunit(bp)];		/* Controller */
@@ -372,29 +349,19 @@ loop:
 	cyl |= (bn / rl02.nbpt) & 1;		/* Get head required */
 	sn = (bn % rl02.nbpt) << 1;		/* Sector number */
 	rladdr = (struct rldevice *)ui->ui_addr;
-
-	/*
-	 * Check that controller is ready
-	 */
 	rlwait(rladdr);
-
-	/*
-	 * Setup for the transfer, and get in the
-	 * UNIBUS adaptor queue.
-	 */
 	rladdr->rlda.rw = cyl<<6 | sn;
-
 	/* save away current transfers drive status */
 	st->rl_dn = ui->ui_slave;
 	st->rl_cylnhd = cyl;
 	st->rl_bleft = bp->b_bcount;
 	st->rl_bpart = rl02.btrak - (sn * NRLBPSC);
-
-	/* RL02 must seek between cylinders and between tracks */
-	/* Determine maximum data transfer at this time */
-	if( st->rl_bleft < st->rl_bpart)
+	/*
+	 * RL02 must seek between cylinders and between tracks,
+	 * determine maximum data transfer at this time.
+	 */
+	if (st->rl_bleft < st->rl_bpart)
 		st->rl_bpart = st->rl_bleft;
-
 	rladdr->rlmp.rw = -(st->rl_bpart >> 1);
 	if (bp->b_flags & B_READ)
 		cmd = RL_IE | RL_READ | (ui->ui_slave << 8);
@@ -402,20 +369,13 @@ loop:
 		cmd = RL_IE | RL_WRITE | (ui->ui_slave << 8);
 	um->um_cmd = cmd;
 	(void) ubago(ui);
-	return (1);
 }
 
-/*
- * Now all ready to go, stuff the registers.
- */
 rldgo(um)
 	register struct uba_ctlr *um;
 {
 	register struct rldevice *rladdr = (struct rldevice *)um->um_addr;
 
-
-	/* Place in unibus address for transfer (lower 18 bits of um_ubinfo) */
-	/* Then execute instruction */
 	rladdr->rlba = um->um_ubinfo;
 	rladdr->rlcs = um->um_cmd|((um->um_ubinfo>>12)&RL_BAE);
 }
@@ -433,20 +393,14 @@ rlintr(rl21)
 	register unit;
 	struct rl_softc *rl = &rl_softc[um->um_ctlr];
 	struct rl_stat *st = &rl_stat[um->um_ctlr];
-	int as = rl->rl_softas;
-	int needie = 1, waitdry, status;
+	int as = rl->rl_softas, status;
 
 	rl->rl_wticks = 0;
 	rl->rl_softas = 0;
-
-	/*
-	 * Get device and block structures, and a pointer
-	 * to the uba_device for the drive.
-	 */
 	dp = um->um_tab.b_actf;
 	bp = dp->b_actf;
 	ui = rldinfo[dkunit(bp)];
-	dk_busy &= ~(1 << ui->ui_dk);	/* Clear busy bit */
+	dk_busy &= ~(1 << ui->ui_dk);
 
 	/*
 	 * Check for and process errors on
@@ -454,22 +408,18 @@ rlintr(rl21)
 	 */
 	if (rladdr->rlcs & RL_ERR) {
 		u_short err;
-		rlwait( rladdr );
-
+		rlwait(rladdr);
 		err = rladdr->rlcs;
-
 		/* get staus and reset controller */
 		rladdr->rlda.getstat = RL_GSTAT;
 		rladdr->rlcs = (ui->ui_slave << 8) | RL_GETSTAT;
 		rlwait(rladdr);
 		status = rladdr->rlmp.getstat;
-
 		/* reset drive */
 		rladdr->rlda.getstat = RL_RESET;
 		rladdr->rlcs = (ui->ui_slave <<8) | RL_GETSTAT; /* Get status*/
 		rlwait(rladdr);
-
-		if ( (status & RLMP_WL) == RLMP_WL ) {
+		if ((status & RLMP_WL) == RLMP_WL) {
 			/*
 			 * Give up on write protected devices
 			 * immediately.
@@ -481,85 +431,74 @@ rlintr(rl21)
 			 * After 10 retries give up.
 			 */
 			harderr(bp, "rl");
-			printf("cs=%b mp=%b\n",
-				err, RLCS_BITS, status, RLER_BITS);
-
+			printf("cs=%b mp=%b\n", err, RLCS_BITS,
+			    status, RLER_BITS);
 			bp->b_flags |= B_ERROR;
 		} else
 			um->um_tab.b_active = 0;	 /* force retry */
-
-		/* Determine disk posistion */
+		/* determine disk position */
 		rladdr->rlcs = (ui->ui_slave << 8) | RL_RHDR;
 		rlwait(rladdr);
-
-		/* save disk drive posistion */
-		st->rl_cyl[ui->ui_slave] = (rladdr->rlmp.readhdr & 0177700) >> 6;
+		/* save disk drive position */
+		st->rl_cyl[ui->ui_slave] =
+		    (rladdr->rlmp.readhdr & 0177700) >> 6;
 	}
-
 	/*
 	 * If still ``active'', then don't need any more retries.
 	 */
 	if (um->um_tab.b_active) {
 		/* RL02 check if more data from previous request */
-		if ( (bp->b_flags & B_ERROR) == 0 &&
-		     (st->rl_bleft -= st->rl_bpart) > 0 ) {
+		if ((bp->b_flags & B_ERROR) == 0 &&
+		     (int)(st->rl_bleft -= st->rl_bpart) > 0) {
 			/*
-			 * the following code was modeled from the rk07
+			 * The following code was modeled from the rk07
 			 * driver when an ECC error occured.  It has to
 			 * fix the bits then restart the transfer which is
 			 * what we have to do (restart transfer).
 			 */
 			int reg, npf, o, cmd, ubaddr, diff, head;
 
-
 			/* seek to next head/track */
-
 			/* increment head and/or cylinder */
 			st->rl_cylnhd++;
 			diff = (st->rl_cyl[ui->ui_slave] >> 1) -
 				(st->rl_cylnhd >> 1);
 			st->rl_cyl[ui->ui_slave] = st->rl_cylnhd;
 			head = st->rl_cylnhd & 1;
-			rlwait( rladdr );
-
-			if ( diff < 0 )
-				rladdr->rlda.seek = -diff << 7 | RLDA_HGH | head << 4;
+			rlwait(rladdr);
+			if (diff < 0)
+				rladdr->rlda.seek =
+				    -diff << 7 | RLDA_HGH | head << 4;
 			else
-				rladdr->rlda.seek = diff << 7 | RLDA_LOW | head << 4;
+				rladdr->rlda.seek =
+				    diff << 7 | RLDA_LOW | head << 4;
 			rladdr->rlcs = (ui->ui_slave << 8) | RL_SEEK;
-
 			npf = btop( bp->b_bcount - st->rl_bleft );
 			reg = btop(um->um_ubinfo&0x3ffff) + npf;
 			o = (int)bp->b_un.b_addr & PGOFSET;
 			ubapurge(um);
 			um->um_tab.b_active++;
-
-			rlwait( rladdr );
+			rlwait(rladdr);
 			rladdr->rlda.rw = st->rl_cylnhd << 6;
-			if ( st->rl_bleft < (st->rl_bpart = rl02.btrak) )
+			if (st->rl_bleft < (st->rl_bpart = rl02.btrak))
 				st->rl_bpart = st->rl_bleft;
 			rladdr->rlmp.rw = -(st->rl_bpart >> 1);
 			cmd = (bp->b_flags&B_READ ? RL_READ : RL_WRITE) |
-				RL_IE | (ui->ui_slave << 8);
+			    RL_IE | (ui->ui_slave << 8);
 			ubaddr = (int)ptob(reg) + o;
 			cmd |= ((ubaddr >> 12) & RL_BAE);
-
 			rladdr->rlba = ubaddr;
 			rladdr->rlcs = cmd;
 			return;
 		}
-
 		um->um_tab.b_active = 0;
 		um->um_tab.b_errcnt = 0;
 		dp->b_active = 0;
 		dp->b_errcnt = 0;
-
 		/* "b_resid" words remaining after error */
 		bp->b_resid = st->rl_bleft;
 		um->um_tab.b_actf = dp->b_forw;
 		dp->b_actf = bp->av_forw;
-
-retry:
 		st->rl_dn = -1;
 		st->rl_bpart = st->rl_bleft = 0;
 		iodone(bp);
@@ -568,21 +507,14 @@ retry:
 		 * then start it up right away.
 		 */
 		if (dp->b_actf)
-			if (rlustart(ui))
-				needie = 0;
+			rlustart(ui);
 		as &= ~(1<<ui->ui_slave);
 	} else
 		as |= (1<<ui->ui_slave);
-	/*
-	 * Release unibus resources and flush data paths.
-	 */
 	ubadone(um);
-
 	/* reset state info */
 	st->rl_dn = -1;
 	st->rl_cylnhd = st->rl_bpart = st->rl_bleft = 0;
-
-doattn:
 	/*
 	 * Process other units which need attention.
 	 * For each unit which needs attention, call
@@ -592,7 +524,7 @@ doattn:
 	while (unit = ffs(as)) {
 		unit--;		/* was 1 origin */
 		as &= ~(1<<unit);
-		(void) rlustart(rlip[rl21][unit]);
+		rlustart(rlip[rl21][unit]);
 	}
 	/*
 	 * If the controller is not transferring, but
@@ -600,7 +532,7 @@ doattn:
 	 * the controller.
 	 */
 	if (um->um_tab.b_actf && um->um_tab.b_active == 0)
-		(void) rlstart(um);
+		rlstart(um);
 }
 
 rlwait(rladdr)
@@ -608,7 +540,7 @@ rlwait(rladdr)
 {
 
 	while ((rladdr->rlcs & RL_CRDY) == 0)
-		continue;         /* Wait */
+		;
 }
 
 rlread(dev, uio)
@@ -645,13 +577,13 @@ rlreset(uban)
 	register struct uba_device *ui;
 	register struct rldevice *rladdr;
 	register struct rl_stat *st;
-	register int	rl21, unit;
+	register int rl21, unit;
 
 	for (rl21 = 0; rl21 < NHL; rl21++) {
 		if ((um = rlminfo[rl21]) == 0 || um->um_ubanum != uban ||
 		    um->um_alive == 0)
 			continue;
-		printf(" Reset hl%d", rl21);
+		printf(" hl%d", rl21);
 		rladdr = (struct rldevice *)um->um_addr;
 		st = &rl_stat[rl21];
 		um->um_tab.b_active = 0;
@@ -660,34 +592,29 @@ rlreset(uban)
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
 			um->um_ubinfo = 0;
 		}
-
 		/* reset controller */
 		st->rl_dn = -1;
 		st->rl_cylnhd = 0;
 		st->rl_bleft = 0;
 		st->rl_bpart = 0;
 		rlwait(rladdr);
-
 		for (unit = 0; unit < NRL; unit++) {
 			rladdr->rlcs = (unit << 8) | RL_GETSTAT;
 			rlwait(rladdr);
-
 			/* Determine disk posistion */
 			rladdr->rlcs = (unit << 8) | RL_RHDR;
 			rlwait(rladdr);
-
 			/* save disk drive posistion */
 			st->rl_cyl[unit] =
 				(rladdr->rlmp.readhdr & 0177700) >> 6;
-
 			if ((ui = rldinfo[unit]) == 0)
 				continue;
 			if (ui->ui_alive == 0 || ui->ui_mi != um)
 				continue;
 			rlutab[unit].b_active = 0;
-			(void) rlustart(ui);
+			rlustart(ui);
 		}
-		(void) rlstart(um);
+		rlstart(um);
 	}
 }
 
@@ -727,22 +654,11 @@ active:
 	}
 }
 
+/*ARGSUSED*/
 rldump(dev)
 	dev_t dev;
 {
-	/* don't think there is room on swap for it anyway. */
-}
- 
-rlsize(dev)
-	dev_t dev;
-{
-	int unit = minor(dev) >> 3;
-	struct uba_device *ui;
-	struct rlst *st;
 
-	if (unit >= NRL || (ui = rldinfo[unit]) == 0 || ui->ui_alive == 0)
-		return (-1);
-	st = &rl02;
-	return (st->sizes[minor(dev) & 07].nblocks);
+	/* don't think there is room on swap for it anyway. */
 }
 #endif

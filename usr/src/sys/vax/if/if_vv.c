@@ -1,4 +1,4 @@
-/*	if_vv.c	4.21	83/06/12	*/
+/*	if_vv.c	4.22	83/06/13	*/
 
 #include "vv.h"
 
@@ -656,7 +656,6 @@ vvrint(unit)
 	if (len > VVMRU || len <= 0)
 		goto dropit;
 #define	vvdataaddr(vv, off, type)	((type)(((caddr_t)((vv)+1)+(off))))
-	if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
 	if (vv->vh_type >= RING_IPTrailer &&
 	     vv->vh_type < RING_IPTrailer+RING_IPNTrailer) {
 		off = (vv->vh_type - RING_IPTrailer) * 512;
@@ -778,7 +777,8 @@ vvoutput(ifp, m0, dst)
 			goto bad;
 		}
 		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		if (vv_dotrailer && off > 0 && (off & 0x1ff) == 0 &&
+		if ((ifp->if_flags & IFF_NOTRAILERS) == 0)
+		if (off > 0 && (off & 0x1ff) == 0 &&
 		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
 			type = RING_IPTrailer + (off>>9);
 			m->m_off -= 2 * sizeof (u_short);
@@ -876,7 +876,9 @@ vvioctl(ifp, cmd, data)
 	case SIOCSIFADDR:
 		/* too difficult to change addr while running */
 		if ((ifp->if_flags & IFF_RUNNING) == 0) {
-			ifp->if_net = in_netof(ifr->ifr_addr.sin_addr);
+			struct sockaddr_in *sin =
+			    (struct sockaddr_in *)&ifr->ifr_addr;
+			ifp->if_net = in_netof(sin->sin_addr);
 			vvinit(ifp->if_unit);
 		} else
 			error = EINVAL;

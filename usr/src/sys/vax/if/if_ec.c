@@ -1,4 +1,4 @@
-/*	if_ec.c	4.36	83/06/13	*/
+/*	if_ec.c	4.37	83/06/13	*/
 
 #include "ec.h"
 
@@ -217,7 +217,7 @@ ecinit(unit)
 	struct ec_softc *es = &ec_softc[unit];
 	struct ecdevice *addr;
 	register struct ifnet *ifp = &es->es_if;
-	register struct sockaddr_in *sin, *sinb;
+	register struct sockaddr_in *sin;
 	int i, s;
 
 	sin = (struct sockaddr_in *)&ifp->if_addr;

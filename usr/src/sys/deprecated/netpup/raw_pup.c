@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.17	83/05/30	*/
+/*	raw_pup.c	4.18	83/06/13	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -53,11 +53,11 @@ rpup_output(m, so)
 		error = EMSGSIZE;
 		goto bad;
 	}
-	pup->pup_length = htons(len);
+	pup->pup_length = htons((u_short)len);
 	dst = (struct sockaddr_pup *)&rp->rcb_faddr;
 	bcopy((caddr_t)dst->spup_net, (caddr_t)pup->pup_dnet,
 	    sizeof (struct pupport));
-	ifp = if_ifonnetof((u_int)pup->pup_dnet);
+	ifp = if_ifonnetof((int)(unsigned)pup->pup_dnet);
 	if (ifp == 0) {
 		error = ENETUNREACH;
 		goto bad;

@@ -1,4 +1,4 @@
-/*	lp.c	4.32	83/01/03	*/
+/*	lp.c	4.33	83/06/13	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -146,9 +146,9 @@ lpwrite(dev, uio)
 	register struct lp_softc *sc = &lp_softc[LPUNIT(dev)];
 	int error;
 
-	while (n = min(512, uio->uio_resid)) {
+	while (n = min(512, (unsigned)uio->uio_resid)) {
 		cp = sc->sc_inbuf->b_un.b_addr;
-		error = uiomove(cp, n, UIO_WRITE, uio);
+		error = uiomove(cp, (int)n, UIO_WRITE, uio);
 		if (error)
 			return (error);
 		do
@@ -339,3 +339,4 @@ lpreset(uban)
 		lpaddr->lpsr |= IENABLE;
 	}
 }
+#endif
