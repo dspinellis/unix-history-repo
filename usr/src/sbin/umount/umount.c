@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -22,6 +22,7 @@ static char sccsid[] = "@(#)umount.c	5.1 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 #include <mtab.h>
+#include </usr/src/local/mkmsys/macklem/mkmsys/h/mount.h>
 
 struct	mtab mtab[NMOUNT];
 
@@ -87,8 +88,8 @@ umountall()
 		freefsent(fs);
 		return;
 	}
-	if (umountfs(fs->fs_spec) < 0)
-		perror(fs->fs_spec);
+	if (umountfs(fs->fs_file) < 0)
+		perror(fs->fs_file);
 	freefsent(fs);
 }
 
@@ -138,21 +139,17 @@ umountfs(name)
 	int mf;
 	struct fstab *fs;
 
-	fs = getfsfile(name);
+	fs = getfsspec(name);
 	if (fs != NULL)
-		name = fs->fs_spec;
-	if (umount(name) < 0) {
+		name = fs->fs_file;
+	if (umount(name, MNT_NOFORCE) < 0) {
 		perror(name);
 		return (0);
 	}
 	if (vflag)
 		fprintf(stderr, "%s: Unmounted\n", name);
-	while ((p1 = rindex(name, '/')) && p1[1] == 0)
-		*p1 = 0;
-	if (p1)
-		name = p1 + 1;
 	for (mp = mtab; mp < &mtab[NMOUNT]; mp++) {
-		if (strncmp(mp->m_dname, name, sizeof (mp->m_dname)))
+		if (strncmp(mp->m_path, name, sizeof (mp->m_path)))
 			continue;
 		*mp = zeromtab;
 		for (mp = &mtab[NMOUNT]; mp >= mtab; mp--)
