@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)locore.s	7.8 (Berkeley) %G%
+ *	@(#)locore.s	7.9 (Berkeley) %G%
  */
 
 #include "assym.s"
@@ -318,6 +318,8 @@ __exit:
  * If the exec fails, process 1 exits.
  */
 _icode:
+	pushl	$0 /* environment */
+
 	# pushl	$argv-_icode	# gas fucks up again
 	movl	$argv,%eax
 	subl	$_icode,%eax
@@ -491,30 +493,6 @@ _ovbcopy:
 	cld
 	ret
 
-	.globl	_copyout
-_copyout:
-	movl	_curpcb,%eax
-	movl	$cpyflt,PCB_ONFAULT(%eax) # in case we page/protection violate
-	pushl	%esi
-	pushl	%edi
-	movl	12(%esp),%esi
-	movl	16(%esp),%edi
-	movl	20(%esp),%ecx
-	shrl	$2,%ecx
-	cld
-	rep
-	movsl
-	movl	20(%esp),%ecx
-	andl	$3,%ecx
-	rep
-	movsb
-	popl	%edi
-	popl	%esi
-	xorl	%eax,%eax
-	movl	_curpcb,%edx
-	movl	%eax,PCB_ONFAULT(%edx)
-	ret
-
 	.globl	_copyin
 _copyin:
 	movl	_curpcb,%eax
@@ -524,6 +502,17 @@ _copyin:
 	movl	12(%esp),%esi
 	movl	16(%esp),%edi
 	movl	20(%esp),%ecx
+
+	/* if dest >= USRSTACK, return error */
+	cmpl	$ USRSTACK, %esi
+	jae	cpyflt
+
+	/* if USRSTACK-dest < len, return error */
+	movl	$ USRSTACK, %eax
+	subl	%esi, %eax
+	cmpl	%ecx, %eax
+	jb	cpyflt
+
 	shrl	$2,%ecx
 	cld
 	rep
@@ -742,17 +731,12 @@ ENTRY(fuword)
 	movl	_curpcb,%ecx
 	movl	$fusufault,PCB_ONFAULT(%ecx)
 	movl	4(%esp),%edx
+
+	cmpl	$ USRSTACK - 3, %edx
+	jae	fusufault
+
 	# .byte	0x65		# use gs
 	movl	0(%edx),%eax
-	movl	$0,PCB_ONFAULT(%ecx)
-	ret
-	
-ENTRY(fusword)
-	movl	_curpcb,%ecx
-	movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
-	movl	4(%esp),%edx
-	# .byte	0x65		# use gs
-	movzwl	0(%edx),%eax
 	movl	$0,PCB_ONFAULT(%ecx)
 	ret
 	
@@ -761,6 +745,10 @@ ENTRY(fubyte)
 	movl	_curpcb,%ecx
 	movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	movl	4(%esp),%edx
+
+	cmpl	$ USRSTACK, %edx
+	jae	fusufault
+
 	# .byte	0x65		# use gs
 	movzbl	0(%edx),%eax
 	movl	$0,PCB_ONFAULT(%ecx)
@@ -773,39 +761,156 @@ fusufault:
 	decl	%eax
 	ret
 
+
+/*
+ * There is a little bit of duplicated code so we can avoid flushing the
+ * prefetch queue in the common case.
+ */
+
 ALTENTRY(suiword)
 ENTRY(suword)
-	movl	_curpcb,%ecx
-	movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
-	movl	4(%esp),%edx
-	movl	8(%esp),%eax
-	# .byte	0x65		# use gs
-	movl	%eax,0(%edx)
-	xorl	%eax,%eax
-	movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
+	movl 4(%esp), %eax /* address */
+
+	cmpl $ USRSTACK, %eax
+	jae return_minus_one
+
+	/* check if the destination crosses a page boundary */
+	movl %eax, %ecx
+	andl $ NBPG - 1, %ecx
+	cmpl $ NBPG - 4, %ecx
+	ja suword_breakup
+
+	/* make sure the page table is present */
+	movl %eax, %ecx
+	shrl $ PDRSHIFT, %ecx
+	movl _PTD(,%ecx,4), %ecx
+	andl $ PG_V, %ecx
+	jnz suword_fault
+
+	/* now make sure the page is present with user write permission */
+	movl %eax, %ecx
+	shrl $ PGSHIFT, %ecx
+	movl _PTmap(,%ecx,4), %ecx
+	andl $ PG_V | PG_UW, %ecx
+	cmpl $ PG_V | PG_UW, %ecx
+	jnz suword_fault
+
+	movl 8(%esp), %ecx
+	movl %ecx, (%eax)
+	xorl %eax, %eax
 	ret
-	
-ENTRY(susword)
-	movl	_curpcb,%ecx
-	movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
-	movl	4(%esp),%edx
-	movl	8(%esp),%eax
-	# .byte	0x65		# use gs
-	movw	%ax,0(%edx)
-	xorl	%eax,%eax
-	movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
+
+suword_fault:
+	/* 
+	 * this is a slow case anyway, so build a frame to make the debugger
+	 * more useful
+	 */
+	pushl %ebp
+	movl %esp, %ebp
+
+	pushl %eax
+	call _user_write_fault
+
+	leave
+
+	cmpl $0, %eax
+	jnz return_minus_one
+
+	movl 4(%esp), %eax
+	movl 8(%esp), %ecx
+	movl %ecx, (%eax)
+	xorl %eax, %eax
+	ret
+
+
+suword_breakup:
+	/* crosses page boundary ... do each byte separately */
+	pushl %ebp
+	movl %esp, %ebp
+	pushl %esi
+	pushl %edi
+	pushl %ebx
+
+	movl %eax, %edi
+	movl 12(%ebp), %ebx
+	movl $4, %esi
+
+suword_breakup_loop:
+	pushl %ebx
+	pushl %edi
+	call _subyte
+	addl $8, %esp
+
+	cmpl $-1, %eax
+	jz suword_breakup_error
+
+	incl %edi
+	shrl $8, %ebx
+	decl %esi
+	jnz suword_breakup_loop
+
+	xorl %eax, %eax
+	popl %ebx
+	popl %edi
+	popl %esi
+	leave
+	ret
+
+suword_breakup_error:
+	movl $-1, %eax
+	popl %ebx
+	popl %edi
+	popl %esi
+	leave
 	ret
 
 ALTENTRY(suibyte)
 ENTRY(subyte)
-	movl	_curpcb,%ecx
-	movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
-	movl	4(%esp),%edx
-	movl	8(%esp),%eax
-	# .byte	0x65		# use gs
-	movb	%eax,0(%edx)
-	xorl	%eax,%eax
-	movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
+	movl 4(%esp), %eax /* address */
+
+	cmpl $ USRSTACK, %eax
+	jae return_minus_one
+
+	/* make sure the page table is present */
+	movl %eax, %ecx
+	shrl $ PDRSHIFT, %ecx
+	movl _PTD(,%ecx,4), %ecx
+	andl $ PG_V, %ecx
+	jnz subyte_fault
+
+	/* now make sure the page is present with user write permission */
+	movl %eax, %ecx
+	shrl $ PGSHIFT, %ecx
+	movl _PTmap(,%ecx,4), %ecx
+	andl $ PG_V | PG_UW, %ecx
+	cmpl $ PG_V | PG_UW, %ecx
+	jnz subyte_fault
+
+	movl 8(%esp), %ecx
+	movb %cl, (%eax)
+	xorl %eax, %eax
+	ret
+
+subyte_fault:
+	pushl %ebp
+	movl %esp, %ebp
+
+	pushl %eax
+	call _user_write_fault
+
+	leave
+
+	cmpl $0, %eax
+	jnz return_minus_one
+
+	movl 4(%esp), %eax
+	movl 8(%esp), %ecx
+	movb %cl, (%eax)
+	xorl %eax, %eax
+	ret
+
+return_minus_one:
+	movl $-1, %eax
 	ret
 
 	ENTRY(setjmp)
