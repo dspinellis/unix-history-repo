@@ -1,6 +1,8 @@
 /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stab.c 1.9 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)stab.c 1.8.1.1 %G%";
+#endif
 
     /*
      *	procedures to put out sdb symbol table information.
@@ -13,7 +15,6 @@ static	char sccsid[] = "@(#)stab.c 1.9 %G%";
     /*	and the rest of the file */
 #   include	"0.h"
 #   include	"objfmt.h"
-#   include	"yy.h"
 #   include	<stab.h>
 
     /*
@@ -33,6 +34,7 @@ static	char sccsid[] = "@(#)stab.c 1.9 %G%";
     /*
      *	global variables
      */
+/*ARGSUSED*/
 stabgvar( name , type , offset , length , line )
     char	*name;
     int		type;
@@ -45,7 +47,7 @@ stabgvar( name , type , offset , length , line )
 	     *	for separate compilation
 	     */
 	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-		    , name , N_PC , N_PGVAR , ABS( line ) );
+		    , (int) name , N_PC , N_PGVAR , ABS( line ) );
 	    /*
 	     *	for sdb
 	     */
@@ -53,16 +55,17 @@ stabgvar( name , type , offset , length , line )
 		return;
 	}
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( NAMEFORMAT , 1 , (int) name );
 	putprintf( "\",0x%x,0,0x%x,0" , 0 , N_GSYM , type );
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( NAMEFORMAT , 1 , (int) name );
 	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_LENG , length );
 }
 
     /*
      *	local variables
      */
+/*ARGSUSED*/
 stablvar( name , type , level , offset , length )
     char	*name;
     int		type;
@@ -75,10 +78,10 @@ stablvar( name , type , level , offset , length )
 		return;
 	}
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( NAMEFORMAT , 1 , (int) name );
 	putprintf( "\",0x%x,0,0x%x,0x%x" , 0 , N_LSYM , type , -offset );
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( NAMEFORMAT , 1 , (int) name );
 	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_LENG , length );
 }
 
@@ -97,33 +100,16 @@ stabparam( name , type , offset , length )
 		return;
 	}
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( NAMEFORMAT , 1 , (int) name );
 	putprintf( "\",0x%x,0,0x%x,0x%x" , 0 , N_PSYM , type , offset );
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
+	putprintf( NAMEFORMAT , 1 , (int) name );
 	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_LENG , length );
     }
 
     /*
      *	fields
      */
-stabfield( name , type , offset , length )
-    char	*name;
-    int		type;
-    int		offset;
-    int		length;
-    {
-	
-	if ( ! opt('g') ) {
-		return;
-	}
-	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
-	putprintf( "\",0x%x,0,0x%x,0x%x" , 0 , N_SSYM , type , offset );
-	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
-	putprintf( "\",0x%x,0,0,0x%x" , 0 , N_LENG , length );
-    }
 
     /*
      *	left brackets
@@ -160,8 +146,6 @@ stabfunc( name , typeclass , line , level )
     int		line;
     long	level;
     {
-	int	type;
-	long	i;
 	char	extname[ BUFSIZ ];
 
 	    /*
@@ -170,10 +154,10 @@ stabfunc( name , typeclass , line , level )
 	if ( level == 1 ) {
 	    if ( typeclass == FUNC ) {
 		putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-			    , name , N_PC , N_PGFUNC , ABS( line ) );
+			    , (int) name , N_PC , N_PGFUNC , ABS( line ) );
 	    } else if ( typeclass == PROC ) {
 		putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-			    , name , N_PC , N_PGPROC , ABS( line ) );
+			    , (int) name , N_PC , N_PGPROC , ABS( line ) );
 	    }
 	}
 	    /*
@@ -183,9 +167,9 @@ stabfunc( name , typeclass , line , level )
 		return;
 	}
 	putprintf( "	.stabs	\"" , 1 );
-	putprintf( NAMEFORMAT , 1 , name );
-	sextname( extname , name , level );
-	putprintf( "\",0x%x,0,0x%x,%s" , 0 , N_FUN , line , extname );
+	putprintf( NAMEFORMAT , 1 , (int) name );
+	sextname( extname , name , (int) level );
+	putprintf( "\",0x%x,0,0x%x,%s" , 0 , N_FUN , line , (int) extname );
     }
 
     /*
@@ -203,105 +187,61 @@ stabline( line )
     /*
      *	source files
      */
-stabsource(filename)
+stabsource( filename )
     char	*filename;
-{
-    int		label;
-    
-	/*
-	 *	for separate compilation
-	 */
-    putprintf("	.stabs	\"%s\",0x%x,0,0x%x,0x%x", 0,
-	    filename, N_PC, N_PSO, N_FLAGCHECKSUM);
-	/*
-	 *	for sdb
-	 */
-    if ( ! opt('g') ) {
-	    return;
+    {
+	int	label;
+	
+	    /*
+	     *	for separate compilation
+	     */
+	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0" , 0 
+		    , (int) filename , N_PC , N_PSO );
+	    /*
+	     *	for sdb
+	     */
+	if ( ! opt('g') ) {
+		return;
+	}
+	label = (int) getlab();
+	putprintf( "	.stabs	\"" , 1 );
+	putprintf( NAMEFORMAT , 1 , (int) filename );
+	putprintf( "\",0x%x,0,0," , 1 , N_SO );
+	putprintf( PREFIXFORMAT , 0 , (int) LLABELPREFIX , label );
+	putprintf( PREFIXFORMAT , 1 , (int) LLABELPREFIX , label );
+	putprintf( ":" , 0 );
     }
-    label = getlab();
-    putprintf( "	.stabs	\"" , 1 );
-    putprintf( NAMEFORMAT , 1 , filename );
-    putprintf( "\",0x%x,0,0," , 1 , N_SO );
-    putprintf( PREFIXFORMAT , 0 , LLABELPREFIX , label );
-    putprintf( PREFIXFORMAT , 1 , LLABELPREFIX , label );
-    putprintf( ":" , 0 );
-}
 
     /*
      *	included files get one or more of these:
      *	one as they are entered by a #include,
-     *	and one every time they are returned to from nested #includes.
+     *	and one every time they are returned to by nested #includes
      */
-stabinclude(filename, firsttime)
+stabinclude( filename )
     char	*filename;
-    bool	firsttime;
-{
-    int	label;
-    long	check;
-    
-	/*
-	 *	for separate compilation
-	 */
-    if (firsttime) {
-	check = checksum(filename);
-    } else {
-	check = N_FLAGCHECKSUM;
-    }
-    putprintf("	.stabs	\"%s\",0x%x,0,0x%x,0x%x", 0,
-	    filename, N_PC, N_PSOL, check);
-	/*
-	 *	for sdb
-	 */
-    if ( ! opt('g') ) {
-	    return;
-    }
-    label = getlab();
-    putprintf( "	.stabs	\"" , 1 );
-    putprintf( NAMEFORMAT , 1 , filename );
-    putprintf( "\",0x%x,0,0," , 1 , N_SOL );
-    putprintf( PREFIXFORMAT , 0 , LLABELPREFIX , label );
-    putprintf( PREFIXFORMAT , 1 , LLABELPREFIX , label );
-    putprintf( ":" , 0 );
-}
-
-    /*
-     *	anyone know a good checksum for ascii files?
-     *	this does a rotate-left and then exclusive-or's in the character.
-     *	also, it avoids returning checksums of 0.
-     *	The rotate is implemented by shifting and adding back the
-     *	sign bit when negative.
-     */
-long
-checksum(filename)
-    char	*filename;
-{
-    FILE		*filep;
-    register int	input;
-    register long	check;
-
-    filep = fopen(filename, "r");
-    if (filep == NULL) {
-	perror(filename);
-	pexit(DIED);
-    }
-    check = 0;
-    while ((input = getc(filep)) != EOF) {
-	if (check < 0) {
-	    check <<= 1;
-	    check += 1;
-	} else {
-	    check <<= 1;
+    {
+	int	label;
+	
+	    /*
+	     *	for separate compilation
+	     */
+	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0" , 0 
+		    , (int) filename , N_PC , N_PSOL );
+	    /*
+	     *	for sdb
+	     */
+	if ( ! opt('g') ) {
+		return;
 	}
-	check ^= input;
+	label = (int) getlab();
+	putprintf( "	.stabs	\"" , 1 );
+	putprintf( NAMEFORMAT , 1 , (int) filename );
+	putprintf( "\",0x%x,0,0," , 1 , N_SOL );
+	putprintf( PREFIXFORMAT , 0 , (int) LLABELPREFIX , label );
+	putprintf( PREFIXFORMAT , 1 , (int) LLABELPREFIX , label );
+	putprintf( ":" , 0 );
     }
-    fclose(filep);
-    if ((unsigned) check <= N_FLAGCHECKSUM) {
-	return N_FLAGCHECKSUM + 1;
-    } else {
-	return check;
-    }
-}
+
 
 /*
  * global Pascal symbols :
@@ -319,7 +259,7 @@ stabglabel( label , line )
     {
 
 	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-		    , label , N_PC , N_PGLABEL , ABS( line ) );
+		    , (int) label , N_PC , N_PGLABEL , ABS( line ) );
     }
 
     /*
@@ -331,7 +271,7 @@ stabgconst( const , line )
     {
 
 	    putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-			, const , N_PC , N_PGCONST , ABS( line ) );
+			, (int) const , N_PC , N_PGCONST , ABS( line ) );
     }
 
     /*
@@ -343,7 +283,7 @@ stabgtype( type , line )
     {
 
 	    putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-			, type , N_PC , N_PGTYPE , ABS( line ) );
+			, (int) type , N_PC , N_PGTYPE , ABS( line ) );
     }
 
 
@@ -365,7 +305,7 @@ stabefunc( name , typeclass , line )
 	    return;
 	}
 	putprintf( "	.stabs	\"%s\",0x%x,0,0x%x,0x%x" , 0 
-		    , name , N_PC , type , ABS( line ) );
+		    , (int) name , N_PC , type , ABS( line ) );
     }
 
 #endif PC
