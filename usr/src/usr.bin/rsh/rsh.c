@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	4.4 83/01/13";
+static char sccsid[] = "@(#)rsh.c	4.5 83/01/30";
 #endif
 
 #include <sys/types.h>
@@ -68,6 +68,14 @@ another:
 	if (!strcmp(*argv, "-d")) {
 		argv++, argc--;
 		options |= SO_DEBUG;
+		goto another;
+	}
+	/*
+	 * Ignore the -e flag to allow aliases with rlogin
+	 * to work
+	 */
+	if (!strncmp(*argv, "-e", 2)) {
+		argv++, argc--;
 		goto another;
 	}
 	if (host == 0)
