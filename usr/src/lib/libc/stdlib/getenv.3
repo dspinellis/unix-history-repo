@@ -1,6 +1,6 @@
-.\"	@(#)getenv.3	4.1 (Berkeley) %G%
+.\"	@(#)getenv.3	5.1 (Berkeley) %G%
 .\"
-.TH GETENV 3
+.TH GETENV 3 "19 January 1983"
 .AT 3
 .SH NAME
 getenv \- value for environment name
@@ -14,11 +14,13 @@ getenv \- value for environment name
 .a
 searches the environment list
 (see
-.IR environ (5))
+.IR environ (7))
 for a string of the form
 .IB name = value
-and returns
+and returns a pointer to the string
 .I value
-if such a string is present, otherwise 0 (NULL).
+if such a string is present, otherwise 
+.I getenv
+returns the value 0 (NULL).
 .SH SEE ALSO
-environ(5), exec(2)
+environ(7), execve(2)
