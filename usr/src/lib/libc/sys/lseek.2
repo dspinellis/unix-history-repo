@@ -2,73 +2,86 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)lseek.2	4.1 (Berkeley) %G%
+.\"	@(#)lseek.2	5.1 (Berkeley) %G%
 .\"
-.TH LSEEK 2 
+.TH LSEEK 2 "7 July 1983"
 .UC 4
 .SH NAME
-lseek, tell \- move read/write pointer
+lseek \- move read/write pointer
 .SH SYNOPSIS
 .nf
-.B long lseek(fildes, offset, whence)
-.B long offset;
+.ft B
+.ta 1.25i 1.6i
+#define L_SET	0	/* set the seek pointer */
+#define L_INCR	1	/* increment the seek pointer */
+#define L_XTND	2	/* extend the file size */
 .PP
-.B long tell(fildes)
+.ft B
+pos = lseek(d, offset, whence)
+int pos;
+int d, offset, whence;
 .fi
+.ft R
 .SH DESCRIPTION
-The file
-descriptor refers to a file open for reading or writing.
-The read (resp. write) pointer for the file is set as follows:
+The descriptor 
+.I d
+refers to a file or device open for reading and/or writing.
+.I Lseek
+sets the file pointer of
+.I d
+as follows:
 .IP
 If
 .I whence
-is 0, the pointer is set to
+is L_SET, the pointer is set to
 .I offset
 bytes.
 .IP
 If
 .I whence
-is 1, the pointer is set to its current location plus
+is L_INCR, the pointer is set to its current location plus
 .IR offset .
 .IP
 If
 .I whence
-is 2, the pointer is set to the size of the
+is L_XTND, the pointer is set to the size of the
 file plus
 .IR offset .
 .PP
-The returned value is the resulting pointer location.
-.PP
-The obsolete function
-.IR tell ( fildes )
-is identical to
-.IR lseek ( "fildes, 0L, 1" ).
-.PP
+Upon successful completion, the resulting pointer location
+as measured in bytes from beginning of the file is returned.
+Some devices are incapable of seeking.  The value of the pointer
+associated with such a device is undefined.
+.SH NOTES
 Seeking far beyond the end of a file, then writing,
-creates a gap or `hole', which occupies no
+creates a gap or \*(lqhole\*(rq, which occupies no
 physical space and reads as zeros.
-.SH "SEE ALSO"
-open(2), creat(2), fseek(3)
-.SH DIAGNOSTICS
-\-1
-is returned for
-an undefined file descriptor,
-seek on a pipe,
-or seek to a position before the beginning of file.
-.SH BUGS
+.SH "RETURN VALUE
+Upon successful completion, a non-negative integer,
+the current file pointer value, is returned.  Otherwise,
+a value of \-1 is returned and \fIerrno\fP is set to indicate
+the error.
+.SH "ERRORS
 .I Lseek
-is a no-op on character special files.
-.SH "ASSEMBLER (PDP-11)"
-(lseek = 19.)
-.br
-(file descriptor in r0)
-.br
-.B sys lseek; offset1; offset2; whence
-.PP
-.I Offset1
-and
-.I offset2
-are the high and low words of 
-.IR offset ;
-r0 and r1 contain
-the pointer upon return.
+will fail and the file pointer will remain unchanged if:
+.TP 15
+[EBADF]
+.I Fildes
+is not an open file descriptor.
+.TP 15
+[ESPIPE]
+.I Fildes
+is associated with a pipe or a socket.
+.TP 15
+[EINVAL]
+.I Whence
+is not a proper value.
+.TP 15
+[EINVAL]
+The resulting file pointer would be negative.
+.SH "SEE ALSO"
+dup(2), open(2)
+.SH BUGS
+This document's use of
+.I whence
+is incorrect English, but maintained for historical reasons.
