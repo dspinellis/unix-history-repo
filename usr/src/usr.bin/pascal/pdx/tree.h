@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)tree.h 1.2 %G%"; */
+/* static char sccsid[] = "@(#)tree.h 1.3 %G%"; */
 
 /*
  * This file contains the declarations of the variables and routines
@@ -21,14 +21,13 @@
 
 typedef char STACK;
 
-#define STACKSIZE 1024
 #define WMASK			(sizeof(int) - 1)
 
 #define push(type, value)	((type *) (sp += sizeof(type)))[-1] = (value)
 #define pop(type)		(*((type *) (sp -= sizeof(type))))
 #define alignstack()		sp = (char *) (( ((int) sp) + WMASK)&~WMASK)
 
-STACK stack[STACKSIZE];
+STACK stack[];
 STACK *sp;
 
 NODE *build();		/* create a node in the parse tree */
