@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -230,7 +230,7 @@ cont:
 			hp->h_bcc = cat(hp->h_bcc, extract(&linebuf[2], GBCC));
 			break;
 		case 'd':
-			strcpy(linebuf + 2, deadletter);
+			strcpy(linebuf + 2, getdeadletter());
 			/* fall into . . . */
 		case 'r':
 			/*
@@ -542,23 +542,14 @@ collcont(s)
  */
 collrub(s)
 {
-	register FILE *dbuf;
-	register int c;
 
 	if (s == SIGINT && hadintr == 0) {
 		hadintr = 1;
 		longjmp(coljmp, 1);
 	}
 	rewind(collf);
-	if (s == SIGINT && value("nosave") != NOSTR || fsize(collf) == 0)
-		goto done;
-	if ((dbuf = fopen(deadletter, "w")) == NULL)
-		goto done;
-	chmod(deadletter, 0600);
-	while ((c = getc(collf)) != EOF)
-		putc(c, dbuf);
-	fclose(dbuf);
-done:
+	if (s != SIGINT || value("nosave") == NOSTR)
+		savedeadletter(collf);
 	fclose(collf);
 	signal(SIGINT, saveint);
 	signal(SIGHUP, savehup);
@@ -570,6 +561,27 @@ done:
 			stop(s);
 	} else
 		exit(1);
+}
+
+savedeadletter(fp)
+	register FILE *fp;
+{
+	register FILE *dbuf;
+	register int c;
+	char *cp;
+
+	if (fsize(fp) == 0)
+		return;
+	cp = getdeadletter();
+	c = umask(077);
+	dbuf = fopen(cp, "a");
+	umask(c);
+	if (dbuf == NULL)
+		return;
+	while ((c = getc(fp)) != EOF)
+		putc(c, dbuf);
+	fclose(dbuf);
+	rewind(fp);
 }
 
 /*

@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)send.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)send.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -286,13 +286,8 @@ mail1(hp, printheaders)
 	 * in them which we write to as files directly.
 	 */
 	to = outof(to, mtf, hp);
-	if (senderr) {
-		if (fsize(mtf) != 0) {
-			(void) remove(deadletter);
-			(void) exwrite(deadletter, mtf, 1);
-			rewind(mtf);
-		}
-	}
+	if (senderr)
+		savedeadletter(mtf);
 	to = elide(to);
 	if (count(to) == 0)
 		goto out;
@@ -321,8 +316,7 @@ mail1(hp, printheaders)
 	pid = fork();
 	if (pid == -1) {
 		perror("fork");
-		(void) remove(deadletter);
-		(void) exwrite(deadletter, mtf, 1);
+		savedeadletter(mtf);
 		goto out;
 	}
 	if (pid == 0) {

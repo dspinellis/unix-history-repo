@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)glob.h	5.15 (Berkeley) %G%
+ *	@(#)glob.h	5.16 (Berkeley) %G%
  */
 
 /*
@@ -41,7 +41,6 @@ FILE	*input;				/* Current command input file */
 char	mailname[PATHSIZE];		/* Name of current file */
 char	prevfile[PATHSIZE];		/* Name of previous file */
 char	*mailrc;			/* Name of startup file */
-char	*deadletter;			/* Name of #/dead.letter */
 char	*homedir;			/* Path name of home directory */
 char	*myname;			/* My login name */
 off_t	mailsize;			/* Size of system mailbox */
