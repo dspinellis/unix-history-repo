@@ -1,6 +1,6 @@
-
 #ifndef lint
-static char *sccsid = "@(#)qd.c	1.40	ULTRIX	10/2/86";
+static char *sccsid = "@(#)qd.c	1.2  Berkeley  %G%";
+static char *osccsid = "@(#)qd.c	1.40	ULTRIX	10/2/86";
 #endif lint
 
 /************************************************************************
@@ -25,12 +25,24 @@ static char *sccsid = "@(#)qd.c	1.40	ULTRIX	10/2/86";
 *									*
 *************************************************************************/
 
+
 /*
  * qd.c
  *
  * Modification history
  *
  * QDSS workstation driver
+ *
+ *  Aug 1987 - marc@ucbvax.berkeley.edu
+ *
+ *	Modify for 4.3bsd with Mikes help.  Add cursor motion support 
+ *	in glass tty.  Work around glass tty output bug (which causes 
+ *	screen to freeze).  Reformat as many comments as patience would
+ *	allow. Use 4.3 console redirect (TIOCCONS) instead of smashing
+ *	cdevsw.  Supporting changes are in locore.s (for map),
+ *	machdep.c, and conf.c. Note that the major number for qd
+ *	is different from ultrix: on 4.3bsd its 41, and on
+ *	ultrix its 42.
  *
  * 26-Aug-86 - rsp (Ricky Palmer)
  *
@@ -107,44 +119,237 @@ static char *sccsid = "@(#)qd.c	1.40	ULTRIX	10/2/86";
  * 14 mar 85  longo  created
  *
  *	 todo:	 fix rlogin bug in console stuff
- *		 cat -u console redirection
  *		 check error return from strategy routine
  *		 verify TOY time stuff (what format?)
  *		 look at system based macro implementation of VTOP
  *
  */
 
-#include "../data/qd_data.c"	/* include external references to data file */
+#define mprintf printf
+#include "qd.h" 	/* # of QDSS's the system is configured for */
 
-/*---------------------------------------------------------------------
-* macro to get system time.  Used to time stamp event queue entries */
+#include "../vax/pte.h"	/* page table values */
+#include "../vax/mtpr.h"	/* VAX register access stuff */
+
+#include "../h/param.h" 	/* general system params & macros */
+#include "../h/conf.h"		/* "linesw" tty driver dispatch */
+#include "../h/dir.h"		/* for directory handling */
+#include "../h/user.h"		/* user structure (what else?) */
+#include "../ultrix/qdioctl.h" 		/* ioctl call values */
+#include "../h/tty.h"
+#include "../h/map.h"		/* resource allocation map struct */
+#include "../h/buf.h"		/* buf structs */
+#include "../h/vm.h"		/* includes 'vm' header files */
+#include "../h/clist.h" 	/* char list handling structs */
+#include "../h/file.h"		/* file I/O definitions */
+#include "../h/uio.h"		/* write/read call structs */
+#include "../h/kernel.h"	/* clock handling structs */
+#include "../vax/cpu.h" 	/* per cpu (pcpu) struct */
+
+#include "../vaxuba/ubareg.h"	/* uba & 'qba' register structs */
+#include "../vaxuba/ubavar.h"	/* uba structs & uba map externs */
+#include "../h/syslog.h"
+
+#include "../ultrix/qduser.h"	/* definitions shared with my client */
+#include "../ultrix/qdreg.h"	/* QDSS device register structures */
+
+/*
+* QDSS driver status flags for tracking operational state 
+*/
+
+struct qdflags {
+
+    u_int inuse;	    /* which minor dev's are in use now */
+    u_int config;	    /* I/O page register content */
+    u_int mapped;	    /* user mapping status word */
+    u_int kernel_loop;	    /* if kernel console is redirected */
+    u_int user_dma;	    /* DMA from user space in progress */
+    u_short pntr_id;	    /* type code of pointing device */
+    u_short duart_imask;    /* shadowing for duart intrpt mask reg */
+    u_short adder_ie;	    /* shadowing for adder intrpt enbl reg */
+    u_short curs_acc;	    /* cursor acceleration factor */
+    u_short curs_thr;	    /* cursor acceleration threshold level */
+    u_short tab_res;	    /* tablet resolution factor */
+    u_short selmask;	    /* mask for active qd select entries */
+};
+
+/* bit definitions for "inuse" entry  */
+
+#define CONS_DEV	0x01
+#define ALTCONS_DEV	0x02
+#define GRAPHIC_DEV	0x04
+
+/* bit definitions for 'mapped' member of flag structure */
+
+#define MAPDEV		0x01		/* hardware is mapped */
+#define MAPDMA		0x02		/* DMA buffer mapped */
+#define MAPEQ		0x04		/* event queue buffer mapped */
+#define MAPSCR		0x08		/* scroll param area mapped */
+#define MAPCOLOR	0x10		/* color map writing buffer mapped */
+
+/* bit definitions for 'selmask' member of qdflag structure */
+
+#define SEL_READ	0x01		/* read select is active */
+#define SEL_WRITE	0x02		/* write select is active */
+
+/*
+* constants used in shared memory operations 
+*/
+
+#define EVENT_BUFSIZE  1024	/* # of bytes per device's event buffer */
+
+#define MAXEVENTS  ( (EVENT_BUFSIZE - sizeof(struct qdinput))	 \
+		     / sizeof(struct _vs_event) )
+
+#define DMA_BUFSIZ	(1024 * 3)
+
+#define COLOR_BUFSIZ  ((sizeof(struct color_buf) + 512) & ~0x01FF)
+
+
+
+/*
+* reference to an array of "uba_device" structures built by the auto
+* configuration program.  The uba_device structure decribes the device
+* sufficiently for the driver to talk to it.  The auto configuration code
+* fills in the uba_device structures (located in ioconf.c) from user
+* maintained info.  
+*/
+
+struct uba_device *qdinfo[NQD];  /* array of pntrs to each QDSS's */
+				 /* uba structures  */
+struct tty qd_tty[NQD*4];	/* teletype structures for each.. */
+				/* ..possible minor device */
+
+struct qd_softc qd_softc[NQD];
+
+/*
+* static storage used by multiple functions in this code  
+*/
+
+int Qbus_unmap[NQD];		/* Qbus mapper release code */
+struct qdflags qdflags[NQD];	/* QDSS device status flags */
+struct qdmap qdmap[NQD];	/* QDSS register map structure */
+caddr_t qdbase[NQD];		/* base address of each QDSS unit */
+struct buf qdbuf[NQD];		/* buf structs used by strategy */
+char one_only[NQD];		/* lock for single process access */
+
+/*
+* The array "event_shared[]" is made up of a number of event queue buffers
+* equal to the number of QDSS's configured into the running kernel (NQD).
+* Each event queue buffer begins with an event queue header (struct qdinput)
+* followed by a group of event queue entries (struct _vs_event).  The array
+* "*eq_header[]" is an array of pointers to the start of each event queue
+* buffer in "event_shared[]".  
+*/
+
+#define EQSIZE ((EVENT_BUFSIZE * NQD) + 512)
+
+char event_shared[EQSIZE];	    /* reserve space for event bufs */
+struct qdinput *eq_header[NQD];     /* event queue header pntrs */
+
+/*
+* This allocation method reserves enough memory pages for NQD shared DMA I/O
+* buffers.  Each buffer must consume an integral number of memory pages to
+* guarantee that a following buffer will begin on a page boundary.  Also,
+* enough space is allocated so that the FIRST I/O buffer can start at the
+* 1st page boundary after "&DMA_shared".  Page boundaries are used so that
+* memory protections can be turned on/off for individual buffers. 
+*/
+
+#define IOBUFSIZE  ((DMA_BUFSIZ * NQD) + 512)
+
+char DMA_shared[IOBUFSIZE];	    /* reserve I/O buffer space */
+struct DMAreq_header *DMAheader[NQD];  /* DMA buffer header pntrs */
+
+/*
+* The driver assists a client in scroll operations by loading dragon
+* registers from an interrupt service routine.	The loading is done using
+* parameters found in memory shrade between the driver and it's client.
+* The scroll parameter structures are ALL loacted in the same memory page
+* for reasons of memory economy.  
+*/
+
+char scroll_shared[2 * 512];	/* reserve space for scroll structs */
+struct scroll *scroll[NQD];	/* pointers to scroll structures */
+
+/*
+* the driver is programmable to provide the user with color map write
+* services at VSYNC interrupt time.  At interrupt time the driver loads
+* the color map with any user-requested load data found in shared memory 
+*/
+
+#define COLOR_SHARED  ((COLOR_BUFSIZ * NQD) + 512)
+
+char color_shared[COLOR_SHARED];      /* reserve space: color bufs */
+struct color_buf *color_buf[NQD];     /* pointers to color bufs */
+
+/*
+* mouse input event structures 
+*/
+
+struct mouse_report last_rep[NQD];
+struct mouse_report current_rep[NQD];
+
+/*
+* input event "select" use 
+*/
+
+struct proc *rsel[NQD]; 	/* process waiting for select */
+
+/*
+* console cursor structure 
+*/
+
+struct _vs_cursor cursor[NQD];
+
+
+
+int nNQD = NQD;
+
+int DMAbuf_size = DMA_BUFSIZ;
+
+
+/*
+ * macro to get system time.  Used to time stamp event queue entries 
+ */
 
 #define TOY ((time.tv_sec * 100) + (time.tv_usec / 10000))
 
-/*--------------------------------------------------------------------------
+/*
 * the "ioconf.c" program, built and used by auto config, externally refers
-* to definitions below.  */
+* to definitions below.  
+*/
 
-	int qdprobe();
-	int qdattach();
-	int qddint();			/* DMA gate array intrpt service */
-	int qdaint();			/* Dragon ADDER intrpt service */
-	int qdiint();
+int qdprobe();
+int qdattach();
+int qddint();			/* DMA gate array intrpt service */
+int qdaint();			/* Dragon ADDER intrpt service */
+int qdiint();
 
-	u_short qdstd[] = { 0 };
+u_short qdstd[] = { 0 };
 
-	struct uba_driver qddriver = {	/* externally referenced: ioconf.c */
+struct uba_driver qddriver = {	/* externally referenced: ioconf.c */
 
-	    qdprobe,			/* device probe entry */
-	    0,				/* no slave device */
-	    qdattach,			/* device attach entry */
-	    0,				/* no "fill csr/ba to start" */
-	    qdstd,			/* device addresses */
-	    "qd",			/* device name string */
-	    qdinfo			/* ptr to QDSS's uba_device struct */
-	};
+    qdprobe,			/* device probe entry */
+    0,				/* no slave device */
+    qdattach,			/* device attach entry */
+    0,				/* no "fill csr/ba to start" */
+    qdstd,			/* device addresses */
+    "qd",			/* device name string */
+    qdinfo			/* ptr to QDSS's uba_device struct */
+};
 
-/*-------------------
+extern	char qvmem[][128*NBPG];
+extern	struct pte QVmap[][128];
+
+/*
+ * v_putc is used to redirect the console cnputc to the virtual console
+ * vputc.  consops is used to direct the console device to the qvss console.
+ */
+extern (*v_putc)();
+extern struct cdevsw *consops;
+
+/*
 * general defines */
 
 #define QDPRIOR (PZERO-1)		/* must be negative */
@@ -155,14 +360,15 @@ static char *sccsid = "@(#)qd.c	1.40	ULTRIX	10/2/86";
 #define BAD	-1
 #define GOOD	0
 
-/*-----------------------------------------------------------------------
-* macro to create a system virtual page number from system virtual adrs */
+/*
+ * Macro to create a system virtual page number from system virtual adrs.
+ */
 
-#define VTOP(x)  (((int)x & ~0xC0000000) >> PGSHIFT) /* convert qmem adrs */
-						     /* to system page # */
+#define VTOP(x)  (((int)x & ~0xC0000000) >> PGSHIFT)
 
-/*------------------------------------------------------------------
-* QDSS register address offsets from start of QDSS address space */
+/*
+ * QDSS register address offsets from start of QDSS address space 
+ */
 
 #define QDSIZE	 (52 * 1024)	/* size of entire QDSS foot print */
 
@@ -184,25 +390,28 @@ static char *sccsid = "@(#)qd.c	1.40	ULTRIX	10/2/86";
 #define BLUE	(CLRSTART+0x200)
 #define GREEN	(CLRSTART+0x400)
 
-/*---------------------------------------------------------------
-* values used in mapping QDSS hardware into the Q memory space */
+/*
+ * Values used in mapping QDSS hardware into the Q memory space.
+ */
 
 #define CHUNK	  (64 * 1024)
-#define QMEMSIZE  (1024 * 1024 * 4)	/* 4 meg */
+#define QMEMSIZE  (1024 * 1024 * 4)
 
-/*----------------------------------------------------------------------
+/*
 * QDSS minor device numbers.  The *real* minor device numbers are in
 * the bottom two bits of the major/minor device spec.  Bits 2 and up are
-* used to specify the QDSS device number (ie: which one?) */
+* used to specify the QDSS device number (ie: which one?)
+*/
 
-#define QDSSMAJOR	42		/* QDSS major device number */
+#define QDSSMAJOR	41		/* QDSS major device number */
 
 #define CONS		0
 #define ALTCONS 	1
 #define GRAPHIC 	2
 
-/*----------------------------------------------
-* console cursor bitmap (block cursor type)  */
+/*
+ * console cursor bitmap (block cursor type) 
+ */
 
 	short cons_cursor[32] = {      /* white block cursor */
 
@@ -213,8 +422,9 @@ static char *sccsid = "@(#)qd.c	1.40	ULTRIX	10/2/86";
 
 	};
 
-/*-------------------------------------
-* constants used in font operations */
+/*
+ * constants used in font operations 
+ */
 
 #define CHARS		95			/* # of chars in the font */
 #define CHAR_HEIGHT	15			/* char height in pixels */
@@ -229,56 +439,43 @@ static char *sccsid = "@(#)qd.c	1.40	ULTRIX	10/2/86";
 #define FONT_Y		200
 */
 
-	extern char q_font[];		/* reference font object code */
+extern char q_font[];		/* reference font object code */
 
-	extern	char q_key[];		/* reference key xlation tables */
-	extern	char q_shift_key[];
-	extern	char *q_special[];
+extern	char q_key[];		/* reference key xlation tables */
+extern	char q_shift_key[];
+extern	char *q_special[];
 
-/*--------------------------------------------------
-* definitions for cursor acceleration reporting  */
+/*
+ * definitions for cursor acceleration reporting
+ */
 
 #define ACC_OFF 	0x01		/* acceleration is inactive */
 
-/*--------------------------------------------------------------------------
-* v_consputc is the switch that is used to redirect the console cnputc() to
-* the virtual console qdputc().
-* v_consgetc is the switch that is used to redirect the console getchar() to
-* the virtual console qdgetc().
+int qdputc();		/* used to direct kernel console output *
+int qdstart();		/* used to direct /dev/console output *
+
+/*
+ * LK-201 state storage for input console keyboard conversion to ASCII 
+ */
+
+struct q_keyboard {
+
+    int shift;			/* state variables	*/
+    int cntrl;
+    int lock;
+    int lastcode;		/* last keycode typed	*/
+    unsigned kup[8];		/* bits for each keycode*/
+    unsigned dkeys[8];		/* down/up mode keys	*/
+    char last;			/* last character	*/
+
+ } q_keyboard;
+
+
+/*
+*
+*	DRIVER FUNCTIONS :
+*
 */
-
-	extern (*v_consputc)();
-	int qdputc();		/* used to direct kernel console output */
-	extern (*v_consgetc)();
-	int qdgetc();		/* used to read kernel console input */
-
-	int qdstart();		/* used to direct /dev/console output */
-
-/*------------------------------------------------------------------------
-* LK-201 state storage for input console keyboard conversion to ASCII */
-
-	struct q_keyboard {
-
-	    int shift;			/* state variables	*/
-	    int cntrl;
-	    int lock;
-	    int lastcode;		/* last keycode typed	*/
-	    unsigned kup[8];		/* bits for each keycode*/
-	    unsigned dkeys[8];		/* down/up mode keys	*/
-	    char last;			/* last character	*/
-
-	 } q_keyboard;
-
-
-/*****************************************************************
-******************************************************************
-******************************************************************
-*
-*	DRIVER FUNCTIONS START HERE:
-*
-******************************************************************
-******************************************************************
-*****************************************************************/
 
 /*********************************************************************
 *
@@ -290,59 +487,71 @@ qdcons_init()
 {
 	register u_int unit;
 
+	struct percpu *pcpu;		/* pointer to percpu structure */
+	register struct qbus *qb;
 	int *ptep;			/* page table entry pointer */
 	caddr_t phys_adr;		/* physical QDSS base adrs */
 	u_int mapix;			/* index into QMEMmap[] array */
 
-	struct cpusw *cpup;		/* pointer to cpusw structure  */
 	u_short *qdaddr;		/* address of QDSS IO page CSR */
 	u_short *devptr;		/* vitual device space */
+	extern	cnputc();		/* standard serial console putc */
 
 #define QDSSCSR 0x1F00
 
+	/*
+	 * if console already configured, dont do again.
+	 */
+	if (v_putc != cnputc)
+		return;
+
 	unit = 0;
 
-/*----------------------------------------------------
-* find the cpusw entry that matches this machine. */
+	/*
+	 * find the cpusw entry that matches this machine. 
+	 */
 
-	cpup = &cpusw[cpu];
-				;
-	if( cpup == NULL ) {
+	for (pcpu = percpu; pcpu && pcpu->pc_cputype != cpu; pcpu++)
+		;
+	if (pcpu == NULL)
+		return;
+
+
+	/*
+	 * Map device registers - the last 8K of umem.
+	 */
+	qb = (struct qbus *)pcpu->pc_io->io_details;
+	ioaccess(qb->qb_iopage, UMEMmap[0] + qb->qb_memsize,
+		UBAIOPAGES * NBPG);
+
+	devptr = (u_short *)((char *)umem[0]+(qb->qb_memsize * NBPG));
+	qdaddr = (u_short *)((u_int)devptr + ubdevreg(QDSSCSR));
+	if (badaddr(qdaddr, sizeof(short)))  {
+		log(LOG_ERR, "Can't find qdss (badaddr)\n"); /* debug */
 		return(0);
 	}
+	/*
+	 * Map q-bus memory used by qdss. (separate map)
+	 */
+	mapix = QMEMSIZE - (CHUNK * (unit + 1));
+	phys_adr = qb->qb_maddr + mapix;
+	ioaccess(phys_adr, QVmap[0], (CHUNK*NQD));
 
-/*------------------------------------------------------
-* Map the Q-bus memory space into the system memory. */
+	/*
+	 * tell QDSS which Q memory address base to decode 
+	 */
 
-	ubaaccess(((*cpup->v_umaddr)(0)), QMEMmap[0],
-			cpup->pc_umsize, PG_V | PG_KW);
-
-	ubaaccess(((*cpup->v_udevaddr)(0)), QMEMmap[0]+btop(cpup->pc_umsize),
-			DEVSPACESIZE ,PG_V|PG_KW);
-
-/*---------------------------------------------------------------------
-* map the QDSS into the Qbus memory (which is now in system space)  */
-
-	devptr = (u_short *)((char *)qmem[0]+cpup->pc_umsize);
-	qdaddr = (u_short *)((u_int)devptr + ubdevreg(QDSSCSR));
-
-	if (BADADDR(qdaddr, sizeof(short)))
-		return(0);
-
-	/*---------------------------------------------------
-	* tell QDSS which Q memory address base to decode */
-
-	mapix = (int) VTOP(QMEMSIZE - CHUNK);
-	ptep = (int *) QMEMmap[0] + mapix;
-	phys_adr = (caddr_t) (((int)*ptep & 0x001FFFFF) << PGSHIFT);
-	*qdaddr = (u_short) ((int)phys_adr >> 16);
-
+	/* 
+	 * shifted right 16 bits - its in 64K units
+	 */
+	*qdaddr = (u_short)((int)mapix >> 16);
 	qdflags[unit].config = *(u_short *)qdaddr;
 
-/*----------------------------------------------------------------------
-* load qdmap struct with the virtual addresses of the QDSS elements */
+	/*
+	 * load qdmap struct with the virtual addresses of the QDSS elements 
+	 */
 
-	qdbase[unit] = (caddr_t) (qmem[0] + QMEMSIZE - CHUNK);
+	qdbase[unit] = (caddr_t) qvmem[0];
 
 	qdmap[unit].template = qdbase[unit] + TMPSTART;
 	qdmap[unit].adder = qdbase[unit] + ADDER;
@@ -355,8 +564,14 @@ qdcons_init()
 
 	qdflags[unit].duart_imask = 0;	/* init shadow variables */
 
-/*------------------
-* init the QDSS  */
+	/*
+	 * init the QDSS 
+	 */
+
+	/***
+	printf("qdbase[0] = %x, qdmap[0].memcsr = %x\n",
+		(char *)qdbase[0], qdmap[0].memcsr);
+	***/
 
 	*(short *)qdmap[unit].memcsr |= SYNC_ON; /* once only: turn on sync */
 
@@ -369,12 +584,9 @@ qdcons_init()
 	ldcursor(unit, cons_cursor);	/* load default cursor map */
 	setup_input(unit);		/* init the DUART */
 
-/*----------------------------------------------------
-* smash the system's virtual console address table */
+	v_putc = qdputc;
+	consops = &cdevsw[QDSSMAJOR];
 
-	v_consputc = qdputc;
-	v_consgetc = qdgetc;
-	cdevsw[0] = cdevsw[QDSSMAJOR];
 	return(1);
 
 } /* qdcons_init */
@@ -405,9 +617,7 @@ qdcons_init()
 qdprobe(reg)
 caddr_t reg;
 {
-	/* the variables MUST reside in the first two register declarations
-	* by UNIX convention in order that they be loaded and returned
-	* properly by the interrupt catching mechanism.  */
+	register int br, cvec; 	/* value-result */
 
 	register int unit;
 
@@ -420,12 +630,17 @@ caddr_t reg;
 	caddr_t phys_adr;		/* physical QDSS base adrs */
 	u_int mapix;
 
-/*---------------------------------------------------------------
-* calculate board unit number from I/O page register address  */
+#ifdef lint
+	br = 0; cvec = br; br = cvec;
+#endif
+
+	/*
+	* calculate board unit number from I/O page register address  
+	*/
 
 	unit = (int) (((int)reg >> 1) & 0x0007);
 
-/*---------------------------------------------------------------------------
+/*
 * QDSS regs must be mapped to Qbus memory space at a 64kb physical boundary.
 * The Qbus memory space is mapped into the system memory space at config
 * time.  After config runs, "qmem[0]" (ubavar.h) holds the system virtual adrs
@@ -433,40 +648,43 @@ caddr_t reg;
 * an array of pte ptrs called "QMEMmap[]" (ubavar.h) which is also loaded at
 * config time.	These are the variables used below to find a vacant 64kb
 * boundary in Qbus memory, and load it's corresponding physical adrs into
-* the QDSS's I/O page CSR.  */
+* the QDSS's I/O page CSR.  
+*/
 
 	/* if this QDSS is NOT the console, then do init here.. */
 
+	/****** NOT FOR NOW - DO LATER (FARKLE) ***/
+#ifdef notdef
 	if (v_consputc != qdputc  ||  unit != 0) {
 
-	    /*-------------------------
-	    * read QDSS config info */
-
+	    /*
+	     * read QDSS config info
+	     */
 	    qdflags[unit].config = *(u_short *)reg;
 
-	    /*------------------------------------
-	    * find an empty 64kb adrs boundary */
-
+	    /*
+	     * find an empty 64kb adrs boundary 
+	     */
 	    qdbase[unit] = (caddr_t) (qmem[0] + QMEMSIZE - CHUNK);
 
-	    /*----------------------------------------------------
-	    * find the cpusw entry that matches this machine. */
-
+	    /*
+	     * find the cpusw entry that matches this machine. 
+	     */
 	    cpup = &cpusw[cpu];
 	    while ( !(BADADDR(qdbase[unit], sizeof(short))) )
 		qdbase[unit] -= CHUNK;
 
-	    /*---------------------------------------------------
-	    * tell QDSS which Q memory address base to decode */
-
+	    /*
+	     * tell QDSS which Q memory address base to decode 
+	     */
 	    mapix = (int) (VTOP(qdbase[unit]) - VTOP(qmem[0]));
 	    ptep = (int *) QMEMmap[0] + mapix;
 	    phys_adr = (caddr_t) (((int)*ptep & 0x001FFFFF) << PGSHIFT);
 	    *(u_short *)reg = (u_short) ((int)phys_adr >> 16);
 
-	    /*-----------------------------------------------------------
-	    * load QDSS adrs map with system addresses of device regs */
-
+	    /*
+	     * load QDSS adrs map with system addresses of device regs
+	     */
 	    qdmap[unit].template = qdbase[unit] + TMPSTART;
 	    qdmap[unit].adder = qdbase[unit] + ADDER;
 	    qdmap[unit].dga = qdbase[unit] + DGA;
@@ -491,12 +709,14 @@ caddr_t reg;
 
 	    *(short *)qdmap[unit].memcsr |= SYNC_ON;
 	}
+#endif notdef
 
-/*--------------------------------------------------------------------------
-* the QDSS interrupts at HEX vectors xx0 (DMA) xx4 (ADDER) and xx8 (DUART).
-* Therefore, we take three vectors from the vector pool, and then continue
-* to take them until we get a xx0 HEX vector.  The pool provides vectors
-* in contiguous decending order.  */
+/*
+ * the QDSS interrupts at HEX vectors xx0 (DMA) xx4 (ADDER) and xx8 (DUART).
+ * Therefore, we take three vectors from the vector pool, and then continue
+ * to take them until we get a xx0 HEX vector.  The pool provides vectors
+ * in contiguous decending order.  
+ */
 
 	vector = (uba_hd[0].uh_lastiv -= 4*3);	/* take three vectors */
 
@@ -504,8 +724,9 @@ caddr_t reg;
 	    vector = (uba_hd[0].uh_lastiv -= 4);  /* ..take another vector */
 	}
 
-	/*---------------------------------------------------------
-	* setup DGA to do a DMA interrupt (transfer count = 0)	*/
+	/*
+	 * setup DGA to do a DMA interrupt (transfer count = 0)
+	 */
 
 	dga = (struct dga *) qdmap[unit].dga;
 
@@ -522,9 +743,6 @@ caddr_t reg;
 	DELAY(20000);			/* wait for the intrpt */
 
 	dga->csr = HALT;		/* stop the wheels */
-
-/*----------
-* exits  */
 
 	if (cvec != vector)		/* if vector != base vector.. */
 	    return(0);			/* ..return = 'no device' */
@@ -557,8 +775,9 @@ struct uba_device *ui;
 
 	unit = ui->ui_unit;		/* get QDSS number */
 
-/*----------------------------------
-* init "qdflags[]" for this QDSS */
+/*
+* init "qdflags[]" for this QDSS 
+*/
 
 	qdflags[unit].inuse = 0;	/* init inuse variable EARLY! */
 	qdflags[unit].mapped = 0;
@@ -570,13 +789,15 @@ struct uba_device *ui;
 	qdflags[unit].duart_imask = 0;	/* init shadow variables */
 	qdflags[unit].adder_ie = 0;
 
-/*----------------------------------------------------------------------
+/*
 * init structures used in kbd/mouse interrupt service.	This code must
 * come after the "init_shared()" routine has run since that routine inits
-* the eq_header[unit] structure used here.   */
+* the eq_header[unit] structure used here.   
+*/
 
-	/*--------------------------------------------
-	* init the "latest mouse report" structure */
+	/*
+	* init the "latest mouse report" structure 
+	*/
 
 	last_rep[unit].state = 0;
 	last_rep[unit].dx = 0;
@@ -594,8 +815,9 @@ struct uba_device *ui;
 	eq_header[unit]->header.head = 0;
 	eq_header[unit]->header.tail = 0;
 
-/*------------------------------------------
-* init single process access lock switch */
+	/*
+	* init single process access lock switch 
+	*/
 
 	one_only[unit] = 0;
 
@@ -622,6 +844,7 @@ int flag;
 	register struct uba_device *ui; /* ptr to uba structures */
 	register struct dga *dga;	/* ptr to gate array struct */
 	register struct tty *tp;
+	int qdstart();
 
 	struct adder *adder;
 	struct duart *duart;
@@ -633,23 +856,20 @@ int flag;
 	minor_dev = minor(dev); /* get QDSS minor device number */
 	unit = minor_dev >> 2;
 
-/*---------------------------------
-* check for illegal conditions	*/
+	/* check for illegal conditions	*/
 
 	ui = qdinfo[unit];		/* get ptr to QDSS device struct */
 
 	if (ui == 0  || ui->ui_alive == 0)
 	    return(ENXIO);		/* no such device or address */
 
-/*--------------
-* init stuff */
+	/* init stuff */
 
 	adder = (struct adder *) qdmap[unit].adder;
 	duart = (struct duart *) qdmap[unit].duart;
 	dga = (struct dga *) qdmap[unit].dga;
 
-/*------------------------------------
-* if this is the graphic device... */
+	/* if this is the graphic device... */
 
 	if ((minor_dev & 0x03) == 2) {
 
@@ -665,10 +885,10 @@ int flag;
 	    qdflags[unit].duart_imask |= 0x22;
 	    duart->imask = qdflags[unit].duart_imask;
 
-/*------------------------------------------------------------------
-* if the open call is to the console or the alternate console... */
-
-	} else if ((minor_dev & 0x03) != 2) {
+	/*
+	 * if the open call is to the console or the alternate console... 
+	 */
+	} else { 
 
 	    qdflags[unit].inuse |= CONS_DEV;  /* mark console as open */
 	    dga->csr |= CURS_ENB;
@@ -691,10 +911,12 @@ int flag;
 		tp->t_ispeed = B9600;
 		tp->t_ospeed = B9600;
 
-		if( (minor_dev & 0x03) == 0 )
+		if( (minor_dev & 0x03) == 0 ) {	
 		    tp->t_flags = XTABS|EVENP|ECHO|CRMOD;
-		else
+		}
+		else {
 		    tp->t_flags = RAW;
+		}
 	    }
 
 	    /*----------------------------------------
@@ -744,8 +966,9 @@ int flag;
 	unit = minor_dev >> 2;		/* get QDSS number */
 	qd = &qdmap[unit];
 
-/*------------------------------------
-* if this is the graphic device... */
+	/*
+	 * if this is the graphic device... 
+	 */
 
 	if ((minor_dev & 0x03) == 2) {
 
@@ -765,8 +988,8 @@ int flag;
 		/*----------------
 		* TEMPLATE RAM */
 
-		mapix = VTOP((int)qd->template) - VTOP(qmem[0]);
-		ptep = (int *)(QMEMmap[0] + mapix);
+		mapix = VTOP((int)qd->template) - VTOP(qvmem[0]);
+		ptep = (int *)(QVmap[0] + mapix);
 
 		for (i = VTOP(TMPSIZE); i > 0; --i)
 		    *ptep++ = (*ptep & ~PG_PROT) | PG_V | PG_KW;
@@ -774,8 +997,8 @@ int flag;
 		/*---------
 		* ADDER */
 
-		mapix = VTOP((int)qd->adder) - VTOP(qmem[0]);
-		ptep = (int *)(QMEMmap[0] + mapix);
+		mapix = VTOP((int)qd->adder) - VTOP(qvmem[0]);
+		ptep = (int *)(QVmap[0] + mapix);
 
 		for (i = VTOP(REGSIZE); i > 0; --i)
 		    *ptep++ = (*ptep & ~PG_PROT) | PG_V | PG_KW;
@@ -783,8 +1006,8 @@ int flag;
 		/*--------------
 		* COLOR MAPS */
 
-		mapix = VTOP((int)qd->red) - VTOP(qmem[0]);
-		ptep = (int *)(QMEMmap[0] + mapix);
+		mapix = VTOP((int)qd->red) - VTOP(qvmem[0]);
+		ptep = (int *)(QVmap[0] + mapix);
 
 		for (i = VTOP(CLRSIZE); i > 0; --i)
 		    *ptep++ = (*ptep & ~PG_PROT) | PG_V | PG_KW;
@@ -922,11 +1145,8 @@ int flag;
 		dga->csr &= ~(GLOBAL_IE | DMA_IE);
 	    }
 	}
-
-/*----------------------------------------------------
-* if this is the console or the alternate console  */
-
 	else {
+	    /* if this is the console or the alternate console  */
 
 	    tp = &qd_tty[minor_dev];
 
@@ -945,9 +1165,6 @@ int flag;
 		dga->csr &= ~(GLOBAL_IE | DMA_IE);
 	    }
 	}
-
-/*--------
-* exit */
 
 	return(0);
 
@@ -985,7 +1202,7 @@ caddr_t datap;
 int flags;
 {
 	register int *ptep;		/* page table entry pointer */
-	register int mapix;		/* QMEMmap[] page table index */
+	register int mapix;		/* QVmap[] page table index */
 	register struct _vs_event *event;
 	register struct tty *tp;
 
@@ -1002,7 +1219,7 @@ int flags;
 	u_int minor_dev = minor(dev);
 	struct uba_device *ui = qdinfo[unit];
 	struct qd_softc *sc = &qd_softc[ui->ui_unit];
-	struct devget *devget;
+	/* struct devget *devget; */
 
 	int error;
 	int s;
@@ -1017,9 +1234,7 @@ int flags;
 
 	short *temp;			/* a pointer to template RAM */
 
-/*-----------------------------------------
-* service graphic device ioctl commands */
-
+	/* service graphic device ioctl commands */
 	switch (cmd) {
 
 	    /*-------------------------------------------------
@@ -1034,7 +1249,7 @@ int flags;
 		}
 
 		event = (struct _vs_event *) GETBEGIN(eq_header[unit]);
-		s = spl5();
+		s = spltty();
 		GETEND(eq_header[unit]);
 		splx(s);
 		bcopy(event, datap, sizeof(struct _vs_event));
@@ -1099,7 +1314,7 @@ int flags;
 
 		dga = (struct dga *) qdmap[unit].dga;
 		pos = (struct _vs_cursor *) datap;
-		s = spl5();
+		s = spltty();
 		dga->x_cursor = TRANX(pos->x);
 		dga->y_cursor = TRANY(pos->y);
 		eq_header[unit]->curs_pos.x = pos->x;
@@ -1113,7 +1328,7 @@ int flags;
 	    case QD_PRGCURSOR:
 
 		curs = (struct prg_cursor *) datap;
-		s = spl5();
+		s = spltty();
 		qdflags[unit].curs_acc = curs->acc_factor;
 		qdflags[unit].curs_thr = curs->threshold;
 		splx(s);
@@ -1133,8 +1348,8 @@ int flags;
 		/*-------------------------------------
 		* enable user write to template RAM */
 
-		mapix = VTOP((int)qd->template) - VTOP(qmem[0]);
-		ptep = (int *)(QMEMmap[0] + mapix);
+		mapix = VTOP((int)qd->template) - VTOP(qvmem[0]);
+		ptep = (int *)(QVmap[0] + mapix);
 
 		for (i = VTOP(TMPSIZE); i > 0; --i)
 		    *ptep++ = (*ptep & ~PG_PROT) | PG_UW | PG_V;
@@ -1142,8 +1357,8 @@ int flags;
 		/*----------------------------------
 		* enable user write to registers */
 
-		mapix = VTOP((int)qd->adder) - VTOP(qmem[0]);
-		ptep = (int *)(QMEMmap[0] + mapix);
+		mapix = VTOP((int)qd->adder) - VTOP(qvmem[0]);
+		ptep = (int *)(QVmap[0] + mapix);
 
 		for (i = VTOP(REGSIZE); i > 0; --i)
 		    *ptep++ = (*ptep & ~PG_PROT) | PG_UW | PG_V;
@@ -1151,8 +1366,8 @@ int flags;
 		/*-----------------------------------
 		* enable user write to color maps */
 
-		mapix = VTOP((int)qd->red) - VTOP(qmem[0]);
-		ptep = (int *)(QMEMmap[0] + mapix);
+		mapix = VTOP((int)qd->red) - VTOP(qvmem[0]);
+		ptep = (int *)(QVmap[0] + mapix);
 
 		for (i = VTOP(CLRSIZE); i > 0; --i)
 		    *ptep++ = (*ptep & ~PG_PROT) | PG_UW | PG_V;
@@ -1160,8 +1375,8 @@ int flags;
 		/*------------------------------
 		* enable user write to DUART */
 
-		mapix = VTOP((int)qd->duart) - VTOP(qmem[0]);
-		ptep = (int *)(QMEMmap[0] + mapix);
+		mapix = VTOP((int)qd->duart) - VTOP(qvmem[0]);
+		ptep = (int *)(QVmap[0] + mapix);
 		*ptep = (*ptep & ~PG_PROT) | PG_UW | PG_V; /* duart page */
 
 		mtpr(TBIA, 0);		/* smash CPU's translation buffer */
@@ -1424,19 +1639,6 @@ int flags;
 		*(short *)datap = qdflags[unit].config;
 		break;
 
-	    /*--------------------------------------------------------------
-	    * re-route kernel console messages to the alternate console  */
-
-	    case QD_KERN_LOOP:
-
-		qdflags[unit].kernel_loop = -1;
-		break;
-
-	    case QD_KERN_UNLOOP:
-
-		qdflags[unit].kernel_loop = 0;
-		break;
-
 	    /*----------------------
 	    * program the tablet */
 
@@ -1465,6 +1667,7 @@ int flags;
 		qdflags[unit].tab_res = *(short *)datap;
 		break;
 
+#ifdef notdef
 	    case DEVIOCGET:			    /* device status */
 		    devget = (struct devget *)datap;
 		    bzero(devget,sizeof(struct devget));
@@ -1491,6 +1694,7 @@ int flags;
 		    devget->category_stat =
 			  sc->sc_category_flags;	    /* cat. stat.   */
 		    break;
+#endif /* notdef */
 
 	    default:
 		/*-----------------------------
@@ -1533,7 +1737,7 @@ int rw;
 	register int s;
 	register int unit;
 
-	s = spl5();
+	s = spltty();
 	unit = minor(dev) >> 2;
 
 	switch (rw) {
@@ -1659,8 +1863,9 @@ register struct buf *bp;
 
 	unit = (minor(bp->b_dev) >> 2) & 0x07;
 
-/*-----------------
-* init pointers */
+	/*
+	* init pointers 
+	*/
 
 	if ((QBAreg = ubasetup(0, bp, 0)) == 0) {
 	    mprintf("\nqd%d: qd_strategy: QBA setup error", unit);
@@ -1669,7 +1874,7 @@ register struct buf *bp;
 
 	dga = (struct dga *) qdmap[unit].dga;
 
-	s = spl5();
+	s = spltty();
 
 	qdflags[unit].user_dma = -1;
 
@@ -1733,6 +1938,9 @@ register struct tty *tp;
 {
 	register int which_unit, unit, c;
 	register struct tty *tp0;
+	int needwakeup = 0;
+	static int qdwakeuptime = 5;
+	int wakeup();
 	int s;
 
 	int curs_on;
@@ -1744,38 +1952,58 @@ register struct tty *tp;
 	which_unit = (unit >> 2) & 0x3;
 	unit &= 0x03;
 
-	s = spl5();
+	s = spltty();
 
-/*------------------------------------------------------------------
-* If it's currently active, or delaying, no need to do anything. */
-
+	/* If it's currently active, or delaying, no need to do anything. */
 	if (tp->t_state & (TS_TIMEOUT|TS_BUSY|TS_TTSTOP))
 		goto out;
 
-/*-------------------------------------------------------------------
-* Display chars until the queue is empty, if the alternate console device
-* is open direct chars there.  Drop input from anything but the console
-* device on the floor.	*/
+	/*
+	 * XXX  FARKLE
+	 *
+	 * Check if the caller is going to sleep and prepare to
+	 * wake him up with a timeout.  This is a temporary hack.
+	 */
+	if (tp->t_outq.c_cc > TTHIWAT(tp))
+		needwakeup++;
+
+	/*
+	 * Drain the queue.
+	 * Drop input from anything but the console
+	 * device on the floor.	
+	 */
 
 	while (tp->t_outq.c_cc) {
 	    c = getc(&tp->t_outq);
-	    if (unit == 0) {
-		if (tp0->t_state & TS_ISOPEN)
-		    (*linesw[tp0->t_line].l_rint)(c, tp0);
-		else
-		    blitc(which_unit, c & 0xFF);
-	    }
+	    if (unit == 0) 
+	    	blitc(which_unit, c & 0xFF);
 	}
 
-/*--------------------------------------------------------
-* If there are sleepers, and output has drained below low
-* water mark, wake up the sleepers. */
+	/*
+	 *  - FARKLE - 
+	 *  We are not a real hardware tty device that incures transmitter
+	 *  interrupts.  This breaks the paradigm used in tty.c for
+	 *  flow control. I.e.
+	 *
+	 *	spltty();
+	 *	 ttstart();  /* schedule output which should interrupt*
+	 *	 set TT_SLEEP flag
+	 *	 sleep(outq)
+	 *	splx();
+	 *	
+	 *  Don't know what to do about this one.  In the meantime we schedule
+	 *  a wakeup for the sleep that will occur.  Its gross - but works
+	 *  for now.  This will all be rewritten anyway.
+	 *	
+	 */
 
 	if ( tp->t_outq.c_cc <= TTLOWAT(tp) ) {
+		if (needwakeup)
+			timeout(wakeup,(caddr_t)&tp->t_outq,qdwakeuptime); /*XXX*/
 		if (tp->t_state & TS_ASLEEP){
 			tp->t_state &= ~TS_ASLEEP;
 			wakeup((caddr_t) &tp->t_outq);
-		}
+		} 
 	}
 
 	tp->t_state &= ~TS_BUSY;
@@ -1798,7 +2026,8 @@ int flag;
 {
 	register int s;
 
-	s = spl5();	/* block intrpts during state modification */
+	log(LOG_NOTICE, "*qdstop*");
+	s = spltty();	/* block intrpts during state modification */
 
 	if (tp->t_state & TS_BUSY) {
 	    if ((tp->t_state & TS_TTSTOP) == 0) {
@@ -1829,19 +2058,54 @@ char chr;
 	register struct adder *adder;
 	register struct dga *dga;
 	register int i;
+	static	 short inescape[NQD];
 
 	short x;
 
-/*---------------
-* init stuff  */
+	/* init stuff  */
 
 	adder = (struct adder *) qdmap[unit].adder;
 	dga = (struct dga *) qdmap[unit].dga;
 
-/*---------------------------
-* non display character?  */
-
 	chr &= 0x7F;
+
+	/*
+	 *  Support cursor addressing so vi will work.
+	 *  Decode for "\E=%.%." cursor motion description.
+	 *
+	 *  If we've seen an escape, grab up to three more
+	 *  characters, bailing out if necessary. 
+	 */
+	if (inescape[unit]) {	
+		switch (inescape[unit]++) {
+		case 1:
+			if (chr != '=') {
+				/* bogus escape sequence */
+				inescape[unit] = 0;
+				blitc(unit, chr);
+			}
+			return(0);
+		case 2:
+			/* position row */
+			cursor[unit].y = CHAR_HEIGHT * chr;
+			if (cursor[unit].y > 863 - CHAR_HEIGHT)
+				cursor[unit].y = 863 - CHAR_HEIGHT;
+			dga->y_cursor = TRANY(cursor[unit].y);
+			return(0);
+		case 3:
+			/* position column */
+			cursor[unit].x = CHAR_WIDTH * chr;
+			if (cursor[unit].x > 1024 - CHAR_WIDTH)
+				cursor[unit].x = 1023 - CHAR_WIDTH;
+			dga->x_cursor = TRANX(cursor[unit].x);
+			inescape[unit] = 0;
+			return(0);
+		default:
+			inescape[unit] = 0;
+			blitc(unit, chr);
+		}
+	}
+			
 
 	switch (chr) {
 
@@ -1872,11 +2136,48 @@ char chr;
 
 	    case '\b':			/* backspace char */
 		if (cursor[unit].x > 0) {
+		    /**** - REMOVED - CRTBS is a function of the line discipline
 		    cursor[unit].x -= CHAR_WIDTH;
 		    blitc(unit, ' ');
+		    ****/
 		    cursor[unit].x -= CHAR_WIDTH;
 		    dga->x_cursor = TRANX(cursor[unit].x);
 		}
+		return(0);
+
+	    case CTRL(k):		/* cursor up */
+		if (cursor[unit].y > 0) {
+			cursor[unit].y -= CHAR_HEIGHT;
+			dga->y_cursor = TRANY(cursor[unit].y);
+		}
+		return(0);
+
+	    case CTRL(^):		/* home cursor */
+		cursor[unit].x = 0;
+		dga->x_cursor = TRANX(cursor[unit].x);
+		cursor[unit].y = 0;
+		dga->y_cursor = TRANY(cursor[unit].y);
+		return(0);
+
+	    case CTRL(l):		/* cursor right */
+		if (cursor[unit].x < 1023 - CHAR_WIDTH) {
+			cursor[unit].x += CHAR_WIDTH;
+			dga->x_cursor = TRANX(cursor[unit].x);
+		}
+		return(0);
+
+	    case CTRL(z):		/* clear screen */
+		setup_dragon(unit);  	
+		clear_qd_screen(unit);
+		/* and home cursor - termcap seems to assume this */
+		cursor[unit].x = 0;
+		dga->x_cursor = TRANX(cursor[unit].x);
+		cursor[unit].y = 0;
+		dga->y_cursor = TRANY(cursor[unit].y);
+		return(0);
+
+	    case '\033':		/* start escape sequence */
+		inescape[unit] = 1;
 		return(0);
 
 	    default:
@@ -1884,8 +2185,7 @@ char chr;
 		    return(0);
 	}
 
-/*------------------------------------------
-* setup VIPER operand control registers  */
+	/* setup VIPER operand control registers  */
 
 	write_ID(adder, CS_UPDATE_MASK, 0x0001);  /* select plane #0 */
 	write_ID(adder, SRC1_OCR_B,
@@ -1903,8 +2203,7 @@ char chr;
 	write_ID(adder, VIPER_Z_LOAD | FOREGROUND_COLOR_Z, 1);
 	write_ID(adder, VIPER_Z_LOAD | BACKGROUND_COLOR_Z, 0);
 
-/*----------------------------------------
-* load DESTINATION origin and vectors  */
+	/* load DESTINATION origin and vectors  */
 
 	adder->fast_dest_dy = 0;
 	adder->slow_dest_dx = 0;
@@ -1921,8 +2220,7 @@ char chr;
 	adder->destination_y = cursor[unit].y;
 	adder->slow_dest_dy = CHAR_HEIGHT;
 
-/*-----------------------------------
-* load SOURCE origin and vectors  */
+	/* load SOURCE origin and vectors  */
 
 	adder->source_1_x = FONT_X + ((chr - ' ') * CHAR_WIDTH);
 	adder->source_1_y = FONT_Y;
@@ -1933,12 +2231,12 @@ char chr;
 	write_ID(adder, LU_FUNCTION_R1, FULL_SRC_RESOLUTION | LF_SOURCE);
 	adder->cmd = RASTEROP | OCRB | 0 | S1E | DTE;
 
-/*-------------------------------------
-* update console cursor coordinates */
+	/* update console cursor coordinates */
 
 	cursor[unit].x += CHAR_WIDTH;
 	dga->x_cursor = TRANX(cursor[unit].x);
 
+	/* auto-wrap margin */
 	if (cursor[unit].x > (1024 - CHAR_WIDTH)) {
 	    blitc(unit, '\r');
 	    blitc(unit, '\n');
@@ -1950,13 +2248,9 @@ qdreset(){}
 qd_init(){}
 
 /******************************************************************
-*******************************************************************
-*******************************************************************
 *
 *	INTERRUPT SERVICE ROUTINES START HERE:
 *
-*******************************************************************
-*******************************************************************
 ******************************************************************/
 
 /*****************************************************************
@@ -1978,15 +2272,17 @@ int qd;
 
 	spl4(); 			/* allow interval timer in */
 
-/*-----------------
-* init pointers */
+	/*
+	* init pointers 
+	*/
 
 	header = DMAheader[qd]; 	    /* register for optimization */
 	dga = (struct dga *) qdmap[qd].dga;
 	adder = (struct adder *) qdmap[qd].adder;
 
-/*------------------------------------------------------------------------
-* if this interrupt flagged as bogus for interrupt flushing purposes.. */
+	/*
+	* if this interrupt flagged as bogus for interrupt flushing purposes.. 
+	*/
 
 	if (DMA_ISIGNORE(header)) {
 	    DMA_CLRIGNORE(header);
@@ -2784,16 +3080,11 @@ GET_TBUTTON:
 	    }
 	}
 
-/*----------------------
-* cleanup and exit  */
-
 	return(0);
 
 } /* qdiint */
 
 /******************************************************************
-*******************************************************************
-*******************************************************************
 *
 *	THE SUBROUTINES START HERE:
 *
@@ -2883,24 +3174,15 @@ int unit;
 qdputc(chr)
 register char chr;
 {
-	register struct tty *tp0;
 
-/*---------------------------------------------------------
-* if system is now physical, forget it (ie: crash DUMP) */
-
+	/* if system is now physical, forget it (ie: crash DUMP) */
 	if ( (mfpr(MAPEN) & 1) == 0 )
 	    return;
 
-/*--------------------------------------------------
-* direct kernel output char to the proper place  */
+        blitc(0, chr & 0xff);
+	if ((chr & 0177) == '\n')
+		blitc(0, '\r');
 
-	tp0 = &qd_tty[1];
-
-	if (qdflags[0].kernel_loop != 0  &&  tp0->t_state & TS_ISOPEN) {
-	    (*linesw[tp0->t_line].l_rint)(chr, tp0);
-	} else {
-	    blitc(0, chr & 0xff);
-	}
 
 } /* qdputc */
 

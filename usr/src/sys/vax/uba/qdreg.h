@@ -1,5 +1,6 @@
 
 /*
+ *		@(#)qdreg.h	1.2  Berkeley  %G%
  *	@(#)qdreg.h	1.5	(ULTRIX)	5/21/86
  */
 
@@ -399,6 +400,7 @@
 	};
 
 /* Driver and data specific structure */
+#define DEV_SIZE 8  /* from ultrix - i don't see where its used ! - marc */
 struct	qd_softc {
 	long	sc_flags;		/* Flags			*/
 	long	sc_category_flags;	/* Category flags		*/

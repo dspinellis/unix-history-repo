@@ -55,7 +55,7 @@
 ***************************************************************************/
 
 #ifdef KERNEL
-#include "../vaxuba/qevent.h"		/* include event struct defs */
+#include "qevent.h"		/* include event struct defs */
 #else
 #include <vaxuba/qevent.h>
 #endif
