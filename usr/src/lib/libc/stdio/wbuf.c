@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)wbuf.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)wbuf.c	5.3 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include	<stdio.h>
@@ -118,4 +118,11 @@ fclose(iop)
 	iop->_flag = 0;
 	iop->_file = 0;
 	return(r);
+}
+
+_cleanup()
+{
+	extern int _fwalk();
+
+	_fwalk(fclose);
 }
