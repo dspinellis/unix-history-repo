@@ -1,0 +1,45 @@
+DM(8)                     BSD System Manager's Manual                    DM(8)
+
+NNAAMMEE
+     ddmm - dungeon master
+
+SSYYNNOOPPSSIISS
+     llnn --ss ddmm _g_a_m_e
+
+DDEESSCCRRIIPPTTIIOONN
+     DDmm is a program used to regulate game playing.  DDmm expects to be invoked
+     with the name of a game that a user wishes to play.  This is done by cre-
+     ating symbolic links to ddmm, in the directory _/_u_s_r_/_g_a_m_e_s for all of the
+     regulated games.  The actual binaries for these games should be placed in
+     a ``hidden'' directory, _/_u_s_r_/_g_a_m_e_s_/_h_i_d_e, that may only be accessed by the
+     ddmm program.  DDmm determines if the requested game is available and, if so,
+     runs it.  The file _/_e_t_c_/_d_m_._c_o_n_f controls the conditions under which games
+     may be run.
+
+     The file _/_e_t_c_/_n_o_g_a_m_e_s may be used to ``turn off'' game playing.  If the
+     file exists, no game playing is allowed; the contents of the file will be
+     displayed to any user requesting a game.
+
+FFIILLEESS
+     /etc/dm.conf        configuration file
+     /etc/nogames        turns off game playing
+     /usr/games/hide     directory of ``real'' binaries
+     /var/log/games.log  game logging file
+
+SSEEEE AALLSSOO
+     dm.conf(5)
+
+BBUUGGSS
+     Two problems result from ddmm running the games setuid ``games''. First,
+     all games that allow users to run UNIX commands should carefully set both
+     the real and effective user id's immediately before executing those com-
+     mands.  Probably more important is that ddmm never be setuid anything but
+     ``games'' so that compromising a game will result only in the user's
+     ability to play games at will.  Secondly, games which previously had no
+     reason to run setuid and which accessed user files may have to be modi-
+     fied.
+
+HHIISSTTOORRYY
+     The ddmm command appeared in 4.3BSD-Tahoe.
+
+4.4BSD                           May 31, 1993                                1
