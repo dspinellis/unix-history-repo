@@ -9,7 +9,7 @@
  * More user commands.
  */
 
-static char *SccsId = "@(#)cmd2.c	2.6 %G%";
+static char *SccsId = "@(#)cmd2.c	2.7 %G%";
 
 /*
  * If any arguments were given, go to the next applicable argument
@@ -157,7 +157,7 @@ save1(str, mark)
 		mesg = *ip;
 		touch(mesg);
 		mp = &message[mesg-1];
-		if ((t = send(mp, obuf)) < 0) {
+		if ((t = send(mp, obuf, 0)) < 0) {
 			perror(file);
 			fclose(obuf);
 			return(1);
@@ -441,4 +441,49 @@ clob1(n)
 	for (cp = buf; cp < &buf[512]; *cp++ = 0xFF)
 		;
 	clob1(n - 1);
+}
+
+/*
+ * Add the given header fields to the ignored list.
+ * If no arguments, print the current list of ignored fields.
+ */
+igfield(list)
+	char *list[];
+{
+	char field[BUFSIZ];
+	register int h;
+	register struct ignore *igp;
+	char **ap;
+
+	if (argcount(list) == 0)
+		return(igshow());
+	for (ap = list; *ap != 0; ap++) {
+		istrcpy(field, *ap);
+		h = hash(field);
+		igp = (struct ignore *) calloc(1, sizeof (struct ignore));
+		igp->i_field = calloc(strlen(field) + 1, sizeof (char));
+		strcpy(igp->i_field, field);
+		igp->i_link = ignore[h];
+		ignore[h] = igp;
+	}
+	return(0);
+}
+
+/*
+ * Print out all currently ignored fields.
+ */
+igshow()
+{
+	register int h, did;
+	struct ignore *igp;
+
+	did = 0;
+	for (h = 0; h < HSHSIZE; h++)
+		for (igp = ignore[h]; igp != 0; igp = igp->i_link) {
+			printf("%s\n", igp->i_field);
+			did++;
+		}
+	if (!did)
+		printf("No fields currently being ignored.\n");
+	return(0);
 }
