@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.72		%G%);
+SCCSID(@(#)main.c	3.73		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -121,7 +121,6 @@ main(argc, argv)
 	char **argv;
 {
 	register char *p;
-	extern char *getlogin();
 	extern int finis();
 	extern char Version[];
 	char *from;
@@ -811,7 +810,7 @@ setsender(from)
 		p = from;
 		nofullname = FALSE;
 	}
-	if (p != NULL)
+	if (p != NULL && p[0] != '\0')
 	{
 		extern struct passwd *getpwnam();
 
@@ -823,7 +822,7 @@ setsender(from)
 			p = NULL;
 		}
 	}
-	if (p == NULL)
+	if (p == NULL || p[0] == '\0')
 	{
 		extern struct passwd *getpwuid();
 		int uid;
