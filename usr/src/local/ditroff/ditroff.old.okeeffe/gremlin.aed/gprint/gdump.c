@@ -1,4 +1,4 @@
-/* gdump.c	1.1	83/06/17 	by David Slattengren
+/* gdump.c	1.2	83/06/22 	by David Slattengren
  *
  *      This file contains a program for printing gprint raster files.
  *   Gprint puts out a generic file, and gdump changes the size to fit
@@ -64,11 +64,11 @@ char *argv[];
 			lpargs[1] = "-Pvarian";
 			break;
 		default:
-			printf ("unknown switch %c", *arg);
+			printf ("unknown switch %c\n", *arg);
 			exit (1);
 			break;
             }
-        }
+        } 
     }
 
     if (FileFound) {		/* open input file, if one exists */
@@ -102,10 +102,10 @@ char *argv[];
 	    fprintf (stderr, "gdump: error writing file %s\n", picture);
 	    cleanup();
 	}
-    }
-    close (infile);				/* eat the rest of input */
+    }						/* eat the rest of input */
     while (read (infile, buf, Vbytperlin) > 0)	/* if there is any */
 	;
+    close (infile);
 
     execv (LPR, lpargs);
     fprintf (stderr, "gdump: can't exec %s\n", LPR);
