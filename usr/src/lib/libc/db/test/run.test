@@ -1,6 +1,6 @@
 #!/bin/sh -
 #
-#	@(#)run.test	8.1 (Berkeley) %G%
+#	@(#)run.test	8.2 (Berkeley) %G%
 #
 
 # db regression tests
@@ -112,8 +112,7 @@ test3()
 		$PROG -o $TMP3 $type $TMP2
 		if (cmp -s $TMP1 $TMP3) ; then :
 		else
-			printf "test3: %s: page size %d: failed\n" \
-			    $type $psize
+			printf "test3: %s: failed\n" $type
 			exit 1
 		fi
 	done
@@ -166,7 +165,7 @@ test4()
 			printf("input key %d: %.*s\n", i, i % 41, $0);
 		exit
 	}' > $TMP1
-	rm -f TMP2 $TMP3
+	rm -f $TMP2 $TMP3
 	cat $TMP1 |
 	awk 'BEGIN {
 			i = 37;
@@ -211,7 +210,7 @@ test5()
 			printf("input key %d: %.*s\n", i, i % 34, $0);
 		exit;
 	}' > $TMP1
-	rm -f TMP2 $TMP3
+	rm -f $TMP2 $TMP3
 	cat $TMP1 |
 	awk 'BEGIN {
 			i = 1500;
