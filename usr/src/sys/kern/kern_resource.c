@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_resource.c	8.3 (Berkeley) %G%
+ *	@(#)kern_resource.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -133,7 +133,7 @@ setpriority(curp, uap, retval)
 	}
 	if (found == 0)
 		return (ESRCH);
-	return (0);
+	return (error);
 }
 
 donice(curp, chgp, n)
