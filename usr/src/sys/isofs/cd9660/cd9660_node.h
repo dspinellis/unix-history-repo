@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_node.h	8.4 (Berkeley) %G%
+ *	@(#)cd9660_node.h	8.5 (Berkeley) %G%
  */
 
 /*
@@ -103,6 +103,7 @@ int cd9660_print __P((struct vop_print_args *));
 int cd9660_islocked __P((struct vop_islocked_args *));
 int cd9660_pathconf __P((struct vop_pathconf_args *));
 int cd9660_blkatoff __P((struct vop_blkatoff_args *));
+#define cd9660_revoke vop_revoke
 
 void cd9660_defattr __P((struct iso_directory_record *,
 			struct iso_node *, struct buf *));
