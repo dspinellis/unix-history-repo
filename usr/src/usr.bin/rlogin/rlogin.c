@@ -12,22 +12,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
-
-/*
- * $Source: mit/rlogin/RCS/rlogin.c,v $
- * $Header: mit/rlogin/RCS/rlogin.c,v 5.2 89/07/26 12:11:21 kfall
- *	Exp Locker: kfall $
- */
 
 /*
  * rlogin - remote login
  */
 #include <sys/param.h>
-#include <sys/file.h>
 #include <sys/socket.h>
-#include <sys/signal.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
@@ -35,21 +27,26 @@ static char sccsid[] = "@(#)rlogin.c	5.37 (Berkeley) %G%";
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
-#include <netdb.h>
 
-#include <sgtty.h>
-#include <setjmp.h>
-#include <varargs.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <netdb.h>
 #include <pwd.h>
+#include <setjmp.h>
+#include <sgtty.h>
+#include <signal.h>
+#include <stdarg.h>
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <setjmp.h>
 
 #ifdef KERBEROS
 #include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
+
+#include "krb.h"
 
 #ifndef TIOCPKT_WINDOW
 #define	TIOCPKT_WINDOW	0x80
@@ -59,29 +56,46 @@ static char sccsid[] = "@(#)rlogin.c	5.37 (Berkeley) %G%";
 struct	winsize winsize;
 int	sigwinch();
 
-#ifndef sun
-#define	get_window_size(fd, wp)	ioctl(fd, TIOCGWINSZ, wp)
+void		catch_child __P((int));
+void		copytochild __P((int));
+__dead void	doit __P((long));
+__dead void	done __P((int));
+void		echo __P((char));
+u_int		getescape __P((char *));
+void		lostpeer __P((int));
+void		mode __P((int));
+void		msg __P((char *));
+void		oob __P((int));
+int		reader __P((int));
+void		sendwindow __P((void));
+void		setsignal __P((int));
+void		sigwinch __P((int));
+void		stop __P((char));
+__dead void	usage __P((void));
+void		writer __P((void));
+void		writeroob __P((int));
+
+#ifdef	KERBEROS
+void		warning __P((const char *, ...));
+#endif
+#ifdef SUNOS4
+int		get_window_size __P((int, struct winsize *));
 #endif
 
-void exit();
-
+int
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	extern char *optarg;
 	extern int optind;
 	struct passwd *pw;
 	struct servent *sp;
-	struct hostent *hp;
 	int uid, options = 0;
 	struct sgttyb ttyb;
 	long omask;
 	int argoff, ch, dflag, one, uid;
 	char *host, *p, *user, term[1024];
-	void lostpeer(), copytochild(), writeroob();
-	u_char getescape();
-	char *getenv();
 
 	argoff = dflag = 0;
 	one = 1;
@@ -189,7 +203,7 @@ main(argc, argv)
 	(void)strcpy(term, (p = getenv("TERM")) ? p : "network");
 	if (ioctl(0, TIOCGETP, &ttyb) == 0) {
 		(void)strcat(term, "/");
-		(void)strcat(term, speeds[ttyb.sg_ospeed]);
+		(void)strcat(term, speeds[(int)ttyb.sg_ospeed]);
 	}
 	if (rem < 0)
 		exit(1);
@@ -204,9 +218,9 @@ struct ltchars defltc;
 struct tchars notc = { -1, -1, -1, -1, -1, -1 };
 struct ltchars noltc = { -1, -1, -1, -1, -1, -1 };
 
+void
 {
 	struct sgttyb sb;
-	void catch_child(), exit();
 
 	(void)ioctl(0, TIOCGETP, (char *)&sb);
 	defflags = sb.sg_flags;
@@ -214,14 +228,14 @@ struct ltchars noltc = { -1, -1, -1, -1, -1, -1 };
 	defflags &= ECHO | CRMOD;
 	deferase = sb.sg_erase;
 	defkill = sb.sg_kill;
-	(void)ioctl(0, TIOCLGET, (char *)&deflflags);
-	(void)ioctl(0, TIOCGETC, (char *)&deftc);
+	(void)ioctl(0, TIOCLGET, &deflflags);
+	(void)ioctl(0, TIOCGETC, &deftc);
 	notc.t_startc = deftc.t_startc;
 	notc.t_stopc = deftc.t_stopc;
-	(void)ioctl(0, TIOCGLTC, (char *)&defltc);
+	(void)ioctl(0, TIOCGLTC, &defltc);
 	(void)signal(SIGINT, SIG_IGN);
-	setsignal(SIGHUP, exit);
-	setsignal(SIGQUIT, exit);
+	setsignal(SIGHUP);
+	setsignal(SIGQUIT);
 	child = fork();
 	if (child == -1) {
 		(void)fprintf(stderr, "rlogin: fork: %s.\n", strerror(errno));
@@ -254,17 +268,18 @@ struct ltchars noltc = { -1, -1, -1, -1, -1, -1 };
 }
 
 /* trap a signal, unless it is being ignored. */
-setsignal(sig, act)
+void
+setsignal(sig)
 	int sig;
-	void (*act)();
 {
 	int omask = sigblock(sigmask(sig));
 
-	if (signal(sig, act) == SIG_IGN)
+	if (signal(sig, exit) == SIG_IGN)
 		(void)signal(sig, SIG_IGN);
 	(void)sigsetmask(omask);
 }
 
+__dead void
 done(status)
 	int status;
 {
@@ -281,7 +296,8 @@ done(status)
 }
 
 void
-catch_child()
+catch_child(signo)
+	int signo;
 {
 	union wait status;
 	int pid;
@@ -291,7 +307,7 @@ catch_child()
 		if (pid == 0)
 			return;
 		/* if the child (reader) dies, just quit */
-		if (pid < 0 || pid == child && !WIFSTOPPED(status))
+		if (pid < 0 || (pid == child && !WIFSTOPPED(status)))
 			done((int)(status.w_termsig | status.w_retcode));
 	}
 	/* NOTREACHED */
@@ -303,6 +319,7 @@ catch_child()
  * ~^Z				suspend rlogin process.
  * ~<delayed-suspend char>	suspend rlogin process, but leave reader alone.
  */
+void
 writer()
 {
 	register int bol, local, n;
@@ -375,7 +392,8 @@ writer()
 #ifdef CRYPT
 #ifdef KERBEROS
 				if (doencrypt)
-					(void)des_write(rem, &escapechar, 1);
+					(void)des_write(rem,
+					    (char *)&escapechar, 1);
 				else
 #endif
 #endif
@@ -402,8 +420,13 @@ writer()
 	}
 }
 
+void
+#if __STDC__
+echo(register char c)
+#else
 echo(c)
-register char c;
+	register char c;
+#endif
 {
 	register char *p;
 	char buf[8];
@@ -424,8 +447,13 @@ register char c;
 	(void)write(STDOUT_FILENO, buf, p - buf);
 }
 
+void
+#if __STDC__
+stop(char cmdc)
+#else
 stop(cmdc)
 	char cmdc;
+#endif
 {
 	struct winsize ws;
 
@@ -434,11 +462,12 @@ stop(cmdc)
 	(void)kill(cmdc == defltc.t_suspc ? 0 : getpid(), SIGTSTP);
 	(void)signal(SIGCHLD, catch_child);
 	mode(1);
-	sigwinch();			/* check for size changes */
+	sigwinch(0);			/* check for size changes */
 }
 
 void
-sigwinch()
+sigwinch(signo)
+	int signo;
 {
 	struct winsize ws;
 
@@ -449,7 +478,8 @@ sigwinch()
 	}
 }
 
-oob()
+oob(signo)
+	int signo;
 {
 
 	out = O_RDWR;
@@ -523,10 +553,10 @@ oob()
 }
 
 /* reader: read from remote: line -> 1 */
+int
 reader(omask)
 	int omask;
 {
-	void oob();
 
 #if !defined(BSD) || BSD < 43
 	int pid = -getpid();
@@ -549,7 +579,7 @@ reader(omask)
 			n = write(STDOUT_FILENO, bufp, remaining);
 			if (n < 0) {
 				if (errno != EINTR)
-					return(-1);
+					return (-1);
 				continue;
 			}
 			bufp += n;
@@ -573,12 +603,14 @@ reader(omask)
 				continue;
 			(void)fprintf(stderr, "rlogin: read: %s.\n",
 			    strerror(errno));
-			return(-1);
+			return (-1);
 		}
 	}
 }
 
+void
 mode(f)
+	int f;
 {
 	struct ltchars *ltc;
 	struct sgttyb sb;
@@ -619,7 +651,8 @@ mode(f)
 }
 
 void
-lostpeer()
+lostpeer(signo)
+	int signo;
 {
 	(void)signal(SIGPIPE, SIG_IGN);
 	msg("\007connection closed.");
@@ -629,11 +662,13 @@ lostpeer()
 	fprintf(stderr, f, a1, a2, a3);
 /* copy SIGURGs to the child process. */
 void
-copytochild()
+copytochild(signo)
+	int signo;
 {
 	(void)kill(child, SIGURG);
 }
 
+void
 msg(str)
 	char *str;
 {
@@ -642,14 +677,23 @@ msg(str)
 
 #ifdef KERBEROS
 /* VARARGS */
-warning(va_alist)
-va_dcl
+void
+#if __STDC__
+warning(const char *fmt, ...)
+#else
+warning(fmt, va_alist)
+	char *fmt;
+	va_dcl
+#endif
 {
 	va_list ap;
-	char *fmt;
 
 	(void)fprintf(stderr, "rlogin: warning, using standard rlogin: ");
+#ifdef __STDC__
+	va_start(ap, fmt);
+#else
 	va_start(ap);
+#endif
 	fmt = va_arg(ap, char *);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
@@ -657,6 +701,7 @@ va_dcl
 }
 #endif
 
+__dead void
 usage()
 {
 	(void)fprintf(stderr,
@@ -677,7 +722,8 @@ usage()
  * The following routine provides compatibility (such as it is) between 4.2BSD
  * Suns and others.  Suns have only a `ttysize', so we convert it to a winsize.
  */
-#ifdef sun
+#ifdef SUNOS4
+int
 get_window_size(fd, wp)
 	int fd;
 	struct winsize *wp;
@@ -686,16 +732,16 @@ get_window_size(fd, wp)
 	int error;
 
 	if ((error = ioctl(0, TIOCGSIZE, &ts)) != 0)
-		return(error);
+		return (error);
 	wp->ws_row = ts.ts_lines;
 	wp->ws_col = ts.ts_cols;
 	wp->ws_xpixel = 0;
 	wp->ws_ypixel = 0;
-	return(0);
+	return (0);
 }
 #endif
 
-u_char
+u_int
 getescape(p)
 	register char *p;
 {
@@ -703,13 +749,13 @@ getescape(p)
 	int len;
 
 	if ((len = strlen(p)) == 1)	/* use any single char, including '\' */
-		return((u_char)*p);
+		return ((u_int)*p);
 					/* otherwise, \nnn */
 	if (*p == '\\' && len >= 2 && len <= 4) {
-		val = strtol(++p, (char **)NULL, 8);
+		val = strtol(++p, NULL, 8);
 		for (;;) {
 			if (!*++p)
-				return((u_char)val);
+				return ((u_int)val);
 			if (*p < '0' || *p > '8')
 				break;
 		}

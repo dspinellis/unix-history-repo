@@ -6,23 +6,32 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)des_rw.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)des_rw.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef CRYPT
 #ifdef KERBEROS
 #include <sys/param.h>
+
 #include <kerberosIV/des.h>
 #include <kerberosIV/krb.h>
-#include <time.h>
-#include <unistd.h>
+
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
 
-extern long		random();
 static unsigned char	des_inbuf[10240], storage[10240], *store_ptr;
 static bit_64		*key;
 static u_char		*key_schedule;
+
+/* XXX these should be in a kerberos include file */
+int	krb_net_read __P((int, char *, int));
+#ifdef notdef
+/* XXX too hard to make this work */
+int	des_pcbc_encrypt __P((des_cblock *, des_cblock *, long,
+	    des_key_schedule, des_cblock *, int));
+#endif
 
 /*
  * NB: These routines will not function properly if NBIO
@@ -79,7 +88,8 @@ des_read(fd, buf, len)
 		nstored = 0;
 	}
 	
-	if (krb_net_read(fd, &net_len, sizeof(net_len)) != sizeof(net_len)) {
+	if (krb_net_read(fd, (char *)&net_len, sizeof(net_len)) !=
+	    sizeof(net_len)) {
 		/* XXX can't read enough, pipe
 		   must have closed */
 		return(0);
@@ -93,7 +103,7 @@ des_read(fd, buf, len)
 	/* the writer tells us how much real data we are getting, but
 	   we need to read the pad bytes (8-byte boundary) */
 	rd_len = roundup(net_len, 8);
-	if (krb_net_read(fd, des_inbuf, rd_len) != rd_len) {
+	if (krb_net_read(fd, (char *)des_inbuf, rd_len) != rd_len) {
 		/* pipe must have closed, return 0 */
 		return(0);
 	}
