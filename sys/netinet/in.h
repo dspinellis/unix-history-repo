@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in.h	7.11 (Berkeley) 4/20/91
- *	$Id: in.h,v 1.4 1993/12/19 00:52:35 wollman Exp $
+ *	$Id: in.h,v 1.5 1994/05/17 22:31:04 jkh Exp $
  */
 
 #ifndef _NETINET_IN_H_
@@ -159,7 +159,7 @@ struct ip_opts {
  * First word of comment is data type; bool is stored in int.
  */
 #define	IP_OPTIONS	1	/* buf/ip_opts; set/get IP per-packet options */
-#ifndef NO_VAT_COMPAT
+#ifdef IP_VAT_COMPAT
 #define	IP_MULTICAST_IF	2	/* set/get IP multicast interfcae */
 #define	IP_MULTICAST_TTL 3	/* set/get IP multicast timetolive */
 #define	IP_MULTICAST_LOOP 4	/* set/get IP m'cast loopback */
