@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)reboot.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)reboot.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,6 +36,7 @@ static char sccsid[] = "@(#)reboot.c	5.6 (Berkeley) %G%";
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/syslog.h>
+#include <sys/syscall.h>
 
 main(argc, argv)
 	int argc;
@@ -112,7 +113,7 @@ main(argc, argv)
 		setalarm(5);
 		pause();
 	}
-	syscall(55, howto);
+	syscall(SYS_reboot, howto);
 	perror("reboot");
 	kill(1, SIGHUP);
 	exit(1);
