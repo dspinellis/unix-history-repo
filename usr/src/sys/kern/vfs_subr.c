@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.19 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.20 (Berkeley) %G%
  */
 
 /*
@@ -131,7 +131,7 @@ ndinit(ndp)
 	ndp->ni_iovcnt = 1;
 	ndp->ni_base = (caddr_t)&ndp->ni_dent;
 	ndp->ni_rw = UIO_WRITE;
-	ndp->ni_segflg = UIO_SYSSPACE;
+	ndp->ni_uioseg = UIO_SYSSPACE;
 }
 
 /*
