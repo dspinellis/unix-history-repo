@@ -1,4 +1,6 @@
-/* @(#)sibuf.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)sibuf.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 #include <stdio.h>
 

@@ -1,4 +1,7 @@
-/* @(#)gcvt.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)gcvt.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * gcvt  - Floating output conversion to
  * minimal length string

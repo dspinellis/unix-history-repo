@@ -1,13 +1,16 @@
-/* @(#)frexp.c	4.2 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)frexp.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
-	the call
-		x = frexp(arg,&exp);
-	must return a double fp quantity x which is <1.0
-	and the corresponding binary exponent "exp".
-	such that
-		arg = x*2^exp
-	if the argument is 0.0, return 0.0 mantissa and 0 exponent.
-*/
+ *	the call
+ *		x = frexp(arg,&exp);
+ *	must return a double fp quantity x which is <1.0
+ *	and the corresponding binary exponent "exp".
+ *	such that
+ *		arg = x*2^exp
+ *	if the argument is 0.0, return 0.0 mantissa and 0 exponent.
+ */
 
 double
 frexp(x,i)

@@ -1,4 +1,7 @@
-/* @(#)isatty.c	4.2 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)isatty.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Returns 1 iff file is a tty
  */

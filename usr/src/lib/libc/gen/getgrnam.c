@@ -1,4 +1,7 @@
-/* @(#)getgrnam.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)getgrnam.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 #include <grp.h>
 
 struct group *

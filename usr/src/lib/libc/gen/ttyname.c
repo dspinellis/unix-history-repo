@@ -1,4 +1,7 @@
-/* @(#)ttyname.c	4.3 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)ttyname.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * ttyname(f): return "/dev/ttyXX" which the the name of the
  * tty belonging to file f.

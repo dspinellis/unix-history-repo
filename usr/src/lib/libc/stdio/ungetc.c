@@ -1,4 +1,6 @@
-/*	ungetc.c	4.3	85/02/13	*/
+#ifndef lint
+static char sccsid[] = "@(#)ungetc.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 #include <stdio.h>
 

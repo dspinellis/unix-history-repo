@@ -1,4 +1,7 @@
-/* @(#)fgets.c	4.2 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)fgets.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 #include	<stdio.h>
 
 char *

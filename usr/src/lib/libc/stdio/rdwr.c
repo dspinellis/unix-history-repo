@@ -1,4 +1,7 @@
-/* @(#)rdwr.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)rdwr.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 #include	<stdio.h>
 
 fread(ptr, size, count, iop)

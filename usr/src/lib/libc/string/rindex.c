@@ -1,8 +1,11 @@
-/* @(#)rindex.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)rindex.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Return the ptr in sp at which the character c last
  * appears; NULL if not found
-*/
+ */
 
 #define NULL 0
 

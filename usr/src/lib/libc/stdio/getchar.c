@@ -1,4 +1,7 @@
-/* @(#)getchar.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)getchar.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * A subroutine version of the macro getchar.
  */

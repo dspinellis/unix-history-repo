@@ -1,4 +1,7 @@
-/* @(#)strlen.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)strlen.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Returns the number of
  * non-NULL bytes in string argument.

@@ -1,4 +1,6 @@
-/*	swab.c	5.1	85/05/30	*/
+#ifndef lint
+static char sccsid[] = "@(#)swab.c	5.2 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Swab bytes

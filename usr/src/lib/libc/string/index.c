@@ -1,4 +1,7 @@
-/* @(#)index.c	4.1 (Berkeley) %G% */
+#ifndef lint
+static char sccsid[] = "@(#)index.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Return the ptr in sp at which the character c appears;
  * NULL if not found

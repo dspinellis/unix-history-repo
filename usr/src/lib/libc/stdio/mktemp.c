@@ -1,4 +1,6 @@
-/*	mktemp.c	4.1	83/06/22	*/
+#ifndef lint
+static char sccsid[] = "@(#)mktemp.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 char *
 mktemp(as)
