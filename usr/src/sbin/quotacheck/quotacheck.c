@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	4.2 (Berkeley, Melbourne) %G%";
+static char sccsid[] = "@(#)quotacheck.c	4.3 (Berkeley, Melbourne) %G%";
 #endif
 
 /*
@@ -8,14 +8,13 @@ static char sccsid[] = "@(#)quotacheck.c	4.2 (Berkeley, Melbourne) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
-#include <pwd.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
-#define	QUOTA
 #include <sys/quota.h>
 #include <sys/stat.h>
 #include <fstab.h>
+#include <pwd.h>
 
 union {
 	struct	fs	sblk;
@@ -29,10 +28,12 @@ struct	dinode	*dp;
 long	blocks;
 dev_t	dev;
 
+#define LOGINNAMESIZE 8
 struct fileusage {
+	struct fileusage *fu_next;
 	struct dqusage fu_usage;
 	u_short	fu_uid;
-	struct fileusage *fu_next;
+	char fu_name[LOGINNAMESIZE + 1];
 };
 #define FUHASH 997
 struct fileusage *fuhead[FUHASH];
@@ -52,12 +53,15 @@ int	aflag;		/* all file systems */
 
 char *qfname = "quotas";
 char quotafile[MAXPATHLEN + 1];
+struct dqblk zerodqbuf;
 
 main(argc, argv)
 	int argc;
 	char **argv;
 {
 	register struct fstab *fs;
+	register struct fileusage *fup;
+	register struct passwd *pw;
 	int i, errs = 0;
 
 again:
@@ -75,6 +79,17 @@ again:
 			"quotacheck [-v] -a",
 			"quotacheck [-v] filesys ...");
 		exit(1);
+	}
+	if (vflag) {
+		setpwent();
+		while ((pw = getpwent()) != 0) {
+			fup = lookup(pw->pw_uid);
+			if (fup == 0)
+				fup = adduid(pw->pw_uid);
+			strncpy(fup->fu_name, pw->pw_name,
+				sizeof(fup->fu_name));
+		}
+		endpwent();
 	}
 	setfsent();
 	while ((fs = getfsent()) != NULL) {
@@ -152,12 +167,18 @@ chkquota(fsdev, qffile)
 		fseek(qf, uid * sizeof(struct dqblk), 0);
 		i = fread(&dqbuf, sizeof(struct dqblk), 1, qf);
 		if (i == 0)
-			bzero(&dqbuf, sizeof(struct dqblk));
+			dqbuf = zerodqbuf;
 		if (dqbuf.dqb_curinodes == fup->fu_usage.du_curinodes &&
-		    dqbuf.dqb_curblocks == fup->fu_usage.du_curblocks)
+		    dqbuf.dqb_curblocks == fup->fu_usage.du_curblocks) {
+			fup->fu_usage.du_curinodes = 0;
+			fup->fu_usage.du_curblocks = 0;
 			continue;
+		}
 		if (vflag) {
-			fprintf(stdout, "uid %d fixed:", uid);
+			if (fup->fu_name[0] != '\0')
+				printf("%-10s fixed:", fup->fu_name);
+			else
+				printf("#%-9d fixed:", uid);
 			fprintf(stdout, " inodes (old %d, new %d)",
 			    dqbuf.dqb_curinodes, fup->fu_usage.du_curinodes);
 			fprintf(stdout, " blocks (old %d, new %d)\n",
@@ -165,6 +186,8 @@ chkquota(fsdev, qffile)
 		}
 		dqbuf.dqb_curinodes = fup->fu_usage.du_curinodes;
 		dqbuf.dqb_curblocks = fup->fu_usage.du_curblocks;
+		fup->fu_usage.du_curinodes = 0;
+		fup->fu_usage.du_curblocks = 0;
 		fseek(qf, uid * sizeof(struct dqblk), 0);
 		fwrite(&dqbuf, sizeof(struct dqblk), 1, qf);
 		quota(Q_SETDUSE, uid, quotadev, &fup->fu_usage);
