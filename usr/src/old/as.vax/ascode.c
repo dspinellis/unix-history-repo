@@ -1,8 +1,41 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)ascode.c 4.4 %G%";
+static	char sccsid[] = "@(#)ascode.c 4.5 %G%";
 #include <stdio.h>
 #include "as.h"
 #include "assyms.h"
+
+/*
+ *	Loader reference types  (plust PCREL) to bytes and lg bytes
+ */
+/*		LEN1	LEN1+PC	LEN2	LEN2+PC	LEN4	LEN4+PC	LEN8	LEN8+PC*/
+int	reflen[] = 	/* {LEN*+PCREL} ==> number of bytes */
+{0,	0,	1,	1,	2,	2,	4,	4,	8,	8};	
+int	lgreflen[] =	/* {LEN*+PCREL} ==> lg number of bytes */ 
+{-1,	-1,	0,	0,	1,	1,	2,	2,	3,	3};
+
+/*
+ *	Sizes to Loader reference types and type flags
+ */
+/*0	1	2	3	4	5	6	7	8*/
+int	len124[] = 	/* {1,2,4,8} ==> {LEN1, LEN2, LEN4, LEN8} */
+{0,	LEN1,	LEN2,	0,	LEN4,	0,	0,	0,	LEN8};
+char	mod124[] = 	/* {1,2,4,8} ==> {bits to construct operands */
+{0,	0x00,	0x20,	0,	0x40,	0,	0,	0,	0};
+int	type_124[] =	/* {1,2,4,8} ==> {TYPB, TYPW, TYPL, TYPQ} */
+{0,	 TYPB,	TYPW,	 0,	 TYPL,	 0,	 0,	 0,	 TYPQ};
+
+/*
+ *	type flags to Loader reference and byte lengths
+ */
+/*TYPB	TYPW	TYPL	TYPQ	TYPF	TYPD*/
+int	ty_NORELOC[] =	/* {TYPB..TYPD} ==> {1 if relocation not OK */
+{0,	0,	0,	1,	1,	1};
+int	ty_LEN[] =	/* {TYPB..TYPD} ==> {LEN1..LEN8} */
+{LEN1,	LEN2,	LEN4,	LEN8,	LEN4,	LEN8};
+int	ty_nbyte[] =	/* {TYPB..TYPD} ==> {1,2,4,8} */
+{1,	2,	4,	8,	4,	8};
+int	ty_nlg[] =	/* {TYPB..TYPD} ==> lg{1,2,4,8} */
+{0,	1,	2,	3,	2,	3};
 
 insout(op, ap, nact)
 	struct arg *ap;
@@ -29,9 +62,9 @@ insout(op, ap, nact)
 	     *	Check argument compatability with instruction template
 	     */
 	    for (ap_walk = ap, i = 1; i <= nact; ap_walk++, i++){
-		ap_type = ap_walk->a_type;
+		ap_type = ap_walk->a_atype;
 		ap_type_mask = ap_type & AMASK;
-		switch( (fetcharg(ip, i-1)) & AMASK){	/* type of fp */
+		switch( (fetcharg(ip, i-1)) & ACCESSMASK){	/* type of fp */
 		case ACCB:
 			if ( !((ap_type_mask == AEXP) || (ap_type_mask == AIMM)) ){
 				yyerror("arg %d, branch displacement must be an expression",i);
@@ -68,8 +101,8 @@ insout(op, ap, nact)
 					return;
 			case AIMM:	yyerror("arg %d, indexing a constant",i);
 					return;
-			case DECR:
-			case INCR:	if (ap_walk->a_areg1==ap_walk->a_areg2) {
+			case ADECR:
+			case AINCR:	if (ap_walk->a_areg1==ap_walk->a_areg2) {
 						yyerror("arg %d, indexing with modified register",i);
 						return;
 					}
@@ -84,8 +117,6 @@ insout(op, ap, nact)
 }
 
 extern	int d124;
-	int len124[] = 	{0,LEN1,LEN2,0,LEN4};
-	char mod124[] = {0,0x00,0x20,0,0x40};
 
 putins(op, ap, n)
 	/*
@@ -95,7 +126,8 @@ putins(op, ap, n)
 {
 	register struct exp 	*xp;
 	register int 		a;
-	int 			i,xtrab;
+	int 			i;
+	int			reloc_how;
 
 #ifdef DEBUG
 	fflush(stdout);
@@ -195,7 +227,7 @@ PASS2:
 	for (i=0; i<n; i++,ap++) {/* now for the arguments */
 		a=ap->a_atype;
 		xp=ap->a_xp;
-		xtrab=0;
+		reloc_how = TYPNONE;
 		if (a&AINDX) {
 #ifdef UNIX
 			{ outb(0x40 | ap->a_areg2); }
@@ -239,33 +271,33 @@ PASS2:
 				if (a<MINWORD || a>MAXWORD) 
 					yyerror("Branch too far");
 				xp->e_xvalue = a>>8;
-				xtrab = LEN1;
+				reloc_how = TYPB;
 				break;
 			}
 			/* reduces to expr(pc) mode */
 			ap->a_areg1 |= (0xAF + mod124[ap->a_dispsize]);
-			xtrab = len124[ap->a_dispsize]+PCREL;
+			reloc_how = type_124[ap->a_dispsize] + RELOC_PCREL;
 			break;
 		
 		case ADISP: /* expr(%r) */
 			ap->a_areg1 |= 0xA0;
 			if ((xp->e_xtype&XTYPE)!=XABS || xp->e_xtype&XFORW){
 				ap->a_areg1 += mod124[ap->a_dispsize];
-				xtrab=len124[ap->a_dispsize];
+				reloc_how = type_124[ap->a_dispsize];
 				break;
 			}
 			if (xp->e_xvalue==0 && !(ap->a_areg1&0x10)) {
 				ap->a_areg1 ^= 0xC0;
 				break;
 			}
-			xtrab=LEN1;
+			reloc_how = TYPB;
 			if ((xp->e_xvalue<MINBYTE) || (xp->e_xvalue>MAXBYTE)){
 				ap->a_areg1 += 0x20;
-				xtrab=LEN2;
+				reloc_how = TYPW;
 			}
 			if ((xp->e_xvalue<MINWORD) || (xp->e_xvalue>MAXWORD)){
 				ap->a_areg1 += 0x20;
-				xtrab=LEN4;
+				reloc_how = TYPL;
 			}
 			break;
 		
@@ -290,22 +322,15 @@ PASS2:
 				}
 			}
 			ap->a_areg1 |= 0x8F;
-			switch (a) {
-			case TYPD:
-			case TYPF:
+			reloc_how = a;
+			if (reloc_how == TYPD || reloc_how == TYPF){
 				if (   ((xp->e_xtype&XTYPE)==XABS)
 				    && (!(xp->e_xtype&XFORW))
 				    && (slitflt(xp))
 				){
+					reloc_how = TYPNONE;
 					ap->a_areg1=extlitflt(xp);
-				} else {
-					xtrab = (a==TYPF) ? LEN4: LEN8;
 				}
-				break;
-			case TYPQ: xtrab = LEN8; break;
-			case TYPL: xtrab = LEN4; break;
-			case TYPW: xtrab = LEN2; break;
-			case TYPB: xtrab = LEN1; break;
 			}	
 			break;
 		
@@ -324,14 +349,7 @@ PASS2:
 			vms_obj_ptr=sobuf+1;
 		}
 #endif VMS
-		if (xtrab) 
-			/*
-			 *	Floating point numbers are written to a.out
-			 *	by outrel; they require that the least significant
-			 *	4 bytes of an 8 byte double precision number
-			 *	immediately follow the field xvalue, which
-			 *	they do.
-			 */
-			outrel(&xp->e_xvalue, xtrab, xp->e_xtype, xp->e_xname);
+		if (reloc_how != TYPNONE) 
+			outrel(xp, reloc_how);
 	}	/*end of the for to pick up all arguments*/
 }

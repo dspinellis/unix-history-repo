@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static	char sccsid[] = "@(#)asparse.c 4.5 %G%";
+static	char sccsid[] = "@(#)asparse.c 4.6 %G%";
 #include <stdio.h>
 #include "as.h"
 #include "asexpr.h"
@@ -78,6 +78,7 @@ int	yyparse()
 			int		field_value;	/*the value to stuff in a field*/
 			char		*stabname;	/*name of stab dealing with*/
 			ptrall		stabstart;	/*where the stab starts in the buffer*/
+			int		reloc_how;	/* how to relocate expressions */
 
 	xp = explist;
 	ap = arglist;
@@ -364,18 +365,15 @@ restlab:
 		 if ((locxp->e_xtype&XTYPE)!=XABS) {
 			if (bitoff)
 				yyerror("Illegal relocation in field");
-			field_width=LEN1;
-			if (curlen==NBPW)
-				field_width = LEN4;
-			if (curlen==NBPW/2)
-				field_width = LEN2;
+			switch(curlen){
+				case NBPW/4:	reloc_how = TYPB; break;
+				case NBPW/2:	reloc_how = TYPW; break;
+				case NBPW:	reloc_how = TYPL; break;
+			}
 			if (passno == 1){
-				dotp->e_xvalue += reflen[field_width];
+				dotp->e_xvalue += ty_nbyte[reloc_how];
 			} else {
-				outrel(&locxp->e_xvalue,
-					field_width,
-					locxp->e_xtype,
-					locxp->e_xname);
+				outrel(locxp, reloc_how);
 			}
 		} else {
 			field_value = locxp->e_xvalue & ( (1L << field_width)-1);
@@ -548,7 +546,7 @@ restlab:
  *		final expression is taken to be  the current
  *		location counter, and is patched by the 2nd pass
  *
- *	.stab{<expr>,}*8,<expr>, <expr>, <expr>, <expr>
+ *	.stab{<expr>,}*NCPS,<expr>, <expr>, <expr>, <expr>
  *	.stabn		 <expr>, <expr>, <expr>, <expr>
  *	.stabs   STRING, <expr>, <expr>, <expr>, <expr>
  *	.stabd		 <expr>, <expr>, <expr> # . 
@@ -567,7 +565,7 @@ restlab:
 	(char *)stabstart -= sizeof(struct symtab *);
 	(char *)stabstart -= sizeof(toktype);
 	shift;
-	for (argcnt = 0; argcnt < 8; argcnt++){
+	for (argcnt = 0; argcnt < NCPS; argcnt++){
 		expr(locxp, val);
 		stpt->s_name[argcnt] = locxp->e_xvalue;
 		xp = explist;
