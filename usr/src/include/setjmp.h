@@ -22,6 +22,10 @@
 #define _JBLEN	83
 #endif
 
+#if defined(sparc) || defined(__sparc__)
+#define _JBLEN	10
+#endif
+
 #if defined(tahoe) || defined(__tahoe__)
 #define _JBLEN	10
 #endif
