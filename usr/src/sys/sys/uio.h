@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uio.h	6.3 (Berkeley) %G%
+ *	@(#)uio.h	6.4 (Berkeley) %G%
  */
 
 #ifndef _UIO_
@@ -17,7 +17,7 @@ struct iovec {
 struct uio {
 	struct	iovec *uio_iov;
 	int	uio_iovcnt;
-	int	uio_offset;
+	off_t	uio_offset;
 	int	uio_segflg;
 	int	uio_resid;
 };
