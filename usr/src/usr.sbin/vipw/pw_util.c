@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pw_util.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pw_util.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -18,14 +18,15 @@ static char sccsid[] = "@(#)pw_util.c	8.1 (Berkeley) %G%";
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <pwd.h>
+
 #include <errno.h>
-#include <stdio.h>
+#include <fcntl.h>
 #include <paths.h>
-#include <string.h>
+#include <pwd.h>
+#include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 extern char *progname;
 extern char *tempname;
@@ -65,11 +66,12 @@ pw_lock()
 {
 	/* 
 	 * If the master password file doesn't exist, the system is hosed.
-	 * Might as well try to build one.
+	 * Might as well try to build one.  Set the close-on-exec bit so
+	 * that users can't get at the encrypted passwords while editing.
 	 * Open should allow flock'ing the file; see 4.4BSD.	XXX
 	 */
 	lockfd = open(_PATH_MASTERPASSWD, O_RDONLY, 0);
-	if (lockfd < 0) {
+	if (lockfd < 0 || fcntl(lockfd, F_SETFD, 1) == -1) {
 		(void)fprintf(stderr, "%s: %s: %s\n",
 		    progname, _PATH_MASTERPASSWD, strerror(errno));
 		exit(1);
@@ -92,7 +94,7 @@ pw_tmp()
 		++p;
 	else
 		p = path;
-	(void)sprintf(p, "%s.XXXXXX", progname);
+	(void)snprintf(p, sizeof(path), "%s.XXXXXX", progname);
 	if ((fd = mkstemp(path)) == -1) {
 		(void)fprintf(stderr,
 		    "%s: %s: %s\n", progname, path, strerror(errno));
