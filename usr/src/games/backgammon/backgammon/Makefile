@@ -3,18 +3,18 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.7	{Berkeley}	%G%
+#	@(#)Makefile	5.8	{Berkeley}	%G%
 #
 LIBC=	/lib/libc.a
 LIBS=	-ltermlib
 CFLAGS=	-O -DV7 -w
 SRCS=	allow.c board.c check.c data.c extra.c fancy.c init.c main.c move.c \
 	odds.c one.c save.c subs.c table.c teach.c text.c ttext1.c ttext2.c \
-	tutor.c message.c
+	tutor.c version.c
 BSRCS=	allow.c board.c check.c extra.c fancy.c init.c main.c move.c \
-	odds.c one.c save.c subs.c table.c text.c message.c
+	odds.c one.c save.c subs.c table.c text.c version.c
 BOBJS=	allow.o board.o check.o extra.o fancy.o init.o main.o move.o \
-	odds.o one.o save.o subs.o table.o text.o message.o
+	odds.o one.o save.o subs.o table.o text.o version.o
 TSRCS=	allow.c board.c check.c data.c fancy.c init.c odds.c one.c save.c \
 	subs.c table.c teach.c ttext1.c ttext2.c tutor.c
 TOBJS=	allow.o board.o check.o data.o fancy.o init.o odds.o one.o save.o \
@@ -29,10 +29,6 @@ backgammon: ${BOBJS} ${LIBC}
 # Backgammon rules and tutorial
 teachgammon: ${TOBJS} ${LIBC}
 	${CC} -o $@ ${TOBJS} ${LIBS}
-
-# Update message.
-message.c: FRC
-	-[ ! -w message.c ] || ex - message.c < Mesgfix
 
 # Documentation
 backgammon.doc: backgammon.src
@@ -99,6 +95,6 @@ ttext2.o: ttext2.c back.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 ttext2.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 tutor.o: tutor.c back.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
 tutor.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h tutor.h
-message.o: message.c
+version.o: version.c
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
