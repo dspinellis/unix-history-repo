@@ -10,7 +10,7 @@
 # include <string.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)mime.c	8.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)mime.c	8.26 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -358,11 +358,13 @@ mime8to7x(mci, header, e, boundaries, flags)
 
 	/*
 	**  Message/* types -- recurse exactly once.
+	**
+	**	Class 'm' is predefined to have "rfc822" only.
 	*/
 
 	if (strcasecmp(type, "message") == 0)
 	{
-		if (strcasecmp(subtype, "rfc822") != 0)
+		if (!wordinclass(subtype, 'm'))
 		{
 			flags |= M87F_NO8BIT;
 		}

@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.131 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.132 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -880,6 +880,9 @@ main(argc, argv, envp)
 
 	/* MIME Content-Types that cannot be transfer encoded */
 	setclass('n', "multipart/signed");
+
+	/* MIME message/* subtypes that can be treated as messages */
+	setclass('m', "rfc822");
 
 	/* MIME Content-Transfer-Encodings that can be encoded */
 	setclass('e', "7bit");
