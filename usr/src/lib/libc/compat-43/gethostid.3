@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gethostid.3	6.2 (Berkeley) %G%
+.\"	@(#)gethostid.3	6.3 (Berkeley) %G%
 .\"
 .TH GETHOSTID 2 ""
 .UC 5
@@ -12,11 +12,11 @@ gethostid, sethostid \- get/set unique identifier of current host
 .nf
 .ft B
 hostid = gethostid()
-int hostid;
+long hostid;
 .PP
 .ft B
 sethostid(hostid)
-int hostid;
+long hostid;
 .fi
 .SH DESCRIPTION
 .I Sethostid
