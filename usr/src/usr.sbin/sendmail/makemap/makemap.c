@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemap.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)makemap.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -75,6 +75,7 @@ main(argc, argv)
 	} dbp;
 	union dbent key, val;
 	char ibuf[BUFSIZE];
+	char fbuf[MAXNAME];
 	extern char *optarg;
 	extern int optind;
 
@@ -118,13 +119,22 @@ main(argc, argv)
 	{
 		typename = argv[0];
 		mapname = argv[1];
+		ext = NULL;
 
 		if (strcmp(typename, "dbm") == 0)
+		{
 			type = T_DBM;
+		}
 		else if (strcmp(typename, "btree") == 0)
+		{
 			type = T_BTREE;
+			ext = ".db";
+		}
 		else if (strcmp(typename, "hash") == 0)
+		{
 			type = T_HASH;
+			ext = ".db";
+		}
 		else
 			type = T_UNKNOWN;
 	}
@@ -150,6 +160,24 @@ main(argc, argv)
 		fprintf(stderr, "%s: Type %s not supported in this version\n",
 			progname, typename);
 		exit(EX_UNAVAILABLE);
+	}
+
+	/*
+	**  Adjust file names.
+	*/
+
+	if (ext != NULL)
+	{
+		int el, fl;
+
+		el = strlen(ext);
+		fl = strlen(mapname);
+		if (fl < el || strcmp(&mapname[fl - el], ext) != 0)
+		{
+			strcpy(fbuf, mapname);
+			strcat(fbuf, ext);
+			mapname = fbuf;
+		}
 	}
 
 	/*
