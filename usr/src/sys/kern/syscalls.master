@@ -1,4 +1,4 @@
-	@(#)syscalls.master	7.41 (Berkeley) %G%
+	@(#)syscalls.master	7.42 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -265,7 +265,7 @@
 199	STD	5 __lseek
 200	STD	4 __truncate
 201	STD	4 __ftruncate
-202	STD	6 sysctl
+202	STD	6 __sysctl
 203	UNIMPL	0 nosys
 204	UNIMPL	0 nosys
 205	UNIMPL	0 nosys
