@@ -1,4 +1,4 @@
-/*	@(#)wait3.s	4.1	(Berkeley)	%G%	*/
+/*	@(#)wait3.s	4.2	(Berkeley)	%G%	*/
 
 /*
  * C library -- wait3
@@ -15,7 +15,7 @@
 
 #define	SYS_wait3	SYS_wait
 
-ENTRY(wait3):
+ENTRY(wait3)
 	movl	8(ap),r0	/* make it easy for system to get */
 	movl	12(ap),r1	/* these extra arguments */
 	bispsw	$0xf		/* flags wait3() */
