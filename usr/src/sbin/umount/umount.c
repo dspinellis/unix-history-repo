@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)umount.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)umount.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -22,8 +22,6 @@ static char sccsid[] = "@(#)umount.c	5.7 (Berkeley) %G%";
 #include <fstab.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
-#include <sys/vnode.h>
-#include <ufs/inode.h>
 #ifdef NFS
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -158,10 +156,10 @@ umountfs(name)
 	if (stat(name, &stbuf) < 0) {
 		if ((mntpt = getmntinfo(name, MNTON)) == 0)
 			return (0);
-	} else if ((stbuf.st_mode & IFMT) == IFBLK) {
+	} else if ((stbuf.st_mode & S_IFMT) == S_IFBLK) {
 		if ((mntpt = getmntinfo(name, MNTON)) == 0)
 			return (0);
-	} else if ((stbuf.st_mode & IFMT) == IFDIR) {
+	} else if ((stbuf.st_mode & S_IFMT) == S_IFDIR) {
 		mntpt = name;
 		if ((name = getmntinfo(mntpt, MNTFROM)) == 0)
 			return (0);
