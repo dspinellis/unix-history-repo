@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rk.c	6.8 (Berkeley) %G%
+ *	@(#)rk.c	6.9 (Berkeley) %G%
  */
 
 #include "rk.h"
@@ -588,7 +588,7 @@ rkecc(ui, flag)
 
 		npf--;
 		reg--;
-		log(KERN_RECOV, "rk%d%c: soft ecc sn%d\n", rkunit(bp->b_dev),
+		log(LOG_WARNING, "rk%d%c: soft ecc sn%d\n", rkunit(bp->b_dev),
 		    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 		mask = rk->rkec2;
 		i = rk->rkec1 - 1;		/* -1 makes 0 origin */
