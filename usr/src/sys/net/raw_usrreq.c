@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)raw_usrreq.c	7.7 (Berkeley) %G%
+ *	@(#)raw_usrreq.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -122,10 +122,10 @@ raw_ctlinput(cmd, arg)
 }
 
 /*ARGSUSED*/
-raw_usrreq(so, req, m, nam, rights, control)
+raw_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights, *control;
+	struct mbuf *m, *nam, *control;
 {
 	register struct rawcb *rp = sotorawcb(so);
 	register int error = 0;
@@ -133,7 +133,7 @@ raw_usrreq(so, req, m, nam, rights, control)
 
 	if (req == PRU_CONTROL)
 		return (EOPNOTSUPP);
-	if (rights && rights->m_len) {
+	if (control && control->m_len) {
 		error = EOPNOTSUPP;
 		goto release;
 	}
