@@ -1,4 +1,6 @@
-static char *sccsid = "@(#)hostname.c	1.3 1.3 83/03/30"; 
+#ifndef lint
+static char *sccsid = "@(#)hostname.c	1.4 (Berkeley) %G%"; 
+#endif
 /*
  * hostname -- get (or set hostname)
  */

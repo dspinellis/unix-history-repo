@@ -1,4 +1,6 @@
-/*	old.bin.grep.c	4.4	83/06/30	*/
+#ifndef lint
+static char sccsid[] = "@(#)old.bin.grep.c	4.5 (Berkeley) %G%";
+#endif
 
 /*
  * grep -- print lines matching (or not matching) a pattern

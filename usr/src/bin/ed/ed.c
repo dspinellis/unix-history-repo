@@ -1,4 +1,6 @@
-/*	ed.c	4.2	82/12/24	*/
+#ifndef lint
+static char sccsid[] = "@(#)ed.c	4.3 (Berkeley) %G%";
+#endif
 
 /*
  * Editor
