@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.14 83/11/29";
+static	char *sccsid = "@(#)cmd1.c	3.15 83/11/29";
 #endif
 
 #include "defs.h"
@@ -171,14 +171,9 @@ char *label;
 		setselwin(w);
 	else
 		wwsetcurwin(cmdwin);
-	switch (wwfork(w)) {
-	case -1:
+	if (wwspawn(w, shell, shellname, (char *)0) < 0) {
 		doclose(w);
 		return 0;
-	case 0:
-		execl(shell, shellname, 0);
-		perror(shell);
-		exit(1);
 	}
 	return w;
 }

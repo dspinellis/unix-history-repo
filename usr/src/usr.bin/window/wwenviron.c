@@ -1,10 +1,8 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwenviron.c	3.3 83/08/31";
+static	char *sccsid = "@(#)wwenviron.c	3.4 83/11/29";
 #endif
 
 #include "ww.h"
-
-extern char **environ;
 
 /*
  * Set up the environment of this process to run in window 'wp'.
@@ -13,11 +11,9 @@ extern char **environ;
 wwenviron(wp)
 register struct ww *wp;
 {
+	static char **termcap = 0;
+	static char *tbuf;
 	register i;
-	register char **p, **q;
-	char **termcap = 0;
-	char **env;
-	char *tbuf;
 
 	(void) dup2(wp->ww_tty, 0);
 	(void) dup2(wp->ww_tty, 1);
@@ -40,23 +36,34 @@ register struct ww *wp;
 		return;
 	}
 
-	for (i = 0, p = environ; *p; p++, i++)
-		;
-	if ((env = (char **)malloc((unsigned)(i + 3) * sizeof (char *))) == 0)
-		return;
-	if ((tbuf = malloc((unsigned) 1024)) == 0)
-		return;
-	for (p = environ, q = env; *p; p++, q++) {
-		if (strncmp(*p, "TERM=", 5) == 0)
-			*q = WWT_TERM;
-		else if (strncmp(*p, "TERMCAP=", 8) == 0)
-			termcap = q;
-		else
-			*q = *p;
+	/*
+	 * Do this only once if vfork().
+	 */
+	if (termcap == 0) {
+		extern char **environ;
+		static char **env;
+		register char **p, **q;
+
+		for (i = 0, p = environ; *p; p++, i++)
+			;
+		env = (char **)malloc((unsigned)(i + 3) * sizeof (char *));
+		if (env == 0)
+			return;
+		if ((tbuf = malloc((unsigned) 1024)) == 0)
+			return;
+		for (p = environ, q = env; *p; p++, q++) {
+			if (strncmp(*p, "TERM=", 5) == 0)
+				*q = WWT_TERM;
+			else if (strncmp(*p, "TERMCAP=", 8) == 0)
+				termcap = q;
+			else
+				*q = *p;
+		}
+		if (termcap == 0)
+			termcap = q++;
+		*q = 0;
+		environ = env;
 	}
-	if (termcap == 0)
-		termcap = q++;
-	*q = 0;
 	*termcap = sprintf(tbuf, "TERMCAP=%sco#%d:li#%d:",
 		WWT_TERMCAP, wp->ww_w.nc, wp->ww_w.nr);
 	if (wwavailmodes & WWM_REV)
@@ -64,5 +71,4 @@ register struct ww *wp;
 	if (wwavailmodes & WWM_UL)
 		(void) strcat(tbuf, WWT_UL);
 	(void) strcat(tbuf, wwkeys);
-	environ = env;
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwspawn.c	3.4 83/10/19";
+static	char *sccsid = "@(#)wwspawn.c	3.5 83/11/29";
 #endif
 
 #include "ww.h"
@@ -7,21 +7,28 @@ static	char *sccsid = "@(#)wwspawn.c	3.4 83/10/19";
 extern int _wwdtablesize;
 extern char _wwtermcap[];
 
-wwfork(wp)
+/*VARARGS3*/
+wwspawn(wp, file, argv0)
 register struct ww *wp;
+char *file, *argv0;
 {
-	switch (wp->ww_pid = fork()) {
+	int pid;
+
+	switch (pid = vfork()) {
 	case -1:
 		wwerrno = WWE_SYS;
 		return -1;
 	case 0:
 		wp->ww_state = WW_INCHILD;
 		wwenviron(wp);
-		return 0;
+		execv(file, &argv0);
+		perror(file);
+		exit(1);
 	default:
+		wp->ww_pid = pid;
 		wp->ww_state = WW_HASPROC;
 		close(wp->ww_tty);
 		wp->ww_tty = -1;
-		return wp->ww_pid;
+		return pid;
 	}
 }
