@@ -5,7 +5,7 @@
 .\" Chris Torek.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)printf.3	6.11 (Berkeley) %G%
+.\"     @(#)printf.3	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt PRINTF 3
@@ -32,7 +32,7 @@
 .Fn snprintf "char *str" "size_t size" "const char *format" ...
 .\" .Ft int
 .\" .Fn smprintf "const char *format" ...
-.Fd #include <varargs.h>
+.Fd #include <stdarg.h>
 .Ft int
 .Fn vprintf "const char *format" "va_list ap"
 .Ft int
@@ -78,7 +78,7 @@ These functions write the output under the control of a
 .Fa format
 string that specifies how subsequent arguments
 (or arguments accessed via the variable-length argument facilities of
-.Xr varargs 3 )
+.Xr stdarg 3 )
 are converted for output.
 .\" Except for
 .\" .I smprintf
@@ -502,7 +502,7 @@ and
 are pointers to strings:
 .Bd -literal -offset indent
 #include <stdio.h>
-fprintf(stdout,"%s, %s %d, %.2d:%.2d0",
+fprintf(stdout, "%s, %s %d, %.2d:%.2d\en",
 	weekday, month, day, hour, min);
 .Ed
 .Pp
@@ -511,23 +511,22 @@ to five decimal places:
 .Bd -literal -offset indent
 #include <math.h>
 #include <stdio.h>
-fprintf(stdout,"pi = %.5f0", 4 * atan(1.0));
+fprintf(stdout, "pi = %.5f\en", 4 * atan(1.0));
 .Ed
 .Pp
 To allocate a 128 byte string and print into it:
 .Bd -literal -offset indent
 #include <stdio.h>
-#include <varargs.h>
-char *newfmt(va_alist)
-		va_dcl
+#include <stdlib.h>
+#include <stdarg.h>
+char *newfmt(const char *fmt, ...)
 {
-		char *p, *malloc(), *fmt;
+		char *p;
 		va_list ap;
 		if ((p = malloc(128)) == NULL)
 			return (NULL);
-		va_start(ap);
-		fmt = va_arg(ap, char *);
-		(void) vsprintf(p, fmt, ap);
+		va_start(ap, fmt);
+		(void) vsnprintf(p, 128, fmt, ap);
 		va_end(ap);
 		return (p);
 }
@@ -536,19 +535,23 @@ char *newfmt(va_alist)
 .Xr printf 1 ,
 .Xr scanf 3
 .Sh STANDARDS
-The functions
+The
 .Fn fprintf ,
 .Fn printf ,
 .Fn sprintf ,
-.Fn snprintf ,
 .Fn vprintf ,
 .Fn vfprintf ,
-.Fn vsprintf ,
 and
-.Fn vsnprintf
+.Fn vsprintf
 functions
 conform to
 .St -ansiC .
+.Sh HISTORY
+The functions
+.Fn snprintf
+and
+.Fn vsnprintf
+are new to this release.
 .Sh BUGS
 The conversion formats
 .Cm %D ,
