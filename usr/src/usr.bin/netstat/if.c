@@ -6,12 +6,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)if.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)if.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/protosw.h>
 #include <sys/socket.h>
+
 #include <net/if.h>
 #include <net/if_dl.h>
 #include <netinet/in.h>
@@ -20,19 +21,20 @@ static char sccsid[] = "@(#)if.c	8.1 (Berkeley) %G%";
 #include <netns/ns_if.h>
 #include <netiso/iso.h>
 #include <netiso/iso_var.h>
-
 #include <arpa/inet.h>
+
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <signal.h>
 #include <unistd.h>
+
 #include "netstat.h"
 
 #define	YES	1
 #define	NO	0
 
-static void sidewaysintpr __P((unsigned, u_long));
-static void catchalarm __P(());
+static void sidewaysintpr __P((u_int, u_long));
+static void catchalarm __P((int));
 
 /*
  * Print a description of the network interfaces.
@@ -83,12 +85,12 @@ intpr(interval, ifnetaddr)
 			    kread((u_long)ifnet.if_name, name, 16))
 				return;
 			name[15] = '\0';
-			ifnetaddr = (u_long) ifnet.if_next;
-			if (interface != 0 &&
-			    (strcmp(name, interface) != 0 || unit != ifnet.if_unit))
+			ifnetaddr = (u_long)ifnet.if_next;
+			if (interface != 0 && (strcmp(name, interface) != 0 ||
+			    unit != ifnet.if_unit))
 				continue;
 			cp = index(name, '\0');
-			*cp++ = ifnet.if_unit + '0';
+			cp += sprintf(cp, "%d", ifnet.if_unit);
 			if ((ifnet.if_flags&IFF_UP) == 0)
 				*cp++ = '*';
 			*cp = '\0';
@@ -340,7 +342,8 @@ loop:
  * Sets a flag to not wait for the alarm.
  */
 static void
-catchalarm()
+catchalarm(signo)
+	int signo;
 {
 	signalled = YES;
 }
