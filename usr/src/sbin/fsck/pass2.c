@@ -6,15 +6,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass2.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass2.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/time.h>
 #include <ufs/ufs/dinode.h>
-#define KERNEL
 #include <ufs/ufs/dir.h>
-#undef KERNEL
 #include <ufs/ffs/fs.h>
 #include <stdlib.h>
 #include <string.h>
@@ -150,7 +148,7 @@ pass2()
 			continue;
 		}
 		fileerror(inp->i_parent, inp->i_number,
-			"BAD INODE NUMBER FOR '..'");
+		    "BAD INODE NUMBER FOR '..'");
 		if (reply("FIX") == 0)
 			continue;
 		lncntp[inp->i_dotdot]++;
@@ -176,6 +174,13 @@ pass2check(idesc)
 	char namebuf[MAXPATHLEN + 1];
 	char pathbuf[MAXPATHLEN + 1];
 
+	/*
+	 * If converting, set directory entry type.
+	 */
+	if (doinglevel2 && dirp->d_ino > 0 && dirp->d_ino < maxino) {
+		dirp->d_type = typemap[dirp->d_ino];
+		ret |= ALTERED;
+	}
 	/* 
 	 * check for "."
 	 */
@@ -188,13 +193,21 @@ pass2check(idesc)
 			if (reply("FIX") == 1)
 				ret |= ALTERED;
 		}
+		if (newinofmt && dirp->d_type != DT_DIR) {
+			direrror(idesc->id_number, "BAD TYPE VALUE FOR '.'");
+			dirp->d_type = DT_DIR;
+			if (reply("FIX") == 1)
+				ret |= ALTERED;
+		}
 		goto chk1;
 	}
 	direrror(idesc->id_number, "MISSING '.'");
 	proto.d_ino = idesc->id_number;
+	if (newinofmt)
+		proto.d_type = DT_DIR;
 	proto.d_namlen = 1;
 	(void)strcpy(proto.d_name, ".");
-	entrysize = DIRSIZ(&proto);
+	entrysize = DIRSIZ(0, &proto);
 	if (dirp->d_ino != 0 && strcmp(dirp->d_name, "..") != 0) {
 		pfatal("CANNOT FIX, FIRST ENTRY IN DIRECTORY CONTAINS %s\n",
 			dirp->d_name);
@@ -222,11 +235,13 @@ chk1:
 		goto chk2;
 	inp = getinoinfo(idesc->id_number);
 	proto.d_ino = inp->i_parent;
+	if (newinofmt)
+		proto.d_type = DT_DIR;
 	proto.d_namlen = 2;
 	(void)strcpy(proto.d_name, "..");
-	entrysize = DIRSIZ(&proto);
+	entrysize = DIRSIZ(0, &proto);
 	if (idesc->id_entryno == 0) {
-		n = DIRSIZ(dirp);
+		n = DIRSIZ(0, dirp);
 		if (dirp->d_reclen < n + entrysize)
 			goto chk2;
 		proto.d_reclen = dirp->d_reclen - n;
@@ -239,6 +254,12 @@ chk1:
 	}
 	if (dirp->d_ino != 0 && strcmp(dirp->d_name, "..") == 0) {
 		inp->i_dotdot = dirp->d_ino;
+		if (newinofmt && dirp->d_type != DT_DIR) {
+			direrror(idesc->id_number, "BAD TYPE VALUE FOR '..'");
+			dirp->d_type = DT_DIR;
+			if (reply("FIX") == 1)
+				ret |= ALTERED;
+		}
 		goto chk2;
 	}
 	if (dirp->d_ino != 0 && strcmp(dirp->d_name, ".") != 0) {
@@ -342,6 +363,13 @@ again:
 			/* fall through */
 
 		case FSTATE:
+			if (newinofmt && dirp->d_type != typemap[dirp->d_ino]) {
+				fileerror(idesc->id_number, dirp->d_ino,
+				    "BAD TYPE VALUE");
+				dirp->d_type = typemap[dirp->d_ino];
+				if (reply("FIX") == 1)
+					ret |= ALTERED;
+			}
 			lncntp[dirp->d_ino]--;
 			break;
 
