@@ -9,13 +9,13 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	7.4 (Berkeley) %G%
+#	@(#)Makefile	7.5 (Berkeley) %G%
 #
 CFLAGS=	-DLOCORE
 
 # source files that live in the current directory
-SRCS=	hkboot.c hpboot.c htboot.c mtboot.c raboot.c rlboot.c upboot.c \
-	utboot.c tmboot.c tsboot.c tuboot.c httoggle.s mttoggle.s \
+SRCS=	hkboot.c hpboot.c htboot.c mtboot.c raboot.c rdboot.c rlboot.c \
+	upboot.c utboot.c tmboot.c tsboot.c tuboot.c httoggle.s mttoggle.s \
 	tmtoggle.s tstoggle.s uttoggle.s
 
 # boot blocks that are preprocessed, then assembled
