@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: srt0.c 1.8 88/12/03$
+ * from: Utah $Hdr: srt0.c 1.12 91/04/25$
  *
- *	@(#)srt0.c	7.3 (Berkeley) %G%
+ *	@(#)srt0.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -26,7 +26,7 @@
 	.globl	_bootdev
 	.globl	_firstopen
 	.globl	__rtt
-	.globl	_lowram,_howto,_devtype,_internalhpib
+	.globl	_lowram,_howto,_devtype,_internalhpib,_machineid
 
 	STACK =    0xfffff000	| below the ROM page
 	BOOTTYPE = 0xfffffdc0
@@ -38,6 +38,7 @@
 	BUSERR =   0xfffffffc
 	MAXADDR =  0xfffff000
 	NBPG =     4096
+	MMUCMD =   0x005f400c	| MMU command/status register
 
 	.data
 _bootdev:
@@ -47,6 +48,8 @@ _devtype:
 _howto:
 	.long	0
 _lowram:
+	.long	0
+_machineid:
 	.long	0
 
 	.text
@@ -60,9 +63,59 @@ vecloop:
 	dbf	d0,vecloop	| go til done
 	movl	#NMIRESET,a0	| NMI keyboard reset addr
 	movl	#nmi,a0@	| catch in reset routine
+/*
+ * Determine our CPU type and look for internal HP-IB
+ * (really only care about detecting 320 (no DIO-II) right now).
+ */
+	lea	_machineid,a0
+	movl	#0x808,d0
+	movc	d0,cacr		| clear and disable on-chip cache(s)
+	movl	#0x200,d0	| data freeze bit
+	movc	d0,cacr		|   only exists on 68030
+	movc	cacr,d0		| read it back
+	tstl	d0		| zero?
+	jeq	is68020		| yes, we have 68020
+	movl	#0x808,d0
+	movc	d0,cacr		| clear data freeze bit again
+	movl	#0x80,MMUCMD	| set magic cookie
+	movl	MMUCMD,d0	| read it back
+	btst	#7,d0		| cookie still on?
+	jeq	not370		| no, 360 or 375
+	movl	#4,a0@		| consider a 370 for now
+	movl	#0,MMUCMD	| clear magic cookie
+	movl	MMUCMD,d0	| read it back
+	btst	#7,d0		| still on?
+	jeq	ihpibcheck	| no, a 370
+	movl	#5,a0@		| yes, must be a 340
+	jra	ihpibcheck
+not370:
+	movl	#3,a0@		| type is at least a 360
+	movl	#0,MMUCMD	| clear magic cookie2
+	movl	MMUCMD,d0	| read it back
+	btst	#16,d0		| still on?
+	jeq	ihpibcheck	| no, a 360
+	movl	#6,a0@		| yes, must be a 345/375/400
+	jra	ihpibcheck
+is68020:
+	movl	#1,a0@		| consider a 330 for now
+	movl	#1,MMUCMD	| a 68020, write HP MMU location
+	movl	MMUCMD,d0	| read it back
+	btst	#0,d0		| zero?
+	jeq	ihpibcheck	| yes, a 330
+	movl	#0,a0@		| no, consider a 320 for now
+	movl	#0x80,MMUCMD	| set magic cookie
+	movl	MMUCMD,d0	| read it back
+	btst	#7,d0		| cookie still on?
+	jeq	ihpibcheck	| no, just a 320
+	movl	#2,a0@		| yes, a 350
+ihpibcheck:
+	movl	#0,MMUCMD	| make sure MMU is off
 	btst	#5,SYSFLAG	| do we have an internal HP-IB?
 	jeq	boottype	| yes, continue
 	clrl	_internalhpib	| no, clear the internal address
+/*
+ * If this is a reboot, extract howto/devtype stored by kernel
+ */
 boottype:
 	cmpw	#12,BOOTTYPE	| is this a reboot (REQ_REBOOT)?
 	jne	notreboot	| no, skip
