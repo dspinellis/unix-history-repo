@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "tip.h"
@@ -415,6 +415,54 @@ timeout()
 {
 	signal(SIGALRM, timeout);
 	timedout = 1;
+}
+
+/*
+ * Stolen from consh() -- puts a remote file on the output of a local command.
+ *	Identical to consh() except for where stdout goes.
+ */
+pipeout(c)
+{
+	char buf[256];
+	int cpid, status, p;
+	time_t start;
+
+	putchar(c);
+	if (prompt("Local command? ", buf))
+		return;
+	kill(pid, SIGIOT);	/* put TIPOUT into a wait state */
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	ioctl(0, TIOCSETC, &defchars);
+	read(repdes[0], (char *)&ccc, 1);
+	/*
+	 * Set up file descriptors in the child and
+	 *  let it go...
+	 */
+	if ((cpid = fork()) < 0)
+		printf("can't fork!\r\n");
+	else if (cpid) {
+		start = time(0);
+		while ((p = wait(&status)) > 0 && p != cpid)
+			;
+	} else {
+		register int i;
+
+		dup2(FD, 1);
+		for (i = 3; i < 20; i++)
+			close(i);
+		signal(SIGINT, SIG_DFL);
+		signal(SIGQUIT, SIG_DFL);
+		execute(buf);
+		printf("can't find `%s'\r\n", buf);
+		exit(0);
+	}
+	if (boolean(value(VERBOSE)))
+		prtime("away for ", time(0)-start);
+	write(fildes[1], (char *)&ccc, 1);
+	ioctl(0, TIOCSETC, &tchars);
+	signal(SIGINT, SIG_DFL);
+	signal(SIGQUIT, SIG_DFL);
 }
 
 #ifdef CONNECT
