@@ -1,4 +1,4 @@
-.\"	@(#)mktemp.3	6.1 (Berkeley) %G%
+.\"	@(#)mktemp.3	6.2 (Berkeley) %G%
 .\"
 .TH MKTEMP 3  ""
 .AT 3
@@ -14,18 +14,24 @@ mktemp \- make a unique file name
 .fi
 .SH DESCRIPTION
 .I Mktemp
-replaces
+creates a unique file name, typically in a temporary filesystem,
+by replacing
 .I template
-by a unique file name, and returns the
+with a unique file name, and returns the
 address of the template.
-The template should look like a file name with six trailing
-X's, which will be replaced with the
+The template should contain a file name with six trailing
+X's, which are replaced with the
 current process id and a unique letter.
 .I Mkstemp
-makes the same replacement to the template but returns an open file descriptor
-for the template file suitable for reading or writing.
+makes the same replacement to the template
+but returns a file descriptor
+for the template file open for reading and writing.
 .I Mkstemp
-avoids the potential race between the creation of the unique
-file name and its being opened for use.
+avoids the race between testing whether the
+file exists and opening it for use.
 .SH "SEE ALSO"
-getpid(2)
+getpid(2), open(2)
+.SH DIAGNOSTICS
+.I Mkstemp
+returns an open file descriptor upon success.
+It returns -1 if no suitable file could be created.
