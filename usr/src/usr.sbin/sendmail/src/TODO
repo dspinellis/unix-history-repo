@@ -1,6 +1,4 @@
-(Version 6.5 of %G%)
-
-RFC 931 validation.
+(Version 6.6 of %G%)
 
 Database (keyed lookup) locking.
 
