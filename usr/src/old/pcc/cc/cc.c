@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)cc.c 4.6 %G%";
+static	char sccsid[] = "@(#)cc.c 4.7 %G%";
 /*
  * cc - front end for C compiler
  */
@@ -6,7 +6,7 @@ static	char sccsid[] = "@(#)cc.c 4.6 %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
-#include <dir.h>
+#include <sys/dir.h>
 
 char	*cpp = "/lib/cpp";
 char	*ccom = "/lib/ccom";

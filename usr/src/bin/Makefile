@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.12	(Berkeley)	%G%
+#	@(#)Makefile	4.13	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -82,9 +82,10 @@ ps:
 # DO NOT DELETE THIS LINE -- make depend uses it
 
 ar: ar.c
-ar: /usr/include/stdio.h
 ar: /usr/include/sys/types.h
 ar: /usr/include/sys/stat.h
+ar: /usr/include/sys/time.h
+ar: /usr/include/stdio.h
 ar: /usr/include/ar.h
 ar: /usr/include/signal.h
 cat: cat.c
@@ -96,7 +97,7 @@ cc: /usr/include/sys/param.h
 cc: /usr/include/stdio.h
 cc: /usr/include/ctype.h
 cc: /usr/include/signal.h
-cc: /usr/include/dir.h
+cc: /usr/include/sys/dir.h
 chgrp: chgrp.c
 chgrp: /usr/include/stdio.h
 chgrp: /usr/include/ctype.h
@@ -113,22 +114,23 @@ cmp: /usr/include/stdio.h
 cmp: /usr/include/ctype.h
 date: date.c
 date: /usr/include/stdio.h
-date: /usr/include/time.h
+date: /usr/include/sys/time.h
 date: /usr/include/utmp.h
 dd: dd.c
 dd: /usr/include/stdio.h
 dd: /usr/include/signal.h
 df: df.c
-df: /usr/include/stdio.h
-df: /usr/include/fstab.h
 df: /usr/include/sys/param.h
 df: /usr/include/sys/fs.h
 df: /usr/include/sys/stat.h
+df: /usr/include/stdio.h
+df: /usr/include/fstab.h
+df: /usr/include/mtab.h
 du: du.c
 du: /usr/include/stdio.h
 du: /usr/include/sys/param.h
 du: /usr/include/sys/stat.h
-du: /usr/include/dir.h
+du: /usr/include/sys/dir.h
 echo: echo.c
 echo: /usr/include/stdio.h
 ed: ed.c
@@ -154,14 +156,14 @@ ld: /usr/include/ctype.h
 ld: /usr/include/ar.h
 ld: /usr/include/a.out.h
 ld: /usr/include/ranlib.h
-ld: /usr/include/stat.h
+ld: /usr/include/sys/stat.h
 ln: ln.c
 ln: /usr/include/stdio.h
 ln: /usr/include/sys/types.h
 ln: /usr/include/sys/stat.h
 ln: /usr/include/errno.h
 login: login.c
-login: /usr/include/sys/types.h
+login: /usr/include/sys/param.h
 login: /usr/include/sys/quota.h
 login: /usr/include/sys/stat.h
 login: /usr/include/sys/time.h
@@ -176,7 +178,7 @@ login: /usr/include/errno.h
 ls: ls.c
 ls: /usr/include/sys/param.h
 ls: /usr/include/sys/stat.h
-ls: /usr/include/dir.h
+ls: /usr/include/sys/dir.h
 ls: /usr/include/stdio.h
 ls: /usr/include/sgtty.h
 ls: /usr/include/pwd.h
@@ -208,6 +210,8 @@ mt: /usr/include/vaxmba/htreg.h
 mt: /usr/include/vaxuba/utreg.h
 mt: /usr/include/vaxuba/tmreg.h
 mt: /usr/include/vaxuba/tsreg.h
+mt: /usr/include/sundev/tmreg.h
+mt: /usr/include/sundev/arreg.h
 nice: nice.c
 nice: /usr/include/stdio.h
 nice: /usr/include/sys/time.h
@@ -219,7 +223,7 @@ nm: /usr/include/stdio.h
 nm: /usr/include/ctype.h
 nm: /usr/include/a.out.h
 nm: /usr/include/stab.h
-nm: /usr/include/stat.h
+nm: /usr/include/sys/stat.h
 od: od.c
 od: /usr/include/stdio.h
 od: /usr/include/sys/types.h
@@ -243,7 +247,7 @@ rm: rm.c
 rm: /usr/include/stdio.h
 rm: /usr/include/sys/param.h
 rm: /usr/include/sys/stat.h
-rm: /usr/include/dir.h
+rm: /usr/include/sys/dir.h
 rmail: rmail.c
 rmail: /usr/include/stdio.h
 rmail: /usr/include/sysexits.h
@@ -261,6 +265,9 @@ stty: /usr/include/sgtty.h
 su: su.c
 su: /usr/include/stdio.h
 su: /usr/include/pwd.h
+su: /usr/include/sys/types.h
+su: /usr/include/sys/time.h
+su: /usr/include/sys/resource.h
 sync: sync.c
 tar: tar.c
 tar: /usr/include/stdio.h
@@ -269,6 +276,7 @@ tar: /usr/include/sys/stat.h
 tar: /usr/include/sys/dir.h
 tar: /usr/include/sys/ioctl.h
 tar: /usr/include/sys/mtio.h
+tar: /usr/include/sys/time.h
 tar: /usr/include/signal.h
 tar: /usr/include/errno.h
 tee: tee.c
@@ -280,10 +288,16 @@ test: test.c
 test: /usr/include/stdio.h
 test: /usr/include/sys/types.h
 test: /usr/include/sys/stat.h
+time: time.c
+time: /usr/include/stdio.h
+time: /usr/include/signal.h
+time: /usr/include/sys/types.h
+time: /usr/include/sys/time.h
+time: /usr/include/sys/resource.h
 wall: wall.c
 wall: /usr/include/stdio.h
 wall: /usr/include/utmp.h
-wall: /usr/include/time.h
+wall: /usr/include/sys/time.h
 wall: /usr/include/signal.h
 who: who.c
 who: /usr/include/stdio.h
@@ -296,7 +310,7 @@ write: /usr/include/sys/types.h
 write: /usr/include/sys/stat.h
 write: /usr/include/signal.h
 write: /usr/include/utmp.h
-write: /usr/include/time.h
+write: /usr/include/sys/time.h
 ps: ps.c
 ps: /usr/include/stdio.h
 ps: /usr/include/ctype.h
@@ -313,12 +327,3 @@ ps: /usr/include/sys/text.h
 ps: /usr/include/sys/stat.h
 ps: /usr/include/sys/mbuf.h
 ps: /usr/include/math.h
-time: time.c
-time: /usr/include/stdio.h
-time: /usr/include/signal.h
-time: /usr/include/sys/types.h
-time: /usr/include/time.h
-time: /usr/include/resource.h
-# DEPENDENCIES MUST END AT END OF FILE
-# IF YOU PUT STUFF HERE IT WILL GO AWAY
-# see make depend above
