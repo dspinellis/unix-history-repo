@@ -1,0 +1,555 @@
+Sun Jan  6 18:42:23 1991  Michael I Bushnell  (mib at geech.ai.mit.edu)
+
+	* Version 1.15 released.
+
+	* version.c: Updated from 1.15 alpha to 1.15
+
+	* context.c (print_context_number_range,
+	print_unidiff_number_range): Don't print N,M when N=M, print
+	just N instead.
+	
+	* README: Updated for version 1.15.
+	Makefile: Updated for version 1.15.
+
+	* diff3.c (main): Don't get confused if one of the arguments
+	is a directory.
+
+	* diff.c (compare_files): Don't get confused if comparing
+	standard input to a directory; print error instead.
+
+	* analyze.c (diff_2_files), context.c (print_context_header,
+	print_context_script), diff.c (main), diff.h (enum
+	output_style): Tread unidiff as an output style in its own
+	right.  This also generates an error when both -u and -c are
+	given.
+
+	* diff.c (main): Better error messages when regexps are bad.
+
+	* diff.c (compare_files): Don't assume stdin is opened.
+
+	* diff3.c (read_diff): Don't assume things about the order of
+	descriptor assignment and closes.
+
+	* util.c (setup_output): Don't assume things about the order
+	of descriptor assignment and closes. 
+
+	* diff.c (compare_files): Set a flag so that closes don't
+	happen more than once.
+
+	* diff.c (main): Don't just flush stdout, do a close.  That
+	way on broken systems we can still get errors. 
+
+Mon Dec 24 16:24:17 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* diff.c (usage): Use = for args of long options.
+
+Mon Dec 17 18:19:20 1990  Michael I Bushnell  (mib at geech.ai.mit.edu)
+
+	* context.c (print_context_label): Labels were interchanged badly.
+
+	* context.c (pr_unidiff_hunk): Changes to deal with files
+	ending in incomplete lines.
+	* util.c (print_1_line): Other half of the changes.
+
+Mon Dec  3 14:23:55 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* diff.c (longopts, usage): unidiff => unified.
+
+Wed Nov  7 17:13:08 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* analyze.c (diff_2_files): No warnings about newlines for -D.
+
+	* diff.c (pr_unidiff_hunk): Remove ref to output_patch_flag.
+
+Tue Oct 23 23:19:18 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* diff.c (compare_files): For -D, compare even args are same file.
+	* analyze.c (diff_2_files): Likewise.
+	Also, output even if files have no differences.
+
+	* analyze.c (diff_2_files): Print missing newline messages last.
+	Return 2 if a newline is missing.
+	Print them even if files end with identical text.
+
+Mon Oct 22 19:40:09 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* diff.c (usage): Return 2.
+
+Wed Oct 10 20:54:04 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* diff.c (longopts): Add +new-files.
+
+Sun Sep 23 22:49:29 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* context.c (print_context_script): Handle unidiff_flag.
+	(print_context_header): Likewise.
+	(print_unidiff_number_range, pr_unidiff_hunk): New functions.
+	* diff.c (longopts): Add element for +unidiff.
+	(main): Handle +unidiff and -u.
+	(usage): Mention them.
+
+Wed Sep  5 16:33:22 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* io.c (find_and_hash_each_line): Deal with missing final newline
+	after buffering necessary context lines.
+
+Sat Sep  1 16:32:32 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* io.c (find_identical_ends): ROBUST_OUTPUT_FORMAT test was backward.
+
+Thu Aug 23 17:17:20 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* diff3.c (WIFEXITED): Undef it if WEXITSTATUS is not defined.
+	* context.c (find_function): Don't try to return values.
+
+Wed Aug 22 11:54:39 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* diff.h (O_RDONLY): Define if not defined.
+
+Tue Aug 21 13:49:26 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* Handle -L option.
+	* context.c (print_context_label): New function.
+	(print_context_header): Use that.
+	* diff.c (main): Recognize the option.
+	(usage): Updated.
+	* diff.h (file_label): New variable.
+	* diff3.c (main): Recognize -L instead of -t.
+
+	* diff3.c (main): Support -m without other option.
+
+	* diff3.c (WEXITSTATUS, WIFEXITED): Define whenever not defined.
+
+	* diff3.c (bcopy, index, rindex): Delete definitions; not used.
+	(D_LINENUM, D_LINELEN): Likewise.
+	(struct diff_block): lengths includes newlines.
+	(struct diff3_block): Likewise.
+	(always_text, merge): New variables.
+	(read_diff): Return address of end, not size read.  Calls changed.
+	Pass -a to diff if given to diff3.
+	current_chunk_size now an int.  Detect error in `pipe'.
+	Check for incomplete line of output here.
+	(scan_diff_line): Don't make scan_ptr + 2 before knowing it is valid.
+	No need to check validity of diff output here.
+	Include newline in length of line.
+	(main): Compute rev_mapping here.  Handle -a and -m.
+	Error message if excess -t operands.  Error for incompatible options.
+	Error if `-' given more than once.
+	Fix error storing in tag_strings.
+	(output_diff3): REV_MAPPING is now an arg.  Call changed.
+	Change syntax of "missing newline" message.
+	Expect length of line to include newline.
+	(output_diff3_edscript): Return just 0 or 1.
+	REV_MAPPING is now an arg.  Call changed.
+	(output_diff3_merge): New function.
+	(process_diff): Better error message for bad diff format.
+	(fatal, perror_with_exit): Return status 2.
+
+	* analyze.c (diff_2_files): Report missing newline in either
+	or both files, if not robust output style.
+
+	* util.c (setup_output): Detect error from pipe.
+	No need to close stdin.
+
+	* util.c (print_1_line): Change format of missing-newline msg.
+	Change if statements to switch.
+
+	* io.c (slurp): Don't mention differences in final newline if -B.
+
+	* io.c (binary_file_p): Use ISO char set as criterion, not ASCII.
+
+	* io.c (find_identical_ends): Increase value of BEG0 by 1.
+	Other changes in backwards scan to avoid decrementing pointers
+	before start of array, and set LINES properly.
+
+	* diff.h (ROBUST_OUTPUT_STYLE): New macro.
+	* io.c (find_identical_ends, find_and_hash_each_line): Use that macro.
+
+	* diff.h (dup2): Don't define if XENIX.
+
+	* diff.c (main): Check for write error at end.
+
+	* context.c (find_function): Don't return a value.
+	Use argument FILE rather than global files.
+
+	* analyze.c: Add external function declarations.
+	* analyze.c (build_script): Turn off explicit check for final newline.
+
+	* analyze.c (discard_confusing_lines): Make integers unsigned.
+
+Tue Jul 31 21:37:16 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* io.c (find_and_hash_each_line): Correct the criterion 
+	for leaving out the newline from the end of the line.
+
+Tue May 29 21:28:16 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* dir.c (diff_dirs): Free things only if nonzero.
+
+Mon Apr 16 18:31:05 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff.h (NDIR_IN_SYS): New macro controls location of ndir.h.
+
+	* diff3.c (xmalloc, xrealloc): Don't die if size == 0 returns 0.
+
+Sun Mar 25 15:58:42 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* analyze.c (discard_confusing_lines):
+	`many' wasn't being used; use it.
+	Cancelling provisionals near start of run must handle already
+	cancelled provisionals.
+	Cancelling subruns of provisionals was cancelling last nonprovisional.
+
+Sat Mar 24 14:02:51 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* analyze.c (discard_confusing_lines):
+	Threshold for line occurring many times scales by square root
+	of total lines.
+	Within each run, cancel any long subrun of provisionals.
+	Don't update `provisional' while cancelling provisionals.
+	In big outer loop, handle provisional and nonprovisional separately.
+
+Thu Mar 22 16:35:33 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* analyze.c (discard_confusing_lines):
+	The first loops to discard provisionals from ends failed to step.
+	In second such loops, keep discarding all consecutive provisionals.
+	Increase threshold for stopping discarding, and also check for
+	consecutive nondiscardables as separate threshold.
+
+Fri Mar 16 00:33:08 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff3.c (read_diff): Pass -- as first arg to diff.
+
+	* diff3.c: Include wait.h or define equivalent macros.
+	(read_diff): Don't use stdio printing error in the inferior.
+	Remember the pid and wait for it.  Report failing status.
+	Report failure of vfork.
+
+Sun Mar 11 17:10:32 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff3.c (main): Accept -t options and pass to output_diff3_edscript.
+	(usage): Mention -t.
+	(read_diff): Use vfork.
+	(vfork): Don't use it on Sparc.
+
+	* diff.h (vfork): Don't use it on Sparc.
+
+Tue Mar  6 22:37:20 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff3.c (dup2): Don't define on Xenix.
+
+	* Makefile: Comments for Xenix.
+
+Thu Mar  1 17:19:23 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* analyze.c (diff_2_files): `message' requires three args.
+
+Fri Feb 23 10:56:50 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* diff.h, util.c, diff3.c: Change 'void *' to 'VOID *', with
+	VOID defined as void if __STDC__, char if not.
+
+Sun Feb 18 20:31:58 1990  David J. MacKenzie  (djm at albert.ai.mit.edu)
+
+	* Makefile: Add rules for getopt.c, getopt1.c, getopt.h.
+
+	* getopt.c, getopt.h, getopt1.c: New files.
+
+	* main.c (main, usage): Add long options.
+
+	* analyze.c (shift_boundaries): Remove unused var 'j_end'.
+
+Thu Feb  8 02:43:16 1990  Jim Kingdon  (kingdon at pogo.ai.mit.edu)
+
+	* GNUmakefile: include ../Makerules before Makefile.
+
+Fri Feb  2 23:21:38 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* analyze.c (diif_2_files): If -B or -I, don't return 1
+	if all changes were ignored.
+
+Wed Jan 24 20:43:57 1990  Richard Stallman  (rms at albert.ai.mit.edu)
+
+	* diff3.c (fatal): Output to stderr.
+
+Thu Jan 11 00:25:56 1990  David J. MacKenzie  (djm at hobbes.ai.mit.edu)
+
+	* diff.c (usage): Mention -v.
+
+Wed Jan 10 16:06:38 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff3.c (output_diff3_edscript): Return number of overlaps.
+	(main): If have overlaps, exit with status 1.
+
+Sun Dec 24 10:29:20 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* io.c (find_equiv_class): Fix typo that came from changing init of B
+	to an assigment.
+
+	* version.c: New file.
+	* diff.c (main): -v prints version number.
+
+	* io.c (binary_file_p): Null char implies binary file.
+
+Fri Nov 17 23:44:55 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* util.c (print_1_line): Fix off by 1 error.
+
+Thu Nov 16 13:51:10 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* util.c (xcalloc): Function deleted.
+
+	* io.c (slurp): Null-terminate the buffer.
+
+	* io.c (read_files): Delete unused vars.
+
+	* io.c (find_equiv_class): Don't index by N if too low.
+
+	* dir.c (dir_sort): Delete the extra declaration of compare_names.
+
+	* diff.h: Don't declare xcalloc.  Declare some other functions.
+
+	* analyze.c (shift_boundaries):
+	Test for END at end of range before indexing by it.
+	Fix typo `preceeding' in var names.
+
+Sat Nov 11 14:04:16 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff3.c (using_to_diff3_block): Delete unused vars.
+	(make_3way_diff, process_diff_control, read_diff, output_diff3): Likewise.
+
+Mon Nov  6 18:15:50 EST 1989 Jay Fenlason (hack@ai.mit.edu)
+
+	* README Fix typo.
+
+Fri Nov  3 15:27:47 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff.c (usage): Mention -D. 
+
+	* ifdef.c (print_ifdef_hunk): Write comments on #else and #endif.
+
+Sun Oct 29 16:41:07 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff.c (compare_files): Don't fflush for identical files.
+
+Wed Oct 25 17:57:12 1989  Randy Smith  (randy at apple-gunkies.ai.mit.edu)
+
+	* diff3.c (using_to_diff3_block): When defaulting lines from
+	FILE0, only copy up to just under the *lowest* line mentioned
+	in the next diff.
+
+	* diff3.c (fatal): Add \n to error messages.
+
+Wed Oct 25 15:05:49 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile (tapefiles): Add ChangeLog.
+
+Tue Oct  3 00:51:17 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff3.c (process_diff, create_diff3_block): Init ->next field.
+
+Fri Sep 29 08:16:45 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* util.c (line_cmp): Alter end char of line 2, not line 1.
+
+Wed Sep 20 00:12:37 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile (diff.tar): Expect ln to fail on some files;
+	copy them with cp.
+
+Mon Sep 18 02:54:29 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Handle -D option:
+	* io.c (find_and_hash_each_line): Keep all lines of 1st file.
+	* diff.c (main): Handle -D option.
+	(compare_files): Reject -D if files spec'd are directories.
+	* analyze.c (diff_2_files): Handle OUTPUT_IFDEF case.
+
+Fri Sep  1 20:15:50 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff.c (option_list): Rename arg VECTOR as OPTIONVEC.
+
+Mon Aug 28 17:58:27 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff.c (compare_files): Clear entire inf[i].stat.
+
+Wed Aug 23 17:48:47 1989  Richard Stallman  (rms at apple-gunkies.ai.mit.edu)
+
+	* io.c (find_identical_ends): Sign was backward
+	determining where to bound the scan for the suffix.
+
+Wed Aug 16 12:49:16 1989  Richard Stallman  (rms at hobbes.ai.mit.edu)
+
+	* analyze.c (diff_2_files): If -q, treat all files as binary.
+	* diff.c (main): Detect -q, record in no_details_flag.
+
+Sun Jul 30 23:12:00 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff.c (usage): New function.
+	(main): Call it.
+
+Wed Jul 26 02:02:19 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff.c (main): Make -C imply -c.
+
+Thu Jul 20 17:57:51 1989  Chris Hanson  (cph at kleph)
+
+	* io.c (find_and_hash_each_line): Bug fix in context handling,
+	introduced by last change.
+
+Fri Jul 14 17:39:20 1989  Chris Hanson  (cph at kleph)
+
+	* analyze.c: To make RCS work correctly on files that don't
+	necessarily end in newline, introduce some changes that cause
+	diffs to be sensitive to missing final newline.  Because
+	non-RCS modes don't want to be affected by these changes, they
+	are conditional on `output_style == OUTPUT_RCS'.
+	(diff_2_files) [OUTPUT_RCS]: Suppress the "File X missing
+	newline" message.
+	(build_script) [OUTPUT_RCS]: Cause the last line to compare as
+	different if exactly one of the files is missing its final
+	newline.
+
+	* io.c (find_and_hash_each_line): Bug fix in
+	ignore_space_change mode.  Change line's length to include the
+	newline.  For OUTPUT_RCS, decrement last line's length if
+	there is no final newline.
+	(find_identical_ends) [OUTPUT_RCS]: If one of the files is
+	missing a final newline, make sure it's not included in either
+	the prefix or suffix.
+
+	* util.c (print_1_line): Change line output routine to account
+	for line length including the newline.
+
+Tue Jun 27 02:35:28 1989  Roland McGrath  (roland at hobbes.ai.mit.edu)
+
+	* Makefile: Inserted $(archpfx) where appropriate.
+
+Wed May 17 20:18:43 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff3.c [USG]: Include fcntl.h.
+
+	* diff.h [USG]: New compilation flags HAVE_NDIR, HAVE_DIRECT.
+
+Wed Apr 26 15:35:57 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* dir.c (diff_dirs): Two new args, NONEX1 and NONEX2, say to pretend
+	nonex dirs are empty.
+	(dir_sort): New arg NONEX, likewise.
+	* diff.c (compare_files): Pass those args.
+	Sometimes call diff_dirs if subdir exists in just one place.
+
+Wed Apr 12 01:10:27 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* io.c (find_identical_ends): Set END0 *after* last char
+	during backward scan for suffix.
+
+Sat Apr  8 15:49:49 1989  Randall Smith  (randy at apple-gunkies.ai.mit.edu)
+
+	* diff3.c (using_to_diff3_block): Now find high marks in files 1
+	and 2 through mapping off of the last difference instead of the
+	first.
+
+	* diff3.c: Many trivial changes to spelling inside comments. 
+
+Fri Feb 24 12:38:03 1989  Randall Smith  (randy at gluteus.ai.mit.edu)
+
+	* util.c, normal.c, io.c, ed.c, dir.c, diff.h, diff.c, context.c,
+	analyze.c, Makefile: Changed copyright header to conform with new
+	GNU General Public license.
+	* diff3.c: Changed copyright header to conform with new GNU
+	General Public license.
+	* COPYING: Made a hard link to /gp/rms/COPYING.
+
+Fri Feb 24 10:01:58 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* io.c (slurp): Leave 2 chars space at end of buffer, not one.
+	(find_identical_ends): Special case if either file is empty;
+	don't try to make a sentinel since could crash.
+
+Wed Feb 15 14:24:48 1989  Jay Fenlason  (hack at apple-gunkies.ai.mit.edu)
+
+	* diff3.c (message)  Re-wrote routine to avoid using alloca()
+
+Wed Feb 15 06:19:14 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* io.c (find_identical_ends): Delete the variable `bytes'.
+
+Sun Feb 12 11:50:36 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* io.c (slurp): ->bufsize is nominal amount we have room for;
+	add room for sentinel when calling xmalloc or xrealloc.
+
+	* io.c (find_identical_ends): Do need overrun check in finding suffix.
+
+Fri Feb 10 01:28:15 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff.c (main): -C now takes arg to specify context length.
+	Now -p to show C function name--Damned IEEE!
+	Fatal error if context length spec'd twice.
+
+	* ed.c (print_ed_hunk): Now special treatment only for lines containing
+	precisely a dot and nothing else.  Output `..', end the insert,
+	substitute that one line, then resume the insert if nec.
+
+	* io.c (find_and_hash_lines): When backing up over starting context,
+	don't move past buffer-beg.
+
+	* io.c (find_identical_ends): Use sentinels to make the loops faster.
+	If files are identical, skip the 2nd loop and return quickly.
+	(slurp): Leave 1 char extra space after each buffer.
+
+	* analyze.c (diff_2_files): Mention difference in final newlines.
+
+Wed Jan 25 22:44:44 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* dir.c (diff_dirs): Use * when calling fcn ptr variable.
+
+Sat Dec 17 14:12:06 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile: New vars INSTALL and LIBS used in some rules;
+	provide default defns plus commented-put defns for sysV.
+
+Thu Nov 17 16:42:53 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* dir.c (dir_sort): Open-trouble not fatal; just say # files is -1.
+	(diff_dirs): If dir_sort does that, give up and return 2.
+
+	* diff.c (compare_files): Don't open directories.
+	Don't close them specially either.
+	Cross-propagate inf[i].dir_p sooner.
+
+Sun Nov 13 11:19:36 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* diff.h: Declare index, rindex.
+
+	* diff.c (compare_files): If comparing foodir with b/f,
+	use foodir/f, not foodir/b/f.
+
+	* diff.c (compare_files): Don't print "are identical" msg for 2 dirs.
+	Status now 1 if one file is a dir and the other isn't, etc.
+
+Thu Nov  3 16:30:24 1988  Randall Smith  (randy at gluteus.ai.mit.edu)
+
+	* Makefile: Added a define for diff3 to define DIFF_PROGRAM.
+
+	* util.c: Added hack to make sure that perror was not called with
+	a null pointer.
+
+	* diff.c: Changed S_IFDIR to S_IFMT in masking type of file bits
+	out. 
+
+	* diff3.c: Included USG compatibility defines.
+
+	* diff.h: Moved sys/file.h into #else USG section (not needed or
+	wanted on System V).
+
+	* ed.c, analyze.c, context.c: Shortened names to 12 characters for
+	the sake of System V (too simple not to do).
+
+Local Variables:
+mode: indented-text
+left-margin: 8
+version-control: never
+End:
