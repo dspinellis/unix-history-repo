@@ -1,4 +1,4 @@
-/*	hp.c	4.3	%G%	*/
+/*	hp.c	4.4	%G%	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -211,7 +211,7 @@ register unit;
 	register struct buf *bp, *dp;
 	register struct device *hpaddr;
 	daddr_t bn;
-	int sn, cn, csn;
+	int sn, cn, csn, ns;
 
 	((struct mba_regs *)HPMBA)->mba_cr |= MBAIE;
 	hpaddr = mbadev(HPMBA, 0);
@@ -226,6 +226,7 @@ register unit;
 		return;
 	hpaddr = mbadev(HPMBA, unit);
 	if((hpaddr->hpds & VV) == 0) {
+		hpaddr->hpcs1 = DCLR|GO;
 		hpaddr->hpcs1 = PRESET|GO;
 		hpaddr->hpof = FMT22;
 	}
@@ -235,6 +236,7 @@ register unit;
 	if ((hpaddr->hpds & (DPR|MOL)) != (DPR|MOL))
 		goto done;
 
+#if NHP > 1
 	bn = dkblock(bp);
 	cn = bp->b_cylin;
 	switch (hp_type[unit]) {
@@ -242,14 +244,17 @@ register unit;
 	case RM:
 		sn = bn%(NRMSECT*NRMTRAC);
 		sn = (sn+NRMSECT-hpSDIST)%NRMSECT;
+		ns = NRMSECT;
 		break;
 	case RM5:
 		sn = bn%(NRMSECT*NTRAC);
 		sn = (sn+NRMSECT-hpSDIST)%NRMSECT;
+		ns = NRMSECT;
 		break;
 	case RP:
 		sn = bn%(NSECT*NTRAC);
 		sn = (sn+NSECT-hpSDIST)%NSECT;
+		ns = NSECT;
 		break;
 	default:
 		panic("hpustart");
@@ -261,8 +266,8 @@ register unit;
 		goto done;
 	csn = ((hpaddr->hpla & 0xffff)>>6) - sn + 1;
 	if(csn < 0)
-		csn += NSECT;
-	if(csn > NSECT-hpRDIST)
+		csn += ns;
+	if(csn > ns-hpRDIST)
 		goto done;
 
 search:
@@ -279,6 +284,7 @@ search:
 		dk_seek[unit]++;
 	}
 	return;
+#endif
 
 done:
 	dp->b_forw = NULL;
@@ -341,7 +347,7 @@ loop:
 		iodone(bp);
 		goto loop;
 	}
-	if(hptab.b_errcnt >= 16 && (bp->b_flags&B_WRITE) == 0) {
+	if(hptab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
 		hpaddr->hpof = hp_offset[hptab.b_errcnt & 017] | FMT22;
 		HPMBA->mba_cr &= ~MBAIE;
 		hpaddr->hpcs1 = OFFSET|GO;

@@ -1,4 +1,4 @@
-/*	up.c	4.10	%G%	*/
+/*	up.c	4.11	%G%	*/
 
 #include "up.h"
 #if NUP > 0
@@ -306,6 +306,8 @@ register unit;
 	}
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL))
 		goto done;
+
+#if NUP > 1
 	/*
 	 * Do enough of the disk address decoding to determine
 	 * which cylinder and sector the request is on.
@@ -347,6 +349,7 @@ search:
 		dk_seek[unit]++;
 	}
 	goto out;
+#endif
 
 done:
 	/*
@@ -433,7 +436,7 @@ loop:
 	 * If this is a retry, then with the 16'th retry we
 	 * begin to try offsetting the heads to recover the data.
 	 */
-	if (uptab.b_errcnt >= 16 && (bp->b_flags&B_WRITE) == 0) {
+	if (uptab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
 		upaddr->upof = up_offset[uptab.b_errcnt & 017] | FMT22;
 		upaddr->upcs1 = IE|OFFSET|GO;
 		while (upaddr->upds & PIP)
