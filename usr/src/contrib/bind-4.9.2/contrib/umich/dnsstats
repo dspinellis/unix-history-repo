@@ -1,0 +1,289 @@
+#!/bin/sh
+PATH=:/bin:/usr/bin:/usr/ucb:/usr/local/bin
+# -------------------------------------------------------------
+#  Copyright (c) 1989, 1993 Regents of the University of Michigan.
+#  All rights reserved.
+#
+#  Redistribution and use is permitted provided that this notice 
+#  is preserved and that due credit is given to the University of 
+#  Michigan. The name of the University may not be used to endorse 
+#  or promote products derived from this software without specific 
+#  prior written permission. This software is provided "as is" 
+#  without express or implied warranty.
+#
+#  DNS Statistics gatherer
+#  Author:  Bryan Beecher
+#  Last Modified:   7/8/93
+#
+#  To make use of this software, you need to be running a copy of
+#  BIND 4.9 compiled with the QRYLOG option defined.
+#
+#  The assumption behind this script is that it will be run out
+#  of crontab daily just before some sort of syslog manager
+#  copies the current contents of LOGFILE elsewhere before
+#  emptying the LOGFILE.  However, it can certainly be run on
+#  a LOGFILE that is not emptied daily, and in this case it
+#  would merely report the cumulative statistics.
+# -------------------------------------------------------------
+
+# -------------------------------------------------------------
+#  C O N F I G U R A T I O N    S E C T I O N
+# -------------------------------------------------------------
+
+##
+##  NOTE:  Ultrix users may want to change the first line
+##         of this script from /bin/sh to /bin/sh5.
+##
+
+# -------------------------------------------------------------
+#  Do we use 'getopts' or 'getopt'?
+# -------------------------------------------------------------
+GETOPT=getopts
+
+# -------------------------------------------------------------
+#  This is the name of the log.
+# -------------------------------------------------------------
+LOGFILE=/var/log/named
+
+# -------------------------------------------------------------
+#  This is the program we use to look things up.
+# -------------------------------------------------------------
+# QUERYPROG="/usr/local/bin/query -t PTR"
+# QUERYOPTIONS=""
+QUERYPROG="/usr/local/bin/dig"
+QUERYOPTIONS="PTR"
+
+# -------------------------------------------------------------
+#  This is the awk we use.
+# -------------------------------------------------------------
+AWK=/bin/awk
+
+# -------------------------------------------------------------
+#  This is the directory in which we should create temp files
+# -------------------------------------------------------------
+TMPDIR=/usr/tmp
+
+# -------------------------------------------------------------
+#  This is the default number of entries we want printed in
+#  each category of statistics.
+# -------------------------------------------------------------
+STOPAT=25
+
+# -------------------------------------------------------------
+#  E N D    O F    C O N F I G U R A T I O N    S E C T I O N
+# -------------------------------------------------------------
+
+# -------------------------------------------------------------
+#  handy files
+# -------------------------------------------------------------
+TMPFILE=$TMPDIR/.dnsstats$$
+OUTFILE=$TMPDIR/.dnsout$$
+
+ADDRFILE=$TMPDIR/.addrs$$
+NAMEFILE=$TMPDIR/.names$$
+TYPEFILE=$TMPDIR/.types$$
+WEEKFILE=$TMPDIR/.week$$
+
+# -------------------------------------------------------------
+#  handle arguments
+# -------------------------------------------------------------
+#	-d <day>
+#	This flag is used to append a dot-day suffix to the LOGFILE.
+#	Handy where log files are kept around for the last week
+#	and contain a day suffix.
+#
+#	-f <logfile>
+#	Change the LOGFILE value altogether.
+#
+#	-n
+#	Don't try to resolve IP addresses from in-addr.arpa names
+#	to "regular" names.  Handy if the DNS is slow or you just
+#	don't care about the domain names associated with the IP
+#	addresses.
+#
+#	-w
+#	Count up all of the DNS statistics for the whole week.
+#
+#	-c <#>
+#	Print only the top-# of entries in each category.
+#	Default is $STOPAT. 
+#
+#	-a
+#	Print the entire list of entries in each category.
+# -------------------------------------------------------------
+NONAMES=0
+PRINTALL=0
+
+trap "rm -f $TMPFILE $OUTFILE $ADDRFILE $NAMEFILE $TYPEFILE $WEEKFILE ; exit 0" 0 1 2 3 15
+
+gethostbyaddr() {
+	QUERYNAME=`echo $ADDRESS | $AWK  '{ n = split($1, oct, ".")
+	  printf("%s.%s.%s.%s.in-addr.arpa.\n", oct[4], oct[3], oct[2], oct[1])
+	  }'`
+	$QUERYPROG $QUERYNAME $QUERYOPTIONS 2>&1 | $AWK ' BEGIN {
+	    msg = " ** Query failed ** "
+	    }
+	    {
+	    if ($4 == "PTR")
+		msg = substr($5, 1, length($5) - 1)
+	    else if ($3 == "PTR")
+		msg = substr($4, 1, length($4) - 1)
+	    }
+	    END {
+		printf(" %6d  %-39s [%s]\n", count, msg, address)
+	    }' count=$COUNT address=$ADDRESS - ;
+}
+
+if [ $GETOPT = "getopts" ] ; then
+	while getopts ac:d:f:nw ARG ; do
+		case $ARG in
+			a)	PRINTALL=1
+				;;
+			c)	STOPAT=$OPTARG
+				;;
+			d) 	LOGFILE=$LOGFILE"."$OPTARG
+				;;
+			f)	LOGFILE=$OPTARG
+				;;
+			n)	NONAMES=1
+				;;
+			w)	cat $LOGFILE* > $WEEKFILE
+				LOGFILE=$WEEKFILE
+				;;
+
+		esac
+	done
+	shift `expr $OPTIND - 1`
+else
+	set -- `getopt ac:d:f:nw $*`
+	if [ $? != 0 ] ; then
+		exit 2
+	fi
+	for ARG in $* ; do
+		case $ARG in
+			-a)	PRINTALL=1
+				shift
+				;;
+			-c)	STOPAT=$2
+				shift 2
+				;;
+			-d) 	LOGFILE=$LOGFILE"."$2
+				shift 2
+				;;
+			-f)	LOGFILE=$2
+				shift 2
+				;;
+			-n)	NONAMES=1
+				shift
+				;;
+			-w)	cat $LOGFILE* > $WEEKFILE
+				LOGFILE=$WEEKFILE
+				shift
+				;;
+			--)	shift
+				break
+				;;
+		esac
+	done
+fi
+
+# -------------------------------------------------------------
+#  divide the log file into three files:
+#	one for source addrs of incoming querys
+#	one for domain names that were queried upon
+#	one for query types
+# -------------------------------------------------------------
+$AWK '
+{
+	if ((n == 0) && ($5 == "last"))
+		next
+	else if ($5 == "last")
+		for (i=0; i<$8; i++) {
+			print info[2] >f1
+			print info[3] >f2
+			print info[4] >f3
+		}
+	else if ($6 == "XX") {
+		n = split($0, info, "/")
+		if (n == 4) {
+			print info[2] >f1
+			print info[3] >f2
+			print info[4] >f3
+		}
+	}
+		
+}' f1=$ADDRFILE f2=$NAMEFILE f3=$TYPEFILE $LOGFILE
+
+# -------------------------------------------------------------
+#  Print some general information
+# -------------------------------------------------------------
+echo "DNS stats for" `hostname` "for period ending" `ls -l $LOGFILE | $AWK '{ print $5, $6, $7 }'`
+echo "Total queries received: " `wc -l $ADDRFILE | $AWK '{ print $1}'`
+echo
+echo "Part I -- query sources"
+echo
+
+# -------------------------------------------------------------
+#  First, tell who was querying this nameserver
+# -------------------------------------------------------------
+if [ $NONAMES -eq 0 ] ; then
+	echo " Number   Source (by name if available)           IP address"
+	echo " ------   -----------------------------           ----------"
+	sort $ADDRFILE | uniq -c | sort -n -r > $TMPFILE
+	if [ $PRINTALL -eq 1 ] ; then
+		mv $TMPFILE $ADDRFILE
+	else
+		head -$STOPAT $TMPFILE > $ADDRFILE
+	fi
+	while [ 1 ] ; do
+		read COUNT ADDRESS
+		if [ $? -ne 0 ] ; then
+			break
+		fi
+		gethostbyaddr
+	done < $ADDRFILE
+else
+	echo " Number  IP address"
+	echo " ------  ----------"
+	sort $ADDRFILE | uniq -c | sort -n -r > $TMPFILE
+	if [ $PRINTALL -eq 1 ] ; then
+		$AWK '{ printf(" %6d  [%s]\n", $1, $2) }' $TMPFILE
+	else
+		head -$STOPAT $TMPFILE | $AWK '{ printf(" %5d  [%s]\n", $1, $2) }'
+	fi
+fi
+
+# -------------------------------------------------------------
+#  Second, tell what names were being queried upon
+# -------------------------------------------------------------
+echo
+echo "Part II -- queried names"
+echo
+echo " Number  Queried name"
+echo " ------  ------------"
+sort $NAMEFILE | uniq -c | sort -n -r > $TMPFILE
+if [ $PRINTALL -eq 1 ] ; then
+	$AWK '{ printf(" %6d  %s\n", $1, $2) }' $TMPFILE
+else
+	head -$STOPAT $TMPFILE | $AWK '{ printf(" %6d  %s\n", $1, $2) }'
+fi
+
+# -------------------------------------------------------------
+#  Third, tell what sort of queries there were
+# -------------------------------------------------------------
+echo
+echo "Part III -- query types"
+echo
+echo " Number  Type"
+echo " ------  ----"
+sort $TYPEFILE | uniq -c | sort -n -r > $TMPFILE
+if [ $PRINTALL -eq 1 ] ; then
+	$AWK '{ printf(" %6d  %s\n", $1, $2) }' $TMPFILE
+else
+	head -$STOPAT $TMPFILE | $AWK '{ printf(" %6d  %s\n", $1, $2) }'
+fi
+
+# -------------------------------------------------------------
+#  Last, tidy things up
+# -------------------------------------------------------------
+rm -f $TMPFILE $OUTFILE $ADDRFILE $NAMEFILE $TYPEFILE $WEEKFILE
