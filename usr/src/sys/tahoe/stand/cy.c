@@ -1,10 +1,10 @@
-/*	cy.c	7.7	88/05/24	*/
+/*	cy.c	7.8	89/04/25	*/
 
 /*
  * Cypher tape driver. Stand alone version.
  */
-#include "../machine/pte.h"
-#include "../machine/mtpr.h"
+#include "machine/pte.h"
+#include "machine/mtpr.h"
 
 #include "param.h"
 #include "inode.h"

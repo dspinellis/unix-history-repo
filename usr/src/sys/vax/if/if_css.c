@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_css.c	7.6 (Berkeley) %G%
+ *	@(#)if_css.c	7.7 (Berkeley) %G%
  */
 
 #include "css.h"
@@ -52,7 +52,7 @@
 #include "socket.h"
 #include "vmmac.h"
 
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "../net/if.h"
 #include "../netimp/if_imp.h"

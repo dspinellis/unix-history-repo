@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ad.c	7.2 (Berkeley) %G%
+ *	@(#)ad.c	7.3 (Berkeley) %G%
  */
 
 #include "ad.h"
@@ -11,7 +11,7 @@
 /*
  * Data translation AD converter interface -- Bill Reeves
  */
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "ioctl.h"

@@ -1,6 +1,6 @@
-/*	boot.c	1.7	88/03/04	*/
+/*	boot.c	1.8	89/04/25	*/
 
-#include "../machine/mtpr.h"
+#include "machine/mtpr.h"
 
 #include "param.h"
 #include "inode.h"

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.6 (Berkeley) %G%
+ *	@(#)up.c	7.7 (Berkeley) %G%
  */
 
 #include "up.h"
@@ -17,7 +17,7 @@
  * TODO:
  *	Check that offset recovery code works
  */
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "systm.h"

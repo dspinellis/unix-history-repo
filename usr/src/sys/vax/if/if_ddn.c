@@ -1,4 +1,4 @@
-/*	@(#)if_ddn.c	7.2 (Berkeley) %G% */
+/*	@(#)if_ddn.c	7.3 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -61,7 +61,7 @@ Revision History:
 
 #include "ddn.h"
 #if NDDN > 0
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "systm.h"

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dn.c	7.1 (Berkeley) %G%
+ *	@(#)dn.c	7.2 (Berkeley) %G%
  */
 
 #include "dn.h"
@@ -11,7 +11,7 @@
 /*
  * DN-11 ACU interface
  */
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "systm.h"

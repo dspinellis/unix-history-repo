@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mba.c	7.2 (Berkeley) %G%
+ *	@(#)mba.c	7.3 (Berkeley) %G%
  */
 
 #include "mba.h"
@@ -11,7 +11,7 @@
 /*
  * Massbus driver, arbitrates a massbus among attached devices.
  */
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "systm.h"

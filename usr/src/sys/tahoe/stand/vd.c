@@ -17,13 +17,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vd.c	7.12 (Berkeley) %G%
+ *	@(#)vd.c	7.13 (Berkeley) %G%
  */
 
 /*
  * Stand alone driver for the VDDC/SMDE controller 
  */
-#include "../machine/mtpr.h"
+#include "machine/mtpr.h"
 
 #include "param.h"
 #include "inode.h"

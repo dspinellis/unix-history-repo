@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mp.c	7.7 (Berkeley) %G%
+ *	@(#)mp.c	7.8 (Berkeley) %G%
  */
 
 #include "mp.h"
@@ -42,8 +42,8 @@
 #include "kernel.h"
 #include "clist.h"
 
-#include "../machine/pte.h"
-#include "../machine/mtpr.h"
+#include "machine/pte.h"
+#include "machine/mtpr.h"
 
 #include "../tahoevba/vbavar.h"
 #include "../tahoevba/mpreg.h"

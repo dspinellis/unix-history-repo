@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)rx.c	7.2 (Berkeley) %G%
+ *	@(#)rx.c	7.3 (Berkeley) %G%
  */
 
 #include "rx.h"
@@ -24,7 +24,7 @@
  * 	powered off at boot time, the controller won't interrupt!
  */
 
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "buf.h"
