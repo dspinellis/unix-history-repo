@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	6.8 (Berkeley) %G%
+ *	@(#)conf.c	6.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -454,6 +454,17 @@ struct tty dhu_tty[];
 #define dhu_tty 0
 #endif
 
+#include "vs.h"
+#if NVS > 0
+int	vsopen(),vsclose(),vsioctl(),vsreset(),vsselect();
+#else
+#define vsopen nodev
+#define vsclose nodev
+#define vsioctl nodev
+#define vsreset nodev
+#define vsselect nodev
+#endif
+
 int	ttselect(), seltrue();
 
 struct cdevsw	cdevsw[] =
@@ -555,18 +566,21 @@ struct cdevsw	cdevsw[] =
 	ikopen,		ikclose,	ikread,		ikwrite,	/*31*/
 	ikioctl,	nodev,		ikreset,	0,
 	seltrue,	nodev,
-	rlopen,		nodev,		rlread,		rlwrite,	/* 32 */
+	rlopen,		nodev,		rlread,		rlwrite,	/*32*/
 	nodev,		nodev,		rlreset,	0,
 	seltrue,	nodev,
-	logopen,	logclose,	logread,	nodev,		/* 33 */
+	logopen,	logclose,	logread,	nodev,		/*33*/
 	logioctl,	nodev,		nulldev,	0,
 	logselect,	nodev,
-	dhuopen,        dhuclose,       dhuread,        dhuwrite,       /* 34 */
+	dhuopen,        dhuclose,       dhuread,        dhuwrite,       /*34*/
 	dhuioctl,       dhustop,        dhureset,       dhu_tty,
 	ttselect,       nodev,
- 	crlopen,	crlclose,	crlread,	crlwrite,	/* 35 */
+ 	crlopen,	crlclose,	crlread,	crlwrite,	/*35*/
  	nodev,		nodev,		nulldev,	0,
  	seltrue,	nodev,
+	vsopen,		vsclose,	nodev,		nodev,		/*36*/
+	vsioctl,	nodev,		vsreset,	0,
+	vsselect,	nodev
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
