@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)optab.c 1.2 %G%";
+static char sccsid[] = "@(#)optab.c 1.3 %G%";
 
 /*
  * px opcode table
@@ -227,17 +227,15 @@ OPTAB optab[] ={
 	{ "badopnn" },
 	{ "pack", PSUBOP, HWORD, HWORD, HWORD },
 	{ "unpack", PSUBOP, HWORD, HWORD, HWORD },
+	{ "new", PSUBOP },
+	{ "dispose", PSUBOP },
+	{ "dfdisp", PSUBOP },
 	{ "argc" },
 	{ "argv", PSUBOP },
-	{ "badopnn" },
-	{ "badopnn" },
-	{ "badopnn" },
 	{ "badopnn" },
 	{ "clck" },
 	{ "wclck" },
 	{ "sclck" },
-	{ "dispose", PSUBOP },
-	{ "new", PSUBOP },
 	{ "date" },
 	{ "time" },
 	{ "undef" },
