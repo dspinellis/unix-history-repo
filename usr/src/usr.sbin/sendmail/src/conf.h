@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.101 (Berkeley) %G%
+ *	@(#)conf.h	8.102 (Berkeley) %G%
  */
 
 /*
@@ -156,7 +156,7 @@ extern int	syslog(int, char *, ...);
 */
 
 # ifdef IRIX
-# include <sys/sysmacros.h>
+# define SYSTEM5	1	/* this is a System-V derived system */
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
@@ -165,6 +165,7 @@ extern int	syslog(int, char *, ...);
 # define setpgid	BSDsetpgrp
 # define GIDSET_T	gid_t
 # define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
+# define LA_TYPE	LA_INT
 # endif
 
 
