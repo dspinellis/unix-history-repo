@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -563,9 +563,14 @@ setsender(from, e, delimptr, internal)
 		SuprErrs = TRUE;
 
 	delimchar = internal ? '\0' : ' ';
+	e->e_from.q_flags = QBADADDR;
 	if (from == NULL ||
 	    parseaddr(from, &e->e_from, RF_COPYALL|RF_SENDERADDR,
-		      delimchar, delimptr, e) == NULL)
+		      delimchar, delimptr, e) == NULL ||
+	    bitset(QBADADDR, e->e_from.q_flags) ||
+	    e->e_from.q_mailer == ProgMailer ||
+	    e->e_from.q_mailer == FileMailer ||
+	    e->e_from.q_mailer == InclMailer)
 	{
 		/* log garbage addresses for traceback */
 			syslog(LOG_ERR, "Unparseable user %s wants to be %s",
