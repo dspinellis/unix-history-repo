@@ -1,4 +1,4 @@
-(Version 8.29 of %G%)
+(Version 8.30 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -250,3 +250,12 @@ E *	Change body put code to time out around individual puts.  This will
 X *	Some way to relay unfound local users to another site.
 
 X *	Disable all default RW sets except mailer-specific?
+
+
+-------------------------------------------------------------------------------
+
+IDA Features that have been requested:
+
+* USERMAILER
+
+* LOCAL_MX_HANDLER
