@@ -1,6 +1,6 @@
     /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pc3.c 1.3 %G%";
+static	char sccsid[] = "@(#)pc3.c 1.4 %G%";
 
     /*
      *	     Pc3 is a pass in the Berkeley Pascal compilation
@@ -61,7 +61,7 @@ static	char sccsid[] = "@(#)pc3.c 1.3 %G%";
      *	function is not resolved at least once.
      */
 
-char	program[] = "pc3";
+char	program[] = "pc";
 
 #include <sys/types.h>
 #include <ar.h>
