@@ -1,0 +1,94 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)tcp.4	5.1 (Berkeley) %G%
+.\"
+.TH TCP 4P "7 July 1983"
+.UC 5
+.SH NAME
+tcp \- Internet Transmission Control Protocol
+.SH SYNOPSIS
+.B #include <sys/socket.h>
+.br
+.B #include <netinet/in.h>
+.PP
+.B s = socket(AF_INET, SOCK_STREAM, 0);
+.SH DESCRIPTION
+The TCP protocol provides reliable, flow-controlled, two-way
+transmission of data.  It is a byte-stream protocol used to
+support the SOCK_STREAM abstraction.  TCP uses the standard
+Internet address format and, in addition, provides a per-host
+collection of \*(lqport addresses\*(rq.  Thus, each address is composed
+of an Internet address specifying the host and network, with
+a specific TCP port on the host identifying the peer entity.
+.PP
+Sockets utilizing the tcp protocol are either \*(lqactive\*(rq or
+\*(lqpassive\*(rq.  Active sockets initiate connections to passive
+sockets.  By default TCP sockets are created active; to create a
+passive socket the
+.IR listen (2)
+system call must be used
+after binding the socket with the
+.IR bind (2)
+system call.  Only
+passive sockets may use the 
+.IR accept (2)
+call to accept incoming connections.  Only active sockets may
+use the
+.IR connect (2)
+call to initiate connections.
+.PP
+Passive sockets may \*(lqunderspecify\*(rq their location to match
+incoming connection requests from multiple networks.  This
+technique, termed \*(lqwildcard addressing\*(rq, allows a single
+server to provide service to clients on multiple networks.
+To create a socket which listens on all networks, the Internet
+address INADDR_ANY
+must be bound.  The TCP port may still be specified
+at this time; if the port is not specified the system will assign one.
+Once a connection has been established the socket's address is
+fixed by the peer entity's location.   The address assigned the
+socket is the address associated with the network interface
+through which packets are being transmitted and received.  Normally
+this address corresponds to the peer entity's network.
+.SH DIAGNOSTICS
+A socket operation may fail with one of the following errors returned:
+.TP 20
+[EISCONN]
+when trying to establish a connection on a socket which
+already has one;
+.TP 20
+[ENOBUFS]
+when the system runs out of memory for
+an internal data structure;
+.TP 20
+[ETIMEDOUT]
+when a connection was dropped
+due to excessive retransmissions;
+.TP 20
+[ECONNRESET]
+when the remote peer
+forces the connection to be closed;
+.TP 20
+[ECONNREFUSED]
+when the remote
+peer actively refuses connection establishment (usually because
+no process is listening to the port);
+.TP 20
+[EADDRINUSE]
+when an attempt
+is made to create a socket with a port which has already been
+allocated;
+.TP 20
+[EADDRNOTAVAIL]
+when an attempt is made to create a 
+socket with a network address for which no network interface
+exists.
+.SH SEE ALSO
+intro(4N), inet(4F)
+.SH BUGS
+It should be possible to send and receive TCP options.
+The system always tries to negotiates the maximum TCP segment
+size to be 1024 bytes.  This can result in poor performance
+if an intervening network performs excessive fragmentation.
