@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.18 (Berkeley) %G%
+ *	@(#)unistd.h	5.19 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -17,12 +17,6 @@
 #define	 STDIN_FILENO	0	/* standard input file descriptor */
 #define	STDOUT_FILENO	1	/* standard output file descriptor */
 #define	STDERR_FILENO	2	/* standard error file descriptor */
-
-/* fnmatch(3) defines */
-#define	FNM_PATHNAME	0x01	/* match pathnames, not filenames */
-#ifndef _POSIX_SOURCE
-#define	FNM_QUOTE	0x02	/* escape special chars with \ */
-#endif
 
 #ifndef NULL
 #define	NULL		0	/* null pointer constant */
