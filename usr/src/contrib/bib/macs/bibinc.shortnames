@@ -1,5 +1,5 @@
 #
-#	"@(#)bibinc.shortnames	2.3	%G%";
+#	"@(#)bibinc.shortnames	2.4	%G%";
 # short journal names, and other names
 #
 # journals
@@ -50,6 +50,10 @@ D CCC84 PROC SI\&GPLAN 1984 SYMP on Compiler Const.\
 D PLISS83 PROC SI\&GPLAN 1983 SYMP on Prog. Lang. Issues in Software Systems\
 %D JUN 1983
 D POPL ACM SYMP on Prin. of Prog. Lang.
+D POPL1 CONF Rec 1th POPL
+D POPL2 CONF Rec 2th POPL
+D POPL3 CONF Rec 3th POPL
+D POPL4 CONF Rec 4th POPL
 D POPL5 CONF Rec 5th POPL
 D POPL6 CONF Rec. 6th POPL
 D POPL7 CONF Rec. 7th POPL
@@ -57,6 +61,11 @@ D POPL8 CONF Rec. 8th POPL
 D POPL9 CONF Rec. 9th POPL
 D POPL10 CONF Rec. 10th POPL
 D POPL11 CONF Rec. 11th POPL
+D POPL12 CONF Rec. 12th POPL
+D POPL13 CONF Rec. 13th POPL
+D POPL14 CONF Rec. 14th POPL
+D POPL15 CONF Rec. 15th POPL
+D POPL16 CONF Rec. 16th POPL
 D STOC Annual ACM SYMP on Theory of Computing
 D FOCS Annual SYMP on Foundations of Computer Science
 D SOSP SYMP on Operating System Prin.
