@@ -7,7 +7,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)st.4	5.2 (Berkeley) %G%
+.\"     @(#)st.4	5.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ST 4 hp300
@@ -187,12 +187,12 @@ way to write more on the tape.  The erase head is not helical.
 .Pp
 One can position a tape to the end of what was last written by reading
 until a
-.Tn \*(qBLANK CHECK\*(q
+.Tn \*qBLANK CHECK\*q
 error is returned.  Writing can be started at this
 point.  (This applies to both long and short filemarks.)  The tape does
 not become positioned somewhere down the "erased" area as does a
 conventional magtape.  One can issue multiple reads at the
-.Tn \*(qBLANK CHECK\*(q
+.Tn \*qBLANK CHECK\*q
 error, but the Exabyte stays positioned at the beginning of the
 blank area, ready to accept write commands.  File skip operations do
 not stop at blank tape and will run into old data or run to the end of
