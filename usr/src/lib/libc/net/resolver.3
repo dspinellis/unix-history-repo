@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)resolver.3	6.8 (Berkeley) %G%
+.\"     @(#)resolver.3	6.9 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RESOLVER 3
@@ -18,18 +18,56 @@
 .Nm dn_expand
 .Nd resolver routines
 .Sh SYNOPSIS
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <arpa/nameser.h>
-#include <resolv.h>
-"u_".Fn res_query char\ *dname int\ class int\ type char\ *answer int\ anslen
-u_".Fn res_search char\ *dname int\ class int\ type char\ *answer int\ anslen
-.Fn res_mkquery int\ op char\ *dname int\ class int\ type char\ *data int\ datalen struct\ rrec\ *newrr char\ *buf int\ buflen
-.Ft buflen
-.Fn res_send char\ *msg int\ msglen char\ *answer int\ anslen
+.Fd #include <sys/types.h>
+.Fd #include <netinet/in.h>
+.Fd #include <arpa/nameser.h>
+.Fd #include <resolv.h>
+.Fo res_query
+.Fa "char *dname"
+.Fa "int class"
+.Fa "int type"
+.Fa "u_char *answer"
+.Fa "int anslen"
+.Fc
+.Fo res_search
+.Fa "char *dname"
+.Fa "int class"
+.Fa "int type"
+.Fa "u_char *answer"
+.Fa "int anslen"
+.Fc
+.Fo res_mkquery
+.Fa "int op"
+.Fa "char *dname"
+.Fa "int class"
+.Fa "int type"
+.Fa "char *data"
+.Fa "int datalen"
+.Fa "struct rrec *newrr"
+.Fa "char *buf"
+.Fa "int buflen"
+.Fc
+.Fo res_send
+.Fa "char *msg"
+.Fa "int msglen"
+.Fa "char *answer"
+.Fa "int anslen"
+.Fc
 .Fn res_init 
-.Fn dn_comp char\ *exp_dn char\ *comp_dn int\ length dnptrs lastdnptr
-u_.Fn dn_expand char\ *msg char\ *eomorig char\ *comp_dn char\ *exp_dn int\ length
+.Fo dn_comp
+.Fa "char *exp_dn"
+.Fa "char *comp_dn"
+.Fa "int length"
+.Fa "char **dnptrs"
+.Fa "char **lastdnptr"
+.Fc
+.Fo dn_expand
+.Fa "u_char *msg"
+.Fa "u_char *eomorig"
+.Fa "u_char *comp_dn"
+.Fa "u_char *exp_dn"
+.Fa "int length"
+.Fc
 .Sh DESCRIPTION
 These routines are used for making, sending and interpreting
 query and reply messages with Internet domain name servers.
@@ -46,7 +84,7 @@ are defined in
 and are as follows.
 Options are stored as a simple bit mask containing the bitwise ``or''
 of the options enabled.
-.Bl -tag -width indent
+.Bl -tag -width RES_DEFNAMES
 .It Dv RES_INIT
 True if the initial name server address and default domain name are
 initialized (i.e.,
@@ -67,7 +105,9 @@ connections for queries instead of
 .Tn UDP
 datagrams.
 .It Dv RES_STAYOPEN
-Used with RES_USEVC to keep the
+Used with
+.Dv RES_USEVC
+to keep the
 .Tn TCP
 connection open between
 queries.
@@ -80,8 +120,7 @@ Unused currently (ignore truncation errors, i.e., don't retry with
 .It Dv RES_RECURSE
 Set the recursion-desired bit in queries.
 This is the default.
-(\c
-.Fn res_send
+.Pf ( Fn res_send
 does not do iterative queries and expects the name server
 to handle recursion.)
 .It Dv RES_DEFNAMES
@@ -98,6 +137,7 @@ will search for host names in the current domain and in parent domains; see
 This is used by the standard host lookup routine
 .Xr gethostbyname 3 .
 This option is enabled by default.
+.El
 .Pp
 The
 .Fn res_init
@@ -160,7 +200,7 @@ The query type
 is usually
 .Dv QUERY ,
 but can be any of the query types defined in
-.Ao Pa arpa/nameser.h Ac .
+.Aq Pa arpa/nameser.h .
 The domain name for the query is given by
 .Fa dname .
 .Fa Newrr
@@ -241,10 +281,15 @@ see
 .Xr named 8 ,
 .Xr resolver 5 ,
 .Xr hostname 7 ,
-.br
-RFC1032, RFC1033, RFC1034, RFC1035, RFC974, 
-.br
-SMM:11 Name Server Operations Guide for BIND
+.Pp
+.%T RFC1032 ,
+.%T RFC1033 ,
+.%T RFC1034 ,
+.%T RFC1035 ,
+.%T RFC974
+.Rs
+.%T "Name Server Operations Guide for BIND"
+.Re
 .Sh HISTORY
 The
 .Nm
