@@ -52,7 +52,7 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         5       00146
+ * CURRENT PATCH LEVEL:         6       00165
  * --------------------         -----   ----------------------
  *
  * 05 Aug 92	Paul Kranenburg		Fixed #! as a magic number
@@ -63,6 +63,7 @@
  * 10 Apr 93	Yoval Yarom		Fix for busy text on executables
  * 20 Apr 93	markie			Stop execution of a file open for write
  *		Rodney W. Grimes	Fix date on Yoval Yarom's patch
+ * 01 Jun 93	Chris Demetriou		Completed markie's patch for VTEXT busy
  */
 
 #include "param.h"
@@ -176,6 +177,13 @@ again:							/* 05 Aug 92*/
 	/* big enough to hold a header? */
 	if (rv)
 		goto exec_fail;
+
+        if (exdata.ex_hdr.a_text != 0 && (ndp->ni_vp->v_flag & VTEXT) == 0 &&
+	    ndp->ni_vp->v_writecount != 0) {
+		rv = ETXTBSY;
+		goto exec_fail;
+	}
+		
 
 	/* ... that we recognize? */
 	rv = ENOEXEC;
