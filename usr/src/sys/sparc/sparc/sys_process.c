@@ -13,7 +13,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)sys_process.c	8.3 (Berkeley) %G%
+ *	@(#)sys_process.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -225,7 +225,7 @@ writetext(p, addr, data, len)
  * being debugged.  This code runs in the context of the child process
  * to fulfill the command requested by the parent.
  */
-procxmt(p)
+trace_req(p)
 	register struct proc *p;
 {
 	register int req, error, sig, pc, psr;
@@ -358,7 +358,7 @@ procxmt(p)
 		break;
 
 	default:
-		panic("procxmt");
+		panic("trace_req");
 	}
 	ipc.ip_error = error;
 	wakeup((caddr_t)&ipc);
