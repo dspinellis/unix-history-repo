@@ -5,11 +5,9 @@
  *
  * %sccs.include.redist.c%
  *
- * OMRON: $Id: genassym.c,v 1.2 92/06/14 06:15:25 moti Exp $
+ * from: hp300/hp300/genassym.c	7.13 (Berkeley) 12/27/92
  *
- * from: hp300/hp300/genassym.c	7.11 (Berkeley) 7/8/92
- *
- *	@(#)genassym.c	7.3 (Berkeley) %G%
+ *	@(#)genassym.c	7.4 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -89,6 +87,7 @@ main()
 	off("P_STAT", struct proc, p_stat);
 	off("P_WCHAN", struct proc, p_wchan);
 	off("P_FLAG", struct proc, p_flag);
+	off("P_MDFLAG", struct proc, p_md.md_flags);
 	def("SSLEEP", SSLEEP);
 	def("SRUN", SRUN);
 
@@ -157,6 +156,11 @@ main()
 	off("PCB_ONFAULT", struct pcb, pcb_onfault);
 	off("PCB_FPCTX", struct pcb, pcb_fpregs);
 	def("SIZEOF_PCB", sizeof(struct pcb));
+
+	/* exception frame offset/sizes */
+	off("FR_SP", struct frame, f_regs[15]);
+	off("FR_HW", struct frame, f_sr);
+	off("FR_ADJ", struct frame, f_stackadj);
 
 	def("SYS_exit", SYS_exit);
 	def("SYS_execve", SYS_execve);
