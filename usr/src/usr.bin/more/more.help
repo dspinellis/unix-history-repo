@@ -1,0 +1,37 @@
+      Commands marked with * may be preceeded by a number, N.
+
+  H              Display this help.
+  q              Exit.
+
+  f, SPACE    *  Forward  N lines, default one screen.
+  b           *  Backward N lines, default one screen.
+  e, j, CR    *  Forward  N lines, default 1 line.
+  y, k        *  Backward N lines, default 1 line.
+  d           *  Forward  N lines, default half screen or last N to d/u.
+  u           *  Backward N lines, default half screen or last N to d/u.
+  r              Repaint screen.
+  R              Repaint screen, discarding buffered input.
+
+  /pattern    *  Search forward for N-th line containing the pattern.
+  ?pattern    *  Search backward for N-th line containing the pattern.
+  n           *  Repeat previous search (for N-th occurence).
+
+  g           *  Go to line N, default 1.
+  G           *  Like g, but default is last line in file.
+  p, %        *  Position to N percent into the file.
+  m<letter>      Mark the current position with <letter>.
+  '<letter>      Return to a previously marked position.
+  ''             Return to previous position.
+
+  E [file]       Examine a new file.
+  N           *  Examine the next file (from the command line).
+  P           *  Examine the previous file (from the command line).
+  =              Print current file name.
+  V              Print version number of "less".
+
+  -<flag>        Toggle a command line flag.
+  _<flag>        Display the setting of a command line flag.
+  +cmd           Execute the less cmd each time a new file is examined.
+
+  !command       Passes the command to the system to be executed (by $SHELL).
+  v              Edit the current file (with $EDITOR).
