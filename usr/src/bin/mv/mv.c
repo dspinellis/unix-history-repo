@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1989, 1993
+ * Copyright (c) 1989, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
@@ -10,12 +10,12 @@
 
 #ifndef lint
 static char copyright[] =
-"@(#) Copyright (c) 1989, 1993\n\
+"@(#) Copyright (c) 1989, 1993, 1994\n\
 	The Regents of the University of California.  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mv.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mv.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -45,14 +45,14 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	register int baselen, exitval, len;
+	register int baselen, len, rval;
 	register char *p, *endp;
 	struct stat sb;
 	int ch;
 	char path[MAXPATHLEN + 1];
 
-	while (((ch = getopt(argc, argv, "-if")) != EOF))
-		switch((char)ch) {
+	while ((ch = getopt(argc, argv, "-if")) != EOF)
+		switch (ch) {
 		case 'i':
 			iflg = 1;
 			break;
@@ -87,20 +87,21 @@ endarg:	argc -= optind;
 	endp = &path[baselen];
 	*endp++ = '/';
 	++baselen;
-	for (exitval = 0; --argc; ++argv) {
+	for (rval = 0; --argc; ++argv) {
 		if ((p = strrchr(*argv, '/')) == NULL)
 			p = *argv;
 		else
 			++p;
 		if ((baselen + (len = strlen(p))) >= MAXPATHLEN) {
 			warnx("%s: destination pathname too long", *argv);
-			exitval = 1;
+			rval = 1;
 		} else {
 			memmove(endp, p, len + 1);
-			exitval |= do_move(*argv, path);
+			if (do_move(*argv, path))
+				rval = 1;
 		}
 	}
-	exit(exitval);
+	exit(rval);
 }
 
 int
@@ -109,6 +110,7 @@ do_move(from, to)
 {
 	struct stat sb;
 	int ask, ch;
+	char modep[15];
 
 	/*
 	 * Check access.  If interactive and file exists, ask user if it
@@ -120,10 +122,12 @@ do_move(from, to)
 		if (iflg) {
 			(void)fprintf(stderr, "overwrite %s? ", to);
 			ask = 1;
-		}
-		else if (access(to, W_OK) && !stat(to, &sb)) {
-			(void)fprintf(stderr, "override mode %o on %s? ",
-			    sb.st_mode & 07777, to);
+		} else if (access(to, W_OK) && !stat(to, &sb)) {
+			strmode(sb.st_mode, modep);
+			(void)fprintf(stderr, "override %s%s%s/%s for %s? ",
+			    modep + 1, modep[9] == ' ' ? "" : " ",
+			    user_from_uid(sb.st_uid, 0),
+			    group_from_gid(sb.st_gid, 0), to);
 			ask = 1;
 		}
 		if (ask) {
@@ -142,8 +146,9 @@ do_move(from, to)
 	}
 
 	/*
-	 * If rename fails, and it's a regular file, do the copy internally;
-	 * otherwise, use cp and rm.
+	 * If rename fails because we're trying to cross devices, and
+	 * it's a regular file, do the copy internally; otherwise, use
+	 * cp and rm.
 	 */
 	if (stat(from, &sb)) {
 		warn("%s", from);
@@ -167,7 +172,8 @@ fastcopy(from, to, sbp)
 		warn("%s", from);
 		return (1);
 	}
-	if ((to_fd = open(to, O_CREAT|O_TRUNC|O_WRONLY, sbp->st_mode)) < 0) {
+	if ((to_fd =
+	    open(to, O_CREAT | O_TRUNC | O_WRONLY, sbp->st_mode)) < 0) {
 		warn("%s", to);
 		(void)close(from_fd);
 		return (1);
@@ -220,8 +226,8 @@ copy(from, to)
 {
 	int pid, status;
 
-	if (!(pid = vfork())) {
-		execl(_PATH_CP, "mv", "-pR", from, to, NULL);
+	if ((pid = vfork()) == 0) {
+		execl(_PATH_CP, "mv", "-PRp", from, to, NULL);
 		warn("%s", _PATH_CP);
 		_exit(1);
 	}
