@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.35	83/05/21	*/
+/*	lfs_inode.c	4.36	83/06/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -342,8 +342,11 @@ itrunc(oip, length)
 	long indirtrunc();
 	int level;
 
-	if (oip->i_size <= length)
+	if (oip->i_size <= length) {
+		oip->i_flag |= ICHG|IUPD;
+		iupdat(oip, &time, &time, 1);
 		return;
+	}
 	/*
 	 * Calculate index into inode's block list of
 	 * last direct and indirect blocks (if any)
