@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -536,10 +536,8 @@ command(top)
 	for (;;) {
 		printf("%s> ", prompt);
 		if (gets(line) == 0) {
-			if (feof(stdin)) {
-				clearerr(stdin);
-				putchar('\n');
-			}
+			if (feof(stdin))
+				quit();
 			break;
 		}
 		if (line[0] == 0)
