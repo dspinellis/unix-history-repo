@@ -1,9 +1,23 @@
+/*
+**  Sendmail
+**  Copyright (c) 1983  Eric P. Allman
+**  Berkeley, California
+**
+**  Copyright (c) 1983 Regents of the University of California.
+**  All rights reserved.  The Berkeley software License Agreement
+**  specifies the terms and conditions for redistribution.
+*/
+
+#ifndef lint
+static char	SccsId[] = "@(#)daemon.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include <errno.h>
 # include "sendmail.h"
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	4.12		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	5.1		%G%	(w/o daemon mode));
 #else
 
 #include <sys/socket.h>
@@ -11,7 +25,7 @@ SCCSID(@(#)daemon.c	4.12		%G%	(w/o daemon mode));
 #include <netdb.h>
 #include <sys/wait.h>
 
-SCCSID(@(#)daemon.c	4.12		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	5.1		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.

@@ -1,3 +1,17 @@
+/*
+**  Sendmail
+**  Copyright (c) 1983  Eric P. Allman
+**  Berkeley, California
+**
+**  Copyright (c) 1983 Regents of the University of California.
+**  All rights reserved.  The Berkeley software License Agreement
+**  specifies the terms and conditions for redistribution.
+*/
+
+#ifndef lint
+static char	SccsId[] = "@(#)conf.c	5.1 (Berkeley) %G%";
+#endif not lint
+
 # include <pwd.h>
 # include <sys/ioctl.h>
 # include "sendmail.h"
@@ -34,7 +48,7 @@
 
 
 
-SCCSID(@(#)conf.c	4.9		%G%);
+SCCSID(@(#)conf.c	5.1		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
