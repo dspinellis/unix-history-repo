@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	6.29 (Berkeley) %G%
+ *	@(#)conf.h	6.30 (Berkeley) %G%
  */
 
 /*
@@ -93,7 +93,7 @@
 
 # endif
 
-#ifdef sun
+#if defined(sun) && !defined(BSD)
 # include <vfork.h>
 #endif
 
