@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)scanner.c 1.3 %G%";
+static char sccsid[] = "@(#)scanner.c 1.4 %G%";
 
 /*
  * Debugger scanner.
@@ -456,7 +456,8 @@ private Token getstring()
 		*q++ = *p;
 	    }
 	} else {
-	    *q++ = charcon(*p);
+	    *q++ = charcon(p);
+	    p = curchar;
 	}
 	p++;
     }
@@ -471,34 +472,30 @@ private Token getstring()
  * Watch out for backslashes.
  */
 
-private Char charcon(ch)
-Char ch;
+private Char charcon(p)
+char *p;
 {
-    Char c, buf[10], *p, *q;
+    char c, buf[10], *q;
 
-    p = curchar;
-    if (ch == '\\') {
+    if (*p == '\\') {
+	++p;
 	if (*p != '\\') {
 	    q = buf;
 	    do {
 		*q++ = *p++;
-	    } while (*p != '\\' and *p != '\n' and *p != '\0');
-	    if (*p != '\\') {
-		ungetc(*p, in);
-		error("non-terminated character constant");
-	    }
+	    } while (*p != '\\' and *p != '\'' and *p != '\n' and *p != '\0');
 	    *q = '\0';
 	    if (isdigit(buf[0])) {
 		c = (Char) octal(buf);
 	    } else {
 		c = charlookup(buf);
 	    }
-	    curchar = p;
+	    curchar = p - 1;
 	} else {
 	    c = '\\';
 	}
     } else {
-	c = ch;
+	c = *p;
     }
     return c;
 }
