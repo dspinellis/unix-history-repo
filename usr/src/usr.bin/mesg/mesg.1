@@ -1,4 +1,14 @@
-.\"	@(#)mesg.1	6.1 (Berkeley) %G%
+.\" Copyright (c) 1987 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that this notice is preserved and that due credit is given
+.\" to the University of California at Berkeley. The name of the University
+.\" may not be used to endorse or promote products derived from this
+.\" software without specific written prior permission. This software
+.\" is provided ``as is'' without express or implied warranty.
+.\"
+.\"	@(#)mesg.1	6.2 (Berkeley) %G%
 .\"
 .TH MESG 1 ""
 .AT 3
@@ -12,26 +22,14 @@ mesg \- permit or deny messages
 .B y
 ]
 .SH DESCRIPTION
-.I Mesg
-with argument
-.B n
-forbids messages via
-.I  write
-and
-.IR talk (1)
-by revoking non-user
-write permission on the user's terminal.
-.I Mesg
-with argument
-.B y
-reinstates permission.
-All by itself,
-.I mesg
-reports the current state without changing it.
+\fIMesg\fP with argument \fBn\fP forbids messages via \fIwrite\fP
+and \fItalk\fP by revoking non-user write permission on the user's
+terminal.  \fIMesg\fP with argument \fBy\fP reinstates permission.
+\fIMesg\fP without arguments reports the current state without
+changing it.
 .SH FILES
 /dev/tty*
 .SH "SEE ALSO"
 write(1), talk(1)
 .SH DIAGNOSTICS
-Exit status is 0 if messages are receivable,
-1 if not, 2 on error.
+Exit status is 0 if messages are receivable, 1 if not, -1 on error.
