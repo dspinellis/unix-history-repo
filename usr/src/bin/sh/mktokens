@@ -8,7 +8,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)mktokens	5.1 (Berkeley) %G%
+#	@(#)mktokens	5.2 (Berkeley) %G%
 
 # The following is a list of tokens.  The second column is nonzero if the
 # token marks the end of a list.  The third column is the name to print in
@@ -42,6 +42,7 @@ TBEGIN	0	"{"
 TEND	1	"}"
 TCASE	0	"case"
 TESAC	1	"esac"
+TNOT	0	"!"
 !
 nl=`wc -l /tmp/ka$$`
 exec > token.def
