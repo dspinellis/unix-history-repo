@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_vnops.c	8.12 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	8.13 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -125,24 +125,12 @@ bad:
 
 /*
  * Check for write permissions on the specified vnode.
- * The read-only status of the file system is checked.
- * Also, prototype text segments cannot be written.
+ * Prototype text segments cannot be written.
  */
 vn_writechk(vp)
 	register struct vnode *vp;
 {
 
-	/*
-	 * Disallow write attempts on read-only file systems;
-	 * unless the file is a socket or a block or character
-	 * device resident on the file system.
-	 */
-	if (vp->v_mount->mnt_flag & MNT_RDONLY) {
-		switch (vp->v_type) {
-		case VREG: case VDIR: case VLNK:
-			return (EROFS);
-		}
-	}
 	/*
 	 * If there's shared text associated with
 	 * the vnode, try to free it up once.  If
