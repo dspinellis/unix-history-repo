@@ -1,7 +1,7 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)kgmon.c	4.4 83/01/15";
+static char sccsid[] = "@(#)kgmon.c	4.5 83/01/15";
 #endif
 
 #include <sys/param.h>
@@ -58,7 +58,7 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int disp;
+	int mode, disp, ronly = 0;
 
 	argc--, argv++;
 	while (argv[0][0] == '-') {
@@ -102,9 +102,8 @@ main(argc, argv)
 			perror(kmemf);
 			exit(3);
 		}
+		ronly++;
 		fprintf(stderr, "%s opened read-only\n", kmemf);
-		if (!sflag)
-			fprintf(stderr, "data may be inconsistent\n");
 		if (rflag)
 			fprintf(stderr, "-r supressed\n");
 		if (bflag)
@@ -128,17 +127,22 @@ main(argc, argv)
 		}
 		read(kmem, Sysmap, nl[N_SYSSIZE].n_value);
 	}
+	mode = kfetch(N_PROFILING);
 	if (hflag)
 		disp = PROFILING_OFF;
 	else if (bflag)
 		disp = PROFILING_ON;
 	else
-		disp = kfetch(N_PROFILING);
-	if (!sflag)
+		disp = mode;
+	if (!sflag) {
+		if (ronly && mode == PROFILING_ON)
+			fprintf(stderr, "data may be inconsistent\n");
 		dumpstate();
+	}
 	if (rflag)
 		resetstate();
 	turnonoff(disp);
+	fprintf(stdout, "kernel profiling is %s.\n", disp ? "off" : "running");
 }
 
 dumpstate()
