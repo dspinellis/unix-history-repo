@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.91 (Berkeley) %G%
+ *	@(#)sendmail.h	8.43.1.3 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.91		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.43.1.3		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -1067,7 +1067,7 @@ extern char		*defcharset __P((ENVELOPE *));
 extern bool		emptyaddr __P((ADDRESS *));
 extern int		sendtolist __P((char *, ADDRESS *, ADDRESS **, int, ENVELOPE *));
 extern bool		wordinclass __P((char *, char));
-extern char		*denlstring __P((char *, int));
+extern char		*denlstring __P((char *, int, int));
 extern void		printaddr __P((ADDRESS *, bool));
 extern void		makelower __P((char *));
 extern void		rebuildaliases __P((MAP *, bool));
