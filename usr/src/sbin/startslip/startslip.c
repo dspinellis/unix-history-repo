@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)startslip.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)startslip.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -40,6 +40,11 @@ static char sccsid[] = "@(#)startslip.c	5.4 (Berkeley) %G%";
 #define DEFAULT_BAUD    B9600
 int     speed = DEFAULT_BAUD;
 int	hup;
+int	logged_in;
+int	wait_time = 60;		/* then back off */
+#define	MAXTRIES	6	/* w/60 sec and doubling, takes an hour */
+#define	PIDFILE		"/var/run/startslip.pid"
+
 #ifdef DEBUG
 int	debug = 1;
 #undef LOG_ERR
@@ -59,17 +64,20 @@ main(argc, argv)
 	extern char *optarg;
 	extern int optind;
 	int ch, disc;
-	int fd = -1, sighup();
-	FILE *wfd = NULL;
+	int fd = -1;
+	void sighup();
+	FILE *wfd = NULL, *pfd;
 	char *dialerstring = 0, buf[BUFSIZ];
-	int first = 1;
+	int first = 1, tries = 0;
+	int pausefirst = 0;
+	int pid;
 #ifdef POSIX
 	struct termios t;
 #else
 	struct sgttyb sgtty;
 #endif
 
-	while ((ch = getopt(argc, argv, "ds:b:")) != EOF)
+	while ((ch = getopt(argc, argv, "db:s:p:")) != EOF)
 		switch (ch) {
 		case 'd':
 			debug = 1;
@@ -79,6 +87,9 @@ main(argc, argv)
 			speed = atoi(optarg);
 			break;
 #endif
+		case 'p':
+			pausefirst = atoi(optarg);
+			break;
 		case 's':
 			dialerstring = optarg;
 			break;
@@ -104,36 +115,66 @@ main(argc, argv)
 
 	if (debug)
 		setbuf(stdout, NULL);
+	
+	if (pfd = fopen(PIDFILE, "r")) {
+		pid = 0;
+		fscanf(pfd, "%d", &pid);
+		if (pid > 0)
+			kill(pid, SIGUSR1);
+		fclose(pfd);
+	}
 restart:
+	logged_in = 0;
+	if (++tries > MAXTRIES) {
+		syslog(LOG_ERR, "exiting after %d tries\n", tries);
+		/* ???
+		if (first)
+		*/
+			exit(1);
+	}
+
 	/*
 	 * We may get a HUP below, when the parent (session leader/
 	 * controlling process) exits; ignore HUP until into new session.
 	 */
 	signal(SIGHUP, SIG_IGN);
 	hup = 0;
-	if (fork() > 0)
+	if (fork() > 0) {
+		if (pausefirst)
+			sleep(pausefirst);
+		if (first)
+			printd("parent exit\n");
 		exit(0);
+	}
+	pausefirst = 0;
 #ifdef POSIX
 	if (setsid() == -1)
 		perror("setsid");
 #endif
-	printd("restart: pid %d: close", getpid());
+	pid = getpid();
+	printd("restart: pid %d: ", pid);
+	if (pfd = fopen(PIDFILE, "w")) {
+		fprintf(pfd, "%d\n", pid);
+		fclose(pfd);
+	}
 	if (wfd) {
+		printd("fclose, ");
 		fclose(wfd);
 		wfd == NULL;
 	}
 	if (fd >= 0) {
+		printd("close, ");
 		close(fd);
 		sleep(5);
 	}
-	printd(", open");
+	printd("open");
 	if ((fd = open(argv[0], O_RDWR)) < 0) {
 		perror(argv[0]);
-		syslog(LOG_ERR, "startslip: open %s: %m\n", argv[0]);
+		syslog(LOG_ERR, "open %s: %m\n", argv[0]);
 		if (first)
 			exit(1);
 		else {
-			sleep(5*60);
+			sleep(wait_time * tries);
 			goto restart;
 		}
 	}
@@ -143,9 +184,6 @@ restart:
 		perror("ioctl (TIOCSCTTY)");
 #endif
 	signal(SIGHUP, sighup);
-	sleep(2);		/* wait for flakey line to settle */
-	if (hup)
-		goto restart;
 	if (debug) {
 		if (ioctl(fd, TIOCGETD, &disc) < 0)
 			perror("ioctl(TIOCSETD)");
@@ -154,33 +192,34 @@ restart:
 	disc = TTYDISC;
 	if (ioctl(fd, TIOCSETD, &disc) < 0) {
 	        perror("ioctl(TIOCSETD)");
-		syslog(LOG_ERR, "startslip: %s: ioctl (TIOCSETD 0): %m\n",
+		syslog(LOG_ERR, "%s: ioctl (TIOCSETD 0): %m\n",
 		    argv[0]);
 	}
 	printd(", ioctl");
 #ifdef POSIX
 	if (tcgetattr(fd, &t) < 0) {
 		perror("tcgetattr");
-		syslog(LOG_ERR, "startslip: %s: tcgetattr: %m\n", argv[0]);
+		syslog(LOG_ERR, "%s: tcgetattr: %m\n", argv[0]);
 	        exit(2);
 	}
 	cfmakeraw(&t);
+	t.c_iflag &= ~IMAXBEL;
 	t.c_cflag |= CRTSCTS;
 	cfsetspeed(&t, speed);
-	if (tcsetattr(fd, TCSANOW, &t) < 0) {
+	if (tcsetattr(fd, TCSAFLUSH, &t) < 0) {
 		perror("tcsetattr");
-		syslog(LOG_ERR, "startslip: %s: tcsetattr: %m\n", argv[0]);
+		syslog(LOG_ERR, "%s: tcsetattr: %m\n", argv[0]);
 	        if (first) 
 			exit(2);
 		else {
-			sleep(5*60);
+			sleep(wait_time * tries);
 			goto restart;
 		}
 	}
 #else
 	if (ioctl(fd, TIOCGETP, &sgtty) < 0) {
 	        perror("ioctl (TIOCGETP)");
-		syslog(LOG_ERR, "startslip: %s: ioctl (TIOCGETP): %m\n",
+		syslog(LOG_ERR, "%s: ioctl (TIOCGETP): %m\n",
 		    argv[0]);
 	        exit(2);
 	}
@@ -189,62 +228,62 @@ restart:
 	sgtty.sg_ispeed = sgtty.sg_ospeed = speed;
 	if (ioctl(fd, TIOCSETP, &sgtty) < 0) {
 	        perror("ioctl (TIOCSETP)");
-		syslog(LOG_ERR, "startslip: %s: ioctl (TIOCSETP): %m\n",
+		syslog(LOG_ERR, "%s: ioctl (TIOCSETP): %m\n",
 		    argv[0]);
 	        if (first) 
 			exit(2);
 		else {
-			sleep(5*60);
+			sleep(wait_time * tries);
 			goto restart;
 		}
 	}
 #endif
+	sleep(2);		/* wait for flakey line to settle */
+	if (hup)
+		goto restart;
+
+	wfd = fdopen(fd, "w+");
+	if (wfd == NULL) {
+		syslog(LOG_ERR, "can't fdopen slip line\n");
+		exit(10);
+	}
+	setbuf(wfd, (char *)0);
 	if (dialerstring) {
 		printd(", send dialstring");
-		(void) write(fd, dialerstring, strlen(dialerstring));
-		(void) write(fd, "\r", 1);
-	}
+		fprintf(wfd, "%s\r", dialerstring);
+	} else
+		putc('\r', wfd);
 	printd("\n");
 
 	/*
 	 * Log in
 	 */
-	wfd = fdopen(fd, "w+");
-	if (wfd == NULL) {
-		syslog(LOG_ERR, "startslip: can't fdopen slip line\n");
-		exit(10);
-	}
 	printd("look for login: ");
-	putc('\r', wfd);
-	while (fflush(wfd), getline(buf, BUFSIZ, fd) != NULL) {
-		if (hup != 0)
+	for (;;) {
+		if (getline(buf, BUFSIZ, fd) == 0 || hup) {
+			sleep(wait_time * tries);
 			goto restart;
+		}
 	        if (bcmp(&buf[1], "ogin:", 5) == 0) {
 	                fprintf(wfd, "%s\r", argv[1]);
 	                continue;
 	        }
 	        if (bcmp(&buf[1], "assword:", 8) == 0) {
 	                fprintf(wfd, "%s\r", argv[2]);
-	                fflush(wfd);
 	                break;
 	        }
 	}
-	printd("setd");
+
 	/*
 	 * Attach
 	 */
+	printd("setd");
 	disc = SLIPDISC;
 	if (ioctl(fd, TIOCSETD, &disc) < 0) {
 	        perror("ioctl(TIOCSETD)");
-		syslog(LOG_ERR, "startslip: %s: ioctl (TIOCSETD SLIP): %m\n",
+		syslog(LOG_ERR, "%s: ioctl (TIOCSETD SLIP): %m\n",
 		    argv[0]);
 	        exit(1);
-	}
-	disc = SC_COMPRESS;
-	if (ioctl(fd, SLIOCSFLAGS, (caddr_t)&disc) < 0) {
-	        perror("ioctl(SLIOCFLAGS)");
-		syslog(LOG_ERR, "ioctl (SLIOCSFLAGS): %m");
-		exit(1);
 	}
 	if (first && debug == 0) {
 		close(0);
@@ -256,7 +295,11 @@ restart:
 	}
 	(void) system("ifconfig sl0 up");
 	printd(", ready\n");
+	if (!first)
+		syslog(LOG_INFO, "reconnected (%d tries).\n", tries);
 	first = 0;
+	tries = 0;
+	logged_in = 1;
 	while (hup == 0) {
 		sigpause(0L);
 		printd("sigpause return\n");
@@ -264,12 +307,13 @@ restart:
 	goto restart;
 }
 
+void
 sighup()
 {
 
 	printd("hup\n");
-	if (hup == 0)
-		syslog(LOG_INFO, "startslip: hangup signal\n");
+	if (hup == 0 && logged_in)
+		syslog(LOG_INFO, "hangup signal\n");
 	hup = 1;
 }
 
@@ -286,8 +330,6 @@ getline(buf, size, fd)
 			return (0);
 	        if ((ret = read(fd, &buf[i], 1)) == 1) {
 	                buf[i] &= 0177;
-			if (debug)
-				fprintf(stderr, "Got %d: \"%s\"\n", i + 1, buf);
 	                if (buf[i] == '\r')
 	                        buf[i] = '\n';
 	                if (buf[i] != '\n' && buf[i] != ':')
@@ -297,10 +339,12 @@ getline(buf, size, fd)
 				fprintf(stderr, "Got %d: \"%s\"\n", i + 1, buf);
 	                return (i+1);
 	        }
-		if (ret < 0) {
-			perror("getline: read (sleeping)");
+		if (ret <= 0) {
+			if (ret < 0)
+				perror("getline: read");
+			else
+				fprintf(stderr, "read returned 0\n");
 			buf[i] = '\0';
-			sleep(60);
 			printd("returning 0 after %d: \"%s\"\n", i, buf);
 			return (0);
 		}
@@ -310,7 +354,6 @@ getline(buf, size, fd)
 
 usage()
 {
-	fprintf(stderr, "usage: startslip [-d] [-b baudrate] [-s dialstring]%s",
-		" dev user passwd\n");
+	fprintf(stderr, "usage: startslip [-d] [-s string] dev user passwd\n");
 	exit(1);
 }
