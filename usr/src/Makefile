@@ -11,7 +11,8 @@
 #	make installsrc
 # The `make build' will compile and install the libraries and the compiler
 # twice before building the rest of the sources.  The `make installsrc' will
-# then install the remaining binaries.
+# then install the remaining binaries.  Only `make build' will clean out
+# the source tree as well as remake the dependencies.
 #
 #	make libthenall
 #	make installsrc
@@ -27,15 +28,15 @@
 #
 # C library options: passed to libc makefile.
 # See lib/libc/Makefile for explanation.
+#
 # HOSTLOOKUP must be either named or hosttable.
 # DFLMON must be either mon.o or gmon.o.
 # DEFS may include -DLIBC_SCCS, -DSYSLIBC_SCCS, both, or neither.
 #
-HOSTLOOKUP=named
-DFLMON=mon.o
-DEFS= -DLIBC_SCCS
-MACHINE=tahoe
-LIBCDEFS= MACHINE=${MACHINE} HOSTLOOKUP=${HOSTLOOKUP} DFLMON=${DFLMON} DEFS="${DEFS}"
+DEFS=		-DLIBC_SCCS
+DFLMON=		mon.o
+HOSTLOOKUP=	named
+LIBCDEFS=	HOSTLOOKUP=${HOSTLOOKUP} DFLMON=${DFLMON} DEFS="${DEFS}"
 
 # global flags
 # SRC_MFLAGS are used on makes in command source directories,
@@ -43,21 +44,20 @@ LIBCDEFS= MACHINE=${MACHINE} HOSTLOOKUP=${HOSTLOOKUP} DFLMON=${DFLMON} DEFS="${D
 # for use in compiling everything else.
 #
 DESTDIR=
-CFLAGS=	-O
-SRC_MFLAGS = -k
+CFLAGS=		-O
+SRC_MFLAGS=	-k
 
-# Programs that live in subdirectories, and have makefiles of their own.
-#
-LIBDIR= lib usr.lib
-SRCDIR=	bin usr.bin etc ucb new games local old
+LIBDIR=	lib usr.lib
+# order is important, old and man must be #1 and #2
+SRCDIR=	old man bin etc games local new ucb usr.bin
 
 all: ${LIBDIR} ${SRCDIR}
 
 libthenall: buildlib1 buildlib3 ${SRCDIR}
 
-build: buildlib1 buildlib2 buildlib3 ${SRCDIR}
+build: clean depend buildlib1 buildlib2 buildlib3 ${SRCDIR}
 
-lib:	FRC
+lib: FRC
 	cd lib/libc; make ${MFLAGS} ${LIBCDEFS}
 	cd lib; make ${MFLAGS} pcc cpp c2
 
@@ -103,26 +103,32 @@ buildlib3: FRC
 	cd usr.lib; make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install
 	@echo
 
-FRC:
-
-install:
+install: FRC
 	-for i in ${LIBDIR} ${SRCDIR}; do \
 		(cd $$i; \
 		make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install); \
 	done
 
-installsrc:
+installsrc: FRC
 	-for i in ${SRCDIR}; do \
 		(cd $$i; \
 		make ${MFLAGS} ${SRC_MFLAGS} DESTDIR=${DESTDIR} install); \
 	done
 
-tags:
+depend: FRC
+	for i in ${LIBDIR} ${SRCDIR}; do \
+		(cd $$i; make ${MFLAGS} depend); \
+	done
+
+tags: FRC
 	for i in include lib usr.lib; do \
 		(cd $$i; make ${MFLAGS} TAGSFILE=../tags tags); \
 	done
 	sort -u +0 -1 -o tags tags
 
-clean:
-	rm -f a.out core *.s *.o
-	for i in ${LIBDIR} ${SRCDIR}; do (cd $$i; make -k ${MFLAGS} clean); done
+clean: FRC
+	for i in ${LIBDIR} ${SRCDIR}; do \
+		(cd $$i; make -k ${MFLAGS} clean); \
+	done
+
+FRC:

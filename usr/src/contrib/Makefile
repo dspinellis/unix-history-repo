@@ -1,43 +1,33 @@
-#	Makefile	4.24	87/07/27
+#
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	4.25	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
+LIBC=	/lib/libc.a
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	ansi apl bib courier cpm dsh help hyper icon jove kermit mh \
-	mkmf np100 patch rcs sunrpc tac tools
-#
-# Default programs that are installed
-#
-STDINST=ansi bib emacs jove kermit mh patch rcs
-#
-# Special purpose software that requires custom installation,
-# or may not be needed by all sites
-#
-OPTDIR=	B dipress enet mmdf news nntp notes pathalias rn \
-	spms sumacc umodem xns X X.local/xlock
+SUBDIR=	ansi bib emacs jove kermit mh patch rcs X X/X.local
 
-all:	${STDINST}
+all: ${SUBDIR}
 
 ${SUBDIR}: FRC
 	cd $@; make ${MFLAGS}
 
-${OPTDIR}: FRC
-	cd $@; make ${MFLAGS} all
-
-depend:
-
 install:
-	-for i in ${STDINST}; do \
-		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-
-installall:
 	-for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
+	for file in `find /usr/new/man -type f -name '*.0' -print`; do \
+		sed -n -f /usr/man/makewhatis.sed $$file; \
+	done | sort -u > whatis.db
+	install -o bin -g bin -m 444 whatis.db ${DESTDIR}/usr/new/man/whatis
 
 clean:
 	-for i in ${SUBDIR}; do (echo $$i; cd $$i; make ${MFLAGS} clean); done
-	-for i in ${OPTDIR}; do (echo $$i; cd $$i; make ${MFLAGS} clean); done
 
+depend:
 FRC:
