@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_ether.c	7.4 (Berkeley) %G%
+ *	@(#)if_ether.c	7.5 (Berkeley) %G%
  */
 
 /*
@@ -531,7 +531,7 @@ arpioctl(cmd, data)
 		bcopy((caddr_t)ar->arp_ha.sa_data, (caddr_t)at->at_enaddr,
 		    sizeof(at->at_enaddr));
 		at->at_flags = ATF_COM | ATF_INUSE |
-			(ar->arp_flags & (ATF_PERM|ATF_PUBL));
+			(ar->arp_flags & (ATF_PERM|ATF_PUBL|ATF_USETRAILERS));
 		at->at_timer = 0;
 		break;
 
