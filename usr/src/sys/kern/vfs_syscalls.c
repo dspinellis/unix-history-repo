@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.11 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1414,7 +1414,7 @@ chown(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	NDINIT(&nd, LOOKUP, NOFOLLOW, UIO_USERSPACE, uap->path, p);
+	NDINIT(&nd, LOOKUP, FOLLOW, UIO_USERSPACE, uap->path, p);
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
