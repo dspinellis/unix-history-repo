@@ -6,32 +6,41 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
-#ifdef sunos
-#include <stdio.h>
-#include <ctype.h>
 #include <sys/param.h>
-#include <ufs/fs.h>
-#else
-#include <sys/param.h>
-#include <ufs/ffs/fs.h>
-#endif
 #include <sys/time.h>
 #include <sys/stat.h>
+#ifdef sunos
+#include <sys/vnode.h>
+
+#include <ufs/fs.h>
+#include <ufs/fsdir.h>
+#include <ufs/inode.h>
+#else
+#include <ufs/ffs/fs.h>
 #include <ufs/ufs/dir.h>
 #include <ufs/ufs/dinode.h>
-#include <protocols/dumprestore.h>
-#ifdef __STDC__
-#include <unistd.h>
-#include <string.h>
 #endif
+
+#include <protocols/dumprestore.h>
+
+#include <ctype.h>
+#include <stdio.h>
+#ifdef __STDC__
+#include <string.h>
+#include <unistd.h>
+#endif
+
 #include "dump.h"
 
-void	dmpindir();
 #define	HASDUMPEDFILE	0x1
 #define	HASSUBDIRS	0x2
+
+static	int dirindir __P((ino_t ino, daddr_t blkno, int level, long *size));
+static	void dmpindir __P((ino_t ino, daddr_t blk, int level, quad_t *size));
+static	int searchdir __P((ino_t ino, daddr_t blkno, long size, long filesize));
 
 /*
  * This is an estimation of the number of TP_BSIZE blocks in the file.
@@ -80,6 +89,7 @@ blockest(dp)
  * that have been modified since the previous dump time. Also, find all
  * the directories in the filesystem.
  */
+int
 mapfiles(maxino, tapesize)
 	ino_t maxino;
 	long *tapesize;
@@ -96,10 +106,14 @@ mapfiles(maxino, tapesize)
 		SETINO(ino, usedinomap);
 		if (mode == IFDIR)
 			SETINO(ino, dumpdirmap);
-		if ((dp->di_mtime.ts_sec >= spcl.c_ddate ||
-		    dp->di_ctime.ts_sec >= spcl.c_ddate)
-#ifndef sunos
+		if (
+#ifdef FS_44INODEFMT
+		    (dp->di_mtime.ts_sec >= spcl.c_ddate ||
+		     dp->di_ctime.ts_sec >= spcl.c_ddate)
 		    && (dp->di_flags & NODUMP) != NODUMP
+#else
+		    dp->di_mtime >= spcl.c_ddate ||
+		     dp->di_ctime >= spcl.c_ddate
 #endif
 		    ) {
 			SETINO(ino, dumpinomap);
@@ -133,6 +147,7 @@ mapfiles(maxino, tapesize)
  * its parent may now qualify for the same treatment on this or a later
  * pass using this algorithm.
  */
+int
 mapdirs(maxino, tapesize)
 	ino_t maxino;
 	long *tapesize;
@@ -190,6 +205,7 @@ mapdirs(maxino, tapesize)
  * as directories. Quit as soon as any entry is found that will
  * require the directory to be dumped.
  */
+static int
 dirindir(ino, blkno, ind_level, filesize)
 	ino_t ino;
 	daddr_t blkno;
@@ -228,6 +244,7 @@ dirindir(ino, blkno, ind_level, filesize)
  * any of the entries are on the dump list and to see if the directory
  * contains any subdirectories.
  */
+static int
 searchdir(ino, blkno, size, filesize)
 	ino_t ino;
 	daddr_t blkno;
@@ -281,7 +298,7 @@ dumpino(dp, ino)
 	ino_t ino;
 {
 	int ind_level, cnt;
-	long size;
+	quad_t size;
 	char buf[TP_BSIZE];
 
 	if (newtape) {
@@ -292,18 +309,19 @@ dumpino(dp, ino)
 	spcl.c_dinode = *dp;
 	spcl.c_type = TS_INODE;
 	spcl.c_count = 0;
-	switch (IFTODT(dp->di_mode)) {
+	switch (dp->di_mode & S_IFMT) {
 
-	case DT_UNKNOWN:
+	case 0:
 		/*
 		 * Freed inode.
 		 */
 		return;
 
-	case DT_LNK:
+	case S_IFLNK:
 		/*
 		 * Check for short symbolic link.
 		 */
+#ifdef FS_44INODEFMT
 		if (dp->di_size > 0 &&
 		    dp->di_size < sblock->fs_maxsymlinklen) {
 			spcl.c_addr[0] = 1;
@@ -315,18 +333,19 @@ dumpino(dp, ino)
 			writerec(buf, 0);
 			return;
 		}
+#endif
 		/* fall through */
 
-	case DT_DIR:
-	case DT_REG:
+	case S_IFDIR:
+	case S_IFREG:
 		if (dp->di_size > 0)
 			break;
 		/* fall through */
 
-	case DT_FIFO:
-	case DT_SOCK:
-	case DT_CHR:
-	case DT_BLK:
+	case S_IFIFO:
+	case S_IFSOCK:
+	case S_IFCHR:
+	case S_IFBLK:
 		writeheader(ino);
 		return;
 
@@ -351,12 +370,12 @@ dumpino(dp, ino)
 /*
  * Read indirect blocks, and pass the data blocks to be dumped.
  */
-void
+static void
 dmpindir(ino, blk, ind_level, size)
 	ino_t ino;
 	daddr_t blk;
 	int ind_level;
-	long *size;
+	quad_t *size;
 {
 	int i, cnt;
 	daddr_t idblk[MAXNINDIR];
