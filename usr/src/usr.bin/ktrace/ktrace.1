@@ -1,14 +1,13 @@
 .\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)ktrace.1	5.4 (Berkeley) %G%
+.\"	@(#)ktrace.1	5.5 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt KTRACE 1
+.Os
 .Sh NAME
 .Nm ktrace
 .Nd enable kernel process tracing
@@ -27,9 +26,11 @@ command
 .Sh DESCRIPTION
 .Nm Ktrace
 enables kernel trace logging for the specified processes.
-Kernel trace data is logged to the file ``ktrace.out''.
+Kernel trace data is logged to the file
+.Pa ktrace.out .
 The kernel operations that are traced include system calls, namei
-translations, signal processing, and I/O.
+translations, signal processing, and
+.Tn I/O .
 .Pp
 Once tracing is enabled on a process, trace data will be logged until
 either the process exits or the trace point is cleared.
@@ -46,95 +47,91 @@ The trace file is not human readable; use
 to decode it.
 .Pp
 The options are as follows:
-.Tw Ds
-.Tp Fl a
+.Bl -tag -width indent
+.It Fl a
 Append to the trace file instead of truncating it.
-.Tp Fl C
+.It Fl C
 Disable tracing on all user owned processes, and, if executed by root, all
 processes in the system.
-.Tp Fl c
+.It Fl c
 Clear the trace points associated with the specified file or processes.
-.Tp Fl d
+.It Fl d
 Descendants; perform the operation for all current children of the
 designated processes.
-.Tc Fl f
-.Ws
-.Ar file
-.Cx
+.It Fl f Ar file 
 Log trace records to
 .Ar file
-instead of ``ktrace.out''.
-.Tc Fl g
-.Ws
-.Ar pgid
-.Cx
+instead of
+.Pa ktrace.out .
+.It Fl g Ar pgid 
 Enable (disable) tracing on all processes in the process group (only one
 .Fl g
 flag is permitted).
-.Tp Fl i
+.It Fl i
 Inherit; pass the trace flags to all future children of the designated
 processes.
-.Tc Fl p
-.Ws
-.Ar pid
-.Cx
+.It Fl p Ar pid 
 Enable (disable) tracing on the indicated process id (only one
 .Fl p
 flag is permitted).
-.Tc Fl t
-.Ws
-.Ar trstr
-.Cx
+.It Fl t Ar trstr 
 The string argument represents the kernel trace points, one per letter.
 The following table equates the letters with the tracepoints:
-.Dw Dp
-.Dp Cm c
+.Pp
+.Bl -tag -width flag -compact
+.It Cm c
 trace system calls
-.Dp Cm n
+.It Cm n
 trace namei translations
-.Dp Cm i
-trace I/O
-.Dp Cm s
+.It Cm i
+trace
+.Tn I/O
+.It Cm s
 trace signal processing
-.Dp
-.Tp Ar command
+.El
+.It Ar command
 Execute
 .Ar command
 with the specified trace flags.
-.Tp
+.El
 .Pp
 The
 .Fl p ,
 .Fl g ,
-and command options are mutually exclusive.
+and
+.Ar command
+options are mutually exclusive.
 .Sh EXAMPLES
 # trace all kernel operations of process id 34
 .Dl $ ktrace -p 34
-.sp
-.nf
+.Pp
 # trace all kernel operations of processes in process group 15 and
 # pass the trace flags to all current and future children
-.fi
 .Dl $ ktrace -idg 15
-.sp
+.Pp
 # disable all tracing of process 65
 .Dl $ ktrace -cp 65
-.sp
+.Pp
 # disable tracing signals on process 70 and all current children
 .Dl $ ktrace -t s -cdp 70
-.sp
-# enable tracing of i/o on process 67
+.Pp
+# enable tracing of
+.Tn I/O
+on process 67
 .Dl $ ktrace -ti -p 67
-.sp
+.Pp
 # run the command "w", tracing only system calls
 .Dl $ ktrace -tc w
-.sp
+.Pp
 # disable all tracing to the file "tracedata"
 .Dl $ ktrace -c -f tracedata
-.sp
+.Pp
 # disable tracing of all processes owned by the user
 .Dl $ ktrace -C
 .Sh SEE ALSO
 .Xr kdump 1
 .Sh HISTORY
-4.4 BSD.
+The
+.Nm ktrace
+command is
+.Ud .

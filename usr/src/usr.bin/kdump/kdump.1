@@ -1,14 +1,13 @@
 .\" Copyright (c) 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.redist.man%
+.\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)kdump.1	5.3 (Berkeley) %G%
+.\"	@(#)kdump.1	5.4 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt KDUMP 1
+.Os
 .Sh NAME
 .Nm kdump
 .Nd display kernel trace data
@@ -23,52 +22,53 @@
 displays the kernel trace files produced with
 .Xr ktrace 1
 in human readable format.
-By default, the file ``ktrace.out'' in the current directory is displayed.
+By default, the file
+.Pa ktrace.out
+in the current directory is displayed.
 .Pp
 The options are as follows:
-.Tw Fl
-.Tp Fl d
+.Bl -tag -width Fl
+.It Fl d
 Display all numbers in decimal.
-.Tc Fl f
-.Ws
-.Ar file
-.Cx
-Display the specified file instead of ``ktrace.out''.
-.Tp Fl l
+.It Fl f Ar file 
+Display the specified file instead of
+.Pa ktrace.out .
+.It Fl l
 Loop reading the trace file, once the end-of-file is reached, waiting for
 more data.
-.Tc Fl m
-.Ws
-.Ar maxdata
-.Cx
+.It Fl m Ar maxdata 
 Display at most
 .Ar maxdata
-bytes when decoding I/O.
-.Tp Fl n
+bytes when decoding
+.Tn I/O .
+.It Fl n
 Suppress ad hoc translations.
 Normally
 .Nm kdump
 tries to decode many system calls into a more human readable format.
-For example, ioctl values are replaced with the macro name and errno
+For example,
+.Xr ioctl 2
+values are replaced with the macro name and
+.Va errno
 values are replaced with the
-.Li strerror()
+.Xr strerror 3
 string.
 Suppressing this feature yields a more consistent output format and is
 easily amenable to further processing.
-.Tp Fl R
+.It Fl R
 Display relative timestamps (time since previous entry).
-.Tp Fl T
+.It Fl T
 Display absolute timestamps for each entry (seconds since epoch).
-.Tc Fl t
-.Ws
-.Ar cnis
-.Cx
+.It Fl t Ar cnis 
 See the
 .Fl t
 option of
 .Xr ktrace 1 .
-.Tp
+.El
 .Sh SEE ALSO
 .Xr ktrace 1
 .Sh HISTORY
-4.4 BSD.
+The
+.Nm kdump
+command is
+.Ud .
