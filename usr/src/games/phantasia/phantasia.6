@@ -5,31 +5,12 @@
 \fB\\$1\fR
 .PP
 ..
-.TH PHANTASIA 6 GAMES
+.TH PHANTASIA 6 ""
 .UC 4
 .SH NAME
 phantasia \- an interterminal fantasy game
 .SH SYNOPSIS
-.B phantasia
-[
-.B \-s
-] [
-.B \-m
-] [
-.B \-a
-] [
-.B \-x
-] [
-.B \-h
-] [
-.B \-H
-] [
-.B \-p
-] [
-.B \-b
-] [
-.B \-S
-]
+phantasia [ \-HSabmpsx ]
 .SH DESCRIPTION
 .I Phantasia
 is a role playing game
@@ -61,9 +42,6 @@ Get a listing of all character names on file.
 .B \-x
 Examine/change a particular character on file.
 .TP .5i
-.B \-h
-Print a help listing (this message).
-.TP .5i
 .B \-H
 Print header only.
 .TP .5i
@@ -74,7 +52,7 @@ Purge old characters.
 Show scoreboard of top characters per login.
 .TP .5i
 .B \-S
-Turn on wizard options, if allowed.
+Turn on wizard options, if allowed, if running as ``root''.
 .PP
 The characters are saved on a common file, in order to make the game
 interactive between players.  The characters are given a password
