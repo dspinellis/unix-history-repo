@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.34 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -302,7 +302,7 @@ close(p, uap, retval)
 	return (closef(fp, p));
 }
 
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 /*
  * Return status information about a file descriptor.
  */
@@ -335,7 +335,7 @@ ofstat(p, uap, retval)
 		break;
 
 	default:
-		panic("fstat");
+		panic("ofstat");
 		/*NOTREACHED*/
 	}
 	cvtstat(&ub, &oub);
@@ -343,7 +343,7 @@ ofstat(p, uap, retval)
 		error = copyout((caddr_t)&oub, (caddr_t)uap->sb, sizeof (oub));
 	return (error);
 }
-#endif /* COMPAT_43 */
+#endif /* COMPAT_43 || COMPAT_SUNOS */
 
 /*
  * Return status information about a file descriptor.
