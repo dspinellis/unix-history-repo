@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.86 (Berkeley) %G%
+ *	@(#)conf.h	8.87 (Berkeley) %G%
  */
 
 /*
@@ -660,6 +660,7 @@ typedef int		pid_t;
 */
 
 #ifdef sequent
+
 # define BSD		1
 # define HASUNSETENV	1
 # define BSD4_3		1	/* to get signal() in conf.c */
@@ -686,6 +687,33 @@ typedef int		pid_t;
 #  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
 # endif
 
+#endif
+
+
+/*
+**  Sequent DYNIX/ptx v2.0 (and higher)
+**
+**	For DYNIX/ptx v1.x, undefine HASSETREUID.
+**
+**	From Tim Wright <timw@sequent.com>.
+*/
+
+#ifdef _SEQUENT_
+# define SYSTEM5	1	/* include all the System V defines */
+# define HASSETSID	1	/* has POSIX setsid(2) call */
+# define HASINITGROUPS	1	/* has initgroups(3) call */
+# define HASSETREUID	1	/* has setreuid(2) call */
+# define HASGETUSERSHELL 0	/* does not have getusershell(3) call */
+# define GIDSET_T	gid_t
+# define LA_TYPE	LA_INT
+# define SFS_TYPE	SFS_STATFS	/* use <sys/statfs.h> statfs() impl */
+# undef SETPROCTITLE
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/etc/sendmail.pid"
+# endif
 #endif
 
 
