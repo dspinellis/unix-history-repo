@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkioconf.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkioconf.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -368,11 +368,10 @@ tahoe_ioconf()
 			continue;
 		np = 0;
 		if (eq(mp->d_name, "vba")) {
-			if (dp->d_vec == 0) {
-				printf("must specify vector for device %s%d\n",
+			if (dp->d_vec == 0)
+				printf(
+		"Warning, no interrupt vector specified for device %s%d\n",
 				    dp->d_name, dp->d_unit);
-				continue;
-			}
 			if (dp->d_addr == 0) {
 				printf("must specify csr for device %s%d\n",
 				    dp->d_name, dp->d_unit);
@@ -435,7 +434,8 @@ tahoe_ioconf()
 }
 #endif
 
-char *intv(dev)
+char *
+intv(dev)
 	register struct device *dev;
 {
 	static char buf[20];
