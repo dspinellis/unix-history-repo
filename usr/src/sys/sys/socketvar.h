@@ -1,4 +1,4 @@
-/*	socketvar.h	6.1	83/07/29	*/
+/*	socketvar.h	6.2	84/01/11	*/
 
 /*
  * Kernel structure per socket.
@@ -128,8 +128,8 @@ struct socket {
 	} \
 }
 
-#define	sorwakeup(so)	sbwakeup(&(so)->so_rcv)
-#define	sowwakeup(so)	sbwakeup(&(so)->so_snd)
+#define	sorwakeup(so)	sowakeup((so), &(so)->so_rcv)
+#define	sowwakeup(so)	sowakeup((so), &(so)->so_snd)
 
 #ifdef KERNEL
 struct	socket *sonewconn();
