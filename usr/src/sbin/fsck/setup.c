@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -318,6 +318,7 @@ readsb(listerr)
 	altsblock.fs_maxbpg = sblock.fs_maxbpg;
 	bcopy((char *)sblock.fs_csp, (char *)altsblock.fs_csp,
 		sizeof sblock.fs_csp);
+	altsblock.fs_maxcluster = sblock.fs_maxcluster;
 	bcopy((char *)sblock.fs_fsmnt, (char *)altsblock.fs_fsmnt,
 		sizeof sblock.fs_fsmnt);
 	bcopy((char *)sblock.fs_sparecon, (char *)altsblock.fs_sparecon,
@@ -335,6 +336,20 @@ readsb(listerr)
 	altsblock.fs_state = sblock.fs_state;
 	altsblock.fs_maxfilesize = sblock.fs_maxfilesize;
 	if (bcmp((char *)&sblock, (char *)&altsblock, (int)sblock.fs_sbsize)) {
+		if (debug) {
+			long *nlp, *olp, *endlp;
+
+			printf("superblock mismatches\n");
+			nlp = (long *)&altsblock;
+			olp = (long *)&sblock;
+			endlp = olp + (sblock.fs_sbsize / sizeof *olp);
+			for ( ; olp < endlp; olp++, nlp++) {
+				if (*olp == *nlp)
+					continue;
+				printf("offset %d, original %d, alternate %d\n",
+				    olp - (long *)&sblock, *olp, *nlp);
+			}
+		}
 		badsb(listerr,
 		"VALUES IN SUPER BLOCK DISAGREE WITH THOSE IN FIRST ALTERNATE");
 		return (0);
