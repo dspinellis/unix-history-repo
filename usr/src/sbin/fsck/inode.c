@@ -1,7 +1,8 @@
 #ifndef lint
-static char version[] = "@(#)inode.c	3.9 (Berkeley) %G%";
+static char version[] = "@(#)inode.c	3.10 (Berkeley) %G%";
 #endif
 
+#include <pwd.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
@@ -214,7 +215,7 @@ pinode(ino)
 {
 	register DINODE *dp;
 	register char *p;
-	char uidbuf[BUFSIZ];
+	struct passwd *pw;
 	char *ctime();
 
 	printf(" I=%u ", ino);
@@ -222,14 +223,10 @@ pinode(ino)
 		return;
 	dp = ginode(ino);
 	printf(" OWNER=");
-	if (getpw((int)dp->di_uid, uidbuf) == 0) {
-		for (p = uidbuf; *p != ':'; p++);
-		*p = 0;
-		printf("%s ", uidbuf);
-	}
-	else {
+	if ((pw = getpwuid((int)dp->di_uid)) != 0)
+		printf("%s ", pw->pw_name);
+	else
 		printf("%d ", dp->di_uid);
-	}
 	printf("MODE=%o\n", dp->di_mode);
 	if (preen)
 		printf("%s: ", devname);
