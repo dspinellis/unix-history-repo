@@ -1,0 +1,23 @@
+(Message inbox:47)
+Date:  Wed, 18 Jul 1990 14:16 EDT
+From:  swl26%CAS.BITNET@CORNELLC.cit.cornell.edu
+Subject:  Re(2): Re(2): diffs for mvs port of flex-2.3
+To:  vern@cs.cornell.edu
+
+
+
+>Thanks, I've successfully unpacked the archive.  I may simply distribute
+>the diffs as a set of files in the MISC/ directory rather than incorporating
+>them into the 2.4 release.  Let me know if you don't want me to do so.
+>
+>               Vern
+
+
+Thank you!  What you propose is okay.  I might suggest, however, that you
+look in the diffs for dfa.c, misc.c, and yylex.c, and consider removing
+some of the ASCIIisms which are probably unnecessary.  The manner in
+which I made the changes was pure brute force, and there might be a
+better way, but the changes I made there shouldn't hurt anything.
+
+        regards,
+        Steve
