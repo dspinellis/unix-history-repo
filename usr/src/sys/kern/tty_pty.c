@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)tty_pty.c	7.13 (Berkeley) %G%
+ *	@(#)tty_pty.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -586,6 +586,14 @@ ptyioctl(dev, cmd, data, flag)
 			return (0);
 		}
 		switch (cmd) {
+
+		case TIOCGPGRP:
+			/*
+			 * We aviod calling ttioctl on the controller since,
+			 * in that case, tp must be the controlling terminal.
+			 */
+			*(int *)data = tp->t_pgrp ? tp->t_pgrp->pg_id : 0;
+			return (0);
 
 		case TIOCPKT:
 			if (*(int *)data) {
