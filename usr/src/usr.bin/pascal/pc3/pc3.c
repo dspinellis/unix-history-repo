@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)pc3.c	1.12 (Berkeley) %G%";
+static	char sccsid[] = "@(#)pc3.c	1.13 (Berkeley) %G%";
 #endif
     /* Copyright (c) 1980 Regents of the University of California */
 
@@ -11,8 +11,8 @@ static	char sccsid[] = "@(#)pc3.c	1.12 (Berkeley) %G%";
      *	with the same argument list of object files that is sent to
      *	the loader.  These checks are performed by pc3 by examining
      *	the symbol tables of the object files:
-     *	(1)  All source and included files must be "up-to-date" with
-     *	     the object files of which they are components.
+     *	(1)  All .o files must be up to date with respect to the
+     *	     runtime libraries.
      *	(2)  Each global Pascal symbol (label, constant, type,
      *	     variable, procedure, or function name) must be uniquely
      *	     declared, i.e. declared in only one included file or
@@ -30,14 +30,16 @@ static	char sccsid[] = "@(#)pc3.c	1.12 (Berkeley) %G%";
      *	
      *	   - the name of the symbol;
      *	   - a subtype descriptor;
-     *	   - for file symbols, their last modify time;
      *	   - the file which logically contains the declaration of
-     *	     the symbol (not an include file);
-     *	   - the file which textually contains the declaration of
-     *	     the symbol (possibly an include file);
-     *	   - the line number at which the symbol is declared;
-     *	   - the file which contains the resolution of the symbol.
-     *	   - the line number at which the symbol is resolved;
+     *	     the symbol or which caused the inclusion of an include file.
+     *	   - for included files:
+     *		- a checksum;
+     *	   - for symbols:
+     *	   	- the file which textually contains the declaration of
+     *	   	  the symbol (possibly an include file);
+     *	   	- the line number at which the symbol is declared;
+     *	   	- the file which contains the resolution of the symbol.
+     *	   	- the line number at which the symbol is resolved;
      *	
      *	     If a symbol has been previously entered into the symbol
      *	table, a check is made that the current declaration is of
@@ -125,7 +127,6 @@ checkfile( ofilep )
 	    return;
 	}
 	fstat( fileno( ofilep -> file ) , &filestat );
-	ofilep -> modtime = filestat.st_mtime;
 	red = fread( (char *) &mag_un , 1 , sizeof mag_un , ofilep -> file );
 	if ( red != sizeof mag_un ) {
 	    error( ERROR , "cannot read header: %s" , ofilep -> name );
@@ -280,6 +281,7 @@ checksymbol( nlp , ofilep )
 			, symbolp -> name );
 #	    endif DEBUG
 	    symbolp -> desc = nlp -> n_desc;
+	    symbolp -> fromp = pfilep;
 	    switch ( symbolp -> desc ) {
 		default:
 			error( FATAL , "panic: [checksymbol] NEW" );
@@ -293,7 +295,6 @@ checksymbol( nlp , ofilep )
 		case N_PLTEXT:
 			symbolp -> sym_un.sym_str.rfilep = ifilep;
 			symbolp -> sym_un.sym_str.rline = nlp -> n_value;
-			symbolp -> sym_un.sym_str.fromp = pfilep;
 			symbolp -> sym_un.sym_str.fromi = ifilep;
 			symbolp -> sym_un.sym_str.iline = nlp -> n_value;
 			return;
@@ -312,20 +313,22 @@ checksymbol( nlp , ofilep )
 				    , classify( symbolp -> desc )
 				    , symbolp -> name );
 			}
-			symbolp -> sym_un.sym_str.fromp = pfilep;
 			symbolp -> sym_un.sym_str.fromi = ifilep;
 			symbolp -> sym_un.sym_str.iline = nlp -> n_value;
 			return;
 		case N_PSO:
+			if ( nlp -> n_value < N_FLAGCHECKSUM ) {
+			    error( WARNING,
+				"%s is out of date and should be recompiled",
+				ofilep -> name );
+			}
 			pfilep = symbolp;
-			/* and fall through */
+			ifilep = symbolp;
+			symbolp -> sym_un.checksum = N_FLAGCHECKSUM;
+			return;
 		case N_PSOL:
 			ifilep = symbolp;
-			symbolp -> sym_un.modtime = mtime( symbolp -> name );
-			if ( symbolp -> sym_un.modtime > ofilep -> modtime ) {
-			    error( WARNING , "%s is out of date with %s"
-				    , ofilep -> name , symbolp -> name );
-			}
+			symbolp -> sym_un.checksum = nlp -> n_value;
 			return;
 	    }
 	} else {
@@ -337,26 +340,42 @@ checksymbol( nlp , ofilep )
 	    switch ( symbolp -> desc ) {
 		default:
 			error( FATAL , "panic [checksymbol] OLD" );
+			return;
 		case N_PSO:
 			    /*
 			     *	finding a file again means you are back
 			     *	in it after finishing an include file.
 			     */
+			if ( symbolp -> desc != nlp -> n_desc ) {
+			    error( FATAL , "panic [checksymbol] PSO" );
+			    return;
+			}
 			pfilep = symbolp;
-			/* and fall through */
+			ifilep = symbolp;
+			return;
 		case N_PSOL:
 			    /*
 			     *	include files can be seen more than once,
-			     *	but they still have to be timechecked.
-			     *	(this will complain twice for out of date
-			     *	include files which include other files.
-			     *	sigh.)
+			     *	but their checksums are checked if they are
+			     *	greater than N_FLAGCHECKSUM.
+			     *	PSOL's are seen with checksums as the
+			     *	include file is entered, and with
+			     *	N_FLAGCHECKSUM as we are back in an
+			     *	included file from a nested include.
 			     */
-			ifilep = symbolp;
-			if ( symbolp -> sym_un.modtime > ofilep -> modtime ) {
-			    error( WARNING , "%s is out of date with %s"
-				    , ofilep -> name , symbolp -> name );
+			if ( symbolp -> desc != nlp -> n_desc ) {
+			    error( FATAL , "panic [checksymbol] PSOL" );
+			    return;
 			}
+			if ((unsigned) symbolp->sym_un.checksum > N_FLAGCHECKSUM
+			   && (unsigned) nlp -> n_value > N_FLAGCHECKSUM
+			   && symbolp -> sym_un.checksum != nlp -> n_value ) {
+			    error( ERROR,
+			    "%s included in %s differs from %s included in %s",
+				symbolp -> name, pfilep -> name,
+				symbolp -> name, symbolp -> fromp -> name );
+			}
+			ifilep = symbolp;
 			return;
 		case N_PEFUNC:
 		case N_PEPROC:
@@ -370,7 +389,7 @@ checksymbol( nlp , ofilep )
 			         && nlp -> n_desc == N_PGFUNC )
 			      || ( symbolp -> desc == N_PEPROC
 				 && nlp -> n_desc == N_PGPROC ) )
-			   && ( symbolp -> sym_un.sym_str.fromp == pfilep )
+			   && ( symbolp -> fromp == pfilep )
 			   && ( symbolp -> sym_un.sym_str.rfilep == NIL ) ) {
 				/*
 				 *	resolve external
@@ -399,7 +418,7 @@ checksymbol( nlp , ofilep )
 #			    ifdef DEBUG
 				fprintf( stderr , "[checksymbol] just another pretty external\n" );
 #			    endif DEBUG
-			    symbolp -> sym_un.sym_str.fromp = pfilep;
+			    symbolp -> fromp = pfilep;
 			    return;
 			}
 			    /*
@@ -441,7 +460,7 @@ included:
 			   || symbolp -> sym_un.sym_str.fromi != ifilep ) {
 			    break;
 			}
-			symbolp -> sym_un.sym_str.fromp = pfilep;
+			symbolp -> fromp = pfilep;
 			return;
 		case N_PLDATA:
 		case N_PLTEXT:
@@ -791,27 +810,6 @@ error( type , message , arg1 , arg2 , arg3 , arg4 , arg5 , arg6 , arg7 , arg8 )
 	if ( type == FATAL ) {
 	    exit( FATAL );
 	}
-    }
-
-    /*
-     *	find the last modify time of a file.
-     *	on error, return the current time.
-     */
-time_t
-mtime( filename )
-    char	*filename;
-    {
-	struct stat	filestat;
-
-#	ifdef DEBUG
-	    fprintf( stderr , "[mtime] filename %s\n"
-		    , filename );
-#	endif DEBUG
-	if ( stat( filename , &filestat ) != 0 ) {
-	    error( WARNING , "%s: cannot stat" , filename );
-	    return ( (time_t) time( 0 ) );
-	}
-	return filestat.st_mtime;
     }
 
 char *
