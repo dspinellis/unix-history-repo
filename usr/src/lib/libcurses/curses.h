@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1981 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1981, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)curses.h	5.39 (Berkeley) %G%
+ *	@(#)curses.h	8.1 (Berkeley) %G%
  */
 
 #ifndef _CURSES_H_
