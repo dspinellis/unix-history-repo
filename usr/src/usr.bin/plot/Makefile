@@ -1,7 +1,8 @@
-#	Makefile	4.3	83/07/04
+#	Makefile	4.4	83/11/11
 #
 CFLAGS=	-O
-ALL=	tek t300 t300s t450 vplot
+ALL=	tek t300 t300s t450 aedplot bgplot crtplot dumbplot gigiplot \
+	hpplot hp7221plot debug atoplot plottoa
 
 all:	${ALL}
 
@@ -17,15 +18,48 @@ t300s:	driver.o
 t450:	driver.o 
 	cc -o t450 driver.o -l450 -lm
 
-vplot:	vplot.o chrtab.o
-	cc -o vplot vplot.o chrtab.o
+aedplot: driver.o
+	cc -o aedplot driver.o -lplotaed
+
+bgplot: driver.o
+	cc -o bgplot driver.o -lplotbg -lm
+
+crtplot: crtdriver.o crtplot.o
+	cc -o crtplot crtdriver.o crtplot.o -lcurses -ltermcap -lm
+
+dumbplot: driver.o
+	cc -o dumbplot driver.o -lplotdumb -ltermcap -lm
+
+gigiplot: driver.o
+	cc -o gigiplot driver.o -lplotgigi -lm
+
+hpplot: driver.o
+	cc -o hpplot driver.o -lplot2648 -lm
+
+hp7221plot: driver.o
+	cc -o hp7221plot driver.o -lplot7221 -lm
+
+atoplot: atoplot.o
+	cc -o atoplot atoplot.o -lplot -lm
+
+plottoa: plottoa.o
+	cc -o plottoa plottoa.o
+
+debug: debug.o
+	cc -o debug debug.o
 
 install: all
 	install -s tek ${DESTDIR}/usr/bin
 	install -s t300 ${DESTDIR}/usr/bin
 	install -s t300s ${DESTDIR}/usr/bin
 	install -s t450 ${DESTDIR}/usr/bin
-	install -s vplot ${DESTDIR}/usr/bin
+	install -s aedplot $(DESTDIR)/usr/bin
+	install -s bgplot ${DESTDIR}/usr/bin
+	install -s crtplot ${DESTDIR}/usr/bin
+	install -s dumbplot ${DESTDIR}/usr/bin
+	install -s gigiplot ${DESTDIR}/usr/bin
+	install -s hpplot ${DESTDIR}/usr/bin
 	install -c plot.sh ${DESTDIR}/usr/bin/plot
+
 clean:
 	rm -f *.o ${ALL} a.out core errs
