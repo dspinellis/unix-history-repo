@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1982, 1986 Regents of the University of California.
  *
- *	@(#)uipc_usrreq.c	7.34 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.35 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -343,9 +343,6 @@ unp_bind(unp, nam, p)
 	struct mbuf *nam;
 	struct proc *p;
 {
-	USES_VOP_ABORTOP;
-	USES_VOP_CREATE;
-	USES_VOP_UNLOCK;
 	struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct inode *ip;
 	int error;
@@ -386,7 +383,6 @@ unp_connect(so, nam, p)
 	struct mbuf *nam;
 	struct proc *p;
 {
-	USES_VOP_ACCESS;
 	register struct sockaddr_un *soun = mtod(nam, struct sockaddr_un *);
 	register struct inode *ip;
 	register struct socket *so2, *so3;

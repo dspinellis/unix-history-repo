@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_descrip.c	7.35 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.36 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -135,7 +135,6 @@ fcntl(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	USES_VOP_ADVLOCK;
 	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	register char *pop;
@@ -632,7 +631,6 @@ closef(fp, p)
 	register struct file *fp;
 	register struct proc *p;
 {
-	USES_VOP_ADVLOCK;
 	struct vnode *vp;
 	struct flock lf;
 	int error;
@@ -688,7 +686,6 @@ flock(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	USES_VOP_ADVLOCK;
 	register struct filedesc *fdp = p->p_fd;
 	register struct file *fp;
 	struct vnode *vp;
