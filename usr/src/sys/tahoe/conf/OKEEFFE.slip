@@ -1,0 +1,50 @@
+#
+# UCB POWER 6/32 OKEEFFE (debug slip)
+#
+machine		tahoe
+cpu		"TAHOE"
+ident		OKEEFFE
+timezone	8 dst
+maxusers	48
+options		INET
+options		NS
+options		KADB
+options		QUOTA
+options		"COMPAT_42"
+options		"TCP_COMPAT_42"
+options		"COMPAT_43"
+#options		FPE
+options		KTRACE
+
+config		vmunix	root on dk0 swap on dk0 and dk1 and dk4
+
+controller	vba0
+controller	vd0	at vba? csr 0xffff2000	vector vdintr
+disk		dk0	at vd0 drive 0
+disk		dk1	at vd0 drive 1
+disk		dk2	at vd0 drive 2
+disk		dk3	at vd0 drive 3
+controller	vd1	at vba? csr 0xffff2100	vector vdintr
+disk		dk4	at vd1 drive 0
+disk		dk5	at vd1 drive 1
+disk		dk6	at vd1 drive 2
+controller	vd2	at vba? csr 0xffff2200	vector vdintr
+disk		dk7	at vd2 drive 0
+disk		dk8	at vd2 drive 1
+controller	cy0	at vba? csr 0xffff4000	vector cyintr
+device		yc0	at cy0 drive 0
+device		vx0	at vba? csr 0xfffe0000	vector vackint vcmdrsp vunsol
+device		vx1	at vba? csr 0xfffe4000 flags 0xff00
+				vector vackint vcmdrsp vunsol
+device		vx2	at vba? csr 0xfffe8000 flags 0xffff
+				vector vackint vcmdrsp vunsol
+device		mp0	at vba? csr 0xffff5000	vector mpintr mpdlintr
+device		mp1	at vba? csr 0xffff5100	vector mpintr mpdlintr
+pseudo-device	loop
+pseudo-device	pty	64
+pseudo-device	ether
+pseudo-device	sl	4
+
+device	ace0	at vba? csr 0xffff0000 flags 0xfff80000 vector acecint acerint
+#device	ace1	at vba? csr 0xffff0100 flags 0xfff90000 vector acecint acerint
+device	enp0	at vba? csr 0xfff41000 vector enpintr
