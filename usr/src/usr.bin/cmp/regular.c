@@ -6,18 +6,19 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)regular.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)regular.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 
+#include <err.h>
 #include <limits.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "extern.h"
 
 void
@@ -26,8 +27,8 @@ c_regular(fd1, file1, skip1, len1, fd2, file2, skip2, len2)
 	char *file1, *file2;
 	off_t skip1, len1, skip2, len2;
 {
-	register u_char ch, *p1, *p2;
-	register off_t byte, length, line;
+	u_char ch, *p1, *p2;
+	off_t byte, length, line;
 	int dfound;
 
 	if (sflag && len1 != len2)
@@ -46,10 +47,10 @@ c_regular(fd1, file1, skip1, len1, fd2, file2, skip2, len2)
 
 	if ((p1 = (u_char *)mmap(NULL,
 	    (size_t)length, PROT_READ, 0, fd1, skip1)) == (u_char *)-1)
-		err("%s: %s", file1, strerror(errno));
+		err(ERR_EXIT, "%s", file1);
 	if ((p2 = (u_char *)mmap(NULL,
 	    (size_t)length, PROT_READ, 0, fd2, skip2)) == (u_char *)-1)
-		err("%s: %s", file2, strerror(errno));
+		err(ERR_EXIT, "%s", file2);
 
 	dfound = 0;
 	for (byte = line = 1; length--; ++p1, ++p2, ++byte) {
@@ -67,5 +68,5 @@ c_regular(fd1, file1, skip1, len1, fd2, file2, skip2, len2)
 	if (len1 != len2)
 		eofmsg (len1 > len2 ? file2 : file1);
 	if (dfound)
-		exit(1);
+		exit(DIFF_EXIT);
 }
