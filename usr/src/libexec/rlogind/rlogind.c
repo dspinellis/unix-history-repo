@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -329,7 +329,7 @@ fatalperror(f, msg, errno)
 
 struct	utmp wtmp;
 char	wtmpf[]	= "/usr/adm/wtmp";
-char	utmp[] = "/etc/utmp";
+char	utmpf[] = "/etc/utmp";
 #define SCPYN(a, b)	strncpy(a, b, sizeof(a))
 #define SCMPN(a, b)	strncmp(a, b, sizeof(a))
 
@@ -337,29 +337,41 @@ rmut()
 {
 	register f;
 	int found = 0;
+	struct utmp *u, *utmp;
+	int nutmp;
+	struct stat statbf;
 
-	f = open(utmp, O_RDWR);
+	f = open(utmpf, O_RDWR);
 	if (f >= 0) {
-		while(read(f, (char *)&wtmp, sizeof(wtmp)) == sizeof(wtmp)) {
-			if (SCMPN(wtmp.ut_line, line+5) || wtmp.ut_name[0]==0)
-				continue;
-			lseek(f, -(long)sizeof(wtmp), L_INCR);
-			SCPYN(wtmp.ut_name, "");
-			SCPYN(wtmp.ut_host, "");
-			time(&wtmp.ut_time);
-			write(f, (char *)&wtmp, sizeof(wtmp));
-			found++;
+		fstat(f, &statbf);
+		utmp = (struct utmp *)malloc(statbf.st_size);
+		if (!utmp)
+			syslog(LOG_ERR, "utmp malloc failed");
+		if (statbf.st_size && utmp) {
+			nutmp = read(f, utmp, statbf.st_size);
+			nutmp /= sizeof(struct utmp);
+		
+			for (u = utmp ; u < &utmp[nutmp] ; u++) {
+				if (SCMPN(u->ut_line, line+5) ||
+				    u->ut_name[0]==0)
+					continue;
+				lseek(f, ((long)u)-((long)utmp), L_SET);
+				SCPYN(u->ut_name, "");
+				SCPYN(u->ut_host, "");
+				time(&u->ut_time);
+				write(f, (char *)u, sizeof(wtmp));
+				found++;
+			}
 		}
 		close(f);
 	}
 	if (found) {
-		f = open(wtmpf, O_WRONLY);
+		f = open(wtmpf, O_WRONLY|O_APPEND);
 		if (f >= 0) {
 			SCPYN(wtmp.ut_line, line+5);
 			SCPYN(wtmp.ut_name, "");
 			SCPYN(wtmp.ut_host, "");
 			time(&wtmp.ut_time);
-			lseek(f, (long)0, L_XTND);
 			write(f, (char *)&wtmp, sizeof(wtmp));
 			close(f);
 		}
