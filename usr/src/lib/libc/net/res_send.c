@@ -6,14 +6,14 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.6 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 /*
  * Send query to name server and wait for reply.
  */
 
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
