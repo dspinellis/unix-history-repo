@@ -23,6 +23,7 @@ static	char	iname[INST_SZ];
 static	char	password[255];
 
 extern char	*sys_errlist;
+int	die();
 
 main(argc, argv)
 int	argc;
@@ -40,6 +41,8 @@ char	**argv;
 		fprintf(stderr, "must run set-uid root to access keyfile\n");
 		exit(1);
 	}
+
+	signal(SIGPIPE, die);
 
 	if(setrlimit(RLIMIT_CORE, &rl) < 0) {
 		perror("rlimit");
@@ -221,5 +224,13 @@ type_info()
 	printf("The Kerberos password you enter now will be used in the future\n");
 	printf("as your login password for all machines in the %s realm.\n", realm);
 	printf("You will only be allowed to perform this operation once, although you may run\n");
-	printf("the %s program to change your Kerberos password\n\n", KPASSWD);
+	printf("the %s program from now on to change your Kerberos password.\n\n", KPASSWD);
+}
+
+die()
+{
+	fprintf(stderr, "\nServer no longer listeninga\n");
+	fflush(stderr);
+	cleanup();
+	exit(1);
 }
