@@ -1,6 +1,12 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
 #ifndef lint
-static char sccsid[] = "@(#)rexec.c	4.8 83/08/18";
-#endif
+static char sccsid[] = "@(#)rexec.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 #include <sys/types.h>
 #include <sys/socket.h>

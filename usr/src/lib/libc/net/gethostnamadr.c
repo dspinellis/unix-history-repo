@@ -1,4 +1,12 @@
-/*	gethostnamadr.c	4.11	85/04/01	*/
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)gethostnamadr.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 /*
  * Copyright (c) 1985 Regents of the University of California
