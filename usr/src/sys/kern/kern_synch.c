@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.20	82/09/06	*/
+/*	kern_synch.c	4.21	82/09/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -29,41 +29,12 @@ roundrobin()
 	timeout(roundrobin, 0, hz / 10);
 }
 
-/*
- * The digital decay cpu usage priority assignment is scaled to run in
- * time as expanded by the 1 minute load average.  Each second we
- * multiply the the previous cpu usage estimate by
- *		nrscale*avenrun[0]
- * The following relates the load average to the period over which
- * cpu usage is 90% forgotten:
- *	loadav 1	 5 seconds
- *	loadav 5	24 seconds
- *	loadav 10	47 seconds
- *	loadav 20	93 seconds
- * This is a great improvement on the previous algorithm which
- * decayed the priorities by a constant, and decayed away all knowledge
- * of previous activity in about 20 seconds.  Under heavy load,
- * the previous algorithm degenerated to round-robin with poor response
- * time when there was a high load average.
- */
+/* constants to digital decay and forget 90% of usage in 5*loadav time */
 #undef ave
 #define	ave(a,b) ((int)(((int)(a*b))/(b+1)))
 int	nrscale = 2;
 double	avenrun[];
-
-/*
- * Constant for decay filter for cpu usage field
- * in process table (used by ps au).
- */
 double	ccpu = 0.95122942450071400909;		/* exp(-1/20) */
-
-#ifdef MELB
-/*
- * Automatic niceness rate & max constants
- */
-#define	MAXNICE	(8 + NZERO)	/* maximum auto nice value */
-#define	NFACT	(40 * hz)	/* nice++ every 40 secs cpu+sys time */
-#endif
 
 /*
  * Recompute process priorities, once a second
@@ -73,39 +44,15 @@ schedcpu()
 	register struct proc *p;
 	register int s, a;
 
-	s = spl6(); time.tv_sec += lbolt / hz; lbolt %= hz; splx(s);
 	wakeup((caddr_t)&lbolt);
-
 	for (p = proc; p < procNPROC; p++) if (p->p_stat && p->p_stat!=SZOMB) {
 #ifdef MUSH
-		/*
-		 * Charge process for memory in use
-		 */
 		if (p->p_quota->q_uid)
 			p->p_quota->q_cost +=
 			    shconsts.sc_click * p->p_rssize;
 #endif
 		if (p->p_time != 127)
 			p->p_time++;
-		if (timerisset(&p->p_seltimer) &&
-		     --p->p_seltimer.tv_sec <= 0) {
-			timerclear(&p->p_seltimer);
-			s = spl6();
-			switch (p->p_stat) {
-
-			case SSLEEP:
-				setrun(p);
-				break;
-
-			case SSTOP:
-				unsleep(p);
-				break;
-			}
-			splx(s);
-		}
-		if (timerisset(&p->p_realtimer.it_value) &&
-		    itimerdecr(&p->p_realtimer, 1000000) == 0)
-			psignal(p, SIGALRM);
 		if (p->p_stat==SSLEEP || p->p_stat==SSTOP)
 			if (p->p_slptime != 127)
 				p->p_slptime++;
@@ -211,47 +158,12 @@ out:
 	/*
 	 * If priority was low (>PZERO) and
 	 * there has been a signal, execute non-local goto through
-	 * u.u_qsav, aborting the system call in progress (see trap.c)
+	 * u.u_qsave, aborting the system call in progress (see trap.c)
 	 * (or finishing a tsleep, see below)
 	 */
 psig:
-	longjmp(u.u_qsav);
+	longjmp(&u.u_qsave);
 	/*NOTREACHED*/
-}
-
-/*
- * Sleep on chan at pri for at most a specified amount of time.
- * Return (TS_OK,TS_TIME,TS_SIG) on (normal,timeout,signal) condition.
- */
-tsleep(chan, pri, tvp)
-	caddr_t chan;
-	int pri;
-	struct timeval *tvp;
-{
-	register struct proc *p = u.u_procp;
-	int s, rval;
-
-	s = spl7();
-	if (timercmp(tvp, &p->p_realtimer.it_value, >)) {
-		/* alarm will occur first! */
-		sleep(chan, pri);
-		rval = TS_OK;		/* almost NOTREACHED modulo fuzz */
-	} else {
-		label_t lqsav;
-
-		bcopy((caddr_t)u.u_qsav, (caddr_t)lqsav, sizeof (label_t));
-		p->p_seltimer = *tvp;
-		if (setjmp(u.u_qsav))
-			rval = TS_SIG;
-		else {
-			sleep(chan, pri);
-			rval = TS_OK;
-		}
-		timerclear(&p->p_seltimer);
-		bcopy((caddr_t)lqsav, (caddr_t)u.u_qsav, sizeof (label_t));
-	}
-	splx(s);
-	return (rval);
 }
 
 /*

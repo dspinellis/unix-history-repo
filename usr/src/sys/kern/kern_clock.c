@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.38	82/09/06	*/
+/*	kern_clock.c	4.39	82/09/08	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -49,9 +49,9 @@ hardclock(pc, ps)
 
 /* update callout times */
 	for (p1 = calltodo.c_next; p1 && p1->c_time <= 0; p1 = p1->c_next)
-		;
+		--p1->c_time;
 	if (p1)
-		p1->c_time--;
+		--p1->c_time;
 
 /* charge process for resource usage... statistically! */
 	if (!noproc) {
@@ -149,10 +149,11 @@ softclock(pc, ps)
 		calltodo.c_next = p1->c_next;
 		arg = p1->c_arg;
 		func = p1->c_func;
+		a = p1->c_time;
 		p1->c_next = callfree;
 		callfree = p1;
 		(void) splx(s);
-		(*func)(arg);
+		(*func)(arg, a);
 	}
 nocallout:
 
@@ -200,7 +201,6 @@ timeout(fun, arg, tim)
 	splx(s);
 }
 
-#ifdef notdef
 /*
  * untimeout is called to remove a function timeout call
  * from the callout structure.
@@ -209,14 +209,13 @@ untimeout(fun, arg)
 	int (*fun)();
 	caddr_t arg;
 {
-
 	register struct callout *p1, *p2;
 	register int s;
 
 	s = spl7();
 	for (p1 = &calltodo; (p2 = p1->c_next) != 0; p1 = p2) {
 		if (p2->c_func == fun && p2->c_arg == arg) {
-			if (p2->c_next)
+			if (p2->c_next && p2->c_time > 0)
 				p2->c_next->c_time += p2->c_time;
 			p1->c_next = p2->c_next;
 			p2->c_next = callfree;
@@ -226,4 +225,15 @@ untimeout(fun, arg)
 	}
 	splx(s);
 }
-#endif
+
+hzto(tv)
+	struct timeval *tv;
+{
+	register int ticks;
+	int s = spl7();
+
+	ticks = ((tv->tv_sec - time.tv_sec) * 1000 +
+		(tv->tv_usec - time.tv_usec) / 1000) / (tick / 1000);
+	splx(s);
+	return (ticks);
+}
