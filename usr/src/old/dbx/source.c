@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)source.c 1.5 %G%";
+static char sccsid[] = "@(#)source.c 1.6 %G%";
 
 /*
  * Source file management.
@@ -228,7 +228,9 @@ public getsrcpos()
     curline = srcline(pc);
     filename = srcfilename(pc);
     setsource(filename);
-    cursrcline = curline;
+    if (curline != 0) {
+	cursrcline = curline;
+    }
 }
 
 /*
