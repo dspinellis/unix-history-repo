@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)6.t	8.1 (Berkeley) %G%
+.\"	@(#)6.t	8.2 (Berkeley) %G%
 .\"
 .nr H2 1
 .ds RH Acknowledgements
@@ -70,7 +70,7 @@ Kowalski, T.
 "FSCK - The UNIX System Check Program",
 Bell Laboratory, Murray Hill, NJ 07974. March 1978
 .IP [Knuth75] 20
-Kunth, D.
+Knuth, D.
 "The Art of Computer Programming",
 Volume 3 - Sorting and Searching,
 Addison-Wesley Publishing Company Inc, Reading, Mass, 1975. pp 506-549
