@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.3 (Berkeley) %G%
+ *	@(#)lfs.h	7.4 (Berkeley) %G%
  */
 
 typedef struct buf	BUF;
@@ -24,7 +24,9 @@ typedef struct segusage SEGUSE;
 struct segusage {
 	u_long	su_nbytes;		/* number of live bytes */
 	u_long	su_lastmod;		/* SEGUSE last modified timestamp */
-#define	SEGUSE_DIRTY	0x1		/* XXX fill in comment */
+#define	SEGUSE_ACTIVE		0x1	/* segment is currently being written */
+#define	SEGUSE_DIRTY		0x2	/* segment has data in it */
+#define	SEGUSE_SUPERBLOCK	0x4	/* segment contains a superblock */
 	u_long	su_flags;
 };
 
@@ -63,7 +65,7 @@ struct lfs {
 	ino_t	lfs_ifile;		/* inode file inode number */
 	daddr_t	lfs_lastseg;		/* address of last segment written */
 	daddr_t	lfs_nextseg;		/* address of next segment to write */
-	daddr_t	lfs_curseg;		/* Current segment being written */
+	daddr_t	lfs_curseg;		/* current segment being written */
 	daddr_t	lfs_offset;		/* offset in curseg for next partial */
 	u_long	lfs_tstamp;		/* time stamp */
 
