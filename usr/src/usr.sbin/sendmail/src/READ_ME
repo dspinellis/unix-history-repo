@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.84 (Berkeley) %G%
+#	@(#)READ_ME	8.85 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -551,6 +551,13 @@ Solaris 2.x (SunOS 5.x)
 	Be sure you have the appropriate patch installed or you won't
 	see system logging.
 
+Ultrix
+	By default, the IDENT protocol is turned off on Ultrix.  If you
+	are running Ultrix 4.4 or later, or if you have gotten a patch
+	the TCP problem for an earlier version of Ultrix, you can turn
+	IDENT on in the configuration file by setting the "ident" timeout
+	to 30 seconds.
+
 OSF/1
 	If you are compiling on OSF/1 (DEC Alpha), you must use 
 	-L/usr/shlib (otherwise it core dumps on startup).  You may also
@@ -963,4 +970,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.84, last update %G% 09:05:49)
+(Version 8.85, last update %G% 08:20:30)
