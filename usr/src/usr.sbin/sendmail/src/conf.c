@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.90 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.91 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1330,10 +1330,11 @@ fsync(fd)
 **  DGUX_INET_ADDR -- inet_addr for DG/UX
 **
 **	Data General DG/UX version of inet_addr returns a struct in_addr
-**	instead of a long.  This patches things.
+**	instead of a long.  This patches things.  Only needed on versions
+**	prior to 5.4.3.
 */
 
-#ifdef DGUX
+#ifdef DGUX_5_4_2
 
 #undef inet_addr
 
