@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.4 (Berkeley) %G%
+ *	@(#)conf.h	8.5 (Berkeley) %G%
  */
 
 /*
@@ -16,10 +16,10 @@
 # include <sys/stat.h>
 # include <fcntl.h>
 
-/*
+/**********************************************************************
 **  Table sizes, etc....
 **	There shouldn't be much need to change these....
-*/
+**********************************************************************/
 
 # define MAXLINE	2048		/* max line length */
 # define MAXNAME	256		/* max length of a name */
@@ -42,9 +42,9 @@
 # define QUEUESIZE	1000		/* max # of jobs per queue run */
 # endif
 
-/*
+/**********************************************************************
 **  Compilation options.
 **
 **	#define these if they are available; comment them out otherwise.
-*/
+**********************************************************************/
 
