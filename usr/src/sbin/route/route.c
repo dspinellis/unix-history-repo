@@ -32,6 +32,7 @@ int	s;
 int	forcehost, forcenet;
 struct	sockaddr_in sin = { AF_INET };
 struct	in_addr inet_makeaddr();
+char	*malloc();
 
 main(argc, argv)
 	int argc;
@@ -220,7 +221,7 @@ newroute(argc, argv)
 		}
 		metric = atoi(argv[3]);
 	} else {
-		if (argc != 3) {
+		if (argc < 3) {
 			printf("usage: %s destination gateway\n", cmd);
 			return;
 		}
@@ -289,6 +290,21 @@ error(cmd)
 		perror(cmd);
 }
 
+char *
+savestr(s)
+	char *s;
+{
+	char *sav;
+
+	sav = malloc(strlen(s) + 1);
+	if (sav == NULL) {
+		fprintf("route: out of memory\n");
+		exit(1);
+	}
+	strcpy(sav, s);
+	return (sav);
+}
+
 /*
  * Interpret an argument as a network address of some kind,
  * returning 1 if a host address, 0 if a network address.
@@ -307,6 +323,7 @@ getaddr(s, sin, hpp, name)
 	if (strcmp(s, "default") == 0) {
 		sin->sin_family = AF_INET;
 		sin->sin_addr = inet_makeaddr(0, INADDR_ANY);
+		*name = "default";
 		return(0);
 	}
 	sin->sin_family = AF_INET;
@@ -326,7 +343,7 @@ getaddr(s, sin, hpp, name)
 	if (np) {
 		sin->sin_family = np->n_addrtype;
 		sin->sin_addr = inet_makeaddr(np->n_net, INADDR_ANY);
-		*name = np->n_name;
+		*name = savestr(np->n_name);
 		return(0);
 	}
 	hp = gethostbyname(s);
@@ -334,7 +351,7 @@ getaddr(s, sin, hpp, name)
 		*hpp = hp;
 		sin->sin_family = hp->h_addrtype;
 		bcopy(hp->h_addr, &sin->sin_addr, hp->h_length);
-		*name = hp->h_name;
+		*name = savestr(hp->h_name);
 		return(1);
 	}
 	fprintf(stderr, "%s: bad value\n", s);
