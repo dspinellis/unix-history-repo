@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)input.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)input.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -115,7 +115,8 @@ rip_input(from, size)
 		ifp = if_ifwithaddr(from);
 		if (ifp) {
 			rt = rtfind(from);
-			if (rt == 0 || (rt->rt_state & RTS_INTERFACE) == 0)
+			if (rt == 0 || ((rt->rt_state & RTS_INTERFACE) == 0) &&
+			    rt->rt_metric >= ifp->int_metric) 
 				addrouteforif(ifp);
 			else
 				rt->rt_timer = 0;
@@ -129,7 +130,8 @@ rip_input(from, size)
 		if ((rt = rtfind(from)) &&
 		    (rt->rt_state & (RTS_INTERFACE | RTS_REMOTE)))
 			rt->rt_timer = 0;
-		else if (ifp = if_ifwithdstaddr(from))
+		else if ((ifp = if_ifwithdstaddr(from)) &&
+		    (rt == 0 || rt->rt_metric >= ifp->int_metric))
 			addrouteforif(ifp);
 		/*
 		 * "Authenticate" router from which message originated.
@@ -177,13 +179,29 @@ rip_input(from, size)
 				   from->sa_family);
 				continue;
 			}
+			/*
+			 * Adjust metric according to incoming interface.
+			 */
+			if ((unsigned)n->rip_metric < HOPCNT_INFINITY)
+				n->rip_metric += ifp->int_metric;
 			rt = rtlookup(&n->rip_dst);
 			if (rt == 0 ||
 			    (rt->rt_state & (RTS_INTERNAL|RTS_INTERFACE)) ==
 			    (RTS_INTERNAL|RTS_INTERFACE)) {
+				/*
+				 * If we're hearing a logical network route
+				 * back from a peer to which we sent it,
+				 * ignore it.
+				 */
+				if (rt && rt->rt_state & RTS_SUBNET &&
+				    (*afp->af_sendroute)(rt, from))
+					continue;
+				/*
+				 * Look for an equivalent route that includes
+				 * this one before adding this route.
+				 */
 				rt = rtfind(&n->rip_dst);
-				if (rt && equal(from, &rt->rt_router) &&
-				    rt->rt_metric <= n->rip_metric)
+				if (rt && equal(from, &rt->rt_router))
 					continue;
 				if (n->rip_metric < HOPCNT_INFINITY)
 				    rtadd(&n->rip_dst, from, n->rip_metric, 0);
@@ -197,14 +215,15 @@ rip_input(from, size)
 			if (equal(from, &rt->rt_router)) {
 				if (n->rip_metric != rt->rt_metric) {
 					rtchange(rt, from, n->rip_metric);
-					if (rt->rt_metric == HOPCNT_INFINITY)
+					if (rt->rt_metric >= HOPCNT_INFINITY)
 						rt->rt_timer =
 						    GARBAGE_TIME - EXPIRE_TIME;
 				} else if (rt->rt_metric < HOPCNT_INFINITY)
 					rt->rt_timer = 0;
 			} else if ((unsigned) (n->rip_metric) < rt->rt_metric ||
 			    (rt->rt_timer > (EXPIRE_TIME/2) &&
-			    rt->rt_metric == n->rip_metric)) {
+			    rt->rt_metric == n->rip_metric &&
+			    n->rip_metric < HOPCNT_INFINITY)) {
 				rtchange(rt, from, n->rip_metric);
 				rt->rt_timer = 0;
 			}

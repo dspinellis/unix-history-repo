@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -144,11 +144,11 @@ inet_rtflags(sin)
 }
 
 /*
- * Return true if a route to subnet of route rt should be sent to dst.
- * Send it only if dst is on the same logical network,
- * or the route is the "internal" route for the net.
+ * Return true if a route to subnet/host of route rt should be sent to dst.
+ * Send it only if dst is on the same logical network if not "internal",
+ * otherwise only if the route is the "internal" route for the logical net.
  */
-inet_sendsubnet(rt, dst)
+inet_sendroute(rt, dst)
 	struct rt_entry *rt;
 	struct sockaddr_in *dst;
 {
