@@ -1,0 +1,72 @@
+###############################################################################
+# isodocuments - ISODE FTAM Document Types Database
+#
+#	Document Types as per ISO 8571/2
+#
+#
+# $Header: /f/osi/ftam/RCS/isodocuments,v 7.4 91/02/22 09:23:18 mrose Interim $
+#
+#
+# $Log:	isodocuments,v $
+# Revision 7.4  91/02/22  09:23:18  mrose
+# Interim 6.8
+# 
+# Revision 7.3  91/01/13  12:26:51  mrose
+# NBS
+# 
+# Revision 7.2  91/01/11  11:35:01  mrose
+# back-off
+# 
+# Revision 7.1  90/11/04  19:15:13  mrose
+# update
+# 
+# Revision 7.0  89/11/23  21:53:55  mrose
+# Release 6.0
+# 
+###############################################################################
+
+
+###############################################################################
+#
+# Syntax:
+#
+#  <entry> <document type> <abstract syntax> <transfer syntax> <file model>
+#							       <constraint set>
+#
+#	Each token is separated by LWSP, though double-quotes may be
+#	used to prevent separation
+#
+###############################################################################
+
+
+# Unstructured text file document type
+# Entry number:			FTAM-1
+# Document type name:		"ISO FTAM unstructured text"
+# Abstract syntax name:		"FTAM unstructured text abstract syntax"
+# Transfer syntax name:		"Basic encoding of a single ASN.1 type"
+# File model:			"FTAM hierarchical file model"
+# Constraint set:		"FTAM unstructured constraint set"
+
+FTAM-1	1.0.8571.5.1	1.0.8571.2.3	2.1.1	1.0.8571.3.1	1.0.8571.4.1
+
+
+# Unstructured binary file document type
+# Entry number:			FTAM-3
+# Document type name:		"ISO FTAM unstructured binary"
+# Abstract syntax name:		"FTAM unstructured binary abstract syntax"
+# Transfer syntax name:		"Basic encoding of a single ASN.1 type"
+# File model:			"FTAM hierarchical file model"
+# Constraint set name:		"FTAM unstructured constraint set"
+
+FTAM-3	1.0.8571.5.3	1.0.8571.2.4	2.1.1	1.0.8571.3.1	1.0.8571.4.1
+
+
+# Filedirectory file document type
+# Entry number:			NBS-9
+# Document type name:		"NBS-9 FTAM file directory file"
+# Abstract syntax name:		"NIST file directory entry abstract syntax"
+# Transfer syntax name:		"Basic encoding of a single ASN.1 type"
+# File model:			"FTAM hierarchical file model"
+# Constraint set name:		"FTAM unstructured constraint set"
+
+NBS-9	1.3.9999.1.5.9	1.3.9999.1.2.2	2.1.1	1.0.8571.3.1	1.0.8571.4.1
