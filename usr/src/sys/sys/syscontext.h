@@ -14,33 +14,9 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)syscontext.h	7.2 (Berkeley) %G%
+ *	@(#)syscontext.h	7.3 (Berkeley) %G%
  */
 
 #include <user.h>
 
-/*
- * This file defines the context necessary to do a system call.
- * For the time being it just selects fields from the user structure.
- */
-#define syscontext	user
-
-#define sc_ap		u_ap
-#define sc_nd		u_nd
-#define sc_retval1	u_r.u_rv.R_val1
-#define sc_retval2	u_r.u_rv.R_val2
-#define sc_offset	u_r.r_off
-#define sc_cdir		u_nd.ni_cdir
-#define sc_rdir		u_nd.ni_rdir
-#define sc_cred		u_nd.ni_cred
-#define sc_uid		u_nd.ni_cred->cr_uid
-#define sc_gid		u_nd.ni_cred->cr_groups[0]
-#define sc_ruid		u_nd.ni_cred->cr_ruid
-#define sc_rgid		u_rgid
-#define sc_groups	u_nd.ni_cred->cr_groups
-#define sc_ngroups	u_nd.ni_cred->cr_ngroups
-#define sc_acflag	u_acflag
-#define sc_cmask	u_cmask
-#define sc_ofile	u_ofile
-
-#define RETURN(value)	{ u.u_error = (value); return; }
+#define RETURN(value)	{ u.u_error = (value); return (u.u_error); }
