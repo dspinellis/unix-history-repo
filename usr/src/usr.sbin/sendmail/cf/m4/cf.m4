@@ -30,13 +30,13 @@ System V or GNU')
 	include(NoSuchFile)')
 define(`PUSHDIVERT', `pushdef(`__D__', divnum)divert($1)')
 define(`POPDIVERT', `divert(__D__)popdef(`__D__')')
-define(`OSTYPE', `include(../ostype/$1.m4)')
+define(`OSTYPE', `define(`_ARG_', $2)include(../ostype/$1.m4)')
 define(`MAILER',
 `ifdef(`_MAILER_$1_', `dnl`'',
 `define(`_MAILER_$1_', `')PUSHDIVERT(7)include(../mailer/$1.m4)POPDIVERT`'')')
-define(`DOMAIN', `include(../domain/$1.m4)')
-define(`FEATURE', `include(../feature/$1.m4)')
-define(`HACK', `include(../hack/$1.m4)')
+define(`DOMAIN', `define(`_ARG_', $2)include(../domain/$1.m4)')
+define(`FEATURE', `define(`_ARG_', $2)include(../feature/$1.m4)')
+define(`HACK', `define(`_ARG_', $2)include(../hack/$1.m4)')
 define(`OLDSENDMAIL', `define(`_OLD_SENDMAIL_', `')')
 define(`VERSIONID', ``#####  $1  #####'')
 define(`LOCAL_RULE_0', `divert(3)')
@@ -115,4 +115,4 @@ define(`confSEPARATE_PROC', `False')
 define(`confCW_FILE', `/etc/sendmail.cw')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	6.10 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	6.11 (Berkeley) %G%')
