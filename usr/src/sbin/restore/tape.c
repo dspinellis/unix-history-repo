@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.3	(Berkeley)	83/02/27";
+static char sccsid[] = "@(#)tape.c	3.4	(Berkeley)	83/02/27";
 #endif
 
 #include "restore.h"
@@ -184,7 +184,7 @@ getvol(nextvol)
 		dumpnum = 1;
 	}
 	if (pipein) {
-		if (volno != 1 || newvol != 1)
+		if (volno != 1 || nextvol != 1)
 			panic("Changing volumes on pipe input?\n");
 		return;
 	}
@@ -481,20 +481,36 @@ readtape(b)
 	char *b;
 {
 	register long i;
-	long newvol;
+	long rd, cnt, newvol;
 
 	if (bct >= NTREC) {
 		for (i = 0; i < NTREC; i++)
 			((struct s_spcl *)&tbf[i*TP_BSIZE])->c_magic = 0;
 		bct = 0;
+		cnt = NTREC*TP_BSIZE;
+		rd = 0;
+	getmore:
 #ifdef RRESTOR
-		if ((i = rmtread(tbf, NTREC*TP_BSIZE)) < 0)
+		i = rmtread(&tbf[rd], cnt);
 #else
-		if ((i = read(mt, tbf, NTREC*TP_BSIZE)) < 0)
+		i = read(mt, &tbf[rd], cnt);
 #endif
-			{
+		if (i > 0 && i != NTREC*TP_BSIZE) {
+			if (!pipein)
+				panic("partial block read: %d should be %d\n",
+					i, NTREC*TP_BSIZE);
+			rd += i;
+			cnt -= i;
+			if (cnt > 0)
+				goto getmore;
+			i = rd;
+		}
+		if (i < 0) {
 			fprintf(stderr, "Tape read error while ");
 			switch (curfile.action) {
+			default:
+				fprintf(stderr, "trying to set up tape\n");
+				break;
 			case UNKNOWN:
 				fprintf(stderr, "trying to resyncronize\n");
 				break;
@@ -798,7 +814,35 @@ checksum(b)
 	return(GOOD);
 }
 
+/*
+ * respond to interrupts
+ */
+onintr()
+{
+	if (pipein || reply("restore interrupted, continue") == FAIL)
+		done(1);
+	if (signal(SIGINT, onintr) == SIG_IGN)
+		signal(SIGINT, SIG_IGN);
+	if (signal(SIGTERM, onintr) == SIG_IGN)
+		signal(SIGTERM, SIG_IGN);
+}
+
+/*
+ * handle unexpected inconsistencies
+ */
+/* VARARGS1 */
+panic(msg, d1, d2)
+	char *msg;
+	long d1, d2;
+{
+
+	fprintf(stderr, msg, d1, d2);
+	if (pipein || reply("abort") == GOOD)
+		abort();
+}
+
 #ifdef RRESTOR
+/* VARARGS1 */
 msg(cp, a1, a2, a3)
 	char *cp;
 {

@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	3.2	(Berkeley)	83/02/27";
+static char sccsid[] = "@(#)utilities.c	3.3	(Berkeley)	83/02/27";
 #endif
 
 #include "restore.h"
@@ -106,6 +106,10 @@ newnode(np)
 		badentry(np, "newnode: not a node");
 	cp = myname(np);
 	if (mkdir(cp, 0777) < 0) {
+		if (command == 'x') {
+			perror(cp);
+			return;
+		}
 		perror("newnode");
 		panic("Cannot make node %s\n", cp);
 	}
@@ -265,30 +269,6 @@ badentry(ep, msg)
 	if (ep->e_flags & KEEP)
 		strcat(flagbuf, "|KEEP");
 	panic("flags: %s\n", &flagbuf[1]);
-}
-
-/*
- * respond to interrupts
- */
-onintr()
-{
-	if (reply("restore interrupted, continue"))
-		return;
-	done(1);
-}
-
-/*
- * handle unexpected inconsistencies
- */
-/* VARARGS1 */
-panic(msg, d1, d2)
-	char *msg;
-	long d1, d2;
-{
-
-	fprintf(stderr, msg, d1, d2);
-	if (reply("abort"))
-		abort();
 }
 
 /*
