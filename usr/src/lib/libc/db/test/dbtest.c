@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dbtest.c	8.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)dbtest.c	8.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -66,18 +66,22 @@ main(argc, argv)
 	DB *dbp;
 	DBT data, key, keydata;
 	size_t len;
-	int ch;
+	int ch, oflags;
 	char *fname, *infoarg, *p, buf[8 * 1024];
 
 	infoarg = NULL;
 	fname = NULL;
-	while ((ch = getopt(argc, argv, "f:i:o:")) != EOF)
+	oflags = O_CREAT | O_RDWR;
+	while ((ch = getopt(argc, argv, "f:i:lo:")) != EOF)
 		switch(ch) {
 		case 'f':
 			fname = optarg;
 			break;
 		case 'i':
 			infoarg = optarg;
+			break;
+		case 'l':
+			oflags |= DB_LOCK;
 			break;
 		case 'o':
 			if ((ofd = open(optarg,
@@ -120,7 +124,7 @@ main(argc, argv)
 		(void)unlink(buf);
 	}
 	if ((dbp = dbopen(fname,
-	    O_CREAT | O_RDWR, S_IRUSR | S_IWUSR, type, infop)) == NULL)
+	    oflags, S_IRUSR | S_IWUSR, type, infop)) == NULL)
 		err("dbopen: %s", strerror(errno));
 	XXdbp = dbp;
 
@@ -599,7 +603,7 @@ void
 usage()
 {
 	(void)fprintf(stderr,
-	    "usage: dbtest [-f file] [-i info] [-o file] type script\n");
+	    "usage: dbtest [-l] [-f file] [-i info] [-o file] type script\n");
 	exit(1);
 }
 
