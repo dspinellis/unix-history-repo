@@ -1,4 +1,4 @@
-.\"	@(#)p5	6.2 (Berkeley) %G%
+.\"	@(#)p5	6.3 (Berkeley) %G%
 .\"
 .NH
 PROCESSES
@@ -414,7 +414,7 @@ potentially active.
 .P1
 #include <stdio.h>
 
-#define	READ	 0
+#define	READ	0
 #define	WRITE	1
 #define	tst(a, b)	(mode == READ ? (b) : (a))
 static	int	popen_pid;

@@ -1,4 +1,4 @@
-.\"	@(#)p3	6.2 (Berkeley) %G%
+.\"	@(#)p3	6.3 (Berkeley) %G%
 .\"
 .NH
 THE STANDARD I/O LIBRARY
@@ -87,7 +87,7 @@ is a structure definition called
 The only declaration needed for a file pointer
 is exemplified by
 .P1
-FILE	 *fp, *fopen();
+FILE	*fp, *fopen();
 .P2
 This says that
 .UL fp
