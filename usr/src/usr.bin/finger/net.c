@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)net.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)net.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -98,6 +98,8 @@ netfinger(name)
 		while ((c = getc(fp)) != EOF) {
 			c &= 0x7f;
 			if (c == 0x0d) {
+				if (lastc == '\r')	/* ^M^M - skip dupes */
+					continue;
 				c = '\n';
 				lastc = '\r';
 			} else {
