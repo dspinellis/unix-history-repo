@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.39 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -24,7 +24,7 @@ static FTSENT	*fts_build __P((FTS *, int));
 static void	 fts_lfree __P((FTSENT *));
 static void	 fts_load __P((FTS *, FTSENT *));
 static void	 fts_padjust __P((FTS *, void *));
-static int	 fts_palloc __P((FTS *, int));
+static int	 fts_palloc __P((FTS *, size_t));
 static FTSENT	*fts_sort __P((FTS *, FTSENT *, int));
 static u_short	 fts_stat __P((FTS *, FTSENT *, int));
 
@@ -70,9 +70,16 @@ fts_open(argv, options, compar)
 	if (ISSET(FTS_LOGICAL))
 		SET(FTS_NOCHDIR);
 
+	/*
+	 * Start out with more than 1K of path space, and enough, in any
+	 * case, to hold the user's paths.
+	 */
+	if (fts_palloc(sp, MAX(maxlen, MAXPATHLEN)))
+		goto mem1;
+
 	/* Allocate/initialize root's parent. */
 	if ((parent = fts_alloc(sp, "", 0)) == NULL)
-		goto mem1;
+		goto mem2;
 	parent->fts_level = FTS_ROOTPARENTLEVEL;
 
 	/* Allocate/initialize root(s). */
@@ -80,7 +87,7 @@ fts_open(argv, options, compar)
 		/* Don't allow zero-length paths. */
 		if ((len = strlen(*argv)) == 0) {
 			errno = ENOENT;
-			goto mem2;
+			goto mem3;
 		}
 		if (maxlen < len)
 			maxlen = len;
@@ -121,16 +128,9 @@ fts_open(argv, options, compar)
 	 * so that everything about the "current" node is ignored.
 	 */
 	if ((sp->fts_cur = fts_alloc(sp, "", 0)) == NULL)
-		goto mem2;
+		goto mem3;
 	sp->fts_cur->fts_link = root;
 	sp->fts_cur->fts_info = FTS_INIT;
-
-	/*
-	 * Start out with more than 1K of path space, and enough, in any
-	 * case, to hold the user's paths.
-	 */
-	if (fts_palloc(sp, MAX(maxlen, MAXPATHLEN)))
-		goto mem3;
 
 	/*
 	 * If using chdir(2), grab a file descriptor pointing to dot to insure
@@ -144,9 +144,9 @@ fts_open(argv, options, compar)
 
 	return (sp);
 
-mem3:	free(sp->fts_cur);
-mem2:	fts_lfree(root);
+mem3:	fts_lfree(root);
 	free(parent);
+mem2:	free(sp->fts_path);
 mem1:	free(sp);
 	return (NULL);
 }
@@ -613,7 +613,7 @@ fts_build(sp, type)
 		if ((p = fts_alloc(sp, dp->d_name, (int)dp->d_namlen)) == NULL)
 			goto mem1;
 		if (dp->d_namlen > maxlen) {
-			if (fts_palloc(sp, (int)dp->d_namlen)) {
+			if (fts_palloc(sp, (size_t)dp->d_namlen)) {
 				/*
 				 * No more memory for path or structures.  Save
 				 * errno, free up the current structure and the
@@ -819,26 +819,34 @@ fts_sort(sp, head, nitems)
 }
 
 static FTSENT *
-fts_alloc(sp, name, len)
+fts_alloc(sp, name, namelen)
 	FTS *sp;
 	char *name;
-	register int len;
+	register int namelen;
 {
 	register FTSENT *p;
-	int needstat;
+	size_t len;
 
 	/*
-	 * Variable sized structures.  The stat structure isn't necessary
-	 * if the user doesn't need it, and the name is variable length.
-	 * Allocate enough extra space after the structure to store them.
+	 * The file name is a variable length array and no stat structure is
+	 * necessary if the user has set the nostat bit.  Allocate the FTSENT
+	 * structure, the file name and the stat structure in one chunk, but
+	 * be careful that the stat structure is reasonably aligned.  Since the
+	 * fts_name field is declared to be of size 1, the fts_name pointer is
+	 * namelen + 2 before the first possible address of the stat structure.
 	 */
-	needstat = ISSET(FTS_NOSTAT) ? 0 : ALIGN(sizeof(struct stat));
-	if ((p = malloc((size_t)(sizeof(FTSENT) + len + 1 + needstat))) == NULL)
+	len = sizeof(FTSENT) + namelen;
+	if (!ISSET(FTS_NOSTAT))
+		len += sizeof(struct stat) + ALIGNBYTES;
+	if ((p = malloc(len)) == NULL)
 		return (NULL);
-	bcopy(name, p->fts_name, len + 1);
-	if (needstat)
-		p->fts_statp = (struct stat *)ALIGN(p->fts_name + len + 1);
-	p->fts_namelen = len;
+
+	/* Copy the name plus the trailing NULL. */
+	bcopy(name, p->fts_name, namelen + 1);
+
+	if (!ISSET(FTS_NOSTAT))
+		p->fts_statp = (struct stat *)ALIGN(p->fts_name + namelen + 2);
+	p->fts_namelen = namelen;
 	p->fts_path = sp->fts_path;
 	p->fts_errno = 0;
 	p->fts_flags = 0;
@@ -870,9 +878,8 @@ fts_lfree(head)
 static int
 fts_palloc(sp, more)
 	FTS *sp;
-	int more;
+	size_t more;
 {
-
 	sp->fts_pathlen += more + 256;
 	sp->fts_path = realloc(sp->fts_path, (size_t)sp->fts_pathlen);
 	return (sp->fts_path == NULL);
