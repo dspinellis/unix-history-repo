@@ -1,5 +1,5 @@
 Original BTL Ratfor System for 4.2
-/* @(#)r1.c	1.1 (Berkeley) %G% */
+/* @(#)r1.c	1.2 (Berkeley) %G% */
 #include "r.h"
 
 #define	wasbreak	brkused[brkptr]==1 || brkused[brkptr]==3
@@ -246,8 +246,10 @@ forcode(){
 forstat(p1) int p1; {
 	char *bp, *q;
 	bp = forstk[--forptr];
-	if (wasnext)
+	if (wasnext) {
 		outnum(p1+1);
+		transfer = 0;
+	}
 	if (nonblank(bp)){
 		outtab();
 		outcode(bp);
