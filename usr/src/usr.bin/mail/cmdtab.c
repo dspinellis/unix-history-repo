@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)cmdtab.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)cmdtab.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "def.h"
@@ -24,6 +24,7 @@ extern int pversion(), group(), top(), core(), null(), stouch(), visual();
 extern int swrite(), dosh(), file(), echo(), Respond(), scroll(), ifcmd();
 extern int elsecmd(), endifcmd(), mboxit(), clobber(), alternates();
 extern int local(), folders(), igfield(), Type(), retfield(), more(), More();
+extern int unread();	/* , Header(); */
 
 struct cmd cmdtab[] = {
 	"next",		next,		NDMLIST,	0,	MMNDEL,
@@ -47,6 +48,10 @@ struct cmd cmdtab[] = {
 	"page",		more,		MSGLIST,	0,	MMNDEL,
 	"More",		More,		MSGLIST,	0,	MMNDEL,
 	"Page",		More,		MSGLIST,	0,	MMNDEL,
+	"unread",	unread,		MSGLIST,	0,	MMNDEL,
+	"Unread",	unread,		MSGLIST,	0,	MMNDEL,
+	"new",		unread,		MSGLIST,	0,	MMNDEL,
+	"New",		unread,		MSGLIST,	0,	MMNDEL,
 	"!",		shell,		I|STRLIST,	0,	0,
 	"copy",		copycmd,	M|STRLIST,	0,	0,
 	"chdir",	schdir,		M|STRLIST,	0,	0,
@@ -87,6 +92,7 @@ struct cmd cmdtab[] = {
 	"ignore",	igfield,	M|RAWLIST,	0,	1000,
 	"discard",	igfield,	M|RAWLIST,	0,	1000,
 	"retain",	retfield,	M|RAWLIST,	0,	1000,
+/*	"Header",	Header,		STRLIST,	0,	1000,	*/
 	"core",		core,		M|NOLIST,	0,	0,
 	"#",		null,		M|NOLIST,	0,	0,
 	"clobber",	clobber,	M|RAWLIST,	0,	1,
