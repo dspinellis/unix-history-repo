@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ether.c	7.10 (Berkeley) %G%
+ *	@(#)if_ether.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -136,7 +136,7 @@ arpwhohas(ac, addr)
 	bcopy((caddr_t)addr, (caddr_t)ea->arp_tpa, sizeof(ea->arp_tpa));
 	sa.sa_family = AF_UNSPEC;
 	sa.sa_len = sizeof(sa);
-	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa);
+	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa, (struct rtentry *)0);
 }
 
 int	useloopback = 1;	/* use loopback interface for local traffic */
@@ -358,8 +358,8 @@ in_arpinput(ac, m)
 		if (at->at_hold) {
 			sin.sin_family = AF_INET;
 			sin.sin_addr = isaddr;
-			(*ac->ac_if.if_output)(&ac->ac_if, 
-			    at->at_hold, (struct sockaddr *)&sin);
+			(*ac->ac_if.if_output)(&ac->ac_if, at->at_hold,
+				(struct sockaddr *)&sin, (struct rtentry *)0);
 			at->at_hold = 0;
 		}
 	}
@@ -438,11 +438,12 @@ reply:
 	eh->ether_type = ETHERTYPE_ARP;
 	sa.sa_family = AF_UNSPEC;
 	sa.sa_len = sizeof(sa);
-	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa);
+	(*ac->ac_if.if_output)(&ac->ac_if, m, &sa, (struct rtentry *)0);
 	if (mcopy) {
 		ea = mtod(mcopy, struct ether_arp *);
 		ea->arp_pro = htons(ETHERTYPE_IPTRAILERS);
-		(*ac->ac_if.if_output)(&ac->ac_if, mcopy, &sa);
+		(*ac->ac_if.if_output)(&ac->ac_if,
+					mcopy, &sa, (struct rtentry *)0);
 	}
 	return;
 out:
