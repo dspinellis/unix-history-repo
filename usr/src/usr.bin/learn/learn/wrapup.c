@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wrapup.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)wrapup.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 #include "signal.h"
@@ -9,22 +9,30 @@ static char sccsid[] = "@(#)wrapup.c	4.1	(Berkeley)	%G%";
 wrapup(n)
 int n;
 {
-	/* this routine does not use 'system' because it wants
-	 interrupts turned off */
-	int retval, pid, pidw;
+/* this routine does not use 'system' because it wants interrupts turned off */
 
 	signal(SIGINT, SIG_IGN);
 	chdir("..");
-	if ( (pid=fork()) ==0) {
+	if (fork() == 0) {
 		signal(SIGHUP, SIG_IGN);
-		execl("/bin/rm", "rm", "-r", dir, 0);
-		execl("/usr/bin/rm", "rm", "-r", dir, 0);
-		fprintf(stderr, "Can't find 'rm' command.\n");
+#if vax
+		if (fork() == 0) {
+			close(1);
+			open("/dev/tty", 1);
+			execl("/bin/stty", "stty", "new", 0);
+		}
+#endif
+		execl("/bin/rm", "rm", "-rf", dir, 0);
+		execl("/usr/bin/rm", "rm", "-rf", dir, 0);
+		perror("bin/rm");
+		fprintf(stderr, "Wrapup:  can't find 'rm' command.\n");
 		exit(0);
 	}
-	printf("Bye.\n"); /* not only does this reassure user but 
-			it stalls for time while deleting directory */
+	if (!n && todo)
+		printf("To take up where you left off type \"learn %s %s\".\n", sname, todo);
+	printf("Bye.\n");	/* not only does this reassure user but it
+				stalls for time while deleting directory */
 	fflush(stdout);
-	/* printf("Wantd %d got %d val %d\n",pid, pidw, retval); */
+	wait(0);
 	exit(n);
 }
