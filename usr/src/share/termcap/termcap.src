@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.114 (Berkeley) %G%
+#	@(#)termcap.src	5.115 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -20,11 +20,8 @@
 # printing terminals very well, nor graphics terminals.  Someday.
 # See termcap(5) in the Unix Programmers Manual for documentation.
 #
-# Conventions: First entry is two chars, first char is manufacturer,
-# second char is canonical name for model or mode.
-# Third entry is the one the editor will print with "set" command.
-# Last entry is verbose description.
-# Others are mnemonic synonyms for the terminal.
+# Conventions: First entry is canonical name for model or mode, last entry
+# is verbose description.  Others are mnemonic synonyms for the terminal.
 #
 # Terminal naming conventions:
 # Terminal names look like <manufacturer> <model> - <modes/options>
@@ -33,7 +30,7 @@
 # dash is present, describes the particular hardware of the terminal.
 # The part to the right can be used for flags indicating special ROM's,
 # extra memory, particular terminal modes, or user preferences.
-# All names are always in lower case, for consistency in typing.
+# All names should be in lower case, for consistency in typing.
 #
 # The following are conventionally used flags:
 #	rv	Terminal in reverse video mode (black on white)
@@ -44,14 +41,6 @@
 #		actually there on the terminal, so the user can use
 #		the arrow keys locally.
 #
-# There are some cases where the same name is used for two different
-# terminals, e.g. "teleray" or "2621" or "vt100".  In these cases,
-# if a site has one of these, they should choose a local default and
-# bring that terminal to the front in the reorder script.  This works
-# because tgetent picks the first match in /etc/termcap.
-# The list of names intentionally duplicated is:
-# 2621, c108, dtc, hp2621, teleray, tvi, vt100.
-#
 # To easily test a new terminal description, put it in $HOME/.termcap
 # and programs will look there before looking in /etc/termcap.
 # You can also setenv TERMPATH to a list of full pathnames (separated
@@ -61,11 +50,8 @@
 #
 # If you absolutely MUST check for a specific terminal (this is discouraged)
 # check for the 2nd entry (the canonical form) since all other codes are
-# subject to change.  The two letter codes are there for version 6 and are
-# EXTREMELY subject to change, or even to go away if version 6 becomes for
-# all practical purposes obsolete.  We would much rather put in special
-# capabilities to describe your terminal rather than having you key on the
-# name.
+# subject to change.  We would much rather put in special capabilities
+# to describe your terminal than have you key on the name.
 #
 #  Special manufacturer codes:
 #	A: hardcopy daisy wheel terminals
@@ -79,8 +65,6 @@
 #
 #  This file is to be installed with an editor script (reorder)
 #  that moves the most common terminals to the front of the file.
-#  If the source is not available, it can be constructed by sorting
-#  the above entries by the 2 char initial code.
 # # --------------------------------
 #
 # A: DAISY WHEEL PRINTERS
