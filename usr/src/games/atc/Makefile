@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 PROG=	atc
-CFLAGS+=-DBSD -I${.CURDIR}
+CFLAGS+=-DBSD -I${.CURDIR} -I.
 SRCS=	extern.c grammar.c graphics.c input.c lex.c list.c log.c \
 	main.c tunable.c update.c
 MAN6=	atc.0
