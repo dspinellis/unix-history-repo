@@ -1,6 +1,7 @@
-/*	ts.c	4.9	81/04/03	*/
+/*	ts.c	4.10	81/04/14	*/
 
 #include "ts.h"
+#include "tm.h"
 #if NTS > 0
 #define printd if(tsdebug)printf
 int tsdebug;
@@ -106,6 +107,10 @@ struct ts_softc *ts_ubaddr;	/* Unibus address of ts_softc */
 #define	SCOM	3		/* sending control command */
 #define	SREW	4		/* sending a drive rewind */
 
+#if NTM > 0
+/* kludge... see tm.c */
+extern	havetm;
+#endif
 /*
  * Determine if there is a controller for
  * a ts at address reg.  Our goal is to make the
@@ -125,6 +130,10 @@ tsprobe(reg)
 	/*		*/
 	/****************/
 
+#if NTM > 0
+	if (havetm)
+		return (0);
+#endif
 	/* IT'S TOO HARD TO MAKE THIS THING INTERRUPT
 	   JUST TO FIND ITS VECTOR */
 	cvec = 0224;
