@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)main.c	3.74.1.1		%G%);
+SCCSID(@(#)main.c	3.75		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -641,7 +641,9 @@ setfrom(from, realname)
 
 	if (from != NULL)
 	{
-		if (strcmp(realname, "network") != 0 && strcmp(realname, "uucp") != 0 &&
+		if (strcmp(realname, "network") != 0 &&
+		    strcmp(realname, "uucp") != 0 &&
+		    strcmp(realname, "daemon") != 0 &&
 # ifdef DEBUG
 		    (Debug == 0 || getuid() != geteuid()) &&
 # endif DEBUG
