@@ -100,7 +100,7 @@ char	MyName[] = "sccs";	/* name used in messages */
 
 /****************  End of Configuration Information  ****************/
 
-static char SccsId[] = "@(#)sccs.c	1.31 %G%";
+static char SccsId[] = "@(#)sccs.c	1.32 %G%";
 
 # define bitset(bit, word)	((bit) & (word))
 
@@ -117,6 +117,7 @@ struct sccsprog
 	char	*sccsname;	/* name of SCCS routine */
 	short	sccsoper;	/* opcode, see below */
 	short	sccsflags;	/* flags, see below */
+	char	*sccsklets;	/* valid key-letters on macros */
 	char	*sccspath;	/* pathname of binary implementing */
 };
 
@@ -142,24 +143,24 @@ struct sccsprog
 
 struct sccsprog SccsProg[] =
 {
-	"admin",	PROG,	REALUSER,		PROGPATH(admin),
-	"chghist",	PROG,	0,			PROGPATH(rmdel),
-	"comb",		PROG,	0,			PROGPATH(comb),
-	"delta",	PROG,	0,			PROGPATH(delta),
-	"get",		PROG,	0,			PROGPATH(get),
-	"help",		PROG,	NO_SDOT,		PROGPATH(help),
-	"prt",		PROG,	0,			PROGPATH(prt),
-	"rmdel",	PROG,	REALUSER,		PROGPATH(rmdel),
-	"what",		PROG,	NO_SDOT,		PROGPATH(what),
-	"edit",		CMACRO,	0,			"get -e",
-	"delget",	CMACRO,	0,			"delta/get -t",
-	"deledit",	CMACRO,	0,			"delta/get -e -t",
-	"fix",		FIX,	0,			NULL,
-	"clean",	CLEAN,	REALUSER,		(char *) CLEANC,
-	"info",		CLEAN,	REALUSER,		(char *) INFOC,
-	"check",	CLEAN,	REALUSER,		(char *) CHECKC,
-	"unedit",	UNEDIT,	0,			NULL,
-	NULL,		-1,	0,			NULL
+	"admin",	PROG,	REALUSER,	"",		PROGPATH(admin),
+	"chghist",	PROG,	0,		"",		PROGPATH(rmdel),
+	"comb",		PROG,	0,		"",		PROGPATH(comb),
+	"delta",	PROG,	0,		"mysrp",	PROGPATH(delta),
+	"get",		PROG,	0,		"ixbeskc",	PROGPATH(get),
+	"help",		PROG,	NO_SDOT,	"",		PROGPATH(help),
+	"prt",		PROG,	0,		"",		PROGPATH(prt),
+	"rmdel",	PROG,	REALUSER,	"",		PROGPATH(rmdel),
+	"what",		PROG,	NO_SDOT,	"",		PROGPATH(what),
+	"edit",		CMACRO,	NO_SDOT,	"ixbsc",	"get -e",
+	"delget",	CMACRO,	NO_SDOT,	"",		"delta/get -t",
+	"deledit",	CMACRO,	NO_SDOT,	"",		"delta/get -e -t",
+	"fix",		FIX,	NO_SDOT,	"",		NULL,
+	"clean",	CLEAN,	REALUSER,	"",		(char *) CLEANC,
+	"info",		CLEAN,	REALUSER,	"",		(char *) INFOC,
+	"check",	CLEAN,	REALUSER,	"",		(char *) CHECKC,
+	"unedit",	UNEDIT,	NO_SDOT,	"",		NULL,
+	NULL,		-1,	0,		"",		NULL
 };
 
 struct pfile
@@ -239,7 +240,7 @@ main(argc, argv)
 			SccsPath = ".";
 	}
 
-	i = command(argv, FALSE);
+	i = command(argv, FALSE, FALSE, "");
 	exit(i);
 }
 /*
@@ -252,6 +253,10 @@ main(argc, argv)
 **	Parameters:
 **		argv -- an argument vector to process.
 **		forkflag -- if set, fork before executing the command.
+**		editflag -- if set, only include flags listed in the
+**			sccsklets field of the command descriptor.
+**		arg0 -- a space-seperated list of arguments to insert
+**			before argv.
 **
 **	Returns:
 **		zero -- command executed ok.
@@ -261,41 +266,88 @@ main(argc, argv)
 **		none.
 */
 
-command(argv, forkflag)
+command(argv, forkflag, editflag, arg0)
 	char **argv;
 	bool forkflag;
+	bool editflag;
+	char *arg0;
 {
 	register struct sccsprog *cmd;
 	register char *p;
 	register char *q;
 	char buf[40];
 	extern struct sccsprog *lookup();
-	char *nav[200];
-	char **avp;
+	char *nav[1000];
+	char **np;
+	char **ap;
 	register int i;
 	extern bool unedit();
 	int rval = 0;
+	extern char *index();
+	extern char *makefile();
 
 # ifdef DEBUG
 	if (Debug)
 	{
-		printf("command:\n");
-		for (avp = argv; *avp != NULL; avp++)
-			printf("    \"%s\"\n", *avp);
+		printf("command:\n\t\"%s\"\n", arg0);
+		for (np = argv; *np != NULL; np++)
+			printf("\t\"%s\"\n", *np);
 	}
 # endif
 
 	/*
-	**  Look up command.
-	**	At this point, argv points to the command name.
+	**  Copy arguments.
+	**	Phase one -- from arg0 & if necessary argv[0].
 	*/
 
-	cmd = lookup(argv[0]);
+	np = nav;
+	for (p = arg0, q = buf; *p != '\0' && *p != '/'; )
+	{
+		*np++ = q;
+		while (*p == ' ')
+			p++;
+		while (*p != ' ' && *p != '\0' && *p != '/')
+			*q++ = *p++;
+		*q++ = '\0';
+	}
+	*np = NULL;
+	if (nav[0] == NULL)
+		*np++ = *argv++;
+
+	/*
+	**  Look up command.
+	**	At this point, nav[0] is the command name.
+	*/
+
+	cmd = lookup(nav[0]);
 	if (cmd == NULL)
 	{
 		usrerr("Unknown command \"%s\"", argv[0]);
 		return (EX_USAGE);
 	}
+
+	/*
+	**  Copy remaining arguments doing editing as appropriate.
+	*/
+
+	for (; *argv != NULL; argv++)
+	{
+		p = *argv;
+		if (*p == '-')
+		{
+			if (p[1] == '\0' || !editflag || cmd->sccsklets == NULL ||
+			    index(cmd->sccsklets, p[1]) != NULL)
+				*np++ = p;
+		}
+		else
+		{
+			if (!bitset(NO_SDOT, cmd->sccsflags))
+				p = makefile(p);
+			if (p != NULL)
+				*np++ = p;
+		}
+	}
+	*np = NULL;
 
 	/*
 	**  Interpret operation associated with this command.
@@ -304,45 +356,33 @@ command(argv, forkflag)
 	switch (cmd->sccsoper)
 	{
 	  case PROG:		/* call an sccs prog */
-		rval = callprog(cmd->sccspath, cmd->sccsflags, argv, forkflag);
+		rval = callprog(cmd->sccspath, cmd->sccsflags, nav, forkflag);
 		break;
 
 	  case CMACRO:		/* command macro */
 		for (p = cmd->sccspath; *p != '\0'; p++)
 		{
-			avp = nav;
-			*avp++ = buf;
-			for (q = buf; *p != '/' && *p != '\0'; p++, q++)
-			{
-				if (*p == ' ')
-				{
-					*q = '\0';
-					*avp++ = &q[1];
-				}
-				else
-					*q = *p;
-			}
-			*q = '\0';
-			*avp = NULL;
-			rval = xcommand(&argv[1], *p != '\0', nav[0], nav[1],
-					nav[2], nav[3], nav[4], nav[5], nav[6]);
+			q = p;
+			while (*p != '\0' && *p != '/')
+				p++;
+			rval = command(&nav[1], *p != '\0', TRUE, q);
 			if (rval != 0)
 				break;
 		}
 		break;
 
 	  case FIX:		/* fix a delta */
-		if (strncmp(argv[1], "-r", 2) != 0)
+		if (strncmp(nav[1], "-r", 2) != 0)
 		{
 			usrerr("-r flag needed for fix command");
 			rval = EX_USAGE;
 			break;
 		}
-		rval = xcommand(&argv[1], TRUE, "get", "-k", NULL);
+		rval = command(&nav[1], TRUE, TRUE, "get -k");
 		if (rval == 0)
-			rval = xcommand(&argv[1], TRUE, "rmdel", NULL);
+			rval = command(&nav[1], TRUE, TRUE, "rmdel");
 		if (rval == 0)
-			rval = xcommand(&argv[2], FALSE, "get", "-e", "-g", NULL);
+			rval = command(&nav[2], FALSE, TRUE, "get -e -g");
 		break;
 
 	  case CLEAN:
@@ -350,15 +390,14 @@ command(argv, forkflag)
 		break;
 
 	  case UNEDIT:
-		i = 0;
-		for (avp = &argv[1]; *avp != NULL; avp++)
+		for (argv = np = &nav[1]; *argv != NULL; argv++)
 		{
-			if (unedit(*avp))
-				nav[i++] = *avp;
+			if (unedit(*argv))
+				*np++ = *argv;
 		}
-		nav[i] = NULL;
+		*np = NULL;
 		if (i > 0)
-			rval = xcommand(nav, FALSE, "get", NULL);
+			rval = command(&nav[1], FALSE, FALSE, "get");
 		break;
 
 	  default:
@@ -399,45 +438,9 @@ lookup(name)
 	return (NULL);
 }
 /*
-**  XCOMMAND -- special version of command
-**
-**	This routine prepends an argv to another argv and calls
-**	command.  It is used mostly for macros, etc.
-**
-**	Parameters:
-**		argv -- the normal argv.
-**		forkflag -- passed to command.
-**		arg0 -- the argv to prepend.
-**
-**	Returns:
-**		see 'command'.
-**
-**	Side Effects:
-**		none.
-*/
-
-xcommand(argv, forkflag, arg0)
-	char **argv;
-	bool forkflag;
-	char *arg0;
-{
-	register char **av;
-	char *newargv[1000];
-	register char **np;
-
-	np = newargv;
-	for (av = &arg0; *av != NULL; av++)
-		*np++ = *av;
-	for (av = argv; *av != NULL; av++)
-		*np++ = *av;
-	*np = NULL;
-	return (command(newargv, forkflag));
-}
-/*
 **  CALLPROG -- call a program
 **
-**	Used to call the SCCS programs.  Arguments in argv will be
-**	modified to be prepended by "SCCS/s." as appropriate.
+**	Used to call the SCCS programs.
 **
 **	Parameters:
 **		progpath -- pathname of the program to call.
@@ -460,12 +463,17 @@ callprog(progpath, flags, argv, forkflag)
 	char **argv;
 	bool forkflag;
 {
-	register char *p;
-	register char **av;
-	extern char *makefile();
 	register int i;
 	auto int st;
-	register char **nav;
+
+# ifdef DEBUG
+	if (Debug)
+	{
+		printf("callprog:\n");
+		for (i = 0; argv[i] != NULL; i++)
+			printf("\t\"%s\"\n", argv[i]);
+	}
+# endif
 
 	if (*argv == NULL)
 		return (-1);
@@ -494,24 +502,6 @@ callprog(progpath, flags, argv, forkflag)
 			return (st);
 		}
 	}
-
-	/*
-	**  Build new argument vector.
-	*/
-
-	/* copy program filename arguments and flags */
-	nav = &argv[1];
-	av = argv;
-	while ((p = *++av) != NULL)
-	{
-		if (!bitset(NO_SDOT, flags) && *p != '-')
-			*nav = makefile(p);
-		else
-			*nav = p;
-		if (*nav != NULL)
-			nav++;
-	}
-	*nav = NULL;
 
 	/*
 	**  Set protection as appropriate.
@@ -792,6 +782,7 @@ unedit(fn)
 	struct pfile *pent;
 	extern struct pfile *getpfile();
 	char buf[120];
+	extern char *makefile();
 # ifdef UIDUSER
 	struct passwd *pw;
 	extern struct passwd *getpwuid();
