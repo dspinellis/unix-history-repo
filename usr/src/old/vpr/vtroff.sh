@@ -1,6 +1,6 @@
 #! /bin/csh -f
 #
-#	@(#)vtroff.sh	4.2	(Berkeley)	%G%
+#	@(#)vtroff.sh	4.3	(Berkeley)	%G%
 #
 umask 0
 set flags=() noglob length=() fonts=() fontf=()
@@ -69,6 +69,8 @@ top:
 			set flags = ($flags $argv[1])
 			shift argv
 			goto top
+		case -:
+			breaksw
 		endsw
 	endif
 if ($#argv == 0) then
