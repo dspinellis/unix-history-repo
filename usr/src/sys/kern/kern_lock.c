@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_lock.c	8.16 (Berkeley) %G%
+ *	@(#)kern_lock.c	8.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -469,19 +469,6 @@ _simple_lock_try(alp, id, l)
 		return (0);
 	if (simplelockrecurse)
 		return (1);
-	if (alp->lock_data == 1) {
-		if (lockpausetime == -1)
-			panic("%s:%d: simple_lock_try: lock held", id, l);
-		printf("%s:%d: simple_lock_try: lock held\n", id, l);
-		if (lockpausetime == 1) {
-			BACKTRACE(curproc);
-		} else if (lockpausetime > 1) {
-			printf("%s:%d: simple_lock_try: lock held...", id, l);
-			tsleep(&lockpausetime, PCATCH | PPAUSE, "slock",
-			    lockpausetime * hz);
-			printf(" continuing\n");
-		}
-	}
 	alp->lock_data = 1;
 	if (curproc)
 		curproc->p_simple_locks++;
