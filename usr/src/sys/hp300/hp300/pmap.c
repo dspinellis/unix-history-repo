@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	8.3 (Berkeley) %G%
+ *	@(#)pmap.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -770,29 +770,40 @@ pmap_page_protect(pa, prot)
 	switch (prot) {
 	case VM_PROT_READ|VM_PROT_WRITE:
 	case VM_PROT_ALL:
-		break;
+		return;
 	/* copy_on_write */
 	case VM_PROT_READ:
 	case VM_PROT_READ|VM_PROT_EXECUTE:
 		pmap_changebit(pa, PG_RO, TRUE);
-		break;
+		return;
 	/* remove_all */
 	default:
-		pv = pa_to_pvh(pa);
-		s = splimp();
-		while (pv->pv_pmap != NULL) {
-#ifdef DEBUG
-			if (!pmap_ste_v(pv->pv_pmap, pv->pv_va) ||
-			    pmap_pte_pa(pmap_pte(pv->pv_pmap,pv->pv_va)) != pa)
-				panic("pmap_page_protect: bad mapping");
-#endif
-			pmap_remove_mapping(pv->pv_pmap, pv->pv_va,
-					    PT_ENTRY_NULL,
-					    PRM_TFLUSH|PRM_CFLUSH);
-		}
-		splx(s);
 		break;
 	}
+	pv = pa_to_pvh(pa);
+	s = splimp();
+	while (pv->pv_pmap != NULL) {
+		register pt_entry_t *pte;
+
+		pte = pmap_pte(pv->pv_pmap, pv->pv_va);
+#ifdef DEBUG
+		if (!pmap_ste_v(pv->pv_pmap, pv->pv_va) ||
+		    pmap_pte_pa(pte) != pa)
+			panic("pmap_page_protect: bad mapping");
+#endif
+		if (!pmap_pte_w(pte))
+			pmap_remove_mapping(pv->pv_pmap, pv->pv_va,
+					    pte, PRM_TFLUSH|PRM_CFLUSH);
+		else {
+			pv = pv->pv_next;
+#ifdef DEBUG
+			if (pmapdebug & PDB_PARANOIA)
+				printf("%s wired mapping for %x not removed\n",
+				       "pmap_page_protect:", pa);
+#endif
+		}
+	}
+	splx(s);
 }
 
 /*
@@ -1627,6 +1638,11 @@ pmap_pageable(pmap, sva, eva, pageable)
 		 */
 		pmap_changebit(pa, PG_M, FALSE);
 #ifdef DEBUG
+		if ((PHYS_TO_VM_PAGE(pa)->flags & PG_CLEAN) == 0) {
+			printf("pa %x: flags=%x: not clean\n",
+			       pa, PHYS_TO_VM_PAGE(pa)->flags);
+			PHYS_TO_VM_PAGE(pa)->flags |= PG_CLEAN;
+		}
 		if (pmapdebug & PDB_PTPAGE)
 			printf("pmap_pageable: PT page %x(%x) unmodified\n",
 			       sva, *(int *)pmap_pte(pmap, sva));
@@ -1986,6 +2002,10 @@ pmap_remove_mapping(pmap, va, pte, flags)
 					PMAP_ACTIVATE(ptpmap,
 					    (struct pcb *)curproc->p_addr, 1);
 			}
+#ifdef DEBUG
+			else if (ptpmap->pm_sref < 0)
+				panic("remove: sref < 0");
+#endif
 		}
 #if 0
 		/*
