@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	7.16 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -403,4 +403,40 @@ hzto(tv)
 		ticks = 0x7fffffff;
 	splx(s);
 	return (ticks);
+}
+
+/*
+ * Return information about system clocks.
+ */
+/* ARGSUSED */
+kinfo_clockrate(op, where, acopysize, arg, aneeded)
+	int op;
+	register char *where;
+	int *acopysize, arg, *aneeded;
+{
+	int buflen, error;
+	struct clockinfo clockinfo;
+
+	*aneeded = sizeof(clockinfo);
+	if (where == NULL)
+		return (0);
+	/*
+	 * Check for enough buffering.
+	 */
+	buflen = *acopysize;
+	if (buflen < sizeof(clockinfo)) {
+		*acopysize = 0;
+		return (0);
+	}
+	/*
+	 * Copyout clockinfo structure.
+	 */
+	clockinfo.hz = hz;
+	clockinfo.phz = phz;
+	clockinfo.tick = tick;
+	clockinfo.profhz = profhz;
+	if (error = copyout((caddr_t)&clockinfo, where, sizeof(clockinfo)))
+		return (error);
+	*acopysize = sizeof(clockinfo);
+	return (0);
 }
