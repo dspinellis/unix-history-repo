@@ -1,5 +1,5 @@
 #ifndef lint
-static	char	*sccsid = "@(#)uda.c	6.4	(Berkeley) %G%";
+static	char	*sccsid = "@(#)uda.c	6.5	(Berkeley) %G%";
 #endif lint
 
 /************************************************************************
@@ -350,7 +350,6 @@ udopen(dev, flag)
 			sleep(&uda_cp_wait,PSWP+1);
 			uda_cp_wait--;
 		}
-		(void) splx(s);
 		mp->mscp_opcode = M_OP_ONLIN;
 		mp->mscp_unit = ui->ui_slave;
 		mp->mscp_cmdref = (long) & ra_info[ui->ui_unit].ratype;
@@ -363,6 +362,7 @@ udopen(dev, flag)
 		timeout(wakeup,(caddr_t) mp->mscp_cmdref,10 * hz);
 			/* make sure we wake up */
 		sleep((caddr_t) mp->mscp_cmdref,PSWP+1); /*wakeup in udrsp() */
+		(void) splx(s);
 	}
 	if(ui->ui_flags == 0){
 		return(ENXIO);  /* Didn't go online */
