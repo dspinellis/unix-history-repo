@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)interp.c 1.20 %G%";
+static char sccsid[] = "@(#)interp.c 1.21 %G%";
 
 #include <math.h>
 #include "whoami.h"
@@ -171,6 +171,7 @@ interpreter(base)
 #		endif PROFILE
 		switch (*pc.ucp++) {
 		case O_BPT:			/* breakpoint trap */
+			PFLUSH();
 			asm(".byte 0");
 			pc.ucp--;
 			continue;
