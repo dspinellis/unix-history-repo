@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)table.c	1.30 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.31 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -200,6 +200,21 @@ OPLOG,	FORCC,
 	SAREG|AWD,	TFLOAT,
 		0,	RESCC,
 		"	cmpf	AL,AR\nZP",
+
+#ifdef FORT
+/* this really ought to be taken care of farther upstream... XXX */
+OPLOG,	FORCC,
+	SAREG|AWD,	TFLOAT,
+	SAREG|AWD,	TDOUBLE,
+		NAREG|NASL,	RESCC,
+		"	cvtfd	AL,A1\n	cmpd	A1,AR\nZP",
+
+OPLOG,	FORCC,
+	SAREG|AWD,	TDOUBLE,
+	SAREG|AWD,	TFLOAT,
+		NAREG|NASR,	RESCC,
+		"	cvtfd	AR,A1\n	cmpd	AL,A1\nZP",
+#endif
 
 CCODES,	INAREG|INTAREG,
 	SANY,	TANY,
