@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)limits.h	7.6 (Berkeley) %G%
+ *	@(#)limits.h	7.7 (Berkeley) %G%
  */
 
 #define	CHAR_BIT	8		/* number of bits in a char */
@@ -19,7 +19,8 @@
  * type converted according to the integral promotions.  The subtraction for
  * INT_MIN and LONG_MIN is so the value is not unsigned; 2147483648 is an
  * unsigned int for 32-bit two's complement ANSI compilers (section 3.1.3.2).
- * These numbers work for pcc as well.
+ * These numbers work for pcc as well.  The UINT_MAX and ULONG_MAX values
+ * are written as hex so that GCC will be quiet about large integer constants.
  */
 #define	SCHAR_MAX	127		/* min value for a signed char */
 #define	SCHAR_MIN	-128		/* max value for a signed char */
@@ -32,11 +33,11 @@
 #define	SHRT_MAX	32767		/* max value for a short */
 #define	SHRT_MIN	-32768		/* min value for a short */
 
-#define	UINT_MAX	4294967295	/* max value for an unsigned int */
+#define	UINT_MAX	0xffffffff	/* max value for an unsigned int */
 #define	INT_MAX		2147483647	/* max value for an int */
 #define	INT_MIN		(-2147483647-1)	/* min value for an int */
 
-#define	ULONG_MAX	4294967295	/* max value for an unsigned long */
+#define	ULONG_MAX	0xffffffff	/* max value for an unsigned long */
 #define	LONG_MAX	2147483647	/* max value for a long */
 #define	LONG_MIN	(-2147483647-1)	/* min value for a long */
 
