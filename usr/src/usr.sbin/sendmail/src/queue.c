@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.20 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.21 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.20 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.21 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -123,10 +123,8 @@ queueup(e, queueall, announce)
 			else
 				sleep(i % 32);
 		}
-		if (fd < 0)
-			syserr("!queueup: cannot create temp file %s", tf);
-
-		tfp = fdopen(fd, "w");
+		if (fd < 0 || (tfp = fdopen(fd, "w")) == NULL)
+			syserr("!queueup: cannot create queue temp file %s", tf);
 	}
 
 	if (tTd(40, 1))
@@ -144,9 +142,9 @@ queueup(e, queueall, announce)
 		e->e_df = queuename(e, 'd');
 		e->e_df = newstr(e->e_df);
 		fd = open(e->e_df, O_WRONLY|O_CREAT, FileMode);
-		if (fd < 0)
-			syserr("!queueup: cannot create %s", e->e_df);
-		dfp = fdopen(fd, "w");
+		if (fd < 0 || (dfp = fdopen(fd, "w")) == NULL)
+			syserr("!queueup: cannot create data temp file %s",
+				e->e_df);
 		(*e->e_putbody)(dfp, FileMailer, e, NULL);
 		(void) xfclose(dfp, "queueup dfp", e->e_id);
 		e->e_putbody = putbody;

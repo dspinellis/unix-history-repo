@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -590,7 +590,6 @@ deliver(e, firstto)
 	char buf[MAXNAME];
 	char rpathbuf[MAXNAME];		/* translated return path */
 	extern int checkcompat();
-	extern FILE *fdopen();
 	extern char SmtpError[];
 
 	errno = 0;
@@ -1269,10 +1268,33 @@ tryhost:
 		mci->mci_pid = pid;
 		(void) close(mpvect[0]);
 		mci->mci_out = fdopen(mpvect[1], "w");
+		if (mci->mci_out == NULL)
+		{
+			syserr("deliver: cannot create mailer output channel, fd=%d",
+				mpvect[1]);
+			(void) close(mpvect[1]);
+			if (clever)
+			{
+				(void) close(rpvect[0]);
+				(void) close(rpvect[1]);
+			}
+			rcode = EX_OSERR;
+			goto give_up;
+		}
 		if (clever)
 		{
 			(void) close(rpvect[1]);
 			mci->mci_in = fdopen(rpvect[0], "r");
+			if (mci->mci_in == NULL)
+			{
+				syserr("deliver: cannot create mailer input channel, fd=%d",
+					mpvect[1]);
+				(void) close(rpvect[0]);
+				fclose(mci->mci_out);
+				mci->mci_out = NULL;
+				rcode = EX_OSERR;
+				goto give_up;
+			}
 		}
 		else
 		{

@@ -12,9 +12,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.15 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.16 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.15 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.16 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -465,8 +465,13 @@ gothostent:
 	}
 
 	/* connection ok, put it into canonical form */
-	mci->mci_out = fdopen(s, "w");
-	mci->mci_in = fdopen(dup(s), "r");
+	if ((mci->mci_out = fdopen(s, "w")) == NULL ||
+	    (s = dup(s)) < 0 ||
+	    (mci->mci_in = fdopen(dup(s), "r")) == NULL)
+	{
+		syserr("cannot open SMTP client channel, fd=%d", s);
+		return EX_TEMPFAIL;
+	}
 
 	return (EX_OK);
 }
