@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-SCCSID(@(#)deliver.c	3.87		%G%);
+SCCSID(@(#)deliver.c	3.88		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -355,7 +355,7 @@ deliver(firstto)
 	{
 # ifdef SMTP
 		if (clever)
-			smtpquit(pv[0]);
+			smtpquit(pv[0], FALSE);
 # endif SMTP
 		define('g', (char *) NULL);
 		return (0);
@@ -391,7 +391,7 @@ deliver(firstto)
 	if (clever)
 	{
 		i = smtpfinish(m, CurEnv);
-		smtpquit(pv[0]);
+		smtpquit(pv[0], TRUE);
 	}
 	else
 # endif SMTP
@@ -817,7 +817,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 
 giveresponse(stat, force, m)
 	int stat;
-	int force;
+	bool force;
 	register struct mailer *m;
 {
 	register char *statmsg;

@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.11		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.12		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.11		%G%);
+SCCSID(@(#)usersmtp.c	3.12		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -175,6 +175,7 @@ smtpfinish(m, e)
 **
 **	Parameters:
 **		name -- name of mailer we are quitting.
+**		showresp -- if set, give a response message.
 **
 **	Returns:
 **		none.
@@ -183,24 +184,21 @@ smtpfinish(m, e)
 **		sends the final protocol and closes the connection.
 */
 
-smtpquit(name)
+smtpquit(name, showresp)
 	char *name;
+	bool showresp;
 {
 	register int i;
 
 	if (SmtpPid < 0)
-	{
-		i = SmtpErrstat;
-	}
-	else
-	{
-		smtpmessage("QUIT");
-		(void) reply();
-		(void) fclose(SmtpIn);
-		(void) fclose(SmtpOut);
-		i = endmailer(SmtpPid, name);
-	}
-	giveresponse(i, TRUE, LocalMailer);
+		return;
+	smtpmessage("QUIT");
+	(void) reply();
+	(void) fclose(SmtpIn);
+	(void) fclose(SmtpOut);
+	i = endmailer(SmtpPid, name);
+	if (showresp)
+		giveresponse(i, TRUE, LocalMailer);
 }
 /*
 **  REPLY -- read arpanet reply
@@ -230,8 +228,9 @@ reply()
 
 		if (fgets(buf, sizeof buf, SmtpIn) == NULL)
 			return (-1);
-		if (Verbose)
+		if (Verbose && !HoldErrs)
 			fputs(buf, stdout);
+		fputs(buf, Xscript);
 		if (buf[3] == '-' || !isdigit(buf[0]))
 			continue;
 		r = atoi(buf);
@@ -261,10 +260,10 @@ smtpmessage(f, a, b, c)
 	char buf[100];
 
 	(void) sprintf(buf, f, a, b, c);
-	(void) strcat(buf, "\r\n");
-	if (Debug)
-		fputs(buf, stdout);
-	fputs(buf, SmtpOut);
+	if (Debug || (Verbose && !HoldErrs))
+		printf(">>> %s\n", buf);
+	fprintf(Xscript, ">>> %s\n", buf);
+	fprintf(SmtpOut, "%s\r\n", buf);
 }
 
 # endif SMTP
