@@ -1,4 +1,4 @@
-/*	user.h	6.8	85/03/07	*/
+/*	user.h	6.9	85/03/11	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
@@ -121,6 +121,7 @@ struct	user {
 /* u_eosys values */
 #define	JUSTRETURN	1
 #define	RESTARTSYS	2
+#define NORMALRETURN	3
 
 /* u_error codes */
 #ifdef KERNEL
