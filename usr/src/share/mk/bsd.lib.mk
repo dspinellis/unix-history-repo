@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.12 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.13 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -81,6 +81,9 @@ cleandir:
 depend: .depend
 .depend: ${SRCS}
 	mkdep ${CFLAGS:M-[ID]*} ${AINC} ${.ALLSRC}
+	(TMP=/tmp/_depend$$$$; \
+	    sed -e 's/^\([^\.]*\).o:/\1.o \1.po:/' < .depend > $$TMP; \
+	    mv $$TMP .depend)
 .endif
 
 .if !target(install)
