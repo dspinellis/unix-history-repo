@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: grf.c 1.31 91/01/21$
  *
- *	@(#)grf.c	7.8 (Berkeley) %G%
+ *	@(#)grf.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -615,7 +615,7 @@ grfunmmap(dev, addr, p)
 	if (addr == 0)
 		return(EINVAL);		/* XXX: how do we deal with this? */
 	size = round_page(gp->g_display.gd_regsize + gp->g_display.gd_fbsize);
-	rv = vm_deallocate(p->p_vmspace->vm_map, (vm_offset_t)addr, size);
+	rv = vm_deallocate(&p->p_vmspace->vm_map, (vm_offset_t)addr, size);
 	return(rv == KERN_SUCCESS ? 0 : EINVAL);
 }
 
