@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if.h	6.12 (Berkeley) %G%
+ *	@(#)if.h	6.13 (Berkeley) %G%
  */
 
 /*
@@ -75,6 +75,9 @@ struct ifnet {
 #define	IFF_NOTRAILERS	0x20		/* avoid use of trailers */
 #define	IFF_RUNNING	0x40		/* resources allocated */
 #define	IFF_NOARP	0x80		/* no address resolution protocol */
+/* next two not supported now, but reserved: */
+#define	IFF_PROMISC	0x100		/* receive all packets */
+#define	IFF_ALLMULTI	0x200		/* receive all multicast packets */
 /* flags set internally only: */
 #define	IFF_CANTCHANGE	(IFF_BROADCAST | IFF_POINTOPOINT | IFF_RUNNING)
 
