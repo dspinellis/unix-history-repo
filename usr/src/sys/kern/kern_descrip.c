@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_descrip.c	7.5 (Berkeley) %G%
+ *	@(#)kern_descrip.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -431,7 +431,7 @@ fdopen(dev, mode, type)
 	 * of the new file descriptor, which was set before the call to
 	 * vn_open() by copen() in vfs_syscalls.c
 	 */
-	indx = u.u_r.r_val1;		/* XXX */
+	indx = u.u_r.r_val1;		/* XXX from copen */
 	if ((unsigned)indx >= NOFILE || (fp = u.u_ofile[indx]) == NULL)
 		return (EBADF);
 	dfd = minor(dev);
@@ -457,18 +457,14 @@ fdopen(dev, mode, type)
 	rwmode = mode & (FREAD|FWRITE);
 	if ((fp->f_flag & rwmode) != rwmode)
 		return (EACCES);
-	/*
-	 * Delete references to this pseudo-device.
-	 * Note that fp->f_count is guaranteed == 1, and
-	 * that fp references the vnode for this driver.
-	 */
-	if (fp->f_count != 1 || fp->f_type != DTYPE_VNODE) 
-		panic("fdopen");
-	vrele((struct vnode *)fp->f_data);
-	fp->f_count = 0;
 	/* 
 	 * Dup the file descriptor. 
 	 */
 	dupit(indx, wfp, u.u_pofile[dfd]);
-	return (0);
+	/*
+	 * Delete references to this pseudo-device by returning
+	 * a special error (-1) that will cause all resources to
+	 * be freed, then detected and cleared by copen.
+	 */
+	return (-1);
 }
