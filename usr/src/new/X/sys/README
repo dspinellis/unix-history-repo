@@ -1,0 +1,3 @@
+These are files that may or may not be needed (depending on the state
+of your 4.2 system) to install the device driver in your kernel.
+See the README files in the appropriate directory.
