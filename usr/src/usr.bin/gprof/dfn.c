@@ -1,9 +1,9 @@
 #ifndef lint
-    static	char *sccsid = "@(#)dfn.c	1.1 (Berkeley) %G%";
+    static	char *sccsid = "@(#)dfn.c	1.2 (Berkeley) %G%";
 #endif lint
 
 #include <stdio.h>
-#include "dprof.h"
+#include "gprof.h"
 
 #define	DFN_DEPTH	100
 struct dfnstruct {

@@ -1,4 +1,4 @@
-    /* sccsid:  @(#)gprof.h	1.1 (Berkeley) %G% */
+    /* sccsid:  @(#)gprof.h	1.2 (Berkeley) %G% */
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -16,8 +16,8 @@ typedef	short UNIT;		/* unit of profiling */
 char	*a_outname;
 #define	A_OUTNAME		"a.out"
 
-char	*dmonname;
-#define	DMONNAME		"dmon.out"
+char	*gmonname;
+#define	GMONNAME		"gmon.out"
 
     /*
      *	a constructed arc,
@@ -56,11 +56,11 @@ struct nl {
 	char		*name;		/* the name */
 	unsigned long	value;		/* the pc entry point */
 	double		time;		/* ticks in this routine */
-	double		childtime;	/* cumulative ticks in dynamic childs */
+	double		childtime;	/* cumulative ticks in children */
 	long		ncall;		/* how many times called */
 	long		selfcalls;	/* how many calls to self */
-	int		index;		/* index in the dynamic list */
-	int		toporder;	/* dynamic call chain top-sort order */
+	int		index;		/* index in the graph list */
+	int		toporder;	/* graph call chain top-sort order */
 	int		cycleno;	/* internal number of cycle on */
 	struct nl	*cyclehead;	/* pointer to head of cycle */
 	struct nl	*cnext;		/* pointer to next member of cycle */
@@ -88,8 +88,8 @@ int	ncycles;		/* maximum allocated cycle headers */
 int	cyclemax;		/* number of cycles discovered */
 
 /*
- * The header on the dmon.out file.
- * dmon.out consists of one of these headers,
+ * The header on the gmon.out file.
+ * gmon.out consists of one of these headers,
  * and then an array of ncnt samples
  * representing the discretized program counter values.
  *	this should be a struct phdr, but since everything is done
