@@ -320,6 +320,10 @@ perly.o: perly.c perly.h $(h)
 	$(CCCMD) perly.c
 
 install: all
+	nroff -man perl.man > /usr/contrib/man/cat1/perl.0
+	nroff -man h2ph.man > /usr/contrib/man/cat1/h2ph.0
+	nroff -man x2p/s2p.man > /usr/contrib/man/cat1/s2p.0
+	nroff -man x2p/a2p.man > /usr/contrib/man/cat1/a2p.0
 	./perl installperl
 
 clean:

@@ -492,12 +492,12 @@ esac
 while expr "X\$ans" : "X!" >/dev/null; do
     read ans
     case "\$ans" in
-    !)
+    \!)
 	sh
 	echo " "
 	echo $n "\$rp $c"
 	;;
-    !*)
+    \!*)
 	set \`expr "X\$ans" : "X!\(.*\)\$"\`
 	sh -c "\$*"
 	echo " "
@@ -1408,7 +1408,7 @@ case "$cppflags" in
 '');;
 *)  set X $cppflags
     cppflags=''
-    for flag do
+    for flag; do
 	case $flag in
 	-D*|-U*|-I*|-traditional|-ansi|-nostdinc) cppflags="$cppflags $flag";;
 	esac
