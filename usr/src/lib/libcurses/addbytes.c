@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)addbytes.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)addbytes.c	5.12 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -40,7 +40,7 @@ __waddbytes(win, bytes, count, so)
 	static char blanks[] = "        ";
 	register int c, newx, x, y;
 	char stand;
-	LINE *lp;
+	__LINE *lp;
 
 	SYNCH_IN;
 
@@ -87,7 +87,8 @@ newline:			if (y == win->maxy - 1) {
 	__TRACE("ADDBYTES: 1: y = %d, x = %d, firstch = %d, lastch = %d\n",
 	    y, x, win->lines[y]->firstch, win->lines[y]->lastch);
 #endif
-			if (lp->line[x] != c || !(lp->standout[x] & stand)) {
+			if (lp->line[x].ch != c || 
+			    !(lp->line[x].attr & stand)) {
 				newx = x + win->ch_off;
 				if (!(lp->flags & __ISDIRTY)) {
 					lp->flags |= __ISDIRTY;
@@ -104,11 +105,11 @@ newline:			if (y == win->maxy - 1) {
 	    lp->lastch - win->ch_off);
 #endif
 			}
-			lp->line[x] = c;
+			lp->line[x].ch = c;
 			if (stand)
-				lp->standout[x] |= __STANDOUT;
+				lp->line[x].attr |= __STANDOUT;
 			else
-				lp->standout[x] &= ~__STANDOUT;
+				lp->line[x].attr &= ~__STANDOUT;
 			if (x == win->maxx - 1)
 				lp->flags |= __ISPASTEOL;
 			else

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)overwrite.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)overwrite.c	5.9 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <ctype.h>
@@ -40,10 +40,7 @@ overwrite(win1, win2)
 	for (y = starty; y < endy; y++) {
 		bcopy(&win1->lines[y - win1->begy]->line[startx - win1->begx],
 		    &win2->lines[y - win2->begy]->line[startx - win2->begx], 
-		    x);
-		bcopy(&win1->lines[y - win1->begy]->standout[startx - win1->begx],
-		    &win2->lines[y - win2->begy]->standout[startx - win2->begx], 
-		    x);
+		    x * __LDATASIZE);
 		touchline(win2, y, startx - win2->begx, endx - win2->begx);
 	}
 	return (OK);

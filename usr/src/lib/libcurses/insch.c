@@ -6,14 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)insch.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)insch.c	5.8 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
 
 /*
  * winsch --
- *	Do an insert-char on the line, leaving (_cury,_curx) unchanged.
+ *	Do an insert-char on the line, leaving (cury, curx) unchanged.
  */
 int
 winsch(win, ch)
@@ -21,23 +21,21 @@ winsch(win, ch)
 	int ch;
 {
 
-	register char *end, *temp1, *temp2;
+	register __LDATA *end, *temp1, *temp2;
 
 	end = &win->lines[win->cury]->line[win->curx];
 	temp1 = &win->lines[win->cury]->line[win->maxx - 1];
 	temp2 = temp1 - 1;
 	while (temp1 > end) {
-		*temp1 = *temp2;
-		/* standout array */
-		*(temp1 + win->maxx) = *(temp2 + win->maxx);
+		bcopy(temp2, temp1, sizeof(__LDATA));
 		temp1--, temp2--;
 	}
-	*temp1 = ch;
-	*(temp1 + win->maxx) &= ~__STANDOUT;
+	temp1->ch = ch;
+	temp1->attr &= ~__STANDOUT;
 	touchline(win, win->cury, win->curx, win->maxx - 1);
 	if (win->cury == LINES - 1 && 
-	    (win->lines[LINES - 1]->line[COLS - 1] != ' ' ||
-	    win->lines[LINES -1]->standout[COLS - 1] & __STANDOUT))
+	    (win->lines[LINES - 1]->line[COLS - 1].ch != ' ' ||
+	    win->lines[LINES -1]->line[COLS - 1].attr != 0))
 		if (win->flags & __SCROLLOK) {
 			wrefresh(win);
 			scroll(win);

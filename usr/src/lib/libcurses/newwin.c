@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newwin.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)newwin.c	5.10 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -28,9 +28,9 @@ newwin(nl, nc, by, bx)
 	register int nl, nc, by, bx;
 {
 	register WINDOW *win;
-	register LINE *lp;
+	register __LINE *lp;
 	register int  i, j;
-	register char *sp;
+	register __LDATA *sp;
 
 	if (nl == 0)
 		nl = LINES - by;
@@ -47,15 +47,13 @@ newwin(nl, nc, by, bx)
 	__TRACE("newwin: win->ch_off = %d\n", win->ch_off);
 #endif
 
-	for (lp = win->topline, i = 0; i < nl; i++, lp = lp->next) {
+	for (lp = win->lines[0], i = 0; i < nl; i++, lp = win->lines[i]) {
 		lp->flags = 0;
-		lp->flags &= ~__ISDIRTY;
-		lp->flags &= ~__ISPASTEOL;
-		for (sp = lp->line; sp < lp->line + nc; sp++) {
-			*sp = ' ';
-			*(sp + nc) &= ~__STANDOUT;
+		for (sp = lp->line, j = 0; j < nc; j++, sp++) {
+			sp->ch = ' ';
+			sp->attr = 0;
 		}
-		lp->hash = __hash(lp->line, nc);
+		lp->hash = __hash(lp->line, nc * __LDATASIZE);
 	}
 	return (win);
 }
@@ -96,7 +94,7 @@ __set_subwin(orig, win)
 	register WINDOW *orig, *win;
 {
 	register int j, k, ocnt, cnt;
-	register LINE *lp, *olp;
+	register __LINE *lp, *olp;
 
 	j = win->begy - orig->begy;
 	k = win->begx - orig->begx;
@@ -105,19 +103,15 @@ __set_subwin(orig, win)
 	__TRACE("__set_subwin: win->ch_off = %d\n", win->ch_off);
 #endif
 
-	lp = win->topline;
-	olp = orig->topline; 
-	ocnt = 0;
-	for (ocnt = 0; ocnt < orig->maxy && cnt < win->maxy; ocnt++) {
-		if (ocnt >= j) {
-			lp->firstch = olp->firstch;
-			lp->lastch = olp->lastch;
-			lp->line = &olp->line[k];
-			lp = lp->next;
-			lp->flags = olp->flags;
-			cnt++;
-		}
-		olp = olp->next;
+	for (ocnt = j, cnt = 0; ocnt < orig->maxy && cnt < win->maxy; 
+	     cnt++, ocnt++) {
+		olp = orig->lines[ocnt];
+		lp = win->lines[cnt];
+		lp->firstch = olp->firstch;
+		lp->lastch = olp->lastch;
+		lp->line = &olp->line[k];
+		lp->flags = olp->flags;
+		cnt++;
 	}
 }
 
@@ -130,8 +124,9 @@ makenew(nl, nc, by, bx)
 	register int by, bx, nl, nc;
 {
 	register WINDOW *win;
-	register LINE *cur, *prev;
+	register __LINE *lp;
 	int i;
+	
 
 #ifdef	DEBUG
 	__TRACE("makenew: (%d, %d, %d, %d)\n", nl, nc, by, bx);
@@ -142,40 +137,36 @@ makenew(nl, nc, by, bx)
 	__TRACE("makenew: nl = %d\n", nl);
 #endif
 
-	/*
-	 * Allocate structure of lines in a window.
+	/* 
+ 	 * Set up line pointer array and line space.
          */
-	if ((win->topline = malloc (nl * sizeof (LINE))) == NULL) {
+	if ((win->lines = malloc (nl * sizeof(__LINE *))) == NULL) {
+		free(win);
+		return NULL;
+	}
+	if ((win->lspace = malloc (nl * sizeof(__LINE))) == NULL) {
 		free (win);
+		free (win->lines);
 		return NULL;
 	}
 
 	/*
 	 * Allocate window space in one chunk.
 	 */
-	if ((win->wspace = malloc(2 * nc * nl)) == NULL) {
-		free(win->topline);
+	if ((win->wspace = malloc(nc * nl * sizeof(__LDATA))) == NULL) {
+		free(win->lines);
+		free(win->lspace);
 		free(win);
 		return NULL;
 	}
-	/* 
- 	 * Link up the lines, set up line pointer array and point line pointers
-	 * to the line space, and point standout arrays to follow lines.
-         */
-	if ((win->lines = malloc (nl * sizeof (LINE *))) == NULL) {
-		free(win->wspace);
-		free(win->topline);
-		free(win);
-		return NULL;
-	}
-	prev = &win->topline[nl - 1];
-	cur = win->topline;
-	for (i = 1; i <= nl; i++, prev = cur, cur = cur->next) {
-		cur->next = &win->topline[i % nl];
-		cur->prev = prev;
-		cur->line = &win->wspace[(i - 1) * 2 * nc];
-		cur->standout = cur->line + nc;
-		win->lines[i - 1] = cur;
+
+	/*
+	 * Point line pointers to line space, and lines themselves into
+	 * window space.
+	 */
+	for (lp = win->lspace, i = 0; i < nl; i++, lp++) {
+		win->lines[i] = lp;
+	        lp->line = &win->wspace[i * nc];
 	}
 
 #ifdef DEBUG

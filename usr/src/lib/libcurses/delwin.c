@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delwin.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)delwin.c	5.8 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -22,18 +22,14 @@ delwin(win)
 {
 
 	register WINDOW *wp, *np;
-	register LINE *lp;
 	register int i;
 
 	if (win->orig == NULL) {
 		/*
 		 * If we are the original window, delete the space for all
-		 * the subwindows, and the array of space as well which is
-		 * pointed to by win->topline->line.
+		 * the subwindows, the line space and the window space.
 		 */
-
-		for (lp = win->topline, i = 0; i < win->maxy; i++) 
-			free(lp);
+		free(win->lspace);
 		free(win->wspace);
 		free(win->lines);
 		wp = win->nextp;
