@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)kdebug.ms	6.2 (Berkeley) %G%
+.\"	@(#)kdebug.ms	6.3 (Berkeley) %G%
 .\"
 .bd S B 3
 .de UX
@@ -102,13 +102,15 @@ of \fIhow to debug the kernel\fP.
 .NH 2
 Invocation
 .PP
-When examining the
+When examining post-mortem dumps of the
 .UX
 kernel the
 \fB\-k\fP option should be used, e.g.
 .DS
-\f(CW% adb \-k /vmunix /dev/mem\fP
+\f(CW% adb \-k vmunix.? vmcore.?\fP
 .DE
+where the appropriate version of the saved operating system
+image and core dump are supplied in place of ``?''.
 This flag causes
 .I adb
 to partially simulate
@@ -119,15 +121,12 @@ file.
 In addition the internal state maintained
 by the debugger is initialized from
 data structures maintained by the
-.UX
 kernel explicitly for debugging\(dd.
-A post-mortem dump may be examined in a similar
+A running kernel may be examined in a similar
 fashion,
 .DS
-\f(CW% adb \-k vmunix.? vmcore.?\fP
+\f(CW% adb \-k /vmunix /dev/mem\fP
 .DE
-where the appropriate version of the saved operating system
-image and core dump are supplied in place of ``?''.
 .FS
 \(dd If the \-k flag is not used when invoking
 .I adb
@@ -175,7 +174,7 @@ is invoked on a post-mortem crash dump it tries
 to automatically establish the proper stack frame.
 This is done by first checking the stack pointer
 normally saved in the restart parameter
-block at \fIscb\-4\fP (or \fIrpb\fP+1fc).  If this
+block at \fIrpb\fP+1fc (or \fIscb\fP\-4).  If this
 value does not point to a valid stack frame,
 .I adb
 searches the interrupt stack looking for a valid stack
@@ -201,7 +200,11 @@ be unable to locate a valid stack frame it prints a message
 and the current state is left undefined.
 When a stack trace of a particular process (other than that
 which was currently executing) is desired, an
-alternate method, described in \(sc2.3, should be used.
+alternate method, described in \(sc2.4, should be used.
+.PP
+Additional information may be obtained from the kernel stack.
+Discussion of that subject is postponed until command scripts
+have been introduced; see \(sc2.2.
 .ds RH "Command Scripts
 .ne 2i
 .NH
@@ -475,6 +478,105 @@ been written
 .DE
 but then reuse of the format would have invoked only the last
 line of the format.
+.NH 2
+Locating stack frames
+.PP
+It is frequently desirable to locate stack frames
+in order to examine local and register variables.
+In particular, frames created by a trap include saved values
+of all registers and the trap context, and all registers are saved
+upon a panic as well.
+Two scripts are provided for tracing stack frames.
+The first is capable of tracing through multiple frames,
+printing the information common to each.
+The second prints all of the information available
+in the stack frame after a trap.
+The following example illustrates their use.
+.ID
+.DT
+.ft CW
+% \fBadb -k vmunix.188 vmcore.188\fP
+sbr 7068 slr 2770
+p0br 5a00 p0lr 74 p1br 5e00 p1lr fff0
+panic: Segmentation fault
+\fB$c\fP
+_boot()	from 80029ddb
+_boot(0,0) from	_panic+3a
+_panic(800447a8) from _trap+ac
+_trap()	from _Xtransflt+1d
+_Xtransflt() from _Xsyscall+c
+_Xsyscall(7fffe7ac,1b6)	from 514
+?(7fffe7ac) from 4ac
+?() from 196
+?(2,7fffe810,7fffe81c) from 3d
+?()
+\fB1000$s\fP
+\fB*(rpb+1fc),4$<frame\fP
+7ffffe74:	handler		psr		mask
+		0		0		2101
+		ap		fp		pc
+		7ffffec0	7ffffe9c	80029ddb	_boot+103
+
+7ffffe9c:	handler		psr		mask
+		0		0		2f00
+		ap		fp		pc
+		7fffff14	7ffffed0	80012de2	_panic+3a
+
+7ffffed0:	handler		psr		mask
+		0		0		2fff
+		ap		fp		pc
+		7fffff70	7fffff2c	8002a408	_trap+ac
+
+7fffff2c:	handler		psr		mask
+		0		0		2fff
+		ap		fp		pc
+		7fffffe8	7fffffa4	80001031	_Xtransflt+1d
+
+\fB<1$<trapframe\fP
+7fffff2c:	handler		psr		mask
+		0		0		2fff
+		ap		fp		pc
+		7fffffe8	7fffffa4	80001031	_Xtransflt+1d
+		r0		r1		r2		r3
+		0		80046988	80046a00	800728db
+		r4		r5		r6		r7
+		800728b0	80054158	80063a60	80066ee0
+		r8		r9		r10		r11
+		80041b80	8		7fffe578	80000000
+7fffff70:	nargs		sp		type		code
+		0		7fffe560	8		2a50b6ca
+		pc		(pc)		ps
+		80001651	_Swtch+2b	d80008
+\fB80001651?i\fP
+_Swtch+2b:	remque	*0(r1),r2
+\fB80046988/X\fP
+_qs:
+_qs:		2a50b6ca
+.DE
+.PP
+The example shows a panic due to a segmentation fault.
+The command ``1000$s'' expands the range over which addresses will be
+displayed symbolically.
+The back trace indicates that the trap occurred four frames
+from the end;
+as the frame pointer is stored at \fIrpb\fP\+1fc, the command
+``*(rpb+1fc),4$<frame'' prints the last four stack frames;
+``*(rpb+1fc)'' is the initial frame pointer, and the count determines the number
+of frames to print.
+Having located the stack frame after the trap (the frame with a return PC
+of Xtransflt+1d), that frame may be displayed again using the script
+for a trap frame.
+The previous frame pointer was left in register 1 by the previous script,
+and thus ``<1$<trapframe'' displays the state at the time of the trap.
+The PC at the time of the fault is shown on the last line from the script,
+with the faulting address listed as the code in the previous line.
+The instruction that caused the fault can then be examined.
+In this example, the instruction was a remque that used a displacement
+addressing mode indirecting through R1.
+The location to which the register points is the first of the process
+run queues, and its first element can be seen to be corrupted;
+its forward pointer, 2a50b6ca, is invalid and is the address that caused
+the fault.
 .NH 2
 Traversing Data Structures
 .PP
