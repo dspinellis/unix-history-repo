@@ -3,38 +3,53 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)types.h	7.10 (Berkeley) %G%
+ *	@(#)types.h	7.11 (Berkeley) %G%
  */
 
 #ifndef _TYPES_
 #define	_TYPES_
 
 typedef	short	dev_t;
-/* major part of a device */
+#ifndef _POSIX_SOURCE
+					/* major part of a device */
 #define	major(x)	((int)(((unsigned)(x)>>8)&0377))
-/* minor part of a device */
+					/* minor part of a device */
 #define	minor(x)	((int)((x)&0377))
-/* make a device number */
+					/* make a device number */
 #define	makedev(x,y)	((dev_t)(((x)<<8) | (y)))
+#endif
 
 typedef	unsigned char	u_char;
 typedef	unsigned short	u_short;
 typedef	unsigned int	u_int;
 typedef	unsigned long	u_long;
-typedef	unsigned short	ushort;		/* sys V compatibility */
+typedef	unsigned short	ushort;		/* Sys V compatibility */
 
 #ifdef KERNEL
 #include "machine/machtypes.h"
 #else
 #include <machine/machtypes.h>
 #endif
+
+#ifdef	_CLOCK_T_
+typedef	_CLOCK_T_	clock_t;
+#undef	_CLOCK_T_
+#endif
+
+#ifdef	_TIME_T_
+typedef	_TIME_T_	time_t;
+#undef	_TIME_T_
+#endif
+
 #ifdef	_SIZE_T_
 typedef	_SIZE_T_	size_t;
 #undef	_SIZE_T_
 #endif
 
+#ifndef _POSIX_SOURCE
 typedef	struct	_uquad { unsigned long val[2]; } u_quad;
 typedef	struct	_quad { long val[2]; } quad;
+#endif
 typedef	long *	qaddr_t;	/* should be typedef quad * qaddr_t; */
 
 typedef	long	daddr_t;
@@ -42,8 +57,6 @@ typedef	char *	caddr_t;
 typedef	u_long	ino_t;
 typedef	long	swblk_t;
 typedef	long	segsz_t;
-typedef	long	time_t;
-typedef	u_long	clock_t;
 typedef	long	off_t;
 typedef	u_short	uid_t;
 typedef	u_short	gid_t;
@@ -52,6 +65,7 @@ typedef	u_short	nlink_t;
 typedef	u_short	mode_t;
 typedef u_long	fixpt_t;
 
+#ifndef _POSIX_SOURCE
 #define	NBBY	8		/* number of bits in a byte */
 
 /*
@@ -78,6 +92,7 @@ typedef	struct fd_set {
 #define	FD_SET(n, p)	((p)->fds_bits[(n)/NFDBITS] |= (1 << ((n) % NFDBITS)))
 #define	FD_CLR(n, p)	((p)->fds_bits[(n)/NFDBITS] &= ~(1 << ((n) % NFDBITS)))
 #define	FD_ISSET(n, p)	((p)->fds_bits[(n)/NFDBITS] & (1 << ((n) % NFDBITS)))
-#define FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
+#define	FD_ZERO(p)	bzero((char *)(p), sizeof(*(p)))
 
+#endif /* !_POSIX_SOURCE */
 #endif /* _TYPES_ */
