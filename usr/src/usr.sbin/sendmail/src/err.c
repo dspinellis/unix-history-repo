@@ -3,7 +3,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.15	%G%";
+static char	SccsId[] = "@(#)err.c	3.16	%G%";
 
 /*
 **  SYSERR -- Print error message.
@@ -36,7 +36,7 @@ syserr(fmt, a, b, c, d, e)
 	extern char Arpa_Syserr[];
 
 	/* format the error message */
-	fmtmsg(errbuf, NULL, Arpa_Syserr, fmt, a, b, c, d, e);
+	fmtmsg(errbuf, (char *) NULL, Arpa_Syserr, fmt, a, b, c, d, e);
 
 	/* output error message to transcript */
 	fprintf(Xscript, "%s\n", errbuf);
@@ -151,6 +151,7 @@ message(num, msg, a, b, c, d, e)
 **		none.
 */
 
+/*VARARGS4*/
 static
 fmtmsg(eb, to, num, fmt, a, b, c, d, e)
 	register char *eb;

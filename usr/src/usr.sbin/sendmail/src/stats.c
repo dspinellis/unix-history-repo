@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] =	"@(#)stats.c	3.2	%G%";
+static char	SccsId[] =	"@(#)stats.c	3.3	%G%";
 
 /*
 **  POSTSTATS -- post statistics in the statistics file
@@ -23,7 +23,6 @@ poststats(sfile)
 	register int fd;
 	struct statistics stat;
 	extern long lseek();
-	extern long time();
 
 	(void) time(&Stat.stat_itime);
 	Stat.stat_size = sizeof Stat;

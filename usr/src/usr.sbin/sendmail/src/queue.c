@@ -4,7 +4,7 @@
 # include <signal.h>
 # include <errno.h>
 
-static char	SccsId[] =	"@(#)queue.c	3.3	%G%";
+static char	SccsId[] =	"@(#)queue.c	3.4	%G%";
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -137,8 +137,8 @@ runqueue(forkflag)
 
 	if (QueueIntvl != 0)
 	{
-		signal(SIGALRM, reordersig);
-		alarm(QueueIntvl);
+		(void) signal(SIGALRM, reordersig);
+		(void) alarm((unsigned) QueueIntvl);
 	}
 
 	if (forkflag)
@@ -150,7 +150,7 @@ runqueue(forkflag)
 			return;
 		}
 		else
-			alarm(0);
+			(void) alarm((unsigned) 0);
 	}
 
 	for (;;)
@@ -224,12 +224,12 @@ reordersig()
 			/* no child -- get zombie & start new one */
 			static int st;
 
-			wait(&st);
+			(void) wait(&st);
 			QueuePid = dofork();
 			if (QueuePid == 0)
 			{
 				/* new child; run queue */
-				runqueue();
+				runqueue(FALSE);
 				finis();
 			}
 		}
@@ -239,7 +239,7 @@ reordersig()
 	**  Arrange to get this signal again.
 	*/
 
-	alarm(QueueIntvl);
+	(void) alarm((unsigned) QueueIntvl);
 }
 /*
 **  ORDERQ -- order the work queue.

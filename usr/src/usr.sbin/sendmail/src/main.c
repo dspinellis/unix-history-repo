@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.52	%G%";
+static char	SccsId[] = "@(#)main.c	3.53	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -254,7 +254,7 @@ main(argc, argv)
 			Debug = atoi(&p[2]);
 			if (Debug <= 0)
 				Debug = 1;
-			setbuf(stdout, NULL);
+			setbuf(stdout, (char *) NULL);
 			printf("Version %s Debug %d\n", Version, Debug);
 			break;
 
@@ -789,7 +789,6 @@ initsys()
 	register char *p;
 	extern char *ttyname();
 	extern char *arpadate();
-	extern long time();
 
 	/* convert timeout interval to absolute time */
 	TimeOut -= CurTime;
