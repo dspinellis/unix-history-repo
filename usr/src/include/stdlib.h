@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	8.1 (Berkeley) %G%
+ *	@(#)stdlib.h	8.2 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -34,6 +34,10 @@ typedef struct {
 	long quot;		/* quotient */
 	long rem;		/* remainder */
 } ldiv_t;
+
+#ifndef NULL
+#define	NULL	0
+#endif
 
 #define	EXIT_FAILURE	1
 #define	EXIT_SUCCESS	0
