@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 
 PROG=	hack
 SRCS=	alloc.c hack.Decl.c hack.apply.c hack.bones.c hack.c hack.cmd.c \
@@ -29,7 +29,7 @@ beforeinstall:
 	install -c -o ${BINOWN} -g ${BINGRP} -m 666 /dev/null \
 	    ${DESTDIR}/var/games/hackdir/record
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/help \
-	    ${.CURDIR}/hh ${DESTDIR}/var/games/hackdir
+	    ${.CURDIR}/hh ${.CURDIR}/data ${DESTDIR}/var/games/hackdir
 	rm -f ${DESTDIR}/var/games/hackdir/bones*
 
 .include <bsd.prog.mk>
