@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.3 (Berkeley) %G%
+# @(#)Makefile	5.4 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -41,6 +41,8 @@ install: ${MAN}
 	install -s -o bin -g bin -m 755 tput ${DESTDIR}/usr/bin
 	install -c -o bin -g bin -m 755 clear.sh ${DESTDIR}/usr/bin/clear
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+	rm -f ${DESTDIR}/usr/man/cat1/clear.0
+	ln ${DESTDIR}/usr/man/cat1/tput.0 ${DESTDIR}/usr/man/cat1/clear.0
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
