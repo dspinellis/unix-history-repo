@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kernfs_vfsops.c	7.2 (Berkeley) %G%
+ *	@(#)kernfs_vfsops.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -17,20 +17,72 @@
 
 #include <sys/param.h>
 #include <sys/systm.h>
-#include <sys/time.h>
+#include <sys/conf.h>
 #include <sys/types.h>
 #include <sys/proc.h>
 #include <sys/vnode.h>
 #include <sys/mount.h>
 #include <sys/namei.h>
 #include <sys/malloc.h>
+
+#include <miscfs/specfs/specdev.h>
+extern int (**spec_vnodeop_p)();
 #include <miscfs/kernfs/kernfs.h>
+
+struct vnode *rrootvp;
+
+/*
+ * Create a vnode for a character device.
+ */
+int
+cdevvp(dev, vpp)
+	dev_t dev;
+	struct vnode **vpp;
+{
+	register struct vnode *vp;
+	struct vnode *nvp;
+	int error;
+
+	if (dev == NODEV)
+		return (0);
+	error = getnewvnode(VT_NON, (struct mount *)0, spec_vnodeop_p, &nvp);
+	if (error) {
+		*vpp = 0;
+		return (error);
+	}
+	vp = nvp;
+	vp->v_type = VCHR;
+	if (nvp = checkalias(vp, dev, (struct mount *)0)) {
+		vput(vp);
+		vp = nvp;
+	}
+	*vpp = vp;
+	return (0);
+}
 
 kernfs_init()
 {
+	int cmaj;
+	int bmaj = major(rootdev);
+	int error = ENOENT;
+
 #ifdef KERNFS_DIAGNOSTIC
 	printf("kernfs_init\n");		/* printed during system boot */
 #endif
+
+	for (cmaj = 0; cmaj < nchrdev; cmaj++) {
+		if (cdevsw[cmaj].d_open == bdevsw[bmaj].d_open) {
+			dev_t cdev = makedev(cmaj, minor(rootdev));
+			error = cdevvp(cdev, &rrootvp);
+			if (error == 0)
+				break;
+		}
+	}
+
+	if (error) {
+		printf("kernfs: no raw boot device\n");
+		rrootvp = 0;
+	}
 }
 
 /*
