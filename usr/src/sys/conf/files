@@ -1,6 +1,7 @@
 net/af.c		standard
 net/if.c		standard
 net/if_loop.c		optional loop
+net/if_sl.c		optional sl
 net/raw_cb.c		standard
 net/raw_usrreq.c	standard
 net/route.c		standard
