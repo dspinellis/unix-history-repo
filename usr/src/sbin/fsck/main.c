@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	2.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	2.4 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -1323,9 +1323,26 @@ setup(dev)
 	 */
 	bmapsz = roundup(howmany(fmax, NBBY), sizeof(short));
 	blockmap = (char *)calloc(bmapsz, sizeof (char));
+	if (blockmap == NULL) {
+		printf("cannot alloc %d bytes for blockmap\n", bmapsz);
+		exit(1);
+	}
 	freemap = (char *)calloc(bmapsz, sizeof (char));
+	if (freemap == NULL) {
+		printf("cannot alloc %d bytes for freemap\n", bmapsz);
+		exit(1);
+	}
 	statemap = (char *)calloc(imax+1, sizeof(char));
+	if (statemap == NULL) {
+		printf("cannot alloc %d bytes for statemap\n", imax + 1);
+		exit(1);
+	}
 	lncntp = (short *)calloc(imax+1, sizeof(short));
+	if (lncntp == NULL) {
+		printf("cannot alloc %d bytes for lncntp\n", 
+		    (imax + 1) * sizeof(short));
+		exit(1);
+	}
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		cgd = cgdmin(&sblock, c);
 		if (c == 0) {
@@ -1361,8 +1378,11 @@ ginode()
 {
 	daddr_t iblk;
 
-	if (inum < ROOTINO || inum > imax)
+	if (inum < ROOTINO || inum > imax) {
+		if (debug && (inum < 0 || inum > imax))
+			printf("inum out of range (%d)\n", inum);
 		return (NULL);
+	}
 	if (inum < startinum || inum >= startinum + INOPB(&sblock)) {
 		iblk = itod(&sblock, inum);
 		if (getblk(&inoblk, iblk, sblock.fs_bsize) == NULL) {
