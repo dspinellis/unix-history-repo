@@ -1,8 +1,6 @@
-#	@(#)Makefile	5.9 (Berkeley) %G%
+#	@(#)Makefile	5.10 (Berkeley) %G%
 
 PROG=	fstat
-SRCS=	fstat.c devname.c
-.PATH:	${.CURDIR}/../../bin/ps
 CFLAGS+=-I/sys
 DPADD=	${LIBKVM}
 LDADD=	-lkvm
