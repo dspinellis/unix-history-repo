@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 FILES=	dot.cshrc dot.login dot.mailrc dot.profile dot.rhosts
 NOOBJ=	noobj

@@ -1,4 +1,4 @@
-#	@(#)bsd.subdir.mk	5.10 (Berkeley) %G%
+#	@(#)bsd.subdir.mk	8.1 (Berkeley) %G%
 
 .MAIN: all
 
