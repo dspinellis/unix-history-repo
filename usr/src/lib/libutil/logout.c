@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)logout.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)logout.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -26,6 +26,8 @@ static char sccsid[] = "@(#)logout.c	5.1 (Berkeley) %G%";
 #include <stdio.h>
 
 #define	UTMPFILE	"/etc/utmp"
+
+/* 0 on failure, 1 on success */
 
 logout(line)
 	register char *line;
@@ -37,7 +39,7 @@ logout(line)
 
 	if (!(fp = fopen(UTMPFILE, "r+")))
 		return(0);
-	rval = 1;
+	rval = 0;
 	while (fread((char *)&ut, sizeof(struct utmp), 1, fp) == 1) {
 		if (!ut.ut_name[0] ||
 		    strncmp(ut.ut_line, line, sizeof(ut.ut_line)))
@@ -48,7 +50,7 @@ logout(line)
 		(void)fseek(fp, (long)-sizeof(struct utmp), L_INCR);
 		(void)fwrite((char *)&ut, sizeof(struct utmp), 1, fp);
 		(void)fseek(fp, (long)0, L_INCR);
-		rval = 0;
+		rval = 1;
 	}
 	(void)fclose(fp);
 	return(rval);
