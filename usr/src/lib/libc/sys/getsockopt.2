@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getsockopt.2	6.10 (Berkeley) %G%
+.\"     @(#)getsockopt.2	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETSOCKOPT 2
@@ -264,7 +264,7 @@ Finally,
 and
 .Dv SO_ERROR
 are options used only with
-.Fn setsockopt .
+.Fn getsockopt .
 .Dv SO_TYPE
 returns the type of the socket, such as
 .Dv SOCK_STREAM ;
