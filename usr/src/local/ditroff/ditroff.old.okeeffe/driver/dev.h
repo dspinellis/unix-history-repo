@@ -16,8 +16,8 @@ struct dev {
 	short	paperlength;	/* max paper length in units */
 	short	nchtab;		/* number of funny names in chtab */
 	short	lchname;	/* length of chname table */
-	short	spare1;		/* in case of expansion */
-	short	spare2;
+	short	nstips;		/* in case of expansion */
+	short	spare1;
 };
 
 struct font {		/* characteristics of a font */
