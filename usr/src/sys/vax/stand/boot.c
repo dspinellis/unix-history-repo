@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	6.3 (Berkeley) %G%
+ *	@(#)boot.c	6.4 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -39,7 +39,16 @@ char	devname[][2] = {
 	'r','l',	/* 14 = rl */
 };
 
-char line[100] = "xx(0,0)vmunix";
+/*
+ * constants for converting a "minor" device numbers to unit number
+ * and partition number
+ */
+#define UNITSHIFT	16
+#define UNITMASK	0x1ff
+#define PARTITIONMASK	0x7
+#define PARTITIONSHIFT	3
+
+char line[100] = "xx(00,0)vmunix";
 
 int	retry = 0;
 
@@ -47,6 +56,7 @@ main()
 {
 	register howto, devtype;	/* howto=r11, devtype=r10 */
 	int io;
+	register type, part, unit;
 
 #ifdef lint
 	howto = 0; devtype = 0;
@@ -55,11 +65,18 @@ main()
 #ifdef JUSTASK
 	howto = RB_ASKNAME|RB_SINGLE;
 #else
+	type = devtype & 0xff;
+	unit = (int)((unsigned)devtype >> UNITSHIFT) & UNITMASK;
+	part = unit & PARTITIONMASK;
+	unit = unit >> PARTITIONSHIFT;
 	if ((howto&RB_ASKNAME)==0) {
-		if (devtype>=0 && devtype<sizeof(devname)/2
-		    && devname[devtype][0]) {
-			line[0] = devname[devtype][0];
-			line[1] = devname[devtype][1];
+		if (type >= 0 && type < sizeof(devname) / 2
+		    && devname[type][0]) {
+			line[0] = devname[type][0];
+			line[1] = devname[type][1];
+			line[3] = unit / 10 + '0';
+			line[4] = unit % 10 + '0';
+			line[6] = part + '0';
 		} else
 			howto = RB_SINGLE|RB_ASKNAME;
 	}
@@ -137,12 +154,20 @@ loadpcs()
 	static int pcsdone = 0;
 	union cpusid sid;
 	char pcs[100];
+	char *closeparen;
+	char *index();
 
 	sid.cpusid = mfpr(SID);
 	if (sid.cpuany.cp_type!=VAX_750 || sid.cpu750.cp_urev<95 || pcsdone)
 		return;
 	printf("Updating 11/750 microcode: ");
-	strncpy(pcs, line, strlen("xx(0,0)"));
+	strncpy(pcs, line, 99);
+	pcs[99] = 0;
+	closeparen = index(pcs, ')');
+	if (closeparen)
+		*(++closeparen) = 0;
+	else
+		return;
 	strcat(pcs, "pcs750.bin");
 	i = open(pcs, 0);
 	if (i < 0)
