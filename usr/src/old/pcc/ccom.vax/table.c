@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)table.c	1.28 (Berkeley) %G%";
+static char *sccsid ="@(#)table.c	1.29 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -37,12 +37,6 @@ SCONV,	INTAREG|FORCC,
 	SANY,	TFLOAT,
 		NAREG|NASL,	RESC1|RESCC,
 		"	cvtZLf	AL,TA1\n",
-#else
-SCONV,	INTAREG|FORCC,		/* rub some bits off that mantissa... */
-	SAREG|AWD,	TWORD|TDOUBLE,
-	SANY,	TFLOAT,
-		NAREG|NASL,	RESC1|RESCC,
-		"	cvtZLf	AL,A1\n	clrl	U1\n",
 #endif
 
 /* take care of redundant conversions introduced by reclaim() */
@@ -65,15 +59,9 @@ SCONV,	INTAREG|FORCC,
 		"	ZA\n",
 
 SCONV,	FORARG,
-	SAREG|AWD,	TWORD|TDOUBLE,
-	SANY,	TFLOAT,
-		NAREG|NASL,	RNULL,
-		"	cvtZLf	AL,A1\n	cvtfd	A1,-(sp)\n",
-
-SCONV,	FORARG,
 	SAREG|AWD,	TANY,
 	SANY,	TANY,
-		0,	RNULL,
+		NAREG|NASL,	RNULL,
 		"	ZV\n",
 
 INIT,	FOREFF,
@@ -326,6 +314,12 @@ DECR,	INAREG|INTAREG,
 	SCON|SNAME,	TANY,
 		NAREG,	RESC1,
 		"	ZD\n",
+
+ASSIGN,	INAREG|FOREFF|FORCC,
+	SAREG|AWD,	TFLOAT|TDOUBLE,
+	SAREG|AWD,	TUCHAR|TUSHORT,
+		NAREG|NASL,	RLEFT|RESCC,
+		"	ZA\n",
 
 ASSIGN,	INAREG|FOREFF|FORCC,
 	SAREG|AWD,	TANY,
