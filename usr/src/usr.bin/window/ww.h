@@ -1,4 +1,4 @@
-/*	@(#)ww.h	3.31 84/04/16		*/
+/*	@(#)ww.h	3.32 84/05/16		*/
 
 #include <sgtty.h>
 #include <setjmp.h>
