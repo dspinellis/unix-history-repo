@@ -9,7 +9,7 @@
  *
  * from: $Hdr: cons.c,v 4.300 91/06/09 06:34:41 root Rel41 $ SONY
  *
- *	@(#)bmcons.c	7.3 (Berkeley) %G%
+ *	@(#)bmcons.c	7.4 (Berkeley) %G%
  */
 
 /*
@@ -27,7 +27,7 @@
 #include <sys/buf.h>
 #include <sys/clist.h>
 #include <sys/file.h>
-#include <sys/bm.h>
+#include "bm.h"
 
 #include <news3400/hbdev/rsreg.h>
 #include <news3400/sio/sccparam.h>
