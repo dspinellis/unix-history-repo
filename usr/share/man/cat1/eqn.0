@@ -1,0 +1,792 @@
+
+
+
+EQN(1)                 BSD Reference Manual                EQN(1)
+
+
+NNAAMMEE
+       eqn - format equations for troff
+
+SSYYNNOOPPSSIISS
+       eeqqnn [ --rrvvCCNNRR ] [ --dd_c_c ] [ --TT_n_a_m_e ] [ --MM_d_i_r ] [ --ff_F ] [ --ss_n
+       ] [ --pp_n ] [ --mm_n ] [ _f_i_l_e_s...  ]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page describes the GNU version of  eeqqnn,  which
+       is part of the groff document formatting system.  eeqqnn com-
+       piles descriptions  of  equations  embedded  within  ttrrooffff
+       input  files  into  commands that are understood by ttrrooffff.
+       Normally, it should be invoked  using  the  --ee  option  of
+       ggrrooffff.  The syntax is quite compatible with Unix eqn.  The
+       output of GNU eqn cannot be processed with Unix troff;  it
+       must  be  processed with GNU troff.  If no files are given
+       on the command line, the standard input will be  read.   A
+       filename of -- will cause the standard input to be read.
+
+       eeqqnn   searches   for   the   file  eeqqnnrrcc  using  the  path
+       ..:://uussrr//sshhaarree//ttmmaacc:://uussrr//sshhaarree//ttmmaacc.  If it exists, eqn will
+       process  it  before  the other input files.  The --RR option
+       prevents this.
+
+       GNU eqn does not provide the  functionality  of  neqn:  it
+       does  not  support low-resolution, typewriter-like devices
+       (although it may work adequately for very simple input).
+
+OOPPTTIIOONNSS
+       --CC     Recognize ..EEQQ and ..EENN even when followed by a char-
+              acter other than space or newline.
+
+       --NN     Don't   allow  newlines  within  delimiters.   This
+              option allows eeqqnn to recover  better  from  missing
+              closing delimiters.
+
+       --vv     Print the version number.
+
+       --rr     Only one size reduction.
+
+       --mm_n    The  minimum  point-size is _n.  eqn will not reduce
+              the size of subscripts or superscripts to a smaller
+              size than _n.
+
+       --TT_n_a_m_e The  output is for device _n_a_m_e.  The only effect of
+              this is to define a macro _n_a_m_e with a value  of  11.
+              Typically  eeqqnnrrcc  will  use this to provide defini-
+              tions  appropriate  for  the  output  device.   The
+              default output device is ppss.
+
+       --MM_d_i_r  Search   _d_i_r   for   eeqqnnrrcc   before   the   default
+
+
+
+Groff Version 1.08        6 October 1992                        1
+
+
+
+
+
+
+
+
+EQN(1)                 BSD Reference Manual                EQN(1)
+
+
+              directories.
+
+       --RR     Don't load eeqqnnrrcc.
+
+       --ff_F    This is equivalent to a ggffoonntt _F command.
+
+       --ss_n    This is equivalent  to  a  ggssiizzee _n  command.   This
+              option  is deprecated.  eqn will normally set equa-
+              tions at whatever the current point  size  is  when
+              the equation is encountered.
+
+       --pp_n    This  says  that subscripts and superscripts should
+              be _n points  smaller  than  the  surrounding  text.
+              This option is deprecated.  Normally eqn makes sets
+              subscripts and superscripts at 70% of the  size  of
+              the surrounding text.
+
+UUSSAAGGEE
+       Only  the  differences  between  GNU  eqn and Unix eqn are
+       described here.
+
+       Most of the new features of GNU  eqn  are  based  on  TeX.
+       There  are  some references to the differences between TeX
+       and GNU eqn below; these may safely be ignored if  you  do
+       not know TeX.
+
+   AAuuttoommaattiicc ssppaacciinngg
+       eeqqnn  gives  each  component  of  an  equation  a type, and
+       adjusts the spacing between components  using  that  type.
+       Possible types are:
+
+       ordinary     an ordinary character such as 1 or _x;
+                                             _
+       operator     a large operator such as _>;
+
+       binary       a binary operator such as +;
+
+       relation     a relation such as =;
+
+       opening      a opening bracket such as (;
+
+       closing      a closing bracket such as );
+
+       punctuation  a punctutation character such as ,;
+
+       inner        a subformula contained within brackets;
+
+       suppress     spacing  that  suppresses  automatic  spacing
+                    adjustment.
+
+       Components of an equation get a type in one of two ways.
+
+
+
+Groff Version 1.08        6 October 1992                        2
+
+
+
+
+
+
+
+
+EQN(1)                 BSD Reference Manual                EQN(1)
+
+
+       ttyyppee _t _e
+              This yields an equation component that  contains  _e
+              but  that  has  type _t, where _t is one of the types
+              mentioned above.  For example, ttiimmeess is defined as
+
+                     ttyyppee ""bbiinnaarryy"" \\((mmuu
+
+              The name of the type doesn't have to be quoted, but
+              quoting protects from macro expansion.
+
+       cchhaarrttyyppee _t _t_e_x_t
+              Unquoted  groups  of  characters  are split up into
+              individual characters, and the type of each charac-
+              ter  is  looked  up;  this changes the type that is
+              stored for each character; it says that the charac-
+              ters in _t_e_x_t from now on have type _t.  For example,
+
+                     cchhaarrttyyppee ""ppuunnccttuuaattiioonn"" ..,,;;::
+
+              would make the characters ..,,;;:: have  type  punctua-
+              tion  whenever  they  subsequently  appeared  in an
+              equation.  The type _t can also be lleetttteerr or  ddiiggiitt;
+              in  these  cases  cchhaarrttyyppee changes the font type of
+              the characters.  See the Fonts subsection.
+
+   NNeeww pprriimmiittiivveess
+       _e_1 ssmmaalllloovveerr _e_2
+              This is similar to oovveerr; ssmmaalllloovveerr reduces the size
+              of  _e_1  and  _e_2;  it  also puts less vertical space
+              between _e_1 or _e_2 and the fraction  bar.   The  oovveerr
+              primitive corresponds to the TeX \\oovveerr primitive in
+              display styles; ssmmaalllloovveerr corresponds to  \\oovveerr  in
+              non-display styles.
+
+       vvcceenntteerr _e
+              This vertically centers _e about the math axis.  The
+              math axis is  the  vertical  position  about  which
+              characters such as + and - are centered; also it is
+              the vertical position used for  the  bar  of  frac-
+              tions.  For example, ssuumm is defined as
+
+                     {{ ttyyppee ""ooppeerraattoorr"" vvcceenntteerr ssiizzee ++55 \\((**SS }}
+
+       _e_1 aacccceenntt _e_2
+              This  sets  _e_2 as an accent over _e_1.  _e_2 is assumed
+              to be at the correct height for a lowercase letter;
+              _e_2  will be moved down according if _e_1 is taller or
+              shorter than a lowercase letter.  For example,  hhaatt
+              is defined as
+
+                     aacccceenntt {{ ""^^"" }}
+
+
+
+Groff Version 1.08        6 October 1992                        3
+
+
+
+
+
+
+
+
+EQN(1)                 BSD Reference Manual                EQN(1)
+
+
+              ddoottddoott,  ddoott,  ttiillddee, vveecc and ddyyaadd are also defined
+              using the aacccceenntt primitive.
+
+       _e_1 uuaacccceenntt _e_2
+              This sets _e_2 as an accent under _e_1.  _e_2 is  assumed
+              to be at the correct height for a character without
+              a descender; _e_2 will be moved  down  if  _e_1  has  a
+              descender.   uuttiillddee is pre-defined using uuaacccceenntt as
+              a tilde accent below the baseline.
+
+       sspplliitt ""_t_e_x_t""
+              This has the same effect as simply
+
+                     _t_e_x_t
+
+              but _t_e_x_t is not subject to macro expansion  because
+              it is quoted; _t_e_x_t will be split up and the spacing
+              between individual characters will be adjusted.
+
+       nnoosspplliitt _t_e_x_t
+              This has the same effect as
+
+                     ""_t_e_x_t""
+
+              but because _t_e_x_t is not quoted it will  be  subject
+              to  macro  expansion; _t_e_x_t will not be split up and
+              the spacing between individual characters will  not
+              be adjusted.
+
+       _e oopppprriimmee
+              This is a variant of pprriimmee that acts as an operator
+              on _e.  It produces a different result from pprriimmee in
+              a  case such as AA oopppprriimmee ssuubb 11: with oopppprriimmee the 11
+              will be tucked under the prime as  a  subscript  to
+              the  AA (as is conventional in mathematical typeset-
+              ting), whereas with pprriimmee the 11 will be a subscript
+              to  the prime character.  The precedence of oopppprriimmee
+              is the same as that of  bbaarr  and  uunnddeerr,  which  is
+              higher  than  that  of everything except aacccceenntt and
+              uuaacccceenntt.  In unquoted text a  ''  that  is  not  the
+              first character will be treated like oopppprriimmee.
+
+       ssppeecciiaall _t_e_x_t _e
+              This  constructs  a  new  object  from  _e  using  a
+              ttrrooffff(1) macro  named  _t_e_x_t.   When  the  macro  is
+              called,  the  string 00ss will contain the output for
+              _e, and the number registers 00ww, 00hh, 00dd, 00sskkeerrnn  and
+              00sskkeeww  will  contain the width, height, depth, sub-
+              script kern, and skew of _e.  (The _s_u_b_s_c_r_i_p_t _k_e_r_n of
+              an  object says how much a subscript on that object
+              should be tucked in; the _s_k_e_w of an object says how
+
+
+
+Groff Version 1.08        6 October 1992                        4
+
+
+
+
+
+
+
+
+EQN(1)                 BSD Reference Manual                EQN(1)
+
+
+              far  to  the  right  of the center of the object an
+              accent over the  object  should  be  placed.)   The
+              macro  must  modify  00ss  so that it will output the
+              desired result  with  its  origin  at  the  current
+              point, and increase the current horizontal position
+              by the width of the object.  The  number  registers
+              must  also  be  modified so that they correspond to
+              the result.
+
+              For example, suppose you wanted  a  construct  that
+              `cancels'  an expression by drawing a diagonal line
+              through it.
+
+                     ..EEQQ
+                     ddeeffiinnee ccaanncceell ''ssppeecciiaall CCaa''
+                     ..EENN
+                     ..ddee CCaa
+                     ..ddss 00ss \\ZZ''\\\\**((00ss''\\vv''\\\\nn((00dduu''\\DD''ll \\\\nn((00wwuu --\\\\nn((00hhuu--\\\\nn((00dduu''\\vv''\\\\nn((00hhuu''
+                     ....
+
+              Then  you  could  cancel  an  expression   _e   with
+              ccaanncceell {{ _e }}
+
+              Here's  a  more  complicated construct that draws a
+              box round an expression:
+
+                     ..EEQQ
+                     ddeeffiinnee bbooxx ''ssppeecciiaall BBxx''
+                     ..EENN
+                     ..ddee BBxx
+                     ..ddss 00ss \\ZZ''\\hh''11nn''\\\\**((00ss''\\
+                     \\ZZ''\\vv''\\\\nn((00dduu++11nn''\\DD''ll \\\\nn((00wwuu++22nn 00''\\DD''ll 00 --\\\\nn((00hhuu--\\\\nn((00dduu--22nn''\\
+                     \\DD''ll --\\\\nn((00wwuu--22nn 00''\\DD''ll 00 \\\\nn((00hhuu++\\\\nn((00dduu++22nn''''\\hh''\\\\nn((00wwuu++22nn''
+                     ..nnrr 00ww ++22nn
+                     ..nnrr 00dd ++11nn
+                     ..nnrr 00hh ++11nn
+                     ....
+
+   CCuussttoommiizzaattiioonn
+       The appearance of equations is controlled by a large  num-
+       ber of parameters. These can be set using the sseett command.
+
+       sseett _p _n
+              This sets parameter _p to value _n _; _n is an integer.
+              For example,
+
+                     sseett xx__hheeiigghhtt 4455
+
+              says  that  eeqqnn  should  assume an x height of 0.45
+              ems.
+
+
+
+
+Groff Version 1.08        6 October 1992                        5
+
+
+
+
+
+
+
+
+EQN(1)                 BSD Reference Manual                EQN(1)
+
+
+              Possible parameters are as follows.  Values are  in
+              units  of  hundredths  of  an  em  unless otherwise
+              stated.  These  descriptions  are  intended  to  be
+              expository rather than definitive.
+
+              mmiinniimmuumm__ssiizzee            eeqqnn  will  not set anything
+                                      at  a  smaller   point-size
+                                      than this.  The value is in
+                                      points.
+
+              ffaatt__ooffffsseett              The ffaatt primitive emboldens
+                                      an equation by overprinting
+                                      two copies of the  equation
+                                      horizontally offset by this
+                                      amount.
+
+              oovveerr__hhaanngg               A  fraction  bar  will   be
+                                      longer by twice this amount
+                                      than  the  maximum  of  the
+                                      widths of the numerator and
+                                      denominator;    in    other
+                                      words, it will overhang the
+                                      numerator  and  denominator
+                                      by at least this amount.
+
+              aacccceenntt__wwiiddtthh            When   bbaarr   or   uunnddeerr  is
+                                      applied to a single charac-
+                                      ter,  the line will be this
+                                      long.   Normally,  bbaarr   or
+                                      uunnddeerr produces a line whose
+                                      length is the width of  the
+                                      object to which it applies;
+                                      in the  case  of  a  single
+                                      character,  this  tends  to
+                                      produce a line  that  looks
+                                      too long.
+
+              ddeelliimmiitteerr__ffaaccttoorr        Extensible  delimiters pro-
+                                      duced  with  the  lleefftt  and
+                                      rriigghhtt  primitives will have
+                                      a combined height and depth
+                                      of at least this many thou-
+                                      sandths of twice the  maxi-
+                                      mum  amount  by  which  the
+                                      sub-equation    that    the
+                                      delimiters  enclose extends
+                                      away from the axis.
+
+              ddeelliimmiitteerr__sshhoorrttffaallll     Extensible delimiters  pro-
+                                      duced  with  the  lleefftt  and
+                                      rriigghhtt primitives will  have
+
+
+
+Groff Version 1.08        6 October 1992                        6
+
+
+
+
+
+
+
+
+EQN(1)                 BSD Reference Manual                EQN(1)
+
+
+                                      a combined height and depth
+                                      not less than  the  differ-
+                                      ence  of  twice the maximum
+                                      amount by  which  the  sub-
+                                      equation  that  the  delim-
+                                      iters enclose extends  away
+                                      from   the  axis  and  this
+                                      amount.
+
+              nnuullll__ddeelliimmiitteerr__ssppaaccee    This much horizontal  space
+                                      is inserted on each side of
+                                      a fraction.
+
+              ssccrriipptt__ssppaaccee            The width of subscripts and
+                                      superscripts  is  increased
+                                      by this amount.
+
+              tthhiinn__ssppaaccee              This  amount  of  space  is
+                                      automatically      inserted
+                                      after  punctuation  charac-
+                                      ters.
+
+              mmeeddiiuumm__ssppaaccee            This  amount  of  space  is
+                                      automatically  inserted  on
+                                      either side of binary oper-
+                                      ators.
+
+              tthhiicckk__ssppaaccee             This  amount  of  space  is
+                                      automatically  inserted  on
+                                      either side of relations.
+
+              xx__hheeiigghhtt                The  height  of   lowercase
+                                      letters  without  ascenders
+                                      such as x.
+
+              aaxxiiss__hheeiigghhtt             The height above the  base-
+                                      line of the center of char-
+                                      acters such as + and -.  It
+                                      is   important   that  this
+                                      value is  correct  for  the
+                                      font you are using.
+
+              ddeeffaauulltt__rruullee__tthhiicckknneessss  This   should  set  to  the
+                                      thickness of the \\((rruu char-
+                                      acter,  or the thickness of
+                                      horizontal  lines  produced
+                                      with    the    \\DD    escape
+                                      sequence.
+
+              nnuumm11                    The oovveerr command will shift
+                                      up   the  numerator  by  at
+
+
+
+Groff Version 1.08        6 October 1992                        7
+
+
+
+
+
+
+
+
+EQN(1)                 BSD Reference Manual                EQN(1)
+
+
+                                      least this amount.
+
+              nnuumm22                    The ssmmaalllloovveerr command  will
+                                      shift  up  the numerator by
+                                      at least this amount.
+
+              ddeennoomm11                  The oovveerr command will shift
+                                      down  the denominator by at
+                                      least this amount.
+
+              ddeennoomm22                  The ssmmaalllloovveerr command  will
+                                      shift  down the denominator
+                                      by at least this amount.
+
+              ssuupp11                    Normally superscripts  will
+                                      be  shifted  up by at least
+                                      this amount.
+
+              ssuupp22                    Superscripts within  super-
+                                      scripts  or upper limits or
+                                      numerators   of   ssmmaalllloovveerr
+                                      fractions  will  be shifted
+                                      up by at least this amount.
+                                      This  is  usually less than
+                                      sup1.
+
+              ssuupp33                    Superscripts within denomi-
+                                      nators  or  square roots or
+                                      subscripts or lower  limits
+                                      will  be  shifted  up by at
+                                      least this amount.  This is
+                                      usually less than sup2.
+
+              ssuubb11                    Subscripts will normally be
+                                      shifted down  by  at  least
+                                      this amount.
+
+              ssuubb22                    When  there  is both a sub-
+                                      script and  a  superscript,
+                                      the   subscript   will   be
+                                      shifted down  by  at  least
+                                      this amount.
+
+              ssuupp__ddrroopp                The  baseline  of  a super-
+                                      script will be no more than
+                                      this  much amount below the
+                                      top of the object on  which
+                                      the superscript is set.
+
+              ssuubb__ddrroopp                The baseline of a subscript
+                                      will be at least this  much
+
+
+
+Groff Version 1.08        6 October 1992                        8
+
+
+
+
+
+
+
+
+EQN(1)                 BSD Reference Manual                EQN(1)
+
+
+                                      below  the  bottom  of  the
+                                      object on  which  the  sub-
+                                      script is set.
+
+              bbiigg__oopp__ssppaacciinngg11         The  baseline  of  an upper
+                                      limit will be at least this
+                                      much  above  the top of the
+                                      object on which  the  limit
+                                      is set.
+
+              bbiigg__oopp__ssppaacciinngg22         The  baseline  of  a  lower
+                                      limit will be at least this
+                                      much  below  the  bottom of
+                                      the  object  on  which  the
+                                      limit is set.
+
+              bbiigg__oopp__ssppaacciinngg33         The   bottom  of  an  upper
+                                      limit will be at least this
+                                      much  above  the top of the
+                                      object on which  the  limit
+                                      is set.
+
+              bbiigg__oopp__ssppaacciinngg44         The  top  of  a lower limit
+                                      will be at least this  much
+                                      below  the  bottom  of  the
+                                      object on which  the  limit
+                                      is set.
+
+              bbiigg__oopp__ssppaacciinngg55         This  much  vertical  space
+                                      will  be  added  above  and
+                                      below limits.
+
+              bbaasseelliinnee__sseepp            The  baselines  of the rows
+                                      in a pile  or  matrix  will
+                                      normally be this far apart.
+                                      In most cases  this  should
+                                      be equal to the sum of nnuumm11
+                                      and ddeennoomm11.
+
+              sshhiifftt__ddoowwnn              The  midpoint  between  the
+                                      top baseline and the bottom
+                                      baseline  in  a  matrix  or
+                                      pile  will  be shifted down
+                                      by this much from the axis.
+                                      In  most  cases this should
+                                      be equal to aaxxiiss__hheeiigghhtt.
+
+              ccoolluummnn__sseepp              This  much  space  will  be
+                                      added  between columns in a
+                                      matrix.
+
+
+
+
+Groff Version 1.08        6 October 1992                        9
+
+
+
+
+
+
+
+
+EQN(1)                 BSD Reference Manual                EQN(1)
+
+
+              mmaattrriixx__ssiiddee__sseepp         This  much  space  will  be
+                                      added  at  each  side  of a
+                                      matrix.
+
+              ddrraaww__lliinneess              If this is non-zero,  lines
+                                      will  be drawn using the \\DD
+                                      escape   sequence,   rather
+                                      than  with  the  \\ll  escape
+                                      sequence and the \\((rruu char-
+                                      acter.
+
+              bbooddyy__hheeiigghhtt             The  amount  by  which  the
+                                      height  of   the   equation
+                                      exceeds  this will be added
+                                      as extra space  before  the
+                                      line  containing  the equa-
+                                      tion   (using   \\xx.)    The
+                                      default value is 85.
+
+              bbooddyy__ddeepptthh              The  amount  by  which  the
+                                      depth   of   the   equation
+                                      exceeds  this will be added
+                                      as extra  space  after  the
+                                      line  containing  the equa-
+                                      tion   (using   \\xx.)    The
+                                      default value is 35.
+
+              nnrrooffff                   If  this  is non-zero, then
+                                      nnddeeffiinnee  will  behave  like
+                                      ddeeffiinnee  and ttddeeffiinnee will be
+                                      ignored, otherwise  ttddeeffiinnee
+                                      will behave like ddeeffiinnee and
+                                      nnddeeffiinnee  will  be  ignored.
+                                      The   default  value  is  0
+                                      (This is typically  changed
+                                      to  1 by the eeqqnnrrcc file for
+                                      the   aasscciiii   and    llaattiinn11
+                                      devices.)
+
+              A  more  precise description of the role of many of
+              these parameters can be  found  in  Appendix  H  of
+              _T_h_e _T_e_X_b_o_o_k.
+
+   MMaaccrrooss
+       Macros can take arguments.  In a macro body, $$_n where _n is
+       between 1 and 9, will be replaced by the _n_-_t_h argument  if
+       the  macro  is  called  with arguments; if there are fewer
+       than _n arguments, it will be replaced by nothing.  A  word
+       containing  a  left parenthesis where the part of the word
+       before the left parenthesis has  been  defined  using  the
+       ddeeffiinnee  command  will  be  recognized as a macro call with
+
+
+
+Groff Version 1.08        6 October 1992                       10
+
+
+
+
+
+
+
+
+EQN(1)                 BSD Reference Manual                EQN(1)
+
+
+       arguments; characters following the left parenthesis up to
+       a  matching  right  parenthesis  will be treated as comma-
+       separated arguments; commas inside nested  parentheses  do
+       not terminate an argument.
+
+       ssddeeffiinnee _n_a_m_e _X _a_n_y_t_h_i_n_g _X
+              This  is like the ddeeffiinnee command, but _n_a_m_e will not
+              be recognized if called with arguments.
+
+       iinncclluuddee ""_f_i_l_e""
+              Include the contents of _f_i_l_e.  Lines of _f_i_l_e begin-
+              ning with ..EEQQ or ..EENN will be ignored.
+
+       iiffddeeff _n_a_m_e _X _a_n_y_t_h_i_n_g _X
+              If  _n_a_m_e  has  been  defined by ddeeffiinnee (or has been
+              automatically defined because _n_a_m_e  is  the  output
+              device)  process  _a_n_y_t_h_i_n_g;  otherwise  ignore _a_n_y_-
+              _t_h_i_n_g.  _X can be any  character  not  appearing  in
+              _a_n_y_t_h_i_n_g.
+
+   FFoonnttss
+       eeqqnn  normally  uses at least two fonts to set an equation:
+       an italic font for letters, and a roman  font  for  every-
+       thing  else.   The existing ggffoonntt command changes the font
+       that is used as the italic font.  By default  this  is  II.
+       The  font  that  is  used as the roman font can be changed
+       using the new ggrrffoonntt command.
+
+       ggrrffoonntt _f
+              Set the roman font to _f.
+
+       The iittaalliicc primitive uses the current italic font  set  by
+       ggffoonntt; the rroommaann primitive uses the current roman font set
+       by ggrrffoonntt.  There is also  a  new  ggbbffoonntt  command,  which
+       changes  the font used by the bboolldd primitive.  If you only
+       use the rroommaann, iittaalliicc and bboolldd primitives to changes fonts
+       within  an  equation, you can change all the fonts used by
+       your equations just by using ggffoonntt, ggrrffoonntt and ggbbffoonntt com-
+       mands.
+
+       You  can  control  which characters are treated as letters
+       (and therefore set in italics) by using the cchhaarrttyyppee  com-
+       mand described above.  A type of lleetttteerr will cause a char-
+       acter to be set in italic type.   A  type  of  ddiiggiitt  will
+       cause a character to be set in roman type.
+
+FFIILLEESS
+       //uussrr//sshhaarree//ttmmaacc//eeqqnnrrcc  Initialization file.
+
+BBUUGGSS
+       Inline  equations  will  be  set at the point size that is
+
+
+
+Groff Version 1.08        6 October 1992                       11
+
+
+
+
+
+
+
+
+EQN(1)                 BSD Reference Manual                EQN(1)
+
+
+       current at the beginning of the input line.
+
+SSEEEE AALLSSOO
+       ggrrooffff(1), ttrrooffff(1), ggrrooffff__ffoonntt(5), _T_h_e _T_e_X_b_o_o_k
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08        6 October 1992                       12
+
+
+
+
+
