@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.37 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,6 +32,10 @@ static char sccsid[] = "@(#)ps.c	5.36 (Berkeley) %G%";
 #include <string.h>
 #include <paths.h>
 #include "ps.h"
+
+#ifdef SPPWAIT
+#define NEWVM
+#endif
 
 KINFO *kinfo;
 VAR *vhead, *vtail;
@@ -314,11 +318,17 @@ saveuser(ki)
 		/*
 		 * save important fields
 		 */
+#ifdef NEWVM
+		usp->u_start = up->u_stats.p_start;
+		usp->u_ru = up->u_stats.p_ru;
+		usp->u_cru = up->u_stats.p_cru;
+#else
 		usp->u_procp = up->u_procp;
 		usp->u_start = up->u_start;
 		usp->u_ru = up->u_ru;
 		usp->u_cru = up->u_cru;
 		usp->u_acflag = up->u_acflag;
+#endif
 	}
 }
 
@@ -326,7 +336,12 @@ pscomp(k1, k2)
 	KINFO *k1, *k2;
 {
 	int i;
+#ifdef NEWVM
+#define VSIZE(k) ((k)->ki_e->e_vm.vm_dsize + (k)->ki_e->e_vm.vm_ssize + \
+		  (k)->ki_e->e_vm.vm_tsize)
+#else
 #define VSIZE(k) ((k)->ki_p->p_dsize + (k)->ki_p->p_ssize + (k)->ki_e->e_xsize)
+#endif
 
 	if (sortby == SORTCPU)
 		return (getpcpu(k2) - getpcpu(k1));
