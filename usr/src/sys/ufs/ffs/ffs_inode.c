@@ -1,4 +1,4 @@
-/*	ffs_inode.c	4.33	83/02/10	*/
+/*	ffs_inode.c	4.34	83/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -521,6 +521,8 @@ indirtrunc(ip, bn, lastbn, level)
 		brelse(bp);
 #ifdef QUOTA
 		return (0);
+#else
+		return;
 #endif
 	}
 	bap = bp->b_un.b_daddr;
