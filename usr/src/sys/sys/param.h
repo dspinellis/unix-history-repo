@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.h	7.23 (Berkeley) %G%
+ *	@(#)param.h	7.24 (Berkeley) %G%
  */
 
 #define	BSD	199103		/* March, 1991 system version (year & month) */
@@ -53,7 +53,6 @@
 
 /* Machine type dependent parameters. */
 #include <machine/param.h>
-#include <machine/endian.h>
 #include <machine/limits.h>
 
 /*
