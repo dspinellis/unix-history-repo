@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_map.h	8.8 (Berkeley) %G%
+ *	@(#)vm_map.h	8.9 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -135,10 +135,24 @@ typedef struct {
 
 #include <sys/proc.h>	/* XXX for curproc and p_pid */
 
+#define	vm_map_lock_drain_interlock(map) { \
+	lockmgr(&(map)->lock, LK_DRAIN|LK_INTERLOCK, \
+		&(map)->ref_lock, curproc); \
+	(map)->timestamp++; \
+}
+#ifdef DIAGNOSTIC
+#define	vm_map_lock(map) { \
+	if (lockmgr(&(map)->lock, LK_EXCLUSIVE, (void *)0, curproc) != 0) { \
+		panic("vm_map_lock: failed to get lock"); \
+	} \
+	(map)->timestamp++; \
+}
+#else
 #define	vm_map_lock(map) { \
 	lockmgr(&(map)->lock, LK_EXCLUSIVE, (void *)0, curproc); \
 	(map)->timestamp++; \
 }
+#endif /* DIAGNOSTIC */
 #define	vm_map_unlock(map) \
 		lockmgr(&(map)->lock, LK_RELEASE, (void *)0, curproc)
 #define	vm_map_lock_read(map) \
