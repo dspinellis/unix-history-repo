@@ -1,38 +1,46 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)sync.8	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH SYNC 8 ""
-.UC 4
-.SH NAME
-sync \- update the super block
-.SH SYNOPSIS
-.B /etc/sync
-.SH DESCRIPTION
-.I Sync
-executes the
-.I sync
-system primitive.
-.I Sync
+.\"     @(#)sync.8	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SYNC 8
+.Os BSD 4
+.Sh NAME
+.Nm sync
+.Nd synchronize internal filesystem information with that on the disk
+.Sh SYNOPSIS
+.Nm /etc/sync
+.Sh DESCRIPTION
+.Xr Sync
 can be called to insure that all disk writes have been completed before the
 processor is halted in a way not suitably done by
-.IR reboot (8)
+.Xr reboot 8
 or
-.IR halt (8).
+.Xr halt 8 .
 Generally, it is preferable to use
-.I reboot
+.Xr reboot
 or
-.I halt
+.Xr halt
 to shut down the system,
 as they may perform additional actions
 such as resynchronizing the hardware clock
 and flushing internal caches before performing a final
-.IR sync .
-.PP
-See
-.IR sync (2)
-for details on the system primitive.
-.SH "SEE ALSO"
-sync(2), fsync(2), halt(8), reboot(8), update(8)
+.Xr sync .
+.Pp
+.Nm sync
+utilizes the
+.Xr sync 2
+function call.
+.Sh SEE ALSO
+.Xr sync 2 ,
+.Xr fsync 2 ,
+.Xr halt 8 ,
+.Xr reboot 8 ,
+.Xr update 8
+.Sh HISTORY
+A
+.Nm
+command appeared in Version 6 AT&T UNIX.

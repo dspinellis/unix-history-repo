@@ -1,27 +1,39 @@
-.\" $Source: /mit/kerberos/src/man/RCS/kpasswd.1,v $
-.\" $Author: steiner $
-.\" $Header: kpasswd.1,v 4.1 89/01/24 09:21:13 steiner Exp $
 .\" Copyright 1989 by the Massachusetts Institute of Technology.
+.\" Copyright (c) 1987, 1988, 1991 Regents of the University of California.
+.\" All rights reserved.
 .\"
 .\" For copying and distribution information,
 .\" please see the file <mit-copyright.h>.
 .\"
-.TH KPASSWDD 8
-.SH NAME
-kpasswdd \- Kerberos password changing daemon
-.SH SYNOPSIS
-.B kpasswdd
-.SH DESCRIPTION
-.I Kpasswdd
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)kpasswdd.8	1.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt KPASSWDD 8
+.Os
+.Sh NAME
+.Nm kpasswdd
+.Nd Kerberos password changing daemon
+.Sh SYNOPSIS
+.Nm kpasswdd
+.Sh DESCRIPTION
+.Nm Kpasswdd
 is the server for the
-.IR passwd (1)
+.Xr passwd 1
 program.
 The server provides a remote password changing facility
 with Kerberos authentication.
 A user must provide the old Kerberos password, encrypted
 in a random session key, to the server.
-.I Kpasswdd
+.Nm Kpasswdd
 runs only on the Kerberos server, as it directly updates the
 Kerberos database.
-.SH SEE ALSO
-kerberos(1), passwd(1)
+.Sh SEE ALSO
+.Xr kerberos 1 ,
+.Xr passwd 1
+.Sh HISTORY
+The
+.Nm
+command
+.Ud
