@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)tape.c	1.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)tape.c	1.11 (Berkeley) %G%";
 #endif
 
 #include "dump.h"
@@ -115,7 +115,7 @@ tperror() {
 senderr()
 {
 
-	perror("dump: pipe error in command to slave");
+	perror("  DUMP: pipe error in command to slave");
 	dumpabort();
 }
 
@@ -316,7 +316,7 @@ char tok = OK;
 enslave()
 {
 	int prev[2], next[2], cmd[2];	/* file descriptors for pipes */
-	int i, j, slavepid;
+	int i, j, ret, slavepid;
 
 	master = getpid();
 	signal(SIGPIPE, dumpabort);
@@ -338,8 +338,8 @@ enslave()
 				close(prev[1]);
 				close(next[0]);
 			} else {		    /* Insert initial token */
-				if (write(next[1], &tok, 1) != 1)
-					ringerr();
+				if ((ret = write(next[1], &tok, 1)) != 1)
+					ringerr(ret, "cannot start token");
 			}
 			doslave(i, cmd[0], prev[0], next[1]);
 			close(next[1]);
@@ -365,27 +365,49 @@ enslave()
 /*
  * Somebody must have died, should never happen
  */
-ringerr()
+ringerr(code, msg, a1, a2)
+	int code;
+	char *msg;
+	int a1, a2;
 {
-	perror("  DUMP: token passing error");
+	char buf[BUFSIZ];
+
+	fprintf(stderr, "  DUMP: ");
+	sprintf(buf, msg, a1, a2);
+	if (code < 0)
+		perror(msg);
+	else if (code == 0)
+		fprintf(stderr, "%s: unexpected EOF\n", buf);
+	else
+		fprintf(stderr, "%s: code %d\n", buf, code);
 	kill(master, SIGPIPE);
 	Exit(X_ABORT);
+}
+
+int childnum;
+sigpipe()
+{
+
+	ringerr(childnum, "SIGPIPE raised");
 }
 
 doslave(num, cmd, prev, next)
 	int num, cmd, prev, next;
 {
+	int ret;
+
 	tmsg("slave %d\n", num);
 	signal(SIGINT, SIG_IGN); 		/* Master handles it */
 	signal(SIGTERM, SIG_IGN);
-	signal(SIGPIPE, ringerr);
+	signal(SIGPIPE, sigpipe);
+	childnum = num;
 	close(fi);
 	if ((fi = open(disk, 0)) < 0) {		/* Need our own seek pointer */
 		perror("  DUMP: can't reopen disk");
 		kill(master, SIGPIPE);
 		Exit(X_ABORT);
 	}
-	while (readpipe(cmd, req, reqsiz) == reqsiz) {
+	while ((ret = readpipe(cmd, req, reqsiz)) == reqsiz) {
 		register struct req *p = req;
 		for (trecno = 0; trecno < ntrec; trecno += p->count, p += p->count) {
 			if (p->dblk) {
@@ -395,13 +417,14 @@ doslave(num, cmd, prev, next)
 			} else {
 				tmsg("%d PIPEIN %d\n", num, p->count);
 				if (p->count != 1)
-					ringerr();
+					ringerr(11, "%d PIPEIN %d", num,
+						p->count);
 				if (readpipe(cmd, tblock[trecno], TP_BSIZE) != TP_BSIZE)
 					senderr();
 			}
 		}
-		if (read(prev, &tok, 1) != 1)
-			ringerr();	/* Wait your turn */
+		if ((ret = read(prev, &tok, 1)) != 1)
+			ringerr(ret, "read token");	/* Wait your turn */
 		tmsg("%d WRITE\n", num);
 #ifdef RDUMP
 		if (tok & OK) {
@@ -418,9 +441,11 @@ doslave(num, cmd, prev, next)
 			kill(master, SIGIOT);	/* restart from checkpoint */
 			tok &= ~OK;
 		}
-		if (write(next, &tok, 1) != 1)
-			ringerr(); /* Next slave's turn */
+		if ((ret = write(next, &tok, 1)) != 1)
+			ringerr(ret, "write token"); /* Next slave's turn */
 	}
+	if (ret != 0)
+		ringerr(ret, "partial record?");
 	tmsg("%d CLOSE\n", num);
 }
 
