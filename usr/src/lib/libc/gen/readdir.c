@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)readdir.c 1.1 %G%";
+static char sccsid[] = "@(#)readdir.c 1.2 %G%";
 
 #include <sys/types.h>
 #include <ndir.h>
@@ -16,7 +16,8 @@ readdir(dirp)
 
 	for (;;) {
 		if (dirp->dd_loc == 0) {
-			dirp->dd_size = read(dirp->dd_fd, dirp->dd_buf, DIRSIZ);
+			dirp->dd_size = read(dirp->dd_fd, dirp->dd_buf, 
+			    MAXDIRSIZ);
 			if (dirp->dd_size <= 0)
 				return NULL;
 		}
@@ -24,7 +25,7 @@ readdir(dirp)
 			dirp->dd_loc = 0;
 			continue;
 		}
-		dp = (struct direct *)dirp->dd_buf + dirp->dd_loc;
+		dp = (struct direct *)(dirp->dd_buf + dirp->dd_loc);
 		dirp->dd_loc += sizeof(struct direct);
 		if (dp->d_ino != 0)
 			return dp;
