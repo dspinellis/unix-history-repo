@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -259,7 +259,6 @@ dovnode()
 	register struct e_vnode *e_vnodebase, *endvnode, *evp;
 	register struct vnode *vp;
 	register struct mount *maddr = NULL, *mp;
-	register struct inode *ip;
 	int numvnodes;
 	struct e_vnode *loadvnodes();
 	struct mount *getmnt();
@@ -634,7 +633,7 @@ struct e_vnode *
 loadvnodes(avnodes)
 	int *avnodes;
 {
-	int ret, copysize, i;
+	int ret, copysize;
 	struct e_vnode *vnodebase;
 
 	if (fcore != NULL) {
@@ -748,7 +747,9 @@ doproc()
 	int nproc;
 	register struct proc *pp;
 	register loc, np;
+	/*
 	struct pte apte;
+	*/
 
 	nproc = getword(nl[SNPROC].n_value);
 	xproc = (struct proc *)calloc(nproc, sizeof (struct proc));
