@@ -3,36 +3,43 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sysctl.3	6.3 (Berkeley) %G%
+.\"	@(#)sysctl.3	6.4 (Berkeley) %G%
 .\"
 .Dd ""
-.Dt SYSCTL 2
+.Dt SYSCTL 3
 .Os
 .Sh NAME
 .Nm sysctl
-.Nd get or set kernel state
+.Nd get or set system information
 .Sh SYNOPSIS
 .Fd #include <sys/sysctl.h>
 .Ft int
-.Fn sysctl "int *name" "u_int namelen" "void *old" "size_t *oldlenp" "void *new" "size_t newlen"
+.Fn sysctl "int *name" "u_int namelen" "void *oldp" "size_t *oldlenp" "void *newp" "size_t newlen"
 .Sh DESCRIPTION
 The
-.Fn sysctl
-function retrieves kernel state and allows processes with
-appropriate privilege to set kernel state.
-The state to be set is described using a
-``Management Information Base'' (MIB) style name,
-described in a
+.Nm sysctl
+function retrieves system information and allows processes with
+appropriate privileges to set system information.
+The information available from
+.Nm sysctl
+consists of integers, strings, and tables.
+Unless explicitly noted below,
+.Nm sysctl
+returns a consistent snapshot of the data requested
+Information may be retrieved and set from the command interface
+using the 
+.Xr sysctl 1
+utility.
+.Pp
+The state is described using a ``Management Information Base'' (MIB)
+style name, listed in
+.Fa name ,
+which is a
 .Fa namelen
-length array of integers pointed to by
-.Fa name .
-The top level names are defined with a CTL_ prefix in
-.Pa <sys/sysctl.h> .
-The next levels down are found in the files given in the ``FILES''
-section of this manual page.
+length array of integers.
 .Pp
 The information is copied into the buffer specified by
-.Fa old .
+.Fa oldp .
 The size of the buffer is given by the location specified by
 .Fa oldlenp
 before the call,
@@ -42,15 +49,15 @@ than the size of the buffer supplied,
 the call supplies as much data as fits in the buffer provided
 and returns with the error code EINVAL.
 If the old value is not desired,
-.Fa old
+.Fa oldp
 and
 .Fa oldlenp
-can be set to NULL.
+should be set to NULL.
 .Pp
 The size of the available data can be determined by calling 
-.Fn sysctl
+.Nm sysctl
 with a NULL parameter for
-.Fa old .
+.Fa oldp .
 The size of the available data be returned in the location pointed to by
 .Fa oldlenp .
 For some operations, the amount of space may change often;
@@ -58,156 +65,396 @@ the system attempts to round up so that the returned size is
 large enough for a call to return the data shortly thereafter.
 .Pp
 To set a new value,
-.Fa new
+.Fa newp
 is set to point to a buffer of length
 .Fa newlen
 from which the requested value is to be taken.
 If a new value is not to be set,
-.Fa new
+.Fa newp
 should be set to NULL and
 .Fa newlen
 set to 0.
 .Pp
-The information available from
-.Fn sysctl
-consists of integers, strings, and tables.
-The string and integer information is detailed below.
-The changeable column shows whether a process with appropriate
-privilege can change the value.
-Changeable values may be retrieved and set using the 
-.Xr sysctl 1
-utility.
-.Bl -column CTL_KERN/KERN_OSRELEASEXX "integerxx" -offset indent
-.It Sy "Name  " "	Type  " "	Changeable"
-.It Pa CTL_KERN/KERN_OSTYPE No "	string" No "	no"
-.It Pa CTL_KERN/KERN_OSRELEASE No "	string" No "	no"
-.It Pa CTL_KERN/KERN_VERSION No "	string" No "	no"
-.It Pa CTL_KERN/KERN_OSREV No "	integer" No "	no"
-.It Pa CTL_KERN/KERN_POSIX1 No "	integer" No "	no"
-.It Pa CTL_KERN/KERN_MAXPROC No "	integer" No "	yes"
-.It Pa CTL_KERN/KERN_MAXFILES No "	integer" No "	yes"
-.It Pa CTL_KERN/KERN_ARGMAX No "	integer" No "	no"
-.It Pa CTL_KERN/KERN_SECURELVL No "	integer" No "	raise only"
-.It Pa CTL_KERN/KERN_HOSTNAME No "	string" No "	yes"
-.It Pa CTL_KERN/KERN_HOSTID No "	integer" No "	yes"
-.It Pa CTL_HW/HW_MACHINE No "	string" No "	no"
-.It Pa CTL_HW/HW_MODEL No "	string" No "	no"
-.It Pa CTL_HW/HW_NCPU No "	integer" No "	no"
-.It Pa CTL_HW/HW_CPUSPEED No "	integer" No "	no"
-.It Pa CTL_HW/HW_PHYSMEM No "	integer" No "	no"
-.It Pa CTL_HW/HW_USERMEM No "	integer" No "	no"
-.It Pa CTL_HW/HW_PAGESIZE No "	integer" No "	no"
+The top level names are defined with a CTL_ prefix in
+.Pa <sys/sysctl.h> ,
+and are as follows.
+The next and subsequent levels down are found in the include files
+listed here, and described in separate sections below.
+.Pp
+.Bl -column CTLXMACHDEPXXX "Next level namesXXX" -offset indent
+.It Sy Pa Name	Next level names	Description
+.It CTL\_DEBUG	sys/sysctl.h	Debugging
+.It CTL\_FS	sys/sysctl.h	File system
+.It CTL\_HW	sys/sysctl.h	Generic CPU, I/O
+.It CTL\_KERN	sys/sysctl.h	High kernel: processes, limits
+.It CTL\_MACHDEP	sys/sysctl.h	Machine dependent
+.It CTL\_NET	sys/socket.h	Networking
+.It CTL\_USER	sys/sysctl.h	User-level
+.It CTL\_VM	vm/vm_param.h	Virtual memory
 .El
 .Pp
 For example, the following retrieves the maximum number of processes allowed
 in the system:
 .Bd -literal -offset indent -compact
-int name[2], maxproc;
+int mib[2], maxproc;
 size_t len;
 .sp
-name[0] = CTL_KERN;
-name[1] = KERN_MAXPROC;
+mib[0] = CTL_KERN;
+mib[1] = KERN_MAXPROC;
 len = sizeof(maxproc);
-sysctl(name, 2, &maxproc, &len, NULL, 0);
+sysctl(mib, 2, &maxproc, &len, NULL, 0);
 .Ed
-.Pp
-The tables that can be retrieved from the kernel by
-.Fn sysctl
-are detailed below.
-For most operations, the
-.Fn sysctl
-function returns a consistent snapshot of the data requested.
-(This is not currently true for
-.Dv KERN_VNODE ) .
-The consistency is done by locking the destination buffer into memory
-so that the data may be copied out without blocking.
-Calls are serialized to avoid deadlock.
-The types of data currently available are process information,
-system vnodes, the open file entries, routing table entries,
-virtual memory statistics, load average history,
-and clock rate information.
-The following paragraphs detail how each of these is obtained.
-.Pp
-The entire process table, or a subset of it, may be obtained with
-.Pa CTL_KERN/KERN_PROC/<op>/<arg> .
-An array of
-.Ns ( Fa struct kinfo_proc Ns )
-structures is returned,
-whose size depends on the current number of such objects in the system.
-The values for <op> and <arg> are:
-.Bl -column KERN_PROC_PGRPX "ARG Meaningxx" -offset indent
-.It Sy "OP  " "	ARG Meaning  "
-.It Dv KERN_PROC_ALL No "	none"
-.It Dv KERN_PROC_PID No "	process ID"
-.It Dv KERN_PROC_PGRP No "	process group"
-.It Dv KERN_PROC_TTY No "	tty device"
-.It Dv KERN_PROC_UID No "	user ID"
-.It Dv KERN_PROC_RUID No "	real user ID"
-.El
-.Pp
-The entire vnode table may be obtained with
-.Pa CTL_KERN/KERN_VNODE .
-The returned data consists of an array
-whose size depends on the current number of such objects in the system.
-Each element of the array contains the kernel address of a vnode
-.Ns ( Fa struct vnode * Ns )
-followed by the vnode itself
-.Ns ( Fa struct vnode Ns ) .
-.Pp
-The entire file table may be obtained with
-.Pa CTL_KERN/KERN_FILE .
-The returned data consists of a single
-.Ns ( Fa struct filehead Ns )
-followed by an array of
-.Ns ( Fa struct file Ns ) ,
-whose size depends on the current number of such objects in the system.
-.Pp
-Information about the system clock rate may be obtained with
-.Pa CTL_KERN/KERN_CLOCKRATE .
-The returned data consists of a
-.Ns ( Fa struct clockinfo Ns ) .
-.Pp
-Information about the load average history may be obtained with
-.Pa CTL_VM/VM_LOADAVG .
-The returned data consists of a
-.Ns ( Fa struct loadavg Ns ) .
-.Pp
-Information about the system wide virtual memory statistics
-may be obtained with
-.Pa CTL_VM/VM_METER .
-The returned data consists of a
-.Ns ( Fa struct vmtotal Ns ) .
-.Pp
-The entire routing table or a subset of it may be obtained with
-.Pa CTL_NET/PF_ROUTE/<protocol number>/<address family>/<op>/<arg> .
-The protocol number is currently always zero.
-The address family may be set to zero to select all address families.
-The values for <op> and <arg> are:
-.Bl -column NET_RT_IFLISTX "ARG Meaningxx" -offset indent
-.It Sy "OP  " "	ARG Meaning  "
-.It Dv NET_RT_FLAGS No "	rtflags"
-.It Dv NET_RT_DUMP No "	none"
-.It Dv NET_RT_IFLIST No "	none"
-.El
-The data is returned as a sequence of routing messages (see
-.Xr route 4
-for the header file, format and meaning).
-The length of each message is contained in the message header.
+.sp
+To retrieve the standard search path for the system utilities:
+.Bd -literal -offset indent -compact
+int mib[2];
+size_t len;
+char *p;
+.sp
+mib[0] = CTL_USER;
+mib[1] = USER_CS_PATH;
+sysctl(mib, 2, NULL, &len, NULL, 0);
+p = malloc(len);
+sysctl(mib, 2, p, &len, NULL, 0);
+.Ed
 .Sh RETURN VALUES
 If the call to
-.Fn sysctl
+.Nm sysctl
 is successful, 0 is returned.
 Otherwise \-1 is returned and
 .Va errno
 is set appropriately.
+.Sh CTL_DEBUG
+There are currently no second level names for the debugging interface.
+.Sh CTL_FS
+There are currently no second level names for the file system.
+.Sh CTL_HW
+The string and integer information available for the CTL_KERN level
+is detailed below.
+The changeable column shows whether a process with appropriate
+privilege may change the value.
+.Bl -column "Second level nameXXX" integerXXX -offset indent
+.It Sy Pa Second level name	Type	Changeable
+.It HW\_MACHINE	string	no
+.It HW\_MODEL	string	no
+.It HW\_NCPU	integer	no
+.It HW\_BYTEORDER	integer	no
+.It HW\_PHYSMEM	integer	no
+.It HW\_USERMEM	integer	no
+.It HW\_PAGESIZE	integer	no
+.\".It HW\_DISKNAMES	integer	no
+.\".It HW\_DISKSTATS	integer	no
+.El
+.Pp
+.Bl -tag -width "123456"
+.It Li HW_MACHINE
+Return the machine class.
+.It Li HW_MODEL
+Return the machine model
+.It Li HW_NCPU
+Return the number of cpus.
+.It Li HW_BYTEORDER
+Return the byteorder (4,321, or 1,234).
+.It Li HW_PHYSMEM
+Return the bytes of physical memory.
+.It Li HW_USERMEM
+Return the bytes of non-kernel memory.
+.It Li HW_PAGESIZE
+Return the software page size.
+.\".It Fa HW_DISKNAMES
+.\".It Fa HW_DISKSTATS
+.El
+.Sh CTL_KERN
+The string and integer information available for the CTL_KERN level
+is detailed below.
+The changeable column shows whether a process with appropriate
+privilege may change the value.
+The types of data currently available are process information,
+system vnodes, the open file entries, routing table entries,
+virtual memory statistics, load average history, and clock rate
+information.
+Consistency in the kernel tables is obtained by locking the destination
+buffer into memory so that the data may be copied out without blocking.
+Calls are serialized to avoid deadlock.
+.Bl -column "KERNXCHOWNXRESTRICTEDXXX" "struct clockrateXXX" -offset indent
+.It Sy Pa Second level name	Type	Changeable
+.It KERN\_ARGMAX	integer	no
+.It KERN\_CHOWN\_RESTRICTED	integer	no
+.It KERN\_CLOCKRATE	struct clockinfo	yes
+.It KERN\_FILE	struct file	yes
+.It KERN\_HOSTID	integer	yes
+.It KERN\_HOSTNAME	string	yes
+.It KERN\_JOB\_CONTROL	integer	no
+.It KERN\_LINK\_MAX	integer	no
+.It KERN\_MAXFILES	integer	yes
+.It KERN\_MAXPROC	integer	yes
+.It KERN\_MAXVNODES	integer	no
+.It KERN\_MAX\_CANON	integer	no
+.It KERN\_MAX\_INPUT	integer	no
+.It KERN\_NAME\_MAX	integer	no
+.It KERN\_NGROUPS	integer	no
+.It KERN\_NO\_TRUNC	integer	no
+.It KERN\_OSRELEASE	string	no
+.It KERN\_OSREV	integer	no
+.It KERN\_OSTYPE	string	no
+.It KERN\_PATH\_MAX	integer	no
+.It KERN\_PIPE\_BUF	integer	no
+.It KERN\_POSIX1	integer	no
+.It KERN\_PROC	struct proc	yes
+.It KERN\_PROF	node	yes
+.It KERN\_SAVED\_IDS	integer	no
+.It KERN\_SECURELVL	integer	raise only
+.It KERN\_VDISABLE	integer	no
+.It KERN\_VERSION	string	no
+.It KERN\_VNODE	struct vnode	yes
+.El
+.Pp
+.Bl -tag -width "123456"
+.It Li KERN_ARGMAX
+Maximum bytes of argument to exec.
+.It Li KERN_CHOWN_RESTRICTED
+Return 1 if appropriate privileges are required for the
+.Xr chown 2
+system call, otherwise 0.
+.It Li KERN_CLOCKRATE
+A
+.Ns ( Li struct clockinfo Ns )
+structure is returned.
+This structure contains the clock, statistics clock and profiling clock
+frequencies, and the number of micro-seconds per hz tick.
+.It Li KERN_FILE
+Return the entire file table.
+The returned data consists of a single
+.Ns ( Li struct filehead Ns )
+followed by an array of
+.Ns ( Li struct file Ns ) ,
+whose size depends on the current number of such objects in the system.
+.It Li KERN_HOSTID
+Return the host id.
+.It Li KERN_HOSTNAME
+Return the hostname.
+.It Li KERN_JOB_CONTROL
+Return 1 if job control is available on this system, otherwise 0.
+.It Li KERN_LINK_MAX
+Return the maximum file link count.
+.It Li KERN_MAXFILES
+Return the maximum number of open files a process may have.
+.It Li KERN_MAXPROC
+Return the maximum number of simultaneous processes a user may have.
+.It Li KERN_MAXVNODES
+Return the maximum number of vnodes available on the system.
+.It Li KERN_MAX_CANON
+Return the maximum number of bytes in terminal canonical input line.
+.It Li KERN_MAX_INPUT
+Return the minimum number of bytes for which space is available in
+a terminal input queue.
+.It Li KERN_NAME_MAX
+Maximum number of bytes in a file name.
+.It Li KERN_NGROUPS
+Maximum number of supplemental groups.
+.It Li KERN_NO_TRUNC
+Return 1 if too long pathnames are truncated.
+.It Li KERN_OSRELEASE
+Return the system release string.
+.It Li KERN_OSREV
+Return the system revision string.
+.It Li KERN_OSTYPE
+Return the system type string.
+.It Li KERN_PATH_MAX
+Maximum number of bytes in a pathname.
+.It Li KERN_PIPE_BUF
+Maximum number of bytes which will be written atomically to a pipe.
+.It Li KERN_POSIX1
+Return the POSIX 1003.1 version with which the system attempts to comply.
+.It Li KERN_PROC
+Return the entire process table, or a subset of it.
+An array of
+.Ns ( Li struct kinfo_proc Ns )
+structures is returned,
+whose size depends on the current number of such objects in the system.
+The third and fourth level names are as follows:
+.Bl -column "Third level nameXXX" "Fourth level is:XXX" -offset indent
+.It Pa Third level name	Fourth level is:
+.It KERN\_PROC\_ALL	None
+.It KERN\_PROC\_PID	A process ID
+.It KERN\_PROC\_PGRP	A process group
+.It KERN\_PROC\_TTY	A tty device
+.It KERN\_PROC\_UID	A user ID
+.It KERN\_PROC\_RUID	A real user ID
+.El
+.It Li KERN_PROF
+Return kernel profiling information.
+The only currently available third level name is GPROF_STATE, which
+returns 1 if the kernel was compiled for profiling, and 0 if it was
+not.
+.It Li KERN_SAVED_IDS
+Returns 1 if saved set-group and saved set-user ID is available.
+.It Li KERN_SECURELVL
+Returns the system security level.
+This level may be raised by processes with appropriate privilege.
+.It Li KERN_VDISABLE
+Returns the terminal character disabling value.
+.It Li KERN_VERSION
+Return the system version string.
+.It Li KERN_VNODE
+Return the entire vnode table.
+(Note, the vnode table is not necessarily a consistent snapshot of
+the system.)
+The returned data consists of an array whose size depends on the
+current number of such objects in the system.
+Each element of the array contains the kernel address of a vnode
+.Ns ( Li struct vnode * Ns )
+followed by the vnode itself
+.Ns ( Li struct vnode Ns ) .
+.El
+.Sh CTL_MACHDEP
+There are currently no second level names for the machine dependent
+interface.
+.Sh CTL_NET
+The string and integer information available for the CTL_NET level
+is detailed below.
+The changeable column shows whether a process with appropriate
+privilege may change the value.
+.Bl -column "Second level nameXXX" "routine messagesXXX" -offset indent
+.It Sy Pa Second level name	Type	Changeable
+.It PF\_ROUTE	routine messages	no
+.El
+.Pp
+.Bl -tag -width "123456"
+.It Li PF_ROUTE
+Return the entire routing table or a subset of it.
+The data is returned as a sequence of routing messages (see
+.Xr route 4
+for the header file, format and meaning).
+The length of each message is contained in the message header.
+.Pp
+The third level name is a protocol number, which is currently always 0.
+The fourth level name is an address family, which may be set to 0 to
+select all address families.
+The fifth and sixth level names are as follows:
+.Bl -column "Fifth level nameXXX" "Sixth level is:XXX" -offset indent
+.It Pa Fifth level name	Sixth level is:
+.It NET\_RT\_FLAGS	rtflags
+.It NET\_RT\_DUMP	None
+.It NET\_RT\_IFLIST	None
+.El
+.Sh CTL_USER
+The string and integer information available for the CTL_USER level
+is detailed below.
+The changeable column shows whether a process with appropriate
+privilege may change the value.
+.Bl -column "Second level nameXXX" "integerXXX" -offset indent
+.It Sy Pa Second level name	Type	Changeable
+.It USER\_BC\_BASE\_MAX	integer	no
+.It USER\_BC\_DIM\_MAX	integer	no
+.It USER\_BC\_SCALE\_MAX	integer	no
+.It USER\_BC\_STRING\_MAX	integer	no
+.It USER\_COLL\_WEIGHTS\_MAX	integer	no
+.It USER\_CS\_PATH	string	no
+.It USER\_EXPR\_NEST\_MAX	integer	no
+.It USER\_LINE\_MAX	integer	no
+.It USER\_POSIX2\_CHAR\_TERM	integer	no
+.It USER\_POSIX2\_C\_BIND	integer	no
+.It USER\_POSIX2\_C\_DEV	integer	no
+.It USER\_POSIX2\_FORT\_DEV	integer	no
+.It USER\_POSIX2\_FORT\_RUN	integer	no
+.It USER\_POSIX2\_LOCALEDEF	integer	no
+.It USER\_POSIX2\_SW\_DEV	integer	no
+.It USER\_POSIX2\_UPE	integer	no
+.It USER\_POSIX2\_VERSION	integer	no
+.It USER\_RE\_DUP\_MAX	integer	no
+.El
+.Bl -tag -width "123456"
+.Pp
+.It Li USER_BC_BASE_MAX
+Return the maximum ibase/obase values in the
+.Xr bc 1
+utility
+.It Li USER_BC_DIM_MAX
+Return the maximum array size in the
+.Xr bc 1
+utility.
+.It Li USER_BC_SCALE_MAX
+Return the maximum scale value in the
+.Xr bc 1
+utility.
+.It Li USER_BC_STRING_MAX
+Return the maximum string length in the
+.Xr bc 1
+utility.
+.It Li USER_COLL_WEIGHTS_MAX
+Return the maximum number of weights that can be assigned to any entry of
+the LC_COLLATE order keyword in the locale definition file.
+.It Li USER_CS_PATH
+Return a value for the
+.Ev PATH
+environment variable that finds all of the standard utilities.
+.It Li USER_EXPR_NEST_MAX
+Return the maximum number of expressions that can be nested within
+parenthesis by the
+.Xr expr 1
+utility.
+.It Li USER_LINE_MAX
+Return the maximum length in bytes of a text-processing utility's input
+line.
+.It Li USER_POSIX2_CHAR_TERM
+Return 1 if the system supports at least one terminal type capable of
+all operations described in POSIX 1003.2, otherwise 0.
+.It Li USER_POSIX2_C_BIND
+Return 1 if the system's C-language development facilities support the
+C-Language Bindings Option, otherwise 0.
+.It Li USER_POSIX2_C_DEV
+Return 1 if the system supports the C-Language Development Utilities Option,
+otherwise 0.
+.It Li USER_POSIX2_FORT_DEV
+Return 1 if the system supports the FORTRAN Development Utilities Option,
+otherwise 0.
+.It Li USER_POSIX2_FORT_RUN
+Return 1 if the system supports the FORTRAN Runtime Utilities Option,
+otherwise 0.
+.It Li USER_POSIX2_LOCALEDEF
+Return 1 if the system supports the creation of locales, otherwise 0.
+.It Li USER_POSIX2_SW_DEV
+Return 1 if the system supports the Software Development Utilities Option,
+otherwise 0.
+.It Li USER_POSIX2_UPE
+Return 1 if the system supports the User Portability Utilities Option,
+otherwise 0.
+.It Li USER_POSIX2_VERSION
+Return the POSIX 1003.2 version with which the system attempts to comply.
+.It Li USER_RE_DUP_MAX
+Return the maximum number of repeated occurrences of a regular expression
+permitted when using interval notation.
+.El
+.Sh CTL_VM
+The string and integer information available for the CTL_VM level
+is detailed below.
+The changeable column shows whether a process with appropriate
+privilege may change the value.
+.Bl -column "Second level nameXXX" "struct loadavgXXX" -offset indent
+.It Sy Pa Second level name	Type	Changeable
+.It VM\_LOADAVG	struct loadavg	no
+.It VM\_METER	struct vmtotal	no
+.El
+.Pp
+.Bl -tag -width "123456"
+.It Li VM_LOADAVG
+Return the load average history.
+The returned data consists of a
+.Ns ( Li struct loadavg Ns ) .
+.It Li VM_METER
+Return the system wide virtual memory statistics.
+The returned data consists of a
+.Ns ( Li struct vmtotal Ns ) .
+.El
 .Sh ERRORS
-The following error may be reported:
+The following errors may be reported:
 .Bl -tag -width Er
 .It Bq Er EFAULT
 The buffer
 .Fa name ,
-.Fa old ,
-.Fa new ,
+.Fa oldp ,
+.Fa newp ,
 or length pointer
 .Fa oldlenp
 contains an invalid address.
@@ -217,7 +464,7 @@ The
 array is less than two or greater than CTL_MAXNAME.
 .It Bq Er EINVAL
 A non-null
-.Fa new
+.Fa newp
 is given and its specified length in
 .Fa newlen
 is too large or too small.
@@ -239,10 +486,10 @@ An attempt is made to set a read-only value.
 A process without appropriate privilege attempts to set a value.
 .El
 .Sh FILES
-.Bl -tag -width <vm/vm_param.h> -compact
+.Bl -tag -width <vm/vmXparam.h> -compact
 .It Pa <sys/sysctl.h>
-definitions for top level identifiers and second level kernel
-and hardware identifiers
+definitions for top level identifiers, second level kernel and hardware
+identifiers, user level identifiers
 .It Pa <sys/socket.h>
 definitions for second level network identifiers
 .It Pa <vm/vm_param.h>
@@ -252,5 +499,5 @@ definitions for second level virtual memory identifiers
 .Xr sysctl 8
 .Sh HISTORY
 The
-.Fn sysctl
+.Nm sysctl
 function first appeared in 4.4BSD.
