@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwinit.c	3.18 84/04/16";
+static	char *sccsid = "@(#)wwinit.c	3.19 84/05/16";
 #endif
 
 #include "ww.h"
@@ -114,12 +114,12 @@ wwinit()
 	wwnobody.ww_order = NWW;
 
 	kp = wwkeys;
-	addcap("kb", &kp);
-	addcap("ku", &kp);
-	addcap("kd", &kp);
-	addcap("kl", &kp);
-	addcap("kr", &kp);
-	addcap("kh", &kp);
+	wwaddcap("kb", &kp);
+	wwaddcap("ku", &kp);
+	wwaddcap("kd", &kp);
+	wwaddcap("kl", &kp);
+	wwaddcap("kr", &kp);
+	wwaddcap("kh", &kp);
 	if ((j = tgetnum("kn")) >= 0) {
 		char cap[32];
 		int i;
@@ -129,9 +129,9 @@ wwinit()
 			;
 		for (i = 1; i <= j; i++) {
 			(void) sprintf(cap, "k%d", i);
-			addcap(cap, &kp);
+			wwaddcap(cap, &kp);
 			cap[0] = 'l';
-			addcap(cap, &kp);
+			wwaddcap(cap, &kp);
 		}
 	}
 	for (i = 0, p = environ; *p++; i++)
@@ -150,6 +150,7 @@ wwinit()
 	*q = 0;
 	environ = env;
 
+	(void) signal(SIGPIPE, SIG_IGN);
 	(void) sigsetmask(s);
 	return 0;
 bad:
@@ -163,8 +164,7 @@ bad:
 	return -1;
 }
 
-static
-addcap(cap, kp)
+wwaddcap(cap, kp)
 register char *cap;
 register char **kp;
 {
