@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ctime.3	6.7 (Berkeley) %G%
+.\"	@(#)ctime.3	6.8 (Berkeley) %G%
 .\"
 .TH CTIME 3  ""
 .UC 4
@@ -46,8 +46,9 @@ slash, it is used as the absolute pathname of the \fItzfile\fP(5)-format
 file from which to read the time conversion information; if \fBTZ\fP
 appears and begins with a character other than a slash, it's used as
 a pathname relative to the system time conversion information directory,
-defined as \fBTZDIR\fP in the include file \fItzfile.h\fP.  If
-this file fails for any reason, GMT is used.
+defined as \fBTZDIR\fP in the include file \fItzfile.h\fP.  If this file
+fails for any reason, the GMT offset as provided by the kernel is
+used, as described above.  If this fails for any reason, GMT is used.
 .PP
 Programs that always wish to use local wall clock time should explicitly
 remove the environmental variable \fBTZ\fP with \fIunsetenv\fP(3).
