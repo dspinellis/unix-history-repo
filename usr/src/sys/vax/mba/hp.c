@@ -1,4 +1,4 @@
-/*	hp.c	4.19	81/03/01	*/
+/*	hp.c	4.20	81/03/03	*/
 
 #include "hp.h"
 #if NHP > 0
@@ -7,7 +7,7 @@
  *
  * TODO:
  *	Check out handling of spun-down drives and write lock
- *	Add RM80 bad sector handling
+ *	Check RM80 skip sector handling, esp when ECC's occur later
  *	Add reading of bad sector information and disk layout from sector 1
  *	Add bad sector forwarding code
  *	Check interaction with tape driver on same mba
@@ -256,8 +256,13 @@ hpdtint(mi, mbasr)
 			    hpaddr->hper1, HPER1_BITS,
 			    hpaddr->hper2, HPER2_BITS);
 			bp->b_flags |= B_ERROR;
+#ifdef notdef
+		} else if (hpaddr->hper2&HP_SSE) {
+			hpecc(mi, 1);
+			return (MBD_RESTARTED);
+#endif
 		} else if ((hpaddr->hper1&(HP_DCK|HP_ECH)) == HP_DCK) {
-			if (hpecc(mi))
+			if (hpecc(mi, 0))
 				return (MBD_RESTARTED);
 			/* else done */
 		} else
@@ -307,8 +312,9 @@ hpwrite(dev)
 		physio(hpstrategy, &rhpbuf[unit], dev, B_WRITE, minphys);
 }
 
-hpecc(mi)
+hpecc(mi, rm80sse)
 	register struct mba_info *mi;
+	int rm80sse;
 {
 	register struct mba_regs *mbp = mi->mi_mba;
 	register struct hpdevice *rp = (struct hpdevice *)mi->mi_drv;
@@ -326,6 +332,13 @@ hpecc(mi)
 		bcr |= 0xffff0000;		/* sxt */
 	npf = btop(bcr + bp->b_bcount) - 1;
 	reg = npf;
+#ifdef notdef
+	if (rm80sse) {
+		rp->hpof |= HP_SSEI;
+		reg--;		/* compensate in advance for reg-- below */
+		goto sse;
+	}
+#endif
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	printf("SOFT ECC hp%d%c bn%d\n", dkunit(bp),
 	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
@@ -345,9 +358,13 @@ hpecc(mi)
 	if (bcr == 0)
 		return (0);
 #ifdef notdef
+sse:
+	if (rpof&HP_SSEI)
+		rp->hpda = rp->hpda + 1;
 	rp->hper1 = 0;
 	rp->hpcs1 = HP_RCOM|HP_GO;
 #else
+sse:
 	rp->hpcs1 = HP_DCLR|HP_GO;
 	bn = dkblock(bp);
 	st = &hpst[mi->mi_type];
@@ -357,6 +374,10 @@ hpecc(mi)
 	sn %= st->nsect;
 	cn += tn/st->ntrak;
 	tn %= st->ntrak;
+#ifdef notdef
+	if (rp->hpof&SSEI)
+		sn++;
+#endif
 	rp->hpdc = cn;
 	rp->hpda = (tn<<8) + sn;
 	mbp->mba_sr = -1;

@@ -1,4 +1,4 @@
-/*	rk.c	4.17	%G%	*/
+/*	rk.c	4.18	%G%	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -7,7 +7,12 @@
  *
  * This driver mimics up.c; see it for an explanation of common code.
  *
- * THIS DRIVER DOESN'T DEAL WITH DRIVES SPINNING DOWN AND UP
+ * TODO:
+ *	Correct to handle spun-down drives
+ *	Check write lock handling
+ *	Add reading of bad sector information and disk layout from sector 1
+ *	Add bad sector forwarding code
+ *	Fix drive recognition
  */
 #define	DELAY(i)		{ register int j; j = i; while (--j > 0); }
 #include "../h/param.h"
@@ -451,8 +456,8 @@ rkecc(ui)
 	npf = btop((rk->rkwc * sizeof(short)) + bp->b_bcount) - 1;
 	reg = btop(um->um_ubinfo&0x3ffff) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	printf("%D ", bp->b_blkno+npf);
-	prdev("ECC", bp->b_dev);
+	printf("SOFT ECC rk%d%c bn%d\n", dkunit(bp),
+	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = rk->rkec2;
 	ubapurge(um);
 	i = rk->rkec1 - 1;		/* -1 makes 0 origin */
@@ -575,16 +580,12 @@ rkdump(dev)
 	struct rkst *st;
 
 	unit = minor(dev) >> 3;
-	if (unit >= NRK) {
-		printf("bad unit\n");
-		return (-1);
-	}
+	if (unit >= NRK)
+		return (ENXIO);
 #define	phys(cast, addr) ((cast)((int)addr & 0x7fffffff))
 	ui = phys(struct uba_dinfo *, rkdinfo[unit]);
-	if (ui->ui_alive == 0) {
-		printf("dna\n");
-		return(-1);
-	}
+	if (ui->ui_alive == 0)
+		return (ENXIO);
 	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
 #if VAX780
 	if (cpu == VAX_780)
@@ -603,10 +604,8 @@ rkdump(dev)
 	}
 	st = &rkst[ui->ui_type];
 	sizes = phys(struct size *, st->sizes);
-	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks) {
-		printf("oor\n");
-		return (-1);
-	}
+	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks)
+		return (EINVAL);
 	while (num > 0) {
 		register struct pte *io;
 		register int i;
@@ -630,13 +629,8 @@ rkdump(dev)
 		*--rp = -blk*NBPG / sizeof (short);
 		*--rp = RK_CDT|RK_GO|RK_WRITE;
 		rkwait(rkaddr);
-		if (rkaddr->rkcs1 & RK_CERR) {
-	printf("rk dump dsk err: (%d,%d,%d) cs1=%x, ds=%x, er1=%x\n",
-			    cn, tn, sn,
-			    rkaddr->rkcs1&0xffff, rkaddr->rkds&0xffff,
-			    rkaddr->rker&0xffff);
-			return (-1);
-		}
+		if (rkaddr->rkcs1 & RK_CERR)
+			return (EIO);
 		start += blk*NBPG;
 		num -= blk;
 	}
