@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_glue.c	7.10 (Berkeley) %G%
+ *	@(#)vm_glue.c	7.11 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -227,7 +227,7 @@ vm_init_limits(p)
         p->p_rlimit[RLIMIT_DATA].rlim_cur = DFLDSIZ;
         p->p_rlimit[RLIMIT_DATA].rlim_max = MAXDSIZ;
 	p->p_rlimit[RLIMIT_RSS].rlim_cur = p->p_rlimit[RLIMIT_RSS].rlim_max =
-		ptoa(vm_stat.free_count);
+		ptoa(cnt.v_free_count);
 }
 
 #include "../vm/vm_pageout.h"
@@ -293,12 +293,12 @@ noswap:
 	 */
 	size = round_page(ctob(UPAGES));
 	addr = (vm_offset_t) p->p_addr;
-	if (vm_stat.free_count > atop(size)) {
+	if (cnt.v_free_count > atop(size)) {
 #ifdef DEBUG
 		if (swapdebug & SDB_SWAPIN)
 			printf("swapin: pid %d(%s)@%x, pri %d free %d\n",
 			       p->p_pid, p->p_comm, p->p_addr,
-			       ppri, vm_stat.free_count);
+			       ppri, cnt.v_free_count);
 #endif
 		vm_map_pageable(kernel_map, addr, addr+size, FALSE);
 		(void) splclock();
@@ -316,14 +316,14 @@ noswap:
 #ifdef DEBUG
 	if (swapdebug & SDB_FOLLOW)
 		printf("sched: no room for pid %d(%s), free %d\n",
-		       p->p_pid, p->p_comm, vm_stat.free_count);
+		       p->p_pid, p->p_comm, cnt.v_free_count);
 #endif
 	(void) splhigh();
 	VM_WAIT;
 	(void) spl0();
 #ifdef DEBUG
 	if (swapdebug & SDB_FOLLOW)
-		printf("sched: room again, free %d\n", vm_stat.free_count);
+		printf("sched: room again, free %d\n", cnt.v_free_count);
 #endif
 	goto loop;
 }
@@ -383,7 +383,7 @@ swapout_threads()
 	 * it (UPAGES pages).
 	 */
 	if (didswap == 0 &&
-	    vm_stat.free_count <= atop(round_page(ctob(UPAGES)))) {
+	    cnt.v_free_count <= atop(round_page(ctob(UPAGES)))) {
 		if ((p = outp) == 0)
 			p = outp2;
 #ifdef DEBUG
@@ -405,7 +405,7 @@ swapout(p)
 	if (swapdebug & SDB_SWAPOUT)
 		printf("swapout: pid %d(%s)@%x, stat %x pri %d free %d\n",
 		       p->p_pid, p->p_comm, p->p_addr, p->p_stat,
-		       p->p_slptime, vm_stat.free_count);
+		       p->p_slptime, cnt.v_free_count);
 #endif
 	size = round_page(ctob(UPAGES));
 	addr = (vm_offset_t) p->p_addr;
