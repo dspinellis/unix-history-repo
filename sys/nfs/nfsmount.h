@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfsmount.h	7.7 (Berkeley) 4/16/91
- *	$Id$
+ *	$Id: nfsmount.h,v 1.2 1993/09/09 22:06:23 rgrimes Exp $
  */
 
 #ifndef __h_nfsmount
@@ -118,6 +118,6 @@ int	nfs_fhtovp __P((
 int	nfs_vptofh __P((
 		struct vnode *vp,
 		struct fid *fhp));
-int	nfs_init __P(());
+void	nfs_init __P(());
 
 #endif /* __h_nfsmount */

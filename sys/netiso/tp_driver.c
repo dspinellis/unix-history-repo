@@ -1,6 +1,6 @@
 /*
  *	from: unknown
- *	$Id$
+ *	$Id: tp_driver.c,v 1.3 1993/10/16 21:05:37 rgrimes Exp $
  */
 
 #define _XEBEC_PG static
@@ -1044,6 +1044,8 @@ static int inx[26][9] = { {0,0,0,0,0,0,0,0,0,},
  {0x0,0x49,-1,0x45,-1,0x44,0x48,-1,0x0, },
  {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,-1, },
 };
+
+int
 tp_driver(p, e)
 register tp_PCB_ *p;
 register struct tp_event *e;

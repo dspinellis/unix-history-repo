@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)raw_usrreq.c	7.9 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: raw_usrreq.c,v 1.3 1993/10/16 17:43:38 rgrimes Exp $
  */
 
 #include "param.h"
@@ -53,6 +53,7 @@
 /*
  * Initialize raw connection block q.
  */
+void
 raw_init()
 {
 
@@ -69,6 +70,7 @@ raw_init()
 /*
  * Raw protocol interface.
  */
+int
 raw_input(m0, proto, src, dst)
 	struct mbuf *m0;
 	register struct sockproto *proto;
@@ -129,6 +131,7 @@ raw_input(m0, proto, src, dst)
 }
 
 /*ARGSUSED*/
+void
 raw_ctlinput(cmd, arg)
 	int cmd;
 	struct sockaddr *arg;
@@ -140,6 +143,7 @@ raw_ctlinput(cmd, arg)
 }
 
 /*ARGSUSED*/
+int
 raw_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;
@@ -307,4 +311,3 @@ release:
 	return (error);
 }
 
-rawintr() {} /* XXX - referenced by locore.  will soon go away */

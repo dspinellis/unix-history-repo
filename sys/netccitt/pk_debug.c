@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pk_debug.c	7.7 (Berkeley) 5/9/91
- *	$Id$
+ *	$Id: pk_debug.c,v 1.2 1993/10/16 19:46:48 rgrimes Exp $
  */
 
 #include "param.h"
@@ -67,10 +67,11 @@ char   *pk_name[] = {
 	"Invalid"
 };
 
+void
 pk_trace (xcp, m, dir)
-struct x25config *xcp;
-register struct mbuf *m;
-char *dir;
+	struct x25config *xcp;
+	register struct mbuf *m;
+	char *dir;
 {
 	register char *s;
 	struct x25_packet *xp = mtod(m, struct x25_packet *);
@@ -91,9 +92,10 @@ char *dir;
 	printf ("\n");
 }
 
+void
 mbuf_cache(c, m)
-register struct mbuf_cache *c;
-struct mbuf *m;
+	register struct mbuf_cache *c;
+	struct mbuf *m;
 {
 	register struct mbuf **mp;
 

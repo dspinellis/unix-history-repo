@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_object.h,v 1.2 1993/10/16 16:20:43 rgrimes Exp $
+ *	$Id: vm_object.h,v 1.3 1993/11/07 17:54:20 wollman Exp $
  */
 
 /*
@@ -169,5 +169,7 @@ void		vm_object_print();
 #define	vm_object_sleep(event, object, interruptible) \
 					thread_sleep((event), &(object)->Lock, (interruptible))
 #endif /* VM_OBJECT_DEBUG */
+
+extern void vm_object_page_clean(vm_object_t, vm_offset_t, vm_offset_t);
 
 #endif /* _VM_OBJECT_ */

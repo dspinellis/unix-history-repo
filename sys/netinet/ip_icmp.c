@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ip_icmp.c	7.15 (Berkeley) 4/20/91
- *	$Id: ip_icmp.c,v 1.3 1993/11/07 17:47:56 wollman Exp $
+ *	$Id: ip_icmp.c,v 1.4 1993/11/18 00:08:18 wollman Exp $
  */
 
 #include "param.h"
@@ -93,7 +93,7 @@ icmp_error(n, type, code, dest, mtu)
 	register struct ip *oip = mtod(n, struct ip *), *nip;
 	register unsigned oiplen = oip->ip_hl << 2;
 	register struct icmp *icp;
-	register struct mbuf *m;
+	register struct mbuf *m = 0;
 	unsigned icmplen;
 	u_long oaddr;
 

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)inode.h	7.17 (Berkeley) 5/8/91
- *	$Id: inode.h,v 1.3 1993/10/16 18:17:40 rgrimes Exp $
+ *	$Id: inode.h,v 1.4 1993/11/07 17:53:38 wollman Exp $
  */
 
 #ifndef _UFS_INODE_H_
@@ -230,9 +230,17 @@ int ufs_unlock __P((struct vnode *vp));
 int ufs_bmap __P((struct vnode *vp, daddr_t bn, struct vnode **vpp,
 	daddr_t *bnp));
 int ufs_strategy __P((struct buf *bp));
-int ufs_print __P((struct vnode *vp));
+void ufs_print __P((struct vnode *vp));
 int ufs_islocked __P((struct vnode *vp));
 int ufs_advlock __P((struct vnode *vp, caddr_t id, int op, struct flock *fl,
 	int flags));
+
+extern void blkfree(struct inode *, daddr_t, off_t);
+extern void ifree(struct inode *, ino_t, int);
+extern void iput(struct inode *);
+extern void ilock(struct inode *);
+extern void iunlock(struct inode *);
+extern void dirbad(struct inode *, off_t, char *);
+
 #endif /* KERNEL */
 #endif /* _UFS_INODE_H_ */

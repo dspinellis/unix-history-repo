@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *	from: @(#)swap_pager.c	7.4 (Berkeley) 5/7/91
- *	$Id: swap_pager.c,v 1.3 1993/11/07 17:54:05 wollman Exp $
+ *	$Id: swap_pager.c,v 1.4 1993/11/07 21:48:34 wollman Exp $
  */
 
 /*
@@ -125,6 +125,8 @@ struct swtab {
 	u_long	  st_usecnt;	/* total used of this size */
 #endif
 } swtab[NSWSIZES+1];
+
+static int swap_pager_finish(swp_clean_t);
 
 #ifdef DEBUG
 int		swap_pager_pendingio;	/* max pending async "clean" ops */
@@ -377,6 +379,7 @@ swap_pager_dealloc(pager)
 	free((caddr_t)pager, M_VMPAGER);
 }
 
+int
 swap_pager_getpage(pager, m, sync)
 	vm_pager_t pager;
 	vm_page_t m;
@@ -389,6 +392,7 @@ swap_pager_getpage(pager, m, sync)
 	return(swap_pager_io((sw_pager_t)pager->pg_data, m, B_READ));
 }
 
+int
 swap_pager_putpage(pager, m, sync)
 	vm_pager_t pager;
 	vm_page_t m;
@@ -402,7 +406,7 @@ swap_pager_putpage(pager, m, sync)
 #endif
 	if (pager == NULL) {
 		(void) swap_pager_clean(NULL, B_WRITE);
-		return;
+		return 0;
 	}
 	flags = B_WRITE;
 	if (!sync)
@@ -454,6 +458,7 @@ swap_pager_haspage(pager, offset)
  * BOGUS:  lower level IO routines expect a KVA so we have to map our
  * provided physical page into the KVA to keep them happy.
  */
+int
 swap_pager_io(swp, m, flags)
 	register sw_pager_t swp;
 	vm_page_t m;
@@ -793,6 +798,7 @@ swap_pager_clean(m, rw)
 	return(tspc ? TRUE : FALSE);
 }
 
+int
 swap_pager_finish(spc)
 	register swp_clean_t spc;
 {
@@ -849,6 +855,7 @@ swap_pager_finish(spc)
 	return(1);
 }
 
+void
 swap_pager_iodone(bp)
 	register struct buf *bp;
 {

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)buf.h	7.11 (Berkeley) 5/9/90
- *	$Id: buf.h,v 1.3 1993/11/07 17:52:21 wollman Exp $
+ *	$Id: buf.h,v 1.4 1993/11/18 05:03:22 rgrimes Exp $
  */
 
 #ifndef _SYS_BUF_H_
@@ -67,6 +67,12 @@ struct bufhd
 	long	b_flags;		/* see defines below */
 	struct	buf *b_forw, *b_back;	/* fwd/bkwd pointer in chain */
 };
+
+#ifdef __STDC__
+struct buf;
+#endif
+typedef void b_iodone_t __P((struct buf *));
+
 struct buf
 {
 	long	b_flags;		/* too much goes here to describe */
@@ -94,7 +100,7 @@ struct buf
 	long	b_resid;		/* words not transferred after error */
 #define	b_errcnt b_resid		/* while i/o in progress: # retries */
 	struct  proc *b_proc;		/* proc doing physical or swap I/O */
-	int	(*b_iodone)();		/* function called by iodone */
+	b_iodone_t *b_iodone;		/* function called by iodone */
 	struct	vnode *b_vp;		/* vnode for dev */
 	int	b_pfcent;		/* center page when swapping cluster */
 	struct	ucred *b_rcred;		/* ref to read credentials */
@@ -136,7 +142,7 @@ extern struct	buf bfreelist[BQUEUES];	/* heads of available lists */
 extern struct	buf bswlist;		/* head of free swap header list */
 extern struct	buf *bclnlist;		/* head of cleaned page list */
 
-void bufinit();
+void bufinit(void);
 int bread(struct vnode *, daddr_t, int, struct ucred *, struct buf **);
 int breada(struct vnode *, daddr_t, int, daddr_t, int, struct ucred *,
 	struct buf **);
@@ -148,10 +154,16 @@ struct buf *incore(struct vnode *, daddr_t);
 struct buf *getblk(struct vnode *, daddr_t, int);
 struct buf *geteblk(int);
 int biowait(struct buf *);
-int biodone(struct buf *);
+void biodone(struct buf *);
 void allocbuf(struct buf *, int);
 
-#endif
+extern void vwakeup(struct buf *);
+extern void bgetvp(struct vnode *, struct buf *);
+extern void brelvp(struct buf *);
+extern void reassignbuf(struct buf *, struct vnode *);
+extern void bufstats(void);
+
+#endif /* KERNEL */
 
 /*
  * These flags are kept in b_flags.

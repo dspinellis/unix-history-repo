@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_output.c	7.22 (Berkeley) 8/31/90
- *	$Id$
+ *	$Id: tcp_output.c,v 1.2 1993/10/16 18:26:29 rgrimes Exp $
  */
 
 #include "param.h"
@@ -59,10 +59,6 @@
 #include "tcpip.h"
 #include "tcp_debug.h"
 
-#ifdef notyet
-extern struct mbuf *m_copypack();
-#endif
-
 /*
  * Initial options.
  */
@@ -71,6 +67,7 @@ u_char	tcp_initopt[4] = { TCPOPT_MAXSEG, 4, 0x0, 0x0, };
 /*
  * Tcp output routine: figure out what should be sent and send it.
  */
+int
 tcp_output(tp)
 	register struct tcpcb *tp;
 {
@@ -79,7 +76,7 @@ tcp_output(tp)
 	int off, flags, error;
 	register struct mbuf *m;
 	register struct tcpiphdr *ti;
-	u_char *opt;
+	u_char *opt = 0;
 	unsigned optlen, hdrlen;
 	int idle, sendalot;
 
@@ -460,7 +457,7 @@ send:
 	if (error) {
 out:
 		if (error == ENOBUFS) {
-			tcp_quench(tp->t_inpcb);
+			tcp_quench(tp->t_inpcb, 0);
 			return (0);
 		}
 		if ((error == EHOSTUNREACH || error == ENETDOWN)
@@ -486,6 +483,7 @@ out:
 	return (0);
 }
 
+void
 tcp_setpersist(tp)
 	register struct tcpcb *tp;
 {

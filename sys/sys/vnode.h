@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode.h	7.39 (Berkeley) 6/27/91
- *	$Id: vnode.h,v 1.3 1993/10/16 17:18:27 rgrimes Exp $
+ *	$Id: vnode.h,v 1.4 1993/11/07 17:53:23 wollman Exp $
  */
 
 #ifndef _SYS_VNODE_H_
@@ -209,7 +209,7 @@ struct vnodeops {
 	int	(*vop_bmap)	__P((struct vnode *vp, daddr_t bn,
 				    struct vnode **vpp, daddr_t *bnp));
 	int	(*vop_strategy)	__P((struct buf *bp));
-	int	(*vop_print)	__P((struct vnode *vp));
+	void	(*vop_print)	__P((struct vnode *vp));
 	int	(*vop_islocked)	__P((struct vnode *vp));
 	int	(*vop_advlock)	__P((struct vnode *vp, caddr_t id, int op,
 				    struct flock *fl, int flags));
@@ -306,6 +306,16 @@ void 	vput __P((struct vnode *vp));	/* unlock and release vnode */
 void 	vrele __P((struct vnode *vp));	/* release vnode */
 void 	vgone __P((struct vnode *vp));	/* completely recycle vnode */
 void 	vgoneall __P((struct vnode *vp));/* recycle vnode and all its aliases */
+extern void vflushbuf(struct vnode *, int);
+extern int vinvalbuf(struct vnode *, int);
+extern int bdevvp(int /*dev_t*/ dev, struct vnode **);
+extern struct vnode *checkalias(struct vnode *, int /*dev_t*/, struct mount *);
+extern void vhold(struct vnode *);
+extern void holdrele(struct vnode *);
+extern void vclean(struct vnode *, int);
+extern int vfinddev(int /*dev_t*/, enum vtype, struct vnode **);
+extern void vprint(const char *, struct vnode *);
+extern int kinfo_vnode(int, char *, int *, int, int *);
 
 /*
  * Flags to various vnode functions.

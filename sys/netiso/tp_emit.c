@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_emit.c	7.9 (Berkeley) 5/9/91
- *	$Id$
+ *	$Id: tp_emit.c,v 1.3 1993/10/16 21:05:39 rgrimes Exp $
  */
 
 /***********************************************************
@@ -968,4 +968,5 @@ tp_error_emit(error, sref, faddr, laddr, erdata, erlen, tpcb, cons_channel,
 #endif notdef
 		}
 	}
+	return 0;
 }

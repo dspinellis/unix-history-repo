@@ -15,7 +15,7 @@
  *
  *  October 1992
  *
- *	$Id$
+ *	$Id: pcfs_vfsops.c,v 1.3 1993/10/16 19:29:37 rgrimes Exp $
  */
 
 #include "param.h"
@@ -57,7 +57,7 @@ pcfs_mount(mp, path, data, ndp, p)
 {
 	struct vnode *devvp;	/* vnode for blk device to mount	*/
 	struct pcfs_args args;	/* will hold data from mount request	*/
-	struct pcfsmount *pmp;	/* pcfs specific mount control block	*/
+	struct pcfsmount *pmp = 0; /* pcfs specific mount control block	*/
 	int error;
 	u_int size;
 
@@ -488,10 +488,7 @@ pcfs_quotactl(mp, cmds, uid, arg, p)
 	caddr_t arg;
 	struct proc *p;
 {
-#if defined(QUOTA)
-#else
 	return EOPNOTSUPP;
-#endif /* defined(QUOTA) */
 }
 
 int

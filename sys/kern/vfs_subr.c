@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_subr.c	7.60 (Berkeley) 6/21/91
- *	$Id: vfs_subr.c,v 1.5 1993/11/07 17:46:27 wollman Exp $
+ *	$Id: vfs_subr.c,v 1.6 1993/11/07 21:44:50 wollman Exp $
  */
 
 /*
@@ -39,6 +39,7 @@
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "mount.h"
 #include "time.h"
@@ -49,6 +50,8 @@
 #include "buf.h"
 #include "errno.h"
 #include "malloc.h"
+
+static void insmntque(struct vnode *, struct mount *);
 
 struct vnode *speclisth[SPECHSZ]; /* device special file vnode hash table */
 
@@ -73,6 +76,7 @@ vfs_remove(mp)
  * Lock a filesystem.
  * Used to prevent access to it while mounting and unmounting.
  */
+int
 vfs_lock(mp)
 	register struct mount *mp;
 {
@@ -107,6 +111,7 @@ vfs_unlock(mp)
  * Mark a mount point as busy.
  * Used to synchronize access and to delay unmounting.
  */
+int
 vfs_busy(mp)
 	register struct mount *mp;
 {
@@ -125,6 +130,7 @@ vfs_busy(mp)
  * Free a busy filesystem.
  * Panic if filesystem is not busy.
  */
+void
 vfs_unbusy(mp)
 	register struct mount *mp;
 {
@@ -181,13 +187,13 @@ void vattr_null(vap)
  */
 struct vnode *vfreeh, **vfreet;
 extern struct vnodeops dead_vnodeops, spec_vnodeops;
-extern void vclean();
 long numvnodes;
 struct vattr va_null;
 
 /*
  * Initialize the vnode structures and initialize each file system type.
  */
+void
 vfsinit()
 {
 	struct vfsops **vfsp;
@@ -210,6 +216,7 @@ vfsinit()
 /*
  * Return the next vnode from the free list.
  */
+int
 getnewvnode(tag, mp, vops, vpp)
 	enum vtagtype tag;
 	struct mount *mp;
@@ -257,6 +264,7 @@ getnewvnode(tag, mp, vops, vpp)
 /*
  * Move a vnode from one mount queue to another.
  */
+static void
 insmntque(vp, mp)
 	register struct vnode *vp;
 	register struct mount *mp;
@@ -291,6 +299,7 @@ insmntque(vp, mp)
  * Make sure all write-behind blocks associated
  * with mount point are flushed out (from sync).
  */
+void
 mntflushbuf(mountp, flags)
 	struct mount *mountp;
 	int flags;
@@ -315,6 +324,7 @@ loop:
 /*
  * Flush all dirty buffers associated with a vnode.
  */
+void
 vflushbuf(vp, flags)
 	register struct vnode *vp;
 	int flags;
@@ -364,6 +374,7 @@ loop:
 /*
  * Update outstanding I/O count and do wakeup if requested.
  */
+void
 vwakeup(bp)
 	register struct buf *bp;
 {
@@ -390,6 +401,7 @@ vwakeup(bp)
  * filesystem there will be no dirty buffers when we are done. Binval
  * returns the count of dirty buffers when it is finished.
  */
+int
 mntinvalbuf(mountp)
 	struct mount *mountp;
 {
@@ -414,6 +426,7 @@ loop:
  * Flush out and invalidate all buffers associated with a vnode.
  * Called with the underlying object locked.
  */
+int
 vinvalbuf(vp, save)
 	register struct vnode *vp;
 	int save;
@@ -461,6 +474,7 @@ vinvalbuf(vp, save)
 /*
  * Associate a buffer with a vnode.
  */
+void
 bgetvp(vp, bp)
 	register struct vnode *vp;
 	register struct buf *bp;
@@ -489,6 +503,7 @@ bgetvp(vp, bp)
 /*
  * Disassociate a buffer from a vnode.
  */
+void
 brelvp(bp)
 	register struct buf *bp;
 {
@@ -517,6 +532,7 @@ brelvp(bp)
  * Used to assign file specific control information
  * (indirect blocks) to the vnode to which they belong.
  */
+void
 reassignbuf(bp, newvp)
 	register struct buf *bp;
 	register struct vnode *newvp;
@@ -553,6 +569,7 @@ reassignbuf(bp, newvp)
  * Used for root filesystem, argdev, and swap areas.
  * Also used for memory file system special devices.
  */
+int
 bdevvp(dev, vpp)
 	dev_t dev;
 	struct vnode **vpp;
@@ -646,6 +663,7 @@ loop:
  * indicate that the vnode is no longer usable (possibly having
  * been changed to a new file system type).
  */
+int
 vget(vp)
 	register struct vnode *vp;
 {
@@ -733,6 +751,7 @@ void vrele(vp)
 /*
  * Page or buffer structure gets a reference.
  */
+void
 vhold(vp)
 	register struct vnode *vp;
 {
@@ -743,6 +762,7 @@ vhold(vp)
 /*
  * Page or buffer structure frees a reference.
  */
+void
 holdrele(vp)
 	register struct vnode *vp;
 {
@@ -762,6 +782,7 @@ holdrele(vp)
  */
 int busyprt = 0;	/* patch to print out busy vnodes */
 
+int
 vflush(mp, skipvp, flags)
 	struct mount *mp;
 	struct vnode *skipvp;
@@ -935,11 +956,12 @@ void vgoneall(vp)
  * Eliminate all activity associated with a vnode
  * in preparation for reuse.
  */
-void vgone(vp)
+void
+vgone(vp)
 	register struct vnode *vp;
 {
 	register struct vnode *vq;
-	struct vnode *vx;
+	struct vnode *vx = 0;
 	long count;
 
 	/*
@@ -1019,6 +1041,7 @@ void vgone(vp)
 /*
  * Lookup a vnode by device number.
  */
+int
 vfinddev(dev, type, vpp)
 	dev_t dev;
 	enum vtype type;
@@ -1038,6 +1061,7 @@ vfinddev(dev, type, vpp)
 /*
  * Calculate the total number of references to a special device.
  */
+int
 vcount(vp)
 	register struct vnode *vp;
 {
@@ -1068,8 +1092,9 @@ loop:
 static char *typename[] =
    { "VNON", "VREG", "VDIR", "VBLK", "VCHR", "VLNK", "VSOCK", "VFIFO", "VBAD" };
 
+void
 vprint(label, vp)
-	char *label;
+	const char *label;
 	register struct vnode *vp;
 {
 	char buf[64];
@@ -1129,6 +1154,7 @@ int kinfo_vgetfailed;
  * Copyout address of vnode followed by vnode.
  */
 /* ARGSUSED */
+int
 kinfo_vnode(op, where, acopysize, arg, aneeded)
 	int op;
 	char *where;

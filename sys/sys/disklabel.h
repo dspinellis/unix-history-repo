@@ -31,11 +31,17 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)disklabel.h	7.19 (Berkeley) 5/7/91
- *	$Id: disklabel.h,v 1.2 1993/10/16 17:16:33 rgrimes Exp $
+ *	$Id: disklabel.h,v 1.3 1993/11/07 17:52:27 wollman Exp $
  */
 
 #ifndef _SYS_DISKLABEL_H_
 #define _SYS_DISKLABEL_H_ 1
+
+#ifndef KERNEL
+#include <sys/conf.h>
+#else
+#include "conf.h"
+#endif
 
 /*
  * Disk description table, see disktab(5)
@@ -311,7 +317,9 @@ struct dos_partition {
 	unsigned char	dp_ecyl;	/* end cylinder */
 	unsigned long	dp_start;	/* absolute starting sector number */
 	unsigned long	dp_size;	/* partition size in sectors */
-} dos_partitions[NDOSPART];
+};
+
+extern struct dos_partition dos_partitions[NDOSPART];
 
 #define	DPSECT(s) ((s) & 0x3f)		/* isolate relevant bits of sector */
 #define	DPCYL(c, s) ((c) + (((s) & 0xc0)<<2)) /* and those that are cylinder */
@@ -336,21 +344,18 @@ struct dos_partition {
 #define DIOCSBAD	_IOW('d', 110, struct dkbad)	/* set kernel dkbad */
 
 #if defined(KERNEL)
-
-
 void diskerr(struct buf *, char *, char *, int, int, struct disklabel *);
-
 int dkcksum(struct disklabel *);
 
 int setdisklabel(struct disklabel *, struct disklabel *, u_long,
 	struct dos_partition *);
 
-char *readdisklabel(int, int (*)(), struct disklabel *,
+char *readdisklabel(int, d_strategy_t *, struct disklabel *,
 	struct dos_partition *, struct dkbad *, struct buf **);
 
 void disksort(struct buf *, struct buf *);
 
-int writedisklabel(int, int (*)(), struct disklabel *,
+int writedisklabel(int, d_strategy_t *, struct disklabel *,
 		struct dos_partition *);
 
 int bounds_check_with_label(struct buf *, struct disklabel *, int);

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns_error.c	7.8 (Berkeley) 6/28/90
- *	$Id: ns_error.c,v 1.3 1993/10/16 19:55:12 rgrimes Exp $
+ *	$Id: ns_error.c,v 1.4 1993/11/07 17:50:25 wollman Exp $
  */
 
 #include "param.h"
@@ -64,7 +64,9 @@ struct ns_errstat ns_errstat;
 int	ns_errprintfs = 0;
 #endif
 
+int
 ns_err_x(c)
+	int c;
 {
 	register u_short *w, *lim, *base = ns_errstat.ns_es_codes;
 	u_short x = c;
@@ -88,10 +90,11 @@ ns_err_x(c)
  * Generate an error packet of type error
  * in response to bad packet.
  */
-
+void
 ns_error(om, type, param)
 	struct mbuf *om;
 	int type;
+	int param;
 {
 	register struct ns_epidp *ep;
 	struct mbuf *m;
@@ -167,8 +170,9 @@ freeit:
 	m_freem(om);
 }
 
+void
 ns_printhost(p)
-register struct ns_addr *p;
+	register struct ns_addr *p;
 {
 
 	printf("<net:%x%x,host:%x%x%x,port:%x>",
@@ -184,6 +188,7 @@ register struct ns_addr *p;
 /*
  * Process a received NS_ERR message.
  */
+void
 ns_err_input(m)
 	struct mbuf *m;
 {
@@ -297,8 +302,9 @@ nstime()
 }
 #endif
 
+int
 ns_echo(m)
-struct mbuf *m;
+	struct mbuf *m;
 {
 	register struct idp *idp = mtod(m, struct idp *);
 	register struct echo {

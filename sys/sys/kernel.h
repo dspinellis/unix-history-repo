@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kernel.h	7.4 (Berkeley) 2/15/91
- *	$Id: kernel.h,v 1.3 1993/10/24 06:23:11 paul Exp $
+ *	$Id: kernel.h,v 1.4 1993/11/07 17:52:39 wollman Exp $
  */
 
 #ifndef _SYS_KERNEL_H_
@@ -56,7 +56,6 @@ extern int hz;			/* clock frequency */
 extern int phz;			/* alternate clock's frequency */
 extern int tick;		/* usec per clock tick */
 extern int lbolt;		/* once a second sleep address */
-int realitexpire();		/* XXX why is this here? */
 
 extern fixpt_t	averunnable[3];
 #if defined(COMPAT_43) && (defined(vax) || defined(tahoe))

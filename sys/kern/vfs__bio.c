@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id: vfs__bio.c,v 1.8 1993/11/07 17:46:24 wollman Exp $
+ *	$Id: vfs__bio.c,v 1.9 1993/11/07 21:44:47 wollman Exp $
  */
 
 #include "param.h"
@@ -295,12 +295,12 @@ brelse(register struct buf *bp)
 	x=splbio();
 	if ((bfreelist + BQ_AGE)->b_flags & B_WANTED) {
 		(bfreelist + BQ_AGE) ->b_flags &= ~B_WANTED;
-		wakeup(bfreelist);
+		wakeup((caddr_t)bfreelist);
 	}
 	/* anyone need this very block? */
 	if (bp->b_flags & B_WANTED) {
 		bp->b_flags &= ~B_WANTED;
-		wakeup(bp);
+		wakeup((caddr_t)bp);
 	}
 
 	if (bp->b_flags & (B_INVAL|B_ERROR)) {
@@ -385,7 +385,7 @@ tryfree:
 	} else	{
 		/* wait for a free buffer of any kind */
 		(bfreelist + BQ_AGE)->b_flags |= B_WANTED;
-		tsleep(bfreelist, PRIBIO, "newbuf", 0);
+		tsleep((caddr_t)bfreelist, PRIBIO, "newbuf", 0);
 		splx(x);
 		return (0);
 	}
@@ -465,7 +465,7 @@ getblk(register struct vnode *vp, daddr_t blkno, int size)
 			x = splbio();
 			if (bp->b_flags & B_BUSY) {
 				bp->b_flags |= B_WANTED;
-				tsleep (bp, PRIBIO, "getblk", 0);
+				tsleep ((caddr_t)bp, PRIBIO, "getblk", 0);
 				splx(x);
 				continue;
 			}
@@ -593,7 +593,7 @@ biowait(register struct buf *bp)
  * others biowait()'ing for it will notice when they are
  * woken up from sleep().
  */
-int
+void
 biodone(register struct buf *bp)
 {
 	int x;
@@ -609,6 +609,37 @@ biodone(register struct buf *bp)
 		brelse(bp);
 	bp->b_flags &=  ~B_ASYNC;
 	bp->b_flags |= B_DONE;
-	wakeup(bp);
+	wakeup((caddr_t)bp);
 	splx(x);
+}
+
+/*
+ * Print out statistics on the current allocation of the buffer pool.
+ * Can be enabled to print out on every ``sync'' by setting "syncprt"
+ * in ufs/ufs_vfsops.c.
+ */
+void
+bufstats()
+{
+	int s, i, j, count;
+	register struct buf *bp, *dp;
+	int counts[MAXBSIZE/CLBYTES+1];
+	static char *bname[BQUEUES] = { "LOCKED", "LRU", "AGE", "EMPTY" };
+
+	for (bp = bfreelist, i = 0; bp < &bfreelist[BQUEUES]; bp++, i++) {
+		count = 0;
+		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
+			counts[j] = 0;
+		s = splbio();
+		for (dp = bp->av_forw; dp != bp; dp = dp->av_forw) {
+			counts[dp->b_bufsize/CLBYTES]++;
+			count++;
+		}
+		splx(s);
+		printf("%s: total-%d", bname[i], count);
+		for (j = 0; j <= MAXBSIZE/CLBYTES; j++)
+			if (counts[j] != 0)
+				printf(", %d-%d", j * CLBYTES, counts[j]);
+		printf("\n");
+	}
 }

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if_sl.c	7.22 (Berkeley) 4/20/91
- *	$Id: if_sl.c,v 1.4 1993/10/16 17:43:20 rgrimes Exp $
+ *	$Id: if_sl.c,v 1.5 1993/11/16 02:47:24 wollman Exp $
  */
 
 /*
@@ -65,7 +65,7 @@
  * interrupts and network activity; thus, splimp must be >= spltty.
  */
 
-/* $Id: /a/cvs/386BSD/src/sys/net/if_sl.c,v 1.4 1993/10/16 17:43:20 rgrimes Exp $ */
+/* $Id: if_sl.c,v 1.5 1993/11/16 02:47:24 wollman Exp $ */
 /* from if_sl.c,v 1.11 84/10/04 12:54:47 rick Exp */
 
 #include "sl.h"
@@ -221,14 +221,12 @@ static int slinit(struct sl_softc *);
 int slopen(int /*dev_t*/, struct tty *);
 int slclose(struct tty *);
 int sltioctl(struct tty *, int, caddr_t, int);
-int sloutput(struct ifnet *, struct mbuf *, struct sockaddr *);
+int sloutput(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentry *);
 void slstart(struct tty *);
 static struct mbuf *sl_btom(struct sl_softc *, int);
 void slinput(int, struct tty *);
 static int slrtrequest(int, struct rtentry *, struct sockaddr *);
 int slioctl(struct ifnet *, int, caddr_t);
-
-int ttrstrt();			/* XXX */
 
 /*
  * Called from boot code to establish sl interfaces.
@@ -346,6 +344,7 @@ slclose(tp)
 		sc->sc_buf = 0;
 	}
 	splx(s);
+	return 0;
 }
 
 /*
@@ -390,10 +389,11 @@ sltioctl(tp, cmd, data, flag)
  * Queue a packet.  Start transmission if not active.
  */
 int
-sloutput(ifp, m, dst)
+sloutput(ifp, m, dst, rt)
 	struct ifnet *ifp;
 	register struct mbuf *m;
 	struct sockaddr *dst;
+	struct rtentry *rt;
 {
 	register struct sl_softc *sc = &sl_softc[ifp->if_unit];
 	register struct ip *ip;
@@ -466,7 +466,7 @@ slstart(tp)
 	struct mbuf *m2;
 #if NBPFILTER > 0
 	u_char bpfbuf[SLMTU + SLIP_HDRLEN];
-	register int len;
+	register int len = 0;
 #endif
 
 	for (;;) {

@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pk_var.h	7.11 (Berkeley) 5/29/91
- *	$Id: pk_var.h,v 1.2 1993/10/16 19:46:58 rgrimes Exp $
+ *	$Id: pk_var.h,v 1.3 1993/11/07 17:47:26 wollman Exp $
  */
 
 
@@ -54,7 +54,8 @@ struct pklcd {
 		struct	pklcd_q *q_forw;	/* debugging chain */
 		struct	pklcd_q *q_back;	/* debugging chain */
 	} lcd_q;
-	int	(*lcd_upper)();		/* switch to socket vs datagram vs ...*/
+	void	(*lcd_upper)(struct pklcd *, struct mbuf *);
+				/* switch to socket vs datagram vs ...*/
 	caddr_t	lcd_upnext;		/* reference for lcd_upper() */
 	int	(*lcd_send)();		/* if X.25 front end, direct connect */
 	caddr_t lcd_downnext;		/* reference for lcd_send() */
@@ -172,6 +173,27 @@ struct mbuf_cache {
 struct	pkcb *pkcbhead;		/* head of linked list of networks */
 struct	pklcd *pk_listenhead;
 struct	pklcd *pk_attach();
+
+struct sockaddr_in;
+struct sockaddr_x25;
+
+extern void x25_connect_callback(struct pklcd *, struct mbuf *);
+extern void x25_rtrequest(int, struct rtentry *, struct sockaddr *);
+extern void x25_rtinvert(int, struct sockaddr *, struct rtentry *);
+extern void x25_ddnip_to_ccitt(struct sockaddr_in *, struct rtentry *);
+extern void x25_rtattach(struct pklcd *, struct rtentry *);
+
+extern void pk_input(struct mbuf *);
+extern void pk_incoming_call(struct pkcb *, struct mbuf *);
+extern void pk_call_accepted(struct pklcd *, struct mbuf *);
+extern void pk_parse_facilities(octet *, struct sockaddr_x25 *);
+extern void pk_close(struct pklcd *);
+extern void pk_freelcd(struct pklcd *);
+extern void pk_callrequest(struct pklcd *, struct sockaddr_x25 *, struct x25config *);
+extern void pk_build_facilities(struct mbuf *, struct sockaddr_x25 *, int);
+extern void pk_clear(struct pklcd *, int, int);
+extern void pk_flush(struct pklcd *);
+extern void pk_message(int, struct x25config *, const char *, ...);
 
 extern char	*pk_name[], *pk_state[];
 int	pk_t20, pk_t21, pk_t22, pk_t23;

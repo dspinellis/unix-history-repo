@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)iso.c	7.14 (Berkeley) 6/27/91
- *	$Id: iso.c,v 1.3 1993/10/16 21:05:15 rgrimes Exp $
+ *	$Id: iso.c,v 1.4 1993/11/07 17:49:40 wollman Exp $
  */
 
 /***********************************************************
@@ -88,12 +88,15 @@ SOFTWARE.
 
 #ifdef ISO
 
+static void iso_ifscrub(struct ifnet *, struct iso_ifaddr *);
+
 struct iso_ifaddr *iso_ifaddr;
 struct ifqueue clnlintrq;
 
 int	iso_interfaces = 0;		/* number of external interfaces */
 extern	struct ifnet loif;	/* loopback interface */
-int ether_output(), llc_rtrequest();
+int ether_output();
+void llc_rtrequest();
 
 
 /*
@@ -109,6 +112,8 @@ int ether_output(), llc_rtrequest();
  * NOTES:			
  */
 struct radix_node_head *iso_rnhead;
+
+void
 iso_init()
 {
 	static iso_init_done;
@@ -130,6 +135,7 @@ iso_init()
  *
  * NOTES:			
  */
+int
 iso_addrmatch1(isoaa, isoab)
 register struct iso_addr *isoaa, *isoab;		/* addresses to check */
 {
@@ -193,6 +199,7 @@ register struct iso_addr *isoaa, *isoab;		/* addresses to check */
  *
  * NOTES:			
  */
+int
 iso_addrmatch(sisoa, sisob)
 struct sockaddr_iso	*sisoa, *sisob;		/* addresses to check */
 {
@@ -434,6 +441,7 @@ caddr_t			buf;		/* RESULT: network portion of address here */
  * Ifp is 0 if not an interface-specific ioctl.
  */
 /* ARGSUSED */
+int
 iso_control(so, cmd, data, ifp)
 	struct socket *so;
 	int cmd;
@@ -593,6 +601,7 @@ iso_control(so, cmd, data, ifp)
 /*
  * Delete any existing route for an interface.
  */
+static void
 iso_ifscrub(ifp, ia)
 	register struct ifnet *ifp;
 	register struct iso_ifaddr *ia;
@@ -616,10 +625,12 @@ iso_ifscrub(ifp, ia)
  * Initialize an interface's internet address
  * and routing table entry.
  */
+int
 iso_ifinit(ifp, ia, siso, scrub)
 	register struct ifnet *ifp;
 	register struct iso_ifaddr *ia;
 	struct sockaddr_iso *siso;
+	int scrub;
 {
 	struct sockaddr_iso oldaddr;
 	int s = splimp(), error, nsellength;
@@ -631,7 +642,8 @@ iso_ifinit(ifp, ia, siso, scrub)
 	 * if this is its first address,
 	 * and to validate the address if necessary.
 	 */
-	if (ifp->if_ioctl && (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, ia))) {
+	if (ifp->if_ioctl && (error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, 
+						       (caddr_t)ia))) {
 		splx(s);
 		ia->ia_addr = oldaddr;
 		return (error);
@@ -737,6 +749,7 @@ iso_ifwithidi(addr)
  * SIDE EFFECTS:	
  *
  */
+int
 iso_ck_addr(isoa)
 struct iso_addr	*isoa;	/* address to check */
 {
@@ -843,6 +856,7 @@ iso_localifa(siso)
  * NOTES:			This could embody some of the functions of
  *					rclnp_ctloutput and cons_ctloutput.
  */
+int
 iso_nlctloutput(cmd, optname, pcb, m)
 int			cmd;		/* command:set or get */
 int			optname;	/* option of interest */
@@ -911,6 +925,7 @@ struct mbuf	*m;			/* data for set, buffer for get */
  * RETURNS:			nada 
  *
  */
+void
 dump_isoaddr(s)
 	struct sockaddr_iso *s;
 {
@@ -933,4 +948,4 @@ dump_isoaddr(s)
 	}
 }
 
-#endif ARGO_DEBUG
+#endif /* ARGO_DEBUG */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_acct.c	7.18 (Berkeley) 5/11/91
- *	$Id: kern_acct.c,v 1.7 1993/11/09 17:04:24 ache Exp $
+ *	$Id: kern_acct.c,v 1.8 1993/11/12 21:19:58 nate Exp $
  */
 
 #include "param.h"
@@ -61,6 +61,8 @@ struct  timeval chk;            /* frequency to check space for accounting */
 struct  vnode *acctp = NULL;	/* file to which to do accounting */
 struct  vnode *savacctp = NULL;	/* file to which to do accounting when space */
 
+static void acctwatch(caddr_t, int);
+
 /*
  * Enable or disable process accounting.
  *
@@ -80,6 +82,7 @@ struct sysacct_args {
 };
 
 /* ARGSUSED */
+int
 sysacct(p, uap, retval)
 	struct proc *p;
 	struct sysacct_args *uap;
@@ -89,7 +92,7 @@ sysacct(p, uap, retval)
 	register struct nameidata *ndp;
 	struct nameidata nd;
 	struct vattr attr;
-	int rv, acctwatch();
+	int rv;
 
 	if (p->p_ucred->cr_uid != 0)
 		return(EPERM);		/* must be root */
@@ -148,7 +151,7 @@ sysacct(p, uap, retval)
 	acctp  = nd.ni_vp;
 	savacctp = NULL;
 	VOP_UNLOCK(acctp);
-	acctwatch(&chk);		/* look for full system */
+	acctwatch((caddr_t)&chk, 0); /* look for full system */
 	return(0);		/* end successfully */
 
 acct_fail:
@@ -161,9 +164,12 @@ acct_fail:
  * Periodically check the file system to see if accounting
  * should be turned on or off.
  */
-acctwatch(resettime)
-	struct timeval *resettime;
+static void
+acctwatch(arg1, arg2)
+	caddr_t arg1;
+	int arg2;
 {
+	struct timeval *resettime = (struct timeval *)arg1;
 	struct statfs sb;
 	int s;
 
@@ -196,6 +202,7 @@ acctwatch(resettime)
 
 /* Mark Tinguely (tinguely@plains.NoDak.edu) 8/10/93 */
 
+void
 acct(p)
 	register struct proc *p;
 {

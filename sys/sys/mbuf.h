@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mbuf.h	7.14 (Berkeley) 12/5/90
- *	$Id: mbuf.h,v 1.3 1993/11/07 17:52:48 wollman Exp $
+ *	$Id: mbuf.h,v 1.4 1993/11/17 20:24:25 wollman Exp $
  */
 
 #ifndef _SYS_MBUF_H_
@@ -346,6 +346,8 @@ struct mbstat {
 };
 
 #ifdef	KERNEL
+void m_copyback(struct mbuf *, int, int, caddr_t);
+
 extern	struct mbuf *mbutl;		/* virtual address of mclusters */
 extern	char *mclrefcnt;		/* cluster reference counts */
 extern struct	mbstat mbstat;

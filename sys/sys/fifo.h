@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)fifo.h	7.1 (Berkeley) 4/15/91
- *	$Id: fifo.h,v 1.2 1993/10/16 17:16:45 rgrimes Exp $
+ *	$Id: fifo.h,v 1.3 1993/11/07 17:52:34 wollman Exp $
  */
 
 #ifndef _SYS_FIFO_H_
@@ -171,7 +171,7 @@ int	fifo_bmap __P((
 		daddr_t *bnp));
 #define fifo_strategy ((int (*) __P(( \
 		struct buf *bp))) fifo_badop)
-int	fifo_print __P((
+void	fifo_print __P((
 		struct vnode *vp));
 #define fifo_islocked ((int (*) __P(( \
 		struct vnode *vp))) nullop)
@@ -181,5 +181,8 @@ int	fifo_advlock __P((
 		int op,
 		struct flock *fl,
 		int flags));
+
+void fifo_printinfo(struct vnode *);
+
 #endif /* FIFO */
 #endif /* _SYS_FIFO_H_ */

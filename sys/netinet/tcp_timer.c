@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_timer.c	7.18 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: tcp_timer.c,v 1.2 1993/10/16 18:26:33 rgrimes Exp $
  */
 
 #include "param.h"
@@ -64,6 +64,7 @@ int	tcp_maxidle;
 /*
  * Fast timeout routine for processing delayed acks
  */
+void
 tcp_fasttimo()
 {
 	register struct inpcb *inp;
@@ -88,6 +89,7 @@ tcp_fasttimo()
  * Updates the timers in all active tcb's and
  * causes finite state machine actions if timers expire.
  */
+void
 tcp_slowtimo()
 {
 	register struct inpcb *ip, *ipnxt;
@@ -135,6 +137,7 @@ tpgone:
 /*
  * Cancel all timers for TCP tp.
  */
+void
 tcp_canceltimers(tp)
 	struct tcpcb *tp;
 {

@@ -31,13 +31,14 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_subr.c	7.7 (Berkeley) 4/15/91
- *	$Id: kern_subr.c,v 1.2 1993/10/16 15:24:30 rgrimes Exp $
+ *	$Id: kern_subr.c,v 1.3 1993/11/18 05:02:34 rgrimes Exp $
  */
 
 #include "param.h"
 #include "systm.h"
 #include "proc.h"
 
+int
 uiomove(cp, n, uio)
 	register caddr_t cp;
 	register int n;
@@ -93,8 +94,11 @@ uiomove(cp, n, uio)
 	return (error);
 }
 
+int
 uioapply(func, arg1, arg2, uio)
 	int (*func)() ;
+	int arg1;
+	int arg2;
 	register struct uio *uio;
 {
 	register struct iovec *iov;
@@ -133,6 +137,7 @@ uioapply(func, arg1, arg2, uio)
 /*
  * Give next character to user as result of read.
  */
+int
 ureadc(c, uio)
 	register int c;
 	register struct uio *uio;
@@ -171,6 +176,7 @@ again:
 	return (0);
 }
 
+void
 strcat(src, append)
 	register char *src, *append;
 {
@@ -181,14 +187,18 @@ strcat(src, append)
 		;
 }
 
+char *
 strcpy(to, from)
-	register char *to, *from;
+	char *to;
+	const char *from;
 {
-
+	char *old = to;
 	for (; *to = *from; ++from, ++to)
 		;
+	return old;
 }
 
+void
 strncpy(to, from, cnt)
 	register char *to, *from;
 	register int cnt;
@@ -215,10 +225,11 @@ strcmp(s1, s2)
 	
 
 
-#ifndef lint	/* unused except by ct.c, other oddities XXX */
+#ifdef notdef	/* unused except by ct.c, other oddities XXX */
 /*
  * Get next character written in by user from uio.
  */
+int
 uwritec(uio)
 	struct uio *uio;
 {

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)spp_debug.c	7.7 (Berkeley) 6/28/90
- *	$Id: spp_debug.c,v 1.2 1993/10/16 19:54:35 rgrimes Exp $
+ *	$Id: spp_debug.c,v 1.3 1993/11/07 17:50:35 wollman Exp $
  */
 
 #include "param.h"
@@ -65,6 +65,7 @@ int	sppconsdebug = 0;
 /*
  * spp debug routines
  */
+void
 spp_trace(act, ostate, sp, si, req)
 	short act;
 	u_char ostate;

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_var.h	7.10 (Berkeley) 6/28/90
- *	$Id: tcp_var.h,v 1.2 1993/10/16 18:26:38 rgrimes Exp $
+ *	$Id: tcp_var.h,v 1.3 1993/11/07 17:48:11 wollman Exp $
  */
 
 #ifndef _NETINET_TCP_VAR_H_
@@ -219,5 +219,10 @@ extern struct	tcpstat tcpstat; /* tcp statistics */
 struct	tcpiphdr *tcp_template();
 struct	tcpcb *tcp_close(), *tcp_drop();
 struct	tcpcb *tcp_timers(), *tcp_disconnect(), *tcp_usrclosed();
+
+void tcp_quench(struct inpcb *, int);
+void tcp_setpersist(struct tcpcb *);
+
+
 #endif
 #endif /* _NETINET_TCP_VAR_H_ */

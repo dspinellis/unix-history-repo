@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_raw.c	7.8 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: clnp_raw.c,v 1.2 1993/10/16 21:04:53 rgrimes Exp $
  */
 
 /***********************************************************
@@ -97,6 +97,7 @@ struct sockproto	rclnp_proto	= { PF_ISO, 0 };
  * NOTES:			The protocol field of rclnp_proto is set to zero indicating
  *					no protocol.
  */
+void
 rclnp_input(m, src, dst, hdrlen)
 struct mbuf 		*m;		/* ptr to packet */
 struct sockaddr_iso	*src;	/* ptr to src address */
@@ -131,6 +132,7 @@ int					hdrlen; /* length (in bytes) of clnp header */
  *
  * NOTES:			
  */
+int
 rclnp_output(m0, so)
 struct mbuf		*m0;		/* packet to send */
 struct socket	*so;	/* socket to send from */
@@ -184,6 +186,7 @@ bad:
  *
  * NOTES:			
  */
+int
 rclnp_ctloutput(op, so, level, optname, m)
 int				op;				/* type of operation */
 struct socket	*so;			/* ptr to socket */
@@ -271,6 +274,7 @@ struct mbuf		**m;			/* ptr to ptr to option data */
 }
 
 /*ARGSUSED*/
+int
 clnp_usrreq(so, req, m, nam, control)
 	register struct socket *so;
 	int req;

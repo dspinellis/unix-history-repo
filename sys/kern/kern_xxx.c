@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_xxx.c	7.17 (Berkeley) 4/20/91
- *	$Id: kern_xxx.c,v 1.4 1993/10/16 15:24:35 rgrimes Exp $
+ *	$Id: kern_xxx.c,v 1.5 1993/10/24 06:19:56 paul Exp $
  */
 
 #include "param.h"
@@ -42,6 +42,7 @@
 #include "utsname.h"
 
 /* ARGSUSED */
+int
 gethostid(p, uap, retval)
 	struct proc *p;
 	void *uap;
@@ -57,6 +58,7 @@ struct sethostid_args {
 };
 
 /* ARGSUSED */
+int
 sethostid(p, uap, retval)
 	struct proc *p;
 	struct sethostid_args *uap;
@@ -76,6 +78,7 @@ struct gethostname_args {
 };
 
 /* ARGSUSED */
+int
 gethostname(p, uap, retval)
 	struct proc *p;
 	struct gethostname_args *uap;
@@ -93,6 +96,7 @@ struct sethostname_args {
 };
 
 /* ARGSUSED */
+int
 sethostname(p, uap, retval)
 	struct proc *p;
 	register struct sethostname_args *uap;
@@ -173,6 +177,7 @@ struct reboot_args {
 };
 
 /* ARGSUSED */
+int
 reboot(p, uap, retval)
 	struct proc *p;
 	struct reboot_args *uap;
@@ -187,6 +192,7 @@ reboot(p, uap, retval)
 }
 
 #ifdef COMPAT_43
+int
 oquota()
 {
 

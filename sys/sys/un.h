@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)un.h	7.7 (Berkeley) 6/28/90
- *	$Id: un.h,v 1.2 1993/10/16 17:18:16 rgrimes Exp $
+ *	$Id: un.h,v 1.3 1993/11/07 17:53:14 wollman Exp $
  */
 
 #ifndef _SYS_UN_H_
@@ -46,10 +46,7 @@ struct	sockaddr_un {
 	char	sun_path[104];		/* path name (gag) */
 };
 
-#ifdef KERNEL
-int	unp_discard();
-#else
-
+#ifndef KERNEL
 /* actual length of an initialized sockaddr_un */
 #define SUN_LEN(su) \
 	(sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))

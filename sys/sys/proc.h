@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)proc.h	7.28 (Berkeley) 5/30/91
- *	$Id: proc.h,v 1.2 1993/10/16 17:17:20 rgrimes Exp $
+ *	$Id: proc.h,v 1.3 1993/11/07 17:52:55 wollman Exp $
  */
 
 #ifndef _PROC_H_
@@ -138,8 +138,8 @@ struct	proc {
 	char	p_comm[MAXCOMLEN+1];
 
 /* end area that is copied on creation */
-#define	p_endcopy	p_wmesg
-	char	*p_wmesg;	/* reason for sleep */
+#define	p_endcopy p_wmesg
+	const char *p_wmesg;	/* reason for sleep */
 	int	p_thread;	/* id for this "thread" (Mach glue) XXX */
 	struct	user *p_addr;	/* kernel virtual addr of u-area (PROC ONLY) */
 	swblk_t	p_swaddr;	/* disk address of u area when swapped */
@@ -228,9 +228,7 @@ struct	pcred {
 
 extern	int pidhashmask;		/* in param.c */
 extern	struct proc *pidhash[];		/* in param.c */
-struct	proc *pfind();			/* find process by id */
 extern	struct pgrp *pgrphash[];	/* in param.c */
-struct 	pgrp *pgfind();			/* find process group by id */
 struct	proc *zombproc, *allproc;	/* lists of procs in various states */
 extern	struct proc proc0;		/* process slot for swapper */
 extern	struct	proc *initproc, *pageproc; /* process slots for init, pager */
@@ -244,6 +242,12 @@ struct	prochd {
 } qs[NQS];
 
 extern	int whichqs;		/* bit mask summarizing non-empty qs's */
+
+extern struct 	pgrp *pgfind();	/* find process group by id */
+extern struct	proc *pfind();	/* find process by id */
+
+void fixjobc(struct proc *, struct pgrp *, int);
+
 #endif	/* KERNEL */
 
 #endif	/* !_PROC_H_ */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if_arp.h	7.4 (Berkeley) 6/28/90
- *	$Id: if_arp.h,v 1.3 1993/11/07 17:46:56 wollman Exp $
+ *	$Id: if_arp.h,v 1.4 1993/11/17 23:31:43 wollman Exp $
  */
 
 #ifndef _NET_IF_ARP_H_
@@ -74,10 +74,21 @@ struct arpreq {
 	struct	sockaddr arp_ha;		/* hardware address */
 	int	arp_flags;			/* flags */
 };
+
 /*  arp_flags and at_flags field values */
 #define	ATF_INUSE	0x01	/* entry in use */
 #define ATF_COM		0x02	/* completed entry (enaddr valid) */
 #define	ATF_PERM	0x04	/* permanent entry */
 #define	ATF_PUBL	0x08	/* publish entry (respond for other host) */
 #define	ATF_USETRAILERS	0x10	/* has requested trailers */
+
+/*
+ * This doesn't really belong here, but there is no obvious other place
+ * to put it that will get seen by every client...
+ */
+struct mbuf; struct sockaddr; struct ifnet; struct rtentry;
+
+extern int 
+ether_output(struct ifnet *, struct mbuf*, struct sockaddr*, struct rtentry *);
+
 #endif /* _NET_IF_ARP_H_ */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_exit.c	7.35 (Berkeley) 6/27/91
- *	$Id: kern_exit.c,v 1.8 1993/10/16 15:24:15 rgrimes Exp $
+ *	$Id: kern_exit.c,v 1.9 1993/10/19 01:01:20 nate Exp $
  */
 
 #include "param.h"
@@ -268,6 +268,7 @@ struct owait_args {
 	int	compat;
 };
 
+int
 owait(p, uap, retval)
 	struct proc *p;
 	register struct owait_args *uap;
@@ -290,6 +291,7 @@ struct wait4_args {
 	int	compat;
 };
 
+int
 wait4(p, uap, retval)
 	struct proc *p;
 	struct wait4_args *uap;
@@ -319,6 +321,7 @@ struct wait1_args {
 #endif
 };
 
+int
 wait1(q, uap, retval)
 	register struct proc *q;
 	register struct wait1_args *uap;

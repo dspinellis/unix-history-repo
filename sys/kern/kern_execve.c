@@ -50,7 +50,7 @@
  * Significant limitations and lack of compatiblity with POSIX are
  * present with this version, to make its basic operation more clear.
  *
- *	$Id: kern_execve.c,v 1.7 1993/10/19 00:58:51 nate Exp $
+ *	$Id: kern_execve.c,v 1.8 1993/10/25 17:26:01 davidg Exp $
  */
 
 #include "param.h"
@@ -90,6 +90,7 @@ struct execve_args {
 };
 
 /* ARGSUSED */
+int
 execve(p, uap, retval)
 	struct proc *p;
 	register struct execve_args *uap;
@@ -100,13 +101,13 @@ execve(p, uap, retval)
 	char **argbuf, **argbufp, *stringbuf, *stringbufp;
 	char **vectp, *ep;
 	int needsenv, limitonargs, stringlen, addr, size, len,
-		rv, amt, argc, tsize, dsize, bsize, cnt, file_offset,
+		rv, amt, argc = 0, tsize, dsize, bsize, cnt, file_offset,
 		virtual_offset;
 	struct vattr attr;
 	struct vmspace *vs;
 	caddr_t newframe;
 	char shellname[MAXINTERP];			/* 05 Aug 92*/
- 	char *shellargs;
+ 	char *shellargs = 0;
 	union {
 		char	ex_shell[MAXINTERP];	/* #! and interpreter name */
 		struct	exec ex_hdr;
@@ -506,7 +507,7 @@ dont_bother:
 	p->p_flag |= SEXEC;
 	if (p->p_pptr && (p->p_flag & SPPWAIT)) {
 	    p->p_flag &= ~SPPWAIT;
-	    wakeup(p->p_pptr);
+	    wakeup((caddr_t)p->p_pptr);
 	}
 	
 	/* implement set userid/groupid */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_fork.c	7.29 (Berkeley) 5/15/91
- *	$Id$
+ *	$Id: kern_fork.c,v 1.2 1993/10/16 15:24:17 rgrimes Exp $
  */
 
 #include "param.h"
@@ -48,6 +48,7 @@
 #include "vm/vm.h"
 
 /* ARGSUSED */
+int
 fork(p, uap, retval)
 	struct proc *p;
 	void *uap;
@@ -58,6 +59,7 @@ fork(p, uap, retval)
 }
 
 /* ARGSUSED */
+int
 vfork(p, uap, retval)
 	struct proc *p;
 	void *uap;
@@ -69,6 +71,7 @@ vfork(p, uap, retval)
 
 int	nprocs = 1;		/* process 0 */
 
+int
 fork1(p1, isvfork, retval)
 	register struct proc *p1;
 	int isvfork, retval[];

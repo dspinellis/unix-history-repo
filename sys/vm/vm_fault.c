@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_fault.c	7.6 (Berkeley) 5/7/91
- *	$Id: vm_fault.c,v 1.5 1993/10/16 16:20:24 rgrimes Exp $
+ *	$Id: vm_fault.c,v 1.6 1993/11/07 17:54:09 wollman Exp $
  */
 
 /*
@@ -94,6 +94,7 @@ vm_statistics_data_t vm_stat;
  *	The map in question must be referenced, and remains so.
  *	Caller may hold no locks.
  */
+int
 vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_map_t	map;
 	vm_offset_t	vaddr;
@@ -248,7 +249,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 
 				PAGE_ASSERT_WAIT(m, !change_wiring);
 				UNLOCK_THINGS;
-				thread_block();
+				thread_block("pagein");
 				wait_result = current_thread()->wait_result;
 				vm_object_deallocate(first_object);
 				if (wait_result != THREAD_AWAKENED)
@@ -257,8 +258,8 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 #else
 				PAGE_ASSERT_WAIT(m, !change_wiring);
 				UNLOCK_THINGS;
-thread_wakeup(&vm_pages_needed); /* XXX! */
-				thread_block();
+				thread_wakeup((int)&vm_pages_needed);/* XXX! */
+				thread_block("pagein");
 				vm_object_deallocate(first_object);
 				goto RetryFault;
 #endif
@@ -281,7 +282,7 @@ thread_wakeup(&vm_pages_needed); /* XXX! */
 
 				PAGE_ASSERT_WAIT(m, !change_wiring);
 				UNLOCK_THINGS;
-				thread_block();
+				thread_block("pgunlck");
 				wait_result = current_thread()->wait_result;
 				vm_object_deallocate(first_object);
 				if (wait_result != THREAD_AWAKENED)
@@ -293,8 +294,8 @@ thread_wakeup(&vm_pages_needed); /* XXX! */
 
 				PAGE_ASSERT_WAIT(m, !change_wiring);
 				UNLOCK_THINGS;
-thread_wakeup(&vm_pages_needed); /* XXX */
-				thread_block();
+				thread_wakeup((int)&vm_pages_needed); /* XXX */
+				thread_block("pgunlck");
 				vm_object_deallocate(first_object);
 				goto RetryFault;
 #endif
@@ -628,7 +629,7 @@ thread_wakeup(&vm_pages_needed); /* XXX */
 					copy_object->ref_count--;
 					vm_object_unlock(copy_object);
 					UNLOCK_THINGS;
-					thread_block();
+					thread_block("pagein");
 					wait_result = current_thread()->wait_result;
 					vm_object_deallocate(first_object);
 					if (wait_result != THREAD_AWAKENED)
@@ -644,8 +645,9 @@ thread_wakeup(&vm_pages_needed); /* XXX */
 					copy_object->ref_count--;
 					vm_object_unlock(copy_object);
 					UNLOCK_THINGS;
-thread_wakeup(&vm_pages_needed); /* XXX */
-					thread_block();
+					thread_wakeup((int)&vm_pages_needed);
+				/* XXX  ^^^^^*/
+					thread_block("pagein");
 					vm_object_deallocate(first_object);
 					goto RetryFault;
 #endif

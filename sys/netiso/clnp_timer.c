@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_timer.c	7.5 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: clnp_timer.c,v 1.2 1993/10/16 21:04:57 rgrimes Exp $
  */
 
 /***********************************************************
@@ -142,6 +142,7 @@ register struct clnp_fragl	*cfh;	/* fragment header to delete */
  *
  * NOTES:			
  */
+void
 clnp_slowtimo()
 {
 	register struct clnp_fragl	*cfh = clnp_frags;
@@ -170,6 +171,7 @@ clnp_slowtimo()
  * NOTES:			
  *	TODO: should send back ER
  */
+void
 clnp_drain()
 {
 	register struct clnp_fragl	*cfh = clnp_frags;

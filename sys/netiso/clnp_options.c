@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_options.c	7.8 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: clnp_options.c,v 1.2 1993/10/16 21:04:50 rgrimes Exp $
  */
 
 /***********************************************************
@@ -93,6 +93,7 @@ SOFTWARE.
  *
  * NOTES:			If source routing has been terminated, do nothing.
  */
+void
 clnp_update_srcrt(options, oidx)
 struct mbuf			*options;	/* ptr to options mbuf */
 struct clnp_optidx	*oidx;		/* ptr to option index */
@@ -140,6 +141,7 @@ struct clnp_optidx	*oidx;		/* ptr to option index */
  *
  * NOTES:			
  */
+void
 clnp_dooptions(options, oidx, ifp, isoa)
 struct mbuf			*options;	/* ptr to options mbuf */
 struct clnp_optidx	*oidx;		/* ptr to option index */
@@ -214,6 +216,7 @@ struct iso_addr		*isoa;		/* ptr to our address for this ifp */
  *
  * NOTES:			
  */
+int
 clnp_set_opts(options, data)
 struct mbuf	**options;	/* target for option information */
 struct mbuf	**data;		/* source of option information */
@@ -268,17 +271,18 @@ struct mbuf	**data;		/* source of option information */
  *					the offset from the beginning of the mbuf data, not the
  *					actual address.
  */
+int
 clnp_opt_sanity(m, opts, len, oidx)
-struct mbuf 		*m;		/* mbuf options reside in */
-caddr_t				opts;	/* ptr to buffer containing options */
-int					len;	/* length of buffer */
-struct clnp_optidx	*oidx;	/* RETURN: filled in with option idx info */
+	struct mbuf *m;		/* mbuf options reside in */
+	caddr_t opts;		/* ptr to buffer containing options */
+	int len;		/* length of buffer */
+	struct clnp_optidx *oidx; /* RETURN: filled in with option idx info */
 {
-	u_char	opcode;			/* code of particular option */
-	u_char	oplen;			/* length of a particular option */
-	caddr_t	opts_end;		/* ptr to end of options */
+	u_char	opcode = 0;	/* code of particular option */
+	u_char	oplen;		/* length of a particular option */
+	caddr_t	opts_end;	/* ptr to end of options */
 	u_char	pad = 0, secure = 0, srcrt = 0, recrt = 0, qos = 0, prior = 0;
-							/* flags for catching duplicate options */
+				/* flags for catching duplicate options */
 	
 	IFDEBUG(D_OPTIONS)
 		printf("clnp_opt_sanity: checking %d bytes of data:\n", len);

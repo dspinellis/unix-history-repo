@@ -38,7 +38,7 @@
  * from: Utah $Hdr: rmp.c 1.3 89/06/07$
  *
  *	From: @(#)rmp.c	7.1 (Berkeley) 5/8/90
- *	$Id$
+ *	$Id: rmp.c,v 1.1 1993/11/07 22:55:07 wollman Exp $
  */
 
 #include "param.h"
@@ -57,9 +57,10 @@
 **  rmp_output: route packet to proper network interface.
 */
 
+int
 rmp_output(m, so)
-struct mbuf *m;
-struct socket *so;
+	struct mbuf *m;
+	struct socket *so;
 {
 	struct ifnet *ifp;
 	struct rawcb *rp = sotorawcb(so);
@@ -82,5 +83,6 @@ struct socket *so;
 	/*
 	 *  Send the packet.
 	 */
-	return ((*ifp->if_output) (ifp, m, &rp->rcb_faddr));
+	return (*ifp->if_output) (ifp, m, (struct sockaddr *)&rp->rcb_faddr,
+		(struct rtentry *)0);
 }

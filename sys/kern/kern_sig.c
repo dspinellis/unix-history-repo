@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_sig.c	7.35 (Berkeley) 6/28/91
- *	$Id: kern_sig.c,v 1.5 1993/10/16 15:24:27 rgrimes Exp $
+ *	$Id: kern_sig.c,v 1.6 1993/11/10 03:53:26 ache Exp $
  */
 
 #define	SIGPROP		/* include signal properties table */
@@ -59,6 +59,10 @@
 #include "kinfo_proc.h"
 #include "user.h"		/* for coredump */
 
+static void setsigvec(struct proc *, int, struct sigaction *);
+static void stop(struct proc *);
+static void sigexit(struct proc *, int);
+
 /*
  * Can process p, with pcred pc, send the signal signo to process q?
  */
@@ -77,6 +81,7 @@ struct sigaction_args {
 };
 
 /* ARGSUSED */
+int
 sigaction(p, uap, retval)
 	struct proc *p;
 	register struct sigaction_args *uap;
@@ -116,6 +121,7 @@ sigaction(p, uap, retval)
 	return (0);
 }
 
+void
 setsigvec(p, sig, sa)
 	register struct proc *p;
 	int sig;
@@ -229,6 +235,7 @@ struct sigprocmask_args {
 	sigset_t mask;
 };
 
+int
 sigprocmask(p, uap, retval)
 	register struct proc *p;
 	struct sigprocmask_args *uap;
@@ -261,6 +268,7 @@ sigprocmask(p, uap, retval)
 }
 
 /* ARGSUSED */
+int
 sigpending(p, uap, retval)
 	struct proc *p;
 	void *uap;
@@ -283,6 +291,7 @@ struct osigvec_args {
 };
 
 /* ARGSUSED */
+int
 osigvec(p, uap, retval)
 	struct proc *p;
 	register struct osigvec_args *uap;
@@ -327,6 +336,7 @@ struct osigblock_args {
 	int	mask;
 };
 
+int
 osigblock(p, uap, retval)
 	register struct proc *p;
 	struct osigblock_args *uap;
@@ -344,6 +354,7 @@ struct osigsetmask_args {
 	int	mask;
 };
 
+int
 osigsetmask(p, uap, retval)
 	struct proc *p;
 	struct osigsetmask_args *uap;
@@ -369,6 +380,7 @@ struct sigsuspend_args {
 };
 
 /* ARGSUSED */
+int
 sigsuspend(p, uap, retval)
 	register struct proc *p;
 	struct sigsuspend_args *uap;
@@ -397,6 +409,7 @@ struct sigstack_args {
 };
 
 /* ARGSUSED */
+int
 sigstack(p, uap, retval)
 	struct proc *p;
 	register struct sigstack_args *uap;
@@ -420,6 +433,7 @@ struct kill_args {
 };
 
 /* ARGSUSED */
+int
 kill(cp, uap, retval)
 	register struct proc *cp;
 	register struct kill_args *uap;
@@ -460,6 +474,7 @@ struct okillpg_args {
 };
 
 /* ARGSUSED */
+int
 okillpg(p, uap, retval)
 	struct proc *p;
 	register struct okillpg_args *uap;
@@ -476,6 +491,7 @@ okillpg(p, uap, retval)
  * Common code for kill process group/broadcast kill.
  * cp is calling process.
  */
+int
 killpg1(cp, signo, pgid, all)
 	register struct proc *cp;
 	int signo, pgid, all;
@@ -795,6 +811,7 @@ out:
  *	while (sig = CURSIG(curproc))
  *		psig(sig);
  */
+int
 issig(p)
 	register struct proc *p;
 {
@@ -932,6 +949,7 @@ issig(p)
  * Signals are handled elsewhere.
  * The process must not be on the run queue.
  */
+static void
 stop(p)
 	register struct proc *p;
 {
@@ -1012,6 +1030,7 @@ psig(sig)
  * If dumping core, save the signal number for the debugger.
  * Calls exit and does not return.
  */
+static void
 sigexit(p, sig)
 	register struct proc *p;
 	int sig;
@@ -1037,6 +1056,7 @@ sigexit(p, sig)
  *		or was not produced from the same program,
  *	the link count to the corefile is > 1.
  */
+int
 coredump(p)
 	register struct proc *p;
 {
@@ -1131,6 +1151,7 @@ out:
  * Flag error in case process won't see signal immediately (blocked or ignored).
  */
 /* ARGSUSED */
+int
 nosys(p, args, retval)
 	struct proc *p;
 	void *args;

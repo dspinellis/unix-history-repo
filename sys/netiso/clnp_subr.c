@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_subr.c	7.13 (Berkeley) 5/6/91
- *	$Id: clnp_subr.c,v 1.3 1993/10/16 21:04:56 rgrimes Exp $
+ *	$Id: clnp_subr.c,v 1.4 1993/11/07 17:49:25 wollman Exp $
  */
 
 /***********************************************************
@@ -206,6 +206,7 @@ register struct iso_addr	*destp;		/* ptr to destination address buffer */
  *
  * NOTES:			
  */
+int
 clnp_ours(dst)
 register struct iso_addr *dst;		/* ptr to destination address */
 {
@@ -247,6 +248,7 @@ int congest_threshold = 0;
  *
  * NOTES:			
  */
+void
 clnp_forward(m, len, dst, oidx, seg_off, inbound_shp)
 struct mbuf			*m;		/* pkt to forward */
 int					len;	/* length of pkt */
@@ -441,6 +443,7 @@ register struct iso_addr	*dstp;	/* ptr to dst addr */
  * NOTES:			It is up to the caller to free the routing entry
  *					allocated in route.
  */
+int
 clnp_route(dst, ro, flags, first_hop, ifa)
 	struct iso_addr	*dst;			/* ptr to datagram destination */
 	register struct	route_iso *ro;	/* existing route structure */
@@ -536,6 +539,7 @@ clnp_route(dst, ro, flags, first_hop, ifa)
  * NOTES:			Remember that option index pointers are really
  *					offsets from the beginning of the mbuf.
  */
+int
 clnp_srcroute(options, oidx, ro, first_hop, ifa, final_dst)
 struct mbuf			*options;		/* ptr to options */
 struct clnp_optidx	*oidx;			/* index to options */
@@ -592,6 +596,7 @@ struct iso_addr		*final_dst;		/* final destination */
  *
  * SIDE EFFECTS:	prints notice, slows down system.
  */
+int
 clnp_badmtu(ifp, rt, line, file)
 struct ifnet *ifp;	/* outgoing interface */
 struct rtentry *rt; /* dst route */
@@ -618,12 +623,13 @@ char *file;			/* where the dirty deed occured */
  *
  * NOTES:			No attempt has been made to make this efficient
  */
+void
 clnp_ypocb(from, to, len)
-caddr_t from;		/* src buffer */
-caddr_t to;			/* dst buffer */
-u_int	len;		/* number of bytes */
+	caddr_t from;		/* src buffer */
+	caddr_t to;		/* dst buffer */
+	u_int	len;		/* number of bytes */
 {
 	while (len--)
 		*(to + len) = *(from + len);
 }
-#endif	ISO
+#endif /* ISO */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_output.c	7.10 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: clnp_output.c,v 1.2 1993/10/16 21:04:52 rgrimes Exp $
  */
 
 /***********************************************************
@@ -164,6 +164,7 @@ int				clnp_id = 0;		/* id for segmented dgrams */
  *					to have clnp check that the route has the same dest, but
  *					by avoiding this check, we save a call to iso_addrmatch1.
  */
+int
 clnp_output(m0, isop, datalen, flags)
 struct mbuf			*m0;		/* data for the packet */
 struct isopcb		*isop;		/* iso pcb */
@@ -545,4 +546,5 @@ done:
 
 int clnp_ctloutput()
 {
+	return EINVAL;
 }

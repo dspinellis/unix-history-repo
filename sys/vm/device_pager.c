@@ -310,7 +310,7 @@ dev_pager_putpage(pager, m, sync)
 		printf("dev_pager_putpage(%x, %x)\n", pager, m);
 #endif
 	if (pager == NULL)
-		return;
+		return 0;
 	panic("dev_pager_putpage called");
 }
 

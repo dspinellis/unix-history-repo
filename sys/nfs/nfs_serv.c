@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfs_serv.c	7.40 (Berkeley) 5/15/91
- *	$Id$
+ *	$Id: nfs_serv.c,v 1.3 1993/09/09 22:06:03 rgrimes Exp $
  */
 
 /*
@@ -270,7 +270,7 @@ nfsrv_readlink(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
-	struct mbuf *mb, *mb2, *mp2, *mp3, *mreq;
+	struct mbuf *mb, *mb2, *mp2 = 0, *mp3 = 0, *mreq;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -356,7 +356,7 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	int error = 0;
 	char *cp2;
 	struct mbuf *mb, *mb2, *mreq;
-	struct mbuf *m2, *m3;
+	struct mbuf *m2 = 0, *m3;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -781,7 +781,7 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	char *cp2;
 	struct mbuf *mb, *mreq;
 	struct nameidata fromnd, tond;
-	struct vnode *fvp, *tvp, *tdvp;
+	struct vnode *fvp = 0, *tvp, *tdvp;
 	nfsv2fh_t fnfh, tnfh;
 	fhandle_t *ffhp, *tfhp;
 	long len, len2;
@@ -1204,7 +1204,7 @@ nfsrv_readdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct proc *p;
 {
 	register char *bp, *be;
-	register struct mbuf *mp;
+	register struct mbuf *mp = 0;
 	register struct direct *dp;
 	register caddr_t cp;
 	register u_long *tl;
@@ -1216,7 +1216,7 @@ nfsrv_readdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	char *cpos, *cend;
 	int len, nlen, rem, xfer, tsiz, i;
 	struct vnode *vp;
-	struct mbuf *mp2, *mp3;
+	struct mbuf *mp2 = 0, *mp3;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
 	struct uio io;

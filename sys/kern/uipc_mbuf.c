@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)uipc_mbuf.c	7.19 (Berkeley) 4/20/91
- *	$Id: uipc_mbuf.c,v 1.3 1993/10/16 15:25:07 rgrimes Exp $
+ *	$Id: uipc_mbuf.c,v 1.4 1993/11/07 17:46:23 wollman Exp $
  */
 
 #include "param.h"
@@ -59,6 +59,9 @@ extern	vm_map_t mb_map;
 struct	mbuf *mbutl;
 char	*mclrefcnt;
 
+static void m_reclaim(void);
+
+void
 mbinit()
 {
 	int s;
@@ -83,8 +86,10 @@ bad:
  * Must be called at splimp.
  */
 /* ARGSUSED */
+int
 m_clalloc(ncl, how)				/* 31 Aug 92*/
 	register int ncl;
+	int how;
 {
 	int npg, mbx;
 	register caddr_t p;
@@ -145,6 +150,7 @@ m_retryhdr(i, t)
 	return (m);
 }
 
+static void
 m_reclaim()
 {
 	register struct domain *dp;
@@ -207,6 +213,7 @@ m_free(m)
 	return (n);
 }
 
+void
 m_freem(m)
 	register struct mbuf *m;
 {
@@ -330,6 +337,7 @@ nospace:
  * Copy data from an mbuf chain starting "off" bytes from the beginning,
  * continuing for "len" bytes, into the indicated buffer.
  */
+void
 m_copydata(m, off, len, cp)
 	register struct mbuf *m;
 	register int off;
@@ -365,6 +373,7 @@ m_copydata(m, off, len, cp)
  * Both chains must be of the same type (e.g. MT_DATA).
  * Any m_pkthdr is not updated.
  */
+void
 m_cat(m, n)
 	register struct mbuf *m, *n;
 {
@@ -385,8 +394,10 @@ m_cat(m, n)
 	}
 }
 
+void
 m_adj(mp, req_len)
 	struct mbuf *mp;
+	int req_len;
 {
 	register int len = req_len;
 	register struct mbuf *m;
@@ -525,3 +536,58 @@ bad:
 	MPFail++;
 	return (0);
 }
+
+/*
+ * Copy data from a buffer back into the indicated mbuf chain,
+ * starting "off" bytes from the beginning, extending the mbuf
+ * chain if necessary.
+ */
+void
+m_copyback(m0, off, len, cp)
+	struct	mbuf *m0;
+	register int off;
+	register int len;
+	caddr_t cp;
+
+{
+	register int mlen;
+	register struct mbuf *m = m0, *n;
+	int totlen = 0;
+
+	if (m0 == 0)
+		return;
+	while (off > (mlen = m->m_len)) {
+		off -= mlen;
+		totlen += mlen;
+		if (m->m_next == 0) {
+			n = m_getclr(M_DONTWAIT, m->m_type);
+			if (n == 0)
+				goto out;
+			n->m_len = min(MLEN, len + off);
+			m->m_next = n;
+		}
+		m = m->m_next;
+	}
+	while (len > 0) {
+		mlen = min (m->m_len - off, len);
+		bcopy(cp, off + mtod(m, caddr_t), (unsigned)mlen);
+		cp += mlen;
+		len -= mlen;
+		mlen += off;
+		off = 0;
+		totlen += mlen;
+		if (len == 0)
+			break;
+		if (m->m_next == 0) {
+			n = m_get(M_DONTWAIT, m->m_type);
+			if (n == 0)
+				break;
+			n->m_len = min(MLEN, len);
+			m->m_next = n;
+		}
+		m = m->m_next;
+	}
+out:	if (((m = m0)->m_flags & M_PKTHDR) && (m->m_pkthdr.len < totlen))
+		m->m_pkthdr.len = totlen;
+}
+

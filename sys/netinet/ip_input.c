@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ip_input.c	7.19 (Berkeley) 5/25/91
- *	$Id: ip_input.c,v 1.4 1993/11/12 04:03:55 wollman Exp $
+ *	$Id: ip_input.c,v 1.5 1993/11/18 00:08:20 wollman Exp $
  */
 
 #include "param.h"
@@ -83,6 +83,12 @@ int	ipsendredirects = IPSENDREDIRECTS;
 int	ipprintfs = 0;
 #endif
 
+static void ip_freef(struct ipq *);
+static void ip_enq(struct ipasfrag *, struct ipasfrag *);
+static void ip_deq(struct ipasfrag *);
+static void save_rte(u_char *, struct in_addr);
+static void ip_forward(struct mbuf *, int);
+
 extern	struct domain inetdomain;
 extern	struct protosw inetsw[];
 u_char	ip_protox[IPPROTO_MAX];
@@ -116,6 +122,7 @@ u_long	*ip_ifmatrix;
  * IP initialization: fill in IP protocol switch table.
  * All protocols not implemented in kernel go to raw IP protocol handler.
  */
+void
 ip_init()
 {
 	register struct protosw *pr;
@@ -149,6 +156,7 @@ struct	route ipforward_rt;
  * Ip input routine.  Checksum and byte swap header.  If fragmented
  * try to reassemble.  Process options.  Pass to next level.
  */
+void
 ipintr()
 {
 	register struct ip *ip;
@@ -502,6 +510,7 @@ dropfrag:
  * Free a fragment reassembly header and all
  * associated datagrams.
  */
+static void
 ip_freef(fp)
 	struct ipq *fp;
 {
@@ -520,6 +529,7 @@ ip_freef(fp)
  * Put an ip fragment on a reassembly chain.
  * Like insque, but pointers in middle of structure.
  */
+static void
 ip_enq(p, prev)
 	register struct ipasfrag *p, *prev;
 {
@@ -533,6 +543,7 @@ ip_enq(p, prev)
 /*
  * To ip_enq as remque is to insque.
  */
+static void
 ip_deq(p)
 	register struct ipasfrag *p;
 {
@@ -546,6 +557,7 @@ ip_deq(p)
  * if a timer expires on a reassembly
  * queue, discard it.
  */
+void
 ip_slowtimo()
 {
 	register struct ipq *fp;
@@ -570,6 +582,7 @@ ip_slowtimo()
 /*
  * Drain off all datagram fragments.
  */
+void
 ip_drain()
 {
 
@@ -589,6 +602,7 @@ struct in_ifaddr *ip_rtaddr();
  * Returns 1 if packet has been forwarded/freed,
  * 0 if the packet should be processed further.
  */
+int
 ip_dooptions(m)
 	struct mbuf *m;
 {
@@ -801,6 +815,7 @@ ip_rtaddr(dst)
  * Save incoming source route for use in replies,
  * to be picked up later by ip_srcroute if the receiver is interested.
  */
+static void
 save_rte(option, dst)
 	u_char *option;
 	struct in_addr dst;
@@ -895,6 +910,7 @@ ip_srcroute()
  * will be moved, and return value is their length.
  * XXX should be deleted; last arg currently ignored.
  */
+void
 ip_stripoptions(m, mopt)
 	register struct mbuf *m;
 	struct mbuf *mopt;
@@ -964,6 +980,7 @@ u_char inetctlerrmap[PRC_NCMDS] = {
  * The srcrt parameter indicates whether the packet is being forwarded
  * via a source route.
  */
+static void
 ip_forward(m, srcrt)
 	struct mbuf *m;
 	int srcrt;
@@ -971,10 +988,10 @@ ip_forward(m, srcrt)
 	register struct ip *ip = mtod(m, struct ip *);
 	register struct sockaddr_in *sin;
 	register struct rtentry *rt;
-	int error, type = 0, code;
+	int error, type = 0, code = 0;
 	struct mbuf *mcopy;
 	struct in_addr dest;
-	int mtu;
+	int mtu = 0;
 
 	dest.s_addr = 0;
 #ifdef DIAGNOSTIC

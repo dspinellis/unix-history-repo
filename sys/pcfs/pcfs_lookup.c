@@ -15,7 +15,7 @@
  *
  *  October 1992
  *
- *	$Id: pcfs_lookup.c,v 1.4 1993/10/17 01:48:37 rgrimes Exp $
+ *	$Id: pcfs_lookup.c,v 1.5 1993/11/17 23:26:17 wollman Exp $
  */
 
 #include "param.h"
@@ -63,8 +63,8 @@ pcfs_lookup(vdp, ndp, p)
 	int slotstatus;
 #define	NONE	0
 #define	FOUND	1
-	int slotoffset;
-	int slotcluster;
+	int slotoffset = 0;
+	int slotcluster = 0;
 	int frcn;
 	u_long cluster;
 	int rootreloff;
@@ -76,7 +76,7 @@ pcfs_lookup(vdp, ndp, p)
 	struct denode *tdp;
 	struct pcfsmount *pmp;
 	struct buf *bp = 0;
-	struct direntry *dep;
+	struct direntry *dep = 0;
 	u_char dosfilename[12];
 
 #if defined(PCFSDEBUG)
@@ -165,7 +165,7 @@ printf("pcfs_lookup(): cache hit, vnode %08x, file %s\n", vdp, dp->de_Name);
 #if defined(PCFSDEBUG)
 printf("pcfs_lookup(): looking for . or .. in root directory\n");
 #endif /* defined(PCFSDEBUG) */
-		cluster == PCFSROOT;
+		cluster = PCFSROOT;
 		diroff = PCFSROOT_OFS;
 		goto foundroot;
 	}

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns_pcb.c	7.11 (Berkeley) 6/27/91
- *	$Id: ns_pcb.c,v 1.2 1993/10/16 19:54:28 rgrimes Exp $
+ *	$Id: ns_pcb.c,v 1.3 1993/11/07 17:50:30 wollman Exp $
  */
 
 #include "param.h"
@@ -52,7 +52,7 @@
 struct	ns_addr zerons_addr;
 struct	nspcb nspcb;
 
-
+int
 ns_pcballoc(so, head)
 	struct socket *so;
 	struct nspcb *head;
@@ -70,6 +70,7 @@ ns_pcballoc(so, head)
 	return (0);
 }
 	
+int
 ns_pcbbind(nsp, nam)
 	register struct nspcb *nsp;
 	struct mbuf *nam;
@@ -120,6 +121,7 @@ noname:
  * If don't have a local address for this socket yet,
  * then pick one.
  */
+int
 ns_pcbconnect(nsp, nam)
 	struct nspcb *nsp;
 	struct mbuf *nam;
@@ -219,6 +221,7 @@ ns_pcbconnect(nsp, nam)
 	return (0);
 }
 
+void
 ns_pcbdisconnect(nsp)
 	struct nspcb *nsp;
 {
@@ -228,6 +231,7 @@ ns_pcbdisconnect(nsp)
 		ns_pcbdetach(nsp);
 }
 
+void
 ns_pcbdetach(nsp)
 	struct nspcb *nsp;
 {
@@ -241,6 +245,7 @@ ns_pcbdetach(nsp)
 	(void) m_free(dtom(nsp));
 }
 
+void
 ns_setsockaddr(nsp, nam)
 	register struct nspcb *nsp;
 	struct mbuf *nam;
@@ -255,6 +260,7 @@ ns_setsockaddr(nsp, nam)
 	sns->sns_addr = nsp->nsp_laddr;
 }
 
+void
 ns_setpeeraddr(nsp, nam)
 	register struct nspcb *nsp;
 	struct mbuf *nam;
@@ -276,6 +282,7 @@ ns_setpeeraddr(nsp, nam)
  * Also pass an extra paramter via the nspcb. (which may in fact
  * be a parameter list!)
  */
+void
 ns_pcbnotify(dst, errno, notify, param)
 	register struct ns_addr *dst;
 	long param;
@@ -326,6 +333,7 @@ struct nspcb *
 ns_pcblookup(faddr, lport, wildp)
 	struct ns_addr *faddr;
 	u_short lport;
+	int wildp;
 {
 	register struct nspcb *nsp, *match = 0;
 	int matchwild = 3, wildcard;

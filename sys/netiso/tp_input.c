@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	@(#)tp_input.c	7.19 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: tp_input.c,v 1.2 1993/10/16 21:05:44 rgrimes Exp $
  */
 
 /***********************************************************
@@ -209,7 +209,7 @@ static u_char tpdu_info[][4] =
 	if (Phrase) {error = (Erval); errlen = (int)(Loc); IncStat(Stat); tpibrk();\
 	goto Whattodo; }
 
-tpibrk() {}
+void tpibrk() {}
 
 /* 
  * WHENEVER YOU USE THE FOLLOWING MACRO,
@@ -370,6 +370,7 @@ ok:
 }
 
 #ifndef TPCONS
+int
 tpcons_output()
 {
 	return(0);
@@ -412,18 +413,18 @@ tp_input(m, faddr, laddr, cons_channel, dgout_routine, ce_bit)
 
 {
 	register struct tp_pcb 	*tpcb = (struct tp_pcb *)0;
-	register struct tpdu 	*hdr;
-	struct socket 			*so;
-	struct tp_event 		e;
-	int 					error = 0;
-	unsigned 				dutype;
-	u_short 				dref, sref = 0, acktime = 2, subseq = 0; /*VAX*/
-	u_char 					preferred_class = 0, class_to_use = 0;
-	u_char					opt, dusize = TP_DFL_TPDUSIZE, addlopt = 0, version;
+	register struct tpdu *hdr;
+	struct socket *so;
+	struct tp_event e;
+	int error = 0;
+	unsigned dutype;
+	u_short dref, sref = 0, acktime = 2, subseq = 0; /*VAX*/
+	u_char preferred_class = 0, class_to_use = 0;
+	u_char opt, dusize = TP_DFL_TPDUSIZE, addlopt = 0, version = 0;
 #ifdef TP_PERF_MEAS
-	u_char					perf_meas;
+	u_char perf_meas;
 #endif TP_PERF_MEAS
-	u_char					fsufxlen = 0, lsufxlen = 0, intercepted = 0;
+	u_char fsufxlen = 0, lsufxlen = 0, intercepted = 0;
 	caddr_t					fsufxloc = 0, lsufxloc = 0;
 	int						tpdu_len = 0;
 	u_int 					takes_data = FALSE;

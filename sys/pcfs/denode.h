@@ -15,7 +15,7 @@
  *
  *  October 1992
  *
- *	$Id: denode.h,v 1.3 1993/11/07 17:51:13 wollman Exp $
+ *	$Id: denode.h,v 1.4 1993/11/17 23:26:16 wollman Exp $
  */
 
 #ifndef _PCFS_DENODE_H_
@@ -238,7 +238,7 @@ int pcfs_unlock __P((struct vnode *vp));
 int pcfs_bmap __P((struct vnode *vp, daddr_t bn, struct vnode **vpp,
 	daddr_t *bnp));
 int pcfs_strategy __P((struct buf *bp));
-int pcfs_print __P((struct vnode *vp));
+void pcfs_print __P((struct vnode *vp));
 int pcfs_islocked __P((struct vnode *vp));
 int pcfs_advlock __P((struct vnode *vp, caddr_t id, int op, struct flock *fl,
 	int flags));

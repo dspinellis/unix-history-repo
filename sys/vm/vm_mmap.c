@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: vm_mmap.c 1.3 90/01/21$
  *	from: @(#)vm_mmap.c	7.5 (Berkeley) 6/28/91
- *	$Id: vm_mmap.c,v 1.9 1993/11/20 22:27:44 davidg Exp $
+ *	$Id: vm_mmap.c,v 1.10 1993/11/22 09:49:53 davidg Exp $
  */
 
 /*
@@ -67,6 +67,7 @@ int mmapdebug = 0;
 #endif
 
 /* ARGSUSED */
+int
 getpagesize(p, uap, retval)
 	struct proc *p;
 	void *uap;
@@ -82,6 +83,7 @@ struct sbrk_args {
 };
 
 /* ARGSUSED */
+int
 sbrk(p, uap, retval)
 	struct proc *p;
 	struct sbrk_args *uap;
@@ -97,6 +99,7 @@ struct sstk_args {
 };
 
 /* ARGSUSED */
+int
 sstk(p, uap, retval)
 	struct proc *p;
 	struct sstk_args *uap;
@@ -116,13 +119,14 @@ struct smmap_args {
 	off_t	pos;
 };
 
+int
 smmap(p, uap, retval)
 	struct proc *p;
 	register struct smmap_args *uap;
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
-	register struct file *fp;
+	register struct file *fp = 0;
 	struct vnode *vp;
 	vm_offset_t addr;
 	vm_size_t size;
@@ -243,6 +247,7 @@ struct msync_args {
 	int	len;
 };
 
+int
 msync(p, uap, retval)
 	struct proc *p;
 	struct msync_args *uap;
@@ -317,6 +322,7 @@ struct munmap_args {
 	int	len;
 };
 
+int
 munmap(p, uap, retval)
 	register struct proc *p;
 	register struct munmap_args *uap;
@@ -349,8 +355,10 @@ munmap(p, uap, retval)
 	return(0);
 }
 
+int
 munmapfd(p, fd)
 	register struct proc *p;
+	int fd;
 {
 #ifdef DEBUG
 	if (mmapdebug & MDB_FOLLOW)
@@ -361,6 +369,7 @@ munmapfd(p, fd)
 	 * XXX -- should vm_deallocate any regions mapped to this file
 	 */
 	p->p_fd->fd_ofileflags[fd] &= ~UF_MAPPED;
+	return 0;
 }
 
 struct mprotect_args {
@@ -369,6 +378,7 @@ struct mprotect_args {
 	int	prot;
 };
 
+int
 mprotect(p, uap, retval)
 	struct proc *p;
 	struct mprotect_args *uap;
@@ -416,6 +426,7 @@ struct madvise_args {
 };
 
 /* ARGSUSED */
+int
 madvise(p, uap, retval)
 	struct proc *p;
 	struct madvise_args *uap;
@@ -433,6 +444,7 @@ struct mincore_args {
 };
 
 /* ARGSUSED */
+int
 mincore(p, uap, retval)
 	struct proc *p;
 	struct mincore_args *uap;
@@ -450,6 +462,7 @@ mincore(p, uap, retval)
  *	MAP_FILE: a vnode pointer
  *	MAP_ANON: NULL or a file pointer
  */
+int
 vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 	register vm_map_t map;
 	register vm_offset_t *addr;
@@ -463,7 +476,7 @@ vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 	register vm_pager_t pager;
 	boolean_t fitit;
 	vm_object_t object;
-	struct vnode *vp;
+	struct vnode *vp = 0;
 	int type;
 	int rv = KERN_SUCCESS;
 
@@ -727,6 +740,7 @@ out:
  * Given address and size it returns map attributes as well
  * as the (locked) object mapped at that location. 
  */
+int
 vm_region(map, addr, size, prot, max_prot, inheritance, shared, object, objoff)
 	vm_map_t	map;
 	vm_offset_t	*addr;		/* IN/OUT */
@@ -802,6 +816,7 @@ vm_region(map, addr, size, prot, max_prot, inheritance, shared, object, objoff)
 /*
  * Yet another bastard routine.
  */
+int
 vm_allocate_with_pager(map, addr, size, fitit, pager, poffset, internal)
 	register vm_map_t	map;
 	register vm_offset_t	*addr;

@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pk_subr.c	7.16 (Berkeley) 6/6/91
- *	$Id: pk_subr.c,v 1.2 1993/10/16 19:46:53 rgrimes Exp $
+ *	$Id: pk_subr.c,v 1.3 1993/11/17 23:32:23 wollman Exp $
  */
 
 #include "param.h"
@@ -48,6 +48,7 @@
 #include "errno.h"
 #include "time.h"
 #include "kernel.h"
+#include "machine/stdarg.h"
 
 #include "../net/if.h"
 
@@ -101,8 +102,9 @@ struct socket *so;
  *  Disconnect X.25 protocol from socket.
  */
 
+void
 pk_disconnect (lcp)
-register struct pklcd *lcp;
+	register struct pklcd *lcp;
 {
 	register struct socket *so = lcp -> lcd_so;
 	register struct pklcd *l, *p;
@@ -145,8 +147,9 @@ register struct pklcd *lcp;
  *  connection and internal descriptors. Wake up any sleepers.
  */
 
+void
 pk_close (lcp)
-struct pklcd *lcp;
+	struct pklcd *lcp;
 {
 	register struct socket *so = lcp -> lcd_so;
 
@@ -206,9 +209,10 @@ int lcn, type;
  *  state.
  */
 
+void
 pk_restart (pkp, restart_cause)
-register struct pkcb *pkp;
-int restart_cause;
+	register struct pkcb *pkp;
+	int restart_cause;
 {
 	register struct mbuf *m;
 	register struct pklcd *lcp;
@@ -247,8 +251,9 @@ int restart_cause;
  *  This procedure frees up the Logical Channel Descripter.
  */
 
+void
 pk_freelcd (lcp)
-register struct pklcd *lcp;
+	register struct pklcd *lcp;
 {
 	if (lcp == NULL)
 		return;
@@ -268,9 +273,10 @@ register struct pklcd *lcp;
  *  Call User Data field.
  */
 
+int
 pk_bind (lcp, nam)
-struct pklcd *lcp;
-struct mbuf *nam;
+	struct pklcd *lcp;
+	struct mbuf *nam;
 {
 	register struct pkcb *pkp;
 	register struct pklcd *pp;
@@ -316,8 +322,9 @@ struct mbuf *nam;
 /*
  * Include a bound control block in the list of listeners.
  */
+int
 pk_listen (lcp)
-register struct pklcd *lcp;
+	register struct pklcd *lcp;
 {
 	register struct pklcd **pp;
 
@@ -341,8 +348,11 @@ register struct pklcd *lcp;
 /*
  * Include a listening control block for the benefit of other protocols.
  */
+int
 pk_protolisten (spi, spilen, callee)
-int (*callee) ();
+	int spi;
+	int spilen;
+	void (*callee) ();
 {
 	register struct pklcd *lcp = pk_attach ((struct socket *)0);
 	register struct mbuf *nam;
@@ -375,10 +385,11 @@ int (*callee) ();
  * by the remote DTE.
  */
 
+void
 pk_assoc (pkp, lcp, sa)
-register struct pkcb *pkp;
-register struct pklcd *lcp;
-register struct sockaddr_x25 *sa;
+	register struct pkcb *pkp;
+	register struct pklcd *lcp;
+	register struct sockaddr_x25 *sa;
 {
 
 	lcp -> lcd_pkp = pkp;
@@ -400,11 +411,12 @@ register struct sockaddr_x25 *sa;
 	lcp -> lcd_stime = time.tv_sec;
 }
 
+int
 pk_connect (lcp, sa)
-register struct pklcd *lcp;
-register struct sockaddr_x25 *sa;
+	register struct pklcd *lcp;
+	register struct sockaddr_x25 *sa;
 {
-	register struct pkcb *pkp;
+	register struct pkcb *pkp = 0;
 
 	if (sa -> x25_addr[0] == '\0')
 		return (EDESTADDRREQ);
@@ -449,10 +461,11 @@ struct bcdinfo {
  *  address, facilities fields and the user data field.
  */
 
+void
 pk_callrequest (lcp, sa, xcp)
-struct pklcd *lcp;
-register struct sockaddr_x25 *sa;
-register struct x25config *xcp;
+	struct pklcd *lcp;
+	register struct sockaddr_x25 *sa;
+	register struct x25config *xcp;
 {
 	register struct x25_calladdr *a;
 	register struct mbuf *m = lcp -> lcd_template;
@@ -480,9 +493,11 @@ register struct x25config *xcp;
 	m_copyback (m, m -> m_pkthdr.len, sa -> x25_udlen, sa -> x25_udata);
 }
 
+void
 pk_build_facilities (m, sa, type)
-register struct mbuf *m;
-struct sockaddr_x25 *sa;
+	register struct mbuf *m;
+	struct sockaddr_x25 *sa;
+	int type;
 {
 	register octet *cp;
 	register octet *fcp;
@@ -516,10 +531,11 @@ struct sockaddr_x25 *sa;
 	m -> m_pkthdr.len = (m -> m_len += *cp + 1);
 }
 
+int
 to_bcd (b, sa, xcp)
-register struct bcdinfo *b;
-struct sockaddr_x25 *sa;
-register struct x25config *xcp;
+	register struct bcdinfo *b;
+	struct sockaddr_x25 *sa;
+	register struct x25config *xcp;
 {
 	register char *x = sa -> x25_addr;
 	unsigned start = b -> posn;
@@ -558,8 +574,9 @@ register struct x25config *xcp;
  *  search is from the highest number to lowest number (DTE).
  */
 
+int
 pk_getlcn (pkp)
-register struct pkcb *pkp;
+	register struct pkcb *pkp;
 {
 	register int i;
 
@@ -576,9 +593,11 @@ register struct pkcb *pkp;
  *  This procedure sends a CLEAR request packet. The lc state is
  *  set to "SENT_CLEAR". 
  */
-
+void
 pk_clear (lcp, diagnostic, abortive)
-register struct pklcd *lcp;
+	register struct pklcd *lcp;
+	int diagnostic;
+	int abortive;
 {
 	register struct mbuf *m = pk_template (lcp -> lcd_lcn, X25_CLEAR);
 
@@ -606,8 +625,11 @@ register struct pklcd *lcp;
  * inward data flow, if the current state changes (blocked ==> open or
  * vice versa), or if forced to generate one.  One forces RNR's to ack data.  
  */
+void
 pk_flowcontrol (lcp, inhibit, forced)
-register struct pklcd *lcp;
+	register struct pklcd *lcp;
+	int inhibit;
+	int forced;
 {
 	inhibit = (inhibit != 0);
 	if (lcp == 0 || lcp -> lcd_state != DATA_TRANSFER ||
@@ -624,9 +646,10 @@ register struct pklcd *lcp;
  *  virtual circuit.
  */
 
-static
+static void
 pk_reset (lcp, diagnostic)
-register struct pklcd *lcp;
+	register struct pklcd *lcp;
+	int diagnostic;
 {
 	register struct mbuf *m;
 	register struct socket *so = lcp -> lcd_so;
@@ -659,8 +682,9 @@ register struct pklcd *lcp;
  *  virtual circuit.
  */
 
+void
 pk_flush (lcp)
-register struct pklcd *lcp;
+	register struct pklcd *lcp;
 {
 	register struct socket *so;
 
@@ -685,10 +709,12 @@ register struct pklcd *lcp;
 /* 
  *  This procedure handles all local protocol procedure errors.
  */
-
+void
 pk_procerror (error, lcp, errstr, diagnostic)
-register struct pklcd *lcp;
-char *errstr;
+	int error;
+	register struct pklcd *lcp;
+	char *errstr;
+	int diagnostic;
 {
 
 	pk_message (lcp -> lcd_lcn, lcp -> lcd_pkp -> pk_xcp, errstr);
@@ -712,10 +738,10 @@ char *errstr;
  *  and  process  the P(R) values  received  in the DATA,  RR OR RNR
  *  packets.
  */
-
+int
 pk_ack (lcp, pr)
-struct pklcd *lcp;
-unsigned pr;
+	struct pklcd *lcp;
+	unsigned pr;
 {
 	register struct socket *so = lcp -> lcd_so;
 
@@ -750,9 +776,9 @@ unsigned pr;
  *  This procedure decodes the X.25 level 3 packet returning a 
  *  code to be used in switchs or arrays.
  */
-
+int
 pk_decode (xp)
-register struct x25_packet *xp;
+	register struct x25_packet *xp;
 {
 	register int type;
 
@@ -843,10 +869,10 @@ register struct x25_packet *xp;
  *  A restart packet has been received. Print out the reason
  *  for the restart.
  */
-
+void
 pk_restartcause (pkp, xp)
-struct pkcb *pkp;
-register struct x25_packet *xp;
+	struct pkcb *pkp;
+	register struct x25_packet *xp;
 {
 	register struct x25config *xcp = pkp -> pk_xcp;
 	register int lcn = LCN(xp);
@@ -878,10 +904,10 @@ int     Reset_cause[] = {
 /* 
  *  A reset packet has arrived. Return the cause to the user.
  */
-
+void
 pk_resetcause (pkp, xp)
-struct pkcb *pkp;
-register struct x25_packet *xp;
+	struct pkcb *pkp;
+	register struct x25_packet *xp;
 {
 	register struct pklcd *lcp =
 				pkp -> pk_chan[LCN(xp)];
@@ -890,8 +916,9 @@ register struct x25_packet *xp;
 	if (code > MAXRESETCAUSE)
 		code = 7;	/* EXRNCG */
 
-	pk_message(LCN(xp), lcp -> lcd_pkp, "reset code 0x%x, diagnostic 0x%x",
-			xp -> packet_data, 4[(u_char *)xp]);
+	pk_message(LCN(xp), (struct x25config *)lcp -> lcd_pkp,
+		   "reset code 0x%x, diagnostic 0x%x",
+		   xp -> packet_data, 4[(u_char *)xp]);
 			
 	if (lcp -> lcd_so)
 		lcp -> lcd_so -> so_error = Reset_cause[code];
@@ -908,10 +935,10 @@ int     Clear_cause[] = {
 /* 
  *  A clear packet has arrived. Return the cause to the user.
  */
-
+void
 pk_clearcause (pkp, xp)
-struct pkcb *pkp;
-register struct x25_packet *xp;
+	struct pkcb *pkp;
+	register struct x25_packet *xp;
 {
 	register struct pklcd *lcp =
 		pkp -> pk_chan[LCN(xp)];
@@ -932,10 +959,11 @@ register struct x25config *xcp;
 }
 
 /* VARARGS1 */
-pk_message (lcn, xcp, fmt, a1, a2, a3, a4, a5, a6)
-struct x25config *xcp;
-char *fmt;
+void
+pk_message (int lcn, struct x25config *xcp, const char *fmt, ...)
 {
+	va_list args;
+	va_start(args, fmt);
 
 	if (lcn)
 		if (pkcbhead -> pk_next)
@@ -948,13 +976,17 @@ char *fmt;
 		else
 			printf ("X.25: ");
 
-	printf (fmt, a1, a2, a3, a4, a5, a6);
-	printf ("\n");
+	printf ("%r\n", fmt, args);
+	va_end(args);
 }
 
+int
 pk_fragment (lcp, m0, qbit, mbit, wait)
-struct mbuf *m0;
-register struct pklcd *lcp;
+	struct mbuf *m0;
+	register struct pklcd *lcp;
+	int qbit;
+	int mbit;
+	int wait;
 {
 	register struct mbuf *m = m0;
 	register struct x25_packet *xp;
@@ -1015,8 +1047,9 @@ abort:
 
 struct mbuf *
 m_split (m0, len0, wait)
-register struct mbuf *m0;
-int len0;
+	register struct mbuf *m0;
+	int len0;
+	int wait;
 {
 	register struct mbuf *m, *n;
 	unsigned len = len0, remain;

@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_kern.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_kern.c,v 1.3 1993/10/16 16:20:30 rgrimes Exp $
+ *	$Id: vm_kern.c,v 1.4 1993/11/07 17:54:13 wollman Exp $
  */
 
 /*
@@ -514,8 +514,8 @@ vm_offset_t kmem_alloc_wait(map, size)
 
 			assert_wait((int)map, TRUE);
 			vm_map_unlock(map);
-thread_wakeup(&vm_pages_needed); /* XXX */
-			thread_block();
+			thread_wakeup((int)&vm_pages_needed); /* XXX */
+			thread_block("vmalloc");
 		}
 		else {
 			vm_map_unlock(map);
@@ -565,8 +565,8 @@ vm_offset_t kmem_alloc_wired_wait(map, size)
 
 			assert_wait((int)map, TRUE);
 			vm_map_unlock(map);
-thread_wakeup(&vm_pages_needed); /* XXX */
-			thread_block();
+			thread_wakeup((int)&vm_pages_needed); /* XXX */
+			thread_block("kmalloc");
 		}
 		else {
 			vm_map_unlock(map);

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)dead_vnops.c	7.13 (Berkeley) 4/15/91
- *	$Id: dead_vnops.c,v 1.2 1993/10/16 15:23:59 rgrimes Exp $
+ *	$Id: dead_vnops.c,v 1.3 1993/11/07 21:44:40 wollman Exp $
  */
 
 #include "param.h"
@@ -174,7 +174,7 @@ int	dead_bmap __P((
 		daddr_t *bnp));
 int	dead_strategy __P((
 		struct buf *bp));
-int	dead_print __P((
+void	dead_print __P((
 		struct vnode *vp));
 #define dead_islocked ((int (*) __P(( \
 		struct vnode *vp))) nullop)
@@ -225,6 +225,7 @@ struct vnodeops dead_vnodeops = {
  * Trivial lookup routine that always fails.
  */
 /* ARGSUSED */
+int
 dead_lookup(vp, ndp, p)
 	struct vnode *vp;
 	struct nameidata *ndp;
@@ -240,6 +241,7 @@ dead_lookup(vp, ndp, p)
  * Open always fails as if device did not exist.
  */
 /* ARGSUSED */
+int
 dead_open(vp, mode, cred, p)
 	struct vnode *vp;
 	int mode;
@@ -254,6 +256,7 @@ dead_open(vp, mode, cred, p)
  * Vnode op for read
  */
 /* ARGSUSED */
+int
 dead_read(vp, uio, ioflag, cred)
 	struct vnode *vp;
 	struct uio *uio;
@@ -275,6 +278,7 @@ dead_read(vp, uio, ioflag, cred)
  * Vnode op for write
  */
 /* ARGSUSED */
+int
 dead_write(vp, uio, ioflag, cred)
 	register struct vnode *vp;
 	struct uio *uio;
@@ -291,6 +295,7 @@ dead_write(vp, uio, ioflag, cred)
  * Device ioctl operation.
  */
 /* ARGSUSED */
+int
 dead_ioctl(vp, com, data, fflag, cred, p)
 	struct vnode *vp;
 	register int com;
@@ -306,6 +311,7 @@ dead_ioctl(vp, com, data, fflag, cred, p)
 }
 
 /* ARGSUSED */
+int
 dead_select(vp, which, fflags, cred, p)
 	struct vnode *vp;
 	int which, fflags;
@@ -322,6 +328,7 @@ dead_select(vp, which, fflags, cred, p)
 /*
  * Just call the device strategy routine
  */
+int
 dead_strategy(bp)
 	register struct buf *bp;
 {
@@ -337,6 +344,7 @@ dead_strategy(bp)
 /*
  * Wait until the vnode has finished changing state.
  */
+int
 dead_lock(vp)
 	struct vnode *vp;
 {
@@ -349,6 +357,7 @@ dead_lock(vp)
 /*
  * Wait until the vnode has finished changing state.
  */
+int
 dead_bmap(vp, bn, vpp, bnp)
 	struct vnode *vp;
 	daddr_t bn;
@@ -365,6 +374,7 @@ dead_bmap(vp, bn, vpp, bnp)
  * Print out the contents of a dead vnode.
  */
 /* ARGSUSED */
+void
 dead_print(vp)
 	struct vnode *vp;
 {
@@ -375,6 +385,7 @@ dead_print(vp)
 /*
  * Empty vnode failed operation
  */
+int
 dead_ebadf()
 {
 
@@ -384,6 +395,7 @@ dead_ebadf()
 /*
  * Empty vnode bad operation
  */
+int
 dead_badop()
 {
 
@@ -394,6 +406,7 @@ dead_badop()
 /*
  * Empty vnode null operation
  */
+int
 dead_nullop()
 {
 
@@ -404,6 +417,7 @@ dead_nullop()
  * We have to wait during times when the vnode is
  * in a state of change.
  */
+int
 chkvnlock(vp)
 	register struct vnode *vp;
 {

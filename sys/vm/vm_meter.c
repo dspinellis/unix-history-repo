@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_meter.c	7.11 (Berkeley) 4/20/91
- *	$Id: vm_meter.c,v 1.2 1993/10/16 16:20:37 rgrimes Exp $
+ *	$Id: vm_meter.c,v 1.3 1993/11/07 17:54:17 wollman Exp $
  */
 
 #include "param.h"
@@ -60,10 +60,14 @@ long tk_rawcc;			/* total raw characters */
 
 fixpt_t	averunnable[3];		/* load average, of runnable procs */
 
+static void vmtotal(void);
+static void loadav(fixpt_t *, int);
+
 int	maxslp = MAXSLP;
 int	saferss = SAFERSS;
 
 
+void
 vmmeter()
 {
 	register unsigned *cp, *rp, *sp;
@@ -74,6 +78,7 @@ vmmeter()
 		wakeup((caddr_t)&proc0);
 }
 
+static void
 vmtotal()
 {
 	register struct proc *p;
@@ -144,6 +149,7 @@ fixpt_t	cexp[3] = {
  * Compute a tenex style load average of a quantity on
  * 1, 5 and 15 minute intervals.
  */
+void
 loadav(avg, n)
 	register fixpt_t *avg;
 	int n;

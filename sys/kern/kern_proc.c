@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_proc.c	7.16 (Berkeley) 6/28/91
- *	$Id$
+ *	$Id: kern_proc.c,v 1.2 1993/10/16 15:24:23 rgrimes Exp $
  */
 
 #include "param.h"
@@ -49,9 +49,13 @@
 #include "ioctl.h"
 #include "tty.h"
 
+static void pgdelete(struct pgrp *);
+static void orphanpg(struct pgrp *);
+
 /*
  * Is p an inferior of the current process?
  */
+int
 inferior(p)
 	register struct proc *p;
 {
@@ -95,9 +99,11 @@ pgfind(pgid)
 /*
  * Move p to a new or existing process group (and session)
  */
+void
 enterpgrp(p, pgid, mksess)
 	register struct proc *p;
 	pid_t pgid;
+	int mksess;
 {
 	register struct pgrp *pgrp = pgfind(pgid);
 	register struct proc **pp;
@@ -186,6 +192,7 @@ done:
 /*
  * remove process from process group
  */
+void
 leavepgrp(p)
 	register struct proc *p;
 {
@@ -206,6 +213,7 @@ done:
 /*
  * delete a process group
  */
+static void
 pgdelete(pgrp)
 	register struct pgrp *pgrp;
 {
@@ -226,8 +234,6 @@ done:
 	FREE(pgrp, M_PGRP);
 }
 
-static orphanpg();
-
 /*
  * Adjust pgrp jobc counters when specified process changes process group.
  * We count the number of processes in each process group that "qualify"
@@ -238,6 +244,7 @@ static orphanpg();
  * entering == 0 => p is leaving specified group.
  * entering == 1 => p is entering specified group.
  */
+void
 fixjobc(p, pgrp, entering)
 	register struct proc *p;
 	register struct pgrp *pgrp;
@@ -277,7 +284,7 @@ fixjobc(p, pgrp, entering)
  * if there are any stopped processes in the group,
  * hang-up all process in that group.
  */
-static
+static void
 orphanpg(pg)
 	struct pgrp *pg;
 {

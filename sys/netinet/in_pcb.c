@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in_pcb.c	7.14 (Berkeley) 4/20/91
- *	$Id: in_pcb.c,v 1.2 1993/10/16 18:26:01 rgrimes Exp $
+ *	$Id: in_pcb.c,v 1.3 1993/11/18 00:08:15 wollman Exp $
  */
 
 #include "param.h"
@@ -54,6 +54,7 @@
 
 struct	in_addr zeroin_addr;
 
+int
 in_pcballoc(so, head)
 	struct socket *so;
 	struct inpcb *head;
@@ -72,6 +73,7 @@ in_pcballoc(so, head)
 	return (0);
 }
 	
+int
 in_pcbbind(inp, nam)
 	register struct inpcb *inp;
 	struct mbuf *nam;
@@ -135,12 +137,13 @@ noname:
  * If don't have a local address for this socket yet,
  * then pick one.
  */
+int
 in_pcbconnect(inp, nam)
 	register struct inpcb *inp;
 	struct mbuf *nam;
 {
 	struct in_ifaddr *ia;
-	struct sockaddr_in *ifaddr;
+	struct sockaddr_in *ifaddr = 0;
 	register struct sockaddr_in *sin = mtod(nam, struct sockaddr_in *);
 
 	if (nam->m_len != sizeof (*sin))
@@ -242,6 +245,7 @@ in_pcbconnect(inp, nam)
 	return (0);
 }
 
+void
 in_pcbdisconnect(inp)
 	struct inpcb *inp;
 {
@@ -255,6 +259,7 @@ in_pcbdisconnect(inp)
 		in_pcbdetach(inp);
 }
 
+void
 in_pcbdetach(inp)
 	struct inpcb *inp;
 {
@@ -270,6 +275,7 @@ in_pcbdetach(inp)
 	(void) m_free(dtom(inp));
 }
 
+void
 in_setsockaddr(inp, nam)
 	register struct inpcb *inp;
 	struct mbuf *nam;
@@ -285,6 +291,7 @@ in_setsockaddr(inp, nam)
 	sin->sin_addr = inp->inp_laddr;
 }
 
+void
 in_setpeeraddr(inp, nam)
 	struct inpcb *inp;
 	struct mbuf *nam;
@@ -317,12 +324,12 @@ in_pcbnotify(head, dst, fport, laddr, lport, cmd, notify)
 	struct sockaddr *dst;
 	u_short fport, lport;
 	struct in_addr laddr;
-	int cmd, (*notify)();
+	int cmd;
+	void (*notify)(struct inpcb *, int);
 {
 	register struct inpcb *inp, *oinp;
 	struct in_addr faddr;
 	int errno;
-	int in_rtchange();
 
 	if ((unsigned)cmd > PRC_NCMDS || dst->sa_family != AF_INET)
 		return;
@@ -400,8 +407,10 @@ in_losing(inp)
  * After a routing change, flush old routing
  * and allocate a (hopefully) better one.
  */
-in_rtchange(inp)
+void
+in_rtchange(inp, errno)
 	register struct inpcb *inp;
+	int errno;
 {
 	if (inp->inp_route.ro_rt) {
 		rtfree(inp->inp_route.ro_rt);

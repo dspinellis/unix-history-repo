@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vnode_pager.c	7.5 (Berkeley) 4/20/91
- *	$Id: vnode_pager.c,v 1.2 1993/10/16 16:21:02 rgrimes Exp $
+ *	$Id: vnode_pager.c,v 1.3 1993/11/07 17:54:30 wollman Exp $
  */
 
 /*
@@ -209,6 +209,7 @@ vnode_pager_dealloc(pager)
 	free((caddr_t)pager, M_VMPAGER);
 }
 
+int
 vnode_pager_getpage(pager, m, sync)
 	vm_pager_t pager;
 	vm_page_t m;
@@ -235,7 +236,7 @@ vnode_pager_putpage(pager, m, sync)
 		printf("vnode_pager_putpage(%x, %x)\n", pager, m);
 #endif
 	if (pager == NULL)
-		return;
+		return 0;
 	err = vnode_pager_io((vn_pager_t)pager->pg_data, m, UIO_WRITE);
 	if (err == VM_PAGER_OK) {
 		m->clean = TRUE;			/* XXX - wrong place */
@@ -301,6 +302,7 @@ vnode_pager_haspage(pager, offset)
  * Note: this routine may be invoked as a result of a pager put
  * operation (possibly at object termination time), so we must be careful.
  */
+void
 vnode_pager_setsize(vp, nsize)
 	struct vnode *vp;
 	u_long nsize;
@@ -352,6 +354,7 @@ vnode_pager_setsize(vp, nsize)
 	vm_object_deallocate(object);
 }
 
+void
 vnode_pager_umount(mp)
 	register struct mount *mp;
 {
@@ -416,6 +419,7 @@ vnode_pager_uncache(vp)
 	return(uncached);
 }
 
+int
 vnode_pager_io(vnp, m, rw)
 	register vn_pager_t vnp;
 	vm_page_t m;

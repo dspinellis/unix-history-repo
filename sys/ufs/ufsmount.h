@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufsmount.h	7.9 (Berkeley) 5/8/91
- *	$Id: ufsmount.h,v 1.2 1993/10/16 18:18:05 rgrimes Exp $
+ *	$Id: ufsmount.h,v 1.3 1993/11/07 17:53:47 wollman Exp $
  */
 
 #ifndef _UFS_UFSMOUNT_H_
@@ -77,6 +77,6 @@ int ufs_statfs __P((struct mount *mp, struct statfs *sbp, struct proc *p));
 int ufs_sync __P((struct mount *mp, int waitfor));
 int ufs_fhtovp __P((struct mount *mp, struct fid *fhp, struct vnode **vpp));
 int ufs_vptofh __P((struct vnode *vp, struct fid *fhp));
-int ufs_init __P(());
+void ufs_init __P(());
 #endif /* KERNEL */
 #endif /* _UFS_UFSMOUNT_H_ */

@@ -172,4 +172,17 @@ boolean_t	lock_try_read_to_write();
 void		lock_set_recursive();
 void		lock_clear_recursive();
 
+/*
+ * Try to get semi-meaningful wait messages into thread_sleep...
+ */
+extern void thread_sleep_(int, simple_lock_t, const char *);
+#if __GNUC__ > 2
+#  define thread_sleep(a,b,c) thread_sleep_((a), (b), __FUNCTION__)
+#else
+#  define thread_sleep(a,b,c) thread_sleep_((a), (b), "vmsleep")
+#endif
+#define thread_sleep_new thread_sleep_
+extern void thread_wakeup(int);
+
+
 #endif /* !_LOCK_H_ */

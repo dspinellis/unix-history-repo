@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mfs_vfsops.c	7.19 (Berkeley) 4/16/91
- *	$Id: mfs_vfsops.c,v 1.3 1993/10/16 18:17:42 rgrimes Exp $
+ *	$Id: mfs_vfsops.c,v 1.4 1993/11/12 10:15:41 chmr Exp $
  */
 
 #include "param.h"
@@ -63,7 +63,7 @@ int mfs_statfs();
 int ufs_sync();
 int ufs_fhtovp();
 int ufs_vptofh();
-int mfs_init();
+void mfs_init();
 
 struct vfsops mfs_vfsops = {
 	mfs_mount,
@@ -84,6 +84,7 @@ struct vfsops mfs_vfsops = {
  * mount system call
  */
 /* ARGSUSED */
+int
 mfs_mount(mp, path, data, ndp, p)
 	register struct mount *mp;
 	char *path;
@@ -153,6 +154,7 @@ int	mfs_pri = PWAIT | PCATCH;		/* XXX prob. temp */
  * address space.
  */
 /* ARGSUSED */
+int
 mfs_start(mp, flags, p)
 	struct mount *mp;
 	int flags;
@@ -187,6 +189,7 @@ mfs_start(mp, flags, p)
 /*
  * Get file system statistics.
  */
+int
 mfs_statfs(mp, sbp, p)
 	struct mount *mp;
 	struct statfs *sbp;

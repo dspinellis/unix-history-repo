@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_glue.c	7.8 (Berkeley) 5/15/91
- *	$Id: vm_glue.c,v 1.10 1993/11/07 17:54:11 wollman Exp $
+ *	$Id: vm_glue.c,v 1.11 1993/11/07 21:48:36 wollman Exp $
  */
 
 /*
@@ -75,9 +75,12 @@
 #include "vm_kern.h"
 #include "machine/stdarg.h"
 
+static void swapout(struct proc *);
+
 int	avefree = 0;		/* XXX */
 int	readbuffers = 0;	/* XXX allow kgdb to read kernel buffer pool */
 
+int
 kernacc(addr, len, rw)
 	caddr_t addr;
 	int len, rw;
@@ -104,6 +107,7 @@ kernacc(addr, len, rw)
 	return(rv == TRUE);
 }
 
+int
 useracc(addr, len, rw)
 	caddr_t addr;
 	int len, rw;
@@ -149,6 +153,7 @@ chgkprot(addr, len, rw)
 }
 #endif
 
+void
 vslock(addr, len)
 	caddr_t	addr;
 	u_int	len;
@@ -157,6 +162,7 @@ vslock(addr, len)
 			round_page(addr+len), FALSE);
 }
 
+void
 vsunlock(addr, len, dirtied)
 	caddr_t	addr;
 	u_int	len;
@@ -180,6 +186,7 @@ vsunlock(addr, len, dirtied)
  * after cpu_fork returns in the child process.  We do nothing here
  * after cpu_fork returns.
  */
+int
 vm_fork(p1, p2, isvfork)
 	register struct proc *p1, *p2;
 	int isvfork;
@@ -254,6 +261,7 @@ vm_fork(p1, p2, isvfork)
  * Set default limits for VM system.
  * Called for proc 0, and then inherited by all others.
  */
+void
 vm_init_limits(p)
 	register struct proc *p;
 {
@@ -290,6 +298,7 @@ int	swapdebug = 0;
  *	2. If not enough memory, wake the pageout daemon and let it
  *	   clear some space.
  */
+void				/* XXX should be __dead, too */
 sched()
 {
 	register struct proc *p;
@@ -382,6 +391,7 @@ noswap:
  * they are swapped.  Else, we swap the longest-sleeping or stopped process,
  * if any, otherwise the longest-resident process.
  */
+void
 swapout_threads()
 {
 	register struct proc *p;
@@ -438,6 +448,7 @@ swapout_threads()
 	}
 }
 
+static void
 swapout(p)
 	register struct proc *p;
 {
@@ -501,39 +512,44 @@ assert_wait(event, ruptible)
 }
 
 void
-thread_block()
+thread_block(const char *wmesg)
 {
 	int s = splhigh();
 
-	if (curproc->p_thread)
-	  tsleep((caddr_t)curproc->p_thread, PVM, "vmblock", 0);
+	if (curproc->p_thread) {
+		tsleep((caddr_t)curproc->p_thread, PVM, wmesg, 0);
+	}
 	splx(s);
 }
 
-thread_sleep(event, lock, ruptible)
+void
+thread_sleep_(event, lock, wmesg)
 	int event;
 	simple_lock_t lock;
-	boolean_t ruptible;
+	const char *wmesg;
 {
-#ifdef lint
-	ruptible++;
-#endif
 	int s = splhigh();
 
 	curproc->p_thread = event;
 	simple_unlock(lock);
-	if (curproc->p_thread)
-	  tsleep((caddr_t)event, PVM, "vmsleep", 0);
+	if (curproc->p_thread) {
+		tsleep((caddr_t)event, PVM, wmesg, 0);
+	}
 	splx(s);
 }
 
+void
 thread_wakeup(event)
 	int event;
 {
-	int s = splhigh();
+#if 0
+	int s = splhigh();	/* XXX is this really necessary??? */
+#endif
 
 	wakeup((caddr_t)event);
+#if 0
 	splx(s);
+#endif
 }
 
 /*

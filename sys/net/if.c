@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if.c	7.14 (Berkeley) 4/20/91
- *	$Id: if.c,v 1.4 1993/10/16 17:43:10 rgrimes Exp $
+ *	$Id: if.c,v 1.5 1993/11/07 17:46:53 wollman Exp $
  */
 
 #include "param.h"
@@ -54,6 +54,10 @@ int	ifqmaxlen = IFQ_MAXLEN;
 struct	ifqueue rawintrq;	/* raw packet input queue */
 struct	ifnet *ifnet;		/* list of configured interfaces */
 
+static void link_rtrequest(int, struct rtentry *, struct sockaddr *);
+static void if_qflush(struct ifqueue *);
+static void if_slowtimo(caddr_t, int);
+
 /*
  * Network interface utility routines.
  *
@@ -61,6 +65,7 @@ struct	ifnet *ifnet;		/* list of configured interfaces */
  * parameters.
  */
 
+void
 ifinit()
 {
 	register struct ifnet *ifp;
@@ -68,7 +73,7 @@ ifinit()
 	for (ifp = ifnet; ifp; ifp = ifp->if_next)
 		if (ifp->if_snd.ifq_maxlen == 0)
 			ifp->if_snd.ifq_maxlen = ifqmaxlen;
-	if_slowtimo();
+	if_slowtimo((caddr_t)0, 0);
 }
 
 #ifdef vax
@@ -94,6 +99,7 @@ static char *sprint_d();
  * Attach an interface to the
  * list of "active" interfaces.
  */
+void
 if_attach(ifp)
 	struct ifnet *ifp;
 {
@@ -104,7 +110,6 @@ if_attach(ifp)
 	register struct sockaddr_dl *sdl;
 	register struct ifaddr *ifa;
 	static int if_indexlim = 8;
-	extern link_rtrequest(), ether_output();
 
 	while (*p)
 		p = &((*p)->if_next);
@@ -120,14 +125,7 @@ if_attach(ifp)
 		}
 		ifnet_addrs = q;
 	}
-#if defined(INET) && NETHER > 0
-	/* XXX -- Temporary fix before changing 10 ethernet drivers */
-	if (ifp->if_output == ether_output) {
-		ifp->if_type = IFT_ETHER;
-		ifp->if_addrlen = 6;
-		ifp->if_hdrlen = 14;
-	}
-#endif
+
 	/*
 	 * create a Link Level name for this device
 	 */
@@ -312,9 +310,11 @@ ifaof_ifpforaddr(addr, ifp)
  * Lookup an appropriate real ifa to point to.
  * This should be moved to /sys/net/link.c eventually.
  */
+void
 link_rtrequest(cmd, rt, sa)
-register struct rtentry *rt;
-struct sockaddr *sa;
+	int cmd;
+	register struct rtentry *rt;
+	struct sockaddr *sa;
 {
 	register struct ifaddr *ifa;
 	struct sockaddr *dst;
@@ -335,6 +335,7 @@ struct sockaddr *sa;
  * the transition.
  * NOTE: must be called at splnet or eqivalent.
  */
+void
 if_down(ifp)
 	register struct ifnet *ifp;
 {
@@ -349,6 +350,7 @@ if_down(ifp)
 /*
  * Flush an interface queue.
  */
+static void
 if_qflush(ifq)
 	register struct ifqueue *ifq;
 {
@@ -369,7 +371,8 @@ if_qflush(ifq)
  * from softclock, we decrement timers (if set) and
  * call the appropriate interface routine on expiration.
  */
-if_slowtimo()
+static void
+if_slowtimo(caddr_t dummy1, int dummy2)
 {
 	register struct ifnet *ifp;
 	int s = splimp();
@@ -427,6 +430,7 @@ ifunit(name)
 /*
  * Interface ioctls.
  */
+int
 ifioctl(so, cmd, data, p)
 	struct socket *so;
 	int cmd;
@@ -565,6 +569,7 @@ ifioctl(so, cmd, data, p)
  * other information.
  */
 /*ARGSUSED*/
+int
 ifconf(cmd, data)
 	int cmd;
 	caddr_t data;

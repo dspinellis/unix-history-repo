@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm.h	7.1 (Berkeley) 5/5/91
- *	$Id: vm.h,v 1.2 1993/10/16 16:20:22 rgrimes Exp $
+ *	$Id: vm.h,v 1.3 1993/11/07 17:54:08 wollman Exp $
  */
 
 #ifndef _VM_H_
@@ -73,4 +73,7 @@ struct	vmspace *vmspace_alloc __P((vm_offset_t min, vm_offset_t max,
 			int pageable));
 struct	vmspace *vmspace_fork __P((struct vmspace *));
 void	vmspace_free __P((struct vmspace *));
+
+extern void thread_block(const char *);
+
 #endif /* _VM_H_ */

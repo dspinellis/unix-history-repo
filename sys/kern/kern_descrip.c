@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_descrip.c	7.28 (Berkeley) 6/25/91
- *	$Id$
+ *	$Id: kern_descrip.c,v 1.4 1993/10/16 15:24:11 rgrimes Exp $
  */
 
 #include "param.h"
@@ -61,6 +61,7 @@ extern int maxfdescs;	/* maximum number of file descriptors to a process */
  * System calls on descriptors.
  */
 /* ARGSUSED */
+int
 getdtablesize(p, uap, retval)
 	struct proc *p;
 	struct args *uap;
@@ -80,6 +81,7 @@ struct dup_args {
 };
 
 /* ARGSUSED */
+int
 dup(p, uap, retval)
 	struct proc *p;
 	struct dup_args *uap;
@@ -118,6 +120,7 @@ struct dup2_args {
 };
 
 /* ARGSUSED */
+int
 dup2(p, uap, retval)
 	struct proc *p;
 	struct dup2_args *uap;
@@ -168,6 +171,7 @@ struct fcntl_args {
 };
 
 /* ARGSUSED */
+int
 fcntl(p, uap, retval)
 	struct proc *p;
 	register struct fcntl_args *uap;
@@ -317,6 +321,7 @@ struct close_args {
 	int	fd;
 };
 
+int
 close(p, uap, retval)
 	struct proc *p;
 	struct close_args *uap;
@@ -352,6 +357,7 @@ struct fstat_args {
 };
 
 /* ARGSUSED */
+int
 fstat(p, uap, retval)
 	struct proc *p;
 	register struct fstat_args *uap;
@@ -389,6 +395,7 @@ fstat(p, uap, retval)
  */
 int fdexpand;
 
+int
 fdalloc(p, want, result)
 	struct proc *p;
 	int want;
@@ -457,6 +464,7 @@ fdalloc(p, want, result)
  * Check to see whether n user file descriptors
  * are available to the process p.
  */
+int
 fdavail(p, n)
 	struct proc *p;
 	register int n;
@@ -479,6 +487,7 @@ fdavail(p, n)
  * Create a new open file structure and allocate
  * a file decriptor for the process that refers to it.
  */
+int
 falloc(p, resultfp, resultfd)
 	register struct proc *p;
 	struct file **resultfp;
@@ -526,6 +535,7 @@ falloc(p, resultfp, resultfd)
 /*
  * Free a file descriptor.
  */
+void
 ffree(fp)
 	register struct file *fp;
 {
@@ -659,6 +669,7 @@ fdcloseexec(p)
  * Internal form of close.
  * Decrement reference count on file structure.
  */
+int
 closef(fp, p)
 	register struct file *fp;
 	register struct proc *p;
@@ -713,6 +724,7 @@ struct flock_args {
 };
 
 /* ARGSUSED */
+int
 flock(p, uap, retval)
 	struct proc *p;
 	register struct flock_args *uap;
@@ -759,6 +771,7 @@ flock(p, uap, retval)
  * references to this file will be direct to the other driver.
  */
 /* ARGSUSED */
+int
 fdopen(dev, mode, type)
 	dev_t dev;
 	int mode, type;
@@ -779,6 +792,7 @@ fdopen(dev, mode, type)
 /*
  * Duplicate the specified descriptor to a free descriptor.
  */
+int
 dupfdopen(fdp, indx, dfd, mode)
 	register struct filedesc *fdp;
 	register int indx, dfd;

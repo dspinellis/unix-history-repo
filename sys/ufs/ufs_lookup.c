@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_lookup.c	7.33 (Berkeley) 5/19/91
- *	$Id$
+ *	$Id: ufs_lookup.c,v 1.4 1993/10/16 18:17:55 rgrimes Exp $
  */
 
 #include "param.h"
@@ -88,6 +88,7 @@ int	dirchk = 0;
  *
  * NOTE: (LOOKUP | LOCKPARENT) currently returns the parent inode unlocked.
  */
+int
 ufs_lookup(vdp, ndp, p)
 	register struct vnode *vdp;
 	register struct nameidata *ndp;
@@ -97,15 +98,15 @@ ufs_lookup(vdp, ndp, p)
 	register struct fs *fs;		/* file system that directory is in */
 	struct buf *bp = 0;		/* a buffer of directory entries */
 	register struct direct *ep;	/* the current directory entry */
-	int entryoffsetinblock;		/* offset of ep in bp's buffer */
+	int entryoffsetinblock = 0; /* offset of ep in bp's buffer */
 	enum {NONE, COMPACT, FOUND} slotstatus;
 	int slotoffset = -1;		/* offset of area with free space */
-	int slotsize;			/* size of area at slotoffset */
-	int slotfreespace;		/* amount of space free in slot */
-	int slotneeded;			/* size of the entry we're seeking */
+	int slotsize = 0;	/* size of area at slotoffset */
+	int slotfreespace = 0;		/* amount of space free in slot */
+	int slotneeded = 0;	/* size of the entry we're seeking */
 	int numdirpasses;		/* strategy for directory search */
 	int endsearch;			/* offset to end directory search */
-	int prevoff;			/* ndp->ni_ufs.ufs_offset of previous entry */
+	int prevoff = 0;	/* ndp->ni_ufs.ufs_offset of previous entry */
 	struct inode *pdp;		/* saved dp during symlink work */
 	struct inode *tdp;		/* returned by iget */
 	off_t enduseful;		/* pointer past last used dir slot */
@@ -539,7 +540,7 @@ found:
 	return (0);
 }
 
-
+void
 dirbad(ip, offset, how)
 	struct inode *ip;
 	off_t offset;
@@ -560,6 +561,7 @@ dirbad(ip, offset, how)
  *	name is not longer than MAXNAMLEN
  *	name must be as long as advertised, and null terminated
  */
+int
 dirbadentry(ep, entryoffsetinblock)
 	register struct direct *ep;
 	int entryoffsetinblock;
@@ -584,6 +586,7 @@ dirbadentry(ep, entryoffsetinblock)
  * Remaining parameters (ndp->ni_ufs.ufs_offset, ndp->ni_ufs.ufs_count)
  * indicate how the space for the new entry is to be obtained.
  */
+int
 direnter(ip, ndp)
 	struct inode *ip;
 	register struct nameidata *ndp;
@@ -720,6 +723,7 @@ direnter(ip, ndp)
  * the space of the now empty record by adding the record size
  * to the size of the previous entry.
  */
+int
 dirremove(ndp)
 	register struct nameidata *ndp;
 {
@@ -758,6 +762,7 @@ dirremove(ndp)
  * supplied.  The parameters describing the directory entry are
  * set up by a call to namei.
  */
+int
 dirrewrite(dp, ip, ndp)
 	struct inode *dp, *ip;
 	struct nameidata *ndp;
@@ -780,6 +785,7 @@ dirrewrite(dp, ip, ndp)
  * is non-zero, fill it in with a pointer to the
  * remaining space in the directory.
  */
+int
 blkatoff(ip, offset, res, bpp)
 	struct inode *ip;
 	off_t offset;
@@ -813,6 +819,7 @@ blkatoff(ip, offset, res, bpp)
  *
  * NB: does not handle corrupted directories.
  */
+int
 dirempty(ip, parentino, cred)
 	register struct inode *ip;
 	ino_t parentino;
@@ -863,6 +870,7 @@ dirempty(ip, parentino, cred)
  * Target is supplied locked, source is unlocked.
  * The target is always iput() before returning.
  */
+int
 checkpath(source, target, cred)
 	struct inode *source, *target;
 	struct ucred *cred;

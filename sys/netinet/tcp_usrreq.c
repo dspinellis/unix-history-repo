@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_usrreq.c	7.15 (Berkeley) 6/28/90
- *	$Id$
+ *	$Id: tcp_usrreq.c,v 1.2 1993/10/16 18:26:36 rgrimes Exp $
  */
 
 #include "param.h"
@@ -72,13 +72,14 @@ struct	tcpcb *tcp_newtcpcb();
  * (called from the software clock routine), then timertype tells which timer.
  */
 /*ARGSUSED*/
+int
 tcp_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;
 	struct mbuf *m, *nam, *control;
 {
 	register struct inpcb *inp;
-	register struct tcpcb *tp;
+	register struct tcpcb *tp = 0;
 	int s;
 	int error = 0;
 	int ostate;
@@ -337,6 +338,7 @@ tcp_usrreq(so, req, m, nam, control)
 	return (error);
 }
 
+int
 tcp_ctloutput(op, so, level, optname, mp)
 	int op;
 	struct socket *so;
@@ -408,6 +410,7 @@ u_long	tcp_recvspace = 1024*16;
  * internet protocol control block, tcp control block,
  * bufer space, and entering LISTEN state if to accept connections.
  */
+int
 tcp_attach(so)
 	struct socket *so;
 {

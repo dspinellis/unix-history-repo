@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pk_output.c	7.10 (Berkeley) 5/29/91
- *	$Id$
+ *	$Id: pk_output.c,v 1.2 1993/10/16 19:46:51 rgrimes Exp $
  */
 
 #include "param.h"
@@ -56,8 +56,9 @@
 struct mbuf_cache pk_output_cache = {0 };
 struct	mbuf *nextpk ();
 
+void
 pk_output (lcp)
-register struct pklcd *lcp;
+	register struct pklcd *lcp;
 {
 	register struct x25_packet *xp;
 	register struct mbuf *m;

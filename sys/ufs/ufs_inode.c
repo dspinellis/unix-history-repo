@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ufs_inode.c	7.40 (Berkeley) 5/8/91
- *	$Id: ufs_inode.c,v 1.4 1993/11/07 17:53:44 wollman Exp $
+ *	$Id: ufs_inode.c,v 1.5 1993/11/07 21:48:19 wollman Exp $
  */
 
 #include "param.h"
@@ -68,6 +68,7 @@ int prtactive;	/* 1 => print out reclaim of active vnodes */
 /*
  * Initialize hash links for inodes.
  */
+void
 ufs_init()
 {
 	register int i;
@@ -93,6 +94,7 @@ ufs_init()
  * return the inode locked. Detection and handling of mount
  * points must be done by the calling routine.
  */
+int
 iget(xp, ino, ipp)
 	struct inode *xp;
 	ino_t ino;
@@ -244,6 +246,7 @@ loop:
 /*
  * Unlock and decrement the reference count of an inode structure.
  */
+void
 iput(ip)
 	register struct inode *ip;
 {
@@ -258,6 +261,7 @@ iput(ip)
  * Last reference to an inode, write the inode out and if necessary,
  * truncate and deallocate the file.
  */
+int
 ufs_inactive(vp, p)
 	struct vnode *vp;
 	struct proc *p;
@@ -303,6 +307,7 @@ ufs_inactive(vp, p)
 /*
  * Reclaim an inode so that it can be used for other purposes.
  */
+int
 ufs_reclaim(vp)
 	register struct vnode *vp;
 {
@@ -346,6 +351,7 @@ ufs_reclaim(vp)
  * time is always taken from the current time. If waitfor is set,
  * then wait for the disk write of the inode to complete.
  */
+int
 iupdat(ip, ta, tm, waitfor)
 	register struct inode *ip;
 	struct timeval *ta, *tm;
@@ -394,6 +400,7 @@ iupdat(ip, ta, tm, waitfor)
  *
  * NB: triple indirect blocks are untested.
  */
+int
 itrunc(oip, length, flags)
 	register struct inode *oip;
 	u_long length;
@@ -585,6 +592,7 @@ done:
  *
  * NB: triple indirect blocks are untested.
  */
+int
 indirtrunc(ip, bn, lastbn, level, countp)
 	register struct inode *ip;
 	daddr_t bn, lastbn;
@@ -675,6 +683,7 @@ indirtrunc(ip, bn, lastbn, level, countp)
 /*
  * Lock an inode. If its already locked, set the WANT bit and sleep.
  */
+void
 ilock(ip)
 	register struct inode *ip;
 {
@@ -694,6 +703,7 @@ ilock(ip)
 /*
  * Unlock an inode.  If WANT bit is on, wakeup.
  */
+void
 iunlock(ip)
 	register struct inode *ip;
 {

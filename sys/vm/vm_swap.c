@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_swap.c	7.18 (Berkeley) 5/6/91
- *	$Id: vm_swap.c,v 1.4 1993/10/16 16:20:56 rgrimes Exp $
+ *	$Id: vm_swap.c,v 1.5 1993/11/17 23:27:04 wollman Exp $
  */
 
 #include "param.h"
@@ -59,6 +59,7 @@ int	nswap, nswdev;
  * to buffers, but rather to pages that
  * are being swapped in and out.
  */
+void
 swapinit()
 {
 	register int i;
@@ -100,6 +101,7 @@ swapinit()
 	sp->av_forw = NULL;
 }
 
+void
 swstrategy(bp)
 	register struct buf *bp;
 {
@@ -173,6 +175,7 @@ struct swapon_args {
 };
 
 /* ARGSUSED */
+int
 swapon(p, uap, retval)
 	struct proc *p;
 	struct swapon_args *uap;
@@ -227,6 +230,7 @@ swapon(p, uap, retval)
  * space, which is laid out with blocks of dmmax pages circularly
  * among the devices.
  */
+int
 swfree(p, index)
 	struct proc *p;
 	int index;

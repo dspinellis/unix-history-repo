@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pccons.c	5.11 (Berkeley) 5/21/91
- *	$Id: pccons.c,v 1.7 1993/11/03 20:14:49 ats Exp $
+ *	$Id: pccons.c,v 1.8 1993/11/17 23:25:17 wollman Exp $
  */
 
 /*
@@ -97,7 +97,8 @@ static struct video_state {
 	char	color;	/* color or mono display */
 } vs;
 
-int pcprobe(), pcattach();
+static int pcprobe(struct isa_device *);
+static int pcattach(struct isa_device *);
 
 struct	isa_driver pcdriver = {
 	pcprobe, pcattach, "pc",
@@ -130,12 +131,15 @@ static	int	char_count;
 #define	CN_TIMERVAL	(hz)		/* frequency at which to check cons */
 #define	CN_TIMO		(2*60)		/* intervals to allow for output char */
 
-int	pcstart();
-int	pcparam();
-int	ttrstrt();
-char	partab[];
+void	pcstart(struct tty *);
+int	pcparam(struct tty *, struct termios *);
+extern char partab[];
+static void cursor(caddr_t, int);
+static void sput(int /*u_char*/, int /*u_char*/);
+static void pc_xmode_on(void);
+static void pc_xmode_off(void);
 
-extern pcopen(dev_t, int, int, struct proc *);
+int pcopen(int /*dev_t*/, int, int, struct proc *);
 /*
  * Wait for CP to accept last CP command sent
  * before setting up next command.
@@ -198,8 +202,9 @@ int kbd_response()
 /*
  * these are both bad jokes
  */
+int
 pcprobe(dev)
-struct isa_device *dev;
+	struct isa_device *dev;
 {
 	int again = 0;
 	int response;
@@ -255,8 +260,9 @@ struct isa_device *dev;
 	return (IO_KBDSIZE);
 }
 
+int
 pcattach(dev)
-struct isa_device *dev;
+	struct isa_device *dev;
 {
 	u_short *cp = Crtat + (CGA_BUF-MONO_BUF)/CHR;
 	u_short was;
@@ -264,12 +270,14 @@ struct isa_device *dev;
 	if (vs.color == 0)
 		printf("pc%d: type monochrome\n",dev->id_unit);
 	else	printf("pc%d: type color\n",dev->id_unit);
-	cursor(0);
+	cursor(0, 0);
+	return 0;
 }
 
 /* ARGSUSED */
+int
 #ifdef __STDC__
-pcopen(dev_t dev, int flag, int mode, struct proc *p)
+pcopen(int /*dev_t*/ dev, int flag, int mode, struct proc *p)
 #else
 pcopen(dev, flag, mode, p)
 	dev_t dev;
@@ -299,9 +307,10 @@ pcopen(dev, flag, mode, p)
 	} else if (tp->t_state&TS_XCLUDE && p->p_ucred->cr_uid != 0)
 		return (EBUSY);
 	tp->t_state |= TS_CARR_ON;
-	return ((*linesw[tp->t_line].l_open)(dev, tp));
+	return ((*linesw[tp->t_line].l_open)(dev, tp, 0));
 }
 
+int
 pcclose(dev, flag, mode, p)
 	dev_t dev;
 	int flag, mode;
@@ -313,17 +322,21 @@ pcclose(dev, flag, mode, p)
 }
 
 /*ARGSUSED*/
+int
 pcread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	return ((*linesw[pccons.t_line].l_read)(&pccons, uio, flag));
 }
 
 /*ARGSUSED*/
+int
 pcwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	return ((*linesw[pccons.t_line].l_write)(&pccons, uio, flag));
 }
@@ -333,8 +346,11 @@ pcwrite(dev, uio, flag)
  * the console processor wants to give us a character.
  * Catch the character, and see who it goes to.
  */
+void
 pcrint(dev, irq, cpl)
 	dev_t dev;
+	int irq;		/* XXX ??? */
+	int cpl;
 {
 	int c;
 	char *cp;
@@ -366,9 +382,12 @@ pcrint(dev, irq, cpl)
 #define CONSOLE_X_BELL _IOW('t',123,int[2])
 #endif /* XSERVER */
 
+int
 pcioctl(dev, cmd, data, flag)
 	dev_t dev;
+	int cmd;
 	caddr_t data;
+	int flag;
 {
 	register struct tty *tp = &pccons;
 	register error;
@@ -408,6 +427,7 @@ int	pcconsintr = 1;
  * Got a console transmission interrupt -
  * the console processor wants another character.
  */
+void
 pcxint(dev)
 	dev_t dev;
 {
@@ -424,6 +444,7 @@ pcxint(dev)
 		pcstart(&pccons);
 }
 
+void
 pcstart(tp)
 	register struct tty *tp;
 {
@@ -457,6 +478,7 @@ out:
 	splx(s);
 }
 
+void
 pccnprobe(cp)
 	struct consdev *cp;
 {
@@ -474,6 +496,7 @@ pccnprobe(cp)
 }
 
 /* ARGSUSED */
+void
 pccninit(cp)
 	struct consdev *cp;
 {
@@ -486,6 +509,7 @@ pccninit(cp)
 static __color;
 
 /* ARGSUSED */
+void
 pccnputc(dev, c)
 	dev_t dev;
 	char c;
@@ -498,6 +522,7 @@ pccnputc(dev, c)
 /*
  * Print a character on console.
  */
+void
 pcputchar(c, tp)
 	char c;
 	register struct tty *tp;
@@ -508,6 +533,7 @@ pcputchar(c, tp)
 
 
 /* ARGSUSED */
+int
 pccngetc(dev)
 	dev_t dev;
 {
@@ -526,6 +552,7 @@ pccngetc(dev)
 	return (*cp);
 }
 
+int
 pcgetchar(tp)
 	register struct tty *tp;
 {
@@ -543,6 +570,7 @@ pcgetchar(tp)
 /*
  * Set line parameters
  */
+int
 pcparam(tp, t)
 	register struct tty *tp;
 	register struct termios *t;
@@ -577,8 +605,10 @@ pcpoll(onoff)
 
 static u_short *crtat = 0;
 
-cursor(int a)
-{ 	int pos = crtat - Crtat;
+static void
+cursor(caddr_t rock, int arg2)
+{
+ 	int pos = crtat - Crtat;
 
 #ifdef XSERVER						/* 15 Aug 92*/
 	if (!pc_xmode) {
@@ -593,7 +623,7 @@ cursor(int a)
 	outb(addr_6845, 11);
 	outb(addr_6845+1, 18);
 #endif	/* FAT_CURSOR */
-	if (a == 0)
+	if (rock == 0)
 		timeout(cursor, 0, hz/10);
 #ifdef XSERVER						/* 15 Aug 92*/
 	}
@@ -619,9 +649,10 @@ static char bgansitopc[] =
  *   sput has support for emulation of the 'pc3' termcap entry.
  *   if ka, use kernel attributes.
  */
+static void
 sput(c,  ka)
-u_char c;
-u_char ka;
+	u_char c;
+	u_char ka;
 {
 
 	int sc = 1;	/* do scroll check */
@@ -923,7 +954,7 @@ u_char ka;
 		crtat -= vs.ncol;
 	}
 	if (ka)
-		cursor(1);
+		cursor((caddr_t)1, 0);
 }
 
 
@@ -1349,7 +1380,7 @@ static Scan_def	scan_codes[] =
 };
 
 
-
+void
 update_led()
 {
 	int response;
@@ -1390,7 +1421,9 @@ update_led()
  *   noblock  ==  0  wait  until a key is gotten. Otherwise return a
  *    if no characters are present 0.
  */
-char *sgetc(noblock)
+char *
+sgetc(noblock)
+	int noblock;
 {
 	u_char		dt;
 	unsigned	key;
@@ -1623,6 +1656,7 @@ loop:
 #define del	0177	
 #define cntld	4
 
+int
 getchar()
 {
 	char	thechar;
@@ -1691,6 +1725,7 @@ dprintf(flgs, fmt /*, va_alist */)
 	__color = 0;
 }
 
+void
 consinit() {}
 
 /* -hv- 22-Apr-93: to make init_main more portable */
@@ -1720,7 +1755,8 @@ int pcmmap(dev_t dev, int offset, int nprot)
 #include "machine/psl.h"
 #include "machine/frame.h"
 
-pc_xmode_on ()
+static void
+pc_xmode_on (void)
 {
 	struct syscframe *fp;
 
@@ -1732,6 +1768,7 @@ pc_xmode_on ()
 	fp->sf_eflags |= PSL_IOPL;
 }
 
+static void
 pc_xmode_off ()
 {
 	struct syscframe *fp;
@@ -1740,7 +1777,7 @@ pc_xmode_off ()
 		return;
 	pc_xmode = 0;
 
-	cursor(0);
+	cursor(0, 0);
 
 	fp = (struct syscframe *)curproc->p_regs;
 	fp->sf_eflags &= ~PSL_IOPL;

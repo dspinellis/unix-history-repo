@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: vm_unix.c 1.1 89/11/07$
  *	from: @(#)vm_unix.c	7.2 (Berkeley) 4/20/91
- *	$Id$
+ *	$Id: vm_unix.c,v 1.3 1993/10/16 16:20:58 rgrimes Exp $
  */
 
 /*
@@ -55,6 +55,7 @@ struct obreak_args {
 };
 
 /* ARGSUSED */
+int
 obreak(p, uap, retval)
 	struct proc *p;
 	struct obreak_args *uap;
@@ -94,6 +95,7 @@ obreak(p, uap, retval)
  * Enlarge the "stack segment" to include the specified
  * stack pointer for the process.
  */
+int
 grow(p, sp)
 	struct proc *p;
 	unsigned sp;
@@ -126,6 +128,7 @@ struct ovadvise_args {
 };
 
 /* ARGSUSED */
+int
 ovadvise(p, uap, retval)
 	struct proc *p;
 	struct ovadvise_args *uap;

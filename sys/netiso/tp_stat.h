@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_stat.h	7.5 (Berkeley) 6/27/91
- *	$Id: tp_stat.h,v 1.2 1993/10/16 21:05:59 rgrimes Exp $
+ *	$Id: tp_stat.h,v 1.3 1993/11/07 17:49:59 wollman Exp $
  */
 
 /***********************************************************
@@ -275,7 +275,7 @@ struct tp_pmeas {
 extern int PStat_Junk;
 #define PStat(tpcb, x)  PStat_Junk
 #define IncPStat(tpcb, x)  /* no-op */
-#define tpmeas(a,b,c,d,e,f) 0
+#define tpmeas(a,b,c,d,e,f) 
 
 #define IFPERF(x)	if (0) {
 #define ENDPERF }

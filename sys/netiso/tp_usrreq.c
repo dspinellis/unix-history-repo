@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_usrreq.c	7.17 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: tp_usrreq.c,v 1.2 1993/10/16 21:06:14 rgrimes Exp $
  */
 
 /***********************************************************
@@ -167,6 +167,7 @@ dump_mbuf(n, str)
  *		xpd data in the buffer
  *  E* whatever is returned from the fsm.
  */
+int
 tp_rcvoob(tpcb, so, m, outflags, inflags)
 	struct tp_pcb	*tpcb;
 	register struct socket	*so;
@@ -273,6 +274,7 @@ release:
  *  EMSGSIZE if trying to send > max-xpd bytes (16)
  *  ENOBUFS if ran out of mbufs
  */
+int
 tp_sendoob(tpcb, so, xdata, outflags)
 	struct tp_pcb	*tpcb;
 	register struct socket	*so;
@@ -788,6 +790,8 @@ tp_usrreq(so, req, m, nam, controlp)
 	splx(s);
 	return error;
 }
+
+void
 tp_ltrace(so, uio)
 struct socket *so;
 struct uio *uio;
@@ -801,6 +805,7 @@ struct uio *uio;
 	ENDTRACE
 }
 
+int
 tp_confirm(tpcb)
 register struct tp_pcb *tpcb;
 {
@@ -815,6 +820,7 @@ register struct tp_pcb *tpcb;
 /*
  * Process control data sent with sendmsg()
  */
+int
 tp_snd_control(m, so, data)
 	struct mbuf *m;
 	struct socket *so;

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)iso_chksum.c	7.5 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: iso_chksum.c,v 1.3 1993/10/16 21:05:18 rgrimes Exp $
  */
 
 /***********************************************************
@@ -188,8 +188,8 @@ iso_gen_csum(m,n,l)
 	register int c0=0, c1=0;
 	register int i=0;
 	int loc = n++, len=0; /* n is position, loc is offset */
-	u_char *xloc;
-	u_char *yloc;
+	u_char *xloc = 0;
+	u_char *yloc = 0;
 	int cum=0;	/* cum == cumulative length */
 
 	IFDEBUG(D_CHKSUM)

@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.7 1993/11/07 17:54:18 wollman Exp $
+ *	$Id: vm_object.c,v 1.8 1993/11/14 03:07:03 jkh Exp $
  */
 
 /*
@@ -75,6 +75,11 @@
 
 #include "vm.h"
 #include "vm_page.h"
+
+static void _vm_object_allocate(vm_size_t, vm_object_t);
+static void vm_object_deactivate_pages(vm_object_t);
+static void vm_object_cache_trim(void);
+static void vm_object_remove(vm_pager_t);
 
 /*
  *	Virtual memory objects maintain the actual data
@@ -170,6 +175,7 @@ vm_object_t vm_object_allocate(size)
 	return(result);
 }
 
+static void
 _vm_object_allocate(size, object)
 	vm_size_t		size;
 	register vm_object_t	object;
@@ -347,7 +353,7 @@ void vm_object_terminate(object)
 	 */
 
 	while (object->paging_in_progress != 0) {
-		vm_object_sleep(object, object, FALSE);
+		vm_object_sleep((int)object, object, FALSE);
 		vm_object_lock(object);
 	}
 
@@ -442,6 +448,7 @@ void vm_object_terminate(object)
  *
  *	The object must be locked.
  */
+void
 vm_object_page_clean(object, start, end)
 	register vm_object_t	object;
 	register vm_offset_t	start;
@@ -484,6 +491,7 @@ again:
  *
  *	The object must be locked.
  */
+static void
 vm_object_deactivate_pages(object)
 	register vm_object_t	object;
 {
@@ -506,6 +514,7 @@ vm_object_deactivate_pages(object)
 /*
  *	Trim the object cache to size.
  */
+static void
 vm_object_cache_trim()
 {
 	register vm_object_t	object;
@@ -999,6 +1008,7 @@ void vm_object_enter(object, pager)
  *	is locked.  XXX this should be fixed
  *	by reorganizing vm_object_deallocate.
  */
+static void
 vm_object_remove(pager)
 	register vm_pager_t	pager;
 {

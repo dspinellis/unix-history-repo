@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)argo_debug.h	7.4 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: argo_debug.h,v 1.2 1993/10/16 21:04:39 rgrimes Exp $
  */
 
 /*****************************************************************
@@ -172,6 +172,7 @@ if( !(phrase) ) printf("ASSERTION NOT VALID at line %d file %s\n",__LINE__,__FIL
 #define	D_REASS			'\21'	
 /* clnp reassembly */
 
+extern void Dump_buf(char *, int);
 char *clnp_iso_addrp();
 
 /***********************************************

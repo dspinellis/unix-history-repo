@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.h	7.10 (Berkeley) 6/26/91
- *	$Id: tty.h,v 1.4 1993/10/16 17:18:06 rgrimes Exp $
+ *	$Id: tty.h,v 1.5 1993/11/14 23:29:50 ache Exp $
  */
 
 #ifndef _SYS_TTY_H_
@@ -81,8 +81,8 @@ struct ringb {
  * (low, high, timeout).
  */
 struct tty {
-	int	(*t_oproc)();		/* device */
-	int	(*t_param)();		/* device */
+	void	(*t_oproc)(struct tty *); /* device */
+	int	(*t_param)(struct tty *, struct termios *); /* device */
 	pid_t	t_rsel;			/* tty */
 	pid_t	t_wsel;
 	caddr_t	T_LINEP; 		/* XXX */
@@ -204,7 +204,51 @@ struct speedtab {
 
 #ifdef KERNEL
 /* symbolic sleep message strings */
-extern	 char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
-#endif
+extern const char ttyin[], ttyout[], ttopen[], ttclos[], ttybg[], ttybuf[];
 
+struct uio;
+
+/* From tty.c: */
+extern void ttychars(struct tty *);
+extern int ttwflush(struct tty *);
+extern int ttywait(struct tty *);
+extern void ttyflush(struct tty *, int);
+extern void ttyblock(struct tty *);
+extern void ttyunblock(struct tty *);
+extern void ttstart(struct tty *);
+extern void ttrstrt(struct tty *);
+extern int ttioctl(struct tty *, int, caddr_t, int);
+extern int ttnread(struct tty *);
+extern int ttselect(int /*dev_t*/, int, struct proc *);
+extern int ttyopen(int /*dev_t*/, struct tty *, int);
+extern void ttylclose(struct tty *, int);
+extern int ttyclose(struct tty *);
+extern int ttymodem(struct tty *, int);
+extern int nullmodem(struct tty *, int);
+extern void ttypend(struct tty *);
+extern void ttyinput(int, struct tty *);
+extern int ttyoutput(int, struct tty *);
+extern int ttread(struct tty *, struct uio *, int);
+extern int ttycheckoutq(struct tty *, int);
+extern int ttwrite(struct tty *, struct uio *, int);
+extern void ttyrub(int, struct tty *);
+extern void ttyrubo(struct tty *, int);
+extern void ttyretype(struct tty *);
+extern void ttyecho(int, struct tty *);
+extern void ttyoutstr(char *, struct tty *);
+extern void ttwakeup(struct tty *);
+extern int ttspeedtab(int, struct speedtab *);
+extern void ttsetwater(struct tty *);
+extern void ttyinfo(struct tty *);
+extern int tputchar(int, struct tty *);
+extern int ttysleep(struct tty *, caddr_t, int, const char *, int);
+
+/* From tty_ring.c: */
+extern int getc(struct ringb *);
+extern size_t rb_write(struct ringb *, char *, size_t);
+
+/* From tty_compat.c: */
+extern int ttcompat(struct tty *, int, caddr_t, int);
+
+#endif /* KERNEL */
 #endif	/* _SYS_TTY_H_ */

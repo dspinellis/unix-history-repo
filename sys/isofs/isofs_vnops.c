@@ -1,5 +1,5 @@
 /*
- *	$Id: isofs_vnops.c,v 1.5 1993/07/19 13:40:10 cgd Exp $
+ *	$Id: isofs_vnops.c,v 1.2 1993/07/20 03:27:37 jkh Exp $
  */
 #include "param.h"
 #include "systm.h"
@@ -28,6 +28,7 @@
  * Nothing to do.
  */
 /* ARGSUSED */
+int
 isofs_open(vp, mode, cred, p)
 	struct vnode *vp;
 	int mode;
@@ -43,6 +44,7 @@ isofs_open(vp, mode, cred, p)
  * Update the times on the inode on writeable file systems.
  */
 /* ARGSUSED */
+int
 isofs_close(vp, fflag, cred, p)
 	struct vnode *vp;
 	int fflag;
@@ -57,6 +59,7 @@ isofs_close(vp, fflag, cred, p)
  * The mode is shifted to select the owner/group/other fields. The
  * super user is granted all permissions.
  */
+int
 isofs_access(vp, mode, cred, p)
 	struct vnode *vp;
 	register int mode;
@@ -67,6 +70,7 @@ isofs_access(vp, mode, cred, p)
 }
 
 /* ARGSUSED */
+int
 isofs_getattr(vp, vap, cred, p)
 	struct vnode *vp;
 	register struct vattr *vap;
@@ -106,6 +110,7 @@ isofs_getattr(vp, vap, cred, p)
  * Vnode op for reading.
  */
 /* ARGSUSED */
+int
 isofs_read(vp, uio, ioflag, cred)
 	struct vnode *vp;
 	register struct uio *uio;
@@ -165,6 +170,7 @@ isofs_read(vp, uio, ioflag, cred)
 }
 
 /* ARGSUSED */
+int
 isofs_ioctl(vp, com, data, fflag, cred, p)
 	struct vnode *vp;
 	int com;
@@ -177,6 +183,7 @@ isofs_ioctl(vp, com, data, fflag, cred, p)
 }
 
 /* ARGSUSED */
+int
 isofs_select(vp, which, fflags, cred, p)
 	struct vnode *vp;
 	int which, fflags;
@@ -196,6 +203,7 @@ isofs_select(vp, which, fflags, cred, p)
  * NB Currently unsupported.
  */
 /* ARGSUSED */
+int
 isofs_mmap(vp, fflags, cred, p)
 	struct vnode *vp;
 	int fflags;
@@ -212,6 +220,7 @@ isofs_mmap(vp, fflags, cred, p)
  * Nothing to do, so just return.
  */
 /* ARGSUSED */
+int
 isofs_seek(vp, oldoff, newoff, cred)
 	struct vnode *vp;
 	off_t oldoff, newoff;
@@ -224,6 +233,7 @@ isofs_seek(vp, oldoff, newoff, cred)
 /*
  * Vnode op for readdir
  */
+int
 isofs_readdir(vp, uio, cred, eofflagp)
 	struct vnode *vp;
 	register struct uio *uio;
@@ -446,6 +456,7 @@ struct ucred *cred;
  * done. If a buffer has been saved in anticipation of a CREATE, delete it.
  */
 /* ARGSUSED */
+int
 isofs_abortop(ndp)
 	struct nameidata *ndp;
 {
@@ -458,6 +469,7 @@ isofs_abortop(ndp)
 /*
  * Lock an inode.
  */
+int
 isofs_lock(vp)
 	struct vnode *vp;
 {
@@ -470,6 +482,7 @@ isofs_lock(vp)
 /*
  * Unlock an inode.
  */
+int
 isofs_unlock(vp)
 	struct vnode *vp;
 {
@@ -484,6 +497,7 @@ isofs_unlock(vp)
 /*
  * Check for a locked inode.
  */
+int
 isofs_islocked(vp)
 	struct vnode *vp;
 {
@@ -498,6 +512,7 @@ isofs_islocked(vp)
  * then call the device strategy routine.
  */
 
+int
 isofs_strategy(bp)
 	register struct buf *bp;
 {
@@ -526,6 +541,7 @@ isofs_strategy(bp)
 /*
  * Print out the contents of an inode.
  */
+void
 isofs_print(vp)
 	struct vnode *vp;
 {

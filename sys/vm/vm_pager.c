@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_pager.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_pager.c,v 1.3 1993/10/16 16:20:50 rgrimes Exp $
+ *	$Id: vm_pager.c,v 1.4 1993/11/22 09:49:54 davidg Exp $
  */
 
 /*
@@ -161,6 +161,7 @@ vm_pager_deallocate(pager)
 	VM_PAGER_DEALLOC(pager);
 }
 
+int
 vm_pager_get(pager, m, sync)
 	vm_pager_t	pager;
 	vm_page_t	m;
@@ -173,6 +174,7 @@ vm_pager_get(pager, m, sync)
 	return(VM_PAGER_GET(pager, m, sync));
 }
 
+int
 vm_pager_put(pager, m, sync)
 	vm_pager_t	pager;
 	vm_page_t	m;
@@ -266,6 +268,7 @@ vm_pager_lookup(list, handle)
  * This routine gains a reference to the object.
  * Explicit deallocation is necessary.
  */
+int
 pager_cache(object, should_cache)
 	vm_object_t	object;
 	boolean_t	should_cache;

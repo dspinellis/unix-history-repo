@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_kinfo.c	7.17 (Berkeley) 6/26/91
- *	$Id: kern_kinfo.c,v 1.4 1993/11/07 21:44:42 wollman Exp $
+ *	$Id: kern_kinfo.c,v 1.5 1993/11/17 22:06:18 nate Exp $
  */
 
 #include "param.h"
@@ -58,6 +58,7 @@ struct getkerninfo_args {
 };
 
 /* ARGSUSED */
+int
 getkerninfo(p, uap, retval)
 	struct proc *p;
 	register struct getkerninfo_args *uap;
@@ -132,14 +133,18 @@ done:
  */
 #define KINFO_PROCSLOP	(5 * sizeof (struct kinfo_proc))
 
+int
 kinfo_doproc(op, where, acopysize, arg, aneeded)
+	int op;
 	char *where;
-	int *acopysize, *aneeded;
+	int *acopysize;
+	int arg;
+	int *aneeded;
 {
 	register struct proc *p;
 	register struct kinfo_proc *dp = (struct kinfo_proc *)where;
-	register needed = 0;
-	int buflen;
+	register int needed = 0;
+	int buflen = 0;
 	int doingzomb;
 	struct eproc eproc;
 	int error = 0;
@@ -253,9 +258,13 @@ fill_eproc(p, ep)
 /*
  * Get file structures.
  */
+int
 kinfo_file(op, where, acopysize, arg, aneeded)
+	int op;
 	register char *where;
-	int *acopysize, *aneeded;
+	int *acopysize;
+	int arg;
+	int *aneeded;
 {
 	int buflen, needed, error;
 	struct file *fp;

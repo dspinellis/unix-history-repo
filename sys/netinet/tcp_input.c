@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_input.c	7.25 (Berkeley) 6/30/90
- *	$Id$
+ *	$Id: tcp_input.c,v 1.2 1993/10/16 18:26:26 rgrimes Exp $
  */
 
 #include "param.h"
@@ -58,6 +58,10 @@
 #include "tcp_var.h"
 #include "tcpip.h"
 #include "tcp_debug.h"
+
+static void tcp_dooptions(struct tcpcb *, struct mbuf *, struct tcpiphdr *);
+static void tcp_pulloutofband(struct socket *, struct tcpiphdr *, struct mbuf *);
+static void tcp_xmit_timer(struct tcpcb *);
 
 int	tcprexmtthresh = 3;
 int	tcppredack;	/* XXX debugging: times hdr predict ok for acks */
@@ -95,6 +99,7 @@ struct	tcpcb *tcp_newtcpcb();
 	} \
 }
 
+int
 tcp_reass(tp, ti, m)
 	register struct tcpcb *tp;
 	register struct tcpiphdr *ti;
@@ -202,6 +207,7 @@ present:
  * TCP input routine, follows pages 65-76 of the
  * protocol specification dated September, 1981 very closely.
  */
+void
 tcp_input(m, iphlen)
 	register struct mbuf *m;
 	int iphlen;
@@ -212,9 +218,9 @@ tcp_input(m, iphlen)
 	int len, tlen, off;
 	register struct tcpcb *tp = 0;
 	register int tiflags;
-	struct socket *so;
+	struct socket *so = 0;
 	int todrop, acked, ourfinisacked, needoutput = 0;
-	short ostate;
+	short ostate = 0;
 	struct in_addr laddr;
 	int dropsocket = 0;
 	int iss = 0;
@@ -594,7 +600,7 @@ trimthenstep6:
 		 * dropping FIN if necessary.
 		 */
 		ti->ti_seq++;
-		if (ti->ti_len > tp->rcv_wnd) {
+		if ((u_long)ti->ti_len > (u_long)tp->rcv_wnd) {
 			todrop = ti->ti_len - tp->rcv_wnd;
 			m_adj(m, -todrop);
 			ti->ti_len = tp->rcv_wnd;
@@ -1057,7 +1063,7 @@ step6:
 		 * but if two URG's are pending at once, some out-of-band
 		 * data may creep in... ick.
 		 */
-		if (ti->ti_urp <= ti->ti_len
+		if ((u_long)ti->ti_urp <= (u_long)ti->ti_len
 #ifdef SO_OOBINLINE
 		     && (so->so_options & SO_OOBINLINE) == 0
 #endif
@@ -1206,6 +1212,7 @@ drop:
 	return;
 }
 
+static void
 tcp_dooptions(tp, om, ti)
 	struct tcpcb *tp;
 	struct mbuf *om;
@@ -1253,6 +1260,7 @@ tcp_dooptions(tp, om, ti)
  * It is still reflected in the segment length for
  * sequencing purposes.
  */
+static void
 tcp_pulloutofband(so, ti, m)
 	struct socket *so;
 	struct tcpiphdr *ti;
@@ -1283,6 +1291,7 @@ tcp_pulloutofband(so, ti, m)
  * Collect new round-trip time estimate
  * and update averages and current timeout.
  */
+static void
 tcp_xmit_timer(tp)
 	register struct tcpcb *tp;
 {
@@ -1366,7 +1375,7 @@ tcp_xmit_timer(tp)
  * While looking at the routing entry, we also initialize other path-dependent
  * parameters from pre-set or cached values in the routing entry.
  */
-
+int
 tcp_mss(tp, offer)
 	register struct tcpcb *tp;
 	u_short offer;

@@ -31,10 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)sys_process.c	7.22 (Berkeley) 5/11/91
- *	$Id$
+ *	$Id: sys_process.c,v 1.6 1993/11/16 09:55:03 davidg Exp $
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "vnode.h"
 #include "buf.h"
@@ -111,7 +112,8 @@ pread (struct proc *procp, unsigned int addr, unsigned int *retval) {
 		rv = vm_map_pageable (kernel_map, kva, kva + PAGE_SIZE, 0);
 		if (!rv) {
 			*retval = 0;
-			bcopy (kva + page_offset, retval, sizeof *retval);
+			bcopy ((caddr_t)(kva + page_offset), retval,
+			       sizeof *retval);
 		}
 		vm_map_remove (kernel_map, kva, kva + PAGE_SIZE);
 	}
@@ -202,7 +204,7 @@ pwrite (struct proc *procp, unsigned int addr, unsigned int datum) {
 
 		rv = vm_map_pageable (kernel_map, kva, kva + PAGE_SIZE, 0);
 		if (!rv) {
-		  bcopy (&datum, kva + page_offset, sizeof datum);
+		  bcopy (&datum, (caddr_t)(kva + page_offset), sizeof datum);
 		}
 		vm_map_remove (kernel_map, kva, kva + PAGE_SIZE);
 	}
@@ -223,6 +225,7 @@ struct ptrace_args {
 /*
  * Process debugging system call.
  */
+int
 ptrace(curp, uap, retval)
 	struct proc *curp;
 	register struct ptrace_args *uap;
@@ -384,6 +387,7 @@ ptrace(curp, uap, retval)
 	return 0;
 }
 
+int
 procxmt(p)
 	register struct proc *p;
 {
@@ -402,6 +406,7 @@ struct profil_args {
 };
 
 /* ARGSUSED */
+int
 profil(p, uap, retval)
 	struct proc *p;
 	register struct profil_args *uap;

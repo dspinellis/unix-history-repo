@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_subr.c	7.20 (Berkeley) 12/1/90
- *	$Id: tcp_subr.c,v 1.3 1993/11/07 17:48:08 wollman Exp $
+ *	$Id: tcp_subr.c,v 1.4 1993/11/18 00:08:22 wollman Exp $
  */
 
 #include "param.h"
@@ -81,6 +81,7 @@ int tcp_mtuchanged(struct inpcb *, int);
 /*
  * Tcp initialization
  */
+void
 tcp_init()
 {
 
@@ -145,6 +146,7 @@ tcp_template(tp)
  * In any case the ack and sequence number of the transmitted
  * segment are as specified by the parameters.
  */
+void
 tcp_respond(tp, ti, m, ack, seq, flags)
 	struct tcpcb *tp;
 	register struct tcpiphdr *ti;
@@ -305,7 +307,7 @@ tcp_close(tp)
 	if (SEQ_LT(tp->iss + so->so_snd.sb_hiwat * 16, tp->snd_max) &&
 	    (rt = inp->inp_route.ro_rt) &&
 	    ((struct sockaddr_in *)rt_key(rt))->sin_addr.s_addr != INADDR_ANY) {
-		register u_long i;
+		register u_long i = 0;
 
 		if ((rt->rt_rmx.rmx_locks & RTV_RTT) == 0) {
 			i = tp->t_srtt *
@@ -378,6 +380,7 @@ tcp_close(tp)
 	return ((struct tcpcb *)0);
 }
 
+void
 tcp_drain()
 {
 
@@ -388,6 +391,7 @@ tcp_drain()
  * store error as soft error, but wake up user
  * (for now, won't do anything until can select for soft error).
  */
+void
 tcp_notify(inp, error)
 	register struct inpcb *inp;
 	int error;
@@ -411,7 +415,7 @@ tcp_notify(inp, error)
  * In the immortal words of Ken and Dennis, ``You are not expected to
  * understand this.''
  */
-int /* grrr... should be void... */
+void /* grrr... should be void... */
 tcp_checkmtu(struct inpcb *inp, int error) {
 #ifdef MTUDISC
   /*
@@ -431,13 +435,14 @@ tcp_mtuchanged(struct inpcb *inp, int error) {
 }
 #endif /* MTUDISC */
 
+void
 tcp_ctlinput(cmd, sa, ip)
 	int cmd;
 	struct sockaddr *sa;
 	register struct ip *ip;
 {
 	register struct tcphdr *th;
-	int (*notify)() = tcp_notify, tcp_quench();
+	void (*notify)(struct inpcb *, int) = tcp_notify;
 
 	if (cmd == PRC_QUENCH)
 		notify = tcp_quench;
@@ -461,8 +466,10 @@ tcp_ctlinput(cmd, sa, ip)
  * When a source quench is received, close congestion window
  * to one segment.  We will gradually open it again as we proceed.
  */
-tcp_quench(inp)
+void
+tcp_quench(inp, errno)
 	struct inpcb *inp;
+	int errno;
 {
 	struct tcpcb *tp = intotcpcb(inp);
 

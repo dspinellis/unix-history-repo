@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ns_input.c	7.8 (Berkeley) 6/27/91
- *	$Id: ns_input.c,v 1.2 1993/10/16 19:54:23 rgrimes Exp $
+ *	$Id: ns_input.c,v 1.3 1993/11/18 00:10:53 wollman Exp $
  */
 
 #include "param.h"
@@ -57,6 +57,9 @@
 #include "idp_var.h"
 #include "ns_error.h"
 
+static void idp_forward(struct mbuf *);
+static void idp_undo_route(struct route *);
+
 /*
  * NS initialization.
  */
@@ -78,6 +81,7 @@ int	nsqmaxlen = IFQ_MAXLEN;
 int	idpcksum = 1;
 long	ns_pexseq;
 
+void
 ns_init()
 {
 	extern struct timeval time;
@@ -100,6 +104,8 @@ ns_init()
  */
 int nsintr_getpck = 0;
 int nsintr_swtch = 0;
+
+void
 nsintr()
 {
 	register struct idp *idp;
@@ -269,13 +275,14 @@ u_char nsctlerrmap[PRC_NCMDS] = {
 
 int idp_donosocks = 1;
 
+void
 idp_ctlinput(cmd, arg)
 	int cmd;
 	caddr_t arg;
 {
 	struct ns_addr *ns;
 	struct nspcb *nsp;
-	struct ns_errp *errp;
+	struct ns_errp *errp = 0;
 	int idp_abort();
 	extern struct nspcb *idp_drop();
 	int type;
@@ -328,8 +335,9 @@ int	idpforwarding = 1;
 struct route idp_droute;
 struct route idp_sroute;
 
+static void
 idp_forward(m)
-struct mbuf *m;
+	struct mbuf *m;
 {
 	register struct idp *idp = mtod(m, struct idp *);
 	register int error, type, code;
@@ -447,6 +455,7 @@ cleanup:
 		m_freem(mcopy);
 }
 
+int
 idp_do_route(src, ro)
 struct ns_addr *src;
 struct route *ro;
@@ -469,12 +478,14 @@ struct route *ro;
 	return (1);
 }
 
+static void
 idp_undo_route(ro)
-register struct route *ro;
+	register struct route *ro;
 {
 	if (ro->ro_rt) {RTFREE(ro->ro_rt);}
 }
 
+void
 ns_watch_output(m, ifp)
 struct mbuf *m;
 struct ifnet *ifp;

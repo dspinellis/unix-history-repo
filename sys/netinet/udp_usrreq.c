@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)udp_usrreq.c	7.20 (Berkeley) 4/20/91
- *	$Id: udp_usrreq.c,v 1.3 1993/11/07 17:48:14 wollman Exp $
+ *	$Id: udp_usrreq.c,v 1.4 1993/11/18 00:08:23 wollman Exp $
  */
 
 #include "param.h"
@@ -59,10 +59,13 @@ struct	udpstat udpstat;
 
 struct	inpcb *udp_last_inpcb = &udb;
 
+static void udp_detach(struct inpcb *);
+
 /*
  * UDP protocol implementation.
  * Per RFC 768, August, 1980.
  */
+void
 udp_init()
 {
 
@@ -78,6 +81,7 @@ int	udp_ttl = UDP_TTL;
 
 struct	sockaddr_in udp_in = { sizeof(udp_in), AF_INET };
 
+void
 udp_input(m, iphlen)
 	register struct mbuf *m;
 	int iphlen;
@@ -258,8 +262,10 @@ udp_saveopt(p, size, type)
  * Notify a udp user of an asynchronous error;
  * just wake up so that he can collect error status.
  */
+void
 udp_notify(inp, errno)
 	register struct inpcb *inp;
+	int errno;
 {
 
 	inp->inp_socket->so_error = errno;
@@ -267,6 +273,7 @@ udp_notify(inp, errno)
 	sowwakeup(inp->inp_socket);
 }
 
+void
 udp_ctlinput(cmd, sa, ip)
 	int cmd;
 	struct sockaddr *sa;
@@ -286,6 +293,7 @@ udp_ctlinput(cmd, sa, ip)
 		in_pcbnotify(&udb, sa, 0, zeroin_addr, 0, cmd, udp_notify);
 }
 
+int
 udp_output(inp, m, addr, control)
 	register struct inpcb *inp;
 	register struct mbuf *m;
@@ -294,7 +302,7 @@ udp_output(inp, m, addr, control)
 	register struct udpiphdr *ui;
 	register int len = m->m_pkthdr.len;
 	struct in_addr laddr;
-	int s, error = 0;
+	int s = 0, error = 0;
 
 	if (control)
 		m_freem(control);		/* XXX */
@@ -373,6 +381,7 @@ u_long	udp_recvspace = 40 * (1024 + sizeof(struct sockaddr_in));
 					/* 40 1K datagrams */
 
 /*ARGSUSED*/
+int
 udp_usrreq(so, req, m, addr, control)
 	struct socket *so;
 	int req;
@@ -509,6 +518,7 @@ release:
 	return (error);
 }
 
+static void
 udp_detach(inp)
 	struct inpcb *inp;
 {

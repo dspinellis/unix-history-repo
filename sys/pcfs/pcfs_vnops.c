@@ -15,7 +15,7 @@
  *
  *  October 1992
  *
- *	$Id$
+ *	$Id: pcfs_vnops.c,v 1.2 1993/10/16 19:29:39 rgrimes Exp $
  */
 
 #include "param.h"
@@ -585,6 +585,7 @@ pcfs_ioctl(vp, com, data, fflag, cred, p)
 	struct vnode *vp;
 	int com;
 	caddr_t data;
+	int fflag;
 	struct ucred *cred;
 	struct proc *p;
 {
@@ -970,7 +971,7 @@ printf("pcfs_rename(fndp %08x, tndp %08x, p %08x\n", fndp, tndp, p);
  *  tdep is unlocked and unreferenced
  */
 	} else {
-		u_long dirsize;
+		u_long dirsize = 0;
 /*
  *  If the source and destination are in different
  *  directories, then mark the entry in the source
@@ -1591,7 +1592,7 @@ pcfs_strategy(bp)
 	return 0;
 }
 
-int
+void
 pcfs_print(vp)
 	struct vnode *vp;
 {

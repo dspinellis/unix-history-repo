@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_map.c	7.3 (Berkeley) 4/21/91
- *	$Id$
+ *	$Id: vm_map.c,v 1.7 1993/10/16 16:20:33 rgrimes Exp $
  */
 
 /*
@@ -393,6 +393,7 @@ void vm_map_deallocate(map)
  *
  *	Requires that the map be locked, and leaves it so.
  */
+int
 vm_map_insert(map, object, offset, start, end)
 	vm_map_t	map;
 	vm_object_t	object;
@@ -606,6 +607,7 @@ boolean_t vm_map_lookup_entry(map, address, entry)
  *	returned in the same parameter.
  *
  */
+int
 vm_map_find(map, object, offset, addr, length, find_space)
 	vm_map_t	map;
 	vm_object_t	object;
@@ -903,6 +905,7 @@ void _vm_map_clip_end(map, entry, end)
  *	range from the superior map, and then destroy the
  *	submap (if desired).  [Better yet, don't try it.]
  */
+int
 vm_map_submap(map, start, end, submap)
 	register vm_map_t	map;
 	register vm_offset_t	start;
@@ -946,6 +949,7 @@ vm_map_submap(map, start, end, submap)
  *	specified, the maximum protection is to be set;
  *	otherwise, only the current protection is affected.
  */
+int
 vm_map_protect(map, start, end, new_prot, set_max)
 	register vm_map_t	map;
 	register vm_offset_t	start;
@@ -1067,6 +1071,7 @@ vm_map_protect(map, start, end, new_prot, set_max)
  *	affects how the map will be shared with
  *	child maps at the time of vm_map_fork.
  */
+int
 vm_map_inherit(map, start, end, new_inheritance)
 	register vm_map_t	map;
 	register vm_offset_t	start;
@@ -1119,6 +1124,7 @@ vm_map_inherit(map, start, end, new_inheritance)
  *	The map must not be locked, but a reference
  *	must remain to the map throughout the call.
  */
+int
 vm_map_pageable(map, start, end, new_pageable)
 	register vm_map_t	map;
 	register vm_offset_t	start;
@@ -1348,6 +1354,7 @@ void vm_map_entry_delete(map, entry)
  *	When called with a sharing map, removes pages from
  *	that region from all physical maps.
  */
+int
 vm_map_delete(map, start, end)
 	register vm_map_t	map;
 	vm_offset_t		start;
@@ -1443,6 +1450,7 @@ vm_map_delete(map, start, end)
  *	Remove the given address range from the target map.
  *	This is the exported form of vm_map_delete.
  */
+int
 vm_map_remove(map, start, end)
 	register vm_map_t	map;
 	register vm_offset_t	start;
@@ -1652,6 +1660,7 @@ void vm_map_copy_entry(src_map, dst_map, src_entry, dst_entry)
  *	map to make copies.  This also reduces map
  *	fragmentation.]
  */
+int
 vm_map_copy(dst_map, src_map,
 			  dst_addr, len, src_addr,
 			  dst_alloc, src_destroy)
@@ -2113,6 +2122,7 @@ vmspace_fork(vm1)
  *	copying operations, although the data referenced will
  *	remain the same.
  */
+int
 vm_map_lookup(var_map, vaddr, fault_type, out_entry,
 				object, offset, out_prot, wired, single_use)
 	vm_map_t		*var_map;	/* IN/OUT */

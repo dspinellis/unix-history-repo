@@ -45,7 +45,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	$Id$
+ *	$Id: lpa.c,v 1.3 1993/09/24 20:37:32 rgrimes Exp $
  */
 
 /*
@@ -91,7 +91,7 @@
 
 /* debug flags */
 #ifndef DEBUG
-#define lprintf
+#define lprintf (void)
 #else
 #define lprintf		if (lpaflag) printf
 int lpaflag = 1;
@@ -217,6 +217,7 @@ lpaprobe(struct isa_device *dvp)
  * lpaattach()
  *	Install device
  */
+int
 lpaattach(isdp)
 	struct isa_device *isdp;
 {
@@ -237,6 +238,7 @@ lpaattach(isdp)
  *
  * We forbid all but first open
  */
+int
 lpaopen(dev, flag)
 	dev_t dev;
 	int flag;
@@ -286,7 +288,7 @@ lpaopen(dev, flag)
 		}
 
 		/* sleep a moment */
-		if ((err = tsleep (sc, LPPRI, "lpaopen", LONG)) !=
+		if ((err = tsleep ((caddr_t)sc, LPPRI, "lpaopen", LONG)) !=
 				EWOULDBLOCK) {
 			sc->sc_flags = 0;
 			return (EBUSY);
@@ -304,7 +306,7 @@ lpaopen(dev, flag)
  * pushbytes()
  *	Workhorse for actually spinning and writing bytes to printer
  */
-static
+static int
 pushbytes(sc)
 	struct lpa_softc *sc;
 {
@@ -338,7 +340,8 @@ pushbytes(sc)
                                  */
                                 if (tic > MAX_SLEEP)
                                         tic = MAX_SLEEP;
-                                err = tsleep(sc, LPPRI, "lpawrite", tic);
+                                err = tsleep((caddr_t)sc, LPPRI, 
+					     "lpawrite", tic);
 				if (err != EWOULDBLOCK) {
 					return (err);
 				}
@@ -359,6 +362,7 @@ pushbytes(sc)
  * lpaclose()
  *	Close on lp.  Try to flush data in buffer out.
  */
+int
 lpaclose(dev, flag)
 	dev_t dev;
 	int flag;
@@ -380,6 +384,7 @@ lpaclose(dev, flag)
  * lpawrite()
  *	Copy from user's buffer, then print
  */
+int
 lpawrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;

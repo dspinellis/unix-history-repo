@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mount.h	7.22 (Berkeley) 6/3/91
- *	$Id: mount.h,v 1.6 1993/11/07 17:52:51 wollman Exp $
+ *	$Id: mount.h,v 1.7 1993/11/12 10:14:37 chmr Exp $
  */
 
 #ifndef _SYS_MOUNT_H_
@@ -169,7 +169,7 @@ struct vfsops {
 	int	(*vfs_fhtovp)	__P((struct mount *mp, struct fid *fhp,
 				    struct vnode **vpp));
 	int	(*vfs_vptofh)	__P((struct vnode *vp, struct fid *fhp));
-	int	(*vfs_init)	__P(());
+	void	(*vfs_init)	__P((void));
 };
 
 #define VFS_MOUNT(MP, PATH, DATA, NDP, P) \
@@ -291,6 +291,11 @@ void	vfs_unlock __P((struct mount *mp)); /* unlock a vfs */
 struct	mount *getvfs __P((fsid_t *fsid));  /* return vfs given fsid */
 extern struct	mount *rootfs;	/* ptr to root mount structure */
 extern struct	vfsops *vfssw[]; /* mount filesystem type table */
+
+extern int vfs_busy(struct mount *);
+extern void vfs_unbusy(struct mount *);
+extern void mntflushbuf(struct mount *, int);
+extern int vflush(struct mount *, struct vnode *, int);
 
 #else /* KERNEL */
 

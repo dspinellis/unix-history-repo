@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.7 1993/11/08 19:15:00 ache Exp $
+ *	$Id: tty.c,v 1.8 1993/11/14 23:29:31 ache Exp $
  */
 
 #include "param.h"
@@ -68,12 +68,12 @@
 static int proc_compare __P((struct proc *p1, struct proc *p2));
 
 /* symbolic sleep message strings */
-char ttyin[] = "ttyin";
-char ttyout[] = "ttyout";
-char ttopen[] = "ttyopn";
-char ttclos[] = "ttycls";
-char ttybg[] = "ttybg";
-char ttybuf[] = "ttybuf";
+const char ttyin[] = "ttyin";
+const char ttyout[] = "ttyout";
+const char ttopen[] = "ttyopn";
+const char ttclos[] = "ttycls";
+const char ttybg[] = "ttybg";
+const char ttybuf[] = "ttybuf";
 
 /*
  * Table giving parity for characters and indicating
@@ -158,6 +158,7 @@ extern struct tty *constty;		/* temporary virtual console */
 #define ttbreakc(c) ((c) == '\n' || ((c) == cc[VEOF] || \
 	(c) == cc[VEOL] || (c) == cc[VEOL2]) && (c) != _POSIX_VDISABLE)
 
+void
 ttychars(tp)
 	struct tty *tp;
 {
@@ -168,6 +169,7 @@ ttychars(tp)
 /*
  * Flush tty after output has drained.
  */
+int
 ttywflush(tp)
 	struct tty *tp;
 {
@@ -181,6 +183,7 @@ ttywflush(tp)
 /*
  * Wait for output to drain.
  */
+int
 ttywait(tp)
 	register struct tty *tp;
 {
@@ -208,10 +211,12 @@ ttywait(tp)
  * Flush TTY read and/or write queues,
  * notifying anyone waiting.
  */
+void
 ttyflush(tp, rw)
 	register struct tty *tp;
+	int rw;
 {
-	register s;
+	register int s;
 
 	s = spltty();
 	if (rw & FWRITE)
@@ -269,6 +274,7 @@ ttyflush(tp, rw)
  * driver.
  */
 /* static void */
+void
 ttyblock(tp)
 	struct tty *tp;
 {
@@ -289,7 +295,7 @@ ttyblock(tp)
  * off our input flow control bits and propagate the change to the driver.
  */
 /* static */
-int
+void
 ttyunblock(tp)
 	struct tty *tp;
 {
@@ -302,6 +308,7 @@ ttyunblock(tp)
 	ttstart(tp);
 }
 
+void
 ttstart(tp)
 	struct tty *tp;
 {
@@ -310,6 +317,7 @@ ttstart(tp)
 		(*tp->t_oproc)(tp);
 }
 
+void
 ttrstrt(tp)				/* XXX */
 	struct tty *tp;
 {
@@ -330,9 +338,12 @@ ttrstrt(tp)				/* XXX */
  * and/or reject any of these ioctl commands.
  */
 /*ARGSUSED*/
+int
 ttioctl(tp, com, data, flag)
 	register struct tty *tp;
+	int com;
 	caddr_t data;
+	int flag;
 {
 	register struct proc *p = curproc;		/* XXX */
 	extern int nldisp;
@@ -395,9 +406,9 @@ ttioctl(tp, com, data, flag)
 		if (t != tp->t_line) {
 			s = spltty();
 			(*linesw[tp->t_line].l_close)(tp, flag);
-			error = (*linesw[t].l_open)(dev, tp);
+			error = (*linesw[t].l_open)(dev, tp, 0);
 			if (error) {
-				(void)(*linesw[tp->t_line].l_open)(dev, tp);
+				(void)(*linesw[tp->t_line].l_open)(dev, tp, 0);
 				splx(s);
 				return (error);
 			}
@@ -636,6 +647,7 @@ ttioctl(tp, com, data, flag)
 	return (0);
 }
 
+int
 ttnread(tp)
 	struct tty *tp;
 {
@@ -649,6 +661,7 @@ ttnread(tp)
 	return (nread);
 }
 
+int
 ttselect(dev, rw, p)
 	dev_t dev;
 	int rw;
@@ -691,9 +704,11 @@ win:
 /*
  * Initial open of tty, or (re)entry to standard tty line discipline.
  */
-ttyopen(dev, tp)
+int
+ttyopen(dev, tp, dummy)
 	dev_t dev;
 	register struct tty *tp;
+	int dummy;
 {
 
 	tp->t_dev = dev;
@@ -712,6 +727,7 @@ ttyopen(dev, tp)
 /*
  * "close" a line discipline
  */
+void
 ttylclose(tp, flag)
 	struct tty *tp;
 	int flag;
@@ -728,6 +744,7 @@ ttylclose(tp, flag)
  * bumping generation number so that pending read/write calls
  * can detect recycling of the tty.
  */
+int
 ttyclose(tp)
 	register struct tty *tp;
 {
@@ -746,8 +763,10 @@ ttyclose(tp)
  * Flag indicates new state of carrier.
  * Returns 0 if the line should be turned off, otherwise 1.
  */
+int
 ttymodem(tp, flag)
 	register struct tty *tp;
+	int flag;
 {
 
 	if ((tp->t_state&TS_WOPEN) == 0 && (tp->t_lflag&MDMBUF)) {
@@ -786,6 +805,7 @@ ttymodem(tp, flag)
  * Default modem control routine (for other line disciplines).
  * Return argument flag, to turn off device on carrier drop.
  */
+int
 nullmodem(tp, flag)
 	register struct tty *tp;
 	int flag;
@@ -808,6 +828,7 @@ nullmodem(tp, flag)
  * reinput pending characters after state switch
  * call at spltty().
  */
+void
 ttypend(tp)
 	register struct tty *tp;
 {
@@ -829,8 +850,9 @@ ttypend(tp)
 /*
  * Process input of a single character received on a tty.
  */
+void
 ttyinput(c, tp)
-	register c;
+	register int c;
 	register struct tty *tp;
 {
 	register int iflag = tp->t_iflag;
@@ -1151,8 +1173,9 @@ startoutput:
  * Returns < 0 if putc succeeds, otherwise returns char to resend.
  * Must be recursive.
  */
+int
 ttyoutput(c, tp)
-	register c;
+	register int c;
 	register struct tty *tp;
 {
 	register int col;
@@ -1251,9 +1274,11 @@ ttyoutput(c, tp)
 /*
  * Process a read call on a tty device.
  */
+int
 ttread(tp, uio, flag)
 	register struct tty *tp;
 	struct uio *uio;
+	int flag;
 {
 	register struct ringb *qp;
 	register int c;
@@ -1378,12 +1403,12 @@ loop:
  * Sleeps here are not interruptible, but we return prematurely
  * if new signals come in.
  */
+int
 ttycheckoutq(tp, wait)
 	register struct tty *tp;
 	int wait;
 {
 	int hiwat, s, oldsig;
-	extern int wakeup();
 
 	hiwat = tp->t_hiwat;
 	s = spltty();
@@ -1398,7 +1423,8 @@ ttycheckoutq(tp, wait)
 				splx(s);
 				return (0);
 			}
-			timeout(wakeup, (caddr_t)&tp->t_out, hz);
+			timeout((timeout_func_t)wakeup, (caddr_t)&tp->t_out,
+				hz); /* XXX */
 			tp->t_state |= TS_ASLEEP;
 			tsleep((caddr_t)&tp->t_out, PZERO - 1, "ttchout", 0);
 		}
@@ -1409,11 +1435,13 @@ ttycheckoutq(tp, wait)
 /*
  * Process a write call on a tty device.
  */
+int
 ttwrite(tp, uio, flag)
 	register struct tty *tp;
 	register struct uio *uio;
+	int flag;
 {
-	register char *cp;
+	register char *cp = 0;
 	register int cc = 0, ce;
 	register struct proc *p = curproc;
 	int i, hiwat, cnt, error, s;
@@ -1611,8 +1639,9 @@ ovhiwat:
  * Rubout one character from the rawq of tp
  * as cleanly as possible.
  */
+void
 ttyrub(c, tp)
-	register c;
+	register int c;
 	register struct tty *tp;
 {
 	char *cp;
@@ -1699,6 +1728,7 @@ ttyrub(c, tp)
  * Crt back over cnt chars perhaps
  * erasing them.
  */
+void
 ttyrubo(tp, cnt)
 	register struct tty *tp;
 	int cnt;
@@ -1712,6 +1742,7 @@ ttyrubo(tp, cnt)
  * Reprint the rawq line.
  * We assume c_cc has already been checked.
  */
+void
 ttyretype(tp)
 	register struct tty *tp;
 {
@@ -1739,8 +1770,9 @@ ttyretype(tp)
 /*
  * Echo a typed character to the terminal.
  */
+void
 ttyecho(c, tp)
-	register c;
+	register int c;
 	register struct tty *tp;
 {
 	if ((tp->t_state & TS_CNTTB) == 0)
@@ -1770,6 +1802,7 @@ ttyecho(c, tp)
 /*
  * send string cp to tp
  */
+void
 ttyoutstr(cp, tp)
 	register char *cp;
 	register struct tty *tp;
@@ -1783,6 +1816,7 @@ ttyoutstr(cp, tp)
 /*
  * Wake up any readers on a tty.
  */
+void
 ttwakeup(tp)
 	register struct tty *tp;
 {
@@ -1801,7 +1835,9 @@ ttwakeup(tp)
  * Look up a code for a specified speed in a conversion table;
  * used by drivers to map software speed values to hardware parameters.
  */
+int
 ttspeedtab(speed, table)
+	int speed;
 	register struct speedtab *table;
 {
 
@@ -1818,6 +1854,7 @@ ttspeedtab(speed, table)
  * from hi to low water.
  * 
  */
+void
 ttsetwater(tp)
 	struct tty *tp;
 {
@@ -1835,6 +1872,7 @@ ttsetwater(tp)
 /*
  * Report on state of foreground process group.
  */
+void
 ttyinfo(tp)
 	register struct tty *tp;
 {
@@ -1972,6 +2010,7 @@ proc_compare(p1, p2)
 /*
  * Output char to tty; console putchar style.
  */
+int
 tputchar(c, tp)
 	int c;
 	struct tty *tp;
@@ -1996,11 +2035,12 @@ tputchar(c, tp)
  * reported by tsleep.  If the tty is revoked, restarting a pending
  * call will redo validation done at the start of the call.
  */
+int
 ttysleep(tp, chan, pri, wmesg, timo)
 	struct tty *tp;
 	caddr_t chan;
 	int pri;
-	char *wmesg;
+	const char *wmesg;
 	int timo;
 {
 	int error;

@@ -1,5 +1,5 @@
 /*
- *	$Id: isofs_vfsops.c,v 1.2 1993/07/20 03:27:36 jkh Exp $
+ *	$Id: isofs_vfsops.c,v 1.3 1993/10/24 04:29:08 rgrimes Exp $
  */
 
 #include "param.h"
@@ -43,6 +43,7 @@ struct vfsops isofs_vfsops = {
  */
 #define ROOTNAME	"root_device"
 
+int
 isofs_mountroot()
 {
 	register struct mount *mp;
@@ -96,6 +97,7 @@ int iso_doforce = 1;
  *
  * mount system call
  */
+int
 isofs_mount(mp, path, data, ndp, p)
 	register struct mount *mp;
 	char *path;
@@ -107,7 +109,7 @@ isofs_mount(mp, path, data, ndp, p)
 	struct ufs_args args;
 	u_int size;
 	int error;
-	struct iso_mnt *imp;
+	struct iso_mnt *imp = 0;
 
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct ufs_args)))
 		return (error);
@@ -194,6 +196,7 @@ isofs_mount(mp, path, data, ndp, p)
 /*
  * Common code for mount and mountroot
  */
+int
 iso_mountfs(devvp, mp, p)
 	register struct vnode *devvp;
 	struct mount *mp;
@@ -328,6 +331,7 @@ out:
  * Nothing to do at the moment.
  */
 /* ARGSUSED */
+int
 isofs_start(mp, flags, p)
 	struct mount *mp;
 	int flags;
@@ -340,6 +344,7 @@ isofs_start(mp, flags, p)
 /*
  * unmount system call
  */
+int
 isofs_unmount(mp, mntflags, p)
 	struct mount *mp;
 	int mntflags;
@@ -374,6 +379,7 @@ isofs_unmount(mp, mntflags, p)
 /*
  * Check to see if a filesystem is mounted on a block device.
  */
+int
 iso_mountedon(vp)
 	register struct vnode *vp;
 {
@@ -396,6 +402,7 @@ iso_mountedon(vp)
 /*
  * Return root of a filesystem
  */
+int
 isofs_root(mp, vpp)
 	struct mount *mp;
 	struct vnode **vpp;
@@ -423,6 +430,7 @@ isofs_root(mp, vpp)
 /*
  * Get file system statistics.
  */
+int
 isofs_statfs(mp, sbp, p)
 	struct mount *mp;
 	register struct statfs *sbp;
@@ -450,6 +458,7 @@ isofs_statfs(mp, sbp, p)
 	return (0);
 }
 
+int
 isofs_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
@@ -476,6 +485,7 @@ struct ifid {
 	int	ifid_ino;
 };
 
+int
 isofs_fhtovp(mp, fhp, vpp)
 	register struct mount *mp;
 	struct fid *fhp;
@@ -552,6 +562,7 @@ isofs_fhtovp(mp, fhp, vpp)
  * Vnode pointer to File handle
  */
 /* ARGSUSED */
+int
 isofs_vptofh(vp, fhp)
 	struct vnode *vp;
 	struct fid *fhp;

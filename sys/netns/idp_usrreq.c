@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)idp_usrreq.c	7.11 (Berkeley) 6/27/91
- *	$Id: idp_usrreq.c,v 1.2 1993/10/16 19:54:11 rgrimes Exp $
+ *	$Id: idp_usrreq.c,v 1.3 1993/11/07 17:50:20 wollman Exp $
  */
 
 #include "param.h"
@@ -63,6 +63,7 @@ struct	sockaddr_ns idp_ns = { sizeof(idp_ns), AF_NS };
 /*
  *  This may also be called for raw listeners.
  */
+void
 idp_input(m, nsp)
 	struct mbuf *m;
 	register struct nspcb *nsp;
@@ -103,6 +104,7 @@ bad:
 	m_freem(m);
 }
 
+void
 idp_abort(nsp)
 	struct nspcb *nsp;
 {
@@ -134,9 +136,12 @@ idp_drop(nsp, errno)
 	so->so_error = errno;
 	ns_pcbdisconnect(nsp);
 	soisdisconnected(so);
+	return nsp;
 }
 
 int noIdpRoute;
+
+int
 idp_output(nsp, m0)
 	struct nspcb *nsp;
 	struct mbuf *m0;
@@ -146,7 +151,7 @@ idp_output(nsp, m0)
 	register struct socket *so;
 	register int len = 0;
 	register struct route *ro;
-	struct mbuf *mprev;
+	struct mbuf *mprev = 0;
 	extern int idpcksum;
 
 	/*
@@ -260,6 +265,7 @@ idp_output(nsp, m0)
 	return (ns_output(m, ro, so->so_options & SO_BROADCAST));
 }
 /* ARGSUSED */
+int
 idp_ctloutput(req, so, level, name, value)
 	int req, level;
 	struct socket *so;
@@ -371,6 +377,7 @@ idp_ctloutput(req, so, level, name, value)
 }
 
 /*ARGSUSED*/
+int
 idp_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;
@@ -455,7 +462,7 @@ idp_usrreq(so, req, m, nam, control)
 	case PRU_SEND:
 	{
 		struct ns_addr laddr;
-		int s;
+		int s = 0;
 
 		if (nam) {
 			laddr = nsp->nsp_laddr;
@@ -533,6 +540,7 @@ release:
 	return (error);
 }
 /*ARGSUSED*/
+int
 idp_raw_usrreq(so, req, m, nam, control)
 	struct socket *so;
 	int req;

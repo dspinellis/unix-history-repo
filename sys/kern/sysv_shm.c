@@ -37,7 +37,7 @@
  *
  *	from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
  *	from: @(#)sysv_shm.c	7.15 (Berkeley) 5/13/91
- *	$Id: sysv_shm.c,v 1.4 1993/10/16 15:24:52 rgrimes Exp $
+ *	$Id: sysv_shm.c,v 1.5 1993/11/07 17:46:20 wollman Exp $
  */
 
 /*
@@ -68,8 +68,8 @@
 struct	shmid_ds	*shmsegs;
 struct	shminfo		shminfo;
 
-int	shmat(), shmctl(), shmdt(), shmget();
-int	(*shmcalls[])() = { shmat, shmctl, shmdt, shmget };
+int	shmat(), shmctl(), shmdt(), shmget(); /* XXX */
+int	(*shmcalls[])() = { shmat, shmctl, shmdt, shmget }; /* XXX */
 int	shmtot = 0;
 
 /*
@@ -89,8 +89,12 @@ struct	shmhandle {
 	caddr_t		shmh_id;
 };
 
+static void shmufree(struct proc *, struct shmdesc *);
+static void shmfree(struct shmid_ds *);
+
 vm_map_t shm_map;	/* address space for shared memory segments */
 
+void
 shminit()
 {
 	register int i;
@@ -114,6 +118,7 @@ struct shmsys_args {
 	u_int which;
 };
 
+int
 shmsys(p, uap, retval)
 	struct proc *p;
 	struct shmsys_args *uap;
@@ -135,6 +140,7 @@ struct shmget_args {
 	int shmflg;
 };
 
+int
 shmget(p, uap, retval)
 	struct proc *p;
 	register struct shmget_args *uap;
@@ -232,6 +238,7 @@ struct shmctl_args {
 };
 
 /* ARGSUSED */
+int
 shmctl(p, uap, retval)
 	struct proc *p;
 	register struct shmctl_args *uap;
@@ -303,6 +310,7 @@ struct shmat_args {
 	int	shmflg;
 };
 
+int
 shmat(p, uap, retval)
 	struct proc *p;
 	register struct shmat_args *uap;
@@ -386,6 +394,7 @@ struct shmdt_args {
 };
 
 /* ARGSUSED */
+int
 shmdt(p, uap, retval)
 	struct proc *p;
 	struct shmdt_args *uap;
@@ -403,8 +412,10 @@ shmdt(p, uap, retval)
 		return(EINVAL);
 	shmufree(p, shmd);
 	shmsegs[shmd->shmd_id % SHMMMNI].shm_lpid = p->p_pid;
+	return 0;
 }
 
+void
 shmfork(p1, p2, isvfork)
 	struct proc *p1, *p2;
 	int isvfork;
@@ -427,6 +438,7 @@ shmfork(p1, p2, isvfork)
 			shmsegs[shmd->shmd_id % SHMMMNI].shm_nattch++;
 }
 
+void
 shmexit(p)
 	struct proc *p;
 {
@@ -441,6 +453,7 @@ shmexit(p)
 	p->p_vmspace->vm_shm = NULL;
 }
 
+int
 shmvalid(id)
 	register int id;
 {
@@ -458,6 +471,7 @@ shmvalid(id)
 /*
  * Free user resources associated with a shared memory segment
  */
+static void
 shmufree(p, shmd)
 	struct proc *p;
 	struct shmdesc *shmd;
@@ -477,6 +491,7 @@ shmufree(p, shmd)
 /*
  * Deallocate resources associated with a shared memory segment
  */
+static void
 shmfree(shp)
 	register struct shmid_ds *shp;
 {
@@ -509,6 +524,7 @@ shmfree(shp)
  * XXX This routine would be common to all sysV style IPC
  *     (if the others were implemented).
  */
+int
 ipcaccess(ipc, mode, cred)
 	register struct ipc_perm *ipc;
 	int mode;

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp.h	7.8 (Berkeley) 5/6/91
- *	$Id: clnp.h,v 1.2 1993/10/16 21:04:42 rgrimes Exp $
+ *	$Id: clnp.h,v 1.3 1993/11/07 17:49:22 wollman Exp $
  */
 
 /***********************************************************
@@ -461,5 +461,8 @@ struct mbuf		*clnp_reass();
 #ifdef	TROLL
 extern struct troll	trollctl;
 #endif	/* TROLL */
+
+extern void clnp_emit_er(struct mbuf *, int /*char*/);
+
 #endif	/* KERNEL */
 #endif /* _NETISO_CLNP_H_ */

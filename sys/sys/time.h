@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)time.h	7.6 (Berkeley) 2/22/91
- *	$Id$
+ *	$Id: time.h,v 1.2 1993/10/16 17:17:59 rgrimes Exp $
  */
 
 #ifndef _SYS_TIME_H_
@@ -82,7 +82,13 @@ struct	itimerval {
 	struct	timeval it_value;	/* current value */
 };
 
-#ifndef KERNEL
+#ifdef KERNEL
+extern void timevaladd(struct timeval *, struct timeval *);
+extern void timevalsub(struct timeval *, struct timeval *);
+extern void timevalfix(struct timeval *);
+extern void realitexpire(caddr_t, int);
+
+#else /* not KERNEL */
 #include <time.h>
 
 #ifndef _POSIX_SOURCE

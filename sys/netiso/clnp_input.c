@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_input.c	7.13 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: clnp_input.c,v 1.2 1993/10/16 21:04:48 rgrimes Exp $
  */
 
 /***********************************************************
@@ -94,7 +94,7 @@ struct clnl_protosw clnl_protox[256];
 int			clnpqmaxlen = IFQ_MAXLEN;	/* RAH? why is this a variable */
 struct mbuf	*clnp_data_ck();
 
-int	clnp_input();
+void	clnp_input(struct mbuf *, struct snpa_hdr *);
 
 int	esis_input();
 
@@ -114,6 +114,7 @@ int	x25esis_input();
  *
  * NOTES:			
  */
+void
 clnp_init()
 {
 	register struct protosw *pr;
@@ -150,6 +151,7 @@ clnp_init()
  *
  * NOTES:			
  */
+void
 clnlintr()
 {
 	register struct mbuf		*m;		/* ptr to first mbuf of pkt */
@@ -279,6 +281,7 @@ next:
  *	TODO: I would like to make seg_part a pointer into the mbuf, but 
  *	will it be correctly aligned?
  */
+void
 clnp_input(m, shp)
 struct mbuf		*m;		/* ptr to first mbuf of pkt */
 struct snpa_hdr	*shp;	/* subnetwork header */
@@ -560,4 +563,4 @@ struct snpa_hdr	*shp;	/* subnetwork header */
  		break;
 	}
 }
-#endif ISO
+#endif /* ISO */

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)iso_snpac.c	7.14 (Berkeley) 6/27/91
- *	$Id: iso_snpac.c,v 1.2 1993/10/16 21:05:26 rgrimes Exp $
+ *	$Id: iso_snpac.c,v 1.3 1993/11/07 17:49:46 wollman Exp $
  */
 
 /***********************************************************
@@ -66,6 +66,7 @@ SOFTWARE.
 #include "types.h"
 #include "param.h"
 #include "systm.h"
+#include "kernel.h"
 #include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"
@@ -87,12 +88,13 @@ SOFTWARE.
 #include "esis.h"
 #include "argo_debug.h"
 
+static void snpac_logdefis(struct rtentry *);
+
 struct llinfo_llc llinfo_llc;
 
-int 				iso_systype = SNPA_ES;	/* default to be an ES */
+int iso_systype = SNPA_ES;	/* default to be an ES */
 extern short	esis_holding_time, esis_config_time, esis_esconfig_time;
-extern struct	timeval time;
-extern int esis_config(), hz;
+extern int esis_config();
 static void snpac_fixdstandmask();
 
 struct sockaddr_iso blank_siso = {sizeof(blank_siso), AF_ISO};
@@ -154,10 +156,11 @@ union sockunion {
  *
  * NOTES:			This does a lot of obscure magic;
  */
+void
 llc_rtrequest(req, rt, sa)
-int req;
-register struct rtentry *rt;
-struct sockaddr *sa;
+	int req;
+	register struct rtentry *rt;
+	struct sockaddr *sa;
 {
 	register union sockunion *gate = (union sockunion *)rt->rt_gateway;
 	register struct llinfo_llc *lc = (struct llinfo_llc *)rt->rt_llinfo, *lc2;
@@ -203,7 +206,7 @@ struct sockaddr *sa;
 		if (rt->rt_flags & RTF_CLONING) {
 			register struct ifaddr *ifa;
 			register struct sockaddr *sa;
-			for (ifa = ifp->if_addrlist; ifa; ifa->ifa_next)
+			for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
 				if ((sa = ifa->ifa_addr)->sa_family == AF_LINK) {
 					if (sa->sa_len > gate->sa.sa_len)
 						log(LOG_DEBUG, "llc_rtrequest: cloning address too small\n");
@@ -280,6 +283,7 @@ struct sockaddr *sa;
  *					A mechanism is needed to prevent this function from
  *					being invoked if the system is an IS.
  */
+int
 iso_snparesolve(ifp, dest, snpa, snpa_len)
 struct	ifnet *ifp;			/* outgoing interface */
 struct	sockaddr_iso *dest;	/* destination */
@@ -345,6 +349,7 @@ int		*snpa_len;			/* RESULT: length of snpa */
  * NOTES:			If there is a route entry associated with cache
  *					entry, then delete that as well
  */
+void
 snpac_free(lc)
 register struct llinfo_llc *lc;		/* entry to free */
 {
@@ -373,6 +378,7 @@ register struct llinfo_llc *lc;		/* entry to free */
  *
  * NOTES:			If entry already exists, then update holding time.
  */
+int
 snpac_add(ifp, nsap, snpa, type, ht, nsellength)
 struct ifnet		*ifp;		/* interface info is related to */
 struct iso_addr		*nsap;		/* nsap to add */
@@ -456,6 +462,7 @@ int					nsellength;	/* nsaps may differ only in trailing bytes */
 
 static void
 snpac_fixdstandmask(nsellength)
+	int nsellength;
 {
 	register char *cp = msk.siso_data, *cplim;
 
@@ -481,6 +488,7 @@ snpac_fixdstandmask(nsellength)
  *
  * NOTES:			
  */
+int
 snpac_ioctl (so, cmd, data)
 struct socket *so;
 int		cmd;	/* ioctl to process */
@@ -537,8 +545,9 @@ caddr_t	data;	/* data for the cmd */
  *
  * NOTES:			
  */
+static void
 snpac_logdefis(sc)
-register struct rtentry *sc;
+	register struct rtentry *sc;
 {
 	register struct iso_addr *r;
 	register struct sockaddr_dl *sdl = (struct sockaddr_dl *)sc->rt_gateway;
@@ -583,6 +592,7 @@ register struct rtentry *sc;
  *					would time out entries where expiry date is older
  *					than the current time.
  */
+void
 snpac_age()
 {
 	register struct	llinfo_llc *lc, *nlc;
@@ -616,6 +626,7 @@ snpac_age()
  *					as interm kludge until
  *					real multicast addresses can be configured
  */
+int
 snpac_ownmulti(snpa, len)
 caddr_t	snpa;
 u_int	len;
@@ -637,6 +648,7 @@ u_int	len;
  *
  * NOTES:			
  */
+void
 snpac_flushifp(ifp)
 struct ifnet	*ifp;
 {
@@ -660,6 +672,7 @@ struct ifnet	*ifp;
  * NOTES:			In the future, this should make a request of a user
  *					level routing daemon.
  */
+void
 snpac_rtrequest(req, host, gateway, netmask, flags, ret_nrt)
 int				req;
 struct iso_addr	*host;
@@ -714,6 +727,7 @@ struct rtentry	**ret_nrt;
  *					This could be made more efficient by checking 
  *					the existing route before adding a new one.
  */
+void
 snpac_addrt(ifp, host, gateway, netmask)
 struct ifnet *ifp;
 struct iso_addr	*host, *gateway, *netmask;

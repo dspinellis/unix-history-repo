@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)in_pcb.h	7.6 (Berkeley) 6/28/90
- *	$Id: in_pcb.h,v 1.3 1993/11/07 17:47:50 wollman Exp $
+ *	$Id: in_pcb.h,v 1.4 1993/11/18 00:08:16 wollman Exp $
  */
 
 #ifndef _NETINET_IN_PCB_H_
@@ -103,7 +103,20 @@ struct raw_inpcb {
 #define	sotorawinpcb(so)	((struct raw_inpcb *)(so)->so_pcb)
 
 #ifdef KERNEL
-struct	inpcb *in_pcblookup();
+/* From in_pcb.h: */
+extern int in_pcballoc(struct socket *, struct inpcb *);
+extern int in_pcbbind(struct inpcb *, struct mbuf *);
+extern int in_pcbconnect(struct inpcb *, struct mbuf *);
+extern void in_pcbdisconnect(struct inpcb *);
+extern void in_pcbdetach(struct inpcb *);
+extern void in_setsockaddr(struct inpcb *, struct mbuf *);
+extern void in_setpeeraddr(struct inpcb *, struct mbuf *);
+extern void in_pcbnotify(struct inpcb *, struct sockaddr *, int, struct in_addr, int, int, void (*)(struct inpcb *, int));
+extern void in_losing(struct inpcb *);
+extern void in_rtchange(struct inpcb *, int);
+extern struct inpcb *in_pcblookup(struct inpcb *, struct in_addr, int, struct in_addr, int, int);
+
+
 #ifdef MTUDISC
 extern void	in_pcbmtu(struct inpcb *);
 extern void	in_mtunotify(struct inpcb *);

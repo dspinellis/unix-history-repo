@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_clock.c	7.16 (Berkeley) 5/9/91
- *	$Id: kern_clock.c,v 1.8 1993/11/09 04:23:29 ache Exp $
+ *	$Id: kern_clock.c,v 1.9 1993/11/09 17:07:27 ache Exp $
  */
 
 #include "param.h"
@@ -50,6 +50,9 @@
 #ifdef GPROF
 #include "gprof.h"
 #endif
+
+static void gatherstats(clockframe *);
+
 
 /* From callout.h */
 struct callout *callfree, *callout, calltodo;
@@ -95,12 +98,13 @@ int ncallout;
  * If this timer is also being used to gather statistics,
  * we run through the statistics gathering routine as well.
  */
+void
 hardclock(frame)
 	clockframe frame;
 {
 	register struct callout *p1;
 	register struct proc *p = curproc;
-	register struct pstats *pstats;
+	register struct pstats *pstats = 0;
 	register struct rusage *ru;
 	register struct vmspace *vm;
 	register int s;
@@ -286,6 +290,7 @@ int	dk_ndrive = DK_NDRIVE;
  * or idle state) for the entire last time interval, and
  * update statistics accordingly.
  */
+void
 gatherstats(framep)
 	clockframe *framep;
 {
@@ -339,6 +344,7 @@ gatherstats(framep)
  * Run periodic events from timeout queue.
  */
 /*ARGSUSED*/
+void
 softclock(frame)
 	clockframe frame;
 {
@@ -346,7 +352,7 @@ softclock(frame)
 	for (;;) {
 		register struct callout *p1;
 		register caddr_t arg;
-		register int (*func)();
+		register timeout_func_t func;
 		register int a, s;
 
 		s = splhigh();
@@ -393,8 +399,9 @@ softclock(frame)
 /*
  * Arrange that (*func)(arg) is called in t/hz seconds.
  */
+void
 timeout(func, arg, t)
-	int (*func)();
+	timeout_func_t func;
 	caddr_t arg;
 	register int t;
 {
@@ -424,8 +431,9 @@ timeout(func, arg, t)
  * untimeout is called to remove a function timeout call
  * from the callout structure.
  */
+void
 untimeout(func, arg)
-	int (*func)();
+	timeout_func_t func;
 	caddr_t arg;
 {
 	register struct callout *p1, *p2;
@@ -452,6 +460,7 @@ untimeout(func, arg)
  */
 
 /* XXX clock_t */
+u_long
 hzto(tv)
 	struct timeval *tv;
 {

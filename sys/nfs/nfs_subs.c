@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	From:	@(#)nfs_subs.c	7.41 (Berkeley) 5/15/91
- *	$Id: nfs_subs.c,v 1.2 1993/09/09 22:06:08 rgrimes Exp $
+ *	$Id: nfs_subs.c,v 1.3 1993/11/07 17:50:57 wollman Exp $
  */
 
 /*
@@ -273,8 +273,8 @@ nfsm_uiotombuf(uiop, mq, siz, bpos)
 	caddr_t *bpos;
 {
 	register char *uiocp;
-	register struct mbuf *mp, *mp2;
-	register int xfer, left, len;
+	register struct mbuf *mp = 0, *mp2;
+	register int xfer, left, len = 0;
 	int uiosiz, clflg, rem;
 	char *cp;
 
@@ -454,7 +454,7 @@ nfsm_strtmbuf(mb, bpos, cp, siz)
 	char *cp;
 	long siz;
 {
-	register struct mbuf *m1, *m2;
+	register struct mbuf *m1 = 0, *m2;
 	long left, xfer, len, tlen;
 	u_long *tl;
 	int putsize;

@@ -31,10 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)uipc_syscalls.c	7.24 (Berkeley) 6/3/91
- *	$Id$
+ *	$Id: uipc_syscalls.c,v 1.4 1993/10/16 15:25:14 rgrimes Exp $
  */
 
 #include "param.h"
+#include "systm.h"
 #include "filedesc.h"
 #include "proc.h"
 #include "file.h"
@@ -60,6 +61,7 @@ struct socket_args {
 	int	protocol;
 };
 
+int
 socket(p, uap, retval)
 	struct proc *p;
 	register struct socket_args *uap;
@@ -92,6 +94,7 @@ struct bind_args {
 };
 
 /* ARGSUSED */
+int
 bind(p, uap, retval)
 	struct proc *p;
 	register struct bind_args *uap;
@@ -116,6 +119,7 @@ struct listen_args {
 };
 
 /* ARGSUSED */
+int
 listen(p, uap, retval)
 	struct proc *p;
 	register struct listen_args *uap;
@@ -138,6 +142,7 @@ struct accept_args {
 	int	compat_43;
 };
 
+int
 accept(p, uap, retval)
 	struct proc *p;
 	struct accept_args *uap;
@@ -155,6 +160,7 @@ struct oaccept_args {
 	int	compat_43;
 };
 
+int
 oaccept(p, uap, retval)
 	struct proc *p;
 	struct oaccept_args *uap;
@@ -178,6 +184,7 @@ struct accept1_args {
 #endif
 };
 
+int
 accept1(p, uap, retval)
 	struct proc *p;
 	register struct accept1_args *uap;
@@ -261,6 +268,7 @@ struct connect_args {
 };
 
 /* ARGSUSED */
+int
 connect(p, uap, retval)
 	struct proc *p;
 	register struct connect_args *uap;
@@ -310,6 +318,7 @@ struct socketpair_args {
 	int	*rsv;
 };
 
+int
 socketpair(p, uap, retval)
 	struct proc *p;
 	register struct socketpair_args *uap;
@@ -373,6 +382,7 @@ struct sendto_args {
 	int	tolen;
 };
 
+int
 sendto(p, uap, retval)
 	struct proc *p;
 	register struct sendto_args *uap;
@@ -404,6 +414,7 @@ struct osend_args {
 	int	flags;
 };
 
+int
 osend(p, uap, retval)
 	struct proc *p;
 	register struct osend_args *uap;
@@ -431,6 +442,7 @@ struct osendmsg_args {
 	int	flags;
 };
 
+int
 osendmsg(p, uap, retval)
 	struct proc *p;
 	register struct osendmsg_args *uap;
@@ -469,6 +481,7 @@ struct sendmsg_args {
 	int	flags;
 };
 
+int
 sendmsg(p, uap, retval)
 	struct proc *p;
 	register struct sendmsg_args *uap;
@@ -503,6 +516,7 @@ done:
 	return (error);
 }
 
+int
 sendit(p, s, mp, flags, retsize)
 	register struct proc *p;
 	int s;
@@ -615,6 +629,7 @@ struct orecvfrom_args {
 	int	*fromlenaddr;
 };
 
+int
 orecvfrom(p, uap, retval)
 	struct proc *p;
 	struct orecvfrom_args *uap;
@@ -635,6 +650,7 @@ struct recvfrom_args {
 	int	*fromlenaddr;
 };
 
+int
 recvfrom(p, uap, retval)
 	struct proc *p;
 	register struct recvfrom_args *uap;
@@ -669,6 +685,7 @@ struct orecv_args {
 	int	flags;
 };
 
+int
 orecv(p, uap, retval)
 	struct proc *p;
 	register struct orecv_args *uap;
@@ -700,6 +717,7 @@ struct orecvmsg_args {
 	int	flags;
 };
 
+int
 orecvmsg(p, uap, retval)
 	struct proc *p;
 	register struct orecvmsg_args *uap;
@@ -743,6 +761,7 @@ struct recvmsg_args {
 	int	flags;
 };
 
+int
 recvmsg(p, uap, retval)
 	struct proc *p;
 	register struct recvmsg_args *uap;
@@ -782,6 +801,7 @@ done:
 	return (error);
 }
 
+int
 recvit(p, s, mp, namelenp, retsize)
 	register struct proc *p;
 	int s;
@@ -918,6 +938,7 @@ struct shutdown_args {
 };
 
 /* ARGSUSED */
+int
 shutdown(p, uap, retval)
 	struct proc *p;
 	register struct shutdown_args *uap;
@@ -940,6 +961,7 @@ struct setsocketopt_args {
 };
 
 /* ARGSUSED */
+int
 setsockopt(p, uap, retval)
 	struct proc *p;
 	register struct setsocketopt_args *uap;
@@ -977,6 +999,7 @@ struct getsockopt_args {
 };
 
 /* ARGSUSED */
+int
 getsockopt(p, uap, retval)
 	struct proc *p;
 	register struct getsockopt_args *uap;
@@ -1009,6 +1032,7 @@ getsockopt(p, uap, retval)
 }
 
 /* ARGSUSED */
+int
 pipe(p, uap, retval)
 	struct proc *p;
 	struct args *uap;
@@ -1065,6 +1089,7 @@ struct getsockname_args {
 	int	compat_43;
 };
 
+int
 getsockname(p, uap, retval)
 	struct proc *p;
 	struct getsockname_args *uap;
@@ -1082,6 +1107,7 @@ struct ogetsockname_args {
 	int	compat_43;
 };
 
+int
 ogetsockname(p, uap, retval)
 	struct proc *p;
 	struct ogetsockname_args *uap;
@@ -1106,6 +1132,7 @@ struct getsockname1_args {
 };
 
 /* ARGSUSED */
+int
 getsockname1(p, uap, retval)
 	struct proc *p;
 	register struct getsockname1_args *uap;
@@ -1154,6 +1181,7 @@ struct getpeername_args {
 	int	compat_43;
 };
 
+int
 getpeername(p, uap, retval)
 	struct proc *p;
 	struct getpeername_args *uap;
@@ -1171,6 +1199,7 @@ struct ogetpeername_args {
 	int	compat_43;
 };
 
+int
 ogetpeername(p, uap, retval)
 	struct proc *p;
 	struct ogetpeername_args *uap;
@@ -1195,6 +1224,7 @@ struct getpeername1_args {
 };
 
 /* ARGSUSED */
+int
 getpeername1(p, uap, retval)
 	struct proc *p;
 	register struct getpeername1_args *uap;
@@ -1232,6 +1262,7 @@ bad:
 	return (error);
 }
 
+int
 sockargs(mp, buf, buflen, type)
 	struct mbuf **mp;
 	caddr_t buf;
@@ -1270,6 +1301,7 @@ sockargs(mp, buf, buflen, type)
 	return (0);
 }
 
+int
 getsock(fdp, fdes, fpp)
 	struct filedesc *fdp;
 	int fdes;

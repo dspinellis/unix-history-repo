@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_pcb.h	7.9 (Berkeley) 5/6/91
- *	$Id: tp_pcb.h,v 1.3 1993/11/07 17:49:56 wollman Exp $
+ *	$Id: tp_pcb.h,v 1.4 1993/11/18 00:10:15 wollman Exp $
  */
 
 /***********************************************************
@@ -135,23 +135,23 @@ struct tp_rtc {
 };
 
 struct nl_protosw {
-	int		nlp_afamily;			/* address family */
-	int		(*nlp_putnetaddr)();	/* puts addresses in nl pcb */
-	int		(*nlp_getnetaddr)();	/* gets addresses from nl pcb */
-	int		(*nlp_cmpnetaddr)();	/* compares address in pcb with sockaddr */
-	int		(*nlp_putsufx)();		/* puts transport suffixes in nl pcb */
-	int		(*nlp_getsufx)();		/* gets transport suffixes from nl pcb */
-	int		(*nlp_recycle_suffix)();/* clears suffix from nl pcb */
-	int		(*nlp_mtu)();			/* figures out mtu based on nl used */
-	int		(*nlp_pcbbind)();		/* bind to pcb for net level */
-	int		(*nlp_pcbconn)();		/* connect for net level */
-	int		(*nlp_pcbdisc)();		/* disconnect net level */
-	int		(*nlp_pcbdetach)();		/* detach net level pcb */
-	int		(*nlp_pcballoc)();		/* allocate a net level pcb */
-	int		(*nlp_output)();		/* prepare a packet to give to nl */
-	int		(*nlp_dgoutput)();		/* prepare a packet to give to nl */
-	int		(*nlp_ctloutput)();		/* hook for network set/get options */
-	caddr_t	nlp_pcblist;			/* list of xx_pcb's for connections */
+	int nlp_afamily;	/* address family */
+	int (*nlp_putnetaddr)(); /* puts addresses in nl pcb */
+	int (*nlp_getnetaddr)(); /* gets addresses from nl pcb */
+	int (*nlp_cmpnetaddr)(); /* compares address in pcb with sockaddr */
+	int (*nlp_putsufx)();	/* puts transport suffixes in nl pcb */
+	int (*nlp_getsufx)();	/* gets transport suffixes from nl pcb */
+	int (*nlp_recycle_suffix)(); /* clears suffix from nl pcb */
+	int (*nlp_mtu)();	/* figures out mtu based on nl used */
+	int (*nlp_pcbbind)();	/* bind to pcb for net level */
+	int (*nlp_pcbconn)();	/* connect for net level */
+	void (*nlp_pcbdisc)();	/* disconnect net level */
+	void (*nlp_pcbdetach)(); /* detach net level pcb */
+	int (*nlp_pcballoc)();	/* allocate a net level pcb */
+	int (*nlp_output)();	/* prepare a packet to give to nl */
+	int (*nlp_dgoutput)();	/* prepare a packet to give to nl */
+	int (*nlp_ctloutput)();	/* hook for network set/get options */
+	caddr_t	nlp_pcblist;	/* list of xx_pcb's for connections */
 };
 
 

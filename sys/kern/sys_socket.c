@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)sys_socket.c	7.11 (Berkeley) 4/16/91
- *	$Id$
+ *	$Id: sys_socket.c,v 1.2 1993/10/16 15:24:50 rgrimes Exp $
  */
 
 #include "param.h"
@@ -51,6 +51,7 @@ struct	fileops socketops =
     { soo_read, soo_write, soo_ioctl, soo_select, soo_close };
 
 /* ARGSUSED */
+int
 soo_read(fp, uio, cred)
 	struct file *fp;
 	struct uio *uio;
@@ -62,6 +63,7 @@ soo_read(fp, uio, cred)
 }
 
 /* ARGSUSED */
+int
 soo_write(fp, uio, cred)
 	struct file *fp;
 	struct uio *uio;
@@ -72,6 +74,7 @@ soo_write(fp, uio, cred)
 		uio, (struct mbuf *)0, (struct mbuf *)0, 0));
 }
 
+int
 soo_ioctl(fp, cmd, data, p)
 	struct file *fp;
 	int cmd;
@@ -130,6 +133,7 @@ soo_ioctl(fp, cmd, data, p)
 	    (struct mbuf *)cmd, (struct mbuf *)data, (struct mbuf *)0));
 }
 
+int
 soo_select(fp, which, p)
 	struct file *fp;
 	int which;
@@ -169,6 +173,7 @@ soo_select(fp, which, p)
 	return (0);
 }
 
+int
 soo_stat(so, ub)
 	register struct socket *so;
 	register struct stat *ub;
@@ -181,6 +186,7 @@ soo_stat(so, ub)
 }
 
 /* ARGSUSED */
+int
 soo_close(fp, p)
 	struct file *fp;
 	struct proc *p;

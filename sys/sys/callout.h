@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)callout.h	7.2 (Berkeley) 2/15/91
- *	$Id: callout.h,v 1.2 1993/10/16 17:16:23 rgrimes Exp $
+ *	$Id: callout.h,v 1.3 1993/11/07 17:52:22 wollman Exp $
  */
 
 #ifndef _SYS_CALLOUT_H_
@@ -40,7 +40,7 @@
 struct callout {
 	struct callout *c_next;		/* next callout in queue */
 	caddr_t c_arg;			/* function argument */
-	int (*c_func)();		/* function to call */
+	void (*c_func)(caddr_t, int);	/* function to call */
 	int c_time;			/* ticks to the event */
 };
 

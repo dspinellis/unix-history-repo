@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
- *	$Id$
+ *	$Id: com.c,v 1.5 1993/10/16 13:45:46 rgrimes Exp $
  */
 
 #include "com.h"
@@ -58,7 +58,15 @@
 #include "i386/isa/ic/ns16550.h"
 #define cominor(d)
 
-int 	comprobe(), comattach(), comintr(), comstart(), comparam();
+static int comprobe();
+static int comattach();
+void comintr(int);
+static void comstart(struct tty *);
+static int comparam(struct tty *, struct termios *);
+
+static void comeint(int, int, int);
+static void commint(int, int);
+static void cominit(int, int);
 
 struct	isa_driver comdriver = {
 	comprobe, comattach, "com"
@@ -111,6 +119,7 @@ extern int kgdb_debug_init;
 
 #define	UNIT(x)		(minor(x))
 
+int
 comprobe(dev)
 struct isa_device *dev;
 {
@@ -179,7 +188,8 @@ struct isa_device *isdp;
 }
 
 /* ARGSUSED */
-comopen(dev_t dev, int flag, int mode, struct proc *p)
+int
+comopen(int /*dev_t*/ dev, int flag, int mode, struct proc *p)
 {
 	register struct tty *tp;
 	register int unit;
@@ -219,11 +229,12 @@ comopen(dev_t dev, int flag, int mode, struct proc *p)
 	}
 	(void) spl0();
 	if (error == 0)
-		error = (*linesw[tp->t_line].l_open)(dev, tp);
+		error = (*linesw[tp->t_line].l_open)(dev, tp, 0);
 	return (error);
 }
  
 /*ARGSUSED*/
+int
 comclose(dev, flag, mode, p)
 	dev_t dev;
 	int flag, mode;
@@ -250,18 +261,22 @@ comclose(dev, flag, mode, p)
 	return(0);
 }
  
+int
 comread(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	register struct tty *tp = &com_tty[UNIT(dev)];
  
 	return ((*linesw[tp->t_line].l_read)(tp, uio, flag));
 }
  
+int
 comwrite(dev, uio, flag)
 	dev_t dev;
 	struct uio *uio;
+	int flag;
 {
 	int unit = UNIT(dev);
 	register struct tty *tp = &com_tty[unit];
@@ -277,6 +292,7 @@ comwrite(dev, uio, flag)
 	return ((*linesw[tp->t_line].l_write)(tp, uio, flag));
 }
  
+void
 comintr(unit)
 	register int unit;
 {
@@ -284,13 +300,12 @@ comintr(unit)
 	register u_char code;
 	register struct tty *tp;
 
-	unit;
 	com = com_addr[unit];
 	while (1) {
 		code = inb(com+com_iir);
 		switch (code & IIR_IMASK) {
 		case IIR_NOPEND:
-			return (1);
+			return;
 		case IIR_RXTOUT:
 		case IIR_RXRDY:
 			tp = &com_tty[unit];
@@ -336,7 +351,7 @@ comintr(unit)
 			break;
 		default:
 			if (code & IIR_NOPEND)
-				return (1);
+				return;
 			log(LOG_WARNING, "com%d: weird interrupt: 0x%x\n",
 			    unit, code);
 			/* fall through */
@@ -347,9 +362,10 @@ comintr(unit)
 	}
 }
 
+static void
 comeint(unit, stat, com)
 	register int unit, stat;
-	register com;
+	register int com;
 {
 	register struct tty *tp;
 	register int c;
@@ -376,9 +392,10 @@ comeint(unit, stat, com)
 	(*linesw[tp->t_line].l_rint)(c, tp);
 }
 
+static void
 commint(unit, com)
 	register int unit;
-	register com;
+	register int com;
 {
 	register struct tty *tp;
 	register int stat;
@@ -402,9 +419,12 @@ commint(unit, com)
 	}
 }
 
+int
 comioctl(dev, cmd, data, flag)
 	dev_t dev;
+	int cmd;
 	caddr_t data;
+	int flag;
 {
 	register struct tty *tp;
 	register int unit = UNIT(dev);
@@ -460,12 +480,13 @@ comioctl(dev, cmd, data, flag)
 	return (0);
 }
 
+static int
 comparam(tp, t)
 	register struct tty *tp;
 	register struct termios *t;
 {
-	register com;
-	register int cfcr, cflag = t->c_cflag;
+	register int com;
+	register int cfcr = 0, cflag = t->c_cflag;
 	int unit = UNIT(tp->t_dev);
 	int ospeed = ttspeedtab(t->c_ospeed, comspeedtab);
  
@@ -511,6 +532,7 @@ comparam(tp, t)
 	return(0);
 }
  
+void
 comstart(tp)
 	register struct tty *tp;
 {
@@ -551,8 +573,10 @@ out:
  * Stop output on a line.
  */
 /*ARGSUSED*/
+void
 comstop(tp, flag)
 	register struct tty *tp;
+	int flag;
 {
 	register int s;
 
@@ -564,6 +588,7 @@ comstop(tp, flag)
 	splx(s);
 }
  
+int
 commctl(dev, bits, how)
 	dev_t dev;
 	int bits, how;
@@ -602,6 +627,7 @@ commctl(dev, bits, how)
  */
 #include "i386/i386/cons.h"
 
+void
 comcnprobe(cp)
 	struct consdev *cp;
 {
@@ -628,6 +654,7 @@ comcnprobe(cp)
 #endif
 }
 
+void
 comcninit(cp)
 	struct consdev *cp;
 {
@@ -638,6 +665,7 @@ comcninit(cp)
 	comconsinit = 1;
 }
 
+static void
 cominit(unit, rate)
 	int unit, rate;
 {
@@ -661,7 +689,9 @@ cominit(unit, rate)
 	splx(s);
 }
 
+int
 comcngetc(dev)
+	dev_t dev;
 {
 	register com = com_addr[UNIT(dev)];
 	short stat;
@@ -682,6 +712,7 @@ comcngetc(dev)
 /*
  * Console kernel output character routine.
  */
+void
 comcnputc(dev, c)
 	dev_t dev;
 	register int c;

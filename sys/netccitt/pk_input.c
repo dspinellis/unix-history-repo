@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pk_input.c	7.14 (Berkeley) 7/16/91
- *	$Id: pk_input.c,v 1.2 1993/10/16 19:46:50 rgrimes Exp $
+ *	$Id: pk_input.c,v 1.3 1993/10/30 06:37:09 rgrimes Exp $
  */
 
 #include "param.h"
@@ -101,13 +101,14 @@ caddr_t llnext;
 	return (pkp);
 }
 
+int
 pk_resize (pkp)
-register struct pkcb *pkp;
+	register struct pkcb *pkp;
 {
 	struct pklcd *dev_lcp = 0;
 	struct x25config *xcp = pkp -> pk_xcp;
 	if (pkp -> pk_chan &&
-	    (pkp -> pk_maxlcn != xcp -> xc_maxlcn)) {
+	    ((u_long)pkp -> pk_maxlcn != (u_long)xcp -> xc_maxlcn)) {
 		pk_restart (pkp, X25_RESTART_NETWORK_CONGESTION);
 		dev_lcp = pkp -> pk_chan[0];
 		free ((caddr_t)pkp -> pk_chan, M_IFADDR);
@@ -144,8 +145,10 @@ register struct pkcb *pkp;
  *  becomes operational, is reset, or when the link goes down. 
  */
 
+int
 pk_ctlinput (code, pkp)
-register struct pkcb *pkp;
+	int code;
+	register struct pkcb *pkp;
 {
 
 
@@ -172,6 +175,7 @@ struct ifqueue pkintrq;
  * This routine is called if there are semi-smart devices that do HDLC
  * in hardware and want to queue the packet and call level 3 directly
  */
+void
 pkintr ()
 {
 	register struct mbuf *m;
@@ -210,8 +214,9 @@ struct mbuf_cache pk_input_cache = {0 };
  *
  */
 
+void
 pk_input (m)
-register struct mbuf *m;
+	register struct mbuf *m;
 {
 	register struct x25_packet *xp;
 	register struct pklcd *lcp;
@@ -623,10 +628,10 @@ register struct mbuf *m;
 		m_freem (m);
 }
 
-static
+static void
 prune_dnic(from, to, dnicname, xcp)
-char *from, *to, *dnicname;
-register struct x25config *xcp;
+	char *from, *to, *dnicname;
+	register struct x25config *xcp;
 {
 	register char *cp1 = from, *cp2 = from;
 	if (xcp->xc_prepnd0 && *cp1 == '0') {
@@ -642,10 +647,12 @@ copyrest:
 	for (cp1 = dnicname; *cp2 = *cp1++;)
 		cp2++;
 }
+
 /* static */
+void
 pk_simple_bsd (from, to, lower, len)
-register octet *from, *to;
-register len, lower;
+	register octet *from, *to;
+	register len, lower;
 {
 	register int c;
 	while (--len >= 0) {
@@ -660,10 +667,12 @@ register len, lower;
 }
 
 /*static octet * */
+void
 pk_from_bcd (a, iscalling, sa, xcp)
-register struct x25_calladdr *a;
-register struct sockaddr_x25 *sa;
-register struct x25config *xcp;
+	register struct x25_calladdr *a;
+	int iscalling;
+	register struct sockaddr_x25 *sa;
+	register struct x25config *xcp;
 {
 	octet buf[MAXADDRLN+1];
 	octet *cp;
@@ -689,13 +698,13 @@ register struct x25config *xcp;
 		bcopy ((caddr_t)buf, (caddr_t)sa -> x25_addr, count + 1);
 }
 
-static
+static void
 save_extra(m0, fp, so)
-struct mbuf *m0;
-octet *fp;
-struct socket *so;
+	struct mbuf *m0;
+	octet *fp;
+	struct socket *so;
 {
-	register struct mbuf *m;
+	register struct mbuf *m = 0;
 	struct cmsghdr cmsghdr;
 	if (m = m_copym (m, 0, (int)M_COPYALL), M_DONTWAIT) {
 		int off = fp - mtod (m0, octet *);
@@ -719,9 +728,10 @@ struct socket *so;
  * sockets awaiting connections.
  */
 
+void
 pk_incoming_call (pkp, m0)
-struct mbuf *m0;
-struct pkcb *pkp;
+	struct pkcb *pkp;
+	struct mbuf *m0;
 {
 	register struct pklcd *lcp = 0, *l;
 	register struct sockaddr_x25 *sa;
@@ -748,8 +758,10 @@ struct pkcb *pkp;
 		((a -> called_addrlen + a -> calling_addrlen + 1) / 2));
 	u += *u + 1;
 	udlen = min (16, ((octet *)xp) + len - u);
+#if 0
 	if (udlen < 0)
 		udlen = 0;
+#endif
 	pk_from_bcd (a, 1, sa, pkp -> pk_xcp); /* get calling address */
 	pk_parse_facilities (facp, sa);
 	bcopy ((caddr_t)u, sa -> x25_udata, udlen);
@@ -859,9 +871,10 @@ struct pkcb *pkp;
 	pk_clear (lcp, 0, 1);
 }
 
+void
 pk_call_accepted (lcp, m)
-struct pklcd *lcp;
-struct mbuf *m;
+	struct pklcd *lcp;
+	struct mbuf *m;
 {
 	register struct x25_calladdr *ap;
 	register octet *fcp;
@@ -885,9 +898,10 @@ struct mbuf *m;
 		lcp -> lcd_upper(lcp, m);
 }
 
+void
 pk_parse_facilities (fcp, sa)
-register octet *fcp;
-register struct sockaddr_x25 *sa;
+	register octet *fcp;
+	register struct sockaddr_x25 *sa;
 {
 	register octet *maxfcp;
 

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnl.h	7.3 (Berkeley) 5/6/91
- *	$Id: clnl.h,v 1.2 1993/10/16 21:04:41 rgrimes Exp $
+ *	$Id: clnl.h,v 1.3 1993/11/07 17:49:21 wollman Exp $
  */
 
 /***********************************************************
@@ -64,6 +64,7 @@ SOFTWARE.
  * ARGO Project, Computer Sciences Dept., University of Wisconsin - Madison
  */
 struct clnl_protosw {
-	int (*clnl_input)();	/* input routine */
+	void (*clnl_input)(struct mbuf *, struct snpa_hdr *);
+				/* input routine */
 };
 #endif /* _NETISO_CLNL_H_ */

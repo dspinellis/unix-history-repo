@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if.h	7.11 (Berkeley) 3/19/91
- *	$Id: if.h,v 1.8 1993/11/14 20:02:20 wollman Exp $
+ *	$Id: if.h,v 1.9 1993/11/16 02:37:39 wollman Exp $
  */
 
 #ifndef _NET_IF_H_
@@ -75,6 +75,8 @@
  * (Would like to call this struct ``if'', but C isn't PL/1.)
  */
 
+struct rtentry;
+
 struct ifnet {
 	char	*if_name;		/* name, e.g. ``en'' or ``lo'' */
 	short	if_unit;		/* sub-unit for lower level driver */
@@ -91,13 +93,14 @@ struct ifnet {
 		int	ifq_drops;
 	} if_snd;			/* output queue */
 /* procedure handles */
-	int	(*if_init)();		/* init routine */
-	int	(*if_output)();		/* output routine (enqueue) */
-	int	(*if_start)();		/* initiate output routine */
-	int	(*if_done)();		/* output complete routine */
-	int	(*if_ioctl)();		/* ioctl routine */
-	int	(*if_reset)();		/* bus reset routine */
-	int	(*if_watchdog)();	/* timer routine */
+	void	(*if_init)(int); /* init routine */
+	int (*if_output)(struct ifnet *, struct mbuf *, struct sockaddr *, 
+			 struct rtentry *); /* output routine (enqueue) */
+	void (*if_start)(struct ifnet *); /* initiate output routine */
+	int (*if_done)(struct ifnet *);	/* output complete routine */
+	int (*if_ioctl)(struct ifnet *, int, caddr_t); /* ioctl routine */
+	void (*if_reset)(int, int); /* bus reset routine */
+	void (*if_watchdog)(int); /* timer routine */
 /* generic interface statistics */
 	int	if_ipackets;		/* packets received on interface */
 	int	if_ierrors;		/* input errors on interface */
@@ -190,6 +193,8 @@ struct ifnet {
  * are allocated and attached when an address is set, and are linked
  * together so all addresses for an interface can be located.
  */
+struct rtentry;
+
 struct ifaddr {
 	struct	sockaddr *ifa_addr;	/* address of interface */
 	struct	sockaddr *ifa_dstaddr;	/* other end of p-to-p link */
@@ -197,7 +202,8 @@ struct ifaddr {
 	struct	sockaddr *ifa_netmask;	/* used to determine subnet */
 	struct	ifnet *ifa_ifp;		/* back-pointer to interface */
 	struct	ifaddr *ifa_next;	/* next address for interface */
-	int	(*ifa_rtrequest)();	/* check or clean routes (+ or -)'d */
+	void	(*ifa_rtrequest)(int, struct rtentry *, struct sockaddr *);
+					/* check or clean routes (+ or -)'d */
 	struct 	rtentry *ifa_rt;	/* ??? for ROUTETOIF */
 	u_short	ifa_flags;		/* mostly rt_flags for cloning */
 	u_short	ifa_llinfolen;		/* extra to malloc for link info */

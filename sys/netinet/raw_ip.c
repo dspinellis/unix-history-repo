@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)raw_ip.c	7.8 (Berkeley) 7/25/90
- *	$Id$
+ *	$Id: raw_ip.c,v 1.2 1993/10/16 18:26:19 rgrimes Exp $
  */
 
 #include "param.h"
@@ -64,6 +64,7 @@ struct	sockproto ripproto = { PF_INET };
  * for raw_input routine, then pass them along with
  * mbuf chain.
  */
+void
 rip_input(m)
 	struct mbuf *m;
 {
@@ -84,6 +85,7 @@ rip_input(m)
  * Tack on options user may have setup with control call.
  */
 #define	satosin(sa)	((struct sockaddr_in *)(sa))
+int
 rip_output(m, so)
 	register struct mbuf *m;
 	struct socket *so;
@@ -122,6 +124,7 @@ rip_output(m, so)
 /*
  * Raw IP socket option processing.
  */
+int
 rip_ctloutput(op, so, level, optname, m)
 	int op;
 	struct socket *so;
@@ -190,6 +193,7 @@ rip_ctloutput(op, so, level, optname, m)
 }
 
 /*ARGSUSED*/
+int
 rip_usrreq(so, req, m, nam, control)
 	register struct socket *so;
 	int req;

@@ -31,10 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_malloc.c	7.25 (Berkeley) 5/8/91
- *	$Id: kern_malloc.c,v 1.3 1993/10/18 03:46:54 davidg Exp $
+ *	$Id: kern_malloc.c,v 1.4 1993/11/22 07:44:32 jkh Exp $
  */
 
 #include "param.h"
+#include "systm.h"
 #include "proc.h"
 #include "kernel.h"
 #include "malloc.h"
@@ -224,16 +225,17 @@ free(addr, type)
 /*
  * Initialize the kernel memory allocator
  */
+void
 kmeminit()
 {
 	register long indx;
 	int npg;
 
 #if	(MAXALLOCSAVE > MINALLOCSIZE * 32768)
-		ERROR!_kmeminit:_MAXALLOCSAVE_too_big
+#  error "kmeminit: MAXALLOCSAVE too big"
 #endif
 #if	(MAXALLOCSAVE < CLBYTES-1)
-		ERROR!_kmeminit:_MAXALLOCSAVE_too_small
+#  error "kmeminit: MAXALLOCSAVE too small"
 #endif
 	npg = VM_KMEM_SIZE/ NBPG;
 	kmemusage = (struct kmemusage *) kmem_alloc(kernel_map,

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_prot.c	7.21 (Berkeley) 5/3/91
- *	$Id$
+ *	$Id: kern_prot.c,v 1.3 1993/10/16 15:24:24 rgrimes Exp $
  */
 
 /*
@@ -48,6 +48,7 @@
 #include "malloc.h"
 
 /* ARGSUSED */
+int
 getpid(p, uap, retval)
 	struct proc *p;
 	void *uap;
@@ -62,6 +63,7 @@ getpid(p, uap, retval)
 }
 
 /* ARGSUSED */
+int
 getppid(p, uap, retval)
 	struct proc *p;
 	void *uap;
@@ -73,6 +75,7 @@ getppid(p, uap, retval)
 }
 
 /* Get process group ID; note that POSIX getpgrp takes no parameter */
+int
 getpgrp(p, uap, retval)
 	struct proc *p;
 	void *uap;
@@ -84,6 +87,7 @@ getpgrp(p, uap, retval)
 }
 
 /* ARGSUSED */
+int
 getuid(p, uap, retval)
 	struct proc *p;
 	void *uap;
@@ -98,6 +102,7 @@ getuid(p, uap, retval)
 }
 
 /* ARGSUSED */
+int
 geteuid(p, uap, retval)
 	struct proc *p;
 	void *uap;
@@ -109,6 +114,7 @@ geteuid(p, uap, retval)
 }
 
 /* ARGSUSED */
+int
 getgid(p, uap, retval)
 	struct proc *p;
 	void *uap;
@@ -128,6 +134,7 @@ getgid(p, uap, retval)
  * correctly in a library function.
  */
 /* ARGSUSED */
+int
 getegid(p, uap, retval)
 	struct proc *p;
 	void *uap;
@@ -143,6 +150,7 @@ struct getgroups_args {
 	int	*gidset;		/* XXX not yet POSIX */
 };
 
+int
 getgroups(p, uap, retval)
 	struct proc *p;
 	register struct getgroups_args *uap;
@@ -172,6 +180,7 @@ getgroups(p, uap, retval)
 }
 
 /* ARGSUSED */
+int
 setsid(p, uap, retval)
 	register struct proc *p;
 	void *uap;
@@ -207,6 +216,7 @@ struct setpgid_args {
 };
 
 /* ARGSUSED */
+int
 setpgid(curp, uap, retval)
 	struct proc *curp;
 	register struct setpgid_args *uap;
@@ -241,6 +251,7 @@ struct setuid_args {
 };
 
 /* ARGSUSED */
+int
 setuid(p, uap, retval)
 	struct proc *p;
 	struct setuid_args *uap;
@@ -270,6 +281,7 @@ struct seteuid_args {
 };
 
 /* ARGSUSED */
+int
 seteuid(p, uap, retval)
 	struct proc *p;
 	struct seteuid_args *uap;
@@ -297,6 +309,7 @@ struct setgid_args {
 };
 
 /* ARGSUSED */
+int
 setgid(p, uap, retval)
 	struct proc *p;
 	struct setgid_args *uap;
@@ -321,6 +334,7 @@ struct setegid_args {
 };
 
 /* ARGSUSED */
+int
 setegid(p, uap, retval)
 	struct proc *p;
 	struct setegid_args *uap;
@@ -347,6 +361,7 @@ struct osetreuid_args {
 };
 
 /* ARGSUSED */
+int
 osetreuid(p, uap, retval)
 	register struct proc *p;
 	struct osetreuid_args *uap;
@@ -393,6 +408,7 @@ struct osetregid_args {
 };
 
 /* ARGSUSED */
+int
 osetregid(p, uap, retval)
 	register struct proc *p;
 	struct osetregid_args *uap;
@@ -437,6 +453,7 @@ struct setgroups_args {
 };
 
 /* ARGSUSED */
+int
 setgroups(p, uap, retval)
 	struct proc *p;
 	struct setgroups_args *uap;
@@ -466,6 +483,7 @@ setgroups(p, uap, retval)
 /*
  * Check if gid is a member of the group set.
  */
+int
 groupmember(gid, cred)
 	gid_t gid;
 	register struct ucred *cred;
@@ -486,6 +504,7 @@ groupmember(gid, cred)
  * indicating use of super-powers.
  * Returns 0 or error.
  */
+int
 suser(cred, acflag)
 	struct ucred *cred;
 	u_short *acflag;
@@ -516,10 +535,11 @@ crget()
  * Free a cred structure.
  * Throws away space when ref count gets to 0.
  */
+void
 crfree(cr)
 	struct ucred *cr;
 {
-	int s = splimp();			/* ??? */
+	int s = splimp();			/* ??? XXX FIXME */
 
 	if (--cr->cr_ref != 0) {
 		(void) splx(s);
@@ -572,6 +592,7 @@ struct getlogin_args {
 };
 
 /* ARGSUSED */
+int
 getlogin(p, uap, retval)
 	struct proc *p;
 	struct getlogin_args *uap;
@@ -593,6 +614,7 @@ struct setlogin_args {
 };
 
 /* ARGSUSED */
+int
 setlogin(p, uap, retval)
 	struct proc *p;
 	struct setlogin_args *uap;

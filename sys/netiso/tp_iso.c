@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tp_iso.c	7.11 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: tp_iso.c,v 1.3 1993/10/16 21:05:47 rgrimes Exp $
  */
 
 /***********************************************************
@@ -116,7 +116,7 @@ SOFTWARE.
  * FUNCTION, ARGUMENTS:
  * 	The argument (which) takes the value TP_LOCAL or TP_FOREIGN.
  */
-
+void
 iso_getsufx(isop, lenp, data_out, which)
 	struct isopcb *isop;
 	u_short *lenp;
@@ -260,6 +260,7 @@ iso_putnetaddr(isop, name, which)
  * 	with that implicitly stored in an isopcb (isop).
  * 	The argument (which) takes values TP_LOCAL or TP_FOREIGN.
  */ 
+int
 iso_cmpnetaddr(isop, name, which)
 	register struct isopcb	*isop;
 	register struct sockaddr_iso	*name;
@@ -698,6 +699,8 @@ tpclnp_ctlinput(cmd, siso)
  */
 
 static struct sockaddr_iso siso = {sizeof(siso), AF_ISO};
+
+void
 tpclnp_ctlinput1(cmd, isoa)
 	int cmd;
 	struct iso_addr *isoa;

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)if_loop.c	7.13 (Berkeley) 4/26/91
- *	$Id: if_loop.c,v 1.3 1993/11/14 00:13:16 wollman Exp $
+ *	$Id: if_loop.c,v 1.4 1993/11/15 20:45:58 wollman Exp $
  */
 
 /*
@@ -85,7 +85,7 @@ static caddr_t lo_bpf;
 struct	ifnet loif;
 int looutput(struct ifnet *, struct mbuf *, struct sockaddr *, struct rtentry *);
 int	loioctl(struct ifnet *, int, caddr_t);
-int lortrequest(int, struct rtentry *, struct sockaddr *);
+void lortrequest(int, struct rtentry *, struct sockaddr *);
 
 void
 loattach(void)
@@ -187,11 +187,11 @@ looutput(ifp, m, dst, rt)
 }
 
 /* ARGSUSED */
-int
+void
 lortrequest(cmd, rt, sa)
-int cmd;
-struct rtentry *rt;
-struct sockaddr *sa;
+	int cmd;
+	struct rtentry *rt;
+	struct sockaddr *sa;
 {
 	if (rt) {
 #ifdef DEBUG

@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.c	7.4 (Berkeley) 5/7/91
- *	$Id$
+ *	$Id: vm_page.c,v 1.2 1993/10/16 16:20:44 rgrimes Exp $
  */
 
 /*
@@ -585,7 +585,7 @@ vm_page_t vm_page_alloc(object, offset)
 	if ((vm_page_free_count < vm_page_free_min) ||
 			((vm_page_free_count < vm_page_free_target) &&
 			(vm_page_inactive_count < vm_page_inactive_target)))
-		thread_wakeup(&vm_pages_needed);
+		thread_wakeup((int)&vm_pages_needed);
 	return(mem);
 }
 

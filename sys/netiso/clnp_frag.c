@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)clnp_frag.c	7.12 (Berkeley) 5/6/91
- *	$Id$
+ *	$Id: clnp_frag.c,v 1.3 1993/10/16 21:04:46 rgrimes Exp $
  */
 
 /***********************************************************
@@ -82,6 +82,9 @@ SOFTWARE.
 /* all fragments are hung off this list */
 struct clnp_fragl	*clnp_frags = NULL;
 
+static void clnp_insert_frag(struct clnp_fragl *, struct mbuf *, struct clnp_segment *);
+
+
 struct mbuf	*clnp_comp_pdu();
 
 
@@ -104,6 +107,7 @@ struct mbuf	*clnp_comp_pdu();
  *					the packet was fragmented during forwarding. In this
  *					case, we ought to send an ER back.
  */
+int
 clnp_fragment(ifp, m, first_hop, total_len, segoff, flags, rt)
 struct ifnet	*ifp;		/* ptr to outgoing interface */
 struct mbuf		*m;			/* ptr to packet */
@@ -381,6 +385,7 @@ struct clnp_segment	*seg;	/* segment part of fragment header */
  *
  * NOTES:			Failure is only due to insufficient resources.
  */
+int
 clnp_newpkt(m, src, dst, seg)
 struct mbuf 		*m;		/* new fragment */
 struct iso_addr		*src;	/* src of new fragment */
@@ -445,6 +450,7 @@ struct clnp_segment	*seg;	/* segment part of fragment header */
  *					The clnp_frag structure actually lies on top of
  *					part of the old clnp header.
  */
+static void
 clnp_insert_frag(cfh, m, seg)
 struct clnp_fragl	*cfh;	/* header of list of packet fragments */
 struct mbuf 		*m;		/* new fragment */
@@ -819,6 +825,7 @@ float troll_random()
  * NOTES:			The operation of this procedure is regulated by the
  *					troll control structure (Troll).
  */
+int
 troll_output(ifp, m, dst, rt)
 struct ifnet	*ifp;
 struct mbuf		*m;
@@ -853,6 +860,7 @@ struct rtentry *rt;
 		err = (*ifp->if_output)(ifp, m, dst, rt);
 		return(err);
 	}
+	return 0;
 }
 
 #endif	TROLL

@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_vnops.c	7.33 (Berkeley) 6/27/91
- *	$Id$
+ *	$Id: vfs_vnops.c,v 1.2 1993/10/16 15:25:29 rgrimes Exp $
  */
 
 #include "param.h"
@@ -54,6 +54,7 @@ struct 	fileops vnops =
  * Common code for vnode open operations.
  * Check permissions, and call the VOP_OPEN or VOP_CREATE routine.
  */
+int
 vn_open(ndp, p, fmode, cmode)
 	register struct nameidata *ndp;
 	struct proc *p;
@@ -139,6 +140,7 @@ bad:
  * The read-only status of the file system is checked.
  * Also, prototype text segments cannot be written.
  */
+int
 vn_writechk(vp)
 	register struct vnode *vp;
 {
@@ -167,6 +169,7 @@ vn_writechk(vp)
 /*
  * Vnode close call
  */
+int
 vn_close(vp, flags, cred, p)
 	register struct vnode *vp;
 	int flags;
@@ -186,6 +189,7 @@ vn_close(vp, flags, cred, p)
  * Package up an I/O request on a vnode into a uio and do it.
  * [internal interface to file i/o for kernel only]
  */
+int
 vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid, p)
 	enum uio_rw rw;
 	struct vnode *vp;
@@ -230,6 +234,7 @@ vn_rdwr(rw, vp, base, len, offset, segflg, ioflg, cred, aresid, p)
 /*
  * File table vnode read routine.
  */
+int
 vn_read(fp, uio, cred)
 	struct file *fp;
 	struct uio *uio;
@@ -251,6 +256,7 @@ vn_read(fp, uio, cred)
 /*
  * File table vnode write routine.
  */
+int
 vn_write(fp, uio, cred)
 	struct file *fp;
 	struct uio *uio;
@@ -278,6 +284,7 @@ vn_write(fp, uio, cred)
 /*
  * File table vnode stat routine.
  */
+int
 vn_stat(vp, sb, p)
 	struct vnode *vp;
 	register struct stat *sb;
@@ -345,6 +352,7 @@ vn_stat(vp, sb, p)
 /*
  * File table vnode ioctl routine.
  */
+int
 vn_ioctl(fp, com, data, p)
 	struct file *fp;
 	int com;
@@ -387,6 +395,7 @@ vn_ioctl(fp, com, data, p)
 /*
  * File table vnode select routine.
  */
+int
 vn_select(fp, which, p)
 	struct file *fp;
 	int which;
@@ -400,6 +409,7 @@ vn_select(fp, which, p)
 /*
  * File table vnode close routine.
  */
+int
 vn_closefile(fp, p)
 	struct file *fp;
 	struct proc *p;
@@ -415,6 +425,7 @@ vn_closefile(fp, p)
  *	- get vp by calling VFS_FHTOVP() macro
  *	- if lockflag lock it with VOP_LOCK()
  */
+int
 vn_fhtovp(fhp, lockflag, vpp)
 	fhandle_t *fhp;
 	int lockflag;

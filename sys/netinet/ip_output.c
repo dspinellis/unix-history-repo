@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)ip_output.c	7.23 (Berkeley) 11/12/90
- *	$Id: ip_output.c,v 1.2 1993/10/16 18:26:16 rgrimes Exp $
+ *	$Id: ip_output.c,v 1.3 1993/10/19 09:14:15 davidg Exp $
  */
 
 #include "param.h"
@@ -64,6 +64,7 @@ struct mbuf *ip_insertoptions();
  * The mbuf chain containing the packet will be freed.
  * The mbuf opt, if present, will not be freed.
  */
+int
 ip_output(m0, opt, ro, flags)
 	struct mbuf *m0;
 	struct mbuf *opt;
@@ -345,6 +346,7 @@ ip_insertoptions(m, opt, phlen)
  * Copy options from ip to jp,
  * omitting those not copied during fragmentation.
  */
+int
 ip_optcopy(ip, jp)
 	struct ip *ip, *jp;
 {
@@ -378,6 +380,7 @@ ip_optcopy(ip, jp)
 /*
  * IP socket option processing.
  */
+int
 ip_ctloutput(op, so, level, optname, mp)
 	int op;
 	struct socket *so;
@@ -386,7 +389,7 @@ ip_ctloutput(op, so, level, optname, mp)
 {
 	register struct inpcb *inp = sotoinpcb(so);
 	register struct mbuf *m = *mp;
-	register int optval;
+	register int optval = 0;
 	int error = 0;
 
 	if (level != IPPROTO_IP)
@@ -512,6 +515,7 @@ ip_ctloutput(op, so, level, optname, mp)
  * Store in mbuf with pointer in pcbopt, adding pseudo-option
  * with destination address if source routed.
  */
+int
 #ifdef notyet
 ip_pcbopts(optname, pcbopt, m)
 	int optname;

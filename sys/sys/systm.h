@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)systm.h	7.17 (Berkeley) 5/25/91
- *	$Id$
+ *	$Id: systm.h,v 1.7 1993/10/08 20:59:39 rgrimes Exp $
  */
 
 #ifndef _SYS_SYSTM_H_
@@ -97,8 +97,8 @@ int	enxio __P((void));
 int	eopnotsupp __P((void));
 int	selscan __P((struct proc *p, fd_set *ibits, fd_set *obits,
 		int nfd, int *retval));
-int	seltrue __P((dev_t dev, int which, struct proc *p));
-void	selwakeup  __P((pid_t pid, int coll));
+int	seltrue __P((int /*dev_t*/ dev, int which, struct proc *p));
+void	selwakeup  __P((int /*pid_t*/ pid, int coll));
 
 __dead void	panic __P((const char *));
 void	tablefull __P((char *));
@@ -111,8 +111,10 @@ void	ttyprintf __P((struct tty *, const char *, ...));
 void	bcopy __P((void *from, void *to, u_int len));
 void	ovbcopy __P((void *from, void *to, u_int len));
 void	bzero __P((void *buf, u_int len));
-static int	bcmp __P((void *str1, void *str2, u_int len));
-static size_t	strlen __P((const char *string));
+#ifndef __GNUC__
+int	bcmp __P((void *str1, void *str2, u_int len));
+#endif
+size_t	strlen __P((const char *string));
 
 int	copystr __P((void *kfaddr, void *kdaddr, u_int len, u_int *done));
 int	copyinstr __P((void *udaddr, void *kaddr, u_int len, u_int *done));
@@ -134,47 +136,31 @@ int	suiword __P((void *base, int word));
 int	scanc __P((unsigned size, u_char *cp, u_char *table, int mask));
 int	skpc __P((int mask, int size, char *cp));
 int	locc __P((int mask, char *cp, unsigned size));
-static int	ffs __P((long value));
+int	ffs __P((long value));
 
 /*
  * XXX - a lot were missing.  A lot are still missing.  Some of the above
  * are inconsistent with ANSI C.  I fixed strlen.  Others are inconsistent
  * with with non-ANSI C due to having unpromoted args.
  */
-#define	nonint	int		/* really void */
 struct	proc;
-struct	ringb;
-struct	speedtab;
 
-typedef	nonint	(*timeout_func_t)	__P((caddr_t arg, int ticks));
+typedef	void	(*timeout_func_t)	__P((caddr_t arg, int ticks));
 
-nonint	DELAY		__P((int count));
-int	getc		__P((struct ringb *rbp));
+void	DELAY		__P((int count));
 void	psignal		__P((struct proc *p, int sig));
-size_t	rb_write	__P((struct ringb *to, char *buf, size_t nfrom));
 void	spinwait	__P((int millisecs));
 int	splhigh		__P((void));
 int	spltty		__P((void));
 int	splx		__P((int new_pri));
-#ifdef notyet
-nonint	timeout		__P((timeout_func_t func, caddr_t arg, int t));
-#endif
+void	timeout		__P((timeout_func_t func, caddr_t arg, int t));
 void	trapsignal	__P((struct proc *p, int sig, unsigned code));
-int	ttioctl		__P((struct tty *tp, int com, caddr_t data, int flag));
-nonint	ttsetwater	__P((struct tty *tp));
-nonint	ttstart		__P((struct tty *tp));
-nonint	ttychars	__P((struct tty *tp));
-int	ttyclose	__P((struct tty *tp));
-nonint	ttyinput	__P((int c, struct tty *tp));
-int	ttysleep	__P((struct tty *tp, caddr_t chan, int pri,
-			     char *wmesg, int timo));
-int	ttspeedtab	__P((int speed, struct speedtab *table));
-nonint	ttwakeup	__P((struct tty *tp));
-#ifdef notyet
-nonint	wakeup		__P((caddr_t chan));
-#endif
-
-#undef	nonint
+void	wakeup		__P((caddr_t chan));
+int tsleep(caddr_t, int, const char *, int);
+void unsleep(struct proc *);
+void wakeup(caddr_t);
+void setrun(struct proc *);	/* xxx move to proc.h */
+void setpri(struct proc *);	/* xxx move to proc.h */
 
 /*
  * Machine-dependent function declarations.

@@ -31,10 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vfs_lookup.c	7.32 (Berkeley) 5/21/91
- *	$Id: vfs_lookup.c,v 1.3 1993/11/07 17:46:25 wollman Exp $
+ *	$Id: vfs_lookup.c,v 1.4 1993/11/07 21:44:48 wollman Exp $
  */
 
 #include "param.h"
+#include "systm.h"
 #include "syslimits.h"
 #include "time.h"
 #include "namei.h"
@@ -71,6 +72,7 @@ u_long nextvnodeid;
  *		if symbolic link, massage name in buffer and continue
  *	}
  */
+int
 namei(ndp, p)
 	register struct nameidata *ndp;
 	struct proc *p;
@@ -93,10 +95,10 @@ namei(ndp, p)
 		MALLOC(ndp->ni_pnbuf, caddr_t, MAXPATHLEN, M_NAMEI, M_WAITOK);
 	if (ndp->ni_segflg == UIO_SYSSPACE)
 		error = copystr(ndp->ni_dirp, ndp->ni_pnbuf,
-			    MAXPATHLEN, &ndp->ni_pathlen);
+			    MAXPATHLEN, (u_int *)&ndp->ni_pathlen);
 	else
 		error = copyinstr(ndp->ni_dirp, ndp->ni_pnbuf,
-			    MAXPATHLEN, &ndp->ni_pathlen);
+			    MAXPATHLEN, (u_int *)&ndp->ni_pathlen);
 	if (error) {
 		free(ndp->ni_pnbuf, M_NAMEI);
 		ndp->ni_vp = NULL;
@@ -232,6 +234,7 @@ namei(ndp, p)
  *	    if LOCKPARENT set, return locked parent in ni_dvp
  *	    if WANTPARENT set, return unlocked parent in ni_dvp
  */
+int
 lookup(ndp, p)
 	register struct nameidata *ndp;
 	struct proc *p;

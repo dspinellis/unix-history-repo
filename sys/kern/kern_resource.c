@@ -31,10 +31,11 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_resource.c	7.13 (Berkeley) 5/9/91
- *	$Id: kern_resource.c,v 1.5 1993/10/16 15:24:26 rgrimes Exp $
+ *	$Id: kern_resource.c,v 1.6 1993/10/19 01:02:16 nate Exp $
  */
 
 #include "param.h"
+#include "systm.h"
 #include "resourcevar.h"
 #include "malloc.h"
 #include "proc.h"
@@ -50,6 +51,7 @@ struct getpriority_args {
 	int	who;
 };
 
+int
 getpriority(curp, uap, retval)
 	struct proc *curp;
 	register struct getpriority_args *uap;
@@ -110,6 +112,7 @@ struct setpriority_args {
 };
 
 /* ARGSUSED */
+int
 setpriority(curp, uap, retval)
 	struct proc *curp;
 	register struct setpriority_args *uap;
@@ -163,6 +166,7 @@ setpriority(curp, uap, retval)
 	return (0);
 }
 
+int
 donice(curp, chgp, n)
 	register struct proc *curp, *chgp;
 	register int n;
@@ -190,6 +194,7 @@ struct setrlimit_args {
 };
 
 /* ARGSUSED */
+int
 setrlimit(p, uap, retval)
 	struct proc *p;
 	register struct setrlimit_args *uap;
@@ -273,6 +278,7 @@ struct getrlimit_args {
 };
 
 /* ARGSUSED */
+int
 getrlimit(p, uap, retval)
 	struct proc *p;
 	register struct getrlimit_args *uap;
@@ -291,6 +297,7 @@ struct getrusage_args {
 };
 
 /* ARGSUSED */
+int
 getrusage(p, uap, retval)
 	register struct proc *p;
 	register struct getrusage_args *uap;
@@ -322,6 +329,7 @@ getrusage(p, uap, retval)
 	    sizeof (struct rusage)));
 }
 
+void
 ruadd(ru, ru2)
 	register struct rusage *ru, *ru2;
 {
