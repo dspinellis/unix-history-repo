@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-static char vers[] = "@(#)lfs_alloc.c 1.19 %G%";
+static char vers[] = "@(#)lfs_alloc.c 1.20 %G%";
 
 /*	alloc.c	4.8	81/03/08	*/
 
@@ -788,13 +788,13 @@ mapsearch(fs, cgp, bpref, allocsiz)
 		start = cgp->cg_frotor / NBBY;
 	len = howmany(fs->fs_fpg, NBBY) - start;
 	loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
-		1 << (allocsiz - 1));
+		1 << (allocsiz - 1 + (fs->fs_frag % NBBY)));
 	if (loc == 0) {
 		loc = fs->fs_dblkno / NBBY;
 		len = start - loc + 1;
 		start = loc;
 		loc = scanc(len, &cgp->cg_free[start], fragtbl[fs->fs_frag],
-			1 << (allocsiz - 1));
+			1 << (allocsiz - 1 + (fs->fs_frag % NBBY)));
 		if (loc == 0) {
 			panic("alloccg: map corrupted");
 			return (0);
@@ -841,7 +841,7 @@ fragacct(fs, fragmap, fraglist, cnt)
 	inblk = (int)(fragtbl[fs->fs_frag][fragmap]) << 1;
 	fragmap <<= 1;
 	for (siz = 1; siz < fs->fs_frag; siz++) {
-		if (((1 << siz) & inblk) == 0)
+		if ((inblk & (1 << (siz + (fs->fs_frag % NBBY)))) == 0)
 			continue;
 		field = around[siz];
 		subfield = inside[siz];

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.27 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.28 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -1643,7 +1643,7 @@ fragacct(fs, fragmap, fraglist, cnt)
 	inblk = (int)(fragtbl[fs->fs_frag][fragmap] << 1);
 	fragmap <<= 1;
 	for (siz = 1; siz < fs->fs_frag; siz++) {
-		if (((1 << siz) & inblk) == 0)
+		if ((inblk & (1 << (siz + (fs->fs_frag % NBBY)))) == 0)
 			continue;
 		field = around[siz];
 		subfield = inside[siz];
