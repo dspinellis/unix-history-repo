@@ -1,4 +1,7 @@
-static char *sccsid = "@(#)test.c	4.1 (Berkeley) %G%";
+#ifndef lint
+static char *sccsid = "@(#)test.c	4.2 (Berkeley) %G%";
+#endif
+
 /*
  *	test expression
  *	[ expression ]
@@ -15,10 +18,12 @@ int	ap;
 int	ac;
 char	**av;
 char	*tmp;
+char	*nxtarg();
 
 main(argc, argv)
 char *argv[];
 {
+	int status;
 
 	ac = argc; av = argv; ap = 1;
 	if(EQ(argv[0],"[")) {
@@ -27,7 +32,10 @@ char *argv[];
 	}
 	argv[ac] = 0;
 	if (ac<=1) exit(1);
-	exit(exp()?0:1);
+	status = (exp()?0:1);
+	if (nxtarg(1)!=0)
+		synbad("too many arguments","");
+	exit(status);
 }
 
 char *nxtarg(mt) {
@@ -71,7 +79,7 @@ e3() {
 	int p1;
 	register char *a;
 	char *p2;
-	int int1, int2;
+	int int1;
 
 	a=nxtarg(0);
 	if(EQ(a, "(")) {
@@ -120,21 +128,21 @@ e3() {
 		p2=nxtarg(0);
 	} else{	int1=atoi(a);
 	}
-	int2 = atoi(nxtarg(0));
 	if(EQ(p2, "-eq"))
-		return(int1==int2);
+		return(int1==atoi(nxtarg(0)));
 	if(EQ(p2, "-ne"))
-		return(int1!=int2);
+		return(int1!=atoi(nxtarg(0)));
 	if(EQ(p2, "-gt"))
-		return(int1>int2);
+		return(int1>atoi(nxtarg(0)));
 	if(EQ(p2, "-lt"))
-		return(int1<int2);
+		return(int1<atoi(nxtarg(0)));
 	if(EQ(p2, "-ge"))
-		return(int1>=int2);
+		return(int1>=atoi(nxtarg(0)));
 	if(EQ(p2, "-le"))
-		return(int1<=int2);
+		return(int1<=atoi(nxtarg(0)));
 
-	synbad("unknown operator ",p2);
+	--ap;
+	return(!EQ(a,""));
 }
 
 tio(a, f)
@@ -144,7 +152,7 @@ int f;
 
 	f = open(a, f);
 	if (f>=0) {
-		close(f);
+		(void) close(f);
 		return(1);
 	}
 	return(0);
@@ -174,10 +182,10 @@ char *f;
 synbad(s1,s2)
 char *s1, *s2;
 {
-	write(2, "test: ", 6);
-	write(2, s1, strlen(s1));
-	write(2, s2, strlen(s2));
-	write(2, "\n", 1);
+	(void) write(2, "test: ", 6);
+	(void) write(2, s1, strlen(s1));
+	(void) write(2, s2, strlen(s2));
+	(void) write(2, "\n", 1);
 	exit(255);
 }
 
