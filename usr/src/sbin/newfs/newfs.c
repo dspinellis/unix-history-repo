@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newfs.c	6.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)newfs.c	6.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifndef lint
@@ -174,6 +174,9 @@ main(argc, argv)
 	struct stat st;
 	int fsi, fso;
 	char *cp, *special, *opstring, buf[BUFSIZ];
+	struct statfs *mp;
+	char *s1, *s2;
+	int len, n;
 
 	if (progname = rindex(*argv, '/'))
 		++progname;
@@ -311,12 +314,35 @@ main(argc, argv)
 			(void)sprintf(device, "%s%s", _PATH_DEV, special);
 		special = device;
 	}
-	if (!Nflag) {
+	if (Nflag) {
+		fso = -1;
+	} else {
 		fso = open(special, O_WRONLY);
 		if (fso < 0)
 			fatal("%s: %s", special, strerror(errno));
-	} else
-		fso = -1;
+
+		/* Bail if target special is mounted */
+		n = getmntinfo(&mp, MNT_NOWAIT);
+		if (n == 0)
+			fatal("%s: getmntinfo: %s", special, strerror(errno));
+
+		len = sizeof(_PATH_DEV) - 1;
+		s1 = special;
+		if (strncmp(_PATH_DEV, s1, len) == 0)
+			s1 += len;
+
+		while (--n >= 0) {
+			s2 = mp->f_mntfromname;
+			if (strncmp(_PATH_DEV, s2, len) == 0) {
+				s2 += len - 1;
+				*s2 = 'r';
+			}
+			if (strcmp(s1, s2) == 0 || strcmp(s1, &s2[1]) == 0)
+				fatal("%s is mounted on %s",
+				    special, mp->f_mntonname);
+			++mp;
+		}
+	}
 	fsi = open(special, O_RDONLY);
 	if (fsi < 0)
 		fatal("%s: %s", special, strerror(errno));
@@ -570,10 +596,12 @@ usage()
 {
 	if (mfs) {
 		fprintf(stderr,
-		    "usage: mfs [ -fsoptions ] special-device mount-point\n");
+		    "usage: %s [ -fsoptions ] special-device mount-point\n",
+			progname);
 	} else
 		fprintf(stderr,
-		    "usage: newfs [ -fsoptions ] special-device%s\n",
+		    "usage: %s [ -fsoptions ] special-device%s\n",
+		    progname,
 #ifdef COMPAT
 		    " [device-type]");
 #else
