@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	8.16 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	8.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -979,18 +979,22 @@ abortit:
 			error = EINVAL;
 			goto abortit;
 		}
-		VOP_ABORTOP(fdvp, fcnp);
-		vrele(fdvp);
-		vrele(fvp);
+
+		/* Release destination completely. */
+		VOP_ABORTOP(tdvp, tcnp);
 		vput(tdvp);
 		vput(tvp);
-		tcnp->cn_flags &= ~MODMASK;
-		tcnp->cn_flags |= LOCKPARENT | LOCKLEAF;
-		if ((tcnp->cn_flags & SAVESTART) == 0)
+
+		/* Delete source. */
+		vrele(fdvp);
+		vrele(fvp);
+		fcnp->cn_flags &= ~MODMASK;
+		fcnp->cn_flags |= LOCKPARENT | LOCKLEAF;
+		if ((fcnp->cn_flags & SAVESTART) == 0)
 			panic("ufs_rename: lost from startdir");
-		tcnp->cn_nameiop = DELETE;
-		(void) relookup(tdvp, &tvp, tcnp);
-		return (VOP_REMOVE(tdvp, tvp, tcnp));
+		fcnp->cn_nameiop = DELETE;
+		(void) relookup(fdvp, &fvp, fcnp);
+		return (VOP_REMOVE(fdvp, fvp, fcnp));
 	}
 	if (error = VOP_LOCK(fvp))
 		goto abortit;
