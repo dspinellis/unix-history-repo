@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.3	6.6 (Berkeley) %G%
+.\"	@(#)intro.3	6.7 (Berkeley) %G%
 .\"
 .TH INTRO 3 ""
 .UC 4
@@ -56,20 +56,21 @@ indicates the proper interface to use.
 (3M)
 These functions constitute the math library,
 .IR libm .
-Functions in the math library (see
+When functions in the math library (see
 .IR math (3M))
-may return conventional values when the function is undefined
-for the given arguments or when the value is not representable.
-In these cases the external variable
-.I errno
-(see
-.IR intro (2))
-is set to the value EDOM (domain error) or ERANGE (range error).
-The values of EDOM and ERANGE are defined in the include file
-.RI < math.h >.
+are passed values that are undefined or would generate
+answers that are out of range,
+they call the \fIinfnan\fP routine.
+By default this routine returns the VAX reserved floating point value
+which causes the process to get a floating point exception (see
+.IR sigvec (2)).
+Programs that wish to take other action should define their own
+version of \fIinfnan\fP (see
+.IR infnan (3M)
+for details).
 The math library is loaded as needed by the Pascal compiler
 .IR pc (1).
-The link editor searches this library under the `\-lm' option.
+C programs that wish to use this library need to specify the ``\-lm'' option.
 .TP
 (3X)
 These functions constitute minor libraries and other miscellaneous
@@ -147,7 +148,7 @@ encrypt	crypt.3	DES encryption
 end	end.3	last locations in program
 endfsent	getfsent.3x	get file system descriptor file entry
 endgrent	getgrent.3	get group file entry
-endhostent	gethostent.3n	get network host entry
+endhostent	gethostbyname.3n	get network host entry
 endnetent	getnetent.3n	get network entry
 endprotoent	getprotoent.3n	get protocol entry
 endpwent	getpwent.3	get password file entry
@@ -205,9 +206,9 @@ getfstype	getfsent.3x	get file system descriptor file entry
 getgrent	getgrent.3	get group file entry
 getgrgid	getgrent.3	get group file entry
 getgrnam	getgrent.3	get group file entry
-gethostbyaddr	gethostent.3n	get network host entry
-gethostbyname	gethostent.3n	get network host entry
-gethostent	gethostent.3n	get network host entry
+gethostbyaddr	gethostbyname.3n	get network host entry
+gethostbyname	gethostbyname.3n	get network host entry
+gethostent	gethostbyname.3n	get network host entry
 getlogin	getlogin.3	get login name
 getnetbyaddr	getnetent.3n	get network entry
 getnetbyname	getnetent.3n	get network entry
@@ -321,7 +322,7 @@ seteuid	setuid.3	set user and group ID
 setfsent	getfsent.3x	get file system descriptor file entry
 setgid	setuid.3	set user and group ID
 setgrent	getgrent.3	get group file entry
-sethostent	gethostent.3n	get network host entry
+sethostent	gethostbyname.3n	get network host entry
 setjmp	setjmp.3	non-local goto
 setkey	crypt.3	DES encryption
 setlinebuf	setbuf.3s	assign buffering to a stream
