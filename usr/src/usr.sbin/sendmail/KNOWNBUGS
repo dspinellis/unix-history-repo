@@ -1,7 +1,7 @@
 
 
 	     K N O W N   B U G S   I N   S E N D M A I L
-			     (for 8.6.3)
+			     (for 8.6.5)
 
 
 The following are bugs or deficiencies in sendmail that I am aware of
@@ -56,4 +56,52 @@ in /ucb/sendmail/KNOWNBUGS.
   this address.  It's not clear what the right behaviour is in this
   circumstance.
 
-(Version 8.9, last updated %G%)
+* REDIRECT aliases don't work with `n' option.
+
+  If you have option `n' set when you use newaliases and have
+  REDIRECT addresses in your aliases file, you'll get the error
+  messages during the newaliases instead of when email is sent to
+  the address in question.  The workaround is to turn off the `n'
+  option.
+
+* owner-* alias that uses :include: broken.
+
+  If you have aliases set up as:
+
+	owner-listname:		:include:/some/file
+
+  sendmail will break because it considers this a "sender address",
+  which is not permitted to use the :include: syntax.  The easiest
+  workaround is to change this to:
+
+	owner-listname:		:include:/some/file,
+
+  (note the trailing comma); a somewhat cleaner solution is to use:
+
+	owner-listname:		listname-request
+	listname-request:	:include:/some/file
+
+* MX records that point at non-existent hosts work strangly.
+
+  Consider the DNS records:
+
+	hostH	MX	1 hostA
+		MX	2 hostB
+	hostA	A	128.32.8.9
+
+  (note that there is no A record for hostB).  If hostA is down,
+  an attempt to send to hostH gives "host unknown" -- that is, it
+  reflects out the status on the last host it tries, which in this
+  case is hostB, which is unknown.  It probably ought to eliminate
+  hostB early in processing.
+
+* NAME environment variables with commas break.
+
+  If you define your NAME environment variable to have a comma
+  (e.g., ``Lastname, Firstname''), and you are using the $q definition
+  that uses ``name <address>'' format, sendmail treats the first and
+  last names as two addresses, thus producing a bogus From line.  You
+  can work around this by changing the $q definition to use
+  ``address (name)''.
+
+(Version 8.10, last updated %G%)
