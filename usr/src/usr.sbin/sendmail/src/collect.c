@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -295,6 +295,13 @@ readerr:
 				printf("Adding Apparently-To: %s\n", q->q_paddr);
 			addheader("apparently-to", q->q_paddr, e);
 		}
+	}
+
+	/* check for message too large */
+	if (MaxMessageSize > 0 && e->e_msgsize > MaxMessageSize)
+	{
+		usrerr("552 Message exceeds maximum fixed size (%ld)",
+			MaxMessageSize);
 	}
 
 	if ((e->e_dfp = fopen(e->e_df, "r")) == NULL)
