@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)bb.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bb.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -15,6 +15,11 @@ static char sccsid[] = "@(#)bb.c	5.1 (Berkeley) %G%";
  *
  * University of Utah CS Dept modification history:
  *
+ * $Log:	bb.c,v $
+ * Revision 5.2  86/03/09  18:13:56  donn
+ * In tempalloc(), don't forget to treat the vleng tree of a temp block
+ * before allocating it with altmpn.
+ * 
  * Revision 2.1  84/07/19  12:01:20  donn
  * Changed comment headers for UofU.
  * 
@@ -543,6 +548,7 @@ switch (expr->tag)
 	break;
 
     case TTEMP:
+	expr->tempblock.vleng = tempalloc (expr->tempblock.vleng);
 	return (expptr) cpexpr (altmpn (expr));
 	break;
 
