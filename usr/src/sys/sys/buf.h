@@ -1,4 +1,4 @@
-/*	buf.h	4.1	%G%	*/
+/*	buf.h	4.2	%G%	*/
 
 /*
  * Each buffer in the pool is usually doubly linked into 2 lists:
@@ -22,7 +22,7 @@
  */
 struct buf
 {
-	int	b_flags;		/* see defines below */
+	long	b_flags;		/* see defines below */
 	struct	buf *b_forw;		/* headed by d_tab of conf.c */
 	struct	buf *b_back;		/*  "  */
 	struct	buf *av_forw;		/* position on free list, */
@@ -66,23 +66,24 @@ unsigned minphys();
 /*
  * These flags are kept in b_flags.
  */
-#define	B_WRITE	 0x0000	/* non-read pseudo-flag */
-#define	B_READ		0x0001	/* read when I/O occurs */
-#define	B_DONE		0x0002	/* transaction finished */
-#define	B_ERROR		0x0004	/* transaction aborted */
-#define	B_BUSY		0x0008	/* not on av_forw/back list */
-#define	B_PHYS		0x0010	/* physical IO */
-#define	B_MAP		0x0020	/* UNIBUS map allocated */
-#define	B_WANTED	0x0040	/* issue wakeup when BUSY goes off */
-#define	B_AGE		0x0080	/* delayed write for correct aging */
-#define	B_ASYNC		0x0100	/* don't wait for I/O completion */
-#define	B_DELWRI	0x0200	/* write at exit of avail list */
-#define	B_TAPE		0x0400	/* this is a magtape (no bdwrite) */
-#define	B_UAREA		0x0800	/* add u-area to a swap operation */
-#define	B_PAGET		0x1000	/* page in/out of page table space */
-#define	B_DIRTY		0x2000	/* dirty page to be pushed out async */
-#define	B_PGIN		0x4000	/* pagein op, so swap() can count it */
-#define	B_CACHE		0x8000	/* did bread find us in the cache ? */
+#define	B_WRITE		0x00000	/* non-read pseudo-flag */
+#define	B_READ		0x00001	/* read when I/O occurs */
+#define	B_DONE		0x00002	/* transaction finished */
+#define	B_ERROR		0x00004	/* transaction aborted */
+#define	B_BUSY		0x00008	/* not on av_forw/back list */
+#define	B_PHYS		0x00010	/* physical IO */
+#define	B_MAP		0x00020	/* UNIBUS map allocated */
+#define	B_WANTED	0x00040	/* issue wakeup when BUSY goes off */
+#define	B_AGE		0x00080	/* delayed write for correct aging */
+#define	B_ASYNC		0x00100	/* don't wait for I/O completion */
+#define	B_DELWRI	0x00200	/* write at exit of avail list */
+#define	B_TAPE		0x00400	/* this is a magtape (no bdwrite) */
+#define	B_UAREA		0x00800	/* add u-area to a swap operation */
+#define	B_PAGET		0x01000	/* page in/out of page table space */
+#define	B_DIRTY		0x02000	/* dirty page to be pushed out async */
+#define	B_PGIN		0x04000	/* pagein op, so swap() can count it */
+#define	B_CACHE		0x08000	/* did bread find us in the cache ? */
+#define	B_INVAL		0x10000	/* buffer contains invalid data */
 
 /*
  * special redeclarations for
