@@ -15,7 +15,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * @(#) $Header: kgdb_proto.h,v 1.1 91/01/10 16:49:43 mccanne Exp $ (LBL)
+ * @(#) $Header: kgdb_proto.h,v 1.3 91/03/12 22:06:43 mccanne Exp $ (LBL)
  */
 
 /*
@@ -29,6 +29,7 @@
 #define KGDB_STEP	0x06
 #define KGDB_KILL	0x07
 #define KGDB_SIGNAL	0x08
+#define KGDB_EXEC	0x09
 
 #define KGDB_CMD(x) ((x) & 0x0f)
 
@@ -38,4 +39,4 @@
 #define KGDB_ACK	0x80
 #define KGDB_DELTA	0x40
 #define KGDB_MORE	0x20
-
+#define KGDB_SEQ	0x10
