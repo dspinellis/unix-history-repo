@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1989 The Regents of the University of California.
+ * Copyright (c) 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -12,20 +12,21 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
- *
- *	@(#)pathnames.h	5.3 (Berkeley) %G%
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#if BSD > 43
+#ifndef lint
+static char sccsid[] = "@(#)global.c	5.1 (Berkeley) %G%";
+#endif /* not lint */
 
-# include <paths.h>
+/*
+ * Allocate global variables.  We do this
+ * by including the header file that defines
+ * them all as externs, but first we define
+ * the keyword "extern" to be nothing, so that
+ * we will actually allocate the space.
+ */
 
-# define	_PATH_LOGIN	"/usr/bin/login"
-
-#else
- 
-# define	_PATH_TTY	"/dev/tty"
-# define	_PATH_LOGIN	"/bin/login"
-
-#endif
+#include "defs.h"
+#define extern
+#include "ext.h"
