@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)ps.c	4.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)ps.c	4.8 (Berkeley) %G%";
 /*
  * ps; VAX 4BSD version
  */
@@ -35,6 +35,12 @@ struct nlist nl[] = {
 #define	X_CCPU		6
 	{ "_ecmx" },
 #define	X_ECMX		7
+	{ "_nproc" },
+#define	X_NPROC		8
+	{ "_ntext" },
+#define	X_NTEXT		9
+	{ "_hz" },
+#define	X_HZ		10
 	{ 0 },
 };
 
@@ -46,7 +52,7 @@ struct	savcom {
 		int	s_ssiz;
 	} sun;
 	struct	asav *ap;
-} savcom[NPROC];
+} *savcom;
 
 struct	asav {
 	char	*a_cmdp;
@@ -98,9 +104,11 @@ char	*gettty(), *getcmd(), *getname(), *savestr(), *alloc(), *state();
 double	pcpu(), pmem();
 int	pscomp();
 int	nswap, maxslp;
+struct	text *atext;
 double	ccpu;
 int	ecmx;
 struct	pte *Usrptma, *usrpt;
+int	nproc, ntext, hz;
 
 struct	ttys {
 	char	name[DIRSIZ+1];
@@ -109,7 +117,6 @@ struct	ttys {
 	struct	ttys *cand;
 } *allttys, *cand[16];
 
-struct	savcom savcom[NPROC];
 int	npr;
 
 int	cmdstart;
@@ -209,10 +216,13 @@ main(argc, argv)
 	getdev();
 	uid = getuid();
 	printhdr();
-	procp = nl[X_PROC].n_value;
-	for (i=0; i<NPROC; i += 8) {
+	procp = getw(nl[X_PROC].n_value);
+	nproc = getw(nl[X_NPROC].n_value);
+	hz = getw(nl[X_HZ].n_value);
+	savcom = (struct savcom *)calloc(nproc, sizeof (*savcom));
+	for (i=0; i<nproc; i += 8) {
 		lseek(kmem, (char *)procp, 0);
-		j = NPROC - i;
+		j = nproc - i;
 		if (j > 8)
 			j = 8;
 		j *= sizeof (struct proc);
@@ -266,6 +276,17 @@ main(argc, argv)
 		printf("\n");
 	}
 	exit(npr == 0);
+}
+
+getw(loc)
+	off_t loc;
+{
+	long word;
+
+	lseek(kmem, loc, 0);
+	if (read(kmem, &word, sizeof (word)) != sizeof (word))
+		printf("error reading kmem at %x\n", loc);
+	return (word);
 }
 
 openfiles(argc, argv)
@@ -336,14 +357,16 @@ getkvars(argc, argv)
 		exit(1);
 	}
 	if (uflg || vflg) {
-		text = (struct text *)alloc(NTEXT * sizeof (struct text));
+		ntext = getw(nl[X_NTEXT].n_value);
+		text = (struct text *)alloc(ntext * sizeof (struct text));
 		if (text == 0) {
 			fprintf(stderr, "no room for text table\n");
 			exit(1);
 		}
-		lseek(kmem, (long)nl[X_TEXT].n_value, 0);
-		if (read(kmem, (char *)text, NTEXT * sizeof (struct text))
-		    != NTEXT * sizeof (struct text)) {
+		atext = (struct text *)getw(nl[X_TEXT].n_value);
+		lseek(kmem, (int)atext, 0);
+		if (read(kmem, (char *)text, ntext * sizeof (struct text))
+		    != ntext * sizeof (struct text)) {
 			cantread("text table", kmemf);
 			exit(1);
 		}
@@ -579,15 +602,14 @@ save()
 		if (sumcpu)
 			ap->a_cpu += u.u_cvm.vm_utime + u.u_cvm.vm_stime;
 		if (mproc->p_textp && text) {
-			xp = &text[mproc->p_textp -
-				    (struct text *)nl[X_TEXT].n_value];
+			xp = &text[mproc->p_textp - atext];
 			ap->a_tsiz = xp->x_size;
 			ap->a_txtrss = xp->x_rssize;
 			ap->a_xccount = xp->x_ccount;
 		}
 	}
 #undef e
-	ap->a_cpu /= HZ;
+	ap->a_cpu /= hz;
 	if (lflg) {
 		register struct lsav *lp;
 
@@ -616,10 +638,10 @@ save()
 	else if (sflg) {
 		if (ap->a_stat != SZOMB) {
 			for (cp = (char *)u.u_stack;
-			    cp < &user.upages[UPAGES][NBPG]; )
+			    cp < &user.upages[UPAGES][0]; )
 				if (*cp++)
 					break;
-			sp->sun.s_ssiz = (&user.upages[UPAGES][NBPG] - cp);
+			sp->sun.s_ssiz = (&user.upages[UPAGES][0] - cp);
 		}
 	}
 	npr++;
@@ -824,7 +846,7 @@ ptime(ap)
 	struct asav *ap;
 {
 
-	printf("%3ld:%02ld", ap->a_cpu / HZ, ap->a_cpu % HZ);
+	printf("%3ld:%02ld", ap->a_cpu / hz, ap->a_cpu % hz);
 }
 
 char	*uhdr =
