@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)string.c	3.4 84/01/09";
+static	char *sccsid = "@(#)string.c	3.5 84/03/23";
 #endif
 
 #include "string.h"
@@ -63,10 +63,6 @@ register min;
 }
 
 #ifdef STR_DEBUG
-struct string str_head = {
-	&str_head, &str_head
-};
-
 char *
 str_alloc(l)
 int l;
@@ -76,6 +72,8 @@ int l;
 	s = (struct string *) malloc((unsigned)l + str_offset);
 	if (s == 0)
 		return 0;
+	if (str_head.s_forw == 0)
+		str_head.s_forw = str_head.s_back = &str_head;
 	s->s_forw = str_head.s_forw;
 	s->s_back = &str_head;
 	str_head.s_forw = s;

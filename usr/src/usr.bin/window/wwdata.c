@@ -1,20 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdata.c	3.9 84/03/03";
+static	char *sccsid = "@(#)wwdata.c	3.10 84/03/23";
 #endif
 
 #include "ww.h"
 #include "tt.h"
-
-struct ww wwhead = {
-	&wwhead, &wwhead
-};
-
-struct ww_tty wwnewtty = {
-	{ 0, 0, -1, -1, 0 },
-	{ -1, -1, -1, -1, -1, -1 },
-	{ -1, -1, -1, -1, -1, -1 },
-	0, 0, 0
-};
 
 int tt_h19();
 int tt_f100();
@@ -25,7 +14,6 @@ struct tt_tab tt_tab[] = {
 	{ "generic",	0, tt_generic },
 	0
 };
-char *tt_strp = tt_strings;
 
 int wwbaudmap[] = {
 	0,

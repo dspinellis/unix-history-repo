@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwenviron.c	3.8 84/01/13";
+static	char *sccsid = "@(#)wwenviron.c	3.9 84/03/23";
 #endif
 
 #include "ww.h"
@@ -13,8 +13,6 @@ static	char *sccsid = "@(#)wwenviron.c	3.8 84/01/13";
 wwenviron(wp)
 register struct ww *wp;
 {
-	static char **termcap = 0;
-	static char *tbuf;
 	register i;
 	int pgrp = getpid();
 
@@ -35,35 +33,7 @@ register struct ww *wp;
 		return;
 	(void) setpgrp(pgrp, pgrp);
 
-	/*
-	 * Do this only once if vfork().
-	 */
-	if (termcap == 0) {
-		extern char **environ;
-		static char **env;
-		register char **p, **q;
-
-		for (i = 0, p = environ; *p; p++, i++)
-			;
-		env = (char **)malloc((unsigned)(i + 3) * sizeof (char *));
-		if (env == 0)
-			return;
-		if ((tbuf = malloc((unsigned) 1024)) == 0)
-			return;
-		for (p = environ, q = env; *p; p++, q++) {
-			if (strncmp(*p, "TERM=", 5) == 0)
-				*q = WWT_TERM;
-			else if (strncmp(*p, "TERMCAP=", 8) == 0)
-				termcap = q;
-			else
-				*q = *p;
-		}
-		if (termcap == 0)
-			termcap = q++;
-		*q = 0;
-		environ = env;
-	}
-	*termcap = sprintf(tbuf, "TERMCAP=%sco#%d:li#%d:%s%s%s%s",
+	(void) sprintf(wwwintermcap, "TERMCAP=%sco#%d:li#%d:%s%s%s%s",
 		WWT_TERMCAP, wp->ww_w.nc, wp->ww_w.nr,
 		wwavailmodes & WWM_REV ? WWT_REV : "",
 		wwavailmodes & WWM_UL ? WWT_UL : "",

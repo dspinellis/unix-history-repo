@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttinit.c	3.8 84/03/03";
+static	char *sccsid = "@(#)ttinit.c	3.9 84/03/23";
 #endif
 
 #include "ww.h"
@@ -10,6 +10,8 @@ ttinit()
 	register struct tt_tab *tp;
 	register char *p, *q;
 	register char *t;
+
+	tt_strp = tt_strings;
 
 	/*
 	 * Set output buffer size to about 1 second of output time.
