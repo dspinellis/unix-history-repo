@@ -1,8 +1,8 @@
-static char *sccsid = "@(#)od.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)od.c	5.4 (Berkeley) %G%";
 /*
  * od -- octal, hex, decimal, character dump of data in a file.
  *
- * usage:	od [-abcdDefFhHiIlLopPvxX] [file] [[+]offset[.][b]]
+ * usage:  od [-abcdDefFhHiIlLopPvxX] [file] [[+]offset[.][b] [label]]
  *
  * where the option flags have the following meaning:
  *   character	object	radix	signed?
@@ -73,14 +73,19 @@ struct dfmt	s_l_dec	= {11, sizeof (long),   10,   SIGNED,  l_put, 0};
 struct dfmt	flt	= {14, sizeof (float),  10,   SIGNED,  f_put, 0};
 struct dfmt	dble	= {21, sizeof (double), 10,   SIGNED,  d_put, 0};
 
+
+char	usage[]	= "od [-abcdfhilopvx] [file] [[+]offset[.][b] [label]]";
 char	dbuf[16];
 char	lastdbuf[16];
 int	addr_base;
 long	addr;
+long	label = -1L;
 int	_parity = NO;
 char	fmt[]	= "            %s";	/* 12 blanks */
 char	*icvt();
 char	*underline();
+long	get_addr();
+
 
 main(argc, argv)
 char **argv;
@@ -95,9 +100,10 @@ char **argv;
 	int	max_llen = 0;
 
 	argv++;
+	argc--;
 	max_llen = max_nelm = 0;
 
-	if(argc > 1) {
+	if(argc > 0) {
 		p = *argv;
 		if(*p == '-') {
 			while(*++p != '\0') {
@@ -155,6 +161,10 @@ char **argv;
 				case 'v':
 					showall = YES;
 					continue;
+				default:
+					printf("od: bad flag -%c\n", *p);
+					puts(usage);
+					exit(1);
 				}
 				nelm = 16 / d->df_size;
 				llen = (d->df_field + 1) * nelm;
@@ -181,7 +191,8 @@ char **argv;
 	if(cv == conv_vec) {
 		addr_base = 8;
 		*(cv++) = &u_s_oct;
-		max_llen = (16 / u_s_oct.df_size) * (u_s_oct.df_field + 1);
+		max_nelm = 16 / u_s_oct.df_size;
+		max_llen = max_nelm * (u_s_oct.df_field + 1);
 	}
 	*cv = (struct dfmt *)0;
 
@@ -192,7 +203,7 @@ char **argv;
 		d->df_fmt = fmt + 12 - (field - d->df_field);
 	}
 
-	if(argc > 1 && **argv != '+') {
+	if(argc > 0 && **argv != '+') {
 		if (freopen(*argv, "r", stdin) == NULL) {
 			printf("od: cannot open %s\n", *argv);
 			exit(1);
@@ -201,8 +212,16 @@ char **argv;
 		argc--;
 	}
 
-	if (argc > 1)
-		offset(*argv);
+	if (argc > 0)
+	{
+		addr = get_addr(*argv);
+		offset(addr);
+		argv++;
+		argc--;
+
+		if (argc > 0)
+			label = get_addr(*argv);
+	}
 
 	same = -1;
 	while ((n = fread(dbuf, 1, sizeof(dbuf), stdin)) > 0) {
@@ -223,8 +242,19 @@ char **argv;
 			}
 		}
 		addr += n;
+		if (label >= 0)
+			label += n;
 	}
-	puts(icvt(addr, addr_base, UNSIGNED, 7));
+	put_addr('\n');
+}
+
+put_addr(c)
+char	c;
+{
+	fputs(icvt(addr, addr_base, UNSIGNED, 7), stdout);
+	if (label >= 0)
+		printf(" (%s)", icvt(label, addr_base, UNSIGNED, 7));
+	putchar(c);
 }
 
 line(n)
@@ -237,10 +267,13 @@ int	n;
 	first = YES;
 	while (c = *cv++) {
 		if (first) {
-			printf("%s ", icvt(addr, addr_base, UNSIGNED, 7));
+			put_addr(' ');
 			first = NO;
-		} else
+		} else {
 			putchar('\t');
+			if (label >= 0)
+				fputs("\t  ", stdout);
+		}
 		i = 0;
 		while (i < n)
 			i += (*(c->df_put))(dbuf+i, c);
@@ -553,11 +586,12 @@ done:
 	return(b);
 }
 
-offset(s)
+long
+get_addr(s)
 register char *s;
 {
 	register char *p;
-	long a;
+	register long a;
 	register int d;
 
 	if (*s=='+')
@@ -584,15 +618,24 @@ register char *s;
 		else
 			break;
 	}
+
 	if (*s == '.')
 		s++;
-	if(*s=='b' || *s=='B')
+	if(*s=='b')
 		a *= 512;
+	if(*s=='B')
+		a *= 1024;
+
+	return(a);
+}
+
+offset(a)
+long	a;
+{
 	if (canseek(stdin))
 		fseek(stdin, a, 0);
 	else
 		dumbseek(stdin, a);
-	addr = a;
 }
 
 dumbseek(s, offset)
