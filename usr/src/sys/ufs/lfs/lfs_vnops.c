@@ -1,21 +1,391 @@
-/*	lfs_vnops.c	4.20	82/03/16	*/
+/*	lfs_vnops.c	4.21	82/03/18	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
-#include "../h/mount.h"
-#include "../h/ino.h"
-#include "../h/reg.h"
-#include "../h/buf.h"
-#include "../h/filsys.h"
 #include "../h/dir.h"
 #include "../h/user.h"
-#include "../h/inode.h"
+#include "../h/reg.h"
 #include "../h/file.h"
-#include "../h/conf.h"
-#include "../h/stat.h"
+#include "../h/inode.h"
+#include "../h/ino.h"
+#include "../h/pte.h"
+#include "../h/vm.h"
+#include "../h/buf.h"
+#include "../h/mtpr.h"
+#include "../h/proc.h"
 #include "../h/inline.h"
+#include "../h/conf.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
+#include "../h/stat.h"
+
+chdir()
+{
+
+	chdirec(&u.u_cdir);
+}
+
+chroot()
+{
+
+	if (suser())
+		chdirec(&u.u_rdir);
+}
+
+chdirec(ipp)
+register struct inode **ipp;
+{
+	register struct inode *ip;
+	struct a {
+		char	*fname;
+	};
+
+	ip = namei(uchar, 0, 1);
+	if(ip == NULL)
+		return;
+	if((ip->i_mode&IFMT) != IFDIR) {
+		u.u_error = ENOTDIR;
+		goto bad;
+	}
+	if(access(ip, IEXEC))
+		goto bad;
+	irele(ip);
+	if (*ipp) {
+		ilock(*ipp);
+		iput(*ipp);
+	}
+	*ipp = ip;
+	return;
+
+bad:
+	iput(ip);
+}
+
+/*
+ * Open system call.
+ */
+open()
+{
+	register struct inode *ip;
+	register struct a {
+		char	*fname;
+		int	rwmode;
+	} *uap;
+
+	uap = (struct a *)u.u_ap;
+	ip = namei(uchar, 0, 1);
+	if (ip == NULL)
+		return;
+	open1(ip, ++uap->rwmode, 0);
+}
+
+/*
+ * Creat system call.
+ */
+creat()
+{
+	register struct inode *ip;
+	register struct a {
+		char	*fname;
+		int	fmode;
+	} *uap;
+
+	uap = (struct a *)u.u_ap;
+	ip = namei(uchar, 1, 1);
+	if (ip == NULL) {
+		if (u.u_error)
+			return;
+		ip = maknode(uap->fmode&07777&(~ISVTX));
+		if (ip==NULL)
+			return;
+		open1(ip, FWRITE, 2);
+	} else
+		open1(ip, FWRITE, 1);
+}
+
+/*
+ * Common code for open and creat.
+ * Check permissions, allocate an open file structure,
+ * and call the device open routine if any.
+ */
+open1(ip, mode, trf)
+	register struct inode *ip;
+	register mode;
+{
+	register struct file *fp;
+	int i;
+
+	if (trf != 2) {
+		if (mode&FREAD)
+			(void) access(ip, IREAD);
+		if (mode&FWRITE) {
+			(void) access(ip, IWRITE);
+			if ((ip->i_mode&IFMT) == IFDIR)
+				u.u_error = EISDIR;
+		}
+	}
+	if (u.u_error)
+		goto out;
+	if (trf == 1)
+		itrunc(ip);
+	irele(ip);
+	if ((fp = falloc()) == NULL)
+		goto out;
+	fp->f_flag = mode&(FREAD|FWRITE);
+	i = u.u_r.r_val1;
+	fp->f_inode = ip;
+	openi(ip, mode&(FREAD|FWRITE));
+	if (u.u_error == 0)
+		return;
+	u.u_ofile[i] = NULL;
+	fp->f_count--;
+out:
+	if (ip != NULL)
+		iput(ip);
+}
+
+/*
+ * Mknod system call
+ */
+mknod()
+{
+	register struct inode *ip;
+	register struct a {
+		char	*fname;
+		int	fmode;
+		int	dev;
+	} *uap;
+
+	uap = (struct a *)u.u_ap;
+	if (suser()) {
+		ip = namei(uchar, 1, 0);
+		if (ip != NULL) {
+			u.u_error = EEXIST;
+			goto out;
+		}
+	}
+	if (u.u_error)
+		return;
+	ip = maknode(uap->fmode);
+	if (ip == NULL)
+		return;
+	if (uap->dev) {
+		/*
+		 * Want to be able to use this to make badblock
+		 * inodes, so don't truncate the dev number.
+		 */
+		ip->i_un.i_rdev = uap->dev;
+		ip->i_flag |= IACC|IUPD|ICHG;
+	}
+
+out:
+	iput(ip);
+}
+
+/*
+ * link system call
+ */
+link()
+{
+	register struct inode *ip, *xp;
+	register struct a {
+		char	*target;
+		char	*linkname;
+	} *uap;
+
+	uap = (struct a *)u.u_ap;
+	ip = namei(uchar, 0, 1);    /* well, this routine is doomed anyhow */
+	if (ip == NULL)
+		return;
+	if ((ip->i_mode&IFMT)==IFDIR && !suser())
+		goto out1;
+	ip->i_nlink++;
+	ip->i_flag |= ICHG;
+	iupdat(ip, &time, &time, 1);
+	irele(ip);
+	u.u_dirp = (caddr_t)uap->linkname;
+	xp = namei(uchar, 1, 0);
+	if (xp != NULL) {
+		u.u_error = EEXIST;
+		iput(xp);
+		goto out;
+	}
+	if (u.u_error)
+		goto out;
+	if (u.u_pdir->i_dev != ip->i_dev) {
+		iput(u.u_pdir);
+		u.u_error = EXDEV;
+		goto out;
+	}
+	wdir(ip);
+out:
+	if (u.u_error) {
+		ip->i_nlink--;
+		ip->i_flag |= ICHG;
+	}
+out1:
+	iput(ip);
+}
+
+/*
+ * symlink -- make a symbolic link
+ */
+symlink()
+{
+	register struct a {
+		char	*target;
+		char	*linkname;
+	} *uap;
+	register struct inode *ip;
+	register char *tp;
+	register c, nc;
+
+	uap = (struct a *)u.u_ap;
+	tp = uap->target;
+	nc = 0;
+	while (c = fubyte(tp)) {
+		if (c < 0) {
+			u.u_error = EFAULT;
+			return;
+		}
+		tp++;
+		nc++;
+	}
+	u.u_dirp = uap->linkname;
+	ip = namei(uchar, 1, 0);
+	if (ip) {
+		iput(ip);
+		u.u_error = EEXIST;
+		return;
+	}
+	if (u.u_error)
+		return;
+	ip = maknode(IFLNK | 0777);
+	if (ip == NULL)
+		return;
+	u.u_base = uap->target;
+	u.u_count = nc;
+	u.u_offset = 0;
+	u.u_segflg = 0;
+	writei(ip);
+	iput(ip);
+}
+
+/*
+ * Unlink system call.
+ * Hard to avoid races here, especially
+ * in unlinking directories.
+ */
+unlink()
+{
+	register struct inode *ip, *pp;
+	struct a {
+		char	*fname;
+	};
+
+	pp = namei(uchar, 2, 0);
+	if(pp == NULL)
+		return;
+	/*
+	 * Check for unlink(".")
+	 * to avoid hanging on the iget
+	 */
+	if (pp->i_number == u.u_dent.d_ino) {
+		ip = pp;
+		ip->i_count++;
+	} else
+		ip = iget(pp->i_dev, u.u_dent.d_ino);
+	if(ip == NULL)
+		goto out1;
+	if((ip->i_mode&IFMT)==IFDIR && !suser())
+		goto out;
+	/*
+	 * Don't unlink a mounted file.
+	 */
+	if (ip->i_dev != pp->i_dev) {
+		u.u_error = EBUSY;
+		goto out;
+	}
+	if (ip->i_flag&ITEXT)
+		xrele(ip);	/* try once to free text */
+/*
+	if ((ip->i_flag&ITEXT) && ip->i_nlink==1) {
+ 		u.u_error = ETXTBSY;
+		goto out;
+	}
+*/
+	u.u_offset -= sizeof(struct direct);
+	u.u_base = (caddr_t)&u.u_dent;
+	u.u_count = sizeof(struct direct);
+	u.u_dent.d_ino = 0;
+	writei(pp);
+	ip->i_nlink--;
+	ip->i_flag |= ICHG;
+
+out:
+	iput(ip);
+out1:
+	iput(pp);
+}
+
+/*
+ * Seek system call
+ */
+seek()
+{
+	register struct file *fp;
+	register struct a {
+		int	fdes;
+		off_t	off;
+		int	sbase;
+	} *uap;
+
+	uap = (struct a *)u.u_ap;
+	fp = getf(uap->fdes);
+	if (fp == NULL)
+		return;
+	if (fp->f_flag&FSOCKET) {
+		u.u_error = ESPIPE;
+		return;
+	}
+	if (uap->sbase == 1)
+		uap->off += fp->f_offset;
+	else if (uap->sbase == 2)
+		uap->off += fp->f_inode->i_size;
+	fp->f_offset = uap->off;
+	u.u_r.r_off = uap->off;
+}
+
+/*
+ * Access system call
+ */
+saccess()
+{
+	register svuid, svgid;
+	register struct inode *ip;
+	register struct a {
+		char	*fname;
+		int	fmode;
+	} *uap;
+
+	uap = (struct a *)u.u_ap;
+	svuid = u.u_uid;
+	svgid = u.u_gid;
+	u.u_uid = u.u_ruid;
+	u.u_gid = u.u_rgid;
+	ip = namei(uchar, 0, 1);
+	if (ip != NULL) {
+		if (uap->fmode&(IREAD>>6))
+			(void) access(ip, IREAD);
+		if (uap->fmode&(IWRITE>>6))
+			(void) access(ip, IWRITE);
+		if (uap->fmode&(IEXEC>>6))
+			(void) access(ip, IEXEC);
+		iput(ip);
+	}
+	u.u_uid = svuid;
+	u.u_gid = svgid;
+}
 
 /*
  * the fstat system call.
@@ -144,235 +514,74 @@ out:
 	u.u_r.r_val1 = uap->count - u.u_count;
 }
 
-/*
- * symlink -- make a symbolic link
- */
-symlink()
+chmod()
 {
-	register struct a {
-		char	*target;
-		char	*linkname;
-	} *uap;
 	register struct inode *ip;
-	register char *tp;
-	register c, nc;
+	register struct a {
+		char	*fname;
+		int	fmode;
+	} *uap;
 
 	uap = (struct a *)u.u_ap;
-	tp = uap->target;
-	nc = 0;
-	while (c = fubyte(tp)) {
-		if (c < 0) {
-			u.u_error = EFAULT;
-			return;
-		}
-		tp++;
-		nc++;
-	}
-	u.u_dirp = uap->linkname;
-	ip = namei(uchar, 1, 0);
-	if (ip) {
-		iput(ip);
-		u.u_error = EEXIST;
+	if ((ip = owner(1)) == NULL)
 		return;
-	}
-	if (u.u_error)
+	ip->i_mode &= ~07777;
+	if (u.u_uid)
+		uap->fmode &= ~ISVTX;
+	ip->i_mode |= uap->fmode&07777;
+	ip->i_flag |= ICHG;
+	if (ip->i_flag&ITEXT && (ip->i_mode&ISVTX)==0)
+		xrele(ip);
+	iput(ip);
+}
+
+chown()
+{
+	register struct inode *ip;
+	register struct a {
+		char	*fname;
+		int	uid;
+		int	gid;
+	} *uap;
+
+	uap = (struct a *)u.u_ap;
+	if (!suser() || (ip = owner(0)) == NULL)
 		return;
-	ip = maknode(IFLNK | 0777);
-	if (ip == NULL)
-		return;
-	u.u_base = uap->target;
-	u.u_count = nc;
-	u.u_offset = 0;
-	u.u_segflg = 0;
-	writei(ip);
+	ip->i_uid = uap->uid;
+	ip->i_gid = uap->gid;
+	ip->i_flag |= ICHG;
+	if (u.u_ruid != 0)
+		ip->i_mode &= ~(ISUID|ISGID);
 	iput(ip);
 }
 
 /*
- * the dup system call.
+ * Set IUPD and IACC times on file.
+ * Can't set ICHG.
  */
-dup()
+utime()
 {
-	register struct file *fp;
 	register struct a {
-		int	fdes;
-		int	fdes2;
+		char	*fname;
+		time_t	*tptr;
 	} *uap;
-	register i, m;
+	register struct inode *ip;
+	time_t tv[2];
 
 	uap = (struct a *)u.u_ap;
-	m = uap->fdes & ~077;
-	uap->fdes &= 077;
-	fp = getf(uap->fdes);
-	if (fp == NULL)
+	if ((ip = owner(1)) == NULL)
 		return;
-	if ((m&0100) == 0) {
-		if ((i = ufalloc()) < 0)
-			return;
+	if (copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof(tv))) {
+		u.u_error = EFAULT;
 	} else {
-		i = uap->fdes2;
-		if (i<0 || i>=NOFILE) {
-			u.u_error = EBADF;
-			return;
-		}
-		u.u_r.r_val1 = i;
+		ip->i_flag |= IACC|IUPD|ICHG;
+		iupdat(ip, &tv[0], &tv[1], 0);
 	}
-	if (i != uap->fdes) {
-		if (u.u_ofile[i]!=NULL)
-			closef(u.u_ofile[i], 0);
-		if (u.u_error)
-			return;
-		u.u_ofile[i] = fp;
-		fp->f_count++;
-	}
-}
-
-/*
- * Mount system call.
- */
-smount()
-{
-	dev_t dev;
-	register struct inode *ip;
-	register struct mount *mp;
-	struct mount *smp;
-	register struct filsys *fp;
-	struct buf *bp;
-	register struct a {
-		char	*fspec;
-		char	*freg;
-		int	ronly;
-	} *uap;
-	register char *cp;
-
-	uap = (struct a *)u.u_ap;
-	dev = getmdev();
-	if (u.u_error)
-		return;
-	u.u_dirp = (caddr_t)uap->freg;
-	ip = namei(uchar, 0, 1);
-	if (ip == NULL)
-		return;
-	if (ip->i_count!=1 || (ip->i_mode&IFMT) != IFDIR)
-		goto out;
-	smp = NULL;
-	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++) {
-		if (mp->m_bufp != NULL) {
-			if (dev == mp->m_dev)
-				goto out;
-		} else
-		if (smp == NULL)
-			smp = mp;
-	}
-	mp = smp;
-	if (mp == NULL)
-		goto out;
-	(*bdevsw[major(dev)].d_open)(dev, !uap->ronly);
-	if (u.u_error)
-		goto out;
-	bp = bread(dev, SUPERB);
-	if (u.u_error) {
-		brelse(bp);
-		goto out1;
-	}
-	mp->m_inodp = ip;
-	mp->m_dev = dev;
-	bp->b_flags |= B_LOCKED;
-	mp->m_bufp = bp;
-	fp = bp->b_un.b_filsys;
-	fp->s_ilock = 0;
-	fp->s_flock = 0;
-	fp->s_ronly = uap->ronly & 1;
-	fp->s_nbehind = 0;
-	fp->s_lasti = 1;
-	u.u_dirp = uap->freg;
-	for (cp = fp->s_fsmnt; cp < &fp->s_fsmnt[sizeof (fp->s_fsmnt) - 1]; )
-		if ((*cp++ = uchar()) == 0)
-			u.u_dirp--;		/* get 0 again */
-	*cp = 0;
-	brelse(bp);
-	ip->i_flag |= IMOUNT;
-	irele(ip);
-	return;
-
-out:
-	u.u_error = EBUSY;
-out1:
 	iput(ip);
 }
 
-/*
- * the umount system call.
- */
-sumount()
+sync()
 {
-	dev_t dev;
-	register struct inode *ip;
-	register struct mount *mp;
-	struct buf *bp;
-	int stillopen, flag;
-	register struct a {
-		char	*fspec;
-	};
 
-	dev = getmdev();
-	if (u.u_error)
-		return;
-	xumount(dev);	/* remove unused sticky files from text table */
 	update(0);
-	for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-		if (mp->m_bufp != NULL && dev == mp->m_dev)
-			goto found;
-	u.u_error = EINVAL;
-	return;
-
-found:
-	stillopen = 0;
-	for (ip = inode; ip < inodeNINODE; ip++)
-		if (ip->i_number != 0 && dev == ip->i_dev) {
-			u.u_error = EBUSY;
-			return;
-		} else if (ip->i_number != 0 && (ip->i_mode&IFMT) == IFBLK &&
-		    ip->i_un.i_rdev == dev)
-			stillopen++;
-	ip = mp->m_inodp;
-	ip->i_flag &= ~IMOUNT;
-	ilock(ip);
-	iput(ip);
-	if ((bp = getblk(dev, SUPERB)) != mp->m_bufp)
-		panic("umount");
-	bp->b_flags &= ~B_LOCKED;
-	flag = !bp->b_un.b_filsys->s_ronly;
-	mp->m_bufp = NULL;
-	brelse(bp);
-	mpurge(mp - &mount[0]);
-	if (!stillopen) {
-		(*bdevsw[major(dev)].d_close)(dev, flag);
-		binval(dev);
-	}
-}
-
-/*
- * Common code for mount and umount.
- * Check that the user's argument is a reasonable
- * thing on which to mount, and return the device number if so.
- */
-dev_t
-getmdev()
-{
-	dev_t dev;
-	register struct inode *ip;
-
-	if (!suser())
-		return(NODEV);
-	ip = namei(uchar, 0, 1);
-	if (ip == NULL)
-		return(NODEV);
-	if ((ip->i_mode&IFMT) != IFBLK)
-		u.u_error = ENOTBLK;
-	dev = (dev_t)ip->i_un.i_rdev;
-	if (major(dev) >= nblkdev)
-		u.u_error = ENXIO;
-	iput(ip);
-	return(dev);
 }
