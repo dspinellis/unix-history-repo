@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getgroups.2	6.2 (Berkeley) %G%
+.\"	@(#)getgroups.2	6.3 (Berkeley) %G%
 .\"
 .TH GETGROUPS 2 ""
 .UC 5
@@ -50,3 +50,9 @@ The argument \fIgidset\fP specifies
 an invalid address.
 .SH "SEE ALSO
 setgroups(2), initgroups(3X)
+.SH BUGS
+The
+.I gidset
+array should be of type
+.BR gid_t ,
+but remains integer for compatibility with earlier systems.
