@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utility.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)utility.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #define PRINTOPTIONS
@@ -342,7 +342,7 @@ fatalperror(f, msg)
 {
 	char buf[BUFSIZ], *strerror();
 
-	(void) sprintf(buf, "%s: %s\r\n", msg, strerror(errno));
+	(void) sprintf(buf, "%s: %s", msg, strerror(errno));
 	fatal(f, buf);
 }
 
