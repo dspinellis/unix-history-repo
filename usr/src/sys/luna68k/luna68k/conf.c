@@ -7,7 +7,7 @@
  *
  * from: hp300/hp300/conf.c	7.13 (Berkeley) 7/9/92
  *
- *	@(#)conf.c	7.6 (Berkeley) %G%
+ *	@(#)conf.c	7.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -201,6 +201,14 @@ cdev_decl(sio);
 #include "bmc.h"
 cdev_decl(bmc);
 
+cdev_decl(kbd);
+/* open, close, read, ioctl, select, map -- XXX should be a map device */
+#define	cdev_kbd_init(c,n) { \
+	dev_init(c,n,open), dev_init(c,n,close), dev_init(c,n,read), \
+	(dev_type_write((*))) nullop, dev_init(c,n,ioctl), \
+	(dev_type_stop((*))) enodev, (dev_type_reset((*))) nullop, 0, \
+	dev_init(c,n,select), (dev_type_map((*))) nullop, 0 }
+
 cdev_decl(cd);
 
 cdev_decl(vn);
@@ -245,7 +253,7 @@ struct cdevsw	cdevsw[] =
 	cdev_notdef(),			/* 11 */
 	cdev_tty_init(NSIO,sio),	/* 12: built-in single-port serial */
 	cdev_tty_init(NBMC,bmc),	/* 13: console terminal emulator */
-	cdev_notdef(),			/* 14 */
+	cdev_kbd_init(2,kbd),		/* 14: kyeboard */
 	cdev_notdef(),			/* 15 */
 	cdev_notdef(),			/* 16 */
 	cdev_notdef(),			/* 17 */
