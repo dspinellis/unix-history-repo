@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)local2.c	1.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)local2.c	1.12 (Berkeley) %G%";
 #endif
 
 # include "pass2.h"
@@ -579,112 +579,6 @@ upput(p, size)
 	}
 }
 
-#ifdef old
-/*
- * Generate code for storage conversions.
- */
-sconv(p, forcc)
-	NODE *p;
-{
-	register NODE *l, *r;
-	register wfrom, wto;
-	int oltype;
-
-	l = getlr(p, '1');
-	oltype = l->in.type, l->in.type = r->in.type;
-	r = getlr(p, 'L');
-	wfrom = tlen(r), wto = tlen(l);
-	if (wfrom == wto)		/* e.g. int -> unsigned */
-		goto done;
-	/*
-	 * Conversion in registers requires care
-	 * as cvt and movz instruction don't work
-	 * as expected (they end up as plain mov's).
-	 */
-	if (l->in.op == REG && r->in.op == REG) {
-		if ((wfrom < wto && ISUNSIGNED(r->in.type)) ||
-		    (wto < wfrom && ISUNSIGNED(l->in.type))) {
-			/* unsigned, mask */
-			if (r->tn.rval != l->tn.rval) {
-				printf("\tandl3\t$%d,", (1<<(wto*SZCHAR))-1);
-				adrput(r);
-				putchar(',');
-			} else
-				printf("\tandl2\t$%d,", (1<<(wto*SZCHAR))-1);
-			adrput(l);
-		} else {				/* effect sign-extend */
-			printf("\tpushl\t"); adrput(r);
-			printf("\n\tcvt"); prtype(l);
-			printf("l\t%d(sp),", sizeof (int) - wto); adrput(l);
-			printf("\n\tmovab\t4(sp),sp");
-		}
-		/*
-		 * If condition codes are required then we must generate a
-		 * test of the appropriate type.
-		 */
-		if (forcc) {
-			printf("\n\tcmp");
-			prtype(l);
-			putchar('\t');
-			printf("$0,");
-			adrput(l);
-		}
-	} else {
-		/*
-		 * Conversion with at least one parameter in memory.
-		 */
-		if (wfrom < wto) {		/* expanding datum */
-			if (ISUNSIGNED(r->in.type)) {
-				printf("\tmovz");
-				prtype(r);
-				/*
-				 * If target is a register, generate
-				 * movz?l so optimizer can compress
-				 * argument pushes.
-				 */
-				if (l->in.op == REG)
-					putchar('l');
-				else
-					prtype(l);
-			} else {
-				printf("\tcvt");
-				prtype(r), prtype(l);
-			}
-			putchar('\t');
-			adrput(r);
-		} else {			/* shrinking dataum */
-			int off = wfrom - wto;
-			if (l->in.op == REG) {
-				printf("\tmovz");
-				prtype(l);
-				putchar('l');
-			} else {
-				printf("\tcvt");
-				prtype(l), prtype(r);
-			}
-			putchar('\t');
-			switch (r->in.op) {
-			case NAME: case OREG:
-				r->tn.lval += off;
-				adrput(r);
-				r->tn.lval -= off;
-				break;
-			case REG: case ICON: case UNARY MUL:
-				adrput(r);
-				break;
-			default:
-				cerror("sconv: bad shrink op");
-				/*NOTREACHED*/
-			}
-		}
-		putchar(',');
-		adrput(l);
-	}
-	putchar('\n');
-done:
-	l->in.type = oltype;
-}
-#else /* new */
 /*
  * Generate code for integral scalar conversions.
  * Many work-arounds for brain-damaged Tahoe register behavior.
@@ -719,7 +613,7 @@ sconv(p, forcc)
 	if (srclen < dstlen) {
 		if (srctype == CHAR && dsttype == USHORT && dst->in.op == REG) {
 			/* (unsigned short) c; => sign extend to 16 bits */
-			putstr("\tcvtbl\t");
+			putstr("cvtbl\t");
 			adrput(src);
 			putstr(",-(sp)\n\tmovzwl\t2(sp),");
 			adrput(dst);
@@ -743,9 +637,9 @@ sconv(p, forcc)
 				val = (1 << dstlen * SZCHAR) - 1;
 				if (src->tn.rval == dst->tn.rval)
 					/* conversion in place */
-					printf("\tandl2\t$%#x,", val);
+					printf("andl2\t$%#x,", val);
 				else {
-					printf("\tandl3\t$%#x,", val);
+					printf("andl3\t$%#x,", val);
 					adrput(src);
 					putchar(',');
 				}
@@ -753,7 +647,7 @@ sconv(p, forcc)
 				return;
 			}
 			val = SZINT - srclen * SZCHAR;
-			printf("\tshll\t$%d,", val);
+			printf("shll\t$%d,", val);
 			adrput(src);
 			putchar(',');
 			adrput(dst);
@@ -774,11 +668,11 @@ sconv(p, forcc)
 		} else {
 			/* we must store src's address */
 			*tmp = *dst;
-			putstr("\tmovab\t");
+			putstr("movab\t");
 			adrput(src);
 			putchar(',');
 			adrput(tmp);
-			putchar('\n');
+			putstr("\n\t");
 			tmp->tn.op = OREG;
 			tmp->tn.lval = srclen - dstlen;
 		}
@@ -802,19 +696,18 @@ genconv(usrc, srclen, dstlen, src, dst)
 
 	if (srclen != dstlen) {
 		if (usrc && srclen < dstlen)
-			putstr("\tmovz");
+			putstr("movz");
 		else
-			putstr("\tcvt");
+			putstr("cvt");
 		putchar(convtab[srclen]);
 	} else
-		putstr("\tmov");
+		putstr("mov");
 	putchar(convtab[dstlen]);
 	putchar('\t');
 	adrput(src);
 	putchar(',');
 	adrput(dst);
 }
-#endif /* new */
 
 rmove( rt, rs, t ) TWORD t;{
 	printf( "	movl	%s,%s\n", rname(rs), rname(rt) );
