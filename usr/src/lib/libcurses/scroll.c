@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)scroll.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)scroll.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
+#include <termios.h>
 
 /*
  * scroll --
@@ -35,7 +36,7 @@ scroll(win)
 
 	if (win == curscr) {
 		putchar('\n');
-		if (!NONL)
+		if (origtermio.c_oflag & ONLCR)
 			win->_curx = 0;
 #ifdef DEBUG
 		__TRACE("scroll: win == curscr\n");
