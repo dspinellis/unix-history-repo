@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lprint.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)lprint.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -25,6 +25,7 @@ static char sccsid[] = "@(#)lprint.c	5.5 (Berkeley) %G%";
 #include <sys/time.h>
 #include <tzfile.h>
 #include <stdio.h>
+#include <ctype.h>
 #include "finger.h"
 #include "pathnames.h"
 
@@ -214,16 +215,35 @@ demi_print(str, oddfield)
 show_text(directory, file_name, header)
 	char *directory, *file_name, *header;
 {
-	register int fd, n;
+	register int ch;
 
 	(void)sprintf(tbuf, "%s/%s", directory, file_name);
-	if ((fd = open(tbuf, O_RDONLY, 0)) < 0)
+	if (!freopen(tbuf, "r", stdin))
 		return(0);
 	(void)printf("%s\n", header);
-	(void)fflush(stdout);
-	while ((n = read(fd, tbuf, sizeof(tbuf))) > 0)
-		if (write(1, tbuf, n) != n)
-			break;
-	(void)close(fd);
+	while ((ch = getchar(fp)) != EOF)
+		vputc(ch);
+	if (ch != '\n')
+		(void)putchar('\n');
 	return(1);
+}
+
+vputc(ch)
+	register int ch;
+{
+	int meta;
+
+	if (!isascii(ch)) {
+		(void)putchar('M');
+		(void)putchar('-');
+		ch = toascii(ch);
+		meta = 1;
+	} else
+		meta = 0;
+	if (isprint(ch) || !meta && isspace(ch))
+		(void)putchar(ch);
+	else {
+		(void)putchar('^');
+		(void)putchar(ch == '\177' ? '?' : ch | 0100);
+	}
 }

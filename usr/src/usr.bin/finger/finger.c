@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)finger.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)finger.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -114,17 +114,16 @@ main(argc, argv)
 loginlist()
 {
 	register PERSON *pn;
-	FILE *fp;
 	struct passwd *pw;
 	struct utmp user;
 	char name[UT_NAMESIZE + 1];
 
-	if ((fp = fopen(_PATH_UTMP, "r")) == NULL) {
+	if (!freopen(_PATH_UTMP, "r", stdin)) {
 		(void)fprintf(stderr, "finger: can't read %s.\n", _PATH_UTMP);
 		exit(2);
 	}
 	name[UT_NAMESIZE] = NULL;
-	while (fread((char *)&user, sizeof(user), 1, fp) == 1) {
+	while (fread((char *)&user, sizeof(user), 1, stdin) == 1) {
 		if (!user.ut_name[0])
 			continue;
 		if ((pn = find_person(user.ut_name)) == NULL) {
@@ -135,7 +134,6 @@ loginlist()
 		}
 		enter_where(&user, pn);
 	}
-	(void)fclose(fp);
 	for (pn = phead; lflag && pn != NULL; pn = pn->next)
 		enter_lastlog(pn);
 }
@@ -150,7 +148,6 @@ userlist(argc, argv)
 	struct utmp user;
 	struct passwd *pw;
 	int dolocal, *used;
-	FILE *fp;
 	char *index();
 
 	if (!(used = (int *)calloc((u_int)argc, (u_int)sizeof(int)))) {
@@ -213,18 +210,17 @@ net:	for (pn = nethead; pn; pn = pn->next) {
 	 * Scan thru the list of users currently logged in, saving
 	 * appropriate data whenever a match occurs.
 	 */
-	if ((fp = fopen(_PATH_UTMP, "r")) == NULL) {
+	if (!freopen(_PATH_UTMP, "r", stdin)) {
 		(void)fprintf( stderr, "finger: can't read %s.\n", _PATH_UTMP);
 		exit(1);
 	}
-	while (fread((char *)&user, sizeof(user), 1, fp) == 1) {
+	while (fread((char *)&user, sizeof(user), 1, stdin) == 1) {
 		if (!user.ut_name[0])
 			continue;
 		if ((pn = find_person(user.ut_name)) == NULL)
 			continue;
 		enter_where(&user, pn);
 	}
-	(void)fclose(fp);
 	for (pn = phead; pn != NULL; pn = pn->next)
 		enter_lastlog(pn);
 }
