@@ -1,4 +1,4 @@
-#	@(#)POSIX	5.10 (Berkeley) %G%
+#	@(#)POSIX	5.11 (Berkeley) %G%
 
 Comments on the IEEE P1003.2 Draft 12
      Part 2: Shell and Utilities
@@ -172,11 +172,7 @@ All uses of "POSIX" refer to section 4.55, Draft 12 of POSIX 1003.2.
 	string1 or string2 of the y command.  This is not specified by
 	POSIX.  This implementation follows historic practice.
 
-21.	POSIX does not specify if the "Nth occurrence" of an RE in a
-	substitute command is an overlapping or a non-overlapping one,
-	i.e. what is the result of s/a*/A/2 on the pattern "aaaaa aaaaa".
-	Historical practice is to drop core or only do non-overlapping
-	RE's.  This implementation only does non-overlapping RE's.
+21.	Deleted.
 
 22.	Historic implementations of sed ignore the RE delimiter characters
 	within character classes.  This is not specified in POSIX.  This
