@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pw_util.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pw_util.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -15,10 +15,12 @@ static char sccsid[] = "@(#)pw_util.c	8.1 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
-#include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 
+#include <err.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <paths.h>
@@ -27,10 +29,13 @@ static char sccsid[] = "@(#)pw_util.c	8.1 (Berkeley) %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
-extern char *progname;
+#include "pw_util.h"
+
 extern char *tempname;
 
+void
 pw_init()
 {
 	struct rlimit rlim;
@@ -62,6 +67,8 @@ pw_init()
 }
 
 static int lockfd;
+
+int
 pw_lock()
 {
 	/* 
@@ -71,67 +78,61 @@ pw_lock()
 	 * Open should allow flock'ing the file; see 4.4BSD.	XXX
 	 */
 	lockfd = open(_PATH_MASTERPASSWD, O_RDONLY, 0);
-	if (lockfd < 0 || fcntl(lockfd, F_SETFD, 1) == -1) {
-		(void)fprintf(stderr, "%s: %s: %s\n",
-		    progname, _PATH_MASTERPASSWD, strerror(errno));
-		exit(1);
-	}
-	if (flock(lockfd, LOCK_EX|LOCK_NB)) {
-		(void)fprintf(stderr,
-		    "%s: the password db is busy.\n", progname);
-		exit(1);
-	}
-	return(lockfd);
+	if (lockfd < 0 || fcntl(lockfd, F_SETFD, 1) == -1)
+		err(1, "%s", _PATH_MASTERPASSWD);
+	if (flock(lockfd, LOCK_EX|LOCK_NB))
+		errx(1, "the password db file is busy");
+	return (lockfd);
 }
 
+int
 pw_tmp()
 {
 	static char path[MAXPATHLEN] = _PATH_MASTERPASSWD;
 	int fd;
 	char *p;
 
-	if (p = rindex(path, '/'))
+	if (p = strrchr(path, '/'))
 		++p;
 	else
 		p = path;
-	(void)snprintf(p, sizeof(path), "%s.XXXXXX", progname);
-	if ((fd = mkstemp(path)) == -1) {
-		(void)fprintf(stderr,
-		    "%s: %s: %s\n", progname, path, strerror(errno));
-		exit(1);
-	}
+	strcpy(p, "pw.XXXXXX");
+	if ((fd = mkstemp(path)) == -1)
+		err(1, "%s", path);
 	tempname = path;
-	return(fd);
+	return (fd);
 }
 
+int
 pw_mkdb()
 {
-	union wait pstat;
+	int pstat;
 	pid_t pid;
 
-	(void)printf("%s: rebuilding the database...\n", progname);
-	(void)fflush(stdout);
+	warnx("rebuilding the database...");
+	(void)fflush(stderr);
 	if (!(pid = vfork())) {
 		execl(_PATH_PWD_MKDB, "pwd_mkdb", "-p", tempname, NULL);
 		pw_error(_PATH_PWD_MKDB, 1, 1);
 	}
-	pid = waitpid(pid, (int *)&pstat, 0);
-	if (pid == -1 || pstat.w_status)
-		return(0);
-	(void)printf("%s: done\n", progname);
-	return(1);
+	pid = waitpid(pid, &pstat, 0);
+	if (pid == -1 || !WIFEXITED(pstat) || WEXITSTATUS(pstat) != 0)
+		return (0);
+	warnx("done");
+	return (1);
 }
 
+void
 pw_edit(notsetuid)
 	int notsetuid;
 {
-	union wait pstat;
+	int pstat;
 	pid_t pid;
 	char *p, *editor;
 
 	if (!(editor = getenv("EDITOR")))
 		editor = _PATH_VI;
-	if (p = rindex(editor, '/'))
+	if (p = strrchr(editor, '/'))
 		++p;
 	else 
 		p = editor;
@@ -145,41 +146,33 @@ pw_edit(notsetuid)
 		_exit(1);
 	}
 	pid = waitpid(pid, (int *)&pstat, 0);
-	if (pid == -1 || pstat.w_status)
+	if (pid == -1 || !WIFEXITED(pstat) || WEXITSTATUS(pstat) != 0)
 		pw_error(editor, 1, 1);
 }
 
+void
 pw_prompt()
 {
-	register int c;
+	int c;
 
-	for (;;) {
-		(void)printf("re-edit the password file? [y]: ");
-		(void)fflush(stdout);
-		c = getchar();
-		if (c != EOF && c != (int)'\n')
-			while (getchar() != (int)'\n');
-		if (c == (int)'n')
-			pw_error((char *)NULL, 0, 0);
-		break;
-	}
+	(void)printf("re-edit the password file? [y]: ");
+	(void)fflush(stdout);
+	c = getchar();
+	if (c != EOF && c != '\n')
+		while (getchar() != '\n');
+	if (c == 'n')
+		pw_error(NULL, 0, 0);
 }
 
+void
 pw_error(name, err, eval)
 	char *name;
 	int err, eval;
 {
-	int sverrno;
+	if (err)
+		warn(name);
 
-	if (err) {
-		sverrno = errno;
-		(void)fprintf(stderr, "%s: ", progname);
-		if (name)
-			(void)fprintf(stderr, "%s: ", name);
-		(void)fprintf(stderr, "%s\n", strerror(sverrno));
-	}
-	(void)fprintf(stderr,
-	    "%s: %s unchanged\n", progname, _PATH_MASTERPASSWD);
+	warnx("%s: unchanged", _PATH_MASTERPASSWD);
 	(void)unlink(tempname);
 	exit(eval);
 }
