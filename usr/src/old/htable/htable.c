@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)htable.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)htable.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -421,18 +421,21 @@ copycomments(in, out, ccount)
 }
 #define	UC(b)	(((int)(b))&0xff)
 
+/*
+ * Print network number in internet-standard dot notation;
+ * v is in host byte order.
+ */
 putnet(f, v)
 	FILE *f;
 	u_long v;
 {
-	register char *a = (char *)&v;
-
-	if (UC(a[0]&0x80) == 0)
-		fprintf(f, "%d", UC(a[0]));
-	else if ((UC(a[0])&0x40) == 0)
-		fprintf(f, "%d.%d", UC(a[0]), UC(a[1]));
+	if (v < 128)
+		fprintf(f, "%d", v);
+	else if (v < 65536)
+		fprintf(f, "%d.%d", (v >> 8) & 0xff, v & 0xff);
 	else
-		fprintf(f, "%d.%d.%d", UC(a[0]), UC(a[1]), UC(a[2]));
+		fprintf(f, "%d.%d.%d", (v >> 16) & 0xff,
+			(v >> 8) & 0xff, v & 0xff);
 }
 
 putaddr(f, v)
