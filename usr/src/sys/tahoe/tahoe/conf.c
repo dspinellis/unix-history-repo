@@ -1,4 +1,4 @@
-/*	conf.c	1.7	87/02/19	*/
+/*	conf.c	1.8	87/03/26	*/
 
 #include "param.h"
 #include "systm.h"
@@ -12,9 +12,11 @@ int	nodev();
 
 #include "dk.h"
 #if NVD > 0
-int	vdopen(),vdstrategy(),vdread(),vdwrite(),vdioctl(),vddump(),vdsize();
+int	vdopen(),vdclose(),vdstrategy(),vdread(),vdwrite(),vdioctl();
+int	vddump(),vdsize();
 #else
 #define	vdopen		nodev
+#define	vdclose		nodev
 #define	vdstrategy	nodev
 #define	vdread		nodev
 #define	vdwrite		nodev
@@ -42,15 +44,15 @@ int	swstrategy(),swread(),swwrite();
 struct bdevsw	bdevsw[] =
 {
 	{ nodev,	nulldev,	nodev,		nodev,		/*0*/
-	  0,		0 },
-	{ vdopen,	nulldev,	vdstrategy,	vddump,		/*1*/
-	  vdsize,	0 },
+	  nodev,	0,		0 },
+	{ vdopen,	vdclose,	vdstrategy,	vdioctl,	/*1*/
+	  vddump,	vdsize,		0 },
 	{ nodev,	nulldev,	nodev,		nodev,		/*2*/
-	  0,		0 },
-	{ cyopen,	cyclose,	cystrategy,	cydump,		/*3*/
-	  0,		B_TAPE },
+	  nodev,	0,		0 },
+	{ cyopen,	cyclose,	cystrategy,	cyioctl,	/*3*/
+	  cydump,	0,		B_TAPE },
 	{ nodev,	nodev,		swstrategy,	nodev,		/*4*/
-	  0,		0 },
+	  nodev,	0,		0 },
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
