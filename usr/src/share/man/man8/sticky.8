@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sticky.8	6.2 (Berkeley) %G%
+.\"	@(#)sticky.8	6.3 (Berkeley) %G%
 .\"
 .TH STICKY 8 ""
 .UC 4
@@ -21,10 +21,9 @@ is set on a sharable executable file,
 the text of that file will not be removed from the system swap area.
 Thus the file does not have to be fetched from the file system
 upon each execution.
-As long as a copy remains in the swap area, the
-original text cannot be overwritten in the file system,
-nor can the file be deleted.
-(Directory entries can be removed so long as one link remains.)
+Shareable text segments are normally placed
+in a least-frequently-used cache after use,
+and thus the `sticky bit' has little effect on commonly-used text images.
 .PP
 Sharable executable files are made by the
 .B \-n
@@ -32,21 +31,6 @@ and
 .B \-z
 options of
 .IR ld (1).
-.PP
-To replace a sticky text executable file that has been used,
-perform the following steps:
-(1) Clear the sticky bit with
-.IR chmod (1).
-(2) Execute the old program to flush the swapped copy.
-This can be done safely even if others are using it.
-(3) Overwrite the sticky file.
-If the file is being executed by any process,
-writing will be prevented; it suffices to simply remove the file
-and then rewrite it, being careful to reset the owner and mode with
-.I chmod
-and
-.IR chown (2).
-(4) Set the sticky bit again.
 .PP
 Only the super-user can set the sticky bit
 on a sharable executable file.
@@ -68,12 +52,6 @@ See
 .IR chmod (1)
 for details about modifying file modes.
 .SH BUGS
-Sticky text executable files are
-largely unnecessary on the VAX.
-The sticky attribute is useful only for large programs that
-will page heavily to start, since text pages are normally cached in core
-as long as possible after all instances of a text image exit.
-.PP
 Since the text areas of sticky text executables are stashed in the swap area,
 abuse of the feature can cause a system to run out of swap.
 .PP
