@@ -1,4 +1,4 @@
-/*	tty.c	6.10	84/08/29	*/
+/*	tty.c	6.11	84/09/10	*/
 
 #include "../machine/reg.h"
 
@@ -360,6 +360,8 @@ ttioctl(tp, com, data, flag)
 	 * Simulate typing of a character at the terminal.
 	 */
 	case TIOCSTI:
+		if (u.u_uid && (flag & FREAD) == 0)
+			return (EPERM);
 		if (u.u_uid && u.u_ttyp != tp)
 			return (EACCES);
 		(*linesw[tp->t_line].l_rint)(*(char *)data, tp);
