@@ -1,4 +1,4 @@
-/* socket.h 4.1 81/10/29 */
+/* socket.h 4.2 81/10/29 */
 
 /*
  * User connection block

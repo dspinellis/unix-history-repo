@@ -1,4 +1,4 @@
-/*	ubareg.h	4.22	81/04/03	*/
+/*	ubareg.h	4.23	81/10/29	*/
 
 /*
  * VAX UNIBUS adapter registers
@@ -77,12 +77,16 @@ struct uba_regs
 #define	UBADPR_DPF	0x20000000	/* DP function (RO) */
 #define	UBADPR_BS	0x007f0000	/* buffer state field */
 #define	UBADPR_BUBA	0x0000ffff	/* buffered UNIBUS address */
+#define	UBA_PURGE780(uba, bdp) \
+    ((uba)->uba_dpr[bdp] |= UBADPR_BNE)
 #endif VAX780
 #if VAX750
 #define	UBADPR_ERROR	0x80000000	/* error occurred */
 #define	UBADPR_NXM	0x40000000	/* nxm from memory */
 #define	UBADPR_UCE	0x20000000	/* uncorrectable error */
 #define	UBADPR_PURGE	0x00000001	/* purge bdp */
+#define	UBA_PURGE750(uba, bdp) \
+    ((uba)->uba_dpr[bdp] |= (UBADPR_PURGE|UBADPR_NXM|UBADPR_UCE))
 #endif VAX750
  
 /* uba_mr[] */

@@ -1,4 +1,4 @@
-/*	ubavar.h	4.19	81/08/31	*/
+/*	ubavar.h	4.20	81/10/29	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -136,9 +136,9 @@ struct uba_driver {
 /*
  * Flags to UBA map/bdp allocation routines
  */
-#define	UBA_NEEDBDP	1		/* transfer needs a bdp */
-#define	UBA_CANTWAIT	2		/* don't block me */
-#define	UBA_NEED16	3		/* need 16 bit addresses only */
+#define	UBA_NEEDBDP	0x1		/* transfer needs a bdp */
+#define	UBA_CANTWAIT	0x2		/* don't block me */
+#define	UBA_NEED16	0x4		/* need 16 bit addresses only */
 
 #ifndef LOCORE
 #ifdef KERNEL
