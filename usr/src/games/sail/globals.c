@@ -1,51 +1,8 @@
 #ifndef lint
-static	char *sccsid = "@(#)globals.c	1.2 83/05/20";
+static	char *sccsid = "@(#)globals.c	1.3 83/05/20";
 #endif
 #include <stdio.h>
-
-#define NUMOFSCENES 32
-
-#define BUFSIZE 2024
-
-struct snag {
-	int turnfoul, toship;
-};
-
-struct BP {
-	int turnsent, toship, mensent;
-};
-
-typedef struct {
-	int row, col, dir;
-} postype;
-postype pos[20];
-
-struct File {
-	char captain[20];
-	int points;
-	int loadL, loadR, readyL, readyR;
-	struct BP OBP[3], DBP[3];
-	int struck, captured, pcrew;
-	char last[10];
-	int drift;
-	struct snag fouls[10], grapples[10];
-	char signal[60];
-	int RH, RG, RR, FS, explode, sink;
-};
-
-typedef struct {
-	char *shipname;
-	int shipnum, nationality;
-	int shiprow, shipcol, shipdir;
-	struct File *file;
-} ships;
-
-struct scenario {
-	int winddir, windspeed, windchange;
-	int turn, people, time, vessels;
-	char *name;
-	ships ship[10];
-};
+#include "externs.h"
 
 struct scenario scene[NUMOFSCENES] = {
 	5, 3, 5, 0, 1, 0, 2, "Ranger vs. Drake",
@@ -278,9 +235,7 @@ struct scenario scene[NUMOFSCENES] = {
 };
 
 /* happy */
-struct shipspecs {
-	int bs, fs, ta, guns, class, hull, qual, crew1, crew2, crew3, gunL, gunR, carL, carR, rig1, rig2, rig3, rig4, pts;
-} specs[] = {
+struct shipspecs specs[] = {
 	4, 7, 3,  19, 5,  5, 4,  2,  2,  2,  2,  2, 0, 0,  4, 4, 4, 4,  7,
 	4, 7, 3,  17, 5,  5, 4,  2,  2,  2,  0,  0, 4, 4,  3, 3, 3, 3,  6,
 	3, 5, 2,  42, 4,  7, 4,  2,  2,  2,  2,  2, 0, 0,  5, 5, 5, -1, 11,
@@ -361,9 +316,7 @@ struct shipspecs {
 /*int bs, fs, ta, guns, class, hull, qual, crew1, crew2, crew3, gunL, gunR, carL, carR, rig1, rig2, rig3, rig4, pts*/
 };
 
-struct windeffects {
-	int A, B, C, D;
-} WET[7][6] = {
+struct windeffects WET[7][6] = {
 	{ {9,9,9,9}, {9,9,9,9}, {9,9,9,9}, {9,9,9,9}, {9,9,9,9}, {9,9,9,9} },
 	{ {3,2,2,0}, {3,2,1,0}, {3,2,1,0}, {3,2,1,0}, {2,1,0,0}, {2,1,0,0} },
 	{ {1,1,1,0}, {1,1,0,0}, {1,0,0,0}, {1,0,0,0}, {1,0,0,0}, {1,0,0,0} },
@@ -372,9 +325,7 @@ struct windeffects {
 	{ {1,0,0,0}, {1,1,0,0}, {1,1,1,0}, {1,1,1,0}, {3,2,2,0}, {3,2,2,0} },
 	{ {2,1,1,0}, {3,2,1,0}, {3,2,1,0}, {3,2,1,0}, {3,3,2,0}, {3,3,2,0} }
 };
-struct Tables {
-	int H, G, C, R;
-} RigTable[11][6] = {
+struct Tables RigTable[11][6] = {
 	 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1, 0,0,1,0 , 
 	 0,0,0,0, 0,0,0,0, 0,0,0,1, 0,0,1,0, 1,0,0,1, 0,1,1,1 ,
 	 0,0,0,0, 0,0,0,1, 0,0,1,1, 0,1,0,1, 0,1,0,1, 1,0,1,2 ,
@@ -468,4 +419,3 @@ int player = -1, nation[5], scroll = 18, game;
 int MIGHTYCAPTAIN;
 char Outbuf[BUFSIZE], movebuf[10], loadwith[20];
 FILE *syncfile;
-
