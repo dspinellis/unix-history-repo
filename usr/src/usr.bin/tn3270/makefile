@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)makefile	4.2 (Berkeley) %G%
+#	@(#)makefile	4.3 (Berkeley) %G%
 #
 
 # Makefile for tn3270 and friends...
@@ -172,7 +172,8 @@ FRC:
 
 tn3270$X:	telnet/telprog.o ${SUBLIB} api/apilib.a
 	${CC} ${CFLAGS} -o tn3270 telnet/telprog.o \
-		$L ${SUBLIB} api/apilib.a $(LIBCURSES) $(LIBTERM)
+		$L ${SUBLIB} api/apilib.a $(LIBCURSES) $(LIBTERM) \
+		-lcompat
 
 #PC_tn3270$X:
 #PC_	link <@<
