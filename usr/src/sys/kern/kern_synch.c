@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_synch.c	8.4 (Berkeley) %G%
+ *	@(#)kern_synch.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -213,8 +213,13 @@ updatepri(p)
 	resetpriority(p);
 }
 
-#define TABLESIZE	64		/* Must be power of 2. */
-#define LOOKUP(x)	((int)x & (TABLESIZE - 1))
+/*
+ * We're only looking at 7 bits of the address; everything is
+ * aligned to 4, lots of things are aligned to greater powers
+ * of 2.  Shift right by 8, i.e. drop the bottom 256 worth.
+ */
+#define TABLESIZE	128
+#define LOOKUP(x)	(((int)(x) >> 8) & (TABLESIZE - 1))
 struct slpque {
 	struct proc *sq_head;
 	struct proc **sq_tailp;
