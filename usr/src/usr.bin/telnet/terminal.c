@@ -59,45 +59,6 @@ int drop;
 }
 
 
-#if	defined(unix)
-/*
- * Various signal handling routines.
- */
-
-void
-deadpeer()
-{
-	setcommandmode();
-	longjmp(peerdied, -1);
-}
-
-void
-intr()
-{
-    if (localchars) {
-	intp();
-	return;
-    }
-    setcommandmode();
-    longjmp(toplevel, -1);
-}
-
-void
-intr2()
-{
-    if (localchars) {
-	sendbrk();
-	return;
-    }
-}
-
-void
-doescape()
-{
-    command(0);
-}
-#endif	/* defined(unix) */
-
 /*
  * These routines decides on what the mode should be (based on the values
  * of various global variables).
