@@ -11,13 +11,13 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pac.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pac.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
  * Do Printer accounting summary.
  * Currently, usage is
- *	pac [-Pprinter] [-pprice] [-s] [-r] [-c] [user ...]
+ *	pac [-Pprinter] [-pprice] [-s] [-r] [-c] [-m] [user ...]
  * to print the usage information for the named people.
  */
 
@@ -34,6 +34,11 @@ int	summarize;			/* Compress accounting file */
 int	reverse;			/* Reverse sort order */
 int	hcount;				/* Count of hash entries */
 int	errs;
+int	mflag = 0;			/* disregard machine names */
+int	pflag = 0;			/* 1 if -p on cmd line */
+int	price100;			/* per-page cost in 100th of a cent */
+char	*index();
+int	pgetnum();
 
 /*
  * Grossness follows:
@@ -82,6 +87,7 @@ main(argc, argv)
 				 * get the price.
 				 */
 				price = atof(cp);
+				pflag = 1;
 				continue;
 
 			case 's':
@@ -98,6 +104,13 @@ main(argc, argv)
 				sort++;
 				continue;
 
+			case 'm':
+				/*
+				 * disregard machine names for each user
+				 */
+				mflag = 1;
+				continue;
+
 			case 'r':
 				/*
 				 * Reverse sorting order.
@@ -106,7 +119,8 @@ main(argc, argv)
 				continue;
 
 			default:
-fprintf(stderr, "usage: pac [-Pprinter] [-pprice] [-s] [-c] [-r] [user ...]\n");
+fprintf(stderr,
+    "usage: pac [-Pprinter] [-pprice] [-s] [-c] [-r] [-m] [user ...]\n");
 				exit(1);
 			}
 		}
@@ -143,6 +157,7 @@ fprintf(stderr, "usage: pac [-Pprinter] [-pprice] [-s] [-c] [-r] [user ...]\n");
  * is set, then just gather the facts on everyone.
  * Note that we must accomodate both the active and summary file
  * formats here.
+ * Host names are ignored if the -m flag is present.
  */
 
 account(acct)
@@ -167,6 +182,8 @@ account(acct)
 			;
 		ic = atoi(cp2);
 		*cp2 = '\0';
+		if (mflag && index(cp, ':'))
+		    cp = index(cp, ':') + 1;
 		hp = lookup(cp);
 		if (hp == NIL) {
 			if (!allflag)
@@ -351,7 +368,8 @@ qucmp(left, right)
 	h1 = *left;
 	h2 = *right;
 	if (sort)
-		r = h1->h_feetpages < h2->h_feetpages ? -1 : h1->h_feetpages > h2->h_feetpages;
+		r = h1->h_feetpages < h2->h_feetpages ? -1 : h1->h_feetpages > 
+h2->h_feetpages;
 	else
 		r = strcmp(h1->h_name, h2->h_name);
 	return(reverse ? -r : r);
@@ -377,6 +395,8 @@ chkprinter(s)
 		printf("accounting not enabled for printer %s\n", printer);
 		exit(2);
 	}
+	if (!pflag && (price100 = pgetnum("pc")) > 0)
+		price = price100/10000.0;
 	sumfile = (char *) calloc(sizeof(char), strlen(acctfile)+5);
 	if (sumfile == NULL) {
 		perror("pac");
