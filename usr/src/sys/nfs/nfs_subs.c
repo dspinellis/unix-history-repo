@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.50 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.51 (Berkeley) %G%
  */
 
 /*
@@ -641,7 +641,8 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	register struct vnode *vp = *vpp;
 	register struct vattr *vap;
 	register struct nfsv2_fattr *fp;
-	extern struct vnodeops spec_nfsv2nodeops, spec_vnodeops;
+	extern struct vnodeops spec_nfsv2nodeops;
+	extern struct vnodeops spec_vnodeops;
 	register struct nfsnode *np;
 	register long t1;
 	caddr_t dpos, cp2;

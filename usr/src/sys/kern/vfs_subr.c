@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.71 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.72 (Berkeley) %G%
  */
 
 /*
@@ -164,7 +164,8 @@ void vattr_null(vap)
  * Routines having to do with the management of the vnode table.
  */
 struct vnode *vfreeh, **vfreet;
-extern struct vnodeops dead_vnodeops, spec_vnodeops;
+extern struct vnodeops dead_vnodeops;
+extern struct vnodeops spec_vnodeops;
 extern void vclean();
 long numvnodes;
 struct vattr va_null;

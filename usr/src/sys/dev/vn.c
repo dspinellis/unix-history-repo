@@ -391,7 +391,8 @@ vnthrottle(vn, vp)
 	register struct vn_softc *vn;
 	struct vnode *vp;
 {
-	extern struct vnodeops ufs_vnodeops, nfsv2_vnodeops;
+	extern struct vnodeops ufs_vnodeops;
+	extern struct vnodeops nfsv2_vnodeops;
 
 	if (vp->v_op == &nfsv2_vnodeops)
 		vn->sc_maxactive = 2;
