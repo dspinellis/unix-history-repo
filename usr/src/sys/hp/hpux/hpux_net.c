@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_net.c 1.33 89/08/23$
  *
- *	@(#)hpux_net.c	7.1 (Berkeley) %G%
+ *	@(#)hpux_net.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -22,7 +22,7 @@
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
+#include "syscontext.h"
 #include "kernel.h"
 #include "proc.h"
 #include "file.h"
@@ -71,69 +71,67 @@ struct hpuxtobsdipc {
  * Single system call entry to BSD style IPC.
  * Gleened from disassembled libbsdipc.a syscall entries.
  */
-hpuxnetioctl()
-{
-	struct a {
+hpuxnetioctl(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	call;
 		int	*args;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	int *args, i;
 	register int code;
+	int error;
 
 	args = uap->args;
 	code = uap->call - MINBSDIPCCODE;
-	if (code < 0 || code >= NUMBSDIPC || hpuxtobsdipc[code].rout == NULL) {
-		u.u_error = EINVAL;
-		return;
-	}
+	if (code < 0 || code >= NUMBSDIPC || hpuxtobsdipc[code].rout == NULL)
+		RETURN (EINVAL);
 	if ((i = hpuxtobsdipc[code].nargs * sizeof (int)) &&
-	    (u.u_error = copyin((caddr_t)args, (caddr_t)u.u_arg, (u_int)i))) {
+	    (error = copyin((caddr_t)args, (caddr_t)uap, (u_int)i))) {
 #ifdef KTRACE
-                if (KTRPOINT(u.u_procp, KTR_SYSCALL))
-                        ktrsyscall(u.u_procp->p_tracep, code + MINBSDIPCCODE,
+                if (KTRPOINT(p, KTR_SYSCALL))
+                        ktrsyscall(p->p_tracep, code + MINBSDIPCCODE,
 				   hpuxtobsdipc[code].nargs);
 #endif
-		return;
+		RETURN (error);
 	}
 #ifdef KTRACE
-        if (KTRPOINT(u.u_procp, KTR_SYSCALL))
-                ktrsyscall(u.u_procp->p_tracep, code + MINBSDIPCCODE,
+        if (KTRPOINT(p, KTR_SYSCALL))
+                ktrsyscall(p->p_tracep, code + MINBSDIPCCODE,
 			   hpuxtobsdipc[code].nargs);
 #endif
-	(*hpuxtobsdipc[code].rout)();
+	RETURN ((*hpuxtobsdipc[code].rout)(p, uap, retval));
 }
 
-hpuxsetsockopt()
-{
-	struct a {
+hpuxsetsockopt(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	s;
 		int	level;
 		int	name;
 		caddr_t	val;
 		int	valsize;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct file *fp;
 	struct mbuf *m = NULL;
-	int tmp;
+	int tmp, error;
 
-	fp = getsock(uap->s);
+	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		return;
-	if (uap->valsize > MLEN) {
-		u.u_error = EINVAL;
-		return;
-	}
+		RETURN (error);
+	if (uap->valsize > MLEN)
+		RETURN (EINVAL);
 	if (uap->val) {
 		m = m_get(M_WAIT, MT_SOOPTS);
-		if (m == NULL) {
-			u.u_error = ENOBUFS;
-			return;
-		}
-		u.u_error =
-		    copyin(uap->val, mtod(m, caddr_t), (u_int)uap->valsize);
-		if (u.u_error) {
+		if (m == NULL)
+			RETURN (ENOBUFS);
+		if (error = copyin(uap->val, mtod(m, caddr_t),
+		    (u_int)uap->valsize)) {
 			(void) m_free(m);
-			return;
+			RETURN (error);
 		}
 		if (uap->name == SO_LINGER) {
 			tmp = *mtod(m, int *);
@@ -150,36 +148,36 @@ hpuxsetsockopt()
 			m->m_len = sizeof(struct linger);
 		}
 	}
-	u.u_error =
-	    sosetopt((struct socket *)fp->f_data, uap->level, uap->name, m);
+	RETURN (sosetopt((struct socket *)fp->f_data, uap->level,
+	    uap->name, m));
 }
 
-hpuxgetsockopt()
-{
-	struct a {
+hpuxgetsockopt(p, uap, retval)
+	struct proc *p;
+	struct args {
 		int	s;
 		int	level;
 		int	name;
 		caddr_t	val;
 		int	*avalsize;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	struct file *fp;
 	struct mbuf *m = NULL;
-	int valsize;
+	int valsize, error;
 
-	fp = getsock(uap->s);
+	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		return;
+		RETURN (error);
 	if (uap->val) {
-		u.u_error = copyin((caddr_t)uap->avalsize, (caddr_t)&valsize,
-			sizeof (valsize));
-		if (u.u_error)
-			return;
+		if (error = copyin((caddr_t)uap->avalsize, (caddr_t)&valsize,
+		    sizeof (valsize)))
+			RETURN (error);
 	} else
 		valsize = 0;
-	u.u_error =
-	    sogetopt((struct socket *)fp->f_data, uap->level, uap->name, &m);
-	if (u.u_error)
+	if (error = sogetopt((struct socket *)fp->f_data, uap->level,
+	    uap->name, &m))
 		goto bad;
 	if (uap->val && valsize && m != NULL) {
 		if (uap->name == SO_LINGER) {
@@ -191,14 +189,14 @@ hpuxgetsockopt()
 		}
 		if (valsize > m->m_len)
 			valsize = m->m_len;
-		u.u_error = copyout(mtod(m, caddr_t), uap->val, (u_int)valsize);
-		if (u.u_error)
-			goto bad;
-		u.u_error = copyout((caddr_t)&valsize, (caddr_t)uap->avalsize,
-		    sizeof (valsize));
+		error = copyout(mtod(m, caddr_t), uap->val, (u_int)valsize);
+		if (error == 0)
+			error = copyout((caddr_t)&valsize,
+			    (caddr_t)uap->avalsize, sizeof (valsize));
 	}
 bad:
 	if (m != NULL)
 		(void) m_free(m);
+	RETURN (error);
 }
 #endif
