@@ -1,75 +1,132 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)date.1	6.7 (Berkeley) %G%
+.\"
+.Dd 
+.\" .Os BSD 4.4
 .\" Copyright (c) 1980 Regents of the University of California.
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)date.1	6.6 (Berkeley) %G%
+.\"	@(#)date.1	6.6 (Berkeley) 4/1/87
 .\"
-.TH DATE 1 ""
-.UC 4
-.SH NAME
-date \- print and set the date
-.SH SYNOPSIS
-.B date
-.RB "[-nu] [-d dst] [-t minutes_west] [yymmddhhmm [" . "ss] ]"
-.SH DESCRIPTION
-If no arguments are given, the current date and time are
-printed.  Providing an argument will set the desired date;
-only the superuser can set the date. The \fI-d\fP and \fI-t\fP
-flags set the kernel's values for daylight savings time and
-minutes west of GMT.  If \fIdst\fP is non-zero, future calls
-to \fIgettimeofday\fP(2) will return a non-zero \fItz_dsttime\fP.
-\fIMinutes_west\fP provides the number of minutes returned
-by future calls to \fIgettimeofday\fP(2) in \fItz_minuteswest\fP.  The
-\fI-u\fP flag is used to display or set the date in GMT (universal) time.
-.I yy
-represents the last two digits of the year;
-the first
-.I mm
-is the month number;
-.I dd
-is the day number;
-.I hh
-is the hour number (24 hour system);
-the second
-.I mm
-is the minute number;
-.BI . ss
-is optional and represents the seconds.
-For example:
-.IP
-date 8506131627
-.PP
-sets the date to June 13 1985, 4:27 PM.  The year, month and day may
-be omitted; the default values will be the current ones.  The system
-operates in GMT.  \fIDate\fP takes care of the conversion to and from
-local standard and daylight-saving time.
-.PP
-If 
-.I timed(8)
+.Dt DATE 1
+.Os BSD 4
+.Sh NAME
+.Nm date
+.Nd display or set date and time
+.Sh SYNOPSIS
+.Nm date
+.Op Fl nu
+.Op Fl d Ar dst
+.Op Fl t Ar minutes_west
+.Op yymmddhhmm Op ss
+.Sh DESCRIPTION
+.Nm Date
+displays today's date and time when invoked without
+arguments.  Providing an argument will set the desired date;
+only the superuser can set the date. The
+.Tp Fl d
+Set the kernel's values for daylight savings time.
+If
+.Ar dst
+is non-zero, future calls
+to
+.Ar gettimeofday
+2  will return a non-zero
+.Ar tz_dsttime  .
+.Tp Fl t
+Set the kernel's values for minutes west of GMT.
+.Ar Minutes_west
+provides the number of minutes returned by future calls to
+.Ar gettimeofday
+2  in
+.Ar tz_minuteswest  .
+.Tp Fl u
+Display or set the date in GMT (universal) time.
+.Tp
+.Pp
+The canonical representation for setting the date and time:
+.Dp Ar yy
+Year in abbreviated form (.e.g 89 for 1989).
+.Dp Ar mm
+Numeric month.
+A number from 01 to 12.
+.Dp Ar dd
+Day, a number from 01 to 31.
+.Dp Ar hh
+Hour, a number from 00 to 24.
+.Dp Ar mm
+Minutes, a number from 00 to 60.
+.Dp Ar .ss
+Seconds, a number from 00 to 60.
+.Dp
+The command:
+.Pp
+.Dl date 8506131627
+.Pp
+sets the date to June 13 1985, 4:27 PM.
+.Pp
+To reset today's time, the incantation can be shortened
+to just the hours and minutes:
+.Pp
+.Dl date 1432
+.Pp
+sets the time to 2:32 PM, unaffecting the date.
+.Pp
+Providing a system stays running, date will handle
+time changes for daylight/standards savings time and leap times.
+.Pp
+If
+.Ar timed 8
 is running to synchronize the clocks of machines in a local
-area network, \fIdate\fP sets the time globally on all those
+area network,
+.Nm date
+sets the time globally on all those
 machines unless the
-.B \-n
+.Fl n
 option is given.
-.SH FILES
-/usr/adm/wtmp to record time-setting.
-In /usr/adm/messages, \fIdate\fP records the name of the user
+.Sh FILES
+.Dw Pa /usr/adm/messages
+.Di L
+.Dp Pa /usr/adm/wtmp
+A record of date resets and time changes.
+.Dp Pa /usr/adm/messages,
+A record of the name of the user
 setting the time.
-.SH SEE ALSO
-gettimeofday(2), utmp(5), timed(8),
+.Sh SEE ALSO
+.Xr gettimeofday 2 ,
+.Xr utmp 5 ,
+.Xr timed 8 ,
 .br
-\fITSP: The Time Synchronization Protocol for UNIX 4.3BSD\fP, 
-R. Gusella and S. Zatti
-.SH DIAGNOSTICS
+.Em TSP:\ The\ Time\ Synchronization Protocol
+.Em for UNIX 4.3BSD ,
+R. Gusella
+and\ S.\ Zatti
+.Sh HISTORY
+.Nm
+appeared in Version 6 AT&T UNIX.
+.Sh DIAGNOSTICS
 Exit status is 0 on success, 1 on complete failure to set the date,
 and 2 on successfully setting the local date but failing globally.
-.PP
-Occasionally, when \fItimed\fP synchronizes the time on many hosts, 
+.Pp
+Occasionally, when
+.Ar timed
+synchronizes the time on many hosts,
 the setting of a new time value may require more than a few seconds.
-On these occasions, \fIdate\fP prints: `Network time being set'.
+On these occasions,
+.Nm date
+prints: `Network time being set'.
 The message `Communication error with timed' occurs when the communication
-between \fIdate\fP and \fItimed\fP fails.
-.SH BUGS
+between
+.Nm date
+and
+.Ar timed
+fails.
+.Sh BUGS
 The system attempts to keep the date in a format closely compatible
 with VMS.  VMS, however, uses local time (rather than GMT) and does
 not understand daylight-saving time.  Thus, if you use both UNIX

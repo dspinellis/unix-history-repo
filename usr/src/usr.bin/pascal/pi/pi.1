@@ -1,113 +1,109 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)pi.1	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH PI 1 ""
+.\"     @(#)pi.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PI 1
 .UC
-.SH NAME
-pi \- Pascal interpreter code translator
-.SH SYNOPSIS
-.B pi
-[
-.B option
-] [
-.B \-i
-name ...
-] name.p
-.SH DESCRIPTION
-.I Pi
+.Sh NAME
+.Nm pi
+.Nd Pascal interpreter code translator
+.Sh SYNOPSIS
+.Nm pi
+.Op Fl blnpstuwz
+.Op Fl i Ar name ...
+.Ar name.p
+.Sh DESCRIPTION
+.Nm Pi
 translates the program in the file
-.I name.p
+.Ar name.p
 leaving interpreter code in the file
-.I obj
+.Pa obj
 in the current directory.
 The interpreter code can be executed using
-.I px.
-.I Pix
+.Nm px .
+.Nm Pix
 performs the functions of
-.I pi
+.Nm pi
 and
-.I px
+.Nm px
 for `load and go' Pascal.
-.PP
-The following flags are interpreted by 
-.I pi;
+.Pp
+The following flags are interpreted by
+.Nm pi ;
 the associated options can also be controlled in comments within the program
 as described in the
-.I "Berkeley Pascal User's Manual."
-.TP 6
-.B  \-b
+.Em "Berkeley Pascal User's Manual."
+.Tw Fl
+.Tp Fl b
 Block buffer the file
-.I output.
-.TP 6
-.B  \-i
+.Ar output .
+.Tp Fl i
 Enable the listing for
 any specified procedures and functions and while processing any specified
-.B include
+.Ic include
 files.
-.TP 6
-.B  \-l
+.Tp Fl l
 Make a program listing during translation.
-.TP 6
-.B  \-n
+.Tp Fl n
 Begin each listed
-.B include
+.Ic include
 file on a new page with a banner line.
-.TP 6
-.B  \-p
+.Tp Fl p
 Suppress the post-mortem control flow backtrace
 if an error occurs;
 suppress statement limit counting.
-.TP 6
-.B  \-s
+.Tp Fl s
 Accept standard Pascal only;
 non-standard constructs cause warning diagnostics.
-.TP 6
-.B  \-t
+.Tp Fl t
 Suppress runtime tests of subrange variables and treat
-.B assert
+.Ic assert
 statements as comments.
-.TP 6
-.B  \-u
+.Tp Fl u
 Card image mode;
 only the first 72 characters of input lines are used.
-.TP 6
-.B  \-w
+.Tp Fl w
 Suppress warning diagnostics.
-.TP 6
-.B  \-z
+.Tp Fl z
 Allow execution profiling with
-.I pxp
+.Nm pxp
 by generating statement counters, and arranging for the
 creation of the profile data file
-.I pmon.out
+.Pa pmon.out
 when the resulting object is executed.
-.dt
-.SH FILES
-file.p				input file
+.Tp
+.Sh FILES
+.Dw /usr/lib/pi1.*strings
+.Di L
+.Dp Pa file.p
+input file
+.Dp Pa file.i
+include file(s)
+.Dp Pa /usr/lib/pi2.*strings
+text of the error messages
+.Dp Pa /usr/lib/how_pi*
+basic usage explanation
+.Dp Pa obj
+interpreter code output
+.Dp
+.Sh SEE ALSO
+.Em Berkeley Pascal User'.Xr s Manual
 .br
-file.i				\fBinclude\fR file(s)
-.br
-/usr/lib/pi2.*strings		text of the error messages
-.br
-.nf
-/usr/lib/how_pi*		basic usage explanation
-.fi
-obj				interpreter code output
-.SH "SEE ALSO"
-Berkeley Pascal User's Manual
-.br
-pix(1),
-px(1),
-pxp(1),
-pxref(1)
-.SH DIAGNOSTICS
+.Xr pix 1 ,
+.Xr px 1 ,
+.Xr pxp 1 ,
+.Xr pxref 1
+.Sh DIAGNOSTICS
 For a basic explanation do
-.IP
-.B	pi
-.PP
+.Pp
+.Df I
+.Nm pi
+.De
+.Pp
 In the diagnostic output of the translator,
 lines containing syntax errors are listed with a flag indicating the
 point of error.
@@ -116,46 +112,53 @@ took in order to be able to continue parsing.
 Some diagnostics indicate only that the input is `malformed.'
 This occurs if the recovery can find no simple correction to make the input
 syntactically valid.
-.LP
+.Pp
 Semantic error diagnostics indicate a line in the source text near the
 point of error.
 Some errors evoke more than one diagnostic to help pinpoint the error;
 the follow-up messages begin with an ellipsis `...'.
-.LP
+.Pp
 .ne 8
 The first character of each error message indicates its class:
-.LP
-.ta 1ic 2.i
-	E	Fatal error; no code will be generated.
-.br
-	e	Non-fatal error.
-.br
-	w	Warning \- a potential problem.
-.br
-	s	Non-standard Pascal construct warning.
-.LP
+.Pp
+.Dw Fl
+.Di L
+.Dp Li E
+Fatal error; no code will be generated.
+.Dp e
+Non-fatal error.
+.Dp w
+Warning \- a potential problem.
+.Dp s
+Non-standard Pascal construct warning.
+.Dp
+.Pp
 If a severe error occurs which inhibits further processing,
 the translator will give a diagnostic and then `QUIT'.
-.SH AUTHORS
+.Sh AUTHORS
 Charles B. Haley, William N. Joy, and Ken Thompson
 .br
 Ported to VAX-11 by Peter Kessler
-.SH BUGS
+.Sh BUGS
 The keyword
-.B packed
+.Ic packed
 is recognized but has no effect.
-.PP
+.Pp
 For clarity,
 semantic errors should be flagged at an appropriate place in the source text,
 and multiple instances of the `same' semantic error should be summarized
 at the end of a
-.B procedure
+.Ic procedure
 or
-.B function
+.Ic function
 rather than evoking many diagnostics.
-.PP
+.Pp
 When
-.B include
+.Ic include
 files are present,
 diagnostics relating to the last procedure in one file may appear after the
 beginning of the listing of the next.
+.\" .Sh ENVIRONMENT
+.Sh HISTORY
+.Nm Pi
+appeared in 3 BSD.

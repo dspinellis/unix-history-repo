@@ -1,89 +1,73 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)cp.1	6.8 (Berkeley) %G%
+.\"     @(#)cp.1	6.9 (Berkeley) %G%
 .\"
-.TH CP 1 ""
-.UC 4
-.SH NAME
-cp - copy files
-.SH SYNOPSIS
-\fBcp [ \fI-fhip\fB ] source_file target_file
-.sp
-\fBcp [ \fI-fhipr\fB ] source_file ... target_directory
-.ft R
-.SH DESCRIPTION
-The
-.I cp
-utility copies
-.I source_file
-to
-.I target_file
-or, in the second form, one or more
-.IR source_file s
-are copied into the target
-.IR target_directory ,
-retaining their original filenames.
+.Dd 
+.Dt CP 1
+.Os BSD 4
+.Sh NAME
+.Nm cp
+.Nd copy files
+.Sh SYNOPSIS
+.Nm cp
+.Op Fl fhip
+.Ar source_file target_file
+.br
+.Nm cp
+.Op Fl fhipr
+.Ar source_file ... target_directory
+.Sh DESCRIPTION
+In the first synopsis form,
+.Nm cp
+utility copies the contents of the
+.Ar source_file
+to the
+.Ar target_file
+or, in the second synopsis form,
+the contents of each named
+.Ar source_file(s)
+is copied to the destination
+.Ar target_directory .
+The names of the files themselves are not changed.
 If
-.I cp
+.Nm cp
 detects an attempt to copy a file to itself, the copy will fail.
-.PP
-For each destination file that already exists, its contents are
-overwritten if permissions allow, but its mode, user ID, and group
-ID are unchanged.
-.PP
-If the destination file does not exist, the mode of the source file is
-used as modified by the file mode creation mask (umask).
-If the source file has its set user ID bit on, that bit is removed
-unless both the source file and the destination file are owned by the
-same user.
-If the source file has its set group ID bit on, that bit is removed
-unless both the source file and the destination file are in the same
-group and the user is a member of that group.
-If both the set user ID and set group ID bits are set, all of the above
-conditions must be fulfilled or both bits are removed.
-.PP
-Appropriate permissions are required for file creation or overwriting.
-.PP
 The following options are available:
-.TP
-.I -h
+.Tp Fl h
 Forces
-.I cp
+.Nm cp
 to follow symbolic links.
 Provided for the
-.I -r
+.Fl r
 option which does not follow symbolic links by default.
-.TP
-.I -f
+.Tp Fl f
 Force existing destination pathnames to be truncated before copying,
 without prompting for confirmation.
 (The
-.I -i
+.Fl i
 option is ignored if the
-.I -f
+.Fl f
 option is specified.)
-.TP
-.I -i
+.Tp Fl i
 Causes
-.I cp
+.Nm cp
 to write a prompt to standard error before copying a file that would
 overwrite an existing file.
 If the response from the standard input begins with the character ``y'',
 the file is copied if permissions allow the copy.
-.TP
-.I -p
+.Tp Fl p
 Causes
-.I cp
+.Nm cp
 to preserve in the copy as many of the modification time, access time,
 .\" and file mode as allowed by permissions.
 file mode, user ID, and group ID as allowed by permissions.
-.IP
+.Pp
 If the user ID and group ID cannot be preserved, no error message
 is displayed and the exit value is not altered.
-.IP
+.Pp
 If the source file has its set user ID bit on and the user ID cannot
 be preserved, the set user ID bit is not preserved
 in the copy's permissions.
@@ -94,25 +78,48 @@ If the source file has both the set user ID and set group ID bits
 on and either the user ID or group ID cannot be preserved, neither
 the set user ID or set group ID bits are preserved in the copy's
 permissions.
-.TP
-.I -r
+.Tp Fl r
 If
-.I source_file
+.Ar source_file
 designates a directory,
-.I cp
+.Nm cp
 copies the directory and the entire subtree connected at that point.
 This option also causes symbolic links to be copied, rather than
 indirected through, and for
-.I cp
+.Nm cp
 to create special files rather than copying them as normal files.
 Created directories have the same mode as the corresponding source
 directory, unmodified by the process' umask.
-.PP
+.Tp
+.Pp
+For each destination file that already exists, its contents are
+overwritten if permissions allow, but its mode, user ID, and group
+ID are unchanged.
+.Pp
+If the destination file does not exist, the mode of the source file is
+used as modified by the file mode creation mask (umask).
+If the source file has its set user ID bit on, that bit is removed
+unless both the source file and the destination file are owned by the
+same user.
+If the source file has its set group ID bit on, that bit is removed
+unless both the source file and the destination file are in the same
+group and the user is a member of that group.
+If both the set user ID and set group ID bits are set, all of the above
+conditions must be fulfilled or both bits are removed.
+.Pp
+Appropriate permissions are required for file creation or overwriting.
+.Pp
 Symbolic links are followed unless the
-.I -r
+.Fl r
 option is specified, in which case the link itself is copied.
-.PP
-.I Cp
+.Pp
+.Nm Cp
 exits 0 on success, >0 if an error occurred.
-.SH "SEE ALSO"
-mv(1), rcp(1), umask(2)
+.Sh SEE ALSO
+.Xr mv 1 ,
+.Xr rcp 1 ,
+.Xr umask 2
+.Sh HISTORY
+The
+.Nm cp
+command appeared in Version 6 AT&T UNIX.

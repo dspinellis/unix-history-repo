@@ -1,53 +1,69 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)nice.1	6.3 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH NICE 1 ""
-.UC 4
-.SH NAME
-nice \- run a command at low priority (\fIsh\fR only)
-.SH SYNOPSIS
-.B nice
-[
-.BI \- number
-]
-command [ arguments ]
-.SH DESCRIPTION
-.I Nice
-executes
-.I command
-with low scheduling priority.
-If the
-.I number
-argument is present, the priority is incremented (higher
-numbers mean lower priorities) by that amount up to a limit of 20.
-The default
-.I number
-is 10.
-.PP
-The super-user may run commands with
-priority higher than normal
-by using a negative priority,
-e.g. `\-\-10'.
-.SH "SEE ALSO"
-csh(1), nice(1), setpriority(2), renice(8)
-.SH DIAGNOSTICS
-.I Nice
-returns the exit status of the subject command.
-.SH BUGS
-.I Nice
+.\"     @(#)nice.1	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt NICE 1
+.Os BSD 4
+.Sh NAME
+.Nm nice
+.Nd execute a command at a low scheduling priority
+.Sh SYNOPSIS
+.Nm nice
+.Oo
+.Op Fl Ar number
+.Oo
+.Ar command
+.Op Ar arguments
+.Sh DESCRIPTION
+.Nm Nice
+runs
+.Ar command
+at a low priority.
+(Think of low and slow).
+If
+.Ar \-number
+is specified, and if it is greater than or equal
+to 10 (the default),
+.Nm nice
+will execute
+.Ar command
+at that priority.
+The upper bound, or lowest priority that
+.Nm nice
+will run a command is 20.
+The lower bounds or
+higher priorities (integers less than 10)
+can only be requested by the super-user.
+Negative numbers are expressed as
+.Ar \-\-number.
+.Pp
+The returned exit status is the exit value from the
+command executed by
+.Nm nice .
+.Sh SEE ALSO
+.Xr csh 1 ,
+.Xr nice 1 ,
+.\" .Xr setpriority 2 ,
+.Xr renice 8
+.Sh HISTORY
+.Nm Nice
+appeared in Version 6 AT&T UNIX.
+.Sh BUGS
+.Nm Nice
 is particular to
-.IR sh (1).
+.Xr sh  1  .
 If you use
-.IR csh (1),
+.Xr csh  1  ,
 then commands executed with ``&'' are automatically immune to hangup
 signals while in the background.
-.PP
-.I Nice
+.Pp
+.Nm Nice
 is built into
-.IR csh (1)
+.Xr csh  1
 with a slightly different syntax than described here.  The form
 ``nice +10'' nices to positive nice, and ``nice \-10'' can be used
 by the super-user to give a process more of the processor.

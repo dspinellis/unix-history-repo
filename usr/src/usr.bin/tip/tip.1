@@ -1,186 +1,176 @@
-.\" Copyright (c) 1980 The Regents of the University of California.
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)tip.1	6.4 (Berkeley) %G%
+.\"     @(#)tip.1	6.5 (Berkeley) %G%
 .\"
-.TH TIP 1 ""
-.UC 4
-.SH NAME
-tip, cu \- connect to a remote system
-.SH SYNOPSIS
-.B tip
-[
-.B \-v
-] [
-.BI \- speed
-] system-name
-.br
-.B tip
-[
-.B \-v
-] [
-.BI \- speed
-] phone-number
-.br
-.B cu
-phone-number
-[
-.B \-t
-] [
-.B \-s
-.I speed
-] [
-.B \ -a
-.I acu
-] [
-.B \-l
-.I line
-] [
-.B \-#
-]
-.SH DESCRIPTION
-.I Tip
+.Dd 
+.Dt TIP 1
+.Os BSD 4
+.Sh NAME
+.Nm tip ,
+.Nm cu
+.Nd connect to a remote system
+.Sh SYNOPSIS
+.Nm tip
+.Op Fl v
+.Cx Fl
+.Ar speed
+.Cx
+.Ar system\-name
+.Nm tip
+.Op Fl v
+.Cx Fl
+.Ar speed
+.Cx
+.Ar phone\-number
+.Nm cu
+.Ar phone\-number
+.Op Fl t
+.Op Fl s Ar speed
+.Op Fl a Ar acu
+.Op Fl l Ar line
+.Op Fl #
+.Sh DESCRIPTION
+.Nm Tip
 and
-.I cu
+.Ar cu
 establish a full-duplex connection to another machine,
 giving the appearance of being logged in directly on the
 remote cpu.  It goes without saying that you must have a login
 on the machine (or equivalent) to which you wish to connect.
 The preferred interface is
-.IR tip .
+.Nm tip  .
 The
-.I cu
+.Ar cu
 interface is included for those people attached to the
 ``call UNIX'' command of version 7.  This manual page
-describes only 
-.IR tip .
-.PP
+describes only
+.Nm tip  .
+.Pp
+Options:
+.Tp Fl v
+Set verbose mode.
+.Tp
+.Pp
 Typed characters are normally transmitted directly to the remote
 machine (which does the echoing as well).  A tilde (`~') appearing
 as the first character of a line is an escape signal; the following
 are recognized:
-.TP 10
-.B ~^D ~.
+.Tw Ds
+.Tp Ic \&~^D \&~ .
 Drop the connection and exit
 (you may still be logged in on the
 remote machine).
-.TP 10
-\fB~c \fP [\fIname\fP]
+.Pp
+.Tp Cx Ic \&~c
+.Cx \&\ \&
+.Op Ar name
+.Cx
 Change directory to name (no argument
 implies change to your home directory).
-.TP 10
-.B ~!
+.Tp Ic \&~!
 Escape to a shell (exiting the shell will
 return you to tip).
-.TP 10
-.B ~>
+.Tp Ic \&~>
 Copy file from local to remote.
-.I Tip
+.Nm Tip
 prompts for the name of a local file to transmit.
-.TP 10
-.B ~<
+.Tp Ic \&~<
 Copy file from remote to local.
-.I Tip
+.Nm Tip
 prompts first for the name of the file to be sent, then for
 a command to be executed on the remote machine.
-.TP 10
-\fB~p\fP \fIfrom\fP [ \fIto\fP ]
+.Tp Cx Ic \&~p
+.Cx \&\ \&
+.Ar from
+.Cx \&\ \&
+.Op Ar to
+.Cx
 Send a file to a remote UNIX host.  The put command causes the remote UNIX
 system to run the command string ``cat > 'to''', while
-.I tip
+.Nm tip
 sends it the ``from''
 file.  If the ``to'' file isn't specified the ``from'' file name is used.
 This command is actually a UNIX specific version of the ``~>'' command.
-.TP 10
-\fB~t\fP \fIfrom\fP [ \fIto\fP ]
-Take a file from a remote UNIX host. 
+.Tp Cx Ic \&~t
+.Cx \&\ \&
+.Ar from
+.Cx \&\ \&
+.Op Ar to
+.Cx
+Take a file from a remote UNIX host.
 As in the put command the ``to'' file
-defaults to the ``from'' file name if it isn't specified. 
+defaults to the ``from'' file name if it isn't specified.
 The remote host
 executes the command string ``cat 'from';echo ^A'' to send the file to
-.IR tip .
-.TP 10
-.B ~|
+.Nm tip  .
+.Tp Ic \&~
 Pipe the output from a remote command to a local UNIX process.
 The command string sent to the local UNIX system is processed by the shell.
-.TP 10
-.B ~$
+.Tp Ic \&~$
 Pipe the output from a local UNIX process to the remote host.
 The command string sent to the local UNIX system is processed by the shell.
-.TP 10
-.B ~#
-Send a BREAK to the remote system. 
+.Tp Ic \&~#
+Send a BREAK to the remote system.
 For systems which don't support the
 necessary
-.I ioctl
+.Ar ioctl
 call the break is simulated by a sequence of line speed changes
 and DEL characters.
-.TP 10
-.B ~s
+.Tp Ic \&~s
 Set a variable (see the discussion below).
-.TP 10
-.B ~^Z
+.Tp Ic \&~^Z
 Stop
-.I tip
+.Nm tip
 (only available with job control).
-.TP 10
-.B ~^Y
+.Tp Ic \&~^Y
 Stop only the ``local side'' of
-.I tip
+.Nm tip
 (only available with job control);
 the ``remote side'' of
-.IR tip ,
+.Nm tip  ,
 the side that displays output from the remote host, is left running.
-.TP 10
-.B ~?
+.Tp Ic \&~?
 Get a summary of the tilde escapes
-.sp
-.PP
-.I Tip
+.Tp
+.Pp
+.Nm Tip
 uses the file /etc/remote to find how to reach a particular
 system and to find out how it should operate while talking
 to the system;
 refer to
-.IR remote (5)
+.Xr remote  5
 for a full description.
 Each system has a default baud rate with which to
 establish a connection.  If this value is not suitable, the baud rate
 to be used may be specified on the command line, e.g. ``tip -300 mds''.
-.PP
+.Pp
 When
-.I tip
+.Nm tip
 establishes a connection it sends out a
 connection message to the remote system; the default value, if any,
-is defined in /etc/remote.
-.PP
+is defined in
+.Pa /etc/remote (see
+.Xr remote 5 ) .
+.Pp
 When
-.I tip
+.Nm tip
 prompts for an argument (e.g. during setup of
 a file transfer) the line typed may be edited with the standard
 erase and kill characters.  A null line in response to a prompt,
 or an interrupt, will abort the dialogue and return you to the
 remote machine.
-.PP
-.I Tip
+.Pp
+.Nm Tip
 guards against multiple users connecting to a remote system
 by opening modems and terminal lines with exclusive access,
 and by honoring the locking protocol used by
-.IR uucp (1C).
-.PP
-During file transfers 
-.I tip
+.Xr uucp 1 .
+.Pp
+During file transfers
+.Nm tip
 provides a running count of the number of lines transferred.
 When using the ~> and ~< commands, the ``eofread'' and ``eofwrite''
 variables are used to recognize end-of-file when reading, and
@@ -188,39 +178,36 @@ specify end-of-file when writing (see below).  File transfers
 normally depend on tandem mode for flow control.  If the remote
 system does not support tandem mode, ``echocheck'' may be set
 to indicate
-.I tip
+.Nm tip
 should synchronize with the remote system on the echo of each
 transmitted character.
-.PP
+.Pp
 When
-.I tip
+.Nm tip
 must dial a phone number to connect to a system it will print
 various messages indicating its actions.
-.I Tip
+.Nm Tip
 supports the DEC DN-11 and Racal-Vadic 831 auto-call-units;
 the DEC DF02 and DF03, Ventel 212+, Racal-Vadic 3451, and
 Bizcomp 1031 and 1032 integral call unit/modems.
-.PP
-.SM
-.B VARIABLES
-.PP
-.I Tip
+.Ss VARIABLES
+.Nm Tip
 maintains a set of
-.I variables
+.Ar variables
 which control its operation.
 Some of these variable are read-only to normal users (root is allowed
 to change anything of interest).  Variables may be displayed
 and set through the ``s'' escape.  The syntax for variables is patterned
 after
-.IR vi (1)
+.Xr vi  1
 and
-.IR Mail (1).
+.Xr Mail  1  .
 Supplying ``all''
 as an argument to the set command displays all variables readable by
 the user.  Alternatively, the user may request display of a particular
 variable by attaching a `?' to the end.  For example ``escape?''
 displays the current escape character.
-.PP
+.Pp
 Variables are numeric, string, character, or boolean values.  Boolean
 variables are set merely by specifying their name; they may be reset
 by prepending a `!' to the name.  Other variable types are set by
@@ -229,190 +216,174 @@ have any blanks in it.  A single set command may be used to interrogate
 as well as set a number of variables.
 Variables may be initialized at run time by placing set commands
 (without the ``~s'' prefix in a file
-.I .tiprc
+.Pa .tiprc
 in one's home directory).  The
-.B \-v
+.Fl v
 option causes
-.I tip
+.Nm tip
 to display the sets as they are made.
-Certain common variables have abbreviations. 
+Certain common variables have abbreviations.
 The following is a list of common variables,
 their abbreviations, and their default values.
-.TP
-.B beautify
-.br
+.Tw Ar
+.Tp Ar beautify
 (bool) Discard unprintable characters when a session is being scripted;
-abbreviated 
-.IR be .
-.TP
-.B baudrate
-.br
+abbreviated
+.Ar be  .
+.Tp Ar baudrate
 (num) The baud rate at which the connection was established;
 abbreviated
-.IR ba .
-.TP
-.B dialtimeout
-.br
+.Ar ba  .
+.Tp Ar dialtimeout
 (num) When dialing a phone number, the time (in seconds)
 to wait for a connection to be established; abbreviated
-.IR dial .
-.TP
-.B echocheck
-.br
+.Ar dial  .
+.Tp Ar echocheck
 (bool) Synchronize with the remote host during file transfer by
 waiting for the echo of the last character transmitted; default is
-.IR off .
-.TP
-.B eofread
-.br
+.Ar off  .
+.Tp Ar eofread
 (str) The set of characters which signify and end-of-tranmission
 during a ~< file transfer command; abbreviated
-.IR eofr .
-.TP
-.B eofwrite
-.br
+.Ar eofr  .
+.Tp Ar eofwrite
 (str) The string sent to indicate end-of-transmission during
 a ~> file transfer command; abbreviated
-.IR eofw .
-.TP
-.B eol
-.br
+.Ar eofw  .
+.Tp Ar eol
 (str) The set of characters which indicate an end-of-line.
-.I Tip
+.Nm Tip
 will recognize escape characters only after an end-of-line.
-.TP
-.B escape
-.br
+.Tp Ar escape
 (char) The command prefix (escape) character; abbreviated
-.IR es ;
+.Ar es  ;
 default value is `~'.
-.TP
-.B exceptions
-.br
+.Tp Ar exceptions
 (str) The set of characters which should not be discarded
 due to the beautification switch; abbreviated
-.IR ex ;
+.Ar ex  ;
 default value is ``\et\en\ef\eb''.
-.TP
-.B force
-.br
+.Tp Ar force
 (char) The character used to force literal data transmission;
 abbreviated
-.IR fo ;
+.Ar fo  ;
 default value is `^P'.
-.TP
-.B framesize
-.br
+.Tp Ar framesize
 (num) The amount of data (in bytes) to buffer between file system
 writes when receiving files; abbreviated
-.IR fr .
-.TP
-.B host
-.br
+.Ar fr  .
+.Tp Ar host
 (str) The name of the host to which you are connected; abbreviated
-.IR ho .
-.TP
-.B prompt
-.br
+.Ar ho  .
+.Tp Ar prompt
 (char) The character which indicates and end-of-line on the remote
 host; abbreviated
-.IR pr ;
+.Ar pr  ;
 default value is `\en'.  This value is used to synchronize during
 data transfers.  The count of lines transferred during a file transfer
 command is based on recipt of this character.
-.TP
-.B raise
-.br
-(bool) Upper case mapping mode; abbreviated 
-.IR ra ;
-default value is 
-.IR off .
+.Tp Ar raise
+(bool) Upper case mapping mode; abbreviated
+.Ar ra  ;
+default value is
+.Ar off  .
 When this mode is enabled, all lower case letters will be mapped to
 upper case by
-.I tip
+.Nm tip
 for transmission to the remote machine.
-.TP
-.B raisechar
-.br
+.Tp Ar raisechar
 (char) The input character used to toggle upper case mapping mode;
 abbreviated
-.IR rc ;
+.Ar rc  ;
 default value is `^A'.
-.TP
-.B record
-.br
+.Tp Ar record
 (str) The name of the file in which a session script is recorded;
 abbreviated
-.IR rec ;
+.Ar rec  ;
 default value is ``tip.record''.
-.TP
-.B script
-.br
+.Tp Ar script
 (bool) Session scripting mode; abbreviated
-.IR sc ;
-default is 
-.IR off .
+.Ar sc  ;
+default is
+.Ar off  .
 When
-.I script
-is 
-.IR true ,
-.I tip
+.Ar script
+is
+.Li true  ,
+.Nm tip
 will record everything transmitted by the remote machine in
 the script record file specified in
-.IR record .
+.Ar record  .
 If the
-.I beautify
+.Ar beautify
 switch is on, only printable ASCII characters will be included in
 the script file (those characters betwee 040 and 0177).  The
 variable
-.I exceptions
+.Ar exceptions
 is used to indicate characters which are an exception to the normal
 beautification rules.
-.TP
-.B tabexpand
-.br
+.Tp Ar tabexpand
 (bool) Expand tabs to spaces during file transfers; abbreviated
-.IR tab ;
+.Ar tab  ;
 default value is
-.IR false .
+.Ar false  .
 Each tab is expanded to 8 spaces.
-.TP
-.B verbose
-.br
+.Tp Ar verbose
 (bool) Verbose mode; abbreviated
-.IR verb ;
-default is 
-.IR true .
-When verbose mode is enabled, 
-.I tip
+.Ar verb  ;
+default is
+.Ar true  .
+When verbose mode is enabled,
+.Nm tip
 prints messages while dialing, shows the current number
 of lines transferred during a file transfer operations,
 and more.
-.TP
-.B SHELL
-.br
+.Tp
+.Sh ENVIRONMENT
+.Nm Tip
+uses the followinf environment variables:
+.Tp Ar SHELL
 (str) The name of the shell to use for the ~! command; default
 value is ``/bin/sh'', or taken from the environment.
-.TP
-.B HOME
-.br
+.Tp Ar HOME
 (str) The home directory to use for the ~c command; default
 value is taken from the environment.
-.PP
-.SH FILES
-.ta \w'/usr/spool/uucp/LCK..*   'u
-.nf
-/etc/remote	global system descriptions
-/etc/phones	global phone number data base
-${REMOTE}	private system descriptions
-${PHONES}	private phone numbers
-~/.tiprc	initialization file.
-/usr/spool/uucp/LCK..*	lock file to avoid conflicts with \fIuucp\fP
-.fi
-.SH DIAGNOSTICS
+.Tp Ar HOST
+Check for a default host if none specified.
+.Tp
+.Pp
+The variables
+.Ev ${REMOTE}
+and
+.Ev ${PHONES}
+are also exported.
+.Sh FILES
+.Dw /var/spool/uucp/LCK..*
+.Di L
+.Dp Pa /etc/remote
+global system descriptions
+.Dp Pa /etc/phones
+global phone number data base
+.Dp ${REMOTE}
+private system descriptions
+.Dp ${PHONES}
+private phone numbers
+.Dp ~/.tiprc
+initialization file.
+.Dp /var/log/aculog
+line access log
+.Dp Pa /var/spool/uucp/LCK..*
+lock file to avoid conflicts with
+.Xr uucp
+.Dp
+.Sh DIAGNOSTICS
 Diagnostics are, hopefully, self explanatory.
-.SH "SEE ALSO"
-remote(5), phones(5)
-.SH BUGS
+.Sh SEE ALSO
+.Xr remote 5 ,
+.Xr phones 5
+.Sh HISTORY
+.Nm Tip
+appeared in 4.2 BSD.
+.Sh BUGS
 The full set of variables is undocumented and should, probably, be
 paired down.

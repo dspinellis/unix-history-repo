@@ -1,40 +1,35 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)calendar.1	6.7 (Berkeley) %G%
+.\"     @(#)calendar.1	6.8 (Berkeley) %G%
 .\"
-.TH CALENDAR 1 ""
-.UC 7
-.SH NAME
-calendar \- reminder service
-.SH SYNOPSIS
-.B calendar
-[ \-a ]
-.SH DESCRIPTION
-.I Calendar 
-reads the file ``calendar'' in the current directory and displays lines
-that begin with either today's or tomorrow's date.
+.Dd 
+.\"
+.Dt CALENDAR 1
+.Os BSD 4.4
+.Sh NAME
+.Nm calendar
+.Nd reminder service
+.Sh SYNOPSIS
+.Nm calendar
+.Op  \-a
+.Sh DESCRIPTION
+.Nm Calendar
+checks the current directory for a file named named
+.Li calendar
+and displays lines that begin with either today's date
+or tomorrow's.
 On Fridays, events on Friday through Monday are displayed.
-.PP
+.Pp
 The following options are available:
-.TP
-\-a
+.Tp Fl a
 Process the ``calendar'' files of all users and mail the results
 to them.
 This requires super-user privileges.
-.PP
+.Tp
+.Pp
 A month and day should begin lines.
 They may be entered in almost any format, either numeric or as character
 strings.
@@ -46,79 +41,86 @@ Lines with leading tabs default to the last entered date, allowing
 multiple line specifications for a single date.
 By convention, dates followed by an asterisk are not fixed, i.e. change
 from year to year.
-.PP
+.Pp
 The ``calendar'' file is preprocessed by
-.IR cpp (1),
+.Xr cpp 1 ,
 allowing the inclusion of shared files such as company holidays or
 meetings.
 If the shared file is not referenced by a full pathname,
-.I cpp
+.Xr cpp 1
 searches in the current (or home) directory first, and then in the
 directory
-.IR /usr/share/calendar .
+.Pa /usr/share/calendar .
 Empty lines and lines protected by the C commenting syntax (/* ... */)
 are ignored.
-.PP
+.Pp
 Some possible calendar entries:
-.in +5
-.sp
-.nf
+.Pp
+.Ds I
 #include	<calendar.usholiday>
 #include	<calendar.birthday>
-.sp
+
 6/15		... June 15 (if ambiguous, will default to month/day).
 Jun. 15	... June 15.
 15 June	... June 15.
 Thursday	... Every Thursday.
 June		... Every June 1st.
 15 *		... 15th of every month.
-.fi
-.PP
-.SH FILES
+.De
+.Pp
+.Sh FILES
 The following default calendar files are provided:
-.TP
-calendar.birthday
-Births and deaths of famous (and not-so-famous) people.
-.TP
-calendar.christian
+.Dw calendar.christian
+.Ds L
+.Dp Pa calendar.birthday
+Births  and  deaths  of  famous ( and  not- so- famous) people.
+.Dp Pa calendar.christian
 Christian holidays.
 This calendar should be updated yearly by the local system administrator
 so that roving holidays are set correctly for the current year.
-.TP
-calendar.computer
+.Dp Pa calendar.computer
 Days of special significance to computer people.
-.TP
-calendar.history
-Everything else, mostly U.S. historical events.
-.TP
-calendar.holiday
-Other holidays, including the not-well-known, obscure, and
-.B really
+.Dp Pa calendar.history
+Everything  else,  mostly  U. S. historical events.
+.Dp Pa calendar.holiday
+Other  holidays,  including  the  not-well-known,  obscure, and
+.Em really
 obscure.
-.TP
-calendar.judaic
+.Dp Pa calendar.judaic
 Jewish holidays.
 This calendar should be updated yearly by the local system administrator
 so that roving holidays are set correctly for the current year.
-.TP
-calendar.music
-Musical events, births, and deaths.
-Strongly oriented toward rock 'n' roll.
-.TP
-calendar.usholiday
+.Dp Pa calendar.music
+Musical  events,  births, and deaths.
+Strongly  oriented  toward  rock ' n' roll.
+.Dp Pa calendar.usholiday
 U.S. holidays.
 This calendar should be updated yearly by the local system administrator
 so that roving holidays are set correctly for the current year.
-.SH "SEE ALSO"
-at(1), cpp(1), mail(1), cron(8)
-.SH COMPATIBILITY
+.Dp
+.Sh SEE ALSO
+.Xr at 1 ,
+.Xr cpp 1 ,
+.Xr cron 8
+.Xr mail 1 ,
+.Sh COMPATIBILITY
 The
-.I calendar
+.Nm calendar
 program previously selected lines which had the correct date anywhere
 in the line.
 This is no longer true, the date is only recognized when it occurs
 first on the line.
-.SH BUGS
-.I Calendar
+.Sh HISTORY
+A
+.Nm
+command appeared in Version 7 AT&T UNIX.
+The version of
+.Nm calendar
+released with this man page
+is not derived from the AT&T version.
+.\" what is status of code?? are phrases like today's date a problem?
+.\" todays's and tomorrow' are only AT&T similarities
+.Sh BUGS
+.Nm Calendar
 doesn't handle events that move around from year to year, i.e.
 ``the last Monday in April''.

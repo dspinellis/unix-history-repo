@@ -1,87 +1,148 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)pr.1	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH PR 1 ""
-.UC 4
-.SH NAME
-pr \- print file
-.SH SYNOPSIS
-.B pr
-[ option ] ...
-[ file ] ...
-.SH DESCRIPTION
-.I Pr
-produces a printed listing of one or more
-.I files.
-The output is separated into pages headed by a date,
-the name of the file or a specified header, and the page number.
-If there are no file arguments,
-.I pr
-prints its standard input.
-.PP
-Options apply to all following files but may be reset
-between files:
-.TP
-.BI \- n
-Produce
-.IR n -column
-output.
-.TP
-.BI + n
-Begin printing with page
-.I  n.
-.TP
-.B  \-h
-Take the next argument as a page header.
-.TP
-.BI \-w n
-For purposes of multi-column output,
-take the width of the page to be
-.I n
-characters instead of the default 72.
-.TP
-.BI \-f
-Use formfeeds instead of newlines to separate pages.
-A formfeed is assumed to use up two blank lines at the top of a page.
-(Thus this option does not affect the effective page length.)
-.TP
-.BI \-l n
-Take the length of the page to be
-.I n
-lines instead of the default 66.
-.TP
-.B  \-t
-Do not print the 5-line header or the
-5-line trailer normally supplied for each page.
-.TP
-.BI \-s c
-Separate columns by the single character
-.I c
-instead of by the appropriate amount of white space.
-A missing
-.I c
-is taken to be a tab.
-.TP
-.B  \-m
-Print all
-.I files
-simultaneously,
-each in one column,
-.PP
-Inter-terminal messages via
-.IR write (1)
-are
-forbidden during a
-.IR pr .
-.SH FILES
-/dev/tty?
-to suspend messages.
-.SH "SEE ALSO"
-cat(1)
-.SH DIAGNOSTICS
-There are no diagnostics when
-.I pr
-is printing on a terminal.
+.\"     @(#)pr.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt PR 1
+.Os BSD 4.4
+.Sh NAME
+.Nm pr
+.Nd Print files.
+.Sh SYNOPSIS
+.Ar pr
+.Op +page
+.Oo
+.Op Fl Ar column
+.Op Fl f
+.Op Fl hheader
+.Op Fl llines
+.Op Fl m
+.Op Fl s Ar char
+.Op Fl t
+.Op Fl w Ar width
+.Ar
+.Oo
+.Sh DESCRIPTION
+The
+.Nm pr
+utility is a printing and pagination filter.
+If multiple
+input files are specified, each is read, formatted,
+and written to standard output.
+By default, the input is
+separated into pages, each with a header that includes the
+page number, date, time, and the file's pathname.
+Text
+columns are of equal width, with at least one <blank>
+separation between text columns.
+Lines that do not fit into
+a text column are truncated.
+If standard output is associated
+with a terminal, diagnostic messages are suppressed
+until the pr utility has completed processing.
+.Pp
+The following options are available:
+.Tw Fl
+.Tp Ar +page
+Begin output at page number page of the
+formatted input.
+.Tp Ar \-column
+Produce output that is columns wide (default
+is 1) and is in text column rank order.
+This
+option should not be used with \-m.
+When
+used with \-t, use the minimum number of lines
+to display the output.
+.Tp Fl f
+Use <form-feed> character for new pages,
+instead of the default behavior that uses a
+sequence of <newline> characters.
+Prior to
+displaying the first page of output an
+<alert> character is written to standard output.
+.Tp Cx  Fl h
+.Ar header
+.Cx
+Use the string header as the header to be
+printed instead of file.
+.Tp Cx Fl l
+.Ar lines
+.Cx
+Override the 66 line default and reset the
+page length to lines.
+If lines is smaller
+than the sum of both the header and trailer
+depths (in lines), the pr utility suppresses
+both the header and trailer, as if the \-t
+option were in effect.
+.Tp Fl m
+Merge files.
+Standard output is formatted so
+the
+.Nm pr
+utility writes one line from each file
+specified by a file operand, side by side
+into text columns of equal fixed widths, in
+terms of the number of column positions.
+.Tp Cx Fl s
+.Ar char
+.Cx
+Separate text columns by the single character
+char instead of by the appropriate number of
+<space>s (default for char is the <tab> character).
+.Tp Fl t
+Print neither the five-line identifying
+header nor the five-line trailer usually
+supplied for each page.
+Quit printing after the
+last line of each file without spacing to the
+end of the page.
+.Tp Cx Fl w
+.Ar width
+.Cx
+Set the width of the line to width column
+positions for multiple text-column output
+only (default is 72).
+.Tp
+.Pp
+The following operands are available:
+.Tw Fl
+.Tp Ar file
+A pathname of a file to be printed.
+.Tp
+.Pp
+If no file
+operands are specified, or if a file operand is \-,
+the standard input is used.
+.Pp
+The standard input is used only if no file operands are
+specified, or if a file operand is \-.
+.Pp
+If pr receives an interrupt while printing to a terminal, it
+flushes all accumulated error messages to the screen before
+terminating.
+.Pp
+The pr utility output is a paginated version of the original
+file (or files).
+This pagination is optionally done using
+<form-feed>s or a sequence of <newline>s.
+Page headers are
+generated unless the \-t option is specified.
+.Pp
+The
+.Nm pr
+utility exits 0 on success, and >0 if an error occurs.
+.Pp
+Error
+messages are written to standard error during the printing
+process (if output is redirected) or after all successful
+file printing is complete (when printing to a terminal).
+.Sh FILES
+.Sh STANDARDS
+The
+.Nm pr
+function is expected to be POSIX 1003.2 compatible.

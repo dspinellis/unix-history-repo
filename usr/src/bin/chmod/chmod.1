@@ -1,277 +1,228 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)chmod.1	6.6 (Berkeley) %G%
+.\"     @(#)chmod.1	6.7 (Berkeley) %G%
 .\"
-.TH CHMOD 1 ""
-.UC 7
-.SH NAME
-chmod - change file modes
-.SH SYNOPSIS
-.nf
-chmod [-fR] mode file ...
-.fi
-.SH DESCRIPTION
+.Dd 
+.Dt CHMOD 1
+.Os BSD 4.4
+.Sh NAME
+.Nm chmod
+change file modes
+.Sh SYNOPSIS
+.Nm chmod
+.Op Fl fR
+.Ar mode
+.Ar file ...
+.Sh DESCRIPTION
 The
-.I chmod
+.Nm chmod
 utility modifies the file mode bits of the listed files
 as specified by the
-.I mode
+.Ar mode
 operand.
-.PP
+.Pp
 The options are as follows:
-.TP
--f
-If the -f option is given,
-.I chmod
+.Tp Fl f
+.Nm chmod
 will still exit 0 and not complain if it fails to change the mode
 on a file.
-.TP
--R
+.Tp Fl R
 Traverse a file hierarchy.
 For each file that is of type directory,
-.I chmod
+.Nm chmod
 changes the mode of all files in the file hierarchy below it followed
 by the mode of the directory itself.
-.PP
+.Tp
+.Pp
 Symbolic links are not indirected through, nor are their modes altered.
-.PP
+.Pp
 Only the owner of a file or the super-user is permitted to change
 the mode of a file.
-.PP
+.Pp
 The
-.I chmod
+.Nm chmod
 utility exits 0 on success, and >0 if an error occurs.
-.SH MODES
+.Sh MODES
 Modes may be absolute or symbolic.
 An absolute mode is an octal number constructed by
-.IR or 'ing
+.Cx Ar or
+.Cx 'ing
+.Cx
 the following values:
-.RS
-.TP 10
-4000
+.Dp Li 4000
 set-user-ID-on-execution
-.br
-.ns
-.TP
-2000
+.Dp Li 2000
 set-group-ID-on-execution
-.br
-.ns
-.TP
-1000
+.Dp Li 1000
 sticky bit, see chmod(2)
-.br
-.ns
-.TP
-0400
+.Dp Li 0400
 read by owner
-.br
-.ns
-.TP
-0200
+.Dp Li 0200
 write by owner
-.br
-.ns
-.TP
-0100
+.Dp Li 0100
 execute (or search for directories) by owner
-.br
-.ns
-.TP
-0070
+.Dp Li 0070
 read, write, execute/search by group
-.br
-.ns
-.TP
-0007
+.Dp Li 0007
 read, write, execute/search by others
-.RE
-.PP
+.Dp
+.Pp
 The read, write, and execute/search values for group and others
 are encoded as described for owner.
-.PP
+.Pp
 The symbolic mode is described by the following grammar:
-.RS
-.TP 10
-mode
-::= clause [ , clause ] ...
-.br
-.ns
-.TP
-clause
-::= [ who ... ] [ action ... ] last_action
-.br
-.ns
-.TP
-action
-::= op perm ...
-.br
-.ns
-.TP
+.Dp Li mode
+::= clause
+.Op  \&, clause
+...
+.Dp Li clause
+::=
+.Op  who ...
+.Op  action ...
 last_action
-::= op [ perm ... ]
-.br
-.ns
-.TP
-who
-::= a | u | g | o
-.br
-.ns
-.TP
-op
-::= + | - | =
-.br
-.ns
-.TP
-perm
-::= r | s | t | w | X | x
-.RE
-.PP
+.Dp Li action
+::= op perm ...
+.Dp Li last_action
+::= op
+.Op  perm ...
+.Dp Li who
+.Li ::= a | u | g | o
+.Dp Li op
+.Li ::= + |  - |  =
+.Dp Li perm
+.Li ::= r |  s |  t |  w |  X |  x
+.Dp
+.Pp
 The
-.I who
+.Ar who
 symbols ``u'', ``g'', and ``o'' specify the user, group, and other parts
 of the mode bits, respectively.
 The
-.I who
+.Ar who
 symbol ``a'' is equivalent to ``ugo''.
-.PP
+.Pp
 The
-.I perm
+.Ar perm
 symbols represent the portions of the mode bits as follows:
-.RS
-.TP 10
-r
+.Dw Fl
+.Dp r
 The read bits.
-.br
-.ns
-.TP
-s
+.Dp s
 The set-user-ID-on-execution and set-group-ID-on-execution bits.
-.br
-.ns
-.TP
-t
+.Dp t
 The sticky bit.
-.br
-.ns
-.TP
-w
+.Dp w
 The write bits.
-.br
-.ns
-.TP
-x
+.Dp x
 The execute/search bits.
-.br
-.ns
-.TP
-X
+.Dp X
 The execute/search bits if the file is a directory or any of the
 execute/search bits are set in the original (unmodified) mode.
 Operations with the
-.I perm
+.Ar perm
 symbol ``X'' are only meaningful in conjunction with the
-.I op
+.Ar op
 symbol ``+'', and it is ignored in all other cases.
-.RE
-.PP
+.Dp
+.Pp
 The
-.I op
+.Ar op
 symbols represent the operation performed, as follows:
-.TP
-+
+.Tw Fl
+.Tp \&+
 If no value is supplied for
-.IR perm ,
+.Ar perm ,
 the ``+'' operation has no effect.
 If no value is supplied for
-.IR who ,
+.Ar who ,
 each permission bit specified in
-.IR perm ,
+.Ar perm ,
 for which the corresponding bit in the file mode creation mask
 is clear, is set.
 Otherwise, the mode bits represented by the specified
-.I who
+.Ar who
 and
-.I perm
+.Ar perm
 values are set.
-.TP
--
+.Tp \&-
 If no value is supplied for
-.IR perm ,
+.Ar perm ,
 the ``-'' operation has no effect.
 If no value is supplied for
-.IR who ,
+.Ar who ,
 the mode bits represented by
-.I perm
+.Ar perm
 are cleared for the owner, group and other permissions.
 Otherwise, the mode bits represented by the specified
-.I who
+.Ar who
 and
-.I perm
+.Ar perm
 values are cleared.
-.TP
-=
+.Tp \&=
 The mode bits specified by the
-.I who
+.Ar who
 value are cleared, or, if no who value is specified, the owner, group
 and other mode bits are cleared.
 Then, if no value is supplied for
-.IR who ,
+.Ar who ,
 each permission bit specified in
-.IR perm ,
+.Ar perm ,
 for which the corresponding bit in the file mode creation mask
 is clear, is set.
 Otherwise, the mode bits represented by the specified
-.I who
+.Ar who
 and
-.I perm
+.Ar perm
 values are set.
-.PP
+.Tp
+.Pp
 Each
-.I clause
+.Ar clause
 specifies one or more operations to be performed on the mode
 bits, and each operation is applied to the mode bits in the
 order specified.
-.PP
+.Pp
 Operations upon the other permissions only (specified by the symbol
 ``o'' by itself), in combination with the
-.I perm
+.Ar perm
 symbols ``s'' or ``t'', are ignored.
-.SH EXAMPLES
-.TP
-``644''
+.Sh EXAMPLES
+.Tw Fl
+.Tp ``644''
 make a file readable by anyone and writable by the owner only.
-.TP
-``go-w''
+.Tp ``go-w''
 deny write permission to group and others.
-.TP
-``=rw,+X''
+.Tp ``=rw,+X''
 set the read and write permissions to the usual defaults, but
 retain any execute permissions that are currently set.
-.TP
-``+X''
+.Tp ``+X''
 make a directory or file searchable/executable by everyone if it is
 already searchable/executable by anyone.
-.TP
-``755'' or ``u=rwx,go=rx''
+.Tp ``755'' or ``u=rwx,go=rx''
 make a file readable/executable by everyone and writeable by the owner only.
-.TP
-``go=''
+.Tp ``go=''
 clear all mode bits for group and others.
-.SH BUGS
+.Tp
+.Sh BUGS
 There's no
-.I perm
+.Ar perm
 option for the naughty bits.
-.SH ENVIRONMENT
-.SH "SEE ALSO"
-install(1), chmod(2), fts(2), stat(2), umask(2), setmode(3), chown(8)
-.SH STANDARDS
+.Sh ENVIRONMENT
+.Sh SEE ALSO
+.Xr install 1 ,
+.Xr chmod 2 ,
+.Xr fts 2 ,
+.Xr stat 2 ,
+.Xr umask 2 ,
+.Xr setmode 3 ,
+.Xr chown 8
+.Sh STANDARDS
 The
-.I chmod
+.Nm chmod
 function is expected to be POSIX 1003.2 compatible with the exception
 of the
-.I perm
+.Ar perm
 symbols ``t'' and ``X'' which are not included in that standard.

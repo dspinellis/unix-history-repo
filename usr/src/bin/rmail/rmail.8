@@ -1,35 +1,42 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)rmail.8	6.3 (Berkeley) %G%
+.\"     @(#)rmail.8	6.4 (Berkeley) %G%
 .\"
-.TH RMAIL 1 ""
-.UC 5
-.SH NAME
-rmail \- handle remote mail received via uucp
-.SH SYNOPSIS
-.B rmail
-user ...
-.SH DESCRIPTION
-.I Rmail
+.Dd 
+.Dt RMAIL 1
+.Os BSD 4.2
+.Sh NAME
+.Nm rmail
+.Nd handle remote mail received via uucp
+.Sh SYNOPSIS
+.Nm rmail
+.Ar user ...
+.Sh DESCRIPTION
+.Nm Rmail
 interprets incoming mail received via
-.IR uucp (1C),
+.Xr uucp 1 ,
 collapsing ``From'' lines in the form generated
-by 
-.IR binmail (1)
+by
+.Xr binmail  1
 into a single line of the form ``return-path!sender'',
 and passing the processed mail on to
-.IR sendmail (8).
-.PP
-.I Rmail
-is explicitly designed for use with 
-.I uucp
+.Xr sendmail  8  .
+.Pp
+.Nm Rmail
+is explicitly designed for use with
+.Xr uucp
 and
-.IR sendmail .
-.SH "SEE ALSO"
-binmail(1), uucp(1), sendmail(8)
-.SH BUGS
-.I Rmail
+.Xr sendmail  .
+.Sh SEE ALSO
+.Xr binmail 1 ,
+.Xr uucp 1 ,
+.Xr sendmail 8
+.Sh HISTORY
+.Nm Rmail
+aapeared in 4.2 BSD.
+.Sh BUGS
+.Nm Rmail
 should not reside in /bin.

@@ -3,128 +3,148 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)find.1	6.12 (Berkeley) %G%
+.\"     @(#)find.1	6.13 (Berkeley) %G%
 .\"
-.TH FIND 1 ""
-.AT 3
-.SH NAME
-find \- walk a file hierarchy
-.SH SYNOPSIS
-.ft B
-find [ \-dsx ] [ path ] expression
-.br
-find [ \-dsx ] [ \-f path ] expression
-.ft R
-.SH DESCRIPTION
-.I Find
+.Dd 
+.Dt FIND 1
+.Os ATT 7th
+.Sh NAME
+.Nm find
+.Nd walk a file hierarchy
+.Sh SYNOPSIS
+.Nm find
+.Op Fl dsx
+.Op Ar path
+.Ar expression
+.Nm find
+.Op Fl dsx
+.Op Fl f Ar path
+.Ar expression
+.Sh DESCRIPTION
+.Nm Find
 recursively descends the directory tree for each
-.I path
+.Ar path
 listed, evaluating an
-.I expression
+.Ar expression
 (composed of the ``primaries'' and ``operands'' listed below) in terms
 of each file in the tree.
-.PP
+.Pp
 The options are as follows:
-.TP
-.B \-d
+.Pp
+.Tw Ds
+.Tp Fl d
 The
-.B \-d
+.Fl d
 option causes find to perform a depth\-first traversal, i.e. directories
 are visited in post\-order and all entries in a directory will be acted
 on before the directory itself.
 By default,
-.I find
+.Nm find
 visits directories in pre\-order, i.e. before their contents.
 Note, the default is
-.I not
+.Ar not
 a breadth\-first traversal.
-.TP
-.B \-f
+.Tp Fl f
 The
-.B \-f
+.Fl f
 option specifies a file hierarchy for
-.I find
+.Nm find
 to traverse.
 If no
-.B \-f
+.Fl f
 option is specified, the first operand after the options is
 expected to be the file hierarchy to be traversed.
-.TP
-.B \-s
+.Tp Fl s
 The
-.B \-s
+.Fl s
 option causes the file information and file type (see
-.IR stat (2)),
+.Xr stat  2  ) ,
 returned for each symbolic link to be those of the file referenced by the
 link, not the link itself.
 If the referenced file does not exist, the file information and type will
 be for the link itself.
-.TP
-.B \-x
+.Tp Fl x
 The
-.B \-x
+.Fl x
 option prevents
-.I find
+.Nm find
 from descending into directories that have a device number different
 than that of the file from which the descent began.
-.SH PRIMARIES
-.TP
-.B atime n
+.Tp
+.Sh PRIMARIES
+.Tw Ds
+.Tp Cx Ic atime
+.Cx \&\ \&
+.Ar n
+.Cx
 True if the difference between the file last access time and the time
-.I find
+.Nm find
 was started, rounded up to the next full 24\-hour period, is
-.B n
+.Ar n
 24\-hour periods.
-.TP
-.B ctime n
+.Tp Cx Ic ctime
+.Cx \&\ \&
+.Ar n
+.Cx
 True if the difference between the time of last change of file status
 information and the time
-.I find
+.Nm find
 was started, rounded up to the next full 24\-hour period, is
-.B n
+.Ar n
 24\-hour periods.
-.TP
-.B exec  utility  [argument ...]  ;
+.Tp Cx Ic exec
+.Cx \&\ \&
+.Ar utility
+.Cx \&\ \&
+.Op argument ... ;
+.Cx
 True if the program named
-.B utility
+.Ar utility
 returns a zero value as its exit status.
 Optional arguments may be passed to the utility.
 The expression must be terminated by a semicolon (``;'').
 If the string ``{}'' appears anywhere in the utility name or the
 arguments it is replaced by the pathname of the current file.
 Utility will be executed in the directory from which
-.I find
+.Nm find
 was executed.
-.TP
-.B fstype type
+.Tp Cx Ic fstype
+.Cx \&\ \&
+.Ar type
+.Cx
 True if the file is contained in a file system of type
-.BR type.
+.Ar type .
 Currently supported types are ``local'', ``mfs'', ``nfs'', ``pc'' and
 ``ufs''.
 The type ``local'' is not a specific file system type, but matches
 any file system physically mounted on the system where the
-.I find
+.Nm find
 is being executed.
-.TP
-.B group gname
+.Tp Cx Ic group
+.Cx \&\ \&
+.Ar gname
+.Cx
 True if the file belongs to the group
-.BR gname .
+.Ar gname  .
 If
-.B gname
+.Ar gname
 is numeric and there is no such group name, then
-.B gname
+.Ar gname
 is treated as a group id.
-.TP
-.B inum n
+.Tp Cx Ic inum
+.Cx \&\ \&
+.Ar n
+.Cx
 True if the file has inode number
-.BR n .
-.TP
-.B links  n
+.Ar n  .
+.Tp Cx Ic links
+.Cx \&\ \&
+.Ar n
+.Cx
 True if the file has
-.B n
+.Ar n
 links.
-.TP
-.B ls
+.Tp Ic ls
 This primary always evaluates to true.
 The following information for the current file is written to standard output:
 its inode number, size in 512\-byte blocks, file permissions, number of hard
@@ -134,52 +154,61 @@ will be displayed instead of the size in bytes.
 If the file is a symbolic link, the pathname of the linked\-to file will be
 displayed preceded by ``\->''.
 The format is identical to that produced by ``ls \-dgils''.
-.TP
-.B mtime n
+.Tp Cx Ic mtime
+.Cx \&\ \&
+.Ar n
+.Cx
 True if the difference between the file last modification time and the time
-.I find
+.Nm find
 was started, rounded up to the next full 24\-hour period, is
-.B n
+.Ar n
 24\-hour periods.
-.TP
-.B ok  utility  [argument ...]  ;
+.Tp Cx Ic ok
+.Cx \&\ \&
+.Ar utility
+.Op argument ... ;
 The
-.B ok
+.Ic ok
 primary is identical to the
-.B exec
+.Ic exec
 primary with the exception that
-.I find
+.Nm find
 requests user affirmation for the execution of the utility by printing
 a message to the terminal and reading a response.
 If the response is other than ``y'' the command is not executed and the
 value of the
-.B ok
+.Ar ok
 expression is false.
-.TP
-.B name pattern
+.Tp Cx Ic name
+.Cx \&\ \&
+.Ar pattern
+.Cx
 True if the last component of the pathname being examined matches
-.BR pattern .
+.Ar pattern  .
 Special shell pattern matching characters (``['', ``]'', ``*'', and ``?'')
 may be used as part of
-.BR pattern .
+.Ar pattern  .
 These characters may be matched explicitly by escaping them with a
 backslash (``\e'').
-.TP
-.B newer file
+.Tp Cx Ic newer
+.Cx \&\ \&
+.Ar file
+.Cx
 True if the current file has a more recent last modification time than
-.BR file .
-.TP
-.B nouser
+.Ar file  .
+.Tp Ic nouser
 True if the file belongs to an unknown user.
-.TP
-.B nogroup
+.Tp Ic nogroup
 True if the file belongs to an unknown group.
-.TP
-.B perm [\-]mode
+.Tp Cx Ic perm
+.Cx \&\ \&
+.Op Fl
+.Ar mode
+.Cx
 The
-.B mode
+.Ar mode
 may be either symbolic (see
-.IR chmod (1))
+.Xr chmod  1  )
 or an octal number.
 If the mode is symbolic, a starting value of zero is assumed and the
 mode sets or clears permissions without regard to the process' file mode
@@ -191,174 +220,182 @@ if at least all of the bits in the mode are set in the file's mode bits.
 If the mode is not preceded by a dash, this primary evaluates to true if
 the bits in the mode exactly match the file's mode bits.
 Note, the first character of a symbolic mode may not be a dash (``\-'').
-.TP
-.B print
+.Tp Ic print
 This primary always evaluates to true.
 It prints the pathname of the current file to standard output.
 The expression is appended to the user specified expression if neither
-.BR exec ,
-.BR ls ,
+.Ic exec  ,
+.Ic ls ,
 or
-.B ok
+.Ic ok
 is specified.
-.TP
-.B prune
+.Tp Ic prune
 This primary always evaluates to true.
 It causes
-.I find
+.Nm find
 to not descend into the current file.
-.TP
-.B size n[c]
+.Tp Cx Ic size
+.Cx \&\ \&
+.Ar n
+.Op Cm c
+.Cx
 True if the file's size, rounded up, in 512\-byte blocks is
-.BR n .
-If 
-.B n
+.Ar n  .
+If
+.Ar n
 is followed by a ``c'', then the primary is true if the
-file's size is 
-.I n
+file's size is
+.Ar n
 bytes.
-.TP
-.B type t
+.Tp Cx Ic type
+.Cx \&\ \&
+.Ar t
+.Cx
 True if the file is of the specified type.
 Possible file types are as follows:
-.RS
-.TP
-.B b
+.Pp
+.Tw Ds
+.Tp Cm b
 block special
-.br
-.ns
-.TP
-.B c
+.Tp Cm c
 character special
-.br
-.ns
-.TP
-.B d
+.Tp Cm d
 directory
-.br
-.ns
-.TP
-.B f
+.Tp Cm f
 regular file
-.br
-.ns
-.TP
-.B l
+.Tp Cm l
 symbolic link
-.br
-.ns
-.TP
-.B p
+.Tp Cm p
 FIFO
-.br
-.ns
-.TP
-.B s
+.Tp Cm s
 socket
-.RE
-.TP
-.B user uname
+.Tp
+.Pp
+.Tp Cx Ic user
+.Cx \&\ \&
+.Ar uname
+.Cx
 True if the file belongs to the user
-.BR uname .
+.Ar uname  .
 If
-.B uname
+.Ar uname
 is numeric and there is no such user name, then
-.B uname
+.Ar uname
 is treated as a user id.
-.PP
+.Tp
+.Pp
 All primaries which take a numeric argument allow the number to be
 preceded by a plus sign (``+'') or a minus sign (``\-'').
 A preceding plus sign means ``more than
-.BR n '',
+.Ar n  ' ' ,
 a preceding minus sign means ``less than
-.BR n ''
+.Ar n  ' '
 and neither means ``exactly
-.BR n ''.
-.SH OPERATORS
+.Ar n  ' ' .
+.Sh OPERATORS
 The primaries may be combined using the following operators.
 The operators are listed in order of decreasing precedence.
-.TP
-.B "( expression )"
+.Di L
+.Dp Cx Ic \&(
+.Ar expression
+.Cx \&)
+.Cx
 This evaluates to true if the parenthesized expression evaluates to
 true.
-.TP
-.B "! expression"
+.Pp
+.Dp Cx Ic \&!
+.Cx \&\ \&
+.Ar expression
+.Cx
 This is the unary NOT operator.
 It evaluates to true if the expression is false.
-.TP
-.B "expression and expression"
-.br
-.ns
-.TP
-.B "expression expression"
+.Pp
+.Dp Cx Ar expression
+.Cx \&\ \&
+.Ic and
+.Cx \&\ \&
+.Ar expression
+.Cx
+.Dp Cx Ar expression expression
+.Cx
 The
-.B and
+.Ic and
 operator is the logical AND operator.
 As it is implied by the juxtaposition of two expressions it does not
 have to be specified.
 The expression evaluates to true if both expressions are true.
 The second expression is not evaluated if the first expression is false.
-.TP
-.B "expression or expression"
+.Pp
+.Dp Cx Ar expression
+.Cx \&\ \&
+.Ic or
+.Cx \&\ \&
+.Ar expression
+.Cx
 The
-.B or
+.Ic or
 operator is the logical OR operator.
 The expression evaluates to true if either the first or the second expression
 is true.
 The second expression is not evaluated if the first expression is true.
-.PP
+.Dp
+.Pp
 All operands and primaries must be separate arguments to
-.IR find .
+.Nm find  .
 Primaries which themselves take arguments expect each argument
 to be a separate argument to
-.IR find .
-.SH EXAMPLES
-.PP
+.Nm find  .
+.Sh EXAMPLES
+.Pp
 The following examples are shown as given to the shell:
-.TP
-find  /  \e!  name  "*.c"  print
+.Tw findx
+.Tp Li find  /  \e!  name  "*.c"  print
 Print out a list of all the files whose names do not end in ``.c''.
-.TP
-find  /  newer  ttt  user  wnj  print
+.Tp Li find  /  newer  ttt  user  wnj  print
 Print out a list of all the files owned by user ``wnj'' that are newer
 than the file ``ttt''.
-.TP
-find  /  \e!  \e(  newer  ttt  user  wnj  \e)  print
+.Tp Li find  /  \e!  \e(  newer  ttt  user  wnj  \e)  print
 Print out a list of all the files which are not both newer than ``ttt''
 and owned by ``wnj''.
-.TP
-find  /  \e(  newer  ttt  or  user wnj  \e)  print
+.Tp Li find  /  \e(  newer  ttt  or  user wnj  \e)  print
 Print out a list of all the files that are either owned by ``wnj'' or
 that are newer than ``ttt''.
-.SH "SEE ALSO"
-chmod(1), sh(1), test(1), stat(2), umask(2),
-getpwent(3), getgrent(3), strmode(3)
-.SH STANDARDS
+.Tp
+.Sh SEE ALSO
+.Xr chmod 1 ,
+.Xr sh 1 ,
+.Xr test 1 ,
+.Xr stat 2 ,
+.Xr umask 2 ,
+.Xr getpwent 3 ,
+.Xr getgrent 3 ,
+.Xr strmode 3
+.Sh STANDARDS
 The
-.I find
+.Nm find
 utility syntax is a replacement for the syntax specified by the POSIX
 1003.2 standard.
 The standard syntax is also supported; see the COMPATIBILITY section
 below for details.
-.PP
+.Pp
 The
-.B \-s
+.Fl s
 option as well as the primaries
-.B inum
+.Ic inum
 and
-.BR ls
+.Ic ls
 are extensions to the POSIX standard.
-.SH COMPATIBILITY
+.Sh COMPATIBILITY
 The traditional, and standardized, syntax for
-.I find
+.Nm find
 is as follows.
 All of the primaries are preceded by a dash (``\-''), i.e. the
 primary ``group'' is specified as ``\-group''.
 The
-.BR \-d ,
-.BR \-s ,
+.Fl d  ,
+.Fl s ,
 and
-.BR \-x
+.Fl x
 options are implemented using the primaries ``\-depth'', ``\-follow'',
 and ``\-xdev''.
 These primaries always evaluate to true.
@@ -366,13 +403,13 @@ The operator ``or'' is implemented as ``\-o'', and the operator
 ``and'' is implemented as ``\-a''.
 The set of file trees to be traversed are specified as the first operands
 to
-.IR find .
+.Nm find  .
 The first operand beginning with a dash (``\-''), exclamation point (``!'')
 or left parenthesis (``('') is assumed to be the beginning of the expression
 and the end of the files to be traversed.
-.PP
+.Pp
 The
-.I find
+.Nm find
 syntax was changed for two reasons.
 The first is that the ``\-depth'', ``\-follow'' and ``\-xdev'' primaries
 are really global variables that take effect before the traversal begins.
@@ -381,12 +418,12 @@ An example is the expression ``\-print \-o \-depth''.
 As \-print always evaluates to true, the standard order of evaluation
 implies that \-depth would never be evaluated.
 This is not the case.
-.PP
+.Pp
 The second reason is that traversing file trees with names beginning with
 a dash, exclamation point or left parenthesis was impossible.
-.SH BUGS
+.Sh BUGS
 The special characters used by
-.I find
+.Nm find
 are also special characters to many shell programs.
 In particular, the characters ``*'', ``['', ``]'', ``?'', ``('', ``)'',
 ``!'', ``\e'' and ``;'' may have to be escaped from the shell.

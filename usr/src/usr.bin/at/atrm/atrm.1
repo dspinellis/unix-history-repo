@@ -1,48 +1,67 @@
-.\" Copyright (c) 1985 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1985, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)atrm.1	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH ATRM 1 ""
-.UC 6
-.SH NAME
-atrm \- remove jobs spooled by at
-.SH SYNOPSIS
-.B atrm
-[ -f ] [ -i ] [-] [[ job #] [ name ]... ]
-.SH DESCRIPTION
-.I Atrm 
+.\"     @(#)atrm.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ATRM 1
+.Os BSD 4.3
+.Sh NAME
+.Nm atrm
+.Nd remove jobs spooled by at
+.Sh SYNOPSIS
+.Nm atrm
+.Op Fl f
+.Op Fl i
+.Op Fl
+.Cx [
+.Op Ar job #
+.Op Ar name
+.Cx ...
+.Cx ]
+.Cx
+.Sh DESCRIPTION
+.Nm Atrm
 removes jobs that were created with the
-.IR at (1)
+.Xr at 1
 command.
-With the
-.B \-
-flag, all jobs belonging to the person invoking
-.I atrm
-are removed.
-If a job number(s) is specified, 
-.I atrm
-attempts to remove only that job number(s).
-.PP
-If the 
-.B \-f 
-flag is used, all information regarding the 
+.Pp
+.Tp Fl f
+all information regarding the
 removal of the specified jobs is suppressed.
-If the
-.B \-i
-flag is used, 
-.I atrm
+.Tp Fl i
+.Nm atrm
 asks if a job should be removed; a response of 'y' causes the job to be removed.
-.PP
-If a user(s) name is specified, all 
+.Tp Fl
+all jobs belonging to the person invoking
+.Nm atrm
+are removed.
+.Tp
+.Pp
+If a
+.Ar job
+number(s) is specified,
+.Nm atrm
+attempts to remove only that
+.Ar job
+number(s).
+.Pp
+If a user(s) name is specified, all
 jobs belonging to that user(s) are removed.
-This form of invoking 
-.I atrm
+This form of invoking
+.Nm atrm
 is useful only to the super-user.
-.SH FILES
-/usr/spool/at		spool area
-.SH "SEE ALSO"
-at(1),
-atq(1),
-cron(8)
+.Sh FILES
+.Tw /usr/spool/at
+.Tp /usr/spool/at
+spool area
+.Tp
+.Sh SEE ALSO
+.Xr at 1 ,
+.Xr atq 1 ,
+.Xr cron 8
+.Sh HISTORY
+.Nm Atrm
+appeared in the 4.3 BSD release.

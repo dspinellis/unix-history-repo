@@ -1,169 +1,188 @@
-.\" Copyright (c) 1988 The Regents of the University of California.
+.\" Copyright (c) 1988, 1990 The Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" Redistribution and use in source and binary forms are permitted
-.\" provided that the above copyright notice and this paragraph are
-.\" duplicated in all such forms and that any documentation,
-.\" advertising materials, and other materials related to such
-.\" distribution and use acknowledge that the software was developed
-.\" by the University of California, Berkeley.  The name of the
-.\" University may not be used to endorse or promote products derived
-.\" from this software without specific prior written permission.
-.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" %sccs.include.redist.man%
 .\"
-.\"	@(#)chpass.1	5.7 (Berkeley) %G%
+.\"     @(#)chpass.1	5.8 (Berkeley) %G%
 .\"
-.TH CHPASS 1 ""
-.UC 4
-.SH NAME
-chpass \- add or change user database information
-.SH SYNOPSIS
-chpass [ -a list ] [ -s shell ] [ user ]
-.SH DESCRIPTION
-.I Chpass
+.Dd 
+.Dt CHPASS 1
+.Os BSD 4.4
+.Sh NAME
+.Nm chpass
+.Nd add or change user database information
+.Sh SYNOPSIS
+chpass
+.Op Fl a Ar list
+.Op Fl s Ar shell
+.Op user
+.Sh DESCRIPTION
+.Nm Chpass
 allows editing of the user database information associated
 with
-.I user
+.Ar user
 or, by default, the current user.
 The information is formatted and supplied to an editor for changes.
+.Pp
+Only the information that the user is allowed to change is displayed.
+.Pp
+The options are as follows:
+.Tp Fl a
+The super-user is allowed to directly supply a user database
+entry, in the format specified by
+.Xr passwd 5 ,
+as an argument.
+This argument must be a colon (``:'') separated list of all the
+user database fields, although they may be empty.
+.Tp Fl s
 The
-.I vi
-editor will be used unless the environmental variable EDITOR selects
+.Fl s
+option attempts to change the user's shell to
+.Ar newsh .
+.Tp
+.Pp
+Possible display items are as follows:
+.Pp
+.Dw Home\ Directory:
+.Dp Login:
+user's login name
+.Dp Password:
+user's encrypted password
+.Dp Uid:
+user's id
+.Dp Gid:
+user's login group id
+.Dp Change:
+password change time
+.Dp Expire:
+account expiration time
+.Dp Class:
+user's general classification
+.Dp Home Directory:
+user's home directory
+.Dp Shell:
+user's login shell
+.Dp Full Name:
+user's real name
+.Dp Location:
+user's normal location
+.Dp Home Phone:
+user's home phone
+.Dp Office Phone:
+user's office phone
+.Dp
+.Pp
+The
+.Ar login
+field is the user name used to access the computer account.
+.Pp
+The
+.Ar password
+field contains the encrypted form of the user's password.
+.Pp
+The
+.Ar uid
+field is the number associated with the
+.Ar login
+field.
+Both of these fields should be unique across the system (and often
+across a group of systems) as they control file access.
+.Pp
+While it is possible to have multiple entries with identical login names
+and/or identical user id's, it is usually a mistake to do so.  Routines
+that manipulate these files will often return only one of the multiple
+entries, and that one by random selection.
+.Pp
+The
+.Ar group
+field is the group that the user will be placed in at login.
+Since this system supports multiple groups (see
+.Xr groups 1 )
+this field currently has little special meaning.
+This field may be filled in with either a number or a group name (see
+.Xr group 5 ) .
+.Pp
+The
+.Ar change
+field is the date by which the password must be changed.
+.Pp
+The
+.Ar expire
+field is the date on which the account expires.
+.Pp
+Both the
+.Ar change
+and
+.Ar expire
+fields should be entered in the form ``month day year'' where
+.Ar month
+is the month name (the first three characters are sufficient),
+.Ar day
+is the day of the month, and
+.Ar year
+is the year.
+.Pp
+The
+.Ar class
+field is currently unused.  In the near future it will be a key to
+a
+.Xr termcap 5
+style database of user attributes.
+.Pp
+The user's home directory is the full UNIX path name where the user
+will be placed at login.
+.Pp
+The shell field is the command interpreter the user prefers.
+If the
+.Ar shell
+field is empty, the Bourne shell,
+.Pa /bin/sh ,
+is assumed.
+When altering a login shell, and not the super-user, the user
+may not change from a non-standard shell or to a non-standard
+shell.
+Non-standard is defined as a shell not found in
+.Pa /etc/shells .
+.Pp
+The last four fields are for storing the user's full name, office
+location, and home and work telephone numbers.
+.Pp
+Once the information has been verified,
+.Nm chpass
+uses
+.Xr mkpasswd 8
+to update the user database.  This is run in the background, and,
+at very large sites could take several minutes.  Until this update
+is completed, the password file is unavailable for other updates
+and the new information will not be available to programs.
+.Sh ENVIRONMENT
+The
+.Xr vi 1
+editor will be used unless the environment variable EDITOR is set to
 an alternate editor.
 When the editor terminates, the information is re-read and used to
 update the user database itself.
 Only the user, or the super-user, may edit the information associated
 with the user.
-.PP
-Only the information that the user is allowed to change is displayed.
-.PP
-Possible display items are as follows:
-.PP
-.RS
- Login:			user's login name
- Password:		user's encrypted password
- Uid:			user's id
- Gid:			user's login group id
- Change:			password change time
- Expire:			account expiration time
- Class:			user's general classification
- Home Directory:	user's home directory
- Shell:			user's login shell
- Full Name:		user's real name
- Location:		user's normal location
- Home Phone:		user's home phone
- Office Phone:		user's office phone
-.RE
-.PP
-.PP
-The
-.I login
-field is the user name used to access the computer account.
-.PP
-The
-.I password
-field contains the encrypted form of the user's password.
-.PP
-The
-.I uid
-field is the number associated with the
-.I login
-field.
-Both of these fields should be unique across the system (and often
-across a group of systems) as they control file access.
-.PP
-While it is possible to have multiple entries with identical login names
-and/or identical user id's, it is usually a mistake to do so.  Routines
-that manipulate these files will often return only one of the multiple
-entries, and that one by random selection.
-.PP
-The
-.I group
-field is the group that the user will be placed in at login.
-Since this system supports multiple groups (see
-.IR groups (1))
-this field currently has little special meaning.
-This field may be filled in with either a number or a group name (see
-.IR group (5)).
-.PP
-The
-.I change
-field is the date by which the password must be changed.
-.PP
-The
-.I expire
-field is the date on which the account expires.
-.PP
-Both the
-.I change
-and
-.I expire
-fields should be entered in the form ``month day year'' where
-.I month
-is the month name (the first three characters are sufficient),
-.I day
-is the day of the month, and
-.I year
-is the year.
-.PP
-The
-.I class
-field is currently unused.  In the near future it will be a key to
-a
-.IR termcap (5)
-style database of user attributes.
-.PP
-The user's home directory is the full UNIX path name where the user
-will be placed at login.
-.PP
-The shell field is the command interpreter the user prefers.
-If the
-.I shell
-field is empty, the Bourne shell (\fI/bin/sh\fP) is assumed.
-When altering a login shell, and not the super-user, the user
-may not change from a non-standard shell or to a non-standard
-shell.
-Non-standard is defined as a shell not found in
-.IR /etc/shells .
-.PP
-The last four fields are for storing the user's full name, office
-location, and home and work telephone numbers.
-.PP
-The options are as follows:
-.TP
-.I -a
-The super-user is allowed to directly supply a user database
-entry, in the format specified by
-.IR passwd (5),
-as an argument.
-This argument must be a colon (``:'') separated list of all the
-user database fields, although they may be empty.
-.TP
-.I -s
-The
-.I -s
-option attempts to change the user's shell to
-.IR newsh .
-.PP
-Once the information has been verified,
-.I chpass
-uses
-.IR mkpasswd (8)
-to update the user database.  This is run in the background, and,
-at very large sites could take several minutes.  Until this update
-is completed, the password file is unavailable for other updates
-and the new information will not be available to programs.
-.SH FILES
-.DT
-/etc/master.passwd		The user database
-/etc/shells			The list of approved shells
-.RE
-.SH "SEE ALSO"
-login(1), finger(1), getusershell(3), passwd(5), mkpasswd(8), vipw(8)
-.br
+.Sh FILES
+.Dw /etc/master.passwd
+.Di L
+.Dp Pa /etc/master.passwd
+The user database
+.Dp Pa /etc/shells
+The list of approved shells
+.Dp
+.Sh SEE ALSO
+.Xr login 1 ,
+.Xr finger 1 ,
+.Xr getusershell 3 ,
+.Xr passwd 5 ,
+.Xr mkpasswd 8 ,
+.Xr vipw 8
+.Pp
 Robert Morris and Ken Thompson,
-.I UNIX password security
-.SH BUGS
+.Ar UNIX Password security
+.Sh HISTORY
+First release 4.4 Bsd.
+.Sh BUGS
 User information should (and eventually will) be stored elsewhere.

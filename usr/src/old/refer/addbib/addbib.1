@@ -1,99 +1,169 @@
-.\" Copyright (c) 1983 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1983, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)addbib.1	6.1 (Berkeley) %G%
 .\"
-.TH ADDBIB 1 ""
-.UC 5
-.SH NAME
-addbib \- create or extend bibliographic database
-.SH SYNOPSIS
-\fBaddbib\fP  [ \fB\-p\fP  promptfile ]  [ \fB\-a\fP ]  database
-.SH DESCRIPTION
-When this program starts up, answering ``y''
-to the initial ``Instructions?'' prompt yields directions;
-typing ``n'' or \s-2RETURN\s0 skips them.
-.I Addbib
+.\"     @(#)addbib.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Os BSD 4.2
+.Dt ADDBIB 1
+.Sh NAME
+.Nm addbib
+.Nd create or extend bibliographic database
+.Sh SYNOPSIS
+.Nm addbib
+.Op Fl p Ar promptfile
+.Op Fl a
+.Ar database
+.Sh DESCRIPTION
+When this program starts up, answering
+.Li y
+to the initial
+.Li Instructions?
+prompt yields directions;
+typing
+.Li n
+or
+.Li RETURN
+skips them.
+.Nm Addbib
 then prompts for various bibliographic fields,
 reads responses from the terminal,
 and sends output records to a
-.I database.
-A null response (just \s-2RETURN\s0) means to leave out that field.
-A minus sign (\-) means to go back to the previous field.
+.Ar database .
+A null response (just
+.Li RETURN )
+means to leave out that field.
+A minus sign
+.Li (\-)
+means to go back to the previous field.
 A trailing backslash allows a field to be continued on the next line.
-The repeating ``Continue?'' prompt allows the user
-either to resume by typing ``y'' or \s-2RETURN\s0,
-to quit the current session by typing ``n'' or ``q'',
+The repeating
+.Li Continue?
+prompt allows the user
+either to resume by typing
+.Li y
+or
+.Li RETURN ,
+to quit the current session by typing
+.Li n
+or
+.Li q ,
 or to edit the
-.I database
-with any system editor \fI(vi, ex, edit, ed).\fP
-.PP
+.Ar database
+with any system editor (.e.g.
+.Xr vi ,
+.Xr ex ,
+.Xr edit ,
+.Xr ed ) .
+.Pp
 The
-.B \-a
+.Fl a
 option suppresses prompting for an abstract;
 asking for an abstract is the default.
-Abstracts are ended with a \s-2CTRL\s0-d.
+Abstracts are ended with a
+.Li CTRL-d .
 The
-.B \-p
+.Fl p
 option causes
-.I addbib
+.Nm addbib
 to use a new prompting skeleton, defined in
-.I promptfile.
+.Ar promptfile .
 This file should contain prompt strings, a tab,
 and the key-letters to be written to the
-.I database.
-.PP
+.Ar database .
+.Pp
 The most common key-letters and their meanings are given below.
-.I Addbib
+.Nm Addbib
 insulates you from these key-letters,
 since it gives you prompts in English,
 but if you edit the bibliography file later on,
 you will need to know this information.
-.sp
-.nf
-	%A	Author's name
-	%B	Book containing article referenced
-	%C	City (place of publication)
-	%D	Date of publication
-	%E	Editor of book containing article referenced
-	%F	Footnote number or label (supplied by \fIrefer\fP\|)
-	%G	Government order number
-	%H	Header commentary, printed before reference
-	%I	Issuer (publisher)
-	%J	Journal containing article
-	%K	Keywords to use in locating reference
-	%L	Label field used by \fB\-k\fP option of \fIrefer\fP
-	%M	Bell Labs Memorandum (undefined)
-	%N	Number within volume
-	%O	Other commentary, printed at end of reference
-	%P	Page number(s)
-	%Q	Corporate or Foreign Author (unreversed)
-	%R	Report, paper, or thesis (unpublished)
-	%S	Series title
-	%T	Title of article or book
-	%V	Volume number
-	%X	Abstract \(em used by \fIroffbib\fP, not by \fIrefer\fP
-	%Y,Z	ignored by \fIrefer\fP
-.fi
-.sp
+.Dw \&%Y,Z
+.Dp \&%A
+Author's name
+.Dp \&%B
+Book containing article referenced
+.Dp \&%C
+City (place of publication)
+.Dp \&%D
+Date of publication
+.Dp \&%E
+Editor of book containing article referenced
+.Dp \&%F
+Footnote number or label (supplied by
+.Xr refer )
+.Dp \&%G
+Government order number
+.Dp \&%H
+Header commentary, printed before reference
+.Dp \&%I
+Issuer (publisher)
+.Dp \&%J
+Journal containing article
+.Dp \&%K
+Keywords to use in locating reference
+.Dp \&%L
+Label field used by
+.Fl k
+option of
+.Xr refer
+.Dp \&%M
+Memorandum label
+.Dp \&%N
+Number within volume
+.Dp \&%O
+Other commentary, printed at end of reference
+.Dp \&%P
+Page number(s)
+.Dp \&%Q
+Corporate or Foreign Author (unreversed)
+.Dp \&%R
+Report, paper, or thesis (unpublished)
+.Dp \&%S
+Series title
+.Dp \&%T
+Title of article or book
+.Dp \&%V
+Volume number
+.Dp \&%X
+Abstract \(em used by
+.Xr roffbib ,
+not by
+.Xr refer
+.Dp \&%Y,Z
+ignored by
+.Xr refer
+.Dp
+.Pp
 Except for `A', each field should be given just once.
 Only relevant fields should be supplied.
-An example is:
-.sp
-.nf
-	%A	Bill Tuthill
-	%T	Refer \(em A Bibliography System
-	%I	Computing Services
-	%C	Berkeley
-	%D	1982
-	%O	\s-1UNX\s0 4.3.5.
-.fi
-.sp
-.SH FILES
-.DT
-promptfile	optional file to define prompting
-.SH SEE ALSO
-refer(1), sortbib(1), roffbib(1), indxbib(1), lookbib(1)
-.SH AUTHORS
+.Sh EXAMPLES
+.Dw \&%Y,Z
+.Dp %A
+Bill Tuthill
+.Dp %T
+Refer \(em A Bibliography System
+.Dp %I
+Computing Services
+.Dp %C
+Berkeley
+.Dp %D
+1982
+.Dp %O
+\s-1UNX\s0 4.3.5.
+.Dp
+.Sh FILES
+.Dw promptfile
+.Dp Pa promptfile
+optional file to define prompting
+.Sh SEE ALSO
+.Xr refer 1 ,
+.Xr sortbib 1 ,
+.Xr roffbib 1 ,
+.Xr indxbib 1 ,
+.Xr lookbib 1
+.Sh HISTORY
+appeared in 4.2 BSD.
+.Sh AUTHORS
 Al Stangenberger, Bill Tuthill

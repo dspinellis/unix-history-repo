@@ -1,147 +1,164 @@
-.\"	@(#)ar.1	6.1 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH AR 1 ""
-.AT 3
-.SH NAME
-ar \- archive and library maintainer
-.SH SYNOPSIS
-.B ar
-key [ posname ] afile name ...
-.SH DESCRIPTION
-.I Ar
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)ar.1	6.2 (Berkeley) %G%
+.\"
+.Dd 
+.Dt AR 1
+.Os ATT 7th
+.Sh NAME
+.Nm ar
+.Nd archive and library maintainer
+.Sh SYNOPSIS
+.Nm ar
+.Cm key
+.Op Ar posname
+.Ar afile name ...
+.Sh DESCRIPTION
+.Nm Ar
 maintains groups of files
 combined into a single archive file.
 Its main use
 is to create and update library files as used by the loader.
 It can be used, though, for any similar purpose.
-.B N.B:
+.Sy N.B.:
 This version of
-.I ar
+.Nm ar
 uses a ASCII-format archive which is portable among the various
-machines running \s-2UNIX\s0.
+machines running UNIX.
 Programs for dealing with older formats are available: see
-.IR arcv (8).
-.PP
-.I Key
+.Xr arcv 8 .
+.Pp
+.Cm Key
 is one character from the set
-.B drqtpmx,
+.Fl drqtpmx
 optionally concatenated with
 one or more of
-.B vuaibclo.
-.I Afile
+.Fl vuaibclo .
+.Ar Afile
 is the archive file.
 The
-.I names
+.Ar names
 are constituent files in the archive file.
 The meanings of the
-.I key
+.Fl key
 characters are:
-.TP
-.B d
+.Tp Fl d
 Delete the named files from the archive file.
-.TP
-.B r
+.Tp Fl r
 Replace the named files in the archive file.
 If the optional character
-.B u
+.Fl u
 is used with
-.B r,
-then only those files with `last-modified' dates later than
+.Fl r
+then only those files with
+.Li last-modified
+dates later than
 the archive files are replaced.
 If an optional positioning character from the set
-.B abi
+.Fl abi
 is used, then the
-.I posname
+.Ar posname
 argument must be present
 and specifies that new files are to be placed
 after
-.RB ( a )
+.Fl a
 or before
-.RB ( b
+.Fl b
 or
-.BR i )
-.IR posname .
+.Fl i
+.Ar posname .
 Otherwise
 new files are placed at the end.
-.TP
-.B q
+.Tp Fl q
 Quickly append the named files to the end of the archive file.
 Optional positioning characters are invalid.
 The command does not check whether the added members
 are already in the archive.
 Useful only to avoid quadratic behavior when creating a large
 archive piece-by-piece.
-.TP
-.B t
+.Tp Fl t
 Print a table of contents of the archive file.
 If no names are given, all files in the archive are tabled.
 If names are given, only those files are tabled.
-.TP
-.B p
+.Tp Fl p
 Print the named files in the archive.
-.TP
-.B m
+.Tp Fl m
 Move the named files to the end of the archive.
 If a positioning character is present,
 then the
-.I posname
+.Ar posname
 argument must be present and,
 as in
-.B r,
+.Fl r
 specifies where the files are to be moved.
-.TP
-.B x
+.Tp Fl x
 Extract the named files.
 If no names are given, all files in the archive are
 extracted.
 In neither case does
-.B x
+.Fl x
 alter the archive file. Normally the `last-modified' date of each
 extracted file is the date when it is extracted. However, if
-.B o
+.Fl o
 is used, the `last-modified' date is reset to the date recorded in the
 archive.
-.TP
-.B v
+.Tp Fl v
 Verbose.
 Under the verbose option,
-.I ar
+.Nm ar
 gives a file-by-file
 description of the making of a
 new archive file from the old archive and the constituent files.
 When used with
-.B t,
+.Fl t
 it gives a long listing of all information about the files.
 When used with
-.BR p ,
+.Fl p ,
 it precedes each file with a name.
-.TP
-.B c
+.Tp Fl c
 Create.
 Normally
-.I ar
+.Nm ar
 will create
-.I afile
+.Ar afile
 when it needs to.
 The create option suppresses the
 normal message that is produced when
-.I afile
+.Ar afile
 is created.
-.TP
-.B l
+.Tp Fl l
 Local.
 Normally
-.I ar
+.Nm ar
 places its temporary files in the directory /tmp.
 This option causes them to be placed in the local directory.
-.SH FILES
-/tmp/v*	temporaries
-.SH "SEE ALSO"
-lorder(1), ld(1), ranlib(1), ar(5), arcv(8)
-.SH BUGS
+.Tp
+.Sh FILES
+.Tw /tmp/v*
+.Tp Pa tmp/v*
+temporaries
+.Tp
+.Sh SEE ALSO
+.Xr lorder 1 ,
+.Xr ld 1 ,
+.Xr ranlib 1 ,
+.Xr ar 5 ,
+.Xr arcv 8
+.Sh HISTORY
+.Nm Ar
+appeared in vanilla Version 6 AT&T UNIX.  The Version 7
+.Nm ar
+appeared
+in 2.0 BSD.
+.Sh BUGS
 If the same file is mentioned twice in an argument list,
 it may be put in the archive twice.
-.LP
-The `last-modified' date of a file will not be altered by the
-.B o
+.Pp
+The
+.Li last-modified
+date of a file will not be altered by the
+.Fl o
 option if the user is not the owner of the extracted file, or the super-user.

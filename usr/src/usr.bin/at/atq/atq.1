@@ -1,41 +1,49 @@
-.\" Copyright (c) 1985 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1985, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)atq.1	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH ATQ 1 ""
-.UC 6
-.SH NAME
-atq \- print the queue of jobs waiting to be run
-.SH SYNOPSIS
-.B atq
-[ -c ] [ -n ] [ name ... ]
-.SH DESCRIPTION
-.I Atq 
+.\"     @(#)atq.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt ATQ 1
+.Os BSD 4.3
+.Sh NAME
+.Nm atq
+.Nd print the queue of jobs waiting to be run
+.Sh SYNOPSIS
+.Nm atq
+.Op Fl c
+.Op Fl n
+.Op Ar name ...
+.Sh DESCRIPTION
+.Nm Atq
 prints the queue of jobs that are waiting to be run
 at a later date. These jobs were created with the
-.IR at (1)
+.Xr at 1
 command.
 With no flags, the queue is sorted in the order that
 the jobs will be executed.
-.PP
-If the 
-.B \-c 
-flag is used, the queue is sorted by the time that the 
-.I at 
-command was given. 
-.PP
-The 
-.B \-n 
-flag prints only the total number of files that are currently
-in the queue. 
-.PP
-If a name(s) is provided, only those files belonging to that user(s) are 
+.Tp Fl c
+the queue is sorted by the time that the
+.Li at
+command was given.
+.Tp Fl n
+only the total number of files that are currently
+in the queue are printed.
+.Tp
+.Pp
+If a name(s) is provided, only those files belonging to that user(s) are
 displayed.
-.SH FILES
-/usr/spool/at		spool area
-.SH "SEE ALSO"
-at(1),
-atrm(1),
-cron(8)
+.Sh FILES
+.Tw /var/spool/at
+.Tp /var/spool/at
+spool area
+.Tp
+.Sh SEE ALSO
+.Xr at 1 ,
+.Xr atrm 1 ,
+.Xr cron 8
+.Sh HISTORY
+.Nm Atq
+appeared in the 4.3 BSD release.

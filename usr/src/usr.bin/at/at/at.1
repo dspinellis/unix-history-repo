@@ -1,130 +1,186 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)at.1	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
 .\"
-.TH AT 1 ""
-.UC 4
-.SH NAME
-at \- execute commands at a later time
-.SH SYNOPSIS
-.B "at [ -c ] [ -s ] [ -m ]"
-time
-[ day ]
-[ file ]
-.SH DESCRIPTION
-.I At
-spools away a copy of the named
-.I file
-to be used as input to
-.IR sh (1)
-or
-.IR csh (1).
-If the
-.B \-c
-flag (for 
-.IR (csh (1)))
-or the
-.B \-s
-flag (for
-.IR (sh (1)))
-is specified, then that shell will be used to execute the job;
-if no shell is specified, 
-the current environment shell is used.
-If no file name is specified, 
-.I at
-prompts for commands from standard input until a ^D is typed. 
-.PP
-If the 
-.B \-m
-flag is specified, mail will be sent to the user after the job
+.\"     @(#)at.1	6.3 (Berkeley) %G%
+.\"
+.Dd 
+.Dt AT 1
+.Dd 
+.Os BSD 4
+.Sh NAME
+.Nm at
+.Sd run command(s) at a specific time
+.Sh SYNOPSIS
+.Nm at
+.Op Fl c
+.Op Fl s
+.Op Fl m
+.Ar time
+.Op Ar day
+.Op Ar command_file
+.Sh DESCRIPTION
+.Nm At
+allows commands to be run at a user specified time.
+The commands can be given to
+.Nm
+via the
+.Ar command_file
+or accepted from the standard input.
+.Nm At
+will pass these commands to the appropriate
+shell at the requested time.
+.Tp Fl c
+.Ar Command_file
+contains
+.Xr csh 1
+commands.
+.Tp Fl s
+.Ar Command_file
+contains
+.Xr sh 1
+commands.
+.Tp Fl m
+Mail will be sent to the user after the job
 has been run. If errors occur during execution of the job, then
 a copy of the error diagnostics will be sent to the user. If
 no errors occur, then a short message is sent informing the
 user that no errors occurred.
-.PP
+.Tp
+.Pp
+If no file name is specified,
+.Nm at
+prompts for commands from standard input until a
+.Li \&^D is typed.
+.Pp
 The format of the spool file is as follows:
 A four line header that includes the owner of the job, the name of the job,
 the shell used to run the job, and whether mail will be
 set after the job is executed. The header is followed by a
-.I cd
-command to the current directory and a 
-.I umask
+.Ic cd
+command to the current directory and a
+.Ic umask
 command to set the modes on any files created by the job.
-Then 
-.I at
+Then
+.Nm at
 copies all relevant environment variables to the spool file.
 When the script is run, it uses the user and group ID
 of the creator of the spool file.
-.PP
+.Pp
 The
-.I time
-is 1 to 4 digits, with an optional following
-`A', `P', `N' or `M' for
-AM, PM, noon or midnight.
-One and two digit numbers are taken to be hours, three and four digits
-to be hours and minutes.
-If no letters follow the digits, a 24 hour clock time is understood.
-.PP
-The optional
-.I day
-is either
-(1) a month name followed by a day number,
-or
-(2) a day of the week; 
-if the word `week' follows, invocation is moved
-seven days further off.
-Names of months and days may be recognizably truncated.
-Examples of legitimate commands are
-.IP
-at 8am jan 24
-.br
-at -c -m 1530 fr week
-.br
-at -s -m 1200n week
-.PP
-.I At
-programs are executed by periodic execution 
-of the command 
-.IR
-/usr/lib/atrun 
-from 
-.IR cron (8).
-The granularity of
-.I at
-depends upon the how often atrun is executed.
-.PP
-Error output is lost unless redirected or the
-.I \-m
-flag is requested, in which case a copy of the errors is sent to
-the user via 
-.IR mail (1).
-.SH FILES
-.nf
-/usr/spool/at                spooling area
-/usr/spool/at/yy.ddd.hhhh.*  job file
-/usr/spool/at/past           directory where jobs are executed from
-/usr/spool/at/lasttimedone   last time atrun was run
-/usr/lib/atrun               executor (run by cron(8))
-.fi
-.SH "SEE ALSO"
-atq(1),
-atrm(1),
-calendar(1),
-sleep(1),
-cron(8)
-.SH DIAGNOSTICS
+.Ar time
+is either a 24 hour military time
+.Em hhmm,
+where
+.Em hh
+is hour and
+.Em mm
+is minutes, or the traditional 12 hour time
+with qualifying options:
+.Df I
+.Dp Li am
+am
+.Dp Li a
+am
+.Dp Li pm
+pm
+.Dp Li p
+pm
+.Dp Li n
+noon
+.Dp Li m
+midnight
+.Dp
+.De
+The time can be abbreviated as shown below in the EXAMPLES.
+.Pp
+A
+.Ar day
+of the week may be specified by the first two
+letters of its name. A week (7 days) may be specified by 
+the argument
+.Em week .
+If a month name is given, the following argument is expected to
+be the day.
+.Sh ENVIRONMENT
+If no shell is specified,
+the current environment variable
+.Ev SHELL
+is used.
+Examples
+.Pp
+.Dp Li at 10p
+Execute at 10pm today, or tomorrow
+if 10pm has past. Use the shell
+found in the environment variable
+.Ev SHELL.
+.Dp Li at -c -m 1705 mo
+Execute at 5:05pm on Monday using
+.Xr csh 1
+and send mail upon completion or
+termination of the job.
+.Dp Li at -s -m 1200n week
+Use
+.Xr sh 1 ,
+send mail upon completetion, start at noon o'clock,
+one week from today.
+.Dp Li at -s 8a apr 1
+Try it for fun.
+.Dp
+.Pp
+.Sh ERRORS
+Errors must be collected via the
+.Fl m
+option or by redirecting the standard output
+from inside the
+.Ar command_file.
+.Sh FILES
+.Dw /var/spool/at/yy.ddd.hhhh.*
+.Ds L
+.Dp Pa /var/spool/at
+spooling area
+.Dp Pa /var/spool/at/yy.ddd.hhhh.*
+job file
+.Dp Pa /var/spool/at/past
+directory where jobs are executed from
+.Dp Pa /var/spool/at/lasttimedone
+last time atrun was run
+.Dp Pa /var/libexec/atrun
+executor (run by
+.Xr cron 8 )
+.Dp
+.Sh SEE ALSO
+.Xr atq 1 ,
+.Xr atrm 1 ,
+.Xr calendar 1 ,
+.Xr cron 8
+.Xr sleep 1 ,
+.Sh DIAGNOSTICS
 Complains about various syntax errors and times out of range.
-.SH BUGS
-Due to the granularity of the execution of
-.IR /usr/lib/atrun,
-there may be bugs in scheduling things almost
-exactly 24 hours into the future.
-
+.Sh HISTORY
+.Nm
+appeared in Version 7 AT&T UNIX.
+.Sh BUGS
+The queueing mechanism
+.Pa /usr/libexec/atrun ,
+is scheduled by
+.Xr cron 8 .
+Frequency with which
+.Xr cron 8
+runs
+.Pa /usr/libexec/atrun
+is site dependent.
+If it is run infrequently, a job may
+fall thru the cracks.
+.Pp
+There are known problems attempting to specify
+a time of 2400 hours to
+.Nm at .
+.Pp
 If the system crashes, mail is not sent to the user informing them that
 the job was not completed.
-
+.Pp
 Sometimes old spool files are not removed from the directory
-/usr/spool/at/past. This is usually due to a system crash,
+/var/spool/at/past. This is usually due to a system crash,
 and requires that they be removed by hand.
