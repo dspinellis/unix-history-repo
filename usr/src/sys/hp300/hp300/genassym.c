@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)genassym.c	7.12 (Berkeley) %G%
+ *	@(#)genassym.c	7.13 (Berkeley) %G%
  */
 
 #define KERNEL
@@ -81,6 +81,7 @@ main()
 	off("P_STAT", struct proc, p_stat);
 	off("P_WCHAN", struct proc, p_wchan);
 	off("P_FLAG", struct proc, p_flag);
+	off("P_MDFLAG", struct proc, p_md.md_flags);
 	def("SSLEEP", SSLEEP);
 	def("SRUN", SRUN);
 
@@ -161,7 +162,6 @@ main()
 	def("SG_ISHIFT", SG_ISHIFT);
 
 	/* pcb fields */
-	off("PCB_FLAGS", struct pcb, pcb_flags);
 	off("PCB_PS", struct pcb, pcb_ps);
 	off("PCB_USTP", struct pcb, pcb_ustp);
 	off("PCB_USP", struct pcb, pcb_usp);
@@ -169,6 +169,11 @@ main()
 	off("PCB_ONFAULT", struct pcb, pcb_onfault);
 	off("PCB_FPCTX", struct pcb, pcb_fpregs);
 	def("SIZEOF_PCB", sizeof(struct pcb));
+
+	/* exception frame offset/sizes */
+	off("FR_SP", struct frame, f_regs[15]);
+	off("FR_HW", struct frame, f_sr);
+	off("FR_ADJ", struct frame, f_stackadj);
 
 	/* system calls */
 	def("SYS_exit", SYS_exit);
@@ -185,7 +190,7 @@ main()
 	def("CLKMSB3", CLKMSB3);
 
 	/* HP-UX trace bit */
-	def("PCB_TRCB", ffs(PCB_HPUXTRACE) - 1);
+	def("MDP_TRCB", ffs(MDP_HPUXTRACE) - 1);
 
 	exit(0);
 }
