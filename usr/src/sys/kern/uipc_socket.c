@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.25	82/01/17	*/
+/*	uipc_socket.c	4.26	82/01/17	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -443,8 +443,12 @@ sohasoutofband(so)
 		return;
 	if (so->so_pgrp > 0)
 		gsignal(so->so_pgrp, SIGURG);
-	else 
-		psignal(-so->so_pgrp, SIGURG);
+	else {
+		struct proc *p = pfind(-so->so_pgrp);
+
+		if (p)
+			psignal(p, SIGURG);
+	}
 }
 
 /*ARGSUSED*/
