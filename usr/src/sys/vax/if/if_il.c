@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if_il.c	7.1 (Berkeley) %G%
+ *	@(#)if_il.c	7.2 (Berkeley) %G%
  */
 
 #include "il.h"
@@ -23,6 +23,7 @@
 #include "vmmac.h"
 #include "ioctl.h"
 #include "errno.h"
+#include "syslog.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -683,6 +684,13 @@ iltotal(is)
 	while (sum < end)
 		*sum++ += *interval++;
 	is->is_if.if_collisions = is->is_sum.ils_collis;
+	if ((is->is_flags & ILF_SETADDR) &&
+	    (bcmp((caddr_t)is->is_stats.ils_addr, (caddr_t)is->is_addr,
+					sizeof (is->is_addr)) != 0)) {
+		log(LOG_ERR, "il%d: physaddr reverted\n", is->is_if.if_unit);
+		is->is_flags &= ~ILF_RUNNING;
+		ilinit(is->is_if.if_unit);
+	}
 }
 
 /*
