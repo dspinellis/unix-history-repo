@@ -1654,10 +1654,10 @@ p->argsp = args;
 if(substr)
 	{
 	p->fcharp = (expptr) substr->datap;
-	if (p->fcharp != ENULL && ! ISINT(p->fcharp.headblock->vtype))
+	if (p->fcharp != ENULL && ! ISINT(p->fcharp->headblock.vtype))
 		p->fcharp = mkconv(TYINT, p->fcharp);
 	p->lcharp = (expptr) substr->nextp->datap;
-	if (p->lcharp != ENULL && ! ISINT(p->lcharp.headblock->vtype))
+	if (p->lcharp != ENULL && ! ISINT(p->lcharp->headblock.vtype))
 		p->lcharp = mkconv(TYINT, p->lcharp);
 	frchain(&substr);
 	}
