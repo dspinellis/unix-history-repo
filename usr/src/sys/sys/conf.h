@@ -1,4 +1,4 @@
-/*	conf.h	4.9	82/10/17	*/
+/*	conf.h	4.10	82/10/31	*/
 
 /*
  * Declaration of block device
@@ -35,6 +35,7 @@ struct cdevsw
 	int	(*d_reset)();
 	struct tty *d_ttys;
 	int	(*d_select)();
+	int	(*d_mmap)();
 };
 #ifdef KERNEL
 struct	cdevsw cdevsw[];
