@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -558,7 +558,7 @@ setsender(from, e, delimptr, internal)
 	*/
 
 	if (bitset(EF_QUEUERUN, e->e_flags) || OpMode == MD_SMTP ||
-	    OpMode == MD_DAEMON)
+	    OpMode == MD_ARPAFTP || OpMode == MD_DAEMON)
 		realname = from;
 	if (realname == NULL || realname[0] == '\0')
 		realname = username();

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.24 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -454,6 +454,32 @@ eatheader(e, full)
 		p = hvalue("date", e);
 	if (p != NULL)
 		define('a', p, e);
+
+	/*
+	**  From person in antiquated ARPANET mode
+	**	required by UK Grey Book e-mail gateways (sigh)
+	*/
+
+	if (OpMode == MD_ARPAFTP)
+	{
+		register struct hdrinfo *hi;
+
+		for (hi = HdrInfo; hi->hi_field != NULL; hi++)
+		{
+			if (bitset(H_FROM, hi->hi_flags) &&
+			    (!bitset(H_RESENT, hi->hi_flags) ||
+			     bitset(EF_RESENT, e->e_flags)) &&
+			    (p = hvalue(hi->hi_field, e)) != NULL)
+				break;
+		}
+		if (hi->hi_field != NULL)
+		{
+			if (tTd(32, 2))
+				printf("eatheader: setsender(*%s == %s)\n",
+					hi->hi_field, p);
+			setsender(p, e, NULL, TRUE);
+		}
+	}
 
 	/*
 	**  Log collection information.
