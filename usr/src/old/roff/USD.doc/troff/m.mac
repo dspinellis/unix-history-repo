@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)m.mac	8.1 (Berkeley) %G%
+.\"	@(#)m.mac	6.4 (Berkeley) %G%
 .\"
 .if \n(mo=1 .ds mo January
 .if \n(mo=2 .ds mo February
@@ -28,7 +28,7 @@
 .ds Nr "N\s-2ROFF\s+2
 .ds Tr "T\s-2ROFF\s+2
 .nr PS 10
-.hy14
+.hy 14
 .ds u \v'-0.3m'\s-2
 .ds d \s0\v'0.3m'
 .nr a .8i
@@ -43,10 +43,10 @@
 .nr m -1i
 .nr x 0 1
 .nr y 0+\nmu
-.ev1
+.ev 1
 .ps \n(PS-2
 .vs \n(PS
-.ll6.5i
+.ll 6.5i
 'in 0
 .ev
 .tr &.
@@ -122,7 +122,7 @@
 .br
 .nr 2C 0
 .ll 6.5i
-.ev1
+.ev 1
 .ll 6.5i
 .ev
 ..
@@ -136,7 +136,7 @@
 ..
 .de pp
 'ps \\n(PS
-.ftR
+.ft R
 .\"'tl ''- % -''
 'bp
 ..
@@ -146,13 +146,13 @@
 .ch fo \nmu
 .de fn
 .da FN
-.ev1
+.ev 1
 .if \\n+x=1 .fs
 .fi
-.ti0
+.ti 0
 ..
 .de xf
-.ev1
+.ev 1
 .nf
 .FN
 .rm FN
@@ -160,7 +160,7 @@
 .ev
 ..
 .de fs
-.ti0
+.ti 0
 \l'1i'
 .br
 ..
@@ -190,31 +190,31 @@ Form	Value\\$2	Argument	Notes\\$1	Explanation
 .in \\ndu
 ..
 .de bt
-.ftR
+.ft R
 .xx
 .ne 1.1
-.ti0
+.ti 0
 ..
 .de b1
 .br
-.ti0
+.ti 0
 ..
 .de pg
 .ft R
 .fi
-.in0
+.in 0
 .xx
 .ne 1.1
 ..
 .de sc
 .pg
 \fI\\*H\\np.\\n+s.\|\\c
-.ftR
+.ft R
 .ul
 ..
 .de mh
 .nr s 0
-.in0
+.in 0
 .xx
 .ne 2.5
 .ft B
@@ -222,19 +222,19 @@ Form	Value\\$2	Argument	Notes\\$1	Explanation
 ..
 .de x1
 .xx
-.in.5i
+.in .5i
 .nf
 ..
 .de x2
 .xx
-.in0
+.in 0
 .fi
 ..
 .de EM
 .br
 \&\c
 'bp
-.pl2i
+.pl 2i
 ..
 .em EM
 .de TS
