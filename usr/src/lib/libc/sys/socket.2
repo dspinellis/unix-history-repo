@@ -1,0 +1,216 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)socket.2	5.1 (Berkeley) %G%
+.\"
+.TH SOCKET 2 "18 July 1983"
+.UC 5
+.SH NAME
+socket \- create an endpoint for communication
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.PP
+.ft B
+s = socket(af, type, protocol)
+int s, af, type, protocol;
+.fi
+.SH DESCRIPTION
+.I Socket
+creates an endpoint for communication and returns a descriptor.
+.PP
+The
+.I af
+parameter specifies an address format with which addresses specified
+in later operations using the socket should be interpreted.  These
+formats are defined in the include file
+.IR <sys/socket.h> .
+The currently understood formats are
+.PP
+.RS
+.nf
+.ta 1.25i 1.75i
+AF_UNIX	(UNIX path names),
+AF_INET	(ARPA Internet addresses),
+AF_PUP	(Xerox PUP-I Internet addresses), and
+AF_IMPLINK	(IMP \*(lqhost at IMP\*(rq addresses).
+.fi
+.RE
+.PP
+The socket has the indicated
+.I type
+which specifies the semantics of communication.  Currently
+defined types are:
+.PP
+.RS
+.nf
+SOCK_STREAM
+SOCK_DGRAM
+SOCK_RAW
+SOCK_SEQPACKET
+SOCK_RDM
+.fi
+.RE
+.PP
+A SOCK_STREAM type provides sequenced, reliable,
+two-way connection based byte streams with an out-of-band data
+transmission mechanism.
+A SOCK_DGRAM socket supports
+datagrams (connectionless, unreliable messages of
+a fixed (typically small) maximum length).
+SOCK_RAW sockets provide access to internal network interfaces.
+The types SOCK_RAW,
+which is available only to the super-user, and
+SOCK_SEQPACKET and SOCK_RDM, which are planned,
+but not yet implemented, are not described here.
+.PP
+The
+.I protocol
+specifies a particular protocol to be used with the socket.
+Normally only a single protocol exists to support a particular
+socket type using a given address format.  However, it is possible
+that many protocols may exist in which case a particular protocol
+must be specified in this manner.  The protocol number to use is
+particular to the \*(lqcommunication domain\*(rq in which communication
+is to take place; see
+.IR services (3N)
+and
+.IR protocols (3N).
+.PP
+Sockets of type SOCK_STREAM
+are full-duplex byte streams, similar
+to pipes.  A stream socket must be in a
+.I connected
+state before any data may be sent or received
+on it.  A connection to another socket is created with a
+.IR connect (2)
+call.  Once connected, data may be transferred using
+.IR read (2)
+and
+.IR write (2)
+calls or some variant of the 
+.IR send (2)
+and
+.IR recv (2)
+calls.  When a session has been completed a
+.IR close (2)
+may be performed.
+Out-of-band data may also be transmitted as described in
+.IR send (2)
+and received as described in
+.IR recv (2).
+.PP
+The communications protocols used to implement a
+SOCK_STREAM insure that data
+is not lost or duplicated.  If a piece of data for which the
+peer protocol has buffer space cannot be successfully transmitted
+within a reasonable length of time, then
+the connection is considered broken and calls
+will indicate an error with
+\-1 returns and with ETIMEDOUT as the specific code
+in the global variable errno.
+The protocols optionally keep sockets \*(lqwarm\*(rq by
+forcing transmissions
+roughly every minute in the absence of other activity.
+An error is then indicated if no response can be
+elicited on an otherwise
+idle connection for a extended period (e.g. 5 minutes).
+A SIGPIPE signal is raised if a process sends
+on a broken stream; this causes naive processes,
+which do not handle the signal, to exit.
+.PP
+SOCK_DGRAM and SOCK_RAW
+sockets allow sending of datagrams to correspondents
+named in
+.IR send (2)
+calls.  It is also possible to receive datagrams at
+such a socket with
+.IR recv (2).
+.PP
+An 
+.IR fcntl (2)
+call can be used to specify a process group to receive
+a SIGURG signal when the out-of-band data arrives.
+.PP
+The operation of sockets is controlled by socket level
+.IR options .
+These options are defined in the file
+.RI < sys/socket.h >
+and explained below.  
+.I Setsockopt
+and
+.IR getsockopt (2)
+are used to set and get options, respectively.
+.PP
+.RS
+.DT
+.nf
+SO_DEBUG 		turn on recording of debugging information
+SO_REUSEADDR	allow local address reuse
+SO_KEEPALIVE	keep connections alive
+SO_DONTROUTE	do no apply routing on outgoing messages
+SO_LINGER 		linger on close if data present
+SO_DONTLINGER	do not linger on close
+.fi
+.RE
+.PP
+SO_DEBUG enables debugging in the underlying protocol modules.
+SO_REUSEADDR indicates the rules used in validating addresses supplied
+in a
+.IR bind (2)
+call should allow reuse of local addresses.  SO_KEEPALIVE enables the
+periodic transmission of messages on a connected socket.  Should the
+connected party fail to respond to these messages, the connection is
+considered broken and processes using the socket are notified via a
+SIGPIPE signal.  SO_DONTROUTE indicates that outgoing messages should
+bypass the standard routing facilities.  Instead, messages are directed
+to the appropriate network interface according to the network portion
+of the destination address.  SO_LINGER
+and SO_DONTLINGER control the actions taken when unsent messags
+are queued on socket and a 
+.IR close (2)
+is performed.
+If the socket promises reliable delivery of data and SO_LINGER is set,
+the system will block the process on the 
+.I close
+attempt until it is able to transmit the data or until it decides it
+is unable to deliver the information (a timeout period, termed the
+linger interval, is specified in the
+.IR setsockopt 
+call when SO_LINGER is requested). 
+If SO_DONTLINGER is specified and a 
+.I close
+is issued, the system will process the close in a manner which allows
+the process to continue as quickly as possible.
+.SH "RETURN VALUE
+A \-1 is returned if an error occurs, otherwise the return
+value is a descriptor referencing the socket.
+.SH "ERRORS
+The \fIsocket\fP call fails if:
+.TP 20
+[EAFNOSUPPORT]
+The specified address family is not supported in this version
+of the system.
+.TP 20
+[ESOCKTNOSUPPORT]
+The specified socket type is not supported in this address family.
+.TP 20
+[EPROTONOSUPPORT]
+The specified protocol is not supported.
+.TP 20
+[EMFILE]
+The per-process descriptor table is full.
+.TP 20
+[ENOBUFS]
+No buffer space is available.  The socket cannot be created.
+.SH SEE ALSO
+accept(2), bind(2), connect(2), getsockname(2), getsockopt(2),
+ioctl(2), listen(2), recv(2),
+select(2), send(2), shutdown(2), socketpair(2)
+.br
+``A 4.2BSD Interprocess Communication Primer''.
+.SH BUGS
+The use of keepalives is a questionable feature for this layer.
