@@ -1,4 +1,4 @@
-/*	ht.c	4.35	82/12/17	*/
+/*	ht.c	4.36	83/05/27	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -437,7 +437,6 @@ htphys(dev, uio)
 	struct uio *uio;
 {
 	register int htunit;
-/*###439 [lint] htphys arg. 2 used inconsistently ht.c(439) :: ht.c(430)%%%*/
 	register struct tu_softc *sc;
 	register struct mba_device *mi;
 	daddr_t a;
