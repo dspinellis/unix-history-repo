@@ -1,41 +1,26 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1980, 1992 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.proprietary.c%
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mbufs.c	5.4 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)mbufs.c	5.5 (Berkeley) %G%";
+#endif /* not lint */
 
-#include "systat.h"
+#include <sys/param.h>
+#include <sys/types.h>
 #include <sys/mbuf.h>
+
+#include <stdlib.h>
+#include <string.h>
+#include <nlist.h>
 #include <paths.h>
+#include "systat.h"
+#include "extern.h"
 
-WINDOW *
-openmbufs()
-{
-	return (subwin(stdscr, LINES-5-1, 0, 5, 0));
-}
-
-closembufs(w)
-	WINDOW *w;
-{
-	if (w == NULL)
-		return;
-	wclear(w);
-	wrefresh(w);
-	delwin(w);
-}
-
-struct	mbstat *mb;
-
-labelmbufs()
-{
-	wmove(wnd, 0, 0); wclrtoeol(wnd);
-	mvwaddstr(wnd, 0, 10,
-	    "/0   /5   /10  /15  /20  /25  /30  /35  /40  /45  /50  /55  /60");
-}
+static struct mbstat *mb;
 
 char *mtnames[] = {
 	"free",
@@ -53,8 +38,35 @@ char *mtnames[] = {
 	"rights",
 	"ifaddrs",
 };
+
 #define	NNAMES	(sizeof (mtnames) / sizeof (mtnames[0]))
 
+WINDOW *
+openmbufs()
+{
+	return (subwin(stdscr, LINES-5-1, 0, 5, 0));
+}
+
+void
+closembufs(w)
+	WINDOW *w;
+{
+	if (w == NULL)
+		return;
+	wclear(w);
+	wrefresh(w);
+	delwin(w);
+}
+
+void
+labelmbufs()
+{
+	wmove(wnd, 0, 0); wclrtoeol(wnd);
+	mvwaddstr(wnd, 0, 10,
+	    "/0   /5   /10  /15  /20  /25  /30  /35  /40  /45  /50  /55  /60");
+}
+
+void
 showmbufs()
 {
 	register int i, j, max, index;
@@ -98,10 +110,14 @@ static struct nlist nlst[] = {
 	{ "" }
 };
 
+int
 initmbufs()
 {
 	if (nlst[X_MBSTAT].n_type == 0) {
-		kvm_nlist(nlst);
+		if (kvm_nlist(kd, nlst)) {
+			nlisterr(nlst);
+			return(0);
+		}
 		if (nlst[X_MBSTAT].n_type == 0) {
 			error("namelist on %s failed", _PATH_UNIX);
 			return(0);
@@ -112,6 +128,7 @@ initmbufs()
 	return(1);
 }
 
+void
 fetchmbufs()
 {
 	if (nlst[X_MBSTAT].n_type == 0)
