@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)inetd.8	6.3 (Berkeley) %G%
+.\"	@(#)inetd.8	6.4 (Berkeley) %G%
 .\"
 .TH INETD 8 ""
 .UC 6
@@ -126,6 +126,11 @@ in the form of the number of seconds since midnight, January
 1, 1900).  All of these services are tcp based.  For
 details of these services, consult the appropriate RFC
 from the Network Information Center.
+.PP
+.I Inetd
+rereads its configuration file when it receives a hangup signal, SIGHUP.
+Services may be added, deleted or modified when the configuration file
+is reread.
 .SH "SEE ALSO"
 comsat(8C), ftpd(8C), rexecd(8C), rlogind(8C), rshd(8C),
 telnetd(8C), tftpd(8C)
