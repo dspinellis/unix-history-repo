@@ -1,41 +1,43 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1980 Regents of the University of California.\n\
+"@(#) Copyright (c) 1990 The Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pc.c	5.4 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)pc.c	5.5 (Berkeley) %G%";
+#endif /* not lint */
 
-#include <stdio.h>
-#include <signal.h>
 #include <sys/param.h>
+#include <sys/signal.h>
 #include <sys/wait.h>
+#include <stdio.h>
+#include "pathnames.h"
 
 /*
  * Pc - front end for Pascal compiler.
  */
-char	*pc0 = "/usr/libexec/pc0";
-char	*pc1 = "/usr/libexec/f1";
-char	*pc2 = "/usr/libexec/pc2";
-char	*c2 = "/usr/libexec/c2";
-char	*pc3 = "/usr/libexec/pc3";
-char	*ld = "/usr/bin/ld";
-char	*as = "/usr/bin/as";
+char	*pc0 = _PATH_PC0;
+char	*pc1 = _PATH_PC1;
+char	*pc2 = _PATH_PC2;
+char	*c2 = _PATH_C2;
+char	*pc3 = _PATH_PC3;
+char	*ld = _PATH_LD;
+char	*as = _PATH_AS;
 char	*lpc = "-lpc";
-char	*crt0 = "/usr/libexec/crt0.o";
-char	*mcrt0 = "/usr/libexec/mcrt0.o";
-char	*gcrt0 = "/usr/libexec/gcrt0.o";
+char	*crt0 = _PATH_CRT0;
+char	*mcrt0 = _PATH_MCRT0;
+char	*gcrt0 = _PATH_GCRT0;
 
 char	*mktemp();
-char	*tmpdir = "/tmp";
+char	*tmpdir = _PATH_TMP;
 char	tmp0[MAXPATHLEN], tmp1[MAXPATHLEN];
 char	*tname[2];
 char	*tfile[2];
@@ -56,7 +58,7 @@ int	pc3argx = 1;
 #define	pc3args	pc0args
 #define	ldargs	pc0args
 /* char	*pc3args[NARGS] =	{ "pc3", 0 }; */
-/* char	*ldargs[NARGS] =	{ "ld", "-X", "/lib/crt0.o", 0, }; */
+/* char	*ldargs[NARGS] =	{ "ld", "-X", _PATH_CRT0, 0, }; */
 
 				/* as -J -t tmpdir -o objfile srcfile \0 */
 int	asargx;
@@ -121,7 +123,7 @@ main(argc, argv)
 
 	argc--, argv++;
 	if (argc == 0) {
-		execl("/bin/cat", "cat", "/usr/lib/how_pc");
+		execl(_PATH_CAT, "cat", _PATH_HOWPC);
 		exit(1);
 	}
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN) {
@@ -193,32 +195,32 @@ main(argc, argv)
 			switch (argp[2]) {
 
 			case '0':
-				pc0 = "/usr/src/ucb/pascal/pc0/a.out";
+				pc0 = _PATH_DPC0;
 				if (argp[3] != '\0') {
 					pc0 = &argp[3];
 				}
 				continue;
 			case '1':
-				pc1 = "/usr/src/lib/pcc/fort";
+				pc1 = _PATH_DPC1;
 				if (argp[3] != '\0') {
 					pc1 = &argp[3];
 				}
 				continue;
 			case '2':
-				pc2 = "/usr/src/ucb/pascal/utilities/pc2";
+				pc2 = _PATH_DPC2;
 				if (argp[3] != '\0') {
 					pc2 = &argp[3];
 				}
 				continue;
 			case '3':
-				pc3 = "/usr/src/ucb/pascal/utilities/pc3";
+				pc3 = _PATH_DPC3;
 				if (argp[3] != '\0') {
 					pc3 = &argp[3];
 				}
 				continue;
 			case 'l':
 				Tlflag = 1;
-				lpc = "/usr/src/usr.lib/libpc/libpc";
+				lpc = _PATH_DLPC;
 				if (argp[3] != '\0') {
 					lpc = &argp[3];
 				}
@@ -351,7 +353,7 @@ main(argc, argv)
 	pc3args[0] = "pc3";
 	if (wflag)
 		pc3args[pc3argx++] = "-w";
-	pc3args[pc3argx++] = "/usr/lib/pcexterns.o";
+	pc3args[pc3argx++] = _PATH_PCEXTERN;
 	for (i = 0; i < argc; i++) {
 		argp = argv[i];
 		if (!strcmp(argp, "-o"))
@@ -376,7 +378,7 @@ main(argc, argv)
 	if (dosys(pc3, pc3args, 0, 0) > 1)
 		done();
 	errs = 0;
-/* char	*ldargs[NARGS] =	{ "ld", "-X", "/lib/crt0.o", 0, }; */
+/* char	*ldargs[NARGS] =	{ "ld", "-X", _PATH_CRT0, 0, }; */
 	ldargs[0] = "ld";
 	ldargs[1] = "-X";
 	ldargs[2] = crt0;
