@@ -1,0 +1,196 @@
+.Lc The\ LISP\ Stepper 14
+.sh 2 Simple\ Use\ Of\ Stepping 14
+.Lf step "s_arg1..."
+.No
+The LISP "stepping" package is intended to give the LISP programmer
+a facility analogous to the Instruction Step mode of running a
+machine language program.  
+The user interface is through the function (fexpr) step, which sets
+switches to put the LISP interpreter in and out of "stepping" mode.
+The most common \fIstep\fP invocations follow.  These invocations are 
+usually typed at the top-level, and will take effect
+immediately (i.e. the next S-expression typed in will be evaluated in stepping
+mode).
+.Eb
+\fI(step t)\fP				; Turn on stepping mode.
+\fI(step nil)\fP			; Turn off stepping mode.
+.Ee
+.Se
+In stepping mode, the LISP evaluator will print out each S-exp to
+be evaluated before evaluation, and the returned value after evaluation,
+calling itself recursively to display the stepped evaluation of each
+argument, if the S-exp is a function call.  In stepping mode, the
+evaluator will wait after displaying each S-exp before evaluation
+for a command character from the console.
+.Eb
+\fISTEP COMMAND SUMMARY\fP
+
+<return>			Continue stepping recursively.
+
+c				Show returned value from this level
+				only, and continue stepping upward.
+
+e				Only step interpreted code.
+
+g				Turn off stepping mode. (but continue
+				evaluation without stepping).
+
+n <number>			Step through <number> evaluations without 
+				stopping
+
+p				Redisplay current form in full
+				(i.e. rebind prinlevel and prinlength to nil)
+
+b				Get breakpoint
+
+q				Quit
+
+d				Call debug
+.Ee
+.sh 2 Advanced\ Features
+.sh 3 Selectively\ Turning\ On\ Stepping.
+
+If
+       \fI(step foo1 foo2 ...)\fP
+
+is typed at top level, stepping will not commence
+immediately, but rather when the evaluator first encounters an S-expression
+whose car is one of \fIfoo1, foo2\fP, etc.  This form will then display
+at the console, and the evaluator will be in stepping mode waiting
+for a command character.
+.pp
+Normally the stepper intercepts calls to \fIfuncall\fP and \fIeval\fP.
+When \fIfuncall\fP is intercepted, the arguments to the function
+have already been evaluated but when \fIeval\fP is intercepted, the
+arguments have not been evaluated.  To differentiate the two cases, 
+when printing the form in evaluation, the stepper preceded intercepted
+calls to 
+.i funcall
+with "f:".
+Calls to \fIfuncall\fP are normally caused by compiled lisp code calling
+other functions, whereas calls to \fIeval\fP 
+usually occur when lisp code is interpreted.
+To step only calls to eval use:
+	\fI(step e)\fP
+
+.sh 3 Stepping\ With\ Breakpoints.
+.pp
+For the moment, step is turned off inside of error breaks, but not by
+the break function.  Upon exiting the error, step is reenabled.
+However, executing \fI(step nil)\fP inside a error loop will turn off
+stepping globally, i.e. within the error loop, and after return has
+be made from the loop.
+.sh 2 Overhead\ of\ Stepping.
+.pp
+If stepping mode has been turned off by \fI(step nil)\fP, 
+the execution overhead
+of having the stepping packing in your LISP is identically nil.
+If one stops stepping by typing "g", every call to eval
+incurs a small overhead--several machine instructions, corresponding
+to the compiled code for a simple cond and one function pushdown.
+Running with \fI(step foo1 foo2 ...)\fP can be more expensive, since a
+member of the car of the current form into the list \fI(foo1 foo2 ...)\fP
+is required at each call to eval.
+.sh 2 Evalhook\ and\ Funcallhook
+.pp
+There are hooks in the
+.Fr
+interpreter to permit a user written function to gain control of the
+evaluation process.
+These hooks are used by the Step package just described.
+There are two hooks and they have been strategically placed in the
+two key functions in the interpreter:
+.i eval
+(which all interpreted code goes through)
+and  
+.i funcall
+(which all compiled code goes through if \fI(sstatus\ translink\ nil)\fP
+has been done).
+The hook in
+.i eval
+is compatible with Maclisp, but there is no
+Maclisp equivalent of the hook in 
+.i funcall .
+.pp
+To arm the hooks two forms must be evaluated: \fI(*rset\ t)\fP and
+\fI(sstatus\ evalhook\ t)\fP.
+Once that is done, 
+.i eval
+and
+.i funcall
+do a special check when they enter.
+.pp
+If 
+.i eval 
+is given a form to evaluate, say \fI(foo\ bar)\fP, 
+and the symbol `evalhook' is non nil, say its value is `ehook',
+then
+.i eval
+will lambda bind the symbols `evalhook' and `funcallhook'
+to nil and will call ehook passing \fI(foo\ bar)\fP as the argument.
+It is ehook's responsibility to evaluate \fI(foo\ bar)\fP and
+return its value.
+Typically ehook will call the function `evalhook' 
+to evaluate \fI(foo\ bar)\fP.
+Note that `evalhook' is a symbol whose function binding is a system function
+described in Chapter 4, and whose value binding, if non nil, is the
+name of a user written
+function (or a lambda expression, or a binary object) which
+will gain control whenever eval is called.
+`evalhook' is also the name of the 
+.i status 
+tag which must be set for
+all of this to work.
+.pp
+If 
+.i funcall
+is given a function, say foo, and a set of already evaluated 
+arguments, say barv and bazv, and if the symbol `funcallhook'
+has a non nil value, say `fhook', then
+.i funcall
+will lambda bind `evalhook' and `funcallhook' to nil
+and will call fhook with arguments barv, bazv and foo.
+Thus fhook must be a lexpr since it may be given any number
+of arguments.  
+The function to call, foo in this case, will be the
+.i last
+of the arguments given to fhook.
+It is fhooks responsibility to do the function call and return the
+value.
+Typically fhook will call the function
+.i funcallhook
+to do the funcall.
+This is an example of a funcallhook function which  just prints
+the arguments on each entry to funcall and the return value.
+.Eb
+-> \fI(defun fhook n (let ((form (cons (arg n) (listify (1- n))))
+			(retval))
+		       (patom "calling ")(print form)(terpr)
+		       (setq retval (funcallhook form 'fhook))
+		       (patom "returns ")(print retval)(terpr)
+		       retval))\fP
+fhook
+-> \fI(*rset t) (sstatus evalhook t) (sstatus translink nil)\fP
+-> \fI(setq funcallhook 'fhook)\fP
+calling (print fhook)		;; now all compiled code is traced
+fhookreturns nil
+calling (terpr)
+
+returns nil
+calling (patom "-> ")
+-> returns "-> "
+calling (read nil Q00000)
+\fI(array foo t 10)\fP		;; to test it, we see what happens when
+returns (array foo t 10) 	;; we make an array
+calling (eval (array foo t 10))
+calling (append (10) nil)
+returns (10)
+calling (lessp 1 1)
+returns nil
+calling (apply times (10))
+returns 10
+calling (small-segment value 10)
+calling (boole 4 137 127)
+returns 128
+ ... there is plenty more ...
+.Ee
