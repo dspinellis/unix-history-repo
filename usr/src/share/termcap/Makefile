@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 
 # reorder gives an editor command for most common terminals
 # (in reverse order from n'th to 1'st most commonly used)
@@ -15,14 +15,12 @@ clean:
 	rm -f termcap
 
 cleandir: clean
-	rm -f ${MAN}
+	rm -f ${MAN5}
 
-install: maninstall
+beforeinstall:
 	install -o ${BINOWN} -g ${BINGRP} -m 444 termcap \
 	     ${DESTDIR}${BINDIR}/misc
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/map3270 \
 	     ${DESTDIR}${BINDIR}/misc
-
-depend lint tags:
 
 .include <bsd.prog.mk>
