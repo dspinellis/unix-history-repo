@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_inode.c	7.70 (Berkeley) %G%
+ *	@(#)ffs_inode.c	7.71 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -149,45 +149,63 @@ ffs_truncate(ap)
 		oip->i_flag |= ICHG|IUPD;
 		return (VOP_UPDATE(ovp, &tv, &tv, 0));
 	}
+#ifdef QUOTA
+	if (error = getinoquota(oip))
+		return (error);
+#endif
 	vnode_pager_setsize(ovp, (u_long)length);
+	fs = oip->i_fs;
+	osize = oip->i_size;
 	/*
-	 * Update the size of the file. If the file is not being
+	 * Lengthen the size of the file. We must ensure that the
+	 * last byte of the file is allocated. Since the smallest
+	 * value of oszie is 0, length will be at least 1.
+	 */
+	if (osize < length) {
+		offset = blkoff(fs, length - 1);
+		lbn = lblkno(fs, length - 1);
+		aflags = B_CLRBUF;
+		if (ap->a_flags & IO_SYNC)
+			aflags |= B_SYNC;
+		if (error = ffs_balloc(oip, lbn, offset + 1, ap->a_cred, &bp,
+		    aflags))
+			return (error);
+		oip->i_size = length;
+		(void) vnode_pager_uncache(ovp);
+		if (aflags & IO_SYNC)
+			bwrite(bp);
+		else
+			bawrite(bp);
+		oip->i_flag |= ICHG|IUPD;
+		return (VOP_UPDATE(ovp, &tv, &tv, 1));
+	}
+	/*
+	 * Shorten the size of the file. If the file is not being
 	 * truncated to a block boundry, the contents of the
 	 * partial block following the end of the file must be
 	 * zero'ed in case it ever become accessable again because
 	 * of subsequent file growth.
 	 */
-	fs = oip->i_fs;
-	osize = oip->i_size;
 	offset = blkoff(fs, length);
-	if (offset == 0 && osize > length) {
+	if (offset == 0) {
 		oip->i_size = length;
 	} else {
 		lbn = lblkno(fs, length);
 		aflags = B_CLRBUF;
 		if (ap->a_flags & IO_SYNC)
 			aflags |= B_SYNC;
-#ifdef QUOTA
-		if (error = getinoquota(oip))
-			return (error);
-#endif
-		if (error = ffs_balloc(oip, lbn, offset, ap->a_cred, &bp, aflags))
+		if (error = ffs_balloc(oip, lbn, offset, ap->a_cred, &bp,
+		    aflags))
 			return (error);
 		oip->i_size = length;
 		size = blksize(fs, oip, lbn);
 		(void) vnode_pager_uncache(ovp);
-		if (osize > length) {
-			bzero(bp->b_un.b_addr + offset, (u_int)(size - offset));
-			allocbuf(bp, size);
-		}
-		if (ap->a_flags & IO_SYNC)
+		bzero(bp->b_un.b_addr + offset, (u_int)(size - offset));
+		allocbuf(bp, size);
+		if (aflags & IO_SYNC)
 			bwrite(bp);
 		else
 			bawrite(bp);
-		if (osize < length) {
-			oip->i_flag |= ICHG|IUPD;
-			return (VOP_UPDATE(ovp, &tv, &tv, 1));
-		}
 	}
 	/*
 	 * Calculate index into inode's block list of
@@ -319,8 +337,7 @@ done:
 		oip->i_blocks = 0;
 	oip->i_flag |= ICHG;
 #ifdef QUOTA
-	if (!getinoquota(oip))
-		(void) chkdq(oip, -blocksreleased, NOCRED, 0);
+	(void) chkdq(oip, -blocksreleased, NOCRED, 0);
 #endif
 	return (allerror);
 }
