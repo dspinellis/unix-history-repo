@@ -1,4 +1,4 @@
-/*	if_ether.c	6.2	83/08/28	*/
+/*	if_ether.c	6.3	83/12/15	*/
 
 /*
  * Ethernet address resolution protocol.
@@ -146,7 +146,7 @@ arpwhohas(ac, addr)
 
 	if ((m = m_get(M_DONTWAIT, MT_DATA)) == NULL)
 		return;
-	m->m_len = sizeof *ea + sizeof *eh;
+	m->m_len = sizeof *ea;
 	m->m_off = MMAXOFF - m->m_len;
 	ea = mtod(m, struct ether_arp *);
 	eh = (struct ether_header *)sa.sa_data;
