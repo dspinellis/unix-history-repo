@@ -1,10 +1,10 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)machpats.c	1.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)machpats.c	1.2	(Berkeley)	%G%";
 #endif not lint
 
-#include "pc2.h"
+#include "inline.h"
 
 /*
  * Pattern table for special VAX instructions.
