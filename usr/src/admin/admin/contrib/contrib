@@ -1,106 +1,165 @@
-The following list are people and organizations that have contributed
-source code that will be part of the 4.4BSD release.  Each person or
-organization listed in the first group provided a large subsystem, the
-second, a specific item, program or library routine.
-
-@	386 support			William Jolitz
-@	ANSI C library support		Chris Torek
-	Autoconfiguration		Robert Elz
-	C library documentation		American National Standards Committee X3
-	CCI 6/32 support		Computer Consoles Inc.
-	GCC				The Free Software Foundation
-@	HP300 support			Systems Programming Group; University
-					of Utah Computer Science Department.
-	Job control			Jim Kulp
-	Kerberos			Project Athena, MIT
-	NFS automounter			Jan Pendry
-	NFS support			Rick Macklem
-	Network device drivers		Micom-Interlan, Excelan
-	Quota support			Robert Elz
-	RPC support			Sun Microsystems Inc.
-@	Stdio				Chris Torek
-	System documentation		IEEE (POSIX)
-	Transport/Network OSI layers	IBM Corp., and the University of Wisconsin
-	VAX 3000 support		Mt. Xinu and Tom Ferrin
-	VAX BI support			Chris Torek
-	VAX device support		Digital Equipment Corp.
-	X11				MIT X Consortium
-
-	ar(1)				Hugh Smith
-	cal(1)				Kim Letkeman
-	cat(1)				Kevin Fall
-	col(1)				Michael Rendell
-@	comm(1)				Case Larsen
-	compress(1)			James A. Woods, Spencer Thomas and Joseph Orost
-	cp(1)				David Hitz
-	cut(1)				Adam S. Moskowitz and Marciano Pitargue
-	des(1)				Phil Karn, Jim Gillogly and Richard Outerbridge
-	du(1)				Chris Newcomb
-	emacs(1)			Richard Stallman
-	find(1)				Cimarron Taylor
-	finger(1)			Tony Nardo
-	fold(1)				Kevin Ruddy
-	fpr(1)				Robert Corbett
-	fsplit(1)			Jerry Berkman and Asa Romberger
-	gprof(1)			Peter Kessler
-	indent(1)			David Willcox, Eric Schmidt, James Gosling and Sun Microsystems
-	jove(1)				Jonathon Payne
-	lex(1)				Vern Paxson
-	locate(1)			James A. Woods
-@	ls(1)				Michael Fischbein
-@	m4(1)				Ozan Yigit
-	mail(1)				Kurt Schoens
-@	make(1)				Adam de Boor
-	mh(1)				Rand Corporation
-	mv(1)				Ken Smith
-	news(1)				Rick Adams (and a cast of thousands)
-@	nm(1)				Hans Huebner
-	paste(1)			Adam S. Moskowitz
-	patch(1)			Larry Wall
-	ranlib(1)			Hugh Smith
-	rcs(1)				Walter F. Tichy
-	tn3270(1)			Gregory Minshall
-	tsort(1)			Michael Rendell
-@	unifdef(1)			Dave Yost
-@	uniq(1)				Case Larsen
-@	uuq(1)				Lou Salkind and Rick Adams
-@	who(1)				Michael Fischbein
-@	window(1)			Edward Wang
-	write(1)			Craig Leres and Jef Poskanzer
-	xargs(1)			John B. Roll Jr.
-	yacc(1)				Robert Paul Corbett
-
-	bitstring(3)			Paul Vixie
-	ctime(3) (timezone support)	Arthur David Olson
-	fnmatch(3)			Guido van Rossum
-	glob(3)				Guido van Rossum
-	kvm(3)				Peter Shipley
-	lsearch(3)			Roger L. Snyder
-@	nsaddr(3)			J.Q. Johnson
-
-	arithmetic(6)			Eamonn McManus
-	atc(6)				Ed James
-	bcd(6)				Steve Hayman
-@	caesar(6)			Rick Adams
-@	ching(6)			Guy Harris
-	factor(6)			Landon Curt Noll
-	fish(6)				Muffy Barkocy
-	fortune(6)			Ken Arnold
-	hack(6)				Andries Brouwer (and a cast of thousands)
-	phantasia(6)			Edward Estes
-	primes(6)			Landon Curt Noll
-	rogue(6)			Timothy C. Stoehr
-	wump(6)				Dave Taylor
-
-@	arp(8)				Sun Microsystems Inc.
-	clri(8)				Rich $alz
-@	disklabel(8)			Symmetric Computer Systems
-	mknod(8)			Kevin Fall
-	ping(8)				Mike Muuss
-	sendmail(8)			Eric Allman
-	slip(8)				Rick Adams
-@	traceroute(8)			Van Jacobson
-@	uucpd(8)			Rick Adams
-@	uusnap(8)			Randy King and Rick Adams
-
-	ANSI C prototypes		John Kohl
+.ds CH
+.sp 5
+The following organizations have either funded the development
+of 4.4BSD or provided people and/or hardware to support our research.
+.sp 1
+.nf
+Compaq Computer Corp.
+Cray Research Inc.
+Dept. of Defense Advance Research Projects Agency (DARPA)
+Digital Equipment Corp.
+The Hewlett-Packard Company
+The Open Software Foundation
+UUNET Technologies Inc.
+.fi
+.sp 2
+The following are people and organizations that have contributed a
+large subsystem.
+.sp
+.TS
+l l.
+386/486 support	William Jolitz
+ANSI C library support	Chris Torek
+ANSI C prototypes	Donn Seeley, John Kohl
+Autoconfiguration	Robert Elz
+C library documentation	American National Standards Committee X3
+CCI 6/32 support	Computer Consoles Inc.
+Disklable support	Symmetric Computer Systems
+Documentation	Cynthia Livingston and The USENIX Assoc.
+GCC and groff integration	UUNET Technologies, Inc.
+GCC, GDB	The Free Software Foundation
+Groff	James Clark
+HP300 support	Jeff Forys, Mike Hibler, Jay Lepreau, Donn Seeley and the
+	Systems Programming Group; University of Utah CS Dept.
+Harris HCX I/O support	Harris Corp.
+Job control	Jim Kulp
+Kerberos	Project Athena, MIT
+Math library (libm)	K.C. Ng, Z-S. Alex Liu, S. McDonald P. Tang, W. Kahan
+NFS automounter	Jan Pendry
+NFS support	Rick Macklem
+Network device drivers	Micom-Interlan, Excelan
+Quota support	Robert Elz
+RPC support	Sun Microsystems Inc.
+Stdio	Chris Torek
+System documentation	IEEE (POSIX)
+Timezone support	Arthur David Olson
+Transport/Network OSI layers	IBM Corp., and the University of Wisconsin
+User level XNS support	Cornell University
+VAX 3000 support	Mt. Xinu and Tom Ferrin
+VAX BI support	Chris Torek
+VAX device support	Digital Equipment Corp.
+Virtual memory implementation	Carnegie-Mellon University Mach project
+X11	MIT X Consortium
+X25	University of British Columbia
+.TE
+.bp
+.sp 5
+The following are people and organizations that have contributed a
+specific item, program, library routine or program maintenance.
+.sp
+.ps 8
+.vs 9
+.TS
+l l.
+386 support	Carnegie-Mellon University Mach project
+386 support	Don Ahn, Sean Fagin, Tim Tucker
+adventure(6)	Will Crowther, Don Woods, Jim Gillogly
+ar(1)	Hugh Smith
+arithmetic(6)	Eamonn McManus
+arp(8)	Sun Microsystems Inc.
+atc(6)	Ed James
+backgammon(6)	Alan Char
+battlestar(6)	David Riggle
+bcd(6)	Steve Hayman
+bdes(1)	Matt Bishop
+bitstring(3)	Paul Vixie
+caesar(6)	Stan King, John Eldridge
+cal(1)	Kim Letkeman
+cat(1)	Kevin Fall
+chess(6)	Stuart Cracraft
+ching(6)	Guy Harris
+cksum(1)	James W. Williams
+clri(8)	Rich $alz
+col(1)	Michael Rendell
+comm(1)	Case Larsen
+compress(1)	James A. Woods, Spencer Thomas and Joseph Orost
+cp(1)	David Hitz
+curses(3)	Ken Arnold
+cut(1)	Adam S. Moskowitz and Marciano Pitargue
+db(3) btree support	Mike Olson
+db(3) hashing support	Margo Seltzer
+des(1)	Phil Karn, Jim Gillogly and Richard Outerbridge
+disklabel(8)	Symmetric Computer Systems
+du(1)	Chris Newcomb
+emacs(1)	Richard Stallman
+factor(6)	Landon Curt Noll
+find(1)	Cimarron Taylor
+finger(1)	Tony Nardo
+fish(6)	Muffy Barkocy
+fnmatch(3)	Guido van Rossum
+fold(1)	Kevin Ruddy
+fortune(6)	Ken Arnold
+fortune(6)	Ken Arnold
+fpr(1)	Robert Corbett
+fsdb(8)	Computer Consoles Inc.
+fsplit(1)	Jerry Berkman and Asa Romberger
+glob(3)	Guido van Rossum
+gprof(1)	Peter Kessler
+hack(6)	Andries Brouwer (and a cast of thousands)
+hangman(6)	Ken Arnold
+hunt(6)	Greg Couch, Conrad Huang
+indent(1)	David Willcox, Eric Schmidt, James Gosling and Sun Microsystems
+jove(1)	Jonathon Payne
+kvm(3)	Peter Shipley
+larn(6)	Noah Morgan
+lex(1)	Vern Paxson
+locate(1)	James A. Woods
+ls(1)	Michael Fischbein
+lsearch(3)	Roger L. Snyder
+m4(1)	Ozan Yigit
+mail(1)	Kurt Schoens
+make(1)	Adam de Boor
+mh(1)	Rand Corporation
+mille(6)	Ken Arnold
+mknod(8)	Kevin Fall
+monop(6)	Ken Arnold
+mv(1)	Ken Smith
+news(1)	Rick Adams (and a cast of thousands)
+nm(1)	Hans Huebner
+packet filter	Steven McCanne
+paste(1)	Adam S. Moskowitz
+patch(1)	Larry Wall
+phantasia(6)	E.A. Estes, C. Robertson
+phantasia(6)	Edward Estes
+ping(8)	Mike Muuss
+pom(6)	Keith E. Brandt
+primes(6)	Landon Curt Noll
+ranlib(1)	Hugh Smith
+rcs(1)	Walter F. Tichy
+regexp(3)	Henry Spencer
+robots(6)	Ken Arnold
+rogue(6)	Timothy C. Stoehr
+sail(6)	David Riggle, Edward Wang
+sendmail(8)	Eric Allman
+sh(1)	Kenneth Almquist
+slattach(8)	Rick Adams
+slip(8)	Rick Adams
+telnet(1) support	Dave Borman
+tn3270(1)	Gregory Minshall
+traceroute(8)	Van Jacobson
+trek(6)	Eric Allman
+tsort(1)	Michael Rendell
+unifdef(1)	Dave Yost
+uniq(1)	Case Larsen
+uucpd(8)	Rick Adams
+uuq(1)	Lou Salkind and Rick Adams
+uusnap(8)	Randy King and Rick Adams
+who(1)	Michael Fischbein
+window(1)	Edward Wang
+worm(6)	Michael Toy
+worms(6)	Eric P. Scott
+write(1)	Craig Leres and Jef Poskanzer
+wump(6)	Dave Taylor
+xargs(1)	John B. Roll Jr.
+yacc(1)	Robert Paul Corbett
+.TE
