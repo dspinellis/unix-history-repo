@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mdef.h	5.6 (Berkeley) %G%
+ *	@(#)mdef.h	5.7 (Berkeley) %G%
  */
 
 /*
@@ -16,10 +16,14 @@
  * by: oz
  */
 
+#ifdef vms
+#include stdio
+#include ctype
+#include signal
+#endif
+
 /*
- *
  * m4 constants..
- *
  */
  
 #define MACRTYPE        1
@@ -71,6 +75,10 @@
 #define SCOMMT          '#'
 #define ECOMMT          '\n'
 
+#ifdef msdos
+#define system(str)	(-1)
+#endif
+
 /*
  * other important constants
  */
@@ -121,12 +129,10 @@ typedef union {			/* stack structure */
  * macros for readibility and/or speed
  *
  *      gpbc()  - get a possibly pushed-back character
- *      min()   - select the minimum of two elements
  *      pushf() - push a call frame entry onto stack
  *      pushs() - push a string pointer onto stack
  */
 #define gpbc() 	 (bp > buf) ? *--bp : getc(infile[ilevel])
-#define min(x,y) ((x > y) ? y : x)
 #define pushf(x) if (sp < STACKMAX) mstack[++sp].sfra = (x)
 #define pushs(x) if (sp < STACKMAX) mstack[++sp].sstr = (x)
 
