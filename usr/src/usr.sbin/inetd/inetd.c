@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -417,7 +417,14 @@ config()
 			int i;
 
 			omask = sigblock(SIGBLOCK);
-			if (cp->se_bi == 0)
+			/*
+			 * sep->se_wait may be holding the pid of a daemon
+			 * that we're waiting for.  If so, don't overwrite
+			 * it unless the config file explicitly says don't 
+			 * wait.
+			 */
+			if (cp->se_bi == 0 && 
+			    (sep->se_wait == 1 || cp->se_wait == 0))
 				sep->se_wait = cp->se_wait;
 #define SWAP(a, b) { char *c = a; a = b; b = c; }
 			if (cp->se_user)
