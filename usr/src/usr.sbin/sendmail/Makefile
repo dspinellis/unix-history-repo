@@ -1,4 +1,4 @@
-#       @(#)Makefile	6.5 (Berkeley) %G%
+#       @(#)Makefile	6.6 (Berkeley) %G%
 
 SUBDIR= mailstats praliases
 VER=	XX
@@ -10,7 +10,7 @@ SUBDIR+=src
 
 tar: Files.base Files.cf Files.misc Files.xdoc
 	(cd src; ${MAKE})
-	(cd doc; ${MAKE})
+	(cd doc; PRINTER=lz ${MAKE})
 	(cd cf/cf; ${MAKE})
 	tar chf sendmail.${VER}.base.tar `cat Files.base`
 	compress sendmail.${VER}.base.tar
