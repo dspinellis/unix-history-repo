@@ -4,46 +4,24 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)namei.h	7.17 (Berkeley) %G%
+ *	@(#)namei.h	7.18 (Berkeley) %G%
  */
-
-/* NEEDSWORK: function defns need update */
 
 #ifndef _NAMEI_H_
 #define	_NAMEI_H_
-
-
-struct componentname {
-	u_long cn_nameiop;	/* in */
-	u_long cn_flags;	/* in */
-	long cn_namelen;	/* in */
-	char *cn_nameptr;	/* in */
-	u_long cn_hash;		/* in */
-	char *cn_pnbuf;		/* in */
-	struct ucred *cn_cred;	/* in */
-	struct proc *cn_proc;	/* in */
-	/*
-	 * Side effects.
-	 */
-	struct ufs_specific {		/* saved info for new dir entry */
-		off_t	ufs_endoff;	/* end of useful directory contents */
-		long	ufs_offset;	/* offset of free space in directory */
-		long	ufs_count;	/* size of free slot in directory */
-		ino_t	ufs_ino;	/* inode number of found directory */
-		u_long	ufs_reclen;	/* size of found directory entry */
-	} cn_ufs;
-};
 
 /*
  * Encapsulation of namei parameters.
  */
 struct nameidata {
 	/*
-	 * Arguments to namei.
+	 * Arguments to namei/lookup.
 	 */
 	caddr_t	ni_dirp;		/* pathname pointer */
 	enum	uio_seg ni_segflg;	/* location of pathname */
-        u_long	ni_nameiop;		/* see below.  NEEDSWORK: here for compatibility */
+     /* u_long	ni_nameiop;		/* namei operation */
+     /* u_long	ni_flags;		/* flags to namei */
+     /* struct	proc *ni_proc;		/* process requesting lookup */
 	/*
 	 * Arguments to lookup.
 	 */
@@ -56,34 +34,33 @@ struct nameidata {
 	struct	vnode *ni_vp;		/* vnode of result */
 	struct	vnode *ni_dvp;		/* vnode of intermediate directory */
 	/*
-	 * Shared between namei, lookup routines, and commit routines.
+	 * Shared between namei and lookup/commit routines.
 	 */
-     /* char	*ni_pnbuf;		/* pathname buffer */
 	long	ni_pathlen;		/* remaining chars in path */
-     /* char	*ni_ptr;		/* current location in pathname */
-     /* long	ni_namelen;		/* length of current component */
 	char	*ni_next;		/* next location in pathname */
-     /* u_long	ni_hash;		/* hash value of current component */
-	u_char	ni_loopcnt;		/* count of symlinks encountered */
-     /* u_char	ni_makeentry;		/* 1 => add entry to name cache */
-     /* u_char	ni_isdotdot;		/* 1 => current component name is .. */
-     /* u_char	ni_more;		/* 1 => symlink needs interpretation */
+	u_long	ni_loopcnt;		/* count of symlinks encountered */
 	/*
-	 * Lookup params.
+	 * Lookup parameters: this structure describes the subset of
+	 * information from the nameidata structure that is passed
+	 * through the VOP interface.
 	 */
-	struct componentname ni_cnd;
+	struct componentname {
+		/*
+		 * Arguments to lookup.
+		 */
+		u_long	cn_nameiop;	/* namei operation */
+		u_long	cn_flags;	/* flags to namei */
+		struct	proc *cn_proc;	/* process requesting lookup */
+		struct	ucred *cn_cred;	/* credentials */
+		/*
+		 * Shared between lookup and commit routines.
+		 */
+		char	*cn_pnbuf;	/* pathname buffer */
+		char	*cn_nameptr;	/* pointer to looked up name */
+		long	cn_namelen;	/* length of looked up component */
+		u_long	cn_hash;	/* hash value of looked up name */
+	} ni_cnd;
 };
-/*
- * Backwards compatibility.
- */
-/* #define ni_nameiop	ni_cnd.cn_nameiop */
-#define ni_cred		ni_cnd.cn_cred
-#define ni_pnbuf	ni_cnd.cn_pnbuf
-#define ni_namelen	ni_cnd.cn_namelen
-#define ni_ptr		ni_cnd.cn_nameptr
-#define ni_hash		ni_cnd.cn_hash
-#define ni_flags	ni_cnd.cn_flags
-#define ni_ufs		ni_cnd.cn_ufs
 
 #ifdef KERNEL
 /*
@@ -123,12 +100,21 @@ struct nameidata {
 #define	HASBUF		0x00400	/* has allocated pathname buffer */
 #define	SAVENAME	0x00800	/* save pathanme buffer */
 #define	SAVESTART	0x01000	/* save starting directory */
-/* new: */
 #define ISDOTDOT	0x02000	/* current component name is .. */
 #define MAKEENTRY	0x04000	/* entry is to be added to name cache */
 #define ISLASTCN	0x08000	/* this is last component of pathname */
 #define ISSYMLINK	0x10000	/* symlink needs interpretation */
 #define PARAMASK	0xfff00	/* mask of parameter descriptors */
+/*
+ * Initialization of an nameidata structure.
+ */
+#define NDINIT(ndp, op, flags, segflg, namep, p) { \
+	(ndp)->ni_cnd.cn_nameiop = op; \
+	(ndp)->ni_cnd.cn_flags = flags; \
+	(ndp)->ni_segflg = segflg; \
+	(ndp)->ni_dirp = namep; \
+	(ndp)->ni_cnd.cn_proc = p; \
+}
 #endif
 
 /*
@@ -155,8 +141,8 @@ struct	namecache {
 
 #ifdef KERNEL
 u_long	nextvnodeid;
-int	namei __P((struct nameidata *ndp, struct proc *p));
-int	lookup __P((struct nameidata *ndp, struct proc *p));
+int	namei __P((struct nameidata *ndp));
+int	lookup __P((struct nameidata *ndp));
 #endif
 
 /*
