@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	8.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	8.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,6 +32,9 @@ static char sccsid[] = "@(#)pstat.c	8.14 (Berkeley) %G%";
 #include <miscfs/union/union.h>
 #undef KERNEL
 #include <sys/stat.h>
+#include <nfs/rpcv2.h>
+#include <nfs/nfsproto.h>
+#include <nfs/nfs.h>
 #include <nfs/nfsnode.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
@@ -116,7 +119,6 @@ char	*nlistf	= NULL;
 char	*memf	= NULL;
 kvm_t	*kd;
 
-const char *mountname[] = INITMOUNTNAMES;
 struct {
 	int m_flag;
 	const char *m_name;
@@ -303,41 +305,23 @@ vnodemode()
 			maddr = vp->v_mount;
 			mount_print(mp);
 			vnode_header();
-			switch (ST.f_type) {
-			case MOUNT_UFS:
-			case MOUNT_MFS:
+			if (!strcmp(ST.f_fstypename, "ufs") ||
+			    !strcmp(ST.f_fstypename, "mfs"))
 				ufs_header();
-				break;
-			case MOUNT_NFS:
+			else if (!strcmp(ST.f_fstypename, "nfs"))
 				nfs_header();
-				break;
-			case MOUNT_UNION:
+			else if (!strcmp(ST.f_fstypename, "union"))
 				union_header();
-				break;
-			case MOUNT_NONE:
-			case MOUNT_MSDOS:
-			default:
-				break;
-			}
 			(void)printf("\n");
 		}
 		vnode_print(evp->avnode, vp);
-		switch (ST.f_type) {
-		case MOUNT_UFS:
-		case MOUNT_MFS:
+		if (!strcmp(ST.f_fstypename, "ufs") ||
+		    !strcmp(ST.f_fstypename, "mfs"))
 			ufs_print(vp);
-			break;
-		case MOUNT_NFS:
+		else if (!strcmp(ST.f_fstypename, "nfs"))
 			nfs_print(vp);
-			break;
-		case MOUNT_UNION:
+		else if (!strcmp(ST.f_fstypename, "union"))
 			union_print(vp);
-			break;
-		case MOUNT_NONE:
-		case MOUNT_MSDOS:
-		default:
-			break;
-		}
 		(void)printf("\n");
 	}
 	free(e_vnodebase);
@@ -566,12 +550,8 @@ mount_print(mp)
 	const char *type;
 
 #define ST	mp->mnt_stat
-	(void)printf("*** MOUNT ");
-	if (ST.f_type >= sizeof(mountname)/sizeof(mountname[0]))
-		type = "unknown";
-	else
-		type = mountname[ST.f_type];
-	(void)printf("%s %s on %s", type, ST.f_mntfromname, ST.f_mntonname);
+	(void)printf("*** MOUNT %s %s on %s", ST.f_fstypename,
+	    ST.f_mntfromname, ST.f_mntonname);
 	if (flags = mp->mnt_flag) {
 		int i;
 		const char *sep = " (";
