@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.42 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -63,6 +63,7 @@ struct hdrinfo	HdrInfo[] =
 	"full-name",		H_ACHECK,
 	"return-receipt-to",	H_FROM /* |H_RECEIPTTO */,
 	"errors-to",		H_FROM|H_ERRORSTO,
+
 		/* destination fields */
 	"to",			H_RCPT,
 	"resent-to",		H_RCPT|H_RESENT,
@@ -71,18 +72,25 @@ struct hdrinfo	HdrInfo[] =
 	"bcc",			H_RCPT|H_ACHECK,
 	"resent-bcc",		H_RCPT|H_ACHECK|H_RESENT,
 	"apparently-to",	H_RCPT,
+
 		/* message identification and control */
 	"message-id",		0,
 	"resent-message-id",	H_RESENT,
 	"message",		H_EOH,
 	"text",			H_EOH,
+
 		/* date fields */
 	"date",			0,
 	"resent-date",		H_RESENT,
+
 		/* trace fields */
 	"received",		H_TRACE|H_FORCE,
 	"via",			H_TRACE|H_FORCE,
 	"mail-from",		H_TRACE|H_FORCE,
+
+		/* miscellaneous fields */
+	"comments",		H_FORCE,
+	"return-path",		H_ACHECK,
 
 	NULL,			0,
 };

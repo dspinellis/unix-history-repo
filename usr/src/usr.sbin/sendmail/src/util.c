@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -632,9 +632,9 @@ xfclose(fp, a, b)
 	FILE *fp;
 	char *a, *b;
 {
-	if (tTd(9, 99))
+	if (tTd(53, 99))
 		printf("xfclose(%x) %s %s\n", fp, a, b);
-	if (fclose(fp) < 0 && tTd(9, 99))
+	if (fclose(fp) < 0 && tTd(53, 99))
 		printf("xfclose FAILURE: %s\n", errstring(errno));
 }
 /*

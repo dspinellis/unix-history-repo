@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)convtime.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)convtime.c	6.3 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <ctype.h>
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)convtime.c	6.2 (Berkeley) %G%";
 **
 **	Parameters:
 **		p -- pointer to ascii time.
+**		units -- default units if none specified.
 **
 **	Returns:
 **		time in seconds.
@@ -36,8 +37,9 @@ static char sccsid[] = "@(#)convtime.c	6.2 (Berkeley) %G%";
 */
 
 time_t
-convtime(p)
+convtime(p, units)
 	char *p;
+	char units;
 {
 	register time_t t, r;
 	register char c;
@@ -49,7 +51,10 @@ convtime(p)
 		while (isascii(c = *p++) && isdigit(c))
 			t = t * 10 + (c - '0');
 		if (c == '\0')
+		{
+			c = units;
 			p--;
+		}
 		switch (c)
 		{
 		  case 'w':		/* weeks */

@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.44 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.45 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -510,7 +510,7 @@ main(argc, argv, envp)
 				break;
 
 			  default:
-				QueueIntvl = convtime(optarg);
+				QueueIntvl = convtime(optarg, 'm');
 				break;
 			}
 # else /* QUEUE */
@@ -1242,6 +1242,7 @@ thaw(freezefile, binfile)
 	    fhdr.frzinfo.frzend != &end ||
 	    strcmp(fhdr.frzinfo.frzver, Version) != 0)
 	{
+		fprintf(stderr, "Wrong version of frozen config file\n");
 		syslog(LOG_WARNING, "Wrong version of frozen config file");
 		(void) close(f);
 		return (FALSE);
