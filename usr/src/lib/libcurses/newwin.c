@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)newwin.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)newwin.c	5.9 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -51,11 +51,12 @@ newwin(nl, nc, by, bx)
 		lp->flags = 0;
 		lp->flags &= ~__ISDIRTY;
 		lp->flags &= ~__ISPASTEOL;
-		for (sp = lp->line; sp < lp->line + nc; sp++)
+		for (sp = lp->line; sp < lp->line + nc; sp++) {
 			*sp = ' ';
+			*(sp + nc) &= ~__STANDOUT;
+		}
 		lp->hash = __hash(lp->line, nc);
 	}
-
 	return (win);
 }
 
@@ -152,14 +153,14 @@ makenew(nl, nc, by, bx)
 	/*
 	 * Allocate window space in one chunk.
 	 */
-	if ((win->wspace = malloc(nc * nl)) == NULL) {
+	if ((win->wspace = malloc(2 * nc * nl)) == NULL) {
 		free(win->topline);
 		free(win);
 		return NULL;
 	}
 	/* 
  	 * Link up the lines, set up line pointer array and point line pointers
-	 * to the line space.
+	 * to the line space, and point standout arrays to follow lines.
          */
 	if ((win->lines = malloc (nl * sizeof (LINE *))) == NULL) {
 		free(win->wspace);
@@ -172,7 +173,8 @@ makenew(nl, nc, by, bx)
 	for (i = 1; i <= nl; i++, prev = cur, cur = cur->next) {
 		cur->next = &win->topline[i % nl];
 		cur->prev = prev;
-		cur->line = &win->wspace[(i - 1) * nc];
+		cur->line = &win->wspace[(i - 1) * 2 * nc];
+		cur->standout = cur->line + nc;
 		win->lines[i - 1] = cur;
 	}
 

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)delch.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)delch.c	5.8 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -24,9 +24,14 @@ wdelch(win)
 	end = &win->lines[win->cury]->line[win->maxx - 1];
 	temp1 = &win->lines[win->cury]->line[win->curx];
 	temp2 = temp1 + 1;
-	while (temp1 < end)
-		*temp1++ = *temp2++;
+	while (temp1 < end) {
+		*temp1 = *temp2;
+		/* standout array */
+		*(temp1 + win->maxx) = *(temp2 + win->maxx);
+		temp1++, temp2++;
+	}
 	*temp1 = ' ';
+	*(temp1 + win->maxx) &= ~__STANDOUT;
 	touchline(win, win->cury, win->curx, win->maxx - 1);
 	return (OK);
 }

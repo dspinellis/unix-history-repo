@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)clrtoeol.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)clrtoeol.c	5.7 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -28,11 +28,12 @@ wclrtoeol(win)
 	minx = -1;
 	maxx = &win->lines[y]->line[x];
 	for (sp = maxx; sp < end; sp++)
-		if (*sp != ' ') {
+		if (*sp != ' ' || *(sp + win->maxx) & __STANDOUT) {
 			maxx = sp;
 			if (minx == -1)
 				minx = sp - win->lines[y]->line;
 			*sp = ' ';
+			*(sp + win->maxx) &= ~__STANDOUT;
 		}
 #ifdef DEBUG
 	__TRACE("CLRTOEOL: minx = %d, maxx = %d, firstch = %d, lastch = %d\n",

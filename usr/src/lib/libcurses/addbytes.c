@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)addbytes.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)addbytes.c	5.11 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -15,18 +15,31 @@ static char sccsid[] = "@(#)addbytes.c	5.10 (Berkeley) %G%";
 #define	SYNCH_IN	{y = win->cury; x = win->curx;}
 #define	SYNCH_OUT	{win->cury = y; win->curx = x;}
 
+int
+waddbytes(win, bytes, count)
+	WINDOW *win;
+	char *bytes;
+	int count;
+{
+	__waddbytes(win, bytes, count, 0);
+}
+
+
+
 /*
  * waddbytes --
  *	Add the character to the current position in the given window.
  */
 int
-waddbytes(win, bytes, count)
+__waddbytes(win, bytes, count, so)
 	register WINDOW *win;
 	register char *bytes;
 	register int count;
+	int so;
 {
 	static char blanks[] = "        ";
 	register int c, newx, x, y;
+	char stand;
 	LINE *lp;
 
 	SYNCH_IN;
@@ -45,8 +58,6 @@ waddbytes(win, bytes, count)
 			break;
 
 		default:
-			if (win->flags & __WSTANDOUT)
-				c |= __STANDOUT;
 #ifdef DEBUG
 	__TRACE("ADDBYTES(%0.2o, %d, %d)\n", win, y, x);
 #endif
@@ -56,11 +67,11 @@ waddbytes(win, bytes, count)
 				lp->flags &= ~__ISPASTEOL;
 newline:			if (y == win->maxy - 1) {
 					if (win->flags & __SCROLLOK) {
-					        x = 0;
 						SYNCH_OUT;
 						scroll(win);
 						SYNCH_IN;
 						lp = win->lines[y];
+					        x = 0;
 					} 
 				} else {
 					y++;
@@ -69,12 +80,14 @@ newline:			if (y == win->maxy - 1) {
 				}
 			}
 				
-							
+			stand = '\0';
+			if (win->flags & __WSTANDOUT || so)
+				stand |= __STANDOUT;
 #ifdef DEBUG
 	__TRACE("ADDBYTES: 1: y = %d, x = %d, firstch = %d, lastch = %d\n",
 	    y, x, win->lines[y]->firstch, win->lines[y]->lastch);
 #endif
-			if (lp->line[x] != c) {
+			if (lp->line[x] != c || !(lp->standout[x] & stand)) {
 				newx = x + win->ch_off;
 				if (!(lp->flags & __ISDIRTY)) {
 					lp->flags |= __ISDIRTY;
@@ -92,6 +105,10 @@ newline:			if (y == win->maxy - 1) {
 #endif
 			}
 			lp->line[x] = c;
+			if (stand)
+				lp->standout[x] |= __STANDOUT;
+			else
+				lp->standout[x] &= ~__STANDOUT;
 			if (x == win->maxx - 1)
 				lp->flags |= __ISPASTEOL;
 			else

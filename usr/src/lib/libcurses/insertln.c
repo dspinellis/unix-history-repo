@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)insertln.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)insertln.c	5.10 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -21,7 +21,7 @@ winsertln(win)
 	register WINDOW *win;
 {
 
-	register int y;
+	register int y, i;
 	register char *end;
 	register LINE *temp;
 
@@ -45,6 +45,8 @@ winsertln(win)
 	else
 		temp = win->lines[y];
 	(void)memset(temp->line, ' ', &temp->line[win->maxx] - temp->line);
+	for(i = 0; i < win->maxx; i++)
+		temp->standout[i] &= ~__STANDOUT;
 	touchline(win, y, 0, win->maxx - 1);
 	if (win->orig == NULL)
 		__id_subwins(win);
