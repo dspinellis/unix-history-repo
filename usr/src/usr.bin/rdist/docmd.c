@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.3 (Berkeley) 83/10/10";
+static	char *sccsid = "@(#)docmd.c	4.4 (Berkeley) 83/10/12";
 #endif
 
 #include "defs.h"
@@ -57,7 +57,7 @@ dohcmds(files, hosts, cmds)
 					n++;
 				}
 			if (n == 0)
-				install(f->b_name, f->b_name, 0, 0);
+				install(f->b_name, f->b_name, 0, options);
 		}
 		if (!nflag) {
 			/* signal end of connection */
@@ -67,7 +67,7 @@ dohcmds(files, hosts, cmds)
 		}
 		for (c = cmds; c != NULL; c = c->b_next)
 			if (c->b_type == NOTIFY)
-				notify(tmpfile, h->b_name, c->b_args);
+				notify(tmpfile, h->b_name, c->b_args, 0);
 	}
 	if (!nflag)
 		(void) unlink(tmpfile);
@@ -82,9 +82,8 @@ makeconn(rhost)
 	register char *ruser;
 	extern char user[];
 
-	(void) sprintf(buf, "/usr/local/rdist -Server%s%s%s%s%s",
-		vflag ? " -v" : "", qflag ? " -q" : "", nflag ? " -n" : "",
-		yflag ? " -y" : "", debug ? " -D" : "");
+	(void) sprintf(buf, "/usr/local/rdist -Server%s%s",
+		nflag ? " -n" : "", qflag ? " -q" : "");
 
 	ruser = rindex(rhost, '.');
 	if (ruser != NULL) {
@@ -114,9 +113,9 @@ makeconn(rhost)
  * destdir = 1 if destination should be a directory
  * (i.e., more than one source is being copied to the same destination).
  */
-install(src, dest, destdir, options)
+install(src, dest, destdir, opts)
 	char *src, *dest;
-	int destdir, options;
+	int destdir, opts;
 {
 	register char *cp;
 
@@ -124,8 +123,9 @@ install(src, dest, destdir, options)
 		return;
 
 	if (nflag || debug) {
-		printf("%s%s %s %s\n", options & VERIFY ? "verify" : "install",
-			options & WHOLE ? " -w" : "", src, dest);
+		printf("%s%s%s %s %s\n", opts & VERIFY ? "verify":"install",
+			opts & WHOLE ? " -w" : "",
+			opts & YOUNGER ? " -y" : "", src, dest);
 		if (nflag)
 			return;
 	}
@@ -137,9 +137,9 @@ install(src, dest, destdir, options)
 		printf("buf = %s", buf);
 	(void) write(rem, buf, strlen(buf));
 
-	if (!destdir && (options & WHOLE))
-		options |= STRIP;
-	sendf(src, NULL, options);
+	if (!destdir && (opts & WHOLE))
+		opts |= STRIP;
+	sendf(src, NULL, opts);
 }
 
 struct tstamp {
@@ -160,6 +160,8 @@ dofcmds(files, stamps, cmds)
 	register struct block *b;
 	register struct tstamp *t;
 	register char **cpp;
+	struct timeval tv[2];
+	struct timezone tz;
 	struct stat stb;
 	extern char *tmpinc;
 
@@ -167,7 +169,7 @@ dofcmds(files, stamps, cmds)
 		printf("dofcmds()\n");
 
 	files = expand(files, 0);
-	stamps = expand(stamps, 1);
+	stamps = expand(stamps, 0);
 	if (files == NULL)
 		fatal("no files to be updated\n");
 	if (stamps == NULL)
@@ -186,7 +188,10 @@ dofcmds(files, stamps, cmds)
 		if (debug)
 			printf("%s: %d\n", b->b_name, stb.st_mtime);
 		t->lastmod = stb.st_mtime;
-		if (!nflag && !vflag) {
+		(void) gettimeofday(&tv[0], &tz);
+		tv[1] = tv[0];
+		(void) utimes(b->b_name, tv);
+		if (!nflag && !(options & VERIFY)) {
 			if ((t->tfp = fopen(tmpfile, "w")) == NULL)
 				error("%s: %s\n", b->b_name, sys_errlist[errno]);
 			(*tmpinc)++;
@@ -194,6 +199,7 @@ dofcmds(files, stamps, cmds)
 			t->tfp = NULL;
 		t++;
 	}
+
 	for (b = files; b != NULL; b = b->b_next) {
 		if (filec) {
 			for (cpp = filev; *cpp; cpp++)
@@ -205,16 +211,15 @@ dofcmds(files, stamps, cmds)
 		tp = NULL;
 		cmptime(b->b_name);
 	}
-	if (!nflag && !vflag)
-		for (t = ts; t < &ts[nstamps]; t++)
-			if (t->tfp != NULL)
-				(void) fclose(t->tfp);
+
 	*tmpinc = 'A';
-	while (nstamps--) {
+	for (t = ts; t < &ts[nstamps]; t++) {
+		if (t->tfp != NULL)
+			(void) fclose(t->tfp);
 		for (b = cmds; b != NULL; b = b->b_next)
 			if (b->b_type == NOTIFY)
-				notify(tmpfile, NULL, b->b_args);
-		if (!nflag && !vflag)
+				notify(tmpfile, NULL, b->b_args, t->lastmod);
+		if (!nflag && !(options & VERIFY))
 			(void) unlink(tmpfile);
 		(*tmpinc)++;
 	}
@@ -263,9 +268,8 @@ cmptime(name)
 	}
 
 	for (t = ts; t < &ts[nstamps]; t++) {
-		if (stb.st_mtime <= t->lastmod)
-			return;
-		log(t->tfp, "updating: %s\n", name);
+		if (stb.st_mtime > t->lastmod)
+			log(t->tfp, "new: %s\n", name);
 	}
 }
 
@@ -309,16 +313,19 @@ rcmptime(st)
 
 /*
  * Notify the list of people the changes that were made.
+ * rhost == NULL if we are mailing a list of changes compared to at time
+ * stamp file.
  */
-notify(file, rhost, to)
+notify(file, rhost, to, lmod)
 	char *file, *rhost;
 	register struct block *to;
+	time_t lmod;
 {
 	register int fd, len;
 	FILE *pf, *popen();
 	struct stat stb;
 
-	if (vflag)
+	if (options & VERIFY)
 		return;
 	if (!qflag) {
 		printf("notify ");
@@ -356,16 +363,24 @@ notify(file, rhost, to)
 	 */
 	fprintf(pf, "From: rdist (Remote distribution program)\n");
 	fprintf(pf, "To:");
+	if (!any('@', to->b_name) && host != NULL)
+		fprintf(pf, " %s@%s", to->b_name, rhost);
+	else
+		fprintf(pf, " %s", to->b_name);
+	to = to->b_next;
 	while (to != NULL) {
 		if (!any('@', to->b_name) && host != NULL)
-			fprintf(pf, " %s@%s", to->b_name, rhost);
+			fprintf(pf, ", %s@%s", to->b_name, rhost);
 		else
-			fprintf(pf, " %s", to->b_name);
+			fprintf(pf, ", %s", to->b_name);
 		to = to->b_next;
 	}
 	putc('\n', pf);
-	fprintf(pf, "Subject: files updated by rdist from %s to %s\n",
-		host, rhost);
+	if (rhost != NULL)
+		fprintf(pf, "Subject: files updated by rdist from %s to %s\n",
+			host, rhost);
+	else
+		fprintf(pf, "Subject: files updated after %s\n", ctime(&lmod));
 	putc('\n', pf);
 
 	while ((len = read(fd, buf, BUFSIZ)) > 0)

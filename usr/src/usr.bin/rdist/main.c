@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	4.4 (Berkeley) 83/10/10";
+static	char *sccsid = "@(#)main.c	4.5 (Berkeley) 83/10/12";
 #endif
 
 #include "defs.h"
@@ -16,8 +16,7 @@ char	*tmpinc = &tmpfile[10];
 int	debug;		/* debugging flag */
 int	nflag;		/* NOP flag, just print commands without executing */
 int	qflag;		/* Quiet. Don't print messages */
-int	vflag;		/* verify only */
-int	yflag;		/* update iff remote younger than master */
+int	options;	/* global options */
 int	iamremote;	/* act as remote server for transfering files */
 
 int	filec;		/* number of files to update */
@@ -40,6 +39,7 @@ main(argc, argv)
 {
 	register char *arg;
 	register struct	passwd *pw;
+	int cmdargs = 0;
 
 	pw = getpwuid(userid = getuid());
 	if (pw == NULL) {
@@ -76,6 +76,10 @@ main(argc, argv)
 				debug++;
 				break;
 
+			case 'c':
+				cmdargs++;
+				break;
+
 			case 'n':
 				nflag++;
 				break;
@@ -85,11 +89,15 @@ main(argc, argv)
 				break;
 
 			case 'v':
-				vflag++;
+				options |= VERIFY;
+				break;
+
+			case 'w':
+				options |= WHOLE;
 				break;
 
 			case 'y':
-				yflag++;
+				options |= YOUNGER;
 				break;
 
 			default:
@@ -109,21 +117,83 @@ main(argc, argv)
 	signal(SIGQUIT, cleanup);
 	signal(SIGTERM, cleanup);
 
-	filec = argc;
-	filev = argv;
-	if (fin == NULL && (fin = fopen(distfile, "r")) == NULL) {
-		perror(distfile);
-		exit(1);
+	if (cmdargs)
+		docmdargs(argc, argv);
+	else {
+		filec = argc;
+		filev = argv;
+		if (fin == NULL && (fin = fopen(distfile, "r")) == NULL) {
+			perror(distfile);
+			exit(1);
+		}
+		yyparse();
 	}
-	yyparse();
 
 	exit(errs);
 }
 
 usage()
 {
-	printf("Usage: rdist [-f distfile] [-d var=value] [-nqyD] [file ...]\n");
+	printf("Usage: rdist [-nqvwyD] [-f distfile] [-d var=value] [file ...]\n");
+	printf("or: rdist [-nqvwyD] -c source [...] machine[:dest]\n");
 	exit(1);
+}
+
+/*
+ * rcp like interface for distributing files.
+ */
+docmdargs(nargs, args)
+	int nargs;
+	char *args[];
+{
+	struct block *bp, *files, *hosts, *cmds, *prev;
+	int i;
+	char *pos, dest[BUFSIZ];
+
+	if (nargs < 2)
+		usage();
+
+	prev = NULL;
+	bp = files = ALLOC(block);
+	for (i = 0; i < nargs - 1; bp = ALLOC(block), i++) {
+		bp->b_type = NAME;
+		bp->b_name = args[i];
+		if (prev != NULL)
+			prev->b_next = bp;
+		bp->b_next = bp->b_args = NULL;
+		prev = bp;
+	}
+
+	hosts = ALLOC(block);
+	hosts->b_type = NAME;
+	hosts->b_name = args[i];
+	hosts->b_name = args[i];
+	hosts->b_next = hosts->b_args = NULL;
+	if ((pos = index(hosts->b_name, ':')) != NULL) {
+		*pos++ = '\0';
+		strcpy(dest, pos);
+	} else
+		dest[0] = '\0';
+
+	hosts = expand(hosts, 0);
+
+	if (dest[0] == '\0')
+		cmds = NULL;
+	else {
+		cmds = ALLOC(block);
+		cmds->b_type = INSTALL;
+		cmds->b_options = options;
+		cmds->b_name = dest;
+		cmds->b_next = cmds->b_args = NULL;
+	}
+
+	if (debug) {
+		printf("docmdargs()\nfiles = ");
+		prnames(files);
+		printf("hosts = ");
+		prnames(hosts);
+	}
+	dohcmds(files, hosts, cmds);
 }
 
 /*
@@ -131,7 +201,10 @@ usage()
  */
 cleanup()
 {
-	(void) unlink(tmpfile);
+	do {
+		(void) unlink(tmpfile);
+		(*tmpinc)--;
+	} while (*tmpinc >= 'A');
 	exit(1);
 }
 
