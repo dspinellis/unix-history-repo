@@ -1,0 +1,65 @@
+compiling main/main.c
+compiling symtab/symtab.c
+compiling source/source.c
+chdir command/; yacc -d grammar.yacc; cc -c -Disvaxpx -I.. -I/usr/src/cmd/pascal/ -DOBJ -DVAX -O y.tab.c
+/bin/rm -f command/y.tab.c
+chdir command/; lex token.lex; cc -c -Disvaxpx -I.. -I/usr/src/cmd/pascal/ -DOBJ -DVAX -O lex.yy.c
+/bin/rm -f command/lex.yy.c
+compiling command/remake.c
+compiling tree/build.c
+compiling tree/eval.c
+compiling tree/opinfo.c
+compiling tree/prtree.c
+compiling tree/tfree.c
+compiling tree/tr_equal.c
+compiling tree/tracestop.c
+compiling tree/misc.c
+compiling tree/assign.c
+compiling sym/predicates.c
+compiling sym/attributes.c
+compiling sym/printdecl.c
+compiling sym/which.c
+compiling sym/print.c
+compiling sym/printval.c
+compiling sym/tree.c
+compiling breakpoint/bp.c
+compiling breakpoint/bpact.c
+compiling breakpoint/fixbps.c
+compiling breakpoint/status.c
+compiling breakpoint/printnews.c
+compiling breakpoint/setbps.c
+compiling breakpoint/trinfo.c
+compiling breakpoint/trcond.c
+compiling runtime/frame.c
+compiling runtime/wheredump.c
+compiling runtime/isactive.c
+compiling runtime/address.c
+compiling runtime/callproc.c
+compiling runtime/entry.c
+Make:  Don't know how to make /usr/src/cmd/pascal/objfmt.h.  Stop.
+compiling object/readobj.c
+compiling object/readsym.c
+compiling object/maketypes.c
+compiling mappings/functab.c
+compiling mappings/objaddr.c
+compiling mappings/srcfile.c
+compiling mappings/srcline.c
+compiling process/runcont.c
+compiling process/pstatus.c
+compiling process/rdwr.c
+"rdwr.c", line 42: warning: & before array or function: ignored
+"rdwr.c", line 65: warning: & before array or function: ignored
+"rdwr.c", line 87: warning: & before array or function: ignored
+"rdwr.c", line 104: warning: & before array or function: ignored
+compiling process/resume.c
+compiling process/start.c
+compiling process/step.c
+compiling process/ptrace.c
+compiling machine/nextaddr.c
+compiling machine/setbp.c
+compiling machine/optab.c
+compiling machine/printdata.c
+compiling machine/printerror.c
+compiling machine/printinst.c
+compiling machine/pxerrors.c
+linking

@@ -1,0 +1,73 @@
+#! /bin/csh -f
+#
+# Simple version of the "sccs" command that understands
+# subdirectories better.
+#
+
+set dir = SCCS
+set command = $1
+shift
+set flags = ()
+set files = ()
+foreach i ($*)
+    if ($i == "-*") then
+	set flags = ($flags $i)
+    else
+	set files = ($files $i)
+    endif
+end
+
+if ($command == info) then
+    foreach i (SCCS/{p.*,*/p.*})
+	echo $i:t `cat $i`
+    end
+    exit 0
+endif
+
+foreach i ($files)
+    if ($i:h == $i:t) then
+	set sfile = $dir/s.$i
+    else
+	set sfile = $dir/$i:h/s.$i:t
+    endif
+    switch ($command)
+	case get:
+	    get $flags $sfile
+	    if ($i:h != $i:t) then
+		mv -f $i:t $i
+	    endif
+	    breaksw
+
+	case edit:
+	    get -e $flags $sfile
+	    if ($i:h != $i:t) then
+		mv -f $i:t $i
+	    endif
+	    breaksw
+
+	case delta:
+	    if ($i:h != $i:t) then
+		mv -f $i $i:t
+	    endif
+	    delta $flags $sfile
+	    breaksw
+
+	case delget:
+	    ./sccs delta $i
+	    ./sccs get $i
+	    breaksw
+
+	case deledit:
+	    ./sccs delta $i
+	    ./sccs edit $i
+	    breaksw
+
+	case prt:
+	    prt $sfile
+	    breaksw
+
+	default:
+	    echo $command\: unknown command
+	    exit 1
+    endsw
+end

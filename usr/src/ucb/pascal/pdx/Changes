@@ -1,0 +1,25 @@
+command/remake.c	- obscure pi command related problem
+machine/optab.c		- defname operator
+process/ptrace.c	- cache initialization
+process/resume.c	- checking for redirected input
+process/runcont.c	- cache initialization, (error handling of
+process/start.c		- cache initialization, process not starting)
+sym/printval.c		- printing booleans
+tree/eval.c		- expressions involving small integers
+Makefile		- the file "compile.csh" is no longer necessary
+machine.h		- added entry "isendofproc"
+machine/nextaddr.c	- added "isendofproc" function to test for END op
+runtime/address.c	- "firstline" now gives up at end of proc
+library/call.c		- ignore permission denied errors
+			  (note the library must be separately made)
+
+sym/predicates.c	- changed compatible for var parameters
+sym/tree.c		- parameter compatibility
+object/readobj.c	- check for file's line index == nlines
+object/readsym.c	- changed indentation from 8 to 4
+symtab/symtab.c		- changed indentation from 8 to 4
+main/main.c		- added -i option
+process/resume.c	- use "isterm" instead of "isatty"
+main.h			- added "isterm" to check for -i option
+tree/eval.c		- error handling for "file" command
+Makefile		- added "clean" and "print"
