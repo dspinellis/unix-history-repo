@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)implog.8	6.2 (Berkeley) %G%
+.\"	@(#)implog.8	6.3 (Berkeley) %G%
 .\"
 .TH IMPLOG 8C ""
 .UC 5
@@ -14,6 +14,8 @@ implog \- IMP log interpreter
 .B \-D
 ] [
 .B \-f
+] [
+.B \-F
 ] [
 .B \-c
 ] [
@@ -52,6 +54,11 @@ Follow the logging process in action.  This flags causes
 to print the current contents of the log file, then
 check for new logged messages every 5 seconds. 
 .TP
+.B \-F
+Follow the logging process in action as with
+.B \-f ,
+but skip all previous messages.
+.TP
 .B \-c
 In addition to printing any data messages logged, show the
 contents of the data in hexadecimal bytes.
@@ -79,5 +86,3 @@ imp(4P),
 implogd(8C)
 .SH BUGS
 Can not specify multiple hosts, imps, etc.
-Can not follow reception of messages without looking at
-those currently in the file.
