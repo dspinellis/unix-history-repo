@@ -1,4 +1,4 @@
-/*	mp.c	1.4	88/04/14	*/
+/*	mp.c	1.5	88/05/14	*/
 
 #include "mp.h"
 #if NMP > 0
@@ -107,7 +107,7 @@ mpprobe(reg, vi)
 	ms->ms_mb = (struct mblok *)ms->ms_buf.vb_rawbuf;
 	ms->ms_ivec = MPINTRBASE + 2*vi->ui_unit;	/* XXX */
 	br = 0x14, cvec = ms->ms_ivec;			/* XXX */
-	return (sizeof (struct mblok));
+	return (sizeof (*reg));
 }
 
 mpattach(vi)
