@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -9,6 +9,7 @@ static char sccsid[] = "@(#)command.c	5.2 (Berkeley) %G%";
 #include "defs.h"
 #include <ctype.h>
 #include <sys/wait.h>
+#include "pathnames.h"
 
 extern char BADEQ[];		/* "unexpected `='" */
 extern char NOMATCH[];		/* "cannot locate value" */
@@ -329,7 +330,7 @@ shell()
 	char *getenv(), *eshell = getenv("SHELL");
 
 	if (eshell == 0)
-		eshell = "/bin/sh";
+		eshell = _PATH_BSHELL;
 	while (readchar() != '\n')
 		/* void */;
 #ifndef VFORK
