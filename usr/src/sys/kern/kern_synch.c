@@ -1,4 +1,4 @@
-/*	kern_synch.c	4.18	82/08/10	*/
+/*	kern_synch.c	4.19	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -29,7 +29,8 @@ struct proc *slpque[SQSIZE];
  * sleeping has gone away.
  */
 sleep(chan, pri)
-caddr_t chan;
+	caddr_t chan;
+	int pri;
 {
 	register struct proc *rp, **hp;
 	register s;
@@ -56,12 +57,14 @@ caddr_t chan;
 			goto out;
 		rp->p_stat = SSLEEP;
 		(void) spl0();
+		u.u_ru.ru_nvcsw++;
 		swtch();
 		if (ISSIG(rp))
 			goto psig;
 	} else {
 		rp->p_stat = SSLEEP;
 		(void) spl0();
+		u.u_ru.ru_nvcsw++;
 		swtch();
 	}
 out:
@@ -80,61 +83,37 @@ psig:
 }
 
 /*
- * Sleep on chan at pri.
- * Return in no more than the indicated number of seconds.
- * (If seconds==0, no timeout implied)
- * Return	TS_OK if chan was awakened normally
- *		TS_TIME if timeout occurred
- *		TS_SIG if asynchronous signal occurred
- *
- * SHOULD HAVE OPTION TO SLEEP TO ABSOLUTE TIME OR AN
- * INCREMENT IN MILLISECONDS!
+ * Sleep on chan at pri for at most a specified amount of time.
+ * Return (TS_OK,TS_TIME,TS_SIG) on (normal,timeout,signal) condition.
  */
-tsleep(chan, pri, seconds)
+tsleep(chan, pri, tvp)
 	caddr_t chan;
-	int pri, seconds;
+	int pri;
+	struct timeval *tvp;
 {
-	label_t lqsav;
-	register struct proc *pp;
-	register sec, n, rval, sov;
+	register struct proc *p = u.u_procp;
+	int s, rval;
 
-	pp = u.u_procp;
-	n = spl7();
-	sec = 0;
-	rval = 0;
-	sov = 0;
-	if (pp->p_clktim && pp->p_clktim<seconds)
-		if (pri > PZERO)
-			seconds = 0;
-		else
-			sov++;
-	if (seconds) {
-		pp->p_flag |= STIMO;
-		sec = pp->p_clktim-seconds;
-		pp->p_clktim = seconds;
-	}
-	bcopy((caddr_t)u.u_qsav, (caddr_t)lqsav, sizeof (label_t));
-	if (setjmp(u.u_qsav))
-		rval = TS_SIG;
-	else {
+	s = spl7();
+	if (timercmp(tvp, &p->p_realtimer.itimer_value, >)) {
+		/* alarm will occur first! */
 		sleep(chan, pri);
-		if ((pp->p_flag&STIMO)==0 && seconds)
-			rval = TS_TIME;
-		else
+		rval = TS_OK;		/* almost NOTREACHED modulo fuzz */
+	} else {
+		label_t lqsav;
+
+		bcopy((caddr_t)u.u_qsav, (caddr_t)lqsav, sizeof (label_t));
+		p->p_seltimer = *tvp;
+		if (setjmp(u.u_qsav))
+			rval = TS_SIG;
+		else {
+			sleep(chan, pri);
 			rval = TS_OK;
-	}
-	pp->p_flag &= ~STIMO;
-	bcopy((caddr_t)lqsav, (caddr_t)u.u_qsav, sizeof (label_t));
-	if (sec > 0)
-		pp->p_clktim += sec;
-	else if (sov) {
-		if ((pp->p_clktim += sec) <= 0) {
-			pp->p_clktim = 0;
-			psignal(pp, SIGALRM);
 		}
-	} else
-		pp->p_clktim = 0;
-	splx(n);
+		timerclear(&p->p_seltimer);
+		bcopy((caddr_t)lqsav, (caddr_t)u.u_qsav, sizeof (label_t));
+	}
+	splx(s);
 	return (rval);
 }
 
@@ -326,7 +305,7 @@ retry:
 	(rpp->p_quota = rip->p_quota)->q_cnt++;
 #endif
 	rpp->p_stat = SIDL;
-	rpp->p_clktim = 0;
+	timerclear(&rpp->p_realtimer.itimer_value);
 	rpp->p_flag = SLOAD | (rip->p_flag & (SPAGI|SNUSIG));
 	if (isvfork) {
 		rpp->p_flag |= SVFORK;
