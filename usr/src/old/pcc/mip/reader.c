@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)reader.c	4.5 (Berkeley) %G%";
+static char *sccsid ="@(#)reader.c	4.6 (Berkeley) %G%";
 #endif lint
 
 # include "pass2.h"
@@ -211,9 +211,6 @@ mainp2( argc, argv ) char *argv[]; {
 		allchk();
 		tcheck();
 		continue;
-
-	default:
-		cerror( "intermediate file format error" );
 
 		}
 
