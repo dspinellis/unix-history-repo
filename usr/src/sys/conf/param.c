@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.c	7.3 (Berkeley) %G%
+ *	@(#)param.c	7.4 (Berkeley) %G%
  */
 
 #ifndef lint
@@ -12,21 +12,21 @@ char copyright[] =
  All rights reserved.\n";
 #endif not lint
 
-#include "../h/param.h"
-#include "../h/systm.h"
-#include "../h/socket.h"
-#include "../h/dir.h"
-#include "../h/user.h"
-#include "../h/proc.h"
-#include "../h/text.h"
-#include "../h/inode.h"
-#include "../h/file.h"
-#include "../h/callout.h"
-#include "../h/clist.h"
-#include "../h/cmap.h"
-#include "../h/mbuf.h"
-#include "../h/quota.h"
-#include "../h/kernel.h"
+#include "../sys/param.h"
+#include "../sys/systm.h"
+#include "../sys/socket.h"
+#include "../ufs/dir.h"
+#include "../sys/user.h"
+#include "../sys/proc.h"
+#include "../sys/text.h"
+#include "../ufs/inode.h"
+#include "../sys/file.h"
+#include "../sys/callout.h"
+#include "../sys/clist.h"
+#include "../sys/cmap.h"
+#include "../sys/mbuf.h"
+#include "../ufs/quota.h"
+#include "../sys/kernel.h"
 /*
  * System parameter formulae.
  *
