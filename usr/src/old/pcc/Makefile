@@ -1,9 +1,9 @@
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 
 .if	(${MACHINE} == "tahoe")
-SUBDIR=	c2 cc ccom f1
+SUBDIR=	c2 cc ccom f1 lint
 .elif	(${MACHINE} == "vax")
-SUBDIR=	c2 cc ccom f1 sccom
+SUBDIR=	c2 cc ccom f1 lint sccom
 .endif
 
 afterinstall:
