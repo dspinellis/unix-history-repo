@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lab.c 1.9 %G%";
+static char sccsid[] = "@(#)lab.c 1.10 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -84,7 +84,7 @@ label(r, l)
 		     *	throw them away if they aren't used in the function
 		     *	which defines them.
 		     */
-		    sextname( extname , p -> symbol , cbn );
+		    extlabname( extname , p -> symbol , cbn );
 		    putprintf( "	.globl	%s" , 0 , extname );
 		    if ( cbn == 1 ) {
 			stabglabel( extname , line );
@@ -135,7 +135,7 @@ gotoop(s)
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
 	    }
-	    sextname( extname , p -> symbol , bn );
+	    extlabname( extname , p -> symbol , bn );
 	    putprintf( "	jbr	%s" , 0 , extname );
 #	endif PC
 	if (bn == cbn)
@@ -182,7 +182,7 @@ labeled(s)
 	    patch4(p->entloc);
 #	endif OBJ
 #	ifdef PC
-	    sextname( extname , p -> symbol , bn );
+	    extlabname( extname , p -> symbol , bn );
 	    putprintf( "%s:" , 0 , extname );
 #	endif PC
 	if (p->value[NL_GOLEV] != NOTYET)
@@ -193,3 +193,31 @@ labeled(s)
 	p->value[NL_GOLEV] = level;
 }
 #endif
+
+#ifdef PC
+    /*
+     *	construct the long name of a label based on it's static nesting.
+     *	into a caller-supplied buffer (that should be about BUFSIZ big).
+     */
+extlabname( buffer , name , level )
+    char	buffer[];
+    char	*name;
+    int		level;
+{
+    char	*starthere;
+    int		i;
+
+    starthere = &buffer[0];
+    for ( i = 1 ; i < level ; i++ ) {
+	sprintf( starthere , EXTFORMAT , enclosing[ i ] );
+	starthere += strlen( enclosing[ i ] ) + 1;
+    }
+    sprintf( starthere , EXTFORMAT , "" );
+    starthere += 1;
+    sprintf( starthere , LABELFORMAT , name );
+    starthere += strlen( name ) + 1;
+    if ( starthere >= &buffer[ BUFSIZ ] ) {
+	panic( "extlabname" );
+    }
+}
+#endif PC
