@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -106,7 +106,7 @@ rtadd(dst, gate, metric, state)
 	struct afhash h;
 	register struct rt_entry *rt;
 	struct rthash *rh;
-	int af = dst->sa_family, flags;
+	int af = dst->sa_family, flags, ifmetric;
 	u_int hash;
 
 	if (af >= af_max)
@@ -139,15 +139,10 @@ rtadd(dst, gate, metric, state)
 	rt->rt_ifp = if_ifwithdstaddr(&rt->rt_router);
 	if (rt->rt_ifp == 0)
 		rt->rt_ifp = if_ifwithnet(&rt->rt_router);
-	if (rt->rt_ifp == 0) {
-		if (dst->sa_family < af_max && gate->sa_family < af_max)
-			syslog(LOG_ERR,
-		   "route to net/host %s goes through unreachable gateway %s\n",
-			   (*afswitch[dst->sa_family].af_format)(dst),
-			   (*afswitch[gate->sa_family].af_format)(gate));
-		free((char *)rt);
-		return;
-	}
+	if (rt->rt_ifp)
+		ifmetric = rt->rt_ifp->int_metric;
+	else
+		ifmetric = 0;
 	if ((state & RTS_INTERFACE) == 0)
 		rt->rt_flags |= RTF_GATEWAY;
 	/*
@@ -159,7 +154,7 @@ rtadd(dst, gate, metric, state)
 		rt->rt_ifmetric = metric + 1;
 	} else {
 		rt->rt_metric = metric;
-		rt->rt_ifmetric = rt->rt_ifp->int_metric + 1;
+		rt->rt_ifmetric = ifmetric + 1;
 	}
 	insque(rt, rh);
 	TRACE_ACTION(ADD, rt);
@@ -170,6 +165,12 @@ rtadd(dst, gate, metric, state)
 	 */
 	if (install && (rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
 	    ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0) {
+		if (errno != EEXIST &&
+		    dst->sa_family < af_max && gate->sa_family < af_max)
+			syslog(LOG_ERR,
+			"adding route to net/host %s through gateway %s: %m\n",
+			   (*afswitch[dst->sa_family].af_format)(dst),
+			   (*afswitch[gate->sa_family].af_format)(gate));
 		perror("SIOCADDRT");
 		if (errno == ENETUNREACH) {
 			TRACE_ACTION(DELETE, rt);
