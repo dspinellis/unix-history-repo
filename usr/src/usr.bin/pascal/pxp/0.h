@@ -1,4 +1,4 @@
-/* static	char *sccsid = "@(#)0.h	1.1 (Berkeley) %G%";*/
+/* static	char *sccsid = "@(#)0.h	1.2 (Berkeley) %G%";*/
 /* Copyright (c) 1979 Regents of the University of California */
 /* #define DEBUG */
 #define	CHAR
@@ -294,5 +294,7 @@ int	gocnt;
 int	cnts;
 
 #include <stdio.h>
+
+typedef enum {FALSE, TRUE} bool;
 
 #undef putchar
