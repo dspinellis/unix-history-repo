@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.101 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.102 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1105,6 +1105,10 @@ tryhost:
 	}
 	else
 	{
+		/* flush any expired connections */
+		(void) mci_scan(NULL);
+
+		/* announce the connection to verbose listeners */
 		if (host == NULL || host[0] == '\0')
 			message("Connecting to %s...", m->m_name);
 		else
