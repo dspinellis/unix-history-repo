@@ -1,0 +1,114 @@
+.\" Copyright (c) 1992 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)tetris.6	5.1 (Berkeley) %G%
+.\"
+.Dd ""
+.Dt TETRIS 6
+.Os
+.Sh NAME
+.Nm tetris
+.Nd the game of tetris
+.Sh SYNOPSIS
+.Nm
+.Op level
+.Op \-keys
+.br
+.Nm
+0
+.Sh DESCRIPTION
+The
+.Nm
+command runs display-based game which must be played on a CRT terminal.
+The object is to fit the shapes together forming complete rows,
+which then vanish.
+When the shapes fill up to the top, the game ends.
+You can optionally select a level of play, or custom-select control keys.
+.Pp
+To select a level of play,
+specify a number from 1 to 9 as the first argument.
+The default level is 2;
+higher levels mean a faster game, as described below.
+If you specify multiple levels, only the first is used.
+.Pp
+The default control keys are as follows:
+.Bl -tag -width <space>x
+.It j
+move left
+.It k
+rotate 1/4 turn counterclockwise
+.It l
+move right
+.It <space>
+drop
+.It p
+pause
+.It q
+quit
+.El
+These can be changed by putting the replacements on the command line,
+preceded by a hyphen (``-''), in the order above
+(but note that if you want to specify a space,
+you must quote it from the shell).
+For example, running:
+.D1 1 "tet 2 -jkl\e pq"
+will play at level 2, using the default key assignments.
+Selecting the same key twice in the specification string causes an error.
+The current key settings are displayed at the bottom of the screen during play.
+.Sh PLAY
+At the start of the game, a shape will appear at the top of the screen,
+falling one square at a time.
+The speed at which it falls is determined directly by the level:
+if you select level 2, the blocks will fall twice per second;
+at level 9, they fall 9 times per second.
+(As the game goes on, things speed up,
+no matter what your initial selection.)
+When this shape
+.Dq "touches down"
+on the bottom of the field, another will appear at the top.
+.Pp
+You can move shapes to the left or right, rotate them counterclockwise,
+or drop them to the bottom by pressing the appropriate keys.
+As you fit them together, completed horizontal rows vanish,
+and any blocks above fall down to fill in.
+When the blocks stack up to the top of the screen, the game is over.
+.Sh SCORING
+You get one point for every block you fit into the stack,
+and one point for every space a block falls when you hit the drop key.
+(Dropping the blocks is therefore a good way to increase your score.)
+Your total score is the product of the level of play
+and your accumulated
+.ie t points\(em200
+.el points -- 200
+points on level 3 gives you a score of 600.
+Each player gets at most one entry on any level,
+to a total of nine scores in the highscores file.
+Players who no longer have accounts are limited to one score.
+Also, scores over 5 years old are expired.
+The exception to these conditions is that the highest score on a given level is
+.Em always
+kept,
+so that following generations can pay homage to those who went before.
+.Pp
+The score list is produced at the end of the game.
+Optionally, you can read the current scores without playing
+by selecting level 0.
+The printout includes each player's overall ranking,
+name, score, and how many points were scored on what level.
+Scores which are the highest on a given level
+are marked with asterisks
+.Dq * .
+.Sh FILES
+.Bl -tag -width /var/games/tetris.scoresxx
+.It /var/games/tetris.scores
+high score file
+.El
+.Sh BUGS
+The higher levels are unplayable without a fast terminal connection.
+.Sh AUTHORS
+Adapted from a 1989 International Obfuscated C Code Contest winner by
+Chris Torek and Darren F Provine.
+.Pp
+Manual entry written by Nancy L Tinkham & Darren F Provine.
