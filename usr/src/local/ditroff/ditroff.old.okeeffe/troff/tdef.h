@@ -120,7 +120,7 @@
 
 /* array sizes, and similar limits: */
 
-#define	NFONT	10	/* maximum number of fonts (including specials) */
+#define	NFONT	60	/* maximum number of fonts (including specials) */
 #define	EXTRAFONT	500	/* extra space for swapping a font */
 #define	NN	300	/* number registers */
 #define	NNAMES	15	 /* predefined reg names */
