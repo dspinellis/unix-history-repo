@@ -12,11 +12,12 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_lfs.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_lfs.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/mount.h>
+#include <ufs/ufs/ufsmount.h>
 
 #include <err.h>
 #include <stdio.h>
@@ -58,7 +59,7 @@ main(argc, argv)
 			noclean = 1;
 			break;
 		case 'o':
-			getmntopts(optarg, mopts, &mntflags);
+			getmntopts(optarg, mopts, &mntflags, 0);
 			break;
 		case 's':
 			short_rds = 1;
@@ -83,7 +84,7 @@ main(argc, argv)
 	else
 		args.export.ex_flags = 0;
 
-	if (mount(MOUNT_LFS, fs_name, mntflags, &args))
+	if (mount("lfs", fs_name, mntflags, &args))
 		err(1, NULL);
 
 	if (!noclean)
