@@ -1,4 +1,4 @@
-/*	ht.c	4.27	82/08/22	*/
+/*	ht.c	4.28	82/09/12	*/
 
 #include "tu.h"
 #if NHT > 0
@@ -415,20 +415,22 @@ htread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
+	int errno;
 
-	u.u_error = htphys(dev, uio);
-	if (u.u_error)
-		return;
-	physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_READ, minphys, uio);
+	errno = htphys(dev, uio);
+	if (errno)
+		return (errno);
+	return (physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_READ, minphys, uio));
 }
 
 htwrite(dev)
 {
+	int errno;
 
-	u.u_error = htphys(dev, uio);
-	if (u.u_error)
-		return;
-	physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_WRITE, minphys, uio);
+	errno = htphys(dev, uio);
+	if (errno)
+		return (errno);
+	return (physio(htstrategy, &rhtbuf[HTUNIT(dev)], dev, B_WRITE, minphys, uio));
 }
 
 htphys(dev, uio)

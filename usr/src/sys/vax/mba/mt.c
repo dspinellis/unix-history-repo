@@ -1,4 +1,4 @@
-/*	mt.c	4.8	82/08/22	*/
+/*	mt.c	4.9	82/09/12	*/
 
 #include "mu.h"
 #if NMT > 0
@@ -458,22 +458,24 @@ mtread(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
+	int errno;
 
-	u.u_error = mtphys(dev, uio);
-	if (u.u_error)
-		return;
-	physio(mtstrategy, &rmtbuf[MTUNIT(dev)], dev, B_READ, minphys, uio);
+	errno = mtphys(dev, uio);
+	if (errno)
+		return (errno);
+	return (physio(mtstrategy, &rmtbuf[MTUNIT(dev)], dev, B_READ, minphys, uio));
 }
 
 mtwrite(dev, uio)
 	dev_t dev;
 	struct uio *uio;
 {
+	int errno;
 
-	u.u_error = mtphys(dev, uio);
-	if (u.u_error)
-		return;
-	physio(mtstrategy, &rmtbuf[MTUNIT(dev)], dev, B_WRITE, minphys, uio);
+	errno = mtphys(dev, uio);
+	if (errno)
+		return (errno);
+	return (physio(mtstrategy, &rmtbuf[MTUNIT(dev)], dev, B_WRITE, minphys, uio));
 }
 
 mtphys(dev, uio)
