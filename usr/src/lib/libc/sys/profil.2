@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)profil.2	4.1 (Berkeley) %G%
+.\"	@(#)profil.2	5.1 (Berkeley) %G%
 .\"
-.TH PROFIL 2 
+.TH PROFIL 2 "12 February 1983"
 .UC 4
 .SH NAME
 profil \- execution time profile
@@ -19,7 +19,7 @@ profil \- execution time profile
 points to an area of core whose length (in bytes) is given by
 .IR bufsiz .
 After this call, the user's program counter (pc)
-is examined each clock tick (60th second);
+is examined each clock tick (10 milliseconds);
 .I offset
 is subtracted from it, and the result multiplied by
 .IR scale .
@@ -30,12 +30,12 @@ that word is incremented.
 .PP
 The scale is interpreted as an unsigned,
 fixed-point fraction with binary point at the
-left: 0177777(8) gives a 1-1 mapping of pc's to words
+left: 0x10000 gives a 1-1 mapping of pc's to words
 in
 .I buff;
-077777(8) maps each pair of instruction words
+0x8000 maps each pair of instruction words
 together.
-02(8) maps all instructions onto the beginning of
+0x2 maps all instructions onto the beginning of
 .I buff
 (producing a non-interrupting core clock).
 .PP
@@ -47,20 +47,14 @@ ineffective by giving a
 .I bufsiz
 of 0.
 Profiling is turned off when an
-.I exec
+.I execve
 is executed, but remains on in child and parent both
 after a
 .IR fork .
-Profiling may be turned off if an update in
+Profiling is turned off if an update in
 .I buff
 would cause a memory fault.
+.SH "RETURN VALUE
+A 0, indicating success, is always returned.
 .SH "SEE ALSO"
-monitor(3), prof(1)
-.SH "ASSEMBLER (PDP-11)"
-(profil = 44.)
-.br
-.B sys profil; buff; bufsiz; offset; scale
-.SH BUGS
-Profiling does not work for interpreters; if a signal were given
-to a process when its cpu-time clock ticked then profiling interpreters
-would be possible.
+gprof(1), setitimer(2), monitor(3)
