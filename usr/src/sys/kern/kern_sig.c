@@ -1,16 +1,33 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)kern_sig.c	7.5 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)kern_sig.c	7.3.1.1 (Berkeley) %G%
  */
+
+#include "machine/reg.h"
+#include "machine/pte.h"
+#include "machine/psl.h"
+#include "machine/mtpr.h"
 
 #include "param.h"
 #include "systm.h"
 #include "dir.h"
+#include "ucred.h"
 #include "user.h"
-#include "inode.h"
+#include "vnode.h"
 #include "proc.h"
 #include "timeb.h"
 #include "times.h"
@@ -21,12 +38,8 @@
 #include "vm.h"
 #include "acct.h"
 #include "uio.h"
+#include "file.h"
 #include "kernel.h"
-
-#include "machine/reg.h"
-#include "machine/pte.h"
-#include "machine/psl.h"
-#include "machine/mtpr.h"
 
 #define	cantmask	(sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP))
 #define	stopsigmask	(sigmask(SIGSTOP)|sigmask(SIGTSTP)| \
@@ -230,7 +243,7 @@ kill()
 killpg()
 {
 	register struct a {
-		int	pgid;
+		int	pgrp;
 		int	signo;
 	} *uap = (struct a *)u.u_ap;
 
@@ -238,90 +251,57 @@ killpg()
 		u.u_error = EINVAL;
 		return;
 	}
-	u.u_error = killpg1(uap->signo, uap->pgid, 0);
+	u.u_error = killpg1(uap->signo, uap->pgrp, 0);
 }
 
 /* KILL CODE SHOULDNT KNOW ABOUT PROCESS INTERNALS !?! */
 
-killpg1(signo, pgid, all)
-	int signo, pgid, all;
+killpg1(signo, pgrp, all)
+	int signo, pgrp, all;
 {
 	register struct proc *p;
-	struct pgrp *pgrp;
-	int f = 0, error = 0;
+	int f, error = 0;
 
-	
-	if (all)	
-		/* 
-		 * broadcast 
+	if (!all && pgrp == 0) {
+		/*
+		 * Zero process id means send to my process group.
 		 */
-		for (p = allproc; p != NULL; p = p->p_nxt) {
-			if (p->p_ppid == 0 || p->p_flag&SSYS || 
-			    p == u.u_procp ||
-			   (u.u_uid && u.u_uid != p->p_uid && 
-			   !(signo == SIGCONT && inferior(p))))
-				continue;
-			f++;
-			if (signo)
-				psignal(p, signo);
-		}
-	else {
-		if (pgid == 0)		
-			/* 
-			 * zero pgid means send to my process group.
-			 */
-			pgrp = u.u_procp->p_pgrp;
-		else {
-			pgrp = pgfind(pgid);
-			if (pgrp == NULL)
-				return(ESRCH);
-		}
-		if (!(pgrp->pg_jobc) && 
-		     (signo==SIGTTIN || signo==SIGTTOU || signo==SIGTSTP))
-			return(EPERM);
-		for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt) {
-			if (p->p_ppid == 0 || p->p_flag&SSYS)
-				continue;
-			if (u.u_uid && u.u_uid != p->p_uid && 
-			   !(signo == SIGCONT && inferior(p))) {
+		pgrp = u.u_procp->p_pgrp;
+		if (pgrp == 0)
+			return (ESRCH);
+	}
+	for (f = 0, p = allproc; p != NULL; p = p->p_nxt) {
+		if ((p->p_pgrp != pgrp && !all) || p->p_ppid == 0 ||
+		    (p->p_flag&SSYS) || (all && p == u.u_procp))
+			continue;
+		if (u.u_uid != 0 && u.u_uid != p->p_uid &&
+		    (signo != SIGCONT || !inferior(p))) {
+			if (!all)
 				error = EPERM;
-				continue;
-			}
-			f++;
-			if (signo)
-				psignal(p, signo);
+			continue;
 		}
+		f++;
+		if (signo)
+			psignal(p, signo);
 	}
 	return (error ? error : (f == 0 ? ESRCH : 0));
 }
 
 /*
  * Send the specified signal to
- * all processes with 'pgid' as
+ * all processes with 'pgrp' as
  * process group.
  */
-gsignal(pgid, sig)
-{
-	register struct pgrp *pgrp;
-	register struct proc *p;
-
-	if (!pgid)
-		return;
-	if ((pgrp = pgfind(pgid)) == NULL)
-		return;
-	pgsignal(pgrp, sig);
-}
-
-pgsignal(pgrp, sig)
-	register struct pgrp *pgrp;
+gsignal(pgrp, sig)
+	register int pgrp;
 {
 	register struct proc *p;
 
-	if (!(pgrp->pg_jobc) && 
-	     (sig==SIGTTIN || sig==SIGTTOU || sig==SIGTSTP))
+	if (pgrp == 0)
 		return;
-	for (p = pgrp->pg_mem; p != NULL; p = p->p_pgrpnxt)
-		psignal(p, sig);
+	for (p = allproc; p != NULL; p = p->p_nxt)
+		if (p->p_pgrp == pgrp)
+			psignal(p, sig);
 }
 
 /*
@@ -360,6 +340,7 @@ psignal(p, sig)
 			action = SIG_DFL;
 	}
 	if (sig) {
+		p->p_sig |= mask;
 		switch (sig) {
 
 		case SIGTERM:
@@ -376,15 +357,13 @@ psignal(p, sig)
 			p->p_sig &= ~stopsigmask;
 			break;
 
+		case SIGSTOP:
 		case SIGTSTP:
 		case SIGTTIN:
 		case SIGTTOU:
-			/*FALLTHROUGH*/
-		case SIGSTOP:
 			p->p_sig &= ~sigmask(SIGCONT);
 			break;
 		}
-		p->p_sig |= mask;
 	}
 	/*
 	 * Defer further processing for signals which are held.
@@ -422,6 +401,16 @@ psignal(p, sig)
 			 */
 			if (action != SIG_DFL)
 				goto run;
+			/*
+			 * Don't clog system with children of init
+			 * stopped from the keyboard.
+			 */
+			if (sig != SIGSTOP && p->p_pptr == &proc[1]) {
+				psignal(p, SIGKILL);
+				p->p_sig &= ~mask;
+				splx(s);
+				return;
+			}
 			/*
 			 * If a child in vfork(), stopping could
 			 * cause deadlock.
@@ -615,6 +604,16 @@ issig()
 			case SIGTSTP:
 			case SIGTTIN:
 			case SIGTTOU:
+				/*
+				 * Children of init aren't allowed to stop
+				 * on signals from the keyboard.
+				 */
+				if (p->p_pptr == &proc[1]) {
+					psignal(p, SIGKILL);
+					continue;
+				}
+				/* fall into ... */
+
 			case SIGSTOP:
 				if (p->p_flag&STRC)
 					continue;
@@ -752,7 +751,7 @@ psig()
 	case SIGSEGV:
 	case SIGSYS:
 		u.u_arg[0] = sig;
-		if (core())
+		if (core() == 0)
 			sig += 0200;
 	}
 	exit(sig);
@@ -770,32 +769,32 @@ psig()
  */
 core()
 {
-	register struct inode *ip;
+	register struct vnode *vp, *dvp;
 	register struct nameidata *ndp = &u.u_nd;
+	struct vattr vattr;
+	int error;
 
 	if (u.u_uid != u.u_ruid || u.u_gid != u.u_rgid)
-		return (0);
-	if (ctob(UPAGES+u.u_dsize+u.u_ssize) >=
+		return (EFAULT);
+	if (ctob(UPAGES + u.u_dsize + u.u_ssize) >=
 	    u.u_rlimit[RLIMIT_CORE].rlim_cur)
-		return (0);
-	if (u.u_procp->p_textp && access(u.u_procp->p_textp->x_iptr, IREAD))
-		return (0);
-	u.u_error = 0;
-	ndp->ni_nameiop = CREATE | FOLLOW;
+		return (EFAULT);
+	if (u.u_procp->p_textp) {
+		vop_lock(u.u_procp->p_textp->x_vptr);
+		error = vn_access(u.u_procp->p_textp->x_vptr, VREAD, u.u_cred);
+		vop_unlock(u.u_procp->p_textp->x_vptr);
+		if (error)
+			return (EFAULT);
+	}
 	ndp->ni_segflg = UIO_SYSSPACE;
 	ndp->ni_dirp = "core";
-	ip = namei(ndp);
-	if (ip == NULL) {
-		if (u.u_error)
-			return (0);
-		ip = maknode(0644, ndp);
-		if (ip==NULL)
-			return (0);
-	}
-	if (access(ip, IWRITE) ||
-	   (ip->i_mode&IFMT) != IFREG ||
-	   ip->i_nlink != 1) {
-		u.u_error = EFAULT;
+	if (error = vn_open(ndp, FCREAT|FWRITE, 0644))
+		return (error);
+	vp = ndp->ni_vp;
+	if (vp->v_type != VREG ||
+	    vop_getattr(vp, &vattr, u.u_cred) ||
+	    vattr.va_nlink != 1) {
+		error = EFAULT;
 		goto out;
 	}
 #ifdef MMAP
@@ -806,23 +805,25 @@ core()
 			munmapfd(fd);
 	}
 #endif
-	itrunc(ip, (u_long)0);
+	vattr_null(&vattr);
+	vattr.va_size = 0;
+	vop_setattr(vp, &vattr, u.u_cred);
 	u.u_acflag |= ACORE;
-	u.u_error = rdwri(UIO_WRITE, ip,
-	    (caddr_t)&u,
-	    ctob(UPAGES),
-	    (off_t)0, 1, (int *)0);
-	if (u.u_error == 0)
-		u.u_error = rdwri(UIO_WRITE, ip,
+	error = vn_rdwr(UIO_WRITE, vp, (caddr_t)&u, ctob(UPAGES), (off_t)0,
+	    UIO_SYSSPACE, IO_UNIT, (int *)0);
+	if (error == 0)
+		error = vn_rdwr(UIO_WRITE, vp,
 		    (caddr_t)ctob(dptov(u.u_procp, 0)),
-		    (int)ctob(u.u_dsize),
-		    (off_t)ctob(UPAGES), 0, (int *)0);
-	if (u.u_error == 0)
-		u.u_error = rdwri(UIO_WRITE, ip,
+		    (int)ctob(u.u_dsize), (off_t)ctob(UPAGES),
+		    UIO_USERSPACE, IO_UNIT, (int *)0);
+	if (error == 0)
+		error = vn_rdwr(UIO_WRITE, vp,
 		    (caddr_t)ctob(sptov(u.u_procp, u.u_ssize - 1)),
 		    (int)ctob(u.u_ssize),
-		    (off_t)ctob(UPAGES)+ctob(u.u_dsize), 0, (int *)0);
+		    (off_t)ctob(UPAGES) + ctob(u.u_dsize),
+		    UIO_USERSPACE, IO_UNIT, (int *)0);
 out:
-	iput(ip);
-	return (u.u_error == 0);
+	if (vp)
+		vrele(vp);
+	return (error);
 }
