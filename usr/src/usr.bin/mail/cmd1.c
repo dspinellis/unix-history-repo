@@ -8,7 +8,7 @@
  * User commands.
  */
 
-static char *SccsId = "@(#)cmd1.c	2.7 %G%";
+static char *SccsId = "@(#)cmd1.c	2.8 %G%";
 
 /*
  * Print the current active headings.
@@ -231,12 +231,31 @@ pcmdlist()
 }
 
 /*
+ * Type out messages, honor ignored fields.
+ */
+type(msgvec)
+	int *msgvec;
+{
+
+	return(type1(msgvec, 1));
+}
+
+/*
+ * Type out messages, even printing ignored fields.
+ */
+Type(msgvec)
+	int *msgvec;
+{
+
+	return(type1(msgvec, 0));
+}
+
+/*
  * Type out the messages requested.
  */
-
 jmp_buf	pipestop;
 
-type(msgvec)
+type1(msgvec, doign)
 	int *msgvec;
 {
 	register *ip;
@@ -276,7 +295,7 @@ type(msgvec)
 		touch(mesg);
 		mp = &message[mesg-1];
 		dot = mp;
-		print(mp, obuf);
+		print(mp, obuf, doign);
 	}
 	if (obuf != stdout) {
 		pipef = NULL;
@@ -305,7 +324,7 @@ brokpipe()
  * Print the indicated message on standard output.
  */
 
-print(mp, obuf)
+print(mp, obuf, doign)
 	register struct message *mp;
 	FILE *obuf;
 {
@@ -313,7 +332,7 @@ print(mp, obuf)
 	if (value("quiet") == NOSTR)
 		fprintf(obuf, "Message %2d:\n", mp - &message[0] + 1);
 	touch(mp - &message[0] + 1);
-	send(mp, obuf);
+	send(mp, obuf, doign);
 }
 
 /*
