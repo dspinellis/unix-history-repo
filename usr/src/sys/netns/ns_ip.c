@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_ip.c	6.5 (Berkeley) %G%
+ *	@(#)ns_ip.c	6.6 (Berkeley) %G%
  */
 
 /*
@@ -36,6 +36,11 @@
 #include "../netns/ns.h"
 #include "../netns/ns_if.h"
 #include "../netns/idp.h"
+
+#ifdef BBNNET
+#include "../bbnnet/in_pcb.h"
+#include "../bbnnet/nopcb.h"
+#endif
 
 struct ifnet_en {
 	struct ifnet ifen_ifnet;
@@ -133,6 +138,7 @@ idpip_input(m0)
 		return;
 	}
 	ip = mtod(m, struct ip *);
+#ifndef BBNNET
 	if (ip->ip_hl > (sizeof (struct ip) >> 2)) {
 		ip_stripoptions(ip, (struct mbuf *)0);
 		if (m->m_len < s) {
@@ -143,6 +149,7 @@ idpip_input(m0)
 			ip = mtod(m, struct ip *);
 		}
 	}
+#endif
 
 	/*
 	 * Make mbuf data length reflect IDP length.
@@ -228,6 +235,10 @@ nsipoutput(ifn, m0, dst)
 	ip->ip_p = IPPROTO_IDP;
 	ip->ip_src = ifn->ifen_src;
 	ip->ip_dst = ifn->ifen_dst;
+#ifdef BBNNET
+	ip->ip_tos = 0;
+	NOPCB_IPSEND(m, len, 0, error);
+#else
 	ip->ip_len = (u_short)len + sizeof (struct ip);
 	ip->ip_ttl = MAXTTL;
 
@@ -235,6 +246,7 @@ nsipoutput(ifn, m0, dst)
 	 * Output final datagram.
 	 */
 	error =  (ip_output(m, (struct mbuf *)0, ro, SO_BROADCAST));
+#endif
 	if (error) {
 		ifn->ifen_ifnet.if_oerrors++;
 		ifn->ifen_ifnet.if_ierrors = error;
