@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hpmaptype.c	7.5 (Berkeley) %G%
+ *	@(#)hpmaptype.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -22,7 +22,6 @@
 #include "../vaxmba/mbareg.h"
 
 #include "saio.h"
-#include "savax.h"
 
 short	rp06_off[8] =	{ 0, 38, 0, -1, -1, -1, 118, -1 };
 short	rm03_off[8] =	{ 0, 100, 0, -1, -1, -1, 309, -1 };
