@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_param.h	7.2 (Berkeley) 4/21/91
- *	$Id: vm_param.h,v 1.4 1994/01/28 03:28:18 jkh Exp $
+ *	$Id: vm_param.h,v 1.5 1994/01/31 04:21:55 davidg Exp $
  */
 
 /*
@@ -111,7 +111,6 @@ typedef int	boolean_t;
  */
 
 #ifdef	KERNEL
-extern vm_size_t	mem_size;	/* size of physical memory (bytes) */
 extern vm_offset_t	first_addr;	/* first physical page */
 extern vm_offset_t	last_addr;	/* last physical page */
 #endif /* KERNEL */
