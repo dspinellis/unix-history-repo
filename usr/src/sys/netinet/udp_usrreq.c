@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	6.1	83/07/29	*/
+/*	udp_usrreq.c	6.2	83/10/06	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
