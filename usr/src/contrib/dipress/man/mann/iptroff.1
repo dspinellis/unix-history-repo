@@ -1,0 +1,67 @@
+.\" (c) Copyright 1986 Xerox Corporation
+.\" All rights reserved.
+.TH IPTROFF 1 5/23/85
+.CM 2
+.SH "NAME"
+iptroff \- convert troff to Interpress
+.SH "SYNOPSIS"
+.B iptroff
+[
+\fB\-D\fR\0 device
+] [
+\fB\-o\fR\0 output-file
+] [
+.B \-t
+] troff\ arguments
+.SH "DESCRIPTION"
+.I Iptroff
+runs
+.IR troff (1)
+sending its output through
+.IR dipress (1)
+to produce typeset output for an Interpress printer.
+As the document is processed, the names of the passes will
+be printed.  This can be suppressed with the
+.B \-q
+(quiet) switch.
+If the troff
+.B \-t
+switch is specified, however,
+the troff output will be sent directly to the standard output
+and not piped through
+.IR dipress .
+In addition, the
+.B \-q
+option is assumed with the
+.B \-t
+option.
+If the
+.B \-D
+switch is specified, then the font metrics for the named device
+will be used instead of the default set.  The actual printer
+that the Interpress master gets sent to is site dependent.
+If the
+.B \-o
+option is specified, then the Interpress master is left in the
+specified file rather than being transmitted to a print server.
+.PP
+The default font is TroffClassic which is the normal Xerox Classic
+font augmented to provide all the special characters found
+in the troff manual with the single exception of the Bell System Logo.
+.PP
+Example:
+.sp
+.RS
+iptroff\0\-ms\0paper
+.RE
+.sp
+will set a paper with the ``ms'' macro package
+in the TroffClassic.
+.SH "FILES"
+.ta \w'$LIB/fonts/*  'u
+$LIB/fonts/*	default font mounts and bug fixes
+.DT
+.SH "SEE ALSO"
+The Interpress Toolkit manual,
+dipress(1),
+troff(1)
