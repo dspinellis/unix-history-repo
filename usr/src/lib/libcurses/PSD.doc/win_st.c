@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)win_st.c	6.3 (Berkeley) %G%
+.\"	@(#)win_st.c	8.1 (Berkeley) %G%
 .\"
 # define	WINDOW	struct _win_st
 
