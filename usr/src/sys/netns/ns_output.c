@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ns_output.c	7.5 (Berkeley) %G%
+ *	@(#)ns_output.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -124,7 +124,8 @@ gotif:
 		if (ns_copy_output) {
 			ns_watch_output(m0, ifp);
 		}
-		error = (*ifp->if_output)(ifp, m0, (struct sockaddr *)dst);
+		error = (*ifp->if_output)(ifp, m0,
+					(struct sockaddr *)dst, ro->ro_rt);
 		goto done;
 	} else error = EMSGSIZE;
 
