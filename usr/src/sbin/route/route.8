@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)route.8	8.3 (Berkeley) %G%
+.\"     @(#)route.8	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt ROUTE 8
@@ -250,6 +250,7 @@ and
 RTM_CHANGE.
 As such, only the super-user may modify
 the routing tables.
+.ne 1i
 .Sh DIAGNOSTICS
 .Bl -tag -width Ds
 .It Sy "add [host \&| network ] %s: gateway %s flags %x"

@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mount_procfs.8	8.2 (Berkeley) %G%
+.\"	@(#)mount_procfs.8	8.3 (Berkeley) %G%
 .\"
 .\"
 .Dd 
@@ -110,6 +110,7 @@ defined in
 .Pa <machine/reg.h> .
 .Pa regs
 can only be written when the process is stopped.
+.ne 1i
 .It Pa fpregs
 The floating point registers as defined by
 .Dv "struct fpregs"

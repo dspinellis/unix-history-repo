@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)restore.8	8.2 (Berkeley) %G%
+.\"     @(#)restore.8	8.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RESTORE 8
@@ -132,6 +132,7 @@ Note that the
 key replaces the function of the old
 .Xr dumpdir 8
 program.
+.ne 1i
 .It Cm i
 This mode allows interactive restoration of files from a dump.
 After reading in the directory information from the dump,
@@ -246,6 +247,7 @@ extracts the actual directory,
 rather than the files that it references.
 This prevents hierarchical restoration of complete subtrees
 from the dump.
+.ne 1i
 .It Cm m
 .Nm Restore
 will extract by inode numbers rather than by file name.

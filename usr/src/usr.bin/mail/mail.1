@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mail.1	8.3 (Berkeley) %G%
+.\"	@(#)mail.1	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MAIL 1
@@ -420,6 +420,7 @@ argument is given, the previous 18\-message group is printed.
 .It Ic help
 A synonym for
 .Ic \&?
+.ne 1i
 .It Ic hold
 .Pf ( Ic ho ,
 also
@@ -558,6 +559,7 @@ saving a message by
 .Ic save
 or when automatically saving to
 .Ar mbox  .
+.pl +1
 .It Ic saveretain
 .Ic Saveretain
 is to
@@ -685,6 +687,7 @@ Message headers currently being ignored (by the
 or
 .Ic retain
 command) are not included.
+.ne 1i
 .It Ic \&~F Ns Ar messages
 Identical to
 .Ic \&~f ,
@@ -776,6 +779,7 @@ Causes
 to prompt you for the subject of each message you send.
 If
 you respond with simply a newline, no subject field will be sent.
+.ne 1i
 .It Ar askcc
 Causes you to be prompted for additional carbon copy recipients at the
 end of each message.
@@ -904,6 +908,7 @@ Pathname of the text editor to use in the
 command and
 .Ic \&~v
 escape.
+.ne 1i
 .It Va crt
 The valued option
 .Va crt

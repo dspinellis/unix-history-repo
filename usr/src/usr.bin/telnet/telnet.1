@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)telnet.1	8.5 (Berkeley) %G%
+.\"	@(#)telnet.1	8.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TELNET 1
@@ -108,6 +108,7 @@ there will be no escape character.
 If Kerberos V5 authentication is being used, the
 .Fl f
 option allows the local credentials to be forwarded to the remote system.
+.ne 1i
 .It Fl k Ar realm
 If Kerberos authentication is being used, the
 .Fl k
@@ -550,6 +551,7 @@ command,
 .Ic getstatus
 will send the subnegotiation to request that the server send
 its current option status.
+.ne 1i
 .It Ic ip
 Sends the
 .Dv TELNET IP
@@ -875,6 +877,7 @@ The initial value for the suspend character is taken to be
 the terminal's
 .Ic suspend
 character.
+.ne 1i
 .It Ic tracefile
 This is the file to which the output, caused by
 .Ic netdata
@@ -1011,6 +1014,7 @@ stream does not start automatically.  The autoencrypt
 (autodecrypt) command states that encryption of the
 output (input) stream should be enabled as soon as
 possible.
+.sp
 .Pp
 Note:  Because of export controls, the
 .Dv TELNET ENCRYPT
@@ -1161,6 +1165,7 @@ protocol processing (having to do with
 options).
 The initial value for this toggle is
 .Dv FALSE .
+.ne 1i
 .It Ic prettydump
 When the
 .Ic netdata

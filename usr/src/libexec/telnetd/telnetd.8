@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)telnetd.8	8.3 (Berkeley) %G%
+.\"	@(#)telnetd.8	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt TELNETD 8
@@ -282,6 +282,7 @@ indicates that only dotted decimal addresses
 should be put into the
 .Pa utmp
 file.
+.ne 1i
 .It Fl U
 This option causes
 .Nm telnetd
@@ -398,6 +399,7 @@ Whenever a
 command is received, it is always responded
 to with a
 .Dv WILL TIMING-MARK
+.ne 1i
 .It "WILL LOGOUT"
 When a
 .Dv DO LOGOUT

@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)fsdb.8	8.5 (Berkeley) %G%
+.\"	@(#)fsdb.8	8.6 (Berkeley) %G%
 .\"
 .TH FSDB 8 ""
 .UC 7
@@ -408,6 +408,7 @@ The address pointed to by
 .IR dot
 has its contents decremented by expression
 .IR e .
+.ne 1i
 .SH COMMANDS
 .PP
 A command must be prefixed by a ':' character.
@@ -607,6 +608,7 @@ display the current working directory.
 .B quit
 quit
 .IR fsdb .
+.ne 1i
 .TP 7.2n
 .B sb
 the value of

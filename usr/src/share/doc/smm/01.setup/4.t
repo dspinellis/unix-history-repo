@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)4.t	8.1 (Berkeley) %G%
+.\"	@(#)4.t	8.2 (Berkeley) %G%
 .\"
 .ds LH "Installing/Operating \*(4B
 .ds CF \*(Dy
@@ -77,7 +77,7 @@ netiso	ISO protocols (TP-4, CLNP, CLTP, etc)
 netns	Xerox network systems protocols (IDP, SPP, etc)
 netx25	CCITT X.25 protocols (X.25 Packet Level, HDLC/LAPB)
 .TE
-.LP
+.sp.05
 A separate subdirectory is provided for each machine architecture
 .TS
 l l.
@@ -91,7 +91,7 @@ sparc	Sun Microsystems SPARCstation 1, 1+, and 2
 tahoe	(deprecated) CCI Power 6-series machines
 vax	(deprecated) Digital VAX machines
 .TE
-.LP
+.sp 0.5
 Each machine directory is subdivided by function;
 for example the hp300 directory contains
 .TS
@@ -102,7 +102,7 @@ dev	device drivers
 conf	configuration files
 stand	machine-dependent standalone code
 .TE
-.LP
+.sp .05
 Other kernel related directories
 .TS
 l l.
@@ -500,6 +500,7 @@ for your installation, creating mail groups as appropriate.
 For more informations see
 ``Sendmail Installation and Operation Guide'' (SMM:8) and
 ``Sendmail \- An Internetwork Mail Router'' (SMM:9).
+.sp
 .Sh 3 "Setting up a UUCP connection"
 .LP
 The version of

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)map3270.5	8.3 (Berkeley) %G%
+.\"	@(#)map3270.5	8.4 (Berkeley) %G%
 .\"
 .TH MAP3270 5  ""
 .UC 6
@@ -107,6 +107,7 @@ In addition, the following characters are special:
 `\er'  means carriage return.
 .in -0.5i
 .fi
+.sp
 .sp
 It is not necessary for each character in a string
 to be enclosed within single quotes.
@@ -287,6 +288,7 @@ and
      Local Control Keys
                               Reset After Error             control-r
                               Purge Input Buffer            control-x
+.ne 1i
                               Keyboard Unlock               control-t
                               Redisplay Screen              control-v
      Other Keys

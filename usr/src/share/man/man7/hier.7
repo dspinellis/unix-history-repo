@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)hier.7	8.4 (Berkeley) %G%
+.\"	@(#)hier.7	8.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt HIER 7
@@ -253,6 +253,7 @@ super-user start-up file
 .It Sy \&.profile
 super-user start-up file
 .El
+.ne 1i
 .It Sy /sbin/
 system programs and administration utilities
 used in both single-user and multi-user environments
@@ -359,6 +360,7 @@ UUCP binaries and scripts (historically placed; to be moved)
 miscellaneous utility data files
 .It Sy libexec/
 system daemons and system utilities (executed by other programs)
+.ne 1i
 .It Sy local/
 local executables, libraries, etc.
 .Pp
