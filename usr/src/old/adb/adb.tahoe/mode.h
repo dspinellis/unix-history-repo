@@ -1,4 +1,4 @@
-/*	mode.h	1.1	86/02/25	*/
+/*	mode.h	1.2	87/03/22	*/
 
 #include "machine.h"
 /*
@@ -7,7 +7,7 @@
 
 #define MAXCOM	64
 #define MAXARG	32
-#define LINSIZ	256
+#define LINSIZ	1024
 TYPE	unsigned	ADDR;
 TYPE	short	INT;
 TYPE	int		VOID;
