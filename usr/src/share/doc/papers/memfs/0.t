@@ -1,4 +1,4 @@
-.\"	@(#)0.t	1.2	(Copyright 1990 M. K. McKusick)	90/04/13
+.\"	@(#)0.t	1.3	(Copyright 1990 M. K. McKusick)	90/04/16
 .rm CM
 .nr PO 1.25i
 .ds CH "
@@ -24,7 +24,7 @@ Figure \\n(Fn - \\$1.
 \&\fB\\$1\fP\\$2
 ..
 .TL
-A Pageable Memory Based File System
+A Pageable Memory Based Filesystem
 .AU
 Marshall Kirk McKusick
 .AU
