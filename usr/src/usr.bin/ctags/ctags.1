@@ -2,22 +2,16 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ctags.1	4.1 (Berkeley) %G%
+.\"	@(#)ctags.1	5.1 (Berkeley) %G%
 .\"
-.TH CTAGS 1 4/1/81
+.TH CTAGS 1 "25 August 1982"
 .UC 4
 .SH NAME
 ctags \- create a tags file
 .SH SYNOPSIS
 .B ctags
 [ 
-.B \-u
-] [
-.B \-v
-] [
-.B \-w
-] [
-.B \-x
+.B \-BFatuwvx
 ]
 name ...
 .SH DESCRIPTION
@@ -26,22 +20,22 @@ makes a tags file for
 .IR ex (1)
 from the specified C, Pascal and Fortran sources.
 A tags file gives the locations of specified objects (in this case
-functions) in a group of files.
-Each line of the tags file contains the function name,
-the file in which it is defined, and a scanning pattern used to find
-the function definition.  These are given in separate fields on the line,
-separated by blanks or tabs.
+functions and typedefs) in a group of files.  Each line of the tags
+file contains the object name, the file in which it is defined, and
+an address specification for the object definition. Functions are
+searched with a pattern, typedefs with a line number. Specifiers are
+given in separate fields on the line, separated by blanks or tabs.
 Using the
 .I tags
 file,
 .I ex
-can quickly find these function definitions.
+can quickly find these objects definitions.
 .PP
 If the
 .B \-x
 flag is given, 
 .I ctags
-produces a list of function names, the line number and file
+produces a list of object names, the line number and file
 name on which each is defined, as well as the text of that line
 and prints this on the standard output.  This is a simple index
 which can be printed out as an off-line readable function index.
@@ -76,6 +70,18 @@ looking for C definitions.
 .PP
 Other options are:
 .TP 5
+.B \-F
+use forward searching patterns (/.../) (default).
+.TP 5
+.B \-B
+use backward searching patterns (?...?).
+.TP 5
+.B \-a
+append to tags file.
+.TP 5
+.B \-t
+create tags for typedefs.
+.TP 5
 .B \-w
 suppressing warning diagnostics.
 .TP 5
@@ -109,7 +115,8 @@ Ken Arnold; FORTRAN added by Jim Kleckner; Bill Joy
 added Pascal and
 .B \-x,
 replacing
-.I cxref.
+.I cxref;
+C typedefs added by Ed Pelegri-Llopart.
 .SH BUGS
 Recognition of \fBfunctions\fR, \fBsubroutines\fR and \fBprocedures\fR
 for FORTRAN and Pascal is done is a very simpleminded way.
@@ -118,3 +125,9 @@ Pascal procedures in different blocks with the same name you lose.
 .PP
 The method of deciding whether to look for C or Pascal and FORTRAN
 functions is a hack.
+.PP
+Does not know about #ifdefs.
+.PP
+Should know about Pascal types.
+Relies on the input being well formed to detect typedefs.
+Use of -tx shows only the last line of typedefs.
