@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.7 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -454,6 +454,8 @@ found:
 			ILOCK(pdp);
 			return (error);
 		}
+		if (lockparent && *ndp->ni_next == '\0')
+			ILOCK(pdp);
 		ndp->ni_vp = ITOV(tdp);
 	} else if (dp->i_number == ndp->ni_dent.d_ino) {
 		vdp = ITOV(dp);
@@ -462,7 +464,8 @@ found:
 	} else {
 		if (error = iget(dp, ndp->ni_dent.d_ino, &tdp))
 			return (error);
-		IUNLOCK(pdp);
+		if (!lockparent || *ndp->ni_next != '\0')
+			IUNLOCK(pdp);
 		ndp->ni_vp = ITOV(tdp);
 	}
 
