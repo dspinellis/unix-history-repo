@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.6 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -698,9 +698,12 @@ cd9660_vget_internal(mp, ino, vpp, relocated, isodir)
 		    && isonum_711(isodir->ext_attr_length))
 			iso_blkatoff(ip, -isonum_711(isodir->ext_attr_length),
 				     &bp2);
+		else
+			bp2 = NULL;
 		cd9660_defattr(isodir, ip, bp2);
 		cd9660_deftstamp(isodir, ip, bp2);
-		brelse(bp2);
+		if (bp2)
+			brelse(bp2);
 		break;
 	    }
 	case ISO_FTYPE_RRIP:
