@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_sl.c	8.4 (Berkeley) %G%
+ *	@(#)if_sl.c	8.5 (Berkeley) %G%
  */
 
 /*
@@ -278,7 +278,6 @@ sltioctl(tp, cmd, data, flag)
 	int flag;
 {
 	struct sl_softc *sc = (struct sl_softc *)tp->t_sc;
-	int s;
 
 	switch (cmd) {
 	case SLIOCGUNIT:
