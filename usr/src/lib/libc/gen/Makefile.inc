@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.44 (Berkeley) %G%
+#	@(#)Makefile.inc	5.45 (Berkeley) %G%
 
 # machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
@@ -38,8 +38,8 @@ MAN3+=	alarm.0 clock.0 crypt.0 ctermid.0 ctime.0 ctype.0 daemon.0 \
 	ispunct.0 isspace.0 isupper.0 isxdigit.0 ldexp.0 modf.0 nice.0 \
 	nlist.0 pause.0 popen.0 psignal.0 pwcache.0 raise.0 scandir.0 \
 	setjmp.0 setmode.0 siginterrupt.0 signal.0 sigsetops.0 sleep.0 \
-	sysctl.0 syslog.0 tcgetpgrp.0 tcsendbreak.0 tcsetattr.0 tcsetpgrp.0 \
-	time.0 times.0 timezone.0 toascii.0 tolower.0 toupper.0 \
+	sysconf.0 sysctl.0 syslog.0 tcgetpgrp.0 tcsendbreak.0 tcsetattr.0 \
+	tcsetpgrp.0 time.0 times.0 timezone.0 toascii.0 tolower.0 toupper.0 \
 	ttyname.0 tzset.0 ualarm.0 unvis.0 usleep.0 utime.0 valloc.0 \
 	vis.0
 
