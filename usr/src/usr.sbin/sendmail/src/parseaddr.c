@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	6.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	6.33 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -562,6 +562,7 @@ struct match
 {
 	char	**first;	/* first token matched */
 	char	**last;		/* last token matched */
+	char	**pattern;	/* pointer to pattern */
 };
 
 # define MAXMATCH	9	/* max params per rewrite */
@@ -624,7 +625,7 @@ rewrite(pvp, ruleset)
 			rp = *rvp;
 			if (tTd(21, 35))
 			{
-				printf("rp=");
+				printf("ADVANCE rp=");
 				xputs(rp);
 				printf(", ap=");
 				xputs(ap);
@@ -638,8 +639,8 @@ rewrite(pvp, ruleset)
 			if (ap == NULL && (*rp & 0377) != MATCHZANY &&
 			    (*rp & 0377) != CANONHOST)
 			{
-				/* end-of-input */
-				break;
+				/* end-of-input with patterns left */
+				goto backup;
 			}
 
 			switch (*rp & 0377)
@@ -648,28 +649,45 @@ rewrite(pvp, ruleset)
 				char buf[MAXLINE];
 
 			  case MATCHCLASS:
-			  case MATCHNCLASS:
-				/* match any token in (not in) a class */
+				/* match any phrase in a class */
+				mlp->pattern = rvp;
 				mlp->first = avp;
 	extendclass:
-				if (*avp == NULL)
+				ap = *avp;
+				if (ap == NULL)
 					goto backup;
 				mlp->last = avp++;
 				cataddr(mlp->first, mlp->last, buf, sizeof buf, '\0');
 				s = stab(buf, ST_CLASS, ST_FIND);
 				if (s == NULL || !bitnset(rp[1], s->s_class))
 				{
-					if ((*rp & 0377) == MATCHCLASS)
-						goto extendclass;
-				}
-				else if ((*rp & 0377) == MATCHNCLASS)
+					if (tTd(21, 36))
+					{
+						printf("EXTEND  rp=");
+						xputs(rp);
+						printf(", ap=");
+						xputs(ap);
+						printf("\n");
+					}
 					goto extendclass;
+				}
+				if (tTd(21, 36))
+					printf("CLMATCH\n");
 				mlp++;
 				break;
+
+			  case MATCHNCLASS:
+				/* match any token not in a class */
+				s = stab(ap, ST_CLASS, ST_FIND);
+				if (s != NULL && bitnset(rp[1], s->s_class))
+					goto backup;
+
+				/* fall through */
 
 			  case MATCHONE:
 			  case MATCHANY:
 				/* match exactly one token */
+				mlp->pattern = rvp;
 				mlp->first = avp;
 				mlp->last = avp++;
 				mlp++;
@@ -677,6 +695,7 @@ rewrite(pvp, ruleset)
 
 			  case MATCHZANY:
 				/* match zero or more tokens */
+				mlp->pattern = rvp;
 				mlp->first = avp;
 				mlp->last = avp - 1;
 				mlp++;
@@ -698,37 +717,47 @@ rewrite(pvp, ruleset)
 			rvp++;
 			continue;
 
-		  backup:
+	  backup:
 			/* match failed -- back up */
-			while (--rvp >= rwr->r_lhs)
+			while (--mlp >= mlist)
 			{
+				rvp = mlp->pattern;
 				rp = *rvp;
+				avp = mlp->last + 1;
+				ap = *avp;
+
+				if (tTd(21, 36))
+				{
+					printf("BACKUP  rp=");
+					xputs(rp);
+					printf(", ap=");
+					xputs(ap);
+					printf("\n");
+				}
+
+				if (ap == NULL)
+				{
+					/* run off the end -- back up again */
+					continue;
+				}
 				if ((*rp & 0377) == MATCHANY ||
 				    (*rp & 0377) == MATCHZANY)
 				{
 					/* extend binding and continue */
-					avp = ++mlp[-1].last;
-					avp++;
+					mlp->last = avp++;
 					rvp++;
+					mlp++;
 					break;
 				}
-				if ((*rp & 0377) == MATCHCLASS ||
-				    (*rp & 0377) == MATCHNCLASS)
+				if ((*rp & 0377) == MATCHCLASS)
 				{
 					/* extend binding and try again */
-					mlp--;
-					avp = ++mlp->last;
+					mlp->last = avp++;
 					goto extendclass;
-				}
-				avp--;
-				if ((*rp & 0377) == MATCHONE)
-				{
-					/* back out binding */
-					mlp--;
 				}
 			}
 
-			if (rvp < rwr->r_lhs)
+			if (mlp < mlist)
 			{
 				/* total failure to match */
 				break;
@@ -1495,7 +1524,7 @@ remotename(name, m, senderaddress, header, canonical, adddomain, e)
 	**  Now restore the comment information we had at the beginning.
 	*/
 
-	cataddr(pvp, lbuf, sizeof lbuf, '\0');
+	cataddr(pvp, NULL, lbuf, sizeof lbuf, '\0');
 	define('g', lbuf, e);
 	expand(fancy, buf, &buf[sizeof buf - 1], e);
 	define('g', oldg, e);
