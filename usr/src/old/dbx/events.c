@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)events.c 5.2 %G%";
+static char sccsid[] = "@(#)events.c 5.3 %G%";
 /*
  * Event/breakpoint managment.
  */
@@ -22,24 +22,33 @@ static char sccsid[] = "@(#)events.c 5.2 %G%";
 #include "lists.h"
 
 #ifndef public
+
 typedef struct Event *Event;
 typedef struct Breakpoint *Breakpoint;
 
-boolean inst_tracing;
-boolean single_stepping;
-boolean isstopped;
-
 #include "symbols.h"
-
-Symbol linesym;
-Symbol procsym;
-Symbol pcsym;
-Symbol retaddrsym;
 
 #define addevent(cond, cmdlist) event_alloc(false, cond, cmdlist)
 #define event_once(cond, cmdlist) event_alloc(true, cond, cmdlist)
 
+/*
+ * When tracing variables we keep a copy of their most recent value
+ * and compare it to the current one each time a breakpoint occurs.
+ * MAXTRSIZE is the maximum size variable we allow.
+ */
+
+#define MAXTRSIZE 512
+
 #endif
+
+public boolean inst_tracing;
+public boolean single_stepping;
+public boolean isstopped;
+
+public Symbol linesym;
+public Symbol procsym;
+public Symbol pcsym;
+public Symbol retaddrsym;
 
 struct Event {
     unsigned int id;
@@ -650,14 +659,6 @@ boolean iscall;
     endfor
     return false;
 }
-
-/*
- * When tracing variables we keep a copy of their most recent value
- * and compare it to the current one each time a breakpoint occurs.
- * MAXTRSIZE is the maximum size variable we allow.
- */
-
-#define MAXTRSIZE 512
 
 /*
  * List of variables being watched.

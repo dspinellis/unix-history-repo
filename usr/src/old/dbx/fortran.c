@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)fortran.c	5.3	%G%";
+static char sccsid[] = "@(#)fortran.c	5.4	%G%";
 /*
  * FORTRAN dependent symbol routines.
  */
@@ -162,9 +162,7 @@ char  **pbuf;
 public fortran_printdecl(s)
 Symbol s;
 {
-
-
-Symbol eltype;
+    Symbol eltype;
 
     switch (s->class) {
 	case CONST:
@@ -283,7 +281,7 @@ Symbol s;
 	    break;
 
 	case RANGE:
-	    if (isspecial(s)) {
+	     if (isspecial(s)) {
 		switch (s->symvalue.rangev.lower) {
 		    case sizeof(short):
 			if (istypename(s->type, "logical*2")) {
@@ -300,7 +298,7 @@ Symbol s;
 			break;
 
 		    case sizeof(double):
-			if (istypename(s->type, "complex")) {
+			if (istypename(s->type,"complex")) {
 			    d2 = pop(float);
 			    d1 = pop(float);
 			    printf("(");
@@ -322,7 +320,7 @@ Symbol s;
 			prtreal(d2);
 			printf(")");
 			break;
-		
+
 		    default:
 			panic("bad size \"%d\" for special",
                                   s->symvalue.rangev.lower);
@@ -346,8 +344,8 @@ Symbol s;
  * Print out a logical
  */
 
-private printlogical(i)
-Integer i;
+private printlogical (i)
+integer i;
 {
     if (i == 0) {
 	printf(".false.");
@@ -364,8 +362,9 @@ private printint(i, t)
 Integer i;
 register Symbol t;
 {
-    if ( (t->type == t_int) or istypename(t->type, "integer") or
-                  istypename(t->type,"integer*2") ) {
+    if (t->type == t_int or istypename(t->type, "integer") or
+	istypename(t->type,"integer*2")
+    ) {
 	printf("%ld", i);
     } else if (istypename(t->type, "addr")) {
 	printf("0x%lx", i);
