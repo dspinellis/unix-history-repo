@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fhdr.c 1.5 %G%";
+static char sccsid[] = "@(#)fhdr.c 1.6 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -374,9 +374,15 @@ params(p, formalist)
 #					endif DEC11
 #				    endif OBJ
 #				    ifdef PC
-					dp = defnl( idlist[1] , VAR , p 
-						, o = roundup( o , (long)A_STACK ) );
-					o += lwidth( p );
+					o = roundup(o, A_STACK);
+					w = lwidth(p);
+#					ifndef DEC11
+					    if (w <= sizeof(int)) {
+						o += sizeof(int) - w;
+					    }
+#					endif not DEC11
+					dp = defnl(idlist[1], VAR, p, o);
+					o += w;
 #				    endif PC
 				    dp->nl_flags |= NMOD;
 				    break;
