@@ -26,7 +26,7 @@ static char copyright[] =
 #endif	/* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	1.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	1.18 (Berkeley) %G%";
 #endif	/* not lint */
 
 /*
@@ -615,7 +615,8 @@ int fd;
 #include <time.h>
 #include <signal.h>
 #include <process.h>
-
+#include <fcntl.h>
+#include <io.h>
 #include <dos.h>
 
 #if	!defined(SO_OOBINLINE)
@@ -877,8 +878,8 @@ register int f;
     static old_1b_offset = 0, old_1b_segment = 0;
 
     globalmode = f;
-    signal(SIGINT, CtrlCInterrupt);
     if (MODE_COMMAND_LINE(f)) {
+	signal(SIGINT, SIG_DFL);
 	if (old_1b_segment|old_1b_offset) {
 	    inregs.h.ah = 0x25;
 	    inregs.h.al = 0x1b;
@@ -887,7 +888,14 @@ register int f;
 	    intdosx(&inregs, &inregs, &segregs);
 	    old_1b_segment = old_1b_offset = 0;
 	}
+	if (setmode(fileno(stdout), O_TEXT) == -1) {
+	    ExitPerror("setmode (text)", 1);
+	}
+	if (setmode(fileno(stdin), O_TEXT) == -1) {
+	    ExitPerror("setmode (text)", 1);
+	}
     } else {
+	signal(SIGINT, CtrlCInterrupt);
 	if ((old_1b_segment|old_1b_offset) == 0) {
 	    extern void iret_subr();
 	    void (far *foo_subr)() = iret_subr;
@@ -902,6 +910,12 @@ register int f;
 	    inregs.x.dx = FP_OFF(foo_subr);
 	    segregs.ds = FP_SEG(foo_subr);
 	    intdosx(&inregs, &inregs, &segregs);
+	}
+	if (setmode(fileno(stdout), O_BINARY) == -1) {
+	    ExitPerror("setmode (binary)", 1);
+	}
+	if (setmode(fileno(stdin), O_BINARY) == -1) {
+	    ExitPerror("setmode (binary)", 1);
 	}
     }
 }
