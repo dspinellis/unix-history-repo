@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 AS=	as ${DEBUG}
 CC=	cc ${DEBUG}
@@ -9,13 +9,13 @@ S= ../..
 
 INCLUDES= -I${.CURDIR} -I${.CURDIR}/$S 
 COPTS=	${INCLUDES} ${IDENT} -DKERNEL
-CFLAGS=	-g -O ${COPTS}
+CFLAGS=	-g -O
 
 LDFLAGS= -N
 
 NOMAN=
 
-LIBS=	-lc
+LIBS=	-L/usr/libexec/gcc2 -lgcc -lc
 
 SRCS=	trap.c machdep.c romcons.c sio.c bmc.c cons.c subr_prf.c kern_clock.c \
 	boot.c sys.c conf.c ufs_disksubr.c disklabel.c scsi.c sc.c sd.c st.c\
