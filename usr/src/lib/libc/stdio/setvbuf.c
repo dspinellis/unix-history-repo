@@ -40,16 +40,20 @@ setvbuf(fp, buf, mode, size)
 			return (EOF);
 
 	/*
-	 * Write current buffer, if any.  Discard unread input, cancel
-	 * line buffering, and free old buffer if malloc()ed.
+	 * Write current buffer, if any.  Discard unread input (including
+	 * ungetc data), cancel line buffering, and free old buffer if
+	 * malloc()ed.  We also clear any eof condition, as if this were
+	 * a seek.
 	 */
 	ret = 0;
 	(void)__sflush(fp);
+	if (HASUB(fp))
+		FREEUB(fp);
 	fp->_r = fp->_lbfsize = 0;
 	flags = fp->_flags;
 	if (flags & __SMBF)
 		free((void *)fp->_bf._base);
-	flags &= ~(__SLBF | __SNBF | __SMBF | __SOPT | __SNPT);
+	flags &= ~(__SLBF | __SNBF | __SMBF | __SOPT | __SNPT | __SEOF);
 
 	/* If setting unbuffered mode, skip all the hard work. */
 	if (mode == _IONBF)
@@ -102,20 +106,28 @@ nbf:
 
 	/*
 	 * Fix up the FILE fields, and set __cleanup for output flush on
-	 * exit (since we are buffered in some way).  If in r/w mode, go
-	 * to the intermediate state, so that everyone has to call
-	 * __srefill or __swsetup on the first operation -- it is more
-	 * trouble than it is worth to set things up correctly here.
+	 * exit (since we are buffered in some way).
 	 */
 	if (mode == _IOLBF)
 		flags |= __SLBF;
-	if (flags & __SRW)
-		flags &= ~(__SRD | __SWR);
-	fp->_w = 0;
 	fp->_flags = flags;
 	fp->_bf._base = fp->_p = (unsigned char *)buf;
 	fp->_bf._size = size;
-	fp->_lbfsize = 0;
+	/* fp->_lbfsize is still 0 */
+	if (flags & __SWR) {
+		/*
+		 * Begin or continue writing: see __swsetup().  Note
+		 * that __SNBF is impossible (it was handled earlier).
+		 */
+		if (flags & __SLBF) {
+			fp->_w = 0;
+			fp->_lbfsize = -fp->_bf._size;
+		} else
+			fp->_w = size;
+	} else {
+		/* begin/continue reading, or stay in intermediate state */
+		fp->_w = 0;
+	}
 	__cleanup = _cleanup;
 
 	return (ret);
