@@ -1,10 +1,10 @@
-/*	ubareg.h	3.1	%H%	*/
+/*	ubareg.h	3.2	%H%	*/
 
 /*
  * Unibus adapter
  */
 
-#define	UBA0		0x80040000	/* sys virt i/o for UBA 0 */
+#define	UBA0		0x80060000	/* sys virt i/o for UBA 0 */
 #define	UBA0_DEV (UBA0+0x2000-0160000)	/* sys virt of device regs */
 
 #define	UNIBASE 0760000	 		/* UNIBUS phys base of i/o reg's */

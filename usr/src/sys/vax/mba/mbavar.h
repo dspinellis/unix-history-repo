@@ -1,4 +1,4 @@
-/*	mbavar.h	3.1	%H%	*/
+/*	mbavar.h	3.2	%H%	*/
 
 /*
  * VAX Massbus adapter registers
@@ -20,8 +20,8 @@ struct mba_regs
  *	mba_map at displacement 0x800
  */
 
-#define MBA0		0x80044000
-#define MBA1		0x80046000
+#define MBA0		0x80064000
+#define MBA1		0x80066000
 
 #define MBA_ERB		0x400
 #define MBA_MAP		0x800
@@ -32,4 +32,3 @@ struct mba_regs
 #define MBAEBITS	0xe0770
 
 #define MBAIE		0x4
-
