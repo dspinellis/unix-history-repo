@@ -1,7 +1,7 @@
 
 
 	     K N O W N   B U G S   I N   S E N D M A I L
-			     (for 8.6.7)
+			     (for 8.6.9)
 
 
 The following are bugs or deficiencies in sendmail that I am aware of
@@ -20,7 +20,8 @@ This list is not guaranteed to be complete.
   any value from 0x01-0xFF in the body and 0x01-0x80 and 0xA0-0xFF in
   the header.  Notably missing is 0x00, which would require a major
   restructuring of the code -- for example, almost no C library support
-  could be used to handle strings.
+  could be used to handle strings.  Fixed (for the message body only)
+  in 8.7.
 
 * Duplicate error messages.
 
@@ -68,7 +69,7 @@ This list is not guaranteed to be complete.
   case is hostB, which is unknown.  It probably ought to eliminate
   hostB early in processing.
 
-* NAME environment variables with commas break.
+* NAME environment variables with commas and unbalanced quotes break.
 
   If you define your NAME environment variable to have a comma
   (e.g., ``Lastname, Firstname''), and you are using the $q definition
@@ -76,6 +77,9 @@ This list is not guaranteed to be complete.
   last names as two addresses, thus producing a bogus From line.  You
   can work around this by changing the $q definition to use
   ``address (name)''.
+
+  If you have an unbalanced double quote (e.g., ``Firstname"Lastname'')
+  the auto-quoting algorithm breaks.
 
 * \231 considered harmful.
 
@@ -128,4 +132,4 @@ This list is not guaranteed to be complete.
   file descriptors per list).  This is particularly egregious if
   you have your connection cache set to be large.
 
-(Version 8.18, last updated %G%)
+(Version 8.19, last updated %G%)
