@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)rm.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)rm.c	4.2 (Berkeley) %G%";
 int	errcode;
 
 #include <stdio.h>
@@ -22,6 +22,12 @@ char *argv[];
 	while(argc>1 && argv[1][0]=='-') {
 		arg = *++argv;
 		argc--;
+
+		/*
+		 *  all files following a null option are considered file names
+		 */
+		if (*(arg+1) == '\0') break;
+
 		while(*++arg != '\0')
 			switch(*arg) {
 			case 'f':

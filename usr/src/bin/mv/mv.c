@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)mv.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)mv.c	4.2 (Berkeley) %G%";
 /*
  * mv file1 file2
  */
@@ -31,15 +31,23 @@ main(argc, argv)
 register char *argv[];
 {
 	register i, r;
+	register char *arg;
 
 	/* get the flag(s) */
 
 	if (argc < 2)
 		goto usage;
-	if (*argv[1] == '-') {
+	while (argc>1 && *argv[1] == '-') {
 		argc--;
-		while (*++argv[1] != '\0')
-			switch (*argv[1]) {
+		arg = *++argv;
+
+		/*
+		 *  all files following a null option are considered file names
+		 */
+		if (*(arg+1) == '\0') break;
+
+		while (*++arg != '\0')
+			switch (*arg) {
 
 			/* interactive mode */
 			case 'i':
@@ -55,7 +63,6 @@ register char *argv[];
 			default:
 				goto usage;
 			}
-		argv++;
 	}
 	if (argc < 3)
 		goto usage;
@@ -77,7 +84,7 @@ register char *argv[];
 		r |= move(argv[i], argv[argc-1]);
 	return(r);
 usage:
-	fprintf(stderr, "usage: mv f1 f2; or mv d1 d2; or mv f1 ... fn d1\n");
+	fprintf(stderr, "usage: mv [-if] f1 f2; or mv [-if] d1 d2; or mv [-if] f1 ... fn d1\n");
 	return(1);
 }
 
