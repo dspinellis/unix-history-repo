@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_put.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_put.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -48,52 +48,79 @@ __bt_put(dbp, key, data, flags)
 	index_t index, nxtindex;
 	pgno_t pg;
 	size_t nbytes;
-	int dflags, exact;
+	int dflags, exact, status;
 	char *dest, db[NOVFLSIZE], kb[NOVFLSIZE];
 
-	if (flags && flags != R_NOOVERWRITE) {
+	switch (flags) {
+	case R_CURSOR:
+		if (ISSET(t, BTF_DELCRSR)) {
+			errno = EINVAL;
+			return (RET_ERROR);
+		}
+		break;
+	case 0:
+	case R_NOOVERWRITE:
+		break;
+	default:
 		errno = EINVAL;
 		return (RET_ERROR);
 	}
+
 	t = dbp->internal;
 	if (ISSET(t, BTF_RDONLY)) {
 		errno = EPERM;
 		return (RET_ERROR);
 	}
-	
+
 	/*
 	 * If the key/data won't fit on a page, store it on indirect pages.
+	 * Only store the key on the overflow page if it's too big after the
+	 * data is on an overflow page.
 	 *
 	 * XXX
 	 * If the insert fails later on, these pages aren't recovered.
 	 */
 	dflags = 0;
-	if (key->size >= t->bt_minkeypage) {
-		if (__ovfl_put(t, key, &pg) == RET_ERROR)
-			return (RET_ERROR);
-		tkey.data = kb;
-		tkey.size = NOVFLSIZE;
-		*(pgno_t *)kb = pg;
-		*(size_t *)(kb + sizeof(pgno_t)) = key->size;
-		dflags |= P_BIGKEY;
-		key = &tkey;
-	}
-	if (data->size >= t->bt_minkeypage) {
-		if (__ovfl_put(t, data, &pg) == RET_ERROR)
-			return (RET_ERROR);
-		tdata.data = db;
-		tdata.size = NOVFLSIZE;
-		*(pgno_t *)db = pg;
-		*(size_t *)(db + sizeof(pgno_t)) = data->size;
-		dflags |= P_BIGDATA;
-		data = &tdata;
+	if (key->size + data->size > t->bt_ovflsize) {
+		if (key->size > t->bt_ovflsize) {
+storekey:		if (__ovfl_put(t, key, &pg) == RET_ERROR)
+				return (RET_ERROR);
+			tkey.data = kb;
+			tkey.size = NOVFLSIZE;
+			*(pgno_t *)kb = pg;
+			*(size_t *)(kb + sizeof(pgno_t)) = key->size;
+			dflags |= P_BIGKEY;
+			key = &tkey;
+		}
+		if (key->size + data->size > t->bt_ovflsize) {
+			if (__ovfl_put(t, data, &pg) == RET_ERROR)
+				return (RET_ERROR);
+			tdata.data = db;
+			tdata.size = NOVFLSIZE;
+			*(pgno_t *)db = pg;
+			*(size_t *)(db + sizeof(pgno_t)) = data->size;
+			dflags |= P_BIGDATA;
+			data = &tdata;
+		}
+		if (key->size + data->size > t->bt_ovflsize)
+			goto storekey;
 	}
 
-	/* bt_fast and __bt_search pin the returned page. */
+	/* Replace the cursor. */
+	if (flags == R_CURSOR) {
+		if ((h = mpool_get(t->bt_mp, t->bt_bcursor.pgno, 0)) == NULL)
+			return (RET_ERROR);
+		index = t->bt_bcursor.index;
+		goto delete;
+	}
+
+	/*
+	 * Find the key to delete, or, the location at which to insert.  Bt_fast
+	 * and __bt_search pin the returned page.
+	 */
 	if (t->bt_order == NOT || (e = bt_fast(t, key, data, &exact)) == NULL)
 		if ((e = __bt_search(t, key, &exact)) == NULL)
 			return (RET_ERROR);
-
 	h = e->page;
 	index = e->index;
 
@@ -111,9 +138,9 @@ __bt_put(dbp, key, data, flags)
 			break;
 		/*
 		 * One special case is if the cursor references the record and
-		 * it's been flagged for deletion.  If so, we delete it and
-		 * pretend it was never there.  Since the cursor will move to
-		 * the next record the inserted record won't be seen.
+		 * it's been flagged for deletion.  Then, we delete the record,
+		 * leaving the cursor there -- this means that the inserted
+		 * record will not be seen in a cursor scan.
 		 */
 		if (ISSET(t, BTF_DELCRSR) && t->bt_bcursor.pgno == h->pgno &&
 		    t->bt_bcursor.index == index) {
@@ -141,9 +168,12 @@ delete:		if (__bt_dleaf(t, h, index) == RET_ERROR) {
 	 * into the offset array, shift the pointers up.
 	 */
 	nbytes = NBLEAFDBT(key->size, data->size);
-	if (h->upper - h->lower < nbytes + sizeof(index_t) ||
-	    t->bt_maxkeypage && t->bt_maxkeypage < NEXTINDEX(h))
-		return (__bt_split(t, h, key, data, dflags, nbytes, index));
+	if (h->upper - h->lower < nbytes + sizeof(index_t)) {
+		status = __bt_split(t, h, key, data, dflags, nbytes, index);
+		if (status == RET_SUCCESS)
+			SET(t, BTF_MODIFIED);
+		return (status);
+	}
 
 	if (index < (nxtindex = NEXTINDEX(h)))
 		bcopy(h->linp + index, h->linp + index + 1,
@@ -169,8 +199,8 @@ delete:		if (__bt_dleaf(t, h, index) == RET_ERROR) {
 			}
 		}
 
-	BT_CLR(t);
 	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+	BT_CLR(t);
 	SET(t, BTF_MODIFIED);
 	return (RET_SUCCESS);
 }
@@ -211,11 +241,8 @@ bt_fast(t, key, data, exactp)
 	 * If won't fit in this page or have too many keys in this page, have
 	 * to search to get split stack.
 	 */
-	nbytes =
-	    NBLEAFDBT(key->size >= t->bt_minkeypage ? NOVFLSIZE : key->size,
-	    data->size >= t->bt_minkeypage ? NOVFLSIZE : data->size);
-	if (h->upper - h->lower < nbytes + sizeof(index_t) ||
-	    t->bt_maxkeypage && t->bt_maxkeypage < NEXTINDEX(h))
+	nbytes = NBLEAFDBT(key->size, data->size);
+	if (h->upper - h->lower < nbytes + sizeof(index_t))
 		goto miss;
 
 	if (t->bt_order == FORWARD) {
@@ -241,7 +268,7 @@ bt_fast(t, key, data, exactp)
 #endif
 	return (&e);
 
-miss:	
+miss:
 #ifdef STATISTICS
 	++bt_cache_miss;
 #endif
