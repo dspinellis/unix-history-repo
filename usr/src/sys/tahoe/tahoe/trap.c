@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trap.c	7.5 (Berkeley) %G%
+ *	@(#)trap.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -204,10 +204,6 @@ out:
 	curpri = p->p_pri;
 }
 
-#ifdef SYSCALLTRACE
-int	syscalltrace = 0;
-#endif
-
 /*
  * Called from locore when a system call occurs
  */
@@ -258,8 +254,16 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 	    (u.u_error = copyin(params, (caddr_t)u.u_arg, (u_int)i)) != 0) {
 		locr0[R0] = u.u_error;
 		locr0[PS] |= PSL_C;	/* carry bit */
+#ifdef KTRACE
+		if (KTRPOINT(p, KTR_SYSCALL))
+			ktrsyscall(p->p_tracep, code, callp->sy_narg);
+#endif
 		goto done;
 	}
+#ifdef KTRACE
+	if (KTRPOINT(p, KTR_SYSCALL))
+		ktrsyscall(p->p_tracep, code, callp->sy_narg);
+#endif
 	u.u_r.r_val1 = 0;
 	u.u_r.r_val2 = locr0[R1];
 	if (setjmp(&u.u_qsave)) {
@@ -267,10 +271,6 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 			u.u_error = EINTR;
 	} else {
 		u.u_eosys = NORMALRETURN;
-#ifdef KTRACE
-		if (KTRPOINT(p, KTR_SYSCALL))
-			ktrsyscall(p->p_tracep, code, callp->sy_narg);
-#endif
 		(*callp->sy_call)(&u);
 	}
 	if (u.u_eosys == NORMALRETURN) {
@@ -286,11 +286,11 @@ syscall(sp, type, hfs, accmst, acclst, dbl, code, pc, psl)
 		pc = opc;
 	/* else if (u.u_eosys == JUSTRETURN) */
 		/* nothing to do */
-#ifdef KTRACE
-	if (KTRPOINT(p, KTR_SYSRET))
-		ktrsysret(p->p_tracep, code);
-#endif
 done:
+	/*
+	 * Reinitialize proc pointer `p' as it may be different
+	 * if this is a child returning from fork syscall.
+	 */
 	p = u.u_procp;
 	if (p->p_cursig || ISSIG(p))
 		psig();
@@ -319,4 +319,8 @@ done:
 			addupc(locr0[PC], &u.u_prof, ticks);
 	}
 	curpri = p->p_pri;
+#ifdef KTRACE
+	if (KTRPOINT(p, KTR_SYSRET))
+		ktrsysret(p->p_tracep, code);
+#endif
 }
