@@ -1,7 +1,7 @@
 %{
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)commands.y 1.12 %G%";
+static char sccsid[] = "@(#)commands.y 1.13 %G%";
 /*
  * Yacc grammar for debugger commands.
  */
@@ -70,7 +70,7 @@ private String curformat = "X";
 %type <y_node>	    event opt_exp_list opt_cond
 %type <y_node>	    exp_list exp term boolean_exp constant address
 %type <y_node>	    alias_command list_command line_number
-%type <y_node>	    int_list alias_command list_command line_number
+%type <y_node>	    integer_list alias_command list_command line_number
 %type <y_node>	    something search_command pattern
 %type <y_node>	    signal_list signal
 %type <y_cmdlist>   actions
@@ -365,13 +365,13 @@ pattern:
 }
 ;
 
-int_list:
+integer_list:
     INT
 {
-	$$ = build(O_COMMA, build(O_LCON, $1), nil);
+	$$ = build(O_LCON, $1);
 }
 |
-    INT int_list
+    INT integer_list
 {
 	$$ = build(O_COMMA, build(O_LCON, $1), $2);
 }
@@ -461,6 +461,7 @@ shellmode:
     /* empty */
 {
 	beginshellmode();
+	stopaliasing();
 }
 ;
 sourcepath:
@@ -689,9 +690,9 @@ examine:
 	$$ = build(O_EXAMINE, $5, $1, $3, 0);
 }
 |
-    '/' count mode
+    '/' stopaliasing count mode
 {
-	$$ = build(O_EXAMINE, $3, build(O_LCON, (long) prtaddr), nil, $2);
+	$$ = build(O_EXAMINE, $4, build(O_LCON, (long) prtaddr), nil, $3);
 }
 |
     address '=' mode
@@ -700,14 +701,14 @@ examine:
 }
 ;
 address:
-    INT
+    INT stopaliasing
 {
 	$$ = build(O_LCON, $1);
 }
 |
-    '&' term
+    '&' stopaliasing term
 {
-	$$ = amper($2);
+	$$ = amper($3);
 }
 |
     address '+' address
@@ -725,14 +726,14 @@ address:
 	$$ = build(O_MUL, $1, $3);
 }
 |
-    '*' address %prec UNARYSIGN
+    '*' stopaliasing address %prec UNARYSIGN
 {
-	$$ = build(O_INDIR, $2);
+	$$ = build(O_INDIR, $3);
 }
 |
-    '(' exp ')'
+    '(' stopaliasing exp ')'
 {
-	$$ = $2;
+	$$ = $3;
 }
 ;
 count:
