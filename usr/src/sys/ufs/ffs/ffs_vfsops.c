@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vfsops.c	7.21 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.22 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -67,9 +67,9 @@ struct vfsops ufs_vfsops = {
 struct ufsmount mounttab[NMOUNT];
 
 /*
- * Called by vfs_mountroot when ufs is going to be mounted as root
+ * Called by vfs_mountroot when ufs is going to be mounted as root.
  *
- * XXX - Need to have a way of figuring the name of the root device
+ * Name is updated by mount(8) after booting.
  */
 #define ROOTNAME	"root_device"
 
@@ -92,12 +92,15 @@ ufs_mountroot()
 		free((caddr_t)mp, M_MOUNT);
 		return (error);
 	}
-	error = vfs_add((struct vnode *)0, mp, 0);
-	if (error) {
+	if (error = vfs_lock(mp)) {
 		(void)ufs_unmount(mp, 0);
 		free((caddr_t)mp, M_MOUNT);
 		return (error);
 	}
+	rootfs = mp;
+	mp->m_next = mp;
+	mp->m_prev = mp;
+	mp->m_vnodecovered = (struct vnode *)0;
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
 	fs->fs_fsmnt[0] = '/';
@@ -131,7 +134,20 @@ ufs_mount(mp, path, data, ndp)
 		return (error);
 	if ((error = getmdev(&devvp, args.fspec, ndp)) != 0)
 		return (error);
-	error = mountfs(devvp, mp);
+	if ((mp->m_flag & M_UPDATE) == 0) {
+		error = mountfs(devvp, mp);
+	} else {
+		ump = VFSTOUFS(mp);
+		fs = ump->um_fs;
+		if (fs->fs_ronly && (mp->m_flag & M_RDONLY) == 0)
+			fs->fs_ronly = 0;
+		/*
+		 * Verify that the specified device is the one that
+		 * is really being used for the root file system.
+		 */
+		if (devvp != ump->um_devvp)
+			error = EINVAL;	/* needs translation */
+	}
 	if (error) {
 		vrele(devvp);
 		return (error);

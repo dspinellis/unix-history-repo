@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.17 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -47,8 +47,8 @@ mount(scp)
 		caddr_t	data;
 	} *uap = (struct a *)scp->sc_ap;
 	register struct nameidata *ndp = &scp->sc_nd;
-	struct vnode *vp;
-	struct mount *mp;
+	register struct vnode *vp;
+	register struct mount *mp;
 	int error;
 
 	/*
@@ -65,6 +65,25 @@ mount(scp)
 	if (error = namei(ndp))
 		RETURN (error);
 	vp = ndp->ni_vp;
+	if (uap->flags & M_UPDATE) {
+		if ((vp->v_flag & VROOT) == 0) {
+			vput(vp);
+			RETURN (EINVAL);
+		}
+		mp = vp->v_mount;
+		/*
+		 * We allow going from read-only to read-write,
+		 * but not from read-write to read-only.
+		 */
+		if ((mp->m_flag & M_RDONLY) == 0 &&
+		    (uap->flags & M_RDONLY) != 0) {
+			vput(vp);
+			RETURN (EOPNOTSUPP);	/* Needs translation */
+		}
+		mp->m_flag |= M_UPDATE;
+		VOP_UNLOCK(vp);
+		goto update;
+	}
 	if (vp->v_count != 1) {
 		vput(vp);
 		RETURN (EBUSY);
@@ -80,25 +99,75 @@ mount(scp)
 	}
 
 	/*
-	 * Mount the filesystem.
+	 * Allocate and initialize the file system.
 	 */
 	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
 		M_MOUNT, M_WAITOK);
 	mp->m_op = vfssw[uap->type];
 	mp->m_flag = 0;
 	mp->m_exroot = 0;
-	error = vfs_add(vp, mp, uap->flags);
-	if (!error)
-		error = VFS_MOUNT(mp, uap->dir, uap->data, ndp);
+	if (error = vfs_lock(mp)) {
+		free((caddr_t)mp, M_MOUNT);
+		vput(vp);
+		RETURN (error);
+	}
+	if (vp->v_mountedhere != (struct mount *)0) {
+		vfs_unlock(mp);
+		free((caddr_t)mp, M_MOUNT);
+		vput(vp);
+		RETURN (EBUSY);
+	}
+	/*
+	 * Put the new filesystem on the mount list after root.
+	 */
+	mp->m_next = rootfs->m_next;
+	mp->m_prev = rootfs;
+	rootfs->m_next = mp;
+	mp->m_next->m_prev = mp;
+	vp->v_mountedhere = mp;
+	mp->m_vnodecovered = vp;
+update:
+	/*
+	 * Set the mount level flags.
+	 */
+	if (uap->flags & M_RDONLY)
+		mp->m_flag |= M_RDONLY;
+	else
+		mp->m_flag &= ~M_RDONLY;
+	if (uap->flags & M_NOSUID)
+		mp->m_flag |= M_NOSUID;
+	else
+		mp->m_flag &= ~M_NOSUID;
+	if (uap->flags & M_NOEXEC)
+		mp->m_flag |= M_NOEXEC;
+	else
+		mp->m_flag &= ~M_NOEXEC;
+	if (uap->flags & M_NODEV)
+		mp->m_flag |= M_NODEV;
+	else
+		mp->m_flag &= ~M_NODEV;
+	if (uap->flags & M_SYNCHRONOUS)
+		mp->m_flag |= M_SYNCHRONOUS;
+	else
+		mp->m_flag &= ~M_SYNCHRONOUS;
+	/*
+	 * Mount the filesystem.
+	 */
+	error = VFS_MOUNT(mp, uap->dir, uap->data, ndp);
+	if (mp->m_flag & M_UPDATE) {
+		mp->m_flag &= ~M_UPDATE;
+		vrele(vp);
+		RETURN (error);
+	}
 	cache_purge(vp);
-	VOP_UNLOCK(vp);
 	if (!error) {
+		VOP_UNLOCK(vp);
 		vfs_unlock(mp);
 		error = VFS_START(mp, 0);
 	} else {
 		vfs_remove(mp);
 		free((caddr_t)mp, M_MOUNT);
-		vrele(vp);
+		vput(vp);
 	}
 	RETURN (error);
 }
