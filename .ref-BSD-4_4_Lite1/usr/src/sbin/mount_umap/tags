@@ -1,3 +1,0 @@
-Mmount_umap	mount_umap.c	/^main(argc, argv)$/
-getmntopts	../mount/getmntopts.c	/^getmntopts(options, m0, flagp)$/
-usage	mount_umap.c	/^usage()$/

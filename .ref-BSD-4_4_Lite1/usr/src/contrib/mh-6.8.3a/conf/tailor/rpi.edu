@@ -1,9 +1,0 @@
-everyone:	65334
-localname:	rpi.edu
-lockstyle:	0
-lockldir:
-mmdfldir:	/usr/spool/mail
-mmdflfil:	
-hostable:	/etc/hosts
-servers:	mail.its.rpi.edu mail1.its.rpi.edu rpi.edu \01rpi.edu
-pophost:        mail.its.rpi.edu

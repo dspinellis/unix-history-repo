@@ -1,2 +1,0 @@
-Mwhereis	whereis.c	/^main(argc, argv)$/
-usage	whereis.c	/^usage()$/
