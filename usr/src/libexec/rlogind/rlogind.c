@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.22.1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -112,9 +112,8 @@ main(argc, argv)
 
 #ifdef	KERBEROS
 	if (use_kerberos && vacuous) {
-		fprintf(stderr, "%s: only one of -k and -v allowed\n", argv[0]);
 		usage();
-		exit(1);
+		fatal("only one of -k and -v allowed\n");
 	}
 #endif
 	fromlen = sizeof (from);
@@ -220,17 +219,16 @@ doit(f, fromp)
 		syslog(LOG_NOTICE, "Connection from %s on illegal port",
 			inet_ntoa(fromp->sin_addr));
 		fatal(f, "Permission denied");
-	} else {
-		write(f, "", 1);
+	}
+	write(f, "", 1);
 #endif
 
-		if (do_rlogin(hp->h_name) == 0) {
-			if (hostok)
-			    authenticated++;
-			else
-			    write(f, "rlogind: Host address mismatch.\r\n",
-			     sizeof("rlogind: Host address mismatch.\r\n") - 1);
-		}
+	if (do_rlogin(hp->h_name) == 0) {
+		if (hostok)
+			authenticated++;
+		else
+			write(f, "rlogind: Host address mismatch.\r\n",
+			    sizeof("rlogind: Host address mismatch.\r\n") - 1);
 	}
 
 	for (c = 'p'; c <= 's'; c++) {
