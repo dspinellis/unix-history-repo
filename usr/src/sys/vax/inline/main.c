@@ -1,7 +1,7 @@
 /* Copyright (c) 1984 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	1.5	(Berkeley)	%G%";
+static char sccsid[] = "@(#)main.c	1.6	(Berkeley)	%G%";
 #endif not lint
 
 #include <stdio.h>
@@ -121,7 +121,7 @@ expand(replace)
 {
 	register int curptr;
 	char *nextreplace, *argv[MAXARGS];
-	int argc, argreg, foundarg, mod = 0;
+	int argc, argreg, foundarg, mod = 0, args = 0;
 	char parsebuf[BUFSIZ];
 
 	stats.attempted++;
@@ -131,6 +131,7 @@ expand(replace)
 		argreg = nextarg(argc, argv);
 		if (argreg == -1)
 			break;
+		args++;
 		for (foundarg = 0; curptr != buftail; ) {
 			curptr = PRED(curptr);
 			argc = parseline(line[curptr], argv, parsebuf);
@@ -160,6 +161,7 @@ expand(replace)
 		stats.finished++;
 	emptyqueue();
 	fputs(replace, stdout);
+	cleanup(args);
 }
 
 /*
