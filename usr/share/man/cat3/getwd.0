@@ -1,0 +1,70 @@
+GETCWD(3)                   BSD Programmer's Manual                  GETCWD(3)
+
+NNAAMMEE
+     ggeettwwdd - get working directory pathname
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssttddiioo..hh>>
+
+     _c_h_a_r _*
+     ggeettccwwdd(_c_h_a_r _*_b_u_f, _s_i_z_e___t _s_i_z_e);
+
+     _c_h_a_r _*
+     ggeettwwdd(_c_h_a_r _*_b_u_f);
+
+DDEESSCCRRIIPPTTIIOONN
+     The ggeettccwwdd() function copies the absolute pathname of the current working
+     directory into the memory referenced by _b_u_f and returns a pointer to _b_u_f.
+     The _s_i_z_e argument is the size, in bytes, of the array referenced by _b_u_f.
+
+     If _b_u_f is NULL, space is allocated as necessary to store the pathname.
+     This space may later be free(3)'d.
+
+     The function ggeettwwdd() is a compatibility routine which calls ggeettccwwdd() with
+     its _b_u_f argument and a size of MAXPATHLEN (as defined in the include file
+     <_s_y_s_/_p_a_r_a_m_._h>). Obviously, _b_u_f should be at least MAXPATHLEN bytes in
+     length.
+
+     These routines have traditionally been used by programs to save the name
+     of a working directory for the purpose of returning to it.  A much faster
+     and less error-prone method of accomplishing this is to open the current
+     directory (`.') and use the fchdir(2) function to return.
+
+RREETTUURRNN VVAALLUUEESS
+     Upon successful completion, a pointer to the pathname is returned.  Oth-
+     erwise a NULL pointer is returned and the global variable _e_r_r_n_o is set to
+     indicate the error.  In addition, ggeettwwdd() copies the error message asso-
+     ciated with _e_r_r_n_o into the memory referenced by _b_u_f.
+
+EERRRROORRSS
+     The ggeettccwwdd() function will fail if:
+
+     [EACCESS]  Read or search permission was denied for a component of the
+                pathname.
+
+     [EINVAL]   The _s_i_z_e argument is zero.
+
+     [ENOENT]   A component of the pathname no longer exists.
+
+     [ENOMEM]   Insufficient memory is available.
+
+     [ERANGE]   The _s_i_z_e argument is greater than zero but smaller than the
+                length of the pathname plus 1.
+
+SSEEEE AALLSSOO
+     chdir(2),  fchdir(2),  malloc(3),  strerror(3)
+
+SSTTAANNDDAARRDDSS
+     The ggeettccwwdd() function conforms to ANSI C X3.159-1989 (``ANSI C ''). The
+     ability to specify a NULL pointer and have ggeettccwwdd() allocate memory as
+     necessary is an extension.
+
+HHIISSTTOORRYY
+     The ggeettwwdd() function appeared in 4.0BSD.
+
+BBUUGGSS
+     The ggeettwwdd() function does not do sufficient error checking and is not
+     able to return very long, but valid, paths.  It is provided for compati-
+     bility.
+
+4.2 Berkeley Distribution        June 4, 1993                                2
