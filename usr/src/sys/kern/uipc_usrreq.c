@@ -1,9 +1,10 @@
-/*	uipc_usrreq.c	6.7	84/08/20	*/
+/*	uipc_usrreq.c	6.8	84/08/21	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/mbuf.h"
+#include "../h/domain.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
@@ -534,6 +535,7 @@ unp_internalize(rights)
 
 int	unp_defer, unp_gcing;
 int	unp_mark();
+extern	struct domain unixdomain;
 
 unp_gc()
 {
@@ -564,7 +566,7 @@ restart:
 			if (fp->f_type != DTYPE_SOCKET)
 				continue;
 			so = (struct socket *)fp->f_data;
-			if (so->so_proto->pr_family != AF_UNIX ||
+			if (so->so_proto->pr_domain != &unixdomain ||
 			    (so->so_proto->pr_flags&PR_ADDR) == 0)
 				continue;
 			if (so->so_rcv.sb_flags & SB_LOCK) {
@@ -586,34 +588,36 @@ restart:
 	unp_gcing = 0;
 }
 
-unp_scan(m, op)
-	register struct mbuf *m;
+unp_dispose(m)
+	struct mbuf *m;
+{
+	int unp_discard();
+
+	unp_scan(m, unp_discard);
+}
+
+unp_scan(m0, op)
+	register struct mbuf *m0;
 	int (*op)();
 {
+	register struct mbuf *m;
 	register struct file **rp;
 	register int i;
-	int qfds;
+	int qfds = 0;
 
-	while (m) {
-		m = m->m_next;
-		if (m == 0)
-			goto bad;
-		if (m->m_len) {
-			qfds = m->m_len / sizeof (struct file *);
-			rp = mtod(m, struct file **);
-			for (i = 0; i < qfds; i++)
-				(*op)(*rp++);
-		}
-		do {
-			m = m->m_next;
-			if (m == 0)
-				goto bad;
-		} while (m->m_act == 0);
-		m = m->m_next;
+	while (m0) {
+		for (m = m0; m; m = m->m_next)
+			if (m->m_type == MT_RIGHTS && m->m_len) {
+				qfds = m->m_len / sizeof (struct file *);
+				rp = mtod(m, struct file **);
+				for (i = 0; i < qfds; i++)
+					(*op)(*rp++);
+				break;		/* XXX, but saves time */
+			}
+		m0 = m0->m_next;
 	}
-	return;
-bad:
-	panic("unp_gcscan");
+	if (qfds == 0)
+		panic("unp_gcscan");
 }
 
 unp_mark(fp)

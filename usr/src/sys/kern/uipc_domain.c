@@ -1,4 +1,4 @@
-/*	uipc_domain.c	6.1	83/07/29	*/
+/*	uipc_domain.c	6.2	84/08/21	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -32,10 +32,13 @@ domaininit()
 #endif
 #endif
 
-	for (dp = domains; dp; dp = dp->dom_next)
+	for (dp = domains; dp; dp = dp->dom_next) {
+		if (dp->dom_init)
+			(*dp->dom_init)();
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_init)
 				(*pr->pr_init)();
+	}
 	pffasttimo();
 	pfslowtimo();
 }

@@ -1,4 +1,4 @@
-/*	uipc_proto.c	6.1	83/07/29	*/
+/*	uipc_proto.c	6.2	84/08/21	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -12,14 +12,15 @@
 
 int	uipc_usrreq();
 int	raw_init(),raw_usrreq(),raw_input(),raw_ctlinput();
+extern	struct domain unixdomain;		/* or at least forward */
 
 struct protosw unixsw[] = {
-{ SOCK_STREAM,	PF_UNIX,	0,		PR_CONNREQUIRED|PR_WANTRCVD,
+{ SOCK_STREAM,	&unixdomain,	0,		PR_CONNREQUIRED|PR_WANTRCVD,
   0,		0,		0,		0,
   uipc_usrreq,
   0,		0,		0,		0,
 },
-{ SOCK_DGRAM,	PF_UNIX,	0,		PR_ATOMIC|PR_ADDR|PR_RIGHTS,
+{ SOCK_DGRAM,	&unixdomain,	0,		PR_ATOMIC|PR_ADDR|PR_RIGHTS,
   0,		0,		0,		0,
   uipc_usrreq,
   0,		0,		0,		0,
@@ -31,5 +32,8 @@ struct protosw unixsw[] = {
 }
 };
 
+int	unp_externalize(), unp_dispose();
+
 struct domain unixdomain =
-    { AF_UNIX, "unix", unixsw, &unixsw[sizeof(unixsw)/sizeof(unixsw[0])] };
+    { AF_UNIX, "unix", 0, unp_externalize, unp_dispose,
+      unixsw, &unixsw[sizeof(unixsw)/sizeof(unixsw[0])] };
