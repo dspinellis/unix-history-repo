@@ -1,0 +1,47 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)title.urm	4.1 (Berkeley) %G%
+.\"
+.tl '--''--'
+.ps20
+.sp 4.25i
+.ft B
+.ce
+UNIX PROGRAMMER'S MANUAL
+.ps10
+.sp |5i
+.ft I
+.ce
+Seventh Edition
+.ce
+Virtual VAX\-11 Version
+.sp |5.75i
+.ce
+November, 1980
+.sp |9.2i
+.ft R
+.ce
+Computer Science Division
+.ce
+Department of Electrical Engineering and Computer Science
+.ce
+University of California
+.ce
+Berkeley, California  94720
+.bp
+...fp 3 G
+.ll 4.8i
+.in .75i
+.hy 0
+.vs 12p
+--
+.sp |8i
+Copyright 1979, Bell Telephone Laboratories, Incorporated.
+Holders of a UNIX\v'-4p'\s-2\fGTM\fP\s0\v'4p'/32V software
+license are permitted to copy this document, or any portion
+of it, as necessary for licensed use of the software,
+provided this copyright notice and statement of permission
+are included.
+.bp
