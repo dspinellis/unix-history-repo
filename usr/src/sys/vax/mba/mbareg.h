@@ -1,4 +1,4 @@
-/*	mbareg.h	4.7	81/02/19	*/
+/*	mbareg.h	4.8	81/02/21	*/
 
 /*
  * VAX Massbus adapter registers
@@ -142,7 +142,7 @@ struct	mba_info {
  */
 struct	mba_hd {
 	short	mh_active;
-	short	mh_flags;
+	short	mh_ndrive;
 	struct	mba_regs *mh_mba;	/* virt addr of mba */
 	struct	mba_regs *mh_physmba;	/* phys addr of mba */
 	struct	mba_info *mh_mbip[8];	/* what is attached */
