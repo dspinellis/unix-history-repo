@@ -1,4 +1,4 @@
-/*	vp.c	3.1	%H%	*/
+/*	vp.c	3.2	%H%	*/
 
 #ifdef ERNIE
 #include "../h/param.h"
@@ -74,14 +74,14 @@ vpopen()
 	VPADDR->prcsr = IENABLE | DTCINTR;
 	vptimo();
 	while (vp11.vp_state & CMNDS) {
-		VOID spl4();
+		(void) spl4();
 		if (vperror(READY)) {
 			vpclose();
 			u.u_error = EIO;
 			return;
 		}
 		vpstart();
-		VOID spl0();
+		(void) spl0();
 	}
 }
 
@@ -90,14 +90,14 @@ vpstrategy(bp)
 {
 	register int e;
 
-	VOID spl4();
+	(void) spl4();
 	while (vp11.vp_state & VBUSY)
 		sleep((caddr_t)&vp11, VPPRI);
 	vp11.vp_state |= VBUSY;
-	VOID spl0();
+	(void) spl0();
 	vp_ubinfo = ubasetup(bp, vpbdp);
 	vp11.vp_bufp = vp_ubinfo & 0x3ffff;
-	VOID spl4();
+	(void) spl4();
 	if (e = vperror(READY))
 		goto brkout;
 	vp11.vp_count = bp->b_bcount;
@@ -108,7 +108,7 @@ vpstrategy(bp)
 	vp11.vp_bufp = 0;
 	if ((vp11.vp_state&MODE) == PPLOT)
 		vp11.vp_state = (vp11.vp_state &~ MODE) | PLOT;
-	VOID spl0();
+	(void) spl0();
 brkout:
 	ubafree(vp_ubinfo), vp_ubinfo = 0;
 	vp11.vp_state &= ~VBUSY;
@@ -175,7 +175,7 @@ vpioctl(dev, cmd, addr, flag)
 	switch (cmd) {
 
 	case ('v'<<8)+0:
-		VOID suword(addr, vp11.vp_state);
+		(void) suword(addr, vp11.vp_state);
 		return;
 
 	case ('v'<<8)+1:
@@ -191,18 +191,18 @@ vpioctl(dev, cmd, addr, flag)
 		u.u_error = ENOTTY;
 		return;
 	}
-	VOID spl4();
-	VOID vperror(READY);
+	(void) spl4();
+	(void) vperror(READY);
 	if (vp11.vp_state&PPLOT)
 		VPADDR->plcsr |= SPP;
 	else
 		VPADDR->plcsr &= ~SPP;
 	vp11.vp_count = 0;
 	while (CMNDS & vp11.vp_state) {
-		VOID vperror(READY);
+		(void) vperror(READY);
 		vpstart();
 	}
-	VOID spl0();
+	(void) spl0();
 }
 
 vptimo()

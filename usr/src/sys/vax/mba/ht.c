@@ -1,4 +1,4 @@
-/*	ht.c	3.1	%H%	*/
+/*	ht.c	3.2	%H%	*/
 
 /*
  * TJU16 tape driver
@@ -105,14 +105,14 @@ htclose(dev, flag)
 
 	unit = minor(dev) & 03;
 	if (flag == FWRITE || ((flag&FWRITE) && (h_flags[unit]&H_WRITTEN))) {
-		VOID hcommand(dev, WEOF);
-		VOID hcommand(dev, WEOF);
-		VOID hcommand(dev, SREV);
+		(void) hcommand(dev, WEOF);
+		(void) hcommand(dev, WEOF);
+		(void) hcommand(dev, SREV);
 	}
-/*	VOID hcommand(dev, REW);	*/
+/*	(void) hcommand(dev, REW);	*/
 /* for 'mtm' file positioning */
 	if((minor(dev)&4) == 0) /* no 4 -> rewind */
-		VOID hcommand(dev, REW);
+		(void) hcommand(dev, REW);
 	h_openf[unit] = 0;
 }
 
@@ -121,12 +121,12 @@ hcommand(dev, com)
 	register struct buf *bp;
 
 	bp = &chtbuf;
-	VOID spl5();
+	(void) spl5();
 	while(bp->b_flags&B_BUSY) {
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)bp, PRIBIO);
 	}
-	VOID spl0();
+	(void) spl0();
 	bp->b_dev = dev;
 	bp->b_resid = com;
 	bp->b_blkno = 0;
@@ -164,7 +164,7 @@ register struct buf *bp;
 		}
 	}
 	bp->av_forw = NULL;
-	VOID spl5();
+	(void) spl5();
 	if (httab.b_actf == NULL)
 		httab.b_actf = bp;
 	else
@@ -172,7 +172,7 @@ register struct buf *bp;
 	httab.b_actl = bp;
 	if (httab.b_active==0)
 		htstart();
-	VOID spl0();
+	(void) spl0();
 }
 
 htstart()

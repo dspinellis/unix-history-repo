@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.2	%H%	*/
+/*	kern_proc.c	3.3	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -127,17 +127,17 @@ badarg:
 	ucp = USRSTACK - nc - NBPW;
 	ap = ucp - na*NBPW - 3*NBPW;
 	u.u_ar0[SP] = ap;
-	VOID suword((caddr_t)ap, na-ne);
+	(void) suword((caddr_t)ap, na-ne);
 	nc = 0;
 	for (;;) {
 		ap += NBPW;
 		if (na==ne) {
-			VOID suword((caddr_t)ap, 0);
+			(void) suword((caddr_t)ap, 0);
 			ap += NBPW;
 		}
 		if (--na < 0)
 			break;
-		VOID suword((caddr_t)ap, ucp);
+		(void) suword((caddr_t)ap, ucp);
 		do {
 			if ((nc&BMASK) == 0) {
 				if (bp)
@@ -147,12 +147,12 @@ badarg:
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				cp = bp->b_un.b_addr;
 			}
-			VOID subyte((caddr_t)ucp++, (c = *cp++));
+			(void) subyte((caddr_t)ucp++, (c = *cp++));
 			nc++;
 		} while(c&0377);
 	}
-	VOID suword((caddr_t)ap, 0);
-	VOID suword((caddr_t)ucp, 0);
+	(void) suword((caddr_t)ap, 0);
+	(void) suword((caddr_t)ucp, 0);
 	setregs();
 bad:
 	if (bp)
@@ -561,8 +561,8 @@ fork1(isvfork)
 	if (p2==NULL || (u.u_uid!=0 && (p2==&proc[NPROC-1] || a>MAXUPRC))) {
 		u.u_error = EAGAIN;
 		if (!isvfork) {
-			VOID vsexpand(0, &u.u_cdmap, 1);
-			VOID vsexpand(0, &u.u_csmap, 1);
+			(void) vsexpand(0, &u.u_cdmap, 1);
+			(void) vsexpand(0, &u.u_csmap, 1);
 		}
 		goto out;
 	}

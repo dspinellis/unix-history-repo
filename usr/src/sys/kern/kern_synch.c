@@ -1,4 +1,4 @@
-/*	kern_synch.c	3.6	%H%	*/
+/*	kern_synch.c	3.7	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -48,10 +48,10 @@ caddr_t chan;
 			rp->p_wchan = 0;
 			rp->p_stat = SRUN;
 			slpque[h] = rp->p_link;
-			VOID spl0();
+			(void) spl0();
 			goto psig;
 		}
-		VOID spl0();
+		(void) spl0();
 		if(runin != 0) {
 			runin = 0;
 			wakeup((caddr_t)&runin);
@@ -60,7 +60,7 @@ caddr_t chan;
 		if(rp->p_sig && issig())
 			goto psig;
 	} else {
-		VOID spl0();
+		(void) spl0();
 		swtch();
 	}
 	splx(s);

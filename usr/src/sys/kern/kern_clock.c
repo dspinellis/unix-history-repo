@@ -1,4 +1,4 @@
-/*	kern_clock.c	3.4	%H%	*/
+/*	kern_clock.c	3.5	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -131,7 +131,7 @@ out:
 		if(++pp->p_cpu == 0)
 			pp->p_cpu--;
 		if(pp->p_cpu % 16 == 0) {
-			VOID setpri(pp);
+			(void) setpri(pp);
 			if (pp->p_pri >= PUSER)
 				pp->p_pri = pp->p_usrpri;
 		}
@@ -146,7 +146,7 @@ out:
 			return;
 		lbolt -= HZ;
 		++time;
-		VOID spl1();
+		(void) spl1();
 		runrun++;
 		wakeup((caddr_t)&lbolt);
 		for(pp = &proc[0]; pp < &proc[NPROC]; pp++)
@@ -176,7 +176,7 @@ out:
 			if(a > 255)
 				a = 255;
 			pp->p_cpu = a;
-			VOID setpri(pp);
+			(void) setpri(pp);
 			s = spl6();
 			if(pp->p_pri >= PUSER) {
 				if ((pp != u.u_procp || noproc) &&
@@ -211,7 +211,7 @@ out:
 			if (pp->p_uid)
 				if (pp->p_nice == NZERO && u.u_vm.vm_utime > 600 * HZ)
 					pp->p_nice = NZERO+4;
-			VOID setpri(pp);
+			(void) setpri(pp);
 			pp->p_pri = pp->p_usrpri;
 		}
 #endif

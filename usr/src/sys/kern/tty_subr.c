@@ -1,4 +1,4 @@
-/*	tty_subr.c	3.1	%H%	*/
+/*	tty_subr.c	3.2	%H%	*/
 
 #include "../h/param.h"
 #include "../h/tty.h"
@@ -316,8 +316,8 @@ register struct clist *p;
 		splx(s);
 		return(-1);
 	}
-	VOID putc(c, p);
-	VOID putc(c>>8, p);
+	(void) putc(c, p);
+	(void) putc(c>>8, p);
 	splx(s);
 	return(0);
 }
