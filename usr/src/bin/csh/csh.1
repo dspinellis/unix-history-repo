@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.1	6.11 (Berkeley) %G%
+.\"	@(#)csh.1	6.12 (Berkeley) %G%
 .\"
 .TH CSH 1 ""
 .UC 4
@@ -47,11 +47,12 @@ for details on setting options in the new tty driver.
 .PP
 An instance of
 .I csh
-begins by executing commands from the file `.cshrc' in the
+begins by executing commands from the file ``/etc/csh.cshrc'' and,
+if this is a login shell, ``/etc/csh.login''.  It then executes
+commands from ``.cshrc''' in the
 .I home
-directory of the invoker.
-If this is a login shell then it also executes commands from the file
-`.login' there.
+directory of the invoker, and, if this is a login shell, the file
+``.login'' in the same location.
 It is typical for users on crt's to put the command ``stty crt'' in their
 .I \&.login
 file, and to also invoke
@@ -69,8 +70,10 @@ a line of command input is read and broken into
 This sequence of words is placed on the command history list and then parsed.
 Finally each command in the current line is executed.
 .PP
-When a login shell terminates it executes commands from the file `.logout'
-in the users home directory.
+When a login shell terminates it executes commands from the files
+``.logout'' in the user's
+.I home
+directory and ``/etc/csh.logout''.
 .sh "Lexical structure"
 The shell splits input lines into words at blanks and tabs with the
 following exceptions.

@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -22,7 +22,7 @@
 # To profile, put -DPROF in DEFS and -pg in CFLAGS, and recompile.
 
 DEFS=	-DTELL -DVFORK -DFILEC	# -DPROF
-CFLAGS=	${DEFS} -O		# -pg
+CFLAGS=	${DEFS} -I. -O		# -pg
 XSTR=	/usr/ucb/xstr
 MAN=	csh.0
 

@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)init.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)init.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.local.h"
@@ -40,9 +40,6 @@ extern	int dolet();
 extern	int dolimit();
 extern	int dologin();
 extern	int dologout();
-#ifdef NEWGRP
-extern	int donewgrp();
-#endif
 extern	int donice();
 extern	int donotify();
 extern	int donohup();
@@ -88,9 +85,6 @@ struct	biltins {
 	"bg",		dobg,		0,	INF,
 	"break",	dobreak,	0,	0,
 	"breaksw",	doswbrk,	0,	0,
-#ifdef IIASA
-	"bye",		goodbye,	0,	0,
-#endif
 	"case",		dozip,		0,	1,
 	"cd",		dochngd,	0,	1,
 	"chdir",	dochngd,	0,	1,
@@ -107,9 +101,6 @@ struct	biltins {
 	"exit",		doexit,		0,	INF,
 	"fg",		dofg,		0,	INF,
 	"foreach",	doforeach,	3,	INF,
-#ifdef IIASA
-	"gd",		dopushd,	0,	1,
-#endif
 	"glob",		doglob,		0,	INF,
 	"goto",		dogoto,		1,	1,
 #ifdef VFORK
@@ -122,18 +113,12 @@ struct	biltins {
 	"limit",	dolimit,	0,	3,
 	"login",	dologin,	0,	1,
 	"logout",	dologout,	0,	0,
-#ifdef NEWGRP
-	"newgrp",	donewgrp,	1,	1,
-#endif
 	"nice",		donice,		0,	INF,
 	"nohup",	donohup,	0,	INF,
 	"notify",	donotify,	0,	INF,
 	"onintr",	doonintr,	0,	2,
 	"popd",		dopopd,		0,	1,
 	"pushd",	dopushd,	0,	1,
-#ifdef IIASA
-	"rd",		dopopd,		0,	1,
-#endif
 	"rehash",	dohash,		0,	0,
 	"repeat",	dorepeat,	2,	INF,
 	"set",		doset,		0,	INF,

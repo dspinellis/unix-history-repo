@@ -5,11 +5,15 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)csh.c	5.7 (Berkeley) %G%";
+static char *sccsid = "@(#)csh.c	5.8 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
 #include <sys/ioctl.h>
+#include <sys/file.h>
+#include <syspaths.h>
+#include <pathnames.h>
+
 /*
  * C Shell
  *
@@ -92,7 +96,7 @@ main(c, av)
 		set1("path", saveblk(pathlist), &shvhed);
 	else
 		importpath(cp);
-	set("shell", SHELLPATH);
+	set("shell", _PATH_CSHELL);
 
 	doldol = putn(getpid());		/* For $$ */
 	shtemp = strspl("/tmp/sh", doldol);	/* For << */
@@ -326,6 +330,19 @@ notty:
 	haderr = 0;		/* In case second time through */
 	if (!fast && reenter == 0) {
 		reenter++;
+		{
+		int osetintr, omask;
+			osetintr = setintr;
+			omask = sigblock(sigmask(SIGINT));
+			setintr = 0;
+			srcunit(open(_PATH_DOTCSHRC, O_RDONLY), 0, 0);
+			if (!fast && !arginp && !onelflg)
+				dohash();
+			if (loginsh)
+				srcunit(open(_PATH_DOTLOGIN, O_RDONLY), 0, 0);
+			(void)sigsetmask(omask);
+			setintr = osetintr;
+		}
 		/* Will have value("home") here because set fast if don't */
 		srccat(value("home"), "/.cshrc");
 		if (!fast && !arginp && !onelflg && !havhash)
@@ -583,6 +600,7 @@ goodbye()
 		(void) signal(SIGINT, SIG_IGN);
 		(void) signal(SIGTERM, SIG_IGN);
 		setintr = 0;		/* No interrupts after "logout" */
+		srcunit(open(_PATH_DOTLOGOUT, O_RDONLY), 0, 0);
 		if (adrof("home"))
 			srccat(value("home"), "/.logout");
 	}
