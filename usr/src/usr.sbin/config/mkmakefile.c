@@ -1,5 +1,5 @@
 /*
- * mkmakefile.c	1.15	82/07/13
+ * mkmakefile.c	1.16	82/07/21
  *	Functions in this file build the makefile from the files list
  *	and the information in the config table
  */
@@ -84,7 +84,10 @@ makefile()
     for (cp = cputype; cp; cp = cp->cpu_next)
 	fprintf(ofp, " -D%s", cp->cpu_name);
     for (op = opt; op; op = op->op_next)
-	  fprintf(ofp, " -D%s", op->op_name);
+	  if (op->op_value)
+		fprintf(ofp, " -D%s=\"%s\"", op->op_name, op->op_value);
+	  else
+		fprintf(ofp, " -D%s", op->op_name);
     fprintf(ofp, "\n");
     if (hz == 0) {
 #ifdef notdef
