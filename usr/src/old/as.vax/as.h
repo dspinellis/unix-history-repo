@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)as.h 4.3 %G%" */
+/* "@(#)as.h 4.4 %G%" */
 #ifdef VMS
 # define	vax	1
 # define	VAX	1
@@ -388,6 +388,7 @@ struct	Quad {
 	extern	int	savelabels;		/*save labels in a.out*/
 	extern	int	orgwarn;		/* questionable origin ? */
 	extern	int	useVM;			/*use virtual memory temp file*/
+	extern	int	jxxxJUMP;		/*use jmp instead of brw for jxxx */
 #ifdef DEBUG
 	extern	int	debug;
 	extern	int	toktrace;
