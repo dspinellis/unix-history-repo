@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -490,6 +490,8 @@ allocino(request, type)
 	dp->di_blocks = btodb(sblock.fs_fsize);
 	n_files++;
 	inodirty();
+	if (newinofmt)
+		typemap[ino] = IFTODT(type);
 	return (ino);
 }
 
