@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1412,10 +1412,11 @@ send_file_list(whichf)
 	glob_t gl;
 
 	if (strpbrk(whichf, "~{[*?") != NULL) {
+		int flags = GLOB_BRACE|GLOB_NOCHECK|GLOB_QUOTE|GLOB_TILDE;
 
 		memset(&gl, 0, sizeof(gl));
 		freeglob = 1;
-		if (glob(whichf, GLOB_BRACE|GLOB_QUOTE|GLOB_TILDE, 0, &gl)) {
+		if (glob(whichf, flags, 0, &gl)) {
 			reply(550, "not found");
 			goto out;
 		} else if (gl.gl_pathc == 0) {
