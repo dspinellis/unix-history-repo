@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)trapov_.c	5.3	%G%
+ *	@(#)trapov_.c	5.4	%G%
  *
  *	Fortran/C floating-point overflow handler
  *
@@ -26,10 +26,10 @@
  */
 
 # include <stdio.h>
-# include <signal.h>
+# include <sys/signal.h>
 # include "opcodes.h"
 # include "../libI77/fiodefs.h"
-# define SIG_VAL	int (*)()
+# define SIG_VAL	void (*)()
 
 /*
  *	Potential operand values
@@ -125,8 +125,8 @@ static union	{
 	long	v_long[2];
 	double	v_double;
 	} retrn;
-static int	(*sigill_default)() = (SIG_VAL)-1;
-static int	(*sigfpe_default)();
+static sig_t sigill_default = (SIG_VAL)-1;
+static sig_t sigfpe_default;
 
 /*
  *	This routine sets up the signal handler for the floating-point
@@ -137,7 +137,7 @@ trapov_(count, rtnval)
 	int *count;
 	double *rtnval;
 {
-	extern got_overflow(), got_illegal_instruction();
+	void got_overflow(), got_illegal_instruction();
 
 	sigfpe_default = signal(SIGFPE, got_overflow);
 	if (sigill_default == (SIG_VAL)-1)
@@ -176,23 +176,24 @@ got_overflow(signo, codeword, myaddr, pc, ps)
 		case FLT_OVF_F:
 		case FLT_DIV_F:
 		case FLT_UND_F:
-				if (sigfpe_default > (SIG_VAL)7)
-					return((*sigfpe_default)(signo, codeword, myaddr, pc, ps));
-				else
-					sigdie(signo, codeword, myaddr, pc, ps);
-					/* NOTREACHED */
+			if (sigfpe_default > (SIG_VAL)7)
+				(*sigfpe_default)(signo, codeword, myaddr,
+				    pc, ps);
+			else
+				sigdie(signo, codeword, myaddr, pc, ps);
+				/* NOTREACHED */
 
 		case FLT_OVF_T:
 		case FLT_DIV_T:
-				if (++total_overflows <= max_messages) {
-					fprintf(ef, "trapov: %s",
-						act_fpe[codeword-1].mesg);
-					if (total_overflows == max_messages)
-						fprintf(ef, ": No more messages will be printed.\n");
-					else
-						fputc('\n', ef);
-				}
-				return;
+			if (++total_overflows <= max_messages) {
+				fprintf(ef, "trapov: %s",
+					act_fpe[codeword-1].mesg);
+				if (total_overflows == max_messages)
+					fprintf(ef, ": No more messages will be printed.\n");
+				else
+					fputc('\n', ef);
+			}
+			return;
 	}
 }
 
@@ -684,8 +685,8 @@ static union	{
 	long	v_long[2];
 	double	v_double;
 	} retrn;
-static int	(*sigill_default)() = (SIG_VAL)-1;
-static int	(*sigfpe_default)();
+static sig_t sigill_default = (SIG_VAL)-1;
+static sig_t sigfpe_default;
 
 
 /*
@@ -697,7 +698,7 @@ trapov_(count, rtnval)
 	int *count;
 	double *rtnval;
 {
-	extern got_overflow();
+	void got_overflow();
 
 	sigfpe_default = signal(SIGFPE, got_overflow);
 	total_overflows = 0;
@@ -718,6 +719,7 @@ trapov_(count, rtnval)
  */
 
 /*ARGSUSED*/
+void
 got_overflow(signo, codeword, sc)
 	int signo, codeword;
 	struct sigcontext *sc;
@@ -732,23 +734,23 @@ got_overflow(signo, codeword, sc)
 		case INT_DIV_T:
 		case FLT_UND_T:
 		case FLT_DIV_T:
-				if (sigfpe_default > (SIG_VAL)7)
-					return((*sigfpe_default)(signo, codeword, sc));
-				else
-					sigdie(signo, codeword, sc);
-					/* NOTREACHED */
+			if (sigfpe_default > (SIG_VAL)7)
+				(*sigfpe_default)(signo, codeword, sc);
+			else
+				sigdie(signo, codeword, sc);
+				/* NOTREACHED */
 
 		case FLT_OVF_T:
-				if (++total_overflows <= max_messages) {
-					fprintf(ef, "trapov: %s",
-						act_fpe[codeword-1].mesg);
-					fprintf(ef, ": Current PC = %X", sc->sc_pc);
-					if (total_overflows == max_messages)
-						fprintf(ef, ": No more messages will be printed.\n");
-					else
-						fputc('\n', ef);
-				}
-				return;
+			if (++total_overflows <= max_messages) {
+				fprintf(ef, "trapov: %s",
+					act_fpe[codeword-1].mesg);
+				fprintf(ef, ": Current PC = %X", sc->sc_pc);
+				if (total_overflows == max_messages)
+					fprintf(ef, ": No more messages will be printed.\n");
+				else
+					fputc('\n', ef);
+			}
+			return;
 	}
 }
 int 
