@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file @(#)termcap.src	1.20	(Berkeley) %G%
+#	Termcap source file @(#)termcap.src	1.21	(Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -126,6 +126,14 @@ An|5520|nec|spinwriter|nec 5520|:\
 Aq|qume5|qume|Qume Sprint 5:\
 	:ct=\E3:st=\E1:cr=^M:do=^J:nl=^J:bl=^G:\
 	:kb=^h:le=^H:bs:co#80:ff=^L:hc:hu=\EH:hd=\Eh:os:ta=^I:pt:up=^Z:
+Ar|q102|qume102|Qume 102:\
+	:al=\EE:am:bl=^G:bs:bt=\EI:\
+	:cd=\EY:ce=\ET:cl=^Z:cm=\E=%+ %+ :co#80:cr=^M:ct=\E3:\
+	:dc=\EW:dl=\ER:do=^J:ei=:ho=^^:ic=\EQ:im=:\
+	:k0=^A@\r:k1=^AA\r:k2=^AB\r:k3=^AC\r:kd=^J:kl=^H:kr=^L:ku=^K:\
+	:le=^H:li#24:ma=^K^P^L :nd=^L:nl=^J:\
+	:se=\EG0:sg#1:so=\EG4:st=\E1:ta=^I:\
+	:ue=\EG0:ug#1:ul:up=^K:us=\EG8:
 # I suspect the xerox1720 is the same as the diablo 1620.
 Ax|x1720|x1700|1700|x1750|xerox 1720:\
 	:co#132:le=^H:bs:ff=^L:hc:os:ta=^I:pt:\
@@ -545,6 +553,13 @@ Mu|sun|Sun Microsystems Workstation console:\
 	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
 	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
 	:al=\E[L:dl=\E[M:im=:ei=:ic=\E[@:dc=\E[P:
+Mu|sun-e|Sun Microsystems Workstation console hacked for emacs:\
+	:li#34:co#80:cl=^L:cm=\E[%i%d;%dH:nd=\E[C:up=\E[A:\
+	:am:bs:mi:ms:\
+	:ce=\E[K:cd=\E[J:so=\E[7m:se=\E[m:\
+	:kd=\E[B:kl=\E[D:ku=\E[A:kr=\E[C:kh=\E[H:\
+	:k1=\EOP:k2=\EOQ:k3=\EOR:k4=\EOS:\
+	:al=\E[L:dl=\E[M:dc=\E[P:
 Mv|virtual|VIRTUAL|cb unix virtual terminal:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:co#80:li#24:am:cl=\E\112:le=^H:bs:cm=\E\107%r%.%.:nd=\E\103:\
@@ -577,11 +592,6 @@ Mz|zen30|z30|zentec 30:\
 #
 # N: ANN ARBOR
 #
-N0|aa|annarbor|4080|ann arbor 4080:\
-	:cr=^M:do=^J:nl=^J:bl=^G:pt:ct=^\^P^P:st=^]^P1:\
-	:cm=^O%r%\066%.%>^S^L%+@:\
-	:co#80:li#40:le=^H:bs:cl=2^L:up=^N:nd=^_:ho=^K:am:\
-	:kb=^^:kd=^J:ku=^N:kl=^H:kr=^_:kh=^K:ma=^_ ^N^P:
 # Needs function keys added.
 # Originally from Mike O'Brien@Rand and Howard Katseff at Bell Labs.
 # Highly modified 6/22 by Mike O'Brien.
@@ -692,10 +702,10 @@ N0|aa|annarbor|4080|ann arbor 4080:\
 #
 #	unused
 #	
-N1|aaa-29-np|aaa-29 with no padding (for psl):\
+N0|aaa-29-np|aaa-29 with no padding (for psl):\
 	:al=\E[L:ce=\E[K:cl=\E[H\E[J:\
 	:dc=\E[P:dl=\E[M:ic=\E[@:tc=aaa-29:
-N2|aaa-unk|ann arbor ambassador (internal - don't use this directly):\
+NA|aaa-unk|ann arbor ambassador (internal - don't use this directly):\
 	:cr=^M:do=^J:nl=^J:bl=^G:al=3\E[L:am:le=^H:bs:\
 	:cd=\E[J:ce=5\E[K:cl=156\E[H\E[J:cm=\E[%i%d;%dH:co#80:\
 	:dc=4\E[P:dl=3\E[M:ho=\E[H:ic=4\E[@:\
@@ -706,236 +716,253 @@ N2|aaa-unk|ann arbor ambassador (internal - don't use this directly):\
 	:ch=\E[%i%d`:\
 	:ul:ei=:im=:pt:bw:bt=\E[Z:\
 	:mi:nd=\E[C:se=\E[m:so=\E[7m:ue=\E[m:us=\E[4m:up=\EM:
-N3|aaa-18|ann arbor ambassador/18 lines:\
+NB|aaa-18|ann arbor ambassador/18 lines:\
 	:ti=\E[2J\E[18;0;0;18p:te=\E[60;0;0;18p\E[18;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;18p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#18:tc=aaa-unk:
-N4|aaa-20|ann arbor ambassador/20 lines:\
+NC|aaa-20|ann arbor ambassador/20 lines:\
 	:ti=\E[2J\E[20;0;0;20p:te=\E[60;0;0;20p\E[20;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;20p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#20:tc=aaa-unk:
-N5|aaa-22|ann arbor ambassador/22 lines:\
+ND|aaa-22|ann arbor ambassador/22 lines:\
 	:ti=\E[2J\E[22;0;0;22p:te=\E[60;0;0;22p\E[22;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;22p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#22:tc=aaa-unk:
-N6|aaa-24|ann arbor ambassador/24 lines:\
+NE|aaa-24|ann arbor ambassador/24 lines:\
 	:ti=\E[2J\E[24;0;0;24p:te=\E[60;0;0;24p\E[24;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;24p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#24:tc=aaa-unk:
-N7|aaa-26|ann arbor ambassador/26 lines:\
+NF|aaa-26|ann arbor ambassador/26 lines:\
 	:ti=\E[2J\E[26;0;0;26p:te=\E[60;0;0;26p\E[26;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;26p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#26:tc=aaa-unk:
-N8|aaa-28|ann arbor ambassador/28 lines:\
+NG|aaa-28|ann arbor ambassador/28 lines:\
 	:ti=\E[2J\E[28;0;0;28p:te=\E[60;0;0;28p\E[28;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;28p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#28:tc=aaa-unk:
-N9|aaa|ambassador|aaa-30|ann arbor ambassador/30 lines:\
+NH|aaa|aaa-30|ambas|ambassador|ann arbor ambassador/30 lines:\
 	:ti=\E[2J\E[30;0;0;30p:te=\E[60;0;0;30p\E[30;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;30p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#30:tc=aaa-unk:
-NA|aaa-36|ann arbor ambassador/36 lines:\
+NI|aaa-36|ann arbor ambassador/36 lines:\
 	:ti=\E[2J\E[36;0;0;36p:te=\E[60;0;0;36p\E[36;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;36p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#36:tc=aaa-unk:
-NB|aaa-40|ann arbor ambassador/40 lines:\
+NJ|aaa-40|ann arbor ambassador/40 lines:\
 	:ti=\E[2J\E[40;0;0;40p:te=\E[60;0;0;40p\E[40;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;40p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#40:tc=aaa-unk:
-NC|aaa-48|ann arbor ambassador/48 lines:\
+NK|aaa-48|ann arbor ambassador/48 lines:\
 	:ti=\E[2J\E[48;0;0;48p:te=\E[60;0;0;48p\E[48;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;48p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#48:tc=aaa-unk:
-ND|aaa-60|ann arbor ambassador/60 lines:\
+NL|aaa-60|ann arbor ambassador/60 lines:\
 	:ti=\E[2J\E[60;0;0;60p:te=\E[60;0;0;60p\E[60;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;0;0;60p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#60:tc=aaa-unk:
-NE|aaa-unk-s|ann arbor ambassador unknown with/status:\
-	:hs:es:i2=\E7\E[>51h\E[H\E[2K\E[>51l\E8:\
+NS|aaa-unk-s|ann arbor ambassador unknown with/status:\
+	:es:hs:i2=\E7\E[>51h\E[H\E[2K\E[>51l\E8:\
 	:ts=\E7\E[>51h\E[H\E[2K\E[%i%d`:fs=\E[>51l\E8:\
 	:ds=\E7\E[>51h\E[H\E[2K\E[>51l\E8:\
 	:tc=aaa-unk:
-NF|aaa-18-s|ann arbor ambassador/18 lines + status line:\
+NM|aaa-18-s|ambassador|ann arbor ambassador/18 lines + status line:\
 	:ti=\E[2J\E[18;1;0;18p:\
-	:te=\E[60;1;0;18p\E[17;1H\E[J:\
+	:te=\E[60;1;0;18p\E[18;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;18p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#17:tc=aaa-unk-s:
-NG|aaa-20-s|ann arbor ambassador/20 lines + status line:\
+NN|aaa-20-s|ambassador|ann arbor ambassador/20 lines + status line:\
 	:ti=\E[2J\E[20;1;0;20p:\
-	:te=\E[60;1;0;20p\E[19;1H\E[J:\
+	:te=\E[60;1;0;20p\E[20;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;20p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#19:tc=aaa-unk-s:
-NH|aaa-22-s|ann arbor ambassador/22 lines + status line:\
+NO|aaa-22-s|ambassador|ann arbor ambassador/22 lines + status line:\
 	:ti=\E[2J\E[22;1;0;22p:\
-	:te=\E[60;1;0;22p\E[21;1H\E[J:\
+	:te=\E[60;1;0;22p\E[22;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;22p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#21:tc=aaa-unk-s:
-NI|aaa-24-s|ann arbor ambassador/24 lines + status line:\
+NP|aaa-24-s|ambassador|ann arbor ambassador/24 lines + status line:\
 	:ti=\E[2J\E[24;1;0;24p:\
-	:te=\E[60;1;0;24p\E[23;1H\E[J:\
+	:te=\E[60;1;0;24p\E[24;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;24p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#23:tc=aaa-unk-s:
-NJ|aaa-26-s|ann arbor ambassador/26 lines + status line:\
+NQ|aaa-26-s|ambassador|ann arbor ambassador/26 lines + status line:\
 	:ti=\E[2J\E[26;1;0;26p:\
-	:te=\E[60;1;0;26p\E[25;1H\E[J:\
+	:te=\E[60;1;0;26p\E[26;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;26p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#25:tc=aaa-unk-s:
-NK|aaa-28-s|ann arbor ambassador/28 lines + status line:\
+NR|aaa-28-s|ambassador|ann arbor ambassador/28 lines + status line:\
 	:ti=\E[2J\E[28;1;0;28p:\
-	:te=\E[60;1;0;28p\E[27;1H\E[J:\
+	:te=\E[60;1;0;28p\E[28;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;28p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#27:tc=aaa-unk-s:
-NL|aaa-30-s|ann arbor ambassador/30 lines + status line:\
+NT|aaa-30-s|ambassador|ann arbor ambassador/30 lines + status line:\
 	:ti=\E[2J\E[30;1;0;30p:\
-	:te=\E[60;1;0;30p\E[29;1H\E[J:\
+	:te=\E[60;1;0;30p\E[30;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;30p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#29:tc=aaa-unk-s:
-NM|aaa-36-s|ann arbor ambassador/36 lines + status line:\
+NU|aaa-36-s|ambassador|ann arbor ambassador/36 lines + status line:\
 	:ti=\E[2J\E[36;1;0;36p:\
-	:te=\E[60;1;0;36p\E[35;1H\E[J:\
+	:te=\E[60;1;0;36p\E[36;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;36p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#35:tc=aaa-unk-s:
-NN|aaa-40-s|ann arbor ambassador/40 lines + status line:\
+NV|aaa-40-s|ambassador|ann arbor ambassador/40 lines + status line:\
 	:ti=\E[2J\E[40;1;0;40p:\
-	:te=\E[60;1;0;40p\E[39;1H\E[J:\
+	:te=\E[60;1;0;40p\E[40;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;40p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#39:tc=aaa-unk-s:
-NO|aaa-48-s|ann arbor ambassador/48 lines+sl:\
-	:ti=\E[2J\E[48;1;0;48p:te=\E[60;1;0;48p\E[47;1H\E[J:\
+NW|aaa-48-s|ann arbor ambassador/48 lines+sl:\
+	:ti=\E[2J\E[48;1;0;48p:te=\E[60;1;0;48p\E[48;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\EP`?y~[[2J~[[H\E7\E[60;1;0;48p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#47:tc=aaa-unk-s:
-NP|aaa-60-s|ann arbor ambassador/60 lines + status line:\
-	:ti=\E[2J\E[60;1;0;60p:te=\E[60;1;0;60p\E[59;1H\E[J:\
+NX|aaa-60-s|ambassador|ann arbor ambassador/60 lines + status line:\
+	:ti=\E[2J\E[60;1;0;60p:te=\E[60;1;0;60p\E[60;1H\E[J:\
 	:is=\EP`+x~M\E\\\E[m\E7\E[60;1;0;60p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:li#59:tc=aaa-unk-s:
-NQ|aaa-18-rv|ambassador/18 lines+rv:\
+NY|aaa-18-rv|ambassador/18 lines+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;0;0;18p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-18:
-NR|aaa-20-rv|ambassador/20 lines+rv:\
+NZ|aaa-20-rv|ambassador/20 lines+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;0;0;20p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-20:
-NS|aaa-22-rv|ambassador/22 lines+rv:\
+Na|aaa-22-rv|ambassador/22 lines+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;0;0;22p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-22:
-NT|aaa-24-rv|ambassador/24 lines+rv:\
+Nb|aaa-24-rv|ambassador/24 lines+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;0;0;24p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-24:
-NU|aaa-26-rv|ambassador/26 lines+rv:\
+Nc|aaa-26-rv|ambassador/26 lines+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;0;0;26p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-26:
-NV|aaa-28-rv|ambassador/28 lines+rv:\
+Nd|aaa-28-rv|ambassador/28 lines+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;0;0;28p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-28:
-NW|aaa-30-rv|ann arbor ambassador/30 lines in reverse video:\
+Ne|aaa-30-rv|ann arbor ambassador/30 lines in reverse video:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;0;0;30p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-30:
-NX|aaa-36-rv|ann arbor ambassador/36 lines in reverse video:\
+Nf|aaa-36-rv|ann arbor ambassador/36 lines in reverse video:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;0;0;36p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-36:
-NY|aaa-40-rv|ann arbor ambassador/40 lines in reverse video:\
+Ng|aaa-40-rv|ann arbor ambassador/40 lines in reverse video:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;0;0;40p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-40:
-NZ|aaa-48-rv|ann arbor ambassador/48 lines in reverse video:\
+Nh|aaa-48-rv|ann arbor ambassador/48 lines in reverse video:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;0;0;48p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-48:
-Na|aaa-60-rv|ann arbor ambassador/60 lines in reverse video:\
+Ni|aaa-60-rv|ann arbor ambassador/60 lines in reverse video:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;0;0;60p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
 	:tc=aaa-60:
-Nb|aaa-18-rv-s|aaa-18-s-rv|ambassador/18 lines+sl+rv:\
+Nj|aaa-18-rv-s|aaa-18-s-rv|ambassador/18 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:ti=\E[2J\E[18;1;0;18p:te=\E[60;1;0;18p\E[18;1H\E[J:li#17:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;18p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
-	:tc=aaa-18-s:
-Nc|aaa-20-rv-s|aaa-20-s-rv|ambassador/20 lines+sl+rv:\
+	:tc=aaa-unk-s:
+Nk|aaa-20-rv-s|aaa-20-s-rv|ambassador/20 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:ti=\E[2J\E[20;1;0;20p:te=\E[60;1;0;20p\E[20;1H\E[J:li#19:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;20p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
-	:tc=aaa-20-s:
-Nd|aaa-22-rv-s|aaa-22-s-rv|ambassador/22 lines+sl+rv:\
+	:tc=aaa-unk-s:
+Nl|aaa-22-rv-s|aaa-22-s-rv|ambassador/22 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:ti=\E[2J\E[22;1;0;22p:te=\E[60;1;0;22p\E[22;1H\E[J:li#21:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;22p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
-	:tc=aaa-22-s:
-Ne|aaa-24-rv-s|aaa-24-s-rv|ambassador/24 lines+sl+rv:\
+	:tc=aaa-unk-s:
+Nm|aaa-24-rv-s|aaa-24-s-rv|ambassador/24 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:ti=\E[2J\E[24;1;0;24p:te=\E[60;1;0;24p\E[24;1H\E[J:li#23:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;24p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
-	:tc=aaa-24-s:
-Nf|aaa-26-rv-s|aaa-26-s-rv|ambassador/26 lines+sl+rv:\
+	:tc=aaa-unk-s:
+Nn|aaa-26-rv-s|aaa-26-s-rv|ambassador/26 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:ti=\E[2J\E[26;1;0;26p:te=\E[60;1;0;26p\E[26;1H\E[J:li#25:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;26p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
-	:tc=aaa-26-s:
-Ng|aaa-28-rv-s|aaa-28-s-rv|ambassador/28 lines+sl+rv:\
+	:tc=aaa-unk-s:
+No|aaa-28-rv-s|aaa-28-s-rv|ambassador/28 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:ti=\E[2J\E[28;1;0;28p:te=\E[60;1;0;28p\E[28;1H\E[J:li#27:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;28p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
-	:tc=aaa-28-s:
-Nh|aaa-30-rv-s|aaa-30-s-rv|ambassador/30 lines+sl+rv:\
+	:tc=aaa-unk-s:
+Np|aaa-rv|aaa-30-rv-s|aaa-30-s-rv|ambassador/30 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:ti=\E[2J\E[30;1;0;30p:te=\E[60;1;0;30p\E[30;1H\E[J:li#29:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;30p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
-	:tc=aaa-30-s:
-Ni|aaa-36-rv-s|aaa-36-s-rv|ambassador/36 lines+sl+rv:\
+	:tc=aaa-unk-s:
+Nq|aaa-36-rv-s|aaa-36-s-rv|ambassador/36 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:ti=\E[2J\E[36;1;0;36p:te=\E[60;1;0;36p\E[36;1H\E[J:li#35:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;36p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
-	:tc=aaa-36-s:
-Nj|aaa-40-rv-s|aaa-40-s-rv|ambassador/40 lines+sl+rv:\
+	:tc=aaa-unk-s:
+Nr|aaa-40-rv-s|aaa-40-s-rv|ambassador/40 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:ti=\E[2J\E[40;1;0;40p:te=\E[60;1;0;40p\E[40;1H\E[J:li#39:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;40p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
-	:tc=aaa-40-s:
-Nk|aaa-48-rv-s|aaa-48-s-rv|ambassador/48 lines+sl+rv:\
+	:tc=aaa-unk-s:
+Ns|aaa-48-rv-s|aaa-48-s-rv|ambassador/48 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:ti=\E[2J\E[48;1;0;48p:te=\E[60;1;0;48p\E[48;1H\E[J:li#47:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;48p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
-	:tc=aaa-48-s:
-Nl|aaa-60-rv-s|aaa-60-s-rv|ambassador/60 lines+sl+rv:\
+	:tc=aaa-unk-s:
+Nt|aaa-60-rv-s|aaa-60-s-rv|ambassador/60 lines+sl+rv:\
 	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
 	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
 	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;60p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
-	:tc=aaa-60-s:
-Nm|aaa-24-ctxt:\
+	:li#50:tc=aaa-unk-s:
+NL|aaa-24-ctxt|ann arbor ambassador/24 lines:\
 	:ti=\E[30;1H\E[K\E[24;0;0;24p:te=\E[60;1;0;24p\E[60;1H\E[K:tc=aaa-24:
-Nn|aaa-24-rv-ctxt:\
+NL|aaa-24-rv-ctxt|ambassador/24+rv:\
 	:ti=\E[30;1H\E[K\E[24;0;0;24p:te=\E[60;1;0;24p\E[60;1H\E[K:tc=aaa-24-rv:
-No|aaa-30-s-ctxt:\
+NL|aaa-s-ctxt|aaa-30-s-ctxt|hairy aaa:\
 	:ti=\E[30;1H\E[K\E[30;1;0;30p:te=\E[60;1;0;30p\E[59;1H\E[K:tc=aaa-30-s:
-Np|aaa-30-s-rv-ctxt:\
-	:ti=\E[30;1H\E[K\E[30;1;0;30p:\
-	:te=\E[60;1;0;30p\E[59;1H\E[K:tc=aaa-30-s-rv:
-Nq|aaa-ctxt|aaa-30-ctxt:\
+NL|aaa-s-rv-ctxt|aaa-30-s-rv-ctxt|hairy aaa:\
+	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
+	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:is=\EP`+x~M\E\\\E[7m\E7\E[60;1;0;30p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
+	:ti=\E[30;1H\E[K\E[30;1;0;30p:te=\E[60;1;0;30p\E[59;1H\E[K:\
+	:li#29:tc=aaa-unk-s:
+NH|aaa-ctxt|aaa-30-ctxt|ann arbor ambassador/30 lines:\
 	:ti=\E[30;0;0;30p:te=\E[60;0;0;30p\E[60;1H\E[K:tc=aaa-30:
-Nr|aaa-rv-ctxt|aaa-30-rv-ctxt:\
-	:ti=\E[30;0;0;30p:te=\E[60;0;0;30p\E[60;1H\E[K:tc=aaa-30-rv:
-Ns|aaa-db|ann arbor ambassador 30/destructive backspace:\
+NH|aaa-rv-ctxt|aaa-30-rv-ctxt|ann arbor ambassador/30 lines:\
+	:ti=\E[30;0;0;30p:te=\E[60;0;0;30p\E[60;1H\E[K:\
+	:md=\E[1;7m:mr=\E[m:mb=\E[5;7m:mk=\E[7;8m:me=\E[7m:\
+	:us=\E[4;7m:ue=\E[7m:se=\E[7m:so=\E[m:\
+	:is=\EP`+x~M\E\\\E[7m\E7\E[60;0;0;30p\E[3g\E[f\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E[8a\EH\E8\E[>6h\E[1Q:\
+	:li#30:tc=aaa-unk:
+Nd|aaa-db|ann arbor ambassador 30/destructive backspace:\
 	:ti=\E[H\E[J\E[30;0;0;30p:te=\E7\E[60;0;0;30p\E8:li#30:\
 	:is=\E[60;0;0;30p\E[H\E[J\E[1Q\E[m\E[20l\E[>30h:le=\E[D:bc=\E[D:bs@:\
 	:tc=aaa-unk:
-# 
+
 # # --------------------------------
 #
 # T: TELETYPE
@@ -983,12 +1010,14 @@ TT|4424|tty4424|teletype 4424M:\
 # below try to get around the problem by ignoring the feature or
 # turning it off when inputting a character.  They are said not to
 # work well at 300 baud.  (You could always cut the wire to the bell!)
-V2|vi200|visual 200 with function keys:\
+#From mike@brl-vgr Mon Nov 14 08:34:29 1983
+V2|vi200|vis200|visual 200 with function keys:\
+	:so=\E4:se=\E3:ms:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
-	:al=\EL:am:le=^H:bs:cd=\Ey:ce=4*\Ex:cl=\Ev:\
-	:cm=\EY%+ %+ :co#80:dc=4*\EO:dl=4*\EM:ho=\EH:\
+	:al=\EL:am:le=^H:bs:cd=\Ey:ce=\Ex:cl=\Ev:\
+	:cm=\EY%+ %+ :co#80:dc=\EO:dl=\EM:ho=\EH:\
 	:im=:ei=:ic=\Ei \b\Ej:\
-	:is=\E3\Eb\Ej\E\\\El\EG\Ed\Ek:\
+	:is=\E3\Eb\Ej\E\\\El\EG\Ec\Ek:\
 	:k0=\EP:k1=\EQ:k2=\ER:k3=\E :k4=\E!:k5=\E":k6=\E#:\
 	:k7=\E$:k8=\E%:k9=\E&:kl=\ED:kr=\EC:ku=\EA:kd=\EB:kh=\EH:\
 	:li#24:nd=\EC:ta=^I:pt:sr=\EI:up=\EA:vs=\Ed:ve=\Ec:
@@ -1077,6 +1106,32 @@ Xs|4112|4113|4114|tek4112|tektronix 4110 series:\
 	:le=^H:cr=^M:nl=^J:do=^J:bl=^G:bs:am:cl=\ELZ:li#34:co#80:
 Xt|4112-nd|4112 not in dialog area:up=^K:ns:tc=4112:
 Xu|4112-5|4112 in 5 line dialog area:li#5:tc=4112:
+Xv|4113|tek4113|tektronix 4113 color graphics, 5 line dialog area:\
+	:le=^H:cr=^M:nl=^J:do=^J:bl=^G:\
+	:eo:da:bs:am:li#5:co#80:\
+	:is=\EKA1\ELL5\ELV0\ELV1:\
+	:vb=\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERB0:\
+	:cl=\ELZ:uc=^H\ELM1_\ELM0:nd=\LM1 \LM0:\
+	:.as=\E^N:.ae=\E^O:
+Xw|4113-34|tek4113-34|tektronix 4113 color graphics, 34 line dialog area:\
+	:is=\EKA1\ELLB2\ELV0\ELV1:li#34:tc=tek4113:
+# ns hidden from vi to allow visual mode. APL font (as, ae) not supported here.
+# uc is slow, but looks nice. Suggest setenv MORE -up . vb needs enough delay
+# to let you see the background color being toggled.
+Xy|4113-nd|tek4113-nd|tektronix 4113 color graphics, no dialog area:\
+	:le=^H:cr=^M:nl=^J:do=^J:bl=^G:\
+	:nd=\t:up=^K:ll=\ELF hl @:ho=\ELF7l\177 @:\
+	:eo:bs:am:li#34:co#80:\
+	:is=\ELZ\EKA0\ELF7l\177 @:vs=\ELZ\EKA0:\
+	:vb=\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERBA4\ERB0:\
+	:cl=\E\f:uc=^H\EMG1_\EMG0:so=\EMT2:se=\EMT1:\
+	:.ns:.as=\E^N:.ae=\E^O:
+Xz|4105|tek4105: \
+	:al=\E[1L:am:bs:cd=\E[J:ce=\E[K:cl=\E[2J\E[H:cm=\E[%i%2;%2H:co#80:\
+	:dc=\E[1P:dl=\E[1M:dn=\E[1B:ho=\E[H:im=\E[4h:li#30:mi:nd=\E[1C:\
+	:as=\E[1m:ae=\E[0m:ms:pt:se=\E[0m:so=\E[7m:up=\E[1A:kb=^h:ku=\E[1A:\
+	:kd=\E[1B:kl=\E[1D:kr=\E[1C:ul:us=\E[4m:ue=\E[0m:is=\E%!1\E[?6l\E[0m:\
+	:mr=\E[<3m:md=\E[<4m:mh=\E[<6m:mb=\E[<7m:me=\E[<1m:ti=\E%!1\E[?6l:xt:
 # # --------------------------------
 #
 # a: ADDS
@@ -1358,7 +1413,7 @@ d5|vt50|dec vt50:\
 	:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:cd=\EJ:ce=\EK:cl=\EH\EJ:co#80:li#12:nd=\EC:ta=^I:pt:up=\EA:
 d6|vt125|vt125-am|DEC vt125:\
-	:cr=^M:do=^J:nl=^J:bl=^G:co#80:li#24:cl=50\E[H\E[2J:\
+	:xn:cr=^M:do=^J:nl=^J:bl=^G:co#80:li#24:cl=50\E[H\E[2J:\
 	:le=^H:am:bs:cm=5\E[%i%d;%dH:nd=2\E[C:up=2\E[A:ce=3\E[K:cd=50\E[J:\
 	:so=2\E[7m:se=2\E[m:us=2\E[4m:ue=2\E[m:md=2\E[1m:mr=2\E[7m:mb=2\E[5m:\
 	:me=2\E[m:is=\E[1;24r\E[24;1H\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h:\
@@ -1520,15 +1575,16 @@ kA|h19-a|h19a|heath-ansi|heathkit-a|heathkit h19 ansi mode:\
 	:sr=\EM:is=\E<\E[>1;2;3;4;5;6;7;8;9l\E[0m\E[11m\E[?7h:
 kB|h19-bs|h19bs|heathkit w/keypad shifted:\
 	:ks=\Et:ke=\Eu:tc=h19-b:
-#the z29 entry sucks...terminfo's description is better.
-kC|z29|zenith 29:\
-	:ip=1.5:ks=\Et:ke=\Eu:vs@:ve@:cr=^M:nl=^J:bl=^G:al=1*\EL:am:le=^H:\
-	:bs:cd=\EJ:ce=\EK:cl=\EE:cm=\EY%+ %+ :co#80:dc=\EN:dl=1*\EM:\
-	:do=\EB:ho=\EH:li#24:nd=\EC:as=\EF:ae=\EG:ms:\
-	:ta=^I:pt:sr=\EI:se=\Eq:so=\Ep:up=\EA:vs=\Ex4:ve=\Ey4:kb=^h:\
-	:ku=\EA:kd=\EB:kl=\ED:kr=\EC:kh=\EH:kn#8:k1=\ES:k2=\ET:k3=\EU:\
-	:k4=\EV:k5=\EW:l6=blue:l7=red:l8=white:k6=\EP:k7=\EQ:k8=\ER:es:hs:\
-	:ts=\Ej\Ex5\Ex1\EY8%+ \Eo:fs=\Ek\Ey5:ds=\Ey1:
+#written by David Shewmake, UCSF Medical Information Science
+#ucbvax!ucsfmis!shewmake
+kC|h29|heath-29|z29|zenith-29:\
+	:am:bc=\ED:bt=\E-:cr=^M:do=^J:nl=^J:bl=^G:\
+	:al=\EL:le=^H:bs:cd=\EJ:ce=\EK:cl=\EE:cm=\EY%+ %+ :co#80:dc=\EN:\
+	:dl=1*\EM:do=\EB:ei=\EO:ho=\EH:im=\E@:li#24:mi:nd=\EC:as=\EF:ae=\EG:\
+	:ms:ta=^I:pt:sr=\EI:se=\Eq:so=\Ep:up=\EA:vs=\Ex4:ve=\Ey4:\
+	:kb=^H:ku=\EA:kd=\EB:kl=\ED:kr=\EC:kh=\EH:kn#1:k0=\E~:l0=HOME:\
+	:k1=\ES:k2=\ET:k3=\EU:k4=\EV:k5=\EW:k6=\EP:k7=\EQ:k8=\ER:k9=\E01:\
+	:es:hs:ts=\Ej\Ex5\Ex1\EY8%+ \Eo:fs=\Ek\Ey5:ds=\Ey1:us=\Es8:ue=\Es0:
 kU|h19-us|h19us|heathkit w/keypad shifted/underscore cursor:\
 	:ks=\Et:ke=\Eu:tc=h19-u:
 kb|h19|heath|h19-b|h19b|heathkit|heath-19|z19|zenith|heathkit h19:\
@@ -1581,14 +1637,25 @@ l5|adm5|5|lsi adm5:\
 	:cd=\EY:ce=\ET:do=^J:kb=^H:kh=^^:\
 	:ma=^Hh^Jj^Kk^Ll^^H:se=\EG:sg#1:so=\EG:tc=adm3aplus:
 l7|adm20|lear siegler adm20:\
-	:li#24:co#80:bs:cl=^Z:cm=\E=%i%r%+^_%+^_:nd=^L:up=^K:ho=^\^:ce=\ET:\
+	:am:li#24:co#80:bs:cl=^Z:cm=\E=%i%r%+^_%+^_:nd=^L:up=^K:ho=^^:ce=\ET:\
 	:cd=\EY:al=\EE:dl=\ER:im=:ei=:ic=\EQ:dm=:ed=:dc=\EW:so=\E):se=\E(:\
-	:am:bt=\EI:pt:kn#7:k1=^A:k2=^B:k3=^W:k4=^D:k5=^E:k6:^X:k7=^Z:
+	:bt=\EI:pt:kn#7:k1=^A:k2=^B:k3=^W:k4=^D:k5=^E:k6:^X:k7=^Z:
 la|adm3a|3a|lsi adm3a:\
 	:am:cr=^M:do=^J:nl=^J:bl=^G:\
 	:le=^H:bs:cm=\E=%+ %+ :cl=1^Z:co#80:ho=^^:li#24:ma=^K^P:nd=^L:up=^K:
 lb|adm3a+|3a+|adm3aplus:\
 	:kl=^H:kd=^J:ku=^K:kr=^L:tc=adm3a:
+lc|adm22|22|lsi adm22:\
+	:is=\E%\014\014\014\016\003\000\003\002\003\002\000\000\000\000\000\000\000\000\000\000\000:\
+	:al=\EE:am:bs:bt=\EI:cd=\Ey:ce=\Et:cl=\E+:cm=\000\E=%+ %+ :co#80:\
+	:cr=^M:dc=\EW:dl=\ER:do=^J:em=:ho=^^:ic=\EQ:im=:\
+	:k1=\001@\015:k2=\001A\015:k3=\001B\015:k4=\001C\015:\
+	:k5=\001D\015:k6=\001E\015:k7=\001F\015:kn#7:\
+	:ko=ho:\
+	:l1=F1:l2=F2:l3=F3:l4=F4:l5=F5:l6=F6:l7=F7:\
+	:kb=^H:kd=^J:kh=^^:kl=^H:kr=^L:ku=^K:li#24:\
+	:ma=j^Jk^P^K^Pl ^R^L^L :nd=^L:nl=^J:\
+	:se=\E(:so=\E):ta=\Ei:up=^K:
 # # --------------------------------
 #
 # m: MICROTERM
@@ -1965,6 +2032,67 @@ z7|trs2|trsII|trs80II|Radio Shack Model II using P&T CP/M:\
 	:dl=^K:do=^_:ho=^F:li#24:nd=^]:\
 	:ms:pt:se=^O:so=^N:up:=^^:\
 	:kb=^H:kd=^_:kl=^\:kr=^]:ku=^^:
+z8|apollo:\
+	:al=\EI:am:bs:cd=\EJ:ce=\EK:ch=\EN%d:cl=^L:cm=\EM%+ %d):\
+	:cv=\EO+ :dc=\EP:dl=\EL:do=\EB:ei=\ER:im=\EQ:mi:nd=\EC:se=\ET:sf=\EE:\
+	:so=\ES:sr=\ED:te=\EX:ti=\EW:ue=\EV:ul:up=\EA:us=\EU:co#88:li#53:
+z9|ps300|Picture System 300:us@:ue@:so@:se@:xt:pt@:tc=vt100:
+za|masscomp2:co#64:li#21:tc=masscomp:
+zb|masscomp1:co#104:li#36:tc=masscomp:
+zc|masscomp:\
+	:al=\E[L:bs:cd=\E[J:ce=\E[K:co#80:dc=\E[P:dl=\E[M:do=\E[B:\
+	:ei=\E[4l:im=\E[4h:is=\EGc\EGb\EGw:li#24:mi:MT:nd=\E[C:pt:se=\E[0m:\
+	:sg#0:so=\E[7m:cm=\E[%i%d;%dH:ue=\EGau:us=\EGu:up=\E[A:\
+	:ku=\EOA:kd=\EOB:kr=\EOC:kl=\EOD:kb=^h:cl=\E[2J:
+# Kimtron TC entries include (undocumented) codes for: enter dim mode (mh),
+# enter bold mode (md), enter reverse mode (mr), turn off all attributes (me)
+# Kimtron ABM 85 added by Dual Systems
+zd|abm85|Kimtron ABM 85:\
+	:is=\EC\EX\Eg\En\E%\Er\E(\Ek\Em\Eq:if=/usr/lib/tabset/stdcrt:\
+	:li#24:co#80:am:bs:bw:ms:pt:\
+	:cl=\E*:cd=\Ey:dl=\ER:al=\EE:ce=\Et:dc=\EW:im=\EQ:ei=\Er:\
+	:cm=\E=%+ %+ :do=^J:nd=^L:up=^K:bt=\EI:\
+	:kh=^^:kb=^H:kd=^J:ku=^K:kd=^J:kl=^H:kr=^L:\
+	:so=\Ej:se=\Ek:sg#1:us=\El:ue=\Em:ug#1:\
+# Kimtron ABM 85H added by Dual Systems.
+# Some notes about the 85h entries:
+# 1) there are several firmware revs of 85H in the world. Use o85h for 
+#    firmware revs prior to SP51
+# 2) Make sure to use 85h entry if the terminal is in 85H mode and the
+#    85e entry if it is in 920 emulation mode. They are incompatible in
+#    some places and NOT software settable i.e., `is' can't fix change it)
+# 3) In 85h mode, the arrow keys and special functions transmit when
+#    the terminal is in dup-edit, and work only locally in local-edit.
+#    Vi won't swallow `del char' for instance, but `vs' turns on
+#    dup-edit anyway so that the arrow keys will work right. If the
+#    arrow keys don't work the way you like, change `vs', `ve', and `is'.
+#    920E mode does not have software commands to toggle between dup
+#    and local edit, so you get whatever was set last on the terminal.
+# 4) vb attribute is nice, but seems too slow to work correctly (\Eb<pad>\Ed)
+# 5) Make sure `hidden' attributes are selected. If `embedded' attributes
+#    are selected, the entries :sg@: and :ug@: should be removed.
+# 6) auto new-line should be on (selectable from setup mode only)
+#
+ze|85h|85H|abm85h|Kimtron ABM 85H, 85H mode:\
+	:is=\EC\EN\EX^T^N\EA\Ea\E%\E9\Ee\Er\En\E"\E}\E'\E(\Ef^M\EG0\Ed:\
+	:im=\EZ:kd=^V:so=\EG4:se=\EG0:us=\EG8:ue=\EG0:vb@:vs=\El:ve=\Ek:\
+	:mh=\E):mr=\EG4:me=\E(\EG0:sg@:ug@:tc=abm85:
+zf|85e|85E|abm85e|Kimtron ABM 85H, 920E mode:\
+	:is=\EC\EX\EA\E%\E9\Ee\Er\En\E"\E}\E'\E(\Ef^M\Ek\Eq\Em:\
+	:mh=\E):mr=\Ej:me=\E(\Ek:im=\EZ:sg@:ug@:vb@:tc=abm85:
+zg|o85h|oabm85h:Kimtron ABM 85H, old firmware rev.:\
+	:is=\E}\EC\EX\Ee\En\E%\Er\E(\Ek\Em\Eq\Ed\ET\EC\E9\EF:\
+	:im=\EZ:sg@:ug@:vb=\200\200\200^G\200\200\200:\
+	:mh=\E):mr=\Ej:me=\E(\Ek:tc=abm85:
+zh|appleII|apple ii plus:vs=\024\103\066:ve=\024\103\062:\
+        :am:co#80:ce=\035:li#24:cl=\014:bs:nd=\034:up=\037:ho=\E\031:pt:\
+        :cd=\013:so=\017:se=\016:cm=\036%r%+ %+ :is=\024T1\016:do=^J:kd=^J:\
+        :ma=^Ul:vb=\024G1\024T1:
+#  Gary Ford 21NOV83
+zi|apple-80|apple II with smarterm 80 col:\
+        :cr=^M:do=^J:nl=^J:bl=^G:co#80:li#24:le=^H:bs:am:\
+        :cl=50^L:cm=5^^%r%+ %+ :ta=^I:bt=2^R:cd=50^K:\
+        :ce=3^]:nd=2^\:up=2^_:is=^TR^V^A:
 #
 # END OF TERMCAP
 #  ------------------------
