@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)gamma.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)gamma.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -295,7 +295,7 @@ neg_gam(x)
 		lg.a -= lsine.a;	/* exact (opposite signs) */
 		lg.b -= lsine.b;
 		y = -(lg.a + lg.b);
-		z = (y - lg.a) - lg.b;
+		z = (y + lg.a) + lg.b;
 		y = exp__D(y, z);
 		if (sgn < 0) y = -y;
 		return (y);
