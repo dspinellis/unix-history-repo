@@ -1,4 +1,4 @@
-/*	uipc_proto.c	4.6	81/11/20	*/
+/*	uipc_proto.c	4.7	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"
@@ -70,7 +70,7 @@ struct protosw protosw[] = {
   udp_usrreq,	udp_sense,	MLEN,
   udp_init,	0,		0,		0,
 },
-{ SOCK_STREAM,	PF_INET,	IPPROTO_TCP,	PR_CONNREQUIRED,
+{ SOCK_STREAM,	PF_INET,	IPPROTO_TCP,	PR_CONNREQUIRED|PR_WANTRCVD,
   tcp_input,	0,		tcp_ctlinput,	0,
   tcp_usrreq,	tcp_sense,	MLEN,
   tcp_init,	tcp_fasttimo,	tcp_slowtimo,	tcp_drain,
@@ -116,7 +116,7 @@ pffindtype(family, type)
 COUNT(PFFINDTYPE);
 	if (family == 0)
 		return (0);
-	for (pr = protosw; pr < protoswLAST; pr++)
+	for (pr = protosw; pr <= protoswLAST; pr++)
 		if (pr->pr_family == family && pr->pr_type == type)
 			return (pr);
 	return (0);
@@ -134,7 +134,7 @@ pffindproto(family, protocol)
 COUNT(PFFINDPROTO);
 	if (family == 0)
 		return (0);
-	for (pr = protosw; pr < protoswLAST; pr++)
+	for (pr = protosw; pr <= protoswLAST; pr++)
 		if (pr->pr_family == family && pr->pr_protocol == protocol)
 			return (pr);
 	return (0);
