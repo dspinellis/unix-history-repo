@@ -1,0 +1,20 @@
+#!/bin/sh
+log=/var/log/messages
+kernel=/sys/compile/VANGOGH/vmunix.gdb
+if [ $# -ge 3 ]; then
+	echo Usage: $0 [ log kernel ]
+fi
+if [ $# -ge 2 ]; then
+	kernel=$2
+fi
+if [ $# -ge 1 ]; then
+	log=$1
+fi
+echo checking $log using kernel $kernel
+egrep 'simple_|Function|Process' <$log | sed 's/^.* vmunix: //' >/tmp/$$.out
+grep Function </tmp/$$.out >/tmp/$$.lst
+sed -e 's,Function:,p/a,' -e 's,(.*$,,' </tmp/$$.lst | \
+gdb -k $kernel | \
+awk '{ printf "s/%s(/%s(/\n", $3, $4; }' >/tmp/$$.sed
+sed -f /tmp/$$.sed </tmp/$$.out
+rm /tmp/$$.sed /tmp/$$.lst /tmp/$$.out
