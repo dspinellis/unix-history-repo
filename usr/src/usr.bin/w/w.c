@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -188,7 +188,7 @@ main(argc, argv)
 		argc--; argv++;
 	}
 
-	if (ioctl(1, TIOCGWINSZ, &win) == -1 || win.ws_col > 70)
+	if (ioctl(1, TIOCGWINSZ, &win) != -1 && win.ws_col > 70)
 		ttywidth = win.ws_col;
 	if ((kmem = open("/dev/kmem", 0)) < 0) {
 		fprintf(stderr, "No kmem\n");
