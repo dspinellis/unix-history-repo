@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)vd.c	7.1 (Berkeley) %G%
+ *	@(#)vd.c	1.28 (Berkeley) %G%
  */
 
 #include "dk.h"
@@ -227,6 +227,9 @@ vdslave(vi, vdaddr)
 	lp->d_ntracks = 23;
 	lp->d_ncylinders = 850;
 	lp->d_secpercyl = 66*23;
+	lp->d_npartitions = 1;
+	lp->d_partitions[0].p_offset = 0;
+	lp->d_partitions[0].p_size = LABELSECTOR + 1;
 
 	/*
 	 * Initialize invariant portion of
