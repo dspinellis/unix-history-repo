@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.5 83/08/22";
+static	char *sccsid = "@(#)cmd.c	3.6 83/08/23";
 #endif
 
 #include "defs.h"
@@ -231,9 +231,9 @@ register struct ww *w;
 		wwdelete(w);
 		/*
 		 * Stick it in front of the old selected window,
-		 * or behind everbody else.
+		 * or behind the frame window.
 		 */
-		wwadd(w, (oldselwin ? oldselwin : &wwhead)->ww_back);
+		wwadd(w, oldselwin ? oldselwin->ww_back : framewin);
 	}
 	reframe();
 }
