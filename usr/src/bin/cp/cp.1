@@ -1,74 +1,99 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)cp.1	6.3 (Berkeley) %G%
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)cp.1	6.4 (Berkeley) %G%
 .\"
 .TH CP 1 ""
 .UC 4
 .SH NAME
-cp \- copy
+cp - copy files
 .SH SYNOPSIS
-.B cp
-[
-.B \-hip
-] file1 file2
-.PP
-.B cp
-[
-.B \-hipr
-] file ... directory
+\fBcp [ \fI-fhip\fB ] source_file target_file
+.sp
+\fBcp [ \fI-fhipr\fB ] source_file ... target_directory
+.ft R
 .SH DESCRIPTION
-.I File1
-is copied onto
-.IR file2 .
-By default, the mode and owner of  
-.I file2
-are preserved if it already
-existed; otherwise the mode of the source file modified by the current
-.IR umask (2)
-is used.  The
-.B \-p
-option causes
-.I cp
-to attempt to preserve (duplicate) in its copies the modification
-times and modes of the source files, ignoring the present
-.IR umask .
-.PP
-In the second form, one or more
-.I files
-are copied into the
-.I directory
-with their original file-names.
-.PP
-.I Cp
-refuses to copy a file onto itself.
-.PP
-If the 
-.B \-i
-option is specified, 
-.I cp
-will prompt the user with the name of the file whenever the copy
-will cause an old file to be overwritten.
-An answer of 'y' will cause 
-.I cp
-to continue.
-Any other answer will prevent it from overwriting the file.
-.PP
-If the
-.B \-r
-option is specified and any of the source files are directories,
-.I cp
-copies each subtree rooted at that name; in this case
-the destination must be a directory.
-.I Cp
-does not follow symbolic links if the
-.B -r
-option is specified.
 The
-.B -h
-option forces
 .I cp
-to always follow symbolic links.
+utility copies
+.I source_file
+to
+.I target_file
+or, in the second form, one or more
+.IR source_file s
+are copied into the target
+.IR target_directory ,
+retaining their original filenames.
+If
+.I cp
+detects an attempt to copy a file to itself, the copy shall fail.
+For each destination file that already exists, its contents are
+overwritten if permissions allow, but its mode, user ID, and group
+ID are unchanged.
+Otherwise, the mode of the
+.I source_file
+is used as modified by the file mode creation mask.
+Appropriate permissions are required for file creation or overwriting.
+.PP
+The following options are available:
+.TP
+.I -h
+Forces
+.I cp
+to follow symbolic links.
+.TP
+.I -f
+Force existing destination pathnames to be removed before copying,
+without prompting for confirmation.
+.TP
+.I -i
+Causes
+.I cp
+to write a prompt to standard error before copying a file that would
+overwrite an existing file.
+If the response from the standard input begins with the character ``y'',
+the file is copied if permissions allow the copy.
+.TP
+.I -p
+Causes
+.I cp
+to preserve in the copy as many of the modification time, access time,
+file mode, user ID, and group ID as allowed by permissions.
+.TP
+.I -r
+If
+.I source_file
+designates a directory,
+.I cp
+copies the directory and the entire subtree connected at that point.
+This option also causes symbolic links to be copied, rather than
+indirected through, and for
+.I cp
+to create special files rather than copying them as normal files.
+.PP
+The
+.I -i
+option is ignored if the
+.I -f
+option is specified.
+.PP
+Symbolic links are followed unless the
+.I -r
+option is specified, in which case the link itself is copied.
+.PP
+.I Cp
+exits 0 on success, >0 if an error occurred.
 .SH "SEE ALSO"
-cat(1), mv(1), rcp(1)
+mv(1), rcp(1), umask(2)
