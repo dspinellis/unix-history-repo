@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.2 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.3 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.2 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.3 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -30,6 +30,10 @@ typedef union
 } querybuf;
 
 static char	hostbuf[MAXMXHOSTS*PACKETSZ];
+
+#ifndef MAXDNSRCH
+#define MAXDNSRCH	6	/* number of possible domains to search */
+#endif
 
 getmxrr(host, mxhosts, localhost, rcode)
 	char *host, **mxhosts, *localhost;
@@ -101,7 +105,7 @@ getmxrr(host, mxhosts, localhost, rcode)
 		GETSHORT(n, cp);
 		if (type != T_MX)
 		{
-			if (tTd(8, 1) || _res.options & RES_DEBUG)
+			if (tTd(8, 8) || _res.options & RES_DEBUG)
 				printf("unexpected answer type %d, size %d\n",
 				    type, n);
 			cp += n;
@@ -231,6 +235,21 @@ mxrand(host)
 /*
 **  GETCANONNAME -- get the canonical name for named host
 **
+**	This algorithm tries to be smart about wildcard MX records.
+**	This is hard to do because DNS doesn't tell is if we matched
+**	against a wildcard or a specific MX.
+**	
+**	We always prefer A & CNAME records, since these are presumed
+**	to be specific.
+**
+**	If we match an MX in one pass and lose it in the next, we use
+**	the old one.  For example, consider an MX matching *.FOO.BAR.COM.
+**	A hostname bletch.foo.bar.com will match against this MX, but
+**	will stop matching when we try bletch.bar.com -- so we know
+**	that bletch.foo.bar.com must have been right.  This fails if
+**	there was also an MX record matching *.BAR.COM, but there are
+**	some things that just can't be fixed.
+**
 **	Parameters:
 **		host -- a buffer containing the name of the host.
 **			This is a value-result parameter.
@@ -239,15 +258,6 @@ mxrand(host)
 **	Returns:
 **		TRUE -- if the host matched.
 **		FALSE -- otherwise.
-**
-**	Notes:
-**		Use query type of ANY if possible (NoWildcardMX), which
-**		will find types CNAME, A, and MX, and will cause all
-**		existing records to be cached by our local server.  If
-**		there is (might be) a wildcard MX record in the local
-**		domain or its parents that are searched, we can't use
-**		ANY; it would cause fully-qualified names to match as
-**		names in a local domain.
 */
 
 bool
@@ -261,13 +271,15 @@ getcanonname(host, hbsize)
 	register int n; 
 	HEADER *hp;
 	querybuf answer;
-	int first, ancount, qdcount, loopcnt;
+	int first, ancount, qdcount;
 	int ret;
-	int qtype = NoWildcardMX ? T_ANY : T_CNAME;
 	char **domain;
-	bool rval;
 	int type;
+	char **dp;
+	char *mxmatch;
+	bool amatch;
 	char nbuf[PACKETSZ];
+	char *searchlist[MAXDNSRCH+1];
 
 	if (tTd(8, 2))
 		printf("getcanonname(%s)\n", host);
@@ -275,197 +287,154 @@ getcanonname(host, hbsize)
 	if ((_res.options & RES_INIT) == 0 && res_init() == -1)
 		return (FALSE);
 
-	loopcnt = 0;
-	rval = FALSE;
-loop:
 	for (cp = host, n = 0; *cp; cp++)
 		if (*cp == '.')
 			n++;
-	if (n > 0 && *--cp == '.')
-	{
-		cp = host;
-		n = -1;
-	}
 
 	/*
-	**  If there is at least one dot, start by searching the
-	**  unmodified name.  This lets us get "vse.CS" in Czechoslovakia
-	**  instead of CS.Berkeley.EDU.
+	**  Initialize domain search list.  If there is at least one
+	**  dot in the name, search the unmodified name first so we
+	**  find "vse.CS" in Czechoslovakia instead of in the local
+	**  domain (e.g., vse.CS.Berkeley.EDU).
+	**
+	**  Older versions of the resolver could create this
+	**  list by tearing apart the host name.
 	*/
 
-	ret = -1;
-	if (n >= 1)
+	dp = searchlist;
+	if (n > 0)
+		*dp++ = "";
+	if (n == 0 || n > 0 && *--cp != '.')
 	{
-		/*
-		**  Try the unmodified name.
-		*/
+		for (domain = _res.dnsrch; *domain != NULL; )
+			*dp++ = *domain++;
+	}
+	*dp = NULL;
 
+	/*
+	**  Now run through the search list for the name in question.
+	*/
+
+	dp = searchlist;
+	mxmatch = NULL;
+
+	for (dp = searchlist; *dp != NULL; dp++)
+	{
+		(void) sprintf(nbuf, "%.*s%s%.*s", MAXDNAME, host,
+				**dp == '\0' ? "" : ".",
+				MAXDNAME, *dp);
 		if (tTd(8, 5))
-			printf("getcanonname: trying %s\n", host);
-		ret = res_query(host, C_IN, qtype, &answer, sizeof(answer));
-		if (ret > 0)
-		{
-			cp = host;
-			if (tTd(8, 8))
-				printf("\tYES\n");
-		}
-		else
+			printf("getcanonname: trying %s\n", nbuf);
+		ret = res_query(nbuf, C_IN, T_ANY, &answer, sizeof(answer));
+		if (ret <= 0)
 		{
 			if (tTd(8, 8))
 				printf("\tNO: h_errno=%d\n", h_errno);
-			if (errno == ECONNREFUSED)
-			{
-				/* no server -- try again later */
-				h_errno = TRY_AGAIN;
-				return FALSE;
-			}
-		}
-	}
-
-	/*
-	**  We assume that RES_DEFNAMES and RES_DNSRCH are set -- if we
-	**  don't want this behaviour, don't use $[ ... $] at all!
-	*/
-
-	if (ret < 0 && (n == 0 || (n > 0 && *--cp != '.')))
-	{
-		for (domain = _res.dnsrch; *domain; domain++)
-		{
-			(void) sprintf(nbuf, "%.*s.%.*s",
-				MAXDNAME, host, MAXDNAME, *domain);
-			if (tTd(8, 5))
-				printf("getcanonname: trying %s\n", nbuf);
-			ret = res_query(nbuf, C_IN, qtype, &answer, sizeof(answer));
-			if (ret > 0)
-			{
-				if (tTd(8, 8))
-					printf("\tYES\n");
-				cp = nbuf;
-				break;
-			}
-			else if (tTd(8, 8))
-				printf("\tNO: h_errno=%d\n", h_errno);
-
-			/*
-			 * If no server present, give up.
-			 * If name isn't found in this domain,
-			 * keep trying higher domains in the search list
-			 * (if that's enabled).
-			 * On a NO_DATA error, keep trying, otherwise
-			 * a wildcard entry of another type could keep us
-			 * from finding this entry higher in the domain.
-			 * If we get some other error (negative answer or
-			 * server failure), then stop searching up,
-			 * but try the input name below in case it's
-			 * fully-qualified.
-			 */
 
 			if (errno == ECONNREFUSED)
 			{
+				/* the name server seems to be down */
 				h_errno = TRY_AGAIN;
 				return FALSE;
 			}
-			if (h_errno == NO_DATA)
+
+			if (mxmatch != NULL)
 			{
-				ret = 0;
-				cp = nbuf;
+				/* we matched before -- use that one */
 				break;
 			}
-			if ((h_errno != HOST_NOT_FOUND) ||
-			    (_res.options & RES_DNSRCH) == 0)
-				return FALSE;
+			continue;
 		}
-	}
-	if (ret < 0 && n <= 0)
-	{
+		if (tTd(8, 8))
+			printf("\tYES\n");
+
 		/*
-		**  Try the unmodified name.
+		**  This might be a bogus match.  Search for A or
+		**  CNAME records.  If we don't have a matching
+		**  wild card MX record, we will accept MX as well.
 		*/
 
-		cp = host;
-		if (tTd(8, 5))
-			printf("getcanonname: trying %s\n", cp);
-		ret = res_query(cp, C_IN, qtype, &answer, sizeof(answer));
-		if (ret > 0)
+		hp = (HEADER *) &answer;
+		ap = (u_char *) &answer + sizeof(HEADER);
+		eom = (u_char *) &answer + ret;
+
+		/* skip question part of response -- we know what we asked */
+		for (qdcount = ntohs(hp->qdcount); qdcount--; ap += ret + QFIXEDSZ)
 		{
-			if (tTd(8, 8))
-				printf("\tYES\n");
+			if ((ret = dn_skipname(ap, eom)) < 0)
+			{
+				if (tTd(8, 20))
+					printf("qdcount failure (%d)\n",
+						ntohs(hp->qdcount));
+				return FALSE;		/* ???XXX??? */
+			}
 		}
-		else
+
+		amatch = FALSE;
+		for (ancount = ntohs(hp->ancount); --ancount >= 0 && ap < eom; ap += n)
 		{
-			if (tTd(8, 8))
-				printf("\tNO: h_errno=%d\n", h_errno);
+			n = dn_expand((u_char *) &answer, eom, ap,
+				      (u_char *) nbuf, sizeof nbuf);
+			if (n < 0)
+				break;
+			ap += n;
+			GETSHORT(type, ap);
+			ap += sizeof(u_short) + sizeof(u_long);
+			GETSHORT(n, ap);
+			switch (type)
+			{
+			  case T_MX:
+				if (**dp != '\0')
+				{
+					/* got a match -- save that info */
+					if (mxmatch == NULL)
+						mxmatch = *dp;
+					continue;
+				}
+
+				/* exact MX matches are as good as an A match */
+				/* fall through */
+
+			  case T_A:
+				/* good show */
+				amatch = TRUE;
+
+				/* continue in case a CNAME also exists */
+				continue;
+
+			  case T_CNAME:
+				/* value points at name */
+				if ((ret = dn_expand((u_char *)&answer,
+				    eom, ap, (u_char *)nbuf, sizeof(nbuf))) < 0)
+					break;
+				(void)strncpy(host, nbuf, hbsize); /* XXX */
+				host[hbsize - 1] = '\0';
+				return TRUE;
+
+			  default:
+				/* not a record of interest */
+				continue;
+			}
+		}
+
+		if (amatch)
+		{
+			/* got an A record and no CNAME */
+			mxmatch = *dp;
+			break;
 		}
 	}
 
-	if (ret <= 0 && h_errno != NO_DATA)
+	if (mxmatch == NULL)
 		return FALSE;
 
-	/* find first satisfactory answer */
-	hp = (HEADER *)&answer;
-	ancount = ntohs(hp->ancount);
-	if (tTd(8, 3))
-		printf("rcode = %d, ancount=%d, qdcount=%d\n",
-			hp->rcode, ancount, ntohs(hp->qdcount));
-
-	/* we don't care about errors here, only if we got an answer */
-	if (ancount == 0)
-	{
-		strncpy(host, cp, hbsize);
-		host[hbsize - 1] = '\0';
-		return (TRUE);
-	}
-	ap = (u_char *)&answer + sizeof(HEADER);
-	eom = (u_char *)&answer + ret;
-	for (qdcount = ntohs(hp->qdcount); qdcount--; ap += ret + QFIXEDSZ)
-	{
-		if ((ret = dn_skipname(ap, eom)) < 0)
-		{
-			if (tTd(8, 20))
-				printf("qdcount failure (%d)\n",
-					ntohs(hp->qdcount));
-			return FALSE;		/* ???XXX??? */
-		}
-	}
-
-	/*
-	* just in case someone puts a CNAME record after another record,
-	* check all records for CNAME; otherwise, just take the first
-	* name found.
-	*/
-	for (first = 1; --ancount >= 0 && ap < eom; ap += ret)
-	{
-		if ((ret = dn_expand((u_char *)&answer,
-		    eom, ap, (u_char *)nbuf, sizeof(nbuf))) < 0)
-			break;
-		if (first) {			/* XXX */
-			(void)strncpy(host, nbuf, hbsize);
-			host[hbsize - 1] = '\0';
-			first = 0;
-			rval = TRUE;
-		}
-		ap += ret;
-		GETSHORT(type, ap);
-		ap += sizeof(u_short) + sizeof(u_long);
-		GETSHORT(ret, ap);
-		if (type == T_CNAME)  {
-			/*
-			 * assume that only one cname will be found.  More
-			 * than one is undefined.  Copy so that if dn_expand
-			 * fails, `host' is still okay.
-			 */
-			if ((ret = dn_expand((u_char *)&answer,
-			    eom, ap, (u_char *)nbuf, sizeof(nbuf))) < 0)
-				break;
-			(void)strncpy(host, nbuf, hbsize); /* XXX */
-			host[hbsize - 1] = '\0';
-			if (++loopcnt > 8)	/* never be more than 1 */
-				return FALSE;
-			rval = TRUE;
-			goto loop;
-		}
-	}
-	return rval;		/* ???XXX??? */
+	/* create matching name and return */
+	(void) sprintf(nbuf, "%.*s%s%.*s", MAXDNAME, host,
+			*mxmatch == '\0' ? "" : ".",
+			MAXDNAME, mxmatch);
+	strncpy(host, nbuf, hbsize);
+	host[hbsize - 1] = '\0';
+	return TRUE;
 }
 
 #else /* not NAMED_BIND */

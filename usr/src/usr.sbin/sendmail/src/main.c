@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -456,20 +456,6 @@ main(argc, argv, envp)
 
 		  case 'q':	/* run queue files at intervals */
 # ifdef QUEUE
-			if (getuid() != 0)
-			{
-				struct stat stbuf;
-
-				/* check to see if we own the queue directory */
-				if (stat(QueueDir, &stbuf) < 0)
-					syserr("main: cannot stat %s", QueueDir);
-				if (stbuf.st_uid != getuid())
-				{
-					/* nope, really a botch */
-					usrerr("Permission denied");
-					exit (EX_NOPERM);
-				}
-			}
 			(void) unsetenv("HOSTALIASES");
 			FullName = NULL;
 			queuemode = TRUE;
@@ -520,7 +506,7 @@ main(argc, argv, envp)
 	av += optind;
 
 #ifdef NAMED_BIND
-	if (tTd(8, 1))
+	if (tTd(8, 8))
 		_res.options |= RES_DEBUG;
 #endif
 
@@ -551,6 +537,22 @@ main(argc, argv, envp)
 		syserr("Warning: .cf version level (%d) exceeds program functionality (%d)",
 			ConfigLevel, MAXCONFIGLEVEL);
 	}
+# ifdef QUEUE
+	if (queuemode && getuid() != 0)
+	{
+		struct stat stbuf;
+
+		/* check to see if we own the queue directory */
+		if (stat(QueueDir, &stbuf) < 0)
+			syserr("main: cannot stat %s", QueueDir);
+		if (stbuf.st_uid != getuid())
+		{
+			/* nope, really a botch */
+			usrerr("Permission denied");
+			exit (EX_NOPERM);
+		}
+	}
+# endif /* QUEUE */
 	switch (OpMode)
 	{
 	  case MD_FREEZE:

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -78,6 +78,7 @@ dropenvelope(e)
 {
 	bool queueit = FALSE;
 	register ADDRESS *q;
+	char *id = e->e_id;
 
 	if (tTd(50, 1))
 	{
@@ -85,11 +86,14 @@ dropenvelope(e)
 		xputs(e->e_id);
 		printf(" flags=%o\n", e->e_flags);
 	}
+
+	if (id == NULL)
+		id = "(none)";
+
 #ifdef LOG
 	if (LogLevel > 12)
 		syslog(LOG_DEBUG, "dropenvelope, id=%s, flags=%o, pid=%d",
-				  e->e_id == NULL ? "(none)" : e->e_id,
-				  e->e_flags, getpid());
+				  id, e->e_flags, getpid());
 #endif /* LOG */
 
 	/* we must have an id to remove disk files */
@@ -157,7 +161,7 @@ dropenvelope(e)
 
 #ifdef LOG
 	if (LogLevel >= 10)
-		syslog(LOG_INFO, "%s: done", e->e_id);
+		syslog(LOG_INFO, "%s: done", id);
 #endif /* LOG */
 }
 /*

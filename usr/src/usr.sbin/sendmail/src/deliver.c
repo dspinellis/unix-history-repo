@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -786,6 +786,7 @@ openmailer(m, pvp, ctladdr, clever, e)
 					printf("openmailer: ");
 					mci_dump(mci);
 				}
+				CurHostName = mci->mci_host;
 				return mci;
 			}
 			mci->mci_mailer = m;

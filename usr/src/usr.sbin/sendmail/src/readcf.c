@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	6.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	6.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1125,10 +1125,6 @@ setoption(opt, val, sticky)
 		Verbose = atobool(val);
 		break;
 
-	  case 'w':		/* we don't have wildcard MX records */
-		NoWildcardMX = atobool(val);
-		break;
-
 	  case 'x':		/* load avg at which to auto-queue msgs */
 		QueueLA = atoi(val);
 		break;
@@ -1180,6 +1176,8 @@ setclass(class, word)
 {
 	register STAB *s;
 
+	if (tTd(37, 8))
+		printf("%s added to class %c\n", word, class);
 	s = stab(word, ST_CLASS, ST_ENTER);
 	setbitn(class, s->s_class);
 }

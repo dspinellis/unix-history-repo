@@ -1,7 +1,7 @@
-(Version 6.3 of %G%)
+(Version 6.4 of %G%)
 
 Multi-token class matches.  IDA implementation is simple, but too
-stupid.
+	stupid.
 
 RFC 931 validation.
 
@@ -10,3 +10,14 @@ Database (keyed lookup) locking.
 Find a good test suite and include in the distribution.
 
 cf/cf/Makefile.dist
+
+(Nakamura Motonori <motonori@kuis.kyoto-u.ac.jp>)  Include a "Default MX"
+that always sorts lowest -- allows you to direct anything that cannot be
+sent immediately to a centralized site.
+
+(Nakamura Motonori <motonori@kuis.kyoto-u.ac.jp>)  If there is a TEMPFAIL
+anywhere during sending of email (specifically after a DATA), try the
+next MX host before giving up.
+
+WIN/3B support (non-atomic rename, no h_addr_list, others?) (Bruce Lilly
+<blilly!bruce@uu.psi.com>)

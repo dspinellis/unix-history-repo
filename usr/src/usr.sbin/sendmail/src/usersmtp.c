@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	6.4 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.5 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	6.4 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	6.5 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -60,7 +60,6 @@ smtpinit(m, mci, e)
 	register int r;
 	EVENT *gte;
 	extern STAB *stab();
-	extern MCI *openmailer();
 
 	if (tTd(17, 1))
 	{
@@ -169,6 +168,9 @@ smtpmailfrom(m, mci, e)
 {
 	int r;
 	char buf[MAXNAME];
+
+	if (tTd(17, 2))
+		printf("smtpmailfrom: CurHost=%s\n", CurHostName);
 
 	/*
 	**  Send the HOPS command.

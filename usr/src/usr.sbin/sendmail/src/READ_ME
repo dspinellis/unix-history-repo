@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	6.2 (Berkeley) %G%
+#	@(#)READ_ME	6.3 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -19,6 +19,14 @@ also a Makefile.dist which is much less clever, but works on the old
 traditional make.  You can use this using:
 
 	make -f Makefile.dist
+
+If you are compiling on SunOS, you must use -Bstatic -- if you do not,
+frozen configuration files fail in bizarre ways and you will open up
+several security holes.
+
+If you use both -DDBM and -DNEWDB, you must delete the module ndbm.o
+from libdb.a.  This compatibility module maps ndbm calls into DB
+calls, and breaks things rather badly.
 
 The following list describes the files in this directory:
 
@@ -76,4 +84,4 @@ version.c	A master file for Version.c -- it may not exist in
 
 Eric Allman
 
-(Version 6.2, last update %G% 08:24:56)
+(Version 6.3, last update %G% 11:51:08)

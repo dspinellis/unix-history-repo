@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.7 (Berkeley) %G%
+ *	@(#)sendmail.h	6.8 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.7		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.8		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -635,7 +635,6 @@ EXTERN long	WkTimeFact;	/* priority offset each time this job is run */
 EXTERN char	*PostMasterCopy;	/* address to get errs cc's */
 EXTERN char	*TrustedUsers[MAXTRUST+1];	/* list of trusted users */
 EXTERN int	CheckpointInterval;	/* queue file checkpoint interval */
-EXTERN bool	NoWildcardMX;	/* we don't have wildcard MX records */
 EXTERN char	*UdbSpec;	/* user database source spec [udbexpand.c] */
 EXTERN int	MaxHopCount;	/* number of hops until we give an error */
 EXTERN int	ConfigLevel;	/* config file level -- what does .cf expect? */
