@@ -1,4 +1,4 @@
-/*	if.h	6.5	84/04/13	*/
+/*	if.h	6.6	85/03/19	*/
 
 /*
  * Structures defining a network interface, providing a packet
@@ -29,24 +29,14 @@
  * Structure defining a queue for a network interface.
  *
  * (Would like to call this struct ``if'', but C isn't PL/1.)
- *
- * EVENTUALLY PURGE if_net AND if_host FROM STRUCTURE
  */
 struct ifnet {
 	char	*if_name;		/* name, e.g. ``en'' or ``lo'' */
 	short	if_unit;		/* sub-unit for lower level driver */
 	short	if_mtu;			/* maximum transmission unit */
-	int	if_net;			/* network number of interface */
 	short	if_flags;		/* up/down, broadcast, etc. */
 	short	if_timer;		/* time 'til if_watchdog called */
-	int	if_host[2];		/* local net host number */
-	struct	sockaddr if_addr;	/* address of interface */
-	union {
-		struct	sockaddr ifu_broadaddr;
-		struct	sockaddr ifu_dstaddr;
-	} if_ifu;
-#define	if_broadaddr	if_ifu.ifu_broadaddr	/* broadcast address */
-#define	if_dstaddr	if_ifu.ifu_dstaddr	/* other end of p-to-p link */
+	struct	ifaddr *if_addrlist;	/* linked list of addresses per if */
 	struct	ifqueue {
 		struct	mbuf *ifq_head;
 		struct	mbuf *ifq_tail;
@@ -73,12 +63,13 @@ struct ifnet {
 #define	IFF_UP		0x1		/* interface is up */
 #define	IFF_BROADCAST	0x2		/* broadcast address valid */
 #define	IFF_DEBUG	0x4		/* turn on debugging */
-#define	IFF_ROUTE	0x8		/* routing entry installed */
+/* was	IFF_ROUTE	0x8		/* routing entry installed */
 #define	IFF_POINTOPOINT	0x10		/* interface is point-to-point link */
 #define	IFF_NOTRAILERS	0x20		/* avoid use of trailers */
 #define	IFF_RUNNING	0x40		/* resources allocated */
 #define	IFF_NOARP	0x80		/* no address resolution protocol */
-#define	IFF_LOCAL	0x100		/* local network, host part encoded */
+					/* flags set internally only: */
+#define	IFF_CANTCHANGE	(IFF_BROADCAST | IFF_POINTOPOINT | IFF_RUNNING)
 
 /*
  * Output queues (ifp->if_snd) and internetwork datagram level (pup level 1)
@@ -116,6 +107,24 @@ struct ifnet {
 
 #define	IFQ_MAXLEN	50
 #define	IFNET_SLOWHZ	1		/* granularity is 1 second */
+
+/*
+ * The ifaddr structure contains information about one address
+ * of an interface.  They are maintained by the different address families,
+ * are allocated and attached when an address is set, and are linked
+ * together so all addresses for an interface can be located.
+ */
+struct ifaddr {
+	struct	sockaddr ifa_addr;	/* address of interface */
+	union {
+		struct	sockaddr ifu_broadaddr;
+		struct	sockaddr ifu_dstaddr;
+	} ifa_ifu;
+#define	ifa_broadaddr	ifa_ifu.ifu_broadaddr	/* broadcast address */
+#define	ifa_dstaddr	ifa_ifu.ifu_dstaddr	/* other end of p-to-p link */
+	struct	ifnet *ifa_ifp;		/* back-pointer to interface */
+	struct	ifaddr *ifa_next;	/* next address for interface */
+};
 
 /*
  * Interface request structure used for socket
@@ -176,7 +185,5 @@ struct	ifqueue	ipintrq;		/* ip packet input queue */
 #endif
 struct	ifqueue rawintrq;		/* raw packet input queue */
 struct	ifnet *ifnet;
-struct	ifnet *if_ifwithaddr(), *if_ifwithnet(), *if_ifwithaf();
-struct	ifnet *if_ifonnetof();
-struct	in_addr if_makeaddr();
+struct	ifaddr *ifa_ifwithaddr(), *ifa_ifwithnet(), *ifa_ifwithaf();
 #endif
