@@ -9,7 +9,7 @@
  * Startup -- interface with user.
  */
 
-static char *SccsId = "@(#)main.c	1.1 %G%";
+static char *SccsId = "@(#)main.c	1.2 %G%";
 
 /*
  * Find out who the user is, copy his mail file (if exists) into
@@ -29,7 +29,7 @@ main(argc, argv)
 	register int i, argp;
 	int mustsend, uflag;
 	FILE *ibuf, *ftat;
-	extern char tempMesg[], _sobuf[];
+	extern char _sobuf[];
 
 #ifdef signal
 	Siginit();
@@ -217,54 +217,9 @@ main(argc, argv)
 	if (ef != NOSTR) {
 		edit++;
 		editfile = mailname = ef;
-		if ((ibuf = fopen(mailname, "r")) == NULL) {
-			perror(mailname);
-			exit(1);
-		}
-		if ((i = open(mailname, 1)) < 0)
-			printf("Warning: \"%s\" not writable.\n", mailname);
-		else
-			close(i);
 	}
-	else {
-		if ((ibuf = fopen(mailname, "r")) == NULL) {
-			if (uflag)
-				printf("No mail for %s\n", myname);
-			else
-				printf("No mail.\n");
-			exit(0);
-		}
-	}
-
-	/*
-	 * Copy the messages into /tmp
-	 * and set pointers.
-	 */
-
-	mailsize = fsize(ibuf);
-	if ((otf = fopen(tempMesg, "w")) == NULL) {
-		perror(tempMesg);
+	if (setfile(mailname, edit) < 0)
 		exit(1);
-	}
-	if ((itf = fopen(tempMesg, "r")) == NULL) {
-		perror(tempMesg);
-		exit(1);
-	}
-	remove(tempMesg);
-	setptr(ibuf);
-	fclose(ibuf);
-
-	/*
-	 * print headings and accept user commands.
-	 */
-
-	if (msgCount == 0) {
-		if (uflag)
-			printf("No mail for %s\n", myname);
-		else
-			printf("No messages.\n");
-		exit(1);
-	}
 	commands();
 	if (!edit)
 		quit();
