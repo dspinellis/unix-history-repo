@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.70 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.71 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1198,32 +1198,39 @@ nis_getcanonname(name, hbsize, statp)
 	static bool try1null = TRUE;
 	static char *yp_domain = NULL;
 	char *domain;
-	char host_record[MAXLINE];
-	char buf[MAXNAME];
 	char *cname;
+	char host_record[MAXLINE];
+	char fbuf[MAXNAME];
+	char nbuf[MAXNAME + 1];
 	extern char *get_column();
 
 	if (tTd(38, 20))
 		printf("nis_getcanonname(%s)\n", name);
 
-	shorten_hostname(name);
+	if (strlen(name) >= sizeof nbuf)
+	{
+		*statp = EX_UNAVAILABLE;
+		return FALSE;
+	}
+	(void) strcpy(nbuf, name);
+	shorten_hostname(nbuf);
 
 	/* we only accept single token search key */
-	if (strchr(name, '.'))
+	if (strchr(nbuf, '.'))
 	{
 		*statp = EX_NOHOST;
 		return FALSE;
 	}
 
-	keylen = strlen(name);
+	keylen = strlen(nbuf);
 
 	if (yp_domain == NULL)
 		yp_get_default_domain(&yp_domain);
-	makelower(name);
+	makelower(nbuf);
 	yperr = YPERR_KEY;
 	if (try0null)
 	{
-		yperr = yp_match(yp_domain, "hosts.byname", name, keylen,
+		yperr = yp_match(yp_domain, "hosts.byname", nbuf, keylen,
 			     &vp, &vsize);
 		if (yperr == 0)
 			try1null = FALSE;
@@ -1231,7 +1238,7 @@ nis_getcanonname(name, hbsize, statp)
 	if (yperr == YPERR_KEY && try1null)
 	{
 		keylen++;
-		yperr = yp_match(yp_domain, "hosts.byname", name, keylen,
+		yperr = yp_match(yp_domain, "hosts.byname", nbuf, keylen,
 			     &vp, &vsize);
 		if (yperr == 0)
 			try0null = FALSE;
@@ -1250,7 +1257,7 @@ nis_getcanonname(name, hbsize, statp)
 	host_record[vsize] = '\0';
 	if (tTd(38, 44))
 		printf("got record `%s'\n", host_record);
-	cname = get_column(host_record, 1, '\0', buf);
+	cname = get_column(host_record, 1, '\0', fbuf);
 	if (cname == NULL)
 	{
 		/* this should not happen, but.... */
@@ -1562,24 +1569,31 @@ nisplus_getcanonname(name, hbsize, statp)
 	char *vp;
 	auto int vsize;
 	int buflen;
-	char buf[MAXLINE + NIS_MAXNAMELEN];
 	nis_result *result;
 	char *p;
 	int len;
+	char nbuf[MAXNAME + 1];
+	char qbuf[MAXLINE + NIS_MAXNAMELEN];
 
-	shorten_hostname(name);
+	if (strlen(name) >= sizeof nbuf)
+	{
+		*statp = EX_UNAVAILABLE;
+		return FALSE;
+	}
+	(void) strcpy(nbuf, name);
+	shorten_hostname(nbuf);
 
-	p = strchr(name, '.');
+	p = strchr(nbuf, '.');
 	if (p == NULL)
 	{
 		/* single token */
-		sprintf(buf, "[name=%s],hosts.org_dir", name);
+		sprintf(qbuf, "[name=%s],hosts.org_dir", nbuf);
 	}
 	else if (p[1] != '\0')
 	{
-		/* multi token -- take only first token in name buf */
+		/* multi token -- take only first token in nbuf */
 		*p = '\0';
-		sprintf(buf, "[name=%s],hosts.org_dir.%s", name, &p[1]);
+		sprintf(qbuf, "[name=%s],hosts.org_dir.%s", nbuf, &p[1]);
 	}
 	else
 	{
@@ -1589,9 +1603,9 @@ nisplus_getcanonname(name, hbsize, statp)
 
 	if (tTd(38, 20))
 		printf("\nnisplus_getcanoname(%s), qbuf=%s\n",
-			 name, buf);
+			 name, qbuf);
 
-	result = nis_list(buf, EXPAND_NAME|FOLLOW_LINKS|FOLLOW_PATH,
+	result = nis_list(qbuf, EXPAND_NAME|FOLLOW_LINKS|FOLLOW_PATH,
 		NULL, NULL);
 
 	if (result->status == NIS_SUCCESS)
@@ -2000,13 +2014,20 @@ text_getcanonname(name, hbsize, statp)
 	FILE *f;
 	char linebuf[MAXLINE];
 	char cbuf[MAXNAME + 1];
-	char buf[MAXNAME + 1];
+	char fbuf[MAXNAME + 1];
+	char nbuf[MAXNAME + 1];
 	extern char *get_column();
 
-	shorten_hostname(name);
+	if (strlen(name) >= sizeof nbuf)
+	{
+		*statp = EX_UNAVAILABLE;
+		return FALSE;
+	}
+	(void) strcpy(nbuf, name);
+	shorten_hostname(nbuf);
 
 	/* we only accept single token search key */
-	if (strchr(name, '.') != NULL)
+	if (strchr(nbuf, '.') != NULL)
 	{
 		*statp = EX_NOHOST;
 		return FALSE;
@@ -2031,16 +2052,16 @@ text_getcanonname(name, hbsize, statp)
 		if ((p = strchr(linebuf, '\n')) != NULL)
 			*p = '\0';
 		cname = get_column(linebuf, 1, '\0', cbuf);
-		if (cname != NULL && strcasecmp(name,  cname) == 0)
+		if (cname != NULL && strcasecmp(nbuf,  cname) == 0)
 		{
 			found = TRUE;
 			break;
 		}
 
 		key_idx = 2;
-		while ((p = get_column(linebuf, key_idx, '\0', buf)) != NULL)
+		while ((p = get_column(linebuf, key_idx, '\0', fbuf)) != NULL)
 		{
-			if (strcasecmp(name, p) == 0)
+			if (strcasecmp(nbuf, p) == 0)
 			{
 				found = TRUE;
 				break;
