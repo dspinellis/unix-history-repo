@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	2.1 (Berkeley) %G%
+ *	@(#)union_subr.c	2.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -20,35 +20,139 @@
 #include <sys/malloc.h>
 #include <sys/file.h>
 #include <sys/filedesc.h>
+#include <sys/queue.h>
 #include "union.h" /*<miscfs/union/union.h>*/
 
 #ifdef DIAGNOSTIC
 #include <sys/proc.h>
 #endif
 
-static struct union_node *unhead;
-static int unvplock;
+/* must be power of two, otherwise change UNION_HASH() */
+#define NHASH 32
+
+/* unsigned int ... */
+#define UNION_HASH(u, l) \
+	(((((unsigned long) (u)) + ((unsigned long) l)) >> 8) & (NHASH-1))
+
+static LIST_HEAD(unhead, union_node) unhead[NHASH];
+static int unvplock[NHASH];
 
 int
 union_init()
 {
+	int i;
 
-	unhead = 0;
-	unvplock = 0;
+	for (i = 0; i < NHASH; i++)
+		LIST_INIT(&unhead[i]);
+	bzero((caddr_t) unvplock, sizeof(unvplock));
+}
+
+static int
+union_list_lock(ix)
+	int ix;
+{
+
+	if (unvplock[ix] & UN_LOCKED) {
+		unvplock[ix] |= UN_WANT;
+		sleep((caddr_t) &unvplock[ix], PINOD);
+		return (1);
+	}
+
+	unvplock[ix] |= UN_LOCKED;
+
+	return (0);
 }
 
 static void
-union_remlist(un)
-	struct union_node *un;
+union_list_unlock(ix)
+	int ix;
 {
-	struct union_node **unpp;
 
-	for (unpp = &unhead; *unpp != 0; unpp = &(*unpp)->un_next) {
-		if (*unpp == un) {
-			*unpp = un->un_next;
-			break;
-		}
+	unvplock[ix] &= ~UN_LOCKED;
+
+	if (unvplock[ix] & UN_WANT) {
+		unvplock[ix] &= ~UN_WANT;
+		wakeup((caddr_t) &unvplock[ix]);
 	}
+}
+
+void
+union_updatevp(un, uppervp, lowervp)
+	struct union_node *un;
+	struct vnode *uppervp;
+	struct vnode *lowervp;
+{
+	int ohash = UNION_HASH(un->un_uppervp, un->un_lowervp);
+	int nhash = UNION_HASH(uppervp, lowervp);
+
+	if (ohash != nhash) {
+		/*
+		 * Ensure locking is ordered from lower to higher
+		 * to avoid deadlocks.
+		 */
+		if (nhash < ohash) {
+			int t = ohash;
+			ohash = nhash;
+			nhash = t;
+		}
+
+		while (union_list_lock(ohash))
+			continue;
+
+		while (union_list_lock(nhash))
+			continue;
+
+		LIST_REMOVE(un, un_cache);
+		union_list_unlock(ohash);
+	} else {	
+		while (union_list_lock(nhash))
+			continue;
+	}
+
+	if (un->un_lowervp != lowervp) {
+		if (un->un_lowervp) {
+			vrele(un->un_lowervp);
+			if (un->un_path) {
+				free(un->un_path, M_TEMP);
+				un->un_path = 0;
+			}
+			if (un->un_dirvp) {
+				vrele(un->un_dirvp);
+				un->un_dirvp = NULLVP;
+			}
+		}
+		un->un_lowervp = lowervp;
+	}
+
+	if (un->un_uppervp != uppervp) {
+		if (un->un_uppervp)
+			vrele(un->un_uppervp);
+
+		un->un_uppervp = uppervp;
+	}
+
+	if (ohash != nhash)
+		LIST_INSERT_HEAD(&unhead[nhash], un, un_cache);
+
+	union_list_unlock(nhash);
+}
+
+void
+union_newlower(un, lowervp)
+	struct union_node *un;
+	struct vnode *lowervp;
+{
+
+	union_updatevp(un, un->un_uppervp, lowervp);
+}
+
+void
+union_newupper(un, uppervp)
+	struct union_node *un;
+	struct vnode *uppervp;
+{
+
+	union_updatevp(un, uppervp, un->un_lowervp);
 }
 
 /*
@@ -95,27 +199,62 @@ union_allocvp(vpp, mp, undvp, dvp, cnp, uppervp, lowervp)
 	int error;
 	struct union_node *un;
 	struct union_node **pp;
-	struct vnode *xlowervp = 0;
+	struct vnode *xlowervp = NULLVP;
+	int hash;
+	int try;
 
-	if (uppervp == 0 && lowervp == 0)
+	if (uppervp == NULLVP && lowervp == NULLVP)
 		panic("union: unidentifiable allocation");
 
 	if (uppervp && lowervp && (uppervp->v_type != lowervp->v_type)) {
 		xlowervp = lowervp;
-		lowervp = 0;
+		lowervp = NULLVP;
 	}
 
 loop:
-	for (un = unhead; un != 0; un = un->un_next) {
-		if ((un->un_lowervp == lowervp ||
-		     un->un_lowervp == 0) &&
-		    (un->un_uppervp == uppervp ||
-		     un->un_uppervp == 0) &&
-		    (UNIONTOV(un)->v_mount == mp)) {
-			if (vget(UNIONTOV(un), 0))
-				goto loop;
+	for (try = 0; try < 3; try++) {
+		switch (try) {
+		case 0:
+			if (lowervp == NULLVP)
+				continue;
+			hash = UNION_HASH(uppervp, lowervp);
+			break;
+
+		case 1:
+			if (uppervp == NULLVP)
+				continue;
+			hash = UNION_HASH(uppervp, NULLVP);
+			break;
+
+		case 2:
+			if (lowervp == NULLVP)
+				continue;
+			hash = UNION_HASH(NULLVP, lowervp);
 			break;
 		}
+
+		while (union_list_lock(hash))
+			continue;
+
+		for (un = unhead[hash].lh_first; un != 0;
+					un = un->un_cache.le_next) {
+			if ((un->un_lowervp == lowervp ||
+			     un->un_lowervp == NULLVP) &&
+			    (un->un_uppervp == uppervp ||
+			     un->un_uppervp == NULLVP) &&
+			    (UNIONTOV(un)->v_mount == mp)) {
+				if (vget(UNIONTOV(un), 0)) {
+					union_list_unlock(hash);
+					goto loop;
+				}
+				break;
+			}
+		}
+
+		union_list_unlock(hash);
+
+		if (un)
+			break;
 	}
 
 	if (un) {
@@ -169,9 +308,7 @@ loop:
 		 * Save information about the upper layer.
 		 */
 		if (uppervp != un->un_uppervp) {
-			if (un->un_uppervp)
-				vrele(un->un_uppervp);
-			un->un_uppervp = uppervp;
+			union_newupper(un, uppervp);
 		} else if (uppervp) {
 			vrele(uppervp);
 		}
@@ -188,12 +325,7 @@ loop:
 		 * might need.
 		 */
 		if (lowervp != un->un_lowervp) {
-			if (un->un_lowervp) {
-				vrele(un->un_lowervp);
-				free(un->un_path, M_TEMP);
-				vrele(un->un_dirvp);
-			}
-			un->un_lowervp = lowervp;
+			union_newlower(un, lowervp);
 			if (cnp && (lowervp != NULLVP) &&
 			    (lowervp->v_type == VREG)) {
 				un->un_hash = cnp->cn_hash;
@@ -216,12 +348,10 @@ loop:
 	 * otherwise lock the vp list while we call getnewvnode
 	 * since that can block.
 	 */ 
-	if (unvplock & UN_LOCKED) {
-		unvplock |= UN_WANT;
-		sleep((caddr_t) &unvplock, PINOD);
+	hash = UNION_HASH(uppervp, lowervp);
+
+	if (union_list_lock(hash))
 		goto loop;
-	}
-	unvplock |= UN_LOCKED;
 
 	error = getnewvnode(VT_UNION, mp, union_vnodeop_p, vpp);
 	if (error) {
@@ -246,7 +376,6 @@ loop:
 		(*vpp)->v_type = lowervp->v_type;
 	un = VTOUNION(*vpp);
 	un->un_vnode = *vpp;
-	un->un_next = 0;
 	un->un_uppervp = uppervp;
 	un->un_lowervp = lowervp;
 	un->un_openl = 0;
@@ -272,21 +401,13 @@ loop:
 		un->un_dirvp = 0;
 	}
 
-	/* add to union vnode list */
-	for (pp = &unhead; *pp; pp = &(*pp)->un_next)
-		continue;
-	*pp = un;
+	LIST_INSERT_HEAD(&unhead[hash], un, un_cache);
 
 	if (xlowervp)
 		vrele(xlowervp);
 
 out:
-	unvplock &= ~UN_LOCKED;
-
-	if (unvplock & UN_WANT) {
-		unvplock &= ~UN_WANT;
-		wakeup((caddr_t) &unvplock);
-	}
+	union_list_unlock(hash);
 
 	return (error);
 }
@@ -297,10 +418,20 @@ union_freevp(vp)
 {
 	struct union_node *un = VTOUNION(vp);
 
-	union_remlist(un);
+	LIST_REMOVE(un, un_cache);
+
+	if (un->un_uppervp)
+		vrele(un->un_uppervp);
+	if (un->un_lowervp)
+		vrele(un->un_lowervp);
+	if (un->un_dirvp)
+		vrele(un->un_dirvp);
+	if (un->un_path)
+		free(un->un_path, M_TEMP);
 
 	FREE(vp->v_data, M_TEMP);
 	vp->v_data = 0;
+
 	return (0);
 }
 
@@ -579,11 +710,10 @@ union_removed_upper(un)
 {
 	if (un->un_flags & UN_ULOCK) {
 		un->un_flags &= ~UN_ULOCK;
-		vput(un->un_uppervp);
-	} else {
-		vrele(un->un_uppervp);
+		VOP_UNLOCK(un->un_uppervp);
 	}
-	un->un_uppervp = NULLVP;
+
+	union_newupper(un, NULLVP);
 }
 
 struct vnode *
