@@ -5,7 +5,7 @@
 # Alternately, if you discover you've got the wrong time zone, you can just
 #	zic -l rightzone
 
-LOCALTIME=	Factory
+LOCALTIME=	US/Pacific
 
 # If you want something other than Eastern United States time as a template
 # for handling POSIX-style time zone environment variables,
@@ -14,11 +14,11 @@ LOCALTIME=	Factory
 # Alternately, if you discover you've got the wrong time zone, you can just
 #	zic -p rightzone
 
-POSIXRULES=	US/Eastern
+POSIXRULES=	US/Pacific
 
 # Use an absolute path name for TZDIR unless you're just testing the software.
 
-TZDIR=		/etc/zoneinfo
+TZDIR=	${DESTDIR}/etc/zoneinfo
 
 # If you always want time values interpreted as "seconds since the epoch
 # (not counting leap seconds)", use
@@ -34,15 +34,7 @@ TZDIR=		/etc/zoneinfo
 #	REDO=		right_posix
 # below.
 
-REDO=		posix_right
-
-# You may want to change this define if you're just testing the software.
-# Alternatively, you can put these functions in /lib/libc.a, removing
-# the old "ctime.o".  This is the
-# ideal solution if you are able.  Build libz.a, extract the files, and
-# then add them to libc.a.
-
-TZLIB=		/usr/lib/libz.a
+REDO=		right_only
 
 # If you're running on a System V-style system and don't want lint grief,
 # add
@@ -103,143 +95,60 @@ TZLIB=		/usr/lib/libz.a
 #	-DCMUCS
 # to the end of the "CFLAGS=" line
 
-CFLAGS=
+VPATH=	data
+CFLAGS=	-Demkdir=mkdir -DTM_GMTOFF=tm_gmtoff -DTM_ZONE=tm_zone -DNOSOLAR \
+	-DTZDIR=\"$(TZDIR)\"
+MAN=	tzfile.0
 
-# LINTFLAGS is set for SunOS 4.0.
-# If you're using System V, you'll want to comment out the "LINTFLAGS=" line.
+TZCOBJS=	zic.o scheck.o ialloc.o
+TZDOBJS=	zdump.o ialloc.o
+SRCS=	zic.c zdump.c scheck.c ialloc.c
+YDATA=	africa antarctica asia australasia europe northamerica \
+	southamerica pacificnew etcetera factory
+NDATA=	systemv
+#SDATA=	solar87 solar88 solar89
+TDATA=	$(YDATA) $(NDATA) $(SDATA)
+DATA=	$(YDATA) $(NDATA) $(SDATA) leapseconds
+USNO=	usno1988 usno1989
 
-LINT=		lint
-LINTFLAGS=	-hbaxc
+all: zic zdump
 
-SHAR=		shar
+zic: $(TZCOBJS)
+	$(CC) $(CFLAGS) $(LFLAGS) $(TZCOBJS) -o $@
 
-################################################################################
+zdump: $(TZDOBJS)
+	$(CC) $(CFLAGS) $(LFLAGS) $(TZDOBJS) -o $@
 
-CC=		cc -DTZDIR=\"$(TZDIR)\"
+posix_only: $(TDATA)
+	./zic -d $(TZDIR) -L /dev/null $(TDATA)
 
-TZCSRCS=	zic.c localtime.c asctime.c \
-		scheck.c ialloc.c emkdir.c getopt.c link.c
-TZCOBJS=	zic.o localtime.o asctime.o \
-		scheck.o ialloc.o emkdir.o getopt.o link.o
-TZDSRCS=	zdump.c localtime.c asctime.c \
-		ialloc.c getopt.c link.c
-TZDOBJS=	zdump.o localtime.o asctime.o \
-		ialloc.o getopt.o link.o
-DATESRCS=	date.c localtime.c getopt.c logwtmp.c
-DATEOBJS=	date.o localtime.o getopt.o logwtmp.o
-LIBSRCS=	localtime.c asctime.c difftime.c
-LIBOBJS=	localtime.o asctime.o difftime.o
-HEADERS=	tzfile.h nonstd.h stdio.h stdlib.h time.h
-NONLIBSRCS=	zic.c zdump.c scheck.c ialloc.c emkdir.c getopt.c link.c
-NEWUCBSRCS=	date.c logwtmp.c
-SOURCES=	$(HEADERS) $(LIBSRCS) $(NONLIBSRCS) $(NEWUCBSRCS)
-DOCS=		Patchlevel.h \
-		README Theory \
-		date.1 newctime.3 tzfile.5 zic.8 zdump.8 \
-		Makefile
-YDATA=		africa antarctica asia australasia \
-		europe northamerica southamerica pacificnew etcetera factory
-NDATA=		systemv
-SDATA=		solar87 solar88 solar89
-TDATA=		$(YDATA) $(NDATA) $(SDATA)
-DATA=		$(YDATA) $(NDATA) $(SDATA) leapseconds
-USNO=		usno1988 usno1989
-ENCHILADA=	$(DOCS) $(SOURCES) $(DATA) $(USNO)
+right_only: leapseconds $(TDATA)
+	./zic -d $(TZDIR) -L leapseconds $(TDATA)
 
-all:		REDID_BINARIES zdump date $(TZLIB)
+other_two: leapseconds $(TDATA)
+	./zic -d $(TZDIR)/posix -L /dev/null $(TDATA)
+	./zic -d $(TZDIR)/right -L leapseconds $(TDATA)
 
-# We want to use system's logwtmp in preference to ours if available.
+posix_right: posix_only other_two
 
-date:		$(DATEOBJS)
-		ar r ,lib.a logwtmp.o
-		-ranlib ,lib.a
-		$(CC) $(CFLAGS) date.o localtime.o getopt.o -lc ,lib.a -o $@
-		rm -f ,lib.a
+right_posix: right_only other_two
 
-REDID_BINARIES:	zic $(DATA) $(REDO)
-		./zic -d $(TZDIR) -l $(LOCALTIME) -p $(POSIXRULES)
-		touch $@
+install: install1 ${MAN} $(DATA) $(REDO)
+	./zic -d $(TZDIR) -l $(LOCALTIME) -p $(POSIXRULES)
+	install -c -o bin -g bin -m 444 tzfile.0 ${DESTDIR}/usr/man/man5
+	chown -R bin.bin $(TZDIR)
+	chmod 775 $(TZDIR)
 
-posix_only:	zic $(TDATA)
-		./zic -d $(TZDIR) -L /dev/null $(TDATA)
-
-right_only:	zic leapseconds $(TDATA)
-		./zic -d $(TZDIR) -L leapseconds $(TDATA)
-
-other_two:	zic leapseconds $(TDATA)
-		./zic -d $(TZDIR)/posix -L /dev/null $(TDATA)
-		./zic -d $(TZDIR)/right -L leapseconds $(TDATA)
-
-posix_right:	posix_only other_two
-
-right_posix:	right_only other_two
-
-zdump:		$(TZDOBJS)
-		$(CC) $(CFLAGS) $(LFLAGS) $(TZDOBJS) -o $@
-
-# The "ar d" command below ensures that obsolete object files are eliminated
-# from the library.
-
-$(TZLIB):	$(LIBOBJS)
-		ar ru $@ $(LIBOBJS)
-		-ar d $@ timemk.o ctime.o
-		-ranlib $@
-
-zic:		$(TZCOBJS)
-		$(CC) $(CFLAGS) $(LFLAGS) $(TZCOBJS) -o $@
-
-SHARS:		SHAR1.Z SHAR2.Z SHAR3.Z SHAR4.Z SHAR5.Z SHAR6.Z SHAR7.Z
-
-SHAR1.Z:	$(DOCS)
-		$(SHAR) $(DOCS) | compress > $@
-
-SHAR2.Z:	$(HEADERS) $(LIBSRCS)
-		$(SHAR) $(HEADERS) $(LIBSRCS) | compress > $@
-
-SHAR3.Z:	$(NONLIBSRCS)
-		$(SHAR) $(NONLIBSRCS) | compress > $@
-
-SHAR4.Z:	$(YDATA) $(NDATA) leapseconds
-		$(SHAR) $(YDATA) $(NDATA) leapseconds | compress > $@
-
-SHAR5.Z:	$(SDATA)
-		$(SHAR) $(SDATA) | compress > $@
-
-SHAR6.Z:	$(USNO)
-		$(SHAR) $(USNO) | compress > $@
-
-SHAR7.Z:	$(NEWUCBSRCS)
-		$(SHAR) $(NEWUCBSRCS) | compress > $@
-
-sure:		$(SOURCES)
-		for i in "$(TZCSRCS)" "$(TZDSRCS)" "$(DATESRCS)" "$(LIBSRCS)"; \
-		do $(LINT) $(LINTFLAGS) $(CFLAGS) -DTZDIR=\"$(TZDIR)\" $$i ; \
-		done
-
-# "/usr/5bin/lint -p" can dump core on SunOS 4.0, so no -p below. . .
-
-SURE:		sure $(ENCHILADA)
-		make sure LINT=/usr/5bin/lint LINTFLAGS=-DUSG
-		make sure LINT=gcc LINTFLAGS="-c -O -ansi -pedantic -Wall"
-		rm -f zic zdump *.o
-		spell $(ENCHILADA)
+install1:
+	-mkdir $(TZDIR)
 
 clean:
-		rm -f core *.o *.out REDID_BINARIES zdump zic date SHAR* ,*
+	rm -f core *.o zdump zic
 
-CLEAN:		clean
-		sccs clean
+cleandir: clean
+	rm -f ${MAN} tags .depend
 
-names:
-		@echo $(ENCHILADA)
+depend: $(SRCS)
+	mkdep $(CFLAGS) $(SRCS)
 
-asctime.o:	nonstd.h stdio.h time.h tzfile.h
-difftime.o:	nonstd.h time.h
-emkdir.o:	nonstd.h stdio.h stdlib.h
-ialloc.o:	nonstd.h stdlib.h
-link.o:		nonstd.h stdio.h
-localtime.o:	nonstd.h stdio.h stdlib.h time.h tzfile.h
-scheck.o:	nonstd.h stdio.h stdlib.h
-zic.o:		nonstd.h stdio.h stdlib.h time.h tzfile.h
-
-.KEEP_STATE:
+lint:
