@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ftpcmd.y	5.25 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.26 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -444,7 +444,6 @@ cmd:		USER SP username CRLF
 						(char *) $4);
 				} else {
 					register struct tm *t;
-					struct tm *gmtime();
 					t = gmtime(&stbuf.st_mtime);
 					reply(213,
 					    "19%02d%02d%02d%02d%02d%02d",
@@ -479,8 +478,6 @@ rcmd:		RNFR check_login SP pathname CRLF
 		}
 	|	REST SP byte_size CRLF
 		= {
-			long atol();
-
 			fromname = (char *) 0;
 			restart_point = $3;
 			reply(350, "Restarting at %ld. %s", restart_point,
@@ -701,7 +698,7 @@ struct tab cmdtab[] = {		/* In order defined in RFC 765 */
 	{ "MRSQ", MRSQ, OSTR, 0,	"(mail recipient scheme question)" },
 	{ "MRCP", MRCP, STR1, 0,	"(mail recipient)" },
 	{ "ALLO", ALLO, ARGS, 1,	"allocate storage (vacuously)" },
-	{ "REST", REST, ARGS, 1,	"(restart command)" },
+	{ "REST", REST, ARGS, 1,	"<sp> offset (restart command)" },
 	{ "RNFR", RNFR, STR1, 1,	"<sp> file-name" },
 	{ "RNTO", RNTO, STR1, 1,	"<sp> file-name" },
 	{ "ABOR", ABOR, ARGS, 1,	"(abort operation)" },
