@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)pp.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)pp.c	1.2 (Berkeley) %G%";
 /* Copyright (c) 1979 Regents of the University of California */
 #
 /*
@@ -194,7 +194,7 @@ indent()
 	indent1(pplev[PRFN] + pplev[STAT]);
 	switch (i = shudpcnt()) {
 		case 1:
-			printf("%7.7ld.", nowcnt());
+			printf("%7ld.", nowcnt());
 			dashes('-');
 			putchar('|');
 			break;
