@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)catman.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)catman.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -184,7 +184,7 @@ usage:
 				 * Don't unlink a directory by accident.
 				 */
 				if (stat(lncat, &sbuf) >= 0 &&
-				    ((sbuf.st_mode&S_IFMT)==S_IFCHR))
+				    ((sbuf.st_mode&S_IFMT)==S_IFREG))
 					unlink(cat);
 				if (pflag)
 					printf("ln %s %s\n", lncat, cat);
