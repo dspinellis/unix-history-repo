@@ -1,18 +1,20 @@
-.\"	@(#)NBSreport.10.88	1.1	88/10/20
+.\"	@(#)NBSreport.10.88	1.2	88/10/20
 .\" *troff -me
 .sp 2
 .ce 100
-\fB\s+2Interim report on a Prototype OSI Network
-Implementation for Berkeley UNIX\s-2\fP
+\fB\s+2Interim Report on Operating Systems Research
+in the DASH and Berkeley UNIX Projects\s-2\fP
 .ce 0
 .ds DT ""
 .sp 2
 .nf
 .ce 4
-Marshall Kirk McKusick
-Michael J Karels
 Susan L. Graham
 Domenico Ferrari
+Marshall Kirk McKusick
+Michael J Karels
+Keith Sklower
+Marc Teitelbaum
 .fi
 .sp 2
 .ce
