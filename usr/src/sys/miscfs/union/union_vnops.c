@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.9 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -570,7 +570,8 @@ union_access(ap)
 }
 
 /*
- *  We handle getattr only to change the fsid.
+ * We handle getattr only to change the fsid and
+ * track object sizes
  */
 int
 union_getattr(ap)
@@ -615,6 +616,7 @@ union_getattr(ap)
 		error = VOP_GETATTR(vp, vap, ap->a_cred, ap->a_p);
 		if (error)
 			return (error);
+		union_newsize(ap->a_vp, vap->va_size, VNOVAL);
 	}
 
 	if (vp == NULLVP) {
@@ -632,6 +634,7 @@ union_getattr(ap)
 		VOP_UNLOCK(vp);
 		if (error)
 			return (error);
+		union_newsize(ap->a_vp, VNOVAL, vap->va_size);
 	}
 
 	if ((vap != ap->a_vap) && (vap->va_type == VDIR))
@@ -685,6 +688,8 @@ union_setattr(ap)
 		FIXUP(un);
 		error = VOP_SETATTR(un->un_uppervp, ap->a_vap,
 					ap->a_cred, ap->a_p);
+		if ((error == 0) && (ap->a_vap->va_size != VNOVAL))
+			union_newsize(ap->a_vp, ap->a_vap->va_size, VNOVAL);
 	} else {
 		error = EROFS;
 	}
@@ -713,6 +718,25 @@ union_read(ap)
 	if (dolock)
 		VOP_UNLOCK(vp);
 
+	/*
+	 * XXX
+	 * perhaps the size of the underlying object has changed under
+	 * our feet.  take advantage of the offset information present
+	 * in the uio structure.
+	 */
+	if (error == 0) {
+		struct union_node *un = VTOUNION(ap->a_vp);
+		off_t cur = ap->a_uio->uio_offset;
+
+		if (vp == un->un_uppervp) {
+			if (cur > un->un_uppersz)
+				union_newsize(ap->a_vp, cur, VNOVAL);
+		} else {
+			if (cur > un->un_lowersz)
+				union_newsize(ap->a_vp, VNOVAL, cur);
+		}
+	}
+
 	return (error);
 }
 
@@ -736,6 +760,23 @@ union_write(ap)
 	error = VOP_WRITE(vp, ap->a_uio, ap->a_ioflag, ap->a_cred);
 	if (dolock)
 		VOP_UNLOCK(vp);
+
+	/*
+	 * the size of the underlying object may be changed by the
+	 * write.
+	 */
+	if (error == 0) {
+		struct union_node *un = VTOUNION(ap->a_vp);
+		off_t cur = ap->a_uio->uio_offset;
+
+		if (vp == un->un_uppervp) {
+			if (cur > un->un_uppersz)
+				union_newsize(ap->a_vp, cur, VNOVAL);
+		} else {
+			if (cur > un->un_lowersz)
+				union_newsize(ap->a_vp, VNOVAL, cur);
+		}
+	}
 
 	return (error);
 }
