@@ -1,0 +1,86 @@
+DECIDE	unctime.c	/^#define DECIDE(a) \\$/
+Exit	dumprtape.c	/^Exit(code)$/
+Mdumpmain	dumpmain.c	/^main(argc, argv)$/
+Mdumprmain	dumprmain.c	/^main(argc, argv)$/
+add	dumptraverse.c	/^add(ip)$/
+alarmcatch	dumpoptr.c	/^alarmcatch()$/
+bitmap	dumptraverse.c	/^bitmap(map, typ)$/
+blkclr	dumptraverse.c	/^blkclr(cp, size)$/
+blksout	dumptraverse.c	/^blksout(blkp, frags)$/
+blocksontape	dumpoptr.c	/^int blocksontape()$/
+bmapest	dumpitime.c	/^bmapest(map)$/
+bread	dumptraverse.c	/^bread(da, ba, c)$/
+broadcast	dumpoptr.c	/^broadcast(message)$/
+close_rewind	dumprtape.c	/^close_rewind()$/
+dcmp	unctime.c	/^dcmp(dp, dp2)$/
+dmpblk	dumprtape.c	/^dmpblk(blkno, size)$/
+dmpindir	dumptraverse.c	/^dmpindir(blk, lvl, size)$/
+dsrch	dumptraverse.c	/^dsrch(d, size)$/
+dump	dumptraverse.c	/^dump(ip)$/
+dumpabort	dumprtape.c	/^dumpabort()$/
+emitl	unctime.c	/^time_t emitl(dp)$/
+est	dumpitime.c	/^est(ip)$/
+flusht	dumprtape.c	/^flusht()$/
+fstabsearch	dumpoptr.c	/^struct	fstab	*fstabsearch(key)$/
+getfstab	dumpoptr.c	/^getfstab()$/
+getino	dumptraverse.c	/^getino(ino)$/
+getitime	dumpitime.c	/^getitime()$/
+getrecord	dumpitime.c	/^int getrecord(df, idatep)$/
+idatesort	dumpoptr.c	/^int	idatesort(p1, p2)$/
+indir	dumptraverse.c	/^indir(d, n)$/
+inititimes	dumpitime.c	/^inititimes()$/
+interrupt	dumpoptr.c	/^interrupt()$/
+lastdump	dumpoptr.c	/^lastdump(arg)$/
+lookup	unctime.c	/^lookup(str)$/
+makeidate	dumpitime.c	/^int makeidate(ip, buf)$/
+mark	dumptraverse.c	/^mark(ip)$/
+max	dumpoptr.c	/^int max(a,b)$/
+min	dumpoptr.c	/^int min(a,b)$/
+msg	dumpoptr.c	/^msg(fmt, a1, a2, a3, a4, a5)$/
+msgtail	dumpoptr.c	/^msgtail(fmt, a1, a2, a3, a4, a5)$/
+o_nconvert	dumpitime.c	/^o_nconvert()$/
+otape	dumprtape.c	/^otape()$/
+pass	dumptraverse.c	/^pass(fn, map)$/
+prdate	dumpitime.c	/^char *prdate(d)$/
+putitime	dumpitime.c	/^putitime()$/
+query	dumpoptr.c	/^query(question)$/
+rawname	dumpmain.c	/^char *rawname(cp)$/
+recout	dumpitime.c	/^recout(file, what)$/
+rewind	dumprtape.c	/^rewind()$/
+rmtcall	dumprmt.c	/^rmtcall(cmd, buf)$/
+rmtclose	dumprmt.c	/^rmtclose()$/
+rmtconnaborted	dumprmt.c	/^rmtconnaborted()$/
+rmtgetb	dumprmt.c	/^rmtgetb()$/
+rmtgetconn	dumprmt.c	/^rmtgetconn()$/
+rmtgets	dumprmt.c	/^rmtgets(cp, len)$/
+rmthost	dumprmt.c	/^rmthost(host)$/
+rmtioctl	dumprmt.c	/^rmtioctl(cmd, count)$/
+rmtopen	dumprmt.c	/^rmtopen(tape, mode)$/
+rmtread	dumprmt.c	/^rmtread(buf, count)$/
+rmtreply	dumprmt.c	/^rmtreply(cmd)$/
+rmtseek	dumprmt.c	/^rmtseek(offset, pos)$/
+rmtstatus	dumprmt.c	/^rmtstatus()$/
+rmtwrite	dumprmt.c	/^rmtwrite(buf, count)$/
+rmtwrite0	dumprmt.c	/^rmtwrite0(count)$/
+rmtwrite1	dumprmt.c	/^rmtwrite1(buf, count)$/
+rmtwrite2	dumprmt.c	/^rmtwrite2()$/
+sendmes	dumpoptr.c	/^sendmes(tty, message)$/
+set_operators	dumpoptr.c	/^set_operators()$/
+sigAbort	dumpmain.c	/^sigAbort()$/
+sig_ign_parent	dumptape.c	/^sig_ign_parent()$/
+sigalrm	dumpmain.c	/^int	sigalrm(){	msg("SIGALRM()  try rewriting\\n"); /
+sigbus	dumpmain.c	/^int	sigbus(){	msg("SIGBUS()  try rewriting\\n"); si/
+sigfpe	dumpmain.c	/^int	sigfpe(){	msg("SIGFPE()  try rewriting\\n"); si/
+sighup	dumpmain.c	/^int	sighup(){	msg("SIGHUP()  try rewriting\\n"); si/
+sigsegv	dumpmain.c	/^int	sigsegv(){	msg("SIGSEGV()  ABORTING!\\n"); abor/
+sigterm	dumpmain.c	/^int	sigterm(){	msg("SIGTERM()  try rewriting\\n"); /
+sigtrap	dumpmain.c	/^int	sigtrap(){	msg("SIGTRAP()  try rewriting\\n"); /
+spclrec	dumptraverse.c	/^spclrec()$/
+tadvance	dumprtape.c	/^tadvance()$/
+taprec	dumprtape.c	/^taprec(dp)$/
+tapsrec	dumprtape.c	/^tapsrec(d)$/
+tfillspec	dumprtape.c	/^tfillspec()$/
+tflush	dumprtape.c	/^tflush(eof)$/
+timeest	dumpoptr.c	/^timeest()$/
+tnexttape	dumprtape.c	/^tnexttape()$/
+unctime	unctime.c	/^time_t unctime(str)$/
