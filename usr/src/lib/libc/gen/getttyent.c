@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getttyent.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)getttyent.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <ttyent.h>
@@ -52,18 +52,20 @@ getttyent()
 
 	if (!tf && !setttyent())
 		return(NULL);
-	do {
-		if (!fgets(line, sizeof(line), tf))
+	for (;;) {
+		if (!fgets(p = line, sizeof(line), tf))
 			return(NULL);
 		/* skip lines that are too big */
-		if (!index(line, '\n')) {
+		if (!index(p, '\n')) {
 			while ((c = getc(tf)) != '\n' && c != EOF)
 				;
 			continue;
 		}
-		for (p = line; isspace(*p); ++p)
-			;
-	} while (!*p || *p == '#');
+		while (isspace(*p))
+			++p;
+		if (*p && *p != '#')
+			break;
+	}
 
 	zapchar = 0;
 	tty.ty_name = p;
