@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_vnops.c	8.28 (Berkeley) %G%
+ *	@(#)union_vnops.c	8.29 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1275,7 +1275,9 @@ union_inactive(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	struct union_node *un = VTOUNION(ap->a_vp);
+	struct vnode *vp = ap->a_vp;
+	struct proc *p = ap->a_p;
+	struct union_node *un = VTOUNION(vp);
 	struct vnode **vpp;
 
 	/*
@@ -1291,13 +1293,6 @@ union_inactive(ap)
 	 * That's too much work for now.
 	 */
 
-#ifdef UNION_DIAGNOSTIC
-	if (un->un_flags & UN_LOCKED)
-		panic("union: inactivating locked node");
-	if (un->un_flags & UN_ULOCK)
-		panic("union: inactivating w/locked upper node");
-#endif
-
 	if (un->un_dircache != 0) {
 		for (vpp = un->un_dircache; *vpp != NULLVP; vpp++)
 			vrele(*vpp);
@@ -1305,8 +1300,10 @@ union_inactive(ap)
 		un->un_dircache = 0;
 	}
 
+	VOP_UNLOCK(vp, 0, p);
+
 	if ((un->un_flags & UN_CACHED) == 0)
-		vgone(ap->a_vp);
+		vgone(vp);
 
 	return (0);
 }
@@ -1331,26 +1328,23 @@ union_lock(ap)
 	struct proc *p = ap->a_p;
 	int flags = ap->a_flags;
 	struct union_node *un;
+	int error;
 
 start:
-	if ((flags & LK_INTERLOCK) == 0)
-		simple_lock(&vp->v_interlock);
-	if (vp->v_flag & VXLOCK) {
-		vp->v_flag |= VXWANT;
+
+	if (flags & LK_INTERLOCK) {
 		simple_unlock(&vp->v_interlock);
-		tsleep((caddr_t)vp, PINOD, "unionlk1", 0);
-		return (ENOENT);
+		flags &= ~LK_INTERLOCK;
 	}
-	simple_unlock(&vp->v_interlock);
-	flags &= ~LK_INTERLOCK;
 
 	un = VTOUNION(vp);
 
 	if (un->un_uppervp != NULLVP) {
 		if (((un->un_flags & UN_ULOCK) == 0) &&
 		    (vp->v_usecount != 0)) {
-			if (vn_lock(un->un_uppervp, flags, p))
-				goto start;
+			error = vn_lock(un->un_uppervp, flags, p);
+			if (error)
+				return (error);
 			un->un_flags |= UN_ULOCK;
 		}
 #ifdef DIAGNOSTIC
@@ -1396,7 +1390,11 @@ start:
  */
 int
 union_unlock(ap)
-	struct vop_lock_args *ap;
+	struct vop_unlock_args /* {
+		struct vnode *a_vp;
+		int a_flags;
+		struct proc *a_p;
+	} */ *ap;
 {
 	struct union_node *un = VTOUNION(ap->a_vp);
 	struct proc *p = ap->a_p;
