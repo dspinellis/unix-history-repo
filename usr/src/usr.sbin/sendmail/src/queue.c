@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.79 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.80 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.79 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.80 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -476,8 +476,14 @@ runqueue(forkflag)
 
 	if (shouldqueue(0L, curtime()))
 	{
+		char *msg = "Skipping queue run -- load average too high";
+
 		if (Verbose)
-			printf("Skipping queue run -- load average too high\n");
+			printf("%s\n", msg);
+#ifdef LOG
+		if (LogLevel > 8)
+			syslog(LOG_INFO, "runqueue: %s", msg);
+#endif
 		if (forkflag && QueueIntvl != 0)
 			(void) setevent(QueueIntvl, runqueue, TRUE);
 		return;
