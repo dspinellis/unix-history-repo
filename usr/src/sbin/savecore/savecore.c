@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)savecore.c	4.7.1.1 (Berkeley) 82/10/24";
+static	char *sccsid = "@(#)savecore.c	4.7.1.2 (Berkeley) 82/10/24";
 /*
  * savecore
  */
@@ -34,8 +34,25 @@ struct nlist nl[] = {
 	{ "_panicstr" },
 #define X_DOADUMP	6
 	{ "_doadump" },
+#define X_DOADUMP	6
+	{ "_doadump" },
 	{ 0 },
 };
+
+/*
+ *	this magic number is found in the kernel at label "doadump"
+ *
+ *	It is derived as follows:
+ *
+ *		doadump:	nop			01
+ *				nop			01
+ *				bicl2 $...		ca
+ *							8f
+ *
+ *	Thus, it is likely to be moderately stable, even across
+ *	operating system releases.
+ */
+#define DUMPMAG 0x8fca0101
 
 /*
  *	this magic number is found in the kernel at label "doadump"
@@ -100,6 +117,31 @@ main(argc, argv)
 			exit(1);
 	}
 	return 0;
+}
+
+int
+dump_exists()
+{
+	register int dumpfd;
+	int word;
+
+	dumpfd = Open(ddname, 0);
+	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_DOADUMP].n_value)), 0);
+	Read(dumpfd, (char *)&word, sizeof word);
+	close(dumpfd);
+	
+	return (word == DUMPMAG);
+}
+
+clear_dump()
+{
+	register int dumpfd;
+	int zero = 0;
+
+	dumpfd = Open(ddname, 1);
+	Lseek(dumpfd, (off_t)(dumplo + ok(nl[X_DOADUMP].n_value)), 0);
+	Write(dumpfd, (char *)&zero, sizeof zero);
+	close(dumpfd);
 }
 
 int
@@ -195,6 +237,10 @@ read_kmem()
 		fprintf(stderr, "/vmunix: doadump not in namelist\n");
 		exit(1);
 	}
+	if (nl[X_DOADUMP].n_value == 0) {
+		fprintf(stderr, "/vmunix: doadump not in namelist\n");
+		exit(1);
+	}
 	kmem = Open("/dev/kmem", 0);
 	Lseek(kmem, (long)nl[X_DUMPDEV].n_value, 0);
 	Read(kmem, (char *)&dumpdev, sizeof dumpdev);
@@ -213,6 +259,12 @@ read_kmem()
 	fseek(fp, (long)nl[X_VERSION].n_value, 0);
 	fgets(vers, sizeof vers, fp);
 	fclose(fp);
+}
+
+check_kmem() {
+	FILE *fp;
+	register char *cp;
+
 }
 
 check_kmem() {
@@ -461,5 +513,7 @@ Write(fd, buf, size)
 		exit(1);
 	}
 }
+
+
 
 
