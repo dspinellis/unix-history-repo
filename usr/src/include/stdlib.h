@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	5.16 (Berkeley) %G%
+ *	@(#)stdlib.h	5.17 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -41,8 +41,10 @@ typedef struct {
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-void	 abort __P((void));
-int	 abs __P((int));
+__dead void
+	 abort __P((void));
+__pure int
+	 abs __P((int));
 int	 atexit __P((void (*)(void)));
 double	 atof __P((const char *));
 int	 atoi __P((const char *));
@@ -50,12 +52,16 @@ long	 atol __P((const char *));
 void	*bsearch __P((const void *, const void *, size_t,
 	    size_t, int (*)(const void *, const void *)));
 void	*calloc __P((size_t, size_t));
-div_t	 div __P((int, int));
-void	 exit __P((int));
+__pure div_t
+	 div __P((int, int));
+__dead void
+	 exit __P((int));
 void	 free __P((void *));
 char	*getenv __P((const char *));
-long	 labs __P((long));
-ldiv_t	 ldiv __P((long, long));
+__pure long
+	 labs __P((long));
+__pure ldiv_t
+	 ldiv __P((long, long));
 void	*malloc __P((size_t));
 void	 qsort __P((void *, size_t, size_t,
 	    int (*)(const void *, const void *)));
