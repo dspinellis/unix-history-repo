@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	7.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	7.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "param.h"
@@ -52,7 +52,6 @@ main()
 
 	printf("#ifdef LOCORE\n");
 	printf("#define\tU_PROCP %d\n", &u->u_procp);
-	printf("#define\tU_EOSYS %d\n", &u->u_eosys);
 	printf("#define\tP_LINK %d\n", &p->p_link);
 	printf("#define\tP_RLINK %d\n", &p->p_rlink);
 	printf("#define\tP_XLINK %d\n", &p->p_xlink);
