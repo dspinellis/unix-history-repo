@@ -1,0 +1,87 @@
+accept(2) accept: accept a connection on a socket.
+access(2) access: determine accessibility of file.
+acct(2) acct: turn accounting on or off.
+bind(2) bind: bind a name to a socket.
+brk(2) brk, sbrk: change data segment size.
+chdir(2) chdir: change current working directory.
+chmod(2) chmod: change mode of file.
+chown(2) chown: change owner and group of a file.
+chroot(2) chroot: change root directory.
+close(2) close: delete a descriptor.
+connect(2) connect: initiate a connection on a socket.
+dup(2) dup, dup2: duplicate a descriptor.
+execve(2) execve: execute a file.
+exit(2) _exit: terminate a process.
+flock(2) flock: apply or remove an advisory lock on an open file.
+fork(2) fork: create a new process.
+fsync(2) fsync: synchronize a file's in-core state with that on disk.
+getdopt(2) getdopt, setdopt: get/set options associated with a descriptor .
+getdtablesize(2) getdtablesize: get descriptor table size.
+getgid(2) getgid, getegid: get group identity.
+getgroups(2) getgroups: get group access list.
+gethostid(2) gethostid, sethostid: get/set unique identifier of current host.
+gethostname(2) gethostname, sethostname: get/set name of current host.
+getitimer(2) getitimer, setitimer: get/set value of interval timer.
+getpagesize(2) getpagesize: get system page size.
+getpgrp(2) getpgrp: get process group.
+getpid(2) getpid: get process identification.
+getpriority(2) getpriority, setpriority: get/set program scheduling priority.
+getrlimit(2) getrlimit, setrlimit: control maximum system resource consumption.
+getrusage(2) getrusage: get information about resource utilization.
+getsockopt(2) getsockopt, setsockopt: get and set options on sockets.
+gettimeofday(2) gettimeofday, settimeofday: get/set date and time.
+getuid(2) getuid, geteuid: get user identity.
+intro(2) intro: introduction to system calls and error numbers.
+ioctl(2) ioctl: control device.
+kill(2) kill: send signal to a process.
+killpg(2) killpg: send signal to a process group.
+link(2) link: make a hard link to a file.
+listen(2) listen: listen for connections on a socket.
+lseek(2) lseek: move read/write pointer.
+madvise(2) madvise: give advice to the paging system.
+mincore(2) mincore: find out about core resident pages.
+mkdir(2) mkdir: make a directory file.
+mknod(2) mknod: make a special file.
+mmap(2) map: map pages of memory.
+mount(2) mount, unmount: mount or remove file system.
+mprotect(2) mprotect: change memory protection.
+mremap(2) mremap: remap pages of memory.
+munmap(2) munmap: unmap pages of memory.
+open(2) open: open a file for reading or writing, or create a new file.
+pause(2) pause: stop until signal.
+pipe(2) pipe: create an interprocess communication channel.
+profil(2) profil: execution time profile.
+ptrace(2) ptrace: process trace.
+read(2) read, readv: read input.
+readlink(2) readlink: read value of a symbolic link.
+reboot(2) reboot: reboot system or halt processor.
+recv(2) recv, recvfrom, recvmsg: receive a message from a socket.
+rename(2) rename: change the name of a file.
+rmdir(2) rmdir: remove a directory file.
+select(2) select: synchronous i/o multiplexing.
+send(2) send, sendto, sendmsg: send a message from a socket.
+setgroups(2) setgroups: set group access list.
+setpgrp(2) setpgrp: set process group.
+setregid(2) setregid: set real and effective group ID.
+setreuid(2) setreuid: set real and effective user ID's.
+shutdown(2) shutdown: shut down part of a full-duplex connection.
+signal(2) signal: catch or ignore signals.
+sigsys(2) sigsys: catch or ignore signals.
+socket(2) socket: create an endpoint for communication.
+socketpair(2) socketpair: create a pair of connected sockets.
+stat(2) stat, lstat, fstat: get file status.
+stk(2) stk, sstk: change stack segment size.
+swapon(2) swapon, swapoff: add/delete a swap device for interleaved paging/swapping.
+symlink(2) symlink: make symbolic link to a file.
+sync(2) sync: update super-block.
+syscall(2) syscall: indirect system call.
+truncate(2) truncate: truncate a file to a specified length.
+umask(2) umask: set file creation mode mask.
+unlink(2) unlink: remove directory entry.
+utimes(2) utimes: set file times.
+vfork(2) vfork: spawn new process in a virtual memory efficient way.
+vhangup(2) vhangup: virtually ``hangup'' the current control terminal.
+vswapon(2) vswapon: add a swap device for interleaved paging/swapping.
+wait(2) wait: wait for process to terminate.
+wait3(2) wait3: wait for process to terminate.
+write(2) write, writev: write on a file.
