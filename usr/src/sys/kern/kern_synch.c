@@ -1,4 +1,4 @@
-/*	kern_synch.c	3.5	%H%	*/
+/*	kern_synch.c	3.6	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -101,8 +101,7 @@ caddr_t chan;
 		seconds = 0;
 	if (seconds) {
 		pp->p_flag |= STIMO;
-		if ((sec = pp->p_clktim-seconds) < 0)
-			sec = 0;
+		sec = pp->p_clktim-seconds;
 		pp->p_clktim = seconds;
 	}
 	bcopy((caddr_t)u.u_qsav, (caddr_t)lqsav, sizeof (label_t));
@@ -117,7 +116,10 @@ caddr_t chan;
 	}
 	pp->p_flag &= ~STIMO;
 	bcopy((caddr_t)lqsav, (caddr_t)u.u_qsav, sizeof (label_t));
-	pp->p_clktim += sec;
+	if (sec > 0)
+		pp->p_clktim += sec;
+	else
+		pp->p_clktim = 0;
 	splx(n);
 	return(rval);
 }
