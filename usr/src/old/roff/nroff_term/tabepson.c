@@ -281,3 +281,4 @@ struct {
 "\001O",	/*circle*/
 "\000\033G",	/* FX80 set Double Strike */	/* \(lt */
 "\000\033H",	/* FX80 cancels D.S.  */	/* \(lb */
+};
