@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	7.38 (Berkeley) %G%
+ *	@(#)sys_generic.c	8.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
