@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.45 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.46 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -212,7 +212,8 @@ nfs_mountroot()
 		VREF(vp);
 		swdevt[0].sw_vp = vp;
 		swdevt[0].sw_nblks = ntohl(nd->swap_nblks);
-	}
+	} else if (bdevvp(swapdev, &swapdev_vp))
+		panic("nfs_mountroot: can't setup swapdev_vp");
 
 	/*
 	 * Create the rootfs mount point.
