@@ -1,4 +1,4 @@
-/* @(#)doprnt.c	4.1 (Berkeley) %G% */
+/* @(#)doprnt.c	4.2 (Berkeley) %G% */
 	# C library -- conversions
 
 .globl	__doprnt
@@ -100,6 +100,15 @@ __doprnt:
 	clrl nchar				# number of chars transferred
 loop:
 	movzwl $65535,r0		# pseudo length
+		# comet sucks.
+	movq *fdesc,r4
+	subl3 r1,r5,r2
+	jlss lp1
+	cmpl r0,r2
+	jleq lp1
+	movl r2,r0
+lp1:
+		#
 	movl r11,r1				# fmt addr
 	bsbw strout				# copy to output, stop at null or percent
 	movl r1,r11				# new fmt
@@ -646,7 +655,7 @@ ceil:	movl r2,exp
 	muld2 ten16,r5
 	subl2 $16,r2
 getman:	addl2 $9,r2			# -ceil(log10(x)) + 9
-	bsbb expten
+	jsb expten
 	emodd r0,r4,r5,r0,r5		# (r0+r4)*r5; r0=int, r5=frac
 fz1:	cvtlp r0,$9,16(sp)		# leading 9 digits
 	ashp $8,$9,16(sp),$0,$17,4(sp)	# as top 9 of 17
