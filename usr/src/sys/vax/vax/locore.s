@@ -1,9 +1,11 @@
-/*	locore.s	4.28	81/02/26	*/
+/*	locore.s	4.29	81/02/26	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
 #include "../h/psl.h"
 #include "../h/pte.h"
+#include "../h/cpu.h"
+#include "mba.h"
 
 	.set	HIGH,0x1f	# mask for total disable
 	.set	MCKVEC,4	# offset into scb of machine check vector
@@ -89,6 +91,7 @@ SCBVEC(wtime):
 	PUSHR; pushl 6*4(sp); PRINTF(1,"Write timeout %x\n"); POPR;
 	PANIC("Write timeout");		/* should be rei? */
 
+#if NMBA > 0
 #if VAX780
 SCBVEC(mba3int):
 	PUSHR; pushl $3; brb 1f
@@ -103,6 +106,7 @@ SCBVEC(mba0int):
 	POPR
 	incl	_cnt+V_INTR
 	rei
+#endif
 
 #if VAX780
 /*
@@ -341,6 +345,8 @@ start:
 	mtpr	$_Sysmap,$P0BR			## GROT ??
 	mtpr	$_Syssize,$P0LR			## GROT ??
 	movl	$_intstack+NISP*NBPG,sp		# set ISP
+	mfpr	$SID,r0
+	extzv	$24,$8,r0,_cpu
 /* init RPB */
 	movab	_rpb,r0
 	movl	r0,(r0)+			# rp_selfref
@@ -485,15 +491,26 @@ _badaddr:
 	ret
 	.align	2
 9:
+	casel	_cpu,$0,$VAX_MAX-1
+0:
+	.word	8f-0b		# 0 is 780
+	.word	5f-0b		# 1 is 750
+5:
+#if VAX750
+	mtpr	$0xf,MCESR
+#endif
+	brb	1f
+8:
 #if VAX780
 	mtpr	$0,$SBIFS
 #endif
+1:
 	addl2	(sp)+,sp		# discard mchchk trash
 	movab	2b,(sp)
 	rei
 
 _addupc:	.globl	_addupc
-	.word	0x0000
+	.word	0x0
 	movl	8(ap),r2		# &u.u_prof
 	subl3	8(r2),4(ap),r0		# corrected pc
 	blss	9f
@@ -749,7 +766,7 @@ _Subyte:
  * from user virtual address to physical address
  */
 _copyseg: 	.globl	_copyseg
-	.word	0x0000
+	.word	0x0
 	mfpr	$IPL,r0		# get current pri level
 	mtpr	$HIGH,$IPL	# turn off interrupts
 	bisl3	$PG_V|PG_KW,8(ap),_CMAP2
@@ -763,7 +780,7 @@ _copyseg: 	.globl	_copyseg
  * specified in relocation units (NBPG bytes)
  */
 _clearseg: 	.globl	_clearseg
-	.word	0x0000
+	.word	0x0
 	mfpr	$IPL,r0		# get current pri level
 	mtpr	$HIGH,$IPL	# extreme pri level
 	bisl3	$PG_V|PG_KW,4(ap),_CMAP1
@@ -778,7 +795,7 @@ _clearseg: 	.globl	_clearseg
  * returns 0 on no access.
  */
 _useracc:	.globl	_useracc
-	.word	0x0000
+	.word	0x0
 	movl	4(ap),r0		# get va
 	movl	8(ap),r1		# count
 	tstl	12(ap)			# test for read access ?
@@ -821,7 +838,7 @@ uaerr:
  */
 	.globl	_kernacc
 _kernacc:
-	.word	0x0000
+	.word	0x0
 	movl	4(ap),r0	# virtual address
 	bbcc	$31,r0,kacc1
 	mfpr	$SBR,r2		# address and length of page table (system)
