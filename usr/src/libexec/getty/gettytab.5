@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gettytab.5	6.2 (Berkeley) %G%
+.\"	@(#)gettytab.5	6.3 (Berkeley) %G%
 .\"
 .TH GETTYTAB 5 ""
 .UC 5
@@ -218,14 +218,13 @@ does not check parity of input characters in
 .I RAW
 mode.
 .SH "SEE ALSO"
+login(1),
 termcap(5),
 getty(8).
 .SH BUGS
-Some ignorant peasants insist on changing the default special
-characters, so it is wise to always specify (at least) the
-erase, kill, and interrupt characters in the
-.B default
-table.
+The special characters (erase, kill, etc.) are reset to system defaults
+by
+.IR login (1).
 In
 .B all
 cases, '#' or '^H' typed in a login name will be treated as
