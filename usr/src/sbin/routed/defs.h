@@ -1,4 +1,4 @@
-/*	defs.h	4.15	84/08/29	*/
+/*	defs.h	4.16	85/02/25	*/
 
 /*
  * Internal data structure definitions for
@@ -20,8 +20,6 @@
 #include "interface.h"
 #include "table.h"
 #include "af.h"
-
-/* #define	COMPAT	1		/* stay compatible with 4.1a daemons */
 
 /*
  * When we find any interfaces marked down we rescan the
