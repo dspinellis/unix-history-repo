@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.19 (Berkeley) %G%
+#	@(#)Makefile	5.20 (Berkeley) %G%
 #
 # This version expects the 4.2BSD directory reading routines to
 # located in libc.a.  If they aren't, augment LIBS.  Also, LIBS
@@ -24,7 +24,7 @@
 # Common object files are assembled into a library {uulib.a}
 #
 ALL=	uucico uucp uux uuxqt uulog uuclean uuname uupoll uusnap \
-	uuencode uudecode uusend uucpd uuq acucntrl
+	uusend uuq acucntrl
 # Common object files placed in uulib.a
 COMMON=	anlwrk.o anyread.o cfgets.o chkpth.o cpmv.o expfile.o gename.o \
 	getargs.o getprm.o getpwinfo.o gnxseq.o lastpart.o logent.o \
@@ -39,8 +39,10 @@ LSRCS=	anlwrk.c anyread.c cfgets.c chkpth.c cpmv.c expfile.c gename.c \
 	getargs.c getprm.c getpwinfo.c gnxseq.c lastpart.c logent.c \
 	mailst.c prefix.c setline.c subdir.c sysacct.c systat.c ulockf.c \
 	uucpdefs.c uucpname.c versys.c xqt.c
-MAN1=	uucp.0 uuencode.0 uulog.0 uuname.0 uux.0 uuq.0 uusend.0
+MAN1=	uucp.0 uulog.0 uuname.0 uux.0 uuq.0 uusend.0
 MAN8=	uucico.0 uuclean.0 uupoll.0 uusnap.0 uuxqt.0
+MAN5=	L-devices.0 L-dialcodes.0 L.aliases.0 L.cmds.0 L.sys.0 \
+	USERFILE.0
 
 #These might be useful on non 4.3bsd systems.
 MISC= htonl.c ioctl.c index.c mkdir.c strpbrk.c 
@@ -52,7 +54,7 @@ P=
 
 OWNER=	uucp
 GROUP=	daemon
-CFLAGS=	-O
+CFLAGS=	-DUSE_OLD_TTY -O
 LDFLAGS=
 LINTFLAGS= -chbap
 LIBS=
@@ -80,16 +82,16 @@ print: $(SRCS)
 	touch print
 
 uucp uux uuxqt uulog uuclean uuname uupoll uusend uuq: uulib.a ${LIBS} ${LIBC}
-	${CC} -o $@ ${LDFLAGS} $@.c uulib.a ${LIBS}
+	${CC} -o $@ ${LDFLAGS} $@.c uulib.a ${LIBS} -lcompat
 
-uusnap uuencode uudecode uucpd acucntrl: ${LIBS} ${LIBC}
+uusnap acucntrl: ${LIBS} ${LIBC}
 	${CC} -o $@ ${LDFLAGS} $@.c ${LIBS}
 
 uucico:	$(P) cico.o cntrl.o conn.o condevs.o gnsys.o pk0.o chksum.o pk1.o \
 	tio.o fio.o gio.o imsg.o uulib.a $(P) aculib/aculib.a ${LIBC}
 	${CC} -o uucico ${LDFLAGS} cico.o cntrl.o conn.o condevs.o gnsys.o \
 	pk0.o chksum.o pk1.o tio.o fio.o gio.o imsg.o \
-	uulib.a aculib/aculib.a ${LIBS}
+	uulib.a aculib/aculib.a ${LIBS} -lcompat
 
 # Note: mode 700 on ${LIBDIR} would be safer.
 # Also,  L.sys etc should be 600.
@@ -98,16 +100,16 @@ mkdirs:
 	-for i in ${LIBDIR} ${SPOOL} ${PUBDIR} ${XQTDIR} ${CORRUPT} \
 		${AUDIT} ${LCK} ${LOG} ${STST} ; do \
 		rm -f $$i ; mkdir $$i ; \
-		chmod 755 $$i; /etc/chown ${OWNER} $$i; chgrp ${GROUP} $$i ; \
+		chmod 755 $$i; chown ${OWNER} $$i; chgrp ${GROUP} $$i ; \
 	done
 	chmod 777 ${PUBDIR} ${LCK}
 	-cd ${LOG}; for i in uucico uux uuxqt uucp xferstats; do\
 		rm -f $$i ; mkdir $$i ; \
-		chmod 755 $$i; /etc/chown ${OWNER} $$i; chgrp ${GROUP} $$i ; \
+		chmod 755 $$i; chown ${OWNER} $$i; chgrp ${GROUP} $$i ; \
 	done
 	-cd ${SPOOL}; for i in ${SUBDIRS} ; do \
 		mkdir $$i; \
-		/etc/chown ${OWNER} $$i; chgrp ${GROUP} $$i; chmod 755 $$i; \
+		chown ${OWNER} $$i; chgrp ${GROUP} $$i; chmod 755 $$i; \
 	done
 
 # The lorder...tsort below is for systems w/o ranlib
@@ -120,8 +122,8 @@ uulib.a: $(P) ${COMMON}
 aculib/aculib.a:
 	cd aculib; make ${MFLAGS} "CFLAGS=${CFLAGS}" "P=${P}"
 
-install: ${MAN1} ${MAN8}
-	/etc/chown ${OWNER} ${LIBDIR}
+install: ${MAN1} ${MAN8} ${MAN5}
+	chown ${OWNER} ${LIBDIR}
 	chgrp ${GROUP} ${LIBDIR}
 	chmod 755 ${LIBDIR}
 	install -s -m 6111 -o ${OWNER} -g ${GROUP} uucico uuclean ${LIBDIR}
@@ -129,18 +131,12 @@ install: ${MAN1} ${MAN8}
 		uucp uux uulog uuname uusnap uupoll uuq ${BIN}
 	install -s -m 6110 -o ${OWNER} -g ${GROUP} uuxqt ${LIBDIR}
 	install -s -m 6110 -o root -g ${GROUP} acucntrl ${LIBDIR}
-	install -s -m 500 -o uucp uucpd ${ETC}
-	@echo Dont forget to fork off /etc/uucpd in /etc/rc.local
-	@echo if you are not running /etc/inetd
 	install -s -m 755 -o bin -g bin uusend ${BIN}
-	install -s -m 755 -o bin -g bin uuencode ${BIN}
-	install -s -m 755 -o bin -g bin uudecode ${BIN}
 	rm -f ${BIN}/ruusend
 	ln ${BIN}/uusend ${BIN}/ruusend
 	install -c -o bin -g bin -m 444 ${MAN1} ${DESTDIR}/usr/man/cat1
+	install -c -o bin -g bin -m 444 ${MAN5} ${DESTDIR}/usr/man/cat5
 	install -c -o bin -g bin -m 444 ${MAN8} ${DESTDIR}/usr/man/cat8
-	rm -f ${DESTDIR}/usr/man/cat1/uudecode.0
-	ln ${DESTDIR}/usr/man/cat1/uuencode.0 ${DESTDIR}/usr/man/cat1/uudecode.0
 
 clean:
 	rm -f *.o ${ALL} uulib.a
