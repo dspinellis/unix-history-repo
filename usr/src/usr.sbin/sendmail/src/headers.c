@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -112,7 +112,12 @@ chompheader(line, def, e)
 	if (bitset(H_EOH, hi->hi_flags))
 		return (hi->hi_flags);
 
-	/* drop explicit From: if same as what we would generate -- for MH */
+	/*
+	**  Drop explicit From: if same as what we would generate.
+	**  This is to make MH (which doesn't always give a full name)
+	**  insert the full name information in all circumstances.
+	*/
+
 	p = "resent-from";
 	if (!bitset(EF_RESENT, e->e_flags))
 		p += 7;
@@ -135,6 +140,12 @@ chompheader(line, def, e)
 			char *fancy;
 			extern char *crackaddr();
 			extern char *udbsender();
+
+			/*
+			**  Try doing USERDB rewriting even on fully commented
+			**  names; this saves the "comment" information (such
+			**  as full name) and rewrites the electronic part.
+			*/
 
 			fancy = crackaddr(fvalue);
 			if (parseaddr(fvalue, &a, RF_COPYNONE, '\0', NULL, e) != NULL &&
