@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)exec.h	7.7 (Berkeley) %G%
+ *	@(#)exec.h	7.8 (Berkeley) %G%
  */
 
 #ifndef	_EXEC_H_
@@ -13,11 +13,18 @@
 #ifndef COFF
 /* Header prepended to each a.out file. */
 struct exec {
+#ifdef sparc
+unsigned char	a_dynamic:1;	/* dynamically linked */
+unsigned char	a_toolversion:7;/* Sun toolset version  XXX */
+unsigned char	a_mid;		/* machine ID */
+unsigned short	a_magic;	/* magic number */
+#else
 #if !defined(vax) && !defined(tahoe) && !defined(i386)
 unsigned short	a_mid;		/* machine ID */
 unsigned short	a_magic;	/* magic number */
 #else
 	 long	a_magic;	/* magic number */
+#endif
 #endif
 unsigned long	a_text;		/* text segment size */
 unsigned long	a_data;		/* initialized data size */
@@ -40,6 +47,7 @@ unsigned long	a_drsize;	/* data relocation size */
 #define	MID_ZERO	0	/* unknown - implementation dependent */
 #define	MID_SUN010	1	/* sun 68010/68020 binary */
 #define	MID_SUN020	2	/* sun 68020-only binary */
+#define	MID_SUN_SPARC	3	/* sparc binary */
 #define	MID_HP200	200	/* hp200 (68010) BSD binary */
 #define	MID_HP300	300	/* hp300 (68020+68881) BSD binary */
 #define	MID_HPUX	0x20C	/* hp200/300 HP-UX binary */
