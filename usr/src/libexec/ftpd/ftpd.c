@@ -176,15 +176,6 @@ nextopt:
 		(void) yyparse();
 	}
 }
-/*
-reapchild()
-{
-	union wait status;
-
-	while (wait3(&status, WNOHANG, 0) > 0)
-		;
-}
-*/
 
 lostconn()
 {
@@ -216,7 +207,7 @@ pass(passwd)
 	setegid(pw->pw_gid);
 	initgroups(pw->pw_name, pw->pw_gid);
 	if (chdir(pw->pw_dir)) {
-		reply(550, "User %s: can't change directory to %s.",
+		reply(530, "User %s: can't change directory to %s.",
 			pw->pw_name, pw->pw_dir);
 		goto bad;
 	}
@@ -346,14 +337,14 @@ store(name, mode)
 		fout = fopen(local, mode), closefunc = fclose;
 	}
 	if (fout == NULL) {
-		reply(550, "%s: %s.", local, sys_errlist[errno]);
+		reply(553, "%s: %s.", local, sys_errlist[errno]);
 		return;
 	}
 	din = dataconn(local, (off_t)-1, "r");
 	if (din == NULL)
 		goto done;
 	if ((tmp = receive_data(din, fout)) > 0 || ferror(fout) > 0) {
-		reply(550, "%s: %s.", local, sys_errlist[errno]);
+		reply(552, "%s: %s.", local, sys_errlist[errno]);
 	}
 	else if (tmp == 0 && !unique) {
 		reply(226, "Transfer complete.");
@@ -520,9 +511,9 @@ send_data(instr, outstr)
 		transflag = 0;
 		return (cnt < 0);
 	}
-	reply(504,"Unimplemented TYPE %d in send_data", type);
+	reply(550, "Unimplemented TYPE %d in send_data", type);
 	transflag = 0;
-	return (1);
+	return (-1);
 }
 
 /*
@@ -560,9 +551,9 @@ receive_data(instr, outstr)
 		return (cnt < 0);
 
 	case TYPE_E:
-		reply(504, "TYPE E not implemented.");
+		reply(553, "TYPE E not implemented.");
 		transflag = 0;
-		return (1);
+		return (-1);
 
 	case TYPE_A:
 		while ((c = getc(instr)) != EOF) {
@@ -627,21 +618,10 @@ lreply(n, s, args)
 	}
 }
 
-/*  NOT CALLED ANYWHERE
-replystr(s)
-	char *s;
-{
-	printf("%s\r\n", s);
-	(void) fflush(stdout);
-	if (debug)
-		fprintf(stderr, "<--- %s\n", s);
-}
-*/
-
 ack(s)
 	char *s;
 {
-	reply(200, "%s command successful.", s);
+	reply(250, "%s command successful.", s);
 }
 
 nack(s)
@@ -707,7 +687,7 @@ makedir(name)
 	}
 	if (dochown)
 		(void) chown(name, pw->pw_uid, -1);
-	ack("MKDIR");
+	reply(257, "MKD command successful.");
 }
 
 removedir(name)
@@ -718,7 +698,7 @@ removedir(name)
 		reply(550, "%s: %s.", name, sys_errlist[errno]);
 		return;
 	}
-	ack("RMDIR");
+	ack("RMD");
 }
 
 pwd()
@@ -726,10 +706,10 @@ pwd()
 	char path[MAXPATHLEN + 1];
 
 	if (getwd(path) == NULL) {
-		reply(451, "%s.", path);
+		reply(550, "%s.", path);
 		return;
 	}
-	reply(251, "\"%s\" is current directory.", path);
+	reply(257, "\"%s\" is current directory.", path);
 }
 
 char *
@@ -1015,6 +995,10 @@ myoob()
 	longjmp(urgcatch, 1);
 }
 
+/*
+ * Note: The 530 reply codes could be 4xx codes, except nothing is
+ * given in the state tables except 421 which implies an exit.  (RFC959)
+ */
 passive()
 {
 	int len;
@@ -1023,7 +1007,7 @@ passive()
 
 	pdata = socket(AF_INET, SOCK_STREAM, 0);
 	if (pdata < 0) {
-		reply(451, "Can't open passive connection");
+		reply(530, "Can't open passive connection");
 		return;
 	}
 	tmp = ctrl_addr;
@@ -1033,7 +1017,7 @@ passive()
 		seteuid(pw->pw_uid);
 		(void) close(pdata);
 		pdata = -1;
-		reply(451, "Can't open passive connection");
+		reply(530, "Can't open passive connection");
 		return;
 	}
 	seteuid(pw->pw_uid);
@@ -1041,13 +1025,13 @@ passive()
 	if (getsockname(pdata, (char *) &tmp, &len) < 0) {
 		(void) close(pdata);
 		pdata = -1;
-		reply(451, "Can't open passive connection");
+		reply(530, "Can't open passive connection");
 		return;
 	}
 	if (listen(pdata, 1) < 0) {
 		(void) close(pdata);
 		pdata = -1;
-		reply(451, "Can't open passive connection");
+		reply(530, "Can't open passive connection");
 		return;
 	}
 	a = (char *) &tmp.sin_addr;
@@ -1084,7 +1068,7 @@ gunique(local)
 	*cp++ = '.';
 	while (!d) {
 		if (++count == 100) {
-			reply(451, "Unique file name not cannot be created.");
+			reply(452, "Unique file name not cannot be created.");
 			return((char *) 0);
 		}
 		*cp++ = ext;
