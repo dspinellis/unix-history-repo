@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.7	%G%	*/
+/*	fs.h	1.8	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -156,7 +156,7 @@ struct	fs
 #define	itog(x,fs)	((x)/(fs)->fs_ipg)
 
 /* turn inode number into disk block address */
-#define	itod(x,fs)	(cgimin(itog(x,fs),fs)+FRAG*((x)%(fs)->fs_ipg/INOPB))
+#define	itod(x,fs)	((daddr_t)(cgimin(itog(x,fs),fs)+FRAG*((x)%(fs)->fs_ipg/INOPB)))
 
 /* turn inode number into disk block offset */
 #define	itoo(x)		((x)%INOPB)
