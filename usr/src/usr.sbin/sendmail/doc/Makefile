@@ -1,44 +1,16 @@
-#
-#  Sendmail
-#  Copyright (c) 1983  Eric P. Allman
-#  Berkeley, California
-#
-#  Copyright (c) 1983 Regents of the University of California.
-#  All rights reserved.  The Berkeley software License Agreement
-#  specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	5.1 (Berkeley) %G%
-#
-#
-#	Makefile for sendmail documentation
-#
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
-OBJS=	intro.lpr op.lpr usenix.lpr
-DOCS=	intro.me  op.me  usenix.me
-SRCS=	$(DOCS) sendmail.8 syslog.3 syslog.8
-ALL=	$(OBJS) rfc819.lpr rfc821.lpr rfc822.lpr
+ALL=	op.ps intro.ps usenix.ps
 
-LPR=	lpr
-TROFF=	vtroff
-GET=	sccs get
+all: ${ALL}
 
-.SUFFIXES: .me .lpr
+op.ps: op.me
+	${PIC} op.me | ${EQN} | ${ROFF} -me > ${.TARGET}
 
-.me.lpr:
-	nroff -me -Tlp $< > $@
+intro.ps: intro.me
+	${PIC} intro.me | ${ROFF} -me > ${.TARGET}
 
-troff: $(DOCS)
-	for i in $(DOCS); do $(TROFF) -me $$i; done
+usenix.ps: usenix.me
+	${ROFF} -me usenix.me > ${.TARGET}
 
-all: $(ALL)
-
-print: $(ALL)
-	$(LPR) $(ALL)
-
-sources: $(SRCS)
-
-$(SRCS):
-	$(GET) $(REL) SCCS/s.$@
-
-clean:
-	rm -f $(OBJS) a.out core
+.include <bsd.doc.mk>
