@@ -2,7 +2,7 @@
  * Copyright (c) 1983, 1990 The Regents of the University of California.
  * All rights reserved.
  *
-%sccs.include.redist.c%
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)rsh.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -87,12 +87,17 @@ main(argc, argv)
 	}
 
 #ifdef KERBEROS
-#define	OPTIONS	"8Ldek:l:nwx"
+#define	OPTIONS	"8KLdek:l:nwx"
 #else
-#define	OPTIONS	"8Ldel:w"
+#define	OPTIONS	"8KLdel:nw"
 #endif
 	while ((ch = getopt(argc - argoff, argv + argoff, OPTIONS)) != EOF)
 		switch(ch) {
+		case 'K':
+#ifdef KERBEROS
+			use_kerberos = 0;
+#endif
+			break;
 		case 'L':	/* -8Lew are ignored to allow rlogin aliases */
 		case 'e':
 		case 'w':
@@ -109,9 +114,11 @@ main(argc, argv)
 			dest_realm = dst_realm_buf;
 			strncpy(dest_realm, optarg, REALM_SZ);
 			break;
+#endif
 		case 'n':
 			nflag = 1;
 			break;
+#ifdef KERBEROS
 		case 'x':
 			encrypt = 1;
 			des_set_key(cred.session, schedule);
@@ -155,17 +162,18 @@ main(argc, argv)
 	args = copyargs(argv);
 
 #ifdef KERBEROS
-	sp = getservbyname((encrypt ? "ekshell" : "kshell"), "tcp");
-	if (sp == NULL) {
-		use_kerberos = 0;
-		warning("can't get entry for %s/tcp service",
-		    encrypt ? "ekshell" : "kshell");
-		sp = getservbyname("shell", "tcp");
+	sp = NULL;
+	if (use_kerberos) {
+		sp = getservbyname((encrypt ? "ekshell" : "kshell"), "tcp");
+		if (sp == NULL) {
+			use_kerberos = 0;
+			warning("can't get entry for %s/tcp service",
+			    encrypt ? "ekshell" : "kshell");
+		}
 	}
-#else
-	sp = getservbyname("shell", "tcp");
 #endif
-
+	if (sp == NULL)
+		sp = getservbyname("shell", "tcp");
 	if (sp == NULL) {
 		(void)fprintf(stderr, "rsh: shell/tcp: unknown service.\n");
 		exit(1);
