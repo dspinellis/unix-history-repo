@@ -1,51 +1,59 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ttyname.c	5.2 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
-
 /*
- * ttyname(f): return "/dev/ttyXX" which the the name of the
- * tty belonging to file f.
- *  NULL if it is not a tty
+ * Copyright (c) 1988 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#define	NULL	0
-#include <sys/param.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)ttyname.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
+
+#include <sys/types.h>
 #include <sys/dir.h>
 #include <sys/stat.h>
+#include <sgtty.h>
 
-static	char	dev[]	= "/dev/";
-char	*strcpy();
-char	*strcat();
+#define	DEVDIR	"/dev/"
 
 char *
-ttyname(f)
+ttyname(fd)
+	int fd;
 {
-	struct stat fsb;
-	struct stat tsb;
-	register struct direct *db;
-	register DIR *df;
-	static char rbuf[32];
+	register struct direct *dirp;
+	register DIR *dp;
+	struct stat sb1, sb2;
+	struct sgttyb ttyb;
+	static char buf[sizeof(DEVDIR) + MAXNAMLEN] = DEVDIR;
+	char *rval, *strcpy();
 
-	if (isatty(f)==0)
+	if (ioctl(fd, TIOCGETP, &ttyb) < 0)
 		return(NULL);
-	if (fstat(f, &fsb) < 0)
+	if (fstat(fd, &sb1) < 0 || (sb1.st_mode&S_IFMT) != S_IFCHR)
 		return(NULL);
-	if ((fsb.st_mode&S_IFMT) != S_IFCHR)
+	if ((dp = opendir(DEVDIR)) == NULL)
 		return(NULL);
-	if ((df = opendir(dev)) == NULL)
-		return(NULL);
-	while ((db = readdir(df)) != NULL) {
-		if (db->d_ino != fsb.st_ino)
+	for (rval = NULL; dirp = readdir(dp);) {
+		if (dirp->d_ino != sb1.st_ino)
 			continue;
-		strcpy(rbuf, dev);
-		strcat(rbuf, db->d_name);
-		if (stat(rbuf, &tsb) < 0)
+		(void)strcpy(buf + sizeof(DEVDIR) - 1, dirp->d_name);
+		if (stat(buf, &sb2) < 0 || sb1.st_dev != sb2.st_dev ||
+		    sb1.st_ino != sb1.st_ino)
 			continue;
-		if (tsb.st_dev == fsb.st_dev && tsb.st_ino == fsb.st_ino) {
-			closedir(df);
-			return(rbuf);
-		}
+		closedir(dp);
+		rval = buf;
+		break;
 	}
-	closedir(df);
-	return(NULL);
+	closedir(dp);
+	return(rval);
 }
