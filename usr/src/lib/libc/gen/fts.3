@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fts.3	5.19 (Berkeley) %G%
+.\"     @(#)fts.3	5.20 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTS 3
@@ -20,7 +20,7 @@
 .Ft FTSENT *
 .Fn fts_read "FTS *ftsp"
 .Ft FTSENT *
-.Fn fts_children "FTS *ftsp"
+.Fn fts_children "FTS *ftsp" "int options"
 .Ft int
 .Fn fts_set "FTS ftsp" "FTSENT *f" "int options"
 .Ft int
@@ -580,6 +580,19 @@ may be overwritten after a call to
 or
 .Fn fts_read
 on the same file hierarchy stream.
+.Pp
+.Em Option
+may be set to the following value:
+.Bl -tag -width FTS_NAMEONLY
+.It Dv FTS_NAMEONLY
+Only the names of the files are needed.
+The contents of all the fields in the returned linked list of structures
+are undefined with the exception of the
+.Fa fts_name
+and
+.Fa fts_namelen
+fields.
+.El
 .Sh FTS_SET
 The function
 .Fn fts_set
@@ -666,16 +679,18 @@ returns 0 on success, and \-1 if an error occurs.
 .Sh ERRORS
 The function
 .Fn fts_open
-may fail and set errno for any of the errors specified for the library
-functions
+may fail and set
+.Va errno
+for any of the errors specified for the library functions
 .Xr open 2
 and
 .Xr malloc 3 .
 .Pp
 The function
 .Fn fts_close
-may fail and set errno for any of the errors specified for the library
-functions
+may fail and set
+.Va errno
+for any of the errors specified for the library functions
 .Xr chdir 2
 and
 .Xr close 2 .
@@ -684,14 +699,28 @@ The functions
 .Fn fts_read
 and
 .Fn fts_children
-may fail and set errno for any of the errors specified for the library
-functions
+may fail and set
+.Va errno
+for any of the errors specified for the library functions
 .Xr chdir 2 ,
 .Xr malloc 3 ,
 .Xr opendir 3 ,
 .Xr readdir 3
 and
 .Xr stat 2 .
+.Pp
+In addition,
+.Fn fts_children ,
+.Fn fts_open
+and
+.Fn fts_set
+may fail and set
+.Va errno
+as follows:
+.Bl -tag -width Er
+.It Bq Er EINVAL
+The options were invalid.
+.EL
 .Sh SEE ALSO
 .Xr find 1 ,
 .Xr chdir 2 ,
