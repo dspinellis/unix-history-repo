@@ -1,5 +1,5 @@
 #
-#	Makefile	1.22	90/02/20
+#	Makefile	1.23	90/06/08
 #
 # Makefile for PCC
 #
@@ -37,6 +37,8 @@ M=../../mip
 TESTDIR = .
 
 all: ccom sccom f1
+
+obj:
 
 #
 # 'ccom' is a one-pass C compiler.
