@@ -1,3 +1,5 @@
+#ifndef _SYS_SYSCALL_H_
+#define _SYS_SYSCALL_H_ 1
 /*
  * System call numbers.
  *
@@ -164,6 +166,11 @@
 #define	SYS_setdomainname	163
 #define	SYS_uname	164
 #define	SYS_shmsys	171
+#define	SYS_vm_allocate	177
+#define	SYS_vm_deallocate	178
+#define	SYS_vm_inherit	179
+#define	SYS_vm_protect	180
 #define	SYS_setgid	181
 #define	SYS_setegid	182
 #define	SYS_seteuid	183
+#endif /* _SYS_SYSCALL_H_ */
