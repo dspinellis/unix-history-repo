@@ -1,0 +1,160 @@
+.TH MAN 1 "18 January 1983"
+.UC 4
+.SH NAME
+man \- find manual information by keywords; print out the manual
+.SH SYNOPSIS
+.br
+.B man
+.B \-k
+keyword ...
+.br
+.B man
+.B \-f
+file ...
+.br
+.B man
+[
+.B \-
+] [
+.B \-t
+] [
+section
+]
+title ...
+.SH DESCRIPTION
+.I Man
+is a program which gives information from the programmers manual.
+It can be asked for one line descriptions of commands specified by
+name, or for all commands whose description contains any of a set of
+keywords.  It can also provide on-line access to the sections of the
+printed manual.
+.PP
+When given the option
+.B \-k
+and a set of keywords,
+.I man
+prints out a one line synopsis of each manual sections whose
+listing in the table of contents contains that keyword.
+.PP
+When given the option
+.B \-f
+and a list of file names, \fIman\fR attempts to locate manual
+sections related to those files, printing out the table of contents
+lines for those sections.
+.PP
+When neither
+.B \-k
+nor
+.B \-f
+is specified,
+.I man
+formats a specified set of manual pages.
+If a section specifier is given
+.I man
+looks in the that section of the manual for the given
+.I titles.
+.I Section
+is an arabic section number (3 for instance).  The number may followed by
+a single letter classifier (1g for instance)
+indicating a graphics program in section 1.  If
+.I section
+is omitted,
+.I man
+searches all sections of the manual, giving preference to commands
+over subroutines in system libraries, and printing the first section
+it finds, if any.
+.PP
+If the standard output is a teletype, or if the flag
+.B \-
+is given,
+.I man
+pipes its output through
+.IR cat (1)
+with the option
+.B \-s
+to crush out useless blank lines,
+.IR ul (1)
+to create proper underlines for different terminals, and through
+.IR more (1)
+to stop after each page on the screen.
+Hit a space to continue,
+a control-D to scroll 11 more lines when the output stops.
+.PP
+The
+.B \-t
+flag causes
+.I man
+to arrange for the specified section to be
+.I troff'ed
+to a suitable raster output device; see
+.IR vtroff (1).
+.SH FILES
+/usr/man/man?/*
+.br
+/usr/man/cat?/*
+.SH SEE\ ALSO
+more(1), ul(1), whereis(1), catman(8)
+.SH MESSAGES
+.IP "Usage: man [ section ] name ..." 5
+.IP "or: man -k keyword ..." 5
+.IP "or: man -f file ..." 5
+.br
+This is the standard memory jogger message you get to tell you how to
+use the 
+.I man
+command when you type it with no arguments.
+.IP "But what do you want from section \fIsection\fP?" 5
+.br
+You didn't supply enough arguments to the 
+.I man
+command.  Typing the command in the form of
+.sp
+.ti +0.5i
+.B "man  3"
+.sp
+that is, just a section number and no title, generates this message.
+.IP "No manual entry for \fItitle\fP." 5
+.br
+There is no entry for the specified 
+.I title
+in any section of the manual.
+.IP "No entry for \fItitle\fP in section \fIsection\fP of the manual." 5
+.br
+There is no entry for the specified 
+.I title
+in the specified
+.I section
+of the manual.
+.IP "man: -k what?" 5
+.br
+You used the -k option, asking for anything appropriate to a title, but
+forgot to supply the title.
+.IP "\fItitle\fP: nothing apropriate" 5
+.br
+The 
+.I man
+command cannot find anything appropriate to the specified 
+.I title
+as specified with the -k option.
+.IP "man: -f what?" 5
+.br
+You used the -f option, asking for the header line for a title, but
+forgot to supply the title.
+.IP "\fItitle\fP: not found" 5
+.br
+The 
+.I man
+command cannot find the specified 
+.I title
+as specified with the -f option.
+.IP "Can't chdir to /usr/man." 5
+.br
+Some kind of problem in the system.  The 
+.I man
+command needs to change directory to the 
+.I /usr/man
+directory to do its job, and was unable to do so for some reason.
+.SH BUGS
+The manual is supposed to be reproducible either on the phototypesetter
+or on a typewriter.
+However, on a typewriter some information is necessarily lost.
