@@ -50,7 +50,7 @@
  * Significant limitations and lack of compatiblity with POSIX are
  * present with this version, to make its basic operation more clear.
  *
- *	$Id$
+ *	$Id: kern_execve.c,v 1.6 1993/10/16 15:24:13 rgrimes Exp $
  */
 
 #include "param.h"
@@ -62,6 +62,7 @@
 #include "namei.h"
 #include "vnode.h"
 #include "file.h"
+#include "acct.h"
 #include "exec.h"
 #include "stat.h"
 #include "wait.h"
@@ -507,6 +508,7 @@ dont_bother:
 	   can be set before the program "runs" */
 	if (p->p_flag & STRC)
 		psignal(p, SIGTRAP);
+	p->p_acflag &= ~AFORK;		/* remove fork, but no exec flag */
 
 	return (0);
 
