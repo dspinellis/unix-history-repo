@@ -4,16 +4,16 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)useful.h	6.3 (Berkeley) %G%
+ *	@(#)useful.h	6.4 (Berkeley) %G%
  */
 
 # include <sys/types.h>
 
 /* support for ANSI prototypes (or not, as the case may be) */
-#if defined(__STDC__) && defined(_FORGIVING_CC_)
-#define P(protos)	protos
+#if defined(__STDC__) && defined(_FORGIVING_CC_) && !defined(__P)
+#define __P(protos)	protos
 #else
-#define P(protos)	()
+#define __P(protos)	()
 #endif
 
 /* support for bool type */
