@@ -1,5 +1,5 @@
 
-/*	vmmeter.h	4.5	%G%	*/
+/*	vmmeter.h	4.6	%G%	*/
 
 /*
  * Virtual memory related instrumentation
@@ -32,6 +32,7 @@ struct vmmeter
 	unsigned v_faults;	/* total faults taken */
 	unsigned v_scan;	/* scans in page out daemon */
 	unsigned v_rev;		/* revolutions of the hand */
+	unsigned v_seqfree;	/* pages taken from sequential programs */
 	unsigned v_dfree;	/* pages freed by daemon */
 #define	v_last v_dfree
 	unsigned v_swpin;	/* swapins */
