@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s	3.2	%H%
+#	locore.s	3.3	%H%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -27,7 +27,7 @@
 	.align	PGSHIFT
 	.globl	Scbbase
 Scbbase:
-	.long	Xrandom + HALT		# unused
+	.long	Xstray + INTSTK		# unused
 	.long	Xmachcheck + HALT	# machine check interrupt
 	.long	Xkspnotval + HALT	# kernel stack not valid
 	.long	Xpowfail + HALT		# power fail
@@ -41,55 +41,55 @@ Scbbase:
 	.long	Xbptflt			# bpt instruction
 	.long	Xcompatflt		# compatibility mode fault
 	.long	Xarithtrap		# arithmetic trap
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
 	.long	Xsyscall		# chmk
 	.long	Xchme+HALT		# chme
 	.long	Xchms+HALT		# chms
 	.long	Xchmu+HALT		# chmu
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# software level 1
-	.long	Xrandom + HALT		# software level 2 (asts)
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# software level 1
+	.long	Xstray + INTSTK		# software level 2 (asts)
 	.long	Xresched		# reschedule nudge
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
 ubabase:
 	.long	Xclockint		# clock
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
 	.long	Xcnrint + INTSTK	# console receiver 
 	.long	Xcnxint + INTSTK	# console transmitter
 
@@ -98,76 +98,76 @@ ubabase:
 #
 
 # IPL 14
-	.long	X14stray + INTSTK	# stray!
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
 	.long	Xua0int + INTSTK	# UBA 0 br4
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
 
 # IPL 15
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
 	.long	Xua0int + INTSTK	# UBA 0 br5
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
 	.long	Xmba0int + INTSTK	# mass bus adapter 0
 	.long	Xmba1int + INTSTK	# mass bus adapter 1
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
 
 # IPL 16
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
 	.long	Xua0int + INTSTK	# UBA 0 br6
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
 
 # IPL 17
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
-	.long	Xrandom + HALT		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
+	.long	Xstray + INTSTK		# unused
 
 # 0x200
 
@@ -225,7 +225,6 @@ _coresw:
 # Catch random or unexpected interrupts
 #
 	.align	2
-Xrandom:
 Xmachcheck:
 Xkspnotval:
 Xpowfail:
@@ -234,7 +233,8 @@ Xchms:
 Xchmu:
 	halt
 
-X14stray:
+	.align	2
+Xstray:
 	pushr	$0x3f
 	pushab	straym
 	calls	$1,_printf
