@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.24 1993/11/10 05:22:52 paul Exp $
+#	$Id: Makefile,v 1.25 1993/11/13 20:12:52 paul Exp $
 #
 
 SUBDIR=
@@ -113,6 +113,7 @@ bootstrapld:
 	@echo " Building new shlib compiler tools"
 	@echo "--------------------------------------------------------------"
 	cd ${.CURDIR}/usr.bin/strip; make depend all install ${CLEANDIR} obj
+	cd ${.CURDIR}/usr.bin/mkdep; make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/gas; make depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/gcc2; make -DNOPIC depend all install ${CLEANDIR} obj
 	cd ${.CURDIR}/gnu/ld; make -DNOPIC depend all install ${CLEANDIR} obj
