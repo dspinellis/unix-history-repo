@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)move.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)move.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "back.h"
@@ -352,17 +352,17 @@ pickmove ()  {
 	fflush (trace);
 #endif
 	do  {				/* compare moves */
-		bcopy (checkq);
+		boardcopy (checkq);
 		next = checkq->b_next;
 		makefree (checkq);
 		checkq = next;
 		movcmp();
 	} while (checkq != 0);
 
-	bcopy (now);
+	boardcopy (now);
 }
 
-bcopy (s)
+boardcopy (s)
 register struct BOARD	*s;			/* game situation */
 {
 	register int	i;			/* index */
