@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)ar.1	8.2 (Berkeley) %G%
+.\"	@(#)ar.1	8.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt AR 1 
@@ -68,7 +68,7 @@ When matching paths listed on the command line against file names stored
 in the archive, only the last component of the path will be compared.
 .Pp
 All informational and error messages use the path listed on the command
-line, if any was specified, otherwise the name in the archive is used.
+line, if any was specified; otherwise the name in the archive is used.
 If multiple files in the archive have the same name, and paths are listed
 on the command line to ``select'' archive files for an operation, only the
 .Em first
@@ -78,7 +78,7 @@ The normal use of
 .Nm ar
 is for the creation and maintenance of libraries suitable for use with
 the loader (see
-.Xr ld 1 )
+.Xr ld 1 ),
 although it is not restricted to this purpose.
 The options are as follows:
 .Bl -tag -width indent
@@ -123,7 +123,7 @@ If one of the options
 .Fl b 
 or 
 .Fl i
-are specified, the files are moved before or after the
+is specified, the files are moved before or after the
 .Ar position
 file in the archive.
 If none of those options are specified, the files are moved
@@ -209,10 +209,12 @@ already in the archive.
 When used with the 
 .Fl p 
 option,
-the name of each printed file is written to the standard output before
-the contents of the file, preceded by a single newline character, and
-followed by two newline characters, enclosed in less-than (``<'') and
-greater-than (``>'') characters.
+the name of each printed file,
+enclosed in less-than (``<'') and greater-than (``>'') characters,
+is written to the standard output before
+the contents of the file;
+it is preceded by a single newline character, and
+followed by two newline characters.
 .Pp
 When used with the 
 .Fl t
@@ -223,7 +225,7 @@ the archive.
 This listing consists of eight, white-space separated fields:
 the file permissions (see
 .Xr strmode 3 ),
-the decimal user and group ID's, separated by a single slash (``/''),
+the decimal user and group ID's separated by a single slash (``/''),
 the file size (in bytes), the file modification time (in the
 .Xr date 1
 format ``%b %e %H:%M %Y''), and the name of the file.
