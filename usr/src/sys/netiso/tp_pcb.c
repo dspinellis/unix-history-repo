@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.c,v $
- *	@(#)tp_pcb.c	7.7 (Berkeley) %G% *
+ *	@(#)tp_pcb.c	7.8 (Berkeley) %G% *
  *
  *
  * This is the initialization and cleanup stuff - 
@@ -700,7 +700,6 @@ bad2:
 	ENDDEBUG
 	so->so_pcb = 0;
 	so->so_tpcb = 0;
-	sofree(so);
 
 /*bad:*/
 	IFDEBUG(D_CONN)
@@ -776,6 +775,20 @@ tp_detach(tpcb)
 #undef FREE_RTC_LIST
 
 	IFDEBUG(D_CONN)
+		printf("so_snd at 0x%x so_rcv at 0x%x\n", &so->so_snd, &so->so_rcv);
+		dump_mbuf(so->so_snd.sb_mb, "so_snd at detach ");
+		printf("about to call LL detach, nlproto 0x%x, nl_detach 0x%x\n",
+				tpcb->tp_nlproto, tpcb->tp_nlproto->nlp_pcbdetach);
+	ENDDEBUG
+
+	if (so->so_snd.sb_cc != 0)
+		sbflush(&so->so_snd);
+	if (tpcb->tp_Xrcv.sb_cc != 0)
+		sbdrop(&tpcb->tp_Xrcv, (int)tpcb->tp_Xrcv.sb_cc);
+	if (tpcb->tp_ucddata)
+		m_freem(tpcb->tp_ucddata);
+
+	IFDEBUG(D_CONN)
 		printf("calling (...nlproto->...)(0x%x, so 0x%x)\n", 
 			so->so_pcb, so);
 		printf("so 0x%x so_head 0x%x,  qlen %d q0len %d qlimit %d\n", 
@@ -783,41 +796,8 @@ tp_detach(tpcb)
 		so->so_q0len, so->so_qlen, so->so_qlimit);
 	ENDDEBUG
 
-	if ( tpcb->tp_flags & (TPF_DISC_DATA_OUT | TPF_CONN_DATA_OUT ) )  {
-		ASSERT( so->so_snd.sb_cc != 0 );
-		IFDEBUG(D_CONN)
-			printf(
-			"detach, flags 0x%x doing sbdrop on so_snd, mb 0x%x cc 0x%x\n", 
-				tpcb->tp_flags, so->so_snd.sb_mb, so->so_snd.sb_cc);
-			dump_mbuf( so->so_snd.sb_mb, "detach so snd: \n");
-		ENDDEBUG
-		if ( so->so_snd.sb_cc != 0 )
-			sbflush(&so->so_snd);
-		tpcb->tp_flags &= ~(TPF_CONN_DATA_OUT | TPF_DISC_DATA_OUT); 
-	}
-	if ( tpcb->tp_flags & (TPF_DISC_DATA_IN | TPF_CONN_DATA_IN ) ) {
-		ASSERT( tpcb->tp_Xrcv.sb_cc != 0 );
-		IFDEBUG(D_CONN)
-			printf(
-			"detach, flags 0x%x doing sbdrop on tp_Xrcv, mb 0x%x cc 0x%x\n", 
-				tpcb->tp_flags, tpcb->tp_Xrcv.sb_mb, tpcb->tp_Xrcv.sb_cc);
-			dump_mbuf( tpcb->tp_Xrcv.sb_mb, "detach Xrcv: \n");
-		ENDDEBUG
-		if( tpcb->tp_Xrcv.sb_cc != 0 )
-			sbdrop(&tpcb->tp_Xrcv, (int)tpcb->tp_Xrcv.sb_cc);
-		tpcb->tp_flags &= ~(TPF_CONN_DATA_IN | TPF_DISC_DATA_IN); 
-	}
 
-	IFDEBUG(D_CONN)
-		printf("so_snd at 0x%x so_rcv at 0x%x\n", &so->so_snd, &so->so_rcv);
-		dump_mbuf(so->so_snd.sb_mb, "so_snd at detach ");
-		printf("about to call LL detach, nlproto 0x%x, nl_detach 0x%x\n",
-				tpcb->tp_nlproto, tpcb->tp_nlproto->nlp_pcbdetach);
-	ENDDEBUG
-
-		
-		
-	(tpcb->tp_nlproto->nlp_pcbdetach)((struct inpcb *)so->so_pcb);
+	(tpcb->tp_nlproto->nlp_pcbdetach)(so->so_pcb);
 				/* does an sofree(so) */
 
 	IFDEBUG(D_CONN)
@@ -848,7 +828,7 @@ tp_detach(tpcb)
 	 * of code, not the IFPERFs)
 	 */
 #ifdef TP_PERF_MEAS
-	if(tpcb->tp_p_mbuf) {
+	if (tpcb->tp_p_mbuf) {
 		register struct mbuf *m = tpcb->tp_p_mbuf;
 		struct mbuf *n;
 		IFDEBUG(D_PERF_MEAS)
