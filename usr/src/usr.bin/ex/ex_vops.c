@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vops.c	5.1 %G%";
+static char *sccsid = "@(#)ex_vops.c	6.1 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -173,6 +173,7 @@ bool fromvis;
 {
 	line *savedot, *savedol;
 	char *savecursor;
+	char savelb[LBSIZE];
 	int nlines, more;
 	register line *a1, *a2;
 	char ch;	/* DEBUG */
@@ -202,6 +203,7 @@ bool fromvis;
 		vudump("before vmacchng hairy case");
 #endif
 		savedot = dot; savedol = dol; savecursor = cursor;
+		CP(savelb, linebuf);
 		nlines = dol - zero;
 		while ((line *) endcore - truedol < nlines)
 			morelines();
@@ -228,11 +230,12 @@ bool fromvis;
 		more = savedol - dol; /* amount we shift everything by */
 		if (more)
 			(*(more>0 ? copywR : copyw))(savedol+1, dol+1, truedol-dol);
-		unddol += more; truedol += more;
+		unddol += more; truedol += more; undap2 += more;
 
 		truedol -= nlines;
 		copyw(zero+1, truedol+1, nlines);
 		dot = savedot; dol = savedol ; cursor = savecursor;
+		CP(linebuf, savelb);
 		vch_mac = VC_MANYCHANGE;
 
 		/* Arrange that no further undo saving happens within macro */

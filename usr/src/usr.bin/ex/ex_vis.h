@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* sccs id:	@(#)ex_vis.h	5.1 %G%  */
+/* sccs id:	@(#)ex_vis.h	6.1 %G%  */
 /*
  * Ex version 3
  * Mark Horton, UCB

@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_cmdsub.c	5.1 %G%";
+static char *sccsid = "@(#)ex_cmdsub.c	6.1 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -107,6 +107,10 @@ delete(hush)
 	if(FIXUNDO) {
 		register int (*dsavint)();
 
+#ifdef TRACE
+		if (trace)
+			vudump("before delete");
+#endif
 		change();
 		dsavint = signal(SIGINT, SIG_IGN);
 		undkind = UNDCHANGE;
@@ -125,6 +129,10 @@ delete(hush)
 		dot = a1;
 		pkill[0] = pkill[1] = 0;
 		signal(SIGINT, dsavint);
+#ifdef TRACE
+		if (trace)
+			vudump("after delete");
+#endif
 	} else {
 		register line *a3;
 		register int i;
@@ -543,8 +551,12 @@ badtag:
 			mid = (top + bot) / 2;
 			fseek(iof, mid, 0);
 			if (mid > 0)	/* to get first tag in file to work */
-				fgets(linebuf, sizeof linebuf, iof);	/* scan to next \n */
-			fgets(linebuf, sizeof linebuf, iof);	/* get a line */
+				/* scan to next \n */
+				if(fgets(linebuf, sizeof linebuf, iof)==NULL)
+					goto goleft;
+			/* get the line itself */
+			if(fgets(linebuf, sizeof linebuf, iof)==NULL)
+				goto goleft;
 			linebuf[strlen(linebuf)-1] = 0;	/* was '\n' */
 #endif
 			while (*cp && *lp == *cp)
@@ -554,6 +566,7 @@ badtag:
 				if (*lp > *cp)
 					bot = mid + 1;
 				else
+goleft:
 					top = mid - 1;
 #endif
 				/* Not this tag.  Try the next */

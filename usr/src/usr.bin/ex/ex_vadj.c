@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_vadj.c	5.1 %G%";
+static char *sccsid = "@(#)ex_vadj.c	6.1 %G%";
 #include "ex.h"
 #include "ex_tty.h"
 #include "ex_vis.h"
@@ -242,21 +242,11 @@ vinslin(p, cnt, l)
 		vgoto(p, 0), vputp(CD, cnt);
 		vclrech(1);
 		vadjAL(p, cnt);
-	} else if (AL) {
-		/*
-		 * Use insert line.
-		 */
-		vgoto(p, 0), vputp(AL, WECHO + 1 - p);
-		for (i = cnt - 1; i > 0; i--) {
-			vgoto(outline+1, 0), vputp(AL, WECHO + 1 - outline);
-			if ((hold & HOLDAT) == 0)
-				putchar('@');
-		}
-		vadjAL(p, cnt);
-	} else if (SR && p == WTOP) {
+	} else if (SR && p == WTOP && costSR < costAL) {
 		/*
 		 * Use reverse scroll mode of the terminal, at
-		 * the top of the window.
+		 * the top of the window.  Reverse linefeed works
+		 * too, since we only use it from line WTOP.
 		 */
 		for (i = cnt; i > 0; i--) {
 			vgoto(p, 0), vputp(SR, 0);
@@ -271,6 +261,17 @@ vinslin(p, cnt, l)
 			 */
 			if (CE && (DA || p != 0))
 				vputp(CE, 1);
+		}
+		vadjAL(p, cnt);
+	} else if (AL) {
+		/*
+		 * Use insert line.
+		 */
+		vgoto(p, 0), vputp(AL, WECHO + 1 - p);
+		for (i = cnt - 1; i > 0; i--) {
+			vgoto(outline+1, 0), vputp(AL, WECHO + 1 - outline);
+			if ((hold & HOLDAT) == 0)
+				putchar('@');
 		}
 		vadjAL(p, cnt);
 	} else

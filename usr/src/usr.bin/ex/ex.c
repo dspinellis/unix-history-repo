@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex.c	5.3 %G%";
+static char *sccsid = "@(#)ex.c	6.1 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -143,10 +143,6 @@ main(ac, av)
 	ruptible = signal(SIGINT, SIG_IGN) == SIG_DFL;
 	if (signal(SIGTERM, SIG_IGN) == SIG_DFL)
 		signal(SIGTERM, onhup);
-#ifdef SIGTSTP
-	if (signal(SIGTSTP, SIG_IGN) == SIG_DFL)
-		signal(SIGTSTP, onsusp), dosusp++;
-#endif
 
 	/*
 	 * Initialize end of core pointers.
@@ -239,6 +235,12 @@ main(ac, av)
 		}
 		ac--, av++;
 	}
+
+#ifdef SIGTSTP
+	if (!hush && signal(SIGTSTP, SIG_IGN) == SIG_DFL)
+		signal(SIGTSTP, onsusp), dosusp++;
+#endif
+
 	if (ac && av[0][0] == '+') {
 		firstpat = &av[0][1];
 		ac--, av++;
@@ -281,7 +283,6 @@ main(ac, av)
 	 * Initialize a temporary file (buffer) and
 	 * set up terminal environment.  Read user startup commands.
 	 */
-	init();
 	if (setexit() == 0) {
 		setrupt();
 		intty = isatty(0);
@@ -304,6 +305,7 @@ main(ac, av)
 			if ((cp = getenv("HOME")) != 0 && *cp)
 				source(strcat(strcpy(genbuf, cp), "/.exrc"), 1);
 		}
+	init();	/* moved after prev 2 chunks to fix directory option */
 
 	/*
 	 * Initial processing.  Handle tag, recover, and file argument
@@ -350,6 +352,7 @@ main(ac, av)
 	 * If you quit out of a 'vi' command by doing Q or ^\,
 	 * you also fall through to here.
 	 */
+	seenprompt = 1;
 	ungetchar(0);
 	globp = 0;
 	initev = 0;

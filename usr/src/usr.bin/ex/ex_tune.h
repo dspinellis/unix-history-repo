@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* sccs id:	@(#)ex_tune.h	5.1 %G%  */
+/* sccs id:	@(#)ex_tune.h	6.1 %G%  */
 /*
  * Definitions of editor parameters and limits
  */
@@ -11,10 +11,10 @@
  * "/usr/lib/..." here, "/lib" will be tried only for strings.
  */
 #include "local/uparm.h"
-#define	EXRECOVER	libpath(ex3.5recover)
-#define	EXPRESERVE	libpath(ex3.5preserve)
+#define	EXRECOVER	libpath(ex3.6recover)
+#define	EXPRESERVE	libpath(ex3.6preserve)
 #ifndef VMUNIX
-#define	EXSTRINGS	libpath(ex3.5strings)
+#define	EXSTRINGS	libpath(ex3.6strings)
 #endif
 
 /*

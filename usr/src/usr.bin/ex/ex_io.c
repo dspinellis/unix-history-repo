@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex_io.c	5.6 %G%";
+static char *sccsid = "@(#)ex_io.c	6.1 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -309,8 +309,19 @@ rop(c)
 
 	io = open(file, 0);
 	if (io < 0) {
-		if (c == 'e' && errno == ENOENT)
+		if (c == 'e' && errno == ENOENT) {
 			edited++;
+			/*
+			 * If the user just did "ex foo" he is probably
+			 * creating a new file.  Don't be an error, since
+			 * this is ugly, and it screws up the + option.
+			 */
+			if (!seenprompt) {
+				printf(" [New file]");
+				noonl();
+				return;
+			}
+		}
 		syserror();
 	}
 	if (fstat(io, &stbuf))
@@ -357,14 +368,16 @@ rop(c)
 			break;
 		}
 	}
-	if (value(READONLY) && denied) {
-		value(READONLY) = ovro;
-		denied = 0;
-	}
-	if (c != 'r' && ((stbuf.st_mode & 0222) == 0 || access(file, 2) < 0)) {
-		ovro = value(READONLY);
-		denied = 1;
-		value(READONLY) = 1;
+	if (c != 'r') {
+		if (value(READONLY) && denied) {
+			value(READONLY) = ovro;
+			denied = 0;
+		}
+		if ((stbuf.st_mode & 0222) == 0 || access(file, 2) < 0) {
+			ovro = value(READONLY);
+			denied = 1;
+			value(READONLY) = 1;
+		}
 	}
 	if (value(READONLY)) {
 		printf(" [Read only]");
@@ -532,6 +545,7 @@ cre:
 #endif
 		if (io < 0)
 			syserror();
+		writing = 1;
 		if (hush == 0)
 			if (nonexist)
 				printf(" [New file]");
@@ -560,6 +574,7 @@ cre:
 		addr1 = saddr1;
 		addr2 = saddr2;
 	}
+	writing = 0;
 }
 
 /*
@@ -711,9 +726,13 @@ source(fil, okfail)
 {
 	jmp_buf osetexit;
 	register int saveinp, ointty, oerrno;
+	char savepeekc, *saveglobp;
 
 	signal(SIGINT, SIG_IGN);
 	saveinp = dup(0);
+	savepeekc = peekc;
+	saveglobp = globp;
+	peekc = 0; globp = 0;
 	if (saveinp < 0)
 		error("Too many nested sources");
 	if (slevel <= 0)
@@ -751,6 +770,8 @@ source(fil, okfail)
 	close(0);
 	dup(saveinp);
 	close(saveinp);
+	globp = saveglobp;
+	peekc = savepeekc;
 	slevel--;
 	resexit(osetexit);
 }
