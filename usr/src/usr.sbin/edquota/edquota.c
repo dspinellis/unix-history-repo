@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)edquota.c	4.1 (Berkeley, from Melbourne) %G%";
+static char sccsid[] = "@(#)edquota.c	4.2 (Berkeley, from Melbourne) %G%";
 #endif
 
 /*
@@ -13,16 +13,12 @@ static char sccsid[] = "@(#)edquota.c	4.1 (Berkeley, from Melbourne) %G%";
 #include <fstab.h>
 
 #include <sys/param.h>
-#define	QUOTA
+#define QUOTA
 #include <sys/quota.h>
 #include <sys/stat.h>
 #include <sys/file.h>
 
-#ifdef MELBOURNE
-#define	DEFEDITOR	"/bin/ed"
-#else
 #define	DEFEDITOR	"/usr/ucb/vi"
-#endif
 
 struct	dquot dq[NMOUNT];
 struct	dquot odq[NMOUNT];
@@ -30,6 +26,7 @@ char	dqf[NMOUNT][MAXPATHLEN + 1];
 char	odqf[NMOUNT][MAXPATHLEN + 1];
 
 char	tmpfil[] = "/tmp/EdP.aXXXXX";
+char	*qfname = "quotas";
 char	*arg0;
 char	*getenv();
 
@@ -148,8 +145,8 @@ getprivs(uid)
 		fprintf(fd,
 "fs %s blocks (soft = %d, hard = %d) inodes (soft = %d, hard = %d)\n"
 			, dqf[i]
-			, dq[i].dq_bsoftlimit
-			, dq[i].dq_bhardlimit
+			, dq[i].dq_bsoftlimit / btodb(1024)
+			, dq[i].dq_bhardlimit / btodb(1024)
 			, dq[i].dq_isoftlimit
 			, dq[i].dq_ihardlimit
 		);
@@ -195,8 +192,12 @@ putprivs(uid)
 			, &dq[i].dq_isoftlimit
 			, &dq[i].dq_ihardlimit
 		);
-		if (n != 4)
-			break;
+		if (n != 4) {
+			fprintf(stderr, "%s: bad format\n", cp);
+			continue;
+		}
+		dq[i].dq_bsoftlimit *= btodb(1024);
+		dq[i].dq_bhardlimit *= btodb(1024);
 	}
 	fclose(fd);
 	n = i;
@@ -214,7 +215,7 @@ putprivs(uid)
 		    dq[i].dq_ihardlimit == odq[j].dq_ihardlimit &&
 		    dq[i].dq_bsoftlimit == odq[j].dq_bsoftlimit &&
 		    dq[i].dq_bhardlimit == odq[j].dq_bhardlimit) {
-			for (j = i; j < 15; j++) {
+			for (j = i; j < NMOUNT; j++) {
 				dq[j] = dq[j+1];
 				strcpy(dqf[j], dqf[j+1]);
 			}
@@ -300,7 +301,7 @@ getdiscq(uid, dq, dqf)
 	register char (*dqf)[MAXPATHLEN + 1];
 {
 	register struct fstab *fs;
-	char qfname[MAXPATHLEN + 1];
+	char qfilename[MAXPATHLEN + 1];
 
 	setfsent();
 	while (fs = getfsent()) {
@@ -311,13 +312,11 @@ getdiscq(uid, dq, dqf)
 		if (stat(fs->fs_spec, &statb) < 0)
 			continue;
 		fsdev = statb.st_rdev;
-		if (fs->fs_quotafile == 0 || *fs->fs_quotafile == '\0')
-			continue;
-		sprintf(qfname, "%s/%s", fs->fs_file, fs->fs_quotafile);
-		if (stat(qfname, &statb) < 0 || statb.st_dev != fsdev)
+		sprintf(qfilename, "%s/%s", fs->fs_file, qfname);
+		if (stat(qfilename, &statb) < 0 || statb.st_dev != fsdev)
 			continue;
 		if (quota(Q_GETDLIM, uid, fsdev, &dqblk) != 0) {
-			register fd = open(qfname, FRDONLY);
+			register fd = open(qfilename, FRDONLY);
 
 			if (fd < 0)
 				continue;
@@ -327,10 +326,6 @@ getdiscq(uid, dq, dqf)
 				continue;
 			}
 			close(fd);
-#ifdef notdef
-			if (dqblk.dqb_isoftlimit == 0 && dqblk.dqb_bsoftlimit == 0)
-				continue;
-#endif
 		}
 		dq->dq_dqb = dqblk;
 		dq->dq_dev = fsdev;
@@ -353,10 +348,17 @@ putdiscq(uid, dq, dqf)
 	cnt = 0;
 	for (cnt = 0; ++cnt <= NMOUNT && **dqf; dq++, dqf++) {
 		fs = getfsfile(*dqf);
-		if (fs == NULL)
-			goto nofile;
-		strcat(*dqf, fs->fs_quotafile);
-		if (stat(*dqf, &sb) >= 0 && (fd = open(*dqf, 1)) >= 0) {
+		if (fs == NULL) {
+			fprintf(stderr, "%s: not in /etc/fstab\n", *dqf);
+			continue;
+		}
+		strcat(*dqf, "/");
+		strcat(*dqf, qfname);
+		if (stat(*dqf, &sb) >= 0)
+			quota(Q_SETDLIM, uid, sb.st_dev, &dq->dq_dqb);
+		if ((fd = open(*dqf, 1)) < 0) {
+			perror(*dqf);
+		} else {
 			lseek(fd, (long)uid * (long)sizeof (struct dqblk), 0);
 			if (write(fd, &dq->dq_dqb, sizeof (struct dqblk)) !=
 			    sizeof (struct dqblk)) {
@@ -365,7 +367,5 @@ putdiscq(uid, dq, dqf)
 			}
 			close(fd);
 		}
-nofile:
-		quota(Q_SETDLIM, uid, sb.st_dev, &dq->dq_dqb);
 	}
 }
