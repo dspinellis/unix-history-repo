@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -410,6 +410,9 @@ struct	nlist Nl[] =
 	{ 0 },
 };
 
+
+extern int la;
+
 getla()
 {
 	static int kmem = -1;
@@ -457,9 +460,6 @@ bool
 shouldqueue(pri)
 	long pri;
 {
-	int la;
-
-	la = getla();
 	if (la < QueueLA)
 		return (FALSE);
 	return (pri > (QueueFactor / (la - QueueLA + 1)));
