@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	5.11 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -27,7 +27,7 @@ MAN=	talk.0
 all: talk
 
 talk: ${OBJS} ${LIBC}
-	${CC} -o $@ ${CFLAGS} ${OBJS} -lcurses -ltermlib
+	${CC} -o $@ ${CFLAGS} ${OBJS} -lcurses -ltermlib -lcompat
 
 clean:
 	rm -f ${OBJS} core talk

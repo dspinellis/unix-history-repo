@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.6 (Berkeley) %G%
+#	@(#)Makefile	4.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -25,13 +25,13 @@ MAN=	xsend.0
 all: enroll xsend xget
 
 enroll: enroll.o lib.o ${LIBC}
-	${CC} enroll.o lib.o -lmp -o $@
+	${CC} enroll.o lib.o -o $@ -lmp -lcompat
 
 xget: xget.o lib.o ${LIBC}
-	${CC} xget.o lib.o -lmp -o $@
+	${CC} xget.o lib.o -o $@ -lmp -lcompat
 
 xsend: xsend.o lib.o ${LIBC}
-	${CC} xsend.o lib.o -lmp -o $@
+	${CC} xsend.o lib.o -o $@ -lmp -lcompat
 
 clean:
 	rm -f ${OBJS} core enroll xsend xget
