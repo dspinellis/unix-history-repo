@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)types.h	7.17 (Berkeley) 5/6/91
- *	$Id: types.h,v 1.4 1993/11/30 21:54:25 ats Exp $
+ *	$Id: types.h,v 1.5 1993/12/19 05:12:57 alm Exp $
  */
 
 #ifndef _TYPES_H_
@@ -60,10 +60,11 @@ typedef u_long	fixpt_t;		/* fixed point number */
 #ifndef _POSIX_SOURCE
 #ifdef __STRICT_ANSI__
 typedef quad_t __attribute (( mode (DI) ));
+typedef unsigned u_quad_t __attribute (( mode (DI) ));
 #else
 typedef long long quad_t;
+typedef unsigned long long u_quad_t;
 #endif
-typedef unsigned quad_t u_quad_t;
 typedef	quad_t *	qaddr_t;
 
 /* GCC_1 quad definitions */
