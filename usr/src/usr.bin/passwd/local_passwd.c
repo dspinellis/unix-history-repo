@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)local_passwd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)local_passwd.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -65,7 +65,7 @@ getnewpasswd(pw)
 
 	(void)printf("Changing local password for %s.\n", pw->pw_name);
 
-	if (uid && pw->pw_passwd &&
+	if (uid && pw->pw_passwd[0] &&
 	    strcmp(crypt(getpass("Old password:"), pw->pw_passwd),
 	    pw->pw_passwd)) {
 		errno = EACCES;
