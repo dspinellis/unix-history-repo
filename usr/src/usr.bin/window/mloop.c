@@ -11,14 +11,15 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mloop.c	3.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)mloop.c	3.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
+#include <sys/signal.h>
 
 mloop()
 {
-	wwrint();		/* catch typeahead before we set ASYNC */
+	kill(getpid(), SIGIO);	/* catch typeahead before ASYNC was set */
 	while (!quit) {
 		if (incmd) {
 			docmd();
