@@ -1,245 +1,204 @@
-.\" Copyright (c) 1988 The Regents of the University of California.
+.\" Copyright (c) 1988, 1993 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	8.1 (Berkeley) %G%
+.\"	@(#)2.t	6.1 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
 .ds LH "Installing/Operating \*(4B
 .ds RH Bootstrapping
-.ds CF \*(DY
-.bp
-.nr H1 2
-.nr H2 0
-.bp
-.LG
-.B
-.ce
-2. BOOTSTRAP PROCEDURE
-.sp 2
-.R
-.NL
+.ds CF \*(Dy
+.NH 1
+Bootstrap Procedure
 .PP
 This section explains the bootstrap procedure that can be used
 to get the kernel supplied with this distribution running on your machine.
-If you are not currently running 4.2BSD you will
+If you are not currently running \*(Ps you will
 have to do a full bootstrap.
-Chapter 3 describes how to upgrade a 4.2BSD system.
+Chapter 3 describes how to upgrade a \*(Ps system.
 An understanding of the operations used in a full bootstrap
 is very helpful in performing an upgrade as well.
 In either case, it is highly desirable to read and understand
 the remainder of this document before proceeding.
 .NH 2
-Booting from tape
+Bootstrapping from the tape
+.PP
+The set of files on the distribution tape are as follows:
+.DS
+1) standalone copy program
+2) disk image of the root filesystem
+3) dump image of the root filesystem
+4) tar image of the /var filesystem
+5) tar image of the /usr filesystem
+6) tar image of the rest of /usr/src
+7) tar image of /usr/src/sys
+8) (8mm tape only) tar image of /usr/src/X11R5
+.DE
 .PP
 The tape bootstrap procedure used to create a
-working system involves the following major
-steps:
+working system involves the following major steps:
 .IP 1)
-Format a disk pack with the \fIvdformat\fP program, if necessary.
+Transfer a bootable root filesystem from the tape to a disk
+and get it booted and running.
 .IP 2)
-Copy a ``mini root'' file system from the
-tape onto the swap area of the disk.
-.IP 3)
-Boot the UNIX system on the ``mini root.''
-.IP 4)
-Restore the full root file system using \fIrestore\fP\|(8).
-.IP 5)
-Reboot the completed root file system.
-.IP 6)
-Label the disks with the \fIdisklabel\fP\|(8) program.
-.IP 7)
-Build and restore the /usr file system from tape
+Build and restore the /var and /usr file systems from tape
 with \fItar\fP\|(1).
-.IP 8)
-Extract the system and utility files and contributed software
-as desired.
+.IP 3)
+Extract the system and utility source files as desired.
+.PP
+The details of the first step varies between architectures.
+The specific steps for the HP300, Sparc, and DecStation are
+given in the next three sections respectively.
+You should follow the specific instructions for your
+particular architecture.
 .PP
 The following sections describe the above steps in detail.  In these
 sections references to disk drives are of the form \fIxx\fP\|(\fId\fP,
 \fIp\fP) and references to files on tape drives are of the form
 \fIxx\fP\|(\fIc\fP,\fId\fP, \fIp\fP)
-where \fIxx\fP are device types described in section 1.4,
+where \fIxx\fP are device types described in section 1.2,
 \fIc\fP is the (optional) controller unit number,
 \fId\fP is the drive unit number, and \fIp\fP is a disk partition
-or tape file offset numbers as described in section 1.4.
+or tape file offset numbers as described in section 1.2.
 For the sake of simplicity, all disk examples will use the disk type
-``dk'' and all tape examples will similarly use ``cy'';
+``\*(Dk'' and all tape examples will similarly use ``\*(Mt'';
 the examples assume drive 0, partition 0.
-Commands you
-are expected to type are shown in italics, while that information
-printed by the system is shown emboldened.
-.PP
-If you encounter problems while following the instructions in
-this part of the document, refer to Appendix B for help in
-troubleshooting.
-.NH 3
-Step 1: formatting the disk
-.PP
-All disks used with \*(4B should be formatted to insure
-the proper handling of physically corrupted disk sectors.
-The
-.I vdformat
-program included in the distribution, or a vendor supplied
-formatting program, may be used to format disks if this has not
-already been done.  The \fIvdformat\fP program is capable of formatting
-any of the disk drives listed in section 1.1, when booting from tape;
-when booting from disk, it supports any drive listed in
-\fI/etc/disktab\fP.
-.PP
-To load the \fIvdformat\fP program, perform the following steps.
-.DS
+Commands you are expected to type are shown in italics, while that
+information printed by the system is shown emboldened.
+.NH 2
+Booting the HP300
+.LP
+The hardware supported by \*(4B for the HP300/400 is as follows:
 .TS
-lw(2i) l.
-(machine powered up)
-\fBMIB POC\fP
-\fBType '#' to cancel boot\fP
-\fI#\fP	(cancel automatic reboot)
-\fBCP [a10.h0]#>\fP\fI\|h\fP	(halt the cpu)
-\fB#>\|\fP\fIfd cyp(0,0)\fP	(make cypher default device)
-\fB#>\|\fP\fIp23 3.\fP \fB00000000\fP	(set boot flags)
-\fB#>\|\fP\fIy.\fP	(initialize the machine)
-\fB#>\|\fP\fIfb\fP	(boot machine)
-\fBcyp(0,0)/etc/fstab\fP
-\fBCP cold boot\fP
-\fB4 way interleave set\fP
-\fBCPU memory test\fP
-\fBECC CPU memory test\fP
-\fBcyp(0,0)/.\fP
-\fBCPU POC1\fP
-\fBcyp(0,0)/poc1\fP
-\fBCPU POC2\fP
-\fBcyp(0,0)/poc2\fP
-\fBFPP POC\fR	(only if floating point processor present)
-\fBcyp(0,0)/fppoc\fP
-\fBFPP WCS\fR	(only if floating point processor present)
-\fBcyp(0,0)/fppwcs\fP
-\fBBOOT SYSTEM cyp(0,0)/boot\fP
-
-\fBBoot\fP
-\fB:\fIcy(0,0)stand/vdformat\fR	(load and run from first tape file)
-\fB52224+17408+1177716 start 0x1000\fP
-\fBVDFORMAT     Berkeley Version 1.6\fP
+center box;
+lw(1i) lw(4i).
+CPUs	T{
+68020 based (318, 319, 320, 330 and 350),
+68030 based (340, 345, 360, 370, 375, 400) and
+68040 based (380, 425, 433).
+T}
+_
+DISKs	T{
+HP-IB/CS80 (7912, 7914, 7933, 7936, 7945, 7957, 7958, 7959, 2200, 2203)
+and SCSI-I (including magneto-optical).
+T}
+_
+TAPEs	T{
+Low-density CS80 cartridge (7914, 7946, 9144),
+high-density CS80 cartridge (9145),
+HP SCSI DAT and
+SCSI exabyte.
+T}
+_
+RS232	T{
+98644 built-in single-port, 98642 4-port and 98638 8-port interfaces.
+T}
+_
+NETWORK	T{
+98643 internal and external LAN cards.
+T}
+_
+GRAPHICS	T{
+Terminal emulation and raw frame buffer support for
+98544/98545/98547 (Topcat color & monochrome),
+98548/98549/98550 (Catseye color & monochrome),
+98700/98710 (Gatorbox),
+98720/98721 (Renaissance),
+98730/98731 (DaVinci) and
+A1096A (Hyperion monochrome).
+T}
+_
+INPUT	T{
+General interface supporting all HIL devices.
+(e.g. keyboard, 2 and 3 button mice, ID module, ...)
+T}
+_
+MISC	T{
+Battery-backed real time clock,
+builtin and 98625A/B HP-IB interfaces,
+builtin and 98658A SCSI interfaces,
+serial printers and plotters on HP-IB,
+and SCSI autochanger device.
+T}
 .TE
-
-\fBcontroller 0: smd\fP
-\fBcontroller 1: smd-e\fP
-
-\fBType `Help' for help, `Start' to execute operations.\fP
-
-\fBvdformat>\fP
-.DE
-.PP
-The \fIvdformat\fP program should now be running and awaiting your input.
-If you made a mistake loading the program off the tape
-you should get either the ``:'' prompt again (from the
-boot program) or the ``#>'' prompt from the console
-processor.  In either case you can retype the appropriate
-command to try again.
-If something else happened, you may have a bad distribution
-tape, or your hardware may be broken; refer to
-Appendix B for help in troubleshooting.
-.PP
-\fIVdformat\fP will create sector headers and verify
-the integrity of each sector formatted.  
-The program starts up by identifying the disk controllers
-installed in the machine.  Old VDDC controllers which 
-support only SMD drives are indicated
-as ``smd'' while newer controllers capable of supporting both
-SMD and extended-SMD drives are tagged as ``smd-e''. 
-\fIVdformat\fP
-will prompt for the information required as shown below.
-If you err in answering questions,
-``Delete'' or backspace erase the last character typed, and ``^U'' erases
-the current input line.  At any point you can ask for
-assistance by typing ``help''; \fIvdformat\fP will list
-the possible answers to the current question.
-.DS
-\fBvdformat>\fP\|\fIformat\fP
-  \fBFormat on which controllers?\fP\|\fI1\fP
-    \fBDrives on controller 1?\fP\|\fI0\fP
-      \fBNumber of patterns to use while verifying?\fP\|\fI1\fP
-      \fBDrive type for controller 1, drive 0?\fP\|\fIegl\fP
-        \fBModule serial number for controller 1, drive 0?\fP\|\fI1\fP
-\fBvdformat>\fP\|\fIlist\fP
-  \fBThe following operations will occur when Start is issued:\fP
-    \fBFormat: Controller 1, drive 0, type EGL.\fP
-\fBvdformat>\fP\|\fIstart\fP
-\fBStarting format on controller 1, drive 0, type EGL.\fP
-(\fIbad sectors will be indicated\fP)
-\fBvdformat>\fP
-.DE
-Once the root device has been formatted, \fIvdformat\fP
-will prompt for another command.
-Return to the bootstrap by typing
-.DS
-\fBvdformat>\fP\|\fIexit\fP
-.DE
-or halt the machine by
-typing ``~h''.
-.DS
-\fBvdformat>\fP \fI~h\fP
-\fB#>\|\fP
-.DE
-.PP
-It may be necessary to format other drives before constructing
-file systems on them; this can be done at a later time with the
-steps just performed, or \fIvdformat\fP may be brought in
-off a disk drive as described in \(sc6.1.
+.LP
+Major items not supported include the 310 and 332 CPUs, 400 series machines
+configured for Domain/OS, EISA and VME bus adaptors, audio, the centronics
+port, 1/2" tape drives (7980), CD-ROM, and the PVRX/TVRX 3D graphics displays.
+.LP
+The basic steps involved in bringing up the HP300 are as follows:
+.IP 1)
+Obtain a new disk and format it, if necessary.
+.IP 2)
+Copy a root file system from the
+tape onto the beginning of the disk.
+.IP 3)
+Boot the UNIX system on the new disk.
+.IP 4)
+If optimal performance is desired, restore the root file system
+using \fIrestore\fP\|(8).
+.IP 5)
+Label the disks with the \fIdisklabel\fP\|(8) program.
 .NH 3
-Step 2: copying the mini-root file system
+Step 1: formating a disk.
 .PP
-The second step is to run a simple program, \fIcopy\fP, to copy a
-small root file system into the \fBsecond\fP partition of the disk.  (Note
-that the disk partitions used by \*(4B may not correspond to those
-used by vendor supplied software.)  This file system will serve as the
-base for creating the actual root file system to be restored.  The
-generic version of the operating system maintained on the ``mini-root''
-file system understands that it should not swap on top of itself, thereby
-allowing double use of the disk partition.  Disk 0 is normally used for
+For your first system you will have to obtain a formatted disk.
+Once you have \*(4B up and running on one machine you can use
+the \fIscsiformat\fP\|(8) program to format additional disks.
+.NH 3
+Step 2: copying the root file system from tape to disk
+.PP
+There are two approaches to getting the root file system from tape to disk.
+If you have two disks, the easiest approach is to boot your vendor
+operating system from the first disk, and then use \fIdd\fP\|(1)
+to copy the root filesystem image from the tape to the beginning of the
+second disk. 
+The root filesystem image is the second file on the tape. 
+It includes a disklabel and bootblock along with the root filesystem.
+The set of commands to copy it from the tape to the beginning of the disk are:
+.DS
+mt -f /dev/nr\*(Mt0 fsf 1
+dd if=/dev/nr\*(Mt0 of=/dev/r\*(Dk1c bs=20b
+.DE
+.PP
+If you have only a single machine with a single disk,
+you need to use the more difficult approach of booting a
+standalone copy program, and using that to copy the 
+root filesystem image from the tape to the disk.
+Disk 0 is normally used for
 this operation; this is reflected in the example procedure.  Another disk
 may be substituted if necessary, although several modifications will
-be necessary to create special files for the alternate disk.  \fICopy\fP
-is loaded just as the \fIvdformat\fP program was loaded; if you don't
-have the bootstrap running, repeat the previous instructions until you
-see the prompt from boot (a colon), and then:
+be necessary to create special files for the alternate disk.
+\fICopy\fP is loaded from the first file on the tape, and then:
 .DS
 .TS
 lw(2i) l.
-\fB:\|\fP\fIcy(0,0)copy\fP	(load and run copy program)
-\fBFrom:\fP \fIcy(0,1)\fP	(tape drive unit 0, second tape file)
-\fBTo:\fP \fIdk(0,1)\fP	(disk drive unit 0, second disk partition)
-\fBCopy completed: 205 records copied\fP
-\fBBoot\fP
-\fB:\fP
+\fB:\|\fP\fI\*(Mt(0,0)copy\fP	(load and run copy program)
+\fBFrom:\fP \fI\*(Mt(0,1)\fP	(tape drive unit 0, second tape file)
+\fBTo:\fP \fI\*(Dk(0,2)\fP	(disk drive unit 0, third disk partition)
+\fBCopy completed: 1400 records copied\fP
 .TE
 .DE
-As before, `delete' or backspace erase characters and `^U' erases lines.
 .NH 3
-Step 3: booting from the mini-root file system
+Step 3: booting the root filesystem
 .PP
-You now have the minimal set of tools necessary to create a
-root file system and restore the file system contents from tape.
-To access this file system load the bootstrap program
-and boot the version of unix that has been placed in the
-``mini-root.''
-As before, load the bootstrap if you do not already have
-it running.  At the colon prompt:
-.DS
-.TS
-lw(2i) l.
-\fB: \fP\fIdk(0,1)vmunix\fP	(get \fIvmunix\fP from disk drive 0, second partition)
-.TE
-.DE
-The standalone boot program should then read the system from
-the mini root file system you just created, and the system should boot:
+You now have a bootable root filesystem on the disk.
+If you were previously running with two disks,
+shut down the machine, remove the disk that you previously booted on,
+set the unit number of the disk onto which you loaded \*(4B to zero,
+and power up the machine.
+If you used the standalone copy program,
+you should power down the machine, switch the tape drive offline,
+and power the machine back up.
+It should now find, boot, and run \*(4B with output that looks
+approximately like this:
 .DS
 .B
-271944+78848+92812 start 0x12e8
-4.3 BSD #1: Sat Jun  4 17:11:42 PDT 1988
-	(karels@okeeffe.Berkeley.EDU:/usr/src/sys/GENERIC)
+597316+34120+139288 start 0x9ec
+4.4BSD UNIX #3: Tue Jul  6 14:02:20 PDT 1993
+	(mckusick@vangogh.CS.Berkeley.EDU:/usr/obj/sys/compile/GENERIC.hp300)
 real mem  = xxx
 avail mem = ###
 using ### buffers containing ### bytes of memory
@@ -273,7 +232,7 @@ The messages that come out next show what devices were found on
 the current processor.  These messages are described in
 \fIautoconf\fP\|(4).
 The distributed system may not have
-found all the communications devices you have (VIOC's or MPCC's),
+found all the communications devices you have
 or all the mass storage peripherals you have, especially
 if you have more than
 two of anything.  You will correct this when you create
@@ -289,18 +248,14 @@ is present.
 The \*(lqroot device?\*(rq prompt was printed by the system 
 to ask you for the name of the root file system to use.
 This happens because the distribution system is a \fIgeneric\fP
-system, i.e. it can be bootstrapped on a Tahoe cpu with its root device
+system, i.e., it can be bootstrapped on a cpu with its root device
 and paging area on any available disk drive.  You should respond to the
-root device question with ``dk0*''.  This response supplies two pieces
-of information: first, ``dk0'' shows that the disk it is running on is
-drive 0 of type ``dk'', and, secondly, the \*(lq*\*(rq shows that the
-system is running \*(lqatop\*(rq the paging area.  The latter is
-extremely important, otherwise the system will attempt to page on top
-of itself and chaos will ensue.  You will later build a system tailored
-to your configuration that will not ask this question when it is
-bootstrapped.
+root device question with ``\*(Dk0''.  This response indicates that
+that the disk it is running on is drive 0 of type ``\*(Dk''.
+You will later build a system tailored to your configuration
+that will not ask this question when it is bootstrapped.
 .DS
-\fBroot device?\fP \fIdk0*\fP
+\fBroot device?\fP \fI\*(Dk0\fP
 WARNING: preposterous time in file system \-\- CHECK AND RESET THE DATE!
 \fBerase ^?, kill ^U, intr ^C\fP
 \fB#\fP
@@ -318,24 +273,27 @@ and the \fIUNIX Programmer's manual\fP applies.  The ``#'' is the prompt
 from the Bourne shell, and lets you know that you are the super-user,
 whose login name is \*(lqroot\*(rq.
 .PP
-To complete installation of the bootstrap system one step remains: the
-root file system must be created.  If the root file system is to reside
-on a disk other than unit 0, you will have to create the necessary special
-files in /dev and use the appropriate value in the following example
-procedures.
+The root filesystem that you are currently running on is complete,
+however it probably is not optimally laid out for the disk on
+which you are running.
+If you will be cloning copies of the system onto multiple disks for
+other machines, you are advised to connect one of these disks to
+this machine, and build and restore a properly laid out root filesystem
+onto it.
+If this is the only machine on which you will be running \*(4B
+or peak performance is not an issue, you can skip this step and
+proceed directly to step 5.
 .PP
-For example, if the root must be placed on dk1, you should
-create /dev/rdk1a and /dev/dk1a using the MAKEDEV script in /dev
-as follows:
-.DS
-\fB#\fP\|\fIcd /dev; MAKEDEV dk1\fP
-.DE
+Connect a second disk to your machine.
+If you bootstraped using the two disk method, you can
+overwrite your initial bootstrapping disk, as it will no longer
+be needed.
 .PP
-To actually create the root file system the shell script \*(lqxtr\*(rq
-should be run:
+To actually create the root filesystem on drive 1 the shell script
+\*(lqxtr\*(rq should be run:
 .DS
-\fB#\fP\|\fIdisk=dk0 tape=cy xtr\fP
-(Note, ``dk0'' specifies both the disk type and the unit number.  Modify
+\fB#\fP\|\fIdisk=\*(Dk1 tape=\*(Mt0 xtr\fP
+(Note, ``\*(Dk1'' specifies both the disk type and the unit number.  Modify
 as necessary.)
 .DE
 .PP
@@ -347,100 +305,121 @@ but should eventually stop with the message:
 \fBRoot filesystem extracted\fP
 \fB#\fP
 .DE
+.PP
+You should then shut down the system, and boot on the disk that
+you just created following the procedure in step (3) above.
 .NH 3
-Step 5: rebooting the completed root file system
-.PP
-With the above work completed, all that is left is to reboot:
-.DS
-.ta 3.5i
-\fB#\|\fP\fIsync\fP	(synchronize file system state)
-\fB#\|\fP\fI~h\fP	(halt cpu)
-\fB#>\|\fP\fIy.\fP	(initialize machine)
-\fB#>\|\fP\fIp23 2.\fP	(set boot flags)
-\fB#>\|\fP\fIfr boot\fP
-\fB\&...(boot program is eventually loaded)...\fP
-\fBBoot\fP
-\fB:\fP \fIdk(0,0)vmunix\fP	(\fIvmunix\fP from disk drive 0, partition 0)
-(Modify unit number as necessary.)
-.B
-.nf
-271944+78848+92812 start 0x12e8
-4.3 BSD #1: Sat Jun  4 17:11:42 PDT 1988
-        (karels@okeeffe.Berkeley.EDU:/usr/src/sys/GENERIC)
-real mem  = ###
-avail mem = ###
-using ### buffers containing ### bytes of memory
-(... information about available devices ...)
-root on dk0
-WARNING: preposterous time in file system -- CHECK AND RESET THE DATE!
-erase ^?, kill ^U, intr ^C
-#
-.fi
-.DE
-.R
-.PP
-If the root device selected by the kernel is not correct, it is necessary
-to reboot again using the option to ask for the root device.  On the Tahoe
-use ``\fIp23 3.\fP''.  At the prompt from the bootstrap, use the same
-disk driver unit specification as used above: ``\fIdk(0,0)vmunix\fP''.
-Then, to the question ``root device?,'' respond with ``\fIdk0\fP''.
-See section 6.1 and appendix C if the system does not reboot properly.
-.PP
-The system is now running single user on the installed root file system.
-The next section tells how to complete the installation of distributed
-software on the /usr file system.
-.NH 3
-Step 6: placing labels on the disks
+Step 5: placing labels on the disks
 .PP
 \*(4B uses disk labels in the first sector of each disk to contain
 information about the geometry of the drive and the partition layout.
 This information is written with \fIdisklabel\fP\|(8).
-Note that recent CCI releases, and apparently Harris releases,
-may use a different form of disk label, also in the first sector.
-As the formats of these labels are incompatible,
-skip this step if your machine is using disk labels already.
-Recent firmware for the console processor (CP) may use these labels,
-and thus the labels must be retained.
-Eventually, it will be possible to use both formats simultaneously.
-You may wish to experiment on a spare disk once the system is running.
 .PP
 For each disk that you wish to label, run the following command:
 .DS
-\fB#\|\fP\fIdisklabel  -rw  dk\fP\fB#\fP  \fBtype\fP  \fI"optional_pack_name"\fP
+\fB#\|\fP\fIdisklabel  -rw  \*(Dk\fP\fB#\fP  \fBtype\fP  \fI"optional_pack_name"\fP
 .DE
-The \fB#\fP is the unit number; the \fBtype\fP is the CCI disk device
-name as listed in section 1.4 or any other name listed in /etc/disktab.
+The \fB#\fP is the unit number; the \fBtype\fP is the HP300 disk device
+name as listed in section 1.2 or any other name listed in /etc/disktab.
 The optional information may contain any descriptive name for the
 contents of a disk, and may be up to 16 characters long.  This procedure
 will place the label on the disk using the information found in /etc/disktab
-for the disk type named.  The default disk partitions in \*(4B are the mostly
-the same as those in the CCI 1.21 release, except for CDC 340Mb xfd drives;
-see section 4.2 for details.  If you have changed the disk partition sizes,
+for the disk type named.
+If you have changed the disk partition sizes,
 you may wish to add entries for the modified configuration in /etc/disktab
 before labeling the affected disks.
 .PP
-Note that the partition sizes and sectors per track in /etc/disktab
-are now specified in sectors, not units of kilobytes as in the vendors'
-4.2BSD and System V systems.
-For most SMD disks, the sector size is 512 bytes, and is listed explicitly.
-ESDI disks on a Power 6/32SX use a sector size of 1024 bytes.
-.NH 3
-Step 7: setting up the /usr file system
+You have now completed the HP300 specific part of the installation.
+You should now proceed to the generic part of the installation
+described starting in section 2.5 below.
+.NH 2
+Booting the SPARC
+.PP
+Chris promises to fill us in here!!!
+.NH 2
+Booting the DecStation
+.PP
+Steps to bootstrap a system.
+.IP 1)
+Load kernel and mini-root into memory with one of the PROM commands.
+This is the only step that depends on what type of machine you are using.
+The 'cnfg' PROM command will display what devices are available
+(DEC 5000 only).
+The 'm' argument tells the kernel to look for a mini-root in memory.
+.DS
+DEC 3100:	boot -f tz(0,5,0) m	# 5 is the SCSI id of the TK50
+DEC 5000:	boot 5/tz6 m		# 6 is the SCSI id of the TK50
+DEC 5000:	boot 6/tftp/bootfile m	# requires bootp on host
+.DE
+.IP 2)
+Format the disk if needed. Most SCSI disks are already formatted.
+.DS
+format
+.DE
+.IP 3)
+Label disks and create file systems.
+.DS
+# disklabel -W /dev/rrz?c		# This enables writing the label
+# disklabel -w -r -B /dev/rrz?c $DISKTYPE
+# newfs /dev/rrz?a
+# newfs /dev/rrz?g
+\&...
+# fsck /dev/rrz?a
+# fsck /dev/rrz?g
+\&...
+.DE
+Supported disk types are listed in /etc/disktab.
+Feel free to add to this list.
+.IP 4)
+Restore / and /usr partitions.
+.DS
+# mount -u /
+# mount /dev/rz?a /a
+# mount /dev/rz?g /b
+# cd /a
+# mt -f /dev/nrmt0 rew
+# restore -xsf 2 /dev/rmt0
+# cd /b
+# {change tapes or tape drive}
+# restore -xf /dev/rmt0
+# cd /
+# sync
+# umount /a
+# umount /b
+# fsck /dev/rz?a /dev/rz?g
+.DE
+.IP 5)
+Initialize the PROM monitor to boot automatically.
+.DS
+# halt -q
+
+DEC 3100:	setenv bootpath boot -f rz(0,?,0)vmunix
+DEC 5000:	setenv bootpath 5/rz?/vmunix -a
+.DE
+.IP 6)
+After booting UNIX, you will need to create /dev/mouse in order to
+run X windows. type `link /dev/xx /dev/mouse' where xx is one of the
+following:
+.DS
+pm0	raw interface to PMAX graphics devices
+cfb0	raw interface to turbochannel PMAG-BA color frame buffer
+xcfb0	raw interface to maxine graphics devices
+mfb0	raw interface to mono graphics devices
+.DE
+.NH 2
+Installing the rest of the system
 .PP
 The next thing to do is to extract the rest of the data from
 the tape.
+At a minimum you need to set up the /var and /usr filesystems.
+You may also want to extract some or all the program sources.
 You might wish to review the disk configuration information in section
 4.2 before continuing; the partitions used below are those most appropriate
 in size.
 .PP
-For the Cipher tape drive, execute the following commands:
-.DS
-\fB#\fP \fIcd /dev; MAKEDEV cy0\fP
-.DE
 Then perform the following:
 .br
 .ne 5
-.sp
 .DS
 .TS
 lw(2i) l.
@@ -450,13 +429,20 @@ lw(2i) l.
 \fBNew password:\fP	(password will not echo)
 \fBRetype new password:\fP
 \fB#\fP \fIhostname mysitename\fP	(set your hostname)
-\fB#\fP \fInewfs dk#c\fP	(create empty user file system)
-(\fIdk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP
+\fB#\fP \fInewfs r\*(Dk#c\fP	(create empty user file system)
+(\fIr\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP
 is the partition; this takes a few minutes)
-\fB#\fP \fImount /dev/dk#c /usr\fP	(mount the usr file system)
+\fB#\fP \fImount /dev/\*(Dk#c /var\fP	(mount the var file system)
+\fB#\fP \fIcd /var\fP	(make /var the current directory)
+\fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
+\fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of var)
+\fB#\fP \fInewfs r\*(Dk#c\fP	(create empty user file system)
+(as before \fIr\*(Dk\fP is the disk type, \fI#\fP is the unit number, \fIc\fP
+is the partition)
+\fB#\fP \fImount /dev/\*(Dk#c /usr\fP	(mount the usr file system)
 \fB#\fP \fIcd /usr\fP	(make /usr the current directory)
-\fB#\fP \fImt -t /dev/rmt12 fsf\fP	(space to end of previous tape file)
-\fB#\fP \fItar xbpf 40 /dev/rmt12\fP	(extract all of usr except usr/src)
+\fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
+\fB#\fP \fItar xbpf 40 /dev/nr\*(Mt0\fP	(extract all of usr except usr/src)
 (this takes about 15-20 minutes)
 .TE
 .DE
@@ -464,40 +450,40 @@ If no disk label has been installed on the disk, the \fInewfs\fP
 command will require a third argument to specify the disk type,
 using one of the names in /etc/disktab.
 If the tape had been rewound or positioned incorrectly before the \fItar\fP,
-it may be repositioned by the following commands.
+to extract /var it may be repositioned by the following commands.
 .DS
-\fB#\fP \fImt -t /dev/rmt12 rew\fP
-\fB#\fP \fImt -t /dev/rmt12 fsf 3\fP
+\fB#\fP \fImt -t /dev/nr\*(Mt0 rew\fP
+\fB#\fP \fImt -t /dev/nr\*(Mt0 fsf 3\fP
 .DE
-The data on the fourth tape file has now been extracted.
-If you are using 1600bpi tapes, the first reel of the
+The data on the fifth tape file has now been extracted.
+If you are using 6250bpi tapes, the first reel of the
 distribution is no longer needed; you should now mount the second
 reel instead.  The installation procedure continues from this
-point on the 6250bpi tape.
+point on the 8mm tape.
 .DS
 .TS
 lw(2i) l.
 \fB#\fP \fImkdir src\fP	(make directory for source)
 \fB#\fP \fIcd src\fP	(make source directory the current directory)
-\fB#\fP \fImt -t /dev/rmt12 fsf\fP	(space to end of previous tape file)
+\fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP	(space to end of previous tape file)
 \fB#\fP \fItar xpbf 40 /dev/rmt12\fP 	(extract the system source)
 (this takes about 5-10 minutes)
 \fB#\fP \fIcd /\fP	(change directory, back to the root)
 \fB#\fP \fIchmod 755  /usr/src\fP
-\fB#\fP \fIumount /dev/dk#c\fP	(unmount /usr)
+\fB#\fP \fIumount /dev/\*(Dk#c\fP	(unmount /usr)
 .TE
 .DE
 .PP
 You can check the consistency of the /usr file system by doing
 .DS
-\fB#\fP \fIfsck /dev/rdk#c\fP
+\fB#\fP \fIfsck /dev/r\*(Dk#c\fP
 .DE
 The output from
 .I fsck
 should look something like:
 .DS
 .B
-** /dev/rdk#c
+** /dev/r\*(Dk#c
 ** Last Mounted on /usr
 ** Phase 1 - Check Blocks and Sizes
 ** Phase 2 - Check Pathnames
@@ -514,35 +500,33 @@ File System Check Program\fP for more details.
 .PP
 To use the /usr file system, you should now remount it with:
 .DS
-\fB#\fP \fI/etc/mount /dev/dk#c /usr\fP
+\fB#\fP \fI/etc/mount /dev/\*(Dk#c /usr\fP
 .DE
 .PP
-If you are using 1600bpi tapes, the second reel of the
+If you are using 6250bpi tapes, the second reel of the
 distribution is no longer needed; you should now mount the third
 reel instead.  The installation procedure continues from this
-point on the 6250bpi tape.
+point on the 8mm tape.
 .DS
 \fB#\fP \fImkdir /usr/src/sys\fP
 \fB#\fP \fIchmod 755 /usr/src/sys\fP
 \fB#\fP \fIcd /usr/src/sys\fP
-\fB#\fP \fImt -t /dev/rmt12 fsf\fP
-\fB#\fP \fItar xpbf 40 /dev/rmt12\fP
+\fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP
+\fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP
 .DE
 .PP
-There is one additional tape file on the distribution tape(s)
-which has not been installed to this point; it contains user
-contributed software in \fItar\fP\|(1) format.  As distributed,
-the user contributed software should be placed in /usr/src/new.
+If you received a distribution on 8mm tape,
+there is one additional tape file on the distribution tape
+which has not been installed to this point; it contains the
+sources for X11R5 in \fItar\fP\|(1) format.  As distributed,
+X11R5 should be placed in /usr/src/X11R5.
 .DS
-\fB#\fP \fImkdir /usr/src/new\fP
-\fB#\fP \fIchmod 755 /usr/src/new\fP
-\fB#\fP \fIcd /usr/src/new\fP
-\fB#\fP \fImt -t /dev/rmt12 fsf\fP
-\fB#\fP \fItar xpbf 40 /dev/rmt12\fP
+\fB#\fP \fImkdir /usr/src/X11R5\fP
+\fB#\fP \fIchmod 755 /usr/src/X11R5\fP
+\fB#\fP \fIcd /usr/src/X11R5\fP
+\fB#\fP \fImt -t /dev/nr\*(Mt0 fsf\fP
+\fB#\fP \fItar xpbf 40 /dev/nr\*(Mt0\fP
 .DE
-Several of the directories for large contributed software subsystems
-have been placed in a single archive file and compressed due to space
-constraints within the distribution.
 .NH 2
 Additional conversion information
 .PP
@@ -555,8 +539,8 @@ system changed.  To restore a dump tape for, say, the /a file system
 something like the following would be used:
 .DS
 \fB#\fP \fImkdir /a\fP
-\fB#\fP \fInewfs dk#c\fI
-\fB#\fP \fImount /dev/dk#c /a\fP
+\fB#\fP \fInewfs \*(Dk#c\fI
+\fB#\fP \fImount /dev/\*(Dk#c /a\fP
 \fB#\fP \fIcd /a\fP
 \fB#\fP \fIrestore x\fP
 .DE
@@ -565,7 +549,3 @@ If \fItar\fP images were written instead of doing a dump, you should
 be sure to use its `-p' option when reading the files back.  No matter
 how you restore a file system, be sure to unmount it and and check its
 integrity with \fIfsck\fP(8) when the job is complete.
-
-
-
-
