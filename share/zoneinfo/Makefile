@@ -137,8 +137,8 @@ right_posix: right_only other_two
 install: maninstall ${DATA} ${REDO}
 	(cd ${.CURDIR}/datfiles; \
 	    ../${OBJ}/zic -d ${TZDIR} -p ${POSIXRULES})
-	install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
-	    ${TZDIR}/${LOCALTIME} ${DESTDIR}/etc/localtime
+	/bin/rm -f ${DESTDIR}/etc/localtime
+	ln -s ${TZDIR}/${LOCALTIME} ${DESTDIR}/etc/localtime
 	chown -R ${BINOWN}.${BINGRP} ${TZDIR}
 	chmod -R a-w ${TZDIR}
 
