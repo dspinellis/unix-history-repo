@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.11 (Berkeley) 87/07/21";
+static char sccsid[] = "@(#)bugfiler.c	5.12 (Berkeley) 87/09/29";
 #endif not lint
 
 /*
@@ -55,6 +55,7 @@ main(argc, argv)
 			break;
 		case '?':
 		default:
+			fputs("usage: bugfiler [-ar] [-v version]\n", stderr);
 			error("usage: bugfiler [-ar] [-v version]", CHN);
 		}
 
