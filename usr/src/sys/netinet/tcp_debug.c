@@ -1,4 +1,4 @@
-/*	tcp_debug.c	4.10	83/05/14	*/
+/*	tcp_debug.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

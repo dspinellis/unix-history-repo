@@ -1,4 +1,4 @@
-#	udiv.s	5.1	82/07/15
+#	udiv.s	6.1	83/07/29
 #
 #	udiv - unsigned division for vax-11
 #

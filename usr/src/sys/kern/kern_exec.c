@@ -1,4 +1,4 @@
-/*	kern_exec.c	4.5	83/07/01	*/
+/*	kern_exec.c	6.1	83/07/29	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"

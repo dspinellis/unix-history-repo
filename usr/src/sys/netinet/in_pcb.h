@@ -1,4 +1,4 @@
-/*	in_pcb.h	4.5	82/10/20	*/
+/*	in_pcb.h	6.1	83/07/29	*/
 
 /*
  * Common structure pcb for internet protocol implementation.

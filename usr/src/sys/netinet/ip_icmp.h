@@ -1,4 +1,4 @@
-/* ip_icmp.h 4.5 82/04/25 */
+/* ip_icmp.h 6.1 83/07/29 */
 
 /*
  * Interface Control Message Protocol Definitions.

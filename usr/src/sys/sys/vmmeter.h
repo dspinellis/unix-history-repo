@@ -1,4 +1,4 @@
-/*	vmmeter.h	4.7	%G%	*/
+/*	vmmeter.h	6.1	%G%	*/
 
 /*
  * Virtual memory related instrumentation

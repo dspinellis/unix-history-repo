@@ -1,4 +1,4 @@
-/*	ip_var.h	4.11	83/07/06	*/
+/*	ip_var.h	6.1	83/07/29	*/
 
 /*
  * Overlay for ip header used by other protocols (tcp, udp).

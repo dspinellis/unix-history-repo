@@ -1,4 +1,4 @@
-/*	param.h	4.2	82/12/09	*/
+/*	param.h	6.1	83/07/29	*/
 
 /*
  * Machine dependent constants for vax.

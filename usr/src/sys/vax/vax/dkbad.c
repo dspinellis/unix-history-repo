@@ -1,4 +1,4 @@
-/*	dkbad.c	4.3	81/05/10	*/
+/*	dkbad.c	6.1	83/07/29	*/
 
 #ifndef NOBADSECT
 #include "../h/param.h"

@@ -1,4 +1,4 @@
-/*	udp_var.h	4.3	81/11/18	*/
+/*	udp_var.h	6.1	83/07/29	*/
 
 /*
  * UDP kernel structures and variables.

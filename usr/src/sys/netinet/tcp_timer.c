@@ -1,4 +1,4 @@
-/*	tcp_timer.c	4.32	83/05/27	*/
+/*	tcp_timer.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

@@ -1,4 +1,4 @@
-/*	raw_cb.h	4.5	83/06/30	*/
+/*	raw_cb.h	6.1	83/07/29	*/
 
 /*
  * Raw protocol interface control block.  Used

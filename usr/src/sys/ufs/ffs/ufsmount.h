@@ -1,4 +1,4 @@
-/*	ufsmount.h	4.4	82/07/19	*/
+/*	ufsmount.h	6.1	83/07/29	*/
 
 /*
  * Mount structure.

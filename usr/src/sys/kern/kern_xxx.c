@@ -1,4 +1,4 @@
-/*	kern_xxx.c	4.5	83/06/21	*/
+/*	kern_xxx.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

@@ -1,4 +1,4 @@
-/*	kernel.h	4.8	83/05/30	*/
+/*	kernel.h	6.1	83/07/29	*/
 
 /*
  * Global variables for the kernel

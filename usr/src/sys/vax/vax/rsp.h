@@ -1,4 +1,4 @@
-/*	rsp.h	4.3	83/06/08	*/
+/*	rsp.h	6.1	83/07/29	*/
 
 /*
  * TU58 transfer protocol constants and data structures

@@ -1,4 +1,4 @@
-/*	if.h	4.19	83/06/12	*/
+/*	if.h	6.1	83/07/29	*/
 
 /*
  * Structures defining a network interface, providing a packet

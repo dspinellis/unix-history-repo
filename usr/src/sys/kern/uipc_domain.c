@@ -1,4 +1,4 @@
-/*	uipc_domain.c	5.9	83/03/15	*/
+/*	uipc_domain.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"

@@ -1,4 +1,4 @@
-/*	if_ether.h	4.5	83/05/15	*/
+/*	if_ether.h	6.1	83/07/29	*/
 
 /*
  * Structure of a 10Mb/s Ethernet header.

@@ -1,4 +1,4 @@
-/*	dkbad.h	4.3	81/05/10	*/
+/*	dkbad.h	6.1	83/07/29	*/
 
 /*
  * Definitions needed to perform bad sector

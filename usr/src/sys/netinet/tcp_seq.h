@@ -1,4 +1,4 @@
-/*	tcp_seq.h	4.1	81/11/29	*/
+/*	tcp_seq.h	6.1	83/07/29	*/
 
 /*
  * TCP sequence numbers are 32 bit integers operated

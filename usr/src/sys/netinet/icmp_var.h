@@ -1,4 +1,4 @@
-/*	icmp_var.h	4.2	83/03/10	*/
+/*	icmp_var.h	6.1	83/07/29	*/
 
 /*
  * Variables related to this implementation

@@ -1,4 +1,4 @@
-/*	ffs_tables.c	2.4	83/05/27	*/
+/*	ffs_tables.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 

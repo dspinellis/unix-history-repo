@@ -1,4 +1,4 @@
-/*	if_ether.c	4.3	83/06/13	*/
+/*	if_ether.c	6.1	83/07/29	*/
 
 /*
  * Ethernet address resolution protocol.

@@ -1,4 +1,4 @@
-/*	tcpip.h	4.1	81/11/29	*/
+/*	tcpip.h	6.1	83/07/29	*/
 
 /*
  * Tcp+ip header, after ip options removed.

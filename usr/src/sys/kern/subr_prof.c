@@ -1,4 +1,4 @@
-/*	subr_prof.c	4.5	83/07/01	*/
+/*	subr_prof.c	6.1	83/07/29	*/
 
 /* last integrated from: gmon.c	4.10 (Berkeley) 1/14/83 */
 

@@ -1,4 +1,4 @@
-/*	if_loop.c	4.19	83/06/13	*/
+/*	if_loop.c	6.1	83/07/29	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.

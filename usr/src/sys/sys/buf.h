@@ -1,4 +1,4 @@
-/*	buf.h	4.22	83/07/01	*/
+/*	buf.h	6.1	83/07/29	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used

@@ -1,4 +1,4 @@
-/*	ffs_subr.c	4.5	83/03/21	*/
+/*	ffs_subr.c	6.1	83/07/29	*/
 
 #ifdef KERNEL
 #include "../h/param.h"

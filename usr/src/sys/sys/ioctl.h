@@ -1,4 +1,4 @@
-/*	ioctl.h	4.34	83/06/13	*/
+/*	ioctl.h	6.1	83/07/29	*/
 /*
  * Ioctl definitions
  */

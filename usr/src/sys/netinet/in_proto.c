@@ -1,4 +1,4 @@
-/*	in_proto.c	5.4	83/01/17	*/
+/*	in_proto.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"

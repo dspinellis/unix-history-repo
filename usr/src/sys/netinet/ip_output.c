@@ -1,4 +1,4 @@
-/*	ip_output.c	1.49	83/05/27	*/
+/*	ip_output.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"

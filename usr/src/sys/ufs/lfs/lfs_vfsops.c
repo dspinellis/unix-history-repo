@@ -1,4 +1,4 @@
-/*	lfs_vfsops.c	4.1	83/05/27	*/
+/*	lfs_vfsops.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

@@ -1,4 +1,4 @@
-/*	machdep.c	4.86	83/07/20	*/
+/*	machdep.c	6.1	83/07/29	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"

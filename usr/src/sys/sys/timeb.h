@@ -1,4 +1,4 @@
-/*	timeb.h	4.2	81/02/19	*/
+/*	timeb.h	6.1	83/07/29	*/
 
 /*
  * Structure returned by ftime system call

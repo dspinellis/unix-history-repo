@@ -1,4 +1,4 @@
-/*	cons.c	4.19	82/12/05	*/
+/*	cons.c	6.1	83/07/29	*/
 
 /*
  * VAX console driver (and floppy interface)

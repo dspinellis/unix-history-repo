@@ -1,4 +1,4 @@
-/*	pup_proto.c	5.3	83/06/30	*/
+/*	pup_proto.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/socket.h"

@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.18	82/10/31	*/
+/*	uipc_pipe.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"

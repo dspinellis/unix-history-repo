@@ -1,4 +1,4 @@
-/*	tty_tb.c	4.8	83/05/27	*/
+/*	tty_tb.c	6.1	83/07/29	*/
 
 #include "tb.h"
 #if NTB > 0

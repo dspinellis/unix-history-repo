@@ -1,4 +1,4 @@
-/*	pup_cksum.c	4.1	83/05/30	*/
+/*	pup_cksum.c	6.1	83/07/29	*/
 
 #include "../h/types.h"
 #include "../h/mbuf.h"

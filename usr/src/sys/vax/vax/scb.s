@@ -1,4 +1,4 @@
-/*	scb.s	4.14	82/03/19	*/
+/*	scb.s	6.1	83/07/29	*/
 
 /*
  * System control block

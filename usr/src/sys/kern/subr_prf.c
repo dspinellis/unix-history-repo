@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.28	83/07/01	*/
+/*	subr_prf.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

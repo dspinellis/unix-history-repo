@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.22	83/05/27	*/
+/*	subr_xxx.c	6.1	83/07/29	*/
 
 #include "../machine/pte.h"
 

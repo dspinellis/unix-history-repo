@@ -1,4 +1,4 @@
-/*	ttydev.h	4.3	83/05/18	*/
+/*	ttydev.h	6.1	83/07/29	*/
 
 /*
  * Terminal definitions related to underlying hardware.

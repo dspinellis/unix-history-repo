@@ -1,4 +1,4 @@
-/*	in_cksum.c	1.17	83/01/17	*/
+/*	in_cksum.c	6.1	83/07/29	*/
 
 #include "../h/types.h"
 #include "../h/mbuf.h"

@@ -1,4 +1,4 @@
-/*	sys_process.c	5.10	83/07/01	*/
+/*	sys_process.c	6.1	83/07/29	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"

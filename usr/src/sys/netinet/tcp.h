@@ -1,4 +1,4 @@
-/*	tcp.h	1.24	83/07/06	*/
+/*	tcp.h	6.1	83/07/29	*/
 
 typedef	u_long	tcp_seq;
 /*

@@ -1,4 +1,4 @@
-/*	udp.h	4.3	81/11/18	*/
+/*	udp.h	6.1	83/07/29	*/
 
 /*
  * Udp protocol header.

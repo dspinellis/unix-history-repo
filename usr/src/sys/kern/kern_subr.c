@@ -1,4 +1,4 @@
-/*	kern_subr.c	4.1	83/05/27	*/
+/*	kern_subr.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"

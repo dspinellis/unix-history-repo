@@ -1,4 +1,4 @@
-/*	in.c	4.12	83/03/14	*/
+/*	in.c	6.1	83/07/29	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
