@@ -1,0 +1,23 @@
+.TH phoon 1 "08 November 1986"
+.SH NAME
+phoon \- show the PHase of the mOON
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+phoon  \%[ <date> ]
+.in -.5i
+.SH DESCRIPTION
+.I Phoon
+displays the phase of the moon, either currently
+or at a specified date / time.
+Unlike other such programs, which just tell you how long since first quarter
+or something like that, phoon *shows* you the phase with a cute little
+picture.
+.SH "SEE\ ALSO"
+.IR deltime(1),
+.IR libtws(3)
+.SH AUTHOR
+Jef Poskanzer
+.SH BUGS
+The algorithm for determining the phase is very simple, but not very
+accurate.
