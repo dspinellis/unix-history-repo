@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys.h	5.1 (Berkeley) %G%
+ *	@(#)sys.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -50,5 +50,35 @@ typedef char* ioctl_t;
 #endif
 
 #include <stdio.h>
+
+#ifdef sun
+typedef void (*sig_t)__P((int));
+#ifdef __GNUC__
+/*
+ * Broken hdrs.
+ */
+extern char    *getenv		__P((const char *));
+extern int	fprintf		__P((FILE *, const char *, ...));
+extern int	sigsetmask	__P((int));
+extern int	sigblock	__P((int));
+extern int	ioctl		__P((int, int, void *));
+extern int	fputc		__P((int, FILE *));
+extern int	fgetc		__P((FILE *));
+extern int	fflush		__P((FILE *));
+extern int	tolower		__P((int));
+extern int	toupper		__P((int));
+extern int	errno, sys_nerr;
+extern char	*sys_errlist[];
+extern void	perror		__P((const char *));
+extern int	read		__P((int, const char*, int));
+#include <string.h>
+#define strerror(e)	sys_errlist[e]
+#endif
+#ifdef SABER
+extern ptr_t    memcpy		__P((ptr_t, const ptr_t, size_t));
+extern ptr_t    memset		__P((ptr_t, int, size_t));
+#endif
+extern char    *fgetline	__P((FILE *, int *));
+#endif
 
 #endif /* _h_sys */

@@ -8,12 +8,12 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)map.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)map.c	5.2 (Berkeley) %G%";
+#endif /* not lint && not SCCSID */
 
 /*
- * el.map.c: Editor function definitions 
+ * map.c: Editor function definitions 
  */
 #include "sys.h"
 #include <stdlib.h>
@@ -306,7 +306,7 @@ private el_action_t  el_map_vi_insert[] = {
     /*   6 */	ED_INSERT,		/* ^F */
     /*   7 */	ED_INSERT,		/* ^G */
     /*   8 */	VI_DELETE_PREV_CHAR,	/* ^H */   /* BackSpace key */
-    /*   9 */	ED_UNASSIGNED,		/* ^I */   /* Tab Key  */
+    /*   9 */	ED_INSERT,		/* ^I */   /* Tab Key  */
     /*  10 */	ED_NEWLINE,		/* ^J */
     /*  11 */	ED_INSERT,		/* ^K */
     /*  12 */	ED_INSERT,		/* ^L */
@@ -346,7 +346,7 @@ private el_action_t  el_map_vi_insert[] = {
     /*  13 */	ED_NEWLINE,		/* ^M */
     /*  14 */	ED_NEXT_HISTORY,	/* ^N */
     /*  15 */	ED_TTY_FLUSH_OUTPUT,	/* ^O */
-    /*  16 */	ED_PREV_HISTORY,		/* ^P */
+    /*  16 */	ED_PREV_HISTORY,	/* ^P */
     /*  17 */	ED_TTY_START_OUTPUT,	/* ^Q */
     /*  18 */	ED_REDISPLAY,		/* ^R */
     /*  19 */	ED_TTY_STOP_OUTPUT,	/* ^S */
@@ -1000,7 +1000,7 @@ map_init_vi(el)
 	map_init_nls(el);
 #endif
 
-    term_bind_arrows(el);
+    term_bind_arrow(el);
 }
 
 
@@ -1038,7 +1038,7 @@ map_init_emacs(el)
     buf[1] = CONTROL('X');
     key_add(el, buf, key_map_cmd(el, EM_EXCHANGE_MARK), XK_CMD);
 
-    term_bind_arrows(el);
+    term_bind_arrow(el);
 }
 
 
@@ -1177,6 +1177,8 @@ map_print_all_keys(el)
 
     (void) fprintf(el->el_outfile, "Multi-character bindings\n");
     key_print(el, "");
+    (void) fprintf(el->el_outfile, "Arrow key bindings\n");
+    term_print_arrow(el, "");
 }
 
 
@@ -1194,17 +1196,18 @@ map_bind(el, argc, argv)
     char   *p;
     char    inbuf[EL_BUFSIZ];
     char    outbuf[EL_BUFSIZ];
-    char   *in;
-    char   *out;
+    char   *in = NULL;
+    char   *out = NULL;
     el_bindings_t *bp;
     int     cmd;
+    int	    key;
 
     if (argv == NULL)
 	return -1;
 
     map = el->el_map.key;
     ntype = XK_CMD;
-    remove = 0;
+    key = remove = 0;
     for (argc = 1; (p = argv[argc]) != NULL; argc++)
 	if (p[0] == '-')
 	    switch (p[1]) {
@@ -1220,6 +1223,10 @@ map_bind(el, argc, argv)
 		ntype = XK_EXE;
 		break;
 #endif
+	    case 'k':
+		key = 1;
+		break;
+
 	    case 'r':
 		remove = 1;
 		break;
@@ -1249,13 +1256,20 @@ map_bind(el, argc, argv)
 	return 0;
     }
 
-    if ((in = parse__string(inbuf, argv[argc++])) == NULL) {
-	(void) fprintf(el->el_errfile, "%s: Invalid \\ or ^ in instring.\n",
-		       argv[0]);
-	return -1;
-    }
+    if (key)
+	in = argv[argc++];
+    else
+	if ((in = parse__string(inbuf, argv[argc++])) == NULL) {
+	    (void) fprintf(el->el_errfile, "%s: Invalid \\ or ^ in instring.\n",
+			   argv[0]);
+	    return -1;
+	}
 
     if (remove) {
+	if (key) {
+	    (void) term_clear_arrow(el, in);
+	    return -1;
+	}
 	if (in[1]) 
 	    (void) key_delete(el, in);
 	else if (map[(unsigned char) *in] == ED_SEQUENCE_LEAD_IN) 
@@ -1266,7 +1280,10 @@ map_bind(el, argc, argv)
     }
 
     if (argv[argc] == NULL) {
-	map_print_key(el, map, in);
+	if (key)
+	    term_print_arrow(el, in);
+	else
+	    map_print_key(el, map, in);
 	return 0;
     }
 
@@ -1285,7 +1302,10 @@ map_bind(el, argc, argv)
 			   "%s: Invalid \\ or ^ in outstring.\n", argv[0]);
 	    return -1;
 	}
-	key_add(el, in, key_map_str(el, out), ntype);
+	if (key)
+	    term_set_arrow(el, in, key_map_str(el, out), ntype);
+	else
+	    key_add(el, in, key_map_str(el, out), ntype);
 	map[(unsigned char) *in] = ED_SEQUENCE_LEAD_IN;
 	break;
 
@@ -1295,13 +1315,17 @@ map_bind(el, argc, argv)
 			   "%s: Invalid command `%s'.\n", argv[0], argv[argc]);
 	    return -1;
 	}
-	if (in[1]) {
-	    key_add(el, in, key_map_cmd(el, cmd), ntype);
-	    map[(unsigned char) *in] = ED_SEQUENCE_LEAD_IN;
-	}
-	else  {
-	    key_clear(el, map, in);
-	    map[(unsigned char) *in] = cmd;
+	if (key)
+	    term_set_arrow(el, in, key_map_str(el, out), ntype);
+	else {
+	    if (in[1]) {
+		key_add(el, in, key_map_cmd(el, cmd), ntype);
+		map[(unsigned char) *in] = ED_SEQUENCE_LEAD_IN;
+	    }
+	    else  {
+		key_clear(el, map, in);
+		map[(unsigned char) *in] = cmd;
+	    }
 	}
 	break;
 

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)parse.h	5.1 (Berkeley) %G%
+ *	@(#)parse.h	5.2 (Berkeley) %G%
  */
 
 /*

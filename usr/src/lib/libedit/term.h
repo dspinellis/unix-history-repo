@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)term.h	5.2 (Berkeley) %G%
+ *	@(#)term.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -17,6 +17,13 @@
 #define _h_el_term
 
 #include "histedit.h"
+
+typedef struct {	/* Symbolic function key bindings	*/
+    char       *name;	/* name of the key			*/
+    int     	key;	/* Index in termcap table		*/
+    key_value_t fun;	/* Function bound to it			*/
+    int	        type;	/* Type of function			*/
+} fkey_t;
 
 typedef struct {
     coord_t t_size;			/* # lines and cols	*/
@@ -33,8 +40,17 @@ typedef struct {
     char  **t_str;			/* termcap strings	*/
     int	   *t_val;			/* termcap values	*/
     char   *t_cap;			/* Termcap buffer	*/
+    fkey_t *t_fkey;			/* Array of keys	*/
 } el_term_t;
 
+/*
+ * fKey indexes
+ */
+#define A_K_DN		0
+#define A_K_UP		1
+#define A_K_LT		2
+#define A_K_RT		3
+#define A_K_NKEYS	4
 
 protected void term_move_to_line	__P((EditLine *, int));
 protected void term_move_to_char	__P((EditLine *, int));
@@ -47,8 +63,13 @@ protected void term_beep		__P((EditLine *));
 protected void term_change_size		__P((EditLine *, int, int));
 protected int  term_get_size		__P((EditLine *, int *, int *));
 protected int  term_init		__P((EditLine *));
-protected void term_bind_arrows		__P((EditLine *));
+protected void term_bind_arrow		__P((EditLine *));
+protected void term_print_arrow		__P((EditLine *, char *));
+protected int  term_clear_arrow		__P((EditLine *, char *));
+protected int  term_set_arrow		__P((EditLine *, char *, 
+					     key_value_t *, int));
 protected void term_end			__P((EditLine *));
+protected int  term_set			__P((EditLine *, char *));
 protected int  term_settc		__P((EditLine *, int, char **));
 protected int  term_telltc		__P((EditLine *, int, char **));
 protected int  term_echotc		__P((EditLine *, int, char **));

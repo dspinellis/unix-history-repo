@@ -8,12 +8,12 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)chared.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)chared.c	5.2 (Berkeley) %G%";
+#endif /* not lint && not SCCSID */
 
 /* 
- * el.chared.c: Character editor utilities
+ * chared.c: Character editor utilities
  */
 #include "sys.h"
 
@@ -430,6 +430,7 @@ ch_init(el)
     el->el_state.argument  = 1;
     el->el_state.lastcmd   = ED_UNASSIGNED;
 
+    el->el_chared.c_macro.nline     = NULL;
     el->el_chared.c_macro.level     = -1;
     el->el_chared.c_macro.macro     = (char **) el_malloc(EL_MAXMACRO * 
 						          sizeof(char *));

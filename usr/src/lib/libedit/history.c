@@ -8,9 +8,9 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)history.c	5.2 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)history.c	5.3 (Berkeley) %G%";
+#endif /* not lint && not SCCSID */
 
 /*
  * hist.c: History access functions

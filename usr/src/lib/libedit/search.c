@@ -8,12 +8,12 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)search.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)search.c	5.2 (Berkeley) %G%";
+#endif /* not lint && not SCCSID */
 
 /*
- * el.search.c: History and character search functions
+ * search.c: History and character search functions
  */
 #include "sys.h"
 #include <stdlib.h>
@@ -22,7 +22,12 @@ static char sccsid[] = "@(#)search.c	5.1 (Berkeley) %G%";
 #endif
 #include "el.h"
 
-private int el_match	__P((const char *, const char *));
+/*
+ * Adjust cursor in vi mode to include the character under it
+ */
+#define EL_CURSOR(el) \
+    ((el)->el_line.cursor + (((el)->el_map.type == MAP_VI) && \
+			    ((el)->el_map.current == (el)->el_map.alt)))
 
 /* search_init():
  *	Initialize the search stuff
@@ -66,7 +71,7 @@ regerror(msg)
 /* el_match():
  *	Return if string matches pattern
  */
-private int
+protected int
 el_match(str, pat)
     const char *str;
     const char *pat;
@@ -125,7 +130,7 @@ c_setpat(el)
 {
     if (el->el_state.lastcmd != ED_SEARCH_PREV_HISTORY && 
 	el->el_state.lastcmd != ED_SEARCH_NEXT_HISTORY) {
-	el->el_search.patlen = el->el_line.cursor - el->el_line.buffer;
+	el->el_search.patlen = EL_CURSOR(el) - el->el_line.buffer;
 	if (el->el_search.patlen >= EL_BUFSIZ) 
 	    el->el_search.patlen = EL_BUFSIZ -1;
 	if (el->el_search.patlen >= 0)  {
@@ -141,7 +146,7 @@ c_setpat(el)
     (void) fprintf(el->el_errfile, "patlen = %d\n", el->el_search.patlen);
     (void) fprintf(el->el_errfile, "patbuf = \"%s\"\n", el->el_search.patbuf);
     (void) fprintf(el->el_errfile, "cursor %d lastchar %d\n", 
-		   el->el_line.cursor - el->el_line.buffer, 
+		   EL_CURSOR(el) - el->el_line.buffer, 
 		   el->el_line.lastchar - el->el_line.buffer);
 #endif
 }

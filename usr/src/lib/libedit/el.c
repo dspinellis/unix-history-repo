@@ -8,15 +8,18 @@
  * %sccs.include.redist.c%
  */
 
-#ifndef lint
-static char sccsid[] = "@(#)el.c	5.1 (Berkeley) %G%";
-#endif /* not lint */
+#if !defined(lint) && !defined(SCCSID)
+static char sccsid[] = "@(#)el.c	5.2 (Berkeley) %G%";
+#endif /* not lint && not SCCSID */
 
 /*
  * el.c: EditLine interface functions
  */
 #include "sys.h"
 
+#include <sys/types.h>
+#include <sys/param.h>
+#include <string.h>
 #include <stdlib.h>
 #if __STDC__
 # include <stdarg.h>
@@ -147,6 +150,10 @@ el_set(va_alist)
 	rv = prompt_set(el, va_arg(va, el_pfunc_t));
 	break;
 
+    case EL_TERMINAL:
+	rv = term_set(el, va_arg(va, char *));
+	break;
+
     case EL_EDITOR:
 	rv = map_set_editor(el, va_arg(va, char *));
 	break;
@@ -179,22 +186,22 @@ el_set(va_alist)
 
 	    case EL_TELLTC:
 		argv[0] = "telltc";
-		rv = term_telltc(el, i, va_arg(va, char **));
+		rv = term_telltc(el, i, argv);
 		break;
 
 	    case EL_SETTC:
 		argv[0] = "settc";
-		rv = term_settc(el, i, va_arg(va, char **));
+		rv = term_settc(el, i, argv);
 		break;
 
 	    case EL_ECHOTC:
 		argv[0] = "echotc";
-		rv = term_echotc(el, i, va_arg(va, char **));
+		rv = term_echotc(el, i, argv);
 		break;
 
 	    case EL_SETTY:
 		argv[0] = "setty";
-		rv = tty_stty(el, i, va_arg(va, char **));
+		rv = tty_stty(el, i, argv);
 		break;
 
 	    default:
@@ -239,6 +246,44 @@ el_line(el)
     EditLine *el;
 {
     return (const LineInfo *) &el->el_line;
+}
+
+static const char elpath[] = "/.editrc";
+
+/* el_source():
+ *	Source a file
+ */
+public int
+el_source(el, fname)
+    EditLine *el;
+    const char *fname;
+{
+    char path[MAXPATHLEN];
+    FILE *fp;
+    char *ptr;
+
+    if (fname == NULL) {
+	fname = &elpath[1];
+	if ((fp = fopen(fname, "r")) == NULL) {
+	    if ((ptr = getenv("HOME")) == NULL) 
+		return -1;
+	    fname = strncpy(path, ptr, MAXPATHLEN);
+	    (void) strncat(path, elpath, MAXPATHLEN);
+	    path[MAXPATHLEN-1] = '\0';
+	}
+    }
+
+    if ((fp = fopen(fname, "r")) == NULL) 
+	return -1;
+
+    while ((ptr = fgetline(fp, NULL)) != NULL)
+	if (parse_line(el, ptr) == -1) {
+	    (void) fclose(fp);
+	    return -1;
+	}
+
+    (void) fclose(fp);
+    return 0;
 }
 
 
