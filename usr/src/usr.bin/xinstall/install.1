@@ -11,9 +11,9 @@
 .\" from this software without specific prior written permission.
 .\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-.\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)install.1	6.5 (Berkeley) %G%
+.\"	@(#)install.1	6.6 (Berkeley) %G%
 .\"
 .TH INSTALL 1 ""
 .UC 5
@@ -22,37 +22,51 @@ install \- install binaries
 .SH SYNOPSIS
 .B install
 [
-.B \-c
+.B \-cs
 ] [
 .B \-m
 mode ] [
 .B \-o
 owner ] [
 .B \-g
-group ] [
-.B \-s
-] file1 file2; or file1 ... fileN directory
+group ] file1 file2; or file1 ... fileN directory
 .SH DESCRIPTION
-The file(s) are moved (or copied if the \fB-c\fP option is specified)
-to the target file or directory.  If the destination is a directory, then
-the \fIfile\fP is moved into \fIdirectory\fP with its original file-name.
-If the target file already exists, it is overwritten.
+The file(s) are moved (or copied if the
+.I -c
+option is specified) to the target file or directory.
+If the destination is a directory, then the
+.I file
+is moved into
+.I directory
+with its original filename.
+If the target file already exists, it is overwritten if permissions
+allow.
 .PP
-The mode is set to 755; the \fB-m\fP option may be used to specify
-an alternate mode.
+The mode is set to 755; the
+.I -m
+option may be used to specify an alternate mode.
 .PP
-The \fB-o\fP and \fB-g\fP options may be used to specify an owner
-and/or group, respectively.
+The
+.I -o
+and
+.I -g
+options may be used to specify an owner and/or group, respectively.
 .PP
-The \fB-s\fP option causes the file to be stripped.  It is an error
-to attempt to strip a file not in the \fIa.out\fP format, but not to
-attempt to strip a file that has already been stripped.
+The
+.I -s
+option causes the file to be stripped.
+.I Install
+exec's the command
+.IR strip (1)
+to strip binaries so that install can be portable over a large
+number of systems and binary types.
 .PP
-\fIInstall\fP refuses to move a file onto itself.
+.I Install
+refuses to move a file onto itself.
 .PP
 Installing ``/dev/null'' creates an empty file.
 .SH "RETURN VALUE"
-Upon successful completion a value of 0 is returned.  Otherwise, a
-value of 1 is returned.
+Upon successful completion a value of 0 is returned.
+Otherwise, a value of 1 is returned.
 .SH "SEE ALSO"
 chgrp(1), chmod(1), cp(1), mv(1), strip(1), a.out(5), chown(8)
