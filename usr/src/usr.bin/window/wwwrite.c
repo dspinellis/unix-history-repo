@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.2 83/08/16";
+static	char *sccsid = "@(#)wwwrite.c	3.3 83/08/16";
 #endif
 
 #include "ww.h"
@@ -7,9 +7,9 @@ static	char *sccsid = "@(#)wwwrite.c	3.2 83/08/16";
 wwwrite(w, p, n)
 register struct ww *w;
 register char *p;
-register n;
+int n;
 {
-	register char c;
+	char c;
 	int oldn = n;
 
 	if (w == 0)
@@ -20,35 +20,53 @@ register n;
 		c = *p++ & 0x7f;
 		switch (w->ww_wstate) {
 		case 0:
-			asm("_wwwrite1:");
-			if (c >= ' ' && c < 0x7f) {
-				register i, j, cc;
+			if (!ISCTRL(c)) {
+				int i, j;
+				register union ww_char *bp;
+				union ww_char *bq;
+				register union ww_char *ns;
+				register char *smap;
+				register char *win;
+				char *touched;
 
-				if (w->ww_insert)
+				if (w->ww_insert) {
 					wwinschar(w, w->ww_scroll + w->ww_cur.r,
 						w->ww_cur.c, c);
-				else {
-					cc = w->ww_buf[w->ww_scroll
-						+ w->ww_cur.r]
-						[w->ww_cur.c].c_w = c;
-					i = wwcurrow(w);
-					j = wwcurcol(w);
-					if (wwsmap[i][j] == w->ww_index) {
-						wwtouched[i] = 1;
-						cc = wwns[i][j].c_w = cc
-							^ w->ww_win[w->ww_cur.r]
-							[w->ww_cur.c]
-							<< WWC_MSHIFT;
+					goto right;
+				}
+				i = w->ww_w.nc - w->ww_cur.c - 1;
+				bp = bq = &w->ww_buf[w->ww_scroll+w->ww_cur.r]
+					[w->ww_cur.c];
+				bp++->c_w = c;
+				while (n > 0 && --i >= 0 && !ISCTRL(*p)) {
+					n--;
+					bp++->c_w = *p++;
+				}
+				win = &w->ww_win[w->ww_cur.r][w->ww_cur.c];
+				i = wwcurrow(w);
+				j = wwcurcol(w);
+				smap = &wwsmap[i][j];
+				ns = &wwns[i][j];
+				touched = &wwtouched[i];
+				j = i = bp - bq;
+				bp = bq;
+				while (--i >= 0) {
+					if (*smap++ == w->ww_index) {
+						*touched = 1;
+						ns++->c_w = bp++->c_w
+							^ *win++ << WWC_MSHIFT;
+					} else {
+						ns++;
+						bp++;
+						win++;
 					}
 				}
-		right:
-				if (++w->ww_cur.c >= w->ww_w.nc) {
+				if ((w->ww_cur.c += j) >= w->ww_w.nc) {
 					w->ww_cur.c = 0;
 					goto lf;
 				}
 				break;
 			}
-			asm("_wwwrite2:");
 			switch (c) {
 			case '\n':
 				if (w->ww_mapnl)
@@ -61,7 +79,11 @@ register n;
 				break;
 			case '\t':
 				w->ww_cur.c |= 7;
-				goto right;
+		right:
+				if (++w->ww_cur.c >= w->ww_w.nc) {
+					w->ww_cur.c = 0;
+					goto lf;
+				}
 				break;
 			case '\b':
 				if (--w->ww_cur.c < 0)
