@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)icmp_var.h	7.1 (Berkeley) %G%
+ *	@(#)icmp_var.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -15,14 +15,14 @@ struct	icmpstat {
 	int	icps_error;		/* # of calls to icmp_error */
 	int	icps_oldshort;		/* no error 'cuz old ip too short */
 	int	icps_oldicmp;		/* no error 'cuz old was icmp */
-	int	icps_outhist[ICMP_IREQREPLY + 1];
+	int	icps_outhist[ICMP_MAXTYPE + 1];
 /* statistics related to input messages processed */
  	int	icps_badcode;		/* icmp_code out of range */
 	int	icps_tooshort;		/* packet < ICMP_MINLEN */
 	int	icps_checksum;		/* bad checksum */
 	int	icps_badlen;		/* calculated bound mismatch */
 	int	icps_reflect;		/* number of responses */
-	int	icps_inhist[ICMP_IREQREPLY + 1];
+	int	icps_inhist[ICMP_MAXTYPE + 1];
 };
 
 #ifdef KERNEL
