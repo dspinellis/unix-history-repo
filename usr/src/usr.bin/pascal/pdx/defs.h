@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	5.3 (Berkeley) %G%
+ *	@(#)defs.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -13,6 +13,8 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*
  * Since C does not allow forward referencing of types,
@@ -43,8 +45,6 @@ typedef struct frame FRAME;		/* runtime activation record */
  * standard I/O library, but which are generally useful.
  */
 
-extern long atol();		/* ascii to long */
-extern double atof();		/* ascii to floating point */
 extern char *mktemp();		/* make a temporary file name */
 
 /*
@@ -63,8 +63,6 @@ short numerrors();		/* return number of errors since last call */
  * defintions for doing memory allocation
  */
 
-extern char *malloc();
-
 #define alloc(n, type)	((type *) malloc((unsigned) (n) * sizeof(type)))
 #define dispose(p)	{ free((char *) p); p = NIL; }
 
@@ -78,8 +76,4 @@ extern char *malloc();
  * string definitions
  */
 
-extern char *strcpy();
-extern int strlen();
-
-#define strdup(s)		strcpy(malloc((unsigned) strlen(s) + 1), s)
 #define streq(s1, s2)	(strcmp(s1, s2) == 0)
