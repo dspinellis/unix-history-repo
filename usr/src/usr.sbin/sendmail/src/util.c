@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.38		%G%);
+SCCSID(@(#)util.c	3.39		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -538,9 +538,7 @@ dfopen(filename, mode)
 **	Parameters:
 **		l -- line to put.
 **		fp -- file to put it onto.
-**		crlf -- if set, output Carriage Return/Line Feed on lines
-**			instead of newline.
-**		fullsmtp -- if set, obey strictest SMTP conventions.
+**		m -- the mailer used to control output.
 **
 **	Returns:
 **		none
@@ -551,14 +549,17 @@ dfopen(filename, mode)
 
 # define SMTPLINELIM	990	/* maximum line length */
 
-putline(l, fp, crlf, fullsmtp)
+putline(l, fp, m)
 	register char *l;
 	FILE *fp;
-	bool crlf;
-	bool fullsmtp;
+	MAILER *m;
 {
 	register char *p;
 	char svchar;
+	char *crlfstring = "\r\n";
+
+	if (!bitset(M_CRLF, m->m_flags))
+		crlfstring++;
 
 	do
 	{
@@ -568,17 +569,17 @@ putline(l, fp, crlf, fullsmtp)
 			p = &l[strlen(l)];
 
 		/* check for line overflow */
-		while (fullsmtp && (p - l) > SMTPLINELIM)
+		while (bitset(M_LIMITS, m->m_flags) && (p - l) > SMTPLINELIM)
 		{
 			register char *q = &l[SMTPLINELIM - 1];
 
 			svchar = *q;
 			*q = '\0';
+			if (l[0] == '.' && bitset(M_XDOT, m->m_flags))
+				fputc('.', fp);
 			fputs(l, fp);
 			fputc('!', fp);
-			if (crlf)
-				fputc('\r', fp);
-			fputc('\n', fp);
+			fputs(crlfstring, fp);
 			*q = svchar;
 			l = q;
 		}
@@ -586,10 +587,10 @@ putline(l, fp, crlf, fullsmtp)
 		/* output last part */
 		svchar = *p;
 		*p = '\0';
+		if (l[0] == '.' && bitset(M_XDOT, m->m_flags))
+			fputc('.', fp);
 		fputs(l, fp);
-		if (crlf)
-			fputc('\r', fp);
-		fputc('\n', fp);
+		fputs(crlfstring, fp);
 		*p = svchar;
 		l = p;
 		if (*l == '\n')

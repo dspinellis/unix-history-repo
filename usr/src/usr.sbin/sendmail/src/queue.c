@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.66		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.67		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.66		%G%);
+SCCSID(@(#)queue.c	3.67		%G%);
 
 /*
 **  Work queue.
@@ -51,6 +51,7 @@ queueup(e, queueall, announce)
 	register FILE *tfp;
 	register HDR *h;
 	register ADDRESS *q;
+	MAILER nullmailer;
 
 	/*
 	**  Create control file.
@@ -88,7 +89,7 @@ queueup(e, queueall, announce)
 			return;
 		}
 		(void) chmod(e->e_df, FileMode);
-		(*e->e_putbody)(dfp, ProgMailer, FALSE, e, FALSE);
+		(*e->e_putbody)(dfp, ProgMailer, e);
 		(void) fclose(dfp);
 		e->e_putbody = putbody;
 	}
@@ -145,7 +146,12 @@ queueup(e, queueall, announce)
 	**	everything as absolute headers.
 	**		All headers that must be relative to the recipient
 	**		can be cracked later.
+	**	We set up a "null mailer" -- i.e., a mailer that will have
+	**	no effect on the addresses as they are output.
 	*/
+
+	bzero(&nullmailer, sizeof nullmailer);
+	nullmailer.m_r_rwset = nullmailer.m_s_rwset = -1;
 
 	define('g', "$f", e);
 	for (h = e->e_header; h != NULL; h = h->h_link)
@@ -163,7 +169,7 @@ queueup(e, queueall, announce)
 		else if (bitset(H_FROM|H_RCPT, h->h_flags))
 		{
 			commaize(h, h->h_value, tfp, bitset(EF_OLDSTYLE, e->e_flags),
-				 (MAILER *) NULL, FALSE);
+				 &nullmailer);
 		}
 		else
 			fprintf(tfp, "%s: %s\n", h->h_field, h->h_value);

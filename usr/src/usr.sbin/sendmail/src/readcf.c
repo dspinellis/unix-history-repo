@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	3.48		%G%);
+SCCSID(@(#)readcf.c	3.49		%G%);
 
 /*
 **  READCF -- read control file.
@@ -483,26 +483,29 @@ struct optlist
 };
 struct optlist	OptList[] =
 {
-	'f',	M_FOPT,
-	'r',	M_ROPT,
-	'P',	M_RPATH,
-	'S',	M_RESTR,
-	'n',	M_NHDR,
-	'l',	M_LOCAL,
-	's',	M_STRIPQ,
-	'm',	M_MUSER,
-	'F',	M_NEEDFROM,
-	'D',	M_NEEDDATE,
-	'M',	M_MSGID,
-	'u',	M_USR_UPPER,
-	'h',	M_HST_UPPER,
-	'x',	M_FULLNAME,
 	'A',	M_ARPAFMT,
-	'U',	M_UGLYUUCP,
-	'e',	M_EXPENSIVE,
-	'X',	M_FULLSMTP,
 	'C',	M_CANONICAL,
+	'D',	M_NEEDDATE,
+	'e',	M_EXPENSIVE,
+	'F',	M_NEEDFROM,
+	'f',	M_FOPT,
+	'h',	M_HST_UPPER,
 	'I',	M_INTERNAL,
+	'L',	M_LIMITS,
+	'l',	M_LOCAL,
+	'M',	M_MSGID,
+	'm',	M_MUSER,
+	'n',	M_NHDR,
+	'P',	M_RPATH,
+	'p',	M_FROMPATH,
+	'R',	M_CRLF,
+	'r',	M_ROPT,
+	'S',	M_RESTR,
+	's',	M_STRIPQ,
+	'U',	M_UGLYUUCP,
+	'u',	M_USR_UPPER,
+	'x',	M_FULLNAME,
+	'X',	M_XDOT,
 	'\0',	0
 };
 

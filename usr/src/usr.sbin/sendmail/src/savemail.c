@@ -1,7 +1,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-SCCSID(@(#)savemail.c	3.55		%G%);
+SCCSID(@(#)savemail.c	3.56		%G%);
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -291,11 +291,9 @@ returntosender(msg, returnto, sendbody)
 **	original offending message.
 **
 **	Parameters:
-**		xfile -- the transcript file.
 **		fp -- the output file.
-**		xdot -- if set, use the SMTP hidden dot algorithm.
+**		m -- the mailer to output to.
 **		e -- the envelope we are working in.
-**		crlf -- set if we want CRLF's at the end of lines.
 **
 **	Returns:
 **		none
@@ -304,16 +302,13 @@ returntosender(msg, returnto, sendbody)
 **		Outputs the body of an error message.
 */
 
-errbody(fp, m, xdot, e, crlf)
+errbody(fp, m, e)
 	register FILE *fp;
 	register struct mailer *m;
-	bool xdot;
 	register ENVELOPE *e;
-	bool crlf;
 {
 	register FILE *xfile;
 	char buf[MAXLINE];
-	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
 	char *p;
 
 	/*
@@ -333,7 +328,7 @@ errbody(fp, m, xdot, e, crlf)
 		if (e->e_xfp != NULL)
 			(void) fflush(e->e_xfp);
 		while (fgets(buf, sizeof buf, xfile) != NULL)
-			putline(buf, fp, crlf, fullsmtp);
+			putline(buf, fp, m);
 		(void) fclose(xfile);
 	}
 	errno = 0;
@@ -348,21 +343,27 @@ errbody(fp, m, xdot, e, crlf)
 	{
 		if (SendBody)
 		{
-			fprintf(fp, "\n   ----- Unsent message follows -----\n");
+			putline("\n", fp, m);
+			putline("   ----- Unsent message follows -----\n", fp, m);
 			(void) fflush(fp);
-			putheader(fp, m, e->e_parent, crlf);
-			fprintf(fp, "\n");
-			putbody(fp, m, xdot, e->e_parent, crlf);
+			putheader(fp, m, e->e_parent);
+			putline("\n", fp, m);
+			putbody(fp, m, e->e_parent);
 		}
 		else
 		{
-			fprintf(fp, "\n  ----- Message header follows -----\n");
+			putline("\n", fp, m);
+			putline("  ----- Message header follows -----\n", fp, m);
 			(void) fflush(fp);
-			putheader(fp, m, e->e_parent, crlf);
+			putheader(fp, m, e->e_parent);
 		}
 	}
 	else
-		fprintf(fp, "\n  ----- No message was collected -----\n\n");
+	{
+		putline("\n", fp, m);
+		putline("  ----- No message was collected -----\n", fp, m);
+		putline("\n", fp, m);
+	}
 
 	/*
 	**  Cleanup and exit

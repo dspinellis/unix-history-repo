@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.144		%G%);
+SCCSID(@(#)deliver.c	3.145		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -347,7 +347,7 @@ deliver(e, firstto)
 	if (clever)
 	{
 		/* send the initial SMTP protocol */
-		rcode = smtpinit(m, pv, (ADDRESS *) NULL);
+		rcode = smtpinit(m, pv);
 
 		if (rcode == EX_OK)
 		{
@@ -358,7 +358,7 @@ deliver(e, firstto)
 				int i;
 
 				e->e_to = to->q_paddr;
-				i = smtprcpt(to);
+				i = smtprcpt(to, m);
 				if (i != EX_OK)
 				{
 					markfailure(e, to, i);
@@ -377,16 +377,16 @@ deliver(e, firstto)
 			else
 			{
 				e->e_to = tobuf + 1;
-				rcode = smtpfinish(m, e);
+				rcode = smtpdata(m, e);
 			}
 
 			/* now close the connection */
-			smtpquit(pv[0]);
+			smtpquit(pv[0], m);
 		}
 	}
 	else
 # endif SMTP
-		rcode = sendoff(e, m, pv, ctladdr, FALSE);
+		rcode = sendoff(e, m, pv, ctladdr);
 
 	/*
 	**  Do final status disposal.
@@ -525,7 +525,6 @@ dofork()
 **		pvp -- parameter vector to send to it.
 **		ctladdr -- an address pointer controlling the
 **			user/groupid etc. of the mailer.
-**		crlf -- set if we want CRLF on the end of lines.
 **
 **	Returns:
 **		exit status of mailer.
@@ -534,12 +533,11 @@ dofork()
 **		none.
 */
 
-sendoff(e, m, pvp, ctladdr, crlf)
+sendoff(e, m, pvp, ctladdr)
 	register ENVELOPE *e;
 	MAILER *m;
 	char **pvp;
 	ADDRESS *ctladdr;
-	bool crlf;
 {
 	auto FILE *mfile;
 	auto FILE *rfile;
@@ -558,10 +556,10 @@ sendoff(e, m, pvp, ctladdr, crlf)
 	**  Format and send message.
 	*/
 
-	putfromline(mfile, m, crlf);
-	(*e->e_puthdr)(mfile, m, e, crlf);
-	fprintf(mfile, "\n");
-	(*e->e_putbody)(mfile, m, FALSE, e, crlf);
+	putfromline(mfile, m);
+	(*e->e_puthdr)(mfile, m, e);
+	putline("\n", mfile, m);
+	(*e->e_putbody)(mfile, m, e);
 	(void) fclose(mfile);
 
 	i = endmailer(pid, pvp[0]);
@@ -976,7 +974,6 @@ logdelivery(stat)
 **	Parameters:
 **		fp -- the file to output to.
 **		m -- the mailer describing this entry.
-**		crlf -- set if we want a CRLF at the end of the line.
 **
 **	Returns:
 **		none
@@ -985,7 +982,7 @@ logdelivery(stat)
 **		outputs some text to fp.
 */
 
-putfromline(fp, m, crlf)
+putfromline(fp, m)
 	register FILE *fp;
 	register MAILER *m;
 {
@@ -1015,15 +1012,14 @@ putfromline(fp, m, crlf)
 	else
 # endif UGLYUUCP
 		expand("$l\n", buf, &buf[sizeof buf - 1], CurEnv);
-	putline(buf, fp, crlf, bitset(M_FULLSMTP, m->m_flags));
+	putline(buf, fp, m);
 }
 /*
 **  PUTBODY -- put the body of a message.
 **
 **	Parameters:
 **		fp -- file to output onto.
-**		m -- a mailer descriptor.
-**		xdot -- if set, use SMTP hidden dot algorithm.
+**		m -- a mailer descriptor to control output format.
 **		e -- the envelope to put out.
 **
 **	Returns:
@@ -1033,14 +1029,12 @@ putfromline(fp, m, crlf)
 **		The message is written onto fp.
 */
 
-putbody(fp, m, xdot, e, crlf)
+putbody(fp, m, e)
 	FILE *fp;
 	MAILER *m;
-	bool xdot;
 	register ENVELOPE *e;
 {
-	char buf[MAXLINE + 1];
-	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
+	char buf[MAXLINE];
 
 	/*
 	**  Output the body of the message
@@ -1055,17 +1049,13 @@ putbody(fp, m, xdot, e, crlf)
 				syserr("Cannot open %s", e->e_df);
 		}
 		else
-			putline("<<< No Message Collected >>>", fp, crlf, fullsmtp);
+			putline("<<< No Message Collected >>>", fp, m);
 	}
 	if (e->e_dfp != NULL)
 	{
 		rewind(e->e_dfp);
-		buf[0] = '.';
-		while (!ferror(fp) &&
-		       fgets(&buf[1], sizeof buf - 1, e->e_dfp) != NULL)
-		{
-			putline((xdot && buf[1] == '.') ? buf : &buf[1], fp, crlf, fullsmtp);
-		}
+		while (!ferror(fp) && fgets(buf, sizeof buf, e->e_dfp) != NULL)
+			putline(buf, fp, m);
 
 		if (ferror(e->e_dfp))
 		{
@@ -1158,11 +1148,11 @@ mailfile(filename, ctladdr)
 		if (f == NULL)
 			exit(EX_CANTCREAT);
 
-		putfromline(f, ProgMailer, FALSE);
-		(*CurEnv->e_puthdr)(f, ProgMailer, CurEnv, FALSE);
-		fputs("\n", f);
-		(*CurEnv->e_putbody)(f, ProgMailer, FALSE, CurEnv, FALSE);
-		fputs("\n", f);
+		putfromline(f, ProgMailer);
+		(*CurEnv->e_puthdr)(f, ProgMailer, CurEnv);
+		putline("\n", f, ProgMailer);
+		(*CurEnv->e_putbody)(f, ProgMailer, CurEnv);
+		putline("\n", f, ProgMailer);
 		(void) fclose(f);
 		(void) fflush(stdout);
 

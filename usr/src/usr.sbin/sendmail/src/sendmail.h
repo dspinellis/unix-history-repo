@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.107		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.108		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -109,9 +109,11 @@ typedef struct mailer	MAILER;
 # define M_FULLNAME	000040000L	/* want Full-Name field */
 # define M_UGLYUUCP	000100000L	/* this wants an ugly UUCP from line */
 # define M_EXPENSIVE	000200000L	/* it costs to use this mailer.... */
-# define M_FULLSMTP	000400000L	/* must run full SMTP, inc. limits */
+# define M_LIMITS	000400000L	/* must enforce SMTP line limits */
 # define M_INTERNAL	001000000L	/* SMTP to another sendmail site */
 # define M_CRLF		002000000L	/* use CRLF instead of NL as EOLine */
+# define M_FROMPATH	004000000L	/* use reverse-path in MAIL FROM: */
+# define M_XDOT		010000000L	/* use hidden-dot algorithm */
 
 # define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID)
 

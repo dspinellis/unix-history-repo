@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.35		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.36		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.35		%G%);
+SCCSID(@(#)usersmtp.c	3.36		%G%);
 
 
 
@@ -34,7 +34,6 @@ bool	SmtpClosing;			/* set on a forced close */
 **		m -- mailer to create connection to.
 **		pvp -- pointer to parameter vector to pass to
 **			the mailer.
-**		ctladdr -- controlling address for this mailer.
 **
 **	Returns:
 **		appropriate exit status -- EX_OK on success.
@@ -43,10 +42,9 @@ bool	SmtpClosing;			/* set on a forced close */
 **		creates connection and sends initial protocol.
 */
 
-smtpinit(m, pvp, ctladdr)
+smtpinit(m, pvp)
 	struct mailer *m;
 	char **pvp;
-	ADDRESS *ctladdr;
 {
 	register int r;
 	char buf[MAXNAME];
@@ -58,7 +56,7 @@ smtpinit(m, pvp, ctladdr)
 
 	SmtpIn = SmtpOut = NULL;
 	SmtpClosing = FALSE;
-	SmtpPid = openmailer(m, pvp, ctladdr, TRUE, &SmtpOut, &SmtpIn);
+	SmtpPid = openmailer(m, pvp, (ADDRESS *) NULL, TRUE, &SmtpOut, &SmtpIn);
 	if (SmtpPid < 0)
 	{
 # ifdef DEBUG
@@ -74,7 +72,7 @@ smtpinit(m, pvp, ctladdr)
 	**	This should appear spontaneously.
 	*/
 
-	r = reply();
+	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		return (EX_TEMPFAIL);
 
@@ -83,8 +81,8 @@ smtpinit(m, pvp, ctladdr)
 	**	My mother taught me to always introduce myself.
 	*/
 
-	smtpmessage("HELO %s", HostName);
-	r = reply();
+	smtpmessage("HELO %s", m, HostName);
+	r = reply(m);
 	if (r < 0)
 		return (EX_TEMPFAIL);
 	else if (REPLYTYPE(r) == 5)
@@ -100,14 +98,14 @@ smtpinit(m, pvp, ctladdr)
 	if (bitset(M_INTERNAL, m->m_flags))
 	{
 		/* tell it to be verbose */
-		smtpmessage("VERB");
-		r = reply();
+		smtpmessage("VERB", m);
+		r = reply(m);
 		if (r < 0)
 			return (EX_TEMPFAIL);
 
 		/* tell it we will be sending one transaction only */
-		smtpmessage("ONEX");
-		r = reply();
+		smtpmessage("ONEX", m);
+		r = reply(m);
 		if (r < 0)
 			return (EX_TEMPFAIL);
 	}
@@ -127,16 +125,16 @@ smtpinit(m, pvp, ctladdr)
 
 	expand("$g", buf, &buf[sizeof buf - 1], CurEnv);
 	if (CurEnv->e_from.q_mailer == LocalMailer ||
-	    !bitset(M_FULLSMTP, m->m_flags))
+	    !bitset(M_FROMPATH, m->m_flags))
 	{
-		smtpmessage("MAIL From:<%s>", canonname(buf, 1));
+		smtpmessage("MAIL From:<%s>", m, canonname(buf, 1));
 	}
 	else
 	{
-		smtpmessage("MAIL From:<@%s%c%s>", HostName,
-			    buf[0] == '@' ? ',' : ':', canonname(buf, 1));
+		smtpmessage("MAIL From:<@%s%c%s>", m, HostName,
+			buf[0] == '@' ? ',' : ':', canonname(buf, 1));
 	}
-	r = reply();
+	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (r == 250)
@@ -150,6 +148,7 @@ smtpinit(m, pvp, ctladdr)
 **
 **	Parameters:
 **		to -- address of recipient.
+**		m -- the mailer we are sending to.
 **
 **	Returns:
 **		exit status corresponding to recipient status.
@@ -158,15 +157,16 @@ smtpinit(m, pvp, ctladdr)
 **		Sends the mail via SMTP.
 */
 
-smtprcpt(to)
+smtprcpt(to, m)
 	ADDRESS *to;
+	register MAILER *m;
 {
 	register int r;
 	extern char *canonname();
 
-	smtpmessage("RCPT To:<%s>", canonname(to->q_user, 2));
+	smtpmessage("RCPT To:<%s>", m, canonname(to->q_user, 2));
 
-	r = reply();
+	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (REPLYTYPE(r) == 2)
@@ -178,7 +178,7 @@ smtprcpt(to)
 	return (EX_PROTOCOL);
 }
 /*
-**  SMTPFINISH -- finish up sending all the SMTP protocol.
+**  SMTPDATA -- send the data and clean up the transaction.
 **
 **	Parameters:
 **		m -- mailer being sent to.
@@ -191,7 +191,7 @@ smtprcpt(to)
 **		none.
 */
 
-smtpfinish(m, e)
+smtpdata(m, e)
 	struct mailer *m;
 	register ENVELOPE *e;
 {
@@ -199,22 +199,33 @@ smtpfinish(m, e)
 
 	/*
 	**  Send the data.
-	**	Dot hiding is done here.
+	**	First send the command and check that it is ok.
+	**	Then send the data.
+	**	Follow it up with a dot to terminate.
+	**	Finally get the results of the transaction.
 	*/
 
-	smtpmessage("DATA");
-	r = reply();
+	/* send the command and check ok to proceed */
+	smtpmessage("DATA", m);
+	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (r == 554)
 		return (EX_UNAVAILABLE);
 	else if (r != 354)
 		return (EX_PROTOCOL);
-	(*e->e_puthdr)(SmtpOut, m, CurEnv, TRUE);
-	fprintf(SmtpOut, "\r\n");
-	(*e->e_putbody)(SmtpOut, m, TRUE, CurEnv, TRUE);
-	smtpmessage(".");
-	r = reply();
+
+	/* now output the actual message */
+	(*e->e_puthdr)(SmtpOut, m, CurEnv);
+	putline("\n", SmtpOut, m);
+	(*e->e_putbody)(SmtpOut, m, CurEnv);
+
+	/* terminate the message */
+	fprintf(SmtpOut, ".%s\n", bitset(M_CRLF, m->m_flags) ? "\r" : "");
+	nmessage(Arpa_Info, ">>> .");
+
+	/* check for the results of the transaction */
+	r = reply(m);
 	if (r < 0 || REPLYTYPE(r) == 4)
 		return (EX_TEMPFAIL);
 	else if (r == 250)
@@ -236,8 +247,9 @@ smtpfinish(m, e)
 **		sends the final protocol and closes the connection.
 */
 
-smtpquit(name)
+smtpquit(name, m)
 	char *name;
+	register MAILER *m;
 {
 	int i;
 
@@ -248,8 +260,8 @@ smtpquit(name)
 	/* send the quit message if not a forced quit */
 	if (!SmtpClosing)
 	{
-		smtpmessage("QUIT");
-		(void) reply();
+		smtpmessage("QUIT", m);
+		(void) reply(m);
 		if (SmtpClosing)
 			return;
 	}
@@ -268,7 +280,7 @@ smtpquit(name)
 **  REPLY -- read arpanet reply
 **
 **	Parameters:
-**		none.
+**		m -- the mailer we are reading the reply from.
 **
 **	Returns:
 **		reply code it reads.
@@ -277,7 +289,7 @@ smtpquit(name)
 **		flushes the mail file.
 */
 
-reply()
+reply(m)
 {
 	(void) fflush(SmtpOut);
 
@@ -313,7 +325,7 @@ reply()
 			syslog(LOG_ERR, "%s", &MsgBuf[4]);
 # endif LOG
 			SmtpClosing = TRUE;
-			smtpquit("reply error");
+			smtpquit("reply error", m);
 			return (-1);
 		}
 		fixcrlf(SmtpReplyBuffer, TRUE);
@@ -339,7 +351,7 @@ reply()
 		if (r == SMTPCLOSING)
 		{
 			/* send the quit protocol */
-			smtpquit("SMTP Shutdown");
+			smtpquit("SMTP Shutdown", m);
 			SmtpClosing = TRUE;
 		}
 
@@ -351,6 +363,7 @@ reply()
 **
 **	Parameters:
 **		f -- format
+**		m -- the mailer to control formatting.
 **		a, b, c -- parameters
 **
 **	Returns:
@@ -361,8 +374,9 @@ reply()
 */
 
 /*VARARGS1*/
-smtpmessage(f, a, b, c)
+smtpmessage(f, m, a, b, c)
 	char *f;
+	MAILER *m;
 {
 	char buf[100];
 
@@ -372,7 +386,7 @@ smtpmessage(f, a, b, c)
 	else if (CurEnv->e_xfp != NULL)
 		fprintf(CurEnv->e_xfp, ">>> %s\n", buf);
 	if (!SmtpClosing)
-		fprintf(SmtpOut, "%s\r\n", buf);
+		fprintf(SmtpOut, "%s%s\n", bitset(M_CRLF, m->m_flags) ? "\r" : "", buf);
 }
 
 # endif SMTP
