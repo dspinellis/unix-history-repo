@@ -1,3 +1,0 @@
-Mtee	tee.c	/^main(argc, argv)$/
-add	tee.c	/^add(fd, name)$/
-err	tee.c	/^err(doexit, fmt, va_alist)$/

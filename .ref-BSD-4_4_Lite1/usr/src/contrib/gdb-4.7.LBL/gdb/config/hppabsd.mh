@@ -1,5 +1,0 @@
-# Host: Hewlett-Packard PA-RISC machine, running BSD
-XDEPFILES= 
-XM_FILE= xm-hppab.h
-NAT_FILE= nm-hppab.h
-NATDEPFILES= hppab-nat.o coredep.o corelow.o exec.o hppab-core.o
