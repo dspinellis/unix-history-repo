@@ -8,12 +8,12 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_lofs.c	5.2 (Berkeley) %G%
+ *	@(#)mount_lofs.c	5.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/mount.h>
-#include <lofs/lofs.h>
+#include <miscfs/lofs/lofs.h>
 
 #include <errno.h>
 #include <stdio.h>
