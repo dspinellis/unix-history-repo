@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)library.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)library.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -21,9 +21,10 @@ static char sccsid[] = "@(#)library.c	5.8 (Berkeley) %G%";
 
 #include <fcntl.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
 #include "clean.h"
 
 void	 add_blocks __P((FS_INFO *, BLOCK_INFO *, int *, SEGSUM *, caddr_t,
@@ -109,6 +110,7 @@ void
 reread_fs_info(fsp, count, use_mmap)
 	FS_INFO *fsp;	/* IN: array of fs_infos to free */
 	int count;	/* IN: number of file systems */
+	int use_mmap;
 {
 	int i;
 	
@@ -464,7 +466,6 @@ pseg_valid (fsp, ssp)
 	caddr_t	p;
 	int i, nblocks;
 	u_long *datap;
-	SEGUSE *sup;
 
 	if ((nblocks = dump_summary(&fsp->fi_lfs, ssp, 0, NULL)) <= 0 ||
 	    nblocks > fsp->fi_lfs.lfs_ssize - 1)
@@ -643,7 +644,7 @@ toss(p, nump, size, dotoss, client)
 	for (i = *nump; --i > 0;) {
 		p1 = p + size;
 		if (dotoss(client, p, p1)) {
-			bcopy(p1, p, i * size);
+			memmove(p, p1, i * size);
 			--(*nump);
 		} else 
 			p += size;
