@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ufs_lookup.c	7.16 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -570,7 +570,8 @@ direnter(ip, ndp)
 		ndp->ni_count = newentrysize;
 		ndp->ni_resid = newentrysize;
 		ndp->ni_base = (caddr_t)&ndp->ni_dent;
-		error = writeip(dp, &ndp->ni_uio, ndp->ni_cred);
+		error =
+		    ufs_write(ndp->ni_dvp, &ndp->ni_uio, IO_SYNC, ndp->ni_cred);
 		if (DIRBLKSIZ > dp->i_fs->fs_fsize)
 			panic("wdir: blksize"); /* XXX - should grow w/balloc */
 		else
@@ -679,7 +680,8 @@ dirremove(ndp)
 		ndp->ni_dent.d_ino = 0;
 		ndp->ni_count = ndp->ni_resid = DIRSIZ(&ndp->ni_dent);
 		ndp->ni_base = (caddr_t)&ndp->ni_dent;
-		error = writeip(dp, &ndp->ni_uio, ndp->ni_cred);
+		error =
+		    ufs_write(ndp->ni_dvp, &ndp->ni_uio, IO_SYNC, ndp->ni_cred);
 	} else {
 		/*
 		 * Collapse new free space into previous entry.
@@ -708,7 +710,7 @@ dirrewrite(dp, ip, ndp)
 	ndp->ni_dent.d_ino = ip->i_number;
 	ndp->ni_count = ndp->ni_resid = DIRSIZ(&ndp->ni_dent);
 	ndp->ni_base = (caddr_t)&ndp->ni_dent;
-	return (writeip(dp, &ndp->ni_uio, ndp->ni_cred));
+	return (ufs_write(ITOV(dp), &ndp->ni_uio, IO_SYNC, ndp->ni_cred));
 }
 
 /*
@@ -772,8 +774,8 @@ dirempty(ip, parentino, cred)
 #define	MINDIRSIZ (sizeof (struct dirtemplate) / 2)
 
 	for (off = 0; off < ip->i_size; off += dp->d_reclen) {
-		error = rdwri(UIO_READ, ip, (caddr_t)dp, MINDIRSIZ, off,
-		    UIO_SYSSPACE, cred, &count);
+		error = vn_rdwr(UIO_READ, ITOV(ip), (caddr_t)dp, MINDIRSIZ,
+		    off, UIO_SYSSPACE, IO_NODELOCKED, cred, &count);
 		/*
 		 * Since we read MINDIRSIZ, residual must
 		 * be 0 unless we're at end of file.
@@ -831,9 +833,9 @@ checkpath(source, target, cred)
 			error = ENOTDIR;
 			break;
 		}
-		error = rdwri(UIO_READ, ip, (caddr_t)&dirbuf,
+		error = vn_rdwr(UIO_READ, ITOV(ip), (caddr_t)&dirbuf,
 			sizeof (struct dirtemplate), (off_t)0, UIO_SYSSPACE,
-			cred, (int *)0);
+			IO_NODELOCKED, cred, (int *)0);
 		if (error != 0)
 			break;
 		if (dirbuf.dotdot_namlen != 2 ||
