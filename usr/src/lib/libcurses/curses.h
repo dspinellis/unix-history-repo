@@ -1,4 +1,4 @@
-/* @(#)curses.h	1.12 (Berkeley) %G% */
+/* @(#)curses.h	1.13 (Berkeley) %G% */
 # ifndef WINDOW
 
 # include	<stdio.h>
@@ -142,4 +142,8 @@ int	__void__;
 WINDOW	*initscr(), *newwin(), *subwin();
 char	*longname(), *getcap();
 
+/*
+ * Used to be in unctrl.h.
+ */
+#define	unctrl(c)	_unctrl[(c) & 0177]
 # endif
