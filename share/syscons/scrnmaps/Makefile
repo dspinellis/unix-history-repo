@@ -11,6 +11,7 @@ NOMAN = noman
 all: ${OLDSCRMAPS}
 
 install:
+	cd ${.CURDIR}; \
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${SCRMAPS} \
 		${DESTDIR}${SCRDIR}
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${OLDSCRMAPS} \
