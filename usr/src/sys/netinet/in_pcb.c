@@ -1,4 +1,4 @@
-/* in_pcb.c 4.7 81/11/21 */
+/* in_pcb.c 4.8 81/11/21 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -103,10 +103,8 @@ in_pcbfree(inp)
 {
 	struct socket *so = inp->inp_socket;
 
-	if (so->so_state & SS_USERGONE)
-		sofree(so);
-	else
-		so->so_pcb = 0;
+	so->so_pcb = 0;
+	sofree(so);
 	remque(inp);
 	(void) m_free(dtom(inp));
 }
