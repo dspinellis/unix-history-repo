@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)wd.c	5.3 (Berkeley) %G%
+ *	@(#)wd.c	5.4 (Berkeley) %G%
  */
 
 #include "wd.h"
@@ -87,22 +87,23 @@ struct disklabel dflt_sizes = {
 	DISKMAGIC, DTYPE_ST506,
 	{
 		512,		/* sector size */
-		17,		/* # of sectors per track */
+		36,		/* # of sectors per track */
 		15,		/* # of tracks per cylinder */
-		918,		/* # of cylinders per unit */
-		17*15,		/* # of sectors per cylinder */
-		918*15*17,	/* # of sectors per unit */
+		1224,		/* # of cylinders per unit */
+		36*15,		/* # of sectors per cylinder */
+		1224*15*36,	/* # of sectors per unit */
 		0		/* write precomp cylinder (none) */
 	},
-	7560,	0,	/* A=root filesystem */
-	7560,	56,
-	123930, 0,	/* C=whole disk */
+	21600,	0,	/* A=root filesystem */
+	21600,	40,
+	660890, 0,	/* C=whole disk */
+	216000,	80,
 	0,	0,
-	7560,	861,
 	0,	0,
 	0,	0,
-	101115,	112
+	399600,	480
 };
+
 static	struct	dkbad	dkbad[NWD];
 struct	disk	wddrives[NWD] = {0};	/* table of units */
 struct	buf	wdtab = {0};
@@ -145,7 +146,7 @@ wdattach(dvp)
 	int unit = dvp->unit;
 
 	INTREN((IRQ14|4));
-	outb(0x3f6,0);
+	outb(0x3f6,8);
 }
 
 /* Read/write routine for a buffer.  Finds the proper unit, range checks
@@ -199,7 +200,7 @@ wdstrategy(bp)
 	bp->b_cylin = blknum / du->dk_dd.dk_secpercyl + cyloff;
 q:
 	dp = &wdutab[unit];
-	s = splbio();
+	s = splhigh();
 	disksort(dp, bp);
 	if (dp->b_active == 0)
 		wdustart(du);		/* start drive if idle */
@@ -245,6 +246,8 @@ wdustart(du)
  * 1.	The transfer length must be an exact multiple of the sector size.
  */
 
+static wd_sebyse;
+
 wdstart()
 {
 	register struct disk *du;	/* disk unit for IO */
@@ -288,7 +291,7 @@ loop:
 			(bp->b_flags & B_READ) ? "read" : "write",
 			bp->b_bcount, blknum);
 	} else {
-		dprintf(DDSK," %d)", du->dk_skip);
+		dprintf(DDSK," %d)%x", du->dk_skip, inb(wdc+wd_altsts));
 	}
 #endif
 
@@ -296,17 +299,15 @@ loop:
 	if(du->dk_skip==0) du->dk_bc = bp->b_bcount;
 	cylin = blknum / secpercyl;
 	head = (blknum % secpercyl) / secpertrk;
-	sector = blknum % secpertrk + 1;
+	sector = blknum % secpertrk;
 	if (DISKSTATE(du->dk_state) == OPEN)
 		cylin += du->dk_dd.dk_partition[minor_dev].cyloff;
-
 
 	/* 
 	 * See if the current block is in the bad block list.
 	 * (If we have one, and not formatting.)
 	 */
-#ifdef notyet
-	if (du->dk_state == OPEN)
+	if (DISKSTATE(du->dk_state) == OPEN && wd_sebyse)
 	    for (bt_ptr = dkbad[unit].bt_bad; bt_ptr->bt_cyl != -1; bt_ptr++) {
 		if (bt_ptr->bt_cyl > cylin)
 			/* Sorted list, and we passed our cylinder. quit. */
@@ -334,17 +335,24 @@ loop:
 			break;
 		}
 	}
-#endif
+	sector += 1;	/* sectors begin with 1, not 0 */
 
 	wdtab.b_active = 1;		/* mark controller active */
 
+	if(du->dk_skip==0 || wd_sebyse) {
+	if(wdtab.b_errcnt && (bp->b_flags & B_READ) == 0) du->dk_bc += 512;
+	while ((inb(wdc+wd_status) & WDCS_BUSY) != 0) ;
+	/*while ((inb(wdc+wd_status) & WDCS_DRQ)) inb(wdc+wd_data);*/
 	outb(wdc+wd_precomp, 0xff);
 	/*wr(wdc+wd_precomp, du->dk_dd.dk_precompcyl / 4);*/
 	/*if (bp->b_flags & B_FORMAT) {
 		wr(wdc+wd_sector, du->dk_dd.dk_gap3);
 		wr(wdc+wd_seccnt, du->dk_dd.dk_nsectors);
 	} else {*/
-	outb(wdc+wd_seccnt, 1);
+	if(wd_sebyse)
+		outb(wdc+wd_seccnt, 1);
+	else
+		outb(wdc+wd_seccnt, ((du->dk_bc +511) / 512));
 	outb(wdc+wd_sector, sector);
 
 	outb(wdc+wd_cyl_lo, cylin);
@@ -360,11 +368,10 @@ loop:
 		outb(wdc+wd_command,
 			(bp->b_flags & B_READ)? WDCC_READ : WDCC_WRITE);
 #ifdef	WDDEBUG
-	if(du->dk_skip == 0)
-	dprintf(DDSK,"sector %d cylin %d head %d addr %x\n",
-	    sector, cylin, head, addr);
+	dprintf(DDSK,"sector %d cylin %d head %d addr %x sts %x\n",
+	    sector, cylin, head, addr, inb(wdc+wd_altsts));
 #endif
-
+}
 		
 	/* If this is a read operation, just go away until it's done.	*/
 	if (bp->b_flags & B_READ) return;
@@ -374,12 +381,7 @@ loop:
 		nulldev();		/* So compiler won't optimize out */
 
 	/* ASSUMES CONTIGUOUS MEMORY */
-	{ register buff_addr;
-
-	buff_addr = addr;
-	buff_addr += (du->dk_skip * 512)/* & CLOFSET*/;
-	outsw (wdc+wd_data, buff_addr, 256);
-	}
+	outsw (wdc+wd_data, addr+du->dk_skip*512, 256);
 	du->dk_bc -= 512;
 }
 
@@ -403,9 +405,11 @@ wdintr()
 	register struct buf *bp, *dp;
 	int status;
 	char partch ;
+static shit[32];
+static wd_haderror;
 
 	/* Shouldn't need this, but it may be a slow controller.	*/
-	while ((status = inb(wdc+wd_altsts)) & WDCS_BUSY)
+	while ((status = inb(wdc+wd_status)) & WDCS_BUSY)
 		nulldev();
 	if (!wdtab.b_active) {
 		printf("wd: extra interrupt\n");
@@ -425,9 +429,14 @@ wdintr()
 		return;
 	}
 	if (status & (WDCS_ERR | WDCS_ECCCOR)) {
+		wd_errstat = inb(wdc+wd_error);		/* save error status */
 #ifdef	WDDEBUG
-		printf("error %x\n", wd_errstat);
+		printf("status %x error %x\n", status, wd_errstat);
 #endif
+		if(wd_sebyse == 0) {
+			wd_haderror = 1;
+			goto outt;
+		}
 		/*if (bp->b_flags & B_FORMAT) {
 			du->dk_status = status;
 			du->dk_error = wdp->wd_error;
@@ -435,7 +444,6 @@ wdintr()
 			goto done;
 		}*/
 		
-		wd_errstat = inb(wdc+wd_error);		/* save error status */
 		wd_errsector = (bp->b_cylin * du->dk_dd.dk_secpercyl) +
 			(((unsigned long) bp->b_blkno * DEV_BSIZE /
 			    du->dk_dd.dk_secsize) % du->dk_dd.dk_secpercyl) +
@@ -443,9 +451,11 @@ wdintr()
 		wd_errbn = bp->b_blkno
 			+ du->dk_skip * du->dk_dd.dk_secsize / DEV_BSIZE ;
 		if (status & WDCS_ERR) {
-			if (++wdtab.b_errcnt < RETRIES)
+			if (++wdtab.b_errcnt < RETRIES) {
 				wdtab.b_active = 0;
-			else {
+				/*while ((inb(wdc+wd_status) & WDCS_DRQ))
+				insw(wdc+wd_data, &shit, sizeof(shit)/2);*/
+			} else {
 				printf("wd%d%c: ", du->dk_unit, partch);
 				printf(
 				"hard %s error, sn %d bn %d status %b error %b\n",
@@ -459,6 +469,7 @@ wdintr()
 				du->dk_unit, partch, wd_errsector,
 				wd_errbn);
 	}
+outt:
 
 	/*
 	 * If this was a successful read operation, fetch the data.
@@ -466,7 +477,7 @@ wdintr()
 	if (((bp->b_flags & (B_READ | B_ERROR)) == B_READ) && wdtab.b_active) {
 		int chk, dummy;
 
-		chk = min(256,(du->dk_bc/2));
+		chk = min(256,du->dk_bc/2);
 		/* Ready to receive data?	*/
 		while ((inb(wdc+wd_status) & WDCS_DRQ) == 0)
 			nulldev();
@@ -474,7 +485,7 @@ wdintr()
 /*dprintf(DDSK,"addr %x\n", (int)bp->b_un.b_addr + du->dk_skip * 512);*/
 		insw(wdc+wd_data,(int)bp->b_un.b_addr + du->dk_skip * 512 ,chk);
 		du->dk_bc -= 2*chk;
-		while(chk++ < 256) insw(wdc+wd_data,&dummy,1);
+		while (chk++ < 256) insw (wdc+wd_data,&dummy,1);
 	}
 
 	wdxfer[du->dk_unit]++;
@@ -494,13 +505,20 @@ wdintr()
 
 			/* see if more to transfer */
 			/*if (du->dk_skip < (bp->b_bcount + 511) / 512) {*/
-			if (du->dk_bc > 0) {
+			if (du->dk_bc > 0 && wd_haderror == 0) {
 				wdstart();
 				return;		/* next chunk is started */
+			} else if (wd_haderror && wd_sebyse == 0) {
+				du->dk_skip = 0;
+				wd_haderror = 0;
+				wd_sebyse = 1;
+				wdstart();
+				return;		/* redo xfer sector by sector */
 			}
 		}
 
 done:
+		wd_sebyse = 0;
 		/* done with this transfer, with or without error */
 		wdtab.b_actf = dp->b_forw;
 		wdtab.b_errcnt = 0;
@@ -574,7 +592,6 @@ wdopen(dev, flags)
 		du->dk_state = OPENRAW;
 		goto done;
 	}
-#ifdef notyet
 	/*
 	 * Read bad sector table into memory.
 	 */
@@ -595,6 +612,7 @@ wdopen(dev, flags)
 	} while ((bp->b_flags & B_ERROR) && (i += 2) < 10 &&
 		i < du->dk_dd.dk_nsectors);
 	db = (struct dkbad *)(bp->b_un.b_addr);
+#define DKBAD_MAGIC 0x4321
 	if ((bp->b_flags & B_ERROR) == 0 && db->bt_mbz == 0 &&
 	    db->bt_flag == DKBAD_MAGIC) {
 		dkbad[unit] = *db;
@@ -606,9 +624,6 @@ wdopen(dev, flags)
 		/*error = ENXIO ;*/
 		du->dk_state = OPENRAW;
 	}
-#else
-	du->dk_state = OPEN;
-#endif
 done:
 	bp->b_flags = B_INVAL | B_AGE;
 	brelse(bp);
@@ -671,6 +686,7 @@ retry:
 #ifdef	WDDEBUG
 		dprintf(DDSK,"rdlabel ");
 #endif
+cyloffset=0;
 		/*
 		 * Read in sector 0 to get the pack label and geometry.
 		 */
@@ -833,7 +849,7 @@ wdsize(dev)
 	register struct disk *du;
 	register val ;
 
-	return(12144);
+	return(21600);
 #ifdef notdef
 	if (unit >= NWD) return(-1);
 	if (wddrives[unit].dk_state == 0) /*{
