@@ -284,6 +284,7 @@ wontoption(option, reply)
 		return;		/* Never reply to TM will's/wont's */
 
 	default:
+		hisopts[option] = 0;
 		fmt = dont;
 	}
 	printring(&netoring, fmt, option);
