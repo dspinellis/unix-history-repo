@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)espreg.h	8.1 (Berkeley) %G%
+ *	@(#)espreg.h	8.2 (Berkeley) %G%
  *
  * from: $Header: espreg.h,v 1.7 92/11/26 02:28:10 torek Exp $ (LBL)
  *
@@ -64,7 +64,7 @@ struct espreg {
 	u_char	esp_xxx9[3];
 	u_char	esp_test;	/* test (do not use) */
 	u_char	esp_xxxA[3];
-	u_char	esp_conf2;	/* configuration #2 (rw) */
+	u_char	esp_conf2;	/* configuration #2 (rw, ESP100A/2xx) */
 	u_char	esp_xxxB[3];
 	u_char	esp_conf3;	/* configuration #3 (rw, ESP-236) */
 	u_char	esp_xxxC[3];
@@ -89,6 +89,7 @@ struct espreg {
 #define	ESPCMD_FLUSH_FIFO	0x01	/* flush FIFO */
 #define	ESPCMD_RESET_CHIP	0x02	/* reset ESP chip */
 #define	ESPCMD_RESET_BUS	0x03	/* reset SCSI bus */
+/* NB: fifo flush takes time, may need delay or NOP to allow completion */
 
 /* disconnected */
 #define	ESPCMD_RESEL_SEQ	0x40	/* reselect sequence */
@@ -214,7 +215,7 @@ char	*espphases[] =
 #define	ESPSTEP_DONE		4	/* command went out */
 
 /*
- * Synchronous transfer period (esp_syncper, 5 bits).
+ * Synchronous transfer period (esp_syncperiod, 5 bits).
  * The minimum clocks-per-period is 5 and the max is 35;
  * the default on reset is 5.  Note that a period value of 4
  * actually gives 5 clocks.
@@ -226,10 +227,12 @@ char	*espphases[] =
  * is only 16 bytes, so the byte count fits in 5 bits.  Normally
  * a copy of the sequence step register appears in the top 3 bits,
  * but in test mode the chip re-uses one of those for a synchronous
- * offset bit.
+ * offset bit; in any case, they are pretty much worthless.
+ *
+ * Note that the fifo flags register must not be read while the
+ * fifo is changing.
  */
-#define	ESP_NFIFO(esp)	((esp)->esp_fflags & 0x1f)
-#define	ESP_FFSTEP(esp)	(((esp)->esp_fflags >> 5) & 3)
+#define	ESP_NFIFO(fflags)	((fflags) & 0x1f)
 
 #define	ESPFFLAGS_TM_SOFFNZ	0x20	/* nonzero sync offset (test mode) */
 
