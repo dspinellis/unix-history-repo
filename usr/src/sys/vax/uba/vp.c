@@ -1,4 +1,4 @@
-/*	vp.c	4.3	%G%	*/
+/*	vp.c	4.4	%G%	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -109,7 +109,7 @@ vpstrategy(bp)
 		vp11.vp_state = (vp11.vp_state &~ MODE) | PLOT;
 	(void) spl0();
 brkout:
-	ubafree(vp_ubinfo), vp_ubinfo = 0;
+	UBAFREECLR(vp_ubinfo);
 	vp11.vp_state &= ~VBUSY;
 	vp11.vp_bp = 0;
 	iodone(bp);
@@ -241,7 +241,7 @@ vpreset()
 		return;
 	if (vp_ubinfo) {
 		printf("<%d>", (vp_ubinfo>>28)&0xf);
-		ubafree(vp_ubinfo), vp_ubinfo = 0;
+		UBAFREECLR(vp_ubinfo);
 	}
 	vp11.vp_bufp = vp_ubinfo & 0x3ffff;
 	vp11.vp_count = vp11.vp_bp->b_bcount;

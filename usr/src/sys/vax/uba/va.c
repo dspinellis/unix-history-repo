@@ -1,4 +1,4 @@
-/*	va.c	4.3	%G%	*/
+/*	va.c	4.4	%G%	*/
 
 #include "va.h"
 #if NVA > 0
@@ -124,7 +124,7 @@ vastrategy(bp)
 	}
 	(void) spl0();
 brkout:
-	ubafree(va_ubinfo), va_ubinfo = 0;
+	UBAFREECLR(va_ubinfo);
 	va11.va_bp = 0;
 	va11.va_busy = 0;
 	iodone(bp);
@@ -280,7 +280,7 @@ vareset()
 		return;
 	if (va_ubinfo) {
 		printf("<%d>", (va_ubinfo>>28)&0xf);
-		ubafree(va_ubinfo), va_ubinfo = 0;
+		UBAFREECLR(va_ubinfo);
 	}
 	/* This code belongs in vastart() */
 	va_ubinfo = ubasetup(va11.va_bp, vabdp);
