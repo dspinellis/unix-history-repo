@@ -1,0 +1,147 @@
+/usr/ucb/mkstr - pi1:2strings x TRdata.c
+cc -c -O -DPI -DPI0 xTRdata.c
+mv xTRdata.o TRdata.o
+rm xTRdata.c
+/usr/ucb/mkstr - pi1:2strings x ato.c
+cc -c -O -DPI -DPI0 xato.c
+mv xato.o ato.o
+rm xato.c
+/usr/ucb/mkstr - pi1:2strings x clas.c
+cc -c -O -DPI -DPI0 xclas.c
+mv xclas.o clas.o
+rm xclas.c
+/usr/ucb/mkstr - pi1:2strings x const.c
+cc -c -O -DPI -DPI0 xconst.c
+mv xconst.o const.o
+rm xconst.c
+/usr/ucb/mkstr - pi1:2strings x conv.c
+cc -c -O -DPI -DPI0 xconv.c
+mv xconv.o conv.o
+rm xconv.c
+/usr/ucb/mkstr - pi1:2strings x error.c
+cc -c -O -DPI -DPI0 xerror.c
+mv xerror.o error.o
+rm xerror.c
+/usr/ucb/mkstr - pi1:2strings x fdec.c
+cc -c -O -DPI -DPI0 xfdec.c
+mv xfdec.o fdec.o
+rm xfdec.c
+/usr/ucb/mkstr - pi1:2strings x hash.c
+cc -c -O -DPI -DPI0 xhash.c
+mv xhash.o hash.o
+rm xhash.c
+/usr/ucb/mkstr - pi1:2strings x lab.c
+cc -c -O -DPI -DPI0 xlab.c
+mv xlab.o lab.o
+rm xlab.c
+/usr/ucb/mkstr - pi1:2strings x lookup.c
+cc -c -O -DPI -DPI0 xlookup.c
+mv xlookup.o lookup.o
+rm xlookup.c
+/usr/ucb/mkstr - pi1:2strings x main.c
+cc -c -O -DPI -DPI0 xmain.c
+mv xmain.o main.o
+rm xmain.c
+/usr/ucb/mkstr - pi1:2strings x nl.c
+cc -c -O -DPI -DPI0 xnl.c
+mv xnl.o nl.o
+rm xnl.c
+as -o printf.o printf.s
+/usr/ucb/mkstr - pi1:2strings x rec.c
+cc -c -O -DPI -DPI0 xrec.c
+mv xrec.o rec.o
+rm xrec.c
+/usr/ucb/mkstr - pi1:2strings x send.c
+cc -c -O -DPI -DPI0 xsend.c
+mv xsend.o send.o
+rm xsend.c
+/usr/ucb/mkstr - pi1:2strings x string.c
+cc -c -O -DPI -DPI0 xstring.c
+mv xstring.o string.o
+rm xstring.c
+/usr/ucb/mkstr - pi1:2strings x subr.c
+cc -c -O -DPI -DPI0 xsubr.c
+mv xsubr.o subr.o
+rm xsubr.c
+/usr/ucb/mkstr - pi1:2strings x tree.c
+cc -c -O -DPI -DPI0 xtree.c
+mv xtree.o tree.o
+rm xtree.c
+as -o treen.o treen.s
+/usr/ucb/mkstr - pi1:2strings x type.c
+cc -c -O -DPI -DPI0 xtype.c
+mv xtype.o type.o
+rm xtype.c
+/usr/ucb/mkstr - pi1:2strings x var.c
+cc -c -O -DPI -DPI0 xvar.c
+mv xvar.o var.o
+rm xvar.c
+as -o wait.o wait.s
+/usr/ucb/mkstr - pi1:2strings x y.tab.c
+cc -c -O -DPI -DPI0 xy.tab.c
+mv xy.tab.o y.tab.o
+rm xy.tab.c
+as -o yycopy.o yycopy.s
+/usr/ucb/mkstr - pi1:2strings x yycosts.c
+cc -c -O -DPI -DPI0 xyycosts.c
+mv xyycosts.o yycosts.o
+rm xyycosts.c
+/usr/ucb/mkstr - pi1:2strings x yyerror.c
+cc -c -O -DPI -DPI0 xyyerror.c
+mv xyyerror.o yyerror.o
+rm xyyerror.c
+/usr/ucb/mkstr - pi1:2strings x yyget.c
+cc -c -O -DPI -DPI0 xyyget.c
+mv xyyget.o yyget.o
+rm xyyget.c
+/usr/ucb/mkstr - pi1:2strings x yyid.c
+cc -c -O -DPI -DPI0 xyyid.c
+mv xyyid.o yyid.o
+rm xyyid.c
+/usr/ucb/mkstr - pi1:2strings x yylex.c
+cc -c -O -DPI -DPI0 xyylex.c
+mv xyylex.o yylex.o
+rm xyylex.c
+/usr/ucb/mkstr - pi1:2strings x yymain.c
+cc -c -O -DPI -DPI0 xyymain.c
+mv xyymain.o yymain.o
+rm xyymain.c
+/usr/ucb/mkstr - pi1:2strings x yyoptions.c
+cc -c -O -DPI -DPI0 xyyoptions.c
+mv xyyoptions.o yyoptions.o
+rm xyyoptions.c
+/usr/ucb/mkstr - pi1:2strings x yypanic.c
+cc -c -O -DPI -DPI0 xyypanic.c
+mv xyypanic.o yypanic.o
+rm xyypanic.c
+/usr/ucb/mkstr - pi1:2strings x yyparse.c
+cc -c -O -DPI -DPI0 xyyparse.c
+mv xyyparse.o yyparse.o
+rm xyyparse.c
+/usr/ucb/mkstr - pi1:2strings x yyprint.c
+cc -c -O -DPI -DPI0 xyyprint.c
+mv xyyprint.o yyprint.o
+rm xyyprint.c
+/usr/ucb/mkstr - pi1:2strings x yyput.c
+cc -c -O -DPI -DPI0 xyyput.c
+mv xyyput.o yyput.o
+rm xyyput.c
+/usr/ucb/mkstr - pi1:2strings x yyrecover.c
+cc -c -O -DPI -DPI0 xyyrecover.c
+mv xyyrecover.o yyrecover.o
+rm xyyrecover.c
+/usr/ucb/mkstr - pi1:2strings x yyseman.c
+cc -c -O -DPI -DPI0 xyyseman.c
+mv xyyseman.o yyseman.o
+rm xyyseman.c
+/usr/ucb/mkstr - pi1:2strings x yytree.c
+cc -c -O -DPI -DPI0 xyytree.c
+mv xyytree.o yytree.o
+rm xyytree.c
+echo "version > Version.c"
+cc -c Version.c
+cc -n -f TRdata.o ato.o clas.o const.o conv.o  error.o fdec.o hash.o lab.o lookup.o  main.o nl.o printf.o rec.o send.o  string.o subr.o tree.o treen.o type.o var.o wait.o  y.tab.o yycopy.o yycosts.o yyerror.o yyget.o yyid.o yylex.o yymain.o  yyoptions.o yypanic.o yyparse.o yyprint.o yyput.o yyrecover.o  yyseman.o yytree.o Version.o ../pascal/fpdata/fp.o ../pascal/fpdata/putc.o ../pascal/fpdata/perror.o
+rm -f ../pi1/pi1:2strings
+ln pi1:2strings ../pi1/pi1:2strings
+cp a.out /usr/ucb/pi34
+cp pi1:2strings /usr/lib/pi1:2strings
