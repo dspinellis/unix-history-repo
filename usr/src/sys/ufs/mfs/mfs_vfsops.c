@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.6 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -38,7 +38,7 @@ int mfs_mount();
 int mfs_start();
 int ufs_unmount();
 int ufs_root();
-int ufs_statfs();
+int mfs_statfs();
 int ufs_sync();
 int ufs_fhtovp();
 int ufs_vptofh();
@@ -49,7 +49,7 @@ struct vfsops mfs_vfsops = {
 	mfs_start,
 	ufs_unmount,
 	ufs_root,
-	ufs_statfs,
+	mfs_statfs,
 	ufs_sync,
 	ufs_fhtovp,
 	ufs_vptofh,
@@ -149,4 +149,18 @@ mfs_start(mp, flags)
 		sleep((caddr_t)vp, PWAIT);
 	}
 	return (0);
+}
+
+/*
+ * Get file system statistics.
+ */
+mfs_statfs(mp, sbp)
+	struct mount *mp;
+	struct statfs *sbp;
+{
+	int error;
+
+	error = ufs_statfs(mp, sbp);
+	sbp->f_type = MOUNT_MFS;
+	return (error);
 }
