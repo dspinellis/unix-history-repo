@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -167,10 +167,6 @@ main(argc, argv)
 			nextdisk = nextdisk->next;
 		}
 		while ((pid = wait(&status)) != -1) {
-			if (status.w_termsig)
-				sumstatus |= 8;
-			else
-				sumstatus |= status.w_retcode;
 			for (dk = disks; dk; dk = dk->next)
 				if (dk->pid == pid)
 					break;
@@ -185,6 +181,7 @@ main(argc, argv)
 				status.w_retcode = 8;
 			}
 			if (status.w_retcode != 0) {
+				sumstatus |= status.w_retcode;
 				*badnext = dk->part;
 				badnext = &dk->part->next;
 				dk->part = dk->part->next;
