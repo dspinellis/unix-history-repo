@@ -8,7 +8,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "include.h"
@@ -38,13 +38,13 @@ timestr(t)
 	static char	s[80];
 
 	if (DAY(t) > 0)
-		sprintf(s, "%dd+%02dhrs", DAY(t), HOUR(t));
+		(void)sprintf(s, "%dd+%02dhrs", DAY(t), HOUR(t));
 	else if (HOUR(t) > 0)
-		sprintf(s, "%d:%02d:%02d", HOUR(t), MIN(t), SEC(t));
+		(void)sprintf(s, "%d:%02d:%02d", HOUR(t), MIN(t), SEC(t));
 	else if (MIN(t) > 0)
-		sprintf(s, "%d:%02d", MIN(t), SEC(t));
+		(void)sprintf(s, "%d:%02d", MIN(t), SEC(t));
 	else if (SEC(t) > 0)
-		sprintf(s, ":%02d", SEC(t));
+		(void)sprintf(s, ":%02d", SEC(t));
 	else
 		*s = '\0';
 
