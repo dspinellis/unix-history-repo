@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 
 LIB=	telnet
-SRCS=	auth.c encrypt.c genget.c getent.c gettytab.c misc.c
+SRCS=	auth.c encrypt.c genget.c getent.c misc.c
 SRCS+=	kerberos.c enc_des.c
 #SRCS+=	kerberos5.c
 CFLAGS+= -DENCRYPTION -DAUTHENTICATION
@@ -13,7 +13,6 @@ CRYPT_SRC+= encrypt.h kerberos.c kerberos5.c krb4encpwd.c
 CRYPT_SRC+= misc.c spx.c Makefile
 NOCRYPT_DIR=${.CURDIR}/Nocrypt
 
-.PATH:  ${.CURDIR}/../../libexec/getty
 .include <bsd.lib.mk>
 
 nocrypt:
