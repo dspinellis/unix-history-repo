@@ -1,8 +1,8 @@
-SCCSID = "@(#)pimakefile 1.21 %G%"
+SCCSID = "@(#)pimakefile 1.22 %G%"
 INSTALLDIR = ${DESTDIR}/usr/ucb
 INSTALLNAME = ${INSTALLDIR}/pi
 WHOAMI = pi
-VERSION = 2.1
+VERSION = 2.2
 DATE = %G%
 
 MKSTR = /usr/ucb/mkstr
@@ -100,7 +100,7 @@ config.c: CONFIG.c makefile
 clean:
 	${RM} *.o ${TMPDIR}/*.c
 	${RM} whoami.h y.tab.h y.tab.c y.tab.out
-	${RM} ${ERRORSTRINGS}
+	${RM} ${WHOAMI}*strings
 	${RM} config.c
 	${RM} a.out core *.list *.bak
 	${RM} opc pic tags
