@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mv.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)mv.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -200,7 +200,7 @@ copy(from, to)
 	int pid, status;
 
 	if (!(pid = vfork())) {
-		execlp(_PATH_CP, "mv", "-pr", from, to);
+		execl(_PATH_CP, "mv", "-pr", from, to, NULL);
 		error(_PATH_CP);
 		_exit(1);
 	}
@@ -208,7 +208,7 @@ copy(from, to)
 	if (!WIFEXITED(status) || WEXITSTATUS(status))
 		return(1);
 	if (!(pid = vfork())) {
-		execlp(_PATH_RM, "mv", "-rf", from);
+		execl(_PATH_RM, "mv", "-rf", from, NULL);
 		error(_PATH_RM);
 		_exit(1);
 	}
