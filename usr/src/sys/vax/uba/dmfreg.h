@@ -1,4 +1,4 @@
-/*	dmfreg.h	6.1	83/07/29	*/
+/*	dmfreg.h	6.2	85/04/30	*/
 
 /*
  * DMF-32 definitions.
@@ -113,3 +113,30 @@ struct dmfdevice {
 
 #define SETLCR(pt, exp) \
 	pt->dmfun.dmfirw = (((pt)->dmftms)<<8) | ((exp)&0xff)
+
+/* dmf line printer csr def */
+#define DMFL_PEN	(1<<0)		/* print enable */
+#define DMFL_RESET	(1<<1)		/* master reset */
+#define DMFL_FORMAT	(1<<2)		/* format control */
+#define DMFL_UNUSED	(3<<3)
+#define DMFL_MAINT	(1<<5)		/* maintenance mode on */
+#define DMFL_IE		(1<<6)		/* intr enable */
+#define DMFL_PDONE	(1<<7)		/* print done bit */
+#define DMFL_INDIR	(7<<8)		/* indirect reg */
+#define DMFL_UNUSED2	(1<<11)
+#define DMFL_CONV	(1<<12)		/* connect verify */
+#define	DMFL_DAVRDY	(1<<13)		/* davfu ready */
+#define DMFL_OFFLINE	(1<<14)		/* printer offline */
+#define DMFL_DMAERR	(1<<15)		/* dma error bit */
+#define DMFL_BUFSIZ	512		/* max chars per dma */
+#define DMFL_DEFCOLS	132		/* default # of cols/line <=255 */
+#define DMFL_DEFLINES	66		/* default # of lines/page <=255 */
+
+/*
+ *  Bits in the configuration register
+ */
+#define DMFC_CONFMASK	0xf000		/* picks off the configuration bits */
+#define	DMFC_DR		0x1000		/* DR11 parallel interface */
+#define DMFC_LP		0x2000		/* LP dma parallel lineprinter i'face */
+#define DMFC_SYNC	0x4000		/* Synchronous serial interface */
+#define DMFC_ASYNC	0x8000		/* 8 Serial ports */
