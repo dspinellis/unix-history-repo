@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -32,7 +32,6 @@ static char sccsid[] = "@(#)rwhod.c	5.25 (Berkeley) %G%";
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
-#include <nlist.h>
 #include <paths.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,12 +47,6 @@ static char sccsid[] = "@(#)rwhod.c	5.25 (Berkeley) %G%";
 #define AL_INTERVAL (3 * 60)
 
 char	myname[MAXHOSTNAMELEN];
-
-struct	nlist nl[] = {
-#define	NL_BOOTTIME	0
-	{ "_boottime" },
-	{ 0 }
-};
 
 /*
  * We communicate with each neighbor in a list constructed at the time we're
@@ -71,12 +64,12 @@ struct	neighbor {
 struct	neighbor *neighbors;
 struct	whod mywd;
 struct	servent *sp;
-int	s, utmpf, kmemf = -1;
+int	s, utmpf;
 
 #define	WHDRSIZE	(sizeof(mywd) - sizeof(mywd.wd_we))
 
 int	 configure __P((int));
-void	 getkmem __P((int));
+void	 getboottime __P((int));
 void	 onalrm __P((int));
 void	 quit __P((char *));
 void	 rt_xaddrs __P((caddr_t, caddr_t, struct rt_addrinfo *));
@@ -116,7 +109,7 @@ main(argc, argv)
 		    _PATH_RWHODIR, strerror(errno));
 		exit(1);
 	}
-	(void) signal(SIGHUP, getkmem);
+	(void) signal(SIGHUP, getboottime);
 	openlog("rwhod", LOG_PID, LOG_DAEMON);
 	/*
 	 * Establish host name as returned by system.
@@ -133,7 +126,7 @@ main(argc, argv)
 		syslog(LOG_ERR, "%s: %m", _PATH_UTMP);
 		exit(1);
 	}
-	getkmem(0);
+	getboottime(0);
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		syslog(LOG_ERR, "socket: %m");
 		exit(1);
@@ -254,7 +247,7 @@ onalrm(signo)
 
 	now = time(NULL);
 	if (alarmcount % 10 == 0)
-		getkmem(0);
+		getboottime(0);
 	alarmcount++;
 	(void) fstat(utmpf, &stb);
 	if ((stb.st_mtime != utmptime) || (stb.st_size > utmpsize)) {
@@ -328,39 +321,20 @@ done:
 }
 
 void
-getkmem(signo)
+getboottime(signo)
 	int signo;
 {
-	static ino_t vmunixino;
-	static time_t vmunixctime;
-	struct stat sb;
+	int mib[2], size;
+	struct timeval tm;
 
-	if (stat(_PATH_UNIX, &sb) < 0) {
-		if (vmunixctime)
-			return;
-	} else {
-		if (sb.st_ctime == vmunixctime && sb.st_ino == vmunixino)
-			return;
-		vmunixctime = sb.st_ctime;
-		vmunixino = sb.st_ino;
-	}
-	if (kmemf >= 0)
-		(void)close(kmemf);
-loop:
-	if (nlist(_PATH_UNIX, nl)) {
-		syslog(LOG_WARNING, "%s: namelist botch", _PATH_UNIX);
-		sleep(300);
-		goto loop;
-	}
-	kmemf = open(_PATH_KMEM, O_RDONLY, 0);
-	if (kmemf < 0) {
-		syslog(LOG_ERR, "%s: %m", _PATH_KMEM);
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_BOOTTIME;
+	size = sizeof(tm);
+	if (sysctl(mib, 2, &tm, &size, NULL, 0) == -1) {
+		syslog(LOG_ERR, "cannot get boottime: %m");
 		exit(1);
 	}
-	(void) lseek(kmemf, (off_t)nl[NL_BOOTTIME].n_value, L_SET);
-	(void) read(kmemf, (char *)&mywd.wd_boottime,
-	    sizeof(mywd.wd_boottime));
-	mywd.wd_boottime = htonl(mywd.wd_boottime);
+	mywd.wd_boottime = htonl(tm.tv_sec);
 }
 
 void
