@@ -9,7 +9,7 @@
 'bd S B 3
 'nr cm 0
 'nf
-'de he
+'de vH
 'ev 2
 'tl '\-\-''\-\-'
 'ft 1
@@ -22,7 +22,7 @@
 'ev
 'ds =G \\*(=F
 ..
-'de fo
+'de vF
 'ev 2
 'sp .35i
 'tl '\f2\\*(=M''Page % of \\*(=G\fP'
