@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)interactive.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)interactive.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -433,12 +433,14 @@ expandarg(arg, ap)
 	register struct arglist *ap;
 {
 	static struct afile single;
+	struct entry *ep;
 	int size;
 
 	ap->head = ap->last = (struct afile *)0;
 	size = expand(arg, 0, ap);
 	if (size == 0) {
-		single.fnum = lookupname(arg)->e_ino;
+		ep = lookupname(arg);
+		single.fnum = ep ? ep->e_ino : 0;
 		single.fname = savename(arg);
 		ap->head = &single;
 		ap->last = ap->head + 1;
