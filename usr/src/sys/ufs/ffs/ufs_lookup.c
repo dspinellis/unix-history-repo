@@ -1,4 +1,4 @@
-/*	ufs_lookup.c	4.15	82/04/19	*/
+/*	ufs_lookup.c	4.16	82/06/07	*/
 
 /* merged into kernel:	@(#)nami.c 2.3 4/8/82 */
 
@@ -281,11 +281,11 @@ dirloop2:
 			}
 		}
 		d = dp->i_dev;
-		irele(dp);
 		pdp = dp;
+		iunlock(pdp);
 		dp = iget(d, fs, u.u_dent.d_ino);
 		if (dp == NULL)  {
-			iput(pdp);
+			irele(pdp);
 			brelse(nbp);
 			return (NULL);
 		}
@@ -298,7 +298,7 @@ dirloop2:
 			if (dp->i_size + pathlen >= MAXPATHLEN - 1 ||
 			    ++nlink > MAXSYMLINKS) {
 				u.u_error = ELOOP;
-				iput(pdp);
+				irele(pdp);
 				iput(dp);
 				brelse(nbp);
 				return (NULL);
@@ -308,7 +308,7 @@ dirloop2:
 			if (bn < 0) {
 				printf("hole in symlink: %s i = %d\n",
 				    fs->fs_fsmnt, dp->i_number);
-				iput(pdp);
+				irele(pdp);
 				iput(dp);
 				brelse(nbp);
 				return (NULL);
@@ -317,7 +317,7 @@ dirloop2:
 				   (int)blksize(fs, dp, (daddr_t)0));
 			if (bp->b_flags & B_ERROR) {
 				brelse(bp);
-				iput(pdp);
+				irele(pdp);
 				iput(dp);
 				brelse(nbp);
 				return (NULL);
@@ -328,7 +328,7 @@ dirloop2:
 			cp = nbp->b_un.b_addr;
 			iput(dp);
 			if (*cp == '/') {
-				iput(pdp);
+				irele(pdp);
 				while (*cp == '/')
 					cp++;
 				if ((dp = u.u_rdir) == NULL)
@@ -342,7 +342,7 @@ dirloop2:
 			fs = dp->i_fs;
 			goto dirloop;
 		}
-		iput(pdp);
+		irele(pdp);
 		if (*cp == '/') {
 			while (*cp == '/')
 				cp++;
