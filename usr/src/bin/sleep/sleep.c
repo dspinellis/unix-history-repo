@@ -12,10 +12,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sleep.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)sleep.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 main(argc, argv)
 	int argc;
@@ -24,7 +26,7 @@ main(argc, argv)
 	int secs;
 
 	if (argc != 2) {
-		fputs("usage: sleep time\n", stderr);
+		(void)fprintf(stderr, "usage: sleep time\n");
 		exit(1);
 	}
 	if ((secs = atoi(argv[1])) > 0)
