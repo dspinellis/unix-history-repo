@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.36 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.37 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -35,10 +35,6 @@ BINMODE?=	555
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
 
-.if (${MACHINE} == "mips")
-NOPROFILE=1
-.endif
-
 .s.o:
 	${CPP} -E ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
 	    ${AS} -o ${.TARGET}
@@ -70,11 +66,7 @@ OBJS+=	${SRCS:R:S/$/.o/g}
 lib${LIB}.a:: ${OBJS}
 	@echo building standard ${LIB} library
 	@rm -f lib${LIB}.a
-.if (${MACHINE} == "mips")
-	@${AR} cq lib${LIB}.a `lorder ${OBJS} | tsort` ${LDADD}
-.else
 	@${AR} cTq lib${LIB}.a `lorder ${OBJS} | tsort` ${LDADD}
-.endif
 	ranlib lib${LIB}.a
 
 POBJS+=	${OBJS:.o=.po}
