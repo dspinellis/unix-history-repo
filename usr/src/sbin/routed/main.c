@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -60,6 +60,14 @@ main(argc, argv)
 	}
 	addr.sin_family = AF_INET;
 	addr.sin_port = sp->s_port;
+	r = socket(AF_ROUTE, SOCK_RAW, 0);
+	/* later, get smart about lookingforinterfaces */
+	if (r)
+		shutdown(r, 0); /* for now, don't want reponses */
+	else {
+		fprintf(stderr, "routed: no routing socket\n");
+		exit(1);
+	}
 	s = getsocket(AF_INET, SOCK_DGRAM, &addr);
 	if (s < 0)
 		exit(1);

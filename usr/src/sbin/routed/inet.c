@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -100,6 +100,33 @@ inet_lnaof(in)
 		if ((ifp->int_netmask & net) == ifp->int_net)
 			return (host &~ ifp->int_subnetmask);
 	return (host);
+}
+
+/*
+ * Return the netmask pertaining to an internet address.
+ */
+inet_maskof(in)
+	struct in_addr in;
+{
+	register u_long i = ntohl(in.s_addr);
+	register u_long mask;
+	register struct interface *ifp;
+
+	if (IN_CLASSA(i)) {
+		mask = IN_CLASSA_NET;
+	} else if (IN_CLASSB(i)) {
+		mask = i & IN_CLASSB_NET;
+	} else
+		mask = i & IN_CLASSC_NET;
+
+	/*
+	 * Check whether network is a subnet;
+	 * if so, use the modified interpretation of `host'.
+	 */
+	for (ifp = ifnet; ifp; ifp = ifp->int_next)
+		if ((ifp->int_netmask & i) == ifp->int_net)
+			mask = ifp->int_subnetmask;
+	return (htonl(mask));
 }
 
 /*

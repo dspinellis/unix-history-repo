@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)defs.h	5.10 (Berkeley) %G%
+ *	@(#)defs.h	5.11 (Berkeley) %G%
  */
 
 /*
@@ -42,6 +42,10 @@
 struct	sockaddr_in addr;	/* address of daemon's socket */
 
 int	s;			/* source and sink of all data */
+int	r;			/* routing socket */
+pid_t	pid;			/* process id for identifying messages */
+uid_t	uid;			/* user id for identifying messages */
+int	seqno;			/* sequence number for identifying messages */
 int	kmem;
 int	supplier;		/* process should supply updates */
 int	install;		/* if 1 call kernel */
@@ -62,6 +66,12 @@ struct	servent *sp;
 
 struct	in_addr inet_makeaddr();
 int	inet_addr();
+int	inet_maskof();
 int	sndmsg();
 int	supply();
 int	cleanup();
+
+int	rtioctl();
+#define ADD 1
+#define DELETE 2
+#define CHANGE 3

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -170,13 +170,13 @@ rtadd(dst, gate, metric, state)
 	 * occur because of an incorrect entry in /etc/gateways.
 	 */
 	if (install && (rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
-	    ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0) {
+	    rtioctl(ADD, &rt->rt_rt) < 0) {
 		if (errno != EEXIST && gate->sa_family < af_max)
 			syslog(LOG_ERR,
 			"adding route to net/host %s through gateway %s: %m\n",
 			   (*afswitch[dst->sa_family].af_format)(dst),
 			   (*afswitch[gate->sa_family].af_format)(gate));
-		perror("SIOCADDRT");
+		perror("ADD ROUTE");
 		if (errno == ENETUNREACH) {
 			TRACE_ACTION("DELETE", rt);
 			remque(rt);
@@ -238,20 +238,23 @@ rtchange(rt, gate, metric)
 	rt->rt_state |= RTS_CHANGED;
 	if (newgateway)
 		TRACE_ACTION("CHANGE TO   ", rt);
+	if (install == 0)
+		return;
 #ifndef RTM_ADD
-	if (add && install)
-		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
-			perror("SIOCADDRT");
-	if (delete && install)
-		if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
-			perror("SIOCDELRT");
+	if (add && rtioctl(ADD, &rt->rt_rt) < 0)
+		perror("ADD ROUTE");
+	if (delete && rtioctl(DELETE, &oldroute) < 0)
+		perror("DELETE ROUTE");
 #else
-	if (delete && install)
-		if (ioctl(s, SIOCDELRT, (char *)&oldroute) < 0)
-			perror("SIOCDELRT");
-	if (add && install) {
-		if (ioctl(s, SIOCADDRT, (char *)&rt->rt_rt) < 0)
-			perror("SIOCADDRT");
+	if (delete && !add) {
+		if (rtioctl(DELETE, &oldroute) < 0)
+			perror("DELETE ROUTE");
+	} else if (!delete && add) {
+		if (rtioctl(ADD, &rt->rt_rt) < 0)
+			perror("ADD ROUTE");
+	} else if (delete && add) {
+		if (rtioctl(CHANGE, &rt->rt_rt) < 0)
+			perror("CHANGE ROUTE");
 	}
 #endif
 }
@@ -270,8 +273,8 @@ rtdelete(rt)
 		    rt->rt_ifp->int_name);
 	    if (install &&
 		(rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
-		ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
-		    perror("SIOCDELRT");
+					    rtioctl(DELETE, &rt->rt_rt) < 0)
+		    perror("rtdelete");
 	}
 	remque(rt);
 	free((char *)rt);
@@ -294,8 +297,8 @@ again:
 				continue;
 			TRACE_ACTION("DELETE", rt);
 			if ((rt->rt_state & (RTS_INTERNAL|RTS_EXTERNAL)) == 0 &&
-			    ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
-				perror("SIOCDELRT");
+			    rtioctl(DELETE, &rt->rt_rt) < 0)
+				perror("rtdeleteall");
 		}
 	}
 	if (doinghost) {
@@ -329,4 +332,59 @@ rtinit()
 		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
 	for (rh = hosthash; rh < &hosthash[ROUTEHASHSIZ]; rh++)
 		rh->rt_forw = rh->rt_back = (struct rt_entry *)rh;
+}
+
+rtioctl(action, ort)
+	int action;
+	struct ortentry *ort;
+{
+#ifndef RTM_ADD
+	switch (action) {
+
+	case ADD:
+		return (ioctl(s, SIOCADDRT, (char *)ort));
+
+	case DELETE:
+		return (ioctl(s, SIOCDELRT, (char *)ort));
+
+	default:
+		return (-1);
+	}
+#else /* RTM_ADD */
+	struct {
+		struct rt_msghdr w_rtm;
+		struct sockaddr_in w_dst;
+		struct sockaddr w_gate;
+		struct sockaddr_in w_netmask;
+	} w;
+#define rtm w.w_rtm
+
+	bzero((char *)&w, sizeof(w));
+	rtm.rtm_msglen = sizeof(w);
+	rtm.rtm_version = RTM_VERSION;
+	rtm.rtm_type = (action == ADD ? RTM_ADD :
+				(action == DELETE ? RTM_DELETE : RTM_CHANGE));
+#undef rt_flags
+#undef rt_dst
+	rtm.rtm_flags = ort->rt_flags;
+	rtm.rtm_seq = ++seqno;
+	rtm.rtm_addrs = RTA_DST|RTA_GATEWAY;
+	bcopy((char *)&ort->rt_dst, (char *)&w.w_dst, sizeof(w.w_dst));
+	bcopy((char *)&ort->rt_gateway, (char *)&w.w_gate, sizeof(w.w_gate));
+	w.w_dst.sin_family = AF_INET;
+	w.w_dst.sin_len = sizeof(w.w_dst);
+	w.w_gate.sa_family = AF_INET;
+	w.w_gate.sa_len = sizeof(w.w_gate);
+	if (rtm.rtm_flags & RTF_HOST) {
+		rtm.rtm_msglen -= sizeof(w.w_netmask);
+	} else {
+		rtm.rtm_msglen -= 8;
+		rtm.rtm_addrs |= RTA_NETMASK;
+		w.w_netmask.sin_len = 8;
+		w.w_netmask.sin_addr.s_addr =
+			inet_maskof(w.w_dst.sin_addr.s_addr);
+	}
+	errno = 0;
+	return write(r, (char *)&w, rtm.rtm_msglen);
+#endif  /* RTM_ADD */
 }
