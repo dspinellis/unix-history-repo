@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)dir.c	3.9 (Berkeley) %G%";
+static char version[] = "@(#)dir.c	3.10 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -60,6 +60,9 @@ dirscan(idesc)
 
 	if (idesc->id_type != DATA)
 		errexit("wrong type to dirscan %d\n", idesc->id_type);
+	if (idesc->id_entryno == 0 &&
+	    (idesc->id_filesize & (DIRBLKSIZ - 1)) != 0)
+		idesc->id_filesize = roundup(idesc->id_filesize, DIRBLKSIZ);
 	blksiz = idesc->id_numfrags * sblock.fs_fsize;
 	if (outrange(idesc->id_blkno, idesc->id_numfrags)) {
 		idesc->id_filesize -= blksiz;
@@ -342,10 +345,6 @@ linkup(orphan, pdir)
 		pfatal("SORRY. NO lost+found DIRECTORY\n\n");
 		return (0);
 	}
-	if (dp->di_size % DIRBLKSIZ) {
-		dp->di_size = roundup(dp->di_size, DIRBLKSIZ);
-		inodirty();
-	}
 	len = strlen(lfname);
 	bcopy(lfname, pathp, len + 1);
 	pathp += len;
@@ -400,6 +399,10 @@ makeentry(parent, ino, name)
 	idesc.id_fix = DONTKNOW;
 	idesc.id_name = name;
 	dp = ginode(parent);
+	if (dp->di_size % DIRBLKSIZ) {
+		dp->di_size = roundup(dp->di_size, DIRBLKSIZ);
+		inodirty();
+	}
 	if ((ckinode(dp, &idesc) & ALTERED) != 0)
 		return (1);
 	if (expanddir(dp) == 0)
