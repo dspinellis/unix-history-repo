@@ -1,8 +1,11 @@
 /*
- * "@(#)dump.h	1.3 (Berkeley) %G%"
+ * "@(#)dump.h	1.4 (Berkeley) %G%"
  */
-#define	NI	16
-#define	DIRPB	(BSIZE/sizeof(struct direct))
+#define	NI		16
+#define	DIRPB(fs)	((fs)->fs_bsize / sizeof(struct direct))
+#define	MAXDIRPB	(MAXBSIZE / sizeof(struct direct))
+#define MAXINOPB	(MAXBSIZE / sizeof(struct dinode))
+#define MAXNINDIR	(MAXBSIZE / sizeof(daddr_t))
 
 #include <stdio.h>
 #include <ctype.h>
@@ -18,15 +21,16 @@
 int (*signal())();
 #include <fstab.h>
 
-#define	MWORD(m,i)	(m[(unsigned)(i-1)/MLEN])
-#define	MBIT(i)		(1<<((unsigned)(i-1)%MLEN))
+#define	MWORD(m,i)	(m[(unsigned)(i-1)/NBBY])
+#define	MBIT(i)		(1<<((unsigned)(i-1)%NBBY))
 #define	BIS(i,w)	(MWORD(w,i) |=  MBIT(i))
 #define	BIC(i,w)	(MWORD(w,i) &= ~MBIT(i))
 #define	BIT(i,w)	(MWORD(w,i) & MBIT(i))
 
-short	clrmap[MSIZ];
-short	dirmap[MSIZ];
-short	nodmap[MSIZ];
+int	msiz;
+char	*clrmap;
+char	*dirmap;
+char	*nodmap;
 
 /*
  *	All calculations done in 0.1" units!
@@ -55,6 +59,8 @@ int	blockswritten;	/* number of blocks written on current tape */
 int	tapeno;		/* current tape number */
 time_t	tstart_writing;	/* when started writing the first tape block */
 char	*processname;
+struct fs *sblock;	/* the file system super block */
+char	buf[MAXBSIZE];
 
 char	*ctime();
 char	*prdate();

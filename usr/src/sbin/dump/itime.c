@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)itime.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)itime.c	1.4 (Berkeley) %G%";
 #include "dump.h"
 
 char *prdate(d)
@@ -210,7 +210,7 @@ int makeidate(ip, buf)
 }
 
 /*
- * This is an estimation of the size of the file.
+ * This is an estimation of the number of TP_BSIZE blocks in the file.
  * It assumes that there are no unallocated blocks; hence
  * the estimate may be high
  */
@@ -220,29 +220,28 @@ est(ip)
 	long s;
 
 	esize++;
-	s = (ip->di_size + FSIZE-1) / FSIZE;
-	esize += s;
-	s /= FRAG;
-	if (s > NDADDR) {
-		s -= NDADDR;
-		if (s > BSIZE / sizeof(daddr_t))
-			esize++;
-		s = (s + (BSIZE/sizeof(daddr_t)) - 1) / (BSIZE/sizeof(daddr_t));
-		esize += s * FRAG;
+	/* calc number of TP_BSIZE blocks */
+	s = roundup(ip->di_size, sblock->fs_fsize) / TP_BSIZE;
+	if (ip->di_size > sblock->fs_bsize * NDADDR) {
+		/* calc number of indirect blocks on the dump tape */
+		s += howmany(s - NDADDR * BLKING(sblock) * sblock->fs_frag,
+			TP_NINDIR);
 	}
+	esize += s;
 }
 
 bmapest(map)
-short *map;
+	char *map;
 {
 	register i, n;
 
 	n = -1;
-	for(i=0; i<MSIZ; i++)
+	for (i = 0; i < msiz; i++)
 		if(map[i])
 			n = i;
 	if(n < 0)
 		return;
+	n++;
 	esize++;
-	esize += (n + (BSIZE/sizeof(short))-1) / (BSIZE/sizeof(short)) * FRAG;
+	esize += howmany(n * sizeof map[0], TP_BSIZE);
 }

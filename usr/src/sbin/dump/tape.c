@@ -1,15 +1,15 @@
-static	char *sccsid = "@(#)tape.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)tape.c	1.5 (Berkeley) %G%";
 #include "dump.h"
 
 char	tblock[NTREC][TP_BSIZE];
 int	trecno = 0;
 
 taprec(dp)
-char *dp;
+	char *dp;
 {
 	register i;
 
-	for(i=0; i<TP_BSIZE; i++)
+	for (i=0; i < TP_BSIZE; i++)
 		tblock[trecno][i] = *dp++;
 	trecno++;
 	spcl.c_tapea++;
@@ -21,23 +21,24 @@ dmpblk(blkno, size)
 	daddr_t blkno;
 	int size;
 {
-	int avail, blks;
+	int avail, tpblks, dblkno;
 
-	if (size % FRAG != 0)
+	if (size % TP_BSIZE != 0)
 		msg("bad size to dmpblk: %d\n", size);
 	avail = NTREC - trecno;
-	for (blks = size / TP_BSIZE; blks > avail; ) {
-		bread(blkno, tblock[trecno], TP_BSIZE * avail);
+	dblkno = fsbtodb(sblock, blkno);
+	for (tpblks = size / TP_BSIZE; tpblks > avail; ) {
+		bread(dblkno, tblock[trecno], TP_BSIZE * avail);
 		trecno += avail;
 		spcl.c_tapea += avail;
 		flusht();
-		blkno += avail;
-		blks -= avail;
+		dblkno += avail * (TP_BSIZE / DEV_BSIZE);
+		tpblks -= avail;
 		avail = NTREC - trecno;
 	}
-	bread(blkno, tblock[trecno], TP_BSIZE * blks);
-	trecno += blks;
-	spcl.c_tapea += blks;
+	bread(dblkno, tblock[trecno], TP_BSIZE * tpblks);
+	trecno += tpblks;
+	spcl.c_tapea += tpblks;
 	if(trecno >= NTREC)
 		flusht();
 }

@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.5 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -11,7 +11,7 @@ main(argc, argv)
 	char	*argv[];
 {
 	char		*arg;
-	register	i;
+	int		i;
 	float		fetapes;
 	register	struct	fstab	*dt;
 
@@ -21,7 +21,10 @@ main(argc, argv)
 	tape = TAPE;
 	disk = DISK;
 	increm = NINCREM;
-
+	if (TP_BSIZE / DEV_BSIZE == 0 || TP_BSIZE % DEV_BSIZE != 0) {
+		msg("TP_BSIZE must be a multiple of DEV_BSIZE\n");
+		dumpabort();
+	}
 	incno = '9';
 	uflag = 0;
 	arg = "u";
@@ -146,13 +149,22 @@ main(argc, argv)
 		msg("Cannot open %s\n", disk);
 		Exit(X_ABORT);
 	}
-	CLR(clrmap);
-	CLR(dirmap);
-	CLR(nodmap);
 	esize = 0;
+	sblock = (struct fs *)buf;
+	sync();
+	bread(SBLOCK, sblock, MAXBSIZE);
+	if (sblock->fs_magic != FS_MAGIC) {
+		msg("bad sblock magic number\n");
+		dumpabort();
+	}
+	msiz = roundup(howmany(sblock->fs_ipg * sblock->fs_ncg, NBBY),
+		TP_BSIZE);
+	clrmap = (char *)calloc(msiz, sizeof(char));
+	dirmap = (char *)calloc(msiz, sizeof(char));
+	nodmap = (char *)calloc(msiz, sizeof(char));
 
 	msg("mapping (Pass I) [regular files]\n");
-	pass(mark, (short *)NULL);		/* mark updates esize */
+	pass(mark, (char *)NULL);		/* mark updates esize */
 
 	do {
 		msg("mapping (Pass II) [directories]\n");
@@ -164,21 +176,21 @@ main(argc, argv)
 	bmapest(nodmap);
 
 	fetapes =
-		(	 esize		/* blocks */
-			*FSIZE		/* bytes / block */
-			*(1.0/density)	/* 0.1" / byte */
+		(	  esize		/* blocks */
+			* TP_BSIZE	/* bytes / block */
+			* (1.0/density)	/* 0.1" / byte */
 		  +
-			 esize		/* blocks */
-			*(1.0/NTREC)	/* IRG's / block */
-			*7		/* 0.1" / IRG */
+			  esize		/* blocks */
+			* (1.0/NTREC)	/* IRG's / block */
+			* 7		/* 0.1" / IRG */
 		) * (1.0 / tsize )	/* tape / 0.1" */
 	;
 	etapes = fetapes;		/* truncating assignment */
 	etapes++;
-	/*
-	 *	esize is typically about 5% too low; we frob it here
-	 */
-	esize += ((5*esize)/100);
+	/* count the nodemap on each additional tape */
+	for (i = 1; i < etapes; i++)
+		bmapest(nodmap);
+	esize += i + 10;	/* headers + 10 trailer blocks */
 	msg("estimated %ld tape blocks on %3.2f tape(s).\n", esize, fetapes);
 
 	otape();			/* bitmap is the first to tape write */
@@ -192,7 +204,7 @@ main(argc, argv)
 	pass(dump, nodmap);
 
 	spcl.c_type = TS_END;
-	for(i=0; i<NTREC; i++)
+	for(i = 0; i < NTREC; i++)
 		spclrec();
 	msg("DUMP: %ld tape blocks on %d tape(s)\n",spcl.c_tapea,spcl.c_volume);
 	msg("DUMP IS DONE\n");

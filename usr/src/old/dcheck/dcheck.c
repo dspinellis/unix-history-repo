@@ -1,9 +1,11 @@
-static	char *sccsid = "@(#)dcheck.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)dcheck.c	1.4 (Berkeley) %G%";
 /*
  * dcheck - check directory consistency
  */
 #define	NB	10
-#define	NDIR	(BSIZE/sizeof(struct direct))
+#define	NDIR(fs)	((fs)->fs_bsize/sizeof(struct direct))
+#define	MAXNDIR		(MAXBSIZE/sizeof(struct direct))
+#define	MAXNINDIR	(MAXBSIZE/sizeof(daddr_t))
 
 #include <stdio.h>
 #include "../h/param.h"
@@ -13,7 +15,7 @@ static	char *sccsid = "@(#)dcheck.c	1.3 (Berkeley) %G%";
 
 union {
 	struct	fs fs;
-	char pad[BSIZE];
+	char pad[MAXBSIZE];
 } fsun;
 #define	sblock	fsun.fs
 
@@ -78,7 +80,7 @@ char *file;
 	headpr = 0;
 	printf("%s:\n", file);
 	sync();
-	bread(SBLOCK, (char *)&sblock, BSIZE);
+	bread(SBLOCK, (char *)&sblock, MAXBSIZE);
 	if (sblock.fs_magic != FS_MAGIC) {
 		printf("%s: not a file system\n", file);
 		nerror++;
@@ -99,7 +101,7 @@ char *file;
 		ecount[i] = 0;
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(cgimin(c, &sblock), (char *)itab,
+		bread(fsbtodb(&sblock, cgimin(c, &sblock)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
 		for (j = 0; j < sblock.fs_ipg; j++) {
 			pass1(&itab[j]);
@@ -108,7 +110,7 @@ char *file;
 	}
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(cgimin(c, &sblock), (char *)itab,
+		bread(fsbtodb(&sblock, cgimin(c, &sblock)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
 		for (j = 0; j < sblock.fs_ipg; j++) {
 			pass2(&itab[j]);
@@ -121,7 +123,7 @@ char *file;
 pass1(ip)
 register struct dinode *ip;
 {
-	struct direct dbuf[NDIR];
+	struct direct dbuf[MAXNDIR];
 	long doff;
 	struct direct *dp;
 	register i, j;
@@ -139,8 +141,8 @@ register struct dinode *ip;
 		d = bmap(i);
 		if(d == 0)
 			break;
-		bread(d, (char *)dbuf, BSIZE);
-		for(j=0; j<NDIR; j++) {
+		bread(fsbtodb(&sblock, d), (char *)dbuf, sblock.fs_bsize);
+		for(j=0; j < NDIR(&sblock); j++) {
 			if(doff >= ip->di_size)
 				break;
 			doff += sizeof(struct direct);
@@ -189,10 +191,10 @@ char *buf;
 {
 	register i;
 
-	lseek(fi, bno*FSIZE, 0);
+	lseek(fi, bno * DEV_BSIZE, 0);
 	if (read(fi, buf, cnt) != cnt) {
 		printf("read error %d\n", bno);
-		for(i=0; i<BSIZE; i++)
+		for(i=0; i < cnt; i++)
 			buf[i] = 0;
 	}
 }
@@ -200,15 +202,15 @@ char *buf;
 daddr_t
 bmap(i)
 {
-	daddr_t ibuf[NINDIR];
+	daddr_t ibuf[MAXNINDIR];
 
 	if(i < NDADDR)
 		return(gip->di_db[i]);
 	i -= NDADDR;
-	if(i > NINDIR) {
+	if(i > NINDIR(&sblock)) {
 		printf("%u - huge directory\n", ino);
 		return((daddr_t)0);
 	}
-	bread(gip->di_ib[0], (char *)ibuf, sizeof(ibuf));
+	bread(fsbtodb(&sblock, gip->di_ib[0]), (char *)ibuf, sizeof(ibuf));
 	return(ibuf[i]);
 }

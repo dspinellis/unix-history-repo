@@ -1,6 +1,6 @@
 /* Copyright (c) 1981 Regents of the University of California */
 
-/*	fs.h	1.8	%G%	*/
+/*	fs.h	1.9	%G%	*/
 
 /*
  * Each disk drive contains some number of file systems.
@@ -17,31 +17,40 @@
  * For file system fs and a cylinder group number cg:
  *	[BBLOCK]	Boot sector and bad block information
  *	[SBLOCK]	Super-block
- *	[CBLOCK]	Cylinder group block
- *	[IBLOCK..IBLOCK+fs.fs_ipg/INOPB)
+ *	[CBLOCK(fs)]	Cylinder group block
+ *	[IBLOCK(fs)..IBLOCK(fs)+fs.fs_ipg/INOPB(fs))
  *			Inode blocks
- *	[IBLOCK+fs.fs_ipg/INOPB..fs.fs_fpg/FRAG)
+ *	[IBLOCK(fs)+fs.fs_ipg/INOPB(fs)..fs.fs_fpg/fs.fs_frag)
  *			Data blocks
- * The beginning of data blocks for cg in fs is also given by cgdmin(cg,fs).
+ * The beginning of data blocks for cg in fs is also given by
+ * the ``cgdmin(cg,fs)'' macro.
+ *
+ * The boot and super blocks are given in absolute disk addresses.
  */
-#define	BBLOCK	((daddr_t)(0*FRAG))
-#define	SBLOCK	((daddr_t)(1*FRAG))
-#define	CBLOCK	((daddr_t)(2*FRAG))
-#define	IBLOCK	((daddr_t)(3*FRAG))
+#define	BBLOCK		((daddr_t)(0 * (MAXBSIZE / DEV_BSIZE)))
+#define	SBLOCK		((daddr_t)(1 * (MAXBSIZE / DEV_BSIZE)))
+/*
+ * The cylinder group and inode blocks are given in file system
+ * addresses, and hence must be converted to disk addresses by
+ * the ``fsbtodb(fs, bno)'' macro.
+ */
+#define	CBLOCK(fs)	((daddr_t)(dbtofsb(fs, 2 * (MAXBSIZE / DEV_BSIZE))))
+#define	IBLOCK(fs)	((daddr_t)(CBLOCK(fs) + (fs)->fs_frag))
 
 /*
- * Addresses stored in inodes are capable of addressing fragments of `blocks.'
- * File system blocks of size BSIZE can be broken into FRAG pieces,
- * each of which is addressible; these pieces may be sectors, or some
- * multiple of a sector size (e.g. 1k byte units).
+ * Addresses stored in inodes are capable of addressing fragments
+ * of `blocks'. File system blocks of at most size MAXBSIZE can 
+ * be optionally broken into 2, 4, or 8 pieces, each of which is
+ * addressible; these pieces may be DEV_BSIZE, or some multiple of
+ * a DEV_BSIZE unit.
  *
- * Large files consist of exclusively large (BSIZE) data blocks.  To avoid
- * undue fragmentation, the last data block of a small file may be
- * allocated as only as many pieces
- * of a large block as are necessary.  The file system format retains
- * only a single pointer to such a fragment, which is a piece of a single
- * BSIZE block which has been divided.  The size of such a fragment is
- * determinable from information in the inode.
+ * Large files consist of exclusively large data blocks.  To avoid
+ * undue wasted disk space, the last data block of a small file may be
+ * allocated as only as many fragments of a large block as are
+ * necessary.  The file system format retains only a single pointer
+ * to such a fragment, which is a piece of a single large block that
+ * has been divided.  The size of such a fragment is determinable from
+ * information in the inode, using the ``blksize(fs, ip, lbn)'' macro.
  *
  * The file system records space availability at the fragment level;
  * to determine block availability, aligned fragments are examined.
@@ -57,7 +66,10 @@
 /*
  * Information per cylinder group summarized in blocks allocated
  * from first cylinder group data blocks.  These blocks have to be
- * specially noticed in mkfs, icheck and fsck.
+ * read in from fs_csaddr (size fs_cssize) in addition to the
+ * super block.
+ * N.B. sizeof(struct csum) must be a power of two in order for
+ * the ``fs_cs'' macro to work (see below).
  */
 struct csum {
 	long	cs_ndir;	/* number of directories */
@@ -65,8 +77,6 @@ struct csum {
 	long	cs_nifree;	/* number of free inodes */
 	long	cs_nffree;	/* number of free frags */
 };
-#define	cssize(fs)	((fs)->fs_ncg*sizeof(struct csum))
-#define	csaddr(fs)	(cgdmin(0, fs))
 
 /*
  * Each file system has a number of inodes statically allocated.
@@ -75,17 +85,28 @@ struct csum {
  */
 #define	NBPI	2048
 
-#define	DESCPG	16			/* desired fs_cpg */
-#define	MAXCPG	32			/* maximum fs_cpg */
-/* MAXCPG is limited only to dimension an array in (struct cg); */
-/* it can be made larger as long as that structures size remains sane. */
+/*
+ * MINBSIZE is the smallest allowable block size.
+ * In order to insure that it is possible to create files of size
+ * 2^32 with only two levels of indirection, MINBSIZE is set to 4096.
+ * MINBSIZE must be big enough to hold a cylinder group block,
+ * thus changes to (struct cg) must keep its size within MINBSIZE.
+ * MAXCPG is limited only to dimension an array in (struct cg);
+ * it can be made larger as long as that structures size remains
+ * within the bounds dictated by MINBSIZE.
+ * Note that super blocks are always of size MAXBSIZE,
+ * and that MAXBSIZE must be >= MINBSIZE.
+ */
+#define MINBSIZE	4096
+#define	DESCPG		16	/* desired fs_cpg */
+#define	MAXCPG		32	/* maximum fs_cpg */
  
 /*
  * Super block for a file system.
  *
- * The super block is nominally located at disk block 1 although
- * this is naive due to bad blocks.  Inode 0 can't be used for normal
- * purposes, historically bad blocks were linked to inode 1,
+ * The super block is nominally located at disk block SBLOCK.
+ * Inode 0 can't be used for normal purposes,
+ * historically bad blocks were linked to inode 1,
  * thus the root inode is 2. (inode 1 is no longer used for
  * this purpose, however numerous dump tapes make this
  * assumption, so we are stuck with it)
@@ -101,7 +122,13 @@ struct	fs
 	long	fs_size;		/* number of blocks in fs */
 	long	fs_dsize;		/* number of data blocks in fs */
 	long	fs_ncg;			/* number of cylinder groups */
+	long	fs_bsize;		/* size of basic blocks in fs */
+	long	fs_fsize;		/* size of frag blocks in fs */
+	long	fs_frag;		/* number of frags in a block in fs */
+	short	fs_minfree;		/* minimum percentage of free blocks */
+	short	fs_rotdelay;		/* num of ms for optimal next block */
 /* sizes determined by number of cylinder groups and their sizes */
+	daddr_t fs_csaddr;		/* blk addr of cyl grp summary area */
 	long	fs_cssize;		/* size of cyl grp summary area */
 	long	fs_cgsize;		/* cylinder group size */
 /* these fields should be derived from the hardware */
@@ -113,7 +140,7 @@ struct	fs
 /* these fields can be computed from the others */
 	short	fs_cpg;			/* cylinders per group */
 	short	fs_ipg;			/* inodes per group */
-	long	fs_fpg;			/* blocks per group*FRAG */
+	long	fs_fpg;			/* blocks per group * fs_frag */
 /* this data must be re-computed after crashes */
 	struct	csum fs_cstotal;	/* cylinder summary information */
 /* these fields are cleared at mount time */
@@ -127,8 +154,14 @@ struct	fs
 	short	fs_rotbl[1];		/* list of blocks for each rotation */
 /* actually longer */
 };
-#define fs_cs(indx) fs_csp[(indx) / (BSIZE / sizeof(struct csum))] \
-			  [(indx) % (BSIZE / sizeof(struct csum))]
+
+/*
+ * convert cylinder group to base address of its global summary info.
+ * N.B. This macro assumes that sizeof(struct csum) is a power of two.
+ */
+#define fs_cs(fs, indx) \
+	fs_csp[(indx) / ((fs)->fs_bsize / sizeof(struct csum))] \
+	[(indx) % ((fs)->fs_bsize / sizeof(struct csum))]
 
 /*
  * Cylinder group macros to locate things in cylinder groups.
@@ -139,32 +172,32 @@ struct	fs
 
 /* cylinder group to spare super block address */
 #define	cgsblock(c,fs)	\
-	(cgbase(c,fs) + SBLOCK)
+	(cgbase(c,fs) + dbtofsb(fs, SBLOCK))
 
 /* convert cylinder group to index of its cg block */
 #define	cgtod(c,fs)	\
-	(cgbase(c,fs) + CBLOCK)
+	(cgbase(c,fs) + CBLOCK(fs))
 
 /* give address of first inode block in cylinder group */
 #define	cgimin(c,fs)	\
-	(cgbase(c,fs) + IBLOCK)
+	(cgbase(c,fs) + IBLOCK(fs))
 
 /* give address of first data block in cylinder group */
-#define	cgdmin(c,fs)	(cgimin(c,fs) + (fs)->fs_ipg / INOPF)
+#define	cgdmin(c,fs)	(cgimin(c,fs) + (fs)->fs_ipg / INOPF(fs))
 
 /* turn inode number into cylinder group number */
 #define	itog(x,fs)	((x)/(fs)->fs_ipg)
 
-/* turn inode number into disk block address */
-#define	itod(x,fs)	((daddr_t)(cgimin(itog(x,fs),fs)+FRAG*((x)%(fs)->fs_ipg/INOPB)))
+/* turn inode number into file system block address */
+#define	itod(x,fs)	((daddr_t)(cgimin(itog(x,fs),fs)+(fs)->fs_frag*((x)%(fs)->fs_ipg/INOPB(fs))))
 
-/* turn inode number into disk block offset */
-#define	itoo(x)		((x)%INOPB)
+/* turn inode number into file system block offset */
+#define	itoo(x,fs)	((x)%INOPB(fs))
 
-/* give cylinder group number for a disk block */
+/* give cylinder group number for a file system block */
 #define	dtog(d,fs)	((d)/(fs)->fs_fpg)
 
-/* give cylinder group block number for a disk block */
+/* give cylinder group block number for a file system block */
 #define	dtogd(d,fs)	((d)%(fs)->fs_fpg)
 
 /*
@@ -186,7 +219,8 @@ struct	fs
  * Its size is derived from the size of blocks and the (struct cg) size,
  * by the number of remaining bits.
  */
-#define	MAXBPG	(NBBY*(BSIZE-(sizeof (struct cg)))/FRAG)
+#define	MAXBPG(fs) \
+	(NBBY*((fs)->fs_bsize-(sizeof (struct cg)))/(fs)->fs_frag)
 
 #define	CG_MAGIC	0x092752
 struct	cg {
@@ -200,7 +234,7 @@ struct	cg {
 	long	cg_rotor;		/* position of last used block */
 	long	cg_frotor;		/* position of last used frag */
 	long	cg_irotor;		/* position of last used inode */
-	long	cg_frsum[FRAG];		/* counts of available frags */
+	long	cg_frsum[MAXFRAG];	/* counts of available frags */
 	short	cg_b[MAXCPG][NRPOS];	/* positions of free blocks */
 	char	cg_iused[MAXIPG/NBBY];	/* used inode map */
 	char	cg_free[1];		/* free block map */

@@ -1,11 +1,13 @@
-static	char *sccsid = "@(#)ncheck.c	1.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)ncheck.c	1.4 (Berkeley) %G%";
 /*
  * ncheck -- obtain file names from reading filesystem
  */
 
-#define	NB	500
-#define	HSIZE	2503
-#define	NDIR	(BSIZE/sizeof(struct direct))
+#define	NB		500
+#define	HSIZE		2503
+#define	NDIR(fs)	((fs)->fs_bsize/sizeof(struct direct))
+#define	MAXNDIR		(MAXBSIZE/sizeof(struct direct))
+#define	MAXNINDIR	(MAXBSIZE/sizeof(daddr_t))
 
 #include <stdio.h>
 #include "../h/param.h"
@@ -92,7 +94,7 @@ check(file)
 	nhent = 0;
 	printf("%s:\n", file);
 	sync();
-	bread(SBLOCK, (char *)&sblock, sizeof(sblock));
+	bread(SBLOCK, (char *)&sblock, MAXBSIZE);
 	if (sblock.fs_magic != FS_MAGIC) {
 		printf("%s: not a file system\n", file);
 		nerror++;
@@ -107,7 +109,7 @@ check(file)
 	}
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(cgimin(c, &sblock), (char *)itab,
+		bread(fsbtodb(&sblock, cgimin(c, &sblock)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
 		for(j=0; j<sblock.fs_ipg; j++) {
 			pass1(&itab[j]);
@@ -117,7 +119,7 @@ check(file)
 	ilist[nxfile+1] = 0;
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(cgimin(c, &sblock), (char *)itab,
+		bread(fsbtodb(&sblock, cgimin(c, &sblock)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
 		for(j=0; j<sblock.fs_ipg; j++) {
 			pass2(&itab[j]);
@@ -126,7 +128,7 @@ check(file)
 	}
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(cgimin(c, &sblock), (char *)itab,
+		bread(fsbtodb(&sblock, cgimin(c, &sblock)), (char *)itab,
 		    sblock.fs_ipg * sizeof (struct dinode));
 		for(j=0; j<sblock.fs_ipg; j++) {
 			pass3(&itab[j]);
@@ -152,7 +154,7 @@ pass1(ip)
 pass2(ip)
 	register struct dinode *ip;
 {
-	struct direct dbuf[NDIR];
+	struct direct dbuf[MAXNDIR];
 	long doff;
 	struct direct *dp;
 	register i, j;
@@ -171,8 +173,8 @@ pass2(ip)
 		d = bmap(i);
 		if(d == 0)
 			break;
-		bread(d, (char *)dbuf, sizeof(dbuf));
-		for(j=0; j<NDIR; j++) {
+		bread(fsbtodb(&sblock, d), (char *)dbuf, sizeof(dbuf));
+		for(j=0; j < NDIR(&sblock); j++) {
 			if(doff >= ip->di_size)
 				break;
 			doff += sizeof(struct direct);
@@ -195,7 +197,7 @@ pass2(ip)
 pass3(ip)
 	register struct dinode *ip;
 {
-	struct direct dbuf[NDIR];
+	struct direct dbuf[MAXNDIR];
 	long doff;
 	struct direct *dp;
 	register i, j;
@@ -213,8 +215,8 @@ pass3(ip)
 		d = bmap(i);
 		if(d == 0)
 			break;
-		bread(d, (char *)dbuf, sizeof(dbuf));
-		for(j=0; j<NDIR; j++) {
+		bread(fsbtodb(&sblock, d), (char *)dbuf, sizeof(dbuf));
+		for(j=0; j < NDIR(&sblock); j++) {
 			if(doff >= ip->di_size)
 				break;
 			doff += sizeof(struct direct);
@@ -301,10 +303,10 @@ bread(bno, buf, cnt)
 {
 	register i;
 
-	lseek(fi, bno*FSIZE, 0);
+	lseek(fi, bno * DEV_BSIZE, 0);
 	if (read(fi, buf, cnt) != cnt) {
 		fprintf(stderr, "ncheck: read error %d\n", bno);
-		for(i=0; i<BSIZE; i++)
+		for(i=0; i < cnt; i++)
 			buf[i] = 0;
 	}
 }
@@ -313,15 +315,15 @@ daddr_t
 bmap(i)
 	int i;
 {
-	daddr_t ibuf[NINDIR];
+	daddr_t ibuf[MAXNINDIR];
 
 	if(i < NDADDR)
 		return(gip->di_db[i]);
 	i -= NDADDR;
-	if(i > NINDIR) {
+	if(i > NINDIR(&sblock)) {
 		fprintf(stderr, "ncheck: %u - huge directory\n", ino);
 		return((daddr_t)0);
 	}
-	bread(gip->di_ib[i], (char *)ibuf, sizeof(ibuf));
+	bread(fsbtodb(&sblock, gip->di_ib[i]), (char *)ibuf, sizeof(ibuf));
 	return(ibuf[i]);
 }

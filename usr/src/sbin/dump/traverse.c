@@ -1,25 +1,18 @@
-static	char *sccsid = "@(#)traverse.c	1.3 (Berkeley) %G%";
-#include "dump.h"
+static	char *sccsid = "@(#)traverse.c	1.4 (Berkeley) %G%";
 
-struct	fs	sblock;
+#include "dump.h"
 
 pass(fn, map)
 	int (*fn)();
-	short *map;
+	char *map;
 {
 	struct dinode *dp;
 	int bits;
 	ino_t maxino;
 
-	sync();
-	bread(SBLOCK, &sblock, sizeof sblock);
-	if (sblock.fs_magic != FS_MAGIC) {
-		msg("bad sblock magic number\n");
-		dumpabort();
-	}
-	maxino = sblock.fs_ipg * sblock.fs_ncg;
+	maxino = sblock->fs_ipg * sblock->fs_ncg - 1;
 	for (ino = 0; ino < maxino; ) {
-		if((ino % MLEN) == 0) {
+		if((ino % NBBY) == 0) {
 			bits = ~0;
 			if(map != NULL)
 				bits = *map++;
@@ -30,47 +23,6 @@ pass(fn, map)
 			(*fn)(dp);
 		}
 		bits >>= 1;
-	}
-}
-
-icat(dp, fn1)
-	register struct	dinode	*dp;
-	int (*fn1)();
-{
-	register int i;
-
-	for (i = 0; i < NDADDR; i++) {
-		if (dp->di_db[i] != 0)
-			(*fn1)(dp->di_db[i]);
-	}
-	for (i = 0; i < NIADDR; i++) {
-		if (dp->di_ib[i] != 0)
-			indir(dp->di_ib[i], fn1, i);
-	}
-}
-
-indir(d, fn1, n)
-	daddr_t d;
-	int (*fn1)();
-	int n;
-{
-	register i;
-	daddr_t	idblk[NINDIR];
-
-	bread(d, (char *)idblk, sizeof(idblk));
-	if(n <= 0) {
-		for(i=0; i<NINDIR; i++) {
-			d = idblk[i];
-			if(d != 0)
-				(*fn1)(d);
-		}
-	} else {
-		n--;
-		for(i=0; i<NINDIR; i++) {
-			d = idblk[i];
-			if(d != 0)
-				indir(d, fn1, n);
-		}
 	}
 }
 
@@ -85,10 +37,10 @@ mark(ip)
 	BIS(ino, clrmap);
 	if(f == IFDIR)
 		BIS(ino, dirmap);
-	if(ip->di_mtime >= spcl.c_ddate ||
-	   ip->di_ctime >= spcl.c_ddate) {
+	if ((ip->di_mtime >= spcl.c_ddate || ip->di_ctime >= spcl.c_ddate) &&
+	    !BIT(ino, nodmap)) {
 		BIS(ino, nodmap);
-		if (f != IFREG){
+		if (f != IFREG && f != IFDIR) {
 			esize += 1;
 			return;
 		}
@@ -97,22 +49,56 @@ mark(ip)
 }
 
 add(ip)
-	struct dinode *ip;
+	register struct	dinode	*ip;
 {
+	register int i;
 
 	if(BIT(ino, nodmap))
 		return;
 	nsubdir = 0;
 	dadded = 0;
-	icat(ip, dsrch);
+	for (i = 0; i < NDADDR; i++) {
+		if (ip->di_db[i] != 0)
+			dsrch(ip->di_db[i], dblksize(sblock, ip, i));
+	}
+	for (i = 0; i < NIADDR; i++) {
+		if (ip->di_ib[i] != 0)
+			indir(ip->di_ib[i], i);
+	}
 	if(dadded) {
-		BIS(ino, nodmap);
-		est(ip);
 		nadded++;
+		if (!BIT(ino, nodmap)) {
+			BIS(ino, nodmap);
+			est(ip);
+		}
 	}
 	if(nsubdir == 0)
 		if(!BIT(ino, nodmap))
 			BIC(ino, dirmap);
+}
+
+indir(d, n)
+	daddr_t d;
+	int n;
+{
+	register i;
+	daddr_t	idblk[MAXNINDIR];
+
+	bread(fsbtodb(sblock, d), (char *)idblk, sblock->fs_bsize);
+	if(n <= 0) {
+		for(i=0; i < NINDIR(sblock); i++) {
+			d = idblk[i];
+			if(d != 0)
+				dsrch(d, sblock->fs_bsize);
+		}
+	} else {
+		n--;
+		for(i=0; i < NINDIR(sblock); i++) {
+			d = idblk[i];
+			if(d != 0)
+				indir(d, n);
+		}
+	}
 }
 
 dump(ip)
@@ -134,12 +120,12 @@ dump(ip)
 		spclrec();
 		return;
 	}
-	if (ip->di_size > NDADDR * BSIZE)
-		i = NDADDR * FRAG;
+	if (ip->di_size > NDADDR * sblock->fs_bsize)
+		i = NDADDR * sblock->fs_frag;
 	else
-		i = howmany(ip->di_size, FSIZE);
+		i = howmany(ip->di_size, sblock->fs_fsize);
 	blksout(&ip->di_db[0], i);
-	size = ip->di_size - NDADDR * BSIZE;
+	size = ip->di_size - NDADDR * sblock->fs_bsize;
 	if (size <= 0)
 		return;
 	for (i = 0; i < NIADDR; i++) {
@@ -155,23 +141,23 @@ dmpindir(blk, lvl, size)
 	long *size;
 {
 	int i, cnt;
-	daddr_t idblk[NINDIR];
+	daddr_t idblk[MAXNINDIR];
 
 	if (blk != 0)
-		bread(blk, (char *)idblk, sizeof(idblk));
+		bread(fsbtodb(sblock, blk), (char *)idblk, sblock->fs_bsize);
 	else
-		blkclr(idblk, sizeof(idblk));
+		blkclr(idblk, sblock->fs_bsize);
 	if (lvl <= 0) {
-		if (*size < NINDIR * BSIZE)
-			cnt = howmany(*size, TP_BSIZE);
+		if (*size < NINDIR(sblock) * sblock->fs_bsize)
+			cnt = howmany(*size, sblock->fs_fsize);
 		else
-			cnt = NINDIR * BLKING * FRAG;
-		*size -= NINDIR * BSIZE;
+			cnt = NINDIR(sblock) * sblock->fs_frag;
+		*size -= NINDIR(sblock) * sblock->fs_bsize;
 		blksout(&idblk[0], cnt);
 		return;
 	}
 	lvl--;
-	for (i = 0; i < NINDIR; i++) {
+	for (i = 0; i < NINDIR(sblock); i++) {
 		dmpindir(idblk[i], lvl, size);
 		if (*size <= 0)
 			return;
@@ -182,53 +168,52 @@ blksout(blkp, frags)
 	daddr_t *blkp;
 	int frags;
 {
-	int i, j, count, blks;
+	int i, j, count, blks, tbperdb;
 
-	blks = frags * BLKING;
+	blks = frags * BLKING(sblock);
+	tbperdb = BLKING(sblock) * sblock->fs_frag;
 	for (i = 0; i < blks; i += TP_NINDIR) {
 		if (i + TP_NINDIR > blks)
 			count = blks;
 		else
 			count = i + TP_NINDIR;
 		for (j = i; j < count; j++)
-			if (blkp[j / (BLKING * FRAG)] != 0)
+			if (blkp[j / tbperdb] != 0)
 				spcl.c_addr[j - i] = 1;
 			else
 				spcl.c_addr[j - i] = 0;
 		spcl.c_count = count - i;
 		spclrec();
-		for (j = i; j < count; j += (BLKING * FRAG))
-			if (blkp[j / (BLKING * FRAG)] != 0)
-				if (j + (BLKING * FRAG) <= count)
-					dmpblk(blkp[j / (BLKING * FRAG)],
-					    BSIZE);
+		for (j = i; j < count; j += tbperdb)
+			if (blkp[j / tbperdb] != 0)
+				if (j + tbperdb <= count)
+					dmpblk(blkp[j / tbperdb],
+					    sblock->fs_bsize);
 				else
-					dmpblk(blkp[j / (BLKING * FRAG)],
+					dmpblk(blkp[j / tbperdb],
 					    (count - j) * TP_BSIZE);
 		spcl.c_type = TS_ADDR;
 	}
 }
 
 bitmap(map, typ)
-	short *map;
+	char *map;
 {
 	register i, n;
 	char *cp;
 
 	n = -1;
-	for(i=0; i<MSIZ; i++)
+	for (i = 0; i < msiz; i++)
 		if(map[i])
 			n = i;
-	if(n < 0)
+	if (n < 0)
 		return;
+	n++;
 	spcl.c_type = typ;
-	spcl.c_count = (n*sizeof(map[0]) + TP_BSIZE)/TP_BSIZE;
+	spcl.c_count = howmany(n * sizeof(map[0]), TP_BSIZE);
 	spclrec();
-	cp = (char *)map;
-	for(i=0; i<spcl.c_count; i++) {
+	for (i = 0, cp = map; i < spcl.c_count; i++, cp += TP_BSIZE)
 		taprec(cp);
-		cp += TP_BSIZE;
-	}
 }
 
 spclrec()
@@ -246,18 +231,19 @@ spclrec()
 	taprec((char *)&spcl);
 }
 
-dsrch(d)
+dsrch(d, size)
 	daddr_t d;
+	int size;
 {
 	register char *cp;
 	register i;
 	register ino_t in;
-	struct direct dblk[DIRPB];
+	struct direct dblk[MAXDIRPB];
 
 	if(dadded)
 		return;
-	bread(d, (char *)dblk, sizeof(dblk));
-	for(i=0; i<DIRPB; i++) {
+	bread(fsbtodb(sblock, d), (char *)dblk, size);
+	for(i=0; i < DIRPB(sblock); i++) {
 		in = dblk[i].d_ino;
 		if(in == 0)
 			continue;
@@ -282,14 +268,14 @@ getino(ino)
 	daddr_t ino;
 {
 	static daddr_t minino, maxino;
-	static struct dinode itab[INOPB];
+	static struct dinode itab[MAXINOPB];
 
 	if (ino >= minino && ino < maxino) {
 		return (&itab[ino - minino]);
 	}
-	bread(itod(ino, &sblock), itab, BSIZE);
-	minino = ino - (ino % INOPB);
-	maxino = minino + INOPB;
+	bread(fsbtodb(sblock, itod(ino, sblock)), itab, sblock->fs_bsize);
+	minino = ino - (ino % INOPB(sblock));
+	maxino = minino + INOPB(sblock);
 	return (&itab[ino - minino]);
 }
 
@@ -304,12 +290,12 @@ bread(da, ba, c)
 	register n;
 	register	regc;
 
-	if (lseek(fi, (long)(da*FSIZE), 0) < 0){
+	if (lseek(fi, (long)(da * DEV_BSIZE), 0) < 0){
 		msg("bread: lseek fails\n");
 	}
 	regc = c;	/* put c someplace safe; it gets clobbered */
 	n = read(fi, ba, c);
-	if(n != c || regc != c){
+	if (n != c || regc != c) {
 		msg("(This should not happen)bread from %s [block %d]: c=0x%x, regc=0x%x, &c=0x%x, n=0x%x\n",
 			disk, da, c, regc, &c, n);
 #ifdef ERNIE
@@ -327,17 +313,6 @@ bread(da, ba, c)
 				breaderrors = 0;
 		}
 	}
-}
-
-CLR(map)
-	register short *map;
-{
-	register n;
-
-	n = MSIZ;
-	do
-		*map++ = 0;
-	while(--n);
 }
 
 blkclr(cp, size)
