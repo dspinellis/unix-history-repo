@@ -1,18 +1,25 @@
 /*
- * Copyright (c) 1983, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1983, 1986, 1987 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983, 1986 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1986, 1987 Regents of the University of California.\n\
  All rights reserved.\n";
-#endif not lint
+#endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.12 (Berkeley) 87/09/29";
-#endif not lint
+static char sccsid[] = "@(#)bugfiler.c	5.13 (Berkeley) %G%";
+#endif /* not lint */
+
 
 /*
  * Bug report processing program, designed to be invoked
