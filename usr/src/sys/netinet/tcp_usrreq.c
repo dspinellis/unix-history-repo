@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.7 81/10/22 */
+/* tcp_usrreq.c 1.8 81/10/23 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -255,7 +255,9 @@ COUNT(T_CLOSE);
 		m_freem(m);
 		tp->t_rcv_unack = NULL;
 	}
-	m_free(dtom(tp));
+	m = dtom(tp);
+	m->m_off = 0;
+	m_free(m);
 	up->uc_tcb = NULL;
 
 	/* lower buffer allocation and decrement host entry */
@@ -286,50 +288,41 @@ sss_snd(tp, m0)
 	seq_t last;
 
 	last = tp->snd_off;
-
-	/* count number of mbufs in send data */
-
 	for (m = n = m0; m != NULL; m = m->m_next) {
 		up->uc_ssize++;
+		if (m->m_off > MSIZE)
+			up->uc_ssize += NMBPG;
 		last += m->m_len;
 	}
-
-	/* find end of send buffer and append data */
-
-	if ((m = up->uc_sbuf) != NULL) {		/* something in send buffer */
-		while (m->m_next != NULL) {		/* find the end */
+	if ((m = up->uc_sbuf) == NULL)
+		up->uc_sbuf = n;
+	else {
+		while (m->m_next != NULL) {
 			m = m->m_next;
 			last += m->m_len;
 		}
-		last += m->m_len;
-
-		/* if there's room in old buffer for new data, consolidate */
-
-		off = m->m_off + m->m_len;
-		while (n != NULL && (MSIZE - off) >= n->m_len) {
-			bcopy((caddr_t)((int)n + n->m_off),
-			      (caddr_t)((int)m + off), n->m_len);
-			m->m_len += n->m_len;
-			off += n->m_len;
-			up->uc_ssize--;
-			n = m_free(n);
+		if (m->m_off <= MSIZE) {
+			last += m->m_len;
+			off = m->m_off + m->m_len;
+			while (n && n->m_off <= MSIZE &&
+			    (MSIZE - off) >= n->m_len) {
+				bcopy((caddr_t)((int)n + n->m_off),
+				      (caddr_t)((int)m + off), n->m_len);
+				m->m_len += n->m_len;
+				off += n->m_len;
+				up->uc_ssize--;
+				n = m_free(n);
+			}
 		}
 		m->m_next = n;
-
-	} else		/* nothing in send buffer */
-		up->uc_sbuf = n;
-
-	if (up->uc_flags & UEOL) {		/* set EOL */
-		tp->snd_end = last;
 	}
-
-	if (up->uc_flags & UURG) {		/* urgent data */
+	if (up->uc_flags & UEOL)
+		tp->snd_end = last;
+	if (up->uc_flags & UURG) {
 		tp->snd_urp = last+1;
 		tp->tc_flags |= TC_SND_URG;
 	}
-
 	send(tp);
-
 	return (SAME);
 }
 

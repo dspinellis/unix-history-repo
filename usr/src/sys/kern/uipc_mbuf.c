@@ -1,4 +1,4 @@
-/* mbuf.c 1.6 81/10/21 */
+/* uipc_mbuf.c 1.2 81/10/23 */
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -82,6 +82,7 @@ COUNT(MBUFINIT);
 	vmemall(&Netmap[0], 2, proc, CSYS);
 	vmaccess(&Netmap[0], m, 2);
 	for (i=0; i < NMBPG; i++) {
+		m->m_off = 0;
 		m_free(m);
 		m++;
 	}
@@ -112,6 +113,7 @@ COUNT(PG_ALLOC);
 	bufs = n << 3;
 	s = spl_imp();
 	for (j=0; j < bufs; j++) {
+		m->m_off = 0;
 		m_free(m);
 		m++;
 	}
