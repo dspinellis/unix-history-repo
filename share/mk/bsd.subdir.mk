@@ -8,7 +8,7 @@ BINGRP?=	bin
 BINOWN?=	bin
 BINMODE?=	555
 
-.END: .MAKE
+_SUBDIRUSE: .USE
 	@for entry in ${SUBDIR}; do \
 		(if test -d ${.CURDIR}/$${entry}.${MACHINE}; then \
 			echo "===> ${DIRPRFX}$${entry}.${MACHINE}"; \
@@ -19,7 +19,7 @@ BINMODE?=	555
 			edir=$${entry}; \
 			cd ${.CURDIR}/$${edir}; \
 		fi; \
-		${MAKE} ${.TARGETS} DIRPRFX=${DIRPRFX}$$edir/); \
+		${MAKE} ${.TARGET:realinstall=install} DIRPRFX=${DIRPRFX}$$edir/); \
 	done
 
 ${SUBDIR}::
@@ -31,45 +31,45 @@ ${SUBDIR}::
 	${MAKE} all
 
 .if !target(all)
-all:
+all: _SUBDIRUSE
 .endif
 
 .if !target(clean)
-clean:
+clean: _SUBDIRUSE
 .endif
 
 .if !target(cleandir)
-cleandir:
+cleandir: _SUBDIRUSE
 .endif
 
 .if !target(depend)
-depend:
+depend: _SUBDIRUSE
 .endif
 
 .if !target (maninstall)
-maninstall:
+maninstall: _SUBDIRUSE
 .endif
 
 .if !target(install)
-install:
-.endif
-
 .if !target(beforeinstall)
 beforeinstall:
 .endif
-
 .if !target(afterinstall)
 afterinstall:
 .endif
+install: afterinstall
+afterinstall: realinstall
+realinstall: beforeinstall _SUBDIRUSE
+.endif
 
 .if !target(lint)
-lint:
+lint: _SUBDIRUSE
 .endif
 
 .if !target(obj)
-obj:
+obj: _SUBDIRUSE
 .endif
 
 .if !target(tags)
-tags:
+tags: _SUBDIRUSE
 .endif
