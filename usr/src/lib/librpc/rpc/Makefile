@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 LIB=	rpc
 CFLAGS+=-I${.CURDIR}
@@ -17,7 +17,7 @@ all: portmap
 
 portmap: portmap.c librpc.a
 	ranlib librpc.a
-	${CC} ${CFLAGS} ${.CURDIR}/portmap.c librpc.a -o ${.TARGET}
+	${CC} ${CFLAGS} ${.CURDIR}/portmap.c librpc.a -lutil -o ${.TARGET}
 
 beforeinstall: hdrs
 	install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} portmap \
