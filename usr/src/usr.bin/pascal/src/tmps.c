@@ -1,8 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-#ifndef lint
-static char sccsid[] = "@(#)tmps.c 1.9.1.1 %G%";
-#endif
+static char sccsid[] = "@(#)tmps.c 1.13 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -20,22 +18,26 @@ static char sccsid[] = "@(#)tmps.c 1.9.1.1 %G%";
  */
 #ifdef PC
     /*
-     *	registers are allocated from highreg towards lowreg.
-     *	registers are of size regsize.
-     *	stack variables are allocated on a downward growing stack.
+     *	register temporaries
+     *	- are allocated from highreg towards lowreg.
+     *	- are of size regsize.
+     *	- register numbers from the various register types are mapped to 
+     *	  integer register numbers using the offsets.  (cf. pcc/mac2defs)
+     *
+     *	stack temporaries
+     *	- are allocated on a downward growing stack.
      */
 
 #ifdef vax
     /*
      *	first pass register declaration constants
      */
-#   define	LONGREGTYPE	0
 struct	regtype {
     long	lowreg;
     long	highreg;
     long	regsize;
 } regtypes[NUMREGTYPES] = {
-	{ 6, 11, 4 },
+	{ 6, 11, 4 },		/* r6..r11 */
 };
 #endif vax
 
@@ -43,15 +45,13 @@ struct	regtype {
     /*
      *	first pass register declaration constants
      */
-#   define	DATAREGTYPE	0
-#   define	ADDRREGTYPE	1
 struct	regtype {
     long	lowreg;
     long	highreg;
     long	regsize;
 } regtypes[NUMREGTYPES] = {
-	{ 2, 7, 0 },		/* off for now */
-	{ 2, 5, 0 },		/* off for now */
+	{ 2, 7, 4 },		/* d2..d7 */
+	{ 2, 5, 4 },		/* a2..a5 */
 };
 #endif mc68000
 #endif PC
@@ -60,9 +60,7 @@ tmpinit(cbn)
 	int	cbn;
 {
 	struct om	*sizesp = &sizes[cbn];
-#	ifdef PC
 	int	i;
-#	endif PC
 
 	sizesp->om_max = -DPOFF1;
 	sizesp->curtmps.om_off = -DPOFF1;
@@ -77,7 +75,6 @@ tmpinit(cbn)
 /*
  * allocate runtime temporary variables
  */
-/*ARGSUSED*/
 struct nl *
 tmpalloc(size, type, mode)
 	long size;
@@ -99,15 +96,46 @@ tmpalloc(size, type, mode)
 			if (offset < op->low_water[REG_GENERAL]) {
 				op->low_water[REG_GENERAL] = offset;
 			}
-			nlp = defnl( (char *) 0 , VAR , type , offset );
 			nlp -> extra_flags = NLOCAL | NREGVAR;
 			putlbracket(ftnno, op);
 			return nlp;
 		}
 #	    endif vax
+#	    ifdef mc68000
+		if (  mode == REGOK
+		   && type != nl + TPTR
+		   && size == regtypes[REG_DATA].regsize
+		   && op->curtmps.next_avail[REG_DATA]
+			    >= regtypes[REG_DATA].lowreg) {
+			offset = op->curtmps.next_avail[REG_DATA]--;
+			if (offset < op->low_water[REG_DATA]) {
+				op->low_water[REG_DATA] = offset;
+			}
+			nlp = defnl(0, VAR, type, offset + DATA_REG_OFFSET );
+			nlp -> extra_flags = NLOCAL | NREGVAR;
+			putlbracket(ftnno, op);
+			return nlp;
+		}
+		if (  mode == REGOK
+		   && type == nl + TPTR
+		   && size == regtypes[REG_ADDR].regsize
+		   && op->curtmps.next_avail[REG_ADDR]
+			    >= regtypes[REG_ADDR].lowreg) {
+			offset = op->curtmps.next_avail[REG_ADDR]--;
+			if (offset < op->low_water[REG_ADDR]) {
+				op->low_water[REG_ADDR] = offset;
+			}
+			nlp = defnl(0, VAR, type, offset + ADDR_REG_OFFSET );
+			nlp -> extra_flags = NLOCAL | NREGVAR;
+			putlbracket(ftnno, op);
+			return nlp;
+		}
+#	    endif mc68000
 #	endif PC
 	if (type == NIL) {
 	    alignment = A_STACK;
+	} else if (type == nl+TPTR) {
+	    alignment = A_POINT;
 	} else {
 	    alignment = align(type);
 	}
@@ -117,7 +145,7 @@ tmpalloc(size, type, mode)
 	if ( offset < op->om_max ) {
 	        op->om_max = offset;
 	}
-	nlp = defnl( (char *) 0 , VAR , type , offset );
+	nlp = defnl( 0 , VAR , type , offset );
 #	ifdef PC
 	    nlp -> extra_flags = NLOCAL;
 	    putlbracket(ftnno, op);
@@ -128,15 +156,13 @@ tmpalloc(size, type, mode)
 /*
  * deallocate runtime temporary variables
  */
-/*ARGSUSED*/
 tmpfree(restore)
     register struct tmps	*restore;
 {
-#   ifdef PC
     register struct om		*op = &sizes[ cbn ];
     bool			change = FALSE;
 
-	    /* i think this never gives back storage!	... peter */
+#   ifdef PC
 #	ifdef vax
 	    if (restore->next_avail[REG_GENERAL]
 		> op->curtmps.next_avail[REG_GENERAL]) {
@@ -145,14 +171,30 @@ tmpfree(restore)
 		    change = TRUE;
 	    }
 #	endif vax
+#	ifdef mc68000
+	    if (restore->next_avail[REG_DATA]
+		> op->curtmps.next_avail[REG_DATA]) {
+		    op->curtmps.next_avail[REG_DATA]
+			= restore->next_avail[REG_DATA];
+		    change = TRUE;
+	    }
+	    if (restore->next_avail[REG_ADDR]
+		> op->curtmps.next_avail[REG_ADDR]) {
+		    op->curtmps.next_avail[REG_ADDR]
+			= restore->next_avail[REG_ADDR];
+		    change = TRUE;
+	    }
+#	endif mc68000
+#   endif PC
     if (restore->om_off > op->curtmps.om_off) {
 	    op->curtmps.om_off = restore->om_off;
 	    change = TRUE;
     }
+#   ifdef PC
 	if (change) {
 	    putlbracket(ftnno, op);
 	}
-#endif PC
+#   endif PC
 }
 
 #ifdef PC
