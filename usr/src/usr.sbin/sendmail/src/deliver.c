@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	6.53 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	6.54 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -418,7 +418,7 @@ deliver(firstto, editfcn)
 		(*e->e_putbody)(mci->mci_out, m, e);
 
 		/* get the exit status */
-		rcode = endmailer(mci, pv[0]);
+		rcode = endmailer(mci, e, pv);
 	}
 	else
 					markfailure(e, to, i);
@@ -628,7 +628,9 @@ dofork()
 **
 **	Parameters:
 **		pid -- pid of mailer.
-**		name -- name of mailer (for error messages).
+**		e -- the current envelope.
+**		pv -- the parameter vector that invoked the mailer
+**			(for error messages).
 **
 **	Returns:
 **		exit code of mailer.
@@ -639,7 +641,8 @@ dofork()
 
 endmailer(pid, name)
 	int pid;
-	char *name;
+	register ENVELOPE *e;
+	char **pv;
 {
 	int st;
 
@@ -651,14 +654,26 @@ endmailer(pid, name)
 	st = waitfor(pid);
 	if (st == -1)
 	{
-		syserr("endmailer %s: wait", name);
+		syserr("endmailer %s: wait", pv[0]);
 		return (EX_SOFTWARE);
 	}
 
 	/* see if it died a horrid death */
 	if ((st & 0377) != 0)
 	{
-		syserr("mailer %s died with signal %o", name, st);
+		syserr("mailer %s died with signal %o", pv[0], st);
+
+		/* log the arguments */
+		if (e->e_xfp != NULL)
+		{
+			register char **av;
+
+			fprintf(e->e_xfp, "Arguments:");
+			for (av = pv; *av != NULL; av++)
+				fprintf(e->e_xfp, " %s", *av);
+			fprintf(e->e_xfp, "\n");
+		}
+
 		ExitStat = EX_TEMPFAIL;
 		return (EX_TEMPFAIL);
 	}
@@ -1574,17 +1589,7 @@ sendall(e, mode)
 			}
 
 			if (mode != SM_VERIFY)
-			{
-				char xfbuf1[20], xfbuf2[20];
-
-				(void) strcpy(xfbuf1, queuename(e, 'x'));
-				(void) strcpy(xfbuf2, queuename(ee, 'x'));
-				if (link(xfbuf1, xfbuf2) < 0)
-				{
-					syserr("sendall: link(%s, %s)",
-						xfbuf1, xfbuf2);
-				}
-			}
+				openxscript(ee);
 #ifdef LOG
 			if (LogLevel > 4)
 				syslog(LOG_INFO, "%s: clone %s",
