@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -57,7 +57,7 @@ main(argc, argv)
 	char **argv;
 {
 	int f, funix, finet, options = 0, defreadfds, fromlen;
-	struct sockaddr_un sun, fromunix;
+	struct sockaddr_un un, fromunix;
 	struct sockaddr_in sin, frominet;
 	int omask, lfd;
 
@@ -124,10 +124,10 @@ main(argc, argv)
 	signal(SIGINT, mcleanup);
 	signal(SIGQUIT, mcleanup);
 	signal(SIGTERM, mcleanup);
-	sun.sun_family = AF_UNIX;
-	strcpy(sun.sun_path, _PATH_SOCKETNAME);
+	un.sun_family = AF_UNIX;
+	strcpy(un.sun_path, _PATH_SOCKETNAME);
 	if (bind(funix,
-	     (struct sockaddr *)&sun, strlen(sun.sun_path) + 2) < 0) {
+	     (struct sockaddr *)&un, strlen(un.sun_path) + 2) < 0) {
 		syslog(LOG_ERR, "ubind: %m");
 		exit(1);
 	}
