@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.8 83/08/17";
+static	char *sccsid = "@(#)ttgeneric.c	3.9 83/08/17";
 #endif
 
 #include "ww.h"
@@ -110,6 +110,8 @@ gen_delline()
 gen_putc(c)
 register char c;
 {
+	if (gen_AM && gen_row == gen_LI - 1 && gen_col + 1 >= gen_CO)
+		return;
 	if (gen_insert) {
 		if (gen_IC)
 			tt_tputs(gen_IC, gen_CO - gen_col);
@@ -118,12 +120,20 @@ register char c;
 			tt_tputs(gen_IP, gen_CO - gen_col);
 	} else
 		putchar(c);
-	gen_col++;
+	if (++gen_col >= gen_CO)
+		if (gen_AM) {
+			gen_col = 0;
+			gen_row++;
+		} else
+			gen_col--;
 }
 
 gen_write(start, end)
 register char *start, *end;
 {
+	if (gen_AM && gen_row == gen_LI - 1
+	    && gen_col + (end - start + 1) >= gen_CO)
+		end--;
 	if (gen_insert) {
 		while (start <= end) {
 			if (gen_IC)
@@ -138,11 +148,19 @@ register char *start, *end;
 		while (start <= end)
 			putchar(*start++);
 	}
+	if (gen_col >= gen_CO)
+		if (gen_AM) {
+			gen_col = 0;
+			gen_row++;
+		} else
+			gen_col--;
 }
 
 gen_blank(n)
 register n;
 {
+	if (gen_AM && gen_row == gen_LI - 1 && gen_col + n >= gen_CO)
+		n--;
 	if (n <= 0)
 		return;
 	if (gen_insert) {
@@ -159,6 +177,12 @@ register n;
 		while (--n >= 0)
 			putchar(' ');
 	}
+	if (gen_col >= gen_CO)
+		if (gen_AM) {
+			gen_col = 0;
+			gen_row++;
+		} else
+			gen_col--;
 }
 
 gen_move(row, col)
@@ -329,8 +353,6 @@ tt_generic()
 	if (gen_CL)
 		tt.tt_clear = gen_clear;
 	tt.tt_ncol = gen_CO;
-	if (gen_AM)
-		tt.tt_ncol--;
 	tt.tt_nrow = gen_LI;
 	tt.tt_init = gen_init;
 	tt.tt_end = gen_end;

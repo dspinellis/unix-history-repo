@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)tth19.c	3.6 83/08/17";
+static	char *sccsid = "@(#)tth19.c	3.7 83/08/17";
 #endif
 
 #include "ww.h"
@@ -91,7 +91,8 @@ register char c;
 	}
 	if (h19_insert)
 		ICPAD();
-	h19_col++;
+	if (++h19_col >= 80)
+		h19_col = 79;
 }
 
 h19_write(start, end)
@@ -124,6 +125,8 @@ register char *start, *end;
 				putchar(c);
 			}
 	}
+	if (h19_col >= 80)
+		h19_col = 79;
 }
 
 h19_blank(n)
@@ -144,6 +147,8 @@ register n;
 		while (--n >= 0)
 			putchar(' ');
 	}
+	if (h19_col >= 80)
+		h19_col = 79;
 }
 
 h19_move(row, col)
