@@ -1,14 +1,14 @@
 #ifndef lint
-static char sccsid[] = "@(#)locate.code.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)locate.code.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 /*
  * PURPOSE:	sorted list compressor (works with a modified 'find'
  *		to encode/decode a filename database)
  *
- * USAGE:	find.bigram < list > bigrams
- *		process bigrams (see find.squeeze) > common_bigrams
- *		find.code common_bigrams < list > squozen_list
+ * USAGE:	bigram < list > bigrams
+ *		process bigrams (see updatedb) > common_bigrams
+ *		code common_bigrams < list > squozen_list
  *
  * METHOD:	Uses 'front compression' (see ";login:", March 1983, p. 8 ).
  *		Output format is, per line, an offset differential count byte
@@ -18,10 +18,10 @@ static char sccsid[] = "@(#)locate.code.c	4.1	(Berkeley)	%G%";
  *
  *	0-28	likeliest differential counts + offset to make nonnegative 
  *	30	escape code for out-of-range count to follow in next word
- *	128-255 bigram codes, (128 most common, as determined by 'find.squeeze')
+ *	128-255 bigram codes, (128 most common, as determined by 'updatedb')
  *	32-127  single character (printable) ascii residue
  *
- * SEE ALSO:	squeeze, bigram.c, find.c
+ * SEE ALSO:	updatedb.csh, bigram.c, find.c
  * 
  * AUTHOR:	James A. Woods, Informatics General Corp.,
  *		NASA Ames Research Center, 10/82
@@ -47,8 +47,10 @@ main ( argc, argv )
 	oldcount = 0;
 	bigram[2] = NULL;
 
-	if ( (fp = fopen ( argv[1], "r" )) == NULL )
-		printf ( "Usage: find.code common_bigrams < list > coded_list\n" ), exit ( 1 );
+	if ((fp = fopen(argv[1], "r")) == NULL) {
+		printf("Usage: code common_bigrams < list > coded_list\n");
+		exit(1);
+	}
 	fgets ( bigrams, 257, fp );
 	fwrite ( bigrams, 1, 256, stdout );
 

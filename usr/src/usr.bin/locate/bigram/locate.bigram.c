@@ -1,12 +1,12 @@
 #ifndef lint
-static char sccsid[] = "@(#)locate.bigram.c	4.1	(Berkeley)	%G%";
+static char sccsid[] = "@(#)locate.bigram.c	4.2	(Berkeley)	%G%";
 #endif not lint
 
 /*
  *  bigram < text > bigrams
  * 
- * List bigrams for 'find.squeeze' script.
- * Use 'find.code' to encode a file using this output.
+ * List bigrams for 'updatedb' script.
+ * Use 'code' to encode a file using this output.
  */
 
 #include <stdio.h>
