@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)4.t	4.1 (Berkeley) %G%
+.\"	@(#)4.t	4.2 (Berkeley) %G%
 .\"
 .ds RH Appendix A \- Fsck Error Conditions
 .NH
@@ -75,7 +75,7 @@ opening of files,
 status of files,
 file system size checks,
 and creation of the scratch file.
-All of the initialization errors are fatal
+All the initialization errors are fatal
 when the file system is being preen'ed.
 .sp
 .LP
@@ -169,7 +169,7 @@ Check the type of the file specified.
 .LP
 Possible responses to the OK prompt are:
 .IP YES
-Ignore this error condition.
+ignore this error condition.
 .IP NO
 ignore this file system and continues checking
 the next file system given.
@@ -188,7 +188,7 @@ One of the following messages will appear:
 .B "SIZE PREPOSTEROUSLY LARGE"
 .br
 .B "TRASHED VALUES IN SUPER BLOCK"
-.sp
+.br
 and will be followed by the message:
 .br
 .B "\fIF\fP: BAD SUPER BLOCK: \fIB\fP"
@@ -250,9 +250,20 @@ See a guru.
 Possible responses to the CONTINUE prompt are:
 .IP YES
 attempt to continue to run the file system check.
-Often,
-however,
-the problem will persist.
+It will retry the read and print out the message:
+.br
+.B "THE FOLLOWING SECTORS COULD NOT BE READ: \fIN\fP"
+.br
+where \fIN\fP indicates the sectors that could not be read.
+If 
+.I fsck
+ever tries to write back one of the blocks on which the read failed
+it will print the message:
+.br
+.B "WRITING ZERO'ED BLOCK \fIN\fP TO DISK"
+.br
+where \fIN\fP indicates the sector that was written with zero's.
+If the disk is experiencing hardware problems, the problem will persist.
 This error condition will not allow a complete check of the file system.
 A second run of
 .I fsck
@@ -276,9 +287,13 @@ See a guru.
 Possible responses to the CONTINUE prompt are:
 .IP YES
 attempt to continue to run the file system check.
-Often,
-however,
-the problem will persist.
+The write operation will be retried with the failed blocks
+indicated by the message:
+.br
+.B "THE FOLLOWING SECTORS COULD NOT BE WRITTEN: \fIN\fP"
+.br
+where \fIN\fP indicates the sectors that could not be written.
+If the disk is experiencing hardware problems, the problem will persist.
 This error condition will not allow a complete check of the file system.
 A second run of
 .I fsck
@@ -289,6 +304,15 @@ cache,
 will terminate with the message ``Fatal I/O error''.
 .IP NO
 terminate the program.
+.sp
+.LP
+.B "bad inode number DDD to ginode"
+.br
+An internal error has attempted to read non-existent inode \fIDDD\fP.
+This error causes 
+.I fsck
+to exit.
+See a guru.
 .NH 2 
 Phase 1 \- Check Blocks and Sizes
 .PP
@@ -302,17 +326,13 @@ checking inode size,
 and checking inode format.
 All errors in this phase except
 .B "INCORRECT BLOCK COUNT"
-are fatal if the file system is being preen'ed,
-.sp
-.LP
-.B "CG \fIC\fP: BAD MAGIC NUMBER"
-The magic number of cylinder group \fIC\fP is wrong.
-This usually indicates that the cylinder group maps have been destroyed.
-When running manually the cylinder group is marked as needing
-to be reconstructed.
+and
+.B "PARTIALLY TRUNCATED INODE"
+are fatal if the file system is being preen'ed.
 .sp
 .LP
 .B "UNKNOWN FILE TYPE I=\fII\fP (CLEAR)"
+.br
 The mode word of the inode \fII\fP indicates that the inode is not a
 special block inode, special character inode, socket inode, regular inode,
 symbolic link, or directory inode.
@@ -326,18 +346,34 @@ for each directory entry pointing to this inode.
 ignore this error condition.
 .sp
 .LP
+.B "PARTIALLY TRUNCATED INODE I=\fII\fP (SALVAGE)"
+.br
+.I Fsck
+has found inode \fII\fP whose size is shorter than the number of
+blocks allocated to it.
+This condition should only occur if the system crashes while in the
+midst of truncating a file.
+When preen'ing the file system, 
+.I fsck
+completes the truncation to the specified size.
+.LP
+Possible responses to SALVAGE are:
+.IP YES
+complete the truncation to the size specified in the inode.
+.IP NO
+ignore this error condition.
+.sp
+.LP
 .B "LINK COUNT TABLE OVERFLOW (CONTINUE)"
 .br
 An internal table for
 .I fsck
 containing allocated inodes with a link count of
-zero has no more room.
-Recompile
-.I fsck
-with a larger value of MAXLNCNT.
+zero cannot allocate more memory.
+Increase the virtual memory for
+.I fsck .
 .LP
-Possible responses
-to the CONTINUE prompt are:
+Possible responses to the CONTINUE prompt are:
 .IP YES
 continue with the program.
 This error condition will not allow a complete check of the file system.
@@ -383,9 +419,19 @@ should be made to re-check this file system.
 terminate the program.
 .sp
 .LP
+.B "BAD STATE DDD TO BLKERR"
+.br
+An internal error has scrambled 
+.I fsck 's
+state map to have the impossible value \fIDDD\fP.
+.I Fsck
+exits immediately. 
+See a guru.
+.sp
+.LP
 .B "\fIB\fP DUP I=\fII\fP"
 .br
-Inode \fII\fP contains block number \fIB\fP which is already claimed by
+Inode \fII\fP contains block number \fIB\fP that is already claimed by
 another inode.
 This error condition may invoke the
 .B "EXCESSIVE DUP BLKS"
@@ -417,10 +463,9 @@ terminate the program.
 .br
 An internal table in
 .I fsck
-containing duplicate block numbers has no more room.
-Recompile
-.I fsck
-with a larger value of DUPTBLSIZE.
+containing duplicate block numbers cannot allocate any more space.
+Increase the amount of virtual memory available to
+.I fsck .
 .LP
 Possible responses to the CONTINUE prompt are:
 .IP YES
@@ -460,7 +505,7 @@ ignore this error condition.
 Phase 1B: Rescan for More Dups
 .PP
 When a duplicate block is found in the file system, the file system is
-rescanned to find the inode which previously claimed that block.
+rescanned to find the inode that previously claimed that block.
 This section lists the error condition when the duplicate block is found.
 .sp
 .LP
@@ -487,39 +532,79 @@ and directory entries pointing to bad inodes.
 All errors in this phase are fatal if the file system is being preen'ed.
 .sp
 .LP
-.B "ROOT INODE UNALLOCATED. TERMINATING."
+.B "ROOT INODE UNALLOCATED (ALLOCATE)"
 .br
 The root inode (usually inode number 2) has no allocate mode bits.
 This should never happen.
-The program will terminate.
-.sp
 .LP
-.B "NAME TOO LONG \fIF\fP"
+Possible responses to the ALLOCATE prompt are:
+.IP YES
+allocate inode 2 as the root inode.
+The files and directories usually found in the root will be recovered
+in Phase 3 and put into
+.I lost+found .
+If the attempt to allocate the root fails,
+.I fsck
+will exit with the message:
 .br
-An excessively long path name has been found.
-This is usually indicative of loops in the file system name space.
-This can occur if the super user has made circular links to directories.
-The offending links must be removed (by a guru).
+.B "CANNOT ALLOCATE ROOT INODE" .
+.IP NO
+.I fsck
+will exit.
 .sp
 .LP
-.B "ROOT INODE NOT DIRECTORY (FIX)"
+.B "ROOT INODE NOT DIRECTORY (REALLOCATE)"
 .br
 The root inode (usually inode number 2)
 is not directory inode type.
+.LP
+Possible responses to the REALLOCATE prompt are:
+.IP YES
+clear the existing contents of the root inode
+and reallocate it.
+The files and directories usually found in the root will be recovered
+in Phase 3 and put into
+.I lost+found .
+If the attempt to allocate the root fails,
+.I fsck
+will exit with the message:
+.br
+.B "CANNOT ALLOCATE ROOT INODE" .
+.IP NO
+.I fsck
+will then prompt with
+.B "FIX"
 .LP
 Possible responses to the FIX prompt are:
 .IP YES
 replace the root inode's type to be a directory.
 If the root inode's data blocks are not directory blocks,
-a VERY large number of error conditions will be produced.
+many error conditions will be produced.
 .IP NO
 terminate the program.
 .sp
 .LP
-.B "DUPS/BAD IN ROOT INODE (CONTINUE)"
+.B "DUPS/BAD IN ROOT INODE (REALLOCATE)"
 .br
 Phase 1 or Phase 1b have found duplicate blocks
 or bad blocks in the root inode (usually inode number 2) for the file system.
+.LP
+Possible responses to the REALLOCATE prompt are:
+.IP YES
+clear the existing contents of the root inode
+and reallocate it.
+The files and directories usually found in the root will be recovered
+in Phase 3 and put into
+.I lost+found .
+If the attempt to allocate the root fails,
+.I fsck
+will exit with the message:
+.br
+.B "CANNOT ALLOCATE ROOT INODE" .
+.IP NO
+.I fsck
+will then prompt with
+.B "CONTINUE" .
 .LP
 Possible responses to the CONTINUE prompt are:
 .IP YES
@@ -528,14 +613,22 @@ ignore the
 error condition in the root inode and
 attempt to continue to run the file system check.
 If the root inode is not correct,
-then this may result in a large number of other error conditions.
+then this may result in many other error conditions.
 .IP NO
 terminate the program.
 .sp
 .LP
+.B "NAME TOO LONG \fIF\fP"
+.br
+An excessively long path name has been found.
+This usually indicates loops in the file system name space.
+This can occur if the super user has made circular links to directories.
+The offending links must be removed (by a guru).
+.sp
+.LP
 .B "I OUT OF RANGE I=\fII\fP NAME=\fIF\fP (REMOVE)"
 .br
-A directory entry \fIF\fP has an inode number \fII\fP which is greater than
+A directory entry \fIF\fP has an inode number \fII\fP that is greater than
 the end of the inode list.
 .LP
 Possible responses to the REMOVE prompt are:
@@ -627,17 +720,33 @@ increase the size of the directory to the minimum directory size.
 ignore this directory.
 .sp
 .LP
+.B "DIRECTORY \fIF\fP LENGTH \fIS\fP NOT MULTIPLE OF \fIB\fP (ADJUST)
+.br
+A directory \fIF\fP has been found with size \fIS\fP that is not
+a multiple of the directory blocksize \fIB\fP.
+.LP
+Possible responses to the ADJUST prompt are:
+.IP YES
+the length is rounded up to the appropriate block size.
+This error can occur on 4.2BSD file systems.
+Thus when preen'ing the file system only a warning is printed
+and the directory is adjusted.
+.IP NO
+ignore the error condition.
+.sp
+.LP
 .B "DIRECTORY CORRUPTED I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP DIR=\fIF\fP (SALVAGE)"
 .br
 A directory with an inconsistent internal state has been found.
 .LP
 Possible responses to the FIX prompt are:
 .IP YES
-throw away all entries up to the next 512-byte boundary.
-This rather drastic action can throw away up to 42 entries,
+throw away all entries up to the next directory boundary (usually 512-byte)
+boundary.
+This drastic action can throw away up to 42 entries,
 and should be taken only after other recovery efforts have failed.
 .IP NO
-Skip up to the next 512-byte boundary and resume reading,
+skip up to the next directory boundary and resume reading,
 but do not modify the directory.
 .sp
 .LP
@@ -659,7 +768,7 @@ A directory \fII\fP has been found whose first entry is unallocated.
 .LP
 Possible responses to the FIX prompt are:
 .IP YES
-make an entry for `.' with inode number equal to \fII\fP.
+build an entry for `.' with inode number equal to \fII\fP.
 .IP NO
 leave the directory unchanged.
 .sp
@@ -717,7 +826,7 @@ A directory \fII\fP has been found whose second entry is unallocated.
 .LP
 Possible responses to the FIX prompt are:
 .IP YES
-make an entry for `..' with inode number equal to the parent of \fII\fP.
+build an entry for `..' with inode number equal to the parent of \fII\fP.
 .IP NO
 leave the directory unchanged.
 .sp
@@ -742,8 +851,12 @@ should be run again.
 .br
 A directory \fII\fP has been found whose second entry is not `..'.
 .I Fsck
-cannot resolve this problem as it should never happen.
-See a guru.
+cannot resolve this problem.
+The file system should be mounted and the second entry in the directory
+moved elsewhere.
+The file system should then be unmounted and
+.I fsck
+should be run again.
 .sp
 .LP
 .B "EXTRA `..' ENTRY I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP DIR=\fIF\fP (FIX)"
@@ -755,6 +868,46 @@ Possible responses to the FIX prompt are:
 remove the extra entry for `..'.
 .IP NO
 leave the directory unchanged.
+.sp
+.LP
+.B "\fIN\fP IS AN EXTRANEOUS HARD LINK TO A DIRECTORY \fID\fP (REMOVE)
+.br
+.I Fsck
+has found a hard link, \fIN\fP, to a directory, \fID\fP.
+When preen'ing the extraneous links are ignored.
+.LP
+Possible responses to the REMOVE prompt are:
+.IP YES
+delete the extraneous entry, \fIN\fP.
+.IP NO
+ignore the error condition.
+.sp
+.LP
+.B "BAD INODE \fIS\fP TO DESCEND"
+.br
+An internal error has caused an impossible state \fIS\fP to be passed to the
+routine that descends the file system directory structure.
+.I Fsck
+exits.
+See a guru.
+.sp
+.LP
+.B "BAD RETURN STATE \fIS\fP FROM DESCEND"
+.br
+An internal error has caused an impossible state \fIS\fP to be returned
+from the routine that descends the file system directory structure.
+.I Fsck
+exits.
+See a guru.
+.sp
+.LP
+.B "BAD STATE \fIS\fP FOR ROOT INODE"
+.br
+An internal error has caused an impossible state \fIS\fP to be assigned
+to the root inode.
+.I Fsck
+exits.
+See a guru.
 .NH 2 
 Phase 3 \- Check Connectivity
 .PP
@@ -771,8 +924,8 @@ directories.
 .br
 The directory inode \fII\fP was not connected to a directory entry
 when the file system was traversed.
-The owner \fIO\fP, mode \fIM\fP, size \fIS\fP, and modify time \fIT\fP of directory
-inode \fII\fP are printed.
+The owner \fIO\fP, mode \fIM\fP, size \fIS\fP, and
+modify time \fIT\fP of directory inode \fII\fP are printed.
 When preen'ing, the directory is reconnected if its size is non-zero,
 otherwise it is cleared.
 .LP
@@ -791,42 +944,86 @@ ignore this error condition.
 This will always invoke the UNREF error condition in Phase 4.
 .sp
 .LP
-.B "SORRY. NO lost+found DIRECTORY"
+.B "NO lost+found DIRECTORY (CREATE)"
 .br
 There is no
 .I lost+found
 directory in the root directory of the file system;
+When preen'ing
 .I fsck
-ignores the request to link a directory in
-.I lost+found .
+tries to create a \fIlost+found\fP directory.
+.LP
+Possible responses to the CREATE prompt are:
+.IP YES
+create a \fIlost+found\fP directory in the root of the file system.
+This may raise the message:
+.br
+.B "NO SPACE LEFT IN / (EXPAND)"
+.br
+See below for the possible responses.
+Inability to create a \fIlost+found\fP directory generates the message:
+.br
+.B "SORRY. CANNOT CREATE lost+found DIRECTORY"
+.br
+and aborts the attempt to linkup the lost inode.
 This will always invoke the UNREF error condition in Phase 4.
-Check access modes of
-.I lost+found .
-See
-.I fsck (8)
-manual entry
-for further detail.
-This error is fatal if the file system is being preen'ed.
+.IP NO
+abort the attempt to linkup the lost inode.
+This will always invoke the UNREF error condition in Phase 4.
 .sp
 .LP
-.B "SORRY. NO SPACE IN lost+found DIRECTORY"
+.B "lost+found IS NOT A DIRECTORY (REALLOCATE)"
+.br
+The entry for
+.I lost+found
+is not a directory.
+.LP
+Possible responses to the REALLOCATE prompt are:
+.IP YES
+allocate a directory inode, and change \fIlost+found\fP to reference it.
+The previous inode reference by the \fIlost+found\fP name is not cleared.
+Thus it will either be reclaimed as an UNREF'ed inode or have its
+link count ADJUST'ed later in this Phase.
+Inability to create a \fIlost+found\fP directory generates the message:
+.br
+.B "SORRY. CANNOT CREATE lost+found DIRECTORY"
+.br
+and aborts the attempt to linkup the lost inode.
+This will always invoke the UNREF error condition in Phase 4.
+.IP NO
+abort the attempt to linkup the lost inode.
+This will always invoke the UNREF error condition in Phase 4.
+.sp
+.LP
+.B "NO SPACE LEFT IN /lost+found (EXPAND)"
 .br
 There is no space to add another entry to the
 .I lost+found
 directory in the root directory
-of the file system;
+of the file system.
+When preen'ing the 
+.I lost+found
+directory is expanded.
+.LP
+Possible responses to the EXPAND prompt are:
+.IP YES
+the 
+.I lost+found
+directory is expanded to make room for the new entry.
+If the attempted expansion fails
 .I fsck
-ignores the request to link a directory in \fIlost+found\fP.
+prints the message:
+.br
+.B "SORRY. NO SPACE IN lost+found DIRECTORY"
+.br
+and aborts the attempt to linkup the lost inode.
 This will always invoke the UNREF error condition in Phase 4.
 Clean out unnecessary entries in
-.I lost+found
-or make
-.I lost+found
-larger.
-See
-.I fsck (8)
-manual entry for further detail.
+.I lost+found .
 This error is fatal if the file system is being preen'ed.
+.IP NO
+abort the attempt to linkup the lost inode.
+This will always invoke the UNREF error condition in Phase 4.
 .sp
 .LP
 .B "DIR I=\fII1\fP CONNECTED. PARENT WAS I=\fII2\fP"
@@ -839,6 +1036,30 @@ The parent inode \fII2\fP of the directory inode \fII1\fP is
 replaced by the inode number of the
 .I lost+found
 directory.
+.sp
+.LP
+.B "DIRECTORY \fIF\fP LENGTH \fIS\fP NOT MULTIPLE OF \fIB\fP (ADJUST)
+.br
+A directory \fIF\fP has been found with size \fIS\fP that is not
+a multiple of the directory blocksize \fIB\fP.
+.LP
+Possible responses to the ADJUST prompt are:
+.IP YES
+the length is rounded up to the appropriate block size.
+This error can occur on 4.2BSD file systems.
+Thus when preen'ing the file system only a warning is printed
+and the directory is adjusted.
+.IP NO
+ignore the error condition.
+.sp
+.LP
+.B "BAD INODE \fIS\fP TO DESCEND"
+.br
+An internal error has caused an impossible state \fIS\fP to be passed to the
+routine that descends the file system directory structure.
+.I Fsck
+exits.
+See a guru.
 .NH 2 
 Phase 4 \- Check Reference Counts
 .PP
@@ -851,10 +1072,9 @@ missing or full
 directory,
 incorrect link counts for files, directories, symbolic links, or special files,
 unreferenced files, symbolic links, and directories,
-bad and duplicate blocks in files, symbolic links, and directories,
-and incorrect total free-inode counts.
+and bad or duplicate blocks in files, symbolic links, and directories.
 All errors in this phase are correctable if the file system is being preen'ed
-except running out of space in the lost+found directory.
+except running out of space in the \fIlost+found\fP directory.
 .sp
 .LP
 .B "UNREF FILE I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP (RECONNECT)"
@@ -875,7 +1095,7 @@ This may invoke the
 .I lost+found
 error condition in Phase 4
 if there are problems connecting inode \fII\fP to
-.I lost+found.
+.I lost+found .
 .IP NO
 ignore this error condition.
 This will always invoke the CLEAR error condition in Phase 4.
@@ -895,42 +1115,102 @@ de-allocate the inode mentioned in the immediately previous error condition by z
 ignore this error condition.
 .sp
 .LP
-.B "SORRY. NO lost+found DIRECTORY"
+.B "NO lost+found DIRECTORY (CREATE)"
 .br
 There is no
 .I lost+found
 directory in the root directory of the file system;
+When preen'ing
 .I fsck
-ignores the request to link a file in
-.I lost+found.
-This will always invoke the CLEAR error condition in Phase 4.
-Check access modes of
-.I lost+found .
-This error is fatal if the file system is being preen'ed.
+tries to create a \fIlost+found\fP directory.
+.LP
+Possible responses to the CREATE prompt are:
+.IP YES
+create a \fIlost+found\fP directory in the root of the file system.
+This may raise the message:
+.br
+.B "NO SPACE LEFT IN / (EXPAND)"
+.br
+See below for the possible responses.
+Inability to create a \fIlost+found\fP directory generates the message:
+.br
+.B "SORRY. CANNOT CREATE lost+found DIRECTORY"
+.br
+and aborts the attempt to linkup the lost inode.
+This will always invoke the UNREF error condition in Phase 4.
+.IP NO
+abort the attempt to linkup the lost inode.
+This will always invoke the UNREF error condition in Phase 4.
 .sp
 .LP
-.B "SORRY. NO SPACE IN lost+found DIRECTORY"
+.B "lost+found IS NOT A DIRECTORY (REALLOCATE)"
+.br
+The entry for
+.I lost+found
+is not a directory.
+.LP
+Possible responses to the REALLOCATE prompt are:
+.IP YES
+allocate a directory inode, and change \fIlost+found\fP to reference it.
+The previous inode reference by the \fIlost+found\fP name is not cleared.
+Thus it will either be reclaimed as an UNREF'ed inode or have its
+link count ADJUST'ed later in this Phase.
+Inability to create a \fIlost+found\fP directory generates the message:
+.br
+.B "SORRY. CANNOT CREATE lost+found DIRECTORY"
+.br
+and aborts the attempt to linkup the lost inode.
+This will always invoke the UNREF error condition in Phase 4.
+.IP NO
+abort the attempt to linkup the lost inode.
+This will always invoke the UNREF error condition in Phase 4.
+.sp
+.LP
+.B "NO SPACE LEFT IN /lost+found (EXPAND)"
 .br
 There is no space to add another entry to the
 .I lost+found
-directory in the root directory of the
-file system;
+directory in the root directory
+of the file system.
+When preen'ing the 
+.I lost+found
+directory is expanded.
+.LP
+Possible responses to the EXPAND prompt are:
+.IP YES
+the 
+.I lost+found
+directory is expanded to make room for the new entry.
+If the attempted expansion fails
 .I fsck
-ignores the request to link a file in
-.I lost+found.
-This will always invoke the CLEAR error condition in Phase 4.
-Check size and contents of
-.I lost+found.
+prints the message:
+.br
+.B "SORRY. NO SPACE IN lost+found DIRECTORY"
+.br
+and aborts the attempt to linkup the lost inode.
+This will always invoke the UNREF error condition in Phase 4.
+Clean out unnecessary entries in
+.I lost+found .
 This error is fatal if the file system is being preen'ed.
+.IP NO
+abort the attempt to linkup the lost inode.
+This will always invoke the UNREF error condition in Phase 4.
 .sp
 .LP
 .B "LINK COUNT FILE I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP COUNT=\fIX\fP SHOULD BE \fIY\fP (ADJUST)"
 .br
-The link count for inode \fII\fP which is a file,
+The link count for inode \fII\fP that is a file,
 is \fIX\fP but should be \fIY\fP.
 The owner \fIO\fP, mode \fIM\fP, size \fIS\fP, and modify time \fIT\fP
 are printed.
-When preen'ing the link count is adjusted.
+When preen'ing the link count is adjusted unless the number of references
+is increasing, a condition that should never occur unless precipitated
+by a hardware failure.
+When the number of references is increasing under preen mode,
+.I fsck
+exits with the message:
+.br
+.B "LINK COUNT INCREASING"
 .LP
 Possible responses to the ADJUST prompt are:
 .IP YES
@@ -941,11 +1221,18 @@ ignore this error condition.
 .LP
 .B "LINK COUNT DIR I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP COUNT=\fIX\fP SHOULD BE \fIY\fP (ADJUST)"
 .br
-The link count for inode \fII\fP which is a directory,
+The link count for inode \fII\fP that is a directory,
 is \fIX\fP but should be \fIY\fP.
 The owner \fIO\fP, mode \fIM\fP, size \fIS\fP, and modify time \fIT\fP
 of directory inode \fII\fP are printed.
-When preen'ing the link count is adjusted.
+When preen'ing the link count is adjusted unless the number of references
+is increasing, a condition that should never occur unless precipitated
+by a hardware failure.
+When the number of references is increasing under preen mode,
+.I fsck
+exits with the message:
+.br
+.B "LINK COUNT INCREASING"
 .LP
 Possible responses to the ADJUST prompt are:
 .IP YES
@@ -961,7 +1248,14 @@ The name \fIF\fP,
 owner \fIO\fP, mode \fIM\fP, size \fIS\fP, and modify time
 \fIT\fP
 are printed.
-When preen'ing the link count is adjusted.
+When preen'ing the link count is adjusted unless the number of references
+is increasing, a condition that should never occur unless precipitated
+by a hardware failure.
+When the number of references is increasing under preen mode,
+.I fsck
+exits with the message:
+.br
+.B "LINK COUNT INCREASING"
 .LP
 Possible responses to the ADJUST prompt are:
 .IP YES
@@ -972,7 +1266,7 @@ ignore this error condition.
 .LP
 .B "UNREF FILE I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP (CLEAR)"
 .br
-Inode \fII\fP which is a file, was not connected to a directory entry when the
+Inode \fII\fP that is a file, was not connected to a directory entry when the
 file system was traversed.
 The owner \fIO\fP, mode \fIM\fP, size \fIS\fP,
 and modify time \fIT\fP of inode \fII\fP
@@ -990,7 +1284,7 @@ ignore this error condition.
 .LP
 .B "UNREF DIR I=\fII\fP OWNER=\fIO\fP MODE=\fIM\fP SIZE=\fIS\fP MTIME=\fIT\fP (CLEAR)"
 .br
-Inode \fII\fP which is a directory,
+Inode \fII\fP that is a directory,
 was not connected to a directory entry when the
 file system was traversed.
 The owner \fIO\fP, mode \fIM\fP, size \fIS\fP,
@@ -1041,29 +1335,18 @@ Possible responses to the CLEAR prompt are:
 de-allocate inode \fII\fP by zeroing its contents.
 .IP NO
 ignore this error condition.
-.sp
-.LP
-.B "FREE INODE COUNT WRONG IN SUPERBLK (FIX)"
-.br
-The actual count of the free inodes does not
-match the count in the super-block
-of the file system.
-When preen'ing,
-the count is fixed.
-.LP
-Possible responses to the FIX prompt are:
-.IP YES
-replace the count in the super-block by the actual count.
-.IP NO
-ignore this error condition.
 .NH 2 
 Phase 5 - Check Cyl groups
 .PP
-This phase concerns itself with the free-block maps.
+This phase concerns itself with the free-block and used-inode maps.
 This section lists error conditions resulting from
 allocated blocks in the free-block maps,
 free blocks missing from free-block maps,
 and the total free-block count incorrect.
+It also lists error conditions resulting from
+free inodes in the used-inode maps,
+allocated inodes missing from used-inode maps,
+and the total used-inode count incorrect.
 .sp
 .LP
 .B "CG \fIC\fP: BAD MAGIC NUMBER"
@@ -1075,86 +1358,42 @@ to be reconstructed.
 This error is fatal if the file system is being preen'ed.
 .sp
 .LP
-.B "EXCESSIVE BAD BLKS IN BIT MAPS (CONTINUE)"
+.B "BLK(S) MISSING IN BIT MAPS (SALVAGE)"
 .br
-An inode contains
-more than a tolerable number (usually 10) of blocks
-claimed by other inodes or that are out of the legal range
-for the file system.
-This error is fatal if the file system is being preen'ed.
-.LP
-Possible responses to the CONTINUE prompt are:
-.IP YES
-ignore the rest of the free-block maps and continue the execution of
-.I fsck.
-.IP NO
-terminate the program.
-.sp
-.LP
-.B "SUMMARY INFORMATION \fIT\fP BAD"
-.br
-where \fIT\fP is one or more of:
-.br
-.B "(INODE FREE)"
-.br
-.B "(BLOCK OFFSETS)"
-.br
-.B "(FRAG SUMMARIES)"
-.br
-.B "(SUPER BLOCK SUMMARIES)"
-.br
-The indicated summary information was found to be incorrect.
-This error condition will always invoke the 
-.B "BAD CYLINDER GROUPS"
-condition in Phase 6.
-When preen'ing,
-the summary information is recomputed.
-.sp
-.LP
-.B "\fIX\fP BLK(S) MISSING"
-.br
-\fIX\fP blocks
-unused by the file system were not found in the free-block maps.
-This error condition will always invoke the 
-.B "BAD CYLINDER GROUPS"
-condition in Phase 6.
-When preen'ing,
-the block maps are rebuilt.
-.sp
-.LP
-.B "BAD CYLINDER GROUPS (SALVAGE)"
-.br
-Phase 5 has found
-bad blocks in the free-block maps,
-duplicate blocks in the free-block maps,
-or blocks missing from the file system.
-When preen'ing,
-the cylinder groups are reconstructed.
+A cylinder group block map is missing some free blocks.
+During preen'ing the maps are reconstructed.
 .LP
 Possible responses to the SALVAGE prompt are:
 .IP YES
-replace the actual free-block maps with a new free-block maps.
+reconstruct the free block map.
 .IP NO
 ignore this error condition.
 .sp
 .LP
-.B "FREE BLK COUNT WRONG IN SUPERBLOCK (FIX)"
+.B "SUMMARY INFORMATION BAD (SALVAGE)"
 .br
-The actual count of free blocks does not match the count in the
-super-block of the file system.
+The summary information was found to be incorrect.
 When preen'ing,
-the counts are fixed.
+the summary information is recomputed.
 .LP
-Possible responses to the FIX prompt are:
+Possible responses to the SALVAGE prompt are:
 .IP YES
-replace the count in the super-block by the actual count.
+reconstruct the summary information.
 .IP NO
 ignore this error condition.
-.NH 2 
-Phase 6 - Salvage Cylinder Groups
-.PP
-This phase concerns itself with the free-block maps reconstruction.
-No error messages are produced.
+.sp
+.LP
+.B "FREE BLK COUNT(S) WRONG IN SUPERBLOCK (SALVAGE)"
+.br
+The superblock free block information was found to be incorrect.
+When preen'ing,
+the superblock free block information is recomputed.
+.LP
+Possible responses to the SALVAGE prompt are:
+.IP YES
+reconstruct the superblock free block information.
+.IP NO
+ignore this error condition.
 .NH 2 
 Cleanup
 .PP

@@ -2,13 +2,13 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)0.t	4.1 (Berkeley) %G%
+.\"	@(#)0.t	4.2 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
 Fsck \- The UNIX\(dg File System Check Program
 .sp
-Revised July 28, 1983
+Revised July 16, 1985
 .AU
 Marshall Kirk McKusick
 .AI
@@ -35,7 +35,7 @@ Contract No. N00039-82-C-0235.
 .FE
 This document reflects the use of
 .I fsck
-with the 4.2BSD file system organization.  This
+with the 4.2BSD and 4.3BSD file system organization.  This
 is a revision of the
 original paper written by
 T. J. Kowalski.
@@ -78,9 +78,9 @@ program and the operator are described.
 .ds LH Fsck
 .ds RH Contents
 .bp 1
-.if t .ds CF July 28, 1983
-.if t .ds LF CSRG TR/9
-.if t .ds RF McKusick, et. al.
+..if t .ds CF July 16, 1985
+..if t .ds LF CSRG TR/9
+..if t .ds RF McKusick, et. al.
 .ce
 .B "TABLE OF CONTENTS"
 .LP
@@ -128,8 +128,7 @@ program and the operator are described.
 \0.6.     Phase 3 - Check Connectivity
 \0.7.     Phase 4 - Check Reference Counts
 \0.8.     Phase 5 - Check Cyl groups
-\0.9.     Phase 6 - Salvage Cylinder Groups
-\0.10.    Cleanup
+\0.9.     Cleanup
 .ds RH Introduction
 .af PN 1
 .bp 1

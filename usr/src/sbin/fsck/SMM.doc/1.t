@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)1.t	4.1 (Berkeley) %G%
+.\"	@(#)1.t	4.2 (Berkeley) %G%
 .\"
 .ds RH Introduction
 .NH
@@ -10,7 +10,7 @@ Introduction
 .PP
 This document reflects the use of
 .I fsck
-with the 4.2BSD file system organization.  This
+with the 4.2BSD and 4.3BSD file system organization.  This
 is a revision of the
 original paper written by
 T. J. Kowalski.
@@ -54,4 +54,3 @@ used by
 (the Coast Guard
 to the rescue) is presented.
 .ds RH Overview of the File System
-.bp

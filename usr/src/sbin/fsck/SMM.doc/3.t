@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	4.1 (Berkeley) %G%
+.\"	@(#)3.t	4.2 (Berkeley) %G%
 .\"
 .ds RH Fixing corrupted file systems
 .NH
@@ -352,7 +352,7 @@ links the directory back into the file system in the
 .I lost+found
 directory.
 This condition only occurs when there has been a hardware failure.
-.bp
+.ds RH "References"
 .SH
 \s+2Acknowledgements\s0
 .PP
@@ -379,18 +379,19 @@ UNIX/TS. (T. Kowalski, July 1979)
 .LP
 .IP [Dolotta78] 20
 Dolotta, T. A., and Olsson, S. B. eds.,
-.I "UNIX User's Manual, Edition 1.1\^"
-(January 1978).
+.I "UNIX User's Manual, Edition 1.1\^" ,
+January 1978.
 .IP [Joy83] 20
 Joy, W., Cooper, E., Fabry, R., Leffler, S., McKusick, M., and Mosher, D.
-.I "4.2BSD System Manual" ,
-University of California at Berkeley,
-Computer Systems Research Group Technical Report #4, 1982.
-.IP [McKusick83] 20
+4.2BSD System Manual,
+.I "University of California at Berkeley" ,
+.I "Computer Systems Research Group Technical Report"
+#4, 1982.
+.IP [McKusick84] 20
 McKusick, M., Joy, W., Leffler, S., and Fabry, R.
-.I "A Fast File System for UNIX" ,
-University of California at Berkeley,
-Computer Systems Research Group Technical Report #7, 1982.
+A Fast File System for UNIX,
+\fIACM Transactions on Computer Systems 2\fP, 3.
+pp. 181-197, August 1984.
 .IP [Ritchie78] 20
 Ritchie, D. M., and Thompson, K.,
 The UNIX Time-Sharing System,
