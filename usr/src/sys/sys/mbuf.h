@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mbuf.h	6.11 (Berkeley) %G%
+ *	@(#)mbuf.h	6.12 (Berkeley) %G%
  */
 
 /*
@@ -104,7 +104,7 @@ struct mbuf {
 #define	MCLGET(m) \
 	{ struct mbuf *p; \
 	  if (mclfree == 0) \
-		(void)m_clalloc(1, MPG_CLUSTERS); \
+		(void)m_clalloc(1, MPG_CLUSTERS, M_DONTWAIT); \
 	  MCLALLOC(p, 1); \
 	  if (p) { \
 		(m)->m_off = (int)p - (int)(m); \
