@@ -12,24 +12,41 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)sleep.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)sleep.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+void usage __P((void));
+
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
-	int secs;
+	int ch, secs;
 
-	if (argc != 2) {
-		(void)fprintf(stderr, "usage: sleep time\n");
-		exit(1);
-	}
-	if ((secs = atoi(argv[1])) > 0)
+	while ((ch = getopt(argc, argv, "")) != EOF)
+		switch(ch) {
+		case '?':
+		default:
+			usage();
+		}
+	argc -= optind;
+	argv += optind;
+
+	if (argc != 1)
+		usage();
+
+	if ((secs = atoi(*argv)) > 0)
 		(void)sleep(secs);
 	exit(0);
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr, "usage: sleep time\n");
+	exit(1);
 }
