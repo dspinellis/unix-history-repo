@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.145		%G%);
+SCCSID(@(#)deliver.c	3.146		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -39,20 +39,19 @@ deliver(firstto, editfcn)
 	char **pvp;
 	register char **mvp;
 	register char *p;
-	register MAILER *m;	/* mailer for this recipient */
-	extern putmessage();
-	extern bool checkcompat();
-	char *pv[MAXPV+1];
-	char tobuf[MAXLINE-50];		/* text line of to people */
-	char buf[MAXNAME];
+	register MAILER *m;		/* mailer for this recipient */
 	ADDRESS *ctladdr;
-	extern ADDRESS *getctladdr();
-	char tfrombuf[MAXNAME];		/* translated from person */
-	extern char **prescan();
 	register ADDRESS *to = firstto;
 	bool clever = FALSE;		/* running user smtp to this mailer */
 	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
 	register int rcode;		/* response code */
+	char *pv[MAXPV+1];
+	char tobuf[MAXLINE-50];		/* text line of to people */
+	char buf[MAXNAME];
+	char tfrombuf[MAXNAME];		/* translated from person */
+	extern bool checkcompat();
+	extern ADDRESS *getctladdr();
+	extern char *remotename();
 
 	errno = 0;
 	if (bitset(QDONTSEND, to->q_flags))
@@ -107,12 +106,7 @@ deliver(firstto, editfcn)
 
 	/* rewrite from address, using rewriting rules */
 	(void) expand(m->m_from, buf, &buf[sizeof buf - 1]);
-	mvp = prescan(buf, '\0');
-	rewrite(mvp, 3);
-	rewrite(mvp, 1);
-	rewrite(mvp, m->m_s_rwset);
-	rewrite(mvp, 4);
-	cataddr(mvp, tfrombuf, sizeof tfrombuf);
+	(void) strcpy(tfrombuf, remotename(buf, m, TRUE, TRUE));
 
 	define('g', tfrombuf, e);		/* translated sender address */
 	define('h', host, e);			/* to host */
