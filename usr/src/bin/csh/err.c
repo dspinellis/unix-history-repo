@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)err.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)err.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -65,17 +65,17 @@ error(s, arg)
 	errspl = 0;
 
 	/*
+	 * Go away if -e or we are a child shell
+	 */
+	if (exiterr || child)
+		exit(1);
+
+	/*
 	 * Reset the state of the input.
 	 * This buffered seek to end of file will also
 	 * clear the while/foreach stack.
 	 */
 	btoeof();
-
-	/*
-	 * Go away if -e or we are a child shell
-	 */
-	if (exiterr || child)
-		exit(1);
 
 	setq("status", onev, &shvhed);
 	if (tpgrp > 0)
