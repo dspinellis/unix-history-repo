@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	8.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	8.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -526,7 +526,7 @@ bread(blkno, buf, size)
 	extern int errno;
 
 loop:
-	if (lseek(diskfd, ((off_t)blkno << dev_bshift), 0) < 0)
+	if ((int)lseek(diskfd, ((off_t)blkno << dev_bshift), 0) < 0)
 		msg("bread: lseek fails\n");
 	if ((cnt = read(diskfd, buf, size)) == size)
 		return;
@@ -566,7 +566,7 @@ loop:
 	 */
 	memset(buf, 0, size);
 	for (i = 0; i < size; i += dev_bsize, buf += dev_bsize, blkno++) {
-		if (lseek(diskfd, ((off_t)blkno << dev_bshift), 0) < 0)
+		if ((int)lseek(diskfd, ((off_t)blkno << dev_bshift), 0) < 0)
 			msg("bread: lseek2 fails!\n");
 		if ((cnt = read(diskfd, buf, (int)dev_bsize)) == dev_bsize)
 			continue;
