@@ -1,0 +1,25 @@
+
+5/30/93
+5/11/93
+The following changes were made to this otherwise pristine
+tree:
+
+groff-1.08/Makefile.in
+	/usr/lib references pointed at /usr/share, what
+	would have been /usr/lib/groff/font is /usr/share/groff_font.
+	tmac points at /usr/share/tmac (where bsd macro files go).
+	paths for cat[157] dirs added (BSD installs cattable files).
+
+groff-1.08/Makefile.comm
+	modified install_man/unintall_man target to install/deinstall
+	cattable pages.
+
+groff-1.08/tmac
+	all mdoc files moved to the directory `notused'
+	and all references to them deleted from the 
+	makefiles
+
+	tmac.s moved to tmac.groff_ms (and ditto for tmac.an and
+	tmac.e) as bsd has its own and these check for
+	usage of groff versus troff.
+
