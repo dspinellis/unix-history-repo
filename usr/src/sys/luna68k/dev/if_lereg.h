@@ -4,12 +4,12 @@
  *
  * %sccs.include.redist.c%
  *
- * from: hp300/dev/if_lereg.h	7.4 (Berkeley) 7/6/92
+ * from: hp300/dev/if_lereg.h	7.5 (Berkeley) 10/11/92
  *
- *	@(#)if_lereg.h	7.3 (Berkeley) %G%
+ *	@(#)if_lereg.h	7.4 (Berkeley) %G%
  */
 
-#include <hp/dev/iotypes.h>	/* XXX */
+#include <luna68k/dev/iotypes.h>	/* XXX */
 
 #define	LEID		21
 
