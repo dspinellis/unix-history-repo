@@ -1,0 +1,14 @@
+After the data declarations were moved into seperate include files
+the sources refused to compile on a pdp-11.  Apparently, the pdp-11
+preprocessor can only handle a limited number of include files.
+To create a version on a pdp machine, you will probably have to
+combine the include files into one include file per source file in
+order to get it to compile.  Not all source files may need this extra
+bit of work.  You'll just have to try and compile and fix those that
+the compiler complains about.  I no longer have access to a pdp-11
+machine, so I can't do any testing on it.  (As stated in the README
+file, I have run this game on a pdp-11/70 before the include files
+were created.)
+
+		Bill Randle
+		8/31/87
