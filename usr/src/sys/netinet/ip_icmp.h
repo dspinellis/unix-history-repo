@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ip_icmp.h	7.1 (Berkeley) %G%
+ *	@(#)ip_icmp.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -98,3 +98,9 @@ struct icmp {
 #define	ICMP_MASKREPLY		18		/* address mask reply */
 
 #define	ICMP_MAXTYPE		18
+
+#define	ICMP_INFOTYPE(type) \
+	((type) == ICMP_ECHOREPLY || (type) == ICMP_ECHO || \
+	(type) == ICMP_TSTAMP || (type) == ICMP_TSTAMPREPLY || \
+	(type) == ICMP_IREQ || (type) == ICMP_IREQREPLY || \
+	(type) == ICMP_MASKREQ || (type) == ICMP_MASKREPLY)
