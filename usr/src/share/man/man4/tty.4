@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tty.4	6.5 (Berkeley) %G%
+.\"	@(#)tty.4	6.6 (Berkeley) %G%
 .\"
 .TH TTY 4 ""
 .UC 4
@@ -23,19 +23,13 @@ The system provides different
 for controlling communications lines.
 In this version of the system there are three disciplines available:
 .IP "old" 8
-The old (standard) terminal driver.  This is used when using the
+The old (Version 7) terminal driver.  This is sometimes used when using the
 standard shell
-.IR sh (1)
-and for compatibility with other standard version 7 UNIX systems.
+.IR sh (1).
 .IP "new"
-A newer terminal driver, with features for job control; this must
-be used when using
+The standard Berkeley terminal driver, with features for job control;
+this must be used when using
 .IR csh (1).
-.IP "net"
-A line discipline used for networking and loading data into
-the system over communications lines.  It allows high speed input
-at very low overhead, and is described in
-.IR bk (4).
 .LP
 Line discipline switching is accomplished with the TIOCSETD 
 .IR ioctl :
@@ -44,8 +38,8 @@ Line discipline switching is accomplished with the TIOCSETD
 .br
 .B "ioctl(f, TIOCSETD, &ldisc);"
 .LP
-where LDISC is OTTYDISC for the standard tty driver, NTTYDISC for the new
-driver and NETLDISC for the networking discipline.
+where LDISC is OTTYDISC for the standard tty driver
+and NTTYDISC for the ``new'' driver.
 The standard (currently old) tty driver is discipline 0 by convention.
 The current line discipline can be obtained with the TIOCGETD
 .IR ioctl .
@@ -63,7 +57,9 @@ The remainder of this section discusses the
 When a terminal file is opened, it causes the process to wait until a
 connection is established.  In practice, user programs seldom open
 these files; they are opened by
-.IR init (8)
+.IR getty (8)
+or
+.IR rlogind (8C)
 and become a user's standard input and output file.
 .PP
 If a process which has no control terminal opens a terminal file, then
@@ -87,7 +83,7 @@ is currently in use.
 A process can remove the association it has with its controlling
 terminal by opening the file
 .B /dev/tty
-and issuing a
+and issuing an
 .IP
 .B "ioctl(f, TIOCNOTTY, 0);"
 .LP
@@ -122,8 +118,9 @@ amount of processing on the input and output characters:
 .IP cooked 10
 The normal mode.  In this mode lines of input are collected and input editing
 is done.  The edited line is made available when it is completed by
-a newline
-or when the \fIt_brkc\fP character, normally an EOT (control-D, hereafter ^D),
+a newline,
+or when the \fIt_brkc\fP character (normally undefined)
+or \fIt_eofc\fP character (normally an EOT, control-D, hereafter ^D)
 is entered.
 A carriage return is usually made synonymous with newline in this mode,
 and replaced with a newline whenever it is typed.
@@ -141,8 +138,8 @@ This mode eliminates all input processing and makes all input characters
 available as they are typed; no output processing is done either.
 .PP
 The style of input processing can also be very different when
-the terminal is put in non-blocking i/o mode; see
-the FNDELAY flag as described in
+the terminal is put in non-blocking I/O mode; see
+the FNDELAY flag described in
 .IR fcntl (2).
 In this case a
 .IR read (2)
@@ -204,11 +201,15 @@ It is not, however, necessary to read a whole line at
 once; any number of characters may be
 requested in a read, even one, without losing information.
 .PP
-During input, line editing is normally done, with the DELETE character
-logically erasing the last character typed and the character ^U (control-U)
+During input, line editing is normally done, with the erase character
+.I sg_erase
+(by default, DELETE)
+logically erasing the last character typed and the
+.I sg_kill
+character (default, ^U: control-U)
 logically erasing the entire current input line.
 These characters
-never erase beyond the beginning of the current input line or an ^D.
+never erase beyond the beginning of the current input line or an eof.
 These characters may be entered literally by
 preceding them with `\e\|'; the `\e\|' will normally be erased when the
 character is typed.
@@ -220,10 +221,12 @@ If the CRMOD bit is cleared in the local mode word then the processing
 for carriage return is disabled, and it is simply echoed as a return,
 and does not terminate cooked mode input.
 .PP
-In the new driver there is a literal-next character ^V which can be typed
+In the new driver there is a literal-next character (normally ^V)
+which can be typed
 in both cooked and CBREAK mode preceding
 .I any
-character to prevent its special meaning.  This is to be preferred to the
+character to prevent its special meaning to the terminal handler.
+This is to be preferred to the
 use of `\e\|' escaping erase and kill characters, but `\e\|' is
 retained with its old function in the new line discipline.
 .PP
@@ -270,7 +273,7 @@ rather than being echoed unmodified; delete is echoed as ^?.
 .LP
 The normal modes for use on CRT terminals are speed dependent.
 At speeds less than 1200 baud, the LCRTERA and LCRTKILL processing
-is painfully slow, so 
+is painfully slow, and
 .IR stty (1)
 normally just sets LCRTBS and LCTLECH; at
 speeds of 1200 baud or greater all of these bits are normally set.
@@ -353,7 +356,7 @@ A bit in the flags word may be set to put the terminal into TANDEM mode.
 In this mode the system produces a stop character (default ^S) when
 the input queue is in danger of overflowing, and a start character (default
 ^Q) when the input has drained sufficiently.  This mode is useful
-when the terminal is actually another machine that obeys the
+when the terminal is actually another machine that obeys those
 conventions.
 .LP
 .B "Line control and breaks."
@@ -378,18 +381,17 @@ be set again by TIOCSDTR.
 When the carrier signal from the dataset drops (usually
 because the user has hung up his terminal) a
 SIGHUP hangup signal is sent to the processes in the distinguished
-process group of the terminal; this usually causes them to terminate
-(the SIGHUP can be suppressed by setting the LNOHANG bit in the local
-state word of the driver.)
+process group of the terminal; this usually causes them to terminate.
+The SIGHUP can be suppressed by setting the LNOHANG bit in the local
+state word of the driver.
 Access to the terminal by other processes is then normally revoked,
 so any further reads will fail, and programs that read a terminal and test for
 end-of-file on their input will terminate appropriately.
 .PP
-When using an ACU
-it is possible to ask that the phone line be hung up on the last close
+It is possible to ask that the phone line be hung up on the last close
 with the TIOCHPCL
 .IR ioctl ;
-this is normally done on the outgoing line.
+this is normally done on the outgoing lines and dialups.
 .LP
 .B "Interrupt characters."
 .PP
@@ -566,8 +568,8 @@ NL0	0
 NL1	0000400
 NL2	0001000
 NL3	0001400
-EVENP	0000200	Even parity allowed on input and generated on output
-ODDP	0000100	Odd parity allowed on input and generated on output
+EVENP	0000200	Even parity allowed on input
+ODDP	0000100	Odd parity allowed on input
 RAW	0000040	Raw mode: wake up on all characters, 8-bit interface
 CRMOD	0000020	Map CR into LF; output LF as CR-LF
 ECHO	0000010	Echo (full duplex)
@@ -607,8 +609,13 @@ Type 3, called XTABS,
 is not a delay at all but causes tabs to be replaced
 by the appropriate number of spaces on output.
 .PP
-Input characters with the wrong parity, as determined by bits 200 and
-100, are ignored in cooked and CBREAK mode.
+The flags for even and odd parity control parity checking on input
+and generation on output in cooked and CBREAK mode
+(unless LPASS8 is enabled, see below).
+Even parity is generated on output unless ODDP is set and EVENP
+is clear, in which case odd parity is generated.
+Input characters with the wrong parity, as determined by EVENP and
+ODDP, are ignored in cooked and CBREAK mode.
 .PP
 RAW
 disables all processing save output flushing with LFLUSHO;
@@ -708,7 +715,7 @@ pointed to by
 has a zero value, all characters waiting in input or output queues are flushed.
 Otherwise, the value of the
 .B int
-is treated as the logical OR of the FREAD and FWRITE defined in
+is for the FREAD and FWRITE bits defined in
 .BR <sys/file.h> ;
 if the FREAD bit is set, all characters waiting in input queues are flushed,
 and if the FWRITE bit is set, all characters waiting in output queues are
@@ -742,22 +749,20 @@ for which this terminal is the control terminal.
 .I arg
 is a pointer to an
 .B int
-(typically a process ID); the process group whose process group ID
-is the value of this
-.B int
-becomes the process group for which this terminal is the control terminal.
+which is the value to which the process group ID
+for this terminal will be set.
 .IP TIOCOUTQ
 returns in the
 .B int
 pointed to by
 .I arg
-the number of characters queued up to be output to the terminal.
+the number of characters queued for output to the terminal.
 .IP FIONREAD
 returns in the
 .B int
 pointed to by
 .I arg
-the number of immediately readable characters from the argument unit.
+the number of characters immediately readable from the argument descriptor.
 This works for files, pipes, and terminals.
 .PP
 .Ul Tchars
@@ -903,7 +908,4 @@ stty(1),
 ioctl(2),
 sigvec(2),
 stty(3C),
-getty(8),
-init(8)
-.SH BUGS
-Half-duplex terminals are not supported.
+getty(8)
