@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)glob.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -425,7 +425,8 @@ match(name, pat, patend)
 			break;
 		case M_SET:
 			ok = 0;
-			k = *name++;
+			if ((k = *name++) == EOS)
+				return(0);
 			if (negate_range = ((*pat & M_MASK) == M_NOT))
 				++pat;
 			while (((c = *pat++) & M_MASK) != M_END)
