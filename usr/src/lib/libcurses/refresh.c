@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -359,7 +359,7 @@ domvcur(oy, ox, ny, nx)
 
 /*
  * Quickch() attempts to detect a pattern in the change of the window
- * inorder to optimize the change, e.g., scroll n lines as opposed to 
+ * in order to optimize the change, e.g., scroll n lines as opposed to 
  * repainting the screen line by line.
  */
 
@@ -375,6 +375,9 @@ quickch(win)
 	char buf[1024];
 	u_int blank_hash;
 
+	/*
+	 * Search for the largest block of text not changed.
+         */
 	for (bsize = win->maxy; bsize >= THRESH; bsize--)
 		for (startw = 0; startw <= win->maxy - bsize; startw++)
 			for (starts = 0; starts <= win->maxy - bsize; 
@@ -382,7 +385,9 @@ quickch(win)
 				for (curw = startw, curs = starts;
 				     curs < starts + bsize; curw++, curs++)
 					if (win->lines[curw]->hash !=
-					    curscr->lines[curs]->hash)
+					    curscr->lines[curs]->hash ||
+				            bcmp(&win->lines[curw], 
+					    &win->lines[curs], win->maxx != 0))
 						break;
 				if (curs == starts + bsize)
 					goto done;
@@ -427,7 +432,8 @@ quickch(win)
 			win->lines[target]->flags &= ~__ISDIRTY;
 		} else if ((n < 0 && target >= win->maxy + n) || 
 			 (n > 0 && target < n)) {
-			if (clp->hash != blank_hash) {
+			if (clp->hash != blank_hash || 
+			    bcmp(clp->line, buf, win->maxx) != 0) {
 				(void)memset(clp->line, ' ', win->maxx);
 #ifdef DEBUG
 				__TRACE("-- memset");
