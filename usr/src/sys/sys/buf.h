@@ -1,4 +1,4 @@
-/*	buf.h	4.20	83/01/16	*/
+/*	buf.h	4.21	83/05/18	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -55,9 +55,14 @@ struct buf
 	daddr_t	b_blkno;		/* block # on device */
 	long	b_resid;		/* words not transferred after error */
 #define	b_errcnt b_resid		/* while i/o in progress: # retries */
-#define	b_pfcent b_resid		/* garbage: don't ask */
 	struct  proc *b_proc;		/* proc doing physical or swap I/O */
 	int	(*b_iodone)();		/* function called by iodone */
+	int	b_pfcent;		/* center page when swapping cluster */
+#ifdef sun
+	caddr_t	b_saddr;		/* saved address */
+	short	b_kmx;			/* saved kernelmap index */
+	short	b_npte;			/* number of pte's mapped */
+#endif
 };
 
 #define	BQUEUES		4		/* number of free buffer queues */
@@ -79,8 +84,6 @@ int	nbuf;			/* number of buffer headers */
 int	bufpages;		/* number of memory pages in the buffer pool */
 struct	buf *swbuf;		/* swap I/O headers */
 int	nswbuf;
-short	*swsize;
-int	*swpf;
 struct	bufhd bufhash[BUFHSZ];	/* heads of hash lists */
 struct	buf bfreelist[BQUEUES];	/* heads of available lists */
 struct	buf bswlist;		/* head of free swap header list */

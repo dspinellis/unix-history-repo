@@ -1,4 +1,4 @@
-/*	conf.h	4.10	82/10/31	*/
+/*	conf.h	4.11	83/05/18	*/
 
 /*
  * Declaration of block device
@@ -15,6 +15,7 @@ struct bdevsw
 	int	(*d_close)();
 	int	(*d_strategy)();
 	int	(*d_dump)();
+	int	(*d_psize)();
 	int	d_flags;
 };
 #ifdef KERNEL
@@ -68,6 +69,7 @@ struct swdevt
 {
 	dev_t	sw_dev;
 	int	sw_freed;
+	int	sw_nblks;
 };
 #ifdef KERNEL
 struct	swdevt swdevt[];
