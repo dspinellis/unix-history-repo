@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.33 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.34 (Berkeley) %G%
  */
 
 /*
@@ -732,7 +732,7 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat)
 	if (cred->cr_uid == 0)
 		rootflg++;
 	ndp->ni_cred = cred;
-	ndp->ni_nameiop = DELETE | WANTPARENT;
+	ndp->ni_nameiop = DELETE | WANTPARENT | SAVESTARTDIR;
 	if (error = nfs_namei(ndp, ffhp, len, &md, &dpos))
 		nfsm_reply(0);
 	fvp = ndp->ni_vp;
@@ -743,7 +743,8 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat)
 	ndinit(&tond);
 	crhold(cred);
 	tond.ni_cred = cred;
-	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE;
+	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE
+		| SAVESTARTDIR;
 	if (error = nfs_namei(&tond, tfhp, len2, &md, &dpos)) {
 		VOP_ABORTOP(ndp);
 		vrele(ndp->ni_dvp);
@@ -782,11 +783,15 @@ out:
 		vrele(ndp->ni_dvp);
 		vrele(fvp);
 	}
+	vrele(tond.ni_startdir);
 out1:
+	vrele(ndp->ni_startdir);
 	crfree(cred);
 	nfsm_reply(0);
 	return (error);
 nfsmout:
+	if (ndp->ni_nameiop & SAVESTARTDIR)
+		vrele(ndp->ni_startdir);
 	VOP_ABORTOP(ndp);
 	vrele(ndp->ni_dvp);
 	vrele(fvp);
@@ -968,7 +973,7 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat)
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
 	ndp->ni_cred = cred;
-	ndp->ni_nameiop = CREATE | LOCKPARENT;
+	ndp->ni_nameiop = CREATE | LOCKPARENT | SAVESTARTDIR;
 	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
 		nfsm_reply(0);
 	nfsm_disect(p, u_long *, NFSX_UNSIGNED);
@@ -983,10 +988,13 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat)
 		else
 			vput(ndp->ni_dvp);
 		vrele(vp);
+		vrele(ndp->ni_startdir);
 		error = EEXIST;
 		nfsm_reply(0);
 	}
-	if (error = VOP_MKDIR(ndp, vap))
+	error = VOP_MKDIR(ndp, vap);
+	vrele(ndp->ni_startdir);
+	if (error)
 		nfsm_reply(0);
 	vp = ndp->ni_vp;
 	bzero((caddr_t)fhp, sizeof(nfh));

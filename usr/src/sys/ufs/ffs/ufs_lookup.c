@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.24 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.25 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -84,7 +84,7 @@ ufs_lookup(vdp, ndp)
 	dp = VTOI(vdp);
 	fs = dp->i_fs;
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
-	flag = ndp->ni_nameiop & OPFLAG;
+	flag = ndp->ni_nameiop & OPMASK;
 	wantparent = ndp->ni_nameiop & (LOCKPARENT|WANTPARENT);
 
 	/*

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.51 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.52 (Berkeley) %G%
  */
 
 /*
@@ -445,7 +445,7 @@ nfs_lookup(vp, ndp)
 	if (vp->v_type != VDIR)
 		return (ENOTDIR);
 	lockparent = ndp->ni_nameiop & LOCKPARENT;
-	flag = ndp->ni_nameiop & OPFLAG;
+	flag = ndp->ni_nameiop & OPMASK;
 	wantparent = ndp->ni_nameiop & (LOCKPARENT|WANTPARENT);
 	if ((error = cache_lookup(ndp)) && error != ENOENT) {
 		struct vattr vattr;

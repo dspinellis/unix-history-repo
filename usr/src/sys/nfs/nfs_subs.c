@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.35 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.36 (Berkeley) %G%
  */
 
 /*
@@ -724,13 +724,12 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	register int i, rem;
 	register struct mbuf *md;
 	register char *cp;
-	register struct filedesc *fdp = u.u_procp->p_fd;	/* XXX */
-	struct vnode *dp, *savedcdir, *savedrdir;
+	struct vnode *dp;
 	int flag;
 	int error;
 
 	if ((ndp->ni_nameiop & HASBUF) == 0) {
-		flag = ndp->ni_nameiop & OPFLAG;
+		flag = ndp->ni_nameiop & OPMASK;
 		/*
 		 * Copy the name from the mbuf list to the d_name field of ndp
 		 * and set the various ndp fields appropriately.
@@ -776,30 +775,23 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	ndp->ni_pathlen = 1;
 	ndp->ni_pnbuf = ndp->ni_dirp = ndp->ni_ptr = &ndp->ni_dent.d_name[0];
 	ndp->ni_next = &ndp->ni_dent.d_name[i];
-	ndp->ni_nameiop |= (NOCROSSMOUNT | REMOTE | HASBUF);
-
+	ndp->ni_nameiop |= (NOCROSSMOUNT | REMOTE | HASBUF | STARTDIR);
+	/*
+	 * Extract and set starting directory.
+	 */
 	if (error = nfsrv_fhtovp(fhp, FALSE, &dp, ndp->ni_cred))
 		return (error);
 	if (dp->v_type != VDIR) {
 		vrele(dp);
 		return (ENOTDIR);
 	}
-	/*
-	 * Must set current directory here to avoid confusion in namei()
-	 * called from rename()
-	 */
-	savedcdir = fdp->fd_cdir;
-	savedrdir = fdp->fd_rdir;
-	fdp->fd_cdir = dp;
-	fdp->fd_rdir = NULLVP;
-
+	ndp->ni_startdir = dp;
 	/*
 	 * And call namei() to do the real work
 	 */
 	error = namei(ndp);
-	fdp->fd_cdir = savedcdir;
-	fdp->fd_rdir = savedrdir;
-	vrele(dp);
+	if (error || (ndp->ni_nameiop & SAVESTARTDIR) == 0)
+		vrele(dp);
 	return (error);
 }
 
