@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	4.19 (Berkeley) 83/07/01";
+static char sccsid[] = "@(#)rwhod.c	4.20 (Berkeley) 83/10/11";
 #endif
 
 #include <sys/types.h>
@@ -208,7 +208,7 @@ verify(name)
 	register int size = 0;
 
 	while (*name) {
-		if (!isascii(*name) || !isalnum(*name))
+		if (!isascii(*name) || !(isalnum(*name) || ispunct(*name)))
 			return (0);
 		name++, size++;
 	}
