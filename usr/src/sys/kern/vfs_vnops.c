@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.6 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -114,7 +114,10 @@ vn_open(ndp, fmode, cmode)
 			error = EINTR;
 		return (error);
 	}
-	return (VOP_OPEN(vp, fmode, ndp->ni_cred));
+	error = VOP_OPEN(vp, fmode, ndp->ni_cred);
+	if (error)
+		vrele(vp);
+	return (error);
 
 bad:
 	vput(vp);
@@ -531,6 +534,16 @@ forceclose(dev)
 			continue;
 		fp->f_flag &= ~(FREAD|FWRITE);
 	}
+}
+
+/*
+ * Vnode reference, just increment the count
+ */
+void vref(vp)
+	struct vnode *vp;
+{
+
+	vp->v_count++;
 }
 
 /*
