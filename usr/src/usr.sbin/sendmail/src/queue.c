@@ -17,12 +17,12 @@
 
 # ifndef QUEUE
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.17 (Berkeley) %G%	(no queueing)";
+static char	SccsId[] = "@(#)queue.c	5.18 (Berkeley) %G%	(no queueing)";
 # endif not lint
 # else QUEUE
 
 # ifndef lint
-static char	SccsId[] = "@(#)queue.c	5.17 (Berkeley) %G%";
+static char	SccsId[] = "@(#)queue.c	5.18 (Berkeley) %G%";
 # endif not lint
 
 /*
@@ -594,7 +594,7 @@ dowork(w)
 
 		/* set basic modes, etc. */
 		(void) alarm(0);
-		clearenvelope(CurEnv);
+		clearenvelope(CurEnv, FALSE);
 		QueueRun = TRUE;
 		ErrorMode = EM_MAIL;
 		CurEnv->e_id = &w->w_name[2];
