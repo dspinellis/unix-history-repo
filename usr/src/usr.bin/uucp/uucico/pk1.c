@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pk1.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk1.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -172,7 +172,7 @@ register struct pack *pk;
 		pk->p_msg |= pk->p_rmsg;
 		if (pk->p_msg == 0)
 			pk->p_msg |= M_RR;
-		if ((pk->p_state & LIVE) == LIVE)
+		if ((pk->p_state & (LIVE|WAITO)) == LIVE)
 			pk->p_state |= RXMIT;
 		pkoutput(pk);
 	}
