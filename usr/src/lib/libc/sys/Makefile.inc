@@ -19,7 +19,9 @@ ASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
 	getgroups.o gethostid.o gethostname.o getitimer.o getkerninfo.o \
 	getpagesize.o getpeername.o getpgrp.o getpid.o getppid.o \
 	getpriority.o getrlimit.o getrusage.o getsockname.o getsockopt.o \
-	gettimeofday.o getuid.o ioctl.o kill.o ktrace.o link.o listen.o \
+	gettimeofday.o getuid.o ioctl.o kill.o ktrace.o \
+	lfs_bmapv.o lfs_markv.o lfs_segclean.o lfs_segwait.o \
+	link.o listen.o \
 	lseek.o lstat.o madvise.o mincore.o mkdir.o mkfifo.o mknod.o \
 	mmap.o mount.o mprotect.o msync.o munmap.o nfssvc.o open.o \
 	profil.o quotactl.o read.o readlink.o readv.o recvfrom.o recvmsg.o \
@@ -29,7 +31,8 @@ ASM=	accept.o access.o acct.o adjtime.o async_daemon.o bind.o chdir.o \
 	setrlimit.o setsid.o setsockopt.o settimeofday.o setuid.o \
 	shutdown.o sigaction.o sigstack.o socket.o socketpair.o stat.o \
 	statfs.o swapon.o symlink.o sync.o truncate.o umask.o unlink.o \
-	unmount.o utimes.o vadvise.o wait4.o write.o writev.o
+	unmount.o utimes.o vadvise.o wait4.o write.o writev.o \
+	sem_lock.o sem_wakeup.o 
 
 PSEUDO=	_exit.o _getlogin.o
 
@@ -38,6 +41,7 @@ POBJS+=	${ASM:.o=.po} ${PSEUDO:.o=.po}
 CLEANFILES+=${ASM} ${PSEUDO} ${POBJS} 
 
 ${ASM}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
+.if (${MACHINE} != "mips")
 	@echo creating ${.PREFIX}.o ${.PREFIX}.po
 	@printf '#include "SYS.h"\nRSYSCALL(${.PREFIX})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.o
@@ -47,8 +51,17 @@ ${ASM}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.po
 	@${LD} -x -r ${.PREFIX}.po
 	@mv a.out ${.PREFIX}.po
+.else
+	@echo creating ${.PREFIX}.o
+	@printf '#include "SYS.h"\nSYSCALL(${.PREFIX})\n' > ${.PREFIX}.s
+	@${AS} ${CFLAGS:M-[ID]*} ${AINC} -o ${.PREFIX}.o ${.PREFIX}.s
+	@rm -f ${.PREFIX}.s
+	@${LD} -x -r ${.PREFIX}.o
+	@mv a.out ${.PREFIX}.o
+.endif
 
 ${PSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
+.if (${MACHINE} != "mips")
 	@echo creating ${.PREFIX}.o ${.PREFIX}.po
 	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' | \
 	    ${CPP} ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.o
@@ -58,6 +71,15 @@ ${PSEUDO}: ${.CURDIR}/${MACHINE}/SYS.h /usr/include/sys/syscall.h
 	    ${CPP} -DPROF ${CFLAGS:M-[ID]*} ${AINC} | ${AS} -o ${.PREFIX}.po
 	@${LD} -x -r ${.PREFIX}.po
 	@mv a.out ${.PREFIX}.po
+.else
+	@echo creating ${.PREFIX}.o
+	@printf '#include "SYS.h"\nPSEUDO(${.PREFIX},${.PREFIX:S/_//})\n' > \
+		${.PREFIX}.s
+	@${AS} ${CFLAGS:M-[ID]*} ${AINC} -o ${.PREFIX}.o ${.PREFIX}.s
+	@rm -f ${.PREFIX}.s
+	@${LD} -x -r ${.PREFIX}.o
+	@mv a.out ${.PREFIX}.o
+.endif
 
 # Missing: profil.0, ptrace.0
 
@@ -72,7 +94,8 @@ MAN2+=	accept.0 access.0 acct.0 adjtime.0 async_daemon.0 bind.0 brk.0 \
 	lseek.0 mkdir.0 mkfifo.0 mknod.0 madvise.0 mincore.0 mmap.0 mount.0 \
 	mprotect.0 msync.0 munmap.0 nfssvc.0 open.0 pipe.0 profil.0 \
 	ptrace.0 quotactl.0 read.0 readlink.0 reboot.0 recv.0 rename.0 \
-	rmdir.0 select.0 send.0 setgroups.0 setpgid.0 setregid.0 setreuid.0 \
+	rmdir.0 select.0 send.0 setgroups.0 setpgid.0 setsid.0 setregid.0 \
+	setreuid.0 \
 	shutdown.0 sigaction.0 sigprocmask.0 sigreturn.0 sigstack.0 \
 	sigsuspend.0 socket.0 socketpair.0 stat.0 statfs.0 swapon.0 \
 	symlink.0 sync.0 syscall.0 truncate.0 umask.0 unlink.0 utimes.0 \
