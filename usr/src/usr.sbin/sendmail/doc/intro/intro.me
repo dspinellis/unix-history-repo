@@ -9,7 +9,7 @@
 SENDMAIL \*- An Internet Mail Router
 .sz
 .sp
-Eric Allman
+Eric Allman\(dg
 .sp 0.5
 .i
 Project INGRES
@@ -21,10 +21,16 @@ Berkeley, California  94720
 .(f
 This is
 .if \n(DR draft
-version 3.12,
+version 3.13,
 last modified on %G%.
 .if \n(DR Please do not distribute this version without permission
 .if \n(DR of the author.
+.)f
+.(f
+\(dgAuthor's current address:
+Britton-Lee, Inc.
+1919 Addison Street, Suite 105.
+Berkeley, California 94704.
 .)f
 .pp
 .i Sendmail
@@ -146,10 +152,12 @@ was an outgrowth of
 a previous incarnation of a UNIX internetwork mail router.
 .i Delivermail
 was written relatively quickly.
-The first version only knew about taking apart addresses
-for explicit forwarding
-and limited aliasing;
-automatic forwarding and other features
+The first version could only parse addresses based on single
+characters embedded in the address,
+required explicit
+description of gateways,
+and had only limited aliasing;
+automatic forwarding of messages to another gateway and other features
 came later.
 .pp
 Design goals for
@@ -234,6 +242,10 @@ by sending only one copy of a message
 to multiple recipients on the same host.
 Besides the difficulty of doing this,
 we failed to appreciate how much volume there would be.
+For example,
+one of our gateways processed a message approximately
+every twenty seconds
+during peak hours, many of which were duplicates.
 .np
 Existing software to do actual delivery
 should be used whenever possible.
@@ -414,13 +426,15 @@ except that they must be lines of text
 (i.e., binary data is not allowed).
 .sh 3 "Argument processing and address parsing"
 .pp
-The arguments are first scanned,
+The arguments to
+.i sendmail
+are first scanned,
 and flag arguments processed.
 The remaining arguments are
 parsed in turn as addresses,
 and a list of recipients is created.
 Aliases are expanded at this step.
-As much validation of the addresses as possible
+As much validation as possible of the addresses
 is done at this step:
 syntax is checked, and local addresses are verified,
 but detailed checking of host names and addresses
@@ -471,6 +485,12 @@ or a meaningless message
 (\c
 .q "Service unavailable" )
 is given.
+.sh 3 "Queueing for retransmission"
+.pp
+If the mailer returned an error status that
+indicated that it might be able to handle the mail later,
+.i sendmail
+will queue the mail and try again later.
 .sh 3 "Return to sender"
 .pp
 If errors occurred during processing,
@@ -591,7 +611,8 @@ line can be merged under certain circumstances.
 Arguments may be flags and addresses.
 The flag arguments are described in Appendix A.
 Following flag arguments,
-address arguments may be given.
+address arguments may be given,
+unless we are running in SMTP mode.
 These follow the syntax in RFC733
 [Crocker77a]
 for ARPANET
@@ -618,7 +639,9 @@ Double quotes
 (\ "\ )
 quote phrases;
 backslashes quote characters.
-Backslashes are more powerful \*- for example,
+Backslashes are more powerful
+in that they will cause otherwise equivalent phrases
+to compare differently \*- for example,
 .i user
 and
 .i
@@ -634,6 +657,21 @@ The rewriting rules control remaining parsing
 after rewriting local names; see below).
 Parentheses, angle brackets, and double quotes
 must be properly balanced and nested.
+.sh 2 "Simple Mail Transfer Protocol"
+.pp
+The Simple Mail Transfer Protocol
+(SMTP)
+[Postel81]
+can be used on input by specifying the
+.b \-as
+flag.
+This will cause
+.i sendmail
+to use a verbose protocol on its standard input and output
+which is useful over certain types of networks.
+If SMTP is used,
+no addresses are passed on the command line;
+these are sent over the standard input instead.
 .sh 2 "Mail to Files and Programs"
 .pp
 Files and programs are legitimate message recipients.
@@ -684,13 +722,6 @@ This file is inverted to speed access.
 Only names that parse as local
 are allowed as aliases;
 this guarantees a unique key.
-.pp
-The inverted form of the file
-must be recreated when the text copy is changed.
-Under certain circumstances,
-.i sendmail
-will do this automatically;
-an option can force rebuilding.
 .sh 3 "Forwarding"
 .pp
 After aliasing,
@@ -771,6 +802,14 @@ after all delivery completes.
 .pp
 An exit status is returned that corresponds to the system standard
 used by the other mailers.
+.sh 2 "Queued Messages"
+.pp
+If the mailer gave a
+.q "temporary failure"
+exit status,
+the message is queued.
+A control file is used to describe the recipients to be sent to
+and various other parameters.
 .sh 2 "Interaction With Other Mailers"
 .pp
 Two examples of how network-specific work is passed to other programs
@@ -866,17 +905,18 @@ H	define header
 M	define mailer
 S	use rewriting set
 C	define word class
+F	define word class from file
 R	specify rewriting rule
 .)b
 .pp
 See figure 2 for an example configuration file.
+Please note that this is intended as an example only.
 .(z
 .hl
 .sz -2
 .re
 ##########################################
 # sendmail configuration file
-#	@(#)sendmail.cf	3.6	8/17/81
 ##########################################
 .sp \n(psu
 ### local hosts on various nets
@@ -1411,7 +1451,7 @@ the input is rewritten as defined by the right hand side (RHS).
 Acceptable escapes in the RHS are:
 .(b
 .ta \w'$#mailer  'u
-$+	Replace from corresponding match in LHS.
+$n	Replace from corresponding match in LHS.
 $#mailer	Canonical mailer name.
 $@host	Canonical host name.
 $:user	Canonical user name.
@@ -1459,6 +1499,25 @@ so that
 .q $=V
 on the LHS of a rewriting rule
 will match any of these words.
+.sh 3 "F \*- define word class from file"
+.(b
+.b F \c
+.i c\&filename
+.i format
+.)b
+.pp
+This works analogously
+to the
+.b C
+line except that it reads the contents of the class
+from the given
+.i filename .
+If given,
+the specified
+.i format
+is used as a
+scanf(3)
+string which should produce a single string.
 .sh 2 "A Detailed Example"
 .pp
 We will now follow the configuration file
@@ -1592,10 +1651,9 @@ M\&uucp	/usr/bin/uux	rsDxm	$U!$f	...uucpmail - $h!rmail ($u)
 .sz
 .)b
 Five mailers are known in the configuration file.
-The first two
+There
 .i must
-be for local and program mail,
-and must come as the first and second mailers respectively.
+be entries for local and program mail.
 .pp
 Local mail is sent using
 /bin/mail.
@@ -1684,6 +1742,12 @@ a
 .q Full-Name:
 line,
 and with multiple users listed.
+.pp
+If
+.q $u
+were to be missing from the argument vector for a mailer,
+that mailer would be accessed using the SMTP [Postel81]
+protocol.
 .sh 3 "Rewriting rules for recipient addresses"
 .(b
 .sz -2
@@ -1808,7 +1872,7 @@ when a message is being sent to multiple recipients.
 .pp
 MMDF
 [Crocker79]
-spans a much wider problem set than
+spans a wider problem set than
 .i sendmail .
 For example,
 MMDF includes a
@@ -1816,13 +1880,9 @@ MMDF includes a
 mailer, whereas
 .i sendmail
 calls on preexisting mailers in most cases.
-.i Sendmail
-is approximately equivalent to the
-SUBMIT and DELIVER phases of MMDF.
-Because of this difference in design goals,
-some of the important features of MMDF
-(queueing, retransmission, and two-phase timeout)
-are unimplemented by
+MMDF
+did not try to fit into the constraints of existing mailers,
+and thus avoids some of the problems of
 .i sendmail .
 .pp
 MMDF and
@@ -1830,7 +1890,9 @@ MMDF and
 both support aliasing,
 customized mailers,
 message batching,
-and automatic forwarding to gateways.
+automatic forwarding to gateways,
+queueing,
+and retransmission.
 .sh 2 "Message Processing Module"
 .pp
 The Message Processing Module (MPM)
@@ -1897,30 +1959,6 @@ that were not initially intended to be applied
 in an internet environment
 has been amazingly successful,
 and has reduced the job to a manageable task.
-.pp
-However,
-many of these mailers implement their own queueing and retransmission.
-In networks that support store-and-forward file transfer,
-such as BerkNet and UUCP,
-this feature must be supplied already.
-However,
-networks that transfer in real time,
-such as the ARPANET or an Ether-based network
-[Metcalfe76],
-generally do not provide these features.
-Also,
-networks which provide these generally do not understand
-timeouts or returning the text of the message on error,
-both highly desirable features\**.
-.(f
-\**We have implemented an ARPANET mailer which
-returns the message on error and does one-stage timeout
-(returning the message after three days).
-.)f
-Such queueing, retransmission, and two-phase timeout
-may be integrated into
-.i sendmail
-if it seems desirable.
 .pp
 .i Sendmail
 has knowledge of a few difficult environments
@@ -2124,6 +2162,16 @@ have been working on.
 .ce
 REFERENCES
 .nr ii 1.5i
+.ip [Borden79]
+Borden, S.,
+Gaines, R. S.,
+and
+Shapiro, N. Z.,
+.ul
+The MH Message Handling System: Users' Manual.
+R-2367-PAF.
+Rand Corporation.
+October 1979.
 .ip [Crocker77a]
 Crocker, D. H.,
 Vittal, J. J.,
@@ -2175,16 +2223,6 @@ Network Information Center,
 SRI International,
 Menlo Park, California.
 1978.
-.ip [Borden79]
-Borden, S.,
-Gaines, R. S.,
-and
-Shapiro, N. Z.,
-.ul
-The MH Message Handling System: Users' Manual.
-R-2367-PAF.
-Rand Corporation.
-October 1979.
 .ip [NBS80]
 National Bureau of Standards,
 .ul
@@ -2262,6 +2300,15 @@ Network Information Center,
 SRI International,
 Menlo Park, California.
 August 1980.
+.ip [Postel81]
+Postel, J. B.,
+.ul
+Simple Mail Transfer Protocol.
+RFC788.
+Network Information Center,
+SRI International,
+Menlo Park, California.
+November 1981.
 .ip [Schmidt79]
 Schmidt, E.,
 .ul
@@ -2372,7 +2419,7 @@ The
 line will be deleted before sending.
 Any addresses in the argument vector will be deleted
 from the send list.
-.ip \-a\&m
+.ip \-a
 Do special processing for the
 ARPANET.
 This includes reading the
@@ -2385,11 +2432,9 @@ style messages
 the FTP protocol
 [Neigus73, Postel74, Postel77]),
 and ending lines of error messages with <CRLF>.
-.ip \-a\&f
-Same as
-.b \-a\&m ,
-except print out message numbers appropriate for the MLFL command
-[Postel77].
+.ip \-a\&p
+Take input over an SMTP connection on standard input and output.
+This does everything the \-a flag does also.
 .ip \-s
 Save UNIX-style
 .q From
@@ -2405,6 +2450,17 @@ maintainer;
 for example,
 aliases are printed as expanded
 and mailer functions are printed as they run.
+.ip \-q
+Try to execute the queued up mail.
+.ip \-D
+Run as a daemon.
+This automatically runs SMTP.
+This is not completely supported yet.
+.ip \-T\&time
+Set timeout interval for mail that cannot be sent.
+.ip \-Q\&dir
+Select directory in which mail will be queued.
+Typically for debugging only.
 .ip \-C\&file
 Use a different configuration file.
 .ip \-A\&file
@@ -2426,7 +2482,7 @@ syntax is checked, and local names are verified,
 but no checking normally done by the mailer is attempted.
 .ip \-d\&level
 Set debugging level.
-.ip \-D\&x\&val
+.ip \-M\&x\&val
 Define macro
 .i x
 to have value
@@ -2480,19 +2536,24 @@ This logs an informational log record
 for each message processed,
 and logs a higher priority log record
 for internal system errors.
-.ip NEWFTP
-If set, the ARPANET reply codes for
-.q "Revised New FTP"
-are used
-[Postel74].
-If not set,
-reply codes for the old, unrevised
-.q "New FTP"
-are used
-[Neigus73].
-If you want to use reply codes for the Mail Transfer Protocol
-[Sluizer81]
-you may find it necessary to make some code modifications.
+.ip QUEUE
+This flag should be set to compile in the queueing code.
+If this is not set,
+mailers must accept the mail immediately
+or it will be returned to the sender.
+.ip SMTP
+If set,
+the code to handle user and server SMTP will be compiled in.
+This is only necessary if your machine has some mailer
+that speaks SMTP.
+.ip UGLYUUCP
+If you have a UUCP host adjacent to you which is not running
+a reasonable version of
+.i rmail ,
+you will have to set this flag to include the
+.q "remote from sysname"
+info on the from line.
+Otherwise, UUCP gets confused about where the mail came from.
 .ip PARANOID
 There are places where
 .i sendmail
