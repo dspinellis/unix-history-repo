@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ttyname.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttyname.c	5.11 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -41,7 +41,7 @@ ttyname(fd)
 	if (fstat(fd, &sb) || !S_ISCHR(sb.st_mode))
 		return(NULL);
 
-	if (db = hash_open(_PATH_DEVDB, O_RDONLY, 0, NULL)) {
+	if (db = dbopen(_PATH_DEVDB, O_RDONLY, 0, DB_HASH, NULL)) {
 		bkey.type = S_IFCHR;
 		bkey.dev = sb.st_rdev;
 		key.data = &bkey;
