@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)calendar.1	6.6 (Berkeley) %G%
+.\"	@(#)calendar.1	6.7 (Berkeley) %G%
 .\"
 .TH CALENDAR 1 ""
 .UC 7
@@ -111,6 +111,13 @@ This calendar should be updated yearly by the local system administrator
 so that roving holidays are set correctly for the current year.
 .SH "SEE ALSO"
 at(1), cpp(1), mail(1), cron(8)
+.SH COMPATIBILITY
+The
+.I calendar
+program previously selected lines which had the correct date anywhere
+in the line.
+This is no longer true, the date is only recognized when it occurs
+first on the line.
 .SH BUGS
 .I Calendar
 doesn't handle events that move around from year to year, i.e.
