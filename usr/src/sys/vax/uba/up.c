@@ -1,4 +1,4 @@
-/*	up.c	4.70	83/02/17	*/
+/*	up.c	4.71	83/02/21	*/
 
 #include "up.h"
 #if NSC > 0
@@ -44,7 +44,7 @@ struct	up_softc {
 struct	size {
 	daddr_t	nblocks;
 	int	cyloff;
-} up_sizes[8] = {
+} up9300_sizes[8] = {
 #ifdef ERNIE
 	49324,	0,		/* A=cyl 0 thru 26 */
 #else
@@ -57,23 +57,32 @@ struct	size {
 	81376,	681,		/* F=cyl 681 thru 814 */
 	153728,	562,		/* G=cyl 562 thru 814 */
 	291346,	82,		/* H=cyl 82 thru 561 */
-}, fj_sizes[8] = {
+}, up9766_sizes[8] = {
+	15884,	0,		/* A=cyl 0 thru 26 */
+	33440,	27,		/* B=cyl 27 thru 81 */
+	500384,	0,		/* C=cyl 0 thru 822 */
+	15884,	562,		/* D=cyl 562 thru 588 */
+	55936,	589,		/* E=cyl 589 thru 680 */
+	86240,	681,		/* F=cyl 681 thru 822 */
+	158592,	562,		/* G=cyl 562 thru 822 */
+	291346,	82,		/* H=cyl 82 thru 561 */
+}, up160_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 49 */
 	33440,	50,		/* B=cyl 50 thru 154 */
 	263360,	0,		/* C=cyl 0 thru 822 */
+	15884,	155,		/* D=cyl 155 thru 204 */
+	55936,	205,		/* E=cyl 205 thru 379 */
+	141664,	380,		/* F=cyl 380 thru 822 */
+	213664,	155,		/* G=cyl 155 thru 822 */
 	0,	0,
-	0,	0,
-	0,	0,
-	0,	0,
-	213664,	155,		/* H=cyl 155 thru 822 */
 }, upam_sizes[8] = {
 	15884,	0,		/* A=cyl 0 thru 31 */
 	33440,	32,		/* B=cyl 32 thru 97 */
 	524288,	0,		/* C=cyl 0 thru 1023 */
-	27786,	668,
-	27786,	723,
-	125440,	778,
-	181760,	668,		/* G=cyl 668 thru 1022 */
+	15884,	668,		/* D=cyl 668 thru 699 */
+	55936,	700,		/* E=cyl 700 thru 809 */
+	109472,	810,		/* F=cyl 810 thru 1023 */
+	182176,	668,		/* G=cyl 668 thru 1023 */
 	291346,	98,		/* H=cyl 98 thru 667 */
 };
 /* END OF STUFF WHICH SHOULD BE READ IN PER DISK */
@@ -108,9 +117,9 @@ struct	upst {
 	short	ncyl;
 	struct	size *sizes;
 } upst[] = {
-	32,	19,	32*19,	815,	up_sizes,	/* 9300 */
-	32,	19,	32*19,	823,	up_sizes,	/* 9766 */
-	32,	10,	32*10,	823,	fj_sizes,	/* fujitsu 160m */
+	32,	19,	32*19,	815,	up9300_sizes,	/* 9300 */
+	32,	19,	32*19,	823,	up9766_sizes,	/* 9766 */
+	32,	10,	32*10,	823,	up160_sizes,	/* fujitsu 160m */
 	32,	16,	32*16,	1024,	upam_sizes,	/* ampex capricorn */
 	0,	0,	0,	0,	0
 };
