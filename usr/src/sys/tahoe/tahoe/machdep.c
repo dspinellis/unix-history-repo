@@ -1,4 +1,4 @@
-/*	machdep.c	1.6	86/11/03	*/
+/*	machdep.c	1.7	86/11/25	*/
 
 #include "param.h"
 #include "systm.h"
@@ -25,6 +25,7 @@
 #include "../tahoe/reg.h"
 #include "../tahoe/pte.h"
 #include "../tahoe/psl.h"
+
 #include "../tahoe/mem.h"
 #include "../tahoe/mtpr.h"
 #include "../tahoe/cp.h"
@@ -67,7 +68,9 @@ startup(firstaddr)
 	for (i = 0; i < btoc(sizeof (struct msgbuf)); i++)
 		*(int *)pte++ = PG_V | PG_KW | (maxmem + i);
 	mtpr(TBIA, 1);
-
+#ifdef KDB
+	kdb_init();			/* startup kernel debugger */
+#endif
 	/*
 	 * Good {morning,afternoon,evening,night}.
 	 */
