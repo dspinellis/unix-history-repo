@@ -135,3 +135,13 @@ echo 't 700 -le 1000 -a -n "1" -a "20" = "20"'
 t 700 -le 1000 -a -n "1" -a "20" = "20"
 echo 't ! \( 700 -le 1000 -a -n "1" -a "20" = "20" \)'
 t ! \( 700 -le 1000 -a -n "1" -a "20" = "20" \)
+
+echo 't foo -a ""'
+t foo -a ""
+echo 't "" -a foo'
+t "" -a foo
+echo 't "" -a ""'
+t "" -a ""
+echo 't "" -o ""'
+t "" -o ""
+

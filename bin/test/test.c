@@ -153,7 +153,7 @@ main(argc, argv)
 			ret_val = posix_unary_op(&argv[1]);
 			if (ret_val >= 0)
 				return (!ret_val);
-		} else {
+		} else if (lookup_op(argv[2], andor_op) < 0) {
 			ret_val = posix_binary_op(&argv[1]);
 			if (ret_val >= 0)
 				return (ret_val);
