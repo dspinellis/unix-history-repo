@@ -8,7 +8,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)tutorial.ms	8.3 (Berkeley) %G%
+.\"	@(#)tutorial.ms	8.4 (Berkeley) %G%
 .\"
 .EH 'PSD:12-%''PMake \*- A Tutorial'
 .OH 'PMake \*- A Tutorial''PSD:12-%'
@@ -52,9 +52,6 @@
 .\" up with such weird commands, they came from running grn on a
 .\" gremlin file...
 .de No
-(\(*D)
-..
-.de nO
 .br
 .ne 0.5i
 .po -0.5i
@@ -129,8 +126,8 @@ considerably faster. It also has a great deal more functionality than
 Make. Throughout the text, whenever something is mentioned that is an
 important difference between PMake and Make (i.e.  something that will
 cause a makefile to fail if you don't do something about it), or is
-simply important, it will be flagged with a parenthetical delta
-symbol, like this:
+simply important, it will be flagged with a little sign in the left
+margin, like this:
 .No
 .LP
 This tutorial is divided into three main sections corresponding to basic,
@@ -173,7 +170,6 @@ Variable assignments
 .IP \(bu 2
 Comments, include statements and conditional directives
 .RE
-.ne 1i
 .LP
 Any line may be continued over multiple lines by ending it with a
 backslash.
@@ -874,7 +870,6 @@ flags (see below)),
 .Ix 0 ref flags -L
 .Ix 0 ref flags -J
 but you do have to be careful at times.
-.pl +1
 .LP
 There are several problems you are likely to encounter. One is
 that some makefiles (and programs) are written in such a way that it is
@@ -901,8 +896,6 @@ thus giving you the shell variable
 Since only one shell is used for all the
 commands, you'll get the same file name for each command in the
 script.
-.ne 1i
-.pl -1
 .LP
 The other problem comes from improperly-specified dependencies that
 worked in Make because of its sequential, depth-first way of examining
@@ -1531,6 +1524,9 @@ Debugging of makefiles is best accomplished using the
 and
 .B "\-p 2"
 flags.
+.xH 2 Exercises
+.ce
+\s+4\fBTBA\fP\s0
 .xH 1 Short-cuts and Other Nice Things
 .LP
 Based on what I've told you so far, you may have gotten the impression
@@ -2369,7 +2365,6 @@ E.g. if you have
 \&.PATH.bitmap    : /usr/local/X/lib/bitmaps
 \&.INCLUDES       : .bitmap
 .DE
-.ne 1i
 PMake will place
 .CW "-I/usr/local/X/lib/bitmaps" '' ``
 in the
@@ -2660,7 +2655,8 @@ $(\fIVARIABLE\fP:\fIsearch-string\fP=\fIreplacement\fP)
 .DE
 It must be the last modifier in the chain. The search is anchored at
 the end of each word, so only suffixes or whole words may be replaced.
-.xH 2 Exercises
+.xH 2 More on Debugging
+.xH 2 More Exercises
 .IP (3.1)
 You've got a set programs, each of which is created from its own
 assembly-language source file (suffix
@@ -2927,9 +2923,7 @@ _MAKELIB_MK	=
 \&.po.a .o.a	:
 	...
 	rm -f $(.MEMBER)
-.DE
-.DS
-.SM
+
 ARFLAGS		?= crl
 
 #
