@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_inet.c	7.12 (Berkeley) %G%
+ *	@(#)tp_inet.c	7.13 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -408,7 +408,7 @@ tpip_output_dg(laddr, faddr, m0, datalen, ro, nochksum)
 		dump_mbuf(m, "tpip_output_dg before ip_output\n");
 	ENDDEBUG
 
-	error = ip_output(m, (struct mbuf *)0, ro, IP_ALLOWBROADCAST);
+	error = ip_output(m, (struct mbuf *)0, ro, IP_ALLOWBROADCAST, NULL);
 
 	IFDEBUG(D_EMIT)
 		printf("tpip_output_dg after ip_output\n");
@@ -573,9 +573,9 @@ tpip_ctlinput(cmd, sin)
 	struct sockaddr_in *sin;
 {
 	extern u_char inetctlerrmap[];
-	extern ProtoHook tpin_abort();
-	extern ProtoHook in_rtchange();
 	extern struct in_addr zeroin_addr;
+	void tp_quench __P((struct inpcb *,int));
+	void tpin_abort __P((struct inpcb *,int));
 
 	if (sin->sin_family != AF_INET && sin->sin_family != AF_IMPLINK)
 		return 0;
@@ -586,8 +586,8 @@ tpip_ctlinput(cmd, sin)
 	switch (cmd) {
 
 		case	PRC_QUENCH:
-			in_pcbnotify(&tp_inpcb, sin, 0,
-				zeroin_addr, 0, cmd, (int (*)())tp_quench);
+			in_pcbnotify(&tp_inpcb, (struct sockaddr *)sin, 0,
+				zeroin_addr, 0, cmd, tp_quench);
 			break;
 
 		case	PRC_ROUTEDEAD:
@@ -595,7 +595,7 @@ tpip_ctlinput(cmd, sin)
 		case	PRC_UNREACH_NET:
 		case	PRC_IFDOWN:
 		case	PRC_HOSTDEAD:
-			in_pcbnotify(&tp_inpcb, sin, 0,
+			in_pcbnotify(&tp_inpcb, (struct sockaddr *)sin, 0,
 				zeroin_addr, 0, cmd, in_rtchange);
 			break;
 
@@ -615,8 +615,8 @@ tpip_ctlinput(cmd, sin)
 		case	PRC_TIMXCEED_REASS:
 		case	PRC_PARAMPROB:
 		*/
-		in_pcbnotify(&tp_inpcb, sin, 0, zeroin_addr, 0,
-				cmd, tpin_abort);
+		in_pcbnotify(&tp_inpcb, (struct sockaddr *)sin, 0,
+			zeroin_addr, 0, cmd, tpin_abort);
 	}
 	return 0;
 }
