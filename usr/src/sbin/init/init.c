@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 #include <signal.h>
@@ -63,9 +63,12 @@ long	lseek();
 struct	sigvec rvec = { reset, sigmask(SIGHUP), 0 };
 
 
-#ifdef vax
+#if defined(vax) || defined(tahoe)
 main()
 {
+#if defined(tahoe)
+	register int r12;		/* make sure r11 gets bootflags */
+#endif
 	register int r11;		/* passed thru from boot */
 #else
 main(argc, argv)
@@ -75,7 +78,7 @@ main(argc, argv)
 	int howto, oldhowto;
 
 	time0 = time(0);
-#ifdef vax
+#if defined(vax) || defined(tahoe)
 	howto = r11;
 #else
 	if (argc > 1 && argv[1][0] == '-') {
