@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_input.c	7.25 (Berkeley) %G%
+ *	@(#)tp_input.c	7.26 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -393,7 +393,7 @@ tp_input(m, faddr, laddr, cons_channel, dgout_routine, ce_bit)
 	int 					error = 0;
 	unsigned 				dutype;
 	u_short 				dref, sref = 0, acktime = 2, subseq = 0; /*VAX*/
-	u_char 					preferred_class = 0, class_to_use = 0;
+	u_char 					preferred_class = 0, class_to_use = 0, pdusize = 0;
 	u_char					opt, dusize = TP_DFL_TPDUSIZE, addlopt = 0, version;
 #ifdef TP_PERF_MEAS
 	u_char					perf_meas;
@@ -511,6 +511,16 @@ again:
 				/* COS tests: NBS IA (Dec. 1987) Sec. 4.5.2.1 */
 				if (dusize < TP_MIN_TPDUSIZE || dusize > TP_MAX_TPDUSIZE)
 						dusize = TP_DFL_TPDUSIZE;
+				break;
+			case	TPP_ptpdu_size:
+				switch (vbptr(P)->tpv_len) {
+				case 1: pdusize = vbval(P, u_char); break;
+				case 2: pdusize = ntohs(vbval(P, u_short)); break;
+				default: ;
+				IFDEBUG(D_TPINPUT)
+					printf("malformed prefered TPDU option\n");
+				ENDDEBUG
+				}
 				break;
 			case	TPP_addl_opt:
 				vb_getval(P, u_char, addlopt);
@@ -706,6 +716,7 @@ again:
 			tpp = tpcb->_tp_param;
 			tpp.p_class = class_to_use;
 			tpp.p_tpdusize = dusize;
+			tpp.p_ptpdusize = pdusize;
 			tpp.p_xtd_format = (opt & TPO_XTD_FMT) == TPO_XTD_FMT;
 			tpp.p_xpd_service = (addlopt & TPAO_USE_TXPD) == TPAO_USE_TXPD;
 			tpp.p_use_checksum = (tpp.p_class == TP_CLASS_0)?0:
@@ -925,6 +936,7 @@ again:
             CONG_UPDATE_SAMPLE(tpcb, ce_bit);
 
 		dusize = tpcb->tp_tpdusize;
+		pdusize = tpcb->tp_ptpdusize;
 
 		dutype = hdr->tpdu_type << 8; /* for the switch below */ 
 
@@ -948,6 +960,23 @@ again:
 					IFDEBUG(D_TPINPUT)
 						printf("CC dusize 0x%x\n", dusize);
 					ENDDEBUG
+				}
+					break;
+			caseof( CC_TPDU_type, TPP_ptpdu_size ): 
+				{
+					u_short opdusize = pdusize;
+					switch (vbptr(P)->tpv_len) {
+					case 1: pdusize = vbval(P, u_char); break;
+					case 2: pdusize = ntohs(vbval(P, u_short)); break;
+					default: ;
+					IFDEBUG(D_TPINPUT)
+						printf("malformed prefered TPDU option\n");
+					ENDDEBUG
+					}
+					CHECK( (pdusize == 0 ||
+							(opdusize && (pdusize > opdusize))),
+						E_TP_INV_PVAL, ts_inv_pval, respond,
+						(1 + (caddr_t)&vbptr(P)->tpv_val - (caddr_t)hdr) )
 				}
 					break;
 			caseof( CC_TPDU_type, TPP_calling_sufx):
@@ -1060,6 +1089,7 @@ again:
 				tpp = tpcb->_tp_param;
 				tpp.p_class = (1<<hdr->tpdu_CCclass);
 				tpp.p_tpdusize = dusize;
+				tpp.p_ptpdusize = pdusize;
 				tpp.p_dont_change_params = 0;
 				tpp.p_xtd_format = (opt & TPO_XTD_FMT) == TPO_XTD_FMT;
 				tpp.p_xpd_service = (addlopt & TPAO_USE_TXPD) == TPAO_USE_TXPD;

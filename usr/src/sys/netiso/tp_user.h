@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_user.h	7.11 (Berkeley) %G%
+ *	@(#)tp_user.h	7.12 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -70,7 +70,7 @@ struct tp_conn_param {
 	short	p_ref_ticks;
 	short	p_inact_ticks;
 
-	short	p_unused;	/* was .. local credit fraction reported (>0) */
+	short	p_ptpdusize;	/* preferred tpdusize/128 */
 	short	p_winsize;
 
 	u_char	p_tpdusize; 	/* log 2 of size */
