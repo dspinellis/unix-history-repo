@@ -280,7 +280,7 @@ main(argc, argv)
 #ifdef POSIX
 		if (fork() > 0)
 			exit(0);
-		if (setsid() != 0)
+		if (setsid() == -1)
 			perror("setsid");
 #else
 		if ((fd = open("/dev/tty", O_RDONLY, 0)) >= 0) {
