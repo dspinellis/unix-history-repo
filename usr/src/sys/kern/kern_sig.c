@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.19	83/05/31	*/
+/*	kern_sig.c	5.19	83/06/02	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -23,39 +23,121 @@
 #include "../h/kernel.h"
 #include "../h/nami.h"
 
-/* KILL CODE SHOULDNT KNOW ABOUT PROCESS INTERNALS !?! */
-
 sigvec()
 {
+	struct a {
+		int	signo;
+		int	(*sighandler)();
+		int	sigmask;
+	} *uap = (struct a  *)u.u_ap;
+	register int sig;
 
+	sig = uap->signo;
+	if (sig <= 0 || sig >= NSIG || sig == SIGKILL || sig == SIGSTOP ||
+	    (sig == SIGCONT && uap->sighandler == SIG_IGN)) {
+		u.u_error = EINVAL;
+		return;
+	}
+	setsignal(sig, uap->sighandler, uap->sigmask);
+}
+
+setsignal(sig, action, sigmask)
+	int sig, (*action)(), sigmask;
+{
+	register struct proc *p;
+	register int mask;
+
+	u.u_r.r_val1 = (int)u.u_signal[sig];
+	mask = 1 << (sig - 1);
+	p = u.u_procp;
+	/*
+	 * Change setting atomically.
+	 */
+	(void) spl6();
+	u.u_signal[sig] = action;
+	u.u_sigmask[sig] = sigmask;
+	if (action == SIG_IGN) {
+		p->p_sig &= ~mask;		/* never to be seen again */
+		p->p_sigignore |= mask;
+		p->p_sigcatch &= ~mask;
+	} else {
+		p->p_sigignore &= ~mask;
+		if (action == SIG_DFL)
+			p->p_sigcatch &= ~mask;
+		else
+			p->p_sigcatch |= mask;
+	}
+	(void) spl0();
 }
 
 sigblock()
 {
+	struct a {
+		int	mask;
+	} *uap = (struct a *)u.u_ap;
+	struct proc *p = u.u_procp;
 
+	(void) spl6();
+	u.u_r.r_val1 = p->p_sigmask;
+	p->p_sigmask |= uap->mask;
+	(void) spl0();
 }
 
 sigsetmask()
 {
+	struct a {
+		int	mask;
+	} *uap = (struct a *)u.u_ap;
+	register struct proc *p = u.u_procp;
 
+	(void) spl6();
+	u.u_r.r_val1 = p->p_sigmask;
+	p->p_sigmask = uap->mask;
+	(void) spl0();
 }
 
 sigpause()
 {
+	struct a {
+		int	mask;
+	} *uap = (struct a *)u.u_ap;
+	register struct proc *p = u.u_procp;
 
+	/*
+	 * When returning from sigpause, we want
+	 * the old mask to be restored after the
+	 * signal handler has finished.  Thus, we
+	 * save it here and mark the proc structure
+	 * to indicate this (should be in u.).
+	 */
+	u.u_oldmask = p->p_sigmask;
+	p->p_flag |= SOMASK;
+	p->p_sigmask = uap->mask;
+	for (;;)
+		sleep((caddr_t)&u, PSLEP);
+	/*NOTREACHED*/
 }
 
 sigstack()
 {
+	struct a {
+		caddr_t	asp;
+		int	onsigstack;
+	} *uap = (struct a *)u.u_ap;
 
+	u.u_sigstack = uap->asp;
+	u.u_onsigstack = uap->onsigstack;
 }
 
-#ifdef notdef
 kill()
 {
+	register struct a {
+		int	pid;
+		int	signo;
+	} *uap = (struct a *)u.u_ap;
 
+	u.u_error = kill1(0, uap->signo, uap->pid);
 }
-#endif
 
 killpg()
 {
@@ -66,6 +148,8 @@ killpg()
 
 	u.u_error = kill1(1, uap->signo, uap->pgrp);
 }
+
+/* KILL CODE SHOULDNT KNOW ABOUT PROCESS INTERNALS !?! */
 
 kill1(ispgrp, signo, who)
 	int ispgrp, signo, who;
@@ -117,8 +201,6 @@ kill1(ispgrp, signo, who)
  * Send the specified signal to
  * all processes with 'pgrp' as
  * process group.
- * Called by tty.c for quits and
- * interrupts.
  */
 gsignal(pgrp, sig)
 	register int pgrp;
@@ -142,28 +224,30 @@ psignal(p, sig)
 {
 	register int s;
 	register int (*action)();
-	long sigmask;
+	int sigmask;
 
 	if ((unsigned)sig >= NSIG)
 		return;
-	sigmask = (1L << (sig-1));
+	sigmask = 1 << (sig-1);
 
 	/*
 	 * If proc is traced, always give parent a chance.
-	 * Otherwise get the signal action from the bits in the proc table.
 	 */
 	if (p->p_flag & STRC)
 		action = SIG_DFL;
 	else {
-		s = (p->p_siga1&sigmask) != 0;
-		s <<= 1;
-		s |= (p->p_siga0&sigmask) != 0;
-		action = (int(*)())s;
 		/*
-		 * If the signal is ignored, we forget about it immediately.
+		 * If the signal is being ignored,
+		 * then we forget about it immediately.
 		 */
-		if (action == SIG_IGN)
+		if (p->p_sigignore & sigmask)
 			return;
+		if (p->p_sigmask & sigmask)
+			action = SIG_HOLD;
+		else if (p->p_sigcatch & sigmask)
+			action = SIG_CATCH;
+		else
+			action = SIG_DFL;
 	}
 #define mask(sig)	(1<<(sig-1))
 #define	stops	(mask(SIGSTOP)|mask(SIGTSTP)|mask(SIGTTIN)|mask(SIGTTOU))
@@ -172,7 +256,7 @@ psignal(p, sig)
 		switch (sig) {
 
 		case SIGTERM:
-			if ((p->p_flag&STRC) != 0 || action != SIG_DFL)
+			if ((p->p_flag&STRC) || action != SIG_DFL)
 				break;
 			/* fall into ... */
 
@@ -370,24 +454,23 @@ issig()
 {
 	register struct proc *p;
 	register int sig;
-	long sigbits;
-	long sigmask;
+	int sigbits, sigmask;
 
 	p = u.u_procp;
 	for (;;) {
 		sigbits = p->p_sig;
 		if ((p->p_flag&STRC) == 0)
-			sigbits &= ~p->p_ignsig;
+			sigbits &= ~(p->p_sigignore | p->p_sigmask);
 		if (p->p_flag&SVFORK)
 #define bit(a) (1<<(a-1))
 			sigbits &= ~(bit(SIGSTOP)|bit(SIGTSTP)|bit(SIGTTIN)|bit(SIGTTOU));
 		if (sigbits == 0)
 			break;
-		sig = ffs((int)sigbits);
-		sigmask = 1L << (sig-1);
+		sig = ffs(sigbits);
+		sigmask = 1 << (sig-1);
 		p->p_sig &= ~sigmask;		/* take the signal! */
 		p->p_cursig = sig;
-		if (p->p_flag&STRC && (p->p_flag&SVFORK)==0) {
+		if (p->p_flag&STRC && (p->p_flag&SVFORK) == 0) {
 			/*
 			 * If traced, always stop, and stay
 			 * stopped until released by the parent.
@@ -449,6 +532,7 @@ issig()
 
 			case SIGCONT:
 			case SIGCHLD:
+			case SIGURG:
 				/*
 				 * These signals are normally not
 				 * sent if the action is the default.
@@ -523,40 +607,50 @@ stop(p)
  */
 psig()
 {
-	register struct proc *rp = u.u_procp;
-	register int n = rp->p_cursig;
-	long sigmask = 1L << (n-1);
+	register struct proc *p = u.u_procp;
+	register int sig = p->p_cursig;
+	int sigmask = 1 << (sig - 1), returnmask;
 	register int (*action)();
 
-	if (rp->p_cursig == 0)
+	if (sig == 0)
 		panic("psig");
-	action = u.u_signal[n];
+	action = u.u_signal[sig];
 	if (action != SIG_DFL) {
-		if (action == SIG_IGN || action == SIG_HOLD)
+		if (action == SIG_IGN || (p->p_sigmask & sigmask))
 			panic("psig action");
 		u.u_error = 0;
-		if (n != SIGILL && n != SIGTRAP)
-			u.u_signal[n] = 0;
 		/*
-		 * If this catch value indicates automatic holding of
-		 * subsequent signals, set the hold value.
+		 * Set the new mask value and also defer further
+		 * occurences of this signal (unless we're simulating
+		 * the old signal facilities). 
+		 *
+		 * Special case: user has done a sigpause.  Here the
+		 * current mask is not of interest, but rather the
+		 * mask from before the sigpause is what we want restored
+		 * after the signal processing is completed.
 		 */
-		if (SIGISDEFER(action)) {
-			(void) spl6();
-			/* SIG_HOLD known to be 3 */
-			rp->p_siga0 |= sigmask;
-			rp->p_siga1 |= sigmask;
-			u.u_signal[n] = SIG_HOLD;
-			(void) spl0();
-			action = SIGUNDEFER(action);
+		(void) spl6();
+		if (p->p_flag & SOUSIG) {
+			if (sig != SIGILL && sig != SIGTRAP) {
+				u.u_signal[sig] = SIG_DFL;
+				p->p_sigcatch &= ~sigmask;
+			}
+			sigmask = 0;
 		}
+		if (p->p_flag & SOMASK) {
+			returnmask = u.u_oldmask;
+			p->p_flag &= ~SOMASK;
+		} else
+			returnmask = p->p_sigmask;
+		p->p_sigmask = u.u_sigmask[sig] | sigmask;
+		(void) spl0();
 		u.u_ru.ru_nsignals++;
-		sendsig(action, n);
-		rp->p_cursig = 0;
+		sendsig(action, sig, returnmask);
+		p->p_cursig = 0;
 		return;
 	}
 	u.u_acflag |= AXSIG;
-	switch (n) {
+	switch (sig) {
 
 	case SIGILL:
 	case SIGIOT:
@@ -567,11 +661,11 @@ psig()
 	case SIGFPE:
 	case SIGSEGV:
 	case SIGSYS:
-		u.u_arg[0] = n;
+		u.u_arg[0] = sig;
 		if (core())
-			n += 0200;
+			sig += 0200;
 	}
-	exit(n);
+	exit(sig);
 }
 
 /*
@@ -612,11 +706,10 @@ core()
 	}
 	itrunc(ip, (u_long)0);
 	u.u_acflag |= ACORE;
-	/* if (u.u_error == 0) */
-		u.u_error = rdwri(UIO_WRITE, ip,
-		    (caddr_t)&u,
-		    ctob(UPAGES),
-		    0, 1, (int *)0);
+	u.u_error = rdwri(UIO_WRITE, ip,
+	    (caddr_t)&u,
+	    ctob(UPAGES),
+	    0, 1, (int *)0);
 	if (u.u_error == 0)
 		u.u_error = rdwri(UIO_WRITE, ip,
 		    (caddr_t)ctob(dptov(u.u_procp, 0)),

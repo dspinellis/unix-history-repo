@@ -1,4 +1,4 @@
-/*	trap.c	4.27	83/01/22	*/
+/*	trap.c	4.28	83/06/02	*/
 
 #include "../machine/psl.h"
 #include "../machine/reg.h"
@@ -190,6 +190,10 @@ syscall(sp, type, code, pc, psl)
 	if (!USERMODE(locr0[PS]))
 		panic("syscall");
 	u.u_ar0 = locr0;
+	if (code == 139) {			/* XXX */
+		sigcleanup();			/* XXX */
+		goto done;			/* XXX */
+	}
 	params = (caddr_t)locr0[AP] + NBPW;
 	u.u_error = 0;
 	opc = pc - 2;
@@ -246,8 +250,10 @@ asm("ok:");						/* GROT */
 	locr0[PS] &= ~PSL_C;
 	if (u.u_eosys == RESTARTSYS)
 		pc = opc;
+#ifdef notdef
 	else if (u.u_eosys == SIMULATERTI)
 		dorti();
+#endif
 	else if (u.u_error) {
 #ifndef lint
 bad:
@@ -258,6 +264,7 @@ bad:
 		locr0[R0] = u.u_r.r_val1;
 		locr0[R1] = u.u_r.r_val2;
 	}
+done:
 	p = u.u_procp;
 	if (p->p_cursig || ISSIG(p))
 		psig();

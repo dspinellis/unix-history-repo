@@ -1,4 +1,4 @@
-/*	kern_exit.c	4.2	83/05/31	*/
+/*	kern_exit.c	4.3	83/06/02	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -51,14 +51,10 @@ exit(rv)
 	p = u.u_procp;
 	p->p_flag &= ~(STRC|SULOCK);
 	p->p_flag |= SWEXIT;
-	(void) spl6();
-	/* we know SIG_IGN is 1 */
-	p->p_siga0 = ~0;
-	p->p_siga1 = 0;
-	(void) spl0();
+	p->p_sigignore = ~0;
 	p->p_cpticks = 0;
 	p->p_pctcpu = 0;
-	for (i=0; i<NSIG; i++)
+	for (i = 0; i < NSIG; i++)
 		u.u_signal[i] = SIG_IGN;
 	untimeout(realitexpire, (caddr_t)p);
 	/*
@@ -224,8 +220,9 @@ loop:
 			p->p_osptr = 0;
 			p->p_cptr = 0;
 			p->p_sig = 0;
-			p->p_siga0 = 0;
-			p->p_siga1 = 0;
+			p->p_sigcatch = 0;
+			p->p_sigignore = 0;
+			p->p_sigmask = 0;
 			p->p_pgrp = 0;
 			p->p_flag = 0;
 			p->p_wchan = 0;
@@ -240,14 +237,13 @@ loop:
 			return (0);
 		}
 	}
-	if (f == 0) {
+	if (f == 0)
 		return (ECHILD);
-	}
 	if (options&WNOHANG) {
 		u.u_r.r_val1 = 0;
 		return (0);
 	}
-	if ((u.u_procp->p_flag&SNUSIG) && setjmp(&u.u_qsave)) {
+	if ((u.u_procp->p_flag&SOUSIG) == 0 && setjmp(&u.u_qsave)) {
 		u.u_eosys = RESTARTSYS;
 		return (0);
 	}

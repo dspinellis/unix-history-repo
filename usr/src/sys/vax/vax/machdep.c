@@ -1,4 +1,4 @@
-/*	machdep.c	4.78	83/05/21	*/
+/*	machdep.c	4.79	83/06/02	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -244,39 +244,53 @@ vmtime(otime, olbolt, oicr)
 #endif
 
 /*
- * Send an interrupt to process
+ * Send an interrupt to process.
  *
- * SHOULD CHANGE THIS TO PASS ONE MORE WORD SO THAT ALL INFORMATION
- * PROVIDED BY HARDWARE IS AVAILABLE TO THE USER PROCESS.
+ * Stack is set up to allow sigcode stored
+ * in u. to call routine, followed by chmk
+ * to sigcleanup routine below.  After sigcleanup
+ * resets the signal mask and the notion of
+ * onsigstack, it returns to user who then
+ * unwinds with the rei at the bottom of sigcode.
  */
-sendsig(p, n)
-	int (*p)();
+sendsig(p, sig, mask)
+	int (*p)(), sig, mask;
 {
 	register int *usp, *regs;
+	int oonsigstack;
 
 	regs = u.u_ar0;
-	usp = (int *)regs[SP];
-	usp -= 5;
+	oonsigstack = u.u_onsigstack;
+	if (!u.u_onsigstack && u.u_sigstack) {
+		usp = (int *)u.u_sigstack;
+		u.u_onsigstack = 1;
+	} else
+		usp = (int *)regs[SP];
+	usp -= 8;
 	if ((int)usp <= USRSTACK - ctob(u.u_ssize))
 		(void) grow((unsigned)usp);
 	;			/* Avoid asm() label botch */
 #ifndef lint
-	asm("probew $3,$20,(r11)");
+	asm("probew $3,$32,(r11)");
 	asm("beql bad");
 #else
-	if (useracc((caddr_t)usp, 0x20, 1))
+	if (useracc((caddr_t)usp, 32, 1))
 		goto bad;
 #endif
-	*usp++ = n;
-	if (n == SIGILL || n == SIGFPE) {
+	*usp++ = sig;
+	if (sig == SIGILL || sig == SIGFPE) {
 		*usp++ = u.u_code;
 		u.u_code = 0;
 	} else
 		*usp++ = 0;
+	*usp++ = (int)(usp + 2);
 	*usp++ = (int)p;
+	/* struct sigcontext used for the inward return */
+	*usp++ = oonsigstack;
+	*usp++ = mask;
 	*usp++ = regs[PC];
 	*usp++ = regs[PS];
-	regs[SP] = (int)(usp - 5);
+	regs[SP] = (int)(usp - 8);
 	regs[PS] &= ~(PSL_CM|PSL_FPD);
 	regs[PC] = (int)u.u_pcb.pcb_sigc;
 	return;
@@ -288,11 +302,38 @@ bad:
 	 * instruction to halt it in its tracks.
 	 */
 	u.u_signal[SIGILL] = SIG_DFL;
-	u.u_procp->p_siga0 &= ~(1<<(SIGILL-1));
-	u.u_procp->p_siga1 &= ~(1<<(SIGILL-1));
+	sig = 1 << (SIGILL - 1);
+	u.u_procp->p_sigignore &= ~sig;
+	u.u_procp->p_sigcatch &= ~sig;
+	u.u_procp->p_sigmask &= ~sig;
 	psignal(u.u_procp, SIGILL);
 }
 
+/*
+ * Routine to cleanup state after a signal
+ * has been taken.  Reset signal mask and
+ * notion of on signal stack from context
+ * left there by sendsig (above).  Pop these
+ * values in preparation for rei which follows
+ * return from this routine.
+ */
+sigcleanup()
+{
+	register int *usp = (int *)u.u_ar0[SP];
+
+#ifndef lint
+	asm("prober $3,$8,(r11)");
+	asm("bnequ 1f; ret; 1:");
+#else
+	if (useracc((caddr_t)usp, 8, 0))
+		return;
+#endif
+	u.u_onsigstack = *usp++ & 01;
+	u.u_procp->p_sigmask = *usp++;
+	u.u_ar0[SP] = (int)usp;
+}
+
+#ifdef notdef
 dorti()
 {
 	struct frame frame;
@@ -326,6 +367,7 @@ dorti()
 	u.u_ar0[PS] &= ~PSL_USERCLR;
 	u.u_ar0[SP] = (int)sp;
 }
+#endif
 
 /*
  * Memenable enables the memory controlle corrected data reporting.

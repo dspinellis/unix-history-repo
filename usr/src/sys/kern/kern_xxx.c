@@ -1,4 +1,4 @@
-/*	kern_xxx.c	4.2	83/05/31	*/
+/*	kern_xxx.c	4.3	83/06/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -325,64 +325,30 @@ okill()
 
 ossig()
 {
-	register int (*f)();
 	struct a {
 		int	signo;
 		int	(*fun)();
-	} *uap;
-	register struct proc *p = u.u_procp;
-	register a;
-	long sigmask;
+	} *uap = (struct a *)u.u_ap;
+	register int a, (*f)();
+	struct proc *p = u.u_procp;
 
-	uap = (struct a *)u.u_ap;
-	a = uap->signo & SIGNUMMASK;
 	f = uap->fun;
-	if (a<=0 || a>=NSIG || a==SIGKILL || a==SIGSTOP ||
-	    a==SIGCONT && (f == SIG_IGN || f == SIG_HOLD)) {
+	a = uap->signo;
+	/*
+	 * Kill processes trying to use job control facilities
+	 * (this'll help us find any vestiges of the old stuff).
+	 */
+	if ((a &~ 0377) ||
+	    (f != SIG_DFL && f != SIG_IGN && ((int)f) & 1)) {
+		psignal(p, SIGSYS);
+		return;
+	}
+	if (a <= 0 || a >= NSIG || a == SIGKILL || a == SIGSTOP ||
+	    a == SIGCONT && (f == SIG_IGN || f == SIG_HOLD)) {
 		u.u_error = EINVAL;
 		return;
 	}
-	if ((uap->signo &~ SIGNUMMASK) || (f != SIG_DFL && f != SIG_IGN &&
-	    SIGISDEFER(f)))
-		u.u_procp->p_flag |= SNUSIG;
-	/* 
-	 * Don't clobber registers if we are to simulate
-	 * a ret+rti.
-	 */
-	if ((uap->signo&SIGDORTI) == 0)
-		u.u_r.r_val1 = (int)u.u_signal[a];
-	/*
-	 * Change setting atomically.
-	 */
-	(void) spl6();
-	sigmask = 1L << (a-1);
-	if (f == SIG_IGN)
-		p->p_sig &= ~sigmask;		/* never to be seen again */
-	u.u_signal[a] = f;
-	if (f != SIG_DFL && f != SIG_IGN && f != SIG_HOLD)
-		f = SIG_CATCH;
-	if ((int)f & 1)
-		p->p_siga0 |= sigmask;
-	else
-		p->p_siga0 &= ~sigmask;
-	if ((int)f & 2)
-		p->p_siga1 |= sigmask;
-	else
-		p->p_siga1 &= ~sigmask;
-	(void) spl0();
-	/*
-	 * Now handle options.
-	 */
-	if (uap->signo & SIGDOPAUSE) {
-		/*
-		 * Simulate a PDP11 style wait instrution which
-		 * atomically lowers priority, enables interrupts
-		 * and hangs.
-		 */
-		opause();
-		/*NOTREACHED*/
-	}
-	if (uap->signo & SIGDORTI)
-		u.u_eosys = SIMULATERTI;
+	setsignal(a, f, 0);
+	p->p_flag |= SOUSIG;		/* mark as simulating old stuff */
 }
 #endif

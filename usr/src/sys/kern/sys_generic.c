@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.36	83/05/27	*/
+/*	sys_generic.c	5.37	83/06/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -129,7 +129,7 @@ rwuio(uio, rw)
 	}
 	count = uio->uio_resid;
 	uio->uio_offset = fp->f_offset;
-	if ((u.u_procp->p_flag&SNUSIG) && setjmp(&u.u_qsave)) {
+	if ((u.u_procp->p_flag&SOUSIG) == 0 && setjmp(&u.u_qsave)) {
 		if (uio->uio_resid == count)
 			u.u_eosys = RESTARTSYS;
 	} else
