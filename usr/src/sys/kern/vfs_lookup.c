@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_lookup.c	7.9 (Berkeley) %G%
+ *	@(#)vfs_lookup.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -82,10 +82,12 @@ namei(ndp)
 	int docache;			/* == 0 do not cache last component */
 	int flag;			/* LOOKUP, CREATE, RENAME or DELETE */
 	int wantparent;			/* 1 => wantparent or lockparent flag */
+	int lockparent;			/* 1 => lockparent flag */
 	int error = 0;
 
 	flag = ndp->ni_nameiop & OPFLAG;
 	wantparent = ndp->ni_nameiop & (LOCKPARENT|WANTPARENT);
+	lockparent = ndp->ni_nameiop & LOCKPARENT;
 	docache = (ndp->ni_nameiop & NOCACHE) ^ NOCACHE;
 	if (flag == DELETE || wantparent)
 		docache = 0;
@@ -308,15 +310,17 @@ dirloop:
 			goto bad2;
 		}
 		if (ndp->ni_pathlen == 1) {
-			bcopy(ndp->ni_next, cp + linklen, ndp->ni_pathlen);
 			FREE(ndp->ni_pnbuf, M_NAMEI);
 			ndp->ni_pnbuf = cp;
-		} else
 			ndp->ni_pnbuf[linklen] = '\0';
+		} else
+			bcopy(ndp->ni_next, cp + linklen, ndp->ni_pathlen);
 		ndp->ni_ptr = cp;
 		ndp->ni_pathlen += linklen;
 		vput(dp);
 		dp = ndp->ni_dvp;
+		if (lockparent && *ndp->ni_next == '\0')
+			VOP_UNLOCK(dp);
 		goto start;
 	}
 
@@ -365,6 +369,8 @@ nextname:
 	return (0);
 
 bad2:
+	if (lockparent && *ndp->ni_next == '\0')
+		VOP_UNLOCK(ndp->ni_dvp);
 	vrele(ndp->ni_dvp);
 bad:
 	vput(dp);
