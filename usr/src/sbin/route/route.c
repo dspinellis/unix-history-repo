@@ -13,7 +13,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)route.c	5.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)route.c	5.46 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -65,7 +65,6 @@ int	s;
 int	forcehost, forcenet, doflush, nflag, af, qflag, tflag, keyword();
 int	iflag, verbose, aflen = sizeof (struct sockaddr_in);
 int	locking, lockrest, debugonly;
-struct	sockaddr_in sin = { sizeof(sin), AF_INET };
 struct	rt_metrics rt_metrics;
 u_long  rtm_inits;
 struct	in_addr inet_makeaddr();
@@ -1031,7 +1030,8 @@ mask_addr()
 	case 0:
 		return;
 	case AF_ISO:
-		olen = MIN(so_dst.siso.siso_nlen, so_mask.sa.sa_len - 6);
+		olen = MIN(so_dst.siso.siso_nlen,
+			   MAX(so_mask.sa.sa_len - 6, 0));
 		break;
 	}
 	cp1 = so_mask.sa.sa_len + 1 + (char *)&so_dst;
@@ -1072,7 +1072,7 @@ char metricnames[] =
 char routeflags[] = 
 "\1UP\2GATEWAY\3HOST\4REJECT\5DYNAMIC\6MODIFIED\7DONE\010MASK_PRESENT\011CLONING\012XRESOLVE\013LLINFO\014STATIC\017PROTO2\020PROTO1";
 char ifnetflags[] = 
-"\1UP\2BROADCAST\3DEBUG\4LOOPBACK\5PTP\6NOTRAILERS\7RUNNING\010NOARP\011PPROMISC\012ALLMULTI\013OACTIVE\014SIMPLEX\015LINK0\016LINK1\017LINK2";
+"\1UP\2BROADCAST\3DEBUG\4LOOPBACK\5PTP\6NOTRAILERS\7RUNNING\010NOARP\011PPROMISC\012ALLMULTI\013OACTIVE\014SIMPLEX\015LINK0\016LINK1\017LINK2\020MULTICAST";
 char addrnames[] =
 "\1DST\2GATEWAY\3NETMASK\4GENMASK\5IFP\6IFA\7AUTHOR\010BRD";
 
