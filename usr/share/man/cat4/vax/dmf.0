@@ -1,0 +1,72 @@
+DMF(4)            BSD Programmer's Manual (VAX Architecture)            DMF(4)
+
+NNAAMMEE
+     ddmmff - DMF-32 terminal multiplexor
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee ddmmff00 aatt uubbaa?? ccssrr 00116600334400 vveeccttoorr ddmmffssrriinntt ddmmffssxxiinntt ddmmffddaaiinntt
+           ddmmffddbbiinntt ddmmffrriinntt ddmmffxxiinntt ddmmfflliinntt
+
+DDEESSCCRRIIPPTTIIOONN
+     The ddmmff device provides 8 lines of asynchronous serial line support.  The
+     first two of these have full modem control.  The device also provides a
+     line printer port similar to the LP-11. Other features of the DMF-32 are
+     not supported.  During autoconfiguration, the driver examines the config-
+     uration of each DMF-32 and adjusts the interrupt vectors so that fewer
+     vector locations are used if possible.
+
+     An optional argument _f_l_a_g_s may be supplied with the device specification
+     in the config file indicating that the line corresponding to bit number _i
+     is not properly connected, and should be treated as hard-wired with car-
+     rier always present.  Thus specifying `flags 0x04' for dmf0 would cause
+     line _t_t_y_A_2 to be treated in this way.  Flags should be set for all lines
+     without hardware support for modem control.
+
+     Normal I/O control parameters for individual lines are managed by
+     ioctl(2) calls.  Line speeds may be initiated via getty(8) and stty(1) or
+     may be communicated by other programs which utilize ioctl such as
+     ifcongif(8),  see tty(4).
+
+     The serial line part of the ddmmff driver normally enables the input silos
+     with a short timeout (30 milliseconds); this allows multiple characters
+     to be received per interrupt during periods of high-speed input.
+
+     A line printer port on a ddmmff is designated by a minor device number of
+     the form 128+_n. See MAKEDEV(8).  Column and lines per page may be changed
+     from the default 132 columns and 66 lines by encoding the number of
+     columns in bits 8-15 of flags and the number of lines in bits 16-23.
+     This device does not provide the fancy output canonicalization features
+     of the lp(4) driver.
+
+FFIILLEESS
+     /dev/tty[A-CE-I][0-7]
+     /dev/ttyd[0-7]
+     /dev/lp
+
+DDIIAAGGNNOOSSTTIICCSS
+     ddmmff%%dd:: NNXXMM lliinnee %%dd..  No response from UNIBUS on a DMA transfer within a
+     timeout period.  This is often followed by a UNIBUS adapter error.  This
+     occurs most frequently when the UNIBUS is heavily loaded and when devices
+     which hog the bus (such as RK07s) are present.  It is not serious.
+
+     ddmmff%%dd:: ssiilloo oovveerrffllooww..  The character input silo overflowed before it
+     could be serviced.  This can happen if a hard error occurs when the CPU
+     is running with elevated priority, as the system will then print a mes-
+     sage on the console with interrupts disabled.  It is not serious.
+
+     ddmmffssrriinntt,, ddmmffssxxiinntt,, ddmmffddaaiinntt,, ddmmffddbbiinntt..  One of the unsupported parts of
+     the dmf interrupted; something is amiss, check your interrupt vectors for
+     a conflict with another device.
+
+SSEEEE AALLSSOO
+     tty(4)
+
+HHIISSTTOORRYY
+     The ddmmff driver appeared in 4.2BSD.
+
+BBUUGGSS
+     It should be possible to set the silo timeout with a configuration file
+     option, as the value is a trade-off between efficiency and response time
+     for flow control and character echo.
+
+4.2 Berkeley Distribution        June 5, 1993                                2

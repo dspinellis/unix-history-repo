@@ -1,0 +1,33 @@
+FL(4)             BSD Programmer's Manual (VAX Architecture)             FL(4)
+
+NNAAMMEE
+     ffll - console floppy interface
+
+DDEESSCCRRIIPPTTIIOONN
+     This is a simple interface to the DEC RX01 floppy disk unit, which is
+     part of the console LSI-11 subsystem for VAX-11/780s. Access is given to
+     the entire floppy consisting of 77 tracks of 26 sectors of 128 bytes.
+
+     All I/O is raw; the seek addresses in raw transfers should be a multiple
+     of 128 bytes and a multiple of 128 bytes should be transferred, as in
+     other ``raw'' disk interfaces.
+
+FFIILLEESS
+     /dev/floppy
+
+DDIIAAGGNNOOSSTTIICCSS
+     None.
+
+SSEEEE AALLSSOO
+     arff(8)
+
+HHIISSTTOORRYY
+     The ffll driver appeared in 4.0BSD.
+
+BBUUGGSS
+     Multiple console floppies are not supported.
+
+     If a write is given with a count not a multiple of 128 bytes then the
+     trailing portion of the last sector will be zeroed.
+
+4th Berkeley Distribution        June 5, 1993                                1

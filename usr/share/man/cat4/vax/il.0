@@ -1,0 +1,54 @@
+IL(4)             BSD Programmer's Manual (VAX Architecture)             IL(4)
+
+NNAAMMEE
+     iill - Interlan NI1010 10 Mb/s Ethernet interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee iill00 aatt uubbaa00 ccssrr 116644000000 vveeccttoorr iillrriinntt iillcciinntt
+
+DDEESSCCRRIIPPTTIIOONN
+     The iill interface provides access to a 10 Mb/s Ethernet network through an
+     Interlan 1010 or 1010A controller.
+
+     Each of the host's network addresses is specified at boot time with an
+     SIOCSIFADDR ioctl(2).  The iill interface employs the address resolution
+     protocol described in arp(4) to dynamically map between Internet and Eth-
+     ernet addresses on the local network.
+
+     The interface normally tries to use a ``trailer'' encapsulation to mini-
+     mize copying data on input and output.  The use of trailers is negotiated
+     with ARP. This negotiation may be disabled, on a per-interface basis, by
+     setting the IFF_NOTRAILERS flag with an SIOCSIFFLAGS ioctl.
+
+DDIIAAGGNNOOSSTTIICCSS
+     iill%%dd:: iinnppuutt eerrrroorr..  The hardware indicated an error in reading a packet
+     off the cable or an illegally sized packet.
+
+     iill%%dd:: ccaann''tt hhaannddllee aaff%%dd..  The interface was handed a message with ad-
+     dresses formatted in an unsuitable address family; the packet was
+     dropped.
+
+     iill%%dd:: sseettaaddddrr ddiiddnn''tt wwoorrkk..  The interface was unable to reprogram its
+     physical ethernet address.  This may happen with very early models of the
+     interface.  This facility is used only when the controller is not the
+     first network interface configured for XNS. The oldest interface tested
+     (2.7.1.0.1.45) has never failed in this way.
+
+     iill%%dd:: rreesseett ffaaiilleedd,, ccssrr==%%bb..
+     iill%%dd:: ssttaattuuss ffaaiilleedd,, ccssrr==%%bb..
+     iill%%dd:: hhaarrddwwaarree ddiiaagg ffaaiilleedd,, ccssrr==%%bb..
+     iill%%dd:: vveerriiffyyiinngg sseettaaddddrr,, ccssrr==%%bb..
+     iill%%dd:: ssttrraayy xxmmiitt iinntteerrrruupptt,, ccssrr==%%bb..
+     iill%%dd:: ccaann''tt iinniittiiaalliizzee..  The above messages indicate a probable hardware
+     error performing the indicated operation during autoconfiguration or ini-
+     tialization.  The status field in the control and status register (the
+     low-order four bits) should indicate the nature of the failure.  See the
+     hardware manual for details.
+
+SSEEEE AALLSSOO
+     netintro(4),  inet(4),  arp(4)
+
+HHIISSTTOORRYY
+     The iill interface appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

@@ -1,0 +1,35 @@
+MEM(4)            BSD Programmer's Manual (VAX Architecture)            MEM(4)
+
+NNAAMMEE
+     mmeemm, kkmmeemm, kkUUmmeemm - memory files
+
+DDEESSCCRRIIPPTTIIOONN
+     The special file //ddeevv//mmeemm is an interface to the physical memory of the
+     computer.  Byte offsets in this file are interpreted as physical memory
+     addresses.  Reading and writing this file is equivalent to reading and
+     writing memory itself.  Only offsets within the bounds of //ddeevv//mmeemm are
+     allowed.
+
+     Kernel virtual memory is accessed through the interface //ddeevv//kkmmeemm in the
+     same manner as //ddeevv//mmeemm. Only kernel virtual addresses that are currently
+     mapped to memory are allowed.
+
+     The file //ddeevv//kkUUmmeemm also refers to kernel virtual memory, but may be used
+     to access areas mapped to UNIBUS address space and other I/O areas.  It
+     forces all accesses to use word (short integer) accesses.
+
+     On the VAX 11/780, the I/O space base address is 20000000(16); on an
+     11/750 the I/O space addresses are of the form fxxxxx(16). On all VAX'en
+     the per-process data size for the current process is UPAGES long and ends
+     at the virtual address 80000000(16).
+
+FFIILLEESS
+     /dev/mem
+     /dev/kmem
+     /dev/kUmem
+
+HHIISSTTOORRYY
+     The mmeemm, kkmmeemm files appeared in Version 6 AT&T UNIX.  The file kkUUmmeemm ap-
+     peared in 3.0BSD.
+
+4th Berkeley Distribution        June 5, 1993                                1

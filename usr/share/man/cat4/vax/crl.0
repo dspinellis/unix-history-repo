@@ -1,0 +1,27 @@
+CRL(4)            BSD Programmer's Manual (VAX Architecture)            CRL(4)
+
+NNAAMMEE
+     ccrrll - VAX 8600 console RL02 interface
+
+DDEESSCCRRIIPPTTIIOONN
+     This is a simple interface to the DEC RL02 disk unit which is part of the
+     console subsystem on the VAX 8600 and 8650.  Access is given to the en-
+     tire RL02 disk; the pack format is the same as that of RL02 disks on oth-
+     er controllers.  As on other VAX console media, transfers are done a word
+     at a time using privileged registers (i.e., slowly).
+
+     All I/O is raw; the seek addresses in raw transfers should be a multiple
+     of 512 bytes and a multiple of 512 bytes should be transferred, as in
+     other ``raw'' disk interfaces.  (Although the sector size is actually 256
+     bytes, the driver allows operations only on 512-byte boundaries.)
+
+FFIILLEESS
+     /dev/crl
+
+SSEEEE AALLSSOO
+     arff(8)
+
+HHIISSTTOORRYY
+     The ccrrll driver appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 5, 1993                                1

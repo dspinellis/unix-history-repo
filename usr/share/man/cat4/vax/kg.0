@@ -1,0 +1,23 @@
+KG(4)             BSD Programmer's Manual (VAX Architecture)             KG(4)
+
+NNAAMMEE
+     kkgg - KL-11/ DL-11W line clock
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee kkgg00 aatt uubbaa00 ccssrr 00117766550000 vveeccttoorr kkgglloocckk
+
+DDEESSCCRRIIPPTTIIOONN
+     A KL-11 or DL-11W can be used as an alternate real time clock source.
+     When configured, certain system statistics and, optionally, system pro-
+     filing work will be collected each time the clock interrupts.  For opti-
+     mum accuracy in profiling, the DL-11W should be configured to interrupt
+     at the highest possible priority level.  The kkgg device driver automati-
+     cally calibrates itself to the line clock frequency.
+
+SSEEEE AALLSSOO
+     kgmon(8),  config(8)
+
+HHIISSTTOORRYY
+     The kkgg driver appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                1

@@ -1,0 +1,55 @@
+TB(4)             BSD Programmer's Manual (VAX Architecture)             TB(4)
+
+NNAAMMEE
+     ttbb - line discipline for digitizing devices
+
+SSYYNNOOPPSSIISS
+     ppsseeuuddoo--ddeevviiccee ttbb
+
+DDEESSCCRRIIPPTTIIOONN
+     This line discipline provides a polled interface to many common digitiz-
+     ing devices which are connected to a host through a serial line.  When
+     these devices stream data at high speed, the use of the line discipline
+     is critical in minimizing the number of samples that would otherwise be
+     lost due to buffer exhaustion in the tty(4) handler.
+
+     The line discipline is enabled by a sequence:
+
+           #include <sys/tablet.h>
+           int ldisc = TBLDISC, fildes; ...
+           ioctl(fildes, TIOCSETD, &ldisc);
+
+     A typical application program then polls the digitizing device by reading
+     a binary data structure which contains: the current X and Y positions (in
+     the device coordinate space), up-down status of the buttons or pen sty-
+     lus, proximity information (when available), and a count of the number of
+     samples received from the input device since it was opened.  In addition,
+     devices such as the GTCO append tilt and pressure information to the end
+     of the aforementioned structure.  For the Polhemus 3-D digitizer the
+     structure read is completely different. Refer to the include file for a
+     complete description.
+
+     While in tablet mode, normal teletype input and output functions take
+     place.  Thus, if an 8 bit output data path is desired, it is necessary to
+     prepare the output line by putting it into RAW mode using ioctl(2).  This
+     must be done _b_e_f_o_r_e changing the discipline with TIOCSETD, as most
+     ioctl(2) calls are disabled while in tablet line-discipline mode.
+
+     The line discipline supports ioctl(2) requests to get/set the operating
+     mode, and to get/set the tablet type and operating mode by _o_r-ing the two
+     values together.
+
+     The line discipline supports digitizing devices which are compatible with
+     Hitachi, GTCO, or Polhemus protocol formats.  For Hitachi there are sev-
+     eral formats with that used in the newer model HDG-1111B the most common.
+
+DDIIAAGGNNOOSSTTIICCSS
+     None.
+
+SSEEEE AALLSSOO
+     tty(4)
+
+HHIISSTTOORRYY
+     The ttbb interface appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 5, 1993                                1

@@ -1,0 +1,102 @@
+IDP(4)                      BSD Programmer's Manual                     IDP(4)
+
+NNAAMMEE
+     iiddpp - Xerox Internet Datagram Protocol
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ssoocckkeett..hh>>
+     ##iinncclluuddee <<nneettnnss//nnss..hh>>
+     ##iinncclluuddee <<nneettnnss//iiddpp..hh>>
+
+     _i_n_t
+     ssoocckkeett(_A_F___N_S, _S_O_C_K___D_G_R_A_M, _0);
+
+DDEESSCCRRIIPPTTIIOONN
+     IDP is a simple, unreliable datagram protocol which is used to support
+     the SOCK_DGRAM abstraction for the Internet protocol family.  IDP sockets
+     are connectionless, and are normally used with the sendto and recvfrom
+     calls, though the connect(2) call may also be used to fix the destination
+     for future packets (in which case the recv(2) or read(2) and send(2) or
+     write(2) system calls may be used).
+
+     Xerox protocols are built vertically on top of IDP. Thus, IDP address
+     formats are identical to those used by SPP. Note that the IDP port space
+     is the same as the SPP port space (i.e. a IDP port may be ``connected''
+     to a SPP port, with certain options enabled below).  In addition broad-
+     cast packets may be sent (assuming the underlying network supports this)
+     by using a reserved ``broadcast address''; this address is network inter-
+     face dependent.
+
+DDIIAAGGNNOOSSTTIICCSS
+     A socket operation may fail with one of the following errors returned:
+
+     [EISCONN]        when trying to establish a connection on a socket which
+                      already has one, or when trying to send a datagram with
+                      the destination address specified and the socket is al-
+                      ready connected;
+
+     [ENOTCONN]       when trying to send a datagram, but no destination ad-
+                      dress is specified, and the socket hasn't been connect-
+                      ed;
+
+     [ENOBUFS]        when the system runs out of memory for an internal data
+                      structure;
+
+     [EADDRINUSE]     when an attempt is made to create a socket with a port
+                      which has already been allocated;
+
+     [EADDRNOTAVAIL]  when an attempt is made to create a socket with a net-
+                      work address for which no network interface exists.
+
+SSOOCCKKEETT OOPPTTIIOONNSS
+     [SO_ALL_PACKETS]        When set, this option defeats automatic process-
+                             ing of Error packets, and Sequence Protocol pack-
+                             ets.
+
+     [SO_DEFAULT_HEADERS]    The user provides the kernel an IDP header, from
+                             which it gleans the Packet Type.  When requested,
+                             the kernel will provide an IDP header, showing
+                             the default packet type, and local and foreign
+                             addresses, if connected.
+
+     [SO_HEADERS_ON_INPUT]   When set, the first 30 bytes of any data returned
+                             from a read or recv from will be the initial 30
+                             bytes of the IDP packet, as described by
+
+                                   struct idp {
+                                           u_short         idp_sum;
+                                           u_short         idp_len;
+                                           u_char          idp_tc;
+                                           u_char          idp_pt;
+                                           struct ns_addr  idp_dna;
+                                           struct ns_addr  idp_sna;
+                                   };
+
+                             This allows the user to determine the packet
+                             type, and whether the packet was a multi-cast
+                             packet or directed specifically at the local
+                             host.  When requested, gives the current state of
+                             the option, (NSP_RAWIN or 0).
+
+     [SO_HEADERS_ON_OUTPUT]  When set, the first 30 bytes of any data sent
+                             will be the initial 30 bytes of the IDP packet.
+                             This allows the user to determine the packet
+                             type, and whether the packet should be multi-cast
+                             packet or directed specifically at the local
+                             host.  You can also misrepresent the sender of
+                             the packet.  When requested, gives the current
+                             state of the option.  (NSP_RAWOUT or 0).
+
+     [SO_SEQNO]              When requested, this returns a sequence number
+                             which is not likely to be repeated until the ma-
+                             chine crashes or a very long time has passed.  It
+                             is useful in constructing Packet Exchange Proto-
+                             col packets.
+
+SSEEEE AALLSSOO
+     send(2),  recv(2),  intro(4),  ns(4)
+
+HHIISSTTOORRYY
+     The iiddpp protocol appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 5, 1993                                2

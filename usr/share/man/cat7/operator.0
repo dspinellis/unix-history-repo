@@ -1,0 +1,28 @@
+OPERATOR(7)                  BSD Reference Manual                  OPERATOR(7)
+
+NNAAMMEE
+     ooppeerraattoorr - C operator precedence and order of evaluation
+
+DDEESSCCRRIIPPTTIIOONN
+           Operator                        Associativity
+           --------                        -------------
+           () [] -> .                      left to right
+           ! ~ ++ -- - (type) * & sizeof   right to left
+           * / %                           left to right
+           + -                             left to right
+           << >>                           left to right
+           < <= > >=                       left to right
+           == !=                           left to right
+           &                               left to right
+           ^                               left to right
+           |                               left to right
+           &&                              left to right
+           ||                              left to right
+           ?:                              right to left
+           = += -= etc.                    right to left
+           ,                               left to right
+
+FFIILLEESS
+     /usr/share/misc/operator
+
+4.4BSD                           June 9, 1993                                1

@@ -1,0 +1,132 @@
+
+
+
+MAKEDEV(8)         BSD System Manager's Manual         MAKEDEV(8)
+
+
+NNAAMMEE
+       MAKEDEV - create system and device special files
+
+SSYYNNOOPPSSIISS
+       MAKEDEV name ...
+
+DDEESSCCRRIIPPTTIIOONN
+       The shell script _M_A_K_E_D_E_V, found in the ``/dev'' directory,
+       is used to create the  common  special  files.   See  _s_p_e_-
+       _c_i_a_l(8) for a more complete discussion of special files.
+
+       _M_A_K_E_D_E_V  takes  any  number  of device names as arguments,
+       where the  names  are  the  common  abbreviation  for  the
+       device.   There  are  two  special  devices,  ``std''  and
+       ``local''.  The former creates the  standard  devices  for
+       the  architecture.   The latter is for devices specific to
+       the   local   site,   and   executes   the   shell    file
+       ``MAKEDEV.local''.
+
+       The  VAX  supports  the following devices.  Where a device
+       name is followed by a hash sign  (``#''),  the  hash  sign
+       must be replaced by a unit number.
+
+       std       the  standard devices (console, crl, csa1, csa2,
+                 drum, fd/*,  floppy,  kUmem,  klog,  kmem,  mem,
+                 null, stderr, stdin, stdout, tty, tu0, tu1)
+       local     configuration specific devices
+       ad#       unibus  interface  to  data translation a/d con-
+                 verter
+       ct#       unibus parallel interface to CAT typesetter
+       dh#       unibus dh11  and  emulations  (e.g.  Able  dmax,
+                 Emulex cs-11)
+       dhu#      unibus dhu11
+       dmf#      unibus dmf32
+       dmz#      unibus dmz32
+       dn#       unibus  dn11  and  emulations (e.g. Able Quadra-
+                 call)
+       dz#       unibus dz11 and dz32
+       hk#       unibus rk06 and rk07
+       hp#       massbus rm??
+       ht#       massbus tm03 & tu??
+       ik#       unibus interface to ikonas frame buffer
+       kra#      bi kdb50 w/ ra??
+       lp#       unibus lp11 parallel interface
+       mt#       massbus tu78
+       np#       unibus  ethernet  co-processor  interface,   for
+                 downloading.
+       ps#       unibus interface to e&s picture system 2
+       pty#      set of 16 master and slave pseudo terminals
+       qv#       qvss (microvax) display
+       ra#       unibus uda50 w/ ra??
+
+
+
+4.4 Berkeley Distribution  June 5, 1993                         1
+
+
+
+
+
+
+
+
+MAKEDEV(8)         BSD System Manager's Manual         MAKEDEV(8)
+
+
+       rb#       730 idc w/ rb80 and/or rb02
+       rl#       unibus rl02
+       rx#       unibus rx211 floppy disk
+       tm#       unibus  tm11  &  te10  emulations  (e.g.  Emulex
+                 tc-11)
+       tms#      unibus/qbus TMSCP (e.g. TU81, TK50)
+       ts#       unibus ts11
+       ttyv0     qvss (microvax) display reserved pty
+       up#       other unibus devices (e.g. on Emulex sc-21v con-
+                 troller)
+       ut#       unibus tu45 emulations (e.g.si 9700)
+       uu#       tu58 cassettes on dl11 controller
+       va#       unibus varian parallel interface
+       vp#       unibus versatec parallel interface
+
+FFIILLEESS
+       /dev      The special file directory.
+
+SSEEEE AALLSSOO
+       _m_k_n_o_d(1), _i_n_t_r_o(4), _c_o_n_f_i_g(8), _s_p_e_c_i_a_l(8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.4 Berkeley Distribution  June 5, 1993                         2
+
+
+
+
+

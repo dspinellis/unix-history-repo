@@ -1,0 +1,86 @@
+INET(4)                     BSD Programmer's Manual                    INET(4)
+
+NNAAMMEE
+     iinneett - Internet protocol family
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<nneettiinneett//iinn..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     The Internet protocol family is a collection of protocols layered atop
+     the _I_n_t_e_r_n_e_t _P_r_o_t_o_c_o_l (IP) transport layer, and utilizing the Internet
+     address format.  The Internet family provides protocol support for the
+     SOCK_STREAM, SOCK_DGRAM, and SOCK_RAW socket types; the SOCK_RAW inter-
+     face provides access to the IP protocol.
+
+AADDDDRREESSSSIINNGG
+     Internet addresses are four byte quantities, stored in network standard
+     format (on the VAX these are word and byte reversed).  The include file
+     <_n_e_t_i_n_e_t_/_i_n_._h> defines this address as a discriminated union.
+
+     Sockets bound to the Internet protocol family utilize the following ad-
+     dressing structure,
+
+           struct sockaddr_in {
+                   short   sin_family;
+                   u_short sin_port;
+                   struct  in_addr sin_addr;
+                   char    sin_zero[8];
+           };
+
+     Sockets may be created with the local address INADDR_ANY to effect
+     ``wildcard'' matching on incoming messages.  The address in a connect(2)
+     or sendto(2) call may be given as INADDR_ANY to mean ``this host''. The
+     distinguished address INADDR_BROADCAST is allowed as a shorthand for the
+     broadcast address on the primary network if the first network configured
+     supports broadcast.
+
+PPRROOTTOOCCOOLLSS
+     The Internet protocol family is comprised of the IP transport protocol,
+     Internet Control Message Protocol (ICMP), Transmission Control Protocol
+     (TCP), and User Datagram Protocol (UDP). TCP is used to support the
+     SOCK_STREAM abstraction while UDP is used to support the SOCK_DGRAM ab-
+     straction.  A raw interface to IP is available by creating an Internet
+     socket of type SOCK_RAW. The ICMP message protocol is accessible from a
+     raw socket.
+
+     The 32-bit Internet address contains both network and host parts.  It is
+     frequency-encoded; the most-significant bit is clear in Class A address-
+     es, in which the high-order 8 bits are the network number.  Class B ad-
+     dresses use the high-order 16 bits as the network field, and Class C ad-
+     dresses have a 24-bit network part.  Sites with a cluster of local net-
+     works and a connection to the Internet may chose to use a single network
+     number for the cluster; this is done by using subnet addressing.  The lo-
+     cal (host) portion of the address is further subdivided into subnet and
+     host parts.  Within a subnet, each subnet appears to be an individual
+     network; externally, the entire cluster appears to be a single, uniform
+     network requiring only a single routing entry.  Subnet addressing is en-
+     abled and examined by the following ioctl(2) commands on a datagram sock-
+     et in the Internet domain; they have the same form as the SIOCIFADDR com-
+     mand (see intro(4)).
+
+     SIOCSIFNETMASK  Set interface network mask.  The network mask defines the
+                     network part of the address; if it contains more of the
+                     address than the address type would indicate, then sub-
+
+                     nets are in use.
+
+     SIOCGIFNETMASK  Get interface network mask.
+
+SSEEEE AALLSSOO
+     ioctl(2),  socket(2),  intro(4),  tcp(4),  udp(4),  ip(4),  icmp(4)
+
+     "An Introductory 4.3 BSD Interprocess Communication Tutorial", _P_S_1, 7.
+
+     "An Advanced 4.3 BSD Interprocess Communication Tutorial", _P_S_1, 8.
+
+CCAAVVEEAATT
+     The Internet protocol support is subject to change as the Internet
+     protocols develop.  Users should not depend on details of the current
+     implementation, but rather the services exported.
+
+HHIISSTTOORRYY
+     The iinneett protocol interface appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                2

@@ -1,0 +1,64 @@
+VP(4)             BSD Programmer's Manual (VAX Architecture)             VP(4)
+
+NNAAMMEE
+     vvpp - Versatec interface
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee vvpp00 aatt uubbaa00 ccssrr 00117777551100 vveeccttoorr vvppiinnttrr vvppiinnttrr
+
+DDEESSCCRRIIPPTTIIOONN
+     The Versatec printer/plotter is normally used with the line printer sys-
+     tem.  This description is designed for those who wish to drive the Ver-
+     satec directly.
+
+     To use the Versatec yourself, you must realize that you cannot open the
+     device, _/_d_e_v_/_v_p_0 if there is a daemon active.  You can see if there is a
+     daemon active by doing a lpq(1),  and seeing if there are any files being
+     sent.  Printing should be turned off using lpc(8).
+
+     To set the Versatec into plot mode you should include <_s_y_s_/_v_c_m_d_._h> and
+     use the ioctl(2) call
+
+           ioctl(fileno(vp), VSETSTATE, plotmd);
+
+     where _p_l_o_t_m_d is defined to be
+
+           int plotmd[] = { VPLOT, 0, 0 };
+
+     and _v_p is the result of a call to fopen on stdio.  When you finish using
+     the Versatec in plot mode you should eject paper by sending it a EOT af-
+     ter putting it back into print mode, i.e. by
+
+           int prtmd[] = { VPRINT, 0, 0 };
+           ...
+           fflush(vp);
+           ioctl(fileno(vp), VSETSTATE, prtmd);
+           write(fileno(vp), "\04", 1);
+
+FFIILLEESS
+     /dev/vp0
+
+DDIIAAGGNNOOSSTTIICCSS
+     The following error numbers are significant at the time the device is
+     opened.
+
+     [ENXIO]  The device is already in use.
+
+     [EIO]    The device is offline.
+
+SSEEEE AALLSSOO
+     lpr(1),  vtroff(1),  va(4) font(5),  lpd(8),
+
+HHIISSTTOORRYY
+     A vvpp driver appeared in Version 7 AT&T UNIX.
+
+BBUUGGSS
+     The configuration part of the driver assumes that the device is set up to
+     vector print mode through 0174 and plot mode through 0200.  As the con-
+     figuration program can't be sure which vector interrupted at boot time,
+     we specify that it has two interrupt vectors, and if an interrupt comes
+     through 0200 it is reset to 0174.  This is safe for devices with one or
+     two vectors at these two addresses.  Other configurations with 2 vectors
+     may require changes in the driver.
+
+4th Berkeley Distribution        June 5, 1993                                1

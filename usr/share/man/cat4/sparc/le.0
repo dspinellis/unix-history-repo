@@ -1,0 +1,21 @@
+LE(4)            BSD Programmer's Manual (SPARC Architecture)            LE(4)
+
+NNAAMMEE
+     llee - SPARC AMD 7990 LANCE ethernet interface
+
+SSYYNNOOPPSSIISS
+     llee** aatt ssbbuuss?? sslloott ?? ooffffsseett ??
+
+DDEESSCCRRIIPPTTIIOONN
+     The llee interface provides access to the 10 Mb/s Ethernet network via the
+     AMD 7990 LANCE Ethernet chip set.
+
+     Each of the host's network addresses is specified at boot time with an
+     SIOCSIFADDR ioctl.  The llee interface employs the address resolution pro-
+     tocol described in arp(4) to dynamically map between Internet and Ether-
+     net addresses on the local network.
+
+SSEEEE AALLSSOO
+     intro(4),  inet(4),  arp(4)
+
+4.4BSD                           June 9, 1993                                1

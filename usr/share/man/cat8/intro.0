@@ -1,0 +1,20 @@
+INTRO(8)                  BSD System Manager's Manual                 INTRO(8)
+
+NNAAMMEE
+     iinnttrroo - introduction to system maintenance and operation commands
+
+DDEESSCCRRIIPPTTIIOONN
+     This section contains information related to system operation and mainte-
+     nance.  It describes commands used to create new file systems, `newfs',
+     verify the integrity of the file systems, `fsck',  control disk usage,
+     `edquota',  maintain system backups, `dump',  and recover files when
+     disks die an untimely death, `restore'.  The `format'  manual for the
+     specific architecture the system is running on should be consulted when
+     formatting disks and tapes.  Network related services like `inetd'  and
+     `ftpd'  are also described.  The section `crash'  should be consulted to
+     understand how to interpret system crash dumps.
+
+HHIISSTTOORRYY
+     The iinnttrroo section manual page appeared in 4.2BSD.
+
+4.2 Berkeley Distribution      December 11, 1993                             1

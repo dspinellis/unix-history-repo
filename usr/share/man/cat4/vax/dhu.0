@@ -1,0 +1,59 @@
+DHU(4)            BSD Programmer's Manual (VAX Architecture)            DHU(4)
+
+NNAAMMEE
+     ddhhuu - DHU-11 communications multiplexer
+
+SSYYNNOOPPSSIISS
+     ddeevviiccee ddhhuu00 aatt uubbaa00 ccssrr 00116600444400 vveeccttoorr ddhhuurriinntt ddhhuuxxiinntt
+
+DDEESSCCRRIIPPTTIIOONN
+     A DHU-11 provides 16 communication lines.
+
+     An optional argument _f_l_a_g_s may be supplied with the device specification
+     in the config file indicating that the line corresponding to bit number _i
+     is not properly connected, and should be treated as hard-wired with car-
+     rier always present.  Thus specifying `flags 0x0004' for dhu0 would cause
+     line _t_t_y_S_2 to be treated in this way.
+
+     Normal I/O control parameters for individual lines are managed by
+     ioctl(2) calls.  Individual DHU-11 lines may be configured to run at any
+     of 13 speeds (50, 200 and 38400 baud are not available); the speed may be
+     set via getty(8) or stty(1) or may be communicated by other programs
+     which utilize ioctl such as ifcongif(8),  see tty(4).
+
+     The DHU-11 driver normally uses input silos and delays receiver inter-
+     rupts by 20 milliseconds rather than taking an interrupt on each input
+     character.
+
+FFIILLEESS
+     /dev/tty[S-Z][0-9a-f]
+
+DDIIAAGGNNOOSSTTIICCSS
+     ddhhuu((%%dd,,%%dd)):: NNXXMM ffaauulltt..  No response from UNIBUS on a DMA transfer within
+     a timeout period.  This is often followed by a UNIBUS adapter error.
+     This occurs most frequently when the UNIBUS is heavily loaded and when
+     devices which hog the bus (such as RK07s) are present.  It is not seri-
+     ous.
+
+     ddhhuu%%dd:: ssiilloo oovveerrffllooww..  The character input silo overflowed before it
+     could be serviced.  This can happen if a hard error occurs when the CPU
+     is running with elevated priority, as the system may then print a message
+     on the console with interrupts disabled.
+
+NNOOTTEESS
+     The driver currently does not make full use of the hardware capabilities
+     of the DHU-11, for dealing with XON/XOFF flow-control or hard-wired lines
+     for example.
+
+     Although the devices are not the same, a DHU-11 can convince the DH-11
+     autoconfiguration code that it is a DH-11.
+
+     The 4 40-way cables are a pain.
+
+SSEEEE AALLSSOO
+     tty(4)
+
+HHIISSTTOORRYY
+     The ddhhuu driver appeared in 4.3BSD.
+
+4.3 Berkeley Distribution        June 5, 1993                                1

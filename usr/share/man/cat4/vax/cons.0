@@ -1,0 +1,66 @@
+CONS(4)           BSD Programmer's Manual (VAX Architecture)           CONS(4)
+
+NNAAMMEE
+     ccoonnss - VAX-11 console interface
+
+DDEESSCCRRIIPPTTIIOONN
+     The console is available to the processor through the console registers.
+     It acts like a normal terminal, except that when the local functions are
+     not disabled, ^^PP (control-P) puts the console in local console mode
+     (where the prompt is `>>>'). The operation of the console in this mode
+     varies slightly per-processor.
+
+   TTnn VVAAXX NNoo 1111//778800 oorr 778855
+     On either the VAX 11/780 or 785 the following commands may be used after
+     placing the console in local mode with ^^PP.
+
+         cc
+         ccoonnttiinnuuee  Re-enter conversational mode if the processor was halted.
+
+         hh
+         hhaalltt      Halt the CPU.  On an 11/780 or 785 the processor is not
+                   stopped by entering local console mode.
+
+         sseett tt pp   (set terminal program) Re-enter conversational mode if the
+                   processor is still running.
+
+         PP         (proceed) Get out of ODT mode.
+
+         <<bbrreeaakk>>   If you hit the break key on the console, then the console
+                   LSI-11 will go into ODT (console debugger mode).
+
+   TTnn VVAAXX NNoo 1111//775500 oorr 1111//773300
+     On an 11/750 or an 11/730 the processor is halted whenever the console is
+     not in conversational mode.
+
+         CC         Return to conversational mode.
+
+         rreett       Return from remote diagnosis mode to local console mode.
+
+         ^^DD        (11/750 only) When in console mode on an 11/750 which has a
+                   remote diagnosis module, a ^^DD will put you in remote diag-
+                   nosis mode, where the prompt will be
+
+   TTnn VVAAXX NNoo 88660000 oorr 88665500
+     The VAX 8600 (8650) console normally works in the same way as the 11/750,
+     except that there are many additional modes and commands.
+
+         cc
+         ccoonnttiinnuuee  Return to conversational mode.
+
+         hhaalltt      Halt the processor if HEX debug enabled.
+
+         pp         Halt the processor if in normal mode.
+
+     With the above proviso's the console works like any other UNIX terminal.
+
+FFIILLEESS
+     /dev/console
+
+SSEEEE AALLSSOO
+     tty(4),  reboot(8)
+
+     _V_A_X _H_a_r_d_w_a_r_e _H_a_n_d_b_o_o_k.
+
+HHIISSTTOORRYY
+     The ccoonnss interface appeared in 4.0BSD.

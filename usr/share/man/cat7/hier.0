@@ -1,0 +1,402 @@
+HIER(7)                      BSD Reference Manual                      HIER(7)
+
+NNAAMMEE
+     hhiieerr - layout of filesystems
+
+DDEESSCCRRIIPPTTIIOONN
+     An outline of the filesystem hierarchy.
+
+     //          root directory of the system
+
+     //CCOOPPYYRRIIGGHHTT
+                system copyright notice
+
+     //[[aa--zz]]     user filesystems
+
+     //aallttrroooott//  alternate root filesystem, in case of disaster
+
+     //aammdd//      home directories mount point; see amd(8)
+
+     //bbiinn//      utilities used in both single and multi-user environments
+
+     //ddeevv//      block, character and other special device files
+
+                MMAAKKEEDDEEVV  script for creating device files; see makedev(8)
+                ccoonnssoollee  the computer's console device
+                ffdd//      file descriptor files; see fd(4)
+                ddrruumm     system swap space; see drum(4)
+                kklloogg     kernel logging device; see syslog(3)
+                kkmmeemm     kernel virtual memory device; see mem(4)
+                lloogg      UNIX domain datagram log socket; see syslogd(8)
+                mmeemm      kernel physical memory device; see mem(4)
+                ssttddeerrrr
+                ssttddiinn
+                ssttddoouutt   file descriptor files; see fd(4)
+                nnuullll     the null device; see null(4)
+                ttttyy      process' controlling terminal device; see tty(4)
+
+     //dduummpp//     online dump(8) repository
+
+     //eettcc//      system configuration files and scripts
+
+                aalliiaasseess**       name alias files for sendmail(8)
+                aammdd**           configuration files for amd(8)
+                cchhaannggeelliisstt     files backed up by the security script
+                ccrroonnttaabb        schedule used by the cron(8) daemon
+                ccsshh..ccsshhrrcc
+                ccsshh..llooggiinn
+                ccsshh..llooggoouutt     system-wide scripts for csh(1)
+                ddaaiillyy          script run each day by cron(8)
+                ddiisskkllaabbeellss//    backup disklabels; see disklabel(8)
+                ddiisskkttaabb        disk description file, see disktab(5)
+                ddmm..ccoonnff        dungeon master configuration; see dm.conf(5)
+                dduummppddaatteess      dump history; see dump(8)
+                eexxppoorrttss        filesystem export information; see mountd(8)
+                ffssttaabb          filesystem information; see fstab(5) and
+                               mount(8)
+                ffttppuusseerrss       users denied ftp(1) access; see ftpd(8)
+                ffttppwweellccoommee     ftp(1) initial message; see ftpd(8)
+                ggeettttyyttaabb       terminal configuration database; see get-
+                               tytab(8)
+                ggrroouupp          group permissions file; see group(5)
+                hhoossttss          host name database backup for named(8);  see
+                               hosts(5)
+
+
+                hhoossttss..eeqquuiivv    trusted machines with equivalent user ID's
+                hhoossttss..llppdd      trusted machines with printing privileges
+                iinneettdd..ccoonnff     Internet server configuration file; see in-
+                               etd(8)
+                kkeerrbbeerroossIIVV//    configuration files for the kerberos version
+                               IV; see kerberos(1)
+                llooccaallttiimmee      local timezone information; see ctime(3)
+                mmaaiill..rrcc        system-wide initialization script for mail(1)
+                mmaann..ccoonnff       configuration file for man(1);  see man.conf(5)
+                mmaasstteerr..ppaasssswwdd
+                ppaasssswwdd
+                ppwwdd..ddbb
+                ssppwwdd..ddbb        password files and their databases; see
+                               pwd_mkdb(8)
+                mmoonntthhllyy        script run each month by cron(8)
+                mmoottdd           system message of the day
+                mmttrreeee//         mtree configuration files; see mtree(1)
+                nnaammeedd..**
+                nnaammeeddbb//        named configuration files and databases; see
+                               named(8)
+                nneettggrroouupp       network groups; see netgroup(5)
+                nneettssttaarrtt       network startup script
+                nneettwwoorrkkss       network name data base; see networks(5)
+                pphhoonneess         remote host phone number data base; see
+                               phones(5)
+                pprriinnttccaapp       system printer configuration; see printcap(5)
+                pprroottooccoollss      protocol name database; see protocols(5)
+                rrcc
+                rrcc..llooccaall       system startup files; see rc(8)
+                rreemmoottee         remote host description file; see remote(5)
+                sseeccuurriittyy       daily (in)security script run by cron(8)
+                sseennddmmaaiill..**     sendmail(8) configuration information
+                sseerrvviicceess       service name data base; see services(5)
+                sshheellllss         list of permitted shells; see shells(5)
+                sslliipphhoommee       slip login/logout scripts; see slattach(8)
+                ssyysslloogg..ccoonnff    syslogd(8) configuration file; see sys-
+                               log.conf(5)
+                tteerrmmccaapp        terminal type database; see termcap(3)
+                ttttyyss           terminal initialization information; see
+                               ttys(5)
+                wweeeekkllyy         script run each week by cron(8)
+
+     //hhoommee//     mount point for the automounter; see amd(8)
+
+     //mmnntt//      empty directory commonly used by system administrators as a
+                temporary mount point
+
+     //rroooott//     home directory for the super-user
+
+                ..rrhhoossttss   super-user id mapping between machines
+                ..ccsshhrrcc    super-user start-up file
+                ..llooggiinn    super-user start-up file
+                ..pprrooffiillee  super-user start-up file
+
+     //ssbbiinn//     system programs and administration utilities used in both sin-
+                gle-user and multi-user environments
+
+     //ssttaanndd//    programs used in a standalone environment
+
+     //ssyyss       symbolic link to the operating system source
+
+     //ttmmpp//      temporary files, usually a mfs(8) memory-based filesystem (the
+                contents of /tmp are usually NOT preserved across a system re-
+                boot)
+
+     //uussrr//      contains the majority of the system utilities and files
+
+                XX1111       X11 files
+
+                          bbiinn//      X11 binaries
+                          iinncclluuddee//  X11 include files
+                          lliibb//      X11 libraries
+                bbiinn//      common utilities, programming tools, and applica-
+                          tions
+                ccoonnttrriibb//  packages maintained by groups other than Berkeley
+
+                          bbiinn//      contributed binaries
+                          iinncclluuddee//  contributed include files
+                          lliibbeexxeecc//  contributed daemons
+                          lliibbddaattaa//  contributed data files
+                ggaammeess//    the important stuff
+                iinncclluuddee//  standard C include files
+
+                          XX1111//         include files for X11 window system
+                          aarrppaa//        include files for Internet service pro-
+                                       tocols
+                          gg++++//         include files for the C++ compiler
+                          kkeerrbbeerroossIIVV//  include files for kerberos authentica-
+                                       tion package; see kerberos(1)
+                          mmaacchhiinnee//     machine specific include files
+                          nneett//         miscellaneous network include files
+                          nneettcccciitttt//    CCITT networking include files
+                          nneettiinneett//     include files for Internet standard
+                                       protocols; see inet(4)
+                          nneettiissoo//      include files for ISO standard proto-
+                                       cols; see iso(4)
+                          nneettnnss//       include files for XNS standard proto-
+                                       cols; see ns(4)
+                          nnffss//         include files for NFS (Network File
+                                       System)
+                          ppaassccaall//      include files for pc(1)
+                          pprroottooccoollss//   include files for Berkeley service pro-
+                                       tocols
+                          rrppcc//         include files for Sun Microsystem's RPC
+                                       package
+                          ssyyss//         kernel include files
+                          uuffss//         include files for UFS
+                          xxnnssccoouurriieerr//  include files for XNS package
+
+                lliibb//      system C library archives; see ar(1)
+
+                          uuuuccpp//  UUCP binaries and scripts (historically
+                                 placed; to be moved)
+
+                lliibbddaattaa//  miscellaneous utility data files
+                lliibbeexxeecc//  system daemons and system utilities (executed by
+                          other programs)
+                llooccaall//    local executables, libraries, etc.
+
+                          bbiinn//      local binaries
+                          iinncclluuddee//  local include files
+                          lliibbeexxeecc//  local daemons
+                          lliibbddaattaa//  local data files
+                oobbjj//      architecture-specific target tree produced by build-
+                          ing the _/_u_s_r_/_s_r_c tree; normally a symbolic link or
+                          mounted filesystem
+                oolldd//      programs from past lives of 4BSD which may disappear
+                          in future releases
+
+                          bbiinn//      old binaries
+
+
+                          iinncclluuddee//  old include files
+                          lliibbeexxeecc//  old daemons
+                          lliibbddaattaa//  old data files
+                ssbbiinn//     system daemons and system utilities (normally exe-
+                          cuted by the super-user)
+                sshhaarree//    architecture-independent text files
+
+                          ccaalleennddaarr//  a variety of calendar files; see calen-
+                                     dar(1)
+                          ddiicctt//      word lists; see look(1) and spell(1)
+
+                                     wwoorrddss     common words
+                                     wweebb22      words of Webster's 2nd Interna-
+                                               tional
+                                     ppaappeerrss//   reference databases; see re-
+                                               fer(1)
+                                     ssppeecciiaall//  custom word lists; see spell(1)
+
+                          ddoocc//       miscellaneous documentation; source for
+                                     most of the printed 4BSD manuals (avail-
+                                     able from the USENIX association)
+                          ggaammeess//     text files used by various games
+                          mmaann//       formatted manual pages
+                          mmee//        macros for use with the me(7) macro pack-
+                                     age
+                          mmiisscc//      miscellaneous system-wide text files
+
+                                     tteerrmmccaapp  terminal characteristics
+                                              database; see termcap(5)
+
+                          mmkk//        include files for make(1)
+                          mmss//        macros for use with the ms(7) macro pack-
+                                     age
+                          sskkeell//      sample initialization files for new user
+                                     accounts
+                          ttaabbsseett//    tab description files for a variety of
+                                     terminals, used in the termcap file; see
+                                     termcap(5)
+                          ttmmaacc//      text processing macros; see nroff(1) and
+                                     troff(1)
+                          zzoonneeiinnffoo//  timezone configuration information; see
+                                     tzfile(5)
+                uussrr..bbiinn//  source for utilities/files in _/_u_s_r_/_b_i_n
+                uussrr..ssbbiinn//
+                          source for utilities/files in _/_u_s_r_/_s_b_i_n
+
+     //uussrr//ssrrcc//  4BSD and local source files
+
+                bbiinn//         source for utilities/files in _/_b_i_n
+                ccoonnttrriibb//     source for utilities/files in _/_u_s_r_/_c_o_n_t_r_i_b
+                eettcc//         source (usually example files) for files in _/_e_t_c
+                ggaammeess//       source for utilities/files in _/_u_s_r_/_g_a_m_e_s
+                iinncclluuddee//     source for files in _/_u_s_r_/_i_n_c_l_u_d_e
+                kkeerrbbeerroossIIVV//  source for Kerberos version IV utilities and li-
+                             braries
+                lliibb//         source for libraries in _/_u_s_r_/_l_i_b
+                lliibbeexxeecc//     source for utilities/files in _/_u_s_r_/_l_i_b_e_x_e_c
+                llooccaall//       source for utilities/files in _/_u_s_r_/_l_o_c_a_l
+                oolldd//         source for utilities/files in _/_u_s_r_/_o_l_d
+                ssbbiinn//        source for utilities/files in _/_s_b_i_n
+                sshhaarree//       source for files in _/_u_s_r_/_s_h_a_r_e
+
+                             ddoocc//
+
+
+
+                                   ppaappeerrss//  source for various Berkeley tech-
+                                            nical papers
+                                   ppssdd//     source for Programmer's Supplemen-
+                                            tary Documents
+                                   ssmmmm//     source for System Manager's Manual
+                                   uussdd//     source for User's Supplementary
+                                            Documents
+                ssyyss//         kernel source files
+
+                             ccoommppiillee//     kernel compilation directory
+                             ccoonnff//        architecture independent configura-
+                                          tion directory
+                             ddeepprreeccaatteedd//  deprecated kernel functionality
+                             ddeevv//         architecture independent device sup-
+                                          port
+                             hhpp//          general support for Hewlett-Packard
+                                          architectures
+                             hhpp330000//       support for the Hewlett-Packard
+                                          9000/300 68000-based workstations
+                             ii338866//        support for the Intel 386/486 work-
+                                          stations
+                             iissooffss//       support for ISO filesystems
+
+                                          ccdd99666600//  support for the ISO-9660
+                                                   filesystem
+
+                             kkeerrnn//        support for the high kernel (system
+                                          calls)
+                             lliibbkkeerrnn//     C library routines used in the ker-
+                                          nel
+                             lluunnaa6688kk//     Omron Luna 68000-based workstations
+                             mmiippss//        general support for MIPS architec-
+                                          tures
+                             mmiissccffss//      miscellaneous file systems
+                             nneett//         miscellaneous networking support
+                             nneettcccciitttt//    CCITT networking support
+                             nneettiinneett//     TCP/IP networking support
+                             nneettiissoo//      ISO networking support
+                             nneettnnss//       XNS networking support
+                             nneewwss33440000//    Sony News MIPS-based workstations
+                             nnffss//         NFS support
+                             ppmmaaxx//        DECstation 3100 and 5000 MIPS-based
+                                          workstations
+                             ssccrriippttss//     kernel debugging scripts
+                             ssppaarrcc//       Sparcstation I & II SPARC-based
+                                          workstations
+                             ssttaanndd//       kernel standalone support
+                             ssyyss//         kernel (and system) include files
+                             ttaahhooee//       Computer Consoles Inc. Tahoe archi-
+                                          tecture (obsolete)
+                             tteessttss//       kernel testing
+                             uuffss//         local filesystem support
+
+                                          ffffss//  the Berkeley Fast File System
+                                          llffss//  the log-structured file system
+                                          mmffss//  the in-memory file system
+                                          uuffss//  shared UNIX file system sup-
+                                                port
+                             vvaaxx//         Digital Equipment Corp. VAX archi-
+                                          tecture (obsolete)
+                             vvmm//          virtual memory support
+
+     //vvaarr//      multi-purpose log, temporary, transient, and spool files
+
+
+
+                aaccccoouunntt//   system accounting files
+
+                           aacccctt  execution accounting file; see acct(5)
+
+                aatt//        timed command scheduling files; see at(1)
+                bbaacckkuuppss//   miscellaneous backup files, largely of files found
+                           in _/_e_t_c
+                ccrraasshh//     system crash dumps; see savecore(8)
+                ddbb//        miscellaneous automatically generated system-
+                           specific database files
+                ggaammeess//     miscellaneous game status and log files
+                lloogg//       miscellaneous system log files
+
+                           aammdd..**        amd(8) logs
+                           ddaaiillyy..oouutt    output of the last run of the
+                                        _/_e_t_c_/_d_a_i_l_y script
+                           ffttpp..**        ftp(1) logs
+                           kkeerrbbeerrooss..**   kerberos(1) logs
+                           llaassttlloogg      system last time logged in log; see
+                                        utmp(5)
+                           llppdd--eerrrrss..**   printer daemon error logs; see lpd(8)
+                           mmaaiilllloogg..**    sendmail(8) log files
+                           mmeessssaaggeess..**   general system information log
+                           mmoonntthhllyy..oouutt  output of the last run of the
+                                        _/_e_t_c_/_m_o_n_t_h_l_y script
+                           sseeccuurree       sensitive security information log
+                           sseennddmmaaiill..sstt  sendmail(8) statistics
+                           ttiimmeedd..**      timed(8) logs
+                           wweeeekkllyy..oouutt   output of the last run of the
+                                        _/_e_t_c_/_w_e_e_k_l_y script
+                           wwttmmpp         login/logout log; see utmp(5)
+
+                mmaaiill//      user system mailboxes
+                mmssggss//      system messages; see msgs(1)
+                pprreesseerrvvee//  temporary home of files preserved after an acciden-
+                           tal death of ex(1) or vi(1)
+                qquuoottaass//    filesystem quota information
+                rruunn//       system information files, rebuilt after each reboot
+
+                           uuttmmpp  database of current users; see utmp(5)
+
+                rrwwhhoo//      rwho data files; see rwhod(8),  rwho(1),  and rup-
+                           time(1)
+                ssppooooll//     miscellaneous printer and mail system spooling di-
+                           rectories
+
+                           ffttpp//         commonly ``~ftp'', the anonymous ftp
+                                        root directory; see ftpd(8)
+                           mmqquueeuuee//      undelivered mail queue; see send-
+                                        mail(8)
+                           nneewwss//        Network news archival and spooling di-
+                                        rectories
+                           oouuttppuutt//      printer spooling directories
+                           sseeccrreettmmaaiill//  secretmail spool directory; see
+                                        xget(1)
+                           uuuuccpp//        uucp spool directory
+                           uuuuccppppuubblliicc//  commonly ``~uucp'', the uucp public
+                                        temporary directory; see uucp(1)
+
+                ttmmpp//       temporary files that are not discarded between sys-
+                           tem reboots
+
+                           vvii..rreeccoovveerr//  recovery directory for nvi(1)
+
+     //vvmmuunniixx    the executable for the operating system
+
+SSEEEE AALLSSOO
+     apropos(1),  ls(1),  whatis(1),  whereis(1),  which(1),
+
+HHIISSTTOORRYY
+     A hhiieerr manual page appeared in Version 7 AT&T UNIX.
+
+4.4BSD                           June 1, 1994                                7
