@@ -28,7 +28,7 @@ SOFTWARE.
  * ARGO TP
  * $Header: tp_inet.c,v 5.3 88/11/18 17:27:29 nhall Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/tp_inet.c,v $
- *	@(#)tp_inet.c	7.4 (Berkeley) %G% *
+ *	@(#)tp_inet.c	7.5 (Berkeley) %G% *
  *
  * Here is where you find the inet-dependent code.  We've tried
  * keep all net-level and (primarily) address-family-dependent stuff
@@ -535,8 +535,7 @@ tpip_input(m, iplen)
 	dst.sin_len  = sizeof(dst);
 
 	(void) tp_input(m, (struct sockaddr *)&src, (struct sockaddr *)&dst,
-				0, tpip_output_dg);
-	splx(s);
+				0, tpip_output_dg, 0);
 	return 0;
 
 discard:
@@ -616,7 +615,7 @@ tpip_ctlinput(cmd, sin)
 	switch (cmd) {
 
 		case	PRC_QUENCH:
-			in_pcbnotify(&tp_inpcb, &sin->sin_addr, 
+			in_pcbnotify(&tp_inpcb, sin, 
 						0, (int (*)())tp_quench);
 			break;
 
@@ -625,7 +624,7 @@ tpip_ctlinput(cmd, sin)
 		case	PRC_UNREACH_NET:
 		case	PRC_IFDOWN:
 		case	PRC_HOSTDEAD:
-			in_pcbnotify(&tp_inpcb, &sin->sin_addr, 
+			in_pcbnotify(&tp_inpcb, sin, 
 					(int)inetctlerrmap[cmd], in_rtchange);
 			break;
 
@@ -645,7 +644,7 @@ tpip_ctlinput(cmd, sin)
 		case	PRC_TIMXCEED_REASS:
 		case	PRC_PARAMPROB:
 		*/
-		in_pcbnotify(&tp_inpcb, &sin->sin_addr,
+		in_pcbnotify(&tp_inpcb, sin,
 				(int)inetctlerrmap[cmd], tpin_abort);
 	}
 	return 0;
