@@ -1,6 +1,8 @@
 /* Copyright (c) Stichting Mathematisch Centrum, Amsterdam, 1985. */
 /* config.h - version 1.0.3 */
 
+#include "pathnames.h"
+
 #ifndef CONFIG	/* make sure the compiler doesnt see the typedefs twice */
 
 #define	CONFIG
@@ -55,8 +57,8 @@
  * A stat system call is done on the mailbox every MAILCKFREQ moves.
  */
 /* #define	MAIL */
-#define	DEF_MAILREADER	"/usr/ucb/mail"		/* or e.g. /bin/mail */
-#define	MAILCKFREQ	1
+#define	DEF_MAILREADER	_PATH_MAIL		/* or e.g. /bin/mail */
+#define	MAILCKFREQ	100	
 
 
 #define SHELL		/* do not delete the '!' command */
@@ -72,9 +74,9 @@
  * otherwise it will be the current directory.
  */
 #ifdef QUEST
-#define HACKDIR "/usr/games/lib/questdir"
+#define HACKDIR _PATH_QUEST
 #else QUEST
-#define HACKDIR	"/usr/games/lib/hackdir"
+#define HACKDIR	_PATH_HACK
 #endif QUEST
 
 /*
@@ -89,7 +91,7 @@
 /*
  * If it is desirable to limit the number of people that can play Hack
  * simultaneously, define HACKDIR, SECURE and MAX_NR_OF_PLAYERS.
- * #define MAX_NR_OF_PLAYERS	6
+ * #define MAX_NR_OF_PLAYERS	100
  */
 #endif CHDIR
 
