@@ -25,11 +25,9 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)showmount.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)showmount.c	6.3 (Berkeley) %G%";
 #endif not lint
 
-#include <stdio.h>
-#include <strings.h>
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/socket.h>
@@ -39,6 +37,8 @@ static char sccsid[] = "@(#)showmount.c	6.2 (Berkeley) %G%";
 #include <rpc/pmap_clnt.h>
 #include <rpc/pmap_prot.h>
 #include <nfs/rpcv2.h>
+#include <stdio.h>
+#include <string.h>
 
 /* Constant defs */
 #define	ALL	1

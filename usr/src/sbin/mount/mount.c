@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -34,7 +34,7 @@ static char sccsid[] = "@(#)mount.c	5.34 (Berkeley) %G%";
 #include <errno.h>
 #include <stdio.h>
 #include <signal.h>
-#include <strings.h>
+#include <string.h>
 #include <sys/mount.h>
 #ifdef NFS
 #include <sys/socket.h>

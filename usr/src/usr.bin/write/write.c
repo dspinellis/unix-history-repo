@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)write.c	4.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)write.c	4.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -37,7 +37,7 @@ static char sccsid[] = "@(#)write.c	4.20 (Berkeley) %G%";
 #include <ctype.h>
 #include <pwd.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 
 extern int errno;
 

@@ -25,13 +25,9 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.7 (Berkeley) %G%";
 #endif not lint
 
-#include <stdio.h>
-#include <strings.h>
-#include <syslog.h>
-#include <signal.h>
 #include <sys/param.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -39,6 +35,10 @@ static char sccsid[] = "@(#)mountd.c	5.6 (Berkeley) %G%";
 #include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/errno.h>
+#include <sys/signal.h>
+#include <stdio.h>
+#include <string.h>
+#include <syslog.h>
 #include <netdb.h>
 #include <rpc/rpc.h>
 #include <rpc/pmap_clnt.h>

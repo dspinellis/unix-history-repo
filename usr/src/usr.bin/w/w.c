@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.21 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -33,7 +33,7 @@ static char sccsid[] = "@(#)w.c	5.20 (Berkeley) %G%";
 #include <kvm.h>
 #include <ctype.h>
 #include <paths.h>
-#include <strings.h>
+#include <string.h>
 #include <stdio.h>
 
 char	*program;

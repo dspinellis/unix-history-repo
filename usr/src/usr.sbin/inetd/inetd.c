@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -78,7 +78,7 @@ static char sccsid[] = "@(#)inetd.c	5.20 (Berkeley) %G%";
 #include <syslog.h>
 #include <pwd.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #include "pathnames.h"
 
 #define	TOOMANY		40		/* don't start more than TOOMANY */

@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)vipw.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)vipw.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -34,7 +34,7 @@ static char sccsid[] = "@(#)vipw.c	5.12 (Berkeley) %G%";
 #include <errno.h>
 #include <pwd.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 
 char *passwd, *temp;
 

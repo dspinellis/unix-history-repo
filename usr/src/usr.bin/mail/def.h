@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)def.h	5.19 (Berkeley) %G%
+ *	@(#)def.h	5.20 (Berkeley) %G%
  */
 
 #include <sys/param.h>		/* includes <sys/types.h> */
@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <sgtty.h>
 #include <ctype.h>
-#include <strings.h>
+#include <string.h>
 #include "pathnames.h"
 
 /*

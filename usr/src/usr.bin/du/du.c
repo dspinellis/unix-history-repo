@@ -25,13 +25,13 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)du.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)du.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <strings.h>
+#include <string.h>
 #include <stdio.h>
 
 typedef struct _ID {
