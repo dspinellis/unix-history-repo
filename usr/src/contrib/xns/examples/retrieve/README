@@ -1,0 +1,9 @@
+This directory contains an example of a trivial use of Clearinghouse.  The
+	retrieve program simply sends a RetrieveAddresses message to a
+	known Clearinghouse, and receives as a response the network
+	address of that Clearinghouse.
+
+Note that we use a private, abbreviated, copy of the Clearinghouse spec.
+The full Clearinghouse.cr (which may be found on /usr/local/lib/courier)
+is somewhat large for convenient recompilation.  On the other hand, using
+a subset could result in confusion later.
