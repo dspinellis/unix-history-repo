@@ -1,4 +1,4 @@
-static char *sccsid = "@(#) (Berkeley) 82/06/27";
+static char *sccsid = "@(#) (Berkeley) 82/10/19";
 /*
  * Print system stuff
  */
