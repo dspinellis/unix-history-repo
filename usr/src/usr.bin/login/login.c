@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.61 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.62 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -56,14 +56,6 @@ struct	passwd *pwd;
 int	failures;
 char	term[64], *envinit[1], *hostname, *username, *tty;
 
-struct	sgttyb sgttyb;
-struct	tchars tc = {
-	CINTR, CQUIT, CSTART, CSTOP, CEOT, CBRK
-};
-struct	ltchars ltc = {
-	CSUSP, CDSUSP, CRPRNT, CDISCARD, CWERASE, CLNEXT
-};
-
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -75,7 +67,7 @@ main(argc, argv)
 	register int ch;
 	register char *p;
 	int ask, fflag, hflag, pflag, cnt, uid;
-	int quietlog, ioctlval, rval;
+	int quietlog, rval;
 	char *domain, *salt, *ttyn;
 	char tbuf[MAXPATHLEN + 2], tname[sizeof(_PATH_TTY) + 10];
 	char localhost[MAXHOSTNAMELEN];
@@ -144,16 +136,8 @@ main(argc, argv)
 	} else
 		ask = 1;
 
-	ioctlval = 0;
-	(void)ioctl(0, TIOCLSET, &ioctlval);
-	(void)ioctl(0, TIOCNXCL, 0);
-	(void)fcntl(0, F_SETFL, ioctlval);
-	(void)ioctl(0, TIOCGETP, &sgttyb);
-	sgttyb.sg_erase = CERASE;
-	sgttyb.sg_kill = CKILL;
-	(void)ioctl(0, TIOCSLTC, &ltc);
-	(void)ioctl(0, TIOCSETC, &tc);
-	(void)ioctl(0, TIOCSETP, &sgttyb);
+	(void) ioctl(0, TIOCNXCL, 0);
+	(void) fcntl(0, F_SETFL, 0);
 
 	for (cnt = getdtablesize(); cnt > 2; cnt--)
 		close(cnt);
@@ -169,9 +153,6 @@ main(argc, argv)
 		tty = ttyn;
 
 	for (cnt = 0;; ask = 1) {
-		ioctlval = TTYDISC;
-		(void)ioctl(0, TIOCSETD, &ioctlval);
-
 		if (ask) {
 			fflag = 0;
 			getloginname();
@@ -311,12 +292,6 @@ main(argc, argv)
 	}
 
 	dolastlog(quietlog);
-
-	if (!hflag) {					/* XXX */
-		static struct winsize win = { 0, 0, 0, 0 };
-
-		(void)ioctl(0, TIOCSWINSZ, &win);
-	}
 
 	(void)chown(ttyn, pwd->pw_uid,
 	    (gr = getgrnam(TTYGRPNAME)) ? gr->gr_gid : pwd->pw_gid);
