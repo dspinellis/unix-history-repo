@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)nlist.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)nlist.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -38,7 +38,7 @@ nlist(name, list)
 	struct exec ebuf;
 	FILE *fstr, *fsym;
 	NLIST nbuf;
-	off_t curoff, strings_offset, symbol_offset, symbol_size, lseek();
+	off_t strings_offset, symbol_offset, symbol_size, lseek();
 	int entries, len, maxlen;
 	char sbuf[256];
 
@@ -56,16 +56,8 @@ nlist(name, list)
 	if (fseek(fsym, symbol_offset, SEEK_SET))
 		goto done1;
 
-	/*
-	 * some versions of stdio do lseek's on every fseek call relative
-	 * to the beginning of the file.  For this reason, all string seeks
-	 * are made relative to the beginning of the symbol table.
-	 */
-	curoff = 0;
 	if (!(fstr = fopen(name, "r")))
 		goto done1;
-	if (fseek(fstr, strings_offset, SEEK_SET))
-		goto done2;
 
 	/*
 	 * clean out any left-over information for all valid entries.
@@ -93,10 +85,9 @@ nlist(name, list)
 			goto done2;
 		if (!s->_strx || s->n_type&N_STAB)
 			continue;
-		if (fseek(fstr, s->_strx - curoff, SEEK_CUR))
+		if (fseek(fstr, strings_offset + s->_strx, SEEK_SET))
 			goto done2;
-		curoff = s->_strx +
-		    fread(sbuf, sizeof(sbuf[0]), maxlen, fstr);
+		(void)fread(sbuf, sizeof(sbuf[0]), maxlen, fstr);
 		for (p = list; ISVALID(p); p++)
 			if (!strcmp(p->_name, sbuf)) {
 				p->n_value = s->n_value;
