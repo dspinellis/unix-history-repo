@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)init_main.c	7.3 (Berkeley) %G%
+ *	@(#)init_main.c	7.4 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -135,9 +135,7 @@ main(firstaddr)
 	pqinit();
 	xinit();
 	ihinit();
-	bhinit();
-	binit();
-	bswinit();
+	swapinit();
 	nchinit();
 #ifdef GPROF
 	kmstartup();
@@ -226,7 +224,6 @@ binit()
 {
 	register struct buf *bp, *dp;
 	register int i;
-	struct swdevt *swp;
 	int base, residual;
 
 	for (dp = bfreelist; dp < &bfreelist[BQUEUES]; dp++) {
@@ -248,9 +245,24 @@ binit()
 		bp->b_flags = B_BUSY|B_INVAL;
 		brelse(bp);
 	}
+}
+
+/*
+ * Set up swap devices.
+ * Initialize linked list of free swap
+ * headers. These do not actually point
+ * to buffers, but rather to pages that
+ * are being swapped in and out.
+ */
+swapinit()
+{
+	register int i;
+	register struct buf *sp = swbuf;
+	struct swdevt *swp;
+
 	/*
 	 * Count swap devices, and adjust total swap space available.
-	 * Some of this space will not be available until a vswapon()
+	 * Some of this space will not be available until a swapon()
 	 * system is issued, usually when the system goes multi-user.
 	 */
 	nswdev = 0;
@@ -261,7 +273,7 @@ binit()
 			nswap = swp->sw_nblks;
 	}
 	if (nswdev == 0)
-		panic("binit");
+		panic("swapinit");
 	if (nswdev > 1)
 		nswap = ((nswap + dmmax - 1) / dmmax) * dmmax;
 	nswap *= nswdev;
@@ -272,19 +284,10 @@ binit()
 	if (nswdev > 1)
 		maxpgio = (maxpgio * (2 * nswdev - 1)) / 2;
 	swfree(0);
-}
 
-/*
- * Initialize linked list of free swap
- * headers. These do not actually point
- * to buffers, but rather to pages that
- * are being swapped in and out.
- */
-bswinit()
-{
-	register int i;
-	register struct buf *sp = swbuf;
-
+	/*
+	 * Now set up swap buffer headers.
+	 */
 	bswlist.av_forw = sp;
 	for (i=0; i<nswbuf-1; i++, sp++)
 		sp->av_forw = sp+1;
