@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpd.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpd.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -154,6 +154,7 @@ main(argc, argv)
 	signal(SIGINT, mcleanup);
 	signal(SIGQUIT, mcleanup);
 	signal(SIGTERM, mcleanup);
+	memset(&un, 0, sizeof(un));
 	un.sun_family = AF_UNIX;
 	strcpy(un.sun_path, _PATH_SOCKETNAME);
 #ifndef SUN_LEN
@@ -181,13 +182,14 @@ main(argc, argv)
 			syslog(LOG_ERR, "printer/tcp: unknown service");
 			mcleanup(0);
 		}
+		memset(&sin, 0, sizeof(sin));
 		sin.sin_family = AF_INET;
 		sin.sin_port = sp->s_port;
 		if (bind(finet, (struct sockaddr *)&sin, sizeof(sin)) < 0) {
 			syslog(LOG_ERR, "bind: %m");
 			mcleanup(0);
 		}
-		FD_SET(finet, &defreadfds);	
+		FD_SET(finet, &defreadfds);
 		listen(finet, 5);
 	}
 	/*
