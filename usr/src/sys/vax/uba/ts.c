@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ts.c	6.6 (Berkeley) %G%
+ *	@(#)ts.c	6.7 (Berkeley) %G%
  */
 
 #include "ts.h"
@@ -179,9 +179,10 @@ tsopen(dev, flag)
 	register struct ts_softc *sc;
 
 	tsunit = TSUNIT(dev);
-	if (tsunit>=NTS || (sc = &ts_softc[tsunit])->sc_openf ||
-	    (ui = tsdinfo[tsunit]) == 0 || ui->ui_alive == 0)
+	if (tsunit>=NTS || (ui = tsdinfo[tsunit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
+	if ((sc = &ts_softc[tsunit])->sc_openf)
+		return (EBUSY);
 	if (tsinit(tsunit))
 		return (ENXIO);
 	tscommand(dev, TS_SENSE, 1);
