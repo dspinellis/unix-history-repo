@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mille.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)mille.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"mille.h"
@@ -125,20 +125,20 @@ rub() {
 
 	(void)signal(SIGINT, SIG_IGN);
 	if (getyn(REALLYPROMPT))
-		die();
+		die(0);
 	(void)signal(SIGINT, rub);
 }
 
 /*
  *	Time to go beddy-by
  */
-die() {
+die(code)
+int code; {
 
 	(void)signal(SIGINT, SIG_IGN);
 	if (outf)
 		fflush(outf);
 	mvcur(0, COLS - 1, LINES - 1, 0);
 	endwin();
-	exit(1);
+	exit(code);
 }
-
