@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)gram.dcl	5.3 (Berkeley) %G%
+ *	@(#)gram.dcl	5.4 (Berkeley) %G%
  */
 
 /*
@@ -12,8 +12,8 @@
  * University of Utah CS Dept modification history:
  *
  * $Log:	gram.dcl,v $
- * Revision 5.7  85/12/21  07:29:08  donn
- * Rule out CHARACTER*(*) declarations in main programs.
+ * Revision 5.7  86/01/30  15:20:27  donn
+ * Improve error message reporting.
  * 
  * Revision 5.6  85/12/18  20:10:26  donn
  * Enforce more strict ordering of specification statements. per the
@@ -108,11 +108,15 @@ lengspec:
 		
 		p = $3;
 		NO66("length specification *n");
-		if( ! ISICON(p) || p->constblock.const.ci<0 )
+		if( ! ISICON(p) )
 			{
 			$$ = 0;
-			dclerr("length must be a positive integer value",
-				PNULL);
+			dclerr("length expression is not type integer", PNULL);
+			}
+		else if ( p->constblock.const.ci < 0 )
+			{
+			$$ = 0;
+			dclerr("illegal negative length", PNULL);
 			}
 		else if( dblflag )
 			{
@@ -125,22 +129,7 @@ lengspec:
 			$$ = p->constblock.const.ci;
 		}
 	| SSTAR intonlyon SLPAR SSTAR SRPAR intonlyoff
-		{
-		NO66("length specification *(*)");
-		if( parstate < INSIDE )
-			{
-			dclerr("variable length function or variable length string in main program", PNULL);
-			$$ = 0;
-			}
-		else
-		if( procclass == CLMAIN )
-			{
-			dclerr("variable length string in main program", PNULL);
-			$$ = 0;
-			}
-		else
-			$$ = -1;
-		}
+		{ NO66("length specification *(*)"); $$ = -1; }
 	;
 
 common:	  SCOMMON in_dcl var
