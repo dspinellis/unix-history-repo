@@ -5,11 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cksum.vax.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cksum.vax.c	1.2 (Berkeley) %G%";
 #endif not lint
 
-#include "../globals.h"
-#include <protocols/timed.h>
+#include <sys/types.h>
 
 #define ADD	asm("adwc (r9)+,r8;");
 
