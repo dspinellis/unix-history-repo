@@ -1,0 +1,42 @@
+Hi.
+
+I have mailed the GNU Bash shell to you since it was hard for you to get
+a copy otherwise.  The original files were first tar'ed, then
+compressed, then uuencoded, and finally split.
+
+You can get them back together by:
+
+	Saving each mail message WITHOUT THE HEADER in the file
+	indicated in the subject line.	When you save the message, make
+	certain that each FILE ENDS IN ONE, AND ONLY ONE, NEWLINE.
+
+	Concatenate the files together in lexographic order of their
+	names.	This means you type "cat bash-1.xx.tar.Z.uu.*" >bash.tar.Z.uu".
+
+	uudecode bash.tar.Z.uu
+
+	uncompress bash.tar.Z
+
+	tar -xvf bash.tar
+
+This produces a directory called "bash-1.xx".  The full source to bash
+resides in this directory.  Now you can read the README file, or the
+INSTALL file, or whatever else I saw fit to put in the distribution.
+
+Do not be insulted by this letter.  It is automatically sent to each
+person that the shell is mailed to, and is not meant to reflect on any
+person's Unix hacking knowledge or expertise.  Hopefully, some people
+may have questions answered by it; I certainly would have found a file
+such as this one useful the first time I received a set of uuencoded
+split files.
+
+If you have suggestions for making the mailing of the shell easier on
+end users, or for improvements to this cover letter, please let me know!
+
+Bug reports for bash should be sent to bash-maintainers@ai.mit.edu.
+If this doesn't work for some reason, or you need an immediate reply,
+you can try sending mail to me.
+
+Brian Fox
+bfox@ai.mit.edu
+March 22, 1989

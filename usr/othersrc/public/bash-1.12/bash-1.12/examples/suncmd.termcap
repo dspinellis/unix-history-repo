@@ -1,0 +1,30 @@
+#Posted-Date: Fri, 9 Mar 90 18:34:29 EST
+#Date: Fri, 9 Mar 90 18:34:29 EST
+#From: "Eirik Fuller" <wonton.tn.cornell.edu!eirik@ucsbcsl.UUCP>
+#To: bfox@ai.mit.edu (Brian Fox)
+#Subject: Patch to bash 1.05 for SunView
+#
+#I think this works:
+#
+Mu|sun-cmd:am:bs:km:pt:li#34:co#80:cl=^L:ce=\E[K:cd=\E[J:rs=\E[s:
+#
+#Another alternative is to send the ti string at startup time (and, I
+#guess, the te string at exit time); that is how vi works in a cmdtool.
+#The best reason to not do this is that this also disables scrolling
+#which, as I understand it, is why anyone would use cmdtool in the
+#first place.  Sending the ti string at startup time would do strange
+#things on other systems too; in xterm it would use the alternate
+#screen.
+#
+#The problem with cmdtool, in case that is less than obvious, is that
+#almost none of the capabilities advertised in /etc/termcap are enabled
+#while scrolling is enabled.  It has other problems too, like being
+#part of an outdated proprietary windowing system, but there's probably
+#no need to dwell on that.  In a sense, though, the sun-cmd termcap
+#entry doesn't lie about the capabilities; I think the termcap man page
+#does warn about some terminals having cursor motion capabilities only
+#in the "ti/te window".
+#
+#A general solution to this problem would require a termcap capability
+#which somehow tells which features are available outside of the ti/te
+#window.  There is no such capability in termcap now, of course.
