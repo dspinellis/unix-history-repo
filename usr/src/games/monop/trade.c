@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)trade.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)trade.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"monop.ext"
@@ -210,9 +210,7 @@ resign() {
 		  case PRPTY:
 			new_own = board[cur_p->loc].owner;
 			break;
-		  case SPEC:
-		  case CC:
-		  case CHANCE:
+		  default:		/* Chance, taxes, etc */
 			new_own = num_play;
 			break;
 		}
@@ -258,7 +256,7 @@ resign() {
 			sqp = op->sqr;
 			sqp->owner = -1;
 			sqp->desc->morg = FALSE;
-			if (op->type == PRPTY) {
+			if (sqp->type == PRPTY) {
 				isnot_monop(sqp->desc->mon_desc);
 				sqp->desc->houses = 0;
 			}

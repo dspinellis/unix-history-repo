@@ -11,10 +11,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)prop.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)prop.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"monop.ext"
+
+extern char *calloc();
 
 /*
  *	This routine deals with buying property, setting all the
@@ -41,7 +43,7 @@ int	op_sqr; {
 	MON	*mp;
 	OWN	*op;
 
-	op = calloc(1, sizeof (OWN));
+	op = (OWN *)calloc(1, sizeof (OWN));
 	op->sqr = &board[op_sqr];
 	val = value(op->sqr);
 	last_tp = NULL;
@@ -108,7 +110,7 @@ reg SQUARE	*sqp; {
 	switch (sqp->type) {
 	  case SAFE:
 		return 0;
-	  case SPEC:
+	  default:		/* Specials, etc */
 		return 1;
 	  case UTIL:
 		if (sqr == 12)
@@ -118,7 +120,7 @@ reg SQUARE	*sqp; {
 	  case RR:
 		return 4 + sqr/10;
 	  case PRPTY:
-		return 8 + (PROP *)(sqp->desc) - prop;
+		return 8 + (sqp->desc) - prop;
 	}
 }
 /*
