@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ns_pcb.c	6.6 (Berkeley) %G%
+ *	@(#)ns_pcb.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -111,7 +111,8 @@ ns_pcbconnect(nsp, nam)
 		dst = &satons_addr(ro->ro_dst);
 
 		ia = ns_iaonnetof(&sns->sns_addr);
-		if (ia == 0) {
+		if (ia == 0 ||
+			(ia->ia_ifp->if_flags & IFF_UP) == 0) {
 			/* 
 			 * If route is known or can be allocated now,
 			 * our src addr is taken from the i/f, else punt.
