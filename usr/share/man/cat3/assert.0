@@ -1,0 +1,32 @@
+ASSERT(3)                   BSD Programmer's Manual                  ASSERT(3)
+
+NNAAMMEE
+     aasssseerrtt - expression verification macro
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<aasssseerrtt..hh>>
+
+     aasssseerrtt(_e_x_p_r_e_s_s_i_o_n);
+
+DDEESSCCRRIIPPTTIIOONN
+     The aasssseerrtt() macro tests the given _e_x_p_r_e_s_s_i_o_n and if it is false, the
+     calling process is terminated.  A diagnostic message is written to the
+     _s_t_d_e_r_r and the function _exit(2) is called effectively terminating the
+     program.
+
+     If _e_x_p_r_e_s_s_i_o_n is true, the aasssseerrtt() macro does nothing.
+
+     The aasssseerrtt() macro may be removed at compile time with the --NNDDEEBBUUGG op-
+     tion, see cc(1).
+
+DDIIAAGGNNOOSSTTIICCSS
+     The following diagnostic message is written to _s_t_d_e_r_r if _e_x_p_r_e_s_s_i_o_n is
+     false:
+
+           "assertion \"%s\" failed: file \"%s\", line %d0, \
+                               "expression", __FILE__, __LINE__);
+
+HHIISSTTOORRYY
+     A aasssseerrtt macro appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 9, 1993                                1

@@ -1,0 +1,23 @@
+END(3)                      BSD Programmer's Manual                     END(3)
+
+NNAAMMEE
+     eenndd, eetteexxtt, eeddaattaa - end boundaries of image segments
+
+SSYYNNOOPPSSIISS
+     _e_x_t_e_r_n _e_n_d_;
+     _e_x_t_e_r_n _e_t_e_x_t_;
+     _e_x_t_e_r_n _e_d_a_t_a_;
+
+DDEESSCCRRIIPPTTIIOONN
+     The global variables _e_n_d, _e_x_t_e_x_t and _e_d_a_t_a correspond to the the next ad-
+     dress following the end of the text segment, the initialized data segment
+     and the end of the data segment (BSS). These values are initially set at
+     execution time by brk(2).
+
+SSEEEE AALLSSOO
+     brk(2),  malloc(3)
+
+HHIISSTTOORRYY
+     A eenndd manual appeared in Version 6 AT&T UNIX.
+
+4.4BSD                          April 19, 1991                               1

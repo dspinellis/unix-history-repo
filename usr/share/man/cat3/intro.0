@@ -1,0 +1,75 @@
+INTRO(3)                    BSD Programmer's Manual                   INTRO(3)
+
+NNAAMMEE
+     iinnttrroo - introduction to the C libraries
+
+DDEESSCCRRIIPPTTIIOONN
+     This section provides an overview of the C library functions, their error
+     returns and other common definitions and concepts.  Most of these func-
+     tions are available from the C library, _l_i_b_c (see libc(3)).  Other li-
+     braries, such as the math library, _l_i_b_m, must be indicated at compile
+     time with the --ll option of the compiler.
+
+     A subset of the libc(functions) are available from Fortran; they are de-
+     scribed separately in intro(3f).
+
+     The various libraries (followed by the loader flag):
+
+     libc(--ll_c)   Standard C library functions. (See libc(3).) When using the C
+                 compiler  cc(1),  it is not necessary to supply the loader
+                 flag --ll_c for these functions.  There are several `libraries'
+                 or groups of functions included inside of libc: the standard
+                 I/O routines, database routines, bit operators, string opera-
+                 tors, character tests and character operators, des encryption
+                 routines, storage allocation, time functions, signal handling
+                 and more.
+
+     libcurses( --ll_c_u_r_s_e_s --ll_t_e_r_m_c_a_p)
+                 Terminal independent screen management routines for two di-
+                 mensional non-bitmap display terminals.  (See curses(3).)
+
+     libcompat(--ll_c_o_m_p_a_t)
+                 Functions which are obsolete but are available for compati-
+                 bility with 4.3BSD. In particular, a number of system call
+                 interfaces provided in previous releases of BSD have been in-
+                 cluded for source code compatibility.  Use of these routines
+                 should, for the most part, be avoided.  The manual page entry
+                 for each compatibility routine indicates the proper interface
+                 to use.
+
+     libl(--ll_l)   The library for lex(1).
+
+     libm(--ll_m)   The math library, _l_i_b_m. The math library is loaded as needed
+                 by the Pascal compiler pc(1),  but not by the C compiler
+                 which requires the --ll_m flag.  (See math(3).)
+
+     libmp(--ll_m_p)
+
+     libplot(--ll_p_l_o_t)
+                 Device independent plotting functions.  (See plot(3).)
+
+     libplotf77(--ll_p_l_o_t_f_7_7)
+                 The device independent plotting functions for fortran.  (See
+                 plot(3).)
+
+     libtermcap--ll_t_e_r_m_c_a_p
+                 The terminal independent operation library package. (See
+                 termcap(3).)
+
+     liby(--ll_y)   The library for yacc(1).
+
+FFIILLEESS
+     /usr/lib/libc.a    the C library
+     /usr/lib/libm.a    the math library
+
+
+     /usr/lib/libc_p.a  the C library compiled for profiling
+     /usr/lib/libm_p.a  the math library compiled for profiling
+
+SSEEEE AALLSSOO
+     stdio(3),  math(3),  intro(2),  cc(1),  ld(1),  nm(1)
+
+HHIISSTTOORRYY
+     An iinnttrroo manual appeared in Version 7 AT&T UNIX.
+
+4th Berkeley Distribution        June 5, 1993                                2
