@@ -1,6 +1,6 @@
-#	@(#)Makefile	4.1	(Berkeley)	83/05/08
+#	@(#)Makefile	4.2	(Berkeley)	83/05/08
 #
-DESTDIR=/usr/new
+DESTDIR=
 CFLAGS = -O
 
 all:	mkey inv hunt refer addbib lookbib sortbib
@@ -36,16 +36,16 @@ sortbib: sortbib.o
 	cc sortbib.o -o sortbib
 
 install: all
-	install -s mkey /usr/lib/refer
-	install -s inv  /usr/lib/refer
-	install -s hunt /usr/lib/refer
-	install -s refer $(DESTDIR)
-	install -s addbib $(DESTDIR)
-	install -s sortbib $(DESTDIR)
-	install roffbib $(DESTDIR)
-	install indxbib $(DESTDIR)
-	install -s lookbib $(DESTDIR)
-	install tmac.bib /usr/lib/tmac
+	install -s mkey $(DESTDIR)/usr/lib/refer
+	install -s inv  $(DESTDIR)/usr/lib/refer
+	install -s hunt $(DESTDIR)/usr/lib/refer
+	install -s refer $(DESTDIR)/usr/bin
+	install -s addbib $(DESTDIR)/usr/bin
+	install -s sortbib $(DESTDIR)/usr/bin
+	install -c roffbib.sh $(DESTDIR)/usr/bin
+	install -c indxbib.sh $(DESTDIR)/usr/bin
+	install -s lookbib $(DESTDIR)/usr/bin
+	install -c tmac.bib $(DESTDIR)/usr/lib/tmac
 clean:
 	rm -f refer inv hunt mkey addbib lookbib sortbib *.o
 
