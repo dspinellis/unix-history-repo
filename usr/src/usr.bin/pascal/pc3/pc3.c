@@ -1,6 +1,6 @@
     /* Copyright (c) 1980 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pc3.c 1.9 %G%";
+static	char sccsid[] = "@(#)pc3.c 1.10 %G%";
 
     /*
      *	     Pc3 is a pass in the Berkeley Pascal compilation
@@ -498,7 +498,7 @@ struct symbol *
 entersymbol( name )
     char	*name;
     {
-	static struct symboltableinfo	*symboltable = NIL;
+	static struct symboltableinfo	symboltable;
 	char				*enteredname;
 	long				hashindex;
 	register struct symboltableinfo	*tablep;
@@ -508,31 +508,32 @@ entersymbol( name )
 
 	enteredname = enterstring( name );
 	hashindex = SHORT_ABS( ( long ) enteredname ) % SYMBOLPRIME;
-	for ( tablep = symboltable ; /*return*/ ; tablep = tablep -> chain ) {
+	for ( tablep = &symboltable ; /*return*/ ; tablep = tablep -> chain ) {
 	    if ( tablep == NIL ) {
-#		ifdef DEBUG
-		    fprintf( stderr , "[entersymbol] calloc\n" );
-#		endif DEBUG
-		tablep = ( struct symboltableinfo * )
-			    calloc( sizeof ( struct symboltableinfo ) , 1 );
-		if ( tablep == NIL ) {
+#		ifdef SPACEDEBUG
+		    fprintf( stderr ,
+			    "[entersymbol] calloc'ing table for %d symbols\n" , 
+			    SYMBOLPRIME );
+#		endif SPACEDEBUG
+		for ( tablep = &symboltable
+		    ; tablep->chain != NIL
+		    ; tablep = tablep->chain ) {
+			continue;
+		}
+		tablep->chain = ( struct symboltableinfo * )
+			    calloc( 1 , sizeof ( struct symboltableinfo ) );
+		if ( tablep->chain == NIL ) {
 		    error( FATAL , "ran out of memory (entersymbol)" );
 		}
-		if ( symboltable == NIL ) {
-		    symboltable = tablep;
-		}
+		tablep = tablep->chain;
 	    }
 	    herep = &( tablep -> entry[ hashindex ] );
 	    limitp = &( tablep -> entry[ SYMBOLPRIME ] );
 	    increment = 1;
 	    do {
-#		ifdef DEBUG
-		    fprintf( stderr , "[entersymbol] increment %d\n" 
-			    , increment );
-#		endif DEBUG
 		if ( *herep == NIL ) {
 			/* empty */
-		    if ( tablep -> used > ( ( SYMBOLPRIME / 3 ) * 4 ) ) {
+		    if ( tablep -> used > ( ( SYMBOLPRIME / 4 ) * 3 ) ) {
 			    /* too full, break for next table */
 			break;
 		    }
@@ -540,19 +541,20 @@ entersymbol( name )
 		    *herep = symbolalloc();
 		    ( *herep ) -> name = enteredname;
 		    ( *herep ) -> lookup = NEW;
-#		    ifdef DEBUG
-			fprintf( stderr , "[entersymbol] name %s NEW\n"
-				, enteredname );
-#		    endif DEBUG
+#		    ifdef HASHDEBUG
+			fprintf( stderr ,
+				"[entersymbol] name %s NEW after %d\n" ,
+				enteredname , increment / 2 );
+#		    endif HASHDEBUG
 		    return *herep;
 		}
 		    /* a find? */
 		if ( ( *herep ) -> name == enteredname ) {
 		    ( *herep ) -> lookup = OLD;
-#		    ifdef DEBUG
-			fprintf( stderr , "[entersymbol] name %s OLD\n"
-				, enteredname );
-#		    endif DEBUG
+#		    ifdef HASHDEBUG
+			fprintf( stderr , "[entersymbol] name %s OLD at %d\n" ,
+				enteredname , increment / 2 );
+#		    endif HASHDEBUG
 		    return *herep;
 		}
 		herep += increment;
@@ -561,6 +563,9 @@ entersymbol( name )
 		}
 		increment += 2;
 	    } while ( increment < SYMBOLPRIME );
+#	    ifdef HASHDEBUG
+		fprintf( stderr , "[entersymbol] next symboltable\n" );
+#	    endif HASHDEBUG
 	}
     }
 
@@ -575,9 +580,11 @@ symbolalloc()
 	struct symbol		*newsymbol;
 
 	if ( symbolsleft <= 0 ) {
-#	    ifdef DEBUG
-		fprintf( stderr , "[symbolalloc] malloc\n" );
-#	    endif DEBUG
+#	    ifdef SPACEDEBUG
+		fprintf( stderr ,
+			"[symbolalloc] malloc space for %d symbols\n" ,
+			SYMBOLALLOC / sizeof( struct symbol ) );
+#	    endif SPACEDEBUG
 	    nextsymbol = ( struct symbol * ) malloc( SYMBOLALLOC );
 	    if ( nextsymbol == 0 ) {
 		error( FATAL , "ran out of memory (symbolalloc)" );
@@ -619,7 +626,7 @@ char *
 enterstring( string )
     char	*string;
     {
-	static struct stringtableinfo	*stringtable = NIL;
+	static struct stringtableinfo	stringtable;
 	long				hashindex;
 	register struct stringtableinfo	*tablep;
 	register char			**herep;
@@ -627,49 +634,52 @@ enterstring( string )
 	register long			increment;
 
 	hashindex = SHORT_ABS( hashstring( string ) ) % STRINGPRIME;
-	for ( tablep = stringtable ; /*return*/ ; tablep = tablep -> chain ) {
+	for ( tablep = &stringtable ; /*return*/ ; tablep = tablep -> chain ) {
 	    if ( tablep == NIL ) {
-#		ifdef DEBUG
-		    fprintf( stderr , "[enterstring] calloc\n" );
-#		endif DEBUG
-		tablep = ( struct stringtableinfo * )
-			    calloc( sizeof ( struct stringtableinfo ) , 1 );
-		if ( tablep == NIL ) {
+#		ifdef SPACEDEBUG
+		    fprintf( stderr ,
+			    "[enterstring] calloc space for %d strings\n" ,
+			    STRINGPRIME );
+#		endif SPACEDEBUG
+		for ( tablep = &stringtable
+		    ; tablep->chain != NIL
+		    ; tablep = tablep->chain ) {
+			continue;
+		}
+		tablep->chain = ( struct stringtableinfo * )
+			    calloc( 1 , sizeof ( struct stringtableinfo ) );
+		if ( tablep->chain == NIL ) {
 		    error( FATAL , "ran out of memory (enterstring)" );
 		}
-		if ( stringtable == NIL ) {
-		    stringtable = tablep;
-		}
+		tablep = tablep->chain;
 	    }
 	    herep = &( tablep -> entry[ hashindex ] );
 	    limitp = &( tablep -> entry[ STRINGPRIME ] );
 	    increment = 1;
 	    do {
-#		ifdef DEBUG
-		    fprintf( stderr , "[enterstring] increment %d\n" 
-			    , increment );
-#		endif DEBUG
 		if ( *herep == NIL ) {
 			/* empty */
-		    if ( tablep -> used > ( ( STRINGPRIME / 3 ) * 4 ) ) {
+		    if ( tablep -> used > ( ( STRINGPRIME / 4 ) * 3 ) ) {
 			    /* too full, break for next table */
 			break;
 		    }
 		    tablep -> used++;
 		    *herep = charalloc( strlen( string ) );
 		    strcpy( *herep , string );
-#		    ifdef DEBUG
-			fprintf( stderr , "[enterstring] string %s copied\n"
-				, *herep );
-#		    endif DEBUG
+#		    ifdef HASHDEBUG
+			fprintf( stderr ,
+				"[enterstring] string %s copied after %d\n" , 
+				*herep , increment / 2 );
+#		    endif HASHDEBUG
 		    return *herep;
 		}
 		    /* quick, check the first chars and then the rest */
 		if ( **herep == *string && strcmp( *herep , string ) == 0 ) {
-#		    ifdef DEBUG
-			fprintf( stderr , "[enterstring] string %s found\n"
-				, *herep );
-#		    endif DEBUG
+#		    ifdef HASHDEBUG
+			fprintf( stderr ,
+				"[enterstring] string %s found after %d\n" ,
+				*herep , increment / 2 );
+#		    endif HASHDEBUG
 		    return *herep;
 		}
 		herep += increment;
@@ -678,6 +688,9 @@ enterstring( string )
 		}
 		increment += 2;
 	    } while ( increment < STRINGPRIME );
+#	    ifdef HASHDEBUG
+		fprintf( stderr , "[enterstring] next stringtable\n" );
+#	    endif HASHDEBUG
 	}
     }
 
@@ -696,10 +709,10 @@ charalloc( length )
 
 	if ( charsleft < lengthplus1 ) {
 	    askfor = lengthplus1 > CHARALLOC ? lengthplus1 : CHARALLOC;
-#	    ifdef DEBUG
-		fprintf( stderr , "[charalloc] malloc( %d )\n" 
+#	    ifdef SPACEDEBUG
+		fprintf( stderr , "[charalloc] malloc space for %d chars\n" 
 			, askfor );
-#	    endif DEBUG
+#	    endif SPACEDEBUG
 	    nextchar = ( char * ) malloc( askfor );
 	    if ( nextchar == 0 ) {
 		error( FATAL , "no room for %d characters" , askfor );
