@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)local.c	1.10 (Berkeley) %G%";
+static char *sccsid ="@(#)local.c	1.11 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -7,17 +7,7 @@ static char *sccsid ="@(#)local.c	1.10 (Berkeley) %G%";
 /*	this file contains code which is dependent on the target machine */
 
 NODE *
-cast( p, t ) register NODE *p; TWORD t; {
-	/* cast node p to type t */
-
-	p = buildtree( CAST, block( NAME, NIL, NIL, t, 0, (int)t ), p );
-	p->in.left->in.op = FREE;
-	p->in.op = FREE;
-	return( p->in.right );
-	}
-
-NODE *
-clocal(p) NODE *p; {
+clocal(p) register NODE *p; {
 
 	/* this is called to do local transformations on
 	   an expression tree preparitory to its being
@@ -33,8 +23,8 @@ clocal(p) NODE *p; {
 
 	register struct symtab *q;
 	register NODE *r;
-	register o;
-	register m, ml;
+	register int o;
+	register int m, ml;
 
 	switch( o = p->in.op ){
 
@@ -71,6 +61,15 @@ clocal(p) NODE *p; {
 			}
 		break;
 
+	case LT:
+	case LE:
+	case GT:
+	case GE:
+		if( ISPTR( p->in.left->in.type ) || ISPTR( p->in.right->in.type ) ){
+			p->in.op += (ULT-LT);
+			}
+		break;
+
 	case PCONV:
 		/* do pointer conversions for char and longs */
 		ml = p->in.left->in.type;
@@ -85,33 +84,44 @@ clocal(p) NODE *p; {
 		return( p->in.left );
 
 	case SCONV:
-		m = (p->in.type == FLOAT || p->in.type == DOUBLE );
-		ml = (p->in.left->in.type == FLOAT || p->in.left->in.type == DOUBLE );
+		m = p->in.type;
+		ml = p->in.left->in.type;
+		if(m == ml)
+			goto clobber;
 		o = p->in.left->in.op;
-		if( (o == FCON || o == DCON) && ml && !m ) {
-			/* float type to int type */
-			r = block( ICON, (NODE *)NULL, (NODE *)NULL, INT, 0, 0 );
+		if(m == FLOAT || m == DOUBLE) {
+			if(o==SCONV &&
+			 ml == DOUBLE &&
+			 p->in.left->in.left->in.type==m) {
+				p->in.op = p->in.left->in.op = FREE;
+				return(p->in.left->in.left);
+				}
+			/* see makety() for constant conversions */
+			break;
+			}
+		if(ml == FLOAT || ml == DOUBLE){
+			if(o != FCON && o != DCON)
+				break;
+			ml = ISUNSIGNED(m) ? UNSIGNED : INT; /* LONG? */
+			r = block( ICON, (NODE *)NULL, (NODE *)NULL, ml, 0, 0 );
 			if( o == FCON )
-				r->tn.lval = (int) p->in.left->fpn.fval;
+				r->tn.lval = ml == INT ?
+					(int) p->in.left->fpn.fval :
+					(unsigned) p->in.left->fpn.fval;
 			else
-				r->tn.lval = (int) p->in.left->dpn.dval;
+				r->tn.lval = ml == INT ?
+					(int) p->in.left->dpn.dval :
+					(unsigned) p->in.left->dpn.dval;
 			r->tn.rval = NONAME;
 			p->in.left->in.op = FREE;
 			p->in.left = r;
+			o = ICON;
+			if( m == ml )
+				goto clobber;
 			}
-		else
-#ifdef SPRECC
-			if ( ml || m )
-#else
-			if ( ml != m )
-#endif
-				break;
-
 		/* now, look for conversions downwards */
 
-		m = p->in.type;
-		ml = p->in.left->in.type;
-		if( p->in.left->in.op == ICON ){ /* simulate the conversion here */
+		if( o == ICON ){ /* simulate the conversion here */
 			CONSZ val;
 			val = p->in.left->tn.lval;
 			switch( m ){
@@ -136,10 +146,10 @@ clocal(p) NODE *p; {
 				}
 			p->in.left->in.type = m;
 			}
-		else if( m != FLOAT && m != DOUBLE )
+		else
 			break;
 
-		/* clobber conversion */
+	clobber:
 		p->in.op = FREE;
 		return( p->in.left );  /* conversion gets clobbered */
 
@@ -175,9 +185,9 @@ clocal(p) NODE *p; {
 			if( r->in.left->in.op == PLUS || r->in.left->in.op == MINUS ) 
 				if( ISPTR(r->in.type) ) {
 					if( ISUNSIGNED(p->in.left->in.type) )
-						p->in.left->in.type = UCHAR;
+						p->in.left->in.type = UNSIGNED;
 					else
-						p->in.left->in.type = CHAR;
+						p->in.left->in.type = INT;
 				}
 		break;
 		}
@@ -231,7 +241,7 @@ offcon( off, t, d, s ) OFFSZ off; TWORD t; {
 
 
 static inwd	/* current bit offsed in word */;
-static word	/* word being built from fields */;
+static CONSZ word	/* word being built from fields */;
 
 incode( p, sz ) register NODE *p; {
 
@@ -241,13 +251,13 @@ incode( p, sz ) register NODE *p; {
 	/* inoff is updated to have the proper final value */
 	/* we also assume sz  < SZINT */
 
-	if (nerrors) return;
+	if(nerrors) return;
 	if((sz+inwd) > SZINT) cerror("incode: field > int");
 	word |= ((unsigned)(p->tn.lval<<(32-sz))) >> (32-sz-inwd);
 	inwd += sz;
 	inoff += sz;
 	if(inoff%SZINT == 0) {
-		printf( "	.long	0x%x\n", word);
+		printf( "	.long	0x%lx\n", word);
 		word = inwd = 0;
 		}
 	}
@@ -272,7 +282,7 @@ cinit( p, sz ) NODE *p; {
 	 * as a favor (?) to people who want to write
 	 *     int i = 9600/134.5;
 	 * we will, under the proper circumstances, do
-	 * a coersion here.
+	 * a coercion here.
 	 */
 	switch (p->in.type) {
 	case INT:
@@ -306,7 +316,7 @@ vfdzero( n ){ /* define n bits of zeros in a vfd */
 	inwd += n;
 	inoff += n;
 	if( inoff%ALINT ==0 ) {
-		printf( "	.long	0x%x\n", word );
+		printf( "	.long	0x%lx\n", word );
 		word = inwd = 0;
 		}
 	}
@@ -321,7 +331,7 @@ exname( p ) char *p; {
 	static char text[BUFSIZ+1];
 #endif
 
-	register i;
+	register int i;
 
 	text[0] = '_';
 #ifndef FLEXNAMES
@@ -370,18 +380,39 @@ commdec( id ){ /* make a common declaration for id, if reasonable */
 	printf( "	.comm	%s,", exname( q->sname ) );
 	off = tsize( q->stype, q->dimoff, q->sizoff );
 	printf( CONFMT, off/SZCHAR );
-	printf( "\n" );
+	putchar( '\n' );
 	}
 
-/*ARGSUSED*/
-isitlong( cb, ce ){ /* is lastcon to be long or short */
-	/* cb is the first character of the representation, ce the last */
+prtdcon(p)
+	register NODE *p;
+{
+	register int o = p->in.op;
+	int i;
 
-	if( ce == 'l' || ce == 'L' ||
-		lastcon >= (1L << (SZINT-1) ) ) return (1);
-	return(0);
+	if (o != DCON && o != FCON)
+		return;
+	/*
+	 * Clobber constants of value zero so
+	 * we can generate more efficient code.
+	 */
+	if ((o == DCON && p->dpn.dval == 0) ||
+	    (o == FCON && p->fpn.fval == 0)) {
+		p->in.op = ICON;
+		p->tn.rval = NONAME;
+		return;
 	}
-
+	locctr(DATA);
+	defalign(o == DCON ? ALDOUBLE : ALFLOAT);
+	deflab(i = getlab());
+	if (o == FCON)
+		fincode(p->fpn.fval, SZFLOAT);
+	else
+		fincode(p->dpn.dval, SZDOUBLE);
+	p->tn.lval = 0;
+	p->tn.rval = -i;
+	p->in.type = (o == DCON ? DOUBLE : FLOAT);
+	p->in.op = NAME;
+}
 
 isitfloat( s ) char *s; {
 	union cvt {
