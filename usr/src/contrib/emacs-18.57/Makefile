@@ -15,7 +15,7 @@ SHELL = /bin/sh
 # Note that on system V you must change MANDIR to /use/local/man/man1.
 LIBDIR= /usr/contrib/lib/emacs
 BINDIR= /usr/contrib/bin
-MANDIR= /usr/contrib/man/man1
+MANDIR= /usr/contrib/man/cat1
 LOCKDIR= /var/emacs/lock
 
 # Flags passed down to subdirectory makefiles.
@@ -60,7 +60,8 @@ install: all mkdir lockdir
 	install -c -s etc/etags ${BINDIR}/etags
 	install -c -s etc/ctags ${BINDIR}/ctags
 	install -c -s -m 1755 src/xemacs ${BINDIR}/xemacs
-	install -c -m 444 etc/emacs.1 ${MANDIR}/emacs.1
+	nroff -man etc/emacs.1 > ${MANDIR}/emacs.0
+	chmod 444 ${MANDIR}/emacs.0
 	-rm -f ${BINDIR}/emacs
 	mv ${BINDIR}/xemacs ${BINDIR}/emacs
 
