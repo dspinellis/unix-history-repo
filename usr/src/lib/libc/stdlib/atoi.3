@@ -1,0 +1,39 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)atoi.3	5.1 (Berkeley) %G%
+.\"
+.TH ATOI 3 ""
+.UC 7
+.SH NAME
+atoi \- convert ASCII string to integer
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdlib.h>
+
+int
+atoi(const char *nptr);
+.ft R
+.fi
+.SH DESCRIPTION
+The
+.I atoi
+function converts the initial portion of the string pointed to by
+.I nptr
+to
+.I integer
+representation.
+.PP
+It is equivalent to:
+.sp
+.RS
+(int)strtol(nptr, (char **)NULL, 10);
+.RE
+.SH SEE ALSO
+atof(3), atol(3), strtod(3), strtol(3), strtoul(3)
+.SH STANDARDS
+.B Atoi
+conforms to ANSI X3.159-1989 (``ANSI C'').
