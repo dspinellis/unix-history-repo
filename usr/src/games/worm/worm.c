@@ -1,5 +1,4 @@
-
-static char sccsid[] = "	worm.c	4.1	82/10/24	";
+static char	*sccsid = "@(#)worm.c	4.3 (Berkeley) %G%";
 
 /*
  * Worm.  Written by Michael Toy
