@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lcmd.c	3.20 %G%";
+static char sccsid[] = "@(#)lcmd.c	3.21 %G%";
 #endif
 
 #include "defs.h"
@@ -34,6 +34,7 @@ struct lcmd_arg arg_escape[];
 struct lcmd_arg arg_foreground[];
 struct lcmd_arg arg_label[];
 struct lcmd_arg arg_nline[];
+struct lcmd_arg arg_close[];
 struct lcmd_arg arg_select[];
 struct lcmd_arg arg_shell[];
 struct lcmd_arg arg_source[];
@@ -42,13 +43,14 @@ struct lcmd_arg arg_time[];
 struct lcmd_arg arg_unalias[];
 struct lcmd_arg arg_unset[];
 struct lcmd_arg arg_window[];
+struct lcmd_arg arg_write[];
 struct lcmd_arg arg_null[] = 0;
 
 struct lcmd_tab lcmd_tab[] = {
 	"%",		1,	l_select,	arg_select,
 	"alias",	1,	l_alias,	arg_alias,
 	"buffer",	2,	l_nline,	arg_nline,
-	"close",	2,	l_close,	0,
+	"close",	2,	l_close,	arg_close,
 	"cursormodes",	2,	l_cursormodes,	arg_cursormodes,
 	"debug",	1,	l_debug,	arg_debug,
 	"escape",	1,	l_escape,	arg_escape,
@@ -66,7 +68,7 @@ struct lcmd_tab lcmd_tab[] = {
 	"unset",	3,	l_unset,	arg_unset,
 	"variable",	1,	l_variable,	arg_null,
 	"window",	2,	l_window,	arg_window,
-	"write",	2,	l_write,	0,
+	"write",	2,	l_write,	arg_write,
 	0
 };
 

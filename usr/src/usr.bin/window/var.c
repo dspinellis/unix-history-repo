@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)var.c	3.6 %G%";
+static char sccsid[] = "@(#)var.c	3.7 %G%";
 #endif
 
 #include "value.h"
@@ -20,7 +20,8 @@ struct value *v;
 
 	/* do this first, easier to recover */
 	val = *v;
-	if (val.v_type == V_STR && (val.v_str = str_cpy(val.v_str)) == 0)
+	if (val.v_type == V_STR && val.v_str != 0 &&
+	    (val.v_str = str_cpy(val.v_str)) == 0)
 		return 0;
 	if (*(p = var_lookup1(head, name)) == 0) {
 		r = (struct var *) malloc(sizeof (struct var));
