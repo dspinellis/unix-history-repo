@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)error.c	5.3 (Berkeley) 87/04/11";
+static char sccsid[] = "@(#)error.c	5.4 (Berkeley) 87/07/21";
 #endif not lint
 
 #include <bug.h>
@@ -21,7 +21,7 @@ static short	err_redir;			/* stderr redirected */
 seterr()
 {
 	if (!freopen(ERROR_FILE, "a", stderr))
-		error("can't open error file %s.\n", ERROR_FILE);
+		error("can't open error file %s.", ERROR_FILE);
 	err_redir = YES;
 }
 
@@ -38,9 +38,9 @@ error(fmt, arg)
 
 	if (err_redir) {
 		/* don't combine these, "fmt" may not require "arg" */
-		fputc('\t', stderr);
+		fprintf(stderr, "\t%s\n\t", tmpname);
 		fprintf(stderr, fmt, arg);
-		fprintf(stderr, "\n\ttemporary file is %s.\n", tmpname);
+		fputc('\n', stderr);
 	}
 	else {
 		sprintf(logmsg, "bugfiler: %s", fmt);
