@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.91 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.92 (Berkeley) %G%
  */
 
 /*
@@ -402,13 +402,8 @@ nfs_getattr(ap)
 	/*
 	 * Update local times for special files.
 	 */
-	if (np->n_flag & (NACC | NUPD)) {
-		if (np->n_flag & NACC)
-			np->n_atim = time;
-		if (np->n_flag & NUPD)
-			np->n_mtim = time;
+	if (np->n_flag & (NACC | NUPD))
 		np->n_flag |= NCHG;
-	}
 	/*
 	 * First look in the cache.
 	 */
@@ -2392,10 +2387,6 @@ nfsspec_close(ap)
 	struct vattr vattr;
 
 	if (np->n_flag & (NACC | NUPD)) {
-		if (np->n_flag & NACC)
-			np->n_atim = time;
-		if (np->n_flag & NUPD)
-			np->n_mtim = time;
 		np->n_flag |= NCHG;
 		if (vp->v_usecount == 1 &&
 		    (vp->v_mount->mnt_flag & MNT_RDONLY) == 0) {
