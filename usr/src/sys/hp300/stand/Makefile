@@ -1,8 +1,8 @@
-#	@(#)Makefile	7.19 (Berkeley) %G%
+#	@(#)Makefile	7.20 (Berkeley) %G%
 
 DESTDIR=
 INCPATH=-I. -I../..
-VPATH=	../../stand
+VPATH=	../../stand.att
 
 CC=cc
 AS=as
