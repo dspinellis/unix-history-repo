@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.8 (Berkeley) %G%
+ *	@(#)pmap.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -440,6 +440,7 @@ pmap_remove(pmap, sva, eva)
 {
 	register vm_offset_t va;
 	register pv_entry_t pv, npv;
+	register int i;
 	pmap_hash_t hp;
 	unsigned entry;
 
@@ -497,11 +498,15 @@ pmap_remove(pmap, sva, eva)
 	if (pmap != cur_pmap) {
 		for (; va < eva; va += NBPG) {
 			hp = &pmap->pm_hash[PMAP_HASH(va)];
-			if (hp->high != va)
+			if (hp->pmh_pte[0].high == va)
+				i = 0;
+			else if (hp->pmh_pte[1].high == va)
+				i = 1;
+			else
 				continue;
 
-			hp->high = 0;
-			entry = hp->low;
+			hp->pmh_pte[i].high = 0;
+			entry = hp->pmh_pte[i].low;
 			if (entry & PG_WIRED)
 				pmap->pm_stats.wired_count--;
 			pmap->pm_stats.resident_count--;
@@ -519,11 +524,15 @@ pmap_remove(pmap, sva, eva)
 
 	for (; va < eva; va += NBPG) {
 		hp = &pmap->pm_hash[PMAP_HASH(va)];
-		if (hp->high != va)
+		if (hp->pmh_pte[0].high == va)
+			i = 0;
+		else if (hp->pmh_pte[1].high == va)
+			i = 1;
+		else
 			continue;
 
-		hp->high = 0;
-		entry = hp->low;
+		hp->pmh_pte[i].high = 0;
+		entry = hp->pmh_pte[i].low;
 		if (entry & PG_WIRED)
 			pmap->pm_stats.wired_count--;
 		pmap->pm_stats.resident_count--;
@@ -532,8 +541,8 @@ pmap_remove(pmap, sva, eva)
 		pmap_attributes[atop(entry - KERNBASE)] = 0;
 #endif
 		/*
-		 * Flush the TLB for the given address.
-		 */
+		* Flush the TLB for the given address.
+		*/
 		MachTLBFlushAddr(va);
 #ifdef DEBUG
 		remove_stats.flushes++;
@@ -615,6 +624,7 @@ pmap_protect(pmap, sva, eva, prot)
 	vm_prot_t prot;
 {
 	register vm_offset_t va;
+	register int i;
 	pmap_hash_t hp;
 	u_int p;
 
@@ -674,10 +684,14 @@ pmap_protect(pmap, sva, eva, prot)
 	if (pmap != cur_pmap) {
 		for (; va < eva; va += NBPG) {
 			hp = &pmap->pm_hash[PMAP_HASH(va)];
-			if (hp->high != va)
+			if (hp->pmh_pte[0].high == va)
+				i = 0;
+			else if (hp->pmh_pte[1].high == va)
+				i = 1;
+			else
 				continue;
 
-			hp->low = (hp->low & ~(PG_M | PG_RO)) | p;
+			hp->pmh_pte[i].low = (hp->pmh_pte[i].low & ~(PG_M | PG_RO)) | p;
 			pmap->pm_flags |= PM_MODIFIED;
 		}
 		return;
@@ -685,14 +699,18 @@ pmap_protect(pmap, sva, eva, prot)
 
 	for (; va < eva; va += NBPG) {
 		hp = &pmap->pm_hash[PMAP_HASH(va)];
-		if (hp->high != va)
+		if (hp->pmh_pte[0].high == va)
+			i = 0;
+		else if (hp->pmh_pte[1].high == va)
+			i = 1;
+		else
 			continue;
 
-		hp->low = (hp->low & ~(PG_M | PG_RO)) | p;
+		hp->pmh_pte[i].low = (hp->pmh_pte[i].low & ~(PG_M | PG_RO)) | p;
 		/*
-		 * Update the TLB if the given address is in the cache.
-		 */
-		MachTLBUpdate(hp->high, hp->low);
+		* Update the TLB if the given address is in the cache.
+		*/
+		MachTLBUpdate(hp->pmh_pte[i].high, hp->pmh_pte[i].low);
 	}
 }
 
@@ -718,7 +736,8 @@ pmap_enter(pmap, va, pa, prot, wired)
 {
 	register pmap_hash_t hp;
 	register u_int npte;
-	register int i;
+	register int i, j;
+	int newpos;
 
 #ifdef DEBUG
 	if (pmapdebug & (PDB_FOLLOW|PDB_ENTER))
@@ -861,12 +880,17 @@ pmap_enter(pmap, va, pa, prot, wired)
 				va, pa, entry);
 				    } else {
 					hp = &pmap->pm_hash[PMAP_HASH(va)];
-					if (hp->high != (va |
-					    (pmap->pm_tlbpid <<
-					    VMMACH_TLB_PID_SHIFT)) ||
-					    (hp->low & PG_FRAME) != pa)
-			printf("found va %x pa %x in pv_table but != %x %x\n",
-				va, pa, hp->high, hp->low);
+					if ((hp->pmh_pte[0].high == (va |
+					(pmap->pm_tlbpid <<
+					VMMACH_TLB_PID_SHIFT)) &&
+					(hp->pmh_pte[0].low & PG_FRAME) == pa) ||
+					(hp->pmh_pte[1].high == (va |
+					(pmap->pm_tlbpid <<
+					VMMACH_TLB_PID_SHIFT)) &&
+					(hp->pmh_pte[1].low & PG_FRAME) == pa))
+						goto fnd;
+			printf("found va %x pa %x in pv_table but !=\n",
+				va, pa);
 				    }
 #endif
 					goto fnd;
@@ -963,32 +987,24 @@ pmap_enter(pmap, va, pa, prot, wired)
 	i = pmaxpagesperpage;
 	do {
 		hp = &pmap->pm_hash[PMAP_HASH(va)];
-		if (!hp->high) {
-			pmap->pm_stats.resident_count++;
-			hp->high = va;
-			hp->low = npte;
-			MachTLBWriteRandom(va, npte);
-		} else {
+		if (hp->pmh_pte[0].high == va &&
+		    (hp->pmh_pte[0].low & PG_FRAME) == (npte & PG_FRAME))
+			j = 0;
+		else if (hp->pmh_pte[1].high == va &&
+		    (hp->pmh_pte[1].low & PG_FRAME) == (npte & PG_FRAME))
+			j = 1;
+		else
+			j = -1;
+		if (j >= 0) {
 #ifdef DEBUG
 			enter_stats.cachehit++;
 #endif
-			if (!(hp->low & PG_WIRED)) {
-				if (hp->high == va &&
-				    (hp->low & PG_FRAME) == (npte & PG_FRAME)) {
-					/*
-					 * Update the same entry.
-					 */
-					hp->low = npte;
-					MachTLBUpdate(va, npte);
-				} else {
-					MachTLBFlushAddr(hp->high);
-					pmap_remove_pv(pmap,
-						hp->high & PG_FRAME,
-						hp->low & PG_FRAME);
-					hp->high = va;
-					hp->low = npte;
-					MachTLBWriteRandom(va, npte);
-				}
+			if (!(hp->pmh_pte[j].low & PG_WIRED)) {
+				/*
+				 * Update the same entry.
+				 */
+				hp->pmh_pte[j].low = npte;
+				MachTLBUpdate(va, npte);
 			} else {
 				/*
 				 * Don't replace wired entries, just update
@@ -997,11 +1013,50 @@ pmap_enter(pmap, va, pa, prot, wired)
 				 * that the entry is in the hardware.
 				 */
 				printf("pmap_enter: wired va %x %x\n", va,
-					hp->low); /* XXX */
+					hp->pmh_pte[j].low); /* XXX */
+				panic("pmap_enter: wired"); /* XXX */
+				MachTLBWriteRandom(va, npte);
+			}
+			goto next;
+		}
+		if (!hp->pmh_pte[0].high)
+			j = 0;
+		else if (!hp->pmh_pte[1].high)
+			j = 1;
+		else
+			j = -1;
+		if (j >= 0) {
+			pmap->pm_stats.resident_count++;
+			hp->pmh_pte[j].high = va;
+			hp->pmh_pte[j].low = npte;
+			MachTLBWriteRandom(va, npte);
+		} else {
+#ifdef DEBUG
+			enter_stats.cachehit++;
+#endif
+			if (!(hp->pmh_pte[1].low & PG_WIRED)) {
+				MachTLBFlushAddr(hp->pmh_pte[1].high);
+				pmap_remove_pv(pmap,
+					hp->pmh_pte[1].high & PG_FRAME,
+					hp->pmh_pte[1].low & PG_FRAME);
+				hp->pmh_pte[1] = hp->pmh_pte[0];
+				hp->pmh_pte[0].high = va;
+				hp->pmh_pte[0].low = npte;
+				MachTLBWriteRandom(va, npte);
+			} else {
+				/*
+				 * Don't replace wired entries, just update
+				 * the hardware TLB.
+				 * Bug: routines to flush the TLB won't know
+				 * that the entry is in the hardware.
+				 */
+				printf("pmap_enter: wired va %x %x\n", va,
+					hp->pmh_pte[1].low); /* XXX */
 				panic("pmap_enter: wired"); /* XXX */
 				MachTLBWriteRandom(va, npte);
 			}
 		}
+next:
 		va += NBPG;
 		npte += NBPG;
 	} while (--i != 0);
@@ -1022,7 +1077,7 @@ pmap_change_wiring(pmap, va, wired)
 {
 	register pmap_hash_t hp;
 	u_int p;
-	int i;
+	register int i, j;
 
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW)
@@ -1059,15 +1114,22 @@ pmap_change_wiring(pmap, va, wired)
 		} while (--i != 0);
 	} else if (pmap->pm_tlbpid >= 0 && pmap->pm_hash != zero_pmap_hash) {
 		i = pmaxpagesperpage;
+		va = (va & PG_FRAME) | (pmap->pm_tlbpid << VMMACH_TLB_PID_SHIFT);
 		do {
 			hp = &pmap->pm_hash[PMAP_HASH(va)];
-			if (!hp->high)
+			if (hp->pmh_pte[0].high == va)
+				j = 0;
+			else if (hp->pmh_pte[1].high == va)
+				j = 1;
+			else {
+				va += NBPG;
 				continue;
-			if (!(hp->low & PG_WIRED) && p)
+			}
+			if (!(hp->pmh_pte[j].low & PG_WIRED) && p)
 				pmap->pm_stats.wired_count++;
-			else if ((hp->low & PG_WIRED) && !p)
+			else if ((hp->pmh_pte[j].low & PG_WIRED) && !p)
 				pmap->pm_stats.wired_count--;
-			hp->low = (hp->low & ~PG_WIRED) | p;
+			hp->pmh_pte[j].low = (hp->pmh_pte[j].low & ~PG_WIRED) | p;
 			va += NBPG;
 		} while (--i != 0);
 	}
@@ -1086,6 +1148,7 @@ pmap_extract(pmap, va)
 {
 	register vm_offset_t pa;
 	register pmap_hash_t hp;
+	register int i;
 
 #ifdef DEBUG
 	if (pmapdebug & PDB_FOLLOW)
@@ -1101,8 +1164,11 @@ pmap_extract(pmap, va)
 		pa = kvtopte(va)->pt_entry & PG_FRAME;
 	} else if (pmap->pm_tlbpid >= 0) {
 		hp = &pmap->pm_hash[PMAP_HASH(va)];
-		if (hp->high)
-			pa = hp->low & PG_FRAME;
+		va = (va & PG_FRAME) | (pmap->pm_tlbpid << VMMACH_TLB_PID_SHIFT);
+		if (hp->pmh_pte[0].high == va)
+			pa = hp->pmh_pte[0].low & PG_FRAME;
+		else if (hp->pmh_pte[1].high == va)
+			pa = hp->pmh_pte[1].low & PG_FRAME;
 		else
 			pa = 0;
 	} else
@@ -1403,20 +1469,24 @@ pmap_alloc_tlbpid(p)
 		 */
 		if (q_pmap->pm_hash != zero_pmap_hash) {
 			register pmap_hash_t hp;
+			register int j;
 
 			hp = q_pmap->pm_hash;
 			for (i = 0; i < PMAP_HASH_NUM_ENTRIES; i++, hp++) {
-				if (!hp->high)
+			    for (j = 0; j < 2; j++) {
+				if (!hp->pmh_pte[j].high)
 					continue;
 
-				if (hp->low & PG_WIRED) {
-					printf("Clearing wired user entry! h %x l %x\n", hp->high, hp->low);
+				if (hp->pmh_pte[j].low & PG_WIRED) {
+					printf("Clearing wired user entry! h %x l %x\n", hp->pmh_pte[j].high, hp->pmh_pte[j].low);
 					panic("pmap_alloc_tlbpid: wired");
 				}
-				pmap_remove_pv(q_pmap, hp->high & PG_FRAME,
-					hp->low & PG_FRAME);
-				hp->high = 0;
+				pmap_remove_pv(q_pmap,
+					hp->pmh_pte[j].high & PG_FRAME,
+					hp->pmh_pte[j].low & PG_FRAME);
+				hp->pmh_pte[j].high = 0;
 				q_pmap->pm_stats.resident_count--;
+			    }
 			}
 		}
 		q_pmap->pm_tlbpid = -1;
@@ -1512,7 +1582,7 @@ pmap_print(pmap)
 	pmap_t pmap;
 {
 	register pmap_hash_t hp;
-	register int i;
+	register int i, j;
 
 	printf("\tpmap_print(%x)\n", pmap);
 
@@ -1526,9 +1596,11 @@ pmap_print(pmap)
 	}
 	hp = pmap->pm_hash;
 	for (i = 0; i < PMAP_HASH_NUM_ENTRIES; i++, hp++) {
-		if (!hp->high)
+	    for (j = 0; j < 2; j++) {
+		if (!hp->pmh_pte[j].high)
 			continue;
-		printf("%d: hi %x low %x\n", i, hp->high, hp->low);
+		printf("%d: hi %x low %x\n", i, hp->pmh_pte[j].high, hp->pmh_pte[j].low);
+	    }
 	}
 }
 #endif
