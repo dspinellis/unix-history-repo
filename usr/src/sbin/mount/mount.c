@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "pathnames.h"
@@ -366,8 +366,15 @@ prmount(spec, name, flags)
 		printf(" (nodev)");
 	if (flags & M_SYNCHRONOUS)
 		printf(" (synchronous)");
-	if (flags & M_UPDATE)
-		printf(" (update only)");
+	if (flags & M_QUOTA)
+		printf(" (with quotas)");
+	if (flags & M_LOCAL)
+		printf(" (local)");
+	if (flags & M_EXPORTED)
+		if (flags & M_EXRDONLY)
+			printf(" (NFS exported read-only)");
+		else
+			printf(" (NFS exported)");
 	printf("\n");
 }
 
