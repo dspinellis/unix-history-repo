@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)fclose.3	6.3 (Berkeley) %G%
+.\"	@(#)fclose.3	6.4 (Berkeley) %G%
 .\"
 .TH FCLOSE 3 ""
 .UC 7
@@ -29,10 +29,8 @@ from its underlying file or set of functions.
 If the stream was being used for output, any buffered data is written
 first, using
 .IR fflush (3).
-Any allocated memory is 
-.IR free 'd.
 .SH "SEE ALSO"
-close(2), fflush(3), fopen(3), free(3), setbuf(3)
+close(2), fflush(3), fopen(3), setbuf(3)
 .SH "RETURN VALUE"
 Upon successful completion 0 is returned.
 Otherwise,
