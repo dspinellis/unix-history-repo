@@ -4,9 +4,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: in_cksum.c 1.6 89/08/24$
+ * from: Utah $Hdr: in_cksum.c 1.1 90/07/09$
  *
- *	@(#)in_cksum.c	7.1 (Berkeley) %G%
+ *	@(#)in_cksum.c	7.2 (Berkeley) %G%
  */
 
 /*
