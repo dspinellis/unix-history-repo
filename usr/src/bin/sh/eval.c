@@ -916,6 +916,7 @@ execcmd(argc, argv)  char **argv; {
 	if (argc > 1) {
 		iflag = 0;		/* exit on error */
 		setinteractive(0);
+		histedit();
 #if JOBS
 		jflag = 0;
 		setjobctl(0);
