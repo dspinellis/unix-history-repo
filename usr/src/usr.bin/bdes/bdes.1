@@ -6,9 +6,10 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)bdes.1	8.1 (Berkeley) %G%
+.\"	@(#)bdes.1	5.5 (Berkeley) %G%
 .\"
 .TH BDES 1 ""
+.UC 6
 .SH NAME
 bdes \- encrypt/decrypt using the Data Encryption Standard
 .SH SYNOPSIS
@@ -27,7 +28,7 @@ modes.
 .I Bdes
 reads from the standard input and writes to the standard output.
 By default, the input is encrypted using cipher block chaining mode.
-Using the same key for encryption and decryption preserves plaintext.
+Using the same key for encryption and decryption preserves plain text.
 .PP
 All modes but the electronic code book mode require an initialization
 vector; if none is supplied, the zero vector is used.
@@ -213,7 +214,7 @@ Reading, MA
 \(co1982.
 .sp
 Matt Bishop,
-.IR "Implementation Notes on bdes(1)"
+.IR "Implementation Notes on bdes(1)" ,
 Technical Report PCS-TR-91-158,
 Department of Mathematics and Computer Science,
 Dartmouth College,
