@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lock.h	8.10 (Berkeley) %G%
+ *	@(#)lock.h	8.11 (Berkeley) %G%
  */
 
 #ifndef	_LOCK_H_
@@ -133,9 +133,12 @@ int	lockmgr __P((__volatile struct lock *, u_int flags,
 int	lockstatus __P((struct lock *));
 
 #ifdef DEBUG
-void simple_unlock __P((__volatile struct simplelock *alp));
-int simple_lock_try __P((__volatile struct simplelock *alp));
-void simple_lock __P((__volatile struct simplelock *alp));
+void _simple_unlock __P((__volatile struct simplelock *alp, const char *, int));
+#define simple_unlock(alp) _simple_unlock(alp, __FILE__, __LINE__)
+int _simple_lock_try __P((__volatile struct simplelock *alp, const char *, int));
+#define simple_lock_try(alp) _simple_lock_try(alp, __FILE__, __LINE__)
+void _simple_lock __P((__volatile struct simplelock *alp, const char *, int));
+#define simple_lock(alp) _simple_lock(alp, __FILE__, __LINE__)
 void simple_lock_init __P((struct simplelock *alp));
 #else /* !DEBUG */
 #if NCPUS == 1 /* no multiprocessor locking is necessary */
