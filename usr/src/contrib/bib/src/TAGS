@@ -1,0 +1,137 @@
+
+Test.c,39
+# define dirAndFile(6,45
+main(12,151
+
+alpha.seek.c,41
+int alpha_seek(18,495
+foldline(70,1868
+
+bib.c,380
+addc(263,7211
+changefmt(591,15208
+citemark(245,6800
+citesort(425,11471
+cleanup(135,3876
+# define echoc(33,958
+   char *fhunt(398,10838
+# define getch(32,922
+int getref(276,7535
+char *hunt(362,9979
+intr(130,3826
+main(61,2160
+   pass2(550,14172
+int putrefs(433,11669
+   rdcite(193,5555
+   rdtext(149,4108
+struct refinfo *refssearch(332,8884
+# define testc(34,1024
+
+bibargs.c,859
+   char *aabet(981,28439
+   char *aabetlast(1032,29515
+  bibwarning(115,4577
+   bldcite(908,26048
+   bldname(1217,34262
+   breakname(754,22454
+   disambiguate(1191,33632
+   int doargs(131,4975
+   doline(1310,36550
+   dumpref(1365,38179
+  error(499,16548
+   expand(583,18220
+fixrfd(516,16893
+   char *fullaabet(1007,29032
+   char *getfield(1095,31288
+   int getname(1151,32619
+int getwrd(552,17581
+incfile(346,11681
+#define iswordc(581,18163
+   makecites(893,25639
+   int match(784,23130
+   char *multfull(1057,30201
+newbibdir(335,11423
+   prtauth(1287,35802
+   int rcomp(814,23753
+   rdref(720,21695
+   char *scopy(805,23599
+   int strhash(708,21433
+   char *tfgets(535,17273
+usageErr(98,4120
+char *walloc(570,17936
+   wordrestuff(693,21020
+   struct wordinfo *wordsearch(676,20548
+   wordstuff(661,20108
+   wrref(737,22058
+
+bibinc.c,98
+closeAllFiles(44,947
+error(55,1146
+main(159,3562
+ready2out(67,1351
+#define skipBlanks(27,535
+
+invert.c,77
+flags(118,3514
+main(34,988
+# define makelow(12,259
+long shorten(158,4601
+
+listrefs.c,87
+cleanup(83,2101
+# define getch(26,688
+intr(79,2076
+main(44,1303
+   rdtext(93,2229
+
+locate.c,70
+int fetchref(220,6819
+char *locate(29,770
+char *stripkeys(197,6324
+
+lookup.c,28
+flags(70,1682
+main(19,485
+
+makekey.c,55
+load_comm(58,1484
+int lookup(45,1254
+makekey(20,518
+
+streams.c,159
+getline(158,4309
+getword(20,497
+long int nextline(136,3847
+long int nextrecord(106,2901
+printline(147,4033
+long int recsize(74,1966
+strreplace(169,4536
+
+adsdebug.h,407
+#define STRINGIFY(39,505
+#define STRINGIFY(41,535
+#define assert(62,1380
+#define assert(94,2126
+#define dbg(48,616
+#define dbg(80,1855
+#define dbgaxl(81,1875
+#define dbgb(82,1900
+#define dbgc(87,2005
+#define dbgd(86,1984
+#define dbgg(85,1963
+#define dbgo(83,1921
+#define dbgs(84,1942
+#define dbgx(88,2026
+#define dbgxl(89,2047
+#define dbgxw(90,2069
+#define min(31,391
+#define name2(45,582
+
+bib.h,50
+# define InitDirectory(42,1185
+# define 50,1380
+
+comments.h,0
+
+streams.h,21
+# define  pos(7,115
