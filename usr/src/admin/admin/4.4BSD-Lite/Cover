@@ -1,4 +1,4 @@
-.\"	@(#)Cover	1.4 (Berkeley) %G%
+.\"	@(#)Cover	1.5 (Berkeley) %G%
 .\" use deqn -Plz Cover | psroff -ms -Plz
 .\"
 .EQ
@@ -7,18 +7,19 @@ delim ##
 .so HEADERS
 .FH
 .sp .75i
-.tl '''April 1, 1994'
+.tl '''March 1, 1994'
 .LP
 Dear Colleague:
 .sp
 .PP
 We are delighted, at long last, to send you information about
-our April 1994 release of 4.4BSD-Lite.
+our March 1994 release of 4.4BSD-Lite.
 The University and UNIX System Laboratories
 have resolved the issues surrounding the second BSD Networking
 Release (Net/2) distribution (see attached press release),
-and the University is now able to release
-4.4BSD-Lite under terms similar to those of Net/2.
+and the University is now able to release 4.4BSD-Lite.
+We strongly recommend that you substitute 4.4BSD-Lite
+for any version of Net/2 that you may be using.
 .PP
 The 4.4BSD-Lite software is copyrighted by the University of California
 and others, but may be freely redistributed without fee.
@@ -27,8 +28,9 @@ from AT&T, Novell/USL, or The Regents of the University of California.
 The distribution includes both software developed at Berkeley
 and much software contributed by authors outside Berkeley.
 The code in this distribution may be redistributed and used
-in released products without fee, if the due credit
-requirements described in the license and the source files are met.
+in released products without fee, if the due credit,
+copyright notice, and other requirements
+described in the license and the source files are met.
 .PP
 This packet is intended to serve two purposes.
 The first is to acquaint you with the details of our distribution
@@ -59,27 +61,27 @@ IEEE POSIX 1003.1 and 1003.2 standards as was possible at the time
 of its release.
 We have not run it through any of the verification test suites, thus,
 you should not claim conformance with either standard without
-first validing the code.
+first validating the code.
 .PP
 This software distribution is only available on two 6250bpi 1/2''
 9-track tapes or one 8mm Exabyte cassette.
 The 4.4BSD-Lite distribution contains source
 for the following architectures:
 .IP \(bu
-HP 9000/300 68000-based workstations.
+HP 9000/300 68000-based workstations,
 .IP \(bu
-DECstation 3100 and 5000 MIPS-based workstations.
+DECstation 3100 and 5000 MIPS-based workstations,
 .IP \(bu
-Sparcstation I & II SPARC-based workstations.
+Sparcstation I & II SPARC-based workstations
 (Please note that the distribution does
 .B not
-support the Sparcstation 10.)
+support the Sparcstation 10.),
 .IP \(bu
-Sony News MIPS-based workstations
+Sony News MIPS-based workstations,
 .IP \(bu
-Omron Luna 68000-based workstations
+Omron Luna 68000-based workstations,
 .IP \(bu
-Intel 386/486-based machines (ISA/AT or EISA bus only)
+Intel 386/486-based machines (ISA/AT or EISA bus only).
 .LP
 The distribution does
 .B not
@@ -203,13 +205,13 @@ when the system is running single user.
 To protect against indiscriminate reading or writing of kernel
 memory, all writing and most reading of kernel data structures
 must be done using a new ``sysctl'' interface.
-The information to be access is described through an extensible
+The information to be accessed is described through an extensible
 ``Management Information Base'' (MIB).
 .PP
 The 4.4BSD-Lite distribution contains most of the interfaces
 specified in the IEEE Std1003.1 system interface standard.
 The biggest area of change is a new terminal driver.
-The terminal driver is similar to the System V terminal driver
+The terminal driver meets the POSIX interface
 with the addition of the necessary extensions to get the
 functionality previously available in the 4.3BSD terminal driver.
 4.4BSD-Lite also adds the IEEE Std1003.1 job control interface,
@@ -288,7 +290,7 @@ the name cache, and the quota structures.
 How to obtain 4.4BSD-Lite
 .PP
 To obtain 4.4BSD-Lite
-we require execution of the Berkeley License Agreement (6/92).
+we require execution of the Berkeley License Agreement (3/94).
 In addition, foreign licensees must execute Addendum Number One for 
 Foreign Licensees in ordering 4.4BSD-Lite.
 The fee is $1000.00 for 4.4BSD-Lite.
@@ -306,7 +308,7 @@ Specifically, for 4.4BSD-Lite, we must receive from your organization the
 following material before the distribution can be sent:
 .IP \(bu
 \fBTwo\fR original signed and executed copies of
-the Berkeley License Agreement (6/92) between your company
+the Berkeley License Agreement (3/94) between your company
 or institution and The Regents of the University of California
 along with Exhibit A properly filled out.
 For Foreign licensees, there is an Addendum to
@@ -332,7 +334,7 @@ If this is not possible,
 insert and initial in the body of the Purchase Order the following clause:
 ``The terms and conditions of this Purchase Order
 are not accepted by The Regents of the University of California.
-The revised Berkeley License Agreement (6/92) prevails.''
+The revised Berkeley License Agreement (3/94) prevails.''
 Wire transfers are strongly discouraged.
 .IP \(bu
 The attached Site Information Form completely filled out.
@@ -363,8 +365,8 @@ the distribution is shipped by commercial carrier.
 Order of shipment will be based on time
 of arrival of the properly completed paperwork.
 Because of the differential in costs of shipping outside the United States,
-we ask that organizations beyond the North American continent pay
-the collect shipping charges.
+we ask that organizations outside the continental United States
+pay the collect shipping charges.
 If the destination is one where collect shipment
 cannot be made by the carrier,
 then advance payment of the shipping charges will be required.
@@ -395,7 +397,7 @@ the following items must be sent to the Computer Systems Research Group:
 1) a letter of authorization signed by the Director or Head of Department 
 requesting 4.4BSD-Lite,
 stating that you have read and understood the Berkeley
-License Agreement (6/92) and that your organization
+License Agreement (3/94) and that your organization
 will abide by it;
 2) an IOC for $1,000.00; and
 3) a Site Information Form.
