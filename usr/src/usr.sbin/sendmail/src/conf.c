@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.189 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.190 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -729,10 +729,12 @@ switch_map_find(service, maptype, mapreturn)
 				if (p != NULL)
 					*p++ = '\0';
 			} while (p != NULL);
-			break;
+			fclose(fp);
+			return svcno;
 		}
+
+		/* service was not found -- use compiled in default */
 		fclose(fp);
-		return svcno;
 	}
 #endif
 
