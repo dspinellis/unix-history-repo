@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)mount.2	6.11 (Berkeley) %G%
+.\"     @(#)mount.2	6.12 (Berkeley) %G%
 .\"
 .Dd 
 .Dt MOUNT 2
@@ -84,34 +84,34 @@ The currently supported types of file systems and
 their type specific data are:
 .Pp
 .Dv MOUNT_UFS
-.Bd -literal -compact -offset indent
+.Bd -literal -offset indent -compact
 struct ufs_args {
-	char	*fspec;	/* Block special file to mount */
-	int	exflags;	/* export related flags */
-	uid_t	exroot;	/* mapping for root uid */
+      char	*fspec;  /* Block special file to mount */
+      int	exflags; /* export related flags */
+      uid_t	exroot;  /* mapping for root uid */
 };
 .Ed
 .Pp
 .Dv MOUNT_NFS
-.Bd -literal -compact -offset indent
+.Bd -literal -offset indent -compact
 struct nfs_args {
-	struct	sockaddr_in *addr;	/* file server address */
-	nfsv2fh_t	*fh;	/* File handle to be mounted */
-	int	flags;	/* flags */
-	int	wsize;	/* write size in bytes */
-	int	rsize;	/* read size in bytes */
-	int	timeo;	/* initial timeout in 0.1 secs */
-	int	retrans;	/* times to retry send */
-	char	*hostname;	/* server's name */
+      struct sockaddr_in *addr; /* file server address */
+      nfsv2fh_t *fh;       /* File handle to be mounted */
+      int       flags;     /* flags */
+      int       wsize;     /* write size in bytes */
+      int       rsize;     /* read size in bytes */
+      int       timeo;     /* initial timeout 0.1 secs */
+      int       retrans;   /* times to retry send */
+      char      *hostname; /* server's name */
 };
 .Ed
 .Pp
 .Dv MOUNT_MFS
-.Bd -literal -compact -offset indent
+.Bd -literal -offset indent -compact
 struct mfs_args {
-	char	*name;	/* name of backing process */
-	caddr_t	base;	/* base address of the file system */
-	u_long	size;	/* size of the file system */
+      char	*name;	/* name of backing process */
+      caddr_t	base;	/* base address of the file system */
+      u_long	size;	/* size of the file system */
 };
 .Ed
 .Pp
@@ -246,7 +246,7 @@ cylinder group information.
 points outside the process's allocated address space.
 .El
 .Pp
-.Em Umount
+.Nm Umount
 may fail with one of the following errors:
 .Bl -tag -width [ENOTBLK]
 .It Bq Er EPERM
