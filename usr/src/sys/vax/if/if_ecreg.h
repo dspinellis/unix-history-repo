@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ecreg.h	7.2 (Berkeley) %G%
+ *	@(#)if_ecreg.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -63,6 +63,8 @@ struct ecdevice {
  * Useful combinations
  */
 #define	EC_READ		(0x600|EC_RINTEN|EC_RWBN)
+#define	EC_MULTI	(0x700|EC_RINTEN|EC_RWBN)
+#define EC_PROMISC	(0x000|EC_RINTEN|EC_RWBN)
 #define	EC_WRITE	(EC_JINTEN|EC_XINTEN|EC_XWBN)
 #define	EC_CLEAR	(EC_JINTEN|EC_XINTEN|EC_JCLR)
 

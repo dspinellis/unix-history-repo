@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_il.c	7.3 (Berkeley) %G%
+ *	@(#)if_il.c	7.4 (Berkeley) %G%
  */
 
 #include "il.h"
@@ -67,7 +67,7 @@ u_short ilstd[] = { 0 };
 struct	uba_driver ildriver =
 	{ ilprobe, 0, ilattach, 0, ilstd, "il", ilinfo };
 #define	ILUNIT(x)	minor(x)
-int	ilinit(),iloutput(),ilioctl(),ilreset(),ilwatch();
+int	ilinit(),iloutput(),ilioctl(),ilreset(),ilwatch(),ilstart();
 int	ildebug = 0;
 
 /*
@@ -82,13 +82,16 @@ int	ildebug = 0;
  * structure for use by the if_uba.c routines in running the interface
  * efficiently.
  */
+
+struct ether_addr {
+	u_char	addr[6];
+};
 struct	il_softc {
 	struct	arpcom is_ac;		/* Ethernet common part */
 #define	is_if	is_ac.ac_if		/* network-visible interface */
 #define	is_addr	is_ac.ac_enaddr		/* hardware Ethernet address */
 	struct	ifuba is_ifuba;		/* UNIBUS resources */
 	int	is_flags;
-#define	ILF_OACTIVE	0x1		/* output is active */
 #define	ILF_RCVPENDING	0x2		/* start rcv in ilcint */
 #define	ILF_STATPENDING	0x4		/* stat cmd pending */
 #define	ILF_RUNNING	0x8		/* board is running */
@@ -96,7 +99,12 @@ struct	il_softc {
 	short	is_lastcmd;		/* can't read csr, so must save it */
 	short	is_scaninterval;	/* interval of stat collection */
 #define	ILWATCHINTERVAL	60		/* once every 60 seconds */
-	struct	il_stats is_stats;	/* holds on-board statistics */
+	union {
+	    struct	il_stats isu_stats;	/* holds on-board statistics */
+	    struct	ether_addr isu_maddrs[63];	/* multicast addrs */
+	}	is_isu;
+#define is_stats	is_isu.isu_stats
+#define is_maddrs	is_isu.isu_maddrs
 	struct	il_stats is_sum;	/* summation over time */
 	int	is_ubaddr;		/* mapping registers of is_stats */
 } il_softc[NIL];
@@ -161,9 +169,10 @@ ilattach(ui)
 	printf("il%d: hardware address %s\n", ui->ui_unit,
 		ether_sprintf(is->is_addr));
 	ifp->if_init = ilinit;
-	ifp->if_output = iloutput;
+	ifp->if_output = ether_output;
 	ifp->if_ioctl = ilioctl;
 	ifp->if_reset = ilreset;
+	ifp->if_start = ilstart;
 	is->is_ifuba.ifu_flags = UBA_CANTWAIT;
 	if_attach(ifp);
 }
@@ -228,8 +237,8 @@ ilinit(unit)
 			is->is_if.if_flags &= ~IFF_UP;
 			return;
 		}
-		is->is_ubaddr = uballoc(ui->ui_ubanum, (caddr_t)&is->is_stats,
-		    sizeof (struct il_stats), 0);
+		is->is_ubaddr = uballoc(ui->ui_ubanum, (caddr_t)&is->is_isu,
+		    sizeof (is->is_isu), 0);
 	}
 	ifp->if_watchdog = ilwatch;
 	is->is_scaninterval = ILWATCHINTERVAL;
@@ -260,7 +269,7 @@ ilinit(unit)
 	 * wedge the board.
 	 */
 	if (is->is_flags & ILF_SETADDR) {
-		bcopy((caddr_t)is->is_addr, (caddr_t)&is->is_stats,
+		bcopy((caddr_t)is->is_addr, (caddr_t)&is->is_isu,
 							sizeof is->is_addr);
 		addr->il_bar = is->is_ubaddr & 0xffff;
 		addr->il_bcr = sizeof is->is_addr;
@@ -278,6 +287,51 @@ ilinit(unit)
 			return;
 		}
 	}
+#ifdef MULTICAST
+	if (is->is_if.if_flags & IFF_PROMISC) {
+		addr->il_csr = ILC_PRMSC;
+		if (ilwait(ui, "all multi"))
+			return;
+	} else if (is->is_if.if_flags & IFF_ALLMULTI) {
+	too_many_multis:
+		addr->il_csr = ILC_ALLMC;
+		if (ilwait(ui, "all multi"))
+			return;
+	else {
+		int i;
+		register struct ether_addr *ep = is->is_maddrs;
+		struct ether_multi *enm;
+		struct ether_multistep step;
+		/*
+		 * Step through our list of multicast addresses.  If we have
+		 * too many multicast addresses, or if we have to listen to
+		 * a range of multicast addresses, turn on reception of all
+		 * multicasts.
+		 */
+		i = 0;
+		ETHER_FIRST_MULTI(step, &is->is_ac, enm);
+		while (enm != NULL) {
+			if (++i > 63 && k != 0) {
+				break;
+			}
+			*ep++ = *(struct ether_addr *)enm->enm_addrlo;
+			ETHER_NEXT_MULTI(step, enm);
+		}
+		if (i = 0) {
+			/* no multicasts! */
+		} else if (i <= 63) {
+			addr->il_bar = is->is_ubaddr & 0xffff;
+			addr->il_bcr = i * sizeof (struct ether_addr);
+			addr->il_csr = ((is->is_ubaddr >> 2) & IL_EUA)|
+						LC_LDGRPS;
+			if (ilwait(ui, "load multi"))
+				return;
+		} else {
+		    is->is_if.if_flags |= IFF_ALLMULTI;
+		    goto too_many_multis;
+		}
+	}
+#endif MULTI
 	/*
 	 * Set board online.
 	 * Hang receive buffer and start any pending
@@ -294,7 +348,7 @@ ilinit(unit)
 	    ((is->is_ifuba.ifu_r.ifrw_info >> 2) & IL_EUA)|ILC_RCV|IL_RIE;
 	while ((addr->il_csr & IL_CDONE) == 0)
 		;
-	is->is_flags = ILF_OACTIVE;
+	is->is_if.if_flags = IFF_OACTIVE;
 	is->is_if.if_flags |= IFF_RUNNING;
 	is->is_flags |= ILF_RUNNING;
 	is->is_lastcmd = 0;
@@ -307,10 +361,10 @@ ilinit(unit)
  * Get another datagram to send off of the interface queue,
  * and map it to the interface before starting the output.
  */
-ilstart(dev)
-	dev_t dev;
+ilstart(ifp)
+	register struct ifnet *ifp;
 {
-        int unit = ILUNIT(dev), len;
+        int unit = ifp->if_unit, len;
 	struct uba_device *ui = ilinfo[unit];
 	register struct il_softc *is = &il_softc[unit];
 	register struct ildevice *addr;
@@ -321,7 +375,7 @@ ilstart(dev)
 	addr = (struct ildevice *)ui->ui_addr;
 	if (m == 0) {
 		if ((is->is_flags & ILF_STATPENDING) == 0)
-			return;
+			return (0);
 		addr->il_bar = is->is_ubaddr & 0xffff;
 		addr->il_bcr = sizeof (struct il_stats);
 		csr = ((is->is_ubaddr >> 2) & IL_EUA)|ILC_STAT|IL_RIE|IL_CIE;
@@ -348,7 +402,8 @@ ilstart(dev)
 startcmd:
 	is->is_lastcmd = csr & IL_CMD;
 	addr->il_csr = csr;
-	is->is_flags |= ILF_OACTIVE;
+	is->is_if.if_flags |= IFF_OACTIVE;
+	return (0);
 }
 
 /*
@@ -362,7 +417,7 @@ ilcint(unit)
 	register struct ildevice *addr = (struct ildevice *)ui->ui_addr;
 	short csr;
 
-	if ((is->is_flags & ILF_OACTIVE) == 0) {
+	if ((is->is_if.if_flags & IFF_OACTIVE) == 0) {
 		printf("il%d: stray xmit interrupt, csr=%b\n", unit,
 			addr->il_csr, IL_BITS);
 		return;
@@ -386,7 +441,7 @@ ilcint(unit)
 		splx(s);
 		is->is_flags &= ~ILF_RCVPENDING;
 	}
-	is->is_flags &= ~ILF_OACTIVE;
+	is->is_if.if_flags &= ~IFF_OACTIVE;
 	csr &= IL_STATUS;
 	switch (is->is_lastcmd) {
 
@@ -405,7 +460,7 @@ ilcint(unit)
 		m_freem(is->is_ifuba.ifu_xtofree);
 		is->is_ifuba.ifu_xtofree = 0;
 	}
-	ilstart(unit);
+	(void) ilstart(&is->is_if);
 }
 
 /*
@@ -471,55 +526,15 @@ ilrint(unit)
 	 * the type and length which are at the front of any trailer data.
 	 */
 	m = if_rubaget(&is->is_ifuba, len, off, &is->is_if);
-	if (m == 0)
-		goto setup;
-	if (off) {
-		struct ifnet *ifp;
-
-		ifp = *(mtod(m, struct ifnet **));
-		m->m_off += 2 * sizeof (u_short);
-		m->m_len -= 2 * sizeof (u_short);
-		*(mtod(m, struct ifnet **)) = ifp;
-	}
-	switch (il->ilr_type) {
-
-#ifdef INET
-	case ETHERTYPE_IP:
-		schednetisr(NETISR_IP);
-		inq = &ipintrq;
-		break;
-
-	case ETHERTYPE_ARP:
-		arpinput(&is->is_ac, m);
-		goto setup;
-#endif
-#ifdef NS
-	case ETHERTYPE_NS:
-		schednetisr(NETISR_NS);
-		inq = &nsintrq;
-		break;
-
-#endif
-	default:
-		m_freem(m);
-		goto setup;
-	}
-
-	s = splimp();
-	if (IF_QFULL(inq)) {
-		IF_DROP(inq);
-		m_freem(m);
-	} else
-		IF_ENQUEUE(inq, m);
-	splx(s);
-
+	if (m)
+		ether_input(&is->is_if, (struct ether_header *)il->ilr_dhost, m);
 setup:
 	/*
 	 * Reset for next packet if possible.
 	 * If waiting for transmit command completion, set flag
 	 * and wait until command completes.
 	 */
-	if (is->is_flags & ILF_OACTIVE) {
+	if (is->is_if.if_flags & IFF_OACTIVE) {
 		is->is_flags |= ILF_RCVPENDING;
 		return;
 	}
@@ -532,133 +547,6 @@ setup:
 		;
 	splx(s);
 }
-
-/*
- * Ethernet output routine.
- * Encapsulate a packet of type family for the local net.
- * Use trailer local net encapsulation if enough data in first
- * packet leaves a multiple of 512 bytes of data in remainder.
- */
-iloutput(ifp, m0, dst)
-	struct ifnet *ifp;
-	struct mbuf *m0;
-	struct sockaddr *dst;
-{
-	int type, s, error;
- 	u_char edst[6];
-	struct in_addr idst;
-	register struct il_softc *is = &il_softc[ifp->if_unit];
-	register struct mbuf *m = m0;
-	register struct ether_header *il;
-	register int off;
-	int usetrailers;
-
-	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
-		error = ENETDOWN;
-		goto bad;
-	}
-	switch (dst->sa_family) {
-
-#ifdef INET
-	case AF_INET:
-		idst = ((struct sockaddr_in *)dst)->sin_addr;
- 		if (!arpresolve(&is->is_ac, m, &idst, edst, &usetrailers))
-			return (0);	/* if not yet resolved */
-		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERTYPE_TRAIL + (off>>9);
-			m->m_off -= 2 * sizeof (u_short);
-			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
-			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
-			goto gottrailertype;
-		}
-		type = ETHERTYPE_IP;
-		off = 0;
-		goto gottype;
-#endif
-#ifdef NS
-	case AF_NS:
-		type = ETHERTYPE_NS;
- 		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
-		(caddr_t)edst, sizeof (edst));
-		off = 0;
-		goto gottype;
-#endif
-
-	case AF_UNSPEC:
-		il = (struct ether_header *)dst->sa_data;
- 		bcopy((caddr_t)il->ether_dhost, (caddr_t)edst, sizeof (edst));
-		type = il->ether_type;
-		goto gottype;
-
-	default:
-		printf("il%d: can't handle af%d\n", ifp->if_unit,
-			dst->sa_family);
-		error = EAFNOSUPPORT;
-		goto bad;
-	}
-
-gottrailertype:
-	/*
-	 * Packet to be sent as trailer: move first packet
-	 * (control information) to end of chain.
-	 */
-	while (m->m_next)
-		m = m->m_next;
-	m->m_next = m0;
-	m = m0->m_next;
-	m0->m_next = 0;
-	m0 = m;
-
-gottype:
-	/*
-	 * Add local net header.  If no space in first mbuf,
-	 * allocate another.
-	 */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct ether_header) > m->m_off) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct ether_header);
-	} else {
-		m->m_off -= sizeof (struct ether_header);
-		m->m_len += sizeof (struct ether_header);
-	}
-	il = mtod(m, struct ether_header *);
-	il->ether_type = htons((u_short)type);
- 	bcopy((caddr_t)edst, (caddr_t)il->ether_dhost, sizeof (edst));
- 	bcopy((caddr_t)is->is_addr, (caddr_t)il->ether_shost,
-	    sizeof(il->ether_shost));
-
-	/*
-	 * Queue message on interface, and start output if interface
-	 * not yet active.
-	 */
-	s = splimp();
-	if (IF_QFULL(&ifp->if_snd)) {
-		IF_DROP(&ifp->if_snd);
-		splx(s);
-		m_freem(m);
-		return (ENOBUFS);
-	}
-	IF_ENQUEUE(&ifp->if_snd, m);
-	if ((is->is_flags & ILF_OACTIVE) == 0)
-		ilstart(ifp->if_unit);
-	splx(s);
-	return (0);
-
-bad:
-	m_freem(m0);
-	return (error);
-}
-
 /*
  * Watchdog routine, request statistics from board.
  */
@@ -675,8 +563,8 @@ ilwatch(unit)
 	}
 	s = splimp();
 	is->is_flags |= ILF_STATPENDING;
-	if ((is->is_flags & ILF_OACTIVE) == 0)
-		ilstart(ifp->if_unit);
+	if ((is->is_if.if_flags & IFF_OACTIVE) == 0)
+		(void) ilstart(ifp);
 	splx(s);
 	ifp->if_timer = is->is_scaninterval;
 }
@@ -722,7 +610,7 @@ ilioctl(ifp, cmd, data)
 		ifp->if_flags |= IFF_UP;
 		ilinit(ifp->if_unit);
 
-		switch (ifa->ifa_addr.sa_family) {
+		switch (ifa->ifa_addr->sa_family) {
 #ifdef INET
 		case AF_INET:
 			((struct arpcom *)ifp)->ac_ipaddr =

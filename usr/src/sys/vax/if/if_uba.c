@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_uba.c	7.5.1.2 (Berkeley) %G%
+ *	@(#)if_uba.c	7.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -253,6 +253,12 @@ nocopy:
 			}
 		} else
 			totlen -= len;
+	}
+	if (off0) {
+		m = top;
+		m->m_pkthdr.len -= 2*sizeof(u_short);
+		m->m_len -= 2*sizeof(u_short);
+		m->m_data += 2*sizeof(u_short);
 	}
 out:
 	if (ifr->ifrw_flags & IFRW_W)

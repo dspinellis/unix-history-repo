@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ex.c	7.4 (Berkeley) %G%
+ *	@(#)if_ex.c	7.5 (Berkeley) %G%
  */
 
 #include "ex.h"
@@ -58,6 +58,13 @@
 #include "../netns/ns_if.h"
 #endif
 
+#ifdef ISO
+#include "../netiso/iso.h"
+#include "../netiso/iso_var.h"
+#include "../netiso/iso_snpac.h"
+extern struct snpa_cache all_es, all_is;
+#endif
+
 #include "../vax/pte.h"
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
@@ -77,7 +84,7 @@ struct	uba_device *exinfo[NEX];
 u_short exstd[] = { 0 };
 struct	uba_driver exdriver =
 	{ exprobe, 0, exattach, 0, exstd, "ex", exinfo };
-int	exinit(),exoutput(),exioctl(),exreset(),exwatch();
+int	exinit(),ether_output(),exioctl(),exreset(),exwatch();
 struct ex_msg *exgetcbuf();
 
 /*
@@ -185,7 +192,7 @@ exprobe(reg)
  * a NET_ADDRS command, only to get the Ethernet address.
  */
 exattach(ui)
-	struct uba_device *ui;
+	register struct uba_device *ui;
 {
 	register struct ex_softc *xs = &ex_softc[ui->ui_unit];
 	register struct ifnet *ifp = &xs->xs_if;
@@ -221,7 +228,7 @@ exattach(ui)
 	    sizeof (xs->xs_addr));
 
 	ifp->if_init = exinit;
-	ifp->if_output = exoutput;
+	ifp->if_output = ether_output;
 	ifp->if_ioctl = exioctl;
 	ifp->if_reset = exreset;
 	ifp->if_flags = IFF_BROADCAST;
@@ -309,7 +316,11 @@ exinit(unit)
 	xs->xs_flags |= EX_RUNNING;
 	if (xs->xs_flags & EX_SETADDR)
 		ex_setaddr((u_char *)0, unit);
-	exstart(unit);				/* start transmits */
+#ifdef ISO
+	ex_setmulti(all_es.sc_snpa, unit, 1);
+	ex_setmulti(all_is.sc_snpa, unit, 2);
+#endif
+	(void) exstart(&xs->xs_if);			/* start transmits */
 	splx(s);
 }
 
@@ -346,8 +357,7 @@ exconfig(ui, itype)
 	cm->cm_opmode = 0;		/* link-level controller mode */
 	cm->cm_dfo = 0x0101;		/* enable host data order conversion */
 	cm->cm_dcn1 = 1;
-	cm->cm_2rsrv[0] =
-		cm->cm_2rsrv[1] = 0;
+	cm->cm_2rsrv[0] = cm->cm_2rsrv[1] = 0;
 	cm->cm_ham = 3;			/* absolute address mode */
 	cm->cm_3rsrv = 0;
 	cm->cm_mapsiz = 0;
@@ -389,11 +399,8 @@ exconfig(ui, itype)
 		bp->mb_next = bp+1;
 	}
 	xs->xs_h2xhdr =
-		xs->xs_h2xent[NH2X-1].mb_link =
-		(u_short)H2XENT_OFFSET(unit);
-	xs->xs_h2xnext =
-		xs->xs_h2xent[NH2X-1].mb_next =
-		xs->xs_h2xent;
+		xs->xs_h2xent[NH2X-1].mb_link = (u_short)H2XENT_OFFSET(unit);
+	xs->xs_h2xnext = xs->xs_h2xent[NH2X-1].mb_next = xs->xs_h2xent;
 
 	/* Now the reply queue. */
 	for (bp = &xs->xs_x2hent[0]; bp < &xs->xs_x2hent[NX2H]; bp++) {
@@ -404,11 +411,8 @@ exconfig(ui, itype)
 		bp->mb_next = bp+1;
 	}
 	xs->xs_x2hhdr =
-		xs->xs_x2hent[NX2H-1].mb_link =
-		(u_short)X2HENT_OFFSET(unit);
-	xs->xs_x2hnext =
-		xs->xs_x2hent[NX2H-1].mb_next =
-		xs->xs_x2hent;
+		xs->xs_x2hent[NX2H-1].mb_link = (u_short)X2HENT_OFFSET(unit);
+	xs->xs_x2hnext = xs->xs_x2hent[NX2H-1].mb_next = xs->xs_x2hent;
 
 	/*
 	 * Write config msg address to EXOS and wait for
@@ -434,12 +438,13 @@ exconfig(ui, itype)
  * Start or re-start output on interface.
  * Get another datagram to send off of the interface queue,
  * and map it to the interface before starting the output.
- * This routine is called by exinit(), exoutput(), and excdint().
+ * This routine is called by exinit(), ether_output(), and excdint().
  * In all cases, interrupts by EXOS are disabled.
  */
-exstart(unit)
-	int unit;
+exstart(ifp)
+struct ifnet *ifp;
 {
+	int unit = ifp->if_unit;
 	struct uba_device *ui = exinfo[unit];
 	register struct ex_softc *xs = &ex_softc[unit];
 	register struct exdevice *addr = (struct exdevice *)ui->ui_addr;
@@ -448,12 +453,12 @@ exstart(unit)
         int len;
 
 #ifdef DEBUG
-	if (xs->xs_flags & EX_XPENDING)
+	if (xs->xs_if.if_flags & IFF_OACTIVE)
 		panic("exstart(): xmit still pending");
 #endif
 	IF_DEQUEUE(&xs->xs_if.if_snd, m);
 	if (m == 0)
-		return;
+		return (0);
 	len = if_wubaput(&xs->xs_ifuba, m);
 	if (len - sizeof(struct ether_header) < ETHERMIN)
 		len = ETHERMIN + sizeof(struct ether_header);
@@ -466,9 +471,10 @@ exstart(unit)
 	bp->mb_et.et_blks[0].bb_len = (u_short)len;
 	*(u_long *)bp->mb_et.et_blks[0].bb_addr =
 		UNIADDR(xs->xs_ifuba.ifu_w.ifrw_info);
-	xs->xs_flags |= EX_XPENDING;
+	xs->xs_if.if_flags |= IFF_OACTIVE;
 	bp->mb_status |= MH_EXOS;
 	addr->xd_portb = EX_NTRUPT;
+	return (0);
 }
 
 /*
@@ -490,10 +496,10 @@ excdint(unit)
 			break;
 		case LLRTRANSMIT:
 #ifdef DEBUG
-			if ((xs->xs_flags & EX_XPENDING) == 0)
+			if ((xs->xs_if.if_flags & IFF_OACTIVE) == 0)
 				panic("exxmit: no xmit pending");
 #endif
-			xs->xs_flags &= ~EX_XPENDING;
+			xs->xs_if.if_flags &= ~IFF_OACTIVE;
 			xs->xs_if.if_opackets++;
 			if (bp->mb_rply == LL_OK) {
 				;
@@ -510,7 +516,7 @@ excdint(unit)
 				m_freem(xs->xs_ifuba.ifu_xtofree);
 				xs->xs_ifuba.ifu_xtofree = 0;
 			}
-			exstart(unit);
+			(void) exstart(&xs->xs_if);
 			break;
 		case LLNET_STSTCS:
 			xs->xs_if.if_ierrors = xs->xs_xsa.sa_crc;
@@ -611,45 +617,7 @@ exrecv(unit, bp)
 	m = if_rubaget(&xs->xs_ifuba, len, off, &xs->xs_if);
 	if (m == 0)
 		return;
-	if (off) {
-		struct ifnet *ifp;
-
-		ifp = *(mtod(m, struct ifnet **));
-		m->m_off += 2 * sizeof (u_short);
-		m->m_len -= 2 * sizeof (u_short);
-		*(mtod(m, struct ifnet **)) = ifp;
-	}
-	switch (eh->ether_type) {
-
-#ifdef INET
-	case ETHERTYPE_IP:
-		schednetisr(NETISR_IP);	/* is this necessary */
-		inq = &ipintrq;
-		break;
-
-	case ETHERTYPE_ARP:
-		arpinput(&xs->xs_ac, m);
-		return;
-#endif
-#ifdef NS
-	case ETHERTYPE_NS:
-		schednetisr(NETISR_NS);
-		inq = &nsintrq;
-		break;
-
-#endif
-	default:
-		m_freem(m);
-		return;
-	}
-
-	s = splimp();
-	if (IF_QFULL(inq)) {
-		IF_DROP(inq);
-		m_freem(m);
-	} else
-		IF_ENQUEUE(inq, m);
-	splx(s);
+	ether_input(&xs->xs_if, eh, m);
 }
 
 /*
@@ -671,141 +639,6 @@ exhangrcv(unit)
 		UNIADDR(xs->xs_ifuba.ifu_r.ifrw_info);
 	bp->mb_status |= MH_EXOS;
 	addr->xd_portb = EX_NTRUPT;
-}
-
-/*
- * Ethernet output routine.
- * Encapsulate a packet of type family for the local net.
- * Use trailer local net encapsulation if enough data in first
- * packet leaves a multiple of 512 bytes of data in remainder.
- */
-exoutput(ifp, m0, dst)
-	register struct ifnet *ifp;
-	register struct mbuf *m0;
-	struct sockaddr *dst;
-{
-	int type, s, error;
-	u_char edst[6];
-	struct in_addr idst;
-	register struct ex_softc *xs = &ex_softc[ifp->if_unit];
-	register struct mbuf *m = m0;
-	register struct ether_header *eh;
-	register int off;
-	int usetrailers;
-
-	if ((ifp->if_flags & (IFF_UP|IFF_RUNNING)) != (IFF_UP|IFF_RUNNING)) {
-		error = ENETDOWN;
-		goto bad;
-	}
-	switch (dst->sa_family) {
-
-#ifdef INET
-	case AF_INET:
-		idst = ((struct sockaddr_in *)dst)->sin_addr;
-		if (!arpresolve(&xs->xs_ac, m, &idst, edst, &usetrailers))
-			return (0);	/* if not yet resolved */
-		off = ntohs((u_short)mtod(m, struct ip *)->ip_len) - m->m_len;
-		if (usetrailers && off > 0 && (off & 0x1ff) == 0 &&
-		    m->m_off >= MMINOFF + 2 * sizeof (u_short)) {
-			type = ETHERTYPE_TRAIL + (off>>9);
-			m->m_off -= 2 * sizeof (u_short);
-			m->m_len += 2 * sizeof (u_short);
-			*mtod(m, u_short *) = htons((u_short)ETHERTYPE_IP);
-			*(mtod(m, u_short *) + 1) = htons((u_short)m->m_len);
-			goto gottrailertype;
-		}
-		type = ETHERTYPE_IP;
-		off = 0;
-		goto gottype;
-#endif
-#ifdef NS
-	case AF_NS:
-		type = ETHERTYPE_NS;
- 		bcopy((caddr_t)&(((struct sockaddr_ns *)dst)->sns_addr.x_host),
-		(caddr_t)edst, sizeof (edst));
-		off = 0;
-		goto gottype;
-#endif
-
-	case AF_UNSPEC:
-		eh = (struct ether_header *)dst->sa_data;
-		bcopy((caddr_t)eh->ether_dhost, (caddr_t)edst, sizeof (edst));
-		type = eh->ether_type;
-		goto gottype;
-
-	default:
-		printf("ex%d: can't handle af%d\n", ifp->if_unit,
-			dst->sa_family);
-		error = EAFNOSUPPORT;
-		goto bad;
-	}
-
-gottrailertype:
-	/*
-	 * Packet to be sent as trailer: move first packet
-	 * (control information) to end of chain.
-	 */
-	while (m->m_next)
-		m = m->m_next;
-	m->m_next = m0;
-	m = m0->m_next;
-	m0->m_next = 0;
-	m0 = m;
-
-gottype:
-	/*
-	 * Add local net header.  If no space in first mbuf,
-	 * allocate another.
-	 */
-	if (m->m_off > MMAXOFF ||
-	    MMINOFF + sizeof (struct ether_header) > m->m_off) {
-		m = m_get(M_DONTWAIT, MT_HEADER);
-		if (m == 0) {
-			error = ENOBUFS;
-			goto bad;
-		}
-		m->m_next = m0;
-		m->m_off = MMINOFF;
-		m->m_len = sizeof (struct ether_header);
-	} else {
-		m->m_off -= sizeof (struct ether_header);
-		m->m_len += sizeof (struct ether_header);
-	}
-	eh = mtod(m, struct ether_header *);
-	eh->ether_type = htons((u_short)type);
-	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
-	bcopy((caddr_t)xs->xs_addr, (caddr_t)eh->ether_shost, 6);
-
-	/*
-	 * Queue message on interface, and start output if interface
-	 * not yet active.
-	 */
-	s = splimp();
-	if (IF_QFULL(&ifp->if_snd)) {
-		IF_DROP(&ifp->if_snd);
-		splx(s);
-		m_freem(m);
-		return (ENOBUFS);
-	}
-	IF_ENQUEUE(&ifp->if_snd, m);
-	/*
-	 * If transmit request not already pending, then
-	 * kick the back end.
-	 */
-	if ((xs->xs_flags & EX_XPENDING) == 0) {
-		exstart(ifp->if_unit);
-	}
-#ifdef DEBUG
-	else {
-		xs->xs_wait++;
-	}
-#endif
-	splx(s);
-	return (0);
-
-bad:
-	m_freem(m0);
-	return (error);
 }
 
 /*
@@ -857,7 +690,7 @@ exioctl(ifp, cmd, data)
                 ifp->if_flags |= IFF_UP;
                 exinit(ifp->if_unit);
 
-                switch (ifa->ifa_addr.sa_family) {
+                switch (ifa->ifa_addr->sa_family) {
 #ifdef INET
 		case AF_INET:
 			((struct arpcom *)ifp)->ac_ipaddr =
@@ -906,37 +739,49 @@ ex_setaddr(physaddr, unit)
 	int unit;
 {
 	register struct ex_softc *xs = &ex_softc[unit];
-	struct uba_device *ui = exinfo[unit];
-	register struct exdevice *addr= (struct exdevice *)ui->ui_addr;
-	register struct ex_msg *bp;
 	
 	if (physaddr) {
 		xs->xs_flags |= EX_SETADDR;
 		bcopy((caddr_t)physaddr, (caddr_t)xs->xs_addr, 6);
 	}
+	ex_setmulti((u_char *)xs->xs_addr, unit, PHYSSLOT);
+}
+/*
+ * enable multicast reception on a particular address.
+ */
+ex_setmulti(linkaddr, unit, slot)
+	u_char *linkaddr;
+	int unit;
+{
+	register struct ex_softc *xs = &ex_softc[unit];
+	struct uba_device *ui = exinfo[unit];
+	register struct exdevice *addr= (struct exdevice *)ui->ui_addr;
+	register struct ex_msg *bp;
+	
 	if (! (xs->xs_flags & EX_RUNNING))
 		return;
 	bp = exgetcbuf(xs);
 	bp->mb_rqst = LLNET_ADDRS;
 	bp->mb_na.na_mask = READ_OBJ|WRITE_OBJ;
-	bp->mb_na.na_slot = PHYSSLOT;
-	bcopy((caddr_t)xs->xs_addr, (caddr_t)bp->mb_na.na_addrs, 6);
+	bp->mb_na.na_slot = slot;
+	bcopy((caddr_t)linkaddr, (caddr_t)bp->mb_na.na_addrs, 6);
 	bp->mb_status |= MH_EXOS;
 	addr->xd_portb = EX_NTRUPT;
 	bp = xs->xs_x2hnext;
 	while ((bp->mb_status & MH_OWNER) == MH_EXOS)	/* poll for reply */
 		;
 #ifdef	DEBUG
-	log(LOG_DEBUG, "ex%d: reset addr %s\n", ui->ui_unit,
-		ether_sprintf(bp->mb_na.na_addrs));
+	log(LOG_DEBUG, "ex%d: %s %s (slot %d)\n", unit,
+		(slot == PHYSSLOT ? "reset addr" : "add multicast"
+		ether_sprintf(bp->mb_na.na_addrs), slot);
 #endif
 	/*
-	 * Now, re-enable reception on phys slot.
+	 * Now, re-enable reception on slot.
 	 */
 	bp = exgetcbuf(xs);
 	bp->mb_rqst = LLNET_RECV;
 	bp->mb_nr.nr_mask = ENABLE_RCV|READ_OBJ|WRITE_OBJ;
-	bp->mb_nr.nr_slot = PHYSSLOT;
+	bp->mb_nr.nr_slot = slot;
 	bp->mb_status |= MH_EXOS;
 	addr->xd_portb = EX_NTRUPT;
 	bp = xs->xs_x2hnext;

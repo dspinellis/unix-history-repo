@@ -1,4 +1,4 @@
-/*	@(#)if_ddn.c	7.1 (Berkeley) %G% */
+/*	@(#)if_ddn.c	7.2 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -603,7 +603,7 @@ ddnioctl(ifp, cmd, data)
 	switch (cmd) {
 
 	case SIOCSIFADDR:
-		if (ifa->ifa_addr.sa_family != AF_INET)
+		if (ifa->ifa_addr->sa_family != AF_INET)
 			return(EINVAL);
 		ifp->if_flags |= IFF_UP;
 		if ((ifp->if_flags & IFF_RUNNING) == 0)
