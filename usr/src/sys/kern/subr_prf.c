@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.6	%G%	*/
+/*	subr_prf.c	4.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,14 +12,6 @@
 #include "../h/dir.h"
 #include "../h/user.h"
 #include "../h/tty.h"
-
-#ifdef TRACE
-#define	TRCBUFS	4096
-char	trcbuf[TRCBUFS];
-char	*trcbufp = trcbuf;
-int	trcwrap;
-int	trcprt = TRCBUFS;
-#endif
 
 /*
  * In case console is off,
@@ -48,82 +40,88 @@ unsigned x1;
 	prf(fmt, &x1, 0);
 }
 
-#ifdef TRACE
-trace(fmt, x1)
-register char *fmt;
-unsigned x1;
+/*
+ * print to the current users terminal,
+ * guarantee not to sleep (so can be called by intr routine)
+ * no watermark checking - so no verbose messages
+ */
+/*VARARGS1*/
+uprintf(fmt, x1)
+	char	*fmt;
+	unsigned x1;
 {
 
-	prf(fmt, &x1, 1);
+	prf(fmt, &x1, 2);
 }
 
-#endif
-
-prf(fmt, adx, trace)
+/* THIS CODE IS VAX DEPENDENT */
+prf(fmt, adx, touser)
 register char *fmt;
-register unsigned int *adx;
+register u_int *adx;
 {
-	register c;
+	register int b, c;
 	char *s;
 
 loop:
-	while((c = *fmt++) != '%') {
+	while ((c = *fmt++) != '%') {
 		if(c == '\0')
 			return;
-		putchar(c, trace);
+		putchar(c, touser);
 	}
+again:
 	c = *fmt++;
-	if (c == 'X')
-		printx((long)*adx, trace);
-	else if (c == 'd' || c == 'u' || c == 'o' || c == 'x')
-		printn((long)*adx, c=='o'? 8: (c=='x'? 16:10), trace);
-	else if (c == 's') {
+	switch (c) {
+
+	case 'l':
+		goto again;
+	case 'x': case 'X':
+		b = 16;
+		goto number;
+	case 'd': case 'D':
+	case 'u':		/* what a joke */
+		b = 10;
+		goto number;
+	case 'o': case 'O':
+		b = 8;
+number:
+		printn(*adx, b, touser);
+		break;
+	case 'c':
+		c = *adx;
+		while (c) {
+			putchar(c&0x7f, touser);
+			c >>= 8;
+		}
+		break;
+	case 's':
 		s = (char *)*adx;
 		while (c = *s++)
-#ifdef TRACE
-			if (trace == 1) {
-				*trcbufp++ = c;
-				if (trcbufp >= &trcbuf[TRCBUFS]) {
-					trcbufp = trcbuf;
-					trcwrap = 1;
-				}
-			} else
-#endif
-				putchar(c, trace);
-	} else if (c == 'D') {
-		printn(*(long *)adx, 10, trace);
-		adx += (sizeof(long) / sizeof(int)) - 1;
+			putchar(c, touser);
+		break;
 	}
 	adx++;
 	goto loop;
 }
+/* END VAX DEPENDENT CODE */
 
-printx(x, trace)
-long x;
+printn(n, b, touser)
+	unsigned long n;
 {
-	int i;
+	char buf[11];
+	register char *cp;
 
-	for (i = 0; i < 8; i++)
-		putchar("0123456789ABCDEF"[(x>>((7-i)*4))&0xf], trace);
-}
-
-/*
- * Print an integer in base b.  If the base is ten it is condidered a
- * signed integer otherwise it is treated as unsigned.
- */
-printn(n, b, trace)
-unsigned long n;
-{
-	register unsigned long a;
-	register long a1 = n;
-
-	if (b == 10 && a1 < 0) {
-		putchar('-', trace);
-		n = -a1;
+	if (b == 10 && (int)n < 0) {
+		putchar('-', touser);
+		n = (unsigned)(-(int)n);
 	}
-	if(a = n/b)
-		printn(a, b, trace);
-	putchar("0123456789ABCDEF"[(int)(n%b)], trace);
+	cp = buf;
+	do {
+		*cp++ = "0123456789abcdef"[n%b];
+		n /= b;
+	} while (n);
+	do
+		putchar(*--cp, touser);
+	while (cp > buf);
 }
 
 /*
@@ -133,6 +131,7 @@ unsigned long n;
 panic(s)
 char *s;
 {
+
 	panicstr = s;
 	printf("panic: %s\n", s);
 	(void) spl0();
@@ -147,11 +146,11 @@ char *s;
  * the device argument.
  */
 prdev(str, dev)
-char *str;
-dev_t dev;
+	char *str;
+	dev_t dev;
 {
 
-	printf("%s on dev %u/%u\n", str, major(dev), minor(dev));
+	printf("%s on dev %d/%d\n", str, major(dev), minor(dev));
 }
 
 /*
@@ -162,77 +161,36 @@ dev_t dev;
  * status register) passed as argument.
  */
 deverror(bp, o1, o2)
-register struct buf *bp;
+	register struct buf *bp;
 {
 
 	printf("bn=%d er=%x,%x", bp->b_blkno, o1,o2);
 	prdev("", bp->b_dev);
 }
 
-#ifdef TRACE
-dumptrc()
-{
-	register char *cp;
-	register int pos, nch;
-
-	nch = trcprt;
-	if (nch < 0 || nch > TRCBUFS)
-		nch = TRCBUFS;
-	pos = (trcbufp - trcbuf) - nch;
-	if (pos < 0)
-		if (trcwrap)
-			pos += TRCBUFS;
-		else {
-			nch += pos;
-			pos = 0;
-		}
-	for (cp = &trcbuf[pos]; nch > 0; nch--) {
-		putchar(*cp++, 0);
-		if (cp >= &trcbuf[TRCBUFS])
-			cp = trcbuf;
-	}
-}
-#else
-/*ARGSUSED*/
-dumptrc(nch)
-	int nch;
-{
-
-}
-#endif
-
 /*
- * Print a character on console or in internal trace buffer.
+ * Print a character on console or users terminal.
  * If destination is console then the last MSGBUFS characters
  * are saved in msgbuf for inspection later.
  */
 /*ARGSUSED*/
-putchar(c, trace)
-register c;
+putchar(c, touser)
+	register int c;
 {
 
-	if (trace == 2) {
-		register struct tty *tp;
-		register s;
+	if (touser) {
+		register struct tty *tp = u.u_ttyp;
 
-		if ((tp = u.u_ttyp) && (tp->t_state&CARR_ON)) {
-			s = spl7();
+		if (tp && (tp->t_state&CARR_ON)) {
+			register s = spl6();
+			if (c == '\n')
+				ttyoutput('\r', tp);
 			ttyoutput(c, tp);
 			ttstart(tp);
 			splx(s);
 		}
 		return;
 	}
-#ifdef TRACE
-	if (trace) {
-		*trcbufp++ = c;
-		if (trcbufp >= &trcbuf[TRCBUFS]) {
-			trcbufp = trcbuf;
-			trcwrap = 1;
-		}
-		return;
-	}
-#endif
 	if (c != '\0' && c != '\r' && c != 0177) {
 		if (msgbuf.msg_magic != MSG_MAGIC) {
 			msgbuf.msg_bufx = 0;
@@ -245,18 +203,4 @@ register c;
 	if (c == 0)
 		return;
 	cnputc(c);
-}
-
-/*
- * print to the current users terminal,
- * guarantee not to sleep (so can be called by intr routine)
- * no watermark checking - so no verbose messages
- */
-
-/*VARARGS1*/
-uprintf(fmt, x1)
-char	*fmt;
-unsigned x1;
-{
-	prf(fmt, &x1, 2);
 }

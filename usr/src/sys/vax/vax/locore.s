@@ -1,7 +1,7 @@
 /*
  * Machine Language Assist for UC Berkeley Virtual Vax/Unix
  *
- *	locore.s		4.16	%G%
+ *	locore.s		4.17	%G%
  */
 
 	.set	HIGH,31		# mask for total disable
@@ -1302,11 +1302,11 @@ kacerr:
  */ 
 
 	.data
-SBIflt:	.asciz	"UBA SBI Fault SR %X CNFGR %X\n"
+SBIflt:	.asciz	"UBA SBI Fault SR %x CNFGR %x\n"
 UBAmsg:	.asciz	"UBA error SR %x, FMER %x, FUBAR %o\n"
 straym:	.asciz	"Stray Interrupt\n"
 ZERmsg:	.asciz	"ZERO VECTOR "
-wtime:	.asciz	"write timeout %X\n"
+wtime:	.asciz	"write timeout %x\n"
 mbasmsg:.asciz	"stray interrupt mba %d\n"
 
 #if VAX==750
