@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.13	(Berkeley)	%G%
+#	Makefile	4.14	83/07/03
 #
 DESTDIR=
 CFLAGS=	-O
@@ -210,8 +210,6 @@ mt: /usr/include/vaxmba/htreg.h
 mt: /usr/include/vaxuba/utreg.h
 mt: /usr/include/vaxuba/tmreg.h
 mt: /usr/include/vaxuba/tsreg.h
-mt: /usr/include/sundev/tmreg.h
-mt: /usr/include/sundev/arreg.h
 nice: nice.c
 nice: /usr/include/stdio.h
 nice: /usr/include/sys/time.h
