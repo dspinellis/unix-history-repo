@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -43,7 +43,9 @@ depend: ${SRCS}
 
 install: ${MAN}
 	install -s -o bin -g bin -m 755 factor primes ${DESTDIR}/usr/games
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat6
+	rm -f ${DESTDIR}/usr/man/cat6/primes.0
+	ln ${DESTDIR}/usr/man/cat6/${MAN} ${DESTDIR}/usr/man/cat6/primes.0
 
 lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
