@@ -1,4 +1,4 @@
-/*	inet_makeaddr.c	4.1	82/10/07	*/
+/*	inet_makeaddr.c	4.2	82/10/07	*/
 
 #include <sys/types.h>
 #include <net/in.h>
@@ -8,7 +8,7 @@
  * building addresses stored in the ifnet structure.
  */
 struct in_addr
-if_makeaddr(net, host)
+inet_makeaddr(net, host)
 	int net, host;
 {
 	u_long addr;

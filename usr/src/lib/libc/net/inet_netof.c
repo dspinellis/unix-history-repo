@@ -1,4 +1,4 @@
-/*	inet_netof.c	4.1	82/10/07	*/
+/*	inet_netof.c	4.2	82/10/07	*/
 
 #include <sys/types.h>
 #include <net/in.h>
@@ -7,7 +7,7 @@
  * Return the network number from an internet
  * address; handles class a/b/c network #'s.
  */
-in_netof(in)
+inet_netof(in)
 	struct in_addr in;
 {
 #if vax || pdp11

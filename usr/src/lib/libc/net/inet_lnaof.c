@@ -1,4 +1,4 @@
-/*	inet_lnaof.c	4.1	82/10/07	*/
+/*	inet_lnaof.c	4.2	82/10/07	*/
 
 #include <sys/types.h>
 #include <net/in.h>
@@ -8,7 +8,7 @@
  * internet address; handles class a/b/c network
  * number formats.
  */
-in_lnaof(in)
+inet_lnaof(in)
 	struct in_addr in;
 {
 #if vax || pdp11
