@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)bugfiler.c	5.2 (Berkeley) 85/08/09";
 #endif not lint
 
 /*
@@ -29,8 +29,12 @@ static char sccsid[] = "@(#)bugfiler.c	5.1 (Berkeley) %G%";
 #include <sys/stat.h>
 #include <sys/dir.h>
 
+#ifndef BUGS_NAME
 #define	BUGS_NAME	"4bsd-bugs"
-#define	BUGS_HOME	"%ucbarpa@BERKELEY"
+#endif
+#ifndef BUGS_HOME
+#define	BUGS_HOME	"@ucbarpa.BERKELEY.EDU"
+#endif
 #define	MAILCMD		"/usr/lib/sendmail -i -t"
 
 char	unixtomh[] = "/usr/new/lib/mh/unixtomh";
