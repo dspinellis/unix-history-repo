@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.37 (Berkeley) %G%
+ *	@(#)sendmail.h	6.38 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.37		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.38		%G%";
 # endif lint
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -779,6 +779,7 @@ extern char	*sfgets P((char *, int, FILE *, time_t));
 extern char	*queuename P((ENVELOPE *, char));
 extern time_t	curtime P(());
 extern bool	transienterror P((int));
+extern char	*errstring P((int));
 
 /* ellipsis is a different case though */
 #ifdef __STDC__
