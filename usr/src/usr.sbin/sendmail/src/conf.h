@@ -117,7 +117,13 @@
 # ifndef IDENTPROTO
 #  define IDENTPROTO	0	/* TCP/IP implementation is broken */
 # endif
+# ifndef HASGETUSERSHELL
+#  define HASGETUSERSHELL 0	/* getusershell(3) causes core dumps */
+# endif
 # define syslog		hard_syslog
+# ifdef __STDC__
+extern int	syslog(int, char *, ...);
+# endif
 # endif
 
 
