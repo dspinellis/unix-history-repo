@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkproto.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkproto.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -325,11 +325,14 @@ iput(ip, aibc, ib, inum)
 	daddr_t *ib;
 	ino_t inum;
 {
+	struct dinode buf[MAXBSIZE / sizeof (struct dinode)];
 	daddr_t d, alloc();
 	int i;
-	struct dinode buf[MAXBSIZE / sizeof (struct dinode)];
+	struct timeval t;
 
-	(void)gettimeofday(&ip->di_atime.tv_sec, NULL);
+	(void)gettimeofday(&t, NULL);
+	ip->di_atime.ts_sec = t.tv_sec;
+	ip->di_atime.ts_nsec = 0;
 	ip->di_mtime = ip->di_ctime = ip->di_atime;
 	switch (ip->di_mode&IFMT) {
 
