@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_physio.c	7.7 (Berkeley) %G%
+ *	@(#)kern_physio.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -190,7 +190,7 @@ physio(strat, bp, dev, rw, mincnt, uio)
 	struct uio *uio;
 {
 	register struct iovec *iov;
-	register int c;
+	register int requested, done;
 	char *a;
 	int s, allocbuf = 0, error = 0;
 	struct buf *getswbuf();
@@ -223,31 +223,31 @@ physio(strat, bp, dev, rw, mincnt, uio)
 			bp->b_blkno = btodb(uio->uio_offset);
 			bp->b_bcount = iov->iov_len;
 			(*mincnt)(bp);
-			c = bp->b_bcount;
+			requested = bp->b_bcount;
 			u.u_procp->p_flag |= SPHYSIO;
-			vslock(a = bp->b_un.b_addr, c);
+			vslock(a = bp->b_un.b_addr, requested);
 			(*strat)(bp);
 			s = splbio();
 			while ((bp->b_flags & B_DONE) == 0)
 				sleep((caddr_t)bp, PRIBIO);
-			vsunlock(a, c, rw);
+			vsunlock(a, requested, rw);
 			u.u_procp->p_flag &= ~SPHYSIO;
 			if (bp->b_flags&B_WANTED)	/* rare */
 				wakeup((caddr_t)bp);
 			splx(s);
-			c -= bp->b_resid;
-			bp->b_un.b_addr += c;
-			iov->iov_len -= c;
-			uio->uio_resid -= c;
-			uio->uio_offset += c;
-			/* temp kludge for tape drives */
-			if (bp->b_resid || (bp->b_flags&B_ERROR))
+			done = bp->b_bcount - bp->b_resid;
+			bp->b_un.b_addr += done;
+			iov->iov_len -= done;
+			uio->uio_resid -= done;
+			uio->uio_offset += done;
+			/* temp kludge for disk drives */
+			if (done < requested || bp->b_flags & B_ERROR)
 				break;
 		}
 		bp->b_flags &= ~(B_BUSY | B_WANTED | B_PHYS | B_RAW);
 		error = biowait(bp);
-		/* temp kludge for tape drives */
-		if (bp->b_resid || error)
+		/* temp kludge for disk drives */
+		if (done < requested || bp->b_flags & B_ERROR)
 			break;
 	}
 	if (allocbuf)
