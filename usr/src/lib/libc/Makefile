@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 # All library objects contain sccsid strings by default; they may be
 # excluded as a space-saving measure.  To produce a library that does
@@ -29,7 +29,7 @@ libkern: ${KQSRCS} ${KSRCS}
 	cp -p ${.CURDIR}/quad/quad.h ${.ALLSRC} /sys/libkern
 	
 beforeinstall: tags
-	install -c -o bin -g bin -m 444 ${.CURDIR}/tags /var/db/libc.tags
+	install -c -o bin -g bin -m 444 tags /var/db/libc.tags
 
 tags: ${SRCS}
 	ctags ${.ALLSRC:M*.c}
