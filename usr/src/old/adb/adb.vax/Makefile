@@ -1,5 +1,5 @@
 #
-#	Makefile	4.5	87/05/10
+#	Makefile	4.6	87/05/31
 #
 DESTDIR= 
 DFLAGS = -DADB
@@ -46,6 +46,8 @@ install:
 
 clean:
 	rm -f adb instrs.adb errs ${OFILES}
+
+depend:
 
 print:
 	@ls -l | pr

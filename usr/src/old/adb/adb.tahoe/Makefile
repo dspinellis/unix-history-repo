@@ -1,4 +1,4 @@
-#	Makefile	5.1	86/02/25
+#	Makefile	5.2	87/05/31
 #
 DESTDIR=
 CFLAGS=	-O
@@ -33,6 +33,8 @@ sym.o:		defs.h sym.c
 
 clean:
 	rm -f adb ${OBJS} core t.c errs
+
+depend:
 
 lint:
 	lint -bx ${SRCS}

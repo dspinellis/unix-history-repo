@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.1	%G%
+#	@(#)Makefile	4.2	%G%
 #
 DIFF=	/bin/diff
 DIFFH=	/usr/lib/diffh
@@ -17,6 +17,8 @@ diff: ${OBJS}
 
 diffh: diffh.o
 	cc -o diffh diffh.o ${LDFLAGS}
+
+depend:
 
 clean:
 	rm -f diff diffh ${OBJS} diffh.o

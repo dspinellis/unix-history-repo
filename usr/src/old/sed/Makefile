@@ -1,4 +1,4 @@
-#	Makefile	4.1	85/04/05
+#	Makefile	4.2	87/05/31
 #
 CFLAGS=-O -w
 
@@ -12,3 +12,5 @@ install: sed
 	install -s sed $(DESTDIR)/bin
 clean:
 	rm -f *.o sed
+
+depend:

@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%";
+#	@(#)Makefile	5.6 (Berkeley) %G%";
 #
 #	Makefile for Xerox Routing Information Protocol
 #	Daemon
@@ -27,3 +27,5 @@ install: XNSrouted
 
 clean:
 	rm -f XNSrouted *.o core a.out t.c linterrs typescript errs
+
+depend:

@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley Software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	5.5 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
@@ -92,6 +92,8 @@ vgrind:
 
 install: csh
 	install -s csh ${DESTDIR}/bin/csh
+
+depend:
 
 clean:
 	${RM} -f a.out strings x.c xs.c csh errs
