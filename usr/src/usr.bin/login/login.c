@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)login.c	5.39 (Berkeley) %G%";
+static char sccsid[] = "@(#)login.c	5.40 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -33,7 +33,7 @@ static char sccsid[] = "@(#)login.c	5.39 (Berkeley) %G%";
  */
 
 #include <sys/param.h>
-#include <sys/quota.h>
+#include <ufs/quota.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -42,7 +42,6 @@ static char sccsid[] = "@(#)login.c	5.39 (Berkeley) %G%";
 
 #include <utmp.h>
 #include <signal.h>
-#include <lastlog.h>
 #include <errno.h>
 #include <ttyent.h>
 #include <syslog.h>
@@ -98,7 +97,7 @@ main(argc, argv)
 	int ask, fflag, hflag, pflag, rflag, cnt;
 	int quietlog, passwd_req, ioctlval, timedout();
 	char *domain, *salt, *envinit[1], *ttyn, *pp;
-	char tbuf[MAXPATHLEN + 2];
+	char tbuf[MAXPATHLEN + 2], tname[sizeof(_PATH_TTY) + 10];
 	char *ctime(), *ttyname(), *stypeof(), *crypt(), *getpass();
 	time_t time();
 	off_t lseek();
@@ -213,8 +212,10 @@ main(argc, argv)
 		close(cnt);
 
 	ttyn = ttyname(0);
-	if (ttyn == NULL || *ttyn == '\0')
-		ttyn = "/dev/tty??";
+	if (ttyn == NULL || *ttyn == '\0') {
+		(void)sprintf(tname, "%s??", _PATH_TTY);
+		ttyn = tname;
+	}
 	if (tty = rindex(ttyn, '/'))
 		++tty;
 	else
@@ -293,6 +294,9 @@ main(argc, argv)
 
 	/* committed to login -- turn off timeout */
 	(void)alarm((u_int)0);
+
+	/* paranoia... */
+	endpwent();
 
 	/*
 	 * If valid so far and root is logging in, see if root logins on
@@ -456,6 +460,9 @@ main(argc, argv)
 	tbuf[0] = '-';
 	strcpy(tbuf + 1, (p = rindex(pwd->pw_shell, '/')) ?
 	    p + 1 : pwd->pw_shell);
+
+	if (setlogname(pwd->pw_name, strlen(pwd->pw_name)) < 0)
+		syslog(LOG_ERR, "setlogname() failure: %m");
 
 	/* discard permissions last so can't get killed and drop core */
 	(void)setuid(pwd->pw_uid);
