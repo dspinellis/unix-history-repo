@@ -1,11 +1,9 @@
-#	@(#)Makefile	4.1	(Berkeley)	82/11/22
+#	@(#)Makefile	4.2	(Berkeley)	83/07/26
 #
 DESTDIR=
 
 doctor: /usr/ucb/lisp /usr/ucb/liszt
-	liszt -mrq doctor.l
-	mv doctor.o doctor
-	chmod 755 doctor
+	liszt -mrq -o doctor doctor.l
 
 install:
 	install doctor $(DESTDIR)/usr/games
