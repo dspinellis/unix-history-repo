@@ -1,7 +1,7 @@
 #	from: @(#)sys.mk	5.11 (Berkeley) 3/13/91
-#	$Id$
+#	$Id: sys.mk,v 1.4 1994/01/31 06:10:42 rgrimes Exp $
 
-unix=		We run UNIX.
+unix=		We run FreeBSD, not UNIX.
 
 .SUFFIXES: .out .a .ln .o .c .cc .cxx .C .F .f .e .r .y .l .s .cl .p .h 
 
