@@ -4,8 +4,7 @@
 .include "${.CURDIR}/../Makefile.inc"
 .endif
 
-#.SUFFIXES: .out .o .c .cc .cxx .C .y .l .s
-.SUFFIXES: .out .o .c .y .l .s
+.SUFFIXES: .out .o .c .cc .cxx .C .y .l .s
 
 CFLAGS+=${COPTS}
 
@@ -45,10 +44,10 @@ CLEANFILES+=strings
 	@${CC} ${CFLAGS} -c x.c -o ${.TARGET}
 	@rm -f x.c
 
-#.cc.o .cxx.o .C.o:
-#	${CXX} -E ${CXXFLAGS} ${.IMPSRC} | xstr -c -
-#	@mv -f x.c x.cc
-#	@${CXX} ${CXXFLAGS} -c x.cc -o ${.TARGET}
+.cc.o .cxx.o .C.o:
+	${CXX} -E ${CXXFLAGS} ${.IMPSRC} | xstr -c -
+	@mv -f x.c x.cc
+	@${CXX} ${CXXFLAGS} -c x.cc -o ${.TARGET}
 
 .endif
 
@@ -126,10 +125,10 @@ depend: .depend _PROGSUBDIR
 	if [ "$$files" != "" ]; then \
 	  mkdep -a ${MKDEP} ${CFLAGS:M-[ID]*} $$files; \
 	fi
-#	files="${.ALLSRC:M*.cc} ${.ALLSRC:M*.C} ${.ALLSRC:M*.cxx}"; \
-#	if [ "$$files" != "  " ]; then \
-#	  mkdep -a ${MKDEP} -+ ${CXXFLAGS:M-[ID]*} $$files; \
-#	fi
+	files="${.ALLSRC:M*.cc} ${.ALLSRC:M*.C} ${.ALLSRC:M*.cxx}"; \
+	if [ "$$files" != "  " ]; then \
+	  mkdep -a ${MKDEP} ${CXXFLAGS:M-nostd*} ${CXXFLAGS:M-[ID]*} $$files; \
+	fi
 .endif
 .endif
 

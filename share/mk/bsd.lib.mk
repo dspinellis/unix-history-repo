@@ -1,6 +1,15 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.12  1993/10/08  12:19:22  rgrimes
+# This fix is from Chris Demetriou
+# You need a SUFFIX: line that has nothing on it so that the built-in
+# SUFFIX rules get cleared.  This is why we did not build the c library
+# using the optimized assembler sources for the i386.
+#
+# You need to make clean in src/lib/libc and rebuild libc, then relink
+# the rest of the world for this fix to take effect.
+#
 # Revision 1.11  1993/08/15  01:27:28  nate
 # 1) Finishedup my DPSRCS fixes from way back.  Now any .h files will
 #    automatically be depended and stripped out of the SRCS line
@@ -73,9 +82,8 @@ BINMODE?=	555
 .MAIN: all
 
 # prefer .s to a .c, add .po, remove stuff not used in the BSD libraries
-#.SUFFIXES: .out .o .po .s .c .cc .cxx .C .f .y .l
 .SUFFIXES:
-.SUFFIXES: .out .o .po .s .c .f .y .l
+.SUFFIXES: .out .o .po .s .c .cc .cxx .C .f .y .l
 
 .c.o:
 	${CC} ${CFLAGS} -c ${.IMPSRC} 
@@ -87,15 +95,15 @@ BINMODE?=	555
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
 
-#.cc.o .cxx.o .C.o:
-#	${CXX} ${CXXFLAGS} -c ${.IMPSRC} 
-#	@${LD} -x -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+.cc.o .cxx.o .C.o:
+	${CXX} ${CXXFLAGS} -c ${.IMPSRC} 
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
-#.cc.po .C.po .cxx.o:
-#	${CXX} -p ${CXXFLAGS} -c ${.IMPSRC} -o ${.TARGET}
-#	@${LD} -X -r ${.TARGET}
-#	@mv a.out ${.TARGET}
+.cc.po .C.po .cxx.o:
+	${CXX} -p ${CXXFLAGS} -c ${.IMPSRC} -o ${.TARGET}
+	@${LD} -X -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 .f.o:
 	${FC} ${RFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
@@ -169,10 +177,10 @@ depend: .depend
 	if [ "$$files" != "" ]; then \
 	  mkdep -a ${MKDEP} ${CFLAGS:M-[ID]*} $$files; \
 	fi
-#	files="${.ALLSRC:M*.cc} ${.ALLSRC:M*.C} ${.ALLSRC:M*.cxx}"; \
-#	if [ "$$files" != "  " ]; then \
-#	  mkdep -a ${MKDEP} -+ ${CXXFLAGS:M-[ID]*} $$files; \
-#	fi
+	files="${.ALLSRC:M*.cc} ${.ALLSRC:M*.C} ${.ALLSRC:M*.cxx}"; \
+	if [ "$$files" != "  " ]; then \
+	  mkdep -a ${MKDEP} ${CXXFLAGS:M-nostd*} ${CXXFLAGS:M-[ID]*} $$files; \
+	fi
 	@(TMP=/tmp/_depend$$$$; \
 	    sed -e 's/^\([^\.]*\).o[ ]*:/\1.o \1.po:/' < .depend > $$TMP; \
 	    mv $$TMP .depend)
