@@ -1,6 +1,10 @@
-/* Copyright (c) 1982 Regents of the University of California */
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
-static char sccsid[] = "@(#)check.c 1.7 %G%";
+static char sccsid[] = "@(#)check.c 5.1 %G%";
 /*
  * Check a tree for semantic correctness.
  */

@@ -1,6 +1,10 @@
-/* Copyright (c) 1982 Regents of the University of California */
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
-static char sccsid[] = "@(#)mappings.c 1.6 %G%";
+static char sccsid[] = "@(#)mappings.c 5.1 %G%";
 
 static char rcsid[] = "$Header: mappings.c,v 1.4 84/12/26 10:40:25 linton Exp $";
 

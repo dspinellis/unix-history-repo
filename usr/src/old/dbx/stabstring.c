@@ -1,8 +1,12 @@
-/* Copyright (c) 1982 Regents of the University of California */
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
 
 #ifndef lint
-static	char sccsid[] = "@(#)stabstring.c	1.2 (Berkeley) %G%"; /* from 1.4 84/03/27 10:24:04 linton Exp */
-#endif
+static char sccsid[] = "@(#)stabstring.c	5.1 (Berkeley) %G%";
+#endif not lint
 
 static char rcsid[] = "$Header: stabstring.c,v 1.6 84/12/26 10:42:17 linton Exp $";
 
