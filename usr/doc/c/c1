@@ -1,0 +1,358 @@
+.ta .5i 1i 1.5i 2i 2.5i 3i 3.5i 4i
+.ul
+1.  Introduction
+.et
+C is a computer language based on the earlier language B [1].
+The languages and their compilers differ in two
+major ways:
+C introduces the notion of types, and defines
+appropriate extra syntax and semantics;
+also, C on the \s8PDP\s10-11 is a true compiler, producing
+machine code where B produced interpretive code.
+.pg
+Most of the software for the \s8UNIX\s10 time-sharing system [2]
+is written in C, as is the operating system itself.
+C is also available on the \s8HIS\s10 6070 computer
+at Murray Hill and
+and on the \s8IBM\s10 System/370
+at Holmdel [3].
+This paper is a manual only for the C language itself
+as implemented on the \s8PDP\s10-11.
+However, hints are given occasionally in the text of
+implementation-dependent features.
+.pg
+The \s8UNIX\s10 Programmer's Manual [4]
+describes the library routines available to C programs under \s8UNIX\s10,
+and also the procedures for compiling programs under that
+system.
+``The \s8GCOS\s10 C Library'' by Lesk and Barres [5]
+describes routines available under that system
+as well as compilation procedures.
+Many of these routines, particularly the ones having to do with I/O,
+are also provided under \s8UNIX\s10.
+Finally, ``Programming in C\(mi A Tutorial,''
+by B. W. Kernighan [6],
+is as useful as promised by its title and the author's
+previous introductions to allegedly impenetrable subjects.
+.ul
+2.  Lexical conventions
+.et
+There are six kinds of
+tokens:
+identifiers, keywords, constants, strings, expression operators,
+and other separators.
+In general blanks, tabs, newlines,
+and comments as described below
+are ignored except as they serve to separate
+tokens.
+At least one of these characters is required to separate
+otherwise adjacent identifiers,
+constants, and certain operator-pairs.
+.pg
+If the input stream has been parsed into tokens
+up to a given character, the next token is taken
+to include the longest string of characters
+which could possibly constitute a token.
+.ms
+2.1  Comments
+.et
+The characters ^^\fG/\**\fR^^ introduce a comment, which terminates
+with the characters^^ \fG\**/\fR.
+.ms
+2.2  Identifiers (Names)
+.et
+An identifier is a sequence of letters and digits;
+the first character must be alphabetic.
+The underscore ``\(ru'' counts as alphabetic.
+Upper and lower case letters
+are considered different.
+No more than the first eight characters
+are significant, and only the first seven for
+external identifiers.
+.ms
+2.3  Keywords
+.et
+The following identifiers are reserved for use
+as keywords, and may not be used otherwise:
+.sp .7
+.in .5i
+.ta 2i
+.nf
+.ne 10
+.ft G
+int	break
+char	continue
+float	if
+double	else
+struct	for
+auto	do
+extern	while
+register	switch
+static	case
+goto	default
+return	entry
+sizeof
+.sp .7
+.ft R
+.fi
+.in 0
+The
+.bd entry
+keyword is not currently implemented by any compiler but
+is reserved for future use.
+.ms
+2.3  Constants
+.et
+There are several kinds
+of constants, as follows:
+.ms
+2.3.1  Integer constants
+.et
+An integer constant is a sequence of digits.
+An integer is taken
+to be octal if it begins with \fG0\fR, decimal otherwise.
+The digits \fG8\fR and \fG9\fR have octal value 10 and 11 respectively.
+.ms
+2.3.2  Character constants
+.et
+A character constant is 1 or 2 characters enclosed in single quotes
+``\fG^\(aa^\fR''.
+Within a character constant a single quote must be preceded by
+a back-slash ``\\''.
+Certain non-graphic characters, and ``\\'' itself,
+may be escaped according to the following table:
+.sp .7
+.ta .5i 1.25i
+.nf
+	\s8BS\s10	\\b
+	\s8NL\s10	\\n
+	\s8CR\s10	\\r
+	\s8HT\s10	\\t
+	\fIddd\fR	\\\fIddd\fR
+	\\	\\\\
+.fi
+.sp .7
+The escape ``\\\fIddd\fR''
+consists of the backslash followed by 1, 2, or 3 octal digits
+which are taken to specify the value of the
+desired character.
+A special case of this construction is ``\\0'' (not followed
+by a digit) which indicates a null character.
+.pg
+Character constants behave exactly like integers
+(not, in particular, like objects
+of character type).
+In conformity with the addressing structure of the \s8PDP\s10-11,
+a character constant of length 1 has the code for the
+given character in the low-order byte
+and 0 in the high-order byte;
+a character constant of length 2 has the code for the
+first character in the low byte and that for the second
+character in the high-order byte.
+Character constants with more than one character are
+inherently machine-dependent and should
+be avoided.
+.ms
+2.3.3  Floating constants
+.et
+A floating constant consists of
+an integer part, a decimal point, a fraction part,
+an \fGe\fR, and an optionally signed integer exponent.
+The integer and fraction parts both consist of a sequence
+of digits.
+Either the integer part or the fraction
+part (not both) may be missing;
+either the decimal point or
+the \fGe\fR and the exponent (not both) may be missing.
+Every floating constant is taken to be double-precision.
+.ms
+2.4  Strings
+.et
+A string is a sequence of characters surrounded by
+double quotes ``^\fG"\fR^''.
+A string has the type
+array-of-characters (see below)
+and refers to an area of storage initialized with
+the given characters.
+The compiler places
+a null byte (^\\0^)
+at the end of each string so that programs
+which scan the string can
+find its end.
+In a string, the character ``^\fG"\fR^'' must be preceded by
+a ``\\''^;
+in addition, the same escapes as described for character
+constants may be used.
+.ul
+3.  Syntax notation
+.et
+In the syntax notation used in this manual,
+syntactic categories are indicated by
+\fIitalic\fR type,
+and literal words and characters
+in \fGgothic.\fR
+Alternatives are listed on separate lines.
+An optional terminal or non-terminal symbol is
+indicated by the subscript ``opt,'' so that
+.dp
+	{ expression\*(op }
+.ed
+would indicate an optional expression in braces.
+.ul
+4.  What's in a Name?
+.et
+C bases the interpretation of an
+identifier upon two attributes of the identifier: its
+.ft I
+storage class
+.ft R
+and its
+.ft I
+type.
+.ft R
+The storage class determines the location and lifetime
+of the storage associated with an identifier;
+the type determines
+the meaning of the values
+found in the identifier's storage.
+.pg
+There are four declarable storage classes:
+automatic,
+static,
+external,
+and
+register.
+Automatic variables are local to each invocation of
+a function, and are discarded on return;
+static variables are local to a function, but retain
+their values independently of invocations of the
+function; external variables are independent of any function.
+Register variables are stored in the fast registers
+of the machine; like automatic
+variables they are local to each function and disappear on return.
+.pg
+C supports four fundamental types of objects:
+characters, integers, single-, and double-precision
+floating-point numbers.
+.sp .7
+.in .5i
+Characters (declared, and hereinafter called, \fGchar\fR) are chosen from
+the \s8ASCII\s10 set;
+they occupy the right-most seven bits
+of an 8-bit byte.
+It is also possible to interpret \fGchar\fRs
+as signed, 2's complement 8-bit numbers.
+.sp .4
+Integers (\fGint\fR) are represented in 16-bit 2's complement notation.
+.sp .4
+Single precision floating point (\fGfloat\fR) quantities
+have magnitude in the range approximately
+10\u\s7\(+-38\s10\d
+or 0; their precision is 24 bits or about
+seven decimal digits.
+.sp .4
+Double-precision floating-point (\fGdouble\fR) quantities have the same range
+as \fGfloat\fRs and a precision of 56 bits
+or about 17 decimal digits.
+.sp .7
+.in 0
+.pg
+Besides the four fundamental types there is a
+conceptually infinite class of derived types constructed
+from the fundamental types in the following ways:
+.sp .7
+.in .5i
+.ft I
+arrays
+.ft R
+of objects of most types;
+.sp .4
+.ft I
+functions
+.ft R
+which return objects of a given type;
+.sp .4
+.ft I
+pointers
+.ft R
+to objects of a given type;
+.sp .4
+.ft I
+structures
+.ft R
+containing objects of various types.
+.sp .7
+.in 0
+In general these methods
+of constructing objects can
+be applied recursively.
+.ul
+5.  Objects and lvalues
+.et
+An object is a manipulatable region of storage;
+an lvalue is an expression referring to an object.
+An obvious example of an lvalue
+expression is an identifier.
+There are operators which yield lvalues:
+for example,
+if E is an expression of pointer type, then \**E is an lvalue
+expression referring to the object to which E points.
+The name ``lvalue'' comes from the assignment expression
+``E1@=@E2'' in which the left operand E1 must be
+an lvalue expression.
+The discussion of each operator
+below indicates whether it expects lvalue operands and whether it
+yields an lvalue.
+.ul
+6.  Conversions
+.et
+A number of operators may, depending on their operands,
+cause conversion of the value of an operand from one type to another.
+This section explains the result to be expected from such
+conversions.
+.ms
+6.1  Characters and integers
+.et
+A \fGchar\fR object may be used anywhere
+an \fGint\fR may be.
+In all cases the
+\fGchar\fR is converted to an \fGint\fR
+by propagating its sign through the
+upper 8 bits of the resultant integer.
+This is consistent with the two's complement representation
+used for both characters and integers.
+(However,
+the sign-propagation feature
+disappears in other implementations.)
+.ms
+6.2  Float and double
+.et
+All floating arithmetic in C is carried out in double-precision;
+whenever a \fGfloat\fR
+appears in an expression it is lengthened to \fGdouble\fR
+by zero-padding its fraction.
+When a \fGdouble\fR must be
+converted to \fGfloat\fR, for example by an assignment,
+the \fGdouble\fR is rounded before
+truncation to \fGfloat\fR length.
+.ms
+6.3  Float and double; integer and character
+.et
+All \fGint\fRs and \fGchar\fRs may be converted without
+loss of significance to \fGfloat\fR or \fGdouble\fR.
+Conversion of \fGfloat\fR or \fGdouble\fR
+to \fGint\fR or \fGchar\fR takes place with truncation towards 0.
+Erroneous results can be expected if the magnitude
+of the result exceeds 32,767 (for \fGint\fR)
+or 127 (for \fGchar\fR).
+.ms
+6.4  Pointers and integers
+.et
+Integers and pointers may be added and compared; in such a case
+the \fGint\fR is converted as
+specified in the discussion of the addition operator.
+.pg
+Two pointers to objects of the same type may be subtracted;
+in this case the result is converted to an integer
+as specified in the discussion of the subtraction
+operator.

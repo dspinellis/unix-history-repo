@@ -1,0 +1,238 @@
+.ul
+9.  Statements
+.et
+Except as indicated, statements are executed in sequence.
+.ms
+9.1  Expression statement
+.et
+Most statements are expression statements, which have
+the form
+.dp 1
+	expression \fG;
+.ed
+Usually expression statements are assignments or function
+calls.
+.ms
+9.2  Compound statement
+.et
+So that several statements can be used where one is expected,
+the compound statement is provided:
+.dp 2
+	compound-statement:
+		{ statement-list }
+
+	statement-list:
+		statement
+		statement statement-list
+.ed
+9.3  Conditional statement
+.et
+The two forms of the conditional statement are
+.dp 2
+	\fGif ( \fIexpression \fG) \fIstatement
+	\fGif ( \fIexpression \fG) \fIstatement \fGelse \fIstatement
+.ed
+In both cases the expression is evaluated
+and if it is non-zero, the first substatement
+is executed.
+In the second case the second substatement is executed
+if the expression is 0.
+As usual the ``else'' ambiguity is resolved by connecting
+an \fGelse\fR with the last encountered elseless \fGif\fR.
+.ms
+9.4  While statement
+.et
+The \fGwhile\fR statement has the form
+.dp 1
+	\fGwhile ( \fIexpression \fG) \fIstatement
+.ed
+The substatement is executed repeatedly
+so long as the value of the 
+expression remains non-zero.
+The test takes place before each execution of the
+statement.
+.ms
+9.5  Do statement
+.et
+The \fGdo\fR statement has the form
+.dp 1
+	\fGdo \fIstatement \fGwhile ( \fIexpression \fG) ;
+.ed
+The substatement is executed repeatedly until
+the value of the expression becomes zero.
+The test takes place after each execution of the
+statement.
+.ms
+9.6  For statement
+.et
+The \fGfor\fR statement has the form
+.dp 1
+.ft G
+	for ( \fIexpression-1\*(op \fG; \fIexpression-2\*(op \fG ; \c
+\fIexpression-3\*(op \fG) \fIstatement
+.ed
+This statement is equivalent to
+.dp 5
+	expression-1;
+	\fGwhile (\fI^expression-2\fG^) {
+		\fIstatement
+		expression-3^\fG;
+	}
+.ed
+Thus the first expression specifies initialization
+for the loop; the second specifies
+a test, made before each iteration, such
+that the loop is exited when the expression becomes
+0;
+the third expression typically specifies an incrementation
+which is performed after each iteration.
+.pg
+Any or all of the expressions may be dropped.
+A missing
+.ft I
+expression-2
+.ft R
+makes the
+implied \fGwhile\fR clause equivalent to ``while(^1^)'';
+other missing expressions are simply
+dropped from the expansion above.
+.ms
+9.7  Switch statement
+.et
+The \fGswitch\fR statement causes control to be transferred
+to one of several statements depending on
+the value of an expression.
+It has the form
+.dp 1
+	\fGswitch ( \fIexpression \fG) \fIstatement
+.ed
+The expression must be \fGint\fR or \fGchar\fR.
+The statement is typically compound.
+Each statement within the statement
+may be labelled with case prefixes
+as follows:
+.dp 1
+	\fGcase \fIconstant-expression \fG:
+.ed
+where the constant
+expression
+must be \fGint\fR or \fGchar\fR.
+No two of the case constants in a switch
+may have the same value.
+Constant expressions are precisely defined in \(sc15.
+.pg
+There may also be at most one statement prefix of the
+form
+.dp 1
+	\fGdefault :
+.ed
+When the \fGswitch\fR statement is executed, its expression
+is evaluated and compared with each case constant in
+an undefined order.
+If one of the case constants is
+equal to the value of the expression,
+control is passed to the statement
+following the matched case prefix.
+If no case constant matches the expression,
+and if there is a \fGdefault\fR prefix, control
+passes to the prefixed
+statement.
+In the absence of a \fGdefault\fR prefix
+none of the statements in the
+switch is executed.
+.pg
+Case or default prefixes in themselves
+do not alter the flow of control.
+.ms
+9.8  Break statement
+.et
+The statement
+.dp 1
+	\fGbreak ;
+.ed
+causes termination of the smallest enclosing \fGwhile\fR, \fGdo\fR,
+\fGfor\fR, or \fGswitch\fR statement;
+control passes to the
+statement following the terminated statement.
+.ms
+9.9  Continue statement
+.et
+The statement
+.dp 1
+	\fGcontinue ;
+.ed
+causes control to pass to the loop-continuation portion of the
+smallest enclosing \fGwhile\fR,
+\fGdo\fR, or \fGfor\fR
+statement; that is to the end of the loop.
+More precisely, in each of the statements
+.dp 4
+.bG
+.ta .5i 2.5i 4.5i
+	while (^^.^.^.^^) {	do {	for (^^.^.^.^^) {
+	  ^.^.^.^	  ^.^.^.^	  ^.^.^.^
+	contin:^;	contin:^;	contin:^;
+	}	} while (^^.^.^.^^)^;	}
+.ed
+.eG
+.ta .5i 1i 1.5i 2i 2.5i 3i
+a \fGcontinue\fR is equivalent to ``goto contin''.
+.ms
+9.10  Return statement
+.et
+A function returns to its caller by means of
+the \fGreturn\fR statement, which has one of the
+forms
+.dp 2
+.ft G
+	return ;
+	return ( \fIexpression \fG) ;
+.ed
+In the first case no value is returned.
+In the second case, the value of the expression
+is returned to the caller
+of the function.
+If required, the expression is converted,
+as if by assignment, to the type of the
+function in which it appears.
+Flowing off the end of a function is
+equivalent to a return with no returned value.
+.ms
+9.11  Goto statement
+.et
+Control may be transferred unconditionally by means of
+the statement
+.dp 1
+.ft G
+	goto \fIexpression \fG;
+.ed
+The expression should be a label (\(sc\(sc9.12, 14.4)
+or an expression of type ``pointer to \fGint\fR''
+which evaluates to a label.
+It is illegal to transfer to a label
+not located in the current function
+unless some extra-language provision
+has been made to adjust
+the stack correctly.
+.ms
+9.12  Labelled statement
+.et
+Any statement may be preceded by
+label prefixes of the form
+.dp 1
+	identifier \fG:
+.ed
+which serve to declare the identifier
+as a label.
+More details on the semantics of labels are
+given in \(sc14.4 below.
+.ms
+9.13  Null statement
+.et
+The null statement has the form
+.dp 1
+	\fG;
+.ed
+A null statement is useful to carry a label just before the ``}''
+of a compound statement or to supply a null
+body to a looping statement such as \fGwhile\fR.
