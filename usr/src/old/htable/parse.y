@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static char sccsid[] = "@(#)parse.y	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)parse.y	4.2 (Berkeley) %G%";
 #endif
 
 #include "htable.h"
@@ -61,8 +61,11 @@ Addresses:	Address
 
 Address	:	NUMBER '.' NUMBER '.' NUMBER '.' NUMBER
 	= {
-		$$ = alloc_addr();
-		$$->addr_val = ($1) | ($3 << 8) | ($5 << 16) | ($7 << 24);
+		char *a;
+
+		$$ = (struct addr *)malloc(sizeof (struct addr));
+		a = (char *)&($$->addr_val);
+		a[0] = $1; a[1] = $3; a[2] = $5; a[3] = $7;
 		$$->addr_link = NOADDR;
 	}
 	;
