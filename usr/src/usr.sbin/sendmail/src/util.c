@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.27 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -341,11 +341,33 @@ fullname(pw, buf)
 	register struct passwd *pw;
 	char *buf;
 {
+	register char *p;
 	register char *bp = buf;
+	int l;
+	bool quoteit;
 	register char *p = pw->pw_gecos;
 
-	if (*p == '*')
-		p++;
+	if (*gecos == '*')
+		gecos++;
+
+	/* see if the full name needs to be quoted */
+	l = 0;
+	quoteit = FALSE;
+	for (p = gecos; *p != '\0' && *p != ',' && *p != ';' && *p != '%'; p++)
+	{
+		if (index("<>()'.", *p) != NULL)
+			quoteit = TRUE;
+		if (*p == '&')
+			l += strlen(login);
+		else
+			l++;
+	}
+	if (quoteit)
+		l += 2;
+
+	/* now fill in buf */
+	if (quoteit)
+		*bp++ = '"';
 	while (*p != '\0' && *p != ',' && *p != ';' && *p != '%')
 	{
 		if (*p == '&')
@@ -359,6 +381,8 @@ fullname(pw, buf)
 		else
 			*bp++ = *p++;
 	}
+	if (quoteit)
+		*bp++ = '"';
 	*bp = '\0';
 }
 /*
