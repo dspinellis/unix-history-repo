@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1983, 1993
+ * Copyright (c) 1983, 1993, 1994
  *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	8.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -320,10 +320,10 @@ __ivaliduser(hostf, raddr, luser, ruser)
 {
 	register char *user, *p;
 	int ch;
-	char ahost[MAXHOSTNAMELEN];
+	char buf[MAXHOSTNAMELEN + 128];		/* host + login */
 
-	while (fgets(ahost, sizeof(ahost), hostf)) {
-		p = ahost;
+	while (fgets(buf, sizeof(buf), hostf)) {
+		p = buf;
 		/* Skip lines that are too long. */
 		if (strchr(p, '\n') == NULL) {
 			while ((ch = getc(hostf)) != '\n' && ch != EOF);
@@ -344,7 +344,7 @@ __ivaliduser(hostf, raddr, luser, ruser)
 		} else
 			user = p;
 		*p = '\0';
-		if (__icheckhost(raddr, ahost) &&
+		if (__icheckhost(raddr, buf) &&
 		    strcmp(ruser, *user ? user : luser) == 0) {
 			return (0);
 		}
