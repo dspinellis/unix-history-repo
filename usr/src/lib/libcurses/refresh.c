@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -162,11 +162,11 @@ makech(win, wy)
 
 	/* Is the cursor still on the end of the last line? */
 	if (wy > 0 && win->lines[wy - 1]->flags & __ISPASTEOL) {
-			win->lines[wy - 1]->flags &= ~__ISPASTEOL;
-			ly++;
-			lx = 0;
-	}			
-
+		win->lines[wy - 1]->flags &= ~__ISPASTEOL;
+		domvcur(ly, lx, ly + 1, 0);
+		ly++;
+		lx = 0;
+	}
 	if (!(win->lines[wy]->flags & __ISDIRTY))
 		return (OK);
 	wx = win->lines[wy]->firstch - win->ch_off;
