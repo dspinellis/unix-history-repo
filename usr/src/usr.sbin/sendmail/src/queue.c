@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.41.1.2 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.64 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.41.1.2 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.64 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -239,7 +239,7 @@ queueup(e, queueall, announce)
 		fprintf(tfp, "$_%s\n", denlstring(p, FALSE));
 
 	/* output name of sender */
-	fprintf(tfp, "S%s\n", denlstring(e->e_from.q_paddr, FALSE));
+	fprintf(tfp, "S%s\n", denlstring(p, FALSE));
 
 	/* output ESMTP-supplied "original" information */
 	if (e->e_envid != NULL)
@@ -263,7 +263,7 @@ queueup(e, queueall, announce)
 		{
 			printctladdr(q, tfp);
 			if (q->q_orcpt != NULL)
-			fprintf(tfp, "R%s\n", denlstring(q->q_paddr, FALSE));
+			fprintf(tfp, "%s\n", denlstring(q->q_paddr, FALSE));
 			if (announce)
 			{
 				e->e_to = q->q_paddr;

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.69 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.70 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1903,7 +1903,7 @@ setoption(opt, val, sticky)
 		break;
 
 	  case O_DEFCHARSET:	/* default character set for mimefying */
-		DefaultCharSet = newstr(denlstring(val));
+		DefaultCharSet = newstr(denlstring(val, TRUE));
 		break;
 
 	  case O_SSFILE:	/* service switch file */
