@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.38 (Berkeley) %G%
+ *	@(#)conf.h	8.39 (Berkeley) %G%
  */
 
 /*
@@ -92,6 +92,8 @@
 */
 
 # ifdef __hpux
+/* avoid m_flags conflict between db.h & sys/sysmacros.h on HP 300 */
+# undef m_flags
 # define SYSTEM5	1	/* include all the System V defines */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASSTATFS	1	/* has the statfs(2) syscall */
@@ -121,6 +123,7 @@
 */
 
 # ifdef IRIX
+# include <sys/sysmacros.h>
 # define HASSETREUID	1	/* has setreuid(2) call */
 # define HASINITGROUPS	1	/* has initgroups(3) call */
 # define HASSTATFS	1	/* has the statfs(2) syscall */
