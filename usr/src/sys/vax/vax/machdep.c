@@ -1,9 +1,10 @@
-/*	machdep.c	4.40	81/10/17	*/
+/*	machdep.c	4.41	81/10/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #ifdef BBNNET
 #include "../bbnnet/net.h"
+#include "../bbnnet/host.h"
 #include "../bbnnet/ucb.h"
 #endif BBNNET
 #include "../h/dir.h"
