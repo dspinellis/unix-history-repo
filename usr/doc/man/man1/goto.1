@@ -1,0 +1,28 @@
+.th GOTO I 3/15/72
+.sh NAME
+goto  \*-  command transfer
+.sh SYNOPSIS
+.bd goto
+label
+.sh DESCRIPTION
+.it Goto
+is allowed only when the Shell
+is taking commands from a file.
+The file is searched from the beginning
+for a line beginning with `:' followed by one
+or more spaces followed by
+the
+.it label.
+If such a line is found, the
+.it goto
+command returns.
+Since the read pointer in the command file points to the
+line after the label,
+the effect is to cause the Shell to transfer to the
+labelled line.
+.s3
+`:' is a do-nothing
+command that is ignored by the Shell and only serves to place a label.
+.sh "SEE ALSO"
+sh (I)
+.sh BUGS
