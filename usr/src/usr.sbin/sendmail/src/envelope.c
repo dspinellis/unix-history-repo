@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	3.11		%G%);
+SCCSID(@(#)envelope.c	3.12		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -578,10 +578,10 @@ setsender(from)
 	}
 
 	SuprErrs = TRUE;
-	if (from == NULL || parseaddr(from, &CurEnv->e_from, 1) == NULL)
+	if (from == NULL || parseaddr(from, &CurEnv->e_from, 1, '\0') == NULL)
 	{
 		from = newstr(realname);
-		(void) parseaddr(from, &CurEnv->e_from, 1);
+		(void) parseaddr(from, &CurEnv->e_from, 1, '\0');
 	}
 	else
 		FromFlag = TRUE;
