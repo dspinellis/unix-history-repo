@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)dbopen.3	5.25 (Berkeley) %G%
+.\"	@(#)dbopen.3	5.26 (Berkeley) %G%
 .\"
 .TH DBOPEN 3 ""
 .UC 7
@@ -78,6 +78,7 @@ typedef struct {
 DBTYPE type;
 int (*close)(const DB *db);
 int (*del)(const DB *db, const DBT *key, u_int flags);
+int (*fd)(const DB *db);
 int (*get)(const DB *db, DBT *key, DBT *data, u_int flags);
 int (*put)(const DB *db, DBT *key, const DBT *data,
 .ti +5
@@ -130,6 +131,28 @@ routines return -1 on error (setting
 0 on success, and 1 if the specified
 .I key
 was not in the file.
+.TP
+fd
+A pointer to a routine which returns a file descriptor representative
+of the underlying database.
+A file descriptor referencing the same file will be returned to all
+processes which call
+.I dbopen
+with the same
+.I file
+name.
+This file descriptor may be safely used as a argument to the
+.IR fcntl (2)
+and
+.IR flock (2)
+locking functions.
+The file descriptor is not necessarily associated with any of the
+underlying files used by the access method.
+No file descriptor is available for in memory databases.
+.I Fd
+routines return -1 on error (setting
+.IR errno ),
+and the file descriptor on success.
 .TP
 get
 A pointer to a routine which is the interface for keyed retrieval from
@@ -377,6 +400,12 @@ or
 .IR malloc (3).
 .PP
 The
+.I fd
+routines will fail and set
+.I errno
+to ENOENT for in memory databases.
+.PP
+The
 .I sync
 routines may fail and set
 .I errno
@@ -390,6 +419,9 @@ for any of the errors specified for the library routine
 .SH BUGS
 The typedef DBT is a mnemonic for ``data base thang'', and was used
 because noone could think of a reasonable name that wasn't already used.
+.PP
+The file descriptor interface is a kluge and will be deleted in a
+future version of the interface.
 .PP
 None of the access methods provide any form of concurrent access,
 locking, or transactions.
