@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	3.5		%G%);
+SCCSID(@(#)envelope.c	3.6		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -138,13 +138,12 @@ dropenvelope(e)
 		queueup(e, FALSE, FALSE);
 
 	/* now unlock the job */
-	if (e->e_xfp != NULL)
-		(void) fclose(e->e_xfp);
+	closexscript(e);
 	unlockqueue(e);
 
 	/* make sure that this envelope is marked unused */
 	e->e_id = e->e_df = NULL;
-	e->e_dfp = e->e_xfp = NULL;
+	e->e_dfp = NULL;
 }
 /*
 **  CLEARENVELOPE -- clear an envelope without unlocking
@@ -197,6 +196,10 @@ unlockqueue(e)
 {
 	/* remove the transcript */
 #ifdef DEBUG
+# ifdef LOG
+	if (LogLevel > 19)
+		syslog(LOG_DEBUG, "%s: unlock", e->e_id);
+# endif LOG
 	if (!tTd(51, 4))
 #endif DEBUG
 		xunlink(queuename(e, 'x'));
@@ -396,6 +399,10 @@ queuename(e, type)
 # ifdef DEBUG
 		if (tTd(7, 1))
 			printf("queuename: assigned id %s, env=%x\n", e->e_id, e);
+# ifdef LOG
+		if (LogLevel > 16)
+			syslog(LOG_DEBUG, "%s: assigned id", e->e_id);
+# endif LOG
 # endif DEBUG
 	}
 
@@ -429,6 +436,10 @@ openxscript(e)
 {
 	register char *p;
 
+# ifdef LOG
+	if (LogLevel > 19)
+		syslog(LOG_DEBUG, "%s: openx%s", e->e_id, e->e_xfp == NULL ? "" : " (no)");
+# endif LOG
 	if (e->e_xfp != NULL)
 		return;
 	p = queuename(e, 'x');
@@ -437,6 +448,27 @@ openxscript(e)
 		syserr("Can't create %s", p);
 	else
 		(void) chmod(p, 0644);
+}
+/*
+**  CLOSEXSCRIPT -- close the transcript file.
+**
+**	Parameters:
+**		e -- the envelope containing the transcript to close.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		none.
+*/
+
+closexscript(e)
+	register ENVELOPE *e;
+{
+	if (e->e_xfp == NULL)
+		return;
+	(void) fclose(e->e_xfp);
+	e->e_xfp = NULL;
 }
 /*
 **  SETSENDER -- set the person who this message is from

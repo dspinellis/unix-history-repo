@@ -2,10 +2,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.42		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.43		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.42		%G%);
+SCCSID(@(#)srvrsmtp.c	3.43		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -227,6 +227,10 @@ smtp()
 			**	In any case, don't mail back errors for
 			**		anything that has happened up to
 			**		now (the other end will do this).
+			**	Truncate our transcript -- the mail has gotten
+			**		to us successfully, and if we have
+			**		to mail this back, it will be easier
+			**		on the reader.
 			**	Then send to everyone.
 			**	Finally give a reply code.  If an error has
 			**		already been given, don't mail a
@@ -240,6 +244,7 @@ smtp()
 				ErrorMode == EM_MAIL;
 			}
 			CurEnv->e_flags &= ~EF_FATALERRS;
+			CurEnv->e_xfp = freopen(queuename(CurEnv, 'x'), "w", CurEnv->e_xfp);
 
 			/* send to all recipients */
 			sendall(CurEnv, SendMode);

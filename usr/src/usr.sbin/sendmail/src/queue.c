@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.67		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.68		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.67		%G%);
+SCCSID(@(#)queue.c	3.68		%G%);
 
 /*
 **  Work queue.
@@ -474,6 +474,7 @@ dowork(w)
 
 		/* set basic modes, etc. */
 		(void) alarm(0);
+		closexscript(CurEnv);
 		CurEnv->e_flags &= ~EF_FATALERRS;
 		QueueRun = TRUE;
 		ErrorMode = EM_MAIL;
