@@ -88,13 +88,13 @@ strings.o: strings
 	rm xs.s
 	
 exrecover: exrecover.o
-	${CC} ${CFLAGS} exrecover.o -o exrecover
+	${CC} ${CFLAGS} exrecover.o ex_extern.o -o exrecover
 
 exrecover.o: exrecover.c
 	${CC} ${CFLAGS} -c -O exrecover.c
 
 expreserve: expreserve.o
-	${CC} expreserve.o -o expreserve
+	${CC} expreserve.o ex_extern.o -o expreserve
 
 expreserve.o:
 	${CC} ${CFLAGS} -c -O expreserve.c
