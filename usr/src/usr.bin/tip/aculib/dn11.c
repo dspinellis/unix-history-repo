@@ -1,4 +1,4 @@
-/*	dn11.c	4.7	81/07/23	*/
+/*	dn11.c	4.8	81/08/24	*/
 
 #if DN11
 /*
@@ -70,9 +70,9 @@ char *num, *acu;
 		;
 	alarm(0);
 	fflush(stdout);
+	close(dn);
 	if (lt != 0) {
 		close(FD);
-		close(dn);
 		return(0);
 	}
 	return(1);
