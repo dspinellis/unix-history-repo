@@ -1,4 +1,4 @@
-/*	vxreg.h	1.2	86/01/13	*/
+/*	vxreg.h	1.3	86/01/21	*/
 
 /*
  * Vioc hardware interface structure.
@@ -39,7 +39,7 @@ struct	vxdevice {
 #define VXC_XMITDTA	0x0200		/* transmit */
 #define VXC_XMITIMM	0x0400		/* xmit immediate */
 #define VXC_FDTATOX	0x0300		/* flush data */
-#define	VXC_LPARAX	0x0600		/* load params */
+#define VXC_LPARAX	0x0600		/* load params */
 #define VXC_SNDBRKX	0x0C00		/* send break to port */
 #define VXC_MDMCTL	0x1000		/* auto modem control */
 /* bisync specific command identifiers */
@@ -48,16 +48,16 @@ struct	vxdevice {
 #define VXC_HUNTMD1	0x0804
 
 /* vioc types returned during config */
-#define	VXT_VIOCBOP	0x05		/* vioc-bop */
+#define VXT_VIOCBOP	0x05		/* vioc-bop */
 #define VXT_PVIOCX	0x0A		/* old connector panel vioc-x */
 #define VXT_VIOCX	0x0B		/* new connector panel vioc-x */
 #define VXT_VIOCB	0x0C		/* vioc-bisync */
-#define	VXT_NEW		0x10		/* new type bit (or'd in) */
+#define VXT_NEW		0x10		/* new type bit (or'd in) */
 
 #define VX_BISYNC	0x1		/* bisync flag indicator for bscport */
 
 /* v_fault status values */
-#define	VXF_READY	0x55		/* no err in vioc self-initializaton */
+#define VXF_READY	0x55		/* no err in vioc self-initializaton */
 
 /* modem control flags */
 #define VMOD_ON		1
@@ -69,7 +69,7 @@ struct	vxdevice {
 #define BRK_CHR	040			/* break character */
 #define DCD_ON	020			/* */
 #define DCD_OFF	010			/* */
-#define	CTS_ON	004			/* */
+#define CTS_ON	004			/* */
 #define DSR_ON	0200			/* modem signal states for bisync */
 #define DSR_OFF 0100
 #define DSR_CHG	(DSR_ON|DSR_OFF)
@@ -77,9 +77,9 @@ struct	vxdevice {
 #define VX_SILO	0x800			/* offset to base of silo */
 
 /* input status bits returned in silo */
-#define	VX_PE	0x40			/* parity error */
-#define	VX_FE	0x80			/* framing error */
-#define	VX_RO	0xc0			/* receiver overrun */
+#define VX_PE	0x40			/* parity error */
+#define VX_FE	0x80			/* framing error */
+#define VX_RO	0xc0			/* receiver overrun */
 
 #define VRESPLEN	12
 #define VCMDLEN		64
