@@ -1,4 +1,4 @@
-/*	buf.h	4.15	82/05/31	*/
+/*	buf.h	4.16	82/05/31	*/
 
 /*
  * The header for buffers in the buffer pool and otherwise used
@@ -118,13 +118,57 @@ unsigned minphys();
 #define	B_BAD		0x100000	/* bad block revectoring in progress */
 
 /*
+ * Insq/Remq for the buffer hash lists.
+ */
+#define	bremhash(bp) { \
+	(bp)->b_back->b_forw = (bp)->b_forw; \
+	(bp)->b_forw->b_back = (bp)->b_back; \
+}
+#define	binshash(bp, dp) { \
+	(bp)->b_forw = (dp)->b_forw; \
+	(bp)->b_back = (dp); \
+	(dp)->b_forw->b_back = (bp); \
+	(dp)->b_forw = (bp); \
+}
+
+/*
+ * Insq/Remq for the buffer free lists.
+ */
+#define	bremfree(bp) { \
+	(bp)->av_back->av_forw = (bp)->av_forw; \
+	(bp)->av_forw->av_back = (bp)->av_back; \
+}
+#define	binsheadfree(bp, dp) { \
+	(dp)->av_forw->av_back = (bp); \
+	(bp)->av_forw = (dp)->av_forw; \
+	(dp)->av_forw = (bp); \
+	(bp)->av_back = (dp); \
+}
+#define	binstailfree(bp, dp) { \
+	(dp)->av_back->av_forw = (bp); \
+	(bp)->av_back = (dp)->av_back; \
+	(dp)->av_back = (bp); \
+	(bp)->av_forw = (dp); \
+}
+
+/*
  * Take a buffer off the free list it's on and
  * mark it as being use (B_BUSY) by a device.
  */
 #define	notavail(bp) { \
 	int x = spl6(); \
-	(bp)->av_back->av_forw = (bp)->av_forw; \
-	(bp)->av_forw->av_back = (bp)->av_back; \
+	bremfree(bp); \
 	(bp)->b_flags |= B_BUSY; \
 	splx(x); \
+}
+
+#define	iodone	biodone
+#define	iowait	biowait
+
+/*
+ * Zero out a buffer's data portion.
+ */
+#define	clrbuf(bp) { \
+	blkclr(bp->b_un.b_addr, bp->b_bcount); \
+	bp->b_resid = 0; \
 }
