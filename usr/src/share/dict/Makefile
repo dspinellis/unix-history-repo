@@ -1,8 +1,6 @@
-#	@(#)Makefile	5.1.1.1 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
-# Missing: connectives, words
-
-FILES=	README propernames web2 web2a
+FILES=	README connectives propernames web2 web2a words
 NOOBJ=	noobj
 
 all clean cleandir depend lint tags:
