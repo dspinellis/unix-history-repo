@@ -1,4 +1,4 @@
-/*	llib-lc	1.20	85/06/17	*/
+/*	llib-lc	1.21	85/06/25	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -97,7 +97,7 @@ int	recvmsg( s, m, f ) struct msghdr m[]; { return 1; }
 int	rename( f, t ) char *f, *t; { return 0;}
 int	rmdir( p ) char *p; { return 0;}
 char	*sbrk(i) { return((char *)0); }
-int	select( n, r, w, e, t ) int *r, *w, *e; struct timeval *t; { return n; }
+int	select( n, r, w, e, t ) fd_set *r, *w, *e; struct timeval *t; { return n; }
 int	send( s, m, l, f )  char *m; { return l; }
 int	sendto( s, m, l, f, t, tl ) char *m; struct sockaddr *t; { return l; }
 int	sendmsg( s, m, l) struct msghdr m[]; { return l; }
