@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)diskpart.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)diskpart.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)diskpart.c	5.6 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
+#define	for_now			/* show all of `c' partition for disklabel */
 #define	NPARTITIONS	8
 #define	PART(x)		(x - 'a')
 
@@ -174,8 +175,10 @@ main(argc, argv)
 	defpart[def][PART('f')] = numcyls[PART('f')] * spc - badsecttable;
 	defpart[def][PART('g')] = numcyls[PART('g')] * spc - badsecttable;
 	defpart[def][PART('c')] = numcyls[PART('c')] * spc;
+#ifndef for_now
 	if (!pflag)
 		defpart[def][PART('c')] -= badsecttable;
+#endif
 
 	/*
 	 * Calculate starting cylinder number for each partition.
@@ -237,8 +240,6 @@ main(argc, argv)
 			printf("sc#%d:", dp->d_secpercyl);
 		if (dp->d_type == DTYPE_SMD && dp->d_flags & D_BADSECT)
 			printf("sf:");
-		if (dp->d_type == DTYPE_MSCP)
-			printf("so:");
 		printf("\\\n\t:dt=%s:", dktypenames[dp->d_type]);
 		for (part = NDDATA - 1; part >= 0; part--)
 			if (dp->d_drivedata[part])
@@ -263,6 +264,16 @@ main(argc, argv)
 			nparts--;
 			printf("%s\n", nparts > 0 ? "\\" : "");
 		}
+#ifdef for_now
+		defpart[def][PART('c')] -= badsecttable;
+		part = PART('c');
+		printf("#\t:p%c#%d:", 'a' + part, defpart[def][part]);
+		printf("o%c#%d:b%c#%d:f%c#%d:\n",
+		    'a' + part, spc * startcyl[part],
+		    'a' + part,
+		    defparam[part].p_frag * defparam[part].p_fsize,
+		    'a' + part, defparam[part].p_fsize);
+#endif
 		exit(0);
 	}
 	printf("%s: #sectors/track=%d, #tracks/cylinder=%d #cylinders=%d\n",
@@ -291,7 +302,6 @@ struct	field {
 	{ "#sectors/track",		0,	&disk.d_nsectors },
 	{ "#tracks/cylinder",		0,	&disk.d_ntracks },
 	{ "#cylinders",			0,	&disk.d_ncylinders },
-	{ "revolutions/minute",		"3600",	&disk.d_rpm },
 	{ 0, 0, 0 },
 };
 
