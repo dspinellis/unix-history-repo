@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -32,6 +32,7 @@ static char sccsid[] = "@(#)w.c	5.13 (Berkeley) %G%";
 #include <machine/pte.h>
 #include <sys/vm.h>
 #include <sys/tty.h>
+#include <sys/kinfo.h>
 #include <paths.h>
 
 #define ARGWIDTH	33	/* # chars left on 80 col crt for args */
@@ -118,7 +119,6 @@ struct	timeval boottime;
 time_t	uptime;			/* time of last reboot & elapsed time since */
 int	np;			/* number of processes currently active */
 struct	utmp utmp;
-struct	proc mproc;
 union {
 	struct user U_up;
 	char	pad[NBPG][UPAGES];
@@ -170,13 +170,15 @@ main(argc, argv)
 					break;
 
 				default:
-					printf("Bad flag %s\n", argv[1]);
+					fprintf(stderr, "w: Bad flag %s\n",
+						argv[1]);
 					exit(1);
 				}
 			}
 		} else {
 			if (!isalnum(argv[1][0]) || argc > 2) {
-				printf("Usage: %s [ -hlsfuw ] [ user ]\n", cp);
+				fprintf(stderr, 
+				       "Usage: %s [ -hlsfuw ] [ user ]\n", cp);
 				exit(1);
 			} else
 				sel_user = argv[1];
@@ -385,7 +387,7 @@ putline()
 
 	/* print idle time */
 	if (idle >= 36 * 60)
-		printf("%2ddays ", (idle + 12 * 60) / (24 * 60));
+		printf(" %ddays ", (idle + 12 * 60) / (24 * 60));
 	else
 		prttime(idle," ");
 	width -= 7;
@@ -484,10 +486,13 @@ prtat(time)
  */
 readpr()
 {
-	int pn, mf, addr, c;
+	int mf, addr, c;
 	int szpt, pfnum, i;
 	struct pte *Usrptma, *usrpt, *pte, apte;
 	struct dblock db;
+	struct kinfo_proc *kp;
+	register struct proc *p;
+	int nentries;
 
 	Usrptma = (struct pte *) nl[X_USRPTMA].n_value;
 	usrpt = (struct pte *) nl[X_USRPT].n_value;
@@ -514,25 +519,23 @@ readpr()
 	lseek(kmem, (long)nl[X_DMMAX].n_value, 0);
 	read(kmem, &dmmax, sizeof(dmmax));
 	/*
-	 * Locate proc table
+	 * Read proc table.
 	 */
-	lseek(kmem, (long)nl[X_NPROC].n_value, 0);
-	read(kmem, &nproc, sizeof(nproc));
-	pr = (struct pr *)calloc(nproc, sizeof (struct pr));
 	np = 0;
-	lseek(kmem, (long)nl[X_PROC].n_value, 0);
-	read(kmem, &aproc, sizeof(aproc));
-	for (pn=0; pn<nproc; pn++) {
-		lseek(kmem, (int)(aproc + pn), 0);
-		read(kmem, &mproc, sizeof mproc);
+	nentries = kvm_getkproc(&kp);
+	pr = (struct pr *)calloc(nentries, sizeof (struct pr));
+	for (i=0; i < nentries; i++, kp++) {
+fprintf(stderr, "kp->kp_pgid %d\n", kp->kp_pgid);
+		p = &kp->kp_proc;
+fprintf(stderr, "p->p_pid %d\n", p->p_pid);
 		/* decide if it's an interesting process */
-		if (mproc.p_stat==0 || mproc.p_stat==SZOMB 
-		    || mproc.p_stat==SSTOP || mproc.p_pgrp==0)
+		if (p->p_stat==0 || p->p_stat==SZOMB 
+		    || p->p_stat==SSTOP)
 			continue;
 		/* find & read in the user structure */
-		if ((mproc.p_flag & SLOAD) == 0) {
+		if ((p->p_flag & SLOAD) == 0) {
 			/* not in memory - get from swap device */
-			addr = dtob(mproc.p_swaddr);
+			addr = dtob(p->p_swaddr);
 			lseek(swap, (long)addr, 0);
 			if (read(swap, &up, sizeof(up)) != sizeof(up)) {
 				continue;
@@ -542,9 +545,9 @@ readpr()
 #define INTPPG (NBPG / sizeof (int))
 			struct pte pagetbl[NBPG / sizeof (struct pte)];
 			/* loaded, get each page from memory separately */
-			szpt = mproc.p_szpt;
-			p0br = (int)mproc.p_p0br;
-			pte = &Usrptma[btokmx(mproc.p_p0br) + szpt-1];
+			szpt = p->p_szpt;
+			p0br = (int)p->p_p0br;
+			pte = &Usrptma[btokmx(p->p_p0br) + szpt-1];
 			lseek(kmem, (long)pte, 0);
 			if (read(kmem, &apte, sizeof(apte)) != sizeof(apte))
 				continue;
@@ -563,23 +566,17 @@ cont:
 		}
 		vstodb(0, CLSIZE, &up.u_smap, &db, 1);
 		pr[np].w_lastpg = dtob(db.db_base);
-		if (up.u_ttyp == NULL)
+		if (kp->kp_tdev == NODEV)
 			continue;
 
 		/* only include a process whose tty has a pgrp which matchs its own */
-		lseek(kmem, (off_t)(&up.u_ttyp->t_pgid), 0);
-		if (read(kmem, &tpgid, sizeof(tpgid)) != sizeof(tpgid))
-			continue;
-		lseek(kmem, (off_t)(&mproc.p_pgrp->pg_id), 0);
-		if (read(kmem, &pgid, sizeof(pgid)) != sizeof(pgid))
-			continue;
-		if (pgid != tpgid)
+		if (kp->kp_pgid != kp->kp_tpgid)
 			continue;
 
 		/* save the interesting parts */
-		pr[np].w_pid = mproc.p_pid;
-		pr[np].w_flag = mproc.p_flag;
-		pr[np].w_size = mproc.p_dsize + mproc.p_ssize;
+		pr[np].w_pid = p->p_pid;
+		pr[np].w_flag = p->p_flag;
+		pr[np].w_size = p->p_dsize + p->p_ssize;
 		pr[np].w_igintr = (((int)up.u_signal[2]==1) +
 		    2*((int)up.u_signal[2]>1) + 3*((int)up.u_signal[3]==1)) +
 		    6*((int)up.u_signal[3]>1);
@@ -587,10 +584,9 @@ cont:
 		    up.u_ru.ru_utime.tv_sec + up.u_ru.ru_stime.tv_sec;
 		pr[np].w_ctime =
 		    up.u_cru.ru_utime.tv_sec + up.u_cru.ru_stime.tv_sec;
-		pr[np].w_tty = up.u_ttyd;
-		pr[np].w_uid = mproc.p_uid;
-		up.u_comm[14] = 0;	/* Bug: This bombs next field. */
-		strcpy(pr[np].w_comm, up.u_comm);
+		pr[np].w_tty = kp->kp_tdev;
+		pr[np].w_uid = p->p_uid;
+		strcpy(pr[np].w_comm, p->p_comm, MAXCOMLEN+1);
 		/*
 		 * Get args if there's a chance we'll print it.
 		 * Can't just save pointer: getargs returns static place.
@@ -716,4 +712,34 @@ min(a, b)
 {
 
 	return (a < b ? a : b);
+}
+
+#define PROCSLOP	(5 * sizeof (struct kinfo_proc))
+kvm_getkproc(bp)
+	char **bp;
+{
+	int ret; 
+	int copysize;
+	int need;
+	char *buff;
+
+	if ((ret = syscall(63, KINFO_PROC_ALL, NULL, NULL, 0)) == -1) {
+		perror("ktable, error getting estimate");
+		return (0);
+	}
+	copysize = ret + PROCSLOP;   /* XXX PROCSLOP should be in header ? */
+	fprintf(stderr, "kinfo: estimated %d, using %d\n", ret, copysize);
+	buff = (char *)malloc(copysize);
+	if (buff == NULL) {
+		fprintf(stderr, "out of memory");
+		exit (1);
+	}
+	if ((ret = syscall(63, KINFO_PROC_ALL, buff, &copysize, 0)) == -1) {
+		perror("ktable");
+		return (0);
+	}
+	fprintf(stderr, "kinfo: wanted: %d copied: %d\n", ret, copysize);
+	*bp = buff;
+
+	return (copysize / sizeof (struct kinfo_proc));
 }
