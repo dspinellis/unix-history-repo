@@ -1,5 +1,5 @@
 /*
-char id_open[] = "@(#)open.c	1.2";
+char id_open[] = "@(#)open.c	1.3";
  *
  * open.c  -  f77 file open routines
  */
@@ -77,7 +77,12 @@ f_open(a) olist *a;
 	b->uscrtch = SCRATCH;
 	b->uend = NO;
 	b->useek = canseek(b->ufd);
-	b->url = a->orl;
+	if (a->oacc && lcase(*a->oacc)=='s' && a->orl > 0)
+		fputs("Warning: open: record length ignored on sequential access\n", units[0].ufd);
+	else if (a->orl < 0 || (a->oacc && lcase(*a->oacc)=='d' && a->orl == 0))
+		err(errflag,F_ERARG,"recl on open")
+	else
+		b->url = a->orl;
 	b->ublnk = (a->oblnk && (lcase(*a->oblnk)=='z'));
 	if (a->ofm)
 	{
