@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)title.urm	8.7 (Berkeley) %G%
+.\"	@(#)title.urm	8.8 (Berkeley) %G%
 .\"
 .af % i
 .EH ''''
@@ -199,7 +199,7 @@ List of Documents	inside back cover
 .\" The contributor list below is derived from the file that resides in
 .\" vangogh:~admin/contrib/contrib:
 .\"
-.\"	@(#)contrib	5.54 (Berkeley) 4/17/94
+.\"	@(#)contrib	5.55 (Berkeley) 4/18/94
 .\"
 .\" This file should not be editted, rather the original contrib file
 .\" should be used to recrete this one following the directions at its top.
@@ -327,7 +327,6 @@ X25 	University of British Columbia
 \fBThe following are people and organizations that provided a specific
 item, program, library routine or program maintenance for the BSD system.
 (Their contribution may not be part of the final 4.4BSD release.)\fP
-.sp 0.4
 .nr PS 9
 .nr VS 10
 .ps 9
@@ -341,125 +340,127 @@ Kernel enhancements	Robert Elz, Peter Ivanov, Ian Johnstone, Piers Lauder,
 	John Lions, Tim Long, Chris Maltby, Greg Rose and John Wainwright 
 ISO-9660 filesystem	Pace Willisson, Atsushi Murai
 .TE
+.sp -0.4
 .TS
 l l l l.
 adventure(6)	Don Woods	log(3)	Peter McIlroy
 adventure(6)	Jim Gillogly	look(1)	David Hitz
 adventure(6)	Will Crowther	ls(1)	Elan Amir
 apply(1)	Rob Pike	ls(1)	Michael Fischbein
-ar(1)	Hugh A. Smith	lsearch(3)	Roger L. Snyder
-arithmetic(6)	Eamonn McManus	m4(1)	Ozan Yigit
-arp(8)	Sun Microsystems Inc.	mail(1)	Kurt Schoens
-at(1)	Steve Wall	make(1)	Adam de Boor
-atc(6)	Ed James	me(7)	Eric Allman
-awk(1)	Arnold Robbins	mergesort(3)	Peter McIlroy
-awk(1)	David Trueman	mh(1)	Marshall Rose
-backgammon(6)	Alan Char	mh(1)	The Rand Corporation
-banner(1)	Mark Horton	mille(6)	Ken Arnold
-battlestar(6)	David Riggle	mknod(8)	Kevin Fall
-bcd(6)	Steve Hayman	monop(6)	Ken Arnold
-bdes(1)	Matt Bishop	more(1)	Eric Shienbrood
-berknet(1)	Eric Schmidt	more(1)	Mark Nudleman
-bib(1)	Dain Samples	mountd(8)	Herb Hasler
-bib(1)	Gary M. Levin	mprof(1)	Ben Zorn
-bib(1)	Timothy A. Budd	msgs(1)	David Wasley
-bitstring(3)	Paul Vixie	multicast	Stephen Deering
-boggle(6)	Barry Brachman	mv(1)	Ken Smith
-bpf(4)	Steven McCanne	named/bind(8)	Douglas Terry
-btree(3)	Mike Olson	named/bind(8)	Kevin Dunlap
-byte-range locking	Scooter Morris	news(1)	Rick Adams (and a cast of thousands)
-caesar(6)	John Eldridge	nm(1)	Hans Huebner
-caesar(6)	Stan King	pascal(1)	Kirk McKusick
-cal(1)	Kim Letkeman	pascal(1)	Peter Kessler
-cat(1)	Kevin Fall	paste(1)	Adam S. Moskowitz
-chess(6)	Stuart Cracraft (The FSF)	patch(1)	Larry Wall
-ching(6)	Guy Harris	pax(1)	Keith Muller
-cksum(1)	James W. Williams	phantasia(6)	C. Robertson
-clri(8)	Rich $alz	phantasia(6)	Edward A. Estes
-col(1)	Michael Rendell	ping(8)	Mike Muuss
-comm(1)	Case Larsen	pom(6)	Keith E. Brandt
-compact(1)	Colin L. McMaster	pr(1)	Keith Muller
-compress(1)	James A. Woods	primes(6)	Landon Curt Noll
-compress(1)	Joseph Orost	qsort(3)	Doug McIlroy
-compress(1)	Spencer Thomas	qsort(3)	Earl Cohen
-courier(1)	Eric Cooper	qsort(3)	Jon Bentley
-cp(1)	David Hitz	quad(3)	Chris Torek
-cpio(1)	AT&T	quiz(6)	Jim R. Oldroyd
-crypt(3)	Tom Truscott	quiz(6)	Keith Gabryelski
-csh(1)	Christos Zoulas	radixsort(3)	Dan Bernstein
-csh(1)	Len Shar	radixsort(3)	Peter McIlroy
-curses(3)	Elan Amir	rain(6)	Eric P. Scott
-curses(3)	Ken Arnold	ranlib(1)	Hugh A. Smith
-cut(1)	Adam S. Moskowitz	rcs(1)	Walter F. Tichy
-cut(1)	Marciano Pitargue	rdist(1)	Michael Cooper
-dbx(1)	Mark Linton	regex(3)	Henry Spencer
-dd(1)	Keith Muller	robots(6)	Ken Arnold
-dd(1)	Lance Visser	rogue(6)	Timothy C. Stoehr
-des(1)	Jim Gillogly	rs(1)	John Kunze
-des(1)	Phil Karn	sail(6)	David Riggle
-des(1)	Richard Outerbridge	sail(6)	Edward Wang
-dipress(1)	Xerox Corporation	sccs(1)	Eric Allman
-disklabel(8)	Symmetric Computer Systems	scsiformat(1)	Lawrence Berkeley Laboratory
-du(1)	Chris Newcomb	sdb(1)	Howard Katseff
-dungeon(6)	R.M. Supnik	sed(1)	Diomidis Spinellis
-ed(1)	Rodney Ruddock	sendmail(8)	Eric Allman
-emacs(1)	Richard Stallman	setmode(3)	Dave Borman
-erf(3)	Peter McIlroy, K.C. Ng	sh(1)	Kenneth Almquist
-error(1)	Robert R. Henry	slattach(8)	Rick Adams
-ex(1)	Mark Horton	slip(8)	Rick Adams
-factor(6)	Landon Curt Noll	spms(1)	Peter J. Nicklin
-file(1)	Ian Darwin	strtod(3)	David M. Gay
-find(1)	Cimarron Taylor	swab(3)	Jeffrey Mogul
-finger(1)	Tony Nardo	sysconf(3)	Sean Eric Fagan
-fish(6)	Muffy Barkocy	sysline(1)	J.K. Foderaro
-fmt(1)	Kurt Schoens	syslog(3)	Eric Allman
-fnmatch(3)	Guido van Rossum	systat(1)	Bill Reeves
-fold(1)	Kevin Ruddy	systat(1)	Robert Elz
-fortune(6)	Ken Arnold	tail(1)	Edward Sze-Tyan Wang
-fpr(1)	Robert Corbett	talk(1)	Clem Cole
-fsdb(8)	Computer Consoles Inc.	talk(1)	Kipp Hickman
-fsplit(1)	Asa Romberger	talk(1)	Peter Moore
-fsplit(1)	Jerry Berkman	telnet(1)	Dave Borman
-gcc/groff integration	UUNET Technologies, Inc.	telnet(1)	Paul Borman
-gcore(1)	Eric Cooper	termcap(5)	John A. Kunze
-getcap(3)	Casey Leedom	termcap(5)	Mark Horton
-glob(3)	Guido van Rossum	test(1)	Kenneth Almquist
-gprof(1)	Peter Kessler	tetris(6)	Chris Torek
-gprof(1)	Robert R. Henry	tetris(6)	Darren F. Provine
-hack(6)	Andries Brouwer (and a cast of thousands)	timed(8)	Riccardo Gusella
-hangman(6)	Ken Arnold	timed(8)	Stefano Zatti
-hash(3)	Margo Seltzer	tn3270(1)	Gregory Minshall
-heapsort(3)	Elmer Yglesias	tr(1)	Igor Belchinskiy
-heapsort(3)	Kevin Lew	traceroute(8)	Van Jacobson
-heapsort(3)	Ronnie Kon	trek(6)	Eric Allman
-hunt(6)	Conrad Huang	tset(1)	Eric Allman
-hunt(6)	Greg Couch	tsort(1)	Michael Rendell
-icon(1)	Bill Mitchell	unifdef(1)	Dave Yost
-icon(1)	Ralph Griswold	uniq(1)	Case Larsen
-indent(1)	David Willcox	uucpd(8)	Rick Adams
-indent(1)	Eric Schmidt	uudecode(1)	Mark Horton
-indent(1)	James Gosling	uuencode(1)	Mark Horton
-indent(1)	Sun Microsystems	uuq(1)	Lou Salkind
-init(1)	Donn Seeley	uuq(1)	Rick Adams
-j0(3)	Sun Microsystems, Inc.	uusnap(8)	Randy King
-j1(3)	Sun Microsystems, Inc.	uusnap(8)	Rick Adams
-jn(3)	Sun Microsystems, Inc.	vacation(1)	Eric Allman
-join(1)	David Goodenough	vi(1)	Steve Kirkendall
-join(1)	Michiro Hikida	which(1)	Peter Kessler
-join(1)	Steve Hayman	who(1)	Michael Fischbein
-jot(1)	John Kunze	window(1)	Edward Wang
-jove(1)	Jonathon Payne	worm(6)	Michael Toy
-kermit(1)	Columbia University	worms(6)	Eric P. Scott
-kvm(3)	Peter Shipley	write(1)	Craig Leres
-kvm(3)	Steven McCanne	write(1)	Jef Poskanzer
-lam(1)	John Kunze	wump(6)	Dave Taylor
-larn(6)	Noah Morgan	X25/Ethernet	Univ. of Erlangen-Nuremberg
-lastcomm(1)	Len Edmondson	X25/LLC2	Dirk Husemann
-lex(1)	Vern Paxson	xargs(1)	John B. Roll Jr.
-libm(3)	Peter McIlroy	xneko(6)	Masayuki Koba
-libm(3)	UUNET Technologies, Inc.	XNSrouted(1)	Bill Nesheim
-locate(1)	James A. Woods	xroach(6)	J.T. Anderson
-lock(1)	Bob Toxen	yacc(1)	Robert Paul Corbett
+apply(1)	Jan-Simon Pendry	lsearch(3)	Roger L. Snyder
+ar(1)	Hugh A. Smith	m4(1)	Ozan Yigit
+arithmetic(6)	Eamonn McManus	mail(1)	Kurt Schoens
+arp(8)	Sun Microsystems Inc.	make(1)	Adam de Boor
+at(1)	Steve Wall	me(7)	Eric Allman
+atc(6)	Ed James	mergesort(3)	Peter McIlroy
+awk(1)	Arnold Robbins	mh(1)	Marshall Rose
+awk(1)	David Trueman	mh(1)	The Rand Corporation
+backgammon(6)	Alan Char	mille(6)	Ken Arnold
+banner(1)	Mark Horton	mknod(8)	Kevin Fall
+battlestar(6)	David Riggle	monop(6)	Ken Arnold
+bcd(6)	Steve Hayman	more(1)	Eric Shienbrood
+bdes(1)	Matt Bishop	more(1)	Mark Nudleman
+berknet(1)	Eric Schmidt	mountd(8)	Herb Hasler
+bib(1)	Dain Samples	mprof(1)	Ben Zorn
+bib(1)	Gary M. Levin	msgs(1)	David Wasley
+bib(1)	Timothy A. Budd	multicast	Stephen Deering
+bitstring(3)	Paul Vixie	mv(1)	Ken Smith
+boggle(6)	Barry Brachman	named/bind(8)	Douglas Terry
+bpf(4)	Steven McCanne	named/bind(8)	Kevin Dunlap
+btree(3)	Mike Olson	news(1)	Rick Adams (and a cast of thousands)
+byte-range locking	Scooter Morris	nm(1)	Hans Huebner
+caesar(6)	John Eldridge	pascal(1)	Kirk McKusick
+caesar(6)	Stan King	pascal(1)	Peter Kessler
+cal(1)	Kim Letkeman	paste(1)	Adam S. Moskowitz
+cat(1)	Kevin Fall	patch(1)	Larry Wall
+chess(6)	Stuart Cracraft (The FSF)	pax(1)	Keith Muller
+ching(6)	Guy Harris	phantasia(6)	C. Robertson
+cksum(1)	James W. Williams	phantasia(6)	Edward A. Estes
+clri(8)	Rich $alz	ping(8)	Mike Muuss
+col(1)	Michael Rendell	pom(6)	Keith E. Brandt
+comm(1)	Case Larsen	pr(1)	Keith Muller
+compact(1)	Colin L. McMaster	primes(6)	Landon Curt Noll
+compress(1)	James A. Woods	qsort(3)	Doug McIlroy
+compress(1)	Joseph Orost	qsort(3)	Earl Cohen
+compress(1)	Spencer Thomas	qsort(3)	Jon Bentley
+courier(1)	Eric Cooper	quad(3)	Chris Torek
+cp(1)	David Hitz	quiz(6)	Jim R. Oldroyd
+cpio(1)	AT&T	quiz(6)	Keith Gabryelski
+crypt(3)	Tom Truscott	radixsort(3)	Dan Bernstein
+csh(1)	Christos Zoulas	radixsort(3)	Peter McIlroy
+csh(1)	Len Shar	rain(6)	Eric P. Scott
+curses(3)	Elan Amir	ranlib(1)	Hugh A. Smith
+curses(3)	Ken Arnold	rcs(1)	Walter F. Tichy
+cut(1)	Adam S. Moskowitz	rdist(1)	Michael Cooper
+cut(1)	Marciano Pitargue	regex(3)	Henry Spencer
+dbx(1)	Mark Linton	robots(6)	Ken Arnold
+dd(1)	Keith Muller	rogue(6)	Timothy C. Stoehr
+dd(1)	Lance Visser	rs(1)	John Kunze
+des(1)	Jim Gillogly	sail(6)	David Riggle
+des(1)	Phil Karn	sail(6)	Edward Wang
+des(1)	Richard Outerbridge	sccs(1)	Eric Allman
+dipress(1)	Xerox Corporation	scsiformat(1)	Lawrence Berkeley Laboratory
+disklabel(8)	Symmetric Computer Systems	sdb(1)	Howard Katseff
+du(1)	Chris Newcomb	sed(1)	Diomidis Spinellis
+dungeon(6)	R.M. Supnik	sendmail(8)	Eric Allman
+ed(1)	Rodney Ruddock	setmode(3)	Dave Borman
+emacs(1)	Richard Stallman	sh(1)	Kenneth Almquist
+erf(3)	Peter McIlroy, K.C. Ng	slattach(8)	Rick Adams
+error(1)	Robert R. Henry	slip(8)	Rick Adams
+ex(1)	Mark Horton	spms(1)	Peter J. Nicklin
+factor(6)	Landon Curt Noll	strtod(3)	David M. Gay
+file(1)	Ian Darwin	swab(3)	Jeffrey Mogul
+find(1)	Cimarron Taylor	sysconf(3)	Sean Eric Fagan
+finger(1)	Tony Nardo	sysline(1)	J.K. Foderaro
+fish(6)	Muffy Barkocy	syslog(3)	Eric Allman
+fmt(1)	Kurt Schoens	systat(1)	Bill Reeves
+fnmatch(3)	Guido van Rossum	systat(1)	Robert Elz
+fold(1)	Kevin Ruddy	tail(1)	Edward Sze-Tyan Wang
+fortune(6)	Ken Arnold	talk(1)	Clem Cole
+fpr(1)	Robert Corbett	talk(1)	Kipp Hickman
+fsdb(8)	Computer Consoles Inc.	talk(1)	Peter Moore
+fsplit(1)	Asa Romberger	telnet(1)	Dave Borman
+fsplit(1)	Jerry Berkman	telnet(1)	Paul Borman
+gcc/groff integration	UUNET Technologies, Inc.	termcap(5)	John A. Kunze
+gcore(1)	Eric Cooper	termcap(5)	Mark Horton
+getcap(3)	Casey Leedom	test(1)	Kenneth Almquist
+glob(3)	Guido van Rossum	tetris(6)	Chris Torek
+gprof(1)	Peter Kessler	tetris(6)	Darren F. Provine
+gprof(1)	Robert R. Henry	timed(8)	Riccardo Gusella
+hack(6)	Andries Brouwer (and a cast of thousands)	timed(8)	Stefano Zatti
+hangman(6)	Ken Arnold	tn3270(1)	Gregory Minshall
+hash(3)	Margo Seltzer	tr(1)	Igor Belchinskiy
+heapsort(3)	Elmer Yglesias	traceroute(8)	Van Jacobson
+heapsort(3)	Kevin Lew	trek(6)	Eric Allman
+heapsort(3)	Ronnie Kon	tset(1)	Eric Allman
+hunt(6)	Conrad Huang	tsort(1)	Michael Rendell
+hunt(6)	Greg Couch	unifdef(1)	Dave Yost
+icon(1)	Bill Mitchell	uniq(1)	Case Larsen
+icon(1)	Ralph Griswold	uucpd(8)	Rick Adams
+indent(1)	David Willcox	uudecode(1)	Mark Horton
+indent(1)	Eric Schmidt	uuencode(1)	Mark Horton
+indent(1)	James Gosling	uuq(1)	Lou Salkind
+indent(1)	Sun Microsystems	uuq(1)	Rick Adams
+init(1)	Donn Seeley	uusnap(8)	Randy King
+j0(3)	Sun Microsystems, Inc.	uusnap(8)	Rick Adams
+j1(3)	Sun Microsystems, Inc.	vacation(1)	Eric Allman
+jn(3)	Sun Microsystems, Inc.	vi(1)	Steve Kirkendall
+join(1)	David Goodenough	which(1)	Peter Kessler
+join(1)	Michiro Hikida	who(1)	Michael Fischbein
+join(1)	Steve Hayman	window(1)	Edward Wang
+jot(1)	John Kunze	worm(6)	Michael Toy
+jove(1)	Jonathon Payne	worms(6)	Eric P. Scott
+kermit(1)	Columbia University	write(1)	Craig Leres
+kvm(3)	Peter Shipley	write(1)	Jef Poskanzer
+kvm(3)	Steven McCanne	wump(6)	Dave Taylor
+lam(1)	John Kunze	X25/Ethernet	Univ. of Erlangen-Nuremberg
+larn(6)	Noah Morgan	X25/LLC2	Dirk Husemann
+lastcomm(1)	Len Edmondson	xargs(1)	John B. Roll Jr.
+lex(1)	Vern Paxson	xneko(6)	Masayuki Koba
+libm(3)	Peter McIlroy	XNSrouted(1)	Bill Nesheim
+libm(3)	UUNET Technologies, Inc.	xroach(6)	J.T. Anderson
+locate(1)	James A. Woods	yacc(1)	Robert Paul Corbett
+lock(1)	Bob Toxen
 .TE
 .\"
 .\" END OF CONTRIB: Contrib ends here.
