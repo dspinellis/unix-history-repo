@@ -1,4 +1,4 @@
-/*	pcb.h	4.1	%G%	*/
+/*	pcb.h	4.2	%G%	*/
 
 /*
  * VAX process control block
@@ -42,3 +42,23 @@ struct pcb
 	int	*pcb_sswap;
 	int	pcb_sigc[3];
 };
+
+#define	AST_NONE	0x04000000	/* ast level */
+#define	AST_USER	0x03000000	/* ast for user mode */
+
+#define	ASTLVL_NONE	4
+#define	ASTLVL_USER	3
+
+#define	AST_CLR		0x07000000
+
+#define	aston() \
+	{ \
+		u.u_pcb.pcb_p0lr = (u.u_pcb.pcb_p0lr &~ AST_CLR) | AST_USER; \
+		mtpr(ASTLVL, ASTLVL_USER); \
+	}
+
+#define	astoff() \
+	{ \
+		u.u_pcb.pcb_p0lr = (u.u_pcb.pcb_p0lr &~ AST_CLR) | AST_NONE; \
+		mtpr(ASTLVL, ASTLVL_NONE); \
+	}

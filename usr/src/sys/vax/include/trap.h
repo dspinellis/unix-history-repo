@@ -1,4 +1,4 @@
-/*	trap.h	4.1	%G%	*/
+/*	trap.h	4.2	%G%	*/
 
 /*
  * Trap type values
@@ -13,8 +13,7 @@
 #define	RESOPFLT	4		/* reserved operand fault */
 #define	SYSCALL		5		/* chmk instruction (syscall trap) */
 #define	ARITHTRAP	6		/* arithmetic trap */
-#define	RESCHED		7		/* software level 1 trap
-					   (reschedule trap) */
+#define	ASTFLT		7		/* software level 2 trap (ast deliv) */
 #define	SEGFLT		8		/* segmentation fault */
 #define	PROTFLT		9		/* protection fault */
 #define	TRCTRAP		10		/* trace trap */
