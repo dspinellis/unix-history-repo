@@ -1,5 +1,5 @@
 #ifndef lint
-char version[] = "@(#)main.c	2.25 (Berkeley) %G%";
+char version[] = "@(#)main.c	2.26 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -646,9 +646,8 @@ pass1()
 				}
 				continue;
 		unknown:
-				if (!SOCK)
-					pfatal("UNKNOWN FILE TYPE I=%u", inum);
-				if ((preen && SOCK) || reply("CLEAR") == 1) {
+				pfatal("UNKNOWN FILE TYPE I=%u", inum);
+				if (reply("CLEAR") == 1) {
 					zapino(dp);
 					inodirty();
 					inosumbad++;
@@ -1481,6 +1480,7 @@ ftypeok(dp)
 	case IFBLK:
 	case IFCHR:
 	case IFLNK:
+	case IFSOCK:
 		return (1);
 
 	default:
