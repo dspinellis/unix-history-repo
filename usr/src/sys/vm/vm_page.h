@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.h	7.8 (Berkeley) %G%
+ *	@(#)vm_page.h	7.9 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -87,6 +87,8 @@ struct vm_page {
 
 /*
  * These are the flags defined for vm_page.
+ *
+ * Note: PG_FILLED and PG_DIRTY are added for the filesystems.
  */
 #define	PG_INACTIVE	0x0001		/* page is in inactive list (P) */
 #define	PG_ACTIVE	0x0002		/* page is in active list (P) */
@@ -99,6 +101,8 @@ struct vm_page {
 #define	PG_FICTITIOUS	0x0100		/* physical page doesn't exist (O) */
 #define	PG_ABSENT	0x0200		/* virtual page doesn't exist (O) */
 #define	PG_FAKE		0x0400		/* page is placeholder for pagein (O) */
+#define	PG_FILLED	0x0800		/* client flag to set when filled */
+#define	PG_DIRTY	0x1000		/* client flag to set when dirty */
 #define	PG_PAGEROWNED	0x4000		/* DEBUG: async paging op in progress */
 #define	PG_PTPAGE	0x8000		/* DEBUG: is a user page table page */
 
@@ -189,19 +193,12 @@ simple_lock_data_t	vm_page_queue_free_lock;
 
 #define vm_page_set_modified(m)	{ (m)->flags &= ~PG_CLEAN; }
 
-#ifdef DEBUG
-#define	VM_PAGE_DEBUG_INIT(m)
-#else
-#define	VM_PAGE_DEBUG_INIT(m)
-#endif
-
 #define	VM_PAGE_INIT(mem, object, offset) { \
 	(mem)->flags = PG_BUSY | PG_CLEAN | PG_FAKE; \
 	vm_page_insert((mem), (object), (offset)); \
 	(mem)->page_lock = VM_PROT_NONE; \
 	(mem)->unlock_request = VM_PROT_NONE; \
 	(mem)->wire_count = 0; \
-	VM_PAGE_DEBUG_INIT(mem); \
 }
 
 void		 vm_page_activate __P((vm_page_t));
