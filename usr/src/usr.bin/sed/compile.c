@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compile.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)compile.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -254,7 +254,7 @@ nonsel:		/* Now parse the command */
 			cmd->u.s = xmalloc(sizeof(struct s_subst));
 			p = compile_re(p, &cmd->u.s->re, 0);
 			if (p == NULL)
-				err(COMPILE, "newline in substitution pattern");
+				err(COMPILE, "unterminated substitute pattern");
 			cmd->u.s->pmatch = xmalloc((cmd->u.s->re.re_nsub + 1) *
 			    sizeof(regmatch_t));
 			p--;
@@ -402,7 +402,7 @@ compile_subst(p, res, nsub)
 			text = xmalloc(asize);
 		}
 	} while (cu_fgets(p = lbuf, sizeof(lbuf)));
-	err(COMPILE, "EOF in substitute pattern");
+	err(COMPILE, "unterminated substitute pattern");
 	return (NULL);
 }
 
@@ -426,8 +426,8 @@ compile_flags(p, s)
 		switch (*p) {
 		case 'g':
 			if (gn)
-				err(WARNING,
-				    "both g and number in substitute flags");
+				err(COMPILE,
+"more than one number or 'g' in substitute flags");
 			gn = 1;
 			s->n = 0;
 			break;
@@ -442,8 +442,8 @@ compile_flags(p, s)
 		case '4': case '5': case '6':
 		case '7': case '8': case '9':
 			if (gn)
-				err(WARNING,
-				    "both g and number in substitute flags");
+				err(COMPILE,
+"more than one number or 'g' in substitute flags");
 			gn = 1;
 			/* XXX Check for overflow */
 			s->n = (int)strtol(p, &p, 10);
@@ -465,7 +465,7 @@ compile_flags(p, s)
 			}
 			*q = '\0';
 			if (q == wfile)
-				err(COMPILE, "empty wfile specified");
+				err(COMPILE, "no wfile specified");
 			s->wfile = strdup(wfile);
 			if (!aflag && (s->wfd = open(wfile,
 			    O_WRONLY|O_APPEND|O_CREAT|O_TRUNC,
@@ -474,7 +474,7 @@ compile_flags(p, s)
 			return (p);
 		default:
 			err(COMPILE,
-			    "bad flag in substitute command: '%c'", p[-1]);
+			    "bad flag in substitute command: '%c'", *p);
 			break;
 		}
 		p++;
@@ -663,7 +663,7 @@ fixuplabel(root, cp)
 				break;
 			}
 			if ((cp2 = findlabel(cp, root)) == NULL)
-				err(COMPILE2, "unspecified label %s", cp->t);
+				err(COMPILE2, "undefined label '%s'", cp->t);
 			free(cp->t);
 			cp->u.c = cp2;
 			break;
