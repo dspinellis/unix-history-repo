@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)su.1	6.9 (Berkeley) %G%
+.\"	@(#)su.1	6.10 (Berkeley) %G%
 .\"
 .TH SU 1 ""
 .UC
@@ -20,12 +20,17 @@ su [ -Kflm ] [ login ]
 requests the Kerberos password for
 .I login
 (or for ``\fIlogin\fP.root'', if no login is provided), and switches to
-that user and group ID after issuing a Kerberos ticket granting ticket.
+that user and group ID after obtaining a Kerberos ticket granting ticket.
 A shell is then invoked.
 .I Su
 will resort to the local password file to find the password for
 .I login
 if there is a Kerberos error.
+If
+.I su
+is executed by root, no password is requested and a shell
+with the appropriate user ID is invoked; no additional Kerberos tickets
+are obtained.
 .PP
 By default, the environment is unmodified with the exception of
 .IR USER ,
@@ -95,4 +100,4 @@ to ``root''.
 By default (unless the prompt is reset by a startup file) the super-user
 prompt is set to ``#'' to remind one of its awesome power.
 .SH "SEE ALSO"
-csh(1), login(1), sh(1), passwd(5), group(5), environ(7)
+csh(1), login(1), sh(1), kinit(1), kerberos(1), passwd(5), group(5), environ(7)
