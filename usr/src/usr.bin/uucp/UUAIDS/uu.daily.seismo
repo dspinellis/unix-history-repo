@@ -1,0 +1,38 @@
+PATH=:/bin:/usr/bin:/usr/ucb
+cd /usr/lib/uucp
+#
+umask 2
+# give them 7 days to get through
+deadtime=`expr 24 \* 7`
+cd /usr/lib/uucp
+(
+uuclean -d/usr/spool/uucp/LCK -n24
+uuclean -d/usr/spool/uucp/STST -n24
+uuclean -d/usr/spool/uucp/AUDIT -n48
+rm -f /usr/spool/uucp/AUDIT/[0-9]*
+uuclean -d/usr/spool/uucp/TM. -pTM. -n24
+uuclean -d/usr/spool/uucp/XTMP -n24
+uuclean -d/usr/spool/uucp/X. -pX. -n$deadtime
+uuclean -d/usr/spool/uucp/C. -pC. -n$deadtime
+uuclean -d/usr/spool/uucp/D. -pD. -n$deadtime
+uuclean -d/usr/spool/uucp/D.`uuname -l` -pD. -n$deadtime
+uuclean -d/usr/spool/uucp/D.`uuname -l`X -pD. -n$deadtime
+) >/dev/null 2>&1
+
+cd /usr/spool/uucp
+/usr/lib/uucp/uucpsummary | /usr/ucb/Mail -s "UUCP Summary" uucplist
+
+cd /usr/spool/uucp/LOG
+for i in uucico uux uuxqt uucp xferstats
+do
+	cd $i
+	for j in *
+	do
+		mv $j .$j
+	done
+	cd ..
+done
+find . -type f -mtime +7 -exec rm -f {} \;
+
+cd /usr/spool/uucppublic
+find . -type f -mtime +30 -exec rm -f {} \;
