@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fgets.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fgets.c	8.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
@@ -30,12 +30,12 @@ fgets(buf, n, fp)
 	register char *s;
 	register unsigned char *p, *t;
 
-	if (n < 2)		/* sanity check */
+	if (n == 0)		/* sanity check */
 		return (NULL);
 
 	s = buf;
 	n--;			/* leave space for NUL */
-	do {
+	while (n != 0) {
 		/*
 		 * If the buffer is empty, refill it.
 		 */
@@ -71,7 +71,8 @@ fgets(buf, n, fp)
 		fp->_p += len;
 		(void)memcpy((void *)s, (void *)p, len);
 		s += len;
-	} while ((n -= len) != 0);
+		n -= len;
+	}
 	*s = 0;
 	return (buf);
 }
