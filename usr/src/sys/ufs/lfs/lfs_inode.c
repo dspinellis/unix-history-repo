@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.19	82/07/24	*/
+/*	lfs_inode.c	4.20	82/07/25	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -211,7 +211,11 @@ loop:
 	return (ip);
 }
 
+#ifdef MATISSE
+int	badinum = 3197;
+#else
 int	badinum = -1;
+#endif
 /*
  * Decrement reference count of
  * an inode structure.
@@ -329,10 +333,7 @@ iupdat(ip, ta, tm, waitfor)
  * Free all the disk blocks associated
  * with the specified inode structure.
  * The blocks of the file are removed
- * in reverse order. This FILO
- * algorithm will tend to maintain
- * a contiguous free list much longer
- * than FIFO.
+ * in reverse order.
  */
 itrunc(ip)
 	register struct inode *ip;
@@ -473,158 +474,6 @@ tloop(ip, bn, indflg)
 	cnt += fs->fs_bsize / DEV_BSIZE;
 	return(cnt);
 #endif
-}
-
-/*
- * Make a new file.
- */
-struct inode *
-maknode(mode)
-	int mode;
-{
-	register struct inode *ip;
-	ino_t ipref;
-
-	if ((mode & IFMT) == IFDIR)
-		ipref = dirpref(u.u_pdir->i_fs);
-	else
-		ipref = u.u_pdir->i_number;
-	ip = ialloc(u.u_pdir, ipref, mode);
-	if (ip == NULL) {
-		iput(u.u_pdir);
-		return(NULL);
-	}
-#ifdef	QUOTA
-	if (ip->i_dquot != NODQUOT)
-		panic("maknode: dquot");
-#endif
-	ip->i_flag |= IACC|IUPD|ICHG;
-	if ((mode & IFMT) == 0)
-		mode |= IFREG;
-	ip->i_mode = mode & ~u.u_cmask;
-	ip->i_nlink = 1;
-	ip->i_uid = u.u_uid;
-	ip->i_gid = u.u_pdir->i_gid;
-#ifdef	QUOTA
-	ip->i_dquot = inoquota(ip);
-#endif
-
-	/*
-	 * Make sure inode goes to disk before directory entry.
-	 */
-	iupdat(ip, &time, &time, 1);
-	wdir(ip);
-	if (u.u_error) {
-		/*
-		 * write error occurred trying to update directory
-		 * so must deallocate the inode
-		 */
-		ip->i_nlink = 0;
-		ip->i_flag |= ICHG;
-		iput(ip);
-		return(NULL);
-	}
-	return(ip);
-}
-
-/*
- * Write a directory entry with
- * parameters left as side effects
- * to a call to namei.
- */
-wdir(ip)
-	struct inode *ip;
-{
-	register struct direct *dp, *ndp;
-	struct fs *fs;
-	struct buf *bp;
-	int lbn, bn, base;
-	int loc, dsize, spccnt, newsize;
-	char *dirbuf;
-
-	u.u_dent.d_ino = ip->i_number;
-	u.u_segflg = 1;
-	newsize = DIRSIZ(&u.u_dent);
-	/*
-	 * if u.u_count == 0, a new directory block must be allocated.
-	 */
-	if (u.u_count == 0) {
-		u.u_dent.d_reclen = DIRBLKSIZ;
-		u.u_count = newsize;
-		u.u_base = (caddr_t)&u.u_dent;
-/*ZZ*/if((u.u_offset&0x1ff))panic("wdir: newblk");
-		writei(u.u_pdir);
-		iput(u.u_pdir);
-		return;
-	}
-	/*
-	 * must read in an existing directory block
-	 * to prepare to place the new entry into it.
-	 */
-	fs = u.u_pdir->i_fs;
-	lbn = lblkno(fs, u.u_offset);
-	base = blkoff(fs, u.u_offset);
-	bn = fsbtodb(fs, bmap(u.u_pdir, lbn, B_WRITE, base + u.u_count));
-	if (u.u_offset + u.u_count > u.u_pdir->i_size)
-/*ZZ*/{if((u.u_offset+u.u_count-1&~0x1ff)!=(u.u_pdir->i_size-1&~0x1ff))
-/*ZZ*/  printf("wdir i_size dir %s/%d (of=%d,cnt=%d,psz=%d))\n",
-/*ZZ*/       u.u_pdir->i_fs->fs_fsmnt,u.u_pdir->i_number,u.u_offset,
-/*ZZ*/       u.u_count,u.u_pdir->i_size);
-		u.u_pdir->i_size = u.u_offset + u.u_count;
-/*ZZ*/}
-	bp = bread(u.u_pdir->i_dev, bn, blksize(fs, u.u_pdir, lbn));
-	if (bp->b_flags & B_ERROR) {
-		brelse(bp);
-		return;
-	}
-	dirbuf = bp->b_un.b_addr + base;
-	dp = (struct direct *)dirbuf;
-	dsize = DIRSIZ(dp);
-	spccnt = dp->d_reclen - dsize;
-	/*
-	 * if there is insufficient room to make an entry at this point
-	 * namei insures that compacting from u.u_offset for u.u_count
-	 * bytes will provide the necessary space.
-	 */
-	for (loc = dp->d_reclen; loc < u.u_count; ) {
-		ndp = (struct direct *)(dirbuf + loc);
-		if (dp->d_ino == 0) {
-			spccnt += dsize;
-		} else {
-			dp->d_reclen = dsize;
-			dp = (struct direct *)((char *)dp + dsize);
-		}
-		dsize = DIRSIZ(ndp);
-		spccnt += ndp->d_reclen - dsize;
-/*ZZ*/if(spccnt>512)panic("wdir spccnt");
-/*ZZ*/if((loc&~0x1ff)!=(loc+ndp->d_reclen-1&~0x1ff))
-/*ZZ*/printf("wdir: compact loc %d reclen %d (dir %s/%d)\n",loc,ndp->d_reclen,
-/*ZZ*/u.u_pdir->i_fs->fs_fsmnt,u.u_pdir->i_number);
-		loc += ndp->d_reclen;
-		bcopy(ndp, dp, dsize);
-	}
-	/*
-	 * Update the pointer fields in the previous entry (if any),
-	 * copy in the new entry, and write out the block.
-	 */
-	if (dp->d_ino == 0) {
-		if (spccnt + dsize < newsize)
-			panic("wdir: compact failed (1)");
-/*ZZ*/if(spccnt+dsize>512)panic("wdir: compact screwup");
-		u.u_dent.d_reclen = spccnt + dsize;
-	} else {
-		if (spccnt < newsize)
-			panic("wdir: compact failed (2)");
-		u.u_dent.d_reclen = spccnt;
-/*ZZ*/if ((((char *)dp-bp->b_un.b_addr)&0x1ff)+dsize>512) panic("wdir: reclen");
-		dp->d_reclen = dsize;
-		dp = (struct direct *)((char *)dp + dsize);
-	}
-/*ZZ*/if((((char*)dp-bp->b_un.b_addr)&0x1ff)+u.u_dent.d_reclen>512)panic("wdir: botch");
-	bcopy(&u.u_dent, dp, newsize);
-	bwrite(bp);
-	u.u_pdir->i_flag |= IUPD|ICHG;
-	iput(u.u_pdir);
 }
 
 /*
