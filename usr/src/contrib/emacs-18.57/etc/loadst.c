@@ -189,7 +189,9 @@ main (argc, argv)
     {
       mail = (char *) malloc (strlen (user_name) + 30);
 
-#if defined (USG) && ! defined (XENIX)
+#ifdef BSD4_4
+      sprintf (mail, "/var/mail/%s", user_name);
+#elif defined (USG) && ! defined (XENIX)
       sprintf (mail, "/usr/mail/%s", user_name);
 #else /* Xenix, or not USG */
       sprintf (mail, "/usr/spool/mail/%s", user_name);
