@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)asc.c	7.11 (Berkeley) %G%
+ *	@(#)asc.c	7.12 (Berkeley) %G%
  */
 
 /* 
@@ -650,21 +650,6 @@ asc_startcmd(asc, target)
 			scsicmd->sd->sd_driver->d_name, target,
 			scsicmd->cmd[0], scsicmd->buflen);
 	}
-	asc_debug_cmd = scsicmd->cmd[0];
-	if (scsicmd->cmd[0] == SCSI_READ_EXT) {
-		asc_debug_bn = (scsicmd->cmd[2] << 24) |
-			(scsicmd->cmd[3] << 16) |
-			(scsicmd->cmd[4] << 8) |
-			scsicmd->cmd[5];
-		asc_debug_sz = (scsicmd->cmd[7] << 8) | scsicmd->cmd[8];
-	}
-	asc_logp->status = PACK(asc - asc_softc, 0, 0, asc_debug_cmd);
-	asc_logp->target = asc->target;
-	asc_logp->state = 0;
-	asc_logp->msg = 0xff;
-	asc_logp->resid = scsicmd->buflen;
-	if (++asc_logp >= &asc_log[NLOG])
-		asc_logp = asc_log;
 #endif
 
 	/*
@@ -678,9 +663,10 @@ asc_startcmd(asc, target)
 	/*
 	 * Copy command data to the DMA buffer.
 	 */
-	len = scsicmd->cmdlen;
+	len = scsicmd->cmdlen + 1;
 	state->dmalen = len;
-	bcopy(scsicmd->cmd, state->dmaBufAddr, len);
+	state->dmaBufAddr[0] = SCSI_DIS_REC_IDENTIFY;
+	bcopy(scsicmd->cmd, state->dmaBufAddr + 1, len);
 
 	/* check for simple SCSI command with no data transfer */
 	if ((state->buflen = scsicmd->buflen) == 0) {
@@ -702,11 +688,25 @@ asc_startcmd(asc, target)
 		state->flags |= DMA_IN;
 	}
 
-	/* preload the FIFO with the message to be sent */
-	regs->asc_fifo = SCSI_DIS_REC_IDENTIFY;
-	MachEmptyWriteBuffer();
+#ifdef DEBUG
+	asc_debug_cmd = scsicmd->cmd[0];
+	if (scsicmd->cmd[0] == SCSI_READ_EXT) {
+		asc_debug_bn = (scsicmd->cmd[2] << 24) |
+			(scsicmd->cmd[3] << 16) |
+			(scsicmd->cmd[4] << 8) |
+			scsicmd->cmd[5];
+		asc_debug_sz = (scsicmd->cmd[7] << 8) | scsicmd->cmd[8];
+	}
+	asc_logp->status = PACK(asc - asc_softc, 0, 0, asc_debug_cmd);
+	asc_logp->target = asc->target;
+	asc_logp->state = asc->script - asc_scripts;
+	asc_logp->msg = SCSI_DIS_REC_IDENTIFY;
+	asc_logp->resid = scsicmd->buflen;
+	if (++asc_logp >= &asc_log[NLOG])
+		asc_logp = asc_log;
+#endif
 
-	/* start the asc */
+	/* initialize the DMA */
 	(*asc->dma_start)(asc, state, state->dmaBufAddr, ASCDMA_WRITE);
 	ASC_TC_PUT(regs, len);
 	readback(regs->asc_cmd);
@@ -872,28 +872,43 @@ again:
 		if (len) {
 			/* save number of bytes still to be sent or received */
 			state->dmaresid = len;
-			/* setup state to resume to */
-			if (state->flags & DMA_IN)
-				state->script =
-					&asc_scripts[SCRIPT_RESUME_DMA_IN];
-			else if (state->flags & DMA_OUT)
-				state->script =
-					&asc_scripts[SCRIPT_RESUME_DMA_OUT];
-			else
-				state->script = asc->script;
 #ifdef DEBUG
 			if (asc_logp == asc_log)
 				asc_log[NLOG - 1].resid = len;
 			else
 				asc_logp[-1].resid = len;
 #endif
+			/* setup state to resume to */
+			if (state->flags & DMA_IN) {
+				/*
+				 * Since the ASC_CNFG3_SRB bit of the
+				 * cnfg3 register bit is not set,
+				 * we just transferred an extra byte.
+				 * Since we can't resume on an odd byte
+				 * boundary, we copy the valid data out
+				 * and resume DMA at the start address.
+				 */
+				if (len & 1) {
+					printf("asc_intr: msg in len %d (fifo %d)\n",
+						len, fifo);
+					len = state->dmalen - len;
+					goto do_in;
+				}
+				state->script =
+					&asc_scripts[SCRIPT_RESUME_DMA_IN];
+			} else if (state->flags & DMA_OUT)
+				state->script =
+					&asc_scripts[SCRIPT_RESUME_DMA_OUT];
+			else
+				state->script = asc->script;
 		} else {
 			/* setup state to resume to */
 			if (state->flags & DMA_IN) {
 				if (state->flags & DMA_IN_PROGRESS) {
+					len = state->dmalen;
+				do_in:
 					state->flags &= ~DMA_IN_PROGRESS;
 					(*asc->dma_end)(asc, state, ASCDMA_READ);
-					len = state->dmalen;
 					bcopy(state->dmaBufAddr, state->buf,
 						len);
 					state->buf += len;
@@ -1360,7 +1375,7 @@ asc_dma_out(asc, status, ss, ir)
 		state->buflen -= len;
 	}
 
-	/* setup for this chunck */
+	/* setup for this chunk */
 	len = state->buflen;
 	if (len > state->dmaBufSize)
 		len = state->dmaBufSize;
@@ -1405,6 +1420,8 @@ asc_last_dma_out(asc, status, ss, ir)
 		len += fifo;
 		regs->asc_cmd = ASC_CMD_FLUSH;
 		readback(regs->asc_cmd);
+		printf("asc_last_dma_out: buflen %d dmalen %d tc %d fifo %d\n",
+			state->buflen, state->dmalen, len, fifo);
 	}
 	state->flags &= ~DMA_IN_PROGRESS;
 	len = state->dmalen - len;
@@ -1422,7 +1439,7 @@ asc_resume_out(asc, status, ss, ir)
 	register State *state = &asc->st[asc->target];
 	register int len;
 
-	/* setup for this chunck */
+	/* setup for this chunk */
 	len = state->buflen;
 	if (len > state->dmaBufSize)
 		len = state->dmaBufSize;
@@ -1757,8 +1774,8 @@ asc_disconnect(asc, status, ss, ir)
 }
 
 /*
- * DMA handling routines. For a turbochannel device, just set the dmar
- * for the I/O ASIC, handle the actual DMA interface.
+ * DMA handling routines. For a turbochannel device, just set the dmar.
+ * For the I/O ASIC, handle the actual DMA interface.
  */
 static void
 tb_dma_start(asc, state, cp, flag)
