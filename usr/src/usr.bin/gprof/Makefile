@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile	1.10 (Berkeley) %G%
+SCCSID = @(#)Makefile	1.11 (Berkeley) %G%
 
 DFLAGS = 
 CFLAGS = -O ${DFLAGS}
@@ -17,6 +17,9 @@ install: gprof flat.blurb callg.blurb
 	${INSTALL} gprof ${DESTDIR}/usr/bin/gprof
 	cp flat.blurb ${DESTDIR}/usr/lib/flat.blurb
 	cp callg.blurb ${DESTDIR}/usr/lib/callg.blurb
+
+gcrt0.h:
+	cp /usr/src/libc/csu/gcrt0.h gcrt0.h
 
 lint:
 	lint ${CFLAGS} ${LINTFLAGS} ${GPROFSRCS}
