@@ -254,6 +254,8 @@ setdraw()	/* generate internal cookies for a drawing function */
 		c = getch();
 		if (cbits(c) == delim)
 			break;
+		if (cbits(c) != ' ')
+			ch = c;
 		vflag = 0;
 		dfact = EM;
 		dx[i] = quant(atoi(), HOR);
