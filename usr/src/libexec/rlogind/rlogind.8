@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rlogind.8	6.6 (Berkeley) %G%
+.\"	@(#)rlogind.8	6.7 (Berkeley) %G%
 .\"
 .TH RLOGIND 8 ""
 .UC 5
@@ -53,7 +53,9 @@ the dot-notation representation of the host address is used.
 .PP
 Once the source port and address have been checked, 
 .I rlogind
-allocates a pseudo terminal (see 
+proceeds with the authentication process described in
+.IR rshd (8C).
+It then allocates a pseudo terminal (see 
 .IR pty (4)),
 and manipulates file descriptors so that the slave
 half of the pseudo terminal becomes the 
@@ -65,18 +67,16 @@ for a login process.
 The login process is an instance of the
 .IR login (1)
 program, invoked with the
-.B \-r
-option.  The login process then proceeds with the authentication
-process as described in
-.IR rshd (8),
-but if automatic authentication fails, it reprompts the user
-to login as one finds on a standard terminal line.  The
+.B \-f
+option if authentication has succeeded.
+If automatic authentication fails, the user is
+prompted to log in as if on a standard terminal line.  The
 .I -l
 option prevents any authentication based on the user's
 ``.rhosts'' file, unless the user is the superuser.
 .PP
 The parent of the login process manipulates the master side of
-the pseduo terminal, operating as an intermediary
+the pseudo terminal, operating as an intermediary
 between the login process and the client instance of the
 .I rlogin
 program.  In normal operation, the packet protocol described
