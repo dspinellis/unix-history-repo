@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.50	83/01/15	*/
+/*	kern_clock.c	4.51	83/01/17	*/
 
 #include "../machine/reg.h"
 #include "../machine/psl.h"
@@ -119,36 +119,6 @@ hardclock(regs)
 			cpstate = CP_NICE;
 		else
 			cpstate = CP_USER;
-		/*
-		 * Charge it with resource utilization for a tick, updating
-		 * statistics which run in (user+system) virtual time,
-		 * such as the cpu time limit and profiling timers.
-		 * This assumes that the current process has been running
-		 * the entire last tick.
-		 */
-		if (!noproc) {
-			s = u.u_procp->p_rssize;
-			u.u_ru.ru_idrss += s; u.u_ru.ru_isrss += 0;	/* XXX */
-			if (u.u_procp->p_textp) {
-				register int xrss = u.u_procp->p_textp->x_rssize;
-
-				s += xrss;
-				u.u_ru.ru_ixrss += xrss;
-			}
-			if (s > u.u_ru.ru_maxrss)
-				u.u_ru.ru_maxrss = s;
-			if ((u.u_ru.ru_utime.tv_sec+u.u_ru.ru_stime.tv_sec+1) >
-			    u.u_rlimit[RLIMIT_CPU].rlim_cur) {
-				psignal(u.u_procp, SIGXCPU);
-				if (u.u_rlimit[RLIMIT_CPU].rlim_cur <
-				    u.u_rlimit[RLIMIT_CPU].rlim_max)
-					u.u_rlimit[RLIMIT_CPU].rlim_cur += 5;
-			}
-			if (timerisset(&u.u_timer[ITIMER_PROF].it_value) &&
-			    itimerdecr(&u.u_timer[ITIMER_PROF], tick) == 0)
-				psignal(u.u_procp, SIGPROF);
-		}
-
 	} else {
 		/*
 		 * CPU was in system state.  If profiling kernel
@@ -173,6 +143,37 @@ hardclock(regs)
 		} else {
 			bumptime(&u.u_ru.ru_stime, tick);
 		}
+	}
+
+	/*
+	 * If the cpu is currently scheduled to a process, then
+	 * charge it with resource utilization for a tick, updating
+	 * statistics which run in (user+system) virtual time,
+	 * such as the cpu time limit and profiling timers.
+	 * This assumes that the current process has been running
+	 * the entire last tick.
+	 */
+	if (noproc == 0 && cpstate != CP_IDLE) {
+		if ((u.u_ru.ru_utime.tv_sec+u.u_ru.ru_stime.tv_sec+1) >
+		    u.u_rlimit[RLIMIT_CPU].rlim_cur) {
+			psignal(u.u_procp, SIGXCPU);
+			if (u.u_rlimit[RLIMIT_CPU].rlim_cur <
+			    u.u_rlimit[RLIMIT_CPU].rlim_max)
+				u.u_rlimit[RLIMIT_CPU].rlim_cur += 5;
+		}
+		if (timerisset(&u.u_timer[ITIMER_PROF].it_value) &&
+		    itimerdecr(&u.u_timer[ITIMER_PROF], tick) == 0)
+			psignal(u.u_procp, SIGPROF);
+		s = u.u_procp->p_rssize;
+		u.u_ru.ru_idrss += s; u.u_ru.ru_isrss += 0;	/* XXX */
+		if (u.u_procp->p_textp) {
+			register int xrss = u.u_procp->p_textp->x_rssize;
+
+			s += xrss;
+			u.u_ru.ru_ixrss += xrss;
+		}
+		if (s > u.u_ru.ru_maxrss)
+			u.u_ru.ru_maxrss = s;
 	}
 
 	/*
