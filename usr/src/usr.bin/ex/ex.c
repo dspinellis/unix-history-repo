@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-static char *sccsid = "@(#)ex.c	6.1 %G%";
+static char *sccsid = "@(#)ex.c	6.2 %G%";
 #include "ex.h"
 #include "ex_argv.h"
 #include "ex_temp.h"
@@ -378,14 +378,6 @@ init()
 	undkind = UNDNONE;
 	chng = 0;
 	edited = 0;
-#ifdef USG
-	signal (SIGHUP, SIG_IGN);
-#endif
-#ifdef USG3TTY
-#ifndef USG
-	signal (SIGHUP, SIG_IGN);
-#endif
-#endif
 	for (i = 0; i <= 'z'-'a'+1; i++)
 		names[i] = 1;
 	anymarks = 0;
