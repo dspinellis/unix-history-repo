@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.23 %G%";
+static char sccsid[] = "@(#)routed.c	4.24 %G%";
 #endif
 
 /*
@@ -34,8 +34,8 @@ struct nlist nl[] = {
 	0,
 };
 
-struct	sockaddr_in routingaddr = { AF_INET, IPPORT_ROUTESERVER };
-struct	sockaddr_in noroutingaddr = { AF_INET, IPPORT_ROUTESERVER+1 };
+struct	sockaddr_in routingaddr = { AF_INET };
+struct	sockaddr_in noroutingaddr = { AF_INET };
 
 int	s;
 int	snoroute;		/* socket with no routing */
@@ -56,7 +56,7 @@ FILE	*ftrace;
 char	packet[MAXPACKETSIZE+1];
 struct	rip *msg = (struct rip *)packet;
 
-struct in_addr if_makeaddr();
+struct in_addr inet_makeaddr();
 struct interface *if_ifwithaddr(), *if_ifwithnet();
 extern char *malloc(), *sys_errlist[];
 extern int errno, exit();
@@ -70,6 +70,7 @@ main(argc, argv)
 {
 	int cc;
 	struct sockaddr from;
+	struct servent *sp;
 	
 	argv0 = argv;
 #ifndef DEBUG
@@ -104,10 +105,13 @@ main(argc, argv)
 	 * able to specify ``don't route'' as an option
 	 * to send, but until then we utilize a second port.
 	 */
-#ifdef vax || pdp11
-	routingaddr.sin_port = htons(routingaddr.sin_port);
-	noroutingaddr.sin_port = htons(noroutingaddr.sin_port);
-#endif
+	sp = getservbyname("router", "udp");
+	if (sp == 0) {
+		fprintf(stderr, "routed: udp/router: unknown service\n");
+		exit(1);
+	}
+	routingaddr.sin_port = htons(sp->s_port);
+	noroutingaddr.sin_port = htons(sp->s_port + 1);
 again:
 	s = socket(SOCK_DGRAM, 0, &routingaddr, 0);
 	if (s < 0) {
@@ -285,7 +289,7 @@ addrouteforif(ifp)
 	else {
 		bzero((char *)&net, sizeof (net));
 		net.sin_family = AF_INET;
-		net.sin_addr = if_makeaddr(ifp->int_net, INADDR_ANY);
+		net.sin_addr = inet_makeaddr(ifp->int_net, INADDR_ANY);
 		dst = (struct sockaddr *)&net;
 	}
 	rt = rtlookup(dst);
@@ -312,30 +316,42 @@ gwkludge()
 {
 	struct sockaddr_in dst, gate;
 	FILE *fp;
-	char *dname, *gname, *qual, buf[BUFSIZ];
+	char *type, *dname, *gname, *qual, buf[BUFSIZ];
 	struct interface *ifp;
 	int metric;
 
 	fp = fopen("/etc/gateways", "r");
 	if (fp == NULL)
 		return;
-	qual = buf; dname = buf + 64; gname = buf + ((BUFSIZ - 64) / 2);
+	qual = buf;
+	dname = buf + 64;
+	gname = buf + ((BUFSIZ - 64) / 3);
+	type = buf + (((BUFSIZ - 64) * 2) / 3);
 	bzero((char *)&dst, sizeof (dst));
 	bzero((char *)&gate, sizeof (gate));
 	dst.sin_family = gate.sin_family = AF_INET;
-	/* format: dst XX gateway XX metric DD [passive]\n */
+	/* format: dst {net | host} XX gateway XX metric DD [passive]\n */
 #define	readentry(fp) \
-	fscanf((fp), "dst %s gateway %s metric %d %s\n", \
-		dname, gname, &metric, qual)
+	fscanf((fp), "dst %s %s gateway %s metric %d %s\n", \
+		type, dname, gname, &metric, qual)
 	for (;;) {
 		struct hostent *host;
+		struct netent *net;
 
 		if (readentry(fp) == EOF)
 			break;
-		host = gethostbyname(dname);
-		if (host == 0)
+		if (strcmp(type, "net") == 0) {
+			net = getnetbyname(dname);
+			if (net == 0 || net->n_addrtype != AF_INET)
+				continue;
+			dst.sin_addr = inet_makeaddr(net->n_net, INADDR_ANY);
+		} else if (strcmp(type, "host") == 0) {
+			host = gethostbyname(dname);
+			if (host == 0)
+				continue;
+			bcopy(host->h_addr, &dst.sin_addr, host->h_length);
+		} else
 			continue;
-		bcopy(host->h_addr, &dst.sin_addr, host->h_length);
 		host = gethostbyname(gname);
 		if (host == 0)
 			continue;
@@ -344,8 +360,8 @@ gwkludge()
 		bzero((char *)ifp, sizeof (*ifp));
 		ifp->int_flags = IFF_REMOTE;
 		/* can't identify broadcast capability */
-		ifp->int_net = in_netof(dst.sin_addr);
-		if ((*afswitch[dst.sin_family].af_checkhost)(&dst)) {
+		ifp->int_net = inet_netof(dst.sin_addr);
+		if (strcmp(type, "host") == 0) {
 			ifp->int_flags |= IFF_POINTOPOINT;
 			ifp->int_dstaddr = *((struct sockaddr *)&dst);
 		}
@@ -884,63 +900,4 @@ if_ifwithnet(addr)
 			break;
 	}
 	return (ifp);
-}
-
-struct in_addr
-if_makeaddr(net, host)
-	int net, host;
-{
-	u_long addr;
-
-	if (net < 128)
-		addr = (net << 24) | host;
-	else if (net < 65536)
-		addr = (net << 16) | host;
-	else
-		addr = (net << 8) | host;
-#if vax || pdp11
-	addr = htonl(addr);
-#endif
-	return (*(struct in_addr *)&addr);
-}
-
-/*
- * Return the network number from an internet
- * address; handles class a/b/c network #'s.
- */
-in_netof(in)
-	struct in_addr in;
-{
-#if vax || pdp11
-	register u_long net;
-
-	if ((in.s_addr&IN_CLASSA) == 0)
-		return (in.s_addr & IN_CLASSA_NET);
-	if ((in.s_addr&IN_CLASSB) == 0)
-		return ((int)htons((u_short)(in.s_addr & IN_CLASSB_NET)));
-	net = htonl((u_long)(in.s_addr & IN_CLASSC_NET));
-	net >>= 8;
-	return ((int)net);
-#else
-	return (IN_NETOF(in));
-#endif
-}
-
-/*
- * Return the local network address portion of an
- * internet address; handles class a/b/c network
- * number formats.
- */
-in_lnaof(in)
-	struct in_addr in;
-{
-#if vax || pdp11
-#define	IN_LNAOF(in) \
-	(((in).s_addr&IN_CLASSA) == 0 ? (in).s_addr&IN_CLASSA_LNA : \
-		((in).s_addr&IN_CLASSB) == 0 ? (in).s_addr&IN_CLASSB_LNA : \
-			(in).s_addr&IN_CLASSC_LNA)
-	return ((int)htonl((u_long)IN_LNAOF(in)));
-#else
-	return (IN_LNAOF(in));
-#endif
 }
