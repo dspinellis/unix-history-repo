@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.32 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.33 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -616,8 +616,11 @@ R$+			$#_LOCAL_ $: $1			regular local names
 S5
 
 # see if we have a relay or a hub
-R$+			$: $>_SET_95_ < $R > $1			try relay
-R$+			$: $>_SET_95_ < $H > $1			try hub')
+R$+			$: < $R > $1			try relay
+R< > $+			$: < $H > $1			try hub
+R< > $+			$@ $1				nope, give up
+R< $- : $+ > $+		$: $>_SET_95_ < $1 : $2 > $3 < @ $2 >
+R< $+ > $+		$@ $>_SET_95_ < $1 > $2 < @ $1 >')
 ifdef(`MAILER_TABLE',
 `
 
