@@ -1,8 +1,7 @@
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 
 PROG=	fstat
 SRCS=	fstat.c devname.c
-CFLAGS+=-I/sys
 .PATH:	${.CURDIR}/../../bin/ps
 DPADD=	${LIBUTIL}
 LDADD=	-lutil
