@@ -1,4 +1,4 @@
-.\"	@(#)IBM.proposal	1.2	90/05/11
+.\"	@(#)IBM.proposal	1.3	90/05/31
 .if n \{\
 .ND
 .rm CH
@@ -16,7 +16,7 @@
 .ps 11p
 .LP
 .nf
-Mr. Joesph Corso
+Mr. Joseph Corso
 IBM Advanced Workstations Development
 1510 Page Mill Rd.
 Palo Alto, CA  94303
