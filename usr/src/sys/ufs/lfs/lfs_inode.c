@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.61 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.62 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -16,6 +16,8 @@
 #include <sys/vnode.h>
 #include <sys/kernel.h>
 #include <sys/malloc.h>
+
+#include <vm/vm.h>
 
 #include <ufs/ufs/quota.h>
 #include <ufs/ufs/inode.h>
@@ -176,13 +178,13 @@ lfs_update(vp, ta, tm, waitfor)
 	if ((ip->i_flag & (IUPD|IACC|ICHG|IMOD)) == 0)
 		return (0);
 	if (ip->i_flag&IACC)
-		ip->i_atime = ta->tv_sec;
+		ip->i_atime.tv_sec = ta->tv_sec;
 	if (ip->i_flag&IUPD) {
-		ip->i_mtime = tm->tv_sec;
+		ip->i_mtime.tv_sec = tm->tv_sec;
 		INCRQUAD((ip)->i_modrev);
 	}
 	if (ip->i_flag&ICHG)
-		ip->i_ctime = time.tv_sec;
+		ip->i_ctime.tv_sec = time.tv_sec;
 	ip->i_flag &= ~(IUPD|IACC|ICHG|IMOD);
 
 	/* Push back the vnode and any dirty blocks it may have. */
@@ -237,7 +239,7 @@ lfs_truncate(vp, length, flags, cred)
 #ifdef VERBOSE
 	printf("lfs_truncate\n");
 #endif
-	vnode_pager_setsize(vp, length);
+	vnode_pager_setsize(vp, (u_long)length);
 
 	ip = VTOI(vp);
 	fs = ip->i_lfs;
