@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.70 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.71 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -373,15 +373,26 @@ sendenvelope(e, mode)
 				(void) xfclose(e->e_dfp, "sendenvelope", e->e_df);
 			e->e_dfp = NULL;
 			e->e_id = e->e_df = NULL;
+
+			/* catch intermediate zombie */
+			(void) waitfor(pid);
 			return;
 		}
 
 		/* double fork to avoid zombies */
-		if (fork() > 0)
+		pid = fork();
+		if (pid > 0)
 			exit(EX_OK);
 
 		/* be sure we are immune from the terminal */
 		disconnect(1, e);
+
+		/* prevent parent from waiting if there was an error */
+		if (pid < 0)
+		{
+			e->e_flags |= EF_INQUEUE|EF_KEEPQUEUE;
+			finis();
+		}
 
 		/*
 		**  Close any cached connections.
@@ -1139,7 +1150,8 @@ tryhost:
 				}
 				(void) close(rpvect[1]);
 			}
-			else if (OpMode == MD_SMTP || OpMode == MD_DAEMON || HoldErrs)
+			else if ((OpMode == MD_SMTP || OpMode == MD_DAEMON ||
+				  HoldErrs) && !DisConnected)
 			{
 				/* put mailer output in transcript */
 				if (dup2(fileno(e->e_xfp), STDOUT_FILENO) < 0)
@@ -1176,12 +1188,20 @@ tryhost:
 					(void) fcntl(i, F_SETFD, j | 1);
 			}
 
-			/* set up the mailer environment */
+			/*
+			**  Set up the mailer environment
+			**	TZ is timezone information.
+			**	SYSTYPE is Apollo software sys type (required).
+			**	ISP is Apollo hardware system type (required).
+			*/
+
 			i = 0;
 			env[i++] = "AGENT=sendmail";
 			for (ep = environ; *ep != NULL; ep++)
 			{
-				if (strncmp(*ep, "TZ=", 3) == 0)
+				if (strncmp(*ep, "TZ=", 3) == 0 ||
+				    strncmp(*ep, "ISP=", 4) == 0 ||
+				    strncmp(*ep, "SYSTYPE=", 8) == 0)
 					env[i++] = *ep;
 			}
 			env[i++] = NULL;

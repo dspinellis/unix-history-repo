@@ -11,9 +11,9 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	8.34 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.35 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	8.34 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	8.35 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
 
@@ -276,6 +276,7 @@ getrequests()
 			*/
 
 			(void) setsignal(SIGCHLD, SIG_DFL);
+			DisConnected = FALSE;
 
 			/* determine host name */
 			p = hostnamebyanyaddr(&RealHostAddr);
