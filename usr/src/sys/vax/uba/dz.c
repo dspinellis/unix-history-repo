@@ -1,4 +1,4 @@
-/*	dz.c	3.1	%H%	*/
+/*	dz.c	3.2	%H%	*/
 
 /*
  *  DZ-11 Driver
@@ -13,6 +13,7 @@
 #include "../h/uba.h"
 #include "../h/conf.h"
 #include "../h/pdma.h"
+#include "../h/bk.h"
  
 #define DZADDR  (UBA0_DEV + 0160100)
 #ifdef ERNIE
@@ -42,6 +43,7 @@
  
 int	dzstart();
 int	dzxint();
+int	ttrstrt();
 struct	tty dz_tty[NDZ];
 int	dz_cnt = { NDZ };
 
@@ -120,12 +122,12 @@ dzopen(d, flag)
 		return;
 	}
 	dzmodem(dev, ON);
-	VOID spl5();
+	(void) spl5();
 	while ((tp->t_state & CARR_ON) == 0) {
 		tp->t_state |= WOPEN;
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
 	}
-	VOID spl0();
+	(void) spl0();
 	(*linesw[tp->t_line].l_open)(d, tp);
 }
  
@@ -184,7 +186,13 @@ dzrint(dev)
 			if (((tp->t_flags & (EVENP|ODDP)) == EVENP)
 			  || ((tp->t_flags & (EVENP|ODDP)) == ODDP))
 				continue;
-		(*linesw[tp->t_line].l_rint)(c, tp);
+#ifdef BERKNET
+			if (tp->t_line == BNETLDIS) {
+				c &= 0177;
+				NETINPUT(c, tp);
+			} else
+#endif
+				(*linesw[tp->t_line].l_rint)(c, tp);
 	}
 }
  
@@ -196,6 +204,9 @@ dev_t dev;
 	register struct tty *tp;
  
 	tp = &dz_tty[minor(dev)];
+	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
+	if (cmd == 0)
+		return;
 	if (ttioccomm(cmd, tp, addr, dev)) {
 		if (cmd==TIOCSETP || cmd==TIOCSETN)
 			dzparam(minor(dev));
@@ -254,7 +265,6 @@ register struct tty *tp;
 	register struct device *dzaddr;
 	register cc;
 	int sps;
-	extern ttrstrt();
  
 	dp = &dzpdma[tp-dz_tty];
 	dzaddr = dp->p_addr;
