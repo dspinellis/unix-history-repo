@@ -1,11 +1,11 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 CFLAGS+=#-DTFILE=\"/dev/ttyp0\"
 CFLAGS+=-D_CURSES_PRIVATE -I${.CURDIR}
 LIB=	curses
 SRCS=	addbytes.c addch.c addnstr.c box.c clear.c clrtobot.c clrtoeol.c \
-	cr_put.c ctrace.c curses.c delch.c deleteln.c delwin.c erase.c \
-	fullname.c getch.c getstr.c hash.c id_subwins.c idlok.c initscr.c \
+	cr_put.c ctrace.c cur_hash.c curses.c delch.c deleteln.c delwin.c \
+	erase.c fullname.c getch.c getstr.c id_subwins.c idlok.c initscr.c \
 	insch.c insertln.c longname.c move.c mvwin.c newwin.c overlay.c \
 	overwrite.c printw.c putchar.c refresh.c scanw.c scroll.c setterm.c \
 	standout.c toucholap.c touchwin.c tscroll.c tstp.c tty.c unctrl.c
