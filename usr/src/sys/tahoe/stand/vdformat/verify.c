@@ -1,10 +1,10 @@
 #ifndef lint
-static char sccsid[] = "@(#)verify.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)verify.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
 
-#define	quiet 0
+#define	verbose	1
 
 /*
 **
@@ -103,9 +103,7 @@ verify_maintainence_area()
 
 /*
 **	verify_cylinders does full track certification for every track
-** on the cylinder.  This is done for speed and minimal head movement.  If
-** an error occurs on any single track the track is flagged for later
-** verification by verify sectors.
+** on the cylinder.
 */
 
 verify_cylinders(base_cyl, cyl_count, pats)
@@ -113,20 +111,22 @@ int	base_cyl, cyl_count, pats;
 {
 	dskadr		dskaddr;
 
+	if (pats == 0)
+		return;
 	/* verify each track of each cylinder */
-	for (dskaddr.cylinder=base_cyl; dskaddr.cylinder<(base_cyl+cyl_count);
-	    dskaddr.cylinder++)
-		for (dskaddr.track=0; dskaddr.track<CURRENT->vc_ntrak;
+	for (dskaddr.cylinder = base_cyl;
+	    dskaddr.cylinder < base_cyl + cyl_count; dskaddr.cylinder++)
+		for (dskaddr.track = 0; dskaddr.track < CURRENT->vc_ntrak;
 		    dskaddr.track++)
-			verify_track(&dskaddr, pats, quiet);
+			verify_track(&dskaddr, pats, verbose);
 }
 
 
 /*
-**	verify_track verifies a single track. If the full track write and
-** compare operation fails then each sector is read individually to determin
-** which sectors are really bad.  If a sector is bad it is flagged as bad by
-** the verify sector routine.
+**	verify_track verifies a single track.  If a full-track write fails,
+** the sector is flagged; if a full-track read fails, then each sector
+** is read individually to determine which sectors are really bad.
+** If a sector is bad it is flagged as bad by flag_sector.
 */
 
 verify_track(dskaddr, pats, verbosity)
@@ -140,60 +140,66 @@ int	verbosity;
 	register long	*after;
 	register long	offset = SECSIZ / sizeof(long);
 	int		pattern_count = pats;
+	int		sectorflagged = -1;
 
-	if(pats == 0)
+	if (pats == 0)
 		return;
 	dskaddr->sector = (char)0;
-	access_dsk((char *)pattern_address[0], dskaddr, WD, CURRENT->vc_nsec, 1);
-	for(index = 0; index < pattern_count; index++) {
-		if(!data_ok()) {
-			if(dcb.operrsta & HEADER_ERROR)  {
-				flag_sector(dskaddr, dcb.operrsta, verbosity);
+	access_dsk((char *)pattern_address[0], dskaddr, WD,
+	    CURRENT->vc_nsec, 1);
+	for (index = 0; index < pattern_count; index++) {
+		if (!data_ok()) {
+			if (dcb.operrsta & HEADER_ERROR)  {
+		 
+				flag_sector(dskaddr, dcb.operrsta,
+				    dcb.err_code, verbosity);
 				break;
 			}
-			if(dcb.operrsta & DATA_ERROR)
+			if (dcb.operrsta & DATA_ERROR)
 				pattern_count = 16;
 		}
-		access_dsk((char *)scratch,dskaddr,RD,CURRENT->vc_nsec,1);
-		if(!data_ok()) {
-			if(dcb.operrsta & HEADER_ERROR)  {
-				flag_sector(dskaddr, dcb.operrsta, verbosity);
+		access_dsk((char *)scratch, dskaddr, RD, CURRENT->vc_nsec, 1);
+		if (!data_ok()) {
+			if (dcb.operrsta & HEADER_ERROR)  {
+				flag_sector(dskaddr, dcb.operrsta,
+				    dcb.err_code, verbosity);
 				break;
 			}
-			pattern_count = 16;
-			for(i = 0; i < CURRENT->vc_nsec; i++) {
+			for (i = 0; i < CURRENT->vc_nsec; i++) {
 				register long	*next;
 
 				dskaddr->sector = i;
 				next = &scratch[i * offset];
-				access_dsk((char *)next,dskaddr,RD,1,1);
-				if(!data_ok()) {
-					flag_sector(dskaddr,
-					    dcb.operrsta,verbosity);
-				}
+				access_dsk((char *)next, dskaddr, RD, 1, 1);
+				if (!data_ok())
+					flag_sector(dskaddr, dcb.operrsta,
+					    dcb.err_code, verbosity);
 			}
 			dskaddr->sector = (char)0;
 		}
-		if(index+1 < pattern_count)
+		if (index+1 < pattern_count)
 			access_dsk((char *)pattern_address[index+1],
 			    dskaddr, WD, CURRENT->vc_nsec, 0);
 		count = CURRENT->vc_nsec * offset;
 		before = *pattern_address[index];
 		after = scratch;
-		for(i=0; i<count; i++) {
-			if(before != *(after++)) {
-				dskaddr->sector = i / offset;
-				flag_sector(dskaddr, DATA_ERROR, verbosity);
+		for (i = 0; i < count; i++) {
+			if (before != *(after++)) {
+				dskaddr->sector = (char)(i / offset);
+				if (dskaddr->sector != sectorflagged)
+					flag_sector(dskaddr, 0, 0,
+					    verbosity);
+				sectorflagged = dskaddr->sector;
 			}
 		}
-		if(index+1 <= pattern_count) {
+		if (index+1 < pattern_count) {
 			poll(60);
-			if(vdtimeout <= 0) {
+			if (vdtimeout <= 0) {
 				printf(" while verifing track.\n");
 				_longjmp(abort_environ, 1);
 			}
 		}
-		if(kill_processes == true) {
+		if (kill_processes == true) {
 			sync_bad_sector_map();
 			_longjmp(quit_environ, 1);
 		}
@@ -201,19 +207,27 @@ int	verbosity;
 }
 
 
-flag_sector(dskaddr, status, verbose)
+flag_sector(dskaddr, status, ecode, verbosity)
 dskadr	*dskaddr;
 long	status;
-int	verbose;
+int	ecode;
+int	verbosity;
 {
 	fmt_err		error;
 	bs_entry	entry;
 
 	indent();
-	if(verbose) {
-		print("Error at sector %d, status=0x%x.",
-		    to_sector(*dskaddr), status);
-		printf("  Sector will be relocated.\n");
+	if (verbosity != 0) {
+		print("Error at sector %d (cyl %d trk %d sect %d),\n",
+		    to_sector(*dskaddr), dskaddr->cylinder, dskaddr->track,
+		    dskaddr->sector);
+		if (status)
+			print("  status=%b", status, ERRBITS);
+		else
+			printf("  data comparison error");
+		if (C_INFO.type == SMD_ECTLR && ecode)
+			printf(", ecode=0x%x", ecode);
+		printf(".\n  Sector will be relocated.\n");
 	}
 	if(is_in_map(dskaddr) == false) {
 		error.err_adr = *dskaddr;

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)io.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)io.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -14,6 +14,7 @@ static cmd_text_element	nul_table[] = {
 	{ 0,	"",	"" }
 };
 
+int wait_for_char;
 char	*clean_up = "Cleaning up...  Please wait.\n";
 
 
@@ -25,13 +26,16 @@ poll(wait)
 int	wait;
 {
 	int	tokens[10];
+	int	didmsg = 0;
 
+	wait_for_char = 0;
 	vdtimeout = wait*1000*1000;
 	uncache(&(dcb.operrsta));
 	while (!((dcb.operrsta) & (DCBCMP | DCBABT))) {
-		if(kill_processes == false && input()) {
+		if (input()) {
 			get_text_cmd(nul_table, tokens);
-			if(kill_processes == true) {
+			if (didmsg == 0 && kill_processes == true) {
+				didmsg = 1;
 				indent();
 				print(clean_up);
 				exdent(1);
@@ -61,8 +65,10 @@ int	wait;
 		DELAY(500);
 	}
 	if((dcb.opcode == RD) || (dcb.opcode == RD_RAW))
-		mtpr(0, PADC);
+		mtpr(PADC, 0);
 	uncache(&(dcb.operrsta));
+	uncache(&(dcb.err_code));
+	wait_for_char = 1;
 }
 
 
@@ -104,6 +110,7 @@ int	func, count, wait;
 {
 	cur.daddr.cylinder = dskaddr->cylinder;
 	cur.daddr.track = dskaddr->track;
+	wait_for_char = 0;
 	dcb.opcode = func;		/* format sector command */
 	dcb.intflg = NOINT;
 	dcb.nxtdcb = (fmt_dcb *)0;	/* end of chain */
@@ -133,6 +140,7 @@ int	func, count, wait;
 			_longjmp(abort_environ, 1);
 		}
 	}
+	wait_for_char = 1;
 	return dcb.operrsta;
 }
 
@@ -198,8 +206,10 @@ int	pass;
 			printf("\nDrive failed to start!\n\n");
 			_longjmp(abort_environ, -1);
 		}
+		printf("\ndrive not ready, attempting to spin up...");
 		access_with_no_trailer(VDSTART, (cur.drive * 6) + 62);
 		DELAY((cur.drive * 5500000) + 62000000);
+		printf(" retrying drive configuration\n");
 		configure_drive(1);
 	}
 }
@@ -307,4 +317,3 @@ char	*par0, *par1, *par2, *par3, *par4, *par5, *par6;
 	printf(par0, par1, par2, par3, par4, par5, par6);
 	DELAY((strlen(par0) + 20) * 9000);
 }
-

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vdfmt.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)vdfmt.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 /*
@@ -12,10 +12,11 @@ main()
 {
 	exdent(-1);
 	print("VDFORMAT                   Version 3.0 \n\n");
-	print("Type `Help' for help, `Start' to execute operations.\n\n");
 
 	for(;;) {
 		determine_controller_types();
+		print(
+		  "\nType `Help' for help, `Start' to execute operations.\n\n");
 		if(!_setjmp(reset_environ)) {
 			init_environment();
 			for(;;) {
@@ -74,6 +75,7 @@ determine_controller_types()
 	for(ctlr = 0; ctlr < MAXCTLR; ctlr++) {
 		c_info[ctlr].addr = (cdr *)(vddcaddr[ctlr]+VBIOBASE);
 		if(!badaddr(c_info[ctlr].addr, 2)) {
+			printf("controller %d: ", ctlr);
 			num_controllers++;
 			c_info[ctlr].addr->cdr_reset = (unsigned)0xffffffff;
 			DELAY(1000000);
@@ -85,9 +87,9 @@ determine_controller_types()
 				c_info[ctlr].code_pos = smd_code_position;
 				c_info[ctlr].cylinder_skew = smd_cyl_skew;
 				c_info[ctlr].track_skew = smd_trk_skew;
+				printf("smd\n");
 				DELAY(1000000);
-			}
-			else {
+			} else {
 				c_info[ctlr].alive = u_true;
 				c_info[ctlr].type = SMD_ECTLR;
 				c_info[ctlr].name = "SMD-E";
@@ -96,10 +98,10 @@ determine_controller_types()
 				c_info[ctlr].code_pos = smd_e_code_position;
 				c_info[ctlr].cylinder_skew = smd_e_cyl_skew;
 				c_info[ctlr].track_skew = smd_e_trk_skew;
+				printf("smd-e\n");
 				DELAY(3000000);
 			}
-		}
-		else  {
+		} else  {
 			c_info[ctlr].alive = u_false;
 			c_info[ctlr].type = UNKNOWN;
 		}

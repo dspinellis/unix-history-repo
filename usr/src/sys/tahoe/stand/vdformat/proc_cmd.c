@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)proc_cmd.c	1.1 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)proc_cmd.c	1.2 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -16,9 +16,11 @@ static char sccsid[] = "@(#)proc_cmd.c	1.1 (Berkeley/CCI) %G%";
 #define	PROFILE		9
 #define	EXERCISE	10
 #define	START		11
+#define	EXIT		12
 
 static cmd_text_element	commands[] = {
 	{ RESET,     "RESET",	  "Reinitialize VDFORMAT, and start over" },
+	{ EXIT,      "EXIT",	  "Terminate program" },
 	{ LIST,	     "List",	  "List operations specified so far" },
 	{ DELETE,    "Delete",	  "Delete specific operations" },
 	{ FORMAT,    "Format",	  "Format and verify disk surface" },
@@ -51,6 +53,11 @@ process_commands()
 		drive_types[type].cmd_token = (int)&vdconfig[type];
 		drive_types[type].cmd_text = vdconfig[type].vc_name;
 		drive_types[type].cmd_help = vdconfig[type].vc_type;
+		cptr = drive_types[type].cmd_text;
+		while(*cptr) {
+			*cptr = toupper(*cptr);
+			cptr++;
+		}
 	}
 	drive_types[type].cmd_token = 0;
 	for(;;) {
@@ -100,6 +107,9 @@ process_commands()
 			case START :
 				should_start = true;
 				break;
+			case EXIT:
+				exit(0);
+				/*NOTREACHED*/
 			default:		/* ignore */
 				break;
 			}
@@ -282,7 +292,7 @@ int	ctlr, drive;
 		if(d_info[ctlr][drive].info != 0)
 			printf("(%s) ", d_info[ctlr][drive].info->vc_name);
 		if(c_info[ctlr].type == SMDCTLR)
-			count = get_text_cmd(drive_types+2, tokens);
+			count = get_text_cmd(drive_types+smddrives, tokens);
 		else
 			count = get_text_cmd(drive_types, tokens);
 		if(kill_processes == true)
