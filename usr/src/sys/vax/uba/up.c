@@ -1,4 +1,4 @@
-/*	up.c	3.24	%G%	*/
+/*	up.c	3.25	%G%	*/
 
 /*
  * UNIBUS disk driver with overlapped seeks and ECC recovery.
@@ -43,13 +43,7 @@
 #include "../h/vm.h"
 
 /*
- * Define number of drives, and range of sampling information to be used.
- *
- * Normally, DK_N .. DK_N+NUP-1 gather individual drive stats,
- * and DK_N+NUP gathers controller transferring stats.
- *
- * If DK_N+NUP > DK_NMAX, then transfer stats are divided per drive.
- * If DK_NMAX is yet smaller, some drives are not monitored.
+ * Drive stats are gathered in dk_*[DK_N].. dk_*[DK_NMAX]
  */
 #define	DK_N	2
 #define	DK_NMAX	3
@@ -276,6 +270,8 @@ register struct buf *bp;
 		iodone(bp);
 		return;
 	}
+	if (DK_N+unit <= DK_NMAX)
+		dk_mspw[DK_N+unit] = .0000020345;
 	bp->b_cylin = bn/(NSECT*NTRAC) + up_sizes[xunit&07].cyloff;
 	dp = &uputab[unit];
 	(void) spl5();
@@ -397,9 +393,9 @@ search:
 	 * Mark this unit busy.
 	 */
 	unit += DK_N;
-	if (unit <= DK_NMAX && DK_N+NUP <= DK_NMAX) {
+	if (unit <= DK_NMAX) {
 		dk_busy |= 1<<unit;
-		dk_numb[unit]++;
+		dk_seek[unit]++;
 	}
 	if (olducode)
 		DELAY(ordelay);
@@ -524,11 +520,9 @@ loop:
 	 * (if there is room for that).
 	 */
 	unit = dn+DK_N;
-	if (NUP+DK_N == DK_NMAX)
-		unit = NUP+DK_N;
 	if (unit <= DK_NMAX) {
 		dk_busy |= 1<<unit;
-		dk_numb[unit]++;
+		dk_xfer[unit]++;
 		dk_wds[unit] += bp->b_bcount>>6;
 	}
 	return (1);
@@ -567,15 +561,13 @@ upintr()
 			    uputab[0].b_active, uputab[1].b_active);
 		}
 		/*
-		 * Mark controller or drive not busy, and check for an
+		 * Mark drive not busy, and check for an
 		 * error condition which may have resulted from the transfer.
 		 */
 		dp = uptab.b_actf;
 		bp = dp->b_actf;
 		unit = dkunit(bp);
-		if (DK_N+NUP == DK_NMAX)
-			dk_busy &= ~(1<<(DK_N+NUP));
-		else if (DK_N+unit <= DK_NMAX)
+		if (DK_N+unit <= DK_NMAX)
 			dk_busy &= ~(1<<(DK_N+unit));
 		if ((upaddr->upcs2 & 07) != unit) {
 			upaddr->upcs2 = unit;
@@ -810,8 +802,6 @@ upreset()
 	printf(" up");
 	uptab.b_active = 0;
 	uptab.b_actf = uptab.b_actl = 0;
-	if (DK_N+NUP == DK_NMAX)
-		dk_busy &= ~(1<<(DK_N+NUP));
 	if (up_ubinfo) {
 		printf("<%d>", (up_ubinfo>>28)&0xf);
 		ubafree(up_ubinfo), up_ubinfo = 0;
