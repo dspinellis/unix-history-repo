@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)macro.c	4.2		%G%);
+SCCSID(@(#)macro.c	4.3		%G%);
 
 char	*Macro[128];
 
@@ -22,9 +22,9 @@ char	*Macro[128];
 
 	register char *q;
 	bool skipping;		/* set if conditionally skipping output */
-	bool gotone = FALSE;	/* set if any expansion done */
+	bool recurse = FALSE;	/* set if recursion required */
+	int i;
 	char xbuf[BUFSIZ];
-	register char *xp = xbuf;
 	extern char *macvalue();
 
 # ifdef DEBUG
@@ -39,7 +39,7 @@ char	*Macro[128];
 	skipping = FALSE;
 	if (s == NULL)
 		s = "";
-	for (; *s != '\0'; s++)
+	for (xp = xbuf; *s != '\0'; s++)
 	{
 		char c;
 
@@ -70,7 +70,6 @@ char	*Macro[128];
 			q = Macro[c & 0177];
 			if (q == NULL)
 				continue;
-			gotone = TRUE;
 			break;
 		}
 
@@ -78,18 +77,19 @@ char	*Macro[128];
 		**  Interpolate q or output one character
 		*/
 
-		if (skipping)
+		if (skipping || xp >= &xbuf[sizeof xbuf])
 			continue;
-		while (xp < &xbuf[sizeof xbuf])
+		if (q == NULL)
+			*xp++ = c;
+		else
 		{
-			if (q == NULL)
+			/* copy to end of q or max space remaining in buf */
+			while ((c = *q++) != '\0' && xp < &xbuf[sizeof xbuf - 1])
 			{
+				if (iscntrl(c) && !isspace(c))
+					recurse = TRUE;
 				*xp++ = c;
-				break;
 			}
-			if (*q == '\0')
-				break;
-			*xp++ = *q++;
 		}
 	}
 	*xp = '\0';
@@ -104,13 +104,15 @@ char	*Macro[128];
 # endif DEBUG
 
 	/* recurse as appropriate */
-	if (gotone)
+	if (recurse)
 		return (expand(xbuf, buf, buflim));
 
 	/* copy results out */
-	for (q = buf, xp = xbuf; xp != '\0' && q < buflim-1; )
-		*q++ = *xp++;
-	*q = '\0';
+	i = buflim - buf - 1;
+	if (i > xp - xbuf)
+		i = xp - xbuf;
+	bcopy(xbuf, buf, i);
+	buf[i] = '\0';
 }
 /*
 **  DEFINE -- define a macro.
