@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	2.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	2.10 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -325,7 +325,6 @@ char **argv;
 	  (void) dup2(0, 2);
 	  s = open("/dev/tty", 2);
 	  if (s >= 0) {
-		(void) ioctl(s, TIOCNOTTY, (char *)0);
 		(void) close(s);
 	  }
 	}
@@ -398,6 +397,7 @@ char **argv;
 			setstatus();
 			checkignorednets();
 		}
+		makeslave(firstslavenet());
 		makeslave(firstslavenet());
 		for (ntp = nettab; ntp != NULL; ntp = ntp->next)
 			if (ntp->status == MASTER)
