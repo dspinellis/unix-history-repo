@@ -1,16 +1,10 @@
 #	@(#)Makefile	5.6 (Berkeley) 6/24/90
-#
-# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
-# --------------------         -----   ----------------------
-# CURRENT PATCH LEVEL:         1       50000
-# --------------------         -----   ----------------------
-#
-# 10 Oct 92	Rodney W. Grimes	Install a real crypt for passwords
-#
 
-CFLAGS+=-DDES
+#CFLAGS+=-DKERBEROS
 PROG=	login
-SRCS=	login.c
+SRCS=	klogin.c login.c
+#DPADD=	${LIBUTIL} ${LIBKRB} ${LIBDES}
+#LDADD=	-lutil -lkrb -ldes
 DPADD=	${LIBUTIL}
 LDADD=	-lutil
 BINOWN=	root
