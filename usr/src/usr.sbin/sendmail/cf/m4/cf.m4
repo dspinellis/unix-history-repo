@@ -6,7 +6,7 @@ divert(0)dnl
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cf.m4	2.10 (Berkeley) %G%
+#	@(#)cf.m4	2.11 (Berkeley) %G%
 #
 
 
@@ -29,7 +29,7 @@ define(`PUSHDIVERT', `pushdef(`__D__', divnum)divert($1)')
 define(`POPDIVERT', `divert(__D__)popdef(`__D__')')
 define(`OSTYPE', `include(../ostype/$1.m4)')
 define(`MAILER',
-`ifdef(`_MAILER_$1_', `dnl',
+`ifdef(`_MAILER_$1_', `dnl`'',
 `define(`_MAILER_$1_')PUSHDIVERT(7)include(../mailer/$1.m4)POPDIVERT`'')')
 define(`DOMAIN', `include(../domain/$1.m4)')
 define(`FEATURE', `include(../feature/$1.m4)')
