@@ -1,14 +1,26 @@
 #
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
+# Copyright (c) 1988 The Regents of the University of California.
+# All rights reserved.
 #
-#	@(#)Makefile	4.7	(Berkeley)	%G%
+# Redistribution and use in source and binary forms are permitted
+# provided that the above copyright notice and this paragraph are
+# duplicated in all such forms and that any documentation,
+# advertising materials, and other materials related to such
+# distribution and use acknowledge that the software was developed
+# by the University of California, Berkeley.  The name of the
+# University may not be used to endorse or promote products derived
+# from this software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	@(#)Makefile	4.8 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
 SRCS=	done.c init.c io.c main.c save.c subr.c vocab.c wizard.c
 OBJS=	done.o init.o io.o main.o save.o subr.o vocab.o wizard.o
+MAN=	adventure.0
 
 advent: ${OBJS} ${LIBC}
 	${CC} -n ${CFLAGS} ${OBJS}
@@ -18,34 +30,22 @@ advent: ${OBJS} ${LIBC}
 save.o: save.c			# vax C optimizer bug - infinite loop
 	${CC} -c save.c
 
-clean: FRC
+clean:
 	rm -f ${OBJS} core advent a.out
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: ${SRCS}
 	mkdep ${CFLAGS} ${SRCS}
 
-install: FRC
+install: ${MAN}
 	install -s -o games -g bin -m 700 advent ${DESTDIR}/usr/games/hide/adventure
 	(cd ${DESTDIR}/usr/games; rm -f adventure; ln -s dm adventure; chown games.bin adventure)
+	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat6
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
-
-FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-done.o: done.c hdr.h
-init.o: init.c hdr.h
-io.o: io.c hdr.h /usr/include/stdio.h
-main.o: main.c hdr.h
-save.o: save.c /usr/include/a.out.h /usr/include/sys/exec.h
-subr.o: subr.c hdr.h
-vocab.o: vocab.c hdr.h
-wizard.o: wizard.c hdr.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
