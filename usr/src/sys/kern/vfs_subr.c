@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.24 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.25 (Berkeley) %G%
  */
 
 /*
@@ -194,11 +194,13 @@ vfsinit()
 	vfreet = &vp->v_freef;
 	vp->v_freeb = &vfreeh;
 	vp->v_op = &dead_vnodeops;
+	vp->v_type = VBAD;
 	for (vp++; vp < vnodeNVNODE; vp++) {
 		*vfreet = vp;
 		vp->v_freeb = vfreet;
 		vfreet = &vp->v_freef;
 		vp->v_op = &dead_vnodeops;
+		vp->v_type = VBAD;
 	}
 	vp--;
 	vp->v_freef = NULL;
