@@ -1,4 +1,4 @@
-/*	llib-lc	1.21	85/06/25	*/
+/*	llib-lc	1.22	85/10/08	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
@@ -189,14 +189,14 @@ int	getpw( u, b) char *b;  { return 0; }
 struct passwd *	getpwent() { return (struct passwd *)NULL; }
 struct passwd *	getpwuid( n ) { return (struct passwd *)NULL; }
 struct passwd *	getpwnam( n ) char *n; { return (struct passwd *)NULL; }
-struct	tm *	gmtime(c) time_t *c; { return gmtime(c); }
+struct	tm *	gmtime(c) long *c; { return gmtime(c); }
 int	gtty(f, b) struct sgttyb *b; { return(0); }
 char *	index(s, c) char *s, c; { return s; }
 long *	initstate( s, st, n) unsigned s; long *st; { return st; }
 int	isatty(f) { return 1; }
 double	ldexp( v, e) double v; { return v; }
 	longjmp( e, v) jmp_buf e; {;}
-struct	tm *localtime(c) time_t *c; { return localtime(c); }
+struct	tm *localtime(c) long *c; { return localtime(c); }
 char *	malloc(n) unsigned n; {static char c; return(&c);}
 double	modf( v, p ) double v, *p; { return v; }
 char *	mktemp(p) char *p; { return(p);}
@@ -246,7 +246,7 @@ int	system(s) char *s; { return(0); }
 long	tell(f) { return((long)0); }
 long	telldir( p ) DIR *p; { return 1L; }
 time_t	time(t) time_t *t; { return( 0 );}
-char *	timezone( z, d ){}
+char *	timezone( z, d ){ return timezone(z, d); }
 char *	ttyname(f) { return " "; }
 int	ttyslot() { return 1; }
 char *	valloc(s) unsigned s; { return malloc(s); }
