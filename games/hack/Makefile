@@ -12,7 +12,7 @@ SRCS=	alloc.c hack.Decl.c hack.apply.c hack.bones.c hack.c hack.cmd.c \
 	hack.timeout.c hack.topl.c hack.track.c hack.trap.c hack.tty.c \
 	hack.u_init.c hack.unix.c hack.vault.c hack.version.c hack.wield.c \
 	hack.wizard.c hack.worm.c hack.worn.c hack.zap.c rnd.c
-CFLAGS+= -I.
+CFLAGS+= -I. -fwritable-strings
 MAN6=	hack.6
 DPSRCS= hack.onames.h
 DPADD=	${LIBTERM}
