@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rcmd.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.28 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -287,14 +287,14 @@ again:
 		cp = NULL;
 		if (lstat(pbuf, &sbuf) < 0)
 			cp = ".rhosts lstat failed";
-		else if ((sbuf.st_mode & S_IFMT) != S_IFREG)
+		else if (!S_ISREG(sbuf.st_mode))
 			cp = ".rhosts not regular file";
 		else if (fstat(fileno(hostf), &sbuf) < 0)
 			cp = ".rhosts fstat failed";
 		else if (sbuf.st_uid && sbuf.st_uid != pwd->pw_uid)
 			cp = "bad .rhosts owner";
-		else if (sbuf.st_mode & 022)
-			cp = "bad .rhosts permissions";
+		else if (sbuf.st_mode & (S_IWGRP|S_IWOTH))
+			cp = ".rhosts writeable by other than owner";
 		/* If there were any problems, quit. */
 		if (cp) {
 			__rcmd_errstr = cp;
