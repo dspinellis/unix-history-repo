@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.28 (Berkeley) %G%
+#	@(#)Makefile.inc	5.29 (Berkeley) %G%
 
 # Missing: profil.0, ptrace.0
 
@@ -11,18 +11,18 @@ SRCS+=	Ovfork.s brk.s cerror.s exect.s fork.s pipe.s ptrace.s reboot.s \
 	sigsuspend.s syscall.s
 
 # glue to provide compatibility between GCC 1.X and 2.X
-SRCS+=	__ftruncate.c __lseek.c mmap.c __truncate.c
+SRCS+=	ftruncate.c lseek.c mmap.c truncate.c
 
 # modules with default implementations on all architectures:
 ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o chflags.o chmod.o \
 	chown.o chroot.o close.o connect.o dup.o dup2.o execve.o fchdir.o \
 	fchflags.o fchmod.o fchown.o fcntl.o flock.o fstat.o fstatfs.o \
-	fsync.o ftruncate.o getdirentries.o getdtablesize.o getegid.o \
+	fsync.o getdirentries.o getdtablesize.o getegid.o \
 	geteuid.o getfh.o getfsstat.o getgid.o getgroups.o getitimer.o \
 	getpeername.o getpgrp.o getpid.o getppid.o getpriority.o \
 	getrlimit.o getrusage.o getsockname.o getsockopt.o gettimeofday.o \
 	getuid.o indir.o ioctl.o kill.o ktrace.o lfs_bmapv.o lfs_markv.o \
-	lfs_segclean.o lfs_segwait.o link.o listen.o lseek.o lstat.o \
+	lfs_segclean.o lfs_segwait.o link.o listen.o lstat.o \
 	madvise.o mincore.o mkdir.o mkfifo.o mknod.o mount.o mprotect.o \
 	msync.o munmap.o nfssvc.o open.o profil.o quotactl.o read.o \
 	readlink.o readv.o recvfrom.o recvmsg.o rename.o revoke.o rmdir.o \
@@ -30,10 +30,9 @@ ASM=	accept.o access.o acct.o adjtime.o bind.o chdir.o chflags.o chmod.o \
 	setgroups.o setitimer.o setpgid.o setpriority.o setrlimit.o \
 	setsid.o setsockopt.o settimeofday.o setuid.o shutdown.o \
 	sigaction.o sigaltstack.o socket.o socketpair.o stat.o statfs.o \
-	swapon.o symlink.o sync.o truncate.o umask.o unlink.o unmount.o \
+	swapon.o symlink.o sync.o umask.o unlink.o unmount.o \
 	utimes.o vadvise.o wait4.o write.o writev.o sem_lock.o \
-	sem_wakeup.o __sysctl.o \
-	__getrlimit.o __indir.o __setrlimit.o
+	sem_wakeup.o __sysctl.o __indir.o
 
 PSEUDO=	_exit.o _getlogin.o
 
