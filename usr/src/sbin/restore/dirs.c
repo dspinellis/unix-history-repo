@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -114,9 +114,10 @@ extractdirs(genmode)
 		}
 	}
 	nulldir.d_ino = 0;
+	nulldir.d_type = DT_DIR;
 	nulldir.d_namlen = 1;
 	(void) strcpy(nulldir.d_name, "/");
-	nulldir.d_reclen = DIRSIZ(&nulldir);
+	nulldir.d_reclen = DIRSIZ(0, &nulldir);
 	for (;;) {
 		curfile.name = "<directory file - name unknown>";
 		curfile.action = USING;
@@ -293,7 +294,6 @@ putdir(buf, size)
 	struct odirect *eodp;
 	register struct direct *dp;
 	long loc, i;
-	extern int Bcvt;
 
 	if (cvtflag) {
 		eodp = (struct odirect *)&buf[size];
@@ -305,22 +305,28 @@ putdir(buf, size)
 	} else {
 		for (loc = 0; loc < size; ) {
 			dp = (struct direct *)(buf + loc);
-			if (Bcvt) {
-				swabst("l2s", (char *) dp);
+			if (oldinofmt) {
+				if (Bcvt) {
+					swabst("l2s", (char *) dp);
+				}
+			} else {
+				if (Bcvt) {
+					swabst("ls", (char *) dp);
+				}
 			}
 			i = DIRBLKSIZ - (loc & (DIRBLKSIZ - 1));
 			if ((dp->d_reclen & 0x3) != 0 ||
 			    dp->d_reclen > i ||
-			    dp->d_reclen < DIRSIZ(dp) ||
+			    dp->d_reclen < DIRSIZ(0, dp) ||
 			    dp->d_namlen > NAME_MAX) {
 				vprintf(stdout, "Mangled directory: ");
 				if ((dp->d_reclen & 0x3) != 0)
 					vprintf(stdout,
 					   "reclen not multiple of 4 ");
-				if (dp->d_reclen < DIRSIZ(dp))
+				if (dp->d_reclen < DIRSIZ(0, dp))
 					vprintf(stdout,
 					   "reclen less than DIRSIZ (%d < %d) ",
-					   dp->d_reclen, DIRSIZ(dp));
+					   dp->d_reclen, DIRSIZ(0, dp));
 				if (dp->d_namlen > NAME_MAX)
 					vprintf(stdout,
 					   "reclen name too big (%d > %d) ",
@@ -350,7 +356,7 @@ long prev = 0;
 putent(dp)
 	struct direct *dp;
 {
-	dp->d_reclen = DIRSIZ(dp);
+	dp->d_reclen = DIRSIZ(0, dp);
 	if (dirloc + dp->d_reclen > DIRBLKSIZ) {
 		((struct direct *)(dirbuf + prev))->d_reclen =
 		    DIRBLKSIZ - prev;
@@ -381,9 +387,10 @@ dcvt(odp, ndp)
 
 	bzero((char *)ndp, (long)(sizeof *ndp));
 	ndp->d_ino =  odp->d_ino;
+	ndp->d_type = DT_UNKNOWN;
 	(void) strncpy(ndp->d_name, odp->d_name, ODIRSIZ);
 	ndp->d_namlen = strlen(ndp->d_name);
-	ndp->d_reclen = DIRSIZ(ndp);
+	ndp->d_reclen = DIRSIZ(0, ndp);
 }
 
 /*
