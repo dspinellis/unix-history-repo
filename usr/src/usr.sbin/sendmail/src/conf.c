@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.177 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.178 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -262,10 +262,10 @@ setupmailers()
 	char buf[100];
 	extern void makemailer();
 
-	strcpy(buf, "prog, P=/bin/sh, F=lsoD, T=X-Unix, A=sh -c $u");
+	strcpy(buf, "prog, P=/bin/sh, F=lsoD, T=DNS/RFC822/X-Unix, A=sh -c $u");
 	makemailer(buf);
 
-	strcpy(buf, "*file*, P=[FILE], F=lsDFMPEou, T=X-Unix, A=FILE");
+	strcpy(buf, "*file*, P=[FILE], F=lsDFMPEou, T=DNS/RFC822/X-Unix, A=FILE");
 	makemailer(buf);
 
 	strcpy(buf, "*include*, P=/dev/null, F=su, A=INCLUDE");
