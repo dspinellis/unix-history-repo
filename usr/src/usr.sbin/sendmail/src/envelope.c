@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -84,7 +84,7 @@ dropenvelope(e)
 	{
 		printf("dropenvelope %x: id=", e);
 		xputs(e->e_id);
-		printf(", flags=%o\n", e->e_flags);
+		printf(", flags=0x%x\n", e->e_flags);
 		if (tTd(50, 10))
 		{
 			printf("sendq=");
@@ -101,10 +101,13 @@ dropenvelope(e)
 		return;
 
 #ifdef LOG
+	if (LogLevel > 4 && bitset(EF_LOGSENDER, e->e_flags))
+		logsender(e, NULL);
 	if (LogLevel > 84)
-		syslog(LOG_DEBUG, "dropenvelope, id=%s, flags=%o, pid=%d",
+		syslog(LOG_DEBUG, "dropenvelope, id=%s, flags=0x%x, pid=%d",
 				  id, e->e_flags, getpid());
 #endif /* LOG */
+	e->e_flags &= ~EF_LOGSENDER;
 
 	/* post statistics */
 	poststats(StatFile);

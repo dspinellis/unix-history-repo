@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.21 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.22 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.21 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.22 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -279,6 +279,7 @@ smtp(e)
 			define('s', sendinghost, e);
 			initsys(e);
 			nrcpts = 0;
+			e->e_flags |= EF_LOGSENDER;
 			setproctitle("%s %s: %.80s", e->e_id, CurSmtpClient, inp);
 
 			/* child -- go do the processing */

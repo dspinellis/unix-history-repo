@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -457,66 +457,88 @@ eatheader(e, full)
 
 # ifdef LOG
 	if (full && LogLevel > 4)
+		logsender(e, msgid);
+# endif /* LOG */
+	e->e_flags &= ~EF_LOGSENDER;
+}
+/*
+**  LOGSENDER -- log sender information
+**
+**	Parameters:
+**		e -- the envelope to log
+**		msgid -- the message id
+**
+**	Returns:
+**		none
+*/
+
+logsender(e, msgid)
+	register ENVELOPE *e;
+	char *msgid;
+{
+	char *name;
+	register char *sbp;
+	register char *p;
+	char hbuf[MAXNAME];
+	char sbuf[MAXLINE];
+
+	if (bitset(EF_RESPONSE, e->e_flags))
+		name = "[RESPONSE]";
+	else if ((name = macvalue('_', e)) != NULL)
+		;
+	else if (RealHostName[0] == '[')
+		name = RealHostName;
+	else
 	{
-		char *name;
-		register char *sbp;
-		char hbuf[MAXNAME];
-		char sbuf[MAXLINE];
-
-		if (bitset(EF_RESPONSE, e->e_flags))
-			name = "[RESPONSE]";
-		else if ((name = macvalue('_', e)) != NULL)
-			;
-		else if (RealHostName[0] == '[')
-			name = RealHostName;
-		else
+		name = hbuf;
+		(void) sprintf(hbuf, "%.80s", RealHostName);
+		if (RealHostAddr.sa.sa_family != 0)
 		{
-			name = hbuf;
-			(void) sprintf(hbuf, "%.80s", RealHostName);
-			if (RealHostAddr.sa.sa_family != 0)
-			{
-				p = &hbuf[strlen(hbuf)];
-				(void) sprintf(p, " (%s)",
-					anynet_ntoa(&RealHostAddr));
-			}
+			p = &hbuf[strlen(hbuf)];
+			(void) sprintf(p, " (%s)",
+				anynet_ntoa(&RealHostAddr));
 		}
+	}
 
-		/* some versions of syslog only take 5 printf args */
+	/* some versions of syslog only take 5 printf args */
 #  if (SYSLOG_BUFSIZE) >= 256
-		sbp = sbuf;
-		sprintf(sbp, "from=%.200s, size=%ld, class=%d, pri=%ld, nrcpts=%d, msgid=%.100s",
-		    e->e_from.q_paddr, e->e_msgsize, e->e_class,
-		    e->e_msgpriority, e->e_nrcpts, msgid);
+	sbp = sbuf;
+	sprintf(sbp, "from=%.200s, size=%ld, class=%d, pri=%ld, nrcpts=%d",
+	    e->e_from.q_paddr, e->e_msgsize, e->e_class,
+	    e->e_msgpriority, e->e_nrcpts);
+	sbp += strlen(sbp);
+	if (msgid != NULL)
+	{
+		sprintf(sbp, ", msgid=%.100s", msgid);
 		sbp += strlen(sbp);
-		if (e->e_bodytype != NULL)
-		{
-			(void) sprintf(sbp, ", bodytype=%.20s", e->e_bodytype);
-			sbp += strlen(sbp);
-		}
-		p = macvalue('r', e);
-		if (p != NULL)
-			(void) sprintf(sbp, ", proto=%.20s", p);
-		syslog(LOG_INFO, "%s: %s, relay=%s",
-		    e->e_id, sbuf, name);
+	}
+	if (e->e_bodytype != NULL)
+	{
+		(void) sprintf(sbp, ", bodytype=%.20s", e->e_bodytype);
+		sbp += strlen(sbp);
+	}
+	p = macvalue('r', e);
+	if (p != NULL)
+		(void) sprintf(sbp, ", proto=%.20s", p);
+	syslog(LOG_INFO, "%s: %s, relay=%s",
+	    e->e_id, sbuf, name);
 
 #  else			/* short syslog buffer */
 
-		syslog(LOG_INFO, "%s: from=%s",
-			e->e_id, shortenstring(e->e_from.q_paddr, 83));
-		syslog(LOG_INFO, "%s: size=%ld, class=%ld, pri=%ld, nrcpts=%d",
-			e->e_id, e->e_msgsize, e->e_class,
-			e->e_msgpriority, e->e_nrcpts);
+	syslog(LOG_INFO, "%s: from=%s",
+		e->e_id, shortenstring(e->e_from.q_paddr, 83));
+	syslog(LOG_INFO, "%s: size=%ld, class=%ld, pri=%ld, nrcpts=%d",
+		e->e_id, e->e_msgsize, e->e_class,
+		e->e_msgpriority, e->e_nrcpts);
+	if (msgid != NULL)
 		syslog(LOG_INFO, "%s: msgid=%s", e->e_id, msgid);
-		if (e->e_bodytype != NULL)
-			syslog(LOG_INFO, "%s: bodytype=%s",
-				e->e_id, e->e_bodytype);
-		p = macvalue('r', e);
-		if (p != NULL)
-			syslog(LOG_INFO, "%s: proto=%s", e->e_id, p);
-		syslog(LOG_INFO, "%s: relay=%s", e->e_id, name);
+	if (e->e_bodytype != NULL)
+		syslog(LOG_INFO, "%s: bodytype=%s", e->e_id, e->e_bodytype);
+	p = macvalue('r', e);
+	if (p != NULL)
+		syslog(LOG_INFO, "%s: proto=%s", e->e_id, p);
+	syslog(LOG_INFO, "%s: relay=%s", e->e_id, name);
 #  endif
-	}
-# endif /* LOG */
 }
 /*
 **  PRIENCODE -- encode external priority names into internal values.
