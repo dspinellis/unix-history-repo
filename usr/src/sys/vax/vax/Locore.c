@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)Locore.c	7.4 (Berkeley) %G%
+ *	@(#)Locore.c	7.5 (Berkeley) %G%
  */
 
 #include "dz.h"
@@ -14,7 +14,6 @@
 
 #include "param.h"
 #include "systm.h"
-#include "dir.h"
 #include "user.h"
 #include "vm.h"
 #include "ioctl.h"
@@ -239,6 +238,10 @@ struct	pte Ka630map[1];
 char	kmembase[100*NBPG];
 #if VAX8200 || VAX630
 struct	pte Clockmap[1];
+#endif
+#ifdef NFS
+struct	pte Nfsiomap[MAXPHYS/NBPG+1];
+char	nfsiobuf[MAXPHYS+NBPG];
 #endif
 
 /*ARGSUSED*/
