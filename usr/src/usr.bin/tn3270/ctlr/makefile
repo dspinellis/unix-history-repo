@@ -19,8 +19,8 @@ KBD	= 3270pc.kbd
 KBD	= unix.kbd
 
 # The source files...
-ALLH =	dctype.h ebc_disp.h hostctlr.h kbdctlr.h oia.h options.h \
-		screen.h scrnctlr.h
+ALLH =	dctype.h ebc_disp.h function.h hostctlr.h oia.h options.h \
+	screen.h scrnctlr.h
 
 ALLC =	dctype.c ebc_disp.c inbound.c oia.c options.c outbound.c
 
@@ -81,11 +81,11 @@ depend:
 # DO NOT DELETE THIS LINE
 
 dctype.o: dctype.h
-inbound.o: ../general/general.h function.h hostctlr.h scrnctlr.h screen.h
+inbound.o: ../general/general.h function.h hostctlr.h oia.h scrnctlr.h screen.h
 inbound.o: options.h dctype.h ebc_disp.h ../general/globals.h inbound.ext
 inbound.o: outbound.ext ../telnet.ext kbd.out
-oia.o: oia.h
+oia.o: ../general/general.h oia.h ../general/globals.h
 options.o: options.h ../general/globals.h options.ext
-outbound.o: ../general/general.h hostctlr.h screen.h ebc_disp.h
+outbound.o: ../general/general.h hostctlr.h oia.h screen.h ebc_disp.h
 outbound.o: ../general/globals.h options.ext ../telnet.ext inbound.ext
 outbound.o: outbound.ext ../general/bsubs.ext
