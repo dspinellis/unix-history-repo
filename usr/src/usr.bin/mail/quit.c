@@ -9,7 +9,7 @@
  * Termination processing.
  */
 
-static char *SccsId = "@(#)quit.c	2.1 %G%";
+static char *SccsId = "@(#)quit.c	2.2 %G%";
 
 /*
  * Save all of the undetermined messages at the top of "mbox"
@@ -20,11 +20,12 @@ static char *SccsId = "@(#)quit.c	2.1 %G%";
 quit()
 {
 	int mcount, p, modify, autohold, anystat, holdbit;
-	FILE *ibuf, *obuf, *fbuf, *rbuf;
+	FILE *ibuf, *obuf, *fbuf, *rbuf, *readstat;
 	register struct message *mp;
 	register int c;
 	extern char tempQuit[], tempResid[];
 	struct stat minfo;
+	char *id;
 
 	/*
 	 * If we are read only, we can't do anything,
@@ -101,6 +102,10 @@ quit()
 			mp->m_flag |= holdbit;
 	}
 	modify = 0;
+	if (Tflag != NOSTR) {
+		if ((readstat = fopen(Tflag, "w")) == NULL)
+			Tflag = NOSTR;
+	}
 	for (c = 0, p = 0, mp = &message[0]; mp < &message[msgCount]; mp++) {
 		if (mp->m_flag & MBOX)
 			c++;
@@ -108,7 +113,14 @@ quit()
 			p++;
 		if (mp->m_flag & MODIFY)
 			modify++;
+		if (Tflag != NOSTR && (mp->m_flag & (MREAD|MDELETED)) != 0) {
+			id = hfield("article-id", mp);
+			if (id != NOSTR)
+				fprintf(readstat, "%s\n", id);
+		}
 	}
+	if (Tflag != NOSTR)
+		fclose(readstat);
 	if (p == msgCount && !modify && !anystat) {
 		if (p == 1)
 			printf("Held 1 message in %s\n", mailname);
