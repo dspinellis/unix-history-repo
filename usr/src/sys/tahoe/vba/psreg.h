@@ -1,4 +1,4 @@
-/*	psreg.h	1.1	86/11/29	*/
+/*	psreg.h	1.2	87/12/22	*/
 
 #ifndef _PSREG_
 #define _PSREG_
@@ -32,9 +32,9 @@ struct  pslookup {
 /*
  * Ioctl requests.
  */
-#define PSIOGETERROR    _IOR(p, 0, int)                 /* get last error */
-#define PSIOLOOKUP      _IOWR(p, 1, struct pslookup)    /* do name lookup */
-#define PSIORWLOGICAL   _IOWR(p, 2, int)                /* set i/o mode */
+#define PSIOGETERROR    _IOR('p', 0, int)                 /* get last error */
+#define PSIOLOOKUP      _IOWR('p', 1, struct pslookup)    /* do name lookup */
+#define PSIORWLOGICAL   _IOWR('p', 2, int)                /* set i/o mode */
 
 /*
  * Error codes returned by PSIOGETERROR are either
