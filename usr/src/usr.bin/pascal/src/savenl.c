@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savenl.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)savenl.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -106,7 +106,6 @@ startnlfile()
 copynlfile()
 {
 	register int n;
-	extern long lseek();
 	int symfd, strfd, filesfd, linesfd;
 	char buff[BUFSIZ];
 
@@ -126,7 +125,8 @@ copynlfile()
 		fprintf(stderr, "sync error on /tmp/obj");
 		pexit(ERRS);
 	}
-	(void) lseek(ofil, 0L, 2);
+	if (lseek(ofil, (off_t)0, 2) == -1)
+		perror("copynlfile: lseek"), panic("copynlfile");
 	write(ofil, (char *) (&nlhdr), sizeof(nlhdr));
 	n = read(strfd, buff, BUFSIZ - sizeof(nlhdr));
 	write(ofil, buff, n);

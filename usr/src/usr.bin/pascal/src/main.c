@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "whoami.h"
@@ -80,7 +80,6 @@ main(argc, argv)
 	register c;
 	FILE *fopen();
 	extern char *myctime();
-	extern long lseek();
 	int i;
 
 	if (argv[0][0] == 'a')
@@ -419,7 +418,8 @@ geterr(seekpt, buf)
 	char *buf;
 {
 
-	(void) lseek(efil, (long) seekpt, 0);
+	if (lseek(efil, (off_t) seekpt, 0) == -1)
+		perror(err_file), pexit(DIED);
 	if (read(efil, buf, 256) <= 0)
 		perror(err_file), pexit(DIED);
 }
