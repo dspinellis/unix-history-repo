@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bugfiler.c	5.4 (Berkeley) 86/03/26";
+static char sccsid[] = "@(#)bugfiler.c	5.5 (Berkeley) 86/05/20";
 #endif not lint
 
 /*
@@ -52,7 +52,8 @@ char	disttmp[] = "RcXXXXXX";
 char	buf[8192];
 char	folder[MAXNAMLEN];
 int	num;
-int	msg_prot = 0664;
+int	msg_prot = 0640;
+int	folder_prot = 0750;
 
 int	debug;
 
@@ -222,7 +223,7 @@ process()
 
 	mktemp(tmpname);
 	if ((tmp = creat(tmpname, msg_prot)) < 0) {
-		fprintf(stderr, "cannont create %s\n", tmpname);
+		fprintf(stderr, "cannot create %s\n", tmpname);
 		exit(1);
 	}
 	if ((tfp = fdopen(tmp, "w")) == NULL) {
@@ -356,6 +357,7 @@ process()
 		badfmt:
 			reply(FROM_I, errfile, tmpname);
 			file(tmpname, "errors");
+			redistribute("errors", num);
 			return(state == EOM);
 		}
 	}
@@ -514,8 +516,11 @@ file(fname, folder)
 	 * in folder and adding one.
 	 */
 	if ((dirp = opendir(folder)) == NULL) {
-		fprintf(stderr, "Cannot open %s/%s\n", maildir, folder);
-		return;
+		(void) mkdir(folder, folder_prot);
+		if ((dirp = opendir(folder)) == NULL) {
+			fprintf(stderr, "Cannot open %s/%s\n", maildir, folder);
+			return;
+		}
 	}
 	num = 0;
 	while ((d = readdir(dirp)) != NULL) {
