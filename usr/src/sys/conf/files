@@ -97,6 +97,9 @@ miscfs/specfs/spec_vnops.c	standard
 miscfs/umapfs/umap_subr.c	optional umapfs
 miscfs/umapfs/umap_vfsops.c	optional umapfs
 miscfs/umapfs/umap_vnops.c	optional umapfs
+miscfs/union/union_subr.c	optional union
+miscfs/union/union_vfsops.c	optional union
+miscfs/union/union_vnops.c	optional union
 net/bpf.c		optional bpfilter
 net/bpf_filter.c	optional bpfilter
 net/if.c		standard

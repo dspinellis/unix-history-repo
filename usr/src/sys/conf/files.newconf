@@ -1,4 +1,4 @@
-#	@(#)files.newconf	8.7 (Berkeley) %G%
+#	@(#)files.newconf	8.8 (Berkeley) %G%
 
 # generic attributes
 define	disk
@@ -118,6 +118,9 @@ file	miscfs/specfs/spec_vnops.c
 file	miscfs/umapfs/umap_subr.c	umapfs
 file	miscfs/umapfs/umap_vfsops.c	umapfs
 file	miscfs/umapfs/umap_vnops.c	umapfs
+file	miscfs/union/union_subr.c	union
+file	miscfs/union/union_vfsops.c	union
+file	miscfs/union/union_vnops.c	union
 file	net/bpf.c		bpfilter needs-count
 file	net/bpf_filter.c	bpfilter needs-count
 file	net/if.c
