@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	"trek.h"
@@ -174,8 +174,8 @@ char	**argv;
 		  case 'p':	/* set priority */
 			if (getuid() != Mother)
 				goto badflag;
-			if (scanf(-1, &av[0][2], "%d", &prio) > 0)
-				break;
+			prio = atoi(av[0] + 2);
+			break;
 
 		  default:
 		  badflag:
