@@ -1,4 +1,4 @@
-/*	hp.c	4.1	83/01/16	*/
+/*	hp.c	4.2	83/01/17	*/
 
 /*
  * RP??/RM?? disk driver
@@ -56,13 +56,7 @@ u_char	hp_offset[16] = {
     0, 0, 0, 0,
 };
 
-struct hpst {
-	short	nsect;
-	short	ntrak;
-	short	nspc;
-	short	ncyl;
-	short	*off;
-} hpst[] = {
+struct st hpst[] = {
 	32,	5,	32*5,	823,	rm3_off,	/* RM03 */
 	32,	19,	32*19,	823,	rm5_off,	/* RM05 */
 	22,	19,	22*19,	815,	hp6_off,	/* RP06 */
@@ -84,7 +78,7 @@ hpopen(io)
 {
 	register unit = io->i_unit;
 	struct hpdevice *hpaddr = (struct hpdevice *)mbadrv(unit);
-	register struct hpst *st;
+	register struct st *st;
 
 	mbainit(UNITTOMBA(unit));
 	if (hp_type[unit] == 0) {
@@ -174,7 +168,7 @@ hpstrategy(io, func)
 	struct mba_regs *mba = mbamba(unit);
 	daddr_t bn;
 	struct hpdevice *hpaddr = (struct hpdevice *)mbadrv(unit);
-	struct hpst *st = &hpst[hp_type[unit]];
+	struct st *st = &hpst[hp_type[unit]];
 	int cn, tn, sn, bytecnt, bytesleft; 
 	daddr_t startblock;
 	char *membase;
@@ -355,7 +349,7 @@ hpecc(io, flag)
 	register unit = io->i_unit;
 	register struct mba_regs *mbp = mbamba(unit);
 	register struct hpdevice *rp = (struct hpdevice *)mbadrv(unit);
-	register struct hpst *st = &hpst[hp_type[unit]];
+	register struct st *st = &hpst[hp_type[unit]];
 	int npf;
 	int bn, cn, tn, sn;
 	int bcr, tad;
@@ -446,19 +440,15 @@ hpioctl(io, cmd, arg)
 	caddr_t arg;
 {
 
-	struct hpst *st = &hpst[hp_type[io->i_unit]];
+	struct st *st = &hpst[hp_type[io->i_unit]], *tmp;
 	struct mba_drv *drv = mbadrv(io->i_unit);
-	struct devdata *devd;
 
 	switch(cmd) {
 
 	case SAIODEVDATA:
 		if ((drv->mbd_dt&MBDT_TAP) == 0) {
-			devd = (struct devdata *)arg;
-			devd->ncyl = st->ncyl;
-			devd->ntrak = st->ntrak;
-			devd->nspc = st->nspc;
-			devd->nsect = st->nsect;
+			tmp = (struct st *)arg;
+			*tmp = *st;
 			return(0);
 		}
 		else 
@@ -479,7 +469,7 @@ hpioctl(io, cmd, arg)
 
 isbad(bt, st, blno)
 	register struct dkbad *bt;
-	register struct devdata *st;	/* dirty, must be fixed */
+	register struct st *st;
 {
 	register int i;
 	register long blk, bblk;
