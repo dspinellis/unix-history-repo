@@ -1,4 +1,4 @@
-/*	syslog.h	4.2	84/04/25	*/
+/*	syslog.h	4.3	84/05/04	*/
 
 /*
  *  SYSLOG.H -- declarations for system logging program
