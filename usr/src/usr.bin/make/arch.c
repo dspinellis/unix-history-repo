@@ -21,7 +21,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)arch.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)arch.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -238,7 +238,7 @@ Arch_ParseArchive (linePtr, nodeLst, ctxt)
 	     * variables and multi-word variable values.... The results
 	     * are just placed at the end of the nodeLst we're returning.
 	     */
-	    buf=sacrifice=(char *)malloc(strlen(memName)+strlen(libName)+3);
+	    buf = sacrifice = emalloc(strlen(memName)+strlen(libName)+3);
 
 	    sprintf(buf, "%s(%s)", libName, memName);
 
@@ -475,7 +475,7 @@ ArchStatMember (archive, member, hash)
 	    return ((struct ar_hdr *) NULL);
     }
 
-    ar = (Arch *) malloc (sizeof (Arch));
+    ar = (Arch *)emalloc (sizeof (Arch));
     ar->name = strdup (archive);
     Hash_InitTable (&ar->members, -1, HASH_STRING_KEYS);
     memName[AR_MAX_NAME_LEN] = '\0';
@@ -499,7 +499,7 @@ ArchStatMember (archive, member, hash)
 
 	    he = Hash_CreateEntry (&ar->members, strdup (memName),
 				   (Boolean *)NULL);
-	    Hash_SetValue (he, (ClientData)malloc (sizeof (struct ar_hdr)));
+	    Hash_SetValue (he, (ClientData)emalloc (sizeof (struct ar_hdr)));
 	    bcopy ((Address)&arh, (Address)Hash_GetValue (he), 
 		sizeof (struct ar_hdr));
 	}
@@ -833,7 +833,7 @@ Arch_FindLib (gn, path)
 {
     char	    *libName;   /* file name for archive */
 
-    libName = (char *)malloc (strlen (gn->name) + 6 - 2);
+    libName = (char *)emalloc (strlen (gn->name) + 6 - 2);
     sprintf(libName, "lib%s.a", &gn->name[2]);
 
     gn->path = Dir_FindFile (libName, path);
