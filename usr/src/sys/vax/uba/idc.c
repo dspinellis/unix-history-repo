@@ -1,4 +1,4 @@
-/*	idc.c	4.12	83/02/10	*/
+/*	idc.c	4.13	83/04/30	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -17,7 +17,6 @@ int	*trp = idctrb;
  * TODO:
  *	dk_busy
  *	ecc
- *	dump
  */
 #include "../machine/pte.h"
 
@@ -767,14 +766,15 @@ active:
 idcdump(dev)
 	dev_t dev;
 {
-#ifdef notdef
 	struct idcdevice *idcaddr;
 	char *start;
-	int num, blk, unit, dbsize;
+	int num, blk, unit;
 	struct size *sizes;
 	register struct uba_regs *uba;
 	register struct uba_device *ui;
 	struct idcst *st;
+	struct idc_dar dar;
+	int nspg;
 
 	unit = minor(dev) >> 3;
 	if (unit >= NRB)
@@ -786,52 +786,74 @@ idcdump(dev)
 	uba = phys(struct uba_hd *, ui->ui_hd)->uh_physuba;
 	ubainit(uba);
 	idcaddr = (struct idcdevice *)ui->ui_physaddr;
-	num = maxfree;
-	start = 0;
-/***
-	idcaddr->idccs1 = IDC_CCLR;
-	idcaddr->idccs2 = unit;
-	idcaddr->idccs1 = idctypes[ui->ui_type]|IDC_DCLR|IDC_GO;
-	(void) idcwait(idcaddr);
-	dbsize = 20 or 31;
-***/
-	st = &idcst[ui->ui_type];
+	if (idcwait(idcaddr, 100) == 0)
+		return (EFAULT);
+	/*
+	 * Since we can only transfer one track at a time, and
+	 * the rl02 has 256 byte sectors, all the calculations
+	 * are done in terms of physical sectors (i.e. num and blk
+	 * are in sectors not NBPG blocks.
+	 */
+	st = phys(struct idcst *, &idcst[ui->ui_type]);
 	sizes = phys(struct size *, st->sizes);
-	if (dumplo < 0 || dumplo + num >= sizes[minor(dev)&07].nblocks)
+	if (dumplo < 0 || dumplo + maxfree >= sizes[minor(dev)&07].nblocks)
 		return (EINVAL);
+	nspg = NBPG / st->nbps;
+	num = maxfree * nspg;
+	start = 0;
+
 	while (num > 0) {
 		register struct pte *io;
 		register int i;
-		int cn, sn, tn;
 		daddr_t bn;
 
-		blk = num > dbsize ? dbsize : num;
+		bn = (dumplo + btop(start)) * nspg;
+		dar.dar_cyl = bn / st->nspc + sizes[minor(dev)&07].cyloff;
+		bn %= st->nspc;
+		dar.dar_trk = bn / st->nsect;
+		dar.dar_sect = bn % st->nsect;
+		blk = st->nsect - dar.dar_sect;
+		if (num < blk)
+			blk = num;
+
 		io = uba->uba_map;
-		for (i = 0; i < blk; i++)
+		for (i = 0; i < (blk + nspg - 1) / nspg; i++)
 			*(int *)io++ = (btop(start)+i) | (1<<21) | UBAMR_MRV;
 		*(int *)io = 0;
-		bn = dumplo + btop(start);
-		cn = bn/st->nspc + sizes[minor(dev)&07].cyloff;
-		sn = bn%st->nspc;
-		tn = sn/st->nsect;
-		sn = sn%st->nsect;
-/***
-		idcaddr->idccyl = cn;
-		rp = (short *) &idcaddr->idcda;
-		*rp = (tn << 8) + sn;
-		*--rp = 0;
-		*--rp = -blk*NBPG / sizeof (short);
-		*--rp = idctypes[ui->ui_type]|IDC_GO|IDC_WRITE;
-		(void) idcwait(idcaddr);
-***/
-		if (idcaddr->idccsr & IDC_ERR)
+
+		idcaddr->idccsr = IDC_CRDY | IDC_SEEK | unit<<8;
+		if ((idcaddr->idccsr&IDC_DRDY) == 0)
+			return (EFAULT);
+		idcaddr->idcdar = dar.dar_dar;
+		idcaddr->idccsr = IDC_SEEK | unit << 8;
+		while ((idcaddr->idccsr & (IDC_CRDY|IDC_DRDY))
+			!= (IDC_CRDY|IDC_DRDY))
+			;
+		if (idcaddr->idccsr & IDC_ERR) {
+			printf("rb%d: seek, csr=%b\n",
+				unit, idcaddr->idccsr, IDCCSR_BITS);
 			return (EIO);
-		start += blk*NBPG;
+		}
+
+		idcaddr->idccsr = IDC_CRDY | IDC_WRITE | unit<<8;
+		if ((idcaddr->idccsr&IDC_DRDY) == 0)
+			return (EFAULT);
+		idcaddr->idcbar = 0;			/* start addr 0 */
+		idcaddr->idcbcr = - (blk * st->nbps);
+		idcaddr->idcdar = dar.dar_dar;
+		idcaddr->idccsr = IDC_WRITE | unit << 8;
+		while ((idcaddr->idccsr & (IDC_CRDY|IDC_DRDY))
+			!= (IDC_CRDY|IDC_DRDY))
+			;
+		if (idcaddr->idccsr & IDC_ERR) {
+			printf("rb%d: write, csr=%b\n",
+				unit, idcaddr->idccsr, IDCCSR_BITS);
+			return (EIO);
+		}
+
+		start += blk * st->nbps;
 		num -= blk;
 	}
 	return (0);
-#else
-	return (ENXIO);
-#endif
 }
 #endif
