@@ -1,13 +1,10 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_exit.c	7.4 (Berkeley) %G%
+ *	@(#)kern_exit.c	7.5 (Berkeley) %G%
  */
-
-#include "../machine/reg.h"
-#include "../machine/psl.h"
 
 #include "param.h"
 #include "systm.h"
@@ -21,8 +18,14 @@
 #include "vm.h"
 #include "file.h"
 #include "inode.h"
+#include "tty.h"
 #include "syslog.h"
 #include "malloc.h"
+
+#include "../machine/reg.h"
+#ifdef COMPAT_43
+#include "../machine/psl.h"
+#endif
 
 /*
  * Exit system call: pass back caller's arg
@@ -32,9 +35,12 @@ rexit()
 	register struct a {
 		int	rval;
 	} *uap;
+	union wait status;
 
 	uap = (struct a *)u.u_ap;
-	exit((uap->rval & 0377) << 8);
+	status.w_status = 0;
+	status.w_retcode = uap->rval;
+	exit(status.w_status);
 }
 
 /*
@@ -45,7 +51,7 @@ rexit()
  * and dispose of children.
  */
 exit(rv)
-	int rv;
+	int rv;			/* should be union wait (XXX) */
 {
 	register int i;
 	register struct proc *p, *q, *nq;
@@ -89,6 +95,14 @@ exit(rv)
 			closef(f);
 		}
 	}
+	if (SESS_LEADER(p)) {
+		p->p_session->s_leader = 0;
+		/* TODO: vhangup(); */
+		if (u.u_ttyp) {
+			u.u_ttyp->t_session = 0;
+			u.u_ttyp->t_pgid = 0;
+		}
+	}
 	ilock(u.u_cdir);
 	iput(u.u_cdir);
 	if (u.u_rdir) {
@@ -100,6 +114,14 @@ exit(rv)
 #ifdef QUOTA
 	qclean();
 #endif
+#ifdef KTRACE
+	/* 
+	 * release trace file
+	 */
+	if (p->p_tracep)
+		irele(p->p_tracep);
+#endif
+	/*
 	/*
 	 * Freeing the user structure and kernel stack
 	 * for the current process: have to run a bit longer
@@ -131,7 +153,7 @@ exit(rv)
 	}
 	if (p->p_pid == 1) {
 		if (p->p_dsize == 0) {
-			printf("Can't exec /etc/init (errno %d)\n", rv >> 8);
+			printf("Can't exec init (errno %d)\n", rv >> 8);
 			for (;;)
 				;
 		} else
@@ -143,7 +165,11 @@ done:
 	ruadd(p->p_ru, &u.u_cru);
 	if (p->p_cptr)		/* only need this if any child is S_ZOMB */
 		wakeup((caddr_t)&proc[1]);
+	if (PGRP_JOBC(p))
+		p->p_pgrp->pg_jobc--;
 	for (q = p->p_cptr; q != NULL; q = nq) {
+		if (PGRP_JOBC(q))
+			q->p_pgrp->pg_jobc--;
 		nq = q->p_osptr;
 		if (nq != NULL)
 			nq->p_ysptr = NULL;
@@ -187,22 +213,33 @@ done:
 	swtch();
 }
 
-wait()
+#ifdef COMPAT_43
+owait()
 {
-	struct rusage ru, *rup;
+	struct a {
+		int	pid;
+		union	wait *status;
+		int	options;
+		struct	rusage *rusage;
+	} *uap = (struct a *)u.u_ap;
 
 	if ((u.u_ar0[PS] & PSL_ALLCC) != PSL_ALLCC) {
-		u.u_error = wait1(0, (struct rusage *)0);
-		return;
+		uap->options = WSIGRESTART;
+		uap->rusage = 0;
+	} else {
+		uap->options = u.u_ar0[R0] | WSIGRESTART;
+		uap->rusage = (struct rusage *)u.u_ar0[R1];
 	}
-	rup = (struct rusage *)u.u_ar0[R1];
-	u.u_error = wait1(u.u_ar0[R0], &ru);
-	if (u.u_error)
-		return;
-	if (rup != (struct rusage *)0)
-		u.u_error = copyout((caddr_t)&ru, (caddr_t)rup,
-		    sizeof (struct rusage));
+	uap->pid = WAIT_ANY;
+	uap->status = 0;
+	wait1(1);
 }
+
+wait4()
+{
+	wait1(0);
+}
+#endif
 
 /*
  * Wait system call.
@@ -211,29 +248,59 @@ wait()
  * Look also for stopped (traced) children,
  * and pass back status from them.
  */
-wait1(options, ru)
-	register int options;
-	struct rusage *ru;
+#ifdef COMPAT_43
+wait1(compat)
+	int compat;
+#else
+wait4()
+#endif
 {
+	register struct a {
+		int	pid;
+		union	wait *status;
+		int	options;
+		struct	rusage *rusage;
+	} *uap = (struct a *)u.u_ap;
 	register f;
 	register struct proc *p, *q;
+	union wait status;
 
 	f = 0;
-loop:
 	q = u.u_procp;
+	if (uap->pid == 0)
+		uap->pid = -q->p_pgid;
+	if (uap->options &~ (WUNTRACED|WNOHANG|WSIGRESTART)) {
+		u.u_error = EINVAL;
+		return;
+	}
+loop:
 	for (p = q->p_cptr; p; p = p->p_osptr) {
+		if (uap->pid != WAIT_ANY &&
+		    p->p_pid != uap->pid && p->p_pgid != -uap->pid)
+			continue;
 		f++;
 		if (p->p_stat == SZOMB) {
+			pgrm(p);			/* off pgrp */
 			u.u_r.r_val1 = p->p_pid;
-			u.u_r.r_val2 = p->p_xstat;
-			p->p_xstat = 0;
-			if (ru && p->p_ru)
-				*ru = *p->p_ru;
-			if (p->p_ru) {
-				ruadd(&u.u_cru, p->p_ru);
-				FREE(p->p_ru, M_ZOMBIE);
-				p->p_ru = 0;
+#ifdef COMPAT_43
+			if (compat)
+				u.u_r.r_val2 = p->p_xstat;
+			else
+#endif
+			if (uap->status) {
+				status.w_status = p->p_xstat;
+				if (u.u_error = copyout((caddr_t)&status,
+				    (caddr_t)uap->status, sizeof(status)))
+					return;
 			}
+			p->p_xstat = 0;
+			if (uap->rusage)
+				u.u_error = copyout((caddr_t)p->p_ru,
+				    (caddr_t)uap->rusage,
+				    sizeof (struct rusage));
+			ruadd(&u.u_cru, p->p_ru);
+			FREE(p->p_ru, M_ZOMBIE);
+			p->p_ru = 0;
 			p->p_stat = NULL;
 			p->p_pid = 0;
 			p->p_ppid = 0;
@@ -255,32 +322,47 @@ loop:
 			p->p_sigcatch = 0;
 			p->p_sigignore = 0;
 			p->p_sigmask = 0;
-			p->p_pgrp = 0;
+			/*p->p_pgrp = 0;*/
 			p->p_flag = 0;
 			p->p_wchan = 0;
 			p->p_cursig = 0;
-			return (0);
+			return;
 		}
-		if (p->p_stat == SSTOP && (p->p_flag&SWTED)==0 &&
-		    (p->p_flag&STRC || options&WUNTRACED)) {
+		if (p->p_stat == SSTOP && (p->p_flag & SWTED) == 0 &&
+		    (p->p_flag & STRC || uap->options & WUNTRACED)) {
 			p->p_flag |= SWTED;
 			u.u_r.r_val1 = p->p_pid;
-			u.u_r.r_val2 = (p->p_cursig<<8) | WSTOPPED;
-			return (0);
+#ifdef COMPAT_43
+			if (compat)
+				u.u_r.r_val2 = (p->p_cursig<<8) | WSTOPPED;
+			else
+#endif
+			if (uap->status) {
+				status.w_status = 0;
+				status.w_stopval = WSTOPPED;
+				status.w_stopsig = p->p_cursig;
+				u.u_error = copyout((caddr_t)&status,
+				    (caddr_t)uap->status, sizeof(status));
+			}
+			return;
 		}
 	}
-	if (f == 0)
-		return (ECHILD);
-	if (options&WNOHANG) {
-		u.u_r.r_val1 = 0;
-		return (0);
+	if (f == 0) {
+		u.u_error = ECHILD;
+		return;
 	}
-	if (setjmp(&u.u_qsave)) {
+	if (uap->options & WNOHANG) {
+		u.u_r.r_val1 = 0;
+		return;
+	}
+	if (uap->options & WSIGRESTART && setjmp(&u.u_qsave)) {
 		p = u.u_procp;
-		if ((u.u_sigintr & sigmask(p->p_cursig)) != 0)
-			return(EINTR);
+		if ((u.u_sigintr & sigmask(p->p_cursig)) != 0) {
+			u.u_error = EINTR;
+			return;
+		}
 		u.u_eosys = RESTARTSYS;
-		return (0);
+		return;
 	}
 	sleep((caddr_t)u.u_procp, PWAIT);
 	goto loop;
