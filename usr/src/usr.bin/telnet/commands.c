@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #if	defined(unix)
@@ -1404,6 +1404,8 @@ shell(argc, argv)
     }
     return 1;
 }
+#else	/* !defined(TN3270) */
+extern int shell();
 #endif	/* !defined(TN3270) */
 
     /*VARARGS*/
@@ -2088,7 +2090,9 @@ filestuff(fd)
 	perror("fcntl");
 	return;
     }
+#ifdef notdef
     printf("\tFlags are 0x%x: %s\n", res, decodeflags(res));
+#endif
 }
 #endif /* defined(unix) && defined(TN3270) */
 
