@@ -2,7 +2,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)gettytab	5.3 (Berkeley) %G%
+#	@(#)gettytab	5.4 (Berkeley) %G%
 #
 #
 # Most of the table entries here are just copies of the
@@ -76,6 +76,9 @@ i|Interdata console:\
 
 l|lsi chess terminal:\
 	:sp#300:
+
+X|Xwindow|X window system:\
+	:fd@:nd@:cd@:rw:sp#9600:
 
 #
 # Fast dialup terminals, 1200/300 rotary (can start either way)
