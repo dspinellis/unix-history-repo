@@ -1,7 +1,7 @@
 /*
  * Machine Language Assist for UC Berkeley Virtual Vax/Unix
  *
- *	locore.s		4.14	%G%
+ *	locore.s		4.15	%G%
  */
 
 	.set	HIGH,31		# mask for total disable
@@ -679,26 +679,18 @@ start:
 	movl	$0x78,PHYSUBA+4		# ienable
 #endif
 
-	movl	Scbbase+MCKVEC,r5	# save machine check entry
-	movab	2f+INTSTK,Scbbase+MCKVEC	# set new vector address
 /*
  * Will now see how much memory there really is
  * in 64kb chunks.  Save number of bytes in r7.
  */
-	mtpr	$HIGH-1,$IPL		# allow machine check interrupts
-	clrl	r7
+	clrl	r1
 1:
-	tstl	(r7)			# this chunk really there?
-	acbl	$8096*1024-1,$64*1024,r7,1b	# loop till mach check
-	brb 	2f			# full load of memory
+	jsb	chkadr			# does this addr exist ?
+	beql	1f
+	acbl	$8096*1024-1,$64*1024,r1,1b
 
-	.align	2
-2:
-#if VAX==780
-	mtpr	$0,$SBIFS		# clear sbi fault status
-#endif
-	movl	r5,Scbbase+MCKVEC	# restore machine check vector
-	movl	$_intstack+2048,sp	# reset interrupt stack pointer
+1:
+	movl	r1,r7			# save addr end of mem
 /*
  * calculate size of cmap[] based on available memory, and allocate space for it
  */
@@ -867,6 +859,78 @@ sigcode:
 	rei
 	.word	0x7f
 	callg	(ap),*12(ap)			# registers 0-6 (6==sp/compat)
+	ret
+
+/*
+ * address existence check
+ *
+ *	check address in r1 to see if we can reference it without
+ *	destroying everything (like the whole world)
+ *
+ *	address should be a physical addr if mapping is disabled,
+ *	or a virtual addr otherwise
+ *
+ *	return (in r0) :
+ *		0	if address cannot be referenced at all
+ *		1	if a byte reference succeeds
+ *		2	if a word ref succeeds
+ *		3	both byte and word
+ *		4	if a long ref succeeds
+ *		5,6,7	various other combinations
+ *
+ *		plus, to make life easy for assembly code hackers,
+ *		set the CC to reflect r0
+ *
+ *	destroys r4 & r5, r1 unaltered
+ */
+
+chkadr:
+	mfpr	$IPL,r4
+	mtpr	$HIGH-1,$IPL		# permit mch chk ints only
+					# (the -1 is a hangover, a mch chk
+					# intr will happen anyway)
+	movl	Scbbase+MCKVEC,r5	# save mch chk intr vec
+	movab	9f+INTSTK,Scbbase+MCKVEC # and replace it with something useful
+
+	clrl	r0			# assume no legal references
+
+	pushab	1f			# return addr in case of mch chk
+	tstl	(r1)			# can we ref this as a long ?
+	addl2	$4,r0			# yes - set flag
+1:
+	tstl	(sp)+			# pop retn addr
+
+	pushab	1f
+	tstw	(r1)			# same for word ref
+	addl2	$2,r0
+1:
+	tstl	(sp)+
+
+	pushab	1f
+	tstb	(r1)			# and for byte ref
+	incl	r0
+1:
+	tstl	(sp)+
+
+	movl	r5,Scbbase+MCKVEC	# restore mch chk intr vec
+	mtpr	r4,$IPL			# and intr prio
+	tstl	r0			# just for assembly hackers
+	rsb
+
+	.align	2
+9:					# machine checks come here
+#if VAX==780
+	mtpr	$0,$SBIFS
+#endif
+	addl2	(sp)+,sp		# discard mch check trash
+	movl	8(sp),(sp)		# return to place requested
+	rei
+
+	.globl	_chkadr
+_chkadr:				# C entry to above
+	.word	0
+	movl	4(ap),r1
+	jsb	chkadr
 	ret
 
 /*
