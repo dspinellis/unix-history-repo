@@ -72,16 +72,17 @@ int		num_lines, num_cols, begy, begx; {
 	fprintf(outf, "SUBWIN(%0.2o, %d, %d, %d, %d)\n", orig, nl, nc, by, bx);
 # endif
 	if (by < orig->_begy || bx < orig->_begx
-	    || by + nl > orig->_maxy || bx + nc > orig->_maxx)
+	    || by + nl > orig->_maxy + orig->_begy
+	    || bx + nc > orig->_maxx + orig->_begx)
 		return ERR;
 	if (nl == 0)
-		nl = orig->_maxy - orig->_begy - by;
+		nl = orig->_maxy + orig->_begy - by;
 	if (nc == 0)
-		nc = orig->_maxx - orig->_begx - bx;
+		nc = orig->_maxx + orig->_begx - bx;
 	if ((win = makenew(nl, nc, by, bx)) == NULL)
 		return ERR;
-	j = orig->_begy + by;
-	k = orig->_begx + bx;
+	j = by - orig->_begy;
+	k = bx - orig->_begx;
 	for (i = 0; i < nl; i++)
 		win->_y[i] = &orig->_y[j++][k];
 	win->_flags = _SUBWIN;
@@ -136,6 +137,7 @@ int	num_lines, num_cols, begy, begx; {
 	win->_maxx = nc;
 	win->_begy = by;
 	win->_begx = bx;
+	win->_flags = 0;
 	win->_scroll = win->_leave = FALSE;
 	for (i = 0; i < nl; i++)
 		win->_firstch[i] = win->_lastch[i] = _NOCHANGE;
