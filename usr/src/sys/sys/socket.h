@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982 Regents of the University of California.
+ * Copyright (c) 1982,1985 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)socket.h	6.10 (Berkeley) %G%
+ *	@(#)socket.h	6.11 (Berkeley) %G%
  */
 
 /*
@@ -76,8 +76,9 @@ struct	linger {
 #define AF_DLI		13		/* Direct data link interface */
 #define AF_LAT		14		/* LAT */
 #define	AF_HYLINK	15		/* NSC Hyperchannel */
+#define	AF_APPLETALK	16		/* Apple Talk */
 
-#define	AF_MAX		16
+#define	AF_MAX		17
 
 /*
  * Structure used by kernel to store most
@@ -116,6 +117,7 @@ struct sockproto {
 #define PF_DLI		AF_DLI
 #define PF_LAT		AF_LAT
 #define	PF_HYLINK	AF_HYLINK
+#define	PF_APPLETALK	AF_APPLETALK
 
 #define	PF_MAX		AF_MAX
 
