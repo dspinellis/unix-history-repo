@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.24 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.25 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.24 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.25 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -276,7 +276,7 @@ smtp(e)
 
 			/* must parse sender first */
 			delimptr = NULL;
-			setsender(p, e, &delimptr);
+			setsender(p, e, &delimptr, FALSE);
 			p = delimptr;
 			if (p != NULL && *p != '\0')
 				*p++ = '\0';

@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.29 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.30 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.29 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.30 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -70,20 +70,9 @@ queueup(df)
 	register char *p;
 	MAILER nullmailer;
 	ADDRESS *lastctladdr;
-	static ADDRESS *nullctladdr = NULL;
 	char buf[MAXLINE], tf[MAXLINE];
 	extern char *macvalue();
 	extern ADDRESS *getctladdr();
-
-	/*
-	**  If we don't have nullctladdr, create one
-	*/
-
-	if (nullctladdr == NULL)
-	{
-		nullctladdr = (ADDRESS *) xalloc(sizeof *nullctladdr);
-		bzero((char *) nullctladdr, sizeof nullctladdr);
-	}
 
 	/*
 	**  Create control file.
@@ -162,8 +151,6 @@ queueup(df)
 			ADDRESS *ctladdr;
 
 			ctladdr = getctladdr(q);
-			if (ctladdr == NULL && q->q_alias != NULL)
-				ctladdr = nullctladdr;
 			if (ctladdr != lastctladdr)
 			{
 				printctladdr(ctladdr, tfp);
@@ -182,8 +169,6 @@ queueup(df)
 			ADDRESS *ctladdr;
 
 			ctladdr = getctladdr(q);
-			if (ctladdr == NULL && q->q_alias != NULL)
-				ctladdr = nullctladdr;
 			if (ctladdr != lastctladdr)
 			{
 				printctladdr(ctladdr, tfp);
@@ -839,7 +824,7 @@ readqf(e)
 		  case 'S':		/* sender */
 			if (Verbose)
 				message(Arpa_Info, "Sender: %s", &buf[1]);
-			setsender(newstr(&bp[1]), e, NULL);
+			setsender(newstr(&bp[1]), e, NULL, TRUE);
 			break;
 
 		  case 'D':		/* data file name */
@@ -1217,7 +1202,7 @@ setctluser(user)
 	*/
 
 	if (user == NULL || *user == '\0')
-		return NULL;
+		user = DefUser;
 
 	/*
 	**  Set up addr fields for controlling user.

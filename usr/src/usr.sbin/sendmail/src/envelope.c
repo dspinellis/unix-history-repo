@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -403,19 +403,21 @@ closexscript(e)
 **		e -- the envelope in which we would like the sender set.
 **		delimptr -- if non-NULL, set to the location of the
 **			trailing delimiter.
+**		internal -- set if this address is coming from an internal
+**			source such as an owner alias.
 **
 **	Returns:
-**		pointer to the delimiter terminating the from address.
+**		none.
 **
 **	Side Effects:
 **		sets sendmail's notion of who the from person is.
 */
 
-char *
-setsender(from, e, delimptr)
+setsender(from, e, delimptr, internal)
 	char *from;
 	register ENVELOPE *e;
 	char **delimptr;
+	bool internal;
 {
 	register char **pvp;
 	char *realname = NULL;
@@ -475,24 +477,27 @@ setsender(from, e, delimptr)
 		extern char *udbsender();
 # endif
 
-		/* if the user has given fullname already, don't redefine */
-		if (FullName == NULL)
-			FullName = macvalue('x', e);
-		if (FullName != NULL && FullName[0] == '\0')
-			FullName = NULL;
+		if (!internal)
+		{
+			/* if the user has given fullname already, don't redefine */
+			if (FullName == NULL)
+				FullName = macvalue('x', e);
+			if (FullName != NULL && FullName[0] == '\0')
+				FullName = NULL;
 
 # ifdef USERDB
-		p = udbsender(from);
+			p = udbsender(from);
 
-		if (p != NULL)
-		{
-			/*
-			**  We have an alternate address for the sender
-			*/
+			if (p != NULL)
+			{
+				/*
+				**  We have an alternate address for the sender
+				*/
 
-			pvp = prescan(p, '\0', pvpbuf, NULL);
-		}
+				pvp = prescan(p, '\0', pvpbuf, NULL);
+			}
 # endif /* USERDB */
+		}
 
 		if ((pw = getpwnam(e->e_from.q_user)) != NULL)
 		{
@@ -511,17 +516,18 @@ setsender(from, e, delimptr)
 
 			/* extract full name from passwd file */
 			if (FullName == NULL && pw->pw_gecos != NULL &&
-			    strcmp(pw->pw_name, e->e_from.q_user) == 0)
+			    strcmp(pw->pw_name, e->e_from.q_user) == 0 &&
+			    !internal)
 			{
 				buildfname(pw->pw_gecos, e->e_from.q_user, buf);
 				if (buf[0] != '\0')
 					FullName = newstr(buf);
 			}
 		}
-		if (FullName != NULL)
+		if (FullName != NULL && !internal)
 			define('x', FullName, e);
 	}
-	else
+	else if (!internal)
 	{
 		if (e->e_from.q_home == NULL)
 			e->e_from.q_home = getenv("HOME");
@@ -548,8 +554,9 @@ setsender(from, e, delimptr)
 	rewrite(pvp, 3);
 	rewrite(pvp, 1);
 	rewrite(pvp, 4);
-
-	define('f', e->e_from.q_paddr, e);
+	cataddr(pvp, buf, sizeof buf, '\0');
+	e->e_sender = newstr(buf);
+	define('f', e->e_sender, e);
 
 	/* save the domain spec if this mailer wants it */
 	if (bitnset(M_CANONICAL, CurEnv->e_from.q_mailer->m_flags))
