@@ -1,4 +1,4 @@
-.\"     @(#)Infoletter	1.9 (Berkeley) %G%
+.\"     @(#)Infoletter	1.10 (Berkeley) %G%
 .\" use -ms
 .nr PS 10
 .ps 10
@@ -16,7 +16,7 @@ June 28, 1991
 .LP
 Dear Colleague:
 .PP
-We are happy to send you information about our April,
+We are happy to send you information about our June,
 1991 update to our 1988 networking release.
 This software is copyrighted by the University of California
 and others, but may be freely redistributed.
@@ -31,7 +31,7 @@ as well as new material that has been written or contributed
 since the Reno release.
 Although many portions of this release have been written or integrated
 only recently, and thus have not been well tested, we have received
-numerous requests for portions of the system.
+numerous requests for these portions of the system.
 Therefore, we are providing this release as an experimental test release
 for interested developers.
 The distribution includes both software developed at Berkeley
@@ -135,7 +135,7 @@ Therefore, you should not depend on applications ported to this release
 working unchanged on 4.4BSD.
 We appreciate your help in this debugging effort and look
 forward to hearing from you.
-Please send your comments to reno43-bugs@vangogh.Berkeley.EDU.
+Please send your comments to net2-bugs@vangogh.Berkeley.EDU.
 .PP
 The code in this distribution may be redistributed and used
 in released products.
@@ -171,18 +171,18 @@ and miscellaneous other utilities.
 .PP
 A new virtual filesystem interface has been added to the
 kernel to support multiple filesystems.
-Although generally similar to Sun Microsystems' (SMI) vnode interface,
+Although generally similar to Sun Microsystems' vnode interface,
 the Berkeley interface has been structured for more efficient support
 of filesystems that maintain state (such as the local filesystem).
 In addition to the local ``fast filesystem'' (UFS),
 we have added an implementation of the network filesystem (NFS)
 from the University of Guelph
-that fully interoperates with the NFS shipped by SMI and
+that fully interoperates with the NFS shipped by Sun and
 its licensees.
 Because this NFS implementation was done using only the
 publicly available NFS specification,
-it does not require a license from SMI for use in source or binary form.
-It runs over UDP to be compatible with SMI implementation by default,
+it does not require a license from Sun for use in source or binary form.
+It runs over UDP to be compatible with Sun implementation by default,
 however, it can be configured on a per-mount basis to run over TCP.
 Using TCP allows it to be used quickly and efficiently through
 gateways and over long-haul networks.
@@ -205,7 +205,7 @@ The MACH virtual memory system call interface has been replaced with the
 Architecture Manual'' (see UNIX Programmer's Manual, 
 Supplementary Documents, PS1:6).
 The interface is similar to the interfaces shipped
-by several commercial vendors such as SMI, Convex Computer Corp.
+by several commercial vendors such as Sun, Convex Computer Corp.
 and AT&T.
 The integration of the new virtual memory is functionally complete,
 but still has serious performance problems under heavy memory load.
@@ -304,7 +304,7 @@ which is used by the ps(1) program.
 Many data structures that were previously statically allocated
 are now allocated dynamically.
 These structures include process structure entries,
-user file tables, the mount table,
+user and system file tables, the mount table,
 the vnode table, the name cache, and the quota structures.
 .SH
 How to obtain this software
@@ -316,7 +316,7 @@ of this release from other sites.
 .LP
 Before the distribution can be sent, we require:
 .IP \(bu
-Execution of the included Berkeley License Agreement.
+Execution of the included Berkeley License Agreement with Exhibit A.
 .IP \(bu
 A check from a U.S. bank for $850.00 US for a single 6250 BPI 9-track tape
 or 8mm Exabyte tape,
@@ -330,8 +330,8 @@ The Berkeley License Agreement governs.''
 (We are a research and development organization and not a commercial
 organization; this fee covers only our distribution costs.)
 .IP \(bu
-The attached Site Information Form and
-Checklist completely filled out and dated.
+The attached Site Information Form
+completely filled out.
 Your copy of the signed Berkeley License Agreement will be sent to the
 person listed as the administrative contact.
 The distribution itself will be sent to the technical contact.
@@ -359,7 +359,7 @@ by commercial carrier.
 Order of shipment will be based on time of arrival of the properly
 completed paperwork.
 Because of the differential in costs of shipping outside the United States,
-we ask that organizations beyond the North American continent pay
+we ask that organizations outside the continental United States pay
 the collect shipping charges.
 .PP
 The most expedient way to insure that your full distribution is sent as
@@ -367,7 +367,7 @@ quickly as possible is to include, in a single package, two copies of the
 completed and properly signed Berkeley License Agreement (\fBwithout
 modification\fR), the check properly made out to ``The Regents of the
 University of California,'' and a completely filled out Site Information
-Form and Checklist, and to send this single package to 
+Form, and to send this single package to 
 the address noted above.
 .PP
 Please note that if you modify the Berkeley License Agreement, you may
@@ -385,9 +385,8 @@ the following items to the Computer Systems Research Group:\fR
 1) a letter signed by the Director or Head of Department requesting
 this distribution and stating that you have read and understood the Berkeley
 License Agreement and that your organization will abide by it, 2)
-an IOC for $495.00 for a single 6250 BPI tape or $545.00 for
-two 1600 BPI tapes, and 3) a Site Information Form and Checklist for
-Hardware/Software.
+an IOC for $850.00 for a single 6250 BPI tape or 8mm Exabyte tape
+or $950.00 for two 1600 BPI tapes, and 3) a Site Information Form.
 .SH
 A Special Note 
 .PP
