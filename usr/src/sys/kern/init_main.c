@@ -26,7 +26,7 @@
 #include "../machine/reg.h"
 #include "../machine/cpu.h"
 
-extern	struct user u;		/* have to declare it somewhere! */
+int	cmask = CMASK;
 /*
  * Initialization code.
  * Called from cold start routine as
@@ -77,7 +77,7 @@ main(firstaddr)
 	u.u_nd.ni_iov = &u.u_nd.ni_iovec;
 #endif
 	u.u_nd.ni_iovcnt = 1;
-	u.u_cmask = CMASK;
+	u.u_cmask = cmask;
 	for (i = 1; i < NGROUPS; i++)
 		u.u_groups[i] = NOGROUP;
 	for (i = 0; i < sizeof(u.u_rlimit)/sizeof(u.u_rlimit[0]); i++)
@@ -157,33 +157,10 @@ main(firstaddr)
 	setupclock();
 
 	/*
-	 * make page-out daemon (process 2)
-	 * the daemon has ctopt(nswbuf*CLSIZE*KLMAX) pages of page
-	 * table so that it can map dirty pages into
-	 * its address space during asychronous pushes.
-	 */
-	mpid = 1;
-	proc[0].p_szpt = clrnd(ctopt(nswbuf*CLSIZE*KLMAX + UPAGES));
-	proc[1].p_stat = SZOMB;		/* force it to be in proc slot 2 */
-	p = freeproc;
-	freeproc = p->p_nxt;
-	if (newproc(0)) {
-		proc[2].p_flag |= SLOAD|SSYS;
-		proc[2].p_dsize = u.u_dsize = nswbuf*CLSIZE*KLMAX; 
-		pageout();
-		/*NOTREACHED*/
-	}
-
-	/*
-	 * make init process and
-	 * enter scheduling loop
+	 * make init process
 	 */
 
-	mpid = 0;
-	proc[1].p_stat = 0;
 	proc[0].p_szpt = CLSIZE;
-	p->p_nxt = freeproc;
-	freeproc = p;
 	if (newproc(0)) {
 		expand(clrnd((int)btoc(szicode)), 0);
 		(void) swpexpand(u.u_dsize, 0, &u.u_dmap, &u.u_smap);
@@ -194,6 +171,23 @@ main(firstaddr)
 		 */
 		return;
 	}
+	/*
+	 * make page-out daemon (process 2)
+	 * the daemon has ctopt(nswbuf*CLSIZE*KLMAX) pages of page
+	 * table so that it can map dirty pages into
+	 * its address space during asychronous pushes.
+	 */
+	proc[0].p_szpt = clrnd(ctopt(nswbuf*CLSIZE*KLMAX + UPAGES));
+	if (newproc(0)) {
+		proc[2].p_flag |= SLOAD|SSYS;
+		proc[2].p_dsize = u.u_dsize = nswbuf*CLSIZE*KLMAX; 
+		pageout();
+		/*NOTREACHED*/
+	}
+
+	/*
+	 * enter scheduling loop
+	 */
 	proc[0].p_szpt = 1;
 	sched();
 }
