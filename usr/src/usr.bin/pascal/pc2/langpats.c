@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)langpats.c 1.7 %G%";
+static char sccsid[] = "@(#)langpats.c 1.8 %G%";
 
 #include <stdio.h>
 #include <ctype.h>
@@ -82,10 +82,10 @@ struct pats {
 	locc	r4,r5,(r1)\n\
 2:\n" },
 
-	{ "1,_ROUND\n",
+	{ "2,_ROUND\n",
 "	cvtrdl	(sp)+,r0\n" },
 
-	{ "1,_TRUNC\n",
+	{ "2,_TRUNC\n",
 "	cvtdl	(sp)+,r0\n" },
 
 	{ "1,_FCALL\n",
