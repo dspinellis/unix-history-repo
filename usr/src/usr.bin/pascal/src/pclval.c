@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)pclval.c 1.7 %G%";
+static	char sccsid[] = "@(#)pclval.c 1.8 %G%";
 #endif
 
 #include "whoami.h"
@@ -40,10 +40,11 @@ pclvalue( var , modflag , required )
 	struct tnode		l_node, tr;
 	VAR_NODE		*v_node;
 	LIST_NODE		*tr_ptr;
-	struct nl		*firstp;
+	struct nl		*firstp, *lastp;
 	char			*firstsymbol;
 	char			firstextra_flags;
 	int			firstbn;
+	int			s;
 
 	if ( var == TR_NIL ) {
 		return NLNIL;
@@ -110,8 +111,13 @@ pclvalue( var , modflag , required )
 			o = 0;
 			break;
 		case VAR:
-			f = 1;		/* no lv on stack yet */
-			o = p -> value[0];
+			if (p->type->class != CRANGE) {
+				f = 1;		/* no lv on stack yet */
+				o = p -> value[0];
+			} else {
+				error("Conformant array bound %s found where variable required", p->symbol);
+				return(NIL);
+			}
 			break;
 		default:
 			error("%s %s found where variable required", classes[p -> class], p -> symbol);
@@ -127,11 +133,13 @@ pclvalue( var , modflag , required )
 		error("Can't modify the for variable %s in the range of the loop", p -> symbol);
 		return (NLNIL);
 	}
+	s = 0;
 	for ( ; c != TR_NIL ; c = c->list_node.next ) {
 		co = c->list_node.list;
 		if ( co == TR_NIL ) {
 			return NLNIL;
 		}
+		lastp = p;
 		p = p -> type;
 		if ( p == NLNIL ) {
 			return NLNIL;
@@ -194,7 +202,12 @@ pclvalue( var , modflag , required )
 					    putop( P2PLUS , P2INT );
 					}
 				}
-				(void) arycod( p , co->ary_node.expr_list );
+				s = arycod( p , co->ary_node.expr_list, s);
+				if (s == p->value[0]) {
+					s = 0;
+				} else {
+					p = lastp;
+				}
 				f = o = 0;
 				continue;
 			case T_FIELD:
@@ -247,6 +260,7 @@ nilfnil( p , c , modflag , firstp , r2 )
 	struct tnode 	*co;
 	struct nl	*lastp;
 	int		t;
+	static int	s = 0;
 
 	if ( c == TR_NIL ) {
 	    return TRUE;
@@ -289,13 +303,18 @@ nilfnil( p , c , modflag , firstp , r2 )
 			    goto bad;
 		    }
 		    codeoff();
-		    t = arycod( p , co->ary_node.expr_list );
+		    s = arycod( p , co->ary_node.expr_list , s );
 		    codeon();
-		    switch ( t ) {
+		    switch ( s ) {
 			    case 0:
 				    return FALSE;
 			    case -1:
 				    goto bad;
+		    }
+		    if (s == p->value[0]) {
+			    s = 0;
+		    } else {
+			    p = lastp;
 		    }
 		    break;
 	    case T_FIELD:

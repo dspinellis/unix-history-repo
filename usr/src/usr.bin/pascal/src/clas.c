@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static	char sccsid[] = "@(#)clas.c 1.9 %G%";
+static	char sccsid[] = "@(#)clas.c 1.8 %G%";
 #endif
 
 #include "whoami.h"
@@ -71,6 +71,7 @@ swit:
 			return (TSTR);
 		case SET:
 			return (TSET);
+		case CRANGE:
 		case RANGE:
 			p = p->type;
 			goto swit;
@@ -119,7 +120,7 @@ scalar(p1)
 	p = p1;
 	if (p == NLNIL)
 		return (NLNIL);
-	if (p->class == RANGE)
+	if (p->class == RANGE || p->class == CRANGE)
 		p = p->type;
 	if (p == NLNIL)
 		return (NLNIL);
@@ -148,8 +149,9 @@ isa(p, s)
 	 * map ranges down to
 	 * the base type
 	 */
-	if (p->class == RANGE)
+	if (p->class == RANGE) {
 		p = p->type;
+	}
 	/*
 	 * the following character/class
 	 * associations are made:
@@ -167,6 +169,19 @@ isa(p, s)
 			break;
 		case SCAL:
 			i = 0;
+			break;
+		case CRANGE:
+			/*
+			 * find the base type of a conformant array range
+			 */
+			switch (classify(p->type)) {
+				case TBOOL: i = 1; break;
+				case TCHAR: i = 2; break;
+				case TINT: i = 3; break;
+				case TSCAL: i = 0; break;
+				default:
+					panic( "isa" );
+			}
 			break;
 		default:
 			i = p - nl;

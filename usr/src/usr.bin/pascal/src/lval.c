@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lval.c 1.11 %G%";
+static char sccsid[] = "@(#)lval.c 1.12 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -28,7 +28,7 @@ lvalue(r, modflag , required )
 	register struct nl *p;
 	struct nl *firstp, *lastp;
 	register *c, *co;
-	int f, o;
+	int f, o, s;
 	/*
 	 * Note that the local optimizations
 	 * done here for offsets would more
@@ -103,8 +103,13 @@ lvalue(r, modflag , required )
 			o = 0;
 			break;
 		case VAR:
-			f = 1;		/* no lv on stack yet */
-			o = p->value[0];
+			if (p->type->class != CRANGE) {
+			    f = 1;		/* no lv on stack yet */
+			    o = p->value[0];
+			} else {
+			    error("Conformant array bound %s found where variable required", p->symbol);
+			    return(NLNIL);
+			}
 			break;
 		default:
 			error("%s %s found where variable required", classes[p->class], p->symbol);
@@ -118,6 +123,7 @@ lvalue(r, modflag , required )
 		error("Can't modify the for variable %s in the range of the loop", p->symbol);
 		return (NIL);
 	}
+	s = 0;		/* subscripts seen */
 	for (; c != NIL; c = c[2]) {
 		co = c[1];
 		if (co == NIL) {
@@ -127,6 +133,14 @@ lvalue(r, modflag , required )
 		p = p->type;
 		if (p == NIL) {
 			return (NIL);
+		}
+		/*
+		 * If we haven't seen enough subscripts, and the next
+		 * qualification isn't array reference, then it's an error.
+		 */
+		if (s && co->tag != T_ARY) {
+			error("Too few subscripts (%d given, %d required)",
+				s, p->value[0]);
 		}
 		switch (co[0]) {
 			case T_PTR:
@@ -213,6 +227,11 @@ lvalue(r, modflag , required )
 					case -1:
 						goto bad;
 				}
+				if (s == p->value[0]) {
+					s = 0;
+				} else {
+					p = lastp;
+				}
 				f = o = 0;
 				continue;
 			case T_FIELD:
@@ -251,6 +270,10 @@ lvalue(r, modflag , required )
 			default:
 				panic("lval2");
 		}
+	}
+	if (s) {
+		error("Too few subscripts (%d given, %d required)",
+			s, p->type->value[0]);
 	}
 	if (f) {
 		if (bn == 0)
@@ -303,6 +326,9 @@ lptr(c)
  * Arycod does the
  * code generation
  * for subscripting.
+ * n is the number of
+ * subscripts already seen
+ * (CLN 09/13/83)
  */
 arycod(np, el)
 	struct nl *np;
@@ -319,13 +345,16 @@ arycod(np, el)
 		return (0);
 	}
 	d = p->value[0];
+	for (i = 1; i <= n; i++) {
+		p = p->chain;
+	}
 	/*
 	 * Check each subscript
 	 */
-	for (i = 1; i <= d; i++) {
+	for (i = n+1; i <= d; i++) {
 		if (el == NIL) {
 			error("Too few subscripts (%d given, %d required)", i-1, d);
-			return (-1);
+			return (i-1);
 		}
 		p = p->chain;
 		if (constsub = constval(el[1])) {
@@ -356,7 +385,11 @@ arycod(np, el)
 			}
 			return (-1);
 		}
-		w = aryconst(np, i);
+		if (p->class == CRANGE) {
+			constsub = 0;
+		} else {
+			w = aryconst(np, i);
+		}
 #		ifdef OBJ
 		    if (constsub) {
 			sub *= w;
@@ -368,7 +401,11 @@ arycod(np, el)
 			el = el[2];
 			continue;
 		    }
-		    if (opt('t') == 0) {
+		    if (p->class == CRANGE) {
+			putcbnds(p, 0);
+			putcbnds(p, 1);
+			putcbnds(p, 2);
+		    } else if (opt('t') == 0) {
 			    switch (w) {
 			    case 8:
 				    w = 6;
@@ -381,7 +418,16 @@ arycod(np, el)
 			    }
 		    }
 		    put(4, width(ap) != 4 ? O_INX2 : O_INX4, w,
-			(short)p->range[0], (short)(p->range[1]));
+		    if (p->class == CRANGE) {
+			if (width(p) == 4) {
+			    put(1, width(ap) != 4 ? O_VINX42 : O_VINX4);
+			} else {
+			    put(1, width(ap) != 4 ? O_VINX2 : O_VINX24);
+			}
+		    } else {
+			put(4, width(ap) != 4 ? O_INX2 : O_INX4, w,
+			    (short)p->range[0], (short)(p->range[1]));
+		    }
 		    el = el[2];
 		    continue;
 #		endif OBJ
@@ -398,16 +444,23 @@ arycod(np, el)
 			el = el[2];
 			continue;
 		    }
-		    if ( p -> range[ 0 ] != 0 ) {
-			putleaf( P2ICON , p -> range[0] , 0 , P2INT , 0 );
-			putop( P2MINUS , P2INT );
-		    }
+		    if (p->class == CRANGE) {
 			/*
-			 *	multiply by the width of the elements
+			 *	if conformant array, subtract off lower bound
 			 */
-		    if ( w != 1 ) {
-			putleaf( P2ICON , w , 0 , P2INT , 0 );
 			putop( P2MUL , P2INT );
+		    } else {
+			if ( p -> range[ 0 ] != 0 ) {
+			    putleaf( P2ICON , (int) p -> range[0] , 0 , P2INT , (char *) 0 );
+			    putop( P2MINUS , P2INT );
+			}
+			    /*
+			     *	multiply by the width of the elements
+			     */
+			if ( w != 1 ) {
+			    putleaf( P2ICON , w , 0 , P2INT , (char *) 0 );
+			    putop( P2MUL , P2INT );
+			}
 		    }
 			/*
 			 *	and add it to the base address
@@ -423,6 +476,37 @@ arycod(np, el)
 		} while (el != NIL);
 		error("Too many subscripts (%d given, %d required)", i-1, d);
 		return (-1);
+	    } else {
+		return(arycod(np->type, el, d));
+	    }
 	}
-	return (1);
+	return (d);
 }
+
+#ifdef OBJ
+/*
+ * Put out the conformant array bounds (lower bound, upper bound or width)
+ * for conformant array type ctype.
+ * The value of i determines which is being put
+ * i = 0: lower bound, i=1: upper bound, i=2: width
+ */
+putcbnds(ctype, i)
+struct nl *ctype;
+int i;
+{
+	switch(width(ctype->type)) {
+	    case 1:
+		put(2, O_RV1 | (ctype->nl_block & 037) << 8+INDX,
+			(int)ctype->nptr[i]->value[0]);
+		break;
+	    case 2:
+		put(2, O_RV2 | (ctype->nl_block & 037) << 8+INDX,
+			(int)ctype->nptr[i]->value[0]);
+		break;
+	    case 4:
+	    default:
+		put(2, O_RV4 | (ctype->nl_block & 037) << 8+INDX,
+			(int)ctype->nptr[i]->value[0]);
+	}
+}
+#endif OBJ

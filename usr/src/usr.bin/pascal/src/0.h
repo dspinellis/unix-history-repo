@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.22 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.23 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -248,6 +248,7 @@ struct	nl {
 		int	   un_value[5];
 		long	   un_range[2];
 		double	   un_real;
+		struct nl  *un_nptr[5];	/* Points to conformant array bounds */
 	} nl_un;
 #	ifdef PTREE
 	    pPointer	inTree;
@@ -264,6 +265,7 @@ struct	nl {
 #define value	nl_un.un_value
 #define ptr	nl_un.un_ptr
 #define real	nl_un.un_real
+#define nptr	nl_un.un_nptr	
 
 extern struct nl *nlp, *disptab[077+1], *Fp;
 extern struct nl nl[INL];
@@ -397,6 +399,7 @@ extern struct nl nl[INL];
 #define	VARNT	22
 #define	FPROC	23
 #define	FFUNC	24
+#define CRANGE	25
 
 /*
  * Clnames points to an array of names for the

@@ -1,7 +1,7 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)var.c 1.18 %G%";
+static char sccsid[] = "@(#)var.c 1.19 %G%";
 #endif
 
 #include "whoami.h"
@@ -244,6 +244,9 @@ loop:
 			return ( sizeof ( int * ) );
 		case FILET:
 			return ( sizeof(struct iorec) + lwidth( p -> type ) );
+		case CRANGE:
+			p = p->type;
+			goto loop;
 		case RANGE:
 			if (p->type == nl+TDOUBLE)
 #ifdef DEBUG
@@ -330,6 +333,7 @@ alignit:
 		    return A_POINT;
 	    case FILET:
 		    return A_FILET;
+	    case CRANGE:
 	    case RANGE:
 		    if ( p -> type == nl+TDOUBLE ) {
 			return A_DOUBLE;
@@ -411,6 +415,12 @@ long aryconst(np, n)
 		return (NIL);
 	if (p->class != ARRAY)
 		panic("ary");
+	/*
+	 * If it is a conformant array, we cannot find the width from
+	 * the type.
+	 */
+	if (p->chain->class == CRANGE)
+		return (NIL);
 	s = lwidth(p->type);
 	/*
 	 * Arrays of anything but characters are word aligned.

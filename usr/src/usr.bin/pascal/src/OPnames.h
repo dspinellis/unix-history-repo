@@ -1,4 +1,4 @@
-/* static	char sccsid[] = "@(#)OPnames.h 1.7 %G%"; */
+/* static	char sccsid[] = "@(#)OPnames.h 1.8 %G%"; */
 
 #ifndef PC
 char	*otext[] = {
@@ -33,7 +33,7 @@ char	*otext[] = {
 	" AND",
 	" OR",
 	" NOT",
-	0,
+	" VAS",
 	" AS2",
 	" AS4",
 	" AS24",
@@ -150,10 +150,10 @@ char	*otext[] = {
 	" LLIMIT",
 	" BUFF",
 	" HALT",
-	0,
-	0,
-	0,
-	0,
+	" VINX2",
+	" VINX24",
+	" VINX42",
+	" VINX4",
 	"*ORD2",
 	"*CONG",
 	"*CONC",

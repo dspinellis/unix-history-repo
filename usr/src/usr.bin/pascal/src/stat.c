@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)stat.c 1.13 %G%";
+static char sccsid[] = "@(#)stat.c 1.14 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -360,6 +360,35 @@ asgnop1(r, p)
 		w = width(p);
 #	    endif OBJ
 #	    ifdef PC
+		/* check for conformant array type */
+		codeoff();
+		p = rvalue(r->lhs_var, MOD|ASGN|NOUSE, LREQ);
+		codeon();
+		if ((classify(p) == TARY || classify(p) == TSTR)
+		    && p->chain->class == CRANGE) {
+		    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR)
+			    , "_blkcpy" );
+		    /* find total size */
+		    /* upper bound */
+		    p1 = p->chain->nptr[1];
+		    putRV(p1->symbol, (p1->nl_block & 037), p1->value[0],
+			p1->extra_flags, p2type( p1 ) );
+		    /* minus lower bound */
+		    p1 = p->chain->nptr[0];
+		    putRV(p1->symbol, (p1->nl_block & 037), p1->value[0],
+			p1->extra_flags, p2type( p1 ) );
+		    putop( P2MINUS, P2INT );
+		    /* add one */
+		    putleaf(P2ICON, 1, 0, P2INT, 0);
+		    putop( P2PLUS, P2INT );
+		    /* and multiply by the width */
+		    p1 = p->chain->nptr[2];
+		    putRV(p1->symbol, (p1->nl_block & 037), p1->value[0],
+			p1->extra_flags, p2type( p1 ) );
+		    putop( P2MUL , P2INT );
+		    p = lvalue( r->lhs_var , MOD|ASGN|NOUSE , RREQ );
+		    putop(P2LISTOP, P2INT);
+		} else {
 		    /*
 		     * since the second pass knows that it should reference
 		     * the lefthandside of asignments, what i need here is
@@ -426,6 +455,23 @@ asgnop1(r, p)
 		    case TPTR:
 			    gen(O_AS2, O_AS2, w, width(p1));
 			    break;
+		    case TARY:
+		    case TSTR:
+			    if (p->chain->class == CRANGE) {
+				/* conformant array assignment */
+				p1 = p->chain;
+				w = width(p1->type);
+				putcbnds(p1, 1);
+				putcbnds(p1, 0);
+				gen(NIL, T_SUB, w, w);
+				put(2, w > 2? O_CON24: O_CON2, 1);
+				gen(NIL, T_ADD, w, w);
+				putcbnds(p1, 2);
+				gen(NIL, T_MULT, w, w);
+				put(1, O_VAS);
+				break;
+			    }
+			    /* else fall through */
 		    default:
 			    put(2, O_AS, w);
 			    break;
@@ -451,6 +497,18 @@ asgnop1(r, p)
 			    putop( P2ASSIGN , p2type( p ) );
 			    putdot( filename , line );
 			    break;
+		    case TARY:
+		    case TSTR:
+			    /* handle conformant array assignment with
+			     * library call.
+			     */
+			    if (p->chain->class == CRANGE) {
+				putop(P2LISTOP, P2INT);
+				putop(P2CALL, P2INT);
+				putdot( filename , line);
+				break;
+			    }
+			    /* else fall through */
 		    default:
 			    putstrop(P2STASG, ADDTYPE(p2type(p), P2PTR),
 					lwidth(p), align(p));
