@@ -1,4 +1,4 @@
-/*	vp.c	4.15	82/07/15	*/
+/*	vp.c	4.16	82/08/13	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -20,6 +20,7 @@
 #include "../h/ubavar.h"
 #include "../h/ubareg.h"
 #include "../h/vcmd.h"
+#include "../h/uio.h"
 
 unsigned minvpph();
 
@@ -192,7 +193,7 @@ vpwrite(dev)
 	dev_t dev;
 {
 
-	physio(vpstrategy, &rvpbuf[VPUNIT(dev)], dev, B_WRITE, minvpph);
+	physio(vpstrategy, &rvpbuf[VPUNIT(dev)], dev, B_WRITE, minvpph, 0);
 }
 
 vpwait(dev)
