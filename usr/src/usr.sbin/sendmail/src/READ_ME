@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.46 (Berkeley) %G%
+#	@(#)READ_ME	8.47 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -438,7 +438,7 @@ Solaris 2.x (SunOS 5.x)
 
 OSF/1
 	If you are compiling on OSF/1 (DEC Alpha), you must use 
-	-non_shared (otherwise it core dumps on startup).  You may also
+	-L/usr/shlib (otherwise it core dumps on startup).  You may also
 	need -mld to get the nlist() function, although some versions
 	apparently don't need this.
 	
@@ -716,4 +716,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.46, last update %G% 17:54:38)
+(Version 8.47, last update %G% 06:00:13)
