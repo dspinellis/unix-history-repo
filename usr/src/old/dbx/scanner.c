@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)scanner.c 1.7 %G%";
+static char sccsid[] = "@(#)scanner.c 1.8 %G%";
 
 /*
  * Debugger scanner.
@@ -106,7 +106,7 @@ public Token yylex()
     if (*p == '\0') {
 	do {
 	    if (isterm(in)) {
-		printf("> ");
+		printf("(%s) ", cmdname);
 		fflush(stdout);
 	    }
 	    line = fgets(linebuf, MAXLINESIZE, in);
@@ -552,6 +552,7 @@ private Boolean eofinput()
     if (curinclindex == 0) {
 	if (isterm(in)) {
 	    putchar('\n');
+	    clearerr(in);
 	    b = false;
 	} else {
 	    b = true;
