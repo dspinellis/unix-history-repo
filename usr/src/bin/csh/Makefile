@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.31 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
