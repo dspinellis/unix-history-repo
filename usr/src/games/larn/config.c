@@ -7,52 +7,41 @@
  *		Larn is copyrighted 1986 by Noah Morgan.
  */
 #include "header.h"
-
-#ifndef LARNHOME
-#define LARNHOME "/usr/games/lib/larn/"		/* normally supplied by a Makefile */
-#endif
-
-#ifndef WIZID
-#define WIZID	0
-#endif
+#include "pathnames.h"
 
 /*
  *	All these strings will be appended to in main() to be complete filenames
  */
 
-		/* the game save filename   */
-char savefilename[SAVEFILENAMESIZE] = 					LARNHOME;
+/* the game save filename */
+char savefilename[1024];
 
-		/* the score file	    	*/
-char scorefile[sizeof(LARNHOME)+sizeof(SCORENAME)] =	LARNHOME;
+/* the logging file */
+char logfile[] = _PATH_LOG;
 
-		/* the logging file     	*/
-char logfile[sizeof(LARNHOME)+sizeof(LOGFNAME)]  =		LARNHOME;
+/* the help text file */
+char helpfile[] = _PATH_HELP;
 
-		/* the help text file		*/
-char helpfile[sizeof(LARNHOME)+sizeof(HELPNAME)] = 		LARNHOME;
+/* the score file */
+char scorefile[] = _PATH_SCORE;
 
-		/* the maze data file		*/
-char larnlevels[sizeof(LARNHOME)+sizeof(LEVELSNAME)] = 	LARNHOME;
+/* the maze data file */
+char larnlevels[] = _PATH_LEVELS;
 
-		/* the fortune data file	*/
-char fortfile[sizeof(LARNHOME)+sizeof(FORTSNAME)] =		LARNHOME;
+/* the fortune data file */
+char fortfile[] = _PATH_FORTS;
 
-		/* the .larnopts filename */
-char optsfile[128] ="/.larnopts";				/* the option file			*/
+/* the .larnopts filename */
+char optsfile[1024] ="/.larnopts";
 
-		/* the player id datafile name */
-char playerids[sizeof(LARNHOME)+sizeof(PLAYERIDS)] =	LARNHOME;
+/* the player id datafile name */
+char playerids[] = _PATH_PLAYERIDS;
 
-		/* the holiday datafile */
-char holifile[sizeof(LARNHOME)+sizeof(HOLIFILE)] =		LARNHOME;
+char diagfile[] ="Diagfile";		/* the diagnostic filename */
+char ckpfile[] ="Larn12.0.ckp";		/* the checkpoint filename */
+char *password ="pvnert(x)";		/* the wizards password <=32 */
+char psname[PSNAMESIZE]="larn";		/* the process name */
 
-char diagfile[] ="Diagfile";					/* the diagnostic filename	*/
-char ckpfile[] ="Larn12.0.ckp";					/* the checkpoint filename	*/
-char *password ="pvnert(x)";					/* the wizards password <=32*/
-#if WIZID == -1
-int wisid=0;			/* the user id of the only person who can be wizard */
-#else
-int wisid=WIZID;		/* the user id of the only person who can be wizard */
-#endif
-char psname[PSNAMESIZE]="larn";						/* the process name		*/
+#define	WIZID	1
+int wisid=0;		/* the user id of the only person who can be wizard */
+

@@ -208,8 +208,6 @@ readopts()
 		case 's':	if (strcmp(i,"savefile:") == 0) /* defining savefilename */
 						{
 						if ((i=lgetw())==0) break;
-						if (strlen(i)>=SAVEFILENAMESIZE) /* avoid overflow */
-							i[SAVEFILENAMESIZE-1]=0;
 						strcpy(savefilename,i); flag=0;
 						}
 					break;

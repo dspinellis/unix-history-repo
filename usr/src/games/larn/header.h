@@ -1,13 +1,5 @@
 /*	header.h		Larn is copyrighted 1986 by Noah Morgan. */
 
-#define SCORENAME	"lscore12.0"
-#define LOGFNAME	"llog12.0"
-#define HELPNAME	"larn.help"
-#define LEVELSNAME	"larnmaze"
-#define FORTSNAME	"lfortune"
-#define PLAYERIDS	"playerids"
-#define HOLIFILE	"holidays"
-
 #define MAXLEVEL 11
 	/*	max # levels in the dungeon			*/
 #define MAXVLEVEL 3
@@ -332,12 +324,11 @@ struct sphere
 #define MAXIBUF	4096			/* size of the input buffer */
 #define LOGNAMESIZE 40			/* max size of the players name */
 #define PSNAMESIZE 40			/* max size of the process name */
-#define SAVEFILENAMESIZE 128	/* max size of the savefile path */
 
 #ifndef NODEFS
 extern char VERSION,SUBVERSION;
 extern char aborted[],alpha[],beenhere[],boldon,cheat,ckpfile[],ckpflag;
-extern char *class[],course[],diagfile[],fortfile[],helpfile[],holifile[];
+extern char *class[],course[],diagfile[],fortfile[],helpfile[];
 extern char *inbuffer,is_alpha[],is_digit[];
 extern char item[MAXX][MAXY],iven[],know[MAXX][MAXY],larnlevels[],lastmonst[];
 extern char level,*levelname[],logfile[],loginname[],logname[],*lpbuf,*lpend;

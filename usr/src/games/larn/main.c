@@ -66,21 +66,9 @@ main(argc,argv)
 	strcpy(loginname,ptr); /* save loginname of the user for logging purposes */
 	strcpy(logname,ptr);	/* this will be overwritten with the players name */
 	if ((ptr = getenv("HOME")) == 0) ptr = ".";
-#ifdef SAVEINHOME
 	strcpy(savefilename, ptr);
 	strcat(savefilename, "/Larn.sav");	/* save file name in home directory */
-#else
-	strcat(savefilename,logname);	/* prepare savefile name */
-	strcat(savefilename,".sav");	/* prepare savefile name */
-#endif
 	sprintf(optsfile, "%s/.larnopts",ptr);	/* the .larnopts filename */
-	strcat(scorefile, SCORENAME);	/* the larn scoreboard filename */
-	strcat(logfile, LOGFNAME);		/* larn activity logging filename */
-	strcat(helpfile, HELPNAME);		/* the larn on-line help file */
-	strcat(larnlevels, LEVELSNAME);	/* the pre-made cave level data file */
-	strcat(fortfile, FORTSNAME);	/* the fortune data file name */
-	strcat(playerids, PLAYERIDS);	/* the playerid data file name */
-	strcat(holifile, HOLIFILE);		/* the holiday data file name */
 
 /*
  *	now malloc the memory for the dungeon 
@@ -165,17 +153,6 @@ main(argc,argv)
 
 	readopts();		/* read the options file if there is one */
 
-#ifdef TIMECHECK
-/*
- *	this section of code checks to see if larn is allowed during working hours
- */
-	if (dayplay==0)	/* check for not-during-daytime-hours */
-	  if (playable())
-		{
-		write(2,"Sorry, Larn can not be played during working hours.\n",52);
-		exit();
-		}
-#endif TIMECHECK
 
 #ifdef UIDSCORE
 	userid = geteuid();	/* obtain the user's effective id number */
@@ -899,42 +876,3 @@ szero(str)
 		*str++ = 0;
 	}
 #endif HIDEBYLINK
-
-#ifdef TIMECHECK
-/*
- *	routine to check the time of day and return 1 if its during work hours
- *	checks the file ".holidays" for forms like "mmm dd comment..."
- */
-int playable()
-	{
-	long g_time,time();
-	int hour,day,year;
-	char *date,*month,*p;
-
-	time(&g_time);	/* get the time and date */
-	date = ctime(&g_time); /* format: Fri Jul  4 00:27:56 EDT 1986 */
-	year = atoi(date+20);
-	hour = (date[11]-'0')*10 + date[12]-'0';
-	day  = (date[8]!=' ') ? ((date[8]-'0')*10 + date[9]-'0') : (date[9]-'0');
-	month = date+4;  date[7]=0;	/* point to and NULL terminate month */
-
-	if (((hour>=8 && hour<17)) /* 8AM - 5PM */
-		&& strncmp("Sat",date,3)!=0 	/* not a Saturday */
-		&& strncmp("Sun",date,3)!=0)	/* not a Sunday */
-			{
-		/* now check for a .holidays datafile */
-			lflush();
-			if (lopen(holifile) >= 0)
-				for ( ; ; )
-					{
-					if ((p=lgetw())==0) break;
-					if (strlen(p)<6) continue;
-					if ((strncmp(p,month,3)==0) && (day==atoi(p+4)) && (year==atoi(p+7)))
-						return(0); /* a holiday */
-					}
-			lrclose();  lcreat((char*)0);
-			return(1);
-			}
-	return(0);
-	}
-#endif TIMECHECK
