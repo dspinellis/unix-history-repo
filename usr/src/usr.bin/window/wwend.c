@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwend.c	3.7 %G%";
+static char sccsid[] = "@(#)wwend.c	3.8 %G%";
 #endif
 
 /*
@@ -13,6 +13,11 @@ static char sccsid[] = "@(#)wwend.c	3.7 %G%";
 
 wwend()
 {
+	wwupdate();
+	if (tt.tt_insert)
+		(*tt.tt_setinsert)(0);
+	if (tt.tt_modes)
+		(*tt.tt_setmodes)(0);
 	(*tt.tt_move)(tt.tt_nrow - 1, 0);
 	(*tt.tt_end)();
 	ttflush();
