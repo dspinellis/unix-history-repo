@@ -9,17 +9,19 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)cpp.sh	6.4 (Berkeley) %G%
+#	@(#)cpp.sh	6.5 (Berkeley) %G%
 #
 # Transitional front end to CCCP to make it behave like (Reiser) CCP:
 #	specifies -traditional
 #	doesn't search gcc-include
 #
-cpp="eval /usr/libexec/cpp"
+PATH=/usr/bin:/bin
+CPP=/usr/libexec/cpp
 ALST="-traditional -D__GNUC__ -$ "
 NSI=no
 OPTS=""
 INCS="-nostdinc"
+FOUNDFILES=no
 
 for A
 do
@@ -39,14 +41,25 @@ do
 		OPTS="$OPTS '$A'"
 		;;
 	*)
+		FOUNDFILES=yes
 		if [ $NSI = "no" ]
 		then
 			INCS="$INCS -I/usr/include"
 			NSI=skip
 		fi
-		$cpp $ALST $INCS $LIBS $CSU $OPTS $A || exit $?
+		eval $CPP $ALST $INCS $LIBS $CSU $OPTS $A || exit $?
 		;;
 	esac
 done
+
+if [ $FOUNDFILES = "no" ]
+then
+	# read standard input
+	if [ $NSI = "no" ]
+	then
+		INCS="$INCS -I/usr/include"
+	fi
+	eval exec $CPP $ALST $INCS $LIBS $CSU $OPTS
+fi
 
 exit 0
