@@ -1,62 +1,128 @@
-.\"	@(#)fseek.3	6.5 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH FSEEK 3  ""
-.AT 3
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)fseek.3	6.6 (Berkeley) %G%
+.\"
+.TH FSEEK 3 ""
+.UC 7
 .SH NAME
-fseek, ftell, rewind \- reposition a stream
+fgetpos, fseek, fsetpos, ftell, rewind \- reposition a stream
 .SH SYNOPSIS
-.B #include <stdio.h>
-.PP
-.B fseek(stream, offset, ptrname)
-.br
-.SM
-.B FILE
-.B *stream;
-.br
-.B long offset;
-.PP
-.B long ftell(stream)
-.br
-.SM
-.B FILE
-.B *stream;
-.PP
-.B rewind(stream)
+.nf
+.ft B
+#include <stdio.h>
+
+int
+fseek(FILE *stream, long offset, int whence);
+
+long
+ftell(FILE *stream);
+
+void
+rewind(FILE *stream);
+
+int
+fgetpos(FILE *stream, fpos_t *pos);
+
+int
+fsetpos(FILE *stream, fpos_t *pos);
+.ft R
+.fi
 .SH DESCRIPTION
 .I Fseek
 sets the position of the next input or output
-operation on the
+operation on the given
 .IR stream .
 The new position is at the signed distance
 .I offset
-bytes
-from the beginning, the current position, or the end of the file,
-according as 
-.I ptrname
-has the value 0, 1, or 2.
-.PP
+bytes from a specified point in the file depending on the
+value of 
+.IR whence .
+If 
+.I whence
+is set to 
+.IR SEEK_SET ,
+.IR SEEK_CUR ,
+or
+.IR SEEK_END ,
+the offset is from the beginning, the current position, or the end of
+the file, respectively.
 .I Fseek
 undoes any effects of
-.IR  ungetc (3).
+.IR ungetc .
 .PP
 .I Ftell
 returns the current value of the offset relative to the beginning
 of the file associated with the named
 .IR stream .
-It is measured in bytes on UNIX;
-on some other systems it is a magic cookie,
-and the only foolproof way to obtain an 
-.I offset
-for
-.IR fseek .
 .PP
-.IR Rewind ( stream )
-is equivalent to
-.IR fseek ( stream ,
-0L, L_SET).
+.IR Rewind
+is equivalent to ``fseek(stream, 0L, SEEK_SET)'', except the error
+indicator for the stream is cleared as well (see
+.IR clearerr (3)).
+.PP
+.I Fgetpos
+and
+.I fsetpos
+are alternate interfaces equivalent to
+.I ftell
+and
+.I fseek
+(with whence set to SEEK_SET), setting and storing the current value of
+the file offset into or from the object referenced by 
+.IR pos .
+On some (non-UNIX) systems an ``fpos_t'' object may be a complex object
+and these routines may be the only way to portably reposition a text stream.
 .SH "SEE ALSO"
-lseek(2),
-fopen(3)
-.SH DIAGNOSTICS
-.I Fseek
-returns \-1 for improper seeks, otherwise zero.
+lseek(2)
+.SH "RETURN VALUE"
+.I Rewind
+returns no value.
+Upon successful completion,
+.IR fgetpos ,
+.IR fseek ,
+.IR fsetpos ,
+and
+.IR ftell 
+return 0.
+Otherwise, \-1 is returned and the global variable errno is set to
+indicate the error.
+.SH ERRORS
+.TP 15
+[EBADF]
+.I Stream
+is not a seekable stream.
+.TP
+[EINVAL]
+The
+.I whence
+argument to 
+.I fseek
+was not SEEK_SET, SEEK_END, or SEEK_CUR.
+.PP
+.IR Fgetpos ,
+.IR fseek ,
+.IR fsetpos ,
+and 
+.I ftell
+may also fail and set
+.I errno
+for any of the errors specified for the routines
+.IR fflush (3),
+.IR fstat (2),
+.IR lseek (2),
+and 
+.IR malloc (3).
+.SH STANDARDS
+.IR Fgetpos ,
+.IR fsetpos ,
+.IR fseek ,
+.IR ftell ,
+and
+.IR rewind
+conform to ANSI X3.159-1989 (``ANSI C'').

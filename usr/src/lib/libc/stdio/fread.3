@@ -1,72 +1,57 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)fread.3	6.2 (Berkeley) %G%
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
 .\"
-.TH FREAD 3  ""
-.UC 4
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)fread.3	6.3 (Berkeley) %G%
+.\"
+.TH FREAD 3 ""
+.UC 7
 .SH NAME
-fread, fwrite \- buffered binary input/output
+fread, fwrite \- stream binary input/output
 .SH SYNOPSIS
-.B #include <stdio.h>
-.PP
-.B fread(ptr, sizeof(*ptr), nitems, stream)
-.br
-.SM
-.B FILE
-.B *stream;
-.PP
-.B fwrite(ptr, sizeof(*ptr), nitems, stream)
-.br
-.SM
-.B FILE
-.B *stream;
+.nf
+.ft B
+#include <stdio.h>
+
+int
+fread(void *ptr, size_t size, size_t count, FILE *stream);
+
+int
+fwrite(void *ptr, size_t size, size_t count, FILE *stream);
+.ft R
+.fi
 .SH DESCRIPTION
 .I Fread
-reads, into a block beginning at
-.IR ptr ,
-.I nitems
-of data of the type of
-.I *ptr
-from the named input
-.IR stream .
-It returns the number of items actually read.
-.PP
-If
-.I stream
-is
-.B stdin
-and the standard output is line buffered, then any partial output line
-will be flushed before any call to
-.IR read (2)
-to satisfy the
-.IR fread .
+reads
+.I count
+items of data, each
+.I size
+bytes long, from the given input
+.IR stream ,
+storing them at the location given by
+.IR ptr .
+It returns the actual count of items read
+(which will be less than
+.I count
+in the event of an
+.B EOF
+or error).
 .PP
 .I Fwrite
-appends at most
-.I nitems
-of data of the type of
-.I *ptr
-beginning at
-.I ptr
-to the named output
-.IR stream .
-It returns the number of items actually written.
+writes
+.I count
+items of data, each
+.I size
+bytes long, to the given output
+.I stream ,
+obtaining them from the location given by
+.IR ptr .
+It returns the actual count of items written.
+.SH "RETURN VALUE"
+These functions return 0 (or a short count) upon end of file or error.
 .SH "SEE ALSO"
-read(2),
-write(2),
-fopen(3),
-getc(3),
-putc(3),
-gets(3),
-puts(3),
-printf(3),
-scanf(3)
-.SH DIAGNOSTICS
-.I Fread
-and
-.I fwrite
-return
-0
-upon end of file or error.
+read(2), write(2), fopen(3), getc(3), putc(3), stdio(3)

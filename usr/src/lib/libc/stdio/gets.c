@@ -1,21 +1,42 @@
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)gets.c	5.2 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
+ *
+ * %sccs.include.redist.c%
+ */
 
-#include	<stdio.h>
+#if defined(LIBC_SCCS) && !defined(lint)
+static char sccsid[] = "@(#)gets.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
+
+#include <unistd.h>
+#include <stdio.h>
 
 char *
-gets(s)
-char *s;
+gets(buf)
+	char *buf;
 {
-	register c;
-	register char *cs;
+	register int c;
+	register char *s;
+	static int warned;
+	static char w[] =
+	    "warning: this program uses gets(), which is unsafe.\r\n";
 
-	cs = s;
-	while ((c = getchar()) != '\n' && c != EOF)
-		*cs++ = c;
-	if (c == EOF && cs==s)
-		return(NULL);
-	*cs++ = '\0';
-	return(s);
+	if (!warned) {
+		(void) write(STDERR_FILENO, w, sizeof(w) - 1);
+		warned = 1;
+	}
+	for (s = buf; (c = getchar()) != '\n';)
+		if (c == EOF)
+			if (s == buf)
+				return (NULL);
+			else
+				break;
+		else
+			*s++ = c;
+	*s = 0;
+	return (buf);
 }

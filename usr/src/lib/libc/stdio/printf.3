@@ -1,23 +1,29 @@
-.\"	@(#)printf.3	6.7 (Berkeley) %G%
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH PRINTF 3 "October 22, 1987"
-.AT 3
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)printf.3	6.8 (Berkeley) %G%
+.\"
+.TH PRINTF 3 ""
+.UC 7
 .SH NAME
-fprintf, printf, sprintf, vprintf, vfprintf, vsprintf - formatted
-output conversion
+printf, fprintf, sprintf, snprintf, vprintf, vfprintf,
+vsprintf, vsnprintf \- formatted output conversion
 .SH SYNOPSIS
 .B #include <stdio.h>
 .PP
 .B printf(format
-.RB [ ,
-arg ] ...
+[ , arg ... ]
 .B )
 .br
 .B char *format;
 .PP
 .B fprintf(stream, format
-.RB [ ,
-arg ] ...
+[ , arg ... ]
 .B )
 .br
 .SM
@@ -26,87 +32,160 @@ arg ] ...
 .br
 .B char *format;
 .PP
-.B sprintf(s, format
-.RB [ ,
-arg ] ...
+.B sprintf(str, format
+[ , arg ... ]
 .B )
 .br
-.B char *s, *format;
+.B char *str, *format;
+.PP
+.B snprintf(str, size, format
+[ , arg ... ]
+.B )
+.br
+.B char *str;
+.br
+.B size_t size;
+.br
+.B char *format;
+.\" .PP
+.\" .B char *smprintf(format
+.\" [ , arg ... ]
+.\" .B )
 .PP
 .B #include <varargs.h>
-.br
-.B vprintf(format, args)
+.PP
+.B vprintf(format, ap)
 .br
 .B char *format;
 .br
-.B va_list args;
+.B va_list ap;
 .PP
-.B vfprintf(stream, format, args)
+.B vfprintf(stream, format, ap)
 .br
-.B FILE *stream;
+.SM
+.B FILE
+.B *stream;
 .br
 .B char *format;
 .br
-.B va_list args;
+.B va_list ap;
 .PP
-.B vsprintf(s, format, args)
+.B vsprintf(str, format, ap)
 .br
-.B char *s, *format;
+.B char *str, *format;
 .br
-.B va_list args;
+.B va_list ap;
+.PP
+.B vsnprintf(str, size, format, ap)
+.br
+.B char *str;
+.br
+.B size_t size;
+.br
+.B char *format;
+.br
+.B va_list ap;
+.\" .PP
+.\" .B char *vsmprintf(format, ap)
+.\" .br
+.\" .B char *format;
+.\" .br
+.\" .B va_list ap;
 .SH DESCRIPTION
+The
+.I printf
+family of functions produces output according to a
+.I format
+as described below.
 .I Printf
 and
 .I vprintf
-place output on the standard output stream
-.BR stdout .
-.I Fprintf
+write the standard output stream
+.BR stdout ;
+.I fprintf
 and
 .I vfprintf
-place output on the named output
-.IR stream .
+write the named output
+.IR stream ;
+.IR sprintf ,
+.IR snprintf ,
+.IR vsprintf ,
+and
+.I vsnprintf
+write to the character string
+.IR str .
+.\" .IR str ;
+.\" and
+.\" .I smprintf
+.\" and
+.\" .I vsmprintf
+.\" dynamically allocate a new string with
+.\" .IR malloc .
+Each function converts, formats, and prints the arguments following the
+.I format
+(or accessed via the variable-length argument facilities of
+.IR varargs (3))
+under control of the
+.I format
+argument.
+.\" Except for
+.\" .I smprintf
+.\" and
+.\" .IR vsmprintf ,
+.\" all of these functions return
+Each function returns
+the number of characters printed
+(not including the trailing `\e0' used to end output to strings).
+.\" .I Smprintf
+.\" and
+.\" .I vsmprintf
+.\" return a pointer to a string of an appropriate length;
+.\" this pointer should be passed to
+.\" .I free
+.\" to release the associated storage
+.\" when it is no longer needed.
+.\" If sufficient space is not avaliable,
+.\" .I smprintf
+.\" and
+.\" .I vsmprintf
+.\" will return
+.\" .SM
+.\" .BR NULL .
+.I Snprintf
+and
+.I vsnprintf
+will write at most
+.IR size \-1
+of the characters printed into the output string
+(the
+.IR size 'th
+character then gets the terminating `\e0');
+if the return value is greater than or equal to the
+.I size
+argument, the string was too short
+and some of the printed characters were discarded.
 .I Sprintf
 and
 .I vsprintf
-copy into the string
-.IR s ,
-followed by the character `\e0'.
-.IR Printf ,
-.IR fprintf ,
-and
-.I sprintf
-take variadic argument lists directly, while
-.IR vprintf ,
-.IR vfprintf ,
-and
-.I vsprintf
-use the variable-length argument facilities of
-.IR varargs (3)
-and hence may be called indirectly (see examples).
+effectively assume an infinte
+.IR size .
 .PP
-Each function converts, formats, and prints its arguments after the
-.I format
-under control of the
-.I format
-argument; each returns the the total number of characters printed (not
-including the trailing `\e0' in
-.I sprintf
-and
-.IR vsprintf ).
-.I Format
-is a character string which contains two types of objects: plain characters,
-which are simply copied to the output stream, and conversion specifications,
+The format is a string comprised of two types of objects:
+plain characters, which are simply copied to the output stream,
+and conversion specifications,
 each of which causes conversion and printing of the next successive
 .IR arg .
-.PP
-Each conversion specification is introduced by the percent character (``%'').
-The remainder of the conversion specification includes, in the following
-order,
-.TP
+These arguments must correspond properly (after type promotion)
+with the conversion specifier.
+Each conversion is introduced by the
+.B %
+(percent sign) character.
+The rest of the conversion includes, in the following order,
+.TP 4
 .B \(bu
 Zero or more of the following flags:
 .RS
-.TP
+.TP 4
 .B \(bu
 a `#' character
 specifying that the value should be converted to an ``alternate form''.
@@ -152,14 +231,14 @@ and
 .B G
 conversions, trailing zeros are not removed from the result as they
 would otherwise be.
-.TP
+.TP 4
 .B \(bu
-A zero ``0'' character specifying zero padding.
+A zero `0' character specifying zero padding.
 For all conversions except
 .BR n ,
 the converted value is padded on the left with zeros rather than blanks.
-If a precision is given with a numeric conversion (
-.BR d ,
+If a precision is given with a numeric conversion
+.RB ( d ,
 .BR i ,
 .BR o ,
 .BR u ,
@@ -167,21 +246,21 @@ If a precision is given with a numeric conversion (
 .BR x ,
 and
 .BR X ),
-the ``0'' flag is ignored.
-.TP
+the `0' flag is ignored.
+.TP 4
 .B \(bu
-A minus sign (``-'') specifying left adjustment of the converted value
+A minus sign (`-') specifying left adjustment of the converted value
 in the indicated field.
 Except for
 .B n
 conversions, the converted value is padded on the right with blanks,
 rather than on the left with blanks or zeros.
-A ``-'' overrides a ``0'' if both are given.
-.TP
+A `-' overrides a `0' if both are given.
+.TP 4
 .B \(bu
 A space, specifying that a blank should be left before a positive number
-produced by a signed conversion (
-.BR d ,
+produced by a signed conversion
+.RB ( d ,
 .BR e ,
 .BR E ,
 .BR f ,
@@ -189,21 +268,21 @@ produced by a signed conversion (
 .BR G ,
 or
 .BR i ).
-.TP
+.TP 4
 .B \(bu
 a `+' character specifying that a sign always be placed before a
 number produced by a signed conversion.
-A ``+'' overrides a space if both are used.
+A `+' overrides a space if both are used.
 .RE
-.TP
+.TP 4
 .B \(bu
 An optional digit string specifying a field width.
 If the converted value has fewer characters than the field width, it will
 be padded on the left (or right, if the left-adjustment flag is used) to
 make up the field width.
-.TP
+.TP 4
 .B \(bu
-An optional precision, in the form of a period (``.'') followed by an
+An optional precision, in the form of a period (`.') followed by an
 optional digit string.  If the digit string is omitted, the precision
 is taken as zero.  This gives the minimum number of digits to appear for
 .BR d ,
@@ -226,7 +305,7 @@ conversions, or the maximum number of characters to be printed from a
 string for
 .B s
 conversions.
-.TP
+.TP 4
 .B \(bu
 The character
 .BR h ,
@@ -247,7 +326,7 @@ argument, or that a following
 conversion corresponds to a pointer to a
 .B "short int"
 argument.
-.TP
+.TP 4
 .B \(bu
 the character
 .B l
@@ -268,7 +347,7 @@ argument, or that a following
 conversion corresponds to a pointer to a
 .B "long int"
 argument.
-.TP
+.TP 4
 .B \(bu
 The character
 .B L
@@ -283,11 +362,11 @@ conversion corresponds to a
 .B "long double"
 argument (but note that long double values are not currently supported
 by the \s-2VAX\s0 and Tahoe compilers).
-.TP
+.TP 4
 .B \(bu
 A character which indicates the type of conversion to be applied.
 .PP
-A field width or precision may be an asterisk (``*'') instead of a
+A field width or precision may be an asterisk (`*') instead of a
 digit string.
 In this case an
 .B int
@@ -297,7 +376,7 @@ positive field width; a negative precision is treated as though it were
 missing.
 .PP
 The conversion characters and their meanings are:
-.TP
+.TP 4
 .B diouxX
 The
 .B int
@@ -321,7 +400,7 @@ conversions.
 The precision, if any, gives the minimum number of digits that must
 appear; if the converted value requires fewer digits, it is padded on
 the left with zeros.
-.TP
+.TP 4
 .B DOU
 The
 .B "long int"
@@ -333,7 +412,7 @@ or
 .B lu
 respectively.
 These conversion characters are deprecated, and will eventually disappear.
-.TP 8
+.TP 4
 .B eE
 The
 .B double
@@ -352,7 +431,7 @@ conversion uses the letter
 to introduce the exponent.
 The exponent always contains at least two digits; if the value is zero,
 the exponent is 00.
-.TP 8
+.TP 4
 .B f
 The
 .B double
@@ -362,7 +441,7 @@ is equal to the precision.
 If the precision is missing, 6 digits are given; if the precision is
 explicitly 0, no digits and no decimal point are printed.
 If a decimal point appears, at least one digit appears before it.
-.TP 8
+.TP 4
 .B g
 The
 .B double
@@ -384,14 +463,14 @@ is used if the exponent from its conversion is less than -4 or greater than
 or equal to the precision.
 Trailing zeros are removed from the fractional part of the result; a
 decimal point appears only if it is followed by at least one digit.
-.TP 8
+.TP 4
 .B c
 The
 .B int
 argument is converted to an
 .B "unsigned char",
 and the resulting character is printed.
-.TP 8
+.TP 4
 .B s
 The
 .B "char *"
@@ -400,19 +479,19 @@ Characters from the string are printed until a null character is reached,
 or until the number of characters indicated by the precision have been
 printed, whichever occurs first; if a precision is given, no null character
 need be present.
-.TP 8
+.TP 4
 .B p
 The
 .B "void *"
-pointer argument is printed in hexadecimal (as if by ``%x'' or ``%lx'').
-.TP 8
+pointer argument is printed in hexadecimal (as if by `%#x' or `%#lx').
+.TP 4
 .B n
 The number of characters written so far is stored into the
 integer indicated by the
 .B "int *"
 (or variant) pointer argument.
 No argument is converted.
-.TP 8
+.TP 4
 .B %
 Prints a `%'; no argument is converted.
 .PP
@@ -454,7 +533,7 @@ To allocate a 128 byte string and print into it:
 char *newfmt(va_alist)
 	va_dcl
 {
-	char *p, *malloc(), fmt;
+	char *p, *malloc(), *fmt;
 	va_list ap;
 	if ((p = malloc(128)) == NULL)
 		return (NULL);
@@ -467,12 +546,24 @@ char *newfmt(va_alist)
 .RE
 .fi
 .SH "SEE ALSO"
-putc(3), scanf(3)
+malloc(3), putc(3), scanf(3)
 .SH BUGS
-The conversion formats ``%D'', ``%O'', and ``%U'' are not standard and
+The conversion formats `%D', `%O', and `%U' are not standard and
 are provided only for backward compatibility.
-The effect of padding the ``%p'' format with zeros (either by the ``0''
+The effect of padding the `%p' format with zeros (either by the `0'
 flag or by specifying a precision), and the benign effect (i.e., none)
-of the ``#'' flag on ``%n'' and ``%p'' conversions, as well as other
-nonsensical combinations such as ``%Ld'', are not standard; such combinations
+of the `#' flag on `%n' and `%p' conversions, as well as other
+nonsensical combinations such as `%Ld', are not standard; such combinations
 should be avoided.
+.PP
+Because
+.I sprintf
+and
+.I vsprintf
+assume an infinitely long string,
+callers must be careful not to overflow the actual space;
+this is often impossible to assure.
+For safety, programmers should use the
+.I snprintf
+interface instead.
+Unfortunately, this interface is not portable.
