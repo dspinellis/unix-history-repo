@@ -24,7 +24,8 @@ C2=	/lib/c2
 LD=	/bin/ld
 TOUCH=	touch -f -c
 
-COPTS=	${IDENT} -DKERNEL
+INCLUDES= -I. -I../h
+COPTS=	${INCLUDES} ${IDENT} -DKERNEL
 CFLAGS=	-O ${COPTS}
 
 AHEADS=	../vax/pcb.m
@@ -40,7 +41,7 @@ clean:
 		errs linterrs makelinks
 
 lint: /tmp
-	@lint -hbxn -I. -DGENERIC ${COPTS} ../vax/Locore.c \
+	@lint -hbxn -DGENERIC ${COPTS} ../vax/Locore.c \
 	  ${CFILES} ../vax/swapgeneric.c ioconf.c | \
 	    grep -v 'struct/union .* never defined' | \
 	    grep -v 'possible pointer alignment problem'
@@ -59,7 +60,7 @@ locore.o: assym.s ${AHEADS} ../vax/rpb.s ../vax/scb.s ../vax/locore.s \
     ../machine/pte.h ../vax/cpu.h mba.h
 	cat assym.s ../vax/rpb.s ../vax/scb.s ../vax/locore.s \
 	    ubglue.s > locore.c
-	cc -E -I. -DLOCORE ${COPTS} locore.c > locore.i
+	cc -E -DLOCORE -I../vax ${COPTS} locore.c > locore.i
 	@echo 'as -o locore.o $${AHEADS} locore.i'
 	@as -o locore.o ${AHEADS} locore.i
 	@rm locore.i
@@ -79,37 +80,23 @@ assym.s: ../h/param.h ../machine/pte.h ../h/buf.h ../h/vmparam.h \
     ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../vaxuba/ubavar.h \
     ../vaxuba/ubareg.h ../h/proc.h ../h/msgbuf.h ../h/text.h ../h/user.h \
     ../vax/rpb.h
-	cc ${IDENT} ${PARAM} ../vax/genassym.c; ./a.out >assym.s; rm -f a.out
+	cc ${INCLUDES} ${IDENT} ${PARAM} ../vax/genassym.c
+	./a.out >assym.s; rm -f a.out
 
-../h/param.h: ../h/signal.h
-	${TOUCH} ../h/param.h
-../h/tty.h:  ../h/ttychars.h ../h/ttydev.h
-	${TOUCH} ../h/tty.h
-../h/ioctl.h: ../h/ttychars.h ../h/ttydev.h
-	${TOUCH} ../h/ioctl.h
-../h/namei.h: ../h/uio.h
-	${TOUCH} ../h/namei.h
-../h/user.h: ../vax/pcb.h ../h/dmap.h ../h/types.h ../h/namei.h \
-    ../h/errno.h
-	${TOUCH} ../h/user.h
-../h/vm.h: ../h/vmmac.h ../h/vmmeter.h ../h/vmparam.h ../h/vmsystm.h
-	${TOUCH} ../h/vm.h
-
-depend:
-	grep '^#include' ${CFILES} | grep -v '<' | \
-	sed -e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-	    -e 's/\.c/.o/' \
-	    -e 's,../[a-zA-Z]*/,,' | \
+depend: 
+	${CC} -M ${COPTS} ${CFILES} | \
+	sed -e ':loop' \
+	    -e 's/\.\.\/[^ /]*\/\.\./../' \
+	    -e 't loop' | \
 	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
 		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
 		       else rec = rec " " $$2 } } \
 	      END { print rec } ' > makedep
-	echo '$$r makedep' >>eddep
 	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
 	echo '$$r makedep' >>eddep
 	echo 'w' >>eddep
 	cp makefile makefile.bak
-	ed - makefile < eddep
+	ex - makefile < eddep
 	rm eddep makedep
 
 
@@ -139,7 +126,7 @@ print:
 
 ioconf.o: ioconf.c ../h/param.h ../machine/pte.h ../h/buf.h ../h/map.h \
     ../vaxmba/mbavar.h ../h/vm.h ../vaxuba/ubavar.h
-	${CC} -I. -c -S ${COPTS} ioconf.c
+	${CC} -c -S ${COPTS} ioconf.c
 	${C2} ioconf.s | ../vax/inline/inline | ${AS} -o ioconf.o
 	rm -f ioconf.s
 
@@ -147,7 +134,7 @@ param.c: ../conf/param.c
 	cp ../conf/param.c .
 
 param.o: param.c makefile
-	${CC} -I. -c ${CFLAGS} ${PARAM} param.c
+	${CC} -c ${CFLAGS} ${PARAM} param.c
 
 %RULES
 
