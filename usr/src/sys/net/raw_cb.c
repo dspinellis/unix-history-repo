@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)raw_cb.c	7.7 (Berkeley) %G%
+ *	@(#)raw_cb.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -53,20 +53,20 @@ raw_attach(so, proto)
 	register struct socket *so;
 	int proto;
 {
-	struct mbuf *m;
-	register struct rawcb *rp;
+	register struct rawcb *rp = sotorawcb(so);
 
-	m = m_getclr(M_DONTWAIT, MT_PCB);
-	if (m == 0)
+	/*
+	 * It is assumed that raw_attach is called
+	 * after space has been allocated for the
+	 * rawcb.
+	 */
+	if (rp == 0)
 		return (ENOBUFS);
 	if (sbreserve(&so->so_snd, raw_sendspace) == 0)
 		goto bad;
 	if (sbreserve(&so->so_rcv, raw_recvspace) == 0)
 		goto bad2;
-	rp = mtod(m, struct rawcb *);
 	rp->rcb_socket = so;
-	so->so_pcb = (caddr_t)rp;
-	rp->rcb_pcb = 0;
 	rp->rcb_proto.sp_family = so->so_proto->pr_domain->dom_family;
 	rp->rcb_proto.sp_protocol = proto;
 	insque(rp, &rawcb);
@@ -74,7 +74,6 @@ raw_attach(so, proto)
 bad2:
 	sbrelease(&so->so_snd);
 bad:
-	(void) m_free(m);
 	return (ENOBUFS);
 }
 
@@ -87,14 +86,15 @@ raw_detach(rp)
 {
 	struct socket *so = rp->rcb_socket;
 
-	if (rp->rcb_route.ro_rt)
-		rtfree(rp->rcb_route.ro_rt);
 	so->so_pcb = 0;
 	sofree(so);
 	remque(rp);
-	if (rp->rcb_options)
-		m_freem(rp->rcb_options);
-	m_freem(dtom(rp));
+#ifdef notdef
+	if (rp->rcb_laddr)
+		m_freem(dtom(rp->rcb_laddr));
+	rp->rcb_laddr = 0;
+#endif
+	free((caddr_t)(rp), M_PCB);
 }
 
 /*
@@ -104,11 +104,16 @@ raw_disconnect(rp)
 	struct rawcb *rp;
 {
 
-	rp->rcb_flags &= ~RAW_FADDR;
+#ifdef notdef
+	if (rp->rcb_faddr)
+		m_freem(dtom(rp->rcb_faddr));
+	rp->rcb_faddr = 0;
+#endif
 	if (rp->rcb_socket->so_state & SS_NOFDREF)
 		raw_detach(rp);
 }
 
+#ifdef notdef
 raw_bind(so, nam)
 	register struct socket *so;
 	struct mbuf *nam;
@@ -118,43 +123,9 @@ raw_bind(so, nam)
 
 	if (ifnet == 0)
 		return (EADDRNOTAVAIL);
-/* BEGIN DUBIOUS */
-	/*
-	 * Should we verify address not already in use?
-	 * Some say yes, others no.
-	 */
-	switch (addr->sa_family) {
-
-#ifdef INET
-	case AF_IMPLINK:
-	case AF_INET: {
-		if (((struct sockaddr_in *)addr)->sin_addr.s_addr &&
-		    ifa_ifwithaddr(addr) == 0)
-			return (EADDRNOTAVAIL);
-		break;
-	}
-#endif
-
-	default:
-		return (EAFNOSUPPORT);
-	}
-/* END DUBIOUS */
 	rp = sotorawcb(so);
-	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_laddr, sizeof (*addr));
-	rp->rcb_flags |= RAW_LADDR;
+	nam = m_copym(nam, 0, M_COPYALL, M_WAITOK);
+	rp->rcb_laddr = mtod(nam, struct sockaddr *);
 	return (0);
 }
-
-/*
- * Associate a peer's address with a
- * raw connection block.
- */
-raw_connaddr(rp, nam)
-	struct rawcb *rp;
-	struct mbuf *nam;
-{
-	struct sockaddr *addr = mtod(nam, struct sockaddr *);
-
-	bcopy((caddr_t)addr, (caddr_t)&rp->rcb_faddr, sizeof(*addr));
-	rp->rcb_flags |= RAW_FADDR;
-}
+#endif

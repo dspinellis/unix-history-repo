@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)raw_usrreq.c	7.4 (Berkeley) %G%
+ *	@(#)raw_usrreq.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -42,6 +42,12 @@ raw_init()
 	rawintrq.ifq_maxlen = IFQ_MAXLEN;
 }
 
+
+/*
+ * Raw protocol input routine.  Find the socket
+ * associated with the packet(s) and move them over.  If
+ * nothing exists for this packet, drop it.
+ */
 /*
  * Raw protocol interface.
  */
@@ -50,85 +56,35 @@ raw_input(m0, proto, src, dst)
 	struct sockproto *proto;
 	struct sockaddr *src, *dst;
 {
-	register struct mbuf *m;
-	struct raw_header *rh;
-	int s;
-
-	/*
-	 * Rip off an mbuf for a generic header.
-	 */
-	m = m_get(M_DONTWAIT, MT_HEADER);
-	if (m == 0) {
-		m_freem(m0);
-		return;
-	}
-	m->m_next = m0;
-	m->m_len = sizeof(struct raw_header);
-	rh = mtod(m, struct raw_header *);
-	rh->raw_dst = *dst;
-	rh->raw_src = *src;
-	rh->raw_proto = *proto;
-
-	/*
-	 * Header now contains enough info to decide
-	 * which socket to place packet in (if any).
-	 * Queue it up for the raw protocol process
-	 * running at software interrupt level.
-	 */
-	s = splimp();
-	if (IF_QFULL(&rawintrq))
-		m_freem(m);
-	else
-		IF_ENQUEUE(&rawintrq, m);
-	splx(s);
-	schednetisr(NETISR_RAW);
-}
-
-/*
- * Raw protocol input routine.  Process packets entered
- * into the queue at interrupt time.  Find the socket
- * associated with the packet(s) and move them over.  If
- * nothing exists for this packet, drop it.
- */
-rawintr()
-{
-	int s;
-	struct mbuf *m;
 	register struct rawcb *rp;
-	register struct raw_header *rh;
+	register struct mbuf *m = m0;
 	struct socket *last;
 
-next:
-	s = splimp();
-	IF_DEQUEUE(&rawintrq, m);
-	splx(s);
-	if (m == 0)
-		return;
-	rh = mtod(m, struct raw_header *);
 	last = 0;
 	for (rp = rawcb.rcb_next; rp != &rawcb; rp = rp->rcb_next) {
-		if (rp->rcb_proto.sp_family != rh->raw_proto.sp_family)
+		if (rp->rcb_proto.sp_family != proto->sp_family)
 			continue;
 		if (rp->rcb_proto.sp_protocol  &&
-		    rp->rcb_proto.sp_protocol != rh->raw_proto.sp_protocol)
+		    rp->rcb_proto.sp_protocol != proto->sp_protocol)
 			continue;
 		/*
 		 * We assume the lower level routines have
 		 * placed the address in a canonical format
 		 * suitable for a structure comparison.
+		 *
+		 * Note that if the lengths are not the same
+		 * the comparison will fail at the first byte.
 		 */
-#define equal(a1, a2) \
-	(bcmp((caddr_t)&(a1), (caddr_t)&(a2), sizeof (struct sockaddr)) == 0)
-		if ((rp->rcb_flags & RAW_LADDR) &&
-		    !equal(rp->rcb_laddr, rh->raw_dst))
+#define	equal(a1, a2) \
+  (bcmp((caddr_t)(a1), (caddr_t)(a2), a1->sa_len) == 0)
+		if (rp->rcb_laddr && !equal(rp->rcb_laddr, dst))
 			continue;
-		if ((rp->rcb_flags & RAW_FADDR) &&
-		    !equal(rp->rcb_faddr, rh->raw_src))
+		if (rp->rcb_faddr && !equal(rp->rcb_faddr, src))
 			continue;
 		if (last) {
 			struct mbuf *n;
-			if (n = m_copy(m->m_next, 0, (int)M_COPYALL)) {
-				if (sbappendaddr(&last->so_rcv, &rh->raw_src,
+			if (n = m_copy(m, 0, (int)M_COPYALL)) {
+				if (sbappendaddr(&last->so_rcv, src,
 				    n, (struct mbuf *)0) == 0)
 					/* should notify about lost packet */
 					m_freem(n);
@@ -139,15 +95,13 @@ next:
 		last = rp->rcb_socket;
 	}
 	if (last) {
-		if (sbappendaddr(&last->so_rcv, &rh->raw_src,
-		    m->m_next, (struct mbuf *)0) == 0)
-			m_freem(m->m_next);
+		if (sbappendaddr(&last->so_rcv, src,
+		    m, (struct mbuf *)0) == 0)
+			m_freem(m);
 		else
 			sorwakeup(last);
-		(void) m_free(m);		/* header */
 	} else
 		m_freem(m);
-	goto next;
 }
 
 /*ARGSUSED*/
@@ -162,13 +116,14 @@ raw_ctlinput(cmd, arg)
 }
 
 /*ARGSUSED*/
-raw_usrreq(so, req, m, nam, rights)
+raw_usrreq(so, req, m, nam, rights, control)
 	struct socket *so;
 	int req;
-	struct mbuf *m, *nam, *rights;
+	struct mbuf *m, *nam, *rights, *control;
 {
 	register struct rawcb *rp = sotorawcb(so);
 	register int error = 0;
+	int len;
 
 	if (req == PRU_CONTROL)
 		return (EOPNOTSUPP);
@@ -176,7 +131,7 @@ raw_usrreq(so, req, m, nam, rights)
 		error = EOPNOTSUPP;
 		goto release;
 	}
-	if (rp == 0 && req != PRU_ATTACH) {
+	if (rp == 0) {
 		error = EINVAL;
 		goto release;
 	}
@@ -190,10 +145,6 @@ raw_usrreq(so, req, m, nam, rights)
 	case PRU_ATTACH:
 		if ((so->so_state & SS_PRIV) == 0) {
 			error = EACCES;
-			break;
-		}
-		if (rp) {
-			error = EINVAL;
 			break;
 		}
 		error = raw_attach(so, (int)nam);
@@ -211,6 +162,7 @@ raw_usrreq(so, req, m, nam, rights)
 		raw_detach(rp);
 		break;
 
+#ifdef notdef
 	/*
 	 * If a socket isn't bound to a single address,
 	 * the raw input routine will hand it anything
@@ -218,28 +170,30 @@ raw_usrreq(so, req, m, nam, rights)
 	 * nothing else around it should go to). 
 	 */
 	case PRU_CONNECT:
-		if (rp->rcb_flags & RAW_FADDR) {
+		if (rp->rcb_faddr) {
 			error = EISCONN;
 			break;
 		}
-		raw_connaddr(rp, nam);
+		nam = m_copym(nam, 0, M_COPYALL, M_WAIT);
+		rp->rcb_faddr = mtod(nam, struct sockaddr *);
 		soisconnected(so);
 		break;
 
-	case PRU_CONNECT2:
-		error = EOPNOTSUPP;
-		goto release;
-
 	case PRU_BIND:
-		if (rp->rcb_flags & RAW_LADDR) {
+		if (rp->rcb_laddr) {
 			error = EINVAL;			/* XXX */
 			break;
 		}
 		error = raw_bind(so, nam);
 		break;
+#endif
+
+	case PRU_CONNECT2:
+		error = EOPNOTSUPP;
+		goto release;
 
 	case PRU_DISCONNECT:
-		if ((rp->rcb_flags & RAW_FADDR) == 0) {
+		if (rp->rcb_faddr == 0) {
 			error = ENOTCONN;
 			break;
 		}
@@ -260,19 +214,19 @@ raw_usrreq(so, req, m, nam, rights)
 	 */
 	case PRU_SEND:
 		if (nam) {
-			if (rp->rcb_flags & RAW_FADDR) {
+			if (rp->rcb_faddr) {
 				error = EISCONN;
 				break;
 			}
-			raw_connaddr(rp, nam);
-		} else if ((rp->rcb_flags & RAW_FADDR) == 0) {
+			rp->rcb_faddr = mtod(nam, struct sockaddr *);
+		} else if (rp->rcb_faddr == 0) {
 			error = ENOTCONN;
 			break;
 		}
 		error = (*so->so_proto->pr_output)(m, so);
 		m = NULL;
 		if (nam)
-			rp->rcb_flags &= ~RAW_FADDR;
+			rp->rcb_faddr = 0;
 		break;
 
 	case PRU_ABORT:
@@ -301,15 +255,23 @@ raw_usrreq(so, req, m, nam, rights)
 		break;
 
 	case PRU_SOCKADDR:
-		bcopy((caddr_t)&rp->rcb_laddr, mtod(nam, caddr_t),
-		    sizeof (struct sockaddr));
-		nam->m_len = sizeof (struct sockaddr);
+		if (rp->rcb_laddr == 0) {
+			error = EINVAL;
+			break;
+		}
+		len = rp->rcb_laddr->sa_len;
+		bcopy((caddr_t)rp->rcb_laddr, mtod(nam, caddr_t), (unsigned)len);
+		nam->m_len = len;
 		break;
 
 	case PRU_PEERADDR:
-		bcopy((caddr_t)&rp->rcb_faddr, mtod(nam, caddr_t),
-		    sizeof (struct sockaddr));
-		nam->m_len = sizeof (struct sockaddr);
+		if (rp->rcb_faddr == 0) {
+			error = ENOTCONN;
+			break;
+		}
+		len = rp->rcb_faddr->sa_len;
+		bcopy((caddr_t)rp->rcb_faddr, mtod(nam, caddr_t), (unsigned)len);
+		nam->m_len = len;
 		break;
 
 	default:
@@ -320,3 +282,5 @@ release:
 		m_freem(m);
 	return (error);
 }
+
+rawintr() {} /* XXX - referenced by locore.  will soon go away */

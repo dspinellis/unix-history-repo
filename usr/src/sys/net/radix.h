@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1988 Regents of the University of California.
+ * Copyright (c) 1988, 1989 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)radix.h	7.2 (Berkeley) %G%
+ *	@(#)radix.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -89,16 +89,14 @@ extern struct radix_node_head {
 
 
 #ifndef KERNEL
-char *malloc();
 #define Bcmp(a, b, n) bcmp(((char *)(a)), ((char *)(b)), (n))
 #define Bzero(p, n) bzero((char *)(p), (int)(n));
 #define R_Malloc(p, t, n) (p = (t) malloc((unsigned int)(n)))
 #define Free(p) free((char *)p);
-#define min(a, b) ((a) < (b) ? (a) : (b))
 #else
-#define Bcmp(a, b, n) bcmp(((caddr_t)(a)), ((caddr_t)(b)), (n))
-#define Bcopy(a, b, n) bcopy(((caddr_t)(a)), ((caddr_t)(b)), (n))
-#define Bzero(p, n) bzero((caddr_t)(p), (int)(n));
-#define R_Malloc(p, t, n) (p = (t) malloc((n), M_RTABLE, M_DONTWAIT))
-#define Free(p) free((caddr_t)p);
-#endif KERNEL
+#define Bcmp(a, b, n) bcmp(((caddr_t)(a)), ((caddr_t)(b)), (unsigned)(n))
+#define Bcopy(a, b, n) bcopy(((caddr_t)(a)), ((caddr_t)(b)), (unsigned)(n))
+#define Bzero(p, n) bzero((caddr_t)(p), (unsigned)(n));
+#define R_Malloc(p, t, n) (p = (t) malloc((unsigned long)(n), M_RTABLE, M_DONTWAIT))
+#define Free(p) free((caddr_t)p, M_RTABLE);
+#endif /*KERNEL*/

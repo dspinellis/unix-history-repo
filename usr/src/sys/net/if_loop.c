@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_loop.c	7.5 (Berkeley) %G%
+ *	@(#)if_loop.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -29,6 +29,7 @@
 #include "ioctl.h"
 
 #include "../net/if.h"
+#include "../net/iftypes.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
 
@@ -46,6 +47,11 @@
 #include "../netns/ns_if.h"
 #endif
 
+#ifdef ISO
+#include "../netiso/iso.h"
+#include "../netiso/iso_var.h"
+#endif
+
 #define	LOMTU	(1024+512)
 
 struct	ifnet loif;
@@ -60,6 +66,9 @@ loattach()
 	ifp->if_flags = IFF_LOOPBACK;
 	ifp->if_ioctl = loioctl;
 	ifp->if_output = looutput;
+	ifp->if_type = IFT_LOOP;
+	ifp->if_hdrlen = 0;
+	ifp->if_addrlen = 0;
 	if_attach(ifp);
 }
 
@@ -78,13 +87,13 @@ looutput(ifp, m, dst)
 	m->m_pkthdr.rcvif = ifp;
 
 {struct mbuf *mm; int mlen = 0;
-for (mm = m; m; m = m->m_next) /* XXX debugging code -- sklwoer */
+for (mm = m; m; m = m->m_next) /* XXX debugging code -- sklower */
     mlen += m->m_len;
 m = mm;
 if (mlen != m->m_pkthdr.len) {
 	if (Loop_Sanity)
 		m_freem(Loop_Sanity);
-	Loop_Sanity = m_copy(m, 0, M_COPYALL);
+	Loop_Sanity = m_copy(m, 0, (int)M_COPYALL);
 }
 }
 
@@ -116,6 +125,19 @@ if (mlen != m->m_pkthdr.len) {
 		}
 		IF_ENQUEUE(ifq, m);
 		schednetisr(NETISR_NS);
+		break;
+#endif
+#ifdef ISO
+	case AF_ISO:
+		ifq = &clnlintrq;
+		if (IF_QFULL(ifq)) {
+			IF_DROP(ifq);
+			m_freem(m);
+			splx(s);
+			return (ENOBUFS);
+		}
+		IF_ENQUEUE(ifq, m);
+		schednetisr(NETISR_ISO);
 		break;
 #endif
 	default:

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if.h	7.4 (Berkeley) %G%
+ *	@(#)if.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -78,6 +78,9 @@ struct ifnet {
 	int	if_collisions;		/* collisions on csma interfaces */
 /* end statistics */
 	struct	ifnet *if_next;
+	u_char	if_type;		/* ethernet, tokenring, etc */
+	u_char	if_addrlen;		/* media address length */
+	u_char	if_hdrlen;		/* media header length */
 };
 
 #define	IFF_UP		0x1		/* interface is up */
@@ -141,17 +144,13 @@ struct ifnet {
  * together so all addresses for an interface can be located.
  */
 struct ifaddr {
-	struct	sockaddr ifa_addr;	/* address of interface */
-	union {
-		struct	sockaddr ifu_broadaddr;
-		struct	sockaddr ifu_dstaddr;
-	} ifa_ifu;
-#define	ifa_broadaddr	ifa_ifu.ifu_broadaddr	/* broadcast address */
-#define	ifa_dstaddr	ifa_ifu.ifu_dstaddr	/* other end of p-to-p link */
+	struct	sockaddr *ifa_addr;	/* address of interface */
+	struct	sockaddr *ifa_dstaddr;	/* other end of p-to-p link */
+#define	ifa_broadaddr	ifa_dstaddr	/* broadcast address interface */
+	struct	sockaddr *ifa_netmask;	/* used to determine subnet */
 	struct	ifnet *ifa_ifp;		/* back-pointer to interface */
 	struct	ifaddr *ifa_next;	/* next address for interface */
 };
-
 /*
  * Interface request structure used for socket
  * ioctl's.  All interface ioctl's must have parameter
@@ -175,6 +174,13 @@ struct	ifreq {
 #define	ifr_flags	ifr_ifru.ifru_flags	/* flags */
 #define	ifr_metric	ifr_ifru.ifru_metric	/* metric */
 #define	ifr_data	ifr_ifru.ifru_data	/* for use by interface */
+};
+
+struct ifaliasreq {
+	char	ifra_name[IFNAMSIZ];		/* if name, e.g. "en0" */
+	struct	sockaddr ifra_addr;
+	struct	sockaddr ifra_broadaddr;
+	struct	sockaddr ifra_mask;
 };
 
 /*
