@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)locore.s	7.10 (Berkeley) %G%
+ *	@(#)locore.s	7.11 (Berkeley) %G%
  */
 
 #include "psl.h"
@@ -55,6 +55,7 @@ eintstack:
  */
 	.align	2
 	.globl	_doadump
+	.globl	_msgbufmapped
 _doadump:
 	nop; nop				# .word 0x0101
 #define	_rpbmap	_Sysmap				# rpb, scb, UNIvec[], istack*4
@@ -69,6 +70,7 @@ _doadump:
 	mfpr	$PCBB,-(sp)
 	mfpr	$MAPEN,-(sp)
 	mfpr	$IPL,-(sp)
+	clrl	_msgbufmapped
 	mtpr	$0,$MAPEN
 	mtpr	$HIGH,$IPL
 	pushr	$0x3fff
