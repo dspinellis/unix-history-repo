@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.37 (Berkeley) %G%
+ *	@(#)rtsock.c	7.38 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -30,10 +30,11 @@ struct walkarg {
 	caddr_t	w_where, w_tmem;
 };
 
-static	void rt_xaddrs		__P((caddr_t, caddr_t, struct rt_addrinfo *));
-static	struct mbuf *rt_msg1	__P((int, struct rt_addrinfo *));
-static	int rt_msg2		__P((int, struct rt_addrinfo *, caddr_t, 
-					struct walkarg *));
+static struct mbuf *
+		rt_msg1 __P((int, struct rt_addrinfo *));
+static int	rt_msg2 __P((int,
+		    struct rt_addrinfo *, caddr_t, struct walkarg *));
+static void	rt_xaddrs __P((caddr_t, caddr_t, struct rt_addrinfo *));
 
 /* Sleazy use of local variables throughout file, warning!!!! */
 #define dst	info.rti_info[RTAX_DST]
@@ -45,6 +46,7 @@ static	int rt_msg2		__P((int, struct rt_addrinfo *, caddr_t,
 #define brdaddr	info.rti_info[RTAX_BRD]
 
 /*ARGSUSED*/
+int
 route_usrreq(so, req, m, nam, control)
 	register struct socket *so;
 	int req;
@@ -95,6 +97,7 @@ route_usrreq(so, req, m, nam, control)
 }
 
 /*ARGSUSED*/
+int
 route_output(m, so)
 	register struct mbuf *m;
 	struct socket *so;
@@ -106,7 +109,6 @@ route_output(m, so)
 	int len, error = 0;
 	struct ifnet *ifp = 0;
 	struct ifaddr *ifa = 0;
-	struct ifaddr *ifaof_ifpforaddr(), *ifa_ifwithroute();
 
 #define senderr(e) { error = e; goto flush;}
 	if (m == 0 || ((m->m_len < sizeof(long)) &&
@@ -136,8 +138,8 @@ route_output(m, so)
 	if (dst == 0)
 		senderr(EINVAL);
 	if (genmask) {
-		struct radix_node *t, *rn_addmask();
-		t = rn_addmask(genmask, 1, 2);
+		struct radix_node *t;
+		t = rn_addmask((caddr_t)genmask, 1, 2);
 		if (t && Bcmp(genmask, t->rn_key, *(u_char *)genmask) == 0)
 			genmask = (struct sockaddr *)(t->rn_key);
 		else
@@ -170,7 +172,7 @@ route_output(m, so)
 		if (rt == 0)
 			senderr(ESRCH);
 		if (rtm->rtm_type != RTM_GET) {/* XXX: too grotty */
-			struct radix_node *rn, *rn_search();
+			struct radix_node *rn;
 			extern struct radix_node_head *mask_rnhead;
 
 			if (Bcmp(dst, rt_key(rt), dst->sa_len) != 0)
@@ -306,6 +308,7 @@ cleanup:
 	return (error);
 }
 
+void
 rt_setmetrics(which, in, out)
 	u_long which;
 	register struct rt_metrics *in, *out;
@@ -348,12 +351,12 @@ rt_xaddrs(cp, cplim, rtinfo)
  * starting "off" bytes from the beginning, extending the mbuf
  * chain if necessary.
  */
+void
 m_copyback(m0, off, len, cp)
 	struct	mbuf *m0;
 	register int off;
 	register int len;
 	caddr_t cp;
-
 {
 	register int mlen;
 	register struct mbuf *m = m0, *n;
@@ -526,6 +529,7 @@ again:
  * has failed, or that a protocol has detected timeouts to a particular
  * destination.
  */
+void
 rt_missmsg(type, rtinfo, flags, error)
 	int type, flags, error;
 	register struct rt_addrinfo *rtinfo;
@@ -552,6 +556,7 @@ rt_missmsg(type, rtinfo, flags, error)
  * This routine is called to generate a message from the routing
  * socket indicating that the status of a network interface has changed.
  */
+void
 rt_ifmsg(ifp)
 	register struct ifnet *ifp;
 {
@@ -582,6 +587,7 @@ rt_ifmsg(ifp)
  * be unnecessary as the routing socket will automatically generate
  * copies of it.
  */
+void
 rt_newaddrmsg(cmd, ifa, error, rt)
 	int cmd, error;
 	register struct ifaddr *ifa;
@@ -639,6 +645,7 @@ rt_newaddrmsg(cmd, ifa, error, rt)
 /*
  * This is used in dumping the kernel table via sysctl().
  */
+int
 sysctl_dumpentry(rn, w)
 	struct radix_node *rn;
 	register struct walkarg *w;
@@ -673,6 +680,7 @@ sysctl_dumpentry(rn, w)
 	return (error);
 }
 
+int
 sysctl_iflist(af, w)
 	int	af;
 	register struct	walkarg *w;
@@ -728,6 +736,7 @@ sysctl_iflist(af, w)
 	return (0);
 }
 
+int
 sysctl_rtable(name, namelen, where, given, new, newlen)
 	int	*name;
 	int	namelen;
@@ -786,7 +795,6 @@ sysctl_rtable(name, namelen, where, given, new, newlen)
  * Definitions of protocols supported in the ROUTE domain.
  */
 
-int	raw_init(),raw_usrreq(),raw_input(),raw_ctlinput(), route_init();
 extern	struct domain routedomain;		/* or at least forward */
 
 struct protosw routesw[] = {
@@ -797,8 +805,6 @@ struct protosw routesw[] = {
   sysctl_rtable,
 }
 };
-
-int	unp_externalize(), unp_dispose();
 
 struct domain routedomain =
     { PF_ROUTE, "route", route_init, 0, 0,
