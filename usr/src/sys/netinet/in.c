@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.c	7.1 (Berkeley) %G%
+ *	@(#)in.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -155,7 +155,7 @@ in_localaddr(in)
 		net = i & IN_CLASSC_NET;
 
 	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-		if (net == subnetsarelocal ? ia->ia_net : ia->ia_subnet)
+		if (net == (subnetsarelocal ? ia->ia_net : ia->ia_subnet))
 			return (1);
 	return (0);
 }
