@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_de.c	7.9 (Berkeley) %G%
+ *	@(#)if_de.c	7.10 (Berkeley) %G%
  */
 
 #include "de.h"
@@ -62,8 +62,7 @@
 #ifdef ISO
 #include "../netiso/iso.h"
 #include "../netiso/iso_var.h"
-#include "../netiso/iso_snpac.h"
-extern struct snpa_cache all_es, all_is;
+extern char all_es_snpa[], all_is_snpa[];
 #endif
 
 #include "../vax/cpu.h"

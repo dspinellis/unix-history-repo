@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)if_ex.c	7.6 (Berkeley) %G%
+ *	@(#)if_ex.c	7.7 (Berkeley) %G%
  */
 
 #include "ex.h"
@@ -61,8 +61,7 @@
 #ifdef ISO
 #include "../netiso/iso.h"
 #include "../netiso/iso_var.h"
-#include "../netiso/iso_snpac.h"
-extern struct snpa_cache all_es, all_is;
+extern char all_es_snpa[], all_is_snpa[];
 #endif
 
 #include "../vax/pte.h"
@@ -318,8 +317,8 @@ exinit(unit)
 	if (xs->xs_flags & EX_SETADDR)
 		ex_setaddr((u_char *)0, unit);
 #ifdef ISO
-	ex_setmulti(all_es.sc_snpa, unit, 1);
-	ex_setmulti(all_is.sc_snpa, unit, 2);
+	ex_setmulti(all_es_snpa, unit, 1);
+	ex_setmulti(all_is_snpa, unit, 2);
 #endif
 	(void) exstart(&xs->xs_if);			/* start transmits */
 	splx(s);
