@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.19	81/12/19	*/
+/*	uipc_socket.c	4.20	81/12/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,6 +13,7 @@
 #include "../h/socket.h"
 #include "../h/socketvar.h"
 #include "../h/stat.h"
+#include "../h/ioctl.h"
 #include "../net/in.h"
 #include "../net/in_systm.h"
 
@@ -117,14 +118,15 @@ COUNT(SOCLOSE);
 				return;
 			}
 		}
-		if ((so->so_state & SS_ISDISCONNECTING) &&
-		    (so->so_options & SO_NBIO)) {
-			u.u_error = EINPROGRESS;
-			splx(s);
-			return;
-		}
-		while (so->so_state & SS_ISCONNECTED) {
-			sleep((caddr_t)&so->so_timeo, PZERO+1);
+		if (so->so_options & SO_LETDATADRAIN) {
+			if ((so->so_state & SS_ISDISCONNECTING) &&
+			    (so->so_options & SO_NBIO)) {
+				u.u_error = EINPROGRESS;
+				splx(s);
+				return;
+			}
+			while (so->so_state & SS_ISCONNECTED)
+				sleep((caddr_t)&so->so_timeo, PZERO+1);
 		}
 	}
 	u.u_error = (*so->so_proto->pr_usrreq)(so, PRU_DETACH, 0, 0);
@@ -430,6 +432,22 @@ soioctl(so, cmd, cmdp)
 
 COUNT(SOIOCTL);
 	switch (cmdp) {
+
+	case SIOCDONE: {
+		int flags;
+		if (copyin(cmdp, (caddr_t)&flags, sizeof (flags))) {
+			u.u_error = EFAULT;
+			return;
+		}
+		if (flags & FREAD) {
+			int s = splimp();
+			socantrcvmore(so);
+			sbflush(&so->so_rcv);
+		}
+		if (flags & FWRITE)
+			(*so->so_proto->pr_usrreq)(so, PRU_DISCONNECT, (struct mbuf *)0, 0);
+		return;
+	}
 
 	}
 	switch (so->so_type) {
