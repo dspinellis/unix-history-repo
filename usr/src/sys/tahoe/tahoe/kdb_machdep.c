@@ -1,4 +1,4 @@
-/*	kdb_machdep.c	7.4	87/03/13	*/
+/*	kdb_machdep.c	7.5	87/12/26	*/
 
 #include "param.h"
 #include "conf.h"
@@ -72,7 +72,7 @@ kdb_init()
 }
 
 int	kdbactive = 0;
-#define	ESC	CTRL([)
+#define	ESC	CTRL('[')
 /*
  * Process a keyboard interrupt from the console.
  * We look for an escape sequence which signals
@@ -95,7 +95,7 @@ kdbrintr(c, tp)
 	if (!escape)
 		return (c == ESC &&  ++escape);
 	escape = 0;
-	if ((c != 'k' && c != 'K' && c != CTRL(k))) {
+	if ((c != 'k' && c != 'K' && c != CTRL('k'))) {
 		(*linesw[tp->t_line].l_rint)(ESC, tp);
 		return (0);
 	}
