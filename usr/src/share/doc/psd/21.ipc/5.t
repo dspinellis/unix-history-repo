@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)5.t	1.2 (Berkeley) %G%
+.\"	@(#)5.t	1.3 (Berkeley) %G%
 .\"
 .ds RH "Advanced Topics
 .bp
@@ -732,34 +732,14 @@ NS Packet Sequences
 The semantics of NS connections demand that
 the user both be able to look inside the network header associated
 with any incoming packet and be able to specify what should go
-in certain fields of an outgoing packet.  The header of an
-IDP-level packet looks like:
-.DS
-.if t .ta \w'struct  'u +\w"  struct ns_addr"u +2.0i
-struct idp {
-	u_short	idp_sum;	/* Checksum */
-	u_short	idp_len;	/* Length, in bytes, including header */
-	u_char	idp_tc;		/* Transport Control (i.e., hop count) */
-	u_char	idp_pt;		/* Packet Type (i.e., level 2 protocol) */
-	struct ns_addr	idp_dna;	/* Destination Network Address */
-	struct ns_addr	idp_sna;	/* Source Network Address */
-};
-.DE
-Most of the fields are filled in automatically; the only
-field that the user should be concerned with is the 
-\fIpacket type\fP field.  The standard values for this
-field are (as defined in <\fInetns/ns.h\fP>):
-.DS
-.if t .ta \w"  #define"u +\w"  NSPROTO_ERROR"u +1.0i
-#define NSPROTO_RI	1		/* Routing Information */
-#define NSPROTO_ECHO	2		/* Echo Protocol */
-#define NSPROTO_ERROR	3		/* Error Protocol */
-#define NSPROTO_PE	4		/* Packet Exchange */
-#define NSPROTO_SPP	5		/* Sequenced Packet */
-.DE
-For SPP connections, the contents of this field are
-automatically set to NSPROTO_SPP; for IDP packets,
-this value defaults to zero, which means ``unknown''.
+in certain fields of an outgoing packet.
+Using different calls to \fIsetsockopt\fP, it is possible
+to indicate whether prototype headers will be associated by
+the user with each outgoing packet (SO_HEADERS_ON_OUTPUT),
+to indicate whether the headers received by the system should be
+delivered to the user (SO_HEADERS_ON_INPUT), or to indicate
+default information that should be associated with all
+outgoing packets on a given socket (SO_DEFAULT_HEADERS).
 .PP
 The contents of a SPP header (minus the IDP header) are:
 .DS
@@ -784,21 +764,13 @@ datastream type are defined by the application(s) in question;
 the value of this field is, by default, zero, but it can be
 used to indicate things such as Xerox's Bulk Data Transfer
 Protocol (in which case it is set to one).  The connection control
-field is a mask of the flags defined above.  The user may
+field is a mask of the flags defined just below it.  The user may
 set or clear the end-of-message bit to indicate
 that a given message is the last of a given substream type,
 or may set/clear the attention bit as an alternate way to
 indicate that a packet should be sent out-of-band.
-.PP
-Using different calls to \fIsetsockopt\fP, is it possible
-to indicate whether prototype headers will be associated by
-the user with each outgoing packet (SO_HEADERS_ON_OUTPUT),
-to indicate whether the headers received by the system should be
-delivered to the user (SO_HEADERS_ON_INPUT), or to indicate
-default information that should be associated with all
-outgoing packets on a given socket (SO_DEFAULT_HEADERS).
-For example, to associate prototype headers with outgoing
-SPP packets, one might use:
+As an example, to associate prototype headers with outgoing
+SPP packets, consider:
 .DS
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -847,8 +819,37 @@ setsockopt(s, NSPROTO_SPP, SO_HEADERS_ON_OUTPUT, &off, sizeof(off));
 setsockopt(s, NSPROTO_SPP, SO_HEADERS_ON_INPUT, &on, sizeof(on));
  ...
 .DE
-To indicate a default prototype header to be associated with
-the outgoing packets on an IDP datagram socket, one would use:
+.PP
+Output is handled somewhat differently in the IDP world.
+The header of an IDP-level packet looks like:
+.DS
+.if t .ta \w'struct  'u +\w"  struct ns_addr"u +2.0i
+struct idp {
+	u_short	idp_sum;	/* Checksum */
+	u_short	idp_len;	/* Length, in bytes, including header */
+	u_char	idp_tc;		/* Transport Control (i.e., hop count) */
+	u_char	idp_pt;		/* Packet Type (i.e., level 2 protocol) */
+	struct ns_addr	idp_dna;	/* Destination Network Address */
+	struct ns_addr	idp_sna;	/* Source Network Address */
+};
+.DE
+The primary field of interest in an IDP header is the \fIpacket type\fP
+field.  The standard values for this field are (as defined
+in <\fInetns/ns.h\fP>):
+.DS
+.if t .ta \w"  #define"u +\w"  NSPROTO_ERROR"u +1.0i
+#define NSPROTO_RI	1		/* Routing Information */
+#define NSPROTO_ECHO	2		/* Echo Protocol */
+#define NSPROTO_ERROR	3		/* Error Protocol */
+#define NSPROTO_PE	4		/* Packet Exchange */
+#define NSPROTO_SPP	5		/* Sequenced Packet */
+.DE
+For SPP connections, the contents of this field are
+automatically set to NSPROTO_SPP; for IDP packets,
+this value defaults to zero, which means ``unknown''.
+.PP
+Setting the value of that field with SO_DEFAULT_HEADERS is
+easy:
 .DS
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -867,6 +868,26 @@ setsockopt(s, NSPROTO_IDP, SO_DEFAULT_HEADERS, (char *) &proto_idp,
     sizeof(proto_idp));
  ...
 .DE
+.PP
+Using SO_HEADERS_ON_OUTPUT is somewhat more difficult.  When
+SO_HEADERS_ON_OUTPUT is turned on for an IDP socket, the socket
+becomes (for all intents and purposes) a raw socket.  In this
+case, all the fields of the prototype header (except the 
+length and checksum fields, which are computed by the kernel)
+must be filled in correctly in order for the socket to send and
+receive data in a sensible manner.  To be more specific, the
+source address must be set to that of the host sending the
+data; the destination address must be set to that of the
+host for whom the data is intended; the packet type must be
+set to whatever value is desired; and the hopcount must be
+set to some reasonable value (almost always zero).  It should
+also be noted that simply sending data using \fIwrite\fP
+will not work unless a \fIconnect\fP or \fIsendto\fP call
+is used, in spite of the fact that it is the destination
+address in the prototype header that is used, not the one
+given in either of those calls.  For almost
+all IDP applications , using SO_DEFAULT_HEADERS is easier and
+more desirable than writing headers.
 .NH 2
 Three-way Handshake
 .PP

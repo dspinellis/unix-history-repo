@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	1.2 (Berkeley) %G%
+.\"	@(#)3.t	1.3 (Berkeley) %G%
 .\"
 .ds RH "Network Library Routines
 .bp
@@ -186,6 +186,8 @@ bzero((char *)&dst, sizeof(dst));
  * integer to a ``union ns_net'' at present; in
  * the future, something will hopefully be provided,
  * but this is the portable way to go for now.
+ * The network number below is the one for the NS net
+ * that the desired host (gyre) is on.
  */
 netnum = htonl(2266);
 dst.sns_addr.x_net = *(union ns_net *) &netnum;
