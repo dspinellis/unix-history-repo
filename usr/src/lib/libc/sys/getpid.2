@@ -2,27 +2,33 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)getpid.2	4.1 (Berkeley) %G%
+.\"	@(#)getpid.2	5.1 (Berkeley) %G%
 .\"
-.TH GETPID 2 
+.TH GETPID 2 "12 February 1983"
 .UC 4
 .SH NAME
-getpid \- get process identification
+getpid, getppid \- get process identification
 .SH SYNOPSIS
-.B getpid()
+.ft B
+.nf
+pid = getpid()
+long pid;
+.sp
+ppid = getppid()
+long ppid;
+.fi
+.ft R
 .SH DESCRIPTION
 .I Getpid
 returns
 the process ID of
 the current process.
-Most often it is used to generate
-uniquely-named
-temporary files.
-.SH "SEE ALSO"
-mktemp(3)
-.SH "ASSEMBLER (PDP-11)"
-(getpid = 20.)
-.br
-.B sys getpid
-.br
-(pid in r0)
+Most often it is used with the host identifier
+.IR gethostid (2)
+to generate uniquely-named temporary files.
+.PP
+.I Getppid
+returns the process ID of the parent
+of the current process. 
+.SH "SEE ALSO
+gethostid(2)
