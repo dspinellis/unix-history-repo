@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: trap.c 1.35 91/12/26$
  *
- *	@(#)trap.c	7.23 (Berkeley) %G%
+ *	@(#)trap.c	7.24 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -143,8 +143,12 @@ again:
 	/*
 	 * If profiling, charge system time to the trapped pc.
 	 */
-	if (p->p_flag & SPROFIL)
-		addupc_intr(p, fp->f_pc, (int)(p->p_sticks - oticks));
+	if (p->p_flag & SPROFIL) {
+		extern int psratio;
+
+		addupc_task(p, fp->f_pc,
+			    (int)(p->p_sticks - oticks) * psratio);
+	}
 #ifdef HP380
 	/*
 	 * Deal with user mode writebacks (from trap, or from sigreturn).
