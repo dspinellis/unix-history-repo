@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.69 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.70 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -380,7 +380,6 @@ lfs_sync(mp, waitfor)
 	int waitfor;
 {
 	extern int crashandburn, syncprt;
-	static int sync_lock, sync_want;
 	int error;
 
 #ifdef VERBOSE
@@ -391,17 +390,6 @@ lfs_sync(mp, waitfor)
 	if (crashandburn)
 		return (0);
 #endif
-	/*
-	 * Meta data blocks are only marked dirty, not busy, so LFS syncs
-	 * must be single threaded.
-	 */
-	while (sync_lock) {
-		sync_want = 1;
-		if (error = tsleep(&sync_lock, PLOCK | PCATCH, "lfs sync", 0))
-			return (error);
-	}
-	sync_lock = 1;
-
 	if (syncprt)
 		ufs_bufstats();
 
@@ -410,11 +398,6 @@ lfs_sync(mp, waitfor)
 #ifdef QUOTA
 	qsync(mp);
 #endif
-	sync_lock = 0;
-	if (sync_want) {
-		sync_want = 0;
-		wakeup(&sync_lock);
-	}
 	return (error);
 }
 
