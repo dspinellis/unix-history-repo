@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)socketvar.h	7.18 (Berkeley) %G%
+ *	@(#)socketvar.h	7.19 (Berkeley) %G%
  */
 
 /*
@@ -66,7 +66,7 @@ struct socket {
 #define	SB_NOINTR	0x40		/* operations not interruptible */
 
 	caddr_t	so_tpcb;		/* Wisc. protocol control block XXX */
-	void	(*so_upcall)(		/* so, so->so_upcallarg, waitf */);
+	void	(*so_upcall) __P((struct socket *so, caddr_t arg, int waitf));
 	caddr_t	so_upcallarg;		/* Arg for above */
 };
 
