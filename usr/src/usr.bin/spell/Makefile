@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.15 (Berkeley) %G%
+#	@(#)Makefile	4.16 (Berkeley) %G%
 
 LIBC=	/usr/lib/libc.a
 SRCS=	spell.c spellin.c spellout.c
@@ -35,7 +35,8 @@ depend: .depend
 	mkdep -p ${CFLAGS:M-[ID]*} ${.ALLSRC}
 
 DIR=	${DESTDIR}/usr/share/dict
-FILES=	hlist hlista hlistb hstop
+FILES=	${.CURDIR}/american ${.CURDIR}/british hlist hlista hlistb hstop \
+	${.CURDIR}/stop
 
 install: maninstall
 	install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
