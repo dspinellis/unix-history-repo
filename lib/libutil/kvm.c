@@ -378,7 +378,8 @@ kvm_getprocs(what, arg)
 			return (-1);
 		}
 		copysize = ret;
-		if (copysize > ocopysize &&
+		if ((copysize > ocopysize ||
+			kvmprocbase == (struct kinfo_proc *) NULL) &&
 			(kvmprocbase = (struct kinfo_proc *)
 				realloc(kvmprocbase, copysize)) == NULL) {
 			seterr("out of memory");
