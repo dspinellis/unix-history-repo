@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rsh.c	4.6 83/02/09";
+static char sccsid[] = "@(#)rsh.c	4.7 83/02/23";
 #endif
 
 #include <sys/types.h>
@@ -135,6 +135,7 @@ another:
 		char *bp; int rembits, wc;
 		(void) close(rfd2);
 	reread:
+		errno = 0;
 		cc = read(0, buf, sizeof buf);
 		if (cc <= 0)
 			goto done;
@@ -161,7 +162,7 @@ another:
 			goto reread;
 		goto rewrite;
 	done:
-		{ int flags = 1; (void) shutdown(rem, &flags); }
+		(void) shutdown(rem, 1);
 		exit(0);
 	}
 	sigacts(sendsig);
