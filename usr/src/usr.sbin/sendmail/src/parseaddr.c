@@ -2,7 +2,7 @@
 # include <ctype.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	1.4	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	1.5	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -61,6 +61,7 @@ parse(addr, a, copyf)
 	bool got_one;
 	extern char *prescan();
 	extern char *xalloc();
+	char **pvp;
 
 	/*
 	**  Initialize and prescan address.
@@ -205,6 +206,43 @@ parse(addr, a, copyf)
 			a->q_host = buf;
 			a->q_user = q;
 		}
+
+		/*
+		**  Don't go to the net if already on the target host.
+		**	This is important on the berkeley network, since
+		**	it get confused if we ask to send to ourselves.
+		**	For nets like the ARPANET, we probably will have
+		**	the local list set to NULL to simplify testing.
+		**	The canonical representation of the name is also set
+		**	to be just the local name so the duplicate letter
+		**	suppression algorithm will work.
+		*/
+
+		if ((pvp = a->q_mailer->m_local) != NULL)
+		{
+			while (*pvp != NULL)
+			{
+				auto char buf2[MAXNAME];
+
+				strcpy(buf2, a->q_host);
+				if (!flagset(P_HST_UPPER, t->p_flags))
+					makelower(buf2);
+				if (strcmp(*pvp++, buf2) == 0)
+				{
+					strcpy(buf2, a->q_user);
+					p = a->q_paddr;
+					if (parse(buf2, a, -1) == NULL)
+					{
+						To = addr;
+						return (NULL);
+					}
+					To = a->q_paddr = p;
+					break;
+				}
+			}
+		}
+
+		/* make copies if specified */
 		if (copyf >= 0)
 		{
 			p = xalloc((unsigned) strlen(a->q_host) + 1);

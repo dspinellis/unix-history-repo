@@ -6,7 +6,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	1.10	%G%";
+static char	SccsId[] = "@(#)main.c	1.11	%G%";
 
 /*
 **  DELIVERMAIL -- Deliver mail to a set of destinations
@@ -114,8 +114,8 @@ bool	ForceMail;	/* mail even if already sent a copy */
 bool	MeToo;		/* send to the sender also if in a group expansion */
 bool	SaveFrom;	/* save From lines on the front of messages */
 bool	IgnrDot;	/* if set, ignore dot when collecting mail */
-bool	Error;		/* set if errors */
 bool	SuprErrs;	/* supress errors if set */
+int	Errors;		/* count of errors */
 char	InFileName[] = "/tmp/mailtXXXXXX";
 char	Transcript[] = "/tmp/mailxXXXXXX";
 addrq	From;		/* the from person */
@@ -376,7 +376,7 @@ main(argc, argv)
 	}
 
 	/* if we have had errors sofar, drop out now */
-	if (Error && ExitStat == EX_OK)
+	if (Errors > 0 && ExitStat == EX_OK)
 		ExitStat = EX_USAGE;
 	if (ExitStat != EX_OK)
 		finis();
