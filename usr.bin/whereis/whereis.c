@@ -57,6 +57,7 @@ static char *bindirs[] = {
 	"/usr/sbin",
 	"/usr/share",
 	"/usr/X386/bin",
+	"/usr/gnu/bin",
 	"/usr/local/bin",
 	"/etc",
 	0
@@ -95,6 +96,14 @@ static char *mandirs[] = {
 	"/usr/local/man/man6",
 	"/usr/local/man/man7",
 	"/usr/local/man/man8",
+	"/usr/gnu/man/man1",
+	"/usr/gnu/man/man2",
+	"/usr/gnu/man/man3",
+	"/usr/gnu/man/man4",
+	"/usr/gnu/man/man5",
+	"/usr/gnu/man/man6",
+	"/usr/gnu/man/man7",
+	"/usr/gnu/man/man8",
 	0
 };
 static char *srcdirs[]  = {
