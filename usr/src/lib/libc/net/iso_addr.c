@@ -21,6 +21,14 @@ static char sccsid[] = "@(#)iso_addr.c	5.2 (Berkeley) %G%";
 
 #include <sys/types.h>
 #include <netiso/iso.h>
+/* States*/
+#define VIRGIN	0
+#define GOTONE	1
+#define GOTTWO	2
+/* Inputs */
+#define	DIGIT	(4*0)
+#define	END	(4*1)
+#define DELIM	(4*2)
 
 struct iso_addr *
 iso_addr(addr)
@@ -29,38 +37,47 @@ register char *addr;
 	static struct iso_addr out_addr;
 	register char *cp = out_addr.isoa_genaddr;
 	char *cplim = cp + sizeof(out_addr.isoa_genaddr);
-	register int byte;
-	register nibble_cnt = 0;
+	register int byte = 0, state = VIRGIN, new;
 
 	bzero((char *)&out_addr, sizeof(out_addr));
-	while (*addr && (cp < cplim)) {
-		byte <<= 8;
+	do {
 		if ((*addr >= '0') && (*addr <= '9')) {
-			byte += *addr - '0';
+			new = *addr - '0';
 		} else if ((*addr >= 'a') && (*addr <= 'f')) {
-			byte += *addr - 'a' + 10;
+			new = *addr - 'a' + 10;
 		} else if ((*addr >= 'A') && (*addr <= 'F')) {
-			byte += *addr - 'A' + 10;
-		} else
-			nibble_cnt++;
+			new = *addr - 'A' + 10;
+		} else if (*addr == 0) 
+			state |= END;
+		else
+			state |= DELIM;
 		addr++;
-		nibble_cnt++;
-		if (nibble_cnt > 1) {
-			*cp++ = byte;
-			nibble_cnt = byte = 0;
+		switch (state /* | INPUT */) {
+		case GOTTWO | DIGIT:
+			*cp++ = byte; /*FALLTHROUGH*/
+		case VIRGIN | DIGIT:
+			state = GOTONE; byte = new; continue;
+		case GOTONE | DIGIT:
+			state = GOTTWO; byte = new + (byte << 4); continue;
+		default: /* | DELIM */
+			state = VIRGIN; *cp++ = byte; byte = 0; continue;
+		case GOTONE | END:
+		case GOTTWO | END:
+			*cp++ = byte; /* FALLTHROUGH */
+		case VIRGIN | END:
+			break;
 		}
-	}
-	if (nibble_cnt && (cp < cplim))
-		*cp++ = byte;
+		break;
+	} while (cp < cplim); 
 	out_addr.isoa_len = cp - out_addr.isoa_genaddr;
 	return (&out_addr);
 }
+static char hexlist[] = "0123456789abcdef";
 
 char *
 iso_ntoa(isoa)
 struct iso_addr *isoa;
 {
-	static char hexlist[] = "0123456789abcdef";
 	static char obuf[64];
 	register char *out = obuf; 
 	register int i;
@@ -73,7 +90,7 @@ struct iso_addr *isoa;
 		*out++ = '.';
 		if (i > 0xf) {
 			out[1] = hexlist[i & 0xf];
-			i >>= 8;
+			i >>= 4;
 			out[0] = hexlist[i];
 			out += 2;
 		} else
