@@ -49,8 +49,10 @@ static	char	sccsid[] = "@(#)outbound.c	3.1  10/29/86";
 
 /* some globals */
 
+#if	!defined(PURE3274)
 int	OutputClock = 0;		/* what time it is */
 int	TransparentClock = 0;		/* time we were last in transparent */
+#endif	/* !defined(PURE3274) */
 
 
 char CIABuffer[64] = {
@@ -231,9 +233,11 @@ int	control;				/* this buffer ended block? */
 		    ScreenSize = NumberLines * NumberColumns;
 		}
 		Clear3270();
+#if	!defined(PURE3274)
 		if (TransparentClock == OutputClock) {
 		    TransStop();
 		}
+#endif	/* !defined(PURE3274) */
 		break;
 	    }
 
@@ -307,6 +311,7 @@ int	control;				/* this buffer ended block? */
 		Ensure(2);
 		i = buffer[0];
 		c = buffer[1];
+#if	!defined(PURE3274)
 		if (!i && !c) { /* transparent write */
 		    if (!control) {
 			return(origCount-(count+1));
@@ -318,11 +323,12 @@ int	control;				/* this buffer ended block? */
 			buffer += count;
 			count -= count;
 		    }
-		} else {
-		    BufferAddress = Addr3270(i, c);
-		    buffer += 2;
-		    count -= 2;
+		    break;
 		}
+#endif	/* !defined(PURE3274) */
+		BufferAddress = Addr3270(i, c);
+		buffer += 2;
+		count -= 2;
 		break;
 	    case ORDER_IC:
 		CursorAddress = BufferAddress;
@@ -417,12 +423,18 @@ int	control;				/* this buffer ended block? */
 	}
     }
     if (count == 0) {
+#if	!defined(PURE3274)
 	OutputClock++;		/* time rolls on */
+#endif	/* !defined(PURE3274) */
 	if (control) {
 	    if (Wcc & WCC_RESTORE) {
+#if	!defined(PURE3274)
 		if (TransparentClock != OutputClock) {
 		    AidByte = 0;
 		}
+#else	/* !defined(PURE3274) */
+		AidByte = 0;
+#endif	/* !defined(PURE3274) */
 		UnLocked = 1;
 	    }
 	    if (Wcc & WCC_ALARM) {
