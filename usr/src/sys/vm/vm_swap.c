@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vm_swap.c	7.9 (Berkeley) %G%
+ *	@(#)vm_swap.c	7.10 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -34,6 +34,7 @@ swstrategy(bp)
 {
 	int sz, off, seg, index;
 	register struct swdevt *sp;
+	struct vnode *vp;
 
 #ifdef GENERIC
 	/*
@@ -66,8 +67,7 @@ swstrategy(bp)
 	} else
 		index = 0;
 	sp = &swdevt[index];
-	bp->b_dev = sp->sw_dev;
-	if (bp->b_vp == NULL || bp->b_dev == 0)
+	if ((bp->b_dev = sp->sw_dev) == 0)
 		panic("swstrategy");
 	if (sp->sw_vp == NULL) {
 		bp->b_error |= B_ERROR;
@@ -76,14 +76,17 @@ swstrategy(bp)
 	}
 	VHOLD(sp->sw_vp);
 	if ((bp->b_flags & B_READ) == 0) {
-		bp->b_vp->v_numoutput--;
-		if ((bp->b_vp->v_flag & VBWAIT) && bp->b_vp->v_numoutput <= 0) {
-			bp->b_vp->v_flag &= ~VBWAIT;
-			wakeup((caddr_t)&bp->b_vp->v_numoutput);
+		if (vp = bp->b_vp) {
+			vp->v_numoutput--;
+			if ((vp->v_flag & VBWAIT) && vp->v_numoutput <= 0) {
+				vp->v_flag &= ~VBWAIT;
+				wakeup((caddr_t)&vp->v_numoutput);
+			}
 		}
 		sp->sw_vp->v_numoutput++;
 	}
-	brelvp(bp);
+	if (bp->b_vp != NULL)
+		brelvp(bp);
 	bp->b_vp = sp->sw_vp;
 	VOP_STRATEGY(bp);
 }
