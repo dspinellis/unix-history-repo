@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)crypt.3	6.4 (Berkeley) %G%
+.\"     @(#)crypt.3	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CRYPT 3
@@ -148,10 +148,14 @@ as described above.
 .%D July 1979
 .Re
 .Sh HISTORY
-A
+A rotor-based
 .Fn crypt
 function appeared in
 .At v6 .
+The current style
+.Fn crypt
+first appeared in
+.At v7 .
 .Sh BUGS
 Dropping the
 .Em least
