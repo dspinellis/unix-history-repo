@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.77 (Berkeley) %G%
+ *	@(#)conf.h	8.78 (Berkeley) %G%
  */
 
 /*
@@ -647,6 +647,38 @@ typedef int		pid_t;
 # define LA_TYPE	LA_ZERO
 # define SFS_TYPE	SFS_4ARGS	/* four argument statfs() call */
 #endif
+
+
+/*
+**  Apollo DomainOS
+**
+**  From Todd Martin <tmartint@tus.ssi1.com> & Don Lewis <gdonl@gv.ssi1.com>
+** 
+**  15 Jan 1994
+**
+*/
+
+#ifdef apollo
+# define HASSTATFS	1	/* has the statfs(2) syscall */
+# define HASSETREUID	1	/* has setreuid(2) call */
+# define HASINITGROUPS	1	/* has initgroups(2) call */
+# undef  SETPROCTITLE
+# define LA_TYPE	LA_SUBR		/* use getloadavg.c */
+# define SFS_TYPE	SFS_MOUNT
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+# ifndef _PATH_SENDMAILPID
+#  define _PATH_SENDMAILPID	"/etc/sendmail.pid"
+# endif
+# undef  S_IFSOCK		/* S_IFSOCK and S_IFIFO are the same */
+# undef  S_IFIFO
+# define S_IFIFO	0010000
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
+#endif 
+
 
 
 

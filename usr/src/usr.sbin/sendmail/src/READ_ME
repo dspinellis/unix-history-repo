@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.48 (Berkeley) %G%
+#	@(#)READ_ME	8.49 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -539,6 +539,15 @@ DG/UX
 	DG/UX -- the person who has this working, Douglas Anderson
 	<dlander@afterlife.ncsc.mil>, used procmail instead.
 
+Apollo DomainOS
+	If you are compiling on Apollo, you will have to create an empty
+	file "unistd.h" and create a file "dirent.h" containing:
+
+		#include <sys/dir.h>
+		#define dirent	direct
+
+	(The Makefile.DomainOS will attempt to do both of these for you.)
+
 System V Release 4 Based Systems
 	There is a single Makefile that is intended for all SVR4-based
 	systems (called Makefile.SVR4).  It defines __svr4__, which is
@@ -721,4 +730,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.48, last update %G% 12:39:32)
+(Version 8.49, last update %G% 08:59:39)
