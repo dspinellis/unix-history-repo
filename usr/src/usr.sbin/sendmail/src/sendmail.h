@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.59 (Berkeley) %G%
+ *	@(#)sendmail.h	8.60 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.59		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.60		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -90,7 +90,6 @@ struct address
 	struct address	*q_alias;	/* address this results from */
 	char		*q_owner;	/* owner of q_alias */
 	struct address	*q_tchain;	/* temporary use chain */
-	time_t		q_timeout;	/* timeout for this address */
 };
 
 typedef struct address ADDRESS;
@@ -702,9 +701,14 @@ EXTERN struct
 	time_t	to_ident;	/* IDENT protocol requests */
 	time_t	to_fileopen;	/* opening :include: and .forward files */
 			/* following are per message */
-	time_t	to_q_return;	/* queue return timeout */
-	time_t	to_q_warning;	/* queue warning timeout */
+	time_t	to_q_return[MAXTOCLASS];	/* queue return timeouts */
+	time_t	to_q_warning[MAXTOCLASS];	/* queue warning timeouts */
 } TimeOuts;
+
+/* timeout classes for return and warning timeouts */
+# define TOC_NORMAL	0	/* normal delivery */
+# define TOC_URGENT	1	/* urgent delivery */
+# define TOC_NONURGENT	2	/* non-urgent delivery */
 
 
 /*
