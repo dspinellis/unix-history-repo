@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.4 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 MAN1=	kdestroy.0 kerberos.0 kinit.0 klist.0 ksrvtgt.0
 MAN3=	acl_check.0 des_crypt.0 krb.0 krb_realmofhost.0 krb_sendauth.0 \
