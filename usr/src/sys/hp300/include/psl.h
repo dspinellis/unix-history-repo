@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)psl.h	7.2 (Berkeley) %G%
+ *	@(#)psl.h	7.3 (Berkeley) %G%
  */
 
 #ifndef PSL_C
@@ -26,7 +26,9 @@
 #define	PSL_IPL5	0x0500		/* interrupt priority level 5 */
 #define	PSL_IPL6	0x0600		/* interrupt priority level 6 */
 #define	PSL_IPL7	0x0700		/* interrupt priority level 7 */
+#define	PSL_M		0x1000		/* master (kernel) sp vs intr sp */
 #define	PSL_S		0x2000		/* supervisor enable bit */
+/*	PSL_T0		0x4000		   ??? T0 on 68020, 8000 is T1 */
 #define	PSL_T		0x8000		/* trace enable bit */
 
 #define	PSL_LOWIPL	(PSL_S)
@@ -39,9 +41,5 @@
 #define	PSL_USERSET	(0)
 #define	PSL_USERCLR	(PSL_S | PSL_IPL7 | PSL_MBZ)
 
-/*
- * Macros to decode processor status word.
- */
 #define	USERMODE(ps)	(((ps) & PSL_S) == 0)
-#define	BASEPRI(ps)	(((ps) & PSL_IPL7) == 0)
 #endif
