@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)spec_vnops.c	7.52 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.53 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -96,9 +96,7 @@ spec_lookup(ap)
 }
 
 /*
- * Open a special file: Don't allow open if fs is mounted -nodev,
- * and don't allow opens of block devices that are currently mounted.
- * Otherwise, call device driver open function.
+ * Open a special file.
  */
 /* ARGSUSED */
 spec_open(ap)
@@ -109,11 +107,14 @@ spec_open(ap)
 		struct proc *a_p;
 	} */ *ap;
 {
-	register struct vnode *vp = ap->a_vp;
-	dev_t dev = (dev_t)vp->v_rdev;
+	struct vnode *bvp, *vp = ap->a_vp;
+	dev_t bdev, dev = (dev_t)vp->v_rdev;
 	register int maj = major(dev);
 	int error;
 
+	/*
+	 * Don't allow open if fs is mounted -nodev.
+	 */
 	if (vp->v_mount && (vp->v_mount->mnt_flag & MNT_NODEV))
 		return (ENXIO);
 
@@ -122,6 +123,29 @@ spec_open(ap)
 	case VCHR:
 		if ((u_int)maj >= nchrdev)
 			return (ENXIO);
+		if (ap->a_cred != FSCRED && (ap->a_mode & FWRITE)) {
+			/*
+			 * When running in very secure mode, do not allow
+			 * opens for writing of any disk character devices.
+			 */
+			if (securelevel >= 2 && isdisk(dev, VCHR))
+				return (EPERM);
+			/*
+			 * When running in secure mode, do not allow opens
+			 * for writing of /dev/mem, /dev/kmem, or character
+			 * devices whose corresponding block devices are
+			 * currently mounted.
+			 */
+			if (securelevel >= 1) {
+				if ((bdev = chrtoblk(dev)) != NODEV &&
+				    vfinddev(bdev, VBLK, &bvp) &&
+				    bvp->v_usecount > 0 &&
+				    (error = ufs_mountedon(bvp)))
+					return (error);
+				if (iskmemdev(dev))
+					return (EPERM);
+			}
+		}
 		VOP_UNLOCK(vp);
 		error = (*cdevsw[maj].d_open)(dev, ap->a_mode, S_IFCHR, ap->a_p);
 		VOP_LOCK(vp);
@@ -130,6 +154,17 @@ spec_open(ap)
 	case VBLK:
 		if ((u_int)maj >= nblkdev)
 			return (ENXIO);
+		/*
+		 * When running in very secure mode, do not allow
+		 * opens for writing of any disk block devices.
+		 */
+		if (securelevel >= 2 && ap->a_cred != FSCRED &&
+		    (ap->a_mode & FWRITE) && isdisk(dev, VBLK))
+			return (EPERM);
+		/*
+		 * Do not allow opens of block devices that are
+		 * currently mounted.
+		 */
 		if (error = ufs_mountedon(vp))
 			return (error);
 		return ((*bdevsw[maj].d_open)(dev, ap->a_mode, S_IFBLK, ap->a_p));
