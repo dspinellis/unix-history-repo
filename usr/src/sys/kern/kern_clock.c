@@ -1,4 +1,4 @@
-/*	kern_clock.c	3.5	%H%	*/
+/*	kern_clock.c	3.6	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -89,18 +89,30 @@ caddr_t pc;
 			p2++;
 		}
 	}
-	if (rcnt >= rintvl) {
-		dhtimer();
-		dztimer();
-		rcnt = -1;
-	}
 
 	/*
 	 * lightning bolt time-out
 	 * and time of day
 	 */
 out:
-	++rcnt;
+
+	/*
+	 * In order to not take input character interrupts to use
+	 * the input silo on DZ's we have to guarantee to echo
+	 * characters regularly.  This means that we have to
+	 * call the timer routines predictably.  Since blocking
+	 * in these routines is at spl5(), we have to make spl5()
+	 * really spl6() blocking off the clock to put this code
+	 * here.  Note also that it is critical that we run spl5()
+	 * (i.e. really spl6()) in the receiver interrupt routines
+	 * so we can't enter them recursively and transpose characters.
+	 */
+	if (rcnt >= rintvl) {
+		dhtimer();
+		dztimer();
+		rcnt = 0;
+	} else
+		rcnt++;
 	if (!noproc) {
 		s = u.u_procp->p_rssize;
 		u.u_vm.vm_idsrss += s;
