@@ -1,12 +1,8 @@
 #
-#	@(#)Makefile	1.18	(Berkeley)	%G%
+#	@(#)Makefile	1.17	(Berkeley)	%G%
 #
 M=/usr/src/lib/mip
-#ifdef vax
-#P=/usr/src/lib/pcc/pcc.vax
-#else
-P=/usr/src/lib/pcc/pcc.tahoe
-#endif
+P=/usr/src/lib/pcc/pcc.${MACHINE}
 CFLAGS=-O
 LINTLIBS=llib-port.ln llib-lc.ln llib-lcurses.ln llib-ldbm.ln llib-lm.ln \
 	llib-lmp.ln llib-lplot.ln llib-ltermcap.ln
@@ -105,13 +101,13 @@ lintall:
 		$M/pftn.c $M/trees.c $M/optim.c lint.c
 
 install: all SHELL
-	install -s lpass1 ${DESTDIR}/usr/lib/lint/lint1
-	install -s lpass2 ${DESTDIR}/usr/lib/lint/lint2
-	for i in llib-*; do install -c -m 644 $$i ${DESTDIR}/usr/lib/lint; done
+	install -s -o bin -g src -m 755 lpass1 ${DESTDIR}/usr/lib/lint/lint1
+	install -s -o bin -g src -m 755 lpass2 ${DESTDIR}/usr/lib/lint/lint2
+	for i in llib-*; do install -c -o bin -g src -m 644 $$i ${DESTDIR}/usr/lib/lint; done
 	-rm -f ${DESTDIR}/usr/lib/lint/llib-ltermlib*
 	ln -s llib-ltermcap ${DESTDIR}/usr/lib/lint/llib-ltermlib
 	ln -s llib-ltermcap.ln ${DESTDIR}/usr/lib/lint/llib-ltermlib.ln
-	install -c SHELL ${DESTDIR}/usr/bin/lint
+	install -c -o bin -g src -m 755 SHELL ${DESTDIR}/usr/bin/lint
 
 shrink:
 	rm -f *.o errs rodata.c pcctokens pcclocal.h
@@ -121,3 +117,5 @@ clean: shrink
 
 tags:	${SRCS}
 	ctags -w ${SRCS}
+
+depend:
