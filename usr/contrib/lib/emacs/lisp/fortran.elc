@@ -1,0 +1,242 @@
+
+(defvar fortran-do-indent 3 "\
+*Extra indentation applied to `do' blocks.")
+
+(defvar fortran-if-indent 3 "\
+*Extra indentation applied to `if' blocks.")
+
+(defvar fortran-continuation-indent 5 "\
+*Extra indentation applied to `continuation' lines.")
+
+(defvar fortran-comment-indent-style (quote fixed) "\
+*nil forces comment lines not to be touched,
+'fixed produces fixed comment indentation to comment-column,
+and 'relative indents to current fortran indentation plus comment-column.")
+
+(defvar fortran-comment-line-column 6 "\
+*Indentation for text in comment lines.")
+
+(defvar comment-line-start nil "\
+*Delimiter inserted to start new full-line comment.")
+
+(defvar comment-line-start-skip nil "\
+*Regexp to match the start of a full-line comment.")
+
+(defvar fortran-minimum-statement-indent 6 "\
+*Minimum indentation for fortran statements.")
+
+(defvar fortran-comment-indent-char 32 "\
+*Character to be inserted for Fortran comment indentation.
+Normally a space.")
+
+(defvar fortran-line-number-indent 1 "\
+*Maximum indentation for Fortran line numbers.
+5 means right-justify them within their five-column field.")
+
+(defvar fortran-check-all-num-for-matching-do nil "\
+*Non-nil causes all numbered lines to be treated as possible do-loop ends.")
+
+(defvar fortran-continuation-char 36 "\
+*Character which is inserted in column 5 by \\[fortran-split-line]
+to begin a continuation line.  Normally $.")
+
+(defvar fortran-comment-region "c$$$" "\
+*String inserted by \\[fortran-comment-region] at start of each line in region.")
+
+(defvar fortran-electric-line-number t "\
+*Non-nil causes line number digits to be moved to the correct column as typed.")
+
+(defvar fortran-startup-message t "\
+*Non-nil displays a startup message when fortran-mode is first called.")
+
+(defvar fortran-column-ruler (concat "0   4 6  10        20        30        40        50        60        70
+" "[   ]|{   |    |    |    |    |    |    |    |    |    |    |    |    |}
+") "*String displayed above current line by \\[fortran-column-ruler].")
+
+(defconst fortran-mode-version "1.21")
+
+(defvar fortran-mode-syntax-table nil "\
+Syntax table in use in fortran-mode buffers.")
+
+(if fortran-mode-syntax-table nil (setq fortran-mode-syntax-table (make-syntax-table)) (modify-syntax-entry 59 "w" fortran-mode-syntax-table) (modify-syntax-entry 43 "." fortran-mode-syntax-table) (modify-syntax-entry 45 "." fortran-mode-syntax-table) (modify-syntax-entry 42 "." fortran-mode-syntax-table) (modify-syntax-entry 47 "." fortran-mode-syntax-table) (modify-syntax-entry 39 "\"" fortran-mode-syntax-table) (modify-syntax-entry 34 "\"" fortran-mode-syntax-table) (modify-syntax-entry 92 "/" fortran-mode-syntax-table) (modify-syntax-entry 46 "w" fortran-mode-syntax-table) (modify-syntax-entry 10 ">" fortran-mode-syntax-table))
+
+(defvar fortran-mode-map nil "\
+Keymap used in fortran mode.")
+
+(if fortran-mode-map nil (setq fortran-mode-map (make-sparse-keymap)) (define-key fortran-mode-map ";" (quote fortran-abbrev-start)) (define-key fortran-mode-map ";" (quote fortran-comment-region)) (define-key fortran-mode-map "" (quote beginning-of-fortran-subprogram)) (define-key fortran-mode-map "" (quote end-of-fortran-subprogram)) (define-key fortran-mode-map ";" (quote fortran-indent-comment)) (define-key fortran-mode-map "" (quote mark-fortran-subprogram)) (define-key fortran-mode-map "
+" (quote fortran-split-line)) (define-key fortran-mode-map "" (quote fortran-indent-subprogram)) (define-key fortran-mode-map "" (quote fortran-window-create)) (define-key fortran-mode-map "" (quote fortran-column-ruler)) (define-key fortran-mode-map "" (quote fortran-previous-statement)) (define-key fortran-mode-map "" (quote fortran-next-statement)) (define-key fortran-mode-map "	" (quote fortran-indent-line)) (define-key fortran-mode-map "0" (quote fortran-electric-line-number)) (define-key fortran-mode-map "1" (quote fortran-electric-line-number)) (define-key fortran-mode-map "2" (quote fortran-electric-line-number)) (define-key fortran-mode-map "3" (quote fortran-electric-line-number)) (define-key fortran-mode-map "4" (quote fortran-electric-line-number)) (define-key fortran-mode-map "5" (quote fortran-electric-line-number)) (define-key fortran-mode-map "6" (quote fortran-electric-line-number)) (define-key fortran-mode-map "7" (quote fortran-electric-line-number)) (define-key fortran-mode-map "8" (quote fortran-electric-line-number)) (define-key fortran-mode-map "9" (quote fortran-electric-line-number)))
+
+(defvar fortran-mode-abbrev-table nil)
+
+(if fortran-mode-abbrev-table nil (define-abbrev-table (quote fortran-mode-abbrev-table) nil) (let ((abbrevs-changed nil)) (define-abbrev fortran-mode-abbrev-table ";b" "byte" nil) (define-abbrev fortran-mode-abbrev-table ";ch" "character" nil) (define-abbrev fortran-mode-abbrev-table ";cl" "close" nil) (define-abbrev fortran-mode-abbrev-table ";c" "continue" nil) (define-abbrev fortran-mode-abbrev-table ";cm" "common" nil) (define-abbrev fortran-mode-abbrev-table ";cx" "complex" nil) (define-abbrev fortran-mode-abbrev-table ";di" "dimension" nil) (define-abbrev fortran-mode-abbrev-table ";do" "double" nil) (define-abbrev fortran-mode-abbrev-table ";dc" "double complex" nil) (define-abbrev fortran-mode-abbrev-table ";dp" "double precision" nil) (define-abbrev fortran-mode-abbrev-table ";dw" "do while" nil) (define-abbrev fortran-mode-abbrev-table ";e" "else" nil) (define-abbrev fortran-mode-abbrev-table ";ed" "enddo" nil) (define-abbrev fortran-mode-abbrev-table ";el" "elseif" nil) (define-abbrev fortran-mode-abbrev-table ";en" "endif" nil) (define-abbrev fortran-mode-abbrev-table ";eq" "equivalence" nil) (define-abbrev fortran-mode-abbrev-table ";ex" "external" nil) (define-abbrev fortran-mode-abbrev-table ";ey" "entry" nil) (define-abbrev fortran-mode-abbrev-table ";f" "format" nil) (define-abbrev fortran-mode-abbrev-table ";fu" "function" nil) (define-abbrev fortran-mode-abbrev-table ";g" "goto" nil) (define-abbrev fortran-mode-abbrev-table ";im" "implicit" nil) (define-abbrev fortran-mode-abbrev-table ";ib" "implicit byte" nil) (define-abbrev fortran-mode-abbrev-table ";ic" "implicit complex" nil) (define-abbrev fortran-mode-abbrev-table ";ich" "implicit character" nil) (define-abbrev fortran-mode-abbrev-table ";ii" "implicit integer" nil) (define-abbrev fortran-mode-abbrev-table ";il" "implicit logical" nil) (define-abbrev fortran-mode-abbrev-table ";ir" "implicit real" nil) (define-abbrev fortran-mode-abbrev-table ";inc" "include" nil) (define-abbrev fortran-mode-abbrev-table ";in" "integer" nil) (define-abbrev fortran-mode-abbrev-table ";intr" "intrinsic" nil) (define-abbrev fortran-mode-abbrev-table ";l" "logical" nil) (define-abbrev fortran-mode-abbrev-table ";op" "open" nil) (define-abbrev fortran-mode-abbrev-table ";pa" "parameter" nil) (define-abbrev fortran-mode-abbrev-table ";pr" "program" nil) (define-abbrev fortran-mode-abbrev-table ";p" "print" nil) (define-abbrev fortran-mode-abbrev-table ";re" "real" nil) (define-abbrev fortran-mode-abbrev-table ";r" "read" nil) (define-abbrev fortran-mode-abbrev-table ";rt" "return" nil) (define-abbrev fortran-mode-abbrev-table ";rw" "rewind" nil) (define-abbrev fortran-mode-abbrev-table ";s" "stop" nil) (define-abbrev fortran-mode-abbrev-table ";su" "subroutine" nil) (define-abbrev fortran-mode-abbrev-table ";ty" "type" nil) (define-abbrev fortran-mode-abbrev-table ";w" "write" nil)))
+
+(defun fortran-mode nil "\
+Major mode for editing fortran code.
+Tab indents the current fortran line correctly. 
+`do' statements must not share a common `continue'.
+
+Type `;?' or `;\\[help-command]' to display a list of built-in abbrevs for Fortran keywords.
+
+Variables controlling indentation style and extra features:
+
+ comment-start
+    Normally nil in Fortran mode.  If you want to use comments
+    starting with `!', set this to the string \"!\".
+ fortran-do-indent
+    Extra indentation within do blocks.  (default 3)
+ fortran-if-indent
+    Extra indentation within if blocks.  (default 3)
+ fortran-continuation-indent
+    Extra indentation appled to continuation statements.  (default 5)
+ fortran-comment-line-column
+    Amount of indentation for text within full-line comments. (default 6)
+ fortran-comment-indent-style
+    nil    means don't change indentation of text in full-line comments,
+    fixed  means indent that text at column fortran-comment-line-column
+    relative  means indent at fortran-comment-line-column beyond the
+ 	      indentation for a line of code.
+    Default value is fixed.
+ fortran-comment-indent-char
+    Character to be inserted instead of space for full-line comment
+    indentation.  (default is a space)
+ fortran-minimum-statement-indent
+    Minimum indentation for fortran statements. (default 6)
+ fortran-line-number-indent
+    Maximum indentation for line numbers.  A line number will get
+    less than this much indentation if necessary to avoid reaching
+    column 5.  (default 1)
+ fortran-check-all-num-for-matching-do
+    Non-nil causes all numbered lines to be treated as possible 'continue'
+    statements.  (default nil)
+ fortran-continuation-char
+    character to be inserted in column 5 of a continuation line.
+    (default $)
+ fortran-comment-region
+    String inserted by \\[fortran-comment-region] at start of each line in 
+    region.  (default \"c$$$\")
+ fortran-electric-line-number
+    Non-nil causes line number digits to be moved to the correct column 
+    as typed.  (default t)
+ fortran-startup-message
+    Set to nil to inhibit message first time fortran-mode is used.
+
+Turning on Fortran mode calls the value of the variable fortran-mode-hook 
+with no args, if that value is non-nil.
+\\{fortran-mode-map}" (interactive) (byte-code "ÂˆÓ ˆ… ÔÕ	\"ˆÂ‰ˆ‰ˆÖ!ˆ×Æ!ˆØ‰ˆ×Ç!ˆÙ‰ˆ×È!ˆÚ‰ˆ×É!ˆÛ‰	ˆ×Ê!ˆÜ‰
+ˆ×Ë!ˆÂ‰ˆ×Ì!ˆÍ‰ˆ×Î!ˆÍ‰ˆ×Ï!ˆÂ‰ˆÝ!ˆÞ‰ˆß‰ˆàá!‡" [fortran-startup-message fortran-mode-version nil local-abbrev-table fortran-mode-abbrev-table fortran-mode-syntax-table indent-line-function comment-indent-hook comment-line-start-skip comment-line-start comment-start-skip comment-start require-final-newline t abbrev-all-caps indent-tabs-mode fortran-mode-map mode-name major-mode kill-all-local-variables message "Emacs Fortran mode version %s.  Bugs to bug-fortran-mode@erl.mit.edu" set-syntax-table make-local-variable fortran-indent-line fortran-comment-hook "^[Cc*][^ 	
+]*[ 	]*" "c" "![ 	]*" use-local-map "Fortran" fortran-mode run-hooks fortran-mode-hook] 15))
+
+(defun fortran-comment-hook nil (byte-code "ŠÁÂ!ˆÃi\\])‡" [comment-column skip-chars-backward " 	" 1] 3))
+
+(defun fortran-indent-comment nil "\
+Align or create comment on current line.
+Existing comments of all types are recognized and aligned.
+If the line has no comment, a side-by-side comment is inserted and aligned
+if the value of  comment-start  is not nil.
+Otherwise, a separate-line comment is inserted, on this line
+or on a new line inserted before this line if this line is not blank." (interactive) (byte-code "ÆˆÇ ˆÈ!ƒ É ‚f Ê	ŠË ˆ`)Â#ƒ\" Ì ‚f …* ÈÍ!?ƒ< Ë ˆÎ ˆÏ jˆc‚f ÈÍ!ƒG Î ‚P Ç ˆÐcˆÑÒ!ˆcˆÓ;ƒ` ÔH‚a Õ iZ\"‡" [comment-line-start-skip comment-start-skip t comment-start comment-line-start fortran-comment-indent-char nil beginning-of-line looking-at fortran-indent-line re-search-forward end-of-line indent-for-comment "^[ 	]*$" delete-horizontal-space fortran-comment-hook "
+" forward-char -1 insert-char 0 calculate-fortran-indent] 19))
+
+(defun fortran-comment-region (beg-region end-region arg) "\
+Comments every line in the region.
+Puts fortran-comment-region at the beginning of every line in the region. 
+BEG-REGION and END-REGION are args which specify the region boundaries. 
+With non-nil ARG, uncomments the region." (interactive "*r
+P") (byte-code "ÇˆÈ É Ê
+\"ˆbˆË ˆ?ƒ2 cˆÌÍ!ÎU…& `W…/ cˆ‚ ‚e Ï!Ð!…D Ñ`ÒÎ!\"ˆÌÍ!ÎU…P `W…d Ð!…` Ñ`ÒÎ!\"ˆ‚E )ˆ	bˆÊÇ\"ˆÊ	Ç\"*‡" [end-region-mark save-point end-region beg-region arg fortran-comment-region com nil make-marker point-marker set-marker beginning-of-line forward-line 1 0 regexp-quote looking-at delete-region match-end] 17))
+
+(defun fortran-abbrev-start nil "\
+Typing \";\\[help-command]\" or \";?\" lists all the fortran abbrevs. 
+Any other key combination is executed normally." (interactive) (byte-code "ÄˆÄ	cˆr‰ÅU† 
+Uƒ Æ ‚ ‰)‡" [c last-command-char help-char unread-command-char nil 63 fortran-abbrev-help] 3))
+
+(defun fortran-abbrev-help nil "\
+List the currently defined abbrevs in Fortran mode." (interactive) (byte-code "ÁˆÂÃ!ˆÄÅ!ˆÆÇ\"ˆÂÈ!‡" [fortran-mode-abbrev-table nil message "Listing abbrev table..." require abbrevlist list-one-abbrev-table "*Help*" "Listing abbrev table...done"] 5))
+
+(defun fortran-column-ruler nil "\
+Inserts a column ruler momentarily above current line, till next keystroke.
+The ruler is defined by the value of fortran-column-ruler.
+The key typed is executed unless it is SPC." (interactive) (byte-code "ÁˆÂŠÃ ˆ`)ÁÄ$‡" [fortran-column-ruler nil momentary-string-display beginning-of-line "Type SPC or any command to erase ruler."] 6))
+
+(defun fortran-window-create nil "\
+Makes the window 72 columns wide." (interactive) (byte-code "ÂˆÃÄÅ!)ˆÆÇ!ˆÈÉÁ\"ˆÊË !‡" [window-min-width t nil 2 split-window-horizontally 73 other-window 1 switch-to-buffer " fortran-window-extra" select-window previous-window] 6))
+
+(defun fortran-split-line nil "\
+Break line at point and insert continuation marker and alignment." (interactive) (byte-code "ÃˆÄ ˆŠÅ ˆÆ!)ƒ ÇÈ	É#‚ ÇÊ
+\"ˆË ‡" [comment-line-start-skip comment-line-start fortran-continuation-char nil delete-horizontal-space beginning-of-line looking-at insert "
+" " " "
+ " fortran-indent-line] 7))
+
+(defun delete-horizontal-regexp (chars) "\
+Delete all characters in CHARS around point.
+CHARS is like the inside of a [...] in a regular expression
+except that ] is never special and  quotes ^, - or ." (interactive "*s") (byte-code "ÁˆÂ!ˆÃ`Ä!ˆ`\"‡" [chars nil skip-chars-backward delete-region skip-chars-forward] 5))
+
+(defun fortran-electric-line-number (arg) "\
+Self insert, but if part of a Fortran line number indent it automatically.
+Auto-indent does not happen if a numeric arg is used." (interactive "P") (byte-code "Äˆ† 	?ƒ Å!‚4 ŠÆÇŠÈ ˆ`)Â#)†# ÉÊ!ƒ+ c‚4 ËÌ!ˆcˆÍ ‡" [arg fortran-electric-line-number t last-command-char nil self-insert-command re-search-backward "[^ 	0-9]" beginning-of-line looking-at "[0-9]" skip-chars-backward " 	" fortran-indent-line] 7))
+
+(defun beginning-of-fortran-subprogram nil "\
+Moves point to the beginning of the current fortran subprogram." (interactive) (byte-code "ÂˆÁÃÄ!ˆÅÆÂÇ#ˆÈÆ!… ÉÊ!)‡" [case-fold-search t nil beginning-of-line -1 re-search-backward "^[ 	0-9]*end\\b[ 	]*[^ 	=(a-z]" move looking-at forward-line 1] 5))
+
+(defun end-of-fortran-subprogram nil "\
+Moves point to the end of the current fortran subprogram." (interactive) (byte-code "ÂˆÁÃÄ!ˆÅÆÂÇ#ˆÈÉ!bˆÊË!)‡" [case-fold-search t nil beginning-of-line 2 re-search-forward "^[ 	0-9]*end\\b[ 	]*[^ 	=(a-z]" move match-beginning 0 forward-line 1] 5))
+
+(defun mark-fortran-subprogram nil "\
+Put mark at end of fortran subprogram, point at beginning. 
+The marks are pushed." (interactive) (byte-code "ÀˆÁ ˆÂ`!ˆÃ ‡" [nil end-of-fortran-subprogram push-mark beginning-of-fortran-subprogram] 4))
+
+(defun fortran-previous-statement nil "\
+Moves point to beginning of the previous fortran statement.
+Returns 'first-statement if that statement is the first
+non-comment Fortran statement in the file, and nil otherwise." (interactive) (byte-code "ÅˆÅÅÆ ˆÇÈÉÊ
+!!P!† ÇË!‰ˆÌÍ!ÎU‰…< Ç!†< ÇÏ!†< ÇË!†< ÇÈP!…D Åˆ‚ ˆ	…K ?ƒT ÐÑ!‚c 	ƒ] Ò ‚c ?…c Ó*‡" [not-first-statement continue-test fortran-continuation-char comment-line-start-skip comment-start-skip nil beginning-of-line looking-at "[ 	]*" regexp-quote char-to-string "     [^ 0
+]" forward-line -1 0 "[ 	]*$" message "Incomplete continuation statement." fortran-previous-statement first-statement] 13))
+
+(defun fortran-next-statement nil "\
+Moves point to beginning of the next fortran statement.
+ Returns 'last-statement if that statement is the last
+ non-comment Fortran statement in the file, and nil otherwise." (interactive) (byte-code "ÃˆÃÄ ˆÅÆ!ÇU‰…( È	!†( ÈÉ!†( ÈÊ!†( ÈË
+P!…0 Ãˆ‚ ˆ?…7 Ì)‡" [not-last-statement comment-line-start-skip comment-start-skip nil beginning-of-line forward-line 1 0 looking-at "[ 	]*$" "     [^ 0
+]" "[ 	]*" last-statement] 8))
+
+(defun fortran-indent-line nil "\
+Indents current fortran line based on its contents and on previous lines." (interactive) (byte-code "ÃˆÄ ŠÅ ˆÆ U?† ÇÈ`É\\Á#… Ê ?ƒ' Ë!‚9 Å ˆÇ
+ŠÌ ˆ`)Í#…9 Î )ˆiW…D Ï!)‡" [cfi t comment-start-skip nil calculate-fortran-indent beginning-of-line fortran-current-line-indentation re-search-forward "^[ 	]*[0-9]+" 4 fortran-line-number-indented-correctly-p fortran-indent-to-column end-of-line move fortran-indent-comment move-to-column] 12))
+
+(defun fortran-indent-subprogram nil "\
+Properly indents the Fortran subprogram which contains point." (interactive) (byte-code "ÀˆŠÁ ˆÂÃ!ˆÄ`Å À#)ˆÂÆ!‡" [nil mark-fortran-subprogram message "Indenting subprogram..." indent-region mark "Indenting subprogram...done."] 7))
+
+(defun calculate-fortran-indent nil "\
+Calculates the fortran indent column based on previous lines." (byte-code "ÎÎÃŠÏ ‰ˆ	ƒ ‰‚ `eUƒ\" ‰‚& Ð ‰ˆÑÒ!ˆÓÔ!ƒd ÓÕ!†X ÎÖ×!ØU…M ÓÙ!…M ÓÚ!‰?…U Îˆ‚9 ˆ)…a \\‰‚ ÓÛ!ƒs \\‰‚ ÓÜ!… \\‰)ˆŠÝ ˆÓÞ!†?Ó!ƒ° 	ß=ƒ¢ 
+\\‰‚­ 	à=…­ 
+‰‚?Óáâã!!P!†À Óä!ƒÌ \\‰‚?	†?…Ý Óå!…Ý æ ƒé Z‰‚?ÑÒ!ˆÓç!ƒü Z‰‚?ÓÛ!ƒZ‰‚?Óè!…æ ƒZ‰‚?Óé!ƒ.Z‰‚?Óê!…8U?…?ëì\")ˆ]+‡" [icol first-statement case-fold-search t fortran-minimum-statement-indent then-test fortran-if-indent fortran-do-indent comment-line-start-skip fortran-comment-indent-style fortran-comment-line-column fortran-continuation-char fortran-continuation-indent fortran-check-all-num-for-matching-do nil fortran-previous-statement fortran-current-line-indentation skip-chars-forward " 	0-9" looking-at "if[ 	]*(" ".*)[ 	]*then\\b[ 	]*[^ 	(=a-z0-9]" forward-line 1 0 "     [^ 0]" ".*then\\b[ 	]*[^ 	(=a-z0-9]" "\\(else\\|elseif\\)\\b" "do\\b" beginning-of-line "[ 	]*$" relative fixed "[ 	]*" regexp-quote char-to-string "     [^ 0
+]" "[ 	]*[0-9]+" fortran-check-for-matching-do "end[ 	]*if\\b" "continue\\b" "end[ 	]*do\\b" "end\\b[ 	]*[^ 	=(a-z]" message "Warning: `end' not in column %d.  Probably an unclosed block."] 29))
+
+(defun fortran-current-line-indentation nil "\
+Indentation of current line, ignoring Fortran line number or continuation.
+This is the column position of the first non-whitespace character
+aside from the line number and/or column 5 line-continuation character.
+For comment lines, returns indentation of the first
+non-indentation text within the comment." (byte-code "ŠÃ ˆÄ!ƒ  ÅÆ!bˆÇ	;ƒ 	‚ È	!!‚0 ÄÉ!ƒ- ÅÆ!b‚0 ÊË!ˆÇÌ!ˆi)‡" [comment-line-start-skip fortran-comment-indent-char t beginning-of-line looking-at match-end 0 skip-chars-forward char-to-string "     [^ 0
+]" move-to-column 5 " 	"] 10))
+
+(defun fortran-indent-to-column (col) "\
+Indents current line with spaces to column COL.
+notes: 1) A non-zero/non-blank character in column 5 indicates a continuation
+          line, and this continuation character is retained on indentation;
+       2) If fortran-continuation-char is the first non-whitespace character,
+          this is a continuation line;
+       3) A non-continuation line which has a number as the first
+          non-whitespace character is a numbered line." (byte-code "ŠÊ ˆË!ƒ2 	…/ ;ƒ ÌH‚ ÍÌ!bˆÎÏÐ
+!P!ˆÑ
+iZ\")‚£ ËÒ!ƒ> ÓÔ!‚{ Õ ˆm†{ gUƒT ÖjˆÓ×!‚{ ËØ!…{ ÖÍÌ!`ZZÌWƒp ÙÚ!‚v ^j)ˆÛÜ!ˆÕ ˆjˆÝŠÞ ˆ`)É#…£ ßÌ!bˆià U?…£ Õ ˆà j)‡" [comment-line-start-skip fortran-comment-indent-style char fortran-comment-indent-char col fortran-continuation-char extra-space fortran-line-number-indent comment-start-skip t beginning-of-line looking-at 0 match-end delete-horizontal-regexp " 	" char-to-string insert-char "     [^ 0
+]" forward-char 6 delete-horizontal-space 5 1 "[0-9]+" message "Warning: line number exceeds 5-digit limit." skip-chars-forward "0-9" re-search-forward end-of-line match-beginning fortran-comment-hook] 22))
+
+(defun fortran-line-number-indented-correctly-p nil "\
+Return t if current line's line number is correctly indente.
+Do not call if there is no line number." (byte-code "ŠÁ ˆÂÃ!ˆiX… iU† ÂÄ!ˆiÅU)‡" [fortran-line-number-indent beginning-of-line skip-chars-forward " 	" "0-9" 5] 5))
+
+(defun fortran-check-for-matching-do nil "\
+When called from a numbered statement, returns t
+ if matching 'do' is found, and nil otherwise." (byte-code "ÃÂŠÄ ˆÅÆ!…7 ÇÈ!ˆÇÉ!ˆÊ`ÇË!ˆ`\"‰ˆÄ ˆÌÍÎÏÐ%ÃÂ#…7 ÅÑP!)*‡" [charnum case-fold-search t nil beginning-of-line looking-at "[ 	]*[0-9]+" skip-chars-forward " 	" "0" buffer-substring "0-9" re-search-backward concat "\\(^[ 	0-9]*end\\b[ 	]*[^ 	=(a-z]\\)\\|\\(^[ 	0-9]*do[ 	]*0*" "\\b\\)\\|\\(^[ 	]*0*" "\\b\\)" "^[ 	0-9]*do[ 	]*0*"] 14))
