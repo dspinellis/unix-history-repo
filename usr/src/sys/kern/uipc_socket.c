@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_socket.c	7.40 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.41 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -366,7 +366,7 @@ restart:
 #ifdef	MAPPED_MBUFS
 				len = min(MCLBYTES, resid);
 #else
-				if (top == 0) {
+				if (atomic && top == 0) {
 					len = min(MCLBYTES - max_hdr, resid);
 					m->m_data += max_hdr;
 				} else
