@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"     @(#)install.1	6.12 (Berkeley) %G%
+.\"     @(#)install.1	6.13 (Berkeley) %G%
 .\"
 .Dd 
 .Dt INSTALL 1
@@ -63,7 +63,8 @@ utility attempts to prevent moving a file onto itself.
 .Pp
 The
 .Nm install
-utility always attempts to preserve the file flags.
+utility always attempts to preserve the file flags with the exception
+of the NODUMP flag which is always turned off.
 .Pp
 Installing
 .Pa /dev/null
