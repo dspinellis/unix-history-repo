@@ -13,7 +13,7 @@
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  * from: hp300/include/param.h	7.13 (Berkeley) 12/27/92
  *
- *	@(#)param.h	8.2 (Berkeley) %G%
+ *	@(#)param.h	8.3 (Berkeley) %G%
  */
 
 /*
@@ -21,6 +21,7 @@
  * Param.h for HP9000 series 300.
  */
 #define	MACHINE "luna68k"
+#define NCPUS 1
 
 /*
  * Round p (pointer or byte index) up to a correctly-aligned value
@@ -160,3 +161,62 @@ int	cpuspeed;
 #else
 #define	DELAY(n)	{ register int N = (n); while (--N > 0); }
 #endif
+
+#ifndef _SIMPLELOCK_H_
+#define _SIMPLELOCK_H_
+/*
+ * A simple spin lock.
+ *
+ * This structure only sets one bit of data, but is sized based on the
+ * minimum word size that can be operated on by the hardware test-and-set
+ * instruction. It is only needed for multiprocessors, as uniprocessors
+ * will always run to completion or a sleep. It is an error to hold one
+ * of these locks while a process is sleeping.
+ */
+struct simplelock {
+	int	lock_data;
+};
+
+#if !defined(DEBUG) && NCPUS > 1
+/*
+ * The simple-lock routines are the primitives out of which the lock
+ * package is built. The machine-dependent code must implement an
+ * atomic test_and_set operation that indivisibly sets the simple lock
+ * to non-zero and returns its old value. It also assumes that the
+ * setting of the lock to zero below is indivisible. Simple locks may
+ * only be used for exclusive locks.
+ */
+static __inline void
+simple_lock_init(lkp)
+	struct simplelock *lkp;
+{
+
+	lkp->lock_data = 0;
+}
+
+static __inline void
+simple_lock(lkp)
+	__volatile struct simplelock *lkp;
+{
+
+	while (test_and_set(&lkp->lock_data))
+		continue;
+}
+
+static __inline int
+simple_lock_try(lkp)
+	__volatile struct simplelock *lkp;
+{
+
+	return (!test_and_set(&lkp->lock_data))
+}
+
+static __inline void
+simple_unlock(lkp)
+	__volatile struct simplelock *lkp;
+{
+
+	lkp->lock_data = 0;
+}
+#endif /* NCPUS > 1 */
+#endif /* !_SIMPLELOCK_H_ */
