@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.45 %G%";
+static char SccsId[] = "@(#)sccs.c	1.46 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -456,7 +456,7 @@ command(argv, forkflag, arg0)
 		*np = NULL;
 
 		/* get all the files that we unedited successfully */
-		if (i > 0)
+		if (np > &ap[1])
 			rval = command(&ap[1], FALSE, "get");
 		break;
 
@@ -611,6 +611,7 @@ callprog(progpath, flags, argv, forkflag)
 	execv(progpath, argv);
 	syserr("cannot execute %s", progpath);
 	exit(EX_UNAVAILABLE);
+	/*NOTREACHED*/
 }
 
 /*
@@ -644,7 +645,6 @@ makefile(name)
 	char *name;
 {
 	register char *p;
-	register char c;
 	char buf[512];
 	extern char *malloc();
 	extern char *rindex();
@@ -786,7 +786,6 @@ clean(mode)
 	int mode;
 {
 	struct direct dir;
-	struct stat stbuf;
 	char buf[100];
 	char pline[120];
 	register FILE *dirfd;
@@ -817,7 +816,7 @@ clean(mode)
 	*/
 
 	gotedit = FALSE;
-	while (fread(&dir, sizeof dir, 1, dirfd) != NULL)
+	while (fread((char *)&dir, sizeof dir, 1, dirfd) != NULL)
 	{
 		if (dir.d_ino == 0 || strncmp(dir.d_name, "s.", 2) != 0)
 			continue;
@@ -892,7 +891,6 @@ unedit(fn)
 	char *pfn;
 	static char tfn[] = "/tmp/sccsXXXXX";
 	FILE *tfp;
-	register char *p;
 	register char *q;
 	bool delete = FALSE;
 	bool others = FALSE;
@@ -1179,6 +1177,7 @@ nextfield(p)
 **		none.
 */
 
+/*VARARGS1*/
 usrerr(f, p1, p2, p3)
 	char *f;
 {
@@ -1203,6 +1202,7 @@ usrerr(f, p1, p2, p3)
 **		none.
 */
 
+/*VARARGS1*/
 syserr(f, p1, p2, p3)
 	char *f;
 {
@@ -1215,7 +1215,7 @@ syserr(f, p1, p2, p3)
 		exit(EX_SOFTWARE);
 	else
 	{
-		perror(0);
+		perror(NULL);
 		exit(EX_OSERR);
 	}
 }
