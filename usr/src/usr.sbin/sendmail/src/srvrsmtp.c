@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	8.35 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.36 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	8.35 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	8.36 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -345,7 +345,7 @@ smtp(e)
 
 			/* now parse ESMTP arguments */
 			msize = 0;
-			for (; p != NULL && *p != '\0'; p++)
+			while (p != NULL && *p != '\0')
 			{
 				char *kp;
 				char *vp = NULL;
@@ -376,7 +376,7 @@ smtp(e)
 					*p++ = '\0';
 
 				if (tTd(19, 1))
-					printf("MAIL: got arg %s=%s\n", kp,
+					printf("MAIL: got arg %s=\"%s\"\n", kp,
 						vp == NULL ? "<null>" : vp);
 
 				if (strcasecmp(kp, "size") == 0)
