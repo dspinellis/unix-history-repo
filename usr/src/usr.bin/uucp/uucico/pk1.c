@@ -1,11 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)pk1.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pk1.c	5.4 (Berkeley) %G%";
 #endif
 
+#include <signal.h>
 #include "uucp.h"
 #include "pk.h"
 #include <setjmp.h>
-#include <signal.h>
 #ifdef BSD4_2
 #include <sys/time.h>
 #endif BSD4_2
@@ -22,8 +22,8 @@ int iomask[2];
 #define CONNODATA 10
 #define NTIMEOUT 10
 
-extern int Errorrate;
 extern int errno;
+extern int Retries;
 extern char *sys_errlist[];
 extern jmp_buf Sjbuf;
 extern	char *malloc();
@@ -35,7 +35,7 @@ int Ntimeout = 0;
  *
  */
 
-struct pack *pklines[NPLINES];
+extern struct pack *pklines[];
 
 /*
  * start initial synchronization.
@@ -150,6 +150,7 @@ struct pack *ipk;
 		}
 		/* set up retransmit or REJ */
 		tries++;
+		Retries++;
 		pk->p_msg |= pk->p_rmsg;
 		if (pk->p_msg == 0)
 			pk->p_msg |= M_RR;
