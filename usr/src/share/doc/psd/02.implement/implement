@@ -1,9 +1,9 @@
-.\" Copyright (c) 1986 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1986, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)implement	6.5 (Berkeley) %G%
+.\"	@(#)implement	8.1 (Berkeley) %G%
 .\"
 .EH 'PSD:2-%''UNIX Implementation'
 .OH 'UNIX Implementation''PSD:2-%'
