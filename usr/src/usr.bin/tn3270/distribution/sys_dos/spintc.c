@@ -5,12 +5,11 @@
 #include <stdlib.h>
 
 #include "../ntn3270/general.h"
+#include "spint.h"
 
 #define	PSP_ENVIRONMENT		0x2c
 #define	PSP_FCB1		0x5c
 #define	PSP_FCB2		0x6c
-
-#define	INTERRUPT_NUMBER	73
 
 typedef struct {
     int
@@ -22,15 +21,6 @@ typedef struct {
 	fcb2_ptr_offset,	/* Offset of FCB 2 */
 	fcb2_ptr_segment;	/* Segment of FCB 2 */
 } ExecList;
-
-typedef struct {
-    union REGS		regs;
-    struct SREGS	sregs;
-    int			int_no;	/* Which interrupt to wait on */
-    int			done;	/* Are we done, or just took an interrupt? */
-    int			rc;	/* return code */
-} Spawn;
-
 
 void
 do_spawn(command, spawn)
@@ -136,6 +126,10 @@ Spawn *spawn;
     spawn->sregs.ds = int_segment;
     intdosx(&spawn->regs, &spawn->regs, &spawn->sregs);
 }
+
+/* XXX */
+
+#define	INTERRUPT_NUMBER	73
 
 main(argc, argv, envp)
 int	argc;				/* Number of passed arguments */
@@ -177,35 +171,36 @@ char	*envp[];			/* Inherited environment */
     }
 
     /*
-     * do_spawn returns when either the command has finished, or when
+     * do_spawn() returns when either the command has finished, or when
      * the required interrupt comes in.  In the latter case, the appropriate
      * thing to do is to process the interrupt, and then return to
-     * the interrupt issuer.
+     * the interrupt issuer by calling continue_spawn().
      */
     do_spawn(command, &spawned);
-    if (spawned.done == 0) {
+    while (spawned.done == 0) {
 	/* Process request */
+	spawned.regs.h.al = 0;
+	spawned.regs.x.cflag = 0;		/* No errors (yet) */
 	switch (spawned.regs.h.ah) {
 	case 1:			/* Add */
-	    spawned.regs.x.cx += spawned.regs.x.dx;
+	    spawned.regs.x.bx += spawned.regs.x.cx;
 	    break;
 	case 2:			/* Subtract */
-	    spawned.regs.x.cx -= spawned.regs.x.dx;
+	    spawned.regs.x.bx -= spawned.regs.x.cx;
 	    break;
 	case 3:			/* Multiply */
-	    spawned.regs.x.cx *= spawned.regs.x.dx;
+	    spawned.regs.x.bx *= spawned.regs.x.cx;
 	    break;
 	case 4:			/* Divide */
-	    spawned.regs.x.cx /= spawned.regs.x.dx;
+	    spawned.regs.x.bx /= spawned.regs.x.cx;
 	    break;
 	default:
 	    spawned.regs.h.al = -1;	/* Error */
 	    spawned.regs.x.cflag = 1;
 	    break;
 	}
+	spawned.regs.h.ah = 0;			/* We saw this */
 	continue_spawn(&spawned);
-	/*NOTREACHED*/
-	/* continue_spawn() causes an eventual return from do_spawn. */
     }
     if (spawned.rc != 0) {
 	fprintf(stderr, "Process generated a return code of 0x%x.\n",
