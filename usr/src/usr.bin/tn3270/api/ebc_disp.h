@@ -1,5 +1,5 @@
 /*
- * @(#)ebc_disp.h	1.2 (Berkeley) %G%
+ * @(#)ebc_disp.h	3.1 (Berkeley) %G%
  */
 
 extern unsigned char

@@ -3,7 +3,7 @@
  */
 
 #ifndef	lint
-static	char	sccsid[] = "@(#)asc_ebc.c	1.2 (Berkeley) %G%";
+static	char	sccsid[] = "@(#)asc_ebc.c	3.1 (Berkeley) %G%";
 #endif	/* ndef lint */
 
 

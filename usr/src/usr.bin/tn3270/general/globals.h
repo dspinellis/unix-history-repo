@@ -7,7 +7,7 @@
  *	first, and we only give those globals relevant to
  *	the #include'd .h files.
  *
- * @(#)globals.h	1.10 (Berkeley) %G%
+ * @(#)globals.h	3.1 (Berkeley) %G%
  */
 
 #if	defined(DEFINING_INSTANCES)
