@@ -1,4 +1,4 @@
-/*	tu.c	4.22	83/07/18	*/
+/*	tu.c	4.23	83/07/21	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -78,9 +78,9 @@ char *tustates[TUS_NSTATES] = {
 
 u_char	tunull[2] = { 0, 0 };	/* nulls to send for initialization */
 u_char	tuinit[2] = { TUF_INITF, TUF_INITF };	/* inits to send */
-static char pcnt[2];            /* pee/vee counters */
+static char tu_pcnt[2];            		/* pee/vee counters */
 int	tutimer = 0;
-struct buf tutab;		/* I/O queue header */
+struct buf tutab;				/* I/O queue header */
 
 /*
  * Open the TU58
@@ -183,7 +183,7 @@ tustrategy(bp)
 		return;
 	}
 	if ((bp->b_flags&B_READ) == 0)
-		tu_pee(&pcnt[minor(bp->b_dev)&DNUM]);
+		tu_pee(&tu_pcnt[minor(bp->b_dev)&DNUM]);
 	bp->av_forw = NULL;
 	s = splx(TUIPL);
 	if (tutab.b_actf == NULL)
@@ -397,7 +397,7 @@ turintr()
 			tutab.b_actf = bp->av_forw;
 			bp->b_resid = tu.tu_count;
 			if ((bp->b_flags&B_READ) == 0)
-				tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
+				tu_vee(&tu_pcnt[minor(bp->b_dev)&DNUM]);
 			iodone(bp);
 			tustart();
 		} else {
@@ -428,7 +428,7 @@ bad:
 				bp->b_flags |= B_ERROR;
 				tutab.b_actf = bp->av_forw;
 				if ((bp->b_flags&B_READ) == 0)
-					tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
+					tu_vee(&tu_pcnt[minor(bp->b_dev)&DNUM]);
 				iodone(bp);
 			}
 			tu.tu_state = TUS_INIT1;
@@ -653,7 +653,7 @@ tuwatch()
 	if (bp = tutab.b_actf) {
 		bp->b_flags |= B_ERROR;
 		if ((bp->b_flags&B_READ) == 0)
-			tu_vee(&pcnt[minor(bp->b_dev)&DNUM]);
+			tu_vee(&tu_pcnt[minor(bp->b_dev)&DNUM]);
 		iodone(bp);
 	}
 retry:
