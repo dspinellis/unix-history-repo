@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.34 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.35 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -26,8 +26,8 @@ extern u_long nextgennumber;
 /* Allocate a new inode. */
 /* ARGSUSED */
 int
-lfs_ialloc(pip, notused, cred, ipp)
-	INODE *pip, **ipp;
+lfs_valloc(pvp, notused, cred, vpp)
+	VNODE *pvp, **vpp;
 	int notused;
 	UCRED *cred;
 {
@@ -40,7 +40,7 @@ lfs_ialloc(pip, notused, cred, ipp)
 	int error;
 
 	/* Get the head of the freelist. */
-	fs = pip->i_lfs;
+	fs = VTOI(pvp)->i_lfs;
 	new_ino = fs->lfs_free;
 	if (new_ino == LFS_UNUSED_INUM) {
 		/*
@@ -69,10 +69,11 @@ lfs_ialloc(pip, notused, cred, ipp)
 	lfs_bwrite(bp);
 
 	/* Create a vnode to associate with the inode. */
-	error = lfs_vcreate(ITOV(pip)->v_mount, new_ino, &vp);
-	if (error) 
+	if (error = lfs_vcreate(pvp->v_mount, new_ino, &vp))
 		return (error);
-	*ipp = ip = VTOI(vp);
+	*vpp = vp;
+	ip = VTOI(vp);
+	VREF(ip->i_devvp);
 
 	/* Set a new generation number for this inode. */
 	if (++nextgennumber < (u_long)time.tv_sec)
@@ -95,6 +96,7 @@ lfs_vcreate(mp, ino, vpp)
 	ino_t ino;
 	VNODE **vpp;
 {
+	extern struct vnodeops lfs_vnodeops;
 	INODE *ip;
 	UFSMOUNT *ump;
 	int error, i;
@@ -111,36 +113,37 @@ lfs_vcreate(mp, ino, vpp)
 
 	/* Initialize the inode. */
 	ip = VTOI(*vpp);
-	ip->i_diroff = 0;
-	ip->i_devvp = ump->um_devvp;
-	ip->i_dev = ump->um_dev;
-	ip->i_flag = 0;
-	ip->i_lfs = ump->um_lfs;
-	ip->i_lockf = 0;
-	ip->i_mode = 0;
-	ip->i_number = ip->i_din.di_inum = ino;
 	ip->i_vnode = *vpp;
+	ip->i_flag = 0;
+	ip->i_mode = 0;
+	ip->i_diroff = 0;
+	ip->i_lockf = 0;
+	ip->i_dev = ump->um_dev;
+	ip->i_number = ip->i_din.di_inum = ino;
+	ip->i_lfs = ump->um_lfs;
+	ip->i_devvp = ump->um_devvp;
 #ifdef QUOTA
 	for (i = 0; i < MAXQUOTAS; i++)
 		ip->i_dquot[i] = NODQUOT;
 #endif
-	VREF(ip->i_devvp);			/* XXX: Why? */
 	return (0);
 }
 
 /* Free an inode. */
 /* ARGUSED */
 void
-lfs_ifree(ip, notused1, notused2)
-	INODE *ip;
+lfs_vfree(vp, notused1, notused2)
+	VNODE *vp;
 	ino_t notused1;
 	int notused2;
 {
 	BUF *bp;
 	IFILE *ifp;
+	INODE *ip;
 	struct lfs *fs;
 	ino_t ino;
 
+	ip = VTOI(vp);
 #ifdef ALLOCPRINT
 	printf("lfs_ifree: free %d\n", ip->i_number);
 #endif
