@@ -1,5 +1,15 @@
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)bcopy.c	5.1.1.1 (Berkeley) %G%";
+#endif not lint
+
 /* block copy from from to to, count bytes */
-static char *sccsid = "@(#)bcopy.c	7.1	%G%";
+static char *sccsid = "@(#)bcopy.c	5.1.1.1	%G%";
 bcopy(from, to, count)
 #ifdef vax
 	char *from, *to;

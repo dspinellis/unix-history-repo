@@ -1,5 +1,5 @@
 /* Copyright (c) 1981 Regents of the University of California */
-static char *sccsid = "@(#)ex_set.c	7.2	%G%";
+static char *sccsid = "@(#)ex_set.c	5.1.1.1	%G%";
 #include "ex.h"
 #include "ex_temp.h"
 #include "ex_tty.h"

@@ -1,4 +1,14 @@
-static char *sccs_id = "@(#)ex_extern.c	7.2	%G%";
+static char *sccs_id = "@(#)ex_extern.c	1.1.1.1	%G%";
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)ex_extern.c	1.1.1.1 (Berkeley) %G%";
+#endif not lint
+
 /*
  * Provide defs of the global variables.
  * This crock is brought to you by the turkeys
