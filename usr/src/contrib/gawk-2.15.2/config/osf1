@@ -1,0 +1,3 @@
+For generic OSF/1
+STDC_HEADERS            1
+HAVE_UNDERSCORE_SETJMP  1
