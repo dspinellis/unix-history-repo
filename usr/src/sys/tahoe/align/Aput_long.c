@@ -1,7 +1,7 @@
-/*	Aput_long.c	1.1	86/07/20	*/
+/*	Aput_long.c	1.2	90/12/04	*/
 
 
-#include	"../tahoealign/align.h"
+#include	"align.h"
 
 put_longword (infop, longword, where)
 register	process_info	*infop;

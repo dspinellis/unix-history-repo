@@ -1,4 +1,4 @@
-/*	align.h	1.1	86/07/20	*/
+/*	align.h	1.2	90/12/04	*/
 
 #ifndef	LOCORE
 /*
@@ -12,7 +12,7 @@
 #define	P2LR	7
 #endif
 
-#include	"../tahoealign/defs.h"
+#include	"defs.h"
 /*
  * Definitions about the stack frame as seen by the routine
  * 'alignment' in the kernel. If you ever wondered what's the

@@ -1,6 +1,6 @@
-/*	Asub2.c	1.1	86/07/20	*/
+/*	Asub2.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 sub2(infop)	process_info *infop;
 /*
 /*	Subtract , 2 operands.

@@ -1,6 +1,6 @@
-/*	Asub3.c	1.1	86/07/20	*/
+/*	Asub3.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 sub3(infop)	process_info *infop;
 /*
 /*	Subtract , 3 operands.

@@ -1,6 +1,6 @@
-/*	Alnf.c	1.1	86/07/20	*/
+/*	Alnf.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h"
+#include "align.h"
 lnf(infop)	process_info *infop;
 /*
 /*	Load a negated float operand into accumulator.

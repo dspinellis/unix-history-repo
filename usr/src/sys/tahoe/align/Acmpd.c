@@ -1,6 +1,6 @@
-/*	Acmpd.c	1.1	86/07/20	*/
+/*	Acmpd.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h"
+#include "align.h"
 cmpd(infop)	process_info *infop;
 /*
 /*	Compare accumulator (double) with operand. 

@@ -1,6 +1,6 @@
-/*	Aoperand.c	1.1	86/07/20	*/
+/*	Aoperand.c	1.2	90/12/04	*/
 
-#include	"../tahoealign/align.h"
+#include	"align.h"
 #define	illegal(x) ((look_at->add_modes & x)==0)
 #define	legal(x) !illegal(x)
 

@@ -1,6 +1,6 @@
-/*	Alnd.c	1.1	86/07/20	*/
+/*	Alnd.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h"
+#include "align.h"
 lnd(infop)	process_info *infop;
 /*
 /*	Load a negated double operand into accumulator.

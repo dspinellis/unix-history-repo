@@ -1,6 +1,6 @@
-/*	Amull2.c	1.1	86/07/20	*/
+/*	Amull2.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 int	zzz1,zzz2,zzz3,zzz4,zzz5;
 mull2(infop)	process_info *infop;
 /*

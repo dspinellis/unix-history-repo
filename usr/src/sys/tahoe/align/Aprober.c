@@ -1,6 +1,6 @@
-/*	Aprober.c	1.1	86/07/20	*/
+/*	Aprober.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 
 #define	PSL_USER	PSL_CURMOD
 prober(infop)	process_info *infop;

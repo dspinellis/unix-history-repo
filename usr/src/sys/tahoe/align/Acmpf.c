@@ -1,6 +1,6 @@
-/*	Acmpf.c	1.1	86/07/20	*/
+/*	Acmpf.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h"
+#include "align.h"
 cmpf(infop)	process_info *infop;
 /*
 /*	Compare accumulator (float) with operand.

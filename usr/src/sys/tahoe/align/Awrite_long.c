@@ -1,6 +1,6 @@
-/*	Awrite_long.c	1.1	86/07/20	*/
+/*	Awrite_long.c	1.2	90/12/04	*/
 
-#include	"../tahoealign/align.h"
+#include	"align.h"
 
 write_longword (infop, longword, where)
 process_info	*infop;

@@ -1,7 +1,7 @@
-/*	Aand2.c	1.1	86/07/20	*/
+/*	Aand2.c	1.2	90/12/04	*/
 
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 and2(infop)	process_info *infop;
 /*
 /*	And , 2 operands.

@@ -1,7 +1,7 @@
-/*	Amuld.c	1.1	86/07/20	*/
+/*	Amuld.c	1.2	90/12/04	*/
 
 
-#include "../tahoealign/align.h"
+#include "align.h"
 muld(infop)	process_info *infop;
 /*
 /*	Multiply operand by accumulator to accumulator (double).

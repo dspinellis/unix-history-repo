@@ -1,6 +1,6 @@
-/*	Aput_byte.c	1.1	86/07/20	*/
+/*	Aput_byte.c	1.2	90/12/04	*/
 
-#include	"../tahoealign/align.h"
+#include	"align.h"
 
 put_byte (infop, byte, where)
 process_info	*infop;

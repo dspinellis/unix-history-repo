@@ -1,7 +1,7 @@
-/*	Asubf.c	1.1	86/07/20	*/
+/*	Asubf.c	1.2	90/12/04	*/
 
 
-#include "../tahoealign/align.h"
+#include "align.h"
 subf(infop)	process_info *infop;
 /*
 /*	Subtract operand from accumulator to accumulator (float).

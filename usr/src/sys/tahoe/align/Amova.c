@@ -1,6 +1,6 @@
-/*	Amova.c	1.1	86/07/20	*/
+/*	Amova.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 mova(infop) 	process_info *infop;
 /*
 /*	Move operand address

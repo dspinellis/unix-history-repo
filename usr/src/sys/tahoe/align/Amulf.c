@@ -1,6 +1,6 @@
-/*	Amulf.c	1.1	86/07/20	*/
+/*	Amulf.c	1.2	90/12/04	*/
 
-#include "../tahoealign/align.h"
+#include "align.h"
 mulf(infop)	process_info *infop;
 /*
 /*	Multiply operand by accumulator to accumulator (float).

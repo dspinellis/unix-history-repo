@@ -1,7 +1,7 @@
-/*	Asbwc.c	1.1	86/07/20	*/
+/*	Asbwc.c	1.2	90/12/04	*/
 
 
-#include "../tahoealign/align.h" 
+#include "align.h" 
 sbwc(infop)	process_info *infop;
 /*
 /*	Subtract with carry.
