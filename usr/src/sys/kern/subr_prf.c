@@ -1,4 +1,4 @@
-/*	subr_prf.c	3.3	%G%	*/
+/*	subr_prf.c	3.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,6 +6,7 @@
 #include "../h/buf.h"
 #include "../h/conf.h"
 #include "../h/mtpr.h"
+#include "../h/reboot.h"
 
 #ifdef TRACE
 #define	TRCBUFS	4096
@@ -119,10 +120,8 @@ long n;
 }
 
 /*
- * Panic is called on unresolvable
- * fatal errors.
- * It syncs, prints "panic: mesg" and
- * then loops.
+ * Panic is called on unresolvable fatal errors.
+ * It syncs, prints "panic: mesg", and then reboots.
  */
 panic(s)
 char *s;
@@ -132,7 +131,7 @@ char *s;
 	printf("panic: %s\n", s);
 	spl0();
 	for(;;)
-		;
+		boot(RB_PANIC, RB_AUTOBOOT);		/* 0 = automatic */
 }
 
 /*

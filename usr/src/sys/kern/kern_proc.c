@@ -1,4 +1,4 @@
-/*	kern_proc.c	3.23	%G%	*/
+/*	kern_proc.c	3.24	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -113,7 +113,7 @@ exece()
 		bdwrite(bp);
 	bp = 0;
 	nc = (nc + NBPW-1) & ~(NBPW-1);
-	getxfile(ip, nc);
+	getxfile(ip, nc + (na+4)*NBPW);
 	if (u.u_error) {
 badarg:
 		for (c = 0; c < nc; c += BSIZE)

@@ -1,7 +1,7 @@
 #
 # Machine Language Assist for UC Berkeley Virtual Vax/Unix
 #
-#	locore.s		3.14	%G%
+#	locore.s		3.15	%G%
 #
 
 	.set	HIGH,31		# mask for total disable
@@ -186,7 +186,6 @@ doadump:
 	pushr	$0x3fff			# save regs 0 - 13
 	calls	$0,_dumptrc		# print out trace information, if any
 	calls	$0,_dump		# produce dump
-	halt
 
 	.data
 	.align	2
@@ -313,8 +312,9 @@ ubasrv:
 	beql	UBAflt
 	pushr	$0xf  			# save regs 0-3
 	pushab	SBImsg
-	calls	$1,_printf
-	popr	$0xf
+	calls	$1,_panic
+#	popr	$0xf
+
 #
 # No SBI fault bits set in UBA config reg - must be
 # some error bits set in UBA status reg.
@@ -890,6 +890,7 @@ start:
 	mfpr	$P1BR,PCB_P1BR(r1)
 	mfpr	$P1LR,PCB_P1LR(r1)
 	movl	$CLSIZE,PCB_SZPT(r1)		# init u.u_pcb.pcb_szpt
+	movl	r11,PCB_R11(r1)
 
 	movab	1f,PCB_PC(r1)			# initial pc
 	clrl	PCB_PSL(r1)			# mode(k,k), ipl=0
@@ -1201,13 +1202,6 @@ _copyseg: 	.globl	_copyseg
 	bisl3	$PG_V|PG_KW,8(ap),CMAP2
 	mtpr	$CADDR2,$TBIS	# invalidate entry for copy 
 	movc3	$NBPG,*4(ap),CADDR2
-	bicl3	$PG_V|PG_M|PG_KW,CMAP2,r1
-	cmpl	r1,8(ap)
-	beql	okcseg
-badcseg:
-	halt
-	jmp	badcseg
-okcseg:
 	mtpr	r0,$IPL		# restore pri level
 	ret
 
