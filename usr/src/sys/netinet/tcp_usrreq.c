@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_usrreq.c	6.7 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -301,16 +301,61 @@ tcp_usrreq(so, req, m, nam, rights)
 	return (error);
 }
 
-tcp_ctloutput(op, so, level, optname, m)
+tcp_ctloutput(op, so, level, optname, mp)
 	int op;
 	struct socket *so;
 	int level, optname;
-	struct mbuf **m;
+	struct mbuf **mp;
 {
+	int error = 0;
+	struct inpcb *inp = sotoinpcb(so);
+	register struct tcpcb *tp = intotcpcb(inp);
+	register struct mbuf *m;
+
 	if (level != IPPROTO_TCP)
 		return (ip_ctloutput(op, so, level, optname, m));
-	/* INCOMPLETE */
-	return (0);
+
+	switch (op) {
+
+	case PRCO_SETOPT:
+		m = *mp;
+		switch (optname) {
+
+		case TCP_NODELAY:
+			if (m == NULL || m->m_len < sizeof (int))
+				error = EINVAL;
+			else if (*mtod(m, int *))
+				tp->t_flags |= TF_NODELAY;
+			else
+				tp->t_flags &= ~TF_NODELAY;
+			break;
+
+		case TCP_MAXSEG:	/* not yet */
+		default:
+			error = EINVAL;
+			break;
+		}
+		m_free(m);
+		break;
+
+	case PRCO_GETOPT:
+		*mp = m = m_get(M_WAIT, MT_SOOPTS);
+		m->m_len = sizeof(int);
+
+		switch (optname) {
+		case TCP_NODELAY:
+			*mtod(m, int *) = tp->t_flags & TF_NODELAY;
+			break;
+		case TCP_MAXSEG:
+			*mtod(m, int *) = tp->t_maxseg;
+			break;
+		default:
+			error = EINVAL;
+			break;
+		}
+		break;
+	}
+	return (error);
 }
 
 int	tcp_sendspace = 1024*4;
