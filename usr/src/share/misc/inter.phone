@@ -1,5 +1,5 @@
 # Country Code : City Code : City : Country
-#	@(#)inter.phone	5.1 (Berkeley) %G%
+#	@(#)inter.phone	5.2 (Berkeley) %G%
 20:2:Cairo:Egypt
 27:11:Johannesburg:South Africa
 27:12:Pretoria:South Africa
@@ -39,14 +39,14 @@
 33:35:Rouen:France
 33:56:Bordeaux:France
 33:61:Toulouse:France
-33:628:All Points:Andorra
+33:628::Andorra
 33:67:Montpellier:France
 33:76:Grenoble:France
 33:77:St. Etienne:France
 33:7:Lyon:France
 33:88:Strasbourg:France
 33:91:Marseille:France
-33:93:All Points:Monaco
+33:93::Monaco
 33:93:Nice:France
 33:94:Toulon:France
 33:98:Brest:France
@@ -71,9 +71,9 @@
 39:41:Venice:Italy
 39:45:Verona:Italy
 39:51:Bologna:Italy
-39:541:All Points:San Marino
+39:541::San Marino
 39:55:Florence:Italy
-39:6:All Points:Vatican City
+39:6::Vatican City
 39:6:Rome:Italy
 39:80:Bari:Italy
 39:81:Naples:Italy
@@ -90,7 +90,7 @@
 41:41:Lucerne:Switzerland
 41:52:Winterthur:Switzerland
 41:61:Basel:Switzerland
-41:75:All Points:Liechtenstein
+41:75::Liechtenstein
 43:222:Vienna:Austria
 43:316:Graz:Austria
 43:5222:Innsbruck:Austria
@@ -115,7 +115,7 @@
 44:752:Plymouth, Eng.:United Kingdom
 44:782:Stoke-on-Trent, Eng.:United Kingdom
 44:902:Wolverhampton, Eng.:United Kingdom
-45:1or2:Copenhagen:Denmark
+45:1 or 2:Copenhagen:Denmark
 45:6:Aarhus:Denmark
 45:8:Aalborg:Denmark
 45:9:Odense:Denmark
