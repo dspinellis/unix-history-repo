@@ -1,3 +1,5 @@
+/*	tty_subr.c	4.3	%G%	*/
+
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/conf.h"
