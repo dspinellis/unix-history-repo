@@ -1,4 +1,4 @@
-/*	raw_usrreq.c	4.6	82/02/01	*/
+/*	raw_usrreq.c	4.7	82/02/02	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -26,13 +26,14 @@ COUNT(RAW_INIT);
  */
 raw_input(m0, pf, daf, saf)
 	struct mbuf *m0;
-	struct sockproto pf;
-	struct sockaddr daf, saf;
+	struct sockproto *pf;
+	struct sockaddr *daf, *saf;
 {
 	register struct mbuf *m;
 	struct raw_header *rh;
 	int s;
 
+COUNT(RAW_INPUT);
 	/*
 	 * Rip off an mbuf for a generic header.
 	 */
@@ -45,9 +46,9 @@ raw_input(m0, pf, daf, saf)
 	m->m_off = MMINOFF;
 	m->m_len = sizeof(struct raw_header);
 	rh = mtod(m, struct raw_header *);
-	rh->raw_dst = daf;
-	rh->raw_src = saf;
-	rh->raw_protocol = pf;
+	rh->raw_dst = *daf;
+	rh->raw_src = *saf;
+	rh->raw_protocol = *pf;
 
 	/*
 	 * Header now contains enough info to decide
@@ -110,6 +111,9 @@ next:
 		 * placed the address in a canonical format
 		 * suitable for a structure comparison. Packets
 		 * are duplicated for each receiving socket.
+		 *
+		 * SHOULD HAVE A NUMBER OF MECHANISMS FOR
+		 * MATCHING BASED ON rcb_flags
 		 */
 		if ((rp->rcb_flags & RAW_ADDR) &&
 		    bcmp(sa->sa_data, so->so_addr.sa_data, 14) != 0)
