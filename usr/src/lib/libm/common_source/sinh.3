@@ -1,4 +1,4 @@
-.TH SINH 3M "8 May 1985"
+.TH SINH 3M "7 August 1985"
 .UC 4
 .SH NAME
 sinh, cosh, tanh \- hyperbolic functions
@@ -18,11 +18,12 @@ sinh, cosh, tanh \- hyperbolic functions
 .SH DESCRIPTION
 These functions compute the designated hyperbolic functions for real arguments.
 .SH SEE ALSO
-intro(3M)
+intro(3M), infnan(3M)
+.SH ERROR (due to Roundoff etc.)
+Below 2.4 \fIulp\fRs; an \fIulp\fR is one \fIU\fRnit in the \fIL\fRast
+\fIP\fRlace.
 .SH DIAGNOSTICS
-.I Sinh
-and
-.I cosh
-return the reserved operand on the VAX if the correct value would overflow.
+Sinh and cosh return the reserved operand on a VAX if
+the correct value would overflow.
 .SH AUTHOR
-W. Kahan, Kwok-Choi Ng
+W. Kahan, Kwok\-Choi Ng
