@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)chpass.1	5.9 (Berkeley) %G%
+.\"     @(#)chpass.1	5.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CHPASS 1
@@ -160,11 +160,8 @@ numbers.
 Once the information has been verified,
 .Nm chpass
 uses
-.Xr mkpasswd 8
-to update the user database.  This is run in the background, and,
-at very large sites could take several minutes.  Until this update
-is completed, the password file is unavailable for other updates
-and the new information will not be available to programs.
+.Xr pwd_mkdb 8
+to update the user database.
 .Sh ENVIRONMENT
 The
 .Xr vi 1
@@ -179,15 +176,20 @@ with the user.
 .Di L
 .Dp Pa /etc/master.passwd
 The user database
+.Dp Pa /etc/passwd
+A Version 7 format password file
+.Dp Pa /etc/chpass.XXXXXX
+Temporary copy of the password file
 .Dp Pa /etc/shells
 The list of approved shells
 .Dp
 .Sh SEE ALSO
 .Xr login 1 ,
 .Xr finger 1 ,
+.Xr passwd 1 ,
 .Xr getusershell 3 ,
 .Xr passwd 5 ,
-.Xr mkpasswd 8 ,
+.Xr pwd_mkdb 8 ,
 .Xr vipw 8
 .Pp
 Robert Morris and Ken Thompson,

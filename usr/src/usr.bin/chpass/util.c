@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -93,55 +93,6 @@ bad:		return(1);
 	tval -= lt->tm_gmtoff;
 	*store = tval;
 	return(0);
-}
-
-/*
- * print --
- *	print out the file for the user to edit; strange side-effect:
- *	return if the user is allowed to modify their shell.
- */
-print(fp, pw)
-	FILE *fp;
-	struct passwd *pw;
-{
-	register char *p;
-	int shellval;
-	char *bp;
-	char *getusershell(), *ok_shell(), *ttoa();
-
-	shellval = 1;
-	(void)fprintf(fp, "#Changing user database information for %s.\n",
-	    pw->pw_name);
-	if (!uid) {
-		(void)fprintf(fp, "Login: %s\n", pw->pw_name);
-		(void)fprintf(fp, "Password: %s\n", pw->pw_passwd);
-		(void)fprintf(fp, "Uid [#]: %d\n", pw->pw_uid);
-		(void)fprintf(fp, "Gid [# or name]: %d\n", pw->pw_gid);
-		(void)fprintf(fp, "Change [month day year]: %s\n",
-		    ttoa(pw->pw_change));
-		(void)fprintf(fp, "Expire [month day year]: %s\n",
-		    ttoa(pw->pw_expire));
-		(void)fprintf(fp, "Class: %s\n", pw->pw_class);
-		(void)fprintf(fp, "Home directory: %s\n", pw->pw_dir);
-		(void)fprintf(fp, "Shell: %s\n",
-		    *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
-	}
-	/* only admin can change "restricted" shells */
-	else if (ok_shell(pw->pw_shell))
-		(void)fprintf(fp, "Shell: %s\n",
-		    *pw->pw_shell ? pw->pw_shell : _PATH_BSHELL);
-	else
-		shellval = 0;
-	bp = pw->pw_gecos;
-	p = strsep(&bp, ",");
-	(void)fprintf(fp, "Full Name: %s\n", p ? p : "");
-	p = strsep(&bp, ",");
-	(void)fprintf(fp, "Location: %s\n", p ? p : "");
-	p = strsep(&bp, ",");
-	(void)fprintf(fp, "Office Phone: %s\n", p ? p : "");
-	p = strsep(&bp, ",");
-	(void)fprintf(fp, "Home Phone: %s\n", p ? p : "");
-	return(shellval);
 }
 
 char *
