@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	2.9 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.10 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -160,8 +160,13 @@ main(argc, argv)
 	}
 	argc = 0;
 #endif
+	/*
+	 * Validate the given file system size.
+	 * Verify that its last block can actually be accessed.
+	 */
 	if (fssize <= 0)
 		printf("preposterous size %d\n", fssize), exit(1);
+	wtfs(fssize - 1, DEV_BSIZE, (char *)&sblock);
 	/*
 	 * collect and verify the sector and track info
 	 */
@@ -816,7 +821,6 @@ wtfs(bno, size, bf)
 {
 	int n;
 
-	lseek(fso, bno * DEV_BSIZE, 0);
 	if (lseek(fso, bno * DEV_BSIZE, 0) < 0) {
 		printf("seek error: %ld\n", bno);
 		perror("wtfs");
