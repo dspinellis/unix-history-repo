@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)script.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)script.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -33,6 +33,7 @@ FILE	*fscript;
 int	master;
 int	slave;
 int	child;
+int	subchild;
 char	*fname = "typescript";
 int	finish();
 
@@ -49,7 +50,6 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int f;
 
 	shell = getenv("SHELL");
 	if (shell == 0)
@@ -86,12 +86,12 @@ main(argc, argv)
 		fail();
 	}
 	if (child == 0) {
-		f = fork();
-		if (f < 0) {
+		subchild = child = fork();
+		if (child < 0) {
 			perror("fork");
 			fail();
 		}
-		if (f)
+		if (child)
 			dooutput();
 		else
 			doshell();
@@ -115,10 +115,15 @@ doinput()
 finish()
 {
 	union wait status;
+	register int pid;
+	register int die = 0;
 
-	if (wait3(&status, WNOHANG, 0) != child)
-		return;
-	done();
+	while ((pid = wait3(&status, WNOHANG, 0)) > 0)
+		if (pid == child)
+			die = 1;
+
+	if (die)
+		done();
 }
 
 dooutput()
@@ -185,8 +190,10 @@ fail()
 done()
 {
 
-	ioctl(0, TIOCSETP, (char *)&b);
-	printf("Script done, file is %s\n", fname);
+	if (!subchild) {
+		ioctl(0, TIOCSETP, (char *)&b);
+		printf("Script done, file is %s\n", fname);
+	}
 	exit(0);
 }
 
