@@ -1,4 +1,4 @@
-/*	conf.c	1.2	86/01/05	*/
+/*	conf.c	1.3	86/01/26	*/
 
 #include "param.h"
 #include "systm.h"
@@ -154,31 +154,6 @@ int	iiioctl(), iiclose(), iiopen();
 #define	iiioctl	nodev
 #endif
 
-#include "ps.h"
-#if NPS > 0
-int	psopen(),psclose(),psread(),pswrite(),psioctl(),psreset();
-#else
-#define psopen nodev
-#define psclose nodev
-#define psread nodev
-#define pswrite nodev
-#define psopen nodev
-#define psioctl nodev
-#define psreset nodev
-#endif
-
-#include "efs.h"
-#if NEFS > 0
-int	efsopen(),efsfgen(),efsread(),efswrite(),efsioctl(),efsreset();
-#else
-#define efsopen nodev
-#define efsfgen nodev
-#define efsread nodev
-#define efswrite nodev
-#define efsioctl nodev
-#define efsreset nodev
-#endif
-
 int	logopen(),logclose(),logread(),logioctl(),logselect();
 
 int	ttselect(), seltrue();
@@ -246,12 +221,6 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nulldev,	0,
 	nodev,		nodev,
 /* 20-30 are reserved for local use */
-	psopen,		psclose,	psread,		pswrite,	/*20*/
-	psioctl,	nodev,		psreset,	0,
-	seltrue,	nodev,
-	efsopen,	efsfgen,	efsread,	efswrite,	/*21*/
-	efsioctl,	nodev,		efsreset,	0,
-	seltrue,	nodev,
 };
 int	nchrdev = sizeof (cdevsw) / sizeof (cdevsw[0]);
 
