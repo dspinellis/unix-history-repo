@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)colcrt.1	6.4 (Berkeley) %G%
+.\"     @(#)colcrt.1	6.5 (Berkeley) %G%
 .\"
 .Dd 
 .Dt COLCRT 1
@@ -46,7 +46,7 @@ A typical use of
 .Nm colcrt
 would be
 .Pp
-.Dl tbl exum2.n  nroff \-ms  colcrt \-  more
+.Dl tbl exum2.n \&| nroff \-ms \&| colcrt \- \&|  more
 .Sh SEE ALSO
 .Xr nroff 1 ,
 .Xr troff 1 ,
@@ -69,7 +69,7 @@ completely.
 Can't back up more than 102 lines.
 .Pp
 General overstriking is lost;
-as a special case `' overstruck with `\-' or underline becomes `+'.
+as a special case `\&|' overstruck with `\-' or underline becomes `+'.
 .Pp
 Lines are trimmed to 132 characters.
 .Pp
