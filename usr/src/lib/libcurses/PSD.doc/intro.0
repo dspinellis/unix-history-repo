@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)intro.0	5.1 (Berkeley) %G%
+.\"	@(#)intro.0	6.1 (Berkeley) %G%
 .\"
 .tp
 .(l C
@@ -65,3 +65,5 @@ and
 Joe Kalash,
 was, and is,
 also greatly appreciated.
+.sp 2
+Revised 16 April 1986
