@@ -19,9 +19,6 @@ extern	bool	Echo;		/* set if echo input to terminal		*/
 extern	int	Users;		/* number of users currently playing		*/
 extern	int	Whichmonster;	/* which monster we are fighting		*/
 extern	int	Lines;		/* line on screen counter for fight routines	*/
-#ifdef OK_TO_PLAY
-extern	int	Okcount;	/* counter for checking ok_to_play		*/
-#endif
 
 extern	jmp_buf Fightenv;	/* used to jump into fight routine		*/
 extern	jmp_buf Timeoenv;	/* used for timing out waiting for input	*/

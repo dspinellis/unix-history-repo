@@ -25,6 +25,9 @@
  * AT&T is in no way connected with this game.
  */
 
+#include <sys/types.h>
+#include <pwd.h>
+
 /*
  * The program allocates as much file space as it needs to store characters,
  * so the possibility exists for the character file to grow without bound.
@@ -183,15 +186,6 @@ double	dtemp;			/* for temporary calculations */
 	cleanup(TRUE);
 	/*NOTREACHED*/
 
-#ifdef OK_TO_PLAY
-    if (!ok_to_play())
-	{
-	mvaddstr(23, 27, "Sorry, you can't play now.\n");
-	cleanup(TRUE);
-	/*NOTREACHED*/
-	}
-#endif
-
     do
 	/* get the player structure filled */
 	{
@@ -251,14 +245,6 @@ double	dtemp;			/* for temporary calculations */
     for (;;)
 	/* loop forever, processing input */
 	{
-#ifdef OK_TO_PLAY
-	if (!ok_to_play())
-	    {
-	    mvaddstr(6, 0, "Whoops!  Can't play now.\n");
-	    leavegame();
-	    /*NOTREACHED*/
-	    }
-#endif
 
 	adjuststats();		/* cleanup stats */
 
@@ -376,9 +362,6 @@ initialstate()
     Users = 0;
     Windows = FALSE;
     Echo = TRUE;
-#ifdef OK_TO_PLAY
-    Okcount = 0;
-#endif
 
     /* setup login name */
     if ((Login = getlogin()) == NULL)
@@ -1370,79 +1353,3 @@ bool	doexit;
 	exit(0);
 	/*NOTREACHED*/
 }
-/**/
-#ifdef	OK_TO_PLAY
-#include <sys/types.h>
-#include <utmp.h>   /* used for counting users on system */
-
-/************************************************************************
-/
-/ FUNCTION NAME: ok_to_play()
-/
-/ FUNCTION: indicate whether playing is allowed
-/
-/ AUTHOR: E. A. Estes, 12/4/85
-/
-/ ARGUMENTS: none
-/
-/ RETURN VALUE:
-/	FALSE if playing is not allowed
-/	TRUE if playing is allowed
-/
-/ MODULES CALLED: time(), fread(), fopen(), fclose(), localtime()
-/
-/ GLOBAL INPUTS: Wizard, Okcount
-/
-/ GLOBAL OUTPUTS: Okcount
-/
-/ DESCRIPTION: 
-/	This function is provided to allow one to restrict access to the game.
-/	Tailor this routine as appropriate.
-/	Return FALSE if playing is not allowed at this time.
-/
-/************************************************************************/
-
-ok_to_play()
-{
-register struct tm	*tp;	/* to get time of day */
-register int	numusers = 0;	/* number of users on system */
-FILE	*fp;			/* to open files */
-long	now;			/* present time */
-struct utmp	ubuf;		/* to read 'utmp' file */
-
-    if (Wizard)
-	/* wizard can always play */
-	return(TRUE);
-
-    if (Okcount >= 5)
-	Okcount = 0;
-    if (Okcount++ > 0)
-	/* only check every 5 times */
-	return(TRUE);
-
-    /* check time of day */
-    time(&now);
-    tp = localtime(&now);
-    if (((tp->tm_hour > 8 && tp->tm_hour < 12)		/* 8-noon */
-	|| (tp->tm_hour > 12 && tp->tm_hour < 16))	/* 1-4 pm */
-	&& (tp->tm_wday != 0 && tp->tm_wday != 6))	/* not a weekend */
-	    return(FALSE);
-
-    /* check # of users */
-    if ((fp = fopen("/etc/utmp", "r")) != NULL)
-	{
-	while (fread((char *) &ubuf, sizeof(ubuf), 1, fp) == 1)
-#ifdef	SYS5
-	    if (ubuf.ut_type == USER_PROCESS)
-#else
-	    if (ubuf.ut_name[0] != '\0')
-#endif
-		++numusers;
-	fclose(fp);
-
-	if (numusers > N_MAXUSERS)
-	    return(FALSE);
-	}
-    return(TRUE);
-}
-#endif

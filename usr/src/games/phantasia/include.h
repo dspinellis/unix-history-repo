@@ -5,7 +5,6 @@
 #include <ctype.h>
 #include <curses.h>
 #include <math.h>
-#include <pwd.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <time.h>

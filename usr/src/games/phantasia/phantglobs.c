@@ -21,9 +21,6 @@ bool	Echo;		/* set if echo input to terminal		*/
 int	Users;		/* number of users currently playing		*/
 int	Whichmonster;	/* which monster we are fighting		*/
 int	Lines;		/* line on screen counter for fight routines	*/
-#ifdef OK_TO_PLAY
-int	Okcount;	/* counter for checking ok_to_play		*/
-#endif
 
 jmp_buf Fightenv;	/* used to jump into fight routine		*/
 jmp_buf Timeoenv;	/* used for timing out waiting for input	*/
