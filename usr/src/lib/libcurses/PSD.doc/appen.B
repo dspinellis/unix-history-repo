@@ -2,16 +2,18 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)appen.B	5.1 (Berkeley) %G%
+.\"	@(#)appen.B	6.1 (Berkeley) %G%
 .\"
-.ie t .he ''\fBAppendix B\fR''
+.ie t .oh '\*(Ln Appendix B''PS1:18-%'
+.eh 'PS1:18-%''\*(Ln Appendix B'
 .el .he ''\fIAppendix B\fR''
 .bp
 .(x
 .ti 0
 .b "Appendix B"
 .)x
-.sh 1 "The WINDOW structure" 1
+.nr $1 0
+.sh 1 "The WINDOW structure"
 .pp
 The WINDOW structure is defined as follows:
 .(l I
@@ -40,7 +42,7 @@ are the maximum values allowed for
 and
 .Vn \*_begx
 are the starting \*y on the terminal for the window,
-i.e.,
+.i i.e. ,
 the window's home.
 .Vn \*_cury ,
 .Vn \*_curx ,
@@ -90,15 +92,53 @@ is the
 character on the
 .Vn i th
 line.
-.pp
 .Vn \*_flags
 can have one or more values
 or'd into it.
-.b \*_SUBWIN
-means that the window is a subwindow,
-which indicates to
-.Fn delwin
-that the space for the lines is not to be freed.
+.pp
+For windows that are not subwindows,
+.Vn \*_orig
+is
+NULL .
+For subwindows,
+it points to the main window
+to which the window is subsidiary.
+.Vn \*_nextp
+is a pointer in a circularly linked list
+of all the windows which are subwindows of the same main window,
+plus the main window itself.
+.pp
+.Vn \*_firstch
+and
+.Vn \*_lastch
+are
+.Fn malloc ed
+arrays which contain the index of the
+first and last changed characters
+on the line.
+.Vn \*_ch\*_off
+is the x offset for the window
+in the
+.Vn \*_firstch
+and
+.Vn \*_lastch
+arrays for this window.
+For main windows,
+this is always 0;
+for subwindows
+it is the difference between the starting point of the main window
+and that of the subindow,
+so that change markers can be set relative to the main window.
+This makes these markers global in scope.
+.pp
+All subwindows share the appropriate portions of
+.Vn _y ,
+.Vn _firstch ,
+.Vn _lastch ,
+and
+.Vn _insdel
+with their main window.
+.pp
 .b \*_ENDLINE
 says that the end of the line for this window
 is also the end of a screen.
@@ -110,6 +150,25 @@ is at the lower right-hand corner of the terminal;
 .i i.e. ,
 if a character was put there,
 the terminal would scroll.
+.b \*_FULLLINE
+says that the width of a line is the same as the width of the terminal.
+If
+.b \*_FLUSH
+is set,
+it says that
+.Fn fflush "" "" stdout
+should be called at the end of each
+.Fn refresh
 .b \*_STANDOUT
 says that all characters added to the screen
 are in standout mode.
+.b \*_INSDEL
+is reserved for future use,
+and is set by
+.Fn idlok .
+.Vn \*_firstch
+is set to
+.b \*_NOCHANGE
+for lines on which there has been no change
+since the last
+.Fn refresh .
