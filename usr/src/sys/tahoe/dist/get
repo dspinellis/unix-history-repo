@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)get	1.7 (Berkeley) %G%
+#	@(#)get	1.8 (Berkeley) %G%
 #
 
 # Shell script to build a mini-root file system in preparation for building
@@ -65,7 +65,7 @@ done
 cp $DISTROOT/dev/MAKEDEV dev/MAKEDEV
 chmod +x dev/MAKEDEV
 cp /dev/null dev/MAKEDEV.local
-(cd dev; ./MAKEDEV std hd0; ./MAKEDEV cy0; mv rmt12 cy0; rm *mt*)
+(cd dev; ./MAKEDEV std hd0 hd1 dk0 dk1; ./MAKEDEV cy0; mv rmt12 cy0; rm *mt*)
 
 # initialize /etc/passwd
 cat >etc/passwd <<EOF
@@ -80,17 +80,17 @@ EOF
 
 # initialize /etc/fstab
 cat >etc/fstab <<EOF
-/dev/xfd0a:/a:xx:1:1
-/dev/hd0a:/a:xx:1:1
+/dev/dk0a /a		ufs	xx 1 1
+/dev/hd0a /a		ufs	xx 1 1
 EOF
 
 # create xtr script
 cat >xtr <<'EOF'
 #!/bin/sh -e
-: ${disk?'Usage: disk=xx0 tape=yy xtr'}
-: ${tape?'Usage: disk=xx0 tape=yy xtr'}
+: ${disk?'Usage: disk=xx0 tape=yy [type=zz] xtr'}
+: ${tape?'Usage: disk=xx0 tape=yy [type=zz] xtr'}
 echo 'Build root file system'
-newfs ${disk}a
+newfs ${disk}a ${type}
 sync
 echo 'Check the file system'
 fsck /dev/r${disk}a
