@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.17 89/11/30$
  *
- *	@(#)clock.c	7.1 (Berkeley) %G%
+ *	@(#)clock.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -213,34 +213,34 @@ clockmmap(dev, addrp)
 	dev_t dev;
 	caddr_t *addrp;
 {
-	register struct mapmem *mp;
-	int id, clockmapin();
+	struct proc *p = u.u_procp;		/* XXX */
+	struct mapmem *mp;
+	int id, error, clockmapin();
 
 	id = minor(dev);	/* XXX */
-	mp = mmalloc(id, addrp, NBPG, MM_RO|MM_CI|MM_NOCORE, &clockops);
+	error = mmalloc(p, id, addrp, NBPG, MM_RO|MM_CI|MM_NOCORE,
+			&clockops, &mp);
 #ifdef DEBUG
 	if (clockdebug)
-		printf("clockmmap(%d): addr %x\n", u.u_procp->p_pid, *addrp);
+		printf("clockmmap(%d): addr %x\n", p->p_pid, *addrp);
 #endif
-	if (mp == MMNIL)
-		return(u.u_error);
-	if (!mmmapin(mp, clockmapin)) {
-		mmfree(mp);
-		return(u.u_error);
-	}
-	return(0);
+	if (error == 0)
+		if (error = mmmapin(p, mp, clockmapin))
+			(void) mmfree(p, mp);
+	return(error);
 }
 
 clockunmmap(dev, addr)
 	dev_t dev;
 	caddr_t addr;
 {
+	struct proc *p = u.u_procp;		/* XXX */
 	register struct mapmem *mp, **mpp;
 	int found, id;
 
 #ifdef DEBUG
 	if (clockdebug)
-		printf("clockunmmap(%d): addr %x\n", u.u_procp->p_pid, addr);
+		printf("clockunmmap(%d): addr %x\n", p->p_pid, addr);
 #endif
 	id = minor(dev);	/* XXX */
 	found = 0;
@@ -255,8 +255,8 @@ clockunmmap(dev, addr)
 			mpp = &mp->mm_next;
 			continue;
 		}
-		mmmapout(mp);
-		mmfree(mp);
+		mmmapout(p, mp);
+		(void) mmfree(p, mp);
 		found++;
 	}
 	return(found ? 0 : EINVAL);
