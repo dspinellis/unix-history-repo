@@ -3,12 +3,15 @@
 # include <sys/dir.h>
 # include <signal.h>
 # include <errno.h>
+# ifdef FLOCK
+# include <sys/file.h>
+# endif FLOCK
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	4.2		%G%	(no queueing));
+SCCSID(@(#)queue.c	4.3		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	4.2		%G%);
+SCCSID(@(#)queue.c	4.3		%G%);
 
 /*
 **  Work queue.
@@ -54,21 +57,27 @@ queueup(e, queueall, announce)
 	MAILER nullmailer;
 
 	/*
-	**  Create control file.
+	**  Create control file if necessary.
 	*/
 
-	tf = newstr(queuename(e, 't'));
-	tfp = fopen(tf, "w");
+	tfp = e->e_qfp;
 	if (tfp == NULL)
 	{
-		syserr("queueup: cannot create temp file %s", tf);
-		return;
+		tf = newstr(queuename(e, 't'));
+		tfp = fopen(tf, "w");
+		if (tfp == NULL)
+		{
+			syserr("queueup: cannot create temp file %s", tf);
+			return;
+		}
+		(void) chmod(tf, FileMode);
 	}
-	(void) chmod(tf, FileMode);
+	else
+		tf = NULL;
 
 # ifdef DEBUG
 	if (tTd(40, 1))
-		printf("queueing in %s\n", tf);
+		printf("queueing %s\n", e->e_id);
 # endif DEBUG
 
 	/*
@@ -201,15 +210,25 @@ queueup(e, queueall, announce)
 	**  Clean up.
 	*/
 
-	(void) fclose(tfp);
 	qf = queuename(e, 'q');
-	holdsigs();
-	(void) unlink(qf);
-	if (link(tf, qf) < 0)
-		syserr("cannot link(%s, %s), df=%s", tf, qf, e->e_df);
-	else
-		(void) unlink(tf);
-	rlsesigs();
+	if (tf != NULL)
+	{
+# ifdef FLOCK
+		(void) flock(fileno(tfp), LOCK_EX|LOCK_NB);
+		if (rename(tf, qf) < 0)
+			syserr("cannot rename(%s, %s), df=%s", tf, qf, e->e_df);
+# else FLOCK
+		holdsigs();
+		(void) unlink(qf);
+		if (link(tf, qf) < 0)
+			syserr("cannot link(%s, %s), df=%s", tf, qf, e->e_df);
+		else
+			(void) unlink(tf);
+		rlsesigs();
+# endif FLOCK
+	}
+	(void) fclose(tfp);
+	e->e_qfp = NULL;
 
 # ifdef LOG
 	/* save log info */
@@ -494,6 +513,8 @@ dowork(w)
 
 	if (i == 0)
 	{
+		FILE *qfp;
+
 		/*
 		**  CHILD
 		**	Lock the control file to avoid duplicate deliveries.
@@ -518,8 +539,17 @@ dowork(w)
 		/* don't use the headers from sendmail.cf... */
 		CurEnv->e_header = NULL;
 
-		/* create the link to the control file during processing */
+		FileName = queuename(CurEnv, 'q');
+		qfp = fopen(FileName, "r");
+		if (qfp == NULL)
+			exit(EX_OK);
+
+		/* lock the control file during processing */
+# ifdef FLOCK
+		if (flock(fileno(qfp), LOCK_EX|LOCK_NB) < 0)
+# else FLOCK
 		if (link(w->w_name, queuename(CurEnv, 'l')) < 0)
+# endif FLOCK
 		{
 			/* being processed by another queuer */
 # ifdef LOG
@@ -533,7 +563,8 @@ dowork(w)
 		initsys();
 
 		/* read the queue control file */
-		readqf(CurEnv, TRUE);
+		readqf(qfp, CurEnv, TRUE);
+		(void) fclose(qfp);
 		CurEnv->e_flags |= EF_INQUEUE;
 		eatheader(CurEnv);
 
@@ -556,6 +587,7 @@ dowork(w)
 **  READQF -- read queue file and set up environment.
 **
 **	Parameters:
+**		qfp -- the file pointer for the qf file.
 **		e -- the envelope of the job to run.
 **		full -- if set, read in all information.  Otherwise just
 **			read in info needed for a queue print.
@@ -568,37 +600,23 @@ dowork(w)
 **		we had been invoked by argument.
 */
 
-readqf(e, full)
+readqf(qfp, e, full)
+	register FILE *qfp;
 	register ENVELOPE *e;
 	bool full;
 {
-	register FILE *f;
 	char buf[MAXFIELD];
 	extern char *fgetfolded();
-	register char *p;
 	extern ADDRESS *sendto();
-
-	/*
-	**  Open the file created by queueup.
-	*/
-
-	p = queuename(e, 'q');
-	f = fopen(p, "r");
-	if (f == NULL)
-	{
-		syserr("readqf: no control file %s", p);
-		return;
-	}
-	FileName = p;
-	LineNumber = 0;
 
 	/*
 	**  Read and process the file.
 	*/
 
+	LineNumber = 0;
 	if (Verbose && full)
 		printf("\nRunning %s\n", e->e_id);
-	while (fgetfolded(buf, sizeof buf, f) != NULL)
+	while (fgetfolded(buf, sizeof buf, qfp) != NULL)
 	{
 		switch (buf[0])
 		{
@@ -693,24 +711,41 @@ printqueue()
 		struct stat st;
 		auto time_t submittime = 0;
 		long dfsize = -1;
+		int fd;
+# ifndef FLOCK
 		char lf[20];
+# endif FLOCK
 		char message[MAXLINE];
 
+		f = fopen(w->w_name, "r");
+		if (f == NULL)
+		{
+			errno = 0;
+			continue;
+		}
 		printf("%7s", w->w_name + 2);
+# ifdef FLOCK
+		fd = fileno(f);
+
+		if (flock(fd, LOCK_EX|LOCK_NB) < 0)
+		{
+			printf("*");
+		}
+		else
+		{
+			flock(fd, LOCK_UN);
+			printf(" ");
+		}
+# else FLOCK
 		strcpy(lf, w->w_name);
 		lf[0] = 'l';
 		if (stat(lf, &st) >= 0)
 			printf("*");
 		else
 			printf(" ");
+# endif FLOCK
 		errno = 0;
-		f = fopen(w->w_name, "r");
-		if (f == NULL)
-		{
-			printf(" (finished)\n");
-			errno = 0;
-			continue;
-		}
+
 		message[0] = '\0';
 		while (fgets(buf, sizeof buf, f) != NULL)
 		{
@@ -750,3 +785,181 @@ printqueue()
 }
 
 # endif QUEUE
+/*
+**  QUEUENAME -- build a file name in the queue directory for this envelope.
+**
+**	Assigns an id code if one does not already exist.
+**	This code is very careful to avoid trashing existing files
+**	under any circumstances.
+**		We first create an nf file that is only used when
+**		assigning an id.  This file is always empty, so that
+**		we can never accidently truncate an lf file.
+**
+**	Parameters:
+**		e -- envelope to build it in/from.
+**		type -- the file type, used as the first character
+**			of the file name.
+**
+**	Returns:
+**		a pointer to the new file name (in a static buffer).
+**
+**	Side Effects:
+**		Will create the lf and qf files if no id code is
+**		already assigned.  This will cause the envelope
+**		to be modified.
+*/
+
+char *
+queuename(e, type)
+	register ENVELOPE *e;
+	char type;
+{
+	static char buf[MAXNAME];
+	static int pid = -1;
+	char c1 = 'A';
+	char c2 = 'A';
+
+	if (e->e_id == NULL)
+	{
+		char qf[20];
+		char nf[20];
+# ifndef FLOCK
+		char lf[20];
+# endif FLOCK
+
+		/* find a unique id */
+		if (pid != getpid())
+		{
+			/* new process -- start back at "AA" */
+			pid = getpid();
+			c1 = 'A';
+			c2 = 'A' - 1;
+		}
+		(void) sprintf(qf, "qfAA%05d", pid);
+# ifndef FLOCK
+		strcpy(lf, qf);
+		lf[0] = 'l';
+# endif FLOCK
+		strcpy(nf, qf);
+		nf[0] = 'n';
+
+		while (c1 < '~' || c2 < 'Z')
+		{
+			int i;
+
+			if (c2 >= 'Z')
+			{
+				c1++;
+				c2 = 'A' - 1;
+			}
+			nf[2] = qf[2] = c1;
+			nf[3] = qf[3] = ++c2;
+# ifndef FLOCK
+			lf[2] = c1;
+			lf[3] = c2;
+# endif FLOCK
+# ifdef DEBUG
+			if (tTd(7, 20))
+				printf("queuename: trying \"%s\"\n", nf);
+# endif DEBUG
+
+# ifdef FLOCK
+			i = open(nf, O_WRONLY|O_CREAT|O_EXCL, FileMode);
+			if (i >= 0)
+			{
+				(void) flock(i, LOCK_EX|LOCK_NB);
+				if (link(nf, qf) < 0)
+				{
+					(void) close(i);
+					(void) unlink(nf);
+					continue;
+				}
+				e->e_qfp = fdopen(i, "w");
+				(void) unlink(nf);
+				break;
+			}
+# else FLOCK
+# ifdef QUEUE
+			if (access(lf, 0) >= 0 || access(qf, 0) >= 0)
+				continue;
+			errno = 0;
+			i = creat(nf, FileMode);
+			if (i < 0)
+			{
+				(void) unlink(nf);	/* kernel bug */
+				continue;
+			}
+			(void) close(i);
+			i = link(nf, lf);
+			(void) unlink(nf);
+			if (i < 0)
+				continue;
+			if (link(lf, qf) >= 0)
+				break;
+			(void) unlink(lf);
+# else QUEUE
+			if (close(creat(qf, FileMode)) < 0)
+				continue;
+# endif QUEUE
+# endif FLOCK
+		}
+		if (c1 >= '~' && c2 >= 'Z')
+		{
+			syserr("queuename: Cannot create \"%s\" in \"%s\"",
+				qf, QueueDir);
+			exit(EX_OSERR);
+		}
+		e->e_id = newstr(&qf[2]);
+		define('i', e->e_id, e);
+# ifdef DEBUG
+		if (tTd(7, 1))
+			printf("queuename: assigned id %s, env=%x\n", e->e_id, e);
+# ifdef LOG
+		if (LogLevel > 16)
+			syslog(LOG_DEBUG, "%s: assigned id", e->e_id);
+# endif LOG
+# endif DEBUG
+	}
+
+	if (type == '\0')
+		return (NULL);
+	(void) sprintf(buf, "%cf%s", type, e->e_id);
+# ifdef DEBUG
+	if (tTd(7, 2))
+		printf("queuename: %s\n", buf);
+# endif DEBUG
+	return (buf);
+}
+/*
+**  UNLOCKQUEUE -- unlock the queue entry for a specified envelope
+**
+**	Parameters:
+**		e -- the envelope to unlock.
+**
+**	Returns:
+**		none
+**
+**	Side Effects:
+**		unlocks the queue for `e'.
+*/
+
+unlockqueue(e)
+	ENVELOPE *e;
+{
+	/* remove the transcript */
+#ifdef DEBUG
+# ifdef LOG
+	if (LogLevel > 19)
+		syslog(LOG_DEBUG, "%s: unlock", e->e_id);
+# endif LOG
+	if (!tTd(51, 4))
+#endif DEBUG
+		xunlink(queuename(e, 'x'));
+
+# ifdef QUEUE
+# ifndef FLOCK
+	/* last but not least, remove the lock */
+	xunlink(queuename(e, 'l'));
+# endif FLOCK
+# endif QUEUE
+}

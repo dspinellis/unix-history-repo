@@ -5,9 +5,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	4.6		%G%	(with DBM));
+SCCSID(@(#)alias.c	4.7		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	4.6		%G%	(without DBM));
+SCCSID(@(#)alias.c	4.7		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -176,9 +176,14 @@ initaliases(aliasfile, init)
 	*/
 
 	dbminit(aliasfile);
-	atcnt = 10;
-	while (SafeAlias && !init && atcnt-- >= 0 && aliaslookup("@") == NULL)
-		sleep(30);
+	atcnt = SafeAlias * 2;
+	if (atcnt > 0)
+	{
+		while (!init && atcnt-- >= 0 && aliaslookup("@") == NULL)
+			sleep(30);
+	}
+	else
+		atcnt = 1;
 
 	/*
 	**  See if the DBM version of the file is out of date with

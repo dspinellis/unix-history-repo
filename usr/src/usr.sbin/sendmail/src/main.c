@@ -3,7 +3,7 @@
 # include <sgtty.h>
 # include "sendmail.h"
 
-SCCSID(@(#)main.c	4.14		%G%);
+SCCSID(@(#)main.c	4.15		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -103,7 +103,7 @@ main(argc, argv, envp)
 	**  Be sure we have enough file descriptors.
 	*/
 
-	for (i = 3; i < 20; i++)
+	for (i = 3; i < 50; i++)
 		(void) close(i);
 	errno = 0;
 
@@ -117,12 +117,23 @@ main(argc, argv, envp)
 
 	argv[argc] = NULL;
 	av = argv;
-	while (*++av != NULL)
+	while ((p = *++av) != NULL)
 	{
-		if (strncmp(*av, "-C", 2) == 0 || strncmp(*av, "-bz", 3) == 0)
+		if (strncmp(p, "-C", 2) == 0)
+		{
+			ConfFile = &p[2];
+			if (ConfFile[0] == '\0')
+				ConfFile = "sendmail.cf";
+			readconfig = safecf = FALSE;
+			setuid(getruid());
+			setgid(getrgid());
+			readcf(ConfFile, FALSE);
+			break;
+		}
+		else if (strncmp(p, "-bz", 3) == 0)
 			break;
 	}
-	if (*av == NULL)
+	if (p == NULL)
 		readconfig = !thaw(FreezeFile);
 
 	/* reset the environment after the thaw */
@@ -152,10 +163,6 @@ main(argc, argv, envp)
 	BlankEnvelope.e_putbody = putbody;
 	BlankEnvelope.e_xfp = NULL;
 	CurEnv = &BlankEnvelope;
-
-	/* make sure we have a clean slate */
-	for (i = 3; i < 50; i++)
-		(void) close(i);
 
 # ifdef LOG
 	openlog("sendmail", LOG_PID);
@@ -233,11 +240,7 @@ main(argc, argv, envp)
 			}
 			break;
 
-		  case 'C':	/* select configuration file */
-			ConfFile = &p[2];
-			if (ConfFile[0] == '\0')
-				ConfFile = "sendmail.cf";
-			safecf = FALSE;
+		  case 'C':	/* select configuration file (already done) */
 			break;
 
 # ifdef DEBUG
@@ -341,11 +344,6 @@ main(argc, argv, envp)
 	**	Extract special fields for local use.
 	*/
 
-	if (!safecf)
-	{
-		setgid(getrgid());
-		setuid(getruid());
-	}
 	if (!safecf || OpMode == MD_FREEZE || readconfig)
 		readcf(ConfFile, safecf);
 
@@ -956,6 +954,7 @@ disconnect(fulldrop)
 			(void) ioctl(fd, TIOCNOTTY, 0);
 			(void) close(fd);
 		}
+		setpgrp(0);
 		errno = 0;
 	}
 #endif TIOCNOTTY

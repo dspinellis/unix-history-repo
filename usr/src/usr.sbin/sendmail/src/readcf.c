@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)readcf.c	4.8		%G%);
+SCCSID(@(#)readcf.c	4.9		%G%);
 
 /*
 **  READCF -- read control file.
@@ -619,6 +619,8 @@ setoption(opt, val, safe, sticky)
 	extern time_t convtime();
 	extern int QueueLA;
 	extern int RefuseLA;
+	extern bool trusteduser();
+	extern char *username();
 
 # ifdef DEBUG
 	if (tTd(37, 1))
@@ -642,8 +644,14 @@ setoption(opt, val, safe, sticky)
 		printf("\n");
 #endif DEBUG
 
-	if (getruid() == 0)
+	/*
+	**  Check to see if this option can be specified by this user.
+	*/
+
+	if (!safe && (getruid() == 0 || trusteduser(username())))
 		safe = TRUE;
+	if (!safe && index("deiLmorsv", opt) == NULL)
+		return;
 
 	switch (opt)
 	{
@@ -654,14 +662,17 @@ setoption(opt, val, safe, sticky)
 			AliasFile = newstr(val);
 		break;
 
+	  case 'a':		/* look N minutes for "@:@" in alias file */
+		if (val[0] == '\0')
+			SafeAlias = 5;
+		else
+			SafeAlias = atoi(val);
+		break;
+
 	  case 'B':		/* substitution for blank character */
 		SpaceSub = val[0];
 		if (SpaceSub == '\0')
 			SpaceSub = ' ';
-		break;
-
-	  case 'a':		/* look for "@:@" in alias file */
-		SafeAlias = atobool(val);
 		break;
 
 	  case 'c':		/* don't connect to "expensive" mailers */
@@ -721,8 +732,7 @@ setoption(opt, val, safe, sticky)
 		break;
 
 	  case 'g':		/* default gid */
-		if (safe)
-			DefGid = atoi(val);
+		DefGid = atoi(val);
 		break;
 
 	  case 'H':		/* help file */
@@ -800,8 +810,7 @@ setoption(opt, val, safe, sticky)
 		break;
 
 	  case 'u':		/* set default uid */
-		if (safe)
-			DefUid = atoi(val);
+		DefUid = atoi(val);
 		break;
 
 	  case 'v':		/* run in verbose mode */
@@ -810,8 +819,7 @@ setoption(opt, val, safe, sticky)
 
 # ifdef DEBUG
 	  case 'W':		/* set the wizards password */
-		if (safe)
-			WizWord = newstr(val);
+		WizWord = newstr(val);
 		break;
 # endif DEBUG
 

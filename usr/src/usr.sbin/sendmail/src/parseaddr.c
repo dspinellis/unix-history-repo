@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	4.13		%G%);
+SCCSID(@(#)parseaddr.c	4.14		%G%);
 
 /*
 **  PARSEADDR -- Parse an address
@@ -736,9 +736,11 @@ rewrite(pvp, ruleset)
 			char **xpvp;
 			int trsize;
 			int i;
+			char *olddelimchar;
 			char buf[MAXNAME + 1];
 			char *pvpb1[MAXATOM + 1];
 			char pvpbuf[PSBUFSIZE];
+			extern char *DelimChar;
 
 			if (**rvp != HOSTBEGIN)
 				continue;
@@ -766,7 +768,9 @@ rewrite(pvp, ruleset)
 			maphostname(buf, sizeof buf);
 
 			/* scan the new host name */
+			olddelimchar = DelimChar;
 			xpvp = prescan(buf, '\0', pvpbuf);
+			DelimChar = olddelimchar;
 			if (xpvp == NULL)
 			{
 				syserr("rewrite: cannot prescan canonical hostname: %s", buf);

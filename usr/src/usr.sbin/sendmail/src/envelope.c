@@ -3,7 +3,7 @@
 #include "sendmail.h"
 #include <sys/stat.h>
 
-SCCSID(@(#)envelope.c	4.7		%G%);
+SCCSID(@(#)envelope.c	4.8		%G%);
 
 /*
 **  NEWENVELOPE -- allocate a new envelope
@@ -185,37 +185,6 @@ clearenvelope(e)
 	e->e_flags = 0;
 }
 /*
-**  UNLOCKQUEUE -- unlock the queue entry for a specified envelope
-**
-**	Parameters:
-**		e -- the envelope to unlock.
-**
-**	Returns:
-**		none
-**
-**	Side Effects:
-**		unlocks the queue for `e'.
-*/
-
-unlockqueue(e)
-	ENVELOPE *e;
-{
-	/* remove the transcript */
-#ifdef DEBUG
-# ifdef LOG
-	if (LogLevel > 19)
-		syslog(LOG_DEBUG, "%s: unlock", e->e_id);
-# endif LOG
-	if (!tTd(51, 4))
-#endif DEBUG
-		xunlink(queuename(e, 'x'));
-
-# ifdef QUEUE
-	/* last but not least, remove the lock */
-	xunlink(queuename(e, 'l'));
-# endif QUEUE
-}
-/*
 **  INITSYS -- initialize instantiation of system
 **
 **	In Daemon mode, this is done in the child.
@@ -275,6 +244,7 @@ initsys()
 	/* time as integer, unix time, arpa time */
 	settime();
 
+#ifdef TTYNAME
 	/* tty name */
 	if (macvalue('y', CurEnv) == NULL)
 	{
@@ -287,6 +257,7 @@ initsys()
 			define('y', ybuf, CurEnv);
 		}
 	}
+#endif TTYNAME
 }
 /*
 **  SETTIME -- set the current time.
@@ -325,125 +296,6 @@ settime()
 	if (macvalue('a', CurEnv) == NULL)
 		define('a', p, CurEnv);
 	define('b', p, CurEnv);
-}
-/*
-**  QUEUENAME -- build a file name in the queue directory for this envelope.
-**
-**	Assigns an id code if one does not already exist.
-**	This code is very careful to avoid trashing existing files
-**	under any circumstances.
-**		We first create an nf file that is only used when
-**		assigning an id.  This file is always empty, so that
-**		we can never accidently truncate an lf file.
-**
-**	Parameters:
-**		e -- envelope to build it in/from.
-**		type -- the file type, used as the first character
-**			of the file name.
-**
-**	Returns:
-**		a pointer to the new file name (in a static buffer).
-**
-**	Side Effects:
-**		Will create the lf and qf files if no id code is
-**		already assigned.  This will cause the envelope
-**		to be modified.
-*/
-
-char *
-queuename(e, type)
-	register ENVELOPE *e;
-	char type;
-{
-	static char buf[MAXNAME];
-	static int pid = -1;
-	char c1 = 'A';
-	char c2 = 'A';
-
-	if (e->e_id == NULL)
-	{
-		char qf[20];
-		char lf[20];
-		char nf[20];
-
-		/* find a unique id */
-		if (pid != getpid())
-		{
-			/* new process -- start back at "AA" */
-			pid = getpid();
-			c1 = 'A';
-			c2 = 'A' - 1;
-		}
-		(void) sprintf(qf, "qfAA%05d", pid);
-		strcpy(lf, qf);
-		lf[0] = 'l';
-		strcpy(nf, qf);
-		nf[0] = 'n';
-
-		while (c1 < '~' || c2 < 'Z')
-		{
-			int i;
-
-			if (c2 >= 'Z')
-			{
-				c1++;
-				c2 = 'A' - 1;
-			}
-			qf[2] = lf[2] = nf[2] = c1;
-			qf[3] = lf[3] = nf[3] = ++c2;
-# ifdef DEBUG
-			if (tTd(7, 20))
-				printf("queuename: trying \"%s\"\n", nf);
-# endif DEBUG
-# ifdef QUEUE
-			if (access(lf, 0) >= 0 || access(qf, 0) >= 0)
-				continue;
-			errno = 0;
-			i = creat(nf, FileMode);
-			if (i < 0)
-			{
-				(void) unlink(nf);	/* kernel bug */
-				continue;
-			}
-			(void) close(i);
-			i = link(nf, lf);
-			(void) unlink(nf);
-			if (i < 0)
-				continue;
-			if (link(lf, qf) >= 0)
-				break;
-			(void) unlink(lf);
-# else QUEUE
-			if (close(creat(qf, FileMode)) < 0)
-				continue;
-# endif QUEUE
-		}
-		if (c1 >= '~' && c2 >= 'Z')
-		{
-			syserr("queuename: Cannot create \"%s\" in \"%s\"",
-				lf, QueueDir);
-			exit(EX_OSERR);
-		}
-		e->e_id = newstr(&qf[2]);
-		define('i', e->e_id, e);
-# ifdef DEBUG
-		if (tTd(7, 1))
-			printf("queuename: assigned id %s, env=%x\n", e->e_id, e);
-# ifdef LOG
-		if (LogLevel > 16)
-			syslog(LOG_DEBUG, "%s: assigned id", e->e_id);
-# endif LOG
-# endif DEBUG
-	}
-
-	if (type == '\0')
-		return (NULL);
-	(void) sprintf(buf, "%cf%s", type, e->e_id);
-# ifdef DEBUG
-	if (tTd(7, 2))
-		printf("queuename: %s\n", buf);
-# endif DEBUG
-	return (buf);
 }
 /*
 **  OPENXSCRIPT -- Open transcript file
@@ -536,7 +388,6 @@ setsender(from)
 	char *from;
 {
 	register char **pvp;
-	register struct passwd *pw = NULL;
 	char *realname = NULL;
 	char buf[MAXNAME];
 	char pvpbuf[PSBUFSIZE];
@@ -562,20 +413,6 @@ setsender(from)
 		extern char *username();
 
 		realname = username();
-		errno = 0;
-	}
-	if (realname == NULL || realname[0] == '\0')
-	{
-		extern struct passwd *getpwuid();
-
-		pw = getpwuid(getruid());
-		if (pw != NULL)
-			realname = pw->pw_name;
-	}
-	if (realname == NULL || realname[0] == '\0')
-	{
-		syserr("Who are you?");
-		realname = "root";
 	}
 
 	/*
@@ -596,8 +433,6 @@ setsender(from)
 			/* syserr("%s, you cannot use the -f flag", realname); */
 			from = NULL;
 		}
-		else if (strcmp(from, realname) != 0)
-			pw = NULL;
 	}
 
 	SuprErrs = TRUE;
@@ -612,19 +447,17 @@ setsender(from)
 	loweraddr(&CurEnv->e_from);
 	SuprErrs = FALSE;
 
-	if (pw == NULL && CurEnv->e_from.q_mailer == LocalMailer)
+	if (CurEnv->e_from.q_mailer == LocalMailer)
 	{
+		register struct passwd *pw;
 		extern struct passwd *getpwnam();
 
+		/*
+		**  Process passwd file entry.
+		*/
+
 		pw = getpwnam(CurEnv->e_from.q_user);
-	}
 
-	/*
-	**  Process passwd file entry.
-	*/
-
-	if (pw != NULL)
-	{
 		/* extract home directory */
 		CurEnv->e_from.q_home = newstr(pw->pw_dir);
 		define('z', CurEnv->e_from.q_home, CurEnv);

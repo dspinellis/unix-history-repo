@@ -34,7 +34,7 @@
 
 
 
-SCCSID(@(#)conf.c	4.5		%G%);
+SCCSID(@(#)conf.c	4.6		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -310,9 +310,30 @@ getrgid()
 char *
 username()
 {
+	static char *myname = NULL;
 	extern char *getlogin();
 
-	return (getlogin());
+	/* cache the result */
+	if (myname == NULL)
+	{
+		myname = getlogin();
+		if (myname == NULL || myname[0] == '\0')
+		{
+			register struct passwd *pw;
+			extern struct passwd *getpwuid();
+
+			pw = getpwuid(getruid());
+			if (pw != NULL)
+				myname = pw->pw_name;
+		}
+		if (myname == NULL || myname[0] == '\0')
+		{
+			syserr("Who are you?");
+			myname = "postmaster";
+		}
+	}
+
+	return (myname);
 }
 /*
 **  TTYPATH -- Get the path of the user's tty
@@ -507,3 +528,27 @@ getla()
 }
 
 #endif VMUNIX
+/*
+**  DBMCLOSE -- close the DBM file
+**
+**	This depends on the implementation of the DBM library.  It
+**	seems to work for all versions that I have come across.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Closes the current DBM file; dbminit must be
+**		called again to continue using the DBM routines.
+*/
+
+dbmclose()
+{
+	extern int pagf, dirf;	/* defined in the DBM package */
+
+	(void) close(pagf);
+	(void) close(dirf);
+}
