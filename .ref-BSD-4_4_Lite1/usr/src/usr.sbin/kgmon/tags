@@ -1,8 +1,0 @@
-Mkgmon	kgmon.c	/^main(int argc, char **argv)$/
-dumpstate	kgmon.c	/^dumpstate(kvp)$/
-getprof	kgmon.c	/^getprof(kvp)$/
-getprofhz	kgmon.c	/^getprofhz(kvp)$/
-kern_readonly	kgmon.c	/^kern_readonly(mode)$/
-openfiles	kgmon.c	/^openfiles(system, kmemf, kvp)$/
-reset	kgmon.c	/^reset(kvp)$/
-setprof	kgmon.c	/^setprof(kvp, state)$/

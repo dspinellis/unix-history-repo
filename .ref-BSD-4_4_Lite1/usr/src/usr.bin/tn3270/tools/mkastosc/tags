@@ -1,8 +1,0 @@
-Mmkastosc	mkastosc.c	/^main(argc, argv)$/
-add	../mkhits/dohits.c	/^add(first, second, value)$/
-dohash	../mkhits/dohits.c	/^dohash(seed, string)$/
-dohits	../mkhits/dohits.c	/^dohits(aidfile, fcnfile)$/
-doit	../mkhits/dohits.c	/^doit(hit, type, hits)$/
-savechr	../mkhits/dohits.c	/^char *savechr(c)$/
-scandefine	../mkhits/dohits.c	/^scandefine(file, prefix)$/
-scanwhite	../mkhits/dohits.c	/^scanwhite(file, prefix)$/

@@ -1,2 +1,0 @@
-Mrandom	random.c	/^main(argc, argv)$/
-usage	random.c	/^usage()$/

@@ -1,6 +1,0 @@
-for the BIND 4.9 "contrib" distribution, i removed the author's copy of
-"doc" and replaced it with a context diff from the ISI version.  use the
-"patch" utility to build the appropriate "doc" version for use with this
-tool.  if you don't know about "patch", keep moving, you're in the wrong
-directory.				Paul Vixie, DECWRL, May 1993
-

@@ -1,3 +1,0 @@
-Mmount_kernfs	mount_kernfs.c	/^main(argc, argv)$/
-getmntopts	../mount/getmntopts.c	/^getmntopts(options, m0, flagp)$/
-usage	mount_kernfs.c	/^usage()$/

@@ -1,5 +1,0 @@
-Msu	su.c	/^main(argc, argv)$/
-chshell	su.c	/^chshell(sh)$/
-kerberos	su.c	/^kerberos(username, user, uid)$/
-koktologin	su.c	/^koktologin(name, realm, toname)$/
-ontty	su.c	/^ontty()$/

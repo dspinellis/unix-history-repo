@@ -1,8 +1,0 @@
-# system5 	- template
-bin	/usr/local
-bboards	on
-etc	/usr/local/lib/mh
-mail	mailbox
-manuals	gen
-mts	mh
-options	SYS5 TYPESIG=void

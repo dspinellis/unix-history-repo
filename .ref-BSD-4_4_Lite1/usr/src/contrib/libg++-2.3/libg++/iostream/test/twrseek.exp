@@ -1,8 +1,0 @@
-fseek:100:0
-write 1:101
-fseek:200:0
-write 1:201
-fseek:100:0
-fgetc:97
-fseek:150:0
-fgetc:0

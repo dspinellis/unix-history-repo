@@ -1,7 +1,0 @@
-MgetNAME	getNAME.c	/^main(argc, argv)$/
-doname	getNAME.c	/^doname(name)$/
-dorefname	getNAME.c	/^dorefname(name)$/
-getfrom	getNAME.c	/^getfrom(pathname)$/
-split	getNAME.c	/^split(line, name)$/
-trimln	getNAME.c	/^trimln(cp)$/
-usage	getNAME.c	/^usage()$/

@@ -1,4 +1,0 @@
-HDEFINES=-DHOST_SYS=HARRIS
-CC=cc -v -Xa
-RANLIB=echo
-

@@ -1,7 +1,0 @@
-if test $# -ge 1; then
-   atob < $1 | uncompress | tar xvpf -
-   mv $1 /usr/tmp/$1.$$
-   echo tarmail file moved to: /usr/tmp/$1.$$
-else
-   atob | uncompress | tar xvpf -
-fi

@@ -1,7 +1,0 @@
-Muncompact	uncompact.c	/^main(argc, argv)$/
-decompress	uncompact.c	/^decompress(cfp, uncfp)$/
-exch	../common_source/tree.c	/^exch(v, vs, x, w, ws)$/
-insert	../common_source/tree.c	/^insert(ch)$/
-setup	uncompact.c	/^setup(cfp, ignore)$/
-uncompact	uncompact.c	/^uncompact(file)$/
-uptree	../common_source/tree.c	/^uptree(ch)$/

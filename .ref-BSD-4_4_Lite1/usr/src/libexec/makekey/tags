@@ -1,2 +1,0 @@
-Mmakekey	makekey.c	/^main()$/
-get	makekey.c	/^get(bp, len)$/

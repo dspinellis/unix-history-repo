@@ -1,2 +1,0 @@
-recvmsg requires at least one iov, with nothing in it. 
-sendmsg might not notice EADDRESS es in iov's

@@ -1,7 +1,0 @@
-awright, compiled it.  missing } in a SYSV ifdef.  I removed the ifdef
-in question and moved the info in it to sysdep.h.
-
-A typo in iproc-pipes.h, otherwise, seems basically ok.  I'll use
-this binary for a while and see what breaks.
-
-	Mark.

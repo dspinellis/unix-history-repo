@@ -1,3 +1,0 @@
-Mmake_keypair	make_keypair.c	/^main(argc, argv)$/
-make_key	make_keypair.c	/^make_key(addr)$/
-usage	make_keypair.c	/^usage(name)$/

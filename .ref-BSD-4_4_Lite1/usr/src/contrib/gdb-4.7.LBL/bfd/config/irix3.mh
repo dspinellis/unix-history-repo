@@ -1,2 +1,0 @@
-LDFLAGS = -lmalloc
-RANLIB=echo

@@ -1,4 +1,0 @@
-Mstartslip	startslip.c	/^main(argc, argv)$/
-getline	startslip.c	/^getline(buf, size, fd)$/
-sighup	startslip.c	/^sighup()$/
-usage	startslip.c	/^usage()$/

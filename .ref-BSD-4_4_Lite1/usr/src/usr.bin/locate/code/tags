@@ -1,3 +1,0 @@
-Mlocate.code	locate.code.c	/^main(argc, argv)$/
-bgindex	locate.code.c	/^bgindex(bg)			\/* Return location of bg in bigrams/
-usage	locate.code.c	/^usage()$/

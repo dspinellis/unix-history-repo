@@ -1,3 +1,0 @@
-# Define USG as -DUSG if you are using a System V operating system.
-USG = -D_POSIX_VERSION
-INSTALL_PROG = cp

@@ -1,5 +1,0 @@
-Mching.cno	ching.cno.c	/^main()$/
-change	ching.cno.c	/^change()$/
-getquest	ching.cno.c	/^getquest()$/
-getrand	ching.cno.c	/^getrand()$/
-getrnum	ching.cno.c	/^getrnum()$/

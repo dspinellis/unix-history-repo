@@ -1,7 +1,0 @@
-BIT	lastcomm.c	/^#define	BIT(flag, ch)	if (f & flag) *p++ = ch$/
-Mlastcomm	lastcomm.c	/^main(argc, argv)$/
-expand	lastcomm.c	/^expand(t)$/
-flagbits	lastcomm.c	/^flagbits(f)$/
-getdev	lastcomm.c	/^getdev(dev)$/
-requested	lastcomm.c	/^requested(argv, acp)$/
-usage	lastcomm.c	/^usage()$/

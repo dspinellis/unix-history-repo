@@ -1,8 +1,0 @@
-: run this script through /bin/sh
-:	convert an ITS-style maildrop to an MMDF-style maildrop.
-:	assumes that CR-LF's have already been tr'd to newlines
-
-for A in $*
-do
-     ex $A < its-mmdf.ex
-done

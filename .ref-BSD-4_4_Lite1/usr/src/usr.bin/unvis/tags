@@ -1,5 +1,0 @@
-Munvis	unvis.c	/^main(argc, argv)$/
-error	unvis.c	/^error(va_alist)$/
-process	unvis.c	/^process(fp, filename)$/
-syserror	unvis.c	/^syserror(va_alist)$/
-usage	unvis.c	/^#define usage()	fprintf(stderr, "usage: %s %s\\n",/

@@ -1,2 +1,0 @@
-: run this script through /bin/sh
-exec scan `pick -from $*`

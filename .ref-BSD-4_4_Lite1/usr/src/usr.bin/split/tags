@@ -1,6 +1,0 @@
-Msplit	split.c	/^main(argc, argv)$/
-newfile	split.c	/^newfile()$/
-split1	split.c	/^split1()$/
-split2	split.c	/^split2()$/
-usage	split.c	/^usage()$/
-wrerror	split.c	/^wrerror()$/

@@ -1,8 +1,0 @@
-RANLIB=echo >/dev/null
-XM_FILE= xm-apollo68v.h
-XM_CLIBS= -lPW
-SYSV_DEFINE=-DSYSV
-REGEX=regex.o
-REGEX1=regex.o
-CC= cc -A ansi -A runtype,any -A systype,any -U__STDC__ -DNO_SYS_FILE
-XDEPFILES= infptrace.o inftarg.o fork-child.o a68v-xdep.o

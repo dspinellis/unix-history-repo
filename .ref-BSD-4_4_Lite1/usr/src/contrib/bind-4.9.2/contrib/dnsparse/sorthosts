@@ -1,4 +1,0 @@
-#!/bin/sh
-# takes /etc/hosts-type input & sorts it by Internet number
-# works only on stdin
-exec sort -n -t. +0 -1 +1 -2 +2 -3 +3 -4

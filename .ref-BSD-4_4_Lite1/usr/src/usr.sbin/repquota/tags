@@ -1,8 +1,0 @@
-Mrepquota	repquota.c	/^main(argc, argv)$/
-addid	repquota.c	/^addid(id, type, name)$/
-hasquota	repquota.c	/^hasquota(fs, type, qfnamep)$/
-lookup	repquota.c	/^lookup(id, type)$/
-oneof	repquota.c	/^oneof(target, list, cnt)$/
-repquota	repquota.c	/^repquota(fs, type, qfpathname)$/
-timeprt	repquota.c	/^timeprt(seconds)$/
-usage	repquota.c	/^usage()$/

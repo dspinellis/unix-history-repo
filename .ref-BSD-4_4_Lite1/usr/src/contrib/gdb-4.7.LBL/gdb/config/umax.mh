@@ -1,5 +1,0 @@
-# Host: Encore running umax 4.2
-XDEPFILES= umax-xdep.o
-XM_FILE= xm-umax.h
-NAT_FILE= nm-umax.h
-NATDEPFILES= exec.o infptrace.o inftarg.o fork-child.o

@@ -1,7 +1,0 @@
-Muniq	uniq.c	/^main (argc, argv)$/
-err	uniq.c	/^err(fmt, va_alist)$/
-file	uniq.c	/^file(name, mode)$/
-obsolete	uniq.c	/^obsolete(argv)$/
-show	uniq.c	/^show(ofp, str)$/
-skip	uniq.c	/^skip(str)$/
-usage	uniq.c	/^usage()$/

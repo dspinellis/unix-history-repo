@@ -1,6 +1,0 @@
-Mnfsd	nfsd.c	/^main(argc, argv, envp)$/
-nonfs	nfsd.c	/^nonfs(signo)$/
-reapchild	nfsd.c	/^reapchild(signo)$/
-setproctitle	nfsd.c	/^setproctitle(a)$/
-syslog	nfsd.c	/^#define	syslog(e, s)	fprintf(stderr,(s))$/
-usage	nfsd.c	/^usage()$/

@@ -1,2 +1,0 @@
-# SUN OS 4.X has mmap(), so compile according.
-HDEFINES = -DHAVE_MMAP

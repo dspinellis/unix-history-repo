@@ -1,2 +1,0 @@
-Mppt	ppt.c	/^main(argc, argv)$/
-putppt	ppt.c	/^putppt(c)$/

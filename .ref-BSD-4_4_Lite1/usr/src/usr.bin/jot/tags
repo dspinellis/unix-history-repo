@@ -1,7 +1,0 @@
-Mjot	jot.c	/^main(argc, argv)$/
-error	jot.c	/^error(msg, s)$/
-getargs	jot.c	/^getargs(ac, av)$/
-getformat	jot.c	/^getformat()$/
-getprec	jot.c	/^getprec(s)$/
-isdefault	jot.c	/^#define	isdefault(s)	(strcmp((s), "-") == 0)$/
-putdata	jot.c	/^putdata(x, notlast)$/

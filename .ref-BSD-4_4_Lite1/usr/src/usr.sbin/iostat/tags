@@ -1,7 +1,0 @@
-Miostat	iostat.c	/^main(argc, argv)$/
-X	iostat.c	/^#define X(fld)	tmp = cur.fld[i]; cur.fld[i] -= las/
-cpustats	iostat.c	/^cpustats()$/
-dkstats	iostat.c	/^dkstats()$/
-nlread	iostat.c	/^#define nlread(x, v) \\$/
-phdr	iostat.c	/^phdr(signo)$/
-usage	iostat.c	/^usage()$/
