@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	4.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	4.24 (Berkeley) %G%";
 #endif
 
 /*
@@ -318,7 +318,7 @@ printit(file)
 			continue;
 
 		case 'L':	/* identification line */
-			if (!SH)
+			if (!SH && !HL)
 				banner(line+1, jobname);
 			continue;
 
@@ -367,6 +367,11 @@ pass2:
 	fseek(cfp, 0L, 0);
 	while (getline(cfp))
 		switch (line[0]) {
+		case 'L':	/* identification line */
+			if (!SH && HL)
+				banner(line+1, jobname);
+			continue;
+
 		case 'M':
 			if (bombed < NOACCT)	/* already sent if >= NOACCT */
 				sendmail(line+1, bombed);
@@ -1041,6 +1046,7 @@ init()
 	SF = pgetflag("sf");
 	SH = pgetflag("sh");
 	SB = pgetflag("sb");
+	HL = pgetflag("hl");
 	RW = pgetflag("rw");
 	BR = pgetnum("br");
 	if ((FC = pgetnum("fc")) < 0)

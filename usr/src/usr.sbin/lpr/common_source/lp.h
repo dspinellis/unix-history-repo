@@ -1,4 +1,4 @@
-/*	lp.h	4.8	85/02/07	*/
+/*	lp.h	4.9	85/02/27	*/
 /*
  * Global definitions for the line printer system.
  */
@@ -48,6 +48,7 @@ extern short	SC;		/* suppress multiple copies */
 extern short	SF;		/* suppress FF on each print job */
 extern short	SH;		/* suppress header page */
 extern short	SB;		/* short banner instead of normal header */
+extern short	HL;		/* print header last */
 extern short	RW;		/* open LP for reading and writing */
 extern short	PW;		/* page width */
 extern short	PX;		/* page width in pixels */

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)common.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)common.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -35,6 +35,7 @@ short	SC;		/* suppress multiple copies */
 short	SF;		/* suppress FF on each print job */
 short	SH;		/* suppress header page */
 short	SB;		/* short banner instead of normal header */
+short	HL;		/* print header last */
 short	RW;		/* open LP for reading and writing */
 short	PW;		/* page width */
 short	PL;		/* page length */
