@@ -4,7 +4,7 @@
  * specifies the terms and conditions for redistribution.
  */
 
-static char sccsid[] = "@(#)c.c 5.7 %G%";
+static char sccsid[] = "@(#)c.c 5.8 %G%";
 /*
  * C-dependent symbol routines.
  */
@@ -72,7 +72,7 @@ Symbol type1, type2;
 	}
 	b = (Boolean) (
 	    (
-		isrange(t1, "int") and
+		isrange(t1, "int") and !isdouble(t1) /* sigh */ and
 		(t2->type == t_int or t2->type == t_char)
 	    ) or (
 		isrange(t1, "char") and
@@ -84,7 +84,7 @@ Symbol type1, type2;
 		t1->symvalue.rangev.lower == t2->symvalue.rangev.lower and
 		t1->symvalue.rangev.upper == t2->symvalue.rangev.upper
 	    ) or (
-		t1->type == t2->type and (
+		t1->class != RANGE and t1->type == t2->type and (
 		    (t1->class == t2->class) or
 		    (t1->class == SCAL and t2->class == CONST) or
 		    (t1->class == CONST and t2->class == SCAL)
