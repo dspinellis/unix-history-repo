@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef FILEC
@@ -50,12 +50,7 @@ static void 	 print_recognized_stuff __P((Char *));
 static void	 extract_dir_and_name __P((Char *, Char *, Char *));
 static Char	*getentry __P((DIR *, int));
 static void	 free_items __P((Char **));
-#ifdef  notdef
-/* gcc bug: Enums in decls */
-static int	 tsearch __P((Char *, int, COMMAND));
-#else
-static int	 tsearch ();
-#endif
+static int	 tsearch __P((Char *, COMMAND, int));
 static int	 recognize __P((Char *, Char *, int, int));
 static int	 is_prefix __P((Char *, Char *));
 static int	 is_suffix __P((Char *, Char *));
@@ -451,8 +446,8 @@ free_items(items)
 static int
 tsearch(word, command, max_word_length)
     Char   *word;
-    int     max_word_length;
     COMMAND command;
+    int     max_word_length;
 {
     static Char **items = NULL;
     register DIR *dir_fd;
