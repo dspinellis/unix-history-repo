@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)printsym.c 1.4 %G%";
+static char sccsid[] = "@(#)printsym.c 1.5 %G%";
 
 /*
  * Printing of symbolic information.
@@ -41,7 +41,7 @@ private String clname[] = {
     "record", "field", "procedure", "function", "funcvar",
     "ref", "pointer", "file", "set", "range", "label", "withptr",
     "scalar", "string", "program", "improper", "variant",
-    "procparam", "funcparam", "module", "typeref", "tag"
+    "procparam", "funcparam", "module", "tag", "common", "typeref"
 };
 
 public String classname(s)
@@ -337,7 +337,6 @@ Symbol s;
 	    } else {
 		printf("offset\t%d\n", s->symvalue.offset);
 	    }
-	    printf("size\t%d\n", size(s));
 	    break;
 
 	case RECORD:
@@ -361,7 +360,31 @@ Symbol s;
 	    break;
 
 	case RANGE:
+            switch(s->symvalue.rangev.lowertype) {
+
+	      case R_CONST :  printf("CONST");
+		              break;
+	      case R_ARG :    printf("ARG");
+			      break;
+	      case R_TEMP :   printf("TEMP");
+			      break;
+	      case R_ADJUST : printf("ADJUST");
+			      break;
+            }
 	    printf("lower\t%d\n", s->symvalue.rangev.lower);
+
+            switch(s->symvalue.rangev.uppertype) {
+
+	      case R_CONST :  printf("CONST");
+		              break;
+	      case R_ARG :    printf("ARG");
+			      break;
+	      case R_TEMP :   printf("TEMP");
+			      break;
+	      case R_ADJUST : printf("ADJUST");
+			      break;
+            }
+
 	    printf("upper\t%d\n", s->symvalue.rangev.upper);
 	    break;
 
@@ -453,7 +476,7 @@ Symbol a;
     String sep;
 
     savesp = sp;
-    sp -= size(a);
+    sp -= (size(a));
     newsp = sp;
     eltype = rtype(a->type);
     elsize = size(eltype);
