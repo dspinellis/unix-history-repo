@@ -1,13 +1,16 @@
 #ifndef lint
-static char sccsid[] = "@(#)af.c	4.4 %G%";
+static char sccsid[] = "@(#)af.c	4.5 %G%";
 #endif
 
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <net/in.h>
-
 #include "router.h"
 #include "rip.h"
+
+extern char packet[MAXPACKETSIZE], *sys_errlist[];
+extern int trace, errno;
+#define	tprintf	if (trace) printf
 
 /*
  * Address family support routines
@@ -86,7 +89,6 @@ inet_output(s, sin, size)
 	struct sockaddr_in *sin;
 	int size;
 {
-	extern char packet[MAXPACKETSIZE];
 	struct sockaddr_in dst;
 
 	dst = *sin;
@@ -98,7 +100,7 @@ inet_output(s, sin, size)
 #endif
 	}
 	if (send(s, sin, packet, size) < 0)
-		perror("send");
+		tprintf("send to %x: %s\n", sin->sin_addr, sys_errlist[errno]);
 }
 
 /*
