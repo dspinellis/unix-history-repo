@@ -1,4 +1,4 @@
-.\"	@(#)m.mac	5.1 (Berkeley) %G%
+.\"	@(#)m.mac	6.1 (Berkeley) %G%
 .\"
 .if \n(mo=1 .ds mo January
 .if \n(mo=2 .ds mo February
@@ -52,17 +52,22 @@
 .sp 0.4
 ..
 .de ht
-.tl `\*(Nr/\*(Tr User's Manual```
-.tl 'October 11, 1976'''\".tl 'Version \n(mo/\n(dy/\n(yr'''
+.tl `\*(Nr/\*(Tr User's Manual``USD:24-%`
+.\" .tl 'updated to May 15, 1977'''\".tl 'Version \n(mo/\n(dy/\n(yr'''
+..
+.de he
+.tl `USD:24-%``\*(Nr/\*(Tr User's Manual`
+.\" .tl 'updated to May 15, 1977'''\".tl 'Version \n(mo/\n(dy/\n(yr'''
 ..
 .de hd
-.tl '\(rn'''
-.if \\n%>1 \{'sp |.33i
-.ht
+.\".tl '\(rn'''
+.if \\n%>1 \{'sp |.30i
+.if e .he
+.if o .ht
 .ps \\n(S2
 .ps \\n(S1
 .ft
-'sp |1i\}
+'sp |.9i\}
 .nr x 0 1
 .nr y 0+\\nmu
 .ch fo \\nmu
@@ -130,7 +135,7 @@
 .de pp
 'ps \\n(PS
 .ftR
-'tl ''- % -''
+.\"'tl ''- % -''
 'bp
 ..
 .wh 0 hd
