@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.114		%G%);
+SCCSID(@(#)deliver.c	3.115		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -1058,7 +1058,8 @@ putheader(fp, m)
 **		p -- the value to put in it.
 **		fp -- file to put it to.
 **		oldstyle -- TRUE if this is an old style header.
-**		m -- a pointer to the mailer descriptor.
+**		m -- a pointer to the mailer descriptor.  If NULL,
+**			don't transform the name at all.
 **
 **	Returns:
 **		none.
@@ -1076,7 +1077,7 @@ commaize(h, p, fp, oldstyle, m)
 {
 	register char *obp;
 	int opos;
-	bool fullsmtp = bitset(M_FULLSMTP, m->m_flags);
+	bool fullsmtp = FALSE;
 	bool firstone = TRUE;
 	char obuf[MAXLINE];
 
@@ -1089,6 +1090,9 @@ commaize(h, p, fp, oldstyle, m)
 	if (tTd(14, 2))
 		printf("commaize(%s: %s)\n", h->h_field, p);
 # endif DEBUG
+
+	if (m != NULL && bitset(M_FULLSMTP, m->m_flags))
+		fullsmtp = TRUE;
 
 	obp = obuf;
 	(void) sprintf(obp, "%s: ", capitalize(h->h_field));
@@ -1151,7 +1155,8 @@ commaize(h, p, fp, oldstyle, m)
 		*p = '\0';
 
 		/* translate the name to be relative */
-		name = remotename(name, m, bitset(H_FROM, h->h_flags));
+		if (m != NULL)
+			name = remotename(name, m, bitset(H_FROM, h->h_flags));
 		if (*name == '\0')
 		{
 			*p = savechar;
