@@ -2,7 +2,7 @@
 /*
 static char sccsid[] = "@(#)t10.c	2.4 (CWI) 89/08/14";
 */
-static char sccsid[] = "@(#)t10.c	2.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)t10.c	2.7 (Berkeley) %G%";
 #endif lint
 #include "tdef.h"
 #include <sgtty.h>
@@ -34,6 +34,7 @@ int	zfont;		/* internal font num. mapped to 0 on printer */
 int	nsizes;
 int	nchtab;
 int	nstips;
+int	xstip	= ~STIP;
 tchar	*stiplab;
 
 /* these characters are used as various signals or values
@@ -350,59 +351,51 @@ tchar	*pi;
 	if (k == DRAWFCN) {
 		if (esc)
 			ptesc();
-		dx = absmot(pi[3]);
-		if (isnmot(pi[3]))
+		dx = absmot(pi[2]);
+		if (isnmot(pi[2]))
 			dx = -dx;
-		dy = absmot(pi[4]);
-		if (isnmot(pi[4]))
+		dy = absmot(pi[3]);
+		if (isnmot(pi[3]))
 			dy = -dy;
+		w = 0;
 		switch (cbits(pi[1])) {
 		case DRAWCIRCLE:	/* circle */
-			fdprintf(ptid, "D%c %d\n", DRAWCIRCLE, dx);	/* dx is diameter */
-			w = 0;
 			hpos += dx;
+				/* FALLTHROUGH */
+		case DRAWTHICK:
+		case DRAWSTYLE:
+			fdprintf(ptid, "D%c %d\n", cbits(pi[1]), dx);	/* dx is diameter */
 			break;
 		case DRAWELLIPSE:
 			fdprintf(ptid, "D%c %d %d\n", DRAWELLIPSE, dx, dy);
-			w = 0;
 			hpos += dx;
 			break;
 		case DRAWLINE:	/* line */
-			k = cbits(pi[2]);
-			fdprintf(ptid, "D%c %d %d ", DRAWLINE, dx, dy);
-			if (k < 128)
-				fdprintf(ptid, "%c\n", k);
-			else
-				fdprintf(ptid, "%s\n", &chname[chtab[k - 128]]);
-			w = 0;
+			fdprintf(ptid, "D%c %d %d\n", DRAWLINE, dx, dy);
 			hpos += dx;
 			vpos += dy;
 			break;
 		case DRAWARC:	/* arc */
-			dx2 = absmot(pi[5]);
-			if (isnmot(pi[5]))
+			dx2 = absmot(pi[4]);
+			if (isnmot(pi[4]))
 				dx2 = -dx2;
-			dy2 = absmot(pi[6]);
-			if (isnmot(pi[6]))
+			dy2 = absmot(pi[5]);
+			if (isnmot(pi[5]))
 				dy2 = -dy2;
 			fdprintf(ptid, "D%c %d %d %d %d\n", DRAWARC,
 				dx, dy, dx2, dy2);
-			w = 0;
 			hpos += dx + dx2;
 			vpos += dy + dy2;
 			break;
 		case DRAWSPLINE:	/* spline */
+		/* case DRAWWIG:	/* wiggly line */
+		case DRAWCURVE:	/* gremlin-style curve */
 		default:	/* something else; copy it like spline */
 			fdprintf(ptid, "D%c %d %d", cbits(pi[1]), dx, dy);
-			w = 0;
 			hpos += dx;
 			vpos += dy;
-			if (cbits(pi[3]) == DRAWFCN || cbits(pi[4]) == DRAWFCN) {
-				/* it was somehow defective */
-				fdprintf(ptid, "\n");
-				break;
-			}
-			for (n = 5; cbits(pi[n]) != DRAWFCN; n += 2) {
+writecoords:
+			for (n = 4; cbits(pi[n]) != '.'; n += 2) {
 				dx = absmot(pi[n]);
 				if (isnmot(pi[n]))
 					dx = -dx;
@@ -415,8 +408,14 @@ tchar	*pi;
 			}
 			fdprintf(ptid, "\n");
 			break;
+
+		case DRAWPOLY:	/* polygon with stipple */
+		case DRAWUBPOLY:/* polygon, stipple, no border */
+			if (xstip != stip) ptstip();
+			fdprintf(ptid, "D%c %d", cbits(pi[1]), dx);
+			goto writecoords;
 		}
-		for (n = 3; cbits(pi[n]) != DRAWFCN; n++)
+		for (n = 2; cbits(pi[n]) != '.'; n++)
 			;
 		outsize = n + 1;
 	} else if (k < 128) {
@@ -474,6 +473,13 @@ ptps()
 	fdprintf(ptid, "s%d\n", k);	/* really should put out string rep of size */
 	mpts = i;
 }
+
+ptstip()
+{
+	xstip = stip;
+	fdprintf(ptid, "i%d\n", xstip);
+}
+
 
 ptfont()
 {

@@ -2,7 +2,7 @@
 /*
 static char sccsid[] = "@(#)ni.c	2.3 (CWI) 89/08/14";
 */
-static char sccsid[] = "@(#)ni.c	2.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)ni.c	2.5 (Berkeley) %G%";
 #endif lint
 #include "tdef.h"
 #include "pathnames.h"
@@ -81,7 +81,7 @@ int	ldrch = LEADER;
 extern    caseds(), caseas(), casesp(), caseft(), caseps(), casevs(),
 casenr(), caseif(), casepo(), casetl(), casetm(), casebp(), casech(),
 casepn(), tbreak(), caseti(), casene(), casenf(), casece(), casefi(),
-casein(), casell(), casens(), casemk(), casert(), caseam(),
+casein(), casell(), casens(), casemk(), casert(), caseam(), casest(),
 casede(), casedi(), caseda(), casewh(), casedt(), caseit(), caserm(),
 casern(), casead(), casers(), casena(), casepl(), caseta(), casetr(),
 caseul(), caselt(), casenx(), caseso(), caseig(), casetc(), casefc(),
@@ -122,6 +122,7 @@ struct contab contab[NM] = {
 	C(PAIR('m', 'k'), casemk),
 	C(PAIR('r', 't'), casert),
 	C(PAIR('a', 'm'), caseam),
+	C(PAIR('s', 't'), casest),
 	C(PAIR('d', 'e'), casede),
 	C(PAIR('d', 'i'), casedi),
 	C(PAIR('d', 'a'), caseda),
@@ -269,6 +270,8 @@ struct	env env_array[NEV] = {
 /* int	it	 */	0,
 /* int	itmac	 */	0,
 /* int	lnsize	 */	LNSIZE,
+/* int	stip	 */	STIP,
+/* int	stip1	 */	STIP,
 },
 };
 
