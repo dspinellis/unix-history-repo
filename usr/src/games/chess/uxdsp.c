@@ -508,11 +508,7 @@ short r,c; char x;
   if (reverse) r = 7-row[sq]; else r = row[sq];
   if (reverse) c = 7-column[sq]; else c = column[sq];
   if (color[sq] == black)  x = '*'; else x = ' ';
-  if (r % 2 == 0 && c % 2 == 1 || r % 2 == 1 && c % 2 == 0)
-	  standout();
-  gotoXY(5+5*c,5+2*(7-r)); printz("%c%c",x,pxx[board[sq]]);
-  standend();
-  printz(" ");
+  gotoXY(5+5*c,5+2*(7-r)); printz("%c%c ",x,pxx[board[sq]]);
 }
 
 
@@ -533,10 +529,11 @@ short i,l,z,m = 0, j;
           printz("%d ", z);
 	  for (j = 0; j < 8; j++) {
 		  printz("|");
-/*		  if (j % 2 == m)
-			  standout(); */
-		  printz("    ");
-		  standend();
+		  if (j % 2 == m)
+			  printz("#");
+		  else
+			  printz(" ");
+		  printz("   ");
 	  }
 	  printz("|");
 	  m = (m + 1) % 2;
