@@ -1,4 +1,4 @@
-/*	tdef.h	4.5	83/08/11	*/
+/*	tdef.h	4.6	85/05/05	*/
 
 #define MAXPTR 0x7fffffff	/* max value of any pointer variable */
 #ifdef NROFF	/*NROFF*/
@@ -111,8 +111,8 @@
 #else
 #define FBUFSZ 256	/*field buf size words*/
 #endif
-#define OBUFSZ 512	/*bytes*/
-#define IBUFSZ 512	/*bytes*/
+#define OBUFSZ 8192	/*bytes*/
+#define IBUFSZ 8192	/*bytes*/
 #define NC 256	/*cbuf size words*/
 #define NOV 10	/*number of overstrike chars*/
 #define ZONE 5	/*5hrs for EST*/
@@ -145,4 +145,3 @@ typedef unsigned filep;
 /* BLK*NBLIST<=65536 words, if filep=unsigned */
 #define BLKBITS 0
 #endif
-
