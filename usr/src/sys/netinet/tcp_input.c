@@ -1,4 +1,4 @@
-/*	tcp_input.c	1.44	81/12/22	*/
+/*	tcp_input.c	1.45	81/12/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -53,10 +53,10 @@ COUNT(TCP_INPUT);
 	ti = mtod(m, struct tcpiphdr *);
 	if (((struct ip *)ti)->ip_hl > (sizeof (struct ip) >> 2))
 		ip_stripoptions((struct ip *)ti, (struct mbuf *)0);
-	if (m->m_len < sizeof (struct tcpiphdr)) {
-		if (m_pullup(m, sizeof (struct tcpiphdr)) == 0) {
+	if (m->m_off > MMAXOFF || m->m_len < sizeof (struct tcpiphdr)) {
+		if ((m = m_pullup(m, sizeof (struct tcpiphdr))) == 0) {
 			tcpstat.tcps_hdrops++;
-			goto drop;
+			return;
 		}
 		ti = mtod(m, struct tcpiphdr *);
 	}
@@ -398,22 +398,21 @@ trimthenstep6:
 		if (SEQ_GT(ti->ti_ack, tp->snd_max))
 			goto dropafterack;
 		acked = ti->ti_ack - tp->snd_una;
-		if (acked >= so->so_snd.sb_cc) {
-			acked -= so->so_snd.sb_cc;
-			tp->snd_wnd -= so->so_snd.sb_cc;
-			/* if acked > 0 our FIN is acked */
-			sbdrop(&so->so_snd, so->so_snd.sb_cc);
+		if (ti->ti_ack == tp->snd_max)
 			tp->t_timer[TCPT_REXMT] = 0;
-		} else {
-			if (acked) {
-				sbdrop(&so->so_snd, acked);
-				tp->snd_wnd -= acked;
-				acked = 0;
-			}
+		else {
 			TCPT_RANGESET(tp->t_timer[TCPT_REXMT],
 			    tcp_beta * tp->t_srtt, TCPTV_MIN, TCPTV_MAX);
 			tp->t_rtt = 0;
 			tp->t_rxtshift = 0;
+		}
+		if (acked > so->so_snd.sb_cc) {
+			sbdrop(&so->so_snd, so->so_snd.sb_cc);
+			tp->snd_wnd -= so->so_snd.sb_cc;
+		} else {
+			sbdrop(&so->so_snd.sb_cc, acked);
+			tp->snd_wnd -= acked;
+			acked = 0;
 		}
 		if (so->so_snd.sb_flags & SB_WAIT)
 			sowwakeup(so);
