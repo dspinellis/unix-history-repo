@@ -1,9 +1,9 @@
-SCCSID = "@(#)Makefile 1.31 %G%"
+SCCSID = "@(#)Makefile 1.32 %G%"
 
 INSTALLDIR = $(DESTDIR)/usr/lib
 INSTALLNAME = ${INSTALLDIR}/pc0
 WHOAMI = pc
-VERSION = 2.6
+VERSION = 2.7
 DATE = %G%
 
 MKSTR = /usr/ucb/mkstr
