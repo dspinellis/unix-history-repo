@@ -17,11 +17,11 @@
 .\" - Avoid passive voice and third person.
 .\" $Revision: 6.8 $
 .\"
-.TH PNAME 1
+.TH SC 1
 .SH NAME
-pname \- spreadsheet calculator
+sc \- spreadsheet calculator
 .SH SYNOPSIS
-.B pname
+.B sc
 [
 .B -c
 ]
@@ -43,7 +43,7 @@ pname \- spreadsheet calculator
 .\" ==========
 .SH DESCRIPTION
 The spreadsheet calculator
-.I pname
+.I sc
 is based on rectangular tables much like a financial spreadsheet.
 When invoked it presents you with a table
 organized as rows and columns of cells.
@@ -97,9 +97,9 @@ All of these options can be changed with the
 and 
 .I S
 commands (see below) while
-.I pname
+.I sc
 is running.  Options specified when
-.I pname 
+.I sc
 is invoked
 override options saved in the data file.
 .\" ==========
@@ -108,7 +108,7 @@ override options saved in the data file.
 The screen is divided into four regions.
 The top line is for entering commands and displaying cell values.
 The second line is for messages from
-.IR pname .
+.IR sc .
 The third line and the first four columns show the column and row numbers,
 from which are derived cell addresses, e.g.
 .I A0
@@ -302,7 +302,7 @@ simple tabbed alignment with ampersands as delimiters.
 Other
 .I Set
 options are normally used only in 
-.I pname
+.I sc
 data files since they are available through 
 .IR ^T .
 You can also use them interactively
@@ -433,7 +433,7 @@ especially when the range is bigger than the visible window.
 .TP
 .B g
 Go to a cell.
-.I pname
+.I sc
 prompts for a cell's name, a regular expression surrounded by
 quotes, or a number.
 If a cell's name such as
@@ -445,7 +445,7 @@ If a quoted regular expression such as "
 " or "
 .I ^Jan [0-9]*$
 " is given,
-.I pname
+.I sc
 searches for a cell containing a string matching the regular
 expression.
 See 
@@ -455,7 +455,7 @@ or
 for more details on the form of regular
 expressions.
 If a number is given, 
-.I pname
+.I sc
 will search for a cell containing that number.
 Searches for either strings or numbers proceed forward from the
 current cell, wrapping back to a0 at the end of the table, and
@@ -482,7 +482,7 @@ leaving only the previously computed constant numeric value.
 .TP
 .B =
 Enter a numeric constant or expression into the current cell.
-.I pname
+.I sc
 prompts for the expression on the top line.
 The usual way to enter a number into a cell is to type ``='',
 then enter the number in response to the prompt on the top line.
@@ -509,7 +509,7 @@ to be flushed right against the right edge of the cell.
 .PP
 Strings you enter must start with ".
 You can leave off the trailing " and
-.I pname
+.I sc
 will add it for you.
 You can also enter a string expression
 by backspacing over the opening " in the prompt.
@@ -640,7 +640,7 @@ commands, if you try to write to the last file used with the
 or
 .I Put
 commands, or the file specified on the command line when
-.I pname
+.I sc
 was invoked, you are asked to confirm
 that the (potentially) dangerous operation is really what you want.
 .\" ----------
@@ -669,7 +669,7 @@ overwriting the existing entries at matching cell locations.
 .B R
 Run macros.
 Since
-.I pname
+.I sc
 files are saved as ASCII files,
 it is possible to use them as primitive macro definition files.
 The
@@ -806,7 +806,7 @@ defined by the upper left and lower right cells in the region.
 All of the commands in this class start with a slash;
 the second letter of the command indicates which command.
 A small menu lists the choices for the second letter when you type ``/''.
-.I pname
+.I sc
 prompts for needed parameters for each command.
 Phrases surrounded by square brackets in the prompt are informational only
 and may be erased with the backspace key.
@@ -921,12 +921,12 @@ Use this command to undefine a previously defined range name.
 .TP
 .B ^C
 Exit from
-.IR pname .
+.IR sc .
 If you made any changes since the last
 .I Get
 or
 .IR Put ,
-.I pname
+.I sc
 asks about saving your data before exiting.
 .PD
 .\" ----------
@@ -948,7 +948,7 @@ information on a particular topic.
 .TP
 .B !
 Shell escape.
-.I pname
+.I sc
 prompts for a shell command to run.
 End the command line with the
 .SM RETURN
@@ -1673,7 +1673,7 @@ if I pay $1000 per month?"
 .SS "Built-in Date and Time Functions"
 .\" ----------
 Time for
-.I pname
+.I sc
 follows the system standard:
 the number of seconds since 1970.
 All date and time functions except
@@ -1770,7 +1770,7 @@ or to unstable cyclic references (for example, set
 expression to ``A0+1'').
 .\" ==========
 .SH SEE ALSO
-bc(1), dc(1), crypt(1), ppname(1)
+bc(1), dc(1), crypt(1)
 .\" ==========
 .SH BUGS
 Top-to-bottom, left-to-right evaluation of expressions is silly.
