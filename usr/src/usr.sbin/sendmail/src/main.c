@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.82 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.83 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -945,10 +945,22 @@ main(argc, argv, envp)
 					{
 						int rs;
 						struct rewrite *rw;
+						char *cp;
+						STAB *s;
 
-						if (buf[2] == '\n')
+						if ((cp = strchr(buf, '\n')) != NULL)
+							*cp = '\0';
+						if (cp == buf+2)
 							continue;
-						rs = atoi(&buf[2]);
+						s = stab(buf+2, ST_RULESET, ST_FIND);
+						if (s == NULL)
+						{
+							if (!isdigit(buf[2]))
+								continue;
+							rs = atoi(buf+2);
+						}
+						else
+							rs = s->s_ruleset;
 						if (rs < 0 || rs > MAXRWSETS)
 							continue;
 						if ((rw = RewriteRules[rs]) == NULL)
