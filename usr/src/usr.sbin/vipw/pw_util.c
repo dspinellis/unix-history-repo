@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pw_util.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pw_util.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -71,7 +71,7 @@ pw_lock()
 		    progname, _PATH_MASTERPASSWD, strerror(errno));
 		exit(1);
 	}
-	if (flock(lockfd, LOCK_EX)) {
+	if (flock(lockfd, LOCK_EX|LOCK_NB)) {
 		(void)fprintf(stderr,
 		    "%s: the password db is busy.\n", progname);
 		exit(1);
@@ -137,10 +137,11 @@ pw_edit(notsetuid)
 			(void)setuid(getuid());
 		}
 		execlp(editor, p, tempname, NULL);
-		pw_error(editor, 1, 1);
+		_exit(1);
 	}
 	pid = waitpid(pid, (int *)&pstat, 0);
-	return (pid == -1 ? 1 : pstat.w_status);
+	if (pid == -1 || pstat.w_status)
+		pw_error(editor, 1, 1);
 }
 
 pw_prompt()
