@@ -1,7 +1,7 @@
 #
 # Network services, Internet style
 #
-#	@(#)services	5.3 (Berkeley) %G%
+#	@(#)services	5.4 (Berkeley) %G%
 #
 echo		7/tcp
 echo		7/udp
@@ -40,6 +40,8 @@ auth		113/tcp		authentication
 sftp		115/tcp
 uucp-path	117/tcp
 nntp		119/tcp		readnews untp	# USENET News Transfer Protocol
+snmp		161/udp
+snmp-trap	162/udp
 #
 # UNIX specific services
 #
