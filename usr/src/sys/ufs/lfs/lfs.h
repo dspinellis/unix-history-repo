@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	8.6 (Berkeley) %G%
+ *	@(#)lfs.h	8.7 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -86,7 +86,7 @@ struct lfs {
 	u_int32_t lfs_minfree;		/* minimum percentage of free blocks */
 
 /* These fields can be computed from the others. */
-	u_quad_t  lfs_maxfilesize;	/* maximum representable file size */
+	u_int64_t lfs_maxfilesize;	/* maximum representable file size */
 	u_int32_t lfs_dbpseg;		/* disk blocks per segment */
 	u_int32_t lfs_inopb;		/* inodes per block */
 	u_int32_t lfs_ifpb;		/* IFILE entries per block */
