@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef FILEC
@@ -112,9 +112,11 @@ static void
 back_to_col_1()
 {
     struct termios tty, tty_normal;
-    int     omask;
+    sigset_t sigset, osigset;
 
-    omask = sigblock(sigmask(SIGINT));
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGINT);
+    sigprocmask(SIG_BLOCK, &sigset, &osigset);
     (void) tcgetattr(SHOUT, &tty);
     tty_normal = tty;
     tty.c_iflag &= ~INLCR;
@@ -122,7 +124,7 @@ back_to_col_1()
     (void) tcsetattr(SHOUT, TCSANOW, &tty);
     (void) write(SHOUT, "\r", 1);
     (void) tcsetattr(SHOUT, TCSANOW, &tty_normal);
-    (void) sigsetmask(omask);
+    sigprocmask(SIG_SETMASK, &osigset, NULL);
 }
 
 /*
@@ -134,10 +136,12 @@ pushback(string)
 {
     register Char *p;
     struct termios tty, tty_normal;
-    int     omask;
+    sigset_t sigset, osigset;
     char    c;
 
-    omask = sigblock(sigmask(SIGINT));
+    sigemptyset(&sigset);
+    sigaddset(&sigset, SIGINT);
+    sigprocmask(SIG_BLOCK, &sigset, &osigset);
     (void) tcgetattr(SHOUT, &tty);
     tty_normal = tty;
     tty.c_lflag &= ~(ECHOKE | ECHO | ECHOE | ECHOK | ECHONL | ECHOPRT | ECHOCTL);
@@ -146,7 +150,7 @@ pushback(string)
     for (p = string; (c = *p) != '\0'; p++)
 	(void) ioctl(SHOUT, TIOCSTI, (ioctl_t) & c);
     (void) tcsetattr(SHOUT, TCSANOW, &tty_normal);
-    (void) sigsetmask(omask);
+    sigprocmask(SIG_SETMASK, &osigset, NULL);
 }
 
 /*
@@ -390,12 +394,14 @@ free_items(items)
 }
 
 #define FREE_ITEMS(items) { \
-	int omask;\
+	sigset_t sigset, osigset;\
 \
-	omask = sigblock(sigmask(SIGINT));\
+	sigemptyset(&sigset);\
+	sigaddset(&sigset, SIGINT);\
+	sigprocmask(SIG_BLOCK, &sigset, &osigset);\
 	free_items(items);\
 	items = NULL;\
-	(void) sigsetmask(omask);\
+	sigprocmask(SIG_SETMASK, &osigset, NULL);\
 }
 
 /*
