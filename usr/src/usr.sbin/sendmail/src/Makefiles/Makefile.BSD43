@@ -11,7 +11,7 @@
 #	It should also work on UMIPS-BSD from MIPS, if you still have
 #	any lying around.
 #
-#	@(#)Makefile.BSD43	8.1 (Berkeley) %G%
+#	@(#)Makefile.BSD43	8.2 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -111,10 +111,10 @@ install-sendmail: sendmail
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 sendmail.hf ${HFDIR}
 
 # doesn't actually install them -- you may want to install pre-nroff versions
-install-docs: aliases.0 newaliases.0 sendmail.0
+install-docs: aliases.0 mailq.0 newaliases.0 sendmail.0
 
 clean:
-	rm -f ${OBJS} sendmail aliases.0 newaliases.0 sendmail.0
+	rm -f ${OBJS} sendmail aliases.0 mailq.0 newaliases.0 sendmail.0
 
 # dependencies
 #   gross overkill, and yet still not quite enough....

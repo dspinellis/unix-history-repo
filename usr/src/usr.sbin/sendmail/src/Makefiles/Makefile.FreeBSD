@@ -1,7 +1,7 @@
 #
 #  Makefile for FreeBSD
 #
-#	@(#)Makefile.FreeBSD	8.1 (Berkeley) %G%
+#	@(#)Makefile.FreeBSD	8.2 (Berkeley) %G%
 
 PROG=	sendmail
 

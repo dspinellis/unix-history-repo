@@ -1,4 +1,4 @@
-#	@(#)Makefile.BSD-OS	8.1 (Berkeley) %G%
+#	@(#)Makefile.BSD-OS	8.2 (Berkeley) %G%
 
 PROG=	sendmail
 DBMDEF=	-DNEWDB
