@@ -10,7 +10,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)llc_input.c	7.1 (Berkeley) %G%
+ *	@(#)llc_input.c	7.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -58,8 +58,6 @@ llcintr()
 	struct ifnet   *ifp;
 	struct rtentry *llrt;
 	struct rtentry *nlrt;
-
-	struct mbuf *m_adj();
 
 	for (;;) {
 		i = splimp();
@@ -154,7 +152,7 @@ llcintr()
 		 */
 		cmdrsp = (frame->llc_ssap & 0x01);
 		frame->llc_ssap &= ~0x01;
-		if (llrt = rtalloc1(&sdlhdr->sdlhdr_src, 0))
+		if (llrt = rtalloc1((struct sockaddr *)&sdlhdr->sdlhdr_src, 0))
 			llrt->rt_refcnt--;
 #ifdef notyet
 		else llrt = npaidb_enter(&sdlhdr->sdlhdr_src, 0, 0, 0);
