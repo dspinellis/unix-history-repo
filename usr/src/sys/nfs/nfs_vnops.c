@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.10 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -60,6 +60,7 @@
 /* Global vars */
 int	nfs_lookup(),
 	nfs_create(),
+	nfs_mknod(),
 	nfs_open(),
 	nfs_close(),
 	nfs_access(),
@@ -89,7 +90,7 @@ int	nfs_lookup(),
 struct vnodeops nfsv2_vnodeops = {
 	nfs_lookup,
 	nfs_create,
-	vfs_noop,
+	nfs_mknod,
 	nfs_open,
 	nfs_close,
 	nfs_access,
@@ -101,7 +102,7 @@ struct vnodeops nfsv2_vnodeops = {
 	vfs_noop,
 	vfs_noop,
 	nfs_fsync,
-	vfs_noop,
+	vfs_nullop,
 	nfs_remove,
 	nfs_link,
 	nfs_rename,
@@ -439,7 +440,8 @@ nfsmout:
 			}
 			newvp = NFSTOV(np);
 		}
-		if (error = nfs_loadattrcache(newvp, &md, &dpos, (struct vattr *)0)) {
+		if (error =
+		    nfs_loadattrcache(&newvp, &md, &dpos, (struct vattr *)0)) {
 			if (newvp != vp)
 				nfs_nput(newvp);
 			else
@@ -464,7 +466,8 @@ nfsmout:
 			return (error);
 		}
 		newvp = NFSTOV(np);
-		if (error = nfs_loadattrcache(newvp, &md, &dpos, (struct vattr *)0)) {
+		if (error =
+		    nfs_loadattrcache(&newvp, &md, &dpos, (struct vattr *)0)) {
 			nfs_nput(newvp);
 			m_freem(mrep);
 			return (error);
@@ -495,7 +498,7 @@ nfsmout:
 		}
 		newvp = NFSTOV(np);
 	}
-	if (error = nfs_loadattrcache(newvp, &md, &dpos, (struct vattr *)0)) {
+	if (error = nfs_loadattrcache(&newvp, &md, &dpos, (struct vattr *)0)) {
 		if (newvp != vp)
 			nfs_nput(newvp);
 		else
@@ -606,6 +609,21 @@ nfs_writerpc(vp, uiop, offp, cred)
 	}
 nfsmout:
 	return (error);
+}
+
+/*
+ * nfs mknod call
+ * This call is currently not supported.
+ */
+/* ARGSUSED */
+nfs_mknod(ndp, vap, cred)
+	struct nameidata *ndp;
+	struct ucred *cred;
+	struct vattr *vap;
+{
+
+	nfs_abortop(ndp);
+	return (EOPNOTSUPP);
 }
 
 /*
