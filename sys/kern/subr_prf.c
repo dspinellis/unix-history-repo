@@ -133,7 +133,11 @@ panic(msg)
 #ifdef PANICWAIT
 	printf("hit any key to boot/dump...\n>");
 	cngetc();
-#endif
+#endif /* PANICWAIT */
+#ifdef PANICDELAY
+	printf("Waiting 20 secs....\n");
+	DELAY(20000000);
+#endif /* PANICDELAY */
 #endif
 	boot(bootopt);
 }
