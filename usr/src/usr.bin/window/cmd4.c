@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd4.c	3.1 83/08/11";
+static	char *sccsid = "@(#)cmd4.c	3.2 83/08/18";
 #endif
 
 #include "defs.h"
@@ -68,5 +68,7 @@ c_colon()
 	(void) wwputs("\r\n", cmdwin);
 	if (terse)
 		wwdelete(cmdwin);
+	else
+		wwcurtowin(cmdwin);
 	dolongcmd(buf);
 }
