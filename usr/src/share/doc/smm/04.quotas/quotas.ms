@@ -2,12 +2,13 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)quotas.ms	5.1 (Berkeley) %G%
+.\"	@(#)quotas.ms	6.1 (Berkeley) %G%
 .\"
+.EH 'SMM:4-%''Disc Quotas in a \s-2UNIX\s+2 Environment'
+.OH 'Disc Quotas in a \s-2UNIX\s+2 Environment''SMM:4-%'
 .ND 5th July, 1983
-.RP
 .TL
-Disc Quotas in a UNIX\s-3\u*\d\s0 Environment.
+Disc Quotas in a \s-2UNIX\s+2\s-3\u*\d\s0 Environment
 .FS
 * UNIX is a trademark of Bell Laboratories.
 .FE
