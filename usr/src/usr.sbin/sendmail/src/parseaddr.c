@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.61		%G%);
+SCCSID(@(#)parseaddr.c	3.62		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -472,7 +472,7 @@ rewrite(pvp, ruleset)
 
 	if (Mode == MD_TEST || tTd(21, 2))
 	{
-		printf("rewrite: ruleset %d, original pvp:", ruleset);
+		printf("rewrite: ruleset %2d   input:", ruleset);
 		printav(pvp);
 	}
 	if (pvp == NULL)
@@ -706,7 +706,7 @@ rewrite(pvp, ruleset)
 
 	if (Mode == MD_TEST || tTd(21, 2))
 	{
-		printf("rewrite: ruleset %d returns:", ruleset);
+		printf("rewrite: ruleset %2d returns:", ruleset);
 		printav(pvp);
 	}
 }
@@ -1022,7 +1022,7 @@ remotename(name, m, senderaddress)
 	}
 
 	/*
-	**  Now do more specific rewriting.
+	**  Do more specific rewriting.
 	**	Rewrite using ruleset 1 or 2 depending on whether this is
 	**		a sender address or not.
 	**	Then run it through any receiving-mailer-specific rulesets.
@@ -1040,6 +1040,15 @@ remotename(name, m, senderaddress)
 		if (m->m_r_rwset > 0)
 			rewrite(pvp, m->m_r_rwset);
 	}
+
+	/*
+	**  Do any final sanitation the address may require.
+	**	This will normally be used to turn internal forms
+	**	(e.g., user@host.LOCAL) into external form.  This
+	**	may be used as a default to the above rules.
+	*/
+
+	rewrite(pvp, 4);
 
 	/*
 	**  Now restore the comment information we had at the beginning.
