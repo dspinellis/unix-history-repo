@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)quotacheck.c	4.5 (Berkeley, Melbourne) %G%";
+static char sccsid[] = "@(#)quotacheck.c	4.6 (Berkeley, Melbourne) %G%";
 #endif
 
 /*
@@ -8,6 +8,7 @@ static char sccsid[] = "@(#)quotacheck.c	4.5 (Berkeley, Melbourne) %G%";
 #include <stdio.h>
 #include <ctype.h>
 #include <signal.h>
+#include <errno.h>
 #include <sys/param.h>
 #include <sys/inode.h>
 #include <sys/fs.h>
@@ -123,6 +124,8 @@ chkquota(fsdev, qffile)
 	char *rawdisk;
 	struct stat statb;
 	struct dqblk dqbuf;
+	static int warned = 0;
+	extern int errno;
 
 	rawdisk = makerawname(fsdev);
 	if (vflag)
@@ -151,7 +154,12 @@ chkquota(fsdev, qffile)
 			qffile, quotadev, fsdev, statb.st_rdev);
 		return (1);
 	}
-	quota(Q_SYNC, 0, quotadev, 0);
+	if (quota(Q_SYNC, 0, quotadev, 0) < 0 &&
+	    errno == EINVAL && !warned && vflag) {
+		warned++;
+		fprintf(stdout,
+		    "*** Warning: Quotas are not compiled into this kernel\n");
+	}
 	sync();
 	bread(SBLOCK, (char *)&sblock, SBSIZE);
 	ino = 0;
