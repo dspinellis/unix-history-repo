@@ -1,4 +1,4 @@
-/*	vm_machdep.c	6.5	85/03/08	*/
+/*	vm_machdep.c	6.6	85/05/28	*/
 
 #include "pte.h"
 
@@ -59,13 +59,18 @@ mapout(pte, size)
 
 /*
  * Check for valid program size
+ * NB - Check data and data growth separately as they may overflow 
+ * when summed together.
  */
-chksize(ts, ds, ss)
-	register unsigned ts, ds, ss;
+chksize(ts, ids, uds, ss)
+	unsigned ts, ids, uds, ss;
 {
 	extern int maxtsize;
 
-	if (ts > maxtsize || ctob(ds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
+	if (ts > maxtsize ||
+	    ctob(ids) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
+	    ctob(uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
+	    ctob(ids + uds) > u.u_rlimit[RLIMIT_DATA].rlim_cur ||
 	    ctob(ss) > u.u_rlimit[RLIMIT_STACK].rlim_cur) {
 		u.u_error = ENOMEM;
 		return (1);
