@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.31 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -231,6 +231,7 @@ setalias(spec)
 			AliasDB[NAliasDBs] = map;
 		}
 		bzero(map, sizeof *map);
+		map->map_mname = s->s_name;
 
 		p = strpbrk(p, " ,/:");
 		if (p != NULL && *p == ':')
