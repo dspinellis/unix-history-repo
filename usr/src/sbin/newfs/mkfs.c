@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)mkfs.c	2.11 (Berkeley) %G%";
+static	char *sccsid = "@(#)mkfs.c	2.12 (Berkeley) %G%";
 
 /*
  * make file system for cylinder-group style file systems
@@ -672,6 +672,7 @@ fsinit()
 	node.i_nlink = 2;
 	node.i_size = sblock.fs_bsize;
 	node.i_db[0] = alloc(node.i_size, node.i_mode);
+	node.i_blocks = howmany(node.i_size, DEV_BSIZE);
 	wtfs(fsbtodb(&sblock, node.i_db[0]), node.i_size, buf);
 	iput(&node);
 	/*
@@ -682,6 +683,7 @@ fsinit()
 	node.i_nlink = PREDEFDIR;
 	node.i_size = makedir(root_dir, PREDEFDIR);
 	node.i_db[0] = alloc(sblock.fs_fsize, node.i_mode);
+	node.i_blocks = howmany(node.i_size, DEV_BSIZE);
 	wtfs(fsbtodb(&sblock, node.i_db[0]), sblock.fs_fsize, buf);
 	iput(&node);
 }
