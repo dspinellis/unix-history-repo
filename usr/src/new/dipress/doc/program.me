@@ -1,0 +1,401 @@
+.bp
+.sh 1 "Creating \*(IP masters from C Programs"
+.lp
+A series of C macros and subroutines have been incorporated into a flexible
+software interface for use in the creation of Interpress masters.  This
+interface provides a facility for higher level software to create Interpress
+masters and eliminates the need for knowledge of the actual encoding of
+the file.  The set of routines resembles the proposal for an Interpress
+procedural interface outlined in the
+.i
+Introduction to Interpress,
+.r
+\s8XSIG\s0 038404 Section 7 "Creating masters: procedural interfaces".
+.lp
+Since this document makes references to the actual Interpress
+encoding form, it is assumed that the reader has knowledge of
+the encoding of Interpress within a file as described in the
+.i
+Interpress Electronic Printing Standard,
+.r
+\s8XSIS\s0 048404, Section 2.5.
+.sh 2 Basics
+.lp
+The Interpress procedure interface described is organized as that described
+in Section 7 of the
+.i
+Introduction to Interpress,
+.r
+\s8XSIG\s0 038404.
+.lp
+There are two levels of interfaces:
+.RS
+.ip \(bu
+The
+.i Literal
+interface which provides procedures for creating the various Interpress tokens
+(i.e., operators, numbers, identifiers, etc.)
+.ip \(bu
+The
+.i Operator
+interface which provides procedures for the creation of specific operators
+with an associated value or values.
+.RE
+.lp
+The following conventions are used in the descriptions of these interfaces:
+.RS
+.RS
+.ip n:
+floating point numbers represented by the C type double (32 bits)
+.ip i:
+integers represented by the C type long (32 bits)
+.ip s:
+character strings which are null terminated
+.ip p:
+pointer to pixels (unsigned char *)
+.RE
+.RE
+.sh 2 "Literal Interface"
+.lp
+The literal interface is a series of routines which append
+the various Interpress types to the output file.  These routines
+perform the actual encoding dependent upon the literal type. 
+.lp
+The routines which comprise the literal interface are:
+.RS
+.ip \fIip_select\fR(i:\ fd) 35
+select the output file represented by the file descriptor fd and append an
+Interpress header
+.ip \fIres_select\fR(i:\ fd) 35
+select the output file represented by the file descriptor fd and append a
+R.E.S. header
+.ip \fIip_raw_select\fR(i:\ fd) 35
+select the output file represented by the file descriptor fd (does not append
+an Interpress header)
+.ip \fIip_close\fR() 35
+close an output file
+.ip \fIip_flush\fR() 35
+flush current output buffer to the file
+.pp
+.pp
+.ip \fIAppendOp\fR(i:\ operator) 35
+append operator in its proper form (either a Short Op or a Long Op)
+.ip \fIAppendNumber\fR(n:\ number) 35
+append the number in its proper form (either as a Short Number, a sequence of
+type sequenceInteger or a sequence of type sequenceRational)
+.ip \fIAppendInteger\fR(i:\ integer) 35
+append the integer in its proper form (either as a Short Number or a sequence
+of type sequenceInteger)
+.ip \fIAppendRational\fR(n:\ num,\ n:\ denom) 35
+append value and divisor as a sequence of type sequenceRational
+.ip \fIAppendIdentifier\fR(s:\ string) 35
+append string as a sequence of type sequenceIdentifier
+.ip \fIAppendComment\fR(s:\ string) 35
+append string as a sequence of type sequenceComment
+.ip \fIAppendString\fR(s:\ string) 35
+append string as a sequence of type sequenceString
+.ip \fIAppendStringX\fR(s:\ string) 35
+append string with possible escapes as a sequence of type sequenceString
+.ip \fIAppendInsertFile\fR(s:\ string) 35
+append string as a sequence of type sequenceInsertFile
+.RE
+.sh 2 "Operator Interface"
+.lp
+Many of the common Interpress primitive operators have a corresponding routine
+in the operator interface which appends the operator and a series of value(s) 
+to the output file.
+.lp
+Interpress operators vary in their use in that several options are available:
+.RS
+.ip \(bu
+the operators may not require any values to be associated with it
+.ip \(bu
+values may be provided explicitly and a resulting value left on the stack
+.ip \(bu
+any or all values may be taken from the stack (left by a previous operation)
+and the result of the operator may then be left on the stack in place of 
+the values
+.ip \(bu
+the values provided may in fact be a larger body of values composed of many
+numbers or integers
+.RE
+.lp
+.i
+Operators with no values:
+.r
+Operators which require no values may be output with the literal interface 
+routines \fIAppendOp\fR or \fIOp\fR.
+.lp
+.i
+Operators with explicit values:
+.r
+The following routines append the named operator along with the values
+specified:
+.RS
+.lp
+.b
+Arithmetic Operators
+.RS
+.ip \fIAbs\|(n:\ value)\fR
+.ip \fIAdd\|(n:\ value1,\ n:\ value2)\fR
+.ip \fICeiling\|(n:\ value)\fR
+.ip \fIDiv\|(n:\ dividend,\ n:\ divisor)\fR
+.ip \fIFloor\|(n:\ value)\fR
+.ip \fIMod\|(n:\ value,\ n:\ divisor)\fR
+.ip \fIMul\|(n:\ value1,\ n:\ value2)\fR
+.ip \fINeg\|(n:\ value)\fR
+.ip \fIRem\|(n:\ value,\ n:\ divisor)\fR
+.ip \fIRound\|(n:\ value)\fR
+.ip \fISub\|(n:\ minuend,\ n:\ subtrahend)\fR
+.ip \fITrunc\|(n:\ value)\fR
+.RE
+.lp
+.b
+Color Operators
+.RS
+.ip \fIMakeGray\|(n:\ colorshade)\fR
+.ip \fIMakeSampledBlack\|(i:\ clear)\fR
+.ip \fISetGray\|(n:\ colorshade)\fR
+.RE
+.lp
+.b
+Correction Operators
+.RS
+.ip \fICorrectSpace\|(n:\ x,\ n:\ y)\fR
+.ip \fISetcorrectMeasure\|(n:\ x,\ n:\ y)\fR
+.ip \fISetCorrectTolerance\|(n:\ x,\ n:\ y)\fR
+.ip \fISpace\|(n:\ x)\fR
+.RE
+.lp
+.b
+Font Operators
+.RS
+.ip \fISetFont(i:\ font)\fR
+.RE
+.lp
+.b
+Frame Operators
+.RS
+.ip \fIFGet\|(i:\ framevariable)\fR
+.RE
+.lp
+.b
+Imager Operators
+.RS
+.ip \fIIGet\|(i:\ imagerVariable)\fR
+.ip \fISetAmplifySpace\|(n:\ value)\fR
+.ip \fISetCorrectPass\|(i:\ value)\fR
+.ip \fISetCorreectShrink\|(n:\ number)\fR
+.ip \fISetNoImage\|(i:\ integer)\fR
+.ip \fISetPriorityImportant\|(i:\ integer)\fR
+.ip \fISetStrokeEnd\|(i:\ integer)\fR
+.ip \fISetStrokeWidth\|(n:\ number)\fR
+.ip \fISetUnderlineStart\|(n:\ number)\fR
+.RE
+.lp
+.b
+Mask Operators
+.r
+.RS
+.ip \fIMaskRectangle\|(n:\ x,\ n:\ y,\ n:\ width,\ n:\ height)\fR
+.ip \fIMaskTrapezoidx\|(n:\ x1,\ n:\ y1,\ n:\ x2,\ n:\ x3,\ n:\ y3,\ n:\ x4)\fR
+.ip \fIMaskTrapezoidy\|(n:\ x1,\ n:\ y1,\ n:\ y2,\ n:\ x3,\ n:\ y3,\ n:\ y4)\fR
+.ip \fIMaskUnderline\|(n:\ dy,\ n:\ h)\fR
+.ip \fIMaskVector\|(n:\ x1,\ n:\ y1,\ n:\ x2,\ n:\ y2)\fR
+.RE
+.lp
+.b
+Position Operators
+.RS
+.ip \fISetXY\|(n:\ x,\ n:\ y)\fR
+.ip \fISetXYRel\|(n:\ dx,\ n:\ dy)\fR
+.ip \fISetXRel\|(n:\ dx)\fR
+.ip \fISetYRel\|(n:\ dy)\fR
+.RE
+.lp
+.b
+Test Operators
+.RS
+.ip \fIAnd\|(i:\ value1,\ i:\ value2)\fR
+.ip \fIGe\|(n:\ value1,\ n:\ value2)\fR
+.ip \fIGt\|(n:\ value2,\ n:\ value2)\fR
+.ip \fINot\|(i:\ value)\fR
+.ip \fIOr\|(i:\ value1,\ i:\ value2)\fR
+.RE
+.lp
+.b
+Transform Operators
+.RS
+.ip \fIRotate\|(n:\ angle)\fR
+.ip \fIScale\|(n:\ s)\fR
+.ip \fIScale2\|(n:\ sx,\ n:\ sy)\fR
+.ip \fITranslate\|(n:\ x,\ n:\ y)\fR
+.RE
+.RE
+.lp
+.i
+Operators with implicit values:
+.r
+The following routines append the named operator along with the values
+specified, with the assumption that other values have been appended through
+previous calls to the literal interface:
+.RS
+.lp
+.b
+Mask Operators
+.RS
+.ip \fILineTo\|(n:\ x,\ n:\ y)\fR
+.ip \fILineToX\|(n:\ x)\fR
+.ip \fILineToY\|(n:\ y)\fR
+.ip \fIMakeOutline\|(i:\ count)\fR
+.RE
+.lp
+.b
+Stack Operators
+.RS
+.ip \fICopy\|(i:\ count)\fR
+.ip \fIRoll\|(i:\ depth,\ i:\ movefirst)\fR
+.ip \fIMark\|(i:\ count)\fR
+.ip \fIUnmark\|(i:\ count)\fR
+.RE
+.lp
+.b
+Vector Operators
+.RS
+.ip \fIGet\|(n:\ index)\fR
+.ip \fIMakeVec\|(I:\ upper)\fR
+.ip \fIMakeVecLU\|(i:\ lower,\ i:\ upper)\fR
+.RE
+.RE
+.lp
+.i
+Templates:
+.r
+Several procedures are provided for common Interpress operations which may
+logically combine groups of operators and values.  Those procedures are:
+.RS
+.ip \fISetupFont\|(s:\ name,\ i:\ size,\ i:\ fontnumber)\fR
+.ip \fIShowString\|(s:\ string)\fR
+.RE
+.lp
+.r
+The following procedures append encoded pixel vectors.
+.RS
+.ip \fIAppendPPVector\|(i:\ length,\ i:\ bitsPerPixel,\ i:\ pixelsPerScanLine,\ p:\ data)\fR
+.ip \fIAppendCPVector\|(i:\ length,\ i:\ breakTable,\ i:\ nRange,\ i:\ pixelsPerScanLine,\ p:\ data)\fR
+.RE
+.sh 2 "Using the Program Interface"
+.lp
+The software which uses these Interpress interfaces can find the
+the desired subroutines in the Interpress library
+.i libip.a
+which exists in the directory
+.i ${SRC}/lib
+as distributed.
+.lp
+There are also several include files in the directory
+.i ${SRC}/include
+which contain the following utilities:
+.RS
+.ip iptokens.h
+definitions for the Interpress encoding of tokens, sequence types and operators
+.ip literal.h
+macro definitions for portions of the literal interface 
+.ip operator.h
+macro definitions for most of the operator interface
+.RE
+.lp
+Note that ${SRC} above denotes the path in which the Interpress software was
+loaded on the host system.
+.sh 3 "An example using the program interfaces"
+.lp
+The following short C program demonstrates an Interpress
+generation facility. This will produce an Interpress master on the file
+descriptor stdout which will print the line "This is an Interpress test"
+across the top of the page.
+.in +5n
+.lp
+\f(TR#include "iptokens.h"
+.br
+#include "literal.h"
+.br
+#include "operator.h"
+.br
+main()
+.br
+{
+.in +5n
+ip_select(1);	/* open stdout */
+.br
+AppendOp(OP_beginBlock);
+.br
+AppendOp(OP_beginBody);
+.br
+/* establish default font */
+.br
+SetupFont("Xerox/XC1-1-1/Classic",100.,1);
+.br
+AppendRational(353,10000000);	/* scale of 1/10 point */
+.br
+AppendOp(OP_scale);
+.br
+AppendInteger(2);
+.br
+AppendOp(OP_fset);	/* save in frame variable 2 */
+.br
+AppendOp(OP_endBody);	/* end preamble */
+.br
+AppendOp(OP_beginBody);	/* start page 1 */
+.br
+FGet(2);	/* retrieve scale */
+.br
+SetFont(1);	/* retrieve default font */
+.br
+SetXY((double)1440,(double)7200);
+.br
+ShowString("This is an Interpress test");
+.br
+AppendOp(OP_endBody);
+.br
+AppendOp(OP_endBlock);
+.br
+ip_close();	/* close file */
+.in -5n
+}
+.in -5n
+.lp
+The text representation of the Interpress master produced by the above
+program is shown below:
+.(l I
+\f(TRHeader: "Interpress/Xerox/2.1 "
+BEGIN (block)
+{
+> Identifier: Xerox
+> Identifier: XC1-1-1
+> Identifier: Classic
+3
+makevec
+findfont
+100
+scale
+modifyfont
+1
+fset
+> Rational: 353/10000000 (0.000035)
+scale
+2
+fset
+}
+{
+2
+fget
+1
+setfont
+1440
+7200
+setxy
+> String: "This is an Interpress test"
+show
+}
+END (block)
+.)l
