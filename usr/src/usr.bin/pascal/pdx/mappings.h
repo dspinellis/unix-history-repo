@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mappings.h	5.1 (Berkeley) %G%
+ *	@(#)mappings.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -22,6 +22,6 @@ char *srcfilename();	/* get the nearest source file <= a given address */
 LINENO srcline();	/* get the nearest source line <= a given address */
 LINENO linelookup();	/* look for a line number with exactly given address */
 
-newfunc();		/* record the appearance of a new function */
+int newfunc();		/* record the appearance of a new function */
 SYM *whatblock();	/* find the function associated with an address */
-clrfunctab();		/* re-initialize function table */
+int clrfunctab();	/* re-initialize function table */

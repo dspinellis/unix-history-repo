@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)runtime.h	5.1 (Berkeley) %G%
+ *	@(#)runtime.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -18,13 +18,13 @@ ADDRESS entry_addr();		/* entry address of current proc/func */
 ADDRESS entry_point();		/* point where environment is setup */
 ADDRESS return_addr();		/* return address of current proc/func */
 ADDRESS caller_addr();		/* entry of caller of current proc/func */
-where();			/* print out currently active procedures */
-dump();				/* dump the world */
-callproc();			/* call a procedure */
-procreturn();			/* return from a "call"-ed procedure */
+int where();			/* print out currently active procedures */
+int dump();			/* dump the world */
+int callproc();			/* call a procedure */
+int procreturn();		/* return from a "call"-ed procedure */
 ADDRESS address();		/* address of a variable */
 ADDRESS firstline();		/* address of first line in a procedure */
-findbeginning();		/* find address of beginning of a procedure */
-runtofirst();			/* step to first line in current procedure */
+int findbeginning();		/* find address of beginning of a procedure */
+int runtofirst();		/* step to first line in current procedure */
 ADDRESS lastaddr();		/* address of last line in program */
 ADDRESS fparamaddr();		/* entry address of a function parameter */

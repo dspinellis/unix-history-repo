@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)process.rep	5.3 (Berkeley) %G%
+ *	@(#)process.rep	5.4 (Berkeley) %G%
  */
 
 /*
@@ -60,12 +60,12 @@ struct process {
  * Process manipulation routines local to this module.
  */
 
-pstart();			/* start up a process */
-pcont();			/* continue execution */
-pstep();			/* single step */
-pio();				/* process memory move */
-psigtrace();			/* catch/don't catch a signal */
-unsetsigtraces();		/* don't catch any signals */
+int pstart();			/* start up a process */
+int pcont();			/* continue execution */
+int pstep();			/* single step */
+int pio();			/* process memory move */
+int psigtrace();		/* catch/don't catch a signal */
+int unsetsigtraces();		/* don't catch any signals */
 
 /*
  * These definitions are for the arguments to "pio".
@@ -78,5 +78,5 @@ typedef enum { TEXTSEG, DATASEG } PIO_SEG;
 
 #define	iread(buf, addr, nbytes)	dread(buf, addr+ENDOFF, nbytes)
 #define	iwrite(buf, addr, nbytes)	dwrite(buf, addr+ENDOFF, nbytes)
-#define dread(buf, addr, nbytes)	drdwr(PREAD, buf, addr, nbytes)
-#define dwrite(buf, addr, nbytes)	drdwr(PWRITE, buf, addr, nbytes)
+#define	dread(buf, addr, nbytes)	drdwr(PREAD, buf, addr, nbytes)
+#define	dwrite(buf, addr, nbytes)	drdwr(PWRITE, buf, addr, nbytes)

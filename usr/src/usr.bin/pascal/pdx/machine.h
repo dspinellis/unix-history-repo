@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machine.h	5.2 (Berkeley) %G%
+ *	@(#)machine.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -18,11 +18,11 @@ ADDRESS pc;			/* current program counter */
 LINENO curline;			/* line number associated with pc */
 SYM *curfunc;			/* pointer to active function symbol */
 
-setbp();			/* set a breakpoint */
-unsetbp();			/* unset a breakpoint */
+int setbp();			/* set a breakpoint */
+int unsetbp();			/* unset a breakpoint */
 BOOLEAN isbperr();		/* test if a breakpoint has occurred */
-printerror();			/* print out an execution error message */
+int printerror();		/* print out an execution error message */
 ADDRESS nextaddr();		/* address of next line to be executed */
 BOOLEAN isendofproc();		/* test if address is at end of procedure */
-printinst(), printninst();	/* print the instruction at a given address */
-printdata(), printndata();	/* print the contents of a given data address */
+int printinst(), printninst();	/* print the instruction at a given address */
+int printdata(), printndata();	/* print the contents of a given data address */

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)process.h	5.1 (Berkeley) %G%
+ *	@(#)process.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -17,21 +17,21 @@ typedef struct process PROCESS;
 
 PROCESS *process;
 
-initstart();		/* initial process start up */
-run();			/* start program running */
-arginit();		/* initialize program arguments */
-setargs();		/* special argument handling */
-newarg();		/* add a new argument to list for program */
-inarg();		/* set standard input for program */
-outarg();		/* set standard output for program */
-cont();			/* continue execution where last left off */
-step();			/* single step */
-stepc();		/* single step command */
-stepto();		/* execute up to a given address */
-next();			/* single step, skip over calls */
-endprogram();		/* note the termination of the program */
-printstatus();		/* print current error */
-printwhere();		/* print current source line and file */
+int initstart();	/* initial process start up */
+int run();		/* start program running */
+int arginit();		/* initialize program arguments */
+int setargs();		/* special argument handling */
+int newarg();		/* add a new argument to list for program */
+int inarg();		/* set standard input for program */
+int outarg();		/* set standard output for program */
+int cont();		/* continue execution where last left off */
+int step();		/* single step */
+int stepc();		/* single step command */
+int stepto();		/* execute up to a given address */
+int next();		/* single step, skip over calls */
+int endprogram();	/* note the termination of the program */
+int printstatus();	/* print current error */
+int printwhere();	/* print current source line and file */
 BOOLEAN isfinished();	/* TRUE if process has terminated */
-iread(), dread();	/* read from the process' address space */
-iwrite(), dwrite();	/* write to the process' address space */
+int iread(), dread();	/* read from the process' address space */
+int iwrite(), dwrite();	/* write to the process' address space */

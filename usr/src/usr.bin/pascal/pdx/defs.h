@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	5.2 (Berkeley) %G%
+ *	@(#)defs.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -55,8 +55,8 @@ char *cmdname;			/* name of command for error messages */
 char *errfilename;		/* current file associated with error */
 short errlineno;		/* line number associated with error */
 
-error();			/* print an error message */
-panic();			/* print error message and exit */
+int error();			/* print an error message */
+int panic();			/* print error message and exit */
 short numerrors();		/* return number of errors since last call */
 
 /*
