@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.6 1993/10/16 16:20:40 rgrimes Exp $
+ *	$Id: vm_object.c,v 1.7 1993/11/07 17:54:18 wollman Exp $
  */
 
 /*
@@ -1220,6 +1220,22 @@ void vm_object_collapse(object)
 			 *	unused portion.
 			 */
 
+			/*
+			 * Remove backing_object from the object hashtable now.
+			 * This is necessary since its pager is going away
+			 * and therefore it is not going to be removed from
+			 * hashtable in vm_object_deallocate().
+			 *
+			 * NOTE - backing_object can only get at this stage if
+			 * it has an internal pager. It is not normally on the
+			 * hashtable unless it was put there by eg. vm_mmap()
+			 *
+			 * XXX - Need I worry here about *named* ANON pagers ?
+			 */
+
+			if (backing_object->pager) {
+				vm_object_remove(backing_object->pager);
+			}
 			object->pager = backing_object->pager;
 #if 1
 			/* Mach 3.0 code */
