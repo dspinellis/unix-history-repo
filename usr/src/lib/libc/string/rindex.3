@@ -5,7 +5,7 @@
 .\" Chris Torek.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)rindex.3	5.2 (Berkeley) %G%
+.\"     @(#)rindex.3	5.3 (Berkeley) %G%
 .\"
 .Dd 
 .Dt RINDEX 3
@@ -28,7 +28,9 @@ matching
 .Em char )
 in the null-terminated string
 .Fa s .
-The character c is returned if it is found; otherwise NULL is returned.
+.Sh RETURN VALUES
+A pointer to the character is returned if it is found; otherwise
+NULL is returned.
 If
 .Fa c
 is
