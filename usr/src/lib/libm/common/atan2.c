@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)atan2.c	1.3 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
+"@(#)atan2.c	1.3 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
 #endif not lint
 
 /* ATAN2(Y,X)
@@ -183,8 +183,10 @@ double  y,x;
 	double copysign(),logb(),scalb(),t,z,signy,signx,hi,lo;
 	int finite(), k,m;
 
+#if (!defined(VAX)&&!defined(TAHOE))
     /* if x or y is NAN */
 	if(x!=x) return(x); if(y!=y) return(y);
+#endif
 
     /* copy down the sign of y and x */
 	signy = copysign(one,y) ;  
@@ -199,6 +201,7 @@ double  y,x;
     /* when x = 0 */
 	if(x==zero) return(copysign(PIo2,signy));
 	    
+#if (!defined(VAX)&&!defined(TAHOE))
     /* when x is INF */
 	if(!finite(x))
 	    if(!finite(y)) 
@@ -208,7 +211,7 @@ double  y,x;
 
     /* when y is INF */
 	if(!finite(y)) return(copysign(PIo2,signy));
-
+#endif
 
     /* compute y/x */
 	x=copysign(x,one); 

@@ -13,7 +13,7 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)trig.c	1.2 (Berkeley) 8/22/85; 1.4 (ucb.elefunt) %G%";
+"@(#)trig.c	1.2 (Berkeley) 8/22/85; 1.5 (ucb.elefunt) %G%";
 #endif not lint
 
 /* SIN(X), COS(X), TAN(X)
@@ -156,10 +156,12 @@ double tan(x)
 double x;
 {
         double copysign(),drem(),cos__C(),sin__S(),a,z,ss,cc,c;
-        int finite(),k;
-
+	int k;
+#if (!defined(VAX)&&!defined(TAHOE))
+        extern int finite();
         /* tan(NaN) and tan(INF) must be NaN */
             if(!finite(x))  return(x-x);
+#endif
         x=drem(x,PI);        /* reduce x into [-PI/2, PI/2] */
         a=copysign(x,one);   /* ... = abs(x) */
 	if ( a >= PIo4 ) {k=1; x = copysign( PIo2 - a , x ); }
@@ -179,10 +181,11 @@ double sin(x)
 double x;
 {
         double copysign(),drem(),sin__S(),cos__C(),a,c,z;
-        int finite();
-
+#if (!defined(VAX)&&!defined(TAHOE))
+        extern int finite();
         /* sin(NaN) and sin(INF) must be NaN */
             if(!finite(x))  return(x-x);
+#endif
 	x=drem(x,PI2);         /*    reduce x into [-PI, PI] */
         a=copysign(x,one);
 	if( a >= PIo4 ) {
@@ -208,10 +211,11 @@ double cos(x)
 double x;
 {
         double copysign(),drem(),sin__S(),cos__C(),a,c,z,s=1.0;
-        int finite();
-
+#if (!defined(VAX)&&!defined(TAHOE))
+        extern int finite();
         /* cos(NaN) and cos(INF) must be NaN */
             if(!finite(x))  return(x-x);
+#endif
 	x=drem(x,PI2);         /*    reduce x into [-PI, PI] */
         a=copysign(x,one);
 	if ( a >= PIo4 ) {

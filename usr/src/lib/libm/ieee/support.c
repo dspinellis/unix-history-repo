@@ -13,11 +13,11 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)support.c	1.1 (Berkeley) 5/23/85; 1.8 (ucb.elefunt) %G%";
+"@(#)support.c	1.1 (Berkeley) 5/23/85; 1.9 (ucb.elefunt) %G%";
 #endif not lint
 
 /* 
- * Some IEEE standard p754 recommended functions and remainder and sqrt for 
+ * Some IEEE standard 754 recommended functions and remainder and sqrt for 
  * supporting the C elementary functions.
  ******************************************************************************
  * WARNING:
@@ -28,7 +28,7 @@ static char sccsid[] =
  * its own assembler.
  ******************************************************************************
  *
- * IEEE p754 required operations:
+ * IEEE 754 required operations:
  *     drem(x,p) 
  *              returns  x REM y  =  x - [x/y]*y , where [x/y] is the integer
  *              nearest x/y; in half way case, choose the even one.
@@ -36,7 +36,7 @@ static char sccsid[] =
  *              returns the square root of x correctly rounded according to 
  *		the rounding mod.
  *
- * IEEE p754 recommended functions:
+ * IEEE 754 recommended functions:
  * (a) copysign(x,y) 
  *              returns x with the sign of y. 
  * (b) scalb(x,N) 
@@ -56,6 +56,7 @@ static char sccsid[] =
 
 
 #if (defined(VAX)||defined(TAHOE))      /* VAX D format */
+#include <errno.h>
     static unsigned short msign=0x7fff , mexp =0x7f80 ;
     static short  prep1=57, gap=7, bias=129           ;   
     static double novf=1.7E38, nunf=3.0E-39, zero=0.0 ;
@@ -81,7 +82,12 @@ double x; int N;
 
 #if (defined(VAX)||defined(TAHOE))
         if( (k= *px & mexp ) != ~msign ) {
-            if( N<-260) return(nunf*nunf); else if(N>260) return(novf+novf);
+            if (N < -260)
+		return(nunf*nunf);
+	    else if (N > 260) {
+		extern double infnan(),copysign();
+		return(copysign(infnan(ERANGE),x));
+	    }
 #else   /* IEEE */
         if( (k= *px & mexp ) != mexp ) {
             if( N<-2100) return(nunf*nunf); else if(N>2100) return(novf+novf);
@@ -153,7 +159,7 @@ finite(x)
 double x;    
 {
 #if (defined(VAX)||defined(TAHOE))
-        return(1.0);
+        return(1);
 #else  /* IEEE */
 #ifdef NATIONAL
         return( (*((short *) &x+3 ) & mexp ) != mexp );
@@ -186,14 +192,22 @@ double x,p;
         *pp &= msign ;
 
 #if (defined(VAX)||defined(TAHOE))
-        if( ( *px & mexp ) == ~msign )
+        if( ( *px & mexp ) == ~msign )	/* is x a reserved operand? */
 #else /* IEEE */
         if( ( *px & mexp ) == mexp )
 #endif
 		return  (x-p)-(x-p);	/* create nan if x is inf */
-	if(p==zero) return zero/zero;
+	if (p == zero) {
 #if (defined(VAX)||defined(TAHOE))
-        if( ( *pp & mexp ) == ~msign )
+		extern double infnan();
+		return(infnan(EDOM));
+#else
+		return zero/zero;
+#endif
+	}
+
+#if (defined(VAX)||defined(TAHOE))
+        if( ( *pp & mexp ) == ~msign )	/* is p a reserved operand? */
 #else /* IEEE */
         if( ( *pp & mexp ) == mexp )
 #endif
@@ -252,7 +266,14 @@ double x;
         if(x!=x||x==zero) return(x);
 
     /* sqrt(negative) is invalid */
-        if(x<zero) return(zero/zero);
+        if(x<zero) {
+#if (defined(VAX)||defined(TAHOE))
+		extern double infnan();
+		return (infnan(EDOM));	/* NaN */
+#else	/* IEEE double */
+		return(zero/zero);
+#endif
+	}
 
     /* sqrt(INF) is INF */
         if(!finite(x)) return(x);               
