@@ -3,14 +3,14 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.21		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.22		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 # include <wait.h>
 
-SCCSID(@(#)daemon.c	3.21		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.22		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -97,7 +97,7 @@ getconnection()
 	SendmailAddress.sin_addr.s_addr = 0;
 	SendmailAddress.sin_port = IPPORT_SMTP;
 # ifdef DEBUG
-	if (Debug > 0)
+	if (tTd(15, 15))
 		SendmailAddress.sin_port = IPPORT_PLAYPORT;
 # endif DEBUG
 	SendmailAddress.sin_port = htons(SendmailAddress.sin_port);
@@ -107,7 +107,7 @@ getconnection()
 	*/
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(15, 1))
 		printf("getconnection\n");
 # endif DEBUG
 
@@ -123,7 +123,7 @@ getconnection()
 		}
 
 # ifdef DEBUG
-		if (Debug)
+		if (tTd(15, 1))
 			printf("getconnection: %d\n", s);
 # endif DEBUG
 
@@ -182,7 +182,7 @@ makeconnection(host, port, outfile, infile)
 	*/
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(16, 1))
 		printf("makeconnection (%s)\n", host);
 # endif DEBUG
 
@@ -194,10 +194,10 @@ makeconnection(host, port, outfile, infile)
 	}
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(16, 1))
 		printf("makeconnection: %d\n", s);
 # endif DEBUG
-	fflush(Xscript);				/* for debugging */
+	(void) fflush(Xscript);				/* for debugging */
 	if (connect(s, &SendmailAddress) < 0)
 	{
 		/* failure, decide if temporary or not */

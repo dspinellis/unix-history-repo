@@ -7,7 +7,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	3.75		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	3.76		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -18,6 +18,10 @@ static char SmailSccsId[] =	"@(#)sendmail.h	3.75		%G%";
 # include <setjmp.h>
 # include "conf.h"
 # include "useful.h"
+
+# ifdef LOG
+# include <syslog.h>
+# endif LOG
 
 /*
 **  Configuration constants.
@@ -372,7 +376,6 @@ EXTERN int	RealGid;	/* when Daemon, real gid of caller */
 extern int	DefUid;		/* default uid to run as */
 extern int	DefGid;		/* default gid to run as */
 EXTERN int	OldUmask;	/* umask when sendmail starts up */
-EXTERN int	Debug;		/* debugging level */
 EXTERN int	Errors;		/* set if errors (local to single pass) */
 EXTERN int	ExitStat;	/* exit status code */
 EXTERN int	HopCount;	/* hop count */
@@ -387,10 +390,22 @@ extern char	*ConfFile;	/* location of configuration file */
 extern char	*StatFile;	/* location of statistics summary */
 extern char	*QueueDir;	/* location of queue directory */
 EXTERN char	*ControlFile;	/* when queued, name of control file temp */
+EXTERN char	*MsgId;		/* Message-Id: for this message */
 EXTERN time_t	CurTime;	/* time of this message */
 EXTERN jmp_buf	TickFrame;	/* frame for clock ticks to jump to */
 extern int	ReadTimeout;	/* timeout on reads before clock ticks */
+extern int	LogLevel;	/* level of logging to perform */
+/*
+**  Trace information
+*/
 
+/* trace vector and macros for debugging flags */
+EXTERN u_char	tTdvect[100];
+# define tTd(flag, level)	(tTdvect[flag] >= level)
+# define tTdlevel(flag)		(tTdvect[flag])
+/*
+**  Miscellaneous information.
+*/
 
 # include	<sysexits.h>
 

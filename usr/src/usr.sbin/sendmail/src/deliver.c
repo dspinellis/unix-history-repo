@@ -2,11 +2,8 @@
 # include <errno.h>
 # include "sendmail.h"
 # include <sys/stat.h>
-# ifdef LOG
-# include <syslog.h>
-# endif LOG
 
-SCCSID(@(#)deliver.c	3.95		%G%);
+SCCSID(@(#)deliver.c	3.96		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -49,7 +46,6 @@ deliver(firstto)
 	extern char **prescan();
 	register ADDRESS *to = firstto;
 	bool clever = FALSE;		/* running user smtp to this mailer */
-	bool tempfail = FALSE;
 	ADDRESS *tochain = NULL;	/* chain of users in this mailer call */
 	bool notopen = TRUE;		/* set if connection not quite open */
 
@@ -61,7 +57,7 @@ deliver(firstto)
 	host = to->q_host;
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(10, 1))
 		printf("\n--deliver, mailer=%d, host=`%s', first user=`%s'\n",
 			m->m_mno, host, to->q_user);
 # endif DEBUG
@@ -191,7 +187,7 @@ deliver(firstto)
 			continue;
 
 # ifdef DEBUG
-		if (Debug)
+		if (tTd(10, 1))
 		{
 			printf("\nsend to ");
 			printaddr(to, FALSE);
@@ -245,10 +241,6 @@ deliver(firstto)
 			{
 				/* send the initial SMTP protocol */
 				i = smtpinit(m, pv, (ADDRESS *) NULL);
-# ifdef QUEUE
-				if (i == EX_TEMPFAIL)
-					tempfail = TRUE;
-# endif QUEUE
 			}
 # ifdef SMTP
 			notopen = FALSE;
@@ -615,7 +607,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	extern FILE *fdopen();
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(11, 1))
 	{
 		printf("openmailer:\n");
 		printav(pvp);
@@ -677,7 +669,7 @@ openmailer(m, pvp, ctladdr, clever, pmfile, prfile)
 	**	DOFORK is clever about retrying.
 	*/
 
-	fflush(Xscript);				/* for debugging */
+	(void) fflush(Xscript);				/* for debugging */
 	DOFORK(XFORK);
 	/* pid is set by DOFORK */
 	if (pid < 0)
@@ -881,7 +873,8 @@ giveresponse(stat, force, m)
 	}
 
 # ifdef LOG
-	syslog(LOG_INFO, "%s->%s: %ld: %s", CurEnv->e_from.q_paddr, CurEnv->e_to, CurEnv->e_msgsize, statmsg);
+	if (LogLevel > 1)
+		syslog(LOG_INFO, "%s: to=%s, stat=%s", MsgId, CurEnv->e_to, statmsg);
 # endif LOG
 # ifdef QUEUE
 	if (stat != EX_TEMPFAIL)
@@ -1308,7 +1301,7 @@ remotename(name, m, force)
 	define('x', oldx);
 
 # ifdef DEBUG
-	if (Debug > 0)
+	if (tTd(12, 1))
 		printf("remotename(%s) => `%s'\n", name, buf);
 # endif DEBUG
 	return (buf);
@@ -1337,7 +1330,7 @@ samefrom(ifrom, efrom)
 	char buf[MAXNAME + 4];
 
 # ifdef DEBUG
-	if (Debug > 7)
+	if (tTd(3, 8))
 		printf("samefrom(%s,%s)-->", ifrom, efrom);
 # endif DEBUG
 	if (strcmp(ifrom, efrom) == 0)
@@ -1355,14 +1348,14 @@ samefrom(ifrom, efrom)
 
   failure:
 # ifdef DEBUG
-	if (Debug > 7)
+	if (tTd(3, 8))
 		printf("FALSE\n");
 # endif DEBUG
 	return (FALSE);
 
   success:
 # ifdef DEBUG
-	if (Debug > 7)
+	if (tTd(3, 8))
 		printf("TRUE\n");
 # endif DEBUG
 	return (TRUE);
@@ -1491,7 +1484,7 @@ sendall(e, verifyonly)
 	register ADDRESS *q;
 
 # ifdef DEBUG
-	if (Debug > 1)
+	if (tTd(13, 2))
 	{
 		printf("\nSend Queue:\n");
 		printaddr(e->e_sendqueue, TRUE);
@@ -1579,7 +1572,7 @@ checkerrors(e)
 	register ENVELOPE *e;
 {
 # ifdef DEBUG
-	if (Debug > 0)
+	if (tTd(4, 1))
 	{
 		printf("\ncheckerrors: FatalErrors %d, errorqueue:\n");
 		printaddr(e->e_errorqueue, TRUE);

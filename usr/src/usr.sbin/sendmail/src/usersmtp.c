@@ -4,10 +4,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	3.14		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	3.15		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	3.14		%G%);
+SCCSID(@(#)usersmtp.c	3.15		%G%);
 
 /*
 **  SMTPINIT -- initialize SMTP.
@@ -53,7 +53,7 @@ smtpinit(m, pvp, ctladdr)
 	{
 		SmtpErrstat = ExitStat;
 # ifdef DEBUG
-		if (Debug > 0)
+		if (tTd(18, 1))
 			printf("smtpinit: cannot open: Errstat %d errno %d\n",
 			   SmtpErrstat, errno);
 # endif DEBUG
@@ -228,7 +228,7 @@ reply()
 {
 	(void) fflush(SmtpOut);
 
-	if (Debug)
+	if (tTd(18, 1))
 		printf("reply\n");
 
 	/*
@@ -242,7 +242,7 @@ reply()
 		register char *p;
 
 		/* arrange to time out the read */
-		fflush(Xscript);			/* for debugging */
+		(void) fflush(Xscript);			/* for debugging */
 		if (setjmp(TickFrame) != 0)
 			return (-1);
 		(void) alarm(ReadTimeout);
@@ -295,7 +295,7 @@ smtpmessage(f, a, b, c)
 	char buf[100];
 
 	(void) sprintf(buf, f, a, b, c);
-	if (Debug || (Verbose && !HoldErrs))
+	if (tTd(18, 1) || (Verbose && !HoldErrs))
 		printf(">>> %s\n", buf);
 	fprintf(Xscript, ">>> %s\n", buf);
 	fprintf(SmtpOut, "%s\r\n", buf);

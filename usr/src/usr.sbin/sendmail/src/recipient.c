@@ -2,7 +2,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.38		%G%);
+SCCSID(@(#)recipient.c	3.39		%G%);
 
 /*
 **  SENDTO -- Designate a send list.
@@ -53,7 +53,7 @@ sendto(list, copyf, ctladdr, qflags)
 	ADDRESS *prev;		/* previous sibling */
 
 # ifdef DEBUG
-	if (Debug > 1)
+	if (tTd(25, 1))
 	{
 		printf("sendto: %s\n   ctladdr=", list);
 		printaddr(ctladdr, FALSE);
@@ -209,7 +209,7 @@ recipient(a, sendq)
 	m = a->q_mailer;
 	errno = 0;
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(26, 1))
 	{
 		printf("\nrecipient: ");
 		printaddr(a, FALSE);
@@ -236,7 +236,7 @@ recipient(a, sendq)
 		{
 			a->q_mailer = m = ProgMailer;
 			a->q_user++;
-			if (a->q_alias == NULL && Debug == 0 && !QueueRun && !ForceMail)
+			if (a->q_alias == NULL && !tTd(0, 1) && !QueueRun && !ForceMail)
 			{
 				usrerr("Cannot mail directly to programs");
 				a->q_flags |= QDONTSEND;
@@ -258,7 +258,7 @@ recipient(a, sendq)
 		if (!ForceMail && sameaddr(q, a, FALSE))
 		{
 # ifdef DEBUG
-			if (Debug)
+			if (tTd(26, 1))
 			{
 				printf("%s in sendq: ", a->q_paddr);
 				printaddr(q, FALSE);
@@ -289,7 +289,7 @@ recipient(a, sendq)
 		if (strncmp(a->q_user, ":include:", 9) == 0)
 		{
 			a->q_flags |= QDONTSEND;
-			if (a->q_alias == NULL && Debug == 0 && !QueueRun && !ForceMail)
+			if (a->q_alias == NULL && !tTd(0, 1) && !QueueRun && !ForceMail)
 				usrerr("Cannot mail directly to :include:s");
 			else
 			{
@@ -330,7 +330,7 @@ recipient(a, sendq)
 		{
 			p = rindex(buf, '/');
 			/* check if writable or creatable */
-			if (a->q_alias == NULL && Debug == 0 && !QueueRun && !ForceMail)
+			if (a->q_alias == NULL && !tTd(0, 1) && !QueueRun && !ForceMail)
 			{
 				usrerr("Cannot mail directly to files");
 				a->q_flags |= QDONTSEND;

@@ -1,9 +1,6 @@
 # include "sendmail.h"
-# ifdef LOG
-# include <syslog.h>
-# endif LOG
 
-SCCSID(@(#)err.c	3.25		%G%);
+SCCSID(@(#)err.c	3.26		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -34,10 +31,9 @@ syserr(fmt, a, b, c, d, e)
 	char *fmt;
 {
 	extern char Arpa_Syserr[];
-	char *saveto = CurEnv->e_to;
 
 	/* format and output the error message */
-	fmtmsg(MsgBuf, NULL, Arpa_Syserr, fmt, a, b, c, d, e);
+	fmtmsg(MsgBuf, (char *) NULL, Arpa_Syserr, fmt, a, b, c, d, e);
 	putmsg(MsgBuf);
 
 	/* mark the error as having occured */
@@ -54,7 +50,8 @@ syserr(fmt, a, b, c, d, e)
 	}
 
 # ifdef LOG
-	syslog(LOG_ERR, "%s->%s: %s", CurEnv->e_from.q_paddr, CurEnv->e_to, &MsgBuf[4]);
+	if (LogLevel > 0)
+		syslog(LOG_ERR, "%s: %s", MsgId, &MsgBuf[4]);
 # endif LOG
 	errno = 0;
 }

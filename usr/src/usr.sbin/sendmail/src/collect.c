@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)collect.c	3.43		%G%);
+SCCSID(@(#)collect.c	3.44		%G%);
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -44,6 +44,8 @@ maketemp(from)
 	extern char *mktemp();
 	static char tempfname[40];
 	extern char *macvalue();
+	register HDR *h;
+	extern HDR *hrvalue();
 	extern char *index();
 
 	/*
@@ -141,7 +143,7 @@ maketemp(from)
 	}
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(30, 1))
 		printf("EOH\n");
 # endif DEBUG
 
@@ -209,6 +211,22 @@ maketemp(from)
 	**  Find out some information from the headers.
 	**	Examples are who is the from person & the date.
 	*/
+
+	/* message id */
+	h = hrvalue("message-id");
+	if (h == NULL)
+		syserr("No Message-Id spec");
+	else if (bitset(H_DEFAULT, h->h_flags))
+	{
+		(void) expand(h->h_value, buf, &buf[sizeof buf - 1], CurEnv);
+		MsgId = newstr(buf);
+	}
+	else
+		MsgId = h->h_value;
+# ifdef DEBUG
+	if (tTd(30, 1))
+		printf("Message-Id: %s\n", MsgId);
+# endif DEBUG
 
 	/* message priority */
 	if (!QueueRun)
@@ -285,7 +303,7 @@ maketemp(from)
 			if (q->q_alias != NULL)
 				continue;
 # ifdef DEBUG
-			if (Debug > 1)
+			if (tTd(30, 3))
 				printf("Adding Apparently-To: %s\n", q->q_paddr);
 # endif DEBUG
 			addheader("apparently-to", q->q_paddr, CurEnv);
@@ -300,7 +318,7 @@ maketemp(from)
 		syserr("Cannot reopen %s", CurEnv->e_df);
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(30, 2))
 	{
 		HDR *h;
 		extern char *capitalize();
@@ -311,6 +329,17 @@ maketemp(from)
 		printf("----------------------------\n");
 	}
 # endif DEBUG
+
+	/*
+	**  Log collection information.
+	*/
+
+# ifdef LOG
+	if (LogLevel > 1)
+		syslog(LOG_INFO, "%s: from=%s, size=%ld, class=%d\n", MsgId,
+		       CurEnv->e_from.q_paddr, CurEnv->e_msgsize,
+		       CurEnv->e_msgpriority);
+# endif LOG
 	return;
 }
 /*
@@ -351,7 +380,7 @@ eatfrom(fm)
 	register char **dt;
 
 # ifdef DEBUG
-	if (Debug > 1)
+	if (tTd(30, 2))
 		printf("eatfrom(%s)\n", fm);
 # endif DEBUG
 
@@ -504,7 +533,7 @@ spechandling(p)
 		  case HAN_RRECEIPT:	/* give return receipt */
 			CurEnv->e_retreceipt = TRUE;
 # ifdef DEBUG
-			if (Debug > 2)
+			if (tTd(30, 3))
 				printf(">>> Return receipt requested\n");
 # endif DEBUG
 			break;

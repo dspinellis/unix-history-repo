@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)parseaddr.c	3.43		%G%);
+SCCSID(@(#)parseaddr.c	3.44		%G%);
 
 /*
 **  PARSE -- Parse an address
@@ -57,7 +57,7 @@ parse(addr, a, copyf)
 
 	CurEnv->e_to = addr;
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(20, 1))
 		printf("\n--parse(%s)\n", addr);
 # endif DEBUG
 
@@ -125,7 +125,7 @@ parse(addr, a, copyf)
 	*/
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(20, 1))
 	{
 		printf("parse-->");
 		printaddr(a, FALSE);
@@ -457,7 +457,7 @@ rewrite(pvp, ruleset)
 	extern bool sameword();
 
 # ifdef DEBUG
-	if (Debug > 9)
+	if (tTd(21, 9))
 	{
 		printf("rewrite: original pvp:\n");
 		printav(pvp);
@@ -472,7 +472,7 @@ rewrite(pvp, ruleset)
 	for (rwr = RewriteRules[ruleset]; rwr != NULL; )
 	{
 # ifdef DEBUG
-		if (Debug > 10)
+		if (tTd(21, 12))
 		{
 			printf("-----trying rule:\n");
 			printav(rwr->r_lhs);
@@ -565,7 +565,7 @@ rewrite(pvp, ruleset)
 		if (rvp >= rwr->r_lhs && *rvp == NULL)
 		{
 # ifdef DEBUG
-			if (Debug > 10)
+			if (tTd(21, 12))
 			{
 				printf("-----rule matches:\n");
 				printav(rwr->r_rhs);
@@ -583,7 +583,7 @@ rewrite(pvp, ruleset)
 
 					m = &mlist[rp[1] - '1'];
 # ifdef DEBUG
-					if (Debug > 13)
+					if (tTd(21, 15))
 					{
 						printf("$%c:", rp[1]);
 						pp = m->first;
@@ -620,7 +620,7 @@ rewrite(pvp, ruleset)
 			*avp++ = NULL;
 			bmove((char *) npvp, (char *) pvp, (avp - npvp) * sizeof *avp);
 # ifdef DEBUG
-			if (Debug > 3)
+			if (tTd(21, 4))
 			{
 				char **vp;
 
@@ -640,7 +640,7 @@ rewrite(pvp, ruleset)
 		else
 		{
 # ifdef DEBUG
-			if (Debug > 10)
+			if (tTd(21, 10))
 				printf("----- rule fails\n");
 # endif DEBUG
 			rwr = rwr->r_next;

@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)stab.c	3.12		%G%);
+SCCSID(@(#)stab.c	3.13		%G%);
 
 /*
 **  STAB -- manage the symbol table
@@ -39,7 +39,7 @@ stab(name, type, op)
 	extern char lower();
 
 # ifdef DEBUG
-	if (Debug > 4)
+	if (tTd(36, 5))
 		printf("STAB: %s %d ", name, type);
 # endif DEBUG
 
@@ -54,7 +54,7 @@ stab(name, type, op)
 		hfunc = (((hfunc << 7) | lower(*p)) & 077777) % STABSIZE;
 
 # ifdef DEBUG
-	if (Debug > 5)
+	if (tTd(36, 9))
 		printf("(hfunc=%d) ", hfunc);
 # endif DEBUG
 
@@ -69,7 +69,7 @@ stab(name, type, op)
 	if (s != NULL || op == ST_FIND)
 	{
 # ifdef DEBUG
-		if (Debug > 4)
+		if (tTd(36, 5))
 		{
 			if (s == NULL)
 				printf("not found\n");
@@ -85,7 +85,7 @@ stab(name, type, op)
 	*/
 
 # ifdef DEBUG
-	if (Debug > 4)
+	if (tTd(36, 5))
 		printf("entered\n");
 # endif DEBUG
 

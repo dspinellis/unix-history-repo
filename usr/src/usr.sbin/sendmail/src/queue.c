@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.26		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.27		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.26		%G%);
+SCCSID(@(#)queue.c	3.27		%G%);
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -57,7 +57,7 @@ queueup(e, queueall)
 	(void) chmod(cf, 0600);
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(40, 1))
 		printf("queueing in %s\n", cf);
 # endif DEBUG
 
@@ -116,7 +116,7 @@ queueup(e, queueall)
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
 	{
 # ifdef DEBUG
-		if (Debug > 0)
+		if (tTd(40, 1))
 		{
 			printf("queueing ");
 			printaddr(q, FALSE);
@@ -149,6 +149,12 @@ queueup(e, queueall)
 		syserr("cannot link(%s, %s), df=%s", cf, buf, e->e_df);
 	else
 		(void) unlink(cf);
+
+# ifdef LOG
+	/* save log info */
+	if (LogLevel > 9)
+		syslog(LOG_INFO, "%s queueup: cf=%s, df=%s\n", MsgId, buf, e->e_df);
+# endif LOG
 
 	/* disconnect this temp file from the job */
 	e->e_df = NULL;
@@ -409,7 +415,7 @@ orderq()
 	}
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(40, 1))
 	{
 		for (w = WorkQ; w != NULL; w = w->w_next)
 			printf("%32s: pri=%ld\n", w->w_name, w->w_pri);
@@ -417,7 +423,7 @@ orderq()
 # endif DEBUG
 }
 /*
-**	WORKCMPF -- compare function for ordering work.
+**  WORKCMPF -- compare function for ordering work.
 **
 **	Parameters:
 **		a -- the first argument.
@@ -465,7 +471,7 @@ dowork(w)
 	auto int xstat;
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(40, 1))
 		printf("dowork: %s pri %ld\n", w->w_name, w->w_pri);
 # endif DEBUG
 
@@ -525,7 +531,7 @@ dowork(w)
 
 		/* if still not sent, perhaps we should time out.... */
 # ifdef DEBUG
-		if (Debug > 2)
+		if (tTd(40, 3))
 			printf("CurTime=%ld, TimeOut=%ld\n", CurTime, TimeOut);
 # endif DEBUG
 		if (CurEnv->e_queueup && CurTime > TimeOut)
@@ -661,7 +667,7 @@ timeout(w)
 	extern char *TextTimeOut;
 
 # ifdef DEBUG
-	if (Debug > 0)
+	if (tTd(40, 3))
 		printf("timeout(%s)\n", w->w_name);
 # endif DEBUG
 	message(Arpa_Info, "Message has timed out");

@@ -1,14 +1,12 @@
 # define  _DEFINE
 # include <signal.h>
 # include <pwd.h>
+# include <time.h>
 # include <sys/ioctl.h>
 # include "sendmail.h"
 # include <sys/stat.h>
-# ifdef LOG
-# include <syslog.h>
-# endif LOG
 
-SCCSID(@(#)main.c	3.93		%G%);
+SCCSID(@(#)main.c	3.94		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -149,6 +147,7 @@ main(argc, argv)
 	argv[argc] = NULL;
 	InChannel = stdin;
 	OutChannel = stdout;
+	MsgId = "<none>";
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
 		(void) signal(SIGINT, finis);
 	if (signal(SIGHUP, SIG_IGN) != SIG_IGN)
@@ -170,18 +169,6 @@ main(argc, argv)
 	openlog("sendmail", 0);
 # endif LOG
 	openxscrpt();
-# ifdef DEBUG
-# ifdef DEBUGFILE
-	if ((i = open(DEBUGFILE, 1)) > 0)
-	{
-		(void) lseek(i, 0L, 2);
-		(void) close(1);
-		(void) dup(i);
-		(void) close(i);
-		Debug++;
-	}
-# endif DEBUGFILE
-# endif
 	errno = 0;
 	from = NULL;
 	CurEnv->e_oldstyle = TRUE;
@@ -279,17 +266,20 @@ main(argc, argv)
 
 # ifdef DEBUG
 		  case 'd':	/* debug */
-			Debug = atoi(&p[2]);
-			if (Debug <= 0)
-				Debug = 1;
+			tTsetup(tTdvect, sizeof tTdvect, "0-99.1");
+			tTflag(&p[2]);
 			setbuf(stdout, (char *) NULL);
-			printf("Version %s Debug %d\n", Version, Debug);
+			printf("Version %s\n", Version);
 			break;
 
 		  case 'M':	/* redefine internal macro */
 			define(p[2], &p[3]);
 			break;
 # endif DEBUG
+
+		  case 'L':	/* logging */
+			LogLevel = atoi(&p[2]);
+			break;
 
 		  case 'C':	/* select configuration file */
 			if (p[2] == '\0')
@@ -452,7 +442,7 @@ main(argc, argv)
 # endif DBM
 
 # ifdef DEBUG
-	if (Debug > 15)
+	if (tTd(0, 15))
 	{
 		/* print configuration table (or at least part of it) */
 		printrules();
@@ -480,7 +470,7 @@ main(argc, argv)
 
 	if (Mode == MD_DAEMON)
 	{
-		if (Debug == 0)
+		if (!tTd(0, 1))
 		{
 			/* put us in background */
 			i = fork();
@@ -624,7 +614,7 @@ main(argc, argv)
 	*/
 
 # ifdef DEBUG
-	if (Debug)
+	if (tTd(1, 1))
 		printf("From person = \"%s\"\n", CurEnv->e_from.q_paddr);
 # endif DEBUG
 
@@ -699,7 +689,7 @@ setfrom(from, realname)
 		realname = CurEnv->e_from.q_paddr;
 
 # ifdef DEBUG
-	if (Debug > 1)
+	if (tTd(1, 2))
 		printf("setfrom(%s, %s)\n", from, realname);
 # endif DEBUG
 
@@ -714,7 +704,7 @@ setfrom(from, realname)
 		    strcmp(realname, "uucp") != 0 &&
 		    strcmp(realname, "daemon") != 0 &&
 # ifdef DEBUG
-		    (Debug == 0 || getuid() != geteuid()) &&
+		    (!tTd(1, 1) || getuid() != geteuid()) &&
 # endif DEBUG
 		    index(from, '!') == NULL && getuid() != 0)
 		{
@@ -796,7 +786,7 @@ finis()
 	CurEnv = &MainEnvelope;
 
 # ifdef DEBUG
-	if (Debug > 0)
+	if (tTd(2, 1))
 	{
 		printf("\n====finis: stat %d sendreceipt %d FatalErrors %d\n",
 		     ExitStat, CurEnv->e_sendreceipt, FatalErrors);
@@ -826,11 +816,11 @@ finis()
 	*/
 
 	if (Transcript != NULL)
-		(void) unlink(Transcript);
+		xunlink(Transcript);
 	if (CurEnv->e_df != NULL)
-		(void) unlink(CurEnv->e_df);
+		xunlink(CurEnv->e_df);
 	if (ControlFile != NULL)
-		(void) unlink(ControlFile);
+		xunlink(ControlFile);
 	exit(ExitStat);
 }
 /*
@@ -989,11 +979,13 @@ initsys()
 	static char cbuf[5];			/* holds hop count */
 	static char dbuf[30];			/* holds ctime(tbuf) */
 	static char pbuf[10];			/* holds pid */
-	static char tbuf[10];			/* holds "current" time */
+	static char tbuf[20];			/* holds "current" time */
 	static char ybuf[10];			/* holds tty id */
 	register char *p;
 	extern char *ttyname();
 	extern char *arpadate();
+	register struct tm *tm;
+	extern struct tm *gmtime();
 
 	/* convert timeout interval to absolute time */
 	TimeOut -= CurTime;
@@ -1009,7 +1001,9 @@ initsys()
 	define('c', cbuf);
 
 	/* time as integer, unix time, arpa time */
-	(void) sprintf(tbuf, "%ld", &CurTime);
+	tm = gmtime(&CurTime);
+	(void) sprintf(tbuf, "%02d%02d%02d%02d%02d", tm->tm_year, tm->tm_mon,
+			tm->tm_mday, tm->tm_hour, tm->tm_min);
 	define('t', tbuf);
 	(void) strcpy(dbuf, ctime(&CurTime));
 	*index(dbuf, '\n') = '\0';

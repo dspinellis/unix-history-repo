@@ -1,7 +1,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-SCCSID(@(#)headers.c	3.21		%G%);
+SCCSID(@(#)headers.c	3.22		%G%);
 
 /*
 **  CHOMPHEADER -- process and save a header line.
@@ -34,6 +34,11 @@ chompheader(line, def)
 	u_long mopts;
 	extern u_long mfencode();
 	extern ADDRESS *sendto();
+
+# ifdef DEBUG
+	if (tTd(31, 6))
+		printf("chompheader: %s\n", line);
+# endif DEBUG
 
 	/* strip off trailing newline */
 	p = rindex(line, '\n');
@@ -212,6 +217,35 @@ hvalue(field)
 			h->h_flags |= H_USED;
 			return (h->h_value);
 		}
+	}
+	return (NULL);
+}
+/*
+**  HRVALUE -- return pointer to header descriptor.
+**
+**	Like hvalue except returns header descriptor block and isn't
+**	picky about "real" headers.
+**
+**	Parameters:
+**		field -- name of field we are interested in.
+**
+**	Returns:
+**		pointer to header descriptor.
+**
+**	Side Effects:
+**		none.
+*/
+
+HDR *
+hrvalue(field)
+	char *field;
+{
+	register HDR *h;
+
+	for (h = CurEnv->e_header; h != NULL; h = h->h_link)
+	{
+		if (strcmp(h->h_field, field) == 0)
+			return (h);
 	}
 	return (NULL);
 }
