@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.33 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -25,6 +25,7 @@ static char sccsid[] = "@(#)csh.c	5.32 (Berkeley) %G%";
 #include <string.h>
 #include <locale.h>
 #include <unistd.h>
+#include <vis.h>
 #if __STDC__
 # include <stdarg.h>
 #else
@@ -1077,7 +1078,7 @@ mailchk()
 	    (void) fprintf(cshout, "You have %smail.\n", new ? "new " : "");
 	else
 	    (void) fprintf(cshout, "%s in %s.\n", new ? "New mail" : "Mail",
-			   short2str(*vp));
+			   vis_str(*vp));
     }
     chktim = t;
 }
@@ -1160,6 +1161,23 @@ closef(oreo)
 
 
 /*
+ * Print the visible version of a string.
+ */
+int
+vis_fputc(ch, fp)
+    int ch;
+    FILE *fp;
+{
+    char uenc[5];	/* 4 + NULL */
+
+    if (ch & QUOTE) 
+	return fputc(ch & TRIM, fp);
+    (void) vis(uenc, ch & TRIM, 
+	       AsciiOnly ? VIS_NOSLASH : (VIS_NLS | VIS_NOSLASH), 0);
+    return fputs(uenc, fp);
+}
+
+/*
  * Move the initial descriptors to their eventual
  * resting places, closin all other units.
  */
@@ -1223,7 +1241,7 @@ printprompt()
 	    else {
 		if (*cp == '\\' && cp[1] == HIST)
 		    cp++;
-		(void) fputc(*cp | QUOTE, cshout);
+		(void) vis_fputc(*cp | QUOTE, cshout);
 	    }
     }
     else

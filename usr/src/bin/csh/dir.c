@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dir.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)dir.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -59,11 +59,11 @@ dinit(hp)
 	(void) fprintf(csherr, "csh: %s\n", path);
 	if (hp && *hp) {
 	    tcp = short2str(hp);
-	    (void) fprintf(csherr, emsg, tcp);
 	    if (chdir(tcp) == -1)
 		cp = NULL;
 	    else
 		cp = hp;
+	    (void) fprintf(csherr, emsg, vis_str(hp));
 	}
 	else
 	    cp = NULL;
@@ -150,7 +150,7 @@ skipargs(v, str)
 		dirflag |= DIR_LINE;
 		break;
 	    default:
-		stderror(ERR_DIRUS, short2str(**v), str);
+		stderror(ERR_DIRUS, vis_str(**v), str);
 		break;
 	    }
     *v = n;
@@ -203,7 +203,7 @@ printdirs()
 	    cur = len;
 	}
 	(void) fprintf(cshout, s != dp->di_name ? "~%s%c" : "%s%c",
-		short2str(s), (dirflag & DIR_VERT) ? '\n' : ' ');
+		vis_str(s), (dirflag & DIR_VERT) ? '\n' : ' ');
     } while ((dp = dp->di_prev) != dcwd);
     if (!(dirflag & DIR_VERT))
 	(void) fprintf(cshout, "\n");
@@ -215,9 +215,9 @@ dtildepr(home, dir)
 {
 
     if (!eq(home, STRslash) && prefix(home, dir))
-	(void) fprintf(cshout, "~%s", short2str(dir + Strlen(home)));
+	(void) fprintf(cshout, "~%s", vis_str(dir + Strlen(home)));
     else
-	(void) fprintf(cshout, "%s", short2str(dir));
+	(void) fprintf(cshout, "%s", vis_str(dir));
 }
 
 void

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.32 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -82,7 +82,7 @@ globtilde(nv, s)
     if (gethdir(gstart)) {
 	blkfree(nv);
 	if (*gstart)
-	    stderror(ERR_UNKUSER, short2str(gstart));
+	    stderror(ERR_UNKUSER, vis_str(gstart));
 	else
 	    stderror(ERR_NOHOME);
     }
@@ -302,7 +302,7 @@ handleone(str, vl, action)
 
     switch (action) {
     case G_ERROR:
-	setname(short2str(str));
+	setname(vis_str(str));
 	blkfree(vl);
 	stderror(ERR_NAME | ERR_AMBIG);
 	break;
@@ -349,7 +349,7 @@ libglob(vl)
 	ptr = short2qstr(*vl);
 	switch (glob(ptr, gflgs, 0, &globv)) {
 	case GLOB_ABEND:
-	    setname(ptr);
+	    setname(vis_str(*vl));
 	    stderror(ERR_NAME | ERR_GLOB);
 	    /* NOTREACHED */
 	case GLOB_NOSPACE:
@@ -416,7 +416,7 @@ globone(str, action)
     if ((gflg & G_CSH) && vl != vo)
 	blkfree(vo);
     if (vl == NULL) {
-	setname(short2str(str));
+	setname(vis_str(str));
 	stderror(ERR_NAME | ERR_NOMATCH);
     }
     if (vl[0] == NULL) {

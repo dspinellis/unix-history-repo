@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)proc.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)proc.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -149,13 +149,13 @@ found:
 	    }
 	    /* PWP: print a newline after ^C */
 	    else if (jobflags & PINTERRUPTED) {
-		(void) fputc('\r' | QUOTE, cshout);
+		(void) vis_fputc('\r' | QUOTE, cshout);
 		(void) fputc('\n', cshout);
 	    }
 	}
 	else {
 	    if (jobflags & PNOTIFY || adrof(STRnotify)) {
-		(void) fputc('\r' | QUOTE, cshout);
+		(void) vis_fputc('\r' | QUOTE, cshout);
 		(void) fputc('\n', cshout);
 		(void) pprint(pp, NUMBER | NAME | REASON);
 		if ((jobflags & PSTOPPED) == 0)
@@ -729,7 +729,7 @@ pprint(pp, flag)
 	}
 prcomd:
 	if (flag & NAME) {
-	    (void) fprintf(cshout, "%s", short2str(pp->p_command));
+	    (void) fprintf(cshout, "%s", vis_str(pp->p_command));
 	    if (pp->p_flags & PPOU)
 		(void) fprintf(cshout, " |");
 	    if (pp->p_flags & PERR)
@@ -955,7 +955,7 @@ dokill(v, t)
 		    break;
 
 	    if (signum == NSIG) {
-		setname(short2str(&v[0][1]));
+		setname(vis_str(&v[0][1]));
 		stderror(ERR_NAME | ERR_UNKSIG);
 	    }
 	}
@@ -1004,7 +1004,7 @@ pkill(v, signum)
 	    case SIGTTOU:
 		if ((jobflags & PRUNNING) == 0) {
 		    (void) fprintf(csherr, "%s: Already suspended\n",
-				   short2str(cp));
+				   vis_str(cp));
 		    err1++;
 		    goto cont;
 		}
@@ -1018,7 +1018,7 @@ pkill(v, signum)
 		goto cont;
 	    }
 	    if (killpg((pid_t) pp->p_jobid, signum) < 0) {
-		(void) fprintf(csherr, "%s: %s\n", short2str(cp),
+		(void) fprintf(csherr, "%s: %s\n", vis_str(cp),
 			       strerror(errno));
 		err1++;
 	    }
