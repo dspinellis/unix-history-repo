@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	.asciz "@(#)ldexp.s	5.4 (Berkeley) %G%"
+	.asciz "@(#)ldexp.s	5.5 (Berkeley) %G%"
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -33,7 +33,13 @@
  */
 
 #include "DEFS.h"
-#include <errno.h>
+
+/*
+ * don't include errno.h, ANSI C says it defines errno.
+ *
+ * #include <errno.h>
+ */
+#define	ERANGE	34
 
 	.globl	_errno
 
