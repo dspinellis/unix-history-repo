@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.20 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.21 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -260,6 +260,22 @@ man8
 ..
 
 # ./usr/contrib/mh-6.8
+..
+
+# ./usr/contrib/news
+news
+
+# ./usr/contrib/news/bin
+bin
+# ./usr/contrib/news/bin
+..
+
+# ./usr/contrib/news
+..
+
+# ./usr/contrib/rnews
+rnews
+# ./usr/contrib/rnews
 ..
 
 # ./usr/contrib
@@ -1553,6 +1569,65 @@ mqueue
 
 # ./var/spool/news
 news
+
+# var/spool/news/data
+data
+
+# var/spool/news/data/OLD
+OLD
+# var/spool/news/data/OLD
+..
+
+# var/spool/news/data/ctlbin
+ctlbin
+# var/spool/news/data/ctlbin
+..
+
+# var/spool/news/data/innd
+innd
+# var/spool/news/data/innd
+..
+
+# var/spool/news/data/trn
+trn
+# var/spool/news/data/trn
+..
+
+# var/spool/news/data
+..
+
+# var/spool/news/news.archive
+news.archive
+# var/spool/news/news.archive
+..
+
+# var/spool/news/out.going
+out.going
+# var/spool/news/out.going
+..
+
+# var/spool/news/spool
+spool
+
+# var/spool/news/spool/in.coming
+in.coming
+
+# var/spool/news/spool/in.coming/bad
+bad
+# var/spool/news/spool/in.coming/bad
+..
+
+# var/spool/news/spool/in.coming/tmp
+tmp
+# var/spool/news/spool/in.coming/tmp
+..
+
+# var/spool/news/spool/in.coming
+..
+
+# var/spool/news/spool
+..
+
 # ./var/spool/news
 ..
 
