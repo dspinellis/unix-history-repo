@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -104,16 +104,15 @@ lostpeer()
 {
 	extern FILE *cout;
 	extern int data;
-	int how = 1+1;
 
 	if (connected) {
 		if (cout != NULL) {
-			shutdown(fileno(cout), &how);
+			shutdown(fileno(cout), 1+1);
 			fclose(cout);
 			cout = NULL;
 		}
 		if (data >= 0) {
-			shutdown(data, &how);
+			shutdown(data, 1+1);
 			(void) close(data);
 			data = -1;
 		}
