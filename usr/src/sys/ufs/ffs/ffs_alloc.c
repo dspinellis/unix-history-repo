@@ -118,8 +118,7 @@ realloccg(ip, bprev, bpref, osize, nsize)
 	register struct buf *bp, *obp;
 	int cg, request;
 	daddr_t bno, bn;
-	int i, count, s;
-	extern struct cmap *mfind();
+	int i, count;
 	
 	fs = ip->i_fs;
 	if ((unsigned)osize > fs->fs_bsize || fragoff(fs, osize) != 0 ||
