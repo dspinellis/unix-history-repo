@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)recno.3	5.4 (Berkeley) %G%
+.\"	@(#)recno.3	5.5 (Berkeley) %G%
 .\"
 .TH RECNO 3 ""
 .UC 7
@@ -28,10 +28,11 @@ this manual page describes only the recno specific information.
 The record number data structure is either variable or fixed-length
 records stored in a flat-file format, accessed by the logical record
 number.
-.PP
 The existence of record number five implies the existence of records
-one through four, and the deletion of record number four causes
-record number five to be renumbered to record number four.
+one through four, and the deletion of record number one causes
+record number five to be renumbered to record number four, as well
+as the cursor, if positioned after record number one, to shift down
+one record.
 .PP
 The recno access method specific data structure provided to
 .I dbopen
