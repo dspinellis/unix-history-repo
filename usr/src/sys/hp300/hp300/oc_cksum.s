@@ -1,9 +1,10 @@
+/*
 | Copyright (c) 1988, 1993
 |	Regents of the University of California.  All rights reserved.
 |
 | %sccs.include.redist.gas%
 |
-|	@(#)oc_cksum.s	8.1 (Berkeley) %G%
+|	@(#)oc_cksum.s	8.2 (Berkeley) %G%
 |
 |
 | oc_cksum: ones complement 16 bit checksum for MC68020.
@@ -61,6 +62,7 @@
 | However, in absolute terms, inlining would only gain 10us per
 | packet -- a 1% effect for a 1ms ethernet packet.  This is not
 | enough gain to be worth the effort.
+*/
 
 	.data
 	.asciz	"@(#)$Header: oc_cksum.s,v 1.1 90/07/09 16:04:43 mike Exp $"
@@ -78,7 +80,7 @@ _oc_cksum:
 	| of buffer.  The usual case is no excess (the usual
 	| case is header checksums) so we give that the faster
 	| 'not taken' leg of the compare.  (We do the excess
-	| first because we're about the trash the low order
+	| first because we are about the trash the low order
 	| bits of the count in d1.)
 
 	btst	#0,d1
@@ -126,10 +128,10 @@ L2:
 	movl	a0@+,d2
 	addxl	d2,d0
 L3:
-	dbra	d1,L2		| (NB- dbra doesn't affect X)
+	dbra	d1,L2		| (NB- dbra does not affect X)
 
 	movl	d0,d1		| fold 32 bit sum to 16 bits
-	swap	d1		| (NB- swap doesn't affect X)
+	swap	d1		| (NB- swap does not affect X)
 	addxw	d1,d0
 	jcc	L4
 	addw	#1,d0
