@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tcp_input.c	7.25 (Berkeley) 6/30/90
- *	$Id: tcp_input.c,v 1.4 1993/12/19 00:52:48 wollman Exp $
+ *	$Id: tcp_input.c,v 1.5 1994/01/24 05:12:32 davidg Exp $
  */
 
 #include "param.h"
@@ -69,7 +69,9 @@ int	tcprexmtthresh = 3;
 int	tcppredack;	/* XXX debugging: times hdr predict ok for acks */
 int	tcppreddat;	/* XXX # times header prediction ok for data packets */
 int	tcppcbcachemiss;
+#ifdef TCPDEBUG
 struct	tcpiphdr tcp_saveti;
+#endif
 struct	inpcb *tcp_last_inpcb = &tcb;
 
 
@@ -221,10 +223,12 @@ tcp_input(m, iphlen)
 	register int tiflags;
 	struct socket *so = 0;
 	int todrop, acked, ourfinisacked, needoutput = 0;
-	short ostate = 0;
 	struct in_addr laddr;
 	int dropsocket = 0;
 	int iss = 0;
+#ifdef TCPDEBUG
+	short ostate = 0;
+#endif
 
 	tcpstat.tcps_rcvtotal++;
 	/*
@@ -328,10 +332,12 @@ findpcb:
 		goto drop;
 	so = inp->inp_socket;
 	if (so->so_options & (SO_DEBUG|SO_ACCEPTCONN)) {
+#ifdef TCPDEBUG
 		if (so->so_options & SO_DEBUG) {
 			ostate = tp->t_state;
 			tcp_saveti = *ti;
 		}
+#endif
 		if (so->so_options & SO_ACCEPTCONN) {
 			so = sonewconn(so, 0);
 			if (so == 0)
