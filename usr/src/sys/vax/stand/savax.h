@@ -1,4 +1,4 @@
-/*	savax.h	6.1	83/07/29	*/
+/*	savax.h	6.2	84/08/07	*/
 
 /*
  * Standalone definitions peculiar to vaxen
@@ -19,6 +19,7 @@
 int	cpu;		/* see <sys/cpu.h> */
 
 #define	MAXNMBA	4
+#define	MAXNUBA	4
 struct	mba_regs **mbaddr;
 int	mbaact;
 caddr_t	*umaddr;
