@@ -1,0 +1,275 @@
+	@(#)syscalls.master	7.1 (Berkeley) %G%
+; System call name/number master file (or rather, slave, from SunOS).
+; Processed to created sun_sysent.c, sun_syscalls.c and sun_syscall.h.
+
+; Columns: number type nargs name altname/comments
+;	number	system call number, must be in order
+;	type	one of STD, OBSOL, UNIMPL, COMPAT
+;	nargs	number of arguments
+;	name	name of syscall routine
+;	altname	name of system call if different
+;		for UNIMPL/OBSOL, name continues with comments
+
+; types:
+;	STD	always included
+;	COMPAT	included on COMPAT #ifdef
+;	LIBCOMPAT included on COMPAT #ifdef, and placed in syscall.h
+;	OBSOL	obsolete, not included in system, only specifies name
+;	UNIMPL	not implemented, placeholder only, call nosys
+;	NOTIMPL	not implemented, placeholder only, call notimp
+
+; #ifdef's, etc. may be included, and are copied to the output files.
+
+0	UNIMPL	0 indir or out-of-range
+1	STD	1 rexit exit
+2	STD	0 fork
+3	STD	3 hpuxread read
+4	STD	3 hpuxwrite write
+5	STD	3 hpuxopen open
+6	STD	1 close
+7	STD	1 hpuxwait owait
+8	STD	2 hpuxcreat ocreat
+9	STD	2 link
+10	STD	1 unlink
+11	STD	2 hpuxexecv execv
+12	STD	1 chdir
+13	COMPAT	1 hpuxtime time
+14	STD	3 mknod
+15	STD	2 chmod
+16	STD	3 chown
+17	STD	1 obreak break
+18	COMPAT	2 hpuxstat stat
+19	STD	3 lseek
+20	STD	0 getpid
+21	NOTIMPL	3 mount
+22	NOTIMPL	1 umount
+23	STD	1 setuid
+24	STD	0 getuid
+25	COMPAT	1 hpuxstime stime
+26	STD	4 hpuxptrace ptrace
+27	COMPAT	1 hpuxalarm alarm
+28	COMPAT	2 hpuxfstat fstat
+29	COMPAT	0 hpuxpause pause
+30	COMPAT	2 hpuxutime utime
+31	COMPAT	2 hpuxstty stty
+32	COMPAT	2 hpuxgtty gtty
+33	STD	2 saccess access
+34	COMPAT	1 hpuxnice nice
+35	COMPAT	1 hpuxftime ftime
+36	STD	0 sync
+37	STD	2 hpuxkill kill
+38	STD	2 hpuxstat stat
+39	COMPAT	1 hpuxsetpgrp setpgrp
+40	STD	2 hpuxlstat lstat
+41	STD	1 hpuxdup dup
+42	STD	0 pipe
+43	COMPAT	1 hpuxtimes times
+44	STD	4 profil
+45	NOTIMPL	4 ki_syscall
+46	STD	1 setgid
+47	STD	0 getgid
+48	COMPAT	2 hpuxssig ssig
+49	UNIMPL	0 reserved for USG
+50	UNIMPL	0 reserved for USG
+51	NOTIMPL	1 acct
+52	UNIMPL	0 nosys
+53	UNIMPL	0 nosys
+54	STD	3 hpuxioctl ioctl
+55	NOTIMPL	4 reboot
+56	STD	2 symlink
+57	STD	3 hpuxutssys utssys
+58	STD	3 readlink
+59	STD	3 execve
+60	STD	1 umask
+61	STD	1 chroot
+62	STD	3 hpuxfcntl fcntl
+63	STD	2 hpuxulimit ulimit
+64	UNIMPL	0 nosys
+65	UNIMPL	0 nosys
+66	STD	0 vfork
+67	STD	0 hpuxread vread
+68	STD	0 hpuxwrite vwrite
+69	UNIMPL	0 nosys
+70	UNIMPL	0 nosys
+71	UNIMPL	0 nosys
+72	UNIMPL	0 nosys
+73	UNIMPL	0 nosys
+74	NOTIMPL	3 mprotect
+75	UNIMPL	0 nosys
+76	UNIMPL	0 nosys
+77	UNIMPL	0 nosys
+78	UNIMPL	0 nosys
+79	STD	2 getgroups
+80	STD	2 setgroups
+81	STD	1 hpuxgetpgrp2 getpgrp2
+82	STD	2 hpuxsetpgrp2 setpgrp2
+83	STD	3 setitimer
+84	STD	3 hpuxwait3 wait3
+85	NOTIMPL	5 swapon
+86	STD	2 getitimer
+87	UNIMPL	0 nosys
+88	UNIMPL	0 nosys
+89	UNIMPL	0 nosys
+90	STD	2 dup2
+91	UNIMPL	0 nosys
+92	STD	2 hpuxfstat fstat
+93	STD	5 select
+94	UNIMPL	0 nosys
+95	STD	1 fsync
+96	UNIMPL	0 nosys
+97	UNIMPL	3 nosys
+98	UNIMPL	2 nosys
+99	UNIMPL	2 nosys
+100	UNIMPL	0 nosys
+101	UNIMPL	0 nosys
+102	UNIMPL	0 nosys
+103	STD	1 sigreturn
+104	UNIMPL	2 nosys
+105	UNIMPL	0 nosys
+106	UNIMPL	0 nosys
+107	UNIMPL	0 nosys
+108	STD	3 hpuxsigvec sigvec
+109	STD	1 hpuxsigblock sigblock
+110	STD	1 hpuxsigsetmask sigsetmask
+111	STD	1 hpuxsigpause sigpause
+112	STD	2 osigstack
+113	UNIMPL	0 nosys
+114	UNIMPL	0 nosys
+115	UNIMPL	0 nosys
+116	STD	2 gettimeofday
+117	UNIMPL	0 nosys
+118	UNIMPL	0 nosys
+119	NOTIMPL	3 hpib_io_stub
+120	STD	3 hpuxreadv readv
+121	STD	3 hpuxwritev writev
+122	STD	2 settimeofday
+123	STD	3 fchown
+124	STD	2 fchmod
+125	UNIMPL	0 nosys
+126	STD	3 hpuxsetresuid setresuid
+127	STD	3 hpuxsetresgid setresgid
+128	STD	2 rename
+129	STD	2 truncate
+130	STD	2 ftruncate
+131	UNIMPL	0 nosys
+132	STD	1 hpuxsysconf sysconf
+133	UNIMPL	0 nosys
+134	UNIMPL	0 nosys
+135	UNIMPL	0 nosys
+136	STD	2 mkdir
+137	STD	1 rmdir
+138	UNIMPL	0 nosys
+139	UNIMPL	0 nosys
+140	UNIMPL	0 nosys
+141	UNIMPL	0 nosys
+142	UNIMPL	0 nosys
+143	UNIMPL	0 nosys
+144	UNIMPL	0 nosys
+145	UNIMPL	0 nosys
+146	UNIMPL	0 nosys
+147	UNIMPL	0 nosys
+148	UNIMPL	0 nosys
+149	UNIMPL	0 nosys
+150	UNIMPL	0 nosys
+151	NOTIMPL	3 privgrp
+152	STD	2 hpuxrtprio rtprio
+153	NOTIMPL	1 plock
+154	STD	2 hpuxnetioctl netioctl
+155	STD	4 hpuxlockf lockf
+156	STD	3 hpuxsemget semget
+157	STD	4 hpuxsemctl semctl
+158	STD	3 hpuxsemop semop
+159	NOTIMPL	2 msgget
+160	NOTIMPL	3 msgctl
+161	NOTIMPL	4 msgsnd
+162	NOTIMPL	5 msgrcv
+#ifdef SYSVSHM
+163	STD	3 hpuxshmget shmget
+164	STD	3 hpuxshmctl shmctl
+165	STD	3 hpuxshmat shmat
+166	STD	1 hpuxshmdt shmdt
+#else
+163	NOTIMPL	3 shmget
+164	NOTIMPL	3 shmctl
+165	NOTIMPL	3 shmat
+166	NOTIMPL	1 shmdt
+#endif
+167	STD	1 hpuxadvise m68020_advise
+168	NOTIMPL	2 nsp_init
+169	NOTIMPL	3 cluster
+170	NOTIMPL	4 mkrnod
+171	UNIMPL	0 nosys
+172	NOTIMPL	0 unsp_open
+173	UNIMPL	0 nosys
+174	STD	3 hpuxgetcontext getcontext
+175	UNIMPL	0 nosys
+176	UNIMPL	0 nosys
+177	UNIMPL	0 nosys
+178	NOTIMPL	0 lsync
+179	UNIMPL	0 nosys
+180	NOTIMPL	0 mysite
+181	NOTIMPL	1 sitels
+182	UNIMPL	0 nosys
+183	UNIMPL	0 nosys
+184	NOTIMPL	4 dskless_stats
+185	UNIMPL	0 nosys
+186	NOTIMPL	3 setacl
+187	NOTIMPL	3 fsetacl
+188	NOTIMPL	3 getacl
+189	NOTIMPL	3 fgetacl
+190	STD	6 hpuxgetaccess getaccess
+191	NOTIMPL	0 getaudid
+192	NOTIMPL	1 setaudid
+193	NOTIMPL	0 getaudproc
+194	NOTIMPL	1 setaudproc
+195	NOTIMPL	2 getevent
+196	NOTIMPL	2 setevent
+197	NOTIMPL	1 audwrite
+198	NOTIMPL	1 audswitch
+199	NOTIMPL	4 audctl
+200	STD	3 hpuxwaitpid waitpid
+201	UNIMPL	0 nosys
+202	UNIMPL	0 nosys
+203	UNIMPL	6 nosys
+204	UNIMPL	0 nosys
+205	UNIMPL	0 nosys
+206	UNIMPL	9 nosys
+207	UNIMPL	0 nosys
+208	UNIMPL	0 nosys
+209	UNIMPL	6 nosys
+210	UNIMPL	5 nosys
+211	UNIMPL	0 nosys
+212	UNIMPL	0 nosys
+213	UNIMPL	0 nosys
+214	UNIMPL	0 nosys
+215	UNIMPL	0 nosys
+216	UNIMPL	0 nosys
+217	UNIMPL	0 nosys
+218	UNIMPL	0 nosys
+219	UNIMPL	0 nosys
+220	UNIMPL	4 nosys
+221	UNIMPL	10 nosys
+222	UNIMPL	0 nosys
+223	UNIMPL	0 nosys
+224	UNIMPL	0 nosys
+225	NOTIMPL	2 pathconf
+226	NOTIMPL	2 fpathconf
+227	UNIMPL	0 nosys
+228	UNIMPL	0 nosys
+229	NOTIMPL	0 async_daemon
+230	NOTIMPL	3 nfs_fcntl
+231	STD	4 getdirentries
+232	STD	2 hpuxgetdomainname getdomainname
+233	NOTIMPL	2 nfs_getfh
+234	NOTIMPL	4 vfsmount
+235	NOTIMPL	1 nfs_svc
+236	STD	2 hpuxsetdomainname setdomainname
+237	NOTIMPL	2 statfs
+238	NOTIMPL	2 fstatfs
+239	STD	3 hpuxsigaction sigaction
+240	STD	3 hpuxsigprocmask sigprocmask
+241	STD	1 hpuxsigpending sigpending
+242	STD	1 hpuxsigsuspend sigsuspend
+243	NOTIMPL	4 fsctl
+244	UNIMPL	0 nosys
+245	NOTIMPL	3 pstat
