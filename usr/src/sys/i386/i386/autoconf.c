@@ -5,9 +5,9 @@
  * This code is derived from software contributed to Berkeley by
  * William Jolitz.
  *
- * %sccs.include.386.c%
+ * %sccs.include.redist.c%
  *
- *	@(#)autoconf.c	5.6 (Berkeley) %G%
+ *	@(#)autoconf.c	5.7 (Berkeley) %G%
  */
 
 /*
@@ -23,7 +23,6 @@
 #include "map.h"
 #include "buf.h"
 #include "dkstat.h"
-#include "vm.h"
 #include "conf.h"
 #include "dmap.h"
 #include "reboot.h"
@@ -71,6 +70,7 @@ swapconf()
 {
 	register struct swdevt *swp;
 	register int nblks;
+extern int Maxmem;
 
 	for (swp = swdevt; swp->sw_dev > 0; swp++)
 	{
@@ -84,7 +84,9 @@ swapconf()
 		}
 	}
 	if (dumplo == 0 && bdevsw[major(dumpdev)].d_psize)
-		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;
+	/*dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;*/
+		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) -
+			Maxmem*NBPG/512;
 	if (dumplo < 0)
 		dumplo = 0;
 }
