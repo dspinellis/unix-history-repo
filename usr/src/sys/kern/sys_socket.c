@@ -1,4 +1,4 @@
-/*	sys_socket.c	6.3	84/08/29	*/
+/*	sys_socket.c	6.4	85/03/18	*/
 
 #include "param.h"
 #include "systm.h"
@@ -78,7 +78,7 @@ soo_ioctl(fp, cmd, data)
 	 */
 #define	cmdbyte(x)	(((x) >> 8) & 0xff)
 	if (cmdbyte(cmd) == 'i')
-		return (ifioctl(cmd, data));
+		return (ifioctl(so, cmd, data));
 	if (cmdbyte(cmd) == 'r')
 		return (rtioctl(cmd, data));
 	return ((*so->so_proto->pr_usrreq)(so, PRU_CONTROL, 
