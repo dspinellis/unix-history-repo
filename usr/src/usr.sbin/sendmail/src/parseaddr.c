@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -104,24 +104,61 @@ parseaddr(addr, a, copyf, delim)
 	a = buildaddr(pvp, a);
 	if (a == NULL)
 		return (NULL);
-	m = a->q_mailer;
 
 	/*
 	**  Make local copies of the host & user and then
 	**  transport them out.
 	*/
 
-	if (copyf > 0)
+	allocaddr(a, copyf, addr);
+
+	/*
+	**  Compute return value.
+	*/
+
+	if (tTd(20, 1))
+	{
+		printf("parseaddr-->");
+		printaddr(a, FALSE);
+	}
+
+	return (a);
+}
+/*
+**  ALLOCADDR -- do local allocations of address on demand.
+**
+**	Also lowercases the host name if requested.
+**
+**	Parameters:
+**		a -- the address to reallocate.
+**		copyf -- the copy flag (see parseaddr for description).
+**		paddr -- the printname of the address.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Copies portions of a into local buffers as requested.
+*/
+
+allocaddr(a, copyf, paddr)
+	register ADDRESS *a;
+	int copyf;
+	char *paddr;
+{
+	register MAILER *m = a->q_mailer;
+
+	if (copyf > 0 && paddr != NULL)
 	{
 		extern char *DelimChar;
 		char savec = *DelimChar;
 
 		*DelimChar = '\0';
-		a->q_paddr = newstr(addr);
+		a->q_paddr = newstr(paddr);
 		*DelimChar = savec;
 	}
 	else
-		a->q_paddr = addr;
+		a->q_paddr = paddr;
 
 	if (a->q_user == NULL)
 		a->q_user = "";
@@ -135,6 +172,9 @@ parseaddr(addr, a, copyf, delim)
 			a->q_user = newstr(a->q_user);
 	}
 
+	if (a->q_paddr == NULL)
+		a->q_paddr = a->q_user;
+
 	/*
 	**  Convert host name to lower case if requested.
 	**	User name will be done later.
@@ -142,18 +182,6 @@ parseaddr(addr, a, copyf, delim)
 
 	if (!bitnset(M_HST_UPPER, m->m_flags))
 		makelower(a->q_host);
-
-	/*
-	**  Compute return value.
-	*/
-
-	if (tTd(20, 1))
-	{
-		printf("parseaddr-->");
-		printaddr(a, FALSE);
-	}
-
-	return (a);
 }
 /*
 **  LOWERADDR -- map UPPER->lower case on addresses as requested.
@@ -756,7 +784,18 @@ rewrite(pvp, ruleset)
 
 			/* look it up */
 			cataddr(++hbrvp, buf, sizeof buf);
-			maphostname(buf, sizeof buf);
+			if (maphostname(buf, sizeof buf - 1) && ConfigLevel >= 2)
+			{
+				register int i;
+
+				/* it mapped -- mark it with a trailing dot */
+				i = strlen(buf);
+				if (i > 0 && buf[i - 1] != '.')
+				{
+					buf[i++] = '.';
+					buf[i] = '\0';
+				}
+			}
 
 			/* scan the new host name */
 			olddelimchar = DelimChar;
@@ -941,6 +980,12 @@ buildaddr(tv, a)
 	{
 		syserr("buildaddr: no user");
 		return (NULL);
+	}
+
+	if (m == LocalMailer && tv[1] != NULL && strcmp(tv[1], ":") == 0)
+	{
+		tv++;
+		a->q_flags |= QNOTREMOTE;
 	}
 
 	/* rewrite according recipient mailer rewriting rules */
@@ -1221,4 +1266,48 @@ remotename(name, m, senderaddress, canonical)
 	if (tTd(12, 1))
 		printf("remotename => `%s'\n", buf);
 	return (buf);
+}
+/*
+**  MAPLOCALUSER -- run local username through ruleset 5 for final redirection
+**
+**	Parameters:
+**		a -- the address to map (but just the user name part).
+**		sendq -- the sendq in which to install any replacement
+**			addresses.
+**
+**	Returns:
+**		none.
+*/
+
+maplocaluser(a, sendq)
+	register ADDRESS *a;
+	ADDRESS **sendq;
+{
+	register char **pvp;
+	register ADDRESS *a1 = NULL;
+	char pvpbuf[PSBUFSIZE];
+
+	if (tTd(29, 1))
+	{
+		printf("maplocaluser: ");
+		printaddr(a, FALSE);
+	}
+	pvp = prescan(a->q_user, '\0', pvpbuf);
+	if (pvp == NULL)
+		return;
+
+	rewrite(pvp, 5);
+	if (pvp[0] == NULL || pvp[0][0] != CANONNET)
+		return;
+
+	/* if non-null, mailer destination specified -- has it changed? */
+	a1 = buildaddr(pvp, NULL);
+	if (a1 == NULL || sameaddr(a, a1))
+		return;
+
+	/* mark old address as dead; insert new address */
+	a->q_flags |= QDONTSEND;
+	a1->q_alias = a;
+	allocaddr(a1, 1, NULL);
+	(void) recipient(a1, sendq);
 }

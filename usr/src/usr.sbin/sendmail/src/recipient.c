@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/types.h>
@@ -340,64 +340,85 @@ recipient(a, sendq)
 	**  the user (which is probably correct anyway).
 	*/
 
-	if (!bitset(QDONTSEND, a->q_flags) && m == LocalMailer)
+	if (bitset(QDONTSEND, a->q_flags) || m != LocalMailer)
+		return (a);
+
+	/* see if this is to a file */
+	if (buf[0] == '/')
 	{
 		struct stat stb;
 		extern bool writable();
 
-		/* see if this is to a file */
-		if (buf[0] == '/')
+		p = rindex(buf, '/');
+		/* check if writable or creatable */
+		if (a->q_alias == NULL && !QueueRun && !ForceMail)
 		{
-			p = rindex(buf, '/');
-			/* check if writable or creatable */
-			if (a->q_alias == NULL && !QueueRun && !ForceMail)
-			{
-				a->q_flags |= QDONTSEND|QBADADDR;
-				usrerr("Cannot mail directly to files");
-			}
-			else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
-			    (*p = '\0', !safefile(buf, getruid(), S_IWRITE|S_IEXEC)))
-			{
-				a->q_flags |= QBADADDR;
-				giveresponse(EX_CANTCREAT, m, CurEnv);
-			}
+			a->q_flags |= QDONTSEND|QBADADDR;
+			usrerr("Cannot mail directly to files");
+		}
+		else if ((stat(buf, &stb) >= 0) ? (!writable(&stb)) :
+		    (*p = '\0', !safefile(buf, getruid(), S_IWRITE|S_IEXEC)))
+		{
+			a->q_flags |= QBADADDR;
+			giveresponse(EX_CANTCREAT, m, CurEnv);
+		}
+		return (a);
+	}
+
+	/*
+	**  If we have a level two config file, then pass the name through
+	**  Ruleset 5 before sending it off.  Ruleset 5 has the right
+	**  to send rewrite it to another mailer.  This gives us a hook
+	**  after local aliasing has been done.
+	*/
+
+	if (tTd(29, 5))
+	{
+		printf("recipient: testing local?  cl=%d, rr5=%x\n\t",
+			ConfigLevel, RewriteRules[5]);
+		printaddr(a, FALSE);
+	}
+	if (!bitset(QNOTREMOTE, a->q_flags) && ConfigLevel >= 2 &&
+	    RewriteRules[5] != NULL)
+	{
+		maplocaluser(a, sendq);
+	}
+
+	/*
+	**  If it didn't get rewritten to another mailer, go ahead
+	**  and deliver it.
+	*/
+
+	if (!bitset(QDONTSEND, a->q_flags))
+	{
+		register struct passwd *pw;
+		extern struct passwd *finduser();
+
+		/* warning -- finduser may trash buf */
+		pw = finduser(buf);
+		if (pw == NULL)
+		{
+			a->q_flags |= QBADADDR;
+			giveresponse(EX_NOUSER, m, CurEnv);
 		}
 		else
 		{
-			register struct passwd *pw;
-			extern struct passwd *finduser();
+			char nbuf[MAXNAME];
 
-			/* warning -- finduser may trash buf */
-			pw = finduser(buf);
-			if (pw == NULL)
+			if (strcmp(a->q_user, pw->pw_name) != 0)
 			{
-				a->q_flags |= QBADADDR;
-				giveresponse(EX_NOUSER, m, CurEnv);
+				a->q_user = newstr(pw->pw_name);
+				(void) strcpy(buf, pw->pw_name);
 			}
-			else
-			{
-				char nbuf[MAXNAME];
-
-				char nbuf[MAXNAME];
-
-				if (strcmp(a->q_user, pw->pw_name) != 0)
-				{
-					a->q_user = newstr(pw->pw_name);
-					(void) strcpy(buf, pw->pw_name);
-				}
-				a->q_home = newstr(pw->pw_dir);
-				a->q_uid = pw->pw_uid;
-				a->q_gid = pw->pw_gid;
-				a->q_flags |= QGOODUID;
-				buildfname(pw->pw_gecos, pw->pw_name, nbuf);
-				if (nbuf[0] != '\0')
-					a->q_fullname = newstr(nbuf);
-				fullname(pw, nbuf);
-				if (nbuf[0] != '\0')
-					a->q_fullname = newstr(nbuf);
-				if (!quoted)
-					forward(a, sendq);
-			}
+			a->q_home = newstr(pw->pw_dir);
+			a->q_uid = pw->pw_uid;
+			a->q_gid = pw->pw_gid;
+			a->q_flags |= QGOODUID;
+			buildfname(pw->pw_gecos, pw->pw_name, nbuf);
+			if (nbuf[0] != '\0')
+				a->q_fullname = newstr(nbuf);
+			if (!quoted)
+				forward(a, sendq);
 		}
 	}
 	return (a);
