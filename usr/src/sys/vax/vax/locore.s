@@ -1,7 +1,7 @@
 /*
  * Machine Language Assist for UC Berkeley Virtual Vax/Unix
  *
- *	locore.s		4.17	%G%
+ *	locore.s		4.18	%G%
  */
 
 	.set	HIGH,31		# mask for total disable
@@ -26,7 +26,10 @@ _rpb:
 	.space	508
 erpb:
 	.space	4
-
+	.globl	_intstack
+_intstack:
+	.space	2048
+eintstack:
 /*
  * Do a dump.
  * Called by auto-restart.
@@ -128,65 +131,83 @@ Xwtime:
 	rei
 
 #endif
-#if VAX==780
-#include "hp.h"
-#include "ht.h"
 /*
  * Massbus 0 adapter interrupts
  */
 	.align	2
-Xmba0int:
+	.globl	_mba0int
+_mba0int:
 	pushr	$0x3f			# save r0 - r5
-	movab	MBA0_CSR,r0		# point at mba regs
-	movl	MBA_AS(r0),r1		# get attn summary bits
-	cvtwl	r1,-(sp)		# push attn summary as arg
-	pushl	MBA_SR(r0)		# pass sr as argument
-	mnegl	$1,MBA_SR(r0)		# clear attention bit
-#if (NHP > 0) && HPMBANUM==0
-	calls	$2,_hpintr
-#else
-#if (NHT > 0) && HTMBANUM==0
-	calls	$2,_htintr
-#else
 	pushl	$0
-	pushl	mbasmsg
-	calls	$4,_printf
-#endif
-#endif
-	brw 	int_ret			# merge with common interrupt code
+	brb	1f
 
 /*
  * Massbus 1 adapter interrupts
  */
 	.align	2
-Xmba1int:
-	pushr	$0x3f
-	movab	MBA1_CSR,r0
-	pushl	MBA_AS(r0)
-	mnegl	$1,MBA_AS(r0)
-	pushl	MBA_SR(r0)		# pass sr as argument
-	mnegl	$1,MBA_SR(r0)		# clear attention bit
-#if (NHP > 0) && HPMBANUM==1
-	calls	$2,_hpintr
-#else
-#if (NHT > 0) && HTMBANUM==1
-	calls	$2,_htintr
-#else
+	.globl	_mba1int
+_mba1int:
+	pushr	$0x3f			# save r0 - r5
 	pushl	$1
-	pushl	mbasmsg
-	calls	$4,_printf
-#endif
-#endif
-	brw 	int_ret			# return from interrupt
+	brb	1f
+
+/*
+ * Massbus 2 adapter interrupts
+ */
+	.align	2
+	.globl	_mba2int
+_mba2int:
+	pushr	$0x3f			# save r0 - r5
+	pushl	$2
+	brb	1f
+
+#if VAX==780 || VAX==ANY
+/*
+ * Massbus 3 adapter interrupts
+ */
+	.align	2
+	.globl	_mba3int
+_mba3int:
+	pushr	$0x3f			# save r0 - r5
+	pushl	$3
+1:
+	calls	$1,_mbintr
+	brw 	int_ret			# merge with common interrupt code
 
 /*
  * Unibus adapter interrupts
  */
 	.align	2
-Xua0int:
+	.globl	_ua0int
+_ua0int:
 	pushr	$0x3f  			# save regs 0-5
+	moval	_uba_hd,r1		# r1 = &uba_hd[0]
+	brb	1f
+
+	.align	2
+	.globl	_ua1int
+_ua1int:
+	pushr	$0x3f
+	moval	_uba_hd+24,r1		# r1 = &uba_hd[1]
+	brb	1f
+
+	.align	2
+	.globl	_ua2int
+_ua2int:
+	pushr	$0x3f
+	moval	_uba_hd+48,r1		# r1 = &uba_hd[2]
+	brb	1f
+
+	.align	2
+	.globl	_ua3int
+_ua3int:
+	pushr	$0x3f
+	moval	_uba_hd+72,r1		# r1 = &uba_hd[3]
+
+1:
 	mfpr	$IPL,r2			# get br level
-	movl	UBA0+UBR_OFF-20*4[r2],r3# get unibus device vector
+	movl	4(r1),r3		# r3 = uba_hd[?].uh_uba
+	movl	UBR_OFF-20*4(r3)[r2],r3	# get unibus device vector
 	bleq	ubasrv  		# branch if zero vector
 					# ... or UBA service required
 
@@ -197,7 +218,8 @@ Xua0int:
  * and service the interrupt.
  */
 ubanorm:
-	movl	_UNIvec(r3),r1 
+	addl2	0xc(r1),r3		# r3 += uba_hd[?].uh_vec
+	movl	*(r3),r1 
 	extzv	$27,$4,r1,r0  		# controller code is in 4 most
 					# significant bits-1 of ISR addr
 	bicl2	$0x78000000,r1		# clear code
@@ -318,8 +340,10 @@ dzprei:
 	rei
 
 dzpcall:
-	pushl	(r0)			# push tty address
-	calls	$1,_dzxint		# call interrupt rtn
+	pushl	r3
+	pushl	(r0)+			# push tty address
+	calls	$1,*(r0)		# call interrupt rtn
+	movl	(sp)+,r3
 	brb 	dzploop			# check for another line
 
 /*
@@ -386,112 +410,38 @@ int_r1:
 
 	.globl	_u
 	.set	_u,0x80000000 - UPAGES*NBPG
+#define	vaddr(x)	((((x)-_Sysmap)/4)*NBPG+0x80000000)
+#define	MAP(mname, vname, npte)			\
+mname:	.globl	mname;				\
+	.space	npte*4;				\
+	.globl	_/**/vname;			\
+	.set	_/**/vname,vaddr(mname)
 
 	.data
 	.align	2
-	.globl	_Sysmap
-_Sysmap:
-	.space	6*NBPG
-UBA0map:
-	.space	16*4
-	.globl	_umbabeg
-	.set	_umbabeg,((UBA0map-_Sysmap)/4)*512+0x80000000
-UMEMmap:
-	.space	16*4
-#if VAX==780
-	.globl	_MBA0map
-_MBA0map:
-	.space	16*4
-	.globl	_MBA1map
-_MBA1map:
-	.space	16*4
-#endif
-umend:
-	.globl	_umbaend
-	.set	_umbaend,((umend-_Sysmap)/4)*512+0x80000000
+MAP(	_Sysmap		,Sysbase	,6*NBPG/4	)
+MAP(	UBA0map		,umabeg		,16		)
+MAP(	UMEMmap		,__junk1	,16		)
+MAP(	_Nexmap		,nexus		,16*16		)
+MAP(	umend		,umbaend	,0		)
+MAP(	_Usrptmap	,usrpt		,2*NBPG		)
+MAP(	_Forkmap	,forkutl	,UPAGES		)
+MAP(	_Xswapmap	,xswaputl	,UPAGES		)
+MAP(	_Xswap2map	,xswap2utl	,UPAGES		)
+MAP(	_Swapmap	,swaputl	,UPAGES		)
+MAP(	_Pushmap	,pushutl	,UPAGES		)
+MAP(	_Vfmap		,vfutl		,UPAGES		)
+MAP(	CMAP1		,CADDR1		,1		)
+MAP(	CMAP2		,CADDR2		,1		)
+MAP(	_mcrmap		,mcr		,1		)
+MAP(	_mmap		,vmmap		,1		)
+MAP(	_bufmap		,buffers	,MAXNBUF*CLSIZE	)
+MAP(	_msgbufmap	,msgbuf		,CLSIZE		)
+MAP(	_camap		,cabase		,32*CLSIZE	)
+MAP(	ecamap		,calimit	,0		)
 
-	.globl	_Usrptmap
-_Usrptmap:
-	.space	8*NBPG
-	.globl	_usrpt
-	.set	_usrpt,((_Usrptmap-_Sysmap)/4)*NBPG+0x80000000
-
-	.globl	_Forkmap
-_Forkmap:
-	.space	4*UPAGES
-	.globl	_forkutl
-	.set	_forkutl,((_Forkmap-_Sysmap)/4)*NBPG+0x80000000
-
-	.globl	_Xswapmap
-_Xswapmap:
-	.space	4*UPAGES
-	.globl	_xswaputl
-	.set	_xswaputl,((_Xswapmap-_Sysmap)/4)*NBPG+0x80000000
-
-	.globl	_Xswap2map
-_Xswap2map:
-	.space	4*UPAGES
-	.globl	_xswap2utl
-	.set	_xswap2utl,((_Xswap2map-_Sysmap)/4)*NBPG+0x80000000
-
-	.globl	_Swapmap
-_Swapmap:
-	.space	4*UPAGES
-	.globl	_swaputl
-	.set	_swaputl,((_Swapmap-_Sysmap)/4)*NBPG+0x80000000
-
-	.globl	_Pushmap
-_Pushmap:
-	.space	4*UPAGES
-	.globl	_pushutl
-	.set	_pushutl,((_Pushmap-_Sysmap)/4)*NBPG+0x80000000
-
-	.globl	_Vfmap
-_Vfmap:
-	.space	4*UPAGES
-	.globl	_vfutl
-	.set	_vfutl,((_Vfmap-_Sysmap)/4)*NBPG+0x80000000
-
-CMAP1:
-	.space	4
-	.set	CADDR1,((CMAP1-_Sysmap)/4)*NBPG+0x80000000
-CMAP2:
-	.space	4
-	.set	CADDR2,((CMAP2-_Sysmap)/4)*NBPG+0x80000000
-
-	.globl	_mcrmap
-_mcrmap:
-	.space	4
-	.globl	_mcr
-	.set	_mcr,((_mcrmap-_Sysmap)/4)*NBPG+0x80000000
-
-	.globl	_mmap
-_mmap:
-	.space	4
-	.globl	_vmmap
-	.set	_vmmap,((_mmap-_Sysmap)/4)*NBPG+0x80000000
-
-	.globl	_bufmap
-_bufmap:
-	.space	4*MAXNBUF*CLSIZE
-	.globl	_buffers
-	.set	_buffers,((_bufmap-_Sysmap)/4)*NBPG+0x80000000
-	.globl	_msgbufmap
-_msgbufmap:
-	.space	4*CLSIZE
-	.globl	_msgbuf
-	.set	_msgbuf,((_msgbufmap-_Sysmap)/4)*NBPG+0x80000000
-	.globl	_camap
-_camap:
-	.globl	_cabase
-	.set	_cabase,((_camap-_Sysmap)/4)*NBPG+0x80000000
-	.space	4*32*CLSIZE
-ecamap:
-	.globl	_calimit
-	.set	_calimit,((ecamap-_Sysmap)/4)*NBPG+0x80000000
-	.globl	eSysmap
 eSysmap:
-	.set	Syssize,(eSysmap-_Sysmap)/4
+	.set	_Syssize,(eSysmap-_Sysmap)/4
 	.text
 
 /*
@@ -675,11 +625,11 @@ Xsyscall:
 start:
 	.word	0x0000
 	mtpr	$HIGH,$IPL			## no interrupts yet
-	mtpr	$Scbbase-0x80000000,$SCBB	# set SCBB
+	mtpr	$_Scbbase-0x80000000,$SCBB	# set SCBB
 	mtpr	$_Sysmap-0x80000000,$SBR	## set SBR
-	mtpr	$Syssize,$SLR			## set SLR
+	mtpr	$_Syssize,$SLR			## set SLR
 	mtpr	$_Sysmap,$P0BR			## set temp P0BR
-	mtpr	$Syssize,$P0LR			## set temp P0LR
+	mtpr	$_Syssize,$P0LR			## set temp P0LR
 	movl	$_intstack+2048,sp		# set ISP
 /*
  * Initialize RPB
@@ -751,11 +701,26 @@ start:
 
 /*
  * Initialize system page table
+ *
+ * First part (scb, unibus vectors and interrupt stack)
+ * is r/w except for the rpb, which sits above the interrupt
+ * stack acting as a red zone.  Then comes the kernel text
+ * which is read only, and then the r/w kernel data.
+ * (The scb and the unibus vector they are made read only after
+ * they are filled in by the configuration code.)
  */
+	clrl	r2
+	movab	eintstack,r1
+	bbcc	$31,r1,0f; 0:
+	ashl	$-9,r1,r1
+1:
+	bisl3	$PG_V|PG_KW,r2,_Sysmap[r2]	# fill data entries
+	aoblss	r1,r2,1b
+	bicl2	$PG_PROT,_rpbmap
+	bisl2	$PG_KR,_rpbmap
 	movab	_etext+NBPG-1,r1	# end of kernel text segment
 	bbcc	$31,r1,0f; 0:		# turn off high order bit
 	ashl	$-9,r1,r1		# last page of kernel text
-	clrl	r2
 1:
 	bisl3	$PG_V|PG_KR,r2,_Sysmap[r2]	# initialize page table entry
 	aoblss	r1,r2,1b		# fill text entries
@@ -901,15 +866,15 @@ _badaddr:
 	movl	$1,r0
 	mfpr	$IPL,r1
 	mtpr	$HIGH,$IPL
-	movl	Scbbase+MCKVEC,r2
+	movl	_Scbbase+MCKVEC,r2
 	movl	4(ap),r3
 	movl	8(ap),r4
-	movab	9f+INTSTK,Scbbase+MCKVEC
-	bbc	$1,r4,1f; tstb	(r3)
-1:	bbc	$2,r4,1f; tstw	(r3)
-1:	bbc	$3,r4,1f; tstl	(r3)
+	movab	9f+INTSTK,_Scbbase+MCKVEC
+	bbc	$0,r4,1f; tstb	(r3)
+1:	bbc	$1,r4,1f; tstw	(r3)
+1:	bbc	$2,r4,1f; tstl	(r3)
 1:	clrl	r0			# made it w/o machine checks
-2:	movl	r2,Scbbase+MCKVEC
+2:	movl	r2,_Scbbase+MCKVEC
 	mtpr	r1,$IPL
 	ret
 	.align	2
@@ -1182,8 +1147,8 @@ _copyseg: 	.globl	_copyseg
 	mfpr	$IPL,r0		# get current pri level
 	mtpr	$HIGH,$IPL	# turn off interrupts
 	bisl3	$PG_V|PG_KW,8(ap),CMAP2
-	mtpr	$CADDR2,$TBIS	# invalidate entry for copy 
-	movc3	$NBPG,*4(ap),CADDR2
+	mtpr	$_CADDR2,$TBIS	# invalidate entry for copy 
+	movc3	$NBPG,*4(ap),_CADDR2
 	mtpr	r0,$IPL		# restore pri level
 	ret
 
@@ -1196,8 +1161,8 @@ _clearseg: 	.globl	_clearseg
 	mfpr	$IPL,r0		# get current pri level
 	mtpr	$HIGH,$IPL	# extreme pri level
 	bisl3	$PG_V|PG_KW,4(ap),CMAP1
-	mtpr	$CADDR1,$TBIS
-	movc5	$0,(sp),$0,$NBPG,CADDR1
+	mtpr	$_CADDR1,$TBIS
+	movc5	$0,(sp),$0,$NBPG,_CADDR1
 	mtpr	r0,$IPL		# restore pri level
 	ret
 
