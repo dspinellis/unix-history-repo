@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)dirs.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -44,7 +44,8 @@ struct modeinfo {
 /*
  * Definitions for library routines operating on directories.
  */
-#define DIRBLKSIZ DEV_BSIZE
+#undef DIRBLKSIZ
+#define DIRBLKSIZ 1024
 struct dirdesc {
 	int	dd_fd;
 	long	dd_loc;
@@ -309,7 +310,11 @@ putdir(buf, size)
 				swabst("l2s", (char *) dp);
 			}
 			i = DIRBLKSIZ - (loc & (DIRBLKSIZ - 1));
-			if (dp->d_reclen == 0 || dp->d_reclen > i) {
+			if ((dp->d_reclen & 0x3) != 0 ||
+			    dp->d_reclen > i ||
+			    dp->d_reclen < DIRSIZ(dp) ||
+			    dp->d_namlen > MAXNAMLEN) {
+				vprintf(stdout, "Mangled directory\n");
 				loc += i;
 				continue;
 			}
