@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
- *	@(#)tp_usrreq.c	7.14 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.15 (Berkeley) %G%
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -587,26 +587,25 @@ tp_usrreq(so, req, m, nam, controlp)
 			if (error)
 				break;
 		}
-		if (so->so_state & SS_ISCONFIRMING) {
-			if (tpcb->tp_state == TP_CONFIRMING)
-				error = tp_confirm(tpcb);
-			if (m) {
-				if (error == 0 && m->m_len != 0)
-					error =  ENOTCONN;
-				m_freem(m);
-				m = 0;
-			}
+		if ((so->so_state & SS_ISCONFIRMING) &&
+		    (tpcb->tp_state == TP_CONFIRMING) &&
+		    (error = tp_confirm(tpcb)))
+			    break;
+		if (req == PRU_SENDOOB) {
+			error = (tpcb->tp_xpd_service == 0) ?
+						EOPNOTSUPP : tp_sendoob(tpcb, so, m, outflags);
 			break;
 		}
 		if (m == 0)
 			break;
-
-		if (req == PRU_SENDOOB) {
-			if (tpcb->tp_xpd_service == 0) {
-				error = EOPNOTSUPP;
-				break;
-			}
-			error = tp_sendoob(tpcb, so, m, outflags);
+		if (m->m_flags & M_EOR) {
+			eotsdu = 1;
+			m->m_flags &= ~M_EOR;
+		}
+		if (eotsdu == 0 && m->m_pkthdr.len == 0)
+			break;
+		if (tpcb->tp_state != TP_AKWAIT && tpcb->tp_state != TP_OPEN) {
+			error = ENOTCONN;
 			break;
 		}
 		/*
@@ -633,10 +632,6 @@ tp_usrreq(so, req, m, nam, controlp)
 			 * Could have eotsdu and no data.(presently MUST have
 			 * an mbuf though, even if its length == 0) 
 			 */
-			if (n->m_flags & M_EOR) {
-				eotsdu = 1;
-				n->m_flags &= ~M_EOR;
-			}
 			IFPERF(tpcb)
 			   PStat(tpcb, Nb_from_sess) += totlen;
 			   tpmeas(tpcb->tp_lref, TPtime_from_session, 0, 0, 
@@ -710,7 +705,8 @@ tp_usrreq(so, req, m, nam, controlp)
 					eotsdu, n, mbufcnt);
 				dump_mbuf(sb->sb_mb, "so_snd.sb_mb");
 			ENDDEBUG
-			error = DoEvent(T_DATA_req); 
+			if (tpcb->tp_state == TP_OPEN)
+				error = DoEvent(T_DATA_req); 
 			IFDEBUG(D_SYSCALL)
 				printf("PRU_SEND: after driver error 0x%x \n",error);
 				printf("so_snd 0x%x cc 0t%d mbcnt 0t%d\n",
