@@ -1,4 +1,4 @@
-/*	uucp.h	5.10	86/01/06	*/
+/*	uucp.h	5.11	86/02/12	*/
 
 #include <stdio.h>
 
@@ -57,12 +57,15 @@
  * Define the various kinds of connections to include.
  * The complete list is in the condevs array in condevs.c
  */
+#define ATT2224		/* AT&T 2224 */
 #define BSDTCP		/* 4.2bsd or 2.9bsd TCP/IP */
+#define CDS224		/* Concord Data Systems 2400 */
 /* #define DATAKIT	/* ATT's datakit */
 #define DF02		/* Dec's DF02/DF03 */
 #define DF112		/* Dec's DF112 */
 #define DN11		/* "standard" DEC dialer */
 #define HAYES		/* Hayes' Smartmodem */
+#define HAYES2400	/* Hayes' 2400 baud Smartmodem */
 /* #define MICOM	/* Micom Mux port */
 #define NOVATION	/* Novation modem */
 #define PAD		/* X.25 PAD */
@@ -71,12 +74,17 @@
 #define RVMACS		/* Racal-Vadic MACS  820 dialer, 831 adaptor */
 /* #define SYTEK	/* Sytek Local Area Net */
 /* #define UNETTCP	/* 3Com's UNET */
+#define USR2400		/* USRobotics Courier 2400 */
 #define VA212		/* Racal-Vadic 212 */
 #define VA811S		/* Racal-Vadic 811S dialer, 831 adaptor */
 #define VA820		/* Racal-Vadic 820 dialer, 831 adaptor */
 #define VADIC		/* Racal-Vadic 345x */
 #define VENTEL		/* Ventel Dialer */
 #define VMACS		/* Racal-Vadic MACS  811 dialer, 831 adaptor */
+
+#if defined(USR2400) && !defined(HAYES)
+#define HAYES
+#endif USR2400 && !HAYES
 
 #if defined(UNETTCP) || defined(BSDTCP)
 #define TCPIP
@@ -113,9 +121,16 @@
 /*
  * If you are running 4.3bsd, define BSD4_3 and BSD4_2
  * If you are just running 4.2bsd, define BSD4_2
+ * If you are running the BRL version of 4.2BSD define BRL4_2, NOT BSD4_3
  */
 #define BSD4_3 	/**/
 #define BSD4_2 	/**/
+/*#define BRL4_2 /**/
+
+#if defined(BRL4_2) && !defined(BSD4_2)
+#define BSD4_2
+#undef BSD4_3
+#endif BRL4_2
 
 /*
  * If you are running 2.9bsd, define BSD2_9
@@ -128,12 +143,12 @@
 #define BSDINETD	/**/
 
 /*
- * If you are running 4.3bsd, you are running the inetd
+ * If you are running 4.3bsd or BRL 4.2, you are running the inetd
  */
 
-#if defined(BSD4_3) && !defined(BSDINETD)
+#if (defined(BSD4_3) || defined(BRL4_2)) && !defined(BSDINETD)
 #define BSDINETD
-#endif BSD4_3 && !BSDINETD
+#endif (BSD4_3 ||BRL4_2) && !BSDINETD
 
 /*#define VMSDTR	/* Turn on modem control on vms(works DTR) for
 			   develcon and gandalf ports to gain access */
@@ -151,12 +166,6 @@
 /* define the value of WFMASK - for umask call - used for all uucp work files */
 #define WFMASK 0137
 
-/* define UUSTAT if you need "uustat" command */
-/* #define UUSTAT	/**/
-
-/* define UUSUB if you need "uusub" command */
-/* #define UUSUB /**/
-
 /* define the value of LOGMASK - for LOGFILE, SYSLOG, ERRLOG */
 #define	LOGMASK		0133
 
@@ -170,6 +179,7 @@
  * sites that are not in your L.sys file (see cico.c)
  */
 #define NOSTRANGERS	/**/
+
 /*
  * Traditionally LCK (lock) files have been kept in /usr/spool/uucp.
  * If you want that define LOCKDIR to be ".".
@@ -219,10 +229,10 @@
 #define	ALIASFILE	"/usr/lib/uucp/L.aliases"
 
 #define SPOOL		"/usr/spool/uucp"
-#define SQLOCK		"SQ"
 #define SYSLOG		"/usr/spool/uucp/SYSLOG"
 #define PUBDIR		"/usr/spool/uucppublic"
 
+#define SQLOCK		"SQ"
 #define SEQLOCK		"SEQL"
 #define CMDPRE		'C'
 #define DATAPRE		'D'
