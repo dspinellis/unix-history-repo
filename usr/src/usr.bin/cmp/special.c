@@ -6,31 +6,33 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)special.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)special.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
-#include <errno.h>
+
+#include <err.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "extern.h"
 
 void
 c_special(fd1, file1, skip1, fd2, file2, skip2)
 	int fd1, fd2;
 	char *file1, *file2;
-	register off_t skip1, skip2;
+	off_t skip1, skip2;
 {
-	register int ch1, ch2;
-	register off_t byte, line;
+	int ch1, ch2;
+	off_t byte, line;
 	FILE *fp1, *fp2;
 	int dfound;
 
 	if ((fp1 = fdopen(fd1, "r")) == NULL)
-		err("%s: %s", file1, strerror(errno));
+		err(ERR_EXIT, "%s", file1);
 	if ((fp2 = fdopen(fd2, "r")) == NULL)
-		err("%s: %s", file1, strerror(errno));
+		err(ERR_EXIT, "%s", file2);
 
 	while (skip1--)
 		if (getc(fp1) == EOF)
@@ -57,9 +59,9 @@ c_special(fd1, file1, skip1, fd2, file2, skip2)
 	}
 
 eof:	if (ferror(fp1))
-		err("%s: %s", file1, strerror(errno));
+		err(ERR_EXIT, "%s", file1);
 	if (ferror(fp2))
-		err("%s: %s", file2, strerror(errno));
+		err(ERR_EXIT, "%s", file2);
 	if (feof(fp1)) {
 		if (!feof(fp2))
 			eofmsg(file1);
@@ -67,5 +69,5 @@ eof:	if (ferror(fp1))
 		if (feof(fp2))
 			eofmsg(file2);
 	if (dfound)
-		exit(1);
+		exit(DIFF_EXIT);
 }
