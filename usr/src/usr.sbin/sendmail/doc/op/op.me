@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.37 (Berkeley) %G%
+.\"	@(#)op.me	8.38 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.37
+Version 8.38
 .sp
 For Sendmail Version 8.6
 .)l
@@ -1804,14 +1804,12 @@ VRFY and EXPN commands.
 .ip 7
 Delivery failures (host or user unknown, etc.).
 .ip 8
-Successful deliveries.
+Successful deliveries and alias database rebuilds.
 .ip 9
 Messages being deferred
 (due to a host being down, etc.).
 .ip 10
 Database expansion (alias, forward, and userdb lookups).
-.ip 15
-Automatic alias database rebuilds.
 .ip 20
 Logs attempts to run locked queue files.
 These are not errors,
@@ -2644,7 +2642,8 @@ in square brackets:
 .)b
 This form avoids the MX mapping.
 .b N.B.:
-This is intended only for situations where you have a network firewall,
+This is intended only for situations where you have a network firewall
+or other host that will do special processing for all your mail,
 so that your MX record points to a gateway machine;
 this machine could then do direct delivery to machines
 within your local domain.
@@ -6825,7 +6824,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.37
+.\"Version 8.38
 .\".ce 0
 .bp 2
 .rs
