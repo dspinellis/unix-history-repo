@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nqnfs.h	7.3 (Berkeley) %G%
+ *	@(#)nqnfs.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -81,7 +81,7 @@ struct nqhost {
 struct nqlease {
 	struct nqlease *lc_chain1[2];	/* Timer queue list (must be first) */
 	struct nqlease *lc_fhnext;	/* Fhandle hash list */
-	struct nqlease *lc_fhprev;
+	struct nqlease **lc_fhprev;
 	time_t		lc_expiry;	/* Expiry time (sec) */
 	struct nqhost	lc_host;	/* Host that got lease */
 	struct nqm	*lc_morehosts;	/* Other hosts that share read lease */
@@ -155,12 +155,14 @@ struct nqm {
 		    NQL_WRITE : nqnfs_piggy[p]) : 0))
 
 /*
- * List heads for timer queues.
+ * List head for timer queue.
  */
-union nqsrvthead {
+extern union nqsrvthead {
 	union	nqsrvthead *th_head[2];
 	struct	nqlease *th_chain[2];
-};
+} nqthead;
+extern struct nqlease **nqfhead;
+extern u_long nqfheadhash;
 
 /*
  * Nqnfs return status numbers.

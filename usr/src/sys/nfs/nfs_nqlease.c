@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.9 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -50,14 +50,11 @@
  * List head for the lease queue and other global data.
  * At any time a lease is linked into a list ordered by increasing expiry time.
  */
-#if	((NQLCHSZ&(NQLCHSZ-1)) == 0)
-#define	NQFHHASH(f)	((*((u_long *)(f)))&(NQLCHSZ-1))
-#else
-#define	NQFHHASH(f)	((*((u_long *)(f)))%NQLCHSZ)
-#endif
+#define	NQFHHASH(f)	((*((u_long *)(f)))&nqfheadhash)
 
 union nqsrvthead nqthead;
-union nqsrvthead nqfhead[NQLCHSZ];
+struct nqlease **nqfhead;
+u_long nqfheadhash;
 time_t nqnfsstarttime = (time_t)0;
 u_long nqnfs_prog, nqnfs_vers;
 int nqsrv_clockskew = NQ_CLOCKSKEW;
@@ -140,12 +137,11 @@ nqsrv_getlease(vp, duration, flags, nd, nam, cachablep, frev, cred)
 	u_quad_t *frev;
 	struct ucred *cred;
 {
-	register struct nqlease *lp;
+	register struct nqlease *lp, *lq, **lpp;
 	register struct nqhost *lph;
-	struct nqlease *tlp = (struct nqlease *)0;
+	struct nqlease *tlp;
 	struct nqm **lphp;
 	struct vattr vattr;
-	union nqsrvthead *lhp;
 	fhandle_t fh;
 	int i, ok, error, s;
 
@@ -170,9 +166,8 @@ nqsrv_getlease(vp, duration, flags, nd, nam, cachablep, frev, cred)
 			splx(s);
 			return (error);
 		}
-		lhp = &nqfhead[NQFHHASH(fh.fh_fid.fid_data)];
-		for (lp = lhp->th_chain[0]; lp != (struct nqlease *)lhp;
-			lp = lp->lc_fhnext)
+		lpp = &nqfhead[NQFHHASH(fh.fh_fid.fid_data)];
+		for (lp = *lpp; lp; lp = lp->lc_fhnext)
 			if (fh.fh_fsid.val[0] == lp->lc_fsid.val[0] &&
 			    fh.fh_fsid.val[1] == lp->lc_fsid.val[1] &&
 			    !bcmp(fh.fh_fid.fid_data, lp->lc_fiddata,
@@ -276,13 +271,11 @@ doreply:
 	lp->lc_vp = vp;
 	lp->lc_fsid = fh.fh_fsid;
 	bcopy(fh.fh_fid.fid_data, lp->lc_fiddata, fh.fh_fid.fid_len - sizeof (long));
-	lp->lc_fhnext = lhp->th_chain[0];
-	if (lhp->th_head[0] == lhp)
-		lhp->th_chain[1] = lp;
-	else
-		lhp->th_chain[0]->lc_fhprev = lp;
-	lp->lc_fhprev = (struct nqlease *)lhp;
-	lhp->th_chain[0] = lp;
+	if (lq = *lpp)
+		lq->lc_fhprev = &lp->lc_fhnext;
+	lp->lc_fhnext = lq;
+	lp->lc_fhprev = lpp;
+	*lpp = lp;
 	vp->v_lease = lp;
 	s = splsoftclock();
 	nqsrv_instimeq(lp, *duration);
@@ -576,7 +569,7 @@ tryagain:
 void
 nqnfs_serverd()
 {
-	register struct nqlease *lp;
+	register struct nqlease *lp, *lq;
 	register struct nqhost *lph;
 	struct nqlease *nextlp;
 	struct nqm *lphnext, *olphnext;
@@ -610,15 +603,9 @@ nqnfs_serverd()
 			nqsrv_instimeq(lp, nqsrv_writeslack);
 		    } else {
 			remque(lp);
-			lhp = &nqfhead[NQFHHASH(lp->lc_fiddata)];
-			if (lp->lc_fhprev == (struct nqlease *)lhp)
-				lhp->th_chain[0] = lp->lc_fhnext;
-			else
-				lp->lc_fhprev->lc_fhnext = lp->lc_fhnext;
-			if (lp->lc_fhnext == (struct nqlease *)lhp)
-				lhp->th_chain[1] = lp->lc_fhprev;
-			else
-				lp->lc_fhnext->lc_fhprev = lp->lc_fhprev;
+			if (lq = lp->lc_fhnext)
+				lq->lc_fhprev = lp->lc_fhprev;
+			*lp->lc_fhprev = lq;
 			/*
 			 * This soft reference may no longer be valid, but
 			 * no harm done. The worst case is if the vnode was
@@ -750,9 +737,8 @@ nqnfsrv_vacated(nfsd, mrep, md, dpos, cred, nam, mrq)
 		/*
 		 * Find the lease by searching the hash list.
 		 */
-		lhp = &nqfhead[NQFHHASH(fhp->fh_fid.fid_data)];
-		for (lp = lhp->th_chain[0]; lp != (struct nqlease *)lhp;
-			lp = lp->lc_fhnext)
+		for (lp = nqfhead[NQFHHASH(fhp->fh_fid.fid_data)]; lp;
+		     lp = lp->lc_fhnext)
 			if (fhp->fh_fsid.val[0] == lp->lc_fsid.val[0] &&
 			    fhp->fh_fsid.val[1] == lp->lc_fsid.val[1] &&
 			    !bcmp(fhp->fh_fid.fid_data, lp->lc_fiddata,

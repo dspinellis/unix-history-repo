@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.60 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.61 (Berkeley) %G%
  */
 
 /*
@@ -62,8 +62,6 @@ extern struct proc *nfs_iodwant[NFS_MAXASYNCDAEMON];
 extern struct nfsreq nfsreqh;
 extern int nqnfs_piggy[NFS_NPROCS];
 extern struct nfsrtt nfsrtt;
-extern union nqsrvthead nqthead;
-extern union nqsrvthead nqfhead[NQLCHSZ];
 extern time_t nqnfsstarttime;
 extern u_long nqnfs_prog, nqnfs_vers;
 extern int nqsrv_clockskew;
@@ -601,11 +599,7 @@ nfs_init()
 		nqnfs_vers = txdr_unsigned(NQNFS_VER1);
 		nqthead.th_head[0] = &nqthead;
 		nqthead.th_head[1] = &nqthead;
-		for (i = 0; i < NQLCHSZ; i++) {
-			lhp = &nqfhead[i];
-			lhp->th_head[0] = lhp;
-			lhp->th_head[1] = lhp;
-		}
+		nqfhead = hashinit(NQLCHSZ, M_NQLEASE, &nqfheadhash);
 	}
 
 	/*
@@ -640,7 +634,7 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	register struct nfsv2_fattr *fp;
 	extern int (**spec_nfsv2nodeop_p)();
 	extern int (**spec_vnodeop_p)();
-	register struct nfsnode *np;
+	register struct nfsnode *np, *nq, **nhpp;
 	register long t1;
 	caddr_t dpos, cp2;
 	int error = 0;
@@ -690,7 +684,9 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 				/*
 				 * Discard unneeded vnode, but save its nfsnode.
 				 */
-				remque(np);
+				if (nq = np->n_forw)
+					nq->n_back = np->n_back;
+				*np->n_back = nq;
 				nvp->v_data = vp->v_data;
 				vp->v_data = NULL;
 				vp->v_op = spec_vnodeop_p;
@@ -700,7 +696,12 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 				 * Reinitialize aliased node.
 				 */
 				np->n_vnode = nvp;
-				insque(np, nfs_hash(&np->n_fh));
+				nhpp = (struct nfsnode **)nfs_hash(&np->n_fh);
+				if (nq = *nhpp)
+					nq->n_back = &np->n_forw;
+				np->n_forw = nq;
+				np->n_back = nhpp;
+				*nhpp = np;
 				*vpp = vp = nvp;
 			}
 		}

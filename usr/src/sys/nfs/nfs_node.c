@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.41 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.42 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -26,20 +26,9 @@
 #include "nfsmount.h"
 #include "nqnfs.h"
 
-/* The request list head */
-extern struct nfsreq nfsreqh;
-
-#define	NFSNOHSZ	512
-#if	((NFSNOHSZ&(NFSNOHSZ-1)) == 0)
-#define	NFSNOHASH(fhsum)	((fhsum)&(NFSNOHSZ-1))
-#else
-#define	NFSNOHASH(fhsum)	(((unsigned)(fhsum))%NFSNOHSZ)
-#endif
-
-union nhead {
-	union  nhead *nh_head[2];
-	struct nfsnode *nh_chain[2];
-} nhead[NFSNOHSZ];
+struct nfsnode **nheadhashtbl;
+u_long nheadhash;
+#define	NFSNOHASH(fhsum)	((fhsum)&nheadhash)
 
 #define TRUE	1
 #define	FALSE	0
@@ -50,23 +39,18 @@ union nhead {
  */
 nfs_nhinit()
 {
-	register int i;
-	register union  nhead *nh = nhead;
 
 #ifndef lint
 	if ((sizeof(struct nfsnode) - 1) & sizeof(struct nfsnode))
 		printf("nfs_nhinit: bad size %d\n", sizeof(struct nfsnode));
 #endif /* not lint */
-	for (i = NFSNOHSZ; --i >= 0; nh++) {
-		nh->nh_head[0] = nh;
-		nh->nh_head[1] = nh;
-	}
+	nheadhashtbl = hashinit(desiredvnodes, M_NFSNODE, &nheadhash);
 }
 
 /*
  * Compute an entry in the NFS hash table structure
  */
-union nhead *
+struct nfsnode **
 nfs_hash(fhp)
 	register nfsv2fh_t *fhp;
 {
@@ -78,7 +62,7 @@ nfs_hash(fhp)
 	fhsum = 0;
 	for (i = 0; i < NFSX_FH; i++)
 		fhsum += *fhpp++;
-	return (&nhead[NFSNOHASH(fhsum)]);
+	return (&nheadhashtbl[NFSNOHASH(fhsum)]);
 }
 
 /*
@@ -92,16 +76,15 @@ nfs_nget(mntp, fhp, npp)
 	register nfsv2fh_t *fhp;
 	struct nfsnode **npp;
 {
-	register struct nfsnode *np;
+	register struct nfsnode *np, *nq, **nhpp;
 	register struct vnode *vp;
 	extern int (**nfsv2_vnodeop_p)();
 	struct vnode *nvp;
-	union nhead *nh;
 	int error;
 
-	nh = nfs_hash(fhp);
+	nhpp = nfs_hash(fhp);
 loop:
-	for (np = nh->nh_chain[0]; np != (struct nfsnode *)nh; np = np->n_forw) {
+	for (np = *nhpp; np; np = np->n_forw) {
 		if (mntp != NFSTOV(np)->v_mount ||
 		    bcmp((caddr_t)fhp, (caddr_t)&np->n_fh, NFSX_FH))
 			continue;
@@ -123,7 +106,11 @@ loop:
 	 * Insert the nfsnode in the hash queue for its new file handle
 	 */
 	np->n_flag = 0;
-	insque(np, nh);
+	if (nq = *nhpp)
+		nq->n_back = &np->n_forw;
+	np->n_forw = nq;
+	np->n_back = nhpp;
+	*nhpp = np;
 	bcopy((caddr_t)fhp, (caddr_t)&np->n_fh, NFSX_FH);
 	np->n_attrstamp = 0;
 	np->n_direofoffset = 0;
@@ -180,6 +167,7 @@ nfs_reclaim(ap)
 	register struct vnode *vp = ap->a_vp;
 	register struct nfsnode *np = VTONFS(vp);
 	register struct nfsmount *nmp = VFSTONFS(vp->v_mount);
+	register struct nfsnode *nq;
 	extern int prtactive;
 
 	if (prtactive && vp->v_usecount != 0)
@@ -187,7 +175,9 @@ nfs_reclaim(ap)
 	/*
 	 * Remove the nfsnode from its hash chain.
 	 */
-	remque(np);
+	if (nq = np->n_forw)
+		nq->n_back = np->n_back;
+	*np->n_back = nq;
 
 	/*
 	 * For nqnfs, take it off the timer queue as required.
