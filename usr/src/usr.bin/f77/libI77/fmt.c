@@ -25,7 +25,7 @@ char id_fmt[] = "@(#)fmt.c	1.8";
 
 struct syl syl_vec[SYLMX];
 struct syl *syl_ptr;
-int parenlvl,revloc;
+int parenlvl,revloc, low_case[256];
 short pc;
 char *f_s(), *f_list(), *i_tem(), *gt_num(), *ap_end();
 char *s_init;
@@ -34,8 +34,16 @@ pars_f()
 {
 	short *s_ptr;
 	long  *l_ptr;
+	int i;
+
+	/* first time, initialize low_case[] */
+	if( low_case[1] == 0 ) {
+	    for(i = 0; i<256; i++) low_case[i]=i;
+	    for(i = 'A'; i<='Z'; i++) low_case[i]=i-'A'+'a';
+	}
 
 	parenlvl=revloc=pc=0;
+
 	s_ptr = (short *) fmtbuf;
 	if( *s_ptr == FMT_COMP ) {
 		/* already compiled - copy value of pc */
@@ -110,14 +118,14 @@ char *i_tem(s) char *s;
 
 ne_d(s,p) char *s,**p;
 {	int n,x,sign=0,pp1,pp2;
-	switch(lcase(*s))
+	switch(low_case[*s])
 	{
 	case ':': op_gen(COLON,(int)('\n'),0,0,s); break;
 #ifndef KOSHER
 	case '$': op_gen(DOLAR,(int)('\0'),0,0,s); break;  /*** NOT STANDARD FORTRAN ***/
 #endif
 	case 'b':
-		switch(lcase(*(s+1)))
+		switch(low_case[*(s+1)])
 		{
 			case 'n': s++; op_gen(BNZ,0,0,0,s); break;
 			case 'z': s++; op_gen(BNZ,1,0,0,s); break;
@@ -129,7 +137,7 @@ ne_d(s,p) char *s,**p;
 		}
 		break;
 	case 's':
-		switch(lcase(*(s+1)))
+		switch(low_case[*(s+1)])
 		{
 			case 'p': s++; x=SP; pp1=1; pp2=1; break;
 #ifndef KOSHER
@@ -147,7 +155,7 @@ ne_d(s,p) char *s,**p;
 	case '0': case '1': case '2': case '3': case '4':
 	case '5': case '6': case '7': case '8': case '9':
 		s=gt_num(s,&n);
-		switch(lcase(*s))
+		switch(low_case[*s])
 		{
 		case 'p': if(sign) n= -n; op_gen(P,n,0,0,s); break;
 #ifndef KOSHER
@@ -169,7 +177,7 @@ ne_d(s,p) char *s,**p;
 		*p = ap_end(s);
 		return(FMTOK);
 	case 't':
-		switch(lcase(*(s+1)))
+		switch(low_case[*(s+1)])
 		{
 			case 'l': s++; x=TL; break;
 			case 'r': s++; x=TR; break;
@@ -202,7 +210,7 @@ e_d(s,p) char *s,**p;
 	char c;
 	s=gt_num(s,&rep_count);
 	if (rep_count == 0) goto ed_err;
-	c = lcase(*s); s++;
+	c = low_case[*s]; s++;
 	switch(c)
 	{
 	case 'd':
@@ -215,7 +223,7 @@ e_d(s,p) char *s,**p;
 			s=gt_num(s,&d);
 		}
 		else d=0;
-		if(lcase(*s) == 'e'
+		if(low_case[*s] == 'e'
 #ifndef KOSHER
 		|| *s == '.'		 /*** '.' is NOT STANDARD FORTRAN ***/
 #endif
