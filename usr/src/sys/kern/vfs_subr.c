@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.27 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.28 (Berkeley) %G%
  */
 
 /*
@@ -798,14 +798,4 @@ vprint(label, vp)
 		printf(" flags (%s)", &buf[1]);
 	printf("\n\t");
 	VOP_PRINT(vp);
-}
-
-strcat(src, append)
-	register char *src, *append;
-{
-
-	for (; *src; ++src)
-		/* void */;
-	while (*src++ = *append++)
-		/* void */;
 }
