@@ -1,4 +1,4 @@
-/*	sys_generic.c	6.9	85/05/22	*/
+/*	sys_generic.c	6.10	85/05/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -343,10 +343,12 @@ done:
 		if (error) \
 			u.u_error = error; \
 	}
-	putbits(in, 0);
-	putbits(ou, 1);
-	putbits(ex, 2);
+	if (u.u_error != EINTR) {
+		putbits(in, 0);
+		putbits(ou, 1);
+		putbits(ex, 2);
 #undef putbits
+	}
 }
 
 unselect(p)
