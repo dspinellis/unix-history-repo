@@ -7,7 +7,7 @@
 #
 #  This has been tested on IRIX 4.0.4.
 #
-#	@(#)Makefile.IRIX	8.4 (Berkeley) %G%
+#	@(#)Makefile.IRIX	8.5 (Berkeley) %G%
 #
 SHELL=	/bin/sh
 
@@ -36,8 +36,7 @@ INCDIRS=
 LIBDIRS=
 
 # libraries required on your system
-LIBS= -lmld
-#LIBS= -lsun -ldb -lmld
+LIBS= -lmld -lmalloc
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
 BINDIR=	${DESTDIR}/usr/lib
