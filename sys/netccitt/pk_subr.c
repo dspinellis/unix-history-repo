@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pk_subr.c	7.16 (Berkeley) 6/6/91
- *	$Id$
+ *	$Id: pk_subr.c,v 1.2 1993/10/16 19:46:53 rgrimes Exp $
  */
 
 #include "param.h"
@@ -157,7 +157,7 @@ struct pklcd *lcp;
 
 	so -> so_pcb = 0;
 	soisdisconnected (so);
-	/* sofree (so);	/* gak!!! you can't do that here */
+	/* sofree (so);*/	/* gak!!! you can't do that here */
 }
 
 /* 
