@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_conf.c	6.7 (Berkeley) %G%
+ *	@(#)tty_conf.c	6.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -45,13 +45,6 @@ struct	linesw linesw[] =
 #if NTB > 0
 	tbopen, tbclose, tbread, nodev, tbioctl,
 	tbinput, nodev, nulldev, ttstart, nullmodem,		/* 3 */
-#else
-	nodev, nodev, nodev, nodev, nodev,
-	nodev, nodev, nodev, nodev, nodev,
-#endif
-#if NTB > 0
-	tbopen, tbclose, tbread, nodev, tbioctl,
-	tbinput, nodev, nulldev, ttstart, nullmodem,		/* 4 */
 #else
 	nodev, nodev, nodev, nodev, nodev,
 	nodev, nodev, nodev, nodev, nodev,
