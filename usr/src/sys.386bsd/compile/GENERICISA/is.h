@@ -1,0 +1,1 @@
+#define NIS 1
