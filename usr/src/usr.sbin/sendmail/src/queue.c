@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	5.48 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	5.49 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	5.48 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	5.49 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -801,6 +801,7 @@ readqf(e)
 	char *qf;
 	register FILE *qfp;
 	ADDRESS *ctladdr;
+	struct stat st;
 	char buf[MAXFIELD];
 	extern char *fgetfolded();
 	extern long atol();
@@ -820,6 +821,30 @@ readqf(e)
 	{
 		if (errno != ENOENT)
 			syserr("readqf: no control file %s", qf);
+		return FALSE;
+	}
+
+	/*
+	**  Check the queue file for plausibility to avoid attacks.
+	*/
+
+	if (fstat(fileno(qfp), &st) < 0)
+	{
+		/* must have been being processed by someone else */
+		fclose(qfp);
+		return FALSE;
+	}
+
+	if (st.st_uid != 0 || (st.st_mode & 07777) != FileMode)
+	{
+# ifdef LOG
+		if (LogLevel > 0)
+		{
+			syslog(LOG_ALERT, "%s: bogus queue file, uid=%d, mode=%o",
+				e->e_id, st.st_uid, st.st_mode);
+		}
+# endif LOG
+		fclose(qfp);
 		return FALSE;
 	}
 
