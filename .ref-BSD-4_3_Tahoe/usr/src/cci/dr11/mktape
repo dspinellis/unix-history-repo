@@ -1,5 +1,0 @@
-make INCLDIR=/usr/include/dr11 dstat
-echo "Mount tape, type CR when ready..."
-read x
-tar cvb 20 ./dstat ./loop ./dinstall
-echo "done..."

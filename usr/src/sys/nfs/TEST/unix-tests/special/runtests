@@ -1,0 +1,31 @@
+:
+#!/bin/sh
+#
+#       @(#)runtests	1.2 90/01/03 NFS Rev 2 testsuite
+#
+
+# If the initialization file is present, assume we are in the distribution
+# tree and that we must copy the tests to the test directory.  Otherwise,
+# we are in the test directory and can just run the tests
+
+InitFile="../tests.init"
+
+if test -f $InitFile
+then
+	. $InitFile
+	echo "SPECIAL TESTS: directory $NFSTESTDIR"
+	mkdir $NFSTESTDIR
+	if test ! -d $NFSTESTDIR
+	then
+		echo "Can't make directory $NFSTESTDIR"
+		exit 1
+	fi
+	make copy DESTDIR=$NFSTESTDIR
+	cd $NFSTESTDIR
+else
+	NFSTESTDIR=`pwd`
+	export PATH
+	echo "SPECIAL TESTS: directory $NFSTESTDIR"
+fi
+
+exec sh runtests.wrk FROM_RUNTESTS

@@ -1,9 +1,0 @@
-If you have an old tcp/ip you might have to turn off the BROADCAST
-option; see the Makefile.
-
-Hunt is not officially supported by anyone anywhere; however, bug
-reports will be read and bug fixes/enhancements may be sent out at
-irregular intervals. Enjoy.
-
-	ucbvax!ucsfcgl!conrad
-	ucsfcgl!conrad@berkeley.edu

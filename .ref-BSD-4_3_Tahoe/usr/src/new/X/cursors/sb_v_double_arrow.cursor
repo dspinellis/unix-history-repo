@@ -1,9 +1,0 @@
-#define sb_v_double_arrow_width 16
-#define sb_v_double_arrow_height 16
-#define sb_v_double_arrow_x_hot 7
-#define sb_v_double_arrow_y_hot 7
-static short sb_v_double_arrow_bits[] = {
-   0x0080, 0x01c0, 0x03e0, 0x07f0,
-   0x0140, 0x0140, 0x0140, 0x0140,
-   0x0140, 0x0140, 0x0140, 0x07f0,
-   0x03e0, 0x01c0, 0x0080, 0x0000};

@@ -1,8 +1,0 @@
-reading symbolic information ...
-source file "same.c"
-[1] stop in same.same
-[1] stopped in same.same at line 10
-   10       printf("same function and module names\n");
-same.same(), line 10 in "same.c"
-main(0x1, 0xbfffe7e8, 0xbfffe7f0), line 15 in "same.c"
-

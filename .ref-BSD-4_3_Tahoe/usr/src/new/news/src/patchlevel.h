@@ -1,3 +1,0 @@
-#define	PATCHLEVEL	11
-
-#define NEWS_VERSION   "B 2.11 10/15/87"

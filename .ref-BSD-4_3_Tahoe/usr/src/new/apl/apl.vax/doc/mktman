@@ -1,1 +1,0 @@
-troff -ms -t man.? > manual.trf

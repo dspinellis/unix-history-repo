@@ -1,8 +1,0 @@
-PT|pt|Convergent Technologies:\
-	:ae=\17:al=\E[1L:am:as=\16:bs:\
-	:cd=\E[0J:ce=\E[0K:ch=\E[%i%dG:\
-	:cl=\E[2J\E[1;1H:cm=\E[%i%d;%dH:co#80:cv=\E[%i%dd:\
-	:dc=\E[1P:dl=\E[1M:do=\E[1B:ho=\E[H:\
-	:kb=\10:kd=\E[B:kl=\E[D:kr=\E[C:ku=\E[A:li#26:\
-	:nd=\E[C:se=\E[m:sf=\E[1S:\
-	:so=\E[7m:sr=\E[1T:ue=\E[m:up=\E[A:us=\E[4m:

@@ -1,4 +1,0 @@
-: Weekly uucp script
-
-SPOOL=/usr/spool/uucp
-mv $SPOOL/SYSLOG $SPOOL/SYSLOG.old

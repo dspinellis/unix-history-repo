@@ -1,7 +1,0 @@
-€‚--this line should *not* print--
-ab‚--this line should print, but *not* the previous line--
-€‚--this line should print--
-‚cd--this line also--
-q--this line too--
-€€‚embedded Katakana, unaligned Kanji
-€‚embedded Katakana

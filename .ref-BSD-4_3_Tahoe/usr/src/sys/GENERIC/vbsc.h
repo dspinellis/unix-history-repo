@@ -1,1 +1,0 @@
-#define NVBSC 0

@@ -1,0 +1,117 @@
+:
+#!/bin/sh
+#
+#       @(#)server	1.5 90/01/10 NFS Rev 2 testsuite
+#      1.1 Lachman ONC Test Suite  source
+#
+# Uncomment the appropriate mount/umount commands depending upon whether
+# this is SysV or BSD.
+#
+# run tests given a server name.  mounts, tests, and unmounts
+# arguments:
+#	-a|-b|-g|-s	test selectors, passed to runtests
+#	-f|-t|-n	test arguments, passed to runtests
+#	mnt_options	arg to -o mount options
+#	server_path	path to mount from server
+#	mntpoint	path to mount on locally
+#	server_name	server to mount from
+#
+Program=`basename $0`
+
+InitFile="./tests.init"
+USAGE="usage:  $Program [-a|-b|-g|-s] [-f|-t|-n] [-o mnt_options] [-p server_path] [-m mntpoint] server_name"
+
+# defaults
+. $InitFile
+
+set - `getopt abfgm:no:p:st $*`
+
+if [ $? != 0 ]
+then
+	echo $USAGE
+	exit 1
+fi
+for c in $*
+do
+	case $c in
+		-a|-b|-g|-s)	TESTS=$c; shift	;;
+		-f|-n|-t)	TESTARG=$c; shift	;;
+		-m)		MNTPOINT=$2; shift; shift	;;
+		-o)		MNTOPTIONS=$2; shift; shift	;;
+		-p)		SERVPATH=$2; shift; shift	;;
+		--)		shift; break		;;
+	esac
+done
+
+if test $# -gt 0
+then
+	SERVER=$1
+	shift
+	if test $# -gt 0
+	then
+		echo $USAGE
+		exit 1
+	fi
+fi
+
+# if no server specified, exit
+if test x$SERVER = x
+then
+	echo $USAGE
+	exit 1
+fi
+
+# make sure nothing is mounted on the mountpoint
+$UMOUNT $MNTPOINT > /dev/null 2>&1
+
+#
+if [ "$SYSTYPE" = "-DSVR3" ]
+then
+	# use the following command if this is SYSV3
+	$MOUNT -f NFS,$MNTOPTIONS $SERVER\:$SERVPATH $MNTPOINT
+else
+	# use the following command if this is BSD
+	$MOUNT -v -o $MNTOPTIONS $SERVER\:$SERVPATH $MNTPOINT
+fi
+
+case $? in
+    0)
+	;;
+    *)
+	echo "Can't mount $SERVER:$SERVPATH on $MNTPOINT"
+	exit 1
+	;;
+esac
+
+# mount doesn't always return error code if it fails, so lets
+# ask here just in case
+HOSTNAME=`hostname`
+HOSTNAME=`expr $HOSTNAME : '\([^.]*\)'`
+NFSTESTDIR=$MNTPOINT/$HOSTNAME.test
+export NFSTESTDIR
+echo -n "Start tests on path $NFSTESTDIR [y/n]? "
+read ans
+case $ans in
+    Y*|y*)
+	;;
+    *)
+	echo "Terminating ($MNTPOINT not unmounted)."
+	exit 1
+	;;
+esac
+	
+echo ""
+
+echo "sh ./runtests $TESTS $TESTARG $NFSTESTDIR"
+sh ./runtests $TESTS $TESTARG $NFSTESTDIR
+
+# use the following command if this is SYSV3
+if [ "$SYSTYPE" = "-DSVR3" ]
+then
+	exec $UMOUNT $MNTPOINT
+else
+	# use the following command if this is BSD
+	exec $UMOUNT -v $MNTPOINT
+fi
+
+# nothing executed after here

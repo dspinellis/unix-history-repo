@@ -1,9 +1,0 @@
-: 'Check if we should advise to clean private B'
-
-bdir="$1"
-
-if test -f $bdir/b
-then echo "You can clean ./bin and ./lib with 'make cleanall'"
-fi
-
-exit 0

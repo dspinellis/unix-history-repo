@@ -1,1 +1,0 @@
-gethead doesn't handle To: lines that continue onto another line.

@@ -1,9 +1,0 @@
-#define bcross_mask_width 15
-#define bcross_mask_height 15
-#define bcross_mask_x_hot 7
-#define bcross_mask_y_hot 7
-static short bcross_mask_bits[] = {
-   0x81c0, 0x81c0, 0x81c0, 0x81c0,
-   0x81c0, 0x81c0, 0xfe3f, 0xfe3f,
-   0xfe3f, 0x81c0, 0x81c0, 0x81c0,
-   0x81c0, 0x81c0, 0x81c0};

@@ -1,8 +1,0 @@
-# font family: Classic
-#	(as opposed to TroffClassic)
-#
-# specify the name mapping from the IP metrics file to Troff metrics format
-#
-XEROX XC1-1-1 Classic			CR    xc1-1-1.map
-XEROX XC1-1-1 Classic-Italic		CI    xc1-1-1.map
-XEROX XC1-1-1 Classic-Bold		CB    xc1-1-1.map

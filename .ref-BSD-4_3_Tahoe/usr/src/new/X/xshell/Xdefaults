@@ -1,8 +1,0 @@
-xshell.action.LeftButton:	xterm =80x65-0+0 -fn 6x10
-xshell.action.MiddleButton:	xted =80x65+0-0 
-xshell.action.RightButton:	xterm =20x20-0-0 -fn 6x10 -e dc
-xshell.action.$:		xterm =80x65+0+0 -fn 6x10 -e sh
-xshell.action.#:		xterm =80x65+0+0 -fn 6x10 -e su
-xshell.ReverseVideo:	on
-xshell.WindowGeometry:	=-0-0
-xshell.Quiet:		on

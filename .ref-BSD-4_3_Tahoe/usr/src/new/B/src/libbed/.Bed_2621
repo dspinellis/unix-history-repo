@@ -1,4 +1,0 @@
-ignore= 0177 0174 # The most common noise on phone lines
-accept= ^E # Like in linda
-accept= ^I # in Bed
-copy  = ^Y # Make ^Y equal to ^C

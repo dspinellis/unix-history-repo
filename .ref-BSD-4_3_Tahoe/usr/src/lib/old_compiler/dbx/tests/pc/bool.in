@@ -1,9 +1,0 @@
-stop at 4
-run
-print b
-step
-print b
-assign b = false
-print b
-assign b = true
-print b

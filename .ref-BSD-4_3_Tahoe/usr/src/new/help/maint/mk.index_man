@@ -1,8 +1,0 @@
-#	Make the Index of the Unix Programmer's Manual.
-
-ed - index_man << '%'
-/^--------/+,$d
-w
-q
-'%'
-cat /usr/lib/whatis >> index_man

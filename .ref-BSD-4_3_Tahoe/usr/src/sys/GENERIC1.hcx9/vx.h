@@ -1,1 +1,0 @@
-#define NVX 2

@@ -1,1 +1,0 @@
-../../X/mit-copyright.h
