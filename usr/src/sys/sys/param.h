@@ -1,6 +1,4 @@
-/* "@(#)param.h 2.1 3/25/82" */
-
-/*	param.h	4.20	82/08/08	*/
+/*	param.h	4.21	82/08/24	*/
 
 /*
  * Tunable variables which do not usually vary per system.
@@ -71,7 +69,7 @@
 #define	NULL	0
 #define	CMASK	0		/* default mask for file creation */
 #define	NODEV	(dev_t)(-1)
-#define	NGRPS	256		/* max number groups */
+#define	NGROUPS	8		/* max number groups */
 
 /*
  * Clustering of hardware pages on machines with ridiculously small
