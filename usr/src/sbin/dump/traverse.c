@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)traverse.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)traverse.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -143,7 +143,7 @@ mapdirs(maxino, tapesize)
 		for (ret = 0, i = 0; filesize > 0 && i < NDADDR; i++) {
 			if (dp->di_db[i] != 0)
 				ret |= searchdir(ino, dp->di_db[i],
-					dblksize(sblock, dp, i));
+					dblksize(sblock, dp, i), filesize);
 			if (ret & HASDUMPEDFILE)
 				filesize = 0;
 			else
@@ -191,7 +191,8 @@ dirindir(ino, blkno, level, filesize)
 		for (i = 0; *filesize > 0 && i < NINDIR(sblock); i++) {
 			blkno = idblk[i];
 			if (blkno != 0)
-				ret |= searchdir(ino, blkno, sblock->fs_bsize);
+				ret |= searchdir(ino, blkno, sblock->fs_bsize,
+					filesize);
 			if (ret & HASDUMPEDFILE)
 				*filesize = 0;
 			else
@@ -213,16 +214,19 @@ dirindir(ino, blkno, level, filesize)
  * any of the entries are on the dump list and to see if the directory
  * contains any subdirectories.
  */
-searchdir(ino, blkno, size)
+searchdir(ino, blkno, size, filesize)
 	ino_t ino;
 	daddr_t blkno;
 	register int size;
+	int filesize;
 {
 	register struct direct *dp;
 	register long loc;
 	char dblk[MAXBSIZE];
 
 	bread(fsbtodb(sblock, blkno), dblk, size);
+	if (filesize < size)
+		size = filesize;
 	for (loc = 0; loc < size; ) {
 		dp = (struct direct *)(dblk + loc);
 		if (dp->d_reclen == 0) {
