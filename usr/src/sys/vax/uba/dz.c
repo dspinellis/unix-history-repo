@@ -1,4 +1,4 @@
-/*	dz.c	4.3	%G%	*/
+/*	dz.c	4.4	%G%	*/
 
 #include "../conf/dz.h"
 #if NDZ11 > 0
@@ -249,7 +249,7 @@ dev_t dev;
 	cmd = (*linesw[tp->t_line].l_ioctl)(tp, cmd, addr);
 	if (cmd == 0)
 		return;
-	if (ttioctl(cmd, tp, addr, dev, flag)) {
+	if (ttioctl(tp, cmd, addr, flag)) {
 		if (cmd==TIOCSETP || cmd==TIOCSETN)
 			dzparam(minor(dev));
 	} else switch(cmd) {
