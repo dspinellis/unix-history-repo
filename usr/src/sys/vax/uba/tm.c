@@ -1,4 +1,4 @@
-/*	tm.c	4.22	%G%	*/
+/*	tm.c	4.23	%G%	*/
 
 #include "te.h"
 #if NTM > 0
@@ -21,7 +21,8 @@ int	tmgapsdcnt;		/* DEBUG */
 #include "../h/map.h"
 #include "../h/pte.h"
 #include "../h/vm.h"
-#include "../h/uba.h"
+#include "../h/ubareg.h"
+#include "../h/ubavar.h"
 #include "../h/mtio.h"
 #include "../h/ioctl.h"
 #include "../h/cmap.h"
@@ -33,11 +34,11 @@ struct	buf	ctmbuf[NTE];
 struct	buf	rtmbuf[NTE];
 
 int	tmprobe(), tmslave(), tmattach(), tmdgo(), tmintr();
-struct	uba_minfo *tmminfo[NTM];
-struct	uba_dinfo *tmdinfo[NTE];
+struct	uba_ctlr *tmminfo[NTM];
+struct	uba_device *tmdinfo[NTE];
 struct	buf tmutab[NTE];
 #ifdef notyet
-struct	uba_dinfo *tmip[NTM][4];
+struct	uba_device *tmip[NTM][4];
 #endif
 u_short	tmstd[] = { 0772520, 0 };
 struct	uba_driver tmdriver =
@@ -118,7 +119,7 @@ tmprobe(reg)
  */
 /*ARGSUSED*/
 tmslave(ui, reg)
-	struct uba_dinfo *ui;
+	struct uba_device *ui;
 	caddr_t reg;
 {
 
@@ -130,7 +131,7 @@ tmslave(ui, reg)
  */
 /*ARGSUSED*/
 tmattach(ui)
-	struct uba_dinfo *ui;
+	struct uba_device *ui;
 {
 
 #ifdef notyet
@@ -149,7 +150,7 @@ tmopen(dev, flag)
 	int flag;
 {
 	register int unit;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register struct tm_softc *sc;
 
 	unit = TMUNIT(dev);
@@ -231,7 +232,7 @@ tmstrategy(bp)
 	register struct buf *bp;
 {
 	int unit = TMUNIT(bp->b_dev);
-	register struct uba_minfo *um;
+	register struct uba_ctlr *um;
 	register struct buf *dp;
 	register struct tm_softc *sc = &tm_softc[unit];
 
@@ -270,12 +271,12 @@ tmstrategy(bp)
  * Start activity on a tm controller.
  */
 tmstart(um)
-	register struct uba_minfo *um;
+	register struct uba_ctlr *um;
 {
 	register struct buf *bp, *dp;
 	register struct device *addr = (struct device *)um->um_addr;
 	register struct tm_softc *sc;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	int unit, cmd;
 	daddr_t blkno;
 
@@ -419,7 +420,7 @@ next:
  * allocated to us; start the device.
  */
 tmdgo(um)
-	register struct uba_minfo *um;
+	register struct uba_ctlr *um;
 {
 	register struct device *addr = (struct device *)um->um_addr;
 
@@ -436,7 +437,7 @@ tmintr(tm11)
 {
 	struct buf *dp;
 	register struct buf *bp;
-	register struct uba_minfo *um = tmminfo[tm11];
+	register struct uba_ctlr *um = tmminfo[tm11];
 	register struct device *addr = (struct device *)tmdinfo[tm11]->ui_addr;
 	register struct tm_softc *sc;
 	int unit;
@@ -623,6 +624,8 @@ tmread(dev)
 {
 
 	tmphys(dev);
+	if (u.u_error)
+		return;
 	physio(tmstrategy, &rtmbuf[TMUNIT(dev)], dev, B_READ, minphys);
 }
 
@@ -631,15 +634,23 @@ tmwrite(dev)
 {
 
 	tmphys(dev);
+	if (u.u_error)
+		return;
 	physio(tmstrategy, &rtmbuf[TMUNIT(dev)], dev, B_WRITE, minphys);
 }
 
 tmphys(dev)
 	dev_t dev;
 {
+	register int unit = TMUNIT(dev);
 	register daddr_t a;
-	register struct tm_softc *sc = &tm_softc[TMUNIT(dev)];
+	register struct tm_softc *sc;
 
+	if (unit >= NTM) {
+		u.u_error = ENXIO;
+		return;
+	}
+	sc = &tm_softc[TMUNIT(dev)];
 	a = dbtofsb(u.u_offset >> 9);
 	sc->sc_blkno = a;
 	sc->sc_nxrec = a + 1;
@@ -648,9 +659,9 @@ tmphys(dev)
 tmreset(uban)
 	int uban;
 {
-	register struct uba_minfo *um;
+	register struct uba_ctlr *um;
 	register tm11, unit;
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register struct buf *dp;
 
 	for (tm11 = 0; tm11 < NTM; tm11++) {
@@ -759,7 +770,7 @@ tmioctl(dev, cmd, addr, flag)
 
 tmdump()
 {
-	register struct uba_dinfo *ui;
+	register struct uba_device *ui;
 	register struct uba_regs *up;
 	register struct device *addr;
 	int blk, num;
@@ -770,7 +781,7 @@ tmdump()
 #define	phys(a,b)	((b)((int)(a)&0x7fffffff))
 	if (tmdinfo[0] == 0)
 		return (ENXIO);
-	ui = phys(tmdinfo[0], struct uba_dinfo *);
+	ui = phys(tmdinfo[0], struct uba_device *);
 	up = phys(ui->ui_hd, struct uba_hd *)->uh_physuba;
 #if VAX780
 	if (cpu == VAX_780)
@@ -808,7 +819,7 @@ tmdwrite(dbuf, num, addr, up)
 	io = up->uba_map;
 	npf = num+1;
 	while (--npf != 0)
-		 *(int *)io++ = (dbuf++ | (1<<UBA_DPSHIFT) | UBA_MRV);
+		 *(int *)io++ = (dbuf++ | (1<<UBAMR_DPSHIFT) | UBAMR_MRV);
 	*(int *)io = 0;
 	addr->tmbc = -(num*NBPG);
 	addr->tmba = 0;

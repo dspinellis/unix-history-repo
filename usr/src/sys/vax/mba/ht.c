@@ -1,6 +1,6 @@
-/*	ht.c	4.7	81/03/07	*/
+/*	ht.c	4.8	81/03/07	*/
 
-#include "ht.h"
+#include "tu.h"
 #if NHT > 0
 /*
  * TM03/TU?? tape driver
@@ -14,7 +14,8 @@
 #include "../h/user.h"
 #include "../h/map.h"
 #include "../h/pte.h"
-#include "../h/mba.h"
+#include "../h/mbareg.h"
+#include "../h/mbavar.h"
 #include "../h/mtio.h"
 #include "../h/ioctl.h"
 #include "../h/cmap.h"
@@ -27,17 +28,20 @@ struct	buf	chtbuf[NHT];
 
 short	httypes[] =
 	{ MBDT_TE16, MBDT_TU45, MBDT_TU77, 0 };
-struct	mba_info *htinfo[NHT];
-int	htdkinit(), htustart(), htndtint(), htdtint();
+struct	mba_device *htinfo[NHT];
+int	htdkinit(), htattach(), htslave(), htustart(), htndtint(), htdtint();
 struct	mba_driver htdriver =
-	{ htdkinit, htustart, 0, htdtint, htndtint, httypes, htinfo };
+    { htattach, htslave, htustart, 0, htdtint, htndtint,
+      httypes, "ht", "tu", htinfo };
 
 #define MASKREG(r)	((r) & 0xffff)
 
 /* bits in minor device */
-#define HTUNIT(dev)	(minor(dev)&03)
+#define	TUUNIT(dev)	(minor(dev)&03)
 #define	H_NOREWIND	04
 #define	H_1600BPI	08
+
+#define HTUNIT(dev)	(htunit[TUUNIT(dev)])
 
 #define	INF	(daddr_t)1000000L	/* a block number that wont exist */
 
@@ -50,7 +54,10 @@ struct	ht_softc {
 	u_short	sc_dsreg;
 	short	sc_resid;
 	short	sc_dens;
-} ht_softc[NHT];
+	struct	mba_device *sc_mi;
+	int	sc_slave;
+} ht_softc[NTU];
+short	htunit[NTU];
 
 /*
  * Bits for sc_flags.
@@ -60,10 +67,21 @@ struct	ht_softc {
 #define H_REWIND  4	/* last unit start was a rewind */
 
 /*ARGSUSED*/
-htdkinit(mi)
-	struct mba_info *mi;
+htattach(mi)
+	struct mba_device *mi;
 {
 
+}
+
+htslave(mi, ms)
+	struct mba_device *mi;
+	struct mba_slave *ms;
+{
+	register struct ht_softc *sc = &ht_softc[ms->ms_unit];
+
+	sc->sc_mi = mi;
+	sc->sc_slave = ms->ms_slave;
+	htunit[ms->ms_unit] = mi->mi_unit;
 }
 
 htopen(dev, flag)
@@ -71,12 +89,12 @@ htopen(dev, flag)
 	int flag;
 {
 	register int unit;
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 	register struct ht_softc *sc;
 
-	unit = HTUNIT(dev);
-	if (unit >= NHT || (sc = &ht_softc[unit])->sc_openf ||
-	    (mi = htinfo[unit]) == 0 || mi->mi_alive == 0) {
+	unit = TUUNIT(dev);
+	if (unit >= NTU || (sc = &ht_softc[unit])->sc_openf ||
+	    (mi = htinfo[HTUNIT(dev)]) == 0 || mi->mi_alive == 0) {
 		u.u_error = ENXIO;
 		return;
 	}
@@ -93,7 +111,7 @@ htopen(dev, flag)
 	}
 	sc->sc_dens =
 	    ((minor(dev)&H_1600BPI)?HTTC_1600BPI:HTTC_800BPI)|
-		HTTC_PDP11|mi->mi_slave;
+		HTTC_PDP11|sc->sc_slave;
 	sc->sc_openf = 1;
 	sc->sc_blkno = (daddr_t)0;
 	sc->sc_nxrec = INF;
@@ -104,7 +122,7 @@ htclose(dev, flag)
 	register dev_t dev;
 	register flag;
 {
-	register struct ht_softc *sc = &ht_softc[HTUNIT(dev)];
+	register struct ht_softc *sc = &ht_softc[TUUNIT(dev)];
 
 	if (flag == FWRITE || ((flag&FWRITE) && (sc->sc_flags&H_WRITTEN))) {
 		htcommand(dev, HT_WEOF, 1);
@@ -131,6 +149,9 @@ htcommand(dev, com, count)
 	bp = &chtbuf[HTUNIT(dev)];
 	(void) spl5();
 	while (bp->b_flags&B_BUSY) {
+		if (bp->b_command == H_REWIND && bp->b_repcnt == 0 &&
+		    (bp->b_flags&B_DONE))
+			break;
 		bp->b_flags |= B_WANTED;
 		sleep((caddr_t)bp, PRIBIO);
 	}
@@ -153,7 +174,7 @@ htstrategy(bp)
 	register struct buf *bp;
 {
 	register int unit = HTUNIT(bp->b_dev);
-	register struct mba_info *mi = htinfo[unit];
+	register struct mba_device *mi = htinfo[unit];
 	register struct buf *dp;
 
 	bp->av_forw = NULL;
@@ -170,12 +191,12 @@ htstrategy(bp)
 }
 
 htustart(mi)
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 {
 	register struct htdevice *htaddr =
 	    (struct htdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
-	int unit = HTUNIT(bp->b_dev);
+	int unit = TUUNIT(bp->b_dev);
 	register struct ht_softc *sc = &ht_softc[unit];
 	daddr_t blkno;
 
@@ -246,7 +267,7 @@ htustart(mi)
  */
 /*ARGSUSED*/
 htdtint(mi, mbasr)
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 	int mbasr;
 {
 	register struct htdevice *htaddr = (struct htdevice *)mi->mi_drv;
@@ -254,7 +275,7 @@ htdtint(mi, mbasr)
 	register struct ht_softc *sc;
 	int ds, er, mbs;
 
-	sc = &ht_softc[HTUNIT(bp->b_dev)];
+	sc = &ht_softc[TUUNIT(bp->b_dev)];
 	ds = sc->sc_dsreg = MASKREG(htaddr->htds);
 	er = sc->sc_erreg = MASKREG(htaddr->hter);
 	sc->sc_resid = MASKREG(htaddr->htfc);
@@ -277,8 +298,8 @@ htdtint(mi, mbasr)
 		    er && ++mi->mi_tab.b_errcnt >= 7) {
 			if ((ds & HTDS_MOL) == 0 && sc->sc_openf > 0)
 				sc->sc_openf = -1;
-			printf("ht%d: hard error bn%d mbasr=%b er=%b\n",
-			    HTUNIT(bp->b_dev), bp->b_blkno,
+			printf("tu%d: hard error bn%d mbasr=%b er=%b\n",
+			    TUUNIT(bp->b_dev), bp->b_blkno,
 			    mbasr, mbasr_bits,
 			    MASKREG(htaddr->hter), HTER_BITS);
 			bp->b_flags |= B_ERROR;
@@ -301,14 +322,16 @@ htdtint(mi, mbasr)
  * non-data-transfer interrupt
  */
 htndtint(mi)
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 {
 	register struct htdevice *htaddr = (struct htdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
 	register struct ht_softc *sc;
 	int er, ds, fc;
 
-	sc = &ht_softc[HTUNIT(bp->b_dev)];
+	if (bp == 0)
+		return (MBN_SKIP);
+	sc = &ht_softc[TUUNIT(bp->b_dev)];
 	ds = sc->sc_dsreg = MASKREG(htaddr->htds);
 	er = sc->sc_erreg = MASKREG(htaddr->hter);
 	fc = sc->sc_resid = MASKREG(htaddr->htfc);
@@ -316,7 +339,11 @@ htndtint(mi)
 		htaddr->htcs1 = HT_DCLR|HT_GO;
 		mbclrattn(mi);
 	}
-	if (bp == &chtbuf[HTUNIT(bp->b_dev)]) {
+	if (sc->sc_flags&H_REWIND) {
+		sc->sc_flags &= ~H_REWIND;
+		return (MBN_CONT);
+	}
+	if (bp == &chtbuf[TUUNIT(bp->b_dev)]) {
 		if (bp->b_command == HT_REWOFFL)
 			/* offline is on purpose; don't do anything special */
 			ds |= HTDS_MOL;	
@@ -331,13 +358,13 @@ htndtint(mi)
 	if ((ds & (HTDS_ERR|HTDS_MOL)) != HTDS_MOL) {
 		if ((ds & HTDS_MOL) == 0 && sc->sc_openf > 0)
 			sc->sc_openf = -1;
-		printf("ht%d: hard error bn%d er=%b ds=%b\n",
-		    HTUNIT(bp->b_dev), bp->b_blkno,
+		printf("tu%d: hard error bn%d er=%b ds=%b\n",
+		    TUUNIT(bp->b_dev), bp->b_blkno,
 		    sc->sc_erreg, HTER_BITS, sc->sc_dsreg, HTDS_BITS);
 		bp->b_flags |= B_ERROR;
 		return (MBN_DONE);
 	}
-	if (bp == &chtbuf[HTUNIT(bp->b_dev)]) {
+	if (bp == &chtbuf[TUUNIT(bp->b_dev)]) {
 		if (sc->sc_flags & H_REWIND)
 			return (ds & HTDS_BOT ? MBN_DONE : MBN_RETRY);
 		bp->b_resid = -sc->sc_resid;
@@ -471,7 +498,7 @@ htioctl(dev, cmd, addr, flag)
 
 htdump()
 {
-	register struct mba_info *mi;
+	register struct mba_device *mi;
 	register struct mba_regs *mp;
 	register struct htdevice *htaddr;
 	int blk, num;
@@ -482,7 +509,7 @@ htdump()
 #define	phys(a,b)		((b)((int)(a)&0x7fffffff))
 	if (htinfo[0] == 0)
 		return (ENXIO);
-	mi = phys(htinfo[0], struct mba_info *);
+	mi = phys(htinfo[0], struct mba_device *);
 	mp = phys(mi->mi_hd, struct mba_hd *)->mh_physmba;
 #if VAX780
 	if (cpu == VAX780)
