@@ -27,12 +27,12 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)indent.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)indent.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
+#include <sys/param.h>
 #include "indent_globs.h"
 #include "indent_codes.h"
-#include <sys/param.h>
 #include <ctype.h>
 
 char       *in_name = "Standard Input";	/* will always point to name of input
@@ -156,10 +156,8 @@ main(argc, argv)
 	    if (input == 0) {	/* we must have the input file */
 		in_name = argv[i];	/* remember name of input file */
 		input = fopen(in_name, "r");
-		if (input == 0) {	/* check for open error */
-		    fprintf(stderr, "indent: can't open %s\n", argv[i]);
-		    exit(1);
-		}
+		if (input == 0)		/* check for open error */
+			err(in_name);
 		continue;
 	    }
 	    else if (output == 0) {	/* we have the output file */
@@ -170,10 +168,8 @@ main(argc, argv)
 		    exit(1);
 		}
 		output = fopen(out_name, "w");
-		if (output == 0) {	/* check for create error */
-		    fprintf(stderr, "indent: can't create %s\n", argv[i]);
-		    exit(1);
-		}
+		if (output == 0)	/* check for create error */
+			err(out_name);
 		continue;
 	    }
 	    fprintf(stderr, "indent: unknown parameter: %s\n", argv[i]);
@@ -236,7 +232,7 @@ main(argc, argv)
 	    else
 		break;
 	    p++;
-	};
+	}
 	if (col > ps.ind_size)
 	    ps.ind_level = ps.i_l_follow = col / ps.ind_size;
     }
@@ -569,7 +565,6 @@ check_type:
 	    break;
 
 	case binary_op:	/* any binary operation */
-    do_binary:
 	    if (ps.want_blank)
 		*e_code++ = ' ';
 	    {
@@ -1084,7 +1079,6 @@ check_type:
 				 * character will cause the line to be printed */
 
 	case comment:		/* we have gotten a /*  this is a biggie */
-    proc_comment:
 	    if (flushed_nl) {	/* we should force a broken line here */
 		flushed_nl = false;
 		dump_line();
@@ -1099,7 +1093,7 @@ check_type:
 	if (type_code != comment && type_code != newline && type_code != preesc)
 	    ps.last_token = type_code;
     }				/* end of main while (1) loop */
-};
+}
 
 /*
  * copy input file to backup file if in_name is /blah/blah/blah/file, then
@@ -1123,34 +1117,34 @@ bakcopy()
 
     /* copy in_name to backup file */
     bakchn = creat(bakfile, 0600);
-    if (bakchn < 0) {
-	fprintf(stderr, "indent: can't create backup file \"%s\"\n", bakfile);
-	exit(1);
-    }
+    if (bakchn < 0)
+	err(bakfile);
     while (n = read(fileno(input), buff, sizeof buff))
-	if (write(bakchn, buff, n) != n) {
-	    fprintf(stderr, "indent: error writing backup file \"%s\"\n",
-		    bakfile);
-	    exit(1);
-	}
-    if (n < 0) {
-	fprintf(stderr, "indent: error reading input file \"%s\"\n", in_name);
-	exit(1);
-    }
+	if (write(bakchn, buff, n) != n)
+	    err(bakfile);
+    if (n < 0)
+	err(in_name);
     close(bakchn);
     fclose(input);
 
     /* re-open backup file as the input file */
     input = fopen(bakfile, "r");
-    if (input == 0) {
-	fprintf(stderr, "indent: can't re-open backup file\n");
-	exit(1);
-    }
+    if (input == 0)
+	err(bakfile);
     /* now the original input file will be the output */
     output = fopen(in_name, "w");
     if (output == 0) {
-	fprintf(stderr, "indent: can't create %s\n", in_name);
 	unlink(bakfile);
-	exit(1);
+	err(in_name);
     }
+}
+
+err(msg)
+	char *msg;
+{
+	extern int errno;
+	char *strerror();
+
+	(void)fprintf(stderr, "indent: %s: %s\n", msg, strerror(errno));
+	exit(1);
 }
