@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.51 (Berkeley) %G%
+#	@(#)READ_ME	8.52 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -440,12 +440,15 @@ Solaris 2.x (SunOS 5.x)
 
 	The Solaris "syslog" function is apparently limited to something
 	about 90 characters because of a kernel limitation.  If you have
-	source code, you can probably up this number.  The syslogd patch
-	is included in kernel jumbo patch for Solaris 2.2 as of revision
-	-39 or so.  At least one person is running with patch 100999-45
-	and their long lost sendmail logging is finally showing up.  At
-	least one other person is running with patch 101318 installed
-	under Solaris 2.3 with success.
+	source code, you can probably up this number.  You can get patches
+	that fix this problem: the patch ids are:
+
+		Solaris 2.1	100834
+		Solaris 2.2	100999
+		Solaris 2.3	100318
+
+	Be sure you have the appropriate patch installed or you won't
+	see system logging.
 
 OSF/1
 	If you are compiling on OSF/1 (DEC Alpha), you must use 
@@ -766,4 +769,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.51, last update %G% 17:37:26)
+(Version 8.52, last update %G% 09:30:14)

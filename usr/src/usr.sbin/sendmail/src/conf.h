@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.83 (Berkeley) %G%
+ *	@(#)conf.h	8.84 (Berkeley) %G%
  */
 
 /*
@@ -176,9 +176,6 @@ extern int	syslog(int, char *, ...);
 
 # ifdef SOLARIS_2_3
 #  define SOLARIS
-#  ifndef SYSLOG_BUFSIZE
-#   define SYSLOG_BUFSIZE	1024	/* allow full size syslog buffer */
-#  endif
 # endif
 
 # ifdef SOLARIS
@@ -198,6 +195,9 @@ extern int	syslog(int, char *, ...);
 #  endif
 #  ifndef _PATH_SENDMAILPID
 #   define _PATH_SENDMAILPID	"/etc/mail/sendmail.pid"
+#  endif
+#  ifndef SYSLOG_BUFSIZE
+#   define SYSLOG_BUFSIZE	1024	/* allow full size syslog buffer */
 #  endif
 
 # else
