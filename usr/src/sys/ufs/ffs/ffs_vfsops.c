@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.80 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.81 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -475,7 +475,7 @@ loop:
 			continue;
 		ip = VTOI(vp);
 		if ((ip->i_flag & (IMOD|IACC|IUPD|ICHG)) == 0 &&
-		    vp->v_dirtyblkhd == NULL)
+		    vp->v_dirtyblkhd.le_next == NULL)
 			continue;
 		if (vget(vp))
 			goto loop;

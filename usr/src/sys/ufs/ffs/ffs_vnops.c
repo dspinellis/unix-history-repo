@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vnops.c	7.93 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.94 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -382,8 +382,8 @@ ffs_fsync(ap)
 	 */
 loop:
 	s = splbio();
-	for (bp = vp->v_dirtyblkhd; bp; bp = nbp) {
-		nbp = bp->b_blockf;
+	for (bp = vp->v_dirtyblkhd.le_next; bp; bp = nbp) {
+		nbp = bp->b_vnbufs.qe_next;
 		if ((bp->b_flags & B_BUSY))
 			continue;
 		if ((bp->b_flags & B_DELWRI) == 0)
@@ -407,7 +407,7 @@ loop:
 			sleep((caddr_t)&vp->v_numoutput, PRIBIO + 1);
 		}
 #ifdef DIAGNOSTIC
-		if (vp->v_dirtyblkhd) {
+		if (vp->v_dirtyblkhd.le_next) {
 			vprint("ffs_fsync: dirty", vp);
 			goto loop;
 		}
