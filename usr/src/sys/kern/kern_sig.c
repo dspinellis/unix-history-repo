@@ -1,4 +1,4 @@
-/*	kern_sig.c	6.11	85/03/12	*/
+/*	kern_sig.c	6.12	85/03/13	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -386,6 +386,7 @@ psignal(p, sig)
 				goto out;
 			p->p_sig &= ~mask;
 			p->p_cursig = sig;
+			psignal(p->p_pptr, SIGCHLD);
 			stop(p);
 			goto out;
 
@@ -523,6 +524,7 @@ issig()
 			 * If traced, always stop, and stay
 			 * stopped until released by the parent.
 			 */
+			psignal(p->p_pptr, SIGCHLD);
 			do {
 				stop(p);
 				swtch();
@@ -584,6 +586,7 @@ issig()
 			case SIGSTOP:
 				if (p->p_flag&STRC)
 					continue;
+				psignal(p->p_pptr, SIGCHLD);
 				stop(p);
 				swtch();
 				continue;
@@ -639,7 +642,8 @@ send:
 
 /*
  * Put the argument process into the stopped
- * state and notify the parent via wakeup and/or signal.
+ * state and notify the parent via wakeup.
+ * Signals are handled elsewhere.
  */
 stop(p)
 	register struct proc *p;
@@ -648,12 +652,6 @@ stop(p)
 	p->p_stat = SSTOP;
 	p->p_flag &= ~SWTED;
 	wakeup((caddr_t)p->p_pptr);
-	/*
-	 * Avoid sending signal to parent if process is traced
-	 */
-	if (p->p_flag&STRC)
-		return;
-	psignal(p->p_pptr, SIGCHLD);
 }
 
 /*
