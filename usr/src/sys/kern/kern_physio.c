@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.40	83/05/18	*/
+/*	kern_physio.c	4.41	83/05/21	*/
 
 #include "../machine/pte.h"
 
@@ -108,7 +108,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 			swkill(p, (char *)0);
 		}
 		nbytes -= c;
-		dblkno += c / DEV_BSIZE;
+		dblkno += btodb(c);
 	}
 	s = spl6();
 	bp->b_flags &= ~(B_BUSY|B_WANTED|B_PHYS|B_PAGET|B_UAREA|B_DIRTY);
@@ -214,7 +214,7 @@ nextiov:
 	while (iov->iov_len > 0) {
 		bp->b_flags = B_BUSY | B_PHYS | rw;
 		bp->b_dev = dev;
-		bp->b_blkno = uio->uio_offset / DEV_BSIZE;
+		bp->b_blkno = btodb(uio->uio_offset);
 		bp->b_bcount = iov->iov_len;
 		(*mincnt)(bp);
 		c = bp->b_bcount;
