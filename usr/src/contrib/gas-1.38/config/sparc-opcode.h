@@ -1,3 +1,12 @@
+/*-
+ * This code is derived from software copyrighted by the Free Software
+ * Foundation.
+ *
+ * Modified 1993 by Chris Torek at Lawrence Berkeley Laboratory.
+ *
+ *	@(#)sparc-opcode.h	5.2 (Berkeley) %G%
+ */
+
 /* Table of opcodes for the sparc.
    Copyright (C) 1989 Free Software Foundation, Inc.
 
@@ -67,6 +76,7 @@ Kinds of operands:
    p    Processor state register.
    q    Floating point queue.
    r    Single register that is both rs1 and rsd.
+   R	Single register that is both rs2 and rsd.
    Q    Coprocessor queue.
    S    Special case.
    t    Trap base register.
@@ -325,6 +335,9 @@ static struct sparc_opcode sparc_opcodes[] =
 { "or",		0x80102000, 0x40800000, "i,1,d", 0 },
 { "or",		0x80100000, 0x40800000, "1,2,d", 0 },
 
+{ "bset",	0x80100000, 0x40800000, "2,r", 0 },	/* or rsd,rs2,rsd */
+{ "bset",	0x80102000, 0x40800000, "i,r", 0 },	/* or rsd,i,rsd */
+
 { "andncc",     0x80a82000, 0x41500000, "1,i,d", 0 },
 { "andncc",	0x80a82000, 0x41500000, "i,1,d", 0 },
 { "andncc",	0x80a80000, 0x41500000, "1,2,d", 0 },
@@ -332,8 +345,19 @@ static struct sparc_opcode sparc_opcodes[] =
 { "andn",	0x80282000, 0x41d00000, "i,1,d", 0 },
 { "andn",	0x80280000, 0x41d00000, "1,2,d", 0 },
 
+{ "bclr",	0x80280000, 0x41d00000, "2,r", 0 },	/* andn rsd,rs2,rsd */
+{ "bclr",	0x80282000, 0x41d00000, "i,r", 0 },	/* andn rsd,i,rsd */
+
 { "cmp",        0x80a02000, 0x7d580000, "1,i", 0 },     /* subcc rs1,i,%g0 */
 { "cmp",	0x80a00000, 0x7d580000, "1,2", 0 },     /* subcc rs1,rs2,%g0 */
+
+{ "deccc",	0x80a02001, 0x41581ffe, "r", 0 },	/* subcc rs1,1,rsd */
+{ "deccc",	0x80a02000, 0x41581fff, "i,r", 0 },	/* subcc rs1,i,rsd */
+{ "dec",	0x80202001, 0x41d81ffe, "r", 0 },	/* sub rs1,1,rsd */
+{ "dec",	0x80202000, 0x41d81fff, "i,r", 0 },	/* etc */
+
+{ "neg",	0x80200000, 0x41d87800, "2,d", 0 },	/* sub %g0,rs2,rsd */
+{ "neg",	0x80200000, 0x41d87800, "R", 0 },	/* same, but rsd=rs2 */
 
 { "subcc",      0x80a02000, 0x41580000, "1,i,d", 0 },
 { "subcc",	0x80a00000, 0x41580000, "1,2,d", 0 },
@@ -351,7 +375,13 @@ static struct sparc_opcode sparc_opcodes[] =
 { "and",	0x80082000, 0x41f00000, "i,1,d", 0 },
 { "and",	0x80080000, 0x41f00000, "1,2,d", 0 },
 
+{ "btst",	0x80880000, 0x41700000, "1,2", 0 },	/* andcc rs1,rs2,%g0 */
+{ "btst",	0x80882000, 0x41700000, "i,1", 0 },	/* andcc rs1,i,%g0 */
+
+{ "inccc",	0x80802001, 0x41781ffe, "r", 0 },	/* addcc rs1,1,rsd */
+{ "inccc",	0x80802000, 0x41781fff, "i,r", 0 },	/* addcc rs1,i,rsd */
 { "inc",	0x80002001, 0x41f81ffe, "r", 0 },       /* add rs1,1,rsd */
+{ "inc",	0x80002000, 0x41f81fff, "i,r", 0 },	/* add rs1,i,rsd */
 
 { "addxcc",     0x80c02000, 0x41380000, "1,i,d", 0 },
 { "addxcc",     0x80c02000, 0x41380000, "i,1,d", 0 },
@@ -401,8 +431,12 @@ static struct sparc_opcode sparc_opcodes[] =
 { "ble",	0x04800000, 0xc1400000, "l", 1 },
 { "be",		0x22800000, 0xc1400000, ",al", 1 },
 { "be",		0x02800000, 0xc1400000, "l", 1 },
+{ "bz",		0x22800000, 0xc1400000, ",al", 1 },
+{ "bz",		0x02800000, 0xc1400000, "l", 1 },
 { "bne",	0x32800000, 0xc1400000, ",al", 1 },
 { "bne",	0x12800000, 0xc1400000, "l", 1 },
+{ "bnz",	0x32800000, 0xc1400000, ",al", 1 },
+{ "bnz",	0x12800000, 0xc1400000, "l", 1 },
 { "b",		0x30800000, 0xc1400000, ",al", 1 },
 { "b",		0x10800000, 0xc1400000, "l", 1 },
 { "ba",		0x30800000, 0xc1400000, ",al", 1 },
@@ -455,6 +489,10 @@ static struct sparc_opcode sparc_opcodes[] =
 { "tne",	0x93d02000, 0x40280000, "1+i", 0 },
 { "tne",	0x93d00000, 0x40282000, "1+2", 0 },
 { "tne",        0x93d00000, 0x4028201f, "1", 0 }, /* tne rs1+%g0 */
+{ "tnz",        0x93d02000, 0x402fc000, "i", 0 }, /* tne %g0+i */
+{ "tnz",	0x93d02000, 0x40280000, "1+i", 0 },
+{ "tnz",	0x93d00000, 0x40282000, "1+2", 0 },
+{ "tnz",        0x93d00000, 0x4028201f, "1", 0 }, /* tne rs1+%g0 */
 { "tleu",       0x8bd02000, 0x502fc000, "i", 0 }, /* tleu %g0+i */
 { "tleu",	0x8bd02000, 0x50280000, "1+i", 0 },
 { "tleu",	0x8bd00000, 0x50282000, "1+2", 0 },
@@ -463,6 +501,10 @@ static struct sparc_opcode sparc_opcodes[] =
 { "ta",		0x91d02000, 0x402d0000, "1+i", 0 },
 { "ta",		0x91d00000, 0x40282000, "1+2", 0 },
 { "ta",         0x91d00000, 0x4028201f, "1", 0 }, /* ta rs1+%g0 */
+{ "t",	        0x91d02000, 0x402fc000, "i", 0 }, /* ta %g0+i */
+{ "t",		0x91d02000, 0x402d0000, "1+i", 0 },
+{ "t",		0x91d00000, 0x40282000, "1+2", 0 },
+{ "t",		0x91d00000, 0x4028201f, "1", 0 }, /* ta rs1+%g0 */
 { "tvs",	0x8fd02000, 0x502fc000, "i", 0 }, /* tvs %g0+i */
 { "tvs",	0x8fd02000, 0x50280000, "1+i", 0 },
 { "tvs",	0x8fd00000, 0x50282000, "1+2", 0 },
@@ -487,6 +529,10 @@ static struct sparc_opcode sparc_opcodes[] =
 { "te",		0x83d02000, 0x50280000, "1+i", 0 },
 { "te",		0x83d00000, 0x50282000, "1+2", 0 },
 { "te",         0x83d00000, 0x5028201f, "1", 0 }, /* te rs1+%g0 */
+{ "tz",	        0x83d02000, 0x502fc000, "i", 0 }, /* te %g0+i */
+{ "tz",		0x83d02000, 0x50280000, "1+i", 0 },
+{ "tz",		0x83d00000, 0x50282000, "1+2", 0 },
+{ "tz",         0x83d00000, 0x5028201f, "1", 0 }, /* te rs1+%g0 */
 { "tn",		0x81d02000, 0x502fc000, "i", 0 }, /* tn %g0+i */
 { "tn",	        0x81d02000, 0x50280000, "1+i", 0 },
 { "tn",		0x81d00000, 0x50282000, "1+2", 0 },
@@ -514,6 +560,12 @@ static struct sparc_opcode sparc_opcodes[] =
 { "xor",        0x80180000, 0x41e00000, "1,2,d", 0 },
 { "xor",	0x80182000, 0x41e00000, "1,i,d", 0 },
 { "xor",	0x80182000, 0x41e00000, "i,1,d", 0 },
+
+{ "btog",	0x80180000, 0x41e00000, "2,r", 0 },	/* xor rsd,rs2,rsd */
+{ "btog",	0x80182000, 0x41e00000, "i,r", 0 },	/* xor rsd,i,rsd */
+
+{ "not",	0x80380000, 0x41c00000, "1,d", 0 },	/* xnor rs1,%g0,rsd */
+{ "not",	0x80380000, 0x41c00000, "r", 0 },	/* xnor rs1,%g0,rsd */
 
 { "fpop1",      0x81a00000, 0x40580000, "[1+2],d", 0 },
 { "fpop2",      0x81a80000, 0x40500000, "[1+2],d", 0 },
