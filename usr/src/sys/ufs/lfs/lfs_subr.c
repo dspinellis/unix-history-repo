@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_subr.c	7.5 (Berkeley) %G%
+ *	@(#)lfs_subr.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -91,6 +91,6 @@ lfs_itod(fs, ino)
 	if (ifp->if_daddr == LFS_UNUSED_DADDR)
 		panic("lfs_itod: unused disk address");
 	iaddr = ifp->if_daddr;
-	LFS_IRELEASE(fs, bp);
+	brelse(bp);
 	return (iaddr);
 }
