@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_nqlease.c	7.17 (Berkeley) %G%
+ *	@(#)nfs_nqlease.c	7.18 (Berkeley) %G%
  */
 
 /*
@@ -996,14 +996,14 @@ if (vp->v_mount->mnt_stat.f_fsid.val[1] != MOUNT_NFS) panic("trash3");
 				if ((np->n_flag & (NMODIFIED | NQNFSEVICTED))
 				    && vp->v_type == VREG) {
 					if (np->n_flag & NQNFSEVICTED) {
-						NFS_VINVBUF(np, vp,
-						            TRUE, cred, p);
+						(void) nfs_vinvalbuf(vp,
+						       V_SAVE, cred, p, 0);
 						np->n_flag &= ~NQNFSEVICTED;
 						(void) nqnfs_vacated(vp, cred);
 					} else {
-						np->n_flag &= ~NMODIFIED;
 						(void) VOP_FSYNC(vp, cred,
 						    MNT_WAIT, p);
+						np->n_flag &= ~NMODIFIED;
 					}
 				}
 			      }
@@ -1040,7 +1040,7 @@ if (vp->v_mount->mnt_stat.f_fsid.val[1] != MOUNT_NFS) panic("trash4");
 	     */
 	    if ((nmp->nm_flag & (NFSMNT_WAITAUTH | NFSMNT_DISMNT | NFSMNT_HASAUTH)) == 0) {
 		ncd->ncd_authuid = nmp->nm_authuid;
-		if (copyout((caddr_t)ncd, argp, sizeof (*ncd)))
+		if (copyout((caddr_t)ncd, argp, sizeof (struct nfsd_cargs)))
 			nmp->nm_flag |= NFSMNT_WAITAUTH;
 		else
 			return (ENEEDAUTH);

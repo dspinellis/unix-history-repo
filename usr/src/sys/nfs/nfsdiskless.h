@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsdiskless.h	7.4 (Berkeley) %G%
+ *	@(#)nfsdiskless.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -35,6 +35,6 @@ struct nfs_diskless {
 	u_char		root_fh[NFS_FHSIZE];	/* File handle of root dir */
 	struct sockaddr_in root_saddr;		/* Address of root server */
 	char		root_hostnam[MNAMELEN];	/* Host name for mount pt */
-	time_t		root_time;		/* Timestamp of root fs */
+	long		root_time;		/* Timestamp of root fs */
 	char		my_hostnam[MAXHOSTNAMELEN]; /* Client host name */
 };

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_node.c	7.45 (Berkeley) %G%
+ *	@(#)nfs_node.c	7.46 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -134,6 +134,7 @@ nfs_inactive(ap)
 {
 	register struct nfsnode *np;
 	register struct sillyrename *sp;
+	struct proc *p = curproc;	/* XXX */
 	extern int prtactive;
 
 	np = VTONFS(ap->a_vp);
@@ -145,6 +146,7 @@ nfs_inactive(ap)
 		/*
 		 * Remove the silly file that was rename'd earlier
 		 */
+		(void) nfs_vinvalbuf(ap->a_vp, 0, sp->s_cred, p, 1);
 		nfs_removeit(sp);
 		crfree(sp->s_cred);
 		vrele(sp->s_dvp);
@@ -152,7 +154,7 @@ nfs_inactive(ap)
 		free((caddr_t)sp, M_NFSREQ);
 #endif
 	}
-	np->n_flag &= NMODIFIED;
+	np->n_flag &= (NMODIFIED | NFLUSHINPROG | NFLUSHWANT);
 	return (0);
 }
 
@@ -208,6 +210,11 @@ nfs_lock(ap)
 {
 	register struct vnode *vp = ap->a_vp;
 
+	/*
+	 * Ugh, another place where interruptible mounts will get hung.
+	 * If you make this sleep interruptible, then you have to fix all
+	 * the VOP_LOCK() calls to expect interruptibility.
+	 */
 	while (vp->v_flag & VXLOCK) {
 		vp->v_flag |= VXWANT;
 		sleep((caddr_t)vp, PINOD);
