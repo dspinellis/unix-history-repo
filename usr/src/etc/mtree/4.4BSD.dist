@@ -3,7 +3,7 @@
 #	   tree: distribution tree: /, /usr, /var
 #	   date: Wed Jul 15 13:40:13 1992
 #
-#	@(#)4.4BSD.dist	5.25 (Berkeley) %G%
+#	@(#)4.4BSD.dist	5.26 (Berkeley) %G%
 
 /set type=dir uname=root gname=wheel mode=0755
 # .
@@ -761,6 +761,17 @@ smm
 
 # ./usr/share/doc/smm/01.setup
 01.setup
+
+# ./usr/share/doc/smm/01.setup/tahoe
+tahoe
+# ./usr/share/doc/smm/01.setup/tahoe
+..
+
+# ./usr/share/doc/smm/01.setup/vax
+vax
+# ./usr/share/doc/smm/01.setup/vax
+..
+
 # ./usr/share/doc/smm/01.setup
 ..
 
