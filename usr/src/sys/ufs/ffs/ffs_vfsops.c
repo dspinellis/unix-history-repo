@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.15 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.16 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -394,6 +394,11 @@ ffs_mountfs(devvp, mp, p)
 		error = EINVAL;		/* XXX needs translation */
 		goto out;
 	}
+	/* XXX updating 4.2 FFS superblocks trashes rotational layout tables */
+	if (fs->fs_postblformat == FS_42POSTBLFMT && !ronly) {
+		error = EROFS;          /* needs translation */
+		goto out;
+	}
 	ump = malloc(sizeof *ump, M_UFSMNT, M_WAITOK);
 	bzero((caddr_t)ump, sizeof *ump);
 	ump->um_fs = malloc((u_long)fs->fs_sbsize, M_UFSMNT,
@@ -407,8 +412,8 @@ ffs_mountfs(devvp, mp, p)
 	fs->fs_ronly = ronly;
 	if (ronly == 0)
 		fs->fs_fmod = 1;
-	blks = howmany(fs->fs_cssize, fs->fs_fsize);
 	size = fs->fs_cssize;
+	blks = howmany(size, fs->fs_fsize);
 	if (fs->fs_contigsumsize > 0)
 		size += fs->fs_ncg * sizeof(int32_t);
 	base = space = malloc((u_long)size, M_UFSMNT, M_WAITOK);
