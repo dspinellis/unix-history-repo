@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)chown.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)chown.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -36,21 +36,30 @@ main(argc, argv)
 	char **argv;
 {
 	extern int optind;
-	register FTS *fts;
+	register FTS *ftsp;
 	register FTSENT *p;
 	register char *cp;
 	int ch;
+	int fts_options;
 
 	myname = (cp = rindex(*argv, '/')) ? cp + 1 : *argv;
 	ischown = myname[2] == 'o';
 
-	while ((ch = getopt(argc, argv, "Rf")) != EOF)
+	fts_options = FTS_NOSTAT | FTS_PHYSICAL;
+	while ((ch = getopt(argc, argv, "HRfh")) != EOF)
 		switch((char)ch) {
 		case 'R':
 			rflag = 1;
 			break;
 		case 'f':
 			fflag = 1;
+			break;
+		case 'h':
+			fts_options &= ~FTS_PHYSICAL;
+			fts_options |= FTS_LOGICAL;
+			break;
+		case 'H':
+			fts_options |= FTS_COMFOLLOW;
 			break;
 		case '?':
 		default:
@@ -79,27 +88,25 @@ main(argc, argv)
 	else 
 		a_gid(*argv);
 
-	if (rflag) {
-		if (!(fts = fts_open(++argv, FTS_NOSTAT|FTS_PHYSICAL, 0))) {
-			(void)fprintf(stderr,
-			    "%s: %s.\n", myname, strerror(errno));
-			exit(1);
-		}
-		while (p = fts_read(fts)) {
-			if (p->fts_info == FTS_D)
-				continue;
-			if (p->fts_info == FTS_ERR) {
-				error(p->fts_path);
-				continue;
-			}
-			if (chown(p->fts_accpath, uid, gid) && !fflag)
-				chownerr(p->fts_path);
-		}
-		exit(retval);
+	if (!(ftsp = fts_open(++argv, fts_options, 0))) {
+		(void)fprintf(stderr,
+		    "%s: %s.\n", myname, strerror(errno));
+		exit(1);
 	}
-	while (*++argv)
-		if (chown(*argv, uid, gid) && !fflag)
-			chownerr(*argv);
+	while (p = fts_read(ftsp)) {
+		if (p->fts_info == FTS_D) {
+			if (rflag)
+				continue;
+			else
+				fts_set(ftsp, p, FTS_SKIP);
+		}
+		if (p->fts_info == FTS_ERR) {
+			error(p->fts_path);
+			continue;
+		}
+		if (chown(p->fts_accpath, uid, gid) && !fflag)
+			chownerr(p->fts_path);
+	}
 	exit(retval);
 }
 
