@@ -1,4 +1,4 @@
-/*	%M	6.1	83/07/29	*/
+/*	%M	6.2	83/10/12	*/
 
 #if defined(VAX750) || defined(VAX730)
 /*
@@ -719,7 +719,7 @@ tu_vee(cp)
 tu_restart()
 {
 	tureset();
-	timeout(tustart(), (caddr_t)0, hz * 3);
+	timeout(tustart, (caddr_t)0, hz * 3);
 }
 
 #endif
