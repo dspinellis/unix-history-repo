@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)tt06	8.1 (Berkeley) %G%
+.\"	@(#)tt06	8.2 (Berkeley) %G%
 .\"
 .NH
 Local Motions: Drawing lines and characters
@@ -256,7 +256,7 @@ so
 may be the only way to get what you want:
 .P1
 .sp 2
-\s8\z\(sq\s14\z\(sq\s22\z\(sq\s36\(sq
+\s8\z\(sq\h'-1p'\s14\z\(sq\h'-1p'\s22\z\(sq\h'-1p'\s36\(sq
 .P2
 is produced by
 .P1
@@ -287,7 +287,7 @@ constructing them with piled-up smaller pieces:
 .P1
 .sp
 .ne 3
-\b'\(lt\(lk\(lb' \b'\(lc\(lf' x \b'\(rc\(rf' \b'\(rt\(rk\(rb'
+\b'\(lt\(lk\(lb' \b'\(lc\(lf' x  \|\b'\(rc\(rf' \b'\(rt\(rk\(rb'
 .sp
 .P2
 by typing in only this:
