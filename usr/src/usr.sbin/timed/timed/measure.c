@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)measure.c	2.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)measure.c	2.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -24,6 +24,7 @@ static char sccsid[] = "@(#)measure.c	2.2 (Berkeley) %G%";
 extern int id;
 int measure_delta;
 extern int sock_raw;
+static n_short seqno = 0;
 
 /*
  * Measures the differences between machines' clocks using
@@ -36,19 +37,20 @@ struct sockaddr_in *addr;
 {
 	int length;
 	int status;
-	int msgcount, trials, ntransmitted;
+	int msgcount, trials;
 	int cc, count;
 	fd_set ready;
 	long sendtime, recvtime, histime;
 	long min1, min2, diff;
 	register long delta1, delta2;
 	struct timeval tv1, tout;
-	u_char packet[PACKET_IN];
+	u_char packet[PACKET_IN], opacket[64];
 	register struct icmp *icp = (struct icmp *) packet;
-	
+	register struct icmp *oicp = (struct icmp *) opacket;
+	struct ip *ip = (struct ip *) packet;
+
 	min1 = min2 = 0x7fffffff;
-	ntransmitted = 1;
-	status = GOOD;
+	status = HOSTDOWN;
 	measure_delta = HOSTDOWN;
 
 /* empties the icmp input queue */
@@ -75,27 +77,27 @@ empty:
 	 */
 
 	length = sizeof(struct sockaddr_in);
-	icp->icmp_type = ICMP_TSTAMP;
-	icp->icmp_code = 0;
-	icp->icmp_cksum = 0;
-	icp->icmp_id = id;
-	icp->icmp_rtime = 0;
-	icp->icmp_ttime = 0;
+	oicp->icmp_type = ICMP_TSTAMP;
+	oicp->icmp_code = 0;
+	oicp->icmp_cksum = 0;
+	oicp->icmp_id = id;
+	oicp->icmp_rtime = 0;
+	oicp->icmp_ttime = 0;
 	FD_ZERO(&ready);
 	msgcount = 0;
 	for (trials = 0; msgcount < MSGS && trials < TRIALS; ++trials) {
-		icp->icmp_seq = ntransmitted++;
-		trials++;
+		oicp->icmp_seq = ++seqno;
+		oicp->icmp_cksum = 0;
 
 		tout.tv_sec = wait->tv_sec;
 		tout.tv_usec = wait->tv_usec;
 
     		(void)gettimeofday (&tv1, (struct timezone *)0);
-		sendtime = icp->icmp_otime = (tv1.tv_sec % (24*60*60)) * 1000 
+		sendtime = oicp->icmp_otime = (tv1.tv_sec % (24*60*60)) * 1000 
 							+ tv1.tv_usec / 1000;
-		icp->icmp_cksum = in_cksum((u_short *)icp, sizeof(*icp));
+		oicp->icmp_cksum = in_cksum((u_short *)oicp, sizeof(*oicp));
 	
-		count = sendto(sock_raw, (char *)packet, sizeof(*icp), 0, 
+		count = sendto(sock_raw, (char *)opacket, sizeof(*oicp), 0, 
 				addr, sizeof(struct sockaddr_in));
 		if (count < 0) {
 			status = UNREACHABLE;
@@ -111,9 +113,10 @@ empty:
 			(void)gettimeofday(&tv1, (struct timezone *)0);
 			if (cc < 0)
 				return(-1);
-			if((icp->icmp_type != ICMP_TSTAMPREPLY) || 
-			    icp->icmp_id != id)
-				continue;
+			icp = (struct icmp *)(packet + (ip->ip_hl << 2));
+			if((icp->icmp_type == ICMP_TSTAMPREPLY) &&
+			    icp->icmp_id == id && icp->icmp_seq == seqno)
+				break;
 		}
 		if (count <= 0)
 			continue;		/* resend */
@@ -137,6 +140,7 @@ empty:
 			status = NONSTDTIME;
 			break;
 		}
+		status = GOOD;
 		delta1 = histime - sendtime;
 		/*
 		 * Handles wrap-around to avoid that around 
@@ -157,8 +161,11 @@ empty:
 			min1 = delta1;
 		if (delta2 < min2)
 			min2 = delta2;
-		if (diff < RANGE)
+		if (diff < RANGE) {
+			min1 = delta1;
+			min2 = delta2;
 			break;
+		}
 	}
 
 	/*
