@@ -1,5 +1,5 @@
-static char *sccsid = "@(#)num.c	4.1 (Berkeley) %G%";
-#include	"stdio.h"
+static char *sccsid = "@(#)num.c	4.2 (Berkeley) %G%";
+#include	<stdio.h>
 #define		formfeed 0xc
 
 /*
