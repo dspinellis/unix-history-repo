@@ -1,4 +1,4 @@
-/*	@(#)defs.h	3.9 84/03/03		*/
+/*	@(#)defs.h	3.10 84/03/29		*/
 
 #include "ww.h"
 #ifndef O_4_1A

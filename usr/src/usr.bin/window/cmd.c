@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.21 84/03/03";
+static	char *sccsid = "@(#)cmd.c	3.22 84/03/29";
 #endif
 
 #include "defs.h"
@@ -209,36 +209,4 @@ struct ww *w;
 		return -1;
 	}
 	return 0;
-}
-
-setselwin(w)
-struct ww *w;
-{
-	if (selwin == w)
-		return;
-	lastselwin = selwin;
-	front(selwin = w, 1);
-}
-
-/*
- * wwvisible() doesn't work for tinted windows.
- * But anything to make it faster.
- */
-front(w, doreframe)
-register struct ww *w;
-{
-	struct ww *oldselwin = selwin;
-}
-
-labelwin(w)
-register struct ww *w;
-{
-	char buf[2];
-	int mode = w == selwin ? WINVERSE : 0;
-
-	buf[0] = w->ww_ident + '0';
-	buf[1] = 0;
-	wwlabel(w, 1, buf, mode);
-	if (w->ww_label)
-		wwlabel(w, 3, w->ww_label, mode);
 }
