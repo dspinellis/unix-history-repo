@@ -1,17 +1,17 @@
-/*	locore.s	6.17	84/08/23	*/
+/*	locore.s	6.18	84/08/28	*/
 
-#include "../machine/psl.h"
-#include "../machine/pte.h"
+#include "psl.h"
+#include "pte.h"
 
-#include "../h/errno.h"
-#include "../h/cmap.h"
+#include "errno.h"
+#include "cmap.h"
 
-#include "../vax/mtpr.h"
-#include "../vax/trap.h"
-#include "../vax/cpu.h"
-#include "../vax/nexus.h"
-#include "../vax/cons.h"
-#include "../vax/clock.h"
+#include "mtpr.h"
+#include "trap.h"
+#include "cpu.h"
+#include "nexus.h"
+#include "cons.h"
+#include "clock.h"
 #include "../vaxuba/ubareg.h"
 
 #include "dz.h"
