@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)as.h 4.17 %G%
+ *	@(#)as.h 4.18 %G%
  */
 #define	reg	register
 
@@ -20,24 +20,14 @@
  *	Sizes for character buffers.
  *	what			size #define name	comments
  *
- *	source file reads	ASINBUFSIZ		integral of BUFSIZ
- *	string assembly		NCPString		large for .stabs
  *	name assembly		NCPName	
- *	string save		STRPOOLDALLOP	
+ *	name save		STRPOOLDALLOP	
  *
- *
- *	-source file reads should be integral of BUFSIZ for efficient reads
- *	-string saving is a simple first fit
+ *	-name saving is a simple first fit
  */
-#ifndef ASINBUFSIZ
-#	define	ASINBUFSIZ	4096
-#endif not ASINBUFSIZ
 #ifndef STRPOOLDALLOP
 #	define STRPOOLDALLOP	8192
 #endif not STRPOOLDALLOP
-#ifndef NCPString
-#	define	NCPString	4080
-#endif not NCPString
 
 #define	NCPName	NCPS
 #ifndef NCPS
@@ -47,7 +37,7 @@
 /*
  *	Check sizes, and compiler error if sizes botch
  */
-#if ((STRPOOLDALLOP < NCPString) || (STRPOOLDALLOP < NCPName))
+#if STRPOOLDALLOP < NCPName
 	$$$botch with definition sizes
 #endif test botches
 /*
