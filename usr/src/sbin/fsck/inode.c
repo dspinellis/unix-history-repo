@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)inode.c	3.8 (Berkeley) %G%";
+static char version[] = "@(#)inode.c	3.9 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -16,12 +16,12 @@ ckinode(dp, idesc)
 	int ret, n, ndb, offset;
 	DINODE dino;
 
-	if (SPECIAL(dp))
-		return (KEEPON);
-	dino = *dp;
 	idesc->id_fix = DONTKNOW;
 	idesc->id_entryno = 0;
 	idesc->id_filesize = dp->di_size;
+	if (SPECIAL(dp))
+		return (KEEPON);
+	dino = *dp;
 	ndb = howmany(dino.di_size, sblock.fs_bsize);
 	for (ap = &dino.di_db[0]; ap < &dino.di_db[NDADDR]; ap++) {
 		if (--ndb == 0 && (offset = blkoff(&sblock, dino.di_size)) != 0)
