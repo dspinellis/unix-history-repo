@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmds.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmds.c	4.6 (Berkeley) %G%";
 #endif
 
 /*
@@ -414,7 +414,7 @@ startpr(enable)
 		else
 			printf("\tprinting enabled\n");
 	}
-	if (!startdaemon(host))
+	if (!startdaemon(printer))
 		printf("\tcouldn't start daemon\n");
 	else
 		printf("\tdaemon started\n");
@@ -587,4 +587,151 @@ stoppr()
 		}
 	} else
 		printf("\tcannot stat lock file\n");
+}
+
+/*
+ * Put the specified jobs at the top of printer queue.
+ */
+topq(argc, argv)
+	char *argv[];
+{
+	register int status, nitems, n;
+	struct stat stbuf;
+	register char *cfname;
+	struct queue **queue;
+
+	if (argc == 1) {
+		printf("Usage: topq printer [jobnum ...] [user ...]\n");
+		return;
+	}
+
+	--argc;
+	printer = *++argv;
+	status = pgetent(line, printer);
+	if (status < 0) {
+		printf("cannot open printer description file\n");
+		return;
+	}
+	if (status == 0) {
+		printf("%s: unknown printer\n", printer);
+		return;
+	}
+	bp = pbuf;
+	if ((SD = pgetstr("sd", &bp)) == NULL)
+		SD = DEFSPOOL;
+	if ((LO = pgetstr("lo", &bp)) == NULL)
+		LO = DEFLOCK;
+	printf("%s:\n", printer);
+
+	if (chdir(SD) < 0) {
+		printf("\tcannot chdir to %s\n", SD);
+		return;
+	}
+	nitems = getq(&queue);
+	while (--argc) {
+		if ((n = inqueue(*++argv, queue, nitems)) < 0) {
+			printf("\tjob %s is not in the queue\n", *argv);
+			continue;
+		}
+		/*
+		 * Reposition the job by changing the modification time of
+		 * the control file.
+		 */
+		if (touch(queue[n]->q_name) == 0) {
+			free(queue[n]);
+			queue[n] = NULL;
+		}
+	}
+	/*
+	 * Put the remaining jobs at the end of the queue.
+	 */
+	for (n = 0; n < nitems; n++) {
+		cfname = queue[n]->q_name;
+		if (cfname == NULL)
+			continue;
+		touch(cfname);
+		free(cfname);
+	}
+	free(queue);
+	/*
+	 * Turn on the public execute bit of the lock file to
+	 * get lpd to rebuild the queue after the current job.
+	 */
+	if (stat(LO, &stbuf) >= 0)
+		(void) chmod(line, (stbuf.st_mode & 0777) | 01);
+} 
+
+/* 
+ * Change the modification time of the file.
+ *	Returns boolean if successful.  
+ */
+touch(cfname)
+	char *cfname;
+{
+	register int fd;
+
+	fd = open(cfname, O_RDWR);
+	if (fd < 0) {
+		printf("\tcannot to open %s\n", cfname);
+		return(0); 
+	}
+	(void) read(fd, line, 1);
+	(void) lseek(fd, 0, 0); 	/* set pointer back to top of file */
+	(void) write(fd, line, 1);
+	(void) close(fd);
+	return(1);
+}
+
+/*
+ * Checks if specified job name is in the printer's queue.
+ * Returns:  negative (-1) if argument name is not in the queue.
+ *     0 to n:  array index of pointer to argument name.
+ */
+inqueue(job, queue, nitems)
+	char *job;
+	struct queue *queue[];
+	int nitems;
+{
+	register struct queue *q;
+	register int n, jobnum, fd;
+	register char *cp;
+
+	printf("inqueue(%s, %x, %d)\n", job, queue, nitems);
+	jobnum = -1;
+	if (isdigit(*job)) {
+		jobnum = 0;
+		do
+			jobnum = jobnum * 10 + (*job++ - '0');
+		while (isdigit(*job));
+		printf("jobnum = %d\n", jobnum);
+	}
+
+	while (--nitems >= 0) {
+		if ((q = queue[nitems]) == NULL)
+			continue;
+		/* this needs to be fixed since the same number can be used
+		   by different machines (i.e. jobnum & machine) */
+		printf("q = %s\n", q->q_name);
+		if (jobnum >= 0) {
+			n = 0;
+			for (cp = q->q_name+3; isdigit(*cp); cp++)
+				n = n * 10 + (*cp - '0');
+			if (jobnum == n)
+				return(nitems);
+			continue;
+		}
+		/*
+		 * Read cf file for owner's name
+		 */
+		if ((fd = open(q->q_name, O_RDONLY)) < 0)
+			continue;
+		while (getline(fd) > 0) {
+			if (line[0] == 'P' && !strcmp(job, line+1)) {
+				(void) close(fd);
+				return(nitems);
+			}
+		}
+		(void) close(fd);
+	}
+	return(-1);
 }

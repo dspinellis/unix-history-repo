@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	4.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)cmdtab.c	4.1 (Berkeley) %G%";
 
 int	abort(), clean(), enable(), disable(), help();
 int	quit(), restart(), start(), status(), stop();
+int	topq();
 
 char	aborthelp[] =	"terminate a spooling daemon immediately and disable printing";
 char	cleanhelp[] =	"remove cruft files from a queue";
@@ -21,6 +22,7 @@ char	restarthelp[] =	"restart a spooling daemon that has died";
 char	starthelp[] =	"enable printing and start a spooling daemon";
 char	statushelp[] =	"show status of daemon";
 char	stophelp[] =	"stop a spooling daemon after current job completes and disable printing";
+char	topqhelp[] =	"put job at top of printer queue";
 
 struct cmd cmdtab[] = {
 	{ "abort",	aborthelp,	abort,		1 },
@@ -34,6 +36,7 @@ struct cmd cmdtab[] = {
 	{ "start",	starthelp,	start,		1 },
 	{ "status",	statushelp,	status,		0 },
 	{ "stop",	stophelp,	stop,		1 },
+	{ "topq",	topqhelp,	topq,		0 },
 	{ "?",		helphelp,	help,		0 },
 	{ 0 },
 };
