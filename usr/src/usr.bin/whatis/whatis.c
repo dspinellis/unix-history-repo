@@ -12,14 +12,19 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)whatis.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)whatis.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
-#include <stdio.h>
+#include <sys/queue.h>
+
 #include <ctype.h>
-#include <string.h>
+#include <err.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "../man/config.h"
 #include "../man/pathnames.h"
 
 #define	MAXLINELEN	256			/* max line handled */
@@ -34,9 +39,9 @@ main(argc, argv)
 {
 	extern char *optarg;
 	extern int optind;
-	register char *beg, **p;
+	ENTRY *ep;
 	int ch;
-	char *p_augment, *p_path, **getdb();
+	char *beg, **p, *p_augment, *p_path, **getdb();
 
 	progname = "whatis";
 	p_augment = p_path = NULL;
@@ -59,10 +64,9 @@ main(argc, argv)
 	if (argc < 1)
 		usage();
 
-	/*NOSTRICT*/
-	if (!(found = (int *)malloc((u_int)argc)))
-		enomem();
-	bzero((char *)found, argc * sizeof(int));
+	if ((found = malloc((u_int)argc)) == NULL)
+		err(1, NULL);
+	memset(found, 0, argc * sizeof(int));
 
 	for (p = argv; *p; ++p)			/* trim full paths */
 		if (beg = rindex(*p, '/'))
@@ -72,9 +76,14 @@ main(argc, argv)
 		whatis(argv, p_augment, 1);
 	if (p_path || (p_path = getenv("MANPATH")))
 		whatis(argv, p_path, 1);
-	else
-		for (p = getdb(); *p; ++p)
-			whatis(argv, *p, 0);
+	else {
+		config();
+		ep = getlist("_whatdb");
+		if (ep != NULL)
+			ep = ep->list.qe_next;
+		for (; ep != NULL; ep = ep->list.qe_next)
+			whatis(argv, ep->s, 0);
+	}
 
 	if (!foundman) {
 		fprintf(stderr, "whatis: no %s file found.\n", _PATH_WHATIS);
