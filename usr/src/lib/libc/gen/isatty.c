@@ -16,15 +16,15 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)isatty.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)isatty.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-#include <sgtty.h>
+#include <termios.h>
 
 isatty(fd)
 	int fd;
 {
-	struct sgttyb ttyb;
+	struct termios t;
 
-	return(ioctl(fd, TIOCGETP, &ttyb) >= 0);
+	return(tcgetattr(fd, &t) != -1);
 }
