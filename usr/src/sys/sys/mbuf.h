@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mbuf.h	8.4 (Berkeley) %G%
+ *	@(#)mbuf.h	8.5 (Berkeley) %G%
  */
 
 #ifndef M_WAITOK
@@ -350,6 +350,7 @@ void	m_adj __P((struct mbuf *, int));
 int	m_clalloc __P((int, int));
 void	m_copyback __P((struct mbuf *, int, int, caddr_t));
 void	m_freem __P((struct mbuf *));
+void	m_reclaim __P((void));
 
 #ifdef MBTYPES
 int mbtypes[] = {				/* XXX */
