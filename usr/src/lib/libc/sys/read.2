@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)read.2	8.3 (Berkeley) %G%
+.\"     @(#)read.2	8.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt READ 2
@@ -19,7 +19,7 @@
 .Ft ssize_t
 .Fn read "int d" "void *buf" "size_t nbytes"
 .Ft ssize_t
-.Fn readv "int d" "struct iovec *iov" "int iovcnt"
+.Fn readv "int d" "const struct iovec *iov" "int iovcnt"
 .Sh DESCRIPTION
 .Fn Read
 attempts to read
