@@ -1,0 +1,120 @@
+ageval	ageval.c	?^ageval(tree, result)$?
+aggregate	aggregate.c	?^aggregate(root)$?
+agspace	aggregate.c	?^agspace(aop)$?
+algorithm	reduction.c	?^algorithm(clist, varmap)$?
+buildlist	reduction.c	?^buildlist(root1, buf)$?
+byeval	byeval.c	?^byeval(root, aghead, agvar)$?
+call_dbu	call_dbu.c	?^call_dbu(code, errflag)$?
+call_ovqp	call_ovqp.c	?^call_ovqp(tree, mode, resultnum)$?
+catcherr	call_dbu.c	?^catcherr(pc, pv)$?
+checkagg	aggregate.c	?^checkagg(aghead1, aop1, aghead2, aop2)$?
+chklink	aggregate.c	?^chklink(root)$?
+chkwidth	aggregate.c	?^chkwidth(aop, widthp, domno)$?
+ckpkey	reformat.c	?^ckpkey(linkmap, var)$?
+ckpkey1	reformat.c	?^ckpkey1(linkmap, ap)$?
+ckvar	tempvar.c	?^ckvar(t)$?
+clearvar	setvar.c	?^clearvar(tree, var)$?
+closer1	openrs.c	?^closer1(var)$?
+closers	openrs.c	?^closers()$?
+construct	reduction.c	?^construct(root, listhead, buf)$?
+copy_ands	makenode.c	?^copy_ands(root, buf)$?
+copytree	makenode.c	?^copytree(r, buf)$?
+costfunc	selectv.c	?^costfunc(root, var, rx)$?
+cprime	aggregate.c	?^cprime(aop)$?
+de_init	de_init.c	?^de_init(argc, argv)$?
+de_rubproc	de_init.c	?^de_rubproc()$?
+decision	decision.c	?^decision(root, qmode, result_num, buf)$?
+decomp	decomp.c	?^decomp(q, qmode, result_num)$?
+decompx	decomp.c	?^decompx(root, qmode, result_num)$?
+decompy	decomp.c	?^decompy(q, qmode, result_num, sqbuf)$?
+decompz	decomp.c	?^decompz(q, qmode, result_num)$?
+derror	error.c	?^derror(eno)$?
+desc_close	openrs.c	?^desc_close(dt1)$?
+desc_get	openrs.c	?^desc_get(relnum, flag)$?
+desc_last	openrs.c	?^desc_last(dt)$?
+desc_lru	openrs.c	?^desc_lru()$?
+desc_top	openrs.c	?^desc_top(dt1)$?
+desc_victum	openrs.c	?^desc_victum()$?
+dfind	pull_sq.c	?^dfind(tree, buf, sqlist)$?
+domnam	usubr.c	?^domnam(lnp, pre)$?
+dstr_mark	usubr.c	?^dstr_mark(relnum)$?
+dstr_rel	usubr.c	?^dstr_rel(relnum)$?
+endovqp	call_ovqp.c	?^endovqp(ack)$?
+endquery	rangetable.c	?^endquery(locrang, reopen)$?
+exec_sq	exec_sq.c	?^exec_sq(sqlist, sqrange, disj)$?
+execsq1	exec_sq.c	?^execsq1(sq, var, relnum)$?
+findagg	aggregate.c	?^findagg(nodep,  agf)$?
+findlinks	reformat.c	?^findlinks(node, selv, linkv, linkmap)$?
+findwid	reformat.c	?^findwid(tree)$?
+fixovlap	decision.c	?^fixovlap(qlist, ovlapvar, buf)$?
+fixrange	decision.c	?^fixrange(root, tree, ovlapvar, reductnum, newrelnu?
+fixresult	decision.c	?^fixresult(root, tree1, newmode, origmode, resnum)$?
+fixtl	decision.c	?^fixtl(tree1, qp1, ovlapvar, buf)$?
+getformat	usubr.c	?^getformat(p)$?
+getrange	aggregate.c	?^getrange(varmap)$?
+hashcost	reformat.c	?^hashcost(npages)$?
+init_decomp	call_ovqp.c	?^init_decomp()$?
+initdesc	openrs.c	?^initdesc(mode)$?
+initrange	rangetable.c	?^initrange()$?
+listcomp	decision.c	?^listcomp(list, mesg)$?
+lnode	usubr.c	?^lnode(nod, lnodv, count)$?
+lockit	lockit.c	?^lockit(root, resvar)$?
+mak_t_rel	usubr.c	?^mak_t_rel(tree, prefix, rnum)$?
+makavar	makenode.c	?^makavar(node, varnum, attnum)$?
+makresdom	makenode.c	?^makresdom(buf, node)$?
+makroot	makenode.c	?^makroot(buf)$?
+maktl	pull_sq.c	?^maktl(node, buf, sq1, varno)$?
+mapvar	mapvar.c	?^mapvar(t, tl)$?
+mk_unique	ret_unique.c	?^mk_unique(root)$?
+mklist	mklist.c	?^mklist(tree)$?
+mksqlist	usubr.c	?^mksqlist(tree, var)$?
+modqual	byeval.c	?^modqual(root, lnodv, srcmap, agvar)$?
+modtree	aggregate.c	?^modtree(pnode, lnodv, replmap)$?
+new_range	rangetable.c	?^new_range(var, relnum)$?
+newquery	rangetable.c	?^newquery(locrang)$?
+openindex	call_ovqp.c	?^openindex(name)$?
+openr1	openrs.c	?^openr1(var)$?
+openrs	openrs.c	?^openrs(root)$?
+openup	openrs.c	?^openup(dt1, varno, mode)$?
+opt_bylist	aggregate.c	?^opt_bylist(alist, root)$?
+order	reduction.c	?^order(clist, ovlapvar)$?
+origvar	tempvar.c	?^origvar(t, sqlist)$?
+ov_err	call_ovqp.c	?^ov_err(code)$?
+ovqpnod	call_ovqp.c	?^ovqpnod(q)$?
+pr_unique	ret_unique.c	?^pr_unique(root1, var1)$?
+prime	ageval.c	?^prime(aop)$?
+primrf	reformat.c	?^primrf(var, pq, locrang)$?
+prlinks	prlinks.c	?^prlinks(label,linkmap)$?
+pull_const	pull_const.c	?^pull_const(root, buf)$?
+pull_sq	pull_sq.c	?^pull_sq(tree1, sqlist, locrang, sqrange, buf)$?
+qryproc	qryproc.c	?^qryproc(pc, pv)$?
+rangename	rangetable.c	?^rangename(var)$?
+rangrf	reformat.c	?^rangrf(var, substvar, sq, buf, linkmap, tree, locr?
+readagg_result	call_ovqp.c	?^readagg_result(result)$?
+readopen	openrs.c	?^readopen(var)$?
+reformat	reformat.c	?^reformat(var, sqlist, locrang, buf, tree)$?
+reinit	reinit.c	?^reinit()$?
+rel_pages	usubr.c	?^rel_pages(tupcnt, width)$?
+removedups	ageval.c	?^removedups(var)$?
+reset_sq	exec_sq.c	?^reset_sq(sqlist, locrang, limit)$?
+rmovlap	decision.c	?^rmovlap(qlist, ovlapvar)$?
+rnum_alloc	rnum.c	?^rnum_alloc()$?
+rnum_assign	rnum.c	?^rnum_assign(name)$?
+rnum_convert	rnum.c	?^rnum_convert(num)$?
+rnum_init	rnum.c	?^rnum_init()$?
+rnum_last	rnum.c	?^rnum_last()$?
+rnum_remove	rnum.c	?^rnum_remove(num)$?
+rnum_temp	rnum.c	?^rnum_temp(rnum)$?
+rstrang	rangetable.c	?^rstrang(locrang, var)$?
+sameafcn	aggregate.c	?^sameafcn(q1, q2)$?
+sameagg	aggregate.c	?^sameagg(aghead, newaop, agg_depth)$?
+savrang	rangetable.c	?^savrang(locrang, var)$?
+selectv	selectv.c	?^selectv(root)$?
+setvar	setvar.c	?^setvar(tree, var, intid, tuple)$?
+specclose	openrs.c	?^specclose(relnum)$?
+specopen	openrs.c	?^specopen(relnum)$?
+startdecomp	call_ovqp.c	?^startdecomp()$?
+tempvar	tempvar.c	?^tempvar(node, sqlist, buf)$?
+undo_sq	exec_sq.c	?^undo_sq(sqlist, locrang, sqrange, limit, maxlimit,?
+varfind	aggregate.c	?^varfind(root, aghead)$?
+writeopen	openrs.c	?^writeopen(var)$?
