@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)res_send.c	6.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.20 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -224,16 +224,29 @@ res_send(buf, buflen, answer, anslen)
 #endif DEBUG
 					continue;
 				}
-			} else
+			} else {
+				/*
+				 * Disconnect if we want to listen
+				 * for responses from more than one server.
+				 */
+				if (connected) {
+					(void) connect(s, &no_addr,
+					    sizeof(no_addr));
+					connected = 0;
+				}
 #endif BSD
-			if (sendto(s, buf, buflen, 0, &_res.nsaddr_list[ns],
-			    sizeof(struct sockaddr)) != buflen) {
+				if (sendto(s, buf, buflen, 0,
+				    &_res.nsaddr_list[ns],
+				    sizeof(struct sockaddr)) != buflen) {
 #ifdef DEBUG
-				if (_res.options & RES_DEBUG)
-					perror("sendto");
+					if (_res.options & RES_DEBUG)
+						perror("sendto");
 #endif DEBUG
-				continue;
+					continue;
+				}
+#if	BSD >= 43
 			}
+#endif
 
 			/*
 			 * Wait for reply
@@ -263,15 +276,6 @@ wait:
 				if (_res.options & RES_DEBUG)
 					printf("timeout\n");
 #endif DEBUG
-				/*
-				 * Disconnect if we want to listen
-				 * for responses from more than one server.
-				 */
-				if (_res.nscount > 1 && connected) {
-					(void) connect(s, &no_addr,
-					    sizeof(no_addr));
-					connected = 0;
-				}
 				gotsomewhere = 1;
 				continue;
 			}
@@ -325,13 +329,11 @@ wait:
 		 * over the rest (i.e. it is on the local machine) and only
 		 * keep that one open.
 		 */
-		if ((_res.options & KEEPOPEN) == KEEPOPEN && ns == 0) {
-			return (resplen);
-		} else {
+		if ((_res.options & KEEPOPEN) == 0 || ns != 0) {
 			(void) close(s);
 			s = -1;
-			return (resplen);
 		}
+		return (resplen);
 	   }
 	}
 	if (s >= 0) {
