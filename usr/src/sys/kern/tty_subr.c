@@ -1,4 +1,4 @@
-/*	tty_subr.c	4.8	%G%	*/
+/*	tty_subr.c	4.9	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -302,33 +302,6 @@ out:
 	return(cc);
 }
 
-char *
-wb_to_q(cp, cc, q)
-register char *cp;
-register struct clist *q;
-register cc;
-{
-char *f;
-register s;
-
-	s = spl6();
-	while (cc > cfreecount) {
-		cwaiting = 1;
-		sleep(&cwaiting, TTOPRI);
-	}
-	if (q->c_cc==0) {
-		b_to_q(cp, cc, q);
-		f = q->c_cf;
-	} else {
-		(void) putc(*cp++, q);
-		f = q->c_cl;
-		f--;
-		b_to_q(cp, --cc, q);
-	}
-	splx(s);
-	return(f);
-}
-
 /*
  * Given a non-NULL pointter into the list (like c_cf which
  * always points to a real character if non-NULL) return the pointer
@@ -411,6 +384,7 @@ struct clist *from, *to;
  * integer (2-byte) get/put
  * using clists
  */
+#ifdef unneeded
 getw(p)
 register struct clist *p;
 {
@@ -421,6 +395,7 @@ register struct clist *p;
 	s = getc(p);
 	return(s | (getc(p)<<8));
 }
+#endif
 
 putw(c, p)
 register struct clist *p;

@@ -1,4 +1,4 @@
-/*	locore.s	4.34	81/03/08	*/
+/*	locore.s	4.35	81/03/09	*/
 
 #include "../h/mtpr.h"
 #include "../h/trap.h"
@@ -7,6 +7,8 @@
 #include "../h/cpu.h"
 #include "../h/nexus.h"
 #include "../h/ubareg.h"
+
+#include "dz.h"
 #include "mba.h"
 
 	.set	HIGH,0x1f	# mask for total disable
@@ -167,6 +169,7 @@ SCBVEC(consdin):
 SCBVEC(consdout):
 	halt
 
+#if NDZ > 0
 /*
  * DZ pseudo dma routine:
  *	r0 - controller number
@@ -203,6 +206,7 @@ dzpcall:
 	calls	$1,*(r0)		# call interrupt rtn
 	movl	(sp)+,r3
 	brb 	dzploop			# check for another line
+#endif
 
 /*
  * Stray UNIBUS interrupt catch routines

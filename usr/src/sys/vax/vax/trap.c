@@ -1,4 +1,4 @@
-/*	trap.c	4.6	%G%	*/
+/*	trap.c	4.7	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -128,7 +128,7 @@ out:
 		swtch();
 	}
 	if (u.u_prof.pr_scale && (syst -= u.u_vm.vm_stime))
-		addupc((caddr_t)locr0[PC], &u.u_prof, (int)-syst);
+		addupc(locr0[PC], &u.u_prof, (int)-syst);
 	curpri = p->p_pri;
 }
 

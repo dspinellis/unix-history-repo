@@ -1,4 +1,4 @@
-/*	kern_resource.c	4.2	%G%	*/
+/*	kern_resource.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -9,10 +9,11 @@
 #include "../h/proc.h"
 #include "../h/seg.h"
 
+struct	inode *acctp;
+
 /*
  * Perform process accounting functions.
  */
-
 sysacct()
 {
 	register struct inode *ip;
@@ -47,6 +48,7 @@ sysacct()
 	}
 }
 
+struct	acct acctbuf;
 /*
  * On exit, write a record on the accounting file.
  */
@@ -55,27 +57,28 @@ acct()
 	register i;
 	register struct inode *ip;
 	off_t siz;
+	register struct acct *ap = &acctbuf;
 
 	if ((ip=acctp)==NULL)
 		return;
 	plock(ip);
-	for (i=0; i<sizeof(acctbuf.ac_comm); i++)
-		acctbuf.ac_comm[i] = u.u_comm[i];
-	acctbuf.ac_utime = compress((long)u.u_vm.vm_utime);
-	acctbuf.ac_stime = compress((long)u.u_vm.vm_stime);
-	acctbuf.ac_etime = compress((long)(time - u.u_start));
-	acctbuf.ac_btime = u.u_start;
-	acctbuf.ac_uid = u.u_ruid;
-	acctbuf.ac_gid = u.u_rgid;
-	acctbuf.ac_mem = 0;
+	for (i=0; i<sizeof(ap->ac_comm); i++)
+		ap->ac_comm[i] = u.u_comm[i];
+	ap->ac_utime = compress((long)u.u_vm.vm_utime);
+	ap->ac_stime = compress((long)u.u_vm.vm_stime);
+	ap->ac_etime = compress((long)(time - u.u_start));
+	ap->ac_btime = u.u_start;
+	ap->ac_uid = u.u_ruid;
+	ap->ac_gid = u.u_rgid;
+	ap->ac_mem = 0;
 	if (i = u.u_vm.vm_utime + u.u_vm.vm_stime)
-		acctbuf.ac_mem = (u.u_vm.vm_ixrss + u.u_vm.vm_idsrss) / i;
-	acctbuf.ac_io = compress((long)(u.u_vm.vm_inblk + u.u_vm.vm_oublk));
-	acctbuf.ac_tty = u.u_ttyd;
-	acctbuf.ac_flag = u.u_acflag;
+		ap->ac_mem = (u.u_vm.vm_ixrss + u.u_vm.vm_idsrss) / i;
+	ap->ac_io = compress((long)(u.u_vm.vm_inblk + u.u_vm.vm_oublk));
+	ap->ac_tty = u.u_ttyd;
+	ap->ac_flag = u.u_acflag;
 	siz = ip->i_size;
 	u.u_offset = siz;
-	u.u_base = (caddr_t)&acctbuf;
+	u.u_base = (caddr_t)ap;
 	u.u_count = sizeof(acctbuf);
 	u.u_segflg = 1;
 	u.u_error = 0;

@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.15	%G%	*/
+/*	kern_physio.c	4.16	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -33,6 +33,9 @@
  *	bawrite
  *	brelse
  */
+
+struct	buf bfreelist[BQUEUES];
+struct	buf bswlist, *bclnlist;
 
 #define	BUFHSZ	63
 struct	bufhd bufhash[BUFHSZ];

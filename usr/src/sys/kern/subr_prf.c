@@ -1,4 +1,4 @@
-/*	subr_prf.c	4.13	%G%	*/
+/*	subr_prf.c	4.14	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -92,7 +92,7 @@ again:
 	case 'o': case 'O':
 		b = 8;
 number:
-		printn(*adx, b, touser);
+		printn((u_long)*adx, b, touser);
 		break;
 	case 'c':
 		b = *adx;
@@ -103,7 +103,7 @@ number:
 	case 'b':
 		b = *adx++;
 		s = (char *)*adx;
-		printn(b, *s++, touser);
+		printn((u_long)b, *s++, touser);
 		any = 0;
 		if (b) {
 			putchar('<', touser);
@@ -137,7 +137,7 @@ number:
  * We don't use recursion to avoid deep kernel stacks.
  */
 printn(n, b, touser)
-	unsigned long n;
+	u_long n;
 {
 	char prbuf[11];
 	register char *cp;
@@ -168,7 +168,6 @@ panic(s)
 	int bootopt = panicstr ? RB_AUTOBOOT : RB_AUTOBOOT|RB_NOSYNC;
 
 	panicstr = s;
-	printf("panic: %s\n", s);
 	(void) spl0();
 	boot(RB_PANIC, bootopt);
 }

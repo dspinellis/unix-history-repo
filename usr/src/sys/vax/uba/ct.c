@@ -1,4 +1,4 @@
-/*	ct.c	4.1	81/02/23	*/
+/*	ct.c	4.2	81/03/09	*/
 
 #include "cat.h"
 #if NCT > 0
@@ -53,13 +53,13 @@ ctwrite(dev)
 	extern lbolt;
 
 	while ((c=cpass()) >= 0) {
-		spl5();
+		(void) spl5();
 		while (cat.oq.c_cc > CATHIWAT)
 			sleep((caddr_t)&cat.oq, PCAT);
 		while (putc(c, &cat.oq) < 0)
 			sleep((caddr_t)&lbolt, PCAT);
 		ctintr();
-		spl0();
+		(void) spl0();
 	}
 }
 

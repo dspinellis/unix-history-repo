@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.3	%G%	*/
+/*	subr_xxx.c	4.4	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -166,6 +166,7 @@ register c;
 	return(u.u_count == 0? -1: 0);
 }
 
+#ifdef unneeded
 /*
  * Pick up and return the next character from the user's
  * write call at location u_base;
@@ -191,6 +192,7 @@ cpass()
 	u.u_base++;
 	return(c&0377);
 }
+#endif
 
 /*
  * Routine which sets a user error; placed in

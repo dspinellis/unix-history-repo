@@ -1,4 +1,4 @@
-/*	machdep.c	4.23	81/03/08	*/
+/*	machdep.c	4.24	81/03/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,10 +28,7 @@
 #include "../h/cmap.h"
 #include <frame.h>
 
-int	coresw = 0;
-int	printsw = 0;
-
-char	version[] = "VAX/UNIX (Berkeley Version 4.23) 81/03/08 16:18:25 \n";
+char	version[] = "VAX/UNIX (Berkeley Version 4.24) 81/03/09 00:32:40 \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init",0]; pushab */
@@ -53,7 +50,7 @@ startup(firstaddr)
 	int firstaddr;
 {
 	register int unixsize;
-	register int i;
+	register unsigned i;
 	register struct pte *pte;
 	register caddr_t v;
 
@@ -440,8 +437,8 @@ tbiscl(v)
   
 int	waittime = -1;
 
-boot(panic, arghowto)
-	int panic, arghowto;
+boot(paniced, arghowto)
+	int paniced, arghowto;
 {
 	register int howto;		/* r11 == how to boot */
 	register int devtype;		/* r10 == major of root dev */
@@ -463,7 +460,7 @@ boot(panic, arghowto)
 		for (;;)
 			;
 	} else {
-		if (panic == RB_PANIC)
+		if (paniced == RB_PANIC)
 			doadump();
 		tocons(TXDB_BOOT);
 	}

@@ -1,6 +1,4 @@
-/*	uba.c	4.20	%G%	*/
-
-#define	DELAY(N)	{ register int d; d = N; while (--d > 0); }
+/*	uba.c	4.21	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -172,8 +170,9 @@ ubasetup(uban, bp, flags)
  * Non buffer setup interface... set up a buffer and call ubasetup.
  */
 uballoc(uban, addr, bcnt, flags)
+	int uban;
 	caddr_t addr;
-	unsigned short bcnt;
+	int bcnt, flags;
 {
 	struct buf ubabuf;
 

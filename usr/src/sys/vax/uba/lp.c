@@ -1,4 +1,4 @@
-/*	lp.c	4.11	81/03/07	*/
+/*	lp.c	4.12	81/03/09	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -92,12 +92,12 @@ dev_t dev;
 	sc->sc_state |= OPEN;
 	sc->sc_inbuf = geteblk();
 	sc->sc_flags = minor(dev) & 07;
-	spl4();
+	(void) spl4();
 	if ((sc->sc_state&TOUT) == 0) {
 		sc->sc_state |= TOUT;
 		timeout(lptout, dev, 10*hz);
 	}
-	spl0();
+	(void) spl0();
 	lpcanon('\f');
 }
 
@@ -196,9 +196,9 @@ register dev_t dev;
 
 	case '\r':
 		logcol = 0;
-		spl4();
+		(void) spl4();
 		lpintr(dev);
-		spl0();
+		(void) spl0();
 		break;
 
 	case '\b':
@@ -234,13 +234,13 @@ dev_t dev;
 
 	sc = &lp_softc[LPUNIT(dev)];
 	if (sc->sc_outq.c_cc >= LPHWAT) {
-		spl4();
+		(void) spl4();
 		lpintr(dev);				/* unchoke */
 		while (sc->sc_outq.c_cc >= LPHWAT) {
 			sc->sc_state |= ASLP;		/* must be ERROR */
 			sleep((caddr_t)sc, LPPRI);
 		}
-		spl0();
+		(void) spl0();
 	}
 	while (putc(c, &sc->sc_outq))
 		sleep((caddr_t)&lbolt, LPPRI);

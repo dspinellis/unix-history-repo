@@ -1,4 +1,4 @@
-/*	up.c	4.30	81/03/07	*/
+/*	up.c	4.31	81/03/09	*/
 
 #include "up.h"
 #if NSC > 0
@@ -12,7 +12,6 @@
  *	Check unibus reset code
  *	Check that offset recovery code, etc works
  */
-#define	DELAY(N)		{ register int d; d = N; while (--d > 0); }
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -429,7 +428,7 @@ loop:
 	else
 		cmd = UP_IE|UP_WCOM|UP_GO;
 	um->um_cmd = cmd;
-	ubago(ui);
+	(void) ubago(ui);
 	return (1);
 }
 
@@ -796,7 +795,7 @@ updump(dev)
 {
 	struct updevice *upaddr;
 	char *start;
-	int num, blk, unit, i;
+	int num, blk, unit;
 	struct size *sizes;
 	register struct uba_regs *uba;
 	register struct uba_device *ui;

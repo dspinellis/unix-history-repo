@@ -1,8 +1,7 @@
-/*	dh.c	4.28	81/03/07	*/
+/*	dh.c	4.29	81/03/09	*/
 
 #include "dh.h"
 #if NDH > 0
-#define	DELAY(i)	{ register int j = i; while (--j > 0); }
 /*
  * DH-11/DM-11 driver
  */
@@ -190,7 +189,7 @@ dmprobe(reg)
 	register struct dmdevice *dmaddr = (struct dmdevice *)reg;
 
 #ifdef lint
-	br = 0; cvec = br; br = cvec;
+	br = 0; vec = br; br = vec;
 #endif
 	dmaddr->dmcsr = DM_DONE|DM_IE;
 	DELAY(20);
@@ -484,7 +483,7 @@ dhxint(dh)
 				 */
 				cntr = addr->dhcar -
 				    UBACVT(tp->t_outq.c_cf, ui->ui_ubanum);
-				ndflush(&tp->t_outq, cntr);
+				ndflush(&tp->t_outq, (int)cntr);
 			}
 			if (tp->t_line)
 				(*linesw[tp->t_line].l_start)(tp);
@@ -674,7 +673,7 @@ dmopen(dev)
 		return;
 	}
 	addr = (struct dmdevice *)ui->ui_addr;
-	spl5();
+	(void) spl5();
 	addr->dmcsr &= ~DM_SE;
 	while (addr->dmcsr & DM_BUSY)
 		;
@@ -685,7 +684,7 @@ dmopen(dev)
 	addr->dmcsr = DH_IE|DM_SE;
 	while ((tp->t_state&CARR_ON)==0)
 		sleep((caddr_t)&tp->t_rawq, TTIPRI);
-	spl0();
+	(void) spl0();
 }
 
 /*

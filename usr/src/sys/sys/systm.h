@@ -1,4 +1,4 @@
-/*	systm.h	4.13	81/02/28	*/
+/*	systm.h	4.14	81/03/09	*/
 
 /*
  * Random set of variables
@@ -56,9 +56,6 @@ dev_t	pipedev;		/* pipe device */
 
 extern	int icode[];		/* user init code */
 extern	int szicode;		/* its size */
-
-extern	int printsw;		/* debug print switch */
-extern	int coresw;		/* switch to force action on core dumps */
 
 dev_t	getmdev();
 daddr_t	bmap();

@@ -1,10 +1,12 @@
-/*	acct.h	4.2	81/02/19	*/
+/*	acct.h	4.3	81/03/09	*/
 
 /*
- * Accounting structures
+ * Accounting structures;
+ * these use a comp_t type which is a 3 bits base 8
+ * exponent, 13 bit fraction ``floating point'' number.
  */
+typedef	u_short comp_t;
 
-typedef	unsigned short comp_t;	/* "floating pt": 3 bits base 8 exp, 13 bits fraction */
 struct	acct
 {
 	char	ac_comm[10];		/* Accounting command name */
@@ -19,9 +21,6 @@ struct	acct
 	dev_t	ac_tty;			/* control typewriter */
 	char	ac_flag;		/* Accounting flag */
 };
-
-extern	struct	acct	acctbuf;
-extern	struct	inode	*acctp;		/* inode of accounting file */
 
 #define	AFORK	01		/* has executed fork, but no exec */
 #define	ASU	02		/* used super-user privileges */

@@ -1,4 +1,4 @@
-/*	clist.h	4.3	81/02/27	*/
+/*	clist.h	4.4	81/03/09	*/
 
 /*
  * Raw structures for the character list routines.
@@ -8,8 +8,8 @@ struct cblock {
 	char	c_info[CBSIZE];
 };
 #ifdef KERNEL
-extern	struct	cblock *cfree;
-extern	int nclist;
+struct	cblock *cfree;
+int	nclist;
 struct	cblock *cfreelist;
 int	cfreecount;
 #endif

@@ -1,4 +1,4 @@
-/*	nexus.h	4.5	81/03/06	*/
+/*	nexus.h	4.6	81/03/09	*/
 
 /*
  * Information about nexus's.
@@ -28,7 +28,7 @@ struct	nexus {
 	long	nex_pad[NEXSIZE / sizeof (long) - 1];
 };
 #ifdef	KERNEL
-extern struct nexus nexus[NNEXUS];
+struct nexus nexus[NNEXUS];
 #endif
 #endif
 
@@ -48,7 +48,7 @@ extern struct nexus nexus[NNEXUS];
 #if VAX780
 #define	NEXFLT_BITS \
 "\20\40PARFLT\37WSQFLT\36URDFLT\35ISQFLT\34MXTFLT\33XMTFLT"
-extern	char nexflt_bits[];
+char	nexflt_bits[];
 #endif
 #endif
 

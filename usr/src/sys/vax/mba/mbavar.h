@@ -1,4 +1,4 @@
-/*	mbavar.h	4.13	81/03/08	*/
+/*	mbavar.h	4.14	81/03/09	*/
 
 /*
  * This file contains definitions related to the kernel structures
@@ -115,7 +115,6 @@ struct mba_driver {
 #define	MBN_DONE	0		/* non-data transfer complete */
 #define	MBN_RETRY	1		/* failed; retry the operation */
 #define	MBN_SKIP	2		/* don't do anything */
-#define	MBN_CONT	3		/* operation continues */
 
 /*
  * Clear attention status for specified device.
