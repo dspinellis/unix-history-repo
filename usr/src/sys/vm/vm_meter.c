@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_meter.c	8.4 (Berkeley) %G%
+ *	@(#)vm_meter.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -158,15 +158,25 @@ vmtotal(totalp)
 		}
 		/*
 		 * Note active objects.
+		 *
+		 * XXX don't count shadow objects with no resident pages.
+		 * This eliminates the forced shadows caused by MAP_PRIVATE.
+		 * Right now we require that such an object completely shadow
+		 * the original, to catch just those cases.
 		 */
 		paging = 0;
 		for (map = &p->p_vmspace->vm_map, entry = map->header.next;
 		     entry != &map->header; entry = entry->next) {
 			if (entry->is_a_map || entry->is_sub_map ||
-			    entry->object.vm_object == NULL)
+			    (object = entry->object.vm_object) == NULL)
 				continue;
-			entry->object.vm_object->flags |= OBJ_ACTIVE;
-			paging |= entry->object.vm_object->paging_in_progress;
+			while (object->shadow &&
+			       object->resident_page_count == 0 &&
+			       object->shadow_offset == 0 &&
+			       object->size == object->shadow->size)
+				object = object->shadow;
+			object->flags |= OBJ_ACTIVE;
+			paging |= object->paging_in_progress;
 		}
 		if (paging)
 			totalp->t_pw++;
