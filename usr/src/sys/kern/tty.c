@@ -1,4 +1,4 @@
-/*	tty.c	3.18	%G%	*/
+/*	tty.c	3.19	%G%	*/
 
 /*
  * TTY subroutines common to more than one line discipline
@@ -57,6 +57,11 @@ char	maptab[] ={
 	'X','Y','Z',000,000,000,000,000,
 };
 
+short	tthiwat[16] =
+   { 100,100,100,100,100,100,100,200,200,400,400,400,650,650,650,650 };
+short	ttlowat[16] =
+   {  30, 30, 30, 30, 30, 30, 30, 50, 50,120,120,120,125,125,125,125 };
+
 #define	OBUFSIZ	100
 
 /*
@@ -81,9 +86,6 @@ register struct tty *tp;
 	tlun.t_flushc = CTRL(o);
 	tlun.t_werasc = CTRL(w);
 	tlun.t_lnextc = CTRL(v);
-	tlun.t_lintr = CTRL(c);
-	tlun.t_lerase = CTRL(h);
-	tlun.t_lkill = CTRL(u);
 	tp->t_local = 0;
 	tp->t_lstate = 0;
 /* end local */
