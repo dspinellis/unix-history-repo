@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)csh.c 4.5 %G%";
+static	char *sccsid = "@(#)csh.c 4.6 %G%";
 
 #include "sh.h"
 #include <sys/ioctl.h>
@@ -114,8 +114,11 @@ main(c, av)
 	sigset(SIGINT, parintr);			/* ... restore */
 	parterm = signal(SIGTERM, SIG_IGN);	/* parents terminability */
 	signal(SIGTERM, parterm);			/* ... restore */
-	if (loginsh)
+	if (loginsh) {
 		signal(SIGHUP, phup);		/* exit processing on HUP */
+		signal(SIGXCPU, phup);		/* ...and on XCPU */
+		signal(SIGXFSZ, phup);		/* ...and on XFSZ */
+	}
 
 	/*
 	 * Process the arguments.
