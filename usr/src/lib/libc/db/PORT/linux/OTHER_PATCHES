@@ -1,0 +1,29 @@
+*** PORT/db/recno/rec_open.c.orig	1993/10/13 02:01:31
+--- PORT/db/recno/rec_open.c	1993/10/13 02:20:47
+***************
+*** 159,167 ****
+--- 159,182 ----
+  				SET(t, R_EOF);
+  			else {
+  				t->bt_msize = sb.st_size;
++ /*
++  * hack : 
++  *
++  * The Linux kernel mmap() semantics are broken :
++  * 
++  * Under Linux, read only private mappings cause write only and read/write 
++  * opens to fail with errno=ETXTBSY.  Shared read only mappings should work
++  * fine though, but I'm not familiar enough with the code to ascertain that
++  * a MAP_SHARED mapping would be safe so I use the non-mmap'd version 
++  * instead.
++  *
++  */
++ 
++ #if !defined(linux) 
+  				if ((t->bt_smap = mmap(NULL, t->bt_msize,
+  				    PROT_READ, MAP_PRIVATE, rfd,
+  				    (off_t)0)) == (caddr_t)-1)
++ #endif
+  					goto slow;
+  				t->bt_cmap = t->bt_smap;
+  				t->bt_emap = t->bt_smap + sb.st_size;
