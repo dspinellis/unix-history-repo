@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)tahoe.c	1.1 (Berkeley) %G%";
+static	char *sccsid = "@(#)tahoe.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include	"gprof.h"
@@ -186,7 +186,7 @@ reladdr( modep )
     }
 }
 
-findcallf( parentp , p_lowpc , p_highpc )
+findcall( parentp , p_lowpc , p_highpc )
     nltype		*parentp;
     unsigned long	p_lowpc;
     unsigned long	p_highpc;
@@ -209,7 +209,7 @@ findcallf( parentp , p_lowpc , p_highpc )
     }
 #   ifdef DEBUG
 	if ( debug & CALLDEBUG ) {
-	    printf( "[findcallf] %s: 0x%x to 0x%x\n" ,
+	    printf( "[findcall] %s: 0x%x to 0x%x\n" ,
 		    parentp -> name , p_lowpc , p_highpc );
 	}
 #   endif DEBUG
@@ -224,7 +224,7 @@ findcallf( parentp , p_lowpc , p_highpc )
 		 */
 #	    ifdef DEBUG
 		if ( debug & CALLDEBUG ) {
-		    printf( "[findcallf]\t0x%x:callf" , instructp - textspace );
+		    printf( "[findcall]\t0x%x:callf" , instructp - textspace );
 		}
 #	    endif DEBUG
 	    firstmode = operandmode( instructp+length );
@@ -276,7 +276,7 @@ findcallf( parentp , p_lowpc , p_highpc )
 			childp = nllookup( destpc );
 #			ifdef DEBUG
 			    if ( debug & CALLDEBUG ) {
-				printf( "[findcallf]\tdestpc 0x%x" , destpc );
+				printf( "[findcall]\tdestpc 0x%x" , destpc );
 				printf( " childp->name %s" , childp -> name );
 				printf( " childp->value 0x%x\n" ,
 					childp -> value );
@@ -305,7 +305,7 @@ findcallf( parentp , p_lowpc , p_highpc )
 			 */
 #		    ifdef DEBUG
 			if ( debug & CALLDEBUG ) {
-			    printf( "[findcallf]\tbut it's a botch\n" );
+			    printf( "[findcall]\tbut it's a botch\n" );
 			}
 #		    endif DEBUG
 		    length = 1;

@@ -3,22 +3,22 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 #
-SCCSID = @(#)Makefile	5.2 (Berkeley) %G%
-
-DFLAGS = 
-CFLAGS = -O ${DFLAGS}
-LINTFLAGS = -x -a -n ${DFLAGS}
+DESTDIR=
+DFLAGS= 
+CFLAGS=	-O ${DFLAGS}
+LINTFLAGS= -x -a -n ${DFLAGS}
 
 RM=	/bin/rm -f
 INSTALL=install
 PR=pr
-
-GPROFHDRS =	gprof.h vax.h
-GPROFSRCS =	gprof.c arcs.c dfn.c lookup.c calls.c hertz.c \
+#MACHINE=	${MACHINE}
+MACHINE=	tahoe
+GPROFHDRS=	gprof.h ${MACHINE}.h
+GPROFSRCS=	gprof.c arcs.c dfn.c lookup.c ${MACHINE}.c hertz.c \
 		printgprof.c printlist.c
-GPROFOBJS =	gprof.o arcs.o dfn.o lookup.o calls.o hertz.o \
+GPROFOBJS=	gprof.o arcs.o dfn.o lookup.o ${MACHINE}.o hertz.o \
 		printgprof.o printlist.o
 
 gprof: ${GPROFOBJS}
@@ -45,11 +45,11 @@ print:
 lint:
 	lint ${LINTFLAGS} ${DFLAGS} ${GPROFSRCS}
 
-gprof.o: gprof.c gprof.h vax.h gcrt0.h
-arcs.o: arcs.c gprof.h vax.h gcrt0.h
-lookup.o: lookup.c gprof.h vax.h gcrt0.h
-dfn.o: dfn.c gprof.h vax.h gcrt0.h
-calls.o: calls.c gprof.h vax.h gcrt0.h
-hertz.o: gprof.h vax.h hertz.c
-printgprof.o: printgprof.c gprof.h vax.h gcrt0.h
-printlist.o: printlist.c gprof.h vax.h gcrt0.h
+gprof.o: gprof.c gprof.h ${MACHINE}.h gcrt0.h
+arcs.o: arcs.c gprof.h ${MACHINE}.h gcrt0.h
+lookup.o: lookup.c gprof.h ${MACHINE}.h gcrt0.h
+dfn.o: dfn.c gprof.h ${MACHINE}.h gcrt0.h
+${MACHINE}.o: ${MACHINE}.c gprof.h ${MACHINE}.h gcrt0.h
+hertz.o: gprof.h ${MACHINE}.h hertz.c
+printgprof.o: printgprof.c gprof.h ${MACHINE}.h gcrt0.h
+printlist.o: printlist.c gprof.h ${MACHINE}.h gcrt0.h
