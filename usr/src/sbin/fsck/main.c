@@ -1,5 +1,5 @@
 #ifndef lint
-char version[] = "@(#)main.c	2.27 (Berkeley) %G%";
+char version[] = "@(#)main.c	2.28 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -1031,6 +1031,9 @@ pass3()
 	idesc.id_type = DATA;
 	for (inumber = ROOTINO; inumber <= lastino; inumber++) {
 		if (statemap[inumber] == DSTATE) {
+			pathp = pathname;
+			*pathp++ = '?';
+			*pathp = '\0';
 			idesc.id_func = findino;
 			srchname = "..";
 			idesc.id_parent = inumber;
@@ -1046,13 +1049,6 @@ pass3()
 					break;
 			} while (statemap[idesc.id_parent] == DSTATE);
 			if (linkup(orphan, idesc.id_parent) == 1) {
-				pathp = pathname;
-				*pathp++ = '/';
-				len = strlen(lfname);
-				bcopy(lfname, pathp, len + 1);
-				pathp += len;
-				*pathp++ = '/';
-				pathp += lftempname(pathp, orphan);
 				idesc.id_func = pass2check;
 				idesc.id_number = lfdir;
 				descend(&idesc, orphan);
@@ -1998,7 +1994,7 @@ linkup(orphan, pdir)
 	ino_t pdir;
 {
 	register DINODE *dp;
-	register lostdir;
+	int lostdir, len;
 	struct inodesc idesc;
 
 	bzero((char *)&idesc, sizeof(struct inodesc));
@@ -2014,6 +2010,9 @@ linkup(orphan, pdir)
 	else
 		if (reply("RECONNECT") == 0)
 			return (0);
+	pathp = pathname;
+	*pathp++ = '/';
+	*pathp = '\0';
 	if (lfdir == 0) {
 		if ((dp = ginode(ROOTINO)) == NULL)
 			return (0);
@@ -2039,23 +2038,30 @@ linkup(orphan, pdir)
 		dp->di_size = fragroundup(&sblock, dp->di_size);
 		inodirty();
 	}
+	len = strlen(lfname);
+	bcopy(lfname, pathp, len + 1);
+	pathp += len;
 	idesc.id_type = DATA;
 	idesc.id_func = mkentry;
 	idesc.id_number = lfdir;
 	idesc.id_filesize = dp->di_size;
 	idesc.id_parent = orphan;	/* this is the inode to enter */
+	idesc.id_fix = DONTKNOW;
 	if ((ckinode(dp, &idesc) & ALTERED) == 0) {
 		pfatal("SORRY. NO SPACE IN lost+found DIRECTORY");
 		printf("\n\n");
 		return (0);
 	}
 	lncntp[orphan]--;
+	*pathp++ = '/';
+	pathp += lftempname(pathp, orphan);
 	if (lostdir) {
 		dp = ginode(orphan);
 		idesc.id_type = DATA;
 		idesc.id_func = chgdd;
 		idesc.id_number = orphan;
 		idesc.id_filesize = dp->di_size;
+		idesc.id_fix = DONTKNOW;
 		(void)ckinode(dp, &idesc);
 		if ((dp = ginode(lfdir)) != NULL) {
 			dp->di_nlink++;
