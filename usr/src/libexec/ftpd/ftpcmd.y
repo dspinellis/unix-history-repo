@@ -6,7 +6,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	4.5 83/01/16";
+static char sccsid[] = "@(#)ftpcmd.y	4.6 83/01/16";
 #endif
 
 #include <sys/types.h>
@@ -68,12 +68,13 @@ cmd:		USER SP username CRLF
 		= {
 			extern struct passwd *getpwnam();
 
-			if ((strcmp($3, "ftp") == 0 ||
-			    strcmp($3, "anonymous") == 0) &&
-			    (pw = getpwnam("ftp")) != NULL) {
-				guest = 1;
-				reply(331,
+			if (strcmp($3, "ftp") == 0 ||
+			  strcmp($3, "anonymous") == 0) {
+				if ((pw = getpwnam("ftp")) != NULL) {
+					guest = 1;
+					reply(331,
 				  "Guest login ok, send ident as password.");
+				}
 			} else {
 				guest = 0;
 				pw = getpwnam($3);
@@ -282,6 +283,7 @@ host_port:	NUMBER COMMA NUMBER COMMA NUMBER COMMA NUMBER COMMA
 			a[0] = $1; a[1] = $3; a[2] = $5; a[3] = $7;
 			p = (char *)&data_dest.sin_port;
 			p[0] = $9; p[1] = $11;
+			data_dest.sin_family = AF_INET;
 		}
 	;
 
