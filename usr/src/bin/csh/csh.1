@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)csh.1	6.24 (Berkeley) %G%
+.\"     @(#)csh.1	6.25 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CSH 1
@@ -32,7 +32,7 @@ and a C-like syntax. It is used both as an interactive
 login shell and a shell script command processor.
 .Ss Argument list processing
 If the first argument (argument 0) to the shell is
-.Ql Fl
+.Ql Fl \& ,
 .Bl -tag -width 5n
 .It Fl b
 This flag forces a ``break'' from option processing, causing any further
@@ -56,7 +56,7 @@ execute commands from the file
 in the invoker's home directory.
 .It Fl i
 The shell is interactive and prompts for its top-level input,
-even if it appears to not be a terminal.
+even if it appears not to be a terminal.
 Shells are interactive without this option if their inputs
 and outputs are terminals.
 .It Fl l
@@ -111,7 +111,7 @@ by `$0'.
 Since many systems use either the standard version 6 or version 7 shells
 whose shell scripts are not compatible with this shell, the shell will
 execute such a `standard' shell if the first character of a script
-is not a `#', i.e. if the script does not start with a comment.
+is not a `#', i.e., if the script does not start with a comment.
 Remaining arguments initialize the variable
 .Ar argv .
 .Pp
@@ -166,15 +166,15 @@ special meaning, by preceding them with `\e'.
 A newline preceded by a `\e' is equivalent to a blank.
 .Pp
 Strings enclosed in matched pairs of quotations,
-`\*(aa', `\*(ga' or `"',
+`'\|', `\*(ga' or `"',
 form parts of a word; metacharacters in these strings, including blanks
 and tabs, do not form separate words.
-These quotations have semantics to be described subsequently.
-Within pairs of `\'' or `"' characters a newline preceded by a `\e' gives
+These quotations have semantics to be described later.
+Within pairs of `\'' or `"' characters, a newline preceded by a `\e' gives
 a true newline character.
 .Pp
 When the shell's input is not a terminal,
-the character `#' introduces a comment which continues to the end of the
+the character `#' introduces a comment that continues to the end of the
 input line.
 It is prevented this special meaning when preceded by `\e'
 and in quotations using `\`', `\'', and `"'.
@@ -190,9 +190,9 @@ sequentially.
 A sequence of pipelines may be executed without immediately
 waiting for it to terminate by following it with an `&'.
 .Pp
-Any of the above may be placed in `(' `)' to form a simple command (which
-may be a component of a pipeline, etc.)
-It is also possible to separate pipelines with `\&|\&|' or `&&' indicating,
+Any of the above may be placed in `(' `)' to form a simple command (that
+may be a component of a pipeline, etc.).
+It is also possible to separate pipelines with `\&|\&|' or `&&' showing,
 as in the C language,
 that the second is to be executed only if the first fails or succeeds
 respectively. (See
@@ -204,27 +204,27 @@ with each pipeline.  It keeps
 a table of current jobs, printed by the
 .Ar jobs
 command, and assigns them small integer numbers.  When
-a job is started asynchronously with `&', the shell prints a line which looks
+a job is started asynchronously with `&', the shell prints a line that looks
 like:
 .Bd -filled -offset indent
 .Op 1
 1234
 .Ed
 .Pp
-indicating that the job which was started asynchronously was job number
+showing that the job which was started asynchronously was job number
 1 and had one (top-level) process, whose process id was 1234.
 .Pp
 If you are running a job and wish to do something else you may hit the key
 .Nm ^Z
 (control-Z) which sends a STOP signal to the current job.
-The shell will then normally indicate that the job has been `Stopped',
+The shell will then normally show that the job has been `Stopped',
 and print another prompt.  You can then manipulate the state of this job,
 putting it in the
 .Em background
 with the
 .Ar bg
 command, or run some other
-commands and then eventually bring the job back into the foreground with
+commands and eventually bring the job back into the foreground with
 the
 .Em foreground
 command
@@ -235,12 +235,11 @@ takes effect immediately and
 is like an interrupt in that pending output and unread input are discarded
 when it is typed.  There is another special key
 .Nm ^Y
-which does
-not generate a STOP signal until a program attempts to
+that does not generate a STOP signal until a program attempts to
 .Xr read  2
 it.
-This can usefully be typed ahead when you have prepared some commands
-for a job which you wish to stop after it has read them.
+This request can usefully be typed ahead when you have prepared some commands
+for a job that you wish to stop after it has read them.
 .Pp
 A job being run in the background will stop if it tries to read
 from the terminal.  Background jobs are normally allowed to produce output,
@@ -252,8 +251,8 @@ output like they do when they try to read input.
 There are several ways to refer to jobs in the shell.  The character
 `%' introduces a job name.  If you wish to refer to job number 1, you can
 name it as `%1'.  Just naming a job brings it to the foreground; thus
-`%1' is a synonym for `fg %1', bringing job 1 back into the foreground.
-Similarly saying `%1 &' resumes job 1 in the background.
+`%1' is a synonym for `fg %1', bringing job number 1 back into the foreground.
+Similarly saying `%1 &' resumes job number 1 in the background.
 Jobs can also be named by prefixes of the string typed in to start them,
 if these prefixes are unambiguous, thus `%ex' would normally restart
 a suspended
@@ -265,7 +264,7 @@ which specifies a job whose text contains
 if there is only one such job.
 .Pp
 The shell maintains a notion of the current and previous jobs.
-In output pertaining to jobs, the current job is marked with a `+'
+In output about jobs, the current job is marked with a `+'
 and the previous job with a `\-'.  The abbreviation `%+' refers
 to the current job and `%\-' refers to the previous job.  For close
 analogy with the syntax of the
@@ -281,7 +280,7 @@ be set. It is an artifact from a
 .Em new
 implementation
 of the
-tty driver which allows generation of interrupt characters from
+tty driver that allows generation of interrupt characters from
 the keyboard to tell jobs to stop.  See stty(1) for details
 on setting options in the new tty driver.
 .Ss Status reporting
@@ -295,7 +294,7 @@ the shell will notify you immediately of changes of status in background
 jobs.
 There is also a shell command
 .Ar notify
-which marks a single process so that its status changes will be immediately
+that marks a single process so that its status changes will be immediately
 reported.  By default
 .Ar notify
 marks the current process;
@@ -417,21 +416,22 @@ History substitutions begin with the character `!' and may begin
 in the input stream (with the proviso that they
 .Nm "do not"
 nest.)
-This `!' may be preceded by an `\e' to prevent its special meaning; for
-convenience, a `!' is passed unchanged when it is followed by a blank,
+This `!' may be preceded by a `\e' to prevent its special meaning; for
+convenience, an `!' is passed unchanged when it is followed by a blank,
 tab, newline, `=' or `('.
 (History substitutions also occur when an input line begins with `\*(ua'.
 This special abbreviation will be described later.)
-Any input line which contains history substitution is echoed on the terminal
+Any input line that contains history substitution is echoed on the terminal
 before it is executed as it could have been typed without history substitution.
 .Pp
-Commands input from the terminal which consist of one or more words
+Commands input from the terminal that consist of one or more words
 are saved on the history list.
 The history substitutions reintroduce sequences of words from these
 saved commands into the input stream.
-The size of which is controlled by the
+The size of the history list is controlled by the
 .Ar history
-variable; the previous command is always retained, regardless of its value.
+variable; the previous command is always retained,
+regardless of the value of the history variable.
 Commands are numbered sequentially from 1.
 .Pp
 For definiteness, consider the following output from the
@@ -455,10 +455,10 @@ number `!11', relatively as in `!\-2' (referring to the same event),
 by a prefix of a command word
 as in `!d' for event 12 or `!wri' for event 9, or by a string contained in
 a word in the command as in `!?mic?' also referring to event 9.
-These forms, without further modification, simply reintroduce the words
+These forms, without further change, simply reintroduce the words
 of the specified events, each separated by a single blank.
-As a special case `!!' refers to the previous command; thus `!!'
-alone is essentially a
+As a special case, `!!' refers to the previous command; thus `!!'
+alone is a
 .Ar redo .
 .Pp
 To select words from an event we can follow the event specification by
@@ -475,7 +475,7 @@ first (command) word
 .Ar n Ns 'th
 argument
 .It \*(ua
-first argument,  i.e. `1'
+first argument,  i.e., `1'
 .It $
 last argument
 .It %
@@ -522,7 +522,7 @@ Remove all leading pathname components, leaving the tail.
 .It \&&
 Repeat the previous substitution.
 .It g
-Apply the change once on each word, prefixing the above, e.g. `g&'.
+Apply the change once on each word, prefixing the above, e.g., `g&'.
 .It a
 Apply the change as many times as possible on a single word, prefixing
 the above. It can be used together with `g' to apply a substitution 
@@ -535,12 +535,12 @@ Quote the substituted words, preventing further substitutions.
 Like q, but break into words at blanks, tabs and newlines.
 .El
 .Pp
-Unless preceded by a `g' the modification is applied only to the first
+Unless preceded by a `g' the change is applied only to the first
 modifiable word.  With substitutions, it is an error for no word to be
 applicable.
 .Pp
 The left hand side of substitutions are not regular expressions in the sense
-of the editors, but rather strings.
+of the editors, but instead strings.
 Any character may be used as the delimiter in place of `/';
 a `\e' quotes the delimiter into the
 .Ar l  " "
@@ -549,11 +549,11 @@ and
 strings.
 The character `&' in the right hand side is replaced by the text from
 the left.
-A `\e' quotes `&' also.
+A `\e' also quotes `&'.
 A null
 .Ar l
-(" ")
-uses the previous string either from a
+(`//')
+uses the previous string either from an
 .Ar l
 or from a
 contextual scan string
@@ -563,8 +563,8 @@ in
 The trailing delimiter in the substitution may be omitted if a newline
 follows immediately as may the trailing `?' in a contextual scan.
 .Pp
-A history reference may be given without an event specification, e.g. `!$'.
-In this case the reference is to the previous command unless a previous
+A history reference may be given without an event specification, e.g., `!$'.
+Here, the reference is to the previous command unless a previous
 history reference occurred on the same line in which case this form repeats
 the previous reference.
 Thus `!?foo?\*(ua !$' gives the first and last arguments
@@ -578,9 +578,9 @@ Thus `\*(ualb\*(ualib' fixes the spelling of
 `lib'
 in the previous command.
 Finally, a history substitution may be surrounded with `{' and `}'
-if necessary to insulate it from the characters which follow.
+if necessary to insulate it from the characters that follow.
 Thus, after `ls \-ld ~paul' we might do `!{l}a' to do `ls \-ld ~paula',
-while `!la' would look for a command starting `la'.
+while `!la' would look for a command starting with `la'.
 .Pp
 .Ss Quotations with \' and \&"
 The quotation of strings by `\'' and `"' can be used
@@ -590,11 +590,11 @@ Strings enclosed in `"' may be expanded as described below.
 .Pp
 In both cases the resulting text becomes (all or part of) a single word;
 only in one special case (see
-.Em Command Substitition
+.Em Command Substitution
 below) does a `"' quoted string yield parts of more than one word;
 `\'' quoted strings never do.
 .Ss Alias substitution
-The shell maintains a list of aliases which can be established, displayed
+The shell maintains a list of aliases that can be established, displayed
 and modified by the
 .Ar alias
 and
@@ -603,7 +603,7 @@ commands.
 After a command line is scanned, it is parsed into distinct commands and
 the first word of each command, left-to-right, is checked to see if it
 has an alias.
-If it does, then the text which is the alias for that command is reread
+If it does, then the text that is the alias for that command is reread
 with the history mechanism available
 as though that command were the previous input line.
 The resulting words replace the
@@ -623,8 +623,8 @@ by flagging it to prevent further aliasing.
 Other loops are detected and cause an error.
 .Pp
 Note that the mechanism allows aliases to introduce parser metasyntax.
-Thus we can `alias print \'pr \e!* \&| lpr\'' to make a command which
-.Ar pr \'s
+Thus, we can `alias print \'pr \e!* \&| lpr\'' to make a command that
+.Ar pr Ns 's
 its arguments to the line printer.
 .Ss Variable substitution
 The shell maintains a set of variables, each of which has as value a list
@@ -645,7 +645,7 @@ the shell does not care what their value is,
 only whether they are set or not.
 For instance, the
 .Ar verbose
-variable is a toggle which causes command input to be echoed.
+variable is a toggle that causes command input to be echoed.
 The setting of this variable results from the
 .Fl v
 command line option.
@@ -655,7 +655,7 @@ The `@' command permits numeric calculations to be performed and the result
 assigned to a variable.
 Variable values are, however, always represented as (zero or more) strings.
 For the purposes of numeric operations, the null string is considered to be
-zero, and the second and subsequent words of multiword values are ignored.
+zero, and the second and additional words of multiword values are ignored.
 .Pp
 After the input line is aliased and parsed, and before each command
 is executed, variable substitution
@@ -674,7 +674,7 @@ A `$' is passed unchanged if followed by a blank, tab, or end-of-line.
 Input/output redirections are recognized before variable expansion,
 and are variable expanded separately.
 Otherwise, the command name and entire argument list are expanded together.
-It is thus possible for the first (command) word to this point to generate
+It is thus possible for the first (command) word (to this point) to generate
 more than one word, the first of which becomes the command name,
 and the rest of which become arguments.
 .Pp
@@ -689,7 +689,7 @@ by a blank and quoted to prevent later command or filename substitution.
 .Pp
 The following metasequences are provided for introducing variable values into
 the shell input.
-Except as noted, it is an error to reference a variable which is not set.
+Except as noted, it is an error to reference a variable that is not set.
 .Pp
 .Bl -tag -width Ds -compact -offset indent
 .It $name
@@ -699,26 +699,25 @@ Are replaced by the words of the value of variable
 each separated by a blank.
 Braces insulate
 .Ar name
-from following characters which would otherwise be part of it.
+from following characters that would otherwise be part of it.
 Shell variables have names consisting of up to 20 letters and digits
 starting with a letter.  The underscore character is considered a letter.
-.br
 If
 .Ar name
 is not a shell variable, but is set in the environment, then
 that value is returned (but
 .Nm :
 modifiers and the other forms
-given below are not available in this case).
+given below are not available here).
 .It $name Ns Op selector
-.It ${name Ns Op selector Ns }
+.It ${name Ns [ selector ] }
 May be used to select only some of the words from the value of
 .Ar name .
 The selector is subjected to `$' substitution and may consist of a single
 number or two numbers separated by a `\-'.
 The first word of a variables value is numbered `1'.
 If the first number of a range is omitted it defaults to `1'.
-If the last member of a range is omitted it defaults to `$#name'.
+If the last number of a range is omitted it defaults to `$#name'.
 The selector `*' selects all words.
 It is not an error for a range to be empty if the second argument is omitted
 or in range.
@@ -751,31 +750,31 @@ The following substitutions may not be modified with `:' modifiers.
 Substitutes the string `1' if name is set, `0' if it is not.
 .It $?0
 Substitutes `1' if the current input filename is known, `0' if it is not.
-.It $$
+.It \&$\&$\&
 Substitute the (decimal) process number of the (parent) shell.
 .It $!
-Substiture the (decimal) process number of the last background process
+Substitute the (decimal) process number of the last background process
 started by this shell.
 .It $<
 Substitutes a line from the standard
-input, with no further interpretation thereafter.  It can be used
-to read from the keyboard in a shell script.
+input, with no further interpretation.
+It can be used to read from the keyboard in a shell script.
 .El
 .Ss Command and filename substitution
 The remaining substitutions, command and filename substitution,
 are applied selectively to the arguments of builtin commands.
-This means that portions of expressions which are not evaluated are
-not subjected to these expansions.
-For commands which are not internal to the shell, the command
+By selectively, we mean that portions of expressions which are
+not evaluated are not subjected to these expansions.
+For commands that are not internal to the shell, the command
 name is substituted separately from the argument list.
 This occurs very late,
 after input-output redirection is performed, and in a child
 of the main shell.
 .Ss Command substitution
-Command substitution is indicated by a command enclosed in `\*(ga'.
+Command substitution is shown by a command enclosed in `\*(ga'.
 The output from such a command is normally broken into separate words
-at blanks, tabs and newlines, with null words being discarded,
-this text then replacing the original string.
+at blanks, tabs and newlines, with null words being discarded;
+this text then replaces the original string.
 Within `"'s, only newlines force new words; blanks and tabs are preserved.
 .Pp
 In any case, the single final newline does not force a new word.
@@ -786,7 +785,7 @@ If a word contains any of the characters `*', `?', `[' or `{'
 or begins with the character `~', then that word is a candidate for
 filename substitution, also known as `globbing'.
 This word is then regarded as a pattern, and replaced with an alphabetically
-sorted list of file names which match the pattern.
+sorted list of file names that match the pattern.
 In a list of words specifying filename substitution it is an error for
 no pattern to match an existing file name, but it is not required
 for each pattern to match.
@@ -805,34 +804,34 @@ matches any one of the characters enclosed.
 Within
 .Sq Op ... ,
 a pair of characters separated by `\-' matches any character lexically between
-the two.
+the two (inclusive).
 .Pp
-The character `~' at the beginning of a filename is used to refer to home
+The character `~' at the beginning of a filename refers to home
 directories.
-Standing alone, i.e. `~' it expands to the invokers home directory as reflected
+Standing alone, i.e., `~' it expands to the invokers home directory as reflected
 in the value of the variable
 .Ar home .
-When followed by a name consisting of letters, digits and `\-' characters
+When followed by a name consisting of letters, digits and `\-' characters,
 the shell searches for a user with that name and substitutes their
 home directory;  thus `~ken' might expand to `/usr/ken' and `~ken/chmach'
 to `/usr/ken/chmach'.
 If the character `~' is followed by a character other than a letter or `/'
-or appears not at the beginning of a word,
+or does not appear at the beginning of a word,
 it is left undisturbed.
 .Pp
 The metanotation `a{b,c,d}e' is a shorthand for `abe ace ade'.
 Left to right order is preserved, with results of matches being sorted
 separately at a low level to preserve this order.
 This construct may be nested.
-Thus `~source/s1/{oldls,ls}.c' expands to
+Thus, `~source/s1/{oldls,ls}.c' expands to
 `/usr/source/s1/oldls.c /usr/source/s1/ls.c'
-whether or not these files exist without any chance of error
+without chance of error
 if the home directory for `source' is `/usr/source'.
 Similarly `../{memo,*box}' might expand to `../memo ../box ../mbox'.
-(Note that `memo' was not sorted with the results of matching `*box'.)
+(Note that `memo' was not sorted with the results of the match to `*box'.)
 As a special case `{', `}' and `{}' are passed undisturbed.
 .Ss Input/output
-The standard input and standard output of a command may be redirected
+The standard input and the standard output of a command may be redirected
 with the following syntax:
 .Pp
 .Bl -tag -width Ds -compact -offset indent
@@ -842,39 +841,39 @@ Open file
 (which is first variable, command and filename expanded) as the standard
 input.
 .It << word
-Read the shell input up to a line which is identical to
+Read the shell input up to a line that is identical to
 .Ar word .
 .Ar Word
 is not subjected to variable, filename or command substitution,
 and each input line is compared to
 .Ar word
-before any substitutions are done on this input line.
+before any substitutions are done on the input line.
 Unless a quoting `\e', `"', `\*(aa' or `\*(ga' appears in
-.Ar word
+.Ar word ,
 variable and command substitution is performed on the intervening lines,
 allowing `\e' to quote `$', `\e' and `\*(ga'.
-Commands which are substituted have all blanks, tabs, and newlines
+Commands that are substituted have all blanks, tabs, and newlines
 preserved, except for the final newline which is dropped.
-The resultant text is placed in an anonymous temporary file which
-is given to the command as standard input.
+The resultant text is placed in an anonymous temporary file that
+is given to the command as its standard input.
 .It > name
 .It >! name
 .It >& name
 .It >&! name
 The file
 .Ar name
-is used as standard output.
+is used as the standard output.
 If the file does not exist then it is created;
-if the file exists, its is truncated, its previous contents being lost.
+if the file exists, it is truncated; its previous contents are lost.
 .Pp
 If the variable
 .Ar noclobber
-is set, then the file must not exist or be a character special file (e.g. a
+is set, then the file must not exist or be a character special file (e.g., a
 terminal or `/dev/null') or an error results.
 This helps prevent accidental destruction of files.
-In this case the `!' forms can be used and suppress this check.
+Here, the `!' forms can be used to suppress this check.
 .Pp
-The forms involving `&' route the diagnostic output into the specified
+The forms involving `&' route the standard error output into the specified
 file as well as the standard output.
 .Ar Name
 is expanded in the same way as `<' input filenames are.
@@ -884,7 +883,8 @@ is expanded in the same way as `<' input filenames are.
 .It >>&! name
 Uses file
 .Ar name
-as standard output like `>' but places output at the end of the file.
+as the standard output;
+like `>' but places output at the end of the file.
 If the variable
 .Ar noclobber
 is set, then it is an error for the file not to exist unless
@@ -896,8 +896,8 @@ A command receives the environment in which the shell was
 invoked as modified by the input-output parameters and
 the presence of the command in a pipeline.
 Thus, unlike some previous shells, commands run from a file of shell commands
-have no access to the text of the commands by default; rather
-they receive the original standard input of the shell.
+have no access to the text of the commands by default;
+instead they receive the original standard input of the shell.
 The `<<' mechanism should be used to present inline data.
 This permits shell command scripts to function as components of pipelines
 and allows the shell to block read its input.
@@ -905,17 +905,18 @@ Note that the default standard input for a command run detached is
 .Ar not
 modified to be the empty file
 .Pa /dev/null ;
-rather the standard input
+instead the standard input
 remains as the original standard input of the shell.  If this is a terminal
 and if the process attempts to read from the terminal, then the process
 will block and the user will be notified (see
 .Sx Jobs
 above).
 .Pp
-Diagnostic output may be directed through a pipe with the standard output.
-Simply use the form `\&|&' rather than just `\&|'.
+The standard error output may be directed through
+a pipe with the standard output.
+Simply use the form `\&|&' instead of just `\&|'.
 .Ss Expressions
-A number of the builtin commands (to be described subsequently)
+Several of the builtin commands (to be described later)
 take expressions, in which the operators are similar to those of C, with
 the same precedence.
 These expressions appear in the
@@ -939,20 +940,19 @@ all others operate on numbers.
 The operators `=~' and `!~' are like `!=' and `==' except that the right
 hand side is a
 .Ar pattern
-(containing, e.g. `*'s, `?'s and instances of
-`[...]'
+(containing, e.g., `*'s, `?'s and instances of `[...]')
 against which the left hand operand is matched.  This reduces the
 need for use of the
 .Ar switch
 statement in shell scripts when all that is really needed is pattern matching.
 .Pp
-Strings which begin with `0' are considered octal numbers.
+Strings that begin with `0' are considered octal numbers.
 Null or missing arguments are considered `0'.
 The result of all expressions are strings,
 which represent decimal numbers.
 It is important to note that no two components of an expression can appear
-in the same word; except when adjacent to components of expressions which
-are syntactically significant to the parser (`&' `\&|' `<' `>' `(' `)')
+in the same word; except when adjacent to components of expressions that
+are syntactically significant to the parser (`&' `\&|' `<' `>' `(' `)'),
 they should be surrounded by spaces.
 .Pp
 Also available in expressions as primitive operands are command executions
@@ -963,7 +963,7 @@ and file enquiries of the form
 where
 .Ic l
 is one of:
-.Bd -ragged -offset indent
+.Bd -literal -offset indent
 r	read access
 w	write access
 x	execute access
@@ -977,20 +977,20 @@ d	directory
 The specified name is command and filename expanded and then tested
 to see if it has the specified relationship to the real user.
 If the file does not exist or is inaccessible then all enquiries return
-false, i.e. `0'.
-Command executions succeed, returning true, i.e. `1',
+false, i.e., `0'.
+Command executions succeed, returning true, i.e., `1',
 if the command exits with status 0, otherwise they fail, returning
-false, i.e. `0'.
+false, i.e., `0'.
 If more detailed status information is required then the command
-should be executed outside of an expression and the variable
+should be executed outside an expression and the variable
 .Ar status
 examined.
 .Ss Control flow
-The shell contains a number of commands which can be used to regulate the
+The shell contains several commands that can be used to regulate the
 flow of control in command files (shell scripts) and
 (in limited but useful ways) from terminal input.
 These commands all operate by forcing the shell to reread or skip in its
-input and, due to the implementation, restrict the placement of some
+input and, because of the implementation, restrict the placement of some
 of the commands.
 .Pp
 The
@@ -1109,7 +1109,7 @@ the first directory in the stack being the current directory.
 .Pp
 .It Ic echo Ar  wordlist
 .It Ic echo Fl n Ar wordlist
-The specified words are written to the shells standard output, separated
+The specified words are written to the shell's standard output, separated
 by spaces, and terminated with a newline unless the
 .Fl n
 option is specified.
@@ -1150,7 +1150,7 @@ variable (first form) or with the value of the specified
 (second form).
 .Pp
 .It Ic fg
-.It Ic fg \&% Ar job ...
+.It Ic fg % Ns Ar job ...
 Brings the current or specified jobs into the foreground, continuing them if
 they were stopped.
 .Pp
@@ -1175,7 +1175,7 @@ may be used to continue the loop prematurely and the builtin
 command
 .Ic break
 to terminate it prematurely.
-When this command is read from the terminal, the loop is read up once
+When this command is read from the terminal, the loop is read once
 prompting with `?' before any statements in the loop are executed.
 If you make a mistake typing in a loop at the terminal you can rub it out.
 .Pp
@@ -1184,7 +1184,7 @@ Like
 .Ic echo
 but no `\e' escapes are recognized and words are delimited
 by null characters in the output.
-Useful for programs which wish to use the shell to filename expand a list
+Useful for programs that wish to use the shell to filename expand a list
 of words.
 .Pp
 .It Ic goto Ar word
@@ -1197,7 +1197,7 @@ possibly preceded by blanks or tabs.
 Execution continues after the specified line.
 .Pp
 .It Ic hashstat
-Print a statistics line indicating how effective the internal hash
+Print a statistics line showing how effective the internal hash
 table has been at locating commands (and avoiding
 .Ic exec Ns \'s ) .
 An
@@ -1205,7 +1205,7 @@ An
 is attempted for each component of the
 .Em path
 where the hash function indicates a possible hit, and in each component
-which does not begin with a `/'.
+that does not begin with a `/'.
 .Pp
 .It Ic history
 .It Ic history Ar n
@@ -1219,11 +1219,11 @@ most recent events are printed.
 The
 .Fl r
 option reverses the order of printout to be most recent first
-rather than oldest first.
+instead of oldest first.
 The
 .Fl h
 option causes the history list to be printed without leading numbers.
-This is used to produce files suitable for sourceing using the \-h
+This format produces files suitable for sourcing using the \-h
 option to
 .Ic source  .
 .Pp
@@ -1242,7 +1242,7 @@ must be a simple command, not
 a pipeline, a command list, or a parenthesized command list.
 Input/output redirection occurs even if
 .Ar expr
-is false, when command is
+is false, i.e., when command is
 .Sy not
 executed (this is a bug).
 .Pp
@@ -1255,11 +1255,11 @@ executed (this is a bug).
 .It Ic endif
 If the specified
 .Ar expr
-is true then the commands to the first
+is true then the commands up to the first
 .Ic else
 are executed; otherwise if
 .Ar expr2
-is true then the commands to the
+is true then the commands up to the
 second
 .Ic else
 are executed, etc.
@@ -1283,11 +1283,11 @@ must appear alone on its input line or after an
 .Pp
 .It Ic jobs
 .It Ic jobs Fl l
-Lists the active jobs; given the
+Lists the active jobs; the
 .Fl l
-options lists process id's in addition to the normal information.
+option lists process id's in addition to the normal information.
 .Pp
-.It Ic kill % Ar job
+.It Ic kill % Ns Ar job
 .It Ic kill Ar pid
 .It Ic kill Fl sig Ar pid ...
 .It Ic kill Fl l
@@ -1297,7 +1297,7 @@ Signals are either given by number or by names (as given in
 .Pa /usr/include/signal.h,
 stripped of the prefix ``SIG'').
 The signal names are listed by ``kill \-l''.
-There is no default, saying just `kill' does not
+There is no default, just saying `kill' does not
 send a signal to the current job.
 If the signal being sent is TERM (terminate) or HUP (hangup),
 then the job or process will be sent a CONT (continue) signal as well.
@@ -1332,7 +1332,7 @@ Resources controllable currently include
 (the maximum
 number of cpu-seconds to be used by each process),
 .Ar filesize
-(the largest single file which can be created),
+(the largest single file that can be created),
 .Ar datasize
 (the maximum growth of the data+stack region via
 .Xr sbrk  2
@@ -1352,9 +1352,10 @@ the default scale is `k' or `kilobytes' (1024 bytes);
 a scale factor of `m' or `megabytes' may also be used.
 For
 .Ar cputime
-the default scaling is `seconds', while `m' for minutes
+the default scale is `seconds';
+a scale factor of `m' for minutes
 or `h' for hours, or a time of the form `mm:ss' giving minutes
-and seconds may be used.
+and seconds also may be used.
 .Pp
 For both
 .Ar resource
@@ -1389,7 +1390,8 @@ The final two forms run command at priority 4 and
 respectively.
 The greater the number, the less cpu the process will get.
 The super-user may specify negative priority by using `nice \-number ...'.
-Command is always executed in a sub-shell, and the restrictions
+.Ar Command
+is always executed in a sub-shell, and the restrictions
 placed on commands in simple
 .Ic if
 statements apply.
@@ -1404,9 +1406,9 @@ All processes detached with `&' are effectively
 .Ic nohup Ns \'ed .
 .Pp
 .It Ic notify
-.It Ic notify % Ar job ...
+.It Ic notify % Ns Ar job ...
 Causes the shell to notify the user asynchronously when the status of the
-current or specified jobs changes; normally notification is presented
+current or specified jobs change; normally notification is presented
 before a prompt.  This is automatic if the shell variable
 .Ic notify
 is set.
@@ -1430,7 +1432,7 @@ have no meaning and interrupts
 continue to be ignored by the shell and all invoked commands.
 Finally
 .Ic onintr 
-statemements are ignored in the system startup files where interrupts
+statements are ignored in the system startup files where interrupts
 are disabled (/etc/csh.cshrc, /etc/csh.login).
 .Pp
 .It Ic popd
@@ -1441,7 +1443,7 @@ With an argument
 discards the
 .Ar n Ns \'th
 entry in the stack.
-The elements of the directory stack are numbered from 0 starting at the top.
+The members of the directory stack are numbered from the top starting at 0.
 .Pp
 .It Ic pushd
 .It Ic pushd Ar name
@@ -1459,7 +1461,9 @@ and pushes the old current working directory
 (as in
 .Ic csw )
 onto the directory stack.
-With a numeric argument, rotates the
+With a numeric argument,
+.Ic pushd
+rotates the
 .Ar n Ns \'th
 argument of the directory
 stack around to be the top element and changes to it.  The members
@@ -1474,7 +1478,7 @@ to directories in the
 .Ic path
 while you are logged in.  This should only be necessary if you add
 commands to one of your own directories, or if a systems programmer
-changes the contents of one of the system directories.
+changes the contents of a system directory.
 .Pp
 .It Ic repeat Ar count command
 The specified
@@ -1498,34 +1502,39 @@ is 0.
 .It Ic set Ar name[index] Ns =word
 .It Ic set Ar name Ns =(wordlist)
 The first form of the command shows the value of all shell variables.
-Variables which have other than a single word as value print as a parenthesized
-word list.
+Variables that have other than a single word as their
+value print as a parenthesized word list.
 The second form sets
-.Ic name
+.Ar name
 to the null string.
 The third form sets
-.Ic name
+.Ar name
 to the single
-.Ic word .
+.Ar word .
 The fourth form sets
 the
 .Ar index Ns 'th
-component of name to word;
+component of
+.Ar name
+to
+.Ar word ;
 this component must already exist.
 The final form sets
 .Ar name
 to the list of words in
 .Ar wordlist .
-In all cases the value is command and filename expanded.
+The value is always command and filename expanded.
 .Pp
 These arguments may be repeated to set multiple values in a single set command.
 Note however, that variable expansion happens for all arguments before any
 setting occurs.
 .Pp
 .It Ic setenv
-.It Ic setenv Ar name value
 .It Ic setenv Ar name
+.It Ic setenv Ar name value
 The first form lists all current environment variables.
+It is equivalent to
+.Xr printenv 1 .
 The last form sets the value of environment variable
 .Ar name
 to be
@@ -1533,7 +1542,7 @@ to be
 a single string.  The second form sets
 .Ar name
 to an empty string.
-The most commonly used environment variable
+The most commonly used environment variables
 .Ev USER ,
 .Ev TERM ,
 and
@@ -1542,7 +1551,7 @@ are automatically imported to and exported from the
 .Nm csh
 variables
 .Ar user ,
-.Op Ar term ,
+.Ar term ,
 and
 .Ar path ;
 there is no need to use
@@ -1554,7 +1563,7 @@ for these.
 The members of
 .Ic argv
 are shifted to the left, discarding
-.Ic argv Bq 1 .
+.Ic argv Ns Bq 1 .
 It is an error for
 .Ic argv
 not to be set or to have less than one word as value.
@@ -1563,7 +1572,7 @@ The second form performs the same function on the specified variable.
 .It Ic source Ar name
 .It Ic source Fl h Ar name
 The shell reads commands from
-.Ic name .
+.Ar name .
 .Ic Source
 commands may be nested; if they are nested too deeply the shell may
 run out of file descriptors.
@@ -1575,12 +1584,12 @@ commands.
 Normally input during
 .Ic source
 commands is not placed on the history list;
-the \-h option causes the commands to be placed in the
+the \-h option causes the commands to be placed on the
 history list without being executed.
 .Pp
 .It Ic stop
 .It Ic stop % Ns Ar job ...
-Stops the current or specified job which is executing in the background.
+Stops the current or specified jobs that are executing in the background.
 .Pp
 .It Ic suspend
 Causes the shell to stop in its tracks, much as if it had been sent a stop
@@ -1598,20 +1607,20 @@ This is most often used to stop shells started by
 .It \ \ \ \ \&...
 .It Ic \ \ \ \ breaksw
 .It Ic endsw
-Each case label is successively matched, against the specified
+Each case label is successively matched against the specified
 .Ar string
 which is first command and filename expanded.
 The file metacharacters `*', `?' and `[...]'
 may be used in the case labels,
 which are variable expanded.
-If none of the labels match before a `default' label is found, then
+If none of the labels match before the `default' label is found, then
 the execution begins after the default label.
 Each case label and the default label must appear at the beginning of a line.
 The command
 .Ic breaksw
 causes execution to continue after the
 .Ic endsw .
-Otherwise control may fall through case labels and default labels as in C.
+Otherwise control may fall through case labels and the default label as in C.
 If no label matches and there is no default, execution continues after
 the
 .Ic endsw .
@@ -1632,7 +1641,7 @@ statistic when the command completes.
 The file creation mask is displayed (first form) or set to the specified
 value (second form).  The mask is given in octal.  Common values for
 the mask are 002 giving all access to the group and read and execute
-access to others or 022 giving all access except no write access for
+access to others or 022 giving all access except write access for
 users in the group or others.
 .Pp
 .It Ic unalias Ar pattern
@@ -1675,11 +1684,11 @@ command above and
 .Xr printenv  1  .
 .Pp
 .It Ic wait
-All background jobs are waited for.
-It the shell is interactive, then an interrupt can disrupt the wait,
-at which time the shell prints names and job numbers of all jobs
+Wait for all background jobs.
+If the shell is interactive, then an interrupt can disrupt the wait.
+After the interrupt, the shell prints names and job numbers of all jobs
 known to be outstanding.
-.It Ic which (command)
+.It Ic which Ar command
 Displays the resolved command that will be executed by the shell.
 .Pp
 .It Ic while Ar (expr)
@@ -1688,7 +1697,9 @@ Displays the resolved command that will be executed by the shell.
 While the specified expression evaluates non-zero, the commands between
 the
 .Ic while
-and the matching end are evaluated.
+and the matching
+.Ic end
+are evaluated.
 .Ic Break
 and
 .Ic continue
@@ -1702,10 +1713,10 @@ Prompting occurs here the first time through the loop as for the
 .Ic foreach
 statement if the input is a terminal.
 .Pp
-.It Ic % Ar job
+.It Ic % Ns Ar job
 Brings the specified job into the foreground.
 .Pp
-.It Ic % Ar job Ic &
+.It Ic % Ns Ar job Ic &
 Continues the specified job in the background.
 .Pp
 .It Ic @
@@ -1716,7 +1727,7 @@ The second form sets the specified
 .Ar name
 to the value of
 .Ar expr .
-If the expression contains `<', `>', `&' or `' then at least
+If the expression contains `<', `>', `&' or `|' then at least
 this part of the expression must be placed within `(' `)'.
 The third form assigns the value of
 .Ar expr
@@ -1737,9 +1748,9 @@ Spaces are, however, mandatory in separating components of
 .Ar expr
 which would otherwise be single words.
 .Pp
-Special postfix `++' and `\-\-' operators increment and decrement
+Special postfix `+\|+' and `\-\|\-' operators increment and decrement
 .Ar name
-respectively, i.e. `@  i++'.
+respectively, i.e., `@  i++'.
 .Ss Pre-defined and environment variables
 The following variables have special meaning to the shell.
 Of these,
@@ -1755,12 +1766,12 @@ are always set by the shell.
 Except for
 .Ar cwd
 and
-.Ar status
+.Ar status ,
 this setting occurs only at initialization;
-these variables will not then be modified unless this is done
+these variables will not then be modified unless done
 explicitly by the user.
 .Pp
-This shell copies the environment variable
+The shell copies the environment variable
 .Ev USER
 into the variable
 .Ar user ,
@@ -1786,7 +1797,7 @@ from the environment, and re-export it if you then change it.
 .Bl -tag -width histchars
 .It Ic argv
 Set to the arguments to the shell, it is from this variable that
-positional parameters are substituted, i.e. `$1' is replaced by
+positional parameters are substituted, i.e., `$1' is replaced by
 `$argv[1]',
 etc.
 .It Ic cdpath
@@ -1817,7 +1828,7 @@ quick substitutions.
 Can be set to the pathname where history is going to be saved/restored.
 .It Ic history
 Can be given a numeric value to control the size of the history list.
-Any command which has been referenced in this many events will not be
+Any command that has been referenced in this many events will not be
 discarded.
 Too large values of
 .Ar history
@@ -1834,7 +1845,8 @@ end-of-file from input devices which are terminals.
 This prevents shells from accidentally being killed by control-D's.
 .It Ic mail
 The files where the shell checks for mail.
-This is done after each command completion which will result in a prompt,
+This checking is done after each command completion that will
+result in a prompt,
 if a specified interval has elapsed.
 The shell says `You have new mail.'
 if the file exists with an access time not greater than its modify time.
@@ -1851,24 +1863,25 @@ when there is mail in the file
 .Ar name .
 .It Ic noclobber
 As described in the section on
-.Sx Input/output ,
+.Sx input/output ,
 restrictions are placed on output redirection to insure that
 files are not accidentally destroyed, and that `>>' redirections
 refer to existing files.
 .It Ic noglob
 If set, filename expansion is inhibited.
-This is most useful in shell scripts which are not dealing with filenames,
+This inhibition is most useful in shell scripts that
+ are not dealing with filenames,
 or after a list of filenames has been obtained and further expansions
 are not desirable.
 .It Ic nonomatch
 If set, it is not an error for a filename expansion to not match any
-existing files; rather the primitive pattern is returned.
-It is still an error for the primitive pattern to be malformed, i.e.
+existing files; instead the primitive pattern is returned.
+It is still an error for the primitive pattern to be malformed, i.e.,
 `echo ['
 still gives an error.
 .It Ic notify
-If set, the shell notifies asynchronously of job completions.  The
-default is to rather present job completions just before printing
+If set, the shell notifies asynchronously of job completions;
+the default is to present job completions just before printing
 a prompt.
 .It Ic path
 Each word of the path variable specifies a directory in which
@@ -1880,7 +1893,7 @@ variable then only full path names will execute.
 The usual search path is `.', `/bin' and `/usr/bin', but this
 may vary from system to system.
 For the super-user the default search path is `/etc', `/bin' and `/usr/bin'.
-A shell which is given neither the
+A shell that is given neither the
 .Fl c
 nor the
 .Fl t
@@ -1895,7 +1908,7 @@ while the shell is active, it may be necessary to do a
 .Ic rehash
 or the commands may not be found.
 .It Ic prompt
-The string which is printed before each command is read from
+The string that is printed before each command is read from
 an interactive terminal input.
 If a `!' appears in the string it will be replaced by the current event number
 unless a preceding `\e' is given.
@@ -1903,7 +1916,7 @@ Default is `% ', or `# ' for the super-user.
 .It Ic savehist
 Is given a numeric value to control the number of entries of the
 history list that are saved in ~/.history when the user logs out.
-Any command which has been referenced in this many events will be saved.
+Any command that has been referenced in this many events will be saved.
 During start up the shell sources ~/.history into the history list
 enabling history to be saved across logins.
 Too large values of
@@ -1915,7 +1928,7 @@ is just set, the shell will use the value of
 .Ar history.
 .It Ic shell
 The file in which the shell resides.
-This is used in forking shells to interpret files which have execute
+This variable is used in forking shells to interpret files that have execute
 bits set, but which are not executable by the system.
 (See the description of
 .Sx Non-builtin Command Execution
@@ -1924,11 +1937,11 @@ Initialized to the (system-dependent) home of the shell.
 .It Ic status
 The status returned by the last command.
 If it terminated abnormally, then 0200 is added to the status.
-Builtin commands which fail return exit status `1',
-all other builtin commands set status `0'.
+Builtin commands that fail return exit status `1',
+all other builtin commands set status to `0'.
 .It Ic time
 Controls automatic timing of commands.
-If set, then any command which takes more than this many cpu seconds
+If set, then any command that takes more than this many cpu seconds
 will cause a line giving user, system, and real times and a utilization
 percentage which is the ratio of user plus system times to real time
 to be printed when it terminates.
@@ -1953,7 +1966,7 @@ option, the shell will hash the names in these directories into an internal
 table so that it will only try an
 .Ic exec
 in a directory if there is a possibility that the command resides there.
-This greatly speeds command location when a large number of directories
+This shortcut greatly speeds command location when many directories
 are present in the search path.
 If this mechanism has been turned off (via
 .Ic unhash ) ,
@@ -1963,7 +1976,7 @@ or
 .Fl t
 argument, and in any case for each directory component of
 .Ar path
-which does not begin with a `/',
+that does not begin with a `/',
 the shell concatenates with the given command name to form a path name
 of a file which it then attempts to execute.
 .Pp
@@ -1999,11 +2012,11 @@ the shell command.
 The first word of the
 .Ic alias
 should be the full path name of the shell
-(e.g. `$shell').
+(e.g., `$shell').
 Note that this is a special, late occurring, case of
 .Ic alias
 substitution,
-and only allows words to be prepended to the argument list without modification.
+and only allows words to be prepended to the argument list without change.
 .Ss Signal handling
 The shell normally ignores
 .Ar quit
@@ -2024,7 +2037,7 @@ Login shells catch the
 .Ar terminate
 signal; otherwise this signal is passed on to children from the state in the
 shell's parent.
-In no case are interrupts allowed when a login shell is reading the file
+Interrupts are not allowed when a login shell is reading the file
 .Pa \&.logout .
 .Sh AUTHOR
 William Joy.
@@ -2052,7 +2065,7 @@ Source of home directories for `~name'.
 Word lengths \-
 Words can be no longer than 1024 characters.
 The system limits argument lists to 10240 characters.
-The number of arguments to a command which involves filename expansion
+The number of arguments to a command that involves filename expansion
 is limited to 1/6'th the number of characters allowed in an argument list.
 Command substitutions may substitute no more characters than are
 allowed in an argument list.
@@ -2089,26 +2102,23 @@ interactive file name
 and user name completion (see
 .Sx File Name Completion ) ,
 and a C-like syntax.
-There are now many shells which also have these mechanisms, plus
-a few more (and maybe some bugs too), which are available thru the
-usenet, or with
-.Bx
-as contributed software like the
-.Xr ksh korn\ shell .
+There are now many shells that also have these mechanisms, plus
+a few more (and maybe some bugs too), which are available through the
+usenet.
 .Sh BUGS
 When a command is restarted from a stop,
 the shell prints the directory it started in if this is different
-from the current directory; this can be misleading (i.e. wrong)
+from the current directory; this can be misleading (i.e., wrong)
 as the job may have changed directories internally.
 .Pp
 Shell builtin functions are not stoppable/restartable.
 Command sequences of the form `a ; b ; c' are also not handled gracefully
-when stopping is attempted.  If you suspend `b', the shell will then
+when stopping is attempted.  If you suspend `b', the shell will
 immediately execute `c'.  This is especially noticeable if this
 expansion results from an
 .Ar alias .
 It suffices to place the sequence of commands in ()'s to force it to
-a subshell, i.e. `( a ; b ; c )'.
+a subshell, i.e., `( a ; b ; c )'.
 .Pp
 Control over tty output after processes are started is primitive;
 perhaps this will inspire someone to work on a good virtual
@@ -2116,12 +2126,12 @@ terminal interface.  In a virtual terminal interface much more
 interesting things could be done with output control.
 .Pp
 Alias substitution is most often used to clumsily simulate shell procedures;
-shell procedures should be provided rather than aliases.
+shell procedures should be provided instead of aliases.
 .Pp
-Commands within loops, prompted for by `?', are not placed in the
+Commands within loops, prompted for by `?', are not placed on the
 .Ic history
 list.
-Control structure should be parsed rather than being recognized as built-in
+Control structure should be parsed instead of being recognized as built-in
 commands.  This would allow control commands to be placed anywhere,
 to be combined with `\&|', and to be used with `&' and `;' metasyntax.
 .Pp
