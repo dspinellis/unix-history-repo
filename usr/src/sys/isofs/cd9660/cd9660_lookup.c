@@ -11,7 +11,7 @@
  *
  *	from: @(#)ufs_lookup.c	7.33 (Berkeley) 5/19/91
  *
- *	@(#)cd9660_lookup.c	8.3 (Berkeley) %G%
+ *	@(#)cd9660_lookup.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -79,8 +79,8 @@ cd9660_lookup(ap)
 	int saveoffset;			/* offset of last directory entry in dir */
 	int numdirpasses;		/* strategy for directory search */
 	doff_t endsearch;		/* offset to end directory search */
-	struct iso_node *pdp;		/* saved dp during symlink work */
-	struct iso_node *tdp;		/* returned by iget */
+	struct vnode *pdp;		/* saved dp during symlink work */
+	struct vnode *tdp;		/* returned by cd9660_vget_internal */
 	int lockparent;			/* 1 => lockparent flag is set */
 	int wantparent;			/* 1 => wantparent or lockparent flag */
 	int error;
@@ -134,22 +134,22 @@ cd9660_lookup(ap)
 		 * See comment below starting `Step through' for
 		 * an explaination of the locking protocol.
 		 */
-		pdp = dp;
+		pdp = vdp;
 		dp = VTOI(*vpp);
 		vdp = *vpp;
 		vpid = vdp->v_id;
-		if (pdp == dp) {
+		if (pdp == vdp) {
 			VREF(vdp);
 			error = 0;
 		} else if (flags & ISDOTDOT) {
-			ISO_IUNLOCK(pdp);
+			VOP_UNLOCK(pdp);
 			error = vget(vdp, 1);
 			if (!error && lockparent && (flags & ISLASTCN))
-				ISO_ILOCK(pdp);
+				error = VOP_LOCK(pdp);
 		} else {
 			error = vget(vdp, 1);
 			if (!lockparent || error || !(flags & ISLASTCN))
-				ISO_IUNLOCK(pdp);
+				VOP_UNLOCK(pdp);
 		}
 		/*
 		 * Check that the capability number did not change
@@ -158,13 +158,14 @@ cd9660_lookup(ap)
 		if (!error) {
 			if (vpid == vdp->v_id)
 				return (0);
-			iso_iput(dp);
-			if (lockparent && pdp != dp && (flags & ISLASTCN))
-				ISO_IUNLOCK(pdp);
+			vput(vdp);
+			if (lockparent && pdp != vdp && (flags & ISLASTCN))
+				VOP_UNLOCK(pdp);
 		}
-		ISO_ILOCK(pdp);
-		dp = pdp;
-		vdp = ITOV(dp);
+		if (error = VOP_LOCK(pdp))
+			return (error);
+		vdp = pdp;
+		dp = VTOI(pdp);
 		*vpp = NULL;
 	}
 	
@@ -376,31 +377,34 @@ found:
 	 * work if the file system has any hard links other than ".."
 	 * that point backwards in the directory structure.
 	 */
-	pdp = dp;
+	pdp = vdp;
 	/*
 	 * If ino is different from dp->i_ino,
 	 * it's a relocated directory.
 	 */
 	if (flags & ISDOTDOT) {
-		ISO_IUNLOCK(pdp);	/* race to get the inode */
-		if (error = iso_iget(dp,dp->i_ino,
-				     dp->i_ino != ino,
-				     &tdp,ep)) {
-			ISO_ILOCK(pdp);
+		VOP_UNLOCK(pdp);	/* race to get the inode */
+		if (error = cd9660_vget_internal(vdp->v_mount, dp->i_ino, &tdp,
+						 dp->i_ino != ino, ep)) {
+			VOP_LOCK(pdp);
 			return (error);
 		}
-		if (lockparent && (flags & ISLASTCN))
-			ISO_ILOCK(pdp);
-		*vpp = ITOV(tdp);
+		if (lockparent && (flags & ISLASTCN) &&
+		    (error = VOP_LOCK(pdp))) {
+			vput(tdp);
+			return (error);
+		}
+		*vpp = tdp;
 	} else if (dp->i_number == dp->i_ino) {
 		VREF(vdp);	/* we want ourself, ie "." */
 		*vpp = vdp;
 	} else {
-		if (error = iso_iget(dp,dp->i_ino,dp->i_ino!=ino,&tdp,ep))
+		if (error = cd9660_vget_internal(vdp->v_mount, dp->i_ino, &tdp,
+						 dp->i_ino != ino, ep))
 			return (error);
 		if (!lockparent || !(flags & ISLASTCN))
-			ISO_IUNLOCK(pdp);
-		*vpp = ITOV(tdp);
+			VOP_UNLOCK(pdp);
+		*vpp = tdp;
 	}
 	
 	/*
