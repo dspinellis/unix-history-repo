@@ -1,4 +1,4 @@
-#	srt0.c	1.1	%G%
+#	srt0.c	1.2	%G%
 
 # Startup code for standalone system
 # Non-relocating version -- for programs which are loaded by boot
@@ -20,8 +20,10 @@
 	movl	$1,PHYSMBA0+4		# init
 	movl	$1,PHYSMBA1+4		# init
 	movl	$1,PHYSUBA+4		# init
-	subl3	$_edata,$RELOC-0x2000,r0
-	movc5	$0,(sp),$0,r0,_edata
+clr:
+	clrl	(r0)+
+	cmpl	r0,sp
+	jlss	clr
 start:
 	movl	$RELOC-0x2000,sp
 	calls	$0,_main
