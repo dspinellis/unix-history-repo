@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)pass5.c	3.4 (Berkeley) %G%";
+static char version[] = "@(#)pass5.c	3.5 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -25,7 +25,8 @@ pass5()
 	idesc.id_type = ADDR;
 	bzero((char *)&cstotal, sizeof(struct csum));
 	sumsize = cgrp.cg_iused - (char *)(&cgrp);
-	mapsize = howmany(MAXIPG + sblock.fs_fpg, NBBY);
+	mapsize = &cgrp.cg_free[howmany(sblock.fs_fpg, NBBY)] -
+		(u_char *)cgrp.cg_iused;
 	(void)time(&now);
 	for (c = 0; c < sblock.fs_ncg; c++) {
 		if (getblk(&cgblk, cgtod(&sblock, c), sblock.fs_cgsize) == 0)
