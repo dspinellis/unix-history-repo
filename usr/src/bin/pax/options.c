@@ -10,7 +10,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)options.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)options.c	1.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -119,7 +119,7 @@ options(argc, argv)
 	/*
 	 * process option flags
 	 */
-	while ((c=getopt(argc, argv,"ab:cdf:iklno:p:rs:tuvwx:B:E:G:HLT:U:XZ"))
+	while ((c=getopt(argc,argv,"ab:cdf:iklno:p:rs:tuvwx:B:DE:G:HLT:U:XYZ"))
 	    != EOF) {
 		switch (c) {
 		case 'a':
@@ -319,6 +319,14 @@ options(argc, argv)
 			}
 			flg |= CBF;
 			break;
+		case 'D':
+			/*
+			 * On extraction check file inode change time before the
+			 * modification of the file name. Non standard option.
+			 */
+			Dflag = 1;
+			flg |= CDF;
+			break;
 		case 'E':
 			/*
 			 * non-standard limit on read faults
@@ -387,10 +395,18 @@ options(argc, argv)
 			Xflag = 1;
 			flg |= CXF;
 			break;
+		case 'Y':
+			/*
+			 * On extraction check file inode change time after the
+			 * modification of the file name. Non standard option.
+			 */
+			Yflag = 1;
+			flg |= CYF;
+			break;
 		case 'Z':
 			/*
-			 * On extraction check file time after the modification
-			 * of the file name. Non standard option.
+			 * On extraction check modification time after the
+			 * modification of the file name. Non standard option.
 			 */
 			Zflag = 1;
 			flg |= CZF;
