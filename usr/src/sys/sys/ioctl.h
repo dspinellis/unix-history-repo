@@ -1,4 +1,4 @@
-/*	ioctl.h	4.9	81/10/17	*/
+/*	ioctl.h	4.10	81/12/21	*/
 /*
  * ioctl definitions, and special character and local tty definitions
  */
@@ -92,4 +92,6 @@ struct ltchars {
 #define	FIONCLEX	(('f'<<8)|2)
 /* another local */
 #define	FIONREAD	(('f'<<8)|127)	/* get # bytes to read */
+
+#define	SIOCDONE	(('s'<<8)|0)	/* shutdown read/write on socket */
 #endif
