@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwenviron.c	3.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwenviron.c	3.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -29,14 +29,18 @@ wwenviron(wp)
 register struct ww *wp;
 {
 	register i;
+#ifndef TIOCSCTTY
 	int pgrp = getpid();
+#endif
 	char buf[1024];
 
+#ifndef TIOCSCTTY
 	if ((i = open("/dev/tty", 0)) < 0)
 		goto bad;
 	if (ioctl(i, TIOCNOTTY, (char *)0) < 0)
 		goto bad;
 	(void) close(i);
+#endif
 	if ((i = wp->ww_socket) < 0) {
 		if ((i = open(wp->ww_ttyname, 2)) < 0)
 			goto bad;
@@ -48,8 +52,13 @@ register struct ww *wp;
 	(void) dup2(i, 2);
 	for (i = wwdtablesize - 1; i > 2; i--)
 		(void) close(i);
+#ifdef TIOCSCTTY
+	(void) setsid(0);
+	(void) ioctl(0, TIOCSCTTY, 0);
+#else
 	(void) ioctl(0, TIOCSPGRP, (char *)&pgrp);
 	(void) setpgrp(pgrp, pgrp);
+#endif
 	/* SIGPIPE is the only one we ignore */
 	(void) signal(SIGPIPE, SIG_DFL);
 	(void) sigsetmask(0);

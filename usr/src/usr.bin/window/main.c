@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	3.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	3.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -25,6 +25,7 @@ static char sccsid[] = "@(#)main.c	3.34 (Berkeley) %G%";
 #include "string.h"
 #include "char.h"
 #include "local.h"
+#include "pathnames.h"
 
 #define next(a) (*++*(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
 
@@ -81,7 +82,7 @@ char **argv;
 			(void) usage();
 	}
 	if ((p = getenv("SHELL")) == 0)
-		p = SHELL;
+		p = _PATH_BSHELL;
 	if ((default_shellfile = str_cpy(p)) == 0)
 		nomem();
 	if (p = rindex(default_shellfile, '/'))
