@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)options.h	5.2 (Berkeley) %G%
+ *	@(#)options.h	5.3 (Berkeley) %G%
  */
 
 struct shparam {
@@ -20,26 +20,50 @@ struct shparam {
 
 
 
-#define eflag optval[0]
-#define fflag optval[1]
-#define Iflag optval[2]
-#define iflag optval[3]
-#define jflag optval[4]
-#define nflag optval[5]
-#define sflag optval[6]
-#define xflag optval[7]
-#define zflag optval[8]
-#define vflag optval[9]
-#define	Eflag optval[10]
+#define eflag optlist[0].val
+#define fflag optlist[1].val
+#define Iflag optlist[2].val
+#define iflag optlist[3].val
+#define mflag optlist[4].val
+#define nflag optlist[5].val
+#define sflag optlist[6].val
+#define xflag optlist[7].val
+#define vflag optlist[8].val
+#define Vflag optlist[9].val
+#define	Eflag optlist[10].val
+#define	Cflag optlist[11].val
+#define	aflag optlist[12].val
+#define	bflag optlist[13].val
+#define	uflag optlist[14].val
 
-#define NOPTS	11
+#define NOPTS	15
+
+struct optent {
+	const char *name;
+	const char letter;
+	char val;
+};
 
 #ifdef DEFINE_OPTIONS
-const char optchar[NOPTS+1] = "efIijnsxzvE";       /* shell flags */
-char optval[NOPTS+1];           /* values of option flags */
+struct optent optlist[NOPTS] = {
+	"errexit",	'e',	0,
+	"noglob",	'f',	0,
+	"ignoreeof",	'I',	0,
+	"interactive",	'i',	0,
+	"monitor",	'm',	0,
+	"noexec",	'n',	0,
+	"stdin",	's',	0,
+	"xtrace",	'x',	0,
+	"verbose",	'v',	0,
+	"vi",		'V',	0,
+	"emacs",	'E',	0,
+	"noclobber",	'C',	0,
+	"allexport",	'a',	0,
+	"notify",	'b',	0,
+	"nounset",	'u',	0,
+};
 #else
-extern const char optchar[NOPTS+1];
-extern char optval[NOPTS+1];
+extern struct optent optlist[NOPTS];
 #endif
 
 
