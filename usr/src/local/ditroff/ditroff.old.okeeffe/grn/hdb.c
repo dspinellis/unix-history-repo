@@ -1,4 +1,4 @@
-/*	hdb.c	1.6	(Berkeley) 84/04/07
+/*	hdb.c	1.7	(Berkeley) 84/10/08
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -7,10 +7,15 @@
  */
 
 #include "gprint.h"
+#include <ctype.h>
+
+#define MAXSTRING 128
 
 /* imports from main.c */
+
 extern int linenum;		/* current line number in input file */
 extern char gremlinfile[];	/* name of file currently reading */
+extern int SUNFILE;		/* TRUE if SUN gremlin file */
 
 /* imports from c */
 
@@ -23,26 +28,27 @@ extern char *sprintf();
 extern POINT *PTInit();
 extern POINT *PTMakePoint();
 
-ELT *DBInit()
 /*
- *      This routine returns a pointer to an initialized database element
+ * This routine returns a pointer to an initialized database element
  * which would be the only element in an empty list.
  */
-
+ELT *
+DBInit()
 {
-    return(NULL);
+    return((ELT *) NULL);
 }  /* end DBInit */
 
-ELT *DBCreateElt(type, pointlist, brush, size, text, db)
+
+/*
+ * This routine creates a new element with the specified attributes and
+ * links it into database.
+ */
+ELT *
+DBCreateElt(type, pointlist, brush, size, text, db)
 int type, brush, size;
 POINT *pointlist;
 char *text;
-ELT *(*db) ;
-/*
- *      This routine creates a new element with the specified attributes and
- * links it into database.
- */
-
+ELT *(*db);
 {
     register ELT *temp;
 
@@ -57,64 +63,99 @@ ELT *(*db) ;
     return(temp);
 } /* end CreateElt */
 
-ELT *DBRead(file)
-register FILE *file;
+
 /*
- *      This routine reads the specified file into a database and 
+ * This routine reads the specified file into a database and 
  * returns a pointer to that database.
  */
-
+ELT *
+DBRead(file)
+register FILE *file;
 {
     register int i;
     register int done;		/* flag for input exhausted */
-    register int type;		/* element type */
     register float nx;		/* x holder so x is not set before orienting */
+    int type;			/* element type */
     ELT *elist;			/* pointer to the file's elements */
     POINT *plist;		/* pointer for reading in points */
-    char  string[100], *txt;
+    char  string[MAXSTRING], *txt;
     float x, y;			/* x and y are read in point coords */
     int len, brush, size;
+    int lastpoint;
 
 
+    SUNFILE = FALSE;
     elist = DBInit();
-    (void) fscanf(file,"%s",string);
+    (void) fscanf(file,"%s\n",string);
     if (strcmp(string, "gremlinfile")) {
-        error("%s is not a gremlin file", gremlinfile);
-        return(elist);
+	if (strcmp(string, "sungremlinfile")) {
+	    error("%s is not a gremlin file", gremlinfile);
+	    return(elist);
+	}
+	SUNFILE = TRUE;
     }
-    (void) fscanf(file, "%d%f%f", &size, &x, &y);
+    (void) fscanf(file, "%d%f%f\n", &size, &x, &y);
 			/* ignore orientation and file positioning point */
     done = FALSE;
     while (!done) {
-        if (fscanf(file,"%d", &size) == EOF) {
+        if (fscanf(file,"%s\n", string) == EOF) {
             error("%s, error in file format", gremlinfile);
             return(elist);
         }
-        if ((type = size) < 0) {	/* no more data */
+	type = DBGetType(string);		/* interpret element type */
+        if (type < 0) {					/* no more data */
             done = TRUE;
             (void) fclose(file);
         } else {
-            (void) fscanf(file, "%f%f", &x, &y);
-            plist = PTInit();		/* pointlist terminated by -1,-1 */
-	    if (TEXT(type)) {		/* only one point for text elements */
-		nx = xorn(x,y);
-                (void) PTMakePoint(nx, y = yorn(x,y), &plist);
+            (void) fscanf(file, "%f%f\n", &x, &y);	/* always one point */
+            plist = PTInit();				/* NULL point list */
+
+	    /* Files created on the SUN have point lists terminated 
+	     * by a line containing only an asterik ('*').  Files 
+	     * created on the AED have point lists terminated by the
+	     * coordinate pair (-1.00 -1.00).
+	     */
+	    if (TEXT(type)) {	/* read only first point for TEXT elements */
+		nx = xorn(x, y);
+		y = yorn(x, y);
+                (void) PTMakePoint(nx, y, &plist);
 		savebounds(nx, y);
-                do
-		    (void) fscanf(file, "%f%f", &x, &y);
-		while ((x >= 0.0) || (y >= 0.0));
-	    } else {
-		while ((x >= 0.0) || (y >= 0.0)) {
-		    nx = xorn(x,y);
-		    (void) PTMakePoint(nx, y = yorn(x,y), &plist);
+
+		lastpoint = FALSE;
+                do {
+		    fgets(string, MAXSTRING, file);
+		    if (string[0] == '*') {	/* SUN gremlin file */
+			lastpoint = TRUE;
+		    }
+		    else {
+			(void) sscanf(string, "%f%f", &x, &y);
+			if ((x == -1.00 && y == -1.00) && (!SUNFILE))
+			    lastpoint = TRUE;
+		    }
+		} while (!lastpoint);
+	    } 
+	    else {		/* not TEXT element */
+		lastpoint = FALSE;
+		while (!lastpoint) {
+		    nx = xorn(x, y);
+		    y = yorn(x, y);
+		    (void) PTMakePoint(nx, y, &plist);
 		    savebounds(nx, y);
-		    (void) fscanf(file, "%f%f", &x, &y);
+
+		    fgets(string, MAXSTRING, file);
+		    if (string[0] == '*') {	/* SUN gremlin file */
+			lastpoint = TRUE;
+		    }
+		    else {
+			(void) sscanf(string, "%f%f", &x, &y);
+			if ((x == -1.00 && y == -1.00) && (!SUNFILE))
+			    lastpoint = TRUE;
+		    }
 		}
 	    }
-            (void) fscanf(file, "%d%d", &brush, &size);
-            (void) fscanf(file, "%d", &len);   
+            (void) fscanf(file, "%d%d\n", &brush, &size);
+            (void) fscanf(file, "%d ", &len);   
             txt = malloc((unsigned) len + 1);
-            (void) getc(file);        /* throw away space character */
             for (i=0; i<len; ++i) {
                 txt[i] = getc(file);
 	    }
@@ -125,3 +166,65 @@ register FILE *file;
     return(elist);
 } /* end DBRead */
 
+
+/*
+ * Interpret element type in string s.
+ * Old file format consisted of integer element types.
+ * New file format has literal names for element types.
+ */
+DBGetType(s)
+register char *s;
+{
+    if (isdigit(s[0]) || (s[0] == '-'))		/* old element format or EOF */
+	return(atoi(s));
+
+    switch (s[0]) {
+	case 'P':
+	    return(POLYGON);
+	case 'V':
+	    return(VECTOR);
+	case 'A':
+	    return(ARC);
+	case 'C':
+	    if (s[1] == 'U')
+		return(CURVE);
+	    switch (s[4]) {
+		case 'L':
+		    return(CENTLEFT);
+		case 'C':
+		    return(CENTCENT);
+		case 'R':
+		    return(CENTRIGHT);
+		default:
+		    error("unknown element type");
+		    exit(1);
+	    }
+	case 'B':
+	    switch (s[3]) {
+		case 'L':
+		    return(BOTLEFT);
+		case 'C':
+		    return(BOTCENT);
+		case 'R':
+		    return(BOTRIGHT);
+		default:
+		    error("unknown element type");
+		    exit(1);
+	    }
+	case 'T':
+	    switch (s[3]) {
+		case 'L':
+		    return(TOPLEFT);
+		case 'C':
+		    return(TOPCENT);
+		case 'R':
+		    return(TOPRIGHT);
+		default:
+		    error("unknown element type");
+		    exit(1);
+	    }
+	default:
+	    error("unknown element type");
+	    exit(1);
+    }
+}
