@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttoutput.c	3.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttoutput.c	3.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -24,9 +24,17 @@ static char sccsid[] = "@(#)ttoutput.c	3.9 (Berkeley) %G%";
 ttflush()
 {
 	register char *p;
-	register n;
+	register n = tt_obp - tt_ob;
 	extern errno;
 
+	if (n == 0)
+		return;
+	if (tt.tt_checksum)
+		(*tt.tt_checksum)(tt_ob, n);
+	if (tt.tt_flush) {
+		(*tt.tt_flush)();
+		return;
+	}
 	wwnflush++;
 	for (p = tt_ob; p < tt_obp;) {
 		wwnwr++;
@@ -67,20 +75,20 @@ ttwrite(s, n)
 		break;
 	case 2:
 		if (tt_obe - tt_obp < 2)
-			(*tt.tt_flush)();
+			ttflush();
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s;
 		break;
 	case 3:
 		if (tt_obe - tt_obp < 3)
-			(*tt.tt_flush)();
+			ttflush();
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s;
 		break;
 	case 4:
 		if (tt_obe - tt_obp < 4)
-			(*tt.tt_flush)();
+			ttflush();
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s++;
@@ -88,7 +96,7 @@ ttwrite(s, n)
 		break;
 	case 5:
 		if (tt_obe - tt_obp < 5)
-			(*tt.tt_flush)();
+			ttflush();
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s++;
 		*tt_obp++ = *s++;
@@ -100,7 +108,7 @@ ttwrite(s, n)
 			register m;
 
 			while ((m = tt_obe - tt_obp) == 0)
-				(*tt.tt_flush)();
+				ttflush();
 			if ((m = tt_obe - tt_obp) > n)
 				m = n;
 			bcopy(s, tt_obp, m);

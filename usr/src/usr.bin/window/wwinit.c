@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwinit.c	3.41 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwinit.c	3.42 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -146,10 +146,15 @@ wwinit()
 		goto bad;
 #endif
 
-	(void) sigsetmask(s);
+	if (tt.tt_checkpoint)
+		if (signal(SIGALRM, wwalarm) == BADSIG) {
+			wwerrno = WWE_SYS;
+			goto bad;
+		}
 	/* catch typeahead before ASYNC was set */
 	(void) kill(getpid(), SIGIO);
-	xxstart();
+	wwstart1();
+	(void) sigsetmask(s);
 	return 0;
 }
 
@@ -183,4 +188,42 @@ wwaddcap1(cap, kp)
 	while (*(*kp)++ = *cap++)
 		;
 	(*kp)--;
+}
+
+wwstart()
+{
+	register i;
+
+	(void) wwsettty(0, &wwnewtty);
+	for (i = 0; i < wwnrow; i++)
+		wwtouched[i] = WWU_TOUCHED;
+	wwstart1();
+}
+
+wwstart1()
+{
+	register i, j;
+
+	for (i = 0; i < wwnrow; i++)
+		for (j = 0; j < wwncol; j++) {
+			wwos[i][j].c_w = ' ';
+			if (tt.tt_checkpoint)
+				wwcs[i][j].c_w = ' ';
+		}
+	xxstart();
+	if (tt.tt_checkpoint)
+		wwdocheckpoint = 1;
+}
+
+/*
+ * Reset data structures and terminal from an unknown state.
+ * Restoring wwos has been taken care of elsewhere.
+ */
+wwreset()
+{
+	register i;
+
+	xxreset();
+	for (i = 0; i < wwnrow; i++)
+		wwtouched[i] = WWU_TOUCHED;
 }

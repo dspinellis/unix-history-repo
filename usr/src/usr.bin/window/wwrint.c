@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwrint.c	3.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwrint.c	3.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -47,9 +47,17 @@ wwrint()
 	if (n > 0) {
 		if (tt.tt_rint)
 			n = (*tt.tt_rint)(wwibq, n);
-		wwibq += n;
-		wwnreadc += n;
-		wwsetintr();
+		if (n > 0) {
+			wwibq += n;
+			wwnreadc += n;
+			/*
+			 * Hasten or delay the next checkpoint,
+			 * as the case may be.
+			 */
+			if (tt.tt_checkpoint && !wwdocheckpoint)
+				(void) alarm(1);
+			wwsetintr();
+		}
 	} else if (n == 0)
 		wwnreadz++;
 	else

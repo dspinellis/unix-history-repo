@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)compress.c	3.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)compress.c	3.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -261,32 +261,37 @@ nomem:
 
 ccstart()
 {
-	register struct cc *p;
 	int ccflush();
 
-	(*tt.tt_flush)();
+	ttflush();
 	tt_obp = tt_ob = cc_buffer;
 	tt_obe = tt_ob + cc_bufsize;
 	tt.tt_flush = ccflush;
+	if (cc_trace) {
+		cc_trace_fp = fopen("window-trace", "a");
+		(void) fcntl(fileno(cc_trace_fp), F_SETFD, 1);
+	}
+	ccreset();
+}
+
+ccreset()
+{
+	register struct cc *p;
+
 	bzero((char *) cc_htab, HSIZE * sizeof *cc_htab);
 	for (p = cc_q0a.qforw; p != &cc_q0a; p = p->qforw)
 		p->hback = 0;
 	for (p = cc_q1a.qforw; p != &cc_q1a; p = p->qforw)
 		p->hback = 0;
-	if (cc_trace) {
-		cc_trace_fp = fopen("window-trace", "a");
-		(void) fcntl(fileno(cc_trace_fp), F_SETFD, 1);
-	}
 }
 
 ccend()
 {
-	int ttflush();
 
-	(*tt.tt_flush)();
+	ttflush();
 	tt_obp = tt_ob = cc_tt_ob;
 	tt_obe = cc_tt_obe;
-	tt.tt_flush = ttflush;
+	tt.tt_flush = 0;
 	if (cc_trace_fp != NULL) {
 		(void) fclose(cc_trace_fp);
 		cc_trace_fp = NULL;
@@ -297,21 +302,21 @@ ccflush()
 {
 	int bufsize = tt_obp - tt_ob;
 	int n;
-	int ttflush();
 
 	if (tt_ob != cc_buffer)
 		abort();
 	if (cc_trace_fp != NULL) {
 		(void) fwrite(tt_ob, 1, bufsize, cc_trace_fp);
-		putc(-1, cc_trace_fp);
+		(void) putc(-1, cc_trace_fp);
 	}
+	tt.tt_flush = 0;
+	(*tt.tt_compress)(1);
 	if (bufsize < tt.tt_token_min) {
 		ttflush();
-		return;
+		goto out;
 	}
 	tt_obp = tt_ob = cc_tt_ob;
 	tt_obe = cc_tt_obe;
-	tt.tt_flush = ttflush;
 	cc_time0 = cc_time;
 	cc_time += bufsize;
 	n = cc_sweep_phase(cc_buffer, bufsize, cc_tokens);
@@ -320,6 +325,8 @@ ccflush()
 	ttflush();
 	tt_obp = tt_ob = cc_buffer;
 	tt_obe = cc_buffer + cc_bufsize;
+out:
+	(*tt.tt_compress)(0);
 	tt.tt_flush = ccflush;
 }
 
