@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)dir.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)dir.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
@@ -37,7 +37,8 @@ dinit(hp)
 	else {
 		cp = getwd(path);
 		if (cp == NULL) {
-			(void) write(2, path, strlen(path));
+#define	WDERR	"csh: can't get current directory.\n"
+			(void) write(SHDIAG, WDERR, strlen(WDERR));
 			exit(1);
 		}
 	}
