@@ -1,4 +1,4 @@
-.\" @(#)Checklist	1.1 (CSRG - distribution) 6/9/92
+.\" @(#)Checklist	1.2 (CSRG - distribution) 7/2/92
 .ND
 .\".ti +3.25i
 .\"June 9, 1992
@@ -31,6 +31,13 @@ Make the check payable to
 .sp 2
 .IP "\l'.5i' 4." 15
 A completed Site Information Form.
+.sp 2
+.IP "\l'.5i' 5." 15
+(Optional) Upgrade fee of $400.00.  If you decide to order it,
+please add the current upgrade fee of $400.00 to the dollar
+amount for your 4.4BSD-Complete alpha.  For example, in
+ordering the 4.4BSD-Complete and upgrade, the fee would be
+$2,400.00.
 .sp 4
 .IP "Send all the documents to:" 29
 Pauline Schwartz
