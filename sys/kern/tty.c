@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.5 1993/10/16 15:24:54 rgrimes Exp $
+ *	$Id: tty.c,v 1.6 1993/11/07 21:44:44 wollman Exp $
  */
 
 #include "param.h"
@@ -201,6 +201,9 @@ ttyflush(tp, rw)
 	register s;
 
 	s = spltty();
+	if (rw & FWRITE)
+		tp->t_state &= ~TS_TTSTOP;
+	(*cdevsw[major(tp->t_dev)].d_stop)(tp, rw);
 	if (rw & FREAD) {
 		flushq(&tp->t_can);
 		flushq(&tp->t_raw);
@@ -210,8 +213,6 @@ ttyflush(tp, rw)
 		ttwakeup(tp);
 	}
 	if (rw & FWRITE) {
-		tp->t_state &= ~TS_TTSTOP;
-		(*cdevsw[major(tp->t_dev)].d_stop)(tp, rw);
 		flushq(&tp->t_out);
 		wakeup((caddr_t)&tp->t_out);
 		if (tp->t_wsel) {
