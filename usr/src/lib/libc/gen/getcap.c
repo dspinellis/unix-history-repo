@@ -41,9 +41,11 @@ static char sccsid[] = "@(#)getcap.c	5.1 (Berkeley) 8/6/92";
 #include <sys/types.h>
 
 #include <ctype.h>
+#include <db.h>
 #include <errno.h>
 #include <errno.h>	
 #include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,11 +57,15 @@ static char sccsid[] = "@(#)getcap.c	5.1 (Berkeley) 8/6/92";
 #define	MAX_RECURSION	32		/* maximum getent recursion */
 #define	SFRAG		100		/* cgetstr mallocs in SFRAG chunks */
 
+#define REFERENCE	(char)0
+#define RECORD		(char)1
+
 static size_t	 topreclen;	/* toprec length */
 static char	*toprec;	/* Additional record specified by cgetset() */
 static int	 gottoprec;	/* Flag indicating retrieval of toprecord */
 
-static int getent __P((char **, u_int *, char **, int, char *, int));
+static int	cdbget __P((DB *, char **, char *));
+static int 	getent __P((char **, u_int *, char **, int, char *, int));
 
 /*
  * Cgetset() allows the addition of a user specified buffer to be added
@@ -184,10 +190,14 @@ getent(cap, len, db_array, fd, name, depth)
 	u_int *len;
 	int fd, depth;
 {
+	DB *capdbp;
+	DBT key, data;
 	register char *r_end, *rp, **db_p;
-	int myfd, eof, foundit;
+	int myfd, eof, foundit, retval;
 	char *record;
-
+	int tc_not_resolved;
+	char pbuf[_POSIX_PATH_MAX];
+	
 	/*
 	 * Return with ``loop detected'' error if we've recursed more than
 	 * MAX_RECURSION times.
@@ -219,7 +229,6 @@ getent(cap, len, db_array, fd, name, depth)
 	}
 	r_end = record + BFRAG;
 	foundit = 0;
-
 	/*
 	 * Loop through database array until finding the record.
 	 */
@@ -230,18 +239,32 @@ getent(cap, len, db_array, fd, name, depth)
 		/*
 		 * Open database if not already open.
 		 */
+
 		if (fd >= 0) {
 			(void)lseek(fd, 0L, L_SET);
 			myfd = 0;
 		} else {
-			fd = open(*db_p, O_RDONLY, 0);
-			if (fd < 0) {
+			sprintf(pbuf, "%s.db", *db_p);
+			if ((capdbp = dbopen(pbuf, O_RDONLY, 0, DB_HASH, 0))
+			     != NULL) {
 				free(record);
-				return (-2);
+				retval = cdbget(capdbp, &record, name);
+				if (capdbp->close(capdbp) < 0)
+					return (-2);
+				if (retval < 0)
+					return (retval);
+				rp = record + strlen(record) + 1;
+				myfd = 0;
+				goto tc_exp;
+			} else {
+				fd = open(*db_p, O_RDONLY, 0);
+				if (fd < 0) {
+					free(record);
+					return (-2);
+				}
+				myfd = 1;
 			}
-			myfd = 1;
 		}
-
 		/*
 		 * Find the requested capability record ...
 		 */
@@ -371,6 +394,7 @@ tc_exp:	{
 		 *	scanned for tc=name constructs.
 		 */
 		scan = record;
+		tc_not_resolved = 0;
 		for (;;) {
 			if ((tc = cgetcap(scan, "tc", '=')) == NULL)
 				break;
@@ -396,7 +420,17 @@ tc_exp:	{
 			newicap = icap;		/* Put into a register. */
 			newilen = ilen;
 			if (iret != 0) {
-				/* an error or couldn't resolve tc= */
+				/* couldn't resolve tc */
+				if (iret == 1)
+					tc_not_resolved = 1;
+				if (iret == -1) {
+					*(s-1) = ':';			
+					scan = s - 1;
+					tc_not_resolved = 1;
+					continue;
+					
+				}
+				/* an error */
 				if (myfd)
 					(void)close(fd);
 				free(record);
@@ -475,8 +509,49 @@ tc_exp:	{
 	if (r_end > rp)
 		record = realloc(record, (size_t)(rp - record));
 	*cap = record;
+	if (tc_not_resolved)
+		return (1);
 	return (0);
 }
+
+static int
+cdbget(capdbp, bp, name)
+	DB *capdbp;
+	char **bp, *name;
+{
+	DBT key, data;
+	char *buf;
+	int st;
+
+	key.data = name;
+	key.size = strlen(name) + 1;
+
+	if ((st = capdbp->get(capdbp, &key, &data, 0)) < 0)
+		return(-2);
+	if (st == 1)
+		return(-1);
+
+	if (((char *)(data.data))[0] == RECORD) {
+		*bp = &((char *)(data.data))[1];
+		return(0);
+	}
+	if ((buf = malloc(data.size - 1)) == NULL)
+		return(-2);
+	
+	strcpy(buf, &((char *)(data.data))[1]);
+	
+	key.data = buf;
+	key.size = data.size - 1;
+
+	if (capdbp->get(capdbp, &key, &data, 0) < 0) {
+		free(buf);
+		return(-2);
+	}
+	free(buf);
+	*bp = &((char *)(data.data))[1];
+	return(0);
+}
+
 
 /*
  * Cgetmatch will return 0 if name is one of the names of the capability
@@ -619,12 +694,10 @@ cgetnext(bp, db_array)
 
 		*rp = '\0';
 		status = getent(bp, &dummy, db_array, -1, buf, 0);
-		if (status == 0)
-			return (1);
-		if (status == -2 || status == -3) {
+		if (status == -2 || status == -3)
 			(void)cgetclose();
-			return (status + 1);
-		}
+
+		return (status + 1);
 	}
 	/* NOTREACHED */
 }
