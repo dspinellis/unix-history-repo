@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mbufs.c	1.3 (Lucasfilm) %G%";
+static char sccsid[] = "@(#)mbufs.c	1.4 (Lucasfilm) %G%";
 #endif
 
 #include "systat.h"
@@ -40,7 +40,8 @@ labelmbufs()
                 "/0   /5   /10  /15  /20  /25  /30  /35  /40  /45  /50");
 }
 
-char *mtnames[] = {
+#define	NLINES	15		/* max # which can fit on screen */
+char *mtnames[NLINES] = {
 	"free",
 	"data",
 	"headers",
@@ -53,6 +54,9 @@ char *mtnames[] = {
 	"zombies",
 	"sockopts",
 	"frags",
+	"rights",
+	"ifaddrs",
+	"#14"
 };
 
 showmbufs()
@@ -62,9 +66,9 @@ showmbufs()
 
 	if (mb == 0)
 		return;
-	for (j = 0; j < 15; j++) {
+	for (j = 0; j < NLINES; j++) {
 		max = 0, index = -1; 
-		for (i = 0; i < 15; i++)
+		for (i = 0; i < NLINES; i++)
 			if (mb->m_mtypes[i] > max) {
 				max = mb->m_mtypes[i];
 				index = i;
@@ -87,7 +91,7 @@ showmbufs()
 		}
 		mb->m_mtypes[index] = 0;
 	}
-	while (j++ < 15) {
+	while (j++ < NLINES) {
 		wmove(wnd, 3 + j, 0);
 		wclrtoeol(wnd);
 	}
