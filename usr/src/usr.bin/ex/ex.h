@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ex.h	7.9.1.1 (Berkeley) %G%
+ *	@(#)ex.h	7.10 (Berkeley) %G%
  */
 
 #ifdef V6
@@ -342,7 +342,7 @@ var	line	*undadot;	/* If we saved all lines, dot reverts here */
 extern	int	(*Outchar)();
 extern	int	(*Pline)();
 extern	int	(*Put_char)();
-var	int	(*oldhup)();
+var	void	(*oldhup)();
 int	(*setlist())();
 int	(*setnorm())();
 int	(*setnorm())();
@@ -390,7 +390,7 @@ off_t	lseek();
 int	normchar();
 int	normline();
 int	numbline();
-var	int	(*oldquit)();
+var	void (*oldquit)();
 int	onhup();
 int	onintr();
 int	onsusp();
