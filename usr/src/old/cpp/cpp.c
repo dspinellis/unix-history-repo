@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cpp.c	1.7 %G%";
+static char sccsid[] = "@(#)cpp.c	1.8 %G%";
 #endif lint
 
 #ifdef FLEXNAMES
@@ -1116,10 +1116,9 @@ main(argc,argv)
 	[i don't see what the problem is.  jfr]
 */
 				} else if (fout==stdout) {
-					extern char _sobuf[BUFSIZ];
 					if (NULL==(fout=fopen(argv[i], "w"))) {
 						pperror("Can't create %s", argv[i]); exit(8);
-					} else {fclose(stdout); setbuf(fout,_sobuf);}
+					} else fclose(stdout);
 # endif
 				} else pperror("extraneous name %s", argv[i]);
 			}
