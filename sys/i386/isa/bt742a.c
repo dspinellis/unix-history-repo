@@ -299,6 +299,21 @@ struct bt_config {
 	u_char	:5;
 };
 
+/*
+ * Determin 32bit address/Data firmware functionality from Bus type
+ * Note: bt742a/747[s|d]/757/946/445s will return 'E'
+ *       bt542b/545s/545d will be return 'A'
+ *				94/05/18 amurai@spec.co.jp
+ */
+#define BT_BUS_TYPE_24bit 'A' 	/* PC/AT 24 bit address bus type */
+#define BT_BUS_TYPE_32bit 'E' 	/* EISA/VLB/PCI 32 bit address bus type */
+#define BT_BUS_TYPE_MCA   'M'   /* Micro chanel is ? forget it right now */
+struct bt_ext_info {
+	u_char  bus_type;	/* Host adapter bus type */
+	u_char  bios_addr;	/* Bios Address-Not use*/
+	u_short max_seg;	/* Max segment List */
+};
+
 #define INT9	0x01
 #define INT10	0x02
 #define INT11	0x04
@@ -989,6 +1004,7 @@ bt_init(unit)
 	unsigned char ad[4];
 	volatile int i, sts;
 	struct bt_config conf;
+	struct bt_ext_info info;
 
 	/*
 	 * reset board, If it doesn't respond, assume 
@@ -1009,6 +1025,35 @@ bt_init(unit)
 #endif
 		return (ENXIO);
 	}
+	/*
+         * Make sure board has a capability of 32bit addressing.
+         *   and Firmware also need a capability of 32bit addressing pointer
+         *   in Extended mailbox and ccb structure.
+         *                                   94/05/18 amurai@spec.co.jp
+         */
+	bt_cmd(unit, 1, sizeof(info),0,&info, BT_INQUIRE_EXTENDED,sizeof(info));
+	switch (info.bus_type) {
+		case BT_BUS_TYPE_24bit:		/* PC/AT 24 bit address bus */
+			printf("bt%d: bt54x-ISA(24bit) bus detected..", unit);
+			printf("Try aha1542 driver instead! ");
+			printf("[giving up]\n");
+			return (ENXIO);
+			break;	
+		case BT_BUS_TYPE_32bit:		/* EISA/VLB/PCI 32 bit bus */
+			printf("bt%d: PCI/EISA/VLB(32bit) bus detected\n",unit);
+			break;	
+		case BT_BUS_TYPE_MCA:           /* forget it right now */
+			printf("bt%d: MCA bus architecture detected..", unit);
+			printf("[giving up]\n");
+			return (ENXIO);
+			break;
+		default:
+			printf("bt%d: Unknown state detected...", unit);
+			printf("[giving up]\n");
+			return (ENXIO);
+			break;
+	}
+
 	/*
 	 * Assume we have a board at this stage
 	 * setup dma channel from jumpers and save int
