@@ -11,11 +11,14 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)pmerge.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pmerge.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <signal.h>
 
 #define PRGFILE 0
@@ -36,15 +39,13 @@ static char sccsid[] = "@(#)pmerge.c	5.1 (Berkeley) %G%";
 FILE	*files[NUMFILES];
 char	*names[NUMFILES];
 FILE	*curfile;		/* current output file */
-FILE	*fopen();
 char	labelopen = FALSE, constopen = FALSE, typeopen = FALSE, varopen = FALSE;
-char	*mktemp();
-char	*malloc();
 
 /*
  * Remove temporary files if interrupted
  */
-onintr()
+void
+onintr(unused)
 {
 	int i;
 
@@ -79,13 +80,16 @@ main(argc, argv)
 
 	signal(SIGINT, onintr);
 
-	curfile = files[PRGFILE] = fopen(names[PRGFILE] = mktemp(TMPNAME), "w");
-	files[LABELFILE] = fopen(names[LABELFILE] = mktemp(TMPNAME), "w");
-	files[CONSTFILE] = fopen(names[CONSTFILE] = mktemp(TMPNAME), "w");
-	files[TYPEFILE] = fopen(names[TYPEFILE] = mktemp(TMPNAME), "w");
-	files[VARFILE] = fopen(names[VARFILE] = mktemp(TMPNAME), "w");
-	files[RTNFILE] = fopen(names[RTNFILE] = mktemp(TMPNAME), "w");
-	files[BODYFILE] = fopen(names[BODYFILE] = mktemp(TMPNAME), "w");
+	curfile = files[PRGFILE] =
+		fopen(names[PRGFILE] = mktemp(strdup(TMPNAME)), "w");
+	files[LABELFILE] =
+		fopen(names[LABELFILE] = mktemp(strdup(TMPNAME)), "w");
+	files[CONSTFILE] =
+		fopen(names[CONSTFILE] = mktemp(strdup(TMPNAME)), "w");
+	files[TYPEFILE] = fopen(names[TYPEFILE] = mktemp(strdup(TMPNAME)), "w");
+	files[VARFILE] = fopen(names[VARFILE] = mktemp(strdup(TMPNAME)), "w");
+	files[RTNFILE] = fopen(names[RTNFILE] = mktemp(strdup(TMPNAME)), "w");
+	files[BODYFILE] = fopen(names[BODYFILE] = mktemp(strdup(TMPNAME)), "w");
 
 	for (i = 0; i < NUMFILES; i++)
 		if (files[i] == NULL)
@@ -107,7 +111,7 @@ main(argc, argv)
 				quit(argv[ac]);
 		} else {
 			printout();
-			onintr();
+			onintr(0);
 			exit(0);
 		}
 		fgets(line, BUFSIZ, input);
@@ -415,6 +419,6 @@ quit(fp)
 {
 	if (fp != NULL)
 		perror(fp);
-	onintr();
+	onintr(0);
 	exit(1);
 }
