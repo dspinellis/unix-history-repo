@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.26 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.27 (Berkeley) %G%
  */
 
 /*
@@ -681,7 +681,8 @@ void vgone(vp)
 		if (vp->v_flag & VALIASED) {
 			count = 0;
 			for (vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
-				if (vq->v_rdev != vp->v_rdev)
+				if (vq->v_rdev != vp->v_rdev ||
+				    vq->v_type != vp->v_type)
 					continue;
 				count++;
 				vx = vq;
@@ -744,7 +745,7 @@ vcount(vp)
 		return (vp->v_usecount);
 loop:
 	for (count = 0, vq = *vp->v_hashchain; vq; vq = vq->v_specnext) {
-		if (vq->v_rdev != vp->v_rdev)
+		if (vq->v_rdev != vp->v_rdev || vq->v_type != vp->v_type)
 			continue;
 		/*
 		 * Alias, but not in use, so flush it out.
