@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)syscall.2	6.3 (Berkeley) %G%
+.\"     @(#)syscall.2	6.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SYSCALL 2
@@ -12,8 +12,8 @@
 .Nm syscall
 .Nd indirect system call
 .Sh SYNOPSIS
-.Fd #include <unistd.h>
 .Fd #include <sys/syscall.h>
+.Fd #include <unistd.h>
 .Ft int
 .Fn syscall "int number" "..."
 .Sh DESCRIPTION
@@ -23,7 +23,7 @@ interface has the specified
 .Fa number
 with the specified arguments.
 Symbolic constants for system calls can be found in the header file
-.Ao Pa syscall.h Ac .
+.Ao Pa sys/syscall.h Ac .
 .Pp
 .Sh RETURN VALUES
 The r0 value of the system call is returned.
