@@ -2,7 +2,7 @@
 .ND
 .po +0.34375i
 .nr PO +0.34375i
-(Rev. 4/86)
+(Rev. 2/92)
 .ps 14
 .ft B
 .ce
@@ -97,7 +97,7 @@ and shall cease use and sublicensing thereof.
 .PP
 \02.\ \ \fBFees. \fRThe distribution fee for this license and delivery
 of one physical copy of the Fourth Berkeley Software Distribution is
-one thousand dollars ($1,000.00). LICENSEE may obtain additional copies
+one thousand dollars ($2,000.00). LICENSEE may obtain additional copies
 and new releases
 of the Fourth Berkeley Software Distribution which The Regents of
 the University of California may choose to make available
@@ -300,7 +300,7 @@ he/she represents.
 .IP
 The release distributed under this agreement is 4.2
 of the Fourth Berkeley Software Distribution and
-updates thereto which comprise release 4.3.
+updates thereto which comprise release 4.3 and 4.4.
 .sp 2
 .PP
 IN WITNESS WHEREOF, The Regents of the University of California 
