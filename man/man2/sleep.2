@@ -1,0 +1,31 @@
+.pa 1
+.he 'SLEEP (II)'9/4/72'SLEEP (II)'
+.ti 0
+NAME		sleep -- stop execution for interval
+.sp
+.ti 0
+SYNOPSIS	(seconds in r0)
+.br
+sys sleep  / sleep = 35.; not in assembler
+.sp
+.ti 0
+DESCRIPTION	The
+current process is suspended from execution
+for the number of seconds specified
+by the contents of register 0.
+.sp
+.ti 0
+SEE ALSO	--
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		Due to the
+implementation,
+the sleep interval is only
+accurate to 256 60ths of a
+second (4.26 sec).
+Even then, the process is placed
+on a low priority queue and must be
+scheduled.
