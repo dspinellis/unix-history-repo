@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)mkdir.1	6.2 (Berkeley) %G%
+.\"	@(#)mkdir.1	6.3 (Berkeley) %G%
 .\"
 .TH MKDIR 1 ""
 .AT 3
@@ -24,7 +24,8 @@ mkdir \- make directories
 .SH DESCRIPTION
 .I Mkdir
 creates the directories named as operands, in the order specified,
-using mode 0777.
+using mode 0777 modified by the current
+.IR umask (2).
 .PP
 The options are as follows:
 .TP
