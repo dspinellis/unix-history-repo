@@ -5,7 +5,7 @@
 .\" Chris Torek.
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)scanf.3	6.9 (Berkeley) %G%
+.\"     @(#)scanf.3	6.10 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SCANF 3
@@ -26,7 +26,7 @@
 .Fn fscanf "FILE *stream" "const char *format" ...
 .Ft int
 .Fn sscanf "const char *str" "const char *format" ...
-.Fd #include <varargs.h>
+.Fd #include <stdarg.h>
 .Ft int
 .Fn vscanf "const char *format" "va_list ap"
 .Ft int
@@ -65,7 +65,7 @@ is analogous to
 and reads input from the stream pointer
 .Fa stream
 using a variable argument list of pointers (see
-.Xr varargs 3 ) .
+.Xr stdarg 3 ) .
 The
 .Fn vscanf
 function scans a variable argument list from the standard input and
@@ -367,11 +367,21 @@ the number of conversions which were successfully completed is returned.
 .Xr strtoul 3 ,
 .Xr getc 3 ,
 .Xr printf 3
+.Sh STANDARDS
+The functions
+.Fn fscanf ,
+.Fn scanf ,
+and
+.Fn sscanf
+conform to
+.St -ansiC .
 .Sh HISTORY
-A
-.Nm
-function appeared in
-.At v7 .
+The functions
+.Fn vscanf ,
+.Fn vsscanf
+and
+.Fn vfscanf
+are new to this release.
 .Sh BUGS
 The current situation with
 .Cm %F
