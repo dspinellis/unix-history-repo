@@ -1,7 +1,11 @@
 #
-# make file for cribbage
+# Copyright (c) 1980 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
 #
-# @(#)Makefile	1.3 (Berkeley) %G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
+#
+# make file for cribbage
 #
 HDRS=	cribbage.h deck.h cribcur.h
 OBJS=	extern.o crib.o support.o cards.o score.o io.o

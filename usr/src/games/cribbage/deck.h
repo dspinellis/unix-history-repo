@@ -1,4 +1,10 @@
-/* @(#)deck.h	1.3 (Berkeley) %G% */
+/*
+ * Copyright (c) 1980 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)deck.h	5.1 (Berkeley) %G%
+ */
 
 /*
  * define structure of a deck of cards and other related things
