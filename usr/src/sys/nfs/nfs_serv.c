@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.47 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.48 (Berkeley) %G%
  */
 
 /*
@@ -213,10 +213,12 @@ nfsrv_lookup(nfsd, mrep, md, dpos, cred, nam, mrq)
 	nd.ni_cnd.cn_cred = cred;
 	nd.ni_cnd.cn_nameiop = LOOKUP;
 	nd.ni_cnd.cn_flags = LOCKLEAF | SAVESTART;
-	if (error = nfs_namei(&nd, fhp, len, nfsd->nd_slp, nam, &md, &dpos, nfsd->nd_procp))
+	if (error = nfs_namei(&nd, fhp, len, nfsd->nd_slp, nam, &md, &dpos,
+	    nfsd->nd_procp))
 		nfsm_reply(0);
 	nqsrv_getl(nd.ni_startdir, NQL_READ);
 	vrele(nd.ni_startdir);
+	FREE(nd.ni_cnd.cn_pnbuf, M_NAMEI);
 	vp = nd.ni_vp;
 	bzero((caddr_t)fhp, sizeof(nfh));
 	fhp->fh_fsid = vp->v_mount->mnt_stat.f_fsid;
@@ -588,7 +590,8 @@ nfsrv_create(nfsd, mrep, md, dpos, cred, nam, mrq)
 	nd.ni_cnd.cn_cred = cred;
 	nd.ni_cnd.cn_nameiop = CREATE;
 	nd.ni_cnd.cn_flags = LOCKPARENT | LOCKLEAF | SAVESTART;
-	if (error = nfs_namei(&nd, fhp, len, nfsd->nd_slp, nam, &md, &dpos, nfsd->nd_procp))
+	if (error = nfs_namei(&nd, fhp, len, nfsd->nd_slp, nam, &md, &dpos,
+	    nfsd->nd_procp))
 		nfsm_reply(0);
 	VATTR_NULL(vap);
 	nfsm_dissect(tl, u_long *, NFSX_SATTR);
@@ -733,7 +736,8 @@ nfsrv_remove(nfsd, mrep, md, dpos, cred, nam, mrq)
 	nd.ni_cnd.cn_cred = cred;
 	nd.ni_cnd.cn_nameiop = DELETE;
 	nd.ni_cnd.cn_flags = LOCKPARENT | LOCKLEAF;
-	if (error = nfs_namei(&nd, fhp, len, nfsd->nd_slp, nam, &md, &dpos, nfsd->nd_procp))
+	if (error = nfs_namei(&nd, fhp, len, nfsd->nd_slp, nam, &md, &dpos,
+	    nfsd->nd_procp))
 		nfsm_reply(0);
 	vp = nd.ni_vp;
 	if (vp->v_type == VDIR &&
@@ -802,7 +806,8 @@ nfsrv_rename(nfsd, mrep, md, dpos, cred, nam, mrq)
 	fromnd.ni_cnd.cn_cred = cred;
 	fromnd.ni_cnd.cn_nameiop = DELETE;
 	fromnd.ni_cnd.cn_flags = WANTPARENT | SAVESTART;
-	if (error = nfs_namei(&fromnd, ffhp, len, nfsd->nd_slp, nam, &md, &dpos, nfsd->nd_procp))
+	if (error = nfs_namei(&fromnd, ffhp, len, nfsd->nd_slp, nam, &md,
+	    &dpos, nfsd->nd_procp))
 		nfsm_reply(0);
 	fvp = fromnd.ni_vp;
 	nfsm_srvmtofh(tfhp);
@@ -811,7 +816,8 @@ nfsrv_rename(nfsd, mrep, md, dpos, cred, nam, mrq)
 	tond.ni_cnd.cn_cred = cred;
 	tond.ni_cnd.cn_nameiop = RENAME;
 	tond.ni_cnd.cn_flags = LOCKPARENT | LOCKLEAF | NOCACHE | SAVESTART;
-	if (error = nfs_namei(&tond, tfhp, len2, nfsd->nd_slp, nam, &md, &dpos, nfsd->nd_procp)) {
+	if (error = nfs_namei(&tond, tfhp, len2, nfsd->nd_slp, nam, &md,
+	    &dpos, nfsd->nd_procp)) {
 		VOP_ABORTOP(fromnd.ni_dvp, &fromnd.ni_cnd);
 		vrele(fromnd.ni_dvp);
 		vrele(fvp);
@@ -933,7 +939,8 @@ nfsrv_link(nfsd, mrep, md, dpos, cred, nam, mrq)
 	nd.ni_cnd.cn_cred = cred;
 	nd.ni_cnd.cn_nameiop = CREATE;
 	nd.ni_cnd.cn_flags = LOCKPARENT;
-	if (error = nfs_namei(&nd, dfhp, len, nfsd->nd_slp, nam, &md, &dpos, nfsd->nd_procp))
+	if (error = nfs_namei(&nd, dfhp, len, nfsd->nd_slp, nam, &md, &dpos,
+	    nfsd->nd_procp))
 		goto out1;
 	xp = nd.ni_vp;
 	if (xp != NULL) {
@@ -996,7 +1003,8 @@ nfsrv_symlink(nfsd, mrep, md, dpos, cred, nam, mrq)
 	nd.ni_cnd.cn_cred = cred;
 	nd.ni_cnd.cn_nameiop = CREATE;
 	nd.ni_cnd.cn_flags = LOCKPARENT;
-	if (error = nfs_namei(&nd, fhp, len, nfsd->nd_slp, nam, &md, &dpos, nfsd->nd_procp))
+	if (error = nfs_namei(&nd, fhp, len, nfsd->nd_slp, nam, &md, &dpos,
+	    nfsd->nd_procp))
 		goto out;
 	nfsm_strsiz(len2, NFS_MAXPATHLEN);
 	MALLOC(pathcp, caddr_t, len2 + 1, M_TEMP, M_WAITOK);
@@ -1076,7 +1084,8 @@ nfsrv_mkdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 	nd.ni_cnd.cn_cred = cred;
 	nd.ni_cnd.cn_nameiop = CREATE;
 	nd.ni_cnd.cn_flags = LOCKPARENT;
-	if (error = nfs_namei(&nd, fhp, len, nfsd->nd_slp, nam, &md, &dpos, nfsd->nd_procp))
+	if (error = nfs_namei(&nd, fhp, len, nfsd->nd_slp, nam, &md, &dpos,
+	    nfsd->nd_procp))
 		nfsm_reply(0);
 	nfsm_dissect(tl, u_long *, NFSX_UNSIGNED);
 	VATTR_NULL(vap);
@@ -1149,7 +1158,8 @@ nfsrv_rmdir(nfsd, mrep, md, dpos, cred, nam, mrq)
 	nd.ni_cnd.cn_cred = cred;
 	nd.ni_cnd.cn_nameiop = DELETE;
 	nd.ni_cnd.cn_flags = LOCKPARENT | LOCKLEAF;
-	if (error = nfs_namei(&nd, fhp, len, nfsd->nd_slp, nam, &md, &dpos, nfsd->nd_procp))
+	if (error = nfs_namei(&nd, fhp, len, nfsd->nd_slp, nam, &md, &dpos,
+	    nfsd->nd_procp))
 		nfsm_reply(0);
 	vp = nd.ni_vp;
 	if (vp->v_type != VDIR) {
