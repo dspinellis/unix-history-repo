@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.10 83/12/06";
+static	char *sccsid = "@(#)lcmd1.c	3.11 83/12/09";
 #endif
 
 #include "defs.h"
@@ -8,10 +8,10 @@ static	char *sccsid = "@(#)lcmd1.c	3.10 83/12/06";
 #include "lcmd.h"
 
 struct lcmd_arg arg_window[] = {
-	{ "row",	1,	ARG_NUM },
-	{ "column",	1,	ARG_NUM },
-	{ "nrows",	2,	ARG_NUM },
-	{ "ncols",	2,	ARG_NUM },
+	{ "row",	1,	ARG_ANY },
+	{ "column",	1,	ARG_ANY },
+	{ "nrows",	2,	ARG_ANY },
+	{ "ncols",	2,	ARG_ANY },
 	{ "nlines",	2,	ARG_NUM },
 	{ "label",	1,	ARG_STR },
 	{ 0,		0,	0 }
@@ -26,10 +26,10 @@ register struct value *v;
 
 	if ((id = findid()) < 0)
 		return;
-	row = a->arg_vtype == V_ERR ? 1 : a->arg_num;
-	col = (++a)->arg_vtype == V_ERR ? 0 : a->arg_num;
-	nrow = (++a)->arg_vtype == V_ERR ? wwnrow - row : a->arg_num;
-	ncol = (++a)->arg_vtype == V_ERR ? wwncol - col : a->arg_num;
+	row = a->arg_vtype != V_NUM ? 1 : a->arg_num;
+	col = (++a)->arg_vtype != V_NUM ? 0 : a->arg_num;
+	nrow = (++a)->arg_vtype != V_NUM ? wwnrow - row : a->arg_num;
+	ncol = (++a)->arg_vtype != V_NUM ? wwncol - col : a->arg_num;
 	nline = (++a)->arg_vtype == V_ERR ? nbufline : a->arg_num;
 	label =  (++a)->arg_vtype == V_ERR ? 0 : a->arg_str;
 	if (openwin(id, row, col, nrow, ncol, nline, label) == 0)
