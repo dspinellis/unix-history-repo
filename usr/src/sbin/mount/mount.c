@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mount.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount.c	5.13 (Berkeley) %G%";
 #endif not lint
 
 #include "pathnames.h"
@@ -166,14 +166,9 @@ main(argc, argv, arge)
 				exit(1);
 			}
 		} while (i == mntsize * sizeof(struct statfs));
-		for (i = 0; i < mntsize; i++) {
-			if (mntbuf[i].f_flags & M_RDONLY)
-				type = "ro";
-			else
-				type = "rw";
+		for (i = 0; i < mntsize; i++)
 			prmount(mntbuf[i].f_mntfromname, mntbuf[i].f_mntonname,
-				type);
-		}
+				mntbuf[i].f_flags);
 		exit(0);
 	}
 
@@ -214,90 +209,100 @@ mountfs(spec, name, type, options, mntopts)
 	struct ufs_args args;
 	char *argp, *argv[50];
 
-	if (!fake) {
-		flags = 0;
-		if (!strcmp(type, FSTAB_RO))
-			flags |= M_RDONLY;
-		switch (mnttype) {
-		case MOUNT_UFS:
-			if (options)
-				getufsopts(options, &flags);
-			if (mntopts)
-				getufsopts(mntopts, &flags);
-			args.fspec = spec;
-			argp = (caddr_t)&args;
-			break;
+	flags = 0;
+	if (!strcmp(type, FSTAB_RO))
+		flags |= M_RDONLY;
+	if (options)
+		getstdopts(options, &flags);
+	if (mntopts)
+		getstdopts(mntopts, &flags);
+	switch (mnttype) {
+	case MOUNT_UFS:
+		if (options)
+			getufsopts(options, &flags);
+		if (mntopts)
+			getufsopts(mntopts, &flags);
+		args.fspec = spec;
+		argp = (caddr_t)&args;
+		break;
 
 #ifdef NFS
-		case MOUNT_NFS:
-			if (options)
-				getnfsopts(options, &nfsargs, &opflags,
-					&retrycnt);
-			if (mntopts)
-				getnfsopts(mntopts, &nfsargs, &opflags,
-					&retrycnt);
-			if (argp = getnfsargs(spec, name, type))
-				break;
-			return (1);
+	case MOUNT_NFS:
+		if (options)
+			getnfsopts(options, &nfsargs, &opflags,
+				&retrycnt);
+		if (mntopts)
+			getnfsopts(mntopts, &nfsargs, &opflags,
+				&retrycnt);
+		if (argp = getnfsargs(spec, name, type))
+			break;
+		return (1);
 #endif /* NFS */
 
 #ifdef MFS
-		case MOUNT_MFS:
-			argv[0] = "memfs";
-			argc = 1;
-			if (options)
-				argc += getmfsopts(options, &argv[argc]);
-			if (mntopts)
-				argc += getmfsopts(mntopts, &argv[argc]);
-			argv[argc++] = spec;
-			argv[argc++] = name;
-			if (i = vfork()) {
-				if (i == -1) {
-					perror("mount: vfork for memfs");
-					return (1);
-				}
-				if (waitpid(i, &status, 0) != -1 &&
-				    WIFEXITED(status) &&
-				    WEXITSTATUS(status) != 0)
-					return (WEXITSTATUS(status));
-				spec = "memfs";
-				goto out;
+	case MOUNT_MFS:
+		argv[0] = "memfs";
+		argc = 1;
+		if (options)
+			argc += getmfsopts(options, &argv[argc]);
+		if (mntopts)
+			argc += getmfsopts(mntopts, &argv[argc]);
+		argv[argc++] = spec;
+		argv[argc++] = name;
+		if (verbose) {
+			printf("exec:");
+			for (i = 0; i < argc; i++)
+				printf(" %s", argv[i]);
+			printf("\n");
+		}
+		if (fake)
+			break;
+		if (i = vfork()) {
+			if (i == -1) {
+				perror("mount: vfork for memfs");
+				return (1);
 			}
-			execve(_PATH_MEMFS, argv, envp);
-			perror(_PATH_MEMFS);
-			exit (1);
+			if (waitpid(i, &status, 0) != -1 &&
+			    WIFEXITED(status) &&
+			    WEXITSTATUS(status) != 0)
+				return (WEXITSTATUS(status));
+			spec = "memfs";
+			goto out;
+		}
+		execve(_PATH_MEMFS, argv, envp);
+		perror(_PATH_MEMFS);
+		exit (1);
 #endif /* MFS */
 
-		default:
-			if (opflags & ISBGRND)
-				exit(1);
-			fprintf(stderr, "%d: unknown mount type\n", mnttype);
+	default:
+		if (opflags & ISBGRND)
 			exit(1);
-			/* NOTREACHED */
+		fprintf(stderr, "%d: unknown mount type\n", mnttype);
+		exit(1);
+		/* NOTREACHED */
 
-		};
-		if (mount(mnttype, name, flags, argp)) {
-			if (opflags & ISBGRND)
-				exit(1);
-			fprintf(stderr, "%s on %s: ", spec, name);
-			switch (errno) {
-			case EMFILE:
-				fprintf(stderr, "Mount table full\n");
-				break;
-			case EINVAL:
-				fprintf(stderr, "Bogus super block\n");
-				break;
-			default:
-				perror((char *)NULL);
-				break;
-			}
-			return(1);
+	}
+	if (!fake && mount(mnttype, name, flags, argp)) {
+		if (opflags & ISBGRND)
+			exit(1);
+		fprintf(stderr, "%s on %s: ", spec, name);
+		switch (errno) {
+		case EMFILE:
+			fprintf(stderr, "Mount table full\n");
+			break;
+		case EINVAL:
+			fprintf(stderr, "Bogus super block\n");
+			break;
+		default:
+			perror((char *)NULL);
+			break;
 		}
+		return(1);
 	}
 
 out:
 	if (verbose)
-		prmount(spec, name, type);
+		prmount(spec, name, flags);
 
 	if (opflags & ISBGRND)
 		exit();
@@ -306,8 +311,9 @@ out:
 }
 
 static
-prmount(spec, name, type)
-	char *spec, *name, *type;
+prmount(spec, name, flags)
+	char *spec, *name;
+	long flags;
 {
 	register char *root;
 
@@ -322,10 +328,16 @@ prmount(spec, name, type)
 	if (root = rindex(spec, '/'))
 		spec = root + 1;
 	printf("%s on %s", spec, name);
-	if (!strcmp(type, FSTAB_RO))
-		printf("\t(read-only)");
-	else if (!strcmp(type, FSTAB_RQ))
-		printf("\t(with quotas)");
+	if (flags & M_RDONLY)
+		printf(" (read-only)");
+	if (flags & M_NOEXEC)
+		printf(" (noexec)");
+	if (flags & M_NOSUID)
+		printf(" (nosuid)");
+	if (flags & M_NODEV)
+		printf(" (nodev)");
+	if (flags & M_SYNCHRONOUS)
+		printf(" (synchronous)");
 	printf("\n");
 }
 
@@ -346,6 +358,45 @@ usage()
 {
 	fprintf(stderr, "usage: mount [-afrw]\nor mount [-frw] special | node\nor mount [-frw] special node\n");
 	exit(1);
+}
+
+getstdopts(options, flagp)
+	char *options;
+	long *flagp;
+{
+	register char *opt;
+	int negative;
+	char *optbuf[BUFSIZ], *strtok();
+
+	strcpy(optbuf, options);
+	for (opt = strtok(optbuf, ","); opt; opt = strtok(NULL, ",")) {
+		if (opt[0] == 'n' && opt[1] == 'o') {
+			negative++;
+			opt += 2;
+		} else {
+			negative = 0;
+		}
+		if (!strcasecmp(opt, "exec")) {
+			if (negative)
+				*flagp |= M_NOEXEC;
+			continue;
+		}
+		if (!strcasecmp(opt, "suid")) {
+			if (negative)
+				*flagp |= M_NOSUID;
+			continue;
+		}
+		if (!strcasecmp(opt, "dev")) {
+			if (negative)
+				*flagp |= M_NODEV;
+			continue;
+		}
+		if (!strcasecmp(opt, "synchronous")) {
+			if (!negative)
+				*flagp |= M_SYNCHRONOUS;
+			continue;
+		}
+	}
 }
 
 getufsopts(options, flagp)
