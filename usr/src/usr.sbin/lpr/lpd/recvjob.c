@@ -1,4 +1,4 @@
-/*	recvjob.c	4.2	83/05/13	*/
+/*	recvjob.c	4.2	83/05/16	*/
 /*
  * Receive printer jobs from the network, queue them and
  * start the printer daemon.
@@ -11,10 +11,9 @@ char    *dfname;		/* data files */
 
 recvjob()
 {
+	struct stat stb;
 	char *bp = pbuf;
 	int status;
-
-	name = "recvjob";
 
 	/*
 	 * Perform lookup for printer name or abbreviation
@@ -27,11 +26,18 @@ recvjob()
 		LF = DEFLOGF;
 	if ((SD = pgetstr("sd", &bp)) == NULL)
 		SD = DEFSPOOL;
+	if ((LO = pgetstr("lo", &bp)) == NULL)
+		LO = DEFLOCK;
 
 	(void) close(2);
 	(void) open(LF, FWRONLY|FAPPEND, 0);
 	if (chdir(SD) < 0)
 		fatal("cannot chdir to %s", SD);
+	if (stat(LO, &stb) == 0 && (stb.st_mode & 010)) {
+		/* queue is disabled */
+		putchar('\1');		/* return error code */
+		exit(1);
+	}
 
 	if (readjob())
 		printjob();
