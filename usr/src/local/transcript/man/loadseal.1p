@@ -1,0 +1,33 @@
+.\"	@(#)loadseal.1p	1.1 (Berkeley) %G%
+.TH LOADSEAL 1 local
+.SH NAME
+loadseal \- download UC seal into a Postscript printer
+.SH SYNOPSIS
+.B loadseal
+[
+.B -Pprinter
+]
+.SH DESCRIPTION
+.PP
+.I Loadseal
+downloads a bitmap image of the UC seal to the given Postscript printer.
+The UC seal will remain in the printer until it is turned off.
+To get the UC letterhead with the UC seal embedded in it, use the
+.I \&.lh
+macro with the
+.I -me
+macros or the
+.I \&.HE
+macro with the
+.I -ms
+macros.
+If you wish to use the UC seal directly, then examine those macros.
+.SH ENVIRONMENT
+.IP PRINTER
+Same as
+.IR psroff (1).
+.SH SEE ALSO
+psroff(1),
+ditroff(1)
+.SH NOTES
+POSTSCRIPT is a trademark of Adobe Systems, Inc.
