@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)dfn.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)dfn.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -20,9 +20,16 @@ struct dfnstruct {
 typedef struct dfnstruct	dfntype;
 
 dfntype	dfn_stack[ DFN_DEPTH ];
-int	dfn_depth = 0;
+int	dfn_depth;
 
-int	dfn_counter = DFN_NAN;
+int	dfn_counter;
+
+dfn_init()
+{
+
+    dfn_depth = 0;
+    dfn_counter = DFN_NAN;
+}
 
     /*
      *	given this parent, depth first number its children.
@@ -60,6 +67,8 @@ dfn( parentp )
 	 *	visit children
 	 */
     for ( arcp = parentp -> children ; arcp ; arcp = arcp -> arc_childlist ) {
+	    if ( arcp -> arc_flags & DEADARC )
+		continue;
 	    dfn( arcp -> arc_childp );
     }
 	/*

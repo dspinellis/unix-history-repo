@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)gprof.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)gprof.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "gprof.h"
@@ -44,6 +44,10 @@ main(argc, argv)
 	case 'b':
 	    bflag = FALSE;
 	    break;
+	case 'C':
+	    Cflag = TRUE;
+	    cyclethreshold = atoi( *++argv );
+	    break;
 	case 'c':
 #if defined(vax) || defined(tahoe)
 	    cflag = TRUE;
@@ -54,8 +58,7 @@ main(argc, argv)
 	    break;
 	case 'd':
 	    dflag = TRUE;
-	    (*argv)++;
-	    debug |= atoi( *argv );
+	    debug |= atoi( *++argv );
 	    debug |= ANYDEBUG;
 #	    ifdef DEBUG
 		printf("[main] debug = %d\n", debug);
