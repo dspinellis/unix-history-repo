@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.87 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.88 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1263,7 +1263,10 @@ self_reference(a, e)
 					printf("found\n");
 
 				/* ought to cache results here */
-				return c;
+				if (sameaddr(b, c))
+					return b;
+				else
+					return c;
 			}
 			if (tTd(27, 2))
 				printf("failed\n");
