@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	4.7 (Berkeley) 85/08/30";
+static	char *sccsid = "@(#)main.c	4.8 (Berkeley) 86/01/09";
 # include "defs"
 /*
 command make to update programs.
@@ -323,7 +323,7 @@ zznextc = 0;
 if( yyparse() )
 	fatal("Description file error");
 
-if(fin != NULL)
+if(fin != NULL && fin != stdin)
 	fclose(fin);
 
 return(0);
