@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.48 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.49 (Berkeley) %G%
 #	John Kunze, Berkeley
 #	Craig Leres, Berkeley
 #
@@ -2579,12 +2579,6 @@ yh|w50-s|wyse50-s|Wyse 50 for sysline:\
 	:hs:ts=\Ef:fs=\r:ds=\Ef\r:es:tc=w50:
 yg|w50-w|w50-132|wyse50-132|Wyse 50-132:\
 	:cm=\Ea%i%dR%dC:co#132:is=\E`;\200\EC\EDF\E0\E'\E(\EA21:tc=w50:
-w6|w60|wyse60|Wyse 60 in native mode:\
-	:ae=\EcD:al=\EE:am:as=\EcE:bs:bt=\EI:bw:cd=\Ey:ce=\Et:\
-	:cl=^Z:cm=\E=%+\040%+\040:co#80:ct=\E0:dc=\EW:dl=\ER:do=^J:\
-	:ei=\Er:im=\Eq:is=:kb=^?:kd=^N:ke=\E~2:kl=^B:kr=^F:ks=\E~3:ku=^P:\
-	:le=^H:li#43:ll=^^^K:mb=\EG2:me=\EG0:mh=\EGp:mi:mr=\EG4:ms:\
-	:nd=^L:pt:se=\EG0:sf=\n:so=\EG4:sr=\Ej:ue=\EG0:up=^K:us=\EG8:
 # from John Gillmore hoptoad!gnu@lll-crg.arpa
 wv|wyse-vp|wyse|Wyse 50 in ADDS Viewpoint emulation mode with "enhance" on:\
 	:am:do=^J:if=/usr/share/tabset/wyse-adds:\
@@ -2596,6 +2590,57 @@ wk|wyse-vp-nk|Wyse 50 in ADDS Viewpoint enhanced mode with cursor keys gone:\
 	:kl@:kr@:kd@:ku@:kh@:tc=wyse-vp:
 vw|wyse925|Wyse-50 emulating tvi925:\
 	:xn@:tc=tvi925:
+# Wyse 60 in 24 row native mode, switches screens for vi and emacs.
+# This termcap is a composite of entries submitted by Steve Van Domelen
+# (Wyse Tech, svd@bigboy.wyse.com) and Douglas Good (doug@cli.com).
+# Merged by Paul Vojta (vojta@math.berkeley.edu).
+ws|wy60|Wyse 60 in native mode:\
+	:ae=\EH^C:al=4\EE:am:as=\EH^B:bl=^G:bs:bt=\EI:bw:cd=100\Ey:ce=\Et:\
+	:cl=100\E*:cm=\E=%+ %+ :co#80:ct=\E0:da:db:dc=11\EW:dl=5\ER:do=^J:\
+	:ds=\EF\r:ei=\Er:fs=\r:ho=^^:hs:if=/usr/lib/tabset/std:im=\Eq:ip=3:\
+	:is=\Ed$\EcD\E'\Er\EH^C\Ed/\EO\Ee1\Ed*\E`@\E`9\E`1^N^T\EwG\Ew0^^^K:\
+	:k0=^A@\r:k1=^AA\r:k2=^AB\r:k3=^AC\r:k4=^AD\r:k5=^AE\r:k6=^AF\r:\
+	:k7=^AG\r:k8=^AH\r:k9=^AI\r:kb=\b:kd=\EOB:ke=200\EcU:kh=\E{:kl=\EOD:\
+	:km:kn#10:ko=bt,le,do,nd,up,dc,dl,ho,al:kr=\EOC:\
+	:ks=200\EZ0+\EOA\177\EZ0,\EOB\177\EZ0.\EOC\177\EZ0-\EOD\177\EZ0*\E{\177:\
+	:ku=\EOA:l0=F1:l1=F2:l2=F3:l3=F4:l4=F5:l5=F6:l6=F7:l7=F8:l8=F9:l9=F10:\
+	:le=\b:li#24:ll=^^^K:mb=\EG2:me=\EG0:mh=\EGp:mi:mr=\EG4:ms:nd=\f:pf=^T:\
+	:po=^R:pt:rs=500\E~!\E~4\E`\:\EeF\Ee(\EwG:se=\EG0:sf=^J:so=\EGt:\
+	:sr=7\Ej:st=\E1:te=50^Z\Ew0:ti=50\Ew1:ts=\EF:ue=\EG0:up=^K:us=\EG8:
+#	Must delete uc= if using infocomp to translate
+w7|wy60-w|wyse60-w|wyse 60 132-column:\
+	:co#132:cm=\Ea%i%dR%dC:dc=16\EW:ip=5:\
+	:rs=500\E~!\E~4\EeF\E`;\Ee(\EwG:tc=wy60:
+#	From now on, page-switching is no longer possible
+w8|wy60-25|wyse60-25|wyse 60 80-column 25-lines:\
+	:li#25:te:ti:\
+	:rs=500\E~!\E~4\E`\:\EeG\Ee)\EwG:tc=wy60:
+w9|wy60-25-w|wyse60-25-w|wyse 60 132-column 25-lines:\
+	:co#132:li#25:cm=\Ea%i%dR%dC:dc=16\EW:ip=5:te:ti:\
+	:rs=500\E~!\E~4\EeF\E`;\Ee)\EwG:tc=wy60:
+wa|wy60-42|wyse60-42|wyse 60 80-column 42-lines:\
+	:li#42:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\E=%+ %+ :dc=16\EW:\
+	:dl=11\ER:ip=5:sr=10\Ej:te:ti:\
+	:rs=500\E~!\E~4\E`\:\EeF\Ee*\EwG:tc=wy60:
+wb|wy60-42-w|wyse60-42-w|wyse 60 132-column 42-lines:\
+	:co#132:li#42:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\Ea%i%dR%dC:dc=19\EW:\
+	:dl=11\ER:ho=2^^:ip=6:sr=10\Ej:te:ti:\
+	:rs=500\E~!\E~4\EeF\E`;\Ee*\EwG:tc=wy60:
+wc|wy60-43|wyse60-43|wyse 60 80-column 43-lines:\
+	:li#43:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\E=%+ %+ :dc=16\EW:\
+	:dl=11\ER:ip=5:sr=10\Ej:te:ti:\
+	:rs=500\E~!\E~4\E`\:\EeF\Ee+\EwG:tc=wy60:
+wd|wy60-43-w|wyse60-43-w|wyse 60 132-column 43-lines:\
+	:co#132:li#43:al=11\EE:cd=260\Ey:cl=260\E*:cm=2\Ea%i%dR%dC:dc=19\EW:\
+	:dl=11\ER:ho=2^^:ip=6:sr=10\Ej:te:ti:\
+	:rs=500\E~!\E~4\EeF\E`;\Ee+\EwG:tc=wy60:
+#	Not recommended at high baud rates
+we|wy60-vb|wyse60-vb|Wyse 60 visible bell:\
+	:vb=\E`8\E`9:\
+	:tc=wy60:
+wf|wy60-w-vb|wy60-wvb|wyse60-wvb|Wyse 60 132-column visible bell:\
+	:vb=\E`8\E`9:\
+	:tc=wy60-w:
 # wyse 75 series from JLarson.pa@xerox.arpa
 wx|wyse75|wy75|wyse 75 terminal :\
 	:co#80:li#24:cl=50\E[H\E[2J:bs:cm=5\E[%i%d;%dH:nd=\E[C:up=\E[A:\
@@ -2610,7 +2655,7 @@ wx|wyse75|wy75|wyse 75 terminal :\
 	:l5=F6:l6=F7:l7=F8:l8=F9:l9=F10:\
 	:is=\E[1;24r\E[24;1H\E[35;?25h\E[4;?10;3;1l\E[m\E(B\E>:\
 	:ds=\E7\E[>,//\E8:ts=\E7\E[>,^A:fs=^A\E8:
-wx|wyse75-80|wy75-80|wyse 75 terminal with 80-column initialization:\
+wy|wyse75-80|wy75-80|wyse 75 terminal with 80-column initialization:\
 	:is=\E[?3l:tc=wy75:
 wl|wyse75-132|wy75-132|wyse 75 terminal with 132 columns :\
 	:is=\E[?3h:co#132:tc=wy75:
