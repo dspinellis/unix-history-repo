@@ -1,4 +1,4 @@
-/*	xpformat.c	1.1	86/01/12	*/
+/*	xpformat.c	1.2	86/01/21	*/
 /*
 /* format disk on Xylogics controller - fsd/smd/fujitsu type */
 /**/
@@ -8,6 +8,7 @@
 #include "inode.h"
 #include "saio.h"
 
+#include "../tahoevba/vbaparam.h"
 #include "../tahoevba/xpreg.h"
 
 char disk[10] ;			/* disk type (smd/fsd/fuj) */
@@ -91,7 +92,7 @@ int unit;
 	xpmkiopb(XP_NOP,unit,0,0,0,0,0,0);
 	iopb->io_comm &= ~XP_IEN;		/* disable interrupts */
 
-	xpaddr = (struct xpdevice *)(xpstand[0] + IOBASE); /* formatting on cntl 0  */
+	xpaddr = (struct xpdevice *)(xpstand[0] + VBIOBASE); /* formatting on cntl 0  */
 	ret = xpaddr->xpreset;			/* reset controller */
 	DELAY(400);				/* wait 400 ns */
 	xpdgo(xpaddr,iopb);	/* start the controller */
@@ -157,7 +158,7 @@ int unit;
 	struct xpdevice *xpaddr;
 	int i,j,flag;
 
-	xpaddr = (struct xpdevice *)(xpstand[0] + IOBASE); /* formatting on cntl 0  */
+	xpaddr = (struct xpdevice *)(xpstand[0] + VBIOBASE); /* formatting on cntl 0  */
 	xpmkiopb(XP_FORMAT,unit,0,0,0,nsect,0,dsktype); 
 	for (i=0; i<ncyl; i++) {
 		iopb->io_comm &= ~XP_IEN;	/* disable interrupts */

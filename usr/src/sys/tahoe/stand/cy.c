@@ -1,4 +1,4 @@
-/*	cy.c	7.1	86/01/12	*/
+/*	cy.c	7.2	86/01/21	*/
 /*	cy.c	Tahoe version 	Mar 1983.	*/
 
 /*
@@ -15,7 +15,10 @@
 #include "saio.h"
 #include "cyvar.h"
 
+#include "../tahoevba/vbaparam.h"
+
 long	cystd[] = { 0xf4000, 0 };
+#define	CYADDR(i)	(cystd[i] + (int)VBIOBASE)
 
 struct scp	/* SYSTEM CONFIGURATION POINTER */
 {
@@ -74,7 +77,7 @@ cyopen(io)
 {
 	register ctlradr;
 
-	ctlradr = cystd[0] + (int)IOBASE;
+	ctlradr = CYADDR(0);
 	SCP = (struct scp *)0xc06;		/* absolute - for setup */
 	TM_RESET(ctlradr,0xff);	/* reset the controller */
 	/*
@@ -181,7 +184,7 @@ cycmd(io,func)
 	register ctlradr;
 	short j;
 
-	ctlradr = cystd[0] + (int)IOBASE;
+	ctlradr = CYADDR(0);
 	cywait(9000); 
 	if (func == READ) func = READ_TA;
 	else if (func == WRITE) func = WRIT_TA;

@@ -1,4 +1,4 @@
-/*	udcformat.c	1.1	86/01/12	*/
+/*	udcformat.c	1.2	86/01/21	*/
 /* format disk - cmd/smd type */
 
 #include "../machine/mtpr.h"
@@ -7,6 +7,7 @@
 #include "inode.h"
 #include "fs.h"
 
+#include "../tahoevba/vbaparam.h"
 #include "../tahoevba/udc.h"
 
 #include "saio.h"
@@ -88,7 +89,7 @@ long func;		/* Known to be 'read' */
 	register char *addr ;
 	register timeout , retries , i;
 
-	cntaddr = (char *)(udstd[0] + IOBASE); /* Booting from cntrlr 0 */
+	cntaddr = (char *)(udstd[0] + VBIOBASE); /* Booting from cntrlr 0 */
 	/*
 	 * prepare a command packet for the controller.
 	 */
@@ -231,7 +232,7 @@ struct iob *io;
 /*
  * Just clean up any junk in the controller's response buffers.
  */	
-	cntaddr = (char *)(udstd[0] + IOBASE); /* Booting from cntrlr 0 */
+	cntaddr = (char *)(udstd[0] + VBIOBASE); /* Booting from cntrlr 0 */
 	while (cntaddr[IB1] == (char)DEVRDY) {
 		cntaddr[IB1] = (char)0;
 		cntaddr[OB2] = (char)0x06;  /* ACK */
