@@ -1,0 +1,66 @@
+
+
+
+XNEKO(6)               BSD Reference Manual              XNEKO(6)
+
+
+NNAAMMEE
+       xneko - cat-and-mouse chase in an X window
+
+SSYYNNOOPPSSIISS
+       xneko [ --ddiissppllaayy _d_i_s_p_l_a_y ] [ --ggeeoommeettrryy _g_e_o_m_e_t_r_y ] [ --ttiittllee
+       _t_i_t_l_e ] [ --nnaammee _n_a_m_e ] [ --iiccoonniicc ]  [  --ssppeeeedd  _s_p_e_e_d  ]  [
+       --ttiimmee _t_i_m_e ] [ --hheellpp ]
+
+DDEESSCCRRIIPPTTIIOONN
+       _X_n_e_k_o  displays  a  window  in  which  a  cat  chases your
+       ``mouse'' cursor.
+
+       All options except the last  three  above  behave  in  the
+       standard manner for X applications (see _X(1)).  The --ssppeeeedd
+       option controls the speed of the cat (the default is  16).
+       The  --ttiimmee  option controls the interval (in microseconds)
+       between updates  of  the  _x_n_e_k_o  window  (the  default  is
+       125000).   The  --hheellpp  option provides a usage message and
+       exits.
+
+       The word ``neko'' means ``cat'' in Japanese.
+
+SSEEEE AALLSSOO
+       X(1)
+
+AAUUTTHHOORR
+       Masayuki Koba, 1990
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.4BSD                     May 31, 1993                         1
+
+
+
+
+

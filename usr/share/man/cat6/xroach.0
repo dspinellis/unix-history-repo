@@ -1,0 +1,66 @@
+
+
+
+XROACH(6)              BSD Reference Manual             XROACH(6)
+
+
+NNAAMMEE
+       xroach - cockroaches hide under your windows
+
+SSYYNNOOPPSSIISS
+       xxrrooaacchh [-option .,..]
+
+DDEESSCCRRIIPPTTIIOONN
+       _X_r_o_a_c_h  displays  disgusting cockroaches on your root win-
+       dow. These creapy crawlies scamper around until they  find
+       a  window  to  hide  under. Whenever you move or iconify a
+       window, the exposed beetles again scamper for cover.
+
+OOPPTTIIOONNSS
+       --ddiissppllaayy _d_i_s_p_l_a_y___n_a_m_e
+               Drop the roaches on the given display.  Make  sure
+               the  display  is  nearby,  so  you  can  hear  the
+               screams.
+
+       --rrcc _r_o_a_c_h___c_o_l_o_r
+               Use the given string as the  color  for  the  bugs
+               instead of the default "black".
+
+       --ssppeeeedd _r_o_a_c_h___s_p_e_e_d
+               Use the given speed for the insects instead of the
+               default 20.0. For example,  in  winter  the  speed
+               should  be  set  to  5.0. In summer, 30.0 might be
+               about right.
+
+       --rrooaacchheess _n_u_m___r_o_a_c_h_e_s
+               This is the number of the little critters. Default
+               is 10.
+
+BBUUGGSS
+       As given by the -roaches option. Default is 10.
+
+CCOOPPYYRRIIGGHHTT
+       Copyright 1991 by J.T. Anderson
+
+AAUUTTHHOORRSS
+       J.T. Anderson (jta@locus.com)
+
+DDEEDDIICCAATTIIOONN
+       Greg McFarlane (gregm@otc.otca.oz.au)
+
+SSEEEE AALLSSOO
+       xroachmotel(1), xddt(1)
+
+
+
+
+
+
+
+
+X Version 11 Release 4     May 30, 1991                         1
+
+
+
+
+

@@ -1,0 +1,18 @@
+ADVENTURE(6)                 BSD Reference Manual                 ADVENTURE(6)
+
+NNAAMMEE
+     aaddvveennttuurree - an exploration game
+
+SSYYNNOOPPSSIISS
+     aaddvveennttuurree [saved-file]
+
+DDEESSCCRRIIPPTTIIOONN
+     The object of the game is to locate and explore Colossal Cave, find the
+     treasures hidden there, and bring them back to the building with you.
+     The program is self-descriptive to a point, but part of the game is to
+     discover its rules.
+
+     To terminate a game, enter ``quit''; to save a game for later resumption,
+     enter ``suspend''.
+
+4.4BSD                           May 31, 1993                                1

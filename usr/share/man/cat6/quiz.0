@@ -1,0 +1,62 @@
+QUIZ(6)                      BSD Reference Manual                      QUIZ(6)
+
+NNAAMMEE
+     qquuiizz - random knowledge tests
+
+SSYYNNOOPPSSIISS
+     qquuiizz [--tt] [--ii _f_i_l_e] [_q_u_e_s_t_i_o_n _a_n_s_w_e_r]
+
+DDEESSCCRRIIPPTTIIOONN
+     The qquuiizz utility tests your knowledge of random facts.  It has a database
+     of subjects from which you can choose.  With no arguments, qquuiizz displays
+     the list of available subjects.
+
+     The options are as follows:
+
+     --tt      Use tutorial mode, in which questions are repeated later if you
+             didn't get them right the first time, and new questions are pre-
+             sented less frequently to help you learn the older ones.
+
+     --ii      Specify an alternate index file.
+
+     Subjects are divided into categories.  You can pick any two categories
+     from the same subject.  QQuuiizz will ask questions from the first category
+     and it expects answers from the second category.  For example, the com-
+     mand ``quiz victim killer'' asks questions which are the names of vic-
+     tims, and expects you to answer with the cause of their untimely demise,
+     whereas the command ``quiz killer victim'' works the other way around.
+
+     If you get the answer wrong, qquuiizz lets you try again.  To see the right
+     answer, enter a blank line.
+
+IInnddeexx aanndd DDaattaa FFiillee SSyynnttaaxx
+     The index and data files have a similar syntax.  Lines in them consist of
+     several categories separated by colons.  The categories are regular ex-
+     pressions formed using the following meta-characters:
+
+           pat|pat  alternate patterns
+           {pat}    optional pattern
+           [pat]    delimiters, as in pat[pat|pat]pat
+
+     In an index file, each line represents a subject.  The first category in
+     each subject is the pathname of the data file for the subject.  The re-
+     maining categories are regular expressions for the titles of each catego-
+     ry in the subject.
+
+     In data files, each line represents a question/answer set.  Each category
+     is the information for the question/answer for that category.
+
+     The backslash character (``\'') is used to quote syntactically signifi-
+     cant characters, or at the end of a line to signify that a continuation
+     line follows.
+
+     If either a question or its answer is empty, qquuiizz will refrain from ask-
+     ing it.
+
+FFIILLEESS
+     /usr/share/games/quiz.db  The default index and data files.
+
+BBUUGGSS
+     QQuuiizz is pretty cynical about certain subjects.
+
+4.4BSD                           May 31, 1993                                1

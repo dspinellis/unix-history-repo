@@ -1,0 +1,330 @@
+
+
+
+RCSINTRO(1)            BSD Reference Manual           RCSINTRO(1)
+
+
+NNAAMMEE
+       rcsintro - introduction to RCS commands
+
+DDEESSCCRRIIPPTTIIOONN
+       The  Revision  Control System (RCS) manages multiple revi-
+       sions of files.  RCS  automates  the  storing,  retrieval,
+       logging, identification, and merging of revisions.  RCS is
+       useful for text that is revised  frequently,  for  example
+       programs,  documentation,  graphics, papers, and form let-
+       ters.
+
+       The basic user interface is extremely simple.  The  novice
+       only  needs  to  learn two commands: ccii(1) and ccoo(1).  ccii,
+       short for "check in", deposits the contents of a file into
+       an archival file called an RCS file.  An RCS file contains
+       all revisions of a particular file.  ccoo, short for  "check
+       out", retrieves revisions from an RCS file.
+
+   FFuunnccttiioonnss ooff RRCCSS
+       +o      Store and retrieve multiple revisions of text.  RCS
+              saves all old revisions in a space  efficient  way.
+              Changes no longer destroy the original, because the
+              previous revisions  remain  accessible.   Revisions
+              can  be  retrieved  according to ranges of revision
+              numbers,  symbolic  names,  dates,   authors,   and
+              states.
+
+       +o      Maintain  a  complete history of changes.  RCS logs
+              all changes automatically.   Besides  the  text  of
+              each  revision, RCS stores the author, the date and
+              time of check-in, and a log message summarizing the
+              change.  The logging makes it easy to find out what
+              happened to a module,  without  having  to  compare
+              source listings or having to track down colleagues.
+
+       +o      Resolve access conflicts.  When two  or  more  pro-
+              grammers  wish  to  modify  the  same revision, RCS
+              alerts the programmers and prevents  one  modifica-
+              tion from corrupting the other.
+
+       +o      Maintain  a  tree  of  revisions.  RCS can maintain
+              separate lines of development for each module.   It
+              stores  a tree structure that represents the ances-
+              tral relationships among revisions.
+
+       +o      Merge revisions and resolve conflicts.   Two  sepa-
+              rate  lines  of development of a module can be coa-
+              lesced by merging.  If the revisions to  be  merged
+              affect  the  same  sections of code, RCS alerts the
+              user about the overlapping changes.
+
+
+
+
+GNU                         1991/04/21                          1
+
+
+
+
+
+
+
+
+RCSINTRO(1)            BSD Reference Manual           RCSINTRO(1)
+
+
+       +o      Control releases and configurations.  Revisions can
+              be  assigned symbolic names and marked as released,
+              stable, experimental, etc.  With these  facilities,
+              configurations  of  modules can be described simply
+              and directly.
+
+       +o      Automatically identify  each  revision  with  name,
+              revision  number,  creation time, author, etc.  The
+              identification is like a stamp that can be embedded
+              at  an appropriate place in the text of a revision.
+              The identification makes  it  simple  to  determine
+              which  revisions  of  which modules make up a given
+              configuration.
+
+       +o      Minimize secondary storage.  RCS needs little extra
+              space for the revisions (only the differences).  If
+              intermediate revisions are deleted, the correspond-
+              ing deltas are compressed accordingly.
+
+   GGeettttiinngg SSttaarrtteedd wwiitthh RRCCSS
+       Suppose  you  have  a  file ff..cc that you wish to put under
+       control of RCS.  If you have not already done so, make  an
+       RCS directory with the command
+
+              mmkkddiirr  RRCCSS
+
+       Then invoke the check-in command
+
+              ccii  ff..cc
+
+       This  command  creates  an  RCS file in the RRCCSS directory,
+       stores ff..cc into it as revision 1.1, and deletes  ff..cc.   It
+       also  asks  you for a description.  The description should
+       be a synopsis of the contents  of  the  file.   All  later
+       check-in  commands  will  ask  you  for a log entry, which
+       should summarize the changes that you made.
+
+       Files in the RCS directory are called RCS files; the  oth-
+       ers  are  called  working  files.  To get back the working
+       file ff..cc in the previous example, use the  check-out  com-
+       mand
+
+              ccoo  ff..cc
+
+       This  command  extracts  the  latest revision from the RCS
+       file and writes it into ff..cc.  If you want to edit ff..cc, you
+       must lock it as you check it out with the command
+
+              ccoo  --ll  ff..cc
+
+       You can now edit ff..cc.
+
+
+
+GNU                         1991/04/21                          2
+
+
+
+
+
+
+
+
+RCSINTRO(1)            BSD Reference Manual           RCSINTRO(1)
+
+
+       Suppose  after  some editing you want to know what changes
+       that you have made.  The command
+
+              rrccssddiiffff  ff..cc
+
+       tells  you  the  difference  between  the  most   recently
+       checked-in  version  and  the working file.  You can check
+       the file back in by invoking
+
+              ccii  ff..cc
+
+       This increments the revision number properly.
+
+       If ccii complains with the message
+
+              ccii eerrrroorr:: nnoo lloocckk sseett bbyy _y_o_u_r _n_a_m_e
+
+       then you have tried to check in a file even though you did
+       not lock it when you checked it out.  Of course, it is too
+       late now to do the check-out with locking, because another
+       check-out  would  overwrite  your modifications.  Instead,
+       invoke
+
+              rrccss  --ll  ff..cc
+
+       This command will lock the latest revision for you, unless
+       somebody  else  got  ahead  of you already.  In this case,
+       you'll have to negotiate with that person.
+
+       Locking assures that you, and only you, can check  in  the
+       next  update,  and avoids nasty problems if several people
+       work on the same file.  Even if a revision is  locked,  it
+       can still be checked out for reading, compiling, etc.  All
+       that locking prevents is a _c_h_e_c_k_-_i_n  by  anybody  but  the
+       locker.
+
+       If  your  RCS  file  is private, i.e., if you are the only
+       person who is going to deposit revisions into  it,  strict
+       locking  is not needed and you can turn it off.  If strict
+       locking is turned off, the owner of the RCS file need  not
+       have  a  lock  for check-in; all others still do.  Turning
+       strict locking off and on is done with the commands
+
+              rrccss  --UU  ff..cc     and     rrccss  --LL  ff..cc
+
+       If you don't want to clutter your working  directory  with
+       RCS  files, create a subdirectory called RRCCSS in your work-
+       ing directory, and move all your  RCS  files  there.   RCS
+       commands  will  look  first  into  that  directory to find
+       needed files.  All the commands discussed above will still
+       work,  without  any modification.  (Actually, pairs of RCS
+
+
+
+GNU                         1991/04/21                          3
+
+
+
+
+
+
+
+
+RCSINTRO(1)            BSD Reference Manual           RCSINTRO(1)
+
+
+       and working files can be specified in three ways: (a) both
+       are  given,  (b)  only the working file is given, (c) only
+       the RCS file is given.  Both RCS  and  working  files  may
+       have  arbitrary  path  prefixes; RCS commands pair them up
+       intelligently.)
+
+       To avoid the deletion of the working file during  check-in
+       (in  case  you  want  to  continue  editing or compiling),
+       invoke
+
+              ccii  --ll  ff..cc     or     ccii  --uu  ff..cc
+
+       These commands check in  ff..cc  as  usual,  but  perform  an
+       implicit check-out.  The first form also locks the checked
+       in revision, the second one doesn't.  Thus, these  options
+       save  you one check-out operation.  The first form is use-
+       ful if you want to continue editing, the second one if you
+       just  want  to read the file.  Both update the identifica-
+       tion markers in your working file (see below).
+
+       You can give ccii the number you want assigned to a  checked
+       in revision.  Assume all your revisions were numbered 1.1,
+       1.2, 1.3, etc., and you would like  to  start  release  2.
+       The command
+
+              ccii  --rr22  ff..cc     or     ccii  --rr22..11  ff..cc
+
+       assigns the number 2.1 to the new revision.  From then on,
+       ccii will number the subsequent  revisions  with  2.2,  2.3,
+       etc.  The corresponding ccoo commands
+
+              ccoo  --rr22  ff..cc     and     ccoo  --rr22..11  ff..cc
+
+       retrieve the latest revision numbered 2._x and the revision
+       2.1, respectively.  ccoo without a revision  number  selects
+       the  latest  revision on the _t_r_u_n_k, i.e. the highest revi-
+       sion with a number consisting of two fields.  Numbers with
+       more  than  two fields are needed for branches.  For exam-
+       ple, to start a branch at revision 1.3, invoke
+
+              ccii  --rr11..33..11  ff..cc
+
+       This command starts a branch numbered 1 at  revision  1.3,
+       and  assigns  the number 1.3.1.1 to the new revision.  For
+       more information about branches, see rrccssffiillee(5).
+
+   AAuuttoommaattiicc IIddeennttiiffiiccaattiioonn
+       RCS can put special strings for identification  into  your
+       source  and  object  code.  To obtain such identification,
+       place the marker
+
+
+
+
+GNU                         1991/04/21                          4
+
+
+
+
+
+
+
+
+RCSINTRO(1)            BSD Reference Manual           RCSINTRO(1)
+
+
+              $$IIdd$$
+
+       into your text, for instance inside a comment.   RCS  will
+       replace this marker with a string of the form
+
+              $$IIdd::  _f_i_l_e_n_a_m_e  _r_e_v_i_s_i_o_n  _d_a_t_e  _t_i_m_e  _a_u_t_h_o_r  _s_t_a_t_e
+              $$
+
+       With such a marker on the first page of each  module,  you
+       can  always  see with which revision you are working.  RCS
+       keeps the markers up to date automatically.  To  propagate
+       the  markers  into  your object code, simply put them into
+       literal character strings.  In C, this is done as follows:
+
+              ssttaattiicc cchhaarr rrccssiidd[[]] == ""$$IIdd$$"";;
+
+       The  command  iiddeenntt  extracts  such markers from any file,
+       even object code and dumps.  Thus, iiddeenntt lets you find out
+       which revisions of which modules were used in a given pro-
+       gram.
+
+       You may also find it useful to put the marker  $$LLoogg$$  into
+       your  text, inside a comment.  This marker accumulates the
+       log messages that are requested  during  check-in.   Thus,
+       you  can  maintain  the  complete  history  of  your  file
+       directly inside it.  There are several additional  identi-
+       fication markers; see ccoo(1) for details.
+
+IIDDEENNTTIIFFIICCAATTIIOONN
+       Author: Walter F. Tichy.
+       Revision Number: 5.1; Release Date: 1991/04/21.
+       Copyright (C) 1982, 1988, 1989 by Walter F. Tichy.
+       Copyright (C) 1990, 1991 by Paul Eggert.
+
+SSEEEE AALLSSOO
+       ci(1),  co(1),  ident(1), rcs(1), rcsdiff(1), rcsintro(1),
+       rcsmerge(1), rlog(1)
+       Walter  F.  Tichy,  RCS--A  System  for  Version  Control,
+       _S_o_f_t_w_a_r_e_-_-_P_r_a_c_t_i_c_e   _&   _E_x_p_e_r_i_e_n_c_e  1155,  7  (July  1985),
+       637-654.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GNU                         1991/04/21                          5
+
+
+
+
+
