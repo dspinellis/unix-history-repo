@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)dirs.c	3.3	(Berkeley)	83/02/28";
+static char sccsid[] = "@(#)dirs.c	3.4	(Berkeley)	83/03/06";
 #endif
 
 #include "restore.h"
@@ -58,7 +58,7 @@ extractdirs(modefile)
 	int putdir(), null();
 
 	vprintf(stdout, "Extract directories from tape\n");
-	mktemp(dirfile);
+	(void) mktemp(dirfile);
 	df = fopen(dirfile, "w");
 	if (df == 0) {
 		fprintf(stderr,
@@ -93,6 +93,8 @@ extractdirs(modefile)
 				perror("opendir");
 			if (mf != NULL)
 				fclose(mf);
+			if ((i = psearch(".")) == 0 || BIT(i, dumpmap) == 0)
+				panic("Root directory is not on tape\n");
 			return;
 		}
 		itp = allocinotab(curfile.ino, ip, seekpt);
@@ -336,7 +338,7 @@ opendir(name)
 {
 	register DIR *dirp;
 
-	dirp = (DIR *)malloc((unsigned long)sizeof(DIR));
+	dirp = (DIR *)malloc((unsigned)sizeof(DIR));
 	dirp->dd_fd = open(name, 0);
 	if (dirp->dd_fd == -1) {
 		free((char *)dirp);
@@ -433,7 +435,7 @@ setdirmodes(modefile)
 	if (ferror(mf))
 		panic("error setting directory modes\n");
 	fclose(mf);
-	unlink(modefile);
+	(void) unlink(modefile);
 }
 
 /*
@@ -545,6 +547,6 @@ done(exitcode)
 {
 
 	closemt();
-	unlink(dirfile);
+	(void) unlink(dirfile);
 	exit(exitcode);
 }
