@@ -8,7 +8,7 @@
  * User commands.
  */
 
-static char *SccsId = "@(#)cmd1.c	1.6 %G%";
+static char *SccsId = "@(#)cmd1.c	1.7 %G%";
 
 /*
  * Print the current active headings.
@@ -247,11 +247,11 @@ type(msgvec)
 		dot = mp;
 		print(mp, obuf);
 	}
-	signal(SIGPIPE, SIG_DFL);
 	if (obuf != stdout) {
 		pclose(obuf);
 		pipef = NULL;
 	}
+	signal(SIGPIPE, SIG_DFL);
 	return(0);
 }
 
