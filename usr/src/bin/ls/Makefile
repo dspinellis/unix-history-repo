@@ -14,19 +14,19 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	ls.c
-OBJS=
+SRCS=	cmp.c ls.c print.c util.c
+OBJS=	cmp.o ls.o print.o util.o
 MAN=	ls.0
 
 all: ls
 
-ls: ${LIBC}
-	${CC} -o $@ ${CFLAGS} $@.c
+ls: ${LIBC} ${OBJS}
+	${CC} -o $@ ${CFLAGS} ${OBJS}
 
 clean:
 	rm -f ${OBJS} core ls
