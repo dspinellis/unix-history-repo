@@ -1,4 +1,4 @@
-#	Makefile	4.18	84/09/07
+#	Makefile	4.19	85/01/09
 #
 DESTDIR=
 CFLAGS=	-O
@@ -55,6 +55,8 @@ install:
 		chmod 2755 ${DESTDIR}/bin/$$i); done
 	rm -f ${DESTDIR}/bin/[; ln ${DESTDIR}/bin/test ${DESTDIR}/bin/[
 	rm -f ${DESTDIR}/bin/e; ln ${DESTDIR}/bin/ed ${DESTDIR}/bin/e
+	rm -f ${DESTDIR}/bin/chfn; ln ${DESTDIR}/bin/passwd ${DESTDIR}/bin/chfn
+	rm -f ${DESTDIR}/bin/chsh; ln ${DESTDIR}/bin/passwd ${DESTDIR}/bin/chsh
 
 clean:
 	rm -f a.out core *.s *.o errs
