@@ -1,9 +1,9 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1990 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.20 (Berkeley) %G%
+ *	@(#)tty.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -28,6 +28,14 @@
 
 #include "machine/reg.h"
 #include "syslog.h"
+
+/* symbolic sleep message strings */
+char ttyin[] = "ttyin";
+char ttyout[] = "ttyout";
+char ttopen[] = "ttopen";
+char ttclos[] = "ttclos";
+char ttybg[] = "ttybg";
+char ttybuf[] = "ttybuf";
 
 /*
  * Table giving parity for characters and indicating
@@ -82,8 +90,8 @@ extern char partab[], maptab[];
 /*
  * Is 'c' a line delimiter ("break" character)?
  */
-#define ttbreakc(c) (c == '\n' || CCEQ(cc[VEOF], c) || \
-		CCEQ(cc[VEOL], c) || CCEQ(cc[VEOL2], c))
+#define ttbreakc(c) ((c) == '\n' || ((c) == cc[VEOF] || \
+	(c) == cc[VEOL] || (c) == cc[VEOL2]) && (c) != _POSIX_VDISABLE)
 
 /*
  * Debugging aids
@@ -109,9 +117,11 @@ ttychars(tp)
 ttywflush(tp)
 	struct tty *tp;
 {
+	int error;
 
-	ttywait(tp);
-	ttyflush(tp, FREAD);
+	if ((error = ttywait(tp)) == 0)
+		ttyflush(tp, FREAD);
+	return (error);
 }
 
 /*
@@ -123,16 +133,19 @@ ttywflush(tp)
 ttywait(tp)
 	register struct tty *tp;
 {
-	int s = spltty();
+	int error = 0, s = spltty();
 
 	while ((tp->t_outq.c_cc || tp->t_state&TS_BUSY) &&
 	    (tp->t_state&TS_CARR_ON || tp->t_cflag&CLOCAL) && 
 	    tp->t_oproc) {
 		(*tp->t_oproc)(tp);
 		tp->t_state |= TS_ASLEEP;
-		sleep((caddr_t)&tp->t_outq, TTOPRI);
+		if (error = tsleep((caddr_t)&tp->t_outq, TTOPRI | PCATCH,
+		    ttyout, 0))
+			break;
 	}
 	splx(s);
+	return (error);
 }
 
 /*
@@ -203,8 +216,10 @@ ttrstrt(tp)
 	struct tty *tp;
 {
 
+#ifdef DIAGNOSTIC
 	if (tp == 0)
 		panic("ttrstrt");
+#endif
 	tp->t_state &= ~TS_TIMEOUT;
 	ttstart(tp);
 }
@@ -266,10 +281,12 @@ ttioctl(tp, com, data, flag)
 		while (isbackground(u.u_procp, tp) && 
 		   u.u_procp->p_pgrp->pg_jobc &&
 		   (u.u_procp->p_flag&SVFORK) == 0 &&
-		   !(u.u_procp->p_sigignore & sigmask(SIGTTOU)) &&
-		   !(u.u_procp->p_sigmask & sigmask(SIGTTOU))) {
+		   (u.u_procp->p_sigignore & sigmask(SIGTTOU)) == 0 &&
+		   (u.u_procp->p_sigmask & sigmask(SIGTTOU)) == 0) {
 			pgsignal(u.u_procp->p_pgrp, SIGTTOU);
-			sleep((caddr_t)&lbolt, TTOPRI);
+			if (error = tsleep((caddr_t)&lbolt, TTOPRI | PCATCH,
+			    ttybg, 0))
+				return (error);
 		}
 		break;
 	}
@@ -289,7 +306,6 @@ ttioctl(tp, com, data, flag)
 		register int t = *(int *)data;
 		dev_t dev = tp->t_dev;
 		dev_t dev = tp->t_dev;
-		int error = 0;
 
 		if ((unsigned)t >= nldisp)
 			return (ENXIO);
@@ -578,7 +594,7 @@ ttselect(dev, rw)
 	case FREAD:
 		nread = ttnread(tp);
 		if (nread > 0 || 
-		   (!(tp->t_cflag&CLOCAL) && !(tp->t_state&TS_CARR_ON)))
+		   ((tp->t_cflag&CLOCAL) == 0 && (tp->t_state&TS_CARR_ON) == 0))
 			goto win;
 		if (tp->t_rsel && tp->t_rsel->p_wchan == (caddr_t)&selwait)
 			tp->t_state |= TS_RCOLL;
@@ -646,6 +662,7 @@ ttyclose(tp)
 	tp->t_session = NULL;
 	tp->t_pgrp = NULL;
 	tp->t_state = 0;
+	return (0);
 }
 
 /*
@@ -860,8 +877,10 @@ ttyinput(c, tp)
 			pgsignal(tp->t_pgrp, SIGTSTP);
 			goto endcase;
 		}
-		if (CCEQ(cc[VINFO],c)) {
-			ttyinfo(tp);
+		if (CCEQ(cc[VINFO], c)) {
+			pgsignal(tp->t_pgrp, SIGINFO);
+			if ((lflag&NOKERNINFO) == 0)
+				ttyinfo(tp);
 			goto endcase;
 		}
 	}
@@ -940,7 +959,7 @@ ttyinput(c, tp)
 		goto endcase;
 	}
 		if (lflag&ECHOKE && tp->t_rawq.c_cc == tp->t_rocount &&
-		    !(lflag&ECHOPRT)) {
+		    (lflag&ECHOPRT) == 0) {
 			while (tp->t_rawq.c_cc)
 				ttyrub(unputc(&tp->t_rawq), tp);
 		} else {
@@ -1197,26 +1216,8 @@ loop:
 	 */
 	if (tp->t_lflag&PENDIN)
 		ttypend(tp);
-	/*
-	 * Handle carrier.
-	 */
-	if (!(tp->t_state&TS_CARR_ON) && !(tp->t_cflag&CLOCAL)) {
-		if (tp->t_state&TS_ISOPEN) {
-			splx(s);
-			return (0);	/* EOF */
-		} else if (flag & IO_NDELAY) {
-			splx(s);
-			return (EWOULDBLOCK);
-		} else {
-			/*
-			 * sleep awaiting carrier
-			 */
-			sleep((caddr_t)&tp->t_rawq, TTIPRI);
-			splx(s);
-			goto loop;
-		}
-	}
 	splx(s);
+
 	/*
 	 * Hang process if it's in the background.
 	 */
@@ -1226,36 +1227,44 @@ loop:
 		    u.u_procp->p_flag&SVFORK || u.u_procp->p_pgrp->pg_jobc == 0)
 			return (EIO);
 		pgsignal(u.u_procp->p_pgrp, SIGTTIN);
-		sleep((caddr_t)&lbolt, TTIPRI);
+		if (error = tsleep((caddr_t)&lbolt, TTIPRI | PCATCH, ttybg, 0))
+			return (error);
 		goto loop;
 	}
+
 	/*
 	 * If canonical, use the canonical queue,
 	 * else use the raw queue.
 	 */
 	qp = lflag&ICANON ? &tp->t_canq : &tp->t_rawq;
+
 	/*
-	 * No input, sleep on rawq awaiting hardware
-	 * receipt and notification.
+	 * If there is no input, sleep on rawq
+	 * awaiting hardware receipt and notification.
+	 * If we have data, we don't need to check for carrier.
 	 */
 	s = spltty();
 	if (qp->c_cc <= 0) {
-		/** XXX ??? ask mike why TS_CARR_ON was (once) necessary here
-		if ((tp->t_state&TS_CARR_ON) == 0 ||
-		    (tp->t_state&TS_NBIO)) {
+		int carrier;
+
+		carrier = (tp->t_state&TS_CARR_ON) || (tp->t_cflag&CLOCAL);
+		if (!carrier && tp->t_state&TS_ISOPEN) {
 			splx(s);
-			return (EWOULDBLOCK);
+			return (0);	/* EOF */
 		}
-		**/
 		if (flag & IO_NDELAY) {
 			splx(s);
 			return (EWOULDBLOCK);
 		}
-		sleep((caddr_t)&tp->t_rawq, TTIPRI);
+		error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+		    carrier ? ttyin : ttopen, 0);
 		splx(s);
+		if (error)
+			return (error);
 		goto loop;
 	}
 	splx(s);
+
 	/*
 	 * Input present, check for input mapping and processing.
 	 */
@@ -1267,7 +1276,9 @@ loop:
 		if (CCEQ(cc[VDSUSP], c) && lflag&ISIG) {
 			pgsignal(tp->t_pgrp, SIGTSTP);
 			if (first) {
-				sleep((caddr_t)&lbolt, TTIPRI);
+				if (error = tsleep((caddr_t)&lbolt,
+				    TTIPRI | PCATCH, ttybg, 0))
+					break;
 				goto loop;
 			}
 			break;
@@ -1291,7 +1302,6 @@ loop:
 		 */
 		if (lflag&ICANON && ttbreakc(c)) {
 			break;
-		}
 		}
 		first = 0;
 	}
@@ -1351,7 +1361,7 @@ ttwrite(tp, uio, flag)
 	register struct uio *uio;
 {
 	register char *cp;
-	register int cc, ce;
+	register int cc = 0, ce;
 	int i, hiwat, cnt, error, s;
 	char obuf[OBUFSIZ];
 
@@ -1360,19 +1370,23 @@ ttwrite(tp, uio, flag)
 	error = 0;
 loop:
 	s = spltty();
-	if (!(tp->t_state&TS_CARR_ON) && !(tp->t_cflag&CLOCAL)) {
+	if ((tp->t_state&TS_CARR_ON) == 0 && (tp->t_cflag&CLOCAL) == 0) {
 		if (tp->t_state&TS_ISOPEN) {
 			splx(s);
 			return (EIO);
 		} else if (flag & IO_NDELAY) {
 			splx(s);
-			return (EWOULDBLOCK);
+			error = EWOULDBLOCK;
+			goto out;
 		} else {
 			/*
 			 * sleep awaiting carrier
 			 */
-			sleep((caddr_t)&tp->t_rawq, TTIPRI);
+			error = tsleep((caddr_t)&tp->t_rawq, TTIPRI | PCATCH,
+			    ttopen, 0);
 			splx(s);
+			if (error)
+				goto out;
 			goto loop;
 		}
 	}
@@ -1381,44 +1395,40 @@ loop:
 	 * Hang the process if it's in the background.
 	 */
 	    (tp->t_lflag&TOSTOP) && (u.u_procp->p_flag&SVFORK)==0 &&
-	    !(u.u_procp->p_sigignore & sigmask(SIGTTOU)) &&
-	    !(u.u_procp->p_sigmask & sigmask(SIGTTOU)) &&
+	    (u.u_procp->p_sigignore & sigmask(SIGTTOU)) == 0 &&
+	    (u.u_procp->p_sigmask & sigmask(SIGTTOU)) == 0 &&
 	     u.u_procp->p_pgrp->pg_jobc) {
 		pgsignal(u.u_procp->p_pgrp, SIGTTOU);
-		sleep((caddr_t)&lbolt, TTIPRI);
+		if (error = tsleep((caddr_t)&lbolt, TTIPRI | PCATCH, ttybg, 0))
+			goto out;
 		goto loop;
 	}
 	/*
 	 * Process the user's data in at most OBUFSIZ
-	 * chunks.  Perform lower case simulation and
-	 * similar hacks.  Keep track of high water
-	 * mark, sleep on overflow awaiting device aid
-	 * in acquiring new space.
+	 * chunks.  Perform any output translation.
+	 * Keep track of high water mark, sleep on overflow
+	 * awaiting device aid in acquiring new space.
 	 */
-	while (uio->uio_resid > 0) {
-		if (tp->t_outq.c_cc > hiwat) {
-			cc = 0;
+	while (uio->uio_resid > 0 || cc > 0) {
+		if (tp->t_lflag&FLUSHO) {
+			uio->uio_resid = 0;
+			return (0);
+		}
+		if (tp->t_outq.c_cc > hiwat)
 			goto ovhiwat;
-		}
 		/*
-		 * Grab a hunk of data from the user.
+		 * Grab a hunk of data from the user,
+		 * unless we have some leftover from last time.
 		 */
-		cc = uio->uio_iov->iov_len;
 		if (cc == 0) {
-			uio->uio_iovcnt--;
-			uio->uio_iov++;
-			if (uio->uio_iovcnt <= 0)
-				panic("ttwrite");
-			continue;
+			cc = min(uio->uio_resid, OBUFSIZ);
+			cp = obuf;
+			error = uiomove(cp, cc, uio);
+			if (error) {
+				cc = 0;
+				break;
+			}
 		}
-		if (cc > OBUFSIZ)
-			cc = OBUFSIZ;
-		cp = obuf;
-		error = uiomove(cp, cc, uio);
-		if (error)
-			break;
-		if (tp->t_lflag&FLUSHO)
-			continue;
 #ifdef notdef
 		/*
 		 * If nothing fancy need be done, grab those characters we
@@ -1444,13 +1454,9 @@ loop:
 					if (ttyoutput(*cp, tp) >= 0) {
 					    /* no c-lists, wait a bit */
 					    ttstart(tp);
-					    sleep((caddr_t)&lbolt, TTOPRI);
-					    if (cc != 0) {
-					        uio->uio_iov->iov_base -= cc;
-					        uio->uio_iov->iov_len += cc;
-					        uio->uio_resid += cc;
-						uio->uio_offset -= cc;
-					    }
+					    if (error = tsleep((caddr_t)&lbolt,
+						TTOPRI | PCATCH, ttybuf, 0))
+						    break;
 					    goto loop;
 					}
 					cp++, cc--;
@@ -1477,27 +1483,28 @@ loop:
 			if (i > 0) {
 				/* out of c-lists, wait a bit */
 				ttstart(tp);
-				sleep((caddr_t)&lbolt, TTOPRI);
-				uio->uio_iov->iov_base -= cc;
-				uio->uio_iov->iov_len += cc;
-				uio->uio_resid += cc;
-				uio->uio_offset -= cc;
+				if (error = tsleep((caddr_t)&lbolt,
+				    TTOPRI | PCATCH, ttybuf, 0))
+					break;
 				goto loop;
 			}
 			if (tp->t_lflag&FLUSHO || tp->t_outq.c_cc > hiwat)
-				goto ovhiwat;
+				break;
 		}
 		ttstart(tp);
 		ttstart(tp);
 	}
+out:
+	/*
+	 * If cc is nonzero, we leave the uio structure inconsistent,
+	 * as the offset and iov pointers have moved forward,
+	 * but it doesn't matter (the call will either return short
+	 * or restart with a new uio).
+	 */
+	uio->uio_resid += cc;
 	return (error);
+
 ovhiwat:
-	if (cc != 0) {
-		uio->uio_iov->iov_base -= cc;
-		uio->uio_iov->iov_len += cc;
-		uio->uio_resid += cc;
-		uio->uio_offset -= cc;
-	}
 	ttstart(tp);
 	s = spltty();
 	/*
@@ -1510,13 +1517,16 @@ ovhiwat:
 	}
 	if (flag & IO_NDELAY) {
 		splx(s);
+		uio->uio_resid += cc;
 		if (uio->uio_resid == cnt)
 			return (EWOULDBLOCK);
 		return (0);
 	}
 	tp->t_state |= TS_ASLEEP;
-	sleep((caddr_t)&tp->t_outq, TTOPRI);
+	error = tsleep((caddr_t)&tp->t_outq, TTOPRI | PCATCH, ttyout, 0);
 	splx(s);
+	if (error)
+		goto out;
 	goto loop;
 }
 
@@ -1617,7 +1627,7 @@ ttyrubo(tp, cnt)
 	register char *rubostring = tp->t_lflag&ECHOE ? "\b \b" : "\b";
 
 	while (--cnt >= 0)
-		ttyout("\b \b", tp);
+		ttyoutstr("\b \b", tp);
 }
 
 /*
@@ -1662,7 +1672,8 @@ ttyecho(c, tp)
 	if ((tp->t_lflag&ECHO) == 0 && !(tp->t_lflag&ECHONL && c == '\n'))
 		return;
 	if (tp->t_lflag&ECHOCTL) {
-		if ((c&TTY_CHARMASK)<=037 && c!='\t' && c!='\n' || c==0177) {
+		if ((c&TTY_CHARMASK) <= 037 && c != '\t' && c != '\n' ||
+		    c == 0177) {
 			(void) ttyoutput('^', tp);
 			c &= TTY_CHARMASK;
 			if (c == 0177)
@@ -1676,7 +1687,7 @@ ttyecho(c, tp)
 	(void) ttyoutput(c, tp);
  * send string cp to tp
  */
-ttyout(cp, tp)
+ttyoutstr(cp, tp)
 	register char *cp;
 	register struct tty *tp;
 {
