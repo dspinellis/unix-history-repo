@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)getpgrp.2	6.5 (Berkeley) %G%
+.\"     @(#)getpgrp.2	6.6 (Berkeley) %G%
 .\"
 .Dd 
 .Dt GETPGRP 2
@@ -51,25 +51,24 @@ function conforms to IEEE Std 1003.1-1988
 .Sh COMPATABILITY
 This version of
 .Fn getpgrp
-differs from past Berkeley versions because it does
-not take a
+differs from past Berkeley versions by not taking a
 .Fa "pid_t pid"
-argument.  We regret changing this but were forced to in
-order to comply with IEEE Std 1003.1-1988
-.Pq Dq Tn POSIX .
-The reasons \fIthey\fR gave for changing this are quoted
-in the next paragraph.  We wonder why they didn't just
-change the name to avoid this incompatability.
+argument.
+This incompatibility is required by
+.St -p1003.1-88 .
 .Pp
-(Quoted from the POSIX Rationale)
-.br
-\fI4.3BSD provides a
+From the
+.St -p1003.1-88
+Rationale:
+.sp
+4.3BSD provides a
 .Fn getpgrp
 function that returns the process group ID for a specified process.
 Although this function is used to support job control, all known
 job-control shells always specify the calling process with this
-function.  Thus, the simpler System V
+function.
+Thus, the simpler System V
 .Fn getpgrp
 suffices, and the added complexity of the 4.3BSD
 .Fn getpgrp
-has been omitted from POSIX.1.\fP
+has been omitted from POSIX.1.
