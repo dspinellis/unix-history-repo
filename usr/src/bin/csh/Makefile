@@ -1,10 +1,10 @@
 #
-#	Makefile	4.3	%G%
+#	Makefile	4.4	%G%
 #
 # C Shell with process control; VM/UNIX VAX Makefile
 # Bill Joy UC Berkeley; Jim Kulp IIASA, Austria
 #
-CFLAGS=	-O -DTELL -DVMUNIX -Ddebug -DVFORK
+CFLAGS=	-O -DTELL -DVMUNIX -Ddebug -DVFORK -pg
 XSTR=	/usr/ucb/xstr
 ED=	-ed
 AS=	-as
@@ -16,7 +16,7 @@ LIBES=
 SCCS=	/usr/local/sccs
 
 # strings.o must be last in OBJS since it can change when previous files compile
-OBJS=	alloc.o doprnt.o printf.o sh.o sh.dir.o sh.dol.o sh.err.o sh.exec.o \
+OBJS=	alloc.o doprnt.o printf.o sh.dir.o sh.dol.o sh.err.o sh.exec.o \
 	sh.exp.o sh.func.o sh.glob.o sh.hist.o sh.init.o sh.lex.o sh.misc.o \
 	sh.parse.o sh.print.o sh.proc.o sh.sem.o sh.set.o sh.sig.o sh.time.o \
 	strings.o
@@ -27,17 +27,18 @@ OBJS=	alloc.o doprnt.o printf.o sh.o sh.dir.o sh.dol.o sh.err.o sh.exec.o \
 	${CC} -c ${CFLAGS} x.c 
 	mv x.o $*.o
 
-csh: ${OBJS} sh.local.h
+csh: sh.o ${OBJS} sh.local.h
 	rm -f csh
-	cc ${OBJS} -o csh ${LIBES}
+	cc sh.o ${OBJS} -o csh ${LIBES}
 
-csh.prof: ${OBJS} sh.prof.o sh.local.h mcrt0.o
+csh.prof: sh.prof.o ${OBJS} sh.local.h
 	rm -f csh.prof
-	ld -X mcrt0.o ${OBJS} -o csh.prof ${LIBES} -lc
+	cc -pg sh.prof.o ${OBJS} ${LIBES} -o csh.prof
 
-sh.o.prof:
-	cp sh.c sh.prof.c
-	cc -c ${CFLAGS} -DPROF sh.prof.c
+sh.prof.o: sh.c
+	${CC} -E ${CFLAGS} -DPROF sh.c | ${XSTR} -c -
+	cc -c ${CFLAGS} -DPROF x.c
+	mv x.o sh.prof.o
 
 .DEFAULT:
 	${SCCS} get $<
