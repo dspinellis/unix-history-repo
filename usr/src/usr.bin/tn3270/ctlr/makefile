@@ -107,7 +107,7 @@ lint:
 	sccs get $<
 
 kbd.out:	$(KBD) hostctlr.h
-	(cd ../tools; make mkhits )
+	(cd ../tools; make mkhits$X )
 	${RM} $@ TMPfunc.out
 	$(CC) $(CFLAGS) -E function.c > TMPfunc.out
 	../tools/mkhits - ../ctlr/TMPfunc.out < $(KBD) > $@
