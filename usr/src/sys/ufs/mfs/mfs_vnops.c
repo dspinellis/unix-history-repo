@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	7.34 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	7.35 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -18,9 +18,6 @@
 #include <sys/malloc.h>
 
 #include <machine/vmparam.h>
-#if defined(tahoe)
-#include <machine/mtpr.h>
-#endif
 
 #include <ufs/mfs/mfsnode.h>
 #include <ufs/mfs/mfsiom.h>
@@ -40,41 +37,41 @@ struct vnodeopv_entry_desc mfs_vnodeop_entries[] = {
 	{ &vop_default_desc, vn_default_error },
 	{ &vop_lookup_desc, mfs_lookup },		/* lookup */
 	{ &vop_create_desc, mfs_create },		/* create */
-	{ &vop_mknod_desc, mfs_mknod },		/* mknod */
-	{ &vop_open_desc, mfs_open },		/* open */
-	{ &vop_close_desc, mfs_close },		/* close */
+	{ &vop_mknod_desc, mfs_mknod },			/* mknod */
+	{ &vop_open_desc, mfs_open },			/* open */
+	{ &vop_close_desc, mfs_close },			/* close */
 	{ &vop_access_desc, mfs_access },		/* access */
 	{ &vop_getattr_desc, mfs_getattr },		/* getattr */
 	{ &vop_setattr_desc, mfs_setattr },		/* setattr */
-	{ &vop_read_desc, mfs_read },		/* read */
-	{ &vop_write_desc, mfs_write },		/* write */
-	{ &vop_ioctl_desc, mfs_ioctl },		/* ioctl */
+	{ &vop_read_desc, mfs_read },			/* read */
+	{ &vop_write_desc, mfs_write },			/* write */
+	{ &vop_ioctl_desc, mfs_ioctl },			/* ioctl */
 	{ &vop_select_desc, mfs_select },		/* select */
-	{ &vop_mmap_desc, mfs_mmap },		/* mmap */
-	{ &vop_fsync_desc, mfs_fsync },		/* fsync */
-	{ &vop_seek_desc, mfs_seek },		/* seek */
+	{ &vop_mmap_desc, mfs_mmap },			/* mmap */
+	{ &vop_fsync_desc, mfs_fsync },			/* fsync */
+	{ &vop_seek_desc, mfs_seek },			/* seek */
 	{ &vop_remove_desc, mfs_remove },		/* remove */
-	{ &vop_link_desc, mfs_link },		/* link */
+	{ &vop_link_desc, mfs_link },			/* link */
 	{ &vop_rename_desc, mfs_rename },		/* rename */
-	{ &vop_mkdir_desc, mfs_mkdir },		/* mkdir */
-	{ &vop_rmdir_desc, mfs_rmdir },		/* rmdir */
+	{ &vop_mkdir_desc, mfs_mkdir },			/* mkdir */
+	{ &vop_rmdir_desc, mfs_rmdir },			/* rmdir */
 	{ &vop_symlink_desc, mfs_symlink },		/* symlink */
 	{ &vop_readdir_desc, mfs_readdir },		/* readdir */
 	{ &vop_readlink_desc, mfs_readlink },		/* readlink */
 	{ &vop_abortop_desc, mfs_abortop },		/* abortop */
 	{ &vop_inactive_desc, mfs_inactive },		/* inactive */
 	{ &vop_reclaim_desc, mfs_reclaim },		/* reclaim */
-	{ &vop_lock_desc, mfs_lock },		/* lock */
+	{ &vop_lock_desc, mfs_lock },			/* lock */
 	{ &vop_unlock_desc, mfs_unlock },		/* unlock */
-	{ &vop_bmap_desc, mfs_bmap },		/* bmap */
+	{ &vop_bmap_desc, mfs_bmap },			/* bmap */
 	{ &vop_strategy_desc, mfs_strategy },		/* strategy */
-	{ &vop_print_desc, mfs_print },		/* print */
+	{ &vop_print_desc, mfs_print },			/* print */
 	{ &vop_islocked_desc, mfs_islocked },		/* islocked */
 	{ &vop_advlock_desc, mfs_advlock },		/* advlock */
 	{ &vop_blkatoff_desc, mfs_blkatoff },		/* blkatoff */
-	{ &vop_vget_desc, mfs_vget },		/* vget */
+	{ &vop_vget_desc, mfs_vget },			/* vget */
 	{ &vop_valloc_desc, mfs_valloc },		/* valloc */
-	{ &vop_vfree_desc, mfs_vfree },		/* vfree */
+	{ &vop_vfree_desc, mfs_vfree },			/* vfree */
 	{ &vop_truncate_desc, mfs_truncate },		/* truncate */
 	{ &vop_update_desc, mfs_update },		/* update */
 	{ &vop_bwrite_desc, mfs_bwrite },		/* bwrite */
