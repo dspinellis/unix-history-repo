@@ -1,4 +1,4 @@
-/*	if_en.c	4.48	82/04/01	*/
+/*	if_en.c	4.49	82/04/01	*/
 
 #include "en.h"
 #include "imp.h"
@@ -102,7 +102,7 @@ COUNT(ENATTACH);
 	es->es_if.if_unit = ui->ui_unit;
 	es->es_if.if_name = "en";
 	es->es_if.if_mtu = ENMTU;
-	es->es_if.if_net = ui->ui_flags & 0xffff;
+	es->es_if.if_net = ui->ui_flags & 0xff;
 	es->es_if.if_host[0] =
 	 (~(((struct endevice *)eninfo[ui->ui_unit]->ui_addr)->en_addr)) & 0xff;
 	sin = (struct sockaddr_in *)&es->es_if.if_addr;
