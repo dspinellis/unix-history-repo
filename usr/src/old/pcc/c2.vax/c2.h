@@ -1,4 +1,4 @@
-/*static	char sccsid[] = "@(#)c2.h 4.5 %G%";*/
+/*static	char sccsid[] = "@(#)c2.h 4.6 %G%";*/
 /* @(#)c2.h 1.19 80/08/26 13:39:07 */
 /*
  * Header for object code improver
@@ -101,14 +101,14 @@
 #define LONG	3
 #define	FFLOAT	4
 #define	DFLOAT	5
-#define	GFLOAT	6
-#define	HFLOAT	7
-#define QUAD	8
-#define OCTA	9
-#define OP2	10
-#define OP3	11
-#define OPB	12
-#define OPX	13
+#define QUAD	6
+#define OP2	7
+#define OP3	8
+#define OPB	9
+#define OPX	10
+#define	GFLOAT	11
+#define	HFLOAT	12
+#define OCTA	13
 
 #define T(a,b) (a|((b)<<8))
 #define U(a,b) (a|((b)<<4))
