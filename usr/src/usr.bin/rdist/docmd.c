@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.17 (Berkeley) 84/03/14";
+static	char *sccsid = "@(#)docmd.c	4.18 (Berkeley) 84/03/19";
 #endif
 
 #include "defs.h"
@@ -136,7 +136,6 @@ makeconn(rhost)
 		if (strcmp(cur_host, rhost) == 0)
 			return(1);
 		closeconn();
-		cur_host = NULL;
 	}
 
 	ruser = rindex(rhost, '.');
@@ -156,6 +155,7 @@ makeconn(rhost)
 	}
 
 	fflush(stdout);
+	cur_host = rhost;
 	rem = rcmd(&rhost, IPPORT_CMDSERVER, user, ruser, buf, 0);
 	if (rem < 0)
 		return(0);
@@ -172,12 +172,11 @@ makeconn(rhost)
 		n = 0;
 		while (*cp >= '0' && *cp <= '9')
 			n = (n * 10) + (*cp++ - '0');
-		if (*cp == '\0' && n == VERSION) {
-			cur_host = rhost;
+		if (*cp == '\0' && n == VERSION)
 			return(1);
-		}
 	}
 	error("connection failed: version numbers don't match\n");
+	closeconn();
 	return(0);
 }
 
