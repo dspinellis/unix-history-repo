@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1983, 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)a.t	6.6 (Berkeley) %G%
+.\"	@(#)a.t	8.1 (Berkeley) %G%
 .\"
 .ds RH Summary of facilities
 .bp
