@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.17 (Berkeley) %G%
+ *	@(#)autoconf.c	7.18 (Berkeley) %G%
  */
 
 /*
@@ -885,14 +885,14 @@ unifind(uhp0, pumem)
 	caddr_t pumem;
 {
 #ifndef lint
-	register int br, cvec;			/* MUST BE r11, r10 */
+	register int rbr, rcvec;			/* MUST BE r11, r10 */
 #else
 	/*
 	 * Lint doesn't realize that these
 	 * can be initialized asynchronously
 	 * when devices interrupt.
 	 */
-	register int br = 0, cvec = 0;
+	register int rbr = 0, rcvec = 0;
 #endif
 	register struct uba_device *ui;
 	register struct uba_ctlr *um;
@@ -902,6 +902,7 @@ unifind(uhp0, pumem)
 	int i, (**ivec)();
 	caddr_t ualloc;
 	extern quad catcher[128];
+	extern int br, cvec;
 #if DW780 || DWBUA
 	struct uba_regs *vubp = uhp->uh_uba;
 #endif
@@ -1011,6 +1012,7 @@ unifind(uhp0, pumem)
 		}
 #endif
 		cvec = 0x200;
+		rcvec = 0x200;
 		i = (*udp->ud_probe)(reg, um->um_ctlr, um);
 #ifdef DW780
 		if (uhp->uh_type == DW780 && vubp->uba_sr) {
@@ -1022,23 +1024,23 @@ unifind(uhp0, pumem)
 			continue;
 		printf("%s%d at uba%d csr %o ",
 		    udp->ud_mname, um->um_ctlr, numuba, addr);
-		if (cvec == 0) {
+		if (rcvec == 0) {
 			printf("zero vector\n");
 			continue;
 		}
-		if (cvec == 0x200) {
+		if (rcvec == 0x200) {
 			printf("didn't interrupt\n");
 			continue;
 		}
-		printf("vec %o, ipl %x\n", cvec, br);
+		printf("vec %o, ipl %x\n", rcvec, rbr);
 		csralloc(ualloc, addr, i);
 		um->um_alive = 1;
 		um->um_ubanum = numuba;
 		um->um_hd = uhp;
 		um->um_addr = (caddr_t)reg;
 		udp->ud_minfo[um->um_ctlr] = um;
-		for (cvec /= 4, ivec = um->um_intr; *ivec; cvec++, ivec++)
-			uhp->uh_vec[cvec] = scbentry(*ivec, SCB_ISTACK);
+		for (rcvec /= 4, ivec = um->um_intr; *ivec; rcvec++, ivec++)
+			uhp->uh_vec[rcvec] = scbentry(*ivec, SCB_ISTACK);
 		for (ui = ubdinit; ui->ui_driver; ui++) {
 			int t;
 
@@ -1095,6 +1097,7 @@ unifind(uhp0, pumem)
 			continue;
 		}
 #endif
+		rcvec = 0x200;
 		cvec = 0x200;
 		i = (*udp->ud_probe)(reg, ui);
 #ifdef DW780
@@ -1107,19 +1110,19 @@ unifind(uhp0, pumem)
 			continue;
 		printf("%s%d at uba%d csr %o ",
 		    ui->ui_driver->ud_dname, ui->ui_unit, numuba, addr);
-		if (cvec == 0) {
+		if (rcvec == 0) {
 			printf("zero vector\n");
 			continue;
 		}
-		if (cvec == 0x200) {
+		if (rcvec == 0x200) {
 			printf("didn't interrupt\n");
 			continue;
 		}
-		printf("vec %o, ipl %x\n", cvec, br);
+		printf("vec %o, ipl %x\n", rcvec, rbr);
 		csralloc(ualloc, addr, i);
 		ui->ui_hd = uhp;
-		for (cvec /= 4, ivec = ui->ui_intr; *ivec; cvec++, ivec++)
-			uhp->uh_vec[cvec] = scbentry(*ivec, SCB_ISTACK);
+		for (rcvec /= 4, ivec = ui->ui_intr; *ivec; rcvec++, ivec++)
+			uhp->uh_vec[rcvec] = scbentry(*ivec, SCB_ISTACK);
 		ui->ui_alive = 1;
 		ui->ui_ubanum = numuba;
 		ui->ui_addr = (caddr_t)reg;
@@ -1230,10 +1233,7 @@ swapconf()
 			    (swp->sw_nblks == 0 || swp->sw_nblks > nblks))
 				swp->sw_nblks = nblks;
 		}
-	if (dumplo == 0 && dumpdev != NODEV && bdevsw[major(dumpdev)].d_psize)
-		dumplo = (*bdevsw[major(dumpdev)].d_psize)(dumpdev) - physmem;
-	if (dumplo < 0)
-		dumplo = 0;
+	dumpconf();
 }
 #else SECSIZE
 swapconf()
