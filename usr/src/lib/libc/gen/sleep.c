@@ -1,4 +1,4 @@
-/*	@(#)sleep.c	4.2 (Berkeley) %G%	*/
+/*	@(#)sleep.c	4.3 (Berkeley) %G%	*/
 
 #include <signal.h>
 #include <setjmp.h>
@@ -38,18 +38,21 @@ sleep(n)
 		else {
 			itp->it_value = oitv.it_value;
 			/*
-			 * Set the reset value to the smallest possible,
-			 * the system will round it to the clock resolution.
+			 * This is a hack, but we must have time to
+			 * return from the setitimer after the longjmp
+			 * or else it'll be restarted.  And, anyway,
+			 * sleep never did anything more than this before.
 			 */
-			oitv.it_value.tv_sec = 0;
-			oitv.it_value.tv_usec = 1;
+			oitv.it_value.tv_sec = 1;
+			oitv.it_value.tv_usec = 0;
 		}
 	}
 	setvec(vec, sleepx);
 	(void) sigvec(SIGALRM, &vec, &ovec);
 	if (setitimer(ITIMER_REAL, itp, (struct itimerval *)0) < 0)
 		longjmp(jmp, 1);
-	sigpause(omask &~ mask(SIGALRM));
+	for (;;)
+		sigpause(omask &~ mask(SIGALRM));
 	/*NOTREACHED*/
 }
 
