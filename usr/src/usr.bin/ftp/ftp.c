@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ftp_var.h"
@@ -296,9 +296,9 @@ getreply(expecteof)
 				if (verbose) {
 					printf("421 Service not available, remote server has closed connection\n");
 					(void) fflush(stdout);
-					code = 421;
-					return(4);
 				}
+				code = 421;
+				return(4);
 			}
 			if (c != '\r' && (verbose > 0 ||
 			    (verbose > -1 && n == '5' && dig > 4))) {
