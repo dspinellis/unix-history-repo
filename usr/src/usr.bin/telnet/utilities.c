@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utilities.c	1.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)utilities.c	1.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	TELOPTS
@@ -112,9 +112,9 @@ int	length;
 	    pThis++;
 	}
 	if (NetTrace == stdout) {
-	    fprintf(NetTrace, "\n");
-	} else {
 	    fprintf(NetTrace, "\r\n");
+	} else {
+	    fprintf(NetTrace, "\n");
 	}
 	length -= BYTES_PER_LINE;
 	offset += BYTES_PER_LINE;
