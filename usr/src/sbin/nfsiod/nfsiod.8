@@ -1,36 +1,49 @@
-.\" Copyright (c) 1989 The Regents of the University of California.
+.\" Copyright (c) 1989, 1991 The Regents of the University of California.
 .\" All rights reserved.
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)nfsiod.8	5.5 (Berkeley) %G%
+.\"     @(#)nfsiod.8	5.6 (Berkeley) %G%
 .\"
-.TH NFSIOD 8 ""
-.UC 7
-.SH NAME
-nfsiod \- local NFS asynchronous I/O server
-.SH SYNOPSIS
-.B nfsiod
-[
-.B numdaemons
-]
-.SH DESCRIPTION
-.I Nfsiod
+.Dd 
+.Dt NFSIOD 8
+.Os
+.Sh NAME
+.Nm nfsiod
+.Nd local
+.Tn NFS
+asynchronous I/O server
+.Sh SYNOPSIS
+.Nm nfsiod
+.Op Ar numdaemons
+.Sh DESCRIPTION
+.Nm Nfsiod
 runs on an
-.SM NFS
+.Tn NFS
 client machine to service asynchronous I/O requests to its server.
 It improves performance but is not required for correct operation.
+.Pp
+Available options:
+.Pp
+.Bl -tag -width Ds
+.It Ar numdaemons
 The option
-.I numdaemons
+.Ar numdaemons
 defines how many
-.I nfsiod
+.Nm nfsiod
 daemons to start;
 if unspecified, only a single daemon will be started.
 A client should typically run enough daemons to handle
 their maximum level of concurrency,
 typically four to six.
-.SH SEE ALSO
-.IR nfsstat (1),
-.IR async_daemon (2),
-.IR mountd (8),
-.IR portmap (8)
+.El
+.Sh SEE ALSO
+.Xr nfsstat 1 ,
+.Xr nfssvc 2 ,
+.Xr mountd 8 ,
+.Xr portmap 8
+.Sh HISTORY
+The
+.Nm
+command
+.Ud
