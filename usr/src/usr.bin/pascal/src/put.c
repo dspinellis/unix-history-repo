@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)put.c 1.13 %G%";
+static char sccsid[] = "@(#)put.c 1.14 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -340,8 +340,10 @@ around:
 				for ( i = 2, lp = (long *)&p[1]; i < n 
 				    ; i += sizeof ( long )/sizeof ( short ) )
 					printf( "\t%D " , *lp ++ );
-				if (i == n) 
-					printf( "\t%d ", p[i - 1] );
+				if (i == n) {
+					sp = (short *)lp;
+					printf( "\t%d ", *sp );
+				}
 				pchr ( '\n' );
 			}
 #endif
