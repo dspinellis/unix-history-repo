@@ -98,9 +98,9 @@ if_ubaminit(ifu, uban, hlen, nmr, ifr, nr, ifw, nw)
 	return (1);
 bad:
 	while (--nw >= 0)
-		ubarelse(ifu->iff_uban, &ifr[nw].ifrw_info);
+		ubarelse(ifu->iff_uban, &ifw[nw].ifw_info);
 	while (--nr >= 0)
-		ubarelse(ifu->iff_uban, &ifw[nr].ifw_info);
+		ubarelse(ifu->iff_uban, &ifr[nr].ifrw_info);
 	m_pgfree(cp, (nr + nw) * ncl);
 	ifr[0].ifrw_addr = 0;
 	return (0);
