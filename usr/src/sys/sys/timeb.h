@@ -1,18 +1,16 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)timeb.h	7.1 (Berkeley) %G%
+ * %sccs.include.redist.c%
+ *
+ *	@(#)timeb.h	7.2 (Berkeley) %G%
  */
 
-/*
- * Structure returned by ftime system call
- */
-struct timeb
-{
-	time_t	time;
-	unsigned short millitm;
-	short	timezone;
-	short	dstflag;
+/* The ftime(2) system call structure -- deprecated. */
+struct timeb {
+	time_t	time;			/* seconds since the Epoch */
+	unsigned short millitm;		/* + milliseconds since the Epoch */
+	short	timezone;		/* minutes west of CUT */
+	short	dstflag;		/* DST == non-zero */
 };
