@@ -3,10 +3,8 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)lorder.1	6.6 (Berkeley) %G%
+.\"     @(#)lorder.1	6.7 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt LORDER 1
 .Os
@@ -15,12 +13,12 @@
 .Nd list dependencies for object files
 .Sh SYNOPSIS
 .Nm lorder
-.Ar file ...
+.Ar
 .Sh DESCRIPTION
 The
 .Nm lorder
 utility uses
-.Xr nm  1
+.Xr nm 1
 to determine interdependencies in the list of object files
 specified on the command line.
 .Nm Lorder
@@ -33,8 +31,9 @@ when a library is created to determine the optimum ordering of the
 object modules so that all references may be resolved in a single
 pass of the loader.
 .Sh EXAMPLES
-.Pp
-.Dl ar cr library.a `lorder ${OBJS}  tsort`
+.Bd -literal -offset indent
+ar cr library.a `lorder ${OBJS}  tsort`
+.Ed
 .Sh SEE ALSO
 .Xr ar 1 ,
 .Xr ld 1 ,
@@ -42,5 +41,7 @@ pass of the loader.
 .Xr ranlib 1 ,
 .Xr tsort 1
 .Sh HISTORY
-.Nm Lorder
-appeared in Version 7 AT&T Unix.
+An
+.Nm lorder
+utility appeared in
+.At v7 .

@@ -3,11 +3,11 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)pxp.1	6.5 (Berkeley) %G%
+.\"	@(#)pxp.1	6.6 (Berkeley) %G%
 .\"
-.Vx
 .Dd 
 .Dt PXP 1
+.Os BSD 3
 .Sh NAME
 .Nm pxp
 .Nd Pascal execution profiler
@@ -30,8 +30,9 @@ or
 .Xr pix 1 ,
 to execute the program,
 and to then issue the command
-.Pp
-.Dl pxp -x name.p
+.Bd -literal -offset indent
+pxp -x name.p
+.Ed
 .Pp
 A reformatted listing is output if none of the
 .Fl c  ,
@@ -40,24 +41,26 @@ or
 .Fl z
 options are specified;
 thus
-.Pp
-.Dl pxp old.p > new.p
+.Bd -literal -offset indent
+pxp old.p > new.p
+.Ed
 .Pp
 places a pretty-printed version of the program in `old.p' in the file `new.p'.
 .Pp
 The use of the following options of
 .Nm pxp
 is discussed in sections 2.6, 5.4, 5.5 and 5.10 of the
-.Em Berkeley Pascal User's Manual .
-.Tp Fl a
+.%T "Berkeley Pascal User's Manual" .
+.Bl -tag -width Fl
+.It Fl a
 Print the bodies of all procedures and functions in the profile;
 even those which were never executed.
-.Tp Fl c
+.It Fl c
 Extract profile data from the file
 .Pa core  .
-.Tp Fl d
+.It Fl d
 Include declaration parts in a profile.
-.Tp Fl e
+.It Fl e
 Eliminate
 .Ic include
 directives when reformatting a file;
@@ -65,85 +68,79 @@ the
 .Ic include
 is replaced by the reformatted contents of the specified
 file.
-.Tp Fl f
+.It Fl f
 Fully parenthesize expressions.
-.Tp Fl j
+.It Fl j
 Left justify all procedures and functions.
-.Tp Fl n
+.It Fl n
 Eject a new page
 as each file is included;
 in profiles, print a blank line at the top of the page.
-.Tp Fl s
+.It Fl s
 Strip comments from the input text.
-.Tp Fl t
+.It Fl t
 Print a table summarizing
 .Ic procedure
 and
 .Ic function
 call counts.
-.Tp Fl u
+.It Fl u
 Card image mode; only the first 72 characters of input lines
 are used.
-.Tp Fl w
+.It Fl w
 Suppress warning diagnostics.
-.Tp Fl z
+.It Fl z
 Generate an execution profile.
 If no
-.Cx Ar name
-.Cx \&\'s
-.Cx
+.Ar name Ns 's
 are given the profile is of the entire program.
 If a list of names is given, then only any specified
-.Cx Ic procedure
-.Cx \&s
-.Cx
+.Ic procedure Ns s
 or
-.Cx Ic function
-.Cx \&s
-.Cx
+.Cx Ic function Ns s
 and the contents of any specified
 .Ic include
 files will appear in the profile.
-.Tp Fl  \&_
+.It Fl \&_
 Underline keywords.
-.Tp Fl  d
+.It Fl d
 With
 .Ar d
-a digit, 2 \(<=
+a digit, 2 \*(Le
 .Ar d
-\(<= 9,
+\*(Le 9,
 causes
 .Nm pxp
 to use
 .Ar d
 spaces as the basic indenting unit.
 The default is 4.
+.El
 .Sh FILES
-.Dw /usr/lib/how_pxp
-.Di L
-.Dp Pa name.p
+.Bl -tag -width /usr/lib/how_pxp -compact
+.It Pa name.p
 input file
-.Dp Pa name.i
+.It Pa name.i
 include file(s)
-.Dp Pa pmon.out
+.It Pa pmon.out
 profile data
-.Dp Pa core
+.It Pa core
 profile data source with
 .Fl c
-.Dp Pa /usr/lib/how_pxp
+.It Pa /usr/lib/how_pxp
 information on basic usage
-.Dp
+.El
 .Sh SEE ALSO
-.Em Berkeley Pascal User's Manual
-.br
 .Xr pi 1 ,
 .Xr px 1
+.Rs
+.%T "Berkeley Pascal User's Manual"
+.Re
 .Sh DIAGNOSTICS
 For a basic explanation do
-.Pp
-.Df I
-.Nm pxp
-.De
+.Bd -literal -offset indent
+pxp
+.Ed
 .Pp
 Error diagnostics include
 `No profile data in file'
@@ -160,10 +157,9 @@ execution;
 `Program and count data do not correspond'
 if the program was changed after compilation, before profiling;
 or if the wrong program is specified.
-.Sh AUTHOR
-William Joy
 .Sh HISTORY
 .Nm Pxp
-appeared in 3 BSD.
+appeared in
+.Bx 3.0 .
 .Sh BUGS
 Does not place multiple statements per line.
