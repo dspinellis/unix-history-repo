@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)status.c	1.2 (Berkeley/CCI) %G%";
+static char sccsid[] = "@(#)status.c	1.3 (Berkeley/CCI) %G%";
 #endif
 
 #include	"vdfmt.h"
@@ -51,31 +51,40 @@ status()
 dump_state(string)
 char	*string;
 {
+	extern int wait_for_char;
+
 	indent();
 	print("%s on controller %d, drive %d.\n",
 	    string, cur.controller, cur.drive);
-	print("Currently accessing cylinder %d, head %d.\n",
-	    cur.daddr.cylinder, cur.daddr.track);
-	print("Currently ");
-	switch (cur.substate) {
-		case sub_chk :
-			printf("determining drive state.\n");
-			break;
-		case sub_fmt :
-			printf("formatting drive surface.\n");
-			break;
-		case sub_vfy :
-			printf("verifying drive surface.\n");
-			break;
-		case sub_rel :
-			printf("performing relocation operations.\n");
-			break;
-		case sub_rcvr :
-			printf("recovering from hardware error.\n");
-			break;
-		default :
-			printf("I don't know what is happening.\n");
-			break;
+	if (wait_for_char)
+		print("Waiting for operator response.\n");
+	else {
+		print("Currently accessing cylinder %d, head %d.\n",
+		    cur.daddr.cylinder, cur.daddr.track);
+		print("Currently ");
+		switch (cur.substate) {
+			case sub_chk :
+				printf("determining drive state.\n");
+				break;
+			case sub_fmt :
+				printf("formatting drive surface.\n");
+				break;
+			case sub_vfy :
+				printf("verifying drive surface.\n");
+				break;
+			case sub_rel :
+				printf("performing relocation operations.\n");
+				break;
+			case sub_rcvr :
+				printf("recovering from hardware error.\n");
+				break;
+			case sub_wmap :
+				printf("writing relocation map.\n");
+				break;
+			default :
+				printf("I don't know what is happening.\n");
+				break;
+		}
 	}
 	exdent(1);
 }
