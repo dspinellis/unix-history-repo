@@ -1,8 +1,10 @@
-/*
- * Copyright (c) 1985 Regents of the University of California.
+/*-
+ * Copyright (c) 1985 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
+ *
+ *	@(#)pathnames.h	5.6 (Berkeley) %G%
  */
 
 #include <paths.h>
