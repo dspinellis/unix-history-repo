@@ -1,5 +1,5 @@
 /*
-char id_fgetc[] = "@(#)fgetc_.c	1.4";
+char id_fgetc[] = "@(#)fgetc_.c	1.5";
  *
  * get a character from a logical unit bypassing formatted I/O
  *
@@ -37,6 +37,6 @@ long *u; char *c; long clen;
 		clearerr(lu->ufd);
 		return((long)i);
 	}
-	*c = i & 0177;
+	*c = i;
 	return(0L);
 }
