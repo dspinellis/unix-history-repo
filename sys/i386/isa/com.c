@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)com.c	7.5 (Berkeley) 5/16/91
- *	$Id: com.c,v 1.8 1994/03/02 20:28:32 guido Exp $
+ *	$Id: com.c,v 1.9 1994/03/20 18:51:49 guido Exp $
  */
 
 #include "com.h"
@@ -204,7 +204,6 @@ comopen(int /*dev_t*/ dev, int flag, int mode, struct proc *p)
 	tp->t_param = comparam;
 	tp->t_dev = dev;
 	if ((tp->t_state & TS_ISOPEN) == 0) {
-		tp->t_state |= TS_WOPEN;
 		ttychars(tp);
 		if (tp->t_ispeed == 0) {
 			tp->t_iflag = TTYDEF_IFLAG;
@@ -223,9 +222,8 @@ comopen(int /*dev_t*/ dev, int flag, int mode, struct proc *p)
 		tp->t_state |= TS_CARR_ON;
 	while ((flag&O_NONBLOCK) == 0 && (tp->t_cflag&CLOCAL) == 0 &&
 	       (tp->t_state & TS_CARR_ON) == 0) {
-		tp->t_state |= TS_WOPEN;
-		if (error = ttysleep(tp, (caddr_t)tp->t_raw, TTIPRI | PCATCH,
-		    ttopen, 0))
+		if (error = tsleep(tp, TSA_CARR_ON(tp), TTIPRI | PCATCH,
+				   "comdcd", 0))
 			break;
 	}
 	(void) spl0();
@@ -255,8 +253,7 @@ comclose(dev, flag, mode, p)
 	if (kgdb_dev != makedev(commajor, unit))
 #endif
 	outb(com+com_ier, 0);
-	if (tp->t_cflag&HUPCL || tp->t_state&TS_WOPEN || 
-	    (tp->t_state&TS_ISOPEN) == 0)
+	if (tp->t_cflag&HUPCL || (tp->t_state&TS_ISOPEN) == 0)
 		(void) commctl(dev, 0, DMSET);
 	ttyclose(tp);
 #ifdef broken /* session holds a ref to the tty; can't deallocate */
@@ -552,17 +549,8 @@ comstart(tp)
 	s = spltty();
 	if (tp->t_state & (TS_TIMEOUT|TS_TTSTOP))
 		goto out;
-	if (RB_LEN(tp->t_out) <= tp->t_lowat) {
-		if (tp->t_state&TS_ASLEEP) {
-			tp->t_state &= ~TS_ASLEEP;
-			wakeup((caddr_t)tp->t_out);
-		}
-		if (tp->t_wsel) {
-			selwakeup(tp->t_wsel, tp->t_state & TS_WCOLL);
-			tp->t_wsel = 0;
-			tp->t_state &= ~TS_WCOLL;
-		}
-	}
+	if (tp->t_state & (TS_SO_OCOMPLETE | TS_SO_OLOWAT) || tp->t_wsel)
+		ttwwakeup(tp);
 	if (RB_LEN(tp->t_out) == 0)
 		goto out;
 	if (inb(com+com_lsr) & LSR_TXRDY) {
@@ -754,43 +742,3 @@ comcnputc(dev, c)
 	splx(s);
 }
 #endif
-
-int
-comselect(dev, rw, p)
-	dev_t dev;
-	int rw;
-	struct proc *p;
-{
-	register struct tty *tp = com_tty[UNIT(dev)];
-	int nread;
-	int s = spltty();
-        struct proc *selp;
-
-	switch (rw) {
-
-	case FREAD:
-		nread = ttnread(tp);
-		if (nread > 0 || 
-		   ((tp->t_cflag&CLOCAL) == 0 && (tp->t_state&TS_CARR_ON) == 0))
-			goto win;
-		if (tp->t_rsel && (selp = pfind(tp->t_rsel)) && selp->p_wchan == (caddr_t)&selwait)
-			tp->t_state |= TS_RCOLL;
-		else
-			tp->t_rsel = p->p_pid;
-		break;
-
-	case FWRITE:
-		if (RB_LEN(tp->t_out) <= tp->t_lowat)
-			goto win;
-		if (tp->t_wsel && (selp = pfind(tp->t_wsel)) && selp->p_wchan == (caddr_t)&selwait)
-			tp->t_state |= TS_WCOLL;
-		else
-			tp->t_wsel = p->p_pid;
-		break;
-	}
-	splx(s);
-	return (0);
-  win:
-	splx(s);
-	return (1);
-}
