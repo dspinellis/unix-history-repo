@@ -1,0 +1,21 @@
+# $Header: services.txt,v 1.2 87/01/27 08:25:41 jqj Exp $
+			# complete:
+Authentication	14 1	/usr/local/lib/courier/Authentication1.cr
+			# incomplete:
+Authentication	14 2	/usr/local/lib/courier/Authentication2.cr
+			# almost complete:
+BulkData	 0 1	/usr/local/lib/courier/BulkData1.cr
+			# almost complete:
+Printing	 4 3	/usr/local/lib/courier/Printing3.cr
+			# complete:
+Time		15 2	/usr/local/lib/courier/Time2.cr
+			# complete except for StreamOf constructs:
+Clearinghouse	 2 2	/usr/local/lib/courier/Clearinghouse2.cr
+GAP		 3 2	/usr/local/lib/courier/Gap2.cr
+GAP		 3 3	/usr/local/lib/courier/Gap3.cr	/usr/local/lib/courier/GAP3d
+			#almost complete (compatible with XDE filetool)
+Filing		10 4	/usr/local/lib/courier/Filing4.cr /usr/local/lib/courier/Filing4d
+			# almost complete (server not quite done yet)
+Filing		10 6	/usr/local/lib/courier/Filing6.cr
+FilingSubset  1500 1	/usr/local/lib/courier/FilingSubset1.cr
+
