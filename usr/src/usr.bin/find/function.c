@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)function.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)function.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -183,6 +183,7 @@ f_exec(plan, entry)
 	register PLAN *plan;
 	FTSENT *entry;
 {
+	extern int dotfd;
 	register int cnt;
 	pid_t pid;
 	int status;
@@ -190,7 +191,7 @@ f_exec(plan, entry)
 	for (cnt = 0; plan->e_argv[cnt]; ++cnt)
 		if (plan->e_len[cnt])
 			brace_subst(plan->e_orig[cnt], &plan->e_argv[cnt],
-			    entry->fts_accpath, plan->e_len[cnt]);
+			    entry->fts_path, plan->e_len[cnt]);
 
 	if (plan->flags && !queryuser(plan->e_argv))
 		return(0);
@@ -200,9 +201,15 @@ f_exec(plan, entry)
 		err("fork: %s", strerror(errno));
 		/* NOTREACHED */
 	case 0:
+		if (fchdir(dotfd)) {
+			(void)fprintf(stderr,
+			    "find: chdir: %s\n", strerror(errno));
+			_exit(1);
+		}
 		execvp(plan->e_argv[0], plan->e_argv);
-		err("%s: %s", plan->e_argv[0], strerror(errno));
-		/* NOTREACHED */
+		(void)fprintf(stderr,
+		    "find: %s: %s\n", plan->e_argv[0], strerror(errno));
+		_exit(1);
 	}
 	pid = waitpid(pid, &status, 0);
 	return(pid != -1 && WIFEXITED(status) && !WEXITSTATUS(status));
@@ -224,8 +231,6 @@ c_exec(argvp, isok)
 	register int cnt;
 	register char **argv, **ap, *p;
 
-	if (!isrelative)
-		ftsoptions |= FTS_NOCHDIR;
 	isoutput = 1;
     
 	new = palloc(N_EXEC, f_exec);
@@ -472,8 +477,6 @@ f_ls(plan, entry)
 	PLAN *plan;
 	FTSENT *entry;
 {
-	void printlong();
-
 	printlong(entry->fts_path, entry->fts_accpath, &entry->fts_statb);
 	return(1);
 }

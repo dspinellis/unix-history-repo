@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	5.1 (Berkeley) %G%
+ *	@(#)extern.h	5.2 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -49,5 +49,4 @@ PLAN	*c_mtime __P((char *));
 PLAN	*c_not __P((void));
 PLAN	*c_or __P((void));
 
-extern int ftsoptions;
-extern int isdeprecated, isdepth, isoutput, isrelative, isxargs;
+extern int ftsoptions, isdeprecated, isdepth, isoutput, isxargs;
