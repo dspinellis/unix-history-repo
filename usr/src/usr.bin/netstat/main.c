@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -71,12 +71,24 @@ struct nlist nl[] = {
 	{ "_spp_istat"},
 #define N_NSERR		22
 	{ "_ns_errstat"},
+
+    /* BBN Internet protocol implementation */
+#define	N_TCP		23
+	{ "_tcp" },
+#define	N_UDP		24
+	{ "_udp" },
+#define N_RDP		25
+	{ "_rdp" },
+#define	N_RDPSTAT	26
+	{ "_rdpstat" },
+
 	"",
 };
 
 /* internet protocols */
-extern	int protopr();
+extern	int protopr(), bbnprotopr();
 extern	int tcp_stats(), udp_stats(), ip_stats(), icmp_stats();
+extern	int tcpstats(), udpstats(), ipstats(), icmpstats(), rdpstats();
 extern	int nsprotopr();
 extern	int spp_stats(), idp_stats(), nserr_stats();
 
@@ -87,7 +99,9 @@ struct protox {
 	int	(*pr_cblocks)();	/* control blocks printing routine */
 	int	(*pr_stats)();		/* statistics printing routine */
 	char	*pr_name;		/* well-known name */
-} protox[] = {
+};
+
+struct  protox berkprotox[] = {
 	{ N_TCB,	N_TCPSTAT,	1,	protopr,
 	  tcp_stats,	"tcp" },
 	{ N_UDB,	N_UDPSTAT,	1,	protopr,
@@ -96,6 +110,23 @@ struct protox {
 	  ip_stats,	"ip" },
 	{ -1,		N_ICMPSTAT,	1,	0,
 	  icmp_stats,	"icmp" },
+	{ -1,		-1,		0,	0,
+	  0,		0 }
+};
+
+struct protox bbnprotox[] = {
+	{ N_TCP,	N_TCPSTAT,	1,	bbnprotopr,
+	  tcpstats,	"tcp" },
+	{ N_UDP,	N_UDPSTAT,	1,	bbnprotopr,
+	  udpstats,	"udp" },
+	{ N_RDP,	N_RDPSTAT,	1,	bbnprotopr,
+	  rdpstats,	"rdp" },
+	{ N_RAWCB,	0,		1,	bbnprotopr,
+	  0,		"raw" },
+	{ -1,		N_IPSTAT,	1,	0,
+	  ipstats,	"ip" },
+	{ -1,		N_ICMPSTAT,	1,	0,
+	  icmpstats,	"icmp" },
 	{ -1,		-1,		0,	0,
 	  0,		0 }
 };
@@ -291,21 +322,21 @@ use:
 		exit(0);
 	}
     if (af == AF_INET || af == AF_UNSPEC) {
+	struct protox *head;
+
+	head = (nl[N_TCB].n_type == 0) ? bbnprotox : berkprotox;
 	setprotoent(1);
 	setservent(1);
-	while (p = getprotoent()) {
 
-		for (tp = protox; tp->pr_name; tp++)
-			if (strcmp(tp->pr_name, p->p_name) == 0)
-				break;
-		if (tp->pr_name == 0 || tp->pr_wanted == 0)
+	for (tp = head; tp->pr_name; tp++) {
+		if (tp->pr_wanted == 0)
 			continue;
-		if (sflag && tp->pr_stats) {
-			(*tp->pr_stats)(nl[tp->pr_sindex].n_value, p->p_name);
-			continue;
-		}
-		if (tp->pr_cblocks)
-			(*tp->pr_cblocks)(nl[tp->pr_index].n_value, p->p_name);
+
+		if (sflag) {
+			if (tp->pr_stats)
+			    (*tp->pr_stats)(nl[tp->pr_sindex].n_value, tp->pr_name);
+		} else if (tp->pr_cblocks)
+			(*tp->pr_cblocks)(nl[tp->pr_index].n_value, tp->pr_name);
 	}
 	endprotoent();
     }
