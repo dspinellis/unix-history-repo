@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser1.c	3.12 84/04/05";
+static	char *sccsid = "@(#)parser1.c	3.13 84/04/06";
 #endif
 
 #include "parser.h"
@@ -167,7 +167,8 @@ char flag;
 		error("command: assignment %s.", cmd == 0 ? "ERR" : cmd);
 #endif
 		if (p_assign(cmd, &t, flag) < 0) {
-			str_free(cmd);
+			if (cmd)
+				str_free(cmd);
 			return -1;
 		}
 	} else {
@@ -175,11 +176,13 @@ char flag;
 		error("command: function %s.", cmd == 0 ? "ERR" : cmd);
 #endif
 		if (p_function(cmd, &t, flag) < 0) {
-			str_free(cmd);
+			if (cmd)
+				str_free(cmd);
 			return -1;
 		}
 	}
-	str_free(cmd);
+	if (cmd)
+		str_free(cmd);
 	val_free(t);
 	if (token == T_EOL)
 		(void) s_gettok();
