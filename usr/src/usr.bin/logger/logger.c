@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)logger.c	6.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)logger.c	6.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -111,54 +111,12 @@ main(argc, argv)
 	exit(0);
 }
 
-
-struct code {
-	char	*c_name;
-	int	c_val;
-};
-
-struct code	PriNames[] = {
-	"panic",	LOG_EMERG,
-	"emerg",	LOG_EMERG,
-	"alert",	LOG_ALERT,
-	"crit",		LOG_CRIT,
-	"err",		LOG_ERR,
-	"error",	LOG_ERR,
-	"warn",		LOG_WARNING,
-	"warning",	LOG_WARNING,
-	"notice",	LOG_NOTICE,
-	"info",		LOG_INFO,
-	"debug",	LOG_DEBUG,
-	NULL,		-1
-};
-
-struct code	FacNames[] = {
-	"kern",		LOG_KERN,
-	"user",		LOG_USER,
-	"mail",		LOG_MAIL,
-	"daemon",	LOG_DAEMON,
-	"auth",		LOG_AUTH,
-	"security",	LOG_AUTH,
-	"syslog",	LOG_SYSLOG,
-	"lpr",		LOG_LPR,
-	"news",		LOG_NEWS,
-	"uucp",		LOG_UUCP,
-	"local0",	LOG_LOCAL0,
-	"local1",	LOG_LOCAL1,
-	"local2",	LOG_LOCAL2,
-	"local3",	LOG_LOCAL3,
-	"local4",	LOG_LOCAL4,
-	"local5",	LOG_LOCAL5,
-	"local6",	LOG_LOCAL6,
-	"local7",	LOG_LOCAL7,
-	NULL,		-1
-};
-
+#define	SYSLOG_NAMES
+#include <syslog.h>
 
 /*
  *  Decode a symbolic name to a numeric value
  */
-
 pencode(s)
 	register char *s;
 {
@@ -168,7 +126,7 @@ pencode(s)
 	for (save = s; *s && *s != '.'; ++s);
 	if (*s) {
 		*s = '\0';
-		fac = decode(save, FacNames);
+		fac = decode(save, facilitynames);
 		if (fac < 0)
 			bailout("unknown facility name: ", save);
 		*s++ = '.';
@@ -177,7 +135,7 @@ pencode(s)
 		fac = 0;
 		s = save;
 	}
-	lev = decode(s, PriNames);
+	lev = decode(s, prioritynames);
 	if (lev < 0)
 		bailout("unknown priority name: ", save);
 	return ((lev & LOG_PRIMASK) | (fac & LOG_FACMASK));
@@ -186,9 +144,9 @@ pencode(s)
 
 decode(name, codetab)
 	char *name;
-	struct code *codetab;
+	CODE *codetab;
 {
-	register struct code *c;
+	register CODE *c;
 
 	if (isdigit(*name))
 		return (atoi(name));
