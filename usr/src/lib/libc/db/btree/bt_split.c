@@ -9,657 +9,732 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_split.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_split.c	5.3 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
+#define	__DBINTERFACE_PRIVATE
 #include <db.h>
+#include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "btree.h"
 
+static int	 bt_preserve __P((BTREE *, pgno_t));
+static PAGE	*bt_psplit __P((BTREE *, PAGE *, PAGE *, PAGE *, int *));
+static PAGE	*bt_page __P((BTREE *, PAGE *, PAGE **, PAGE **, int *));
+static PAGE	*bt_root __P((BTREE *, PAGE *, PAGE **, PAGE **, int *));
+static int	 bt_rroot __P((BTREE *, PAGE *, PAGE *, PAGE *));
+static int	 bt_broot __P((BTREE *, PAGE *, PAGE *, PAGE *));
+static recno_t	 rec_total __P((PAGE *));
+
+#ifdef STATISTICS
+u_long	bt_rootsplit, bt_split, bt_sortsplit, bt_pfxsaved;
+#endif
+
 /*
- *  _BT_SPLIT -- Split a page into two pages.
+ * __BT_SPLIT -- Split the tree.
  *
- *	Splits are caused by insertions, and propogate up the tree in
- *	the usual way.  The root page is always page 1 in the file on
- *	disk, so root splits are handled specially.  On entry to this
- *	routine, t->bt_curpage is the page to be split.
+ * Parameters:
+ *	t:	tree
+ *	h:	page to split
+ *	key:	key to insert
+ *	data:	data to insert
+ *	flags:	BIGKEY/BIGDATA flags
+ *	nbytes:	length of insertion
+ *	skip:	index to leave open
  *
- *	Parameters:
- *		t -- btree in which to do split.
- *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR.
- *
- *	Side Effects:
- *		Changes the notion of the current page.
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS
  */
-
 int
-_bt_split(t)
-	BTREE_P t;
+__bt_split(t, h, key, data, flags, nbytes, skip)
+	BTREE *t;
+	PAGE *h;
+	const DBT *key, *data;
+	u_long flags;
+	size_t nbytes;
+	int skip;
 {
-	BTHEADER *h;
-	BTHEADER *left, *right;
-	pgno_t nextpgno, parent;
-	int nbytes, len;
-	IDATUM *id;
-	DATUM *d;
-	char *src;
-	IDATUM *new;
-	pgno_t oldchain;
-	u_char flags;
+	BINTERNAL *bi;
+	BLEAF *bl;
+	DBT a, b;
+	EPGNO *parent;
+	PAGE *l, *r, *lchild, *rchild;
+	index_t nxtindex;
+	size_t nksize;
+	int nosplit;
+	char *dest;
 
-	h = (BTHEADER *) t->bt_curpage;
+	/*
+	 * Split the page into two pages, l and r.  The split routines return
+	 * a pointer to the page into which the key should be inserted and skip
+	 * set to the offset which should be used.  Additionally, l and r are
+	 * pinned.
+	 */
+	h = h->pgno == P_ROOT ?
+	    bt_root(t, h, &l, &r, &skip) : bt_page(t, h, &l, &r, &skip);
+	if (h == NULL)
+		return (RET_ERROR);
 
-	/* split root page specially, since it must remain page 1 */
-	if (h->h_pgno == P_ROOT) {
-		return (_bt_splitroot(t));
+	/*
+	 * Grab the space and insert the [rb]leaf structure.  Always a [rb]leaf
+	 * structure since key inserts always cause a leaf page to split first.
+	 */
+	h->linp[skip] = h->upper -= nbytes;
+	dest = (char *)h + h->upper;
+	if (ISSET(t, BTF_RECNO)) {
+		WR_RLEAF(dest, data, flags)
+		++t->bt_nrecs;
+		SET(t, BTF_METADIRTY | BTF_MODIFIED);
+	} else {
+		WR_BLEAF(dest, key, data, flags)
+		SET(t, BTF_MODIFIED);
 	}
 
 	/*
-	 *  This is a little complicated.  We go to some trouble to
-	 *  figure out which of the three possible cases -- in-memory tree,
-	 *  disk tree (no cache), and disk tree (cache) -- we have, in order
-	 *  to avoid unnecessary copying.  If we have a disk cache, then we
-	 *  have to do some extra copying, though, since the cache code
-	 *  manages buffers externally to this code.
+	 * Now we walk the parent page stack -- a LIFO stack of the pages that
+	 * were traversed when we searched for the page that split.  Each stack
+	 * entry is a page number and a page index offset.  The offset is for
+	 * the page traversed on the search.  We've just split a page, so we
+	 * have to insert a new key into the parent page.
+	 *
+	 * If the insert into the parent page causes it to split, may have to
+	 * continue splitting all the way up the tree.  We stop if the root
+	 * splits or the page inserted into didn't have to split to hold the
+	 * new key.  Some algorithms replace the key for the old page as well
+	 * as the new page.  We don't, as there's no reason to believe that the
+	 * first key on the old page is any better than the key we have, and,
+	 * in the case of a key being placed at index 0 causing the split, the
+	 * key is unavailable.
+	 *
+	 * There are a maximum of 5 pages pinned at any time.  We keep the left
+	 * and right pages pinned while working on the parent.   The 5 are the
+	 * two children, left parent and right parent (when the parent splits)
+	 * and the root page or the overflow key page when calling bt_preserve.
+	 * This code must make sure that all pins are released other than the
+	 * root page or overflow page which is unlocked elsewhere.
 	 */
+	for (nosplit = 0; (parent = BT_POP(t)) != NULL;) {
+		lchild = l;
+		rchild = r;
 
-	if (ISDISK(t) && ISCACHE(t)) {
-		if ((left = (BTHEADER *) malloc((unsigned) t->bt_psize))
-		    == (BTHEADER *) NULL)
-			return (RET_ERROR);
-		left->h_pgno = left->h_prevpg = left->h_nextpg = P_NONE;
-		left->h_flags = t->bt_curpage->h_flags;
-		left->h_lower = (index_t)
-			  (((char *) &(left->h_linp[0])) - ((char *) left));
-		left->h_upper = t->bt_psize;
+		/* Get the parent page. */
+		if ((h = mpool_get(t->bt_mp, parent->pgno, 0)) == NULL)
+			goto err2;
 
-	} else {
-		if ((left = _bt_allocpg(t)) == (BTHEADER *) NULL)
-			return (RET_ERROR);
-	}
-	left->h_pgno = h->h_pgno;
+	 	/* The new key goes ONE AFTER the index. */
+		skip = parent->index + 1;
 
-	if ((right = _bt_allocpg(t)) == (BTHEADER *) NULL)
-		return (RET_ERROR);
-	right->h_pgno = ++(t->bt_npages);
-
-	/* now do the split */
-	if (_bt_dopsplit(t, left, right) == RET_ERROR)
-		return (RET_ERROR);
-
-	right->h_prevpg = left->h_pgno;
-	nextpgno = right->h_nextpg = h->h_nextpg;
-	left->h_nextpg = right->h_pgno;
-	left->h_prevpg = h->h_prevpg;
-
-	/* okay, now use the left half of the page as the new page */
-	if (ISDISK(t) && ISCACHE(t)) {
-		(void) bcopy((char *) left, (char *) t->bt_curpage,
-			     (int) t->bt_psize);
-		(void) free ((char *) left);
-		left = t->bt_curpage;
-	} else {
-		(void) free((char *) t->bt_curpage);
-		t->bt_curpage = left;
-	}
-
-	/*
-	 *  Write the new pages out.  We need them to stay where they are
-	 *  until we're done updating the parent pages.
-	 */
-
-	if (_bt_write(t, left, NORELEASE) == RET_ERROR)
-		return (RET_ERROR);
-	if (_bt_write(t, right, NORELEASE) == RET_ERROR)
-		return (RET_ERROR);
-
-	/* update 'prev' pointer of old neighbor of left */
-	if (nextpgno != P_NONE) {
-		if (_bt_getpage(t, nextpgno) == RET_ERROR)
-			return (RET_ERROR);
-		h = t->bt_curpage;
-		h->h_prevpg = right->h_pgno;
-		h->h_flags |= F_DIRTY;
-	}
-
-	if ((parent = _bt_pop(t)) != P_NONE) {
-		if (right->h_flags & F_LEAF) {
-			d = (DATUM *) GETDATUM(right, 0);
-			len = d->d_ksize;
-			if (d->d_flags & D_BIGKEY) {
-				bcopy(&(d->d_bytes[0]),
-				      (char *) &oldchain,
-				      sizeof(oldchain));
-				if (_bt_markchain(t, oldchain) == RET_ERROR)
-					return (RET_ERROR);
-				src = (char *) &oldchain;
-				flags = D_BIGKEY;
-			} else {
-				src = (char *) &(d->d_bytes[0]);
-				flags = 0;
+		/*
+		 * Calculate the space needed on the parent page.
+		 *
+		 * Space hack when insertin into BINTERNAL pages.  Only need to
+		 * retain the number of bytes that will distinguish between the
+		 * new entry and the LAST entry on the page to its left.  If
+		 * the keys compare equal, only need to retain one byte as a
+		 * placeholder.  Special cases are that the entire key must be
+		 * retained for the next-to-leftmost key on the leftmost page
+		 * of each level, or the search will fail, and can't mess with
+		 * overflow keys.
+		 */
+		switch (rchild->flags & P_TYPE) {
+		case P_BINTERNAL:
+			bi = GETBINTERNAL(rchild, 0);
+			nbytes = NBINTERNAL(bi->ksize);
+			if (t->bt_pfx && (h->prevpg != P_INVALID || skip > 1) &&
+			    !(bi->flags & P_BIGKEY)) {
+				BINTERNAL *tbi;
+				tbi =
+				    GETBINTERNAL(lchild, NEXTINDEX(lchild) - 1);
+				a.size = tbi->ksize;
+				a.data = tbi->bytes;
+				b.size = bi->ksize;
+				b.data = bi->bytes;
+				goto prefix;
 			}
+			break;
+		case P_BLEAF:
+			bl = GETBLEAF(rchild, 0);
+			nbytes = NBLEAF(bl);
+			if (t->bt_pfx && (h->prevpg != P_INVALID || skip > 1) &&
+			    !(bl->flags & P_BIGKEY)) {
+				BLEAF *tbl;
+				size_t n;
+
+				tbl = GETBLEAF(lchild, NEXTINDEX(lchild) - 1);
+				a.size = tbl->ksize;
+				a.data = tbl->bytes;
+				b.size = bl->ksize;
+				b.data = bl->bytes;
+prefix:				nksize = t->bt_pfx(&a, &b);
+				n = NBINTERNAL(nksize);
+				if (n < nbytes) {
+#ifdef STATISTICS
+					bt_pfxsaved += nbytes - n;
+#endif
+					nbytes = n;
+				} else
+					nksize = 0;
+			} else
+				nksize = 0;
+			break;
+		case P_RINTERNAL:
+		case P_RLEAF:
+			nbytes = NRINTERNAL;
+			break;
+		}
+
+		/* Split the parent page if necessary or shift the indices. */
+		if (h->upper - h->lower < nbytes + sizeof(index_t)) {
+			h = h->pgno == P_ROOT ?
+			    bt_root(t, h, &l, &r, &skip) :
+			    bt_page(t, h, &l, &r, &skip);
+			if (h == NULL)
+				goto err1;
 		} else {
-			id = (IDATUM *) GETDATUM(right, 0);
-			len = id->i_size;
-			flags = id->i_flags;
-			src = (char *) &(id->i_bytes[0]);
-		}
-		nbytes = len + (sizeof(IDATUM) - sizeof(char));
-		new = (IDATUM *) malloc((unsigned) nbytes);
-		if (new == (IDATUM *) NULL)
-			return (RET_ERROR);
-		new->i_size = len;
-		new->i_pgno = right->h_pgno;
-		new->i_flags = flags;
-		if (len > 0)
-			(void) bcopy(src, (char *) &(new->i_bytes[0]), len);
-
-		nbytes = LONGALIGN(nbytes) + sizeof(index_t);
-		if (_bt_getpage(t, parent) == RET_ERROR)
-			return (RET_ERROR);
-
-		h = t->bt_curpage;
-
-		/*
-		 *  Split the parent if we need to, then reposition the
-		 *  tree's current page pointer for the new datum.
-		 */
-		if ((h->h_upper - h->h_lower) < nbytes) {
-			if (_bt_split(t) == RET_ERROR)
-				return (RET_ERROR);
-			if (_bt_reposition(t, new, parent, right->h_prevpg)
-			      == RET_ERROR)
-				return (RET_ERROR);
+			if (skip < (nxtindex = NEXTINDEX(h)))
+				bcopy(h->linp + skip, h->linp + skip + 1,
+				    (nxtindex - skip) * sizeof(index_t));
+			h->lower += sizeof(index_t);
+			nosplit = 1;
 		}
 
-		/* okay, now insert the new idatum */
-		if (_bt_inserti(t, new, right->h_prevpg) == RET_ERROR)
-			return (RET_ERROR);
+		/* Insert the key into the parent page. */
+		switch(rchild->flags & P_TYPE) {
+		case P_BINTERNAL:
+			h->linp[skip] = h->upper -= nbytes;
+			dest = (char *)h + h->linp[skip];
+			bcopy(bi, dest, nbytes);
+			if (nksize)
+				((BINTERNAL *)dest)->ksize = nksize;
+			((BINTERNAL *)dest)->pgno = rchild->pgno;
+			break;
+		case P_BLEAF:
+			h->linp[skip] = h->upper -= nbytes;
+			dest = (char *)h + h->linp[skip];
+			WR_BINTERNAL(dest, nksize ? nksize : bl->ksize,
+			    rchild->pgno, rchild->flags & P_OVERFLOW);
+			bcopy(bl->bytes, dest, nksize ? nksize : bl->ksize);
+			if (bl->flags & P_BIGKEY &&
+			    bt_preserve(t, *(pgno_t *)bl->bytes) == RET_ERROR)
+				goto err1;
+			break;
+		case P_RINTERNAL:
+			/* Update both left and right page counts. */
+			h->linp[skip] = h->upper -= nbytes;
+			dest = (char *)h + h->linp[skip];
+			((RINTERNAL *)dest)->nrecs = rec_total(rchild);
+			((RINTERNAL *)dest)->pgno = rchild->pgno;
+			dest = (char *)h + h->linp[skip - 1];
+			((RINTERNAL *)dest)->nrecs = rec_total(lchild);
+			((RINTERNAL *)dest)->pgno = lchild->pgno;
+			break;
+		case P_RLEAF:
+			/* Update both left and right page counts. */
+			h->linp[skip] = h->upper -= nbytes;
+			dest = (char *)h + h->linp[skip];
+			((RINTERNAL *)dest)->nrecs = NEXTINDEX(rchild);
+			((RINTERNAL *)dest)->pgno = rchild->pgno;
+			dest = (char *)h + h->linp[skip - 1];
+			((RINTERNAL *)dest)->nrecs = NEXTINDEX(lchild);
+			((RINTERNAL *)dest)->pgno = lchild->pgno;
+			break;
+		}
+
+		/* Unpin the held pages. */
+		if (nosplit) {
+			mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+			break;
+		}
+		mpool_put(t->bt_mp, lchild, MPOOL_DIRTY);
+		mpool_put(t->bt_mp, rchild, MPOOL_DIRTY);
 	}
+
+	/* Unpin the held pages. */
+	mpool_put(t->bt_mp, l, MPOOL_DIRTY);
+	mpool_put(t->bt_mp, r, MPOOL_DIRTY);
 
 	/*
-	 *  Okay, split is done; don't need right page stapled down anymore.
-	 *  The page we call 'left' above is the new version of the old
-	 *  (split) page, so we can't release it.
+	 * If it's a recno tree, increment the count on all remaining parent
+	 * pages.  Otherwise, clear the stack.
 	 */
-
-	if (_bt_release(t, right) == RET_ERROR)
-		return (RET_ERROR);
-	if (ISDISK(t) && !ISCACHE(t))
-		(void) free((char *) right);
-
-	return (RET_SUCCESS);
-}
-
-/*
- *  _BT_REPOSITION -- Reposition the current page pointer of a btree.
- *
- *	After splitting a node in the tree in order to make room for
- *	an insertion, we need to figure out which page after the split
- *	should get the item we want to insert.  This routine positions
- *	the tree's current page pointer appropriately.
- *
- *	Parameters:
- *		t -- tree to position
- *		new -- the item we want to insert
- *		parent -- parent of the node that we just split
- *		prev -- page number of item directly to the left of
- *			new's position in the tree.
- *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR.
- *
- *	Side Effects:
- *		None.
- */
-
-int
-_bt_reposition(t, new, parent, prev)
-	BTREE_P t;
-	IDATUM *new;
-	pgno_t parent;
-	pgno_t prev;
-{
-	index_t i, next;
-	IDATUM *idx;
-
-	if (parent == P_ROOT) {
-
-		/*
-		 *  If we just split the root page, then there are guaranteed
-		 *  to be exactly two IDATUMs on it.  Look at both of them
-		 *  to see if they point to the page that we want.
-		 */
-
-		if (_bt_getpage(t, parent) == RET_ERROR)
-			return (RET_ERROR);
-
-		next = NEXTINDEX(t->bt_curpage);
-		for (i = 0; i < next; i++) {
-			idx = (IDATUM *) GETDATUM(t->bt_curpage, i);
-			if (_bt_getpage(t, idx->i_pgno) == RET_ERROR)
+	if (ISSET(t, BTF_RECNO))
+		while  ((parent = BT_POP(t)) != NULL) {
+			if ((h = mpool_get(t->bt_mp, parent->pgno, 0)) == NULL)
 				return (RET_ERROR);
-			if (_bt_isonpage(t, new, prev) == RET_SUCCESS)
-				return (RET_SUCCESS);
-			if (_bt_getpage(t, parent) == RET_ERROR)
-				return (RET_ERROR);
+			++GETRINTERNAL(h, parent->index)->nrecs;
+			mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 		}
-	} else {
+	else
+		BT_CLR(t);
+	return (RET_SUCCESS);
 
-		/*
-		 *  Get the parent page -- which is where the new item would
-		 *  have gone -- and figure out whether the new item now goes
-		 *  on the parent, or the page immediately to the right of
-		 *  the parent.
-		 */
+	/*
+	 * If something fails in the above loop we were already walking back
+	 * up the tree and the tree is now inconsistent.  Nothing much we can
+	 * do about it but release any memory we're holding.
+	 */
+err1:	mpool_put(t->bt_mp, lchild, MPOOL_DIRTY);
+	mpool_put(t->bt_mp, rchild, MPOOL_DIRTY);
 
-		if (_bt_getpage(t, parent) == RET_ERROR)
-			return (RET_ERROR);
-		if (_bt_isonpage(t, new, prev) == RET_SUCCESS)
-			return (RET_SUCCESS);
-		if (_bt_getpage(t, t->bt_curpage->h_nextpg) == RET_ERROR)
-			return (RET_ERROR);
-		if (_bt_isonpage(t, new, prev) == RET_SUCCESS)
-			return (RET_SUCCESS);
-	}
+err2:	mpool_put(t->bt_mp, l, 0);
+	mpool_put(t->bt_mp, r, 0);
+	__dbpanic(t->bt_dbp);
 	return (RET_ERROR);
 }
 
 /*
- *  _BT_ISONPAGE -- Is the IDATUM for a given page number on the current page?
+ * BT_PAGE -- Split a non-root page of a btree.
  *
- *	This routine is used by _bt_reposition to decide whether the current
- *	page is the correct one on which to insert a new item.
+ * Parameters:
+ *	t:	tree
+ *	h:	root page
+ *	lp:	pointer to left page pointer
+ *	rp:	pointer to right page pointer
+ *	skip:	pointer to index to leave open
  *
- *	Parameters:
- *		t -- tree to check
- *		new -- the item that will be inserted (used for binary search)
- *		prev -- page number of page whose IDATUM is immediately to
- *			the left of new's position in the tree.
- *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR (corresponding to TRUE, FALSE).
+ * Returns:
+ *	Pointer to page in which to insert or NULL on error.
  */
-
-int
-_bt_isonpage(t, new, prev)
-	BTREE_P t;
-	IDATUM *new;
-	pgno_t prev;
+static PAGE *
+bt_page(t, h, lp, rp, skip)
+	BTREE *t;
+	PAGE *h, **lp, **rp;
+	int *skip;
 {
-	BTHEADER *h = (BTHEADER *) t->bt_curpage;
-	index_t i, next;
-	IDATUM *idx;
+	PAGE *l, *r, *tp;
+	pgno_t npg;
 
-	i = _bt_binsrch(t, &(new->i_bytes[0]));
-	while (i != 0 && _bt_cmp(t, &(new->i_bytes[0]), i) == 0)
-		--i;
-	next = NEXTINDEX(h);
-	idx = (IDATUM *) GETDATUM(h, i);
-	while (i < next && idx->i_pgno != prev) {
-		i++;
-		idx = (IDATUM *) GETDATUM(h, i);
+#ifdef STATISTICS
+	++bt_split;
+#endif
+	/* Put the new right page for the split into place. */
+	if ((r = mpool_new(t->bt_mp, &npg)) == NULL)
+		return (NULL);
+	r->pgno = npg;
+	r->lower = BTDATAOFF;
+	r->upper = t->bt_psize;
+	r->nextpg = h->nextpg;
+	r->prevpg = h->pgno;
+	r->flags = h->flags & P_TYPE;
+
+	/*
+	 * If we're splitting the last page on a level because we're appending
+	 * a key to it (skip is NEXTINDEX()), it's likely that the data is
+	 * sorted.  Adding an empty page on the side of the level is less work
+	 * and can push the fill factor much higher than normal.  If we're
+	 * wrong it's no big deal, we'll just do the split the right way next
+	 * time.  It may look like it's equally easy to do a similar hack for
+	 * reverse sorted data, that is, split the tree left, but it's not.
+	 * Don't even try.
+	 */
+	if (h->nextpg == P_INVALID && *skip == NEXTINDEX(h)) {
+#ifdef STATISTICS
+		++bt_sortsplit;
+#endif
+		h->nextpg = r->pgno;
+		r->lower = BTDATAOFF + sizeof(index_t);
+		*skip = 0;
+		*lp = h;
+		*rp = r;
+		return (r);
 	}
-	if (idx->i_pgno == prev)
-		return (RET_SUCCESS);
-	else
-		return (RET_ERROR);
+
+	/* Put the new left page for the split into place. */
+	if ((l = malloc(t->bt_psize)) == NULL) {
+		mpool_put(t->bt_mp, r, 0);
+		return (NULL);
+	}
+	l->pgno = h->pgno;
+	l->nextpg = r->pgno;
+	l->prevpg = h->prevpg;
+	l->lower = BTDATAOFF;
+	l->upper = t->bt_psize;
+	l->flags = h->flags & P_TYPE;
+
+	/* Fix up the previous pointer of the page after the split page. */
+	if (h->nextpg != P_INVALID) {
+		if ((tp = mpool_get(t->bt_mp, h->nextpg, 0)) == NULL) {
+			free(l);
+			/* XXX mpool_free(t->bt_mp, r->pgno); */
+			return (NULL);
+		}
+		tp->prevpg = r->pgno;
+		mpool_put(t->bt_mp, tp, 0);
+	}
+
+	/*
+	 * Split right.  The key/data pairs aren't sorted in the btree page so
+	 * it's simpler to copy the data from the split page onto two new pages
+	 * instead of copying half the data to the right page and compacting
+	 * the left page in place.  Since the left page can't change, we have
+	 * to swap the original and the allocated left page after the split.
+	 */
+	tp = bt_psplit(t, h, l, r, skip);
+
+	/* Move the new left page onto the old left page. */
+	bcopy(l, h, t->bt_psize);
+	if (tp == l)
+		tp = h;
+	free(l);
+
+	*lp = h;
+	*rp = r;
+	return (tp);
 }
 
 /*
- *  _BT_SPLITROOT -- Split the root of a btree.
+ * BT_RSPLIT -- Split the root page of a btree.
  *
- *	The root page for a btree is always page one.  This means that in
- *	order to split the root, we need to do extra work.
+ * Parameters:
+ *	t:	tree
+ *	h:	root page
+ *	lp:	pointer to left page pointer
+ *	rp:	pointer to right page pointer
+ *	skip:	pointer to index to leave open
  *
- *	Parameters:
- *		t -- tree to split
- *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR.
- *
- *	Side Effects:
- *		Splits root upward in the usual way, adding two new pages
- *		to the tree (rather than just one, as in usual splits).
+ * Returns:
+ *	Pointer to page in which to insert or NULL on error.
  */
-
-int
-_bt_splitroot(t)
-	BTREE_P t;
+static PAGE *
+bt_root(t, h, lp, rp, skip)
+	BTREE *t;
+	PAGE *h, **lp, **rp;
+	int *skip;
 {
-	BTHEADER *h = t->bt_curpage;
-	BTHEADER *left, *right;
-	IDATUM *id;
-	BTHEADER *where_h;
-	char *src, *dest;
-	int len, nbytes;
-	u_long was_leaf;
-	pgno_t oldchain;
-	u_char flags;
+	PAGE *l, *r, *tp;
+	pgno_t lnpg, rnpg;
 
-	/* get two new pages for the split */
-	if ((left = _bt_allocpg(t)) == (BTHEADER *) NULL)
-		return (RET_ERROR);
-	left->h_pgno = ++(t->bt_npages);
-	if ((right = _bt_allocpg(t)) == (BTHEADER *) NULL)
-		return (RET_ERROR);
-	right->h_pgno = ++(t->bt_npages);
+#ifdef STATISTICS
+	++bt_split;
+	++bt_rootsplit;
+#endif
+	/* Put the new left and right pages for the split into place. */
+	if ((l = mpool_new(t->bt_mp, &lnpg)) == NULL ||
+	    (r = mpool_new(t->bt_mp, &rnpg)) == NULL)
+		return (NULL);
+	l->pgno = lnpg;
+	r->pgno = rnpg;
+	l->nextpg = r->pgno;
+	r->prevpg = l->pgno;
+	l->prevpg = r->nextpg = P_INVALID;
+	l->lower = r->lower = BTDATAOFF;
+	l->upper = r->upper = t->bt_psize;
+	l->flags = r->flags = h->flags & P_TYPE;
 
-	/* do the split */
-	if (_bt_dopsplit(t, left, right) == RET_ERROR)
-		return (RET_ERROR);
+	/* Split the root page. */
+	tp = bt_psplit(t, h, l, r, skip);
 
-	/* connect the new pages correctly */
-	right->h_prevpg = left->h_pgno;
-	left->h_nextpg = right->h_pgno;
+	/* Make the root page look right. */
+	if ((ISSET(t, BTF_RECNO) ?
+	    bt_rroot(t, h, l, r) : bt_broot(t, h, l, r)) == RET_ERROR)
+		return (NULL);
+
+	*lp = l;
+	*rp = r;
+	return (tp);
+}
+
+/*
+ * BT_RROOT -- Fix up the recno root page after the split.
+ *
+ * Parameters:
+ *	t:	tree
+ *	h:	root page
+ *
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS
+ */
+static int
+bt_rroot(t, h, l, r)
+	BTREE *t;
+	PAGE *h, *l, *r;
+{
+	char *dest;
+
+	/* Insert the left and right keys, set the header information. */
+	h->linp[0] = h->upper = t->bt_psize - NRINTERNAL;
+	dest = (char *)h + h->upper;
+	WR_RINTERNAL(dest,
+	    l->flags & P_RLEAF ? NEXTINDEX(l) : rec_total(l), l->pgno);
+
+	h->linp[1] = h->upper -= NRINTERNAL;
+	dest = (char *)h + h->upper;
+	WR_RINTERNAL(dest,
+	    r->flags & P_RLEAF ? NEXTINDEX(r) : rec_total(r), r->pgno);
+
+	h->lower = BTDATAOFF + 2 * sizeof(index_t);
+
+	/* Unpin the root page, set to recno internal page. */
+	h->flags &= ~P_TYPE;
+	h->flags |= P_RINTERNAL;
+	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+
+	return (RET_SUCCESS);
+}
+
+/*
+ * BT_BROOT -- Fix up the btree root page after the split.
+ *
+ * Parameters:
+ *	t:	tree
+ *	h:	root page
+ *
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS
+ */
+static int
+bt_broot(t, h, l, r)
+	BTREE *t;
+	PAGE *h, *l, *r;
+{
+	BINTERNAL *bi;
+	BLEAF *bl;
+	size_t nbytes;
+	char *dest;
 
 	/*
-	 *  Write the child pages out now.  We need them to remain
-	 *  where they are until we finish updating parent pages,
-	 *  however.
+	 * If the root page was a leaf page, change it into an internal page.
+	 * We copy the key we split on (but not the key's data, in the case of
+	 * a leaf page) to the new root page.  If the key is on an overflow
+	 * page, mark the overflow chain so it isn't deleted when the leaf copy
+	 * of the key is deleted.
+	 *
+	 * The btree comparison code guarantees that the left-most key on any
+	 * level of the tree is never used, so it doesn't need to be filled
+	 * in.  (This is not just convenience -- if the insert index is 0, we
+	 * don't *have* a key to fill in.)  The right key is available because
+	 * the split code guarantees not to split on the skipped index.
 	 */
+	nbytes = LALIGN(sizeof(size_t) + sizeof(pgno_t) + sizeof(u_char));
+	h->linp[0] = h->upper = t->bt_psize - nbytes;
+	dest = (char *)h + h->upper;
+	WR_BINTERNAL(dest, 0, l->pgno, 0);
 
-	if (_bt_write(t, left, NORELEASE) == RET_ERROR)
-		return (RET_ERROR);
-	if (_bt_write(t, right, NORELEASE) == RET_ERROR)
-		return (RET_ERROR);
+	switch(h->flags & P_TYPE) {
+	case P_BLEAF:
+		bl = GETBLEAF(r, 0);
+		nbytes = NBINTERNAL(bl->ksize);
+		h->linp[1] = h->upper -= nbytes;
+		dest = (char *)h + h->upper;
+		WR_BINTERNAL(dest, bl->ksize, r->pgno, 0);
+		bcopy(bl->bytes, dest, bl->ksize);
 
-	/* now change the root page into an internal page */
-	was_leaf = (h->h_flags & F_LEAF);
-	h->h_flags &= ~F_LEAF;
-	h->h_lower = (index_t) (((char *) (&(h->h_linp[0]))) - ((char *) h));
-	h->h_upper = (index_t) t->bt_psize;
-	(void) bzero((char *) &(h->h_linp[0]), (int) (h->h_upper - h->h_lower));
+		if (bl->flags & P_BIGKEY &&
+		    bt_preserve(t, *(pgno_t *)bl->bytes) == RET_ERROR)
+			return (RET_ERROR);
+		break;
+	case P_BINTERNAL:
+		bi = GETBINTERNAL(r, 0);
+		nbytes = NBINTERNAL(bi->ksize);
+		h->linp[1] = h->upper -= nbytes;
+		dest = (char *)h + h->upper;
+		bcopy(bi, dest, nbytes);
+		((BINTERNAL *)dest)->pgno = r->pgno;
+		break;
+	}
+	h->lower = BTDATAOFF + 2 * sizeof(index_t);
 
-	/* put two new keys on root page */
-	where_h = left;
-	while (where_h) {
-		DATUM *data;
-		IDATUM *idata;
+	/* Unpin the root page, set to btree internal page. */
+	h->flags &= ~P_TYPE;
+	h->flags |= P_BINTERNAL;
+	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 
-		if (was_leaf) {
-			data = (DATUM *) GETDATUM(where_h, 0);
+	return (RET_SUCCESS);
+}
 
-			if (where_h == left) {
-				len = 0;	/* first key in tree is null */
-			} else {
-				if (data->d_flags & D_BIGKEY) {
-					bcopy(&(data->d_bytes[0]),
-					      (char *) &oldchain,
-					      sizeof(oldchain));
-					if (_bt_markchain(t, oldchain) == RET_ERROR)
-						return (RET_ERROR);
-					src = (char *) &oldchain;
-					flags = D_BIGKEY;
-				} else {
-					src = (char *) &(data->d_bytes[0]);
-					flags = 0;
-				}
-				len = data->d_ksize;
-			}
-		} else {
-			idata = (IDATUM *) GETDATUM(where_h, 0);
-			len = idata->i_size;
-			flags = idata->i_flags;
-			src = &(idata->i_bytes[0]);
+/*
+ * BT_PSPLIT -- Do the real work of splitting the page.
+ *
+ * Parameters:
+ *	t:	tree
+ *	h:	page to be split
+ *	l:	page to put lower half of data
+ *	r:	page to put upper half of data
+ *	skip:	pointer to index to leave open
+ *
+ * Returns:
+ *	Pointer to page in which to insert.
+ */
+static PAGE *
+bt_psplit(t, h, l, r, skip)
+	BTREE *t;
+	PAGE *h, *l, *r;
+	int *skip;
+{
+	BINTERNAL *bi;
+	BLEAF *bl;
+	RLEAF *rl;
+	EPGNO *c;
+	PAGE *rval;
+	index_t half, sval;
+	size_t nbytes;
+	void *src;
+	int bigkeycnt, isbigkey, nxt, off, top;
+
+	/*
+	 * Split the data to the left and right pages. Leave the skip index
+	 * open and guarantee that the split doesn't happen on that index (the
+	 * right key must be available for the parent page).  Additionally,
+	 * make some effort not to split on an overflow key.  This makes it
+	 * faster to process internal pages and can save space since overflow
+	 * keys used by internal pages are never deleted.
+	 */
+	bigkeycnt = 0;
+	sval = *skip;
+	half = (t->bt_psize - BTDATAOFF) / 2;
+	for (nxt = off = 0, top = NEXTINDEX(h); nxt < top; ++off) {
+		if (sval == off)
+			continue;
+		switch (h->flags & P_TYPE) {
+		case P_BINTERNAL:
+			src = bi = GETBINTERNAL(h, nxt);
+			nbytes = NBINTERNAL(bi->ksize);
+			isbigkey = bi->flags & P_BIGKEY;
+			break;
+		case P_BLEAF:
+			src = bl = GETBLEAF(h, nxt);
+			nbytes = NBLEAF(bl);
+			isbigkey = bl->flags & P_BIGKEY;
+			break;
+		case P_RINTERNAL:
+			src = GETRINTERNAL(h, nxt);
+			nbytes = NRINTERNAL;
+			isbigkey = 0;
+			break;
+		case P_RLEAF:
+			src = rl = GETRLEAF(h, nxt);
+			nbytes = NRLEAF(rl);
+			isbigkey = 0;
+			break;
 		}
-		dest = ((char *) h) + h->h_upper;
-		nbytes = len + (sizeof (IDATUM) - sizeof(char));
-		dest -= LONGALIGN(nbytes);
-		id = (IDATUM *) dest;
-		id->i_size = len;
-		id->i_pgno = where_h->h_pgno;
-		id->i_flags = flags;
-		if (len > 0)
-			(void) bcopy((char *) src, (char *) &(id->i_bytes[0]), len);
-		dest -= ((int) h);
-		h->h_linp[NEXTINDEX(h)] = (index_t) dest;
-		h->h_upper = (index_t) dest;
-		h->h_lower += sizeof(index_t);
+		++nxt;
+		l->linp[off] = l->upper -= nbytes;
+		bcopy(src, (char *)l + l->upper, nbytes);
 
-		/* next page */
-		if (where_h == left)
-			where_h = right;
+		/* There's no empirical justification for the '3'. */
+		if (half < nbytes)
+			if (!isbigkey || bigkeycnt == 3)
+				break;
+			else
+				++bigkeycnt;
 		else
-			where_h = (BTHEADER *) NULL;
+			half -= nbytes;
 	}
-
-	if (_bt_release(t, left) == RET_ERROR)
-		return (RET_ERROR);
-	if (_bt_release(t, right) == RET_ERROR)
-		return (RET_ERROR);
+	l->lower += (off + 1) * sizeof(index_t);
 
 	/*
-	 *  That's it, split is done.  If we're doing a non-cached disk
-	 *  btree, we can free up the pages we allocated, as they're on
-	 *  disk, now.
+	 * If we're splitting the page that the cursor was on, have to adjust
+	 * the cursor to point to the same record as before the split.
 	 */
+	c = &t->bt_bcursor;
+	if (c->pgno == h->pgno)
+		if (c->index < off)
+			c->pgno = l->pgno;
+		else {
+			c->pgno = r->pgno;
+			c->index -= off;
+		}
 
-	if (ISDISK(t) && !ISCACHE(t)) {
-		(void) free ((char *) left);
-		(void) free ((char *) right);
+	/*
+	 * Decide which page to return, and adjust the skip index if the
+	 * to-be-inserted-upon page has changed.
+	 */
+	if (sval > off) {
+		rval = r;
+		*skip -= off + 1;
+	} else
+		rval = l;
+
+	for (off = 0; nxt < top; ++off) {
+		if (sval == nxt) {
+			sval = 0;
+			continue;
+		}
+		switch (h->flags & P_TYPE) {
+		case P_BINTERNAL:
+			src = bi = GETBINTERNAL(h, nxt);
+			nbytes = NBINTERNAL(bi->ksize);
+			break;
+		case P_BLEAF:
+			src = bl = GETBLEAF(h, nxt);
+			nbytes = NBLEAF(bl);
+			break;
+		case P_RINTERNAL:
+			src = GETRINTERNAL(h, nxt);
+			nbytes = NRINTERNAL;
+			break;
+		case P_RLEAF:
+			src = rl = GETRLEAF(h, nxt);
+			nbytes = NRLEAF(rl);
+			break;
+		}
+		++nxt;
+		r->linp[off] = r->upper -= nbytes;
+		bcopy(src, (char *)r + r->upper, nbytes);
 	}
+	r->lower += off * sizeof(index_t);
 
-	h->h_flags |= F_DIRTY;
+	/* If the key is being appended to the page, adjust the index. */
+	if (sval == top)
+		r->lower += sizeof(index_t);
 
+	return (rval);
+}
+
+/*
+ * BT_PRESERVE -- Mark a chain of pages as used by an internal node.
+ *
+ * Chains of indirect blocks pointed to by leaf nodes get reclaimed when the
+ * record that references them gets deleted.  Chains pointed to by internal
+ * pages never get deleted.  This routine marks a chain as pointed to by an
+ * internal page.
+ *
+ * Parameters:
+ *	t:	tree
+ *	pg:	page number of first page in the chain.
+ *
+ * Returns:
+ *	RET_SUCCESS, RET_ERROR.
+ */
+static int
+bt_preserve(t, pg)
+	BTREE *t;
+	pgno_t pg;
+{
+	PAGE *h;
+
+	if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
+		return (RET_ERROR);
+	h->flags |= P_PRESERVE;
+	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
 	return (RET_SUCCESS);
 }
 
 /*
- *  _BT_DOPSPLIT -- Do the work of splitting a page
+ * REC_TOTAL -- Return the number of recno entries below a page.
  *
- *	This routine takes two page pointers and splits the data on the
- *	current page of the btree between them.
+ * Parameters:
+ *	h:	page
  *
- *	We do a lot of work here to handle duplicate keys on a page; we
- *	have to place these keys carefully to guarantee that later searches
- *	will find them correctly.  See comments in the code below for details.
+ * Returns:
+ *	The number of recno entries below a page.
  *
- *	Parameters:
- *		t -- tree to split
- *		left -- pointer to page to get left half of the data
- *		right -- pointer to page to get right half of the data
- *
- *	Returns:
- *		None.
+ * XXX
+ * These values could be set by the bt_psplit routine.  The problem is that the
+ * entry has to be popped off of the stack etc. or the values have to be passed
+ * all the way back to bt_split/bt_rroot and it's not very clean.
  */
-
-int
-_bt_dopsplit(t, left, right)
-	BTREE_P t;
-	BTHEADER *left;
-	BTHEADER *right;
+static recno_t
+rec_total(h)
+	PAGE *h;
 {
-	BTHEADER *h = t->bt_curpage;
-	size_t psize;
-	char *where;
-	BTHEADER *where_h;
-	index_t where_i;
-	int nbytes, dsize, fixedsize, freespc;
-	index_t i;
-	index_t save_lower, save_upper, save_i;
-	index_t switch_i;
-	char *save_key;
-	DATUM *d;
-	CURSOR *c;
-	index_t top;
-	int free_save;
-	pgno_t chain;
-	int ignore;
+	recno_t recs;
+	index_t nxt, top;
 
-	/*
-	 *  Our strategy is to put half the bytes on each page.  We figure
-	 *  out how many bytes we have total, and then move items until
-	 *  the last item moved put at least 50% of the data on the left
-	 *  page.
-	 */
-	save_key = (char *) NULL;
-	psize = (int) t->bt_psize;
-	where = ((char *) left) + psize;
-	where_h = left;
-	where_i = 0;
-	nbytes = psize - (int) ((char *) &(h->h_linp[0]) - ((char *) h));
-	freespc = nbytes;
-
-	top = NEXTINDEX(h);
-	if (h->h_flags & F_LEAF)
-		fixedsize = (sizeof(DATUM) - sizeof(char));
-	else
-		fixedsize = (sizeof(IDATUM) - sizeof(char));
-
-	save_key = (char *) NULL;
-
-	/* move data */
-	for (i = 0; i < top; i++) {
-
-		/*
-		 *  Internal and leaf pages have different layouts for
-		 *  data items, but in both cases the first entry in the
-		 *  data item is a size_t.
-		 */
-		d = (DATUM *) GETDATUM(h,i);
-		if (h->h_flags & F_LEAF) {
-			dsize = d->d_ksize + d->d_dsize + fixedsize;
-		} else {
-			dsize = d->d_ksize + fixedsize;
-		}
-
-		/*
-		 *  If a page contains duplicate keys, we have to be
-		 *  careful about splits.  A sequence of duplicate keys
-		 *  may not begin in the middle of one page and end in
-		 *  the middle of another; it must begin on a page boundary,
-		 *  in order for searches on the internal nodes to work
-		 *  correctly.
-		 */
-		if (where_h == left) {
-			if (save_key == (char *) NULL) {
-				if (h->h_flags & F_LEAF) {
-					if (d->d_flags & D_BIGKEY) {
-						free_save = TRUE;
-						bcopy(&(d->d_bytes[0]),
-						     (char *) &chain,
-						     sizeof(chain));
-						if (_bt_getbig(t, chain,
-							       &save_key,
-							       &ignore)
-						    == RET_ERROR)
-							return (RET_ERROR);
-					} else {
-						free_save = FALSE;
-						save_key = (char *) &(d->d_bytes[0]);
-					}
-				} else {
-					IDATUM *id = (IDATUM *) d;
-
-					if (id->i_flags & D_BIGKEY) {
-						free_save = TRUE;
-						bcopy(&(id->i_bytes[0]),
-						     (char *) &chain,
-						     sizeof(chain));
-						if (_bt_getbig(t, chain,
-							       &save_key,
-							       &ignore)
-						    == RET_ERROR)
-							return (RET_ERROR);
-					} else {
-						free_save = FALSE;
-						save_key = (char *)
-							&(id->i_bytes[0]);
-					}
-				}
-				save_i = 0;
-				save_lower = where_h->h_lower;
-				save_upper = where_h->h_upper;
-			} else {
-				if (_bt_cmp(t, save_key, i) != 0) {
-					save_lower = where_h->h_lower;
-					save_upper = where_h->h_upper;
-					save_i = i;
-				}
-				if (h->h_flags & F_LEAF) {
-					if (free_save)
-						(void) free(save_key);
-					if (d->d_flags & D_BIGKEY) {
-						free_save = TRUE;
-						bcopy(&(d->d_bytes[0]),
-						     (char *) &chain,
-						     sizeof(chain));
-						if (_bt_getbig(t, chain,
-							       &save_key,
-							       &ignore)
-						    == RET_ERROR)
-							return (RET_ERROR);
-					} else {
-						free_save = FALSE;
-						save_key = (char *) &(d->d_bytes[0]);
-					}
-				} else {
-					IDATUM *id = (IDATUM *) d;
-
-					if (id->i_flags & D_BIGKEY) {
-						free_save = TRUE;
-						bcopy(&(id->i_bytes[0]),
-						     (char *) &chain,
-						     sizeof(chain));
-						if (_bt_getbig(t, chain,
-							       &save_key,
-							       &ignore)
-						    == RET_ERROR)
-							return (RET_ERROR);
-					} else {
-						free_save = FALSE;
-						save_key = (char *)
-							&(id->i_bytes[0]);
-					}
-				}
-			}
-		}
-
-		/* copy data and update page state */
-		where -= LONGALIGN(dsize);
-		(void) bcopy((char *) d, (char *) where, dsize);
-		where_h->h_upper = where_h->h_linp[where_i] =
-			(index_t) (where - (int) where_h);
-		where_h->h_lower += sizeof(index_t);
-		where_i++;
-
-		/* if we've moved half, switch to the right-hand page */
-		nbytes -= LONGALIGN(dsize) + sizeof(index_t);
-		if ((freespc - nbytes) > nbytes) {
-			nbytes = 2 * freespc;
-
-			/* identical keys go on the same page */
-			if (save_i > 0) {
-				/* i gets incremented at loop bottom... */
-				i = save_i - 1;
-				where_h->h_lower = save_lower;
-				where_h->h_upper = save_upper;
-			}
-			where = ((char *) right) + psize;
-			where_h = right;
-			switch_i = where_i;
-			where_i = 0;
-		}
-	}
-
-	/*
-	 *  If there was an active scan on the database, and we just
-	 *  split the page that the cursor was on, we may need to
-	 *  adjust the cursor to point to the same entry as before the
-	 *  split.
-	 */
-
-	c = &(t->bt_cursor);
-	if ((t->bt_flags & BTF_SEQINIT)
-	    && (c->c_pgno == h->h_pgno)
-	    && (c->c_index >= switch_i)) {
-		c->c_pgno = where_h->h_pgno;
-		c->c_index -= where_i;
-	}
-	return (RET_SUCCESS);
+	for (recs = 0, nxt = 0, top = NEXTINDEX(h); nxt < top; ++nxt)
+		recs += GETRINTERNAL(h, nxt)->nrecs;
+	return (recs);
 }

@@ -9,284 +9,323 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)bt_seq.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)bt_seq.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <errno.h>
 #include <db.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include "btree.h"
 
+static int	 bt_seqadv __P((BTREE *, EPG *, int));
+static int	 bt_seqset __P((BTREE *, EPG *, DBT *, int));
+
 /*
- *  _BT_SEQINIT -- Initialize a sequential scan on the btree.
+ * Sequential scan support.
  *
- *	Sets the tree's notion of the current scan location correctly
- *	given a key and a direction.
+ * The tree can be scanned sequentially, starting from either end of the tree
+ * or from any specific key.  A scan request before any scanning is done is
+ * initialized as starting from the least node.
  *
- *	Parameters:
- *		t -- tree in which to initialize scan
- *		key -- key for initial scan position
- *		flags -- R_NEXT, R_PREV
- *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR, or RET_SPECIAL if there's no data
- *		in the tree to scan.
- *
- *	Side Effects:
- *		Changes current scan position for the tree.  Almost certainly
- *		changes current page, as well.  Sets BTF_SEQINIT bit in tree
- *		flags, so that we know we've initialized a scan.
+ * Each tree has an EPGNO which has the current position of the cursor.  The
+ * cursor has to survive deletions/insertions in the tree without losing its
+ * position.  This is done by noting deletions without doing them, and then
+ * doing them when the cursor moves (or the tree is closed).
  */
 
+/*
+ * __BT_SEQ -- Btree sequential scan interface.
+ *
+ * Parameters:
+ *	dbp:	pointer to access method
+ *	key:	key for positioning and return value
+ *	data:	data return value
+ *	flags:	R_CURSOR, R_FIRST, R_LAST, R_NEXT, R_PREV.
+ *
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS or RET_SPECIAL if there's no next key.
+ */
 int
-_bt_seqinit(t, key, flags)
-	BTREE_P t;
-	DBT *key;
-	int flags;
+__bt_seq(dbp, key, data, flags)
+	const DB *dbp;
+	DBT *key, *data;
+	u_int flags;
 {
-	BTITEM *item;
-	BTHEADER *h;
-	CURSOR *c;
-	IDATUM *id;
-	index_t last;
+	BTREE *t;
+	EPG e;
+	int status;
 
 	/*
-	 *  Figure out if we really have to search for the key that the
-	 *  user supplied.  If key is null, then this is an unkeyed scan
-	 *  and we can just start from an endpoint.
+	 * If scan unitialized as yet, or starting at a specific record, set
+	 * the scan to a specific key.  Both bt_seqset and bt_seqadv pin the
+	 * page the cursor references if they're successful.
 	 */
-
-	c = &(t->bt_cursor);
-
-	if (flags == R_CURSOR) {
-		if (key->data != (u_char *) NULL) {
-
-			/* key supplied, find first instance of it */
-			item = _bt_first(t, key);
-			c->c_index = item->bti_index;
-			c->c_pgno = t->bt_curpage->h_pgno;
-		} else {
-			errno = EINVAL;
-			return (RET_ERROR);
+	t = dbp->internal;
+	switch(flags) {
+	case R_NEXT:
+		if (ISSET(t, BTF_SEQINIT)) {
+			status = bt_seqadv(t, &e, flags);
+			break;
 		}
-
-	} else {
-
-		/*
-		 *  Unkeyed scan.  For backward scans, find the last item
-		 *  in the tree; for forward scans, find the first item.
-		 */
-
-		if (_bt_getpage(t, (pgno_t) P_ROOT) == RET_ERROR)
-			return (RET_ERROR);
-		h = t->bt_curpage;
-		if (flags == R_LAST || flags == R_PREV) {
-
-			/* backward scan */
-			while (!(h->h_flags & F_LEAF)) {
-				last = NEXTINDEX(h) - 1;
-				id = (IDATUM *) GETDATUM(h,last);
-				if (_bt_getpage(t, id->i_pgno) == RET_ERROR)
-					return (RET_ERROR);
-				h = t->bt_curpage;
-			}
-
-			/* skip empty pages */
-			while (NEXTINDEX(h) == 0 && h->h_prevpg != P_NONE) {
-				if (_bt_getpage(t, h->h_prevpg) == RET_ERROR)
-					return (RET_ERROR);
-				h = t->bt_curpage;
-			}
-
-			c->c_pgno = h->h_pgno;
-			if (NEXTINDEX(h) > 0)
-				c->c_index = NEXTINDEX(h) - 1;
-			else
-				c->c_index = 0;
-		} else if (flags == R_FIRST || flags == R_NEXT) {
-			/* forward scan */
-			while (!(h->h_flags & F_LEAF)) {
-				id = (IDATUM *) GETDATUM(h,0);
-				if (_bt_getpage(t, id->i_pgno) == RET_ERROR)
-					return (RET_ERROR);
-				h = t->bt_curpage;
-			}
-
-			/* skip empty pages */
-			while (NEXTINDEX(h) == 0 && h->h_nextpg != P_NONE) {
-				if (_bt_getpage(t, h->h_nextpg) == RET_ERROR)
-					return (RET_ERROR);
-				h = t->bt_curpage;
-			}
-
-			c->c_pgno = h->h_pgno;
-			c->c_index = 0;
-		} else {
-			/* no flags passed in */
-			errno = EINVAL;
-			return (RET_ERROR);
+		/* FALLTHROUGH */
+	case R_CURSOR:
+	case R_FIRST:
+		status = bt_seqset(t, &e, key, flags);
+		SET(t, BTF_SEQINIT);
+		break;
+	case R_PREV:
+		if (ISSET(t, BTF_SEQINIT)) {
+			status = bt_seqadv(t, &e, flags);
+			break;
 		}
-	}
-
-	/* okay, scan is initialized */
-	t->bt_flags |= BTF_SEQINIT;
-
-	/* don't need the descent stack anymore */
-	while (_bt_pop(t) != P_NONE)
-		continue;
-
-	if (c->c_index == NEXTINDEX(t->bt_curpage))
-		return (RET_SPECIAL);
-
-	return (RET_SUCCESS);
-}
-
-/*
- *  _BT_SEQADVANCE -- Advance the sequential scan on this tree.
- *
- *	Moves the current location pointer for the scan on this tree one
- *	spot in the requested direction.
- *
- *	Parameters:
- *		t -- btree being scanned
- *		flags -- for R_NEXT, R_PREV
- *
- *	Returns:
- *		RET_SUCCESS, RET_ERROR, or RET_SPECIAL if there is no
- *		more data in the specified direction.
- *
- *	Side Effects:
- *		May change current page.
- */
-
-int
-_bt_seqadvance(t, flags)
-	BTREE_P t;
-	int flags;
-{
-	BTHEADER *h;
-	CURSOR *c;
-	index_t index;
-
-	c = &(t->bt_cursor);
-	index = c->c_index;
-
-	if (_bt_getpage(t, c->c_pgno) == RET_ERROR)
-		return (RET_ERROR);
-	h = t->bt_curpage;
-
-	/* by the time we get here, don't need the cursor key anymore */
-	if (c->c_key != (char *) NULL)
-		(void) free(c->c_key);
-
-	if (flags == R_NEXT) {
-
-		/*
-		 *  This is a forward scan.  If the cursor is pointing
-		 *  at a virtual record (that is, it was pointing at
-		 *  a record that got deleted), then we should return
-		 *  the record it's pointing at now.  Otherwise, we
-		 *  should advance the scan.  In either case, we need
-		 *  to be careful not to run off the end of the current
-		 *  page.
-		 */
-
-		if (c->c_flags & CRSR_BEFORE) {
-
-			if (index >= NEXTINDEX(h)) {
-				/* out of items on this page, get next page */
-				if (h->h_nextpg == P_NONE) {
-					/* tell caller we're done... */
-					c->c_index = NEXTINDEX(h);
-					return (RET_SPECIAL);
-				}
-
-				/* skip empty pages */
-				do {
-					if (_bt_getpage(t, h->h_nextpg)
-					    == RET_ERROR) {
-						c->c_index = NEXTINDEX(h);
-						return (RET_ERROR);
-					}
-					h = t->bt_curpage;
-					c->c_pgno = h->h_pgno;
-				} while (NEXTINDEX(h) == 0
-					 && h->h_nextpg != P_NONE);
-
-				if (NEXTINDEX(h) == 0) {
-					/* tell caller we're done */
-					c->c_index = NEXTINDEX(h);
-					return (RET_SPECIAL);
-				}
-				index = 0;
-			}
-			c->c_flags &= ~CRSR_BEFORE;
-
-		} else if (++index >= NEXTINDEX(h)) {
-
-			/* out of items on this page, get next page */
-			if (h->h_nextpg == P_NONE) {
-				/* tell caller we're done... */
-				c->c_index = NEXTINDEX(h);
-				return (RET_SPECIAL);
-			}
-
-			/* skip empty pages */
-			do {
-				if (_bt_getpage(t, h->h_nextpg) == RET_ERROR) {
-					c->c_index = NEXTINDEX(h);
-					return (RET_ERROR);
-				}
-				h = t->bt_curpage;
-				c->c_pgno = h->h_pgno;
-			} while (NEXTINDEX(h) == 0 && h->h_nextpg != P_NONE);
-
-			if (NEXTINDEX(h) == 0) {
-				/* tell caller we're done */
-				c->c_index = NEXTINDEX(h);
-				return (RET_SPECIAL);
-			}
-			index = 0;
-		}
-	} else if (flags == R_PREV) {
-
-		/* for backward scans, life is substantially easier */
-		c->c_flags &= ~CRSR_BEFORE;
-		if (c->c_key != (char *) NULL) {
-			(void) free(c->c_key);
-			c->c_key = (char *) NULL;
-		}
-
-		if (index == 0) {
-
-			/* we may be done */
-			c->c_index = 0;
-
-			/* out of items on this page, get next page */
-			if (h->h_prevpg == P_NONE)
-				return (RET_SPECIAL);
-
-			/* skip empty pages */
-			do {
-				if (_bt_getpage(t, h->h_prevpg) == RET_ERROR)
-					return (RET_ERROR);
-				h = t->bt_curpage;
-				c->c_pgno = h->h_pgno;
-			} while (NEXTINDEX(h) == 0 && h->h_prevpg != P_NONE);
-
-			if (NEXTINDEX(h) == 0)
-				return (RET_SPECIAL);
-
-			index = NEXTINDEX(h) - 1;
-		} else
-			--index;
-	} else {
-		/* must specify a direction */
+		/* FALLTHROUGH */
+	case R_LAST:
+		status = bt_seqset(t, &e, key, flags);
+		SET(t, BTF_SEQINIT);
+		break;
+	default:
 		errno = EINVAL;
 		return (RET_ERROR);
 	}
 
-	c->c_index = index;
+	if (status == RET_SUCCESS) {
+		status = __bt_ret(t, &e, key, data);
+
+		/* Update the actual cursor. */
+		if (status == RET_SUCCESS) {
+			t->bt_bcursor.pgno = e.page->pgno;
+			t->bt_bcursor.index = e.index;
+		}
+		mpool_put(t->bt_mp, e.page, 0);
+	}
+	return (status);
+}
+
+/*
+ * BT_SEQSET -- Set the sequential scan to a specific key.
+ *
+ * Parameters:
+ *	t:	tree
+ *	ep:	storage for returned key
+ *	key:	key for initial scan position
+ *	flags:	R_CURSOR, R_FIRST, R_LAST, R_NEXT, R_PREV
+ *
+ * Side effects:
+ *	Pins the page the cursor references.
+ *
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS or RET_SPECIAL if there's no next key.
+ */
+static int
+bt_seqset(t, ep, key, flags)
+	BTREE *t;
+	EPG *ep;
+	DBT *key;
+	int flags;
+{
+	EPG *e;
+	PAGE *h;
+	pgno_t pg;
+	int exact;
+
+	/*
+	 * Delete any already deleted record that we've been saving because
+	 * the cursor pointed to it.  Since going to a specific key, should
+	 * delete any logically deleted records so they aren't found.
+	 */
+	if (ISSET(t, BTF_DELCRSR) && __bt_crsrdel(t, &t->bt_bcursor))
+		return (RET_ERROR);
+
+	/*
+	 * If R_CURSOR set, find the first instance of the key in the tree and
+	 * point the cursor at it.  Otherwise, find the first or the last record
+	 * in the tree and point the cursor at it.  The cursor may not be moved
+	 * until a new key has been found.
+	 */
+	switch(flags) {
+	case R_CURSOR:				/* Keyed scan. */
+		if (key->data == NULL || key->size == 0) {
+			errno = EINVAL;
+			return (RET_ERROR);
+		}
+		e = __bt_first(t, key, &exact);	/* Returns pinned page. */
+		if (e == NULL)
+			return (RET_ERROR);
+		if (!exact) {
+			mpool_put(t->bt_mp, e->page, 0);
+			return (RET_SPECIAL);
+		}
+		*ep = *e;
+		break;
+	case R_FIRST:				/* First record. */
+	case R_NEXT:
+		/* Walk down the left-hand side of the tree. */
+		for (pg = P_ROOT;;) {
+			if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
+				return (RET_ERROR);
+			if (h->flags & (P_BLEAF|P_RLEAF))
+				break;
+			pg = GETBINTERNAL(h, 0)->pgno;
+			mpool_put(t->bt_mp, h, 0);
+		}
+
+		/* Skip any empty pages. */
+		while (NEXTINDEX(h) == 0 && h->nextpg != P_INVALID) {
+			pg = h->nextpg;
+			mpool_put(t->bt_mp, h, 0);
+			if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
+				return (RET_ERROR);
+		}
+
+		if (NEXTINDEX(h) == 0) {
+			mpool_put(t->bt_mp, h, 0);
+			return (RET_SPECIAL);
+		}
+
+		ep->page = h;
+		ep->index = 0;
+		break;
+	case R_LAST:				/* Last record. */
+	case R_PREV:
+		/* Walk down the right-hand side of the tree. */
+		for (pg = P_ROOT;;) {
+			if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
+				return (RET_ERROR);
+			if (h->flags & (P_BLEAF|P_RLEAF))
+				break;
+			pg = GETBINTERNAL(h, NEXTINDEX(h) - 1)->pgno;
+			mpool_put(t->bt_mp, h, 0);
+		}
+
+		/* Skip any empty pages. */
+		while (NEXTINDEX(h) == 0 && h->prevpg != P_INVALID) {
+			pg = h->prevpg;
+			mpool_put(t->bt_mp, h, 0);
+			if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
+				return (RET_ERROR);
+		}
+
+		if (NEXTINDEX(h) == 0) {
+			mpool_put(t->bt_mp, h, 0);
+			return (RET_SPECIAL);
+		}
+
+		ep->page = h;
+		ep->index = NEXTINDEX(h) - 1;
+		break;
+	}
 	return (RET_SUCCESS);
+}
+
+/*
+ * BT_SEQADVANCE -- Advance the sequential scan.
+ *
+ * Parameters:
+ *	t:	tree
+ *	flags:	R_NEXT, R_PREV
+ *
+ * Side effects:
+ *	Pins the page the new key/data record is on.
+ *
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS or RET_SPECIAL if there's no next key.
+ */
+static int
+bt_seqadv(t, e, flags)
+	BTREE *t;
+	EPG *e;
+	int flags;
+{
+	EPGNO *c, delc;
+	PAGE *h;
+	index_t index;
+	pgno_t pg;
+
+	/* Save the current cursor if going to delete it. */
+	c = &t->bt_bcursor;
+	if (ISSET(t, BTF_DELCRSR))
+		delc = *c;
+
+	if ((h = mpool_get(t->bt_mp, c->pgno, 0)) == NULL)
+		return (RET_ERROR);
+
+	/*
+ 	 * Find the next/previous record in the tree and point the cursor at it.
+	 * The cursor may not be moved until a new key has been found.
+	 */
+	index = c->index;
+	switch(flags) {
+	case R_NEXT:			/* Next record. */
+		if (++index == NEXTINDEX(h)) {
+			do {
+				pg = h->nextpg;
+				mpool_put(t->bt_mp, h, 0);
+				if (pg == P_INVALID)
+					return (RET_SPECIAL);
+				if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
+					return (RET_ERROR);
+			} while (NEXTINDEX(h) == 0);
+			index = 0;
+		}
+		break;
+	case R_PREV:			/* Previous record. */
+		if (index-- == 0) {
+			do {
+				pg = h->prevpg;
+				mpool_put(t->bt_mp, h, 0);
+				if (pg == P_INVALID)
+					return (RET_SPECIAL);
+				if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL)
+					return (RET_ERROR);
+			} while (NEXTINDEX(h) == 0);
+			index = NEXTINDEX(h) - 1;
+		}
+		break;
+	}
+
+	e->page = h;
+	e->index = index;
+
+	/*
+	 * Delete any already deleted record that we've been saving because the
+	 * cursor pointed to it.  This could cause the new index to be shifted
+	 * down by one if the record we're deleting is on the same page and has
+	 * a larger index.
+	 */
+	if (ISSET(t, BTF_DELCRSR)) {
+		UNSET(t, BTF_DELCRSR);			/* Don't try twice. */
+		if (c->pgno == delc.pgno && c->index > delc.index)
+			--c->index;
+		if (__bt_crsrdel(t, &delc))
+			return (RET_ERROR);
+	}
+	return (RET_SUCCESS);
+}
+
+/*
+ * __BT_CRSRDEL -- Delete the record referenced by the cursor.
+ *
+ * Parameters:
+ *	t:	tree
+ *
+ * Returns:
+ *	RET_ERROR, RET_SUCCESS
+ */
+int
+__bt_crsrdel(t, c)
+	BTREE *t;
+	EPGNO *c;
+{
+	PAGE *h;
+	int status;
+
+	UNSET(t, BTF_DELCRSR);			/* Don't try twice. */
+	if ((h = mpool_get(t->bt_mp, c->pgno, 0)) == NULL)
+		return (RET_ERROR);
+	status = __bt_dleaf(t, h, c->index);
+	mpool_put(t->bt_mp, h, MPOOL_DIRTY);
+	return (status);
 }

@@ -9,239 +9,216 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-/*
- *  test1.c -- simple btree test program.
- */
-
+#include <sys/param.h>
+#include <fcntl.h>
+#include <db.h>
+#include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <sys/param.h>
-#include <sys/types.h>
-#include <sys/file.h>
-#include <db.h>
-#include <btree.h>
-
-#define	DICTIONARY	"/usr/share/dict/words"
+#include <stdlib.h>
+#include <string.h>
+#include "btree.h"
 
 typedef struct cmd_table {
 	char *cmd;
 	int nargs;
-	int (*func)();
-	char *descrip;
+	int rconv;
+	void (*func) __P((DB *, char **));
+	char *usage, *descrip;
 } cmd_table;
 
-extern int cursor(), delcur(), delete(), first(), help(), insert();
-extern int last(), lookup(), next(), previous();
+int stopstop;
+DB *globaldb;
 
-cmd_table Commands[] = {
-	"cursor", 2, cursor,
-		"cursor <word>:  point the scan cursor at <word>",
-	"delcur", 1, delcur,
-		"delcur:  delete the word under the scan cursor",
-	"delete", 2, delete,
-		"delete <word>:  delete <word> from the dictionary",
-	"first", 1, first,
-		"first: point the scan cursor at the first dictionary entry",
-	"help", 1, help,
-		"help:  print this command summary",
-	"insert", 3, insert,
-		"insert <word> <def>:  insert <word> into the dictionary with definition <def>",
-	"last", 1, last,
-		"last:  point the scan cursor at the last dictionary entry",
-	"lookup", 2, lookup,
-		"lookup <word>:  look up <word> in the dictionary",
-	"next", 1, next,
-		"next:  move the scan cursor forward one word",
-	"previous", 1, previous,
-		"previous:  move the scan cursor back one word",
-	(char *) NULL, 0, NULL, (char *) NULL,
+void bstat	__P((DB *, char **));
+void cursor	__P((DB *, char **));
+void delcur	__P((DB *, char **));
+void delete	__P((DB *, char **));
+void dump	__P((DB *, char **));
+void first	__P((DB *, char **));
+void get	__P((DB *, char **));
+void help	__P((DB *, char **));
+void iafter	__P((DB *, char **));
+void ibefore	__P((DB *, char **));
+void insert	__P((DB *, char **));
+void keydata	__P((DBT *, DBT *));
+void last	__P((DB *, char **));
+void list	__P((DB *, char **));
+void load	__P((DB *, char **));
+void mstat	__P((DB *, char **));
+void next	__P((DB *, char **));
+int  parse	__P((char *, char **, int));
+void previous	__P((DB *, char **));
+void show	__P((DB *, char **));
+void usage	__P((void));
+void user	__P((DB *));
+
+cmd_table commands[] = {
+	"?",	0, 0, help, "help", NULL,
+	"b",	0, 0, bstat, "bstat", "stat btree",
+	"c",	1, 1, cursor,  "cursor word", "move cursor to word",
+	"delc",	0, 0, delcur, "delcur", "delete key the cursor references",
+	"dele",	1, 1, delete, "delete word", "delete word",
+	"d",	0, 0, dump, "dump", "dump database",
+	"f",	0, 0, first, "first", "move cursor to first record",
+	"g",	1, 1, get, "get word", "locate word",
+	"h",	0, 0, help, "help", "print command summary",
+	"ia",	2, 1, iafter, "iafter key data", "insert data after key",
+	"ib",	2, 1, ibefore, "ibefore key data", "insert data before key",
+	"in",	2, 1, insert, "insert word def", "insert key with data def",
+	"la",	0, 0, last, "last", "move cursor to last record",
+	"li",	1, 1, list, "list file", "list to a file",
+	"loa",	1, 1, load, "load file", NULL,
+	"loc",	1, 1, get, "get word", NULL,
+	"m",	0, 0, mstat, "mstat", "stat memory pool",
+	"n",	0, 0, next, "next", "move cursor forward one record",
+	"p",	0, 0, previous, "previous", "move cursor back one record",
+	"q",	0, 0, NULL, "quit", "quit",
+	"sh",	1, 0, show, "show page", "dump a page",
+	{ NULL },
 };
 
-char *Usage = "[-p pagesize] [-c cachesize] [-u] [-l|b|n] [dbname]";
+int recno;					/* use record numbers */
+char *dict = "words";				/* default dictionary */
+char *progname;
 
+int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	char *dbname;
 	int c;
-	char *progname;
-	extern int strcmp();
-	extern char *optarg;
-	extern int optind;
-	DB *t;
+	DB *db;
 	BTREEINFO b;
 
 	progname = *argv;
 
-	b.psize = 0;
+	b.flags = 0;
 	b.cachesize = 0;
+	b.maxkeypage = 0;
+	b.minkeypage = 0;
+	b.psize = 0;
+	b.compare = NULL;
+	b.prefix = NULL;
 	b.lorder = 0;
-	b.flags = R_DUP;
-	b.compare = strcmp;
 
-	while ((c = getopt(argc, argv, "p:c:ulb")) != EOF) {
+	while ((c = getopt(argc, argv, "bc:di:lp:ru")) != EOF) {
 		switch (c) {
-		  case 'p':
-			b.psize = atoi(optarg);
-			break;
-
-		  case 'c':
-			b.cachesize = atoi(optarg);
-			break;
-
-		  case 'u':
-			b.flags = 0;
-			break;
-
-		  case 'l':
-			b.lorder = LITTLE_ENDIAN;
-			break;
-
-		  case 'b':
+		case 'b':
 			b.lorder = BIG_ENDIAN;
 			break;
-
-		  default:
-			fprintf(stderr, "%s: usage: %s\n", progname, Usage);
-			exit (1);
+		case 'c':
+			b.cachesize = atoi(optarg);
+			break;
+		case 'd':
+			b.flags |= R_DUP;
+			break;
+		case 'i':
+			dict = optarg;
+			break;
+		case 'l':
+			b.lorder = LITTLE_ENDIAN;
+			break;
+		case 'p':
+			b.psize = atoi(optarg);
+			break;
+		case 'r':
+			recno = 1;
+			break;
+		case 'u':
+			b.flags = 0;
+			break;
+		default:
+			usage();
 		}
 	}
+	argc -= optind;
+	argv += optind;
 
-	if (argv[optind] != (char *) NULL)
-		dbname = argv[optind];
+	if (recno)
+		db = dbopen(*argv == NULL ? NULL : *argv, O_RDWR,
+		    0, DB_RECNO, NULL);
+	else
+		db = dbopen(*argv == NULL ? NULL : *argv, O_CREAT|O_RDWR,
+		    0600, DB_BTREE, &b);
 
-	if ((t = btree_open(dbname, O_CREAT|O_RDWR, 0600, &b)) == (DB *) NULL) {
-		perror(progname);
-		exit (1);
+	if (db == NULL) {
+		(void)fprintf(stderr, "dbopen: %s\n", strerror(errno));
+		exit(1);
 	}
-
-	load(t);
-
-	user(t);
+	globaldb = db;
+	user(db);
+	exit(0);
+	/* NOTREACHED */
 }
 
-load(t)
-	DB *t;
+void
+user(db)
+	DB *db;
 {
-	char *lbuf;
-	int i, l;
-	int status;
-	FILE *fp;
-	DBT key;
-	DBT data;
-	char word[64];
-	char drow[64];
+	FILE *ifp;
+	int argc, i, last;
+	char *lbuf, *argv[4], buf[512];
 
-	printf("loading %s...\n", DICTIONARY);
-	fflush(stdout);
-	if ((fp = fopen(DICTIONARY, "r")) == (FILE *) NULL) {
-		perror("/usr/dict/words");
-		(void) (*(t->close))(t->internal);
-		exit (1);
+	if ((ifp = fopen("/dev/tty", "r")) == NULL) {
+		(void)fprintf(stderr,
+		    "/dev/tty: %s\n", strerror(errno));
+		exit(1);
 	}
-
-	key.data = &word[0];
-	data.data = &drow[0];
-	while ((lbuf = fgets(word, 64, fp)) != (char *) NULL) {
-		l = strlen(lbuf) - 1;
-		lbuf[l] = '\0';
-		for (i = 0; i < l; i++)
-			drow[l - (i + 1)] = word[i];
-		drow[l] = '\0';
-
-		key.size = data.size = l + 1;
-
-		status = (*(t->put))(t->internal, &key, &data, R_NOOVERWRITE);
-
-		switch (status) {
-		  case RET_SUCCESS:
+	for (last = 0;;) {
+		(void)printf("> ");
+		(void)fflush(stdout);
+		if ((lbuf = fgets(&buf[0], 512, ifp)) == NULL)
 			break;
-
-		  case RET_ERROR:
-			perror("put");
-			break;
-
-		  case RET_SPECIAL:
-			fprintf(stderr, "%s is a duplicate key!\n", lbuf);
-			fflush(stderr);
-			break;
+		if (lbuf[0] == '\n') {
+			i = last;
+			goto uselast;
 		}
-	}
-
-	(void) fclose(fp);
-	printf("done\n");
-	fflush(stdout);
-}
-
-user(t)
-	DB *t;
-{
-	char *lbuf;
-	int argc;
-	int i;
-	char *argv[4];
-	char buf[512];
-
-	for (;;) {
-		printf("> ");
-		fflush(stdout);
-		if ((lbuf = fgets(&buf[0], 512, stdin)) == (char *) NULL)
-			break;
 		lbuf[strlen(lbuf) - 1] = '\0';
 
-		if (strcmp(lbuf, "quit") == 0)
+		if (lbuf[0] == 'q')
 			break;
 
 		argc = parse(lbuf, &argv[0], 3);
 		if (argc == 0)
 			continue;
 
-		for (i = 0; Commands[i].cmd != (char *) NULL; i++) {
-			if (strcmp(Commands[i].cmd, argv[0]) == 0)
+		for (i = 0; commands[i].cmd != NULL; i++)
+			if (strncmp(commands[i].cmd, argv[0],
+			    strlen(commands[i].cmd)) == 0)
 				break;
-		}
 
-		if (Commands[i].cmd == (char *) NULL) {
-			fprintf(stderr,
-				"%s: command unknown ('help' for help)\n",
-				lbuf);
-			fflush(stderr);
+		if (commands[i].cmd == NULL) {
+			(void)fprintf(stderr,
+			    "%s: command unknown ('help' for help)\n", lbuf);
 			continue;
 		}
 
-		if (Commands[i].nargs != argc) {
-			fprintf(stderr, "arg count\n");
-			fflush(stderr);
+		if (commands[i].nargs != argc - 1) {
+			(void)fprintf(stderr, "usage: %s\n", commands[i].usage);
 			continue;
 		}
 
-		switch (argc) {
-		  case 1:
-			(*(Commands[i].func))(t);
-			break;
-		  case 2:
-			(*(Commands[i].func))(t, argv[1]);
-			break;
-		  case 3:
-			(*(Commands[i].func))(t, argv[1], argv[2]);
-			break;
-		  case 4:
-			(*(Commands[i].func))(t, argv[1], argv[2], argv[3]);
-			break;
+		if (recno && commands[i].rconv) {
+			static recno_t nlong;
+			nlong = atoi(argv[1]);
+			argv[1] = (char *)&nlong;
 		}
+uselast:	last = i;
+		(*commands[i].func)(db, argv);
 	}
-	(void) (*(t->close))(t->internal);
-	exit (0);
+	if ((db->sync)(db) == RET_ERROR)
+		perror("dbsync");
+	else if ((db->close)(db) == RET_ERROR)
+		perror("dbclose");
 }
 
 int
 parse(lbuf, argv, maxargc)
-	char *lbuf;
-	char **argv;
+	char *lbuf, **argv;
 	int maxargc;
 {
 	int argc = 0;
@@ -262,241 +239,425 @@ parse(lbuf, argv, maxargc)
 	return (argc);
 }
 
-int
-cursor(t, arg)
-	DB *t;
-	char *arg;
+void
+cursor(db, argv)
+	DB *db;
+	char **argv;
 {
+	DBT data, key;
 	int status;
-	DBT key;
-	DBT data;
 
-	key.data = arg;
-	key.size = strlen(arg + 1);
-	status = (*(t->seq))(t->internal, &key, &data, R_CURSOR);
-	if (status == RET_SUCCESS)
-		show(&key, &data);
+	key.data = argv[1];
+	if (recno)
+		key.size = sizeof(recno_t);
 	else
+		key.size = strlen(argv[1]) + 1;
+	status = (*db->seq)(db, &key, &data, R_CURSOR);
+	switch (status) {
+	case RET_ERROR:
 		perror("cursor");
+		break;
+	case RET_SPECIAL:
+		(void)printf("key not found\n");
+		break;
+	case RET_SUCCESS:
+		keydata(&key, &data);
+		break;
+	}
 }
 
-int
-delcur(t)
-	DB *t;
+void
+delcur(db, argv)
+	DB *db;
+	char **argv;
 {
 	int status;
 
-	status = (*(t->delete))(t->internal, (DBT *) NULL, R_CURSOR);
+	status = (*db->del)(db, NULL, R_CURSOR);
 
 	if (status == RET_ERROR)
 		perror("delcur");
 }
 
-int
-delete(t, arg)
-	DB *t;
-	char *arg;
+void
+delete(db, argv)
+	DB *db;
+	char **argv;
 {
-	int status;
 	DBT key;
+	int status;
 
-	key.data = arg;
-	key.size = strlen(arg) + 1;
+	key.data = argv[1];
+	if (recno)
+		key.size = sizeof(recno_t);
+	else
+		key.size = strlen(argv[1]) + 1;
 
-	status = (*(t->delete))(t->internal, &key, 0);
+	status = (*db->del)(db, &key, 0);
 	switch (status) {
-	  case RET_SUCCESS:
-		break;
-
-	  case RET_ERROR:
+	case RET_ERROR:
 		perror("delete");
 		break;
-
-	  case RET_SPECIAL:
-		fprintf(stderr, "%s not found\n", arg);
-		fflush(stderr);
+	case RET_SPECIAL:
+		(void)printf("key not found\n");
+		break;
+	case RET_SUCCESS:
 		break;
 	}
 }
 
-int
-first(t)
-	DB *t;
+void
+dump(db, argv)
+	DB *db;
+	char **argv;
 {
-	int status;
-	DBT key;
-	DBT data;
+	__bt_dump(db);
+}
 
-	status = (*(t->seq))(t->internal, &key, &data, R_FIRST);
+void
+first(db, argv)
+	DB *db;
+	char **argv;
+{
+	DBT data, key;
+	int status;
+
+	status = (*db->seq)(db, &key, &data, R_FIRST);
 
 	switch (status) {
-	  case RET_ERROR:
+	case RET_ERROR:
 		perror("first");
 		break;
-
-	  case RET_SPECIAL:
-		printf("no more keys");
+	case RET_SPECIAL:
+		(void)printf("no more keys\n");
 		break;
-
-	  case RET_SUCCESS:
-		show(&key, &data);
+	case RET_SUCCESS:
+		keydata(&key, &data);
 		break;
 	}
 }
-int
-help(t)
-	DB *t;
+
+void
+get(db, argv)
+	DB *db;
+	char **argv;
+{
+	DBT data, key;
+	int status;
+
+	key.data = argv[1];
+	if (recno)
+		key.size = sizeof(recno_t);
+	else
+		key.size = strlen(argv[1]) + 1;
+
+	status = (*db->get)(db, &key, &data, 0);
+
+	switch (status) {
+	case RET_ERROR:
+		perror("get");
+		break;
+	case RET_SPECIAL:
+		(void)printf("key not found\n");
+		break;
+	case RET_SUCCESS:
+		keydata(&key, &data);
+		break;
+	}
+}
+
+void
+help(db, argv)
+	DB *db;
+	char **argv;
 {
 	int i;
 
-#ifdef lint
-	t = t;
-#endif /* lint */
-	for (i = 0; Commands[i].cmd != (char *) NULL; i++)
-		printf("%s\n", Commands[i].descrip);
-	printf("type 'quit' to quit\n");
+	for (i = 0; commands[i].cmd; i++)
+		if (commands[i].descrip)
+			(void)printf("%s: %s\n",
+			    commands[i].usage, commands[i].descrip);
 }
 
-int
-insert(t, arg, def)
-	DB *t;
-	char *arg;
-	char *def;
+void
+iafter(db, argv)
+	DB *db;
+	char **argv;
+{
+	DBT key, data;
+	int status;
+
+	if (!recno) {
+		(void)fprintf(stderr,
+		    "iafter only available for recno db's.\n");
+		return;
+	}
+	key.data = argv[1];
+	key.size = sizeof(recno_t);
+	data.data = argv[2];
+	data.size = strlen(data.data);
+	status = (db->put)(db, &key, &data, R_IAFTER);
+	switch (status) {
+	case RET_ERROR:
+		perror("iafter");
+		break;
+	case RET_SPECIAL:
+		(void)printf("%s (duplicate key)\n", argv[1]);
+		break;
+	case RET_SUCCESS:
+		break;
+	}
+}
+
+void
+ibefore(db, argv)
+	DB *db;
+	char **argv;
+{
+	DBT key, data;
+	int status;
+
+	if (!recno) {
+		(void)fprintf(stderr,
+		    "ibefore only available for recno db's.\n");
+		return;
+	}
+	key.data = argv[1];
+	key.size = sizeof(recno_t);
+	data.data = argv[2];
+	data.size = strlen(data.data);
+	status = (db->put)(db, &key, &data, R_IBEFORE);
+	switch (status) {
+	case RET_ERROR:
+		perror("ibefore");
+		break;
+	case RET_SPECIAL:
+		(void)printf("%s (duplicate key)\n", argv[1]);
+		break;
+	case RET_SUCCESS:
+		break;
+	}
+}
+
+void
+insert(db, argv)
+	DB *db;
+	char **argv;
 {
 	int status;
-	DBT key;
-	DBT data;
+	DBT data, key;
 
-	key.data = arg;
-	key.size = strlen(arg) + 1;
-	data.data = def;
-	data.size = strlen(def) + 1;
+	key.data = argv[1];
+	if (recno)
+		key.size = sizeof(recno_t);
+	else
+		key.size = strlen(argv[1]) + 1;
+	data.data = argv[2];
+	data.size = strlen(argv[2]) + 1;
 
-	status = (*(t->put))(t->internal, &key, &data, R_NOOVERWRITE);
+	status = (*db->put)(db, &key, &data, R_NOOVERWRITE);
 	switch (status) {
-	  case RET_SUCCESS:
-		break;
-
-	  case RET_ERROR:
+	case RET_ERROR:
 		perror("put");
 		break;
-
-	  case RET_SPECIAL:
-		fprintf(stderr, "%s is a duplicate key!\n", arg);
-		fflush(stderr);
+	case RET_SPECIAL:
+		(void)printf("%s (duplicate key)\n", argv[1]);
+		break;
+	case RET_SUCCESS:
 		break;
 	}
 }
 
-int
-last(t)
-	DB *t;
+void
+last(db, argv)
+	DB *db;
+	char **argv;
 {
+	DBT data, key;
 	int status;
-	DBT key;
-	DBT data;
 
-	status = (*(t->seq))(t->internal, &key, &data, R_LAST);
+	status = (*db->seq)(db, &key, &data, R_LAST);
 
 	switch (status) {
-	  case RET_ERROR:
+	case RET_ERROR:
 		perror("last");
 		break;
-
-	  case RET_SPECIAL:
-		printf("no more keys");
+	case RET_SPECIAL:
+		(void)printf("no more keys\n");
 		break;
-
-	  case RET_SUCCESS:
-		show(&key, &data);
+	case RET_SUCCESS:
+		keydata(&key, &data);
 		break;
 	}
 }
 
-int
-lookup(t, arg)
-	DB *t;
-	char *arg;
+void
+list(db, argv)
+	DB *db;
+	char **argv;
 {
+	DBT data, key;
+	FILE *fp;
 	int status;
-	DBT key;
-	DBT data;
 
-	key.data = arg;
-	key.size = strlen(arg) + 1;
-
-	status = (*(t->get))(t->internal, &key, &data, 0);
-
-	switch (status) {
-	  case RET_SPECIAL:
-		printf("not found\n");
-		break;
-	  case RET_SUCCESS:
-		show(&key, &data);
-		break;
-	  case RET_ERROR:
-		perror("get");
-		break;
+	if ((fp = fopen(argv[1], "w")) == NULL) {
+		(void)fprintf(stderr, "%s: %s\n", argv[1], strerror(errno));
+		return;
 	}
+	status = (*db->seq)(db, &key, &data, R_FIRST);
+	while (status == RET_SUCCESS) {
+		(void)fprintf(fp, "%s\n", key.data);
+		status = (*db->seq)(db, &key, &data, R_NEXT);
+	}
+	if (status == RET_ERROR)
+		perror("list");
 }
 
-int
-next(t)
-	DB *t;
+void
+load(db, argv)
+	DB *db;
+	char **argv;
 {
+	register char *p, *t;
+	FILE *fp;
+	DBT data, key;
 	int status;
-	DBT key;
-	DBT data;
+	char b1[256], b2[256];
 
-	status = (*(t->seq))(t->internal, &key, &data, R_NEXT);
+	if ((fp = fopen(argv[1], "r")) == NULL) {
+		perror(argv[1]);
+		return;
+	}
+	(void)printf("loading %s...\n", dict);
+
+	key.data = b1;
+	data.data = b2;
+	while (fgets(b1, sizeof(b1), fp) != NULL) {
+		data.size = strlen(b1);
+		b1[data.size - 1] = '\0';
+		for (p = &b1[data.size - 2], t = b2; p >= b1; *t++ = *p--);
+		b2[data.size - 1] = '\0';
+		key.size = data.size;
+
+		status = (*db->put)(db, &key, &data, R_NOOVERWRITE);
+		switch (status) {
+		case RET_ERROR:
+			perror("load/put");
+			exit(1);
+		case RET_SPECIAL:
+			(void)fprintf(stderr, "duplicate: %s\n", key.data);
+			exit(1);
+		case RET_SUCCESS:
+			break;
+		}
+	}
+	(void)fclose(fp);
+}
+
+void
+next(db, argv)
+	DB *db;
+	char **argv;
+{
+	DBT data, key;
+	int status;
+
+	status = (*db->seq)(db, &key, &data, R_NEXT);
 
 	switch (status) {
-	  case RET_ERROR:
+	case RET_ERROR:
 		perror("next");
 		break;
-
-	  case RET_SPECIAL:
-		printf("no more keys");
+	case RET_SPECIAL:
+		(void)printf("no more keys\n");
 		break;
-
-	  case RET_SUCCESS:
-		show(&key, &data);
+	case RET_SUCCESS:
+		keydata(&key, &data);
 		break;
 	}
 }
 
-int
-previous(t)
-	DB *t;
+void
+previous(db, argv)
+	DB *db;
+	char **argv;
 {
+	DBT data, key;
 	int status;
-	DBT key;
-	DBT data;
 
-	status = (*(t->seq))(t->internal, &key, &data, R_PREV);
+	status = (*db->seq)(db, &key, &data, R_PREV);
 
 	switch (status) {
-	  case RET_ERROR:
+	case RET_ERROR:
 		perror("previous");
 		break;
-
-	  case RET_SPECIAL:
-		printf("no more keys");
+	case RET_SPECIAL:
+		(void)printf("no more keys\n");
 		break;
-
-	  case RET_SUCCESS:
-		show(&key, &data);
+	case RET_SUCCESS:
+		keydata(&key, &data);
 		break;
 	}
 }
 
-show(key, data)
-	DBT *key;
-	DBT *data;
+void
+show(db, argv)
+	DB *db;
+	char **argv;
 {
-	if (key->size > 0)
-		printf("%s", key->data);
+	BTREE *t;
+	PAGE *h;
+	pgno_t pg;
+
+	pg = atoi(argv[1]);
+	if (pg == 0) {
+		(void)printf("page 0 is meta-data page.\n");
+		return;
+	}
+
+	t = db->internal;
+	if ((h = mpool_get(t->bt_mp, pg, 0)) == NULL) {
+		(void)printf("getpage of %ld failed\n", pg);
+		return;
+	}
+	__bt_dpage(h);
+	mpool_put(t->bt_mp, h, 0);
+}
+
+void
+bstat(db, argv)
+	DB *db;
+	char **argv;
+{
+	(void)printf("BTREE\n");
+	__bt_stat(db);
+}
+
+void
+mstat(db, argv)
+	DB *db;
+	char **argv;
+{
+	(void)printf("MPOOL\n");
+	mpool_stat(((BTREE *)db->internal)->bt_mp);
+}
+
+void
+keydata(key, data)
+	DBT *key, *data;
+{
+	if (!recno && key->size > 0)
+		(void)printf("%s/", key->data);
 	if (data->size > 0)
-		printf("/%s", data->data);
-	printf("\n");
+		(void)printf("%s", data->data);
+	(void)printf("\n");
+}
+
+void
+usage()
+{
+	(void)fprintf(stderr,
+	    "usage: %s [-bdlu] [-c cache] [-i file] [-p page] [file]\n",
+	    progname);
+	exit (1);
 }
