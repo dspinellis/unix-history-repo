@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)linkaddr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)linkaddr.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -56,20 +56,32 @@ link_addr(addr, sdl)
 		switch (state /* | INPUT */) {
 		case NAMING | DIGIT:
 		case NAMING | LETTER:
-			*cp++ = addr[-1]; continue;
+			*cp++ = addr[-1];
+			continue;
 		case NAMING | DELIM:
-			state = RESET; sdl->sdl_nlen = cp - sdl->sdl_data; continue;
+			state = RESET;
+			sdl->sdl_nlen = cp - sdl->sdl_data;
+			continue;
 		case GOTTWO | DIGIT:
-			*cp++ = byte; /*FALLTHROUGH*/
+			*cp++ = byte;
+			/* FALLTHROUGH */
 		case RESET | DIGIT:
-			state = GOTONE; byte = new; continue;
+			state = GOTONE;
+			byte = new;
+			continue;
 		case GOTONE | DIGIT:
-			state = GOTTWO; byte = new + (byte << 4); continue;
+			state = GOTTWO;
+			byte = new + (byte << 4);
+			continue;
 		default: /* | DELIM */
-			state = RESET; *cp++ = byte; byte = 0; continue;
+			state = RESET;
+			*cp++ = byte;
+			byte = 0;
+			continue;
 		case GOTONE | END:
 		case GOTTWO | END:
-			*cp++ = byte; /* FALLTHROUGH */
+			*cp++ = byte;
+			/* FALLTHROUGH */
 		case RESET | END:
 			break;
 		}
