@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.6 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -105,6 +105,8 @@ nfs_mount(mp, path, data, ndp)
 	int len;
 	nfsv2fh_t nfh;
 
+	if (mp->m_flag & M_UPDATE)
+		return (0);
 	if (error = copyin(data, (caddr_t)&args, sizeof (struct nfs_args)))
 		return (error);
 	if (error=copyin((caddr_t)args.fh, (caddr_t)&nfh, sizeof (nfsv2fh_t)))
@@ -153,7 +155,6 @@ mountnfs(argp, mp, saddr, pth, hst)
 		goto bad;
 	if (error = soconnect(nmp->nm_so, saddr))
 		goto bad;
-printf("sosnd=0x%x sorcv=0x%x\n",&nmp->nm_so->so_snd,&nmp->nm_so->so_rcv);
 	if ((argp->flags & NFSMNT_TIMEO) && argp->timeo >= 1)
 		nmp->nm_timeo = argp->timeo;
 	else
