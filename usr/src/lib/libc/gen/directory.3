@@ -13,62 +13,40 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)directory.3	6.4 (Berkeley) %G%
+.\"	@(#)directory.3	6.5 (Berkeley) %G%
 .\"
 .TH DIRECTORY 3 ""
 .UC 5
 .SH NAME
 opendir, readdir, telldir, seekdir, rewinddir, closedir, dirfd \- directory operations
 .SH SYNOPSIS
-.B #include <sys/types.h>
-.br
-.B #include <sys/dir.h>
-.PP
-.SM
-.B DIR
-.B *opendir(filename)
-.br
-.B char *filename;
-.PP
-.B struct direct
-.B *readdir(dirp)
-.br
-.SM
-.B DIR
-.B *dirp;
-.PP
-.B long
-.B telldir(dirp)
-.br
-.SM
-.B DIR
-.B *dirp;
-.PP
-.B seekdir(dirp, loc)
-.br
-.SM
-.B DIR
-.B *dirp;
-.br
-.B long loc;
-.PP
-.B rewinddir(dirp)
-.br
-.SM
-.B DIR
-.B *dirp;
-.PP
-.B closedir(dirp)
-.br
-.SM
-.B DIR
-.B *dirp;
-.PP
-.B dirfd(dirp)
-.br
-.SM
-.B DIR
-.B *dirp;
+.nf
+.ft B
+#include <sys/types.h>
+#include <dirent.h>
+
+DIR *
+opendir(const char *filename);
+
+struct direct
+*readdir(DIR * dirp);
+
+long
+telldir(const DIR *dirp);
+
+void
+seekdir(DIR *dirp, long loc);
+
+void
+rewinddir(DIR *dirp);
+
+int
+closedir(DIR *dirp);
+
+int
+dirfd(DIR *dirp)
+.ft R
+.fi
 .SH DESCRIPTION
 .I Opendir
 opens the directory named by
@@ -129,7 +107,9 @@ to the beginning of the directory.
 .I Closedir
 closes the named
 .I directory stream
-and frees the structure associated with the DIR pointer.
+and frees the structure associated with the DIR pointer,
+returning 0 on success.
+On failure, -1 is returned and errno is set to indicate the error.
 .PP
 .I Dirfd
 returns the integer file descriptor associated with the named
@@ -138,27 +118,18 @@ see open(2).
 .PP
 Sample code which searchs a directory for entry ``name'' is:
 .PP
-.br
-	len = strlen(name);
-.br
-	dirp = opendir(".");
-.br
-	for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp))
-.br
-		if (dp->d_namlen == len && !strcmp(dp->d_name, name)) {
-.br
-			closedir(dirp);
-.br
-			return FOUND;
-.br
-		}
-.br
-	closedir(dirp);
-.br
-	return NOT_FOUND;
+.nf
+.RS
+len = strlen(name);
+dirp = opendir(".");
+for (dp = readdir(dirp); dp != NULL; dp = readdir(dirp))
+	if (dp->d_namlen == len && !strcmp(dp->d_name, name)) {
+		(void)closedir(dirp);
+		return FOUND;
+	}
+(void)closedir(dirp);
+return NOT_FOUND;
+.RE
+.fi
 .SH "SEE ALSO"
-open(2),
-close(2),
-read(2),
-lseek(2),
-dir(5)
+open(2), close(2), read(2), lseek(2), dir(5)
