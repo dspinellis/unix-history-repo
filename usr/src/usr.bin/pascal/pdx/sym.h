@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sym.h	5.2 (Berkeley) %G%
+ *	@(#)sym.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -48,15 +48,15 @@ NODE *dot();			/* construct a tree for the dot operator */
 NODE *subscript();		/* construct a tree for subscripting */
 SYM *treetype();		/* return the type of a tree, checking also */
 long evalindex();		/* evaluate a subscript index */
-unmkstring();			/* free a constant string type */
-chkboolean();			/* check if a tree is boolean-valued */
-printdecl();			/* print out a symbol's declaration */
-printparams();			/* print out values of a fn's parameters */
-printentry();			/* note entrance of a block */
-printexit();			/* note exiting from a block */
-printcall();			/* note call of a function */
-printval();			/* print an eval result */
-printv();			/* print the name and value of a variable */
-printwhich();			/* print the full "path" of an identifier */
-maketypes();			/* initialize basic types */
-make_keyword();			/* create a keyword in a given symbol table */
+int unmkstring();		/* free a constant string type */
+int chkboolean();		/* check if a tree is boolean-valued */
+int printdecl();		/* print out a symbol's declaration */
+int printparams();		/* print out values of a fn's parameters */
+int printentry();		/* note entrance of a block */
+int printexit();		/* note exiting from a block */
+int printcall();		/* note call of a function */
+int printval();			/* print an eval result */
+int printv();			/* print the name and value of a variable */
+int printwhich();		/* print the full "path" of an identifier */
+int maketypes();		/* initialize basic types */
+int make_keyword();		/* create a keyword in a given symbol table */

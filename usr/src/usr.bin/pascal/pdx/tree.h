@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tree.h	5.2 (Berkeley) %G%
+ *	@(#)tree.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -41,10 +41,10 @@ STACK stack[];
 STACK *sp;
 
 NODE *build();		/* create a node in the parse tree */
-prtree();		/* print a tree in source form */
-eval();			/* evaluate a tree, leaving value on stack */
+int prtree();		/* print a tree in source form */
+int eval();		/* evaluate a tree, leaving value on stack */
 long popsmall();	/* pop a small item from the stack given its type */
-tfree();		/* release storage for a tree */
+int tfree();		/* release storage for a tree */
 BOOLEAN tr_equal();	/* test if two trees are structurally equivalent */
 BOOLEAN cond();		/* evaluate a node for a conditional */
 ADDRESS lval();		/* return the object address of a node */

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)main.h	5.2 (Berkeley) %G%
+ *	@(#)main.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -19,7 +19,7 @@ BOOLEAN opt[26];	/* true if command line option given */
 #define option(c)	opt[(c)-'a']
 #define isterm(file)	(option('i') || isatty(fileno(file)))
 
-main();			/* debugger main routine */
-init();			/* read in source and object data */
-erecover();		/* does non-local goto for error recovery */
-quit();			/* clean-up before exiting */
+int main();		/* debugger main routine */
+int init();		/* read in source and object data */
+int erecover();		/* does non-local goto for error recovery */
+int quit();		/* clean-up before exiting */

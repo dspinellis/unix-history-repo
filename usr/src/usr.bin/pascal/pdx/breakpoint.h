@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)breakpoint.h	5.1 (Berkeley) %G%
+ *	@(#)breakpoint.h	5.2 (Berkeley) %G%
  */
 
 /*
@@ -58,20 +58,20 @@ typedef enum { TRPRINT, TRSTOP } TRTYPE;
  * routines available from this module
  */
 
-addvar();		/* add a variable to the trace list */
-delvar();		/* delete a variable from the trace list */
-printvarnews();		/* print out variables that have changed */
-trfree();		/* free the entire trace list */
-addcond();		/* add a condition to the list */
-delcond();		/* delete a condition from the list */
+int addvar();		/* add a variable to the trace list */
+int delvar();		/* delete a variable from the trace list */
+int printvarnews();	/* print out variables that have changed */
+int trfree();		/* free the entire trace list */
+int addcond();		/* add a condition to the list */
+int delcond();		/* delete a condition from the list */
 BOOLEAN trcond();	/* determine if any trace condition is true */
 BOOLEAN stopcond();	/* determine if any stop condition is true */
 
-addbp();		/* add a breakpoint */
-delbp();		/* delete a breakpoint, return FALSE if unsuccessful */
-bpfree();		/* free all breakpoint information */
-setallbps();		/* set traps for all breakpoints */
-unsetallbps();		/* remove traps at all breakpoints */
+int addbp();		/* add a breakpoint */
+int delbp();		/* delete a breakpoint, return FALSE if unsuccessful */
+int bpfree();		/* free all breakpoint information */
+int setallbps();	/* set traps for all breakpoints */
+int unsetallbps();	/* remove traps at all breakpoints */
 BOOLEAN bpact();	/* handle a breakpoint */
-fixbps();		/* destroy temporary breakpoints left after a fault */
-status();		/* list items being traced */
+int fixbps();		/* destroy temporary breakpoints left after a fault */
+int status();		/* list items being traced */
