@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1990, 1991 Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1991, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from the Stanford/CMU enet packet filter,
  * (net/enet.c) distributed as part of 4.3BSD, and code contributed
@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *      @(#)bpf.c	7.15 (Berkeley) %G%
+ *      @(#)bpf.c	8.1 (Berkeley) %G%
  *
  * static char rcsid[] =
  * "$Header: bpf.c,v 1.33 91/10/27 21:21:58 mccanne Exp $";

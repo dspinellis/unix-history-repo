@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rz.c	7.9 (Berkeley) %G%
+ *	@(#)rz.c	8.1 (Berkeley) %G%
  */
 
 /*
