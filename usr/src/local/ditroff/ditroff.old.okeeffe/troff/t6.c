@@ -1,3 +1,4 @@
+/*	t6.c	1.2	(Berkeley)	83/08/15	*/
 #include "tdef.h"
 extern
 #include "d.h"
@@ -196,9 +197,14 @@ findft(i)
 register int	i;
 {
 	register k;
+	register char last;
 
-	if ((k = i - '0') >= 0 && k <= nfonts && k < smnt)
-		return(k);
+	if ((k = (i & BMASK) - '0') >= 0 && k <= 9) {	/* digit - see if two */
+	    if (last = cbits(i) >> BYTE)
+		if ((last -= '0') < 0 || last > 9 || (k = k*10+last) > nfonts)
+			return(-1);
+	    return(k);		/* one digit (or two, if in range */
+	}
 	for (k = 0; fontlab[k] != i; k++)
 		if (k > nfonts)
 			return(-1);
