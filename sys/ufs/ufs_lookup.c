@@ -141,7 +141,7 @@ ufs_lookup(vdp, ndp, p)
 		if (error == ENOENT)
 			return (error);
 #ifdef PARANOID
-		if (vdp == ndp->ni_rdir && ndp->ni_isdotdot)
+		if (vdp == ndp->ni_rootdir && ndp->ni_isdotdot)
 			panic("ufs_lookup: .. through root");
 #endif
 		/*
