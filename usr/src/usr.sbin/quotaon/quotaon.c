@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)quotaon.c	4.2 (Berkeley, Melbourne) %G%";
+static char sccsid[] = "@(#)quotaon.c	4.3 (Berkeley, Melbourne) %G%";
 #endif
 /*
  * Turn quota on/off for a filesystem.
@@ -12,6 +12,7 @@ static char sccsid[] = "@(#)quotaon.c	4.2 (Berkeley, Melbourne) %G%";
 
 int	vflag;		/* verbose */
 int	aflag;		/* all file systems */
+int	done;
 
 char *qfname = "quotas";
 char quotafile[MAXPATHLEN + 1];
@@ -22,7 +23,7 @@ main(argc, argv)
 {
 	register struct fstab *fs;
 	char *whoami, *rindex();
-	int offmode = 0, errs = 0;
+	int offmode = 0, errs = 0, i;
 
 	whoami = rindex(*argv, '/') + 1;
 	if (whoami == (char *)1)
@@ -51,11 +52,12 @@ again:
 	}
 	setfsent();
 	while ((fs = getfsent()) != NULL) {
-		if (fs->fs_type == 0)
+		if (aflag &&
+		    (fs->fs_type == 0 || strcmp(fs->fs_type, "rq") != 0))
 			continue;
-		if (aflag && strcmp(fs->fs_type, "rq") != 0)
-			continue;
-		if (!aflag && !oneof(fs->fs_file, argv, argc))
+		if (!aflag &&
+		    !(oneof(fs->fs_file, argv, argc) ||
+		      oneof(fs->fs_spec, argv, argc)))
 			continue;
 		if (offmode) {
 			if (setquota(fs->fs_spec, NULL) < 0) {
@@ -79,6 +81,10 @@ again:
 			printf("%s: quotas turned on\n", fs->fs_file);
 	}
 	endfsent();
+	for (i = 0; i < argc; i++)
+		if ((done & (1 << i)) == 0)
+			fprintf(stderr, "%s not found in /etc/fstab\n",
+				argv[i]);
 	exit(errs);
 }
 
@@ -89,7 +95,9 @@ oneof(target, list, n)
 	register int i;
 
 	for (i = 0; i < n; i++)
-		if (strcmp(target, list[i]) == 0)
+		if (strcmp(target, list[i]) == 0) {
+			done |= 1 << i;
 			return (1);
+		}
 	return (0);
 }
