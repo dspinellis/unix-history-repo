@@ -12,13 +12,11 @@
 
 #ifndef lint
 #ifdef DAEMON
-static char sccsid[] = "@(#)daemon.c	5.39 (Berkeley) %G% (with daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.40 (Berkeley) %G% (with daemon mode)";
 #else
-static char sccsid[] = "@(#)daemon.c	5.39 (Berkeley) %G% (without daemon mode)";
+static char sccsid[] = "@(#)daemon.c	5.40 (Berkeley) %G% (without daemon mode)";
 #endif
 #endif /* not lint */
-
-int la;	/* load average */
 
 #ifdef DAEMON
 

@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	5.24 (Berkeley) %G%
+ *	@(#)sendmail.h	5.25 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	5.24		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	5.25		%G%";
 # endif lint
 # else  _DEFINE
 # define EXTERN extern
@@ -243,6 +243,7 @@ struct envelope
 	FILE		*e_dfp;		/* temporary file */
 	char		*e_id;		/* code for this entry in queue */
 	FILE		*e_xfp;		/* transcript file */
+	FILE		*e_lockfp;	/* the lock file for this message */
 	FILE		*e_qfp;		/* queue control file */
 	char		*e_message;	/* error message */
 	char		*e_macro[128];	/* macro definitions */
@@ -533,6 +534,7 @@ EXTERN int	LogLevel;	/* level of logging to perform */
 EXTERN int	FileMode;	/* mode on files */
 EXTERN int	QueueLA;	/* load average starting forced queueing */
 EXTERN int	RefuseLA;	/* load average refusing connections are */
+EXTERN int	CurrentLA;	/* current load average */
 EXTERN int	QueueFactor;	/* slope of queue function */
 EXTERN time_t	QueueIntvl;	/* intervals between running the queue */
 EXTERN char	*AliasFile;	/* location of alias file */
