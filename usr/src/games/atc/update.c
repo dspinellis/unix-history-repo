@@ -8,7 +8,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)update.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)update.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "include.h"
@@ -188,6 +188,7 @@ command(pp)
 	PLANE	*pp;
 {
 	static char	buf[50], *bp, *comm_start;
+	char	*index();
 
 	buf[0] = '\0';
 	bp = buf;
