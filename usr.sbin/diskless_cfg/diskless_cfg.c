@@ -10,6 +10,10 @@ Based loosely on the 4.4BSD diskless setup code
 #include <sys/stat.h>
 #include <netdb.h>
 
+#ifdef hpux
+#define fhandle_t char
+#endif
+
 #ifdef sun
 #include <rpc/types.h>
 #include <sys/errno.h>
