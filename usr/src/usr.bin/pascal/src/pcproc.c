@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)pcproc.c 1.19 %G%";
+static	char sccsid[] = "@(#)pcproc.c 1.20 %G%";
 
 #include "whoami.h"
 #ifdef PC
@@ -396,10 +396,11 @@ pcproc(r)
 					    putdot( filename , line );
 					    break;
 				    default:
-					    putstrop( P2STASG
-							, p2type( filetype )
-							, lwidth( filetype )
-							, align( filetype ) );
+					    putstrop(P2STASG,
+						    ADDTYPE(p2type(filetype),
+							    P2PTR),
+						    lwidth(filetype),
+						    align(filetype));
 					    putdot( filename , line );
 					    break;
 				}
@@ -1014,10 +1015,10 @@ pcproc(r)
 					    putdot( filename , line );
 					    break;
 				    default:
-					    putstrop( P2STASG
-							, p2type( ap )
-							, lwidth( ap )
-							, align( ap ) );
+					    putstrop(P2STASG,
+						    ADDTYPE(p2type(ap), P2PTR),
+						    lwidth(ap),
+						    align(ap));
 					    putdot( filename , line );
 					    break;
 				}

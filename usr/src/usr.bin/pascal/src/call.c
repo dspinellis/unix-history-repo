@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)call.c 1.22 %G%";
+static	char sccsid[] = "@(#)call.c 1.23 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -366,8 +366,8 @@ call(p, argv, porf, psbn)
 			putstrop( ( noarguments ? P2UNARY P2STCALL : P2STCALL ),
 				ADDTYPE( p_type_p2type , P2PTR ) ,
 				p_type_width , p_type_align );
-			putstrop( P2STASG , p_type_p2type , lwidth( p -> type )
-				, align( p -> type ) );
+			putstrop(P2STASG, ADDTYPE(p_type_p2type, P2PTR),
+				lwidth(p -> type), align(p -> type));
 			break;
 		}
 	    } else {
