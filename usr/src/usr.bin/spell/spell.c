@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)spell.c	4.2 %G%";
+static char sccsid[] = "@(#)spell.c	4.3 %G%";
 #endif
 
 #include "spell.h"
@@ -249,8 +249,12 @@ char *ep,*d,*a;
 y_to_e(ep,d,a,lev)
 char *ep,*d,*a;
 {
+	char c = *ep;
 	*ep++ = 'e';
-	return(strip(ep,"",d,lev));
+	if (strip(ep,"",d,lev))
+		return (1);
+	ep[-1] = c;
+	return (0);
 }
 
 ily(ep,d,a,lev)
