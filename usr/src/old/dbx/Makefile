@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.5 (Berkeley) %G%
+#	@(#)Makefile	4.6 (Berkeley) %G%
 #
 # make file for debugger "dbx"
 #
@@ -81,6 +81,38 @@ HDR = \
     tree.h \
     ops.h
 
+SRC = \
+    defs.h \
+    commands.y \
+    asm.c \
+    events.c \
+    c.c \
+    cerror.s \
+    check.c \
+    coredump.c \
+    debug.c \
+    eval.c \
+    fortran.c \
+    keywords.c \
+    languages.c \
+    library.c \
+    lists.c \
+    machine.c \
+    main.c \
+    mappings.c \
+    names.c \
+    object.c \
+    operators.c \
+    pascal.c \
+    printsym.c \
+    process.c \
+    runtime.c \
+    scanner.c \
+    source.c \
+    symbols.c \
+    tree.c \
+    ops.c
+
 .c.o:
 	@echo "compiling $*.c"
 	@${CC} ${CFLAGS} -c $*.c
@@ -122,10 +154,18 @@ print:
 #
 
 clean:
-	rm -f ${HDR} ${OBJ} y.tab.c y.tab.h ${AOUT} core
+	rm -f ${HDR} ${OBJ} y.tab.c y.tab.h \
+	    ${AOUT} mkdate mkdate.o makedefs makedefs.o date.c core
 
 install:
 	install ${AOUT} ${DEST}
+
+#
+# Create a tar file called "tape" containing relevant files.
+#
+
+tape:
+	tar cfv tape Makefile READ_ME TO_DO ${SRC} makedefs.c mkdate.c
 
 #
 # Header dependencies are purposely incomplete since header files
