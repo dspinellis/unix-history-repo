@@ -1,147 +1,62 @@
-/*
- * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * Chris Torek.
+ *
+ * %sccs.include.redist.c%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)wbuf.c	5.5 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)wbuf.c	5.6 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
-#include	<stdio.h>
-#include	<sys/types.h>
-#include	<sys/stat.h>
+#include <stdio.h>
+#include "local.h"
 
-char	*malloc();
-
-_flsbuf(c, iop)
-unsigned char c;
-register FILE *iop;
+/*
+ * Write the given character into the (probably full) buffer for
+ * the given file.  Flush the buffer out if it is or becomes full,
+ * or if c=='\n' and the file is line buffered.
+ */
+__swbuf(c, fp)
+	register int c;
+	register FILE *fp;
 {
-	register char *base;
-	register n, rn;
-	char c1;
-	int size;
-	struct stat stbuf;
+	register int n;
 
-	if (iop->_flag & _IORW) {
-		iop->_flag |= _IOWRT;
-		iop->_flag &= ~(_IOEOF|_IOREAD);
+	/*
+	 * In case we cannot write, or longjmp takes us out early,
+	 * make sure _w is 0 (if fully- or un-buffered) or -_bf._size
+	 * (if line buffered) so that we will get called again.
+	 * If we did not do this, a sufficient number of putc()
+	 * calls might wrap _w from negative to positive.
+	 */
+	fp->_w = fp->_lbfsize;
+	if (cantwrite(fp))
+		return (EOF);
+	c = (unsigned char)c;
+
+	/*
+	 * If it is completely full, flush it out.  Then, in any case,
+	 * stuff c into the buffer.  If this causes the buffer to fill
+	 * completely, or if c is '\n' and the file is line buffered,
+	 * flush it (perhaps a second time).  The second flush will always
+	 * happen on unbuffered streams, where _bf._size==1; fflush()
+	 * guarantees that putc() will always call wbuf() by setting _w
+	 * to 0, so we need not do anything else.
+	 */
+	n = fp->_p - fp->_bf._base;
+	if (n >= fp->_bf._size) {
+		if (fflush(fp))
+			return (EOF);
+		n = 0;
 	}
-
-	if ((iop->_flag&_IOWRT)==0)
-		return(EOF);
-tryagain:
-	if (iop->_flag&_IOLBF) {
-		base = iop->_base;
-		*iop->_ptr++ = c;
-		if ((rn = iop->_ptr - base) >= iop->_bufsiz || c == '\n') {
-			iop->_ptr = base;
-			iop->_cnt = 0;
-		} else {
-			/* we got here because _cnt is wrong, so fix it */
-			iop->_cnt = -rn;
-			rn = n = 0;
-		}
-	} else if (iop->_flag&_IONBF) {
-		c1 = c;
-		rn = 1;
-		base = &c1;
-		iop->_cnt = 0;
-	} else {
-		if ((base=iop->_base)==NULL) {
-			if (fstat(fileno(iop), &stbuf) < 0 ||
-			    stbuf.st_blksize <= NULL)
-				size = BUFSIZ;
-			else
-				size = stbuf.st_blksize;
-			if ((iop->_base=base=malloc(size)) == NULL) {
-				iop->_flag |= _IONBF;
-				goto tryagain;
-			}
-			iop->_flag |= _IOMYBUF;
-			iop->_bufsiz = size;
-			if (iop==stdout && isatty(fileno(stdout))) {
-				iop->_flag |= _IOLBF;
-				iop->_ptr = base;
-				goto tryagain;
-			}
-			rn = n = 0;
-		} else
-			rn = iop->_ptr - base;
-		iop->_ptr = base;
-		iop->_cnt = iop->_bufsiz;
-	}
-	while (rn > 0) {
-		if ((n = write(fileno(iop), base, rn)) <= 0) {
-			iop->_flag |= _IOERR;
-			return(EOF);
-		}
-		rn -= n;
-		base += n;
-	}
-	if ((iop->_flag&(_IOLBF|_IONBF)) == 0) {
-		iop->_cnt--;
-		*iop->_ptr++ = c;
-	}
-	return(c);
-}
-
-fpurge(iop)
-register FILE *iop;
-{
-	iop->_ptr = iop->_base;
-	iop->_cnt = iop->_flag&(_IOLBF|_IONBF|_IOREAD) ? 0 : iop->_bufsiz;
-	return(0);
-}
-
-fflush(iop)
-register FILE *iop;
-{
-	register char *base;
-	register n, rn;
-
-	if ((iop->_flag&(_IONBF|_IOWRT))==_IOWRT &&
-	    (base = iop->_base) != NULL && (rn = n = iop->_ptr - base) > 0) {
-		iop->_ptr = base;
-		iop->_cnt = (iop->_flag&(_IOLBF|_IONBF)) ? 0 : iop->_bufsiz;
-		do {
-			if ((n = write(fileno(iop), base, rn)) <= 0) {
-				iop->_flag |= _IOERR;
-				return(EOF);
-			}
-			rn -= n;
-			base += n;
-		} while (rn > 0);
-	}
-	return(0);
-}
-
-fclose(iop)
-	register FILE *iop;
-{
-	register int r;
-
-	r = EOF;
-	if (iop->_flag&(_IOREAD|_IOWRT|_IORW) && (iop->_flag&_IOSTRG)==0) {
-		r = fflush(iop);
-		if (close(fileno(iop)) < 0)
-			r = EOF;
-		if (iop->_flag&_IOMYBUF)
-			free(iop->_base);
-	}
-	iop->_cnt = 0;
-	iop->_base = (char *)NULL;
-	iop->_ptr = (char *)NULL;
-	iop->_bufsiz = 0;
-	iop->_flag = 0;
-	iop->_file = 0;
-	return(r);
-}
-
-_cleanup()
-{
-	extern int _fwalk();
-
-	_fwalk(fclose);
+	fp->_w--;
+	*fp->_p++ = c;
+	if (++n == fp->_bf._size || (fp->_flags & __SLBF && c == '\n'))
+		if (fflush(fp))
+			return (EOF);
+	return (c);
 }
