@@ -5,9 +5,9 @@
 # include "sendmail.h"
 
 # ifdef DBM
-SCCSID(@(#)alias.c	3.39		%G%	(with DBM));
+SCCSID(@(#)alias.c	3.40		%G%	(with DBM));
 # else DBM
-SCCSID(@(#)alias.c	3.39		%G%	(without DBM));
+SCCSID(@(#)alias.c	3.40		%G%	(without DBM));
 # endif DBM
 
 /*
@@ -202,10 +202,9 @@ initaliases(aliasfile, init)
 	(void) strcpy(buf, aliasfile);
 	(void) strcat(buf, ".pag");
 	stb.st_ino = 0;
-	if ((stat(buf, &stb) < 0 || stb.st_mtime < modtime || atcnt < 0) &&
-	    !init)
+	if (!init && (atcnt < 0 || stat(buf, &stb) < 0 || stb.st_mtime < modtime))
 	{
-		if (stb.st_ino != 0 &&
+		if (AutoRebuild && stb.st_ino != 0 &&
 		    ((stb.st_mode & 0666) == 0666 || stb.st_uid == geteuid()))
 		{
 			init = TRUE;
