@@ -1,5 +1,5 @@
 # Makefile for f77 system lib, libU77.a
-#	@(#)makefile	1.7	%G%
+#	@(#)makefile	1.8	%G%
 
 LIB = libU77.a
 LPR = lpr
@@ -129,7 +129,7 @@ install:	$(LIB)
 
 Version:	$(SOURCES) mkvers
 	@rm -f Version.c
-	mkvers $(LIB) $(SOURCES) > Version.c
+	./mkvers $(LIB) $(SOURCES) > Version.c
 	cc -c Version.c
 	mv Version.o Version
 
@@ -140,7 +140,7 @@ print:	index
 	@pr index Makefile `ls $(SOURCES)` | $(LPR)
 
 index:	$(SOURCES) mkindx
-	@mkindx "f77 $(LIB) Source Listing " Makefile $(SOURCES)
+	@./mkindx "f77 $(LIB) Source Listing " Makefile $(SOURCES)
 
 mkindx:	mkindx.c
 	@cc mkindx.c -o mkindx
