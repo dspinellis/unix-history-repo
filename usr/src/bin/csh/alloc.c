@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)alloc.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)alloc.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -59,7 +59,7 @@ char   *membot = NULL;		/* PWP: bottom of allocatable memory */
 
 #define ROUNDUP	7
 
-#define ALIGN(a) (((a) + ROUNDUP) & ~ROUNDUP)
+#define MEMALIGN(a) (((a) + ROUNDUP) & ~ROUNDUP)
 
 union overhead {
     union overhead *ov_next;	/* when free */
@@ -135,7 +135,7 @@ malloc(nbytes)
      * hash buckets which satisfies request.  Account for space used per block
      * for accounting.
      */
-    nbytes = ALIGN(ALIGN(sizeof(union overhead)) + nbytes + RSLOP);
+    nbytes = MEMALIGN(MEMALIGN(sizeof(union overhead)) + nbytes + RSLOP);
     shiftr = (nbytes - 1) >> 2;
 
     /* apart from this loop, this is O(1) */
@@ -173,7 +173,7 @@ malloc(nbytes)
     p->ov_rmagic = RMAGIC;
     *((u_int *) (((caddr_t) p) + nbytes - RSLOP)) = RMAGIC;
 #endif
-    return ((ptr_t) (((caddr_t) p) + ALIGN(sizeof(union overhead))));
+    return ((ptr_t) (((caddr_t) p) + MEMALIGN(sizeof(union overhead))));
 #else
     if (nbytes)
 	return ((ptr_t) 0);
@@ -254,7 +254,7 @@ free(cp)
     CHECK(!memtop || !membot, "free(%lx) called before any allocations.", cp);
     CHECK(cp > (ptr_t) memtop, "free(%lx) above top of memory.", cp);
     CHECK(cp < (ptr_t) membot, "free(%lx) above top of memory.", cp);
-    op = (union overhead *) (((caddr_t) cp) - ALIGN(sizeof(union overhead)));
+    op = (union overhead *) (((caddr_t) cp) - MEMALIGN(sizeof(union overhead)));
     CHECK(op->ov_magic != MAGIC, "free(%lx) bad block.", cp);
 
 #ifdef RCHECK
@@ -311,8 +311,7 @@ calloc(i, j)
  */
 #ifndef lint
 int     realloc_srchlen = 4;	/* 4 should be plenty, -1 =>'s whole list */
-
-#endif				/* lint */
+#endif /* lint */
 
 ptr_t
 realloc(cp, nbytes)
@@ -328,7 +327,7 @@ realloc(cp, nbytes)
 
     if (cp == NULL)
 	return (malloc(nbytes));
-    op = (union overhead *) (((caddr_t) cp) - ALIGN(sizeof(union overhead)));
+    op = (union overhead *) (((caddr_t) cp) - MEMALIGN(sizeof(union overhead)));
     if (op->ov_magic == MAGIC) {
 	was_alloced++;
 	i = op->ov_index;
@@ -337,25 +336,27 @@ realloc(cp, nbytes)
 	/*
 	 * Already free, doing "compaction".
 	 * 
-	 * Search for the old block of memory on the free list.  First, check the
-	 * most common case (last element free'd), then (this failing) the last
-	 * ``realloc_srchlen'' items free'd. If all lookups fail, then assume
-	 * the size of the memory block being realloc'd is the smallest
-	 * possible.
+	 * Search for the old block of memory on the free list.  First, check 
+	 * the most common case (last element free'd), then (this failing) 
+	 * the last ``realloc_srchlen'' items free'd. If all lookups fail, 
+	 * then assume the size of the memory block being realloc'd is the 
+	 * smallest possible.
 	 */
 	if ((i = findbucket(op, 1)) < 0 &&
 	    (i = findbucket(op, realloc_srchlen)) < 0)
 	i = 0;
 
-    onb = ALIGN(nbytes + ALIGN(sizeof(union overhead)) + RSLOP);
+    onb = MEMALIGN(nbytes + MEMALIGN(sizeof(union overhead)) + RSLOP);
 
     /* avoid the copy if same size block */
     if (was_alloced && (onb < (1 << (i + 3))) && (onb >= (1 << (i + 2))))
 	return ((ptr_t) cp);
     if ((res = malloc(nbytes)) == NULL)
 	return ((ptr_t) 0);
-    if (cp != res)		/* common optimization */
-	bcopy(cp, res, nbytes);
+    if (cp != res) {		/* common optimization */
+	onb = (1 << (i + 3)) - MEMALIGN(sizeof(union overhead)) - RSLOP;
+	bcopy(cp, res, onb < nbytes ? onb : nbytes);
+    }
     if (was_alloced)
 	free(cp);
     return (res);
@@ -364,7 +365,7 @@ realloc(cp, nbytes)
 	return ((ptr_t) 0);
     else
 	return ((ptr_t) 0);
-#endif				/* !lint */
+#endif /* !lint */
 }
 
 
