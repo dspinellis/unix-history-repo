@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	3.42		%G%);
+SCCSID(@(#)util.c	3.43		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -533,6 +533,14 @@ putline(l, fp, m)
 	register char *p;
 	char svchar;
 
+	/* strip out 0200 bits -- these can look like TELNET protocol */
+	if (bitnset(M_LIMITS, m->m_flags))
+	{
+		p = l;
+		while ((*p++ &= ~0200) != 0)
+			continue;
+	}
+
 	do
 	{
 		/* find the end of the line */
@@ -541,7 +549,7 @@ putline(l, fp, m)
 			p = &l[strlen(l)];
 
 		/* check for line overflow */
-		while (bitnset(M_LIMITS, m->m_flags) && (p - l) > SMTPLINELIM)
+		while ((p - l) > SMTPLINELIM && bitnset(M_LIMITS, m->m_flags))
 		{
 			register char *q = &l[SMTPLINELIM - 1];
 
