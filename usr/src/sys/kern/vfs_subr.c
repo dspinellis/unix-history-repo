@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.83 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.84 (Berkeley) %G%
  */
 
 /*
@@ -189,7 +189,7 @@ void vattr_null(vap)
 /*
  * Routines having to do with the management of the vnode table.
  */
-extern struct vnode *vfreeh, **vfreet;
+struct vnode *vfreeh, **vfreet = &vfreeh;
 extern int (**dead_vnodeop_p)();
 extern int (**spec_vnodeop_p)();
 extern void vclean();
@@ -618,19 +618,11 @@ void vrele(vp)
 		panic("vrele: ref cnt");
 	}
 #endif
-	if (vfreeh == NULLVP) {
-		/*
-		 * insert into empty list
-		 */
-		vfreeh = vp;
-		vp->v_freeb = &vfreeh;
-	} else {
-		/*
-		 * insert at tail of list
-		 */
-		*vfreet = vp;
-		vp->v_freeb = vfreet;
-	}
+	/*
+	 * insert at tail of LRU list
+	 */
+	*vfreet = vp;
+	vp->v_freeb = vfreet;
 	vp->v_freef = NULL;
 	vfreet = &vp->v_freef;
 	VOP_INACTIVE(vp);
