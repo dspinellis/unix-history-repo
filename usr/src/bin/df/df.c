@@ -1,12 +1,15 @@
-static char *sccsid = "@(#)df.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)df.c	4.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <fstab.h>
 #include <sys/param.h>
 #include <sys/filsys.h>
 #include <sys/fblk.h>
+#include <sys/stat.h>
+/*
+ * df
+ */
 
 #define NFS	20	/* Max number of filesystems */
-
 
 struct {
 	char path[32];
@@ -30,9 +33,7 @@ main(argc, argv)
 char **argv;
 {
 	int i;
-	FILE *f = fopen(FSTAB, "r");
 	char buf[128];
-	struct	fstab	fs;
 
 	while (argc >= 1 && argv[1][0]=='-') {
 		switch(argv[1][1]) {
@@ -64,23 +65,21 @@ char **argv;
 		printf("\tiused\tifree\t%%iused");
 	putchar('\n');
 	if(argc <= 1) {
-		if (f == NULL)
+		struct	fstab	*fsp;
+		if (setfsent() == 0)
 			perror(FSTAB), exit(1);
-		while (!feof(f)){
-			fscanf(f, FSTABFMT, FSTABARG(&fs));
-			if (strcmp(fs.fs_type, "rw") && strcmp(fs.fs_type, "ro"))
+		while( (fsp = getfsent()) != 0){
+			if (  (strcmp(fsp->fs_type, FSTAB_RW) != 0)
+			    &&(strcmp(fsp->fs_type, FSTAB_RO) != 0) )
 				continue;
 			if (root[0] == 0)
-				strcpy(root, fs.fs_spec);
-			dfree(fs.fs_spec);
+				strcpy(root, fsp->fs_spec);
+			dfree(fsp->fs_spec);
 		}
+		endfsent();
 		exit(0);
 	}
 
-	if (f){
-		fscanf(f, FSTABFMT, FSTABARG(&fs));
-		strcpy(root, fs.fs_spec);
-	}
 	for(i=1; i<argc; i++) {
 		dfree(argv[i]);
 	}
@@ -95,7 +94,27 @@ char *file;
 	long	used;
 	long	hardway;
 	char	*mp;
+	struct	stat stbuf;
 
+	if(stat(file, &stbuf) == 0 && (stbuf.st_mode&S_IFMT) != S_IFCHR
+	  && (stbuf.st_mode&S_IFMT) != S_IFBLK) {
+		int mt = open("/etc/mtab", 0), len;
+		char *str = "/dev/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+		char mtab[32];
+		struct stat mstbuf;
+		while((len = read(mt, mtab, 32)) == 32) {
+			read(mt, &str[5], 32);
+			if(stat(str, &mstbuf) == 0 && mstbuf.st_rdev == stbuf.st_dev) {
+				file = str;
+				break;
+			}
+		}
+		close(mt);
+		if(len == 0) {
+			fprintf(stderr, "%s: mounted on unknown device\n", file);
+			return;
+		}
+	}
 	fi = open(file, 0);
 	if(fi < 0) {
 		fprintf(stderr,"cannot open %s\n", file);
