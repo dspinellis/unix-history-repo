@@ -106,6 +106,7 @@ ufs/ufs/ufs_vfsops.c	standard
 ufs/ufs/ufs_vnops.c	standard
 nfs/nfs_bio.c		optional nfs
 nfs/nfs_node.c		optional nfs
+nfs/nfs_nqlease.c	optional nfs
 nfs/nfs_serv.c		optional nfs
 nfs/nfs_socket.c	optional nfs
 nfs/nfs_srvcache.c	optional nfs
