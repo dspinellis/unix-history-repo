@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vnops.c	7.62 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.63 (Berkeley) %G%
  */
 
 /*
@@ -82,6 +82,13 @@ struct vnodeops nfsv2_vnodeops = {
 	nfs_print,		/* print */
 	nfs_islocked,		/* islocked */
 	nfs_advlock,		/* advlock */
+	nfs_blkatoff,		/* blkatoff */
+	nfs_vget,		/* vget */
+	nfs_valloc,		/* valloc */
+	nfs_vfree,		/* vfree */
+	nfs_truncate,		/* truncate */
+	nfs_update,		/* update */
+	bwrite,			/* bwrite */
 };
 
 /*
@@ -121,6 +128,13 @@ struct vnodeops spec_nfsv2nodeops = {
 	nfs_print,		/* print */
 	nfs_islocked,		/* islocked */
 	spec_advlock,		/* advlock */
+	spec_blkatoff,		/* blkatoff */
+	spec_vget,		/* vget */
+	spec_valloc,		/* valloc */
+	spec_vfree,		/* vfree */
+	spec_truncate,		/* truncate */
+	nfs_update,		/* update */
+	bwrite,			/* bwrite */
 };
 
 #ifdef FIFO
@@ -158,6 +172,13 @@ struct vnodeops fifo_nfsv2nodeops = {
 	nfs_print,		/* print */
 	nfs_islocked,		/* islocked */
 	fifo_advlock,		/* advlock */
+	fifo_blkatoff,		/* blkatoff */
+	fifo_vget,		/* vget */
+	fifo_valloc,		/* valloc */
+	fifo_vfree,		/* vfree */
+	fifo_truncate,		/* truncate */
+	nfs_update,		/* update */
+	bwrite,			/* bwrite */
 };
 #endif /* FIFO */
 
@@ -1701,4 +1722,88 @@ nfs_print(vp)
 	if (np->n_lockwaiter)
 		printf(" waiting pid %d", np->n_lockwaiter);
 	printf("\n");
+}
+
+/*
+ * NFS directory offset lookup.
+ * Currently unsupported.
+ */
+nfs_blkatoff(vp, offset, res, bpp)
+	struct vnode *vp;
+	off_t offset;
+	char **res;
+	struct buf **bpp;
+{
+
+	return (EOPNOTSUPP);
+}
+
+/*
+ * NFS flat namespace lookup.
+ * Currently unsupported.
+ */
+nfs_vget(mp, ino, vpp)
+	struct mount *mp;
+	ino_t ino;
+	struct vnode **vpp;
+{
+
+	return (EOPNOTSUPP);
+}
+
+/*
+ * NFS flat namespace allocation.
+ * Currently unsupported.
+ */
+nfs_valloc(pvp, mode, cred, vpp)
+	struct vnode *pvp;
+	int mode;
+	struct ucred *cred;
+	struct vnode **vpp;
+{
+
+	return (EOPNOTSUPP);
+}
+
+/*
+ * NFS flat namespace free.
+ * Currently unsupported.
+ */
+void
+nfs_vfree(pvp, ino, mode)
+	struct vnode *pvp;
+	ino_t ino;
+	int mode;
+{
+
+	return;
+}
+
+/*
+ * NFS file truncation.
+ */
+nfs_truncate(vp, length, flags)
+	struct vnode *vp;
+	u_long length;
+	int flags;
+{
+
+	/* Use nfs_setattr */
+	printf("nfs_truncate: need to implement!!");
+	return (EOPNOTSUPP);
+}
+
+/*
+ * NFS update.
+ */
+nfs_update(vp, ta, tm, waitfor)
+	struct vnode *vp;
+	struct timeval *ta;
+	struct timeval *tm;
+	int waitfor;
+{
+
+	/* Use nfs_setattr */
+	printf("nfs_update: need to implement!!");
+	return (EOPNOTSUPP);
 }
