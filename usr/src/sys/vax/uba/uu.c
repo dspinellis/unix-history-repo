@@ -1,12 +1,13 @@
-/*	uu.c	4.6	83/06/11	*/
+/*	uu.c	4.7	83/06/16	*/
 
 #include "uu.h"
 #if NUU > 0
 /*
  * TU58 DECtape II/DL11 device driver
  *
- * The TU58 * is treated as a block device (only).  Error detection and
- * recovery is almost non-existant.  It is assumed that the
+ * The TU58 is treated as a block device (only).  Error detection and
+ * recovery is not very extensive, but sufficient to handle the most
+ * common errors. It is assumed that the
  * TU58 will follow the RSP protocol exactly, very few protocol
  * errors are checked for.  
  */
@@ -20,7 +21,6 @@
 #include "../h/time.h"
 #include "../h/kernel.h"
 #include "../h/errno.h"
-#include "../h/uio.h"
 #include "../h/file.h"
 
 #include "../vax/cpu.h"
@@ -72,7 +72,7 @@ char *tustates[TUS_NSTATES] = {
 
 #define	UNIT(dev)	(minor(dev)>>1)
 
-u_char	uunull[2] = { 0, 0 };	/* nulls to send for initialization */
+u_char	uunull[4] = { 0, 0, 0, 0 };	/* nulls to send for initialization */
 u_char	uuinit[2] = { TUF_INITF, TUF_INITF };	/* inits to send */
 
 struct	uba_device	*uudinfo[NUU];
@@ -135,7 +135,7 @@ uuopen(dev, flag)
 	 * is already active, just return
 	 */
 	if (uuc->tu_dopen[0] && uuc->tu_dopen[1])
-		return;
+		goto ok;
 
 	/*
 	 * If the unit already initialized,
@@ -172,21 +172,9 @@ uuclose(dev, flag)
 	int flag;
 {
 	register struct uu_softc *uuc;
-	int unit = UNIT(dev);
-	int ctlr = unit/NDPC;
 
-	uuc = &uu_softc[ctlr];
-	if (uuc->tu_serrs + uuc->tu_cerrs + uuc->tu_herrs != 0) {
-		/*
-		 * A tu58 is like nothing ever seen before;
-		 * I guess this is appropriate then...
-		 */
-		uprintf(
-		   "uu%d: %d soft errors, %d checksum errors, %d hard errors\n",
-		    unit, uuc->tu_serrs, uuc->tu_cerrs, uuc->tu_herrs);
-		    uuc->tu_serrs = uuc->tu_cerrs = uuc->tu_herrs = 0;
-	}
-	uuc->tu_dopen[unit&UMASK] = 0;
+	uuc = &uu_softc[UNIT(dev)/NDPC];
+	uuc->tu_dopen[UNIT(dev)&UMASK] = 0;
 }
 
 uureset(ctlr)
@@ -229,9 +217,9 @@ uustrategy(bp)
 	if (ui == 0 || ui->ui_alive == 0)
 		goto bad;
 	uutab = &uitab[unit/NDPC];	/* one request queue per controller */
+	s = splx(UUIPL);
 	if ((bp->b_flags&B_READ) == 0)
 		tu_pee(&pcnt[unit]);
-	s = splx(UUIPL);
 	bp->av_forw = NULL;
 	if (uutab->b_actf == NULL)
 		uutab->b_actf = bp;
@@ -336,13 +324,10 @@ uurintr(ctlr)
 	 * (either overrun or break)
 	 */
 	case TUS_RCVERR:
-		if (c & UURDB_ORUN) 
-			printf("uu(%d): data overrun, bytes left: %d",
-			  ui->ui_unit, 
-			  uuc->tu_count + uuc->tu_rcnt - data->pk_mcount);
-		else
-			printf("uu(%d): break received", ui->ui_unit);
-		printf(", transfer restarted\n"); 
+		if ((c & UURDB_ORUN) == 0)
+			printf("uu%d: break received, transfer restarted\n",
+								data->pk_unit);
+		uuc->tu_serrs++;
 		uu_restart(ctlr, ui);	
 		break;
 
@@ -409,6 +394,10 @@ uurintr(ctlr)
 	 * in uudma)
 	 */
 	case TUS_GETH:
+#ifndef UUDMA
+		if (data->pk_flag == TUF_DATA)
+			uuc->tu_rbptr = (u_char *)uuc->tu_addr;
+#endif
 		uuc->tu_rcnt = data->pk_mcount;
 		uuc->tu_state = TUS_GETD;
 		break;
@@ -427,7 +416,7 @@ uurintr(ctlr)
 		if (data->pk_chksum !=
 		    tuchk(*((short *)data), (u_short *)
 		     (data->pk_flag == TUF_DATA ?
-		     (u_short *)  uuc->tu_addr : (u_short *)&data->pk_op),
+		     (u_short *) uuc->tu_addr : (u_short *)&data->pk_op),
 		     (int)data->pk_mcount))
 	case TUS_CHKERR:
 			uuc->tu_cerrs++;
@@ -445,8 +434,8 @@ uurintr(ctlr)
 			uuc->tu_flag = 0;
 			uuaddr->tcs = UUCS_INTR;
 			if ((bp = uutab->b_actf) == NULL) {
-				printf("uu(%d): no bp, active %d\n", 
-					ui->ui_unit, uitab[ctlr].b_active);
+				printf("uu%d: no bp, active %d\n", 
+					data->pk_unit, uitab[ctlr].b_active);
 				uustart(ui);
 				return;
 			}
@@ -467,11 +456,13 @@ uurintr(ctlr)
 			iodone(bp);
 			uustart(ui);
 		} else {
-			printf("neither data nor end: %o %o\n",
-			    data->pk_flag&0xff, data->pk_op&0xff);
+			/*
+			 * Neither data nor end: data was lost
+			 * somehow, restart the transfer.
+			 */
 			uuaddr->rcs = 0;		/* flush the rest */
-			uuc->tu_state = TUS_INIT1;
 			uu_restart(ctlr, ui);
+			uuc->tu_serrs++;
 		}
 		break;
 
@@ -482,7 +473,7 @@ uurintr(ctlr)
 	default:
 bad:
 		if (c == TUF_INITF) {
-			printf("uu%d protocol error, state=", unit);
+			printf("uu%d protocol error, state=", data->pk_unit);
 			printstate(uuc->tu_state);
 			printf(", op=%x, cnt=%d, block=%d\n",
 			    cmd->pk_op, cmd->pk_count, cmd->pk_block);
@@ -497,7 +488,7 @@ bad:
 			uuc->tu_state = TUS_INIT1;
 		} else {
 			printf("uu%d receive state error, state=", 
-				unit);
+				data->pk_unit);
 			printstate(uuc->tu_state);
 			printf(", byte=%x\n", c & 0xff);
 #ifdef notdef
@@ -556,9 +547,6 @@ top:
 		c = uuaddr->rdb;	/* prevent overrun error */
 		uuaddr->rcs = UUCS_INTR;
 		uuc->tu_flag = 1;
-		break;
-
-	case TUS_IDLE:		/* stray interrupt? */
 		break;
 
 	/*
@@ -631,6 +619,8 @@ top:
 	/*
 	 * Random interrupt
 	 */
+	case TUS_IDLE:		/* stray interrupt? */
+
 	default:
 		break;
 	}
@@ -653,6 +643,11 @@ uuwatch()
 		uutab = &uitab[ctlr];
 		if ((uuc->tu_dopen[0] == 0) && (uuc->tu_dopen[1] == 0) && 
 		    (uutab->b_active == 0)) {
+			/*
+			 * If both devices on this controller have
+			 * been closed and the request queue is
+			 * empty, mark ths controller not active
+			 */
 			uuc->tu_flag = 0;
 			uuaddr->rcs = 0;
 			continue;
@@ -662,9 +657,10 @@ uuwatch()
 			uuc->tu_flag++;
 		if (uuc->tu_flag <= 40)
 			continue;
-		printf("uu(%d): read stalled\n", ctlr);
+		printf("uu%d: read stalled\n", uudata[ctlr].pk_unit);
 		printf("%X %X %X %X %X %X %X\n", uuc->tu_rbptr, uuc->tu_rcnt,
-		       uuc->tu_wbptr, uuc->tu_wcnt, uuc->tu_state, uuc->tu_addr, uuc->tu_count);
+		       uuc->tu_wbptr, uuc->tu_wcnt, uuc->tu_state, uuc->tu_addr,
+		       uuc->tu_count);
 		uuc->tu_flag = 0;
 		s = splx(UUIPL);
 		i = uuaddr->rdb;		/* dummy */
@@ -767,7 +763,7 @@ uuioctl(dev, cmd, data, flag)
 	caddr_t data;
 {
 	/*
-	 * to be added later
+	 * add code to wind/rewind cassette here
 	 */
 	return (ENXIO);
 }
