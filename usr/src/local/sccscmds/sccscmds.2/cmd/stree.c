@@ -1,7 +1,7 @@
 # include	"../hdr/defines.h"
 # include	"../hdr/had.h"
 
-SCCSID(@(#)stree.c	4.1);
+SCCSID(@(#)stree.c	4.2);
 USXALLOC();
 
 struct	tree {
@@ -104,9 +104,9 @@ prttree(file)
 	gpkt.p_iop = 0;
 
 	tree = alloc(n = ((maxser(&gpkt) + 1) * sizeof(struct tree)));
-	zero(tree, n);
+	bzero(tree, n);
 	pos = alloc(n = ((maxser(&gpkt) + 1) * sizeof(struct position)));
-	zero(pos, n);
+	bzero(pos, n);
 	for (i = 1; i <= maxser(&gpkt); i++)
 		pos[i].p_node = i;
 	rdp = gpkt.p_idel;

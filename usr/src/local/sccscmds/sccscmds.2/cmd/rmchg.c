@@ -1,7 +1,7 @@
 # include "../hdr/defines.h"
 # include "../hdr/had.h"
 
-SCCSID(@(#)rmchg.c	4.1);
+SCCSID(@(#)rmchg.c	4.2);
 
 /*
 	Program to remove a specified delta from an SCCS file,
@@ -173,7 +173,7 @@ char *file;
 	Save requested SID for later checking of
 	permissions (by 'permiss').
 	*/
-	move(&sid,&gpkt.p_reqsid,sizeof(gpkt.p_reqsid));
+	bcopy(&sid,&gpkt.p_reqsid,sizeof(gpkt.p_reqsid));
 
 	/*
 	Now read-in delta table. The 'dodelt' routine
@@ -202,7 +202,7 @@ char *file;
 	Replace 'sid' with original 'sid'
 	requested.
 	*/
-	move(&gpkt.p_reqsid,&sid,sizeof(gpkt.p_reqsid));
+	bcopy(&gpkt.p_reqsid,&sid,sizeof(gpkt.p_reqsid));
 
 	/*
 	Now check permissions.

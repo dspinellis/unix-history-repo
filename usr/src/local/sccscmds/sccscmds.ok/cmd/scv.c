@@ -13,7 +13,7 @@
 # include	"../hdr/defines.h"
 # include	"dir.h"
 
-SCCSID(@(#)scv.c	4.4);
+SCCSID(@(#)scv.c	4.5);
 
 
 /*
@@ -258,7 +258,7 @@ char *ofile;
 		return;
 	printf("%s:\n",ofile);
 	ckpfile(auxf(ofile,'p'));
-	zero(&opkt,sizeof(opkt));
+	bzero(&opkt,sizeof(opkt));
 	opnr(&opkt.Pibuf,ofile);
 	dohead(&opkt);
 	rlp = 0;
@@ -372,7 +372,7 @@ short **rlp;
 		rlp[p1->d_sid.s_rel][p1->d_sid.s_lev] = m;
 	}
 	brp = alloca(n = (ndels + 1) * sizeof(*brp));
-	zero(brp,n);
+	bzero(brp,n);
 	for (m = 1; m <= ndels; m++) {
 		p1 = &dt[m];
 		if (p1->d_type != 'D') {
@@ -468,7 +468,7 @@ register struct Packet *pkt;
 	if(rdrec(pkt) == 1) fatal("premature eof (58)");
 	hdr = pkt->Pibuf.Irecptr;
 	if(hdr->Hmagicno != MAGICNO) fatal("not an SCCS file (53)");
-	move(hdr,&pkt->Phdr,sizeof(*hdr));
+	bcopy(hdr,&pkt->Phdr,sizeof(*hdr));
 }
 
 
@@ -484,7 +484,7 @@ register short ***rlp;
 	while (rdrec(pkt) != 1 && (rt = pkt->Pibuf.Irecptr)->Rrel) {
 		if (n == 0) {
 			*rlp = alloc(sz = (rt->Rrel + 1) * sizeof(**rlp));
-			zero(*rlp,sz);
+			bzero(*rlp,sz);
 			**rlp = rt->Rrel;
 		}
 		(*rlp)[rt->Rrel] = alloc((rt->Rlevs + 1) * sizeof(***rlp));
@@ -514,7 +514,7 @@ short ndels;
 			return(fatal("internal error in dodeltab"));
 		ndt = &dt[ndels];
 		ndt->d_type = odt->Dtype;
-		move(odt->Dpgmr,ndt->d_pgmr,sizeof(ndt->d_pgmr));
+		bcopy(odt->Dpgmr,ndt->d_pgmr,sizeof(ndt->d_pgmr));
 		ndt->d_datetime = (odt->Ddthi<<16)+(unsigned)odt->Ddtlo;
 		ndt->d_sid.s_rel = odt->Drel;
 		ndt->d_sid.s_lev = odt->Dlev;
@@ -533,7 +533,7 @@ short ndels;
 			hists[ndels] = alloc(n);
 			hists[ndels][0] = 0;
 		}
-		move(odt->Dhist,strend(hists[ndels]),n);
+		bcopy(odt->Dhist,index(hists[ndels], '\0'),n);
 	}
 	if (ndels) {
 		fatal("in dodelt");

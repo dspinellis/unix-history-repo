@@ -1,4 +1,4 @@
-#	makefile	4.3	83/12/22
+#	makefile	4.4	85/05/04
 #
 CFLAGS=	-O -w
 LIBS=	../libpw.a ../libPW.a ../libwrt.a
@@ -6,68 +6,68 @@ LIBS=	../libpw.a ../libPW.a ../libwrt.a
 all:	admin bdiff chghist comb delta get help prt rmdel sccsdiff.sh \
 	what val snull cmt prs
 
-admin:	admin.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o admin admin.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+admin:	admin.o ../com/comobj.a alloc.o
+	$(CC) -o admin admin.o ../com/comobj.a $(LIBS) alloc.o
 
 admin.o:	admin.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) admin.c
 
-cmt:	cmt.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o cmt cmt.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+cmt:	cmt.o ../com/comobj.a alloc.o
+	$(CC) -o cmt cmt.o ../com/comobj.a $(LIBS) alloc.o
 
 cmt.o:	cmt.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) cmt.c
 
-bdiff:	bdiff.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o bdiff bdiff.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+bdiff:	bdiff.o ../com/comobj.a alloc.o
+	$(CC) -o bdiff bdiff.o ../com/comobj.a $(LIBS) alloc.o
 
 bdiff.o:	bdiff.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) bdiff.c
 
-comb:	comb.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o comb comb.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+comb:	comb.o ../com/comobj.a alloc.o
+	$(CC) -o comb comb.o ../com/comobj.a $(LIBS) alloc.o
 
 comb.o:		comb.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) comb.c
 
-scv:	scv.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o scv scv.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+scv:	scv.o ../com/comobj.a alloc.o
+	$(CC) -o scv scv.o ../com/comobj.a $(LIBS) alloc.o
 
 scv.o:		scv.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) scv.c
 
-snull:	snull.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o snull snull.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+snull:	snull.o ../com/comobj.a alloc.o
+	$(CC) -o snull snull.o ../com/comobj.a $(LIBS) alloc.o
 
 snull.o:		snull.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) snull.c
 
-delta:	delta.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o delta delta.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+delta:	delta.o ../com/comobj.a alloc.o
+	$(CC) -o delta delta.o ../com/comobj.a $(LIBS) alloc.o
 
 delta.o:	delta.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) -DLOGDELTA delta.c
 
-get:	get.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -y_getwd -o get get.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+get:	get.o ../com/comobj.a alloc.o
+	$(CC) -o get get.o ../com/comobj.a $(LIBS) alloc.o
 
 get.o:		get.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) get.c
 
-help:	help.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o help help.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+help:	help.o ../com/comobj.a alloc.o
+	$(CC) -o help help.o ../com/comobj.a $(LIBS) alloc.o
 
 help.o:		help.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) help.c
 
-prt:	prt.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o prt prt.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+prt:	prt.o ../com/comobj.a alloc.o
+	$(CC) -o prt prt.o ../com/comobj.a $(LIBS) alloc.o
 
 prt.o:		prt.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) prt.c
 
-prs:	prs.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o prs prs.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+prs:	prs.o ../com/comobj.a alloc.o
+	$(CC) -o prs prs.o ../com/comobj.a $(LIBS) alloc.o
 
 prs.o:		prs.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) prs.c
@@ -80,20 +80,20 @@ rmdel:	rmchg
 	-rm -f rmdel
 	ln rmchg rmdel
 
-rmchg:	rmchg.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o rmchg rmchg.o ../com/comobj.a $(LIBS) ctime.o alloc.o
+rmchg:	rmchg.o ../com/comobj.a alloc.o
+	$(CC) -o rmchg rmchg.o ../com/comobj.a $(LIBS) alloc.o
 
 rmchg.o:	rmchg.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) rmchg.c
 
-what:	what.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o what what.o ../com/comobj.a $(LIBS) $(LIBES) ctime.o alloc.o
+what:	what.o ../com/comobj.a alloc.o
+	$(CC) -o what what.o ../com/comobj.a $(LIBS) $(LIBES) alloc.o
 
 what.o:		what.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) what.c
 
-val:	val.o ../com/comobj.a ctime.o alloc.o
-	$(CC) -o val val.o ../com/comobj.a $(LIBS) $(LIBES) ctime.o alloc.o
+val:	val.o ../com/comobj.a alloc.o
+	$(CC) -o val val.o ../com/comobj.a $(LIBS) $(LIBES) alloc.o
 
 val.o:	val.c ../hdr/defines.h ../hdr/had.h
 	$(CC) -c $(CFLAGS) val.c
