@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <stdio.h>
@@ -291,8 +291,26 @@ xputs(s)
 		}
 		if (c < 040 || c >= 0177)
 		{
-			(void) putchar('^');
-			c ^= 0100;
+			switch (c)
+			{
+			  case '\n':
+				c = 'n';
+				break;
+
+			  case '\r':
+				c = 'r';
+				break;
+
+			  case '\t':
+				c = 't';
+				break;
+
+			  default:
+				(void) putchar('^');
+				(void) putchar(c ^ 0100);
+				continue;
+			}
+			(void) putchar('\\');
 		}
 		(void) putchar(c);
 	}
