@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 
 # -DSLOWSYS	invoke xread() for system time quirk on PDP, others?
 # -DNOKANJI	default is for Japanese Unix.  undef only for raw
@@ -46,6 +46,6 @@ lint: ${SRCS}
 	${LINT} ${LINTFLAGS} ${CFLAGS} ${.ALLSRC}
 
 tags: ${SRCS}
-	${CTAGS} ${.ALLSRC} -f ${.CURDIR}/tags
+	-ctags ${.ALLSRC} -f ${.CURDIR}/tags
 
 .include <bsd.prog.mk>
