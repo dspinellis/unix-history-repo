@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.85 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.86 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -107,9 +107,8 @@ mount(p, uap, retval)
 	 */
 	mp = (struct mount *)malloc((u_long)sizeof(struct mount),
 		M_MOUNT, M_WAITOK);
+	bzero((char *)mp, (u_long)sizeof(struct mount));
 	mp->mnt_op = vfssw[uap->type];
-	mp->mnt_flag = 0;
-	mp->mnt_mounth = NULLVP;
 	if (error = vfs_lock(mp)) {
 		free((caddr_t)mp, M_MOUNT);
 		vput(vp);
