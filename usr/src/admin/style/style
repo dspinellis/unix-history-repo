@@ -1,40 +1,45 @@
 /*
- * This is the style guide for BSD's KNF or Kernel Normal Form.
+ * This is the style guide for BSD's KNF (Kernel Normal Form).
  *
- * Multi-line comments look like this.  Make them real sentences.  Fill them
- * so they look like real paragraphs.
+ * Multi-line comments look like this.  Make them real sentences.  Fill
+ * them so they look like real paragraphs.
  *
- * 	@(#)style	1.2	(Berkeley)	%G%
+ *	@(#)style	1.3 (Berkeley) %G%
  */
 
 /*
- * Important single-line comments look like this.
+ * VERY important single-line comments look like this.
  */
 
-/* Minor single-line comments look like this. */
+/* Most single-line comments look like this. */
 
-/* Include files go at top of source module. */
+/* Include files go at the top of the source module. */
 #include <stdio.h>		/* Non-local includes in brackets. */
 
 /*
- * Global pathnames are defined in /usr/include/paths.h.
- * Pathnames local to the program go in pathnames.h in local directory.
+ * Global pathnames are defined in /usr/include/paths.h.  Pathnames local
+ * to the program go in pathnames.h in the local directory.
  */
-#include <paths.h>		/* Non-local includes in quotes */
-#include "pathnames.h"		/* Local includes in quotes */		
+#include <paths.h>		/* Non-local includes in brackets. */
+#include "pathnames.h"		/* Local includes in quotes. */		
 
 /*
  * All ANSI function decls go at the top of the source module.  Use the
  * __P macro from include file <sys/cdefs.h>.  Only the kernel has a name
- * associated with the types.
+ * associated with the types, i.e. unless you're in the kernel use:
+ *
+ *	void function __P((int));
+ * not:
+ *	void function __P((int a));
  */
-void f1 __P((int, const char *));
+void function __P((int, const char *));
 
 /*
  * Macros are capitalized, parenthesized, and should avoid side-effects.
  * If they are an inline expansion of a function, the function is defined
  * all in lowercase, the macro has the same name all in uppercase. If the
- * macro needs more than a single line, use braces.
+ * macro needs more than a single line, use braces.  Put a space before
+ * the backslashes.
  */
 #define	MACRO(x, y) { \
 	variable = (x) + (y); \
@@ -75,9 +80,7 @@ main(argc, argv)
 	extern int optind;
 	int ch;
 
-	/*
-	 * For consistency, getopt should be used to parse options.
-	 */
+	/* For consistency, getopt should be used to parse options. */
 	while ((ch = getopt(argc, argv, "")) != EOF)
 		switch (ch) {		/* Indent the switch. */
 		case '':		/* Don't indent the case. */
@@ -90,8 +93,8 @@ main(argc, argv)
 	argv += optind;
 
 	/*
-	 * Space after keywords (while, for, return, switch)
-	 * No parenthesis for single statement block.
+	 * Space after keywords (while, for, return, switch).  No parenthesis
+	 * for single statement block.
 	 *
 	 * Forever loop.
 	 */
@@ -99,8 +102,8 @@ main(argc, argv)
 		stmt;
 	
 	/*
-	 * Parts of a for loop may be left empty.
-	 * Avoid declarations in blocks.
+	 * Parts of a for loop may be left empty.  Avoid declarations in
+	 * blocks.
 	 */
 	for (; cnt < 15; cnt++) {
 		stmt1;
@@ -112,7 +115,10 @@ main(argc, argv)
 		stmt2;
 	}
 
-	/* Try to put shorter part first. */
+	/*
+	 * Try to put shorter part first.  The closing and opening braces
+	 * go on the same line as the else.
+	 */
 	if (test) {
 		stmt;
 	} else if (bar) {
@@ -120,10 +126,22 @@ main(argc, argv)
 	} else
 		stmt;
 		
-	/* No space on function call. */
-	if (error = f1(a1, a2))
+	/* No space after function names. */
+	if (error = function(a1, a2))
 		exit(error);
-	doit(a1);
+
+	/*
+	 * Unary operators do not require spaces, binary operators do.
+	 * Try not to use too many parenthesis unless the statement is
+	 * really confusing without them.
+	 */
+	a = b->c[0] + ~d == (e || f) || g && h ? i : j >> 1;
+	k = l & FLAGS;
+
+	/*
+	 * Exits should be 0 on success, and 1 on failure.  Don't denote
+	 * all the possible exit points, using the integers 1 through 300.
+	 */
 	exit(0);    /* Avoid obvious comments such as "Exit 0 on success." */
 }
 
@@ -131,37 +149,106 @@ main(argc, argv)
  * If a function type is declared, it should be on a line
  * by itself preceeding the function.
  */
-char *
-f2(a1, a2, f1)
-	int a1, a2;	/* Declare ints too. */
-	float f1;	/* List in order declared. */
+static char *
+function(a1, a2, a3, a4)
+	int a1, a2, a4;	/* Declare ints too. */
+	float a3;	/* List in order declared, as much as possible. */
 {
 	/*
 	 * When declaring variables in functions declare them sorted by size,
 	 * then in alphabetical order; multiple ones per line are okay.  Old
 	 * style function declarations can go on the same line.  ANSI style
-	 * function declarations should be in the include file "externs.h".
-	 * If a line overflows, just reuse the type keyword.
+	 * function declarations should go in the include file "externs.h".
+	 * If a line overflows reuse the type keyword.
 	 */
 	extern u_char one;
 	extern char two;
-	struct foo three, four;
+	struct foo three, *four;
 	double five;
-	int six, seven;
-	char eight, nine();
+	int *six, seven, eight();
+	char *nine, ten, eleven, twelve, thirteen, fourteen, fifteen, sixteen;
 	char *overflow();
+	void *malloc();
 
-	return (bad ? (char *)0 : overflow());
+	/*
+	 * Casts and sizeof's are not followed by a space.  NULL is any
+	 * pointer type, and doesn't need to be cast.  Also, test pointers
+	 * against NULL, i.e. use:
+	 *
+	 * 	(p = f()) == NULL
+	 * not:
+	 *	!(p = f())
+ 	 *
+	 * Routines returning void * should not have their return values cast
+	 * to any pointer type.
+	 */
+	if ((four = malloc(sizeof(struct foo))) == NULL)
+		return (NULL);
+	if ((six = (int *)overflow()) == NULL)
+		return (NULL);
+	return (eight);
 }
 
-f3()
-{
-					/* Empty line if no variables. */
-	return (1);
-}
-
+static void
 usage()
-{					/* use printf(3), not puts/putchar */
-	(void)fprintf(stderr, "usage: X:\n");
+{	/* Insert an empty line if the function has no variables. */
+
+	/*
+	 * Use printf(3), not fputs/puts/putchar/whatever.
+	 *
+	 * Usage statements should look like the manual pages.  Options w/o
+	 * operands come first, in alphabetical order inside a single set of
+	 * braces.  Followed by options with operands, in alphabetical order,
+	 * each in braces.  Followed by required arguments in the order they
+	 * are specified, followed by optional arguments in the order they
+	 * are specified.  A bar ('|') separates either/or options/arguments,
+	 * and multiple options/arguments wwhich are specified together are
+	 * placed in a single set of braces.
+	 *
+	 * "usage: f [-ade] [-b b_arg] [-m m_arg] req1 req2 [opt1 [opt2]]\n"
+	 * "usage: f [-a | -b] [-c [-de] [-n number]]\n"
+	 */
+	(void)fprintf(stderr, "usage: f [-ab]\n");
 	exit(1);
+}
+
+/*
+ * Error routines can be tricky.  The following works in most cases, and
+ * can be easily adapted per program.  It allows both:
+ *
+ *	if ((fp = fopen(file, "r")) == NULL)
+ *		err("%s: %s", file, strerror(errno));
+ * and:
+ *	if ((p = malloc(sizeof(int))) == NULL)
+ *		err("%s", strerror(errno));
+ *
+ * Never use perror(3).
+ */
+#if __STDC__
+#include <stdarg.h>
+#else
+#include <varargs.h>
+#endif
+
+void
+#if __STDC__
+err(const char *fmt, ...)
+#else
+err(fmt, va_alist)
+	char *fmt;
+        va_dcl
+#endif
+{
+	va_list ap;
+#if __STDC__
+	va_start(ap, fmt);
+#else
+	va_start(ap);
+#endif
+	(void)fprintf(stderr, "program_name: ");
+	(void)vfprintf(stderr, fmt, ap);
+	va_end(ap);
+	(void)fprintf(stderr, "\n");
+	exit(1);
+	/* NOTREACHED */
 }
