@@ -1,4 +1,4 @@
-/*	if_imphost.c	4.14	82/10/05	*/
+/*	if_imphost.c	4.15	82/10/09	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -9,10 +9,10 @@
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
-#include "../net/if_imp.h"
-#include "../net/if_imphost.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
+#include "../netimp/if_imp.h"
+#include "../netimp/if_imphost.h"
 
 /*
  * Head of host table hash chains.

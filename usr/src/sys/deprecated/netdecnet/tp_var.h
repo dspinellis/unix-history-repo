@@ -1,4 +1,4 @@
-/*	tp_var.h	1.2	82/05/15	*/
+/*	tp_var.h	1.3	82/10/09	*/
 
 /*
  * Kernel data structures for DECnet Transport layer.
