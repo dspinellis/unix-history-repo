@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.100 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.101 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1046,6 +1046,10 @@ tryhost:
 	}
 	else
 	{
+		if (host == NULL || host[0] == '\0')
+			message("Connecting to %s...", m->m_name);
+		else
+			message("Connecting to %s via %s...", host, m->m_name);
 		if (TrafficLogFile != NULL)
 		{
 			char **av;
