@@ -1,5 +1,6 @@
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 
 PROG=	cksum
+SRCS=	cksum.c crc.c
 
 .include <bsd.prog.mk>
