@@ -122,6 +122,13 @@ ufs/ufs_subr.c		standard
 ufs/ufs_tables.c	standard
 ufs/ufs_vfsops.c	standard
 ufs/ufs_vnops.c		standard
+nfs/nfs_client.c	optional nfs
+nfs/nfs_node.c		optional nfs
+nfs/nfs_serv.c		optional nfs
+nfs/nfs_socket.c	optional nfs
+nfs/nfs_subs.c		optional nfs
+nfs/nfs_syscalls.c	optional nfs
+nfs/nfs_vfsops.c	optional nfs
 netiso/clnp_debug.c	optional iso
 netiso/clnp_er.c	optional iso
 netiso/clnp_frag.c	optional iso
