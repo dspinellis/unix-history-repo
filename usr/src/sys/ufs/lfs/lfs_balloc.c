@@ -1,4 +1,4 @@
-/*	lfs_balloc.c	5.3	82/11/13	*/
+/*	lfs_balloc.c	5.4	83/03/15	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -53,6 +53,8 @@ bmap(ip, bn, rwflg, size)
 			bp = realloccg(ip, ip->i_db[nb],
 				blkpref(ip, nb, (int)nb, &ip->i_db[0]),
 				osize, (int)fs->fs_bsize);
+			if (bp == NULL)
+				return ((daddr_t)-1);
 			ip->i_size = (nb + 1) * fs->fs_bsize;
 			ip->i_db[nb] = dbtofsb(fs, bp->b_blkno);
 			ip->i_flag |= IUPD|ICHG;
