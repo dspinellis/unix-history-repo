@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ns_if.h	7.4 (Berkeley) %G%
+ *	@(#)ns_if.h	7.5 (Berkeley) %G%
  */
 
 /*
@@ -27,9 +27,9 @@
 struct ns_ifaddr {
 	struct	ifaddr ia_ifa;		/* protocol-independent info */
 #define	ia_ifp		ia_ifa.ifa_ifp
+#define	ia_flags	ia_ifa.ifa_flags
 /*	union	ns_net	ia_net;		/* network number of interface */
 #define ia_net		ia_addr.sns_addr.x_net
-	int	ia_flags;
 	struct	ns_ifaddr *ia_next;	/* next in list of xerox addresses */
 	struct	sockaddr_ns ia_addr;	/* reserve space for my address */
 	struct	sockaddr_ns ia_dstaddr;	/* space for my broadcast address */
@@ -49,10 +49,6 @@ struct	ns_aliasreq {
  */
 
 #define	IA_SNS(ia) (&(((struct ns_ifaddr *)(ia))->ia_addr))
-/*
- * ia_flags
- */
-#define	IFA_ROUTE	0x01		/* routing entry installed */
 
 /* This is not the right place for this but where is? */
 #define	ETHERTYPE_NS	0x0600
