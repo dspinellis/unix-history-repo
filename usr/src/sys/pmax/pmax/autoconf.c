@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: autoconf.c 1.31 91/01/21$
  *
- *	@(#)autoconf.c	7.7 (Berkeley) %G%
+ *	@(#)autoconf.c	7.8 (Berkeley) %G%
  */
 
 /*
@@ -133,8 +133,10 @@ configure()
 			 */
 			if (cp->pmax_addr == (char *)QUES)
 				continue;
-			if (!(*drp->d_init)(cp))
+			if (!(*drp->d_init)(cp)) {
+				cp->pmax_alive = 0;
 				continue;
+			}
 			if (drp->d_intr && (i = cp->pmax_pri) >= 0) {
 				if (tc_slot_info[i].intr)
 					printf("%s: slot %d already in use\n",

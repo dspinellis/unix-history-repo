@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kmin.h	7.1 (Berkeley) %G%
+ *	@(#)kmin.h	7.2 (Berkeley) %G%
  */
 
 /* 
@@ -116,8 +116,8 @@
 /* Pseudo-TCslots */
 #define	KMIN_SCSI_SLOT		3
 #define	KMIN_LANCE_SLOT		4
-#define	KMIN_SCC0_SLOT		5
-#define	KMIN_SCC1_SLOT		6
+#define	KMIN_SCC1_SLOT		5
+#define	KMIN_SCC0_SLOT		6
 #define	KMIN_ASIC_SLOT		7
 
 /*
