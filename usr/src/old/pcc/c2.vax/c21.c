@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)c21.c 4.23 %G%";
+static	char sccsid[] = "@(#)c21.c 4.24 %G%";
 #endif
 /* char C21[] = {"@(#)c21.c 1.83 80/10/16 21:18:22 JFR"}; /* sccs ident */
 
@@ -234,14 +234,28 @@ bmove() {
 			if (shfrom >= 0)	/* ashl $N,r*,r0 */
 			{
 				delnode(p);
+				p = pf;
 				if (shfrom != shto)
 				{
-					uses[shto] = NULL; splitrand(pf);
+					uses[shto] = NULL; splitrand(p);
 					cp2=regs[RT1]; while (*cp2++!='[');
 					cp1=regfrom; while (*cp2++= *cp1++);
 					*--cp2 = ']';
 					*++cp2 = '\0';
-					newcode(pf);
+					newcode(p);
+				}
+				if (p->op == MOVA)
+				{
+					int movato;
+
+					splitrand(p);
+					if ((movato = isreg(regs[RT2])) >= 0
+					    && movato < NUSE)
+						/*
+						 * this register is dead;
+						 * resurrect it temporarily
+						 */
+						uses[movato] = p;
 				}
 			}
 			else
@@ -258,6 +272,7 @@ bmove() {
 			case 2:	pf->subop = LONG; break;
 			case 3:	pf->subop = QUAD; break;
 			}
+			pf->pop = 0;
 			redunm++; nsaddr++; nchange++;
 			goto std;
 		}
@@ -316,6 +331,8 @@ ashadd:
 			while (*cp1!=',') *cp2++= *cp1++; *cp2='\0';
 			pn->code = p->code; pn->pop = NULL;
 			uses[extreg] = NULL;
+			p = pn;
+			break;
 		}
 		else
 		if (flen == 8 || flen == 16)
@@ -1331,7 +1348,10 @@ register struct node *p;
 		}
 	} else if (p1->op==TST && equstr(regs[RT1],ccloc+1) &&
 			equtype(ccloc[0],p1->subop)) {
-		p1=insertl(p1->forw); decref(p->ref); p->ref=p1; 
+		p1=insertl(p1->forw);
+		decref(p->ref);
+		p->ref=p1; 
+		p->labno=p1->labno;
 		nrtst++; nchange++;
 	}
 }
