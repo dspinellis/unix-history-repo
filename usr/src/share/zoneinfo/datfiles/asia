@@ -1,0 +1,134 @@
+# @(#)asia	4.4
+
+# From Guy Harris:
+# Incorporates data for Singapore from Robert Elz' asia 1.1, as well as
+# additional information from Tom Yap, Sun Microsystems Intercontinental
+# Technical Support (including a page from the Official Airline Guide -
+# Worldwide Edition).  The names for time zones are guesses.
+
+###############################################################################
+
+# People's Republic of China
+
+# From Guy Harris:
+# People's Republic of China.  Yes, they really have only one time zone.
+
+# From Bob Devine (January 28, 1988):
+# No they don't.  See TIME mag, February 17, 1986 p.52.  Even though
+# China is across 4 physical time zones, before Feb 1, 1986 only the
+# Peking (Bejing) time zone was recognized.  Since that date, China
+# has two of 'em -- Peking's and Urumqi (named after the capital of
+# the Xinjiang Uighur Autonomous Region).  I don't know about DST for it.
+# 
+# . . .I just deleted the DST table and this editor makes it too
+# painful to suck in another copy..  So, here is what I have for 
+# DST start/end dates for Peking's time zone (info from AP):
+# 
+#     1986 May 4 - Sept 14
+#     1987 mid-April - ?? 
+
+# From U. S. Naval Observatory (January 19, 1989):
+# CHINA               8 H  AHEAD OF UTC  ALL OF CHINA, INCL TAIWAN
+# CHINA               9 H  AHEAD OF UTC  APR 17 - SEP 10
+
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	PRC	1970	max	-	Apr	Sun<=14	2:00	1:00	D
+Rule	PRC	1970	max	-	Sep	Sun<=14	3:00	0	S
+
+# Zone	NAME		GMTOFF	RULES/SAVE	FORMAT	[UNTIL]
+Zone	PRC		8:00	PRC		C%sT
+
+###############################################################################
+
+# Republic of China
+
+# From Guy Harris
+
+# Zone	NAME		GMTOFF	RULES/SAVE	FORMAT	[UNTIL]
+Zone	ROC		8:00	-		CST
+
+###############################################################################
+
+# Hongkong
+
+# From Guy Harris
+
+# Zone	NAME		GMTOFF	RULES/SAVE	FORMAT	[UNTIL]
+Zone	Hongkong	8:00	-		HKT
+
+###############################################################################
+
+# Iran
+
+# From Bob Devine (January 28, 1988):
+# Iran: Last Sunday in March to third (?) Sunday in
+# September.  Since the revolution, the official calendar is Monarchic
+# calendar; I have no idea what the correspondence between dates are.
+
+# From U. S. Naval Observatory (January 19, 1989):
+# IRAN                3.5H AHEAD OF UTC
+
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	Iran	1988	max	-	Mar	lastSun	2:00	1:00	D
+Rule	Iran	1988	max	-	Sep	Sun>=15	2:00	0	S
+
+# Zone	NAME		GMTOFF	RULES/SAVE	FORMAT	[UNTIL]
+Zone	Iran		3:30	Iran		I%sT
+
+###############################################################################
+
+# Israel
+
+# From U. S. Naval Observatory (January 19, 1989):
+# ISRAEL              2 H  AHEAD OF UTC
+# ISRAEL              3 H  AHEAD OF UTC  APR 10 - SEP 3
+
+# From Arthur David Olson (January 21, 1989):
+# Stick with rules below (which were provided by Guy Harris and which were
+# posted in 1988) for now.
+
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	Israel	1987	max	-	Apr	Sun<=21	2:00	1:00	D
+Rule	Israel	1987	max	-	Aug	Sat<=28	2:00	0	S
+
+# Zone	NAME		GMTOFF	RULES/SAVE	FORMAT	[UNTIL]
+Zone	Israel		3:00	Israel		I%sT
+
+###############################################################################
+
+# Japan
+
+# From Guy Harris
+
+# Zone	NAME		GMTOFF	RULES/SAVE	FORMAT	[UNTIL]
+Zone	Japan		9:00	-		JST
+
+###############################################################################
+
+# Republic of Korea
+
+# From Guy Harris:
+# According to someone at the Korean Times in San Francisco,
+# Daylight Savings Time was not observed until 1987.  He did not know
+# at what time of day DST starts or ends.
+
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	ROK	1987	max	-	May	Sun<=14	2:00	1:00	D
+Rule	ROK	1987	max	-	Oct	Sun<=14	3:00	0	S
+
+# Zone	NAME		GMTOFF	RULES/SAVE	FORMAT	[UNTIL]
+Zone	ROK		9:00	ROK		K%sT
+
+###############################################################################
+
+# Lebanon
+
+# From Bob Devine (January 28, 1988):
+# Lebanon: They do have DST but I don't know the dates.
+
+###############################################################################
+
+# Singapore
+
+# Zone	NAME		GMTOFF	RULES/SAVE	FORMAT	[UNTIL]
+Zone	Singapore	8:00	-		SST
