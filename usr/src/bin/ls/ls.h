@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ls.h	5.3 (Berkeley) %G%
+ *	@(#)ls.h	5.4 (Berkeley) %G%
  */
 
 typedef struct _lsstruct {
@@ -28,7 +28,6 @@ typedef struct _lsstruct {
 extern int errno;
 
 extern int f_accesstime;	/* use time of last access */
-extern int f_firsttime;		/* to control recursion */
 extern int f_group;		/* show group ownership of a file */
 extern int f_inode;		/* print inode */
 extern int f_longform;		/* long listing format */
