@@ -53,7 +53,7 @@ static char sccsid[] = "@(#)rlogin.c	5.12 (Berkeley) 9/19/88";
 #include <netdb.h>
 
 #ifdef	KERBEROS
-#include <krb.h>
+#include <kerberosIV/krb.h>
 int		encrypt = 0;
 char		dst_realm_buf[REALM_SZ];
 char		*dest_realm = NULL;

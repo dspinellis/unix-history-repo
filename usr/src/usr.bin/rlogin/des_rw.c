@@ -26,10 +26,9 @@
 static char sccsid[] = "@(#)des_rw.c	1.7 (Berkeley) 2/6/89";
 #endif /* not lint */
 
-#include <sys/types.h>
 #include <sys/param.h>
-#include <krb.h>
-#include <des.h>
+#include <kerberosIV/krb.h>
+#include <kerberosIV/des.h>
 
 extern long		random();
 static unsigned char	des_inbuf[10240], storage[10240], *store_ptr;
