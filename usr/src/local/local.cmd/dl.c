@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)dl.c	4.1\t%G%";
+static char *sccsid = "@(#)dl.c	4.2\t%G%";
 
 #include <stdio.h>
 #include <sys/param.h>
@@ -18,7 +18,6 @@ static char *sccsid = "@(#)dl.c	4.1\t%G%";
 struct	stat s1, s2, buf;
 extern	unsigned errno;
 int	errcode;
-char	*sprintf();
 char    *path;
 char    *path2;
 char    line[1024];
@@ -380,7 +379,7 @@ char arg[];
 			exit(1);
 		while((dp = readdir(dirp)) != NULL) {
 			if(dp->d_ino != 0 && !dotname(dp->d_name)) {
-				sprintf(name, "%s/%s", arg, dp->d_name);
+				(void) sprintf(name, "%s/%s", arg, dp->d_name);
 				if (dflag) printf("dldir: name= %s\n",name);
 				if(lstat(name, &buf2)) {
 					if (!fflag) 
@@ -635,8 +634,8 @@ Perror(s)
 	char *s;
 {
 	char buf[MAXPATHLEN + 10];
-	
-	sprintf(buf, "move: %s", s);
+
+	(void) sprintf(buf, "move: %s", s);
 	perror(buf);
 }
 
@@ -645,7 +644,7 @@ Perror2(s1, s2)
 {
 	char buf[MAXPATHLEN + 20];
 
-	sprintf(buf, "dl: %s: %s", s1, s2);
+	(void) sprintf(buf, "dl: %s: %s", s1, s2);
 	perror(buf);
 }
 
