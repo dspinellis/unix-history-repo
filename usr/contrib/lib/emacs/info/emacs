@@ -1,0 +1,289 @@
+Info file emacs, produced by texinfo-format-buffer   -*-Text-*-
+from file emacs.tex
+
+This file documents the GNU Emacs editor.
+
+Copyright (C) 1985, 1986 Richard M. Stallman.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+sections entitled "The GNU Manifesto", "Distribution" and "GNU Emacs
+General Public License" are included exactly as in the original, and
+provided that the entire resulting derived work is distributed under the
+terms of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the sections entitled "The GNU Manifesto", "Distribution"
+and "GNU Emacs General Public License" may be included in a translation
+approved by the author instead of in the original English.
+
+
+Indirect:
+emacs-1: 1095
+emacs-2: 54792
+emacs-3: 106767
+emacs-4: 157051
+emacs-5: 207244
+emacs-6: 257887
+emacs-7: 311190
+emacs-8: 361692
+emacs-9: 413473
+emacs-10: 464227
+emacs-11: 514849
+emacs-12: 567674
+emacs-13: 626437
+
+Tag table:
+(Indirect)
+Node: Top1097
+Node: Distrib15062
+Node: License17459
+Node: Intro25497
+Node: Screen28159
+Node: Point29596
+Node: Echo Area31162
+Node: Mode Line33411
+Node: Characters37709
+Node: Keys40758
+Node: Commands43260
+Node: Entering Emacs46046
+Node: Exiting47360
+Node: Command Switches49702
+Node: Basic54794
+Node: Blank Lines63620
+Node: Continuation Lines65176
+Node: Position Info66606
+Node: Arguments69790
+Node: Undo72841
+Node: Minibuffer75829
+Node: Minibuffer File78353
+Node: Minibuffer Edit79973
+Node: Completion82230
+Node: Repetition88246
+Node: M-x91172
+Node: Help93789
+Node: Mark102943
+Node: Setting Mark104569
+Node: Using Region106769
+Node: Marking Objects107474
+Node: Mark Ring109341
+Node: Killing111075
+Node: Yanking116632
+Node: Kill Ring117446
+Node: Appending Kills118678
+Node: Earlier Kills120736
+Node: Accumulating Text123351
+Node: Rectangles126420
+Node: Registers129938
+Node: RegPos130954
+Node: RegText131840
+Node: RegRect132905
+Node: Display133631
+Node: Scrolling134794
+Node: Horizontal Scrolling138132
+Node: Selective Display139326
+Node: Display Vars140536
+Node: Search143153
+Node: Incremental Search144333
+Node: Nonincremental Search152138
+Node: Word Search153602
+Node: Regexp Search155209
+Node: Regexps157053
+Node: Search Case167720
+Node: Replace168421
+Node: Unconditional Replace169359
+Node: Regexp Replace170467
+Node: Replacement and Case171378
+Node: Query Replace172322
+Node: Other Repeating Search175676
+Node: Fixit176968
+Node: Kill Errors177551
+Node: Transpose178863
+Node: Fixing Case181335
+Node: Spelling181999
+Node: Files183440
+Node: File Names184588
+Node: Visiting188111
+Node: Saving192753
+Node: Backup197628
+Node: Backup Names199016
+Node: Backup Deletion200529
+Node: Backup Copying201693
+Node: Interlocking203419
+Node: Reverting207246
+Node: Auto Save209049
+Node: Auto Save Files210006
+Node: Auto Save Control211821
+Node: Recover213031
+Node: ListDir214172
+Node: Dired215656
+Node: Dired Enter216307
+Node: Dired Edit217118
+Node: Dired Deletion218849
+Node: Dired Immed222072
+Node: Misc File Ops223361
+Node: Buffers226003
+Node: Select Buffer228268
+Node: List Buffers229579
+Node: Misc Buffer230967
+Node: Kill Buffer232676
+Node: Several Buffers233883
+Node: Windows237703
+Node: Basic Window238283
+Node: Split Window240013
+Node: Other Window241704
+Node: Pop Up Window243456
+Node: Change Window244613
+Node: Major Modes246540
+Node: Choosing Modes248778
+Node: Indentation251186
+Node: Indentation Commands253300
+Node: Tab Stops255963
+Node: Just Spaces257889
+Node: Text258690
+Node: Text Mode260677
+Node: Nroff Mode262757
+Node: TeX Mode264419
+Node: TeX Editing266033
+Node: TeX Print269461
+Node: Outline Mode272715
+Node: Outline Format274171
+Node: Outline Motion276957
+Node: Outline Visibility278527
+Node: Words281513
+Node: Sentences284486
+Node: Paragraphs286695
+Node: Pages289004
+Node: Filling291621
+Node: Auto Fill292158
+Node: Fill Commands294299
+Node: Fill Prefix296396
+Node: Case298583
+Node: Programs300608
+Node: Program Modes303078
+Node: Lists305277
+Node: Defuns311192
+Node: Grinding313814
+Node: Basic Indent314422
+Node: Multi-line Indent316432
+Node: Lisp Indent318068
+Node: C Indent321463
+Node: Matching326627
+Node: Comments328192
+Node: Balanced Editing334709
+Node: Lisp Completion335724
+Node: Documentation336725
+Node: Change Log337965
+Node: Tags340531
+Node: Tag Syntax341850
+Node: Create Tag Table342536
+Node: Select Tag Table344121
+Node: Find Tag344955
+Node: Tags Search347265
+Node: Tags Stepping349554
+Node: List Tags350123
+Node: Fortran351146
+Node: Fortran Motion352198
+Node: Fortran Indent353018
+Node: ForIndent Commands353693
+Node: ForIndent Num354826
+Node: ForIndent Conv356090
+Node: ForIndent Vars356875
+Node: Fortran Comments358045
+Node: Fortran Columns361694
+Node: Fortran Abbrev363107
+Node: Running364010
+Node: Compilation364968
+Node: Lisp Modes369808
+Node: Lisp Libraries371071
+Node: Loading371617
+Node: Compiling Libraries374490
+Node: Mocklisp376382
+Node: Lisp Eval377056
+Node: Lisp Debug380685
+Node: Lisp Interaction386188
+Node: External Lisp387536
+Node: Abbrevs389603
+Node: Defining Abbrevs391803
+Node: Expanding Abbrevs394220
+Node: Editing Abbrevs397025
+Node: Saving Abbrevs398900
+Node: Dynamic Abbrevs400876
+Node: Picture402171
+Node: Basic Picture404591
+Node: Insert in Picture406881
+Node: Tabs in Picture408318
+Node: Rectangles in Picture409820
+Node: Sending Mail411571
+Node: Mail Format413475
+Node: Mail Headers414797
+Node: Mail Mode417951
+Node: Rmail421540
+Node: Rmail Scrolling424548
+Node: Rmail Motion425544
+Node: Rmail Deletion428766
+Node: Rmail Inbox431549
+Node: Rmail Files433711
+Node: Rmail Output436282
+Node: Rmail Labels438670
+Node: Rmail Summary442233
+Node: Rmail Make Summary443190
+Node: Rmail Summary Edit444626
+Node: Rmail Reply448016
+Node: Rmail Editing450948
+Node: Rmail Digest453258
+Node: Recursive Edit454320
+Node: Narrowing457382
+Node: Sorting459388
+Node: Shell464229
+Node: Single Shell465153
+Node: Interactive Shell466727
+Node: Shell Mode469660
+Node: Hardcopy471474
+Node: Dissociated Press472427
+Node: Amusements474976
+Node: Emulation475455
+Node: Customization478235
+Node: Minor Modes479691
+Node: Variables481335
+Node: Examining483308
+Node: Edit Options484755
+Node: Locals486348
+Node: File Variables489385
+Node: Keyboard Macros492884
+Node: Basic Kbd Macro495088
+Node: Save Kbd Macro497025
+Node: Kbd Macro Query498676
+Node: Key Bindings500590
+Node: Keymaps501444
+Node: Rebinding506040
+Node: Disabling508068
+Node: Syntax509853
+Node: Syntax Entry510718
+Node: Syntax Change514851
+Node: Init File517020
+Node: Init Syntax518255
+Node: Init Examples520419
+Node: Terminal Init524473
+Node: Quitting526171
+Node: Lossage529148
+Node: Stuck Recursive529776
+Node: Screen Garbled530470
+Node: Text Garbled531574
+Node: Unasked-for Search532197
+Node: Emergency Escape532966
+Node: Total Frustration534708
+Node: Bugs535320
+Node: Manifesto544409
+Node: Glossary567676
+Node: Key Index600067
+Node: Command Index609379
+Node: Variable Index626439
+Node: Concept Index632328
+
+End tag table

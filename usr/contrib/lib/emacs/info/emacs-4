@@ -1,0 +1,1133 @@
+Info file emacs, produced by texinfo-format-buffer   -*-Text-*-
+from file emacs.tex
+
+This file documents the GNU Emacs editor.
+
+Copyright (C) 1985, 1986 Richard M. Stallman.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+sections entitled "The GNU Manifesto", "Distribution" and "GNU Emacs
+General Public License" are included exactly as in the original, and
+provided that the entire resulting derived work is distributed under the
+terms of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the sections entitled "The GNU Manifesto", "Distribution"
+and "GNU Emacs General Public License" may be included in a translation
+approved by the author instead of in the original English.
+
+
+File: emacs  Node: Regexps, Prev: Regexp Search, Up: Search, Next: Search Case
+
+Syntax of Regular Expressions
+=============================
+
+Regular expressions have a syntax in which a few characters are special
+constructs and the rest are "ordinary".  An ordinary character is a simple
+regular expression which matches that character and nothing else.  The
+special characters are `$', `^', `.', `*', `+', `?', `[', `]' and `\'; no
+new special characters will be defined.  Any other character appearing in a
+regular expression is ordinary, unless a `\' precedes it.
+
+For example, `f' is not a special character, so it is ordinary, and
+therefore `f' is a regular expression that matches the string `f' and no
+other string.  (It does not match the string `ff'.)  Likewise, `o' is a
+regular expression that matches only `o'.
+
+Any two regular expressions A and B can be concatenated.  The result is a
+regular expression which matches a string if A matches some amount of the
+beginning of that string and B matches the rest of the string.
+
+As a simple example, we can concatenate the regular expressions `f'
+and `o' to get the regular expression `fo', which matches only
+the string `fo'.  Still trivial.  To do something nontrivial, you
+need to use one of the special characters.  Here is a list of them.
+
+`. (Period)'     
+     is a special character that matches any single character except a
+     newline.  Using concatenation, we can make regular expressions like
+     `a.b' which matches any three-character string which begins with `a'
+     and ends with `b'.
+     
+`*'     
+     is not a construct by itself; it is a suffix, which means the
+     preceding regular expression is to be repeated as many times as
+     possible.  In `fo*', the `*' applies to the `o', so `fo*' matches one
+     `f' followed by any number of `o's.  The case of zero `o's is allowed:
+     `fo*' does match `f'.
+     
+     `*' always applies to the smallest possible preceding expression.
+     Thus, `fo*' has a repeating `o', not a repeating `fo'.
+     
+     The matcher processes a `*' construct by matching, immediately, as
+     many repetitions as can be found.  Then it continues with the rest of
+     the pattern.  If that fails, backtracking occurs, discarding some of
+     the matches of the `*'-modified construct in case that makes it
+     possible to match the rest of the pattern.  For example, matching
+     `ca*ar' against the string `caaar', the `a*' first tries to match all
+     three `a's; but the rest of the pattern is `ar' and there is only `r'
+     left to match, so this try fails.  The next alternative is for `a*' to
+     match only two `a's.  With this choice, the rest of the regexp matches
+     successfully.
+     
+`+'     
+     Is a suffix character similar to `*' except that it requires that the
+     preceding expression be matched at least once.  So, for example,
+     `ca+r' will match the strings `car' and `caaaar' but not the string
+     `cr', whereas `ca*r' would match all three strings.
+     
+`?'     
+     Is a suffix character similar to `*' except that it can match the
+     preceding expression either once or not at all.  For example,
+     `ca?r' will match `car' or `cr'; nothing else.
+     
+`[ ... ]'     
+     `[' begins a "character set", which is terminated by a `]'.  In the
+     simplest case, the characters between the two form the set.  Thus,
+     `[ad]' matches either one `a' or one `d', and `[ad]*' matches any
+     string composed of just `a's and `d's (including the empty string),
+     from which it follows that `c[ad]*r' matches `cr', `car', `cdr',
+     `caddaar', etc.
+     
+     Character ranges can also be included in a character set, by writing
+     two characters with a `-' between them.  Thus, `[a-z]' matches any
+     lower-case letter.  Ranges may be intermixed freely with individual
+     characters, as in `[a-z$%.]', which matches any lower case letter or
+     `$', `%' or period.
+     
+     Note that the usual special characters are not special any more inside
+     a character set.  A completely different set of special characters
+     exists inside character sets: `]', `-' and `^'.
+     
+     To include a `]' in a character set, you must make it the first
+     character.  For example, `[]a]' matches `]' or `a'.  To include a `-',
+     write `---', which is a range containing only `-'.  To include `^',
+     make it other than the first character in the set.
+     
+`[^ ... ]'     
+     `[^' begins a "complement character set", which matches any character
+     except the ones specified.  Thus, `[^a-z0-9A-Z]' matches all
+     characters except letters and digits.
+     
+     `^' is not special in a character set unless it is the first
+     character.  The character following the `^' is treated as if it
+     were first (`-' and `]' are not special there).
+     
+     Note that a complement character set can match a newline, unless
+     newline is mentioned as one of the characters not to match.
+     
+`^'     
+     is a special character that matches the empty string, but only if at
+     the beginning of a line in the text being matched.  Otherwise it fails
+     to match anything.  Thus, `^foo' matches a `foo' which occurs
+     at the beginning of a line.
+     
+`$'     
+     is similar to `^' but matches only at the end of a line.  Thus,
+     `xx*$' matches a string of one `x' or more at the end of a line.
+     
+`\'     
+     has two functions: it quotes the special characters (including
+     `\'), and it introduces additional special constructs.
+     
+     Because `\' quotes special characters, `\$' is a regular expression
+     which matches only `$', and `\[' is a regular expression which matches
+     only `[', and so on.
+
+Note: for historical compatibility, special characters are treated as
+ordinary ones if they are in contexts where their special meanings make no
+sense.  For example, `*foo' treats `*' as ordinary since there is no
+preceding expression on which the `*' can act.  It is poor practice to
+depend on this behavior; better to quote the special character anyway,
+regardless of where is appears.
+
+For the most part, `\' followed by any character matches only
+that character.  However, there are several exceptions: characters
+which, when preceded by `\', are special constructs.  Such
+characters are always ordinary when encountered on their own.  Here
+is a table of `\' constructs.
+
+`\|'     
+     specifies an alternative.  Two regular expressions A and B with `\|'
+     in between form an expression that matches anything that either A or B
+     will match.
+     
+     Thus, `foo\|bar' matches either `foo' or `bar' but no other string.
+     
+     `\|' applies to the largest possible surrounding expressions.  Only a
+     surrounding `\( ... \)' grouping can limit the grouping power of `\|'.
+     
+     Full backtracking capability exists to handle multiple uses of `\|'.
+     
+`\( ... \)'     
+     is a grouping construct that serves three purposes:
+     
+       1. To enclose a set of `\|' alternatives for other operations.
+          Thus, `\(foo\|bar\)x' matches either `foox' or `barx'.
+          
+       2. To enclose a complicated expression for the postfix `*' to
+          operate on.  Thus, `ba\(na\)*' matches `bananana', etc., with any
+          (zero or more) number of `na' strings.
+          
+       3. To mark a matched substring for future reference.
+          
+     
+     This last application is not a consequence of the idea of a
+     parenthetical grouping; it is a separate feature which happens to be
+     assigned as a second meaning to the same `\( ... \)' construct
+     because there is no conflict in practice between the two meanings.
+     Here is an explanation of this feature:
+     
+`\DIGIT'     
+     after the end of a `\( ... \)' construct, the matcher remembers the
+     beginning and end of the text matched by that construct.  Then, later
+     on in the regular expression, you can use `\' followed by DIGIT to
+     mean "match the same text matched the DIGIT'th time by the `\( ... \)'
+     construct."
+     
+     The strings matching the first nine `\( ... \)' constructs appearing
+     in a regular expression are assigned numbers 1 through 9 in order that the
+     open-parentheses appear in the regular expression.  `\1' through
+     `\9' may be used to refer to the text matched by the corresponding
+     `\( ... \)' construct.
+     
+     For example, `\(.*\)\1' matches any newline-free string that is
+     composed of two identical halves.  The `\(.*\)' matches the first
+     half, which may be anything, but the `\1' that follows must match
+     the same exact text.
+     
+`\`'     
+     matches the empty string, provided it is at the beginning
+     of the buffer.
+     
+`\''     
+     matches the empty string, provided it is at the end of
+     the buffer.
+     
+`\b'     
+     matches the empty string, provided it is at the beginning or end of a
+     word.  Thus, `\bfoo\b' matches any occurrence of `foo' as a separate
+     word.  `\bballs?\b' matches `ball' or `balls' as a separate word.
+     
+`\B'     
+     matches the empty string, provided it is not at the beginning or
+     end of a word.
+     
+`\<'     
+     matches the empty string, provided it is at the beginning of a word.
+     
+`\>'     
+     matches the empty string, provided it is at the end of a word.
+     
+`\w'     
+     matches any word-constituent character.  The editor syntax table
+     determines which characters these are.
+     
+`\W'     
+     matches any character that is not a word-constituent.
+     
+`\sCODE'     
+     matches any character whose syntax is CODE.  CODE is a character which
+     represents a syntax code: thus, `w' for word constituent, `-' for
+     whitespace, `(' for open-parenthesis, etc.  *Note Syntax::.
+     
+`\SCODE'     
+     matches any character whose syntax is not CODE.
+
+  Here is a complicated regexp, used by Emacs to recognize the end of a
+sentence together with any whitespace that follows.  It is given in Lisp
+syntax to enable you to distinguish the spaces from the tab characters.  In
+Lisp syntax, the string constant begins and ends with a double-quote.
+`\"' stands for a double-quote as part of the regexp, `\\' for a
+backslash as part of the regexp, `\t' for a tab and `\n' for a
+newline.
+
+     "[.?!][]\"')]*\\($\\|\t\\|  \\)[ \t\n]*"
+
+This contains four parts in succession: a character set matching period,
+`?' or `!'; a character set matching close-brackets,
+quotes or parentheses, repeated any number of times; an alternative in
+backslash-parentheses that matches end-of-line, a tab or two spaces; and a
+character set matching whitespace characters, repeated any number of times.
+
+
+File: emacs  Node: Search Case, Prev: Regexps, Up: Search, Next: Replace
+
+Searching and Case
+==================
+
+  All sorts of searches in Emacs normally ignore the case of the text they
+are searching through; if you specify searching for `FOO', then `Foo' and
+`foo' are also considered a match.  Regexps, and in particular character
+sets, are included: `[aB]' would match `a' or `A' or `b' or `B'.
+
+  If you do not want this feature, set the variable `case-fold-search'
+to `nil'.  Then all letters must match exactly, including case.  This
+is a per-buffer variable; altering the variable affects only the current
+buffer, but there is a default value which you can change as well.
+*Note Locals::.
+
+
+File: emacs  Node: Replace, Prev: Search Case, Up: Search, Next: Other Repeating Search
+
+Replacement Commands
+====================
+
+  Global search-and-replace operations are not needed as often in Emacs as
+they are in other editors, but they are available.  In addition to the
+simple `replace-string' command which is like that found in most
+editors, there is a `query-replace' command which asks you, for each
+occurrence of the pattern, whether to replace it.
+
+  The replace commands all replace one string (or regexp) with one
+replacement string.  It is possible to perform several replacements in
+parallel using the command `expand-region-abbrevs'.  *Note Expanding Abbrevs::.
+
+* Menu:
+
+* Unconditional Replace::  Replacing all matches for a string.
+* Regexp Replace::         Replacing all matches for a regexp.
+* Replacement and Case::   How replacements preserve case of letters.
+* Query Replace::          How to use querying.
+
+
+File: emacs  Node: Unconditional Replace, Prev: Replace, Up: Replace, Next: Regexp Replace
+
+Unconditional Replacement
+-------------------------
+
+`M-x replace-string RET STRING RET NEWSTRING RET'     
+     Replace every occurrence of STRING with NEWSTRING.
+`M-x replace-regexp RET REGEXP RET NEWSTRING RET'     
+     Replace every match for REGEXP with NEWSTRING.
+
+  To replace every instance of `foo' after point with `bar', use
+the command `M-x replace-string' with the two arguments `foo' and
+`bar'.  Replacement occurs only after point, so if you want to cover
+the whole buffer you must go to the beginning first.  All occurrences up to
+the end of the buffer are replaced; to limit replacement to part of the
+buffer, narrow to that part of the buffer before doing the replacement
+(*Note Narrowing::).
+
+  When `replace-string' exits, point is left at the last occurrence
+replaced.  The value of point when the `replace-string' command was
+issued is remembered on the mark ring; `C-u C-SPC' moves back
+there.
+
+  A numeric argument restricts replacement to matches that are surrounded
+by word boundaries.
+
+
+File: emacs  Node: Regexp Replace, Prev: Unconditional Replace, Up: Replace, Next: Replacement and Case
+
+Regexp Replacement
+------------------
+
+  `replace-string' replaces exact matches for a single string.  The
+similar command `replace-regexp' replaces any match for a specified
+pattern.
+
+  In `replace-regexp', the NEWSTRING need not be constant.  It can refer to
+all or part of what is matched by the REGEXP.  `\&' in NEWSTRING stands for
+the entire text being replaced.  `\D' in NEWSTRING, where D is a digit,
+stands for whatever matched the D'th parenthesized grouping in REGEXP.  For
+example,
+
+     M-x replace-regexp RET c[ad]+r RET \&-safe RET
+
+would replace (for example) `cadr' with `cadr-safe' and `cddr'
+with `cddr-safe'.
+
+     M-x replace-regexp RET \(c[ad]+r\)-safe RET \1 RET
+
+would perform exactly the opposite replacements.  To include a `\'
+in the text to replace with, you must give `\\'.
+
+
+File: emacs  Node: Replacement and Case, Prev: Regexp Replace, Up: Replace, Next: Query Replace
+
+Replace Commands and Case
+-------------------------
+
+  If the arguments to a replace command are in lower case, it preserves
+case when it makes a replacement.  Thus, the command
+
+     M-x replace-string RET foo RET bar RET
+
+replaces a lower case `foo' with a lower case `bar', `FOO'
+with `BAR', and `Foo' with `Bar'.  If upper case letters are
+used in the second argument, they remain upper case every time that
+argument is inserted.  If upper case letters are used in the first
+argument, the second argument is always substituted exactly as given, with
+no case conversion.  Likewise, if the variable `case-replace' is set
+to `nil', replacement is done without case conversion.  If
+`case-fold-search' is set to `nil', case is significant in
+matching occurrences of `foo' to replace; also, case conversion of the
+replacement string is not done.
+
+
+File: emacs  Node: Query Replace, Prev: Replacement and Case, Up: Replace
+
+Query Replace
+-------------
+
+`M-% STRING RET NEWSTRING RET'     
+`M-x query-replace RET STRING RET NEWSTRING RET'     
+     Replace some occurrences of STRING with NEWSTRING.
+`M-x query-replace-regexp RET REGEXP RET NEWSTRING RET'     
+     Replace some matches for REGEXP with NEWSTRING.
+
+  If you want to change only some of the occurrences of `foo' to `bar', not
+all of them, then you cannot use an ordinary `replace-string'.  Instead,
+use `M-%' (`query-replace').  This command finds occurrences of `foo' one
+by one, displays each occurrence and asks you whether to replace it.  A
+numeric argument to `query-replace' tells it to consider only occurrences
+that are bounded by word-delimiter characters.
+
+  Aside from querying, `query-replace' works just like `replace-string',
+and `query-replace-regexp' works just like `replace-regexp'.
+
+  The things you can type when you are shown an occurrence of STRING
+or a match for REGEXP are:
+
+
+`SPC'     
+     to replace the occurrence with NEWSTRING.  This preserves case, just
+     like `replace-string', provided `case-replace' is non-`nil', as it
+     normally is.
+     
+`DEL'     
+     to skip to the next occurrence without replacing this one.
+     
+`, (Comma)'     
+     to replace this occurrence and display the result.  You are then asked
+     for another input character, except that since the replacement has
+     already been made, DEL and SPC are equivalent.  You could
+     type `C-r' at this point (see below) to alter the replaced text.  You
+     could also type `C-x u' to undo the replacement; this exits the
+     `query-replace', so if you want to do further replacement you must use
+     `C-x ESC' to restart (*Note Repetition::).
+     
+`ESC'     
+     to exit without doing any more replacements.
+     
+`. (Period)'     
+     to replace this occurrence and then exit.
+     
+`!'     
+     to replace all remaining occurrences without asking again.
+     
+`^'     
+     to go back to the location of the previous occurrence (or what used to
+     be an occurrence), in case you changed it by mistake.  This works by
+     popping the mark ring.  Only one `^' in a row is allowed, because
+     only one previous replacement location is kept during `query-replace'.
+     
+`C-r'     
+     to enter a recursive editing level, in case the occurrence needs to be
+     edited rather than just replaced with NEWSTRING.  When you are
+     done, exit the recursive editing level with `C-M-c' and the next
+     occurrence will be displayed.  *Note Recursive Edit::.
+     
+`C-w'     
+     to delete the occurrence, and then enter a recursive editing level as
+     in `C-r'.  Use the recursive edit to insert text to replace the
+     deleted occurrence of STRING.  When done, exit the recursive
+     editing level with `C-M-c' and the next occurrence will be
+     displayed.
+     
+`C-l'     
+     to redisplay the screen and then give another answer.
+     
+`C-h'     
+     to display a message summarizing these options, then give another
+     answer.
+
+  If you type any other character, the `query-replace' is exited, and
+the character executed as a command.  To restart the `query-replace',
+use `C-x ESC', which repeats the `query-replace' because it
+used the minibuffer to read its arguments.  *Note C-x ESC: Repetition.
+  
+
+File: emacs  Node: Other Repeating Search, Prev: Replace, Up: Search
+
+Other Search-and-Loop Commands
+==============================
+
+  Here are some other commands that find matches for a regular expression.
+They all operate from point to the end of the buffer.
+
+`M-x occur'     
+     Print each line that follows point and contains a match for the
+     specified regexp.  A numeric argument specifies the number of context
+     lines to print before and after each matching line; the default is
+     none.
+     
+     The buffer `*Occur*' containing the output serves as a menu for
+     finding the occurrences in their original context.  Find an occurrence
+     as listed in `*Occur*', position point there and type `C-c
+     C-c'; this switches to the buffer that was searched and moves point to
+     the original of the same occurrence.
+     
+`M-x list-matching-lines'     
+     Synonym for `M-x occur'.
+     
+`M-x count-matches'     
+     Print the number of matches following point for the specified regexp.
+     
+`M-x delete-non-matching-lines'     
+     Delete each line that follows point and does not contain a match for
+     the specified regexp.
+     
+`M-x delete-matching-lines'     
+     Delete each line that follows point and contains a match for the
+     specified regexp.
+
+
+File: emacs  Node: Fixit, Prev: Search, Up: Top, Next: Files
+
+Commands for Fixing Typos
+*************************
+
+  In this chapter we describe the commands that are especially useful for
+the times when you catch a mistake in your text just after you have made
+it, or change your mind while composing text on line.
+
+* Menu:
+
+* Kill Errors:: Commands to kill a batch of recently entered text.
+* Transpose::   Exchanging two characters, words, lines, lists...
+* Fixing Case:: Correcting case of last word entered.
+* Spelling::    Apply spelling checker to a word, or a whole file.
+
+
+File: emacs  Node: Kill Errors, Prev: Fixit, Up: Fixit, Next: Transpose
+
+Killing Your Mistakes
+=====================
+
+`DEL'     
+     Delete last character (`delete-backward-char').
+`M-DEL'     
+     Kill last word (`backward-kill-word').
+`C-x DEL'     
+     Kill to beginning of sentence (`backward-kill-sentence').
+
+  The DEL character (`delete-backward-char') is the most
+important correction command.  When used among graphic (self-inserting)
+characters, it can be thought of as canceling the last character typed.
+
+  When your mistake is longer than a couple of characters, it might be more
+convenient to use `M-DEL' or `C-x DEL'.  `M-DEL' kills back to the start of
+the last word, and `C-x DEL' kills back to the start of the last sentence.
+`C-x DEL' is particularly useful when you are thinking of what to write as
+you type it, in case you change your mind about phrasing.  `M-DEL' and `C-x
+DEL' save the killed text for `C-y' and `M-y' to retrieve.  *Note
+Yanking::.
+
+  `M-DEL' is often useful even when you have typed only a few
+characters wrong, if you know you are confused in your typing and aren't
+sure exactly what you typed.  At such a time, you cannot correct with
+DEL except by looking at the screen to see what you did.  It requires
+less thought to kill the whole word and start over again.
+
+
+File: emacs  Node: Transpose, Prev: Kill Errors, Up: Fixit, Next: Fixing Case
+
+Transposing Text
+================
+
+`C-t'     
+     Transpose two characters (`transpose-chars').
+`M-t'     
+     Transpose two words (`transpose-words').
+`C-M-t'     
+     Transpose two balanced expressions (`transpose-sexps').
+`C-x C-t'     
+     Transpose two lines (`transpose-lines').
+
+  The common error of transposing two characters can be fixed, when they
+are adjacent, with the `C-t' command (`transpose-chars').  Normally,
+`C-t' transposes the two characters on either side of point.  When
+given at the end of a line, rather than transposing the last character of
+the line with the newline, which would be useless, `C-t' transposes the
+last two characters on the line.  So, if you catch your transposition error
+right away, you can fix it with just a `C-t'.  If you don't catch it so
+fast, you must move the cursor back to between the two transposed
+characters.  If you transposed a space with the last character of the word
+before it, the word motion commands are a good way of getting there.
+Otherwise, a reverse search (`C-r') is often the best way.
+*Note Search::.
+
+
+  `Meta-t' (`transpose-words') transposes the word before point
+with the word after point.  It moves point forward over a word, dragging
+the word preceding or containing point forward as well.  The punctuation
+characters between the words do not move.  For example, `FOO, BAR'
+transposes into `BAR, FOO' rather than `BAR FOO,'.
+
+  `C-M-t' (`transpose-sexps') is a similar command for transposing
+two expressions (*Note Lists::), and `{C-x C-t} (`transpose-lines')'exchanges lines.  They work like `M-t' except in determining the
+division of the text into syntactic units.
+
+  A numeric argument to a transpose command serves as a repeat count: it
+tells the transpose command to move the character (word, sexp, line) before
+or containing point across several other characters (words, sexps, lines).
+For example, `C-u 3 C-t' moves the character before point forward across
+three other characters.  This is equivalent to repeating `C-t' three times.
+`C-u - 4 M-t' moves the word before point backward across four words.  `C-u
+- C-M-t' would cancel the effect of plain `C-M-t'.
+
+  A numeric argument of zero is assigned a special meaning (because
+otherwise a command with a repeat count of zero would do nothing): to
+transpose the character (word, sexp, line) ending after point with the
+one ending after the mark.
+
+
+File: emacs  Node: Fixing Case, Prev: Transpose, Up: Fixit, Next: Spelling
+
+Case Conversion
+===============
+
+`M-- M-l'     
+     Convert last word to lower case.  Note `Meta--' is Meta-minus.
+`M-- M-u'     
+     Convert last word to all upper case.
+`M-- M-c'     
+     Convert last word to lower case with capital initial.
+
+  A very common error is to type words in the wrong case.  Because of this,
+the word case-conversion commands `M-l', `M-u' and `M-c' have a special
+feature when used with a negative argument: they do not move the cursor.
+As soon as you see you have mistyped the last word, you can simply
+case-convert it and go on typing.  *Note Case::.
+
+
+File: emacs  Node: Spelling, Prev: Fixing Case, Up: Fixit
+
+Checking and Correcting Spelling
+================================
+
+`M-$'     
+     Check and correct spelling of word (`spell-word').
+`M-x spell-buffer'     
+     Check and correct spelling of each word in the buffer.
+`M-x spell-region'     
+     Check and correct spelling of each word in the region.
+`M-x spell-string'     
+     Check spelling of specified word.
+
+  To check the spelling of the word before point, and optionally correct it
+as well, use the command `M-$' (`spell-word').  This command runs
+an inferior process containing the `spell' program to see whether the
+word is correct English.  If it is not, it asks you to edit the word (in
+the minibuffer) into a corrected spelling, and then does a `query-replace'
+to substitute the corrected spelling for the old one throughout the buffer.
+
+  If you exit the minibuffer without altering the original spelling, it
+means you do not want to do anything to that word.  Then the `query-replace'
+is not done.
+
+  `M-x spell-buffer' checks each word in the buffer the same way that
+`spell-word' does, doing a `query-replace' if appropriate for every
+incorrect word.
+
+  `M-x spell-region' is similar but operates only on the region, not
+the entire buffer.
+
+  `M-x spell-string' reads a string as an argument and checks whether
+that is a correctly spelled English word.  It prints in the echo area a
+message giving the answer.
+
+
+File: emacs  Node: Files, Prev: Fixit, Up: Top, Next: Buffers
+
+File Handling
+*************
+
+  The basic unit of stored data in Unix is the "file".  To edit a file,
+you must tell Emacs to examine the file and prepare a buffer containing a
+copy of the file's text.  This is called "visiting" the file.  Editing
+commands apply directly to text in the buffer; that is, to the copy inside
+Emacs.  Your changes appear in the file itself only when you "save" the
+buffer back into the file.
+
+  In addition to visiting and saving files, Emacs can delete, copy, rename,
+and append to files, and operate on file directories.
+
+* Menu:
+
+* File Names::   How to type and edit file name arguments.
+* Visiting::     Visiting a file prepares Emacs to edit the file.
+* Saving::       Saving makes your changes permanent.
+* Reverting::    Reverting cancels all the changes not saved.
+* Auto Save::    Auto Save periodically protects against loss of data.
+* ListDir::      Listing the contents of a file directory.
+* Dired::        "Editing" a directory to delete, rename, etc.
+                  the files in it.
+* Misc File Ops:: Other things you can do on files.
+
+
+File: emacs  Node: File Names, Prev: Files, Up: Files, Next: Visiting
+
+File Names
+==========
+
+  Most Emacs commands that operate on a file require you to specify the
+file name.  (Saving and reverting are exceptions; the buffer knows which
+file name to use for them.)  File names are specified using the minibuffer
+(*Note Minibuffer::).  "Completion" is available, to make it easier to
+specify long file names.  *Note Completion::.
+
+  There is always a "default file name" which will be used if you type
+just RET, entering an empty argument.  Normally the default file name
+is the name of the file visited in the current buffer; this makes it easy
+to operate on that file with any of the Emacs file commands.
+
+  Each buffer has a default directory, normally the same as the directory
+of the file visited in that buffer.  When Emacs reads a file name, if you
+do not specify a directory, the default directory is used.  If you specify
+a directory in a relative fashion, with a name that does not start with a
+slash, it is interpreted with respect to the default directory.  The
+default directory is kept in the variable `default-directory', which
+has a separate value in every buffer.
+
+  For example, if the default file name is `/u/rms/gnu/gnu.tasks' then
+the default directory is `/u/rms/gnu/'.  If you type just `foo',
+which does not specify a directory, it is short for `/u/rms/gnu/foo'.
+`../.login' would stand for `/u/rms/.login'.  `new/foo'
+would stand for the filename `/u/rms/gnu/new/foo'.
+
+  The command `M-x pwd' prints the current buffer's default directory,
+and the command `M-x cd' sets it (to a value read using the
+minibuffer).  A buffer's default directory changes only when the `cd'
+command is used.  A file-visiting buffer's default directory is initialized
+to the directory of the file that is visited there.  If a buffer is made
+randomly with `C-x b', its default directory is copied from that of the
+buffer that was current at the time.
+
+  The default directory actually appears in the minibuffer when the
+minibuffer becomes active to read a file name.  This serves two purposes:
+it shows you what the default is, so that you can type a relative file name
+and know with certainty what it will mean, and it allows you to edit the
+default to specify a different directory.  This insertion of the default
+directory is inhibited if the variable `insert-default-directory' is
+set to `nil'.
+
+  Note that it is legitimate to type an absolute file name after you enter
+the minibuffer, ignoring the presence of the default directory name as part
+of the text.  The final minibuffer contents may look invalid, but that is
+not so.  *Note Minibuffer File::.
+
+  `$' in a file name is used to substitute environment variables.  For
+example, if you have used the shell command `setenv FOO rms/hacks' to
+set up an environment variable named `FOO', then you can use
+`/u/$FOO/test.c' or `/u/${FOO}/test.c' as an abbreviation for
+`/u/rms/hacks/test.c'.  The environment variable name consists of all
+the alphanumeric characters after the `$'; alternatively, it may be
+enclosed in braces after the `$'.  Note that the `setenv' command
+affects Emacs only if done before Emacs is started.
+
+  To access a file with `$' in its name, type `$$'.  This pair
+is converted to a single `$' at the same time as variable substitution
+is performed for single `$'.  The Lisp function that performs the
+substitution is called `substitute-in-file-name'.  The substitution
+is performed only on filenames read as such using the minibuffer.
+
+
+File: emacs  Node: Visiting, Prev: File Names, Up: Files, Next: Saving
+
+Visiting Files
+==============
+
+`C-x C-f'     
+     Visit a file (`find-file').
+`C-x C-v'     
+     Visit a different file instead of the one visited last
+     (`find-alternate-file').
+`C-x 4 C-f'     
+     Visit a file, in another window (`find-file-other-window').  Don't
+     change this window.
+
+  "Visiting" a file means copying its contents into Emacs where you can
+edit them.  Emacs makes a new buffer for each file that you visit.  We say
+that the buffer is visiting the file that it was created to hold.  Emacs
+constructs the buffer name from the file name by throwing away the
+directory, keeping just the name proper.  For example, a file named
+`/usr/rms/emacs.tex' would get a buffer named `emacs.tex'.  If
+there is already a buffer with that name, a unique name is constructed by
+appending `<2>', `<3>', or so on, using the lowest number that
+makes a name that is not already in use.
+
+  Each window's mode line shows the name of the buffer that is being displayed
+in that window, so you can always tell what buffer you are editing.
+
+  The changes you make with Emacs are made in the Emacs buffer.  They do
+not take effect in the file that you visited, or any place permanent, until
+you "save" the buffer.  Saving the buffer means that Emacs writes the
+current contents of the buffer into its visited file.  *Note Saving::.
+
+  If a buffer contains changes that have not been saved, the buffer is said
+to be "modified".  This is important because it implies that some
+changes will be lost if the buffer is not saved.  The mode line displays
+two stars near the left margin if the buffer is modified.
+
+  To visit a file, use the command `C-x C-f' (`find-file').  Follow
+the command with the name of the file you wish to visit, terminated by a
+RET.
+
+  The file name is read using the minibuffer (*Note Minibuffer::), with
+defaulting and completion in the standard manner (*Note File Names::).
+While in the minibuffer, you can abort `C-x C-f' by typing `C-g'.
+
+  Your confirmation that `C-x C-f' has completed successfully is the
+appearance of new text on the screen and a new buffer name in the mode
+line.  If the specified file does not exist and could not be created, or
+cannot be read, then an error results.  The error message is printed in the
+echo area, and includes the file name which Emacs was trying to visit.
+
+  If you visit a file that is already in Emacs, `C-x C-f' does not make
+another copy.  It selects the existing buffer containing that file.
+However, before doing so, it checks that the file itself has not changed
+since you visited or saved it last.  If the file has changed, a warning
+message is printed.  *Note Simultaneous Editing: Interlocking.
+
+  What if you want to create a file?  Just visit it.  Emacs prints
+`(New File)' in the echo area, but in other respects behaves as if you
+had visited an existing empty file.  If you make any changes and save them,
+the file is created.
+
+  If you visit a nonexistent file unintentionally (because you typed the
+wrong file name), use the `C-x C-v' (`find-alternate-file')
+command to visit the file you wanted.  `C-x C-v' is similar to `C-x
+C-f', but it kills the current buffer (after first offering to save it if
+it is modified).  `C-x C-v' is allowed even if the current buffer
+is not visiting a file.
+
+  If the file you specify is actually a directory, Dired is called on that
+directory (*Note Dired::).  This can be inhibited by setting the variable
+`find-file-run-dired' to `nil'; then it is an error to try to
+visit a directory.
+
+  `C-x 4 f' (`find-file-other-window') is like `C-x C-f'
+except that the buffer containing the specified file is selected in another
+window.  The window that was selected before `C-x 4 f' continues to
+show the same buffer it was already showing.  If this command is used when
+only one window is being displayed, that window is split in two, with one
+window showing the same before as before, and the other one showing the
+newly requested file.  *Note Windows::.
+
+  There are two hook variables that allow extensions to modify the
+operation of visiting files.  Visiting a file that does not exist runs the
+functions in the list `find-file-not-found-hooks'; the value of this
+variable is expected to be a list of functions, and the functions are
+called one by one until one of them returns non-`nil'.  Any visiting
+of a file, whether extant or not, expects `find-file-hooks' to
+contain list of functions and calls them all, one by one.  In both cases
+the functions receive no arguments.  Visiting a nonexistent file
+runs the `find-file-not-found-hooks' first.
+
+
+File: emacs  Node: Saving, Prev: Visiting, Up: Files, Next: Reverting
+
+Saving Files
+============
+
+  "Saving" a buffer in Emacs means writing its contents back into the file
+that was visited in the buffer.
+
+`C-x C-s'     
+     Save the current buffer in its visited file (`save-buffer').
+`C-x s'     
+     Save any or all buffers in their visited files (`save-some-buffers').
+`M-~'     
+     Forget that the current buffer has been changed (`not-modified').
+`C-x C-w'     
+     Save the current buffer in a specified file, and record that file as
+     the one visited in the buffer (`write-file').
+`M-x set-visited-file-name'     
+     Change file the name under which the current buffer will be saved.
+
+  When you wish to save the file and make your changes permanent, type
+`C-x C-s' (`save-buffer').  After saving is finished, `C-x C-s'
+prints a message such as
+
+     Wrote /u/rms/gnu/gnu.tasks
+
+If the selected buffer is not modified (no changes have been made in it
+since the buffer was created or last saved), saving is not really done,
+because it would have no effect.  Instead, `C-x C-s' prints a message
+in the echo area saying
+
+     (No changes need to be written)
+
+  The command `C-x s' (`save-some-buffers') can save any or all modified
+buffers.  First it asks, for each modified buffer, whether to save it.
+These questions should be answered with `y' or `n'.  `C-x C-c',
+the key that kills Emacs, invokes `save-some-buffers' and therefore
+asks the same questions.
+
+  If you have changed a buffer and do not want the changes to be saved, you
+should take some action to prevent it.  Otherwise, each time you use
+`save-some-buffers' you are liable to save it by mistake.  One thing
+you can do is type `M-~' (`not-modified'), which clears out the
+indication that the buffer is modified.  If you do this, none of the save
+commands will believe that the buffer needs to be saved.  (`~' is often
+used as a mathematical symbol for `not'; thus `Meta-~' is `not', metafied.)
+You could also use `set-visited-file-name' (see below) to mark the
+buffer as visiting a different file name, one which is not in use for
+anything important.  Alternatively, you can undo all the changes made since
+the file was visited or saved, by reading the text from the file again.
+This is called "reverting".  *Note Reverting::.  You could also undo all
+the changes by repeating the undo command `C-x u' until you have undone
+all the changes; but this only works if you have not made more changes than
+the undo mechanism can remember.
+
+  `M-x set-visited-file-name' alters the name of the file that the
+current buffer is visiting.  It reads the new file name using the
+minibuffer.  It can be used on a buffer that is not visiting a file, too.
+The buffer's name is changed to correspond to the file it is now visiting
+in the usual fashion (unless the new name is in use already for some other
+buffer; in that case, the buffer name is not changed).
+`set-visited-file-name' does not save the buffer in the newly visited
+file; it just alters the records inside Emacs so that, if you save the
+buffer, it will be saved in that file.  It also marks the buffer as
+"modified" so that `C-x C-s' will save.
+
+  If you wish to mark the buffer as visiting a different file and save it
+right away, use `C-x C-w' (`write-file').  It is precisely
+equivalent to `set-visited-file-name' followed by `C-x C-s'.
+`C-x C-s' used on a buffer that is not visiting with a file has the
+same effect as `C-x C-w'; that is, it reads a file name, marks the
+buffer as visiting that file, and saves it there.  The default file name in
+a buffer that is not visiting a file is made by combining the buffer name
+with the buffer's default directory.
+
+  If Emacs is about to save a file and sees that the date of the latest
+version on disk does not match what Emacs last read or wrote, Emacs
+notifies you of this fact, because it probably indicates a problem caused
+by simultaneous editing and requires your immediate attention.
+*Note Simultaneous Editing: Interlocking.
+
+  If the variable `require-final-newline' is non-`nil', Emacs
+puts a newline at the end of any file that doesn't already end in one,
+every time a file is saved or written.
+
+  You can implement other ways to write files, and other things to be done
+before writing them, using the hook variable `write-file-hooks'.  The
+value of this variable should be a list of Lisp functions.  When a file is
+to be written, the functions in the list are called, one by one, with no
+arguments.  If one of them returns a non-`nil' value, Emacs takes this
+to mean that the file has been written in some suitable fashion; the rest
+of the functions are not called, and normal writing is not done.
+
+* Menu:
+
+* Backup::       How Emacs saves the old version of your file.
+* Interlocking:: How Emacs protects against simultaneous editing
+                  of one file by two users.
+
+
+File: emacs  Node: Backup, Prev: Saving, Up: Saving, Next: Interlocking
+
+Backup Files
+------------
+
+  Because Unix does not provide version numbers in file names, rewriting a
+file in Unix automatically destroys all record of what the file used to
+contain.  Thus, saving a file from Emacs throws away the old contents of
+the file---or it would, except that Emacs carefully copies the old contents
+to another file, called the "backup" file, before actually saving.
+(Provided the variable `make-backup-files' is non-`nil'.
+Backup files are not written if this variable is `nil').
+
+  At your option, Emacs can keep either a single backup file or a series of
+numbered backup files for each file that you edit.
+
+  Emacs makes a backup for a file only the first time the file is saved
+from one buffer.  No matter how many times you save a file, its backup file
+continues to contain the contents from before the file was visited.
+Normally this means that the backup file contains the contents from before
+the current editing session; however, if you kill the buffer and then visit
+the file again, a new backup file will be made by the next save.
+
+* Menu:
+
+* Names: Backup Names.		How backup files are named;
+				Choosing single or numbered backup files.
+* Deletion: Backup Deletion.	Emacs deletes excess numbered backups.
+* Copying: Backup Copying.	Backups can be made by copying or renaming.
+
+
+File: emacs  Node: Backup Names, Prev: Backup, Up: Backup, Next: Backup Deletion
+
+Single or Numbered Backups
+..........................
+
+  If you choose to have a single backup file (this is the default),
+the backup file's name is constructed by appending `~' to the
+file name being edited; thus, the backup file for `eval.c' would
+be `eval.c~'.
+
+  If you choose to have a series of numbered backup files, backup file
+names are made by appending `.~', the number, and another `~' to
+the original file name.  Thus, the backup files of `eval.c' would be
+called `eval.c.~1~', `eval.c.~2~', and so on, through names
+like `eval.c.~259~' and beyond.
+
+  If protection stops you from writing backup files under the usual names,
+the backup file is written as `%backup%~' in your home directory.
+Only one such file can exist, so only the most recently made such backup is
+available.
+
+  The choice of single backup or numbered backups is controlled by the
+variable `version-control'.  Its possible values are
+
+`t'     
+     Make numbered backups.
+`nil'     
+     Make numbered backups for files that have numbered backups already.
+     Otherwise, make single backups.
+`never'     
+     Do not in any case make numbered backups; always make single backups.
+
+`version-control' may be set locally in an individual buffer to
+control the making of backups for that buffer's file.  For example,
+Rmail mode locally sets `version-control' to `never' to make sure
+that there is only one backup for an Rmail file.  *Note Locals::.
+
+
+File: emacs  Node: Backup Deletion, Prev: Backup Names, Up: Backup, Next: Backup Copying
+
+Automatic Deletion of Backups
+.............................
+
+  To prevent unlimited consumption of disk space, Emacs can delete numbered
+backup versions automatically.  Generally Emacs keeps the first few backups
+and the latest few backups, deleting any in between.  This happens every
+time a new backup is made.  The two variables that control the deletion are
+`kept-old-versions' and `kept-new-versions'.  Their values are, respectively
+the number of oldest (lowest-numbered) backups to keep and the number of
+newest (highest-numbered) ones to keep, each time a new backup is made.
+Recall that these values are used just after a new backup version is made;
+that newly made backup is included in the count in `kept-new-versions'.
+By default, both variables are 2.
+
+  If `trim-versions-without-asking' is non-`nil', the excess
+middle versions are deleted without a murmur.  If it is `nil', the
+default, then you are asked whether the excess middle versions should
+really be deleted.
+
+  Dired's `.' (Period) command can also be used to delete old versions.
+*Note Dired::.
+
+
+File: emacs  Node: Backup Copying, Prev: Backup Deletion, Up: Backup
+
+Copying vs. Renaming
+....................
+
+  Backup files can be made by copying the old file or by renaming it.  This
+makes a difference when the old file has multiple names.  If the old file
+is renamed into the backup file, then the alternate names become names for
+the backup file.  If the old file is copied instead, then the alternate
+names remain names for the file that you are editing, and the contents
+accessed by those names will be the new contents.
+
+  The method of making a backup file may also affect the file's owner
+and group.  If copying is used, these do not change.  If renaming is used,
+you become the file's owner, and the file's group becomes the default
+(different operating systems have different defaults for the group).
+
+  Having the owner change is usually a good idea, because then the owner
+always shows who last edited the file.  Also, the owners of the backups
+show who produced those versions.  Occasionally there is a file whose
+owner should not change; it is a good idea for such files to contain
+local variable lists to set `backup-by-copying-when-mismatch' for
+them alone (*Note File Variables::).
+
+  The choice of renaming or copying is controlled by three variables.
+Normally, renaming is done.  If the variable `backup-by-copying' is
+non-`nil', copying is used.  Otherwise, if the variable
+`backup-by-copying-when-linked' is non-`nil', then copying is done for
+files that have multiple names, but renaming may still done when the file
+being edited has only one name.  If the variable
+`backup-by-copying-when-mismatch' is non-`nil', then copying is done if
+renaming would cause the file's owner or group to change.
+
+
+File: emacs  Node: Interlocking, Prev: Backup, Up: Saving
+
+Protection against Simultaneous Editing
+---------------------------------------
+
+  Simultaneous editing occurs when two users visit the same file, both make
+changes, and then both save them.  If nobody were informed that this was
+happening, whichever user saved first would later find that his changes
+were lost.  On some systems, Emacs notices immediately when the second user
+starts to change the file, and issues an immediate warning.  When this is
+not possible, or if the second user has gone on to change the file despite
+the warning, Emacs checks later when the file is saved, and issues a second
+warning when a user is about to overwrite a file containing another user's
+changes.  If the editing user takes the proper corrective action at this
+point, he can prevent actual loss of work.
+
+  When you make the first modification in an Emacs buffer that is visiting
+a file, Emacs records that you have locked the file.  (It does this by
+writing another file in a directory reserved for this purpose.)  The lock
+is removed when you save the changes.  The idea is that the file is locked
+whenever the buffer is modified.  If you begin to modify the buffer while
+the visited file is locked by someone else, this constitutes a collision,
+and Emacs asks you what to do.  It does this by calling the Lisp function
+`ask-user-about-lock', which you can redefine for the sake of
+customization.  The standard definition of this function asks you a
+question and accepts three possible answers:
+
+`s'     
+     Steal the lock.  Whoever was already changing the file loses the lock,
+     and you gain the lock.
+`p'     
+     Proceed.  Go ahead and edit the file despite its being locked by someone else.
+`q'     
+     Quit.  This causes an error (`file-locked') and the modification you
+     were trying to make in the buffer does not actually take place.
+
+  Note that locking works on the basis of a file name; if a file has
+multiple names, Emacs does not realize that the two names are the same file
+and cannot prevent two user from editing it simultaneously under different
+names.  However, basing locking on names means that Emacs can interlock the
+editing of new files that will not really exist until they are saved.
+
+  Some systems are not configured to allow Emacs to make locks.  On
+these systems, Emacs cannot detect trouble in advance, but it still can
+detect it in time to prevent you from overwriting someone else's changes.
+
+  Every time Emacs saves a buffer, it first checks the last-modification
+date of the existing file on disk to see that it has not changed since the
+file was last visited or saved.  If the date does not match, it implies
+that changes were made in the file in some other way, and these changes are
+about to be lost if Emacs actually does save.  To prevent this, Emacs
+prints a warning message and asks for confirmation before saving.
+Occasionally you will know why the file was changed and know that it does
+not matter; then you can answer `yes' and proceed.  Otherwise, you should
+cancel the save with `C-g' and investigate the situation.
+
+  The first thing you should do when notified that simultaneous editing has
+already taken place is to list the directory with `C-u C-x C-d' (*Note
+Directory Listing: ListDir.).  This will show the file's current author.
+You should attempt to contact him to warn him not to continue editing.
+Often the next step is to save the contents of your Emacs buffer under a
+different name, and use `diff' to compare the two files.
+
+  Simultaneous editing checks are also made when you visit with `C-x
+C-f' a file that is already visited and when you start to modify a file.
+This is not strictly necessary, but it can cause you to find out about the
+problem earlier, when perhaps correction takes less work.
+
+
