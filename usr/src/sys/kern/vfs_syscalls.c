@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	7.91 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.92 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -876,6 +876,13 @@ out:
 	return (error);
 }
 
+struct args_lseek {
+	int	fdes;
+	int	pad;
+	off_t	off;
+	int	sbase;
+};
+
 #if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 /*
  * Seek system call.
@@ -889,12 +896,8 @@ lseek(p, uap, retval)
 	} *uap;
 	long *retval;
 {
-	struct nargs {
-		int	fdes;
-		off_t	off;
-		int	sbase;
-	} nuap;
-	quad_t qret;
+	struct args_lseek nuap;
+	off_t qret;
 	int error;
 
 	nuap.fdes = uap->fdes;
@@ -911,11 +914,7 @@ lseek(p, uap, retval)
  */
 __lseek(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fdes;
-		off_t	off;
-		int	sbase;
-	} *uap;
+	register struct args_lseek *uap;
 	off_t *retval;
 {
 	struct ucred *cred = p->p_ucred;
@@ -1438,51 +1437,11 @@ out:
 	return (error);
 }
 
-#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
-/*
- * Truncate a file given its path name.
- */
-/* ARGSUSED */
-truncate(p, uap, retval)
-	struct proc *p;
-	register struct args {
-		char	*fname;
-		long	length;
-	} *uap;
-	int *retval;
-{
-	struct nargs {
-		char	*fname;
-		off_t	length;
-	} nuap;
-
-	nuap.fname = uap->fname;
-	nuap.length = uap->length;
-	return (__truncate(p, &nuap, retval));
-}
-
-/*
- * Truncate a file given a file descriptor.
- */
-/* ARGSUSED */
-ftruncate(p, uap, retval)
-	struct proc *p;
-	register struct args {
-		int	fd;
-		long	length;
-	} *uap;
-	int *retval;
-{
-	struct nargs {
-		int	fd;
-		off_t	length;
-	} nuap;
-
-	nuap.fd = uap->fd;
-	nuap.length = uap->length;
-	return (__ftruncate(p, &nuap, retval));
-}
-#endif /* COMPAT_43 || COMPAT_SUNOS */
+struct args_truncate {
+	char	*fname;
+	int	pad;
+	off_t	length;
+};
 
 /*
  * Truncate a file given its path name.
@@ -1490,10 +1449,7 @@ ftruncate(p, uap, retval)
 /* ARGSUSED */
 __truncate(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		char	*fname;
-		off_t	length;
-	} *uap;
+	register struct args_truncate *uap;
 	int *retval;
 {
 	register struct vnode *vp;
@@ -1521,16 +1477,19 @@ out:
 	return (error);
 }
 
+struct args_ftruncate {
+	int	fd;
+	int	pad;
+	off_t	length;
+};
+
 /*
  * Truncate a file given a file descriptor.
  */
 /* ARGSUSED */
 __ftruncate(p, uap, retval)
 	struct proc *p;
-	register struct args {
-		int	fd;
-		off_t	length;
-	} *uap;
+	register struct args_ftruncate *uap;
 	int *retval;
 {
 	struct vattr vattr;
@@ -1558,6 +1517,46 @@ out:
 	VOP_UNLOCK(vp);
 	return (error);
 }
+
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
+/*
+ * Truncate a file given its path name.
+ */
+/* ARGSUSED */
+truncate(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		char	*fname;
+		long	length;
+	} *uap;
+	int *retval;
+{
+	struct args_truncate nuap;
+
+	nuap.fname = uap->fname;
+	nuap.length = uap->length;
+	return (__truncate(p, &nuap, retval));
+}
+
+/*
+ * Truncate a file given a file descriptor.
+ */
+/* ARGSUSED */
+ftruncate(p, uap, retval)
+	struct proc *p;
+	register struct args {
+		int	fd;
+		long	length;
+	} *uap;
+	int *retval;
+{
+	struct args_ftruncate nuap;
+
+	nuap.fd = uap->fd;
+	nuap.length = uap->length;
+	return (__ftruncate(p, &nuap, retval));
+}
+#endif /* COMPAT_43 || COMPAT_SUNOS */
 
 /*
  * Synch an open file.
