@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strtok.3	5.2 (Berkeley) %G%
+.\"	@(#)strtok.3	5.3 (Berkeley) %G%
 .\"
 .TH STRTOK 3 ""
 .UC 3
@@ -21,12 +21,15 @@
 strtok, strsep \- string token operations
 .SH SYNOPSIS
 .nf
-.B char *strtok(str, sep)
-.B char *str, *sep;
-.PP
-.B char *strsep(str, sep)
-.B char *str, *sep;
+.ft B
+char *
+strtok(char *str, const char *sep);
+.ft R
 .fi
+.SH DESCRIPTION
+.ft B
+This interface is obsoleted by strsep(3).
+.ft R
 .PP
 .I Strtok
 is used to isolate sequential tokens in a null-terminated string,
@@ -40,24 +43,30 @@ The first time that
 is called,
 .I str
 should be specified; subsequent calls, wishing to obtain further tokens
-from the same string, should pass a null pointer instead.  The separator
-string,
+from the same string, should pass a null pointer instead.
+The separator string,
 .IR sep ,
 must be supplied each time, and may change between calls.
+.PP
 .I Strtok
 returns a pointer to the start of each subsequent token in the string,
-after replacing the token itself with a NUL character.  When no more
-tokens remain, a null pointer is returned.
-.PP
-.I Strsep
-behaves similarly to
-.I strtok
-with the exception that the tokens in the string are separated by single
-occurrences of separator characters.  This routine was added to allow
-handling blank fields.
+after replacing the token itself with a NUL character.
+When no more tokens remain, a null pointer is returned.
+.SH SEE ALSO
+index(3), memchr(3), rindex(3), strchr(3), strcspn(3), strpbrk(3), strrchr(3),
+strsep(3), strspn(3), strstr(3)
+.SH STANDARDS
+.B Strtok
+conforms to ANSI X3.159-1989 (``ANSI C'').
 .SH BUGS
 There is no way to get tokens from multiple strings simultaneously.
 .PP
-.I Strsep
-is used heavily in the C library; calls to it and calls to the C library
-should not be intermixed.
+The System V
+.B strtok
+will, if handed a string containing only delimiter characters,
+not alter the next starting point, so that a call to
+.B strtok
+with a different (or empty) delimiter string
+may return a non-NULL value.
+Since this implementation always alters the next starting point,
+such a sequence of calls would always return NULL.
