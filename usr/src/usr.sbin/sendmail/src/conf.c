@@ -81,6 +81,16 @@
 **				is called directly, so these should be
 **				stripped, but the program-mailer (i.e.,
 **				csh) should leave them in.
+**			   M_NEEDDATE -- this mailer requires a Date:
+**				field in the message.
+**			   M_NEEDFROM -- this mailer requires a From:
+**				field in the message.
+**			   M_MSGID -- this mailer requires a Message-Id
+**				field in the message.
+**			   M_COMMAS -- this mailer wants comma-
+**				seperated To: and Cc: fields.
+**			   M_ARPAFMT == M_NEEDDATE|M_NEEDFROM|M_MSGID|
+**				M_COMMAS.
 **			- an exit status to use as the code for the
 **			  error message print if the mailer returns
 **			  something we don't understand.
@@ -108,12 +118,19 @@
 **			This table will almost certainly have to be
 **			changed on your site if you have anything more
 **			than the UUCP net.
+**		HdrInfo -- a table describing well-known header fields.
+**			Each entry has the field name and some flags,
+**			which can be:
+**			H_CONCAT -- if there is more than one field
+**				of this name, turn it into a comma-
+**				seperated list.
+**			H_DELETE -- delete this field.
 */
 
 
 
 
-static char SccsId[] = "@(#)conf.c	2.6	%G%";
+static char SccsId[] = "@(#)conf.c	3.1	%G%";
 
 
 bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
@@ -123,6 +140,8 @@ bool	UseMsgId = FALSE;	/* don't put message id's in anywhere */
 # ifdef BERKELEY
 
 char	*ArpaHost = "Berkeley";	/* host name of gateway on Arpanet */
+char	*UucpHost = "ucbvax";	/* host name of gateway on UUCP net */
+# define BerkHost   MyLocName	/* host name of gateway on Berk net */
 # define NETV6MAIL		/* use /usr/net/bin/v6mail for local delivery */
 
 # else BERKELEY
@@ -221,31 +240,36 @@ struct mailer Mailer[] =
 # else
 		"/bin/mail",
 # endif
-		M_ROPT|M_NOHOST|M_STRIPQ,	EX_NOUSER,	NULL,
+		M_ROPT|M_NOHOST|M_STRIPQ|M_ARPAFMT,	EX_NOUSER,	NULL,
+		"$f",		NULL,
 		{ "...local%mail", "-d", "$u", NULL }
 	},
 	/* pipes through programs -- must be #1 */
 	{
 		"/bin/csh",
 		M_HDR|M_FHDR|M_NOHOST,		EX_UNAVAILABLE,	NULL,
+		"$f",		NULL,
 		{ "...prog%mail", "-fc", "$u", NULL }
 	},
 	/* local berkeley mail */
 	{
 		"/usr/net/bin/sendberkmail",
 		M_FOPT|M_HDR|M_STRIPQ,		EX_UNAVAILABLE,	BerkLocal,
+		"$B:$f",	NULL,
 		{ "...berk%mail", "-m", "$h", "-t", "$u", "-h", "$c", NULL }
 	},
 	/* arpanet mail */
 	{
 		"/usr/lib/mailers/arpa",
-		M_STRIPQ,			0,		ArpaLocal,
+		M_STRIPQ|M_ARPAFMT,		0,		ArpaLocal,
+		"$f@$A",	NULL,
 		{ "...arpa%mail", "$f", "$h", "$u", NULL }
 	},
 	/* uucp mail (cheat & use Bell's v7 mail) */
 	{
 		"/bin/mail",
 		M_ROPT|M_STRIPQ,		EX_NOUSER,	UucpLocal,
+		"$U!$f",	NULL,
 # ifdef DUMBMAIL
 		{ "...uucp%mail", "$h!$u", NULL }
 # else
@@ -292,6 +316,45 @@ struct parsetab ParseTab[] =
 	'\0',	M_LOCAL,	P_MOVE,				"",
 };
 # endif BERKELEY
+
+
+/*
+**  Header info table
+*/
+
+struct hdrinfo	HdrInfo[] =
+{
+	"date",		0,
+	"from",		0,
+	"to",		H_CONCAT,
+	"cc",		H_CONCAT,
+	"subject",	0,
+	"message-id",	0,
+	NULL,		0
+};
+/*
+**  INITMACS -- initialize predefined macros.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Macros array gets initialized.
+*/
+
+char	*Macro[26];
+
+# define MACRO(x)	Macro[x - 'A']
+
+initmacs()
+{
+	MACRO('A') = ArpaHost;
+	MACRO('B') = BerkHost;
+	MACRO('U') = UucpHost;
+}
 /*
 **  GETNAME -- Get the current users login name.
 **

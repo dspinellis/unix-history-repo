@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "dlvrmail.h"
 
-static char	SccsId[] = "@(#)collect.c	2.3	%G%";
+static char	SccsId[] = "@(#)collect.c	3.1	%G%";
 
 /*
 **  MAKETEMP -- read & parse message header & make temp file.
@@ -41,9 +41,9 @@ static char	SccsId[] = "@(#)collect.c	2.3	%G%";
 **		temp buffer can be deallocated.
 */
 
-char	MsgId[MAXNAME];		/* message-id, determined or created */
+char	*MsgId;			/* message-id, determined or created */
 long	MsgSize;		/* size of message in bytes */
-bool	GotHdr;			/* if set, "From ..." line exists */
+char	*Date;			/* UNIX-style origination date */
 
 char *
 maketemp(from)
@@ -51,14 +51,21 @@ maketemp(from)
 {
 	register FILE *tf;
 	char buf[MAXFIELD+1];
-	static char fbuf[sizeof buf];
-	extern char *prescan();
-	extern char *matchhdr();
 	register char *p;
-	register bool inheader;
-	bool firstline;
 	char c;
 	extern int errno;
+	register HDR *h;
+	HDR **hp;
+	extern bool isheader();
+	extern char *newstr();
+	extern char *xalloc();
+	char *fname;
+	char *fvalue;
+	extern char *index(), *rindex();
+	char *xfrom;
+	extern char *hvalue();
+	extern char *makemsgid();
+	struct hdrinfo *hi;
 	extern char *index();
 
 	/*
@@ -73,71 +80,112 @@ maketemp(from)
 		return (NULL);
 	}
 
+	/* try to read a UNIX-style From line */
+	if (fgets(buf, sizeof buf, stdin) == NULL)
+		return (NULL);
+	if (strncmp(buf, "From ", 5) == 0)
+	{
+		eatfrom(buf);
+		fgets(buf, sizeof buf, stdin);
+	}
+
 	/*
 	**  Copy stdin to temp file & do message editting.
-	**	From person gets copied into fbuf.  At the end of
-	**	this loop, if fbuf[0] == '\0' then there was no
-	**	recognized from person in the message.  We also
-	**	save the message id in MsgId.  The
-	**	flag 'inheader' keeps track of whether we are
-	**	in the header or in the body of the message.
-	**	The flag 'firstline' is only true on the first
-	**	line of a message.
 	**	To keep certain mailers from getting confused,
 	**	and to keep the output clean, lines that look
 	**	like UNIX "From" lines are deleted in the header,
 	**	and prepended with ">" in the body.
 	*/
 
-	inheader = TRUE;
-	firstline = TRUE;
-	fbuf[0] = '\0';
-	while (!feof(stdin) && fgets(buf, sizeof buf, stdin) != NULL)
+	for (; !feof(stdin); !feof(stdin) && fgets(buf, sizeof buf, stdin))
 	{
-		if (inheader && isalnum(buf[0]))
-		{
-			/* get the rest of this field */
-			while ((c = getc(stdin)) == ' ' || c == '\t')
-			{
-				p = &buf[strlen(buf)];
-				*p++ = c;
-				if (fgets(p, sizeof buf - (p - buf), stdin) == NULL)
-					break;
-			}
-			if (c != EOF)
-				ungetc(c, stdin);
-		}
-
-		if (!IgnrDot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
+		/* see if the header is over */
+		if (!isheader(buf))
 			break;
 
-		/* are we still in the header? */
-		if ((buf[0] == '\n' || buf[0] == '\0') && inheader)
+		/* get the rest of this field */
+		while ((c = getc(stdin)) == ' ' || c == '\t')
 		{
-			inheader = FALSE;
-			if (MsgId[0] == '\0')
-			{
-				makemsgid();
-				if (UseMsgId)
-					fprintf(tf, "Message-Id: <%s>\n", MsgId);
-			}
+			p = &buf[strlen(buf)];
+			*p++ = c;
+			if (fgets(p, sizeof buf - (p - buf), stdin) == NULL)
+				break;
+		}
+		if (c != EOF)
+			ungetc(c, stdin);
+
+		MsgSize += strlen(buf);
+
+		/*
+		**  Snarf header away.
+		*/
+
+		/* strip off trailing newline */
+		p = rindex(buf, '\n');
+		if (p != NULL)
+			*p = '\0';
+
+		/* find canonical name */
+		fname = buf;
+		p = index(buf, ':');
+		fvalue = &p[1];
+		while (isspace(*--p))
+			continue;
+		*++p = '\0';
+		makelower(fname);
+
+		/* strip field value on front */
+		if (*fvalue == ' ')
+			fvalue++;
+
+		/* search header list for this header */
+		for (hp = &Header, h = Header; h != NULL; hp = &h->h_link, h = h->h_link)
+		{
+			if (strcmp(fname, h->h_field) == 0 && flagset(H_CONCAT|H_DEFAULT, h->h_flags))
+				break;
+		}
+		if (h == NULL)
+		{
+			/* create a new node */
 # ifdef DEBUG
 			if (Debug)
-				printf("EOH\n");
+				printf("new field '%s', value '%s'\n", fname, fvalue);
 # endif DEBUG
+			*hp = h = (HDR *) xalloc(sizeof *h);
+			h->h_field = newstr(fname);
+			h->h_value = NULL;
+			h->h_link = NULL;
+			h->h_flags = 0;
+
+			/* see if it is a known type */
+			for (hi = HdrInfo; hi->hi_field != NULL; hi++)
+			{
+				if (strcmp(hi->hi_field, h->h_field) == 0)
+				{
+					h->h_flags = hi->hi_flags;
+					break;
+				}
+			}
+		}
+		else if (flagset(H_DEFAULT, h->h_flags))
+		{
+			/* overriding default, throw out old value */
+# ifdef DEBUG
+			if (Debug)
+				printf("overriding '%s', old='%s', new='%s'\n",
+				       fname, h->h_value, fvalue);
+# endif DEBUG
+			free(h->h_value);
+			h->h_value = NULL;
 		}
 
-		/* Hide UNIX-like From lines */
 		if (strncmp(buf, "From ", 5) == 0)
 		{
-			if (!firstline)
-			{
-				fputs(">", tf);
-				MsgSize++;
-			}
-			else
-			{
-				GotHdr++;
+# ifdef DEBUG
+			if (Debug)
+				printf("installing '%s: %s'\n", fname, fvalue);
+# endif DEBUG
+			h->h_value = newstr(fvalue);
 				if (from != NULL)
 				{
 					fputs("From ", tf);
@@ -153,41 +201,53 @@ maketemp(from)
 				}
 			}
 		}
-
-		if (inheader && !isspace(buf[0]))
+		else
 		{
-			/* find out if this is really a header */
-			for (p = buf; *p != ':' && *p != '\0' && !isspace(*p); p++)
-				continue;
-			while (*p != ':' && isspace(*p))
-				p++;
-			if (*p != ':')
-			{
-				inheader = FALSE;
+			register int len;
+
+			/* concatenate the two values */
 # ifdef DEBUG
-				if (Debug)
-					printf("EOH?\n");
+			if (Debug)
+				printf("concat '%s: %s' with '%s'\n", fname,
+				       h->h_value, fvalue);
 # endif DEBUG
-			}
+			len = strlen(h->h_value) + strlen(fvalue) + 2;
+			p = xalloc(len);
+			strcpy(p, h->h_value);
+			strcat(p, ",");
+			strcat(p, fvalue);
+			free(h->h_value);
+			h->h_value = p;
 		}
+	}
 
-		if (inheader)
+# ifdef DEBUG
+	if (Debug)
+		printf("EOH\n");
+# endif DEBUG
+
+	/* throw away a blank line */
+	if (buf[0] == '\n')
+		fgets(buf, sizeof buf, stdin);
+
+	/*
+	**  Collect the body of the message.
+	*/
+
+	for (; !feof(stdin); !feof(stdin) && fgets(buf, sizeof buf, stdin) != NULL)
+	{
+		/* check for end-of-message */
+		if (!IgnrDot && buf[0] == '.' && (buf[1] == '\n' || buf[1] == '\0'))
+			break;
+
+		/* Hide UNIX-like From lines */
+		if (strncmp(buf, "From ", 5) == 0)
 		{
-			/* find the sender */
-			p = matchhdr(buf, "sender");
-			if (p == NULL && fbuf[0] == '\0')
-				p = matchhdr(buf, "from");
-			if (p != NULL)
-				prescan(p, fbuf, &fbuf[sizeof fbuf - 1], '\0');
-
-			/* find the message id */
-			p = matchhdr(buf, "message-id");
-			if (p != NULL && MsgId[0] == '\0')
-				prescan(p, MsgId, &MsgId[sizeof MsgId - 1], '\0');
+			fputs(">", tf);
+			MsgSize++;
 		}
 		MsgSize += strlen(buf);
 		fputs(buf, tf);
-		firstline = FALSE;
 		if (ferror(tf))
 		{
 			if (errno == ENOSPC)
@@ -202,11 +262,140 @@ maketemp(from)
 		}
 	}
 	fclose(tf);
-	if (MsgId[0] == '\0')
-		makemsgid();
+
+	/*
+	**  Find out some information from the headers.
+	**	Examples are who is the from person, the date, the
+	**	message-id, etc.
+	*/
+
+	/* from person */
+	xfrom = hvalue("sender");
+	if (xfrom == NULL)
+		xfrom = hvalue("from");
+
+	/* date message originated */
+	/* we don't seem to have a good way to do canonical conversion ....
+	p = hvalue("date");
+	if (p != NULL)
+		Date = newstr(arpatounix(p));
+	.... so we will ignore the problem for the time being */
+	if (Date == NULL)
+	{
+		auto long t;
+		extern char *ctime();
+
+		time(&t);
+		Date = newstr(ctime(&t));
+	}
+
+	/* message id */
+	MsgId = hvalue("message-id");
+	if (MsgId == NULL)
+		MsgId = makemsgid();
+
 	if (freopen(InFileName, "r", stdin) == NULL)
 		syserr("Cannot reopen %s", InFileName);
-	return (ArpaFmt && fbuf[0] != '\0' ? fbuf : NULL);
+
+# ifdef DEBUG
+	if (Debug)
+	{
+		printf("----- collected header -----\n");
+		for (h = Header; h != NULL; h = h->h_link)
+			printf("%s: %s\n", capitalize(h->h_field), h->h_value);
+		printf("----------------------------\n");
+	}
+# endif DEBUG
+	return (ArpaFmt ? xfrom : NULL);
+}
+/*
+**  EATFROM -- chew up a UNIX style from line and process
+**
+**	This does indeed make some assumptions about the format
+**	of UNIX messages.
+**
+**	Parameters:
+**		fm -- the from line.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		extracts what information it can from the header,
+**		such as the Date.
+*/
+
+char	*MonthList[] =
+{
+	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+	NULL
+};
+
+eatfrom(fm)
+	char *fm;
+{
+	register char *p;
+	register char **dt;
+
+	/* find the date part */
+	p = fm;
+	while (*p != '\0')
+	{
+		/* skip a word */
+		while (*p != '\0' && *p != ' ')
+			*p++;
+		while (*p == ' ')
+			*p++;
+		if (!isupper(*p) || p[3] != ' ' || p[13] != ':' || p[16] != ':')
+			continue;
+
+		/* we have a possible date */
+		for (dt = MonthList; *dt != NULL; dt++)
+			if (strncmp(*dt, p, 3) == 0)
+				break;
+
+		if (*dt != NULL)
+			break;
+	}
+
+	if (*p != NULL)
+	{
+		/* we have found a date */
+		Date = xalloc(25);
+		strncpy(Date, p, 25);
+		Date[24] = '\0';
+	}
+}
+/*
+**  HVALUE -- return value of a header.
+**
+**	Parameters:
+**		field -- the field name.
+**
+**	Returns:
+**		pointer to the value part.
+**		NULL if not found.
+**
+**	Side Effects:
+**		sets the H_USED bit in the header if found.
+*/
+
+char *
+hvalue(field)
+	char *field;
+{
+	register HDR *h;
+
+	for (h = Header; h != NULL; h = h->h_link)
+	{
+		if (strcmp(h->h_field, field) == 0)
+		{
+			h->h_flags |= H_USED;
+			return (h->h_value);
+		}
+	}
+	return (NULL);
 }
 /*
 **  MAKEMSGID -- Compute a message id for this process.
@@ -223,23 +412,49 @@ maketemp(from)
 **		none.
 **
 **	Returns:
-**		none.
+**		a message id.
 **
 **	Side Effects:
-**		Stores a message-id into MsgId.
-**
-**	Called By:
-**		maketemp
+**		none.
 */
 
+char *
 makemsgid()
 {
 	auto long t;
 	extern char *MyLocName;
 	extern char *ArpaHost;
+	static char buf[50];
 
 	time(&t);
-	sprintf(MsgId, "%ld.%d.%s@%s", t, getpid(), MyLocName, ArpaHost);
+	sprintf(buf, "<%ld.%d.%s@%s>", t, getpid(), MyLocName, ArpaHost);
+	return (buf);
+}
+/*
+**  ISHEADER -- predicate telling if argument is a header.
+**
+**	Parameters:
+**		s -- string to check for possible headerness.
+**
+**	Returns:
+**		TRUE if s is a header.
+**		FALSE otherwise.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+isheader(s)
+	register char *s;
+{
+	if (!isalnum(*s))
+		return (FALSE);
+	while (!isspace(*s) && *s != ':')
+		s++;
+	while (isspace(*s))
+		s++;
+	return (*s == ':');
 }
 /*
 **  SAVEDATE -- find and save date field from a "From" line

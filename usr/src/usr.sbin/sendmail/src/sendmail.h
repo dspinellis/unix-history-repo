@@ -3,7 +3,7 @@
 **
 **	Most of these are actually allocated in globals.c
 **
-**	@(#)sendmail.h	2.2	%G%
+**	@(#)sendmail.h	3.1	%G%
 */
 
 
@@ -33,6 +33,13 @@
 **	flags associated with it, and the argument vector to
 **	pass to it.  The flags are defined in conf.c
 **
+**	The host map is a list of lists of strings.  Within each
+**	list, any host is mapped to the last host in the list.
+**	This allows multiple names, as well as doing clever
+**	mail grouping in point-to-point networks.  Note: this
+**	is only used internally, so the apparent host is still
+**	kept around.
+**
 **	The argument vector is expanded before actual use.  Every-
 **	thing is passed through except for things starting with "$".
 **	"$x" defines some interpolation, as described in conf.c
@@ -45,17 +52,25 @@ struct mailer
 	short	m_flags;	/* status flags, see below */
 	short	m_badstat;	/* the status code to use on unknown error */
 	char	**m_local;	/* list of local names for this host */
+	char	*m_from;	/* pattern for From: header */
+	char	***m_hmap;	/* host map */
 	char	*m_argv[MAXPV];	/* template argument vector */
 };
 
-# define M_FOPT		0001	/* mailer takes picky -f flag */
-# define M_ROPT		0002	/* mailer takes picky -r flag */
-# define M_QUIET	0004	/* don't print error on bad status */
-# define M_RESTR	0010	/* must be daemon to execute */
-# define M_HDR		0020	/* insert From line */
-# define M_NOHOST	0040	/* ignore host in comparisons */
-# define M_STRIPQ	0100	/* strip quote characters from user/host */
-# define M_FHDR		0200	/* force good From line */
+# define M_FOPT		000001	/* mailer takes picky -f flag */
+# define M_ROPT		000002	/* mailer takes picky -r flag */
+# define M_QUIET	000004	/* don't print error on bad status */
+# define M_RESTR	000010	/* must be daemon to execute */
+# define M_HDR		000020	/* insert From line */
+# define M_NOHOST	000040	/* ignore host in comparisons */
+# define M_STRIPQ	000100	/* strip quote characters from user/host */
+# define M_FHDR		000200	/* force good From line */
+# define M_NEEDFROM	000400	/* need arpa-style From: line */
+# define M_NEEDDATE	001000	/* need arpa-style Date: line */
+# define M_MSGID	002000	/* need Message-Id: field */
+# define M_COMMAS	004000	/* need comma-seperated address lists */
+
+# define M_ARPAFMT	(M_NEEDDATE|M_NEEDFROM|M_MSGID|M_COMMAS)
 
 extern struct mailer Mailer[];
 
@@ -107,6 +122,44 @@ struct parsetab
 # define P_HST_UPPER	0040	/* don't map UPPER->lower in host names */
 
 
+/*
+**  Header structure.
+**	This structure is used internally to store header items.
+*/
+
+struct header
+{
+	char		*h_field;	/* the name of the field */
+	char		*h_value;	/* the value of that field */
+	struct header	*h_link;	/* the next header */
+	short		h_flags;	/* status bits, see below */
+};
+
+typedef struct header	HDR;
+
+extern HDR	*Header;	/* head of header list */
+
+/*
+**  Header information structure.
+**	Defined in conf.c, this struct declares the header fields
+**	that have some magic meaning.
+*/
+
+struct hdrinfo
+{
+	char	*hi_field;	/* the name of the field */
+	short	hi_flags;	/* status bits, see below */
+};
+
+extern struct hdrinfo	HdrInfo[];
+
+/* bits for h_flags and hi_flags */
+# define H_CONCAT	00001	/* comma-concat multiple fields */
+# define H_DELETE	00002	/* don't send this field */
+# define H_DEFAULT	00004	/* if another value is found, drop this */
+# define H_USED		00010	/* indicates that this has been output */
+
+
 
 
 /*
@@ -129,7 +182,8 @@ extern int	Errors;		/* set if errors */
 extern int	ExitStat;	/* exit status code */
 extern char	InFileName[];	/* input file name */
 extern char	Transcript[];	/* the transcript file name */
-extern char	MsgId[];	/* the message id for this message */
+extern char	*MsgId;		/* the message id for this message */
+extern char	*Date;		/* origination date (UNIX format) */
 extern addrq	From;		/* the person it is from */
 extern char	*To;		/* the target person */
 extern int	HopCount;	/* hop count */

@@ -1,12 +1,13 @@
 # include <stdio.h>
 # include <pwd.h>
 # include <signal.h>
+# include <ctype.h>
 # include "dlvrmail.h"
 # ifdef LOG
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	2.6	%G%";
+static char SccsId[] = "@(#)deliver.c	3.1	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -68,9 +69,8 @@ deliver(to, editfcn)
 	extern FILE *fdopen();
 	extern int errno;
 	FILE *mfile;
-	extern putheader();
+	extern putmessage();
 	extern pipesig();
-	extern bool GotHdr;
 	extern char *index();
 
 	/*
@@ -157,20 +157,13 @@ deliver(to, editfcn)
 	}
 
 	/*
-	**  If the mailer wants a From line, insert a new editfcn.
-	*/
-
-	if (flagset(M_HDR, m->m_flags) && editfcn == NULL && (!GotHdr || flagset(M_FHDR, m->m_flags)))
-		editfcn = putheader;
-
-	/*
 	**  Call the mailer.
-	**	The argument vector gets built, pipes through 'editfcn'
+	**	The argument vector gets built, pipes
 	**	are created as necessary, and we fork & exec as
-	**	appropriate.  In the parent, we call 'editfcn'.
+	**	appropriate.
 	*/
 
-	pvp = buildargv(m->m_argv, m->m_flags, host, user, From.q_paddr);
+	pvp = buildargv(m, host, user, From.q_paddr);
 	if (pvp == NULL)
 	{
 		usrerr("name too long");
@@ -178,8 +171,8 @@ deliver(to, editfcn)
 	}
 	rewind(stdin);
 
-	/* create a pipe if we will need one */
-	if (editfcn != NULL && pipe(pvect) < 0)
+	/* create a pipe to shove the mail through */
+	if (pipe(pvect) < 0)
 	{
 		syserr("pipe");
 		return (-1);
@@ -192,11 +185,8 @@ deliver(to, editfcn)
 	if (pid < 0)
 	{
 		syserr("Cannot fork");
-		if (editfcn != NULL)
-		{
-			close(pvect[0]);
-			close(pvect[1]);
-		}
+		close(pvect[0]);
+		close(pvect[1]);
 		return (-1);
 	}
 	else if (pid == 0)
@@ -206,17 +196,14 @@ deliver(to, editfcn)
 		close(2);
 		dup(1);
 		signal(SIGINT, SIG_IGN);
-		if (editfcn != NULL)
+		close(0);
+		if (dup(pvect[0]) < 0)
 		{
-			close(0);
-			if (dup(pvect[0]) < 0)
-			{
-				syserr("Cannot dup to zero!");
-				_exit(EX_OSERR);
-			}
-			close(pvect[0]);
-			close(pvect[1]);
+			syserr("Cannot dup to zero!");
+			_exit(EX_OSERR);
 		}
+		close(pvect[0]);
+		close(pvect[1]);
 		if (!flagset(M_RESTR, m->m_flags))
 			setuid(getuid());
 # ifndef VFORK
@@ -250,15 +237,14 @@ deliver(to, editfcn)
 		_exit(EX_UNAVAILABLE);
 	}
 
-	/* arrange to write out header message if error */
-	if (editfcn != NULL)
-	{
-		close(pvect[0]);
-		signal(SIGPIPE, pipesig);
-		mfile = fdopen(pvect[1], "w");
-		(*editfcn)(mfile);
-		fclose(mfile);
-	}
+	/* write out message to mailer */
+	close(pvect[0]);
+	signal(SIGPIPE, pipesig);
+	mfile = fdopen(pvect[1], "w");
+	if (editfcn == NULL)
+		editfcn = putmessage;
+	(*editfcn)(mfile, m);
+	fclose(mfile);
 
 	/*
 	**  Wait for child to die and report status.
@@ -367,55 +353,102 @@ giveresponse(stat, force, m)
 	return (stat);
 }
 /*
-**  PUTHEADER -- insert the From header into some mail
+**  PUTMESSAGE -- output a message to the final mailer.
 **
-**	For mailers such as 'msgs' that want the header inserted
-**	into the mail, this edit filter inserts the From line and
 **	then passes the rest of the message through.  If we have
 **	managed to extract a date already, use that; otherwise,
 **	use the current date/time.
 **
 **	Parameters:
-**		fp -- the file pointer for the output.
+**		fp -- file to output onto.
+**		m -- a mailer descriptor.
 **
 **	Returns:
-**		none
+**		none.
 **
 **	Side Effects:
-**		Puts a "From" line in UNIX format, and then
-**			outputs the rest of the message.
-**
-**	Called By:
-**		deliver
+**		The message is written onto fp.
 */
 
-putheader(fp)
-	register FILE *fp;
+putmessage(fp, m)
+	FILE *fp;
+	struct mailer *m;
 {
-	char buf[MAXLINE + 1];
-	long tim;
-	extern char *ctime();
+	char buf[BUFSIZ];
+	register int i;
+	HDR *h;
 	register char *p;
-	extern char *index();
+	extern char *arpadate();
+	extern char *hvalue();
+	bool anyheader = FALSE;
+	extern char *translate();
 	extern char SentDate[];
 
-	/* output the header part */
-	fgets(buf, sizeof buf, stdin);
-	if (strncmp(buf, "From ", 5) != 0 || (p = index(&buf[5], ' ')) == NULL)
-	{
-		time(&tim);
-		fprintf(fp, "From %s %s", From.q_paddr, ctime(&tim));
-		fputs(buf, fp);
-	}
-	else
-		fprintf(fp, "From %s %s", From.q_paddr, &p[1]);
+	/* clear all "used" bits */
+	for (h = Header; h != NULL; h = h->h_link)
+		h->h_flags &= ~H_USED;
 
-	/* output the body */
-	while (!ferror(fp) && fgets(buf, sizeof buf, stdin) != NULL)
-		fputs(buf, fp);
+	/* output date if needed by mailer */
+	p = hvalue("date");
+	if (flagset(M_NEEDDATE, m->m_flags) && p == NULL)
+		p = arpadate(Date);
+	if (p != NULL)
+	{
+		fprintf(fp, "Date: %s\n", p);
+		anyheader = TRUE;
+	}
+
+	/* output from line if needed by mailer */
+	p = hvalue("from");
+	if (flagset(M_NEEDFROM, m->m_flags) && p == NULL)
+	{
+		char frombuf[MAXLINE];
+		extern char *FullName;
+
+		p = translate("$f", From.q_mailer, From.q_paddr, NULL, NULL);
+		if (FullName != NULL)
+			fprintf(fp, "From: %s <%s>\n", FullName, p);
+		else
+			fprintf(fp, "From: %s\n", p);
+		free(p);
+		anyheader = TRUE;
+	}
+	else if (p != NULL)
+	{
+		fprintf(fp, "From: %s\n", p);
+		anyheader = TRUE;
+	}
+
+	/* output message-id field if needed */
+	p = hvalue("message-id");
+	if (flagset(M_MSGID, m->m_flags) && p == NULL)
+		p = MsgId;
+	if (p != NULL)
+	{
+		fprintf(fp, "Message-Id: %s\n", p);
+		anyheader = TRUE;
+	}
+
+	/* output any other header lines */
+	for (h = Header; h != NULL; h = h->h_link)
+	{
+		if (flagset(H_USED, h->h_flags))
+			continue;
+		fprintf(fp, "%s: %s\n", capitalize(h->h_field), h->h_value);
+		h->h_flags |= H_USED;
+		anyheader = TRUE;
+	}
+
+	if (anyheader)
+		fprintf(fp, "\n");
+
+	/* output the body of the message */
+	while (!ferror(fp) && (i = read(0, buf, BUFSIZ)) > 0)
+		fwrite(buf, 1, i, fp);
+
 	if (ferror(fp))
 	{
-		syserr("putheader: write error");
+		syserr("putmessage: write error");
 		setstat(EX_IOERR);
 	}
 }
@@ -601,8 +634,7 @@ recipient(a, targetq)
 **	the static argv is returned.
 **
 **	Parameters:
-**		tmplt -- a template for an argument vector.
-**		flags -- the flags for this server.
+**		m -- a pointer to the mailer descriptor.
 **		host -- the host name to send to.
 **		user -- the user name to send to.
 **		from -- the person this mail is from.
@@ -622,9 +654,8 @@ recipient(a, targetq)
 */
 
 char **
-buildargv(tmplt, flags, host, user, from)
-	char **tmplt;
-	int flags;
+buildargv(m, host, user, from)
+	struct mailer *m;
 	char *host;
 	char *user;
 	char *from;
@@ -636,7 +667,7 @@ buildargv(tmplt, flags, host, user, from)
 	char **mvp;
 	static char buf[512];
 	register char *bp;
-	char pbuf[30];
+	extern char *translate();
 
 	/*
 	**  Do initial argv setup.
@@ -650,16 +681,16 @@ buildargv(tmplt, flags, host, user, from)
 	pvp = pv;
 	bp = buf;
 
-	*pvp++ = tmplt[0];
+	*pvp++ = m->m_argv[0];
 
 	/* insert -f or -r flag as appropriate */
-	if (flagset(M_FOPT|M_ROPT, flags) && FromFlag)
+	if (flagset(M_FOPT|M_ROPT, m->m_flags) && FromFlag)
 	{
-		if (flagset(M_FOPT, flags))
+		if (flagset(M_FOPT, m->m_flags))
 			*pvp++ = "-f";
 		else
 			*pvp++ = "-r";
-		*pvp++ = From.q_paddr;
+		*pvp++ = translate(from, m, from, user, host);
 	}
 
 	/*
@@ -673,23 +704,84 @@ buildargv(tmplt, flags, host, user, from)
 	**	checked.
 	*/
 
-	for (mvp = tmplt; (p = *++mvp) != NULL; )
+	for (mvp = m->m_argv; (p = *++mvp) != NULL; )
 	{
 		if (pvp >= &pv[MAXPV])
 		{
 			syserr("Too many parameters to %s", pv[0]);
 			return (NULL);
 		}
-		*pvp++ = bp;
-		for (; *p != '\0'; p++)
+		*pvp++ = translate(p, m, from, user, host);
+	}
+	*pvp = NULL;
+
+# ifdef DEBUG
+	if (Debug)
+	{
+		printf("Interpolated argv is:\n");
+		for (mvp = pv; *mvp != NULL; mvp++)
+			printf("\t%s\n", *mvp);
+	}
+# endif DEBUG
+
+	return (pv);
+}
+/*
+**  TRANSLATE -- translate a string using $x escapes.
+**
+**	Parameters:
+**		s -- string to translate.
+**		m -- pointer to mailer descriptor.
+**
+**	Returns:
+**		pointer to translated string.
+**
+**	Side Effects:
+**		none.
+*/
+
+char *
+translate(s, m, from, user, host)
+	register char *s;
+	struct mailer *m;
+	char *from;
+	char *user;
+	char *host;
+{
+	register char *q;
+	char buf[MAXNAME];
+	register char *bp;
+	char *stack = NULL;
+	char pbuf[10];
+	extern char *newstr();
+	extern char *Macro[];
+
+	bp = buf;
+restart:
+
+# ifdef DEBUG
+	if (Debug)
+		printf("translate(%s)\n", s);
+# endif DEBUG
+	for (; *s != '\0'; s++)
+	{
+		/* q will be the interpolated quantity */
+		q = NULL;
+		if (*s == '$')
 		{
-			/* q will be the interpolated quantity */
-			q = NULL;
-			if (*p == '$')
+			if (isupper(*++s))
+				q = Macro[*s - 'A'];
+			else
 			{
-				switch (*++p)
+				switch (*s)
 				{
 				  case 'f':	/* from person */
+					if (stack == NULL && m != NULL)
+					{
+						stack = s;
+						s = m->m_from;
+						goto restart;
+					}
 					q = from;
 					break;
 
@@ -707,37 +799,37 @@ buildargv(tmplt, flags, host, user, from)
 					break;
 				}
 			}
-
-			/*
-			**  Interpolate q or output one character
-			**	Strip quote bits as we proceed.....
-			*/
-
-			if (q != NULL)
-			{
-				while (bp < &buf[sizeof buf - 1] && (*bp++ = *q++) != '\0')
-					continue;
-				bp--;
-			}
-			else if (bp < &buf[sizeof buf - 1])
-				*bp++ = *p;
 		}
-		*bp++ = '\0';
-		if (bp >= &buf[sizeof buf - 1])
-			return (NULL);
-	}
-	*pvp = NULL;
 
+		/*
+		**  Interpolate q or output one character
+		**	Strip quote bits as we proceed.....
+		*/
+
+		if (q != NULL)
+		{
+			while (bp < &buf[sizeof buf - 1] && (*bp++ = *q++) != '\0')
+				continue;
+			bp--;
+		}
+		else if (bp < &buf[sizeof buf - 1])
+			*bp++ = *s;
+	}
+	if (stack != NULL)
+	{
+		s = stack;
+		s++;
+		stack = NULL;
+		goto restart;
+	}
+	*bp++ = '\0';
+	if (bp >= &buf[sizeof buf - 1])
+		return (NULL);
 # ifdef DEBUG
 	if (Debug)
-	{
-		printf("Interpolated argv is:\n");
-		for (mvp = pv; *mvp != NULL; mvp++)
-			printf("\t%s\n", *mvp);
-	}
+		printf("translate ==> '%s'\n", buf);
 # endif DEBUG
-
-	return (pv);
+	return (newstr(buf));
 }
 /*
 **  MAILFILE -- Send a message to a file.
