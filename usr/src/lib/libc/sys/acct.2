@@ -2,16 +2,18 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)acct.2	4.1 (Berkeley) %G%
+.\"	@(#)acct.2	5.1 (Berkeley) %G%
 .\"
-.TH ACCT 2 
+.TH ACCT 2 "13 February 1983"
 .UC 4
 .SH NAME
 acct \- turn accounting on or off
 .SH SYNOPSIS
 .nf
-.B acct(file)
-.B char *file;
+.ft B
+acct(file)
+char *file;
+.ft R
 .fi
 .SH DESCRIPTION
 The system is prepared to write a record
@@ -27,18 +29,51 @@ An argument of 0 causes accounting to be turned off.
 .PP
 The accounting file format is given in
 .IR acct (5).
-.SH "SEE ALSO"
-acct(5), sa(8)
-.SH DIAGNOSTICS
+.PP
+This call is permitted only to the super-user.
+.SH NOTES
+Accounting is automatically disabled when the file system the
+accounting file resides on runs out of space; it is enabled when
+space once again becomes available.
+.SH "RETURN VALUE
 On error \-1 is returned.
 The file must exist and the call may be exercised only by the super-user.
 It is erroneous to try to turn on accounting when it is already on.
+.SH ERRORS
+.I Acct
+will fail if one of the following is true:
+.TP 15
+[EPERM]
+The caller is not the super-user.
+.TP 15
+[EPERM]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[ENOENT]
+The named file does not exist.
+.TP 15
+[EISDIR]
+The named file is a directory.
+.TP 15
+[EROFS]
+The named file resides on a read-only file system.
+.TP 15
+[EFAULT]
+.I File
+points outside the process's allocated address space.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.TP 15
+[EACCES]
+The file is a character or block special file.
+.SH "SEE ALSO"
+acct(5), sa(8)
 .SH BUGS
 No accounting is produced for programs running
 when a crash occurs.
 In particular nonterminating programs are never
 accounted for.
-.SH "ASSEMBLER (PDP-11)"
-(acct = 51.)
-.br
-.B sys acct; file
