@@ -2,15 +2,15 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)chgrp.1	5.1 (Berkeley) %G%
+.\"	@(#)chgrp.1	6.1 (Berkeley) %G%
 .\"
-.TH CHGRP 1 "28 April 1982"
+.TH CHGRP 1 ""
 .UC 5
 .SH NAME
 chgrp \- change group
 .SH SYNOPSIS
 .B chgrp
-[ -f ]
+[ -f -R ]
 group file ...
 .SH DESCRIPTION
 .I Chgrp
@@ -29,6 +29,13 @@ to the specified group and be the owner of the file, or be the super-user.
 No errors are reported when the
 .B \-f
 (force) option is given.
+.PP
+When the
+.B \-R
+option is given, 
+.I chgrp
+recursively descends its directory arguments
+setting the specified group-ID.
 .SH FILES
 /etc/group
 .SH "SEE ALSO"
