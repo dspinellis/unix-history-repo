@@ -74,14 +74,13 @@ char lpr_id[] = "~|^`lpr.c:\t4.2\t1 May 1981\n";
 
 #ifndef lint
 char copyright[] =
-"@(#) Copyright (c) 1983 Regents of the University of California.\n\
+"@(#) Copyright (c) 1983, 1989 Regents of the University of California.\n\
  All rights reserved.\n";
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpr.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpr.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
-
 /*
  *      lpr -- off line print
  *
@@ -192,6 +191,16 @@ main(argc, argv)
 			}
 			break;
 
+		case 'U':		/* user name */
+			hdr++;
+			if (arg[2])
+				person = &arg[2];
+			else if (argc > 1) {
+				argc--;
+				person = *++argv;
+			}
+			break;
+
 		case 'J':		/* job name */
 			hdr++;
 			if (arg[2])
@@ -285,13 +294,15 @@ main(argc, argv)
 	 * algorithm as lprm. 
 	 */
 	userid = getuid();
-	if ((pw = getpwuid(userid)) == NULL)
-		fatal("Who are you?");
-	person = pw->pw_name;
+	if (userid != DU || person == 0) {
+		if ((pw = getpwuid(userid)) == NULL)
+			fatal("Who are you?");
+		person = pw->pw_name;
+	}
 	/*
 	 * Check for restricted group access.
 	 */
-	if (RG != NULL) {
+	if (RG != NULL && userid != DU) {
 		if ((gptr = getgrnam(RG)) == NULL)
 			fatal("Restricted group specified incorrectly");
 		if (gptr->gr_gid != getgid()) {
