@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)uudecode.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)uudecode.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -25,10 +25,10 @@ static char sccsid[] = "@(#)uudecode.c	5.5 (Berkeley) %G%";
  * create the specified file, decoding as you go.
  * used with uuencode.
  */
-#include <stdio.h>
-#include <pwd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdio.h>
+#include <pwd.h>
 
 /* single character decode */
 #define DEC(c)	(((c) - ' ') & 077)
