@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_subr.c	7.17 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.18 (Berkeley) %G%
  */
 
 /*
@@ -169,6 +169,7 @@ ndrele(ndp)
  */
 struct vnode *vfreeh, **vfreet;
 extern struct vnodeops dead_vnodeops, spec_vnodeops;
+extern void vclean();
 
 #define	SPECHSZ	64
 #if	((SPECHSZ&(SPECHSZ-1)) == 0)
