@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.47 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.48 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -49,7 +49,6 @@ lfs_vget(mntp, ino, vpp)
 	struct ufsmount *ump;
 	dev_t dev;
 	int error;
-	extern struct vnodeops lfs_fifoops, lfs_specops;
 
 	ump = VFSTOUFS(mntp);
 	dev = ump->um_dev;
@@ -96,7 +95,7 @@ lfs_vget(mntp, ino, vpp)
 	 * Initialize the vnode from the inode, check for aliases.  In all
 	 * cases re-init ip, the underlying vnode/inode may have changed.
 	 */
-	if (error = ufs_vinit(mntp, &lfs_specops, &lfs_fifoops, &vp)) {
+	if (error = ufs_vinit(mntp, &lfs_specops, LFS_FIFOOPS, &vp)) {
 		ufs_iput(ip);
 		*vpp = NULL;
 		return (error);

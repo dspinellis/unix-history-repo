@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_extern.h	7.2 (Berkeley) %G%
+ *	@(#)ffs_extern.h	7.3 (Berkeley) %G%
  */
 
 struct buf;
@@ -66,3 +66,10 @@ __END_DECLS
 
 extern int inside[], around[];
 extern u_char *fragtbl[];
+extern struct vnodeops ffs_vnodeops, ffs_specops;
+#ifdef FIFO
+extern struct vnodeops ffs_fifoops;
+#define FFS_FIFOOPS &ffs_fifoops
+#else
+#define FFS_FIFOOPS NULL
+#endif
