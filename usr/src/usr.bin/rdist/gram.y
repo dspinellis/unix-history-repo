@@ -1,6 +1,6 @@
 %{
 #ifndef lint
-static	char *sccsid = "@(#)gram.y	4.8 (Berkeley) 84/02/09";
+static	char *sccsid = "@(#)gram.y	4.9 (Berkeley) 84/04/06";
 #endif
 
 #include "defs.h"
@@ -17,14 +17,15 @@ struct	subcmd *last_sc;
 %term RP	3
 %term SM	4
 %term ARROW	5
-%term DCOLON	6
-%term NAME	7
-%term STRING	8
-%term INSTALL	9
-%term NOTIFY	10
-%term EXCEPT	11
-%term SPECIAL	12
-%term OPTION	13
+%term COLON	6
+%term DCOLON	7
+%term NAME	8
+%term STRING	9
+%term INSTALL	10
+%term NOTIFY	11
+%term EXCEPT	12
+%term SPECIAL	13
+%term OPTION	14
 
 %union {
 	int intval;
@@ -48,10 +49,16 @@ command:	  NAME EQUAL namelist = {
 			(void) lookup($1, INSERT, $3);
 		}
 		| namelist ARROW namelist cmdlist = {
-			insert($1, $3, $4);
+			insert(NULL, $1, $3, $4);
+		}
+		| NAME COLON namelist ARROW namelist cmdlist = {
+			insert($1, $3, $5, $6);
 		}
 		| namelist DCOLON NAME cmdlist = {
-			append($1, $3, $4);
+			append(NULL, $1, $3, $4);
+		}
+		| NAME COLON namelist DCOLON NAME cmdlist = {
+			append($1, $3, $5, $6);
 		}
 		| error
 		;
@@ -203,8 +210,10 @@ again:
 					break;
 				}
 			}
-			if (c == '\n')
+			if (c == '\n') {
+				yylineno++;
 				c = ' '; /* can't send '\n' */
+			}
 			*cp1++ = c;
 		}
 		if (c != '"')
@@ -213,11 +222,11 @@ again:
 		yylval.string = makestr(yytext);
 		return(STRING);
 
-	case ':':  /* :: */
+	case ':':  /* : or :: */
 		if ((c = getc(fin)) == ':')
 			return(DCOLON);
 		ungetc(c, fin);
-		c = ':';
+		return(COLON);
 	}
 	cp1 = yytext;
 	cp2 = &yytext[INMAX - 1];
@@ -237,7 +246,7 @@ again:
 		}
 		*cp1++ = c;
 		c = getc(fin);
-		if (c == EOF || any(c, " \t()=;\n")) {
+		if (c == EOF || any(c, " \"'\t()=;:\n")) {
 			ungetc(c, fin);
 			break;
 		}
@@ -295,7 +304,8 @@ any(c, str)
 /*
  * Insert or append ARROW command to list of hosts to be updated.
  */
-insert(files, hosts, subcmds)
+insert(label, files, hosts, subcmds)
+	char *label;
 	struct namelist *files, *hosts;
 	struct subcmd *subcmds;
 {
@@ -326,6 +336,7 @@ insert(files, hosts, subcmds)
 			fatal("ran out of memory\n");
 		nc->c_type = ARROW;
 		nc->c_name = h->n_name;
+		nc->c_label = label;
 		nc->c_files = files;
 		nc->c_cmds = subcmds;
 		nc->c_next = c;
@@ -343,7 +354,8 @@ insert(files, hosts, subcmds)
  * Append DCOLON command to the end of the command list since these are always
  * executed in the order they appear in the distfile.
  */
-append(files, stamp, subcmds)
+append(label, files, stamp, subcmds)
+	char *label;
 	struct namelist *files;
 	char *stamp;
 	struct subcmd *subcmds;
@@ -355,6 +367,7 @@ append(files, stamp, subcmds)
 		fatal("ran out of memory\n");
 	c->c_type = DCOLON;
 	c->c_name = stamp;
+	c->c_label = label;
 	c->c_files = expand(files, E_ALL);
 	c->c_cmds = subcmds;
 	c->c_next = NULL;

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.18 (Berkeley) 84/03/19";
+static	char *sccsid = "@(#)docmd.c	4.19 (Berkeley) 84/04/06";
 #endif
 
 #include "defs.h"
@@ -20,6 +20,8 @@ docmds(argc, argv)
 	char **argv;
 {
 	register struct cmd *c;
+	register struct namelist *f;
+	register char **cpp;
 	extern struct cmd *cmds;
 
 	signal(SIGHUP, cleanup);
@@ -28,12 +30,27 @@ docmds(argc, argv)
 	signal(SIGTERM, cleanup);
 
 	for (c = cmds; c != NULL; c = c->c_next) {
+		if (argc) {
+			for (cpp = argv; *cpp; cpp++) {
+				if (c->c_label != NULL &&
+				    strcmp(c->c_label, (*cpp)+1) == 0) {
+					cpp = NULL;
+					goto found;
+				}
+				for (f = c->c_files; f != NULL; f = f->n_next)
+					if (strcmp(f->n_name, *cpp) == 0)
+						goto found;
+			}
+			continue;
+		} else
+			cpp = NULL;
+	found:
 		switch (c->c_type) {
 		case ARROW:
-			doarrow(c->c_files, c->c_name, c->c_cmds);
+			doarrow(cpp, c->c_files, c->c_name, c->c_cmds);
 			break;
 		case DCOLON:
-			dodcolon(c->c_files, c->c_name, c->c_cmds);
+			dodcolon(cpp, c->c_files, c->c_name, c->c_cmds);
 			break;
 		default:
 			fatal("illegal command type %d\n", c->c_type);
@@ -45,13 +62,15 @@ docmds(argc, argv)
 /*
  * Process commands for sending files to other machines.
  */
-doarrow(files, rhost, cmds)
+doarrow(filev, files, rhost, cmds)
+	char **filev;
 	struct namelist *files;
 	char *rhost;
 	struct subcmd *cmds;
 {
 	register struct namelist *f;
 	register struct subcmd *sc;
+	register char **cpp;
 	int n, ddir;
 
 	if (debug)
@@ -81,19 +100,15 @@ doarrow(files, rhost, cmds)
 		}
 	}
 	for (f = files; f != NULL; f = f->n_next) {
-#ifdef notdef
-		if (filec) {
-			register char **cpp;
-
+		if (filev) {
 			for (cpp = filev; *cpp; cpp++)
-				if (!strcmp(f->b_name, *cpp))
+				if (strcmp(f->n_name, *cpp) == 0)
 					goto found;
 			if (!nflag)
 				(void) fclose(lfp);
 			continue;
 		}
 	found:
-#endif
 		n = 0;
 		for (sc = cmds; sc != NULL; sc = sc->sc_next) {
 			if (sc->sc_type != INSTALL)
@@ -230,7 +245,8 @@ extern	char target[], *tp;
 /*
  * Process commands for comparing files to time stamp files.
  */
-dodcolon(files, stamp, cmds)
+dodcolon(filev, files, stamp, cmds)
+	char **filev;
 	struct namelist *files;
 	char *stamp;
 	struct subcmd *cmds;
@@ -273,15 +289,13 @@ dodcolon(files, stamp, cmds)
 	}
 
 	for (f = files; f != NULL; f = f->n_next) {
-#ifdef notdef
-		if (filec) {
+		if (filev) {
 			for (cpp = filev; *cpp; cpp++)
-				if (!strcmp(b->b_name, *cpp))
+				if (strcmp(f->n_name, *cpp) == 0)
 					goto found;
 			continue;
 		}
 	found:
-#endif
 		tp = NULL;
 		cmptime(f->n_name);
 	}
