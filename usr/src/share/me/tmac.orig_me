@@ -8,14 +8,14 @@
 .\"*		Electronics Research Laboratory				*
 .\"*		U.C. Berkeley.						*
 .\"*									*
-.\"*	VERSION 2.11	First Release: 11 Sept 1978			*
+.\"*	VERSION 2.12	First Release: 11 Sept 1978			*
 .\"*	See file \*(||/revisions for revision history			*
 .\"*									*
 .\"*	Documentation is available.					*
 .\"*									*
 .\"**********************************************************************
 .\"
-.\"	@(#)tmac.orig_me	2.11	%G%
+.\"	@(#)tmac.orig_me	2.12	%G%
 .\"	%beginstrip%
 .\"
 .\"	Code on .de commands:
@@ -172,7 +172,6 @@
 .if t .@m			\" output cut mark
 .if \\n(hm>0 \
 .	sp |\\n(hmu		\" move to header position
-.if \\n($T=2 \\!.
 .@t $h				\" output header title
 .if \\n(tm<=0 \
 .	nr tm \n(.Vu
