@@ -1,5 +1,5 @@
 #ifndef LINT
-static char *sccsid="@(#)showtc.c	1.6	(Berkeley) %G%";
+static char *sccsid="@(#)showtc.c	1.7	(Berkeley) %G%";
 #endif
 
 /*
@@ -168,7 +168,7 @@ int		bflag = NO;
 int		Uflag = NO;
 int		tc_loopc;		/* loop counter */
 char		*tcfile;		/* termcap database pathname */
-char		tcbuf[1024];		/* buffer for termcap description */
+char		tcbuf[2048];		/* buffer for termcap description */
 char		*lastchar();
 int		name_cmp();
 int		ent_cmp();
