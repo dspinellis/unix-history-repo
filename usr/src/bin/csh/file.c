@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef FILEC
@@ -19,6 +19,9 @@ static char sccsid[] = "@(#)file.c	5.18 (Berkeley) %G%";
 #include <pwd.h>
 #include <stdlib.h>
 #include <unistd.h>
+#ifndef SHORT_STRINGS
+#include <string.h>
+#endif /* SHORT_STRINGS */
 #if __STDC__
 # include <stdarg.h>
 #else
