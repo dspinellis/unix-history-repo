@@ -104,7 +104,7 @@ extern void free ();
 extern char *getenv ();
 
 extern int errno, sys_nerr;
-extern char *sys_errlist[];
+extern const char *const sys_errlist[];
 
 extern int execv (), execvp ();
 
@@ -574,7 +574,7 @@ static char *link_command_spec = "\
 %{!c:%{!M:%{!MM:%{!E:%{!S:ld %l %X %{o*} %{A} %{d} %{e*} %{m} %{N} %{n} \
 			%{r} %{s} %{T*} %{t} %{u*} %{x} %{z}\
 			%{!A:%{!nostdlib:%S}} %{static:}\
-			%{L*} %D %o %{!nostdlib:libgcc.a%s %L libgcc.a%s %{!A:%E}}\n }}}}}";
+			%{L*} %D %o %{!nostdlib:%L libgcc.a%s %L %{!A:%E}}\n }}}}}";
 #else
 #ifdef LINK_LIBGCC_SPECIAL
 /* Have gcc do the search for libgcc.a, and don't generate -L options.  */
@@ -582,14 +582,14 @@ static char *link_command_spec = "\
 %{!c:%{!M:%{!MM:%{!E:%{!S:ld %l %X %{o*} %{A} %{d} %{e*} %{m} %{N} %{n} \
 			%{r} %{s} %{T*} %{t} %{u*} %{x} %{z}\
 			%{!A:%{!nostdlib:%S}} %{static:}\
-			%{L*} %o %{!nostdlib:libgcc.a%s %L libgcc.a%s %{!A:%E}}\n }}}}}";
+			%{L*} %o %{!nostdlib:%L libgcc.a%s %L %{!A:%E}}\n }}}}}";
 #else
 /* Use -L and have the linker do the search for -lgcc.  */
 static char *link_command_spec = "\
 %{!c:%{!M:%{!MM:%{!E:%{!S:ld %l %X %{o*} %{A} %{d} %{e*} %{m} %{N} %{n} \
 			%{r} %{s} %{T*} %{t} %{u*} %{x} %{z}\
 			%{!A:%{!nostdlib:%S}} %{static:}\
-			%{L*} %D %o %{!nostdlib:-lgcc %L -lgcc %{!A:%E}}\n }}}}}";
+			%{L*} %D %o %{!nostdlib:%L -lgcc %L %{!A:%E}}\n }}}}}";
 #endif
 #endif
 
@@ -913,7 +913,7 @@ static char *gcc_exec_prefix;
 #endif
 
 #ifndef STANDARD_EXEC_PREFIX
-#define STANDARD_EXEC_PREFIX "/usr/local/lib/gcc-lib/"
+#define STANDARD_EXEC_PREFIX "/usr/libexec/gcc2/"
 #endif /* !defined STANDARD_EXEC_PREFIX */
 
 static char *standard_exec_prefix = STANDARD_EXEC_PREFIX;
@@ -1831,12 +1831,11 @@ process_command (argc, argv)
   if (*temp) *temp = '\0';
 
   /* Set up the default search paths.  */
+  if (gcc_exec_prefix == 0)
+	  gcc_exec_prefix = standard_exec_prefix;
 
-  if (gcc_exec_prefix)
-    {
-      add_prefix (&exec_prefix, gcc_exec_prefix, 0, 0, NULL_PTR);
-      add_prefix (&startfile_prefix, gcc_exec_prefix, 0, 0, NULL_PTR);
-    }
+  add_prefix (&exec_prefix, gcc_exec_prefix, 0, 0, NULL_PTR);
+  add_prefix (&startfile_prefix, gcc_exec_prefix, 0, 0, NULL_PTR);
 
   /* COMPILER_PATH and LIBRARY_PATH have values
      that are lists of directory names with colons.  */
