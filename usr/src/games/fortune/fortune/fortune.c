@@ -25,7 +25,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fortune.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)fortune.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include	<sys/param.h>
@@ -682,7 +682,8 @@ register FILEDESC	*fp;
 			free(name);
 	}
 	if (fp->num_children == 0) {
-		fprintf(stderr, "fortune:%s:No fortune files in directory\n", fp->path);
+		(void) fprintf(stderr,
+		    "fortune: %s: No fortune files in directory.\n", fp->path);
 		return FALSE;
 	}
 	return TRUE;
@@ -805,7 +806,7 @@ unsigned int	size;
 	char	*new;
 
 	if ((new = malloc(size)) == NULL) {
-		fprintf(stderr, "fortune:Out of space\n");
+		(void) fprintf(stderr, "fortune: out of memory.\n");
 		exit(1);
 	}
 	return new;
@@ -850,19 +851,19 @@ init_prob()
 	DPRINTF(1, (stderr, "summing probabilities:%d%% with %d NO_PROB's",
 		    percent, num_noprob));
 	if (percent > 100) {
-		fprintf(stderr, "fortune:Probabilities sum to %d%%!\n",
-			percent);
+		(void) fprintf(stderr,
+		    "fortune: probabilities sum to %d%%!\n", percent);
 		exit(1);
 	}
 	else if (percent < 100 && num_noprob == 0) {
-		fprintf(stderr,
-			"fortune:No place to put residual probability (%d%%)\n",
-			percent);
+		(void) fprintf(stderr,
+		    "fortune: no place to put residual probability (%d%%)\n",
+		    percent);
 		exit(1);
 	}
 	else if (percent == 100 && num_noprob != 0) {
-		fprintf(stderr,
-		    "fortune:No probability left to put in residual files\n");
+		(void) fprintf(stderr,
+		    "fortune: no probability left to put in residual files\n");
 		exit(1);
 	}
 	percent = 100 - percent;
@@ -1094,7 +1095,8 @@ FILEDESC	*fp;
 			exit(1);
 		}
 		if (read(fd, (char *) &fp->tbl, sizeof fp->tbl) != sizeof fp->tbl) {
-			fprintf(stderr, "fortune:%s corrupted\n", fp->path);
+			(void)fprintf(stderr,
+			    "fortune: %s corrupted\n", fp->path);
 			exit(1);
 		}
 		/* fp->tbl.str_version = ntohl(fp->tbl.str_version); */
@@ -1286,7 +1288,8 @@ FILEDESC	*list;
 			else {
 				*sp = '\0';
 				if (RE_EXEC(Fortbuf)) {
-					printf("%c%c", fp->tbl.str_delim, fp->tbl.str_delim);
+					printf("%c%c", fp->tbl.str_delim,
+					    fp->tbl.str_delim);
 					if (!in_file) {
 						printf(" (%s)", fp->name);
 						Found_one = TRUE;
