@@ -1,5 +1,12 @@
 #	@(#)Makefile	5.45.1.1 (Berkeley) 5/6/91
 #
+# PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+# --------------------         -----   ----------------------
+# CURRENT PATCH LEVEL:         1       00123
+# --------------------         -----   ----------------------
+#
+# 04 Apr 93	Rodney W. Grimes	Removed added netccitt and vm
+#
 # Doing a make install builds /usr/include
 #
 # The ``rm -rf''s used below are safe because rm doesn't follow symbolic
@@ -20,7 +27,7 @@ MFILES=	float.h frame.h
 LFILES=	errno.h fcntl.h signal.h syslog.h termios.h
 
 DIRS=arpa protocols
-LDIRS=	net netimp netinet netiso netns nfs sys ufs
+LDIRS=	net netccitt netimp netinet netiso netns nfs sys ufs vm
 
 NOOBJ=	noobj
 
