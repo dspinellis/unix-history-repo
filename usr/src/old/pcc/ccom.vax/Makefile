@@ -6,8 +6,7 @@ CFLAGS = ${O} -I. -I${M} -DASSTRINGS -DSTABDOT -DLCOMM -DBUFSTDERR -DFLEXNAMES \
 LDFLAGS = -g
 
 M=../mip
-# all: comp fort	not making f1 until f77 copy of sources is merged back
-all: comp
+all: comp fort
 comp: rodata.o cgram.o xdefs.o scan.o pftn.o trees.o optim.o code.o local.o \
 	reader.o local2.o order.o match.o allo.o comm1.o table.o stab.o
 	$(CC) $(LDFLAGS) -z rodata.o cgram.o xdefs.o scan.o pftn.o trees.o \
@@ -66,7 +65,6 @@ lintall:
 		local2.c order.c $M/match.c $M/allo.c $M/comm1.c table.c
 fort: comp fort.o freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o \
 	fcomm2.o
-	@echo "f1 is usually made from sources in /usr/src/usr.lib/f77 ..."
 	$(CC) -z $(CFLAGS) fort.o freader.o fallo.o fmatch.o ftable.o \
 		forder.o flocal2.o fcomm2.o -o $(TESTDIR)/fort
 fort.o: fort.h $M/fort.c
@@ -90,5 +88,5 @@ fort.o freader.o fallo.o fmatch.o ftable.o forder.o flocal2.o fcomm2.o: \
 install:	all
 	rm -f ${DESTDIR}/lib/ccom
 	cp comp ${DESTDIR}/lib/ccom
-#	rm -f ${DESTDIR}/lib/f1
-#	cp fort ${DESTDIR}/lib/f1
+	rm -f ${DESTDIR}/lib/f1
+	cp fort ${DESTDIR}/lib/f1

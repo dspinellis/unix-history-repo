@@ -1,4 +1,4 @@
-static char *sccsid ="@(#)local.c	1.2 (Berkeley) %G%";
+static char *sccsid ="@(#)local.c	1.3 (Berkeley) %G%";
 # include "mfile1"
 
 /*	this file contains code which is dependent on the target machine */
@@ -116,19 +116,10 @@ clocal(p) NODE *p; {
 				}
 			p->in.left->in.type = m;
 			}
-		else {
-			/* meaningful ones are conversion of int to char, int to short,
-			   and short to char, and unsigned version of them */
-			if( m==CHAR || m==UCHAR ){
-				if( ml!=CHAR && ml!= UCHAR ) break;
-				}
-			else if( m==SHORT || m==USHORT ){
-				if( ml!=CHAR && ml!=UCHAR && ml!=SHORT && ml!=USHORT ) break;
-				}
-			}
+		else
+			break;
 
 		/* clobber conversion */
-		if( tlen(p) == tlen(p->in.left) ) goto inherit;
 		p->in.op = FREE;
 		return( p->in.left );  /* conversion gets clobbered */
 
