@@ -1,4 +1,8 @@
-/*	vba.c	1.6	87/04/01	*/
+/*	vba.c	1.7	87/04/06	*/
+
+/*
+ * Tahoe VERSAbus adapator support routines.
+ */
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/pte.h"
@@ -20,10 +24,13 @@
 #include "../tahoevba/vbavar.h"
 
 #define	kvtopte(v) (&Sysmap[btop((int)(v) &~ KERNBASE)])
-/*
- * Tahoe VERSAbus adapator support routines.
- */
 
+/*
+ * Allocate private page map and intermediate buffer
+ * for a VERSAbus device, large enough for maximum transfer size.
+ * Intermediate buffer 
+ * Make intermediate buffer uncacheable.
+ */
 vbainit(vb, xsize, flags)
 	register struct vb_buf *vb;
 	int xsize, flags;
@@ -32,13 +39,13 @@ vbainit(vb, xsize, flags)
 	register n;
 
 	vb->vb_flags = flags;
-	vbmapalloc(btoc(xsize)+1, &vb->vb_map, &vb->vb_utl);
+	vbmapalloc(btoc(xsize) + 1, &vb->vb_map, &vb->vb_utl);
 	n = roundup(xsize, NBPG);
 	vb->vb_bufsize = n;
 	if (vb->vb_rawbuf == 0)
 		vb->vb_rawbuf = calloc(n);
 	if ((int)vb->vb_rawbuf & PGOFSET)
-		panic("vbinit");
+		panic("vbinit pgoff");
 	vb->vb_physbuf = vtoph((struct proc *)0, vb->vb_rawbuf);
 	if (flags & VB_20BIT)
 		vb->vb_maxphys = btoc(VB_MAXADDR20);
@@ -46,6 +53,8 @@ vbainit(vb, xsize, flags)
 		vb->vb_maxphys = btoc(VB_MAXADDR24);
 	else
 		vb->vb_maxphys = btoc(VB_MAXADDR32);
+	if (btoc(vb->vb_physbuf + n) > vb->vb_maxphys)
+		panic("vbinit physbuf");
 	
 	/*
 	 * Make raw buffer pages uncacheable.
@@ -57,32 +66,21 @@ vbainit(vb, xsize, flags)
 }
 
 /*
- * Next piece of logic takes care of unusual cases when less (or more) than
- * a full block (or sector) are required. This is done by the swapping
- * logic, when it brings page table pages from the swap device.
- * Since some controllers can't read less than a sector, the
- * only alternative is to read the disk to a temporary buffer and
- * then to move the amount needed back to the process (usually proc[0]
- * or proc[2]).
- * On Tahoe, the virtual addresses versus physical I/O problem creates
- * the need to move I/O data through an intermediate buffer whenever one
- * of the following is true:
- *	1) The data length is not a multiple of sector size (?)
+ * Check a transfer to see whether it can be done directly
+ * to the destination buffer, or whether it must be copied.
+ * On Tahoe, the lack of a bus I/O map forces data to be copied
+ * to a physically-contiguous buffer whenever one of the following is true:
+ *	1) The data length is not a multiple of sector size.
+ *	   (The swapping code does this, unfortunately.)
  *	2) The buffer is not physically contiguous and the controller
  *	   does not support scatter-gather operations.
  *	3) The physical address for I/O is higher than addressible
  *	   by the device.
- */
-
-/*
- * Check a transfer to see whether it can be done directly
- * to the destination buffer, or whether it must be copied.
- * If copying is necessary, the intermediate buffer is mapped.
- * This routine is called by the start routine. It
- * returns the physical address of the first byte for i/o, to
- * be presented to the controller. If intermediate buffering is
- * needed and a write out is done, now is the time to get the
- * original user's data in the buffer.
+ * This routine is called by the start routine.
+ * If copying is necessary, the intermediate buffer is mapped;
+ * if the operation is a write, the data is copied into the buffer.
+ * It returns the physical address of the first byte for DMA, to
+ * be presented to the controller.
  */
 u_long
 vbasetup(bp, vb, sectsize)
@@ -95,7 +93,7 @@ vbasetup(bp, vb, sectsize)
 	int npf, o, v;
 
 	o = (int)bp->b_un.b_addr & PGOFSET;
-	npf = i = btoc(bp->b_bcount + o);
+	npf = btoc(bp->b_bcount + o);
 	vb->vb_iskernel = (((int)bp->b_un.b_addr & KERNBASE) == KERNBASE);
 	if (vb->vb_iskernel)
 		spte = kvtopte(bp->b_un.b_addr);
@@ -107,8 +105,9 @@ vbasetup(bp, vb, sectsize)
 	else if ((vb->vb_flags & VB_SCATTER) == 0 ||
 	    vb->vb_maxphys != VB_MAXADDR32) {
 		dpte = spte;
-		for (p = (dpte++)->pg_pfnum; --i; dpte++) {
-			if ((v = dpte->pg_pfnum) != p + NBPG &&
+		p = (dpte++)->pg_pfnum;
+		for (i = npf; --i > 0; dpte++) {
+			if ((v = dpte->pg_pfnum) != p + CLSIZE &&
 			    (vb->vb_flags & VB_SCATTER) == 0)
 				goto copy;
 			if (p >= vb->vb_maxphys)
@@ -137,7 +136,8 @@ copy:
 	} else  {
 		dpte = vb->vb_map;
 		for (i = npf, p = (int)vb->vb_utl; i--; p += NBPG) {
-			*(int *)dpte++ = (spte++)->pg_pfnum | PG_V | PG_KW;
+			*(int *)dpte++ = (spte++)->pg_pfnum |
+			    PG_V | PG_KW | PG_N;
 			mtpr(TBIS, p);
 		}
 		if ((bp->b_flags & B_READ) == 0)
