@@ -1,4 +1,4 @@
-/*	tcp_var.h	6.1	83/07/29	*/
+/*	tcp_var.h	6.2	84/11/14	*/
 
 /*
  * Kernel variables for tcp.
@@ -48,7 +48,10 @@ struct tcpcb {
 	tcp_seq	rcv_adv;		/* advertised window */
 /* retransmit variables */
 	tcp_seq	snd_max;		/* highest sequence number sent
-					   used to recognize retransmits */
+					 * used to recognize retransmits
+					 */
+/* congestion control (for source quench) */
+	u_short	snd_cwnd;		/* congestion-controlled window */
 /* transmit timing stuff */
 	short	t_idle;			/* inactivity time */
 	short	t_rtt;			/* round trip time */
