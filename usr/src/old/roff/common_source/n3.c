@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)n3.c	4.3 %G%";
+static char sccsid[] = "@(#)n3.c	4.4 %G%";
 #endif lint
 
 #include "tdef.h"
@@ -453,10 +453,9 @@ int	x;
 	register char	*i;
 	char	*sbrk();
 
-/* ought to be rounded up by sizeof(int) */
-	if (x % 2 == 1) 
-		x++;
-	if ( (i = sbrk(x)) >= (char *)-1) {
+	x += sizeof(int) - 1;
+	x &= ~(sizeof(int) - 1);
+	if ((u_int)(i = sbrk(x)) == -1) {
 		prstrfl("Core limit reached.\n");
 		edone(0100);
 	} else {
