@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)setup.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)setup.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 #define DKTYPENAMES
@@ -264,7 +264,17 @@ setup(dev)
 		    (maxino + 1) * sizeof(short));
 		goto badsb;
 	}
-
+	numdirs = sblock.fs_cstotal.cs_ndir;
+	listmax = numdirs + 10;
+	inpsort = (struct inoinfo **)calloc((unsigned)listmax,
+	    sizeof(struct inoinfo *));
+	inphead = (struct inoinfo **)calloc((unsigned)numdirs,
+	    sizeof(struct inoinfo *));
+	if (inpsort == NULL || inphead == NULL) {
+		printf("cannot alloc %d bytes for inphead\n", 
+		    numdirs * sizeof(struct inoinfo *));
+		goto badsb;
+	}
 	bufinit();
 	return (1);
 
