@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)main.c	4.11 (Berkeley) %G%";
 #include <errno.h>
 #include <nlist.h>
 #include <signal.h>
+#include <syslog.h>
 
 int	supplier = -1;		/* process should supply updates */
 extern int gateway;
@@ -33,6 +34,7 @@ main(argc, argv)
 #endif
 	
 	argv0 = argv;
+	openlog("routed", LOG_PID, 0);
 	sp = getservbyname("router", "udp");
 	if (sp == NULL) {
 		fprintf(stderr, "routed: router/udp: unknown service\n");
@@ -131,6 +133,7 @@ main(argc, argv)
 	toall(sendmsg);
 	signal(SIGALRM, timer);
 	signal(SIGHUP, hup);
+	signal(SIGTERM, hup);
 	timer();
 
 	for (;;) {
@@ -178,7 +181,7 @@ getsocket(domain, type, sin)
 	int domain, type;
 	struct sockaddr_in *sin;
 {
-	int retry, s;
+	int retry, s, on = 1;
 
 	retry = 1;
 	while ((s = socket(domain, type, 0, 0)) < 0 && retry) {
@@ -186,14 +189,22 @@ getsocket(domain, type, sin)
 		sleep(5 * retry);
 		retry <<= 1;
 	}
-	if (retry == 0)
+	if (retry == 0) {
+		syslog(LOG_ERR, "socket: %m");
 		return (-1);
+	}
+	if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &on, sizeof (on)) < 0) {
+		syslog(LOG_ERR, "setsockopt SO_BROADCAST: %m");
+		exit(1);
+	}
 	while (bind(s, sin, sizeof (*sin), 0) < 0 && retry) {
 		perror("bind");
 		sleep(5 * retry);
 		retry <<= 1;
 	}
-	if (retry == 0)
+	if (retry == 0) {
+		syslog(LOG_ERR, "bind: %m");
 		return (-1);
+	}
 	return (s);
 }
