@@ -9,10 +9,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)crypt.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)crypt.c	5.10 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
+#include <limits.h>
 #include <pwd.h>
 
 /*
@@ -40,6 +41,12 @@ static char sccsid[] = "@(#)crypt.c	5.9 (Berkeley) %G%";
  */
 #if !defined(vax)
 #define	MUST_ALIGN
+#endif
+
+#ifdef CHAR_BITS
+#if CHAR_BITS != 8
+	#error C_block structure assumes 8 bit characters
+#endif
 #endif
 
 /*
@@ -310,7 +317,7 @@ static unsigned char ExpandTr[] = {	/* expansion operation */
 	28, 29, 30, 31, 32,  1,
 };
 
-static unsigned char PC1[] = {		/* permuted choice table (key)  */
+static unsigned char PC1[] = {		/* permuted choice table 1 */
 	57, 49, 41, 33, 25, 17,  9,
 	 1, 58, 50, 42, 34, 26, 18,
 	10,  2, 59, 51, 43, 35, 27,
@@ -322,12 +329,12 @@ static unsigned char PC1[] = {		/* permuted choice table (key)  */
 	21, 13,  5, 28, 20, 12,  4,
 };
 
-static unsigned char Rotates[] = {	/* number of rotations of PC1 */
+static unsigned char Rotates[] = {	/* PC1 rotation schedule */
 	1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1,
 };
 
 /* note: each "row" of PC2 is left-padded with bits that make it invertible */
-static unsigned char PC2[] = {		/* permuted choice key (table)  */
+static unsigned char PC2[] = {		/* permuted choice table 2 */
 	 9, 18,    14, 17, 11, 24,  1,  5,
 	22, 25,     3, 28, 15,  6, 21, 10,
 	35, 38,    23, 19, 12,  4, 26,  8,
@@ -449,7 +456,7 @@ crypt(key, setting)
 	register long i;
 	register int t;
 	long salt;
-	int num_iter, salt_size, key_size;
+	int num_iter, salt_size;
 	C_block keyblock, rsltblock;
 
 	for (i = 0; i < 8; i++) {
@@ -463,6 +470,22 @@ crypt(key, setting)
 	encp = &cryptresult[0];
 	switch (*setting) {
 	case _PASSWORD_EFMT1:
+		/*
+		 * Involve the rest of the password 8 characters at a time.
+		 */
+		while (*key) {
+			if (des_cipher((char *)&keyblock,
+			    (char *)&keyblock, 0L, 1))
+				return(NULL);
+			for (i = 0; i < 8; i++) {
+				if ((t = 2*(unsigned char)(*key)) != 0)
+					key++;
+				keyblock.b[i] ^= t;
+			}
+			if (des_setkey((char *)keyblock.b))
+				retrun(NULL);
+		}
+
 		*encp++ = *setting++;
 
 		/* get iteration count */
@@ -476,12 +499,10 @@ crypt(key, setting)
 		setting += 4;
 		encp += 4;
 		salt_size = 4;
-		key_size = 128;
 		break;
 	default:
 		num_iter = 25;
 		salt_size = 2;
-		key_size = 8;
 	}
 
 	salt = 0;
@@ -495,28 +516,6 @@ crypt(key, setting)
 	if (des_cipher((char *)&constdatablock, (char *)&rsltblock,
 	    salt, num_iter))
 		return(NULL);
-
-	/*
-	 * encrypt the remainder of the password 8 characters at a time.
-	 */
-	while ((key_size -= 8) > 0 && *key) {
-		C_block xdatablock;
-
-		for (i = 0; i < 8; i++) {
-			if ((t = 2*(unsigned char)(*key)) != 0)
-				key++;
-			keyblock.b[i] = t;
-			if (t == 0)
-				break;	/* pad out with previous key */
-		}
-		if (des_setkey((char *)keyblock.b))
-			return(NULL);
-		if (des_cipher((char *)&constdatablock,
-		    (char *)&xdatablock, 0L, 1))
-			return(NULL);
-		rsltblock.b32.i0 ^= xdatablock.b32.i0;
-		rsltblock.b32.i1 ^= xdatablock.b32.i1;
-	}
 
 	/*
 	 * Encode the 64 cipher bits as 11 ascii characters.
@@ -566,13 +565,13 @@ des_setkey(key)
 
 	PERM6464(K,K0,K1,(unsigned char *)key,(C_block *)PC1ROT);
 	key = (char *)&KS[0];
-	STORE(K&0xfcfcfcfcL, K0&0xfcfcfcfcL, K1, *(C_block *)key);
+	STORE(K&~0x03030303L, K0&~0x03030303L, K1, *(C_block *)key);
 	for (i = 1; i < 16; i++) {
 		key += sizeof(C_block);
 		STORE(K,K0,K1,*(C_block *)key);
 		ptabp = (C_block *)PC2ROT[Rotates[i]-1];
 		PERM6464(K,K0,K1,(unsigned char *)key,ptabp);
-		STORE(K&0xfcfcfcfcL, K0&0xfcfcfcfcL, K1, *(C_block *)key);
+		STORE(K&~0x03030303L, K0&~0x03030303L, K1, *(C_block *)key);
 	}
 	return(0);
 }
@@ -601,7 +600,7 @@ des_cipher(in, out, salt, num_iter)
 	C_block B;
 
 	L0 = salt;
-	TO_SIX_BIT(salt, L0);	/* convert to 8*(6+2) format */
+	TO_SIX_BIT(salt, L0);	/* convert to 4*(6+2) format */
 
 #if defined(vax) || defined(pdp11)
 	salt = ~salt;	/* "x &~ y" is faster than "x & y". */
@@ -644,36 +643,34 @@ des_cipher(in, out, salt, num_iter)
 		loop_count = 8;
 		do {
 
-#define	BTAB(i)		(((unsigned char *)&B.b[0])[i])
-#define	SPTAB(t, i)	(*(long *)((unsigned char *)t \
-				+ i*(sizeof(long)/4)))
+#define	SPTAB(t, i)	(*(long *)((unsigned char *)t + i*(sizeof(long)/4)))
 #if defined(gould)
-			/* use this if BTAB(i) is evaluated just once ... */
-#define	DOXOR(a,b,i)	a^=SPTAB(SPE[0][i],BTAB(i));b^=SPTAB(SPE[1][i],BTAB(i));
+			/* use this if B.b[i] is evaluated just once ... */
+#define	DOXOR(x,y,i)	x^=SPTAB(SPE[0][i],B.b[i]); y^=SPTAB(SPE[1][i],B.b[i]);
 #else
 #if defined(pdp11)
 			/* use this if your "long" int indexing is slow */
-#define	DOXOR(a,b,i)	j=BTAB(i); a^=SPTAB(SPE[0][i],j); b^=SPTAB(SPE[1][i],j);
+#define	DOXOR(x,y,i)	j=B.b[i]; x^=SPTAB(SPE[0][i],j); y^=SPTAB(SPE[1][i],j);
 #else
 			/* use this if "k" is allocated to a register ... */
-#define	DOXOR(a,b,i)	k=BTAB(i); a^=SPTAB(SPE[0][i],k); b^=SPTAB(SPE[1][i],k);
+#define	DOXOR(x,y,i)	k=B.b[i]; x^=SPTAB(SPE[0][i],k); y^=SPTAB(SPE[1][i],k);
 #endif
 #endif
 
-#define	CRUNCH(L0, L1, R0, R1)	\
-			k = (R0 ^ R1) & SALT;	\
-			B.b32.i0 = k ^ R0 ^ kp->b32.i0;		\
-			B.b32.i1 = k ^ R1 ^ kp->b32.i1;		\
+#define	CRUNCH(p0, p1, q0, q1)	\
+			k = (q0 ^ q1) & SALT;	\
+			B.b32.i0 = k ^ q0 ^ kp->b32.i0;		\
+			B.b32.i1 = k ^ q1 ^ kp->b32.i1;		\
 			kp = (C_block *)((char *)kp+ks_inc);	\
 							\
-			DOXOR(L0, L1, 0);		\
-			DOXOR(L0, L1, 1);		\
-			DOXOR(L0, L1, 2);		\
-			DOXOR(L0, L1, 3);		\
-			DOXOR(L0, L1, 4);		\
-			DOXOR(L0, L1, 5);		\
-			DOXOR(L0, L1, 6);		\
-			DOXOR(L0, L1, 7);
+			DOXOR(p0, p1, 0);		\
+			DOXOR(p0, p1, 1);		\
+			DOXOR(p0, p1, 2);		\
+			DOXOR(p0, p1, 3);		\
+			DOXOR(p0, p1, 4);		\
+			DOXOR(p0, p1, 5);		\
+			DOXOR(p0, p1, 6);		\
+			DOXOR(p0, p1, 7);
 
 			CRUNCH(L0, L1, R0, R1);
 			CRUNCH(R0, R1, L0, L1);
