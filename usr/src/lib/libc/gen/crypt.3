@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)crypt.3	6.6 (Berkeley) %G%
+.\"     @(#)crypt.3	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt CRYPT 3
@@ -49,10 +49,10 @@ Both the iteration
 .Fa count
 and the 
 .Fa salt
-are encoded as follows: only 6 bits per character are used, with the least
-significant bits occurring first.
+are encoded with 6 bits per character, least significant bits first.
 The values 0 to 63 are encoded by the characters ``./0-9A-Za-z'',
 respectively.
+.Pp
 The
 .Fa salt
 is used to induce disorder in to the
@@ -61,22 +61,30 @@ algorithm
 in one of 16777216
 possible ways
 (specifically, if bit
-.Em N
+.Em i
 of the
 .Ar salt
 is set then bits
-.Em N
+.Em i
 and
-.Em N+24
+.Em i+24
 are swapped in the
 .Tn DES
 ``E'' box output).
-Then the
+The
 .Ar key
-is used to perform
+is divided into groups of 8 characters (a short final group is null-padded)
+and the low-order 7 bits of each each character (56 bits per group) are
+used to form the DES key as follows: the first group of 56 bits becomes the
+initial DES key.
+For each additional group, the XOR of the group bits and the encryption of
+the DES key with itself becomes the next DES key.
+Then the final DES key is used to perform
 .Ar count
 cumulative encryptions of a 64-bit constant.
-The value returned is a character array, 20 bytes in length, consisting
+The value returned is a
+.Dv NUL Ns -terminated
+string, 20 bytes in length, consisting
 of the
 .Ar setting
 followed by the encoded 64-bit encryption.
@@ -93,7 +101,9 @@ of 25 is used, fewer perturbations of
 are available, at most 8
 characters of
 .Ar key
-are used, and the returned value is a character array 13 bytes in length.
+are used, and the returned value is a
+.Dv NUL Ns -terminated
+string 13 bytes in length.
 .Pp
 The
 functions,
@@ -110,9 +120,8 @@ The
 argument to
 .Fn setkey
 is a 64 character array of
-.Tn ASCII
-binary values (0 or 1).
-A 56-bit key is derived from dividing this array by dividing the string
+binary values (numeric 0 or 1).
+A 56-bit key is derived from this array by dividing the array
 into groups of 8 and ignoring the last bit in each group.
 .Fa salt
 specifies perturbations to
