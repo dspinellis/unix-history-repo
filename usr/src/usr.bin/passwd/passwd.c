@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -34,11 +34,15 @@ main(argc, argv)
 	char *argv[];
 {
 	struct passwd *pwd;
-	char *cp, *uname;
+	char *cp, *uname, *progname;
 	int fd, i, u, dochfn, dochsh;
 	FILE *tf;
 	DBM *dp;
 
+	if ((progname = index(argv[0], '/')) == NULL)
+		progname = argv[0];
+	else
+		progname++;
 	dochfn = 0, dochsh = 0;
 	argc--, argv++;
 	while (argc > 0 && argv[0][0] == '-') {
@@ -66,9 +70,15 @@ main(argc, argv)
 		}
 		argc--, argv++;
 	}
+	if (!dochfn && !dochsh) {
+		if (strcmp(progname, "chfn") == 0)
+			dochfn = 1;
+		else if (strcmp(progname, "chsh") == 0)
+			dochsh = 1;
+	}
 	if (argc < 1) {
 		if ((uname = getlogin()) == NULL) {
-			fprintf(stderr, "Usage: passwd [-f] [-s] [user]\n");
+			fprintf(stderr, "Usage: %s [-f] [-s] [user]\n", progname);
 			exit(1);
 		}
 		printf("Changing %s for %s.\n",
