@@ -1,4 +1,4 @@
-/*	tabnec25-t.c	4.1	86/04/03	*/
+/*	tabnec25-t.c	4.2	88/07/22	*/
 #define INCH 240
 /*
 NEC Spinwriter 7725 and 5525 (Diablo replacements)
@@ -157,7 +157,7 @@ struct {
 "\000\0",	/*narrow sp*/
 "\001-",	/*hyphen*/
 "\001O\b+",	/*bullet*/
-"\002\[]",	/*square*/
+"\002[]",	/*square*/
 "\001-",	/*3/4 em*/
 "\001_",	/*rule*/
 "\2031/4",	/*1/4*/

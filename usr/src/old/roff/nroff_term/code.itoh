@@ -1,4 +1,4 @@
-/*	code.itoh	4.1	83/08/05	*/
+/*	code.itoh	4.2	88/07/22	*/
 /* terminal driver codes for the C.Itoh Prowriter */
 /* codetab */
 "\001 ",	/*space*/
@@ -103,7 +103,7 @@
 "\001-",         /*3/4 em dash*/
 "\001\033X \033Y",        /*rule--should properly be up one unit*/
 "\001\033\046N\033\044",    /*1/4*/
-"\001\033\046\M\033\044",    /*1/2*/
+"\001\033\046M\033\044",    /*1/2*/
 "\0033/4",	 /*3/4*/
 "\001-",	 /*minus*/
 "\202fi",	 /*fi*/

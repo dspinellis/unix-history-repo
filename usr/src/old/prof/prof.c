@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)prof.c	4.4 (Berkeley) %G%";
+static	char *sccsid = "@(#)prof.c	4.5 (Berkeley) %G%";
 #endif
 /*
  * prof
@@ -10,7 +10,7 @@ static	char *sccsid = "@(#)prof.c	4.4 (Berkeley) %G%";
 #include <a.out.h>
 #include <sys/time.h>
 
-typedef	short UNIT;		/* unit of profiling */
+typedef	unsigned short UNIT;		/* unit of profiling */
 #define	PCFUDGE		11
 #define	A_OUTNAME	"a.out"
 #define	MON_OUTNAME	"mon.out"
@@ -54,7 +54,7 @@ struct cnt {
  * Each discretized pc sample has
  * a count of the number of samples in its range
  */
-unsigned UNIT	*samples;
+UNIT	*samples;
 
 FILE	*pfile, *nfile;
 
@@ -309,7 +309,7 @@ openpfile(filename)
 	highpc = h.highpc - (UNIT *)0;
 	sampbytes =
 	    stb.st_size - sizeof(struct hdr) - h.ncount*sizeof(struct cnt);
-	nsamples = sampbytes / sizeof (unsigned UNIT);
+	nsamples = sampbytes / sizeof (UNIT);
 }
 
 closepfile()
@@ -378,20 +378,20 @@ asgncntrs()
 readsamples()
 {
 	register i;
-	unsigned UNIT	sample;
+	UNIT	sample;
 	int totalt;
 	
 	if (samples == 0) {
-		samples = (unsigned UNIT *)
-		    calloc(sampbytes, sizeof (unsigned UNIT));
+		samples = (UNIT *)
+		    calloc(sampbytes, sizeof (UNIT));
 		if (samples == 0) {
 			printf("prof: No room for %d sample pc's\n", 
-			    sampbytes / sizeof (unsigned UNIT));
+			    sampbytes / sizeof (UNIT));
 			done();
 		}
 	}
 	for (i = 0; ; i++) {
-		fread(&sample, sizeof (unsigned UNIT), 1, pfile);
+		fread(&sample, sizeof (UNIT), 1, pfile);
 		if (feof(pfile))
 			break;
 		samples[i] += sample;
@@ -411,7 +411,7 @@ readsamples()
 asgnsamples()
 {
 	register j;
-	unsigned UNIT	ccnt;
+	UNIT	ccnt;
 	double time;
 	unsigned pcl, pch;
 	register int i;
@@ -478,7 +478,7 @@ putprof()
 	fwrite(&h, sizeof (struct hdr), 1, sfile);
 	for (np = nl; np < npe-1; np++) {
 		if (np->ncall > 0) {
-			kp.cvalue = np->value * sizeof (unsigned UNIT);
+			kp.cvalue = np->value * sizeof (UNIT);
 			kp.cncall = np->ncall;
 			fwrite(&kp, sizeof (struct cnt), 1, sfile);
 		}
@@ -486,7 +486,7 @@ putprof()
 	kp.cvalue = 0;
 	kp.cncall = 0;
 	fwrite(&kp, sizeof (struct cnt), 1, sfile);
-	fwrite(samples, sizeof (unsigned UNIT), nsamples, sfile);
+	fwrite(samples, sizeof (UNIT), nsamples, sfile);
 	fclose(sfile);
 }
 
@@ -582,7 +582,7 @@ plotprof()
 	scale = (4080.*ransca)/(sampbytes/sizeof(UNIT));
 	lastsx = 0.0;
 	for(i = 0; i < nsamples; i++) {
-		unsigned UNIT ccnt;
+		UNIT ccnt;
 		double tx, ty;
 		ccnt = samples[i];
 		time = ccnt;

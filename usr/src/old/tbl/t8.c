@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)t8.c	4.2 %G%";
+static char sccsid[] = "@(#)t8.c	4.3 %G%";
 #endif
 
  /* t8.c: write out one line of output table */
@@ -28,7 +28,7 @@ for(c=0; c<ncol; c++)
 		{
 		for(ip=nl; ip<nlin; ip=next(ip))
 			if (!vspen(s=table[ip][c].col)) break;
-		if (s>0 && s<128)
+		if (tx(s))
 		fprintf(tabout, ".ne \\n(%c|u+\\n(.Vu\n",s);
 		continue;
 		}

@@ -1,4 +1,4 @@
-/*	t..c	4.3	85/09/14	*/
+/*	t..c	4.4	88/07/22	*/
 
 /* t..c : external declarations */
 
@@ -39,6 +39,8 @@ extern int textflg;
 extern int left1flg;
 extern int rightl;
 struct colstr {char *col, *rcol;};
+/* FIXME: kludge for seeing if somebody stuffed a char into col or rcol. */
+# define tx(a) ((int)(a)>0 && (int)(a)<128)
 extern struct colstr *table[];
 extern char *cspace, *cstore;
 extern char *chspace();
