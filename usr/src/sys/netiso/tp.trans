@@ -50,7 +50,7 @@ SOFTWARE.
 *INCLUDE
 
 {
-/*	@(#)tp.trans	7.3 (Berkeley) %G% */
+/*	@(#)tp.trans	7.4 (Berkeley) %G% */
 #include "param.h"
 #include "socket.h"
 #include "socketvar.h"

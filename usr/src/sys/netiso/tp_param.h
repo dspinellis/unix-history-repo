@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_param.h,v 5.3 88/11/18 17:28:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_param.h,v $
- *	@(#)tp_param.h	7.4 (Berkeley) %G% *
+ *	@(#)tp_param.h	7.5 (Berkeley) %G% *
  *
  */
 
@@ -298,12 +298,20 @@ bcopy((caddr_t)&(((struct tp_vbp *)(src))->tpv_val),(caddr_t)&(dst),sizeof(type)
 #define LOCAL_CREDIT(tpcb) tp_local_credit(tpcb)
 #else
 #define LOCAL_CREDIT( tpcb ) {\
-	register struct sockbuf *xxsb = &((tpcb)->tp_sock->so_rcv);\
-	register int xxi = ((xxsb)->sb_hiwat-(xxsb)->sb_cc);\
-	register int maxcredit = ((tpcb)->tp_xtd_format?0xffff:0xf);\
-	maxcredit = ((tpcb)->tp_decbit?1:maxcredit);\
-	xxi = (xxi<0) ? 0 : ((xxi)>>(tpcb)->tp_tpdusize);\
-	(tpcb)->tp_lcredit = MIN( xxi ,maxcredit );\
+    register struct sockbuf *xxsb = &((tpcb)->tp_sock->so_rcv);\
+    register int xxi = ((xxsb)->sb_hiwat-(xxsb)->sb_cc);\
+    register int maxcredit = ((tpcb)->tp_xtd_format?0xffff:0xf);\
+    xxi = (xxi<0) ? 0 : ((xxi)>>(tpcb)->tp_tpdusize);\
+    xxi = MIN(xxi, maxcredit); \
+    if (!(tpcb->tp_cebit_off)) { \
+        (tpcb)->tp_lcredit = ROUND((tpcb)->tp_win_recv); \
+        if (xxi < (tpcb)->tp_lcredit) { \
+            (tpcb)->tp_lcredit = xxi; \
+        } \
+    } \
+    else { \
+        (tpcb)->tp_lcredit = xxi; \
+    } \
 }
 #endif ARGO_DEBUG
 
