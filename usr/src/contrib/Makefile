@@ -1,4 +1,4 @@
-#	Makefile	4.22	87/02/12
+#	Makefile	4.23	87/05/30
 #
 DESTDIR=
 CFLAGS=	-O
@@ -25,6 +25,8 @@ ${SUBDIR}: FRC
 
 ${OPTDIR}: FRC
 	cd $@; make ${MFLAGS} all
+
+depend:
 
 install:
 	-for i in ${STDINST}; do \
