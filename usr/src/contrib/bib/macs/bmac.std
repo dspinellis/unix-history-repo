@@ -1,4 +1,4 @@
-.\"	@(#)bmac.std	2.3	%G%;
+.\"	@(#)bmac.std	2.4	%G%;
 .\" standard format troff commands
 .\" citation formatting strings
 .ds [[ [
@@ -67,7 +67,8 @@
 .if !"\\*([A"" \\*([A,
 .if !"\\*([T""  \\*(lq\\*([T\\*(rq,
 \\fI\\*([J \\*([V\\fP\c
-.if !"\\*([N"" ,\\*([N
+.ie !"\\*([N"" , \\*([N
+.el  
 .if !"\\*([D"" (\\*([D)\c
 .if !"\\*([P"" , \\*([P\c
 .if !"\\*([I"" , \\*([I\c
