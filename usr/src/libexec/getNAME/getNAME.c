@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)getNAME.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)getNAME.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -173,7 +173,7 @@ newman:
 			strcat(linbuf, " ");
 		i++;
 		trimln(headbuf);
-		for (loc = headbuf; loc; loc = strchr(loc, ' '))
+		for (loc = strchr(headbuf, ' '); loc; loc = strchr(loc, ' '))
 			if (loc[1] == ',')
 				strcpy(loc, &loc[1]);
 			else
@@ -181,8 +181,31 @@ newman:
 		if (headbuf[0] != '.') {
 			strcat(linbuf, headbuf);
 		} else {
+			/*
+			 * Get rid of quotes in macros.
+			 */
+			for (loc = strchr(&headbuf[4], '"'); loc; ) {
+				strcpy(loc, &loc[1]);
+				loc = strchr(loc, '"');
+			}
+			/*
+			 * Handle cross references
+			 */
+			if (headbuf[1] == 'X' && headbuf[2] == 'r') {
+				for (loc = &headbuf[4]; *loc != ' '; loc++)
+					continue;
+				loc[0] = '(';
+				loc[2] = ')';
+				loc[3] = '\0';
+			}
+			/*
+			 * Put dash between names and description.
+			 */
 			if (headbuf[1] == 'N' && headbuf[2] == 'd')
 				strcat(linbuf, "\\- ");
+			/*
+			 * Skip over macro names.
+			 */
 			strcat(linbuf, &headbuf[4]);
 		}
 	}
