@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pow.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)pow.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /* POW(X,Y)  
@@ -150,8 +150,22 @@ pow_P(x, y) double x, y;
 	struct Double s, t, __log__D();
 	double  __exp__D(), huge = 1e300, tiny = 1e-300;
 
-	if (x == 1)
+	if (x == zero)
+		if (y > zero)
+			return (zero);
+		else if (_IEEE)
+			return (huge*huge);
+		else
+			return (infnan(ERANGE));
+	if (x == one)
 		return (one);
+	if (!finite(x))
+		if (y < zero)
+			return (zero);
+		else if (_IEEE)
+			return (huge*huge);
+		else
+			return (infnan(ERANGE));
 	if (y >= 7e18)		/* infinity */
 		if (x < 1)
 			return(tiny*tiny);
