@@ -554,6 +554,20 @@ bdevvp(dev, vpp)
 	dev_t dev;
 	struct vnode **vpp;
 {
+	return(getdevvp(dev, vpp, VBLK));
+}
+
+
+/*
+ * Create a vnode for a device.
+ * Used by bdevvp (block device) for root file system etc.,
+ * and by cnopen for console (character device).
+ */
+getdevvp(dev, vpp, type)
+	dev_t dev;
+	struct vnode **vpp;
+	enum vtype type;
+{
 	register struct vnode *vp;
 	struct vnode *nvp;
 	int error;
@@ -562,11 +576,11 @@ bdevvp(dev, vpp)
 		return (0);
 	error = getnewvnode(VT_NON, (struct mount *)0, &spec_vnodeops, &nvp);
 	if (error) {
-		*vpp = 0;
+		*vpp = NULLVP;
 		return (error);
 	}
 	vp = nvp;
-	vp->v_type = VBLK;
+	vp->v_type = type;
 	if (nvp = checkalias(vp, dev, (struct mount *)0)) {
 		vput(vp);
 		vp = nvp;
