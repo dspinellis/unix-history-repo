@@ -7,15 +7,18 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)makemap.c	8.6.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)makemap.c	8.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
 #include <sysexits.h>
 #include <sys/types.h>
-#include <sys/file.h>
 #include <ctype.h>
 #include <string.h>
+#include <sys/errno.h>
+#ifndef ISC_UNIX
+# include <sys/file.h>
+#endif
 #include "useful.h"
 #include "conf.h"
 
@@ -40,7 +43,7 @@ union dbent
 	struct
 	{
 		char	*data;
-		int	size;
+		size_t	size;
 	} xx;
 };
 
@@ -54,6 +57,7 @@ main(argc, argv)
 	bool inclnull = FALSE;
 	bool notrunc = FALSE;
 	bool allowreplace = FALSE;
+	bool allowdups = FALSE;
 	bool verbose = FALSE;
 	bool foldcase = TRUE;
 	int exitstat;
@@ -65,6 +69,7 @@ main(argc, argv)
 	int st;
 	int mode;
 	enum type type;
+	int fd;
 	union
 	{
 #ifdef NDBM
@@ -76,19 +81,27 @@ main(argc, argv)
 		void	*dbx;
 	} dbp;
 	union dbent key, val;
+#ifdef NEWDB
+	BTREEINFO bti;
+#endif
 	char ibuf[BUFSIZE];
 	char fbuf[MAXNAME];
 	extern char *optarg;
 	extern int optind;
+	extern bool lockfile();
 
 	progname = argv[0];
 
-	while ((opt = getopt(argc, argv, "Nforv")) != EOF)
+	while ((opt = getopt(argc, argv, "Ndforv")) != EOF)
 	{
 		switch (opt)
 		{
 		  case 'N':
 			inclnull = TRUE;
+			break;
+
+		  case 'd':
+			allowdups = TRUE;
 			break;
 
 		  case 'f':
@@ -144,7 +157,7 @@ main(argc, argv)
 	switch (type)
 	{
 	  case T_ERR:
-		fprintf(stderr, "Usage: %s [-N] [-o] [-v] type mapname\n", progname);
+		fprintf(stderr, "Usage: %s [-N] [-d] [-f] [-o] [-r] [-v] type mapname\n", progname);
 		exit(EX_USAGE);
 
 	  case T_UNKNOWN:
@@ -162,6 +175,26 @@ main(argc, argv)
 		fprintf(stderr, "%s: Type %s not supported in this version\n",
 			progname, typename);
 		exit(EX_UNAVAILABLE);
+
+#ifdef NEWDB
+	  case T_BTREE:
+		bzero(&bti, sizeof bti);
+		if (allowdups)
+			bti.flags |= R_DUP;
+		break;
+
+	  case T_HASH:
+#endif
+#ifdef NDBM
+	  case T_DBM:
+#endif
+		if (allowdups)
+		{
+			fprintf(stderr, "%s: Type %s does not support -d (allow dups)\n",
+				progname, typename);
+			exit(EX_UNAVAILABLE);
+		}
+		break;
 	}
 
 	/*
@@ -187,6 +220,9 @@ main(argc, argv)
 	*/
 
 	mode = O_RDWR;
+#ifdef O_EXLOCK
+	mode |= O_EXLOCK;
+#endif
 	if (!notrunc)
 		mode |= O_CREAT|O_TRUNC;
 	switch (type)
@@ -200,10 +236,26 @@ main(argc, argv)
 #ifdef NEWDB
 	  case T_HASH:
 		dbp.db = dbopen(mapname, mode, 0644, DB_HASH, NULL);
+		if (dbp.db != NULL)
+		{
+# ifdef OLD_NEWDB
+			(void) (*dbp.db->sync)(dbp.db);
+# else
+			(void) (*dbp.db->sync)(dbp.db, 0);
+# endif
+		}
 		break;
 
 	  case T_BTREE:
-		dbp.db = dbopen(mapname, mode, 0644, DB_BTREE, NULL);
+		dbp.db = dbopen(mapname, mode, 0644, DB_BTREE, &bti);
+		if (dbp.db != NULL)
+		{
+# ifdef OLD_NEWDB
+			(void) (*dbp.db->sync)(dbp.db);
+# else
+			(void) (*dbp.db->sync)(dbp.db, 0);
+# endif
+		}
 		break;
 #endif
 
@@ -218,6 +270,27 @@ main(argc, argv)
 			progname, typename, mapname);
 		exit(EX_CANTCREAT);
 	}
+
+#ifndef O_EXLOCK
+	switch (type)
+	{
+# ifdef NDBM
+	  case T_DBM:
+		fd = dbm_dirfno(dbp.dbm);
+		if (fd >= 0)
+			lockfile(fd);
+		break;
+# endif
+# ifdef NEWDB
+	  case T_HASH:
+	  case T_BTREE:
+		fd = dbp.db->fd(dbp.db);
+		if (fd >= 0)
+			lockfile(fd);
+		break;
+# endif
+	}
+#endif
 
 	/*
 	**  Copy the data
@@ -344,4 +417,52 @@ main(argc, argv)
 	}
 
 	exit (exitstat);
+}
+/*
+**  LOCKFILE -- lock a file using flock or (shudder) fcntl locking
+**
+**	Parameters:
+**		fd -- the file descriptor of the file.
+**
+**	Returns:
+**		TRUE if the lock was acquired.
+**		FALSE otherwise.
+*/
+
+bool
+lockfile(fd)
+	int fd;
+{
+# if !HASFLOCK
+	int action;
+	struct flock lfd;
+	extern int errno;
+
+	bzero(&lfd, sizeof lfd);
+	lfd.l_type = F_WRLCK;
+	action = F_SETLKW;
+
+	if (fcntl(fd, action, &lfd) >= 0)
+		return TRUE;
+
+	/*
+	**  On SunOS, if you are testing using -oQ/tmp/mqueue or
+	**  -oA/tmp/aliases or anything like that, and /tmp is mounted
+	**  as type "tmp" (that is, served from swap space), the
+	**  previous fcntl will fail with "Invalid argument" errors.
+	**  Since this is fairly common during testing, we will assume
+	**  that this indicates that the lock is successfully grabbed.
+	*/
+
+	if (errno == EINVAL)
+		return TRUE;
+
+# else	/* HASFLOCK */
+
+	if (flock(fd, LOCK_EX) >= 0)
+		return TRUE;
+
+# endif
+
+	return FALSE;
 }
