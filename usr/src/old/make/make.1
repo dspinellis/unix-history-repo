@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)make.1	6.1 (Berkeley) %G%
+.\"	@(#)make.1	6.2 (Berkeley) %G%
 .\"
 .TH MAKE 1 ""
 .UC 4
@@ -185,6 +185,25 @@ on makefiles in subdirectories and pass along useful options
 such as
 .BR \-k .
 .PP
+Another special macro is `VPATH'.
+The `VPATH' macro should be set to a list of directories separated by colons.
+When
+.I make
+searches for a file as a result of a dependency relation, it will
+first search the current directory and then each of the directories on the
+`VPATH' list.
+If the file is found, the actual path to the file will be used, rather than
+just the filename.
+If `VPATH' is not defined, then only the current directory is searched.
+.PP
+One use for `VPATH' is when one has several programs that compile from the
+same source.
+The source can be kept in one directory and each set of
+object files (along with a separate
+.IR makefile )
+would be in a separate subdirectory.
+The `VPATH' macro would point to the source directory in this case.
+.PP
 Command lines are executed one at a time, each by its
 own shell.
 A line is printed when it is executed unless
@@ -252,4 +271,6 @@ notably
 .IR  cd (1),
 are ineffectual across newlines in
 .I make.
-
+.PP
+`VPATH' is intended to act like the System V `VPATH' support,
+but there is no guarantee that it functions identically.
