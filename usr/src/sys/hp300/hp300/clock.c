@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: clock.c 1.18 91/01/21$
  *
- *	@(#)clock.c	7.16 (Berkeley) %G%
+ *	@(#)clock.c	7.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -150,8 +150,8 @@ setstatclockrate(newhz)
 }
 
 /*
- * Statistics/profiling clock interrupt.  Clear the interrupt and
- * compute a new interval.
+ * Statistics/profiling clock interrupt.  Compute a new interval.
+ * Interrupt has already been cleared.
  *
  * DO THIS INLINE IN locore.s?
  */
@@ -161,10 +161,8 @@ statintr(fp)
 {
 	register volatile struct clkreg *clk;
 	register int newint, r, var;
-	register u_char discard;
 
 	clk = (volatile struct clkreg *)clkstd[0];
-	discard = clk->clk_msb3;	/* clear interrupt */
 	var = statvar;
 	do {
 		r = random() & (var - 1);
