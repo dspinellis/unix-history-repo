@@ -1,4 +1,4 @@
-/*	mac2defs.h	1.3	86/07/27	*/
+/*	mac2defs.h	1.4	88/01/19	*/
 
 /*
  * Tahoe Registers
@@ -68,6 +68,6 @@ extern	int maxargs;
 
 #define MYREADER(p)	myreader(p)
 int	optim2();
-#define	SIREG		(SPECIAL|6)	/* indexed OREG */
+#define	SIREG		(SPECIAL|7)	/* indexed OREG */
 int	special();			/* additional special shapes */
 #define callchk(p)	if ((p)->in.op != FORTCALL) allchk()
