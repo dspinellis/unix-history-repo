@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -97,20 +97,7 @@ main()
 		exit(1);
 	}
 #ifndef DEBUG
-	if (fork())
-		exit(0);
-	{ int s;
-	  for (s = 0; s < 10; s++)
-		(void) close(s);
-	  (void) open("/", 0);
-	  (void) dup2(0, 1);
-	  (void) dup2(0, 2);
-	  s = open(_PATH_TTY, 2);
-	  if (s >= 0) {
-		ioctl(s, TIOCNOTTY, 0);
-		(void) close(s);
-	  }
-	}
+	daemon(1, 0);
 #endif
 	if (chdir(_PATH_RWHODIR) < 0) {
 		(void)fprintf(stderr, "rwhod: %s: %s\n",
