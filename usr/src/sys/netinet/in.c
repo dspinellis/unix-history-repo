@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.c	7.3 (Berkeley) %G%
+ *	@(#)in.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -144,19 +144,17 @@ in_localaddr(in)
 	struct in_addr in;
 {
 	register u_long i = ntohl(in.s_addr);
-	register u_long net;
 	register struct in_ifaddr *ia;
 
-	if (IN_CLASSA(i))
-		net = i & IN_CLASSA_NET;
-	else if (IN_CLASSB(i))
-		net = i & IN_CLASSB_NET;
-	else
-		net = i & IN_CLASSC_NET;
-
-	for (ia = in_ifaddr; ia; ia = ia->ia_next)
-		if (net == (subnetsarelocal ? ia->ia_net : ia->ia_subnet))
-			return (1);
+	if (subnetsarelocal) {
+		for (ia = in_ifaddr; ia; ia = ia->ia_next)
+			if ((i & ia->ia_netmask) == ia->ia_net)
+				return (1);
+	} else {
+		for (ia = in_ifaddr; ia; ia = ia->ia_next)
+			if ((i & ia->ia_subnetmask) == ia->ia_subnet)
+				return (1);
+	}
 	return (0);
 }
 
