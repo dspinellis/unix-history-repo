@@ -1,11 +1,11 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 SUBDIR=	apply apropos ar at banner basename bc bdes biff cal calendar \
 	cap_mkdb checknr chflags chpass cksum col colcrt colrm column \
 	comm compress cpp ctags cut dc deroff diction diff dirname du \
 	env error ex expand false file find finger fmt fold fpr from \
 	fsplit fstat ftp gcore gprof graph grep head hexdump id indent \
-	join jot kdump ktrace lam last lastcomm learn leave lex locate \
+	join jot kdump ktrace lam last lastcomm learn leave locate \
 	lock logger login logname lorder m4 mail make man mesg mkdep \
 	mkfifo mklocale mkstr more msgs mt netstat nfsstat nice nm nohup \
 	pagesize passwd paste plot pr printenv printf ptx quota \
