@@ -1,4 +1,4 @@
-/* static	char *sccsid = "@(#)0.h	1.4 (Berkeley) %G%";*/
+/* static	char *sccsid = "@(#)0.h	1.5 (Berkeley) %G%";*/
 /* Copyright (c) 1979 Regents of the University of California */
 /* #define DEBUG */
 #define	CHAR
@@ -148,9 +148,28 @@ int	optstk[26];
  * space.  The fundamental limit of 64k total data space
  * should be exceeded well before these are full.
  */
-#define	MAXHASH	4
-#define	MAXTREE	30
-#define	MAXDEPTH 150
+/*
+ * TABLE_MULTIPLIER is for uniformly increasing the sizes of the tables
+ */
+#ifdef ADDR32
+#define TABLE_MULTIPLIER	8
+#endif ADDR32
+#ifdef ADDR16
+#define TABLE_MULTIPLIER	1
+#endif ADDR16
+#define	MAXHASH	(4 * TABLE_MULTIPLIER)
+#define	MAXTREE	(30 * TABLE_MULTIPLIER)
+/*
+ * MAXDEPTH is the depth of the parse stack.
+ * STACK_MULTIPLIER is for increasing its size.
+ */
+#ifdef ADDR32
+#define	STACK_MULTIPLIER	8
+#endif ADDR32
+#ifdef ADDR16
+#define	STACK_MULTIPLIER	1
+#endif ADDR16
+#define	MAXDEPTH ( 150 * STACK_MULTIPLIER )
 
 /*
  * ERROR RELATED DEFINITIONS
