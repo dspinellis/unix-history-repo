@@ -1,0 +1,311 @@
+###########################################################
+#
+#	SENDMAIL CONFIGURATION FILE FOR SUBSIDIARY MACHINES
+#
+#	You should install this file as /etc/sendmail.cf
+#	if your machine is a subsidiary machine (that is, some
+#	other machine in your domain is the main mail-relaying
+#	machine).  Then edit the file to customize it for your
+#	network configuration.
+#
+#	See the manual "System Administration for the Sun Workstation".
+#	Look at "Setting Up The Mail Routing System" in the chapter on
+#	Communications.  The Sendmail references in the back of the
+#	manual are also very useful.
+#
+#	@(#)subsidiary.mc 1.11 88/02/08 SMI; from UCB arpa.mc 3.25 2/24/83
+#
+
+# local UUCP connections -- not forwarded to mailhost
+CV
+
+# my official hostname
+Dj$w
+
+# major relay mailer
+DMether
+
+# major relay host
+DRbeach.gal.utexas.edu
+CRbeach.gal.utexas.edu
+
+#################################################
+#
+#	General configuration information
+
+# local domain names
+#
+# These can now be determined from the domainname system call.
+# The first component of the NIS domain name is stripped off unless
+# it begins with a dot or a plus sign.
+# If your NIS domain is not inside the domain name you would like to have
+# appear in your mail headers, add a "Dm" line to define your domain name.
+# The Dm value is what is used in outgoing mail.  The Cm values are
+# accepted in incoming mail.  By default Cm is set from Dm, but you might
+# want to have more than one Cm line to recognize more than one domain 
+# name on incoming mail during a transition.
+# Example:
+# DmCS.Podunk.EDU
+# Cm cs cs.Podunk.EDU
+#
+DmGal.UTexas.Edu
+Cm Gal Gal.UTexas.Edu
+
+# known hosts in this domain are obtained from gethostbyname() call
+
+# Version number of configuration file
+DVSMI-4.1
+
+
+###   Standard macros
+
+# name used for error messages
+DnMailer-Daemon
+# UNIX header format
+DlFrom $g  $d
+# delimiter (operator) characters
+Do.:%@!^=/[]
+# format of a total name
+Dq$g$?x ($x)$.
+# SMTP login message
+De$j Sendmail $v/$V ready at $b
+
+###   Options
+
+# Remote mode - send through server if mailbox directory is mounted
+OR
+# location of alias file
+OA/etc/aliases
+# default delivery mode (deliver in background)
+Odbackground
+# rebuild the alias file automagically
+OD
+# temporary file mode -- 0600 for secure mail, 0644 for permissive
+OF0600
+# default GID
+Og1
+# location of help file
+OH/usr/lib/sendmail.hf
+# log level
+OL9
+# default messages to old style
+Oo
+# Cc my postmaster on error replies I generate
+OPPostmaster
+# queue directory
+OQ/usr/spool/mqueue
+# read timeout for SMTP protocols
+Or15m
+# status file -- none
+OS/etc/sendmail.st
+# queue up everything before starting transmission, for safety
+Os
+# return queued mail after this long
+OT3d
+# default UID
+Ou1
+
+###   Message precedences
+Pfirst-class=0
+Pspecial-delivery=100
+Pjunk=-100
+
+###   Trusted users
+T root daemon uucp
+
+###   Format of headers 
+H?P?Return-Path: <$g>
+HReceived: $?sfrom $s $.by $j ($v/$V)
+	id $i; $b
+H?D?Resent-Date: $a
+H?D?Date: $a
+H?F?Resent-From: $q
+H?F?From: $q
+H?x?Full-Name: $x
+HSubject:
+H?M?Resent-Message-Id: <$t.$i@$j>
+H?M?Message-Id: <$t.$i@$j>
+HErrors-To:
+
+###########################
+###   Rewriting rules   ###
+###########################
+
+
+#  Sender Field Pre-rewriting
+S1
+# None needed.
+
+#  Recipient Field Pre-rewriting
+S2
+# None needed.
+
+# Name Canonicalization
+
+# Internal format of names within the rewriting rules is:
+# 	anything<@host.domain.domain...>anything
+# We try to get every kind of name into this format, except for local
+# names, which have no host part.  The reason for the "<>" stuff is
+# that the relevant host name could be on the front of the name (for
+# source routing), or on the back (normal form).  We enclose the one that
+# we want to route on in the <>'s to make it easy to find.
+# 
+S3
+
+# handle "from:<>" special case
+R$*<>$*			$@@				turn into magic token
+
+# basic textual canonicalization
+R$*<$+>$*		$2				basic RFC822 parsing
+
+# make sure <@a,@b,@c:user@d> syntax is easy to parse -- undone later
+R@$+,$+:$+		@$1:$2:$3			change all "," to ":"
+R@$+:$+			$@$>6<@$1>:$2			src route canonical
+
+R$+:$*;@$+		$@$1:$2;@$3			list syntax
+R$+@$+			$:$1<@$2>			focus on domain
+R$+<$+@$+>		$1$2<@$3>			move gaze right
+R$+<@$+>		$@$>6$1<@$2>			already canonical
+
+# convert old-style names to domain-based names
+# All old-style names parse from left to right, without precedence.
+R$-!$+			$@$>6$2<@$1.uucp>		uucphost!user
+R$-.$+!$+		$@$>6$3<@$1.$2>			host.domain!user
+R$+%$+			$@$>3$1@$2			user%host
+
+#  Final Output Post-rewriting 
+S4
+R$+<@$+.uucp>		$2!$1				u@h.uucp => h!u
+R$+			$: $>9 $1			Clean up addr
+R$*<$+>$*		$1$2$3				defocus
+
+
+#  Clean up an name for passing to a mailer
+#  (but leave it focused)
+S9
+R$=w!@			$@$w!$n				
+R@			$@$n				handle <> error addr
+R$*<$*LOCAL>$*		$1<$2$m>$3			change local info
+R<@$+>$*:$+:$+		<@$1>$2,$3:$4			<route-addr> canonical
+
+
+#######################
+#   Rewriting rules
+
+# special local conversions
+S6
+R$*<@$*$=m>$*		$1<@$2LOCAL>$4			convert local domain
+
+# Local and Program Mailer specification
+
+Mlocal,	P=/bin/mail, F=rlsDFMmnP, S=10, R=20, A=mail -d $u
+Mprog,	P=/bin/sh,   F=lsDFMeuP,  S=10, R=20, A=sh -c $u
+
+S10
+# None needed.
+
+S20
+# None needed.
+
+############################################################
+#####
+#####		Ethernet Mailer specification
+#####
+#####	Messages processed by this configuration are assumed to remain
+#####	in the same domain.  This really has nothing particular to do
+#####   with Ethernet - the name is historical.
+
+Mether,	P=[TCP], F=msDFMuCX, S=11, R=21, A=TCP $h
+S11
+R$*<@$+>$*		$@$1<@$2>$3			already ok
+R$+			$@$1<@$w>			tack on our hostname
+
+S21
+# None needed.
+
+
+
+##########################################################
+#  General code to convert back to old style UUCP names
+S5
+R$+<@LOCAL>		$@ $w!$1			name@LOCAL => sun!name
+R$+<@$-.LOCAL>		$@ $2!$1			u@h.LOCAL => h!u
+R$+<@$+.uucp>		$@ $2!$1			u@h.uucp => h!u
+R$+<@$*>		$@ $2!$1			u@h => h!u
+# Route-addrs do not work here.  Punt til uucp-mail comes up with something.
+R<@$+>$*		$@ @$1$2			just defocus and punt
+R$*<$*>$*		$@ $1$2$3			Defocus strange stuff
+
+#	UUCP Mailer specification
+
+Muucp,	P=/usr/bin/uux, F=msDFMhuU, S=13, R=23,
+	A=uux - -r -a$f $h!rmail ($u)
+
+# Convert uucp sender (From) field
+S13
+R$+			$:$>5$1				convert to old style
+R$=w!$+			$2				strip local name
+R$+			$:$w!$1				stick on real host name
+
+# Convert uucp recipient (To, Cc) fields
+S23
+R$+			$:$>5$1				convert to old style
+
+
+#####		RULESET ZERO PREAMBLE
+
+# Ruleset 30 just calls rulesets 3 then 0.
+S30
+R$*			$: $>3 $1			First canonicalize
+R$*			$@ $>0 $1			Then rerun ruleset 0
+
+S0
+# On entry, the address has been canonicalized and focused by ruleset 3.
+# Handle special cases.....
+R@			$#local $:$n			handle <> form
+# Earlier releases special-cased the [x.y.z.a] format, but SunOS 4.1 or later
+# should handle these properly on input.
+
+# now delete redundant local info
+R$*<$*$=w.LOCAL>$*	$1<$2>$4			thishost.LOCAL
+R$*<@LOCAL>$*		$1<@$m>$2			host == domain gateway
+R$*<$*$=w.uucp>$*	$1<$2>$4			thishost.uucp
+R$*<$*$=w>$*		$1<$2>$4			thishost
+
+# arrange for local names to be fully qualified
+R$*<@$%y>$*		$1<@$2.LOCAL>$3			user@etherhost
+
+# For numeric spec, you can't pass spec on to receiver, since old rcvr's
+# were not smart enough to know that [x.y.z.a] is their own name.
+R<@[$+]>:$*		$:$>9 <@[$1]>:$2		Clean it up, then...
+R<@[$+]>:$*		$#ether $@[$1] $:$2		numeric internet spec
+R<@[$+]>,$*		$#ether $@[$1] $:$2		numeric internet spec
+R$*<@[$+]>		$#ether $@[$2] $:$1		numeric internet spec
+
+R$*<$*.>$*		$1<$2>$3			drop trailing dot
+R<@>:$*			$@$>30$1			retry after route strip
+R$*<@>			$@$>30$1			strip null trash & retry
+
+
+################################################
+###  Machine dependent part of ruleset zero  ###
+################################################
+
+# resolve names we can handle locally
+R<@$=V.uucp>:$+		$:$>9 $1			First clean up, then...
+R<@$=V.uucp>:$+		$#uucp  $@$1 $:$2		@host.uucp:...
+R$+<@$=V.uucp>		$#uucp  $@$2 $:$1		user@host.uucp
+
+# optimize names of known ethernet hosts
+R$*<@$%y.LOCAL>$*	$#ether $@$2 $:$1<@$2>$3	user@host.here
+
+# other non-local names will be kicked upstairs
+R$+			$:$>9 $1			Clean up, keep <>
+R$*<@$+>$*		$#$M    $@$R $:$1<@$2>$3	user@some.where
+R$*@$*			$#$M    $@$R $:$1<@$2>		strangeness with @
+
+# Local names with % are really not local!
+R$+%$+			$@$>30$1@$2			turn % => @, retry
+
+# everything else is a local name
+R$+			$#local $:$1			local names
