@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.43 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.44 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -529,17 +529,6 @@ readcf(cfname)
 
 	/* initialize host maps from local service tables */
 	inithostmaps();
-
-	if (stab("host", ST_MAP, ST_FIND) == NULL)
-	{
-		/* user didn't initialize: set up host map */
-		strcpy(buf, "host host");
-#if NAMED_BIND
-		if (ConfigLevel >= 2)
-			strcat(buf, " -a.");
-#endif
-		makemapentry(buf);
-	}
 }
 /*
 **  TOOMANY -- signal too many of some option
@@ -1151,6 +1140,8 @@ struct optioninfo
 	"MaxHostStatAge",	O_MHSA,		TRUE,
 #define O_DEFCHARSET	0x85
 	"DefaultCharSet",	O_DEFCHARSET,	TRUE,
+#define O_SSFILE	0x86
+	"ServiceSwitchFile",	O_SSFILE,	FALSE,
 
 	NULL,			'\0',		FALSE,
 };
@@ -1713,6 +1704,10 @@ setoption(opt, val, sticky)
 		DefaultCharSet = newstr(val);
 		break;
 
+	  case O_SSFILE:	/* service switch file */
+		ServiceSwitchFile = newstr(val);
+		break;
+
 	  default:
 		break;
 	}
@@ -1860,7 +1855,7 @@ makemapentry(line)
 	}
 
 	mapname = p;
-	while (isascii(*++p) && isalnum(*p))
+	while ((isascii(*++p) && isalnum(*p)) || *p == '.')
 		continue;
 	if (*p != '\0')
 		*p++ = '\0';

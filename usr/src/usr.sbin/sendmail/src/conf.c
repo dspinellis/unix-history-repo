@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.109 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.110 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -185,6 +185,7 @@ setdefaults(e)
 		TimeOuts.to_q_return[i] = 5 DAYS;	/* option T */
 		TimeOuts.to_q_warning[i] = 0;		/* option T */
 	}
+	ServiceSwitchFile = "/etc/service.switch";
 	setdefuser();
 	setupmaps();
 	setupmailers();
@@ -333,6 +334,10 @@ setupmaps()
 		host_map_init, null_map_open, null_map_close,
 		host_map_lookup, null_map_store);
 
+	MAPDEF("text", NULL, MCF_ALIASOK,
+		map_parseargs, text_map_open, null_map_close,
+		text_map_lookup, null_map_store);
+
 	MAPDEF("stab", NULL, MCF_ALIASOK|MCF_ALIASONLY,
 		map_parseargs, stab_map_open, null_map_close,
 		stab_map_lookup, stab_map_store);
@@ -362,7 +367,12 @@ setupmaps()
 
 	/* sequenced maps */
 	MAPDEF("sequence", NULL, MCF_ALIASOK,
-		seq_map_parse, null_map_open, null_map_close,
+		seq_map_parse, null_map_open, seq_map_close,
+		seq_map_lookup, seq_map_store);
+
+	/* switched interface to sequenced maps */
+	MAPDEF("switch", NULL, MCF_ALIASOK|MCF_REBUILDABLE,
+		map_parseargs, switch_map_open, seq_map_close,
 		seq_map_lookup, seq_map_store);
 }
 
@@ -380,7 +390,7 @@ setupmaps()
 **		none
 **
 **	Side Effects:
-**		Should define maps "host" and "passwd" as necessary
+**		Should define maps "host" and "users" as necessary
 **		for this OS.  If they are not defined, they will get
 **		a default value later.  It should check to make sure
 **		they are not defined first, since it's possible that
@@ -390,7 +400,241 @@ setupmaps()
 void
 inithostmaps()
 {
+	char buf[MAXLINE];
+
+	/*
+	**  Make sure we have a host map.
+	*/
+
+	if (stab("host", ST_MAP, ST_FIND) == NULL)
+	{
+		/* user didn't initialize: set up host map */
+		strcpy(buf, "host host");
+#if NAMED_BIND
+		if (ConfigLevel >= 2)
+			strcat(buf, " -a.");
+#endif
+		makemapentry(buf);
+	}
+
+	/*
+	**  Set up default aliases maps
+	*/
+
+	if (stab("aliases.files", ST_MAP, ST_FIND) == NULL)
+	{
+		strcpy(buf, "aliases.files implicit /etc/aliases");
+		makemapentry(buf);
+	}
+#ifdef NISPLUS
+	if (stab("aliases.nisplus", ST_MAP, ST_FIND) == NULL)
+	{
+		strcpy(buf, "aliases.nisplus nisplus -kalias -vexpansion -d mail_aliases.org_dir");
+		makemapentry(buf);
+	}
+#endif
+#ifdef NIS
+	if (stab("aliases.nis", ST_MAP, ST_FIND) == NULL)
+	{
+		strcpy(buf, "aliases.nis nis -d mail.aliases");
+		makemapentry(buf);
+	}
+#endif
+	if (stab("aliases", ST_MAP, ST_FIND) == NULL)
+	{
+		strcpy(buf, "aliases switch aliases");
+		makemapentry(buf);
+	}
+	strcpy(buf, "switch:aliases");
+	setalias(buf);
+
+#if 0		/* "user" map class is a better choice */
+	/*
+	**  Set up default users maps.
+	*/
+
+	if (stab("users.files", ST_MAP, ST_FIND) == NULL)
+	{
+		strcpy(buf, "users.files text -m -z: -k0 -v6 /etc/passwd");
+		makemapentry(buf);
+	}
+#ifdef NISPLUS
+	if (stab("users.nisplus", ST_MAP, ST_FIND) == NULL)
+	{
+		strcpy(buf, "users.nisplus nisplus -m -kname -vhome -d passwd.org_dir");
+		makemapentry(buf);
+	}
+#endif
+#ifdef NIS
+	if (stab("users.nis", ST_MAP, ST_FIND) == NULL)
+	{
+		strcpy(buf, "users.nis nis -m -d passwd.byname");
+		makemapentry(buf);
+	}
+#endif
+	if (stab("users", ST_MAP, ST_FIND) == NULL)
+	{
+		strcpy(buf, "users switch -m passwd");
+		makemapentry(buf);
+	}
+#endif
+}
+/*
+**  SWITCH_MAP_FIND -- find the list of types associated with a map
+**
+**	This is the system-dependent interface to the service switch.
+**
+**	Parameters:
+**		service -- the name of the service of interest.
+**		maptype -- an out-array of strings containing the types
+**			of access to use for this service.  There can
+**			be at most MAXMAPSTACK types for a single service.
+**
+**	Returns:
+**		The number of map types filled in, or -1 for failure.
+*/
+
+int
+switch_map_find(service, maptype)
+	char *service;
+	char *maptype[MAXMAPSTACK];
+{
+	register FILE *fp;
+	int svcno;
+	static char buf[MAXLINE];
+
 #ifdef SOLARIS
+	struct __nsw_switchconfig *nsw_conf;
+	enum __nsw_parse_err pserr;
+	struct __nsw_lookup *lk;
+	int nsw_rc;
+	static struct __nsw_lookup lkp0 =
+		{ "files", {1, 0, 0, 0}, NULL, NULL };
+	static struct __nsw_switchconfig lkp_default =
+		{ 0, "sendmail", 3, &lkp0 };
+
+	if ((nsw_conf = __nsw_getconfig(service, &pserr)) == NULL)
+		lk = lkp_default.lookups;
+	else
+		lk = nsw_conf->lookups;
+	svcno = 0;
+	while (lk != NULL)
+	{
+		maptype[svcno] = lk->service_name;
+		if (lk->actions[__NSW_NOTFOUND] == __NSW_RETURN)
+			map->map_return[MA_NOTFOUND] |= 1 << svcno;
+		if (lk->actions[__NSW_TRYAGAIN] == __NSW_RETURN)
+			map->map_return[MA_TRYAGAIN] |= 1 << svcno;
+		if (lk->actions[__NSW_UNAVAIL] == __NSW_RETURN)
+			map->map_return[MA_TRYAGAIN] |= 1 << svcno;
+		svcno++;
+	}
+	return svcno;
+#endif
+
+#if defined(ultrix) || defined(__osf__)
+	struct svcinfo *svcinfo;
+	int svc;
+
+	svc = getsvc();
+	if (strcmp(service, "hosts") == 0)
+		svc = SVC_HOSTS;
+	else if strcmp(service, "aliases") == 0)
+		svc = SVC_ALIASES;
+	else if (strcmp(service, "passwd") == 0)
+		svc = SVC_PASSWD;
+	else
+		return -1;
+	for (svcno = 0; svcno < SVC_PATHSIZE; svcno++)
+	{
+		switch (svcinfo->svcpath[svc][svcno])
+		{
+		  case SVC_LOCAL:
+			maptype[svcno] = "files";
+			break;
+
+		  case SVC_YP:
+			maptype[svcno] = "nis";
+			break;
+
+		  case SVC_BIND:
+			maptype[svcno] = "dns";
+			break;
+
+#ifdef SVC_HESIOD
+		  case SVC_HESIOD:
+			maptype[svcno] = "hesiod";
+			break;
+#endif
+
+		  case SVC_LAST:
+			svcno = SVC_PATHSIZE;
+			break;
+		}
+	}
+	return svcno;
+#endif
+
+#if !defined(SOLARIS) && !defined(ultrix) && !defined(__osf__)
+	/*
+	**  Fall-back mechanism.
+	*/
+
+	svcno = 0;
+	fp = fopen(ServiceSwitchFile, "r");
+	if (fp != NULL)
+	{
+		while (fgets(buf, sizeof buf, fp) != NULL)
+		{
+			register char *p;
+
+			p = strpbrk(buf, "#\n");
+			if (p != NULL)
+				*p = '\0';
+			p = strpbrk(buf, " \t");
+			if (p != NULL)
+				*p++ = '\0';
+			if (strcmp(buf, service) != 0)
+				continue;
+
+			/* got the right service -- extract data */
+			do
+			{
+				while (isspace(*p))
+					p++;
+				if (*p == '\0')
+					break;
+				maptype[svcno++] = p;
+				p = strpbrk(p, " \t");
+				if (p != NULL)
+					*p++ = '\0';
+			} while (p != NULL);
+			break;
+		}
+		fclose(fp);
+		return svcno;
+	}
+
+	/* if the service file doesn't work, use an absolute fallback */
+	if (strcmp(service, "aliases") == 0)
+	{
+		maptype[0] = "files";
+		return 1;
+	}
+	if (strcmp(service, "hosts") == 0)
+	{
+# if NAMED_BIND
+		maptype[svcno++] = "dns";
+# else
+#  if defined(sun) && !defined(BSD) && !defined(SOLARIS)
+		/* SunOS */
+		maptype[svcno++] = "nis";
+#  endif
+# endif
+		maptype[svcno++] = "files";
+		return svcno;
+	}
+	return -1;
 #endif
 }
 /*

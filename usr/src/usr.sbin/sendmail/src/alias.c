@@ -10,7 +10,7 @@
 # include <pwd.h>
 
 #ifndef lint
-static char sccsid[] = "@(#)alias.c	8.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)alias.c	8.30 (Berkeley) %G%";
 #endif /* not lint */
 
 
@@ -199,23 +199,37 @@ setalias(spec)
 
 	for (p = spec; p != NULL; )
 	{
-		char aname[50];
-
 		while (isspace(*p))
 			p++;
 		if (*p == '\0')
 			break;
 		spec = p;
 
-		if (NAliasDBs >= MAXALIASDB)
+		/*
+		**  Treat simple filename specially -- this is the file name
+		**  for the files implementation, not necessarily in order.
+		*/
+
+		if (spec[0] == '/')
 		{
-			syserr("Too many alias databases defined, %d max", MAXALIASDB);
-			return;
+			s = stab("aliases.files", ST_MAP, ST_ENTER);
+			map = &s->s_map;
 		}
-		(void) sprintf(aname, "Alias%d", NAliasDBs);
-		s = stab(aname, ST_MAP, ST_ENTER);
-		map = &s->s_map;
-		AliasDB[NAliasDBs] = map;
+		else
+		{
+			char aname[50];
+
+			if (NAliasDBs >= MAXALIASDB)
+			{
+				syserr("Too many alias databases defined, %d max",
+					MAXALIASDB);
+				return;
+			}
+			(void) sprintf(aname, "Alias%d", NAliasDBs);
+			s = stab(aname, ST_MAP, ST_ENTER);
+			map = &s->s_map;
+			AliasDB[NAliasDBs] = map;
+		}
 		bzero(map, sizeof *map);
 
 		p = strpbrk(p, " ,/:");
@@ -238,6 +252,9 @@ setalias(spec)
 		if (p != NULL)
 			*p++ = '\0';
 
+		if (tTd(27, 20))
+			printf("  map %s:%s %s\n", class, s->s_name, spec);
+
 		/* look up class */
 		s = stab(class, ST_MAPCLASS, ST_FIND);
 		if (s == NULL)
@@ -256,7 +273,8 @@ setalias(spec)
 			if (map->map_class->map_parse(map, spec))
 			{
 				map->map_mflags |= MF_VALID|MF_ALIAS;
-				NAliasDBs++;
+				if (AliasDB[NAliasDBs] == map)
+					NAliasDBs++;
 			}
 		}
 	}

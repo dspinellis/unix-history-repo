@@ -10,9 +10,9 @@
 
 #ifndef lint
 #if NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.25 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.26 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.25 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.26 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -94,6 +94,7 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 	u_short prefer[MAXMXHOSTS];
 	int weight[MAXMXHOSTS];
 	extern bool getcanonname();
+	extern bool mx_enabled();
 
 	if (tTd(8, 2))
 		printf("getmxrr(%s, droplocalhost=%d)\n", host, droplocalhost);
@@ -119,6 +120,17 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 
 	/* efficiency hack -- numeric or non-MX lookups */
 	if (host[0] == '[')
+		goto punt;
+
+	/*
+	**  If we don't have MX records in our host switch, don't
+	**  try for MX records.  Note that this really isn't "right",
+	**  since we might be set up to try NIS first and then DNS;
+	**  if the host is found in NIS we really shouldn't be doing
+	**  MX lookups.  However, that should be a degenerate case.
+	*/
+
+	if (!mx_enabled())
 		goto punt;
 
 	errno = 0;
@@ -386,6 +398,40 @@ mxrand(host)
 	if (tTd(17, 9))
 		printf(" = %d\n", hfunc);
 	return hfunc;
+}
+/*
+**  MX_ENABLED -- check to see if MX records apply
+**
+**	This is done by seeing if "dns" is listed in the hosts
+**	service switch.
+*/
+
+bool
+mx_enabled()
+{
+	static bool firsttime = TRUE;
+	static bool hasmx;
+	char *maptype[MAXMAPSTACK];
+
+	if (firsttime)
+	{
+		int nmaps;
+
+		nmaps = switch_map_find("hosts", maptype);
+		hasmx = FALSE;
+		if (nmaps > 0 && nmaps <= MAXMAPSTACK)
+		{
+			register int mapno;
+
+			for (mapno = 0; mapno < nmaps && !hasmx; mapno++)
+			{
+				if (strcmp(maptype[mapno], "dns") == 0)
+					hasmx = TRUE;
+			}
+		}
+		firsttime = FALSE;
+	}
+	return hasmx;
 }
 /*
 **  GETCANONNAME -- get the canonical name for named host

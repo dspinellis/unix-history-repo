@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.46 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1475,5 +1475,78 @@ shortenstring(s, m)
 	strncpy(buf, s, m);
 	strcpy(buf + m, "...");
 	strcpy(buf + m + 3, s + l - m);
+	return buf;
+}
+/*
+**  GET_COLUMN  -- look up a Column in a line buffer
+**
+**	Parameters:
+**		line -- the raw text line to search.
+**		col -- the column number to fetch.
+**		delim -- the delimiter between columns.  If null,
+**			use white space.
+**		buf -- the output buffer.
+**
+**	Returns:
+**		buf if successful.
+**		NULL otherwise.
+*/
+
+char *
+get_column(line, col, delim, buf)
+	char line[];
+	int col;
+	char delim;
+	char buf[];
+{
+	char *p;
+	char *begin, *end;
+	int i;
+	char delimbuf[3];
+	
+	if (delim == '\0')
+		strcpy(delimbuf, "\t ");
+	else
+	{
+		delimbuf[0] = delim;
+		delimbuf[1] = '\0';
+	}
+
+	p = line;
+	if (*p == '\0')
+		return NULL;			/* line empty */
+	if (*p == delim && col == 0)
+		return NULL;			/* first column empty */
+
+	begin = line;
+
+	if (col == 0 && delim == '\0')
+	{
+		while (*begin && isspace(*begin))
+			begin++;
+	}
+
+	for (i = 0; i < col; i++)
+	{
+		if ((begin = strpbrk(begin, delimbuf)) == NULL)
+			return NULL;		/* no such column */
+		begin++;
+		if (delim == '\0')
+		{
+			while (*begin && isspace(*begin))
+				begin++;
+		}
+	}
+	
+	end = strpbrk(begin, delimbuf);
+	if (end == NULL)
+	{
+		strcpy(buf, begin);
+	}
+	else
+	{
+		strncpy(buf, begin, end - begin);
+		buf[end - begin] = '\0';
+	}
 	return buf;
 }
