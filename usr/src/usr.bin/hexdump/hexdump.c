@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)hexdump.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)hexdump.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -47,7 +47,7 @@ main(argc, argv)
 	char *p, *rindex();
 
 	length = -1;
-	while ((ch = getopt(argc, argv, "bcde:f:n:os:v")) != EOF)
+	while ((ch = getopt(argc, argv, "bcde:f:n:os:vx")) != EOF)
 		switch (ch) {
 		case 'b':
 			add("\"%07.7_Ax\n\"");
@@ -98,6 +98,10 @@ main(argc, argv)
 			break;
 		case 'v':
 			vflag = ALL;
+			break;
+		case 'x':
+			add("\"%07.7_Ax\n\"");
+			add("\"%07.7_ax \" 8/2 \"%04x \" \"\\n\"");
 			break;
 		case '?':
 			usage();

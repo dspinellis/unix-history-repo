@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)hexdump.1	5.3 (Berkeley) %G%
+.\"	@(#)hexdump.1	5.4 (Berkeley) %G%
 .\"
 .TH HEXDUMP 1 ""
 .UC 7
@@ -23,7 +23,7 @@ hexdump - ascii, decimal, hexadecimal, octal dump
 hexdump
 .ft B
 [
-.I -bcdov
+.I -bcdovx
 .ft B
 ] [
 .I -e format_string
@@ -130,6 +130,16 @@ option, any number of groups of output lines, which would be
 identical to the immediately preceding group of output lines (except
 for the input offsets), are replaced with a line comprised of a
 single asterisk.
+.TP
+-x
+Display the input offset in hexadecimal, followed by eight, space
+separated, four column, zero-filled, two-byte quantities of input
+data, in hexadecimal, per line.
+It is equivalent to specifying the following format strings:
+.ti +5
+"%07.7_Ax\en"
+.ti +5
+"%07.7_ax  " 8/2 "%04x " "\en"
 .PP
 For each input file,
 .I hexdump
@@ -286,15 +296,9 @@ string but with any ``+'', `` '', or ``#'' conversion flag characters
 removed, and referencing a NULL string.
 .PP
 If no format strings are specified, the default display is equivalent
-to specifying the following format strings:
-.ti +5
-"%07.7_Ax\en"
-.ti +5
-"%07.7_ax  " 8/2 "%04x " "\en"
-.sp
-This displays the input offset in hexadecimal, followed by eight, space
-separated, four column, zero-filled, two-byte quantities of input
-data, in hexadecimal, per line.
+to specifying the
+.I -x
+option.
 .PP
 .I Hexdump
 exits 0 on success and >0 if an error occurred.
@@ -302,7 +306,7 @@ exits 0 on success and >0 if an error occurred.
 Display the input in perusal format:
 .sp
 .ti +5
-"%06.6_ao "  12/1 "%3o "
+"%06.6_ao "  12/1 "%3_u "
 .ti +5
 "\et\et" "%_p "
 .ti +5
