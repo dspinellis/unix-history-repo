@@ -25,15 +25,4 @@ keyboard problems.
 	machine off network.  (Though the machine will continue to run with
 	no network facilities)
 
-/sys/i386/isa/syscons.c
-	This file will not compile correctly with the compiler distributed
-	in FreeBSD before version 1.1.  To compile a FreeBSD 1.1 kernel 
-	with a compiler from before FreeBSD 1.1, you will need to add
-	the `-D__FreeBSD__' flag to your kernel compiles; e.g.,
-		make CC='cc -D__FreeBSD__'
-	in /sys/compile/SYSCONS (or substitute the name of your
-	configuration.  Once you upgrade your compilation tools this
-	will no longer be necessary.
-	
-
-$Id: KNOWNBUGS,v 1.3 1994/02/09 06:22:58 wollman Exp $
+$Id: KNOWNBUGS,v 1.4 1994/02/11 12:21:22 nate Exp $
