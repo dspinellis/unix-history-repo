@@ -12,7 +12,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	4.5 (Berkeley) %G%";
 #endif not lint
 
 /* LOG(X)
@@ -50,9 +50,9 @@ static char sccsid[] = "@(#)log.c	4.4 (Berkeley) %G%";
  *	   since the last 20 bits of ln2hi is 0.)
  *
  * Special cases:
- *	log(x) is NAN with signal if x < 0 (including -INF) ; 
+ *	log(x) is NaN with signal if x < 0 (including -INF) ; 
  *	log(+INF) is +INF; log(0) is -INF with signal;
- *	log(NAN) is that NAN with no signal.
+ *	log(NaN) is that NaN with no signal.
  *
  * Accuracy:
  *	log(x) returns the exact log(x) nearly rounded. In a test run with
@@ -68,9 +68,6 @@ static char sccsid[] = "@(#)log.c	4.4 (Berkeley) %G%";
 
 #ifdef VAX	/* VAX D format */
 #include <errno.h>
-extern errno;
-static long	NaN_[] = {0x8000, 0x0};
-#define NaN	(*(double *) NaN_)
 
 /* double static */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
@@ -82,7 +79,7 @@ static long     sqrt2x[] = { 0x04f340b5, 0xde6533f9};
 #define    ln2hi    (*(double*)ln2hix)
 #define    ln2lo    (*(double*)ln2lox)
 #define    sqrt2    (*(double*)sqrt2x)
-#else		/* IEEE double format */
+#else	/* IEEE double */
 double static
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
@@ -96,7 +93,9 @@ double x;
 	double logb(),scalb(),copysign(),log__L(),s,z,t;
 	int k,n,finite();
 
-	if(x!=x) return(x);
+#ifndef VAX
+	if(x!=x) return(x);	/* x is NaN */
+#endif
 	if(finite(x)) {
 	   if( x > zero ) {
 
@@ -118,14 +117,17 @@ double x;
 
 	   else {
 #ifdef VAX
-		errno = EDOM;
-		return (NaN);
-#else
+		extern double infnan();
+		if ( x == zero )
+		    return (infnan(-ERANGE));	/* -INF */
+		else
+		    return (infnan(EDOM));	/* NaN */
+#else	/* IEEE double */
 		/* zero argument, return -INF with signal */
 		if ( x == zero )
 		    return( negone/zero );
 
-		/* negative argument, return NAN with signal */
+		/* negative argument, return NaN with signal */
 		else 
 		    return ( zero / zero );
 #endif
@@ -134,7 +136,7 @@ double x;
     /* end of if (finite(x)) */
     /* NOT REACHED ifdef VAX */
 
-    /* log(-INF) is NAN with signal */
+    /* log(-INF) is NaN with signal */
 	else if (x<0) 
 	    return(zero/zero);      
 

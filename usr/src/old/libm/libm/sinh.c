@@ -12,35 +12,35 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sinh.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)sinh.c	4.3 (Berkeley) %G%";
 #endif not lint
 
 /* SINH(X)
  * RETURN THE HYPERBOLIC SINE OF X
  * DOUBLE PRECISION (VAX D format 56 bits, IEEE DOUBLE 53 BITS)
  * CODED IN C BY K.C. NG, 1/8/85; 
- * REIVESD BY K.C. NG on 2/8/85, 3/7/85, 3/24/85, 4/16/85.
+ * REVISED BY K.C. NG on 2/8/85, 3/7/85, 3/24/85, 4/16/85.
  *
  * Required system supported functions :
  *	copysign(x,y)
  *	scalb(x,N)
  *
  * Required kernel functions:
- *	E(x)	...return exp(x)-1
+ *	expm1(x)	...return exp(x)-1
  *
  * Method :
  *	1. reduce x to non-negative by sinh(-x) = - sinh(x).
  *	2. 
  *
- *		                                     E(x) + E(x)/(E(x)+1)
- *	    0        <= x <= lnovfl    :  sinh(x) := ----------------------
- *			       			              2
- *	    lnovfl   <= x <= lnovfl+ln2:  sinh(x) := E(x)/2 (avoid overflow)
- *	    lnovfl+ln2 <  x <  INF     :  overflow to INF
+ *	                                      expm1(x) + expm1(x)/(expm1(x)+1)
+ *	    0 <= x <= lnovfl     : sinh(x) := --------------------------------
+ *			       		                      2
+ *     lnovfl <= x <= lnovfl+ln2 : sinh(x) := expm1(x)/2 (avoid overflow)
+ * lnovfl+ln2 <  x <  INF        :  overflow to INF
  *	
  *
  * Special cases:
- *	sinh(x) is x if x is +INF, -INF, or NAN.
+ *	sinh(x) is x if x is +INF, -INF, or NaN.
  *	only sinh(0)=0 is exact for finite argument.
  *
  * Accuracy:
@@ -83,18 +83,20 @@ double sinh(x)
 double x;
 {
 	static double  one=1.0, half=1.0/2.0 ;
-	double E(), t, scalb(), copysign(), sign;
-	if(x!=x) return(x);
+	double expm1(), t, scalb(), copysign(), sign;
+#ifndef VAX
+	if(x!=x) return(x);	/* x is NaN */
+#endif
 	sign=copysign(one,x);
 	x=copysign(x,one);
 	if(x<lnovfl)
-	    {t=E(x); return(copysign((t+t/(one+t))*half,sign));}
+	    {t=expm1(x); return(copysign((t+t/(one+t))*half,sign));}
 
 	else if(x <= lnovfl+0.7)
 		/* subtract x by ln(2^(max+1)) and return 2^max*exp(x) 
 	    		to avoid unnecessary overflow */
-	    return(copysign(scalb(one+E((x-mln2hi)-mln2lo),max),sign));
+	    return(copysign(scalb(one+expm1((x-mln2hi)-mln2lo),max),sign));
 
 	else  /* sinh(+-INF) = +-INF, sinh(+-big no.) overflow to +-INF */
-	    return( E(x)*sign );
+	    return( expm1(x)*sign );
 }

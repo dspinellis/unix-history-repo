@@ -13,7 +13,7 @@ From Prof. Kahan at UC at Berkeley
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)log__L.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)log__L.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 /* log__L(Z)
@@ -22,7 +22,7 @@ static char sccsid[] = "@(#)log__L.c	1.1 (Berkeley) %G%";
  *		      S				     2 + X
  *		     
  * DOUBLE PRECISION (VAX D FORMAT 56 bits or IEEE DOUBLE 53 BITS)
- * KERNEL FUNCTION FOR LOG; TO BE USED IN L, LOG, AND POW FUNCTIONS
+ * KERNEL FUNCTION FOR LOG; TO BE USED IN LOG1P, LOG, AND POW FUNCTIONS
  * CODED IN C BY K.C. NG, 1/19/85; 
  * REVISED BY K.C. Ng, 2/3/85, 4/16/85.
  *
@@ -35,7 +35,7 @@ static char sccsid[] = "@(#)log__L.c	1.1 (Berkeley) %G%";
  *
  *	       z*(L1 + z*(L2 + z*(... (L7 + z*L8)...)))
  *
- *	   where z=s*s. (See the listing below for L's values.) The 
+ *	   where z=s*s. (See the listing below for Lk's values.) The 
  *	   coefficients are obtained by a special Remez algorithm. 
  *
  * Accuracy:
@@ -76,7 +76,7 @@ static long        L8x[] = { 0x00003f00, 0x00000000};
 #define       L6    (*(double*)L6x)
 #define       L7    (*(double*)L7x)
 #define       L8    (*(double*)L8x)
-#else  		/* IEEE double precision (53 bits) */
+#else	/* IEEE double */
 static double
 L1     =  6.6666666666667340202E-1    , /*Hex  2^ -1   *  1.5555555555592 */
 L2     =  3.9999999999416702146E-1    , /*Hex  2^ -2   *  1.999999997FF24 */
@@ -92,7 +92,7 @@ double z;
 {
 #ifdef VAX
     return(z*(L1+z*(L2+z*(L3+z*(L4+z*(L5+z*(L6+z*(L7+z*L8))))))));
-#else 	/* IEEE double */
+#else	/* IEEE double */
     return(z*(L1+z*(L2+z*(L3+z*(L4+z*(L5+z*(L6+z*L7)))))));
 #endif
 }

@@ -1,4 +1,6 @@
-/*	@(#)jn.c	4.1	%G%	*/
+#ifndef lint
+static char sccsid[] = "@(#)jn.c	4.2 (Berkeley) %G%";
+#endif not lint
 
 /*
 	floating point Bessel's function of
@@ -33,9 +35,11 @@
 */
 
 #include <math.h>
+#ifdef VAX
 #include <errno.h>
-
-int	errno;
+#else	/* IEEE double */
+static double zero = 0.e0;
+#endif
 
 double
 jn(n,x) int n; double x;{
@@ -87,8 +91,12 @@ yn(n,x) int n; double x;{
 	double y0(), y1();
 
 	if (x <= 0) {
-		errno = EDOM;
-		return(-HUGE);
+#ifdef VAX
+		extern double infnan();
+		return(infnan(EDOM));	/* NaN */
+#else	/* IEEE double */
+		return(zero/zero);	/* IEEE machines: invalid operation */
+#endif
 	}
 	sign = 1;
 	if(n<0){
