@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.18 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.19 (Berkeley) %G%
  */
 
 /*
@@ -179,6 +179,8 @@ smmap(p, uap, retval)
 	    ((uap->flags & MAP_ANON) && uap->fd != -1))
 		return (EINVAL);
 	size = (vm_size_t) round_page(uap->len);
+	if ((uap->flags & MAP_FIXED) && (addr + size > VM_MAXUSER_ADDRESS))
+		return (EINVAL);
 	/*
 	 * XXX if no hint provided for a non-fixed mapping place it after
 	 * the end of the largest possible heap.
