@@ -1,4 +1,4 @@
-/*	kern_clock.c	4.35	82/07/22	*/
+/*	kern_clock.c	4.36	82/08/22	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -576,6 +576,7 @@ timeout(fun, arg, tim)
 	splx(s);
 }
 
+#ifdef notdef
 /*
  * untimeout is called to remove a function timeout call
  * from the callout structure.
@@ -601,3 +602,4 @@ untimeout (fun, arg)
 	}
 	splx(s);
 }
+#endif
