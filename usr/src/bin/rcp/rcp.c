@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcp.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcp.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -54,7 +54,6 @@ Key_schedule schedule;
 #endif
 
 extern int errno;
-extern char *sys_errlist[];
 struct passwd *pwd;
 int errs, pflag, port, rem, userid;
 int iamremote, iamrecursive, targetshouldbedirectory;
@@ -205,7 +204,7 @@ toremote(targ, argc, argv)
 			host = index(argv[i], '@');
 			if (!(bp = malloc((u_int)(strlen(_PATH_RSH) +
 				    strlen(argv[i]) + strlen(src) +
-				    strlen(tuser) + strlen(thost) +
+				    tuser ? strlen(tuser) : 0 + strlen(thost) +
 				    strlen(targ)) + CMDNEEDS + 20)))
 					nospace();
 			if (host) {
@@ -356,7 +355,7 @@ verifydir(cp)
 			return;
 		errno = ENOTDIR;
 	}
-	error("rcp: %s: %s.\n", cp, sys_errlist[errno]);
+	error("rcp: %s: %s.\n", cp, strerror(errno));
 	exit(1);
 }
 
@@ -429,7 +428,7 @@ source(argc, argv)
 	for (x = 0; x < argc; x++) {
 		name = argv[x];
 		if ((f = open(name, O_RDONLY, 0)) < 0) {
-			error("rcp: %s: %s\n", name, sys_errlist[errno]);
+			error("rcp: %s: %s\n", name, strerror(errno));
 			continue;
 		}
 		if (fstat(f, &stb) < 0)
@@ -493,7 +492,7 @@ notreg:			(void)close(f);
 		if (readerr == 0)
 			(void)write(rem, "", 1);
 		else
-			error("rcp: %s: %s\n", name, sys_errlist[readerr]);
+			error("rcp: %s: %s\n", name, strerror(readerr));
 		(void)response();
 	}
 }
@@ -507,7 +506,7 @@ rsource(name, statp)
 	char *last, *vect[1], path[MAXPATHLEN];
 
 	if (!(d = opendir(name))) {
-		error("rcp: %s: %s\n", name, sys_errlist[errno]);
+		error("rcp: %s: %s\n", name, strerror(errno));
 		return;
 	}
 	last = rindex(name, '/');
@@ -596,11 +595,12 @@ sink(argc, argv)
 	static BUF buffer;
 	struct stat stb;
 	struct timeval tv[2];
+	enum { YES, NO, DISPLAYED } wrerr;
 	BUF *bp, *allocbuf();
 	off_t i, j;
 	char ch, *targ, *why;
 	int amt, count, exists, first, mask, mode;
-	int ofd, setimes, size, targisdir, wrerr;
+	int ofd, setimes, size, targisdir;
 	char *np, *vect[1], buf[BUFSIZ], *malloc();
 
 #define	atime	tv[0]
@@ -730,12 +730,12 @@ sink(argc, argv)
 				setimes = 0;
 				if (utimes(np, tv) < 0)
 				    error("rcp: can't set times on %s: %s\n",
-					np, sys_errlist[errno]);
+					np, strerror(errno));
 			}
 			continue;
 		}
 		if ((ofd = open(np, O_WRONLY|O_CREAT, mode)) < 0) {
-bad:			error("rcp: %s: %s\n", np, sys_errlist[errno]);
+bad:			error("rcp: %s: %s\n", np, strerror(errno));
 			continue;
 		}
 		if (exists && pflag)
@@ -747,7 +747,7 @@ bad:			error("rcp: %s: %s\n", np, sys_errlist[errno]);
 		}
 		cp = bp->buf;
 		count = 0;
-		wrerr = 0;
+		wrerr = NO;
 		for (i = 0; i < size; i += BUFSIZ) {
 			amt = BUFSIZ;
 			if (i + amt > size)
@@ -757,7 +757,7 @@ bad:			error("rcp: %s: %s\n", np, sys_errlist[errno]);
 				j = read(rem, cp, amt);
 				if (j <= 0) {
 					error("rcp: %s\n",
-					    j ? sys_errlist[errno] :
+					    j ? strerror(errno) :
 					    "dropped connection");
 					exit(1);
 				}
@@ -765,31 +765,41 @@ bad:			error("rcp: %s: %s\n", np, sys_errlist[errno]);
 				cp += j;
 			} while (amt > 0);
 			if (count == bp->cnt) {
-				if (wrerr == 0 &&
+				if (wrerr == NO &&
 				    write(ofd, bp->buf, count) != count)
-					wrerr++;
+					wrerr = YES;
 				count = 0;
 				cp = bp->buf;
 			}
 		}
-		if (count != 0 && wrerr == 0 &&
+		if (count != 0 && wrerr == NO &&
 		    write(ofd, bp->buf, count) != count)
-			wrerr++;
-		if (ftruncate(ofd, size))
+			wrerr = YES;
+		if (ftruncate(ofd, size)) {
 			error("rcp: can't truncate %s: %s\n", np,
-			    sys_errlist[errno]);
+			    strerror(errno));
+			wrerr = DISPLAYED;
+		}
 		(void)close(ofd);
 		(void)response();
-		if (setimes) {
+		if (setimes && wrerr == NO) {
 			setimes = 0;
-			if (utimes(np, tv) < 0)
+			if (utimes(np, tv) < 0) {
 				error("rcp: can't set times on %s: %s\n",
-				    np, sys_errlist[errno]);
-		}				   
-		if (wrerr)
-			error("rcp: %s: %s\n", np, sys_errlist[errno]);
-		else
+				    np, strerror(errno));
+				wrerr = DISPLAYED;
+			}
+		}
+		switch(wrerr) {
+		case YES:
+			error("rcp: %s: %s\n", np, strerror(errno));
+			break;
+		case NO:
 			(void)write(rem, "", 1);
+			break;
+		case DISPLAYED:
+			break;
+		}
 	}
 screwup:
 	error("rcp: protocol screwup: %s\n", why);
@@ -806,7 +816,7 @@ allocbuf(bp, fd, blksize)
 	char *malloc();
 
 	if (fstat(fd, &stb) < 0) {
-		error("rcp: fstat: %s\n", sys_errlist[errno]);
+		error("rcp: fstat: %s\n", strerror(errno));
 		return(0);
 	}
 	size = roundup(stb.st_blksize, blksize);
