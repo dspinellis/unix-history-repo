@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -562,7 +562,7 @@ illegal_building(str)
 	/*
 	 * Delete any spaces before the E or C.
 	 */
-	for (ptr = last_ch - 1; ptr > str && *ptr != ' '; ptr--)
+	for (ptr = last_ch - 1; ptr > str && *ptr == ' '; ptr--)
 		;
 	(void) strcpy(ptr+1, last_ch);
 	/*
