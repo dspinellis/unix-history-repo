@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_umap.c	5.2 (Berkeley) %G%
+ *	@(#)mount_umap.c	5.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -117,8 +117,10 @@ main(argc, argv)
 	fscanf(fp, "%d\n", &nentries);
 	if (nentries > MAPFILEENTRIES)
 		printf("mount_umap: nentries exceeds maximum\n");
+#if 0
 	else
 		printf("reading %d entries\n", nentries);
+#endif
 
 	for(count = 0; count<nentries;count++) {
 		if ((fscanf(fp, "%d %d\n", &(mapdata[count][0]),
@@ -167,8 +169,10 @@ main(argc, argv)
 	fscanf(gfp, "%d\n", &gnentries);
 	if (gnentries > GMAPFILEENTRIES)
 		printf("mount_umap: gnentries exceeds maximum\n");
+#if 0
 	else
 		printf("reading %d group entries\n", gnentries);
+#endif
 
 	for(count = 0; count<gnentries;count++) {
 		if ((fscanf(gfp, "%d %d\n", &(gmapdata[count][0]),
@@ -189,8 +193,10 @@ main(argc, argv)
 	args.gnentries = gnentries;
 	args.gmapdata = &(gmapdata[0][0]);
 
+#if 0
 	printf("calling mount_umap(%s,%d,<%s>)\n",target,mntflags,
 	       args.target);
+#endif
 	if (mount(MOUNT_UMAP, argv[1], mntflags, &args)) {
 		(void)fprintf(stderr, "mount_umap: %s\n", strerror(errno));
 	}
