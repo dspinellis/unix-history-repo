@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)open.c	7.7 (Berkeley) %G%
+ *	@(#)open.c	7.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -216,7 +216,6 @@ getunit(cp)
 /*
  * XXX more stdio-avoidance.
  */
-static
 atoi(cp)
 	char *cp;
 {
