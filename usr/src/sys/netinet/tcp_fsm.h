@@ -1,4 +1,4 @@
-/*	tcp_fsm.h	4.11	81/12/12	*/
+/*	tcp_fsm.h	4.12	81/12/21	*/
 
 /*
  * TCP FSM state definitions.
@@ -24,7 +24,6 @@
 
 #define	TCPS_HAVERCVDSYN(s)	((s) >= TCPS_SYN_RECEIVED)
 #define	TCPS_HAVERCVDFIN(s)	((s) >= TCPS_TIME_WAIT)
-#define	TCPS_OURFINNOTACKED(s)	((s) > TCPS_CLOSE_WAIT && (s) < TCPS_FIN_WAIT_2)
 
 #ifdef	TCPOUTFLAGS
 /*
