@@ -1010,6 +1010,7 @@ mode(f)
 	    tc = &notc2;
 	    noltc2 = oltc;
 	    ltc = &noltc2;
+#if defined(unix)
 	    /*
 	     * If user hasn't specified one way or the other,
 	     * then default to trapping signals.
@@ -1023,6 +1024,9 @@ mode(f)
 	    } else {
 		notc2.t_intrc = notc2.t_quitc = -1;
 	    }
+#else	/* defined(unix) */
+	    notc2.t_intrc = -1;
+#endif	/* defined(unix) */
 	    noltc2.t_suspc = escape;
 	    noltc2.t_dsuspc = -1;
 	    onoff = 1;
@@ -1101,11 +1105,35 @@ willoption(option, reply)
 
 	switch (option) {
 
+	case TELOPT_ECHO:
 #	if defined(TN3270)
+	    /*
+	     * The following is a pain in the rear-end.
+	     * Various IBM servers (some versions of Wiscnet,
+	     * possibly Fibronics/Spartacus, and who knows who
+	     * else) will NOT allow us to send "DO SGA" too early
+	     * in the setup proceedings.  On the other hand,
+	     * 4.2 servers (telnetd) won't set SGA correctly.
+	     * So, we are stuck.  Empirically (but, based on
+	     * a VERY small sample), the IBM servers don't send
+	     * out anything about ECHO, so we postpone our sending
+	     * "DO SGA" until we see "WILL ECHO" (which 4.2 servers
+	     * DO send).
+	     */
+	    {
+		static int askedSGA = 0;
+
+		if (askedSGA == 0) {
+		    askedSGA = 1;
+		    if (!hisopts[TELOPT_SGA]) {
+			willoption(TELOPT_SGA, 0);
+		    }
+		}
+	    }
+		/* Fall through */
 	case TELOPT_EOR:
 	case TELOPT_BINARY:
 #endif	/* defined(TN3270) */
-	case TELOPT_ECHO:
 	case TELOPT_SGA:
 		settimer(modenegotiated);
 		hisopts[option] = 1;
