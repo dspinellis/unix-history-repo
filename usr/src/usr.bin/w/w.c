@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.15 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -525,9 +525,7 @@ readpr()
 	nentries = kvm_getkproc(&kp);
 	pr = (struct pr *)calloc(nentries, sizeof (struct pr));
 	for (i=0; i < nentries; i++, kp++) {
-fprintf(stderr, "kp->kp_pgid %d\n", kp->kp_pgid);
 		p = &kp->kp_proc;
-fprintf(stderr, "p->p_pid %d\n", p->p_pid);
 		/* decide if it's an interesting process */
 		if (p->p_stat==0 || p->p_stat==SZOMB 
 		    || p->p_stat==SSTOP)
@@ -566,11 +564,11 @@ cont:
 		}
 		vstodb(0, CLSIZE, &up.u_smap, &db, 1);
 		pr[np].w_lastpg = dtob(db.db_base);
-		if (kp->kp_tdev == NODEV)
+		if (kp->kp_eproc.kp_tdev == NODEV)
 			continue;
 
 		/* only include a process whose tty has a pgrp which matchs its own */
-		if (kp->kp_pgid != kp->kp_tpgid)
+		if (kp->kp_eproc.kp_pgid != kp->kp_eproc.kp_tpgid)
 			continue;
 
 		/* save the interesting parts */
@@ -584,7 +582,7 @@ cont:
 		    up.u_ru.ru_utime.tv_sec + up.u_ru.ru_stime.tv_sec;
 		pr[np].w_ctime =
 		    up.u_cru.ru_utime.tv_sec + up.u_cru.ru_stime.tv_sec;
-		pr[np].w_tty = kp->kp_tdev;
+		pr[np].w_tty = kp->kp_eproc.kp_tdev;
 		pr[np].w_uid = p->p_uid;
 		strcpy(pr[np].w_comm, p->p_comm, MAXCOMLEN+1);
 		/*
@@ -697,7 +695,7 @@ vstodb(vsbase, vssize, dmp, dbp, rev)
 	}
 	if (*ip <= 0 || *ip + blk > nswap)
 		panic("vstodb *ip");
-	dbp->db_size = min(vssize, blk - vsbase);
+	dbp->db_size = MIN(vssize, blk - vsbase);
 	dbp->db_base = *ip + (rev ? blk - (vsbase + dbp->db_size) : vsbase);
 }
 
@@ -706,12 +704,6 @@ panic(cp)
 {
 
 	/* printf("%s\n", cp); */
-}
-
-min(a, b)
-{
-
-	return (a < b ? a : b);
 }
 
 #define PROCSLOP	(5 * sizeof (struct kinfo_proc))
@@ -728,7 +720,6 @@ kvm_getkproc(bp)
 		return (0);
 	}
 	copysize = ret + PROCSLOP;   /* XXX PROCSLOP should be in header ? */
-	fprintf(stderr, "kinfo: estimated %d, using %d\n", ret, copysize);
 	buff = (char *)malloc(copysize);
 	if (buff == NULL) {
 		fprintf(stderr, "out of memory");
@@ -738,7 +729,6 @@ kvm_getkproc(bp)
 		perror("ktable");
 		return (0);
 	}
-	fprintf(stderr, "kinfo: wanted: %d copied: %d\n", ret, copysize);
 	*bp = buff;
 
 	return (copysize / sizeof (struct kinfo_proc));
