@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_2.c	2.1 83/10/31";
+static	char *sccsid = "@(#)pl_2.c	2.2 83/11/08";
 #endif
 
 #include "player.h"
@@ -100,6 +100,7 @@ play()
 			break;
 		case 'S':
 			dont_adjust = !dont_adjust;
+			draw_turn();
 			break;
 		}
 	}

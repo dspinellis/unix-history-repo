@@ -1,5 +1,5 @@
 /*
- * sccsid = "@(#)player.h	2.2 %G%";
+ * sccsid = "@(#)player.h	2.3 %G%";
  */
 #include <curses.h>
 #include "externs.h"
@@ -21,7 +21,7 @@
 #define BOX_R		(BOX_L+BOX_X-1)
 
 #define TURN_T		BOX_B
-#define TURN_X		7
+#define TURN_X		8
 #define TURN_L		((BOX_L+BOX_R-TURN_X)/2)
 #define TURN_Y		1
 #define TURN_B		(TURN_T+TURN_Y+1)

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_7.c	2.1 83/10/31";
+static	char *sccsid = "@(#)pl_7.c	2.2 83/11/08";
 #endif
 
 #include "player.h"
@@ -224,7 +224,7 @@ draw_view()
 draw_turn()
 {
 	(void) wmove(turn_w, 0, 0);
-	(void) wprintw(turn_w, "Turn %d", turn);
+	(void) wprintw(turn_w, "%cTurn %d", dont_adjust?'*':'-', turn);
 	(void) wrefresh(turn_w);
 }
 
