@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ttgeneric.c	3.17 83/09/17";
+static	char *sccsid = "@(#)ttgeneric.c	3.18 83/12/17";
 #endif
 
 #include "ww.h"
@@ -7,14 +7,12 @@ static	char *sccsid = "@(#)ttgeneric.c	3.17 83/09/17";
 
 char *tgoto();
 
-char gen_frame[16] = {
+short gen_frame[16] = {
 	' ', '|', '-', '+',
 	'|', '|', '+', '+',
 	'-', '+', '-', '+',
 	'+', '+', '+', '+'
 };
-
-char gen_graphics;
 
 char *gen_CM;
 char *gen_IM;
@@ -91,6 +89,14 @@ register new;
 			if (gen_UE)
 				ps(gen_UE);
 	}
+	if (diff & WWM_GRP) {
+		if (new & WWM_GRP) {
+			if (gen_GS)
+				ps(gen_GS);
+		} else
+			if (gen_GE)
+				ps(gen_GE);
+	}
 	tt.tt_modes = new;
 }
 
@@ -117,25 +123,14 @@ register char c;
 		gen_setinsert(tt.tt_ninsert);
 	if (tt.tt_nmodes != tt.tt_modes)
 		gen_setmodes(tt.tt_nmodes);
-	if (c & 0x80) {
-		if (gen_GS != 0 && !gen_graphics) {
-			gen_graphics = 1;
-			ps(gen_GS);
-		}
-	} else {
-		if (gen_GE != 0 && gen_graphics) {
-			gen_graphics = 0;
-			ps(gen_GE);
-		}
-	}
 	if (tt.tt_insert) {
 		if (gen_IC)
 			tt_tputs(gen_IC, gen_CO - tt.tt_col);
-		putchar(c & 0x7f);
+		putchar(c);
 		if (gen_IP)
 			tt_tputs(gen_IP, gen_CO - tt.tt_col);
 	} else
-		putchar(c & 0x7f);
+		putchar(c);
 	if (++tt.tt_col == gen_CO)
 		if (gen_AM)
 			tt.tt_col = 0, tt.tt_row++;
@@ -153,40 +148,17 @@ register n;
 		gen_setmodes(tt.tt_nmodes);
 	if (tt.tt_insert) {
 		while (--n >= 0) {
-			if (*p & 0x80) {
-				if (gen_GS != 0 && !gen_graphics) {
-					gen_graphics = 1;
-					ps(gen_GS);
-				}
-			} else {
-				if (gen_GE != 0 && gen_graphics) {
-					gen_graphics = 0;
-					ps(gen_GE);
-				}
-			}
 			if (gen_IC)
 				tt_tputs(gen_IC, gen_CO - tt.tt_col);
-			putchar(*p++ & 0x7f);
+			putchar(*p++);
 			if (gen_IP)
 				tt_tputs(gen_IP, gen_CO - tt.tt_col);
 			tt.tt_col++;
 		}
 	} else {
 		tt.tt_col += n;
-		while (--n >= 0) {
-			if (*p & 0x80) {
-				if (gen_GS != 0 && !gen_graphics) {
-					gen_graphics = 1;
-					ps(gen_GS);
-				}
-			} else {
-				if (gen_GE != 0 && gen_graphics) {
-					gen_graphics = 0;
-					ps(gen_GE);
-				}
-			}
-			putchar(*p++ & 0x7f);
-		}
+		while (--n >= 0)
+			putchar(*p++);
 	}
 	if (tt.tt_col == gen_CO)
 		if (gen_AM)
@@ -253,7 +225,6 @@ gen_init()
 	tt.tt_col = tt.tt_row = 0;
 	tt.tt_ninsert = tt.tt_insert = 0;
 	tt.tt_nmodes = tt.tt_modes = 0;
-	gen_graphics = 0;
 }
 
 gen_end()
