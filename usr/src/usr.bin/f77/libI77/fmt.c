@@ -1,5 +1,5 @@
 /*
-char id_fmt[] = "@(#)fmt.c	1.7";
+char id_fmt[] = "@(#)fmt.c	1.8";
  *
  * fortran format parser
  */
