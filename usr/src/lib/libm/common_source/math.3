@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)math.3	6.5 (Berkeley) %G%
+.\"	@(#)math.3	6.6 (Berkeley) %G%
 .\"
 .TH INTRO 3M ""
 .UC 4
@@ -17,13 +17,12 @@
 .SH NAME
 intro \- introduction to mathematical library functions
 .SH DESCRIPTION
-These functions constitute the math library,
+These functions constitute the C math library,
 .I libm.
-They are automatically loaded as needed by the Fortran compiler
-.IR f77 (1).
 The link editor searches this library under the \*(lq\-lm\*(rq option.
 Declarations for these functions may be obtained from the include file
 .RI < math.h >.
+The Fortran math library is described in ``man 3f intro''.
 .SH "LIST OF FUNCTIONS"
 .sp 2
 .nf
