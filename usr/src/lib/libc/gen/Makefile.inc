@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.49 (Berkeley) %G%
+#	@(#)Makefile.inc	5.50 (Berkeley) %G%
 
 # machine-independent gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen
@@ -8,7 +8,7 @@ SRCS+=	alarm.c assert.c clock.c closedir.c confstr.c crypt.c ctermid.c \
 	fnmatch.c frexp.c fstab.c fts.c getcap.c getcwd.c getgrent.c \
 	getgrouplist.c gethostname.c getloadavg.c getlogin.c getmntinfo.c \
 	getnetgrent.c getpagesize.c getpass.c getpwent.c getttyent.c \
-	getusershell.c glob.c initgroups.c isatty.c isctype.c isinf.c \
+	getusershell.c glob.c initgroups.c isatty.c isinf.c \
 	nice.c nlist.c opendir.c pause.c popen.c psignal.c pwcache.c \
 	raise.c readdir.c rewinddir.c scandir.c seekdir.c sethostname.c \
 	setjmperr.c setmode.c siginterrupt.c siglist.c signal.c sigsetops.c \
@@ -27,20 +27,17 @@ errlst.o errlst.po:
 	rm -f errlst.s
 .endif
 
-MAN3+=	alarm.0 clock.0 confstr.0 crypt.0 ctermid.0 ctime.0 ctype.0 \
-	daemon.0 directory.0 err.0 exec.0 fnmatch.0 frexp.0 fts.0 getcap.0 \
+MAN3+=	alarm.0 clock.0 confstr.0 crypt.0 ctermid.0 ctime.0 daemon.0 \
+	directory.0 err.0 exec.0 fnmatch.0 frexp.0 fts.0 getcap.0 \
 	getcwd.0 getdiskbyname.0 getfsent.0 getgrent.0 getgrouplist.0 \
 	gethostname.0 getloadavg.0 getmntinfo.0 getnetgrent.0 \
 	getpagesize.0 getpass.0 getpwent.0 getttyent.0 getusershell.0 \
-	glob.0 initgroups.0 isalnum.0 isalpha.0 isascii.0 isblank.0 \
-	iscntrl.0 isdigit.0 isgraph.0 isinf.0 islower.0 isprint.0 \
-	ispunct.0 isspace.0 isupper.0 isxdigit.0 ldexp.0 modf.0 nice.0 \
-	nlist.0 pause.0 popen.0 psignal.0 pwcache.0 raise.0 \
-	scandir.0 setjmp.0 setmode.0 siginterrupt.0 signal.0 sigsetops.0 \
-	sleep.0 sysconf.0 sysctl.0 syslog.0 tcgetpgrp.0 tcsendbreak.0 \
-	tcsetattr.0 tcsetpgrp.0 time.0 times.0 timezone.0 toascii.0 \
-	tolower.0 toupper.0 ttyname.0 tzset.0 ualarm.0 unvis.0 usleep.0 \
-	utime.0 valloc.0 vis.0
+	glob.0 initgroups.0 isinf.0 ldexp.0 modf.0 nice.0 nlist.0 pause.0 \
+	popen.0 psignal.0 pwcache.0 raise.0 scandir.0 setjmp.0 setmode.0 \
+	siginterrupt.0 signal.0 sigsetops.0 sleep.0 sysconf.0 sysctl.0 \
+	syslog.0 tcgetpgrp.0 tcsendbreak.0 tcsetattr.0 tcsetpgrp.0 \
+	time.0 times.0 timezone.0 ttyname.0 tzset.0 ualarm.0 unvis.0 \
+	usleep.0 utime.0 valloc.0 vis.0
 
 MLINKS=	crypt.3 encrypt.3 crypt.3 setkey.3
 MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
