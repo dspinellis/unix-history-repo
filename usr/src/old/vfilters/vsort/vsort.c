@@ -1,3 +1,13 @@
+/*
+ * Copyright (c) 1983 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ */
+
+#ifndef lint
+static char sccsid[] = "@(#)vsort.c	1.2 (Berkeley) %G%";
+#endif /* not lint */
+
 # include <stdio.h>
 /*
  * vsort - Sort troff output for versatec to reduce amount of reverse leading
