@@ -1,6 +1,13 @@
-/*	@(#)input-scrub.c	6.3 (Berkeley) %G%
+/*-
+ * This code is derived from software copyrighted by the Free Software
+ * Foundation.
+ *
+ * Modified 1991 by Donn Seeley at UUNET Technologies, Inc.
+ */
 
-Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
+#ifndef lint
+static char sccsid[] = "@(#)input-scrub.c	6.4 (Berkeley) %G%";
+#endif /* not lint */
 
 /* input_scrub.c - layer between app and the rest of the world
    Copyright (C) 1987 Free Software Foundation, Inc.

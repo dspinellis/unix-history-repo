@@ -1,6 +1,13 @@
-/*	@(#)i386.c	6.3 (Berkeley) %G%
+/*-
+ * This code is derived from software copyrighted by the Free Software
+ * Foundation.
+ *
+ * Modified 1991 by Donn Seeley at UUNET Technologies, Inc.
+ */
 
-Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
+#ifndef lint
+static char sccsid[] = "@(#)i386.c	6.4 (Berkeley) %G%";
+#endif /* not lint */
 
 /* i386.c -- Assemble code for the Intel 80386
    Copyright (C) 1989, Free Software Foundation.
