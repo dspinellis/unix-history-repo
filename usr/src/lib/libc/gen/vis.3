@@ -13,62 +13,116 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)vis.3	5.3 (Berkeley) %G%
+.\"	@(#)vis.3	5.4 (Berkeley) %G%
 .\"
-.TH CENCODE 3 ""
+.TH VIS 3 ""
 .UC 7
 .SH NAME
-cencode, cdecode \- encode (decode) non-printing characters
+vis \- visually encode characters
 .SH SYNOPSIS
 .nf
 .ft B
-#include <cencode.h>
+#include <vis.h>
 
-char *cencode(character, cflag)
-char character;
+char *vis(dst, c, flag, nextc)
+char *dst, c, nextc;
 int flag;
 
-cdecode(character, store, dflag)
-char character, *store;
+int strvis(dst, src, flag)
+char *dst, *src;
 int flag;
+
+int strvisx(dst, src, len, flag)
+char *dst, *src;
+int len, flag;
+
 .ft R
 .fi
 .SH DESCRIPTION
-.I Cencode
-converts a non-printing character into a printable, invertible
-representation;
-.I cdecode
-converts that representation back into the original character.
-These functions are useful for filtering a stream of characters to
-and from a visual representation.
+.I Vis
+copies into dst a string which represents the character c.  If
+c needs no encoding, it is copied in unaltered.  The string is
+null terminated, and a pointer to the end of the string is
+returned.  The maximum length of any visual encoding is four
+characters (not including the trailing NULL); thus, when
+encoding a set of characters into a buffer, the size of the buffer should
+be four times the number of characters encoded (plus one for the last NULL).
+The flag parameter is used for altering the default range of
+characters considered for encoding and for altering the visual
+representation.
+The additional character, nextc, is only used when selecting the
+VIS_CSTYLE encoding format (explained below).
 .PP
-.I Cencode
-returns a pointer to a string that contains the printable
-representation of the character passed as the argument
-.IR character .
-By default,
-.I cencode
-considers characters selected by
-.IR isgraph (3),
-space, tab, and newline to be printable characters.
+Strvis and strvisx copy into dst a visual representation of
+the string src.  Strvis encodes characters from src up to the
+first NULL.  Strvisx encodes exactly len characters from src (this
+is useful for encoding a block of data that may contain NULL's).
+Both forms NULL terminate dst.  Dst must be four times the number
+of characters encoded from src (plus one for the NULL).  Both
+forms return the number of characters in dst (not including
+the trailing NULL).
 .PP
-There are three possible forms of representation, as specified by the
-.I cflags
-argument.
+The encoding is a unique, invertible representation comprised entirely of
+graphic characters; it can be decoded back into the original form using 
+the unvis(3) or strunvis(3) functions.
+.PP
+There are two parameters that can be controlled: the range of
+characters that are encoded, and the type
+of representation used.  
+By default, all non-graphic characters
+except space, tab, and newline are encoded.  The following flags
+alter this:
+.TP
+VIS_SP
+Also encode space.
+.TP
+VIS_TAB		
+Also encode tab.
+.TP
+VIS_NL
+Also encode newline.
+.TP
+VIS_WHITE	
+Synonym for VIS_SP | VIS_TAB | VIS_NL.
+.TP
+VIS_SAFE	
+Only encode "unsafe" characters.  Unsafe means control
+characters which may cause common terminals to perform
+unexpected functions.  Currently this form allows space,
+tab, newline, backspace, bell, and return - in addition
+to all graphic characters - unencoded. 
+.PP
+There are three forms of representation.
 All forms use the backslash character (``\e'') to introduce a special
 sequence; two backslashes are used to represent a real backslash.
-.I Cflags
-is specified by
-.IR or 'ing
-one or more of the following values:
+These are the visual formats:
 .TP
-CENC_WHITE
-Setting
-.I CENC_WHITE
-in
-.I cflag
-causes space, tab, and newline characters to be considered non-printable,
-and therefore encoded.
+(default)
+Use an ``M'' to represent meta characters (characters with the 8th
+bit set), and use carat (``^'') to represent control characters see
+(\fIiscntrl\fP(3)).
+The following formats are used:
+.RS
+.TP
+\e^C
+Represents the control character ``C''.
+Spans characters \e000 through \e037, and \e177 (as \e^?).
+.TP
+\eM-C
+Represents character ``C'' with the 8th bit set.
+Spans characters \e241 through \e376.
+.TP
+\eM^C
+Represents control character ``C'' with the 8th bit set.
+Spans characters \e200 through \e237, and \e377 (as \eM^?).
+.TP
+\e040
+Represents ACSII space.
+.TP
+\e240
+Represents Meta-space.
+.sp
+.RE
 .TP
 CENC_CSTYLE
 Use C-style backslash sequences to represent standard non-printable
@@ -83,149 +137,22 @@ The following sequences are used to represent the indicated characters:
 \er   - CR  (015)
 \et   - HT  (011)
 \ev   - VT  (013)
-\e000 - NUL (000)
+\e0   - NUL (000)
 .fi
 .sp
-These are the only characters that are converted using
-.IR CENC_CSTYLE .
-The more familiar abbreviation of ``\e0'' for NULL cannot be used
-as it could be confused with other octal numbers if the sequence
-preceded other digits.
+When using this format, the nextc parameter is looked at to determine
+if a NULL character can be encoded as ``\e0'' instead of ``\e000''.
+If nextc is an octal digit, the latter representation is used to
+avoid ambiguity.
 .TP
-CENC_GRAPH
-Use an ``M'' to represent meta characters (characters with the 8th
-bit set), and use carat (``^'') to represent control characters see
-(\fIiscntrl\fP(3)).
-The following formats are used:
-.RS
-.TP
-\e^C
-Represents the control character ``C''.
-Spans characters \e000 through \e037, and \e0177 (as ``\e^?'').
-.TP
-\eM-C
-Represents character ``C'' with the 8th bit set.
-Spans characters \e0240 (\e0241 if
-.I CENC_WHITE
-is set) through \e0376.
-.TP
-\eM^C
-Represents control character ``C'' with the 8th bit set.
-Spans characters \e0200 through \e0237, and \e0377 (as ``\eM^?'').
-.sp
-.RE
-.RS
-The only characters that cannot be displayed using
-.I CDEC_GRAPH
-are space and meta-space, and only when
-.I CENC_WHITE
-is set.
-.RE
-.TP
-CENC_OCTAL
+VIS_OCTAL
 Use a three digit octal sequence.  The form is ``\eddd'' where
 d represents an octal digit.
-All non-printing characters may be displayed in this form.
 .PP
-If the supplied character could not be encoded (because the selected
-formats were unable encode that character) it is placed in the return
-string unaltered.
-Note that if NULL's are not encoded, it is placed in the string as two
-NULL's.
-If the caller expects to encounter this situation, it suffices to always
-extract one character from the returned string before checking for NULL.
-If
-.I CENC_OCTAL
-is selected, in addition to any other formats, this situation can never
-arise.
-.PP
-Calling
-.I cencode
-with no requested formats results in no encoding being done; however,
-backslashes are still doubled.
-.PP
-.I Cdecode
-is used decode data encoded by
-.IR cencode .
-Characters are passed to
-.I cdecode
-until the decoder recognizes a character to return.
-.I Dflags
-is specified by
-.IR or 'ing
-one or more of the following values:
-.TP
-CDEC_HAT
-Treat the carat (``^'') character specially, i.e. decode the sequence
-``^C'' as the control character ``C''.
-This is separate from the sequence ``\e^C'' as output by
-.I cencode
-with the
-.I CENC_GRAPH
-flag set as it does not require the preceding backslash character.
-.TP
-CDEC_END
-Reset the state of the decoder to the initial state, and flush out
-any characters have been retained in the decoder.
-.PP
-There are five possible return values from
-.IR cdecode :
-.TP
-CDEC_NEEDMORE
-The decoder has not yet recognized a control sequence; supply it
-with more characters.
-.TP
-CDEC_NOCHAR
-A valid sequence which did not result in a character was decoded.
-.TP
-CDEC_OK
-A character was recognized and has been placed in the location
-pointed to by
-.IR store .
-.TP
-CDEC_OKPUSH
-A character was recognized and has been placed in the location
-pointed to by
-.IR store ;
-however, the character that was just supplied to
-.I cdecode
-has not yet been used.
-When processing a stream of characters, the current character should be
-supplied to
-.I cdecode
-again.
-.TP
-CDEC_SYNBAD
-An unrecognized backslash sequence was detected.
-The decoder was automatically reset to a normal state.
-All characters since the last un-escaped backslash character constitute
-the unrecognized sequence.
-The following code fragment illustrates the use of
-.IR cdecode :
-.PP
-.nf
-int ch;
-char nc;
-
-while ((ch = getchar()) != EOF) {
-again:
-	switch(cdecode((char)ch, &nc, 0)) {
-	case CDEC_NEEDMORE:
-	case CDEC_NOCHAR:
-		break;
-	case CDEC_OK:
-		(void)putchar(nc);
-		break;
-	case CDEC_OKPUSH:
-		(void)putchar(nc);
-		goto again;
-	case CDEC_SYNBAD:
-		(void)fprintf(stderr, "bad sequence!\n");
-		exit(1);
-	}
-}
-if (cdecode((char)0, &nc, CDEC_END) == CDEC_OK)
-	(void)putchar(nc);
-.fi
+There is one additional flag, VIS_NOSLASH, which inhibits the
+doubling of backslashes and the backslash before the default
+format (that is, control characters are represented by ^C and
+meta characters as M-C).  With this flag set, the encoding is
+ambiguous and non-invertible.
 .SH "SEE ALSO"
-vis(1)
+vis(1), unvis(1), unvis(3)
