@@ -1,4 +1,4 @@
-/*	hgraph.c	1.9	(Berkeley) 83/10/13
+/*	hgraph.c	1.10	(Berkeley) 83/11/02
  *
  *     This file contains the graphics routines for converting gremlin
  * pictures to troff input.
@@ -16,11 +16,10 @@
 extern int style[];	/* line and character styles */
 extern int thick[];
 extern char *tfont[];
-extern char *tsize[];
+extern int tsize[];
 
 
-extern double scale;		/* imports from main.c */
-extern double troffscale;
+extern double troffscale;	/* imports from main.c */
 extern point();
 extern int linethickness;
 extern int linmod;
@@ -206,7 +205,7 @@ int angle;
 HGSetFont(font, size)
 int font, size;
 {
-    printf(".ft %s\n.ps %s\n", tfont[font-1], tsize[size-1]);
+    printf(".ft %s\n.ps %d\n", tfont[font-1], tsize[size-1]);
 }
 
 
