@@ -5,144 +5,132 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)itime.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)itime.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "dump.h"
 #include <sys/file.h>
 #include <errno.h>
 
-char *
-prdate(d)
-	time_t d;
-{
-	char *p;
+struct	dumpdates **ddatev = 0;
+int	nddates = 0;
+int	ddates_in = 0;
+struct	dumptime *dthead = 0;
 
-	if(d == 0)
-		return("the epoch");
-	p = ctime(&d);
-	p[24] = 0;
-	return(p);
-}
-
-struct	idates	**idatev = 0;
-int	nidates = 0;
-int	idates_in = 0;
-struct	itime	*ithead = 0;
-
-void	readitimes();
+void	readdumptimes();
 int	getrecord();
-int	makeidate();
+int	makedumpdate();
 
-static void recout();
+static void dumprecout();
 
 void
-inititimes()
+initdumptimes()
 {
 	FILE *df;
 
-	if ((df = fopen(increm, "r")) == NULL) {
+	if ((df = fopen(dumpdates, "r")) == NULL) {
 		if (errno == ENOENT) {
-			msg("WARNING: no file `%s'\n", increm);
+			msg("WARNING: no file `%s'\n", dumpdates);
 			return;
 		}
-		quit("cannot read %s: %s\n", increm, strerror(errno));
+		quit("cannot read %s: %s\n", dumpdates, strerror(errno));
 		/* NOTREACHED */
 	}
 	(void) flock(fileno(df), LOCK_SH);
-	readitimes(df);
+	readdumptimes(df);
 	fclose(df);
 }
 
 void
-readitimes(df)
+readdumptimes(df)
 	FILE *df;
 {
-	register	int	i;
-	register	struct	itime	*itwalk;
+	register int i;
+	register struct	dumptime *dtwalk;
 
 	for (;;) {
-		itwalk = (struct itime *)calloc(1, sizeof (struct itime));
-		if (getrecord(df, &(itwalk->it_value)) < 0)
+		dtwalk = (struct dumptime *)calloc(1, sizeof (struct dumptime));
+		if (getrecord(df, &(dtwalk->dt_value)) < 0)
 			break;
-		nidates++;
-		itwalk->it_next = ithead;
-		ithead = itwalk;
+		nddates++;
+		dtwalk->dt_next = dthead;
+		dthead = dtwalk;
 	}
 
-	idates_in = 1;
+	ddates_in = 1;
 	/*
 	 *	arrayify the list, leaving enough room for the additional
-	 *	record that we may have to add to the idate structure
+	 *	record that we may have to add to the ddate structure
 	 */
-	idatev = (struct idates **)calloc(nidates + 1,sizeof (struct idates *));
-	itwalk = ithead;
-	for (i = nidates - 1; i >= 0; i--, itwalk = itwalk->it_next)
-		idatev[i] = &itwalk->it_value;
+	ddatev = (struct dumpdates **)
+		calloc(nddates + 1, sizeof (struct dumpdates *));
+	dtwalk = dthead;
+	for (i = nddates - 1; i >= 0; i--, dtwalk = dtwalk->dt_next)
+		ddatev[i] = &dtwalk->dt_value;
 }
 
 void
-getitime()
+getdumptime()
 {
-	register	struct	idates	*ip;
-	register	int	i;
-			char	*fname;
+	register struct dumpdates *ddp;
+	register int i;
+	char *fname;
 
 	fname = disk;
 #ifdef FDEBUG
-	msg("Looking for name %s in increm = %s for delta = %c\n",
-		fname, increm, incno);
+	msg("Looking for name %s in dumpdates = %s for level = %c\n",
+		fname, dumpdates, level);
 #endif
 	spcl.c_ddate = 0;
-	lastincno = '0';
+	lastlevel = '0';
 
-	inititimes();
+	initdumptimes();
 	/*
 	 *	Go find the entry with the same name for a lower increment
 	 *	and older date
 	 */
-	ITITERATE(i, ip) {
-		if (strncmp(fname, ip->id_name, sizeof (ip->id_name)) != 0)
+	ITITERATE(i, ddp) {
+		if (strncmp(fname, ddp->dd_name, sizeof (ddp->dd_name)) != 0)
 			continue;
-		if (ip->id_incno >= incno)
+		if (ddp->dd_level >= level)
 			continue;
-		if (ip->id_ddate <= spcl.c_ddate)
+		if (ddp->dd_ddate <= spcl.c_ddate)
 			continue;
-		spcl.c_ddate = ip->id_ddate;
-		lastincno = ip->id_incno;
+		spcl.c_ddate = ddp->dd_ddate;
+		lastlevel = ddp->dd_level;
 	}
 }
 
 void
-putitime()
+putdumptime()
 {
-	FILE		*df;
-	register	struct	idates	*itwalk;
-	register	int	i;
-	int		fd;
-	char		*fname;
+	FILE *df;
+	register struct dumpdates *dtwalk;
+	register int i;
+	int fd;
+	char *fname;
 
 	if(uflag == 0)
 		return;
-	if ((df = fopen(increm, "r+")) == NULL)
-		quit("cannot rewrite %s: %s\n", increm, strerror(errno));
+	if ((df = fopen(dumpdates, "r+")) == NULL)
+		quit("cannot rewrite %s: %s\n", dumpdates, strerror(errno));
 	fd = fileno(df);
 	(void) flock(fd, LOCK_EX);
 	fname = disk;
-	free(idatev);
-	idatev = 0;
-	nidates = 0;
-	ithead = 0;
-	idates_in = 0;
-	readitimes(df);
+	free(ddatev);
+	ddatev = 0;
+	nddates = 0;
+	dthead = 0;
+	ddates_in = 0;
+	readdumptimes(df);
 	if (fseek(df, 0L, 0) < 0)
 		quit("fseek: %s\n", strerror(errno));
 	spcl.c_ddate = 0;
-	ITITERATE(i, itwalk) {
-		if (strncmp(fname, itwalk->id_name,
-				sizeof (itwalk->id_name)) != 0)
+	ITITERATE(i, dtwalk) {
+		if (strncmp(fname, dtwalk->dd_name,
+				sizeof (dtwalk->dd_name)) != 0)
 			continue;
-		if (itwalk->id_incno != incno)
+		if (dtwalk->dd_level != level)
 			continue;
 		goto found;
 	}
@@ -150,57 +138,58 @@ putitime()
 	 *	construct the new upper bound;
 	 *	Enough room has been allocated.
 	 */
-	itwalk = idatev[nidates] =
-		(struct idates *)calloc(1, sizeof(struct idates));
-	nidates += 1;
+	dtwalk = ddatev[nddates] =
+		(struct dumpdates *)calloc(1, sizeof(struct dumpdates));
+	nddates += 1;
   found:
-	(void) strncpy(itwalk->id_name, fname, sizeof (itwalk->id_name));
-	itwalk->id_incno = incno;
-	itwalk->id_ddate = spcl.c_date;
+	(void) strncpy(dtwalk->dd_name, fname, sizeof (dtwalk->dd_name));
+	dtwalk->dd_level = level;
+	dtwalk->dd_ddate = spcl.c_date;
 
-	ITITERATE(i, itwalk) {
-		recout(df, itwalk);
+	ITITERATE(i, dtwalk) {
+		dumprecout(df, dtwalk);
 	}
 	if (fflush(df))
-		quit("%s: %s\n", increm, strerror(errno));
+		quit("%s: %s\n", dumpdates, strerror(errno));
 	if (ftruncate(fd, ftell(df)))
-		quit("ftruncate (%s): %s\n", increm, strerror(errno));
+		quit("ftruncate (%s): %s\n", dumpdates, strerror(errno));
 	(void) fclose(df);
-	msg("level %c dump on %s\n", incno, prdate(spcl.c_date));
+	msg("level %c dump on %s", level,
+		spcl.c_date == 0 ? "the epoch\n" : ctime(&spcl.c_date));
 }
 
 static void
-recout(file, what)
-	FILE	*file;
-	struct	idates	*what;
+dumprecout(file, what)
+	FILE *file;
+	struct dumpdates *what;
 {
 
 	if (fprintf(file, DUMPOUTFMT,
-		    what->id_name,
-		    what->id_incno,
-		    ctime(&what->id_ddate)) < 0)
-		quit("%s: %s\n", increm, strerror(errno));
+		    what->dd_name,
+		    what->dd_level,
+		    ctime(&what->dd_ddate)) < 0)
+		quit("%s: %s\n", dumpdates, strerror(errno));
 }
 
 int	recno;
 int
-getrecord(df, idatep)
-	FILE	*df;
-	struct	idates	*idatep;
+getrecord(df, ddatep)
+	FILE *df;
+	struct dumpdates *ddatep;
 {
-	char		buf[BUFSIZ];
+	char buf[BUFSIZ];
 
 	recno = 0;
 	if ( (fgets(buf, BUFSIZ, df)) != buf)
 		return(-1);
 	recno++;
-	if (makeidate(idatep, buf) < 0)
+	if (makedumpdate(ddatep, buf) < 0)
 		msg("Unknown intermediate format in %s, line %d\n",
-			increm, recno);
+			dumpdates, recno);
 
 #ifdef FDEBUG
-	msg("getrecord: %s %c %s\n",
-		idatep->id_name, idatep->id_incno, prdate(idatep->id_ddate));
+	msg("getrecord: %s %c %s", ddatep->dd_name, ddatep->dd_level,
+	    ddatep->dd_ddate == 0 ? "the epoch\n" : ctime(&ddatep->dd_ddate));
 #endif
 	return(0);
 }
@@ -208,15 +197,15 @@ getrecord(df, idatep)
 time_t	unctime();
 
 int
-makeidate(ip, buf)
-	struct	idates	*ip;
-	char	*buf;
+makedumpdate(ddp, buf)
+	struct dumpdates *ddp;
+	char *buf;
 {
-	char	un_buf[128];
+	char un_buf[128];
 
-	sscanf(buf, DUMPINFMT, ip->id_name, &ip->id_incno, un_buf);
-	ip->id_ddate = unctime(un_buf);
-	if (ip->id_ddate < 0)
+	sscanf(buf, DUMPINFMT, ddp->dd_name, &ddp->dd_level, un_buf);
+	ddp->dd_ddate = unctime(un_buf);
+	if (ddp->dd_ddate < 0)
 		return(-1);
 	return(0);
 }
