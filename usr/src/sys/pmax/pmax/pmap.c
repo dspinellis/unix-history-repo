@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.c	7.9 (Berkeley) %G%
+ *	@(#)pmap.c	7.10 (Berkeley) %G%
  */
 
 /*
@@ -1451,7 +1451,7 @@ pmap_alloc_tlbpid(p)
 		 * Have to find a tlbpid to recycle.
 		 * There is probably a better way to do this.
 		 */
-		for (q = allproc; q != NULL; q = q->p_nxt) {
+		for (q = (struct proc *)allproc; q != NULL; q = q->p_nxt) {
 			q_pmap = &q->p_vmspace->vm_pmap;
 			if ((id = q_pmap->pm_tlbpid) < 0)
 				continue;
