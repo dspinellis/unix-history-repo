@@ -1,0 +1,27 @@
+Thu Apr 19 12:17:29 PST 1979
+
+This shell needs a printf which prints through putchar like it used to.
+The printf.c in this dir hacks one from the stdio printf without dragging
+in all the stdio stuff.  It should work on most systems which only have stdio.
+Some early versions of stdio have a "strout" whose first 2 arguments are
+reversed.  Check this before you run the shell.
+
+The getpw*.c stuff here is simply to keep from dragging in all the data space
+from the stdio stuff (an input buffer, output buffer, file structs, etc)
+since the shell does its own i/o anyways because of the way
+it parses in loops.  If you don't care about more data space you dont need
+to take these.
+
+For the debugging "alloc" command to work it needs to work its
+way through the alloc list.  A modified version of alloc which does this
+is in this directory.  If you wish you can simply get rid of the "alloc"
+command and not define "debug" in makefile.
+
+For the shell to coexist with another shell you can define OTHERSH
+in sh.local.h as, e.g. "/bin/sh".  If a file which purports to be a shell
+script doesn't start with a `#' this other shell interprets it.
+If necessary a longer string than just `#' could easily be used.
+If OTHERSH is not defined then this hack doesn't occur.
+For full sanity complementary code should be placed in OTHERSH!
+
+Look at sh.local.h for other things which you may need/want to change.
