@@ -1,4 +1,4 @@
-#	@(#)TODO	5.7 (Berkeley) %G%
+#	@(#)TODO	5.8 (Berkeley) %G%
 
 NOTE: Changed the lookup on a page of inodes to search from the back
 in case the same inode gets written twice on the same page.
@@ -41,8 +41,11 @@ Keith:
 		to be written?  (Different numbering of indirect blocks.)
 
 Margo:
-	Fix the use of the dinode spare field to use the generation number
-		instead.
+	Change so that only search one sector of inode block file for the
+		inode by using sector addresses in the ifile instead of
+		logical disk addresses.
+	Fix the use of the ifile version field to use the generation
+		number instead.
 *	Unmount; not doing a bgetvp (VHOLD) in lfs_newbuf call.
 	Document in the README file where the checkpoint information is
 		on disk.
