@@ -64,6 +64,7 @@ tputs(cp, affcnt, outc)
 {
 	register int i = 0;
 	register int mspc10;
+	int speed;
 
 	if (cp == 0)
 		return;
@@ -107,8 +108,12 @@ tputs(cp, affcnt, outc)
 	 */
 	if (i == 0)
 		return;
-	if (ospeed <= 0 || ospeed >= (sizeof tmspc10 / sizeof tmspc10[0]))
+	if (ospeed <= 0)
 		return;
+	if (ospeed >= (sizeof tmspc10 / sizeof tmspc10[0]))
+		speed = (sizeof tmspc10 / sizeof tmspc10[0]) - 1;
+	else
+		speed = ospeed;
 
 	/*
 	 * Round up by a half a character frame,
@@ -117,7 +122,7 @@ tputs(cp, affcnt, outc)
 	 * Transmitting pad characters slows many
 	 * terminals down and also loads the system.
 	 */
-	mspc10 = tmspc10[ospeed];
+	mspc10 = tmspc10[speed];
 	i += mspc10 / 2;
 	for (i /= mspc10; i > 0; i--)
 		(*outc)(PC);
