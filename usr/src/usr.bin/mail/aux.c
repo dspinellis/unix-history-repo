@@ -11,7 +11,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	1.4 %G%";
+static char *SccsId = "@(#)aux.c	1.5 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -508,10 +508,12 @@ blankline(linebuf)
 
 /*
  * Fetch the sender's name from the passed message.
+ * If fetching this name for replying purposes, do not
+ * return sender:
  */
 
 char *
-nameof(mp)
+nameof(mp, reply)
 	register struct message *mp;
 {
 	char namebuf[LINESIZE];
@@ -520,7 +522,11 @@ nameof(mp)
 	register FILE *ibuf;
 	int first = 1;
 
-	if ((cp = hfield("reply-to", mp)) != NOSTR) {
+	if ((cp = hfield("from", mp)) != NOSTR) {
+		strcpy(namebuf, cp);
+		return(savestr(namebuf));
+	}
+	if (!reply && (cp = hfield("sender", mp)) != NOSTR) {
 		strcpy(namebuf, cp);
 		return(savestr(namebuf));
 	}
