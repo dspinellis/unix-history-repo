@@ -11,12 +11,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 
 #if	defined(unix)
+#include <signal.h>
 /* By the way, we need to include curses.h before telnet.h since,
  * among other things, telnet.h #defines 'DO', which is a variable
  * declared in curses.h.
@@ -373,7 +374,7 @@ suboption()
 }
 
 
-static int
+int
 telrcv()
 {
     register int c;
@@ -418,7 +419,7 @@ telrcv()
 	case TS_DATA:
 	    if (c == IAC) {
 		telrcv_state = TS_IAC;
-		continue;
+		break;
 	    }
 #	    if defined(TN3270)
 	    if (In3270) {
@@ -427,7 +428,7 @@ telrcv()
 		    c = *sbp++ & 0377, scc--; count++;
 		    if (c == IAC) {
 			telrcv_state = TS_IAC;
-			break;
+			continue;
 		    }
 		    *Ifrontp++ = c;
 		}
@@ -764,7 +765,7 @@ int	block;			/* should we block in the select ? */
     if (ring_full_count(&ttyiring)) {
 #   if defined(TN3270)
 	if (In3270) {
-	    c = DataFromTerminal(ttyiring.send,
+	    c = DataFromTerminal(ttyiring.consume,
 					ring_full_consecutive(&ttyiring));
 	    if (c) {
 		returnValue = 1;
@@ -843,7 +844,7 @@ telnet()
 		/* If there is data waiting to go out to terminal, don't
 		 * schedule any more data for the terminal.
 		 */
-	if (tfrontp-tbackp) {
+	if (ring_full_count(ttyoring)) {
 	    schedValue = 1;
 	} else {
 	    if (shell_active) {
