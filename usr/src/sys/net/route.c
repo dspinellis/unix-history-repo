@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	7.25 (Berkeley) %G%
+ *	@(#)route.c	7.26 (Berkeley) %G%
  */
 #include "param.h"
 #include "systm.h"
@@ -103,11 +103,24 @@ rtfree(rt)
 	rt->rt_refcnt--;
 	if (rt->rt_refcnt <= 0 && (rt->rt_flags & RTF_UP) == 0) {
 		rttrash--;
+		ifa = rt->rt_ifa;
 		if (rt->rt_nodes->rn_flags & (RNF_ACTIVE | RNF_ROOT))
 			panic ("rtfree 2");
 		Free(rt_key(rt));
 		Free(rt);
+		IFAFREE(ifa);
 	}
+}
+
+void
+ifafree(ifa)
+	register struct ifaddr *ifa;
+{
+	if (ifa == 0)
+		panic("ifafree");
+	ifa->ifa_refcnt--;
+	if (ifa->ifa_refcnt <= 0 && (ifa->ifa_flags & IFA_ROUTE) == 0)
+		free((caddr_t)ifa, M_IFADDR);
 }
 
 /*
@@ -391,6 +404,7 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 			Free(rt);
 			senderr(EEXIST);
 		}
+		ifa->ifa_refcnt++;
 		rt->rt_ifa = ifa;
 		rt->rt_ifp = ifa->ifa_ifp;
 		if (req == RTM_RESOLVE)
