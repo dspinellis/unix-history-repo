@@ -1,4 +1,4 @@
-#	@(#)Makefile.inc	5.4 (Berkeley) %G%
+#	@(#)Makefile.inc	5.5 (Berkeley) %G%
 
 # gen sources
 .PATH: ${.CURDIR}/${MACHINE}/gen ${.CURDIR}/gen ${.CURDIR}/gen/regexp
@@ -11,7 +11,7 @@ SRCS+=	alarm.c clock.c closedir.c crypt.c ctime.c ctype_.c difftime.c \
 	pause.c perror.c popen.c psignal.c random.c readdir.c regex.c \
 	remove.c rewinddir.c scandir.c seekdir.c setjmperr.c setmode.c \
 	setrgid.c setruid.c siginterrupt.c sigsetjmp.c siglist.c signal.c \
-	sigset.c sleep.c syslog.c telldir.c termios.c time.c timezone.c \
+	sigsetops.c sleep.c syslog.c telldir.c termios.c time.c timezone.c \
 	tmpnam.c ttyname.c ttyslot.c ualarm.c unvis.c usleep.c valloc.c vis.c \
 	wait.c wait3.c waitpid.c
 
@@ -45,8 +45,8 @@ MAN3+=	alarm.0 clock.0 crypt.0 ctime.0 ctype.0 directory.0 execvp.0 \
 	getttyent.0 getusershell.0 getwd.0 glob.0 initgroups.0 insque.0 \
 	mktemp.0 ndbm.0 nice.0 nlist.0 pause.0 perror.0 popen.0 psignal.0 \
 	random.0 regex.0 regexp.0 scandir.0 setjmp.0 setmode.0 setuid.0 \
-	siginterrupt.0 signal.0 sleep.0 syslog.0 time.0 tmpnam.0 ttyname.0 \
-	ualarm.0 unvis.0 usleep.0 valloc.0 vis.0
+	siginterrupt.0 signal.0 sigsetops.0 sleep.0 syslog.0 time.0 \
+	tmpnam.0 ttyname.0 ualarm.0 unvis.0 usleep.0 valloc.0 vis.0
 
 MLINKS=	crypt.3 encrypt.3 crypt.3 setkey.3
 MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
