@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)dumpfs.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumpfs.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/param.h>
@@ -73,8 +73,12 @@ dumpfs(name)
 		perror(name);
 		return;
 	}
+	if (afs.fs_postblformat == FS_42POSTBLFMT)
+		afs.fs_nrpos = 8;
 	dev_bsize = afs.fs_fsize / fsbtodb(&afs, 1);
-	printf("magic\t%x\ttime\t%s", afs.fs_magic, ctime(&afs.fs_time));
+	printf("magic\t%x\tformat\t%s\ttime\t%s", afs.fs_magic,
+	    afs.fs_postblformat == FS_42POSTBLFMT ? "static" : "dynamic",
+	    ctime(&afs.fs_time));
 	printf("nbfree\t%d\tndir\t%d\tnifree\t%d\tnffree\t%d\n",
 	    afs.fs_cstotal.cs_nbfree, afs.fs_cstotal.cs_ndir,
 	    afs.fs_cstotal.cs_nifree, afs.fs_cstotal.cs_nffree);
@@ -108,21 +112,22 @@ dumpfs(name)
 	printf("cgrotor\t%d\tfmod\t%d\tronly\t%d\n",
 	    afs.fs_cgrotor, afs.fs_fmod, afs.fs_ronly);
 	if (afs.fs_cpc != 0)
-		printf("blocks available in each rotational position");
+		printf("blocks available in each of %d rotational positions",
+		     afs.fs_nrpos);
 	else
 		printf("insufficient space to maintain rotational tables\n");
 	for (c = 0; c < afs.fs_cpc; c++) {
 		printf("\ncylinder number %d:", c);
-		for (i = 0; i < NRPOS; i++) {
-			if (afs.fs_postbl[c][i] == -1)
+		for (i = 0; i < afs.fs_nrpos; i++) {
+			if (fs_postbl(&afs, c)[i] == -1)
 				continue;
 			printf("\n   position %d:\t", i);
-			for (j = afs.fs_postbl[c][i], k = 1; ;
-			     j += afs.fs_rotbl[j], k++) {
+			for (j = fs_postbl(&afs, c)[i], k = 1; ;
+			     j += fs_rotbl(&afs)[j], k++) {
 				printf("%5d", j);
 				if (k % 12 == 0)
 					printf("\n\t\t");
-				if (afs.fs_rotbl[j] == 0)
+				if (fs_rotbl(&afs)[j] == 0)
 					break;
 			}
 		}
@@ -173,7 +178,9 @@ dumpcg(name, c)
 		return;
 	}
 	printf("magic\t%x\ttell\t%x\ttime\t%s",
-	    acg.cg_magic, i, ctime(&acg.cg_time));
+	    afs.fs_postblformat == FS_42POSTBLFMT ?
+	    ((struct ocg *)&acg)->cg_magic : acg.cg_magic,
+	    i, ctime(&acg.cg_time));
 	printf("cgx\t%d\tncyl\t%d\tniblk\t%d\tndblk\t%d\n",
 	    acg.cg_cgx, acg.cg_ncyl, acg.cg_niblk, acg.cg_ndblk);
 	printf("nbfree\t%d\tndir\t%d\tnifree\t%d\tnffree\t%d\n",
@@ -186,14 +193,20 @@ dumpcg(name, c)
 		j += i * acg.cg_frsum[i];
 	}
 	printf("\nsum of frsum: %d\niused:\t", j);
-	pbits(acg.cg_iused, afs.fs_ipg);
+	pbits(cg_inosused(&acg), afs.fs_ipg);
 	printf("free:\t");
-	pbits(acg.cg_free, afs.fs_fpg);
+	pbits(cg_blksfree(&acg), afs.fs_fpg);
 	printf("b:\n");
 	for (i = 0; i < afs.fs_cpg; i++) {
-		printf("   c%d:\t(%d)\t", i, acg.cg_btot[i]);
-		for (j = 0; j < NRPOS; j++)
-			printf(" %d", acg.cg_b[i][j]);
+		if (cg_blktot(&acg)[i] == 0)
+			continue;
+		printf("   c%d:\t(%d)\t", i, cg_blktot(&acg)[i]);
+		for (j = 0; j < afs.fs_nrpos; j++) {
+			if (afs.fs_cpc > 0 &&
+			    fs_postbl(&afs, i % afs.fs_cpc)[j] == -1)
+				continue;
+			printf(" %d", cg_blks(&afs, &acg, i)[j]);
+		}
 		printf("\n");
 	}
 };
@@ -208,7 +221,7 @@ pbits(cp, max)
 	for (i = 0; i < max; i++)
 		if (isset(cp, i)) {
 			if (count)
-				printf(",%s", count %9 == 8 ? "\n\t" : " ");
+				printf(",%s", count % 6 ? " " : "\n\t");
 			count++;
 			printf("%d", i);
 			j = i;
