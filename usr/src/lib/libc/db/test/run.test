@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)run.test	5.1 (Berkeley) %G%
+#	@(#)run.test	5.2 (Berkeley) %G%
 #
 
 # db regression tests
@@ -21,6 +21,8 @@ main()
 	test2
 	test3
 	test4
+	test5
+	test6
 	rm -f $TMP1 $TMP2 $TMP3
 }
 
@@ -28,7 +30,7 @@ main()
 # be key/data pairs.
 test1()
 {
-	printf "Test1: btree, hash: small key, small data pairs\n"
+	printf "Test 1: btree, hash: small key, small data pairs\n"
 	for i in `sed 200q $DICT`; do
 		printf "%s\n" $i
 	done > $TMP1
@@ -44,7 +46,7 @@ test1()
 			exit 1
 		fi
 	done
-	printf "Test1: recno: small key, small data pairs\n"
+	printf "Test 1: recno: small key, small data pairs\n"
 	rm -f $TMP2 $TMP3
 	sed 200q $DICT |
 		awk '{ 
@@ -63,7 +65,7 @@ test1()
 # each a medium size data entry.
 test2()
 {
-	printf "Test2: btree, hash: small key, medium data pairs\n"
+	printf "Test 2: btree, hash: small key, medium data pairs\n"
 	mdata=abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
 	echo $mdata |
 	    awk '{ for (i = 1; i < 201; ++i) print $0 }' > $TMP1
@@ -79,7 +81,7 @@ test2()
 			exit 1
 		fi
 	done
-	printf "Test2: recno: small key, medium data pairs\n"
+	printf "Test 2: recno: small key, medium data pairs\n"
 	rm -f $TMP2 $TMP3
 	echo $mdata | 
 		awk '{  for (i = 1; i < 201; ++i)
@@ -96,7 +98,7 @@ test2()
 # Insert the programs in /bin with their paths as their keys.
 test3()
 {
-	printf "Test3: btree, hash: small key, big data pairs\n"
+	printf "Test 3: btree, hash: small key, big data pairs\n"
 	rm -f $TMP1
 	(find /bin -type f -print | xargs cat) > $TMP1
 	for type in hash btree; do
@@ -111,7 +113,7 @@ test3()
 			exit 1
 		fi
 	done
-	printf "Test3: recno: big data pairs\n"
+	printf "Test 3: recno: big data pairs\n"
 	rm -f $TMP2 $TMP3
 	find /bin -type f -print | 
 		awk '{
@@ -129,15 +131,15 @@ test3()
 # Do random recno entries.
 test4()
 {
-	printf "Test4: recno: random entries\n"
-	echo "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg" |
+	printf "Test 4: recno: random entries\n"
+	echo "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg" |
 		awk '{
 			for (i = 37; i <= 37 + 88 * 17; i += 17)
-				printf("input key %d: %s\n", i, $0);
+				printf("input key %d: %.*s\n", i, i % 41, $0);
 			for (i = 1; i <= 15; ++i)
-				printf("input key %d: %s\n", i, $0);
+				printf("input key %d: %.*s\n", i, i % 41, $0);
 			for (i = 19234; i <= 19234 + 61 * 27; i += 27)
-				printf("input key %d: %s\n", i, $0);
+				printf("input key %d: %.*s\n", i, i % 41, $0);
 			exit
 		}' > $TMP1
 	rm -f TMP2 $TMP3
@@ -173,5 +175,76 @@ test4()
 		exit 1
 	fi
 }
+
+# Do reverse order recno entries.
+test5()
+{
+	printf "Test 5: recno: reverse order entries\n"
+	echo "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg" |
+		awk ' {
+			for (i = 1500; i; --i)
+				printf("input key %d: %.*s\n", i, i % 34, $0);
+			exit;
+		}' > $TMP1
+	rm -f TMP2 $TMP3
+	cat $TMP1 | awk 'BEGIN {
+				i = 1500;
+			}
+			{
+				printf("p\nk%d\nd%s\n", i, $0);
+				--i;
+			}
+			END {
+				for (i = 1500; i; --i) 
+					printf("g\nk%d\n", i);
+			}' > $TMP2
+	./dbtest -o $TMP3 recno $TMP2
+	if (cmp -s $TMP1 $TMP3) ; then
+	else
+		printf "test5: type recno: failed\n"
+		exit 1
+	fi
+}
 		
+# Do alternating order recno entries.
+test6()
+{
+	printf "Test 6: recno: alternating order entries\n"
+	echo "abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg abcdefg" |
+		awk ' {
+			for (i = 1; i < 1200; i += 2)
+				printf("input key %d: %.*s\n", i, i % 34, $0);
+			for (i = 2; i < 1200; i += 2)
+				printf("input key %d: %.*s\n", i, i % 34, $0);
+			exit;
+		}' > $TMP1
+	rm -f TMP2 $TMP3
+	cat $TMP1 | awk 'BEGIN {
+				i = 1;
+				even = 0;
+			}
+			{
+				printf("p\nk%d\nd%s\n", i, $0);
+				i += 2;
+				if (i >= 1200) {
+					if (even == 1)
+						exit;
+					even = 1;
+					i = 2;
+				}
+			}
+			END {
+				for (i = 1; i < 1200; ++i) 
+					printf("g\nk%d\n", i);
+			}' > $TMP2
+	./dbtest -o $TMP3 recno $TMP2
+	sort -o $TMP1 $TMP1
+	sort -o $TMP3 $TMP3
+	if (cmp -s $TMP1 $TMP3) ; then
+	else
+		printf "test6: type recno: failed\n"
+		exit 1
+	fi
+}
+
 main
