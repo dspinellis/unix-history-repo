@@ -4,7 +4,7 @@
 
 		Eric Allman <eric@CS.Berkeley.EDU>
 
-		@(#)README	8.53 (Berkeley) %G%
+		@(#)README	8.54 (Berkeley) %G%
 
 
 This document describes the sendmail configuration files being used
@@ -65,31 +65,58 @@ to great effect.  But it should get you started.
 Configuration files are contained in the subdirectory "cf", with a
 suffix ".mc".  They must be run through "m4" to produce a ".cf" file.
 
-Let's examine a typical .mc file (cf/cs-exposed.mc):
+Let's examine a typical .mc file (cf/cs-hpux9.mc):
 
 	divert(-1)
 	#
 	# Copyright (c) 1983 Eric P. Allman
-	# Copyright (c) 1988 The Regents of the University of California.
-	# All rights reserved.
+	# Copyright (c) 1988, 1993
+	#	The Regents of the University of California.  All rights reserved.
 	#
-	# Redistribution and use in source and binary forms are permitted
-	# provided that the above copyright notice and this paragraph are
-	# duplicated in all such forms and that any documentation,
-	# advertising materials, and other materials related to such
-	# distribution and use acknowledge that the software was developed
-	# by the University of California, Berkeley.  The name of the
-	# University may not be used to endorse or promote products derived
-	# from this software without specific prior written permission.
-	# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-	# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-	# WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+	# Redistribution and use in source and binary forms, with or without
+	# modification, are permitted provided that the following conditions
+	# are met:
+	# 1. Redistributions of source code must retain the above copyright
+	#    notice, this list of conditions and the following disclaimer.
+	# 2. Redistributions in binary form must reproduce the above copyright
+	#    notice, this list of conditions and the following disclaimer in
+	#    the documentation and/or other materials provided with the
+	#    distribution.
+	# 3. All advertising materials mentioning features or use of this
+	#    software #    must display the following acknowledgement:
+	#	This product includes software developed by the University of
+	#	California, Berkeley and its contributors.
+	# 4. Neither the name of the University nor the names of its
+	#    contributors may be used to endorse or promote products derived
+	#    from this software without specific prior written permission.
+	#
+	# THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS''
+	# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+	# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+	# PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS
+	# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+	# OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+	# OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+	# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+	# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+	# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+	# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	#
+
+	#
+	#  This is a Berkeley-specific configuration file for HP-UX 9.x.
+	#  It applies only the the Computer Science Division at Berkeley,
+	#  and should not be used elsewhere.   It is provided on the sendmail
+	#  distribution as a sample only.  To create your own configuration
+	#  file, create an appropriate domain file in ../domain, change the
+	#  `DOMAIN' macro below to reference that file, and copy the result
+	#  to a name of your own choosing.
 	#
 
 The divert(-1) will delete the crud in the resulting output file.
-The copyright notice is what your lawyers require.  Our lawyers require
-the one that I've included in my files. A copyleft is a copyright by
-another name.
+The copyright notice can be replace by whatever your lawyers require;
+our lawyers require the one that I've included in my files.  A copyleft
+is a copyright by another name.
 
 The next line MUST be
 
@@ -107,15 +134,22 @@ resulting file.  We use SCCS; you could use RCS, something else, or
 omit it completely.  This is not the same as the version id included
 in SMTP greeting messages -- this is defined in m4/version.m4.
 
-	DOMAIN(cs.exposed)
+	OSTYPE(hpux9)dnl
 
-This example exposes the host inside of the CS subdomain -- that is,
-it doesn't try to hide the name of the workstation to the outside
-world.  Changing this to DOMAIN(cs.hidden) would have made outgoing
-messages refer to "<username>@CS.Berkeley.EDU" instead of using the
-local hostname.  Internally this is effected by using
-"MASQUERADE_AS(CS.Berkeley.EDU)".
+You must specify an OSTYPE to properly configure things such as the
+pathname of the help and status files, the flags needed for the local
+mailer, and other important things.  If you omit it, you will get an
+error when you try to build the configuration.  Look at the ostype
+directory for the list of known operating system types.
 
+	DOMAIN(CS.Berkeley.EDU)dnl
+
+This example is specific to the Computer Science Division at Berkeley.
+You can use "DOMAIN(generic)" to get a sufficiently bland definition
+that may well work for you, or you can create a customized domain
+definition appropriate for your environment.
+
+	MAILER(local)
 	MAILER(smtp)
 
 These describe the mailers used at the default CS site site.  The
@@ -126,16 +160,17 @@ local mailer is always included automatically.
 | OSTYPE |
 +--------+
 
-Note that cf/cs-exposed.mc omits an OSTYPE macro -- this assumes
-default Computer Science Division environment.  There are several
-explicit environments available: bsd4.3, bsd4.4, hpux, irix, osf1,
-riscos4.5, sunos3.5, sunos4.1, and ultrix4.1.  These change things
-like the location of the alias file and queue directory.  Some of
-these files are identical to one another.
+You MUST define an operating system environment, or the configuration
+file build will puke.  There are several environments available; look
+at the "ostype" directory for the current list.  This macro changes
+things like the location of the alias file and queue directory.  Some
+of these files are identical to one another.
 
-Operating system definitions are easy to write.  They may define
-the following variables (everything defaults, so an ostype file
-may be empty).
+Operating system definitions are usually easy to write.  They may define
+the following variables (everything defaults, so an ostype file may be
+empty).  Unfortunately, the list of configuration-supported systems is
+not as broad as the list of source-supported systems, since many of
+the source contributors do not include corresponding ostype files.
 
 ALIAS_FILE		[/etc/aliases] The location of the text version
 			of the alias file(s).  It can be a comma-separated
@@ -1335,12 +1370,8 @@ ostype		Definitions describing a particular operating
 
 domain		Definitions describing a particular domain, referenced
 		using the DOMAIN macro in the .mc file.  These are
-		site dependent; for example, we contribute "cs.exposed.m4"
-		and "cs.hidden.m4" which both describe hosts in the
-		CS.Berkeley.EDU subdomain; the former displays the local
-		hostname (e.g., mammoth.CS.Berkeley.EDU), whereas the
-		latter does its best to hide the identity of the local
-		workstation inside the CS subdomain.
+		site dependent; for example, "CS.Berkeley.EDU.m4"
+		describes hosts in the CS.Berkeley.EDU subdomain.
 
 mailer		Descriptions of mailers.   These are referenced using
 		the MAILER macro in the .mc file.
