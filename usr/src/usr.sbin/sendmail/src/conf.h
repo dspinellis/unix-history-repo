@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.102 (Berkeley) %G%
+ *	@(#)conf.h	8.103 (Berkeley) %G%
  */
 
 /*
@@ -846,6 +846,20 @@ typedef int		pid_t;
 # define NEEDFSYNC	1	/* no fsync in system library */
 # define GETSHORT	_getshort
 #endif
+
+
+/*
+**  NCR 3000 Series (SysVr4)
+**
+**	From From: Kevin Darcy <kevin@tech.mis.cfc.com>.
+*/
+
+#ifdef NCR3000
+# define __svr4__
+# undef BSD
+# define LA_AVENRUN	"avenrun"
+#endif
+ 
 
 
 
