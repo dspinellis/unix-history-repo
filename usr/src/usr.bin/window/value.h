@@ -1,5 +1,5 @@
 /*
- *	@(#)value.h	3.2 83/12/06
+ *	@(#)value.h	3.3 84/01/12
  */
 
 struct value {
@@ -15,3 +15,5 @@ struct value {
 #define V_NUM	1
 #define V_STR	2
 #define V_ERR	3
+
+#define val_free(v)	((v).v_type == V_STR ? str_free((v).v_str) : 0)
