@@ -1,4 +1,4 @@
-/*	uba.c	4.2	%G%	*/
+/*	uba.c	4.3	%G%	*/
 
 #include "../h/param.h"
 #include "../h/map.h"
@@ -10,6 +10,7 @@
 #include "../h/proc.h"
 #include "../h/vm.h"
 #include "../h/conf.h"
+#include "../h/mtpr.h"
 
 /*
  * Allocate as many contiguous UBA mapping registers
@@ -128,7 +129,7 @@ ubainit()
 {
 
 	mfree(ubamap, 496, 1);
-	mfree(bdpmap, 15, 1);
+	mfree(bdpmap, NUBABDP, 1);
 }
 
 #define	DELAY(N)	{ register int d; d = N; while (--d > 0); }
@@ -140,11 +141,18 @@ ubareset()
 	int s;
 
 	s = spl6();
+#if VAX==780
 	printf("UBA RESET:");
 	up->uba_cr = ADINIT;
 	up->uba_cr = IFS|BRIE|USEFIE|SUEFIE;
 	while ((up->uba_cnfgr & UBIC) == 0)
 		;
+#endif
+#if VAX==750
+	printf("UNIBUS INIT:");
+	mtpr(IUR, 1);
+	DELAY(100000);
+#endif
 	for (cdp = cdevsw; cdp->d_open; cdp++)
 		(*cdp->d_reset)();
 	printf("\n");
