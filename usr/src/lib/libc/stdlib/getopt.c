@@ -11,8 +11,8 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getopt.c	4.5 (Berkeley) %G%";
-#endif LIBC_SCCS and not lint
+static char sccsid[] = "@(#)getopt.c	4.6 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
 
 #include <stdio.h>
 
@@ -24,9 +24,9 @@ int	opterr = 1,		/* if error message should be printed */
 	optopt;			/* character checked for validity */
 char	*optarg;		/* argument associated with option */
 
-#define BADCH	(int)'?'
-#define EMSG	""
-#define tell(s)	{ \
+#define	BADCH	(int)'?'
+#define	EMSG	""
+#define	tell(s)	{ \
 	if (opterr) { \
 		fputs(*nargv, stderr); \
 		fputs(s, stderr); \
@@ -37,18 +37,17 @@ char	*optarg;		/* argument associated with option */
 }
 
 getopt(nargc, nargv, ostr)
-	int	nargc;
-	char	**nargv, *ostr;
+	int nargc;
+	char **nargv, *ostr;
 {
-	static char	*place = EMSG;		/* option letter processing */
-	register char	*oli;			/* option letter list index */
-	char	*index();
+	static char *place = EMSG;		/* option letter processing */
+	register char *oli;			/* option letter list index */
+	char *index();
 
 	if (!*place) {				/* update scanning pointer */
-		if (optind >= nargc || *(place = nargv[optind]) != '-' ||
-		    !*++place)
+		if (optind >= nargc || *(place = nargv[optind]) != '-')
 			return(EOF);
-		if (*place == '-') {		/* found "--" */
+		if (place[1] && *++place == '-') {	/* found "--" */
 			++optind;
 			return(EOF);
 		}
