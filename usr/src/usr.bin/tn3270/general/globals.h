@@ -19,6 +19,17 @@
 #endif
 
 
+EXTERN int
+		/*
+		 * shell_active ==>
+		 *		1.  Don't do input.
+		 *		2.  Don't do output.
+		 *		3.  Don't block in select.
+		 *		4.  When nothing to do, call shell_continue()
+		 */
+	shell_active;
+
+
 #if	defined(INCLUDED_3270)
 #endif
 
