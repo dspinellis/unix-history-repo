@@ -1,4 +1,4 @@
-/*	hgraph.c	1.3	83/03/30
+/*	hgraph.c	1.4	83/05/05
  *
  * Copyright -C- 1982 Barry S. Roitblat
  *
@@ -691,27 +691,27 @@ char *fontFile;
     if((fonts = open(s,0)) == -1) 
     {
         perror(s);
-        fprintf(stderr,"Can't get font file");
-        abort();
+        fprintf(stderr,"Can't get font file\n");
+        exit(1);
     }
     /* Get the header and check magic number */
     if(read(fonts,&header,sizeof(header)) != sizeof(header)) 
     {
         perror(s);
-        fprintf(stderr,"Bad read in font file");
-        abort();
+        fprintf(stderr,"Bad read in font file\n");
+        exit(1);
     }
     if(header.magic != 0436) 
     {
-        fprintf(stderr,"Bad magic numer in font file");
-        abort();
+        fprintf(stderr,"Bad magic numer in font file\n");
+        exit(1);
     }
     /* Get dispatches */
     if(read(fonts,dispatch,sizeof(dispatch)) != sizeof(dispatch)) 
     {
         perror(s);
-        fprintf(stderr,"Bad read in font file");
-        abort();
+        fprintf(stderr,"Bad read in font file\n");
+        exit(1);
     }
     /* Allocate space for bit map and read in bits */
     if (bits != NULL) free(bits);
@@ -720,16 +720,15 @@ char *fontFile;
     if(read(fonts,bits,header.size) != header.size) 
     {
         perror(s);
-        fprintf(stderr,"Can't read bit map in font file");
-        abort();
+        fprintf(stderr,"Can't read bit map in font file\n");
+        exit(1);
     }
     /* Close font file */
     if(close(fonts) != 0) 
     {
         perror(s);
-        fprintf(stderr,"Can't close font file");
-        abort();
-        abort();
+        fprintf(stderr,"Can't close font file\n");
+        exit(1);
     }
 }
 
