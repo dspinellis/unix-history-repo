@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_ihash.c	7.5 (Berkeley) %G%
+ *	@(#)ufs_ihash.c	7.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -78,7 +78,9 @@ ufs_ihashins(ip)
 	ip->i_next = iq;
 	ip->i_prev = ipp;
 	*ipp = ip;
-	ILOCK(ip);
+	if ((ip->i_flag & ILOCKED) != 0)
+		panic("ufs_ihashins: already locked");
+	ip->i_flag |= ILOCKED;
 }
 
 /*
