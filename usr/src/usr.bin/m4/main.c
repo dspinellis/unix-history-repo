@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -175,17 +175,9 @@ struct keyblk keywrds[] = {	/* m4 keywords to be installed */
 	"errprint",     ERRPTYPE,
 	"m4wrap",       M4WRTYPE,
 	"m4exit",       EXITTYPE,
-#if unix || vms
 	"syscmd",       SYSCTYPE,
 	"sysval",       SYSVTYPE,
-#endif
-#if unix
 	"unix",         MACRTYPE,
-#else
-#if vms
-	"vms",          MACRTYPE,
-#endif
-#endif
 };
 
 #define MAXKEYS	(sizeof(keywrds)/sizeof(struct keyblk))
@@ -258,11 +250,7 @@ char *argv[];
 	if (outfile[0] != NULL) {
 		(void) fclose(outfile[0]);
 		m4temp[UNIQUE] = '0';
-#if vms
-		(void) remove(m4temp);
-#else
 		(void) unlink(m4temp);
-#endif
 	}
 
 	exit(0);
