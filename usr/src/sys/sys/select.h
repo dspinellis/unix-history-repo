@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)select.h	7.3 (Berkeley) %G%
+ *	@(#)select.h	7.4 (Berkeley) %G%
  */
 
 #ifndef _SELECT_H_
@@ -19,6 +19,9 @@ struct selinfo {
 	short	si_flags;	/* see below */
 };
 #define	SI_COLL	0x0001		/* collision occurred */
+
+struct proc;
+struct selinfo;
 
 void	selrecord __P((struct proc *selector, struct selinfo *));
 void	selwakeup __P((struct selinfo *));
