@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.84 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.85 (Berkeley) %G%
  */
 
 /*
@@ -191,7 +191,6 @@ void vattr_null(vap)
  */
 struct vnode *vfreeh, **vfreet = &vfreeh;
 extern int (**dead_vnodeop_p)();
-extern int (**spec_vnodeop_p)();
 extern void vclean();
 long numvnodes;
 extern struct vattr va_null;

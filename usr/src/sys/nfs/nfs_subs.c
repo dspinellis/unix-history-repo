@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.61 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.62 (Berkeley) %G%
  */
 
 /*
@@ -35,6 +35,8 @@
 #include <nfs/nfsmount.h>
 #include <nfs/nqnfs.h>
 #include <nfs/nfsrtt.h>
+
+#include <miscfs/specfs/specdev.h>
 
 #include <netinet/in.h>
 #ifdef ISO
@@ -633,7 +635,6 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	register struct vattr *vap;
 	register struct nfsv2_fattr *fp;
 	extern int (**spec_nfsv2nodeop_p)();
-	extern int (**spec_vnodeop_p)();
 	register struct nfsnode *np, *nq, **nhpp;
 	register long t1;
 	caddr_t dpos, cp2;
