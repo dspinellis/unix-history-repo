@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vnops.c	8.16 (Berkeley) %G%
+ *	@(#)cd9660_vnops.c	8.17 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -504,8 +504,8 @@ cd9660_readdir(ap)
 		struct uio *a_uio;
 		struct ucred *a_cred;
 		int *a_eofflag;
+		int *a_ncookies;
 		u_long *a_cookies;
-		int a_ncookies;
 	} */ *ap;
 {
 	register struct uio *uio = ap->a_uio;
@@ -521,6 +521,8 @@ cd9660_readdir(ap)
 	int error = 0;
 	int reclen;
 	u_short namelen;
+	int ncookies = 0;
+	u_long *cookies = NULL;
 
 	dp = VTOI(vdp);
 	imp = dp->i_mnt;
@@ -535,9 +537,19 @@ cd9660_readdir(ap)
 	idp->saveent.d_type = idp->assocent.d_type = idp->current.d_type =
 	    DT_UNKNOWN;
 	idp->uio = uio;
+	if (ap->a_ncookies == NULL) {
+		idp->cookies = NULL;
+	} else {
+		/*
+		 * Guess the number of cookies needed.
+		 */
+		ncookies = uio->uio_resid / 16;
+		MALLOC(cookies, u_int *, ncookies * sizeof(u_int), M_TEMP,
+		    M_WAITOK);
+		idp->cookies = cookies;
+		idp->ncookies = ncookies;
+	}
 	idp->eofflag = 1;
-	idp->cookies = ap->a_cookies;
-	idp->ncookies = ap->a_ncookies;
 	idp->curroff = uio->uio_offset;
 
 	if ((entryoffsetinblock = idp->curroff & bmask) &&
@@ -647,6 +659,18 @@ cd9660_readdir(ap)
 	}
 	if (error < 0)
 		error = 0;
+
+	if (ap->a_ncookies != NULL) {
+		if (error)
+			free(cookies, M_TEMP);
+		else {
+			/*
+			 * Work out the number of cookies actually used.
+			 */
+			*ap->a_ncookies = ncookies - idp->ncookies;
+			*ap->a_cookies = cookies;
+		}
+	}
 
 	if (bp)
 		brelse (bp);
@@ -961,24 +985,14 @@ cd9660_pathconf(ap)
 }
 
 /*
- * Unsupported operation
- */
-int
-cd9660_enotsupp()
-{
-
-	return (EOPNOTSUPP);
-}
-
-/*
  * Global vfs data structures for isofs
  */
 #define cd9660_create \
-	((int (*) __P((struct  vop_create_args *)))cd9660_enotsupp)
-#define cd9660_mknod ((int (*) __P((struct  vop_mknod_args *)))cd9660_enotsupp)
+	((int (*) __P((struct  vop_create_args *)))eopnotsupp)
+#define cd9660_mknod ((int (*) __P((struct  vop_mknod_args *)))eopnotsupp)
 #define cd9660_setattr \
-	((int (*) __P((struct  vop_setattr_args *)))cd9660_enotsupp)
-#define cd9660_write ((int (*) __P((struct  vop_write_args *)))cd9660_enotsupp)
+	((int (*) __P((struct  vop_setattr_args *)))eopnotsupp)
+#define cd9660_write ((int (*) __P((struct  vop_write_args *)))eopnotsupp)
 #ifdef NFS
 int	 lease_check __P((struct vop_lease_args *));
 #define	 cd9660_lease_check lease_check
@@ -987,28 +1001,28 @@ int	 lease_check __P((struct vop_lease_args *));
 #endif
 #define cd9660_fsync ((int (*) __P((struct  vop_fsync_args *)))nullop)
 #define cd9660_remove \
-	((int (*) __P((struct  vop_remove_args *)))cd9660_enotsupp)
-#define cd9660_link ((int (*) __P((struct  vop_link_args *)))cd9660_enotsupp)
+	((int (*) __P((struct  vop_remove_args *)))eopnotsupp)
+#define cd9660_link ((int (*) __P((struct  vop_link_args *)))eopnotsupp)
 #define cd9660_rename \
-	((int (*) __P((struct  vop_rename_args *)))cd9660_enotsupp)
-#define cd9660_mkdir ((int (*) __P((struct  vop_mkdir_args *)))cd9660_enotsupp)
-#define cd9660_rmdir ((int (*) __P((struct  vop_rmdir_args *)))cd9660_enotsupp)
+	((int (*) __P((struct  vop_rename_args *)))eopnotsupp)
+#define cd9660_mkdir ((int (*) __P((struct  vop_mkdir_args *)))eopnotsupp)
+#define cd9660_rmdir ((int (*) __P((struct  vop_rmdir_args *)))eopnotsupp)
 #define cd9660_symlink \
-	((int (*) __P((struct vop_symlink_args *)))cd9660_enotsupp)
+	((int (*) __P((struct vop_symlink_args *)))eopnotsupp)
 #define cd9660_advlock \
-	((int (*) __P((struct vop_advlock_args *)))cd9660_enotsupp)
+	((int (*) __P((struct vop_advlock_args *)))eopnotsupp)
 #define cd9660_valloc ((int(*) __P(( \
 		struct vnode *pvp, \
 		int mode, \
 		struct ucred *cred, \
-		struct vnode **vpp))) cd9660_enotsupp)
-#define cd9660_vfree ((int (*) __P((struct  vop_vfree_args *)))cd9660_enotsupp)
+		struct vnode **vpp))) eopnotsupp)
+#define cd9660_vfree ((int (*) __P((struct  vop_vfree_args *)))eopnotsupp)
 #define cd9660_truncate \
-	((int (*) __P((struct  vop_truncate_args *)))cd9660_enotsupp)
+	((int (*) __P((struct  vop_truncate_args *)))eopnotsupp)
 #define cd9660_update \
-	((int (*) __P((struct  vop_update_args *)))cd9660_enotsupp)
+	((int (*) __P((struct  vop_update_args *)))eopnotsupp)
 #define cd9660_bwrite \
-	((int (*) __P((struct  vop_bwrite_args *)))cd9660_enotsupp)
+	((int (*) __P((struct  vop_bwrite_args *)))eopnotsupp)
 
 /*
  * Global vfs data structures for cd9660
