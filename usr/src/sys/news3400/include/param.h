@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  *
- *	@(#)param.h	7.5 (Berkeley) %G%
+ *	@(#)param.h	7.6 (Berkeley) %G%
  */
 
 /*
@@ -33,13 +33,17 @@
 #define	PGSHIFT		12		/* LOG2(NBPG) */
 #define	NPTEPG		(NBPG/4)
 
+#define NBSEG		0x400000	/* bytes/segment */
+#define	SEGOFSET	(NBSEG-1)	/* byte offset into segment */
+#define	SEGSHIFT	22		/* LOG2(NBSEG) */
+
 #define	KERNBASE	0x80000000	/* start of kernel virtual */
 #define	BTOPKERNBASE	((u_long)KERNBASE >> PGSHIFT)
 
 #define	DEV_BSIZE	512
 #define	DEV_BSHIFT	9		/* log2(DEV_BSIZE) */
 #define BLKDEV_IOSIZE	2048
-#define	MAXPHYS		(24 * 1024)	/* max raw I/O transfer size */
+#define	MAXPHYS		(128 * 1024)	/* max raw I/O transfer size */
 
 #define	CLSIZE		1
 #define	CLSIZELOG2	0
