@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pc.1	4.1 (Berkeley) %G%
+.\"	@(#)pc.1	5.1 (Berkeley) %G%
 .\"
-.TH PC 1
+.TH PC 1 "6 June 1983"
 .UC 4
 .SH NAME
 pc \- Pascal compiler
@@ -106,7 +106,7 @@ Suppress loading and produce `.o' file(s) from source file(s).
 .TP 6
 .B \-g
 Have the compiler produce additional symbol table information for
-.IR sdb (1).
+.IR dbx (1).
 .TP 6
 .BR \-w
 Suppress warning messages.
@@ -139,7 +139,7 @@ The following options are peculiar to
 Compile code to perform runtime checks,
 verify
 .B assert
-statements,
+calls,
 and initialize all variables to zero as in
 .IR pi .
 .TP 6
@@ -159,6 +159,11 @@ Make a program listing during translation.
 .B  \-s
 Accept standard Pascal only;
 non-standard constructs cause warning diagnostics.
+.TP 6
+.BR \-t " directory"
+Use the given
+.I directory
+for compiler temporary files.
 .TP 6
 .B  \-z
 Allow execution profiling with
@@ -191,7 +196,7 @@ file.p	pascal source files
 .br
 /usr/lib/pc3	separate compilation consistency checker
 .br
-/usr/lib/pc2.0strings	text of the error messages
+/usr/lib/pc2.*strings	text of the error messages
 .br
 /usr/lib/how_pc	basic usage explanation
 .br
