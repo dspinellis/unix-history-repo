@@ -9,7 +9,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)timer.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)timer.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -65,8 +65,8 @@ again:
 				if (!supplier || timetobroadcast)
 					continue;
 				msg->rip_cmd = htons(RIPCMD_RESPONSE);
-				xnnet(msg->rip_nets[0].rip_dst[0]) = 
-					ns_netof(satons_addr(rt->rt_dst));
+				msg->rip_nets[0].rip_dst =
+					(satons_addr(rt->rt_dst)).x_net;
 				msg->rip_nets[0].rip_metric =
 				   	htons(min(rt->rt_metric+1, HOPCNT_INFINITY));
 				toall(sendmsg);

@@ -8,7 +8,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)output.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)output.c	5.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -73,7 +73,7 @@ supply(dst, flags, ifp)
 	struct sockaddr_ns *sns =  (struct sockaddr_ns *) dst;
 	int (*output)() = afswitch[dst->sa_family].af_output;
 	int doinghost = 1, size, metric;
-	long net;
+	union ns_net net;
 
 	msg->rip_cmd = ntohs(RIPCMD_RESPONSE);
 again:
@@ -89,20 +89,20 @@ again:
 	        if ((rt->rt_flags & (RTF_HOST|RTF_GATEWAY)) == RTF_HOST)
 			sns = (struct sockaddr_ns *)&rt->rt_router;
 		metric = min(rt->rt_metric + 1, HOPCNT_INFINITY);
-		net = ns_netof(sns->sns_addr);
+		net = sns->sns_addr.x_net;
 		/*
 		 * Make sure that we don't put out a two net entries
 		 * for a pt to pt link (one for the G route, one for the if)
 		 * This is a kludge, and won't work if there are lots of nets.
 		 */
 		for (nn = msg->rip_nets; nn < n; nn++) {
-			if(net == xnnet(nn->rip_dst[0])) {
-				if(metric < ntohs(nn->rip_metric))
+			if (ns_neteqnn(net, nn->rip_dst)) {
+				if (metric < ntohs(nn->rip_metric))
 					nn->rip_metric = htons(metric);
 				goto next;
 			}
 		}
-		xnnet(n->rip_dst[0]) = net;
+		n->rip_dst = net;
 		n->rip_metric = htons(metric);
 		n++;
 	next:;

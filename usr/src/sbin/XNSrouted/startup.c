@@ -9,7 +9,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)startup.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)startup.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -24,8 +24,8 @@ static char sccsid[] = "@(#)startup.c	5.4 (Berkeley) %G%";
 struct	interface *ifnet;
 int	lookforinterfaces = 1;
 int	performnlist = 1;
+int	gateway = 0;
 int	externalinterfaces = 0;		/* # of remote and local interfaces */
-int	gateway = 0;		/* 1 if we are a gateway to parts beyond */
 char ether_broadcast_addr[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
 
@@ -71,16 +71,6 @@ ifinit()
 			lookforinterfaces = 1;
 			continue;
 		}
-#ifdef notdef
-		/* already known to us? */
-		/* We can have more than one point to point link
-		   with the same local address.
-		   It is not clear what this was guarding against
-		   anyway.
-		if (if_ifwithaddr(ifr->ifr_addr))
-			continue;
-		   */
-#endif
 		if (ifs.int_addr.sa_family != AF_NS)
 			continue;
                 if (ifs.int_flags & IFF_POINTOPOINT) {
@@ -97,8 +87,18 @@ ifinit()
                         }
 			ifs.int_broadaddr = ifreq.ifr_broadaddr;
 		}
+		/* 
+		 * already known to us? 
+		 * what makes a POINTOPOINT if unique is its dst addr,
+		 * NOT its source address 
+		 */
+		if ( ((ifs.int_flags & IFF_POINTOPOINT) &&
+			if_ifwithdstaddr(&ifs.int_dstaddr)) ||
+			( ((ifs.int_flags & IFF_POINTOPOINT) == 0) &&
+			if_ifwithaddr(&ifs.int_addr)))
+			continue;
 		/* no one cares about software loopback interfaces */
-		if (strcmp(ifr->ifr_name,"lo0")==0)
+		if (strncmp(ifr->ifr_name,"lo", 2)==0)
 			continue;
 		ifp = (struct interface *)malloc(sizeof (struct interface));
 		if (ifp == 0) {
@@ -115,6 +115,14 @@ ifinit()
 		if ((ifs.int_flags & IFF_POINTOPOINT) == 0 ||
 		    if_ifwithaddr(&ifs.int_dstaddr) == 0)
 			externalinterfaces++;
+		/*
+		 * If we have a point-to-point link, we want to act
+		 * as a supplier even if it's our only interface,
+		 * as that's the only way our peer on the other end
+		 * can tell that the link is up.
+		 */
+		if ((ifs.int_flags & IFF_POINTOPOINT) && supplier < 0)
+			supplier = 1;
 		ifp->int_name = malloc(strlen(ifr->ifr_name) + 1);
 		if (ifp->int_name == 0) {
 			syslog(LOG_ERR,"XNSrouted: out of memory\n");
@@ -172,6 +180,11 @@ addrouteforif(ifp)
 	rt = rtlookup(dst);
 	if (rt)
 		rtdelete(rt);
+	if (tracing)
+		fprintf(stderr, "Adding route to interface %s\n", ifp->int_name);
+	if (ifp->int_transitions++ > 0)
+		syslog(LOG_ERR, "re-installing interface %s", ifp->int_name);
 	rtadd(dst, &ifp->int_addr, ifp->int_metric,
 		ifp->int_flags & (IFF_INTERFACE|IFF_PASSIVE|IFF_REMOTE));
 }
+

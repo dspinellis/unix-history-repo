@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)defs.h	5.4 (Berkeley) %G%";
+ *	@(#)defs.h	5.5 (Berkeley) %G%";
  */
 
 #include <sys/types.h>
@@ -12,7 +12,11 @@
 #include <net/route.h>
 #include <netns/ns.h>
 #include <netns/idp.h>
-#define xnnet(p) (*(long *)&(p))
+#if defined(vax) || defined(pdp11)
+#define xnnet(x) ((u_long) (x)->rip_dst[1] << 16 | (u_long) (x)->rip_dst[0] )
+#else
+#define xnnet(x) ((u_long) (x)->rip_dst[0] << 16 | (u_long) (x)->rip_dst[1] )
+#endif
 #define	IDPPORT_RIF	1
 
 #include <stdio.h>
@@ -30,7 +34,7 @@
  * kernel every CHECK_INTERVAL seconds to see if they've
  * come up.
  */
-#define	CHECK_INTERVAL	(1*60)
+#define	CHECK_INTERVAL	(5*60)
 
 #define equal(a1, a2) \
 	(bcmp((caddr_t)(a1), (caddr_t)(a2), sizeof (struct sockaddr)) == 0)

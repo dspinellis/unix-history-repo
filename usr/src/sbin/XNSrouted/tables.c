@@ -7,7 +7,7 @@
 
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -170,9 +170,16 @@ rtchange(rt, gate, metric)
 			rt->rt_router = *gate;
 		}
 		rt->rt_metric = metric;
-		rt->rt_state &= ~RTS_INTERFACE;
+		if ((rt->rt_state & RTS_INTERFACE) && metric) {
+			rt->rt_state &= ~RTS_INTERFACE;
+			syslog(LOG_ERR,
+				"changing route from interface %s (timed out)",
+				rt->rt_ifp->int_name);
+		}
 		if (metric)
-			rt->rt_state |= RTF_GATEWAY;
+			rt->rt_flags |= RTF_GATEWAY;
+		else
+			rt->rt_flags &= ~RTF_GATEWAY;
 		rt->rt_state |= RTS_CHANGED;
 		TRACE_ACTION(CHANGE TO, rt);
 	}
@@ -189,9 +196,13 @@ rtdelete(rt)
 	struct rt_entry *rt;
 {
 
+	if (rt->rt_state & RTS_INTERFACE) {
+		syslog(LOG_ERR, "deleting route to interface %s (timed out)",
+			rt->rt_ifp->int_name);
+	}
 	TRACE_ACTION(DELETE, rt);
-	if (install && delete && ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
-		syslog(LOG_ERR,"SIOCDELR %m");
+	if (install && ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
+		perror("SIOCDELRT");
 	remque(rt);
 	free((char *)rt);
 }
