@@ -14,11 +14,11 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.7 {Berkeley} %G%
+#	@(#)Makefile	4.8 {Berkeley} %G%
 #
 CFLAGS=	-O
 YFLAGS=	-d
-LIBC=	/lib/libc.a
+LIBC=	/usr/lib/libc.a
 BSRCS=	beauty.c tree.c lextab.c bdef.c
 BOBJS=	beauty.o tree.o lextab.o bdef.o
 SSRCS=	0.alloc.c 0.args.c 0.def.c 0.extr.c 0.graph.c 0.list.c 0.parts.c \

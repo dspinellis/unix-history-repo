@@ -1,31 +1,16 @@
-#
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.
-#
-# Redistribution and use in source and binary forms are permitted
-# provided that the above copyright notice and this paragraph are
-# duplicated in all such forms and that any documentation,
-# advertising materials, and other materials related to such
-# distribution and use acknowledge that the software was developed
-# by the University of California, Berkeley.  The name of the
-# University may not be used to endorse or promote products derived
-# from this software without specific prior written permission.
-# THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
-#
-#	@(#)Makefile	5.4 (Berkeley) %G%
-#
-MDIR=	${DESTDIR}/usr/share/man/cat7
-OBJS=	ascii.0 environ.0 eqnchar.0 hier.0 hostname.0 intro.0 mailaddr.0 \
-	man.0 ms.0 operator.0 term.0
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
-all clean depend lint tags:
+MAN7=	ascii.0 environ.0 eqnchar.0 hier.0 hostname.0 intro.0 mailaddr.0 \
+	man.0 ms.0 operator.0 term.0
+MLINKS=	intro.7 miscellaneous.7
+
+all: ${MAN7}
+
+clean depend lint tags:
 
 cleandir:
-	rm -f ${OBJS}
+	rm -f ${MAN7}
 
-install: ${OBJS}
-	install -c -o bin -g bin -m 444 ${OBJS} ${MDIR}
-	rm -f ${MDIR}/miscellaneous.0; \
-		ln ${MDIR}/intro.0 ${MDIR}/miscellaneous.0
+install: maninstall
+
+.include <bsd.prog.mk>

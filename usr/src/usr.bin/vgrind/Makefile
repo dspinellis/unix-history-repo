@@ -14,10 +14,10 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.6 (Berkeley) %G%
+#	@(#)Makefile	5.7 (Berkeley) %G%
 #
 CFLAGS=	-O
-LIBC=	/lib/libc.a
+LIBC=	/usr/lib/libc.a
 RSRCS=	retest.c regexp.c
 ROBJS=	retest.o regexp.o
 VSRCS=	regexp.c vfontedpr.c vgrindefs.c

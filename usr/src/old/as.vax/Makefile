@@ -1,9 +1,4 @@
-#
-# Copyright (c) 1980 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 #	as.h		Definitions for data structures
 #	asnumber.h	Definitions for all numbers: byte .. G format float
@@ -42,19 +37,6 @@
 #	instrs		included in pseudo.c; instructions and semantic info
 #				for each instructions
 #
-HDRS=	astoks.H astokfix.awk as.h asexpr.h asnumber.h asscan.h asscanl.h \
-	assyms.h instrs.h
-SRCS=	asscan1.c asscan2.c asscan3.c asscan4.c bignum1.c bignum2.c natof.c \
-	floattab.c asmain.c asparse.c asexpr.c assyms.c asjxxx.c ascode.c \
-	aspseudo.c assizetab.c asio.c
-OBJS=	asscan1.o asscan2.o asscan3.o asscan4.o bignum1.o bignum2.o natof.o \
-	floattab.o asparse.o asexpr.o asmain.o assyms.o asjxxx.o ascode.o \
-	aspseudo.o assizetab.o asio.o
-GRIND = astoks.h as.h asscan.h assyms.h asexpr.h instrs.h asnumber.h \
-	asscanl.h asscan1.c asscan2.c asscan3.c asscan4.c bignum1.c \
-	bignum2.c natof.c floattab.c asmain.c asscan.c asparse.c asexpr.c \
-	assyms.c asjxxx.c ascode.c asio.c assizetab.c aspseudo.c
-
 #	available flags:
 #
 #	AS		This is the assembler; always set
@@ -78,38 +60,22 @@ GRIND = astoks.h as.h asscan.h assyms.h asexpr.h instrs.h asnumber.h \
 #			strings, null terminated, and can be no more
 #			than BUFSIZ long.
 #			
-DFLAGS=	-DAS
-CFLAGS=	-O ${DFLAGS}
+PROG=	as
+CFLAGS+=-DAS -I.
+SRCS=	asscan1.c asscan2.c asscan3.c asscan4.c bignum1.c bignum2.c natof.c \
+	floattab.c asmain.c asparse.c asexpr.c assyms.c asjxxx.c ascode.c \
+	aspseudo.c assizetab.c asio.c
 
-all as: ${OBJS} ${LIBC}
-	${CC} -o as ${CFLAGS} ${OBJS}
-
-.c.o:	astoks.h ${HDRS}
-	${CC} ${CFLAGS} -c $*.c
+all: astoks.h
 
 astoks.h: astoks.H astokfix.awk
-	awk -f astokfix.awk < astoks.H > astoks.h
+	awk -f ${.CURDIR}/astokfix.awk < ${.CURDIR}/astoks.H > astoks.h
 
 aspseudo.o: as.h astoks.h aspseudo.c instrs.h instrs.as
-	${CC} -c -R ${DFLAGS} aspseudo.c
+	${CC} ${CFLAGS} -R -c ${.IMPSRC}
 
-instrs.as: instrs
-	(echo FLAVOR AS ; cat instrs) | awk -f instrs > instrs.as
+instrs.as: ${.CURDIR}/instrs
+	(echo FLAVOR AS ; cat ${.CURDIR}/instrs) | \
+	    awk -f ${.CURDIR}/instrs > instrs.as
 
-lint: ${SRCS}
-	lint ${CFLAGS} ${SRCS}
-
-clean:
-	rm -f ${OBJS} instrs.as as core a.out errs
-
-cleandir: clean
-	rm -f ${MAN} tags .depend
-
-depend: ${SRCS} instrs.as
-	mkdep ${CFLAGS} ${SRCS}
-
-install: ${MAN}
-	install -s -o bin -g bin -m 755 as ${DESTDIR}/usr/bin
-
-tags: ${SRCS}
-	ctags ${SRCS}
+.include <bsd.prog.mk>

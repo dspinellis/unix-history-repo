@@ -1,4 +1,4 @@
-# @(#)Makefile	4.31
+#	@(#)Makefile	5.5 (Berkeley) %G%
 
 # Change the line below for your time zone (after finding the zone you want in
 # the time zone files, or adding it to a time zone file).
@@ -95,13 +95,13 @@ REDO=		right_only
 #	-DCMUCS
 # to the end of the "CFLAGS=" line
 
-VPATH=	data
+.PATH:	${.CURDIR}/datfiles
 CFLAGS=	-Demkdir=mkdir -DTM_GMTOFF=tm_gmtoff -DTM_ZONE=tm_zone -DNOSOLAR \
 	-DTZDIR=\"$(TZDIR)\"
 MAN=	tzfile.0
 
-OBJS=	zic.o scheck.o ialloc.o
 SRCS=	zic.c scheck.c ialloc.c
+OBJS=	${SRCS:.c=.o}
 
 YDATA=	africa antarctica asia australasia europe northamerica \
 	southamerica pacificnew etcetera factory
@@ -111,30 +111,38 @@ TDATA=	$(YDATA) $(NDATA) $(SDATA)
 DATA=	$(YDATA) $(NDATA) $(SDATA) leapseconds
 USNO=	usno1988 usno1989
 
-all: zic
+all: zic ${MAN}
 
-zic: $(OBJS)
+zic: $(OBJS) ${MAN}
 	$(CC) $(CFLAGS) $(LFLAGS) $(OBJS) -o $@
 
 posix_only: $(TDATA)
-	./zic -d $(TZDIR) -L /dev/null $(TDATA)
+	(cd ${.CURDIR}/datfiles; \
+	    ../obj/zic -d $(TZDIR) -L /dev/null $(TDATA))
 
 right_only: leapseconds $(TDATA)
-	./zic -d $(TZDIR) -L leapseconds $(TDATA)
+	(cd ${.CURDIR}/datfiles; \
+	    ../obj/zic -d $(TZDIR) -L leapseconds $(TDATA))
 
 other_two: leapseconds $(TDATA)
-	./zic -d $(TZDIR)/posix -L /dev/null $(TDATA)
-	./zic -d $(TZDIR)/right -L leapseconds $(TDATA)
+	(cd ${.CURDIR}/datfiles;
+	    ../obj/zic -d $(TZDIR)/posix -L /dev/null $(TDATA))
+	(cd ${.CURDIR}/datfiles; \
+	    ../obj/zic -d $(TZDIR)/right -L leapseconds $(TDATA))
 
 posix_right: posix_only other_two
 
 right_posix: right_only other_two
 
 install: ${MAN} $(DATA) $(REDO)
-	./zic -d $(TZDIR) -l $(LOCALTIME) -p $(POSIXRULES)
-	install -c -o bin -g bin -m 444 tzfile.0 ${DESTDIR}/usr/man/man5
-	chown -R bin.bin $(TZDIR)
-	chmod 775 $(TZDIR)
+	(cd ${.CURDIR}/datfiles; \
+	    ../obj/zic -d $(TZDIR) -p $(POSIXRULES))
+	install -c -o ${BINOWN} -g ${BINGRP} -m 444 tzfile.0 \
+	    ${DESTDIR}/usr/man/cat5
+	install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+	    ${TZDIR}/${LOCALTIME} ${DESTDIR}/etc/localtime
+	chown -R ${BINOWN}.${BINGRP} $(TZDIR)
+	chmod -R a-w $(TZDIR)
 
 clean:
 	rm -f core *.o zic
@@ -143,6 +151,8 @@ cleandir: clean
 	rm -f ${MAN} tags .depend
 
 depend: $(SRCS)
-	mkdep $(CFLAGS) $(SRCS)
+	mkdep ${CFLAGS} ${.ALLSRC}
 
-lint:
+lint tags:
+
+.include <bsd.prog.mk>

@@ -1,78 +1,63 @@
-#
-# Copyright (c) 1987 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	4.11	(Berkeley)	%G%
-#
-# The word lists may be extended by adding special words.
-# The set of files containing words to be added are defined
-# by SPECIAL below.  By default we add commands and library
-# function names defined in /usr/man/man[1238n].  The word
-# lists also may be extended by adding local words.  The set
-# of files containing words to be added are defined by LOCAL
-# below.  Typically these lists reside in /usr/local/dict.
+#	@(#)Makefile	4.12 (Berkeley) %G%
 
-SPECIAL=	special.4bsd
-
-CFLAGS=	-O
-LIBC=	/lib/libc.a
+LIBC=	/usr/lib/libc.a
 SRCS=	spell.c spellin.c spellout.c
-OBJS=	spell.o spellin.o spellout.o
-MAN=	spell.0
+MAN1=	spell.0
+MLINKS=	spell.1 spellin.1 spell.1 spellout.1
+SPECIAL=${.CURDIR}/special.4bsd
 
-all: spell hlist hlista hlistb hstop spellin spellout
+all: spell hlist hlista hlistb hstop spellin spellout ${MAN1}
 
 spell spellin spellout: ${LIBC}
-	${CC} ${CFLAGS} $@.c -o $@
+	${CC} ${CFLAGS} ${.CURDIR}/${.PREFIX}.c -o ${.TARGET}
 
 hlist: spellin
-	spellin < words >hlist
+	spellin < ${.CURDIR}/words > hlist
 
-hlista: american ${SPECIAL} ${LOCAL} hlist spellin
-	(cat american ${SPECIAL} ${LOCAL}) | spellin hlist > hlista
+hlista: american ${SPECIAL} hlist spellin
+	(cat ${.CURDIR}/american ${SPECIAL}) | spellin hlist > hlista
 
-hlistb: british ${SPECIAL} ${LOCAL} hlist spellin
-	(cat british ${SPECIAL} ${LOCAL}) | spellin hlist > hlistb
+hlistb: british ${SPECIAL} hlist spellin
+	(cat ${.CURDIR}/british ${SPECIAL}) | spellin hlist > hlistb
 
 hstop: stop spellin
-	spellin < stop >hstop
+	spellin < ${.CURDIR}/stop > hstop
 
 clean:
-	rm -f ${OBJS} core spell spellin hlista hlistb hlist hstop spellout
+	rm -f a.out Errs errs mklog core spell spellin hlista \
+	    hlistb hlist hstop spellout
 
 cleandir: clean
-	rm -f ${MAN} tags .depend
+	rm -f ${MAN1} ${.CURDIR}/tags .depend
 
 depend: ${SRCS}
-	mkdep -p ${CFLAGS} ${SRCS}
+	mkdep -p ${CFLAGS:M-[ID]*} ${.ALLSRC}
 
 DIR=	${DESTDIR}/usr/share/dict
-FILES=	hlista hlistb hstop hlist american british connectives \
-	propernames stop README words web2 web2a
-install: ${MAN}
-	-[ -d ${DIR}/special ] || mkdir ${DIR}/special
-	install -s -o bin -g bin -m 755 spell ${DESTDIR}/usr/libexec/spell
-	install -s -o bin -g bin -m 755 spellin ${DESTDIR}/usr/libexec/spellin
-	install -s -o bin -g bin -m 755 spellout ${DESTDIR}/usr/libexec/spellout
-	install -c -o bin -g bin -m 755 spell.sh ${DESTDIR}/usr/bin/spell
-	install -c -o bin -g bin -m 444 ${FILES} ${DIR}
-	install -c -o bin -g bin -m 444 special.4bsd ${DIR}/special/4bsd
-	install -c -o bin -g bin -m 444 special.math ${DIR}/special/math
-	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
-	cp -p -r papers ${DIR}; chmod 755 ${DIR}/papers/runinv
-	rm -f ${DESTDIR}/usr/man/cat1/spellin.0
-	rm -f ${DESTDIR}/usr/man/cat1/spellout.0
-	ln ${DESTDIR}/usr/man/cat1/spell.0 ${DESTDIR}/usr/man/cat1/spellin.0
-	ln ${DESTDIR}/usr/man/cat1/spell.0 ${DESTDIR}/usr/man/cat1/spellout.0
+FILES1=	hlist hlista hlistb hstop
+FILES2=american british connectives propernames stop README words web2 web2a
+
+install: maninstall
+	install ${STRIP} -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
+	    spell spellin spellout ${DESTDIR}/usr/libexec
+	install -c -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} \
+	    ${.CURDIR}/spell.sh ${DESTDIR}/usr/bin/spell
+	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${FILES1} ${DIR}
+	cd ${.CURDIR}; install -c -o ${BINOWN} -g ${BINGRP} -m 444 \
+	    ${FILES2} ${DIR}
+	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/special.4bsd \
+	    ${DIR}/special/4bsd
+	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/special.math \
+	    ${DIR}/special/math
+	cp -p -r ${.CURDIR}/papers ${DIR}
 
 lint: ${SRCS}
-	lint ${CFLAGS} spell.c
-	lint ${CFLAGS} spellin.c
-	lint ${CFLAGS} spellout.c
+	cd ${.CURDIR}; ${LINT} ${LINTFLAGS} ${CFLAGS} spell.c
+	cd ${.CURDIR}; ${LINT} ${LINTFLAGS} ${CFLAGS} spellin.c
+	cd ${.CURDIR}; ${LINT} ${LINTFLAGS} ${CFLAGS} spellout.c
 
 tags: ${SRCS}
-	ctags spell.c
-	ctags -a spellin.c
-	ctags -a spellout.c
-	sort -o tags tags
+	cd ${.CURDIR}; ctags ${SRCS}
+
+.include <bsd.own.mk>
+.include <bsd.man.mk>
