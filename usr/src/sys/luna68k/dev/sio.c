@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sio.c	7.6 (Berkeley) %G%
+ *	@(#)sio.c	7.7 (Berkeley) %G%
  */
 
 /*
@@ -454,12 +454,24 @@ siointr(unit)
 	int s, rr;
 
 	tp = &sio_tty[unit];
-	rr = siogetreg(sio);
 
+start:
+	rr = siogetreg(sio);
 	if (rr & RR_RXRDY) {
+		if (rr & (RR_FRAMING | RR_OVERRUN | RR_PARITY)) {
+			sioeint(unit, rr, sio);
+			goto start;
+		}
+
 		code = sio->sio_data;
 		if ((tp->t_state & TS_ISOPEN) != 0)
 			(*linesw[tp->t_line].l_rint)(code, tp);
+
+		while ((rr = siogetreg(sio)) & RR_RXRDY) {
+			code = sio->sio_data;
+			if ((tp->t_state & TS_ISOPEN) != 0)
+				(*linesw[tp->t_line].l_rint)(code, tp);
+		}
 	}
 
 	if (rr & RR_TXRDY) {
@@ -470,6 +482,30 @@ siointr(unit)
 		else
 			siostart(tp);
 	}
+}
+
+sioeint(unit, stat, sio)
+	register int unit, stat;
+	register struct siodevice *sio;
+{
+	register struct tty *tp;
+	register int code;
+
+	tp = &sio_tty[unit];
+
+	code = sio->sio_data;
+
+	sio->sio_cmd = WR0_ERRRST;
+
+	if ((tp->t_state & TS_ISOPEN) == 0)
+		return;
+
+	if (stat & RR_FRAMING)
+		code |= TTY_FE;
+	else if (stat & RR_PARITY)
+		code |= TTY_PE;
+
+	(*linesw[tp->t_line].l_rint)(code, tp);
 }
 
 /*
