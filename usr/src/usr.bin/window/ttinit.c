@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ttinit.c	3.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)ttinit.c	3.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -28,6 +28,7 @@ int tt_f100();
 int tt_tvi925();
 int tt_wyse75();
 int tt_wyse60();
+int tt_zapple();
 int tt_zentec();
 int tt_generic();
 struct tt_tab tt_tab[] = {
@@ -38,6 +39,7 @@ struct tt_tab tt_tab[] = {
 	{ "wyse75",	6, tt_wyse75 },
 	{ "wyse60",	6, tt_wyse60 },
 	{ "w60",	3, tt_wyse60 },
+	{ "zapple",	6, tt_zapple },
 	{ "zentec",	6, tt_zentec },
 	{ "generic",	0, tt_generic },
 	0
