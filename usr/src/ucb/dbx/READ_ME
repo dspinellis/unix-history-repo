@@ -1,0 +1,19 @@
+This is a very new version of a multi-language debugger for UNIX.
+Bugs are to be expected.
+
+Interface files (.h) are automatically generated from implementation files (.c)
+so they (the .h files) should not be modified.
+
+Things to do:
+    testing 1 2 3 ...
+    dynamic scoping
+    parameter passing
+    tracing register variables
+    dynamic bounds for ranges
+    Fortran
+    eliminate redundant header file information
+    variable numbers of parameters
+    overloading
+    Pascal
+    screen-oriented front end
+    cleaner and more powerful event specification syntax
