@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)tape.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "restore.h"
@@ -38,6 +38,7 @@ static char	*map;
 static char	lnkbuf[MAXPATHLEN + 1];
 static int	pathlen;
 
+int		oldinofmt;	/* old inode format conversion required */
 int		Bcvt;		/* Swap Bytes (for CCI or sun) */
 static int	Qcvt;		/* Swap quads (for sun) */
 u_long		swabl();
@@ -555,7 +556,7 @@ getfile(f1, f2)
 {
 	register int i;
 	int curblk = 0;
-	off_t size = spcl.c_dinode.di_size;
+	long size = spcl.c_dinode.di_size;
 	static char clearedbuf[MAXBSIZE];
 	char buf[MAXBSIZE / TP_BSIZE][TP_BSIZE];
 	char junk[TP_BSIZE];
@@ -978,14 +979,6 @@ good:
 		qcvt.val[1] = qcvt.val[0];
 		qcvt.val[0] = i;
 	}
-	/*
-	 * If we are restoring a filesystem with old format inodes, 
-	 * copy the uid/gid to the new location.
-	 */
-	if ((buf->c_flags & DR_NEWINODEFMT) == 0) {
-		buf->c_dinode.di_uid = buf->c_dinode.di_ouid;
-		buf->c_dinode.di_gid = buf->c_dinode.di_ogid;
-	}
 
 	switch (buf->c_type) {
 
@@ -1001,6 +994,9 @@ good:
 		break;
 
 	case TS_TAPE:
+		if ((buf->c_flags & DR_NEWINODEFMT) == 0)
+			oldinofmt = 1;
+		/* fall through */
 	case TS_END:
 		buf->c_inumber = 0;
 		break;
@@ -1012,6 +1008,14 @@ good:
 	default:
 		panic("gethead: unknown inode type %d\n", buf->c_type);
 		break;
+	}
+	/*
+	 * If we are restoring a filesystem with old format inodes, 
+	 * copy the uid/gid to the new location.
+	 */
+	if (oldinofmt) {
+		buf->c_dinode.di_uid = buf->c_dinode.di_ouid;
+		buf->c_dinode.di_gid = buf->c_dinode.di_ogid;
 	}
 	if (dflag)
 		accthdr(buf);
