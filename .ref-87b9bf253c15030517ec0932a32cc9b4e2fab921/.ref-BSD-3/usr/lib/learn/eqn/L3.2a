@@ -1,0 +1,14 @@
+#print
+Do
+   x sub i +y sub j
+and
+   x sub i+y sub j
+produce the same output?
+Answer yes or no.
+#copyin
+#user
+#uncopyin
+#match no
+#log
+#next
+3.1b 10

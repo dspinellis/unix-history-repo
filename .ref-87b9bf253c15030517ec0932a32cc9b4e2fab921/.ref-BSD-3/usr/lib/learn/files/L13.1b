@@ -1,0 +1,19 @@
+#print
+There is a file in this directory whose name begins
+with 'z'. Do what it tells you to, then type "ready".
+#create X1
+#create X2
+#create zip
+Rename the file named "mary" to "joe".
+#create joe
+I am a file
+#
+rm -f mary
+ls >X1
+mv joe mary
+#user
+ls >X2
+#cmp X1 X2
+#log
+#next
+13.1c 5

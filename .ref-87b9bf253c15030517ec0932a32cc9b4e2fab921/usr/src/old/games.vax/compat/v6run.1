@@ -1,0 +1,45 @@
+.\"
+.\"	v6run.1	4.1	82/05/12
+.\"
+.TH V6RUN 1 
+.SH NAME
+v6run, v7run  \-  compatability mode execution on VAX
+.SH SYNOPSIS
+.B v6run
+[
+.B \-root
+] file
+.SH DESCRIPTION
+.I V6run
+and
+.I v7run
+are programs to run UNIX version 6 and UNIX version 7
+.I a.out
+format PDP-11 executable files.
+The hardware compatability mode of the VAX is used for all PDP-11
+instructions for which it applies.
+System calls from the compatability mode program are caught
+and simulated by executing appropriate native mode system calls.
+.PP
+The optional
+.I root
+specification indicates a directory which is to be treated as
+the root directory for the process and its children.
+This is especially useful for running a PDP-11 shell on
+a directory hierarchy which looks like a PDP-11 file system
+using a command such as
+.sp
+.ti +5
+"v6run -/user/pdp11stuff/v6files /bin/sh".
+.sp
+Note that the specification of the file to execute (/bin/sh)
+is relative to the specified directory.
+.SH DIAGNOSTICS
+Open failures are reported if files can not be opened for read access.
+Other error messages concern bad system calls, bad a.out format etc.
+.SH BUGS
+There is no way to run separated I/D space processes.
+The floating point simulation has not been well tested and no
+doubt has some problems.
+.SH AUTHOR
+Arthur W. Wetzel (University of Pittsburgh - IDIS)

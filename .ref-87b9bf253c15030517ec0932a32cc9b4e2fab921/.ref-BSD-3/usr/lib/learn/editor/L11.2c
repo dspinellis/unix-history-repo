@@ -1,0 +1,30 @@
+#print
+You can of course execute other shell commands
+before going into the editor.  For example,
+in this directory there is a file named for a New Jersey
+city.  Find out what file it is; then print it with "cat"
+and with the editor to check the listings are the same.
+Then type "ready".
+#create Ref
+2 cups sifted all-purpose flour
+1 tablespoon double-acting baking powder
+1/2 teaspoon salt
+1/4 cup butter
+3/4 cup milk
+#create trenton
+2 cups sifted all-purpose flour
+1 tablespoon double-acting baking powder
+1/2 teaspoon salt
+1/4 cup butter
+3/4 cup milk
+#copyout
+#pipe
+#user
+#unpipe
+#uncopyout
+grep '....' .ocopy | tail -5 >X1
+#cmp X1 Ref
+#log
+#next
+12.1a 10
+12.2a 5

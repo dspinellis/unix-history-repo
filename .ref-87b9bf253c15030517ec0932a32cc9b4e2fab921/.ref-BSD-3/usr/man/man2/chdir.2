@@ -1,0 +1,25 @@
+.TH CHDIR 2 
+.SH NAME
+chdir \- change default directory
+.SH SYNOPSIS
+.B chdir(dirname)
+.br
+.B char *dirname;
+.SH DESCRIPTION
+.I Dirname
+is the address of the pathname of a directory, terminated by a null byte.
+.I Chdir
+causes this directory
+to become the current working directory,
+the starting point for path names not beginning with `/'.
+.SH "SEE ALSO"
+cd(1)
+.SH DIAGNOSTICS
+Zero is returned if the directory is changed; \-1
+is returned
+if the given name is not that of a directory
+or is not searchable.
+.SH ASSEMBLER
+(chdir = 12.)
+.br
+.B sys chdir; dirname

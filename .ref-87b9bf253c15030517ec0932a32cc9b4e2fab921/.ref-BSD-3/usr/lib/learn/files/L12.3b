@@ -1,0 +1,18 @@
+#print
+Are the files "memo1" and "memo2" the same?
+If they are different, "diff" will print the
+lines that are not the same.
+Reply "yes" or "no".
+#create memo1
+A quick brown fox jumps over the lazy dog.
+We were away a year ago.
+#create memo2
+A quick brown fox jumps over the lazy dog.
+We were away a year ago.
+#copyin
+#user
+#uncopyin
+#match yes
+#log
+#next
+12.3c 2

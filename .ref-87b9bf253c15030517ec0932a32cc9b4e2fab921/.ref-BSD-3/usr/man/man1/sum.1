@@ -1,0 +1,19 @@
+.TH SUM 1 
+.SH NAME
+sum \- sum and count blocks in a file
+.SH SYNOPSIS
+.B sum
+file
+.SH DESCRIPTION
+.I Sum
+calculates and prints a 16-bit checksum for the named file,
+and also prints the number of blocks in the file.
+It is typically used to look for bad spots, or
+to validate a file communicated over
+some transmission line.
+.SH "SEE ALSO"
+wc(1)
+.SH DIAGNOSTICS
+`Read error'
+is indistinuishable from end of file on
+most devices; check the block count.

@@ -1,0 +1,17 @@
+#print
+You can use the [] characters anywhere you want
+in a file name.  For example,
+ ls a[bc]d
+would match abd or acd, right?
+What is the command that finds out how
+many files are named "ax" or "bx"?
+Type that command, then "ready".
+#create ax
+#create bx
+#copyin
+#user
+#uncopyin
+#match ls [ab]x
+#log
+#next
+7.3c 2
