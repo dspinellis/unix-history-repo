@@ -1,9 +1,9 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwspawn.c	3.8 84/04/08";
+static	char *sccsid = "@(#)wwspawn.c	3.9 84/04/16";
 #endif
 
 #include "ww.h"
-#include <signal.h>
+#include <sys/signal.h>
 
 /*
  * There is a dead lock with vfork and closing of pseudo-ports.
@@ -17,8 +17,9 @@ char **argv;
 	int pid;
 	int ret;
 	char erred = 0;
+	int s;
 
-	(void) sighold(SIGCHLD);
+	s = sigblock(sigmask(SIGCHLD));
 	switch (pid = vfork()) {
 	case -1:
 		wwerrno = WWE_SYS;
@@ -39,12 +40,10 @@ char **argv;
 			ret = pid;
 		}
 	}
-	(void) sigrelse(SIGCHLD);
-	/*
+	(void) sigsetmask(s);
 	if (wp->ww_socket >= 0) {
 		(void) close(wp->ww_socket);
 		wp->ww_socket = -1;
 	}
-	*/
 	return ret;
 }

@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.30 84/04/09	
+ *	@(#)ww.h	3.31 84/04/16	
  */
 
 #include <sgtty.h>
@@ -239,11 +239,4 @@ char *sprintf();
 #define MIN(x, y)	((x) > (y) ? (y) : (x))
 #define MAX(x, y)	((x) > (y) ? (x) : (y))
 
-#if defined(O_4_1A)||defined(O_4_1C)
-int (*sigset)();
-#define signal(s, v)	sigset((s), (v))
-#else
 #define sigmask(s)	(1 << (s) - 1)
-#define sighold(s)	sigblock(sigmask(s))
-#define sigrelse(s)	sigsetmask(sigblock(0) & ~sigmask(s))
-#endif

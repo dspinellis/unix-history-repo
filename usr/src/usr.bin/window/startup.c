@@ -1,17 +1,18 @@
 #ifndef lint
-static	char *sccsid = "@(#)startup.c	3.11 84/04/09";
+static	char *sccsid = "@(#)startup.c	3.12 84/04/16";
 #endif
 
 #include "defs.h"
 #include "value.h"
 #include "var.h"
 #include "char.h"
+#include "local.h"
 
 doconfig()
 {
 	char buf[100];
 	char *home;
-	static char runcom[] = ".windrc";
+	static char runcom[] = RUNCOM;
 
 	if ((home = getenv("HOME")) == 0)
 		home = ".";

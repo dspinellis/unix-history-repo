@@ -1,21 +1,17 @@
-@(#)README	3.2 84/04/05
+@(#)README	3.3 84/04/16
 
 Compilation notes:
 
-     The flags:
+     There is only one compiler option:
 
 	O_SUN		use 68000 byte ordering
-	O_4_1C		4.1c
-	O_4_1A		4.1a
 
-     4.2bsd on a vax needs no flags.  Some systems will need the jobs library.
-4.1a does not support the 't' command.
+     The file local.h contains locally tunable constants.
 
      The makefile should be updated with mkmf.  The only library it needs
 is termcap (and jobs for 4.1).
 
-     Do not profile on 4.1.  A bug in the system causes profiling
-to stay on after an exec.
+     Window only runs on 4.2 machines.
 
 
 A few notes about the internals:

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.23 84/04/08";
+static	char *sccsid = "@(#)main.c	3.24 84/04/16";
 #endif
 
 #include "defs.h"
@@ -7,6 +7,7 @@ static	char *sccsid = "@(#)main.c	3.23 84/04/08";
 #include <stdio.h>
 #include "string.h"
 #include "char.h"
+#include "local.h"
 
 #define next(a) (*++*(a) ? *(a) : (*++(a) ? *(a) : (char *)usage()))
 
@@ -61,10 +62,10 @@ char **argv;
 		} else
 			(void) usage();
 	}
-	nbufline = 48;				/* compatible */
-	escapec = ctrl(p);	
+	nbufline = NLINE;
+	escapec = ESCAPEC;	
 	if ((p = getenv("SHELL")) == 0)
-		p = "/bin/csh";
+		p = SHELL;
 	if ((shellfile = str_cpy(p)) == 0)
 		nomem();
 	if (p = rindex(shellfile, '/'))
@@ -73,9 +74,7 @@ char **argv;
 		p = shellfile;
 	shell[0] = p;
 	shell[1] = 0;
-#ifndef O_4_1A
 	(void) gettimeofday(&starttime, (struct timezone *)0);
-#endif
 	if (wwinit() < 0) {
 		(void) fprintf(stderr, "%s.\n", wwerror());
 		exit(1);
