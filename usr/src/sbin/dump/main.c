@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.3 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -225,6 +225,7 @@ char *rawname(cp)
 	char *cp;
 {
 	static char rawbuf[32];
+	char *rindex();
 	char *dp = rindex(cp, '/');
 
 	if (dp == 0)
