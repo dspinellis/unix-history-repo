@@ -163,35 +163,31 @@ dmfprobe(reg, ctlr)
 		intrv[0] = ctlr->ui_intr[4];
 		intrv[1] = ctlr->ui_intr[5];
 		ctlr->ui_intr = intrv;
-	}
-	else if (dmfoptions == DMFC_LP) {
+	} else if (dmfoptions == DMFC_LP) {
 		/* LP portion only */
 
 		cvec = (uba_hd[numuba].uh_lastiv -= 8);
 		ctlr->ui_intr = &ctlr->ui_intr[6];
-	}
-	else if (dmfoptions == (DMFC_LP|DMFC_ASYNC)) {
+	} else if (dmfoptions == (DMFC_LP|DMFC_ASYNC)) {
 		/* LP ans Async portions only */
 
 		cvec = (uba_hd[numuba].uh_lastiv -= 2*8);
 		ctlr->ui_intr = &ctlr->ui_intr[4];
-	}
-	else {
+	} else {
 		/* All other configurations get everything */
 
 		cvec = (uba_hd[numuba].uh_lastiv -= 4*8);
 	}
 	a = (dmfoptions >> 12) & 0xf;
 	printf("dmf%d:", ctlr->ui_unit);
-	for(i=0;a != 0;++i,a >>= 1) {
-		if(a&1)
+	for (i = 0; a != 0; ++i, a >>= 1) {
+		if (a & 1)
 			printf(" %s",dmfdevs[i]);
 	}
 	printf(".\n");
 
 	if (dmfoptions & DMFC_LP)
 		dmfaddr->dmfl[0] = DMFL_RESET;
-	/* NEED TO SAVE IT SOMEWHERE FOR OTHER DEVICES */
 	return (sizeof (struct dmfdevice));
 }
 
@@ -227,8 +223,8 @@ dmfopen(dev, flag)
 	int s;
 
 	unit = minor(dev);
-	if(unit & 0200)
-		return(dmflopen(dev,flag));
+	if (unit & 0200)
+		return (dmflopen(dev,flag));
 	dmf = unit >> 3;
 	if (unit >= NDMF*8 || (ui = dmfinfo[dmf])== 0 || ui->ui_alive == 0)
 		return (ENXIO);
@@ -293,8 +289,10 @@ dmfclose(dev, flag)
 	register unit;
 
 	unit = minor(dev);
-	if(unit & 0200)
-		return(dmflclose(dev,flag));
+	if (unit & 0200) {
+		dmflclose(dev,flag);
+		return;
+	}
 		
 	tp = &dmf_tty[unit];
 	(*linesw[tp->t_line].l_close)(tp);
@@ -310,7 +308,7 @@ dmfread(dev, uio)
 {
 	register struct tty *tp;
 
-	if(minor(dev)&0200)
+	if (minor(dev) & 0200)
 		return(ENXIO);
 	tp = &dmf_tty[minor(dev)];
 	return ((*linesw[tp->t_line].l_read)(tp, uio));
@@ -322,8 +320,8 @@ dmfwrite(dev, uio)
 {
 	register struct tty *tp;
 
-	if(minor(dev)&0200)
-		return(dmflwrite(dev,uio));
+	if (minor(dev) & 0200)
+		return (dmflwrite(dev,uio));
 	tp = &dmf_tty[minor(dev)];
 	return ((*linesw[tp->t_line].l_write)(tp, uio));
 }
@@ -335,53 +333,48 @@ dmfrint(dmf)
 	int dmf;
 {
 	register c;
+	register struct tty *tp;
 	register struct dmfdevice *addr;
 	register struct tty *tp0;
-	register dev;
 	int unit;
 	int overrun = 0;
+	register struct uba_device *ui;
 
-	{
-		register struct uba_device *ui;
-
-		ui = dmfinfo[dmf];
-		if (ui == 0 || ui->ui_alive == 0)
-			return;
-		addr = (struct dmfdevice *)ui->ui_addr;
-	}
+	ui = dmfinfo[dmf];
+	if (ui == 0 || ui->ui_alive == 0)
+		return;
+	addr = (struct dmfdevice *)ui->ui_addr;
 	tp0 = &dmf_tty[dmf * 8];
 	/*
 	 * Loop fetching characters from the silo for this
 	 * dmf until there are no more in the silo.
 	 */
 	while ((c = addr->dmfrbuf) < 0) {
-		register struct tty *tp;
 
 		unit = (c >> 8) & 07;
 		tp = tp0 + unit;
-		dev = unit + dmf * 8;
 		if (c & DMF_DSC) {
 			addr->dmfcsr = DMF_IE | DMFIR_TBUF | unit;
 			if (addr->dmfrms & DMF_CAR)
 				(void)(*linesw[tp->t_line].l_modem)(tp, 1);
-			else if ((dmfsoftCAR[dmf] & (1<<unit)) == 0 &&
+			else if ((dmfsoftCAR[dmf] & (1 << unit)) == 0 &&
 			    (*linesw[tp->t_line].l_modem)(tp, 0) == 0) {
 				addr->dmfcsr = DMF_IE | DMFIR_LCR | unit;
 				addr->dmflctms = DMFLCR_ENA;
 			}
 			continue;
 		}
-		if ((tp->t_state&TS_ISOPEN)==0) {
+		if ((tp->t_state&TS_ISOPEN) == 0) {
 			wakeup((caddr_t)&tp->t_rawq);
 #ifdef PORTSELECTOR
-			if ((tp->t_state&TS_WOPEN) == 0)
+			if ((tp->t_state & TS_WOPEN) == 0)
 #endif
 				continue;
 		}
 		if (c & (DMF_PE|DMF_DO|DMF_FE)) {
 			if (c & DMF_PE)
-				if ((tp->t_flags&(EVENP|ODDP))==EVENP
-			 	|| (tp->t_flags&(EVENP|ODDP))==ODDP )
+				if ((tp->t_flags & (EVENP|ODDP)) == EVENP
+			 	|| (tp->t_flags & (EVENP|ODDP)) == ODDP)
 					continue;
 			if ((c & DMF_DO) && overrun == 0) {
 				log(LOG_WARNING, "dmf%d: silo overflow\n", dmf);
@@ -393,7 +386,7 @@ dmfrint(dmf)
 			 	* a null (in raw mode, for getty), or a
 			 	* interrupt (in cooked/cbreak mode).
 			 	*/
-				if (tp->t_flags&RAW)
+				if (tp->t_flags & RAW)
 					c = 0;
 				else
 					c = tp->t_intrc;
@@ -420,7 +413,7 @@ dmfioctl(dev, cmd, data, flag)
 	register int unit = minor(dev);
 	int error;
  
-	if(unit & 0200)
+	if (unit & 0200)
 		return (ENOTTY);
 	tp = &dmf_tty[unit];
 	error = (*linesw[tp->t_line].l_ioctl)(tp, cmd, data, flag);
@@ -550,8 +543,8 @@ dmfparam(unit)
 dmfxint(dmf)
 	int dmf;
 {
-	int u = dmf * 8;
-	struct tty *tp0 = &dmf_tty[u];
+	int unit0 = dmf * 8;
+	struct tty *tp0 = &dmf_tty[unit0];
 	register struct tty *tp;
 	register struct dmfdevice *addr;
 	register struct uba_device *ui;
@@ -569,7 +562,7 @@ dmfxint(dmf)
 		tp->t_state &= ~TS_BUSY;
 		if (tp->t_state&TS_FLUSH)
 			tp->t_state &= ~TS_FLUSH;
-		else if (dmf_dma[u + t]) {
+		else if (dmf_dma[unit0 + t]) {
 			/*
 			 * Do arithmetic in a short to make up
 			 * for lost 16&17 bits.
@@ -821,95 +814,91 @@ dmfreset(uban)
 	}
 }
 
-/* dmflopen -- open the line printer port on a dmf32
- *
+/*
+ * dmflopen -- open the line printer port on a dmf32
  */
-dmflopen(dev,flag)
-dev_t dev;
-int flag;
+/* ARGSUSED */
+dmflopen(dev, flag)
+	dev_t dev;
+	int flag;
 {
 	register int dmf;
 	register struct dmfl_softc *sc;
 	register struct uba_device *ui;
 	register struct dmfdevice *addr;
 
-
-	dmf = DMFL_UNIT(dev) ;
-	if(((sc= &dmfl_softc[dmf])->dmfl_state & OPEN) ||
+	dmf = DMFL_UNIT(dev);
+	if (((sc= &dmfl_softc[dmf])->dmfl_state & OPEN) ||
 		((ui=dmfinfo[dmf]) == 0) || ui->ui_alive == 0)
 			return(ENXIO);
 	addr = (struct dmfdevice *)ui->ui_addr;
-	if((addr->dmfl[0] & DMFL_OFFLINE))
-	{
+	if ((addr->dmfl[0] & DMFL_OFFLINE)) {
 		/*printf("dmf: line printer offline/jammed\n");*/
-		return(EIO);
+		return (EIO);
 	}
-	if((addr->dmfl[0]&DMFL_CONV))
-	{
+	if ((addr->dmfl[0] & DMFL_CONV)) {
 		printf("dmf:line printer disconnected\n");
-		return(EIO);
+		return (EIO);
 	}
 
 	addr->dmfl[0] = 0;
 	sc->dmfl_state |= OPEN;
-	return 0;
+	return (0);
 }
 
-dmflclose(dev,flag)
-dev_t dev;
-int flag;
+/* ARGSUSED */
+dmflclose(dev, flag)
+	dev_t dev;
+	int flag;
 {
 	register int dmf= DMFL_UNIT(dev);
 	register struct dmfl_softc *sc = &dmfl_softc[dmf];
 
-	dmflout(dev,"\f",1);
+	dmflout(dev, "\f", 1);
 	sc->dmfl_state = 0;
-	if(sc->dmfl_info != 0)
+	if (sc->dmfl_info != 0)
 		ubarelse((struct dmfdevice *)(dmfinfo[dmf])->ui_ubanum,
 			&(sc->dmfl_info));
 
-	((struct dmfdevice *)(dmfinfo[dmf]->ui_addr))->dmfl[0]=0;
-	return 0;
+	((struct dmfdevice *)(dmfinfo[dmf]->ui_addr))->dmfl[0] = 0;
+	return (0);
 }
 
-dmflwrite(dev,uio)
-dev_t dev;
-struct uio *uio;
+dmflwrite(dev, uio)
+	dev_t dev;
+	struct uio *uio;
 {
 	register unsigned int n;
 	register int error;
 	register struct dmfl_softc *sc;
 
 	sc = &dmfl_softc[DMFL_UNIT(dev)];
-	if(sc->dmfl_state&ERROR) return(EIO);
-	while(n=min(DMFL_BUFSIZ,(unsigned)uio->uio_resid))
-	{
-		if(error=uiomove(&sc->dmfl_buf[0],(int)n,
-			UIO_WRITE,uio))
-		{
+	if (sc->dmfl_state&ERROR)
+		return(EIO);
+	while (n = min(DMFL_BUFSIZ, (unsigned)uio->uio_resid)) {
+		if (error = uiomove(&sc->dmfl_buf[0], (int)n, UIO_WRITE, uio)) {
 			printf("uio move error\n");
-			return(error);
+			return (error);
 		}
-		if(error=dmflout(dev,&sc->dmfl_buf[0],n))
-		{
-			return(error);
-		}
+		if (error = dmflout(dev, &sc->dmfl_buf[0], n))
+			return (error);
 	}
-	return 0;
+	return (0);
 }
 
 
-/* dmflout -- start io operation to dmf line printer
+/*
+ * dmflout -- start io operation to dmf line printer
  *		cp is addr of buf of n chars to be sent.
  *
  *	-- dmf will be put in formatted output mode, this will
  *		be selectable from an ioctl if the
  *		need ever arises.
  */
-dmflout(dev,cp,n)
-dev_t dev;
-char *cp;
-int n;
+dmflout(dev, cp, n)
+	dev_t dev;
+	char *cp;
+	int n;
 {
 	register struct dmfl_softc *sc;
 	register int dmf;
@@ -918,23 +907,23 @@ int n;
 	register unsigned info;
 	register unsigned i;
 
-	dmf = DMFL_UNIT(dev) ;
-	sc= &dmfl_softc[dmf];
-	if(sc->dmfl_state&ERROR) return(EIO);
-	ui= dmfinfo[dmf];
-	/* allocate unibus resources, will be released when io
-	 * operation is done
+	dmf = DMFL_UNIT(dev);
+	sc = &dmfl_softc[dmf];
+	if (sc->dmfl_state & ERROR)
+		return (EIO);
+	ui = dmfinfo[dmf];
+	/*
+	 * allocate unibus resources, will be released when io
+	 * operation is done.
 	 */
-	sc->dmfl_info=
-	info=
-		uballoc(ui->ui_ubanum,cp,n,0);
-	d= (struct dmfdevice *)ui->ui_addr;
-	d->dmfl[0] = (2<<8) | DMFL_FORMAT; /* indir reg 2 */
+	sc->dmfl_info = info = uballoc(ui->ui_ubanum,cp,n,0);
+	d = (struct dmfdevice *)ui->ui_addr;
+	d->dmfl[0] = (2<<8) | DMFL_FORMAT;	/* indir reg 2 */
 	/* indir reg auto increments on r/w */
 	/* SO DON'T CHANGE THE ORDER OF THIS CODE */
-	d->dmfl[1] = 0; /* prefix chars & num */
-	d->dmfl[1] = 0; /* suffix chars & num */
-	d->dmfl[1] = info; 	/* dma lo 16 bits addr */
+	d->dmfl[1] = 0;			/* prefix chars & num */
+	d->dmfl[1] = 0;			/* suffix chars & num */
+	d->dmfl[1] = info; 		/* dma lo 16 bits addr */
 
 	/* NOT DOCUMENTED !! */
 	d->dmfl[1] = -n;		/* number of chars */
@@ -947,80 +936,81 @@ int n;
 	d->dmfl[1] = sc->dmfl_lines 	/* lines per page */
 		| (sc->dmfl_cols<<8);	/* carriage width */
 	sc->dmfl_state |= ASLP;
-	i=spltty();
+	i = spltty();
 	d->dmfl[0] |= DMFL_PEN|DMFL_IE;
-	while(sc->dmfl_state & ASLP)
-	{
-		sleep(&sc->dmfl_buf[0],(PZERO+8));
-		while(sc->dmfl_state&ERROR)
-		{
-			timeout(dmflint,dmf,10*hz);
-			sleep(&sc->dmfl_state,(PZERO+8));
+	while (sc->dmfl_state & ASLP) {
+		sleep(&sc->dmfl_buf[0], (PZERO+8));
+		while (sc->dmfl_state & ERROR) {
+			timeout(dmflint, dmf, 10*hz);
+			sleep(&sc->dmfl_state, (PZERO+8));
 		}
-		/*if(sc->dmfl_state&ERROR) return (EIO);*/
+		/*if (sc->dmfl_state&ERROR) return (EIO);*/
 	}
 	splx(i);
-	return(0);
+	return (0);
 }
-/* dmflint -- handle an interrupt from the line printer part of the dmf32
- *
+
+/*
+ * dmflint -- handle an interrupt from the line printer part of the dmf32
  */
-
 dmflint(dmf)
-int dmf;
+	int dmf;
 {
-
 	register struct uba_device *ui;
 	register struct dmfl_softc *sc;
 	register struct dmfdevice *d;
 
-	ui= dmfinfo[dmf];
-	sc= &dmfl_softc[dmf];
-	d= (struct dmfdevice *)ui->ui_addr;
+	ui = dmfinfo[dmf];
+	sc = &dmfl_softc[dmf];
+	d = (struct dmfdevice *)ui->ui_addr;
 
 	d->dmfl[0] &= ~DMFL_IE;
 
-	if(sc->dmfl_state&ERROR)
-	{
+	if (sc->dmfl_state & ERROR) {
 		printf("dmfl: intr while in error state \n");
-		if((d->dmfl[0]&DMFL_OFFLINE) == 0)
+		if ((d->dmfl[0]&DMFL_OFFLINE) == 0)
 			sc->dmfl_state &= ~ERROR;
 		wakeup(&sc->dmfl_state);
 		return;
 	}
-	if(d->dmfl[0]&DMFL_DMAERR)
-	{
+	if (d->dmfl[0] & DMFL_DMAERR)
 		printf("dmf:NXM\n");
-	}
-	if(d->dmfl[0]&DMFL_OFFLINE)
-	{
+	if (d->dmfl[0] & DMFL_OFFLINE) {
 		printf("dmf:printer error\n");
 		sc->dmfl_state |= ERROR;
 	}
-	if(d->dmfl[0]&DMFL_PDONE)
-	{
+	if (d->dmfl[0] & DMFL_PDONE) {
 #ifdef notdef
-		printf("bytes= %d\n",d->dmfl[1]);
-		printf("lines= %d\n",d->dmfl[1]);
+		printf("bytes= %d\n", d->dmfl[1]);
+		printf("lines= %d\n", d->dmfl[1]);
 #endif
 	}
 	sc->dmfl_state &= ~ASLP;
 	wakeup(&sc->dmfl_buf[0]);
-	if(sc->dmfl_info != 0)
-		ubarelse(ui->ui_ubanum,&sc->dmfl_info);
+	if (sc->dmfl_info != 0)
+		ubarelse(ui->ui_ubanum, &sc->dmfl_info);
 	sc->dmfl_info = 0;
-
 }
 
 /* stubs for interrupt routines for devices not yet supported */
 
-dmfsrint() { printf("dmfsrint\n"); }
+dmfsrint()
+{
+	printf("dmfsrint\n");
+}
 
-dmfsxint() { printf("dmfsxint\n"); }
+dmfsxint()
+{
+	printf("dmfsxint\n");
+}
 
-dmfdaint() { printf("dmfdaint\n"); }
+dmfdaint()
+{
+	printf("dmfdaint\n");
+}
 
-dmfdbint() { printf("dmfdbint\n"); }
-
-
+dmfdbint()
+{
+	printf("dmfdbint\n");
+}
 #endif
