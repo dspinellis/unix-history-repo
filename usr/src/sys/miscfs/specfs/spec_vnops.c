@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)spec_vnops.c	7.20 (Berkeley) %G%
+ *	@(#)spec_vnops.c	7.21 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -79,6 +79,7 @@ struct vnodeops spec_vnodeops = {
 	spec_bmap,		/* bmap */
 	spec_strategy,		/* strategy */
 	spec_print,		/* print */
+	spec_nullop,		/* islocked */
 };
 
 /*
