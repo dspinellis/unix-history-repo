@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)glob.h	5.7 (Berkeley) %G%
+ *	@(#)glob.h	5.8 (Berkeley) %G%
  */
 
 #ifndef _GLOB_H_
@@ -19,6 +19,11 @@ typedef struct {
 	int gl_offs;		/* reserved at beginning of gl_pathv */
 	int gl_flags;		/* copy of flags parameter to glob() */
 	int (*gl_errfunc)();	/* copy of errfunc parameter to glob() */
+	void *(*gl_opendir)();	/* alternate opendir() function for glob() */
+	struct dirent *(*gl_readdir)();	/* alternate readdir() function */
+	void (*gl_closedir)();	/* alternate closedir() function for glob() */
+	int (*gl_lstat)();	/* alternate lstat() function for glob() */
+	int (*gl_stat)();	/* alternate stat() function for glob() */
 	char **gl_pathv;	/* list of paths matching pattern */
 } glob_t;
 
@@ -33,6 +38,7 @@ typedef struct {
 #define	GLOB_MAGCHAR	0x040	/* pattern had globbing characters */
 #define	GLOB_NOMAGIC	0x080	/* GLOB_NOCHECK without magic chars (csh) */
 #define	GLOB_QUOTE	0x100	/* quote special chars with \ */
+#define	GLOB_ALTDIRFUNC	0x200	/* use alternately specified directory funcs */
 #endif
 
 #define	GLOB_NOSPACE	(-1)	/* malloc call failed */
