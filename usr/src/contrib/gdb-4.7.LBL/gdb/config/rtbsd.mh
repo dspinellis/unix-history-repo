@@ -1,0 +1,8 @@
+# IBM RT/PC running BSD unix. 
+# This file contributed at NYU, where we are using the RT to remote
+# debug a 29k running unix.  No attempt, as of 7/16/91, has been made
+# to support debugging of RT executables.
+XDEPFILES=coredep.o corelow.o infptrace.o inftarg.o fork-child.o
+MH_CFLAGS=-DHOSTING_ONLY	# No debugging of RT executables 
+XM_FILE= xm-rtbsd.h
+CC=gcc -traditional		# hc/pcc just can't cut it.
