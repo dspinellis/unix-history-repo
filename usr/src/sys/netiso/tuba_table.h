@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_table.h	7.4 (Berkeley) %G%
+ *	@(#)tuba_table.h	7.5 (Berkeley) %G%
  */
 
 struct tuba_cache {
@@ -16,7 +16,8 @@ struct tuba_cache {
 	int	tc_index;
 	u_short	tc_sum_in;			/* for inbound cksum */
 	u_short	tc_sum_out;			/* for outbound cksum */
-	struct	iso_addr tc_addr;
+	struct	iso_addr tc_addr;		/* so you can respond */
+	char	tc_EID[7];			/* what counts for lookups */
 };
 
 #define ADDCARRY(x)  (x >= 65535 ? x -= 65535 : x)

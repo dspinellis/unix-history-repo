@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tuba_usrreq.c	7.4 (Berkeley) %G%
+ *	@(#)tuba_usrreq.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,8 +43,8 @@
  * TCP protocol interface to socket abstraction.
  */
 extern	char *tcpstates[];
-extern	struct inpcb tcb;
-struct	isopcb tuba_isopcb;
+extern	struct inpcb tuba_inpcb;
+extern	struct isopcb tuba_isopcb;
 
 /*
  * Process a TCP user request for TCP tb.  If this is a send request
@@ -108,6 +108,9 @@ tuba_usrreq(so, req, m, nam, control)
 			iso_pcbdetach(isop);
 		} else {
 			inp = sotoinpcb(so);
+			remque(inp);
+			insque(inp, &tuba_inpcb);
+			inp->inp_head = &tuba_inpcb;
 			tp = intotcpcb(inp);
 			if (tp == 0)
 				panic("tuba_usrreq 3");
