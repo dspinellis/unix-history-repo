@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.34 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1700,17 +1700,17 @@ badaddr:
 	tv++;
 
 	/* do special mapping for local mailer */
-	if (m == LocalMailer && *tv != NULL)
+	if (*tv != NULL)
 	{
 		register char *p = *tv;
 
 		if (*p == '"')
 			p++;
-		if (*p == '|')
+		if (*p == '|' && bitnset(M_CHECKPROG, m->m_flags))
 			a->q_mailer = m = ProgMailer;
-		else if (*p == '/')
+		else if (*p == '/' && bitnset(M_CHECKFILE, m->m_flags))
 			a->q_mailer = m = FileMailer;
-		else if (*p == ':')
+		else if (*p == ':' && bitnset(M_CHECKINCLUDE, m->m_flags))
 		{
 			/* may be :include: */
 			cataddr(tv, NULL, buf, sizeof buf, '\0');
@@ -1725,7 +1725,8 @@ badaddr:
 		}
 	}
 
-	if (m == LocalMailer && *tv != NULL && strcmp(*tv, "@") == 0)
+	if (bitnset(M_CHECKUDB, m->m_flags) && *tv != NULL &&
+	    strcmp(*tv, "@") == 0)
 	{
 		tv++;
 		a->q_flags |= QNOTREMOTE;

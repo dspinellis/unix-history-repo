@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	8.44 (Berkeley) %G%
+ *	@(#)sendmail.h	8.45 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	8.44		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	8.45		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -175,6 +175,7 @@ typedef struct mailer	MAILER;
 
 /* bits for m_flags */
 # define M_ESMTP	'a'	/* run Extended SMTP protocol */
+# define M_ALIASABLE	'A'	/* user can be LHS of an alias */
 # define M_BLANKEND	'b'	/* ensure blank line at end of message */
 # define M_NOCOMMENT	'c'	/* don't include comment part of address */
 # define M_CANONICAL	'C'	/* make addresses canonical "u@dom" */
@@ -188,11 +189,13 @@ typedef struct mailer	MAILER;
 # define M_PREHEAD	'H'	/* MAIL11V3: preview headers */
 # define M_INTERNAL	'I'	/* SMTP to another sendmail site */
 # define M_LOCALMAILER	'l'	/* delivery is to this host */
+# define M_NOLOOPCHECK	'k'	/* don't check for loops in HELO command */
 # define M_LIMITS	'L'	/* must enforce SMTP line limits */
 # define M_MUSER	'm'	/* can handle multiple users at once */
 		/*	'M'	/* CF: include Message-Id: */
 # define M_NHDR		'n'	/* don't insert From line */
 # define M_MANYSTATUS	'N'	/* MAIL11V3: DATA returns multi-status */
+# define M_RUNASRCPT	'o'	/* always run mailer as recipient */
 # define M_FROMPATH	'p'	/* use reverse-path in MAIL FROM: */
 		/*	'P'	/* CF: include Return-Path: */
 # define M_ROPT		'r'	/* mailer takes picky -r flag */
@@ -202,9 +205,15 @@ typedef struct mailer	MAILER;
 # define M_USR_UPPER	'u'	/* preserve user case distinction */
 # define M_UGLYUUCP	'U'	/* this wants an ugly UUCP from line */
 		/*	'V'	/* UIUC: !-relativize all addresses */
+# define M_HASPWENT	'w'	/* check for /etc/passwd entry */
 		/*	'x'	/* CF: include Full-Name: */
 # define M_XDOT		'X'	/* use hidden-dot algorithm */
+# define M_TRYRULESET5	'5'	/* use ruleset 5 after local aliasing */
 # define M_7BITS	'7'	/* use 7-bit path */
+# define M_CHECKINCLUDE	':'	/* check for :include: files */
+# define M_CHECKPROG	'|'	/* check for |program addresses */
+# define M_CHECKFILE	'/'	/* check for /file addresses */
+# define M_CHECKUDB	'@'	/* user can be user database key */
 
 EXTERN MAILER	*Mailer[MAXMAILERS+1];
 
@@ -354,6 +363,7 @@ ENVELOPE
 /* values for e_flags */
 #define EF_OLDSTYLE	0x0000001	/* use spaces (not commas) in hdrs */
 #define EF_INQUEUE	0x0000002	/* this message is fully queued */
+#define EF_NORETURN	0x0000004	/* don't return the message on error */
 #define EF_CLRQUEUE	0x0000008	/* disk copy is no longer needed */
 #define EF_SENDRECEIPT	0x0000010	/* send a return receipt */
 #define EF_FATALERRS	0x0000020	/* fatal errors occured */
@@ -767,7 +777,6 @@ EXTERN bool	IgnrDot;	/* don't let dot end messages */
 EXTERN bool	SaveFrom;	/* save leading "From" lines */
 EXTERN bool	Verbose;	/* set if blow-by-blow desired */
 EXTERN bool	GrabTo;		/* if set, get recipients from msg */
-EXTERN bool	NoReturn;	/* don't return letter to sender */
 EXTERN bool	SuprErrs;	/* set if we are suppressing errors */
 EXTERN bool	HoldErrs;	/* only output errors to transcript */
 EXTERN bool	NoConnect;	/* don't connect to non-local mailers */
@@ -815,7 +824,6 @@ EXTERN bool	SendMIMEErrors;	/* send error messages in MIME format */
 EXTERN bool	MatchGecos;	/* look for user names in gecos field */
 EXTERN bool	UseErrorsTo;	/* use Errors-To: header (back compat) */
 EXTERN bool	TryNullMXList;	/* if we are the best MX, try host directly */
-extern bool	CheckLoopBack;	/* check for loopback on HELO packet */
 EXTERN bool	InChild;	/* true if running in an SMTP subprocess */
 EXTERN bool	DisConnected;	/* running with OutChannel redirected to xf */
 EXTERN char	SpaceSub;	/* substitution for <lwsp> */

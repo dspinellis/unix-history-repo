@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)usersmtp.c	8.19 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.20 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)usersmtp.c	8.19 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)usersmtp.c	8.20 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -160,15 +160,13 @@ tryhelo:
 	**  Check to see if we actually ended up talking to ourself.
 	**  This means we didn't know about an alias or MX, or we managed
 	**  to connect to an echo server.
-	**
-	**	If this code remains at all, "CheckLoopBack" should be
-	**	a mailer flag.  This is a MAYBENEXTRELEASE feature.
 	*/
 
 	p = strchr(&SmtpReplyBuffer[4], ' ');
 	if (p != NULL)
 		*p = '\0';
-	if (CheckLoopBack && strcasecmp(&SmtpReplyBuffer[4], MyHostName) == 0)
+	if (!bitnset(M_NOLOOPCHECK, m->m_flags) &&
+	    strcasecmp(&SmtpReplyBuffer[4], MyHostName) == 0)
 	{
 		syserr("553 %s config error: mail loops back to myself",
 			MyHostName);
@@ -357,7 +355,7 @@ smtpmailfrom(m, mci, e)
 	}
 	else
 		bufp = buf;
-	if (e->e_from.q_mailer == LocalMailer ||
+	if (bitnset(M_LOCALMAILER, e->e_from.q_mailer->m_flags) ||
 	    !bitnset(M_FROMPATH, m->m_flags))
 	{
 		smtpmessage("MAIL From:<%s>%s", m, mci, bufp, optbuf);

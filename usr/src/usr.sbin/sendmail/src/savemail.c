@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.31 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.32 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -160,7 +160,7 @@ savemail(e)
 		switch (state)
 		{
 		  case ESM_QUIET:
-			if (e->e_from.q_mailer == LocalMailer)
+			if (bitnset(M_LOCALMAILER, e->e_from.q_mailer->m_flags))
 				state = ESM_DEADLETTER;
 			else
 				state = ESM_MAIL;
@@ -303,7 +303,7 @@ savemail(e)
 			*/
 
 			p = NULL;
-			if (e->e_from.q_mailer == LocalMailer)
+			if (bitnset(M_HASPWENT, e->e_from.q_mailer->m_flags))
 			{
 				if (e->e_from.q_home != NULL)
 					p = e->e_from.q_home;
@@ -470,7 +470,7 @@ returntosender(msg, returnq, sendbody, e)
 		ee->e_flags &= ~EF_OLDSTYLE;
 	ee->e_sendqueue = returnq;
 	ee->e_msgsize = ERRORFUDGE;
-	if (!NoReturn)
+	if (!bitset(EF_NORETURN, e->e_flags))
 		ee->e_msgsize += e->e_msgsize;
 	initsys(ee);
 	for (q = returnq; q != NULL; q = q->q_next)
@@ -703,7 +703,7 @@ errbody(mci, e)
 	**  Output text of original message
 	*/
 
-	if (NoReturn)
+	if (bitset(EF_NORETURN, e->e_flags))
 		SendBody = FALSE;
 	putline("", mci);
 	if (e->e_parent->e_df != NULL)

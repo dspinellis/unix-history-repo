@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.86 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.87 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -761,9 +761,7 @@ deliver(e, firstto)
 		}
 
 		/* compute effective uid/gid when sending */
-		/* XXX perhaps this should be to->q_mailer != LocalMailer ?? */
-		/* XXX perhaps it should be a mailer flag? */
-		if (to->q_mailer == ProgMailer || to->q_mailer == FileMailer)
+		if (bitnset(M_RUNASRCPT, to->q_mailer->m_flags))
 			ctladdr = getctladdr(to);
 
 		user = to->q_user;
@@ -782,7 +780,7 @@ deliver(e, firstto)
 
 		if (m->m_maxsize != 0 && e->e_msgsize > m->m_maxsize)
 		{
-			NoReturn = TRUE;
+			e->e_flags |= EF_NORETURN;
 			usrerr("552 Message is too large; %ld bytes max", m->m_maxsize);
 			giveresponse(EX_UNAVAILABLE, m, NULL, ctladdr, e);
 			continue;
@@ -1285,7 +1283,8 @@ tryhost:
 			execve(m->m_mailer, pv, env);
 			saveerrno = errno;
 			syserr("Cannot exec %s", m->m_mailer);
-			if (m == LocalMailer || transienterror(saveerrno))
+			if (bitnset(M_LOCALMAILER, m->m_flags) ||
+			    transienterror(saveerrno))
 				_exit(EX_OSERR);
 			_exit(EX_UNAVAILABLE);
 		}

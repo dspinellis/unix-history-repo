@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	8.45 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	8.46 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -409,19 +409,14 @@ recipient(a, sendq, e)
 		}
 	}
 
-	if (m != LocalMailer)
-	{
-		if (!bitset(QDONTSEND, a->q_flags))
-			e->e_nrcpts++;
-		goto testselfdestruct;
-	}
-
 	/* try aliasing */
-	alias(a, sendq, e);
+	if (!bitset(QDONTSEND, a->q_flags) && bitnset(M_ALIASABLE, m->m_flags))
+		alias(a, sendq, e);
 
 # ifdef USERDB
 	/* if not aliased, look it up in the user database */
-	if (!bitset(QDONTSEND|QNOTREMOTE|QVERIFIED, a->q_flags))
+	if (!bitset(QDONTSEND|QNOTREMOTE|QVERIFIED, a->q_flags) &&
+	    bitnset(M_CHECKUDB, m->m_flags))
 	{
 		extern int udbexpand();
 
@@ -444,10 +439,6 @@ recipient(a, sendq, e)
 	}
 # endif
 
-	/* if it was an alias or a UDB expansion, just return now */
-	if (bitset(QDONTSEND|QQUEUEUP|QVERIFIED, a->q_flags))
-		goto testselfdestruct;
-
 	/*
 	**  If we have a level two config file, then pass the name through
 	**  Ruleset 5 before sending it off.  Ruleset 5 has the right
@@ -461,8 +452,9 @@ recipient(a, sendq, e)
 			ConfigLevel, RewriteRules[5]);
 		printaddr(a, FALSE);
 	}
-	if (!bitset(QNOTREMOTE, a->q_flags) && ConfigLevel >= 2 &&
-	    RewriteRules[5] != NULL)
+	if (!bitset(QNOTREMOTE|QDONTSEND|QQUEUEUP|QVERIFIED, a->q_flags) &&
+	    ConfigLevel >= 2 && RewriteRules[5] != NULL &&
+	    bitnset(M_TRYRULESET5, m->m_flags))
 	{
 		maplocaluser(a, sendq, e);
 	}
@@ -472,7 +464,8 @@ recipient(a, sendq, e)
 	**  and deliver it.
 	*/
 
-	if (!bitset(QDONTSEND|QQUEUEUP, a->q_flags))
+	if (!bitset(QDONTSEND|QQUEUEUP|QVERIFIED, a->q_flags) &&
+	    bitnset(M_HASPWENT, m->m_flags))
 	{
 		auto bool fuzzy;
 		register struct passwd *pw;

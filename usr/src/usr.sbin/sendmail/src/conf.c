@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.96 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.97 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -146,12 +146,6 @@ bool	BrokenSmtpPeers = TRUE;		/* set if you have broken SMTP peers */
 #else
 bool	BrokenSmtpPeers = FALSE;	/* set if you have broken SMTP peers */
 #endif
-#ifdef NOLOOPBACKCHECK
-bool	CheckLoopBack = FALSE;		/* set to check HELO loopback */
-#else
-bool	CheckLoopBack = TRUE;		/* set to check HELO loopback */
-#endif
-
 /*
 **  SETDEFAULTS -- set default values
 **
@@ -464,7 +458,7 @@ ttypath()
 **	message should be given using "usrerr" and 0 should
 **	be returned.
 **
-**	'NoReturn' can be set to suppress the return-to-sender
+**	EF_NORETURN can be set in e->e_flags to suppress the return-to-sender
 **	function; this should be done on huge messages.
 **
 **	Parameters:
@@ -495,11 +489,11 @@ checkcompat(to, e)
 	register STAB *s;
 
 	s = stab("arpa", ST_MAILER, ST_FIND);
-	if (s != NULL && e->e_from.q_mailer != LocalMailer &&
+	if (s != NULL && strcmp(e->e_from.q_mailer->m_name, "local") != 0 &&
 	    to->q_mailer == s->s_mailer)
 	{
 		usrerr("553 No ARPA mail through this machine: see your system administration");
-		/* NoReturn = TRUE; to supress return copy */
+		/* e->e_flags |= EF_NORETURN; to supress return copy */
 		return (EX_UNAVAILABLE);
 	}
 # endif /* EXAMPLE_CODE */

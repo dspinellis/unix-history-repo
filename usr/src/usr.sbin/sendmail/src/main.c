@@ -13,7 +13,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.61 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.62 (Berkeley) %G%";
 #endif /* not lint */
 
 #define	_DEFINE
@@ -92,7 +92,7 @@ ERROR %%%%   Cannot have daemon mode without SMTP   %%%% ERROR
 #endif /* SMTP */
 #endif /* DAEMON */
 
-#define MAXCONFIGLEVEL	5	/* highest config version level known */
+#define MAXCONFIGLEVEL	6	/* highest config version level known */
 
 main(argc, argv, envp)
 	int argc;
@@ -762,6 +762,24 @@ main(argc, argv, envp)
 	else
 		InclMailer = st->s_mailer;
 
+	/* heuristic tweaking of local mailer for back compat */
+	if (ConfigLevel < 6)
+	{
+		if (LocalMailer != NULL)
+		{
+			setbitn(M_ALIASABLE, LocalMailer->m_flags);
+			setbitn(M_HASPWENT, LocalMailer->m_flags);
+			setbitn(M_TRYRULESET5, LocalMailer->m_flags);
+			setbitn(M_CHECKINCLUDE, LocalMailer->m_flags);
+			setbitn(M_CHECKPROG, LocalMailer->m_flags);
+			setbitn(M_CHECKFILE, LocalMailer->m_flags);
+			setbitn(M_CHECKUDB, LocalMailer->m_flags);
+		}
+		if (ProgMailer != NULL)
+			setbitn(M_RUNASRCPT, ProgMailer->m_flags);
+		if (FileMailer != NULL)
+			setbitn(M_RUNASRCPT, FileMailer->m_flags);
+	}
 
 	/* operate in queue directory */
 	if (OpMode != MD_TEST && chdir(QueueDir) < 0)

@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.32 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.33 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -158,7 +158,7 @@ chompheader(line, def, e)
 				SuprErrs = TRUE;
 			fancy = crackaddr(fvalue);
 			if (parseaddr(fvalue, &a, RF_COPYNONE, '\0', NULL, e) != NULL &&
-			    a.q_mailer == LocalMailer &&
+			    bitnset(M_CHECKUDB, a.q_mailer->m_flags) &&
 			    (p = udbsender(a.q_user)) != NULL)
 			{
 				char *oldg = macvalue('g', e);
