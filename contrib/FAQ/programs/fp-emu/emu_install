@@ -1,13 +1,12 @@
 #!/bin/sh 
-
+if [ -d /sys/i386/i386/fpemul ]; then
+	echo emulator already installed.
+	exit
+fi
 
 patch -d /sys/i386/include < npx_h.diff
-wait
 cat files.i386.add >> /sys/i386/conf/files.i386
-wait
-cp fpem.tar /sys/i386/i386
-cd /sys/i386/i386
-tar xvf fpem.tar
-rm fpem.tar
-wait
-
+cp -r fpemul /sys/i386/i386
+echo ""
+echo Installation completed, please go remake a kernel and boot it to
+echo run the new emulator.
