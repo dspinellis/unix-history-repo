@@ -1,0 +1,42 @@
+addng.c:#ifdef SERVER
+addng.c:#ifdef SERVER
+addng.c:#else	/* not SERVER */
+addng.c:#endif	/* SERVER */
+artio.c:#ifdef SERVER
+artio.c:#ifdef SERVER
+artio.c:#ifdef SERVER
+artio.c:#ifdef SERVER
+artio.c:#else	/* not SERVER */
+artio.c:#endif /* SERVER */
+final.c:#ifdef SERVER
+getactive.c:#define SERVER
+getactive.c:	if (server_init(SERVER_HOST) < 0) {
+head.c:#ifdef SERVER
+head.c:#ifdef SERVER
+head.c:#else	/* not SERVER */
+head.c:#endif	/* SERVER */
+head.c:#ifdef SERVER
+head.c:#ifndef SERVER
+init.c:#ifndef SERVER
+init.c:#ifdef SERVER
+init.c:    if (server_init(SERVER_HOST) < 0)
+ng.c:#ifdef SERVER
+ng.c:#ifdef SERVER
+ng.c:#ifndef SERVER
+ng.c:#else	/* SERVER */
+ng.c:#endif /* SERVER */
+ng.c:#ifndef SERVER
+ng.c:#ifdef SERVER
+ngdata.c:#ifdef SERVER
+ngdata.c:#ifdef SERVER
+ngdata.c:#ifndef SERVER
+ngdata.c:#else /* SERVER */
+rcstuff.c:#ifdef SERVER
+rcstuff.c:#ifdef SERVER
+rcstuff.c:#else	/* not SERVER */
+rcstuff.c:#ifdef SERVER
+rcstuff.c:#ifndef SERVER
+rcstuff.c:#else	/* SERVER */
+rcstuff.c:#endif /* SERVER */
+respond.c:#ifdef SERVER
+respond.c:#ifdef SERVER

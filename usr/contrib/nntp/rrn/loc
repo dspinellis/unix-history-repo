@@ -1,0 +1,23 @@
+#!/bin/sh
+thing=$1
+shift
+dflt=$1
+shift
+for dir in $*; do
+    case "$thing" in
+    .)
+	if test -d $dir/$thing; then
+	    echo $dir
+	    exit 0
+	fi
+	;;
+    *)
+	if test -f $dir/$thing; then
+	    echo $dir/$thing
+	    exit 0
+	fi
+	;;
+    esac
+done
+echo $dflt
+exit 1

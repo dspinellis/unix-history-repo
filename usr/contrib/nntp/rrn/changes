@@ -1,0 +1,14 @@
+
+File		Change
+
+getactive.c	Add it.
+sserver.h	Add it.
+server.c	Add it.
+response_codes.h	Add it.
+
+config.h	Add "#define SERVER" and "#define SERVER_HOST ucbvax"
+		Change spool directory to "/tmp".
+common.h	#define  SERVER for article savers
+
+newsetup.SH	Reflect getactive to get active file
+newsgroups.SH	Reflect getactive

@@ -1,0 +1,103 @@
+After all the rn kits are run you should have the following files:
+
+Filename	Kit Description
+--------	--- -----------
+Configure        2  A shell script that installs everything system dependent.
+EXTERN.h         9  When included, makes other includes not belong to me.
+HACKERSGUIDE     5  A brief guide to the contorted innards of rn.
+INIT             3  Sample system-wide switch file. (NEW)
+INTERN.h         9  When included, makes other includes belong to me.
+MANIFEST         7  This list of files.
+Makefile.SH      7  The makefile.
+NEW              3  List of new features with 4.3 rn.
+Pnews.1          8  Manual page for Pnews.
+Pnews.SH         5  A news posting shell script that knows about -h.
+README           7  Installation instructions.
+Rnmail.1         8  Manual page for Rnmail.
+Rnmail.SH        7  A mailer that knows about -h.
+Wishlist         8  What the next version wants in it.
+addng.c          8  Routines for scanning the active file for new newsgroups.
+addng.h          9  Public info regarding addng.c.
+art.c            4  Routines to display an article.
+art.h            8  Public info regarding art.c.
+art.help.SH      7  Shell script for help at the article level.
+artio.c          8  Reserved for the article abstract type, someday.
+artio.h          8  Public info regarding artio.c.
+artsrch.c        6  Routines for searching among articles.
+artsrch.h        8  Public info regarding artsrch.c.
+artstate.h       8  Info on the current state of the article.
+backpage.c       8  Routines for paging backwards in articles.
+backpage.h       8  Public info regarding backpage.c.
+bits.c           3  Bitmap management functions.
+bits.h           8  Public info regarding bits.c.
+cheat.c          7  Routines to do lookahead of several types.
+cheat.h          8  Public info regarding cheat.c.
+common.h         3  Global info.
+final.c          7  Finalization (exit) routines.
+final.h          8  Public info regarding final.c.
+head.c           7  Header parsing routines.
+head.h           7  Public info regarding head.c.
+header.c.1.pat   8  DOXREFS patch for header.c for 2.10.1 news.
+header.c.2.pat   8  DOXREFS patch for header.c for 2.10.2 news.
+header.h.1.pat   8  DOXREFS patch for header.h for 2.10.1 news.
+header.h.2.pat   7  DOXREFS patch for header.h for 2.10.2 news.
+help.c           6  Help routines.
+help.h           9  Public info regarding help.c.
+inews.c.1.pat    6  DOXREFS and LINKART patches for 2.10.1 news.
+inews.c.2.pat    6  DOXREFS and LINKART patches for 2.10.2 news.
+init.c           1  Initialization (startup) routines.
+init.h           9  Public info regarding init.c.
+intrp.c          3  Filename expansion and % interpretation routines.
+intrp.h          8  Public info regarding intrp.c.
+kfile.c          7  KILL file routines.
+kfile.h          8  Public info regarding kfile.c.
+kitleader        8  Shell script to produce front of kit.
+kitlists.c       8  Knapsack packer.
+kittrailer       8  Shell script to produce end of kit.
+last.c           8  Routines for handling the .rnlast file.
+last.h           8  Public info regarding last.c.
+makedepend.SH    8  Shell script to generate make dependencies.
+makedir.SH       8  Shell script to make nested subdirectories.
+makedist         4  Shell script to make a distribution kit.
+makekit          8  Shell script to make a kit file.
+manifake         8  Shell script to make MANIFEST.new file.
+manimake         8  Shell script to make MANIFEST file.
+mbox.saver.SH    8  Shell script to save an article to a mailbox.
+ndir.c           8  4.2 directory routine emulation.
+ndir.h           8  Public info regarding ndir.c.
+newsetup.1       8  Manual page for newsetup.
+newsetup.SH      7  Shell script to create a .newsrc file.
+newsgroups.1     8  Manual page for newsgroups.
+newsgroups.SH    8  Shell script to list unsubscribed newsgroups.
+newsnews.SH      8  A motd-like file that rn may print at startup.
+ng.c             4  Routines to display a newsgroup.
+ng.h             1  Public info regarding ng.c.
+ng.help.SH       8  Shell script to do newsgroup selection help.
+ngdata.c         7  General data fetching routines for a newsgroup.
+ngdata.h         8  Public info regarding ngdata.c.
+ngsrch.c         7  Routines to search among newsgroups.
+ngsrch.h         8  Public info regarding ngsrch.c.
+ngstuff.c        4  Support routines for ng.c.
+ngstuff.h        8  Public info regarding ng.c.
+norm.saver.SH    8  Shell script to save an article to a normal file.
+only.c           8  Routines to perform newsgroup restriction.
+only.h           8  Public info regarding only.c.
+pager.help.SH    8  Shell script for help at the pager level.
+rcln.c           5  Routines to mung a .newsrc line.
+rcln.h           8  Public info regarding rcln.c.
+rcstuff.c        2  Routines to mung the .newsrc file.
+rcstuff.h        8  Public info regarding rcstuff.c.
+respond.c        6  Various routines for doing things with articles.
+respond.h        8  Public info regarding respond.c.
+rn.1             1  Manual pages for rn. PLEASE READ.
+rn.c             5  Main program.
+rn.h             8  Public info regarding rn.c.
+search.c         4  Regular expression processing ala emacs.
+search.h         8  Public info regarding search.c.
+subs.help.SH     8  Shell script for help for escape substitutions.
+sw.c             6  Switch processing routines.
+sw.h             9  Public info regarding switch.c.
+term.c           5  Terminal interface routines.
+term.h           7  Public info regarding term.c.
+util.c           6  Utility routines.
+util.h           8  Public info regarding util.c.

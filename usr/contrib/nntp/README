@@ -1,0 +1,147 @@
+NNTP README		March 20, 1986		For version 1.2a NNTP package
+
+[See the file CHANGES to see differences between this version and
+older versions.]
+
+     This package contains everything (well, most of it, I hope) that
+you'll need to implement a remote news server running the NNTP
+protocol.
+
+     A brief tour of the directories and their programs:
+
+	server		Source for the NNTP news server daemon.
+
+	rrn		Version 4.3 of "rn", hacked up to support
+			remote news reading.
+
+	inews		A "mini-inews" written by Steven Grady
+			<grady@ucbingres.berkeley.edu> which allows
+		 	remote posting without changing much else.
+
+	xmit		An active transmission client for transferring
+			news, written by Erik Fair; see note below.
+
+	common		Common stuff (response codes, configuration info,
+			and some client library routines) for the
+			the news server and the clients.  The "conf.h"
+			file here which needs to be edited to reflect
+			the peculiarities of your system.
+
+	support		Some support programs which make the nntpd's
+			life considerably easier.
+
+	doc		Documentation on the server, including manual
+			pages.  Manual pages for rrn are in rrn/.
+
+     Each directory has associated with it a README file (except
+for rrn -- rrn has a bunch of 'em.  The one you want is README_RRN).
+As you go through the system customizing things, you should read
+the README for each directory to get an idea of what traps await
+you in that area.  You may also want to print a copy of doc/rfc977.
+
+     TWO IMPORTANT NOTES:
+
+	1. The NNTP server assumes that the history file format
+	   is 2.10.3; therefore, you need 2.10.3 news.
+
+	2. If you want to transfer news with NNTP, you'll be using
+	   the "nntpxmit" program in the "xmit" directory.
+	   This requires routines in 2.10.3 news source, and must
+	   be compiled there.  See xmit/README for more info.
+
+     >>>>> Get 2.10.3 news if you don't have it.
+
+     So, time for a general and cohesive Plan:
+
+     1. Look at common/README.  This will explain the stuff which
+	needs to be tailored for your system in common/conf.h.
+	Make the necessary changes to reflect your system.
+
+	Note that unfortunately "rrn" has its own configuration
+	include file, and it was not feasible (pronounced "I'm too
+	lazy") to combine the two.
+
+     2. Look at server/README; there shouldn't be much to do here,
+	as the configuration stuff should have been taken care of
+	when you edited common/conf.h.
+
+	Do a "make", and see if things work ok -- they should
+	(comforting, right?)
+
+     3. Check out support/README and learn about the support programs.
+	Again, there should be no configuration changes, as that's
+	what common/conf.h is for.
+
+	Do a "make" here, too.
+
+     4. Look at inews/README.  This is for the pseudo-inews which
+	gets installed on client news machines.  If you don't want
+	your clients to be able to post, don't worry about this.
+	But I suggest you do.  Again, there shouldn't be any
+	configuration futzing to be dealt with.
+
+	Alas, do a make here, too.
+
+     5. The big one: rrn.  Read rrn/README_RRN to get some idea of
+	what has been changed from generic rn 4.3.  Then run
+	a Configure.  Now follow the instructions as given in
+	rrn/README_RRN.
+
+     6. It would be nice if you could do a "make install" here,
+	but you can't: if you compile this on the NNTP server machine,
+	you don't want rrn objects installed.  On the other hand,
+	if you compile this on a client machine, you don't want
+	server objects installed.  So:
+
+	Server?  Type "make install_server".  This installs "server"
+		 and "support".
+
+	Client?  Type "make install_client".  This installs "rrn"
+		 and "inews"
+
+     Problems?  You can get to me via electronic mail via the
+following electronic addresses:
+
+	Internet:	phil@ucbvax.berkeley.edu
+	UUCP:		...!ucbvax!phil
+	CSNET:		phil@Berkeley
+	Telephone:	(415) 848-8409
+
+     I'm very interested in learing what hacks need to be made to
+nntpd to get it to work on various systems, and certainly, if there
+are outright bugs, please let me know.
+
+     Also, please send me electronic mail if you decide to use this
+package, as that way I can mail out bug reports and fixes.  Be sure
+to include a reply-able address if your mailer doesn't generate
+one for you.
+
+     One note, though -- as for "rrn", I'll support bugs caused
+by my additions/mods to it (hopefully Larry Wall will be supporting
+this soon...) but please don't send me reports about things which
+were already in rn 4.3.  Thanks.
+
+     Wait... one more note:  there is a (well, many, but I'll say "a")
+known bug in my implementation of "rrn".  If there is a kill file
+for a newsgroup, you *cannot* save articles to shell script savers.
+I have *no* idea what causes this.  If you find out, *please* let me
+know.  If you'd care to work on it, I'll send you lots of stuff
+I've tracked down so far.
+
+     Finally, I'd like to thank the various people who both inspired
+and helped to make this project a reality:  Erik Fair, whose criticism
+and suggestions helped mold NNTP (and who wrote the active transmission
+client); Brian Kantor, who really got me motivated enough to go and
+finish the thing, and whose work on the RFC was *tremendous*; Steven
+Grady, who wrote the inews interafce (and wasted countless hours only
+to have his work dashed periodically...); Mike Meyer, who beta tested
+the software and pointed out numerous problems; Bob Henry, who let me
+have the resources so that it got done; Peter Yee, who repeated enough
+good ideas to get me to include them; all the folks who had patience
+with me and didn't go off and write this themselves (jsq, you
+listening?  My thanks.); Chuq von Rospach and the members of lan-news;
+and probably a lot of other people I've neglected to mention.  My
+thanks to all.
+
+						Phil Lapsley,
+						13 March 1986

@@ -1,0 +1,30 @@
+
+    This file describes the changes which have been made in NNTP
+since the initial release.  Individuals who either reported or
+inspired the bug/bug fix are in square brackets.
+
+1.2a	20 March 1986
+
+	common/conf.h defined MAX_GROUPS as 300; this was too low on
+	some machines.  Upped to 450.  [solex@rice.edu, beorn@ic.berkeley.edu]
+
+	rrn/Makefile.sh had .c instead of .o for OBJS and SRCS
+	respectively.  Also had cc -o ../common/clientlib.o (see below).
+
+	inews/inews.c had (char *) 0 for gets(), which made SUN's upset.
+	Changed to simply NULL. [brian@sdcsvax.ucsd.edu]
+
+	inews/Makefile had cc -o ../common/clientlib.o which some
+	machines don't do.  [brian@sdcsvax.ucsd.edu]
+
+	common/clientlib.c has "untp" instead of "nntp".
+
+	server/active.c made more robust about reading active file
+	if active file is longer than MAX_GROUPS.
+
+	server/common.h included common/conf.h after checking for
+	DBM, which caused some problems.  [soma!sob@rice.edu]
+
+1.2	15 March 1986
+
+	Released.
