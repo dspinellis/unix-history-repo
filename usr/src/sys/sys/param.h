@@ -1,4 +1,4 @@
-/*	param.h	6.8	85/05/05	*/
+/*	param.h	6.9	85/06/07	*/
 
 /*
  * Machine type dependent parameters.
@@ -175,3 +175,8 @@
  */
 #define	howmany(x, y)	(((x)+((y)-1))/(y))
 #define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))
+
+/*
+ * Maximum size of hostname recognized and stroed in the kernel.
+ */
+#define MAXHOSTNAMELEN	32
