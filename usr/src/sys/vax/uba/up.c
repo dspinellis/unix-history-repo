@@ -1,4 +1,4 @@
-/*	up.c	4.21	81/02/23	*/
+/*	up.c	4.22	81/02/25	*/
 
 #include "up.h"
 #if NSC > 0
@@ -30,6 +30,7 @@ struct	up_softc {
 	int	sc_softas;
 	int	sc_ndrive;
 	int	sc_wticks;
+	int	sc_recal;
 } up_softc[NSC];
 
 /* THIS SHOULD BE READ OFF THE PACK, PER DRIVE */
@@ -101,6 +102,7 @@ daddr_t dkblock();
 
 int	upwstart, upwatch();		/* Have started guardian */
 int	upseek;
+int	updrydel;
 
 /*ARGSUSED*/
 upprobe(reg)
@@ -198,40 +200,63 @@ bad:
 	return;
 }
 
+/*
+ * Unit start routine.
+ * Seek the drive to be where the data is
+ * and then generate another interrupt
+ * to actually start the transfer.
+ * If there is only one drive on the controller,
+ * or we are very close to the data, don't
+ * bother with the search.  If called after
+ * searching once, don't bother to look where
+ * we are, just queue for transfer (to avoid
+ * positioning forever without transferrring.)
+ */
 upustart(ui)
 	register struct uba_dinfo *ui;
 {
 	register struct buf *bp, *dp;
-	register struct uba_minfo *um;
+	register struct uba_minfo *um = ui->ui_mi;
 	register struct updevice *upaddr;
 	register struct upst *st;
 	daddr_t bn;
-	int sn, cn, csn;
-	int didie = 0;
-
-	if (ui == 0)
-		return (0);
+	int sn, csn;
 	/*
 	 * The SC21 cancels commands if you just say
 	 *	cs1 = UP_IE
 	 * so we are cautious about handling of cs1.
 	 * Also don't bother to clear as bits other than in upintr().
 	 */
+	int didie = 0;
+
+	if (ui == 0)
+		return (0);
 	dk_busy &= ~(1<<ui->ui_dk);
 	dp = &uputab[ui->ui_unit];
 	if ((bp = dp->b_actf) == NULL)
 		goto out;
-	/* dont confuse controller by giving SEARCH while dt in progress */
-	um = ui->ui_mi;
+	/*
+	 * If the controller is active, just remember
+	 * that this device would like to be positioned...
+	 * if we tried to position now we would confuse the SC21.
+	 */
 	if (um->um_tab.b_active) {
 		up_softc[um->um_ctlr].sc_softas |= 1<<ui->ui_slave;
 		return (0);
 	}
+	/*
+	 * If we have already positioned this drive,
+	 * then just put it on the ready queue.
+	 */
 	if (dp->b_active)
 		goto done;
 	dp->b_active = 1;
 	upaddr = (struct updevice *)um->um_addr;
 	upaddr->upcs2 = ui->ui_slave;
+	/*
+	 * If drive has just come up,
+	 * setup the pack.
+	 */
 	if ((upaddr->upds & UP_VV) == 0) {
 		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
 		upaddr->upcs1 = UP_IE|UP_DCLR|UP_GO;
@@ -239,16 +264,26 @@ upustart(ui)
 		upaddr->upof = UP_FMT22;
 		didie = 1;
 	}
+	/*
+	 * If drive is offline, forget about positioning.
+	 */
 	if ((upaddr->upds & (UP_DPR|UP_MOL)) != (UP_DPR|UP_MOL))
 		goto done;
+	/*
+	 * If there is only one drive,
+	 * dont bother searching.
+	 */
 	if (up_softc[um->um_ctlr].sc_ndrive == 1)
 		goto done;
+	/*
+	 * Figure out where this transfer is going to
+	 * and see if we are close enough to justify not searching.
+	 */
 	st = &upst[ui->ui_type];
 	bn = dkblock(bp);
-	cn = bp->b_cylin;
 	sn = bn%st->nspc;
 	sn = (sn + st->nsect - upSDIST) % st->nsect;
-	if (cn - upaddr->updc)
+	if (bp->b_cylin - upaddr->updc)
 		goto search;		/* Not on-cylinder */
 	else if (upseek)
 		goto done;		/* Ok just to be on-cylinder */
@@ -258,7 +293,11 @@ upustart(ui)
 	if (csn > st->nsect - upRDIST)
 		goto done;
 search:
-	upaddr->updc = cn;
+	upaddr->updc = bp->b_cylin;
+	/*
+	 * Not on cylinder at correct position,
+	 * seek/search.
+	 */
 	if (upseek)
 		upaddr->upcs1 = UP_IE|UP_SEEK|UP_GO;
 	else {
@@ -266,12 +305,20 @@ search:
 		upaddr->upcs1 = UP_IE|UP_SEARCH|UP_GO;
 	}
 	didie = 1;
+	/*
+	 * Mark unit busy for iostat.
+	 */
 	if (ui->ui_dk >= 0) {
 		dk_busy |= 1<<ui->ui_dk;
 		dk_seek[ui->ui_dk]++;
 	}
 	goto out;
 done:
+	/*
+	 * Device is ready to go.
+	 * Put it on the ready queue for the controller
+	 * (unless its already there.)
+	 */
 	if (dp->b_active != 2) {
 		dp->b_forw = NULL;
 		if (um->um_tab.b_actf == NULL)
@@ -285,6 +332,9 @@ out:
 	return (didie);
 }
 
+/*
+ * Start up a transfer on a drive.
+ */
 upstart(um)
 	register struct uba_minfo *um;
 {
@@ -296,12 +346,19 @@ upstart(um)
 	int dn, sn, tn, cmd;
 
 loop:
+	/*
+	 * Pull a request off the controller queue
+	 */
 	if ((dp = um->um_tab.b_actf) == NULL)
 		return (0);
 	if ((bp = dp->b_actf) == NULL) {
 		um->um_tab.b_actf = dp->b_forw;
 		goto loop;
 	}
+	/*
+	 * Mark controller busy, and
+	 * determine destination of this request.
+	 */
 	um->um_tab.b_active++;
 	ui = updinfo[dkunit(bp)];
 	bn = dkblock(bp);
@@ -311,7 +368,14 @@ loop:
 	tn = sn/st->nsect;
 	sn %= st->nsect;
 	upaddr = (struct updevice *)ui->ui_addr;
-	upaddr->upcs2 = dn;
+	/*
+	 * Select drive if not selected already.
+	 */
+	if ((upaddr->upcs2&07) != dn)
+		upaddr->upcs2 = dn;
+	/*
+	 * Check that it is ready and online
+	 */
 	if ((upaddr->upds & (UP_DPR|UP_MOL)) != (UP_DPR|UP_MOL)) {
 		printf("up%d not ready", dkunit(bp));
 		if ((upaddr->upds & (UP_DPR|UP_MOL)) != (UP_DPR|UP_MOL)) {
@@ -324,14 +388,25 @@ loop:
 			iodone(bp);
 			goto loop;
 		}
+		/*
+		 * Oh, well, sometimes this
+		 * happens, for reasons unknown.
+		 */
 		printf(" (flakey)\n");
 	}
+	/*
+	 * After 16th retry, do offset positioning
+	 */
 	if (um->um_tab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
 		upaddr->upof = up_offset[um->um_tab.b_errcnt & 017] | UP_FMT22;
 		upaddr->upcs1 = UP_IE|UP_OFFSET|UP_GO;
 		while (upaddr->upds & UP_PIP)
 			DELAY(25);
 	}
+	/*
+	 * Setup for the transfer, and get in the
+	 * UNIBUS adaptor queue.
+	 */
 	upaddr->updc = bp->b_cylin;
 	upaddr->upda = (tn << 8) + sn;
 	upaddr->upwc = -bp->b_bcount / sizeof (short);
@@ -344,6 +419,9 @@ loop:
 	return (1);
 }
 
+/*
+ * Now all ready to go, stuff the registers.
+ */
 updgo(um)
 	struct uba_minfo *um;
 {
@@ -353,6 +431,9 @@ updgo(um)
 	upaddr->upcs1 = um->um_cmd|((um->um_ubinfo>>8)&0x300);
 }
 
+/*
+ * Handle a disk interrupt.
+ */
 scintr(sc21)
 	register sc21;
 {
@@ -367,75 +448,144 @@ scintr(sc21)
 
 	sc->sc_wticks = 0;
 	sc->sc_softas = 0;
-	if (um->um_tab.b_active) {
-		if ((upaddr->upcs1 & UP_RDY) == 0)
-			printf("upintr !RDY\n");
-		dp = um->um_tab.b_actf;
-		bp = dp->b_actf;
-		ui = updinfo[dkunit(bp)];
-		dk_busy &= ~(1 << ui->ui_dk);
+	/*
+	 * If controller wasn't transferring, then this is an
+	 * interrupt for attention status on seeking drives.
+	 * Just service them.
+	 */
+	if (um->um_tab.b_active == 0) {
+		if (upaddr->upcs1 & UP_TRE)
+			upaddr->upcs1 = UP_TRE;
+		goto doattn;
+	}
+	if ((upaddr->upcs1 & UP_RDY) == 0)
+		printf("upintr !RDY\n");		/* shouldn't happen */
+	/*
+	 * Get device and block structures, and a pointer
+	 * to the uba_dinfo for the drive.  Select the drive.
+	 */
+	dp = um->um_tab.b_actf;
+	bp = dp->b_actf;
+	ui = updinfo[dkunit(bp)];
+	dk_busy &= ~(1 << ui->ui_dk);
+	if ((upaddr->upcs2&07) != ui->ui_slave)
 		upaddr->upcs2 = ui->ui_slave;
-		if ((upaddr->upds&UP_ERR) || (upaddr->upcs1&UP_TRE)) {
-			int cs2;
-			while ((upaddr->upds & UP_DRY) == 0)
-				DELAY(25);
-			if (upaddr->uper1&UP_WLE)	
-				printf("up%d is write locked\n", dkunit(bp));
-			if (++um->um_tab.b_errcnt > 28 || upaddr->uper1&UP_WLE)
-				bp->b_flags |= B_ERROR;
-			else
-				um->um_tab.b_active = 0; /* force retry */
-			if (um->um_tab.b_errcnt > 27) {
-				cs2 = (int)upaddr->upcs2;
-				deverror(bp, cs2, (int)upaddr->uper1);
-			}
-			if ((upaddr->uper1&(UP_DCK|UP_ECH))==UP_DCK)
-				if (upecc(ui))
-					return;
-			upaddr->upcs1 = UP_TRE|UP_IE|UP_DCLR|UP_GO;
-			needie = 0;
-			if ((um->um_tab.b_errcnt&07) == 4) {
-				upaddr->upcs1 = UP_RECAL|UP_IE|UP_GO;
-				while(upaddr->upds & UP_PIP)
-					DELAY(25);
-			}
-			if (um->um_tab.b_errcnt == 28 && cs2&(UP_NEM|UP_MXF)) {
+	/*
+	 * Check for and process errors on
+	 * either the drive or the controller.
+	 */
+	if ((upaddr->upds&UP_ERR) || (upaddr->upcs1&UP_TRE)) {
+		while ((upaddr->upds & UP_DRY) == 0)
+			updrydel++;
+		if (upaddr->uper1&UP_WLE) {
+			/*
+			 * Give up on write locked devices
+			 * immediately.
+			 */
+			printf("up%d is write locked\n", dkunit(bp));
+			bp->b_flags |= B_ERROR;
+		} else if (++um->um_tab.b_errcnt > 27) {
+			/*
+			 * After 28 retries (16 without offset, and
+			 * 12 with offset positioning) give up.
+			 */
+			if (upaddr->upcs2&(UP_NEM|UP_MXF)) {
 				printf("FLAKEY UP ");
 				ubareset(um->um_ubanum);
 				return;
 			}
+			harderr(bp);
+			printf("up%d cs2 %b er1 %b er2 %b\n",
+			    dkunit(bp), upaddr->upcs2, UPCS2_BITS, upaddr->uper1,
+			    UPER1_BITS, upaddr->uper2, UPER2_BITS);
+			bp->b_flags |= B_ERROR;
+		} else {
+			/*
+			 * Retriable error.
+			 * If a soft ecc, correct it (continuing
+			 * by returning if necessary.
+			 * Otherwise fall through and retry the transfer
+			 */
+			um->um_tab.b_active = 0;	 /* force retry */
+			if ((upaddr->uper1&(UP_DCK|UP_ECH))==UP_DCK)
+				if (upecc(ui))
+					return;
 		}
-		ubadone(um);
-		if (um->um_tab.b_active) {
-			if (um->um_tab.b_errcnt >= 16) {
-				upaddr->upcs1 = UP_RTC|UP_GO|UP_IE;
-				while (upaddr->upds & UP_PIP)
-					DELAY(25);
-				needie = 0;
-			}
-			um->um_tab.b_active = 0;
-			um->um_tab.b_errcnt = 0;
-			um->um_tab.b_actf = dp->b_forw;
-			dp->b_active = 0;
-			dp->b_errcnt = 0;
-			dp->b_actf = bp->av_forw;
-			bp->b_resid = (-upaddr->upwc * sizeof(short));
-			iodone(bp);
-			if (dp->b_actf)
-				if (upustart(ui))
-					needie = 0;
+		/*
+		 * Clear drive error and, every eight attempts,
+		 * (starting with the fourth)
+		 * recalibrate to clear the slate.
+		 */
+		upaddr->upcs1 = UP_TRE|UP_IE|UP_DCLR|UP_GO;
+		needie = 0;
+		if ((um->um_tab.b_errcnt&07) == 4) {
+			upaddr->upcs1 = UP_RECAL|UP_IE|UP_GO;
+			um->um_tab.b_active = 1;
+			sc->sc_recal = 1;
+			return;
 		}
-		as &= ~(1<<ui->ui_slave);
-	} else {
-		if (upaddr->upcs1 & UP_TRE)
-			upaddr->upcs1 = UP_TRE;
 	}
+	/*
+	 * Done retrying transfer... release
+	 * resources... if we were recalibrating,
+	 * then retry the transfer.
+	 * Mathematical note: 28%8 != 4.
+	 */
+	ubadone(um);
+	if (sc->sc_recal) {
+		sc->sc_recal = 0;
+		um->um_tab.b_active = 0;	/* force retry */
+	}
+	/*
+	 * If still ``active'', then don't need any more retries.
+	 */
+	if (um->um_tab.b_active) {
+		/*
+		 * If we were offset positioning,
+		 * return to centerline.
+		 */
+		if (um->um_tab.b_errcnt >= 16) {
+			upaddr->upof = UP_FMT22;
+			upaddr->upcs1 = UP_RTC|UP_GO|UP_IE;
+			while (upaddr->upds & UP_PIP)
+				DELAY(25);
+			needie = 0;
+		}
+		um->um_tab.b_active = 0;
+		um->um_tab.b_errcnt = 0;
+		um->um_tab.b_actf = dp->b_forw;
+		dp->b_active = 0;
+		dp->b_errcnt = 0;
+		dp->b_actf = bp->av_forw;
+		bp->b_resid = (-upaddr->upwc * sizeof(short));
+		iodone(bp);
+		/*
+		 * If this unit has more work to do,
+		 * then start it up right away.
+		 */
+		if (dp->b_actf)
+			if (upustart(ui))
+				needie = 0;
+	}
+	as &= ~(1<<ui->ui_slave);
+doattn:
+	/*
+	 * Process other units which need attention.
+	 * For each unit which needs attention, call
+	 * the unit start routine to place the slave
+	 * on the controller device queue.
+	 */
 	for (unit = 0; as; as >>= 1, unit++)
 		if (as & 1) {
 			upaddr->upas = 1<<unit;
 			if (upustart(upip[sc21][unit]))
 				needie = 0;
 		}
+	/*
+	 * If the controller is not transferring, but
+	 * there are devices ready to transfer, start
+	 * the controller.
+	 */
 	if (um->um_tab.b_actf && um->um_tab.b_active == 0)
 		if (upstart(um))
 			needie = 0;

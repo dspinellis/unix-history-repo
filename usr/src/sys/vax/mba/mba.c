@@ -1,4 +1,4 @@
-/*	mba.c	4.8	81/02/21	*/
+/*	mba.c	4.9	81/02/25	*/
 
 /*
  * Massbus driver; arbitrates massbusses through device driver routines
@@ -21,6 +21,7 @@ int	mbadebug = 0;
 #include "../h/mtpr.h"
 #include "../h/vm.h"
 
+char	mbasr_bits[] = MBASR_BITS;
 /*
  * Start activity on a massbus device.
  * We are given the device's mba_info structure and activate
