@@ -1,5 +1,5 @@
 #
-#	@(#)Makefile	4.1 %G%
+#	@(#)Makefile	4.2 %G%
 #
 DESTDIR =
 SRCS = \
@@ -9,7 +9,7 @@ SRCS = \
 	hytab.c ntab.c suftab.c \
 	d.h tw.h v.h tdef.h sdef.h
 
-CFLAGS = -O -DNROFF -DVMUNIX -I../troff/
+CFLAGS = -O -DNROFF -DVMUNIX -I../troff/ 
 c = ni.o nii.o n1.o n2.o n3.o n4.o n5.o n6.o n7.o n8.o n9.o n10.o
 s = hytab.o ntab.o suftab.o
 
@@ -57,8 +57,10 @@ ntab.o:	../troff/ntab.c
 suftab.o:	../troff/suftab.c
 	$(CC) -R -c ../troff/suftab.c
 
-term:
+term:	FRC
 	cd term; make ${MFLAGS}
+
+FRC:
 
 install: all
 	install -s nroff ${DESTDIR}/usr/bin
