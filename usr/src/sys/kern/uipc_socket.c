@@ -1,4 +1,4 @@
-/*	uipc_socket.c	6.3	84/04/24	*/
+/*	uipc_socket.c	6.4	84/04/30	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -366,9 +366,11 @@ nopages:
 		}
 		if (dontroute)
 			so->so_options |= SO_DONTROUTE;
+		s = splnet();
 		error = (*so->so_proto->pr_usrreq)(so,
 		    (flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
 		    top, (caddr_t)nam, rights);
+		splx(s);
 		if (dontroute)
 			so->so_options &= ~SO_DONTROUTE;
 		top = 0;
