@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile 1.6 %G%
+SCCSID = @(#)Makefile 1.7 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 PX_HEADER = px_header
@@ -15,7 +15,7 @@ install: all pxref.p
 	strip ${INSTALLIB}/pc2
 	strip ${INSTALLIB}/pc3
 	cp pmerge ${INSTALL}/pmerge
-	pc -w pxref.p -o ${INSTALL}/pxref
+	-pc -w pxref.p -o ${INSTALL}/pxref
 
 pix: pix.c
 	${CC} -O -o pix pix.c
