@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optim.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)optim.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -347,7 +347,7 @@ xlocate(name)
 		if (strcmp(cp, xp->xh_name) == 0)
 			return(xp);
 		if (h - q < 0)
-			q += XHSIZE;
+			h += XHSIZE;
 		xp = &xtrahash[(h - q) % XHSIZE];
 		if (xp->xh_name == NOSTR)
 			return(xp);
