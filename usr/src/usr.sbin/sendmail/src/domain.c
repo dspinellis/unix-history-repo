@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.13 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.14 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.13 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.14 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -93,6 +93,9 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 	u_short prefer[MAXMXHOSTS];
 	int weight[MAXMXHOSTS];
 	extern bool getcanonname();
+
+	if (tTd(8, 2))
+		printf("getmxrr(%s, droplocalhost=%d)\n", host, droplocalhost);
 
 	if (fallbackMX != NULL)
 	{
@@ -194,6 +197,9 @@ getmxrr(host, mxhosts, droplocalhost, rcode)
 		    (st = stab(bp, ST_CLASS, ST_FIND)) != NULL &&
 		    bitnset('w', st->s_class))
 		{
+			if (tTd(8, 3))
+				printf("found localhost (%s) in MX list, pref=%d\n",
+					bp, pref);
 			if (!seenlocal || pref < localpref)
 				localpref = pref;
 			seenlocal = TRUE;
