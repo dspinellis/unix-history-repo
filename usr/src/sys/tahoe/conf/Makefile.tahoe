@@ -1,4 +1,4 @@
-#	@(#)Makefile.tahoe	1.14 (Berkeley) %G%
+#	@(#)Makefile.tahoe	1.15 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -18,8 +18,8 @@
 # -DTRACE	compile in kernel tracing hooks
 # -DQUOTA	compile in file system quotas
 #
-C2=	/lib/c2
-LD=	/bin/ld
+C2=	/usr/libexec/c2
+LD=	/usr/pgrm/ld
 TOUCH=	touch -f -c
 INDIR=	../tahoe/inline
 INLINE=	${INDIR}/inline
