@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser1.c	3.11 84/01/12";
+static	char *sccsid = "@(#)parser1.c	3.12 84/04/05";
 #endif
 
 #include "parser.h"
@@ -187,6 +187,20 @@ char flag;
 		p_synerror();
 		return -1;
 	}
+	return 0;
+}
+
+p_convstr(v)
+register struct value *v;
+{
+	if (v->v_type != V_NUM)
+		return 0;
+	if ((v->v_str = str_itoa(v->v_num)) == 0) {
+		p_memerror();
+		v->v_type = V_ERR;
+		return -1;
+	}
+	v->v_type = V_STR;
 	return 0;
 }
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)string.c	3.5 84/03/23";
+static	char *sccsid = "@(#)string.c	3.6 84/04/05";
 #endif
 
 #include "string.h"
@@ -19,6 +19,26 @@ register char *s;
 		return 0;
 	while (*p++ = *s++)
 		;
+	return str;
+}
+
+char *
+str_ncpy(s, n)
+register char *s;
+register n;
+{
+	int l = strlen(s);
+	char *str;
+	register char *p;
+
+	if (n > l)
+		n = l;
+	str = p = str_alloc(n + 1);
+	if (p == 0)
+		return 0;
+	while (--n >= 0)
+		*p++ = *s++;
+	*p = 0;
 	return str;
 }
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)parser4.c	3.1 84/01/12";
+static	char *sccsid = "@(#)parser4.c	3.2 84/04/05";
 #endif
 
 #include "parser.h"
@@ -18,17 +18,13 @@ p_expr3_10(level, v, flag)
 register struct value *v;
 char flag;
 {
-	struct value t;
+	struct value l, r;
 	int op;
 	char *opname;
 
-	if (level == 10) {
-		if (p_expr11(v, flag) < 0)
-			return -1;
-	} else {
-		if (p_expr3_10(level + 1, v, flag) < 0)
-			return -1;
-	}
+	if ((level == 10 ? p_expr11(v, flag)
+	     : p_expr3_10(level + 1, v, flag)) < 0)
+		return -1;
 	for (;;) {
 		switch (level) {
 		case 3:
@@ -104,112 +100,161 @@ char flag;
 			}
 			break;
 		}
-		if (v->v_type == V_ERR)
+		l = *v;
+		if (l.v_type == V_ERR)
 			flag = 0;
 
 		op = token;
 		(void) s_gettok();
-		if (level == 10) {
-			if (p_expr11(&t, flag) < 0) {
-				p_synerror();
-				val_free(*v);
-				return -1;
-			}
-		} else {
-			if (p_expr3_10(level + 1, &t, flag) < 0) {
-				p_synerror();
-				val_free(*v);
-				return -1;
-			}
+		if ((level == 10 ? p_expr11(&r, flag)
+		     : p_expr3_10(level + 1, &r, flag)) < 0) {
+			p_synerror();
+			val_free(l);
+			return -1;
 		}
 
-		if (t.v_type == V_ERR)
+		if (r.v_type == V_ERR)
 			flag = 0;
-		else if (t.v_type != v->v_type) {
-			p_error("Type mismatch.");
-			flag = 0;
-		} else switch (op) {
+		else switch (op) {
 		case T_EQ:
 		case T_NE:
 		case T_LT:
 		case T_LE:
 		case T_GT:
 		case T_GE:
-			if (v->v_type == V_STR) {
-				int tmp;
-				tmp = strcmp(v->v_str, t.v_str);
-				str_free(v->v_str);
-				str_free(t.v_str);
-				v->v_type = V_NUM;
-				v->v_num = tmp;
-				t.v_num = 0;
+		case T_PLUS:
+			if (l.v_type == V_STR) {
+				if (r.v_type == V_NUM)
+					if (p_convstr(&r) < 0)
+						flag = 0;
+			} else
+				if (r.v_type == V_STR)
+					if (p_convstr(&l) < 0)
+						flag = 0;
+			break;
+		case T_LS:
+		case T_RS:
+			if (r.v_type == V_STR) {
+				char *p = r.v_str;
+				r.v_type = V_NUM;
+				r.v_num = strlen(p);
+				str_free(p);
 			}
 			break;
+		case T_OR:
+		case T_XOR:
+		case T_AND:
+		case T_MINUS:
+		case T_MUL:
+		case T_DIV:
+		case T_MOD:
 		default:
-			if (v->v_type == V_STR) {
-				p_error("Numeric value required for %s.",
+			if (l.v_type == V_STR || r.v_type == V_STR) {
+				p_error("%s: Numeric operands required.",
 					opname);
 				flag = 0;
 			}
 		}
-
 		if (!flag) {
-			val_free(*v);
-			val_free(t);
+			val_free(l);
+			val_free(r);
 			v->v_type = V_ERR;
+			if (p_abort())
+				return -1;
 			continue;
 		}
 
+		v->v_type = V_NUM;
 		switch (op) {
-		case T_OR:
-			v->v_num |= t.v_num;
-			break;
-		case T_XOR:
-			v->v_num ^= t.v_num;
-			break;
-		case T_AND:
-			v->v_num &= t.v_num;
-			break;
 		case T_EQ:
-			v->v_num = v->v_num == t.v_num;
-			break;
 		case T_NE:
-			v->v_num = v->v_num != t.v_num;
-			break;
 		case T_LT:
-			v->v_num = v->v_num < t.v_num;
-			break;
 		case T_LE:
-			v->v_num = v->v_num <= t.v_num;
-			break;
 		case T_GT:
-			v->v_num = v->v_num > t.v_num;
-			break;
 		case T_GE:
-			v->v_num = v->v_num >= t.v_num;
-			break;
-		case T_LS:
-			v->v_num <<= t.v_num;
-			break;
-		case T_RS:
-			v->v_num >>= t.v_num;
-			break;
-		case T_PLUS:
-			v->v_num += t.v_num;
-			break;
-		case T_MINUS:
-			v->v_num -= t.v_num;
-			break;
-		case T_MUL:
-			v->v_num *= t.v_num;
-			break;
-		case T_DIV:
-			v->v_num /= t.v_num;
-			break;
-		case T_MOD:
-			v->v_num %= t.v_num;
+			if (l.v_type == V_STR) {
+				int tmp = strcmp(l.v_str, r.v_str);
+				str_free(l.v_str);
+				str_free(r.v_str);
+				l.v_type = V_NUM;
+				l.v_num = tmp;
+				r.v_type = V_NUM;
+				r.v_num = 0;
+			}
 			break;
 		}
+		switch (op) {
+		case T_OR:
+			v->v_num = l.v_num | r.v_num;
+			break;
+		case T_XOR:
+			v->v_num = l.v_num ^ r.v_num;
+			break;
+		case T_AND:
+			v->v_num = l.v_num & r.v_num;
+			break;
+		case T_EQ:
+			v->v_num = l.v_num == r.v_num;
+			break;
+		case T_NE:
+			v->v_num = l.v_num != r.v_num;
+			break;
+		case T_LT:
+			v->v_num = l.v_num < r.v_num;
+			break;
+		case T_LE:
+			v->v_num = l.v_num <= r.v_num;
+			break;
+		case T_GT:
+			v->v_num = l.v_num > r.v_num;
+			break;
+		case T_GE:
+			v->v_num = l.v_num >= r.v_num;
+			break;
+		case T_LS:
+			if (l.v_type == V_STR) {
+				int i;
+				if ((i = strlen(l.v_str)) > r.v_num)
+					i = r.v_num;
+				v->v_str = str_ncpy(l.v_str, i);
+				v->v_type = V_STR;
+			} else
+				v->v_num = l.v_num << r.v_num;
+			break;
+		case T_RS:
+			if (l.v_type == V_STR) {
+				int i;
+				if ((i = strlen(l.v_str)) > r.v_num)
+					i -= r.v_num;
+				else
+					i = 0;
+				v->v_str = str_cpy(l.v_str + i);
+				v->v_type = V_STR;
+			} else
+				v->v_num = l.v_num >> r.v_num;
+			break;
+		case T_PLUS:
+			if (l.v_type == V_STR) {
+				v->v_str = str_cat(l.v_str, r.v_str);
+				v->v_type = V_STR;
+			} else
+				v->v_num = l.v_num + r.v_num;
+			break;
+		case T_MINUS:
+			v->v_num = l.v_num - r.v_num;
+			break;
+		case T_MUL:
+			v->v_num = l.v_num * r.v_num;
+			break;
+		case T_DIV:
+			v->v_num = l.v_num / r.v_num;
+			break;
+		case T_MOD:
+			v->v_num = l.v_num % r.v_num;
+			break;
+		}
+		val_free(l);
+		val_free(r);
 	}
 	/*NOTREACHED*/
 }
