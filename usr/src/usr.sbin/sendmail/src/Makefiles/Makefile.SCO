@@ -7,7 +7,7 @@
 #
 #  This has been tested on SCO.
 #
-#	@(#)Makefile.SCO	8.2 (Berkeley) %G%
+#	@(#)Makefile.SCO	8.3 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -70,17 +70,19 @@ all: ${ALL}
 sendmail: ${BEFORE} ${OBJS}
 	${CC} -o sendmail ${OBJS} ${LIBDIRS} ${LIBS}
 
+NROFF=	nroff -h
+
 aliases.0: aliases.5
-	nroff -h -mandoc aliases.5 > aliases.0
+	${NROFF} -mandoc aliases.5 > aliases.0
 
 mailq.0: mailq.1
-	nroff -h -mandoc mailq.1 > mailq.0
+	${NROFF} -mandoc mailq.1 > mailq.0
 
 newaliases.0: newaliases.1
-	nroff -h -mandoc newaliases.1 > newaliases.0
+	${NROFF} -mandoc newaliases.1 > newaliases.0
 
 sendmail.0: sendmail.8
-	nroff -h -mandoc sendmail.8 > sendmail.0
+	${NROFF} -mandoc sendmail.8 > sendmail.0
 
 install: install-sendmail install-docs
 
