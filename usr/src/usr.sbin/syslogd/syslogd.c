@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslogd.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslogd.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -53,14 +53,8 @@ static char sccsid[] = "@(#)syslogd.c	5.30 (Berkeley) %G%";
 #define DEFSPRI		(LOG_KERN|LOG_CRIT)
 #define TIMERINTVL	30		/* interval for checking flush, mark */
 
-#include <stdio.h>
-#include <utmp.h>
-#include <ctype.h>
-#include <strings.h>
-#include <setjmp.h>
-
-#include <sys/syslog.h>
 #include <sys/param.h>
+#include <sys/syslog.h>
 #include <sys/errno.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -77,11 +71,17 @@ static char sccsid[] = "@(#)syslogd.c	5.30 (Berkeley) %G%";
 #include <netinet/in.h>
 #include <netdb.h>
 
-#define	CTTY	"/dev/console"
-char	*LogName = "/dev/log";
-char	*ConfFile = "/etc/syslog.conf";
-char	*PidFile = "/etc/syslog.pid";
-char	ctty[] = CTTY;
+#include <utmp.h>
+#include <setjmp.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <strings.h>
+#include "pathnames.h"
+
+char	*LogName = _PATH_LOG;
+char	*ConfFile = _PATH_LOGCONF;
+char	*PidFile = _PATH_LOGPID;
+char	ctty[] = _PATH_CONSOLE;
 
 #define FDMASK(fd)	(1 << (fd))
 
@@ -273,10 +273,10 @@ main(argc, argv)
 			InetInuse = 1;
 		}
 	}
-	if ((fklog = open("/dev/klog", O_RDONLY)) >= 0)
+	if ((fklog = open(_PATH_KLOG, O_RDONLY, 0)) >= 0)
 		klogm = FDMASK(fklog);
 	else {
-		dprintf("can't open /dev/klog (%d)\n", errno);
+		dprintf("can't open %s (%d)\n", _PATH_KLOG, errno);
 		klogm = 0;
 	}
 
@@ -710,8 +710,8 @@ wallmsg(f, iov)
 		return;
 
 	/* open the user login file */
-	if ((uf = fopen("/etc/utmp", "r")) == NULL) {
-		logerror("/etc/utmp");
+	if ((uf = fopen(_PATH_UTMP, "r")) == NULL) {
+		logerror(_PATH_UTMP);
 		reenter = 0;
 		return;
 	}
