@@ -29,16 +29,18 @@ SOFTWARE.
  *
  * $Header: tp_user.h,v 5.2 88/11/04 15:44:44 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_user.h,v $
- *	@(#)tp_user.h	7.4 (Berkeley) %G%
+ *	@(#)tp_user.h	7.5 (Berkeley) %G%
  *
  * These are the values a real-live user ;-) needs. 
  */
 
+#ifndef _TYPES_
 #ifdef KERNEL
-#include  "types.h"
+#include  "../sys/types.h"
 #else KERNEL
 #include  <sys/types.h>
 #endif KERNEL
+#endif
 
 #ifndef __TP_USER__
 #define __TP_USER__
