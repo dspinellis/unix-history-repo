@@ -1,4 +1,4 @@
-/* quotactl.s 4.1 83/06/30 */
+/* quotactl.s 5.1 85/06/03 */
 
 #include "SYS.h"
 
