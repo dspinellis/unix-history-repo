@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)lookbib.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)lookbib.c	4.4 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -11,7 +11,14 @@ char **argv;
 {
 	FILE *fp, *hfp, *fopen(), *popen();
 	char s[BUFSIZ], hunt[64], *sprintf();
+	int instructions = 1;
 
+	if (strcmp(argv[1],"-n") == 0)
+	{
+		argv++;
+		argc--;
+		instructions = 0;
+	}
 	if (argc == 1 || argc > 2)
 	{
 		fputs("Usage:  lookbib database\n",
@@ -39,7 +46,7 @@ char **argv;
 	}
 	sprintf(hunt, "/usr/lib/refer/hunt %s", argv[1]);
 
-	if (isatty(fileno(fp)))
+	if (instructions && isatty(fileno(fp)))
 	{
 		fprintf(stderr, "Instructions? ");
 		fgets(s, BUFSIZ, fp);
