@@ -14,12 +14,15 @@ D COMPSUR ACM Computing Surveys
 D I&C Information and Control
 D IBMJRD IBM Journal of Research and Development
 D IBMSJ IBM Systems Journal
+D IEEESW IEEE Software
 D IEEETSE IEEE Transactions on Software Engineering
 D IEEETC IEEE Transactions on Computers
 D IJCIS International Journal of Computer and Information Sciences
+D IJMMS International Journal of Man-Machine Studies
 D IPL Information Processing Letters
 D JACM Journal of the ACM
 D JCSS Journal of Computer and System Sciences
+D JS&S Journal of Systems and Software
 D MATHST Mathematics Systems Theory
 D NMATH Numerical Mathematics
 D SIAMJC Siam Journal on Computing
@@ -32,6 +35,7 @@ D SPE Software\(emPractice & Experience
 D TOCS ACM Transactions on Computer Systems
 D TODS ACM Transactions on Database Systems
 D TOMS ACM Transactions on Mathematical Software
+D TOOIS ACM Transactions on Office Information Systems
 D TOPLAS ACM Transactions on Programming Languages and Systems
 #
 # CONFs
@@ -59,6 +63,23 @@ D CCC84 PROC of the ACM SI\&GPLAN 1984 SYMP on Compiler Construction, SIGPLAN\
 %D JUN 1984\
 %V 19 \
 %N 6
+D CHI83 PROC S\&IGCHI CONF on Human Factors in Computing Systems\
+%C Boston, MA\
+%D DEC 1983
+D ICSE International CONF on Software Engineering
+D ICSE3 PROC 3rd ICSE\
+%D MAY 1978
+D ICSE4 PROC 4th ICSE\
+%D 1979
+D ICSE5 PROC 5th ICSE\
+%C San Diego, CA\
+%D MAR 1981
+D ICSE6 PROC 6th ICSE\
+%C Tokyo, Japan\
+%D SEP 1982
+D ICSE7 PROC 7th ICSE\
+%C Orlando, FL\
+%D APR 1984
 D PLISS83 PROC ACM SI\&GPLAN 1983 SYMP on Programming Language Issues in Software Systems, SIGPLAN\
 %C San Francisco, CA\
 %D JUN 1983\
@@ -100,10 +121,15 @@ D POPL12 CONF Record of the Twelfth POPL\
 D POPL13 CONF Record of the Thirteenth POPL\
 %C Tampa Bay, FL\
 %D JAN 1986
+D PSDE84 PROC of the ACM S\&IGSOFT/S\&IGPLAN Software Engineering SYMP on Practical Software Development Environments\
+%C Pittsburgh, PA\
+%D APR 1984
+D TEXT81 PROC of the ACM S\&IGPLAN S\&IGOA SYMP on Text Manipulation\
+%C Portland, OR\
+%D JUN 1981
 D STOC Annual ACM SYMP on Theory of Computing
 D FOCS Annual SYMP on Foundations of Computer Science
 D SOSP SYMP on Operating System Principles
-D ICSE International CONF on Software Engineering
 D JICAI Joint International CONF on Artificial Intelligence
 D HICSS Hawaii International CONF on System Science
 D ADA80 PROC of the ACM-SI\&GPLAN Symposium on the Ada Programming Language, SIGPLAN\
