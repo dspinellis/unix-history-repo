@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)optab.c 1.1 %G%";
+static char sccsid[] = "@(#)optab.c 1.2 %G%";
 
 /*
  * px opcode table
@@ -217,7 +217,7 @@ OPTAB optab[] ={
 	{ "put" },
 	{ "fnil" },
 	{ "badopnn" },
-	{ "defname", PSUBOP, HWORD },
+	{ "defname" },
 	{ "reset" },
 	{ "rewrite" },
 	{ "file" },
