@@ -1,8 +1,8 @@
 #ifndef lint
-static char *sccsid ="@(#)local.c	1.6 (Berkeley) %G%";
+static char *sccsid ="@(#)local.c	1.7 (Berkeley) %G%";
 #endif lint
 
-# include "mfile1"
+# include "pass1.h"
 
 /*	this file contains code which is dependent on the target machine */
 
@@ -274,10 +274,13 @@ cinit( p, sz ) NODE *p; {
 	case INT:
 	case UNSIGNED:
 		l = p->in.left;
-		if (l->in.op != SCONV || l->in.left->tn.op != FCON) break;
+		if (l->in.op != SCONV ||
+		    (l->in.left->tn.op != DCON && l->in.left->tn.op != FCON))
+			break;
 		l->in.op = FREE;
 		l = l->in.left;
-		l->tn.lval = (long)(l->fpn.dval);
+		l->tn.lval = l->tn.op == DCON ? (long)(l->dpn.dval) :
+			(long)(l->fpn.fval);
 		l->tn.rval = NONAME;
 		l->tn.op = ICON;
 		l->tn.type = INT;
@@ -375,10 +378,19 @@ isitlong( cb, ce ){ /* is lastcon to be long or short */
 
 
 isitfloat( s ) char *s; {
+	union cvt {
+		double	d;
+		int	n[2];
+	} cvt;
 	double atof();
-	dcon = atof(s);
-	fcon = dcon;
-	return( fcon == dcon ? FCON : DCON );
+
+	/* avoid floating point exception for double -> float conversions */
+	dcon = cvt.d = atof(s);
+	if( cvt.n[1] == 0 ){
+		fcon = dcon;
+		return( FCON );
+		}
+	return( DCON );
 	}
 
 ecode( p ) NODE *p; {
