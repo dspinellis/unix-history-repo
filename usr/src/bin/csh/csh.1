@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)csh.1	6.6 (Berkeley) %G%
+.\"	@(#)csh.1	6.7 (Berkeley) %G%
 .\"
 .TH CSH 1 ""
 .UC 4
@@ -124,7 +124,7 @@ like:
 .DT
 	[1] 1234
 .PP
-indicating that the jobs which was started asynchronously was job number
+indicating that the job which was started asynchronously was job number
 1 and had one (top-level) process, whose process id was 1234.
 .PP
 If you are running a job and wish to do something else you may hit the key
@@ -225,7 +225,7 @@ However, given
 .br
 	% vi DSC.
 .br
-and will sound the terminal bell to indicate the expansion is
+and will sound the terminal bell to indicate that the expansion is
 incomplete, since there are two file names matching the prefix ``D''.
 .PP
 If a partial file name is followed by the end-of-file character
@@ -339,7 +339,7 @@ alone is essentially a
 .PP
 To select words from an event we can follow the event specification by
 a `:' and a designator for the desired words.
-The words of a input line are numbered from 0,
+The words of an input line are numbered from 0,
 the first (usually command) word being 0, the second word (first argument)
 being 1, etc.
 The basic word designators are:
@@ -524,7 +524,7 @@ and the rest of which become arguments.
 .PP
 Unless enclosed in `"' or given the `:q' modifier the results of variable
 substitution may eventually be command and filename substituted.
-Within `"' a variable whose value consists of multiple words expands to a
+Within `"', a variable whose value consists of multiple words expands to a
 (portion of) a single word, with the words of the variables value
 separated by blanks.
 When the `:q' modifier is applied to a substitution
@@ -795,7 +795,7 @@ remains as the original standard input of the shell.  If this is a terminal
 and if the process attempts to read from the terminal, then the process
 will block and the user will be notified (see
 .B Jobs
-above.)
+above).
 .PP
 Diagnostic output may be directed through a pipe with the standard output.
 Simply use the form `|\|&' rather than just `|'.
@@ -978,7 +978,7 @@ statement as discussed below.
 .HP 5
 .BR chdir " name"
 .br
-Change the shells working directory to directory
+Change the shell's working directory to directory
 .I name.
 If no argument is given then change to the home directory of the user.
 .br
@@ -1230,10 +1230,10 @@ If the specified
 .IR expr ""
 is true then the commands to the first
 .I else
-are executed; else if
+are executed; otherwise if
 .IR expr2 ""
 is true then the commands to the
-second else are executed, etc.
+second \fIelse\fR are executed, etc.
 Any number of
 .I else-if
 pairs are possible; only one
@@ -1446,7 +1446,7 @@ continue to be ignored by the shell and all invoked commands.
 .BR "popd" " +n"
 .br
 Pops the directory stack, returning to the new top directory.
-With a argument `+\fIn\fR' discards the \fIn\fR\|th
+With an argument `+\fIn\fR' discards the \fIn\fR\|th
 entry in the stack.
 The elements of the directory stack are numbered from 0 starting at the top.
 .HP 5
@@ -2147,7 +2147,7 @@ or yields a non-zero exit status.
 \c
 The shell will start faster, because it will neither search for nor
 execute commands from the file
-`\&.cshrc' in the invokers home directory.
+`\&.cshrc' in the invoker's home directory.
 .TP 5
 .B  \-i
 \c
@@ -2199,13 +2199,13 @@ as
 is to
 .B \-v.
 .PP
-After processing of flag arguments if arguments remain but none of the
+After processing of flag arguments, if arguments remain but none of the
 .B \-c,
 .B \-i,
 .B \-s,
 or
 .B \-t
-options was given the first argument is taken as the name of a file of
+options was given, the first argument is taken as the name of a file of
 commands to be executed.
 The shell opens this file, and saves its name for possible resubstitution
 by `$0'.
