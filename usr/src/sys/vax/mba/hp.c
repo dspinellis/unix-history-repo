@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.18 (Berkeley) %G%
+ *	@(#)hp.c	6.19 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -607,16 +607,14 @@ hpdtint(mi, mbsr)
 {
 	register struct hpdevice *hpaddr = (struct hpdevice *)mi->mi_drv;
 	register struct buf *bp = mi->mi_tab.b_actf;
-	register struct hpst *st;
 	register int er1, er2;
 	struct hpsoftc *sc = &hpsoftc[mi->mi_unit];
-	int retry = 0, i;
+	int retry = 0;
 	int npf;
 	daddr_t bn;
 	int bcr;
 
 	bcr = MASKREG(-mi->mi_mba->mba_bcr);
-	st = &hpst[mi->mi_type];
 	if (hpaddr->hpds&HPDS_ERR || mbsr&MBSR_EBITS) {
 		er1 = hpaddr->hper1;
 		er2 = hpaddr->hper2;

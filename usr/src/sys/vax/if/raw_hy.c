@@ -1,5 +1,5 @@
 /*
- *	@(#)raw_hy.c	6.4	%G%
+ *	@(#)raw_hy.c	6.5	%G%
  *
  * 4.3 BSD Unix kernel - NSC HYPERchannel support
  *
@@ -44,7 +44,6 @@ rhy_output(m, so)
 	register struct mbuf *m;
 	struct socket *so;
 {
-	struct mbuf *n;
 	int error = 0;
 	register struct sockaddr_in *sin;
 	register struct rawcb *rp = sotorawcb(so);
