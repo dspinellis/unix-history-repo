@@ -313,6 +313,7 @@ giveresponse(stat, force, m)
 	extern int N_SysEx;
 	extern long MsgSize;
 	char buf[30];
+	extern char *sprintf();
 
 	i = stat - EX__BASE;
 	if (i < 0 || i > N_SysEx)
@@ -390,6 +391,7 @@ putmessage(fp, m)
 	extern char *hvalue();
 	bool anyheader = FALSE;
 	extern char *translate();
+	extern char *capitalize();
 	extern char SentDate[];
 
 	/* clear all "used" bits */
@@ -410,10 +412,9 @@ putmessage(fp, m)
 	p = hvalue("from");
 	if (bitset(M_NEEDFROM, m->m_flags) && p == NULL)
 	{
-		char frombuf[MAXLINE];
 		extern char *FullName;
 
-		p = translate("$f", From.q_mailer, From.q_paddr, NULL, NULL);
+		p = translate("$f", From.q_mailer, From.q_paddr, (char *) NULL, (char *) NULL);
 		if (FullName != NULL)
 			fprintf(fp, "From: %s <%s>\n", FullName, p);
 		else
@@ -566,7 +567,6 @@ recipient(a, targetq)
 {
 	register ADDRESS *q;
 	register struct mailer *m;
-	register char **pvp;
 	extern bool forward();
 	extern int errno;
 	extern bool sameaddr();
@@ -668,12 +668,10 @@ buildargv(m, host, user, from)
 	char *from;
 {
 	register char *p;
-	register char *q;
 	static char *pv[MAXPV+1];
 	char **pvp;
 	char **mvp;
 	static char buf[512];
-	register char *bp;
 	extern char *translate();
 
 	/*
@@ -686,8 +684,6 @@ buildargv(m, host, user, from)
 	*/
 
 	pvp = pv;
-	bp = buf;
-
 	*pvp++ = m->m_argv[0];
 
 	/* insert -f or -r flag as appropriate */
@@ -762,6 +758,7 @@ translate(s, m, from, user, host)
 	char pbuf[10];
 	extern char *newstr();
 	extern char *Macro[];
+	extern char *sprintf();
 
 	bp = buf;
 restart:
@@ -861,6 +858,7 @@ mailfile(filename)
 	register FILE *f;
 	auto long tim;
 	extern char *ctime();
+	extern long time();
 
 	f = fopen(filename, "a");
 	if (f == NULL)
