@@ -13,7 +13,7 @@
 #include "DEFS.h"
 
 #if defined(LIBC_SCCS) && !defined(lint)
-	ASMSTR("@(#)setjmp.s	5.3 (Berkeley) %G%")
+	ASMSTR("@(#)setjmp.s	5.4 (Berkeley) %G%")
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -39,10 +39,11 @@ NON_LEAF(setjmp, SETJMP_FRAME_SIZE, ra)
 	lw	v1, SETJMP_FRAME_SIZE(sp)	# v1 = jmpbuf
 	sw	v0, (1 * 4)(v1)			# save sc_mask = sigblock(0)
 	move	a0, zero
-	addu	a1, sp, STAND_FRAME_SIZE	# pointer to struct sigstack
-	jal	sigstack
+	addu	a1, sp, STAND_FRAME_SIZE	# pointer to struct sigaltstack
+	jal	sigaltstack
 	lw	a0, SETJMP_FRAME_SIZE(sp)	# restore jmpbuf
-	lw	v1, STAND_FRAME_SIZE+4(sp)	# get old ss_onstack
+	lw	v1, STAND_FRAME_SIZE+8(sp)	# get old ss_onstack
+	and	v1, v1, 1			# extract onstack flag
 	sw	v1, 0(a0)			# save it in sc_onstack
 	lw	ra, STAND_RA_OFFSET(sp)
 	addu	sp, sp, SETJMP_FRAME_SIZE
