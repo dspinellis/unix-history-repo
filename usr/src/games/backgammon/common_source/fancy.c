@@ -1,12 +1,18 @@
 /*
  * Copyright (c) 1980 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fancy.c	5.2 (Berkeley) %G%";
-#endif not lint
+static char sccsid[] = "@(#)fancy.c	5.3 (Berkeley) %G%";
+#endif /* not lint */
 
 #include "back.h"
 
@@ -405,7 +411,7 @@ newpos ()  {
 
 	if (CM)  {			/* try CM to get there */
 		mode = 0;
-		m = tgoto (CM,c,r);
+		m = (char *)tgoto (CM,c,r);
 		count = strlen (m);
 	}
 
@@ -701,7 +707,7 @@ register char	*s;
 	bufp = tbuf;			/* get string entries */
 	cap = tstr;
 	for (code = tcap; *code; code += 2)
-		**cap++ = tgetstr (code,&bufp);
+		**cap++ = (char *)tgetstr (code,&bufp);
 
 					/* get pertinent lengths */
 	if (HO)
@@ -716,6 +722,6 @@ register char	*s;
 		lND = strlen (ND);
 	if (LI < 24 || CO < 72 || !(CL && UP && ND))
 		return (0);
-	linect = calloc (LI+1,sizeof(int));
+	linect = (int *)calloc (LI+1,sizeof(int));
 	return (1);
 }
