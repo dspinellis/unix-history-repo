@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ufs_vnops.c	6.19 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	6.20 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -942,6 +942,17 @@ rename()
 		 */
 		if (xp->i_number == ip->i_number)
 			goto bad;
+		/*
+		 * If the parent directory is "sticky", then the user must
+		 * own the parent directory, or the destination of the rename,
+		 * otherwise the destination may not be changed (except by
+		 * root). This implements append-only directories.
+		 */
+		if ((dp->i_mode & ISVTX) && u.u_uid != 0 &&
+		    u.u_uid != dp->i_uid && xp->i_uid != u.u_uid) {
+			error = EPERM;
+			goto bad;
+		}
 		/*
 		 * Target must be empty if a directory
 		 * and have no links to it.
