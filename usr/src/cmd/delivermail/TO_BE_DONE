@@ -1,0 +1,30 @@
+  ***** Change sendto & aliasdbm to know about quoted commas.
+	Currently, quoted commas delimit aliases when they should be
+	ignored.
+
+   ****	Collect mail together that can be sent all at once, i.e.,
+	create equivalence classes of hosts.  This could end up needing
+	great knowledge about network topology, but most errors would
+	end up being inefficient although still ok.
+
+    *** Put host aliasing into the users file, e.g.,
+	``vax135!:research!vax135!''   This would simplify
+	configuration considerably, but it might not be worth it.
+	For example, this is too sensitive to be in a file that
+	is writable by all users.
+
+     ** Collect all names that are local in advance, and send
+	them all off to /bin/mail at once -- fork before sending so
+	that we can return status quickly.
+
+     ** Handle :Include: specifications.
+
+      * (Somehow) have "From" person modified so that if an alias exists
+	for the person, it will appear post-aliased rather than pre-aliased,
+	especially (perhaps only?) in ARPANET mail.  For example, if there
+	exists an alias "fabry->cory:fabry", then if mail comes in from
+	"cory:fabry", make it appear as though it were from "fabry".
+	This should probably be in Mail (put "From" and "Date" lines in)
+	or in the arpa mailer.
+
+      * Do aliasing on mail being returned also (?).
