@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_pageout.c	7.10 (Berkeley) %G%
+ *	@(#)vm_pageout.c	7.11 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -49,6 +49,8 @@
 int	vm_pages_needed;	/* Event on which pageout daemon sleeps */
 
 int	vm_page_free_min_sanity = 40;
+
+int	vm_page_max_wired = 0;	/* XXX max # of wired pages system-wide */
 
 /*
  *	vm_pageout_scan does the dirty work for the pageout daemon.
@@ -303,6 +305,10 @@ void vm_pageout()
 
 	if (cnt.v_free_target <= cnt.v_free_min)
 		cnt.v_free_target = cnt.v_free_min + 1;
+
+	/* XXX does not really belong here */
+	if (vm_page_max_wired == 0)
+		vm_page_max_wired = cnt.v_free_count / 3;
 
 	/*
 	 *	The pageout daemon is never done, so loop
