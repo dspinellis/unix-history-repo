@@ -1,4 +1,4 @@
-/*	tm.c	4.31	81/04/03	*/
+/*	tm.c	4.32	81/04/03	*/
 
 #include "te.h"
 #if NTM > 0
@@ -833,7 +833,7 @@ tmioctl(dev, cmd, addr, flag)
 		mtget.mt_dsreg = sc->sc_dsreg;
 		mtget.mt_erreg = sc->sc_erreg;
 		mtget.mt_resid = sc->sc_resid;
-		mtget.mt_type = MI_ISTM;
+		mtget.mt_type = MT_ISTM;
 		if (copyout((caddr_t)&mtget, addr, sizeof(mtget)))
 			u.u_error = EFAULT;
 		return;
