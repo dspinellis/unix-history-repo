@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile 1.5 %G%
+SCCSID = @(#)Makefile 1.6 %G%
 INSTALL = ${DESTDIR}/usr/ucb
 INSTALLIB = ${DESTDIR}/usr/lib
 PX_HEADER = px_header
@@ -43,7 +43,9 @@ pxref: pxref.p
 pc: pc.c
 	${CC} -O -d2 -o pc pc.c
 
-pcexterns.o: /usr/lib/libpc.a /lib/libc.a /usr/lib/libm.a /usr/lib/libg.a
+LIBRARIES = /usr/lib/libpc.a /lib/libc.a /usr/lib/libm.a /usr/lib/libg.a
+
+pcexterns.o: pcexterns.awk ${LIBRARIES}
 	${NM} /usr/lib/libpc.a | awk -f pcexterns.awk >pcexterns.s
 	${NM} /lib/libc.a | awk -f pcexterns.awk >>pcexterns.s
 	${NM} /usr/lib/libm.a | awk -f pcexterns.awk >>pcexterns.s
