@@ -1,50 +1,46 @@
-/*	main.c	1.11	(Berkeley) 83/10/13
+/*	main.c	1.12	(Berkeley) 83/11/02
  *
  *	This file contains the main and file system dependent routines
  * for processing gremlin files into troff input.  The program watches
  * input go by to standard output, only interpretting things between .GS
- * and .GE lines.  Default values may be overridden, as in gprint, on the
- * command line and are further overridden by commands in the input.  A
- * description of the command-line options are listed below.  A space is
- * NOT required for the operand of an option.
+ * and .GE lines.  Default values (font, size, scale, thickness) may be
+ * overridden with a "default" command and are further overridden by
+ * commands in the input.  A description of the command-line options are
+ * listed below.  A space is NOT required for the operand of an option.
  *
  *	command options are:
  *
- *	-r ss	sets gremlin's roman font to troff font ss.  Also for -i,
- *		-b and -s for italics, bold, and special fonts.  This does
- *		NOT affect font changes imbedded into strings.  A \fI, for
- *		instance, will get the italics font regardless of what -i
- *		is set to.
- *
- *	-1 #	sets point size 1 to #.  also for -2, -3, -4.  Defaults
- *		are 12, 16, 24, 36.
- *
- *	-n #	set narrow line thickness to # pixels.  Also for -m (medium)
- *		and -t (thick).  Defaults are 1, 3, and 5 pixels.
- *
- *	-x #	scale the picture by x (integer or decimal).
+ *	-L dir	set the library directory to dir.  If a file is not found
+ *		in the current directory, it is looked for in dir (default
+ *		is /usr/lib/gremlib).
  *
  *	-T dev	Prepare output for "dev" printer.  Default is for the varian
- *		and versatec printers.  Devices acceptable are:  ver, var, ip.
+ *	-P dev	and versatec printers.  Devices acceptable are:  ver, var, ip.
  *
- *	-p	prompt user for fonts, sizes and thicknesses.
- *
- *
- *		Inside the GS and GE, there are commands similar to command-
- *	    line options listed above.  At most one command may reside on each
- *	    line, and each command is followed by a parameter separated by white
- *	    space.  The commands are as follows, and may be abbreviated down to
- *	    one character (with exception of "scale" down to "sc") and may be
+ *		Inside the GS and GE, commands are accepted to reconfigure
+ *	    the picture.  At most one command may reside on each line, and
+ *	    each command is followed by a parameter separated by white space.
+ *	    The commands are as follows, and may be abbreviated down to one
+ *	    character (with exception of "scale" down to "sc") and may be
  *	    upper or lower case.
  *
+ *			      default  -  make all settings in the current
+ *					  .GS/.GE the global defaults.
+ *					  Height, width and file are NOT saved.
  *			   1, 2, 3, 4  -  set size 1, 2, 3, or 4 (followed
+ *					  by an integer point size).
  *	roman, italics, bold, special  -  set gremlin's fonts to any other
  *					  troff font (one or two characters)
  *			     scale, x  -  scale is IN ADDITION to the global
- *					  scale factor from the -x option.
+ *					  scale factor from the default.
+ *			   pointscale  -  turn on scaling point sizes to
+ *					  match "scale" commands.  (optional
+ *					  operand "off" to turn it off)
  *		narrow, medium, thick  -  set pixel widths of lines.
  *				 file  -  set the file name to read the
- *					  gremlin picture from.
+ *					  gremlin picture from.  If the file
+ *					  isn't in the current directory, the
+ *					  gremlin library is tried.
  *			width, height  -  these two commands override any
  *					  scaling factor that is in effect,
  *					  and forces the picture to fit into
@@ -83,16 +79,13 @@ extern POINT *PTInit(), *PTMakePoint();
 #define DEFSTYLE	SOLID		/* default line style */
 
 #define SCREENtoINCH	0.02		/* scaling factor, screen to inches */
-#define BIG	100000000000.0		/* unweildly large floating number */
-
-#define JLEFT		-1		/* justification constants - for the */
-#define JCENTER		0		/*    whole picture - where it will */
-#define JRIGHT		1		/*    get placed within the line */
+#define BIG	999999999999.0		/* unweildly large floating number */
 
 
-char	SccsId[] = "main.c	1.11	83/10/13";
+char	SccsId[] = "main.c	1.12	83/11/02";
 
 char	*printer = DEFAULTDEV;	/* device to look up resolution of */
+char	*gremlib = GREMLIB;	/* place to find files after current dir. */
 double	res;			/* that printer's resolution goes here */
 
 int	linethickness;		/* brush styles */
@@ -103,37 +96,29 @@ int	lastyline;		/* a line's vertical position is NOT the same */
 				/* after that line is over, so for a line of */
 				/* drawing commands, vertical spacing is kept */
 				/* in lastyline */
-double	scale = SCREENtoINCH;	/* default scale to map gremlin screen to inches
-				   (modified by -x command-line option) */
 
-		    /* list of prompts for asking user to set default values */
-char	*prompt[] = {				  /* used only for -p option */
-		"Roman font name? (%s): ",	"Italic font name? (%s): ",
-		"Bold font name? (%s): ",	"Special font name? (%s): ",
-		"font size 1? (%s): ",		"font size 2? (%s): ",
-		"font size 3? (%s): ",		"font size 4? (%s): ",
-	};
+			/* these are the default fonts, sizes, line styles, */
+			/*   and thicknesses.  These can be modified from a */
+			/*   "default" command and are reset each time the  */
+			/*   start of a picture (.GS) is found.		    */
 
-			/* these are the default fonts, sizes, */
-			/*   line styles, and thicknesses.  These */
-			/*   can be modified from command-line */
-			/*   options, and are reset each time the */
-			/*   start of a picture (.GS) is found. */
+char *	deffont[] = {  "R", "I", "B", "S"  };
+int	defsize[] = {  10, 16, 24, 36  };
+int	defthick[STYLES] = {  1, 1, 5, 1, 1, 3  };
+int	style[STYLES] = {  DOTTED, DOTDASHED, SOLID, DASHED, SOLID, SOLID  };
+double	scale = 1.0;		/* no scaling, default */
+int	defpoint = 0;		/* flag for pointsize scaling */
 
-char	*defstring[] = {
-		"R\0         ", "I\0         ", "B\0         ", "S\0         ",
-		"10\0        ", "16\0        ", "24\0        ", "36\0        "
-	};
-int	defthick[STYLES] = { 1, 1, 5, 1, 1, 3 };	/* defaults... */
-int	style[STYLES] = { DOTTED, DOTDASHED, SOLID, DASHED, SOLID, SOLID };
 int	thick[STYLES];	/* thicknesses set by defaults, then by commands */
-char	*tfont[FONTS];	/* fonts originally set to defstring values, then */
-char 	*tsize[SIZES];	/*    optionally changed by commands inside grn */
+char	*tfont[FONTS];	/* fonts originally set to deffont values, then */
+int 	tsize[SIZES];	/*    optionally changed by commands inside grn */
 
 double	xscale;		/* scaling factor from individual pictures */
 double	troffscale;	/* scaling factor at output time */ 
 double	width;		/* user-request maximum width for picture (in inches) */
 double	height;		/* user-request height */
+int	pointscale;	/* flag for pointsize scaling */
+int	setdefault;	/* flag for a .GS/.GE to remember all settings */
 
 double	toppoint;		/* remember the picture */
 double	bottompoint;		/* bounds in these variables */
@@ -163,9 +148,6 @@ char *doinput();
  |		reads the inputs, passing it directly to output until a ".GS"
  |		line is read.  Main then passes control to "conv" to do the
  |		gremlin file conversions.
- |
- | Bugs:	a -p option ALWAYS reads standard input.  Even if the input
- |		file is coming in that way.
  *----------------------------------------------------------------------------*/
 
 main(argc, argv)
@@ -175,9 +157,8 @@ char **argv;
 	register FILE *fp = stdin;
 	register int k;
 	register char c;
-	char *file[50], string[50];
-	float mult;
-	int brsh, gfil = 0;
+	register gfil = 0;
+	char *file[50];
 
 	char *operand();
 
@@ -188,72 +169,17 @@ char **argv;
 	    else
 	      switch (c = (*argv)[1]) {
 
-		case '1':	/* select sizes */
-		case '2':
-		case '3':
-		case '4':
-			strcpy(defstring[c + FONTS-'1'], operand(&argc, &argv));
-			break;
-		case 'r':	/* select Roman font */
-			strcpy(defstring[0], operand(&argc, &argv));
-			break;
-		case 'i':	/* select italics font */
-			strcpy(defstring[1], operand(&argc, &argv));
-			break;
-		case 'b':	/* select bold font */
-			strcpy(defstring[2], operand(&argc, &argv));
-			break;
-		case 's':	/* select special font */
-			strcpy(defstring[3], operand(&argc, &argv));
-			break;
-		case 'n':	/* select narrow brush width */
-			(void) sscanf(operand(&argc, &argv), "%d", &brsh);
-			defthick[0]=defthick[1]=defthick[3]=defthick[4]=brsh;
-			break;
-		case 't':	/* select thick brush width */
-			(void) sscanf(operand(&argc, &argv), "%d", &brsh);
-			defthick[2] = brsh;
-			break;
-		case 'm':	/* select medium brush width */
-			(void) sscanf(operand(&argc, &argv), "%d", &brsh);
-			defthick[5] = brsh;
-			break;
-		case 'x':	/* select scale */
-			sscanf(operand(&argc, &argv),"%f", &mult);
-			scale *= mult;
-			break;
 		case 'P':
 		case 'T':	/* final output typesetter name */
 			printer = operand(&argc, &argv);
 			break;
-		case 'p':	/* prompt for font and size parameters */
-			for (k = 0; k < 8; k++) {
-			    fprintf(stderr, prompt[k], defstring[k]);
-			    gets(string);
-			    if (*string != '\0') strcpy(defstring[k], string);
-			}
-			fprintf(stderr,"narrow brush size? (%d): ",defthick[0]);
-			gets(string);
-			if (*string != '\0') {
-			    sscanf(string, "%d", &brsh);
-			    defthick[0] = defthick[1] = defthick[3]
-							= defthick[4] = brsh;
-			}
-			fprintf(stderr,"medium brush size? (%d): ",defthick[5]);
-			gets(string);
-			if (*string != '\0') {
-			    sscanf(string, "%d", &brsh);
-			    defthick[5] = brsh;
-			}
-			fprintf(stderr, "thick brush size? (%d): ",defthick[2]);
-			gets(string);
-			if (*string != '\0') {
-			    sscanf(string, "%d", &brsh);
-			    defthick[2] = brsh;
-			}
+
+		case 'L':	/* set library directory */
+			gremlib = operand(&argc, &argv);
 			break;
+
 		default:
-			fprintf(stderr, "unknown switch: %c\n", c);
+			error("unknown switch: %c", c);
 	    }
 	}
 				/* set the resolution for an output device */
@@ -267,7 +193,7 @@ char **argv;
 	for (k=0; k<gfil; k++) {
 		if (file[k] != NULL) {
 			if ((fp = fopen(file[k], "r")) == NULL) {
-			    fprintf(stderr, "grn: can't open %s\n", file[k]);
+			    error("can't open %s", file[k]);
 			    continue;
 			}
 		} else {
@@ -282,6 +208,22 @@ char **argv;
 		    }
 		}
 	}
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	error (control_string, args, . . . )
+ |
+ | Results:	prints ("grn: ", the control_string + args, "\n") to stderr
+ *----------------------------------------------------------------------------*/
+
+/* VARARGS1 */
+error(s, a1, a2, a3, a4)
+char *	s;
+{
+	fprintf(stderr, "grn: ");
+	fprintf(stderr, s, a1, a2, a3, a4);
+	fprintf(stderr, "\n");
 }
 
 
@@ -301,7 +243,7 @@ char ***argvp;
 {
 	if ((**argvp)[2]) return(**argvp + 2); /* operand immediately follows */
 	if ((--*argcp) <= 0) {			/* no operand */
-	    fprintf (stderr, "command-line option operand missing.\n");
+	    error("command-line option operand missing.");
 	    exit(1);
 	}
 	return(*(++(*argvp)));			/* operand is next word */
@@ -324,7 +266,7 @@ char *name;
 
 	sprintf(temp, "%s/dev%s/DESC.out", DEVDIR, name);
 	if ((fin = open(temp, 0)) < 0) {
-	    fprintf(stderr, "can't open tables for %s\n", temp);
+	    error("can't open tables for %s", temp);
 	    exit(1);
 	}
 	read(fin, &device, sizeof(struct dev));
@@ -347,7 +289,7 @@ char *name;
 char *doinput(fp)
 FILE *fp;
 {
-    register char *k;
+    char *k;
 
 
     if ((k = fgets(inputline, MAXINLINE, fp)) == NULL)
@@ -362,7 +304,7 @@ FILE *fp;
  | Routine:	initpic ( )
  |
  | Results:	sets all parameters to the normal defaults, possibly overridden
- |		by the command line flags.  Initilaize the picture variables,
+ |		by a setdefault command.  Initilaize the picture variables,
  |		and output the startup commands to troff to begin the picture.
  *----------------------------------------------------------------------------*/
 
@@ -374,19 +316,21 @@ initpic()
 	thick[i] = defthick[i];
     }
     for (i = 0; i < FONTS; i++) {	/* font name defaults */
-	tfont[i] = defstring[i];
+	tfont[i] = deffont[i];
     }
     for (i = 0; i < SIZES; i++) {	/* font size defaults */
-	tsize[i] = defstring[FONTS + i];
+	tsize[i] = defsize[i];
     }
 
     gremlinfile[0] = 0;		/* filename is "null" */
+    setdefault = 0;		/* this is not the default settings (yet) */
 
     toppoint = BIG;		/* set the picture bounds out */
     bottompoint = 0.0;		/* of range so they'll be set */
     leftpoint = BIG;		/* by "savebounds" on input */
     rightpoint = 0.0;
 
+    pointscale = defpoint;	/* Flag for scaling point sizes default. */
     xscale = scale;		/* default scale of individual pictures */
     width = 0.0;		/* size specifications input by user */
     height = 0.0;
@@ -425,17 +369,19 @@ int baseline;
 	    done |= (*c1 == '.' && *c2 == 'G' && *c3 == 'E');	 /*  and .GE */
 
 	    if (done) {
+		if (setdefault) savestate();
+
 		if (!gremlinfile[0]) {
-		    fprintf(stderr, "grn: at line %d: no picture filename.\n",
-								    baseline);
+		    if(!setdefault) fprintf(stderr,
+			"at line %d: no picture filename.\n", baseline);
 		    return;
 		}
 		if ((gfp = fopen(gremlinfile, "r")) == NULL) {
 		    char name[100];	/* if the file isn't in the current */
 					/* directory, try the gremlin library */
-		    sprintf(name, "%s%s", GREMLIB, gremlinfile);
+		    sprintf(name, "%s%s", gremlib, gremlinfile);
 		    if ((gfp = fopen(name, "r")) == NULL) {
-			fprintf(stderr, "grn: can't open %s\n", gremlinfile);
+			error("can't open %s", gremlinfile);
 			return;
 		    }
 		}
@@ -453,8 +399,16 @@ int baseline;
 		    troffscale = xscale;
 		} else {
 		    if (temp < troffscale) troffscale = temp;
+		}				/* here, troffscale is the */
+						/* picture's scaling factor */
+		if (pointscale) {
+		    register int i;		/* do pointscaling here, when */
+					     /* scale is known, before output */
+		    for (i = 0; i < SIZES; i++)
+			tsize[i] = (int) (troffscale * (double) tsize[i] + 0.5);
 		}
-		troffscale *= res;	/* change to device units from inches */
+						   /* change to device units */
+		troffscale *= SCREENtoINCH * res;	/* from screen units */
 
 		ytop = toppoint * troffscale;		/* calculate integer */
 		ybottom = bottompoint * troffscale;	/* versions of the */
@@ -491,6 +445,36 @@ int baseline;
 		interpret(inputline);	/* take commands from the input file */
 	    }
 	} while (!done);
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	savestate  ( )
+ |
+ | Results:	all the current  scaling / font size / font name / thickness /
+ |		pointscale  settings are saved to be the defaults.  Scaled
+ |		point sizes are NOT saved.  The scaling is done each time a
+ |		new picture is started.
+ |
+ | Side Efct:	defpoint, scale, deffont, defsize and defthick are modified.
+ *----------------------------------------------------------------------------*/
+
+savestate()
+{
+    register int i;
+
+    for (i = 0; i < STYLES; i++) {	/* line thickness defaults */
+	defthick[i] = thick[i];
+    }
+    for (i = 0; i < FONTS; i++) {	/* font name defaults */
+	deffont[i] = tfont[i];
+    }
+    for (i = 0; i < SIZES; i++) {	/* font size defaults */
+	defsize[i] = tsize[i];
+    }
+
+    scale *= xscale;		/* default scale of individual pictures */
+    defpoint = pointscale;	/* flag for scaling pointsizes from x factors */
 }
 
 
@@ -534,7 +518,10 @@ char *line;
     char str1[MAXINLINE];
     char str2[MAXINLINE];
     register char *chr;
+    register int i;
+    double par;
 
+    str2[0] = '\0';
     sscanf(line, "%80s%80s", &str1[0], &str2[0]);
     for (chr = &str1[0]; *chr; chr++)		/* convert command to */
 	if(isupper(*chr)) *chr = tolower(*chr);		/* lower case */
@@ -544,27 +531,38 @@ char *line;
 	case '2':	/* font sizes */
 	case '3':
 	case '4':
-	    tsize[str1[0] - '1'] = malloc(strlen(str2) + 1);
-	    strcpy(tsize[str1[0] - '1'], str2);
+	    i = atoi(str2);
+	    if (i > 0 && i < 1000)
+		tsize[str1[0] - '1'] = i;
+	    else
+		error("bad font size value at line %d", linenum);
 	    break;
 
 	case 'r':	/* roman */
+	    if(str2[0] < '0') goto nofont;
 	    tfont[0] = malloc(strlen(str2) + 1);
 	    strcpy(tfont[0], str2);
 	    break;
 
 	case 'i':	/* italics */
+	    if(str2[0] < '0') goto nofont;
 	    tfont[1] = malloc(strlen(str2) + 1);
 	    strcpy(tfont[1], str2);
 	    break;
 
 	case 'b':	/* bold */
+	    if(str2[0] < '0') goto nofont;
 	    tfont[2] = malloc(strlen(str2) + 1);
 	    strcpy(tfont[2], str2);
 	    break;
 
 	case 's':	/* special */
-	    if (str1[1] == 'c') goto scalecommand;
+	    if (str1[1] == 'c') goto scalecommand;	/* or scale */
+
+	    if(str2[0] < '0') {
+	nofont:	error("no fontname specified in line %d", linenum);
+		break;
+	    }
 	    tfont[3] = malloc(strlen(str2) + 1);
 	    strcpy(tfont[3], str2);
 	    break;
@@ -583,8 +581,11 @@ char *line;
 
 	case 'x':	/* x */
 	scalecommand:	/* scale */
-	    xscale *= atof(str2);
-	    if (xscale < 0.0) xscale = -xscale;
+	    par = atof(str2);
+	    if (par > 0.0)
+		xscale *= par;
+	    else
+		error("illegal scale value on line %d", linenum);
 	    break;
 
 	case 'f':	/* file */
@@ -599,6 +600,17 @@ char *line;
 	case 'h':	/* height */
 	    height = atof(str2);
 	    if (height < 0.0) height = -height;
+	    break;
+
+	case 'd':	/* defaults */
+	    setdefault = 1;
+	    break;
+
+	case 'p':	/* pointscale */
+	    if (strcmp("off", str2))
+		pointscale = 1;
+	    else
+		pointscale = 0;
 	    break;
 
 	default: 
