@@ -1,6 +1,6 @@
 ##
 ##	Copyright (c) 1982 Regents of the University of California
-##	@(#)instrs 4.5 %G%
+##	@(#)instrs 4.6 %G%
 ##
 ##	Robert R. Henry
 ##	University of California, Berkeley
@@ -421,6 +421,7 @@ BEGIN{
 # clro		CLR TN1		ESCD 0x7c	1  W O 
 # clrf		CLR TN1		CORE 0xd4	1  W F 
 # clrd		CLR TN1		CORE 0x7c	1  W D 
+# clrg		CLR TN1		CORE 0x7c	1  W D 
 # clrh		CLR TN1		ESCD 0x7c	1  W H 
 	 	 	
 # cvtbw		CVT TNX2	CORE 0x99	2  R B  W W 
@@ -508,6 +509,7 @@ BEGIN{
 # movao		MOVA TN1	ESCD 0x7e	2  A O  W L 
 # movaf		MOVA TN1	CORE 0xde	2  A F  W L 
 # movad		MOVA TN1	CORE 0x7e	2  A D  W L 
+# movag		MOVA TN1	CORE 0x7e	2  A G  W L 
 # movah		MOVA TN1	ESCD 0x7e	2  A H  W L 
 	 	 	
 # movb		MOV TN1		CORE 0x90	2  R B  W B 
@@ -532,7 +534,7 @@ BEGIN{
 # pushao	PUSHA TN1	ESCD 0x7f	1  A O 
 # pushaf	PUSHA TN1	CORE 0xdf	1  A F 
 # pushad	PUSHA TN1	CORE 0x7f	1  A D 
-# pushag	PUSHA TN1	CORE 0xdf	1  A G 
+# pushag	PUSHA TN1	CORE 0x7f	1  A G 
 # pushah	PUSHA TN1	ESCD 0x7f	1  A H 
 	 	 	
 # acbb		ACB TN1		CORE 0x9d	4  R B  R B  M B  B W 
