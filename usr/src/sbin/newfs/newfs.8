@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)newfs.8	6.10 (Berkeley) %G%
+.\"     @(#)newfs.8	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NEWFS 8
@@ -17,7 +17,7 @@
 .Op Fl N
 .Op Ar newfs-options
 .Ar special
-.Nm mfs
+.Nm mount_mfs
 .Op Fl F Ar mount_flags
 .Op Ar newfs-options
 .Ar special node
@@ -29,7 +29,7 @@ program.
 Before running 
 .Nm newfs
 or
-.Nm mfs ,
+.Nm mount_mfs ,
 the disk must be labeled using 
 .Xr disklabel 8 .
 .Nm Newfs
@@ -39,20 +39,20 @@ Typically the defaults are reasonable, however
 .Nm newfs
 has numerous options to allow the defaults to be selectively overridden.
 .Pp
-.Nm Mfs
+.Nm Mount_mfs
 is used to build a file system in virtual memory and then mount it
 on a specified node.
-.Nm Mfs
+.Nm Mount_mfs
 exits and the contents of the file system are lost
 when the file system is unmounted.
 If
-.Nm mfs
+.Nm mount_mfs
 is sent a signal while running,
 for example during system shutdown,
 it will attempt to unmount its
 corresponding file system.
 The parameters to
-.Nm mfs
+.Nm mount_mfs
 are the same as those to
 .Nm newfs .
 The special file is only used to read the disk label which provides
@@ -179,13 +179,13 @@ relative to sector 0 on track N-1 on the same cylinder.
 .Pp
 .El
 The following option applies only to
-.Nm mfs .
+.Nm mount_mfs .
 .Bl -tag -width Fl
 .It Fl F Ar mount flags
 Used to pass in a decimal numeric value to be passed
 as mount flags when running as a memory based file system.
 This option is primarily intended for use when
-.Nm mfs
+.Nm mount_mfs
 is started by the
 .Xr mount 8
 command.
