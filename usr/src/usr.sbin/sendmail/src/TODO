@@ -1,4 +1,4 @@
-(Version 8.23 of %G%)
+(Version 8.24 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -9,11 +9,6 @@ Key:
 
 X ****	8 -> 7 bit MIME conversion.
 
-E ****	Change NoReturn to be an envelope flag. [8.7]
-
-X ****	Add M_NOLOOPBACKCHK (k) mailer flag to turn off check of name in
-	HELO command. [8.8]
-
 X ****	Merge Sun changes.  [8.7]
 
 X ****	Macro giving size of the message in bytes.
@@ -22,25 +17,9 @@ X ****	Create a "service switch" abstraction that will interface with
 	Sun NSS, Ultrix /etc/svc.conf, etc.  This will allow you to
 	turn off DNS entirely, a la ``OIoff''.  [8.7]
 
-X ****	Should have new mailer flags to override LocalMailer stuff:
-	- M_ALIASABLE (A) -- can use as the LHS of an alias.
-	- M_HASPWENT (w) -- should have a /etc/passwd entry.  If not found
-	  there, implies user unknown.  Also implies .forward and UDB
-	  searching, search for |, /, and :include:, etc.).
-	- Actually, UDB searching and |, /, and :include: mapping should
-	  probably be on another flag.  (Cannot be 'l' for back compat
-	  reasons.)
-	- Need for $@host part of triple and Return-Receipt-To: processing
-	  should also be split apart.
-	- M_RUNASRCPT (?) -- always setuid to the recipient before calling
-	  the mailer.
-	[8.8]
-
 X ****	Mailer flag to enable/disable surrounding route-addrs with
 	angle brackets in setsender().  UUCP cleanup scripts treat
 	these as file redirection.
-
-X ****	Mailer flag to override MX lookups.
 
 E ****	Fix parseaddr to return a dummy mailer with QBADADDR set for
 	all cases except null input; change calls to be more sceptical
