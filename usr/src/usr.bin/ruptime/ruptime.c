@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ruptime.c	4.4 82/05/09";
+static char sccsid[] = "@(#)ruptime.c	4.5 82/10/07";
 #endif
 
 #include <sys/param.h>
@@ -17,7 +17,7 @@ struct	hs {
 	int	hs_nusers;
 } hs[NHOSTS];
 struct	whod awhod;
-int	hscmp();
+int	hscmp(), ucmp(), lcmp(), tcmp();
 
 #define	WHDRSIZE	(sizeof (awhod) - sizeof (awhod.wd_we))
 
@@ -25,6 +25,8 @@ char	*interval();
 int	now;
 char	*malloc(), *sprintf();
 int	aflg;
+
+#define down(h)		(now - (h)->hs_wd->wd_recvtime > 5 * 60)
 
 main(argc, argv)
 	int argc;
@@ -37,12 +39,28 @@ main(argc, argv)
 	register struct whod *wd;
 	register struct whoent *we;
 	int maxloadav = 0;
+	int (*cmp)() = hscmp;
 
 	time(&t);
 	argc--, argv++;
 again:
 	if (!strcmp(*argv, "-a")) {
 		aflg++;
+		argc--, argv++;
+		goto again;
+	}
+	if (!strcmp(*argv, "-l")) {
+		cmp = lcmp;
+		argc--, argv++;
+		goto again;
+	}
+	if (!strcmp(*argv, "-u")) {
+		cmp = ucmp;
+		argc--, argv++;
+		goto again;
+	}
+	if (!strcmp(*argv, "-t")) {
+		cmp = tcmp;
 		argc--, argv++;
 		goto again;
 	}
@@ -84,15 +102,15 @@ again:
 		}
 		(void) close(f);
 	}
-	qsort((char *)hs, nhosts, sizeof (hs[0]), hscmp);
 	(void) time(&now);
+	qsort((char *)hs, nhosts, sizeof (hs[0]), cmp);
 	if (nhosts == 0) {
 		printf("no hosts!?!\n");
 		exit(1);
 	}
 	for (i = 0; i < nhosts; i++) {
 		hsp = &hs[i];
-		if (now - hsp->hs_wd->wd_recvtime > 5 * 60) {
+		if (down(hsp)) {
 			printf("%-8.8s%s\n", hsp->hs_wd->wd_hostname,
 			    interval(now - hsp->hs_wd->wd_recvtime, "down"));
 			continue;
@@ -143,4 +161,57 @@ hscmp(h1, h2)
 {
 
 	return (strcmp(h1->hs_wd->wd_hostname, h2->hs_wd->wd_hostname));
+}
+
+/*
+ * Compare according to load average.
+ */
+lcmp(h1, h2)
+	struct hs *h1, *h2;
+{
+
+	if (down(h1))
+		if (down(h2))
+			return (tcmp(h1, h2));
+		else
+			return (1);
+	else if (down(h2))
+		return (-1);
+	else
+		return (h2->hs_wd->wd_loadav[0] - h1->hs_wd->wd_loadav[0]);
+}
+
+/*
+ * Compare according to number of users.
+ */
+ucmp(h1, h2)
+	struct hs *h1, *h2;
+{
+
+	if (down(h1))
+		if (down(h2))
+			return (tcmp(h1, h2));
+		else
+			return (1);
+	else if (down(h2))
+		return (-1);
+	else
+		return (h2->hs_nusers - h1->hs_nusers);
+}
+
+/*
+ * Compare according to uptime.
+ */
+tcmp(h1, h2)
+	struct hs *h1, *h2;
+{
+	long t1, t2;
+
+	return (
+		(down(h2) ? h2->hs_wd->wd_recvtime - now
+			  : h2->hs_wd->wd_sendtime - h2->hs_wd->wd_bootime)
+		-
+		(down(h1) ? h1->hs_wd->wd_recvtime - now
+			  : h1->hs_wd->wd_sendtime - h1->hs_wd->wd_bootime)
+	);
 }
