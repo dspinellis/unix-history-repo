@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.16 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.17 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -290,6 +290,7 @@ extern struct nl nl[INL];
 #define	NPARAM	0004	/* variable is a parameter */
 #define	NGLOBAL	0010	/* variable is a global */
 #define	NREGVAR	0020	/* or'ed in if variable is in a register */
+#define NNLOCAL 0040	/* named local variable, not used in symbol table */
 #endif PC
 
 /*
@@ -353,6 +354,7 @@ extern struct nl nl[INL];
 #define PARAMVAR	1
 #define LOCALVAR	2
 #define	GLOBALVAR	3
+#define	NAMEDLOCALVAR	4
 
 /*
  * NAMELIST CLASSES
@@ -603,14 +605,21 @@ short	cnts;
  * parts to be repeated and to be in any order, so that
  * they can be detected semantically to give better
  * error diagnostics.
+ *
+ * The flag NONLOCALVAR indicates that a non-local var has actually
+ * been used hence the display must be saved; NONLOCALGOTO indicates
+ * that a non-local goto has been done hence that a setjmp must be done.
  */
 int	parts[ DSPLYSZ ];
 
-#define	LPRT	1
-#define	CPRT	2
-#define	TPRT	4
-#define	VPRT	8
-#define	RPRT	16
+#define	LPRT		0x0001
+#define	CPRT		0x0002
+#define	TPRT		0x0004
+#define	VPRT		0x0008
+#define	RPRT		0x0010
+
+#define	NONLOCALVAR	0x0020
+#define	NONLOCALGOTO	0x0040
 
 /*
  * Flags for the "you used / instead of div" diagnostic

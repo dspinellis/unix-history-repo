@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)clas.c 1.5 %G%";
+static	char sccsid[] = "@(#)clas.c 1.6 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -224,11 +224,13 @@ whereis( level , offset , other_flags )
 	return ( offset >= 0 ? PARAMVAR : LOCALVAR );
 #   endif OBJ
 #   ifdef PC
-	switch ( other_flags & ( NGLOBAL | NPARAM | NLOCAL ) ) {
+	switch ( other_flags & ( NGLOBAL | NPARAM | NLOCAL | NNLOCAL) ) {
 	    case NGLOBAL:
 		return GLOBALVAR;
 	    case NPARAM:
 		return PARAMVAR;
+	    case NNLOCAL:
+		return NAMEDLOCALVAR;
 	    case NLOCAL:
 		return LOCALVAR;
 	    default:

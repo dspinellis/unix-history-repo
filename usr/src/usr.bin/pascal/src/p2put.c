@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.10 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.11 %G%";
 
     /*
      *	functions to help pi put out
@@ -292,6 +292,7 @@ putLV( name , level , offset , other_flags , type )
 	    } else {
 		putleaf( P2NAME , (level * sizeof(struct dispsave)) + AP_OFFSET
 		    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
+		parts[ level ] |= NONLOCALVAR;
 	    }
 	    putleaf( P2ICON , offset , 0 , P2INT , 0 );
 	    putop( P2PLUS , P2PTR | P2CHAR );
@@ -302,8 +303,20 @@ putLV( name , level , offset , other_flags , type )
 	    } else {
 		putleaf( P2NAME , (level * sizeof(struct dispsave)) + FP_OFFSET
 		    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
+		parts[ level ] |= NONLOCALVAR;
 	    }
 	    putleaf( P2ICON , -offset , 0 , P2INT , 0 );
+	    putop( P2MINUS , P2PTR | P2CHAR );
+	    break;
+	case NAMEDLOCALVAR:
+	    if ( level == cbn ) {
+		putleaf( P2REG , 0 , P2FP , ADDTYPE( type , P2PTR ) , 0 );
+	    } else {
+		putleaf( P2NAME , (level * sizeof(struct dispsave)) + FP_OFFSET
+		    , 0 , P2PTR | P2CHAR , DISPLAYNAME );
+		parts[ level ] |= NONLOCALVAR;
+	    }
+	    putleaf( P2ICON , 0 , 0 , P2INT , name );
 	    putop( P2MINUS , P2PTR | P2CHAR );
 	    break;
     }

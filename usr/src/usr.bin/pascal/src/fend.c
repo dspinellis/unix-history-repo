@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.14 %G%";
+static char sccsid[] = "@(#)fend.c 1.15 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -54,7 +54,6 @@ funcend(fp, bundle, endline)
 #	ifdef PC
 	    int		savlabel = getlab();
 	    int		toplabel = getlab();
-	    int		botlabel = getlab();
 	    int		proflabel = getlab();
 	    int		skip = getlab();
 	    char	extname[ BUFSIZ ];
@@ -187,8 +186,8 @@ funcend(fp, bundle, endline)
 	     */
 	putprintf( "	.word	" , 1 );
         putprintf( PREFIXFORMAT , 0 , LABELPREFIX , savlabel );
-	putjbr( botlabel );
 	putlab( toplabel );
+	putprintf( "	subl2	$LF%d,sp" , 0 , ftnno );
 	if ( profflag ) {
 		/*
 		 *	call mcount for profiling
@@ -204,17 +203,22 @@ funcend(fp, bundle, endline)
 	    putprintf( "	.text" , 0 );
 	}
 	    /*
-	     *	save old display 
+	     *	if there are nested procedures we must save the display.
 	     */
-	putprintf( "	movq	%s+%d,%d(%s)" , 0
-		, DISPLAYNAME , cbn * sizeof(struct dispsave)
-		, DSAVEOFFSET , P2FPNAME );
-	    /*
-	     *	set up new display by saving AP and FP in appropriate
-	     *	slot in display structure.
-	     */
-	putprintf( "	movq	%s,%s+%d" , 0
-		, P2APNAME , DISPLAYNAME , cbn * sizeof(struct dispsave) );
+	if ( parts[ cbn ] & NONLOCALVAR ) {
+		/*
+		 *	save old display 
+		 */
+	    putprintf( "	movq	%s+%d,%d(%s)" , 0
+		    , DISPLAYNAME , cbn * sizeof(struct dispsave)
+		    , DSAVEOFFSET , P2FPNAME );
+		/*
+		 *	set up new display by saving AP and FP in appropriate
+		 *	slot in display structure.
+		 */
+	    putprintf( "	movq	%s,%s+%d" , 0
+		    , P2APNAME , DISPLAYNAME , cbn * sizeof(struct dispsave) );
+	}
 	    /*
 	     *	set underflow checking if runtime tests
 	     */
@@ -240,19 +244,26 @@ funcend(fp, bundle, endline)
 	    putdot( filename , line );
 	}
 	    /*
-	     *  set up goto vector in case of non-local goto to this frame
+	     *  set up goto vector if potential non-local goto to this frame
 	     */
-	putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
-		, "_setjmp" );
-	putLV( 0 , cbn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
-	putop( P2CALL , P2INT );
-	putleaf( P2ICON , 0 , 0 , P2INT , 0 );
-	putop( P2NE , P2INT );
-	putleaf( P2ICON , skip , 0 , P2INT , 0 );
-	putop( P2CBRANCH , P2INT );
-	putdot( filename , line );
-	putprintf( "	jmp	(r0)" , 0 );
-	putlab(skip);
+	if ( ( cbn < 2 && ( parts[ cbn ] & LPRT ) ) ||
+	    ( parts[ cbn ] & NONLOCALGOTO ) != 0 ) {
+	    putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
+		    , "_setjmp" );
+	    putLV( 0 , cbn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
+	    putop( P2CALL , P2INT );
+	    putleaf( P2ICON , 0 , 0 , P2INT , 0 );
+	    putop( P2NE , P2INT );
+	    putleaf( P2ICON , skip , 0 , P2INT , 0 );
+	    putop( P2CBRANCH , P2INT );
+	    putdot( filename , line );
+		/*
+		 *	on non-local goto, setjmp returns with address to
+		 *	be branched to.
+		 */
+	    putprintf( "	jmp	(r0)" , 0 );
+	    putlab(skip);
+	}
 #endif PC
 	if ( monflg ) {
 		if ( fp -> value[ NL_CNTR ] != 0 ) {
@@ -484,13 +495,12 @@ funcend(fp, bundle, endline)
 #	ifdef PC
 		/*
 		 *	if there were file variables declared at this level
-		 *	call pclose( &__disply[ cbn ] ) to clean them up.
+		 *	call PCLOSE( ap ) to clean them up.
 		 */
 	    if ( dfiles[ cbn ] ) {
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_PCLOSE" );
-		putRV( DISPLAYNAME , 0 , cbn * sizeof( struct dispsave ) ,
-			NGLOBAL , P2PTR | P2CHAR );
+		putleaf( P2REG , 0 , P2AP , ADDTYPE( P2CHAR , P2PTR ) , 0 );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
 	    }
@@ -541,12 +551,16 @@ funcend(fp, bundle, endline)
 		putdot( filename , line );
 	    }
 		/*
-		 *	restore old display entry from save area
+		 *	if there are nested procedures we must save the display.
 		 */
-
-	    putprintf( "	movq	%d(%s),%s+%d" , 0
-		, DSAVEOFFSET , P2FPNAME
-		, DISPLAYNAME , cbn * sizeof(struct dispsave) );
+	    if ( parts[ cbn ] & NONLOCALVAR ) {
+		    /*
+		     *	restore old display entry from save area
+		     */
+		putprintf( "	movq	%d(%s),%s+%d" , 0
+		    , DSAVEOFFSET , P2FPNAME
+		    , DISPLAYNAME , cbn * sizeof(struct dispsave) );
+	    }
 	    stabrbrac( cbn );
 	    putprintf( "	ret" , 0 );
 		/*
@@ -556,10 +570,7 @@ funcend(fp, bundle, endline)
 	    putprintf( "	.set	" , 1 );	
 	    putprintf( PREFIXFORMAT , 1 , LABELPREFIX , savlabel );
 	    putprintf( ", 0x%x" , 0 , savmask() );
-	    putlab( botlabel );
-	    putprintf( "	subl2	$LF%d,sp" , 0 , ftnno );
 	    putrbracket( ftnno );
-	    putjbr( toplabel );
 		/*
 		 *  put down the entry point for formal calls
 		 *  the arguments for FCALL have been passed to us
@@ -580,7 +591,7 @@ funcend(fp, bundle, endline)
 		putop( P2LISTOP , P2INT );
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
-		putjbr( botlabel );
+		putjbr( toplabel );
 	    }
 		/*
 		 *	declare pcp counters, if any
