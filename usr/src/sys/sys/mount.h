@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mount.h	7.12 (Berkeley) %G%
+ *	@(#)mount.h	7.13 (Berkeley) %G%
  */
 
 typedef quad fsid_t;			/* file system id type */
@@ -69,52 +69,52 @@ struct statfs {
  * The file systems are put on a doubly linked list.
  */
 struct mount {
-	struct mount	*m_next;		/* next in mount list */
-	struct mount	*m_prev;		/* prev in mount list */
-	struct vfsops	*m_op;			/* operations on fs */
-	struct vnode	*m_vnodecovered;	/* vnode we mounted on */
-	struct vnode	*m_mounth;		/* list of vnodes this mount */
-	int		m_flag;			/* flags */
-	uid_t		m_exroot;		/* exported mapping for uid 0 */
-	struct statfs	m_stat;			/* cache of filesystem stats */
-	qaddr_t		m_data;			/* private data */
+	struct mount	*mnt_next;		/* next in mount list */
+	struct mount	*mnt_prev;		/* prev in mount list */
+	struct vfsops	*mnt_op;		/* operations on fs */
+	struct vnode	*mnt_vnodecovered;	/* vnode we mounted on */
+	struct vnode	*mnt_mounth;		/* list of vnodes this mount */
+	int		mnt_flag;		/* flags */
+	uid_t		mnt_exroot;		/* exported mapping for uid 0 */
+	struct statfs	mnt_stat;		/* cache of filesystem stats */
+	qaddr_t		mnt_data;		/* private data */
 };
 
 /*
  * Mount flags.
  */
-#define	M_RDONLY	0x00000001	/* read only filesystem */
-#define	M_SYNCHRONOUS	0x00000002	/* file system written synchronously */
-#define	M_NOEXEC	0x00000004	/* can't exec from filesystem */
-#define	M_NOSUID	0x00000008	/* don't honor setuid bits on fs */
-#define	M_NODEV		0x00000010	/* don't interpret special files */
+#define	MNT_RDONLY	0x00000001	/* read only filesystem */
+#define	MNT_SYNCHRONOUS	0x00000002	/* file system written synchronously */
+#define	MNT_NOEXEC	0x00000004	/* can't exec from filesystem */
+#define	MNT_NOSUID	0x00000008	/* don't honor setuid bits on fs */
+#define	MNT_NODEV	0x00000010	/* don't interpret special files */
 /*
  * exported mount flags.
  */
-#define	M_EXPORTED	0x00000100	/* file system is exported */
-#define	M_EXRDONLY	0x00000200	/* exported read only */
+#define	MNT_EXPORTED	0x00000100	/* file system is exported */
+#define	MNT_EXRDONLY	0x00000200	/* exported read only */
 /*
  * Flags set by internal operations.
  */
-#define	M_LOCAL		0x00001000	/* filesystem is stored locally */
-#define	M_QUOTA		0x00002000	/* quotas are enabled on filesystem */
+#define	MNT_LOCAL	0x00001000	/* filesystem is stored locally */
+#define	MNT_QUOTA	0x00002000	/* quotas are enabled on filesystem */
 /*
  * Mask of flags that are visible to statfs()
  */
-#define	M_VISFLAGMASK	0x0000ffff
+#define	MNT_VISFLAGMASK	0x0000ffff
 /*
  * filesystem control flags.
  *
- * M_MLOCK lock the mount entry so that name lookup cannot proceed
+ * MNT_MLOCK lock the mount entry so that name lookup cannot proceed
  * past the mount point.  This keeps the subtree stable during mounts
  * and unmounts.
  */
-#define	M_UPDATE	0x00010000	/* not a real mount, just an update */
-#define	M_MLOCK		0x00100000	/* lock so that subtree is stable */
-#define	M_MWAIT		0x00200000	/* someone is waiting for lock */
-#define M_MPBUSY	0x00400000	/* scan of mount point in progress */
-#define M_MPWANT	0x00800000	/* waiting for mount point */
-#define M_UNMOUNT	0x01000000	/* unmount in progress */
+#define	MNT_UPDATE	0x00010000	/* not a real mount, just an update */
+#define	MNT_MLOCK	0x00100000	/* lock so that subtree is stable */
+#define	MNT_MWAIT	0x00200000	/* someone is waiting for lock */
+#define MNT_MPBUSY	0x00400000	/* scan of mount point in progress */
+#define MNT_MPWANT	0x00800000	/* waiting for mount point */
+#define MNT_UNMOUNT	0x01000000	/* unmount in progress */
 
 /*
  * Operations supported on mounted file system.
@@ -133,15 +133,15 @@ struct vfsops {
 };
 
 #define VFS_MOUNT(MP, PATH, DATA, NDP) \
-	(*(MP)->m_op->vfs_mount)(MP, PATH, DATA, NDP)
-#define VFS_START(MP, FLAGS)	  (*(MP)->m_op->vfs_start)(MP, FLAGS)
-#define VFS_UNMOUNT(MP, FORCIBLY) (*(MP)->m_op->vfs_unmount)(MP, FORCIBLY)
-#define VFS_ROOT(MP, VPP)	  (*(MP)->m_op->vfs_root)(MP, VPP)
-#define VFS_QUOTACTL(MP, C, U, A) (*(MP)->m_op->vfs_quotactl)(MP, C, U, A)
-#define VFS_STATFS(MP, SBP)	  (*(MP)->m_op->vfs_statfs)(MP, SBP)
-#define VFS_SYNC(MP, WAITFOR)	  (*(MP)->m_op->vfs_sync)(MP, WAITFOR)
-#define VFS_FHTOVP(MP, FIDP, VPP) (*(MP)->m_op->vfs_fhtovp)(MP, FIDP, VPP)
-#define	VFS_VPTOFH(VP, FIDP)	  (*(VP)->v_mount->m_op->vfs_vptofh)(VP, FIDP)
+	(*(MP)->mnt_op->vfs_mount)(MP, PATH, DATA, NDP)
+#define VFS_START(MP, FLAGS)	  (*(MP)->mnt_op->vfs_start)(MP, FLAGS)
+#define VFS_UNMOUNT(MP, FORCIBLY) (*(MP)->mnt_op->vfs_unmount)(MP, FORCIBLY)
+#define VFS_ROOT(MP, VPP)	  (*(MP)->mnt_op->vfs_root)(MP, VPP)
+#define VFS_QUOTACTL(MP, C, U, A) (*(MP)->mnt_op->vfs_quotactl)(MP, C, U, A)
+#define VFS_STATFS(MP, SBP)	  (*(MP)->mnt_op->vfs_statfs)(MP, SBP)
+#define VFS_SYNC(MP, WAITFOR)	  (*(MP)->mnt_op->vfs_sync)(MP, WAITFOR)
+#define VFS_FHTOVP(MP, FIDP, VPP) (*(MP)->mnt_op->vfs_fhtovp)(MP, FIDP, VPP)
+#define	VFS_VPTOFH(VP, FIDP)	  (*(VP)->v_mount->mnt_op->vfs_vptofh)(VP, FIDP)
 
 /*
  * Flags for various system call interfaces.

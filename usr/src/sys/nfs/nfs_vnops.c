@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vnops.c	7.36 (Berkeley) %G%
+ *	@(#)nfs_vnops.c	7.37 (Berkeley) %G%
  */
 
 /*
@@ -479,7 +479,7 @@ nfs_lookup(vp, ndp)
 				nfs_nput(vdp);
 			}
 		}
-		ndp->ni_vp = (struct vnode *)0;
+		ndp->ni_vp = NULLVP;
 	} else
 		nfs_unlock(vp);
 	error = 0;
@@ -644,7 +644,7 @@ nfs_readrpc(vp, uiop, cred)
 	struct nfsmount *nmp;
 	long len, retlen, tsiz;
 
-	nmp = vfs_to_nfs(vp->v_mount);
+	nmp = VFSTONFS(vp->v_mount);
 	tsiz = uiop->uio_resid;
 	while (tsiz > 0) {
 		nfsstats.rpccnt[NFSPROC_READ]++;
@@ -687,7 +687,7 @@ nfs_writerpc(vp, uiop, cred)
 	struct nfsmount *nmp;
 	long len, tsiz;
 
-	nmp = vfs_to_nfs(vp->v_mount);
+	nmp = VFSTONFS(vp->v_mount);
 	tsiz = uiop->uio_resid;
 	while (tsiz > 0) {
 		nfsstats.rpccnt[NFSPROC_WRITE]++;
@@ -1130,7 +1130,7 @@ nfs_readdir(vp, uiop, cred, eofflagp)
 		return (0);
 	}
 
-	nmp = vfs_to_nfs(vp->v_mount);
+	nmp = VFSTONFS(vp->v_mount);
 	tresid = uiop->uio_resid;
 	/*
 	 * Loop around doing readdir rpc's of size uio_resid or nm_rsize,
@@ -1254,7 +1254,7 @@ nfs_statfs(mp, sbp)
 	struct ucred *cred;
 	struct nfsnode *np;
 
-	nmp = vfs_to_nfs(mp);
+	nmp = VFSTONFS(mp);
 	if (error = nfs_nget(mp, &nmp->nm_fh, &np))
 		return (error);
 	vp = NFSTOV(np);
@@ -1274,9 +1274,9 @@ nfs_statfs(mp, sbp)
 	sbp->f_bavail = fxdr_unsigned(long, sfp->sf_bavail);
 	sbp->f_files = 0;
 	sbp->f_ffree = 0;
-	if (sbp != &mp->m_stat) {
-		bcopy(mp->m_stat.f_mntonname, sbp->f_mntonname, MNAMELEN);
-		bcopy(mp->m_stat.f_mntfromname, sbp->f_mntfromname, MNAMELEN);
+	if (sbp != &mp->mnt_stat) {
+		bcopy(mp->mnt_stat.f_mntonname, sbp->f_mntonname, MNAMELEN);
+		bcopy(mp->mnt_stat.f_mntfromname, sbp->f_mntfromname, MNAMELEN);
 	}
 	nfsm_reqdone;
 	nfs_nput(vp);
@@ -1398,7 +1398,7 @@ nfs_bmap(vp, bn, vpp, bnp)
 	if (vpp != NULL)
 		*vpp = vp;
 	if (bnp != NULL)
-		*bnp = bn * btodb(vp->v_mount->m_stat.f_bsize);
+		*bnp = bn * btodb(vp->v_mount->mnt_stat.f_bsize);
 	return (0);
 }
 

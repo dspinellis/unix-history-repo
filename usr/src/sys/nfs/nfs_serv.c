@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.17 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.18 (Berkeley) %G%
  */
 
 /*
@@ -207,7 +207,7 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq, repstat)
 		nfsm_reply(0);
 	vp = ndp->ni_vp;
 	bzero((caddr_t)fhp, sizeof(nfh));
-	fhp->fh_fsid = vp->v_mount->m_stat.f_fsid;
+	fhp->fh_fsid = vp->v_mount->mnt_stat.f_fsid;
 	if (error = VFS_VPTOFH(vp, &fhp->fh_fid)) {
 		vput(vp);
 		nfsm_reply(0);
@@ -565,14 +565,14 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat)
 		vp = ndp->ni_vp;
 	} else {
 		vp = ndp->ni_vp;
-		ndp->ni_vp = (struct vnode *)0;
+		ndp->ni_vp = NULLVP;
 		VOP_ABORTOP(ndp);
 		vap->va_size = 0;
 		if (error = VOP_SETATTR(vp, vap, cred))
 			nfsm_reply(0);
 	}
 	bzero((caddr_t)fhp, sizeof(nfh));
-	fhp->fh_fsid = vp->v_mount->m_stat.f_fsid;
+	fhp->fh_fsid = vp->v_mount->mnt_stat.f_fsid;
 	if (error = VFS_VPTOFH(vp, &fhp->fh_fid)) {
 		vput(vp);
 		nfsm_reply(0);
@@ -900,7 +900,7 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat)
 		nfsm_reply(0);
 	vp = ndp->ni_vp;
 	bzero((caddr_t)fhp, sizeof(nfh));
-	fhp->fh_fsid = vp->v_mount->m_stat.f_fsid;
+	fhp->fh_fsid = vp->v_mount->mnt_stat.f_fsid;
 	if (error = VFS_VPTOFH(vp, &fhp->fh_fid)) {
 		vput(vp);
 		nfsm_reply(0);
@@ -1271,7 +1271,7 @@ nfsrv_noop(mrep, md, dpos, cred, xid, mrq, repstat)
  * Perform access checking for vnodes obtained from file handles that would
  * refer to files already opened by a Unix client. You cannot just use
  * vn_writechk() and VOP_ACCESS() for two reasons.
- * 1 - You must check for M_EXRDONLY as well as M_RDONLY for the write case
+ * 1 - You must check for MNT_EXRDONLY as well as MNT_RDONLY for the write case
  * 2 - The owner is to be given access irrespective of mode bits so that
  *     processes that chmod after opening a file don't break. I don't like
  *     this because it opens a security hole, but since the nfs server opens
@@ -1285,13 +1285,13 @@ nfsrv_access(vp, flags, cred)
 	struct vattr vattr;
 	int error;
 	if (flags & VWRITE) {
-		/* Just vn_writechk() changed to check M_EXRDONLY */
+		/* Just vn_writechk() changed to check MNT_EXRDONLY */
 		/*
 		 * Disallow write attempts on read-only file systems;
 		 * unless the file is a socket or a block or character
 		 * device resident on the file system.
 		 */
-		if ((vp->v_mount->m_flag & (M_RDONLY | M_EXRDONLY)) &&
+		if ((vp->v_mount->mnt_flag & (MNT_RDONLY | MNT_EXRDONLY)) &&
 			vp->v_type != VCHR &&
 			vp->v_type != VBLK &&
 			vp->v_type != VSOCK)
