@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fhpib.c	7.1 (Berkeley) %G%
+ *	@(#)fhpib.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
  * Inline version of fhpibwait to be used in places where
  * we don't worry about getting hung.
  */
-#define	FHPIBWAIT(hd, m)	while (((hd)->hpib_intr & (m)) == 0)
+#define	FHPIBWAIT(hd, m)	while (((hd)->hpib_intr & (m)) == 0) DELAY(1)
 
 #ifdef DEBUG
 int	fhpibdebugunit = -1;
@@ -37,22 +37,15 @@ int	fhpibdebug = 0;
 
 int	dopriodma = 0;	/* use high priority DMA */
 int	doworddma = 1;	/* non-zero if we should attempt word dma */
-int	dolworddma = 1;	/* use longword dma (scsi) */
 int	doppollint = 1;	/* use ppoll interrupts instead of watchdog */
 
 long	fhpibbadint[2] = { 0 };
 long	fhpibtransfer[NHPIB] = { 0 };
 long	fhpibnondma[NHPIB] = { 0 };
 long	fhpibworddma[NHPIB] = { 0 };
-long	fhpibremain[NHPIB] = { 0 };
-long	fhpibloops[NHPIB] = { 0 };
-
 #endif
 
 int	fhpibcmd[NHPIB];
-int	dmathresh = 3;	/* char count beyond which we will attempt dma */
-
-extern	int hpibtimeout;
 
 fhpibtype(hc)
 	register struct hp_ctlr *hc;
@@ -109,21 +102,19 @@ fhpibifc(hd)
 	hd->hpib_stat = ST_ATN;
 }
 
-fhpibsend(unit, slave, sec, addr, cnt)
+fhpibsend(unit, slave, sec, addr, origcnt)
 	register char *addr;
-	register int cnt;
 {
 	register struct hpib_softc *hs = &hpib_softc[unit];
 	register struct fhpibdevice *hd;
+	register int cnt = origcnt;
 	register int timo;
-	int origcnt = cnt;
-	int err = 0;
 
 	hd = (struct fhpibdevice *)hs->sc_hc->hp_addr;
 	hd->hpib_stat = 0;
 	hd->hpib_imask = IM_IDLE | IM_ROOM;
 	if (fhpibwait(hd, IM_IDLE) < 0)
-		err++;
+		goto senderr;
 	hd->hpib_stat = ST_ATN;
 	hd->hpib_data = C_UNL;
 	hd->hpib_data = C_TAG + hs->sc_ba;
@@ -131,17 +122,17 @@ fhpibsend(unit, slave, sec, addr, cnt)
 	if (sec != -1)
 		hd->hpib_data = C_SCG + sec;
 	if (fhpibwait(hd, IM_IDLE) < 0)
-		err++;
-	hd->hpib_stat = ST_WRITE;
-	if (cnt && !err) {
+		goto senderr;
+	if (cnt) {
+		hd->hpib_stat = ST_WRITE;
 		while (--cnt) {
 			hd->hpib_data = *addr++;
 			timo = hpibtimeout;
-			while ((hd->hpib_intr & IM_ROOM) == 0)
-				if (--timo == 0) {
-					err++;
-					goto out;
-				}
+			while ((hd->hpib_intr & IM_ROOM) == 0) {
+				if (--timo <= 0)
+					goto senderr;
+				DELAY(1);
+			}
 		}
 		hd->hpib_stat = ST_EOI;
 		hd->hpib_data = *addr;
@@ -151,40 +142,36 @@ fhpibsend(unit, slave, sec, addr, cnt)
 		if (sec == 0x12)
 			DELAY(150);
 		hd->hpib_data = C_UNL;
-		if (fhpibwait(hd, IM_IDLE) < 0)
-			err++;
-	}
-out:
-	if (err) {
-		cnt++;
-		fhpibifc(hd);
-#ifdef DEBUG
-		if (fhpibdebug & FDB_FAIL) {
-			printf("hpib%d: fhpibsend failed: slave %d, sec %x, ",
-			       unit, slave, sec);
-			printf("sent %d of %d bytes\n", origcnt-cnt, origcnt);
-		}
-#endif
+		(void) fhpibwait(hd, IM_IDLE);
 	}
 	hd->hpib_imask = 0;
-	return(origcnt - cnt);
+	return (origcnt);
+senderr:
+	hd->hpib_imask = 0;
+	fhpibifc(hd);
+#ifdef DEBUG
+	if (fhpibdebug & FDB_FAIL) {
+		printf("hpib%d: fhpibsend failed: slave %d, sec %x, ",
+			unit, slave, sec);
+		printf("sent %d of %d bytes\n", origcnt-cnt-1, origcnt);
+	}
+#endif
+	return(origcnt - cnt - 1);
 }
 
-fhpibrecv(unit, slave, sec, addr, cnt)
+fhpibrecv(unit, slave, sec, addr, origcnt)
 	register char *addr;
-	register int cnt;
 {
 	register struct hpib_softc *hs = &hpib_softc[unit];
 	register struct fhpibdevice *hd;
+	register int cnt = origcnt;
 	register int timo;
-	int origcnt = cnt;
-	int err = 0;
 
 	hd = (struct fhpibdevice *)hs->sc_hc->hp_addr;
 	hd->hpib_stat = 0;
 	hd->hpib_imask = IM_IDLE | IM_ROOM | IM_BYTE;
 	if (fhpibwait(hd, IM_IDLE) < 0)
-		err++;
+		goto recverror;
 	hd->hpib_stat = ST_ATN;
 	hd->hpib_data = C_UNL;
 	hd->hpib_data = C_LAG + hs->sc_ba;
@@ -192,40 +179,39 @@ fhpibrecv(unit, slave, sec, addr, cnt)
 	if (sec != -1)
 		hd->hpib_data = C_SCG + sec;
 	if (fhpibwait(hd, IM_IDLE) < 0)
-		err++;
+		goto recverror;
 	hd->hpib_stat = ST_READ0;
 	hd->hpib_data = 0;
-	if (cnt && !err) {
-		do {
+	if (cnt) {
+		while (--cnt >= 0) {
 			timo = hpibtimeout;
-			while ((hd->hpib_intr & IM_BYTE) == 0)
-				if (--timo == 0) {
-					err++;
-					goto out;
-				}
+			while ((hd->hpib_intr & IM_BYTE) == 0) {
+				if (--timo == 0)
+					goto recvbyteserror;
+				DELAY(1);
+			}
 			*addr++ = hd->hpib_data;
-		} while (--cnt);
-out:
+		}
 		FHPIBWAIT(hd, IM_ROOM);
 		hd->hpib_stat = ST_ATN;
 		hd->hpib_data = (slave == 31) ? C_UNA : C_UNT;
-		if (fhpibwait(hd, IM_IDLE) < 0)
-			err++;
-	}
-	if (err) {
-		if (!cnt)
-			cnt++;
-		fhpibifc(hd);
-#ifdef DEBUG
-		if (fhpibdebug & FDB_FAIL) {
-			printf("hpib%d: fhpibrecv failed: slave %d, sec %x, ",
-			       unit, slave, sec);
-			printf("got %d of %d bytes\n", origcnt-cnt, origcnt);
-		}
-#endif
+		(void) fhpibwait(hd, IM_IDLE);
 	}
 	hd->hpib_imask = 0;
-	return(origcnt - cnt);
+	return (origcnt);
+
+recverror:
+	fhpibifc(hd);
+recvbyteserror:
+	hd->hpib_imask = 0;
+#ifdef DEBUG
+	if (fhpibdebug & FDB_FAIL) {
+		printf("hpib%d: fhpibrecv failed: slave %d, sec %x, ",
+		       unit, slave, sec);
+		printf("got %d of %d bytes\n", origcnt-cnt-1, origcnt);
+	}
+#endif
+	return(origcnt - cnt - 1);
 }
 
 fhpibgo(unit, slave, sec, addr, count, rw)
@@ -288,10 +274,11 @@ fhpibgo(unit, slave, sec, addr, count, rw)
 		return;
 	}
 	fhpibcmd[unit] = CT_REN | CT_8BIT | CT_FIFOSEL;
-	if (count < dmathresh) {
+	if (count < hpibdmathresh) {
 #ifdef DEBUG
 		fhpibnondma[unit]++;
-		fhpibworddma[unit]--;
+		if (flags & DMAGO_WORD)
+			fhpibworddma[unit]--;
 #endif
 		hs->sc_curcnt = count;
 		(void) fhpibsend(unit, slave, sec, addr, count);
@@ -336,13 +323,7 @@ fhpibdone(unit)
 		if (cnt) {
 			addr = hs->sc_addr;
 			hd->hpib_imask = IM_IDLE | IM_ROOM;
-#ifdef DEBUG
-			fhpibremain[unit]++;
-			while ((hd->hpib_intr & IM_IDLE) == 0)
-				fhpibloops[unit]++;
-#else
 			FHPIBWAIT(hd, IM_IDLE);
-#endif
 			hd->hpib_stat = ST_WRITE;
 			while (--cnt) {
 				hd->hpib_data = *addr++;
@@ -452,7 +433,7 @@ fhpibwait(hd, x)
 	register int timo = hpibtimeout;
 
 	while ((hd->hpib_intr & x) == 0 && --timo)
-		;
+		DELAY(1);
 	if (timo == 0) {
 #ifdef DEBUG
 		if (fhpibdebug & FDB_FAIL)
