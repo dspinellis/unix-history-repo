@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)pstat.8	6.1 (Berkeley) %G%
+.\"	@(#)pstat.8	6.2 (Berkeley) %G%
 .\"
 .TH PSTAT 8 ""
 .UC 4
@@ -121,6 +121,8 @@ resulted from demand-page-from-inode exec format (see
 Disk address in swap, measured in multiples of 512 bytes.
 .IP CADDR
 Head of a linked list of loaded processes using this text segment.
+.IP RSS
+Size of resident text, measured in multiples of 512 bytes.
 .IP SIZE
 Size of text segment, measured in multiples of 512 bytes.
 .IP IPTR
@@ -129,6 +131,10 @@ Core location of corresponding inode.
 Number of processes using this text segment.
 .IP CCNT
 Number of processes in core using this text segment.
+.IP FORW
+Forward link in free list.
+.IP BACK
+Backward link in free list.
 .PD
 .TP
 .B \-p
@@ -155,65 +161,51 @@ stopped under trace
 .IP F
 Miscellaneous state variables, or-ed together (hexadecimal):
 .RS
-.IP 000001 9n
+.IP 0001 9n
 loaded
-.IP 000002
+.IP 0002
 the scheduler process
-.IP 000004
+.IP 0004
 locked for swap out
-.IP 000008
+.IP 0008
 swapped out
-.IP 000010
+.IP 0010
 traced
-.IP 000020
+.IP 0020
 used in tracing
 .	\".IP 000040
 .	\"locked in by
 .	\".IR lock (2).
-.IP 000080
+.IP 0080
 in page-wait
-.IP 000100
+.IP 0100
 prevented from swapping during
 .IR fork (2)
-.IP 000200
-gathering pages for raw i/o
-.IP 000400
+.IP 0200
+will restore old mask after taking signal
+.IP 0400
 exiting
-.IP 001000
+.IP 0800
+doing physical i/o (bio.c)
+.IP 1000
 process resulted from a
 .IR vfork (2)
 which is not yet complete
-.IP 002000
+.IP 2000
 another flag for
 .IR vfork (2)
-.IP 004000
+.IP 4000
 process has no virtual memory, as it is a parent in the context of
 .IR vfork (2)
-.IP 008000
+.IP 8000
 process is demand paging data pages from its text inode.
-.IP 010000
-process has advised of anomalous behavior with
-.IR vadvise (2).
-.IP 020000
-process has advised of sequential behavior with
-.IR vadvise (2).
-.IP 040000
-process is in a sleep which will timeout.
-.IP 080000
-a parent of this process has exited and this process
-is now considered detached.
-.IP 100000
-process used 4.1BSD compatibility mode signal primitives,
-no system calls will restart.
-.IP 200000
-process is owed a profiling tick.
 .RE
 .IP POIP
 number of pages currently being pushed out from this process.
 .IP PRI
 Scheduling priority, see
 .IR setpriority (2).
-.IP SIGNAL
+.IP SIG
 Signals received (signals 1-32 coded in bits 0-31),
 .IP UID
 Real user ID.
@@ -252,10 +244,6 @@ Wait channel number of a waiting process.
 Link pointer in list of runnable processes.
 .IP TEXTP
 If text is pure, pointer to location of text table entry.
-.IP CLKT
-Countdown for real interval timer,
-.IR setitimer (2)
-measured in clock ticks (10 milliseconds).
 .PD
 .TP
 .B \-t
@@ -280,12 +268,14 @@ Calculated column position of terminal.
 .IP STATE
 Miscellaneous state variables encoded thus:
 .RS
+.IP T
+delay timeout in progress
 .IP W
 waiting for open to complete
 .IP O
 open
-.IP S
-has special (output) start routine
+.IP F
+outq has been flushed during DMA
 .IP C
 carrier is on
 .IP B
@@ -294,6 +284,8 @@ busy doing output
 process is awaiting output
 .IP X
 open for exclusive use
+.IP S
+output stopped
 .IP H
 hangup on close
 .RE
@@ -329,15 +321,22 @@ open for reading
 open for writing
 .IP A
 open for appending
+.IP S
+shared lock present
+.IP X
+exclusive lock present
+.IP I
+signal pgrp when data ready
 .RE
 .IP CNT
 Number of processes that know this open file.
-.IP INO
-The location of the inode table entry for this file.
-.IP OFFS/SOCK
+.IP MSG
+Number of messages outstanding for this file.
+.IP DATA
+The location of the inode table entry or socket structure for this file.
+.IP OFFSET
 The file offset (see
-.IR lseek (2)),
-or the core address of the associated socket structure.
+.IR lseek (2)).
 .PD
 .PP
 .B \-s
