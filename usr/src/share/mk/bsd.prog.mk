@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.29 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.30 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -50,7 +50,7 @@ OBJS+=  ${SRCS:R:S/$/.o/g}
 ${PROG}: ${OBJS} ${LIBC} ${DPADD}
 	${CC} ${LDFLAGS} -o ${.TARGET} ${OBJS} ${LDADD}
 
-.else defined(PROG)
+.else defined(SRCS)
 
 SRCS= ${PROG}.c
 
@@ -83,8 +83,10 @@ _PROGSUBDIR: .USE
 	done
 .endif
 
+.if !target(all)
 .MAIN: all
 all: ${PROG} ${MANALL} _PROGSUBDIR
+.endif
 
 .if !target(clean)
 clean: _PROGSUBDIR
