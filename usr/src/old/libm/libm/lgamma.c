@@ -1,4 +1,4 @@
-/*	@(#)lgamma.c	4.2	%G% */
+/*	@(#)lgamma.c	4.3	%G% */
 
 /*
 	C program for floating point log gamma function
@@ -12,7 +12,7 @@
 	are #5243 from Hart & Cheney; for expansion
 	around infinity they are #5404.
 
-	Calls log, drem and sin.
+	Calls log, floor and sin.
 */
 
 #include <errno.h>
@@ -90,8 +90,8 @@ static double
 neg(arg)
 double arg;
 {
-	double temp;
-	double log(), sin(), drem(), pos();
+	double t;
+	double log(), sin(), floor(), pos();
 
 	arg = -arg;
      /*
@@ -104,8 +104,11 @@ double arg;
       * which uses true pi to do the argument reduction...
       *	temp = sin(pi*arg);
       */
-	temp = drem(arg, 1.e0);
-	if(temp == 0.) {
+	t = floor(arg);
+	if (arg - t  > 0.5e0)
+	    t += 1.e0;			/* t := integer nearest arg */
+#if !(IEEE|NATIONAL)
+	if(arg == t) {
 		errno = EDOM;
 #ifdef VAX
 		return (NaN);
@@ -113,13 +116,18 @@ double arg;
 		return(HUGE);
 #endif
 	}
+#endif
 
-	temp = drem(arg, 2.e0);
-	if (temp < 0.)
-	    temp = -temp;
-	else
-	    signgam = -1;
-	return(-log(arg*pos(arg)*sin(pi*temp)/pi));
+	signgam = (int) (t - 2*floor(t/2));	/* signgam =  1 if t was odd, */
+						/*            0 if t was even */
+	signgam = signgam - 1 + signgam;	/* signgam =  1 if t was odd, */
+						/*           -1 if t was even */
+	t = arg - t;				/*  -0.5 <= t <= 0.5 */
+	if (t < 0.e0) {
+	    t = -t;
+	    signgam = -signgam;
+	}
+	return(-log(arg*pos(arg)*sin(pi*t)/pi));
 }
 
 static double
