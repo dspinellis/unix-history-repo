@@ -15,19 +15,18 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)enpload.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)enpload.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * CMC Ethernet ``Microcode'' Loader.
  */
-#include <stdio.h>
-#include <a.out.h>
-
 #include <sys/types.h>
 #include <sys/file.h>
 #include <sys/ioctl.h>
-#include <tahoeif/if_enpreg.h>
+#include <tahoe/if/if_enpreg.h>
+#include <stdio.h>
+#include <a.out.h>
 
 char	*dev;
 
