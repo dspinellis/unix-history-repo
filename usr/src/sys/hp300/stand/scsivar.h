@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)scsivar.h	7.1 (Berkeley) %G%
+ *	@(#)scsivar.h	7.2 (Berkeley) %G%
  */
 
 struct	scsi_softc {
@@ -17,7 +17,7 @@ struct	scsi_softc {
 	char	sc_alive;
 	char	sc_scsi_addr;
 	char	sc_stat;
-	char	sc_msg;
+	char	sc_msg[7];
 };
 
 extern	struct scsi_softc scsi_softc[];
