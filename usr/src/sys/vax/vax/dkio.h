@@ -1,4 +1,4 @@
-/*	dkio.h	4.1	82/02/08	*/
+/*	dkio.h	4.2	82/08/01	*/
 /*
  * Structures and definitions for disk io control commands
  *
@@ -8,4 +8,4 @@
  */
 
 /* disk io control commands */
-#define DKIOCHDR	(('d'<<8)|1)	/* next I/O will read/write header */
+#define DKIOCHDR	_IO(d, 1)	/* next I/O will read/write header */

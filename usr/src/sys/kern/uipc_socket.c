@@ -456,105 +456,62 @@ sohasoutofband(so)
 }
 
 /*ARGSUSED*/
-soioctl(so, cmd, cmdp)
+soioctl(so, cmd, data)
 	register struct socket *so;
 	int cmd;
-	register caddr_t cmdp;
+	register char *data;
 {
 
 	switch (cmd) {
 
-	case FIONBIO: {
-		int nbio;
-		if (copyin(cmdp, (caddr_t)&nbio, sizeof (nbio))) {
-			u.u_error = EFAULT;
-			return;
-		}
-		if (nbio)
+	case FIONBIO:
+		if (*(int *)data)
 			so->so_state |= SS_NBIO;
 		else
 			so->so_state &= ~SS_NBIO;
 		return;
-	}
 
-	case FIOASYNC: {
-		int async;
-		if (copyin(cmdp, (caddr_t)&async, sizeof (async))) {
-			u.u_error = EFAULT;
-			return;
-		}
-		if (async)
+	case FIOASYNC:
+		if (*(int *)data)
 			so->so_state |= SS_ASYNC;
 		else
 			so->so_state &= ~SS_ASYNC;
 		return;
-	}
 
-	case SIOCSKEEP: {
-		int keep;
-		if (copyin(cmdp, (caddr_t)&keep, sizeof (keep))) {
-			u.u_error = EFAULT;
-			return;
-		}
-		if (keep)
+	case SIOCSKEEP:
+		if (*(int *)data)
 			so->so_options &= ~SO_KEEPALIVE;
 		else
 			so->so_options |= SO_KEEPALIVE;
 		return;
-	}
 
-	case SIOCGKEEP: {
-		int keep = (so->so_options & SO_KEEPALIVE) != 0;
-		if (copyout((caddr_t)&keep, cmdp, sizeof (keep)))
-			u.u_error = EFAULT;
+	case SIOCGKEEP:
+		*(int *)data = (so->so_options & SO_KEEPALIVE) != 0;
 		return;
-	}
 
-	case SIOCSLINGER: {
-		int linger;
-		if (copyin(cmdp, (caddr_t)&linger, sizeof (linger))) {
-			u.u_error = EFAULT;
-			return;
-		}
-		so->so_linger = linger;
+	case SIOCSLINGER:
+		so->so_linger = *(int *)data;
 		if (so->so_linger)
 			so->so_options &= ~SO_DONTLINGER;
 		else
 			so->so_options |= SO_DONTLINGER;
 		return;
-	}
 
-	case SIOCGLINGER: {
-		int linger = so->so_linger;
-		if (copyout((caddr_t)&linger, cmdp, sizeof (linger))) {
-			u.u_error = EFAULT;
-			return;
-		}
-	}
-	case SIOCSPGRP: {
-		int pgrp;
-		if (copyin(cmdp, (caddr_t)&pgrp, sizeof (pgrp))) {
-			u.u_error = EFAULT;
-			return;
-		}
-		so->so_pgrp = pgrp;
+	case SIOCGLINGER:
+		*(int *)data = so->so_linger;
 		return;
-	}
 
-	case SIOCGPGRP: {
-		int pgrp = so->so_pgrp;
-		if (copyout((caddr_t)&pgrp, cmdp, sizeof (pgrp))) {
-			u.u_error = EFAULT;
-			return;
-		}
-	}
+	case SIOCSPGRP:
+		so->so_pgrp = *(int *)data;
+		return;
+
+	case SIOCGPGRP:
+		*(int *)data = so->so_pgrp;
+		return;
 
 	case SIOCDONE: {
-		int flags;
-		if (copyin(cmdp, (caddr_t)&flags, sizeof (flags))) {
-			u.u_error = EFAULT;
-			return;
-		}
+		int flags = *(int *)data;
+
 		flags++;
 		if (flags & FREAD) {
 			int s = splimp();
@@ -568,63 +525,46 @@ soioctl(so, cmd, cmdp)
 	}
 
 	case SIOCSENDOOB: {
-		char oob;
+		char oob = *(char *)data;
 		struct mbuf *m;
-		if (copyin(cmdp, (caddr_t)&oob, sizeof (oob))) {
-			u.u_error = EFAULT;
-			return;
-		}
+
 		m = m_get(M_DONTWAIT);
 		if (m == 0) {
 			u.u_error = ENOBUFS;
 			return;
 		}
 		m->m_off = MMINOFF;
-		m->m_len = 1;
-		*mtod(m, caddr_t) = oob;
+		m->m_len = sizeof (char);
+		*mtod(m, char *) = oob;
 		(*so->so_proto->pr_usrreq)(so, PRU_SENDOOB, m, 0);
 		return;
 	}
 
 	case SIOCRCVOOB: {
 		struct mbuf *m = m_get(M_DONTWAIT);
+
 		if (m == 0) {
 			u.u_error = ENOBUFS;
 			return;
 		}
 		m->m_off = MMINOFF; *mtod(m, caddr_t) = 0;
 		(*so->so_proto->pr_usrreq)(so, PRU_RCVOOB, m, 0);
-		if (copyout(mtod(m, caddr_t), cmdp, sizeof (char))) {
-			u.u_error = EFAULT;
-			return;
-		}
-		m_free(m);
+		*(char *)data = *mtod(m, char *);
+		(void) m_free(m);
 		return;
 	}
 
-	case SIOCATMARK: {
-		int atmark = (so->so_state&SS_RCVATMARK) != 0;
-		if (copyout((caddr_t)&atmark, cmdp, sizeof (atmark))) {
-			u.u_error = EFAULT;
-			return;
-		}
+	case SIOCATMARK:
+		*(int *)data = (so->so_state&SS_RCVATMARK) != 0;
 		return;
-	}
 
 	/* routing table update calls */
 	case SIOCADDRT:
 	case SIOCDELRT:
-	case SIOCCHGRT: {
-		struct rtentry route;
 		if (!suser())
 			return;
-		if (copyin(cmdp, (caddr_t)&route, sizeof (route))) {
-			u.u_error = EFAULT;
-			return;
-		}
-		u.u_error = rtrequest(cmd, &route);
+		u.u_error = rtrequest(cmd, (struct rtentry *)data);
 		return;
-	}
 
 	/* type/protocol specific ioctls */
 	}

@@ -1,12 +1,14 @@
-/*	adreg.h	4.1	82/06/26	*/
+/*	adreg.h	4.2	82/08/01	*/
 
 struct addevice {
 	short int ad_csr;			/* Control status register */
 	short int ad_data;			/* Data buffer */
 };
 
-#define AD_CHAN		(('a'<<8)|0)
-#define AD_READ		(('a'<<8)|1)
+#define AD_CHAN		ADIOSCHAN
+#define AD_READ		ADIOGETW
+#define	ADIOSCHAN	_IOW(a, 0, int)		/* set channel */
+#define	ADIOGETW	_IOR(a, 1, int)		/* read one word */
 
 /*
  * Unibus CSR register bits
