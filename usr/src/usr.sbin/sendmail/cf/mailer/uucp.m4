@@ -13,12 +13,12 @@ POPDIVERT
 ###   UUCP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)uucp.m4	6.5 (Berkeley) %G%')
+VERSIONID(`@(#)uucp.m4	6.6 (Berkeley) %G%')
 
-Msuucp,		P=UUCP_MAILER_PATH, F=mDFMhuU, S=12, R=22, M=100000
+Msuucp,		P=UUCP_MAILER_PATH, F=mDFMhuU, S=12, R=22, M=100000,
 		A=uux - -r -z -a$f -gC $h!rmail ($u)
 
-Muucp,		P=UUCP_MAILER_PATH, F=DFMhuU, S=12, R=22, M=100000
+Muucp,		P=UUCP_MAILER_PATH, F=DFMhuU, S=12, R=22, M=100000,
 		A=uux - -r -z -a$f -gC $h!rmail ($u)
 
 # sender rewriting
