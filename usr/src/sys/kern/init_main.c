@@ -4,11 +4,13 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)init_main.c	8.2 (Berkeley) %G%
+ *	@(#)init_main.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
 #include <sys/filedesc.h>
+#include <sys/errno.h>
+#include <sys/exec.h>
 #include <sys/kernel.h>
 #include <sys/mount.h>
 #include <sys/map.h>
@@ -57,13 +59,16 @@ int	boothowto;
 struct	timeval boottime;
 struct	timeval runtime;
 
+static void start_init __P((struct proc *p, int *regs));
+
 /*
  * System startup; initialize the world, create process 0, mount root
  * filesystem, and fork to create init and pagedaemon.  Most of the
  * hard work is done in the lower-level initialization routines including
  * startup(), which does memory initialization and autoconfiguration.
  */
-main()
+main(regs)
+	int *regs;
 {
 	register struct proc *p;
 	register struct filedesc0 *fdp;
@@ -233,46 +238,8 @@ main()
 	if (fork(p, NULL, rval))
 		panic("fork init");
 	if (rval[1]) {
-		extern int icode[];		/* user init code */
-		extern int szicode;		/* size of icode */
-		static char initflags[] = "-sf";
-		vm_offset_t addr;
-		char *ip;
-
-		/*
-		 * Now in process 1.  Set init flags into icode, get a minimal
-		 * address space, copy out "icode", and return to it to do an
-		 * exec of init.
-		 */
-		ip = initflags + 1;
-		if (boothowto&RB_SINGLE)
-			*ip++ = 's';
-#ifdef notyet
-		if (boothowto&RB_FASTBOOT)
-			*ip++ = 'f';
-#endif
-		if (ip == initflags + 1)
-			*ip++ = '-';
-		*ip++ = '\0';
-
-		addr = VM_MIN_ADDRESS;
-		initproc = p = curproc;
-		if (vm_allocate(&p->p_vmspace->vm_map, &addr,
-		    round_page(szicode + sizeof(initflags)), FALSE) != 0 ||
-		    addr != VM_MIN_ADDRESS)
-			panic("init: couldn't allocate at zero");
-
-		/* Need just enough stack from which to exec. */
-		addr = trunc_page(USRSTACK - PAGE_SIZE);
-		if (vm_allocate(&p->p_vmspace->vm_map, &addr,
-		    PAGE_SIZE, FALSE) != KERN_SUCCESS)
-			panic("vm_allocate init stack");
-		p->p_vmspace->vm_maxsaddr = (caddr_t)addr;
-		(void)copyout((caddr_t)icode, (caddr_t)VM_MIN_ADDRESS,
-		    (u_int)szicode);
-		(void)copyout(initflags, (caddr_t)(VM_MIN_ADDRESS + szicode),
-		    sizeof(initflags));
-		return;			/* returns to icode */
+		start_init(curproc, regs);
+		return;
 	}
 
 	/* Create process 2 (the pageout daemon). */
@@ -293,4 +260,109 @@ main()
 	/* The scheduler is an infinite loop. */
 	scheduler();
 	/* NOTREACHED */
+}
+
+/*
+ * List of paths to try when searching for "init".
+ */
+static char *initpaths[] = {
+	"/sbin/init",
+	"/sbin/oinit",
+	"/sbin/init.bak",
+	NULL,
+};
+
+/*
+ * Start the initial user process; try exec'ing each pathname in "initpaths".
+ * The program is invoked with one argument containing the boot flags.
+ */
+static void
+start_init(p, regs)
+	struct proc *p;
+	int *regs;
+{
+	vm_offset_t addr;
+	struct execve_args args;
+	int options, i, retval[2], error;
+	char **pathp, *path, *ucp, **uap, *arg0, *arg1;
+
+	/*
+	 * We need to set p->p_md.md_regs since start_init acts like a
+	 * system call and references the regs to set the entry point
+	 * (see setregs) when it tries to exec.  On regular fork, the
+	 * p->p_md.md_regs of the child is undefined since it is set on
+	 * each system call.  The startup code in "locore.s" has arranged
+	 * that there be some place to set "p->p_md.md_regs" to, and
+	 * passed a pointer to that place as main's argument.
+	 */
+	p->p_md.md_regs = regs;
+
+	/*
+	 * Need just enough stack to hold the faked-up "execve()" arguments.
+	 */
+	addr = trunc_page(VM_MAX_ADDRESS - PAGE_SIZE);
+	if (vm_allocate(&p->p_vmspace->vm_map, &addr, PAGE_SIZE, FALSE) != 0)
+		panic("init: couldn't allocate argument space");
+	p->p_vmspace->vm_maxsaddr = (caddr_t)addr;
+
+	for (pathp = &initpaths[0]; (path = *pathp) != NULL; pathp++) {
+		/*
+		 * Move out the boot flag argument.
+		 */
+		options = 0;
+		ucp = (char *)USRSTACK;
+		(void) subyte(--ucp, 0);		/* trailing zero */
+		if (boothowto & RB_SINGLE) {
+			(void) subyte(--ucp, 's');
+			options = 1;
+		}
+#ifdef notyet
+                if (boothowto & RB_FASTBOOT) {
+			(void) subyte(--ucp, 'f');
+			options = 1;
+		}
+#endif
+		if (options == 0)
+			(void) subyte(--ucp, '-');
+		(void) subyte(--ucp, '-');		/* leading hyphen */
+		arg1 = ucp;
+
+		/*
+		 * Move out the file name (also arg 0).
+		 */
+		for (i = strlen(path) + 1; i >= 0; i--)
+			(void) subyte(--ucp, path[i]);
+		arg0 = ucp;
+
+		/*
+		 * Move out the arg pointers.
+		 */
+		uap = (char **)((int)ucp & ~(NBPW-1));
+		(void) suword((caddr_t)--uap, 0);	/* terminator */
+		(void) suword((caddr_t)--uap, (int)arg1);
+		(void) suword((caddr_t)--uap, (int)arg0);
+
+		/*
+		 * Point at the arguments.
+		 */
+		args.fname = arg0;
+		args.argp = uap;
+		args.envp = NULL;
+
+		/*
+		 * Now try to exec the program.
+		 */
+		if ((error = execve(p, &args, &retval)) == 0)
+			return;
+		if (error != ENOENT) {
+			/*
+			 * Found "init", but couldn't execute it.
+			 * Complain now.
+			 */
+			printf("Can't invoke %s: error %d\n", path, error);
+			panic("init error");
+		}
+	}
+	printf("init: not found\n");
+	panic("no init");
 }

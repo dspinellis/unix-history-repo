@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: locore.s 1.66 92/12/22$
  *
- *	@(#)locore.s	8.2 (Berkeley) %G%
+ *	@(#)locore.s	8.3 (Berkeley) %G%
  */
 
 /*
@@ -1082,20 +1082,35 @@ Lnocache0:
 	movw	#PSL_LOWIPL,sr		| lower SPL
 	movl	d7,_boothowto		| save reboot flags
 	movl	d6,_bootdev		|   and boot device
-	jbsr	_main			| call main()
-
-/* proc[1] == init now running here;
- * create a null exception frame and return to user mode in icode
+/*
+ * Create a fake exception frame that returns to user mode,
+ * make space for the rest of a fake saved register set, and
+ * pass the first available RAM and a pointer to the register
+ * set to "main()".  "main()" will call "icode()", which fakes
+ * an "execve()" system call, which is why we need to do that
+ * ("main()" sets "u.u_ar0" to point to the register set).
+ * When "main()" returns, we're running in process 1 and have
+ * successfully faked the "execve()".  We load up the registers from
+ * that set; the "rte" loads the PC and PSR, which jumps to "init".
  */
+  	clrw	sp@-			| vector offset/frame type
+	clrl	sp@-			| PC - filled in by "execve"
+  	movw	#PSL_USER,sp@-		| in user mode
+	clrw	sp@-			| pad SR to longword
+	lea	sp@(-64),sp		| construct space for D0-D7/A0-A7
+	pea	sp@			| addr of space for D0
+	jbsr	_main			| main(firstaddr, r0)
+	addql	#4,sp			| pop args
 	cmpl	#-2,_mmutype		| 68040?
 	jne	Lnoflush		| no, skip
 	.word	0xf478			| cpusha dc
 	.word	0xf498			| cinva ic
 Lnoflush:
-	clrw	sp@-			| vector offset/frame type
-	clrl	sp@-			| return to icode location 0
-	movw	#PSL_USER,sp@-		| in user mode
-	rte
+	movl	sp@(60),a0		| grab and load
+	movl	a0,usp			|   user SP
+	moveml	sp@+,#0x7FFF		| load most registers (all but SSP)
+	addql	#6,sp			| pop SSP and align word
+  	rte
 
 /*
  * Signal "trampoline" code (18 bytes).  Invoked from RTE setup by sendsig().
@@ -1124,33 +1139,6 @@ _sigcodetrap:
 	trap	#0			| exit(errno)		(2 bytes)
 	.align	2
 _esigcode:
-
-/*
- * Icode is copied out to process 1 to exec init.
- * If the exec fails, process 1 exits.
- */
-	.globl	_icode,_szicode
-	.text
-_icode:
-	clrl	sp@-
-	pea	pc@((argv-.)+2)
-	pea	pc@((init-.)+2)
-	clrl	sp@-
-	moveq	#SYS_execve,d0
-	trap	#0
-	moveq	#SYS_exit,d0
-	trap	#0
-init:
-	.asciz	"/sbin/init"
-	.even
-argv:
-	.long	init+6-_icode		| argv[0] = "init" ("/sbin/init" + 6)
-	.long	eicode-_icode		| argv[1] follows icode after copyout
-	.long	0
-eicode:
-
-_szicode:
-	.long	_szicode-_icode
 
 /*
  * Primitives
