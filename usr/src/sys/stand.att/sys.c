@@ -13,12 +13,19 @@
 #include "reboot.h"
 #include "saio.h"
 
+#define	isdigit(c)	((c) >= '0' && (c) <= '9')
+#define	isspace(c)	((c) == ' ' || (c) == '\t')
+#define	isupper(c)	((c) >= 'A' && (c) <= 'Z')
+#define	tolower(c)	((c) - 'A' + 'a')
+
 ino_t	dlook();
 
 struct dirstuff {
 	int loc;
 	struct iob *io;
 };
+
+struct iob iob[NFILES];
 
 static
 openi(n, io)
@@ -43,11 +50,10 @@ find(path, file)
 	struct iob *file;
 {
 	register char *q;
-	char *dir;
-	char c;
+	char *dir, c;
 	int n;
 
-	if (path==NULL || *path=='\0') {
+	if (path == NULL || *path == '\0') {
 		printf("null path\n");
 		return (0);
 	}
@@ -82,6 +88,10 @@ find(path, file)
 	}
 	return (n);
 }
+
+#define	NBUFS	4
+static char	b[NBUFS][MAXBSIZE];
+static daddr_t	blknos[NBUFS];
 
 static daddr_t
 sbmap(io, bn)
@@ -215,7 +225,7 @@ readdir(dirp)
 			lbn = lblkno(&io->i_fs, dirp->loc);
 			d = sbmap(io, lbn);
 			if(d == 0)
-				return NULL;
+				return (NULL);
 			io->i_bn = fsbtodb(&io->i_fs, d) + io->i_boff;
 			io->i_ma = io->i_buf;
 			io->i_cc = blksize(&io->i_fs, &io->i_ino, lbn);
@@ -240,13 +250,13 @@ lseek(fdesc, addr, ptr)
 {
 	register struct iob *io;
 
-#ifndef	SMALL
-	if (ptr != 0) {
+#ifndef SMALL
+	if (ptr != L_SET) {
 		printf("Seek not from beginning of file\n");
 		errno = EOFFSET;
 		return (-1);
 	}
-#endif SMALL
+#endif
 	fdesc -= 3;
 	if (fdesc < 0 || fdesc >= NFILES ||
 	    ((io = &iob[fdesc])->i_flgs & F_ALLOC) == 0) {
@@ -341,7 +351,7 @@ read(fdesc, buf, count)
 		errno = EBADF;
 		return (-1);
 	}
-#ifndef	SMALL
+#ifndef SMALL
 	if ((file->i_flgs & F_FILE) == 0) {
 		file->i_cc = count;
 		file->i_ma = buf;
@@ -353,7 +363,7 @@ read(fdesc, buf, count)
 			file->i_offset += i;
 		return (i);
 	}
-#endif SMALL
+#endif
 	if (file->i_offset+count > file->i_ino.i_size)
 		count = file->i_ino.i_size - file->i_offset;
 	if ((i = count) <= 0)
@@ -393,7 +403,7 @@ read(fdesc, buf, count)
 	return (count);
 }
 
-#ifndef	SMALL
+#ifndef SMALL
 write(fdesc, buf, count)
 	int fdesc, count;
 	char *buf;
@@ -427,105 +437,111 @@ write(fdesc, buf, count)
 		errno = file->i_error;
 	return (i);
 }
-#endif SMALL
+#endif
 
 int	openfirst = 1;
-unsigned opendev;		/* last device opened */
-extern	unsigned bootdev;
+u_int	opendev;		/* last device opened */
+extern u_int bootdev;
 
 open(str, how)
 	char *str;
 	int how;
 {
-	register char *cp;
-	register int i;
+	register char *t;
+	register int cnt;
 	register struct iob *file;
-	int fdesc;
-	long atol();
+	int fdesc, args[8], *argp;
 
 	if (openfirst) {
-		for (i = 0; i < NFILES; i++)
-			iob[i].i_flgs = 0;
+		for (cnt = 0; cnt < NFILES; cnt++)
+			iob[cnt].i_flgs = 0;
 		openfirst = 0;
 	}
 
-	for (fdesc = 0; fdesc < NFILES; fdesc++)
-		if (iob[fdesc].i_flgs == 0)
-			goto gotfile;
-	_stop("No more file slots");
-gotfile:
-	(file = &iob[fdesc])->i_flgs |= F_ALLOC;
-
-#ifndef	SMALL
-	for (cp = str; *cp && *cp != '/' && *cp != ':' && *cp != '('; cp++)
-		;
-	if (*cp == '(') {
-		if ((file->i_ino.i_dev = getdev(str, cp - str)) == -1)
-			goto bad;
-		cp++;
-		if ((file->i_unit = getunit(cp)) == -1)
-			goto bad;
-		for (; *cp != ','; cp++)
-			if (*cp == 0) {
-				errno = EOFFSET;
-				goto badspec;
-			}
-		file->i_boff = atol(++cp);
-		for (;;) {
-			if (*cp == ')')
-				break;
-			if (*cp++)
-				continue;
-			goto badspec;
+	for (fdesc = 0;; fdesc++) {
+		if (fdesc == NFILES)
+			_stop("No more file slots");
+		if (iob[fdesc].i_flgs == 0) {
+			file = &iob[fdesc];
+			file->i_flgs |= F_ALLOC;
+			file->i_adapt = file->i_ctlr = file->i_unit =
+			    file->i_part = 0;
+			break;
 		}
-		cp++;
-	} else if (*cp != ':') {
-#endif
-		/* default bootstrap unit and device */
-		file->i_ino.i_dev = (bootdev >> B_TYPESHIFT) & B_TYPEMASK;
-		file->i_unit = ((bootdev >> B_UNITSHIFT) & B_UNITMASK) +
-		     (8 * ((bootdev >> B_ADAPTORSHIFT) & B_ADAPTORMASK));
-		file->i_boff = (bootdev >> B_PARTITIONSHIFT) & B_PARTITIONMASK;
-		cp = str;
-#ifndef	SMALL
-	} else {
-# define isdigit(n)	((n>='0') && (n<='9'))
-		if (cp == str)
-			goto badspec;
-		/*
-	 	 * syntax for possible device name:
-	 	 *	<alpha-string><digit-string><letter>:
-	 	 */
-		for (cp = str; *cp != ':' && !isdigit(*cp); cp++)
-			;
-		if ((file->i_ino.i_dev = getdev(str, cp - str)) == -1)
+	}
+
+	for (cnt = 0; cnt < sizeof(args)/sizeof(args[0]); args[cnt++] = 0);
+#ifndef SMALL
+	for (t = str; *t && *t != '/' && *t != ':' && *t != '('; ++t)
+		if (isupper(*t))
+			*t = tolower(*t);
+	switch(*t) {
+	case '(':	/* type(adapt, ctlr, drive, partition)file */
+		if ((file->i_ino.i_dev = getdev(str, t - str)) == -1)
 			goto bad;
-		if ((file->i_unit = getunit(cp)) == -1)
+		for (argp = args + 4, cnt = 0; *t != ')'; ++cnt) {
+			for (++t; isspace(*t); ++t);
+			if (*t == ')')
+				break;
+			if (!isdigit(*t))
+				goto badspec;
+			*argp++ = atoi(t);
+			for (++t; isdigit(*t); ++t);
+			if (*t != ',' && *t != ')' || cnt == 4)
+				goto badspec;
+		}
+		for (++t; isspace(*t); ++t);
+		argp -= 4;
+		file->i_adapt = *argp++;
+		file->i_ctlr = *argp++;
+		file->i_unit = *argp++;
+		file->i_part = *argp;
+		break;
+	case ':':	/* [A-Za-z]*[0-9]*[A-Za-z]:file */
+		for (t = str; *t != ':' && !isdigit(*t); ++t);
+		if ((file->i_ino.i_dev = getdev(str, t - str)) == -1)
 			goto bad;
-		while (isdigit(*cp))
-			cp++;
-		file->i_boff = 0;
-		if (*cp >= 'a' && *cp <= 'h')
-			file->i_boff = *cp++ - 'a';
-		if (*cp++ != ':') {
+		if ((file->i_unit = getunit(t)) == -1)
+			goto bad;
+		for (; isdigit(*t); ++t);
+		if (*t >= 'a' && *t <= 'h')
+			file->i_part = *t++ - 'a';
+		if (*t != ':') {
 			errno = EOFFSET;
 			goto badspec;
 		}
+		for (++t; isspace(*t); ++t);
+		break;
+	case '/':
+	default:		/* default bootstrap unit and device */
+#else
+	{
+#endif /* SMALL */
+		file->i_ino.i_dev = B_TYPE(bootdev);
+		file->i_adapt = B_ADAPTOR(bootdev);
+		file->i_ctlr = B_CONTROLLER(bootdev);
+		file->i_unit = B_UNIT(bootdev);
+		file->i_part = B_PARTITION(bootdev);
+		t = str;
 	}
-#endif
-	opendev = file->i_ino.i_dev << B_TYPESHIFT;
-	opendev |= (file->i_unit % 8) << B_UNITSHIFT;
-	opendev |= (file->i_unit / 8) << B_ADAPTORSHIFT;
-	opendev |= file->i_boff << B_PARTITIONSHIFT;
-	opendev |= B_DEVMAGIC;
+
+	opendev = MAKEBOOTDEV(file->i_ino.i_dev, file->i_adapt, file->i_ctlr,
+	    file->i_unit, file->i_part);
+
 	if (errno = devopen(file))
 		goto bad;
-#ifndef SMALL
-	if (cp != str && *cp == '\0') {
-		file->i_flgs |= how+1;
+
+	if (*t == '\0') {
+		file->i_flgs |= how + 1;
 		file->i_cc = 0;
 		file->i_offset = 0;
 		return (fdesc+3);
+	}
+#ifndef SMALL
+	else if (how != 0) {
+		printf("Can't write files yet.. Sorry\n");
+		errno = EIO;
+		goto bad;
 	}
 #endif
 	file->i_ma = (char *)(&file->i_fs);
@@ -537,18 +553,11 @@ gotfile:
 		printf("super block read error\n");
 		goto bad;
 	}
-	if ((i = find(cp, file)) == 0) {
+	if ((cnt = find(t, file)) == 0) {
 		errno = ESRCH;
 		goto bad;
 	}
-#ifndef	SMALL
-	if (how != 0) {
-		printf("Can't write files yet.. Sorry\n");
-		errno = EIO;
-		goto bad;
-	}
-#endif SMALL
-	if (openi(i, file) < 0) {
+	if (openi(cnt, file) < 0) {
 		errno = file->i_error;
 		goto bad;
 	}
@@ -559,7 +568,7 @@ gotfile:
 
 #ifndef SMALL
 badspec:
-	printf("malformed device specification\n");
+	printf("malformed device specification\nusage: device(adaptor, controller, drive, partition)file\n");
 #endif
 bad:
 	file->i_flgs = 0;
@@ -574,18 +583,19 @@ getdev(str, len)
 {
 	register struct devsw *dp;
 	register int i;
-	char c = str[len];
+	char savedch = str[len];
 
-	str[len] = 0;
+	str[len] = '\0';
 	for (dp = devsw, i = 0; i < ndevs; dp++, i++)
 		if (dp->dv_name && strcmp(str, dp->dv_name) == 0) {
-			str[len] = c;
+			str[len] = savedch;
 			return (i);
 		}
 	printf("Unknown device\nKnown devices are:\n");
 	for (dp = devsw, i = 0; i < ndevs; dp++, i++)
 		if (dp->dv_name)
 			printf(" %s", dp->dv_name);
+	printf("\n");
 	errno = ENXIO;
 	return (-1);
 }
@@ -594,18 +604,17 @@ static
 getunit(cp)
 	register char *cp;
 {
-	register int i = 0;
+	int unit;
 
-	while (*cp >= '0' && *cp <= '9')
-		i = i * 10 + *cp++ - '0';
-	if ((unsigned) i > 255) {
+	unit = atoi(cp);
+	if ((u_int)unit > 255) {
 		printf("minor device number out of range (0-255)\n");
 		errno = EUNIT;
-		i = -1;
+		return (-1);
 	}
-	return (i);
+	return (unit);
 }
-#endif
+#endif /* SMALL */
 
 close(fdesc)
 	int fdesc;
@@ -624,7 +633,7 @@ close(fdesc)
 	return (0);
 }
 
-#ifndef	SMALL
+#ifndef SMALL
 ioctl(fdesc, cmd, arg)
 	int fdesc, cmd;
 	char *arg;
@@ -668,7 +677,7 @@ ioctl(fdesc, cmd, arg)
 		errno = file->i_error;
 	return (error);
 }
-#endif SMALL
+#endif /* SMALL */
 
 exit()
 {
