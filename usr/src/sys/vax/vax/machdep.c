@@ -1,13 +1,14 @@
-/*	machdep.c	4.60	82/08/13	*/
+/*	machdep.c	4.61	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/kernel.h"
 #include "../h/map.h"
 #include "../h/reg.h"
 #include "../h/mtpr.h"
-#include "../h/clock.h"
+#include "../vax/clock.h"
 #include "../h/pte.h"
 #include "../h/vm.h"
 #include "../h/proc.h"
@@ -205,12 +206,24 @@ sysphys()
 	u.u_error = EINVAL;
 }
 
+clockstart()
+{
+
+	clkstart();
+}
+
+clockset()
+{
+
+	clkset();
+}
+
 /*
  * Initialze the clock, based on the time base which is, e.g.
  * from a filesystem.  Base provides the time to within six months,
  * and the time of year clock provides the rest.
  */
-clkinit(base)
+clockinit(base)
 	time_t base;
 {
 	register unsigned todr = mfpr(TODR);
@@ -219,7 +232,7 @@ clkinit(base)
 
 	if (base < 5*SECYR) {
 		printf("WARNING: preposterous time in file system");
-		time = 6*SECYR + 186*SECDAY + SECDAY/2;
+		time.tv_sec = 6*SECYR + 186*SECDAY + SECDAY/2;
 		clkset();
 		goto check;
 	}
@@ -232,7 +245,7 @@ clkinit(base)
 	 */
 	if (todr < TODRZERO) {
 		printf("WARNING: todr too small");
-		time = base;
+		time.tv_sec = base;
 		/*
 		 * Believe the time in the file system for lack of
 		 * anything better, resetting the TODR.
@@ -247,25 +260,25 @@ clkinit(base)
 	 * seconds in the current year takes us to the end of the current year
 	 * and then around into the next year to the same position.
 	 */
-	time = (todr-TODRZERO)/100 + timezone*60;
-	while (time < base-SECYR/2) {
+	time.tv_sec = (todr-TODRZERO)/100 + timezone*60;
+	while (time.tv_sec < base-SECYR/2) {
 		if (LEAPYEAR(year))
-			time += SECDAY;
+			time.tv_sec += SECDAY;
 		year++;
-		time += SECYR;
+		time.tv_sec += SECYR;
 	}
 
 	/*
 	 * See if we gained/lost two or more days;
 	 * if so, assume something is amiss.
 	 */
-	deltat = time - base;
+	deltat = time.tv_sec - base;
 	if (deltat < 0)
 		deltat = -deltat;
 	if (deltat < 2*SECDAY)
 		return;
 	printf("WARNING: clock %s %d days",
-	    time < base ? "lost" : "gained", deltat / SECDAY);
+	    time.tv_sec < base ? "lost" : "gained", deltat / SECDAY);
 check:
 	printf(" -- CHECK AND RESET THE DATE!\n");
 }
@@ -281,7 +294,7 @@ clkset()
 {
 	int year = YRREF;
 	unsigned secyr;
-	unsigned yrtime = time - timezone*60;
+	unsigned yrtime = time.tv_sec - timezone*60;
 
 	/*
 	 * Whittle the time down to an offset in the current year,
@@ -315,7 +328,7 @@ vmtime(otime, olbolt, oicr)
 	if (mfpr(ICCS)&ICCS_INT)
 		return(-1);
 	else
-		return(((time-otime)*60 + lbolt-olbolt)*16667 + mfpr(ICR)-oicr);
+		return(((time.tv_sec-otime)*60 + lbolt-olbolt)*16667 + mfpr(ICR)-oicr);
 }
 #endif
 
@@ -814,4 +827,18 @@ machinecheck(cmcf)
 	}
 	memerr();
 	panic("mchk");
+}
+
+microtime(tvp)
+	struct timeval *tvp;
+{
+	int s = spl7();
+
+	tvp->tv_sec = time.tv_sec;
+	tvp->tv_usec = (lbolt+1)*16667 + mfpr(ICR);
+	while (tvp->tv_usec > 1000000) {
+		tvp->tv_sec++;
+		tvp->tv_usec -= 1000000;
+	}
+	splx(s);
 }
