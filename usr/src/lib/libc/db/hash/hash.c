@@ -409,7 +409,7 @@ hash_sync(dbp)
 static int
 flush_meta()
 {
-	HASHHDR *whdrp;
+	HASHHDR *whdrp, whdr;
 	int fp, i, wsize;
 
 	if (!hashp->save_file)
