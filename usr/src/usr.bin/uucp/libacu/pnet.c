@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)pnet.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)pnet.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "../condevs.h"
@@ -38,6 +38,7 @@ char *flds[];
 	alarm(15);
 	if (pnetscon(fd, flds[F_PHONE], socket) < 0) {
 		DEBUG(4, "pnet connect failed - %s\n", flds[F_PHONE]);
+		alarm(0);
 		return CF_DIAL;
 	}
 	alarm(0);
