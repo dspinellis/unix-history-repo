@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)main.c	4.5 83/02/09";
+static char sccsid[] = "@(#)main.c	4.6 83/03/11";
 #endif
 
 #include <sys/param.h>
@@ -37,11 +37,13 @@ struct nlist nl[] = {
 	{ "_rthost" },
 #define	N_RTNET		12
 	{ "_rtnet" },
-	0,
+#define	N_ICMPSTAT	13
+	{ "_icmpstat" },
+	"",
 };
 
 extern	int protopr();
-extern	int tcp_stats(), udp_stats(), ip_stats();
+extern	int tcp_stats(), udp_stats(), ip_stats(), icmp_stats();
 
 struct protox {
 	u_char	pr_index;		/* index into nlist of cb head */
@@ -57,6 +59,8 @@ struct protox {
 	  udp_stats,	"udp" },
 	{ -1,		N_IPSTAT,	1,	0,
 	  ip_stats,	"ip" },
+	{ -1,		N_ICMPSTAT,	1,	0,
+	  icmp_stats,	"icmp" },
 	{ -1,		-1,		0,	0,
 	  0,		0 }
 };
