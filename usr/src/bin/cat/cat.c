@@ -1,7 +1,7 @@
 /*
  * Concatenate files.
  */
-static	char *Sccsid = "@(#)cat.c	4.4 (Berkeley) %G%";
+static	char *Sccsid = "@(#)cat.c	4.5 (Berkeley) %G%";
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -69,7 +69,7 @@ char **argv;
 			fi = stdin;
 		else {
 			if ((fi = fopen(*argv, "r")) == NULL) {
-				fprintf(stderr, "cat: can't open %s\n", *argv);
+				perror(*argv);
 				continue;
 			}
 		}
