@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)genassym.c	5.4 (Berkeley) %G%
+ *	@(#)genassym.c	5.5 (Berkeley) %G%
  */
 
 #include "../i386/pte.h"

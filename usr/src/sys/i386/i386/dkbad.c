@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)dkbad.c	5.1 (Berkeley) %G%
+ *	@(#)dkbad.c	5.2 (Berkeley) %G%
  */
 
 

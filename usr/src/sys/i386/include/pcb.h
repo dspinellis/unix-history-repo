@@ -7,7 +7,7 @@
  *
  * %sccs.include.noredist.c%
  *
- *	@(#)pcb.h	5.3 (Berkeley) %G%
+ *	@(#)pcb.h	5.4 (Berkeley) %G%
  */
 
 /*
