@@ -1,17 +1,26 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+ * Copyright (c) 1981 Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms are permitted
+ * provided that this notice is preserved and that due credit is given
+ * to the University of California at Berkeley. The name of the University
+ * may not be used to endorse or promote products derived from this
+ * software without specific prior written permission. This software
+ * is provided ``as is'' without express or implied warranty.
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)vpltdmp.c	5.1 (Berkeley) %G%";
-#endif not lint
+char copyright[] =
+"@(#) Copyright (c) 1981 Regents of the University of California.\n\
+ All rights reserved.\n";
+#endif /* not lint */
+
+#ifndef lint
+static char sccsid[] = "@(#)vpltdmp.c	5.2 (Berkeley) %G%";
+#endif /* not lint */
 
 /*
- * Copyright (C) 1981, Regents of the University of California
- *	All rights reserved
- *
  *  reads raster file created by vplot and dumps it onto the
  *  Varian or Versatec plotter.
  *  Input comes from file descriptor 0, output is to file descriptor 1.
@@ -22,7 +31,7 @@ static char sccsid[] = "@(#)vpltdmp.c	5.1 (Berkeley) %G%";
 #define IN	0
 #define OUT	1
 
-static	char *Sid = "@(#)vpltdmp.c	5.1\t%G%";
+static	char *Sid = "@(#)vpltdmp.c	5.2\t%G%";
 
 int	plotmd[] = { VPLOT };
 int	prtmd[]  = { VPRINT };
