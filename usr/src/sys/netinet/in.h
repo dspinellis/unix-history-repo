@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)in.h	7.2 (Berkeley) %G%
+ *	@(#)in.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -67,16 +67,24 @@ struct in_addr {
 #define	IN_CLASSB_HOST		0x0000ffff
 #define	IN_CLASSB_MAX		65536
 
-#define	IN_CLASSC(i)		(((long)(i) & 0xc0000000) == 0xc0000000)
+#define	IN_CLASSC(i)		(((long)(i) & 0xe0000000) == 0xc0000000)
 #define	IN_CLASSC_NET		0xffffff00
 #define	IN_CLASSC_NSHIFT	8
 #define	IN_CLASSC_HOST		0x000000ff
+
+#define	IN_CLASSD(i)		(((long)(i) & 0xf0000000) == 0xe0000000)
+#define	IN_MULTICAST(i)		IN_CLASSD(i)
+
+#define	IN_EXPERIMENTAL(i)	(((long)(i) & 0xe0000000) == 0xe0000000)
+#define	IN_BADCLASS(i)		(((long)(i) & 0xf0000000) == 0xf0000000)
 
 #define	INADDR_ANY		(u_long)0x00000000
 #define	INADDR_BROADCAST	(u_long)0xffffffff	/* must be masked */
 #ifndef KERNEL
 #define	INADDR_NONE		0xffffffff		/* -1 return */
 #endif
+
+#define	IN_LOOPBACKNET		127			/* official! */
 
 /*
  * Socket address, internet style.
