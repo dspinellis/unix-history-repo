@@ -1,4 +1,4 @@
-/*	if_dmc.c	4.18	82/10/09	*/
+/*	if_dmc.c	4.19	82/10/10	*/
 
 #include "dmc.h"
 #if NDMC > 0
@@ -19,18 +19,20 @@ int dmcdebug = 1;
 #include "../h/tty.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
-#include "../h/cpu.h"
-#include "../h/mtpr.h"
 #include "../h/vmmac.h"
+#include <errno.h>
+
+#include "../net/if.h"
+#include "../net/route.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
-#include "../net/if.h"
+
+#include "../vax/cpu.h"
+#include "../vax/mtpr.h"
 #include "../vaxif/if_uba.h"
 #include "../vaxif/if_dmc.h"
-#include "../net/route.h"
-#include <errno.h>
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
 
 /*
  * Driver information for auto-configuration stuff.

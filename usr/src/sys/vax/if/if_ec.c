@@ -1,4 +1,4 @@
-/*	if_ec.c	4.23	82/10/09	*/
+/*	if_ec.c	4.24	82/10/10	*/
 
 #include "ec.h"
 
@@ -13,22 +13,25 @@
 #include "../h/buf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include "../h/ubareg.h"
-#include "../h/ubavar.h"
-#include "../h/ecreg.h"
-#include "../h/cpu.h"
-#include "../h/mtpr.h"
 #include "../h/vmmac.h"
+#include <errno.h>
+
+#include "../net/if.h"
+#include "../net/netisr.h"
+#include "../net/route.h"
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
-#include "../net/if.h"
-#include "../vaxif/if_ec.h"
-#include "../vaxif/if_uba.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_var.h"
 #include "../netpup/pup.h"
-#include "../net/route.h"
-#include <errno.h>
+
+#include "../vax/cpu.h"
+#include "../vax/mtpr.h"
+#include "../vaxif/if_ec.h"
+#include "../vaxif/if_ecreg.h"
+#include "../vaxif/if_uba.h"
+#include "../vaxuba/ubareg.h"
+#include "../vaxuba/ubavar.h"
 
 #define	ECMTU	1500
 #define	ECMEM	0000000
