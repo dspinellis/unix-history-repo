@@ -3,19 +3,16 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
 
-# The following sources are incomplete and cannot be compiled without
-# some work
-WORK=	aard ddl mpu
-
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	adventure backgammon battlestar boggle ching compat cribbage doctor \
-	fortune hangman hunt mille monop quiz robots rogue sail snake trek zork
+SUBDIR=	aard adventure backgammon battlestar boggle ching compat \
+	cribbage ddl doctor fortune hangman hunt mille monop quiz \
+	robots rogue sail snake trek zork
 
 # Shell scripts that need only be installed and are never removed.
 #
