@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iso.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)iso.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -64,7 +64,6 @@ SOFTWARE.
 #undef satosiso
 #include <netiso/tp_param.h>
 #include <netiso/tp_states.h>
-#include <netiso/tp_astring.c>
 #include <netiso/tp_pcb.h>
 #include <netiso/tp_stat.h>
 #include <netiso/iso_pcb.h>
@@ -282,6 +281,7 @@ tp_protopr(off, name)
 	u_long off;
 	char *name;
 {
+	extern char *tp_sstring[];
 	struct tp_ref *tpr, *tpr_base;
 	struct tp_refinfo tpkerninfo;
 	int size;
