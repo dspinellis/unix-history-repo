@@ -1,4 +1,4 @@
-#	@(#)bsd.prog.mk	5.12 (Berkeley) %G%
+#	@(#)bsd.prog.mk	5.13 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -142,7 +142,8 @@ lint: ${SRCS} _PROGSUBDIR
 
 .if !target(tags)
 tags: ${SRCS} _PROGSUBDIR
-	ctags -f ${.CURDIR}/tags ${.ALLSRC}
+	cd ${.CURDIR}; ctags -f /dev/stdout ${.ALLSRC} | \
+	    sed "s;\${.CURDIR}/;;" > tags
 .endif
 
 .if !defined(NOMAN)
