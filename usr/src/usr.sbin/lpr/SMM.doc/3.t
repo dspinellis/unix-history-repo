@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)3.t	5.1 (Berkeley) %G%
+.\"	@(#)3.t	6.1 (Berkeley) %G%
 .\"
 .NH 1
 Access control
@@ -35,8 +35,8 @@ and setgid \fIspooling\fP to access spool files and printers.
 The printer server, \fIlpd\fP,
 uses the same verification procedures as \fIrshd\fP\|(8C)
 in authenticating remote clients.  The host on which a client
-resides must be present in the file /etc/hosts.equiv, used
-to create clusters of machines under a single administration. 
+resides must be present in the file /etc/hosts.equiv or /etc/hosts.lpd and
+the request message must come from a reserved port number.
 .PP
 In practice, none of \fIlpd\fP, \fIlpq\fP, or
 \fIlprm\fP would have to run as user \fIroot\fP if remote
