@@ -16,7 +16,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -260,11 +260,11 @@ mf_fgets(sp, spflag)
 	}
 
 	/*
-	 * Use fgetline so that we can handle essentially infinite input
-	 * data.  Can't use the pointer into the stdio buffer as the process
-	 * space because the ungetc() can cause it to move.
+	 * Use fgetln so that we can handle essentially infinite input data.
+	 * Can't use the pointer into the stdio buffer as the process space
+	 * because the ungetc() can cause it to move.
 	 */
-	p = fgetline(f, &len);
+	p = fgetln(f, &len);
 	if (ferror(f))
 		err(FATAL, "%s: %s", fname, strerror(errno ? errno : EIO));
 	cspace(sp, p, len, spflag);
