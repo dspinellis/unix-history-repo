@@ -1,0 +1,21 @@
+cc -I../h -O -c bequal.c
+cc -I../h -O -c xalloc.c
+cc -I../h -O -c sequal.c
+cc -I../h -O -c set_si_buf.c
+cc -I../h -O -c set_so_buf.c
+cc -I../h -O -c trace.c
+cc -I../h -O -c atoi.c
+cc -I../h -O -c lprintf.c
+ar urv gutil bequal.o xalloc.o sequal.o set_si_buf.o set_so_buf.o trace.o atoi.o lprintf.o
+r - bequal.o
+r - xalloc.o
+r - sequal.o
+r - set_si_buf.o
+r - set_so_buf.o
+r - trace.o
+r - atoi.o
+r - lprintf.o
+chmod 664 gutil
+ranlib gutil
+cp gutil ../../lib/gutil
+ranlib ../../lib/gutil
