@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)headers.c	8.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)headers.c	8.16 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -482,6 +482,7 @@ eatheader(e, full)
 		}
 
 		/* some versions of syslog only take 5 printf args */
+#  if (SYSLOG_BUFSIZE) >= 256
 		sbp = sbuf;
 		sprintf(sbp, "from=%.200s, size=%ld, class=%d, pri=%ld, nrcpts=%d, msgid=%.100s",
 		    e->e_from.q_paddr, e->e_msgsize, e->e_class,
@@ -497,6 +498,23 @@ eatheader(e, full)
 			(void) sprintf(sbp, ", proto=%.20s", p);
 		syslog(LOG_INFO, "%s: %s, relay=%s",
 		    e->e_id, sbuf, name);
+
+#  else			/* short syslog buffer */
+
+		syslog(LOG_INFO, "%s: from=%s",
+			e->e_id, shortenstring(e->e_from.q_paddr, 83));
+		syslog(LOG_INFO, "%s: size=%ld, class=%ld, pri=%ld, nrcpts=%d",
+			e->e_id, e->e_msgsize, e->e_class,
+			e->e_msgpriority, e->e_nrcpts);
+		syslog(LOG_INFO, "%s: msgid=%s", e->e_id, msgid);
+		if (e->e_bodytype != NULL)
+			syslog(LOG_INFO, "%s: bodytype=%s",
+				e->e_id, e->e_bodytype);
+		p = macvalue('r', e);
+		if (p != NULL)
+			syslog(LOG_INFO, "%s: proto=%s", e->e_id, p);
+		syslog(LOG_INFO, "%s: relay=%s", e->e_id, name);
+#  endif
 	}
 # endif /* LOG */
 }

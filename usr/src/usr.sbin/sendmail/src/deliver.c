@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.50 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.51 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1767,10 +1767,6 @@ giveresponse(stat, m, mci, ctladdr, e)
 **		none
 */
 
-#ifndef SYSLOG_BUFSIZE
-# define SYSLOG_BUFSIZE	1024
-#endif
-
 logdelivery(m, mci, stat, ctladdr, e)
 	MAILER *m;
 	register MCI *mci;
@@ -1784,6 +1780,7 @@ logdelivery(m, mci, stat, ctladdr, e)
 	int l;
 	char buf[512];
 
+#  if (SYSLOG_BUFSIZE) >= 256
 	bp = buf;
 	if (ctladdr != NULL)
 	{
@@ -1835,30 +1832,28 @@ logdelivery(m, mci, stat, ctladdr, e)
 	}
 	bp += strlen(bp);
 
-	if ((bp - buf) > (sizeof buf - 220))
+#define STATLEN		(((SYSLOG_BUFSIZE) - 100) / 4)
+#if (STATLEN) < 63
+# undef STATLEN
+# define STATLEN	63
+#endif
+#if (STATLEN) > 203
+# undef STATLEN
+# define STATLEN	203
+#endif
+
+	if ((bp - buf) > (sizeof buf - ((STATLEN) + 20)))
 	{
 		/* desperation move -- truncate data */
-		bp = buf + sizeof buf - 217;
+		bp = buf + sizeof buf - ((STATLEN) + 17);
 		strcpy(bp, "...");
 		bp += 3;
 	}
 
 	(void) strcpy(bp, ", stat=");
 	bp += strlen(bp);
-	l = strlen(stat);
-#define STATLEN		(((SYSLOG_BUFSIZE) - 100) / 8)
-#if (STATLEN) < 30
-# undef STATLEN
-# define STATLEN	30
-#endif
-#if (STATLEN) > 100
-# undef STATLEN
-# define STATLEN	100
-#endif
-	if (l > (STATLEN * 2 + 3))
-		sprintf(bp, "%.*s...%s", STATLEN, stat, stat + l - STATLEN);
-	else
-		(void) strcpy(bp, stat);
+
+	(void) strcpy(bp, shortenstring(stat, (STATLEN)));
 		
 	l = SYSLOG_BUFSIZE - 100 - strlen(buf);
 	p = e->e_to;
@@ -1873,6 +1868,72 @@ logdelivery(m, mci, stat, ctladdr, e)
 		p = q;
 	}
 	syslog(LOG_INFO, "%s: to=%s%s", e->e_id, p, buf);
+
+#  else		/* we have a very short log buffer size */
+
+	l = SYSLOG_BUFSIZE - 40;
+	p = e->e_to;
+	while (strlen(p) >= l)
+	{
+		register char *q = strchr(p + l, ',');
+
+		if (q == NULL)
+			break;
+		syslog(LOG_INFO, "%s: to=%.*s [more]",
+			e->e_id, ++q - p, p);
+		p = q;
+	}
+	syslog(LOG_INFO, "%s: to=%s", e->e_id, p);
+
+	if (ctladdr != NULL)
+	{
+		bp = buf;
+		strcpy(buf, "ctladdr=");
+		bp += strlen(buf);
+		strcpy(bp, shortenstring(ctladdr->q_paddr, 83));
+		bp += strlen(buf);
+		if (bitset(QGOODUID, ctladdr->q_flags))
+		{
+			(void) sprintf(bp, " (%d/%d)",
+					ctladdr->q_uid, ctladdr->q_gid);
+			bp += strlen(bp);
+		}
+		syslog(LOG_INFO, "%s: %s", e->e_id, buf);
+	}
+	syslog(LOG_INFO, "%s: delay=%s",
+		e->e_id, pintvl(curtime() - e->e_ctime, TRUE));
+
+	if (m != NULL)
+		syslog(LOG_INFO, "%s: mailer=%s", e->e_id, m->m_name);
+
+	if (mci != NULL && mci->mci_host != NULL)
+	{
+# ifdef DAEMON
+		extern SOCKADDR CurHostAddr;
+# endif
+
+		(void) strcpy(buf, mci->mci_host);
+
+# ifdef DAEMON
+		(void) strcat(buf, " (");
+		(void) strcat(buf, anynet_ntoa(&CurHostAddr));
+		(void) strcat(buf, ")");
+# endif
+		syslog(LOG_INFO, "%s: relay=%s", e->e_id, buf);
+	}
+	else
+	{
+		char *p = macvalue('h', e);
+
+		if (p != NULL && p[0] != '\0')
+			syslog(LOG_INFO, "%s: relay=%s", e->e_id, p);
+	}
+
+	strcpy(bp, ", stat=");
+	bp += strlen(bp);
+
+	syslog(LOG_INFO, "%s: stat=%s", e->e_id, shortenstring(stat, 63));
+#  endif /* short log buffer */
 # endif /* LOG */
 }
 /*
