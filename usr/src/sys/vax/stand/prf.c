@@ -83,11 +83,9 @@ number:
 		printn((u_long)b, *s++);
 		any = 0;
 		if (b) {
-			putchar('<');
 			while (i = *s++) {
 				if (b & (1 << (i-1))) {
-					if (any)
-						putchar(',');
+					putchar(any? ',' : '<');
 					any = 1;
 					for (; (c = *s) > 32; s++)
 						putchar(c);
@@ -95,7 +93,8 @@ number:
 					for (; *s > 32; s++)
 						;
 			}
-			putchar('>');
+			if (any)
+				putchar('>');
 		}
 		break;
 
@@ -135,12 +134,6 @@ printn(n, b)
 
 /*
  * Print a character on console.
- * Attempts to save and restore device
- * status.
- *
- * Whether or not printing is inhibited,
- * the last MSGBUFS characters
- * are saved in msgbuf for inspection later.
  */
 putchar(c)
 	register c;
@@ -188,7 +181,6 @@ gets(buf)
 	lp = buf;
 	for (;;) {
 		c = getchar() & 0177;
-	store:
 		switch(c) {
 		case '\n':
 		case '\r':
@@ -196,6 +188,12 @@ gets(buf)
 			*lp++ = '\0';
 			return;
 		case '\b':
+			if (lp > buf) {
+				lp--;
+				putchar(' ');
+				putchar('\b');
+			}
+			continue;
 		case '#':
 		case '\177':
 			lp--;
