@@ -1,5 +1,5 @@
 /*
-char id_err[] = "@(#)err.c	1.3";
+char id_err[] = "@(#)err.c	1.4";
  *
  * file i/o error and initialization routines
  */
@@ -45,8 +45,8 @@ int lcount,line_len;
 extern char *sys_errlist[];
 extern int sys_nerr;
 
-#include "f_errlist.h"
-int f_nerr = MAXERR - F_ER;
+extern char *f_errlist[];
+extern int f_nerr;
 
 
 fatal(n,s) char *s;
@@ -59,7 +59,7 @@ fatal(n,s) char *s;
 		fprintf(stderr,"%s: [%d] end of file\n",s,n);
 	else if(n>=0 && n<sys_nerr)
 		fprintf(stderr,"%s: [%d] %s\n",s,n,sys_errlist[n]);
-	else if(n>=F_ER && n<MAXERR)
+	else if(n>=F_ER && n<F_MAXERR)
 		fprintf(stderr,"%s: [%d] %s\n",s,n,f_errlist[n-F_ER]);
 	else
 		fprintf(stderr,"%s: [%d] unknown error number\n",s,n);
