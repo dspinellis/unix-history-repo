@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)sysline.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)sysline.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -1236,6 +1236,7 @@ sysrup(hp)
 {
 	char filename[100];
 	struct whod wd;
+#define WHOD_HDR_SIZE (sizeof (wd) - sizeof (wd.wd_we))
 	static char buffer[50];
 	time_t now;
 
@@ -1257,7 +1258,7 @@ sysrup(hp)
 	if (hp->rh_file < 0)
 		return sprintf(buffer, "%s?", hp->rh_host);
 	(void) lseek(hp->rh_file, (off_t)0, 0);
-	if (read(hp->rh_file, (char *)&wd, sizeof wd) != sizeof wd)
+	if (read(hp->rh_file, (char *)&wd, WHOD_HDR_SIZE) != WHOD_HDR_SIZE)
 		return sprintf(buffer, "%s ?", hp->rh_host);
 	(void) time(&now);
 	if (now - wd.wd_recvtime > DOWN_THRESHOLD) {
