@@ -1,13 +1,12 @@
 int	trc = -1;
 int	trcw = 0;
-#define	D(i)	if (trc&(1<<i)) { if (trcw&(1<<i)) DELAY(1000); } else
 int	csdel0 = 30;
 int	csdel1 = 0;
 int	csdel2 = 0;
 int	asdel = 500;
 int	csdel3 = 100;
 int	softas;
-/*	%H%	3.8	%G%	*/
+/*	%H%	3.9	%G%	*/
 
 /*
  * Emulex UNIBUS disk driver with overlapped seeks and ECC recovery.
@@ -260,10 +259,6 @@ register struct buf *bp;
 	dp = &uputab[unit];
 	(void) spl5();
 	disksort(dp, bp);
-#ifdef UTRACE
-D(1)	ttime();
-D(2)	trace("upstrat bn %d unit %d\n", bp->b_blkno, unit);
-#endif
 	if (dp->b_active == 0) {
 		(void) upustart(unit);
 		if (uptab.b_actf && uptab.b_active == 0)
@@ -292,10 +287,6 @@ register unit;
 		softas |= 1<<unit;
 		return;
 	}
-#ifdef UTRACE
-D(3)	ttime();
-D(4)	trace("upustart %d active %d", unit, uputab[unit].b_active);
-#endif
 	/*
 	 * Whether or not it was before, this unit is no longer busy.
 	 * Check to see if there is (still or now) a request in this
@@ -318,9 +309,6 @@ D(4)	trace("upustart %d active %d", unit, uputab[unit].b_active);
 	 * the drive, preset it and put in 16bit/word mode.
 	 */
 	if ((upaddr->upds & VV) == 0) {
-#ifdef UTRACE
-D(5)		trace(" not VV");
-#endif
 		upaddr->upcs1 = IE|DCLR|GO;
 		DELAY(idelay);
 		upaddr->upcs1 = IE|PRESET|GO;
@@ -380,10 +368,6 @@ D(5)		trace(" not VV");
 		goto done;
 
 search:
-#ifdef UTRACE
-D(6)	trace(" search %d@%d to %d@%d", upaddr->updc, (upaddr->upla>>6),
-	    cn, sn);
-#endif
 	upaddr->updc = cn;
 	upaddr->upda = sn;
 	upaddr->upcs1 = IE|SEARCH|GO;
@@ -405,9 +389,6 @@ done:
 	 * we won't get called again (by upintr() because upas&(1<<unit))
 	 * and link us onto the chain of ready disks.
 	 */
-#ifdef UTRACE
-D(7)	trace(" done");
-#endif
 	dp->b_active = 2;
 	dp->b_forw = NULL;
 	if (uptab.b_actf == NULL)
@@ -418,9 +399,6 @@ D(7)	trace(" done");
 
 out:
 	if (csdel1) DELAY(csdel1);
-#ifdef UTRACE
-D(8)	trace("\n");
-#endif
 	return (didie);
 }
 
@@ -437,10 +415,6 @@ upstart()
 
 loop:
 	if (csdel2) DELAY(csdel2);
-#ifdef UTRACE
-D(9)	ttime();
-D(10)	trace("upstart");
-#endif
 	/*
 	 * Pick a drive off the queue of ready drives, and
 	 * perform the first transfer on its queue.
@@ -449,12 +423,8 @@ D(10)	trace("upstart");
 	 * are not present and on-line, for which we completely clear the
 	 * request queue.
 	 */
-	if ((dp = uptab.b_actf) == NULL) {
-#ifdef UTRACE
-D(11)		trace("\n");
-#endif
+	if ((dp = uptab.b_actf) == NULL)
 		return (0);
-	}
 	if ((bp = dp->b_actf) == NULL) {
 		uptab.b_actf = dp->b_forw;
 		goto loop;
@@ -473,13 +443,7 @@ D(11)		trace("\n");
 	tn = sn/NSECT;
 	sn %= NSECT;
 	upaddr = UPADDR;
-#ifdef UTRACE
-D(12)	trace(" unit %d", dn);
-#endif
 	if ((upaddr->upcs2 & 07) != dn) {
-#ifdef UTRACE
-D(13)		trace(" select");
-#endif
 		upaddr->upcs2 = dn;
 		DELAY(sdelay);
 		nwaitcs2++;
@@ -493,9 +457,6 @@ D(13)		trace(" select");
 	 * (Then on to any other ready drives.)
 	 */
 	if ((upaddr->upds & (DPR|MOL)) != (DPR|MOL)) {
-#ifdef UTRACE
-D(14)		trace(" !(DPR && MOL)");
-#endif
 		uptab.b_active = 0;
 		uptab.b_errcnt = 0;
 		dp->b_actf = bp->av_forw;
@@ -510,9 +471,6 @@ D(14)		trace(" !(DPR && MOL)");
 	 * begin to try offsetting the heads to recover the data.
 	 */
 	if (uptab.b_errcnt >= 16) {
-#ifdef UTRACE
-D(15)		trace(" offset");
-#endif
 		upaddr->upof = up_offset[uptab.b_errcnt & 017] | FMT22;
 		upaddr->upcs1 = IE|OFFSET|GO;
 		DELAY(idelay);
@@ -524,11 +482,6 @@ D(15)		trace(" offset");
 	 * 2 bits of the UNIBUS address from the information
 	 * returned by ubasetup() for the cs1 register bits 8 and 9.
 	 */
-#ifdef UTRACE
-D(16)	trace(" %s %d.%d@%d cnt %d ba %x\n",
-	    (bp->b_flags&B_READ) ? "read" : "write",
-	    cn, tn, sn, bp->b_bcount, up_ubinfo & 0x3ffff);
-#endif
 	upaddr->updc = cn;
 	upaddr->upda = (tn << 8) + sn;
 	upaddr->upba = up_ubinfo;
@@ -539,9 +492,6 @@ D(16)	trace(" %s %d.%d@%d cnt %d ba %x\n",
 	else
 		cmd |= IE|WCOM|GO;
 	upaddr->upcs1 = cmd;
-#ifdef notdef
-	if (csdel3) DELAY(csdel3);
-#endif
 	/*
 	 * This is a controller busy situation.
 	 * Record in dk slot NUP+DK_N (after last drive)
@@ -578,10 +528,6 @@ upintr()
 	int osoftas;
 	int needie = 1;
 
-#ifdef UTRACE
-D(17)	ttime();
-D(18)	trace("upintr as %d act %d %d %d;", as, uptab.b_active, uputab[0].b_active, uputab[1].b_active);
-#endif
 	if (uptab.b_active) {
 		/*
 		 * The drive is transferring, thus the hardware
@@ -589,9 +535,6 @@ D(18)	trace("upintr as %d act %d %d %d;", as, uptab.b_active, uputab[0].b_active
 		 * completes; check for it anyways.
 		 */
 		if ((upaddr->upcs1 & RDY) == 0) {
-#ifdef UTRACE
-D(19)			trace(" !RDY");
-#endif
 			printf("!RDY: cs1 %o, ds %o, wc %d\n", upaddr->upcs1,
 			    upaddr->upds, upaddr->upwc);
 printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1].b_active);
@@ -608,9 +551,6 @@ printf("as=%d act %d %d %d\n", as, uptab.b_active, uputab[0].b_active, uputab[1]
 		else if (DK_N+unit <= DK_NMAX)
 			dk_busy &= ~(1<<(DK_N+unit));
 		if (upaddr->upcs1 & TRE) {
-#ifdef UTRACE
-D(20)			trace(" TRE");
-#endif
 			/*
 			 * An error occurred, indeed.  Select this unit
 			 * to get at the drive status (a SEARCH may have
@@ -675,22 +615,13 @@ D(20)			trace(" TRE");
 		 * on this drive with the upustart routine (if any).
 		 */
 		if (uptab.b_active) {
-#ifdef UTRACE
-D(21)			trace(" unit %d", unit);
-#endif
 			if ((upaddr->upcs2 & 07) != unit) {
-#ifdef UTRACE
-D(22)				trace(" select");
-#endif
 				upaddr->upcs2 = unit;
 				DELAY(sdelay);
 				nwaitcs2++;
 			} else
 				neasycs2++;
 			if (uptab.b_errcnt >= 16) {
-#ifdef UTRACE
-D(23)				trace(" rtc");
-#endif
 				upaddr->upcs1 = RTC|GO|IE;
 				DELAY(idelay);
 				while (upaddr->upds & PIP)
@@ -712,18 +643,12 @@ D(23)				trace(" rtc");
 		as &= ~(1<<unit);
 		softas &= ~(1<<unit);
 		ubafree(up_ubinfo), up_ubinfo = 0;
-	}
-#ifndef notdef
-	else {
+	} else {
 		if (upaddr->upcs1 & TRE) {
-#ifdef UTRACE
-D(24)			trace(" TRE");
-#endif
 			upaddr->upcs1 = TRE;
 			DELAY(idelay);
 		}
 	}
-#endif
 	/*
 	 * If we have a unit with an outstanding SEARCH,
 	 * and the hardware indicates the unit requires attention,
@@ -731,45 +656,23 @@ D(24)			trace(" TRE");
 	 * Finally, if the controller is not transferring
 	 * start it if any drives are now ready to transfer.
 	 */
-#ifdef UTRACE
-D(25)	trace("\n");
-#endif
 	as |= softas;
 	osoftas = softas;
 	softas = 0;
 	for (unit = 0; unit < NUP; unit++)
-		if ((as|osoftas) & (1<<unit))
-/*
-			if (uputab[unit].b_active == 1) {
-*/
-			{
-				if (as & (1<<unit)) {
+		if ((as|osoftas) & (1<<unit)) {
+			if (as & (1<<unit)) {
 				upaddr->upas = 1<<unit;
-#ifdef UTRACE
-D(26)				trace("as clear %d\n", unit);
-#endif
 				if (asdel) DELAY(asdel);
-				}
-				if (upustart(unit))
-					needie = 0;
 			}
-/*
-			} else {
-				upaddr->upas = 1<<unit;
-#ifdef UTRACE
-D(27)				trace("spurious as clear %d\n", unit);
-#endif
-				DELAY(1000);
-			}
-*/
+			if (upustart(unit))
+				needie = 0;
+		}
 	if (uptab.b_actf && uptab.b_active == 0)
 		if (upstart())
 			needie = 0;
 out:
 	if (needie) {
-#ifdef UTRACE
-D(28)		trace("upintr set IE\n");
-#endif
 		upaddr->upcs1 = IE;
 	}
 }
