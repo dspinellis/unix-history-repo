@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.39 (Berkeley) %G%
+ *	@(#)mount.h	7.40 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -208,35 +208,18 @@ struct fhandle {
 };
 typedef struct fhandle	fhandle_t;
 
-/*
- * Network address hash list element
- */
-union nethostaddr {
-	u_long had_inetaddr;
-	struct mbuf *had_nam;
-};
-
-struct netaddrhash {
-	struct netaddrhash *neth_next;
-	struct ucred	neth_anon;
-	u_short		neth_family;
-	union nethostaddr neth_haddr;
-	union nethostaddr neth_hmask;
-	int		neth_exflags;
-};
-#define	neth_inetaddr	neth_haddr.had_inetaddr
-#define	neth_inetmask	neth_hmask.had_inetaddr
-#define	neth_nam	neth_haddr.had_nam
-#define	neth_msk	neth_hmask.had_nam
+#ifdef KERNEL
+#include <net/radix.h>
 
 /*
- * Network address hashing defs.
+ * Network address lookup element
  */
-#define	NETHASHSZ	8	/* Must be a power of 2 <= 256 */
-#define	NETMASK_HASH	NETHASHSZ /* Last hash table element is for networks */
-#define	NETADDRHASH(a)	\
-	(((a)->sa_family == AF_INET) ? ((a)->sa_data[5] & (NETHASHSZ - 1)) : \
-	 (((a)->sa_family == AF_ISO) ? iso_addrhash(a) : 0))
+struct netcred {
+	struct	radix_node netc_rnodes[2];
+	int	netc_exflags;
+	struct	ucred netc_anon;
+};
+#endif /* KERNEL */
 
 /*
  * Arguments to mount UFS-based filesystems
