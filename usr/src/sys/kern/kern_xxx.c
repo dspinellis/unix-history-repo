@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_xxx.c	7.1 (Berkeley) %G%
+ *	@(#)kern_xxx.c	7.2 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -69,7 +69,7 @@ reboot()
 	};
 
 	if (suser())
-		boot(RB_BOOT, ((struct a *)u.u_ap)->opt);
+		boot(((struct a *)u.u_ap)->opt);
 }
 
 #ifdef COMPAT
