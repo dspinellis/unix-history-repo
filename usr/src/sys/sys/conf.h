@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.h	7.1 (Berkeley) %G%
+ *	@(#)conf.h	7.1.1.1 (Berkeley) %G%
  */
 
 /*
@@ -20,6 +20,7 @@ struct bdevsw
 	int	(*d_open)();
 	int	(*d_close)();
 	int	(*d_strategy)();
+	int	(*d_ioctl)();
 	int	(*d_dump)();
 	int	(*d_psize)();
 	int	d_flags;
@@ -76,6 +77,10 @@ struct swdevt
 	dev_t	sw_dev;
 	int	sw_freed;
 	int	sw_nblks;
+#ifdef SECSIZE
+	int	sw_blksize;
+	int	sw_bshift;
+#endif SECSIZE
 };
 #ifdef KERNEL
 struct	swdevt swdevt[];

@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)buf.h	7.3 (Berkeley) %G%
+ *	@(#)buf.h	7.3.1.1 (Berkeley) %G%
  */
 
 /*
@@ -59,6 +59,9 @@ struct buf
 	    daddr_t *b_daddr;		/* indirect block */
 	} b_un;
 	daddr_t	b_blkno;		/* block # on device */
+#ifdef SECSIZE
+	long	b_blksize;		/* size of device blocks */
+#endif SECSIZE
 	long	b_resid;		/* words not transferred after error */
 #define	b_errcnt b_resid		/* while i/o in progress: # retries */
 	struct  proc *b_proc;		/* proc doing physical or swap I/O */
@@ -74,8 +77,14 @@ struct buf
 #define	BQ_EMPTY	3		/* buffer headers with no memory */
 
 #ifdef	KERNEL
+#ifdef SECSIZE
+#define	BUFHSZ		512
+#define	MINSECSIZE	512
+#define RND	(MAXBSIZE/MINSECSIZE)
+#else SECSIZE
 #define	BUFHSZ	512
 #define RND	(MAXBSIZE/DEV_BSIZE)
+#endif SECSIZE
 #if	((BUFHSZ&(BUFHSZ-1)) == 0)
 #define	BUFHASH(dev, dblkno)	\
 	((struct buf *)&bufhash[((int)(dev)+(((int)(dblkno))/RND))&(BUFHSZ-1)])

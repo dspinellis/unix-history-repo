@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)fs.h	7.2 (Berkeley) %G%
+ *	@(#)fs.h	7.2.1.1 (Berkeley) %G%
  */
 
 /*
@@ -28,11 +28,16 @@
  * the ``cgbase(fs, cg)'' macro.
  *
  * The first boot and super blocks are given in absolute disk addresses.
+ * The byte-offset forms are preferred, as they don't imply a sector size.
  */
 #define BBSIZE		8192
 #define SBSIZE		8192
+#define	BBOFF		((off_t)(0))
+#define	SBOFF		((off_t)(BBOFF + BBSIZE))
+#ifndef SECSIZE
 #define	BBLOCK		((daddr_t)(0))
 #define	SBLOCK		((daddr_t)(BBLOCK + BBSIZE / DEV_BSIZE))
+#endif SECSIZE
 
 /*
  * Addresses stored in inodes are capable of addressing fragments
@@ -198,7 +203,8 @@ struct	fs
 	char   	fs_ronly;   		/* mounted read-only flag */
 	char   	fs_flags;   		/* currently unused flag */
 	char	fs_fsmnt[MAXMNTLEN];	/* name mounted on */
-	long	fs_sparecon[32];	/* reserved for future constants */
+	long	fs_dbsize;		/* hardware sector size */
+	long	fs_sparecon[31];	/* reserved for future constants */
 /* these fields retain the current block allocation info */
 	long	fs_cgrotor;		/* last cg searched */
 	struct	csum *fs_csp[MAXCSBUFS];/* list of fs_cs info buffers */
