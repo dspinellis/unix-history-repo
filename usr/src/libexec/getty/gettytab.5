@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gettytab.5	6.3 (Berkeley) %G%
+.\"	@(#)gettytab.5	6.4 (Berkeley) %G%
 .\"
 .TH GETTYTAB 5 ""
 .UC 5
@@ -44,7 +44,7 @@ no entry in the table obtained, nor one in the special
 table.
 .nf
 
-.ta \w'k0-k9  'u +\w'Type  'u +\w'``/bin/login"  'u
+.ta \w'k0-k9  'u +\w'Type  'u +\w'``/usr/bin/login"  'u
 \fBName	Type	Default	Description\fR
 ap	bool	false	terminal uses any parity
 bd	num	0	backspace delay
@@ -79,7 +79,7 @@ kl	str	^U	kill character
 lc	bool	false	terminal has lower case
 lm	str	login:	login prompt
 ln	str	^V	``literal next'' character
-lo	str	/bin/login	program to exec when name obtained
+lo	str	/usr/bin/login	program to exec when name obtained
 nd	num	0	newline (line-feed) delay
 nl	bool	false	terminal has (or might have) a newline character
 nx	str	default	next table (for auto speed selection)
@@ -178,7 +178,7 @@ Surplus '@' and '#' characters are ignored.
 When getty execs the login process, given
 in the
 .B lo
-string (usually "/bin/login"), it will have set
+string (usually "/usr/bin/login"), it will have set
 the enviroment to include the terminal type, as indicated
 by the
 .B tt
