@@ -6,7 +6,7 @@ PUSHDIVERT(-1)
 #
 # %sccs.include.redist.sh%
 #
-ifdef(`LOCAL_MAILER_FLAGS',, `define(`LOCAL_MAILER_FLAGS', `rn')')
+ifdef(`LOCAL_MAILER_FLAGS',, `define(`LOCAL_MAILER_FLAGS', `rmn')')
 ifdef(`LOCAL_MAILER_PATH',, `define(`LOCAL_MAILER_PATH', /bin/mail)')
 ifdef(`LOCAL_MAILER_ARGS',, `define(`LOCAL_MAILER_ARGS', `mail -d $u')')
 ifdef(`LOCAL_SHELL_FLAGS',, `define(`LOCAL_SHELL_FLAGS', `eu')')
@@ -18,9 +18,9 @@ POPDIVERT
 ###   Local and Program Mailer specification   ###
 ##################################################
 
-VERSIONID(`@(#)local.m4	8.3 (Berkeley) %G%')
+VERSIONID(`@(#)local.m4	8.4 (Berkeley) %G%')
 
-Mlocal,		P=LOCAL_MAILER_PATH, F=CONCAT(`lsDFMm', LOCAL_MAILER_FLAGS), S=10, R=20,
+Mlocal,		P=LOCAL_MAILER_PATH, F=CONCAT(`lsDFM', LOCAL_MAILER_FLAGS), S=10, R=20,
 		A=LOCAL_MAILER_ARGS
 Mprog,		P=LOCAL_SHELL_PATH, F=CONCAT(`lsDFM', LOCAL_SHELL_FLAGS), S=10, R=20, D=$z:/,
 		A=LOCAL_SHELL_ARGS
