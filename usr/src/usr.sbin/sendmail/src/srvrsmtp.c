@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	6.14 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.15 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	6.14 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	6.15 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -256,16 +256,16 @@ smtp(e)
 			if (p == NULL)
 				break;
 			if (setjmp(TopFrame) > 0)
+			{
+				/* this failed -- undo work */
+				if (InChild)
+					finis();
 				break;
+			}
 			QuickAbort = TRUE;
 			setsender(p, e);
-			if (Errors == 0)
-			{
-				message("250", "Sender ok");
-				gotmail = TRUE;
-			}
-			else if (InChild)
-				finis();
+			message("250", "Sender ok");
+			gotmail = TRUE;
 			break;
 
 		  case CMDRCPT:		/* rcpt -- designate recipient */
