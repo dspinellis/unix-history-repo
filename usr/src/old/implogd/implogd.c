@@ -1,4 +1,4 @@
-/*	implogd.c	4.1	82/04/04	*/
+/*	implogd.c	4.2	82/10/10	*/
 
 #include <time.h>
 #include <sgtty.h>
@@ -40,11 +40,21 @@ main(argc, argv)
 	argc--, argv++;
 	if (argc > 0 && !strcmp(argv[0], "-d"))
 		options |= SO_DEBUG;
-	s = open("/dev/tty", 2);
-	if (s >= 0) {
-		ioctl(s, TIOCNOTTY, 0);
-		close(s);
+#ifndef DEBUG
+	if (fork())
+		exit(0);
+	for (s = 0; s < 10; s++)
+		(void) close(t);
+	(void) open("/", 0);
+	(void) dup2(0, 1);
+	(void) dup2(0, 2);
+	{ int tt = open("/dev/tty", 2);
+	  if (tt > 0) {
+		ioctl(tt, TIOCNOTTY, 0);
+		close(tt);
+	  }
 	}
+#endif
 	log = open(LOGFILE, 1);
 	if (log < 0)
 		exit(1);

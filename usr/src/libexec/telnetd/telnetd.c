@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	4.8 82/10/07";
+static char sccsid[] = "@(#)telnetd.c	4.9 82/10/10";
 #endif
 
 /*
@@ -68,6 +68,21 @@ main(argc, argv)
 		}
 	}
 	sin.sin_port = htons(sin.sin_port);
+#ifndef DEBUG
+	if (fork())
+		exit(0);
+	for (s = 0; s < 10; s++)
+		(void) close(s);
+	(void) open("/", 0);
+	(void) dup2(0, 1);
+	(void) dup2(0, 2);
+	{ int tt = open("/dev/tty", 2);
+	  if (tt > 0) {
+		ioctl(tt, TIOCNOTTY, 0);
+		close(tt);
+	  }
+	}
+#endif
 	for (;;) {
 		errno = 0;
 		if ((s = socket(SOCK_STREAM, 0, &sin, options)) < 0) {
