@@ -100,7 +100,12 @@ struct pr_advice *advice;
 	if (advice->portsize > 1)
 	    aport = ntohs(lport);
 	else
+	{
+	    if (lport != (lport & 0xff))
+		return(EINVAL);	/* must be 8 bits */
+
 	    aport = lport;	/* a char is a char */
+	}
 
 	/*
 	 *  really only a worry for byte size ports
