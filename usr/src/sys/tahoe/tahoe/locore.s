@@ -1,4 +1,4 @@
-/*	locore.s	1.25	88/05/06	*/
+/*	locore.s	1.26	88/05/19	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -663,7 +663,7 @@ start:
 /* clear memory from kernel bss and pages for proc 0 u. and page table */
 	movab	_edata,r6; andl2 $~SYSTEM,r6
 	movab	_end,r5; andl2 $~SYSTEM,r5
-#ifdef KDB
+#ifdef KADB
 	subl2	$4,r5
 1:	clrl	(r6); ACBL(r5,$4,r6,1b)		# clear just bss
 	addl2	$4,r5
@@ -1224,7 +1224,7 @@ ENTRY(savectx, 0)
 	clrl	r0
 	ret
 
-#ifdef KDB
+#ifdef KADB
 /*
  * C library -- reset, setexit
  *

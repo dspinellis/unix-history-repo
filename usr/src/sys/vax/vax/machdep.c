@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)machdep.c	7.12 (Berkeley) %G%
+ *	@(#)machdep.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -108,7 +108,7 @@ startup(firstaddr)
 #endif
 #endif
 
-#ifdef KDB
+#ifdef KADB
 	kdb_init();
 #endif
 	/*
