@@ -1,4 +1,5 @@
-static	char sccsid[] = "@(#)ld.c 4.4 %G%";
+static	char sccsid[] = "@(#)ld.c 4.5 %G%";
+
 /*
  * ld - string table version for VAX
  */
@@ -170,13 +171,19 @@ char	*tabstr;	/* string table for table of contents */
  * (historically) read from such a file at 2 different places at the
  * same time.  These structures are remnants from those days,
  * and now serve only to catch ``Premature EOF''.
+ * In order to make I/O more efficient, we provide routines which
+ * work in hardware page sizes. The associated constants are defined 
+ * as BLKSIZE, BLKSHIFT, and BLKMASK.
  */
+#define BLKSIZE 1024
+#define BLKSHIFT 10
+#define BLKMASK (BLKSIZE - 1)
 typedef struct {
 	short	*fakeptr;
 	int	bno;
 	int	nibuf;
 	int	nuser;
-	char	buff[BSIZE];
+	char	buff[BLKSIZE];
 } PAGE;
 
 PAGE	page[2];
@@ -1466,15 +1473,15 @@ top:
 		goto top;
 	}
 	if (n > BUFSIZ) {
-		take = n - n % BSIZE;
-		lseek(infil, (sp->bno+1)*BSIZE, 0);
+		take = n - n % BLKSIZE;
+		lseek(infil, (sp->bno+1)*BLKSIZE, 0);
 		if (take > sp->size || read(infil, loc, take) != take)
 			error(1, "premature EOF");
 		loc += take;
 		n -= take;
 		sp->size -= take;
 		sp->pos += take;
-		dseek(sp, (sp->bno+1+take/BSIZE)*BSIZE, -1);
+		dseek(sp, (sp->bno+1+take/BLKSIZE)*BLKSIZE, -1);
 		goto top;
 	}
 	*loc++ = get(sp);
@@ -1508,8 +1515,8 @@ long loc, s;
 	register b, o;
 	int n;
 
-	b = loc>>BSHIFT;
-	o = loc&BMASK;
+	b = loc>>BLKSHIFT;
+	o = loc&BLKMASK;
 	if (o&01)
 		error(1, "loader error; odd offset");
 	--sp->pno->nuser;
@@ -1519,7 +1526,7 @@ long loc, s;
 				if (page[0].bno < page[1].bno)
 					p = &page[0];
 			p->bno = b;
-			lseek(infil, loc & ~(long)BMASK, 0);
+			lseek(infil, loc & ~(long)BLKMASK, 0);
 			if ((n = read(infil, p->buff, sizeof(p->buff))) < 0)
 				n = 0;
 			p->nibuf = n;
@@ -1542,7 +1549,7 @@ STREAM *asp;
 
 	sp = asp;
 	if ((sp->nibuf -= sizeof(char)) < 0) {
-		dseek(sp, ((long)(sp->bno+1)<<BSHIFT), (long)-1);
+		dseek(sp, ((long)(sp->bno+1)<<BLKSHIFT), (long)-1);
 		sp->nibuf -= sizeof(char);
 	}
 	if ((sp->size -= sizeof(char)) <= 0) {
