@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)docmd.c	4.14 (Berkeley) 84/02/16";
+static	char *sccsid = "@(#)docmd.c	4.15 (Berkeley) 84/02/24";
 #endif
 
 #include "defs.h"
@@ -45,9 +45,9 @@ docmds(argc, argv)
 /*
  * Process commands for sending files to other machines.
  */
-doarrow(files, host, cmds)
+doarrow(files, rhost, cmds)
 	struct namelist *files;
-	char *host;
+	char *rhost;
 	struct subcmd *cmds;
 {
 	register struct namelist *f;
@@ -55,7 +55,7 @@ doarrow(files, host, cmds)
 	int n, ddir;
 
 	if (debug)
-		printf("doarrow(%x, %s, %x)\n", files, host, cmds);
+		printf("doarrow(%x, %s, %x)\n", files, rhost, cmds);
 
 	if (files == NULL) {
 		error("no files to be updated\n");
@@ -71,7 +71,7 @@ doarrow(files, host, cmds)
 		if (setjmp(env) != 0)
 			goto done;
 		signal(SIGPIPE, lostconn);
-		if (!makeconn(host))
+		if (!makeconn(rhost))
 			return;
 		if ((lfp = fopen(tmpfile, "w")) == NULL) {
 			fatal("cannot open %s\n", tmpfile);
@@ -111,7 +111,7 @@ done:
 	}
 	for (sc = cmds; sc != NULL; sc = sc->sc_next)
 		if (sc->sc_type == NOTIFY)
-			notify(tmpfile, host, sc->sc_args, 0);
+			notify(tmpfile, rhost, sc->sc_args, 0);
 	if (!nflag)
 		(void) unlink(tmpfile);
 }
@@ -131,7 +131,7 @@ makeconn(rhost)
 		printf("makeconn(%s)\n", rhost);
 
 	if (cur_host != NULL && strcmp(cur_host, rhost) == 0)
-		return;
+		return(1);
 
 	closeconn();
 
@@ -181,6 +181,9 @@ makeconn(rhost)
  */
 closeconn()
 {
+	if (debug)
+		printf("closeconn()\n");
+
 	if (rem >= 0) {
 		(void) write(rem, "\2\n", 2);
 		(void) close(rem);
