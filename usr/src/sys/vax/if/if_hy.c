@@ -1,26 +1,84 @@
-/*	if_hy.c	6.2	84/08/29	*/
+/*	@(#)if_hy.c	6.3 (Berkeley) %G% */
+
+/*
+ * 4.2 BSD Unix Kernel - Vax Network Interface Support
+ *
+ * $Header: if_hy.c,v 10.1 84/07/22 21:02:56 steveg Exp $
+ * $Locker:  $
+ *
+ * Modifications from Berkeley 4.2 BSD
+ * Copyright (c) 1983, Tektronix Inc.
+ * All Rights Reserved
+ *
+ * $Log:	if_hy.c,v $
+ *	Revision 10.1  84/07/22  21:02:56  steveg
+ *	define PI13 (moved from if_hyreg.h, somehow got dropped in the process)
+ *	rework hywatch to check for power fails first
+ *	
+ *	Revision 10.0  84/06/30  19:54:27  steveg
+ *	Big Build
+ *	
+ *	Revision 3.17  84/06/20  19:20:28  steveg
+ *	increment hy_ntime in hywatch
+ *	print out state name, csr, last command, and hy_flags when watchdog timer
+ *	expires
+ *	
+ *	Revision 3.16  84/06/20  19:09:34  steveg
+ *	turn on continuous logging by default
+ *	
+ *	Revision 3.15  84/05/30  22:19:09  steveg
+ *	changes to reflect new layout ot statistics data
+ *	
+ *	Revision 3.14  84/05/30  19:25:15  steveg
+ *	move driver states to if_hy.h so log printing programs can use them
+ *	
+ *	Revision 3.13  84/05/30  17:13:26  steveg
+ *	make it compile
+ *	
+ *	Revision 3.12  84/05/30  13:46:16  steveg
+ *	rework logging
+ *	
+ *	Revision 3.11  84/05/18  19:35:02  steveg
+ *	clear IFF_RUNNING and IFF_UP on unibus reset to force resource allocation
+ *	by the init routine
+ *	
+ *	Revision 3.10  84/05/04  12:14:44  steveg
+ *	more rework to make it actually work under 4.2
+ *	
+ *	Revision 3.9  84/05/01  23:34:52  steveg
+ *	fix typo so it compiles (unit -> ui->ui_unit)
+ *	
+ *	Revision 3.8  84/05/01  23:18:30  steveg
+ *	changes after talking with rickk
+ *	- check power off more closely
+ *	- support remote loopback through A710 adapters
+ *	- IMPLINK -> HYLINK
+ *	- return EHOSTUNREACH on hyroute failure
+ *	- bump if_collisions on abnormal interrupts that aren't input or output
+ *	
+ *
+ */
+
 
 #include "hy.h"
 #if NHY > 0
 
 /*
  * Network Systems Copropration Hyperchanel interface
- *
- * UNTESTED WITH 4.2
  */
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
-#include "param.h"
-#include "systm.h"
-#include "mbuf.h"
-#include "buf.h"
-#include "protosw.h"
-#include "socket.h"
-#include "vmmac.h"
-#include "errno.h"
-#include "time.h"
-#include "kernel.h"
-#include "ioctl.h"
+#include "../h/param.h"
+#include "../h/systm.h"
+#include "../h/mbuf.h"
+#include "../h/buf.h"
+#include "../h/protosw.h"
+#include "../h/socket.h"
+#include "../h/vmmac.h"
+#include "../h/errno.h"
+#include "../h/time.h"
+#include "../h/kernel.h"
+#include "../h/ioctl.h"
 
 #include "../net/if.h"
 #include "../net/netisr.h"
@@ -34,13 +92,24 @@
 #include "../vax/mtpr.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
-#include "if_hy.h"
-#include "if_hyreg.h"
-#include "if_uba.h"
 
-#define HYROUTE
-#define HYELOG
-#define	HYMTU	576
+/*
+ * configuration specific paramters
+ *	- change as appropriate for particular installaions
+ */
+#define	HYROUTE
+#define	HYELOG
+#define	HYLOG
+#define	HYMTU	1100
+#define PI13
+
+#ifdef	DEBUG
+#define	HYLOG
+#endif
+
+#include "../vaxif/if_hy.h"
+#include "../vaxif/if_hyreg.h"
+#include "../vaxif/if_uba.h"
 
 int	hyprobe(), hyattach(), hyinit(), hyioctl();
 int	hyoutput(), hyreset(), hywatch();
@@ -66,7 +135,6 @@ struct	hy_softc {
 	struct	ifuba hy_ifuba;		/* UNIBUS resources */
 	short	hy_flags;		/* flags */
 	short	hy_state;		/* driver state */
-	int	hy_ilen;		/* mp length on input */
 	int	hy_olen;		/* packet length on output */
 	int	hy_lastwcr;		/* last command's word count */
 	short	hy_savedstate;		/* saved for reissue after status */
@@ -80,69 +148,27 @@ struct	hy_softc {
 } hy_softc[NHY];
 
 #ifdef HYELOG
-#define HYE_MAX	0x18
-u_long	hy_elog[(HYE_MAX+1)*4];
+u_long	hy_elog[HYE_SIZE];
+#endif
+
+#ifdef HYLOG
+struct hy_log hy_log;
+#endif
+
+#ifdef HYROUTE
+struct hy_route hy_route[NHY];
 #endif
 
 #ifdef DEBUG
-#define printL	lprintf
-#define printD	if (hy_debug_flag) lprintf
+#define printL	printf
+#define printD	if (hy_debug_flag) printf
 int	hy_debug_flag = 0;
 /*
  * hy_nodebug bit 0x01	set hy_debug_flag on hycancel
  * hy_nodebug bit 0x02	set hy_debug_flag on command reissue
  * hy_nodebug bit 0x04	set hy_debug_flag on abnormal interrupt
- * hy_nodebug bit 0x08	set hy_debug_flag on hyouput
- * hy_nodebug bit 0x10	set hy_debug_flag on hyouput with associated data
  */
 int	hy_nodebug = 0x0;
-#else
-#define printD	hyvoid
-#endif
-
-/*
- * Requests for service (in order by descending priority).
- */
-#define RQ_ENDOP	001	/* end the last adapter function */
-#define RQ_REISSUE	002	/* reissue previous cmd after status */
-#define RQ_STATUS	004	/* get the status of the adapter */
-#define RQ_STATISTICS	010	/* get the statistics of the adapter */
-#define RQ_MARKDOWN	020	/* mark this adapter port down */
-#define RQ_MARKUP	040	/* mark this interface up */
-
-#define RQ_XASSOC	0100	/* associated data to transmit */
-
-/* 
- * Driver states.
- */
-#define	STARTUP		0	/* initial state (before fully there) */
-#define	IDLE		1	/* idle state */
-#define	STATSENT	2	/* status cmd sent to adapter */
-#define	ENDOPSENT	3	/* end operation cmd sent */
-#define	RECVSENT	4	/* input message cmd sent */
-#define	RECVDATASENT	5	/* input data cmd sent */
-#define	XMITSENT	6	/* transmit message cmd sent */
-#define	XMITDATASENT	7	/* transmit data cmd sent */
-#define	WAITING		8	/* waiting for messages */
-#define	CLEARSENT	9	/* clear wait for message cmd sent */
-#define MARKPORT	10	/* mark this host's adapter port down issued */
-#define RSTATSENT	11	/* read statistics cmd sent to adapter */
-
-#ifdef DEBUG
-char *hy_state_names[] = {
-	"Startup",
-	"Idle",
-	"Status Sent",
-	"End op Sent",
-	"Recieve Message Proper Sent",
-	"Recieve Data Sent",
-	"Transmit Message Proper Sent",
-	"Transmit Data Sent",
-	"Wait for Message Sent",
-	"Clear Wait for Message Sent",
-	"Mark Port Down Sent",
-	"Read Statistics Sent"
-};
 #endif
 
 #define SCANINTERVAL	10	/* seconds */
@@ -179,7 +205,7 @@ hyprobe(reg)
 	addr->hyd_csr |= S_CLRINT;	/* clear any stacked interrupts */
 #endif
 	addr->hyd_csr &= ~(S_IE | S_CLRINT);	/* disable further interrupts */
-	return(1);
+	return(sizeof(struct hydevice));
 }
 
 /*
@@ -192,11 +218,14 @@ hyattach(ui)
 {
 	register struct hy_softc *is = &hy_softc[ui->ui_unit];
 	register struct ifnet *ifp = &is->hy_if;
+	register struct sockaddr_in *sin;
 
 	ifp->if_unit = ui->ui_unit;
 	ifp->if_name = "hy";
 	ifp->if_mtu = HYMTU;
 	is->hy_state = STARTUP;		/* don't allow state transitions yet */
+	sin = (struct sockaddr_in *)&ifp->if_addr;
+	sin->sin_family = AF_INET;
 	ifp->if_init = hyinit;
 	ifp->if_ioctl = hyioctl;
 	ifp->if_output = hyoutput;
@@ -217,12 +246,15 @@ hyattach(ui)
 hyreset(unit, uban)
 	int unit, uban;
 {
-	register struct uba_device *ui = hyinfo[unit];
+	register struct uba_device *ui;
+	register struct hy_softc *is;
 
-	if (unit >= NHY || ui == 0 || ui->ui_alive == 0 ||
+	if (unit >= NHY || (ui = hyinfo[unit]) == 0 || ui->ui_alive == 0 ||
 	  ui->ui_ubanum != uban)
 		return;
 	printf(" hy%d", unit);
+	is = &hy_softc[unit];		/* force unibus resource allocation */
+	is->hy_if.if_flags &= ~(IFF_UP|IFF_RUNNING);
 	hyinit(unit);
 }
 
@@ -235,14 +267,17 @@ hyinit(unit)
 {
 	register struct hy_softc *is = &hy_softc[unit];
 	register struct uba_device *ui = hyinfo[unit];
+	register struct mbuf *m;
 	struct sockaddr_in *sin;
 	int s;
 
 	sin = (struct sockaddr_in *)&is->hy_if.if_addr;
-	if (in_netof(sin->sin_addr) == 0)
+	if (sin->sin_addr.s_addr == 0)		/* address still unknown */
 		return;
+	if (is->hy_if.if_flags & IFF_RUNNING)	/* just reset the device */
+		goto justreset;
 	if (if_ubainit(&is->hy_ifuba, ui->ui_ubanum,
-	    sizeof (struct hy_hdr), (int)btoc(HYMTU)) == 0) { 
+	    sizeof (struct hym_hdr), (int)btoc(HYMTU)) == 0) { 
 #ifdef DEBUG
 		if (hy_nodebug & 4)
 			hy_debug_flag = 1;
@@ -252,14 +287,27 @@ hyinit(unit)
 		return;
 	}
 	is->hy_if.if_flags |= IFF_RUNNING;
+
+justreset:
 	/*
-	 * Issue wait for message and start the state machine
+	 * remove any left over outgoing messages, reset the hardware and
+	 * start the state machine
 	 */
 	s = splimp();
+#ifdef HYLOG
+	hylog(HYL_RESET, 0, (char *)0);
+#endif
 	is->hy_state = IDLE;
 	is->hy_flags = RQ_STATUS | RQ_STATISTICS | RQ_MARKUP;
 	is->hy_retry = 0;
-	hyact(ui);
+	for(;;) {
+		IF_DEQUEUE(&is->hy_if.if_snd, m);
+		if (m != NULL)
+			m_freem(m);
+		else
+			break;
+	}
+	hycancel(ui);		/* also bumps the state machine */
 	splx(s);
 }
 
@@ -287,6 +335,22 @@ hystart(ui, cmd, count, ubaddr)
 		is->hy_savedcount = count;
 		is->hy_savedaddr = ubaddr;
 	}
+#ifdef PI13
+	if (addr->hyd_csr & S_POWEROFF) {
+		printf("hy%d: \"Soft\" Adapter Power Failure (hystart)\n", ui->ui_unit);
+		addr->hyd_csr |= S_POWEROFF;
+		DELAY(100);
+		if (addr->hyd_csr & S_POWEROFF) {
+			printf( "hy%d: \"Hard\" Adapter Power Failure, Network Shutdown (hystart)\n", ui->ui_unit);
+			if_down(&is->hy_if);
+			is->hy_if.if_flags &= ~IFF_UP;
+			is->hy_state = STARTUP;
+		} else {
+			printf("hy%d: Adapter Power Restored (hystart)\n", ui->ui_unit);
+		}
+		return;
+	}
+#endif
 	addr->hyd_bar = ubaddr & 0xffff;
 	addr->hyd_wcr = is->hy_lastwcr = -((count+1) >> 1);
 	addr->hyd_dbuf = cmd;
@@ -384,16 +448,16 @@ logit:
 			hycancel(ui);
 #ifdef PI13
 		} else if (addr->hyd_csr & S_POWEROFF) {
-			printf("hy%d: Power Off bit set, trying to reset\n",
-				unit);
+			printf("hy%d: \"Soft\" Adapter Power Failure (hyint)\n", unit);
 			addr->hyd_csr |= S_POWEROFF;
 			DELAY(100);
 			if (addr->hyd_csr & S_POWEROFF) {
+				printf( "hy%d: \"Hard\" Adapter Power Failure, Network Shutdown (hyint)\n", unit);
 				if_down(&is->hy_if);
+				is->hy_if.if_flags &= ~IFF_UP;
 				is->hy_state = STARTUP;
-				printf(
-				  "hy%d: Power Off Error, network shutdown\n",
-				  unit);
+			} else {
+				printf("hy%d: Adapter Power Restored (hyint)\n", unit);
 			}
 #endif
 		} else {
@@ -428,9 +492,8 @@ logit:
 			hy_debug_flag = 1;
 		printD("hy%d: abnormal interrupt, driver state \"%s\" (%d)\n",
 			unit, hy_state_names[is->hy_state], is->hy_state);
-		printD("\tflags 0x%x ilen %d olen %d lastwcr %d retry %d\n",
-			is->hy_flags, is->hy_ilen, is->hy_olen,
-			is->hy_lastwcr, is->hy_retry);
+		printD("\tflags 0x%x olen %d lastwcr %d retry %d\n",
+			is->hy_flags, is->hy_olen, is->hy_lastwcr, is->hy_retry);
 		printD("\tsaved: state %d count %d cmd 0x%x ptr 0x%x\n",
 			is->hy_savedstate, is->hy_savedcount,
 			is->hy_savedaddr, is->hy_savedcmd);
@@ -440,8 +503,10 @@ logit:
 #endif
 		if (is->hy_state == XMITSENT || is->hy_state == XMITDATASENT)
 			is->hy_if.if_oerrors++;
-		if (is->hy_state == RECVSENT || is->hy_state == RECVDATASENT)
+		else if (is->hy_state == RECVSENT || is->hy_state == RECVDATASENT)
 			is->hy_if.if_ierrors++;
+		else
+			is->hy_if.if_collisions++;	/* other errors */
 		if (is->hy_state == XMITDATASENT ||
 		    is->hy_state == RECVSENT ||
 		    is->hy_state == RECVDATASENT ||
@@ -479,6 +544,8 @@ logit:
 
 }
 
+int hyoutprint = 0;
+
 /*
  * Encapsulate a packet of type family for the local net.
  */
@@ -489,83 +556,25 @@ hyoutput(ifp, m0, dst)
 {
 	register struct hym_hdr *hym;
 	register struct mbuf *m;
+	register char *mp;
 #ifdef HYROUTE
-	register struct hyroute *r = &hy_route[ifp->if_unit];
+	register struct hy_route *r = &hy_route[ifp->if_unit];
 #endif
-	short dtype;		/* packet type */
-	int dhost;		/* destination adapter address */
-	int dlen;
-	int mplen = 0;		/* message proper length */
-	short loopback = 0;	/* hardware loopback requested */
+	int dlen;	/* packet size, incl hardware header, but not sw header */
 	int error = 0;
 	int s;
 
-#ifdef DEBUG
-	if (hy_nodebug & 8)
-		hy_debug_flag = 1;
-#endif
+	/*
+	 * Calculate packet length for later deciding whether it will fit
+	 * in a message proper or we also need associated data.
+	 */
 	dlen = 0;
 	for (m = m0; m; m = m->m_next)
 		dlen += m->m_len;
 	m = m0;
-	switch(dst->sa_family) {
-
-#ifdef INET
-	case AF_INET: {
-		register struct ip *ip = mtod(m, struct ip *);
-		register struct sockaddr_in *sin = (struct sockaddr_in *)dst;
-		register long hostaddr = in_lnaof(sin->sin_addr);
-
-		dhost = hostaddr & 0xffff;
-		dtype = HYLINK_IP;
-#ifdef DEBUG
-		printD("hy%d: output to host %x, dhost %x\n",
-			ifp->if_unit, sin->sin_addr.s_addr, dhost);
-#endif
-		/*
-		 * Debugging loopback support:
-		 * upper byte of 24 bit host number interpreted as follows
-		 *	0x00 --> no loopback
-		 *	0x01 --> hardware loop through remote adapter
-		 *	other --> software loop through remote ip layer
-		 */
-		if (hostaddr & 0xff0000) {
-			struct in_addr temp;
-
-			temp = ip->ip_dst;
-			ip->ip_dst = ip->ip_src;
-			ip->ip_src = temp;
-			if ((hostaddr & 0xff0000) == 0x10000)
-				loopback = H_LOOPBK;
-		}
-		/*
-		 * If entire packet won't fit in message proper, just
-		 * send hyperchannel hardware header and ip header in
-		 * message proper.  If that won't fit either, just send
-		 * the maximum message proper.
-		 *
-		 * This insures that the associated data is at least a
-		 * TCP/UDP header in length and thus prevents potential
-		 * problems with very short word counts.
-		 */
-		if (dlen > MPSIZE - sizeof (struct hy_hdr)) {
-			mplen = sizeof(struct hy_hdr) + (ip->ip_hl << 2);
-			if (mplen > MPSIZE)
-				mplen = MPSIZE;
-		}
-		break;
-	}
-#endif
-
-	default:
-		printf("hy%d: can't handle af%d\n", ifp->if_unit,
-			dst->sa_family);
-#ifdef DEBUG
-		if (hy_nodebug & 4)
-			hy_debug_flag = 1;
-#endif
-		error = EAFNOSUPPORT;
-		goto drop;
+	if (dst->sa_family == AF_HYLINK) {	/* don't add header */
+		dlen -= HYM_SWLEN;
+		goto headerexists;
 	}
 
 	/*
@@ -574,6 +583,7 @@ hyoutput(ifp, m0, dst)
 	 * If that should fail, drop this sucker.
 	 * No extra space for headers is allocated.
 	 */
+	mp = mtod(m, char *);	/* save pointer to real message */
 	if (m->m_off > MMAXOFF ||
 	    MMINOFF + sizeof(struct hym_hdr) > m->m_off) {
 		m = m_get(M_DONTWAIT, MT_HEADER);
@@ -589,68 +599,79 @@ hyoutput(ifp, m0, dst)
 		m->m_off -= sizeof(struct hym_hdr);
 		m->m_len += sizeof(struct hym_hdr);
 	}
+
+	dlen += sizeof(struct hym_hdr) - HYM_SWLEN;
+
 	hym = mtod(m, struct hym_hdr *);
-	hym->hym_mplen = mplen;
-	hym->hym_hdr.hyh_type = dtype;
-	hym->hym_hdr.hyh_off = 0;
-	hym->hym_hdr.hyh_from = htons((u_short)ifp->if_host[0]);
-	hym->hym_hdr.hyh_param = loopback;
-#ifdef HYROUTE
-	if (r->hyr_lasttime.tv_sec != 0) {
-		register struct hy_hash *rh;
-		register int i;
 
-		i = HYRHASH(dhost);
-		rh = &r->hyr_hash[i];
-		i = 0;
-		while (rh->hyr_key != dhost) {
-			rh++; i++;
-			if (rh > &r->hyr_hash[HYRSIZE])
-				rh = &r->hyr_hash[0];
-			if (rh->hyr_flags == 0 || i > HYRSIZE)
-				goto notfound;
+	bzero((caddr_t)hym, sizeof(struct hym_hdr));
+
+	switch(dst->sa_family) {
+
+#ifdef INET
+	case AF_INET: {
+		int i;
+
+		/*
+		 * if loopback address, swizzle ip header so when
+		 * it comes back it looks like it was addressed to us
+		 */
+		i = hyroute(ifp, (u_long)in_lnaof(((struct sockaddr_in *)dst)->sin_addr), hym);
+		if (i < 0)
+			goto notfound;
+		if (i > 0) {
+			struct in_addr temp;
+
+			temp.s_addr = ((struct ip *)mp)->ip_dst.s_addr;
+			((struct ip *)mp)->ip_dst.s_addr = ((struct ip *)mp)->ip_src.s_addr;
+			((struct ip *)mp)->ip_src.s_addr = temp.s_addr;
 		}
-		if (rh->hyr_flags & HYR_GATE) {
-			loopback = 0;	/* no hardware loopback on gateways */
-			i = rh->hyr_nextgate;
-			if (i >= rh->hyr_egate)
-				rh->hyr_nextgate = rh->hyr_pgate;
-			else
-				rh->hyr_nextgate++;
-			rh = &r->hyr_hash[r->hyr_gateway[i]];
-			if ((rh->hyr_flags & HYR_DIR) == 0)
-				goto notfound;
-		}
-		hym->hym_hdr.hyh_ctl = rh->hyr_ctl;
-		hym->hym_hdr.hyh_access = rh->hyr_access;
-		hym->hym_hdr.hyh_to = rh->hyr_dst;
-	} else {
-		hym->hym_hdr.hyh_ctl = H_XTRUNKS | H_RTRUNKS;
-		hym->hym_hdr.hyh_access = 0;
-		hym->hym_hdr.hyh_to = htons((u_short)dhost);
+		/*
+		 * If entire packet won't fit in message proper, just
+		 * send hyperchannel hardware header and ip header in
+		 * message proper.
+		 *
+		 * This insures that the associated data is at least a
+		 * TCP/UDP header in length and thus prevents potential
+		 * problems with very short word counts.
+		 */
+		if (dlen > MPSIZE)
+			hym->hym_mplen = sizeof(struct hy_hdr) + (((struct ip *)mp)->ip_hl << 2);
+		hym->hym_type = HYLINK_IP;
+		break;
 	}
-#else
-	hym->hym_hdr.hyh_ctl = H_XTRUNKS | H_RTRUNKS;
-	hym->hym_hdr.hyh_access = 0;
-	hym->hym_hdr.hyh_to = htons(dhost);
 #endif
 
-	if (hym->hym_mplen) {
-		hym->hym_hdr.hyh_ctl |= H_ASSOC;
+	default:
+		printf("hy%d: can't handle af%d\n", ifp->if_unit,
+			dst->sa_family);
+		error = EAFNOSUPPORT;
+		goto drop;
+	}
+
+
+headerexists:
+
+	/*
+	 * insure message proper is below the maximum
+	 */
+	if (hym->hym_mplen > MPSIZE || (dlen > MPSIZE && hym->hym_mplen == 0))
+		hym->hym_mplen = MPSIZE;
+
+	hym->hym_from = htons((u_short)ifp->if_host[0]);
+	if (hym->hym_mplen)
+		hym->hym_ctl |= H_ASSOC;
+	else
+		hym->hym_ctl &= ~H_ASSOC;
+	if (hyoutprint) printf("hy%d: output mplen=%x ctl=%x access=%x to=%x from=%x param=%x type=%x\n",
+		ifp->if_unit, hym->hym_mplen, hym->hym_ctl,
+		hym->hym_access, hym->hym_to, hym->hym_from,
+		hym->hym_param, hym->hym_type);
 #ifdef DEBUG
-		if (hy_nodebug & 16)
-			hy_debug_flag = 1;
-#endif
-	} else
-		hym->hym_hdr.hyh_ctl &= ~H_ASSOC;
-#ifdef DEBUG
-	printD("hy%d: output mplen=%x ctl=%x access=%x to=%x",
-		ifp->if_unit, hym->hym_mplen, hym->hym_hdr.hyh_ctl,
-		hym->hym_hdr.hyh_access, hym->hym_hdr.hyh_to);
-	printD(" (adapter %x) from=%x param=%x type=%x off=%x\n",
-		hym->hym_hdr.hyh_to_adapter,
-		hym->hym_hdr.hyh_from, hym->hym_hdr.hyh_param,
-		hym->hym_hdr.hyh_type, hym->hym_hdr.hyh_off);
+	printD("hy%d: output mplen=%x ctl=%x access=%x to=%x from=%x param=%x type=%x\n",
+		ifp->if_unit, hym->hym_mplen, hym->hym_ctl,
+		hym->hym_access, hym->hym_to, hym->hym_from,
+		hym->hym_param, hym->hym_type);
 #endif
 	s = splimp();
 	if (IF_QFULL(&ifp->if_snd)) {
@@ -665,10 +686,72 @@ hyoutput(ifp, m0, dst)
 	splx(s);
 	return (0);
 notfound:
-	error = ENETUNREACH;			/* XXX */
+	error = EHOSTUNREACH;
 drop:
 	m_freem(m);
 	return (error);
+}
+
+int
+hyroute(ifp, dest, hym)
+	register struct ifnet *ifp;
+	u_long dest;
+	register struct hym_hdr *hym;
+{
+#ifdef HYROUTE
+	register struct hy_route *rt = &hy_route[ifp->if_unit];
+	register struct hyr_hash *rhash;
+	register int i;
+#endif
+
+	hym->hym_param = 0;
+#ifdef HYROUTE
+	if (rt->hyr_lasttime != 0) {
+		i = HYRHASH(dest);
+		rhash = &rt->hyr_hash[i];
+		i = 0;
+		while (rhash->hyr_key != dest) {
+			if (rhash->hyr_flags == 0 || i > HYRSIZE)
+				return(-1);
+			rhash++; i++;
+			if (rhash >= &rt->hyr_hash[HYRSIZE])
+				rhash = &rt->hyr_hash[0];
+		}
+		if (rhash->hyr_flags & HYR_GATE) {
+			i = rhash->hyr_nextgate;
+			if (i >= rhash->hyr_egate)
+				rhash->hyr_nextgate = rhash->hyr_pgate;
+			else
+				rhash->hyr_nextgate++;
+			rhash = &rt->hyr_hash[rt->hyr_gateway[i]];
+			if ((rhash->hyr_flags & HYR_DIR) == 0)
+				return(-1);
+		} else if (rhash->hyr_flags & HYR_LOOP) {
+			hym->hym_param = H_LOOPBK;	/* adapter loopback */
+		} else if (rhash->hyr_flags & HYR_RLOOP) {
+			hym->hym_param = H_RLOOPBK;	/* A710 remote loopback */
+		}
+		hym->hym_ctl = rhash->hyr_ctl;
+		hym->hym_access = rhash->hyr_access;
+		hym->hym_to = rhash->hyr_dst;
+	} else {
+#endif
+		hym->hym_ctl = H_XTRUNKS | H_RTRUNKS;
+		hym->hym_access = 0;
+		hym->hym_to = htons((u_short)dest);
+		if (dest & 0x010000)
+			hym->hym_param = H_LOOPBK;	/* adapter loopback */
+		else if (dest & 0x020000)
+			hym->hym_param = H_RLOOPBK;	/* A710 remote loopback */
+#ifdef HYROUTE
+	}
+#endif
+
+	hym->hym_from = htons((u_short)ifp->if_host[0]);
+	if (hym->hym_param == 0)
+		return(0);
+	else
+		return(1);
 }
 
 hyact(ui)
@@ -707,8 +790,7 @@ actloop:
 		} else if (HYS_RECVDATA(addr)) {
 			is->hy_state = RECVSENT;
 			is->hy_retry = 0;
-			hystart(ui, HYF_INPUTMSG, MPSIZE,
-			    is->hy_ifuba.ifu_r.ifrw_info);
+			hystart(ui, HYF_INPUTMSG, MPSIZE, is->hy_ifuba.ifu_r.ifrw_info + HYM_SWLEN);
 		} else if (rq & RQ_REISSUE) {
 			is->hy_flags &= ~RQ_REISSUE;
 			is->hy_state = is->hy_savedstate;
@@ -737,8 +819,7 @@ actloop:
 				    (char *)hym);
 #endif
 				mplen = hym->hym_mplen;
-				if (hym->hym_hdr.hyh_to_adapter ==
-				    hym->hym_hdr.hyh_from_adapter)
+				if (hym->hym_to_adapter == hym->hym_from_adapter)
 					cmd = HYF_XMITLOCMSG;
 				else
 					cmd = HYF_XMITMSG;
@@ -748,13 +829,7 @@ actloop:
 					hyprintdata((char *)hym,
 					    sizeof (struct hym_hdr));
 #endif
-				/*
-				 * Strip off the software part of
-				 * the hyperchannel header
-				 */
-				m->m_off += sizeof(struct hym_data);
-				m->m_len -= sizeof(struct hym_data);
-				is->hy_olen = if_wubaput(&is->hy_ifuba, m);
+				is->hy_olen = if_wubaput(&is->hy_ifuba, m) - HYM_SWLEN;
 				if (is->hy_ifuba.ifu_flags & UBA_NEEDBDP)
 					UBAPURGE(is->hy_ifuba.ifu_uba,
 						is->hy_ifuba.ifu_w.ifrw_bdp);
@@ -765,13 +840,15 @@ actloop:
 				if (hy_debug_flag)
 					hyprintdata(
 					    is->hy_ifuba.ifu_w.ifrw_addr,
-					    is->hy_olen);
+					    is->hy_olen + HYM_SWLEN);
 #endif
-				hystart(ui, cmd,
-				    (mplen == 0) ? is->hy_olen : mplen,
-				    is->hy_ifuba.ifu_w.ifrw_info);
-				if (mplen != 0)
+				if (mplen == 0) {
+					is->hy_flags &= ~RQ_XASSOC;
+					mplen = is->hy_olen;
+				} else {
 					is->hy_flags |= RQ_XASSOC;
+				}
+				hystart(ui, cmd, mplen, is->hy_ifuba.ifu_w.ifrw_info + HYM_SWLEN);
 			} else if (rq & RQ_MARKDOWN) {
 				is->hy_flags &= ~(RQ_MARKUP | RQ_MARKDOWN);
 				is->hy_state = MARKPORT;
@@ -805,8 +882,6 @@ actloop:
 				ifp->if_host[0] =
 				  (is->hy_stat.hyc_uaddr << 8) |
 					PORTNUM(&is->hy_status);
-				sin->sin_addr =
-				   if_makeaddr(ifp->if_net, ifp->if_host[0]);
 				ifp->if_flags |= IFF_UP;
 				if_rtinit(ifp, RTF_UP);
 #ifdef HYLOG
@@ -845,7 +920,7 @@ actloop:
 			register int i;
 			
 			i = is->hy_status.hys_error;
-			if (i < HYE_MAX)
+			if (i > HYE_MAX)
 				i = HYE_MAX;
 			switch (is->hy_status.hys_last_fcn) {
 				case HYF_XMITLOCMSG:
@@ -864,26 +939,23 @@ actloop:
 		register struct hy_stat *p =
 			(struct hy_stat *)is->hy_ifuba.ifu_r.ifrw_addr;
 
-		is->hy_stat.hyc_msgcnt = ntohl(p->hyc_msgcnt);
-		is->hy_stat.hyc_dbcnt = ntohl(p->hyc_dbcnt);
-		is->hy_stat.hyc_tbusy = ntohl(p->hyc_tbusy);
-		is->hy_stat.hyc_hwret = ntohl(p->hyc_hwret);
-		is->hy_stat.hyc_crcbad = ntohl(p->hyc_crcbad);
-		is->hy_stat.hyc_mcret = ntohl(p->hyc_mcret);
-		is->hy_stat.hyc_tdabort = ntohl(p->hyc_tdabort);
-		is->hy_stat.hyc_atype[0] = p->hyc_atype[0];
-		is->hy_stat.hyc_atype[1] = p->hyc_atype[1];
-		is->hy_stat.hyc_atype[2] = p->hyc_atype[2];
-		is->hy_stat.hyc_uaddr = p->hyc_uaddr;
+		bcopy((caddr_t)p, (caddr_t)&is->hy_stat, sizeof(struct hy_stat));
 #ifdef DEBUG
-		printD(
-	"hy%d: statistics - msgcnt %d dbcnt %d hwret %d tbusy %d crcbad %d\n",
+
+		printD("hy%d: statistics - df0 %d df1 %d df2 %d df3 %d\n",
 			ui->ui_unit,
-			is->hy_stat.hyc_msgcnt, is->hy_stat.hyc_dbcnt,
-			is->hy_stat.hyc_tbusy, is->hy_stat.hyc_hwret,
-			is->hy_stat.hyc_crcbad);
-		printD("	mcret %d tdabort %d atype %x %x %x uaddr %x\n",
-			is->hy_stat.hyc_mcret, is->hy_stat.hyc_tdabort,
+			(is->hy_stat.hyc_df0[0]<<16) | (is->hy_stat.hyc_df0[1]<<8) | is->hy_stat.hyc_df0[2],
+			(is->hy_stat.hyc_df1[0]<<16) | (is->hy_stat.hyc_df1[1]<<8) | is->hy_stat.hyc_df1[2],
+			(is->hy_stat.hyc_df2[0]<<16) | (is->hy_stat.hyc_df2[1]<<8) | is->hy_stat.hyc_df2[2],
+			(is->hy_stat.hyc_df3[0]<<16) | (is->hy_stat.hyc_df3[1]<<8) | is->hy_stat.hyc_df3[2]);
+		printD("	ret0 %d ret1 %d ret2 %d ret3 %d\n",
+			(is->hy_stat.hyc_ret0[0]<<16) | (is->hy_stat.hyc_ret0[1]<<8) | is->hy_stat.hyc_ret0[2],
+			(is->hy_stat.hyc_ret1[0]<<16) | (is->hy_stat.hyc_ret1[1]<<8) | is->hy_stat.hyc_ret1[2],
+			(is->hy_stat.hyc_ret2[0]<<16) | (is->hy_stat.hyc_ret2[1]<<8) | is->hy_stat.hyc_ret2[2],
+			(is->hy_stat.hyc_ret3[0]<<16) | (is->hy_stat.hyc_ret3[1]<<8) | is->hy_stat.hyc_ret3[2]);
+		printD("	cancel %d abort %d atype %x %x %x uaddr %x\n",
+			(is->hy_stat.hyc_cancel[0]<<8) | is->hy_stat.hyc_cancel[1],
+			(is->hy_stat.hyc_abort[0]<<8) | is->hy_stat.hyc_abort[1],
 			is->hy_stat.hyc_atype[0], is->hy_stat.hyc_atype[1],
 			is->hy_stat.hyc_atype[2], is->hy_stat.hyc_uaddr);
 #endif
@@ -904,17 +976,18 @@ actloop:
 		break;
 
 	case RECVSENT: {
-		register struct hy_hdr *hyh;
+		register struct hym_hdr *hym;
 		register unsigned len;
 
 		if (is->hy_ifuba.ifu_flags & UBA_NEEDBDP)
 			UBAPURGE(is->hy_ifuba.ifu_uba,
 			    is->hy_ifuba.ifu_r.ifrw_bdp);
-		hyh = (struct hy_hdr *) (is->hy_ifuba.ifu_r.ifrw_addr);
+		hym = (struct hym_hdr *) (is->hy_ifuba.ifu_r.ifrw_addr);
 		len = (0xffff & (addr->hyd_wcr - is->hy_lastwcr)) << 1;
 		if (len > MPSIZE) {
 			printf("hy%d: RECVD MP > MPSIZE (%d)\n",
 			    ui->ui_unit, len);
+			is->hy_state = IDLE;
 #ifdef DEBUG
 			hy_debug_flag = 1;
 			printD("hy%d: csr = 0x%b, bar = 0x%x, wcr = 0x%x\n",
@@ -922,41 +995,41 @@ actloop:
 				addr->hyd_bar, addr->hyd_wcr);
 #endif
 		}
+		hym->hym_mplen = len;
 #ifdef DEBUG
 		printD("hy%d: recvd mp, len = %d, data = ", ui->ui_unit, len);
 		if (hy_debug_flag)
-			hyprintdata((char *)hyh, len);
+			hyprintdata((char *)hym, len + HYM_SWLEN);
 #endif
-		if (hyh->hyh_ctl & H_ASSOC) {
+		if (hym->hym_ctl & H_ASSOC) {
 			is->hy_state = RECVDATASENT;
-			is->hy_ilen = len;
 			is->hy_retry = 0;
 			hystart(ui, HYF_INPUTDATA,
-			    (int)(HYMTU-len+sizeof (struct hy_hdr)),
-			    (int)(is->hy_ifuba.ifu_r.ifrw_info + len));
+			    (int)(HYMTU + sizeof (struct hy_hdr) - len),
+			    (int)(HYM_SWLEN + is->hy_ifuba.ifu_r.ifrw_info + len));
 		} else {
-			hyrecvdata(ui, hyh, (int)len);
+			hyrecvdata(ui, hym, (int)len + HYM_SWLEN);
 			is->hy_state = IDLE;
 		}
 		break;
 	}
 
 	case RECVDATASENT: {
-		register struct hy_hdr *hyh;
+		register struct hym_hdr *hym;
 		register unsigned len;
 
 		if (is->hy_ifuba.ifu_flags & UBA_NEEDBDP)
 			UBAPURGE(is->hy_ifuba.ifu_uba,
 			    is->hy_ifuba.ifu_r.ifrw_bdp);
-		hyh = (struct hy_hdr *) (is->hy_ifuba.ifu_r.ifrw_addr);
+		hym = (struct hym_hdr *) (is->hy_ifuba.ifu_r.ifrw_addr);
 		len = (0xffff & (addr->hyd_wcr - is->hy_lastwcr)) << 1;
 #ifdef DEBUG
 		printD("hy%d: recvd assoc data, len = %d, data = ",
 			ui->ui_unit, len);
 		if (hy_debug_flag)
-			hyprintdata((char *)hyh + is->hy_ilen, len);
+			hyprintdata((char *)hym + hym->hym_mplen, len);
 #endif
-		hyrecvdata(ui, hyh, (int)(len + is->hy_ilen));
+		hyrecvdata(ui, hym, (int)(len + hym->hym_mplen + HYM_SWLEN));
 		is->hy_state = IDLE;
 		break;
 	}
@@ -978,7 +1051,7 @@ actloop:
 #endif
 			}
 			hystart(ui, HYF_XMITLSTDATA, is->hy_olen - len,
-			    is->hy_ifuba.ifu_w.ifrw_info + len);
+			    is->hy_ifuba.ifu_w.ifrw_info + HYM_SWLEN + len);
 			break;
 		}
 		/* fall through to ... */
@@ -1000,6 +1073,7 @@ actloop:
 
 	case MARKPORT:
 		is->hy_state = STARTUP;
+		if_down(&is->hy_if);
 		is->hy_if.if_flags &= ~IFF_UP;
 		goto endintr;
 	
@@ -1019,15 +1093,19 @@ endintr:
 #endif
 }
 
+struct sockproto hypproto = { PF_HYLINK };
+struct sockaddr_in hypdst = { AF_HYLINK };
+struct sockaddr_in hypsrc = { AF_HYLINK };
+
 /*
  * Called from device interrupt when receiving data.
  * Examine packet to determine type.  Decapsulate packet
  * based on type and pass to type specific higher-level
  * input routine.
  */
-hyrecvdata(ui, hyh, len)
+hyrecvdata(ui, hym, len)
 	struct uba_device *ui;
-	register struct hy_hdr *hyh;
+	register struct hym_hdr *hym;
 	int len;
 {
 	register struct hy_softc *is = &hy_softc[ui->ui_unit];
@@ -1036,18 +1114,16 @@ hyrecvdata(ui, hyh, len)
 
 	is->hy_if.if_ipackets++;
 #ifdef DEBUG
-	printD("hy%d: recieved packet, len = %d (actual %d)\n",
-		ui->ui_unit, len,
-		len - (hyh->hyh_off + sizeof (struct hy_hdr)));
+	printD("hy%d: recieved packet, len = %d\n", ui->ui_unit, len);
 #endif
 #ifdef HYLOG
 	{
 		struct {
 			short hlen;
-			struct hy_hdr hhdr;
+			struct hym_hdr hhdr;
 		} hh;
 		hh.hlen = len;
-		hh.hhdr = *hyh;
+		hh.hhdr = *hym;
 		hylog(HYL_RECV, sizeof(hh), (char *)&hh);
 	}
 #endif
@@ -1059,23 +1135,45 @@ hyrecvdata(ui, hyh, len)
 	m = if_rubaget(&is->hy_ifuba, len, 0);
 	if (m == NULL)
 		return;
-	switch (hyh->hyh_type) {
+
+	/*
+	 * if normal or adapter loopback response packet believe hym_type,
+	 * otherwise, use the raw input queue cause it's a response from an
+	 * adapter command.
+	 */
+	if (hym->hym_param != 0 && (u_short)hym->hym_param != 0x80ff)
+		goto rawlinkin;
+
+	switch (hym->hym_type) {
 
 #ifdef INET
 	case HYLINK_IP:
-		/*
-		 * Strip the variable portion of the hyperchannel header
-		 * (fixed portion stripped in if_rubaget).
-		 */
-		m->m_len -= hyh->hyh_off;
-		m->m_off += hyh->hyh_off;
 		schednetisr(NETISR_IP);
 		inq = &ipintrq;
 		break;
 #endif
 	default:
-		m_freem(m);
-		return;
+	rawlinkin:
+		{
+			struct mbuf *m0;
+
+			MGET(m0, M_DONTWAIT, MT_DATA);
+			if (m == 0) {
+				m_freem(m);
+				return;
+			}
+			m0->m_off = MMINOFF;
+			m0->m_len = sizeof(struct hym_hdr);
+			m0->m_next = m;
+			bcopy((caddr_t)hym, mtod(m0, caddr_t), sizeof(struct hym_hdr));
+			m = m0;
+			hypproto.sp_protocol = 0;
+			hypdst.sin_addr = ((struct sockaddr_in *)&is->hy_if.if_addr)->sin_addr;
+			hypsrc.sin_addr = if_makeaddr(is->hy_if.if_net, is->hy_if.if_host[0]);
+			raw_input(m, &hypproto, (struct sockaddr *)&hypsrc,
+				(struct sockaddr *)&hypdst);
+			return;
+		}
 	}
 	if (IF_QFULL(inq)) {
 		IF_DROP(inq);
@@ -1108,6 +1206,9 @@ hycancel(ui)
 		m_freem(is->hy_ifuba.ifu_xtofree);
 		is->hy_ifuba.ifu_xtofree = 0;
 	}
+#ifdef HYLOG
+	hylog(HYL_CANCEL, 0, (char *)0);
+#endif
 #ifdef DEBUG
 	if (hy_nodebug & 1)
 		hy_debug_flag = 1;
@@ -1116,9 +1217,8 @@ hycancel(ui)
 	printD("hy%d: cancel from state \"%s\" cmd=0x%x count=%d ptr=0x%x\n",
 		ui->ui_unit, hy_state_names[is->hy_state], is->hy_savedcmd,
 		is->hy_savedcount, is->hy_savedaddr);
-	printD("\tflags 0x%x ilen %d olen %d lastwcr %d retry %d\n",
-		is->hy_flags, is->hy_ilen, is->hy_olen, is->hy_lastwcr,
-		is->hy_retry);
+	printD("\tflags 0x%x olen %d lastwcr %d retry %d\n",
+		is->hy_flags, is->hy_olen, is->hy_lastwcr, is->hy_retry);
 	printD("\tsaved: state %d count %d ptr 0x%x cmd 0x%x\n",
 		is->hy_savedstate, is->hy_savedcount, is->hy_savedaddr,
 		is->hy_savedcmd);
@@ -1159,18 +1259,12 @@ hywatch(unit)
 	int s;
 
 	s = splimp();
-	is->hy_if.if_timer = SCANINTERVAL;
-	if (is->hy_ntime > 2 && is->hy_state != WAITING &&
-	  is->hy_state != STARTUP && is->hy_state != IDLE) {
-		printf("hy%d: watchdog timer expired\n", unit);
-		hycancel(ui);
-	}
 #ifdef PI13
 	if ((addr->hyd_csr & S_POWEROFF) != 0) {
 		addr->hyd_csr |= S_POWEROFF;
 		DELAY(100);
 		if ((addr->hyd_csr & S_POWEROFF) == 0) {
-			printf("hy%d: adapter power restored\n", unit);
+			printf("hy%d: Adapter Power Restored (hywatch)\n", unit);
 			is->hy_state = IDLE;
 			is->hy_flags |=
 			  (RQ_MARKUP | RQ_STATISTICS | RQ_ENDOP | RQ_STATUS);
@@ -1178,7 +1272,21 @@ hywatch(unit)
 		}
 	}
 #endif
+	if (++is->hy_ntime >= 2 && is->hy_state != WAITING &&
+	  is->hy_state != STARTUP && is->hy_state != IDLE) {
+#ifdef HYLOG
+		printf("hy%d: watchdog timer expired in state \"%s\"\n", unit,
+			hy_state_names[is->hy_state]);
+#else
+		printf("hy%d: watchdog timer expired in state %d\n", unit,
+			is->hy_state);
+#endif
+		printf("hy%d: last command 0x%x, flags 0x%x, csr 0x%b\n", unit,
+			is->hy_savedcmd, is->hy_flags, addr->hyd_csr, HY_CSR_BITS);
+		hycancel(ui);
+	}
 	splx(s);
+	is->hy_if.if_timer = SCANINTERVAL;
 }
 
 #ifdef HYLOG
@@ -1194,30 +1302,38 @@ hylog(code, len, ptr)
 		hy_log.hyl_eptr = &hy_log.hyl_buf[HYL_SIZE];
 		hy_log.hyl_ptr = &hy_log.hyl_buf[0];
 		hy_log.hyl_self = &hy_log;
-		hy_log.hyl_enable = HYL_DISABLED;
-		hy_log.hyl_onerr = HYL_CATCH1;
+		hy_log.hyl_enable = HYL_CONTINUOUS;
+		hy_log.hyl_onerr = HYL_CONTINUOUS;
+		hy_log.hyl_count = 0;
+		hy_log.hyl_icount = 16;
+		hy_log.hyl_filter = 0xffff;	/* enable all */
 	}
-	if (hy_log.hyl_enable == HYL_DISABLED ||
-	  hy_log.hyl_enable == HYL_CAUGHT1 ||
-	  hy_log.hyl_enable == HYL_CAUGHTSTATUS ||
-	  (hy_log.hyl_enable == HYL_CATCHSTATUS && code != HYL_STATUS))
+	if (hy_log.hyl_enable == HYL_DISABLED || ((1 << code) & hy_log.hyl_filter) == 0)
 		goto out;
 	p = hy_log.hyl_ptr;
-	if (p + len + 2 >= hy_log.hyl_eptr) {
+	if (p + len + 3 >= hy_log.hyl_eptr) {
 		bzero((caddr_t)p, (unsigned)(hy_log.hyl_eptr - p));
 		p = &hy_log.hyl_buf[0];
-		if (hy_log.hyl_enable == HYL_CATCH1) {
-			hy_log.hyl_enable = hy_log.hyl_onerr = HYL_CAUGHT1;
-			goto out;
-		}
-		if (hy_log.hyl_enable == HYL_CATCHSTATUS) {
-			hy_log.hyl_enable = hy_log.hyl_onerr = HYL_CAUGHTSTATUS;
+		if (hy_log.hyl_enable != HYL_CONTINUOUS) {
+			hy_log.hyl_enable = HYL_DISABLED;
 			goto out;
 		}
 	}
 	*p++ = code;
 	*p++ = len;
 	bcopy((caddr_t)ptr, (caddr_t)p, (unsigned)len);
+	if (hy_log.hyl_count != 0 && --hy_log.hyl_count == 0) {
+		*p++ = '\0';
+		hy_log.hyl_enable = HYL_DISABLED;
+		hy_log.hyl_count = hy_log.hyl_icount;
+	}
+	if (hy_log.hyl_wait != 0) {		/* wakeup HYGETLOG if wanted */
+		hy_log.hyl_wait -= (p - hy_log.hyl_ptr) + len;
+		if (hy_log.hyl_wait <= 0) {
+			wakeup((caddr_t)&hy_log);
+			hy_log.hyl_wait = 0;
+		}
+	}
 	hy_log.hyl_ptr = p + len;
 out:
 	splx(s);
@@ -1230,44 +1346,145 @@ hyioctl(ifp, cmd, data)
 	int cmd;
 	caddr_t	data;
 {
-	struct sockaddr_in *sin;
-	struct ifreq *ifr = (struct ifreq *)data;
+	struct sockaddr_in *sin = (struct sockaddr_in *)data;
+	struct hyrsetget *sg = (struct hyrsetget *)data;
+#if defined(HYLOG) || defined(HYELOG)
+	struct hylsetget *sgl = (struct hylsetget *)data;
+#endif
+	struct hy_route *r = (struct hy_route *)&hy_route[ifp->if_unit];
 	int s = splimp(), error = 0;
+#ifdef HYLOG
+	struct hy_softc *is = &hy_softc[ifp->if_unit];
+	struct {
+		u_char	hstate;
+		u_char	hflags;
+		u_short	iflags;
+		int	hcmd;	
+		int	herror;
+		u_long	haddr;
+		u_long	hmisc;
+	} hil;
+
+	hil.hmisc = -1;
+	hil.hstate = is->hy_state;
+	hil.hflags = is->hy_flags;
+	hil.hcmd = cmd;
+#endif
 
 	switch(cmd) {
 
 	case SIOCSIFADDR:
+		if (sin->sin_family != AF_INET)
+			return(EINVAL);
 		if (ifp->if_flags & IFF_RUNNING)
 			if_rtinit(ifp, -1);
-		sin = (struct sockaddr_in *)&ifr->ifr_addr;
+#ifdef HYLOG
+		hil.haddr = ((struct sockaddr_in *)&ifp->if_addr)->sin_addr.s_addr;
+#endif
+		ifp->if_addr = *(struct sockaddr *)sin;
 		ifp->if_net = in_netof(sin->sin_addr);
-		sin = (struct sockaddr_in *)&ifp->if_addr;
-		sin->sin_family = AF_INET;
-		sin->sin_addr = if_makeaddr(ifp->if_net, ifp->if_host[0]);
-		if (ifp->if_flags & IFF_RUNNING)
-			if_rtinit(ifp, RTF_UP);
-		else
-			hyinit(ifp->if_unit);
+		hyinit(ifp->if_unit);
 		break;
 
 	case HYSETROUTE:
 		if (!suser()) {
 			error = EPERM;
-			goto bad;
+			goto out;
 		}
-		hy_route[ifp->if_unit] = *(struct hyroute *)ifr->ifr_data;
-		hy_route[ifp->if_unit].hyr_lasttime = time;
+
+		if (sg->hyrsg_len != sizeof(struct hy_route)) {
+			error = EINVAL;
+			goto out;
+		}
+		if (copyin((caddr_t)(sg->hyrsg_ptr), (caddr_t)r, sg->hyrsg_len)) {
+			r->hyr_lasttime = 0;	/* disable further routing if trouble */
+			error = EFAULT;
+			goto out;
+		}
+		r->hyr_lasttime = time.tv_sec;
+#ifdef HYLOG
+		hil.hmisc = r->hyr_lasttime;
+#endif
 		break;
 
 	case HYGETROUTE:
-		*(struct hyroute *)ifr->ifr_data = hy_route[ifp->if_unit];
+		if (sg->hyrsg_len < sizeof(struct hy_route)) {
+			error = EINVAL;
+			goto out;
+		}
+		if (copyout((caddr_t)r, (caddr_t) (sg->hyrsg_ptr), sizeof(struct hy_route))) {
+			error = EFAULT;
+			goto out;
+		}
 		break;
+
+#ifdef HYELOG
+	case HYGETELOG:
+		if (sgl->hylsg_len < sizeof(hy_elog)) {
+			error = EINVAL;
+			goto out;
+		}
+		if (copyout((caddr_t)hy_elog, sgl->hylsg_ptr, sizeof(hy_elog))) {
+			error = EFAULT;
+			goto out;
+		}
+		if (sgl->hylsg_cmd) {
+			if (!suser()) {
+				error = EPERM;
+				goto out;
+			}
+			bzero((caddr_t)hy_elog, sizeof(hy_elog));
+		}
+		break;
+#endif
+
+#ifdef HYLOG
+	case HYSETLOG:
+		if (!suser()) {
+			error = EPERM;
+			goto out;
+		}
+		hy_log.hyl_enable = HYL_DISABLED;
+		hylog(HYL_NOP, 0, (char *)0);		/* force log init */
+		hy_log.hyl_enable = sgl->hylsg_cmd & 0x0f;
+		hy_log.hyl_onerr = (sgl->hylsg_cmd >> 4) & 0x0f;
+		hy_log.hyl_filter = (sgl->hylsg_cmd >> 8) & 0xffffff;
+		hy_log.hyl_count = hy_log.hyl_icount = sgl->hylsg_len;
+		wakeup((caddr_t)&hy_log);	/* wakeup sleeping HYGETLOG */
+		break;
+
+	case HYGETLOG:
+		if (sgl->hylsg_len < sizeof(hy_log)) {
+			error = EINVAL;
+			goto out;
+		}
+		if (sgl->hylsg_cmd != 0) {
+			if (hy_log.hyl_wait) {
+				error = EBUSY;
+				goto out;
+			}
+			hy_log.hyl_wait = sgl->hylsg_cmd;
+			sleep((caddr_t)&hy_log);
+		}
+
+		if (copyout((caddr_t)&hy_log, sgl->hylsg_ptr, sizeof(hy_log))) {
+			error = EFAULT;
+			goto out;
+		}
+		break;
+#endif
 
 	default:
 		error = EINVAL;
 		break;
 	}
-bad:
+out:
+#ifdef HYLOG
+	hil.herror = error;
+	hil.iflags = ifp->if_flags;
+	hil.haddr = ((struct sockaddr_in *)&ifp->if_addr)->sin_addr.s_addr;
+	hylog(HYL_IOCTL, sizeof(hil), (char *)&hil);
+#endif
 	splx(s);
 	return (error);
 }
