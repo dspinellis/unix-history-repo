@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)readcf.c	8.95 (Berkeley) %G%";
+static char sccsid[] = "@(#)readcf.c	8.96 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -2033,8 +2033,7 @@ setclass(class, str)
 **		line -- the config file line
 **
 **	Returns:
-**		TRUE if it successfully entered the map entry.
-**		FALSE otherwise (usually syntax error).
+**		none.
 **
 **	Side Effects:
 **		Enters the map into the dictionary.
