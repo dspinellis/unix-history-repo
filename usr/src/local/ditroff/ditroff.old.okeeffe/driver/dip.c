@@ -1,4 +1,4 @@
-/*	dip.c	1.4	(Berkeley)	83/11/30
+/*	dip.c	1.5	(Berkeley)	83/12/18
  *	dip
  *	driver for impress/imagen canon laser printer
  */
@@ -63,7 +63,9 @@ x ...\n	device control functions:
 #define	BMASK	0377
 #define	NFONT	30		/* maximum forever */
 
+#ifndef FONTDIR
 #define FONTDIR	"/usr/lib/font";
+#endif
 #define BITDIR	"/usr/local/lib/ifontt";
 
 				/* BOTTOMTHRESH and DELTATHRESH are used to */
