@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.1 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.2 (Berkeley) %G%
  */
 
 /*
@@ -831,11 +831,19 @@ mntloop:
 
 nextname:
 	/*
-	 * Check for read-only file systems and executing texts
+	 * Check for read-only file systems.
 	 */
-	if (flag != LOOKUP && ((dp->v_mount->m_flag & (M_RDONLY | M_EXRDONLY)) ||
-		(error = vn_access(dp, VWRITE, ndp->ni_cred))))
-		goto bad2;
+	if (flag == DELETE || flag == RENAME) {
+		/*
+		 * Disallow directory write attempts on read-only
+		 * file systems.
+		 */
+		if ((dp->v_mount->m_flag & (M_RDONLY|M_EXRDONLY)) ||
+		    (wantparent && (ndp->ni_dvp->v_mount->m_flag & M_RDONLY))) {
+			error = EROFS;
+			goto bad2;
+		}
+	}
 
 	/*
 	 * Kludge city... This is hokey, but since ufs_rename() calls
