@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	7.73 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.74 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -312,8 +312,8 @@ ffs_mountfs(devvp, mp, p)
 	devvp->v_specflags |= SI_MOUNTEDON;
 
 	/* Sanity checks for old file systems.			   XXX */
-	fs->fs_npsect = MAX(fs->fs_npsect, fs->fs_nsect);	/* XXX */
-	fs->fs_interleave = MAX(fs->fs_interleave, 1);		/* XXX */
+	fs->fs_npsect = max(fs->fs_npsect, fs->fs_nsect);	/* XXX */
+	fs->fs_interleave = max(fs->fs_interleave, 1);		/* XXX */
 	if (fs->fs_postblformat == FS_42POSTBLFMT)		/* XXX */
 		fs->fs_nrpos = 8;				/* XXX */
 	if (fs->fs_inodefmt < FS_44INODEFMT) {			/* XXX */
