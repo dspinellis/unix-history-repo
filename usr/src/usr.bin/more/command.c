@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -202,6 +202,7 @@ getcc()
 {
 	extern int cmdstack;
 	int ch;
+	off_t position();
 
 	/* left over from error() routine. */
 	if (cmdstack) {
