@@ -1,56 +1,89 @@
-.\"	@(#)arithmetic.6	6.2 (Berkeley) %G%
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.TH ARITHMETIC 6  ""
-.AT 3
+.\" This code is derived from software contributed to Berkeley by
+.\" Eamonn McManus of Trinity College Dublin.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)arithmetic.6	6.3 (Berkeley) %G%
+.\"
+.TH ARITHMETIC 1 ""
+.UC 4
 .SH NAME
-arithmetic \- provide drill in number facts
+arithmetic \- quiz on simple arithmetic
 .SH SYNOPSIS
-.B /usr/games/arithmetic
-[
-.B +\-x/
-] [ range ]
+.B arithmetic
+.B [
+\-o
+.B [
++\-x/
+.B ]
+.B [
+range
+.B ]
 .SH DESCRIPTION
 .I Arithmetic
-types out simple arithmetic problems, and waits for an answer to be typed in.
-If the answer is correct, it types back \*(lqRight!\*(rq, and a new problem.
-If the answer is wrong, it replies \*(lqWhat?\*(rq,
-and waits for another answer.
-After every twenty problems, it publishes
-statistics on correctness and the time required to answer.
+asks you to solve problems in simple arithmetic.
+Each question must be answered correctly before going on to the next.
+After every 20 problems, it prints the score so far and the time taken.
+You can quit at any time by typing the interrupt or end-of-file character.
 .PP
-To quit the program, type an interrupt (delete).
-.PP
-The first optional argument determines the kind of problem to be generated;
-.B +\-x/
-respectively cause addition, subtraction, multiplication, and division
-problems to be generated.
-One or more characters can be given;
-if more than one is given, the different types of
-problems will be mixed in random order; default is
-.B +\-.
-.PP
-.I Range
-is a decimal number;
-all addends, subtrahends, differences, multiplicands, divisors,
-and quotients will be less than or equal to the value of
+The options are as follows:
+.TP
+\-o
+By default,
+.I arithmetic
+asks questions on addition of numbers from 0 to 10, and corresponding
+subtraction.
+By supplying one or more of the characters
+.BR +\-x/ ,
+you can ask for problems in addition, subtraction, multiplication, and
+division, respectively.
+If you give one of these characters more than once, that kind of problem
+will be asked correspondingly more often.
+.TP
+\-r
+If a
+.I range
+is supplied,
+.I arithmetic
+selects the numbers in its problems in the following way.
+For addition and multiplication, the numbers to be added or multiplied
+are between 0 and
+.IR range ,
+inclusive.
+For subtraction and division, both the required result and the number to
+divide by or subtract will be between 0 and
 .IR range .
-Default
+(Of course,
+.I arithmetic
+will not ask you to divide by 0.)  The default
 .I range
 is 10.
 .PP
-At the start, all numbers less than or equal to
-.I range
-are equally likely to appear.
-If the respondent makes a mistake,
-the numbers in the problem which was missed
-become more likely to reappear.
+When you get a problem wrong,
+.I arithmetic
+will remember the numbers involved, and will tend to select those numbers
+more often than others, in problems of the same sort.
+Eventually it will forgive and forget.
 .PP
-As a matter of educational philosophy, the program will
-not give correct answers, since the learner should, in principle,
-be able to calculate them.
-Thus the program is intended to provide drill for
-someone just past the first learning stage, not to teach number facts
-.I de
-.IR novo .
-For almost all users, the relevant statistic should be
-time per problem, not percent correct.
+.I Arithmetic
+cannot be persuaded to tell you the right answer.
+You must work it out for yourself.
+.SH DIAGNOSTICS
+``What?'' if you get a question wrong.
+``Right!'' if you get it right.
+``Please type a number.'' if arithmetic doesn't understand what you typed.
+.SH "SEE ALSO"
+bc(1), dc(1)
