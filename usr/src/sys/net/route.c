@@ -1,4 +1,4 @@
-/*	route.c	4.16	83/02/10	*/
+/*	route.c	4.17	83/03/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -79,6 +79,46 @@ rtfree(rt)
 		rttrash--;
 		(void) m_free(dtom(rt));
 	}
+}
+
+/*
+ * Force a routing table entry to the specified
+ * destination to go through the given gateway.
+ * Normally called as a result of a routing redirect
+ * message from the network layer.
+ *
+ * N.B.: must be called at splnet or higher
+ *
+ * Should notify all parties with a reference to
+ * the route that it's changed (so, for instance,
+ * round trip time estimates may be recalculated),
+ * but we have no back pointers at the moment.
+ */
+rtredirect(dst, gateway)
+	struct sockaddr *dst, *gateway;
+{
+	struct route ro;
+	register struct rtentry *rt;
+
+	/* verify the gateway is directly reachable */
+	if (if_ifwithnet(gateway) == 0)
+		return;
+	ro.ro_dst = *dst;
+	ro.ro_rt = NULL;
+	rtalloc(&ro);
+	rt = ro.ro_rt;
+	/*
+	 * Don't listen to the redirect if it's
+	 * for a route to an interface. 
+	 *
+	 * Should probably create a new entry when
+	 * the lookup fails.  This will be necessary
+	 * when wildcard routes are added.
+	 */
+	if (rt == NULL || (rt->rt_flags & RTF_GATEWAY) == 0)
+		return;
+	rt->rt_gateway = *gateway;
+	rtfree(rt);
 }
 
 /*
