@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.10 (Berkeley) %G%
+#	@(#)Makefile	8.1 (Berkeley) %G%
 
 PROG=	mille
 SRCS=	comp.c end.c extern.c init.c mille.c misc.c move.c print.c \
