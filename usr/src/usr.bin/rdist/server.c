@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)server.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)server.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "defs.h"
@@ -722,8 +722,8 @@ recvf(cmd, type)
 				}
 				buf[0] = '\0';
 				(void) sprintf(buf + 1,
-					"%s:%s: Warning: remote mode %o != local mode %o\n",
-					host, target, stb.st_mode & 07777, mode);
+					"%s: Warning: remote mode %o != local mode %o\n",
+					target, stb.st_mode & 07777, mode);
 				(void) write(rem, buf, strlen(buf + 1) + 1);
 				return;
 			}
@@ -888,7 +888,7 @@ badt:
 	}
 	if (opts & COMPARE) {
 		buf[0] = '\0';
-		(void) sprintf(buf + 1, "%s: updated %s\n", host, target);
+		(void) sprintf(buf + 1, "updated %s\n", target);
 		(void) write(rem, buf, strlen(buf + 1) + 1);
 	} else
 		ack();
