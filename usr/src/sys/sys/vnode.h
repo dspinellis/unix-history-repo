@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vnode.h	7.18 (Berkeley) %G%
+ *	@(#)vnode.h	7.19 (Berkeley) %G%
  */
 
 /*
@@ -128,6 +128,7 @@ struct vnodeops {
 	int	(*vn_strategy)(		/* bp */ );
 
 	int	(*vn_print)(		/* vp */ );
+	int	(*vn_islocked)(		/* vp */ );
 };
 
 /* Macros to call the vnode ops */
@@ -162,6 +163,7 @@ struct vnodeops {
 #define	VOP_BMAP(v,s,p,n)	(*((v)->v_op->vn_bmap))((v),(s),(p),(n))
 #define	VOP_STRATEGY(b)		(*((b)->b_vp->v_op->vn_strategy))(b)
 #define	VOP_PRINT(v)		(*((v)->v_op->vn_print))(v)
+#define	VOP_ISLOCKED(v)		(*((v)->v_op->vn_islocked))(v)
 
 /*
  * This structure defines the information maintained about
