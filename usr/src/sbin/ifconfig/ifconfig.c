@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ifconfig.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)ifconfig.c	4.9 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -20,7 +20,7 @@ char	name[30];
 int	setaddr;
 int	s;
 
-int	setifflags(), setifaddr();
+int	setifflags(), setifaddr(), setifdstaddr();
 
 struct	cmd {
 	char	*c_name;
@@ -43,6 +43,7 @@ struct	cmd {
 	{ "-swabips",	-EN_SWABIPS,	setifflags },
 #endif
 	{ 0,		0,		setifaddr },
+	{ 0,		0,		setifdstaddr },
 };
 
 main(argc, argv)
@@ -52,7 +53,7 @@ main(argc, argv)
 
 	if (argc < 2) {
 		fprintf(stderr, "usage: ifconfig interface %s %s %s\n",
-		    "[ address ] [ up ] [ down ]",
+		    "[ address [ dest_addr ] ] [ up ] [ down ]",
 		    "[ trailers | -trailers ]",
 		    "[ arp | -arp ]");
 		exit(1);
@@ -80,6 +81,8 @@ main(argc, argv)
 		for (p = cmds; p->c_name; p++)
 			if (strcmp(*argv, p->c_name) == 0)
 				break;
+		if (p->c_name == 0 && setaddr)
+			p++;	/* got src, do dst */
 		if (p->c_func)
 			(*p->c_func)(*argv, p->c_parameter);
 		argc--, argv++;
@@ -108,6 +111,18 @@ setifaddr(addr, param)
 	setaddr++;
 }
 
+/*ARGSUSED*/
+setifdstaddr(addr, param)
+	char *addr;
+	int param;
+{
+
+	getaddr(addr, (struct sockaddr_in *)&ifr.ifr_dstaddr);
+	strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+	if (ioctl(s, SIOCSIFDSTADDR, (caddr_t)&ifr) < 0)
+		Perror("ioctl (SIOCSIFDSTADDR)");
+}
+
 setifflags(vname, value)
 	char *vname;
 	int value;
@@ -133,6 +148,13 @@ status()
 		Perror("ioctl (SIOCGIFADDR)");
 	sin = (struct sockaddr_in *)&ifr.ifr_addr;
 	printf("%s: %s ", name, inet_ntoa(sin->sin_addr));
+	if (flags & IFF_POINTOPOINT) {
+		strncpy(ifr.ifr_name, name, sizeof (ifr.ifr_name));
+		if (ioctl(s, SIOCGIFDSTADDR, (caddr_t)&ifr) < 0)
+			Perror("ioctl (SIOCGIFDSTADDR)");
+		sin = (struct sockaddr_in *)&ifr.ifr_dstaddr;
+		printf("--> %s ", inet_ntoa(sin->sin_addr));
+	}
 #define	IFFBITS \
 "\020\1UP\2BROADCAST\3DEBUG\4ROUTE\5POINTOPOINT\6NOTRAILERS\7RUNNING\10NOARP\
 \11LOCAL"
