@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)symbols.c 1.8 %G%";
+static char sccsid[] = "@(#)symbols.c 1.9 %G%";
 
 /*
  * Symbol management.
@@ -526,22 +526,24 @@ Symbol sym;
 	    elsize = size(t->type);
 	    nel = 1;
 	    for (t = t->chain; t != nil; t = t->chain) {
-
-		if(t->symvalue.rangev.lowertype == R_ARG
-                   or t->symvalue.rangev.lowertype == R_TEMP )  {
-			if( ! getbound(t, t->symvalue.rangev.lower,
-		                         t->symvalue.rangev.lowertype, &lower))
-			error(" dynamic bounds not currently available ");
+		if (t->symvalue.rangev.lowertype == R_ARG or
+		  t->symvalue.rangev.lowertype == R_TEMP)  {
+		    if (not getbound(t, t->symvalue.rangev.lower,
+		      t->symvalue.rangev.lowertype, &lower)) {
+			error("dynamic bounds not currently available");
+		    }
+		} else {
+		    lower = t->symvalue.rangev.lower;
 		}
-		else lower = t->symvalue.rangev.lower;
-
-		if(t->symvalue.rangev.uppertype == R_ARG
-                   or t->symvalue.rangev.uppertype == R_TEMP )  {
-			if( ! getbound(t, t->symvalue.rangev.upper,
-		                         t->symvalue.rangev.uppertype, &upper))
-			error(" dynamic bounds not currently available ");
+		if (t->symvalue.rangev.uppertype == R_ARG or
+		  t->symvalue.rangev.uppertype == R_TEMP) {
+		    if (not getbound(t, t->symvalue.rangev.upper,
+		      t->symvalue.rangev.uppertype, &upper)) {
+			error("dynamic bounds nor currently available");
+		    }
+		} else {
+		    upper = t->symvalue.rangev.upper;
 		}
-		else upper = t->symvalue.rangev.upper;
 		nel *= (upper-lower+1);
 	    }
 	    r = nel*elsize;
@@ -592,11 +594,16 @@ Symbol sym;
 	    break;
 
 	case SCAL:
+	    r = sizeof(Word);
+	    /*
+	     *
 	    if (t->symvalue.iconval > 255) {
 		r = sizeof(short);
 	    } else {
 		r = sizeof(char);
 	    }
+	     *
+	     */
 	    break;
 
 	case FPROC:
