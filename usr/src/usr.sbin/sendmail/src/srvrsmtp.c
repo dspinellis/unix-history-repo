@@ -2,10 +2,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	3.43		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	3.44		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	3.43		%G%);
+SCCSID(@(#)srvrsmtp.c	3.44		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -327,7 +327,8 @@ smtp()
 			{
 				(void) close(0);
 				(void) dup(fileno(InChannel));
-				(void) fclose(InChannel);
+				if (fileno(InChannel) != fileno(OutChannel))
+					(void) fclose(InChannel);
 				InChannel = stdin;
 			}
 			if (fileno(OutChannel) != 1)
@@ -337,6 +338,8 @@ smtp()
 				(void) fclose(OutChannel);
 				OutChannel = stdout;
 			}
+			(void) close(2);
+			(void) dup(1);
 			execl("/bin/csh", "sendmail", 0);
 			execl("/bin/sh", "sendmail", 0);
 			message("500", "Can't");
