@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)libpc.h 1.3 %G%"; */
+/* static char sccsid[] = "@(#)libpc.h 1.4 %G%"; */
 
 extern FILE *ACTFILE();
 extern long *ADDT();
@@ -11,9 +11,7 @@ extern long *CTTOT();
 extern long ERROR();
 extern long EXPO();
 extern char *FNIL();
-extern long FCALL();
 extern struct formalrtn *FSAV();
-extern long FRET();
 extern struct iorec *GETNAME();
 extern bool IN();
 extern bool INCT();
