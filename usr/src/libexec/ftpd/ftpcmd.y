@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ftpcmd.y	5.17 (Berkeley) %G%
+ *	@(#)ftpcmd.y	5.18 (Berkeley) %G%
  */
 
 /*
@@ -25,7 +25,7 @@
 %{
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpcmd.y	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpcmd.y	5.18	(Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -52,7 +52,7 @@ extern	int form;
 extern	int debug;
 extern	int timeout;
 extern  int pdata;
-extern	char hostname[];
+extern	char hostname[], remotehost[];
 extern	char *globerr;
 extern	int usedefault;
 extern  int transflag;
@@ -81,8 +81,8 @@ char	*index();
 	APPE	MLFL	MAIL	MSND	MSOM	MSAM
 	MRSQ	MRCP	ALLO	REST	RNFR	RNTO
 	ABOR	DELE	CWD	LIST	NLST	SITE
-	STAT	HELP	NOOP	XMKD	XRMD	XPWD
-	XCUP	STOU	SYST
+	STAT	HELP	NOOP	MKD	RMD	PWD
+	CDUP	STOU	SYST
 
 	LEXERR
 
@@ -186,7 +186,7 @@ cmd:		USER SP username CRLF
 	|	RETR check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				retrieve((char *) 0, (char *) $4);
+				retrieve((char *) 0, (char *)$4);
 			if ($4 != NULL)
 				free((char *) $4);
 		}
@@ -207,24 +207,24 @@ cmd:		USER SP username CRLF
 	|	NLST check_login CRLF
 		= {
 			if ($2)
-				retrieve("/bin/ls", "");
+				send_file_list(".");
 		}
-	|	NLST check_login SP pathname CRLF
+	|	NLST check_login SP STRING CRLF
 		= {
-			if ($2 && $4 != NULL)
-				retrieve("/bin/ls %s", (char *) $4);
+			if ($2 && $4 != NULL) 
+				send_file_list((char *) $4);
 			if ($4 != NULL)
 				free((char *) $4);
 		}
 	|	LIST check_login CRLF
 		= {
 			if ($2)
-				retrieve("/bin/ls -lg", "");
+				retrieve("/bin/ls -lgA", "");
 		}
 	|	LIST check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				retrieve("/bin/ls -lg %s", (char *) $4);
+				retrieve("/bin/ls -lgA %s", (char *) $4);
 			if ($4 != NULL)
 				free((char *) $4);
 		}
@@ -274,26 +274,26 @@ cmd:		USER SP username CRLF
 		= {
 			reply(200, "NOOP command successful.");
 		}
-	|	XMKD check_login SP pathname CRLF
+	|	MKD check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
 				makedir((char *) $4);
 			if ($4 != NULL)
 				free((char *) $4);
 		}
-	|	XRMD check_login SP pathname CRLF
+	|	RMD check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
 				removedir((char *) $4);
 			if ($4 != NULL)
 				free((char *) $4);
 		}
-	|	XPWD check_login CRLF
+	|	PWD check_login CRLF
 		= {
 			if ($2)
 				pwd();
 		}
-	|	XCUP check_login CRLF
+	|	CDUP check_login CRLF
 		= {
 			if ($2)
 				cwd("..");
@@ -541,14 +541,14 @@ struct tab cmdtab[] = {		/* In order defined in RFC 765 */
 	{ "STAT", STAT, OSTR, 0,	"(get server status)" },
 	{ "HELP", HELP, OSTR, 1,	"[ <sp> <string> ]" },
 	{ "NOOP", NOOP, ARGS, 1,	"" },
-	{ "MKD",  XMKD, STR1, 1,	"<sp> path-name" },
-	{ "XMKD", XMKD, STR1, 1,	"<sp> path-name" },
-	{ "RMD",  XRMD, STR1, 1,	"<sp> path-name" },
-	{ "XRMD", XRMD, STR1, 1,	"<sp> path-name" },
-	{ "PWD",  XPWD, ARGS, 1,	"(return current directory)" },
-	{ "XPWD", XPWD, ARGS, 1,	"(return current directory)" },
-	{ "CDUP", XCUP, ARGS, 1,	"(change to parent directory)" },
-	{ "XCUP", XCUP, ARGS, 1,	"(change to parent directory)" },
+	{ "MKD",  MKD,  STR1, 1,	"<sp> path-name" },
+	{ "XMKD", MKD,  STR1, 1,	"<sp> path-name" },
+	{ "RMD",  RMD,  STR1, 1,	"<sp> path-name" },
+	{ "XRMD", RMD,  STR1, 1,	"<sp> path-name" },
+	{ "PWD",  PWD,  ARGS, 1,	"(return current directory)" },
+	{ "XPWD", PWD,  ARGS, 1,	"(return current directory)" },
+	{ "CDUP", CDUP, ARGS, 1,	"(change to parent directory)" },
+	{ "XCUP", CDUP, ARGS, 1,	"(change to parent directory)" },
 	{ "STOU", STOU, STR1, 1,	"<sp> file-name" },
 	{ NULL,   0,    0,    0,	0 }
 };
@@ -666,6 +666,11 @@ yylex()
 				dologout(0);
 			}
 			(void) alarm(0);
+#ifdef SETPROCTITLE
+			if (strncasecmp(cbuf, "PASS", 4) != NULL) {
+				setproctitle("%s: %s", remotehost, cbuf);
+			}
+#endif /* SETPROCTITLE */
 			if ((cp = index(cbuf, '\r'))) {
 				*cp++ = '\n';
 				*cp = '\0';
