@@ -11,13 +11,16 @@
  *
  * from: Utah $Hdr: hpux_tty.c 1.12 92/04/15$
  *
- *	@(#)hpux_tty.c	7.14 (Berkeley) %G%
+ *	@(#)hpux_tty.c	7.15 (Berkeley) %G%
  */
 
 /*
  * stty/gtty/termio emulation stuff
  */
 #ifdef HPUXCOMPAT
+#ifndef COMPAT_43
+#define COMPAT_43
+#endif
 
 #include <sys/param.h>
 #include <sys/systm.h>
