@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mfs_vnops.c	8.6 (Berkeley) %G%
+ *	@(#)mfs_vnops.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -196,6 +196,8 @@ mfs_bmap(ap)
 		*ap->a_vpp = ap->a_vp;
 	if (ap->a_bnp != NULL)
 		*ap->a_bnp = ap->a_bn;
+	if (ap->a_runp != NULL)
+		*ap->a_runp = 0;
 	return (0);
 }
 
