@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)iostat.c	4.7 (Berkeley) 83/02/23";
+static	char *sccsid = "@(#)iostat.c	4.8 (Berkeley) 83/05/30";
 /*
  * iostat
  */
@@ -8,8 +8,8 @@ static	char *sccsid = "@(#)iostat.c	4.7 (Berkeley) 83/02/23";
 #include <sys/buf.h>
 #include <sys/dk.h>
 #ifdef vax
-#include <sys/ubavar.h>
-#include <sys/mbavar.h>
+#include <vaxuba/ubavar.h>
+#include <vaxmba/mbavar.h>
 #endif
 #ifdef sun
 #include <sundev/mbvar.h>
@@ -110,7 +110,7 @@ loop:
 		printf(" tin tout");
 		for (i = 0; i < DK_NDRIVE; i++)
 			if (s.dk_mspw[i] != 0.0)
-				printf(" sps tps msps ");
+				printf(" bps tps msps ");
 		printf(" us ni sy id\n");
 		tohdr = 19;
 	}
@@ -184,7 +184,7 @@ stats(dn)
 		itime += xtime, xtime = 0;
 	if (itime < 0)
 		xtime += itime, itime = 0;
-	printf("%4.0f", s.dk_seek[dn]/etime);
+	printf("%4.0f", words/512/etime);
 	printf("%4.0f", s.dk_xfer[dn]/etime);
 	printf("%5.1f ",
 	    s.dk_seek[dn] ? itime*1000./s.dk_seek[dn] : 0.0);
