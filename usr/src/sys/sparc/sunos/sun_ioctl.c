@@ -13,9 +13,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sun_ioctl.c	7.4 (Berkeley) %G%
+ *	@(#)sun_ioctl.c	7.5 (Berkeley) %G%
  *
- * from: $Header: sun_ioctl.c,v 1.5 92/07/10 00:26:51 torek Exp $
+ * from: $Header: sun_ioctl.c,v 1.7 93/05/28 04:40:43 torek Exp $
  */
 
 #include <sys/param.h>
@@ -118,9 +118,11 @@ sun_ioctl(p, uap, retval)
 		struct sun_termio st;
 		int speed;
 		static struct speedtab sptab[] = {
-			0,0, 50,1, 75,2, 110,3, 134,4, 135,4, 150,5, 200,6,
-			300,7, 600,8, 1200,9, 1800,10, 2400,11, 4800,12,
-			9600,13, 19200,14, 38400,15, -1,-1
+			{ 0, 0 }, { 50, 1 }, { 75, 2 }, { 110, 3 },
+			{ 134, 4 }, { 135, 4 }, { 150, 5 }, { 200, 6 },
+			{ 300, 7 }, { 600, 8 }, { 1200, 9 }, { 1800, 10 },
+			{ 2400, 11 }, { 4800, 12 }, { 9600, 13 },
+			{ 19200, 14 }, { 38400, 15 }, { -1, -1 }
 		};
 
 		if ((error = (*ctl)(fp, TIOCGETA, (caddr_t)&bt, p)) != 0)
