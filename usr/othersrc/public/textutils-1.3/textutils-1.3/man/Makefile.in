@@ -1,0 +1,58 @@
+# Makefile for GNU textutils documentation.
+# Do not use this makefile directly, but only from `../Makefile'.
+# Copyright (C) 1991 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+SHELL = /bin/sh
+
+srcdir = @srcdir@/man
+@VPATH@
+
+MANFILES = cat.1 cmp.1 comm.1 csplit.1 cut.1 expand.1 fold.1 head.1 \
+join.1 nl.1 paste.1 pr.1 sort.1 split.1 sum.1 tac.1 tail.1 tr.1 \
+unexpand.1 uniq.1 wc.1
+
+DISTFILES = Makefile.in $(MANFILES)
+
+all:
+.PHONY: all
+
+install: all
+	for f in $(MANFILES); do \
+	if test -f $$f; then src=.; else src=$(srcdir); fi; \
+	$(INSTALLDATA) $$src/$$f $(mandir)/$(manprefix)`basename $$f 1`$(manext); \
+	done
+.PHONY: install
+
+tags:
+.PHONY: tags
+
+TAGS:
+.PHONY: TAGS
+
+mostlyclean:
+.PHONY: mostlyclean
+
+clean: mostlyclean
+	rm -f Makefile
+.PHONY: clean
+
+realclean: clean
+.PHONY: realclean
+
+dist:
+	ln $(DISTFILES) ../`cat ../.fname`/man
+.PHONY: dist
