@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	2.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	2.6 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -45,6 +45,8 @@ int nnets;		/* Number of networks I am connected to */
 struct netinfo *slavenet;
 struct netinfo *firstslavenet();
 int Mflag;
+int justquit = 0;
+
 struct nets {
 	char *name;
 	long net;
@@ -100,7 +102,7 @@ char **argv;
 	trace = OFF;
 	nflag = OFF;
 	iflag = OFF;
-	openlog("timed", LOG_ODELAY, LOG_DAEMON);
+	openlog("timed", LOG_CONS|LOG_PID, LOG_DAEMON);
 
 	if (getuid() != 0) {
 		fprintf(stderr, "Timed: not superuser\n");
@@ -171,7 +173,6 @@ char **argv;
 		fprintf(fd, "Tracing started on: %s\n\n", 
 					date());
 	}
-	openlog("timed", LOG_ODELAY|LOG_CONS, LOG_DAEMON);
 
 	srvp = getservbyname("timed", "udp");
 	if (srvp == 0) {
@@ -377,6 +378,7 @@ char **argv;
 			else
 				makeslave(savefromnet);
 			setstatus();
+			justquit = 1;
 			break;
 			
 		default:
