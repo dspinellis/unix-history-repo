@@ -1,4 +1,4 @@
-/*	user.h	6.7	85/02/15	*/
+/*	user.h	6.8	85/03/07	*/
 
 #ifdef KERNEL
 #include "../machine/pcb.h"
@@ -19,13 +19,13 @@
  * isn't needed in core when the process is swapped out.
  */
  
-#define	MAXCOMLEN	16		/* <= MAXNAMLEN, >= sizeof(a_comm) */
+#define	MAXCOMLEN	16		/* <= MAXNAMLEN, >= sizeof(ac_comm) */
  
 struct	user {
 	struct	pcb u_pcb;
 	struct	proc *u_procp;		/* pointer to proc structure */
 	int	*u_ar0;			/* address of users saved R0 */
-	char	u_comm[MAXNAMLEN + 1];
+	char	u_comm[MAXCOMLEN + 1];
 
 /* syscall parameters, results and catches */
 	int	u_arg[8];		/* arguments to current system call */
@@ -45,11 +45,11 @@ struct	user {
 	char	u_eosys;		/* special action on end of syscall */
 
 /* 1.1 - processes and protection */
-	short	u_uid;			/* effective user id */
-	short	u_gid;			/* effective group id */
-	short	u_groups[NGROUPS];	/* groups, 0 terminated */
-	short	u_ruid;			/* real user id */
-	short	u_rgid;			/* real group id */
+	uid_t	u_uid;			/* effective user id */
+	uid_t	u_ruid;			/* real user id */
+	gid_t	u_gid;			/* effective group id */
+	gid_t	u_rgid;			/* real group id */
+	gid_t	u_groups[NGROUPS];	/* groups, 0 terminated */
 
 /* 1.2 - memory management */
 	size_t	u_tsize;		/* text size (clicks) */
@@ -67,6 +67,7 @@ struct	user {
 	int	(*u_signal[NSIG])();	/* disposition of signals */
 	int	u_sigmask[NSIG];	/* signals to be blocked */
 	int	u_sigonstack;		/* signals to take on sigstack */
+	int	u_sigintr;		/* signals that interrupt syscalls */
 	int	u_oldmask;		/* saved mask from before sigpause */
 	int	u_code;			/* ``code'' to trap */
 	struct	sigstack u_sigstack;	/* sp & on stack state variable */
@@ -76,6 +77,7 @@ struct	user {
 /* 1.4 - descriptor management */
 	struct	file *u_ofile[NOFILE];	/* file structures for open files */
 	char	u_pofile[NOFILE];	/* per-process flags of open files */
+	int	u_lastfile;		/* high-water mark of u_ofile */
 #define	UF_EXCLOSE 	0x1		/* auto-close on exec */
 #define	UF_MAPPED 	0x2		/* mapped from device */
 	struct	inode *u_cdir;		/* current directory */
@@ -117,10 +119,8 @@ struct	user {
 };
 
 /* u_eosys values */
-#define	JUSTRETURN	0
-#define	RESTARTSYS	1
-#define	SIMULATERTI	2
-#define	REALLYRETURN	3
+#define	JUSTRETURN	1
+#define	RESTARTSYS	2
 
 /* u_error codes */
 #ifdef KERNEL
