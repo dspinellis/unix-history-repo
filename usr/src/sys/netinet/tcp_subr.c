@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)tcp_subr.c	7.13 (Berkeley) %G%
+ *	@(#)tcp_subr.c	7.13.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -290,7 +290,9 @@ tcp_ctlinput(cmd, sa)
 	case PRC_REDIRECT_HOST:
 	case PRC_REDIRECT_TOSNET:
 	case PRC_REDIRECT_TOSHOST:
+#if BSD>=43
 		in_pcbnotify(&tcb, &sin->sin_addr, 0, in_rtchange);
+#endif
 		break;
 
 	default:
@@ -300,6 +302,15 @@ tcp_ctlinput(cmd, sa)
 			tcp_notify);
 	}
 }
+
+#if BSD<43
+/* XXX fake routine */
+tcp_abort(inp)
+	struct inpcb *inp;
+{
+	return;
+}
+#endif
 
 /*
  * When a source quench is received, close congestion window
