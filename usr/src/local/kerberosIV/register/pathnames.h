@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	1.2 (Berkeley) %G%
+ *	@(#)pathnames.h	5.1 (Berkeley) %G%
  */
 
 #define	SERVER_KEYDIR	"/etc/kerberosIV/register_keys"
