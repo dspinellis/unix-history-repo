@@ -14,7 +14,6 @@ netimp/if_imp.c		optional imp inet
 netimp/if_imphost.c	optional imp inet
 netinet/if_loop.c	optional loop inet device-driver
 netinet/in.c		optional inet
-netinet/in_cksum.c	optional inet
 netinet/in_pcb.c	optional inet
 netinet/in_proto.c	optional inet
 netinet/ip_icmp.c	optional inet
