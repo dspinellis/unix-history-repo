@@ -382,7 +382,7 @@ restart:
 				MGET(m, M_WAIT, MT_DATA);
 				mlen = MLEN;
 			}
-			if (resid >= MINCLSIZE && space >= MCLBYTES) {
+			if (resid >= MINCLSIZE) {
 				MCLGET(m, M_WAIT);
 				if ((m->m_flags & M_EXT) == 0)
 					goto nopages;
@@ -396,7 +396,8 @@ restart:
 				} else
 					len = min(MCLBYTES, resid);
 #endif
-				space -= MCLBYTES;
+				len = min(len, space);
+				space -= len;
 			} else {
 nopages:
 				len = min(min(mlen, resid), space);

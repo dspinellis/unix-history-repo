@@ -239,12 +239,15 @@ gottype:
 		goto bad;
 	}
 	eh = mtod(m, struct ether_header *);
-	type = htons((u_short)type);
-	bcopy((caddr_t)&type,(caddr_t)&eh->ether_type,
-		sizeof(eh->ether_type));
- 	bcopy((caddr_t)edst, (caddr_t)eh->ether_dhost, sizeof (edst));
- 	bcopy((caddr_t)ac->ac_enaddr, (caddr_t)eh->ether_shost,
-	    sizeof(eh->ether_shost));
+
+	eh->ether_type = htons((u_short) type);
+		
+	*(int *) eh->ether_dhost = *(int *) edst;
+	((short *) eh->ether_dhost)[2] = ((short *) edst)[2];
+
+	*(int *) eh->ether_shost = *(int *) ac->ac_enaddr;
+	((short *) eh->ether_shost)[2] = ((short *) ac->ac_enaddr)[2];
+
 	s = splimp();
 	/*
 	 * Queue message on interface, and start output if interface
