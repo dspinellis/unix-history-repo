@@ -13,13 +13,13 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)tmpnam.3	5.7 (Berkeley) %G%
+.\"	@(#)tmpnam.3	5.8 (Berkeley) %G%
 .\"
 .TH COMPATS5 3 ""
 .UC 7
 .SH NAME
 memccpy, memchr, memcmp, memcpy, memset, strchr,
-strcspn, strpbrk, strrchr, strspn, tempnam,
+strcspn, strdup, strpbrk, strrchr, strspn, tempnam,
 tmpfile, tmpnam \- System V compatibility routines
 .SH SYNOPSIS
 .nf
@@ -72,6 +72,8 @@ tmpfile, tmpnam \- System V compatibility routines
 .B char *tmpnam(str)
 .B char *str;
 .PP
+.B char *strdup(str)
+.B char *str;
 .SH COMMENT
 The \fI#defines\fP \fIP_tmpdir\fP and \fIL_tmpnam\fP, used by the routines
 \fItempnam\fP, \fItmpfile\fP, and \fItmpnam\fP are not available in
