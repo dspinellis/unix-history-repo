@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)sed.1	5.2 (Berkeley) %G%
+.\"	@(#)sed.1	5.3 (Berkeley) %G%
 .\"
 .Dd ""
 .Dt SED 1
@@ -430,8 +430,9 @@ Within
 .Em string1
 and
 .Em string2 ,
-the delimiter itself can be used as a literal character if it is preceded
-by a backslash.
+a backslash followed by any character other than a newline is that literal
+character, and a backslash followed by an ``n'' is replaced by a newline
+character.
 .sp
 .It [2addr]!function
 .It [2addr]!function-list
