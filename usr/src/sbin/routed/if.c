@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)if.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)if.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -10,7 +10,7 @@ static char sccsid[] = "@(#)if.c	4.3 (Berkeley) %G%";
 extern	struct interface *ifnet;
 
 /*
- * Find the interface with address add.
+ * Find the interface with address addr.
  */
 struct interface *
 if_ifwithaddr(addr)
@@ -29,6 +29,24 @@ if_ifwithaddr(addr)
 			break;
 		if ((ifp->int_flags & IFF_BROADCAST) &&
 		    same(&ifp->int_broadaddr, addr))
+			break;
+	}
+	return (ifp);
+}
+
+/*
+ * Find the point-to-point interface with destination address addr.
+ */
+struct interface *
+if_ifwithdstaddr(addr)
+	struct sockaddr *addr;
+{
+	register struct interface *ifp;
+
+	for (ifp = ifnet; ifp; ifp = ifp->int_next) {
+		if ((ifp->int_flags & IFF_POINTOPOINT) == 0)
+			continue;
+		if (same(&ifp->int_dstaddr, addr))
 			break;
 	}
 	return (ifp);
