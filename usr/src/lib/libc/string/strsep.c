@@ -1,56 +1,54 @@
-/*
- * Copyright (c) 1988 The Regents of the University of California.
+/*-
+ * Copyright (c) 1990 The Regents of the University of California.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * %sccs.include.redist.c%
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)strsep.c	5.2 (Berkeley) %G%";
-#endif /* LIBC_SCCS and not lint */
-
+#include <sys/stdc.h>
+#include <string.h>
 #include <stdio.h>
 
+#if defined(LIBC_SCCS) && !defined(lint)
+static const char sccsid[] = "@(#)strsep.c	5.3 (Berkeley) %G%";
+#endif /* LIBC_SCCS and not lint */
+
+/*
+ * Get next token from string *stringp, where tokens are nonempty
+ * strings separated by characters from delim.  
+ *
+ * Writes NULs into the string at *stringp to end tokens.
+ * delim need not remain constant from call to call.
+ * On return, *stringp points past the last NUL written (if there might
+ * be further tokens), or is NULL (if there are definitely no more tokens).
+ *
+ * If *stringp is NULL, strtoken returns NULL.
+ */
 char *
-strsep(s, delim)
-	register char *s, *delim;
+strsep(stringp, delim)
+	register char **stringp;
+	register const char *delim;
 {
-	register char *spanp;
+	register char *s;
+	register const char *spanp;
 	register int c, sc;
-	static char *last;
 	char *tok;
 
-	if (s == NULL && (s = last) == NULL)
-		return(NULL);
-
-	/*
-	 * Scan token (scan for delimiters: s += strcspn(s, delim), sort of).
-	 * Note that delim must have one NUL; we stop if we see that, too.
-	 */
-	for (tok = s;; ++s) {
-		c = *s;
+	if ((s = *stringp) == NULL)
+		return (NULL);
+	for (tok = s;;) {
+		c = *s++;
 		spanp = delim;
 		do {
 			if ((sc = *spanp++) == c) {
-				if (c == 0) {
-					last = NULL;
-					return(tok);
-				}
-				*s++ = '\0';
-				last = s;
-				return(tok);
+				if (c == 0)
+					s = NULL;
+				else
+					s[-1] = 0;
+				*stringp = s;
+				return (tok);
 			}
-		} while (sc);
+		} while (sc != 0);
 	}
 	/* NOTREACHED */
 }
