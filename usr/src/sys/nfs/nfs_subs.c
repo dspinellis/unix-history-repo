@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_subs.c	7.11 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -88,12 +88,12 @@ int numgrps = 8;
  * and returns a ptr to it.
  * The hsiz is the size of the rest of the nfs request header.
  * (just used to decide if a cluster is a good idea)
- * nb: Note that the prog, vers and proc args are already in xdr byte order
+ * nb: Note that the prog, vers and procid args are already in xdr byte order
  */
-struct mbuf *nfsm_reqh(prog, vers, proc, cred, hsiz, bpos, mb, retxid)
+struct mbuf *nfsm_reqh(prog, vers, procid, cred, hsiz, bpos, mb, retxid)
 	u_long prog;
 	u_long vers;
-	u_long proc;
+	u_long procid;
 	struct ucred *cred;
 	int hsiz;
 	caddr_t *bpos;
@@ -137,7 +137,7 @@ struct mbuf *nfsm_reqh(prog, vers, proc, cred, hsiz, bpos, mb, retxid)
 	*p++ = rpc_vers;
 	*p++ = prog;
 	*p++ = vers;
-	*p++ = proc;
+	*p++ = procid;
 
 	/* Now we can call nfs_unixauth() and copy it in */
 	ap = nfs_unixauth(cred);
@@ -245,7 +245,7 @@ nfsm_uiotombuf(uiop, mq, siz, bpos)
 {
 	register struct mbuf *mp;
 	struct mbuf *mp2;
-	long xfer, left, uiosiz, off;
+	long xfer, left, uiosiz;
 	int clflg;
 	int rem, len;
 	char *cp, *uiocp;
@@ -333,7 +333,6 @@ nfsm_disct(mdp, dposp, siz, left, updateflg, cp2)
 	register struct mbuf *mp, *mp2;
 	register int siz2, xfer;
 	register caddr_t p;
-	caddr_t p2;
 
 	mp = *mdp;
 	while (left == 0) {
@@ -388,8 +387,8 @@ nfsm_disct(mdp, dposp, siz, left, updateflg, cp2)
 		mp->m_len = siz;
 		*mdp = mp2;
 		*dposp = mtod(mp2, caddr_t);
-		return (0);
 	}
+	return (0);
 }
 
 /*
@@ -593,7 +592,10 @@ nfs_loadattrcache(vpp, mdp, dposp, vaper)
 	register struct nfsv2_fattr *fp;
 	extern struct vnodeops spec_nfsv2nodeops;
 	register struct nfsnode *np;
-	nfsm_vars;
+	register long t1;
+	caddr_t dpos, cp2;
+	int error = 0;
+	struct mbuf *md;
 	enum vtype type;
 	dev_t rdev;
 	struct timeval mtime;
@@ -715,13 +717,10 @@ nfs_namei(ndp, fhp, len, mdp, dposp)
 	register struct mbuf *md;
 	register char *cp;
 	struct vnode *dp = (struct vnode *)0;
-	struct vnode *tdp;
-	struct mount *mp;
 	int flag;
 	int docache;
 	int wantparent;
 	int lockparent;
-	int rootflg = 0;
 	int error = 0;
 
 	ndp->ni_vp = ndp->ni_dvp = (struct vnode *)0;
@@ -935,7 +934,6 @@ nfsrv_fhtovp(fhp, lockflag, vpp, cred)
 	struct ucred *cred;
 {
 	register struct mount *mp;
-	int error;
 
 	if ((mp = getvfs(&fhp->fh_fsid)) == NULL)
 		return (ESTALE);

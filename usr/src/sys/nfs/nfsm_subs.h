@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfsm_subs.h	7.3 (Berkeley) %G%
+ *	@(#)nfsm_subs.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -29,8 +29,8 @@
 /*
  * First define what the actual subs. return
  */
-struct mbuf *nfsm_reqh();
-struct vnode *nfs_fhtovp();
+extern struct mbuf *nfsm_reqh();
+extern struct vnode *nfs_fhtovp();
 
 /*
  * To try and deal with different variants of mbuf.h, I have used the
@@ -89,6 +89,7 @@ struct vnode *nfs_fhtovp();
  * unions.
  */
 
+#ifndef lint
 #define	nfsm_build(a,c,s) \
 		t1 = NFSMSIZ(mb); \
 		if ((s) > (t1-mb->m_len)) { \
@@ -103,6 +104,20 @@ struct vnode *nfs_fhtovp();
 		(a) = (c)(bpos); \
 		mb->m_len += (s); \
 		bpos += (s)
+#else /* lint */
+#define	nfsm_build(a,c,s) \
+		t1 = NFSMSIZ(mb); \
+		if ((s) > (t1-mb->m_len)) { \
+			MGET(mb2, M_WAIT, MT_DATA); \
+			mb->m_next = mb2; \
+			mb = mb2; \
+			mb->m_len = 0; \
+			bpos = mtod(mb, caddr_t); \
+		} \
+		(a) = (c)(bpos); \
+		mb->m_len += (s); \
+		bpos += (s)
+#endif /* lint */
 
 #define	nfsm_disect(a,c,s) \
 		t1 = mtod(md, caddr_t)+md->m_len-dpos; \
@@ -149,10 +164,12 @@ struct vnode *nfs_fhtovp();
 		}
 
 #define	nfsm_loadattr(v,a) \
-		if (error = nfs_loadattrcache(&(v), &md, &dpos, (a))) { \
+		{ struct vnode *tvp = (v); \
+		if (error = nfs_loadattrcache(&tvp, &md, &dpos, (a))) { \
 			m_freem(mrep); \
 			goto nfsmout; \
-		}
+		} \
+		(v) = tvp; }
 
 #define	nfsm_strsiz(s,m) \
 		nfsm_disect(p,u_long *,NFSX_UNSIGNED); \
@@ -165,13 +182,6 @@ struct vnode *nfs_fhtovp();
 #define	nfsm_srvstrsiz(s,m) \
 		nfsm_disect(p,u_long *,NFSX_UNSIGNED); \
 		if (((s) = fxdr_unsigned(long,*p)) > (m) || (s) <= 0) { \
-			error = EBADRPC; \
-			nfsm_reply(0); \
-		}
-
-#define	nfsm_srvstrsizon(s,m) \
-		nfsm_disecton(p,u_long *,NFSX_UNSIGNED); \
-		if (((s) = fxdr_unsigned(long,*p)) > (m)) { \
 			error = EBADRPC; \
 			nfsm_reply(0); \
 		}
@@ -194,16 +204,6 @@ struct vnode *nfs_fhtovp();
 			error = ENOBUFS; \
 			goto nfsmout; \
 		}
-
-#define	nfsm_vars \
-		register u_long *p; \
-		register caddr_t cp; \
-		register long t1, t2; \
-		caddr_t bpos, dpos, cp2; \
-		u_long xid; \
-		int error = 0; \
-		long offs = 0; \
-		struct mbuf *mreq, *mrep, *md, *mb, *mb2
 
 #define nfsm_reqdone	m_freem(mrep); \
 		nfsmout: 
@@ -238,16 +238,6 @@ struct vnode *nfs_fhtovp();
 			return(ENOBUFS); \
 		}
 
-#define	nfsm_srvars \
-		register caddr_t cp; \
-		register u_long *p; \
-		register long t1, t2; \
-		caddr_t bpos; \
-		long offs = 0; \
-		int error = 0; \
-		char *cp2; \
-		struct mbuf *mb, *mb2, *mreq
-
 #define	nfsm_srvdone \
 		nfsmout: \
 		return(error)
@@ -259,7 +249,6 @@ struct vnode *nfs_fhtovp();
 		else \
 			nfs_rephead((s), xid, error, mrq, &mb, &bpos); \
 		m_freem(mrep); \
-		mreq = *mrq; \
 		if (error) \
 			return(0); \
 		}

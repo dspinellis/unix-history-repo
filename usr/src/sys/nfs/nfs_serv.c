@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_serv.c	7.8 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -84,7 +84,12 @@ nfsrv_getattr(mrep, md, dpos, cred, xid, mrq)
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
-	nfsm_srvars;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb, *mb2;
 
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
@@ -128,7 +133,12 @@ nfsrv_setattr(mrep, md, dpos, cred, xid, mrq)
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
-	nfsm_srvars;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb, *mb2;
 
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
@@ -200,7 +210,13 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq)
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
-	nfsm_srvars;
+	register caddr_t cp;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb, *mb2;
 	long len;
 	struct vattr va, *vap = &va;
 
@@ -254,8 +270,12 @@ nfsrv_readlink(mrep, md, dpos, cred, xid, mrq)
 	struct iovec iv[NFS_MAXPATHLEN/MLEN+1];
 	register struct iovec *ivp = iv;
 	register struct mbuf *mp;
-	nfsm_srvars;
-	struct mbuf *mp2, *mp3;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb, *mb2, *mp2, *mp3;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -329,7 +349,12 @@ nfsrv_read(mrep, md, dpos, cred, xid, mrq)
 	register struct iovec *ivp = iv;
 	register struct mbuf *mp;
 	register struct nfsv2_fattr *fp;
-	nfsm_srvars;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb, *mb2;
 	struct mbuf *mp2, *mp3;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
@@ -440,7 +465,12 @@ nfsrv_write(mrep, md, dpos, cred, xid, mrq)
 	struct iovec iv[MAX_IOVEC];
 	struct vattr va;
 	register struct vattr *vap = &va;
-	nfsm_srvars;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb, *mb2;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -556,7 +586,13 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq)
 	register struct vattr *vap = &va;
 	struct nameidata nami;
 	register struct nameidata *ndp = &nami;
-	nfsm_srvars;
+	register caddr_t cp;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb, *mb2;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -633,7 +669,12 @@ nfsrv_remove(mrep, md, dpos, cred, xid, mrq)
 {
 	struct nameidata nami;
 	register struct nameidata *ndp = &nami;
-	nfsm_srvars;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -679,7 +720,12 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq)
 	long xid;
 {
 	register struct nameidata *ndp;
-	nfsm_srvars;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb;
 	struct nameidata nami, tond;
 	struct vnode *fvp, *tvp, *tdvp;
 	nfsv2fh_t fnfh, tnfh;
@@ -765,7 +811,12 @@ nfsrv_link(mrep, md, dpos, cred, xid, mrq)
 {
 	struct nameidata nami;
 	register struct nameidata *ndp = &nami;
-	nfsm_srvars;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb;
 	struct vnode *vp, *xp;
 	nfsv2fh_t nfh, dnfh;
 	fhandle_t *fhp, *dfhp;
@@ -817,7 +868,12 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq)
 	struct nameidata nami;
 	register struct nameidata *ndp = &nami;
 	register struct vattr *vap = &va;
-	nfsm_srvars;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -874,7 +930,13 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq)
 	register struct nfsv2_fattr *fp;
 	struct nameidata nami;
 	register struct nameidata *ndp = &nami;
-	nfsm_srvars;
+	register caddr_t cp;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb, *mb2;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -943,7 +1005,12 @@ nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq)
 {
 	struct nameidata nami;
 	register struct nameidata *ndp = &nami;
-	nfsm_srvars;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -1021,7 +1088,13 @@ nfsrv_readdir(mrep, md, dpos, cred, xid, mrq)
 	register char *bp, *be;
 	register struct mbuf *mp;
 	register struct direct *dp;
-	nfsm_srvars;
+	register caddr_t cp;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb, *mb2;
 	char *cpos, *cend;
 	int len, nlen, rem, xfer, tsiz, i;
 	struct vnode *vp;
@@ -1185,7 +1258,12 @@ nfsrv_statfs(mrep, md, dpos, cred, xid, mrq)
 {
 	register struct statfs *sf;
 	register struct nfsv2_statfs *sfp;
-	nfsm_srvars;
+	register u_long *p;
+	register long t1;
+	caddr_t bpos;
+	int error = 0;
+	char *cp2;
+	struct mbuf *mb, *mb2;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -1211,6 +1289,7 @@ nfsrv_statfs(mrep, md, dpos, cred, xid, mrq)
 /*
  * Null operation, used by clients to ping server
  */
+/* ARGSUSED */
 nfsrv_null(mrep, md, dpos, cred, xid, mrq)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
@@ -1218,16 +1297,19 @@ nfsrv_null(mrep, md, dpos, cred, xid, mrq)
 	struct ucred *cred;
 	u_long xid;
 {
-	nfsm_srvars;
+	caddr_t bpos;
+	int error = 0;
+	struct mbuf *mb;
 
 	error = VNOVAL;
 	nfsm_reply(0);
-	nfsm_srvdone;
+	return (error);
 }
 
 /*
  * No operation, used for obsolete procedures
  */
+/* ARGSUSED */
 nfsrv_noop(mrep, md, dpos, cred, xid, mrq)
 	struct mbuf **mrq;
 	struct mbuf *mrep, *md;
@@ -1235,11 +1317,13 @@ nfsrv_noop(mrep, md, dpos, cred, xid, mrq)
 	struct ucred *cred;
 	u_long xid;
 {
-	nfsm_srvars;
+	caddr_t bpos;
+	int error = 0;
+	struct mbuf *mb;
 
 	error = EPROCUNAVAIL;
 	nfsm_reply(0);
-	nfsm_srvdone;
+	return (error);
 }
 
 /*

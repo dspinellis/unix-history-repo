@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_syscalls.c	7.3 (Berkeley) %G%
+ *	@(#)nfs_syscalls.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -155,7 +155,7 @@ nfssvc()
 	struct mbuf *mreq, *mrep, *nam, *md;
 	struct socket *so;
 	caddr_t dpos;
-	int proc;
+	int procid;
 	u_long retxid;
 	int error;
 
@@ -174,17 +174,17 @@ nfssvc()
 	 */
 	for (;;) {
 		if (error = nfs_getreq(so, nfs_prog, nfs_vers, NFS_NPROCS-1,
-			&nam, &mrep, &md, &dpos, &retxid, &proc, cr)) {
+			&nam, &mrep, &md, &dpos, &retxid, &procid, cr)) {
 			m_freem(nam);
 			continue;
 		}
-		if (error = (*(nfsrv_procs[proc]))(mrep, md, dpos,
+		if (error = (*(nfsrv_procs[procid]))(mrep, md, dpos,
 			cr, retxid, &mreq)) {
 			m_freem(nam);
 			nfsstats.srv_errs++;
 			continue;
 		} else
-			nfsstats.srvrpccnt[proc]++;
+			nfsstats.srvrpccnt[procid]++;
 		m = mreq;
 		siz = 0;
 		while (m) {

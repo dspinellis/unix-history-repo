@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.7 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -92,6 +92,7 @@ nfs_mountroot()
  * doing the sockargs() call because sockargs() allocates an mbuf and
  * an error after that means that I have to release the mbuf.
  */
+/* ARGSUSED */
 nfs_mount(mp, path, data, ndp)
 	struct mount *mp;
 	char *path;
@@ -136,7 +137,6 @@ mountnfs(argp, mp, saddr, pth, hst)
 	char *pth, *hst;
 {
 	register struct nfsmount *nmp;
-	struct nfsnode *np;
 #ifdef notdef
 	struct statfs statf, *sbp;
 #endif
@@ -316,6 +316,7 @@ extern int syncprt;
 /*
  * Flush out the buffer cache
  */
+/* ARGSUSED */
 nfs_sync(mp, waitfor)
 	struct mount *mp;
 	int waitfor;
@@ -332,31 +333,37 @@ nfs_sync(mp, waitfor)
 /*
  * At this point, this should never happen
  */
+/* ARGSUSED */
 nfs_fhtovp(mp, fhp, vpp)
 	struct mount *mp;
 	struct fid *fhp;
 	struct vnode **vpp;
 {
+
 	return (EINVAL);
 }
 
 /*
  * Vnode pointer to File handle, should never happen either
  */
+/* ARGSUSED */
 nfs_vptofh(mp, fhp, vpp)
 	struct mount *mp;
 	struct fid *fhp;
 	struct vnode **vpp;
 {
+
 	return (EINVAL);
 }
 
 /*
  * Vfs start routine, a no-op.
  */
+/* ARGSUSED */
 nfs_start(mp, flags)
 	struct mount *mp;
 	int flags;
 {
+
 	return (0);
 }
