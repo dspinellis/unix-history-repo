@@ -1,4 +1,4 @@
-/*	machdep.c	4.72	82/12/17	*/
+/*	machdep.c	4.73	83/01/12	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -758,6 +758,9 @@ physstrat(bp, strat, prio)
 	int s;
 
 	(*strat)(bp);
+	/* pageout daemon doesn't wait for pushed pages */
+	if (bp->b_flags & B_DIRTY)
+		return;
 	s = spl6();
 	while ((bp->b_flags & B_DONE) == 0)
 		sleep((caddr_t)bp, prio);
