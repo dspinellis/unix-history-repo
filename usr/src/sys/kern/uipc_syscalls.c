@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 1982, 1986, 1988 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +13,19 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_syscalls.c	7.8 (Berkeley) %G%
+ * Redistribution and use in source and binary forms are permitted
+ * provided that the above copyright notice and this paragraph are
+ * duplicated in all such forms and that any documentation,
+ * advertising materials, and other materials related to such
+ * distribution and use acknowledge that the software was developed
+ * by the University of California, Berkeley.  The name of the
+ * University may not be used to endorse or promote products derived
+ * from this software without specific prior written permission.
+ * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ *	@(#)uipc_syscalls.c	7.2.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -44,9 +55,10 @@ socket()
 		int	protocol;
 	} *uap = (struct a *)u.u_ap;
 	struct socket *so;
-	register struct file *fp;
+	struct file *fp;
+	int fd;
 
-	if ((fp = falloc()) == NULL)
+	if (u.u_error = falloc(&fp, &fd))
 		return;
 	fp->f_flag = FREAD|FWRITE;
 	fp->f_type = DTYPE_SOCKET;
@@ -55,9 +67,11 @@ socket()
 	if (u.u_error)
 		goto bad;
 	fp->f_data = (caddr_t)so;
+	u.u_r.r_val1 = fd;
 	return;
 bad:
-	u.u_ofile[u.u_r.r_val1] = 0;
+	u.u_ofile[fd] = 0;
+	crfree(fp->f_cred);
 	fp->f_count = 0;
 }
 
@@ -116,7 +130,7 @@ accept()
 		caddr_t	name;
 		int	*anamelen;
 	} *uap = (struct a *)u.u_ap;
-	register struct file *fp;
+	struct file *fp;
 	struct mbuf *nam;
 	int namelen;
 	int s;
@@ -161,13 +175,7 @@ noname:
 		splx(s);
 		return;
 	}
-	if (ufalloc(0) < 0) {
-		splx(s);
-		return;
-	}
-	fp = falloc();
-	if (fp == 0) {
-		u.u_ofile[u.u_r.r_val1] = 0;
+	if (u.u_error = falloc(&fp, &u.u_r.r_val1)) {
 		splx(s);
 		return;
 	}
@@ -258,9 +266,9 @@ socketpair()
 		int	protocol;
 		int	*rsv;
 	} *uap = (struct a *)u.u_ap;
-	register struct file *fp1, *fp2;
+	struct file *fp1, *fp2;
 	struct socket *so1, *so2;
-	int sv[2];
+	int fd, sv[2];
 
 	if (useracc((caddr_t)uap->rsv, 2 * sizeof (int), B_WRITE) == 0) {
 		u.u_error = EFAULT;
@@ -272,22 +280,20 @@ socketpair()
 	u.u_error = socreate(uap->domain, &so2, uap->type, uap->protocol);
 	if (u.u_error)
 		goto freeit;
-	fp1 = falloc();
-	if (fp1 == NULL)
+	if (u.u_error = falloc(&fp1, &fd))
 		goto free2;
-	sv[0] = u.u_r.r_val1;
+	sv[0] = fd;
 	fp1->f_flag = FREAD|FWRITE;
 	fp1->f_type = DTYPE_SOCKET;
 	fp1->f_ops = &socketops;
 	fp1->f_data = (caddr_t)so1;
-	fp2 = falloc();
-	if (fp2 == NULL)
+	if (u.u_error = falloc(&fp2, &fd))
 		goto free3;
 	fp2->f_flag = FREAD|FWRITE;
 	fp2->f_type = DTYPE_SOCKET;
 	fp2->f_ops = &socketops;
 	fp2->f_data = (caddr_t)so2;
-	sv[1] = u.u_r.r_val1;
+	sv[1] = fd;
 	u.u_error = soconnect2(so1, so2);
 	if (u.u_error)
 		goto free4;
@@ -299,16 +305,20 @@ socketpair()
 		 if (u.u_error)
 			goto free4;
 	}
-	u.u_r.r_val1 = 0;
 	(void) copyout((caddr_t)sv, (caddr_t)uap->rsv, 2 * sizeof (int));
+	u.u_r.r_val1 = sv[0];
+	u.u_r.r_val2 = sv[1];
 	return;
 free4:
+	crfree(fp2->f_cred);
 	fp2->f_count = 0;
 	u.u_ofile[sv[1]] = 0;
 free3:
+	crfree(fp1->f_cred);
 	fp1->f_count = 0;
 	u.u_ofile[sv[0]] = 0;
 free2:
+	so2->so_state |= SS_NOFDREF;
 	(void)soclose(so2);
 freeit:
 	(void)soclose(so1);
@@ -837,9 +847,9 @@ bad:
 
 pipe()
 {
-	register struct file *rf, *wf;
+	struct file *rf, *wf;
 	struct socket *rso, *wso;
-	int r;
+	int fd, r;
 
 	u.u_error = socreate(AF_UNIX, &rso, SOCK_STREAM, 0);
 	if (u.u_error)
@@ -847,23 +857,20 @@ pipe()
 	u.u_error = socreate(AF_UNIX, &wso, SOCK_STREAM, 0);
 	if (u.u_error)
 		goto freeit;
-	rf = falloc();
-	if (rf == NULL)
+	if (u.u_error = falloc(&rf, &fd))
 		goto free2;
-	r = u.u_r.r_val1;
+	u.u_r.r_val1 = fd;
 	rf->f_flag = FREAD;
 	rf->f_type = DTYPE_SOCKET;
 	rf->f_ops = &socketops;
 	rf->f_data = (caddr_t)rso;
-	wf = falloc();
-	if (wf == NULL)
+	if (u.u_error = falloc(&wf, &fd))
 		goto free3;
 	wf->f_flag = FWRITE;
 	wf->f_type = DTYPE_SOCKET;
 	wf->f_ops = &socketops;
 	wf->f_data = (caddr_t)wso;
-	u.u_r.r_val2 = u.u_r.r_val1;
-	u.u_r.r_val1 = r;
+	u.u_r.r_val2 = fd;
 	if (u.u_error = unp_connect2(wso, rso))
 		goto free4;
 	wso->so_state |= SS_CANTRCVMORE;
@@ -876,6 +883,7 @@ free3:
 	rf->f_count = 0;
 	u.u_ofile[r] = 0;
 free2:
+	wso->so_state |= SS_NOFDREF;
 	(void)soclose(wso);
 freeit:
 	(void)soclose(rso);
