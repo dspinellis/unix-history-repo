@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_dmv.c	7.10 (Berkeley) %G%
+ *	@(#)if_dmv.c	7.11 (Berkeley) %G%
  */
 
 /*
@@ -294,7 +294,9 @@ dmvinit(unit)
 	 * (both local and destination for an address family).
 	 */
 	for (ifa = ifp->if_addrlist; ifa; ifa = ifa->ifa_next)
-		if (ifa->ifa_addr->sa_family && ifa->ifa_dstaddr->sa_family)
+		if (ifa->ifa_addr->sa_family &&
+		    ifa->ifa_addr->sa_family != AF_LINK &&
+		    ifa->ifa_dstaddr && ifa->ifa_dstaddr->sa_family)
 			break;
 	if (ifa == (struct ifaddr *) 0)
 		return;
