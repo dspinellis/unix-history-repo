@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwiomux.c	3.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwiomux.c	3.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -27,9 +27,9 @@ static char sccsid[] = "@(#)wwiomux.c	3.19 (Berkeley) %G%";
 /*
  * Multiple window output handler.
  * The idea is to copy window outputs to the terminal, via the
- * display package.  We try to give the top most window highest
- * priority.  The only return condition is when there is keyboard
- * input or when a child process dies which are serviced by signal
+ * display package.  We try to give wwcurwin highest priority.
+ * The only return conditions are when there is keyboard input
+ * and when a child process dies, which are serviced by signal
  * catchers (wwrint() and wwchild()).
  * When there's nothing to do, we sleep in a select().
  * This can be done better with interrupt driven io.  But that's
@@ -145,6 +145,21 @@ wwiomux()
 				if (w->ww_ispty)
 					*p = c;
 			}
+		/*
+		 * Try the current window first, if there is output
+		 * then process it and go back to the top to try again.
+		 * This can lead to starvation of the other windows,
+		 * but presumably that what we want.
+		 * Update will eventually happen when output from wwcurwin
+		 * dies down.
+		 */
+		if ((w = wwcurwin) != 0 && w->ww_pty >= 0 &&
+		    w->ww_obq > w->ww_obp && !w->ww_stopped) {
+			n = wwwrite(w, w->ww_obp, w->ww_obq - w->ww_obp);
+			if ((w->ww_obp += n) == w->ww_obq)
+				w->ww_obq = w->ww_obp = w->ww_ob;
+			continue;
+		}
 		for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw)
 			if (w->ww_pty >= 0 && w->ww_obq > w->ww_obp &&
 			    !w->ww_stopped) {
@@ -152,11 +167,8 @@ wwiomux()
 					w->ww_obq - w->ww_obp);
 				if ((w->ww_obp += n) == w->ww_obq)
 					w->ww_obq = w->ww_obp = w->ww_ob;
-				if (wwinterrupt()) {
-					wwclrintr();
-					return;
-				}
-				break;
+				if (wwinterrupt())
+					break;
 			}
 	}
 }
