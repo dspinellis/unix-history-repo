@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)stdlib.h	8.4 (Berkeley) %G%
+ *	@(#)stdlib.h	8.5 (Berkeley) %G%
  */
 
 #ifndef _STDLIB_H_
@@ -117,7 +117,7 @@ int	 getloadavg __P((double [], int));
 char	*group_from_gid __P((unsigned long, int));
 int	 heapsort __P((void *, size_t, size_t,
 	    int (*)(const void *, const void *)));
-char	*initstate __P((unsigned, char *, int));
+char	*initstate __P((unsigned long, char *, long));
 int	 mergesort __P((void *, size_t, size_t,
 	    int (*)(const void *, const void *)));
 int	 radixsort __P((const unsigned char **, int, const unsigned char *,
@@ -127,7 +127,7 @@ int	 sradixsort __P((const unsigned char **, int, const unsigned char *,
 long	 random __P((void));
 char	*realpath __P((const char *, char resolved_path[]));
 char	*setstate __P((char *));
-void	 srandom __P((unsigned));
+void	 srandom __P((unsigned long));
 char	*user_from_uid __P((unsigned long, int));
 #ifndef __STRICT_ANSI__
 long long
