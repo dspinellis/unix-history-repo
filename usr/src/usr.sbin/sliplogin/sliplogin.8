@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)sliplogin.8	5.3 (Berkeley) %G%
+.\"     @(#)sliplogin.8	5.4 (Berkeley) %G%
 .\"
 .Dd 
 .Dt SLIPLOGIN 8
@@ -149,22 +149,26 @@ logs various information to the system log daemon,
 with a facility code of
 .Em daemon .
 The messages are listed here, grouped by severity level.
+.Pp
 .Sy Error Severity
-.Bl -tag -width Ds
+.Bl -tag -width Ds -compact
 .It Sy ioctl (TCGETS): Em reason
 A
 .Dv TCGETS
 .Fn ioctl
 to get the line parameters failed.
+.Pp
 .It Sy ioctl (TCSETS): Em reason
 A
 .Dv TCSETS
 .Fn ioctl
 to set the line parameters failed.
+.Pp
 .It Sy /etc/slip.hosts: Em reason
 The
 .Pa /etc/slip.hosts
 file could not be opened.
+.Pp
 .It Sy access denied for Em user
 No entry for
 .Em user
@@ -173,7 +177,7 @@ was found in
 .El
 .Pp
 .Sy Notice Severity
-.Bl -tag -width Ds
+.Bl -tag -width Ds -compact
 .It Sy "attaching slip unit" Em unit Sy for Ar loginname
 .Tn SLIP
 unit
