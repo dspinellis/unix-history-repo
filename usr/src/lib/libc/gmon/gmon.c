@@ -6,7 +6,7 @@
  */
 
 #if !defined(lint) && defined(LIBC_SCCS)
-static char sccsid[] = "@(#)gmon.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)gmon.c	5.12 (Berkeley) %G%";
 #endif
 
 #include <unistd.h>
@@ -16,6 +16,7 @@ static char sccsid[] = "@(#)gmon.c	5.11 (Berkeley) %G%";
 
 #ifdef DEBUG
 #include <stdio.h>
+#include <fcntl.h>
 #endif
 
 #include <sys/gmon.h>
@@ -130,6 +131,8 @@ _mcleanup()
 	int toindex;
 	struct rawarc rawarc;
 	struct gmonparam *p = &_gmonparam;
+	int log, len;
+	char buf[200];
 
 	if (p->state == GMON_PROF_ERROR)
 		ERR("_mcleanup: tos overflow\n");
@@ -141,7 +144,13 @@ _mcleanup()
 		return;
 	}
 #ifdef DEBUG
-	fprintf(stderr, "[mcleanup] sbuf 0x%x ssiz %d\n", sbuf, ssiz);
+	log = open("gmon.log", O_CREAT|O_TRUNC|O_WRONLY, 0664);
+	if (log < 0) {
+		perror("mcount: gmon.log");
+		return;
+	}
+	len = sprintf(buf, "[mcleanup1] sbuf 0x%x ssiz %d\n", sbuf, ssiz);
+	write(log, buf, len);
 #endif
 	write(fd, (char *)&gmonhdr, sizeof(gmonhdr));
 	write(fd, sbuf, ssiz);
@@ -155,10 +164,11 @@ _mcleanup()
 		for (toindex = p->froms[fromindex]; toindex != 0;
 		     toindex = p->tos[toindex].link) {
 #ifdef DEBUG
-			fprintf(stderr,
-			"[mcleanup] frompc 0x%x selfpc 0x%x count %d\n" ,
+			len = sprintf(buf,
+			"[mcleanup2] frompc 0x%x selfpc 0x%x count %d\n" ,
 				frompc, p->tos[toindex].selfpc,
 				p->tos[toindex].count);
+			write(log, buf, len);
 #endif
 			rawarc.raw_frompc = frompc;
 			rawarc.raw_selfpc = p->tos[toindex].selfpc;
