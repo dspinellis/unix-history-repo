@@ -9,7 +9,7 @@
  * software without specific prior written permission. This software
  * is provided ``as is'' without express or implied warranty.
  *
- *	@(#)uipc_usrreq.c	7.4 (Berkeley) %G%
+ *	@(#)uipc_usrreq.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
