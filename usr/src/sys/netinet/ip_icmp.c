@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_icmp.c	7.10 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.8.1.1 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -75,6 +75,7 @@ icmp_error(n, type, code, dest)
 	if (oip->ip_off &~ (IP_MF|IP_DF))
 		goto free;
 	if (oip->ip_p == IPPROTO_ICMP && type != ICMP_REDIRECT &&
+	  dtom(oip)->m_len >= oiplen + ICMP_MINLEN &&
 	  n->m_len >= oiplen + ICMP_MINLEN &&
 	  !ICMP_INFOTYPE(((struct icmp *)((caddr_t)oip + oiplen))->icmp_type)) {
 		icmpstat.icps_oldicmp++;
@@ -121,6 +122,7 @@ icmp_error(n, type, code, dest)
 	nip = mtod(m, struct ip *);
 	bcopy((caddr_t)oip, (caddr_t)nip, oiplen);
 	nip->ip_len = m->m_len;
+	nip->ip_hl = sizeof(struct ip) >> 2;
 	nip->ip_hl = sizeof(struct ip) >> 2;
 	nip->ip_p = IPPROTO_ICMP;
 	icmp_reflect(m);
@@ -382,6 +384,10 @@ icmp_reflect(m)
 	ip->ip_ttl = MAXTTL;
 
 	if (optlen > 0) {
+		register u_char *cp;
+		int opt, cnt, off;
+		u_int len;
+
 		register u_char *cp;
 		int opt, cnt, off;
 		u_int len;
