@@ -1,8 +1,8 @@
-SCCSID = "@(#)pimakefile 1.24 %G%"
+SCCSID = "@(#)pimakefile 1.25 %G%"
 INSTALLDIR = ${DESTDIR}/usr/ucb
 INSTALLNAME = ${INSTALLDIR}/pi
 WHOAMI = pi
-VERSION = 2.2
+VERSION = 2.3
 DATE = %G%
 
 MKSTR = /usr/ucb/mkstr
@@ -117,6 +117,7 @@ print:	sources
 	@pr yy.h yy*.c
 
 install: a.out
+	${RM} ${LIBDIR}/${OLDSTRINGS}
 	cp ${ERRORSTRINGS} ${LIBDIR}/${ERRORSTRINGS}
 	cp ${INSTALLDIR}/pi ${INSTALLDIR}/pi.bak
 	cp a.out ${INSTALLDIR}/pi
