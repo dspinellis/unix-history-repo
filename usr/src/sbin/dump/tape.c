@@ -1,4 +1,7 @@
-static	char *sccsid = "@(#)tape.c	1.7 (Berkeley) %G%";
+#ifndef lint
+static	char *sccsid = "@(#)tape.c	1.8 (Berkeley) %G%";
+#endif
+
 #include "dump.h"
 
 char	(*tblock)[TP_BSIZE];	/* Pointer to malloc()ed buffer for tape */
@@ -27,10 +30,8 @@ alloctape()
 taprec(dp)
 	char *dp;
 {
-	register i;
 
-	for (i=0; i < TP_BSIZE; i++)
-		tblock[trecno][i] = *dp++;
+	bcopy(dp, tblock[trecno], TP_BSIZE);
 	trecno++;
 	spcl.c_tapea++;
 	if(trecno >= ntrec)
