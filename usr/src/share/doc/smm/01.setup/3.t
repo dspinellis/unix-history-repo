@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)3.t	6.17 (Berkeley) %G%
+.\"	@(#)3.t	6.18 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -20,6 +20,42 @@ System V system, some of this section will still apply (in particular,
 the filesystem conversion).  However, many of the system configuration
 files are different, and the executable file formats are completely
 incompatible.
+.PP
+In particular be wary when using this information to upgrade
+a 4.3\*(Bs HP300 system.
+There are at least 4 different versions of ``4.3'' out there:
+.IP 1)
+HPBSD 1.x from Utah.
+.br
+This was the original version of 4.3\*(Bs for HP300s from which the
+other varients (and 4.4) are derived.
+It is largely a 4.3 system with Sun's NFS 3.0 filesystem code and
+some 4.3-Tahoe features (e.g. networking code).
+Since the filesystem code is 4.2/4.3 vintage and the filesystem
+hierarchy is largely 4.3, most of this section should apply.
+.IP 2)
+MORE/bsd from Mt. Xinu.
+.br
+This is a 4.3-Tahoe vintage system with Sun's NFS 4.0 filesystem code
+upgraded with Tahoe UFS features.
+The instructions for 4.3-Tahoe should largely apply.
+.IP 3)
+4.3-Reno from CSRG.
+.br
+At least one site bootstrapped HP300 support from the Reno distribution.
+The Reno filesystem code was somewhere between 4.3 and 4.4: the VFS switch
+had been added but many of the UFS features (e.g. ``inline'' symlinks)
+were missing.
+The filesystem hierarchy reorginization first appeared in this release.
+Be extremely careful following these instructions in this case.
+.IP 4)
+HPBSD 2.0 from Utah.
+.br
+As if things weren't bad enough already,
+this release has the 4.4 filesystem and networking code
+as well as some utilities, but still has a 4.3 hierarchy.
+No filesystem conversions are necessary in this case,
+but files will still need to be moved around.
 .NH 2
 Installation overview
 .PP
@@ -174,7 +210,7 @@ lfC c l.
 /usr/lib/aliases	*	mail forwarding data base (moves to \f(CW/etc/aliases\fP)
 /usr/lib/crontab	*	cron daemon data base (moves to \f(CW/etc/crontab\fP)
 /usr/lib/crontab.local	*	local cron daemon data base (moves to \f(CW/etc/crontab.local\fP)
-/usr/lib/lib*.a	\(dg	for locally libraries
+/usr/lib/lib*.a	\(dg	for local libraries
 /usr/lib/mail.rc	\(dg	system-wide mail(1) initialization (moves to \f(CW/etc/mail.rc\fP)
 /usr/lib/sendmail.cf	*	sendmail configuration (moves to \f(CW/etc/sendmail.cf\fP)
 /usr/lib/tmac/*	\(dd	for locally developed troff/nroff macros (moves to \f(CW/usr/share/tmac/*\fP)
@@ -985,10 +1021,20 @@ initialized to \-1.
 .NH 4
 Virtual memory changes
 .PP
-The new virtual memory implementation is derived from the MACH
+The new virtual memory implementation is derived from the Mach
 operating system developed at Carnegie-Mellon,
 and was ported to the BSD kernel at the University of Utah.
-The MACH virtual memory system call interface has been replaced with the
+It is based on the 2.0 release of Mach
+(with some bug fixes from the 2.5 and 3.0 releases)
+and retains many of its essential features such as
+the separation of the machine dependent and independent layers
+(the ``pmap'' interface),
+efficient memory utilization using copy-on-write
+and other lazy-evaluation techniques,
+and support for large, sparse address spaces.
+It does not include the ``external pager'' interface instead using
+a primitive internal pager interface.
+The Mach virtual memory system call interface has been replaced with the
 ``mmap''-based interface described in the ``Berkeley Software
 Architecture Manual'' (see UNIX Programmer's Manual,
 Supplementary Documents, PSD:5).
@@ -998,6 +1044,28 @@ The integration of the new virtual memory is functionally complete,
 but still has serious performance problems under heavy memory load.
 The internal kernel interfaces have not yet been completed
 and the memory pool and buffer cache have not been merged.
+Some additional cavaets:
+.IP \(bu
+Since the code is based on the 2.0 release of Mach,
+bugs and misfeatures of the BSD version should not be considered
+short-comings of the current Mach virtual memory system.
+.IP \(bu
+Because of the disjoint virtual memory (page) and IO (buffer) caches,
+it is possible to see inconsistancies if using both the mmap and
+read/write interfaces on the same file simultaneously.
+.IP \(bu
+Swap space is allocated on-demand rather than up front and no
+allocation checks are performed so it is possible to over-commit
+memory and eventually deadlock.
+.IP \(bu
+The semantics of the
+.Xr vfork (2)
+system call are slightly different.
+The synchronization between parent and child is preserved,
+but the memory sharing aspect is not.
+In practise this has been sufficient for backward compatibility,
+but newer code should just use
+.Xr fork (2).
 .NH 4
 Networking additions and changes
 .PP
@@ -1346,6 +1414,8 @@ Though this native operating system compatibility was provided by the
 developers as needed for their purposes and is by no means complete,
 it is sufficient to run a number of non-trivial applications including
 those which require HP-UX or SunOS shared libraries.
+For example, the vendor supplied X11 server and windowing environment
+can be used on both the HP300 and SPARC.
 .PP
 It is important to remember that merely copying over a native binary
 and executing it (or executing it directly across NFS) does not imply
@@ -1363,7 +1433,7 @@ The DECstation port also has code for ULTRIX emulation
 (kernel option ULTRIXCOMPAT, not compiled into the generic kernel)
 but it was used primarily for initially bootstrapping the port and
 has not been used since.
-Hence, some work may be required to make it useful.
+Hence, some work may be required to make it generally useful.
 .NH 3
 Changes to the utilities
 .PP
@@ -1541,10 +1611,12 @@ see section 5 for information on setting up the network.
 Since the stat st_size field is now 64-bits instead of 32,
 doing something like:
 .DS
+.ft CW
 foo(st.st_size);
 .DE
 and then (improperly) defining foo with an ``int'' or ``long'' parameter:
 .DS
+.ft CW
 foo(size)
 	int size;
 {
@@ -1552,25 +1624,36 @@ foo(size)
 }
 .DE
 will fail miserably (well, it might work on a little endian machine).
-This problem showed up in emacs as well as several other programs.
+This problem showed up in
+.Xr emacs (1)
+as well as several other programs.
 A related problem is improperly casting (or failing to cast)
-the second argument to lseek or [f]truncate ala:
+the second argument to
+.Xr lseek (2),
+.Xr truncate (2),
+or
+.Xr ftruncate (2)
+ala:
 .DS
+.ft CW
 lseek(fd, (long)off, 0);
 .DE
 or
 .DS
+.ft CW
 lseek(fd, 0, 0);
 .DE
 The best solution is to include
-.Pn <sys/types.h>
+.Pn <unistd.h>
 which has prototypes that catch these types of errors.
 .PP
-Determining the ``namelen'' parameter for a connect call on a
-unix domain socket should use the SUN_LEN macro.
+Determining the ``namelen'' parameter for a
+.Xr connect (2)
+call on a unix domain socket should use the ``SUN_LEN'' macro from
+.Pn <sys/un.h> .
 One old way that was used:
 .DS
-addrlen = strlen(unaddr.sun_path) + sizeof(unaddr.sun_family);
+addrlen  =  strlen(unaddr.sun_path)  +  sizeof(unaddr.sun_family);
 .DE
 no longer works as there is an additional field ``sun_len''.
 .PP
