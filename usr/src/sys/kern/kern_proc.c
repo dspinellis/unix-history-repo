@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.35	82/08/24	*/
+/*	kern_proc.c	4.36	82/09/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -6,6 +6,7 @@
 #include "../h/mtpr.h"
 #include "../h/dir.h"
 #include "../h/user.h"
+#include "../h/kernel.h"
 #include "../h/proc.h"
 #include "../h/buf.h"
 #include "../h/reg.h"
@@ -17,11 +18,21 @@
 #include "../h/vm.h"
 #include "../h/text.h"
 #include "../h/psl.h"
-#include "../h/vlimit.h"
 #include "../h/file.h"
 #include "../h/quota.h"
 #include "../h/descrip.h"
 #include "../h/uio.h"
+#include "../h/mbuf.h"
+
+gethostid()
+{
+
+}
+
+sethostid()
+{
+
+}
 
 /*
  * exec system call, with and without environments.
@@ -32,13 +43,13 @@ struct execa {
 	char	**envp;
 };
 
-exec()
+execv()
 {
 	((struct execa *)u.u_ap)->envp = NULL;
-	exece();
+	execve();
 }
 
-exece()
+execve()
 {
 	register nc;
 	register char *cp;
@@ -336,7 +347,6 @@ register struct inode *ip;
 	 * parent who will set SVFDONE when he has taken back
 	 * our resources.
 	 */
-	u.u_prof.pr_scale = 0;
 	if ((u.u_procp->p_flag & SVFORK) == 0)
 		vrelvm();
 	else {
@@ -476,7 +486,7 @@ exit(rv)
 	p = u.u_procp;
 	p->p_flag &= ~(STRC|SULOCK);
 	p->p_flag |= SWEXIT;
-	p->p_clktim = 0;
+	timerclear(&p->p_seltimer);
 	(void) spl6();
 	if ((int)SIG_IGN & 1)
 		p->p_siga0 = ~0;
@@ -523,7 +533,7 @@ exit(rv)
 		ilock(u.u_rdir);
 		iput(u.u_rdir);
 	}
-	u.u_limit[LIM_FSIZE] = INFINITY;
+	u.u_rlimit[RLIMIT_FSIZE].rlim_cur = RLIM_INFINITY;
 	acct();
 #ifdef QUOTA
 	qclean();
@@ -549,9 +559,10 @@ exit(rv)
 	if (p->p_pid == 1)
 		panic("init died");
 done:
-	((struct xproc *)p)->xp_xstat = rv;		/* overlay */
-	((struct xproc *)p)->xp_vm = u.u_vm;		/* overlay */
-	vmsadd(&((struct xproc *)p)->xp_vm, &u.u_cvm);
+	p->p_xstat = rv;
+	{ struct mbuf *m = m_getclr(M_DONTWAIT); p->p_ru = mtod(m, struct rusage *); }
+	*p->p_ru = u.u_ru;
+	ruadd(p->p_ru, &u.u_cru);
 	for (q = proc; q < procNPROC; q++)
 		if (q->p_pptr == p) {
 			if (q->p_osptr)
@@ -595,18 +606,17 @@ done:
 
 wait()
 {
-	struct vtimes vm;
-	struct vtimes *vp;
+	struct rusage ru, *rup;
 
 	if ((u.u_ar0[PS] & PSL_ALLCC) != PSL_ALLCC) {
-		wait1(0, (struct vtimes *)0);
+		wait1(0, (struct rusage *)0);
 		return;
 	}
-	vp = (struct vtimes *)u.u_ar0[R1];
-	wait1(u.u_ar0[R0], &vm);
+	rup = (struct rusage *)u.u_ar0[R1];
+	wait1(u.u_ar0[R0], &ru);
 	if (u.u_error)
 		return;
-	(void) copyout((caddr_t)&vm, (caddr_t)vp, sizeof (struct vtimes));
+	(void) copyout((caddr_t)&ru, (caddr_t)rup, sizeof (struct rusage));
 }
 
 /*
@@ -616,9 +626,9 @@ wait()
  * Look also for stopped (traced) children,
  * and pass back status from them.
  */
-wait1(options, vp)
-	register options;
-	struct vtimes *vp;
+wait1(options, ru)
+	register int options;
+	struct rusage *ru;
 {
 	register f;
 	register struct proc *p, *q;
@@ -630,12 +640,13 @@ loop:
 		f++;
 		if (p->p_stat == SZOMB) {
 			u.u_r.r_val1 = p->p_pid;
-			u.u_r.r_val2 = ((struct xproc *)p)->xp_xstat;
-			((struct xproc *)p)->xp_xstat = 0;
-			if (vp)
-				*vp = ((struct xproc *)p)->xp_vm;
-			vmsadd(&u.u_cvm, &((struct xproc *)p)->xp_vm);
-			((struct xproc *)p)->xp_vm = zvms;
+			u.u_r.r_val2 = p->p_xstat;
+			p->p_xstat = 0;
+			if (ru)
+				*ru = *p->p_ru;
+			ruadd(&u.u_cru, p->p_ru);
+			m_free(dtom(p->p_ru));
+			p->p_ru = 0;
 			p->p_stat = NULL;
 			p->p_pid = 0;
 			p->p_ppid = 0;
@@ -751,7 +762,7 @@ fork1(isvfork)
 	if (newproc(isvfork)) {
 		u.u_r.r_val1 = p1->p_pid;
 		u.u_r.r_val2 = 1;  /* child */
-		u.u_start = time;
+		u.u_start = time.tv_sec;
 		u.u_acflag = AFORK;
 #ifdef QUOTA
 		u.u_qflags &= ~QUF_LOGIN;
