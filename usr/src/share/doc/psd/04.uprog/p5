@@ -1,4 +1,4 @@
-.\"	@(#)p5	6.1 (Berkeley) %G%
+.\"	@(#)p5	6.2 (Berkeley) %G%
 .\"
 .NH
 PROCESSES
@@ -112,7 +112,7 @@ is located, say
 .P1
 execl("/bin/date", "date", NULL);
 execl("/usr/bin/date", "date", NULL);
-fprintf(stderr, "Someone stole 'date'\n");
+fprintf(stderr, "Someone stole 'date'\en");
 .P2
 .PP
 A variant of
@@ -414,7 +414,7 @@ potentially active.
 .P1
 #include <stdio.h>
 
-#define	READ	0
+#define	READ	 0
 #define	WRITE	1
 #define	tst(a, b)	(mode == READ ? (b) : (a))
 static	int	popen_pid;
