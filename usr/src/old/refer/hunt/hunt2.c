@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)hunt2.c	4.2 (Berkeley) %G%";
+static char *sccsid = "@(#)hunt2.c	4.3 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -77,7 +77,7 @@ union ptr {
 	fprintf(stderr,"first item hash %d lp %ld 0%lo\n", hh[0],lp,lp);
 # endif
 	_assert (fb!=NULL);
-	_assert (fseek(fb,lp,0)==NULL);
+	_assert (fseek(fb, lp, 0) != -1);
 	for(i=0; i<lmaster; i++)
 	{
 		if (iflong)
@@ -119,7 +119,7 @@ union ptr {
 			}
 		}
 		lp = hpt[hh[nterm]];
-		_assert (fseek(fb, lp, 0)==0);
+		_assert (fseek(fb, lp, 0) != -1);
 # if D1
 		fprintf(stderr,"item %d hash %d seek to %ld\n",nterm,hh[nterm],lp);
 # endif
