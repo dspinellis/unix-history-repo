@@ -1,4 +1,4 @@
-/*	kern_descrip.c	6.6	84/11/27	*/
+/*	kern_descrip.c	6.7	84/11/27	*/
 
 #include "param.h"
 #include "systm.h"
@@ -59,7 +59,7 @@ dup()
 	j = ufalloc(0);
 	if (j < 0)
 		return;
-	dupit(j, fp, u.u_pofile[uap->i]);
+	dupit(j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
 }
 
 dup2()
@@ -84,7 +84,7 @@ dup2()
 		if (u.u_error)
 			return;
 	}
-	dupit(uap->j, fp, u.u_pofile[uap->i]);
+	dupit(uap->j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
 }
 
 dupit(fd, fp, flags)
@@ -124,7 +124,7 @@ fcntl()
 		}
 		if ((i = ufalloc(i)) < 0)
 			return;
-		dupit(i, fp, *pop);
+		dupit(i, fp, *pop &~ UF_EXCLOSE);
 		break;
 
 	case F_GETFD:
