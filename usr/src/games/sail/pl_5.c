@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_5.c	2.2 83/12/09";
+static	char *sccsid = "@(#)pl_5.c	2.3 83/12/17";
 #endif
 
 #include "player.h"
@@ -106,7 +106,7 @@ acceptmove()
 		(void) strcpy(movebuf, buf);
 	else
 		(void) strcpy(movebuf, "d");
-	Write(W_LAST, ms, 1, (int)movebuf, 0, 0, 0);
+	Write(W_MOVE, ms, 1, (int)movebuf, 0, 0, 0);
 	Signal("Helm: %s.", (struct ship *)0, movebuf);
 }
 
@@ -191,7 +191,7 @@ char buf;
 				Signal("Sending all crew sections.",
 					(struct ship *)0);
 			Write(isdefense ? W_DBP : W_OBP, ms, 0,
-				j, turn, to-SHIP(0), men);
+				j, turn, to->file->index, men);
 			if (isdefense) {
 				(void) wmove(slot_w, 2, 0);
 				for (k=0; k < NBP; k++)
