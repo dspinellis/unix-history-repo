@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)csh.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)csh.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sh.h"
@@ -340,9 +340,7 @@ main(argc, argv)
      */
     if (loginsh || intact || intty && isatty(SHOUT))
 	setintr = 1;
-#ifdef TELL
     settell();
-#endif
     /*
      * Save the remaining arguments in argv.
      */
@@ -591,9 +589,7 @@ srcunit(unit, onlyown, hflg)
     int     oonelflg = onelflg;
     bool    oenterhist = enterhist;
     char    OHIST = HIST;
-#ifdef TELL
     bool    otell = cantell;
-#endif
 
     struct Bin saveB;
     sigmask_t omask;
@@ -649,9 +645,7 @@ srcunit(unit, onlyown, hflg)
      */
     if (setintr)
 	(void) sigsetmask(omask);
-#ifdef TELL
     settell();
-#endif
 
     if ((my_reenter = setexit()) == 0)
 	process(0);		/* 0 -> blow away on errors */
@@ -677,9 +671,7 @@ srcunit(unit, onlyown, hflg)
 	if (enterhist)
 	    HIST = OHIST;
 	enterhist = oenterhist;
-#ifdef TELL
 	cantell = otell;
-#endif
     }
 
     resexit(oldexit);
