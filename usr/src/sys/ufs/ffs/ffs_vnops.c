@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ffs_vnops.c	7.37 (Berkeley) %G%
+ *	@(#)ffs_vnops.c	7.38 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -952,7 +952,10 @@ ufs_rename(fndp, tndp)
 	if (oldparent != dp->i_number)
 		newparent = dp->i_number;
 	if (doingdirectory && newparent) {
-		if (error = ufs_access(fndp->ni_vp, VWRITE, tndp->ni_cred))
+		VOP_LOCK(fndp->ni_vp);
+		error = ufs_access(fndp->ni_vp, VWRITE, tndp->ni_cred);
+		VOP_UNLOCK(fndp->ni_vp);
+		if (error)
 			goto bad;
 		tndp->ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE;
 		do {
