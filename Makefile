@@ -1,6 +1,6 @@
 #	@(#)Makefile	5.1.1.2 (Berkeley) 5/9/91
 #
-#	$Id: Makefile,v 1.47 1994/05/05 20:05:10 ache Exp $
+#	$Id: Makefile,v 1.48 1994/05/10 23:12:33 jkh Exp $
 #
 
 SUBDIR=
@@ -176,16 +176,18 @@ bootstrapld:	directories cleandist mk includes
 # changes  back,  use  the  same  target  without   defining
 # PW_COMPACT.
 
-bootstrappwd:	directories
+bootstrappwd:   #directories
 	-rm -f ${.CURDIR}/lib/libc/obj/getpwent.o ${.CURDIR}/lib/libc/getpwent.o
 	cd ${.CURDIR}/lib/libc; make all
 	-rm -f ${.CURDIR}/usr.sbin/pwd_mkdb/obj/pwd_mkdb.o ${.CURDIR}/usr.sbin/pwd_mkdb/pwd_mkdb.o
 	cd ${.CURDIR}/usr.sbin/pwd_mkdb; make all install ${CLEANDIR}
 	cp /etc/master.passwd /etc/mp.t; pwd_mkdb /etc/mp.t
-	cp ${.CURDIR}/lib/libc/obj/libc* /usr/lib
+	SLIB=`basename ${.CURDIR}/lib/libc/obj/libc.so.*`; \
+		cp ${.CURDIR}/lib/libc/obj/$$SLIB /usr/lib/$$SLIB.tmp; \
+		mv /usr/lib/$$SLIB.tmp /usr/lib/$$SLIB
 	cd ${.CURDIR}/lib/libc; make install ${CLEANDIR}
-	-rm -f ${.CURDIR}/usr.bin/passwd/obj/getpwent.o ${.CURDIR}/usr.bin/passwd/getpwent.o
-	cd ${.CURDIR}/usr.bin/passwd; make all install ${CLEANDIR}
+	cd ${.CURDIR}/usr.bin/passwd; make clean all install ${CLEANDIR}
+	cd ${.CURDIR}/usr.bin/chpass; make clean all install ${CLEANDIR}
 	cd ${.CURDIR}/bin; make clean all install ${CLEANDIR}
 	cd ${.CURDIR}/sbin; make clean all install ${CLEANDIR}
 	@echo "--------------------------------------------------------------"
