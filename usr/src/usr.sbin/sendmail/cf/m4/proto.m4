@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	6.14 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	6.15 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -38,6 +38,11 @@ CONCAT(DB, BITNET_RELAY)
 ifdef(`CSNET_RELAY',
 `# CSNET relay host
 CONCAT(DC, CSNET_RELAY)
+
+')dnl
+ifdef(`FAX_RELAY',
+`# FAX relay host
+CONCAT(DF, FAX_RELAY)
 
 ')dnl
 ifdef(`SMART_HOST',
@@ -466,6 +471,11 @@ ifdef(`BITNET_RELAY',
 ifdef(`CSNET_RELAY',
 `R$*<@$+.CSNET>$*	$#smtp $@ $C $: $1 <@$2.CSNET> $3	user@host.CSNET',
 	`dnl')
+ifdef(`_MAILER_fax_',
+`R$+ < @ $+ .FAX >	$#fax $@ $2 $: $1			user@host.FAX',
+`ifdef(`FAX_RELAY',
+`R$*<@$+.FAX>$*		$#smtp $@ $F $: $1 <@$2.FAX> $3		user@host.FAX',
+	`dnl')')
 
 ifdef(`UUCP_RELAY',
 `# forward non-local UUCP traffic to our UUCP relay
