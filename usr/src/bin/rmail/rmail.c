@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rmail.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmail.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -186,6 +186,8 @@ main(argc, argv)
 		/* Save off from user's address; the last one wins. */
 		for (p = addrp; *p && !isspace(*p); ++p);
 		*p = '\0';
+		if (*addrp == '\0')
+			addrp = "<>";
 		if (from_user != NULL)
 			free(from_user);
 		if ((from_user = strdup(addrp)) == NULL)
@@ -208,17 +210,14 @@ main(argc, argv)
 	args[i++] = "-odq";		/* Queue it, don't try to deliver. */
 	args[i++] = "-oi";		/* Ignore '.' on a line by itself. */
 
-	if (from_sys != NULL) {		/* Set sender's host name. */
-		if (strchr(from_sys, '.') == NULL)
-			(void)snprintf(buf, sizeof(buf),
-			    "-oMs%s.%s", from_sys, domain);
-		else
-			(void)snprintf(buf, sizeof(buf), "-oMs%s", from_sys);
-		if ((args[i++] = strdup(buf)) == NULL)
-			 err(EX_TEMPFAIL, NULL);
-	}
-					/* Set protocol used. */
-	(void)snprintf(buf, sizeof(buf), "-oMr%s", domain);
+	/* set from system and protocol used */
+	if (from_sys == NULL)
+		(void)snprintf(buf, sizeof(buf), "-p%s", domain);
+	else if (strchr(from_sys, '.') == NULL)
+		(void)snprintf(buf, sizeof(buf), "-p%s:%s.%s",
+			domain, from_sys, domain);
+	else
+		(void)snprintf(buf, sizeof(buf), "-p%s:%s", domain, from_sys);
 	if ((args[i++] = strdup(buf)) == NULL)
 		err(EX_TEMPFAIL, NULL);
 
