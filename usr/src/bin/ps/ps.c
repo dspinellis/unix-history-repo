@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ps.c	5.28 (Berkeley) %G%";
+static char sccsid[] = "@(#)ps.c	5.29 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <machine/pte.h>
@@ -30,9 +30,14 @@ static char sccsid[] = "@(#)ps.c	5.28 (Berkeley) %G%";
 #include <pwd.h>
 #include <math.h>
 #include <errno.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
+#include <varargs.h>
 #include <kvm.h>
+#include "pathnames.h"
 
 struct usave {
 	struct	proc *u_procp;
@@ -46,10 +51,10 @@ struct usave {
 /*
  * to compute offset in common structures
  */
-#define	POFF(x)		((int)&((struct proc *)0)->x)
-#define	EOFF(x)		((int)&((struct eproc *)0)->x)
-#define	UOFF(x)		((int)&((struct usave *)0)->x)
-#define	ROFF(x)		((int)&((struct rusage *)0)->x)
+#define	POFF(x)		offsetof(struct proc, x)
+#define	EOFF(x)		offsetof(struct eproc, x)
+#define	UOFF(x)		offsetof(struct usave, x)
+#define	ROFF(x)		offsetof(struct rusage, x)
 
 enum type	{ CHAR, UCHAR, SHORT, USHORT, LONG, ULONG, KPTR };
 
@@ -61,23 +66,23 @@ enum type	{ CHAR, UCHAR, SHORT, USHORT, LONG, ULONG, KPTR };
 
 int needuser, needcomm, neednlist;
 
-int 	command(), ucomm(), logname(), pvar(), evar(), uvar(), rvar(), uname(), 
+int 	command(), ucomm(), logname(), pvar(), evar(), uvar(), rvar(), uname(),
 	runame(), state(), pri(), tdev(), tname(), longtname(), started(),
-	lstarted(), wchan(), vsize(), rssize(), p_rssize(), cputime(), 
+	lstarted(), wchan(), vsize(), rssize(), p_rssize(), cputime(),
 	pmem(), pcpu(), pagein(), maxrss(), tsize(), trss();
 	/**
 	utime(), stime(), ixrss(), idrss(), isrss();
 	**/
 
-struct	usave *saveuser();
-char	*saveargs();
+uid_t	getuid();
+char	*ttyname();
 
 struct var {
-	char	*name[8];	/* name(s) of variable */
+	char	*name[4];	/* name(s) of variable */
 	char	*header;	/* default header */
 	int	flag;
 #define	USER	0x01	/* requires user structure */
-#define	LJUST	0x02	/* right adjust on output */
+#define	LJUST	0x02	/* left adjust on output (trailing blanks) */
 #define	COMM	0x04	/* requires exec arguments and environment (XXX) */
 #define	NLIST	0x08	/* requires nlist to get extra variables */
 	int	(*oproc)();	/* output routine */
@@ -95,8 +100,8 @@ struct var {
 	 */
 	struct	var *next;
 }  var[] = {
-	{{"command", "comm", "args"}, "COMMAND", USER|LJUST|COMM, 
-		command, 16}, 
+	{{"command", "comm", "args"}, "COMMAND", USER|LJUST|COMM,
+		command, 16},
 	{{"ucomm"}, "COMMAND",	LJUST, ucomm, MAXCOMLEN},
 	{{"logname"}, "LOGNAME", LJUST, logname, MAXLOGNAME},
 	{{"flag", "f"}, "F", 0, pvar, 7, POFF(p_flag), LONG, "x"},
@@ -134,14 +139,14 @@ struct var {
 	{{"tname", "tty", "tt"}, "TT", LJUST, tname, 3},
 	{{"longtname", "longtty"}, "TT", LJUST, longtname, 8},
 	{{"tpgid"}, "TPGID", 0, evar, 4, EOFF(e_tpgid), USHORT, PIDFMT},
-	{{"tsession", "tsess"}, "TSESS", 
+	{{"tsession", "tsess"}, "TSESS",
 		0, evar, 6, EOFF(e_tsess), KPTR, "x"},
 	{{"paddr", "procaddr"}, "PADDR",
 		0, evar, 6, EOFF(e_paddr), KPTR, "x"},
 	{{"state", "stat"}, "STAT", 0, state, 4},
 	{{"pri"}, "PRI", 0, pri, 3},
 	{{"usrpri"}, "UPR", 0, pvar, 3, POFF(p_usrpri), CHAR, "d"},
-	{{"nice", "ni"}, "NI", 0, pvar, 2, POFF(p_nice), CHAR, "d"}, 
+	{{"nice", "ni"}, "NI", 0, pvar, 2, POFF(p_nice), CHAR, "d"},
 	{{"vsize", "vsz"}, "VSZ", 0, vsize, 5},
 	{{"rssize", "rsz"}, "RSZ", 0, rssize, 4},
 	{{"rss", "p_rss"}, "RSS", 0, p_rssize, 4},
@@ -172,31 +177,31 @@ struct var {
 	{{"idrss"}, "IDRSS", USER, idrss, 4},
 	{{"isrss"}, "ISRSS", USER, isrss, 4},
 	***/
-	{{"minflt"}, "MINFLT", 
+	{{"minflt"}, "MINFLT",
 		USER, rvar, 4, ROFF(ru_minflt), LONG, "d"},
-	{{"majflt"}, "MAJFLT", 
+	{{"majflt"}, "MAJFLT",
 		USER, rvar, 4, ROFF(ru_majflt), LONG, "d"},
-	{{"nswap"}, "NSWAP", 	
+	{{"nswap"}, "NSWAP",
 		USER, rvar, 4, ROFF(ru_nswap), LONG, "d"},
-	{{"inblock", "inblk"}, "INBLK", 	
+	{{"inblock", "inblk"}, "INBLK",
 		USER, rvar, 4, ROFF(ru_inblock), LONG, "d"},
-	{{"oublock", "oublk"}, "OUBLK", 
+	{{"oublock", "oublk"}, "OUBLK",
 		USER, rvar, 4, ROFF(ru_oublock), LONG, "d"},
-	{{"msgsnd"}, "MSGSND", 
+	{{"msgsnd"}, "MSGSND",
 		USER, rvar, 4, ROFF(ru_msgsnd), LONG, "d"},
-	{{"msgrcv"}, "MSGRCV", 
+	{{"msgrcv"}, "MSGRCV",
 		USER, rvar, 4, ROFF(ru_msgrcv), LONG, "d"},
-	{{"nsignals", "nsigs"}, "NSIGS", 
+	{{"nsignals", "nsigs"}, "NSIGS",
 		USER, rvar, 4, ROFF(ru_nsignals), LONG, "d"},
-	{{"nvcsw", "vcsw"}, "VCSW", 
+	{{"nvcsw", "vcsw"}, "VCSW",
 		USER, rvar, 5, ROFF(ru_nvcsw), LONG, "d"},
-	{{"nivcsw", "ivcsw"}, "IVCSW", 
+	{{"nivcsw", "ivcsw"}, "IVCSW",
 		USER, rvar, 5, ROFF(ru_nivcsw), LONG, "d"},
 	NULL
 };
 
-/* 
- * combination variables 
+/*
+ * combination variables
  */
 struct combovar {
 	char *name;
@@ -260,26 +265,25 @@ fixpt_t	ccpu;
 
 #define USAGE	"ps [ -(o|O) fmt ] [ -wlvujnsaxSCLmcr ] [ -p pid ] [ -t tty ]"
 
-main (argc, argv) 
+main (argc, argv)
 	char *argv[];
 {
 	extern char *optarg;
 	extern int optind;
-	int ch; 
-	register i;
+	int ch;
+	register int i;
 	register struct var *v;
 	register struct proc *p;
 	struct winsize ws;
-	struct kinfo_proc *kprocs;
-	int nentries;
+	size_t nentries;
 	int fmt = 0;
 	int pscomp();
 	int what, flag;
 	char *kludge_oldps_options();
 
-	if ((ioctl(1, TIOCGWINSZ, &ws) == -1 && 
-	     ioctl(2, TIOCGWINSZ, &ws) == -1 &&
-	     ioctl(0, TIOCGWINSZ, &ws) == -1) ||
+	if ((ioctl(1, TIOCGWINSZ, (char *)&ws) == -1 &&
+	     ioctl(2, TIOCGWINSZ, (char *)&ws) == -1 &&
+	     ioctl(0, TIOCGWINSZ, (char *)&ws) == -1) ||
 	     ws.ws_col == 0)
 		termwidth = 79;
 	else
@@ -328,32 +332,25 @@ main (argc, argv)
 			fmt++;
 			break;
 		case 'T':
+			if ((optarg = ttyname(0)) == NULL)
+				error("<stdin>: not a terminal");
+			/* FALLTHROUGH */
 		case 't': {
+			char *ttypath;
 			struct stat stbuf;
-			char *tname, *ttyname();
-			char termname[MAXPATHLEN+1];
+			char pathbuf[MAXPATHLEN];
 
-			if (ch == 'T') {
-				if ((tname = ttyname(0)) == NULL)
-					error("<stdin>: not a terminal");
-			} else 
-				tname = optarg;
-			if (strlen(tname) == 2) {
-				if (strcmp(tname, "co") == 0)
-					strcpy(termname, "/dev/console");
-				else {
-					strcpy(termname, "/dev/tty");
-					strcat(termname, tname);
-				}
-			} else if (*tname != '/') {
-				strcpy(termname, "/dev/");
-				strcat(termname, tname);
-			} else
-				strcpy(termname, tname);
-			if (stat(termname, &stbuf) == -1)
-				syserror(termname);
+			if (strcmp(optarg, "co") == 0)
+				ttypath = _PATH_CONSOLE;
+			else if (*optarg != '/')
+				(void) sprintf(ttypath = pathbuf, "%s%s",
+				    _PATH_TTY, optarg);
+			else
+				ttypath = optarg;
+			if (stat(ttypath, &stbuf) == -1)
+				syserror(ttypath);
 			if ((stbuf.st_mode & S_IFMT) != S_IFCHR)
-				error("%s: not a terminal", termname);
+				error("%s: not a terminal", ttypath);
 			ttydev = stbuf.st_rdev;
 			break;
 		}
@@ -368,26 +365,23 @@ main (argc, argv)
 			rawcpu++;
 			break;
 		case 'L': {
-			int i = 0;
 			struct combovar *cb = &combovar[0];
-			char *cp;
+			char *cp, *sep = "";
 
-			v = &var[0];
-			for (;;) {
-				if (v->name[0] != NULL) {
-					cp = v->name[0];
-					v++;
-				} else if (cb->name != NULL) {
-					cp = cb->name;
-					cb++;
-				} else
+			for (i = 0, v = &var[0];;) {
+				if (v->name[0] != NULL)
+					cp = v++->name[0];
+				else if (cb->name != NULL)
+					cp = cb++->name;
+				else
 					break;
-				if (termwidth && 
-				   (i += strlen(cp)+1) > termwidth)
-					i = strlen(cp), printf("\n");
-				printf("%s ", cp);
+				if (termwidth &&
+				    (i += strlen(cp) + 1) > termwidth)
+					i = strlen(cp), sep = "\n";
+				(void) printf("%s%s", sep, cp);
+				sep = " ";
 			}
-			printf("\n");
+			(void) printf("\n");
 			exit(0);
 		}
 		case 'a':
@@ -409,12 +403,12 @@ main (argc, argv)
 			break;	/* no-op */
 		case '?':
 		default:
-			fprintf(stderr, "usage: %s\n", USAGE);
+			(void) fprintf(stderr, "usage: %s\n", USAGE);
 			exit(1);
 		}
 	argc -= optind;
 	argv += optind;
-	
+
 	if (*argv) {
 		char *nlistf, *memf = NULL, *swapf = NULL;
 
@@ -461,7 +455,7 @@ main (argc, argv)
 	 * select procs
 	 */
 	if ((nentries = kvm_getprocs(what, flag)) == -1) {
-		fprintf(stderr, "ps: %s\n", kvm_geterr());
+		(void) fprintf(stderr, "ps: %s\n", kvm_geterr());
 		exit(1);
 	}
 	kinfo = (struct kinfo *)malloc(nentries * sizeof (struct kinfo));
@@ -485,7 +479,7 @@ main (argc, argv)
 	/*
 	 * sort proc list
 	 */
-	qsort(kinfo, nentries, sizeof (struct kinfo), pscomp);
+	qsort((void *)kinfo, nentries, sizeof (struct kinfo), pscomp);
 	/*
 	 * for each proc, call each variable output function.
 	 */
@@ -496,11 +490,11 @@ main (argc, argv)
 		for (v = vhead; v != NULL; v = v->next) {
 			(*v->oproc)(&kinfo[i], v);
 			if (v->next != NULL)
-				putchar(' ');
+				(void) putchar(' ');
 		}
-		putchar('\n');
+		(void) putchar('\n');
 		if (prtheader && lineno++ == prtheader-4) {
-			putchar('\n');
+			(void) putchar('\n');
 			printheader();
 			lineno = 0;
 		}
@@ -514,43 +508,28 @@ main (argc, argv)
 parsefmt(fmt)
 	char *fmt;
 {
-	register char *f = fmt, *cp, *hp;
+	register char *cp, *hp;
 	struct var *v;
-	char *strtok(), *index();
-	char newbuf[1024], *nb = newbuf; /* XXX */
 	char *lookupcombo();
 	struct var *lookupvar();
-	
-	/*
-	 * strtok is not &^%^& re-entrant, so we have
-	 * only one level of expansion, looking for combo
-	 * variables once here, and expanding the string
-	 * before really parsing it.  With strtok_r,
-	 * you would move the expansion to before the
-	 * lookupvar inside the 2nd while loop with a
-	 * recursive call to parsefmt.
-	 */
-	while ((cp = strtok(f, FMTSEP)) != NULL) {
-		if ((hp = lookupcombo(cp)) == NULL);
-			hp = cp;
-		if (((nb + strlen(hp)) - newbuf) >= 1024)
-			error("format too large");
-		strcpy(nb, hp);
-		while (*nb)
-			nb++;
-		*nb++ = ' ';
-		*nb =  '\0';
-		f = NULL;
-	}
-	f = newbuf;
-	while ((cp = strtok(f, FMTSEP)) != NULL) {
-		if (hp = index(cp, '='))
+
+	while (fmt) {
+		while ((cp = strsep(&fmt, FMTSEP)) != NULL && *cp == '\0')
+			/* void */;
+		if ((hp = lookupcombo(cp)) != NULL) {
+			parsefmt(hp);
+			continue;
+		}
+		if ((hp = index(cp, '=')) != NULL)
 			*hp++ = '\0';
 		v = lookupvar(cp);
 		if (v == NULL)
 			error("unknown variable in format: %s", cp);
-		if (v->next != NULL || vtail == v)
-			error("can't specify a variable twice: %s", cp);
+		if (v->next != NULL || vtail == v) {
+			(void) fprintf(stderr,
+			    "ps: can't specify a variable twice: %s\n", cp);
+			continue;
+		}
 		if (hp)
 			v->header = hp;
 		if (vhead == NULL)
@@ -559,9 +538,7 @@ parsefmt(fmt)
 			vtail->next = v;
 			vtail = v;
 		}
-		f = NULL;	/* for strtok */
 	}
-
 }
 
 scanvars()
@@ -583,6 +560,7 @@ scanvars()
 	}
 	totwidth--;
 }
+
 printheader()
 {
 	register struct var *v;
@@ -590,54 +568,54 @@ printheader()
 	for (v = vhead; v != NULL; v = v->next) {
 		if (v->flag & LJUST) {
 			if (v->next == NULL)	/* last one */
-				printf("%s", v->header);
+				(void) printf("%s", v->header);
 			else
-				printf("%-*s",v->width, v->header);
+				(void) printf("%-*s", v->width, v->header);
 		} else
-			printf("%*s",v->width, v->header);
+			(void) printf("%*s", v->width, v->header);
 		if (v->next != NULL)
-			putchar(' ');
+			(void) putchar(' ');
 	}
-	putchar('\n');
+	(void) putchar('\n');
 }
 
-command(k, v) 
+command(k, v)
 	struct kinfo *k;
 	struct var *v;
 {
 
-	if (v->next == NULL) {		
+	if (v->next == NULL) {
 		/* last field */
 		if (termwidth == UNLIMITED)
-			printf("%s", k->ki_args);
+			(void) printf("%s", k->ki_args);
 		else {
-			register left = termwidth - (totwidth - v->width);
+			register int left = termwidth - (totwidth - v->width);
 			register char *cp = k->ki_args;
 
-			if (left < 1)	/* already wrapped, just use std width */
+			if (left < 1) /* already wrapped, just use std width */
 				left = v->width;
-			while (left-- && *cp)
-				putchar(*cp++);
+			while (--left >= 0 && *cp)
+				(void) putchar(*cp++);
 		}
 	} else
-		printf("%-*.*s", v->width, v->width, k->ki_args);
-		
+		(void) printf("%-*.*s", v->width, v->width, k->ki_args);
+
 }
 
-ucomm(k, v) 
+ucomm(k, v)
 	struct kinfo *k;
 	struct var *v;
 {
 
-	printf("%-*s", v->width, k->ki_p->p_comm);
+	(void) printf("%-*s", v->width, k->ki_p->p_comm);
 }
 
-logname(k, v) 
+logname(k, v)
 	struct kinfo *k;
 	struct var *v;
 {
 
-	printf("%-*s", v->width, k->ki_p->p_logname);
+	(void) printf("%-*s", v->width, k->ki_p->p_logname);
 }
 
 state(k, v)
@@ -658,7 +636,7 @@ state(k, v)
 	case SSLEEP:
 		if (flag & SSINTR)	/* interuptable (long) */
 			*cp = p->p_slptime >= MAXSLP ? 'I' : 'S';
-		else 
+		else
 			*cp = (flag & SPAGE) ? 'P' : 'D';
 		break;
 
@@ -701,7 +679,7 @@ state(k, v)
 	if ((flag & SCTTY) && k->ki_e->e_pgid == k->ki_e->e_tpgid)
 		*cp++ = '+';
 	*cp = '\0';
-	printf("%-*s", v->width, buf);
+	(void) printf("%-*s", v->width, buf);
 }
 
 pri(k, v)
@@ -709,7 +687,7 @@ pri(k, v)
 	struct var *v;
 {
 
-	printf("%*d", v->width, k->ki_p->p_pri - PZERO);
+	(void) printf("%*d", v->width, k->ki_p->p_pri - PZERO);
 }
 
 uname(k, v)
@@ -717,7 +695,7 @@ uname(k, v)
 	struct var *v;
 {
 
-	printf("%-*s", v->width, user_from_uid(k->ki_p->p_uid, 0));
+	(void) printf("%-*s", v->width, user_from_uid(k->ki_p->p_uid, 0));
 }
 
 runame(k, v)
@@ -725,7 +703,7 @@ runame(k, v)
 	struct var *v;
 {
 
-	printf("%-*s", v->width, user_from_uid(k->ki_p->p_ruid, 0));
+	(void) printf("%-*s", v->width, user_from_uid(k->ki_p->p_ruid, 0));
 }
 
 tdev(k, v)
@@ -735,12 +713,12 @@ tdev(k, v)
 	dev_t dev = k->ki_e->e_tdev;
 
 	if (dev == NODEV)
-		printf("%*s", v->width, "??");
+		(void) printf("%*s", v->width, "??");
 	else {
 		char buff[16];
 
-		sprintf(buff, "%d/%d", major(dev), minor(dev));
-		printf("%*s", v->width, buff);
+		(void) sprintf(buff, "%d/%d", major(dev), minor(dev));
+		(void) printf("%*s", v->width, buff);
 	}
 }
 
@@ -751,14 +729,14 @@ tname(k, v)
 	struct var *v;
 {
 	dev_t dev = k->ki_e->e_tdev;
-	char *tname;
+	char *ttname;
 
-	if (dev == NODEV || (tname = devname(dev, S_IFCHR)) == NULL)
-		printf("%-*s", v->width, "??");
+	if (dev == NODEV || (ttname = devname(dev, S_IFCHR)) == NULL)
+		(void) printf("%-*s", v->width, "??");
 	else {
-		if (strncmp(tname, "tty", 3) == 0)
-			tname += 3;
-		printf("%*.*s%c", v->width-1, v->width-1, tname,
+		if (strncmp(ttname, "tty", 3) == 0)
+			ttname += 3;
+		(void) printf("%*.*s%c", v->width-1, v->width-1, ttname,
 			k->ki_e->e_flag & EPROC_CTTY ? ' ' : '-');
 	}
 }
@@ -768,12 +746,12 @@ longtname(k, v)
 	struct var *v;
 {
 	dev_t dev = k->ki_e->e_tdev;
-	char *tname;
+	char *ttname;
 
-	if (dev == NODEV || (tname = devname(dev, S_IFCHR)) == NULL)
-		printf("%-*s", v->width, "??");
+	if (dev == NODEV || (ttname = devname(dev, S_IFCHR)) == NULL)
+		(void) printf("%-*s", v->width, "??");
 	else
-		printf("%-*s", v->width, tname);
+		(void) printf("%-*s", v->width, ttname);
 }
 
 #include <sys/time.h>
@@ -784,9 +762,9 @@ started(k, v)
 {
 	extern char *attime();
 
-	printf("%-*s", v->width, k->ki_u ? 
+	(void) printf("%-*s", v->width, k->ki_u ?
 		attime(&k->ki_u->u_start.tv_sec) : "-");
-		
+
 }
 
 lstarted(k, v)
@@ -794,13 +772,13 @@ lstarted(k, v)
 	struct var *v;
 {
 	extern char *ctime();
-	char *tp; 
+	char *tp;
 
 	if (k->ki_u)
 		(tp = ctime(&k->ki_u->u_start.tv_sec))[24] = '\0';
 	else
 		tp = "-";
-	printf("%-*s", v->width, tp);
+	(void) printf("%-*s", v->width, tp);
 }
 
 wchan(k, v)
@@ -810,12 +788,12 @@ wchan(k, v)
 
 	if (k->ki_p->p_wchan) {
 		if (k->ki_p->p_pri > PZERO)
-			printf("%-*.*s", v->width, v->width, k->ki_e->e_wmesg);
+			(void) printf("%-*.*s", v->width, v->width, k->ki_e->e_wmesg);
 		else
-			printf("%*x", v->width, 
+			(void) printf("%*x", v->width,
 				(int)k->ki_p->p_wchan &~ KERNBASE);
 	} else
-		printf("%-*s", v->width, "-");
+		(void) printf("%-*s", v->width, "-");
 }
 
 #define pgtok(a)        (((a)*NBPG)/1024)
@@ -825,7 +803,7 @@ vsize(k, v)
 	struct var *v;
 {
 
-	printf("%*d", v->width, 
+	(void) printf("%*d", v->width,
 		pgtok(k->ki_p->p_dsize + k->ki_p->p_ssize + k->ki_e->e_xsize));
 }
 
@@ -834,8 +812,8 @@ rssize(k, v)
 	struct var *v;
 {
 
-	printf("%*d", v->width, 
-		pgtok(k->ki_p->p_rssize + (k->ki_e->e_xccount ? 
+	(void) printf("%*d", v->width,
+		pgtok(k->ki_p->p_rssize + (k->ki_e->e_xccount ?
 		      (k->ki_e->e_xrssize / k->ki_e->e_xccount) : 0)));
 }
 
@@ -844,7 +822,7 @@ p_rssize(k, v)		/* doesn't account for text */
 	struct var *v;
 {
 
-	printf("%*d", v->width, pgtok(k->ki_p->p_rssize));
+	(void) printf("%*d", v->width, pgtok(k->ki_p->p_rssize));
 }
 
 cputime(k, v)
@@ -859,14 +837,14 @@ cputime(k, v)
 		secs = 0;
 		psecs = 0;
 	} else {
-		secs = k->ki_p->p_utime.tv_sec + 
+		secs = k->ki_p->p_utime.tv_sec +
 			k->ki_p->p_stime.tv_sec;
-		psecs = k->ki_p->p_utime.tv_usec + 
+		psecs = k->ki_p->p_utime.tv_usec +
 			k->ki_p->p_stime.tv_usec;
 		if (sumrusage) {
-			secs += k->ki_u->u_cru.ru_utime.tv_sec + 
+			secs += k->ki_u->u_cru.ru_utime.tv_sec +
 				k->ki_u->u_cru.ru_stime.tv_sec;
-			psecs += k->ki_u->u_cru.ru_utime.tv_usec + 
+			psecs += k->ki_u->u_cru.ru_utime.tv_usec +
 				k->ki_u->u_cru.ru_stime.tv_usec;
 		}
 		/*
@@ -878,8 +856,8 @@ cputime(k, v)
 			secs++;
 		}
 	}
-	sprintf(obuff, "%3ld:%02ld.%02ld", secs/60, secs%60, psecs);
-	printf("%*s", v->width, obuff);
+	(void) sprintf(obuff, "%3ld:%02ld.%02ld", secs/60, secs%60, psecs);
+	(void) printf("%*s", v->width, obuff);
 }
 
 double
@@ -908,13 +886,12 @@ pcpu(k, v)
 	struct var *v;
 {
 
-	printf("%*.1f", v->width, getpcpu(k));
+	(void) printf("%*.1f", v->width, getpcpu(k));
 }
 
 double
-getpmem(k, v)
+getpmem(k)
 	struct kinfo *k;
-	struct var *v;
 {
 	struct proc *p = k->ki_p;
 	struct eproc *e = k->ki_e;
@@ -927,7 +904,7 @@ getpmem(k, v)
 	 * gets set.
 	 */
 
-	if (p->p_flag & SLOAD == 0)
+	if ((p->p_flag & SLOAD) == 0)
 		return (0.0);
 	szptudot = UPAGES + clrnd(ctopt(p->p_dsize + p->p_ssize + e->e_xsize));
 	fracmem = ((float)p->p_rssize + szptudot)/CLSIZE/ecmx;
@@ -941,7 +918,7 @@ pmem(k, v)
 	struct var *v;
 {
 
-	printf("%*.1f", v->width, getpmem(k));
+	(void) printf("%*.1f", v->width, getpmem(k));
 }
 
 pagein(k, v)
@@ -949,7 +926,7 @@ pagein(k, v)
 	struct var *v;
 {
 
-	printf("%*d", v->width, k->ki_u ? k->ki_u->u_ru.ru_majflt : 0);
+	(void) printf("%*d", v->width, k->ki_u ? k->ki_u->u_ru.ru_majflt : 0);
 }
 
 maxrss(k, v)
@@ -958,17 +935,17 @@ maxrss(k, v)
 {
 
 	if (k->ki_p->p_maxrss != (RLIM_INFINITY/NBPG))
-		printf("%*d", v->width, pgtok(k->ki_p->p_maxrss));
+		(void) printf("%*d", v->width, pgtok(k->ki_p->p_maxrss));
 	else
-		printf("%*s", v->width, "-");
+		(void) printf("%*s", v->width, "-");
 }
 
 tsize(k, v)
 	struct kinfo *k;
 	struct var *v;
 {
-	
-	printf("%*d", v->width, pgtok(k->ki_e->e_xsize));
+
+	(void) printf("%*d", v->width, pgtok(k->ki_e->e_xsize));
 }
 
 trss(k, v)
@@ -976,49 +953,49 @@ trss(k, v)
 	struct var *v;
 {
 
-	printf("%*d", v->width, pgtok(k->ki_e->e_xrssize));
+	(void) printf("%*d", v->width, pgtok(k->ki_e->e_xrssize));
 }
 
 /*
  * Generic output routines.  Print fields from various prototype
  * structures.
  */
-pvar(k, v) 
+pvar(k, v)
 	struct kinfo *k;
 	struct var *v;
 {
- 
+
 	printval((char *)((char *)k->ki_p + v->off), v);
 }
 
-evar(k, v) 
+evar(k, v)
 	struct kinfo *k;
 	struct var *v;
 {
- 
+
 	printval((char *)((char *)k->ki_e + v->off), v);
 }
 
-uvar(k, v) 
+uvar(k, v)
 	struct kinfo *k;
 	struct var *v;
 {
- 
+
 	if (k->ki_u)
 		printval((char *)((char *)k->ki_u + v->off), v);
 	else
-		printf("%*s", v->width, "-");
+		(void) printf("%*s", v->width, "-");
 }
 
 rvar(k, v)
 	struct kinfo *k;
 	struct var *v;
 {
-	
+
 	if (k->ki_u)
 		printval((char *)((char *)(&k->ki_u->u_ru) + v->off), v);
 	else
-		printf("%*s", v->width, "-");
+		(void) printf("%*s", v->width, "-");
 }
 
 char *
@@ -1061,31 +1038,31 @@ printval(bp, v)
 
 	switch (v->type) {
 	case CHAR:
-		printf(ofmt, v->width, *(char *)bp);
+		(void) printf(ofmt, v->width, *(char *)bp);
 		break;
 
 	case UCHAR:
-		printf(ofmt, v->width, *(u_char *)bp);
+		(void) printf(ofmt, v->width, *(u_char *)bp);
 		break;
 
 	case SHORT:
-		printf(ofmt, v->width, *(short *)bp);
+		(void) printf(ofmt, v->width, *(short *)bp);
 		break;
 
 	case USHORT:
-		printf(ofmt, v->width, *(u_short *)bp);
+		(void) printf(ofmt, v->width, *(u_short *)bp);
 		break;
 
 	case LONG:
-		printf(ofmt, v->width, *(long *)bp);
+		(void) printf(ofmt, v->width, *(long *)bp);
 		break;
 
 	case ULONG:
-		printf(ofmt, v->width, *(u_long *)bp);
+		(void) printf(ofmt, v->width, *(u_long *)bp);
 		break;
 
 	case KPTR:
-		printf(ofmt, v->width, *(u_long *)bp &~ KERNBASE);
+		(void) printf(ofmt, v->width, *(u_long *)bp &~ KERNBASE);
 		break;
 
 	default:
@@ -1094,15 +1071,14 @@ printval(bp, v)
 }
 
 /* XXX - redo */
-struct usave *
-saveuser(ki) 
+saveuser(ki)
 	struct kinfo *ki;
 {
 	register struct usave *usp;
 	register struct user *up;
-	
+
 	if ((usp = (struct usave *)calloc(1, sizeof (struct usave))) == NULL) {
-		fprintf(stderr, "ps: out of memory\n");
+		(void) fprintf(stderr, "ps: out of memory\n");
 		exit(1);
 	}
 	ki->ki_u = usp;
@@ -1111,10 +1087,10 @@ saveuser(ki)
 	 * save arguments if needed
 	 */
 	if (needcomm)
-		ki->ki_args = saveargs(ki->ki_p, up);
+		ki->ki_args = strdup(kvm_getargs(ki->ki_p, up));
 	else
 		ki->ki_args = NULL;
-	if (up != NULL) { 
+	if (up != NULL) {
 		/*
 		 * save important fields
 		 */
@@ -1125,19 +1101,8 @@ saveuser(ki)
 		usp->u_cmask = up->u_cmask;
 		usp->u_acflag = up->u_acflag;
 	}
-	return;
 }
 
-char *
-saveargs(p, up)
-	struct proc *p;
-	struct user *up;
-{
-	char *savestr();
-
-	return(savestr(kvm_getargs(p, up)));
-}
-	
 
 pscomp(k1, k2)
 	struct kinfo *k1, *k2;
@@ -1161,40 +1126,38 @@ pscomp(k1, k2)
 
 donlist()
 {
+#define kread(x, v) \
+	kvm_read(psnl[x].n_value, (char *)&v, sizeof v) != sizeof(v)
+
 	if (kvm_nlist(psnl) != 0)
 		error("can't get namelist");
-	if (kvm_read(psnl[X_FSCALE].n_value, &fscale, sizeof(int)) !=
-	    sizeof (int))
+	if (kread(X_FSCALE, fscale))
 		error("error reading fscale: %s", kvm_geterr());
-	if (kvm_read(psnl[X_ECMX].n_value, &ecmx, sizeof(int)) !=
-	    sizeof (int))
+	if (kread(X_ECMX, ecmx))
 		error("error reading ecmx: %s", kvm_geterr());
-	if (kvm_read(psnl[X_CCPU].n_value, &ccpu, sizeof(fixpt_t)) !=
-	    sizeof (fixpt_t))
+	if (kread(X_CCPU, ccpu))
 		error("error reading ccpu: %s", kvm_geterr());
+#undef kread
 }
 
-char *
-savestr(cp)
-	char *cp;
+#ifdef lint
+/* VARARGS1 */
+error(fmt) char *fmt; { (void) fputs(fmt, stderr); exit(1); /* NOTREACHED */ }
+#else
+error(va_alist)
+	va_dcl
 {
-	register unsigned len;
-	register char *dp;
+	char *fmt;
+	va_list ap;
 
-	len = strlen(cp);
-	dp = (char *)calloc(len+1, sizeof (char));
-	(void) strcpy(dp, cp);
-	return (dp);
-}
-
-error(a, b, c, d, e)
-	char *a, *b, *c, *d, *e;
-{
-	fprintf(stderr, "ps: ");
-	fprintf(stderr, a, b, c, d, e);
-	fprintf(stderr, "\n");
+	va_start(ap);
+	fmt = va_arg(ap, char *);
+	(void) fprintf(stderr, "ps: ");
+	(void) vfprintf(stderr, fmt, ap);
+	(void) fprintf(stderr, "\n");
 	exit(1);
 }
+#endif
 
 syserror(a)
 	char *a;
@@ -1219,10 +1182,10 @@ char *
 kludge_oldps_options(s)
 	char *s;
 {
-	int len = strlen(s), numlen = 0;
+	size_t len = strlen(s);
 	char *newopts, *ns, *cp;
 
-	if ((newopts = ns = (char *)malloc(len+2)) == NULL)
+	if ((newopts = ns = malloc(len + 2)) == NULL)
 		error("out of memory");
 	/*
 	 * options begin with '-'
@@ -1236,7 +1199,7 @@ kludge_oldps_options(s)
 	/*
 	 * if last letter is a 't' flag with no argument (in the context
 	 * of the oldps options -- option string NOT starting with a '-' --
-	 * then convert to 'T' (meaning *this* terminal, i.e. ttyname(0).
+	 * then convert to 'T' (meaning *this* terminal, i.e. ttyname(0)).
 	 */
 	if (*cp == 't' && *s != '-')
 		*cp = 'T';
@@ -1245,23 +1208,20 @@ kludge_oldps_options(s)
 		 * otherwise check for trailing number, which *may* be a
 		 * pid.
 		 */
-		while (isdigit(*cp)) {
+		while (cp >= s && isdigit(*cp))
 			--cp;
-			numlen++;
-		}
 	}
 	cp++;
-	bcopy(s, ns, cp - s);	/* copy everything up to trailing number */
-	while (*ns)
-		ns++;
+	bcopy(s, ns, (size_t)(cp - s));	/* copy up to trailing number */
+	ns += cp - s;
 	/*
 	 * if there's a trailing number, and not a preceding 'p' (pid) or
 	 * 't' (tty) flag, then assume it's a pid and insert a 'p' flag.
 	 */
-	if (isdigit(*cp) && (cp == s || *(cp-1) != 't' && *(cp-1) != 'p' &&
-	   ((cp-1) == s || *(cp-2) != 't')))
+	if (isdigit(*cp) && (cp == s || cp[-1] != 't' && cp[-1] != 'p' &&
+	    (cp - 1 == s || cp[-2] != 't')))
 		*ns++ = 'p';
-	strcat(ns, cp);		/* and append the number */
+	(void) strcpy(ns, cp);		/* and append the number */
 
 	return (newopts);
 }
