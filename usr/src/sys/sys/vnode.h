@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode.h	7.31 (Berkeley) %G%
+ *	@(#)vnode.h	7.32 (Berkeley) %G%
  */
 
 #include <machine/endian.h>
@@ -33,14 +33,12 @@ enum vtagtype	{ VT_NON, VT_UFS, VT_NFS, VT_MFS };
  * is used rather than a union structure to cut down on the
  * number of header files that must be included.
  */
-#define VN_MAXPRIVATE	184
+#define VN_MAXPRIVATE	188
 
 struct vnode {
 	u_long		v_flag;			/* vnode flags (see below) */
 	long		v_usecount;		/* reference count of users */
 	long		v_holdcnt;		/* page & buffer references */
-	u_short		v_shlockc;		/* count of shared locks */
-	u_short		v_exlockc;		/* count of exclusive locks */
 	off_t		v_lastr;		/* last read (read-ahead) */
 	u_long		v_id;			/* capability identifier */
 	struct mount	*v_mount;		/* ptr to vfs we are in */
@@ -75,9 +73,6 @@ struct vnode {
 #define	VROOT		0x0001	/* root of its file system */
 #define	VTEXT		0x0002	/* vnode is a pure text prototype */
 #define	VSYSTEM		0x0004	/* vnode being used by kernel */
-#define	VEXLOCK		0x0010	/* exclusive lock */
-#define	VSHLOCK		0x0020	/* shared lock */
-#define	VLWAIT		0x0040	/* proc is waiting on shared or excl. lock */
 #define	VXLOCK		0x0100	/* vnode is locked to change underlying type */
 #define	VXWANT		0x0200	/* process is waiting for vnode */
 #define	VBWAIT		0x0400	/* waiting for output to complete */
@@ -124,6 +119,7 @@ struct vnodeops {
 
 	int	(*vn_print)(		/* vp */ );
 	int	(*vn_islocked)(		/* vp */ );
+	int	(*vn_advlock)(		/* vp, proc, op, lck, flg */ );
 };
 
 /* Macros to call the vnode ops */
@@ -159,6 +155,7 @@ struct vnodeops {
 #define	VOP_STRATEGY(b)		(*((b)->b_vp->v_op->vn_strategy))(b)
 #define	VOP_PRINT(v)		(*((v)->v_op->vn_print))(v)
 #define	VOP_ISLOCKED(v)		(*((v)->v_op->vn_islocked))(v)
+#define	VOP_ADVLOCK(v,p,o,l,f)	(*((v)->v_op->vn_advlock))((v),(p),(o),(l),(f))
 
 /*
  * flags for ioflag
