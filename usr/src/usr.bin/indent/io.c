@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)io.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)io.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*-
@@ -65,7 +65,7 @@ static char sccsid[] = "@(#)io.c	5.4 (Berkeley) %G%";
  *	initial coding 	November 1976	D A Willcox of CAC
  *
  */
-#include "indent_globs.h";
+#include "indent_globs.h"
 
 
 
@@ -154,7 +154,7 @@ dump_line()
 	    }
 	    cur_col = pad_output(cur_col, target_col);
 	    for (p = s_code; p < e_code; p++)
-		if (*p == 0200)
+		if (*p == (char)0200)
 		    fprintf(output, "%d", target_col * 7);
 		else
 		    putc(*p, output);
