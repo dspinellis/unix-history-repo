@@ -18,7 +18,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -419,7 +419,6 @@ commands()
 			if (quitting)
 				quit();
 		}
-			
 		/*
 		 * Display prompt and accept a character.
 		 */
@@ -428,8 +427,7 @@ commands()
 		noprefix();
 		c = getcc();
 
-	again:
-		if (sigs)
+again:		if (sigs)
 			continue;
 
 		/*
@@ -595,9 +593,12 @@ commands()
 			 * Print file name, etc.
 			 */
 			cmd_exec();
-			error(eq_message());
-			break;
-			
+			lower_left();
+			clear_eol();
+			putstr(eq_message());
+			lower_left();
+			c = getcc();
+			goto again;
 		case A_QUIT:
 			/*
 			 * Exit.
