@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)tree.c 1.4 %G%";
+static char sccsid[] = "@(#)tree.c 1.5 %G%";
 
 /*
  * This module contains the interface between the SYM routines and
@@ -316,12 +316,11 @@ NODE *a, *slist;
     register SYM *t;
     register NODE *p;
     SYM *etype, *atype, *eltype;
-    NODE *esub, *olda;
+    NODE *esub;
 
-    olda = a;
     t = rtype(a->nodetype);
     if (t->class != ARRAY) {
-	trerror("%t is not an array");
+	trerror("%t is not an array", a);
     }
     eltype = t->type;
     p = slist;
@@ -333,35 +332,57 @@ NODE *a, *slist;
 	if (!compatible(atype, etype)) {
 	    trerror("subscript %t is the wrong type", esub);
 	}
-	a = build(O_INDEX, a, esub);
-	a->nodetype = eltype;
+	esub->nodetype = atype;
     }
     if (p != NIL) {
-	trerror("too many subscripts for %t", olda);
+	trerror("too many subscripts for %t", a);
     } else if (t != NIL) {
-	trerror("not enough subscripts for %t", olda);
+	trerror("not enough subscripts for %t", a);
     }
-    return(a);
+    p = alloc(1, NODE);
+    p->op = O_INDEX;
+    p->left = a;
+    p->right = slist;
+    p->nodetype = eltype;
+    return p;
 }
 
 /*
- * Evaluate a subscript index.
+ * Evaluate a subscript (possibly more than one index).
  */
 
-evalindex(arraytype, index)
+long evalindex(arraytype, subs)
 SYM *arraytype;
-long index;
+NODE *subs;
 {
-    long lb, ub;
-    SYM *indextype;
+    long lb, ub, index, i;
+    SYM *t, *indextype;
+    NODE *p;
 
-    indextype = arraytype->chain;
-    lb = indextype->symvalue.rangev.lower;
-    ub = indextype->symvalue.rangev.upper;
-    if (index < lb || index > ub) {
-	error("subscript out of range");
+    t = rtype(arraytype);
+    if (t->class != ARRAY) {
+	panic("unexpected class %d in evalindex", t->class);
     }
-    return(index - lb);
+    i = 0;
+    t = t->chain;
+    p = subs;
+    while (t != NIL) {
+	if (p == NIL) {
+	    panic("unexpected end of subscript list in evalindex");
+	}
+	indextype = rtype(t);
+	lb = indextype->symvalue.rangev.lower;
+	ub = indextype->symvalue.rangev.upper;
+	eval(p->left);
+	index = popsmall(p->left->nodetype);
+	if (index < lb || index > ub) {
+	    error("subscript value %d out of range %d..%d", index, lb, ub);
+	}
+	i = i + (index - lb);
+	t = t->chain;
+	p = p->right;
+    }
+    return i;
 }
 
 /*
