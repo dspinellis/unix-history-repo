@@ -32,6 +32,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00054
+ * --------------------         -----   ----------------------
+ *
+ * 08 Sep 92    Rick "gopher I"         Fix infinite loop when subdirs
+ *						of local mount exported
  */
 
 #ifndef lint
@@ -584,14 +592,20 @@ get_exportlist()
 			while (statfs(ep->ex_dirp, &stfsbuf) < 0 ||
 			       mount(MOUNT_UFS, ep->ex_dirp,
 				     stfsbuf.f_flags|MNT_UPDATE, &args) < 0) {
+/* 08 Sep 92*/			if (cp)
+					*cp-- = savedc;
+				else
+					cp = ep->ex_dirp + dirplen - 1;
+#ifdef OMIT
 				if (cp == NULL)
 					cp = ep->ex_dirp + dirplen - 1;
 				else
 					*cp = savedc;
+#endif	/* OMIT*/
 				/* back up over the last component */
 				while (*cp == '/' && cp > ep->ex_dirp)
 					cp--;
-				while (*(cp - 1) != '/' && cp > ep->ex_dirp)
+/* 08 Sep 92*/			while (cp > ep->ex_dirp && *(cp - 1) != '/')
 					cp--;
 				if (cp == ep->ex_dirp) {
 					syslog(LOG_WARNING,
