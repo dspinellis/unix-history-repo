@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.112 (Berkeley) %G%
+ *	@(#)conf.h	8.113 (Berkeley) %G%
  */
 
 /*
@@ -884,6 +884,46 @@ typedef int		pid_t;
 
 #ifdef NonStop_UX_BXX
 # define __svr4__
+#endif
+
+
+/*
+**  Hitachi 3050R & 3050RX Workstations running HI-UX/WE2.
+**
+**	Tested for 1.04 and 1.03
+**	From Akihiro Hashimoto ("Hash") <hash@dominic.ipc.chiba-u.ac.jp>.
+*/
+
+#ifdef __H3050R
+# define SYSTEM5	1	/* include all the System V defines */
+# define HASINITGROUPS	1	/* has initgroups(3) call */
+# define setreuid(r, e)	setresuid(r, e, -1)
+# define LA_TYPE	LA_FLOAT
+# define SFS_TYPE	SFS_VFS	/* use <sys/vfs.h> statfs() implementation */
+# define HASSETVBUF	/* HI-UX has no setlinebuf */
+# ifndef GIDSET_T
+#  define GIDSET_T	gid_t
+# endif
+# ifndef _PATH_UNIX
+#  define _PATH_UNIX	"/HI-UX"
+# endif
+# ifndef _PATH_SENDMAILCF
+#  define _PATH_SENDMAILCF	"/usr/lib/sendmail.cf"
+# endif
+# ifndef IDENTPROTO
+#  define IDENTPROTO	0	/* TCP/IP implementation is broken */
+# endif
+# ifndef HASGETUSERSHELL
+#  define HASGETUSERSHELL 0	/* getusershell(3) causes core dumps */
+# endif
+
+/* avoid m_flags conflict between db.h & sys/sysmacros.h on HIUX 3050 */
+# undef m_flags
+
+# ifdef __STDC__
+extern int	syslog(int, char *, ...);
+# endif
+
 #endif
 
 
