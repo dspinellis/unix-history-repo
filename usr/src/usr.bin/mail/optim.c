@@ -10,7 +10,7 @@
 #include "configdefs.h"
 #include <ctype.h>
 
-static char *SccsId = "@(#)optim.c	2.4 %G%";
+static char *SccsId = "@(#)optim.c	2.5 %G%";
 
 /*
  * Map a name into the correct network "view" of the
@@ -534,11 +534,11 @@ optim1(netstr, name)
 ntype(nc)
 	register int nc;
 {
-	register struct nettypetab *np;
+	register struct ntypetab *np;
 
-	for (np = nettypetab; np->nt_char != 0; np++)
+	for (np = ntypetab; np->nt_char != 0; np++)
 		if (np->nt_char == nc)
-			return(np->nt_type);
+			return(np->nt_bcode);
 	return(0);
 }
 
@@ -552,9 +552,9 @@ ntype(nc)
 netkind(nt)
 	register int nt;
 {
-	register struct netkindtab *np;
+	register struct nkindtab *np;
 
-	for (np = netkindtab; np->nk_type != 0; np++)
+	for (np = nkindtab; np->nk_type != 0; np++)
 		if (np->nk_type == nt)
 			return(np->nk_kind);
 	return(0);
