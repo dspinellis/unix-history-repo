@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	8.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	8.8 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -571,7 +571,7 @@ errbody(fp, m, e)
 
 	sprintf(buf, "The original message was received at %s", arpadate(NULL));
 	putline(buf, fp, m);
-	expand("from \201_", buf, &buf[sizeof buf - 1], e);
+	expand("from \201_", buf, &buf[sizeof buf - 1], e->e_parent);
 	putline(buf, fp, m);
 	putline("", fp, m);
 
