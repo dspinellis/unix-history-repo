@@ -1,4 +1,4 @@
-/*	macdefs.h	1.1	86/01/11	*/
+/*	macdefs.h	1.2	86/01/23	*/
 
 # define makecc(val,i)  lastcon = (lastcon<<8)|((val<<24)>>24);  
 
@@ -25,6 +25,7 @@
 /*	should be long if feasable */
 
 # define CONSZ long
+# define ACONFMT "$0x%lx"
 # define CONFMT "%ld"
 
 /*	size in which offsets are kept
