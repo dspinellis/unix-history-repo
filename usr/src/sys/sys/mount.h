@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount.h	7.30 (Berkeley) %G%
+ *	@(#)mount.h	7.31 (Berkeley) %G%
  */
 
 #ifndef KERNEL
@@ -286,6 +286,7 @@ struct nfs_args {
 #define	NFSMNT_READAHEAD	0x00004000  /* set read ahead */
 #define	NFSMNT_DEADTHRESH	0x00008000  /* set dead server retry thresh */
 #define	NFSMNT_NQLOOKLEASE	0x00010000  /* Get lease for lookup */
+#define	NFSMNT_RESVPORT		0x00020000  /* Allocate a reserved port */
 #define	NFSMNT_INTERNAL		0xffe00000  /* Bits set internally */
 #define	NFSMNT_MNTD		0x00200000  /* Mnt server for mnt point */
 #define	NFSMNT_DISMINPROG	0x00400000  /* Dismount in progress */
