@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sys_socket.c	7.3 (Berkeley) %G%
+ *	@(#)sys_socket.c	7.4 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -44,9 +44,8 @@ soo_rw(fp, rw, uio)
 {
 	int soreceive(), sosend();
 
-	return (
-	    (*(rw==UIO_READ?soreceive:sosend))
-	      ((struct socket *)fp->f_data, 0, uio, 0, 0));
+	return ((*(rw == UIO_READ ? soreceive : sosend))
+	      ((struct socket *)fp->f_data, 0, uio, 0, 0, 0));
 }
 
 soo_ioctl(fp, cmd, data)
@@ -77,11 +76,11 @@ soo_ioctl(fp, cmd, data)
 		return (0);
 
 	case SIOCSPGRP:
-		so->so_pgrp = *(int *)data;
+		so->so_pgid = *(int *)data;
 		return (0);
 
 	case SIOCGPGRP:
-		*(int *)data = so->so_pgrp;
+		*(int *)data = so->so_pgid;
 		return (0);
 
 	case SIOCATMARK:

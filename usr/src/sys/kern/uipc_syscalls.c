@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_syscalls.c	7.7 (Berkeley) %G%
+ *	@(#)uipc_syscalls.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -538,8 +538,7 @@ recvfrom()
 	msg.msg_accrights = 0;
 	msg.msg_control = 0;
 	msg.msg_flags = uap->flags;
-	recvit(uap->s, &msg, (caddr_t)uap->fromlenaddr,
-				(caddr_t)0, (caddr_t)0, compat_43);
+	recvit(uap->s, &msg, (caddr_t)uap->fromlenaddr, (caddr_t)0, compat_43);
 }
 #ifdef COMPAT_43
 orecv()
@@ -562,7 +561,7 @@ orecv()
 	msg.msg_accrights = 0;
 	msg.msg_control = 0;
 	msg.msg_flags = uap->flags;
-	recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, (caddr_t)0, 0);
+	recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, 0);
 }
 
 orecvmsg()
@@ -598,7 +597,7 @@ orecvmsg()
 		}
 	    
 	recvit(uap->s, &msg, (caddr_t)&uap->msg->msg_namelen,
-	    (caddr_t)&uap->msg->msg_accrightslen, (caddr_t)0, /* compat_43 */1);
+	    (caddr_t)&uap->msg->msg_accrightslen, /* compat_43 */1);
 }
 #endif
 
@@ -638,15 +637,15 @@ recvmsg()
 			u.u_error = EFAULT;
 			return;
 		}
-	recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, (caddr_t)0, 0);
+	recvit(uap->s, &msg, (caddr_t)0, (caddr_t)0, 0);
 	msg.msg_iov = uiov;
 	u.u_error = copyout((caddr_t)&msg, (caddr_t)uap->msg, sizeof(msg));
 }
 
-recvit(s, mp, namelenp, rightslenp, controllenp, compat_43)
+recvit(s, mp, namelenp, rightslenp, compat_43)
 	int s, compat_43;
 	register struct msghdr *mp;
-	caddr_t namelenp, rightslenp, controllenp;
+	caddr_t namelenp, rightslenp;
 {
 	register struct file *fp;
 	struct uio auio;
@@ -704,6 +703,7 @@ recvit(s, mp, namelenp, rightslenp, controllenp, compat_43)
 			(void) copyout(mtod(from, caddr_t),
 			    (caddr_t)mp->msg_name, (unsigned)len);
 		}
+		mp->msg_namelen = len;
 		if (namelenp)
 			(void) copyout((caddr_t)&len, namelenp, sizeof (int));
 	}
@@ -717,6 +717,7 @@ recvit(s, mp, namelenp, rightslenp, controllenp, compat_43)
 			(void) copyout((caddr_t)mtod(rights, caddr_t),
 			    (caddr_t)mp->msg_accrights, (unsigned)len);
 		}
+		mp->msg_accrightslen = len;
 		if (rightslenp)
 			(void) copyout((caddr_t)&len, rightslenp, sizeof (int));
 	}
@@ -732,8 +733,7 @@ recvit(s, mp, namelenp, rightslenp, controllenp, compat_43)
 			(void) copyout((caddr_t)mtod(control, caddr_t),
 			    (caddr_t)mp->msg_control, (unsigned)len);
 		}
-		if (controllenp)
-			(void) copyout((caddr_t)&len, controllenp, sizeof(int));
+		mp->msg_controllen = len;
 	}
 	if (rights)
 		m_freem(rights);
@@ -1009,7 +1009,6 @@ sockargs(aname, name, namelen, type)
 	int namelen, type;
 {
 	register struct mbuf *m;
-	register struct sockaddr *sa;
 	int error;
 
 	if ((u_int)namelen > MLEN)
@@ -1023,12 +1022,14 @@ sockargs(aname, name, namelen, type)
 		(void) m_free(m);
 	else
 		*aname = m;
-	sa = mtod(m, struct sockaddr *);
+	if (type == MT_SONAME) {
+		register struct sockaddr *sa = mtod(m, struct sockaddr *);
 #if defined(COMPAT_43) && BYTE_ORDER != BIG_ENDIAN
-	if (type == MT_SONAME && sa->sa_family == 0 && sa->sa_len < AF_MAX)
-		sa->sa_family = sa->sa_len;
+		if (sa->sa_family == 0 && sa->sa_len < AF_MAX)
+			sa->sa_family = sa->sa_len;
 #endif
-	sa->sa_len = namelen;
+		sa->sa_len = namelen;
+	}
 	return (error);
 }
 
