@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_syscalls.c	7.16 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1156,8 +1156,14 @@ rename(scp)
 		error = EXDEV;
 		goto out;
 	}
-	if (fvp == tdvp || fvp == tvp)
+	if (fvp == tdvp)
 		error = EINVAL;
+	/*
+	 * If source is the same as the destination,
+	 * then there is nothing to do.
+	 */
+	if (fvp == tvp)
+		error = -1;
 out:
 	if (error) {
 		VOP_ABORTOP(&tond);
@@ -1167,6 +1173,8 @@ out:
 	}
 out1:
 	ndrele(&tond);
+	if (error == -1)
+		RETURN (0);
 	RETURN (error);
 }
 
