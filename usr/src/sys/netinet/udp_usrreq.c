@@ -1,4 +1,4 @@
-/*	udp_usrreq.c	6.2	83/10/06	*/
+/*	udp_usrreq.c	6.2	83/10/13	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -31,7 +31,7 @@ udp_init()
 	udb.inp_next = udb.inp_prev = &udb;
 }
 
-int	udpcksum;
+int	udpcksum = 1;
 struct	sockaddr_in udp_in = { AF_INET };
 
 udp_input(m0)
@@ -185,12 +185,12 @@ udp_output(inp, m0)
 	ui->ui_next = ui->ui_prev = 0;
 	ui->ui_x1 = 0;
 	ui->ui_pr = IPPROTO_UDP;
-	ui->ui_len = len + sizeof (struct udphdr);
+	ui->ui_len = htons((u_short)len + sizeof (struct udphdr));
 	ui->ui_src = inp->inp_laddr;
 	ui->ui_dst = inp->inp_faddr;
 	ui->ui_sport = inp->inp_lport;
 	ui->ui_dport = inp->inp_fport;
-	ui->ui_ulen = htons((u_short)ui->ui_len);
+	ui->ui_ulen = ui->ui_len;
 
 	/*
 	 * Stuff checksum and output datagram.
