@@ -1,4 +1,4 @@
-/* if_en.c 4.4 81/11/04 */
+/* if_en.c 4.5 81/11/07 */
 
 #include "en.h"
 /*
@@ -62,7 +62,7 @@ enprobe(reg)
 	addr->en_ostat = 0;
 	addr->en_owc = -1;
 	addr->en_oba = 0;
-	addr->en_ostat = IEN|GO;
+	addr->en_ostat = EN_IEN|EN_GO;
 	DELAY(100000);
 	addr->en_ostat = 0;
 	printf("ethernet address %d\n", ~addr->en_addr&0xff);
@@ -243,7 +243,7 @@ COUNT(ENSTART);
 	printf("en%d: sending packet (%d bytes)\n", unit, len);
 	prt_byte(xpkt, len);
 #endif
-	addr->en_ostat = IEN|GO;
+	addr->en_ostat = EN_IEN|EN_GO;
 }
 
 /*
@@ -266,7 +266,7 @@ COUNT(ENSETUP);
 	addr = (struct endevice *)ui->ui_addr;
 	addr->en_iba = imp_stat.iaddr;
 	addr->en_iwc = -600;	/* a little extra to avoid hardware bugs */
-	addr->en_istat = IEN|GO;
+	addr->en_istat = EN_IEN|EN_GO;
 }
 
 /*
@@ -292,7 +292,7 @@ COUNT(ENXINT);
 	}
 	imp_stat.endelay = 0;
 	imp_stat.enmask = ~0;
-	if (addr->en_ostat&ERROR)
+	if (addr->en_ostat&EN_OERROR)
 		printf("en%d: output error ostat=%b\n", unit,
 			addr->en_ostat, EN_BITS);
 	imp_stat.outactive = 0;
@@ -353,7 +353,7 @@ COUNT(ENRINT);
 #endif
 	if (imp_stat.flush)
 		goto flush;
-	if (addr->en_istat&ERROR) {
+	if (addr->en_istat&EN_IERROR) {
 #ifdef notdef
 		printf("en%d: input error istat=%b\n", unit,
 			addr->en_istat, EN_BITS);
@@ -456,7 +456,7 @@ flush:
 setup:
 	addr->en_iba = imp_stat.iaddr;
 	addr->en_iwc = -600;
-	addr->en_istat = IEN|GO;
+	addr->en_istat = EN_IEN|EN_GO;
 }
 
 #ifdef IMPDEBUG
