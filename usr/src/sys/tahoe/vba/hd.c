@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)hd.c	7.6 (Berkeley) %G%
+ *	@(#)hd.c	7.7 (Berkeley) %G%
  */
 
 #include "hd.h"
@@ -56,8 +56,9 @@
 struct vba_ctlr *hdcminfo[NHDC];
 struct vba_device *hddinfo[NHD];
 int hdcprobe(), hdslave(), hdattach(), hddgo(), hdstrategy();
+long hdstd[] = { 0 };
 struct vba_driver hdcdriver =
-    { hdcprobe, hdslave, hdattach, hddgo, 0L, "hd", hddinfo, "hdc", hdcminfo };
+    { hdcprobe, hdslave, hdattach, hddgo, hdstd, "hd", hddinfo, "hdc", hdcminfo };
 
 /*
  * Per-controller state.
