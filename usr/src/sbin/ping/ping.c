@@ -58,6 +58,7 @@ char usage[] = "Usage:  ping [-drv] host [data size] [npackets]\n";
 
 char *hostname;
 char hnamebuf[MAXHOSTNAMELEN];
+char *inet_ntoa();
 
 int npackets;
 int ntransmitted = 0;		/* sequence # for outbound packets = #sent */
@@ -78,6 +79,7 @@ char *argv[];
 {
 	struct sockaddr_in from;
 	char **av = argv;
+	char *toaddr = NULL;
 	struct sockaddr_in *to = (struct sockaddr_in *) &whereto;
 	int on = 1;
 	struct protoent *proto;
@@ -114,6 +116,7 @@ char *argv[];
 			to->sin_family = hp->h_addrtype;
 			bcopy(hp->h_addr, (caddr_t)&to->sin_addr, hp->h_length);
 			hostname = hp->h_name;
+			toaddr = inet_ntoa(to->sin_addr.s_addr);
 		} else {
 			printf("%s: unknown host %s\n", argv[0], av[0]);
 			exit(1);
@@ -148,7 +151,11 @@ char *argv[];
 	if (options & SO_DONTROUTE)
 		setsockopt(s, SOL_SOCKET, SO_DONTROUTE, &on, sizeof(on));
 
-	printf("PING %s: %d data bytes\n", hostname, datalen );
+	printf("PING %s", hostname);
+	if (toaddr)
+		printf(" (%s)", toaddr);
+	printf(": %d data bytes\n", datalen);
+				
 
 	setlinebuf( stdout );
 
@@ -305,7 +312,6 @@ struct sockaddr_in *from;
 	struct timeval tv;
 	struct timeval *tp;
 	int hlen, triptime;
-	char *inet_ntoa();
 
 	from->sin_addr.s_addr = ntohl( from->sin_addr.s_addr );
 	gettimeofday( &tv, &tz );
