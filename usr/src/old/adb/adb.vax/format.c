@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)format.c	4.2 %G%";
+static	char sccsid[] = "@(#)format.c	4.3 %G%";
 #endif
 /*
  *
@@ -60,6 +60,7 @@ STRING		ifp;
 			   fcount += modifier-'0';
 			OD
 			fp--;
+			IF fcount==0 THEN fcount = 1; FI
 		ELSE fcount = 1;
 		FI
 
@@ -216,12 +217,18 @@ STRING		ifp;
 		    case 'f':
 			fw = 0;
 			fw.sa = wx;
-			printf("%-16.9f", fw);
+			IF (wx & ~0xFFFF00FF) == 0x8000
+			THEN printf("(reserved oprnd)");
+			ELSE printf("%-16.9f", fw);
+			FI
 			dotinc=4; break;
 
 		    case 'F':
 			fw.sa = wx;
-			printf("%-32.18F", fw);
+			IF (wx & ~0xFFFF00FF) == 0x8000
+			THEN printf("%-32s", "(reserved oprnd)");
+			ELSE printf("%-32.18F", fw);
+			FI
 			dotinc=8; break;
 
 		    case 'n': case 'N':
