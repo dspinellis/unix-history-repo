@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)maketape	4.19 (Berkeley) %G%
+#	@(#)maketape	4.20 (Berkeley) %G%
 #
 #	maketape [ 6250 | 1600 [ tapename [ remotetapemachine ] ] ]
 miniroot=hp0d
@@ -27,24 +27,25 @@ tp cmf /tmp/tape.$$ boot copy format
 cd /nbsd/sys/mdec
 echo "Build 1st level boot block file"
 cat tsboot htboot tmboot mtboot utboot noboot noboot /tmp/tape.$$ | \
-	$remote dd of=${tape} bs=512 conv=sync
+	$remote dd of=${tape} obs=512 conv=sync
 cd /nbsd
 sync
 echo "Add dump of mini-root file system"
-dd if=/dev/r${miniroot} | ${remote+"$remote dd"} of=${tape} bs=20b count=205 conv=sync
+eval dd if=/dev/r${miniroot} count=205 bs=20b ${remote+"| $remote dd obs=20b"} \
+	of=${tape} conv=sync
 echo "Add full dump of real file system"
 /etc/${remote+r}dump 0uf $remote${remote+:}${tape} /nbsd
 echo "Add tar image of system sources"
-cd /nbsd/sys; tar cf ${tartape} . \
-	${remote+"| $remote /usr/local/20b > $tape"}
+cd /nbsd/sys; eval tar cf ${tartape} . \
+	${remote+'| $remote /usr/local/20b ">" $tape'}
 echo "Add tar image of /usr"
-cd /nbsd/usr; tar cf ${tartape} adm bin dict doc games \
+cd /nbsd/usr; eval tar cf ${tartape} adm bin dict doc games \
 	guest hosts include lib local man mdec msgs new \
 	preserve pub spool tmp ucb \
-		${remote+"| $remote /usr/local/20b > $tape"}
+		${remote+'| $remote /usr/local/20b ">" $tape'}
 echo "Add varian fonts"
-cd /usr/lib/vfont; tar cf ${tartape} . \
-	${remote+"| $remote /usr/local/20b > $tape"}
+cd /usr/lib/vfont; eval tar cf ${tartape} . \
+	${remote+'| $remote /usr/local/20b ">" $tape'}
 if [ ${type} != '6250' ]
 then
 	echo "Done, rewinding first tape"
@@ -57,13 +58,13 @@ then
 	fi
 fi
 echo "Add user source code"
-cd /nbsd/usr/src; tar cfFF ${tartape} . \
-	${remote+"| $remote /usr/local/20b > $tape"}
+cd /nbsd/usr/src; eval tar cf ${tartape} . \
+	${remote+'| $remote /usr/local/20b ">" $tape'}
 echo "Add user contributed software"
-cd /nbsd/usr/src/new; tar cf ${tartape} . \
-	${remote+"| $remote /usr/local/20b > $tape"}
+cd /nbsd/usr/src/new; eval tar cf ${tartape} . \
+	${remote+'| $remote /usr/local/20b ">" $tape'}
 echo "Add ingres source"
-cd /nbsd/usr/ingres; tar cf ${tartape} . \
-	${remote+"| $remote /usr/local/20b > $tape"}
+cd /nbsd/usr/ingres; eval tar cf ${tartape} . \
+	${remote+'| $remote /usr/local/20b ">" $tape'}
 echo "Done, rewinding tape"
 $remote mt -t ${tape} rew &
