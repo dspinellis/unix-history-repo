@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: vm_mmap.c 1.6 91/10/21$
  *
- *	@(#)vm_mmap.c	7.22 (Berkeley) %G%
+ *	@(#)vm_mmap.c	7.23 (Berkeley) %G%
  */
 
 /*
@@ -160,7 +160,7 @@ smmap(p, uap, retval)
 	struct vnode *vp;
 	vm_offset_t addr;
 	vm_size_t size;
-	vm_prot_t prot;
+	vm_prot_t prot, maxprot;
 	caddr_t handle;
 	int flags, error;
 
@@ -205,9 +205,10 @@ smmap(p, uap, retval)
 	 * If we are mapping a file we need to check various
 	 * file/vnode related things.
 	 */
-	if (flags & MAP_ANON)
+	if (flags & MAP_ANON) {
 		handle = NULL;
-	else {
+		maxprot = VM_PROT_ALL;
+	} else {
 		/*
 		 * Mapping file, get fp for validation.
 		 * Obtain vnode and make sure it is of appropriate type
@@ -229,15 +230,20 @@ smmap(p, uap, retval)
 		    ((flags & MAP_SHARED) &&
 		     (uap->prot & PROT_WRITE) && (fp->f_flag & FWRITE) == 0))
 			return(EACCES);
-		if ((flags & MAP_SHARED) && (fp->f_flag & FWRITE) == 0)
-			flags = (flags & ~MAP_SHARED) | MAP_PRIVATE;
 		handle = (caddr_t)vp;
+		/*
+		 * Set maximum protection as dictated by the open file.
+		 * XXX use the vnode instead?  Problem is: what credentials
+		 * do we use for determination?  What if proc does a setuid?
+		 */
+		maxprot = 0;
+		if (fp->f_flag & FREAD)
+			maxprot |= VM_PROT_READ|VM_PROT_EXECUTE;
+		if (fp->f_flag & FWRITE)
+			maxprot |= VM_PROT_WRITE;
 	}
-	/*
-	 * Map protections to MACH style
-	 */
 	prot = uap->prot & VM_PROT_ALL;
-	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot,
+	error = vm_mmap(&p->p_vmspace->vm_map, &addr, size, prot, maxprot,
 			flags, handle, (vm_offset_t)uap->pos);
 	if (error == 0)
 		*retval = (int) addr;
@@ -401,16 +407,7 @@ mprotect(p, uap, retval)
 	if ((addr & PAGE_MASK) || uap->len < 0)
 		return(EINVAL);
 	size = (vm_size_t)uap->len;
-	/*
-	 * Map protections
-	 */
-	prot = VM_PROT_NONE;
-	if (uap->prot & PROT_READ)
-		prot |= VM_PROT_READ;
-	if (uap->prot & PROT_WRITE)
-		prot |= VM_PROT_WRITE;
-	if (uap->prot & PROT_EXEC)
-		prot |= VM_PROT_EXECUTE;
+	prot = uap->prot & VM_PROT_ALL;
 
 	switch (vm_map_protect(&p->p_vmspace->vm_map, addr, addr+size, prot,
 	    FALSE)) {
@@ -462,11 +459,11 @@ mincore(p, uap, retval)
  * Handle is either a vnode pointer or NULL for MAP_ANON.
  */
 int
-vm_mmap(map, addr, size, prot, flags, handle, foff)
+vm_mmap(map, addr, size, prot, maxprot, flags, handle, foff)
 	register vm_map_t map;
 	register vm_offset_t *addr;
 	register vm_size_t size;
-	vm_prot_t prot;
+	vm_prot_t prot, maxprot;
 	register int flags;
 	caddr_t handle;		/* XXX should be vp */
 	vm_offset_t foff;
@@ -527,15 +524,11 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 			goto out;
 		}
 		/*
-		 * The object of unnamed anonymous regions was just created
-		 * find it for pager_cache.
-		 */
-		if (handle == NULL)
-			object = vm_object_lookup(pager);
-
-		/*
 		 * Don't cache anonymous objects.
 		 * Loses the reference gained by vm_pager_allocate.
+		 * Note that object will be NULL when handle == NULL,
+		 * this is ok since vm_allocate_with_pager has made
+		 * sure that these objects are uncached.
 		 */
 		(void) pager_cache(object, FALSE);
 #ifdef DEBUG
@@ -681,18 +674,16 @@ vm_mmap(map, addr, size, prot, flags, handle, foff)
 	}
 	/*
 	 * Correct protection (default is VM_PROT_ALL).
-	 * Note that we set the maximum protection.  This may not be
-	 * entirely correct.  Maybe the maximum protection should be based
-	 * on the object permissions where it makes sense (e.g. a vnode).
-	 *
-	 * Changed my mind: leave max prot at VM_PROT_ALL.
+	 * If maxprot is different than prot, we must set both explicitly.
 	 */
-	if (prot != VM_PROT_ALL) {
+	rv = KERN_SUCCESS;
+	if (maxprot != VM_PROT_ALL)
+		rv = vm_map_protect(map, *addr, *addr+size, maxprot, TRUE);
+	if (rv == KERN_SUCCESS && prot != maxprot)
 		rv = vm_map_protect(map, *addr, *addr+size, prot, FALSE);
-		if (rv != KERN_SUCCESS) {
-			(void) vm_deallocate(map, *addr, size);
-			goto out;
-		}
+	if (rv != KERN_SUCCESS) {
+		(void) vm_deallocate(map, *addr, size);
+		goto out;
 	}
 	/*
 	 * Shared memory is also shared with children.
