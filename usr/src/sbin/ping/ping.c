@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ping.c	4.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ping.c	4.4 (Berkeley) %G%";
 #endif
 
 /*
@@ -374,8 +374,9 @@ int len;
 	/*
 	 * add back carry outs from top 16 bits to low 16 bits
 	 */
-	sum += (sum >> 16);	/* add hi 16 to low 16 */
-	answer = ~sum;		/* truncate to 16 bits */
+	sum = (sum >> 16) + (sum & 0xffff);	/* add hi 16 to low 16 */
+	sum += (sum >> 16);			/* add carry */
+	answer = ~sum;				/* truncate to 16 bits */
 	return (answer);
 }
 
