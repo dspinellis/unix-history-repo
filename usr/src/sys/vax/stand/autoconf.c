@@ -1,4 +1,4 @@
-/*	autoconf.c	4.2	81/03/21	*/
+/*	autoconf.c	4.3	81/03/22	*/
 
 #include "../h/param.h"
 #include "../h/cpu.h"
@@ -45,6 +45,7 @@ caddr_t	umaddr730[] = { UMA };
 configure()
 {
 	union cpusid cpusid;
+	int nmba, nuba, i;
 
 	cpusid.cpusid = mfpr(SID);
 	cpu = cpusid.cpuany.cp_type;
@@ -54,17 +55,34 @@ configure()
 		mbaddr = mbaddr780;
 		ubaddr = ubaddr780;
 		umaddr = umaddr780;
+		nmba = sizeof (mbaddr780) / sizeof (mbaddr780[0]);
+		nuba = sizeof (ubaddr780) / sizeof (ubaddr780[0]);
 		break;
 
 	case VAX_750:
 		mbaddr = mbaddr750;
 		ubaddr = ubaddr750;
 		umaddr = umaddr750;
+		nmba = sizeof (mbaddr750) / sizeof (mbaddr750[0]);
+		nuba = 0;
 		break;
 
 	case VAX_730:
 		ubaddr = ubaddr730;
 		umaddr = umaddr730;
+		nmba = nuba = 0;
 		break;
 	}
+	/*
+	 * Forward into the past...
+	 */
+	for (i = 0; i < nmba; i++)
+		if (!badloc(mbaddr[i]))
+			mbaddr[i]->mba_cr = MBCR_INIT;
+	for (i = 0; i < nuba; i++)
+		if (!badloc(ubaddr[i]))
+			ubaddr[i]->uba_cr = UBACR_ADINIT;
+	/* give unibus devices a chance to recover... */
+	if (nuba > 0)
+		DELAY(2000000);
 }
