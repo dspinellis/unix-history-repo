@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.14 (Berkeley) %G%";
 #endif
 
 /*
@@ -538,61 +538,41 @@ wrong_length(str, n)
 }
 
 /*
- * Make sure that building is 'E' or 'C'.
- * Error correction is done if building is 'e', 'c', "evans", or "cory".
+ * Deal with Berkeley buildings.  Abbreviating Cory to C and Evans to E.
  * Correction changes "str".
- * The finger program determines the building by looking at the last
- * character.  Currently, finger only allows that character to be 'E' or 'C'.
  *
  * Returns 1 if incorrect room format.
  * 
  * Note: this function assumes that the newline has been removed from str.
  */
 illegal_building(str)
-	char *str;
+	register char *str;
 {
 	int length = strlen(str);
-	char *last_ch, *ptr;
+	register char *ptr;
 
 	/*
-	 * Zero length strings are acceptable input.
+	 * If the string is [Ee]vans or [Cc]ory or ends in
+	 * [ \t0-9][Ee]vans or [ \t0-9M][Cc]ory, then contract the name
+	 * into 'E' or 'C', as the case may be, and delete leading blanks.
 	 */
-	if (length == 0)
-		return (0);
-	/*
-	 * Delete "vans" and "ory".
-	 */
-	if (strcmpn(str+length-4, "vans", 4) == 0) {
-		length -= 4;
-		str[length] = '\0';
-	}
-	if (strcmpn(str+length-3, "ory", 3) == 0) {
-		length -= 3;
-		str[length] = '\0';
-	}
-	last_ch = str+length-1;
-	/*
-	 * Now change e to E or c to C.
-	 */
-	if (*last_ch == 'e')
-		*last_ch = 'E';
-	if (*last_ch == 'c')
-		*last_ch = 'C';
-	/*
-	 * Delete any spaces before the E or C.
-	 */
-	for (ptr = last_ch - 1; ptr > str && *ptr == ' '; ptr--)
-		;
-	(void) strcpy(ptr+1, last_ch);
-	/*
-	 * Make sure building is evans or cory.
-	 */
-	if (*last_ch != 'E' && *last_ch != 'C') {
-		printf("%s%s%s",
-			"The finger program requires that your",
-			" office be in Cory or Evans.\n",
-			"Enter this as (for example) 597E or 197C.\n");
-		return (1);
+	if (length >= 5 && strcmp(ptr = str + length - 4, "vans") == 0 &&
+	    (*--ptr == 'e' || *ptr == 'E') &&
+	    (--ptr < str || isspace(*ptr) || isdigit(*ptr))) {
+		for (; ptr > str && isspace(*ptr); ptr--)
+			;
+		ptr++;
+		*ptr++ = 'E';
+		*ptr = '\0';
+	} else
+	if (length >= 4 && strcmp(ptr = str + length - 3, "ory") == 0 &&
+	    (*--ptr == 'c' || *ptr == 'C') &&
+	    (--ptr < str || *ptr == 'M' || isspace(*ptr) || isdigit(*ptr))) {
+		for (; ptr > str && isspace(*ptr); ptr--)
+			;
+		ptr++;
+		*ptr++ = 'C';
+		*ptr = '\0';
 	}
 	return (0);
 }
