@@ -1,4 +1,4 @@
-(Version 8.28 of %G%)
+(Version 8.29 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -90,6 +90,10 @@ E ***	Move mailertable lookup after UUCP-specific class checks?
 E ***	Users in more than one list with different owners get duplicate
 	deliveries -- maybe just assign them arbitrarily to one
 	envelope or the other?
+
+X **	Have a ruleset (6?) that gets both sender and recipient
+	addresses to check compatibility.  Can you do enough interesting
+	things with this?
 
 X **	Make MAXBADCOMMANDS run time configurable.
 
