@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.23 (Berkeley) 1/7/89";
 #endif /* not lint */
 
 /*
@@ -43,6 +43,7 @@ static char sccsid[] = "@(#)rlogind.c	5.24 (Berkeley) %G%";
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/file.h>
+#include <sys/param.h>
 
 #include <netinet/in.h>
 
@@ -82,7 +83,7 @@ main(argc, argv)
 	int on = 1, fromlen;
 	struct sockaddr_in from;
 
-	openlog("rlogind", LOG_PID | LOG_AUTH, LOG_AUTH);
+	openlog("rlogind", LOG_PID | LOG_CONS, LOG_AUTH);
 
 	opterr = 0;
 	while ((ch = getopt(argc, argv, ARGSTR)) != EOF)
@@ -118,8 +119,7 @@ main(argc, argv)
 #endif
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
-		fprintf(stderr, "%s: ", argv[0]);
-		perror("getpeername");
+		syslog(LOG_ERR,"Couldn't get peer name of remote host: %m");
 		exit(1);
 	}
 	if (keepalive &&
@@ -146,7 +146,10 @@ doit(f, fromp)
 	int authenticated = 0;
 #endif
 	register struct hostent *hp;
+	char	remotehost[MAXHOSTNAMELEN];
+	char	localhost[MAXHOSTNAMELEN];
 	struct hostent hostent;
+	char	*raddr;
 	char c;
 
 	alarm(60);
@@ -164,6 +167,33 @@ doit(f, fromp)
 		 */
 		hp = &hostent;
 		hp->h_name = inet_ntoa(fromp->sin_addr);
+	} else {
+		(void) gethostname(localhost, sizeof(localhost));
+		if(same_domain(hp->h_name, localhost)) {
+			bcopy(hp->h_name, remotehost, sizeof(remotehost));
+			hp = gethostbyname(remotehost);
+			authenticated = -10;	/* !authenticated */
+			if(hp == NULL) {
+				syslog(LOG_NOTICE, "Couldn't get entry for remote host %s\n",
+					remotehost);
+			} else {
+			    for(;;) {
+				if(!(raddr = hp->h_addr_list[0]))
+					break;
+
+				if(!bcmp(raddr, (caddr_t) &fromp->sin_addr,
+				    sizeof(struct in_addr))) {
+					authenticated = 0;
+					break;
+				}
+				hp->h_addr_list++;
+    			    }
+			    if(authenticated < 0) {
+				syslog(LOG_NOTICE,"Host address not listed for name %s",
+					remotehost);
+			    }
+			}
+		}
 	}
 
 	if(use_kerberos) {
@@ -179,9 +209,11 @@ doit(f, fromp)
 #ifndef OLD_LOGIN
 		if (fromp->sin_family != AF_INET ||
 	    	    fromp->sin_port >= IPPORT_RESERVED ||
-	    	    fromp->sin_port < IPPORT_RESERVED/2)
+	    	    fromp->sin_port < IPPORT_RESERVED/2) {
+			syslog(LOG_NOTICE, "Connection from %s on illegal port",
+				inet_ntoa(fromp->sin_addr));
 			fatal(f, "Permission denied");
-		else {
+		} else {
 			write(f, "", 1);
 #endif
 
@@ -240,7 +272,7 @@ gotpty:
 #ifdef OLD_LOGIN
 		execl("/bin/login", "login", "-r", hp->h_name, 0);
 #else /* OLD_LOGIN */
-		if (authenticated)
+		if (authenticated > 0)
 			execl("/bin/login", "login", "-p",
 			    "-h", hp->h_name, "-f", lusername, 0);
 		else
