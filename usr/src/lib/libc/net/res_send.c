@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_send.c	6.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_send.c	6.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -134,11 +134,13 @@ res_send(buf, buflen, answer, anslen)
 			 */
 			if (s < 0)
 				s = socket(AF_INET, SOCK_DGRAM, 0);
-			if (sendto(s, buf, buflen, 0, &_res.nsaddr_list[ns],
-			    sizeof(struct sockaddr)) != buflen) {
+			if (connect(s, &_res.nsaddr_list[ns],
+			    sizeof(struct sockaddr)) < 0 ||
+			    send(s, buf, buflen, 0) != buflen) {
 #ifdef DEBUG
 				if (_res.options & RES_DEBUG) 
-					printf("sendto errno = %d\n", errno);
+					printf("connect/send errno = %d\n",
+					    errno);
 #endif DEBUG
 			}
 			/*
@@ -147,6 +149,7 @@ res_send(buf, buflen, answer, anslen)
 			timeout.tv_sec = 
 				((_res.retrans * _res.retry) / _res.nscount);
 			timeout.tv_usec = 0;
+wait:
 			dsmask = 1 << s;
 			n = select(s+1, &dsmask, 0, 0, &timeout);
 			if (n < 0) {
@@ -183,7 +186,7 @@ res_send(buf, buflen, answer, anslen)
 					p_query(answer);
 				}
 #endif DEBUG
-				continue;
+				goto wait;
 			}
 			if (!(_res.options & RES_IGNTC) && anhp->tc) {
 				/*
