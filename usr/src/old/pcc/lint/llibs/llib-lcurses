@@ -1,4 +1,4 @@
-/* @(#)llib-lcurses	1.5 (Berkeley) %G% */
+/* @(#)llib-lcurses	1.6 (Berkeley) %G% */
 
 /* LINTLIBRARY */
 # include	"curses.h"
@@ -8,17 +8,22 @@
  * but lint needs something a little more solid than that
  */
 
-bool	AM, BS, CA, DA, DB, EO, GT, HZ, IN, MI, MS, NC, OS, UL, XN;
-
-char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *DC, *DL, *DM, *DO, *ED,
-	*EI, *HO, *IC, *IM, *IP, *LL, *MA, *ND, *SE, *SF, *SO, *SR,
-	*TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VE, *VS, PC;
+bool	AM, BS, CA, DA, DB, EO, HC, HZ, IN, MI, MS, NC, NS, OS, UL,
+	XB, XN, XT, XS, XX;
+char	*AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *CS, *DC, *DL,
+	*DM, *DO, *ED, *EI, *K0, *K1, *K2, *K3, *K4, *K5, *K6,
+	*K7, *K8, *K9, *HO, *IC, *IM, *IP, *KD, *KE, *KH, *KL,
+	*KR, *KS, *KU, *LL, *MA, *ND, *NL, *RC, *SC, *SE, *SF,
+	*SO, *SR, *TA, *TE, *TI, *UC, *UE, *UP, *US, *VB, *VS,
+	*VE, *AL_PARM, *DL_PARM, *UP_PARM, *DOWN_PARM,
+	*LEFT_PARM, *RIGHT_PARM;
+char	PC;
 
 /*
  * From the tty modes...
  */
 
-bool	NONL, UPPERCASE, normtty, _pfast;
+bool	GT, NONL, UPPERCASE, normtty, _pfast;
 
 # define	WINDOW	struct _win_st
 
@@ -144,3 +149,5 @@ WINDOW *subwin(o, Nl, Nc, by, bx) WINDOW *o; int Nl, Nc, by, bx; { return o; }
 	/* These really return char *'s but this will do. */
 int	wstandout(win) WINDOW *win; { return 0; }
 int	wstandend(win) WINDOW *win; { return 0; }
+char *	getcap(name) char * name; { return 0; }
+char *	_unctrl[1];
