@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)termios.h	7.13 (Berkeley) %G%
+ *	@(#)termios.h	7.14 (Berkeley) %G%
  */
 
 /*
@@ -59,7 +59,7 @@
 #define VMIN		16	/* !ICANON */
 #define VTIME		17	/* !ICANON */
 #ifndef _POSIX_SOURCE
-#define VINFO		18	/* ICANON */
+#define VSTATUS		18	/* ICANON */
 /*			19	   spare */
 #define	NCCS		20
 #define	NCC		NCCS
@@ -156,7 +156,7 @@
 #define TOSTOP		0x00400000	/* stop background jobs from output */
 #ifndef _POSIX_SOURCE
 #define FLUSHO		0x00800000	/* output being flushed (state) */
-#define	NOKERNINFO	0x02000000	/* no kernel output from VINFO */
+#define	NOKERNINFO	0x02000000	/* no kernel output from VSTATUS */
 #define PENDIN		0x20000000	/* XXX retype pending input (state) */
 #endif  /*_POSIX_SOURCE */
 #define	NOFLSH		0x80000000	/* don't flush after interrupt */
@@ -169,7 +169,7 @@ struct termios {
 	tcflag_t	c_oflag;	/* output flags */
 	tcflag_t	c_cflag;	/* control flags */
 	tcflag_t	c_lflag;	/* local flags */
-	cc_t		c_cc[NCC];	/* control chars */
+	cc_t		c_cc[NCCS];	/* control chars */
 	long		c_ispeed;	/* input speed */
 	long		c_ospeed;	/* output speed */
 };
