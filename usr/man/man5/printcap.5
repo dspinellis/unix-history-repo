@@ -1,0 +1,83 @@
+.TH PRINTCAP 5 "25 February 1983"
+.UC 4
+.ad
+.SH NAME
+printcap \- printer capability data base
+.SH SYNOPSIS
+/etc/printcap
+.SH DESCRIPTION
+.I printcap
+is a simplified version of the
+.IR termcap (5)
+data base
+used to describe line printers.  The spooling system accesses the
+.I printcap
+file every time it is used, allowing dynamic
+addition and deletion of printers.  Each entry in the data base
+is used to describe one printer.  This data base may not be
+substituted for, as is possible for 
+.IR termcap ,
+because it may allow accounting to be bypassed.
+.PP
+The default printer is normally 
+.IR lp ,
+though the environment variable
+.I PRINTER
+may be used to override this.  Each spooling utility supports an option,
+.BI \-P printer,
+to allow explicit naming of a destination printer.
+.SH CAPABILITIES
+Refer to
+.I termcap
+for a description of the file layout.
+.nf
+
+.ta \w'k0-k9  'u +\w'Type  'u +\w'``/usr/spool/lpd"  'u
+\fBName	Type	Default	Description\fR
+sd	str	``/usr/spool/lpd"	spool directory
+lo	str	``lock"	name of lock file
+st	str	``status"	status file name
+dn	str	``/usr/lib/lpd"	spooling daemon's path name
+lf	str	``/dev/console"	error logging file name
+lp	str	``/dev/lp"	device name to open for output
+br	num	none	if lp is a tty, set the baud rate (ioctl call)
+fc	num	0	if lp is a tty, clear flag bits (sgtty.h)
+fs	num	0	like `fc' but set bits
+rm	str	NULL	machine name for remote printer
+rl	str	``/usr/lib/rlpr"	remote lpr started by local daemon
+bd	str	``/usr/ucb"	bin directory of lpr, lpq, lprm
+rp	str	NULL	remote printer name argument (lp by default)
+mx	num	1000	maximum file size (in BUFSIZ blocks)
+of	str	NULL	name of output filtering program
+af	str	NULL	name of accounting file
+ff	str	``\ef"	string to send for a form feed
+tr	str	NULL	trailer. string to print when queue empties
+pw	num	132	page width
+pl	num	66	page length
+sb	bool	false	short banner (one line only)
+sh	bool	false	suppress printing of burst page header
+sf	bool	false	suppress form feeds
+ic	bool	false	driver supports (non standard) ioctl
+			call for indenting printout
+.fi
+.PP
+Output is sent to the remote machine if line printer device is null.
+For expamble, the following line would send output to the machine
+`ucbvax'.
+.PP
+.ti +0.5i
+:lp=:rm=ucbvax:
+.PP
+The `br', `fc', and  `fs' entries are used to change tty characteristics
+(see
+.IR tty (4)).
+The `fc' and `fs' entries only set or clear the specified bits in the
+.I g_flags
+field; the rest are unchanged.
+.PP
+Error messages sent to the console have a carriage return and a line
+feed appended to them, rather than just a line feed.
+.PP
+If the local line printer driver supports indentation, the daemon
+must understand how to invoke it.
+.SH BUGS
