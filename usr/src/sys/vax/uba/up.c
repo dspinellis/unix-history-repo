@@ -1,4 +1,4 @@
-/*	up.c	4.32	81/03/09	*/
+/*	up.c	4.33	81/03/09	*/
 
 #include "up.h"
 #if NSC > 0
@@ -408,15 +408,6 @@ loop:
 		printf(" (flakey)\n");
 	}
 	/*
-	 * After 16th retry, do offset positioning
-	 */
-	if (um->um_tab.b_errcnt >= 16 && (bp->b_flags&B_READ) != 0) {
-		upaddr->upof = up_offset[um->um_tab.b_errcnt & 017] | UP_FMT22;
-		upaddr->upcs1 = UP_IE|UP_OFFSET|UP_GO;
-		while (upaddr->upds & UP_PIP)
-			DELAY(25);
-	}
-	/*
 	 * Setup for the transfer, and get in the
 	 * UNIBUS adaptor queue.
 	 */
@@ -471,6 +462,10 @@ upintr(sc21)
 			upaddr->upcs1 = UP_TRE;
 		goto doattn;
 	}
+	/*
+	 * Release unibus resources and flush data paths.
+	 */
+	ubadone(um);
 	/*
 	 * Get device and block structures, and a pointer
 	 * to the uba_device for the drive.  Select the drive.
@@ -531,21 +526,39 @@ upintr(sc21)
 		needie = 0;
 		if ((um->um_tab.b_errcnt&07) == 4) {
 			upaddr->upcs1 = UP_RECAL|UP_IE|UP_GO;
-			um->um_tab.b_active = 1;
-			sc->sc_recal = 1;
-			return;
+			sc->sc_recal = 0;
+			goto nextrecal;
 		}
 	}
 	/*
-	 * Done retrying transfer... release
-	 * resources... if we were recalibrating,
-	 * then retry the transfer.
-	 * Mathematical note: 28%8 != 4.
+	 * Advance recalibration finite state machine
+	 * if recalibrate in progress, through
+	 *	RECAL
+	 *	SEEK
+	 *	OFFSET (optional)
+	 *	RETRY
 	 */
-	ubadone(um);
-	if (sc->sc_recal) {
+	switch (sc->sc_recal) {
+
+	case 1:
+		upaddr->updc = bp->b_cylin;
+		upaddr->upcs1 = UP_SEEK|UP_IE|UP_GO;
+		goto nextrecal;
+	case 2:
+		if (um->um_tab.b_errcnt < 16 || (bp->b_flags&B_READ) == 0)
+			goto donerecal;
+		upaddr->upof = up_offset[um->um_tab.b_errcnt & 017] | UP_FMT22;
+		upaddr->upcs1 = UP_IE|UP_OFFSET|UP_GO;
+		goto nextrecal;
+	nextrecal:
+		sc->sc_recal++;
+		um->um_tab.b_active = 1;
+		return;
+	donerecal:
+	case 3:
 		sc->sc_recal = 0;
-		um->um_tab.b_active = 0;	/* force retry */
+		um->um_tab.b_active = 0;
+		break;
 	}
 	/*
 	 * If still ``active'', then don't need any more retries.
@@ -586,12 +599,13 @@ doattn:
 	 * the unit start routine to place the slave
 	 * on the controller device queue.
 	 */
-	for (unit = 0; as; as >>= 1, unit++)
-		if (as & 1) {
-			upaddr->upas = 1<<unit;
-			if (upustart(upip[sc21][unit]))
-				needie = 0;
-		}
+	while (unit = ffs(as)) {
+		unit--;		/* was 1 origin */
+		as &= ~(1<<unit);
+		upaddr->upas = 1<<unit;
+		if (upustart(upip[sc21][unit]))
+			needie = 0;
+	}
 	/*
 	 * If the controller is not transferring, but
 	 * there are devices ready to transfer, start
