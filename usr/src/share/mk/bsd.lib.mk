@@ -1,4 +1,4 @@
-#	@(#)bsd.lib.mk	5.31 (Berkeley) %G%
+#	@(#)bsd.lib.mk	5.32 (Berkeley) %G%
 
 .if exists(${.CURDIR}/../Makefile.inc)
 .include "${.CURDIR}/../Makefile.inc"
@@ -111,7 +111,7 @@ realinstall: beforeinstall
 	install -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} lib${LIB}.a \
 	    ${DESTDIR}${LIBDIR}
 	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}.a
-.if (${MACHINE} != "mips")
+.if !defined(NOPROFILE)
 	ranlib lib${LIB}_p.a
 	install -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 	    lib${LIB}_p.a ${DESTDIR}${LIBDIR}
