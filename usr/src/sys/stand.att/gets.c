@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)gets.c	7.3 (Berkeley) %G%
+ *	@(#)gets.c	7.4 (Berkeley) %G%
  */
 
 gets(buf)
@@ -30,6 +30,7 @@ gets(buf)
 			*lp = '\0';
 			return;
 		case '\b':
+		case '\177':
 			if (lp > buf) {
 				lp--;
 				putchar('\b');
@@ -38,7 +39,6 @@ gets(buf)
 			}
 			break;
 		case '#':
-		case '\177':
 			if (lp > buf)
 				--lp;
 			break;
