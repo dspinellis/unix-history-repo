@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	8.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	8.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -349,7 +349,7 @@ initsys(e)
 	**	tucked away in the transcript).
 	*/
 
-	if (OpMode == MD_DAEMON && !bitset(EF_QUEUERUN, e->e_flags) &&
+	if (OpMode == MD_DAEMON && bitset(EF_QUEUERUN, e->e_flags) &&
 	    e->e_xfp != NULL)
 		OutChannel = e->e_xfp;
 
