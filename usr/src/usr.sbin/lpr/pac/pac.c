@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pac.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)pac.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -22,7 +22,13 @@ static char sccsid[] = "@(#)pac.c	5.5 (Berkeley) %G%";
  * to print the usage information for the named people.
  */
 
+#include <sys/param.h>
+
+#include <dirent.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include "lp.h"
 #include "lp.local.h"
 
 char	*printer;			/* printer name */
@@ -38,8 +44,6 @@ int	errs;
 int	mflag = 0;			/* disregard machine names */
 int	pflag = 0;			/* 1 if -p on cmd line */
 int	price100;			/* per-page cost in 100th of a cent */
-char	*index();
-int	pgetnum();
 
 /*
  * Grossness follows:
@@ -57,16 +61,20 @@ struct hent {
 };
 
 struct	hent	*hashtab[HSHSIZE];	/* Hash table proper */
-struct	hent	*enter();
-struct	hent	*lookup();
 
-#define	NIL	((struct hent *) 0)	/* The big zero */
+int	account __P((FILE *));
+int	any __P((int, char []));
+int	chkprinter __P((char *));
+void	dumpit __P((void));
+int	hash __P((char []));
+struct	hent *enter __P((char []));
+struct	hent *lookup __P((char []));
+int	qucmp __P((const void *, const void *));
+void	rewrite __P((void));
 
-double	atof();
-char	*getenv();
-char	*pgetstr();
-
+int
 main(argc, argv)
+	int argc;
 	char **argv;
 {
 	register FILE *acct;
@@ -160,7 +168,7 @@ fprintf(stderr,
  * formats here.
  * Host names are ignored if the -m flag is present.
  */
-
+int
 account(acct)
 	register FILE *acct;
 {
@@ -186,7 +194,7 @@ account(acct)
 		if (mflag && index(cp, ':'))
 		    cp = index(cp, ':') + 1;
 		hp = lookup(cp);
-		if (hp == NIL) {
+		if (hp == NULL) {
 			if (!allflag)
 				continue;
 			hp = enter(cp);
@@ -203,20 +211,19 @@ account(acct)
  * Sort the hashed entries by name or footage
  * and print it all out.
  */
-
+void
 dumpit()
 {
 	struct hent **base;
 	register struct hent *hp, **ap;
 	register int hno, c, runs;
 	float feet;
-	int qucmp();
 
 	hp = hashtab[0];
 	hno = 1;
 	base = (struct hent **) calloc(sizeof hp, hcount);
 	for (ap = base, c = hcount; c--; ap++) {
-		while (hp == NIL)
+		while (hp == NULL)
 			hp = hashtab[hno++];
 		*ap = hp;
 		hp = hp->h_link;
@@ -242,7 +249,7 @@ dumpit()
 /*
  * Rewrite the summary file with the summary information we have accumulated.
  */
-
+void
 rewrite()
 {
 	register struct hent *hp;
@@ -289,7 +296,7 @@ enter(name)
 	register struct hent *hp;
 	register int h;
 
-	if ((hp = lookup(name)) != NIL)
+	if ((hp = lookup(name)) != NULL)
 		return(hp);
 	h = hash(name);
 	hcount++;
@@ -316,17 +323,17 @@ lookup(name)
 	register struct hent *hp;
 
 	h = hash(name);
-	for (hp = hashtab[h]; hp != NIL; hp = hp->h_link)
+	for (hp = hashtab[h]; hp != NULL; hp = hp->h_link)
 		if (strcmp(hp->h_name, name) == 0)
 			return(hp);
-	return(NIL);
+	return(NULL);
 }
 
 /*
  * Hash the passed name and return the index in
  * the hash table to begin the search.
  */
-
+int
 hash(name)
 	char name[];
 {
@@ -341,8 +348,9 @@ hash(name)
 /*
  * Other stuff
  */
-
+int
 any(ch, str)
+	int ch;
 	char str[];
 {
 	register int c = ch;
@@ -359,18 +367,18 @@ any(ch, str)
  * The comparison is ascii collating order
  * or by feet of typesetter film, according to sort.
  */
-
-qucmp(left, right)
-	struct hent **left, **right;
+int
+qucmp(a, b)
+	const void *a, *b;
 {
 	register struct hent *h1, *h2;
 	register int r;
 
-	h1 = *left;
-	h2 = *right;
+	h1 = *(struct hent **)a;
+	h2 = *(struct hent **)b;
 	if (sort)
-		r = h1->h_feetpages < h2->h_feetpages ? -1 : h1->h_feetpages > 
-h2->h_feetpages;
+		r = h1->h_feetpages < h2->h_feetpages ?
+		    -1 : h1->h_feetpages > h2->h_feetpages;
 	else
 		r = strcmp(h1->h_name, h2->h_name);
 	return(reverse ? -r : r);
@@ -379,6 +387,7 @@ h2->h_feetpages;
 /*
  * Perform lookup for printer name or abbreviation --
  */
+int
 chkprinter(s)
 	register char *s;
 {

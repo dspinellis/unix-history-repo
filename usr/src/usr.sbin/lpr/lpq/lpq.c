@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpq.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpq.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -24,13 +24,25 @@ static char sccsid[] = "@(#)lpq.c	5.7 (Berkeley) %G%";
  * -P used to identify printer as per lpr/lprm
  */
 
+#include <sys/param.h>
+
+#include <syslog.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <ctype.h>
 #include "lp.h"
+#include "lp.local.h"
 
 char	*user[MAXUSERS];	/* users to process */
 int	users;			/* # of users in user array */
 int	requ[MAXREQUESTS];	/* job number of spool entries */
 int	requests;		/* # of spool requests */
 
+void usage __P((void));
+
+int
 main(argc, argv)
 	register int	argc;
 	register char	**argv;
@@ -79,6 +91,7 @@ main(argc, argv)
 	exit(0);
 }
 
+void
 usage()
 {
 	puts("usage: lpq [-l] [-Pprinter] [user ...] [job ...]");
