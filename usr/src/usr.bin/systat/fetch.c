@@ -5,11 +5,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fetch.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fetch.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "systat.h"
-#include <sys/dir.h>
 #include <sys/user.h>
 #include <sys/proc.h>
 #include <sys/vmmac.h>
@@ -78,9 +77,7 @@ getcmd(pid, mproc)
 		return ("pagedaemon");
         if (mproc->p_flag&(SSYS|SWEXIT))
                 return ("");
-        if (getu(mproc) == 0)
-		return ("???");
-        (void) strncpy(cmd, u.u_comm, sizeof (cmd));
+        (void) strncpy(cmd, mproc->p_comm, sizeof (cmd));
         return (cmd);
 }
 
