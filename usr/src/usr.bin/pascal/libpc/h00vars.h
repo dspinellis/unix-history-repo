@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* sccsid[] = "@(#)h00vars.h 1.3 %G%"; */
+/* sccsid[] = "@(#)h00vars.h 1.4 %G%"; */
 
 #include <stdio.h>
 
@@ -94,14 +94,15 @@ struct iorec {
 /*
  * unit flags
  */
-#define	FDEF	0x80	/* 1 => reserved file name */
-#define	FTEXT	0x40	/* 1 => text file, process EOLN */
-#define	FWRITE	0x20	/* 1 => open for writing */
-#define	FREAD	0x10	/* 1 => open for reading */
-#define	TEMP	0x08	/* 1 => temporary file */
-#define	SYNC	0x04	/* 1 => window is out of sync */
-#define	EOLN	0x02	/* 1 => at end of line */
-#define	EOFF	0x01	/* 1 => at end of file */
+#define SPEOLN	0x100	/* 1 => pseudo EOLN char read at EOF */
+#define	FDEF	0x080	/* 1 => reserved file name */
+#define	FTEXT	0x040	/* 1 => text file, process EOLN */
+#define	FWRITE	0x020	/* 1 => open for writing */
+#define	FREAD	0x010	/* 1 => open for reading */
+#define	TEMP	0x008	/* 1 => temporary file */
+#define	SYNC	0x004	/* 1 => window is out of sync */
+#define	EOLN	0x002	/* 1 => at end of line */
+#define	EOFF	0x001	/* 1 => at end of file */
 
 /*
  * file routines
