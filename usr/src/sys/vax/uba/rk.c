@@ -1,4 +1,4 @@
-/*	rk.c	4.29	81/03/11	*/
+/*	rk.c	4.30	81/03/17	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -386,7 +386,7 @@ retry:
 			goto nextrecal;
 		case 2:
 			if (um->um_tab.b_errcnt < 16 ||
-			    (bp->b_flags&B_READ) != 0)
+			    (bp->b_flags&B_READ) == 0)
 				goto donerecal;
 			rkaddr->rkatt = rk_offset[um->um_tab.b_errcnt & 017];
 			rkaddr->rkcs1 = RK_CDT|RK_IE|RK_OFFSET|RK_GO;
