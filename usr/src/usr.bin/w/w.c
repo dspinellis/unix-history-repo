@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	5.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	5.25 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -89,7 +89,7 @@ main(argc, argv)
 	int ch;
 	extern char *optarg;
 	extern int optind;
-	char *strsave();
+	char *attime();
 
 	program = argv[0];
 	/*
@@ -259,7 +259,7 @@ main(argc, argv)
 	if (argwidth < 4)
 		argwidth = 8;
 	for (ep = ehead; ep != NULL; ep = ep->next) {
-		ep->args = strsave(kvm_getargs(ep->proc, kvm_getu(ep->proc)));
+		ep->args = strdup(kvm_getargs(ep->proc, kvm_getu(ep->proc)));
 		if (ep->args == NULL) {
 			error("out of memory");
 			exit(1);
@@ -310,18 +310,6 @@ ttystat(line)
 	return (&statbuf);
 }
 
-char *
-strsave(cp)
-	char *cp;
-{
-	register unsigned len;
-	register char *dp;
-
-	len = strlen(cp);
-	dp = (char *)calloc(len+1, sizeof (char));
-	(void) strcpy(dp, cp);
-	return (dp);
-}
 /*
  * prttime prints a time in hours and minutes or minutes and seconds.
  * The character string tail is printed at the end, obvious
