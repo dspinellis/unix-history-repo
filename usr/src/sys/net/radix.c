@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.c	7.8 (Berkeley) %G%
+ *	@(#)radix.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -465,8 +465,8 @@ rn_delete(v, netmask, head)
 	if (dupedkey = tt->rn_dupedkey) {
 		if (netmask) 
 			netmask = rn_search(netmask, rn_maskhead)->rn_key;
-		for (; tt->rn_mask != netmask; tt = tt->rn_dupedkey)
-			if (tt == 0)
+		while (tt->rn_mask != netmask)
+			if ((tt = tt->rn_dupedkey) == 0)
 				return (0);
 	}
 	if (tt->rn_mask == 0 || (saved_m = m = tt->rn_mklist) == 0)
