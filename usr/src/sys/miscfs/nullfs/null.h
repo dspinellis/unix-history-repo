@@ -36,7 +36,7 @@ struct null_node {
 extern int make_null_node __P((struct mount *mp, struct vnode **vpp));
 
 #define	MOUNTTONULLMOUNT(mp) ((struct null_mount *)((mp)->mnt_data))
-#define	VTONULLNODE(vp) ((struct null_node *)(vp)->v_data)
+#define	VTONULL(vp) ((struct null_node *)(vp)->v_data)
 #ifdef NULLFS_DIAGNOSTIC
 extern struct vnode *null_checkvp __P((struct vnode *vp, char *fil, int lno));
 #define	NULLTOLOWERVP(vp) null_checkvp(vp, __FILE__, __LINE__)
@@ -47,3 +47,4 @@ extern struct vnode *null_checkvp __P((struct vnode *vp, char *fil, int lno));
 extern int (**null_vnodeop_p)();
 extern struct vfsops null_vfsops;
 #endif /* KERNEL */
+
