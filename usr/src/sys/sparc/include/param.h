@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)param.h	8.1 (Berkeley) %G%
+ *	@(#)param.h	8.2 (Berkeley) %G%
  *
  * from: $Header: param.h,v 1.13 92/11/26 02:04:38 torek Exp $ (LBL)
  */
@@ -94,9 +94,9 @@
 #define	btoc(x)	(((unsigned)(x) + PGOFSET) >> PGSHIFT)
 
 #define	btodb(bytes)		/* calculates (bytes / DEV_BSIZE) */ \
-	((unsigned)(bytes) >> DEV_BSHIFT)
+	((bytes) >> DEV_BSHIFT)
 #define	dbtob(db)		/* calculates (db * DEV_BSIZE) */ \
-	((unsigned)(db) << DEV_BSHIFT)
+	((db) << DEV_BSHIFT)
 
 /*
  * Map a ``block device block'' to a file system block.
