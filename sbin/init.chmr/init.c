@@ -159,6 +159,8 @@ char		**argv;
 #endif
 		else if (!strcmp(argv[1], "-"))		/* ignore this */
 			;
+		else if (!strcmp(argv[1], "--"))	/* ... and this */
+			;
 		else
 			syslog(LOG_ERR, "unknown option \"%s\"", argv[1]);
 		argc--; argv++;
@@ -754,6 +756,7 @@ callout_t	*ctp,
 		callout_free = ctp;
 		callout_nfree ++;
 	}
+	callout_tab = (callout_t *)0;
 	unblocksig();
 }
 
