@@ -1,4 +1,18 @@
-/* @(#)mldistrib.c	5.5 (Berkeley) %G% */
+/*
+ * Copyright (c) 1992 Eric P. Allman
+ * Copyright (c) 1992 Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ */
+
+#ifndef lint
+char copyright[] =
+"@(#) Copyright (c) 1992 The Regents of the University of California.\n\
+ All rights reserved.\n";
+static char sccsid[] = "@(#)mldistrib.c	5.6 (Berkeley) %G%";
+#endif /* not lint */
+
 #include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -216,7 +230,8 @@ openmailer(from, nopts, opts, argc, argv)
 	argp += argc;
 	*argp = CHARNULL;
 
-	if (debug) {
+	if (debug)
+	{
 		printf("| %s, args:\n", _PATH_SENDMAIL);
 		for (argp = args; *argp; argp++)
 			printf("  %s\n", *argp);
