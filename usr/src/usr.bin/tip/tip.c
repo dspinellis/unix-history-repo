@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -577,6 +577,6 @@ setparity(defparity)
 			partab[i] |= 0200;	/* turn on bit 7 */
 		return;
 	}
-	fprintf(stderr, "%s: unknown parity value\n", PA);
+	fprintf(stderr, "%s: unknown parity value\r\n", parity);
 	fflush(stderr);
 }
