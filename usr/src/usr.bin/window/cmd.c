@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	3.14 83/11/02";
+static	char *sccsid = "@(#)cmd.c	3.15 83/11/23";
 #endif
 
 #include "defs.h"
@@ -240,17 +240,11 @@ struct ww *w;
 front(w)
 register struct ww *w;
 {
-	char moved = 0;
-
-	if (wwvisible(w))
-		moved = 1;
-	else
-		while (w->ww_back != framewin) {
-			wwmoveup(w);
-			moved = 1;
-		}
-	if (moved)
+	if (!wwvisible(w) && w->ww_back != framewin) {
+		wwdelete(w);
+		wwadd(w, framewin);
 		reframe();
+	}
 }
 
 reframe()

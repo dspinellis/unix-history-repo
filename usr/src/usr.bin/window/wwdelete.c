@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdelete.c	3.5 83/09/15";
+static	char *sccsid = "@(#)wwdelete.c	3.6 83/11/23";
 #endif
 
 #include "ww.h"
@@ -10,56 +10,40 @@ static	char *sccsid = "@(#)wwdelete.c	3.5 83/09/15";
 wwdelete(w)
 register struct ww *w;
 {
-	if (w->ww_forw == 0 || w->ww_back == 0)
-		return;				/* sanity */
+	register struct ww *wp;
+	register i, j;
 
-	{
-		register i = w->ww_i.t;
-		register char *touched = &wwtouched[i];
+	for (i = w->ww_i.t; i < w->ww_i.b; i++)
+		for (j = w->ww_i.l; j < w->ww_i.r; j++)
+			if (wwsmap[i][j] == w->ww_index) {
+				wwsmap[i][j] = WWX_NOBODY;
+				wwns[i][j].c_w = ' ';
+				wwtouched[i] = 1;
+			}
+	for (wp = w->ww_forw; wp != &wwhead; wp = wp->ww_forw) {
+		int i1, i2, j1, j2;
 
-		for (; i < w->ww_i.b; i++, touched++) {
-			register int j = w->ww_i.l;
-			register char *smap = &wwsmap[i][j];
-			register union ww_char *ns = &wwns[i][j];
-
-			for (j = w->ww_i.nc; --j >= 0;) {
-				if (*smap == w->ww_index) {
-					*touched = 1;
-					*smap++ = WWX_NOBODY;
-					ns++->c_w = ' ';
-				} else {
-					smap++;
-					ns++;
+		w->ww_order--;
+		i1 = MAX(w->ww_i.t, wp->ww_i.t);
+		i2 = MIN(w->ww_i.b, wp->ww_i.b);
+		j1 = MAX(w->ww_i.l, wp->ww_i.l);
+		j2 = MIN(w->ww_i.r, wp->ww_i.r);
+		for (i = i1; i < i2; i++) {
+			for (j = j1; j < j2; j++) {
+				if (wwsmap[i][j] != WWX_NOBODY)
+					continue;
+				if ((wp->ww_win[i][j] & WWM_GLS) == 0) {
+					wwsmap[i][j] = wp->ww_index;
+					wwns[i][j].c_w = wp->ww_buf[i][j].c_w ^
+						wp->ww_win[i][j] << WWC_MSHIFT;
+					wwtouched[i] = 1;
+					if (wp->ww_win[i][j] == 0)
+						wp->ww_nvis[i]++;
 				}
 			}
 		}
 	}
-	{
-		register struct ww *wp;
 
-		for (wp = w->ww_forw; wp != &wwhead; wp = wp->ww_forw) {
-			wp->ww_order--;
-			wwuncover(w, wp);
-		}
-	}
-	{
-		register i;
-
-		for (i = w->ww_i.t; i < w->ww_i.b; i++) {
-			register j = w->ww_i.l;
-			register char *win = &w->ww_win[i][j];
-			register char *cov = &w->ww_cov[i][j];
-
-			for (j = w->ww_i.nc; --j >= 0;) {
-				if (*win != 0) {
-					if ((*win++ &= ~WWM_COV) == 0)
-						w->ww_nvis[i]++;
-				} else
-					win++;
-				*cov++ = WWX_NOBODY;
-			}
-		}
-	}
 	w->ww_back->ww_forw = w->ww_forw;
 	w->ww_forw->ww_back = w->ww_back;
 	w->ww_forw = w->ww_back = 0;

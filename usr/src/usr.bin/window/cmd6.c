@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd6.c	3.2 83/09/15";
+static	char *sccsid = "@(#)cmd6.c	3.3 83/11/23";
 #endif
 
 #include "defs.h"
@@ -13,7 +13,7 @@ c_debug()
 	register struct ww *w;
 
 	if (!terse)
-		(void) wwputs("[m(smap), n(ns), o(os), v(nvis), w(win), c(cov)]? ", cmdwin);
+		(void) wwputs("[m(smap), n(ns), o(os), v(nvis), w(win)]? ", cmdwin);
 	wwcurtowin(cmdwin);
 	while (bpeekc() < 0)
 		bread();
@@ -32,10 +32,6 @@ c_debug()
 	case 'v':
 		if ((w = getwin()) != 0)
 			wwdumpnvis(w);
-		break;
-	case 'c':
-		if ((w = getwin()) != 0)
-			wwdumpcov(w);
 		break;
 	case 'w':
 		if ((w = getwin()) != 0)

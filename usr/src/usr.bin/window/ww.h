@@ -1,5 +1,5 @@
 /*
- *	@(#)ww.h	3.18 83/11/02	
+ *	@(#)ww.h	3.19 83/11/23	
  */
 
 #include <stdio.h>
@@ -42,7 +42,6 @@ struct ww {
 		/* arrays */
 	char **ww_win;		/* the window */
 	union ww_char **ww_buf;	/* the buffer */
-	char **ww_cov;		/* the covered-by array */
 	char **ww_fmap;		/* map for frame and box windows */
 	short *ww_nvis;		/* how many ww_buf chars are visible per row */
 
@@ -93,7 +92,6 @@ union ww_char {
 #define WWM_BLK		0x02	/* blinking */
 #define WWM_UL		0x04	/* underlined */
 #define WWM_GLS		0x10	/* window only, glass, i.e. transparent */
-#define WWM_COV		0x20	/* window only, covered */
 
 	/* ww_state values */
 #define WWS_INITIAL	0	/* just opened */

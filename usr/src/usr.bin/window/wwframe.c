@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwframe.c	3.10 83/09/15";
+static	char *sccsid = "@(#)wwframe.c	3.11 83/11/23";
 #endif
 
 #include "ww.h"
@@ -164,20 +164,21 @@ register r, c;
 char code;
 {
 	char oldcode;
+	register char *smap;
 
 	if (r < f->ww_i.t || r >= f->ww_i.b || c < f->ww_i.l || c >= f->ww_i.r)
 		return;
+
+	smap = &wwsmap[r][c];
+
 	{
 		register struct ww *w;
 
-		w = wwindex[wwsmap[r][c]];
+		w = wwindex[*smap];
 		if (w->ww_order > f->ww_order) {
-			if (w != &wwnobody) {
-				if ((w->ww_win[r][c] |= WWM_COV) == WWM_COV)
-					w->ww_nvis[r]--;
-				w->ww_cov[r][c] = f->ww_index;
-			}
-			wwsmap[r][c] = f->ww_index;
+			if (w != &wwnobody && w->ww_win[r][c] == 0)
+				w->ww_nvis[r]--;
+			*smap = f->ww_index;
 		}
 	}
 
@@ -195,7 +196,7 @@ char code;
 	{
 		register char *win = &f->ww_win[r][c];
 
-		if (*win == WWM_GLS)
+		if (*win == WWM_GLS && *smap == f->ww_index)
 			f->ww_nvis[r]++;
 		*win &= ~WWM_GLS;
 	}

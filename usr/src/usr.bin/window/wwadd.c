@@ -1,18 +1,18 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwadd.c	3.5 83/09/15";
+static	char *sccsid = "@(#)wwadd.c	3.6 83/11/23";
 #endif
 
 #include "ww.h"
 
 /*
- * Stick w1 behind w2
- * W1 should have an empty ww_cov map.
+ * Stick w1 behind w2.
  */
 wwadd(w1, w2)
-register struct ww *w1, *w2;
+register struct ww *w1;
+struct ww *w2;
 {
-	if (w1->ww_forw != 0 || w1->ww_back != 0)
-		return;				/* sanity */
+	register struct ww *w;
+	register i;
 
 	w1->ww_order = w2->ww_order + 1;
 	w1->ww_back = w2;
@@ -20,40 +20,35 @@ register struct ww *w1, *w2;
 	w2->ww_forw->ww_back = w1;
 	w2->ww_forw = w1;
 
-	{
-		register struct ww *wp;
+	for (w = w1->ww_forw; w != &wwhead; w = w->ww_forw)
+		w->ww_order++;
+	for (i = w1->ww_i.t; i < w1->ww_i.b; i++) {
+		register j = w1->ww_i.l;
+		register char *smap = &wwsmap[i][j];
+		register char *win = &w1->ww_win[i][j];
+		int nvis = 0;
 
-		for (wp = w2; wp != &wwhead; wp = wp->ww_back)
-			wwcover(wp, w1);
-		for (wp = w1->ww_forw; wp != &wwhead; wp = wp->ww_forw) {
-			wp->ww_order++;
-			wwcover(w1, wp);
-		}
-	}
-	{
-		int i = w1->ww_i.t;
-		char *touched = &wwtouched[i];
-
-		for (; i < w1->ww_i.b; i++, touched++) {
-			int j = w1->ww_i.l;
-			register char *win = &w1->ww_win[i][j];
-			register char *smap = &wwsmap[i][j];
-			register union ww_char *ns = &wwns[i][j];
-			register union ww_char *buf = &w1->ww_buf[i][j];
-
-			for (; j < w1->ww_i.r; j++) {
-				if ((*win & (WWM_GLS|WWM_COV)) == 0) {
-					*touched = 1;
-					*smap++ = w1->ww_index;
-					ns++->c_w = buf++->c_w
-						^ *win++ << WWC_MSHIFT;
-				} else {
-					smap++;
-					ns++;
-					win++;
-					buf++;
-				}
+		for (j = w1->ww_i.l; j < w1->ww_i.r; j++) {
+			w = wwindex[*smap];
+			if (w1->ww_order > w->ww_order) {
+				win++;
+				smap++;
+				continue;
 			}
+			if (*win & WWM_GLS) {
+				win++;
+				smap++;
+				continue;
+			}
+			if (w != &wwnobody && w->ww_win[i][j] == 0)
+				w->ww_nvis[i]--;
+			*smap++ = w1->ww_index;
+			if (*win == 0)
+				nvis++;
+			wwns[i][j].c_w = w1->ww_buf[i][j].c_w ^
+				*win++ << WWC_MSHIFT;
+			wwtouched[i] = 1;
 		}
+		w1->ww_nvis[i] = nvis;
 	}
 }

@@ -1,25 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdump.c	3.8 83/11/15";
+static	char *sccsid = "@(#)wwdump.c	3.9 83/11/23";
 #endif
 
 #include "ww.h"
 #include "tt.h"
 
 static char cmap[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-wwdumpcov(w)
-register struct ww *w;
-{
-	register i, j;
-
-	tt.tt_nmodes = 0;
-	(*tt.tt_clear)();
-	for (i = w->ww_i.t; i < w->ww_i.b; i++) {
-		(*tt.tt_move)(i, w->ww_i.l);
-		for (j = w->ww_i.l; j < w->ww_i.r; j++)
-			(*tt.tt_putc)(cmap[w->ww_cov[i][j]]);
-	}
-}
 
 wwdumpwin(w)
 register struct ww *w;
@@ -31,7 +17,7 @@ register struct ww *w;
 	for (i = w->ww_i.t; i < w->ww_i.b; i++) {
 		(*tt.tt_move)(i, w->ww_i.l);
 		for (j = w->ww_i.l; j < w->ww_i.r; j++)
-			(*tt.tt_putc)(w->ww_win[i][j] & WWM_COV ? 'C' : ' ');
+			(*tt.tt_putc)(w->ww_win[i][j] & WWM_GLS ? 'G' : ' ');
 	}
 }
 

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwcursor.c	3.3 83/09/15";
+static	char *sccsid = "@(#)wwcursor.c	3.4 83/11/23";
 #endif
 
 #include "ww.h"
@@ -20,15 +20,15 @@ register struct ww *w;
 	}
 	if (wwcursormodes != 0) {
 		win = &w->ww_win[w->ww_cur.r][w->ww_cur.c];
-		if (*win == 0)
-			w->ww_nvis[w->ww_cur.r]--;
-		else if (*win == wwcursormodes)
-			w->ww_nvis[w->ww_cur.r]++;
 		*win ^= wwcursormodes;
 		if (w->ww_cur.r < w->ww_i.t || w->ww_cur.r >= w->ww_i.b
 		    || w->ww_cur.c < w->ww_i.l || w->ww_cur.c >= w->ww_i.r)
 			return;
 		if (wwsmap[w->ww_cur.r][w->ww_cur.c] == w->ww_index) {
+			if (*win == 0)
+				w->ww_nvis[w->ww_cur.r]++;
+			else if (*win == wwcursormodes)
+				w->ww_nvis[w->ww_cur.r]--;
 			wwns[w->ww_cur.r][w->ww_cur.c].c_m ^= wwcursormodes;
 			wwtouched[w->ww_cur.r] = 1;
 		}
