@@ -1,4 +1,4 @@
-/*	param.h	6.2	83/09/24	*/
+/*	param.h	6.3	84/07/31	*/
 
 /*
  * Machine type dependent parameters.
@@ -15,7 +15,7 @@
  * Machine-independent constants
  */
 #define	NMOUNT	15		/* number of mountable file systems */
-/* NMOUNT must be <= 15 unless c_mdev (cmap.h) is expanded */
+/* NMOUNT must be <= 255 unless c_mdev (cmap.h) is expanded */
 #define	MSWAPX	NMOUNT		/* pseudo mount table index for swapdev */
 #define	MAXUPRC	25		/* max processes per user */
 #define	NOFILE	20		/* max open files per process */
@@ -62,15 +62,13 @@
 #define	NBPW	sizeof(int)	/* number of bytes in an integer */
 
 #define	NULL	0
-#define	CMASK	0		/* default mask for file creation */
+#define	CMASK	022		/* default mask for file creation */
 #define	NODEV	(dev_t)(-1)
 
 /*
  * Clustering of hardware pages on machines with ridiculously small
  * page sizes is done here.  The paging subsystem deals with units of
- * CLSIZE pte's describing NBPG (from vm.h) pages each... BSIZE must
- * be CLSIZE*NBPG in the current implementation, that is the paging subsystem
- * deals with the same size blocks that the file system uses.
+ * CLSIZE pte's describing NBPG (from vm.h) pages each.
  *
  * NOTE: SSIZE, SINCR and UPAGES must be multiples of CLSIZE
  */
