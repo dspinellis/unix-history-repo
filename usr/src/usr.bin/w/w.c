@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)w.c	8.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)w.c	8.3 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -307,10 +307,11 @@ pr_header(nowp, nusers)
 	/*
 	 * Print time of day.
 	 *
-	 * Note, SCCS forces the string manipulation below, as it
-	 * replaces w.c with file information.
+	 * SCCS forces the string manipulation below, as it replaces
+	 * %, M, and % in a character string with the file name.
 	 */
-	(void)strftime(buf,sizeof(buf),__CONCAT("%l:%","M%p"),localtime(nowp));
+	(void)strftime(buf, sizeof(buf),
+	    __CONCAT("%l:%","M%p"), localtime(nowp));
 	(void)printf("%s ", buf);
 
 	/*
