@@ -1,4 +1,4 @@
-/*	@(#)getcwd.c	4.7	(Berkeley)	%G%	*/
+/*	@(#)getcwd.c	4.8	(Berkeley)	%G%	*/
 
 /*
  * getwd() returns the pathname of the current working directory. On error
@@ -14,6 +14,7 @@
 #define PATHSEP		"/"
 #define ROOTDIR		"/"
 
+char *strcpy();
 static int pathsize;			/* pathname length */
 
 char *
