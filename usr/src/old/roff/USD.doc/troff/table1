@@ -1,6 +1,6 @@
 .\" %sccs.include.proprietary.roff%
 .\"
-.\"	@(#)table1	8.1 (Berkeley) %G%
+.\"	@(#)table1	8.2 (Berkeley) %G%
 .\"
 .pn 30
 .rm mx
@@ -61,12 +61,12 @@ Font Style Examples
 .fi
 .vs 12p
 .na
-The following fonts are printed in 12-point, with a vertical spacing of 14-point,
-and with
-non-alphanumeric characters separated by \(14\|em space (all measurements
-on 8.5 \(mu 11 inch paper prior to photoreduction).
-This font sample is printed on an Apple Laserwriter
-at University of California, Berkeley.
+The following fonts were originally printed in 12-point,
+with a vertical spacing of 14-point,
+and with non-alphanumeric characters separated by \(14\|em space.
+After the photo reduction process used to produce this book,
+they are approximately the size of 10-point font
+with a vertical spacing of 12-points.
 .sp .5i
 .ps 12
 .vs 14p
