@@ -6,7 +6,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)sed.test	5.5 (Berkeley) %G%
+#	@(#)sed.test	5.6 (Berkeley) %G%
 #
 
 # sed Regression Tests
@@ -467,6 +467,13 @@ u2/g' lines1
 		$SED -e 'y10\123456789198765432\101' lines1
 	fi
 	mark '8.15' ; $SED -e '1N;2y/\n/X/' lines1
+	mark '8.16'
+	if [ $BSD -eq 1 ] ; then
+		echo 'BSD sed does not handle branch defined REs'
+	else
+		echo 'eeefff' | $SED -e 'p' -e 's/e/X/p' -e ':x' \
+		    -e 's//Y/p' -e '/f/bx'
+	fi
 }
 
 test_error()
