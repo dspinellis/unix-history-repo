@@ -1,4 +1,4 @@
-/*	autoconf.c	4.37	82/05/06	*/
+/*	autoconf.c	4.38	82/05/19	*/
 
 /*
  * Setup the system to run on the current machine.
@@ -357,7 +357,7 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	u_short *reg, addr;
 	struct uba_hd *uhp;
 	struct uba_driver *udp;
-	int i, (**ivec)(), haveubasr = 0;
+	int i, (**ivec)(), haveubasr;
 
 	/*
 	 * Initialize the UNIBUS, by freeing the map
@@ -365,24 +365,8 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	 */
 	uhp = &uba_hd[numuba];
 	uhp->uh_map = (struct map *)calloc(UAMSIZ * sizeof (struct map));
-	rminit(uhp->uh_map, NUBMREG, 1, "uba", UAMSIZ);
-	switch (cpu) {
-#if VAX780
-	case VAX_780:
-		uhp->uh_bdpfree = (1<<NBDP780) - 1;
-		haveubasr = 1;
-		break;
-#endif
-#if VAX750
-	case VAX_750:
-		uhp->uh_bdpfree = (1<<NBDP750) - 1;
-		break;
-#endif
-#if VAX7ZZ
-	case VAX_7ZZ:
-		break;
-#endif
-	}
+	ubainitmaps(uhp);
+	haveubasr = cpu == VAX_780;
 
 	/*
 	 * Save virtual and physical addresses
@@ -422,7 +406,6 @@ unifind(vubp, pubp, vumem, pumem, memmap)
 	*(int *)(&vubp->uba_map[0]) = UBAMR_MRV;
 
 #define	ubaddr(off)	(u_short *)((int)vumem + ((off)&0x3ffff))
-#define	ubdevreg(addr)	(addr&0x1fff|0760000)
 	/*
 	 * Check each unibus mass storage controller.
 	 * For each one which is potentially on this uba,
