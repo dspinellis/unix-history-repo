@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.25 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.26 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -340,7 +340,7 @@ reapchild()
 	register struct servtab *sep;
 
 	for (;;) {
-		pid = wait3(&status, WNOHANG, (struct rusage *)0);
+		pid = wait3((int *)&status, WNOHANG, (struct rusage *)0);
 		if (pid <= 0)
 			break;
 		if (debug)
@@ -478,7 +478,7 @@ setsockopt(fd, SOL_SOCKET, opt, (char *)&on, sizeof (on))
 	if (turnon(sep->se_fd, SO_REUSEADDR) < 0)
 		syslog(LOG_ERR, "setsockopt (SO_REUSEADDR): %m");
 #undef turnon
-	if (bind(sep->se_fd, &sep->se_ctrladdr,
+	if (bind(sep->se_fd, (struct sockaddr *)&sep->se_ctrladdr,
 	    sizeof (sep->se_ctrladdr)) < 0) {
 		syslog(LOG_ERR, "%s/%s: bind: %m",
 		    sep->se_service, sep->se_proto);
@@ -548,14 +548,14 @@ getconfigent()
 {
 	register struct servtab *sep = &serv;
 	int argc;
-	char *cp, *arg, *strdup();
+	char *cp, *arg, *newstr();
 
 more:
 	while ((cp = nextline(fconfig)) && *cp == '#')
 		;
 	if (cp == NULL)
 		return ((struct servtab *)0);
-	sep->se_service = strdup(skip(&cp));
+	sep->se_service = newstr(skip(&cp));
 	arg = skip(&cp);
 	if (strcmp(arg, "stream") == 0)
 		sep->se_socktype = SOCK_STREAM;
@@ -569,11 +569,11 @@ more:
 		sep->se_socktype = SOCK_RAW;
 	else
 		sep->se_socktype = -1;
-	sep->se_proto = strdup(skip(&cp));
+	sep->se_proto = newstr(skip(&cp));
 	arg = skip(&cp);
 	sep->se_wait = strcmp(arg, "wait") == 0;
-	sep->se_user = strdup(skip(&cp));
-	sep->se_server = strdup(skip(&cp));
+	sep->se_user = newstr(skip(&cp));
+	sep->se_server = newstr(skip(&cp));
 	if (strcmp(sep->se_server, "internal") == 0) {
 		register struct biltin *bi;
 
@@ -593,7 +593,7 @@ more:
 	argc = 0;
 	for (arg = skip(&cp); cp; arg = skip(&cp))
 		if (argc < MAXARGV)
-			sep->se_argv[argc++] = strdup(arg);
+			sep->se_argv[argc++] = newstr(arg);
 	while (argc <= MAXARGV)
 		sep->se_argv[argc++] = NULL;
 	return (sep);
@@ -662,20 +662,13 @@ nextline(fd)
 }
 
 char *
-strdup(cp)
+newstr(cp)
 	char *cp;
 {
-	char *new;
-
-	if (cp == NULL)
-		cp = "";
-	new = malloc((unsigned)(strlen(cp) + 1));
-	if (new == (char *)0) {
-		syslog(LOG_ERR, "Out of memory.");
-		exit(-1);
-	}
-	(void)strcpy(new, cp);
-	return (new);
+	if (cp = strdup(cp))
+		return(cp);
+	syslog(LOG_ERR, "%m");
+	exit(-1);
 }
 
 setproctitle(a, s)
@@ -689,7 +682,7 @@ setproctitle(a, s)
 
 	cp = Argv[0];
 	size = sizeof(sin);
-	if (getpeername(s, &sin, &size) == 0)
+	if (getpeername(s, (struct sockaddr *)&sin, &size) == 0)
 		(void) sprintf(buf, "-%s [%s]", a, inet_ntoa(sin.sin_addr)); 
 	else
 		(void) sprintf(buf, "-%s", a); 
