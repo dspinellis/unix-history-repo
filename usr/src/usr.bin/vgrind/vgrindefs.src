@@ -1,13 +1,16 @@
 model|mod|m:\
-	:pb=\p\dis\dbeginproc:bb=\dbeginproc\d:be=\dendproc\d|;:\
+	:pb=^\d(space\d\p\drep)|(\p\dis|inline|public\dbeginproc):\
+	:bb=\dbeginproc|space|case\d:be=\dendproc|end\d|;:\
 	:cb=\$:ce=\$|$:sb=":se=":lb=':le=\a|$:\
 	:kw=abs and array beginproc boolean by case cdnl char copied dispose\
-	div do dynamic else elsif end endproc entry external f FALSE false\
-	fi file for formal fortran global if in integer include inline is lbnd\
+	div do dynamic else elsif end endproc entry external FALSE false\
+	fi file for formal fortran global if iff ift\
+	in integer include inline is lbnd\
 	max min mod new NIL nil noresult not notin od of or procedure public\
-	read readln readonly record recursive rem rep repeat result return set\
+	read readln readonly record recursive rem rep repeat res\
+	result return set\
 	space string subscript such then TRUE true type ubnd union until\
-	varies while width write writeln:
+	varies while width:
 pascal|pasc|p:\
 	:pb=(^\d?procedure|function|program\d\p\d|\(|;|\:)|(=\d?record\d):\
 	:bb=\dcase|begin\d:be=\dend|forward\d|;:\
@@ -48,3 +51,12 @@ CSH|csh:\
 	while umask unalias unset wait while @ env \
 	argv child home ignoreeof noclobber noglob \
 	nomatch path prompt shell status verbose :
+ldl|LDL:\
+	:pb=^\p\::bb=\::be=;:cb=/*:ce=*/:sb=":se=\e":\
+	:kw=constant functions grammar reswords tokens add1 addste\
+	car cdr check colno cond cons copy defun divide empty enter\
+	eq equal findattr firstchild ge getattr getfield gt hash label\
+	lambda lastchild le leftsibling lookone lookup lt minus name ne\
+	newnode nextcom nil null parent plus precnl prevcom prog progn\
+	quote reglob return rightsibling self set setattr setfield setq\
+	stjoin sub1 t times tnull tokno ttype:
