@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_vfsops.c	7.8 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.9 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -257,14 +257,13 @@ nfs_unmount(mp, flags)
 		return (EBUSY);
 	/*
 	 * Goes something like this..
-	 * - Call nfs_nflush() to clear out the nfsnode table
+	 * - Call vflush() to clear out vnodes for this file system
 	 * - Flush out lookup cache
 	 * - Close the socket
 	 * - Free up the data structures
 	 */
-	if (error = nfs_nflush(mp)) {
+	if (error = vflush(mp, (struct vnode *)0, flags))
 		return (error);
-	}
 	/*
 	 * Scan the request list for any requests left hanging about
 	 */
