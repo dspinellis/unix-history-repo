@@ -1,4 +1,4 @@
-/*	raw_pup.c	4.4	82/03/03	*/
+/*	raw_pup.c	4.5	82/03/05	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
@@ -9,7 +9,7 @@
 #include "../net/in_systm.h"
 #include "../net/pup.h"
 #include "../net/raw_cb.h"
-#include "/usr/include/errno.h"
+#include "../errno.h"
 
 /*
  * Raw PUP protocol interface.
