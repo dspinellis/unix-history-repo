@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)in.h	7.6 (Berkeley) %G%
+ *	@(#)in.h	7.7 (Berkeley) %G%
  */
 
 /*
@@ -33,6 +33,8 @@
 #define	IPPROTO_PUP		12		/* pup */
 #define	IPPROTO_UDP		17		/* user datagram protocol */
 #define	IPPROTO_IDP		22		/* xns idp */
+#define	IPPROTO_TP		29 		/* tp-4 w/ class negotiation */
+#define	IPPROTO_EON		80		/* ISO cnlp */
 
 #define	IPPROTO_RAW		255		/* raw IP packet */
 #define	IPPROTO_MAX		256
@@ -101,7 +103,8 @@ struct in_addr {
  * Socket address, internet style.
  */
 struct sockaddr_in {
-	short	sin_family;
+	u_char	sin_len;
+	u_char	sin_family;
 	u_short	sin_port;
 	struct	in_addr sin_addr;
 	char	sin_zero[8];
@@ -111,6 +114,7 @@ struct sockaddr_in {
  * Options for use with [gs]etsockopt at the IP level.
  */
 #define	IP_OPTIONS	1		/* set/get IP per-packet options */
+#define	IP_HDRINCL	2		/* set/get IP per-packet options */
 
 #ifdef KERNEL
 extern	struct domain inetdomain;
