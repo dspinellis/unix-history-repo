@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)cat.1	6.4 (Berkeley) %G%
+.\"	@(#)cat.1	6.5 (Berkeley) %G%
 .\"
 .TH CAT 1 ""
 .UC 1
@@ -21,7 +21,7 @@
 cat \- concatenate and print files
 .SH SYNOPSIS
 .nf
-cat [-u] [-] [file ...]
+cat [-benstuv] [-] [file ...]
 .SH DESCRIPTION
 The
 .I cat
@@ -31,9 +31,44 @@ The
 operands are processed in command line order.
 A single dash represents standard input.
 .PP
+The options are as follows:
+.TP
+.I -b
+Implies the
+.I -n
+option but doesn't number blank lines.
+.TP
+.I -e
+Implies the
+.I -v
+option, and displays a dollar sign (``$'') at the end of each line
+as well.
+.TP
+.I -n
+Number the
+.I output
+lines, starting at 1.
+.TP
+.I -s
+Squeeze multiple adjacent empty lines, causing the output to be
+single spaced.
+.TP
+.I -t
+Implies the
+.I -v
+option, and displays tab characters as ``^I'' as well.
+.TP
+.I -u
 The
-.B \-u
+.I \-u
 option guarantees that the output is unbuffered.
+.TP
+.I -v
+Displays non-printing characters so they are visible.
+Control characters print line ``^X'' for control-X; the delete
+character (octal 0177) prints as ``^?''.
+Non-ascii characters (with the high bit set) are printed as
+``M-'' (for meta) followed by the character for the low 7 bits.
 .PP
 The command ``cat file1 file2 > file3'' concatenates the contents of
 file1 and file2 and places the result in file3.
