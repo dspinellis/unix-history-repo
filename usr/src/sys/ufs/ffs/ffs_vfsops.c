@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ffs_vfsops.c	8.3 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	8.4 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -90,9 +90,8 @@ ffs_mountroot()
 		free(mp, M_MOUNT);
 		return (error);
 	}
-	rootfs = mp;
-	mp->mnt_next = mp;
-	mp->mnt_prev = mp;
+	TAILQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+	mp->mnt_flag |= MNT_ROOTFS;
 	mp->mnt_vnodecovered = NULLVP;
 	ump = VFSTOUFS(mp);
 	fs = ump->um_fs;
@@ -281,8 +280,8 @@ ffs_reload(mountp, cred, p)
 		brelse(bp);
 	}
 loop:
-	for (vp = mountp->mnt_mounth; vp; vp = nvp) {
-		nvp = vp->v_mountf;
+	for (vp = mountp->mnt_vnodelist.lh_first; vp != NULL; vp = nvp) {
+		nvp = vp->v_mntvnodes.le_next;
 		/*
 		 * Step 4: invalidate all inactive vnodes.
 		 */
@@ -293,7 +292,7 @@ loop:
 		/*
 		 * Step 5: invalidate all cached file data.
 		 */
-		if (vget(vp))
+		if (vget(vp, 1))
 			goto loop;
 		if (vinvalbuf(vp, 0, cred, p, 0, 0))
 			panic("ffs_reload: dirty2");
@@ -494,7 +493,7 @@ ffs_unmount(mp, mntflags, p)
 
 	flags = 0;
 	if (mntflags & MNT_FORCE) {
-		if (mp == rootfs)
+		if (mp->mnt_flag & MNT_ROOTFS)
 			return (EINVAL);
 		flags |= FORCECLOSE;
 	}
@@ -619,7 +618,9 @@ ffs_sync(mp, waitfor, cred, p)
 	 * Write back each (modified) inode.
 	 */
 loop:
-	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
+	for (vp = mp->mnt_vnodelist.lh_first;
+	     vp != NULL;
+	     vp = vp->v_mntvnodes.le_next) {
 		/*
 		 * If the vnode that we are about to sync is no longer
 		 * associated with this mount point, start over.
@@ -631,9 +632,9 @@ loop:
 		ip = VTOI(vp);
 		if ((ip->i_flag &
 		    (IN_ACCESS | IN_CHANGE | IN_MODIFIED | IN_UPDATE)) == 0 &&
-		    vp->v_dirtyblkhd.le_next == NULL)
+		    vp->v_dirtyblkhd.lh_first == NULL)
 			continue;
-		if (vget(vp))
+		if (vget(vp, 1))
 			goto loop;
 		if (error = VOP_FSYNC(vp, cred, waitfor, p))
 			allerror = error;
