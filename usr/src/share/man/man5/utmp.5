@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)utmp.5	6.4 (Berkeley) %G%
+.\"	@(#)utmp.5	6.5 (Berkeley) %G%
 .\"
 .TH UTMP 5  ""
 .UC 4
@@ -19,10 +19,13 @@ defined in the include file.
 .RS
 .PP
 .nf
+#define UT_NAMESIZE	8
+#define UT_LINESIZE	8
+#define UT_HOSTSIZE	16
 struct utmp {
-	char	ut_line[8];
-	char	ut_name[8];
-	char	ut_host[16];
+	char	ut_line[UT_NAMESIZE];
+	char	ut_name[UT_LINESIZE];
+	char	ut_host[UT_HOSTSIZE];
 	time_t	ut_time;
 };
 .ft R
