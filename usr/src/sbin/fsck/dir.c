@@ -1,5 +1,5 @@
 #ifndef lint
-static char version[] = "@(#)dir.c	3.6 (Berkeley) %G%";
+static char version[] = "@(#)dir.c	3.7 (Berkeley) %G%";
 #endif
 
 #include <sys/param.h>
@@ -243,17 +243,15 @@ mkentry(idesc)
 	return (ALTERED|STOP);
 }
 
-chgdd(idesc)
+chgino(idesc)
 	struct inodesc *idesc;
 {
 	register DIRECT *dirp = idesc->id_dirp;
 
-	if (dirp->d_name[0] == '.' && dirp->d_name[1] == '.' &&
-	dirp->d_name[2] == 0) {
-		dirp->d_ino = lfdir;
-		return (ALTERED|STOP);
-	}
-	return (KEEPON);
+	if (bcmp(dirp->d_name, idesc->id_name, dirp->d_namlen + 1))
+		return (KEEPON);
+	dirp->d_ino = idesc->id_parent;;
+	return (ALTERED|STOP);
 }
 
 linkup(orphan, pdir)
@@ -265,6 +263,7 @@ linkup(orphan, pdir)
 	ino_t oldlfdir;
 	struct inodesc idesc;
 	char tempname[BUFSIZ];
+	extern int pass4check();
 
 	bzero((char *)&idesc, sizeof(struct inodesc));
 	dp = ginode(orphan);
@@ -317,9 +316,34 @@ linkup(orphan, pdir)
 		}
 	}
 	dp = ginode(lfdir);
-	if (!DIRCT(dp) || statemap[lfdir] != DFOUND) {
-		pfatal("SORRY. NO lost+found DIRECTORY");
-		printf("\n\n");
+	if (!DIRCT(dp)) {
+		pfatal("lost+found IS NOT A DIRECTORY");
+		if (reply("REALLOCATE") == 0)
+			return (0);
+		oldlfdir = lfdir;
+		if ((lfdir = allocdir(ROOTINO, 0)) == 0) {
+			pfatal("SORRY. CANNOT CREATE lost+found DIRECTORY\n\n");
+			return (0);
+		}
+		idesc.id_type = DATA;
+		idesc.id_func = chgino;
+		idesc.id_number = ROOTINO;
+		idesc.id_parent = lfdir;	/* new inumber for lost+found */
+		idesc.id_name = lfname;
+		if ((ckinode(ginode(ROOTINO), &idesc) & ALTERED) == 0) {
+			pfatal("SORRY. CANNOT CREATE lost+found DIRECTORY\n\n");
+			return (0);
+		}
+		inodirty();
+		idesc.id_type = ADDR;
+		idesc.id_func = pass4check;
+		idesc.id_number = oldlfdir;
+		adjust(&idesc, lncntp[oldlfdir] + 1);
+		lncntp[oldlfdir] = 0;
+		dp = ginode(lfdir);
+	}
+	if (statemap[lfdir] != DFOUND) {
+		pfatal("SORRY. NO lost+found DIRECTORY\n\n");
 		return (0);
 	}
 	if (dp->di_size % DIRBLKSIZ) {
@@ -349,10 +373,12 @@ linkup(orphan, pdir)
 	if (lostdir) {
 		dp = ginode(orphan);
 		idesc.id_type = DATA;
-		idesc.id_func = chgdd;
+		idesc.id_func = chgino;
 		idesc.id_number = orphan;
 		idesc.id_filesize = dp->di_size;
 		idesc.id_fix = DONTKNOW;
+		idesc.id_name = "..";
+		idesc.id_parent = lfdir;	/* new value for ".." */
 		(void)ckinode(dp, &idesc);
 		dp = ginode(lfdir);
 		dp->di_nlink++;
