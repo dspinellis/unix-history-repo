@@ -1,4 +1,4 @@
-.\"	@(#)u3	5.1 (Berkeley) %G%
+.\"	@(#)u3	6.1 (Berkeley) %G%
 .\"
 .sp
 .SH
@@ -178,7 +178,10 @@ and so on.
 .UL spell
 and
 .UL typo
-detect possible spelling mistakes in a document.
+detect possible spelling mistakes in a document.\(dg
+.FS
+\(dg "typo" is not provided with Berkeley Unix.
+.FE
 .UL spell
 works by comparing the words in your document
 to a dictionary,
