@@ -1,4 +1,4 @@
-/*	ubareg.h	4.26	81/12/03	*/
+/*	ubareg.h	4.27	82/03/18	*/
 
 /*
  * VAX UNIBUS adapter registers
@@ -105,14 +105,14 @@ struct uba_regs
 #endif
 #if defined(VAX780) && !defined(VAX750)
 #define	UBAPURGE(uba, bdp) { \
-	if (cpu==VAX_780) {
+	if (cpu==VAX_780) { \
 		UBA_PURGE780((uba), (bdp)); \
 	} \
 }
 #endif
 #if !defined(VAX780) && defined(VAX750)
 #define	UBAPURGE(uba, bdp) { \
-	if (cpu==VAX_750) {
+	if (cpu==VAX_750) { \
 		UBA_PURGE750((uba), (bdp)); break; \
 	} \
 }
