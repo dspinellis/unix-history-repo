@@ -1,0 +1,44 @@
+SunOS 4.1.X curses is broken.  It occasionally repaints the wrong thing
+on the screen, and nobody has been able to figure out a workaround other
+than to rewrite curscr every time stdscr is modified.  This, obviously,
+trashes performance.  A test program is attached.
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+/*
+ * Compile with: 
+ * /usr/5bin/cc -DSYSV_CURSES curse.c -lcurses
+ *
+ * Broken on: SunOS virtual61 4.1.3C 8 sun4m
+ *
+ * The broken behavior can be seen in that the line is first displayed,
+ * then redisplayed, with a missing the 'r' from the word "different",
+ * and then redisplayed correctly.
+ */
+#include <sys/types.h>
+
+#include <curses.h>
+#include <stdio.h>
+
+#define	S1 "ing different traces, both beginning at the same time"
+#define	S2 "          using different traces, both beginning at the same time"
+
+main()
+{
+#ifdef SYSV_CURSES
+	newterm("xterm", stdout, stdin);
+#else
+	initscr();
+#endif
+	mvaddstr(0, 0, S1);
+	refresh();
+	write(1, "\07", 1);
+	sleep(2);
+	mvaddstr(0, 0, S2);
+	refresh();
+	write(1, "\07", 1);
+	sleep(2);
+	wrefresh(curscr);
+	write(1, "\07", 1);
+	sleep(2);
+	endwin();
+}
