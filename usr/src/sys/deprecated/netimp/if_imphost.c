@@ -1,4 +1,4 @@
-/*	if_imphost.c	6.2	84/08/29	*/
+/*	if_imphost.c	6.3	85/02/28	*/
 
 #include "imp.h"
 #if NIMP > 0
@@ -114,7 +114,7 @@ hostfree(hp)
  * Reset a given network's host entries.
  */
 hostreset(net)	    
-	int net;
+	long net;
 {
 	register struct mbuf *m;
 	register struct host *hp, *lp;
@@ -125,7 +125,7 @@ hostreset(net)
 		hp = hm->hm_hosts; 
 		lp = hp + HPMBUF;
 		while (hm->hm_count > 0 && hp < lp) {
-			if (hp->h_addr.s_net == net) {
+			if (in_netof(hp->h_addr) == net) {
 				hp->h_flags &= ~HF_INUSE;
 				hostrelease(hp);
 			}
@@ -157,6 +157,7 @@ hostrelease(hp)
 		hp->h_q = 0;
 	}
 	hp->h_flags = 0;
+	hp->h_rfnm = 0;
 	if (--mtod(mh, struct hmbuf *)->hm_count)
 		return;
 	mprev = &hosts;
