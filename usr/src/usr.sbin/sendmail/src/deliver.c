@@ -8,7 +8,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.21	%G%";
+static char SccsId[] = "@(#)deliver.c	3.22	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.
@@ -167,6 +167,18 @@ deliver(to, editfcn)
 		}
 
 		/*
+		**  If an error message has already been given, don't
+		**	bother to send to this address.
+		**
+		**	>>>>>>>>>> This clause assumes that the local mailer
+		**	>> NOTE >> cannot do any further aliasing; that
+		**	>>>>>>>>>> function is subsumed by sendmail.
+		*/
+
+		if (bitset(QBADADDR, to->q_flags))
+			continue;
+
+		/*
 		**  See if this user name is "special".
 		**	If the user name has a slash in it, assume that this
 		**	is a file -- send it off without further ado.
@@ -184,22 +196,6 @@ deliver(to, editfcn)
 				giveresponse(i, TRUE, m);
 				continue;
 			}
-		}
-
-		/*
-		**  See if the user exists.
-		**	Strictly, this is only needed to print a pretty
-		**	error message.
-		**
-		**	>>>>>>>>>> This clause assumes that the local mailer
-		**	>> NOTE >> cannot do any further aliasing; that
-		**	>>>>>>>>>> function is subsumed by sendmail.
-		*/
-
-		if (bitset(QBADADDR, to->q_flags))
-		{
-			giveresponse(EX_NOUSER, TRUE, m);
-			continue;
 		}
 
 		/* create list of users for error messages */
@@ -440,9 +436,12 @@ giveresponse(stat, force, m)
 		statmsg = SysExMsg[i];
 	if (stat == 0)
 	{
-		statmsg = "ok";
+		if (bitset(M_FINAL, m->m_flags))
+			statmsg = "delivered";
+		else
+			statmsg = "queued";
 		if (Verbose)
-			message("050", "ok");
+			message("050", statmsg);
 	}
 	else
 	{
@@ -714,23 +713,38 @@ recipient(a)
 	**  the user (which is probably correct anyway).
 	*/
 
-	if (!bitset(QDONTSEND, a->q_flags) && a->q_mailer == M_LOCAL &&
-	    a->q_home == NULL)
+	if (!bitset(QDONTSEND, a->q_flags) && a->q_mailer == M_LOCAL)
 	{
-		register struct passwd *pw;
-		extern struct passwd *getpwnam();
 		char buf[MAXNAME];
 
 		strcpy(buf, a->q_user);
 		stripquotes(buf, TRUE);
-		pw = getpwnam(buf);
-		if (pw == NULL)
-			a->q_flags |= QBADADDR;
+
+		/* see if this is to a file */
+		if (index(buf, '/') != NULL)
+		{
+			if (access(buf, 2) < 0)
+			{
+				a->q_flags |= QBADADDR;
+				giveresponse(EX_CANTCREAT, TRUE, m);
+			}
+		}
 		else
 		{
-			a->q_home = newstr(pw->pw_dir);
-			if (strcmp(buf, a->q_user) == 0)
-				forward(a);
+			register struct passwd *pw;
+			extern struct passwd *getpwnam();
+			pw = getpwnam(buf);
+			if (pw == NULL)
+			{
+				a->q_flags |= QBADADDR;
+				giveresponse(EX_NOUSER, TRUE, m);
+			}
+			else
+			{
+				a->q_home = newstr(pw->pw_dir);
+				if (strcmp(buf, a->q_user) == 0)
+					forward(a);
+			}
 		}
 	}
 }

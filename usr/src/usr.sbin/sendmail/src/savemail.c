@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.10	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.11	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -93,7 +93,7 @@ savemail()
 			if (xfile == NULL)
 				syserr("Cannot open %s", Transcript);
 			(void) expand("$n", buf, &buf[sizeof buf - 1]);
-			printf("\r\nMessage from %s\r\n", buf);
+			printf("\r\nMessage from %s...\r\n", buf);
 			printf("Errors occurred while sending mail, transcript follows:\r\n");
 			while (fgets(buf, sizeof buf, xfile) != NULL && !ferror(stdout))
 				fputs(buf, stdout);
@@ -145,9 +145,8 @@ savemail()
 	**	and we all know what poor typists programmers are.
 	*/
 
-	(void) setuid(getuid());
-	(void) setgid(getgid());
-	setpwent();
+	if (ArpaMode != ARPA_NONE)
+		return;
 	p = NULL;
 	if (From.q_mailer == M_LOCAL)
 	{

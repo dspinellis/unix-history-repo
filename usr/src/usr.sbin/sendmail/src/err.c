@@ -5,7 +5,9 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.6	%G%";
+static char	SccsId[] = "@(#)err.c	3.7	%G%";
+
+extern bool	HasXscrpt;
 
 /*
 **  SYSERR -- Print error message.
@@ -57,7 +59,7 @@ syserr(fmt, a, b, c, d, e)
 			(void) sprintf(eb, ": error %d", errno);
 	}
 
-	if (ArpaFmt)
+	if (ArpaMode != ARPA_NONE && !HasXscrpt)
 		printf("%s\r\n", errbuf);
 	else
 		printf("sendmail: %s\n", &errbuf[4]);
@@ -134,13 +136,13 @@ message(num, msg, a, b, c, d, e)
 	}
 
 	/* print arpa format header if needed */
-	if (ArpaFmt)
+	if (ArpaMode != ARPA_NONE && !HasXscrpt)
 		printf("%.3s ", num);
 
 	if (To != NULL && To[0] != '\0')
 		printf("%s... ", To);
 	printf(msg, a, b, c, d, e);
-	if (ArpaFmt)
+	if (ArpaMode != ARPA_NONE && !HasXscrpt)
 		printf("\r");
 	printf("\n");
 	(void) fflush(stdout);

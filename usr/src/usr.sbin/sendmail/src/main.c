@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.19	%G%";
+static char	SccsId[] = "@(#)main.c	3.20	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -110,7 +110,7 @@ static char	SccsId[] = "@(#)main.c	3.19	%G%";
 
 
 
-bool	ArpaFmt;	/* mail is expected to be in ARPANET format */
+int	ArpaMode;	/* specifies the ARPANET mode */
 bool	FromFlag;	/* from person is explicitly specified */
 bool	MailBack;	/* mail back response on error */
 bool	BerkNet;	/* called from BerkNet */
@@ -133,7 +133,6 @@ char	*To;		/* the target person */
 int	HopCount;	/* hop count */
 int	ExitStat;	/* the exit status byte */
 HDR	*Header;	/* header list */
-char	*Macro[128];	/* macros */
 long	CurTime;	/* current time */
 char	FromLine[80];	/* holds From line (UNIX style header) */
 int	NextMailer = 0;	/* "free" index into Mailer struct */
@@ -151,7 +150,6 @@ main(argc, argv)
 	register char *p;
 	char *realname;
 	char *fullname = NULL;
-	extern char *collect();
 	extern char *getlogin();
 	char *locname;
 	extern int finis();
@@ -281,7 +279,7 @@ main(argc, argv)
 			break;
 
 		  case 'D':	/* redefine internal macro */
-			Macro[p[2]] = &p[3];
+			define(p[2], &p[3]);
 			break;
 # endif DEBUG
 
@@ -318,7 +316,20 @@ main(argc, argv)
 			break;
 
 		  case 'a':	/* arpanet format */
-			ArpaFmt++;
+			switch (p[2])
+			{
+			  case 'f':	/* mail from file connection */
+				ArpaMode = ARPA_FILE;
+				break;
+
+			  case 'm':	/* mail over telnet connection */
+				ArpaMode = ARPA_MAIL;
+				break;
+
+			  default:
+				ArpaMode = ARPA_OLD;
+				break;
+			}
 			break;
 		
 		  case 's':	/* save From lines in headers */
@@ -336,9 +347,6 @@ main(argc, argv)
 			break;
 		}
 	}
-
-	if (from != NULL && ArpaFmt)
-		syserr("-f and -a are mutually exclusive");
 
 	/*
 	**  Read control file and initialize system macros.
@@ -456,27 +464,13 @@ main(argc, argv)
 				*nb++ = *p++;
 		}
 		*nb = '\0';
-		if (!ArpaFmt && from == NULL && nbuf[0] != '\0')
+		if (ArpaMode == ARPA_NONE && from == NULL && nbuf[0] != '\0')
 			fullname = nbuf;
 	}
 	if (fullname != NULL && fullname[0] != '\0')
 		define('x', fullname);
 
-	/*
-	** Get a temp file.
-	*/
-
-	p = collect();
-	if (from == NULL)
-		from = p;
-
 	setfrom(from, realname);
-
-	(void) expand("$l", FromLine, &FromLine[sizeof FromLine - 1]);
-# ifdef DEBUG
-	if (Debug)
-		printf("From person = \"%s\"\n", From.q_paddr);
-# endif DEBUG
 
 	if (argc <= 0)
 		usrerr("Usage: /etc/sendmail [flags] addr...");
@@ -513,7 +507,7 @@ main(argc, argv)
 				(void) strcpy(nbuf, argv[0]);
 				(void) strcat(nbuf, "@");
 				(void) strcat(nbuf, argv[2]);
-				p = nbuf;
+				p = newstr(nbuf);
 				argv += 2;
 				argc -= 2;
 			}
@@ -526,13 +520,30 @@ main(argc, argv)
 	/* if we have had errors sofar, drop out now */
 	if (Errors > 0 && ExitStat == EX_OK)
 		ExitStat = EX_USAGE;
-	if (ExitStat != EX_OK)
+	if (ArpaMode > ARPA_OLD && ExitStat != EX_OK)
 		finis();
 
+	/* no errors, tell arpanet to go ahead */
+	To = NULL;
+	if (ArpaMode == ARPA_MAIL)
+		message("350", "Enter mail, end with \".\" on a line by itself");
+	errno = 0;
+
 	/*
-	**  Do aliasing.
-	**	First arrange that the person who is sending the mail
-	**	will not be expanded (unless explicitly requested).
+	**  Read the input mail.
+	*/
+
+	collect();
+
+	(void) expand("$l", FromLine, &FromLine[sizeof FromLine - 1]);
+# ifdef DEBUG
+	if (Debug)
+		printf("From person = \"%s\"\n", From.q_paddr);
+# endif DEBUG
+
+	/*
+	**  Arrange that the person who is sending the mail
+	**  will not be expanded (unless explicitly requested).
 	*/
 
 	From.q_flags |= QDONTSEND;
@@ -558,6 +569,22 @@ main(argc, argv)
 	** All done.
 	*/
 
+	To = NULL;
+	if (Errors == 0)
+	{
+		switch (ArpaMode)
+		{
+			static char *okmsg = "Mail accepted";
+
+		  case ARPA_FILE:
+			message("252", okmsg);
+			break;
+
+		  case ARPA_MAIL:
+			message("256", okmsg);
+			break;
+		}
+	}
 	finis();
 }
 /*
@@ -586,6 +613,8 @@ main(argc, argv)
 **	Parameters:
 **		from -- the person it is from.
 **		realname -- the actual person executing sendmail.
+**			If NULL, then take whoever we previously
+**			thought was the from person.
 **
 **	Returns:
 **		none.
@@ -603,6 +632,8 @@ setfrom(from, realname)
 	extern char **prescan();
 	extern char *index();
 
+	if (realname == NULL)
+		realname = From.q_paddr;
 	if (from != NULL)
 	{
 		if (strcmp(realname, "network") != 0 && strcmp(realname, "uucp") != 0 &&

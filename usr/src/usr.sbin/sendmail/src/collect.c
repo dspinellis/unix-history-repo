@@ -3,7 +3,7 @@
 # include <errno.h>
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)collect.c	3.14	%G%";
+static char	SccsId[] = "@(#)collect.c	3.15	%G%";
 
 /*
 **  COLLECT -- read & parse message header & make temp file.
@@ -32,18 +32,11 @@ static char	SccsId[] = "@(#)collect.c	3.14	%G%";
 **
 **	Side Effects:
 **		Temp file is created and filled.
-**
-**	Called By:
-**		main
-**
-**	Notes:
-**		This is broken off from main largely so that the
-**		temp buffer can be deallocated.
+**		The from person may be set.
 */
 
 long	MsgSize;		/* size of message in bytes */
 
-char *
 maketemp(from)
 	char *from;
 {
@@ -70,12 +63,12 @@ maketemp(from)
 	if ((tf = fopen(InFileName, "w")) == NULL)
 	{
 		syserr("Cannot create %s", InFileName);
-		return (NULL);
+		return;
 	}
 
 	/* try to read a UNIX-style From line */
 	if (fgets(buf, sizeof buf, stdin) == NULL)
-		return (NULL);
+		return;
 	if (strncmp(buf, "From ", 5) == 0)
 	{
 		eatfrom(buf);
@@ -179,6 +172,8 @@ maketemp(from)
 	xfrom = hvalue("sender");
 	if (xfrom == NULL)
 		xfrom = hvalue("from");
+	if (ArpaMode != ARPA_NONE)
+		setfrom(xfrom, NULL);
 
 	/* full name of from person */
 	p = hvalue("full-name");
@@ -209,7 +204,7 @@ maketemp(from)
 		printf("----------------------------\n");
 	}
 # endif DEBUG
-	return (ArpaFmt ? xfrom : NULL);
+	return;
 }
 /*
 **  EATFROM -- chew up a UNIX style from line and process
