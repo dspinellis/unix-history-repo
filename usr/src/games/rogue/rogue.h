@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)rogue.h	5.3 (Berkeley) %G%
+ *	@(#)rogue.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -171,9 +171,6 @@
 #define GEMS 14
 
 #define GOLD_PERCENT 46
-
-#define SCORE_FILE "/usr/games/lib/rogue.scores"
-#define LOCK_FILE  "/usr/games/lib/rogue.lock"
 
 #define MAX_OPT_LEN 40
 

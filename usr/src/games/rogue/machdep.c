@@ -19,7 +19,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)machdep.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)machdep.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -93,6 +93,7 @@ static char sccsid[] = "@(#)machdep.c	5.3 (Berkeley) %G%";
 
 #include <signal.h>
 #include "rogue.h"
+#include "pathnames.h"
 
 /* md_slurp:
  *
@@ -505,13 +506,13 @@ int status;
 
 /* md_lock():
  *
- * This function is intended to give the user exclusive access to the
- * score file.  It does so by "creat"ing a lock file, which can only
- * be created if it does not already exist.  The file is deleted when
- * score file processing is finished.  The lock file should be located
- * in the same directory as the score file.  These full path names should
- * be defined for any particular site in rogue.h.  The constants SCORE_FILE
- * and LOCK_FILE define these file names.
+ * This function is intended to give the user exclusive access to the score
+ * file.  It does so by "creat"ing a lock file, which can only be created
+ * if it does not already exist.  The file is deleted when score file
+ * processing is finished.  The lock file should be located in the same
+ * directory as the score file.  These full path names should be defined for
+ * any particular site in rogue.h.  The constants _PATH_SCOREFILE and
+ * _PATH_LOCKFILE define these file names.
  *
  * When the parameter 'l' is non-zero (true), a lock is requested.  Otherwise
  * the lock is released by removing the lock file.
@@ -521,7 +522,7 @@ md_lock(l)
 boolean l;
 {
 	short tries;
-	char *lock_file = LOCK_FILE;
+	char *lock_file = _PATH_LOCKFILE;
 
 	if (l) {
 		for (tries = 0; tries < 5; tries++) {
