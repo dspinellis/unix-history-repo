@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -623,6 +623,15 @@ backeval(cp, literal)
 	arginp = cp;
 	while (*cp)
 	    *cp++ &= TRIM;
+
+        /*
+	 * In the child ``forget'' everything about current aliases or
+	 * eval vectors.
+	 */
+	alvec = NULL;
+	evalvec = NULL;
+	alvecp = NULL;
+	evalp = NULL;
 	(void) lex(&paraml);
 	if (seterr)
 	    stderror(ERR_OLD);
