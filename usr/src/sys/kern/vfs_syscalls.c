@@ -2361,17 +2361,13 @@ revoke(p, uap, retval)
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
-	if (vp->v_type != VCHR && vp->v_type != VBLK) {
-		error = EINVAL;
-		goto out;
-	}
 	if (error = VOP_GETATTR(vp, &vattr, p->p_ucred, p))
 		goto out;
 	if (p->p_ucred->cr_uid != vattr.va_uid &&
 	    (error = suser(p->p_ucred, &p->p_acflag)))
 		goto out;
 	if (vp->v_usecount > 1 || (vp->v_flag & VALIASED))
-		vgoneall(vp);
+		VOP_REVOKE(vp, REVOKEALL);
 out:
 	vrele(vp);
 	return (error);
