@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)nm.c 4.6 %G%";
+static	char sccsid[] = "@(#)nm.c 4.7 %G%";
 #endif
 /*
  * nm - print name list; VAX string table version
@@ -211,7 +211,9 @@ psyms(symp, nsyms)
 			    symp[n].n_un.n_name);
 			continue;
 		}
-		switch (c&N_TYPE) {
+		if (c == N_FN)
+			c = 'f';
+		else switch (c&N_TYPE) {
 
 		case N_UNDF:
 			c = 'u';
@@ -230,8 +232,8 @@ psyms(symp, nsyms)
 		case N_BSS:
 			c = 'b';
 			break;
-		case N_FN:
-			c = 'f';
+		default:
+			c = '?';
 			break;
 		}
 		if (uflg && c!='u')
