@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.c	1.2 (Berkeley) %G%
+ *	@(#)conf.c	5.1 (Berkeley) %G%
  *
  * $Id: conf.c,v 1.2 1992/05/27 07:09:27 jsp Exp jsp $
  */

@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mount_portal.c	1.1 (Berkeley) %G%
+ *	@(#)mount_portal.c	5.1 (Berkeley) %G%
  *
  * $Id: portald.c,v 1.3 1992/05/27 07:09:27 jsp Exp jsp $
  */
