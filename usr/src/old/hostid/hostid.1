@@ -1,0 +1,23 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)hostid.1	5.1 (Berkeley) %G%
+.\"
+.TH HOSTID 1 "1 April 1983"
+.UC 5
+.SH NAME
+hostid \- set or print identifier of current host system
+.SH SYNOPSIS
+.B hostid
+[ identifier ]
+.SH DESCRIPTION
+The
+.I hostid
+command prints the identifier of the current host in hexadecimal.
+This numeric value is expected to be unique across all hosts and
+is normally set to the host's Internet address.
+The super-user can set the hostid by giving a hexadecimal
+argument; this is usually done in the startup script /etc/rc.local.
+.SH SEE ALSO
+gethostid(2), sethostid(2)
