@@ -8,7 +8,7 @@
  * Define all of the command names and bindings.
  */
 
-static char *SccsId = "@(#)cmdtab.c	1.2 %G%";
+static char *SccsId = "@(#)cmdtab.c	1.3 %G%";
 
 extern int type(), preserve(), delete(), undelete(), next(), shell(), schdir();
 extern int save(), help(), headers(), pdot(), strace(), respond(), editor();
@@ -22,7 +22,7 @@ struct cmd cmdtab[] = {
 	"alias",	group,		M|RAWLIST,	0,	1000,
 	"print",	type,		MSGLIST,	0,	MMNDEL,
 	"type",		type,		MSGLIST,	0,	MMNDEL,
-	"visual",	visual,		W|I|MSGLIST,	0,	MMNORM,
+	"visual",	visual,		I|MSGLIST,	0,	MMNORM,
 	"top",		top,		MSGLIST,	0,	MMNDEL,
 	"touch",	stouch,		W|MSGLIST,	0,	MMNDEL,
 	"preserve",	preserve,	W|MSGLIST,	0,	MMNDEL,
@@ -54,7 +54,7 @@ struct cmd cmdtab[] = {
 	"Respond",	Respond,	I|MSGLIST,	0,	MMNDEL,
 	"reply",	respond,	I|MSGLIST,	0,	MMNDEL,
 	"respond",	respond,	I|MSGLIST,	0,	MMNDEL,
-	"edit",		editor,		W|I|MSGLIST,	0,	MMNORM,
+	"edit",		editor,		I|MSGLIST,	0,	MMNORM,
 	"echo",		echo,		RAWLIST,	0,	1000,
 	"quit",		edstop,		NOLIST, 	0,	0,
 	"list",		pcmdlist,	M|NOLIST,	0,	0,
