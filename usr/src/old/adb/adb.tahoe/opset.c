@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)opset.c	1.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)opset.c	1.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -48,7 +48,7 @@ printins(space)
 	checkerr(); \
 	dotoff += (nbytes)
 
-	(void) adbread(SP_INSTR, dot, &ins, 1);
+	(void) adbread(space, dot, &ins, 1);
 	checkerr();
 	if ((ip = ioptab[ins]) == NULL) {
 		adbprintf("?%2x", ins);
