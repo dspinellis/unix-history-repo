@@ -1,4 +1,4 @@
-\"	@(#)present.me	1.5	%G%
+\"	@(#)present.me	1.6	%G%
 .sh 1 "Data Presentation"
 .pp
 The data is presented to the user in two different formats.
@@ -22,7 +22,7 @@ The flat profile gives a quick overview of the routines that are used,
 and shows the routines that are themselves responsible
 for large fractions of the execution time.
 In practice,
-this profile usually indicates that no single function
+this profile usually shows that no single function
 is overwhelmingly responsible for 
 the total time of the program.
 Notice that for this profile,
@@ -121,7 +121,7 @@ the Caller routines as its parents,
 and the Sub routines as its children.
 The reader should keep in mind that all information
 is given \fIwith respect to Example\fP.
-The index in the first column indicates that Example
+The index in the first column shows that Example
 is the second entry in the profile listing.
 The Example routine is called ten times, four times by Caller1,
 and six times by Caller2.
@@ -142,7 +142,7 @@ the self and descendant times are those for the cycle as a whole.
 Since Sub1 is called a total of forty times from outside
 of its cycle, it propagates 50% of the cycle's self and descendant
 time to Example's descendant time field.
-Finally each name is followed by an index that indicates
+Finally each name is followed by an index that shows
 where on the listing to find the entry for that routine.
 .sh 1 "Using the Profiles"
 .pp
@@ -155,7 +155,7 @@ requires a careful examination of the call graph profile,
 and a thorough knowledge of the abstractions underlying
 the program.
 .pp
-One of the easiest optimizations that can be performed
+The easiest optimization that can be performed
 is a small change
 to a control construct or data structure that improves the
 running time of the program.
@@ -209,7 +209,7 @@ They are typified by programs that exhibit a large degree of
 recursion, such as recursive descent compilers.
 The problem is that most of the major routines are grouped
 into a single monolithic cycle.
-As in the case of the symbol table abstraction that is placed
+As in the symbol table abstraction that is placed
 in one routine,
 it is impossible to distinguish which members of the cycle are
 responsible for the execution time.
@@ -256,7 +256,7 @@ in this example ``calc1'', ``calc2'', and ``calc3''.
 By inspecting the source code for each of these routines
 you can determine which format routine generates the output that
 you wish to modify.
-Since the \fBgprof\fR entry indicates all the
+Since the \fBgprof\fR entry shows all the
 potential calls to the format routine you intend to change,
 you can determine if your modifications will affect output that
 should be left alone.
@@ -267,7 +267,7 @@ one of which implements the new format.
 You can then retarget just the call by ``calc2''
 that needs the new format.
 It should be noted that the static call information is particularly
-useful in this case since the test case you run probably will not
+useful here since the test case you run probably will not
 exercise the entire program.
 .sh 1 "Conclusions"
 .pp
@@ -280,8 +280,8 @@ and how that routine uses other abstractions.
 The profile accurately assesses the cost of routines
 at all levels of the program decomposition.
 The profiler is easily used,
-and can be compiled into the program without any prior planning on the part
-of the programmer.
+and can be compiled into the program without any prior planning by
+the programmer.
 It adds only five to thirty percent execution overhead to the program
 being profiled,
 produces no additional output until after the program finishes,
