@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.26 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.22.1.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -38,7 +38,7 @@ static char sccsid[] = "@(#)rlogind.c	5.26 (Berkeley) %G%";
  */
 
 #include <stdio.h>
-#include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -119,8 +119,8 @@ main(argc, argv)
 #endif
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
-		syslog(LOG_ERR,"Couldn't get peer name of remote host: %m");
-		exit(1);
+		syslog(LOG_ERR, "Couldn't get peer name of remote host: %m");
+		fatalperror("Can't get peer name of host");
 	}
 	if (keepalive &&
 	    setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0)
@@ -165,6 +165,26 @@ doit(f, fromp)
 		 */
 		hp = &hostent;
 		hp->h_name = inet_ntoa(fromp->sin_addr);
+#ifndef OLD_LOGIN
+	} else if (local_domain(hp->h_name)) {
+		/*
+		 * If name returned by gethostbyaddr is in our domain,
+		 * attempt to verify that we haven't been fooled by someone
+		 * in a remote net; look up the name and check that this
+		 * address corresponds to the name.
+		 */
+		strncpy(remotehost, hp->h_name, sizeof(remotehost) - 1);
+		remotehost[sizeof(remotehost) - 1] = 0;
+		hp = gethostbyname(remotehost);
+		if (hp)
+		    for (; hp->h_addr_list[0]; hp->h_addr_list++) {
+			if (!bcmp(hp->h_addr_list[0], (caddr_t)&fromp->sin_addr,
+			    sizeof(fromp->sin_addr))) {
+				hostok++;
+				break;
+			}
+		}
+#endif
 	} else if (local_domain(hp->h_name)) {
 		/*
 		 * If name returned by gethostbyaddr is in our domain,
@@ -558,5 +578,26 @@ setup_term(fd)
 	env[0] = term;
 	env[1] = 0;
 	environ = env;
+}
+
+/*
+ * Check whether host h is in our local domain,
+ * as determined by the part of the name following
+ * the first '.' in its name and in ours.
+ * If either name is unqualified (contains no '.'),
+ * assume that the host is local, as it will be
+ * interpreted as such.
+ */
+local_domain(h)
+	char *h;
+{
+	char localhost[MAXHOSTNAMELEN];
+	char *p1, *p2 = index(h, '.');
+
+	(void) gethostname(localhost, sizeof(localhost));
+	p1 = index(localhost, '.');
+	if (p1 == NULL || p2 == NULL || !strcasecmp(p1, p2))
+		return(1);
+	return(0);
 }
 #endif /* OLD_LOGIN */
