@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ex_vget.c	6.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)ex_vget.c	6.11 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -655,31 +655,31 @@ fastpeekkey()
 	 */
 #ifdef MDEBUG
 	if (trace)
-		fprintf(trace,"\nfastpeekkey: ",c);
+		fprintf(trace,"\nfastpeekkey: ");
 #endif
 	Oint = signal(SIGINT, trapalarm);
-	if (value(TIMEOUT) && inopen >= 0) {
-		signal(SIGALRM, trapalarm);
-#ifdef MDEBUG
-		alarm(10);
-		if (trace)
-			fprintf(trace, "set alarm ");
-#else
-		alarm(1);
-#endif
-	}
 	CATCH
-		c = peekkey();
+		if (value(TIMEOUT) && inopen >= 0) {
+			signal(SIGALRM, trapalarm);
 #ifdef MDEBUG
-	if (trace)
-		fprintf(trace,"[OK]",c);
+			alarm(10);
+			if (trace)
+				fprintf(trace, "set alarm ");
+#else
+			alarm(1);
 #endif
+		}
+		c = peekkey();
 		alarm(0);
+#ifdef MDEBUG
+		if (trace)
+			fprintf(trace,"[OK]",c);
+#endif
 	ONERR
 		c = 0;
 #ifdef MDEBUG
-	if (trace)
-		fprintf(trace,"[TIMEOUT]",c);
+		if (trace)
+			fprintf(trace,"[TIMEOUT]",c);
 #endif
 	ENDCATCH
 #ifdef MDEBUG
