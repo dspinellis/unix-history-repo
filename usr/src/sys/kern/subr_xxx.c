@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.15	82/08/13	*/
+/*	subr_xxx.c	4.16	82/08/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -209,10 +209,10 @@ strlen(s1)
 }
 #endif
 
-copyuout(uio, to, len)
-	register struct uio *uio;
-	caddr_t to;
+copyuout(from, len, uio)
+	caddr_t from;
 	int len;
+	register struct uio *uio;
 {
 	register struct iovec *iov = uio->uio_iov;
 	int error = 0;
@@ -222,12 +222,12 @@ copyuout(uio, to, len)
 		count = iov->iov_len;
 		if (count > len)
 			count = len;
-		if (copyout(iov->iov_base, to, count)) {
+		if (copyout(from, iov->iov_base, count)) {
 			error = EFAULT;
 			break;
 		}
 		iov->iov_base += len;
-		to += count;
+		from += count;
 		uio->uio_resid -= count;
 		iov->iov_len -= len;
 		iov++;

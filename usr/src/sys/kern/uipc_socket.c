@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.46	82/08/01	*/
+/*	uipc_socket.c	4.47	82/08/14	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -17,6 +17,7 @@
 #include "../net/in.h"
 #include "../net/in_systm.h"
 #include "../net/route.h"
+#include "../h/uio.h"
 
 /*
  * Socket support routines.
@@ -345,14 +346,16 @@ release:
 	return (error);
 }
 
-soreceive(so, asa)
+soreceive(so, asa, uio)
 	register struct socket *so;
 	struct sockaddr *asa;
+	struct uio *uio;
 {
+	register struct iovec *iov;
 	register struct mbuf *m, *n;
 	u_int len;
-	int eor, s, error = 0, cnt = u.u_count;
-	caddr_t base = u.u_base;
+	int eor, s, error = 0, resid = uio->uio_resid;
+	int cnt;
 
 restart:
 	sblock(&so->so_rcv);
@@ -395,15 +398,19 @@ restart:
 			panic("receive 2");
 		so->so_rcv.sb_mb = m;
 	}
-	so->so_state &= ~SS_RCVATMARK;
-	if (so->so_oobmark && cnt > so->so_oobmark)
-		cnt = so->so_oobmark;
 	eor = 0;
 	do {
-		len = MIN(m->m_len, cnt);
+		if (uio->uio_iovcnt == 0)
+			break;
+		iov = uio->uio_iov;
+		len = iov->iov_len;
+		so->so_state &= ~SS_RCVATMARK;
+		if (so->so_oobmark && len > so->so_oobmark)
+			len = so->so_oobmark;
+		if (len > m->m_len)
+			len = m->m_len;
 		splx(s);
-		iomove(mtod(m, caddr_t), len, B_READ);
-		cnt -= len;
+		uiomove(mtod(m, caddr_t), len, UIO_WRITETO, uio);
 		s = splnet();
 		if (len == m->m_len) {
 			eor = (int)m->m_act;
@@ -415,7 +422,14 @@ restart:
 			m->m_len -= len;
 			so->so_rcv.sb_cc -= len;
 		}
-	} while ((m = so->so_rcv.sb_mb) && cnt && !eor);
+		if (so->so_oobmark) {
+			so->so_oobmark -= len;
+			if (so->so_oobmark == 0) {
+				so->so_state |= SS_RCVATMARK;
+				break;
+			}
+		}
+	} while ((m = so->so_rcv.sb_mb) && !eor);
 	if ((so->so_proto->pr_flags & PR_ATOMIC) && eor == 0)
 		do {
 			if (m == 0)
@@ -428,11 +442,6 @@ restart:
 		} while (eor == 0);
 	if ((so->so_proto->pr_flags & PR_WANTRCVD) && so->so_pcb)
 		(*so->so_proto->pr_usrreq)(so, PRU_RCVD, 0, 0);
-	if (so->so_oobmark) {
-		so->so_oobmark -= u.u_base - base;
-		if (so->so_oobmark == 0)
-			so->so_state |= SS_RCVATMARK;
-	}
 release:
 	sbunlock(&so->so_rcv);
 	splx(s);
