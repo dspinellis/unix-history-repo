@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_prot.c	8.3 (Berkeley) %G%
+ *	@(#)kern_prot.c	8.4 (Berkeley) %G%
  */
 
 /*
@@ -449,13 +449,11 @@ crget()
 crfree(cr)
 	struct ucred *cr;
 {
-	int s = splimp();			/* ??? */
+	int s;
 
-	if (--cr->cr_ref != 0) {
-		(void) splx(s);
-		return;
-	}
-	FREE((caddr_t)cr, M_CRED);
+	s = splimp();				/* ??? */
+	if (--cr->cr_ref == 0)
+		FREE((caddr_t)cr, M_CRED);
 	(void) splx(s);
 }
 
