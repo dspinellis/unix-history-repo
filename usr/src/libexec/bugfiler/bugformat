@@ -16,14 +16,16 @@ To ensure that your bug report is handled correctly by bugfiler(8),
 you must replace "folder" (on the line above starting with "Index:")
 with one of the following values:
 
-	folder  ::= bin | doc | etc | games | ideas | include | lib | local
-			| man | misc | new | sys | ucb | usr.bin | usr.lib
+	folder  ::= bin | doc | etc | games | ideas | include | lib
+			| local | man | misc | new | sys | ucb
+			| usr.bin | usr.lib
 
-If you're not running 4.3BSD, you should also replace "4.3BSD" on the
-same line with one of the following values.
+If you're not running 4.3BSD, you should also replace "4.3BSD" on
+the same line with one of the following values.
 
-	version ::= V7 | 2BSD | 4.1BSD | 4.2BSD | 4.3BSD
+	version ::= 4.3BSD | 4.3BSD-tahoe | 4.3BSD-reno | net2
 
-For example, if your bug concerns the program "/usr/bin/file" and you're
-currently running 4.2BSD, you should replace "folder" with "usr.bin", and
-"4.3BSD" with "4.2BSD".  The folder "ideas" is for suggestions.
+For example, if your bug concerns the program "/usr/bin/file" and
+you're currently running 4.3BSD-Reno, you should replace "folder"
+with "usr.bin/file", and "net2" with "4.3BSD-Reno".  The folder
+"ideas" is for suggestions.
