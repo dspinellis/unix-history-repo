@@ -1,4 +1,4 @@
-/*	if_en.c	4.77	83/05/10	*/
+/*	if_en.c	4.78	83/05/30	*/
 
 #include "en.h"
 
@@ -438,8 +438,10 @@ enrint(unit)
 		struct pup_header *pup = mtod(m, struct pup_header *);
 
 		pupproto.sp_protocol = pup->pup_type;
-		pupdst.spup_addr = pup->pup_dport;
-		pupsrc.spup_addr = pup->pup_sport;
+		bcopy((caddr_t)pup->pup_dnet, (caddr_t)pupdst.spup_net,
+		    sizeof (struct pupport));
+		bcopy((caddr_t)pup->pup_snet, (caddr_t)pupsrc.spup_net,
+		    sizeof (struct pupport));
 		raw_input(m, &pupproto, (struct sockaddr *)&pupsrc,
 		  (struct sockaddr *)&pupdst);
 		goto setup;
@@ -507,7 +509,7 @@ enoutput(ifp, m0, dst)
 #endif
 #ifdef PUP
 	case AF_PUP:
-		dest = ((struct sockaddr_pup *)dst)->spup_addr.pp_host;
+		dest = ((struct sockaddr_pup *)dst)->spup_host;
 		type = ENTYPE_PUP;
 		off = 0;
 		goto gottype;
