@@ -14,22 +14,22 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
 LIBC=	/lib/libc.a
-SRCS=	expand.c
+SRCS=	expand.c unexpand.c
 OBJS=
 MAN=	expand.0
 
-all: expand
+all: expand unexpand
 
-expand: ${LIBC}
+expand unexpand: ${LIBC}
 	${CC} -o $@ ${CFLAGS} $@.c
 
 clean:
-	rm -f ${OBJS} core expand
+	rm -f ${OBJS} core expand unexpand
 
 cleandir: clean
 	rm -f ${MAN} tags .depend
@@ -38,7 +38,7 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 expand ${DESTDIR}/usr/ucb
+	install -s -o bin -g bin -m 755 expand unexpand ${DESTDIR}/usr/ucb
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 	rm -f ${DESTDIR}/usr/man/cat1/unexpand.0
 	ln ${DESTDIR}/usr/man/cat1/expand.0 ${DESTDIR}/usr/man/cat1/unexpand.0
