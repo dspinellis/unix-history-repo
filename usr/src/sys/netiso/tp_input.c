@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_input.c,v 5.6 88/11/18 17:27:38 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_input.c,v $
- *	@(#)tp_input.c	7.7 (Berkeley) %G% *
+ *	@(#)tp_input.c	7.8 (Berkeley) %G% *
  *
  * tp_input() gets an mbuf chain from ip.  Actually, not directly
  * from ip, because ip calls a net-level routine that strips off
@@ -1331,7 +1331,7 @@ again:
 	if (takes_data) {
 		int max = tpdu_info[ hdr->tpdu_type ] [TP_MAX_DATA_INDEX];
 		int datalen = tpdu_len - hdr->tpdu_li - 1, mbtype = MT_DATA;
-		struct tp_control_hdr c_hdr;
+		struct cmsghdr c_hdr;
 		struct mbuf *n;
 
 		CHECK( (max && datalen > max), E_TP_LENGTH_INVAL,

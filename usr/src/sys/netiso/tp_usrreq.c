@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_usrreq.c,v 5.4 88/11/18 17:29:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_usrreq.c,v $
- *	@(#)tp_usrreq.c	7.9 (Berkeley) %G%
+ *	@(#)tp_usrreq.c	7.10 (Berkeley) %G%
  *
  * tp_usrreq(), the fellow that gets called from most of the socket code.
  * Pretty straighforward.
@@ -771,11 +771,11 @@ tp_snd_control(m, so, data)
 	struct socket *so;
 	register struct mbuf **data;
 {
-	register struct tp_control_hdr *ch;
+	register struct cmsghdr *ch;
 	int error = 0;
 
 	if (m && m->m_len) {
-		ch = mtod(m, struct tp_control_hdr *);
+		ch = mtod(m, struct cmsghdr *);
 		m->m_len -= sizeof (*ch);
 		m->m_data += sizeof (*ch);
 		error = tp_ctloutput(PRCO_SETOPT,
