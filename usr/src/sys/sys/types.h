@@ -4,17 +4,47 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)types.h	7.18 (Berkeley) %G%
+ *	@(#)types.h	7.19 (Berkeley) %G%
  */
 
 #ifndef _TYPES_H_
 #define	_TYPES_H_
+
+/* Machine type dependent parameters. */
+#include <machine/endian.h>
 
 typedef	unsigned char	u_char;
 typedef	unsigned short	u_short;
 typedef	unsigned int	u_int;
 typedef	unsigned long	u_long;
 typedef	unsigned short	ushort;		/* Sys V compatibility */
+
+#ifdef _NOQUAD
+typedef	struct	_uquad	{ u_long val[2]; } u_quad_t;
+typedef	struct	_quad	{   long val[2]; } quad_t;
+typedef	long *	qaddr_t;
+#define	QUADNE(q1, q2) \
+	((q1).val[_QUAD_LOWWORD] != (q2).val[_QUAD_LOWWORD] || \
+	(q1).val[_QUAD_HIGHWORD] != (q2).val[_QUAD_HIGHWORD])
+#define	QUADEQ(q1, q2) \
+	((q1).val[_QUAD_LOWWORD] == (q2).val[_QUAD_LOWWORD] && \
+	(q1).val[_QUAD_HIGHWORD] == (q2).val[_QUAD_HIGHWORD])
+#define	QUADGT(q1, q2) \
+	(((q1).val[_QUAD_HIGHWORD] == (q2).val[_QUAD_HIGHWORD]) ? \
+	 ((q1).val[_QUAD_LOWWORD] > (q2).val[_QUAD_LOWWORD]) : \
+	 ((q1).val[_QUAD_HIGHWORD] > (q2).val[_QUAD_HIGHWORD]))
+#define	INCRQUAD(q) \
+	((++((q).val[_QUAD_LOWWORD]) == 0) ? ++((q).val[_QUAD_HIGHWORD]) : 0)
+
+#else /* QUAD support */
+typedef	unsigned long long u_quad_t;
+typedef	long long quad_t;
+typedef	quad_t * qaddr_t;
+#define	QUADNE(q1, q2)	(q1) != (q2)
+#define	QUADEQ(q1, q2)	(q1) == (q2)
+#define	QUADGT(q1, q2)	(q1) > (q2)
+#define	INCRQUAD(q)	(q)++
+#endif /* QUAD */
 
 typedef	char *	caddr_t;		/* core address */
 typedef	long	daddr_t;		/* disk address */
@@ -31,10 +61,6 @@ typedef	u_short	mode_t;			/* permissions */
 typedef u_long	fixpt_t;		/* fixed point number */
 
 #ifndef _POSIX_SOURCE
-typedef	struct	_uquad	{ u_long val[2]; } u_quad;
-typedef	struct	_quad	{   long val[2]; } quad;
-typedef	long *	qaddr_t;	/* should be typedef quad * qaddr_t; */
-
 #define	major(x)	((int)(((u_int)(x) >> 8)&0xff))	/* major number */
 #define	minor(x)	((int)((x)&0xff))		/* minor number */
 #define	makedev(x,y)	((dev_t)(((x)<<8) | (y)))	/* create dev_t */
