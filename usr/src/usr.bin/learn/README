@@ -14,13 +14,6 @@ Lessons are in (vi lessons are on user-contributed-software tape)
 and auxilliary programs are in
 	/usr/lib/learn/bin
 
-Make a learn by
-	make
-Check that it's sensible with
-	make check
-If that doesn't print any messages,
-you're probably in good shape.
-
 Lesson directories may be protected.
 
 Learn keeps a log file for each script in the .../learn/log
