@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tty.c	8.8 (Berkeley) %G%
+ *	@(#)tty.c	8.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -397,15 +397,18 @@ ttyoutput(c, tp)
 	if (c == '\t' &&
 	    ISSET(oflag, OXTABS) && !ISSET(tp->t_lflag, EXTPROC)) {
 		c = 8 - (tp->t_column & 7);
-		if (!ISSET(tp->t_lflag, FLUSHO)) {
+		if (ISSET(tp->t_lflag, FLUSHO)) {
+			notout = 0;
+		} else {
 			s = spltty();		/* Don't interrupt tabs. */
-			c -= b_to_q("        ", c, &tp->t_outq);
+			notout = b_to_q("        ", c, &tp->t_outq);
+			c -= notout;
 			tk_nout += c;
 			tp->t_outcc += c;
 			splx(s);
 		}
 		tp->t_column += c;
-		return (c ? -1 : '\t');
+		return (notout ? '\t' : -1);
 	}
 	if (c == CEOT && ISSET(oflag, ONOEOT))
 		return (-1);
