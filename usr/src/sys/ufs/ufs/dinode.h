@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)dinode.h	7.13 (Berkeley) %G%
+ *	@(#)dinode.h	7.14 (Berkeley) %G%
  */
 
 /*
@@ -24,23 +24,22 @@
 #define	NIADDR	3		/* indirect addresses in inode */
 
 struct dinode {
-	u_short	di_mode;	/*  0: mode and type of file */
-	short	di_nlink;	/*  2: number of links to file */
-	uid_t	di_uid;		/*  4: owner's user id */
-	gid_t	di_gid;		/*  6: owner's group id */
-	u_quad_t di_qsize;	/*  8: number of bytes in file */
-	time_t	di_atime;	/* 16: time last accessed */
-	long	di_atspare;
-	time_t	di_mtime;	/* 24: time last modified */
-	long	di_mtspare;
-	time_t	di_ctime;	/* 32: last time inode changed */
-	long	di_ctspare;
-	daddr_t	di_db[NDADDR];	/* 40: disk block addresses */
-	daddr_t	di_ib[NIADDR];	/* 88: indirect blocks */
-	long	di_flags;	/* 100: status, currently unused */
-	long	di_blocks;	/* 104: blocks actually held */
-	long	di_gen;		/* 108: generation number */
-	long	di_spare[4];	/* 112: reserved, currently unused */
+	u_short		di_mode;	/*   0: mode and type of file */
+	short		di_nlink;	/*   2: number of links to file */
+	u_short		di_ouid;	/*   4: old owner's user id */
+	u_short		di_ogid;	/*   6: old owner's group id */
+	u_quad_t	di_qsize;	/*   8: number of bytes in file */
+	struct timeval	di_atime;	/*  16: time last accessed */
+	struct timeval	di_mtime;	/*  24: time last modified */
+	struct timeval	di_ctime;	/*  32: last time inode changed */
+	daddr_t		di_db[NDADDR];	/*  40: disk block addresses */
+	daddr_t		di_ib[NIADDR];	/*  88: indirect blocks */
+	long		di_flags;	/* 100: status, currently unused */
+	long		di_blocks;	/* 104: blocks actually held */
+	long		di_gen;		/* 108: generation number */
+	u_long		di_uid;		/* 112: owner's user id */
+	u_long		di_gid;		/* 116: owner's group id */
+	long		di_spare[2];	/* 120: reserved, currently unused */
 };
 
 #ifdef _NOQUAD
