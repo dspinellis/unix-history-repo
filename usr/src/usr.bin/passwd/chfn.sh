@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)chfn.sh	4.7 (Berkeley) %G%";
+static char *sccsid = "@(#)chfn.sh	4.8 (Berkeley) %G%";
 #endif lint
 
 /*
@@ -8,6 +8,7 @@ static char *sccsid = "@(#)chfn.sh	4.7 (Berkeley) %G%";
 #include <stdio.h>
 #include <signal.h>
 #include <pwd.h>
+#include <ndbm.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/file.h>
@@ -21,11 +22,7 @@ struct default_values {
 };
 
 char	temp[] = "/etc/ptmp";
-char	temp_pag[] = "/etc/ptmp.pag";
-char	temp_dir[] = "/etc/ptmp.dir";
 char	passwd[] = "/etc/passwd";
-char	passwd_pag[] = "/etc/passwd.pag";
-char	passwd_dir[] = "/etc/passwd.dir";
 struct	passwd *pwd;
 char	*crypt();
 char	*getpass();
@@ -38,6 +35,7 @@ main(argc, argv)
 	char replacement[4*BUFSIZ];
 	int fd;
 	FILE *tf;
+	DBM *dp;
 
 	if (argc > 2) {
 		printf("Usage: changefinger [user]\n");
@@ -105,6 +103,14 @@ main(argc, argv)
 		printf("Absurd fdopen failure - seek help\n");
 		goto out;
 	}
+	if ((dp = ndbmopen(passwd, O_RDWR, 0644)) == NULL) {
+		fprintf(stderr, "Warning: dbminit failed: ");
+		perror(passwd);
+	} else if (flock(dp->db_dirf, LOCK_EX) < 0) {
+		perror("Warning: lock failed");
+		ndbmclose(dp);
+		dp = NULL;
+	}
 	unlimit(RLIMIT_CPU);
 	unlimit(RLIMIT_FSIZE);
 	/*
@@ -112,8 +118,10 @@ main(argc, argv)
 	 * with new gecos field.
 	 */
 	while ((pwd = getpwent()) != NULL) {
-		if (pwd->pw_uid == user_uid)
+		if (pwd->pw_uid == user_uid) {
 			pwd->pw_gecos = replacement;
+			replace(dp, pwd);
+		}
 		fprintf(tf,"%s:%s:%d:%d:%s:%s:%s\n",
 			pwd->pw_name,
 			pwd->pw_passwd,
@@ -125,21 +133,14 @@ main(argc, argv)
 	}
 	(void) endpwent();
 	(void) fclose(tf);
-	if (makedb(temp) < 0)
-		fprintf(stderr, "chfn: mkpasswd failed\n");
-	else if (rename(temp_pag, passwd_pag) < 0)
-		fprintf(stderr, "chfn: "), perror(temp_pag);
-	else if (rename(temp_dir, passwd_dir) < 0)
-		fprintf(stderr, "chfn: "), perror(temp_dir);
-	else if (rename(temp, passwd) < 0)
+	ndbmclose(dp);
+	if (rename(temp, passwd) < 0) {
 		fprintf(stderr, "chfn: "), perror("rename");
-	else
-		exit(0);
-out:
-	unlink(temp_pag);
-	unlink(temp_dir);
-	unlink(temp);
-	exit(1);
+	out:
+		(void) unlink(temp);
+		exit(1);
+	}
+	exit(0);
 }
 
 unlimit(lim)
@@ -150,20 +151,39 @@ unlimit(lim)
 	(void) setrlimit(lim, &rlim);
 }
 
-makedb(file)
-	char *file;
+/*
+ * Replace the password entry in the dbm data base with pwd.
+ */
+replace(dp, pwd)
+	DBM *dp;
+	struct passwd *pwd;
 {
-	int status, pid, w;
+	datum key, content;
+	register char *cp, *tp;
+	char buf[BUFSIZ];
 
-	if ((pid = vfork()) == 0) {
-		execl("/etc/mkpasswd", "mkpasswd", file, 0);
-		_exit(127);
-	}
-	while ((w = wait(&status)) != pid && w != -1)
-		;
-	if (w == -1 || status != 0)
-		status = -1;
-	return(status);
+	if (dp == NULL)
+		return;
+
+	cp = buf;
+#define	COMPACT(e)	tp = pwd->pw_/**/e; while (*cp++ = *tp++);
+	COMPACT(name);
+	COMPACT(passwd);
+	*(int *)cp = pwd->pw_uid; cp += sizeof (int);
+	*(int *)cp = pwd->pw_gid; cp += sizeof (int);
+	*(int *)cp = pwd->pw_quota; cp += sizeof (int);
+	COMPACT(comment);
+	COMPACT(gecos);
+	COMPACT(dir);
+	COMPACT(shell);
+	content.dptr = buf;
+	content.dsize = cp - buf;
+	key.dptr = pwd->pw_name;
+	key.dsize = strlen(pwd->pw_name);
+	dbmstore(dp, key, content, DB_REPLACE);
+	key.dptr = (char *)&pwd->pw_uid;
+	key.dsize = sizeof (int);
+	dbmstore(dp, key, content, DB_REPLACE);
 }
 
 /*
