@@ -14,6 +14,8 @@ char	*strcat();
 char	*strncat();
 int	strcmp();
 int	strncmp();
+int	strcasecmp();
+int	strncasecmp();
 char	*strcpy();
 char	*strncpy();
 int	strlen();
