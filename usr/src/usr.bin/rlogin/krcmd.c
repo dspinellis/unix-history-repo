@@ -1,15 +1,4 @@
 /*
- *	$Source: /mit/kerberos/ucb/mit/kcmd/RCS/krcmd.c,v $
- *	$Header: /mit/kerberos/ucb/mit/kcmd/RCS/krcmd.c,v 5.1 89/07/25 15:38:44 kfall Exp Locker: kfall $
- */
-
-#ifndef lint
-static char *rcsid_kcmd_c =
-"$Header: /mit/kerberos/ucb/mit/kcmd/RCS/krcmd.c,v 5.1 89/07/25 15:38:44 kfall Exp Locker: kfall $";
-#endif lint
-#define LIBC_SCCS
-
-/*
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
  *
@@ -17,8 +6,17 @@ static char *rcsid_kcmd_c =
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)krcmd.c	1.3 (Berkeley) 2/10/89";
+static char sccsid[] = "@(#)krcmd.c	1.5 (Berkeley) %G%";
 #endif /* not lint */
+
+/*
+ *	$Source: /mit/kerberos/ucb/mit/kcmd/RCS/krcmd.c,v $
+ *	$Header: /mit/kerberos/ucb/mit/kcmd/RCS/krcmd.c,v 5.1
+ *		89/07/25 15:38:44 kfall Exp Locker: kfall $
+ * static char *rcsid_kcmd_c =
+ * "$Header: /mit/kerberos/ucb/mit/kcmd/RCS/krcmd.c,v 5.1 89/07/25 15:38:44
+ *	kfall Exp Locker: kfall $";
+ */
 
 #include <sys/types.h>
 #include <stdio.h>

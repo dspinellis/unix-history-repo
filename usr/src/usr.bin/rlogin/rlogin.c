@@ -2,7 +2,7 @@
  * Copyright (c) 1983, 1990 The Regents of the University of California.
  * All rights reserved.
  *
-%sccs.include.redist.c%
+ * %sccs.include.redist.c%
  */
 
 #ifndef lint
@@ -12,19 +12,19 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogin.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogin.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
  * $Source: mit/rlogin/RCS/rlogin.c,v $
- * $Header: mit/rlogin/RCS/rlogin.c,v 5.2 89/07/26 12:11:21 kfall Exp Locker: kfall $
+ * $Header: mit/rlogin/RCS/rlogin.c,v 5.2 89/07/26 12:11:21 kfall
+ *	Exp Locker: kfall $
  */
 
 /*
  * rlogin - remote login
  */
 #include <sys/param.h>
-#include <sys/errno.h>
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/signal.h>

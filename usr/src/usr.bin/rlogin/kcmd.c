@@ -1,24 +1,22 @@
 /*
- *	$Source: /mit/kerberos/src/appl/bsd/RCS/kcmd.c,v $
- *	$Header: kcmd.c,v 4.16 89/05/17 10:54:31 jtkohl Exp $
- */
-
-#ifndef lint
-static char *rcsid_kcmd_c =
-"$Header: kcmd.c,v 4.16 89/05/17 10:54:31 jtkohl Exp $";
-#endif lint
-#define LIBC_SCCS
-
-/*
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
  */
 
-#if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "derived from @(#)rcmd.c	5.17 (Berkeley) 6/27/88";
-#endif /* LIBC_SCCS and not lint */
+#ifndef lint
+static char Xsccsid[] = "derived from @(#)rcmd.c 5.17 (Berkeley) 6/27/88";
+static char sccsid[] = "@(#)kcmd.c	5.6 (Berkeley) %G%";
+#endif /* not lint */
+
+/*
+ *	$Source: /mit/kerberos/src/appl/bsd/RCS/kcmd.c,v $
+ *	$Header: kcmd.c,v 4.16 89/05/17 10:54:31 jtkohl Exp $
+ *
+ * static char *rcsid_kcmd_c =
+ * "$Header: kcmd.c,v 4.16 89/05/17 10:54:31 jtkohl Exp $";
+ */
 
 #include <sys/param.h>
 #include <sys/file.h>
