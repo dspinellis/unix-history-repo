@@ -1,15 +1,17 @@
 /*
- * Copyright (c) University of British Columbia, 1984
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
- *
- * This code is derived from software contributed to Berkeley by
- * the Laboratory for Computation Vision and the Computer Science Department
- * of the University of British Columbia.
+ * Copyright (c) Computing Centre, University of British Columbia, 1985 
+ * Copyright (c) 1990, 1992 The Regents of the University of California.
+ * Copyright (C) Computer Science Department IV, 
+ * 		 University of Erlangen-Nuremberg, Germany, 1992
+ * 
+ * This code is derived from software contributed to Berkeley by the
+ * Laboratory for Computation Vision and the Computer Science Department
+ * of the the University of British Columbia and the Computer Science
+ * Department (IV) of the University of Erlangen-Nuremberg, Germany.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)x25.h	7.8 (Berkeley) %G%
+ *	@(#)x25.h	7.9 (Berkeley) %G%
  */
 
 #ifdef KERNEL
@@ -18,6 +20,9 @@
 #define PRC_LINKDOWN	5
 #define PRC_LINKRESET	6
 #define PRC_LINKDONTCOPY	7
+#ifndef PRC_DISCONNECT_REQUEST  
+#define PRC_DISCONNECT_REQUEST 10
+#endif
 #endif
 
 #define CCITTPROTO_HDLC		1
@@ -96,11 +101,12 @@ struct	x25config {
 	/* link level parameters */
 	u_short	xc_lproto:4,	/* link level protocol eg. CCITTPROTO_HDLC */
 		xc_lptype:4,	/* protocol type eg. HDLCPROTO_LAPB */
-		xc_lwsize:5,	/* link level window size */
 		xc_ltrace:1,	/* link level tracing flag */
-		xc_rsvd1:2;	/* for use by other link-level protocols */
+		xc_lwsize:7;	/* link level window size */
+	u_short	xc_lxidxchg:1,  /* link level XID exchange flag - NOT YET */
 	/* packet level parameters */
-	u_short	xc_pwsize:3,	/* default window size */
+	        xc_rsvd1:2,
+                xc_pwsize:3,	/* default window size */
 		xc_psize:4,	/* default packet size 7=128, 8=256, ... */
 		xc_type:3,	/* network type */
 #define X25_1976	0
@@ -110,8 +116,7 @@ struct	x25config {
 #define X25_BASIC	4
 		xc_ptrace:1,	/* packet level tracing flag */
 		xc_nodnic:1,	/* remove our dnic when calling on net */
-		xc_prepnd0:1,	/* prepend 0 when making offnet calls */
-		xc_rsvd2:3;
+		xc_prepnd0:1;	/* prepend 0 when making offnet calls */
 	u_short	xc_maxlcn;	/* max logical channels */
 	u_short	xc_dg_idletimo;	/* timeout for idle datagram circuits. */
 };
