@@ -1,18 +1,14 @@
-/* @(#)stty.c	4.1 (Berkeley) %G% */
+/*	stty.c	4.2	83/07/04	*/
+
 /*
- * Writearound to old stty and gtty system calls
+ * Writearound to old stty system call.
  */
 
 #include <sgtty.h>
 
 stty(fd, ap)
-struct sgtty *ap;
+	struct sgtty *ap;
 {
-	return(ioctl(fd, TIOCSETP, ap));
-}
 
-gtty(fd, ap)
-struct sgtty *ap;
-{
-	return(ioctl(fd, TIOCGETP, ap));
+	return(ioctl(fd, TIOCSETP, ap));
 }
