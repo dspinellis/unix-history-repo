@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)netcmds.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)netcmds.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -25,6 +25,9 @@ static char sccsid[] = "@(#)netcmds.c	5.4 (Berkeley) %G%";
 #include <netinet/in_pcb.h>
 
 #define	streq(a,b)	(strcmp(a,b)==0)
+
+static void changeitems(), showprotos(), showports(), showhosts();
+static int selectproto(), selectport(), selecthost();
 
 netcmd(cmd, args)
 	char *cmd, *args;
@@ -65,7 +68,7 @@ netcmd(cmd, args)
 	return (0);
 }
 
-static
+static void
 changeitems(args, onoff)
 	char *args;
 	int onoff;
@@ -108,7 +111,7 @@ changeitems(args, onoff)
 	}
 }
 
-static
+static int
 selectproto(proto)
 	char *proto;
 {
@@ -123,7 +126,7 @@ selectproto(proto)
 	return (new != protos, protos = new);
 }
 
-static
+static void
 showprotos()
 {
 
@@ -140,7 +143,7 @@ static	struct pitem {
 	int	onoff;
 } *ports;
 
-static
+static int
 selectport(port, onoff)
 	long port;
 	int onoff;
@@ -181,7 +184,7 @@ checkport(inp)
 	return (1);
 }
 
-static
+static void
 showports()
 {
 	register struct pitem *p;
@@ -204,9 +207,10 @@ static	struct hitem {
 	int	onoff;
 } *hosts;
 
-static
+static int
 selecthost(in, onoff)
 	struct in_addr *in;
+	int onoff;
 {
 	register struct hitem *p;
 
@@ -245,7 +249,7 @@ checkhost(inp)
 	return (1);
 }
 
-static
+static void
 showhosts()
 {
 	register struct hitem *p;
