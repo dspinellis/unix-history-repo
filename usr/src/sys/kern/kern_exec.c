@@ -1,4 +1,4 @@
-/*	kern_exec.c	6.4	84/07/21	*/
+/*	kern_exec.c	6.5	84/07/23	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -46,7 +46,7 @@ execve()
 	register char *cp;
 	register struct buf *bp;
 	register struct execa *uap;
-	int na, ne, ucp, ap, c;
+	int na, ne, ucp, ap, len, cc;
 	int indir, uid, gid;
 	char *sharg;
 	struct inode *ip;
@@ -59,7 +59,7 @@ execve()
 		struct	exec ex_exec;
 	} exdata;
 	register struct nameidata *ndp = &u.u_nd;
-	int resid;
+	int resid, error;
 
 	ndp->ni_nameiop = LOOKUP | FOLLOW;
 	ndp->ni_segflg = UIO_USERSPACE;
@@ -88,7 +88,7 @@ execve()
 	}
 
 	/*
-	 * Read in first few bytes of file for segment sizes, ux_mag:
+	 * Read in first few bytes of file for segment sizes, magic number:
 	 *	407 = plain executable
 	 *	410 = RO text
 	 *	413 = demand paged RO text
@@ -102,12 +102,12 @@ execve()
 	 * THE ASCII LINE.
 	 */
 	exdata.ex_shell[0] = '\0';	/* for zero length files */
-	u.u_error = rdwri(UIO_READ, ip, (caddr_t)&exdata,
-	   sizeof (struct exec), 0, 1, &resid);
+	u.u_error = rdwri(UIO_READ, ip, (caddr_t)&exdata, sizeof (exdata),
+	    0, 1, &resid);
 	if (u.u_error)
 		goto bad;
 #ifndef lint
-	if (resid > sizeof (struct exec) - sizeof (exdata.ex_exec.a_magic) &&
+	if (resid > sizeof (exdata) - sizeof (exdata.ex_exec.a_magic) &&
 	    exdata.ex_shell[0] != '#') {
 		u.u_error = ENOEXEC;
 		goto bad;
@@ -169,7 +169,7 @@ execve()
 			ndp->ni_dent.d_namlen = MAXCOMLEN;
 		bcopy((caddr_t)ndp->ni_dent.d_name, (caddr_t)cfname,
 		    (unsigned)(ndp->ni_dent.d_namlen + 1));
-		cfname[MAXCOMLEN] = 0;
+		cfname[MAXCOMLEN] = '\0';
 		indir = 1;
 		iput(ip);
 		ndp->ni_nameiop = LOOKUP | FOLLOW;
@@ -186,6 +186,7 @@ execve()
 	na = 0;
 	ne = 0;
 	nc = 0;
+	cc = 0;
 	uap = (struct execa *)u.u_ap;
 	bno = rmalloc(argmap, (long)ctod(clrnd((int)btoc(NCARGS))));
 	if (bno == 0) {
@@ -194,6 +195,9 @@ execve()
 	}
 	if (bno % CLSIZE)
 		panic("execa rmalloc");
+	/*
+	 * Copy arguments into file in argdev area.
+	 */
 	if (uap->argp) for (;;) {
 		ap = NULL;
 		if (indir && (na == 1 || na == 2 && sharg))
@@ -202,41 +206,51 @@ execve()
 			ap = fuword((caddr_t)uap->argp);
 			uap->argp++;
 		}
-		if (ap==NULL && uap->envp) {
+		if (ap == NULL && uap->envp) {
 			uap->argp = NULL;
-			if ((ap = fuword((caddr_t)uap->envp)) == NULL)
-				break;
-			uap->envp++;
-			ne++;
+			if ((ap = fuword((caddr_t)uap->envp)) != NULL)
+				uap->envp++, ne++;
 		}
 		if (ap == NULL)
 			break;
 		na++;
-		if (ap == -1)
-			u.u_error = EFAULT;
+		if (ap == -1) {
+			error = EFAULT;
+			break;
+		}
 		do {
-			if (nc >= NCARGS-1)
-				u.u_error = E2BIG;
-			if (indir && na == 2 && sharg != NULL)
-				c = *sharg++ & 0377;
-			else if ((c = fubyte((caddr_t)ap++)) < 0)
-				u.u_error = EFAULT;
-			if (u.u_error) {
-				if (bp)
-					brelse(bp);
-				bp = 0;
-				goto badarg;
-			}
-			if (nc % (CLSIZE*NBPG) == 0) {
+			if (cc <= 0) {
+				/*
+				 * We depend on NCARGS being a multiple of
+				 * CLSIZE*NBPG.  This way we need only check
+				 * overflow before each buffer allocation.
+				 */
+				if (nc >= NCARGS-1) {
+					error = E2BIG;
+					break;
+				}
 				if (bp)
 					bdwrite(bp);
-				bp = getblk(argdev, bno + ctod(nc / NBPG),
-				    CLSIZE*NBPG);
+				cc = CLSIZE*NBPG;
+				bp = getblk(argdev, bno + ctod(nc/NBPG), cc);
 				cp = bp->b_un.b_addr;
 			}
-			nc++;
-			*cp++ = c;
-		} while (c > 0);
+			if (indir && na == 2 && sharg != NULL)
+				error = copystr(sharg, cp, cc, &len);
+			else
+				error = copyinstr((caddr_t)ap, cp, cc, &len);
+			ap += len;
+			cp += len;
+			nc += len;
+			cc -= len;
+		} while (error == ENOENT);
+		if (error) {
+			u.u_error = error;
+			if (bp)
+				brelse(bp);
+			bp = 0;
+			goto badarg;
+		}
 	}
 	if (bp)
 		bdwrite(bp);
@@ -250,8 +264,8 @@ execve()
 	getxfile(ip, &exdata.ex_exec, nc + (na+4)*NBPW, uid, gid);
 	if (u.u_error) {
 badarg:
-		for (c = 0; c < nc; c += CLSIZE*NBPG) {
-			bp = baddr(argdev, bno + ctod(c / NBPG), CLSIZE*NBPG);
+		for (cc = 0; cc < nc; cc += CLSIZE*NBPG) {
+			bp = baddr(argdev, bno + ctod(cc/NBPG), CLSIZE*NBPG);
 			if (bp) {
 				bp->b_flags |= B_AGE;		/* throw away */
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
@@ -263,7 +277,7 @@ badarg:
 	}
 
 	/*
-	 * copy back arglist
+	 * Copy back arglist.
 	 */
 	ucp = USRSTACK - nc - NBPW;
 	ap = ucp - na*NBPW - 3*NBPW;
@@ -272,7 +286,7 @@ badarg:
 	nc = 0;
 	for (;;) {
 		ap += NBPW;
-		if (na==ne) {
+		if (na == ne) {
 			(void) suword((caddr_t)ap, 0);
 			ap += NBPW;
 		}
@@ -289,9 +303,9 @@ badarg:
 				bp->b_flags &= ~B_DELWRI;	/* cancel io */
 				cp = bp->b_un.b_addr;
 			}
-			(void) subyte((caddr_t)ucp++, (c = *cp++));
+			(void) subyte((caddr_t)ucp++, (cc = *cp++));
 			nc++;
-		} while(c&0377);
+		} while(cc&0377);
 	}
 	(void) suword((caddr_t)ap, 0);
 	setregs(exdata.ex_exec.a_entry);
@@ -343,7 +357,7 @@ getxfile(ip, ep, nargc, uid, gid)
 	 * Compute text and data sizes and make sure not too large.
 	 */
 	ts = clrnd(btoc(ep->a_text));
-	ds = clrnd(btoc((ep->a_data + ep->a_bss)));
+	ds = clrnd(btoc(ep->a_data + ep->a_bss));
 	ss = clrnd(SSIZE + btoc(nargc));
 	if (chksize((unsigned)ts, (unsigned)ds, (unsigned)ss))
 		goto bad;
@@ -421,7 +435,7 @@ bad:
  * Clear registers on exec
  */
 setregs(entry)
-	int entry;
+	u_long entry;
 {
 	register int i;
 	register struct proc *p = u.u_procp;
