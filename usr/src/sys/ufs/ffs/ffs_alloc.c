@@ -1,4 +1,4 @@
-/*	ffs_alloc.c	2.23	83/02/10	*/
+/*	ffs_alloc.c	2.24	83/03/21	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -60,9 +60,7 @@ alloc(ip, bpref, size)
 	}
 	if (size == fs->fs_bsize && fs->fs_cstotal.cs_nbfree == 0)
 		goto nospace;
-	if (u.u_uid != 0 &&
-	    fs->fs_cstotal.cs_nbfree * fs->fs_frag + fs->fs_cstotal.cs_nffree <
-	      fs->fs_dsize * fs->fs_minfree / 100)
+	if (u.u_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
 		goto nospace;
 #ifdef QUOTA
 	if (chkdq(ip, (long)((unsigned)size/DEV_BSIZE), 0))
@@ -114,9 +112,7 @@ realloccg(ip, bprev, bpref, osize, nsize)
 		    ip->i_dev, fs->fs_bsize, osize, nsize, fs->fs_fsmnt);
 		panic("realloccg: bad size");
 	}
-	if (u.u_uid != 0 &&
-	    fs->fs_cstotal.cs_nbfree * fs->fs_frag + fs->fs_cstotal.cs_nffree <
-	      fs->fs_dsize * fs->fs_minfree / 100)
+	if (u.u_uid != 0 && freespace(fs, fs->fs_minfree) <= 0)
 		goto nospace;
 	if (bprev == 0) {
 		printf("dev = 0x%x, bsize = %d, bprev = %d, fs = %s\n",
@@ -313,7 +309,7 @@ blkpref(ip, lbn, indx, bap)
 	 */
 	nextblk = bap[indx - 1] + fs->fs_frag;
 	if (indx > fs->fs_maxcontig &&
-	    bap[indx - fs->fs_maxcontig] + fs->fs_frag * fs->fs_maxcontig
+	    bap[indx - fs->fs_maxcontig] + blkstofrags(fs, fs->fs_maxcontig)
 	    != nextblk)
 		return (nextblk);
 	if (fs->fs_rotdelay != 0)
@@ -564,7 +560,7 @@ alloccgblk(fs, cgp, bpref)
 	/*
 	 * if the requested block is available, use it
 	 */
-	if (isblock(fs, cgp->cg_free, bpref/fs->fs_frag)) {
+	if (isblock(fs, cgp->cg_free, fragstoblks(fs, bpref))) {
 		bno = bpref;
 		goto gotit;
 	}
@@ -610,7 +606,7 @@ alloccgblk(fs, cgp, bpref)
 		}
 		for (i = fs->fs_postbl[pos][i];; ) {
 			if (isblock(fs, cgp->cg_free, bno + i)) {
-				bno = (bno + i) * fs->fs_frag;
+				bno = blkstofrags(fs, (bno + i));
 				goto gotit;
 			}
 			delta = fs->fs_rotbl[i];
@@ -631,7 +627,7 @@ norot:
 		return (NULL);
 	cgp->cg_rotor = bno;
 gotit:
-	clrblock(fs, cgp->cg_free, (long)(bno/fs->fs_frag));
+	clrblock(fs, cgp->cg_free, (long)fragstoblks(fs, bno));
 	cgp->cg_cs.cs_nbfree--;
 	fs->fs_cstotal.cs_nbfree--;
 	fs->fs_cs(fs, cgp->cg_cgx).cs_nbfree--;
@@ -745,12 +741,12 @@ free(ip, bno, size)
 	cgp->cg_time = time.tv_sec;
 	bno = dtogd(fs, bno);
 	if (size == fs->fs_bsize) {
-		if (isblock(fs, cgp->cg_free, bno/fs->fs_frag)) {
+		if (isblock(fs, cgp->cg_free, fragstoblks(fs, bno))) {
 			printf("dev = 0x%x, block = %d, fs = %s\n",
 			    ip->i_dev, bno, fs->fs_fsmnt);
 			panic("free: freeing free block");
 		}
-		setblock(fs, cgp->cg_free, bno/fs->fs_frag);
+		setblock(fs, cgp->cg_free, fragstoblks(fs, bno));
 		cgp->cg_cs.cs_nbfree++;
 		fs->fs_cstotal.cs_nbfree++;
 		fs->fs_cs(fs, cg).cs_nbfree++;
@@ -787,7 +783,7 @@ free(ip, bno, size)
 		/*
 		 * if a complete block has been reassembled, account for it
 		 */
-		if (isblock(fs, cgp->cg_free, bbase / fs->fs_frag)) {
+		if (isblock(fs, cgp->cg_free, fragstoblks(fs, bbase))) {
 			cgp->cg_cs.cs_nffree -= fs->fs_frag;
 			fs->fs_cstotal.cs_nffree -= fs->fs_frag;
 			fs->fs_cs(fs, cg).cs_nffree -= fs->fs_frag;
