@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)d_lg10.c	5.2	%G%
+ *	@(#)d_lg10.c	5.3	%G%
  */
 
 double d_lg10(x)
