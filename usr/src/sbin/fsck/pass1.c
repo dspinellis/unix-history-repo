@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pass1.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)pass1.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/time.h>
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 #include <stdlib.h>
@@ -78,7 +79,7 @@ pass1()
 			if (/* dp->di_size < 0 || */
 			    dp->di_size + sblock.fs_bsize - 1 < dp->di_size) {
 				if (debug)
-					printf("bad size %lu:", dp->di_size);
+					printf("bad size %qu:", dp->di_size);
 				goto unknown;
 			}
 			if (!preen && (dp->di_mode & IFMT) == IFMT &&
@@ -91,7 +92,7 @@ pass1()
 			ndb = howmany(dp->di_size, sblock.fs_bsize);
 			if (ndb < 0) {
 				if (debug)
-					printf("bad size %lu ndb %d:",
+					printf("bad size %qu ndb %d:",
 						dp->di_size, ndb);
 				goto unknown;
 			}

@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)inode.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)inode.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
+#include <sys/time.h>
 #include <ufs/ufs/dinode.h>
 #include <ufs/ufs/dir.h>
 #include <ufs/ffs/fs.h>
@@ -72,8 +73,9 @@ iblock(idesc, ilevel, isize)
 {
 	register daddr_t *ap;
 	register daddr_t *aplim;
-	int i, n, (*func)(), nif, sizepb;
 	register struct bufarea *bp;
+	int i, n, (*func)(), nif;
+	quad_t sizepb;
 	char buf[BUFSIZ];
 	extern int dirscan(), pass1check();
 
@@ -402,8 +404,8 @@ pinode(ino)
 	printf("MODE=%o\n", dp->di_mode);
 	if (preen)
 		printf("%s: ", devname);
-	printf("SIZE=%lu ", dp->di_size);
-	p = ctime(&dp->di_mtime);
+	printf("SIZE=%qu ", dp->di_size);
+	p = ctime(&dp->di_mtime.tv_sec);
 	printf("MTIME=%12.12s %4.4s ", &p[4], &p[20]);
 }
 
@@ -473,7 +475,7 @@ allocino(request, type)
 		return (0);
 	}
 	dp->di_mode = type;
-	(void)time(&dp->di_atime);
+	(void)time(&dp->di_atime.tv_sec);
 	dp->di_mtime = dp->di_ctime = dp->di_atime;
 	dp->di_size = sblock.fs_fsize;
 	dp->di_blocks = btodb(sblock.fs_fsize);
