@@ -1,4 +1,4 @@
-/*	param.h	4.14	81/11/26	*/
+/*	param.h	4.15	82/02/15	*/
 
 /*
  * Tunable variables which do not usually vary per system.
@@ -71,6 +71,7 @@
 #define	ROOTINO	((ino_t)2)	/* i number of all roots */
 #define	SUPERB	((daddr_t)1)	/* block number of the super block */
 #define	DIRSIZ	14		/* max characters per directory */
+#define	NGRPS	256		/* max number groups */
 
 /*
  * Clustering of hardware pages on machines with ridiculously small
