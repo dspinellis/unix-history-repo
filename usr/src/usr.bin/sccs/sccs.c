@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.55 %G%";
+static char SccsId[] = "@(#)sccs.c	1.56 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -191,7 +191,7 @@ struct sccsprog SccsProg[] =
 	"sccsdiff",	SHELL,	REALUSER,		PROGPATH(sccsdiff),
 	"edit",		CMACRO,	NO_SDOT,		"get -e",
 	"delget",	CMACRO,	NO_SDOT,		"delta:mysrp/get:ixbeskcl -t",
-	"deledit",	CMACRO,	NO_SDOT,		"delta:mysrp/get:ixbskcl -e -t",
+	"deledit",	CMACRO,	NO_SDOT,		"delta:mysrp -n/get:ixbskcl -e -t -g",
 	"fix",		FIX,	NO_SDOT,		NULL,
 	"clean",	CLEAN,	REALUSER|NO_SDOT,	(char *) CLEANC,
 	"info",		CLEAN,	REALUSER|NO_SDOT,	(char *) INFOC,
