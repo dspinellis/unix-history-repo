@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
 
-DIR=	ps2/05.iosys
-SRCS=	iosys
+DIR=	papers/fsinterface
+SRCS=	abstract.ms fsinterface.ms
 MACROS=	-ms
 
 paper.${PRINTER}: ${SRCS}

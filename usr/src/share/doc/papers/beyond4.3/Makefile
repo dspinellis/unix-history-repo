@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.1 (Berkeley) %G%
 
-DIR=	ps2/05.iosys
-SRCS=	iosys
+DIR=	papers/beyond43
+SRCS=	beyond43.ms
 MACROS=	-ms
 
 paper.${PRINTER}: ${SRCS}

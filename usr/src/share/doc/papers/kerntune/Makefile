@@ -1,20 +1,10 @@
-#
-# Copyright (c) 1984 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	1.2 (Berkeley) %G%
-#
+#	@(#)Makefile	1.3 (Berkeley) %G%
+
+DIR=	papers/kerntune
 SRCS=	0.t 1.t 2.t 3.t 4.t
-PIC=	pic ${PRINTER}
-TBL=	dtbl ${PRINTER}
-EQN=	deqn ${PRINTER}
-TROFF=	ditroff ${PRINTER}
-PRINTER=-Plz
-TYPE=	-n
+MACROS=	-ms
 
-paper:	perf
-	lpr ${PRINTER} ${TYPE} perf
+paper.${PRINTER}: ${SRCS}
+	${SOELIM} ${SRCS} | ${PIC} | ${TBL} | ${EQN} | ${ROFF} > ${.TARGET}
 
-perf:	${SRCS} Makefile
-	soelim ${SRCS} | ${PIC} | ${TBL} | ${EQN} | ${TROFF} -ms -t > perf
+.include <bsd.doc.mk>

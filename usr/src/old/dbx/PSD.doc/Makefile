@@ -1,27 +1,10 @@
-#
-# Copyright (c) 1986 Regents of the University of California.
-# All rights reserved.  The Berkeley software License Agreement
-# specifies the terms and conditions for redistribution.
-#
-#	@(#)Makefile	6.1 (Berkeley) %G%
-#
-PRINTER=-Pdp
-TROFF=	ditroff ${PRINTER}
-TBL=	dtbl ${PRINTER}
-LPR=	lpr -n ${PRINTER}
+#	@(#)Makefile	6.2 (Berkeley) %G%
 
+DIR=	ps1/11.dbx
 SRCS=	dbx.ms
+MACROS=	-ms
 
-paper:	dbx.n
-	${LPR} dbx.n
+paper.${PRINTER}: ${SRCS}
+	${TBL} ${SRCS} | ${ROFF} > ${.TARGET}
 
-dbx.n:	${SRCS}
-	${TBL} ${SRCS} | ${TROFF} -t -msU >dbx.n
-
-clean:
-	rm -f dbx.n
-
-spell:	${SRCS}
-	@for i in ${SRCS}; do \
-		echo $$i; spell $$i | sort | comm -23 - spell.ok > $$i.spell; \
-	done
+.include <bsd.doc.mk>
