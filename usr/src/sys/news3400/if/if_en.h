@@ -9,7 +9,7 @@
  *
  * from: $Hdr: if_en.h,v 4.300 91/06/09 06:25:56 root Rel41 $ SONY
  *
- *	@(#)if_en.h	7.1 (Berkeley) %G%
+ *	@(#)if_en.h	7.2 (Berkeley) %G%
  */
 
 /*
@@ -42,6 +42,7 @@ struct	en_softc {
 	int	es_oactive;		/* # of active output buffers */
 #endif
 	int	es_interval;		/* interval of watchdog */
+	caddr_t	es_bpf;
 };
 
 #define	es_if	es_ac.ac_if		/* network-visible interface */

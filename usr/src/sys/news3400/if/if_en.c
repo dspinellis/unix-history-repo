@@ -9,7 +9,7 @@
  *
  * from: $Hdr: if_en.c,v 4.300 91/06/09 06:25:54 root Rel41 $ SONY
  *
- *	@(#)if_en.c	7.2 (Berkeley) %G%
+ *	@(#)if_en.c	7.3 (Berkeley) %G%
  */
 
 #include "en.h"
@@ -85,11 +85,9 @@ struct ether_addr {
 extern struct ifnet loif;
 
 struct en_softc en_softc[NEN];
-struct ether_addr myether[NEN];
 
 #if NBPFILTER > 0
 #include "../net/bpf.h"
-caddr_t	en_bpf[NEN];
 #endif
 
 enprobe(ii)
@@ -113,8 +111,6 @@ enattach(ii)
 	extern char *ether_sprintf();
 
 	en_attach(ii->ii_unit);
-	bcopy((caddr_t)es->es_addr, &myether[ii->ii_unit],
-		sizeof(struct ether_addr));
 	printf("en%d: hardware address %s\n",
 		ii->ii_unit, ether_sprintf((u_char *)es->es_addr));
 	ifp->if_unit = ii->ii_unit;
@@ -127,14 +123,9 @@ enattach(ii)
 	ifp->if_reset = enreset;
 #endif
 	ifp->if_start = enstart;
-	ifp->if_flags = IFF_BROADCAST;
+	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX;
 #if NBPFILTER > 0
-	{
-		static struct bpf_devp dev =
-			{ DLT_EN10MB, sizeof(struct ether_header) };
-
-		bpfattach(&en_bpf[ii->ii_unit], ifp, &dev);
-	}
+	bpfattach(&es->es_bpf, ifp, DLT_EN10MB, sizeof(struct ether_header));
 #endif
 	if_attach(ifp);
 }
@@ -223,11 +214,11 @@ enstart(ifp)
 	 * If bpf is listening on this interface, let it
 	 * see the packet before we commit it to the wire.
 	 */
-	if (en_bpf[unit]) {
+	if (es->es_bpf) {
 #ifdef CPU_SINGLE
-		bpf_tap(en_bpf[unit], es->es_ifnews.ifn_waddr, len);
+		bpf_tap(es->es_bpf, es->es_ifnews.ifn_waddr, len);
 #else
-		bpf_mtap(en_bpf[unit], m);
+		bpf_mtap(es->es_bpf, m);
 #endif
 	}
 #endif /* NBPFILTER > 0 */
@@ -254,10 +245,18 @@ _enxint(unit, error, collision)
 		es->es_if.if_flags &= ~IFF_OACTIVE;
 		es->es_if.if_opackets++;
 	}
-	if (error)
+	if (error) {
+#ifdef DEBUG
+		printf("_enxint: error (unit=%d)\n", unit);
+#endif
 		es->es_if.if_oerrors++;
-	if (collision)
+	}
+	if (collision) {
+#ifdef DEBUG
+		printf("_enxint: collision (unit=%d)\n", unit);
+#endif
 		es->es_if.if_collisions++;
+	}
 	enstart(&es->es_if);
 }
 
@@ -294,15 +293,12 @@ _enrint(unit, len)
 		return;
 	}
 #if NBPFILTER > 0
-#if NRAWETHER > 0
-	etherinput(unit, en, len + sizeof(struct en_rheader));
-#endif
 	/*
 	 * Check if there's a bpf filter listening on this interface.
 	 * If so, hand off the raw packet to enet.
 	 */
-	if (en_bpf[unit]) {
-		bpf_tap(en_bpf[unit], es->es_ifnews.ifn_raddr,
+	if (es->es_bpf) {
+		bpf_tap(es->es_bpf, es->es_ifnews.ifn_raddr,
 			len + sizeof(struct en_rheader));
 		/*
 		 * Note that the interface cannot be in promiscuous mode if
@@ -318,11 +314,6 @@ _enrint(unit, len)
 				sizeof(en->enr_dhost)) != 0)
 			return;
 	}
-#else /* NBPFILTER > 0 */
-#if NRAWETHER > 0
-	if (etherinput(unit, en, len + sizeof(struct en_rheader)))
-		return;
-#endif
 #endif /* NBPFILTER > 0 */
 	/*
 	 * Deal with trailer protocol: if type is trailer type
