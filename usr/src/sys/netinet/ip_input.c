@@ -1,21 +1,10 @@
-/* ip_input.c 1.3 81/10/16 */
+/* ip_input.c 1.4 81/10/18 */
 #include "../h/param.h"
 #include "../bbnnet/net.h"
 #include "../bbnnet/tcp.h"
 #include "../bbnnet/ip.h"
 #include "../bbnnet/ucb.h"
-
-/*****************************************************************************
-*                                                                            *
-*         ip level input routine: called from 1822 level upon receipt        *
-*         of an internet datagram or fragment.  this routine does            *
-*         fragment reassembly, if necessary, and passes completed            *
-*         datagrams to higher level protocol processing routines on          *
-*         the basis of the ip header protocol field.  it is passed a         *
-*         pointer to an mbuf chain containing the datagram/fragment.         *
-*         the mbuf offset/length are set to point at the ip header.          *
-*                                                                            *
-*****************************************************************************/
+#include "../h/systm.h"
 
 int nosum = 0;
 
@@ -52,214 +41,205 @@ COUNT(IP_INPUT);
         		return;
 		}
 	}
+	ip_bswap(ip);
+	fp = netcb.n_ip_head ? ip_findf(ip) : 0;
 
-	ip_bswap(ip);                   /* byte-swap header */
-
-	netcb.n_ip_lock++;      /* lock frag reass.q */
-	fp = ip_findf(ip);      /* look for chain on reass.q with this hdr */
-
-	/* adjust message length to remove any padding */
-
+	/*
+	 * adjust message length to remove any padding
+	 */
 	for (i=0, m=mp; m != NULL; m = m->m_next) {
 		i += m->m_len;
 		n = m;
 	}
 	i -= ip->ip_len;
 
-	if (i != 0) 
+	if (i != 0)
         	if (i > (int)n->m_len)
         		m_adj(mp, -i);
         	else
         		n->m_len -= i;
 
 	ip->ip_len -= hlen;     /* length of data */
-  	ip->ip_mff = ((ip->ip_off & ip_mf) ? TRUE : FALSE);                
-	ip->ip_off <<= 3;                                                 
-	if (!ip->ip_mff && ip->ip_off == 0) {    /* not fragmented */
+  	ip->ip_mff = ((ip->ip_off & ip_mf) ? TRUE : FALSE);
+	ip->ip_off <<= 3;
+	if (ip->ip_mff || ip->ip_off)
+		goto fragged;
+	if (fp != NULL) {
+		q = fp->iqx.ip_next;
+		while (q != (struct ip *)fp) {
+			m_freem(dtom(q));
+			q = q->ip_next;
+		}
+		ip_freef(fp);           /* free header */
+	}
+	if (hlen > sizeof (struct ip))
+		ip_opt(ip, hlen);
+	switch (ip->ip_p) {
 
-		if (fp != NULL) {               /* free existing reass.q chain */
-		        
-			q = fp->iqx.ip_next;    /* free mbufs assoc. w/chain */
-			while (q != (struct ip *)fp) {
-				m_freem(dtom(q));
-				q = q->ip_next;
-			}
-			ip_freef(fp);           /* free header */
-		} 
-		netcb.n_ip_lock = 0;
+	case TCPROTO:
+		tcp_input(mp);
+		break;
 
-		ip_opt(ip, hlen);               /* option processing */
-		i = ip->ip_p;
+	default:
+		raw_input(mp, ip->ip_p, UIP);
+		break;
+	}
+	return;
 
-		/* pass to next level */
+fragged:
+	/* -> msg buf beyond ip hdr if not first fragment */
 
-		if (i == TCPROTO)
-			tcp_input(mp);
-		else
-			raw_input(mp, i, UIP);
+	if (ip->ip_off != 0) {
+		mp->m_off += hlen;
+		mp->m_len -= hlen;
+	}
 
-	} else {                                /* fragmented */
+	if (fp == NULL) {               /* first fragment of datagram in */
 
-        	/* -> msg buf beyond ip hdr if not first fragment */
+	/* set up reass.q header: enq it, set up as head of frag
+	   chain, set a timer value, and move in ip header */
 
-		if (ip->ip_off != 0) {
-                	mp->m_off += hlen;
-                	mp->m_len -= hlen;
+		if ((m = m_get(1)) == NULL) {   /* allocate an mbuf */
+			m_freem(mp);
+			return;
 		}
 
-		if (fp == NULL) {               /* first fragment of datagram in */
+		fp = (struct ipq *)((int)m + MHEAD);
+		fp->iqx.ip_next = fp->iqx.ip_prev = (struct ip *)fp;
+		bcopy(ip, &fp->iqh, min(MLEN-28, hlen));
+		fp->iqh.ip_ttl = MAXTTL;
+		fp->iq_next = NULL;
+		fp->iq_prev = netcb.n_ip_tail;
+		if (netcb.n_ip_head != NULL)
+			netcb.n_ip_tail->iq_next = fp;
+		else
+			netcb.n_ip_head = fp;
+		netcb.n_ip_tail = fp;
+	}
 
-		/* set up reass.q header: enq it, set up as head of frag
-		   chain, set a timer value, and move in ip header */
+	/***********************************************************
+	*                                                          *
+	*              merge fragment into reass.q                 *
+	*    algorithm:   match  start  and  end  bytes  of new    *
+	*    fragment  with  fragments  on  the  queue.   if   no  *
+	*    overlaps  are  found,  add  new  frag. to the queue.  *
+	*    otherwise, adjust start and end of new frag.  so  no  *
+	*    overlap   and   add  remainder  to  queue.   if  any  *
+	*    fragments are completely covered by the new one,  or  *
+	*    if  the  new  one is completely duplicated, free the  *
+	*    fragments.                                            *
+	*                                                          *
+	***********************************************************/
 
-			if ((m = m_get(1)) == NULL) {   /* allocate an mbuf */
+	q = fp->iqx.ip_next;    /* -> top of reass. chain */
+	ip->ip_end = ip->ip_off + ip->ip_len - 1;
+
+	/* skip frags which new doesn't overlap at end */
+
+	while ((q != (struct ip *)fp) && (ip->ip_off > q->ip_end))
+		q = q->ip_next;
+
+	if (q == (struct ip *)fp)               /* frag at end of chain */
+		ip_enq(ip, fp->iqx.ip_prev);
+	
+	else {
+		if (ip->ip_end < q->ip_off)     /* frag doesn't overlap any on chain */
+			ip_enq(ip, q->ip_prev);
+
+		/* new overlaps beginning of next frag only */
+
+		else if (ip->ip_end < q->ip_end) {
+			if ((i = ip->ip_end - q->ip_off + 1) < ip->ip_len) {
+				ip->ip_len -= i;
+				ip->ip_end -= i;
+				m_adj(mp, -i);
+				ip_enq(ip, q->ip_prev);
+			} else
 				m_freem(mp);
-				return;
+
+		/* new overlaps end of previous frag */
+
+		} else {
+
+			savq = q;
+			if (ip->ip_off <= q->ip_off) {  /* complete cover */
+				savq = q->ip_prev;
+				ip_deq(q);
+				m_freem(dtom(q));
+			
+			} else {                        /* overlap */
+				if ((i = q->ip_end - ip->ip_off + 1) < ip->ip_len) {
+					ip->ip_off += i;
+					ip->ip_len -= i;
+					m_adj(mp, i);
+				} else
+					ip->ip_len = 0;
 			}
 
-			fp = (struct ipq *)((int)m + MHEAD);
-			fp->iqx.ip_next = fp->iqx.ip_prev = (struct ip *)fp; 
-			bcopy(ip, &fp->iqh, min(MLEN-28, hlen));
-			fp->iqh.ip_ttl = MAXTTL;
-			fp->iq_next = NULL;                   
-			fp->iq_prev = netcb.n_ip_tail;
-			if (netcb.n_ip_head != NULL) 
-				netcb.n_ip_tail->iq_next = fp;
-			else 
-				netcb.n_ip_head = fp;
-			netcb.n_ip_tail = fp;
-		} 
+		/* new overlaps at beginning of successor frags */
 
-                /***********************************************************
-                *                                                          *
-                *              merge fragment into reass.q                 *
-                *    algorithm:   match  start  and  end  bytes  of new    *
-                *    fragment  with  fragments  on  the  queue.   if   no  *
-                *    overlaps  are  found,  add  new  frag. to the queue.  *
-                *    otherwise, adjust start and end of new frag.  so  no  *
-                *    overlap   and   add  remainder  to  queue.   if  any  *
-                *    fragments are completely covered by the new one,  or  *
-                *    if  the  new  one is completely duplicated, free the  *
-                *    fragments.                                            *
-                *                                                          *
-                ***********************************************************/   
+			q = savq->ip_next;
+			while ((q != (struct ip *)fp) && (ip->ip_len != 0) &&
+				(q->ip_off < ip->ip_end))
 
-	        q = fp->iqx.ip_next;    /* -> top of reass. chain */
-		ip->ip_end = ip->ip_off + ip->ip_len - 1;
+				/* complete cover */
 
-		/* skip frags which new doesn't overlap at end */
-
-		while ((q != (struct ip *)fp) && (ip->ip_off > q->ip_end))
-			q = q->ip_next;
-
-		if (q == (struct ip *)fp)               /* frag at end of chain */
-			ip_enq(ip, fp->iqx.ip_prev);
-		
-		else {  
-			if (ip->ip_end < q->ip_off)     /* frag doesn't overlap any on chain */
-				ip_enq(ip, q->ip_prev);
-
-			/* new overlaps beginning of next frag only */
-
-			else if (ip->ip_end < q->ip_end) {
-				if ((i = ip->ip_end - q->ip_off + 1) < ip->ip_len) {
-        				ip->ip_len -= i;
-        				ip->ip_end -= i;
-					m_adj(mp, -i);
-					ip_enq(ip, q->ip_prev);
-				} else
-					m_freem(mp);
-
-			/* new overlaps end of previous frag */
-
-			} else {
-
-				savq = q;
-				if (ip->ip_off <= q->ip_off) {  /* complete cover */
-					savq = q->ip_prev;
+				if (q->ip_end <= ip->ip_end) {
+					p = q->ip_next;
 					ip_deq(q);
 					m_freem(dtom(q));
-				  
-				} else {                        /* overlap */
-					if ((i = q->ip_end - ip->ip_off + 1) < ip->ip_len) {
-        					ip->ip_off += i;  
-        					ip->ip_len -= i;  
-        					m_adj(mp, i);
+					q = p;
+
+				} else {        /* overlap */
+
+					if ((i = ip->ip_end - q->ip_off + 1) < ip->ip_len) {
+						ip->ip_len -= i;
+						ip->ip_end -= i;
+						m_adj(mp, -i);
 					} else
 						ip->ip_len = 0;
+					break;
 				}
 
-			/* new overlaps at beginning of successor frags */
+		/* enqueue whatever is left of new before successors */
 
-				q = savq->ip_next;
-				while ((q != (struct ip *)fp) && (ip->ip_len != 0) && 
-					(q->ip_off < ip->ip_end)) 
-
-					/* complete cover */
-
-					if (q->ip_end <= ip->ip_end) {
-						p = q->ip_next;
-						ip_deq(q);
-						m_freem(dtom(q));
-						q = p;
-
-					} else {        /* overlap */
-
-						if ((i = ip->ip_end - q->ip_off + 1) < ip->ip_len) {
-        						ip->ip_len -= i;
-        						ip->ip_end -= i;
-        						m_adj(mp, -i);
-						} else
-							ip->ip_len = 0;
-						break;
-					}
-
-			/* enqueue whatever is left of new before successors */
-
-				if (ip->ip_len != 0)
-					ip_enq(ip, savq);
-				else
-					m_freem(mp);
-			}
+			if (ip->ip_len != 0)
+				ip_enq(ip, savq);
+			else
+				m_freem(mp);
 		}
-
-		/* check for completed fragment reassembly */
-
-		if ((i = ip_done(fp)) > 0) {
-
-			p = fp->iqx.ip_next;            /* -> top mbuf */
-			m = dtom(p);
-			p->ip_len = i;                  /* total data length */
-			ip_opt(p, p->ip_hl << 2);       /* option processing */
-			ip_mergef(fp);                  /* cleanup frag chain */
-
-			/* copy src/dst internet address to header mbuf */
-
-			bcopy(&fp->iqh.ip_src, &p->ip_src, 2*sizeof(struct socket));
-			ip_freef(fp);                   /* dequeue header */
-			netcb.n_ip_lock = 0;
-
-			/* call next level with completed datagram */
-
-			i = p->ip_p;
-			if (i == TCPROTO)
-				tcp_input(m);
-        		else
-				raw_input(m, i, UIP);
-		} else
-			netcb.n_ip_lock = 0;
 	}
+
+	/* check for completed fragment reassembly */
+
+	if ((i = ip_done(fp)) == 0)
+		return;
+
+	p = fp->iqx.ip_next;            /* -> top mbuf */
+	m = dtom(p);
+	p->ip_len = i;                  /* total data length */
+	ip_opt(p, p->ip_hl << 2);       /* option processing */
+	ip_mergef(fp);                  /* cleanup frag chain */
+
+	/* copy src/dst internet address to header mbuf */
+
+	bcopy(&fp->iqh.ip_src, &p->ip_src, 2*sizeof(struct socket));
+	ip_freef(fp);                   /* dequeue header */
+	i = p->ip_p;
+	if (i == TCPROTO)
+		tcp_input(m);
+	else
+		raw_input(m, i, UIP);
 }
 
-
-ip_done(p)      /* check to see if fragment reassembly is complete */
-register struct ip *p;
+ip_done(p)
+	register struct ip *p;
 {
 	register struct ip *q;
 	register next;
 
 COUNT(IP_DONE);
-	q = p->ip_next;                       
+	q = p->ip_next;
 
 	if (q->ip_off != 0)
 		return(0);
@@ -288,7 +268,7 @@ COUNT(IP_MERGEF);
 	while (q != p) {        /* through chain */
 
 	        n->m_next = m = dtom(q);
-		while (m != NULL) 
+		while (m != NULL)
 			if (m->m_len != 0) {
 				n = m;
 				m = m->m_next;
@@ -299,22 +279,23 @@ COUNT(IP_MERGEF);
 }
 
 
-ip_freef(fp)	        /* deq and free reass.q header */           
+ip_freef(fp)	        /* deq and free reass.q header */
 register struct ipq *fp;
 {
 COUNT(IP_FREEF);
-	if (fp->iq_prev != NULL)                               
-		(fp->iq_prev)->iq_next = fp->iq_next;  
-	else                                           
-		netcb.n_ip_head = fp->iq_next;         
-	if (fp->iq_next != NULL)                               
-		(fp->iq_next)->iq_prev = fp->iq_prev;  
+	if (fp->iq_prev != NULL)
+		(fp->iq_prev)->iq_next = fp->iq_next;
+	else
+		netcb.n_ip_head = fp->iq_next;
+	if (fp->iq_next != NULL)
+		(fp->iq_next)->iq_prev = fp->iq_prev;
 	else
 		netcb.n_ip_tail = fp->iq_prev;
 	m_free(dtom(fp));
 }
 
-struct ipq *ip_findf(p)         /* does fragment reass chain w/this hdr exist? */
+struct ipq *
+ip_findf(p)         /* does fragment reass chain w/this hdr exist? */
 register struct ip *p;
 {
 	register struct ipq *fp;
@@ -346,8 +327,8 @@ COUNT(IP_OPT);
 		while (i > 0)
 
   			switch (*q++) {
-			case 0:                 
-			case 1:                 
+			case 0:
+			case 1:
 				i--;
 				break;
 
@@ -373,7 +354,7 @@ COUNT(IP_ENQ);
 	prev->ip_next->ip_prev = p;
 	prev->ip_next = p;
 }
- 
+
 ip_deq(p)
 register struct ip *p;
 {
@@ -389,25 +370,20 @@ ip_timeo()      /* frag reass.q timeout routine */
 	int s = splnet();
 
 COUNT(IP_TIMEO);
-	timeout(ip_timeo, 0, 60);       /* reschedule every second */
-
-	if (netcb.n_ip_lock) {    /* reass.q must not be in use */
-		splx(s);
-		return;
-	}
+	timeout(ip_timeo, 0, hz);       /* reschedule every second */
 
 	/* search through reass.q */
 
-	for (fp = netcb.n_ip_head; fp != NULL; fp = fp->iq_next) 
+	for (fp = netcb.n_ip_head; fp != NULL; fp = fp->iq_next)
 
 		if (--(fp->iqx.ip_ttl) == 0) {  /* time to die */
 
 			q = fp->iqx.ip_next;    /* free mbufs assoc. w/chain */
-			while (q != (struct ip *)fp) {                         
-				m_freem(dtom(q));   
-				q = q->ip_next;                                
-			}                                                      
-			ip_freef(fp);           /* free header */              
+			while (q != (struct ip *)fp) {
+				m_freem(dtom(q));
+				q = q->ip_next;
+			}
+			ip_freef(fp);           /* free header */
 		}
 	splx(s);
 }

@@ -1,4 +1,4 @@
-/* tcp_usrreq.c 1.1 81/10/14 */
+/* tcp_usrreq.c 1.2 81/10/18 */
 #include "../h/param.h"
 #include "../bbnnet/net.h"
 #include "../bbnnet/tcp.h"
@@ -628,76 +628,4 @@ COUNT(TIMERS);
 	}
 
 	return(SAME);
-}
-
-netprepr(tp, n)         /* network preproc (66,67,68,69,70,71,72,73,74,75,76) */
-register struct tcb *tp;
-register struct th *n;
-{
-
-COUNT(NETPREPR);
-	switch (tp->t_state) {
-
-	case LISTEN:
-
-		if (n->t_ack || !syn_ok(tp, n))
-			send_rst(tp, n);
-		else if (!n->t_rst)
-			return(0);
-		break;
-
-	case SYN_SENT:
-
-		if (!ack_ok(tp, n) || !syn_ok(tp, n))
-
-			send_rst(tp, n);        /* 71,72,75 */
-
-		else if (n->t_rst) {
-
-			t_close(tp, URESET);            /* 70 */
-			return(CLOSED);
-		} else
-			return(0);
-		break;
-
-	default:
-
-        	if (n->t_rst) {         /* any resets? */
-        
-        		if (n->t_seq >= tp->rcv_nxt) {  /* good reset */
-        
-        			if (tp->t_state == L_SYN_RCVD) {
-
-        				if (ack_ok(tp, n)) {    /* 67 */
-						t_cancel(tp, TREXMT);
-						t_cancel(tp, TREXMTTL);
-						t_cancel(tp, TPERSIST);
-						h_free(tp->t_ucb->uc_host);
-        					return(LISTEN);
-					}
-        			} else {                        /* 66 */
-                        		t_close(tp, URESET);
-                			return(CLOSED);
-        			}
-        		}                               /* else 69 */
-        		break;
-        	}
-
-	case SYN_RCVD:
-
-		if (ack_ok(tp, n))              /* acceptable ack */
-
-			if (syn_ok(tp, n) && n->t_seq != tp->irs)      
-
-				/* bad syn (73,75,76) */
-
-				send_null(tp);  
-			else
-				return(0);      /* acceptable segment */
-		else
-			send_rst(tp, n);        /* bad ack (74) */
-
-	}
-
-	return(-1);     /* tell caller to eat segment (unacceptable) */
 }
