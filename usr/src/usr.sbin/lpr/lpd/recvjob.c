@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recvjob.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)recvjob.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -186,7 +186,9 @@ readjob()
 				(void) write(1, "\2", 1);
 				continue;
 			}
-			strcpy(dfname, cp);
+			(void) strcpy(dfname, cp);
+			if (index(dfname, '/'))
+				frecverr("illegal path name");
 			(void) readfile(dfname, size);
 			continue;
 		}
@@ -260,8 +262,6 @@ noresponse()
 chksize(size)
 	int size;
 {
-	struct stat stb;
-	register char *ddev;
 	int spacefree;
 	struct fs fs;
 
