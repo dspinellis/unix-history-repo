@@ -1,4 +1,4 @@
-# @(#)Makefile	1.3 %G%
+# @(#)Makefile	1.4 %G%
 
 CFLAGS=		-O
 OBJS=		battlestar.o com1.o com2.o com3.o com4.o com5.o com6.o com7.o \
@@ -52,7 +52,7 @@ lint: ${CFILES}
 	lint ${LINTFLAGS} ${CFILES} ${LIBS} 
 
 install: battlestar $(MAN) $(LOGFILE)
-	install -s -c battlestar $(DIR)/battlestar
+	install -s battlestar $(DIR)/battlestar
 
 logfile $(LOGFILE):
 	cp /dev/null $(LOGFILE)
