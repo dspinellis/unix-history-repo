@@ -1,4 +1,6 @@
-.\"	@(#)m.mac	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)m.mac	6.2 (Berkeley) %G%
 .\"
 .if \n(mo=1 .ds mo January
 .if \n(mo=2 .ds mo February

@@ -1,7 +1,8 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)tabs	6.1 (Berkeley) %G%
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)tabs	6.2 (Berkeley) %G%
 .\"
 .ta 5n 10n 15n 20n 25n 30n 35n 40n 45n 50n 55n 60n 65n 70n 75n 80n

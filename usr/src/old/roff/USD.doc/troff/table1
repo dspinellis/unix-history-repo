@@ -1,4 +1,6 @@
-.\"	@(#)table1	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)table1	6.2 (Berkeley) %G%
 .\"
 .pn 32
 .rm mx

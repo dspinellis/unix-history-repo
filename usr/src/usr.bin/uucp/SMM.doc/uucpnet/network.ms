@@ -1,4 +1,6 @@
-.\"	@(#)network.ms	5.3 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)network.ms	5.4 (Berkeley) %G%
 .\"
 .EH 'SMM:21-%''A Dial-Up Network of \s-2UNIX\s+2 Systems'
 .OH 'Dial-Up Network of \s-2UNIX\s+2 Systems''SMM:21-%'

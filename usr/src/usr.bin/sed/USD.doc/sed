@@ -1,4 +1,6 @@
-.\"	@(#)sed	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)sed	6.2 (Berkeley) %G%
 .\"
 .EH 'USD:18-%''SED \(em A Non-interactive Text Editor'
 .OH 'SED \(em A Non-interactive Text Editor''USD:18-%'

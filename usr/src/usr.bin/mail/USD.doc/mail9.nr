@@ -1,8 +1,9 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)mail9.nr	6.1 (Berkeley) 5/23/86
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)mail9.nr	6.3 (Berkeley) %G%
 .\"
 .bp
 .sh 1 "Summary of commands, options, and escapes"

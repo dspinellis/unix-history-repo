@@ -1,4 +1,6 @@
-.\"	@(#)e.mac	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)e.mac	6.2 (Berkeley) %G%
 .\"
 .ds . \&\s+2.\s0\&
 .de UC

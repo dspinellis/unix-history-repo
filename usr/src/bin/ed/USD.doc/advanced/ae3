@@ -1,4 +1,6 @@
-.\"	@(#)ae3	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)ae3	6.2 (Berkeley) %G%
 .\"
 .NH
 LINE ADDRESSING IN THE EDITOR

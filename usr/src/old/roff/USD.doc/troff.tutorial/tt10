@@ -1,4 +1,6 @@
-.\"	@(#)tt10	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tt10	6.2 (Berkeley) %G%
 .\"
 .NH
 Number Registers and Arithmetic

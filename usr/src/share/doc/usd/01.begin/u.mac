@@ -1,4 +1,6 @@
-.\"	@(#)u.mac	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)u.mac	6.2 (Berkeley) %G%
 .\"
 .tr |\(bv
 .de IT

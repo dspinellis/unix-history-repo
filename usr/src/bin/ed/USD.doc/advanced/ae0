@@ -1,4 +1,6 @@
-.\"	@(#)ae0	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)ae0	6.2 (Berkeley) %G%
 .\"
 .nr P1 1
 .EH 'USD:13-%''Advanced Editing on \s-2UNIX\s+2'

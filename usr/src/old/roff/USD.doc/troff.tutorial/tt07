@@ -1,4 +1,6 @@
-.\"	@(#)tt07	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tt07	6.2 (Berkeley) %G%
 .\"
 .NH
 Strings

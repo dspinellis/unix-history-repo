@@ -1,4 +1,6 @@
-.\"	@(#)tt08	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tt08	6.2 (Berkeley) %G%
 .\"
 .NH
 Introduction to Macros

@@ -1,4 +1,6 @@
-.\"	@(#)tt12	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tt12	6.2 (Berkeley) %G%
 .\"
 .NH
 Conditionals

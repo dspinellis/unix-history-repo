@@ -1,4 +1,6 @@
-.\"	@(#)t2	6.2 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)t2	6.3 (Berkeley) %G%
 .\"
 .SH
 2.0\ Shell\ procedures

@@ -1,4 +1,6 @@
-.\"	@(#)tt00	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)tt00	6.2 (Berkeley) %G%
 .\"
 .EH 'USD:25-%''A TROFF Tutorial'
 .OH 'A TROFF Tutorial''USD:25-%'

@@ -1,4 +1,6 @@
-.\"	@(#)t1	6.1 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)t1	6.2 (Berkeley) %G%
 .\"
 .EH 'USD:3-%''An Introduction to the UNIX Shell'
 .OH 'An Introduction to the UNIX Shell''USD:3-%'

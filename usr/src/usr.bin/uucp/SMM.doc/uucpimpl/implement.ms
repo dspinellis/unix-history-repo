@@ -1,8 +1,9 @@
-.\" Copyright (c) 1986 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)implement.ms	6.4 (Berkeley) %G%
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)implement.ms	6.5 (Berkeley) %G%
 .\"
 .ds UU UUCP
 .ds Uu U\s-2UCP\s+2
