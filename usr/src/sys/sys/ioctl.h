@@ -1,4 +1,4 @@
-/*	ioctl.h	6.6	84/12/31	*/
+/*	ioctl.h	6.6	85/01/03	*/
 /*
  * Ioctl definitions
  */
@@ -43,6 +43,14 @@ struct sgttyb {
 	short	sg_flags;		/* mode flags */
 };
 #endif
+
+/*
+ * Window size structure
+ */
+struct winsize {
+	unsigned short	row, col;		/* character size of window */
+	unsigned short	xpixel, ypixel;		/* pixel size of window */
+};
 
 #ifndef _IO
 /*
@@ -184,6 +192,8 @@ struct sgttyb {
 #define	TIOCMBIC	_IOW(t, 107, int)	/* bic modem bits */
 #define	TIOCMGET	_IOR(t, 106, int)	/* get all modem bits */
 #define	TIOCREMOTE	_IO(t, 105)		/* remote input editing */
+#define TIOCGWINSZ	_IOR(t, 104, struct winsize)	/* get window size */
+#define TIOCSWINSZ	_IOW(t, 103, struct winsize)	/* set window size */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
