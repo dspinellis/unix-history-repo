@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tcopy.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)tcopy.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <stdio.h>
@@ -92,7 +92,8 @@ main(argc, argv)
 		if (op == READ)
 			op = COPY;
 		inf = argv[0];
-		if ((outp = open(argv[1], O_RDWR, 0666)) < 0) {
+		if ((outp = open(argv[1], op == VERIFY ? O_RDONLY : O_RDWR,
+		    0666)) < 0) {
 			perror(argv[1]);
 			exit(3);
 		}
