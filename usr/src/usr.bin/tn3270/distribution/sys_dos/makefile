@@ -17,7 +17,7 @@ ALLC = termout.c
 
 ALLO = termout.o
 
-ALLH = terminal.h
+ALLH =
 
 screenlib:	$(ALLO)
 	ar cr screenlib $(ALLO)
@@ -66,6 +66,6 @@ depend:
 
 # DO NOT DELETE THIS LINE
 
-termout.o: terminal.h ../telnet.ext ../ctlr/hostctlr.h ../ctlr/inbound.ext
+termout.o: ../telnet.ext ../ctlr/hostctlr.h ../ctlr/inbound.ext
 termout.o: ../ctlr/options.ext ../ctlr/outbound.ext ../ctlr/screen.h
 termout.o: ../keyboard/map3270.ext ../system/globals.h disp_asc.out
