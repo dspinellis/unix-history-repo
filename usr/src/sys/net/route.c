@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)route.c	6.17 (Berkeley) %G%
+ *	@(#)route.c	6.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -135,7 +135,8 @@ rtredirect(dst, gateway, flags, src)
 	 */
 	if ((rt && !equal(src, &rt->rt_gateway)) || ifa_ifwithaddr(gateway)) {
 		rtstat.rts_badredirect++;
-		rtfree(rt);
+		if (rt)
+			rtfree(rt);
 		return;
 	}
 	/*
