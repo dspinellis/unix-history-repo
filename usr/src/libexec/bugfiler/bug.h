@@ -27,10 +27,6 @@
 #define SUMMARY_FILE	"summary"		/* summary file */
 #define TMP_BUG		"errors/BUG_XXXXXX"	/* tmp bug report */
 
-/* permissions */
-#define DIR_MODE	0750		/* directory creation mode */
-#define FILE_MODE	0644		/* file creation mode */
-
 #define CHN		(char *)NULL	/* null arg string */
 #define COMMENT		'#'		/* comment in redist file */
 #define EOS		(char)NULL	/* end of string */
