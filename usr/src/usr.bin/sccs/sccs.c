@@ -93,7 +93,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.60 %G%";
+static char SccsId[] = "@(#)sccs.c	1.61 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -302,10 +302,14 @@ main(argc, argv)
 # ifndef SCCSDIR
 			  case 'p':		/* path of sccs files */
 				SccsPath = ++p;
+				if (SccsPath[0] == '\0' && argv[1] != NULL)
+					SccsPath = *++argv;
 				break;
 
 			  case 'd':		/* directory to search from */
 				SccsDir = ++p;
+				if (SccsDir[0] == '\0' && argv[1] != NULL)
+					SccsDir = *++argv;
 				break;
 # endif
 
