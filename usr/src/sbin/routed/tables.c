@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	4.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	4.11 (Berkeley) %G%";
 #endif
 
 /*
@@ -166,11 +166,13 @@ rtchange(rt, gate, metric)
 		if ((rt->rt_state & RTS_INTERFACE) && metric) {
 			rt->rt_state &= ~RTS_INTERFACE;
 			syslog(LOG_ERR,
-				"deleting route to interface %s (timed out)",
+				"changing route from interface %s (timed out)",
 				rt->rt_ifp->int_name);
 		}
 		if (metric)
-			rt->rt_state |= RTF_GATEWAY;
+			rt->rt_flags |= RTF_GATEWAY;
+		else
+			rt->rt_flags &= ~RTF_GATEWAY;
 		rt->rt_state |= RTS_CHANGED;
 		TRACE_ACTION(CHANGE TO, rt);
 	}
