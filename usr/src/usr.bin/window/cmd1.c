@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	3.23 84/04/08";
+static	char *sccsid = "@(#)cmd1.c	3.24 84/04/08";
 #endif
 
 #include "defs.h"
@@ -120,7 +120,7 @@ int maxrow, maxcol;
 			break;
 		case ctrl([):
 			if (!terse)
-				wwputs("\r\nCancelled.  ", cmdwin);
+				wwputs("\nCancelled.  ", cmdwin);
 			return 3;
 		case '\r':
 			return 2;

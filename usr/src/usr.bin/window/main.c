@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)main.c	3.21 84/04/08";
+static	char *sccsid = "@(#)main.c	3.22 84/04/08";
 #endif
 
 #include "defs.h"
@@ -86,6 +86,7 @@ char **argv;
 		fprintf(stderr, "Can't open command window.\r\n");
 		goto bad;
 	}
+	cmdwin->ww_mapnl = 1;
 	cmdwin->ww_nointr = 1;
 	cmdwin->ww_noupdate = 1;
 	if (terse)
