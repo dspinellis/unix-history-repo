@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.10 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.11 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -194,16 +194,21 @@ unmount(p, uap, retval)
 	int error;
 	struct nameidata nd;
 
-	/*
-	 * Must be super user
-	 */
-	if (error = suser(p->p_ucred, &p->p_acflag))
-		return (error);
-
 	NDINIT(&nd, LOOKUP, FOLLOW | LOCKLEAF, UIO_USERSPACE, uap->path, p);
 	if (error = namei(&nd))
 		return (error);
 	vp = nd.ni_vp;
+
+	/*
+	 * Unless this is a user mount, then must
+	 * have suser privilege.
+	 */
+	if (((vp->v_mount->mnt_flag & MNT_USER) == 0) &&
+	    (error = suser(p->p_ucred, &p->p_acflag))) {
+		vput(vp);
+		return (error);
+	}
+
 	/*
 	 * Must be the root of the filesystem
 	 */
