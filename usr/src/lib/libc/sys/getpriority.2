@@ -1,0 +1,46 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)getpriority.2	4.1 (Berkeley) %G%
+.\"
+.TH NICE 2 
+.UC 4
+.SH NAME
+nice \- set program priority
+.SH SYNOPSIS
+.B nice(incr)
+.SH DESCRIPTION
+The scheduling
+priority of the process is augmented by
+.IR incr .
+Positive priorities get less
+service than normal.
+Priority 10 is recommended to users
+who wish to execute long-running programs
+without flak from the administration.
+.PP
+Negative increments are ignored except on behalf of 
+the super-user.
+The priority is limited to the range
+\-20 (most urgent) to 20 (least).
+.PP
+The priority of a process is
+passed to a child process by
+.IR fork (2).
+For a privileged process to return to normal priority
+from an unknown state,
+.I nice
+should be called successively with arguments
+\-40 (goes to priority \-20 because of truncation),
+20 (to get to 0),
+then 0 (to maintain compatibility with previous versions
+of this call).
+.SH "SEE ALSO"
+nice(1), fork(2), renice(8)
+.SH "ASSEMBLER (PDP-11)"
+(nice = 34.)
+.br
+(priority in r0)
+.br
+.B sys nice
