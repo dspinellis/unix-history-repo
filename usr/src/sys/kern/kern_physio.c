@@ -1,4 +1,4 @@
-/*	kern_physio.c	4.35	82/10/31	*/
+/*	kern_physio.c	4.36	82/11/02	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -94,7 +94,7 @@ swap(p, dblkno, addr, nbytes, rdflg, flag, dev, pfcent)
 #ifdef TRACE
 		trace(TR_SWAPIO, dev, bp->b_blkno);
 #endif
-		physstrat(bp, bdevsw[major(dev).d_strategy, PSWP);
+		physstrat(bp, bdevsw[major(dev)].d_strategy, PSWP);
 		if (flag & B_DIRTY) {
 			if (c < nbytes)
 				panic("big push");
