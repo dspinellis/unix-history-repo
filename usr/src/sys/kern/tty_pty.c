@@ -1,4 +1,4 @@
-/*	tty_pty.c	6.3	83/10/01	*/
+/*	tty_pty.c	6.4	84/02/15	*/
 
 /*
  * Pseudo-teletype Driver
@@ -368,8 +368,8 @@ again:
 			return (0);
 		}
 		while (cp < ce) {
-			while ((tp->t_delct || tp->t_canq.c_cc)
-			&& (tp->t_rawq.c_cc + tp->t_canq.c_cc) >= TTYHOG - 2) {
+			if ((tp->t_rawq.c_cc + tp->t_canq.c_cc) >= TTYHOG - 2 &&
+			    (tp->t_canq.c_cc > 0)) {
 				wakeup((caddr_t)&tp->t_rawq);
 				if (tp->t_state & TS_NBIO) {
 					iov->iov_base -= ce - cp;
