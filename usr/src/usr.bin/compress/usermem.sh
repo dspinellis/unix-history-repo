@@ -19,7 +19,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)usermem.sh	5.5 (Berkeley) %G%
+#	@(#)usermem.sh	5.6 (Berkeley) %G%
 #
 : This shell script snoops around to find the maximum amount of available
 : user memory.  These variables need to be set only if there is no
@@ -53,9 +53,9 @@ fi
 
 SIZE=0
 # messages: probably the most transportable
-if test -r /usr/adm/messages -a -s /usr/adm/messages
+if test -r /var/log/messages -a -s /var/log/messages
 then
-    SIZE=`grep avail /usr/adm/messages | sed -n '$s/.*[ 	]//p'`
+    SIZE=`grep avail /var/log/messages | sed -n '$s/.*[ 	]//p'`
 fi
 
 if test 0$SIZE -le 0		# no SIZE in /usr/adm/messages
