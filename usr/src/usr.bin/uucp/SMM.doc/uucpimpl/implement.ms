@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)implement.ms	6.2 (Berkeley) %G%
+.\"	@(#)implement.ms	6.3 (Berkeley) %G%
 .\"
 .TL
 Installation and Operation of UUCP
@@ -21,20 +21,20 @@ Department of Electrical Engineering and Computer Science
 University of California, Berkeley
 Berkeley, CA  94720
 .AB
-Uucp is a series of programs designed to permit communication between
+Uucp is a collection of programs designed to permit communication between
 .UX
 systems using either dial-up or
 hardwired communication lines.
 It is used for file transfers and remote command execution.
 The first version of the system was designed and implemented
 by M. E. Lesk (SMM:21).
-.LP
+.PP
 There have been many changes to the implementation of UUCP
 since the release of 4.2BSD.
 Many problems been fixed,
 and several improvements to provide greater throughput have been incorporated.
-A number of new features and facilites have been added,
-these include:
+A number of new features and facilities have been added.
+These include:
 .IP \(bu 3
 Improved administration.
 .IP \(bu 3
@@ -46,13 +46,15 @@ Security enhancements.
 .PP
 The first part of this document gives a detailed 
 description of the use of UUCP.
+The command descriptions do not describe all the options available;
+see the manual pages for complete descriptions.
 The rest of the document indicates the changes that have been made to UUCP,
 and provides an update on the installation and implementation details.
-It is for use by an administrator/installer of the system;
+It is for use by an administrator or installer of the system;
 it is not meant as a user's guide.
 .sp
 .LP
-Revised 
+Revised May 1986
 .AE
 .LP
 .OH 'Installation and Operation of UUCP''SMM:9-%'
@@ -63,51 +65,54 @@ Uucp Implementation Description
 Uucp is a batch type operation.
 Files are created in a spool directory for processing
 by the uucp demons.
+For efficiency, the files are separated by type into subdirectories
+of this directory.  The subdirectories will be described
+in section 9.
 There are three types of files used for the execution
 of work.
 .I Data\ files
 contain data for transfer to remote systems.
 .I Work\ files
-contain directions for file transfers between systems.
+contain instructions for file transfers between systems.
 .I Execution\ files
-are directions for
+are instructions for
 .UX
 command executions which
 involve the resources of one or more systems.
 .LP
-The uucp system consists of ten primary and four
+The uucp system consists of ten primary (i.e. invoked by users) and four
 secondary programs.
-These programs are summaried in section 9.
+These programs are summarized in section 9.
 The three most important primary programs are:
 .RS
 .IP uucp 10
-This program creates work and gathers data files in the spool directory
+This program creates work and gathers data files in the spool directories
 for the transmission of files.
 .IP uux
 This program creates work files, execute files and gathers data files for the remote execution of
 .UX
 commands.
-.IP uulog
-This program updates the log file with new entries
-and reports on the status of uucp requests.
+.IP uusnap
+This program provides a snapshot of the current queue including
+transfers queued and commands to be executed locally.
 .RE
 .ne 10
 .LP
 The three most important secondary programs are:
 .RS
 .IP uucico 10
-This program executes the work files for data transmission.
+This program actually performs the data transmission.
 .IP uuxqt
 This program executes the execution files for
 .UX
 command execution.
 .IP uuclean
-This program removes old files from the spool directory.
+This program removes old files from the spool directories.
 .RE
 .LP
 The next six sections of this paper will describe the operation
 of each program.
-the installation of the system,
+The remainder of this paper describes the installation of the system,
 the security aspects of the system,
 the files required for execution,
 and the administration of the system.
@@ -141,11 +146,12 @@ The options interpreted by
 .I uucp
 are:
 .RS
-.IP \-d 10
-Make directories when necessary for copying the file.
-.IP \-c
-Don't copy source files to the spool directory,
-but use the specified source when the actual
+.IP \-f 10
+Don't make directories when copying the file.
+The default is to make the necessary directories.
+.IP \-C
+Copy source files to the spool directory.
+The default is to use the specified source when the actual
 transfer takes place.
 .IP \-g\fIletter\fR
 Put
@@ -155,6 +161,8 @@ in as the grade in the name of the work file.
 machine.)
 .IP \-m
 Send mail on completion of the work.
+.IP \-n\fIuser\fR
+Notify \fIuser\fR on the destination system that a file was sent.
 .LP
 The following options are used primarily for debugging:
 .IP \-r 10
@@ -164,7 +172,7 @@ program.
 .IP \-s\fIdir\fR
 Use directory
 .I dir
-for the spool directory.
+for the top level spool directory.
 .IP \-x\fInum\fR
 .I Num
 is the level of debugging output desired.
@@ -180,13 +188,15 @@ If a source argument has a
 .I system-name!
 prefix for a remote system,
 the file name expansion will be done on the remote system.
+Quote or escape characters that have special meaning to your shell,
+for example, `!' in csh.
 .LP
 The command
 .IP "" 12
 uucp\ \ *.c\ \ usg!/usr/dan
 .LP
 will set up the transfer of all files whose names end with ``.c''
-to the ``/usr/dan'' directory on the``usg'' machine.
+to the ``/usr/dan'' directory on the ``usg'' machine.
 .LP
 The source and/or destination names may also contain a
 .I ~user
@@ -217,19 +227,19 @@ classify the work into one of five types:
 .IP [1]
 Copy source to destination on local system.
 .IP [2]
-Receive files from other systems.
+Receive files from a remote system.
 .IP [3]
-Send files to a remote systems.
+Send files to a remote system.
 .IP [4]
-Send files from remote systems
+Send files from remote system
 to another remote system.
 .IP [5]
-Receive files from remote systems when the source
+Receive files from remote system when the source pathname
 contains special shell characters as
 mentioned above.
 .RE
 .LP
-After the work has been set up in the spool directory,
+After the work has been set up in the spool directories,
 the
 .I uucico
 program is started to try to contact the other
@@ -238,20 +248,17 @@ was specified).
 .SH
 Type 1
 .LP
-A
-.I cp
-command is used to do the work.
+.I Uucp
+makes a copy of the file.
 The
-.I \-d
-and the
 .I \-m
-options are not honored in this case.
+option is not honored in this case.
 .SH
 Type 2
 .LP
 A one line
 .I "work file"
-is created for each file requested and put in the spool directory
+is created for each file requested and put in the appropriate spool directory
 with the following fields, each separated by a blank.
 (All
 .I "work files"
@@ -267,7 +274,7 @@ The
 .I ~user
 part will be expanded on the remote system.
 .IP [3]
-The full path-name of the destination file.
+The full path-name of the local destination file.
 If the
 .I ~user
 notation is used, it will be immediately
@@ -276,7 +283,6 @@ expanded to be the login directory for the user.
 The user's login name.
 .IP [5]
 A ``\-'' followed by an option list.
-(Only the \-m and \-d options will appear in this list.)
 .RE
 .KS
 .SH
@@ -284,16 +290,14 @@ Type 3
 .LP
 For each source file, a
 .I "work file"
-is created and the source file is copied into a
-.I "data file"
-in the spool directory.
-(A ``\-c'' option on the
+is created.
+A ``\-C'' option on the
 .I uucp
-command will prevent the
+command will cause the
 .I "data file"
-from being made.)
-In this case, the file will be transmitted from
-the indicated source.)
+to be copied into the spool directory
+and the file to be transmitted from
+the copy.
 The fields of each entry are given below.
 .RS
 .IP [1]
@@ -315,6 +319,8 @@ in the spool directory.
 The file mode bits of the source file
 in octal print format
 (e.g. 0666).
+.IP [8]
+The user to notify on the remote system that the transfer has completed.
 .RE
 .KE
 .SH
@@ -350,7 +356,7 @@ option
 \ ...\ \ command-string
 .LP
 where the command-string is made up of one or more arguments.
-All special shell characters such as ``<>|^'' must be quoted
+All special shell characters such as ``<>|*?!'' must be quoted
 either by quoting the entire command-string
 or quoting the character as a separate argument.
 Within the command-string, the command and file names may
@@ -395,7 +401,7 @@ names of the files required
 for execution (including standard input),
 the user's login name, the destination
 of the standard output, and the command to be executed.
-This file is either put in the spool directory
+This file is either put in the appropriate spool directory
 for local execution or sent to the remote system using
 a generated send command (type 3 above).
 .LP
@@ -409,8 +415,7 @@ program.
 (This will work only if the local system has permission
 to put files in the remote spool directory as controlled
 by the remote
-.I USERFILE .
-)
+``USERFILE''.)
 .LP
 The
 .I "execute file"
@@ -496,49 +501,24 @@ command is executed using the Shell specified in the
 .I uucp.h
 header file.
 In addition, a shell ``PATH'' statement is prepended
-to the command line as specified in the
-.I uuxqt
-program.
+to the command line.
 .LP
-After execution, the standard output is copied or set up to be
+After execution, the temporary standard output file is copied to
+or set up to be
 sent to the proper place.
 .RE
 .NH
-Uulog - Uucp Log Inquiry
+Uusnap - Uucp Queue Snapshot
 .LP
-The
+This program displays a synopsis of the current
 .I uucp
-programs create individual
-log files for each program invocation.
-Periodically,
-.I uulog
-may be executed to prepend these files to the
-system logfile.
-This method of logging was chosen to minimize file
-locking of the logfile during program execution.
-.LP
-The
-.I uulog
-program merges the individual
-log files and outputs specified log entries.
-The output request is specified by the use of the
-following options:
-.RS
-.IP \-s\fIsys\fR 9
-Print entries where
-.I sys
-is the remote system name;
-.IP \-u\fIuser\fR
-Print entries for user
-.I user.
-.RE
-.LP
-The intersection of lines satisfying the two options is output.
-A null
-.I sys
-or
-.I user
-means all system names or users respectively.
+situation.  For each site that has work queued or that had an abnormal
+termination on the last connection, a line summarizing the work to be done
+is output.  The line will indicate how many commands there are to be sent,
+how many data files have been received and not processed, and how many
+jobs received from the site there are to be executed.  A status message
+describing the last connection will be included if the connection
+terminated abnormally.
 .NH
 Uucico - Copy In, Copy Out
 .LP
@@ -569,13 +549,13 @@ by one of the
 uucp, uux, uuxqt
 .R
 or
-.I uucico
+.I uupoll
 programs,
 .IP c)
 directly by the user (this is usually for testing),
 .IP d)
 by a remote system.
-(The uucico program should be specified as the ``shell''
+(The \fIuucico\fP program should be specified as the ``shell''
 field in the ``/etc/passwd'' file for the ``uucp'' logins.)
 .RE
 .LP
@@ -615,7 +595,7 @@ is started by a program or ``cron'' shell.
 Do work only for system
 .I sys.
 If
-.I \-s
+.B \-s
 is specified,
 a call to the specified system
 will be made even if there is no work for system
@@ -628,7 +608,7 @@ The following options are used primarily for debugging:
 .IP \-d\fIdir\fR
 Use directory
 .I dir
-for the spool directory.
+for the top level spool directory.
 .IP \-x\fInum\fR
 .I Num
 is the level of debugging output desired.
@@ -641,7 +621,7 @@ program.
 .SH
 Scan For Work
 .LP
-The names of the work related files in the spool directory have format
+The names of the work related files in a spool subdirectory have format
 .IP
 type . system-name grade number
 .LP
@@ -676,7 +656,7 @@ for a file transfer between the local
 machine and the ``res45'' machine.
 .LP
 The scan for work is done by looking through the
-spool directory for
+appropriate spool directory for
 .I "work files"
 (files with prefix ``C.'').
 A list is made of all systems to be called.
@@ -687,16 +667,16 @@ will then call each system and process all
 Call Remote System
 .LP
 The call is made using information from several
-files which reside in the uucp program directory.
+files which reside in the uucp system directory (usually /usr/lib/uucp).
 At the start of the call process, a lock is
 set to forbid multiple conversations 
 between the same two systems.
 .LP
 The system name is found in the
-.I L.sys
+``L.sys''
 file.
 The precise format of the
-.I L.sys
+``L.sys''
 file is described in section 10, ``System File Details''.
 The information contained for each system is;
 .RS
@@ -734,10 +714,10 @@ file.
 The
 .I L-devices
 file is scanned using fields [3] and [4] from the
-.I L.sys
+``L.sys''
 file to find an available device for the call.
 The program will try all devices which satisfy
-[3] and [4] until the call is made, or no more
+[3] and [4] until the call is made or no more
 devices can be tried.
 If a device is successfully opened, a lock file
 is created so that another copy of
@@ -748,7 +728,7 @@ If the call is complete, the
 login information
 .R
 (field [6] of
-.I L.sys )
+``L.sys'')
 is used to login.
 .LP
 The conversation between the two
@@ -809,7 +789,7 @@ or
 the mode in which each program starts.
 (The 
 .I MASTER
-has been specified by the ``\-r1'' uucico option.)
+has been specified by the ``\-r1'' \fIuucico\fP option.)
 The
 .I MASTER
 program does a work search similar to the
@@ -830,7 +810,7 @@ copy complete,
 .IP X
 execute a
 .I uucp
-command,
+command, and
 .IP H
 hangup.
 .RE
@@ -860,7 +840,7 @@ for each request.
 The send and receive replies are
 based on permission to access the
 requested file/directory using the
-.I USERFILE
+``USERFILE''
 and read/write permissions of the file/directory.
 After each file is copied into the spool directory
 of the receiving system,
@@ -875,15 +855,15 @@ Otherwise, a
 message is sent.
 (In the case of
 .I CN ,
-the transferred file will be in the spool
-directory with a name beginning with ``TM'.)
+the transferred file will be in a spool
+subdirectory with a name beginning with ``TM'.)
 The requests and results are logged on both systems.
 .LP
 The hangup response is determined by the
 .I SLAVE
-program by a work scan of the spool directory.
-If work for the remote system exists in the
-.I SLAVE's
+program by a work scan of its spool directory.
+If work for the \fIMASTER\fP\|'s system exists in the
+\fISLAVE\fP\|'s
 spool directory, an
 .I HN
 message is sent and the programs switch roles.
@@ -931,7 +911,7 @@ program may be started by either the
 or
 .I uux
 programs.
-The program scans the spool directory for
+The program scans the appropriate spool directory for
 .I
 execute files
 .R
@@ -961,7 +941,7 @@ file as appropriate.
 Uuclean - Uucp Spool Directory Cleanup
 .LP
 This program is typically started by the daemon, once a day.
-Its function is to remove files from the spool directory which
+Its function is to remove files from the spool directories which
 are more than 3 days old.
 These are usually files for work which can not be completed.
 .LP
@@ -994,18 +974,18 @@ This is the level of debugging output desired.
 .NH
 Changes to the UUCP Implementation
 .PP
-The demands placed on UUCP networking,
-and new technology,
+The demands placed on UUCP networking
+and new technology
 have prompted several changes and improvements to the UUCP software.
 Such things as low cost, autodial, autoanswer, high speed modems,
 and the availability of X.25 and TCP/IP as carriers,
-have encouraged new facilities in UUCP to be developed.
+have encouraged new facilities to be developed for UUCP.
 .PP
-The following areas have been changed between the 4.2 and 4.3 BSD releases.
+The following areas have been changed between the 4.2 and 4.3 BSD releases:
 .IP \(bu 3
 General fixes and performance improvements.
 .IP \(bu 3
-Administration control facilites.
+Administration control facilities.
 .IP \(bu 3
 Modem and autodialer support has been extended.
 .IP \(bu 3
@@ -1015,37 +995,35 @@ Security enhancements.
 .SH
 Fixes and performance improvements.
 .PP
-Many of the fixes related to portability considerations,
-and improvements as provided by the USENET community.
+These include many fixes related to portability
+and general improvements as provided by the USENET community.
+In particular, the \fIsitename\fR truncation length
+has been extended to 14 characters from the original 7.
+This makes it compatible with the current System V version of UUCP.
 .PP
-The \fIsitename\fR truncation length as been extended to 14 characters from
-the original 7 characters.
-This maintains compatibility with the current System V version of UUCP.
-.PP
-An effort as been made to improve the overall performance of the UUCP system
+An effort has been made to improve the overall performance of the UUCP system
 by organizing its workload in a more sensible way.
-For example the program \fIuucico\fR will not resend files it has already sent,
+For example the program \fIuucico\fR will not resend files it has already sent
 when the files are specified in one ``C.'' file.
 .SH
 Administration and control facilities.
 .PP
 There is a new program, \fIuuq\fR,
 to give more descriptive information on status of jobs in the UUCP spool queue.
-It also allows the user to delete spooled requests,
-still in the queue.
+It also allows users to delete requests that are still in the queue.
 .PP
 In the past, on large UUCP sites,
 the spool directory could grow large with many files
 within the ``/usr/spool/uucp'' directory.
 To help the UUCP administrator control the system,
-a number of subdirectories have been created to easy this congestion.
+a number of subdirectories have been created to ease this congestion.
 .PP
 The system status ``STST'' files are kept in a subdirectory.
 .PP
-Corrupted ``C.'' and ``X.'' files,
-that could not be processed,
+Corrupted ``C.'' and ``X.'' files
+that could not be processed
 are placed in the ``CORRUPT'' subdirectory,
-instead of just exiting.
+instead of terminating the connection.
 .PP
 Lock files may be kept in a subdirectory,
 ``LCK'',
@@ -1053,272 +1031,209 @@ if desired.
 .PP
 If an ``X.'' request fails,
 the notification is returned to the originator of the request,
-instead of ``uucp'' on the previous system. 
+not to ``uucp'' on the previous system. 
 .PP
 There is a new \fIsystem\fR file, ``L.aliases'',
-that may be used when a site changes it's name.
-All the utilities,
-\fIuucp\fR, \fIuux\fR, \fIuucico\fR, etc.,
-all check ``L.aliases''.
+that may be used when a site changes its name.
+Most of the utilities
+check ``L.aliases'' for correct mapping.
 .SH
-Modem and autodialer support:
+Modem and autodialer support
 .PP
 In a short period of time,
-there has been a big increase in the transfer rates and capabilites
+there has been an increase in the transfer rates and capabilities
 that are being provided with modern modems.
-Most modems will allow several combinations of baud rate,
-and provide autodial and autoanswer facilites as well.
+Most modems allow several combinations of baud rate,
+and provide autodial and autoanswer facilities as well.
 .PP
-Most sites will have but a few modems,
-they are therefore a precious resource an effort has been made to use them
-to maximum potential.
-The \fIuucico\fR program now has code to dial in and out on the same device,
-if that modem as both autodial and autoanswer provision.
-.PP
-There is a new dialing facility \fIacucntrl\fR that has been built to handle
+Most sites will have but a few modems;
+they are therefore a precious resource,
+and an effort has been made to use them to maximum potential.
+The \fIuucico\fR program now has code to place and receive calls on the same
+device, if that modem has both autodial and autoanswer support.
+There is a new dialing facility \fIacucntrl\fR that has been designed to handle
 some of the changes in modem technology.
-There are a number of new modems and autodialers that can now be handled.
+There are a number of new modems and autodialers that are now supported.
 Here is a list of some of the new devices:
-Racal Vadic 212,
-Racal Vadic 811 dialer with 831 adaptor,
-Racal Vadic 820 dialer with 831 adaptor,
-Racal Vadic MACS 811 dialer with 831 adaptor,
-Racal Vadic MACS 820 dialer with 831 adaptor,
-Dec DF112,
-Novation,
-Penril,
-Hayes 2400 Smartmodem,
-Concord Data Systems CDS 224,
-ATT 2224 2400 baud modem.
-.PP
-It now correctly does the closing hangup sequence.
-.PP
-It will try up to TRYCALLS to dial a site
-instead of one try for each dialer.
+.sp
+.RS
+.nf
+Racal-Vadic 212
+Racal-Vadic 811 dialer with 831 adapter
+Racal-Vadic 820 dialer with 831 adapter
+Racal-Vadic MACS 811 dialer with 831 adapter
+Racal-Vadic MACS 820 dialer with 831 adapter
+DEC DF112
+Novation
+Penril
+Hayes 2400 Smartmodem
+Concord Data Systems CDS 224
+AT&T 2224 2400 baud modem
+.fi
+.RE
 .SH
 New protocols for different transportation mediums
 .PP
 The UUCP software has had provision for different protocols
-to be used in the sending and receiving of data,
-but originaly only one was implemented
+to be used for sending and receiving data,
+but originally only one was implemented
 and this is the one that is largely used throughout the UUCP community.
-The standard `g' protocol,
-has a maxium throughput around 9000 baud,
+It has a maximum throughput of around 9000 baud,
 regardless of the physical medium.
-The use of checksums and the like are of little use when the protocol
-is bounded within another protocol such as TCP or X.25.
-It is a waste of time and cpu resources to calculate CRC's
-when the carrier already provides error free transmissions.
+The use of checksums and short data packets are of little use when the protocol
+is layered above another reliable protocol such as TCP or X.25.
 The UUCP system did not utilize LAN's and high speed carriers well.
 Two new protocols have been added
-to provide for efficient use of new carrier facilities.
+to provide for this.
 The protocols now available to UUCP are:
 .DS
-`t' protocol, optimised for use on TCP/IP carriers.
-`f' protocol, optimised for use on X.25 PAD carriers.
+`t' protocol, optimized for use on TCP/IP carriers.
+`f' protocol, optimized for use on X.25 PAD carriers.
 `g' protocol, standard UUCP protocol used for dialup or hardwired lines.
 .DE
 .PP
-The `t' protocol presumes an error free channel,
-and is essentially the `g' protocol without the checksumming and packetizing.
-Other changes where necessary to run UUCP on top of a TCP carrier,
-the code could not do ioctl's on sockets that are connections to remote hosts.
-.PP
-The `f' protocol relies on flow control of the data stream.
-It is meant for working over links that can be guaranteed to be errorfree,
+The existing `g' protocol code has been cleaned up in this version.
+The `t' protocol is essentially the `g' protocol except that the channel
+is assumed to be free from errors.  As such, no checksums are used and
+files are transferred without packetizing.
+The `f' protocol relies on the flow control of the data stream.
+It is meant for use over links that can be guaranteed
+to be free from errors,
 specifically X.25/PAD links.
-A checksum is calculated over a whole file only.
+The checksum is calculated over whole files only.
 If a transport fails the receiver can request retransmissions.
-This protocol uses a 7-bit datapath only,
-so it may be used on carriers that are not 8-bit transparent.
-.PP
-As well as adding new protocols,
-the existing `g' protocol code has been cleaned up.
+This protocol uses a 7-bit data path only,
+so it may be used on carriers that do not handle 8-bit data paths transparently.
 .SH
 Changes to \fIuucico\fR
 .PP
+\fIUucico\fP used to attempt to place a call using every dialer on the system.
+Since this could take a long time at large sites, the defined constant TRYCALLS
+now limits the number of attempts.
+.PP
 You can specify a maximum grade to send either
-on the command line using (-gX)
-or in the ``L.sys'' file
+on the command line using -gX option
+or by specifying the time to call in the ``L.sys'' file as follows:
 .DS
-Any/C|Evening will only send grade C,
+Any/C,Evening 
 .DE
+This will only send grade C or higher transfers,
 usually mail,
-or higher during the day and will send everything in the evening
-See Figure 5.
-.SH
-UUCP System files.
+during the day and will send any grades in the evening.
 .PP
-The \fIsystem\fR files in the ``/usr/lib/uucp'' directory can contain comments,
-by putting a `#' as the first character on a line.
-Lines may be continued by placing a `\\' as the last character of a line.
-This is helpful in making an understandable \fIL.sys\fR file.
+The code for the closing hangup sequence has been fixed.
 .PP
-Some new options are available to \fIuucico\fR, these include:
+Some new options were added to \fIuucico\fR.  These include:
 .RS
 .IP -R
-This flag reverses \fIuucico\fR role.
-Let the remote system be master first instead of being the slave.
+This flag reverses \fIuucico\fR\|'s initial role
+(lets the remote system be master first rather than slave).
 .IP -L
 \fIuucico\fR will only call ``local'' sites.
 Local sites are those sites having one of
-\fBLOCAL\fR, \fBTCP\fR or \fBDIRECT\fR in the CALLER field of ``L.sys''.
+\fBLOCAL\fR, \fBTCP\fR or \fBDIR\fR in the CALLER field of ``L.sys''.
 .RE
 .PP
 If ``/etc/nologin'' is present,
-usually created by \fIshutdown\fR,
-\fIuucico\fR and \fIuuxqt\fR will gracefully exit,
+usually created by \fIshutdown\fR\|(8),
+\fIuucico\fR and \fIuuxqt\fR will exit gracefully,
 instead of getting killed off when the system goes down.
 .PP
-Does an exponential backoff on retry time if call fails
-instead of always waiting the default 5 minutes.
-The default may be overridden by adding ",TIME" to the time field in ``L.sys''.
+\fIUucico\fP now uses an exponential back off on the retry time if
+consecutive calls fail instead of always waiting 5 minutes.
+The default may be overridden by adding ";\fItime\fP"
+to the time field in ``L.sys''.
 .DS
-ucbvax Any,2
+ucbvax Any;2
 .DE
-will use a default retry time of 2 minutes.
+The preceding fragment indicates that a default retry time of 2 minutes will
+be used.
 .PP
 If \fIuucico\fR receives a SIGFPE while running,
-it will toggle debugging on and off.
+it will toggle debugging.
 .PP
-It will not send files to remote system if the remote system
-is returning an out of temp space error.
+It will not send files to a remote system
+returning an out of temporary file space error.
 .PP
-Add ABORT sequence to the expect/send sequence so it does not have
-to wait for timeout if cannot get through a dataswitch.
-See figure X.
-This example will only call noao in the evening.
-It will expect nothing,
-then wait 1 second (\ed),
-and then send a carriage return.
-Look for CLASS, then send NOAOUUCP.
-From then on,
-if it sees the word Down before finishing logging in,
-it will hang up immediately.
-In the mean time,
-it looks for GO,
-when received,
-delay 1 second and then send a CR.
-Look for ``ogin:'', etc.
-This abort sequence is useful
-if you must go through a dataswitch to get to the computer.
+More functionality has been added to the expect/send sequences.
+The ABORT command was added to the expect/send sequence so it does not have
+to wait for timeout if cannot get through a port selector.
+You can specify a time for the expect/send sequences with ~
+to override the default timeout.
+The expect/send sequences now allow escape sequences to specify characters
+that could not be specified before.
 .PP
 The time field in the ``L.sys'' file now handles
-"Evening" and "Night" in addition to:
-.DS
-Any, Mo, Tu, We, Th, Fr, Sa, Su.
-.DE
-Evening and Night are defined to be:
-.DS
-Evening = Wk1700-0800|Sa|Su
-Night = Any2300-0800|Sa|Su0800-1700
+``Evening'', ``Night'', and ``NonPeak'' in addition to
+Any, Mo, Tu, We, Th, Fr, Sa, Su, and Wk.
 .DE
 .PP
-The expect/send code now handles '\e' sequences:
-.RS
-.IP "s"
-indicates a space
-.IP "d"
-indicates a delay 1 second
-.IP "r"
-indicates a carriage return with no linefeed
-.IP "b"
-indicates a break
-.IP "c"
-indicates do not send a CR after these characters
-.IP "xxx"
-the octal character xxx (e.g. \es == \e040
-.RE
-.PP
-The file \fIL-devices\fR now handles "chat" scripts,
+The file \fIL-devices\fR now handles ``chat'' scripts,
 to help get through local port selectors and smart modems.
-This helps keep \fIL.sys\fR readable but increases functionality.
-See figure 4.
+This helps keep ``L.sys'' readable while using the increased functionality.
 .PP
-For compatibility with System V UUCP system,
-in the Date fields of ``L.sys'':
+For compatibility with the System V UUCP,
+the following changes were made
+in the date fields of ``L.sys'':
 .DS
-`|' was changed to `,' (| is supported, but not encouraged)
-`,' was changed to `;' (to allow , to be the date seperator)
+`|' changed to `,' (`|' is supported, but not encouraged)
+`,' changed to `;' (to allow `,' to be the date separator)
 .DE
 .PP
 For Honey DanBer compatibility,
-the Grade flag is now passed as:
-.DS
--vgrade=X
-.DE
+\fIuucico\fP now passes the maximum grade to the remote system as
+``-vgrade=X''
 instead of the old -pX
 .PP
-You can specify a time for the expect send sequences with ~ instead
-of getting the default MAXMSGTIME.
-For example:
-.DS
-system Any ACU 1200 1234567 ogin~20--ogin~10--ogin user password pw
-.DE
-will look for ``ogin'' for 20 seconds,
-then send CR,
-look for ``ogin'' for 10 seconds,
-send a CR and look for ``ogin'' for MAXMSGTIME seconds
+Support has been added for GTE's PC Pursuit service.
+It is mainly the handling of the call back method they use.
 .PP
-Added code to support GTEs PC Pursuit service.
-It's mainly the handling of the dialback they use.
-.PP
-Added time "NonPeak" for Tymnet/Telenet services that charge lower rates
-from 6pm-7am M-F and Sat & Sun.
-.SH
-Security enhancements.
-.PP
-Running \fIuucico\fR with debugging turned on,
-requires ``L.sys'' to have read access.
+Users must now have read access to ``L.sys'' in order to run
+\fIuucico\fP with debugging turned on.
 .NH
 The UUCP system.
 .SH
 Names
 .PP
-The naming of a site is important since it provides a means of
+The name of a site is important since it provides a means of
 identifying a machine,
 and consequently,
 that machine's users.
-There are two names used within the UUCP system,
-these are the \fIloginname\fR and the \fIsitename\fR.
+There are two kinds of names used within the UUCP system;
+\fIloginname\fRs and \fIsitename\fRs.
 .PP
-It is important that the \fIloginname\fR used by a remote machine
+It is important that the \fIloginname\fRs used by a remote machine
 to call into a local machine
 is not the same as that of a normal user of the local machine.
-It is common for many remote machines to have the same \fIloginname\fR,
-such as uucp or nuucp.
+Each \fIloginname\fP corresponds with a line in ``/etc/passwd''.
+It is the administrator's decision whether each remote site should use
+the same login name or different ones.
 .PP
 Each machine in a UUCP network is given a unique \fIsitename\fR.
 The \fIsitename\fR identifies the calling machine to the called machine.
 A \fIsitename\fR can be up to 14 characters in length.
 It is useful to have a \fIsitename\fR that is unique in the first 7 characters,
-to be compatible with earlier implementaions of UUCP.
+to be compatible with earlier implementations of UUCP.
 It is desirable that the \fIsitename\fR will convey this uniqueness
 and perhaps a real world identity to the rest of the network.
-.PP
-The \fIsitename\fR and the \fIloginname\fR are not the same thing!
-They may have the same values,
-but this is purely a decision of the UUCP administrators
-when the network connections are set up.
 .SH
 The UUCP system organization.
 .PP
 There are several directories that are used by the UUCP system as distributed.
 These are:
 .RS
-.IP src 12
+.IP src 10
 (/usr/src/usr.bin/uucp)
-This directory contains the source files for generating the UUCP system.
-.IP system 12
+This directory contains the source files for the UUCP system.
+.IP system
 (/usr/lib/uucp)
-This is the directory where system binaries,
-and system control files reside.
-.IP spool 12
+This directory contains the system binaries and system control files.
+.IP spool
 (/usr/spool/uucp)
-This is the spool directory used to store transfer requests and data.
-.IP commands 12
+This spool directory is used to store transfer requests and data.
+.IP command
 (/usr/bin)
-This is the directory where the programs used by users will be kept.
+This directory contains the user-level programs.
 .RE
 .SH
 The system directory
@@ -1328,13 +1243,13 @@ and should reside in the \fIsystem\fR directory,
 /usr/lib/uucp.
 .RS
 .IP L-devices 15
-This file contains entries for all devices that are to be used by UUCP.
+Contains entries for all devices that are to be used by UUCP.
 .IP L-dialcodes 15
-This file contains dialing abbreviations.
+Contains dialing abbreviations.
 .IP L.aliases 15
-Used to provide sitename aliases.
+Contains site name aliases.
 .IP L.cmds 15
-This file contains commands that can be used by a remote site.
+Contains the list of commands that can be used by a remote site.
 .IP L.sys 15
 Contains site connection information for each system that can be called.
 .IP SEQF 15
@@ -1346,9 +1261,9 @@ The program used to control calling remote systems.
 .IP uucico 15
 The actual transfer program.
 .IP uuclean 15
-A utility to cleanup after UUCP.
+A utility to clean up after UUCP.
 .IP uuxqt 15
-Allows UUCP to execute commands.
+Executes commands received from remote systems.
 .RE
 .SH
 The command directory
@@ -1357,25 +1272,25 @@ The \fIcommand\fR directory, /usr/bin,
 contains the following user available commands:
 .RS
 .IP uucp 15
-spools a UNIX to UNIX file-copy request.
+Spools a UNIX to UNIX file-copy request.
 .IP uux 15
-spools a request for remote execution.
+Spools a request for remote execution.
 .IP uusend 15
-provides a facility to transfer binary files using mail.
+Provides a facility to transfer binary files using mail.
 .IP uuencode 15
-binary file encoder (for \fIuusend\fR)
+Binary file encoder (for \fIuusend\fR)
 .IP uudecode 15
-binary file decoder (for \fIuusend\fR)
+Binary file decoder (for \fIuusend\fR)
 .IP uulog 15
-reports from log files.
+Reports from log files.
 .IP uusnap 15
-provides a snap-shot of \fIuucp\fP activity.
+Provides a snapshot of \fIuucp\fP activity.
 .IP uupoll 15
-polls remote system until an answer is received.
+Polls a remote system.
 .IP uuname 15
-prints a list of known remote UUCP hosts.
+Prints a list of known remote UUCP hosts.
 .IP uuq 15
-reports information from the UUCP spool queue.
+Reports information from the UUCP spool queue.
 .RE
 .SH
 The spool directory
@@ -1385,11 +1300,11 @@ The \fIspool\fR directory,
 contains the following files and directories:
 .RS
 .IP C. 15
-A directory for command, ``C.'' files.
+A directory for command (``C.'') files.
 .IP D. 15
-A directory for data, ``D.'', files.
+A directory for data (``D.'') files.
 .IP X. 15
-A directory for command execution, ``X.'', files.
+A directory for command execution (``X.'') files.
 .IP D.\fImachine\fP 15
 A directory for local ``D.'' files.
 .IP D.\fImachine\fPX 15
@@ -1399,31 +1314,42 @@ A directory for corrupted ``C.'' and ``X.'' files.
 .IP ERRLOG 15
 A file where internal error messages are collected.
 .IP LCK 15
-A directory for device and site lock files.
+A directory for device and site lock files (optional).
 .IP LOG 15
-A directory for individual site LOGFILE's.
+A directory for individual site LOGFILE's (optional).
 .IP LOGFILE 15
-the log file of UUCP activity.
+The log file of UUCP activity (optional).
 .IP STST 15
-A directory for site STST files.
+A directory for per site system status files (``STST'').
 .IP SYSLOG 15
-the log file of UUCP file transfers.
+The log file of UUCP file transfers.
 .IP TM. 15
-A directory for temporary, ``TM.'', files.
+A directory for temporary (``TM.'') files.
 .RE
+.PP
+This version has broken the spool directory into the above list
+of directories leaving only a few system files in the top level
+directory.  The logs from each system may be kept together or
+in separate files in a subdirectory (LOG).  This decision is
+made when the system is compiled.
 .PP
 There is an additional directory,
 /usr/spool/uucppublic,
-that is used as a general Public accecs directory for UUCP.
+that is used as a general public access directory for UUCP.
 It is not used by UUCP directly
 but it is normally the home directory for the UUCP system owner.
 Most importantly this directory is owned by uucp,
-and the access permissions are 0777,
-this usually garrantees a place that files can be sent to,
+and the access permissions are 0777.
+This usually guarantees a place that files can be copied to,
 and retrieved from,
 on any site.
 .NH
 System file details.
+.PP
+The \fIsystem\fR files in the ``/usr/lib/uucp'' directory can contain comments,
+by putting a `#' as the first character on a line.
+Lines may be continued by placing a `\e' as the last character of a line.
+This is helpful in making the files more readable.
 .SH
 L-devices
 .PP
@@ -1438,90 +1364,94 @@ The format for each entry is:
 .LP
 where;
 .IP \fIType\fR 10
-is the type of calling to use.
-There are several different calling types.
+Is the type of connection to use.
+.sp
 .RS
-.br
-\fBACU\fR indicates a dialing devices.
-.br
-\fBDIR\fR is used when a direct connection is used.
-.br
-\fBDK\fR an AT&T Datakit.
-.br
-\fBMICOM\fR Micom terminal switch.
-.br
-\fBPAD\fR X.25 PAD connection.
-.br
-\fBPCP\fR GTE Telenet PC Pursuit.
-.br
-\fBSYTEK\fR Sytek high-speed dedicated modem port.
-.br
-\fBTCP\fR TCP/IP connection.
+.IP \fBACU\fR 12
+Indicates that a dialing device is used.
+.IP \fBLOCAL\fR
+Indicates an \fBACU\fP with a ``preferred'' connection.
+.IP \fBDIR\fR
+Indicates that a direct connection is used.
+.IP \fBDK\fR
+Indicates that an AT&T Datakit is used.
+.IP \fBMICOM\fR
+Indicates that a Micom terminal switch is used.
+.IP \fBPAD\fR
+Indicates that a X.25 PAD connection is used.
+.IP \fBPCP\fR
+Indicates that GTE Telenet PC Pursuit is used.
+.IP \fBSYTEK\fR
+Indicates that a Sytek high-speed dedicated modem port is used.
+.IP \fBTCP\fR
+Indicates that a TCP/IP connection is used.
 .RE
 .IP \fIDevice\fR 10
-is the entry in ``/dev'' corresponding to a real device,
-the owner should be uucp.
-.IP \fIUseful\fR 10
-information to be used by the device,
-such as the name of the callunit to be used,
-or maybe ``unused''.
+Is the entry in ``/dev'' corresponding to a real device.
+UUCP should be able to access this device.
+.IP \fICall_Unit\fR 10
+Is the device for dialing if different from the device used for the data
+transfer.
+This field must contain a place holder if unused (such as ``unused'').
 .IP \fIClass\fR 10
-is the line speed.
+is the line baud rate for dialers and direct lines or the port number
+for network connections.
 .IP \fIDialer\fR 10
 is either \fBdirect\fR,
 or from the list of available dialers.
 The list of available dialers includes:
 .RS
-.IP \fBDF02\fR 10
+.IP \fBDF02\fR 12
 DEC DF02 or DF03 modems.
-.IP \fBDF112\fR 10
-Dec DF112 modems.
+.IP \fBDF112\fR 12
+DEC DF112 modems.
 Use a \fIDialer\fR field of \fBDF112T\fR to use tone dialing,
 or \fBDF112P\fR for pulse dialing.
-.IP \fBatt\fR 10
+.IP \fBatt\fR 12
 AT&T 2224 2400 baud modem.
-.IP \fBcds224\fR 10
+.IP \fBcds224\fR 12
 Concord Data Systems 224 2400 baud modem.
-.IP \fBdn11\fR 10
-DEC DN11 Unibus dialer.
-.IP \fBhayes\fR 10
+.IP \fBdn11\fR 12
+DEC DN11 \s-2UNIBUS\s+2 dialer.
+.IP \fBhayes\fR 12
 Hayes Smartmodem 1200 and compatible autodialing modems.
 Use a \fIDialer\fR field of \fBhayestone\fR to use tone dialing,
 or \fBhayespulse\fR for pulse dialing.
 It is also permissible to include the letters `T' and `P' in the phone number
-(in \fIL.sys\fR)
+(in ``L.sys'')
 to change to tone or pulse midway through dialing.
 (Note that a leading `T' or `P' will be interpreted as a dialcode!)
-.IP \fBhayes2400\fR 10
+.IP \fBhayes2400\fR 12
 Hayes Smartmodem 2400 and compatible modems.
 Use a \fIDialer\fR field of \fBhayes2400tone\fR to use tone dialing,
 or \fBhayes2400pulse\fR for pulse dialing.
-.IP \fBnovation\fR 10
+.IP \fBnovation\fR 12
 Novation ``Smart Cat'' autodialing modem.
-.IP \fBpenril\fR 10
+.IP \fBpenril\fR 12
 Penril Corp ``Hayes compatible'' modems.
-.IP \fBrvmacs\fR 10
+.IP \fBrvmacs\fR 12
 Racal-Vadic 820 dialer with 831 adapter in a MACS configuration.
-.IP \fBva212\fR 10
+.IP \fBva212\fR 12
 Racal-Vadic 212 autodialing modem.
-.IP \fBva811s\fR 10
+.IP \fBva811s\fR 12
 Racal-Vadic 811s dialer with 831 adapter.
-.IP \fBva820\fR 10
+.IP \fBva820\fR 12
 Racal-Vadic 820 dialer with 831 adapter.
-.IP \fBvadic\fR 10
+.IP \fBvadic\fR 12
 Racal-Vadic 3450 and 3451 series autodialing modems.
-.IP \fBventel\fR 10
+.IP \fBventel\fR 12
 Ventel 212+ autodialing modem.
-.IP \fBvmacs\fR 10
+.IP \fBvmacs\fR 12
 Racal-Vadic 811 dialer with 831 adapter in a MACS configuration.
 .RE
 .IP \fIChat\fR
 is a send/expect sequence that can be used to talk through dataswitches,
-or issue special comands to a device such as a modem.
-The syntax is identical to that of the Expect/Send script of \fIL.sys\fR.
+or issue special commands to a device such as a modem.
+The syntax is identical to that of the Expect/Send script of ``L.sys''
+and will be described later.
 The difference is that,
 the \fIL-devices\fR script is used before the connection is made,
-while the \fIL.sys\fR script is used after.
+while the ``L.sys'' script is used after.
 .SH
 L-dialcodes
 .PP
@@ -1539,20 +1469,19 @@ is the abbreviation,
 .IP dial-seq
 is the dial sequence to call that location.
 .RE
-.PP
+.LP
 The line
 .IP "" 12
 py\ \ 165\-
 .LP
-would be set up so that entry py7777 would
+would be set up so that entry py7777 in ``L.sys'' would
 send 165\-7777 to the dial-unit.
 .SH
 L.aliases.
 .PP
-The \fIL.aliases\fR file provides a mapping facility of \fIsitenames\fR.
-This facility is useful when \fIsitenames\fR are changed,
-and the change is only temporary,
-or the change is permanent but it is not widely known by the users of the net.
+The \fIL.aliases\fR file provides a mapping facility for \fIsitename\fRs.
+This facility is useful when a \fIsitename\fR is changed temporarily,
+or until a permanent change becomes widely known by the users of the net.
 The format of the file is:
 .DS
 real_name alias_name
@@ -1573,6 +1502,7 @@ The commands are listed one per line.
 Most sites L.cmds will be something like:
 .DS
 rmail
+rnews
 ruusend
 .DE
 A line of the form:
@@ -1584,8 +1514,7 @@ can be used to set a search path.
 L.sys
 .PP
 Each entry in this file represents one system
-which can be called by the local UUCP programs.
-The fields are described below.
+that communicates with the local system and has the form:
 .DS
 \fISitename  Times  Caller  Class  Device\fR  [\fIExpect  Send\fR]....
 .DE
@@ -1606,27 +1535,27 @@ List items are constructed as:
 .DE
 \fIKeyword\fR is required, and must be one of:
 .RS
-.IP \fBAny\fR 8
+.IP \fBAny\fR 10
 Any time, any day of the week.
-.IP \fBWk\fR 8
+.IP \fBWk\fR
 Any weekday. In addition,
 \fBMo, Tu, We, Th, Fr, Sa,\fR and \fBSu\fR
-can be used for Monday through Sunday, respectively.
-.IP \fBEvening\fR 8
+can be used.
+.IP \fBEvening\fR
 When evening telephone rates are in effect,
 from 1700 to 0800 Monday through Friday,
 and all day Saturday and Sunday.
 .B Evening
 is the same as
 .B Wk1700-0800,Sa,Su .
-.IP \fBNight\fR 8
+.IP \fBNight\fR
 When nighttime telephone rates are in effect,
 from 2300 to 0800 Monday through Friday,
 all day Saturday, and from 2300 to 1700 Sunday.
 .B Night
 is the same as
 .B Any2300-0800,Sa,Su0800-1700 .
-.IP \fBNonPeak\fR 8
+.IP \fBNonPeak\fR
 This is a slight modification of 
 .B Evening .
 It matches when the USA X.25 carriers have their lower rate period. This
@@ -1634,13 +1563,10 @@ is 1800 to 0700 Monday through Friday, and all day Saturday and Sunday.
 .B NonPeak
 is the same as
 .B Any1800-0700,Sa,Su .
-.IP \fBNever\fR 8
-Never call;
-calling into this site is forbidden or impossible.
+.IP \fBNever\fR
+Calling this site is forbidden or impossible.
 This is intended for polled connections,
 where the remote system calls into the local machine periodically.
-This is necessary when one of the machines is lacking
-either dial-in or dial-out modems.
 .PP
 The optional \fIhhmm-hhmm\fR
 subfield provides a time range that modifies the keyword.
@@ -1666,13 +1592,12 @@ when it is queued by \fIuucp\fR or \fIuux\fR).
 By convention, mail is sent at grade \fBC\fR,
 news is sent at grade \fBd\fR,
 and uucp copies are sent at grade \fBn\fR.
-Unfortunately, some sites do not follow these conventions,
-so it is not 100% reliable.
+Unfortunately, some sites do not follow these conventions consistently.
 .PP
 The \fIretry_time\fR subfield is optional;
 it must be preceded by a `;' (semicolon) and
-specifies the time, in minutes,
-before a failed connection may be tried again.
+specifies the minimum time, in minutes,
+before a failed connection will be tried again.
 By default,
 the retry time starts at 10 minutes and gradually increases at each failure,
 until after 26 tries \fIuucico\fR gives up completely (MAX RETRIES).
@@ -1683,12 +1608,12 @@ If the retry time is too small,
 is the type of device used.
 It may be one of the following:
 .DS
-\fBACU DIR MICOM PAD PCP SYTEK TCP\fR
+\fBACU DIR LOCAL MICOM PAD PCP SYTEK TCP\fR
 .DE
-the derscriptions in L-devices apply here.
+The descriptions are the same as listed in ``L-devices'' above.
 If several alternate ports or network connections should be tried,
 use multiple
-.I L.sys
+``L.sys''
 entries.
 .IP \fIClass\fR 10
 is usually the speed (baud) of the device,
@@ -1709,7 +1634,7 @@ all at 1200 baud.
 .PP
 On TCP connections,
 .I Class
-is the port number (an integer number) or a port name from ``/etc/services''
+is the port number (an integer) or a port name from ``/etc/services''
 that is used to make the connection.
 For standard Berkeley TCP/IP,
 UUCP normally uses port number 540.
@@ -1745,9 +1670,8 @@ There must be a corresponding line in ``L-devices'' with identical
 .PP
 For \fBTCP\fR and other network devices,
 .I Device
-holds the true network name of the remote system,
-which may be different from its UUCP name
-(although one would hope not).
+holds the network name for establishing a connection to the remote system,
+which may be different from its UUCP name.
 .PP
 The
 .I Expect
@@ -1760,8 +1684,7 @@ and what to
 .I send
 to login to the remote system once a physical connection has
 been established.  A complete set of expect/send strings is referred
-to as an
-.IR "expect/send script" .
+to as an ``\fIexpect\fP/\fIsend script\fP''.
 The same syntax is used in the
 .I L\-devices
 file to interact with the dialer prior to making a connection;
@@ -1771,16 +1694,17 @@ The complete format for one
 pair is:
 .PP
 .DS
-\fIexpect\fP\fB~\fP\fItimeout\fP\fB-\fP\fIsend\fP\fB-\fP\fI\
+\fIexpect\fP\fB~\fP\fItimeout\fP\fB\-\fP\fIfailsend\fP\fB\-\fP\fI\
 expect\fP\fB~\fP\fItimeout   send\fP
 .DE
 .PP
-.I Expect
+.I Expect,
+.I failsend,
 and
-.I Send
+.I send
 are character strings.
 .I Expect
-is compared against in coming text from the remote host;
+is compared against incoming text from the remote host;
 .I send
 is sent back when
 .I expect
@@ -1791,11 +1715,11 @@ is followed by a `\er' (carriage return). If the
 string is not matched within
 .I timeout
 seconds (default 45), then it is assumed that the match failed.
-The `\fIexpect\fP\fB-\fP\fIsend\fP\fB-\fP\fIexpect\fP' notation 
+The `\fIexpect\fP\fB-\fP\fIfailsend\fP\fB-\fP\fIexpect\fP' notation 
 provides a limited loop mechanism; if the first
 .I expect
 string fails to match, then the
-.I send
+.I failsend
 string between the hyphens is transmitted, and
 .I uucico
 waits for the second
@@ -1810,7 +1734,7 @@ The timeout can (optionally) be specified by appending the parameter
 `\fB~\fP\fInn\fP' to the expect string, when \fInn\fR is the timeout
 time in seconds.
 .PP
-Backslash escapes that may be imbedded in the
+Backslash escapes that may be embedded in the
 .I expect
 or
 .I send
@@ -1829,7 +1753,7 @@ strings include:
 	denotes the corresponding ASCII character.
 .DE
 .PP
-As a special case, an empty pair of double-quotes \fB""\fP in the
+As a special case, an empty pair of double-quotes \fB"\|"\fP in the
 .I expect
 string is interpreted as ``expect nothing'';
 that is, transmit the \fIsend\fR string regardless of what is received.
@@ -1839,10 +1763,12 @@ cause a lone `\er' (carriage return) to be sent.
 One of the following keywords may be substituted for the
 .I send
 string:
-.DS
+.sp
+.TS
+l l.
 BREAK	Generate a 3/10 second BREAK
 BREAK\fIn\fP	Generate an \fIn\fP/10 second BREAK
-CR	Send a Carriage Return (same as "").
+CR	Send a Carriage Return (same as "\|").
 EOT	Send an End-Of-Transmission character, ASCII \e004.
 	Note that this will cause most hosts to hang up.
 NL	Send a Newline.
@@ -1852,13 +1778,12 @@ P_ODD	Use odd parity on future send strings.
 P_ONE	Use parity one on future send strings.
 P_EVEN	Use even parity on future send strings. (Default)
 P_ZERO	Use parity zero on future send strings.
-.DE
+.TE
 .PP
 Finally, if the
 .I expect
-string consists of the keyword
-.BR ABORT ,
-then the string following is used to arm an abort trap. If that string
+string consists of the keyword \fBABORT\fP,
+the following string is used to arm an abort trap. If that string
 is subsequently received any time prior to the completion of the entire
 .I expect/send
 script, then
@@ -1868,26 +1793,29 @@ script had timed out. This is useful for trapping error messages from
 port selectors or front-end processors such as ``Host Unavailable'' or
 ``System is Down.''
 .PP
-For example:
-.PP
+An example expect/send sequence might look something like this:
 .DS
-""  ""  ogin:--ogin:  nuucp  ssword:  ufeedme
+"\|" \ed\er CLASS HOST ABORT Down GO \ed\er ogin:~30-\eb-ogin: uucp word: password
 .DE
-.PP
-This is executed as, ``When the remote system answers,
-.I expect
-nothing.
-.I Send
-a carriage return.
-.I Expect
-the remote to transmit the string `ogin:'. If it doesn't
-within 45 seconds, send another carriage return.  When it finally does,
-.I send
-it the string `nuucp'.  Then
-.I expect
-the string `ssword:'; when that is received,
-.I send
-`ufeedme'.''
+First, \fIuucico\fP will expect nothing,
+wait 1 second (\ed),
+and then send a carriage return.
+The next expected message is ``CLASS'', in response to which \fIuucico\fP
+sends ``HOST''.
+From then on,
+if it sees the word ``Down'' before finishing logging in,
+it will hang up immediately.
+In the mean time,
+it looks for ``GO''.
+After this is received,
+it delays 1 second and then sends a CR.
+\fIUucico\fP resets the timeout to 30 seconds while whating to
+receive ``ogin:''.  If there is no response, a break will be sent
+and the program will wait for 45 seconds for ``ogin:'' again.
+When this is received, ``uucp'' will be sent.  The sequence ends by waiting
+for ``word:'' and responding with ``password''.
+At this point, UUCP has completed the login and continues with the protocol
+for establishing the connection..
 .SH
 USERFILE
 .PP
@@ -1896,7 +1824,7 @@ It specifies the file system directory trees that are accessible to
 local users and to remote systems via UUCP
 .PP
 Each line in
-.I USERFILE
+``USERFILE''
 is of the form:
 .DS
 [\fIloginname\fP]\fB,\fP[\fIsitename\fP] [ \fBc\fP ] \fIpathname\fP \c
@@ -1907,12 +1835,12 @@ The first two items are separated by a comma;
 any number of spaces or tabs may separate the remaining items.
 .PP
 The \fIloginname\fR
-is a login name (from ``/etc/passwd'')
+is a user name (from ``/etc/passwd'')
 on the local machine.
 .PP
 The \fIsitename\fR
-is the name of a remote machine,
-this is the same name used in ``L.sys''.
+is the name of a remote machine.
+This is the same name used in ``L.sys''.
 .PP
 The \fIc\fR denotes the optional \fIcallback\fR field.
 If a \fBc\fP appears here,
@@ -1924,16 +1852,47 @@ The \fIpathname\fR
 is a pathname prefix that is permissible for this \fIloginname\fR
 and/or \fIsitename\fR.
 .PP
-It accepts the pathnames on the first line that has a null
-.I system 
-field.
+When \fIuucico\fP
+runs in master role or \fIuucp\fP or \fIuux\fP
+are run by local users, the permitted pathnames are those on the
+first line with a
+.I loginname
+that matches the name of the user who executed the command.
+If no such line exists, then the first line with a null (missing)
+.I loginname
+field is used.
+(Beware:
+.I uucico
+is often run by the superuser or the UUCP administrator through \fIcron\fP.
 .PP
-A line with both \fIloginname\fR and \fIsitename\fR are null,
-for example
+When
+.I uucico
+runs in slave role, the permitted pathnames are those on the
+first line with a
+.I sitename
+field that matches the hostname of the remote machine.
+If no such line exists, then the first line with a null (missing)
+.I sitename
+field is used.
+.PP
+.I Uuxqt
+works differently; it knows neither a login name nor a hostname.
+It accepts the pathnames on the first line that has a null
+.I sitename 
+field.
+(This is the same line that is used by
+.I uucico
+when it cannot match the remote machine's hostname.)
+.PP
+A line with both
+.I loginname
+and
+.I sitename
+null, for example
 .DS
 ,  /usr/spool/uucppublic
-.DE
-can be used to conveniently specify the paths for both "no match" cases
+.DE	
+can be used to conveniently specify the paths for both ``no match'' cases
 if lines earlier in ``USERFILE'' did not define them.
 .NH
 Installing the UUCP system.
@@ -1948,8 +1907,8 @@ available at build time.
 .SH
 Uucp.h modifications
 .PP
-The installer of UUCP may wish to change some of the defines in ``uucp.h'',
-some of the interesting defines are mentioned below.
+The installer of UUCP may wish to change some of the defines in ``uucp.h''.
+Some of the interesting defines are mentioned below.
 .PP
 if \fBDIALINOUT\fR is defined then \fIacucntrl\fR will allow modems to be
 used in both directions.
@@ -1973,40 +1932,35 @@ There are several
 .I make
 variable definitions which may need modification.
 .RS
-.IP DESTDIR 12
-where all the system will end up,
-normal from the root.
-.IP LIBDIR 12
-${DESTDIR}/usr/lib/uucp, low level binaries, site information, and dialing
-information resides here.
-.IP BIN 12
-${DESTDIR}/usr/bin, the user utilities reside here.
-.IP ETC 12
-${DESTDIR}/etc
-.IP PUBDIR 12
-${DESTDIR}/usr/spool/uucppublic, uucp owns this directory.
-A place where files can almost always be sent.
-.IP SPOOL 12
-${DESTDIR}/usr/spool/uucp,
-where all commands and data is held until transfers can take place.
-.IP XQTDIR 12
-${SPOOL}/XTMP, a place where UUCP executeable commands will be kept.
-.IP CORRUPT 12
-${SPOOL}/CORRUPT, where corrupted ``C.'' and ``D.'' files end up.
+.IP LIBDIR 15
+the directory where
+low level binaries, site information, and dialing
+information are stored
+.IP BIN
+The directory in which the user utilities reside.
+.IP PUBDIR
+A directory where files can almost always be sent.
+This should be UUCP's home directory and writable by everyone.
+.IP SPOOL
+The top level spool directory.
+.IP XQTDIR
+The directory where temporary files will be stored by \fIuuxqt\fP.
+.IP CORRUPT
+The directory where corrupted ``C.'' and ``D.'' files end up.
 .IP AUDIT
-${SPOOL}/AUDIT, an audit trail.
-.IP LCK 12
-${SPOOL}/LCK, a place to keep lock files.
-LOG= ${SPOOL}/LOG
-.IP STST 12
-${SPOOL}/STST, a place to keep ``STST'' files for different systems.
-.IP HOSTNAME 12
-the machines name.
-.IP SUBDIRS 12
-There are six subdirs,
-not counting XTMP, that may be built under SPOOL,
-these are,
-``C.'', ``D.\fIHOSTNAME\fRX'', ``D.\fIHOSTNAME\fR'', ``D.'', ``X.'', and ``TM.''.
+The directory where debugging traces are stored by \fIuucico\fP when
+debugging is remotely enabled or enabled by a signal.
+.IP LCK
+The directory where lock files are kept.
+\fITip\fP\|(1) and other programs may need to be
+modified if this is changed as the lock files are shared.
+.IP LOG
+The directory where the log files are placed if ``LOGBYSITE'' is defined
+in ``uucp.h''.
+.IP STST
+The directory where the remote system status files (``STST'') are stored.
+.IP HOSTNAME
+The machine's name.
 .RE
 .SH
 Building the system
@@ -2019,7 +1973,7 @@ will compile the entire system.
 .PP
 The command
 .DS
-make makedirs
+make mkdirs
 .DE
 will build all the directories needed for the system,
 giving them appropriate owners and permissions.
@@ -2041,30 +1995,31 @@ The administrator should then be aware of any special facilities
 that are going to be required,
 things like;
 What lines and modems are to be used?
-or
-is the connection through different hardware and carriers?
+Is the connection through different hardware and carriers?
 Does the remote system care about parity?
 What speed lines are being used and do they cycle through several speeds?
 Is there a line switch front end that will require special Chat dialogue in
-``L.sys''?
+``L.sys''\|?
 .PP
-Once a \fIlogin\fR connection can be completed the Admisitrator should
+Once a \fIlogin\fR connection can be completed the administrator should
 have enough information to allow the correct setup of the \fIsystem\fR files
 in /usr/lib/uucp.
 .PP
 The UUCP administrator should then
-negociate with the remote site UUCP administrator
-as to when and who will do polling.
-The relevant accounts and passwords must be set up.
-Decide on what permissions and security precausions are to be observed.
-Arrange testing time and facilites to complete initial connection to the system.
+negotiate with the remote site's UUCP administrator
+as to who will do polling and when.
+Both administrators must set up the relevant accounts and passwords.
+The UUCP administrator should
+decide on what permissions and security precautions are to be observed.
+Testing time and facilities will need to be arranged
+to complete initial connection testing between the systems.
 .NH
 Security
 .PP
 The uucp system, left unrestricted,
 will let any outside user execute any commands
-and copy in/out any file which is readable/writable
-by the uucp login user.
+and copy any files that are accessible
+to the uucp login user.
 It is up to the individual sites to be aware of this and
 apply the protections that they feel are necessary.
 .PP
@@ -2084,14 +2039,13 @@ Therefore, the only work that can be done is through
 A path check is done on file names that are to be sent
 or received.
 The
-.I USERFILE
+``USERFILE''
 supplies the information for these checks.
 The
-.I USERFILE
+``USERFILE''
 can also be set up to require call-back
 for certain login-ids.
-(See the ``Files required for execution'' section
-for the file description.)
+(See the description of ``USERFILE'' above.)
 .IP -
 A conversation sequence count can be set up so
 that the called system
@@ -2103,19 +2057,19 @@ The
 program comes with a list of commands that it
 will execute.
 A ``PATH'' shell statement is prepended to the command
-line as specifed in the
+line as specified in the
 .I uuxqt
 program.
 The installer may modify the list or remove the
 restrictions as desired.
 .IP -
 The
-.I L.sys
-file should be owned by uucp and have mode 0400
+``L.sys''
+file should be owned by uucp and only readable by uucp
 to protect the phone numbers and login information
 for remote sites.
 (Programs uucp, uucico, uux, uuxqt should be also
-owned by uucp and have the setuid bit set.)
+owned by uucp and have the set user id bit set.)
 .NH
 Administration
 .PP
@@ -2125,18 +2079,13 @@ administered for the
 system.
 Some administration can be accomplished by 
 .I "shell files"
-which can be initiated by
-.I crontab
-entries.
+which can be initiated by \fIcron\fP\|(8).
 Others will require manual intervention.
-Some sample 
-.I "shell files"
-are given toward the end of this section.
 .SH
 SQFILE \- sequence check file
 .PP
 This file is set up in the
-.I program
+.I library
 directory and contains an entry for each remote
 system with which you agree to perform conversation
 sequence checks.
@@ -2146,7 +2095,8 @@ The first conversation will add two items to the line,
 the conversation count, and the date/time of the most
 resent conversation.
 These items will be updated with each conversation.
-If a sequence check fails, the entry will have to
+If a sequence check fails, which could indicate that an unauthorized
+connection has been attempted, the entry will have to
 be adjusted.
 .SH
 TM \- temporary data files
@@ -2167,12 +2117,11 @@ is a sequential three digit number starting at zero
 for each invocation of
 .I uucico
 and incremented for each file received.
-
 After the entire remote file is received, the
 .I TM
-file is moved/copied to the requested destination.
+file is moved to the requested destination.
 If processing is abnormally terminated or the
-move/copy fails, the file will remain in the
+move fails, the file will remain in the
 spool directory.
 .PP
 The leftover files should be periodically removed;
@@ -2187,57 +2136,6 @@ will remove all
 .I TM
 files older than three days.
 .SH
-LOG \- log entry files
-.PP
-During execution of programs, individual
-.I LOG
-files are created in the
-.I spool
-directory with information about
-queued requests, calls to remote systems,
-execution of
-.I uux
-commands and file copy results.
-These files should be combined into the
-.I LOGFILE
-by using the
-.I uulog
-program.
-This program will put the new
-.I LOG
-files at the beginning of the existing
-.I LOGFILE.
-The command
-.IP "" 12
-uulog
-.LP
-will accomplish the merge.
-Options are available to print some or all the
-log entries after the files are merged.
-The
-.I LOGFILE
-should be removed periodically
-since it is copied each time new LOG
-entries are put into the file.
-.PP
-The
-.I LOG
-files are created initially with mode 0222.
-If the program which creates the file terminates normally,
-it changes the
-mode to 0666.
-Aborted runs may leave the files with mode
-0222 and the
-.I uulog
-program will not read or remove them.
-To remove them, either use
-.I rm ,
-.I uuclean ,
-or change the mode to 0666 and let
-.I uulog
-merge them with the
-.I LOGFILE .
-.SH
 STST \- system status files
 .PP
 These files are created in the spool directory by the
@@ -2246,17 +2144,12 @@ program.
 They contain information of failures such as login, dialup or
 sequence check and will contain a
 .I TALKING
-status when to machines are conversing.
-The form of the file name is
-.IP
-\fBSTST\fR.sys
-.PP
-where
-.I sys
-is the remote system name.
+status when two machines are conversing.
+The file name is
+the remote system name in the ``STST'' directory.
 .PP
 For ordinary failures (dialup, login), the file will prevent
-repeated tries for about one hour.
+repeated tries too frequently.
 For sequence check failures, the file must be removed before
 any future attempts to converse with that remote system.
 .PP
@@ -2281,7 +2174,7 @@ where
 is either a device or system name.
 The files may be left in the spool directory if runs abort.
 They will be ignored (reused) after a time of about 24 hours.
-When runs abort and calls are desired before the time limit,
+When runs abort and calls are desired before the time limit expires,
 the lock files should be removed.
 .SH
 Shell Files
@@ -2299,20 +2192,16 @@ Therefore, the
 program should be periodically started.
 The command to start
 .I uucico
-can be put in a ``shell'' file with a command to merge
-.I LOG
-files and started by a crontab entry on an hourly basis.
-The file could contain the commands
+can be put in a ``shell'' file
+and started by \fIcron\fP on an hourly basis.
+The file could contain the command:
 .IP
-.I program /uulog
-.br
-.I program /uucico
-\ \ \-r1
+uucico\ \ \-r1
 .PP
 Note that the ``\-r1'' option is required to start the
 .I uucico
 program in
-.I MASTER
+MASTER
 mode.
 .PP
 Another shell file may be set up on a daily basis to remove
@@ -2329,10 +2218,10 @@ files for work which can not be accomplished for
 reasons like bad phone number, login changes etc.
 A shell file containing commands like
 .IP
-.I program /uuclean
+uuclean
 \ \ \-pTM \-pC. \-pD.
 .br
-.I program /uuclean
+uuclean
 \ \ \-pST \-pLCK \-n12
 .LP
 can be used.
@@ -2357,11 +2246,11 @@ One or more logins should be set up for
 .I uucp .
 Each of the ``/etc/passwd'' entries should
 have the
-``\fIprogram\fR/uucico''
+.I uucico
 as the shell to be executed.
 The login directory is normally ``/usr/spool/uucppublic''.
 The various logins are used in conjunction with the
-.I USERFILE
+``USERFILE''
 to restrict file access.
 Specifying the
 .I shell
@@ -2389,14 +2278,14 @@ for the
 .I uucp
 logins.
 .PP
-The
-.I L.sys ,
-.I SQFILE
+``L.sys'',
+``SQFILE'',
 and the
-.I USERFILE
+``USERFILE''
 which are put in the
 .I program
 directory should be owned by
 the
 .I uucp
-login and set with mode 0400.
+login and set so that they can only be read by the \fIuucp\fP login
+and are writable by no one.
