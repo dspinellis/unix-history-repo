@@ -1,4 +1,4 @@
-/*	ts.c	4.31	82/10/17	*/
+/*	ts.c	4.32	82/10/17	*/
 
 #include "ts.h"
 #if NTS > 0
@@ -814,7 +814,7 @@ tsioctl(dev, cmd, data, flag)
 		while (--callcount >= 0) {
 			tscommand(dev, tsops[mtop->mt_op], fcount);
 			if ((mtop->mt_op == MTFSR || mtop->mt_op == MTBSR) &&
-			    bp->b_resid) {
+			    bp->b_resid)
 				return (EIO);
 			if ((bp->b_flags&B_ERROR) || sc->sc_sts.s_xs0&TS_BOT)
 				break;

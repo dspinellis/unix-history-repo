@@ -1,4 +1,4 @@
-/*	uda.c	4.11	82/10/17	*/
+/*	uda.c	4.12	82/10/17	*/
 
 #include "ra.h"
 #if NUDA > 0
@@ -29,21 +29,18 @@
 #include "../vax/cpu.h"
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
+
+#define	NRSPL2	3		/* log2 number of response packets */
+#define	NCMDL2	3		/* log2 number of command packets */
+#define	NRSP	(1<<NRSPL2)
+#define	NCMD	(1<<NCMDL2)
+
 #include "../vaxuba/udareg.h"
 
 int udadebug;
 #define	printd	if(udadebug&1)printf
 
 int udaerror = 0;	/* set to cause hex dump of error log packets */
-
-/*
- * Parameters for the communications area
- */
-
-#define	NRSPL2	3		/* log2 number of response packets */
-#define	NCMDL2	3		/* log2 number of command packets */
-#define	NRSP	(1<<NRSPL2)
-#define	NCMD	(1<<NCMDL2)
 
 #include "../vax/mscp.h"
 

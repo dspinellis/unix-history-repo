@@ -1,4 +1,4 @@
-/*	tm.c	4.56	82/10/17	*/
+/*	tm.c	4.57	82/10/17	*/
 
 #include "te.h"
 #include "ts.h"
@@ -27,6 +27,7 @@
 #include "../h/mtio.h"
 #include "../h/cmap.h"
 #include "../h/uio.h"
+#include "../h/kernel.h"
 
 #include "../vax/cpu.h"
 #include "../vaxuba/ubareg.h"

@@ -1,4 +1,4 @@
-/*	dn.c	4.9	82/10/17	*/
+/*	dn.c	4.10	82/10/17	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -15,6 +15,7 @@
 #include "../h/pte.h"
 #include "../h/conf.h"
 #include "../h/ioctl.h"
+#include "../h/uio.h"
 
 #include "../vaxuba/ubavar.h"
 
@@ -57,9 +58,12 @@ dnprobe(reg)
 	register int br, cvec;	/* value-result, must be r11, r10 */
 	register struct dndevice *dnaddr = (struct dndevice *)reg;
 
+#ifdef lint
+	br = 0; cvec = 0; br = cvec; cvec = br;
+#endif
 	/*
 	 * If there's at least one dialer out there it better be
-	 *  at chassis 0.
+	 * at chassis 0.
 	 */
 	dnaddr->dn_reg[0] = MENABLE|IENABLE|DONE;
 	DELAY(5);
@@ -67,6 +71,7 @@ dnprobe(reg)
 	return (sizeof (struct dndevice));
 }
 
+/*ARGSUSED*/
 dnattach(ui)
 	struct uba_device *ui;
 {
@@ -114,7 +119,7 @@ dnwrite(dev, uio)
 	register u_short *dnreg;
 	register int cc;
 	register struct dndevice *dp;
-	char buf[OBUFSIZ];
+	char obuf[OBUFSIZ];
 	register char *cp;
 	extern lbolt;
 	int error;
@@ -122,7 +127,7 @@ dnwrite(dev, uio)
 	dp = (struct dndevice *)dninfo[DNUNIT(dev)]->ui_addr;
 	dnreg = &(dp->dn_reg[DNREG(dev)]);
 	cc = MIN(uio->uio_resid, OBUFSIZ);
-	cp = buf;
+	cp = obuf;
 	error = uiomove(cp, (unsigned)cc, UIO_WRITE, uio);
 	if (error)
 		return (error);

@@ -1,4 +1,4 @@
-/*	rk.c	4.48	82/10/17	*/
+/*	rk.c	4.49	82/10/17	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -383,7 +383,6 @@ rkintr(rk11)
 	int unit;
 	struct rk_softc *sc = &rk_softc[um->um_ctlr];
 	int as = (rkaddr->rkatt >> 8) | sc->sc_softas;
-	int needie = 1;
 
 	sc->sc_wticks = 0;
 	sc->sc_softas = 0;
@@ -511,7 +510,7 @@ retry:
 		}
 	if (um->um_tab.b_actf && um->um_tab.b_active == 0)
 		rkstart(um);
-	if (((needie = rkaddr->rkcs1) & RK_IE) == 0)
+	if (((rkaddr->rkcs1) & RK_IE) == 0)
 		rkaddr->rkcs1 = RK_IE;
 }
 
