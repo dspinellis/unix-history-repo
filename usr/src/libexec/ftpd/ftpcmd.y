@@ -12,7 +12,7 @@
 %{
 
 #ifndef lint
-static	char sccsid[] = "@(#)ftpcmd.y	5.3 (Berkeley) %G%";
+static	char sccsid[] = "@(#)ftpcmd.y	5.4 (Berkeley) %G%";
 #endif
 
 #include <sys/types.h>
@@ -27,6 +27,7 @@ static	char sccsid[] = "@(#)ftpcmd.y	5.3 (Berkeley) %G%";
 #include <ctype.h>
 #include <pwd.h>
 #include <setjmp.h>
+#include <syslog.h>
 
 extern	struct sockaddr_in data_dest;
 extern	int logged_in;
@@ -83,8 +84,8 @@ cmd:		USER SP username CRLF
 			extern struct passwd *getpwnam();
 
 			logged_in = 0;
-			if (strcmp($3, "ftp") == 0 ||
-			  strcmp($3, "anonymous") == 0) {
+			if (strcmp((char *) $3, "ftp") == 0 ||
+			  strcmp((char *) $3, "anonymous") == 0) {
 				if ((pw = getpwnam("ftp")) != NULL) {
 					guest = 1;
 					reply(331,
@@ -93,9 +94,9 @@ cmd:		USER SP username CRLF
 				else {
 					reply(530, "User %s unknown.", $3);
 				}
-			} else if (checkuser($3)) {
+			} else if (checkuser((char *) $3)) {
 				guest = 0;
-				pw = getpwnam($3);
+				pw = getpwnam((char *) $3);
 				if (pw == NULL) {
 					reply(530, "User %s unknown.", $3);
 				}
@@ -103,12 +104,12 @@ cmd:		USER SP username CRLF
 				    reply(331, "Password required for %s.", $3);
 				}
 			}
-			free($3);
+			free((char *) $3);
 		}
 	|	PASS SP password CRLF
 		= {
-			pass($3);
-			free($3);
+			pass((char *) $3);
+			free((char *) $3);
 		}
 	|	PORT SP host_port CRLF
 		= {
@@ -117,7 +118,7 @@ cmd:		USER SP username CRLF
 				(void) close(pdata);
 			}
 			pdata = -1;
-			ack($1);
+			ack((char *) $1);
 		}
 	|	PASV CRLF
 		= {
@@ -180,28 +181,28 @@ cmd:		USER SP username CRLF
 		}
 	|	ALLO SP NUMBER CRLF
 		= {
-			ack($1);
+			ack((char *) $1);
 		}
 	|	RETR check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				retrieve(0, $4);
+				retrieve((char *) 0, (char *) $4);
 			if ($4 != NULL)
-				free($4);
+				free((char *) $4);
 		}
 	|	STOR check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				store($4, "w");
+				store((char *) $4, "w");
 			if ($4 != NULL)
-				free($4);
+				free((char *) $4);
 		}
 	|	APPE check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				store($4, "a");
+				store((char *) $4, "a");
 			if ($4 != NULL)
-				free($4);
+				free((char *) $4);
 		}
 	|	NLST check_login CRLF
 		= {
@@ -211,9 +212,9 @@ cmd:		USER SP username CRLF
 	|	NLST check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				retrieve("/bin/ls %s", $4);
+				retrieve("/bin/ls %s", (char *) $4);
 			if ($4 != NULL)
-				free($4);
+				free((char *) $4);
 		}
 	|	LIST check_login CRLF
 		= {
@@ -223,20 +224,20 @@ cmd:		USER SP username CRLF
 	|	LIST check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				retrieve("/bin/ls -lg %s", $4);
+				retrieve("/bin/ls -lg %s", (char *) $4);
 			if ($4 != NULL)
-				free($4);
+				free((char *) $4);
 		}
 	|	DELE check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				delete($4);
+				delete((char *) $4);
 			if ($4 != NULL)
-				free($4);
+				free((char *) $4);
 		}
 	|	ABOR CRLF
 		= {
-			ack($1);
+			ack((char *) $1);
 		}
 	|	CWD check_login CRLF
 		= {
@@ -246,36 +247,36 @@ cmd:		USER SP username CRLF
 	|	CWD check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				cwd($4);
+				cwd((char *) $4);
 			if ($4 != NULL)
-				free($4);
+				free((char *) $4);
 		}
 	|	rename_cmd
 	|	HELP CRLF
 		= {
-			help(0);
+			help((char *) 0);
 		}
 	|	HELP SP STRING CRLF
 		= {
-			help($3);
+			help((char *) $3);
 		}
 	|	NOOP CRLF
 		= {
-			ack($1);
+			ack((char *) $1);
 		}
 	|	XMKD check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				makedir($4);
+				makedir((char *) $4);
 			if ($4 != NULL)
-				free($4);
+				free((char *) $4);
 		}
 	|	XRMD check_login SP pathname CRLF
 		= {
 			if ($2 && $4 != NULL)
-				removedir($4);
+				removedir((char *) $4);
 			if ($4 != NULL)
-				free($4);
+				free((char *) $4);
 		}
 	|	XPWD check_login CRLF
 		= {
@@ -291,11 +292,11 @@ cmd:		USER SP username CRLF
 		= {
 			if ($2 && $4 != NULL) {
 				unique++;
-				store($4, "w");
+				store((char *) $4, "w");
 				unique = 0;
 			}
 			if ($4 != NULL)
-				free($4);
+				free((char *) $4);
 		}
 	|	QUIT CRLF
 		= {
@@ -416,13 +417,13 @@ mode_code:	S
 
 pathname:	pathstring
 	= {
-		if ($1 && strncmp($1, "~", 1) == 0) {
-			$$ = (int)*glob($1);
+		if ($1 && strncmp((char *) $1, "~", 1) == 0) {
+			$$ = (int)*glob((char *) $1);
 			if (globerr != NULL) {
 				reply(550, globerr);
 				$$ = NULL;
 			}
-			free($1);
+			free((char *) $1);
 		} else
 			$$ = $1;
 	}
@@ -434,13 +435,13 @@ pathstring:	STRING
 rename_cmd:	rename_from rename_to
 	= {
 		if ($1 && $2)
-			renamecmd($1, $2);
+			renamecmd((char *) $1, (char *) $2);
 		else
 			reply(503, "Bad sequence of commands.");
 		if ($1)
-			free($1);
+			free((char *) $1);
 		if ($2)
-			free($2);
+			free((char *) $2);
 	}
 	;
 
@@ -449,9 +450,9 @@ rename_from:	RNFR check_login SP pathname CRLF
 		char *from = 0, *renamefrom();
 
 		if ($2 && $4)
-			from = renamefrom($4);
+			from = renamefrom((char *) $4);
 		if (from == 0 && $4)
-			free($4);
+			free((char *) $4);
 		$$ = (int)from;
 	}
 	;
@@ -561,7 +562,8 @@ getline(s, n, iop)
 	register FILE *iop;
 {
 	register c;
-	register char *cs, ch;
+	register char *cs;
+	char ch;
 
 	cs = s;
 	for (c = 0; tmpline[c] != '\0' && --n > 0; ++c) {
@@ -569,7 +571,7 @@ getline(s, n, iop)
 		if (tmpline[c] == '\n') {
 			*cs++ = '\0';
 			if (debug) {
-				fprintf(stderr, "FTPD: command: %s", s);
+				syslog(LOG_DEBUG, "FTPD: command: %s", s);
 			}
 			tmpline[0] = '\0';
 			return(s);
@@ -581,8 +583,8 @@ getline(s, n, iop)
 	while (--n > 0 && read(fileno(iop),&ch,1) >= 0) {
 		c = 0377 & ch;
 		while (c == IAC) {
-			read(fileno(iop),&ch,1);	/* skip command */
-			read(fileno(iop),&ch,1);	/* try next char */
+			(void) read(fileno(iop),&ch,1);	/* skip command */
+			(void) read(fileno(iop),&ch,1);	/* try next char */
 			c = 0377 & ch;
 		}
 		*cs++ = c;
@@ -593,10 +595,7 @@ getline(s, n, iop)
 		return (NULL);
 	*cs++ = '\0';
 	if (debug) {
-		fprintf(stderr, "FTPD: command: %s", s);
-		if (c != '\n')
-			putc('\n', stderr);
-		fflush(stderr);
+		syslog(LOG_DEBUG, "FTPD: command: %s", s);
 	}
 	return (s);
 }
@@ -604,17 +603,17 @@ getline(s, n, iop)
 static int
 toolong()
 {
-	long now;
+	time_t now;
 	extern char *ctime();
+	extern time_t time();
 
 	reply(421,
 	  "Timeout (%d seconds): closing control connection.", timeout);
-	time(&now);
+	(void) time(&now);
 	if (logging) {
-		fprintf(stderr,
+		syslog(LOG_INFO,
 			"FTPD: User %s timed out after %d seconds at %s",
 			(pw ? pw -> pw_name : "unknown"), timeout, ctime(&now));
-		fflush(stderr);
 	}
 	dologout(1);
 }
@@ -631,13 +630,13 @@ yylex()
 		switch (state) {
 
 		case CMD:
-			signal(SIGALRM, toolong);
-			alarm(timeout);
+			(void) signal(SIGALRM, toolong);
+			(void) alarm((unsigned) timeout);
 			if (getline(cbuf, sizeof(cbuf)-1, stdin) == NULL) {
 				reply(221, "You could at least say goodbye.");
 				dologout(0);
 			}
-			alarm(0);
+			(void) alarm(0);
 			if (index(cbuf, '\r')) {
 				cp = index(cbuf, '\r');
 				cp[0] = '\n'; cp[1] = 0;
@@ -657,7 +656,7 @@ yylex()
 			if (p != 0) {
 				if (p->implemented == 0) {
 					nack(p->name);
-					longjmp(errcatch);
+					longjmp(errcatch,0);
 					/* NOTREACHED */
 				}
 				state = p->state;
@@ -774,9 +773,9 @@ yylex()
 		default:
 			fatal("Unknown state in scanner.");
 		}
-		yyerror();
+		yyerror((char *) 0);
 		state = CMD;
-		longjmp(errcatch);
+		longjmp(errcatch,0);
 	}
 }
 
@@ -794,12 +793,12 @@ copy(s)
 	char *s;
 {
 	char *p;
-	extern char *malloc();
+	extern char *malloc(), *strcpy();
 
-	p = malloc(strlen(s) + 1);
+	p = malloc((unsigned) strlen(s) + 1);
 	if (p == NULL)
 		fatal("Ran out of memory.");
-	strcpy(p, s);
+	(void) strcpy(p, s);
 	return ((int)p);
 }
 
@@ -846,7 +845,7 @@ help(s)
 			}
 			printf("\r\n");
 		}
-		fflush(stdout);
+		(void) fflush(stdout);
 		reply(214, "Direct comments to ftp-bugs@%s.", hostname);
 		return;
 	}

@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)ftpd.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftpd.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -37,6 +37,7 @@ static char sccsid[] = "@(#)ftpd.c	5.3 (Berkeley) %G%";
 #include <netdb.h>
 #include <errno.h>
 #include <strings.h>
+#include <syslog.h>
 
 /*
  * File containing login names
@@ -51,7 +52,7 @@ extern	char *crypt();
 extern	char version[];
 extern	char *home;		/* pointer to home directory for glob */
 extern	FILE *popen(), *fopen(), *freopen();
-extern	int pclose(), fclose();
+extern	int  pclose(), fclose();
 extern	char *getline();
 extern	char cbuf[];
 
@@ -60,14 +61,12 @@ struct	sockaddr_in data_source;
 struct	sockaddr_in data_dest;
 struct	sockaddr_in his_addr;
 
-struct	hostent *hp;
-
 int	data;
 jmp_buf	errcatch, urgcatch;
 int	logged_in;
 struct	passwd *pw;
 int	debug;
-int	timeout;
+int	timeout = 900;    /* timeout after 15 minutes of inactivity */
 int	logging;
 int	guest;
 int	wtmp;
@@ -95,7 +94,6 @@ int	swaitmax = SWAITMAX;
 int	swaitint = SWAITINT;
 
 int	lostconn();
-int	reapchild();
 int	myoob();
 FILE	*getdatasock(), *dataconn();
 
@@ -103,24 +101,23 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int options = 0, addrlen;
+	int addrlen;
 	long pgid;
 	char *cp;
 
 	addrlen = sizeof (his_addr);
 	if (getpeername(0, &his_addr, &addrlen) < 0) {
-		fprintf(stderr, "%s: ", argv[0]);
-		perror("getpeername");
+		syslog(LOG_ERR, "getpeername (%s): %m",argv[0]);
 		exit(1);
 	}
 	addrlen = sizeof (ctrl_addr);
-	if (getsockname(0, &ctrl_addr, &addrlen) < 0) {
-		fprintf(stderr, "%s: ", argv[0]);
-		perror("getsockname");
+	if (getsockname(0, (char *) &ctrl_addr, &addrlen) < 0) {
+		syslog(LOG_ERR, "getsockname (%s): %m",argv[0]);
 		exit(1);
 	}
 	data_source.sin_port = htons(ntohs(ctrl_addr.sin_port) - 1);
 	debug = 0;
+	openlog("ftpd", LOG_PID, LOG_DAEMON);
 	argc--, argv++;
 	while (argc > 0 && *argv[0] == '-') {
 		for (cp = &argv[0][1]; *cp; cp++) switch (*cp) {
@@ -131,12 +128,10 @@ main(argc, argv)
 
 		case 'd':
 			debug = 1;
-			options |= SO_DEBUG;
 			break;
 
 		case 'l':
 			logging = 1;
-			(void) freopen("/tmp/ftplog", "a", stderr);
 			break;
 
 		case 't':
@@ -152,14 +147,14 @@ main(argc, argv)
 nextopt:
 		argc--, argv++;
 	}
-	signal(SIGPIPE, lostconn);
-	signal(SIGCHLD, SIG_IGN);
+	(void) signal(SIGPIPE, lostconn);
+	(void) signal(SIGCHLD, SIG_IGN);
 	if (signal(SIGURG, myoob) < 0) {
-		perror("signal");
+		syslog(LOG_ERR, "signal: %m");
 	}
 	pgid = getpid();
-	if (ioctl(fileno(stdin), SIOCSPGRP, (char *) &pgid) < 0) {
-		perror("ioctl");
+	if (ioctl(fileno(stdin), (int) SIOCSPGRP, (char *) &pgid) < 0) {
+		syslog(LOG_ERR, "ioctl: %m");
 	}
 	dolog(&his_addr);
 	/* do telnet option negotiation here */
@@ -173,15 +168,15 @@ nextopt:
 	stru = STRU_F;
 	mode = MODE_S;
 	tmpline[0] = '\0';
-	gethostname(hostname, sizeof (hostname));
+	(void) gethostname(hostname, sizeof (hostname));
 	reply(220, "%s FTP server (%s) ready.",
 		hostname, version);
 	for (;;) {
-		setjmp(errcatch);
-		yyparse();
+		(void) setjmp(errcatch);
+		(void) yyparse();
 	}
 }
-
+/*
 reapchild()
 {
 	union wait status;
@@ -189,12 +184,13 @@ reapchild()
 	while (wait3(&status, WNOHANG, 0) > 0)
 		;
 }
+*/
 
 lostconn()
 {
 
 	if (debug)
-		fprintf(stderr, "Lost connection.\n");
+		syslog(LOG_DEBUG, "lost connection");
 	dologout(-1);
 }
 
@@ -250,7 +246,7 @@ pass(passwd)
 	save.pw_name = savestr(pw->pw_name);
 	save.pw_passwd = savestr(pw->pw_passwd);
 	save.pw_comment = savestr(pw->pw_comment);
-	save.pw_gecos = savestr(pw->pw_gecos, &save.pw_gecos);
+	save.pw_gecos = savestr(pw->pw_gecos);
 	save.pw_dir = savestr(pw->pw_dir);
 	save.pw_shell = savestr(pw->pw_shell);
 	pw = &save;
@@ -266,10 +262,10 @@ savestr(s)
 	char *s;
 {
 	char *malloc();
-	char *new = malloc(strlen(s) + 1);
+	char *new = malloc((unsigned) strlen(s) + 1);
 	
 	if (new != NULL)
-		strcpy(new, s);
+		(void) strcpy(new, s);
 	return (new);
 }
 
@@ -291,7 +287,7 @@ retrieve(cmd, name)
 	} else {
 		char line[BUFSIZ];
 
-		sprintf(line, cmd, name), name = line;
+		(void) sprintf(line, cmd, name), name = line;
 		fin = popen(line, "r"), closefunc = pclose;
 	}
 	if (fin == NULL) {
@@ -314,7 +310,7 @@ retrieve(cmd, name)
 	else if (tmp == 0) {
 		reply(226, "Transfer complete.");
 	}
-	fclose(dout);
+	(void) fclose(dout);
 	data = -1;
 	pdata = -1;
 done:
@@ -365,7 +361,7 @@ store(name, mode)
 	else if (tmp == 0 && unique) {
 		reply(226, "Transfer complete (unique file name:%s).", local);
 	}
-	fclose(din);
+	(void) fclose(din);
 	data = -1;
 	pdata = -1;
 done:
@@ -386,18 +382,18 @@ getdatasock(mode)
 	if (s < 0)
 		return (NULL);
 	seteuid(0);
-	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof (on)) < 0)
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof (on)) < 0)
 		goto bad;
 	/* anchor socket to avoid multi-homing problems */
 	data_source.sin_family = AF_INET;
 	data_source.sin_addr = ctrl_addr.sin_addr;
-	if (bind(s, &data_source, sizeof (data_source), 0) < 0)
+	if (bind(s, &data_source, sizeof (data_source)) < 0)
 		goto bad;
 	seteuid(pw->pw_uid);
 	return (fdopen(s, mode));
 bad:
 	seteuid(pw->pw_uid);
-	close(s);
+	(void) close(s);
 	return (NULL);
 }
 
@@ -412,14 +408,14 @@ dataconn(name, size, mode)
 	int retry = 0;
 
 	if (size >= 0)
-		sprintf (sizebuf, " (%ld bytes)", size);
+		(void) sprintf (sizebuf, " (%ld bytes)", size);
 	else
 		(void) strcpy(sizebuf, "");
 	if (pdata > 0) {
 		struct sockaddr_in from;
 		int s, fromlen = sizeof(from);
 
-		s = accept(pdata, &from, &fromlen, 0);
+		s = accept(pdata, &from, &fromlen);
 		if (s < 0) {
 			reply(425, "Can't open data connection.");
 			(void) close(pdata);
@@ -429,7 +425,7 @@ dataconn(name, size, mode)
 		(void) close(pdata);
 		pdata = s;
 		reply(150, "Openning data connection for %s (%s,%d)%s.",
-		     name, inet_ntoa(from.sin_addr.s_addr),
+		     name, inet_ntoa(from.sin_addr),
 		     ntohs(from.sin_port), sizebuf);
 		return(fdopen(pdata, mode));
 	}
@@ -451,12 +447,12 @@ dataconn(name, size, mode)
 		return (NULL);
 	}
 	reply(150, "Opening data connection for %s (%s,%d)%s.",
-	    name, inet_ntoa(data_dest.sin_addr.s_addr),
+	    name, inet_ntoa(data_dest.sin_addr),
 	    ntohs(data_dest.sin_port), sizebuf);
 	data = fileno(file);
 	while (connect(data, &data_dest, sizeof (data_dest)) < 0) {
 		if (errno == EADDRINUSE && retry < swaitmax) {
-			sleep(swaitint);
+			sleep((unsigned) swaitint);
 			retry += swaitint;
 			continue;
 		}
@@ -600,6 +596,7 @@ fatal(s)
 	dologout(0);
 }
 
+/*VARARGS2*/
 reply(n, s, args)
 	int n;
 	char *s;
@@ -608,15 +605,14 @@ reply(n, s, args)
 	printf("%d ", n);
 	_doprnt(s, &args, stdout);
 	printf("\r\n");
-	fflush(stdout);
+	(void) fflush(stdout);
 	if (debug) {
-		fprintf(stderr, "<--- %d ", n);
-		_doprnt(s, &args, stderr);
-		fprintf(stderr, "\n");
-		fflush(stderr);
+		syslog(LOG_DEBUG, "<--- %d ", n);
+		syslog(LOG_DEBUG, s, &args);
 	}
 }
 
+/*VARARGS2*/
 lreply(n, s, args)
 	int n;
 	char *s;
@@ -624,22 +620,23 @@ lreply(n, s, args)
 	printf("%d-", n);
 	_doprnt(s, &args, stdout);
 	printf("\r\n");
-	fflush(stdout);
+	(void) fflush(stdout);
 	if (debug) {
-		fprintf(stderr, "<--- %d-", n);
-		_doprnt(s, &args, stderr);
-		fprintf(stderr, "\n");
+		syslog(LOG_DEBUG, "<--- %d- ", n);
+		syslog(LOG_DEBUG, s, &args);
 	}
 }
 
+/*  NOT CALLED ANYWHERE
 replystr(s)
 	char *s;
 {
 	printf("%s\r\n", s);
-	fflush(stdout);
+	(void) fflush(stdout);
 	if (debug)
 		fprintf(stderr, "<--- %s\n", s);
 }
+*/
 
 ack(s)
 	char *s;
@@ -653,7 +650,8 @@ nack(s)
 	reply(502, "%s command not implemented.", s);
 }
 
-yyerror()
+yyerror(s)
+	char *s;
 {
 	char *cp;
 
@@ -765,23 +763,23 @@ dolog(sin)
 	struct hostent *hp = gethostbyaddr(&sin->sin_addr,
 		sizeof (struct in_addr), AF_INET);
 	time_t t;
+	extern char *ctime();
 
 	if (hp) {
-		strncpy(remotehost, hp->h_name, sizeof (remotehost));
+		(void) strncpy(remotehost, hp->h_name, sizeof (remotehost));
 		endhostent();
 	} else
-		strncpy(remotehost, inet_ntoa(sin->sin_addr),
+		(void) strncpy(remotehost, inet_ntoa(sin->sin_addr),
 		    sizeof (remotehost));
 	if (!logging)
 		return;
-	t = time(0);
-	fprintf(stderr,"FTPD: connection from %s at %s", remotehost, ctime(&t));
-	fflush(stderr);
+	t = time((time_t *) 0);
+	syslog(LOG_INFO,"FTPD: connection from %s at %s", remotehost, ctime(&t));
 }
 
 #include <utmp.h>
 
-#define	SCPYN(a, b)	strncpy(a, b, sizeof (a))
+#define	SCPYN(a, b)	(void) strncpy(a, b, sizeof (a))
 struct	utmp utmp;
 
 /*
@@ -794,11 +792,11 @@ dologin(pw)
 
 	if (wtmp >= 0) {
 		/* hack, but must be unique and no tty line */
-		sprintf(line, "ftp%d", getpid());
+		(void) sprintf(line, "ftp%d", getpid());
 		SCPYN(utmp.ut_line, line);
 		SCPYN(utmp.ut_name, pw->pw_name);
 		SCPYN(utmp.ut_host, remotehost);
-		utmp.ut_time = time(0);
+		utmp.ut_time = (long) time((time_t *) 0);
 		(void) write(wtmp, (char *)&utmp, sizeof (utmp));
 		if (!guest) {		/* anon must hang on */
 			(void) close(wtmp);
@@ -822,7 +820,7 @@ dologout(status)
 		if (wtmp >= 0) {
 			SCPYN(utmp.ut_name, "");
 			SCPYN(utmp.ut_host, "");
-			utmp.ut_time = time(0);
+			utmp.ut_time = (long) time((time_t *) 0);
 			(void) write(wtmp, (char *)&utmp, sizeof (utmp));
 			(void) close(wtmp);
 		}
@@ -903,9 +901,9 @@ popen(cmd, mode)
 	hisside = tst(p[RDR], p[WTR]);
 	if ((pid = fork()) == 0) {
 		/* myside and hisside reverse roles in child */
-		close(myside);
-		dup2(hisside, tst(0, 1));
-		close(hisside);
+		(void) close(myside);
+		(void) dup2(hisside, tst(0, 1));
+		(void) close(hisside);
 		execv(gav[0], gav);
 		_exit(1);
 	}
@@ -914,7 +912,7 @@ popen(cmd, mode)
 	if (pid == -1)
 		return (NULL);
 	popen_pid[myside] = pid;
-	close(hisside);
+	(void) close(hisside);
 	return (fdopen(myside, mode));
 }
 
@@ -925,7 +923,7 @@ pclose(ptr)
 	int status;
 
 	f = fileno(ptr);
-	fclose(ptr);
+	(void) fclose(ptr);
 	istat = signal(SIGINT, SIG_IGN);
 	qstat = signal(SIGQUIT, SIG_IGN);
 	hstat = signal(SIGHUP, SIG_IGN);
@@ -933,9 +931,9 @@ pclose(ptr)
 		;
 	if (r == -1)
 		status = -1;
-	signal(SIGINT, istat);
-	signal(SIGQUIT, qstat);
-	signal(SIGHUP, hstat);
+	(void) signal(SIGINT, istat);
+	(void) signal(SIGQUIT, qstat);
+	(void) signal(SIGHUP, hstat);
 	return (status);
 }
 
@@ -964,44 +962,44 @@ checkuser(name)
 			break;
 		}
 	}
-	fclose(fd);
+	(void) fclose(fd);
 	return (!found);
 }
 
 myoob()
 {
-	int aflag = 0, count = 0, iacflag = 0, atmark;
+	int aflag = 0, atmark;
 	char c, *cp;
 
 	if (!transflag) {
 		for (;;) {
-			if (ioctl(fileno(stdin), SIOCATMARK, &atmark) < 0) {
-				perror("ioctl");
+			if (ioctl(fileno(stdin), (int) SIOCATMARK, (char *) &atmark) < 0) {
+				syslog(LOG_ERR, "ioctl: %m");
 				break;
 			}
 			if (atmark)
 				break;
-			read(fileno(stdin), &c, 1);
+			(void) read(fileno(stdin), &c, 1);
 		}
-		recv(fileno(stdin), &c, 1, MSG_OOB);
-		read(fileno(stdin), &c, 1);
+		(void) recv(fileno(stdin), &c, 1, MSG_OOB);
+		(void) read(fileno(stdin), &c, 1);
 		return;
 	}
 	for (;;) {
-		if (ioctl(fileno(stdin), SIOCATMARK, &atmark) < 0) {
-			perror("ioctl");
+		if (ioctl(fileno(stdin), (int) SIOCATMARK, (char *) &atmark) < 0) {
+			syslog(LOG_ERR, "ioctl: %m");
 			break;
 		}
 		if (atmark)
 			break;
-		read(fileno(stdin), &c, 1);
+		(void) read(fileno(stdin), &c, 1);
 		if (c == IAC || c == IP)
 			aflag++;
 	}
-	recv(fileno(stdin), &c, 1, MSG_OOB);
+	(void) recv(fileno(stdin), &c, 1, MSG_OOB);
 	if (c == IAC)
 		aflag++;
-	read(fileno(stdin), &c, 1);
+	(void) read(fileno(stdin), &c, 1);
 	if (c == DM)
 		aflag++;
 	if (aflag != 4)
@@ -1031,7 +1029,7 @@ passive()
 	tmp = ctrl_addr;
 	tmp.sin_port = 0;
 	seteuid(0);
-	if (bind(pdata, (char *) &tmp, sizeof(tmp), 0) < 0) {
+	if (bind(pdata, (struct sockaddr *) &tmp, sizeof(tmp)) < 0) {
 		seteuid(pw->pw_uid);
 		(void) close(pdata);
 		pdata = -1;
@@ -1078,7 +1076,7 @@ gunique(local)
 		*cp = '/';
 	}
 	if (d < 0) {
-		perror(local);
+		syslog(LOG_ERR, "%s: %m", local);
 		return((char *) 0);
 	}
 	(void) strcpy(new, local);
