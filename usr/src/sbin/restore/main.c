@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -51,6 +51,7 @@ time_t	dumptime;
 time_t	dumpdate;
 FILE 	*terminal;
 
+int
 main(argc, argv)
 	int argc;
 	char *argv[];
@@ -67,16 +68,8 @@ main(argc, argv)
 	if (signal(SIGTERM, onintr) == SIG_IGN)
 		(void) signal(SIGTERM, SIG_IGN);
 	setlinebuf(stderr);
-	if (argc < 2) {
-usage:
-		fprintf(stderr, "Usage:\n%s%s%s%s%s",
-			"\trestore tfhsvy [file file ...]\n",
-			"\trestore xfhmsvy [file file ...]\n",
-			"\trestore ifhmsvy\n",
-			"\trestore rfsvy\n",
-			"\trestore Rfsvy\n");
-		done(1);
-	}
+	if (argc < 2)
+		usage();
 	argv++;
 	argc -= 2;
 	command = '\0';
@@ -153,18 +146,18 @@ usage:
 				fprintf(stderr,
 					"%c and %c are mutually exclusive\n",
 					*cp, command);
-				goto usage;
+				usage();
 			}
 			command = *cp;
 			break;
 		default:
 			fprintf(stderr, "Bad key character %c\n", *cp);
-			goto usage;
+			usage();
 		}
 	}
 	if (command == '\0') {
 		fprintf(stderr, "must specify i, t, r, R, or x\n");
-		goto usage;
+		usage();
 	}
 	setinput(inputdev);
 	if (argc == 0) {
@@ -269,4 +262,15 @@ usage:
 			checkrestore();
 		done(0);
 	}
+}
+
+usage()
+{
+	(void)fprintf(stderr, "usage:\n%s%s%s%s%s",
+	    "\trestore tfhsvy [file file ...]\n",
+	    "\trestore xfhmsvy [file file ...]\n",
+	    "\trestore ifhmsvy\n",
+	    "\trestore rfsvy\n",
+	    "\trestore Rfsvy\n");
+	done(1);
 }
