@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.33 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.34 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -101,6 +101,9 @@ main(argc, argv)
 		case 'v':
 			vacuous = 1;
 			break;
+		case 'x':
+			encrypt = 1;
+			break;
 #endif
 		case '?':
 		default:
@@ -151,8 +154,11 @@ doit(f, fromp)
 
 	alarm(60);
 	read(f, &c, 1);
-	if (c != 0)
+	if(c != 0)
 		exit(1);
+#ifdef	KERBEROS
+	if(vacuous)
+		fatal(f, "Remote host requires Kerberos authentication");
 
 	alarm(0);
 	fromp->sin_port = ntohs((u_short)fromp->sin_port);
