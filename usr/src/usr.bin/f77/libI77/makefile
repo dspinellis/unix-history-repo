@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.19	%G%
+#	@(#)makefile	1.20	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
@@ -32,7 +32,7 @@ OBJECTS = dfe.o due.o iio.o sue.o sfe.o lread.o lwrite.o \
 
 all:	$(LIB) $(LIB_P)
 
-$(LIB):	$(OBJECTS) Version
+$(LIB):	$(OBJECTS) Version ioinit.f
 	ar ru $(LIB) $?
 	ranlib $(LIB)
 	@chmod 644 $(LIB)
