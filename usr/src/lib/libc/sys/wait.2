@@ -2,34 +2,44 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)wait.2	6.2 (Berkeley) %G%
+.\"	@(#)wait.2	6.3 (Berkeley) %G%
 .\"
 .TH WAIT 2 ""
 .UC 4
 .SH NAME
-wait, wait3 \- wait for process to terminate
+wait, waitpid, wait4, wait3 \- wait for process to terminate
 .SH SYNOPSIS
 .ft B
 .nf
+#include <sys/types.h>
 #include <sys/wait.h>
 .PP
 .ft B
 pid = wait(status)
-int pid;
-union wait *status;
+pid_t pid;
+int *status;
 .PP
 .ft B
-pid = wait(0)
-int pid;
+pid = waitpid(wpid, status, options)
+pid_t pid, wpid;
+int *status;
+int options;
 .PP
 .ft B
 #include <sys/time.h>
 #include <sys/resource.h>
 .PP
 .ft B
+pid = wait4(wpid, status, options, rusage)
+pid_t pid, wpid;
+int *status;
+int options;
+struct rusage *rusage;
+.PP
+.ft B
 pid = wait3(status, options, rusage)
-int pid;
-union wait *status;
+pid_t pid;
+int *status;
 int options;
 struct rusage *rusage;
 .fi
@@ -49,32 +59,54 @@ the value \-1 returned.
 On return from a successful 
 .I wait
 call, 
+the
 .I status
-is nonzero, and the high byte of 
-.I status
-contains the low byte of the argument to
-.I exit
-supplied by the child process;
-the low byte of 
-.I status
-contains the termination status of the process.
-A more precise definition of the
-.I status
-word is given in
-.RI < sys/wait.h >.
+area contains termination information about the process that exited
+as defined below.
 .PP
-.I Wait3
-provides an alternate interface for programs
-that must not block when collecting the status
-of child processes.  The
+The
+.I wait4
+call provides a more general interface for programs
+that wish to wait for certain child processes,
+that wish resource utilization statistics accummulated by child processes,
+or that require options.
+The other wait functions are implemented using
+.IR wait4 .
+.PP
+The
+.I wpid
+parameter specifies the set of child processes for which to wait.
+If
+.I wpid
+is \-1, the call waits for any child process.
+If
+.I wpid
+is 0,
+the call waits for any child process in the process group of the caller.
+If
+.I wpid
+is greater than zero, the call waits for the process with process id
+.IR wpid .
+If
+.I wpid
+is less than \-1, the call waits for any process whose process group id
+equals the absolute value of
+.IR wpid .
+.PP
+The
 .I status
-parameter is defined as above.  The
+parameter is defined below.  The
 .I options
-parameter is used to indicate the call should not block if
-there are no processes that wish to report status (WNOHANG),
-and/or that children of the current process that are stopped
-due to a SIGTTIN, SIGTTOU, SIGTSTP, or SIGSTOP signal should also have
-their status reported (WUNTRACED).  If
+parameter contains the bitwise OR of any of the following options.
+The WNOHANG option
+is used to indicate that the call should not block if
+there are no processes that wish to report status.
+If the WUNTRACED option is set,
+children of the current process that are stopped
+due to a SIGTTIN, SIGTTOU, SIGTSTP, or SIGSTOP signal also have
+their status reported.
+.PP
+If
 .I rusage
 is non-zero, a summary of the resources used by the terminated
 process and all its
@@ -83,25 +115,67 @@ for stopped processes).
 .PP
 When the WNOHANG option is specified and no processes
 wish to report status, 
-.I wait3
+.I wait4
 returns a 
 .I pid
-of 0.  The WNOHANG and WUNTRACED options may be combined by 
-.IR or 'ing
-the two values.
+of 0.
+.PP
+The
+.I waitpid
+call is identical to
+.I wait4
+with an
+.I rusage
+value of zero.
+The older
+.I wait3
+call is the same as
+.I wait4
+with a
+.I wpid
+value of \-1.
+.PP
+The following macros may be used to test the manner of exit of the process.
+One of the first three macros will evaluate to a non-zero (true) value:
+.IP WIFEXITED(status)
+True if the process terminated normally by a call to
+.IR _exit (2)
+or
+.IR exit (2).
+.IP WIFSIGNALED(status)
+True if the process terminated due to receipt of a signal.
+.IP WIFSTOPPED(status)
+True if the process has not terminated, but has stopped and can be restarted.
+This macro can be true only if the wait call specified the
+WUNTRACED
+option
+or if the child process is being traced (see
+.IR ptrace (2)).
+.LP
+Depending on the values of those macros, the following macros
+produce the remaining status information about the child process:
+.IP WEXITSTATUS(status)
+If WIFEXITED(status) is true, evaluates to the low-order 8 bits
+of the argument passed to
+.IR _exit (2)
+or
+.IR exit (2)
+by the child.
+.IP WTERMSIG(status)
+If WIFSIGNALED(status) is true, evaluates to the number of the signal
+that caused the termination of the process.
+.IP WCOREDUMP(status)
+If WIFSIGNALED(status) is true, evaluates as true if the termination
+of the process was accompanied by the creation of a core file
+containing an image of the process when the signal was received.
+.IP WSTOPSIG(status)
+If WIFSTOPPED(status) is true, evaluates to the number of the signal
+that caused the process to stop.
 .SH NOTES
 See
-.IR sigvec (2)
-for a list of termination statuses (signals);
-0 status indicates normal termination.
-A special status (0177) is returned for a stopped process
-that has not terminated and can be restarted;
-see
-.IR ptrace (2).
-If the 0200 bit of the termination status
-is set,
-a core image of the process was produced
-by the system.
+.IR sigaction (2)
+for a list of termination signals.
+A status of 0 indicates normal termination.
 .PP
 If the parent process terminates without
 waiting on its children,
@@ -109,21 +183,39 @@ the initialization process
 (process ID = 1)
 inherits the children.
 .PP
-.I Wait
-and
-.I wait3
-are automatically restarted when a process receives a
-signal while awaiting termination of a child process.
+If a signal is caught while any of the
+.I wait
+calls is pending,
+the call may be interrupted or restarted when the signal-catching routine
+returns,
+depending on the options in effect for the signal;
+see
+.IR intro (2),
+System call restart.
 .SH "RETURN VALUE
 If \fIwait\fP returns due to a stopped
 or terminated child process, the process ID of the child
 is returned to the calling process.  Otherwise, a value of \-1
 is returned and \fIerrno\fP is set to indicate the error.
 .PP
-.I Wait3
-returns \-1 if there are no children not previously waited
-for;  0 is returned if WNOHANG is specified and there are
-no stopped or exited children.
+If
+.IR wait4 ,
+.I wait3
+or
+.I waitpid
+returns due to a stopped
+or terminated child process, the process ID of the child
+is returned to the calling process.
+If there are no children not previously awaited,
+\-1 is returned with
+.I errno
+set to [ECHILD].
+Otherwise, if WNOHANG is specified and there are
+no stopped or exited children,
+0 is returned.
+If an error is detected or a caught signal aborts the call,
+a value of \-1
+is returned and \fIerrno\fP is set to indicate the error.
 .SH ERRORS
 .I Wait
 will fail and return immediately if one or more of the following
@@ -135,5 +227,24 @@ child processes.
 .TP 15
 [EFAULT]
 The \fIstatus\fP or \fIrusage\fP arguments point to an illegal address.
+(May not be detected before exit of a child process.)
+.TP 15
+[EINTR]
+The call was interrupted by a caught signal,
+or the signal did not have the SA_RESTART flag set.
+.SH STANDARDS
+The
+.I wait
+and
+.I waitpid
+functions are defined by POSIX;
+.I wait4
+and
+.I wait3
+are not specified by POSIX.
+The WCOREDUMP macro
+and the ability to restart a pending
+.I wait
+call are extensions to the POSIX interface.
 .SH "SEE ALSO"
-exit(2)
+exit(2), sigaction(2)
