@@ -1,12 +1,12 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd5.c	1.4 83/07/28";
+static	char *sccsid = "@(#)cmd5.c	1.5 83/07/28";
 #endif
 
 #include "defs.h"
-#include <ctype.h>
 
 struct ww *openwin();
 struct ww *doopen();
+struct ww *idtowin();
 
 static char *sourcefilename;
 static int lineno;			/* current line number in source file */
@@ -19,6 +19,7 @@ static char baderrwin;			/* can't open errwin */
 int s_window();
 int s_select();
 int s_escape();
+int s_label();
 struct scmd {
 	char *s_name;			/* name of command */
 	int s_len;			/* number of characters to check */
@@ -30,6 +31,7 @@ static struct scmd scmd[] = {
 	"window",	1, 4, 4, s_window,
 	"%",		1, 0, 0, s_select,
 	"escape",	1, 1, 1, s_escape,
+	"label",	1, 2, 2, s_label,
 	0
 };
 
@@ -38,34 +40,40 @@ char *filename;
 {
 	register FILE *f;
 	char buf[BUFSIZ];
-	register struct scmd *sp;
 
 	if ((f = fopen(filename, "r")) == 0)
 		return;
-	sourcefilename = filename;
-	for (lineno = 1; fgets(buf, sizeof buf, f) != 0; lineno++) {
-		makeargv(buf);
-		if (argc == 0)
-			continue;
-		for (sp = scmd; sp->s_name; sp++)
-			if (sp->s_len > 0) {
-				if (strncmp(*argv, sp->s_name, sp->s_len) == 0)
-					break;
-			} else
-				if (strncmp(*argv, sp->s_name) == 0)
-					break;
-		if (sp->s_name) {
-			if (sp->s_amin > argc - 1)
-				error("Too few arguments.");
-			else if (sp->s_amax < argc - 1)
-				error("Too many arguments.");
-			else
-				(*sp->s_func)();
-		} else
-			error("%s: Unknown command.", *argv);
-	}
+	beginerror(filename);
+	for (lineno = 1; fgets(buf, sizeof buf, f) != 0; lineno++)
+		doline(buf);
 	enderror();
 	return 0;
+}
+
+doline(line)
+char *line;
+{
+	register struct scmd *sp;
+
+	makeargv(line);
+	if (argc == 0)
+		return;
+	for (sp = scmd; sp->s_name; sp++)
+		if (sp->s_len > 0) {
+			if (strncmp(*argv, sp->s_name, sp->s_len) == 0)
+				break;
+		} else
+			if (strncmp(*argv, sp->s_name) == 0)
+				break;
+	if (sp->s_name) {
+		if (sp->s_amin > argc - 1)
+			error("Too few arguments.");
+		else if (sp->s_amax < argc - 1)
+			error("Too many arguments.");
+		else
+			(*sp->s_func)();
+	} else
+		error("%s: Unknown command.", *argv);
 }
 
 s_window()
@@ -102,14 +110,11 @@ s_window()
 
 s_select()
 {
-	register int id;
-	register struct ww *w;
+	struct ww *w;
 
-	id = atoi(*argv + 1);
-	if (id < 1 || id > 9 || (w = wwfind(id)) == 0)
-		error("%d: No such window.", id);
-	else
-		setselwin(w);
+	if ((w = idtowin(*argv + 1)) == 0)
+		return;
+	setselwin(w);
 }
 
 s_escape()
@@ -117,19 +122,80 @@ s_escape()
 	setescape(argv[1]);
 }
 
+s_label()
+{
+	struct ww *w;
+
+	if ((w = idtowin(argv[1])) == 0)
+		return;
+	setlabel(w, argv[2]);
+}
+
+struct ww *
+idtowin(idstr)
+char *idstr;
+{
+	int id;
+	struct ww *w = 0;
+
+	id = atoi(idstr);
+	if (id < 1 || id > 9 || (w = wwfind(id)) == 0)
+		error("%d: No such window.", id);
+	return w;
+}
+
 makeargv(p)
 register char *p;
 {
 	static char buf[BUFSIZ];
 	register char *q = buf, **pp = argv;
+	char quote = 0, escape = 0;
+	int i;
 
 	for (; *p == ' ' || *p == '\t'; p++)
 		;
 	while (*p && *p != '\n' && *p != '#'
 	       && pp < &argv[sizeof argv/sizeof *argv - 1]) {
 		*pp++ = q;
-		while (*p && *p != '\n' && *p != ' ' && *p != '\t')
-			*q++ = *p++;
+		while (*p && *p != '\n') {
+			if (escape) {
+				switch (*p) {
+				case 'n':
+					*q++ = '\n';
+					break;
+				case 'r':
+					*q++ = '\r';
+					break;
+				case '0': case '1': case '2': case '3':
+				case '4': case '5': case '6': case '7':
+					*q = 0;
+					for (i = 3; --i >= 0
+					     && *p >= '0' && *p <= '9';)
+						*q = *q << 3 | *p++ - '0';
+					q++;
+					break;
+				default:
+					*q++ = *p++;
+					break;
+				}
+				escape = 0;
+			} else if (*p == '\\') {
+				escape == 1;
+			} else if (quote) {
+				if (*p == quote) {
+					quote = 0;
+					p++;
+				} else
+					*q++ = *p++;
+			} else {
+				if (*p == '"' || *p == '\'')
+					quote = *p++;
+				else if (*p == ' ' || *p == '\t')
+					break;
+				else
+					*q++ = *p++;
+			}
+		}
 		*q++ = 0;
 		for (; *p == ' ' || *p == '\t'; p++)
 			;
@@ -143,6 +209,11 @@ static
 error(fmt, a, b, c, d, e, f, g, h)
 char *fmt;
 {
+	if (sourcefilename == 0) {
+		wwprintf(cmdwin, fmt, a, b, c, d, e, f, g, h);
+		wwprintf(cmdwin, ".  ");
+		return;
+	}
 #define ERRLINES 10
 	if (errwin == 0 && !baderrwin) {
 		char buf[512];
@@ -165,6 +236,12 @@ char *fmt;
 	wwprintf(errwin, "\r\n");
 }
 
+beginerror(filename)
+char *filename;
+{
+	sourcefilename = filename;
+}
+
 enderror()
 {
 	if (errwin != 0) {
@@ -173,4 +250,5 @@ enderror()
 		errwin = 0;
 	} else
 		baderrwin = 0;
+	sourcefilename = 0;
 }
