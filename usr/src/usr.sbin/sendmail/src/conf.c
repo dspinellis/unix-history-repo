@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.141 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.142 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -715,8 +715,16 @@ switch_map_find(service, maptype, mapreturn)
   punt:
 	if (strcmp(service, "aliases") == 0)
 	{
-		maptype[0] = "files";
-		return 1;
+		maptype[svcno++] = "files";
+#ifdef AUTO_NIS_ALIASES
+# ifdef NISPLUS
+		maptype[svcno++] = "nisplus";
+# endif
+# ifdef NIS
+		maptype[svcno++] = "nis";
+# endif
+#endif
+		return svcno;
 	}
 	if (strcmp(service, "hosts") == 0)
 	{
