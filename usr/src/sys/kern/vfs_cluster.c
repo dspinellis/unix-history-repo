@@ -6,7 +6,7 @@
  * Use and redistribution is subject to the Berkeley Software License
  * Agreement and your Software Agreement with AT&T (Western Electric).
  *
- *	@(#)vfs_cluster.c	7.45 (Berkeley) %G%
+ *	@(#)vfs_cluster.c	7.46 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -54,8 +54,9 @@ bufinit()
 		else
 			bp->b_bufsize = base * CLBYTES;
 		binshash(bp, &bfreelist[BQ_AGE]);
-		bp->b_flags = B_BUSY|B_INVAL;
-		brelse(bp);
+		bp->b_flags = B_INVAL;
+		dp = bp->b_bufsize ? &bfreelist[BQ_AGE] : &bfreelist[BQ_EMPTY];
+		binsheadfree(bp, dp);
 	}
 }
 
@@ -191,7 +192,7 @@ bwrite(bp)
 {
 	struct proc *p = curproc;		/* XXX */
 	register int flag;
-	int s, error;
+	int s, error = 0;
 
 	flag = bp->b_flags;
 	bp->b_flags &= ~(B_READ | B_DONE | B_ERROR | B_DELWRI);
@@ -222,8 +223,9 @@ bwrite(bp)
 			reassignbuf(bp, bp->b_vp);
 		brelse(bp);
 	} else if (flag & B_DELWRI) {
+		s = splbio();
 		bp->b_flags |= B_AGE;
-		error = 0;
+		splx(s);
 	}
 	return (error);
 }
@@ -301,6 +303,7 @@ brelse(bp)
 	/*
 	 * Retry I/O for locked buffers rather than invalidating them.
 	 */
+	s = splbio();
 	if ((bp->b_flags & B_ERROR) && (bp->b_flags & B_LOCKED))
 		bp->b_flags &= ~B_ERROR;
 	/*
@@ -316,7 +319,6 @@ brelse(bp)
 	/*
 	 * Stick the buffer back on a free list.
 	 */
-	s = splbio();
 	if (bp->b_bufsize <= 0) {
 		/* block has no buffer ... put at front of unused buffer list */
 		flist = &bfreelist[BQ_EMPTY];
