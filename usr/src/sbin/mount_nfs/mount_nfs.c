@@ -15,7 +15,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mount_nfs.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)mount_nfs.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -471,6 +471,7 @@ getnfsargs(spec, nfsargsp)
 	if (nfhret.stat) {
 		if (opflags & ISBGRND)
 			exit(1);
+		errno = nfhret.stat;
 		warn("can't access %s", spec);
 		return (0);
 	}
