@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)inet.c	4.11 83/03/12";
+static char sccsid[] = "@(#)inet.c	4.12 83/05/30";
 #endif
 
 #include <sys/types.h>
@@ -129,12 +129,17 @@ tcp_stats(off, name)
 	}
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&tcpstat, sizeof (tcpstat));
-	printf("%s:\n\t%d bad header checksums\n", name, tcpstat.tcps_badsum);
-	printf("\t%d bad header offset fields\n", tcpstat.tcps_badoff);
-	printf("\t%d incomplete headers\n", tcpstat.tcps_hdrops);
+	printf("%s:\n\t%d bad header checksum%s\n", name,
+		tcpstat.tcps_badsum, plural(tcpstat.tcps_badsum));
+	printf("\t%d bad header offset field%s\n",
+		tcpstat.tcps_badoff, plural(tcpstat.tcps_badoff));
+	printf("\t%d incomplete header%s\n",
+		tcpstat.tcps_hdrops, plural(tcpstat.tcps_hdrops));
 #ifdef notdef
-	printf("\t%d bad segments\n", tcpstat.tcps_badsegs);
-	printf("\t%d unacknowledged packets\n", tcpstat.tcps_unack);
+	printf("\t%d bad segment%s\n",
+		tcpstat.tcps_badsegs, plural(tcpstat.badsegs));
+	printf("\t%d unacknowledged packet%s\n",
+		tcpstat.tcps_unack, plural(tcpstat.tcps_unack));
 #endif
 }
 
@@ -153,9 +158,12 @@ udp_stats(off, name)
 	}
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&udpstat, sizeof (udpstat));
-	printf("%s:\n\t%d bad header checksums\n", name, udpstat.udps_badsum);
-	printf("\t%d incomplete headers\n", udpstat.udps_hdrops);
-	printf("\t%d bad data length fields\n", udpstat.udps_badlen);
+	printf("%s:\n\t%d bad header checksum%s\n", name,
+		udpstat.udps_badsum, plural(udpstat.udps_badsum));
+	printf("\t%d incomplete header%s\n",
+		udpstat.udps_hdrops, plural(udpstat.udps_hdrops));
+	printf("\t%d bad data length field%s\n",
+		udpstat.udps_badlen, plural(udpstat.udps_badlen));
 }
 
 /*
@@ -173,12 +181,12 @@ ip_stats(off, name)
 	}
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&ipstat, sizeof (ipstat));
-	printf("%s:\n\t%d bad header checksums\n", name, ipstat.ips_badsum);
-	printf("\t%d packet size smaller than minimum\n",
-		ipstat.ips_tooshort);
-	printf("\t%d data size < data length\n", ipstat.ips_toosmall);
-	printf("\t%d header length < data size\n", ipstat.ips_badhlen);
-	printf("\t%d data length < header length\n", ipstat.ips_badlen);
+	printf("%s:\n\t%d bad header checksum%s\n", name,
+		ipstat.ips_badsum, plural(ipstat.ips_badsum));
+	printf("\t%d with size smaller than minimum\n", ipstat.ips_tooshort);
+	printf("\t%d with data size < data length\n", ipstat.ips_toosmall);
+	printf("\t%d with header length < data size\n", ipstat.ips_badhlen);
+	printf("\t%d with data length < header length\n", ipstat.ips_badlen);
 }
 
 static	char *icmpnames[] = {
@@ -217,11 +225,12 @@ icmp_stats(off, name)
 	}
 	klseek(kmem, off, 0);
 	read(kmem, (char *)&icmpstat, sizeof (icmpstat));
-	printf("%s:\n\t%d calls to icmp_error\n", name, icmpstat.icps_error);
-	printf("\t%d errors not generated 'cuz old message too short\n",
-		icmpstat.icps_oldshort);
-	printf("\t%d errors not generated 'cuz old message was icmp\n",
-		icmpstat.icps_oldicmp);
+	printf("%s:\n\t%d call%s to icmp_error\n", name,
+		icmpstat.icps_error, plural(icmpstat.icps_error));
+	printf("\t%d error%s not generated 'cuz old message too short\n",
+		icmpstat.icps_oldshort, plural(icmpstat.icps_oldshort));
+	printf("\t%d error%s not generated 'cuz old message was icmp\n",
+		icmpstat.icps_oldicmp, plural(icmpstat.icps_oldicmp));
 	for (first = 1, i = 0; i < ICMP_IREQREPLY + 1; i++)
 		if (icmpstat.icps_outhist[i] != 0) {
 			if (first) {
@@ -231,10 +240,13 @@ icmp_stats(off, name)
 			printf("\t\t%s: %d\n", icmpnames[i],
 				icmpstat.icps_outhist[i]);
 		}
-	printf("\t%d messages < minimum length\n", icmpstat.icps_tooshort);
-	printf("\t%d bad checksums\n", icmpstat.icps_checksum);
-	printf("\t%d messages with bad length\n", icmpstat.icps_badlen);
-	printf("\t%d message responses generated\n", icmpstat.icps_reflect);
+	printf("\t%d message%s < minimum length\n",
+		icmpstat.icps_tooshort, plural(icmpstat.icps_tooshort));
+	printf("\t%d bad checksum%s\n", icmpstat.icps_checksum);
+	printf("\t%d message%s with bad length\n",
+		icmpstat.icps_badlen, plural(icmpstat.icps_badlen));
+	printf("\t%d message response%s generated\n",
+		icmpstat.icps_reflect, plural(icmpstat.icps_reflect));
 	for (first = 1, i = 0; i < ICMP_IREQREPLY + 1; i++)
 		if (icmpstat.icps_inhist[i] != 0) {
 			if (first) {
