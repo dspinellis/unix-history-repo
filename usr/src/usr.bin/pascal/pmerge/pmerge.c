@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)pmerge.c 1.3 %G%";
+static char sccsid[] = "@(#)pmerge.c 1.4 %G%";
 
 #include <ctype.h>
 #include <stdio.h>
@@ -107,7 +107,7 @@ main(argc, argv)
 			}
 			for (cp = &line[1]; isspace(*cp); cp++)
 				/* void */;
-			if (strcmpn("include", cp, 7))
+			if (strncmp("include", cp, 7))
 				goto bad;
 			for (cp += 7; isspace(*cp); cp++)
 				/* void */;
@@ -237,7 +237,7 @@ split(line)
 		len = cp - word;
 		switch (*word) {
 		case 'b':
-			if (len == 5 && !strcmpn(word, "begin", 5)) {
+			if (len == 5 && !strncmp(word, "begin", 5)) {
 				if (nest == 0 && beginnest == 0) {
 					if (inprog != 1) {
 						fprintf(stderr,
@@ -251,13 +251,13 @@ split(line)
 			}
 			break;
 		case 'c':
-			if (len == 4 && !strcmpn(word, "case", 4)) {
+			if (len == 4 && !strncmp(word, "case", 4)) {
 				if (beginnest > 0) {
 					beginnest++;
 				}
 				break;
 			}
-			if (len == 5 && !strcmpn(word, "const", 5)) {
+			if (len == 5 && !strncmp(word, "const", 5)) {
 				if (nest == 0) {
 					prt = FALSE;
 					if (!constopen) {
@@ -269,7 +269,7 @@ split(line)
 			}
 			break;
 		case 'e':
-			if (len == 3 && !strcmpn(word, "end", 3)) {
+			if (len == 3 && !strncmp(word, "end", 3)) {
 				if (beginnest == 1) {
 					nest--;
 				}
@@ -287,7 +287,7 @@ split(line)
 				}
 				break;
 			}
-			if (len == 8 && !strcmpn(word, "external", 8)) {
+			if (len == 8 && !strncmp(word, "external", 8)) {
 				fputs("forward", curfile);
 				prt = FALSE;
 				if (paren_level == 0) {
@@ -296,7 +296,7 @@ split(line)
 			}
 			break;
 		case 'f':
-			if (len == 8 && !strcmpn(word, "function", 8)) {
+			if (len == 8 && !strncmp(word, "function", 8)) {
 				if (nest == 0) {
 					curfile = files[RTNFILE];
 				}
@@ -305,14 +305,14 @@ split(line)
 				}
 				break;
 			}
-			if (len == 7 && !strcmpn(word, "forward", 7)) {
+			if (len == 7 && !strncmp(word, "forward", 7)) {
 				if (paren_level == 0) {
 					nest--;
 				}
 			}
 			break;
 		case 'l':
-			if (len == 5 && !strcmpn(word, "label", 5)) {
+			if (len == 5 && !strncmp(word, "label", 5)) {
 				if (nest == 0) {
 					prt = FALSE;
 					if (!labelopen) {
@@ -324,7 +324,7 @@ split(line)
 			}
 			break;
 		case 'p':
-			if (len == 9 && !strcmpn(word, "procedure", 9)) {
+			if (len == 9 && !strncmp(word, "procedure", 9)) {
 				if (nest == 0) {
 					curfile = files[RTNFILE];
 				}
@@ -333,7 +333,7 @@ split(line)
 				}
 				break;
 			}
-			if (len == 7 && !strcmpn(word, "program", 7)) {
+			if (len == 7 && !strncmp(word, "program", 7)) {
 				if (nest != 0) {
 					fprintf(stderr, "improper program nesting");
 					quit(NULL);
@@ -343,7 +343,7 @@ split(line)
 			}
 			break;
 		case 't':
-			if (len == 4 && !strcmpn(word, "type", 4)) {
+			if (len == 4 && !strncmp(word, "type", 4)) {
 				if (nest == 0) {
 					prt = FALSE;
 					if (!typeopen) {
@@ -355,7 +355,7 @@ split(line)
 			}
 			break;
 		case 'v':
-			if (len == 3 && !strcmpn(word, "var", 3)) {
+			if (len == 3 && !strncmp(word, "var", 3)) {
 				if (nest == 0) {
 					prt = FALSE;
 					if (!varopen) {
