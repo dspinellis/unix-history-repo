@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfsproto.h	7.9 (Berkeley) %G%
+ *	@(#)nfsproto.h	7.10 (Berkeley) %G%
  */
 
 /*
