@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.2	%G%";
+static char SccsId[] = "@(#)deliver.c	3.3	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a particular address.

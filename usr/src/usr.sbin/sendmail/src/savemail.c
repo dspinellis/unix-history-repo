@@ -2,7 +2,7 @@
 # include <pwd.h>
 # include "postbox.h"
 
-static char	SccsId[] = "@(#)savemail.c	3.1	%G%";
+static char	SccsId[] = "@(#)savemail.c	3.2	%G%";
 
 /*
 **  SAVEMAIL -- Save mail on error
@@ -43,6 +43,8 @@ savemail()
 	extern ADDRESS *parse();
 	static int exclusive;
 	extern char *DaemonName;
+	extern char *strcpy(), *strcat();
+	extern long time();
 
 	if (exclusive++)
 		return;

@@ -4,7 +4,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	3.1	%G%";
+static char	SccsId[] = "@(#)err.c	3.2	%G%";
 
 /*
 **  SYSERR -- Print error message.
@@ -33,6 +33,7 @@ syserr(fmt, a, b, c, d, e)
 	register char *p;
 	extern char *sys_errlist[];
 	extern int sys_nerr;
+	extern char *sprintf();
 
 	sprintf(errbuf, fmt, a, b, c, d, e);
 	if (errno != 0)
@@ -84,7 +85,7 @@ usrerr(fmt, a, b, c, d, e)
 	extern char SuprErrs;
 
 	if (SuprErrs)
-		return;
+		return (0);
 
 	Errors++;
 	if (To != NULL)

@@ -7,7 +7,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.2	%G%";
+static char	SccsId[] = "@(#)main.c	3.3	%G%";
 
 /*
 **  POSTBOX -- Post mail to a set of destinations.
@@ -147,13 +147,13 @@ main(argc, argv)
 	extern char Version[];
 	extern int errno;
 	char *from;
-	register int i;
 	typedef int (*fnptr)();
 	char nbuf[MAXLINE];
 	struct passwd *pw;
 	extern char *newstr();
 	extern char *Macro[];
 	extern char *index();
+	extern char *strcpy(), *strcat();
 	bool canrename;
 
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
@@ -565,6 +565,8 @@ finis()
 
 openxscrpt()
 {
+	extern char *mktemp();
+
 	mktemp(Transcript);
 	HasXscrpt++;
 	if (freopen(Transcript, "w", stdout) == NULL)
