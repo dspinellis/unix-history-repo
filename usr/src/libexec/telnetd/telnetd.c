@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnetd.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnetd.c	5.21 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -386,6 +386,11 @@ telnet(f, p)
 	setsockopt(net, SOL_SOCKET, SO_OOBINLINE, &on, sizeof on);
 #endif	/* defined(SO_OOBINLINE) */
 	signal(SIGTSTP, SIG_IGN);
+	/*
+	 * Ignoring SIGTTOU keeps the kernel from blocking us
+	 * in ttioctl() in /sys/tty.c.
+	 */
+	signal(SIGTTOU, SIG_IGN);
 	signal(SIGCHLD, cleanup);
 	setpgrp(0, 0);
 
