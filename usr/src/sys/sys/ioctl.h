@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ioctl.h	6.13 (Berkeley) %G%
+ *	@(#)ioctl.h	6.14 (Berkeley) %G%
  */
 
 /*
@@ -250,8 +250,10 @@ struct winsize {
 /* protocol i/o controls (bbn) */
 #define SIOCSPUSH	_IO(b, 64)		/* tcp: set push */
 #define SIOCCPUSH	_IO(b, 65)		/* tcp: clear push */
-#define SIOCSNOACT	_IOW(b, 66, int)	/* tcp: set no activity timer */
-#define SIOCGNOACT	_IOR(b, 67, int)	/* tcp: get no activity timer */
+#define SIOCSNOACT	_IOW(b, 66, u_long)	/* tcp: set no activity timer */
+#define SIOCGNOACT	_IOR(b, 67, u_long)	/* tcp: get no activity timer */
+#define	    TCP_NOACTPROBE	0x80000000	/*	send pkt on timeout */
+#define	    TCP_NOACTSIG	0x40000000	/*	advise user on timeout */
 #define SIOCSINIT	_IOW(b, 68, int)	/* tcp: set init timer */
 #define SIOCGINIT	_IOR(b, 69, int)	/* tcp: get init timer */
 #define SIOCABORT	_IO(b, 70)		/* tcp: abort connection */
