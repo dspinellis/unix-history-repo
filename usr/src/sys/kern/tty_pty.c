@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.12	82/01/14	*/
+/*	tty_pty.c	4.13	82/01/15	*/
 
 /*
  * Pseudo-teletype Driver
@@ -36,6 +36,7 @@ struct	pt_ioctl {
 
 #define	PTCRCOLL	0x01
 #define	PTCWCOLL	0x02
+#define	PTCNBIO		0x04
 
 /*ARGSUSED*/
 ptsopen(dev, flag)
@@ -169,8 +170,13 @@ dev_t dev;
 	tp = &pt_tty[minor(dev)];
 	if ((tp->t_state&(TS_CARR_ON|TS_ISOPEN)) == 0)
 		return;
-	while (tp->t_outq.c_cc == 0 || (tp->t_state&TS_TTSTOP))
+	while (tp->t_outq.c_cc == 0 || (tp->t_state&TS_TTSTOP)) {
+		if (pt_ioctl[minor(dev)].pti_flags&PTCNBIO) {
+			u.u_error = EWOULDBLOCK;
+			return;
+		}
 		sleep((caddr_t)&tp->t_outq.c_cf, TTIPRI);
+	}
 	while (tp->t_outq.c_cc && passc(getc(&tp->t_outq)) >= 0)
 		;
 	if (tp->t_outq.c_cc <= TTLOWAT(tp)) {
@@ -266,8 +272,24 @@ ptyioctl(dev, cmd, addr, flag)
 
 	tp = &pt_tty[minor(dev)];
 	/* IF CONTROLLER STTY THEN MUST FLUSH TO PREVENT A HANG ??? */
-	if (cdevsw[major(dev)].d_open == ptcopen && cmd == TIOCSETP)
-		while (getc(&tp->t_outq) >= 0);
+	if (cdevsw[major(dev)].d_open == ptcopen) {
+		if (cmd == FIONBIO) {
+			int nbio;
+			register struct pt_ioctl *pti;
+			if (copyin(addr, &nbio, sizeof (nbio))) {
+				u.u_error = EFAULT;
+				return;
+			}
+			pti = &pt_ioctl[minor(dev)];
+			if (nbio)
+				pti->pti_flags |= PTCNBIO;
+			else
+				pti->pti_flags &= ~PTCNBIO;
+			return;
+		}
+		if (cmd == TIOCSETP)
+			while (getc(&tp->t_outq) >= 0);
+	}
 	if (ttioctl(tp, cmd, addr, dev) == 0)
 		u.u_error = ENOTTY;
 }
