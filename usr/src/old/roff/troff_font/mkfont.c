@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)mkfont.c	4.2 %G%";
+static char sccsid[] = "@(#)mkfont.c	4.3 %G%";
 #endif lint
 
 #include "mkfont1.c"
@@ -50,8 +50,8 @@ char **argv;
 				if(font[i].name == chtab[j])break;
 			}
 			ascii[i] = chtab[j+1] & 0377;
-			if(chtab[j] == 'hy')hyw = width[i];
-			if(chtab[j] == 'em')emw = width[i];
+			if(chtab[j] == PAIR('h','y')) hyw = width[i];
+			if(chtab[j] == PAIR('e','m')) emw = width[i];
 		}
 	}
 	printf("char XXw[256-32] {\t/*XX*/\n");
