@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -184,10 +184,17 @@ s_strncpy(dst, src, n)
 {
     register Char *sdst;
 
+    if (n == 0)
+	return(dst);
+
     sdst = dst;
-    while (--n >= 0 && (*dst++ = *src++));
-    while (--n >= 0)
-	*dst++ = '\0';
+    do 
+	if ((*dst++ = *src++) == '\0') {
+	    while (--n > 0)
+		*dst++ = '\0';
+	    return(sdst);
+	}
+    while (--n != 0);
     return (sdst);
 }
 
@@ -212,12 +219,20 @@ s_strncat(dst, src, n)
 {
     register Char *sdst;
 
+    if (n == 0) 
+	return (dst);
+
     sdst = dst;
+
     while (*dst++);
     --dst;
-    while (*src && --n >= 0)
-	*dst++ = *src++;
-    *dst++ = '\0';
+
+    do 
+	if ((*dst++ = *src++) == '\0')
+	    return(sdst);
+    while (--n != 0);
+
+    *dst = '\0';
     return (sdst);
 }
 
@@ -285,10 +300,13 @@ s_strncmp(str1, str2, n)
     register Char *str1, *str2;
     register size_t n;
 {
-    for (; --n >= 0 && *str1 == *str2; str1++, str2++);
-
-    if (n < 0)
+    if (n == 0)
 	return (0);
+    do {
+        if (*str1 == '\0' || *str1 != *str2)
+	    break;
+	str1++, str2++;
+    } while (--n != 0);
     /*
      * The following case analysis is necessary so that characters which look
      * negative collate low against normal characters but high against the
@@ -302,6 +320,7 @@ s_strncmp(str1, str2, n)
 	return (1);
     else
 	return (*str1 - *str2);
+    return(0);
 }
 
 Char   *
