@@ -1,13 +1,13 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)ops.c 1.2 %G%";
+static char sccsid[] = "@(#)ops.c 1.3 %G%";
 
 /*
  * Machine operators.
  */
 
 #include "defs.h"
-#include "vaxops.h"
+#include "ops.h"
 
 #ifndef public
 typedef unsigned char VaxOpcode;
