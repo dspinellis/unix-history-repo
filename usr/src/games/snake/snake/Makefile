@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	5.5 (Berkeley) %G%
+#	@(#)Makefile	5.6 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -38,7 +38,7 @@ install: FRC
 	(cd ${DESTDIR}/usr/games; rm -f snake; ln -s dm snake; chown games.bin snake)
 	install -s -o games -g bin -m 700 snscore ${DESTDIR}/usr/games/hide
 	(cd ${DESTDIR}/usr/games; rm -f snscore; ln -s dm snscore; chown games.bin snscore)
-	install -c -o games -g bin -m 600 /dev/null ${DESTDIR}/usr/games/lib/snakerawscores
+	-[ -s ${DESTDIR}/usr/games/lib/snakerawscores ] || install -c -o games -g bin -m 600 /dev/null ${DESTDIR}/usr/games/lib/snakerawscores
 
 lint: FRC
 	lint ${CFLAGS} ${SRCS1}
