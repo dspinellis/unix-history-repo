@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)up.c	7.5 (Berkeley) %G%
+ *	@(#)up.c	7.6 (Berkeley) %G%
  */
 
 #include "up.h"
@@ -772,7 +772,7 @@ upecc(ui, flag)
 		npf = bp->b_error;
 	else
 		npf = btodb(bp->b_bcount + (up->upwc * sizeof(short)) + 511);
-	reg = btop(um->um_ubinfo&0x3ffff) + npf;
+	reg = btop(UBAI_ADDR(um->um_ubinfo)) + npf;
 	o = (int)bp->b_un.b_addr & PGOFSET;
 	mask = up->upec2;
 #ifdef UPECCDEBUG
