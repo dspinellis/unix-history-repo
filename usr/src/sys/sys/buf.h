@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)buf.h	7.16 (Berkeley) %G%
+ *	@(#)buf.h	7.17 (Berkeley) %G%
  */
 
 /*
@@ -159,6 +159,7 @@ __END_DECLS
 #define	B_INVAL		0x010000	/* does not contain valid info  */
 #define	B_LOCKED	0x020000	/* locked in core (not reusable) */
 #define	B_HEAD		0x040000	/* a buffer header, not a buffer */
+#define	B_GATHERED	0x080000	/* LFS: already in a segment */
 #define	B_BAD		0x100000	/* bad block revectoring in progress */
 #define	B_CALL		0x200000	/* call b_iodone from iodone */
 #define	B_RAW		0x400000	/* set by physio for raw transfers */
