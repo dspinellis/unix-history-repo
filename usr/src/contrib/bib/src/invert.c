@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)invert.c	2.3	%G%";
+static char sccsid[] = "@(#)invert.c	2.4	%G%";
 #endif not lint
 #
 /*  input:  records of lines, separated by blank lines
@@ -98,6 +98,7 @@ char **arglist;
 	fprintf(stderr,
 	    "%d documents   %d distinct keys  %d key occurrences\n",
 	    records, distinct, keys);
+    exit(0);
 }
 
 
