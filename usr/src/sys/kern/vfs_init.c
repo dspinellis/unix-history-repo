@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_init.c	8.3 (Berkeley) %G%
+ *	@(#)vfs_init.c	8.4 (Berkeley) %G%
  */
 
 
@@ -193,7 +193,8 @@ struct vattr va_null;
  */
 vfsinit()
 {
-	struct vfsops **vfsp;
+	struct vfsconf *vfsp;
+	int i, maxtypenum;
 
 	/*
 	 * Initialize the vnode table
@@ -212,9 +213,14 @@ vfsinit()
 	 * Initialize each file system type.
 	 */
 	vattr_null(&va_null);
-	for (vfsp = &vfssw[0]; vfsp <= &vfssw[MOUNT_MAXTYPE]; vfsp++) {
-		if (*vfsp == NULL)
-			continue;
-		(*(*vfsp)->vfs_init)();
+	maxtypenum = 0;
+	for (vfsp = vfsconf, i = 1; i <= maxvfsconf; i++, vfsp++) {
+		if (i < maxvfsconf)
+			vfsp->vfc_next = vfsp + 1;
+		if (maxtypenum <= vfsp->vfc_typenum)
+			maxtypenum = vfsp->vfc_typenum + 1;
+		(*vfsp->vfc_vfsops->vfs_init)(vfsp);
 	}
+	/* next vfc_typenum to be used */
+	maxvfsconf = maxtypenum;
 }
