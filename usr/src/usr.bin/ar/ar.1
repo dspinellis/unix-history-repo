@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)ar.1	6.8 (Berkeley) %G%
+.\"	@(#)ar.1	6.9 (Berkeley) %G%
 .\"
 .TH AR 1 ""
 .AT 3
@@ -40,8 +40,7 @@ When matching paths listed on the command line against file names stored
 in the archive, only the last component of the path will be compared.
 .PP
 All informational and error messages use the path listed on the command
-archive, not the name entered in the archive unless no name was supplied
-on the command line.
+line, if any was specified, otherwise the name in the archive is used.
 If multiple files in the archive have the same name, and paths are listed
 on the command line to ``select'' archive files for an operation, only the
 .B first
@@ -162,12 +161,13 @@ already in the archive.
 .IP
 When used with the \-p option,
 the name of each printed file is written to the standard output before
-the contents of the file, on a line by itself, enclosed in less-than
-(``<'') and greater-than (``>'') characters.
+the contents of the file, preceded by a single newline character, and
+followed by two newline characters, enclosed in less-than (``<'') and
+greater-than (``>'') characters.
 .IP
 When used with the \-t option,
 .I ar
-displays an ``ls -l'' style listing of information about the files in
+displays an ``ls -l'' style listing of information about the members of
 the archive.
 This listing consists of eight, white-space separated fields:
 the file permissions (see
@@ -178,9 +178,9 @@ the file size (in bytes), the file modification time (in the
 format ``%b %e %H:%M %Y''), and the name of the file.
 .TP
 \-x
-Extract the specified files into the files named by the command line
-arguments.
-If no files are specified, all the files in the archive are extracted into
+Extract the specified archive members into the files named by the command
+line arguments.
+If no members are specified, all the members of the archive are extracted into
 the current directory.
 .IP
 If the file does not exist, it is created; if it does exist, the owner
@@ -226,4 +226,4 @@ The
 .I ar
 utility is expected to offer a superset of the POSIX 1003.2 functionality.
 .SH "SEE ALSO"
-ld(1), ranlib(1), ar(5)
+ld(1), ranlib(1), strmode(3), ar(5)
