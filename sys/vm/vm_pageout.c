@@ -65,7 +65,7 @@
  * any improvements or extensions that they make and grant Carnegie the
  * rights to redistribute these changes.
  *
- * $Id: vm_pageout.c,v 1.17 1994/03/21 09:46:12 davidg Exp $
+ * $Id: vm_pageout.c,v 1.18 1994/04/05 03:23:51 davidg Exp $
  */
 
 /*
@@ -85,6 +85,7 @@
 
 extern vm_map_t kmem_map;
 int	vm_pages_needed;		/* Event on which pageout daemon sleeps */
+int	vm_pagescanner;			/* Event on which pagescanner sleeps */
 int	vm_pageout_free_min = 0;	/* Stop pageout to wait for pagers at this free level */
 
 int	vm_pageout_pages_needed = 0;	/* flag saying that the pageout daemon needs pages */
@@ -96,17 +97,19 @@ extern int hz;
 int	vm_pageout_proc_limit;
 extern int nswiodone;
 extern int swap_pager_full;
+extern int swap_pager_ready;
 
 #define MAXREF 32767
-#define DEACT_MAX (DEACT_START * 4)
-#define MINSCAN 256	/* minimum number of pages to scan in active queue */
-			/* set the "clock" hands to be (MINSCAN * 4096) Bytes */
+
+#define MAXSCAN 512	/* maximum number of pages to scan in active queue */
+			/* set the "clock" hands to be (MAXSCAN * 4096) Bytes */
+#define ACT_DECLINE	1
+#define ACT_ADVANCE	5
+#define ACT_MAX		1000
 
 #define LOWATER ((2048*1024)/NBPG)
 
 #define VM_PAGEOUT_PAGE_COUNT 8
-static int minscan;
-void vm_pageout_deact_bump(vm_page_t m) ;
 static vm_offset_t vm_space_needed;
 int vm_pageout_req_do_stats;
 int vm_pageout_do_stats;
@@ -235,14 +238,17 @@ vm_pageout_clean(m, sync)
 		vm_page_free_count >= vm_pageout_free_min) {
 		if( pageout_count == 1) {
 			pageout_status[0] = pager ?
-				vm_pager_put(pager, m, ((sync || (object == kernel_object)) ? TRUE: FALSE)) :
+				vm_pager_put(pager, m,
+				    ((sync || (object == kernel_object)) ? TRUE: FALSE)) :
 				VM_PAGER_FAIL;
 		} else {
 			if( !pager) {
 				for(i=0;i<pageout_count;i++)
 					pageout_status[i] = VM_PAGER_FAIL;
 			} else {
-				vm_pager_putmulti(pager, ms, pageout_count, ((sync || (object == kernel_object)) ? TRUE : FALSE), pageout_status);
+				vm_pager_putmulti(pager, ms, pageout_count,
+				    ((sync || (object == kernel_object)) ? TRUE : FALSE),
+				    pageout_status);
 			}
 		}
 			
@@ -302,98 +308,6 @@ vm_pageout_clean(m, sync)
 	return anyok;
 }
 
-#if 0
-int
-vm_fault_object_deactivate_pages(map, object, dummy)
-	vm_map_t map;
-	vm_object_t object;
-	int dummy;
-{
-	register vm_page_t	p, next;
-	int rcount;
-	int s;
-	int dcount;
-	int count;
-
-	dcount = 0;
-	/*
-	 * deactivate the pages in the objects shadow
-	 */
-
-	if (object->shadow)
-		dcount += vm_fault_object_deactivate_pages(map, object->shadow, 0);
-
-	/*
-	 * scan the objects memory queue and remove 20% of the active pages
-	 */
-	rcount = object->resident_page_count;
-	count = rcount;
-	if (count == 0)
-		return dcount;
-#define MINOBJWRITE 10
-#define OBJDIVISOR 5
-	if (count > MINOBJWRITE) {
-		count = MINOBJWRITE + ((count - MINOBJWRITE) / OBJDIVISOR);
-	}
-	p = (vm_page_t) queue_first(&object->memq);
-	while ((rcount-- > 0) && !queue_end(&object->memq, (queue_entry_t) p) ) {
-		next = (vm_page_t) queue_next(&p->listq);
-		vm_page_lock_queues();
-		/*
-		 * if a page is active, not wired and is in the processes pmap,
-		 * then deactivate the page.
-		 */
-		if ((p->flags & (PG_ACTIVE|PG_BUSY)) == PG_ACTIVE &&
-			p->wire_count == 0 &&
-			p->hold_count == 0 &&
-			pmap_page_exists(vm_map_pmap(map), VM_PAGE_TO_PHYS(p))) {
-			if (!pmap_is_referenced(VM_PAGE_TO_PHYS(p))) {
-				vm_page_deactivate(p);
-				if ((p->flags & PG_CLEAN) == 0) {
-					vm_pageout_clean(p,0);
-				}
-				++dcount;
-				if (--count <= 0) {
-					vm_page_unlock_queues();
-					s = splbio();
-					while (object->paging_in_progress) {
-						tsleep((caddr_t) object,PVM,"vmfobw",0);
-					}
-					splx(s);
-					return dcount;
-				}
-			} else {
-				vm_pageout_deact_bump(p);
-				pmap_clear_reference(VM_PAGE_TO_PHYS(p));
-				queue_remove(&object->memq, p, vm_page_t, listq);
-				queue_enter(&object->memq, p, vm_page_t, listq);
-				queue_remove(&vm_page_queue_active, p, vm_page_t, pageq);
-				queue_enter(&vm_page_queue_active, p, vm_page_t, pageq);
-			}
-		/*
-		 * if a page is inactive and has been modified, clean it now
-		 */
-		} else if ((p->flags & (PG_INACTIVE|PG_BUSY)) == PG_INACTIVE) {
-			if ((p->flags & PG_CLEAN) &&
-				pmap_is_modified(VM_PAGE_TO_PHYS(p)))
-				p->flags &= ~PG_CLEAN;
-
-			if ((p->flags & PG_CLEAN) == 0)
-				vm_pageout_clean(p,0);
-		}
-
-		vm_page_unlock_queues();
-		p = next;
-	}
-	s = splbio();
-	while (object->paging_in_progress) {
-		tsleep((caddr_t)object,PVM,"vmfobw",0);
-	}
-	splx(s);
-	return dcount;
-}
-#endif
-
 /*
  *	vm_pageout_object_deactivate_pages
  *
@@ -447,7 +361,7 @@ vm_pageout_object_deactivate_pages(map, object, count)
 			p->hold_count == 0 &&
 			pmap_page_exists(vm_map_pmap(map), VM_PAGE_TO_PHYS(p))) {
 			if (!pmap_is_referenced(VM_PAGE_TO_PHYS(p))) {
-				vm_page_pageout_deactivate(p);
+				vm_page_deactivate(p);
 				/*
 				 * see if we are done yet
 				 */
@@ -462,12 +376,11 @@ vm_pageout_object_deactivate_pages(map, object, count)
 				}
 				
 			} else {
-				vm_pageout_deact_bump(p);
-				pmap_clear_reference(VM_PAGE_TO_PHYS(p));
+				/*
+				 * Move the page to the bottom of the queue.
+				 */
 				queue_remove(&object->memq, p, vm_page_t, listq);
 				queue_enter(&object->memq, p, vm_page_t, listq);
-				queue_remove(&vm_page_queue_active, p, vm_page_t, pageq);
-				queue_enter(&vm_page_queue_active, p, vm_page_t, pageq);
 			}
 		} 
 
@@ -521,17 +434,6 @@ vm_pageout_map_deactivate_pages(map, entry, count, freeer)
 	return;
 }
 
-#if 0
-void
-vm_fault_free_pages(p)
-	struct proc *p;
-{
-	int overage = 1;
-	vm_pageout_map_deactivate_pages(&p->p_vmspace->vm_map,
-		(vm_map_entry_t) 0, &overage, vm_fault_object_deactivate_pages);
-}
-#endif
-
 /*
  *	vm_pageout_scan does the dirty work for the pageout daemon.
  */
@@ -539,8 +441,8 @@ int
 vm_pageout_scan()
 {
 	vm_page_t	m;
-	int		page_shortage, maxscan, maxlaunder;
-	int		pages_freed, free, nproc, nbusy;
+	int		page_shortage, maxscan, maxlaunder, act_smallest;
+	int		pages_freed, free, nproc, nbusy, actloop;
 	vm_page_t	next;
 	struct proc	*p;
 	vm_object_t	object;
@@ -548,19 +450,9 @@ vm_pageout_scan()
 	int		force_wakeup = 0;
 
 morefree:
-	/*
-	 * deactivate objects with ref_counts == 0
-	 */
-	object = (vm_object_t) queue_first(&vm_object_list);
-	while (!queue_end(&vm_object_list, (queue_entry_t) object)) {
-		if (object->ref_count == 0)
-			vm_object_deactivate_pages(object);
-		object = (vm_object_t) queue_next(&object->object_list);
-	}
-
 rerun:
 	/*
-	 * next scan the processes for exceeding their rlimits or if process
+	 * scan the processes for exceeding their rlimits or if process
 	 * is swapped out -- deactivate pages 
 	 */
 
@@ -641,12 +533,12 @@ rescan1:
 			break;
 		}
 
+		next = (vm_page_t) queue_next(&m->pageq);
+
 		if( (m->flags & PG_INACTIVE) == 0) {
 			printf("vm_pageout_scan: page not inactive?");
-			goto rescan1;
+			continue;
 		}
-
-		next = (vm_page_t) queue_next(&m->pageq);
 
 		/*
 		 * activate held pages
@@ -674,10 +566,9 @@ rescan1:
 		 * vm system.
 		 */
 		if (m->flags & PG_CLEAN) {
-			if ((vm_page_free_count > vm_pageout_free_min)
+			if ((vm_page_free_count > vm_pageout_free_min)			/* XXX */
 				&& pmap_is_referenced(VM_PAGE_TO_PHYS(m))) {
 				vm_page_activate(m);
-				++vm_stat.reactivations;
 				m = next;
 				continue;
 			}
@@ -724,20 +615,13 @@ rescan1:
 		 *	Be sure the pmap system is updated so
 		 *	we can scan the inactive queue.
 		 */
-		pmap_update();
+		pmap_update();		/* Why do we need a TLB flush here? Sparc? */
 
 		/*
 		 * swap out inactive processes
 		 */
 		swapout_threads();
 
-#if 0
-		/*
-		 * see if malloc has anything for us
-		 */
-		if (free <= vm_page_free_reserved)
-			malloc_gc(); 
-#endif
 	}
 
 skipfree:
@@ -764,12 +648,9 @@ skipfree:
 
 restart_inactivate_all:
 
-	page_shortage = vm_page_inactive_target - vm_page_inactive_count;
-	page_shortage -= vm_page_free_count;  
+	page_shortage = vm_page_inactive_target -
+	    (vm_page_free_count + vm_page_inactive_count);
 
-	if (force_wakeup) {
-		page_shortage = vm_page_active_count;
-	}
 	if (page_shortage <= 0) {
 		if (pages_freed == 0) {
 			if( vm_page_free_count < vm_page_free_min) {
@@ -784,21 +665,10 @@ restart_inactivate_all:
 			
 	}
 
-	maxscan = vm_page_active_count;
-
-	/*
-	 * deactivate pages that are active, but have not been used
-	 * for a while.
-	 */
-restart_inactivate:
 	m = (vm_page_t) queue_first(&vm_page_queue_active);
-	while (maxscan-- > 0) {
+	maxscan = vm_page_active_count;
+	while (maxscan-- && (page_shortage > 0)) {
 
-		if (page_shortage <= 0 && (!vm_pageout_do_stats
-			|| maxscan < (vm_page_active_count - minscan)) ) {
-			break;
-		}
-	
 		if (queue_end(&vm_page_queue_active, (queue_entry_t) m)) {
 			break;
 		}
@@ -806,58 +676,28 @@ restart_inactivate:
 		next = (vm_page_t) queue_next(&m->pageq);
 
 		/*
- 		 * dont mess with pages that are busy
+ 		 * Don't deactivate pages that are busy.
 		 */
 		if ((m->flags & PG_BUSY) || (m->hold_count != 0)) {
-			queue_remove(&vm_page_queue_active, m, vm_page_t, pageq);
-			queue_enter(&vm_page_queue_active, m, vm_page_t, pageq);
 			m = next;
 			continue;
 		}
 
-	/*
-	 *	Move some more pages from active to inactive.
-	 */
-
-		/*
-		 * see if there are any pages that are able to be deactivated
-		 */
-		/*
-		 * the referenced bit is the one that say that the page
-		 * has been used.
-		 */
-		if (!pmap_is_referenced(VM_PAGE_TO_PHYS(m))) {
-			/*
-			 * if the page has not been referenced, call the
-			 * vm_page_pageout_deactivate routine.  It might
-			 * not deactivate the page every time.  There is
-			 * a policy associated with it.
-			 */
-			if (page_shortage > 0) {
-				if (vm_page_pageout_deactivate(m)) {
-					/*
-					 * if the page was really deactivated, then
-					 * decrement the page_shortage
-					 */
-					if ((m->flags & PG_ACTIVE) == 0) {
-						--page_shortage;
-					}
-				}
-			}
-		} else {
-			/*
-			 * if the page was recently referenced, set our
-			 * deactivate count and clear reference for a future
-			 * check for deactivation.
-			 */
-			vm_pageout_deact_bump(m);
-/*			if (page_shortage > 0 || m->deact >= (DEACT_MAX/2)) */
-				pmap_clear_reference(VM_PAGE_TO_PHYS(m));
-			queue_remove(&m->object->memq, m, vm_page_t, listq);
-			queue_enter(&m->object->memq, m, vm_page_t, listq);
+		if (pmap_is_referenced(VM_PAGE_TO_PHYS(m))) {
+			pmap_clear_reference(VM_PAGE_TO_PHYS(m));
+			if (m->act_count < ACT_MAX)
+				m->act_count += ACT_ADVANCE;
 			queue_remove(&vm_page_queue_active, m, vm_page_t, pageq);
 			queue_enter(&vm_page_queue_active, m, vm_page_t, pageq);
+		} else {
+			m->act_count -= min(m->act_count, ACT_DECLINE);
+
+			if (!m->act_count) {
+				vm_page_deactivate(m);
+				--page_shortage;
+			}
 		}
+
 		m = next;
 	}
 
@@ -876,59 +716,81 @@ restart_inactivate:
 	return force_wakeup;
 }
 
-/*
- * this code maintains a dynamic reference count per page
- */
 void
-vm_pageout_deact_bump(vm_page_t m) {
-	if( m->deact >= DEACT_START) {
-		m->deact += 2;
-		if( m->deact > DEACT_MAX)
-			m->deact = DEACT_MAX;
-	} else {
-		m->deact += DEACT_START;
-	}
-}
-
-/*
- * optionally do a deactivate if the deactivate has been done
- * enough to justify it.
- */
-int
-vm_page_pageout_deactivate(m)
-	vm_page_t m;
+vm_pagescan()
 {
+	int maxscan, pages_scanned, pages_referenced, nextscan, scantick = hz/20;
+	int m_ref, next_ref;
+	vm_page_t m, next;
 
-	switch (m->deact) {
-case DEACT_FREE:
-		vm_page_deactivate(m);
-		return 1;
-case DEACT_CLEAN:
-		break;
-case DEACT_DELAY:
-case DEACT_START:
-		break;
+	(void) splnone();
+
+	nextscan = scantick;
+
+scanloop:
+
+	pages_scanned = 0;
+	pages_referenced = 0;
+	maxscan = min(vm_page_active_count, MAXSCAN);
+
+	/*
+	 * Gather statistics on page usage.
+	 */
+	m = (vm_page_t) queue_first(&vm_page_queue_active);
+	while (maxscan-- > 0) {
+
+		if (queue_end(&vm_page_queue_active, (queue_entry_t) m)) {
+			break;
+		}
+
+		++pages_scanned;
+
+		next = (vm_page_t) queue_next(&m->pageq);
+
+		/*
+ 		 * Dont mess with pages that are busy.
+		 */
+		if ((m->flags & PG_BUSY) || (m->hold_count != 0)) {
+			queue_remove(&vm_page_queue_active, m, vm_page_t, pageq);
+			queue_enter(&vm_page_queue_active, m, vm_page_t, pageq);
+			m = next;
+			continue;
+		}
+
+		/*
+		 * Advance pages that have been referenced, decline pages that
+		 * have not.
+		 */
+		if (pmap_is_referenced(VM_PAGE_TO_PHYS(m))) {
+			pmap_clear_reference(VM_PAGE_TO_PHYS(m));
+			pages_referenced++;
+			if (m->act_count < ACT_MAX)
+				m->act_count += ACT_ADVANCE;
+			queue_remove(&vm_page_queue_active, m, vm_page_t, pageq);
+			queue_enter(&vm_page_queue_active, m, vm_page_t, pageq);
+		} else {
+			m->act_count -= min(m->act_count, ACT_DECLINE);
+			if (!m->act_count &&
+			    (vm_page_free_count+vm_page_inactive_count < vm_page_count/10))
+				vm_page_deactivate(m);
+		}
+		m = next;
 	}
-	--m->deact;
-	return 0;
+
+	if (pages_referenced) {
+		nextscan = (pages_scanned / pages_referenced) * scantick;
+		nextscan = max(nextscan, scantick);
+		nextscan = min(nextscan, hz);
+	} else
+		nextscan = hz;
+
+	tsleep((caddr_t) &vm_pagescanner, PVM, "scanw", nextscan);
+	goto scanloop;
 }
 
-void
-vm_pageout_timeout(int flag) {
-	
-	int nextrun = hz/10;
-	if( ((vm_page_free_count + vm_page_inactive_count) < LOWATER) ||
-		(vm_page_free_count <= vm_page_free_reserved) ) {
-		nextrun = hz/32;
-		wakeup((caddr_t) & vm_pages_needed);
-	}
-	vm_pageout_req_do_stats = 1;
-	timeout((timeout_func_t)&vm_pageout_timeout, 0, nextrun);
-}
 /*
  *	vm_pageout is the high level pageout daemon.
  */
-
 void
 vm_pageout()
 {
@@ -942,10 +804,7 @@ vm_pageout()
 	 */
 
 vmretry:
-	vm_page_free_min = npendingio/3;
-#ifdef VSMALL
 	vm_page_free_min = 8;
-#endif
 	vm_page_free_reserved = 8;
 	if (vm_page_free_min < 8)
 		vm_page_free_min = 8;
@@ -955,39 +814,30 @@ vmretry:
 	vm_page_free_target = 2*vm_page_free_min + vm_page_free_reserved;
 	vm_page_inactive_target = 3*vm_page_free_min + vm_page_free_reserved;
 	vm_page_free_min += vm_page_free_reserved;
-	minscan = MINSCAN;
-	if (minscan > vm_page_count/3)
-		minscan = vm_page_count/3;
 
 	(void) swap_pager_alloc(0, 0, 0, 0);
-
-	timeout((timeout_func_t) &vm_pageout_timeout, 0, 100);
 
 	/*
 	 *	The pageout daemon is never done, so loop
 	 *	forever.
 	 */
-
-		
 	while (TRUE) {
 		int force_wakeup;
 		
-		if( !vm_pageout_req_do_stats)
-			tsleep((caddr_t) &vm_pages_needed, PVM, "psleep", 0);
-		if( vm_pageout_req_do_stats)
-			vm_pageout_do_stats = 1;
-		vm_pageout_req_do_stats = 0;
+		tsleep((caddr_t) &vm_pages_needed, PVM, "psleep", 0);
 	
 		vm_pager_sync();
-	/*
-	 * The force wakeup hack added to eliminate delays and potiential
-	 * deadlock.  It was possible for the page daemon to indefintely
-	 * postpone waking up a process that it might be waiting for memory
-	 * on.  The putmulti stuff seems to have aggravated the situation.
-	 */
+		/*
+		 * The force wakeup hack added to eliminate delays and potiential
+		 * deadlock.  It was possible for the page daemon to indefintely
+		 * postpone waking up a process that it might be waiting for memory
+		 * on.  The putmulti stuff seems to have aggravated the situation.
+		 */
 		force_wakeup = vm_pageout_scan();
 		vm_pager_sync();
+#if 0
 		if( force_wakeup)
+#endif
 			wakeup( (caddr_t) &vm_page_free_count);
 		vm_pageout_do_stats = 0;
 		cnt.v_scan++;

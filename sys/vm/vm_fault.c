@@ -66,7 +66,7 @@
  * rights to redistribute these changes.
  */
 /*
- * $Id: vm_fault.c,v 1.14 1994/01/31 04:19:59 davidg Exp $
+ * $Id: vm_fault.c,v 1.15 1994/03/14 21:54:24 davidg Exp $
  */
 
 /*
@@ -133,6 +133,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	vm_page_t		marray[VM_FAULT_READ];
 	int			reqpage;
 	int			spl;
+	int			hardfault=0;
 
 	vm_stat.faults++;		/* needs lock XXX */
 /*
@@ -284,13 +285,12 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 			 */
 
 			vm_page_lock_queues();
-			spl = vm_disable_intr();
+			spl = splimp();
 			if (m->flags & PG_INACTIVE) {
 				queue_remove(&vm_page_queue_inactive, m,
 						vm_page_t, pageq);
 				m->flags &= ~PG_INACTIVE;
 				vm_page_inactive_count--;
-				vm_stat.reactivations++;
 			} 
 
 			if (m->flags & PG_ACTIVE) {
@@ -299,7 +299,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 				m->flags &= ~PG_ACTIVE;
 				vm_page_active_count--;
 			}
-			vm_set_intr(spl);
+			splx(spl);
 			vm_page_unlock_queues();
 
 			/*
@@ -403,6 +403,7 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 				vm_stat.pageins++;
 				m->flags &= ~PG_FAKE;
 				pmap_clear_modify(VM_PAGE_TO_PHYS(m));
+				hardfault++;
 				break;
 			}
 
@@ -895,8 +896,16 @@ vm_fault(map, vaddr, fault_type, change_wiring)
 	}
 	else {
 		vm_page_activate(m);
-		vm_pageout_deact_bump(m);
 	}
+
+	if( curproc && curproc->p_stats) {
+		if (hardfault) {
+			curproc->p_stats->p_ru.ru_majflt++;
+		} else {
+			curproc->p_stats->p_ru.ru_minflt++;
+		}
+	}
+		
 	vm_page_unlock_queues();
 
 	/*

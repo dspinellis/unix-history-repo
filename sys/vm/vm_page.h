@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_page.h	7.3 (Berkeley) 4/21/91
- *	$Id: vm_page.h,v 1.12 1994/03/19 22:31:09 davidg Exp $
+ *	$Id: vm_page.h,v 1.13 1994/04/05 03:23:50 davidg Exp $
  */
 
 /*
@@ -124,18 +124,13 @@ struct vm_page {
 
 	unsigned int	wire_count;	/* how many wired down maps use me? */
 	unsigned short	flags;		/* bit encoded flags */
-	unsigned short	deact;		/* deactivation count */
+	unsigned short	act_count;	/* active count */
 	int		hold_count;	/* page hold count -- don't pageout */
 
 	vm_offset_t	phys_addr;	/* physical address of page */
 };
 
 typedef struct vm_page	*vm_page_t;
-
-#define DEACT_START	5
-#define	DEACT_DELAY	2
-#define DEACT_CLEAN	1
-#define DEACT_FREE	0
 
 #if	VM_PAGE_DEBUG
 #define	VM_PAGE_CHECK(mem) { \
@@ -274,14 +269,6 @@ extern boolean_t pmap_is_referenced(vm_offset_t);
 extern boolean_t pmap_is_modified(vm_offset_t);
 extern vm_offset_t pmap_phys_ddress(int);
 
-
-/*
- * these macros are *MUCH* faster on a 386/486 type machine
- * eventually they need to be implemented correctly and put
- * somewhere in the machine dependant stuff.
- */
-#define vm_disable_intr() (disable_intr(), 0)
-#define vm_set_intr(spl) enable_intr()
 
 /*
  * Keep page from being freed by the page daemon

@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.23 1994/03/14 21:54:25 davidg Exp $
+ *	$Id: vm_object.c,v 1.24 1994/04/05 03:23:49 davidg Exp $
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -401,7 +401,7 @@ vm_object_terminate(object)
 		VM_PAGE_CHECK(p);
 
 		vm_page_lock_queues();
-		s = vm_disable_intr();
+		s = splimp();
 		if (p->flags & PG_ACTIVE) {
 			queue_remove(&vm_page_queue_active, p, vm_page_t,
 						pageq);
@@ -415,7 +415,7 @@ vm_object_terminate(object)
 			p->flags &= ~PG_INACTIVE;
 			vm_page_inactive_count--;
 		}
-		vm_set_intr(s);
+		splx(s);
 		vm_page_unlock_queues();
 		p = (vm_page_t) queue_next(&p->listq);
 	}

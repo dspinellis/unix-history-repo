@@ -556,6 +556,8 @@ swapout(p)
 		       p->p_slptime, vm_page_free_count);
 #endif
 
+	++p->p_stats->p_ru.ru_nswap;
+
 
 	(void) splhigh();
 	p->p_flag &= ~SLOAD;

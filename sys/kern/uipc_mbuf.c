@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)uipc_mbuf.c	7.19 (Berkeley) 4/20/91
- *	$Id: uipc_mbuf.c,v 1.5 1993/11/25 01:33:32 wollman Exp $
+ *	$Id: uipc_mbuf.c,v 1.6 1993/12/19 00:51:44 wollman Exp $
  */
 
 #include "param.h"
@@ -312,7 +312,8 @@ m_copym(m, off0, len, wait)
 		n->m_len = MIN(len, m->m_len - off);
 		if (m->m_flags & M_EXT) {
 			n->m_data = m->m_data + off;
-			mclrefcnt[mtocl(m->m_ext.ext_buf)]++;
+			if (m->m_ext.ext_free == (void (*)())0)
+				mclrefcnt[mtocl(m->m_ext.ext_buf)]++;
 			n->m_ext = m->m_ext;
 			n->m_flags |= M_EXT;
 		} else
@@ -639,7 +640,8 @@ extpacket:
 	if (m -> m_flags & M_EXT) {
 		n -> m_flags |= M_EXT;
 		n -> m_ext = m -> m_ext;
-		mclrefcnt[mtocl (m -> m_ext.ext_buf)]++;
+		if (m->m_ext.ext_free == (void (*)())0)
+			mclrefcnt[mtocl (m -> m_ext.ext_buf)]++;
 		n -> m_data = m -> m_data + len;
 	} else {
 		bcopy (mtod (m, caddr_t) + len, mtod (n, caddr_t), remain);

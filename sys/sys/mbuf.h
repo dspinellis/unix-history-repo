@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)mbuf.h	7.14 (Berkeley) 12/5/90
- *	$Id: mbuf.h,v 1.6 1993/12/19 00:55:19 wollman Exp $
+ *	$Id: mbuf.h,v 1.7 1994/03/07 11:48:12 davidg Exp $
  */
 
 #ifndef _SYS_MBUF_H_
@@ -241,6 +241,7 @@ union mcluster {
 		(m)->m_data = (m)->m_ext.ext_buf; \
 		(m)->m_flags |= M_EXT; \
 		(m)->m_ext.ext_size = MCLBYTES;  \
+		(m)->m_ext.ext_free = (void (*)())0; \
 	  } \
 	}
 
@@ -259,8 +260,7 @@ union mcluster {
  * Free a single mbuf and associated external storage.
  * Place the successor, if any, in n.
  */
-#ifdef notyet
-#define	MFREE(m, n) \
+#define	MFREE(m, nn) \
 	{ mbstat.m_mtypes[(m)->m_type]--; \
 	  if ((m)->m_flags & M_EXT) { \
 		if ((m)->m_ext.ext_free) \
@@ -268,15 +268,6 @@ union mcluster {
 			    (m)->m_ext.ext_size); \
 		else \
 			MCLFREE((m)->m_ext.ext_buf); \
-	  } \
-	  (n) = (m)->m_next; \
-	  FREE((m), mbtypes[(m)->m_type]); \
-	}
-#else /* notyet */
-#define	MFREE(m, nn) \
-	{ mbstat.m_mtypes[(m)->m_type]--; \
-	  if ((m)->m_flags & M_EXT) { \
-		MCLFREE((m)->m_ext.ext_buf); \
 	  } \
 	  (nn) = (m)->m_next; \
 	  if( mbuffreecnt < 256) { \
@@ -289,7 +280,6 @@ union mcluster {
 	  	  FREE((m), mbtypes[(m)->m_type]); \
 	  } \
 	}
-#endif
 
 /*
  * Copy mbuf pkthdr from from to to.
