@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	2.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	2.9 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -32,6 +32,7 @@ int machup;
 u_short sequence;			/* sequence number */
 long delay1;
 long delay2;
+long random();
 char hostname[MAXHOSTNAMELEN];
 struct host hp[NHOSTS];
 char tracefile[] = "/usr/adm/timed.log";
@@ -77,7 +78,6 @@ char **argv;
 	int nflag, iflag;
 	struct timeval time;
 	struct servent *srvp;
-	struct tsp resp, conflict, *answer, *readmsg(), *acksend();
 	long casual();
 	char *date();
 	int n;
@@ -90,7 +90,7 @@ char **argv;
 	struct netinfo *savefromnet;
 	struct sockaddr_in server;
 	u_short port;
-	int havemaster = 0;
+	uid_t getuid();
 
 #ifdef lint
 	ntip = NULL;
@@ -127,7 +127,7 @@ char **argv;
 				    "timed: -i and -n make no sense together\n");
 				} else {
 					nflag = ON;
-					addnetname(*argv, &nets);
+					addnetname(*argv);
 				}
 				while (*(++(*argv)+1)) ;
 				break;
@@ -138,7 +138,7 @@ char **argv;
 				    "timed: -i and -n make no sense together\n");
 				} else {
 					iflag = ON;
-					addnetname(*argv, &nets);
+					addnetname(*argv);
 				}
 				while (*(++(*argv)+1)) ;
 				break;
@@ -219,7 +219,7 @@ char **argv;
 	}
 	ifc.ifc_len = sizeof(buf);
 	ifc.ifc_buf = buf;
-	if (ioctl(sock, (int)SIOCGIFCONF, (char *)&ifc) < 0) {
+	if (ioctl(sock, SIOCGIFCONF, (char *)&ifc) < 0) {
 		syslog(LOG_ERR, "get interface configuration: %m");
 		exit(1);
 	}
@@ -233,7 +233,7 @@ char **argv;
 			ntp = (struct netinfo *)malloc(sizeof(struct netinfo));
 		ntp->my_addr = 
 			((struct sockaddr_in *)&ifreq.ifr_addr)->sin_addr;
-		if (ioctl(sock, (int)SIOCGIFFLAGS, 
+		if (ioctl(sock, SIOCGIFFLAGS, 
 					(char *)&ifreq) < 0) {
 			syslog(LOG_ERR, "get interface flags: %m");
 			continue;
@@ -247,7 +247,7 @@ char **argv;
 			flag = 1;
 		else
 			flag = 0;
-		if (ioctl(sock, (int)SIOCGIFNETMASK, 
+		if (ioctl(sock, SIOCGIFNETMASK, 
 					(char *)&ifreq) < 0) {
 			syslog(LOG_ERR, "get netmask: %m");
 			continue;
@@ -255,14 +255,14 @@ char **argv;
 		ntp->mask = ((struct sockaddr_in *)
 			&ifreq.ifr_addr)->sin_addr.s_addr;
 		if (flag) {
-			if (ioctl(sock, (int)SIOCGIFBRDADDR, 
+			if (ioctl(sock, SIOCGIFBRDADDR, 
 						(char *)&ifreq) < 0) {
 				syslog(LOG_ERR, "get broadaddr: %m");
 				continue;
 			}
 			ntp->dest_addr = *(struct sockaddr_in *)&ifreq.ifr_broadaddr;
 		} else {
-			if (ioctl(sock, (int)SIOCGIFDSTADDR, 
+			if (ioctl(sock, SIOCGIFDSTADDR, 
 						(char *)&ifreq) < 0) {
 				syslog(LOG_ERR, "get destaddr: %m");
 				continue;
@@ -325,7 +325,7 @@ char **argv;
 	  (void) dup2(0, 2);
 	  s = open("/dev/tty", 2);
 	  if (s >= 0) {
-		(void) ioctl(s, (int)TIOCNOTTY, (char *)0);
+		(void) ioctl(s, TIOCNOTTY, (char *)0);
 		(void) close(s);
 	  }
 	}
@@ -508,7 +508,7 @@ setstatus()
 	if (trace)
 		fprintf(fd, "Net status:\n");
 	for (ntp = nettab; ntp != NULL; ntp = ntp->next) {
-		switch (ntp->status) {
+		switch ((int)ntp->status) {
 		  case MASTER:
 			nmasternets++;
 			break;
@@ -521,7 +521,7 @@ setstatus()
 		}
 		if (trace) {
 			fprintf(fd, "\t%-16s", inet_ntoa(ntp->net));
-			switch (ntp->status) {
+			switch ((int)ntp->status) {
 			  case MASTER:
 				fprintf(fd, "MASTER\n");
 				break;
@@ -578,7 +578,6 @@ long inf;
 long sup;
 {
 	float value;
-	long random();
 
 	value = (float)(random() & 0x7fffffff) / 0x7fffffff;
 	return(inf + (sup - inf) * value);
@@ -606,6 +605,6 @@ addnetname(name)
 		syslog(LOG_ERR, "malloc failed");
 		exit(1);
 	}
-	bzero(*netlist, sizeof(**netlist));
+	bzero((char *)*netlist, sizeof(**netlist));
 	(*netlist)->name = name;
 }
