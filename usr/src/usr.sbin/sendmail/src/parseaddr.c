@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parseaddr.c	8.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)parseaddr.c	8.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1614,6 +1614,8 @@ badaddr:
 			}
 			tv++;
 		}
+		else
+			setstat(EX_UNAVAILABLE);
 		buf[0] = '\0';
 		for (; (*tv != NULL) && (**tv != CANONUSER); tv++)
 		{
