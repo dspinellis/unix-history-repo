@@ -15,6 +15,7 @@ static char sccsid[] = "@(#)newfs.c	4.14 %G%";
 
 #define	BOOTDIR	"/usr/mdec"	/* directory for boot blocks */
 
+int	Nflag;			/* run mkfs without writing file system */
 int	verbose;		/* show mkfs line before exec */
 int	noboot;			/* do not fill boot blocks */
 int	fssize;			/* file system size */
@@ -64,6 +65,10 @@ main(argc, argv)
 			case 'v':
 				verbose++;
 				break;
+
+			case 'N':
+				Nflag++;
+				/* fall through to */
 
 			case 'n':
 				noboot++;
@@ -163,6 +168,8 @@ next:
 		fprintf(stderr, "usage: newfs [ -v ] [ mkfs-options ] %s\n",
 			"special-device device-type");
 		fprintf(stderr, "where mkfs-options are:\n");
+		fprintf(stderr, "\t-N do not create file system, %s\n",
+			"just print out parameters");
 		fprintf(stderr, "\t-s file system size (sectors)\n");
 		fprintf(stderr, "\t-b block size\n");
 		fprintf(stderr, "\t-f frag size\n");
@@ -240,6 +247,9 @@ next:
 	if (cpg == 0)
 		cpg = 16;
 	i = 0;
+	if (Nflag)
+		av[i++] = "-N";
+	av[i++] = special;
 	av[i++] = sprintf(a2, "%d", fssize);
 	av[i++] = sprintf(a3, "%d", nsectors);
 	av[i++] = sprintf(a4, "%d", ntracks);
@@ -250,7 +260,7 @@ next:
 	av[i++] = sprintf(a9, "%d", rpm / 60);
 	av[i++] = sprintf(a10, "%d", density);
 	av[i++] = 0;
-	sprintf(cmd, "/etc/mkfs %s", special);
+	strcpy(cmd, "/etc/mkfs");
 	for (i = 0; av[i] != 0; i++) {
 		strcat(cmd, " ");
 		strcat(cmd, av[i]);
