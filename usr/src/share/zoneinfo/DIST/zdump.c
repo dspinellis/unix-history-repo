@@ -1,6 +1,6 @@
 #ifndef lint
 #ifndef NOID
-static char	elsieid[] = "@(#)zdump.c	4.9";
+static char	elsieid[] = "@(#)zdump.c	4.10";
 #endif /* !defined NOID */
 #endif /* !defined lint */
 
@@ -63,6 +63,9 @@ static int	longest;
 static void	show();
 static void	hunt();
 static long	delta();
+static char *	ecpyalloc();
+
+static char *	progname;
 
 int
 main(argc, argv)
@@ -79,6 +82,7 @@ char *	argv[];
 	time_t		hibit;
 	struct tm	tm, newtm;
 
+	progname = argv[0];
 	vflag = 0;
 	cutoff = NULL;
 	while ((c = getopt(argc, argv, "c:v")) == 'c' || c == 'v')
@@ -108,6 +112,7 @@ char *	argv[];
 	for (i = optind; i < argc; ++i) {
 		register char **	saveenv;
 		char *			tzequals;
+		char *			ab;
 		char *			fakeenv[2];
 
 		tzequals = malloc((unsigned) (strlen(argv[i]) + 4));
@@ -137,6 +142,7 @@ char *	argv[];
 		t += SECSPERHOUR * HOURSPERDAY;
 		show(argv[i], t, TRUE);
 		tm = *localtime(&t);
+		ab = ecpyalloc(tzname[tm.tm_isdst]);
 		for ( ; ; ) {
 			if (cutoff != NULL && t >= cuttime)
 				break;
@@ -147,8 +153,12 @@ char *	argv[];
 				break;
 			newtm = *localtime(&newt);
 			if (delta(&newtm, &tm) != (newt - t) ||
-				newtm.tm_isdst != tm.tm_isdst)
+				newtm.tm_isdst != tm.tm_isdst ||
+				strcmp(tzname[newtm.tm_isdst], ab) != 0) {
 					hunt(argv[i], t, newt);
+					free(ab);
+					ab = ecpyalloc(tzname[newtm.tm_isdst]);
+			}
 			t = newt;
 			tm = newtm;
 		}
@@ -183,8 +193,10 @@ time_t	hit;
 	time_t		t;
 	struct tm	lotm;
 	struct tm	tm;
+	char *		loab;
 
 	lotm = *localtime(&lot);
+	loab = ecpyalloc(tzname[lotm.tm_isdst]);
 	while ((hit - lot) >= 2) {
 		t = lot / 2 + hit / 2;
 		if (t <= lot)
@@ -193,13 +205,15 @@ time_t	hit;
 			--t;
 		tm = *localtime(&t);
 		if (delta(&tm, &lotm) == (t - lot) &&
-			tm.tm_isdst == lotm.tm_isdst) {
+			tm.tm_isdst == lotm.tm_isdst &&
+			strcmp(tzname[tm.tm_isdst], loab) == 0) {
 				lot = t;
 				lotm = tm;
 		} else	hit = t;
 	}
 	show(name, lot, TRUE);
 	show(name, hit, TRUE);
+	free(loab);
 }
 
 static long
@@ -241,4 +255,21 @@ int	v;
 #endif /* defined TM_GMTOFF */
 	}
 	(void) printf("\n");
+}
+
+static char *
+ecpyalloc(string)
+char *	string;
+{
+	register char *	result;
+	register int	length;
+
+	length = strlen(string);
+	result = malloc(length + 1);
+	if (result == 0) {
+		(void) fprintf(stderr, "%s: can't allocate memory\n", progname);
+		(void) exit(EXIT_FAILURE);
+	}
+	(void) strcpy(result, string);
+	return result;
 }
