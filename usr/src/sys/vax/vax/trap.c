@@ -1,4 +1,4 @@
-/*	trap.c	4.16	82/09/04	*/
+/*	trap.c	4.17	82/09/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -186,7 +186,7 @@ asm("ok:");						/* GROT */
 	u.u_dirp = (caddr_t)u.u_arg[0];
 	u.u_r.r_val1 = 0;
 	u.u_r.r_val2 = locr0[R1];
-	if (setjmp(u.u_qsav)) {
+	if (setjmp(&u.u_qsave)) {
 		if (u.u_error == 0 && u.u_eosys == JUSTRETURN)
 			u.u_error = EINTR;
 	} else {
