@@ -1,0 +1,327 @@
+%    Copyright (C) 1991 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% gslp.ps - format and print text
+
+% This utility provides functionality approximately equivalent to the Unix
+% `enscript' program.  It prints plain text files using a single font.
+% It currently handles tabs and formfeeds, but not backspaces.
+% Currently it neither truncates nor wraps over-length lines.
+% It only works with fixed-pitch fonts.
+% Flags implemented: -12BclrR -b -f -F -L -p
+% Flags added:
+%	-T<n> for defining the tab width
+%	-P<n> for setting the first page to print
+%	-Q<n> for setting the last page to print
+
+/lpdict 80 dict def
+lpdict begin
+
+% Define the initial values of the printing parameters.
+
+/BodyFont null def		% use default
+  /defaultBodyFont
+    { /Courier findfont Landscape { 7 } { 10 } ifelse scalefont } def
+/Columns 1 def
+/Headers true def
+/HeadingLeft () def
+/HeadingCenter () def
+/HeadingRight null def		% use page #
+/HeadingFont null def		% use default
+  /defaultHeadingFont
+    { /Courier-Bold findfont 10 scalefont } def
+/MaxLines 9999 def		% max lines per page
+/Landscape false def
+/OutFile null def		% null = write directly to device
+/PageFirst 1 def
+/PageLast 99999 def
+/Tab 8 def
+/Truncate false def		% wrap long lines, don't truncate
+
+% When writing to a file, we want to write out PostScript;
+% when writing to the printer, we want to execute it;
+% some commands should be executed regardless.
+% lpexec provides for all this.
+
+/lpexec		% arg1...argn /op n do_always lpexec ->
+ { OutFile null eq
+    { pop 1 add true
+    }
+    { /t exch def 1 add /n exch def cvx
+      n { n -1 roll dup wosp } repeat
+      OutFile (\n) writestring
+      n t
+    }
+   ifelse
+    { pop load exec }
+    { { pop } repeat }
+   ifelse
+ } def
+
+/lpmoveto
+ { /moveto 2 true lpexec
+ } def
+/lpshow
+ { dup length 0 ne { /show 1 false lpexec } { pop } ifelse
+ } def
+/lpsetmyfont
+ { dup load setfont
+   OutFile null ne { cvx /setfont 1 false lpexec } { pop } ifelse
+ } def
+
+% Define some utility procedures.
+
+/beginpage
+ { /lindex 0 def
+   /skipping pindex PageFirst ge pindex PageLast le and not def
+   /save 0 true lpexec /pagesave exch def
+   skipping { nulldevice   /OutFile null def } if
+   Headers
+    { /HFont lpsetmyfont
+      HeadingLeft 0 topskip showline2
+      HeadingCenter dup stringwidth pop 2 div topskip showline2
+      HeadingRight null eq
+       { (page ) pindex 4 string cvs concatstrings }
+       { HeadingRight }
+      ifelse
+      dup stringwidth pop pwidth 0.95 mul exch sub
+      topskip showline2
+    }
+   if
+   /BFont lpsetmyfont
+ } def
+
+/endpage
+ { lindex 0 ne { /showpage 0 false lpexec } if
+   pagesave /restore 0 true lpexec
+   /pindex pindex 1 add def
+ } def
+
+/fontheight	% font -> height
+ { dup /FontBBox get
+   dup 3 get exch 1 get sub
+   exch /FontMatrix get
+   0 get mul 1.2 mul
+ } def
+
+/wosp
+ { OutFile ( ) writestring OutFile exch write==only
+ } def
+
+/outfont		% name font ->
+ { OutFile null ne
+    { exch wosp
+      dup /FontName get wosp OutFile ( findfont) writestring
+      /FontMatrix get 0 get 1000 mul round cvi wosp
+      OutFile ( scalefont def\n) writestring
+    }
+    { pop pop
+    }
+   ifelse
+ } def
+
+% showline doesn't do line wrapping yet....
+/showline		% line -> leftover_line (handles \f)
+ { (\f) search
+    {  { dup length 0 eq { pop exit } if   showline1 } loop
+      endpage beginpage
+      pop
+    }
+   if
+   showline1
+ } def
+
+/showline1		% line -> leftover_line (handles page break)
+ { lindex llength eq { endpage beginpage } if
+   lindex colines idiv cowidth mul	% x
+   lindex colines mod fheight mul neg	% y
+   showline2
+   /lindex lindex 1 add def
+   ()
+ } def
+
+/showline2	% string x y -> (handles tabs)
+ { lpmoveto
+    { dup length 0 eq { pop exit } if
+      (\t) search
+       { dup length 0 ne { lpshow } { pop } ifelse pop
+         currentpoint exch tabwx div
+	   0.05 add ceiling tabwx mul exch lpmoveto
+       }
+       { lpshow exit }
+      ifelse
+    } loop
+ } def
+
+% The main printing procedure
+
+/lp
+ { /lpfile exch def
+   /save 0 true lpexec
+
+% Initialize the device and fonts.
+   /BFont
+     BodyFont null eq { defaultBodyFont } { BodyFont } ifelse def
+   /BFont BFont outfont
+   /HFont
+     HeadingFont null eq { defaultHeadingFont } { HeadingFont } ifelse def
+   /HFont HFont outfont
+
+% Get the layout parameters.
+   clippath
+   Landscape { -90 /rotate 1 true lpexec } if
+   BFont setfont ( ) stringwidth pop /cwx exch def
+     cwx Tab mul /tabwx exch def
+   BFont fontheight /fheight exch def
+   Headers { HFont fontheight fheight add } { 0 } ifelse
+     /topskip exch def
+   pathbbox
+     2 index sub /plength exch def
+     2 index sub dup /pwidth exch def
+       Columns div /cowidth exch def
+     exch cowidth 0.025 mul add
+     exch plength 0.98 mul add topskip sub
+     /translate 2 true lpexec
+   plength 0.9 mul topskip sub fheight div cvi MaxLines min
+     dup /colines exch def
+     Columns mul /llength exch def
+   OutFile null ne { nulldevice } if
+
+% Print layout
+   (Page height = ) print llength =only
+   (.\n) print flush
+
+% Disable stack recording so we can use stopped with readline.
+   $error /recordstacks false put
+
+% Initialize for the first page.
+   /lbuf 1000 string def
+   /pindex 1 def
+   beginpage
+
+% Iterate through the file.
+   ()
+    { dup length /pos exch def
+      lbuf exch 0 exch putinterval
+       { lpfile lbuf pos lbuf length pos sub getinterval readline } stopped
+       { exch pop true } if
+      exch length pos add lbuf exch 0 exch getinterval exch
+       { showline }
+       { dup length 0 ne { showline } if exit }
+      ifelse
+    } loop
+   pop
+
+% Wrap up.
+   endpage
+   /restore 0 true lpexec
+
+ } def
+
+end
+
+% Usage: <file> lp
+%   prints <file> using the current parameter settings.
+% Usage: [ <arg1> ... <argn> ] lpcommand
+%   interprets args like a command line.
+
+/lp { save   lpdict begin lp end   restore } def
+
+lpdict begin
+
+/splitfn		% (FontNNN) -> <font>
+ { dup /arg exch def length
+    { dup 0 le { exit } if
+      dup 1 sub arg exch get dup 48 ge exch 59 le and not { exit } if
+      1 sub
+    } loop
+   arg exch 0 exch getinterval dup cvn findfont
+   exch arg exch anchorsearch pop pop cvr scalefont
+ } def
+
+% Parse the command line switches.
+
+/doswitch	% (-*) argstring ->
+ { exch dup cvn lpdict exch known
+    { cvn load exec }
+    { exch pop (Unknown switch: ) print print (\n) print flush }
+   ifelse
+ } def
+
+/more		% string ->
+ { dup length 0 ne
+    { (- ) dup 1 3 index 0 get put
+      exch dup length 1 sub 1 exch getinterval
+      doswitch
+    }
+    { pop
+    }
+   ifelse
+ } def
+
+(-1)cvn { /Columns 1 def   more } def
+(-2)cvn { /Columns 2 def   more } def
+/-b { /HeadingLeft exch def   /HeadingCenter () def   /HeadingRight null def
+      /Headers true def
+      /break true def
+    } def
+/-B { /Headers false def   more } def
+/-c { /Truncate true def   more } def
+/-f { splitfn /BodyFont exch def } def
+/-F { splitfn /HeadingFont exch def } def
+/-l { 66 -L -B } def
+/-L { cvi /MaxLines exch def } def
+/-p { (w) file /OutFile exch def   Outfile (%!\n) writestring } def
+/-P { cvi /PageFirst exch def } def
+/-Q { cvi /PageLast exch def } def
+/-r { /Landscape true def   more } def
+/-R { /Landscape false def   more } def
+/-T { cvi /Tab exch def } def
+
+end
+
+/lpcommand
+ { lpdict begin
+   /break false def
+    { dup length 2 ge { dup 0 get (-) 0 get eq } { false } ifelse
+       { dup 0 2 getinterval
+         exch dup length 2 sub 2 exch getinterval
+	 doswitch
+       }
+       { break not { dup /HeadingLeft exch def } if
+         (r) file lp
+       }
+      ifelse
+    } forall
+   OutFile null ne { OutFile closefile   /OutFile null def } if
+   end
+ } def
+
+[ shellarguments
+ { ] dup length 0 ne
+    { lpcommand
+    }
+    { (Usage: gslp [-12BclrR] [-b<header] [-f<font>] [-F<hfont>]\n) print
+      (         [-L<lines>] [-p<outfile>] [-P<startpage#>] [-Q<stoppage#>]\n) print
+      (         [-T<tabwidth>] file1 ... filen\n) print flush
+    }
+   ifelse
+ }
+ { pop }
+ifelse
