@@ -3,14 +3,14 @@
 # include <sys/mx.h>
 
 #ifndef DAEMON
-SCCSID(@(#)daemon.c	3.29		%G%	(w/o daemon mode));
+SCCSID(@(#)daemon.c	3.30		%G%	(w/o daemon mode));
 #else
 
 # include <sys/socket.h>
 # include <net/in.h>
 # include <wait.h>
 
-SCCSID(@(#)daemon.c	3.29		%G%	(with daemon mode));
+SCCSID(@(#)daemon.c	3.30		%G%	(with daemon mode));
 
 /*
 **  DAEMON.C -- routines to use when running as a daemon.
@@ -113,8 +113,17 @@ getconnection()
 
 	for (;;)
 	{
+		int i;
+
 		/* get a socket for the SMTP connection */
-		s = socket(SOCK_STREAM, 0, &SendmailAddress, SO_ACCEPTCONN);
+		/* do loop is to avoid 4.1b kernel bug (?) */
+		i = 50;
+		do
+		{
+			s = socket(SOCK_STREAM, 0, &SendmailAddress, SO_ACCEPTCONN);
+			if (s < 0)
+				sleep(5);
+		} while (--i > 0 && s < 0);
 		if (s < 0)
 		{
 			/* probably another daemon already */
