@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile.vax	7.7 (Berkeley) %G%
+#	@(#)Makefile.vax	7.8 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -94,7 +94,7 @@ assym.s: Makefile
 assym.s: ../h/param.h ../machine/pte.h ../h/buf.h ../h/vmparam.h \
     ../h/vmmeter.h ../h/dir.h ../h/cmap.h ../h/map.h ../vaxuba/ubavar.h \
     ../vaxuba/ubareg.h ../h/proc.h ../h/msgbuf.h ../h/text.h ../h/user.h \
-    ../vax/rpb.h
+    ../vax/rpb.h ../machine/vmparam.h
 	cc ${INCLUDES} ${IDENT} ${PARAM} ../vax/genassym.c
 	./a.out >assym.s; rm -f a.out
 
