@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)pstat.c	4.23 (Berkeley) %G%";
+static char *sccsid = "@(#)pstat.c	4.24 (Berkeley) %G%";
 #endif
 /*
  * Print system stuff
@@ -48,33 +48,33 @@ struct nlist nl[] = {
 	{ "_Usrptmap" },
 #define	USRPT	8
 	{ "_usrpt" },
-#define	SNSWAP	9
-	{ "_nswap" },
-#define	SWAPMAP	10
+#define	SWAPMAP	9
 	{ "_swapmap" },
-#define	SDH	11
+#define	SDH	10
 	{ "_dh11" },
-#define	SNDH	12
+#define	SNDH	11
 	{ "_ndh11" },
-#define	SNPROC	13
+#define	SNPROC	12
 	{ "_nproc" },
-#define	SNTEXT	14
+#define	SNTEXT	13
 	{ "_ntext" },
-#define	SNFILE	15
+#define	SNFILE	14
 	{ "_nfile" },
-#define	SNINODE	16
+#define	SNINODE	15
 	{ "_ninode" },
-#define	SNSWAPMAP 17
+#define	SNSWAPMAP 16
 	{ "_nswapmap" },
-#define	SPTY	18
+#define	SPTY	17
 	{ "_pt_tty" },
-#define	SDMMIN	19
+#define	SDMMIN	18
 	{ "_dmmin" },
-#define	SDMMAX	20
+#define	SDMMAX	19
 	{ "_dmmax" },
-#define	SNSWDEV	21
+#define	SNSWDEV	20
 	{ "_nswdev" },
-	0,
+#define	SSWDEVT	21
+	{ "_swdevt" },
+	{ "" }
 };
 
 int	inof;
@@ -653,6 +653,7 @@ doswap()
 	int ntext;
 	struct map *swapmap;
 	int nswapmap;
+	struct swdevt *swdevt, *sw;
 	register struct proc *pp;
 	int nswap, used, tused, free, waste;
 	int db, sb;
@@ -662,30 +663,38 @@ doswap()
 
 	nproc = getw(nl[SNPROC].n_value);
 	proc = (struct proc *)calloc(nproc, sizeof (struct proc));
-	lseek(fc, getw(nl[SPROC].n_value), 0);
-	read(fc, proc, nproc * sizeof (struct proc));
+	ntext = getw(nl[SNTEXT].n_value);
+	xtext = (struct text *)calloc(ntext, sizeof (struct text));
 	nswapmap = getw(nl[SNSWAPMAP].n_value);
 	swapmap = (struct map *)calloc(nswapmap, sizeof (struct map));
+	nswdev = getw(nl[SNSWDEV].n_value);
+	swdevt = (struct swdevt *)calloc(nswdev, sizeof (struct swdevt));
+	lseek(fc, nl[SSWDEVT].n_value, L_SET);
+	read(fc, swdevt, nswdev * sizeof (struct swdevt));
+	lseek(fc, getw(nl[SPROC].n_value), 0);
+	read(fc, proc, nproc * sizeof (struct proc));
+	lseek(fc, getw(nl[STEXT].n_value), 0);
+	read(fc, xtext, ntext * sizeof (struct text));
 	lseek(fc, getw(nl[SWAPMAP].n_value), 0);
 	read(fc, swapmap, nswapmap * sizeof (struct map));
 	swapmap->m_name = "swap";
 	swapmap->m_limit = (struct mapent *)&swapmap[nswapmap];
-	nswap = getw(nl[SNSWAP].n_value);
 	dmmin = getw(nl[SDMMIN].n_value);
 	dmmax = getw(nl[SDMMAX].n_value);
-	nswdev = getw(nl[SNSWDEV].n_value);
+	nswap = 0;
+	for (sw = swdevt; sw < &swdevt[nswdev]; sw++)
+		nswap += sw->sw_nblks,
 	free = 0;
 	for (me = (struct mapent *)(swapmap+1);
 	    me < (struct mapent *)&swapmap[nswapmap]; me++)
 		free += me->m_size;
-	ntext = getw(nl[SNTEXT].n_value);
-	xtext = (struct text *)calloc(ntext, sizeof (struct text));
-	lseek(fc, getw(nl[STEXT].n_value), 0);
-	read(fc, xtext, ntext * sizeof (struct text));
 	tused = 0;
 	for (xp = xtext; xp < &xtext[ntext]; xp++)
-		if (xp->x_iptr!=NULL)
-			tused += xdsize(xp);
+		if (xp->x_iptr!=NULL) {
+			tused += ctod(xp->x_size);
+			if (xp->x_flag & XPAGI)
+				tused += ctod(ctopt(xp->x_size));
+		}
 	used = tused;
 	waste = 0;
 	for (pp = proc; pp < &proc[nproc]; pp++) {
@@ -693,31 +702,37 @@ doswap()
 			continue;
 		if (pp->p_flag & SSYS)
 			continue;
-		db = ctod(pp->p_dsize);
-		sb = ctod(pp->p_ssize);
-		waste -= db + sb;
-		db = up(db);
-		sb = up(sb);
-		used += db + sb;
-		waste += db + sb;
+		db = ctod(pp->p_dsize), sb = up(db);
+		used += sb;
+		waste += sb - db;
+		db = ctod(pp->p_ssize), sb = up(db);
+		used += sb;
+		waste += sb - db;
 		if ((pp->p_flag&SLOAD) == 0)
 			used += vusize(pp);
 	}
-	/* a DMMAX/2 block goes to argmap */
 	if (totflg) {
-		printf("%3d/%3d 00k swap\n", used/100, (used+free)/100);
+#define	btok(x)	((x) / (1024 / DEV_BSIZE))
+		printf("%3d/%3d 00k swap\n",
+		    btok(used/100), btok((used+free)/100));
 		return;
 	}
-	printf("%d used (%d text), %d free, %d wasted, %d missing\n",
-	    used, tused, free, waste, (nswap - dmmax/2 - (used + free)));
+	printf("%dk used (%dk text), %dk free, %dk wasted, %dk missing\n",
+	    btok(used), btok(tused), btok(free), btok(waste),
+/* a dmmax/2 block goes to argmap */
+	    btok(nswap - dmmax/2 - (used + free)));
 	printf("avail: ");
 	for (i = dmmax; i >= dmmin; i /= 2) {
 		j = 0;
 		while (rmalloc(swapmap, i) != 0)
 			j++;
-		if (j) printf("%d*%d ", j, i);
+		if (j) printf("%d*%dk ", j, btok(i));
 	}
-	printf("\n");
+	free = 0;
+	for (me = (struct mapent *)(swapmap+1);
+	    me < (struct mapent *)&swapmap[nswapmap]; me++)
+		free += me->m_size;
+	printf("%d*1k\n", btok(free));
 }
 
 up(size)
@@ -735,22 +750,22 @@ up(size)
 	return (i);
 }
 
+/*
+ * Compute number of pages to be allocated to the u. area
+ * and data and stack area page tables, which are stored on the
+ * disk immediately after the u. area.
+ */
 vusize(p)
-	struct proc *p;
+	register struct proc *p;
 {
 	register int tsz = p->p_tsize / NPTEPG;
 
-	return (ctod(clrnd(UPAGES +
-	    clrnd(ctopt(p->p_tsize+p->p_dsize+p->p_ssize+UPAGES)) - tsz)));
-}
-
-xdsize(xp)
-	struct text *xp;
-{
-
-	if (xp->x_flag & XPAGI)
-		return (ctod(clrnd(xp->x_size + ctopt(xp->x_size))));
-	return (ctod(xp->x_size));
+	/*
+	 * We do not need page table space on the disk for page
+	 * table pages wholly containing text. 
+	 */
+	return (clrnd(UPAGES +
+	    clrnd(ctopt(p->p_tsize+p->p_dsize+p->p_ssize+UPAGES)) - tsz));
 }
 
 /*
