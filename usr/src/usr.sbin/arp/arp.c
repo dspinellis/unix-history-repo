@@ -60,7 +60,7 @@ file(name)
 {
 	FILE *fp;
 	int i;
-	char line[100], arg[4][50], *args[4];
+	char line[100], arg[5][50], *args[5];
 
 	if ((fp = fopen(name, "r")) == NULL) {
 		fprintf(stderr, "arp: cannot open %s\n", name);
@@ -70,8 +70,10 @@ file(name)
 	args[1] = &arg[1][0];
 	args[2] = &arg[2][0];
 	args[3] = &arg[3][0];
+	args[4] = &arg[4][0];
 	while(fgets(line, 100, fp) != NULL) {
-		i = sscanf(line, "%s %s %s %s", arg[0], arg[1], arg[2], arg[3]);
+		i = sscanf(line, "%s %s %s %s", arg[0], arg[1], arg[2], arg[3],
+			arg[4]);
 		if (i < 2) {
 			fprintf(stderr, "arp: bad line: %s\n", line);
 			continue;
@@ -114,6 +116,8 @@ set(argc, argv)
 			ar.arp_flags &= ~ATF_PERM;
 		if (strncmp(argv[0], "pub", 3) == 0)
 			ar.arp_flags |= ATF_PUBL;
+		if (strncmp(argv[0], "trail", 5) == 0)
+			ar.arp_flags |= ATF_USETRAILERS;
 		argv++;
 	}
 	
@@ -171,8 +175,9 @@ get(host)
 		ether_print(ea);
 	else
 		printf("(incomplete)");
-	if (!(ar.arp_flags & ATF_PERM)) printf(" temporary");
+	if (ar.arp_flags & ATF_PERM) printf(" permanent");
 	if (ar.arp_flags & ATF_PUBL) printf(" published");
+	if (ar.arp_flags & ATF_USETRAILERS) printf(" trailers");
 	printf("\n");
 }
 
@@ -274,8 +279,9 @@ dump(kernel, mem)
 			ether_print(at->at_enaddr);
 		else
 			printf("(incomplete)");
-		if (!(at->at_flags & ATF_PERM)) printf(" temporary");
+		if (at->at_flags & ATF_PERM) printf(" permanent");
 		if (at->at_flags & ATF_PUBL) printf(" published");
+		if (at->at_flags & ATF_USETRAILERS) printf(" trailers");
 		printf("\n");
 	}
 }
