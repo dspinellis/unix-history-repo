@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)sigpause.2	6.1 (Berkeley) %G%
+.\"	@(#)sigpause.2	6.2 (Berkeley) %G%
 .\"
 .TH SIGPAUSE 2 ""
 .UC 4
@@ -31,7 +31,7 @@ set to EINTR.
 .PP
 In normal usage, a signal is blocked using
 .IR sigblock (2),
-to begin a critical section, variables modified on the occurance
+to begin a critical section, variables modified on the occurrence
 of the signal are examined to determine that there is no work
 to be done, and the process pauses awaiting work by using
 .I sigpause
