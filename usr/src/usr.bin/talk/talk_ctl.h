@@ -4,16 +4,8 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)talk_ctl.h	5.5 (Berkeley) %G%
+ *	@(#)talk_ctl.h	5.6 (Berkeley) %G%
  */
-
-#include <sys/types.h>
-#include <protocols/talkd.h>
-#include <netinet/in.h>
-#include "talk.h"
-#include <errno.h>
-
-extern	int errno;
 
 extern	struct sockaddr_in daemon_addr;
 extern	struct sockaddr_in ctl_addr;

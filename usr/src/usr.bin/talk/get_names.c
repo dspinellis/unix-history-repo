@@ -6,13 +6,14 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)get_names.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)get_names.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
-#include "talk.h"
 #include <sys/param.h>
+#include <sys/socket.h>
 #include <protocols/talkd.h>
 #include <pwd.h>
+#include "talk.h"
 
 char	*getlogin();
 char	*ttyname();
@@ -52,7 +53,7 @@ get_names(argc, argv)
 	gethostname(hostname, sizeof (hostname));
 	my_machine_name = hostname;
 	/* check for, and strip out, the machine name of the target */
-	for (cp = argv[1]; *cp && !any(*cp, "@:!."); cp++)
+	for (cp = argv[1]; *cp && !index("@:!.", *cp); cp++)
 		;
 	if (*cp == '\0') {
 		/* this is a local to local talk */
@@ -88,15 +89,4 @@ get_names(argc, argv)
 	msg.r_name[NAME_SIZE - 1] = '\0';
 	strncpy(msg.r_tty, his_tty, TTY_SIZE);
 	msg.r_tty[TTY_SIZE - 1] = '\0';
-}
-
-static
-any(c, cp)
-	register char c, *cp;
-{
-
-	while (*cp)
-		if (c == *cp++)
-			return (1);
-	return (0);
 }
