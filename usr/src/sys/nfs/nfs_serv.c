@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.56 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.57 (Berkeley) %G%
  */
 
 /*
@@ -1228,7 +1228,7 @@ out:
 struct flrep {
 	u_long fl_cachable;
 	u_long fl_duration;
-	u_quad_t fl_frev;
+	u_long fl_frev[2];
 	nfsv2fh_t fl_nfh;
 	struct nfsv2_fattr fl_fattr;
 };
@@ -1553,7 +1553,7 @@ again:
 			bzero((caddr_t)&fl.fl_nfh, sizeof (nfsv2fh_t));
 			fl.fl_duration = txdr_unsigned(duration2);
 			fl.fl_cachable = txdr_unsigned(cache2);
-			txdr_hyper(&frev2, &fl.fl_frev);
+			txdr_hyper(&frev2, fl.fl_frev);
 			if (VOP_GETATTR(nvp, vap, cred, nfsd->nd_procp)) {
 				vput(nvp);
 				goto invalid;
