@@ -1,24 +1,22 @@
-.\"	@(#)NBSreport.10.88	1.4	88/10/21
+.\"	@(#)NBSreport.10.88	1.5	88/10/21
 .\" *troff -me
 .sp 2
 .ce 100
 \fB\s+2Interim Report on Operating Systems Research
 in the DASH and Berkeley UNIX Projects\s-2\fP
-.ce 0
-.ds DT ""
+.sp
+
 .sp 2
-.nf
-.ce 4
 Susan L. Graham
 Domenico Ferrari
 Marshall Kirk McKusick
 Michael J Karels
 Keith Sklower
 Marc Teitelbaum
-.fi
+.ce 0
 .sp 2
 .ce
-DASH Project
+\fB\s+2DASH Project\s0\fP
 .pp
 During the first three months of the contract, the DASH Project
 has proceeded with the design and the implementation of the second
@@ -54,7 +52,7 @@ The experiments to be performed on the DASH kernel in the Sequent
 environment are now being designed.
 .sp 2
 .ce
-Berkeley UNIX Project
+\fB\s+2Berkeley UNIX Project\s0\fP
 .pp
 We looked into the costs of joining acunet, reviewed Marshall
 Rose's proposal to /usr/group for a networking standard, made known
@@ -123,8 +121,7 @@ Those system utilities that create sessions and manipulate jobs have
 been converted to use the new facilities.
 Numerous other smaller POSIX related changes are also being made.
 .sp 2
-.ce
-References
+\fBReferences\fP
 .sp
 .ip "[Tzou and Anderson 1988]"
 S.-Y.Tzou and D.P.Anderson, ``A Performance
