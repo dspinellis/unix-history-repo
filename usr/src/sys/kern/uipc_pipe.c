@@ -1,4 +1,4 @@
-/*	uipc_pipe.c	4.3	81/11/18	*/
+/*	uipc_pipe.c	4.4	81/11/21	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"
@@ -40,11 +40,11 @@ COUNT(PICONNECT);
 	wso->so_proto = rso->so_proto = &pipeproto;
 	wso->so_pcb = (caddr_t)rso;
 	rso->so_pcb = (caddr_t)wso;
-	wso->so_snd.sb_hiwat = PIPSIZ/2;
-	wso->so_snd.sb_mbcnt = PIPSIZ;
+	wso->so_snd.sb_hiwat = PIPSIZ;
+	wso->so_snd.sb_mbmax = 2*PIPSIZ;
 	wso->so_state |= SS_ISCONNECTED|SS_CANTRCVMORE;
-	rso->so_rcv.sb_hiwat = PIPSIZ/2;
-	rso->so_rcv.sb_mbcnt = PIPSIZ;
+	rso->so_rcv.sb_hiwat = 0;
+	rso->so_rcv.sb_mbmax = 0;
 	rso->so_state |= SS_ISCONNECTED|SS_CANTSENDMORE;
 	return (1);
 }
@@ -87,21 +87,39 @@ COUNT(PIUSRREQ);
 		break;
 
 	case PRU_RCVD:
-		if (so->so_rcv.sb_cc == 0 && so2 && so2->so_snd.sb_cc) {
-			so->so_rcv.sb_cc = so2->so_snd.sb_cc;
-			so->so_rcv.sb_mbcnt = so2->so_snd.sb_mbcnt;
-			so->so_rcv.sb_mb = so2->so_rcv.sb_mb;
-			so2->so_snd.sb_cc = 0;
-			so2->so_snd.sb_mbcnt = 0;
-			so2->so_snd.sb_mb = 0;
-			sorwakeup(so);
-			sowwakeup(so2);
-		}
+		if (so2 == 0)
+			break;
+#define	rcv (&so->so_rcv)
+#define snd (&so2->so_snd)
+		/*
+		 * Transfer resources back to send port
+		 * and wakeup any waiting to write.
+		 */
+		snd->sb_mbmax += rcv->sb_mbmax - rcv->sb_mbcnt;
+		rcv->sb_mbmax = rcv->sb_mbcnt;
+		snd->sb_hiwat += rcv->sb_hiwat - rcv->sb_cc;
+		rcv->sb_hiwat = rcv->sb_cc;
+		sbwakeup(snd);
+#undef snd
+#undef rcv
 		break;
 
 	case PRU_SEND:
-		sbappend(&so->so_snd, m);
-		sorwakeup(so2);
+#define	rcv (&so2->so_rcv)
+#define	snd (&so->so_snd)
+		/*
+		 * Send to paired receive port, and then
+		 * give it enough resources to hold what it already has.
+		 * Wake up readers.
+		 */
+		sbappend(rcv, m);
+		snd->sb_mbmax -= rcv->sb_mbcnt - rcv->sb_mbmax;
+		rcv->sb_mbmax = rcv->sb_mbcnt;
+		snd->sb_hiwat -= rcv->sb_cc - rcv->sb_hiwat;
+		rcv->sb_hiwat = rcv->sb_cc;
+		sbwakeup(rcv);
+#undef snd
+#undef rcv
 		break;
 
 	case PRU_ABORT:
