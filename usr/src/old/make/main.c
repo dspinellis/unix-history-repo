@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	4.2 (Berkeley) 82/04/20";
+static	char *sccsid = "@(#)main.c	4.3 (Berkeley) 82/10/10";
 # include "defs"
 /*
 command make to update programs.
@@ -47,6 +47,7 @@ char *prompt	= "";	/* other systems -- pick what you want */
 int nopdir	= 0;
 char junkname[20];
 char funny[128];
+char	options[26 + 1] = { '-' };
 
 main(argc,argv)
 int argc;
@@ -60,6 +61,7 @@ char c, *s;
 static char onechar[2] = "X";
 #ifdef unix
 int intrupt();
+char *op = options + 1;
 
 
 
@@ -86,67 +88,72 @@ for(i=1; i<argc; ++i)
 setvar("$","$");
 inarglist = 0;
 
-for(i=1; i<argc; ++i)
-    if(argv[i]!=0 && argv[i][0]=='-')
-	{
-	for(j=1 ; (c=argv[i][j])!='\0' ; ++j)  switch(c)
-		{
-		case 'd':
-			dbgflag = YES;
-			break;
+for (i=1; i<argc; ++i)
+	if (argv[i]!=0 && argv[i][0]=='-') {
+		for (j=1 ; (c=argv[i][j])!='\0' ; ++j) {
+			*op++ = c;
+			switch (c) {
 
-		case 'p':
-			prtrflag = YES;
-			break;
+			case 'd':
+				dbgflag = YES;
+				break;
 
-		case 's':
-			silflag = YES;
-			break;
+			case 'p':
+				prtrflag = YES;
+				break;
 
-		case 'i':
-			ignerr = YES;
-			break;
+			case 's':
+				silflag = YES;
+				break;
 
-		case 'S':
-			keepgoing = NO;
-			break;
+			case 'i':
+				ignerr = YES;
+				break;
 
-		case 'k':
-			keepgoing = YES;
-			break;
+			case 'S':
+				keepgoing = NO;
+				break;
 
-		case 'n':
-			noexflag = YES;
-			break;
+			case 'k':
+				keepgoing = YES;
+				break;
 
-		case 'r':
-			noruleflag = YES;
-			break;
+			case 'n':
+				noexflag = YES;
+				break;
 
-		case 't':
-			touchflag = YES;
-			break;
+			case 'r':
+				noruleflag = YES;
+				break;
 
-		case 'q':
-			questflag = YES;
-			break;
+			case 't':
+				touchflag = YES;
+				break;
 
-		case 'f':
-			if(i >= argc-1)
-			  fatal("No description argument after -f flag");
-			if( rddescf(argv[i+1]) )
+			case 'q':
+				questflag = YES;
+				break;
+
+			case 'f':
+				op--;		/* don't pass this one */
+				if(i >= argc-1)
+				  fatal("No description argument after -f flag");
+				if( rddescf(argv[i+1]) )
 				fatal1("Cannot open %s", argv[i+1]);
-			argv[i+1] = 0;
-			++descset;
-			break;
+				argv[i+1] = 0;
+				++descset;
+				break;
 
-		default:
-			onechar[0] = c;	/* to make lint happy */
-			fatal1("Unknown flag argument %s", onechar);
+			default:
+				onechar[0] = c;	/* to make lint happy */
+				fatal1("Unknown flag argument %s", onechar);
+			}
 		}
-
-	argv[i] = 0;
+		argv[i] = 0;
 	}
+
+*op++ = '\0';
+setvar("MFLAGS", options);		/* MFLAGS=options to make */
 
 if( !descset )
 #ifdef unix
