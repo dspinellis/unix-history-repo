@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	4.9 (Berkeley) 87/05/21";
+static	char *sccsid = "@(#)main.c	4.10 (Berkeley) 87/11/15";
 # include "defs"
 /*
 command make to update programs.
@@ -358,7 +358,7 @@ if(prntflag)
 	{
 	printf("Open directories:\n");
 	for (od = firstod; od; od = od->nxtopendir)
-		printf("\t%d: %s\n", od->dirfc->dd_fd, od->dirn);
+		printf("\t%d: %s\n", dirfd(od->dirfc), od->dirn);
 	}
 #endif
 

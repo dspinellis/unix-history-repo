@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)dosys.c	4.10 (Berkeley) %G%";
+static	char *sccsid = "@(#)dosys.c	4.11 (Berkeley) %G%";
 #include "defs"
 #include <signal.h>
 
@@ -87,7 +87,7 @@ for (od = firstod; od; od = od->nxtopendir)
 		 * we cannot call closedir since this will modify
 		 * the parents data space; just call close directly.
 		 */
-		close(od->dirfc->dd_fd);
+		(void)close(dirfd(od->dirfc));
 }
 
 
