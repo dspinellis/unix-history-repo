@@ -1,8 +1,10 @@
-.\"	@(#)sed	5.1 (Berkeley) %G%
+.\"	@(#)sed	6.1 (Berkeley) %G%
 .\"
+.EH 'USD:18-%''SED \(em A Non-interactive Text Editor'
+.OH 'SED \(em A Non-interactive Text Editor''USD:18-%'
 .hw de-limit
 .hw de-limit-ing
-.RP
+.\".RP
 ....TM 78-1270-1 39199 39199-11
 .ND August 15, 1978
 .TL
@@ -12,8 +14,8 @@ Lee E. McMahon
 .AI
 .MH
 .OK
-Context search
-Editing
+\"Context search
+\"Editing
 .AB
 .ul
 Sed
