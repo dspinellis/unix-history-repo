@@ -8,13 +8,11 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)makelist	5.1 (Berkeley) %G%
+#	@(#)makelist	5.2 (Berkeley) %G%
 
 # makelist.sh: Automatically generate header files...
 
-# On vangogh /usr/bin/awk is broken; christos Fri Jul  3 14:01:03 EDT 1992
-AWK=/usr/old/bin/awk
-#AWK=/usr/bin/awk
+AWK=/usr/bin/awk
 USAGE="Usage: $0 -h|-e|-fc|-fh|-bc|-bh <filenames>" 
 
 if [ "x$1" = "x" ]
