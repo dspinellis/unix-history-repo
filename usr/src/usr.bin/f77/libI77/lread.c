@@ -1,5 +1,5 @@
 /*
-char id_lread[] = "@(#)lread.c	1.8";
+char id_lread[] = "@(#)lread.c	1.9";
  *
  * list directed read
  */
@@ -121,6 +121,11 @@ l_read(number,ptr,len,type) ftnint *number,type; flex *ptr; ftnlen len;
 			ptr->flshort=lx;
 			break;
 		case TYLOGICAL:
+			if(len == sizeof(short))
+				ptr->flshort = lx;
+			else
+				ptr->flint = lx;
+			break;
 		case TYLONG:
 			ptr->flint=lx;
 			break;
