@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)ls.c	4.20 (Berkeley) %G%";
+static	char *sccsid = "@(#)ls.c	4.21 (Berkeley) %G%";
 #endif
 
 /*
@@ -46,6 +46,9 @@ time_t	now, sixmonthsago;
 
 char	*dotp = ".";
 
+struct winsize win;
+int	twidth;
+
 struct	afile *gstat();
 int	fcmp();
 char	*cat(), *savestr();
@@ -69,9 +72,12 @@ main(argc, argv)
 	if (getuid() == 0)
 		Aflg++;
 	(void) time(&now); sixmonthsago = now - 6L*30L*24L*60L*60L; now += 60;
+	twidth = 80;
 	if (isatty(1)) {
 		qflg = Cflg = 1;
 		(void) gtty(1, &sgbuf);
+		if (ioctl(1, TIOCGWINSZ, &win) != -1)
+			twidth = (win.ws_col == 0 ? 80 : win.ws_col);
 		if ((sgbuf.sg_flags & XTABS) == 0)
 			usetabs = 1;
 	} else
@@ -359,7 +365,7 @@ formatf(fp0, fplast)
 			width = (width + 8) &~ 7;
 		else
 			width += 2;
-		columns = 80 / width;
+		columns = twidth / width;
 		if (columns == 0)
 			columns = 1;
 	}
