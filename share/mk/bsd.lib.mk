@@ -1,6 +1,9 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.19  1993/11/07  09:14:44  paul
+# Added missing cleandir line for shared libs.
+#
 # Revision 1.18  1993/11/06  19:15:25  paul
 # Added missing $ to {CXX} in .cc.so
 #
@@ -115,8 +118,10 @@ BINMODE?=	555
 
 .c.o:
 	${CC} ${CFLAGS} -c ${.IMPSRC} 
-	@${LD} -x -r ${.TARGET}
-	@mv a.out ${.TARGET}
+# XXX -- shouldn't need to comment these out  but there's something not quite
+#        worked out with the new linker.
+#	@${LD} -x -r ${.TARGET}
+#	@mv a.out ${.TARGET}
 
 .c.po:
 	${CC} -p ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
