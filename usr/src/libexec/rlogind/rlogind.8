@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rlogind.8	6.8 (Berkeley) %G%
+.\"	@(#)rlogind.8	6.9 (Berkeley) %G%
 .\"
 .TH RLOGIND 8 ""
 .UC 5
@@ -54,7 +54,7 @@ the dot-notation representation of the host address is used.
 Once the source port and address have been checked, 
 .I rlogind
 proceeds with the authentication process described in
-.IR rshd (8C).
+.IR rshd (8).
 It then allocates a pseudo terminal (see 
 .IR pty (4)),
 and manipulates file descriptors so that the slave
