@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)cleanerd.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cleanerd.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -44,7 +44,7 @@ struct tossstruct {
 int	 lfs_segwait __P((fsid_t, struct timeval *));
 int	 lfs_segclean __P((fsid_t, u_long));
 int	 lfs_bmapv __P((fsid_t, BLOCK_INFO *, int));
-int	 lfs_markv __P((fsid_t, BLOCK_INFO *, int, INODE_INFO *, int));
+int	 lfs_markv __P((fsid_t, BLOCK_INFO *, int));
 
 /* function prototypes */
 int	 bi_tossold __P((const void *, const void *, const void *));
@@ -285,12 +285,11 @@ clean_segment(fsp, id)
 	int id;		/* segment number */
 {
 	BLOCK_INFO *block_array;
-	INODE_INFO *inode_array;
 	SEGUSE *sp;
 	struct lfs *lfsp;
 	struct tossstruct t;
 	caddr_t seg_buf;
-	int num_inodes, num_blocks;
+	int num_blocks;
 
 	lfsp = &fsp->fi_lfs;
 	sp = SEGUSE_ENTRY(lfsp, fsp->fi_segusep, id);
@@ -310,15 +309,13 @@ clean_segment(fsp, id)
 		return (-1);
 	}
 	/* get a list of blocks that are contained by the segment */
-	if (lfs_segmapv(fsp, id, seg_buf, &block_array, &num_blocks, 
-	    &inode_array, &num_inodes) < 0) {
+	if (lfs_segmapv(fsp, id, seg_buf, &block_array, &num_blocks) < 0) {
 		err(0, "clean_segment: lfs_segmapv failed");
 		return (-1);
 	}
 
 #ifdef VERBOSE
-	(void) printf("lfs_segmapv returned %d blocks and %d inodes\n",
-	    num_blocks, num_inodes);
+	(void) printf("lfs_segmapv returned %d blocks\n", num_blocks);
 	fflush (stdout);
 #endif
 
@@ -340,7 +337,6 @@ clean_segment(fsp, id)
 #ifdef VERBOSE
 	{
 		BLOCK_INFO *_bip;
-		INODE_INFO *_iip;
 		u_long *lp;
 		int i;
 
@@ -352,21 +348,16 @@ clean_segment(fsp, id)
 			PRINT_BINFO(_bip);
 			lp = (u_long *)_bip->bi_bp;
 		}
-		if (num_inodes)
-			printf("INODE INFOS\n");
-		for (_iip = inode_array, i=0; i < num_inodes; ++_iip, ++i)
-			PRINT_IINFO(1, _iip);
 	}
 #endif
 	/* rewrite the live data */
-	if (num_blocks > 0 || num_inodes > 0)
-		if (lfs_markv(fsp->fi_statfsp->f_fsid, block_array, num_blocks,
-		    inode_array, num_inodes) < 0) {
+	if (num_blocks > 0)
+		if (lfs_markv(fsp->fi_statfsp->f_fsid, block_array, num_blocks)
+		    < 0 ) {
 			err(0, "clean_segment: lfs_bmapv failed");
 			return (-1);
 		}
 	free(block_array);
-	free(inode_array);
 	munmap_segment(fsp, seg_buf);
 
 	return (0);

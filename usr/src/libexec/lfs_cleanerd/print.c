@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)print.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)print.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -165,8 +165,11 @@ dump_super(lfsp)
 		"free     ", lfsp->lfs_free,
 		"idaddr   ", lfsp->lfs_idaddr,
 		"ifile    ", lfsp->lfs_ifile);
-	(void)printf("%s0x%X\t%s%d\t%s0x%X\t%s0x%X\n%s0x%X\t%s0x%X\t",
+	(void)printf("%s%d\t%s%d\t%s%d\n",
 		"bfree    ", lfsp->lfs_bfree,
+		"avail    ", lfsp->lfs_avail,
+		"uinodes  ", lfsp->lfs_uinodes);
+	(void)printf("%s%d\t%s0x%X\t%s0x%X\n%s0x%X\t%s0x%X\t",
 		"nfiles   ", lfsp->lfs_nfiles,
 		"lastseg  ", lfsp->lfs_lastseg,
 		"nextseg  ", lfsp->lfs_nextseg,
@@ -180,7 +183,8 @@ dump_super(lfsp)
 		"writer   ", lfsp->lfs_writer,
 		"dirops   ", lfsp->lfs_dirops,
 		"doifile  ", lfsp->lfs_doifile );
-	(void)printf("%s%d\t%s0x%X\t%s%d\n",
+	(void)printf("%s%d\t%s%d\t%s0x%X\t%s%d\n",
+		"nactive  ", lfsp->lfs_nactive,
 		"fmod     ", lfsp->lfs_fmod,
 		"clean    ", lfsp->lfs_clean,
 		"ronly    ", lfsp->lfs_ronly);
