@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)disklabel.h	7.19 (Berkeley) %G%
+ *	@(#)disklabel.h	7.20 (Berkeley) %G%
  */
 
 /*
@@ -130,7 +130,12 @@ struct disklabel {
 		u_long	p_fsize;	/* filesystem basic fragment size */
 		u_char	p_fstype;	/* filesystem type, see below */
 		u_char	p_frag;		/* filesystem fragments per block */
-		u_short	p_cpg;		/* filesystem cylinders per group */
+		union {
+			u_short	cpg;	/* UFS: FS cylinders per group */
+			u_short	sgs;	/* LFS: FS segment shift */
+		} __partition_u1;
+#define	p_cpg	__partition_u1.cpg
+#define	p_sgs	__partition_u1.sgs
 	} d_partitions[MAXPARTITIONS];	/* actually may be more */
 };
 #else LOCORE
@@ -187,6 +192,7 @@ static char *dktypenames[] = {
 #define	FS_V8		6		/* Eighth Edition, 4K blocks */
 #define	FS_BSDFFS	7		/* 4.2BSD fast file system */
 #define	FS_MSDOS	8		/* MSDOS file system */
+#define	FS_LFS		9		/* 4.4BSD log-structured file system */
 
 #ifdef	DKTYPENAMES
 static char *fstypenames[] = {
