@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)cd9660_vfsops.c	8.13 (Berkeley) %G%
+ *	@(#)cd9660_vfsops.c	8.14 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -52,23 +52,17 @@ struct vfsops cd9660_vfsops = {
 
 /*
  * Called by vfs_mountroot when iso is going to be mounted as root.
- *
- * Name is updated by mount(8) after booting.
  */
-#define ROOTNAME	"root_device"
 
 static iso_mountfs();
 
 cd9660_mountroot()
 {
-	register struct mount *mp;
+	struct mount *mp;
 	extern struct vnode *rootvp;
 	struct proc *p = curproc;	/* XXX */
-	struct iso_mnt *imp;
-	register struct fs *fs;
-	u_int size;
-	int error;
 	struct iso_args args;
+	int error;
 	
 	/*
 	 * Get vnodes for swapdev and rootdev.
@@ -76,30 +70,21 @@ cd9660_mountroot()
 	if (bdevvp(swapdev, &swapdev_vp) || bdevvp(rootdev, &rootvp))
 		panic("cd9660_mountroot: can't setup bdevvp's");
 
-	mp = malloc((u_long)sizeof(struct mount), M_MOUNT, M_WAITOK);
-	bzero((char *)mp, (u_long)sizeof(struct mount));
-	mp->mnt_op = &cd9660_vfsops;
-	mp->mnt_flag = MNT_RDONLY;
-	LIST_INIT(&mp->mnt_vnodelist);
+	if (error = vfs_rootmountalloc("cd9660", "root_device", &mp))
+		return (error);
 	args.flags = ISOFSMNT_ROOT;
 	if (error = iso_mountfs(rootvp, mp, p, &args)) {
+		mp->mnt_vfc->vfc_refcount--;
 		free(mp, M_MOUNT);
 		return (error);
 	}
 	if (error = vfs_lock(mp)) {
 		(void)cd9660_unmount(mp, 0, p);
+		mp->mnt_vfc->vfc_refcount--;
 		free(mp, M_MOUNT);
 		return (error);
 	}
 	CIRCLEQ_INSERT_TAIL(&mountlist, mp, mnt_list);
-	mp->mnt_vnodecovered = NULLVP;
-	imp = VFSTOISOFS(mp);
-	(void) copystr("/", mp->mnt_stat.f_mntonname, MNAMELEN - 1,
-	    &size);
-	bzero(mp->mnt_stat.f_mntonname + size, MNAMELEN - size);
-	(void) copystr(ROOTNAME, mp->mnt_stat.f_mntfromname, MNAMELEN - 1,
-	    &size);
-	bzero(mp->mnt_stat.f_mntfromname + size, MNAMELEN - size);
 	(void)cd9660_statfs(mp, &mp->mnt_stat, p);
 	vfs_unlock(mp);
 	return (0);

@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	8.9 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
