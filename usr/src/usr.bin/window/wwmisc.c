@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwmisc.c	1.6 83/07/22";
+static	char *sccsid = "@(#)wwmisc.c	1.7 83/07/28";
 #endif
 
 #include "ww.h"
@@ -33,4 +33,28 @@ register id;
 	for (w = wwhead; w && w->ww_ident != id; w = w->ww_next)
 		;
 	return w;
+}
+
+char *
+unctrl(c)
+register char c;
+{
+	static char buf[5];
+	register char *p = buf;
+
+	if (c == DEL) {
+		*p++ = '^';
+		*p++ = '?';
+	} else if (c < ' ') {
+		*p++ = '^';
+		*p++ = c + '@';
+	} else if (c > DEL) {
+		*p++ = '\\';
+		*p++ = (c >> 6 & 3) + '0';
+		*p++ = (c >> 3 & 7) + '0';
+		*p++ = (c & 7) + '0';
+	} else
+		*p++ = c;
+	*p = 0;
+	return buf;
 }
