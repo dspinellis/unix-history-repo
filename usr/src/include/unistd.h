@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.29 (Berkeley) %G%
+ *	@(#)unistd.h	5.30 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -111,7 +111,7 @@ char	*mktemp __P((char *));
 int	 nfssvc __P((int, caddr_t));
 int	 nice __P((int));
 void	 psignal __P((unsigned int, const char *));
-extern char *const sys_siglist[];
+extern const char *const sys_siglist[];
 int	 profil __P((char *, int, int, int));
 int	 rcmd __P((char **, int, const char *,
 		const char *, const char *, int *));
