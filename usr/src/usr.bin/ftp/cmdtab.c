@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	4.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	4.2 (Berkeley) %G%";
 #endif
 #include "ftp_var.h"
 
@@ -57,7 +57,6 @@ struct cmd cmdtab[] = {
 	{ "bye",	quithelp,	0,	quit },
 	{ "cd",		cdhelp,		0,	cd },
 	{ "close",	disconhelp,	0,	disconnect },
-	{ "connect",	connecthelp,	0,	setpeer },
 	{ "delete",	deletehelp,	0,	delete },
 	{ "debug",	debughelp,	0,	setdebug },
 	{ "dir",	dirhelp,	1,	ls },
@@ -68,6 +67,7 @@ struct cmd cmdtab[] = {
 	{ "ls",		lshelp,		1,	ls },
 	{ "mode",	modehelp,	0,	setmode },
 	{ "mkdir",	mkdirhelp,	0,	makedir },
+	{ "open",	connecthelp,	0,	setpeer },
 	{ "prompt",	prompthelp,	0,	setprompt },
 	{ "put",	sendhelp,	1,	put },
 	{ "pwd",	pwdhelp,	0,	pwd },
