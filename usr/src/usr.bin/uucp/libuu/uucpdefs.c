@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)uucpdefs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)uucpdefs.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -10,17 +10,14 @@ char RRmtname[64];
 char *Rmtname = RRmtname;
 char User[128];
 char Loginuser[16];
-char Myname[16];
-char Myfullname[64];
-int Bspeed;
+char Myname[MAXBASENAME+1];
 char Wrkdir[WKDSIZE];
 
 char *Spool = SPOOL;
 char DLocal[64];
 char DLocalX[64];
 int Debug = 0;
-int Packflg = 0;
-long Retrytime;
+time_t Retrytime;
 short Usrf = 0;			/* Uustat global flag */
 int IsTcpIp = 0;	/* 1 == TCP/IP connection, else 0.  kludge to suppress ioctl */
 char MaxGrade = '\177';
