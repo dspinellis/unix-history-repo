@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_balloc.c	7.33 (Berkeley) %G%
+ *	@(#)lfs_balloc.c	7.34 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -292,6 +292,7 @@ lfs_balloc(vp, iosize, lbn, bpp)
 		if (newblock ||
 		    daddr == UNASSIGNED && !(bp->b_flags & B_CACHE)) {
 			ip->i_blocks += btodb(fs->lfs_bsize);
+			fs->lfs_bfree -= btodb(fs->lfs_bsize);
 			if (iosize != fs->lfs_bsize)
 				clrbuf(bp);
 		}
