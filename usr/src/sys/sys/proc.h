@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	8.4 (Berkeley) %G%
+ *	@(#)proc.h	8.5 (Berkeley) %G%
  */
 
 #ifndef _PROC_H_
@@ -149,12 +149,12 @@ struct	proc {
 #define	P_PROFIL	0x00020	/* Has started profiling. */
 #define	P_SELECT	0x00040	/* Selecting; wakeup/waiting danger. */
 #define	P_SINTR		0x00080	/* Sleep is interruptible. */
-#define	P_SYSTEM	0x00100	/* System proc: no sigs, stats or swapping. */
-#define	P_TIMEOUT	0x00200	/* Timing out during sleep. */
-#define	P_TRACED	0x00400	/* Debugged process being traced. */
-#define	P_SUGID		0x00800	/* Had set id privileges since last exec. */
-#define	P_WEXIT		0x01000	/* Working on exiting. */
-#define	P_WAITED	0x02000	/* Process being debugged. */
+#define	P_SUGID		0x00100	/* Had set id privileges since last exec. */
+#define	P_SYSTEM	0x00200	/* System proc: no sigs, stats or swapping. */
+#define	P_TIMEOUT	0x00400	/* Timing out during sleep. */
+#define	P_TRACED	0x00800	/* Debugged process being traced. */
+#define	P_WAITED	0x01000	/* Debugging process has waited for child. */
+#define	P_WEXIT		0x02000	/* Working on exiting. */
 #define P_EXEC		0x04000	/* Process called exec. */
 
 /* Should probably be changed into a hold count. */
