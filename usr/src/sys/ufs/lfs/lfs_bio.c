@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	7.4 (Berkeley) %G%
+ *	@(#)lfs_bio.c	7.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -59,7 +59,9 @@ printf("lfs_bwrite\n");
  * XXX
  * This routine flushes buffers out of the B_LOCKED queue when LFS has too
  * many locked down.  Eventually the pageout daemon will simply call LFS
- * when pages need to be reclaimed.
+ * when pages need to be reclaimed.  Note, we have one static count of locked
+ * buffers, so we can't have more than a single file system.  To make this
+ * work for multiple file systems, put the count into the mount structure.
  */
 void
 lfs_flush()
@@ -67,8 +69,8 @@ lfs_flush()
 	register struct mount *mp;
 	struct mount *omp;
 
-	/* 800K in a 4K file system. */
-	if (locked_queue_count < 200)
+	/* 1M in a 4K file system. */
+	if (locked_queue_count < 256)
 		return;
 	mp = rootfs;
 	do {
@@ -83,9 +85,9 @@ lfs_flush()
 			omp = mp;
 			mp = mp->mnt_next;
 			vfs_unbusy(omp);
+			/* Not exact, but it doesn't matter. */
+			locked_queue_count = 0;
 		} else
 			mp = mp->mnt_next;
 	} while (mp != rootfs);
-	/* Not exact, but it doesn't matter. */
-	locked_queue_count = 0;
 }
