@@ -1,4 +1,4 @@
-/*	sys_generic.c	5.29	82/12/28	*/
+/*	sys_generic.c	5.30	83/01/23	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -510,17 +510,19 @@ ioctl()
 		u.u_error = EFAULT;
 		return;
 	}
-	if (com&IOC_IN && size) {
-		u.u_error = copyin(uap->cmarg, (caddr_t)data, (u_int)size);
-		if (u.u_error)
-			return;
-	} else
-		*(caddr_t *)data = uap->cmarg;
-	/*
-	 * Zero the buffer on the stack so the user
-	 * always gets back something deterministic.
-	 */
-	if ((com&IOC_OUT) && size)
+	if (com&IOC_IN) {
+		if (size) {
+			u.u_error =
+			    copyin(uap->cmarg, (caddr_t)data, (u_int)size);
+			if (u.u_error)
+				return;
+		} else
+			*(caddr_t *)data = uap->cmarg;
+	} else if ((com&IOC_OUT) && size)
+		/*
+		 * Zero the buffer on the stack so the user
+		 * always gets back something deterministic.
+		 */
 		bzero((caddr_t)data, size);
 
 	if (fp->f_type == DTYPE_SOCKET)
