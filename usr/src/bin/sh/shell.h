@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)shell.h	5.2 (Berkeley) %G%
+ *	@(#)shell.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -25,6 +25,7 @@
  * a quit signal will generate a core dump.
  */
 
+#include <sys/cdefs.h>
 
 #define JOBS 1
 #define SYMLINKS 1
@@ -36,13 +37,13 @@
 /* #define SYSV */
 /* #define DEBUG */
 
-#ifdef __STDC__
 typedef void *pointer;
+
+#ifdef __STDC__
 #ifndef NULL
 #define NULL (void *)0
 #endif
 #else /* not __STDC__ */
-typedef char *pointer;
 #ifndef NULL
 #define NULL 0
 #endif

@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mkinit.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)mkinit.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -30,6 +30,7 @@ static char sccsid[] = "@(#)mkinit.c	5.1 (Berkeley) %G%";
  */
 
 
+#include <sys/cdefs.h>
 #include <stdio.h>
 
 
@@ -125,14 +126,8 @@ void addstr(), addchar(), writetext();
 
 FILE *ckfopen();
 char *savestr();
-#ifdef __STDC__
-void *ckmalloc(int);
-#else
-char *ckmalloc();
-#endif
+void *ckmalloc __P((int));
 void error();
-
-
 
 main(argc, argv)
 	char **argv;
@@ -475,11 +470,7 @@ ckfopen(file, mode)
 
 
 
-#ifdef __STDC__
 void *
-#else
-char *
-#endif
 ckmalloc(nbytes) {
 	register char *p;
 	char *malloc();
