@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ch9.n	6.1 (Berkeley) %G%
+.\"	@(#)ch9.n	6.2 (Berkeley) %G%
 .\"
 ." $Header: ch9.n 1.4 83/07/21 21:08:57 sklower Exp $
 .Lc Arrays\ and\ Vectors 9
@@ -37,7 +37,7 @@ the lisp system.
 .pp
 The structure of an array object is given in \(sc1.3.10 and reproduced here
 for your convenience.
-.sp 1v
+.(b
 .TS
 box center ;
 c | c | c | c .
@@ -56,6 +56,7 @@ length	getlength	putlength	fixnum
 _
 delta	getdelta	putdelta	fixnum
 .TE
+.)b
 .sh 2 "general arrays" \n(ch 1
 Suppose the evaluator is told to evaluate \fI(foo\ a\ b)\fP
 and the function cell of the symbol foo contains an array object
@@ -249,7 +250,7 @@ individual blobits there are particulars which are likely to change,
 previously have been stored in the individual entries in the hunk,
 and are stored in the data slots of the vector.
 Once again we summarize the structure of a vector in tabular form:
-.sp 1v
+.(b
 .TS
 box center ;
 c | c | c | c .
@@ -263,6 +264,7 @@ property	vprop	vsetprop	lispval
 _
 size	vsize	\-	fixnum
 .TE
+.)b
 Vectors are created specifying size and optional fill value using the
 function (\fInew-vector\fP  'x_size ['g_fill ['g_prop]]), or by
 initial values: (\fIvector\fP ['g_val ...]).
@@ -318,7 +320,7 @@ Thus, immediate vectors may be used for efficiently processing
 character data.
 They are also useful in storing results from functions written
 in other languages.
-.sp 1v
+.(b
 .TS
 box center ;
 c | c | c | c .
@@ -336,6 +338,7 @@ size	vsize	\-	fixnum
 	vsize-byte		fixnum
 	vsize-word		fixnum
 .TE
+.)b
 To create immediate vectors specifying size and fill data,
 you can use the functions
 \fInew-vectori-byte\fP,
