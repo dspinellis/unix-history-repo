@@ -1,19 +1,17 @@
 #ifndef lint
-static char sccsid[] = "@(#)getpwinfo.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)getpwinfo.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "uucp.h"
 #include <pwd.h>
 
-/*******
- *	guinfo(uid, name, path)	get passwd file info for uid
- *	int uid;
- *	char *path, *name;
+/*LINTLIBRARY*/
+
+/*
+ *	get passwd file info for uid
  *
- *	return codes:  0  |  FAIL
+ *	return codes:  SUCCESS  |  FAIL
  *
- *	modified 3/16/81 to use the "real" login name -- mcnc!dennis
- *						(Dennis Rockwell)
  */
 
 guinfo(uid, name, path)
@@ -22,15 +20,19 @@ register char *path, *name;
 {
 	register struct passwd *pwd;
 	struct passwd *getpwuid(), *getpwnam();
-	char *getlogin(), *l;
+	char *getlogin(), *getenv(), *l;
 
-	if ((l = getlogin()) != NULL) {
+	if ((l = getlogin()) == NULL) {
+		l = getenv("USER");
+	}
+	if (l != NULL) {
 		pwd = getpwnam(l);
-		if (pwd->pw_uid == uid || *l == 'U')
+		if (pwd != NULL && pwd->pw_uid == uid)
 			goto setup;
 	}
 	if ((pwd = getpwuid(uid)) == NULL) {
 		/* can not find uid in passwd file */
+		*name = '\0';
 		*path = '\0';
 		return FAIL;
 	}
