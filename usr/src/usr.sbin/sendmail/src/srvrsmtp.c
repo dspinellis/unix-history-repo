@@ -3,10 +3,10 @@
 # include <signal.h>
 
 # ifndef SMTP
-SCCSID(@(#)srvrsmtp.c	4.10		%G%	(no SMTP));
+SCCSID(@(#)srvrsmtp.c	4.11		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)srvrsmtp.c	4.10		%G%);
+SCCSID(@(#)srvrsmtp.c	4.11		%G%);
 
 /*
 **  SMTP -- run the SMTP protocol.
@@ -46,7 +46,6 @@ struct cmd
 # define CMDDBGKILL	13	/* kill -- kill sendmail */
 # define CMDDBGWIZ	14	/* wiz -- become a wizard */
 # define CMDONEX	15	/* onex -- sending one transaction only */
-# define CMDDBGSHELL	16	/* shell -- give us a shell */
 
 static struct cmd	CmdTab[] =
 {
@@ -69,7 +68,6 @@ static struct cmd	CmdTab[] =
 	"debug",	CMDDBGDEBUG,
 	"kill",		CMDDBGKILL,
 	"wiz",		CMDDBGWIZ,
-	"shell",	CMDDBGSHELL,
 # endif DEBUG
 	NULL,		CMDERROR,
 };
@@ -359,31 +357,6 @@ smtp()
 				message("500", "Can't kill Mom");
 			break;
 
-		  case CMDDBGSHELL:	/* give us an interactive shell */
-			if (!iswiz())
-				break;
-			if (fileno(InChannel) != 0)
-			{
-				(void) close(0);
-				(void) dup(fileno(InChannel));
-				if (fileno(InChannel) != fileno(OutChannel))
-					(void) fclose(InChannel);
-				InChannel = stdin;
-			}
-			if (fileno(OutChannel) != 1)
-			{
-				(void) close(1);
-				(void) dup(fileno(OutChannel));
-				(void) fclose(OutChannel);
-				OutChannel = stdout;
-			}
-			(void) close(2);
-			(void) dup(1);
-			execl("/bin/csh", "sendmail", 0);
-			execl("/bin/sh", "sendmail", 0);
-			message("500", "Can't");
-			exit(EX_UNAVAILABLE);
-
 		  case CMDDBGWIZ:	/* become a wizard */
 			if (WizWord != NULL)
 			{
@@ -534,6 +507,8 @@ help(topic)
 **		Prints a 500 exit stat if we are not a wizard.
 */
 
+#ifdef DEBUG
+
 bool
 iswiz()
 {
@@ -541,6 +516,8 @@ iswiz()
 		message("500", "Mere mortals musn't mutter that mantra");
 	return (IsWiz);
 }
+
+#endif DEBUG
 /*
 **  RUNINCHILD -- return twice -- once in the child, then in the parent again
 **
