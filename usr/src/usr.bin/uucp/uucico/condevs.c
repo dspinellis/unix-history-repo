@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)condevs.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)condevs.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -1149,7 +1149,7 @@ struct Devices *dev;
 
 #ifdef INTERVALTIMER
 #define uucpdelay(num,denom) intervaldelay(1000000*num/denom)
-#include <time.h>
+#include <sys/time.h>
 catch alarm sig
 SIGALRM
 struct itimerval itimerval;
