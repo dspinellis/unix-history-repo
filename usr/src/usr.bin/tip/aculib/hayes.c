@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)hayes.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)hayes.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,7 +36,7 @@ static char sccsid[] = "@(#)hayes.c	5.3 (Berkeley) %G%";
 
 #define	min(a,b)	((a < b) ? a : b)
 
-static	int sigALRM();
+static	void sigALRM();
 static	int timeout = 0;
 static	jmp_buf timeoutbuf;
 static 	char gobble();
@@ -124,7 +124,7 @@ hay_abort()
 	hay_disconnect();
 }
 
-static int
+static void
 sigALRM()
 {
 
@@ -138,10 +138,10 @@ gobble(match)
 	register char *match;
 {
 	char c;
-	int (*f)();
+	sig_t f;
 	int i, status = 0;
 
-	signal(SIGALRM, sigALRM);
+	f = signal(SIGALRM, sigALRM);
 	timeout = 0;
 #ifdef DEBUG
 	printf("\ngobble: waiting for %s\n", match);

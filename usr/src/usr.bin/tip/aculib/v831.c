@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)v831.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)v831.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -15,8 +15,8 @@ static char sccsid[] = "@(#)v831.c	5.4 (Berkeley) %G%";
 #include "tip.h"
 
 int	v831_abort();
-static	int alarmtr();
-extern	errno;
+static	void alarmtr();
+extern	int errno;
 
 static jmp_buf jmpbuf;
 static int child = -1;
@@ -26,6 +26,7 @@ v831_dialer(num, acu)
 {
         int status, pid, connected = 1;
         register int timelim;
+	static int dialit();
 
         if (boolean(value(VERBOSE)))
                 printf("\nstarting call...");
@@ -87,10 +88,9 @@ v831_dialer(num, acu)
         return (1);
 }
 
-static
+static void
 alarmtr()
 {
-
         alarm(0);
         longjmp(jmpbuf, 1);
 }
@@ -153,15 +153,16 @@ struct vaconfig {
 #define STX	02
 #define ETX	03
 
-static
+static int
 dialit(phonenum, acu)
 	register char *phonenum;
 	char *acu;
 {
         register struct vaconfig *vp;
 	struct sgttyb cntrl;
-        char c, *sanitize();
+        char c;
         int i, two = 2;
+	static char *sanitize();
 
         phonenum = sanitize(phonenum);
 #ifdef DEBUG
