@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)optr.c	1.7 (Berkeley) %G%";
+static	char *sccsid = "@(#)optr.c	1.8 (Berkeley) %G%";
 
 #include "dump.h"
 
@@ -349,26 +349,24 @@ fstabsearch(key)
 {
 	register struct pfstab *pf;
 	register struct fstab *fs;
-	register int i, keylength;
 	char *rawname();
 
 	if (table == NULL)
 		return ((struct fstab *)0);
-	keylength = min(strlen(key), sizeof (table->pf_fstab->fs_file));
 	for (pf = table; pf; pf = pf->pf_next) {
 		fs = pf->pf_fstab;
-		if (strncmp(fs->fs_file, key, keylength) == 0)
+		if (strcmp(fs->fs_file, key) == 0)
 			return (fs);
-		if (strncmp(fs->fs_spec, key, keylength) == 0)
+		if (strcmp(fs->fs_spec, key) == 0)
 			return (fs);
-		if (strncmp(rawname(fs->fs_spec), key, keylength) == 0)
+		if (strcmp(rawname(fs->fs_spec), key) == 0)
 			return (fs);
 		if (key[0] != '/'){
 			if (*fs->fs_spec == '/' &&
-			    strncmp(fs->fs_spec + 1, key, keylength) == 0)
+			    strcmp(fs->fs_spec + 1, key) == 0)
 				return (fs);
 			if (*fs->fs_file == '/' &&
-			    strncmp(fs->fs_file + 1, key, keylength) == 0)
+			    strcmp(fs->fs_file + 1, key) == 0)
 				return (fs);
 		}
 	}
