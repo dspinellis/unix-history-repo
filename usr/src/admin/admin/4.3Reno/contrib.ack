@@ -1,4 +1,4 @@
-.\"	@(#)contrib.ack	5.1	90/07/05
+.\"	@(#)contrib.ack	5.2	90/08/03
 .so HEADERS
 .if n \{\
 .ND
@@ -82,7 +82,7 @@ VAX 3000 support	Mt. Xinu
 Programming Language C	American National Standards Committee X3
 System documentation	IEEE (POSIX)
 .TE
-.bp
+.sp 2
 .TS
 l l l l.
 cal(1)	Kim Letkeman	cat(1)	Kevin Fall
