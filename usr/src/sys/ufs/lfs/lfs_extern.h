@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_extern.h	8.3 (Berkeley) %G%
+ *	@(#)lfs_extern.h	8.4 (Berkeley) %G%
  */
 
 struct fid;
@@ -19,10 +19,10 @@ struct mbuf;
 
 __BEGIN_DECLS
 u_long	 cksum __P((void *, size_t));				/* XXX */
-int	 lfs_balloc __P((struct vnode *, u_long, daddr_t, struct buf **));
+int	 lfs_balloc __P((struct vnode *, u_long, ufs_daddr_t, struct buf **));
 int	 lfs_blkatoff __P((struct vop_blkatoff_args *));
 int	 lfs_bwrite __P((struct vop_bwrite_args *));
-int	 lfs_check __P((struct vnode *, daddr_t));
+int	 lfs_check __P((struct vnode *, ufs_daddr_t));
 int	 lfs_close __P((struct vop_close_args *));
 int	 lfs_create __P((struct vop_create_args *));
 int	 lfs_fhtovp __P((struct mount *, struct fid *, struct mbuf *,
@@ -42,7 +42,7 @@ int	 lfs_mount __P((struct mount *,
 	    char *, caddr_t, struct nameidata *, struct proc *));
 int	 lfs_mountroot __P((void));
 struct buf *
-	 lfs_newbuf __P((struct vnode *, daddr_t, size_t));
+	 lfs_newbuf __P((struct vnode *, ufs_daddr_t, size_t));
 int	 lfs_read __P((struct vop_read_args *));
 int	 lfs_reclaim __P((struct vop_reclaim_args *));
 int	 lfs_remove __P((struct vop_remove_args *));

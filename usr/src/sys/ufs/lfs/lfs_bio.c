@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_bio.c	8.4 (Berkeley) %G%
+ *	@(#)lfs_bio.c	8.5 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -137,7 +137,7 @@ lfs_flush()
 int
 lfs_check(vp, blkno)
 	struct vnode *vp;
-	daddr_t blkno;
+	ufs_daddr_t blkno;
 {
 	extern int lfs_allclean_wakeup;
 	int error;

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_subr.c	8.2 (Berkeley) %G%
+ *	@(#)lfs_subr.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -37,7 +37,7 @@ lfs_blkatoff(ap)
 	register struct lfs *fs;
 	struct inode *ip;
 	struct buf *bp;
-	daddr_t lbn;
+	ufs_daddr_t lbn;
 	int bsize, error;
 
 	ip = VTOI(ap->a_vp);
@@ -83,7 +83,8 @@ lfs_seglock(fs, flags)
 
 	sp = fs->lfs_sp = malloc(sizeof(struct segment), M_SEGMENT, M_WAITOK);
 	sp->bpp = malloc(((LFS_SUMMARY_SIZE - sizeof(SEGSUM)) /
-	    sizeof(daddr_t) + 1) * sizeof(struct buf *), M_SEGMENT, M_WAITOK);
+	    sizeof(ufs_daddr_t) + 1) * sizeof(struct buf *),
+	    M_SEGMENT, M_WAITOK);
 	sp->seg_flags = flags;
 	sp->vp = NULL;
 	(void) lfs_initseg(fs);

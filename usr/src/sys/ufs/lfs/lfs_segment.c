@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	8.6 (Berkeley) %G%
+ *	@(#)lfs_segment.c	8.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -48,13 +48,13 @@ void	 lfs_callback __P((struct buf *));
 void	 lfs_gather __P((struct lfs *, struct segment *,
 	     struct vnode *, int (*) __P((struct lfs *, struct buf *))));
 int	 lfs_gatherblock __P((struct segment *, struct buf *, int *));
-void	 lfs_iset __P((struct inode *, daddr_t, time_t));
+void	 lfs_iset __P((struct inode *, ufs_daddr_t, time_t));
 int	 lfs_match_data __P((struct lfs *, struct buf *));
 int	 lfs_match_dindir __P((struct lfs *, struct buf *));
 int	 lfs_match_indir __P((struct lfs *, struct buf *));
 int	 lfs_match_tindir __P((struct lfs *, struct buf *));
 void	 lfs_newseg __P((struct lfs *));
-void	 lfs_shellsort __P((struct buf **, daddr_t *, register int));
+void	 lfs_shellsort __P((struct buf **, ufs_daddr_t *, register int));
 void	 lfs_supercallback __P((struct buf *));
 void	 lfs_updatemeta __P((struct segment *));
 int	 lfs_vref __P((struct vnode *));
@@ -187,7 +187,7 @@ lfs_segwrite(mp, flags)
 	struct segment *sp;
 	struct vnode *vp;
 	SEGUSE *segusep;
-	daddr_t ibno;
+	ufs_daddr_t ibno;
 	CLEANERINFO *cip;
 	int clean, do_ckp, error, i;
 
@@ -305,7 +305,7 @@ lfs_writefile(fs, sp, vp)
 	    sp->sum_bytes_left < sizeof(struct finfo))
 		(void) lfs_writeseg(fs, sp);
 
-	sp->sum_bytes_left -= sizeof(struct finfo) - sizeof(daddr_t);
+	sp->sum_bytes_left -= sizeof(struct finfo) - sizeof(ufs_daddr_t);
 	++((SEGSUM *)(sp->segsum))->ss_nfinfo;
 
 	fip = sp->fip;
@@ -331,10 +331,10 @@ lfs_writefile(fs, sp, vp)
 	if (fip->fi_nblocks != 0) {
 		sp->fip =
 		    (struct finfo *)((caddr_t)fip + sizeof(struct finfo) +
-		    sizeof(daddr_t) * (fip->fi_nblocks - 1));
+		    sizeof(ufs_daddr_t) * (fip->fi_nblocks - 1));
 		sp->start_lbp = &sp->fip->fi_blocks[0];
 	} else {
-		sp->sum_bytes_left += sizeof(struct finfo) - sizeof(daddr_t);
+		sp->sum_bytes_left += sizeof(struct finfo) - sizeof(ufs_daddr_t);
 		--((SEGSUM *)(sp->segsum))->ss_nfinfo;
 	}
 }
@@ -348,7 +348,7 @@ lfs_writeinode(fs, sp, ip)
 	struct buf *bp, *ibp;
 	IFILE *ifp;
 	SEGUSE *sup;
-	daddr_t daddr;
+	ufs_daddr_t daddr;
 	ino_t ino;
 	int error, i, ndx;
 	int redo_ifile = 0;
@@ -360,7 +360,7 @@ lfs_writeinode(fs, sp, ip)
 	if (sp->ibp == NULL) {
 		/* Allocate a new segment if necessary. */
 		if (sp->seg_bytes_left < fs->lfs_bsize ||
-		    sp->sum_bytes_left < sizeof(daddr_t))
+		    sp->sum_bytes_left < sizeof(ufs_daddr_t))
 			(void) lfs_writeseg(fs, sp);
 
 		/* Get next inode block. */
@@ -376,10 +376,10 @@ lfs_writeinode(fs, sp, ip)
 		fs->lfs_avail -= fsbtodb(fs, 1);
 		/* Set remaining space counters. */
 		sp->seg_bytes_left -= fs->lfs_bsize;
-		sp->sum_bytes_left -= sizeof(daddr_t);
-		ndx = LFS_SUMMARY_SIZE / sizeof(daddr_t) -
+		sp->sum_bytes_left -= sizeof(ufs_daddr_t);
+		ndx = LFS_SUMMARY_SIZE / sizeof(ufs_daddr_t) -
 		    sp->ninodes / INOPB(fs) - 1;
-		((daddr_t *)(sp->segsum))[ndx] = daddr;
+		((ufs_daddr_t *)(sp->segsum))[ndx] = daddr;
 	}
 
 	/* Update the inode times and copy the inode onto the inode page. */
@@ -452,7 +452,7 @@ lfs_gatherblock(sp, bp, sptr)
 		panic ("lfs_gatherblock: Null vp in segment");
 #endif
 	fs = sp->fs;
-	if (sp->sum_bytes_left < sizeof(daddr_t) ||
+	if (sp->sum_bytes_left < sizeof(ufs_daddr_t) ||
 	    sp->seg_bytes_left < fs->lfs_bsize) {
 		if (sptr)
 			splx(*sptr);
@@ -466,7 +466,7 @@ lfs_gatherblock(sp, bp, sptr)
 		/* Add the current file to the segment summary. */
 		++((SEGSUM *)(sp->segsum))->ss_nfinfo;
 		sp->sum_bytes_left -= 
-		    sizeof(struct finfo) - sizeof(daddr_t);
+		    sizeof(struct finfo) - sizeof(ufs_daddr_t);
 
 		if (sptr)
 			*sptr = splbio();
@@ -478,7 +478,7 @@ lfs_gatherblock(sp, bp, sptr)
 	*sp->cbpp++ = bp;
 	sp->fip->fi_blocks[sp->fip->fi_nblocks++] = bp->b_lblkno;
 
-	sp->sum_bytes_left -= sizeof(daddr_t);
+	sp->sum_bytes_left -= sizeof(ufs_daddr_t);
 	sp->seg_bytes_left -= fs->lfs_bsize;
 	return(0);
 }
@@ -528,7 +528,7 @@ lfs_updatemeta(sp)
 	struct vnode *vp;
 	struct indir a[NIADDR + 2], *ap;
 	struct inode *ip;
-	daddr_t daddr, lbn, off;
+	ufs_daddr_t daddr, lbn, off;
 	int db_per_fsb, error, i, nblocks, num;
 
 	vp = sp->vp;
@@ -575,7 +575,7 @@ printf ("Updatemeta allocating indirect block: shouldn't happen\n");
 				ip->i_blocks += btodb(fs->lfs_bsize);
 				fs->lfs_bfree -= btodb(fs->lfs_bsize);
 			}
-			((daddr_t *)bp->b_data)[ap->in_off] = off;
+			((ufs_daddr_t *)bp->b_data)[ap->in_off] = off;
 			VOP_BWRITE(bp);
 		}
 
@@ -966,7 +966,7 @@ lfs_match_tindir(fs, bp)
 struct buf *
 lfs_newbuf(vp, daddr, size)
 	struct vnode *vp;
-	daddr_t daddr;
+	ufs_daddr_t daddr;
 	size_t size;
 {
 	struct buf *bp;
@@ -1033,7 +1033,7 @@ lfs_supercallback(bp)
 void
 lfs_shellsort(bp_array, lb_array, nmemb)
 	struct buf **bp_array;
-	daddr_t *lb_array;
+	ufs_daddr_t *lb_array;
 	register int nmemb;
 {
 	static int __rsshell_increments[] = { 4, 1, 0 };

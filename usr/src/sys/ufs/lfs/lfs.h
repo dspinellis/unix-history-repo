@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	8.7 (Berkeley) %G%
+ *	@(#)lfs.h	8.8 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -50,7 +50,7 @@ struct finfo {
 	u_int32_t fi_nblocks;		/* number of blocks */
 	u_int32_t fi_version;		/* version number */
 	u_int32_t fi_ino;		/* inode number */
-	daddr_t	  fi_blocks[1];		/* array of logical block numbers */
+	ufs_daddr_t	  fi_blocks[1];	/* array of logical block numbers */
 };
 
 /* On-disk and in-memory super block. */
@@ -73,13 +73,13 @@ struct lfs {
 	u_int32_t lfs_nfiles;		/* number of allocated inodes */
 	int32_t	  lfs_avail;		/* blocks available for writing */
 	u_int32_t lfs_uinodes;		/* inodes in cache not yet on disk */
-	daddr_t	  lfs_idaddr;		/* inode file disk address */
+	ufs_daddr_t lfs_idaddr;		/* inode file disk address */
 	ino_t	  lfs_ifile;		/* inode file inode number */
-	daddr_t	  lfs_lastseg;		/* address of last segment written */
-	daddr_t	  lfs_nextseg;		/* address of next segment to write */
-	daddr_t	  lfs_curseg;		/* current segment being written */
-	daddr_t	  lfs_offset;		/* offset in curseg for next partial */
-	daddr_t	  lfs_lastpseg;		/* address of last partial written */
+	ufs_daddr_t lfs_lastseg;	/* address of last segment written */
+	ufs_daddr_t lfs_nextseg;	/* address of next segment to write */
+	ufs_daddr_t lfs_curseg;		/* current segment being written */
+	ufs_daddr_t lfs_offset;		/* offset in curseg for next partial */
+	ufs_daddr_t lfs_lastpseg;	/* address of last partial written */
 	u_int32_t lfs_tstamp;		/* time stamp */
 
 /* These are configuration parameters. */
@@ -112,7 +112,7 @@ struct lfs {
 
 #define	LFS_MIN_SBINTERVAL	5	/* minimum superblock segment spacing */
 #define	LFS_MAXNUMSB		10	/* superblock disk offsets */
-	daddr_t	  lfs_sboffs[LFS_MAXNUMSB];
+	ufs_daddr_t lfs_sboffs[LFS_MAXNUMSB];
 
 /* Checksum -- last valid disk field. */
 	u_int32_t lfs_cksum;		/* checksum for superblock checking */
@@ -162,7 +162,7 @@ typedef struct ifile IFILE;
 struct ifile {
 	u_int32_t if_version;		/* inode version number */
 #define	LFS_UNUSED_DADDR	0	/* out-of-band daddr */
-	daddr_t	  if_daddr;		/* inode disk address */
+	ufs_daddr_t if_daddr;		/* inode disk address */
 	ino_t	  if_nextfree;		/* next-unallocated inode */
 };
 
@@ -189,7 +189,7 @@ typedef struct segsum SEGSUM;
 struct segsum {
 	u_int32_t ss_sumsum;		/* check sum of summary block */
 	u_int32_t ss_datasum;		/* check sum of data */
-	daddr_t	  ss_next;		/* next segment */
+	ufs_daddr_t ss_next;		/* next segment */
 	u_int32_t ss_create;		/* creation time stamp */
 	u_int16_t ss_nfinfo;		/* number of file info structures */
 	u_int16_t ss_ninos;		/* number of inodes in summary */
@@ -219,14 +219,14 @@ struct segsum {
 #define	datosn(fs, daddr)	/* disk address to segment number */	\
 	(((daddr) - (fs)->lfs_sboffs[0]) / fsbtodb((fs), (fs)->lfs_ssize))
 #define sntoda(fs, sn) 		/* segment number to disk address */	\
-	((daddr_t)((sn) * ((fs)->lfs_ssize << (fs)->lfs_fsbtodb) +	\
+	((ufs_daddr_t)((sn) * ((fs)->lfs_ssize << (fs)->lfs_fsbtodb) +	\
 	    (fs)->lfs_sboffs[0]))
 
 /* Read in the block with the cleaner info from the ifile. */
 #define LFS_CLEANERINFO(CP, F, BP) {					\
 	VTOI((F)->lfs_ivnode)->i_flag |= IN_ACCESS;			\
 	if (bread((F)->lfs_ivnode,					\
-	    (daddr_t)0, (F)->lfs_bsize, NOCRED, &(BP)))			\
+	    (ufs_daddr_t)0, (F)->lfs_bsize, NOCRED, &(BP)))		\
 		panic("lfs: ifile read");				\
 	(CP) = (CLEANERINFO *)(BP)->b_data;				\
 }
@@ -273,8 +273,8 @@ struct segsum {
  */
 typedef struct block_info {
 	ino_t	bi_inode;		/* inode # */
-	daddr_t	bi_lbn;			/* logical block w/in file */
-	daddr_t	bi_daddr;		/* disk address of block */
+	ufs_daddr_t bi_lbn;		/* logical block w/in file */
+	ufs_daddr_t bi_daddr;		/* disk address of block */
 	time_t	bi_segcreate;		/* origin segment create time */
 	int	bi_version;		/* file version number */
 	void	*bi_bp;			/* data buffer */
@@ -294,7 +294,7 @@ struct segment {
 	u_int32_t seg_bytes_left;	/* bytes left in segment */
 	u_int32_t sum_bytes_left;	/* bytes left in summary block */
 	u_int32_t seg_number;		/* number of this segment */
-	daddr_t  *start_lbp;		/* beginning lbn for this set */
+	ufs_daddr_t *start_lbp;		/* beginning lbn for this set */
 
 #define	SEGM_CKP	0x01		/* doing a checkpoint */
 #define	SEGM_CLEAN	0x02		/* cleaner call; don't sort */
