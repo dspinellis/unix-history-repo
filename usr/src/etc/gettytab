@@ -2,7 +2,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)gettytab	5.9 (Berkeley) %G%
+#	@(#)gettytab	5.10 (Berkeley) %G%
 #
 #
 # Most of the table entries here are just copies of the
@@ -70,7 +70,15 @@ D2400|d2400|Fast-Dial-2400:\
 	:nx=D300:tc=1200-baud:
 5|D300|Fast-Dial-300:\
 	:nx=D2400:tc=300-baud:
-
+#
+#telebit
+#
+t19200:\
+	:nx=t2400:tc=19200-baud:
+t2400:\
+	:nx=t1200:tc=2400-baud:
+t1200:\
+	:nx=t19200:tc=1200-baud:
 #
 # Odd special case terminals
 #
