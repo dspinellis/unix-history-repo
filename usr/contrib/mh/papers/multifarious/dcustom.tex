@@ -1,0 +1,198 @@
+% Customize the dissertation style of AmS-TeX
+
+\expandafter\ifx\csname documentstyle\endcsname\relax \input amstex\fi
+\expandafter\ifx\csname ask\endcsname\relax \documentstyle{diss}\fi
+
+
+\catcode`\@=11				% for a little while
+
+
+% Parameters different that diss.sty
+
+\hoffset=.175in				% center it...
+
+% \def\contitle{\jobname.toc}
+% \def\figtitle{\jobname.lof}
+% \def\tabtitle{\jobname.lot}
+
+
+% Figure Support
+
+\def\tagfigure#1#2#3{%
+    \figure{figure#1}{#2}%
+    \ifundefined{#3}%
+	\expandafter\let\csname#3\endcsname=\lastfigure
+    \else
+	\tell{Warning: #3 is already defined}%
+    \fi
+}
+
+\def\tagdiagram#1#2#3{%
+    \diagram{diagram#1}{#2}%
+    \ifundefined{#3}%
+	\expandafter\let\csname#3\endcsname=\lastfigure
+    \else
+	\tell{Warning: #3 is already defined}%
+    \fi
+}
+
+\def\tagtable#1#2#3{%
+    \table{#2}%
+	\input table#1\relax
+    \endtable
+    \ifundefined{#3}%
+	\expandafter\let\csname#3\endcsname=\lasttable
+    \else
+	\tell{Warning: #3 is already defined}%
+    \fi
+}
+
+
+% Page Numbering
+
+\newif\ifdraft	\draftfalse
+
+\def\draftstring{{\ifdraft \tt Draft\fi}}
+\def\draftext{%
+    \ifdraft
+	\begingroup
+	    \tt
+	    \ifodd\pageno
+		\TeX set \today\ with DISS.STY v\version	    
+	    \else
+		Draft \versiontag/ of \versiondate/
+	    \fi
+	\endgroup
+    \fi
+}
+\def\versiontag/{\errmessage{version.tex not loaded!}}
+\let\versiondate=\versiontag
+\def\uci@headpage{\draftext\hfil\rm\folio}
+\def\uci@footpage{\draftstring\hfil\rm\folio\hfil\draftstring}
+
+
+% Draft style
+
+\def\draftstyle{%
+    \quiet
+	\drafttrue
+	\nochapternumbers
+    \verbose
+}
+
+
+% Article and Galley styles
+
+\let\@articlestyle=\articlestyle
+
+\outer\def\articlestyle{%
+    \quiet
+	\@articlestyle
+	\input article
+    \verbose
+}
+
+\outer\def\galleystyle{%
+    \quiet
+	\@articlestyle
+	\input galley
+    \verbose
+}
+
+
+% Theorems, Equations, and the like
+
+\outer\def\proclaim #1. #2\par{%
+    \medbreak\vskip-\parskip
+    \begingroup
+	\singlespace
+	\noindent{\smallertype\sc#1.\enspace}{\sl#2}\par
+    \endgroup
+    \ifdim\lastskip<\medskipamount \removelastskip\penalty55\medskip\fi
+}
+
+\def\proof #1.{\lp{\smallertype\sc Proof of #1.\enspace}}
+
+\def\thm#1{{\smallertype\sc#1}}
+
+\def\eqn#1{\ifmmode {\it(#1\/)}\else $\it(#1\/)$\fi}
+
+\def\implies{\quad\supset\ }
+
+\def\tdots{\ldots\thinspace}
+
+
+% References...
+
+\let\journalinfo=\jourinfo
+\let\thesis=\book			% experimental
+\let\thesisinfo=\bookinfo		%  ..
+
+
+% Miscellaneous Macros
+
+\let\bop=\newpage
+
+\def\hbreak{\hfil\break}
+
+\def\lp{\par\noindent}
+
+% usage: \boxit{text}
+\def\boxit#1{%
+    \leavevmode
+    \thinspace
+    \hbox{%
+	\smallertype
+	\vrule
+	\vtop{%
+	    \vbox{%
+		\hrule\kern\p@
+		\hbox{\vphantom{\sc/}\thinspace{\sc#1}\thinspace}
+	    }%
+	    \kern\p@\hrule
+	}%
+	\vrule
+    }%
+    \thinspace
+}
+
+
+% Additional verbatim support
+
+\def\?{\char'077}
+
+\def\verbatimlines{%
+    \lineno@uci=\z@
+    \begingroup
+	\setupverbatim
+	\parskip=\z@ plus .05\baselineskip
+	\parindent=20\p@
+	\everypar{\advance\lineno@uci by\@ne \llap{\the\lineno@uci\ \ }}%
+	\catcode`\ =13 \catcode`\^^M=13 \catcode`\?=\z@
+	\verbatimgobble
+}
+
+
+% Trademarks...
+
+\input trademark
+
+
+% Parameters different than the AmS-TeX dissertation style
+
+\quiet
+    \twosided
+    \useolddigits
+    \raggedbottom
+    \raggedright
+    \AuthorsInCSC
+    \refdef@AmS\yr\oldstyle
+    \halfspace
+    \twelvepoint
+\verbose
+
+
+\catcode`\@=12				% back to normal
+
+
+\let\dcustom=\empty
