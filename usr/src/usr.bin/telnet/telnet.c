@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.12 (Berkeley) 4/22/86";
 #endif not lint
 
 /*
@@ -38,20 +38,17 @@ static char sccsid[] = "@(#)telnet.c	5.12 (Berkeley) %G%";
 
 
 
+#ifndef	FD_SETSIZE
 /*
  * The following is defined just in case someone should want to run
  * this telnet on a 4.2 system.
  *
- * This has never been tested, so good luck...
  */
-#ifndef	FD_SETSIZE
 
-typedef long	fd_set;
-
-#define	FD_SET(n, p)	(*(p) |= (1<<(n)))
-#define	FD_CLR(n, p)	(*(p) &= ~(1<<(n)))
-#define	FD_ISSET(n, p)	(*(p) & (1<<(n)))
-#define FD_ZERO(p)	(*(p) = 0)
+#define	FD_SET(n, p)	((p)->fds_bits[0] |= (1<<(n)))
+#define	FD_CLR(n, p)	((p)->fds_bits[0] &= ~(1<<(n)))
+#define	FD_ISSET(n, p)	((p)->fds_bits[0] & (1<<(n)))
+#define FD_ZERO(p)	((p)->fds_bits[0] = 0)
 
 #endif
 
@@ -73,6 +70,13 @@ char	netobuf[2*BUFSIZ], *nfrontp = netobuf, *nbackp = netobuf;
 #define	NETBYTES()	(nfrontp-nbackp)
 #define	NETROOM()	(NETMAX()-NETLOC()+1)
 char	*neturg = 0;		/* one past last byte of urgent data */
+
+char	subbuffer[100], *subpointer, *subend;	/* buffer for sub-options */
+#define	SB_CLEAR()	subpointer = subbuffer;
+#define	SB_TERM()	subend = subpointer;
+#define	SB_ACCUM(c)	if (subpointer < (subbuffer+sizeof subbuffer)) { \
+				*subpointer++ = (c); \
+			}
 
 char	hisopts[256];
 char	myopts[256];
@@ -244,6 +248,27 @@ control(c)
 		buf[2] = 0;
 	}
 	return (buf);
+}
+
+
+/*
+ * upcase()
+ *
+ *	Upcase (in place) the argument.
+ */
+
+void
+upcase(argument)
+register char *argument;
+{
+    register int c;
+
+    while (c = *argument) {
+	if (islower(c)) {
+	    *argument = toupper(c);
+	}
+	argument++;
+    }
 }
 
 /*
@@ -531,7 +556,7 @@ printoption(direction, fmt, option, what)
 {
 	if (!showoptions)
 		return;
-	printf("%s ", direction);
+	printf("%s ", direction+1);
 	if (fmt == doopt)
 		fmt = "do";
 	else if (fmt == dont)
@@ -542,7 +567,7 @@ printoption(direction, fmt, option, what)
 		fmt = "wont";
 	else
 		fmt = "???";
-	if (option < TELOPT_SUPDUP)
+	if (option < (sizeof telopts/sizeof telopts[0]))
 		printf("%s %s", fmt, telopts[option]);
 	else
 		printf("%s %d", fmt, option);
@@ -724,11 +749,16 @@ telnet()
 	FD_ZERO(&xbits);
 
 	ioctl(net, FIONBIO, (char *)&on);
-#if	defined(xxxSO_OOBINLINE)
-	setsockopt(net, SOL_SOCKET, SO_OOBINLINE, on, sizeof on);
-#endif	/* defined(xxxSO_OOBINLINE) */
-	if (telnetport && !hisopts[TELOPT_SGA]) {
-		willoption(TELOPT_SGA);
+#if	defined(SO_OOBINLINE)
+	setsockopt(net, SOL_SOCKET, SO_OOBINLINE, &on, sizeof on);
+#endif	/* defined(SO_OOBINLINE) */
+	if (telnetport) {
+	    if (!hisopts[TELOPT_SGA]) {
+		willoption(TELOPT_SGA, 0);
+	    }
+	    if (!myopts[TELOPT_TTYPE]) {
+		dooption(TELOPT_TTYPE, 0);
+	    }
 	}
 	for (;;) {
 		if (scc < 0 && tcc < 0) {
@@ -784,7 +814,7 @@ telnet()
 			    sbp = sibuf;
 			}
 			canread = sibuf + sizeof sibuf - sbp;
-#if	!defined(xxxSO_OOBINLINE)
+#if	!defined(SO_OOBINLINE)
 			/*
 			 * In 4.2 (and some early 4.3) systems, the
 			 * OOB indication and data handling in the kernel
@@ -838,9 +868,9 @@ telnet()
 			c = read(net, sibuf, canread);
 		    }
 		    settimer(didnetreceive);
-#else	/* !defined(xxxSO_OOBINLINE) */
+#else	/* !defined(SO_OOBINLINE) */
 		    c = read(net, sbp, canread);
-#endif	/* !defined(xxxSO_OOBINLINE) */
+#endif	/* !defined(SO_OOBINLINE) */
 		    if (c < 0 && errno == EWOULDBLOCK) {
 			c = 0;
 		    } else if (c <= 0) {
@@ -863,9 +893,17 @@ telnet()
 			c = read(tin, tbp, tibuf+sizeof tibuf - tbp);
 			if (c < 0 && errno == EWOULDBLOCK) {
 				c = 0;
-			} else if (c <= 0) {
-				tcc = c;
-				break;
+			} else {
+				/* EOF detection for line mode!!!! */
+				if (c == 0 && globalmode >= 3) {
+					/* must be an EOF... */
+					*tbp = ntc.t_eofc;
+					c = 1;
+				}
+				if (c <= 0) {
+					tcc = c;
+					break;
+				}
 			}
 			tcc += c;
 		}
@@ -968,6 +1006,8 @@ telnet()
 #define	TS_DO		4
 #define	TS_DONT		5
 #define	TS_CR		6
+#define	TS_SB		7		/* sub-option collection */
+#define	TS_SE		8		/* looking for sub-option end */
 
 telrcv()
 {
@@ -1066,6 +1106,11 @@ telrcv()
 			case GA:
 				break;
 
+			case SB:
+				SB_CLEAR();
+				state = TS_SB;
+				continue;
+
 			default:
 				break;
 			}
@@ -1073,54 +1118,74 @@ telrcv()
 			continue;
 
 		case TS_WILL:
-			printoption("RCVD", will, c, !hisopts[c]);
+			printoption(">RCVD", will, c, !hisopts[c]);
 			if (c == TELOPT_TM) {
 				if (flushout) {
 					flushout = 0;
 				}
 			} else if (!hisopts[c]) {
-				willoption(c);
+				willoption(c, 1);
 			}
 			state = TS_DATA;
 			continue;
 
 		case TS_WONT:
-			printoption("RCVD", wont, c, hisopts[c]);
+			printoption(">RCVD", wont, c, hisopts[c]);
 			if (c == TELOPT_TM) {
 				if (flushout) {
 					flushout = 0;
 				}
 			} else if (hisopts[c]) {
-				wontoption(c);
+				wontoption(c, 1);
 			}
 			state = TS_DATA;
 			continue;
 
 		case TS_DO:
-			printoption("RCVD", doopt, c, !myopts[c]);
+			printoption(">RCVD", doopt, c, !myopts[c]);
 			if (!myopts[c])
 				dooption(c);
 			state = TS_DATA;
 			continue;
 
 		case TS_DONT:
-			printoption("RCVD", dont, c, myopts[c]);
+			printoption(">RCVD", dont, c, myopts[c]);
 			if (myopts[c]) {
 				myopts[c] = 0;
 				sprintf(nfrontp, wont, c);
 				nfrontp += sizeof (wont) - 2;
 				flushline = 1;
 				setconnmode();	/* set new tty mode (maybe) */
-				printoption("SENT", wont, c);
+				printoption(">SENT", wont, c);
 			}
 			state = TS_DATA;
 			continue;
+		case TS_SB:
+			if (c == IAC) {
+				state = TS_SE;
+			} else {
+				SB_ACCUM(c);
+			}
+			continue;
+
+		case TS_SE:
+			if (c != SE) {
+				if (c != IAC) {
+					SB_ACCUM(IAC);
+				}
+				SB_ACCUM(c);
+				state = TS_SB;
+			} else {
+				SB_TERM();
+				suboption();	/* handle sub-option */
+				state = TS_DATA;
+			}
 		}
 	}
 }
 
-willoption(option)
-	int option;
+willoption(option, reply)
+	int option, reply;
 {
 	char *fmt;
 
@@ -1143,11 +1208,14 @@ willoption(option)
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (dont) - 2;
-	printoption("SENT", fmt, option);
+	if (reply)
+		printoption(">SENT", fmt, option);
+	else
+		printoption("<SENT", fmt, option);
 }
 
-wontoption(option)
-	int option;
+wontoption(option, reply)
+	int option, reply;
 {
 	char *fmt;
 
@@ -1169,7 +1237,10 @@ wontoption(option)
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (doopt) - 2;
-	printoption("SENT", fmt, option);
+	if (reply)
+		printoption(">SENT", fmt, option);
+	else
+		printoption("<SENT", fmt, option);
 }
 
 dooption(option)
@@ -1183,6 +1254,7 @@ dooption(option)
 		fmt = will;
 		break;
 
+	case TELOPT_TTYPE:		/* terminal type option */
 	case TELOPT_SGA:		/* no big deal */
 		fmt = will;
 		myopts[option] = 1;
@@ -1195,7 +1267,48 @@ dooption(option)
 	}
 	sprintf(nfrontp, fmt, option);
 	nfrontp += sizeof (doopt) - 2;
-	printoption("SENT", fmt, option);
+	printoption(">SENT", fmt, option);
+}
+
+/*
+ * suboption()
+ *
+ *	Look at the sub-option buffer, and try to be helpful to the other
+ * side.
+ *
+ *	Currently we recognize:
+ *
+ *		Terminal type, send request.
+ */
+
+suboption()
+{
+    switch (subbuffer[0]&0xff) {
+    case TELOPT_TTYPE:
+	if ((subbuffer[1]&0xff) != TELQUAL_SEND) {
+	    ;
+	} else {
+	    char *name;
+	    char namebuf[41];
+	    char *getenv();
+	    int len;
+
+	    name = getenv("TERM");
+	    if ((name == 0) || ((len = strlen(name)) > 40)) {
+		name = "UNKNOWN";
+	    }
+	    if ((len + 4+2) < NETROOM()) {
+		strcpy(namebuf, name);
+		upcase(namebuf);
+		sprintf(nfrontp, "%c%c%c%c%s%c%c", IAC, SB, TELOPT_TTYPE,
+				    TELQUAL_IS, namebuf, IAC, SE);
+		nfrontp += 4+strlen(namebuf)+2;
+	    }
+	}
+
+    default:
+	break;
+    }
 }
 
 /*
@@ -1224,10 +1337,11 @@ doflush()
 {
     NET2ADD(IAC, DO);
     NETADD(TELOPT_TM);
-    printoption("SENT", doopt, TELOPT_TM);
     flushline = 1;
     flushout = 1;
     ttyflush();
+    /* do printoption AFTER flush, otherwise the output gets tossed... */
+    printoption("<SENT", doopt, TELOPT_TM);
 }
 
 intp()
@@ -1416,11 +1530,19 @@ lclchars()
 
 togdebug()
 {
+#ifndef	NOT43
     if (net > 0 &&
 	setsockopt(net, SOL_SOCKET, SO_DEBUG, (char *)&debug, sizeof(debug))
 									< 0) {
 	    perror("setsockopt (SO_DEBUG)");
     }
+#else	NOT43
+    if (debug) {
+	if (net > 0 && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+	    perror("setsockopt (SO_DEBUG)");
+    } else
+	printf("Cannot turn off socket debugging\n");
+#endif	NOT43
     return 1;
 }
 
@@ -1582,6 +1704,7 @@ struct setlist Setlist[] = {
     { "interrupt", "character to cause an Interrupt Process", &ntc.t_intrc },
     { "kill",	"character to cause an Erase Line", &nttyb.sg_kill },
     { "quit",	"character to cause a Break", &ntc.t_quitc },
+    { "eof",	"character to cause an EOF ", &ntc.t_eofc },
     { 0 }
 };
 
@@ -1651,20 +1774,20 @@ char	*argv[];
 dolinemode()
 {
     if (hisopts[TELOPT_SGA]) {
-	wontoption(TELOPT_SGA);
+	wontoption(TELOPT_SGA, 0);
     }
     if (hisopts[TELOPT_ECHO]) {
-	wontoption(TELOPT_ECHO);
+	wontoption(TELOPT_ECHO, 0);
     }
 }
 
 docharmode()
 {
     if (!hisopts[TELOPT_SGA]) {
-	willoption(TELOPT_SGA);
+	willoption(TELOPT_SGA, 0);
     }
     if (!hisopts[TELOPT_ECHO]) {
-	willoption(TELOPT_ECHO);
+	willoption(TELOPT_ECHO, 0);
     }
 }
 
@@ -1911,8 +2034,13 @@ tn(argc, argv)
 		host = gethostbyname(argv[1]);
 		if (host) {
 			sin.sin_family = host->h_addrtype;
+#ifndef	NOT43
 			bcopy(host->h_addr_list[0], (caddr_t)&sin.sin_addr,
 				host->h_length);
+#else	NOT43
+			bcopy(host->h_addr, (caddr_t)&sin.sin_addr,
+				host->h_length);
+#endif	NOT43
 			hostname = host->h_name;
 		} else {
 			printf("%s: unknown host\n", argv[1]);
@@ -1948,12 +2076,17 @@ tn(argc, argv)
 			perror("telnet: socket");
 			return 0;
 		}
+#ifndef	NOT43
 		if (debug &&
 				setsockopt(net, SOL_SOCKET, SO_DEBUG,
-					(char *)&debug, sizeof(debug)) < 0) {
+					(char *)&debug, sizeof(debug)) < 0)
+#else	NOT43
+		if (debug && setsockopt(net, SOL_SOCKET, SO_DEBUG, 0, 0) < 0)
+#endif	NOT43
 			perror("setsockopt (SO_DEBUG)");
-		}
+
 		if (connect(net, (struct sockaddr *)&sin, sizeof (sin)) < 0) {
+#ifndef	NOT43
 			if (host && host->h_addr_list[1]) {
 				int oerrno = errno;
 
@@ -1970,6 +2103,7 @@ tn(argc, argv)
 				(void) close(net);
 				continue;
 			}
+#endif	NOT43
 			perror("telnet: connect");
 			signal(SIGINT, SIG_DFL);
 			signal(SIGQUIT, SIG_DFL);
@@ -2192,7 +2326,6 @@ main(argc, argv)
 	autoflush = 1;
 #endif	/* LNOFLSH */
 	ntc = otc;
-	ntc.t_eofc = -1;		/* we don't want to use EOF */
 	nltc = oltc;
 	nttyb = ottyb;
 	setbuf(stdin, (char *)0);
