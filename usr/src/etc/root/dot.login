@@ -1,5 +1,4 @@
 setenv BLOCKSIZE 1k
-setenv HOME ~root
 
 tset -Q \?$TERM
 echo 'erase ^H, kill ^U, intr ^C status ^T'
