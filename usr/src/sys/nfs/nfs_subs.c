@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_subs.c	7.46 (Berkeley) %G%
+ *	@(#)nfs_subs.c	7.47 (Berkeley) %G%
  */
 
 /*
@@ -792,19 +792,19 @@ nfs_namei(ndp, fhp, len, slp, nam, mdp, dposp, p)
 	register struct mbuf *md;
 	register char *fromcp, *tocp;
 	struct vnode *dp;
-	int flag, error, rdonly;
+	int error, rdonly;
+	struct componentname *cnp = &ndp->ni_cnd;
 
-	flag = ndp->ni_nameiop & OPMASK;
-	MALLOC(ndp->ni_pnbuf, char *, len + 1, M_NAMEI, M_WAITOK);
+	MALLOC(cnp->cn_pnbuf, char *, len + 1, M_NAMEI, M_WAITOK);
 	/*
 	 * Copy the name from the mbuf list to ndp->ni_pnbuf
 	 * and set the various ndp fields appropriately.
 	 */
 	fromcp = *dposp;
-	tocp = ndp->ni_pnbuf;
+	tocp = cnp->cn_pnbuf;
 	md = *mdp;
 	rem = mtod(md, caddr_t) + md->m_len - fromcp;
-	ndp->ni_hash = 0;
+	cnp->cn_hash = 0;
 	for (i = 0; i < len; i++) {
 		while (rem == 0) {
 			md = md->m_next;
@@ -820,11 +820,11 @@ nfs_namei(ndp, fhp, len, slp, nam, mdp, dposp, p)
 			goto out;
 		}
 		if (*fromcp & 0200)
-			if ((*fromcp&0377) == ('/'|0200) || flag != DELETE) {
+			if ((*fromcp&0377) == ('/'|0200) || cnp->cn_nameiop != DELETE) {
 				error = EINVAL;
 				goto out;
 			}
-		ndp->ni_hash += (unsigned char)*fromcp;
+		cnp->cn_hash += (unsigned char)*fromcp;
 		*tocp++ = *fromcp++;
 		rem--;
 	}
@@ -838,12 +838,13 @@ nfs_namei(ndp, fhp, len, slp, nam, mdp, dposp, p)
 		else if (error = nfs_adv(mdp, dposp, len, rem))
 			goto out;
 	}
-	ndp->ni_pathlen = tocp - ndp->ni_pnbuf;
-	ndp->ni_ptr = ndp->ni_pnbuf;
+	ndp->ni_pathlen = tocp - cnp->cn_pnbuf;
+	cnp->cn_nameptr = cnp->cn_pnbuf;
 	/*
 	 * Extract and set starting directory.
 	 */
-	if (error = nfsrv_fhtovp(fhp, FALSE, &dp, ndp->ni_cred, slp, nam, &rdonly))
+	if (error = nfsrv_fhtovp(fhp, FALSE, &dp, ndp->ni_cnd.cn_cred, slp,
+	    nam, &rdonly))
 		goto out;
 	if (dp->v_type != VDIR) {
 		vrele(dp);
@@ -852,19 +853,20 @@ nfs_namei(ndp, fhp, len, slp, nam, mdp, dposp, p)
 	}
 	ndp->ni_startdir = dp;
 	if (rdonly)
-		ndp->ni_nameiop |= (NOCROSSMOUNT | RDONLY);
+		cnp->cn_flags |= (NOCROSSMOUNT | RDONLY);
 	else
-		ndp->ni_nameiop |= NOCROSSMOUNT;
+		cnp->cn_flags |= NOCROSSMOUNT;
 	/*
 	 * And call lookup() to do the real work
 	 */
-	if (error = lookup(ndp, p))
+	cnp->cn_proc = p;
+	if (error = lookup(ndp))
 		goto out;
 	/*
 	 * Check for encountering a symbolic link
 	 */
-	if (ndp->ni_nameiop & ISSYMLINK) {
-		if ((ndp->ni_nameiop & LOCKPARENT) && ndp->ni_pathlen == 1)
+	if (cnp->cn_flags & ISSYMLINK) {
+		if ((cnp->cn_flags & LOCKPARENT) && ndp->ni_pathlen == 1)
 			vput(ndp->ni_dvp);
 		else
 			vrele(ndp->ni_dvp);
@@ -876,12 +878,12 @@ nfs_namei(ndp, fhp, len, slp, nam, mdp, dposp, p)
 	/*
 	 * Check for saved name request
 	 */
-	if (ndp->ni_nameiop & (SAVENAME | SAVESTART)) {
-		ndp->ni_nameiop |= HASBUF;
+	if (cnp->cn_flags & (SAVENAME | SAVESTART)) {
+		cnp->cn_flags |= HASBUF;
 		return (0);
 	}
 out:
-	FREE(ndp->ni_pnbuf, M_NAMEI);
+	FREE(cnp->cn_pnbuf, M_NAMEI);
 	return (error);
 }
 
