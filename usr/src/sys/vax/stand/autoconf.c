@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)autoconf.c	7.5 (Berkeley) %G%
+ *	@(#)autoconf.c	7.6 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -19,7 +19,7 @@
 #include "savax.h"
 
 #ifdef VAX8200
-#include "../vax/bireg.h"
+#include "../vaxbi/bireg.h"
 /*
  * These are found during configuration, rather than being compiled in
  * statically.
