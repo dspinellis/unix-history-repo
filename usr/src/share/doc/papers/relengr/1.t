@@ -1,9 +1,9 @@
-.\"	@(#)1.t	1.5	(Copyright 1989 M. K. McKusick)	89/02/23
+.\"	@(#)1.t	1.6	(Copyright 1989 M. K. McKusick)	89/02/24
 .NH
 Introduction
 .PP
-The Computer Systems Research Group
-.SM (CSRG)
+The Computer Systems Research Group (\c
+.SM CSRG )
 has always been a small group of software developers.
 This resource limitation requires careful software-engineering management
 as well as careful coordination of both
@@ -21,8 +21,8 @@ The timely followup of ``cleanup'' releases reflects the importance
 places on providing a reliable and robust system on which its
 user community can depend.
 .PP
-The development of the Berkeley Software Distribution
-.SM (BSD)
+The development of the Berkeley Software Distribution (\c
+.SM BSD )
 illustrates an \fIadvantage\fP of having a few
 principal developers:
 the developers all understand the entire system thoroughly enough

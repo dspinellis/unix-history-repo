@@ -1,4 +1,4 @@
-.\"	@(#)2.t	1.6	(Copyright 1989 M. K. McKusick)	89/02/23
+.\"	@(#)2.t	1.7	(Copyright 1989 M. K. McKusick)	89/02/24
 .NH
 System Development
 .PP
@@ -17,7 +17,7 @@ the Internet Worm.
 These projects are ordered based on the perceived benefit of the
 project as opposed to its difficulty;
 the most important are selected for inclusion in each new release.
-Usually there is a prototype available from a group outside
+Often there is a prototype available from a group outside
 .SM CSRG .
 Because of the limited staff at
 .SM CSRG ,
@@ -25,7 +25,10 @@ this prototype is obtained to use as a starting base
 for integration into the
 .SM BSD
 system.
-Only if no prototype is available is the project architected in-house.
+Only if no prototype is available is the project begun in-house.
+In either case, the design of the facility is forced to conform to the
+.SM CSRG
+style.
 .PP
 Unlike other development groups, the staff of
 .SM CSRG
