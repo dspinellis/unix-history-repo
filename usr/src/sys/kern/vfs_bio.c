@@ -6,7 +6,7 @@
  * Use and redistribution is subject to the Berkeley Software License
  * Agreement and your Software Agreement with AT&T (Western Electric).
  *
- *	@(#)vfs_bio.c	7.48 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.49 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -142,8 +142,9 @@ breadn(vp, blkno, size, rablkno, rabsize, num, cred, bpp)
 			VOP_STRATEGY(bp);
 			trace(TR_BREADMISS, pack(vp, size), blkno);
 			p->p_stats->p_ru.ru_inblock++;	/* pay for read */
-		} else
+		} else {
 			trace(TR_BREADHIT, pack(vp, size), blkno);
+		}
 	}
 
 	/*
