@@ -1,19 +1,12 @@
-SCCSID = "@(#)Makefile 1.23 %G%"
-
-CFLAGS = -O
-
-LIB = ${DESTDIR}/usr/lib
-SRCDIR = ${DESTDIR}/usr/ucb
-PASDIR = ${DESTDIR}/usr/src/ucb/pascal
-TAGSFILE=tags
-
-INSTALL= install
-LD= /bin/ld
-RM = /bin/rm -f
-RANLIB= ranlib
-AR= /bin/ar
-
-CMDS =	ACTFILE.c ADDT.c ARGV.c ASRT.c ASRTS.c ATAN.c BUFF.c CARD.c \
+#
+# Copyright (c) 1987 Regents of the University of California.
+# All rights reserved.  The Berkeley software License Agreement
+# specifies the terms and conditions for redistribution.
+#
+#	@(#)Makefile	1.23	(Berkeley)	%G%
+#
+CFLAGS=	-O
+CMDS=	ACTFILE.c ADDT.c ARGV.c ASRT.c ASRTS.c ATAN.c BUFF.c CARD.c \
 	CASERNG.c CHR.c CLCK.c COS.c CTTOT.c DATE.c DEFNAME.c \
 	DFDISPOSE.c DISPOSE.c EXCEPT.c EXP.c EXPO.c FCALL.c FLUSH.c \
 	FNIL.c FRTN.c FSAV.c GET.c HALT.c IN.c INCT.c LINO.c \
@@ -24,17 +17,12 @@ CMDS =	ACTFILE.c ADDT.c ARGV.c ASRT.c ASRTS.c ATAN.c BUFF.c CARD.c \
 	REWRITE.c ROUND.c RSNG4.c SCLCK.c SEED.c SIN.c SQRT.c STLIM.c \
 	SUBSC.c SUBSCZ.c SUBT.c SUCC.c TEOF.c TEOLN.c TIME.c TRUNC.c \
 	UNIT.c UNPACK.c WRITEC.c WRITEF.c WRITES.c WRITLN.c
-
-SYS =	ERROR.c GETNAME.c IOSYNC.c PCEXIT.c PCLOSE.c PCSTART.c \
+SYS=	ERROR.c GETNAME.c IOSYNC.c PCEXIT.c PCLOSE.c PCSTART.c \
 	PFCLOSE.c PERROR.c PFLUSH.c PMFLUSH.c UNSYNC.c \
 	blkclr.c blkcpy.c
-
-EXTN =	APPEND.c SEEK.c TELL.c
+EXTN=	APPEND.c SEEK.c TELL.c
 SRCS=	${CMDS} ${SYS} ${EXTN}
-
-HDRS =	whoami.h h00vars.h
-
-OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o ASRTS.o ATAN.o BUFF.o CARD.o \
+COBJS=	ACTFILE.o ADDT.o ARGV.o ASRT.o ASRTS.o ATAN.o BUFF.o CARD.o \
 	CASERNG.o CHR.o CLCK.o COS.o CTTOT.o DATE.o DEFNAME.o \
 	DFDISPOSE.o DISPOSE.o EXCEPT.o EXP.o EXPO.o FCALL.o FLUSH.o \
 	FNIL.o FRTN.o FSAV.o GET.o HALT.o IN.o INCT.o LINO.o \
@@ -45,148 +33,149 @@ OBJS =	ACTFILE.o ADDT.o ARGV.o ASRT.o ASRTS.o ATAN.o BUFF.o CARD.o \
 	REWRITE.o ROUND.o RSNG4.o SCLCK.o SEED.o SIN.o SQRT.o STLIM.o\
 	SUBSC.o SUBSCZ.o SUBT.o SUCC.o TEOF.o TEOLN.o TIME.o TRUNC.o\
 	UNIT.o UNPACK.o WRITEC.o WRITEF.o WRITES.o WRITLN.o
-
 SYOBJ =	ERROR.o GETNAME.o IOSYNC.o PCEXIT.o PCLOSE.o PCSTART.o \
 	PFCLOSE.o PERROR.o PFLUSH.o PMFLUSH.o UNSYNC.o \
 	blkclr.o blkcpy.o
-
 EXOBJ =	APPEND.o SEEK.o TELL.o
+OBJS=	${COBJS} ${SYOBJ} ${EXOBJ}
 
 .c.o:
 	${CC} -p ${CFLAGS} -c $*.c
 	mv $@ tmp.o
-	-${LD} -X -r -o profiled/$@ tmp.o
+	-ld -X -r -o profiled/$@ tmp.o
 	${CC} ${CFLAGS} -c $*.c
 	mv $@ tmp.o
-	-${LD} -x -r -o $@ tmp.o
+	-ld -x -r -o $@ tmp.o
 
-libpc libpc_p: ${OBJS} ${SYOBJ} ${EXOBJ}
-	cd profiled; ${AR} cru ../libpc_p ${OBJS} ${SYOBJ} ${EXOBJ}
-	${RANLIB} libpc_p
-	${AR} cru libpc ${OBJS} ${SYOBJ} ${EXOBJ}
-	${RANLIB} libpc
+all: libpc libpc_p
 
-install: libpc libpc_p
-	${INSTALL} libpc_p ${LIB}/libpc_p.a
-	${RANLIB} ${LIB}/libpc_p.a
-	${INSTALL} libpc ${LIB}/libpc.a
-	${RANLIB} ${LIB}/libpc.a
+libpc libpc_p: ${OBJS}
+	cd profiled; ar cru ../libpc_p ${OBJS}
+	ranlib libpc_p
+	ar cru libpc ${OBJS}
+	ranlib libpc
 
-sources: ${CMDS} ${SYS} ${EXTN} ${HDRS}
+clean: FRC
+	rm -f ${OBJS} core libpc libpc_p profiled/*.o tmp tmp.o
 
-whoami.h:
-	cp ${PASDIR}/whoami.h whoami.h
+depend: FRC
+	mkdep ${CFLAGS} ${SRCS}
 
-clean:
-	${RM} libpc libpc_p *.o profiled/*.o a.out lpr tmp core errs tags
+install: FRC
+	install -o bin -g bin -m 644 libpc_p ${DESTDIR}/usr/lib/libpc_p.a
+	ranlib ${DESTDIR}/usr/lib/libpc_p.a
+	install -o bin -g bin -m 644 libpc ${DESTDIR}/usr/lib/libpc.a
+	ranlib ${DESTDIR}/usr/lib/libpc.a
 
-print:
-	ls -l >lst
-	${SRCDIR}/vprint lst Makefile *.h [A-Z][A-Z]*.[cs] [a-z][a-z]*.[cs]
-	${RM} lst
+lint: FRC
+	lint ${CFLAGS} ${SRCS}
 
-grind: sources
-	${SRCDIR}/ctags -v *.h *.c | sort -f >index
-	${SRCDIR}/vgrind -t -x index >lpr
-	${SRCDIR}/vgrind -t -n Makefile >>lpr
-	${RM} index
-	${SRCDIR}/vgrind -t *.h *.c >>lpr
-	${SRCDIR}/vpr -t lpr
+tags: FRC
+	ctags ${SRCS}
 
-tags:
-	cwd=`pwd`; \
-	for i in ${SRCS}; do \
-		ctags -a -f ${TAGSFILE} $$cwd/$$i; \
-	done
+FRC:
 
-depend:	sources
-	/bin/grep '^#[ 	]*include' ${CMDS} ${SYS} ${EXTN} | sed \
-		-e '/<.*>/d' \
-		-e 's/:[^"]*"\([^"]*\)".*/: \1/' \
-		-e 's/\.c/.o/' >makedep
-	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
-	echo '$$r makedep' >>eddep
-	echo 'w' >>eddep
-	cp Makefile Makefile.bak
-	ed - Makefile < eddep
-	rm eddep makedep
-	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
-	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
-	echo '# see make depend above' >> Makefile
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
 
-# DO NOT DELETE THIS LINE -- make depend uses it
-# DEPENDENCIES MUST END AT END OF FILE
-ACTFILE.o: h00vars.h
-ARGV.o: h00vars.h
-BUFF.o: h00vars.h
-CTTOT.o: whoami.h
-CTTOT.o: h00vars.h
-DEFNAME.o: h00vars.h
-DFDISPOSE.o: h00vars.h
-DFDISPOSE.o: libpc.h
-DISPOSE.o: h00vars.h
-EXCEPT.o: whoami.h
-FCALL.o: h00vars.h
-FLUSH.o: h00vars.h
-FNIL.o: h00vars.h
-FRTN.o: h00vars.h
-FSAV.o: h00vars.h
-GET.o: h00vars.h
-HALT.o: h00vars.h
-IN.o: h00vars.h
-INCT.o: h00vars.h
-LINO.o: h00vars.h
-LLIMIT.o: h00vars.h
-MAX.o: h00vars.h
-NAM.o: h00vars.h
-NEW.o: h00vars.h
-NIL.o: h00vars.h
-PAGE.o: h00vars.h
-PUT.o: h00vars.h
-RANDOM.o: h00vars.h
-READ4.o: h00vars.h
-READ8.o: h00vars.h
-READC.o: h00vars.h
-READE.o: h00vars.h
-READLN.o: h00vars.h
-RELEQ.o: h00vars.h
-RELNE.o: h00vars.h
-RELSGE.o: h00vars.h
-RELSGT.o: h00vars.h
-RELSLE.o: h00vars.h
-RELSLT.o: h00vars.h
-RELTGE.o: h00vars.h
-RELTGT.o: h00vars.h
-RELTLE.o: h00vars.h
-RELTLT.o: h00vars.h
-REMOVE.o: h00vars.h
-RESET.o: h00vars.h
-REWRITE.o: h00vars.h
-SEED.o: h00vars.h
-STLIM.o: h00vars.h
-TEOF.o: h00vars.h
-TEOLN.o: h00vars.h
-UNIT.o: h00vars.h
-WRITEC.o: h00vars.h
-WRITEF.o: h00vars.h
-WRITES.o: h00vars.h
-WRITLN.o: h00vars.h
-GETNAME.o: h00vars.h
-GETNAME.o: libpc.h
-IOSYNC.o: h00vars.h
-PCEXIT.o: h00vars.h
-PCLOSE.o: h00vars.h
-PCLOSE.o: libpc.h
-PCSTART.o: h00vars.h
-PCSTART.o: libpc.h
-PFCLOSE.o: h00vars.h
-PFCLOSE.o: libpc.h
-PFLUSH.o: h00vars.h
-PMFLUSH.o: h00vars.h
-UNSYNC.o: h00vars.h
-APPEND.o: h00vars.h
-SEEK.o: h00vars.h
-TELL.o: h00vars.h
-# DEPENDENCIES MUST END AT END OF FILE
-# IF YOU PUT STUFF HERE IT WILL GO AWAY
-# see make depend above
+ACTFILE.o: ACTFILE.c h00vars.h /usr/include/stdio.h whoami.h
+ADDT.o: ADDT.c
+ARGV.o: ARGV.c h00vars.h /usr/include/stdio.h whoami.h
+ASRT.o: ASRT.c
+ASRTS.o: ASRTS.c
+ATAN.o: ATAN.c /usr/include/math.h
+BUFF.o: BUFF.c h00vars.h /usr/include/stdio.h whoami.h
+CARD.o: CARD.c
+CASERNG.o: CASERNG.c
+CHR.o: CHR.c
+CLCK.o: CLCK.c
+COS.o: COS.c /usr/include/math.h
+CTTOT.o: CTTOT.c whoami.h h00vars.h /usr/include/stdio.h whoami.h
+DATE.o: DATE.c
+DEFNAME.o: DEFNAME.c h00vars.h /usr/include/stdio.h whoami.h
+DFDISPOSE.o: DFDISPOSE.c h00vars.h /usr/include/stdio.h whoami.h libpc.h
+DISPOSE.o: DISPOSE.c h00vars.h /usr/include/stdio.h whoami.h
+EXCEPT.o: EXCEPT.c /usr/include/signal.h
+EXP.o: EXP.c /usr/include/math.h
+EXPO.o: EXPO.c
+FCALL.o: FCALL.c h00vars.h /usr/include/stdio.h whoami.h
+FLUSH.o: FLUSH.c h00vars.h /usr/include/stdio.h whoami.h
+FNIL.o: FNIL.c h00vars.h /usr/include/stdio.h whoami.h
+FRTN.o: FRTN.c h00vars.h /usr/include/stdio.h whoami.h
+FSAV.o: FSAV.c h00vars.h /usr/include/stdio.h whoami.h
+GET.o: GET.c h00vars.h /usr/include/stdio.h whoami.h
+HALT.o: HALT.c h00vars.h /usr/include/stdio.h whoami.h
+IN.o: IN.c h00vars.h /usr/include/stdio.h whoami.h
+INCT.o: INCT.c h00vars.h /usr/include/stdio.h whoami.h
+LINO.o: LINO.c h00vars.h /usr/include/stdio.h whoami.h
+LLIMIT.o: LLIMIT.c h00vars.h /usr/include/stdio.h whoami.h
+LN.o: LN.c /usr/include/math.h
+MAX.o: MAX.c h00vars.h /usr/include/stdio.h whoami.h
+MULT.o: MULT.c
+NAM.o: NAM.c h00vars.h /usr/include/stdio.h whoami.h
+NEW.o: NEW.c h00vars.h /usr/include/stdio.h whoami.h
+NIL.o: NIL.c h00vars.h /usr/include/stdio.h whoami.h
+PACK.o: PACK.c
+PAGE.o: PAGE.c h00vars.h /usr/include/stdio.h whoami.h
+PRED.o: PRED.c
+PUT.o: PUT.c h00vars.h /usr/include/stdio.h whoami.h
+RANDOM.o: RANDOM.c h00vars.h /usr/include/stdio.h whoami.h
+RANG4.o: RANG4.c
+READ4.o: READ4.c h00vars.h /usr/include/stdio.h whoami.h /usr/include/errno.h
+READ8.o: READ8.c h00vars.h /usr/include/stdio.h whoami.h /usr/include/errno.h
+READC.o: READC.c h00vars.h /usr/include/stdio.h whoami.h
+READE.o: READE.c h00vars.h /usr/include/stdio.h whoami.h
+READLN.o: READLN.c h00vars.h /usr/include/stdio.h whoami.h
+RELEQ.o: RELEQ.c h00vars.h /usr/include/stdio.h whoami.h
+RELNE.o: RELNE.c h00vars.h /usr/include/stdio.h whoami.h
+RELSGE.o: RELSGE.c h00vars.h /usr/include/stdio.h whoami.h
+RELSGT.o: RELSGT.c h00vars.h /usr/include/stdio.h whoami.h
+RELSLE.o: RELSLE.c h00vars.h /usr/include/stdio.h whoami.h
+RELSLT.o: RELSLT.c h00vars.h /usr/include/stdio.h whoami.h
+RELTGE.o: RELTGE.c h00vars.h /usr/include/stdio.h whoami.h
+RELTGT.o: RELTGT.c h00vars.h /usr/include/stdio.h whoami.h
+RELTLE.o: RELTLE.c h00vars.h /usr/include/stdio.h whoami.h
+RELTLT.o: RELTLT.c h00vars.h /usr/include/stdio.h whoami.h
+REMOVE.o: REMOVE.c h00vars.h /usr/include/stdio.h whoami.h
+RESET.o: RESET.c h00vars.h /usr/include/stdio.h whoami.h
+REWRITE.o: REWRITE.c h00vars.h /usr/include/stdio.h whoami.h
+ROUND.o: ROUND.c
+RSNG4.o: RSNG4.c
+SCLCK.o: SCLCK.c
+SEED.o: SEED.c h00vars.h /usr/include/stdio.h whoami.h
+SIN.o: SIN.c /usr/include/math.h
+SQRT.o: SQRT.c /usr/include/math.h
+STLIM.o: STLIM.c h00vars.h /usr/include/stdio.h whoami.h
+SUBSC.o: SUBSC.c
+SUBSCZ.o: SUBSCZ.c
+SUBT.o: SUBT.c
+SUCC.o: SUCC.c
+TEOF.o: TEOF.c h00vars.h /usr/include/stdio.h whoami.h
+TEOLN.o: TEOLN.c h00vars.h /usr/include/stdio.h whoami.h
+TIME.o: TIME.c
+TRUNC.o: TRUNC.c
+UNIT.o: UNIT.c h00vars.h /usr/include/stdio.h whoami.h
+UNPACK.o: UNPACK.c
+WRITEC.o: WRITEC.c h00vars.h /usr/include/stdio.h whoami.h
+WRITEF.o: WRITEF.c h00vars.h /usr/include/stdio.h whoami.h
+WRITES.o: WRITES.c h00vars.h /usr/include/stdio.h whoami.h
+WRITLN.o: WRITLN.c h00vars.h /usr/include/stdio.h whoami.h
+ERROR.o: ERROR.c /usr/include/stdio.h /usr/include/signal.h
+GETNAME.o: GETNAME.c h00vars.h /usr/include/stdio.h whoami.h libpc.h
+IOSYNC.o: IOSYNC.c h00vars.h /usr/include/stdio.h whoami.h
+PCEXIT.o: PCEXIT.c h00vars.h /usr/include/stdio.h whoami.h
+PCLOSE.o: PCLOSE.c h00vars.h /usr/include/stdio.h whoami.h libpc.h
+PCSTART.o: PCSTART.c /usr/include/signal.h h00vars.h /usr/include/stdio.h
+PCSTART.o: whoami.h libpc.h
+PFCLOSE.o: PFCLOSE.c h00vars.h /usr/include/stdio.h whoami.h libpc.h
+PERROR.o: PERROR.c /usr/include/stdio.h /usr/include/signal.h
+PFLUSH.o: PFLUSH.c h00vars.h /usr/include/stdio.h whoami.h
+PMFLUSH.o: PMFLUSH.c h00vars.h /usr/include/stdio.h whoami.h
+UNSYNC.o: UNSYNC.c h00vars.h /usr/include/stdio.h whoami.h
+blkclr.o: blkclr.c
+blkcpy.o: blkcpy.c
+APPEND.o: APPEND.c h00vars.h /usr/include/stdio.h whoami.h
+SEEK.o: SEEK.c h00vars.h /usr/include/stdio.h whoami.h
+TELL.o: TELL.c h00vars.h /usr/include/stdio.h whoami.h
+
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
