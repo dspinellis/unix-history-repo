@@ -1,6 +1,6 @@
-.\"	@(#)calendar.1	4.1 (Berkeley) %G%
+.\"	@(#)calendar.1	5.1 (Berkeley) %G%
 .\"
-.TH CALENDAR 1 4/1/81
+.TH CALENDAR 1  "29 March 1982"
 .AT 3
 .SH NAME
 calendar \- reminder service
@@ -15,7 +15,8 @@ tomorrow's date anywhere in the line.
 Most reasonable month-day dates such as `Dec. 7,'
 `december 7,' `12/7,' etc., are recognized, but not
 `7 December' or `7/12'.
-If you give just a date, i.e. ``1'', that day in any month will do.
+If you give the month as ``*''
+with a date, i.e. ``* 1'', that day in any month will do.
 On weekends `tomorrow' extends through Monday.
 .PP
 When 
@@ -27,6 +28,13 @@ and sends him any positive results by
 .IR mail (1).
 Normally this is done daily in the wee hours under control of
 .IR cron (8).
+.PP
+The file `calendar' is first run through the ``C'' preprocessor,
+.IR /lib/cpp ,
+to include any other calendar files
+specified with the usual ``#include'' syntax.
+Included calendars will usually be shared by all users,
+maintained and documented by the local administration.
 .SH FILES
 calendar
 .br
@@ -36,13 +44,10 @@ calendar
 .br
 /tmp/cal*
 .br
-egrep, sed, mail subprocesses
+/lib/cpp, egrep, sed, mail as subprocesses
 .SH "SEE ALSO"
 at(1), cron(8), mail(1)
 .SH BUGS
-Your calendar must be public information for you
-to get reminder service.
-.br
 .I Calendar's
 extended idea of `tomorrow' doesn't account for
 holidays.
