@@ -1,4 +1,4 @@
-/*	tty.c	6.14	85/02/08	*/
+/*	tty.c	6.15	85/04/17	*/
 
 #include "../machine/reg.h"
 
@@ -291,15 +291,14 @@ ttioctl(tp, com, data, flag)
 			(*linesw[tp->t_line].l_close)(tp);
 		if (t)
 			error = (*linesw[t].l_open)(dev, tp);
-		splx(s);
 		if (error) {
-			s = spltty();
 			if (tp->t_line)
 				(void) (*linesw[tp->t_line].l_open)(dev, tp);
 			splx(s);
 			return (error);
 		}
 		tp->t_line = t;
+		splx(s);
 		break;
 	}
 
@@ -472,8 +471,7 @@ ttioctl(tp, com, data, flag)
 	 * this user must own that process.
 	 * SHOULD VERIFY THAT PGRP IS IN USE AND IS THIS USER'S.
 	 */
-	case TIOCSPGRP:
-		{
+	case TIOCSPGRP: {
 		struct proc *p;
 		int pgrp = *(int *)data;
 
@@ -485,15 +483,15 @@ ttioctl(tp, com, data, flag)
 			return (EPERM);
 		tp->t_pgrp = pgrp;
 		break;
-		}
+	}
 
 	case TIOCGPGRP:
 		*(int *)data = tp->t_pgrp;
 		break;
 
 	case TIOCSWINSZ:
-		if (bcmp((caddr_t)&tp->t_winsize, data, 
-				sizeof(struct winsize))) {
+		if (bcmp((caddr_t)&tp->t_winsize, data,
+		    sizeof (struct winsize))) {
 			tp->t_winsize = *(struct winsize *)data;
 			gsignal(tp->t_pgrp, SIGWINCH);
 		}
@@ -857,7 +855,6 @@ ttyinput(c, tp)
 			}
 		}
 	}
-
 endcase:
 	/*
 	 * If DEC-style start/stop is enabled don't restart
@@ -866,11 +863,9 @@ endcase:
 	if (tp->t_flags&DECCTQ && tp->t_state&TS_TTSTOP &&
 	    tp->t_startc != tp->t_stopc)
 		return;
-
 restartoutput:
 	tp->t_state &= ~TS_TTSTOP;
 	tp->t_flags &= ~FLUSHO;
-
 startoutput:
 	ttstart(tp);
 }
