@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)ex_io.c	7.11.1.1 (Berkeley) %G%";
+static char *sccsid = "@(#)ex_io.c	7.12 (Berkeley) %G%";
 #endif not lint
 
 #include "ex.h"
@@ -602,6 +602,7 @@ cre:
 		break;
 	}
 	putfile(0);
+	(void) fsync(io);
 	ignore(iostats());
 	if (c != 2 && addr1 == one && addr2 == dol) {
 		if (eq(file, savedfile))
@@ -824,7 +825,6 @@ clrstats()
 iostats()
 {
 
-	(void) fsync(io);
 	close(io);
 	io = -1;
 	if (hush == 0) {
