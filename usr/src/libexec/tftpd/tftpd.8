@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tftpd.8	6.1 (Berkeley) %G%
+.\"	@(#)tftpd.8	6.2 (Berkeley) %G%
 .\"
 .TH TFTPD 8C ""
 .UC 5
@@ -10,25 +10,16 @@
 tftpd \- DARPA Trivial File Transfer Protocol server
 .SH SYNOPSIS
 .B /etc/tftpd
-[
-.B \-d
-] [
-.I port
-]
 .SH DESCRIPTION
 .I Tftpd
 is a server which supports the DARPA Trivial File Transfer
-Protocol.  The TFTP server operates
+Protocol.
+The TFTP server operates
 at the port indicated in the ``tftp'' service description;
 see
 .IR services (5).
-This port number may be overridden (for debugging purposes)
-by specifying a port number on the command line.  If the
-.B \-d
-option is specified, each socket created by
-.I tftpd
-will have debugging enabled (see SO_DEBUG in
-.IR socket (2)).
+The server is normally started by
+.IR inetd (8).
 .PP
 The use of
 .I tftp
@@ -37,19 +28,11 @@ Due to the lack of authentication information,
 .I tftpd
 will allow only publicly readable files to be
 accessed.
+Files may be written only if they already exist and are publicly writable.
 Note that this extends the concept of ``public'' to include
 all users on all hosts that can be reached through the network;
 this may not be appropriate on all systems, and its implications
 should be considered before enabling tftp service.
+The server should have the user ID with the lowest possible privilege.
 .SH "SEE ALSO"
-tftp(1C)
-.SH BUGS
-This server is known only to be self consistent
-(i.e. it operates with the user TFTP program,
-.IR tftp (1C)).
-Due to the unreliability of the transport protocol
-(UDP) and the scarcity of TFTP implementations,
-it is uncertain whether it really works.
-.PP
-The search permissions of the directories leading to the files accessed
-are not checked.
+tftp(1C), inetd(8)
