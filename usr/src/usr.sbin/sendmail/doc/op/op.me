@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.21 (Berkeley) %G%
+.\"	@(#)op.me	8.22 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.21
+Version 8.22
 .sp
 For Sendmail Version 8.6
 .)l
@@ -4267,7 +4267,7 @@ For example, the default
 .i host
 map appends a dot on successful matches.
 .ip "\-f"
-Fold upper to lower case before looking up the key.
+Do not fold upper to lower case before looking up the key.
 .ip "\-m"
 Match only (without replacing the value).
 If you only care about the existence of a key and not the value
@@ -4307,7 +4307,7 @@ The program
 can be used to build any of the three database-oriented maps.
 It takes the following flags:
 .ip \-f
-Do not fold upper to lower case in the map.
+Fold upper to lower case in the map.
 .ip \-N
 Include null bytes in keys.
 .ip \-o
@@ -6751,7 +6751,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.21
+.\"Version 8.22
 .\".ce 0
 .bp 2
 .ce
