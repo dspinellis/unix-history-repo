@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)syslog.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)syslog.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -67,7 +67,7 @@ syslog(pri, fmt, p0, p1, p2, p3, p4)
 	if (pri <= 0 || PRIFAC(pri) >= LOG_NFACILITIES || (PRIMASK(pri) & LogMask) == 0)
 		return;
 	if (LogFile < 0)
-		openlog(LogTag, LogStat & ~LOG_ODELAY, 0);
+		openlog(LogTag, LogStat | LOG_NDELAY, 0);
 
 	/* set default facility if none specified */
 	if ((pri & LOG_FACMASK) == 0)
@@ -160,7 +160,7 @@ openlog(ident, logstat, logfac)
 		return;
 	SyslogAddr.sa_family = AF_UNIX;
 	strncpy(SyslogAddr.sa_data, logname, sizeof SyslogAddr.sa_data);
-	if (!(LogStat & LOG_ODELAY)) {
+	if (LogStat & LOG_NDELAY) {
 		LogFile = socket(AF_UNIX, SOCK_DGRAM, 0);
 		fcntl(LogFile, F_SETFD, 1);
 	}
@@ -169,6 +169,7 @@ openlog(ident, logstat, logfac)
 /*
  * CLOSELOG -- close the system log
  */
+
 closelog()
 {
 
