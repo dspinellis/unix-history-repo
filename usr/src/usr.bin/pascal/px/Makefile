@@ -1,7 +1,7 @@
-SCCSID = "@(#)Makefile 1.2 %G%"
+SCCSID = "@(#)Makefile 1.3 %G%"
 
 CFLAGS = -O
-DEFS = -DVAX -DOBJ
+DEFS = -DVAX -DOBJ -DDEBUG
 DESTDIR =/usr/ucb
 LIBDIR =/usr/lib
 PASCALDIR = /usr/src/cmd/pascal
@@ -31,7 +31,7 @@ ${PCHDR}:
 	${CC} ${CFLAGS} ${DEFS} -c $*.c
 
 px: Version.c ${PXOBJ}
-	${CC} ${CFLAGS} -o px Version.c ${PXOBJ} /usr/src/lib/libpc/libpc -lm
+	${CC} ${CFLAGS} -o px Version.c ${PXOBJ} -lpc -lnm
 Version.c: version.c
 	${CC} ${CFLAGS} -o version version.c
 	./version >Version.c
@@ -54,8 +54,8 @@ install: px
 	cp px ${DESTDIR}/px
 
 clean:
-	${RM}  *.o *.s px version.* opc* pic* OPnames.h objfmt.h libpc.h\
-		panics.h h02opcs.h errs lpr core tmp
+	${RM}  *.o *.s px version opc* pic* OPnames.h objfmt.h libpc.h\
+		panics.h h01errs.h h02opcs.h errs lpr core tmp
 
 prt: interp.s
 	sed -f clean.sed <interp.s
@@ -95,6 +95,7 @@ interp.o: h02opcs.h
 interp.o: machdep.h
 interp.o: h01errs.h
 interp.o: libpc.h
+opc.o: OPnames.h
 utilities.o: vars.h
 utilities.o: panics.h
 utilities.o: h02opcs.h
