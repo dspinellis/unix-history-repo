@@ -1,4 +1,4 @@
-/*	@(#)read.c	6.2 (Berkeley) %G%
+/*	@(#)read.c	6.3 (Berkeley) %G%
 
 Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
 
@@ -331,9 +331,10 @@ read_a_source_file (buffer)
 	       */
 	      if ( c == ':' )
 		{
-		  colon(s);	/* user-defined label */
 		  if (flagseen['g'])
-		    stabf(s);	/* set line number for function definition */
+		    /* set line number for function definition */
+		    funcstab(s);
+		  colon(s);	/* user-defined label */
 		  * input_line_pointer ++ = ':'; /* Put ':' back for error messages' sake. */
 				/* Input_line_pointer -> after ':'. */
 		  SKIP_WHITESPACE();
@@ -1386,13 +1387,12 @@ pseudo_set (symbolP)
  * stabs(file), stabf(func) and stabd(line) -- for the purpose of
  * source file debugging of assembly files, generate file,
  * function and line number stabs, respectively.
- * stabs() and stabd() are normally called through a function linestab()
- * in input-scrub.c which understands about logical line numbers.
+ * These functions have corresponding functions named
+ * filestab(), funcstab() and linestab() in input-scrub.c,
+ * where logical files and logical line numbers are handled.
  */
 
 #include <stab.h>
-
-static int stabs_done;
 
 stabs(file)
      char *file;
@@ -1404,7 +1404,6 @@ stabs(file)
 		    0,
 		    obstack_next_free(& frags) - frag_now->fr_literal,
 		    frag_now);
-  stabs_done = 1;
 }
 
 stabf(func)
@@ -1414,12 +1413,8 @@ stabf(func)
   static int void_undefined = 1;
 
   /* crudely filter uninteresting labels: require an initial '_' */
-  if (now_seg != SEG_TEXT || *func++ != '_')
+  if (*func++ != '_')
     return;
-
-  /* don't emit a function stab until a file stab has been seen */
-  if (!stabs_done)
-    linestab();
 
   /* assembly functions are assumed to have void type */
   if (void_undefined)

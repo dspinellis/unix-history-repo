@@ -1,4 +1,4 @@
-/*	@(#)input-scrub.c	6.2 (Berkeley) %G%
+/*	@(#)input-scrub.c	6.3 (Berkeley) %G%
 
 Modified for Berkeley Unix by Donn Seeley, donn@okeeffe.berkeley.edu  */
 
@@ -305,27 +305,24 @@ as_where()
 }
 
 /*
- * linestab() -- generate a line number stab for the current source line.
- * If the filename has changed, generate a file stab first.
+ * Support for source file debugging.  These functions handle
+ * logical lines and logical files.
  */
+static char *saved_file;
+static int saved_len;
+static line_numberT saved_line;
+
 void
-linestab()
+filestab()
 {
-  static char *saved_file;
-  static int saved_len;
-  static line_numberT saved_line;
   char *file;
-  line_numberT line;
   int len;
 
-  if (!flagseen['g'] ||
-      !physical_input_file ||
-      !input_file_is_open() ||
-      now_seg != SEG_TEXT)
+  if (!physical_input_file ||
+      !input_file_is_open())
     return;
 
   file = logical_input_file ? logical_input_file : physical_input_file;
-  line = logical_input_line ? logical_input_line : physical_input_line;
 
   if (saved_file == 0 || strcmp(file, saved_file) != 0)
     {
@@ -344,6 +341,30 @@ linestab()
 	strcpy(saved_file, file);
       saved_line = 0;
     }
+}
+
+void
+funcstab(func)
+     char *func;
+{
+  if (now_seg != SEG_TEXT)
+    return;
+
+  filestab();
+  stabf(func);
+}
+
+void
+linestab()
+{
+  line_numberT line;
+
+  if (now_seg != SEG_TEXT)
+    return;
+
+  filestab();
+
+  line = logical_input_line ? logical_input_line : physical_input_line;
 
   if (saved_line == 0 || line != saved_line)
     {
