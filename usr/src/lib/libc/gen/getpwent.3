@@ -1,4 +1,4 @@
-.\"	@(#)getpwent.3	6.2 (Berkeley) %G%
+.\"	@(#)getpwent.3	6.3 (Berkeley) %G%
 .\"
 .TH GETPWENT 3  ""
 .AT 3
@@ -8,13 +8,13 @@ getpwent, getpwuid, getpwnam, setpwent, endpwent, setpwfile \- get password file
 .nf
 .B #include <pwd.h>
 .PP
-.B struct passwd *getpwent()
-.PP
 .B struct passwd *getpwuid(uid)
 .B int uid;
 .PP
 .B struct passwd *getpwnam(name)
 .B char *name;
+.PP
+.B struct passwd *getpwent()
 .PP
 .B setpwent()
 .PP
@@ -48,13 +48,30 @@ and
 are unused; the others have meanings described in
 .IR passwd (5).
 .PP
-.I Getpwent
-reads the next
-line (opening the file if necessary);
-.I setpwent
-rewinds the file;
+Searching of the password file is done using the \fIndbm\fP
+database access routines.
+.I Setpwent
+opens the database;
 .I endpwent
 closes it.
+.I Getpwuid
+and
+.I getpwnam
+search the database (opening it if necessary) for a matching
+.I uid
+or
+.IR name .
+EOF is returned if there is no entry.
+.PP
+For programs wishing to read the entire database,
+.I getpwent
+reads the next
+line (opening the database if necessary).
+In addition to opening the database,
+.I setpwent
+can be used to make
+.I getpwent
+begin its search from the beginning of the database.
 .PP
 .I Setpwfile
 changes the default password file to
@@ -66,16 +83,6 @@ close the previous file.
 If this is desired,
 .I endpwent
 should be called prior to it.
-.PP
-.I Getpwuid
-and
-.I getpwnam
-search from the beginning until a matching
-.I uid
-or
-.I name
-is found
-(or until EOF is encountered).
 .SH FILES
 /etc/passwd
 .SH "SEE ALSO"
