@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tstp.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)tstp.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -63,7 +63,8 @@ __stop_signal_handler(signo)
 	(void)tcgetattr(STDIN_FILENO, &__orig_termios);
 
 	/* Reset the terminal state to the mode just before we stopped. */
-	(void)tcsetattr(STDIN_FILENO, __tcaction, &save);
+	(void)tcsetattr(STDIN_FILENO, __tcaction ?
+	    TCSASOFT | TCSADRAIN : TCSADRAIN, &save);
 
 	/* Restart the screen. */
 	__startwin();
