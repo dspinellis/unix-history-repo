@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_syscalls.c	8.26 (Berkeley) %G%
+ *	@(#)vfs_syscalls.c	8.27 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -197,6 +197,7 @@ update:
 	cache_purge(vp);
 	if (!error) {
 		TAILQ_INSERT_TAIL(&mountlist, mp, mnt_list);
+		checkdirs(vp);
 		VOP_UNLOCK(vp);
 		vfs_unlock(mp);
 		error = VFS_START(mp, 0, p);
@@ -207,6 +208,44 @@ update:
 		vput(vp);
 	}
 	return (error);
+}
+
+/*
+ * Scan all active processes to see if any of them have a current
+ * or root directory onto which the new filesystem has just been
+ * mounted. If so, replace them with the new mount point.
+ */
+checkdirs(olddp)
+	struct vnode *olddp;
+{
+	struct filedesc *fdp;
+	struct vnode *newdp;
+	struct proc *p;
+
+	if (olddp->v_usecount == 1)
+		return;
+	if (VFS_ROOT(olddp->v_mountedhere, &newdp))
+		panic("mount: lost mount");
+	for (p = allproc.lh_first; p != 0; p = p->p_list.le_next) {
+		fdp = p->p_fd;
+		if (fdp->fd_cdir == olddp) {
+			vrele(fdp->fd_cdir);
+			VREF(newdp);
+			fdp->fd_cdir = newdp;
+			printf("patch cdir for proc %d\n", p->p_pid);
+		}
+		if (fdp->fd_rdir == olddp) {
+			vrele(fdp->fd_rdir);
+			VREF(newdp);
+			fdp->fd_rdir = newdp;
+		}
+	}
+	if (rootvnode == olddp) {
+		vrele(rootvnode);
+		VREF(newdp);
+		rootvnode = newdp;
+	}
+	vput(newdp);
 }
 
 /*
@@ -494,22 +533,36 @@ fchdir(p, uap, retval)
 	int *retval;
 {
 	register struct filedesc *fdp = p->p_fd;
-	register struct vnode *vp;
+	struct vnode *vp, *tdp;
+	struct mount *mp;
 	struct file *fp;
 	int error;
 
 	if (error = getvnode(fdp, uap->fd, &fp))
 		return (error);
 	vp = (struct vnode *)fp->f_data;
+	VREF(vp);
 	VOP_LOCK(vp);
 	if (vp->v_type != VDIR)
 		error = ENOTDIR;
 	else
 		error = VOP_ACCESS(vp, VEXEC, p->p_ucred, p);
+	while (!error && (mp = vp->v_mountedhere) != NULL) {
+		if (mp->mnt_flag & MNT_MLOCK) {
+			mp->mnt_flag |= MNT_MWAIT;
+			sleep((caddr_t)mp, PVFS);
+			continue;
+		}
+		if (error = VFS_ROOT(mp, &tdp))
+			break;
+		vput(vp);
+		vp = tdp;
+	}
 	VOP_UNLOCK(vp);
-	if (error)
+	if (error) {
+		vrele(vp);
 		return (error);
-	VREF(vp);
+	}
 	vrele(fdp->fd_cdir);
 	fdp->fd_cdir = vp;
 	return (0);
