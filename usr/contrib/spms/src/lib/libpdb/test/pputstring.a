@@ -1,0 +1,67 @@
+!<arch>
+Ipputstring     418698288   968   27    100644  105       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=here:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+
+Opputstring     418698288   968   27    100644  171       `
+aaa
+bbb|ccc
+ddd|eee:
+fff:lp=new_string:id=butnothere
+ggg|
+hhh|iii:lp=andhere
+
+:jjj
+kkk|lll|:lp:lp=andherealso:
+zzz|:lp=new_string:
+fff|:lp=new_string:
+zzz|:lp=new_string:
+
+Tpputstring.c   418698295   968   27    100644  666       `
+/*
+ * pputstring()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "pdb.h"
+
+char *PGN = "Tpputstring";		/* program name */
+
+main()
+{
+	int closepdb();			/* close database */
+	PDB *mustopenpdb();		/* must open database or die */
+	PDB *pdbp;			/* database stream */
+	void pputstring();		/* add or change strings */
+	
+	pdbp = mustopenpdb("T_INPUT", ".", "rw");
+	resetpdb(pdbp);
+	pputstring("fff", "lp", "new_string", pdbp);
+	pputstring("zzz", "lp", "new_string", pdbp);
+	closepdb(pdbp);
+	pdbp = mustopenpdb("T_OUTPUT", ".", "w");
+	resetpdb(pdbp);
+	pputstring("fff", "lp", "new_string", pdbp);
+	pputstring("zzz", "lp", "new_string", pdbp);
+	closepdb(pdbp);
+	exit(0);
+}
+Tpputstring.sh  418870190   968   27    100755  177       `
+#!/bin/csh -f
+#
+# pputstring()
+#
+cp Ipputstring T_INPUT
+Tpputstring
+cat T_INPUT T_OUTPUT |& diff - Opputstring
+set diffstatus = $status
+rm -f T_INPUT T_OUTPUT
+exit($diffstatus)
+

@@ -1,0 +1,43 @@
+!<arch>
+Ogetcpd         418696279   968   27    100644  70        `
+project directory: work
+project root directory: ...
+regular directory
+Tgetcpd.c       418696281   968   27    100644  591       `
+/*
+ * getcpd()
+ */
+#include <stdio.h>
+#include "path.h"
+#include "spms.h"
+
+char *PGN = "Tgetcpd";			/* program name */
+
+main()
+{
+	int getcpd();			/* get current working project dir */
+	PATH pb;			/* project directory struct buffer */
+
+	while (getcpd(&pb) == 1)
+		{
+		if ((pb.p_mode&P_IFMT) == P_IFPROOT)
+			printf("project root directory: %s\n", pb.p_alias);
+		else if ((pb.p_mode&P_IFMT) == P_IFPDIR)
+			printf("project directory: %s\n", pb.p_alias);
+		chdir(PARENTDIR);
+		}
+	if ((pb.p_mode&P_IFMT) == P_IFREG)
+		printf("regular directory\n");
+	else
+		printf("bad pathname\n");
+	exit(0);
+}
+
+Tgetcpd.sh      418870296   968   27    100755  69        `
+#!/bin/csh -f
+#
+# getcpd()
+#
+Tgetcpd |& diff - Ogetcpd
+exit($status)
+

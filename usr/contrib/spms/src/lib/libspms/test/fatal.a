@@ -1,0 +1,33 @@
+!<arch>
+Ofatal          418696272   968   27    100644  35        `
+Tfatal: ___this___is___test___1___
+
+Tfatal.c        418696275   968   27    100644  223       `
+/*
+ * fatal()
+ */
+
+char *PGN = "Tfatal";
+
+main()
+{
+	char one = '1';
+	char *s1 = "this";
+	char *s2 = "is";
+	char *s3 = "test";
+
+	fatal("___%s___%s___%s___%c___", s1, s2, s3, one);
+	fatal("___%s___%s___%s___", s1, s2, s3);
+}
+
+Tfatal.sh       418870295   968   27    100755  131       `
+#!/bin/csh -f
+#
+# fatal()
+#
+Tfatal >& T_OUTPUT
+cat T_OUTPUT | diff - Ofatal
+set diffstatus = $status
+rm T_OUTPUT
+exit($diffstatus)
+
