@@ -1,4 +1,4 @@
-/*	groups.c	4.3	82/11/15	*/
+/*	groups.c	4.4	83/02/10	*/
 
 /*
  * groups
@@ -8,7 +8,7 @@
 #include <grp.h>
 #include <pwd.h>
 
-int	groups[NGROUPS];
+short	groups[NGROUPS];
 struct	group *gr, *getgrgid();
 
 main(argc, argv)
