@@ -1,7 +1,7 @@
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 
 # need conversion:	tn3270
-# remove ld, lisp
+# remove lisp
 
 	window write xargs yes
 
