@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)spec.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)spec.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -43,7 +43,7 @@ spec()
 			continue;
 
 		/* grab file name, "$", "set", or "unset" */
-		if (!(p = strtok(p, "\n\t ,")))
+		if (!(p = strtok(p, "\n\t ")))
 			specerr();
 
 		if (p[0] == '/')
@@ -111,9 +111,9 @@ set(ip)
 	uid_t getowner();
 	long atol(), strtol();
 
-	while (kw = strtok((char *)NULL, "= \t\n,")) {
+	while (kw = strtok((char *)NULL, "= \t\n")) {
 		ip->flags |= type = key(kw);
-		val = strtok((char *)NULL, "= \t\n,");
+		val = strtok((char *)NULL, " \t\n");
 		if (!val)
 			specerr();
 		switch(type) {
@@ -126,9 +126,17 @@ set(ip)
 		case F_IGN:
 			/* just set flag bit */
 			break;
-		case F_MODE:
-			ip->st_mode = (mode_t)strtol(val, (char **)NULL, 8);
+		case F_MODE: {
+			mode_t *set, *setmode();
+
+			if (!(set = setmode(val))) {
+				(void)fprintf(stderr,
+				    "mtree: invalid file mode %s.\n", val);
+				specerr();
+			}
+			ip->st_mode = getmode(set, 0);
 			break;
+		}
 		case F_NLINK:
 			ip->st_nlink = atoi(val);
 			break;
@@ -184,7 +192,7 @@ unset(ip)
 {
 	register char *p;
 
-	while (p = strtok((char *)NULL, "\n\t ,"))
+	while (p = strtok((char *)NULL, "\n\t "))
 		ip->flags &= ~key(p);
 }
 
