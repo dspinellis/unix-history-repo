@@ -14,15 +14,14 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
-MDIR=	${DESTDIR}/usr/man/cat5
-OBJS=	L-devices.0 L-dialcodes.0 L.aliases.0 L.cmds.0 L.sys.0 USERFILE.0 \
-	a.out.0 acct.0 ar.0 core.0 dbx.0 dir.0 disktab.0 dump.0 fs.0 \
-	fstab.0 gettytab.0 group.0 hosts.0 mtab.0 networks.0 \
+MDIR=	${DESTDIR}/usr/share/man/cat5
+OBJS=	a.out.0 acct.0 core.0 dbx.0 dir.0 disktab.0 dump.0 fs.0 \
+	fstab.0 group.0 hosts.0 networks.0 \
 	passwd.0 phones.0 plot.0 printcap.0 protocols.0 remote.0 \
-	resolver.0 services.0 shells.0 stab.0 tar.0 tp.0 ttys.0 types.0 \
-	tzfile.0 utmp.0 uuencode.0 vfont.0 vgrindefs.0
+	resolver.0 services.0 shells.0 stab.0 types.0 \
+	utmp.0 vfont.0
 
 all clean depend lint tags:
 
