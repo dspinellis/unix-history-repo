@@ -1,5 +1,5 @@
 /*
- * config.h	1.5	81/05/22
+ * config.h	1.6	82/07/21
  * Definitions that everybody needs to know
  */
 
@@ -53,6 +53,7 @@ struct cputype {
 } *cputype;
 struct opt {
 	char *op_name;
+	char *op_value;
 	struct cputype *op_next;
 } *opt;
 char *ident, *ns(), *malloc(), *tc(), *qu();
