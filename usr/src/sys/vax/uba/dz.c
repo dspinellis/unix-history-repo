@@ -1,4 +1,4 @@
-/*	dz.c	3.17	%G%	*/
+/*	dz.c	3.18	%G%	*/
 
 #include "../conf/dz.h"
 #if NDZ11 > 0
@@ -79,7 +79,7 @@ struct pdma dzpdma[] = {
 	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[5], dzxint,
 	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[6], dzxint,
 	(struct device *)(DZADDR), NULL, NULL, (int)&dz_tty[7], dzxint,
-#if NDZ >= 2
+#if NDZ11 >= 2
 	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[8], dzxint,
 	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[9], dzxint,
 	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[10], dzxint,
@@ -89,7 +89,7 @@ struct pdma dzpdma[] = {
 	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[14], dzxint,
 	(struct device *)(DZADDR+010), NULL, NULL, (int)&dz_tty[15], dzxint,
 #endif
-#if NDZ >= 3
+#if NDZ11 >= 3
 	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[16], dzxint,
 	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[17], dzxint,
 	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[18], dzxint,
@@ -99,7 +99,7 @@ struct pdma dzpdma[] = {
 	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[22], dzxint,
 	(struct device *)(DZADDR+020), NULL, NULL, (int)&dz_tty[23], dzxint,
 #endif
-#if NDZ >= 4
+#if NDZ11 >= 4
 	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[24], dzxint,
 	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[25], dzxint,
 	(struct device *)(DZADDR+030), NULL, NULL, (int)&dz_tty[26], dzxint,
