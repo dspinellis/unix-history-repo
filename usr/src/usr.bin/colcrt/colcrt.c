@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)colcrt.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)colcrt.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -68,8 +68,7 @@ main(argc, argv)
 	do {
 		if (argc > 0) {
 			close(0);
-			if ((f=fopen(argv[0], "r")
-) < 0) {
+			if (!(f = fopen(argv[0], "r"))) {
 				fflush(stdout);
 				perror(argv[0]);
 				exit (1);

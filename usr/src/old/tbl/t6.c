@@ -1,10 +1,11 @@
 #ifndef lint
-static char sccsid[] = "@(#)t6.c	4.3 %G%";
+static char sccsid[] = "@(#)t6.c	4.4 %G%";
 #endif
 
  /* t6.c: compute tab stops */
-# define tx(a) (a>0 && a<128)
+
 # include "t..c"
+
 maktab()
 {
 # define FN(i,c) font[stynum[i]][c]
@@ -34,7 +35,7 @@ for(icol=0; icol <ncol; icol++)
 			case 'a':
 				acase[icol]=1;
 				s = table[ilin][icol].col;
-				if (s>0 && s<128 && text)
+				if (tx(s) && text)
 					{
 					if (doubled[icol]==0)
 						fprintf(tabout, ".nr %d 0\n.nr %d 0\n",S1,S2);

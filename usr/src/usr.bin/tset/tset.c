@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)tset.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)tset.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -1529,7 +1529,7 @@ char	def;
 	else
 		prs(" set to ");
 	bufp = buf;
-	if (tgetstr("kb", &bufp) > 0 && n == buf[0] && buf[1] == NULL)
+	if (tgetstr("kb", &bufp) && n == buf[0] && buf[1] == NULL)
 		prs("Backspace\n");
 	else if (n == 0177)
 		prs("Delete\n");

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tb.c	4.3 %G%";
+static char sccsid[] = "@(#)tb.c	4.4 %G%";
 #endif
 
  /* tb.c: check which entries exist, also storage allocation */
@@ -50,7 +50,7 @@ if (spvecs[spcount])
 if (spcount>=MAXVEC)
 	error("Too many characters in table");
 spvecs[spcount++]= pp = calloc(MAXCHS+200,1);
-if (pp== -1 || pp == 0)
+if (pp == 0)
 	error("no space for characters");
 return(pp);
 }
@@ -71,7 +71,7 @@ if (tpcount<0 || thisvec+n > tpvecs[tpcount]+MAXCHS)
 		tpvecs[tpcount] = calloc(MAXCHS,1);
 		}
 	thisvec = tpvecs[tpcount];
-	if (thisvec == -1)
+	if (thisvec == 0)
 		error("no space for vectors");
 	}
 tp=thisvec;

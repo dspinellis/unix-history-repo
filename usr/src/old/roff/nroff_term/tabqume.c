@@ -1,4 +1,4 @@
-/*	tabqume.c	4.1	83/08/05	*/
+/*	tabqume.c	4.2	88/07/22	*/
 #define INCH 240
 /*
  * QUME 10 Pitch
@@ -149,7 +149,7 @@ struct {
 "\201y",	/*y*/
 "\201z",	/*z*/
 "\001[",	/*{*/
-"\001\033\ ",	/*|*/
+"\001\033 ",	/*|*/
 "\001]",	/*}*/
 "\000\0",	/*~*/
 "\000\0",	/*narrow sp*/
@@ -248,14 +248,14 @@ struct {
 "\001+",	/*equation plus*/
 "\001\134",	/*registered*/
 "\001^",	/*copyright*/
-"\001\033\ ",	/*box rule */
+"\001\033 ",	/*box rule */
 "\001c\b/",	/*cent sign*/
 "\000\0",	/*dbl dagger*/
 "\000\0",	/*right hand*/
 "\000\0",	/*left hand*/
 "\001*",	/*math * */
 "\000\0",	/*bell system sign*/
-"\001\033\ ",	/*or (was star)*/
+"\001\033 ",	/*or (was star)*/
 "\000\0",	/*circle*/
 "\000\0",	/*left top (of big curly)*/
 "\000\0",	/*left bottom*/

@@ -1,4 +1,4 @@
-/*	tabqume12.c	4.1	83/08/05	*/
+/*	tabqume12.c	4.2	88/07/22	*/
 #define INCH 240
 /*
  * QUME 12 Pitch
@@ -249,7 +249,7 @@ struct {
 "\000\0",	/*registered*/
 "\000\0",	/*copyright*/
 "\001|",	/*box rule */
-"\001\033\ ",	/*cent sign*/
+"\001\033 ",	/*cent sign*/
 "\000\0",	/*dbl dagger*/
 "\000\0",	/*right hand*/
 "\000\0",	/*left hand*/

@@ -10,7 +10,7 @@ static char sccsid[] = "@(#)open.c	4.1 (Berkeley) 11/11/83";
 
 char dbuf[BUFSIZ];	/* Used to buffer display characters */
 struct sgttyb sgttyb;	/* Used to save terminal control bits */
-curx, cury;		/* Current screen position */
+int curx, cury;		/* Current screen position */
 int xbot, ybot;		/* Coordinates of screen lower-left corner */
 int scale;		/* The number of pixels per 2**12 units
 			 * of world coordinates.

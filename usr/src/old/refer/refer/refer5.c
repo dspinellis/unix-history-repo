@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)refer5.c	4.8 (Berkeley) %G%";
+static char *sccsid = "@(#)refer5.c	4.9 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -105,7 +105,7 @@ char *flds[], *nstline, *endline;
 	}
 	if (bare == 0) {
 		if (!another) {
-			sprintf(t1, "%s%s\%s\n", stline, sig, endline);
+			sprintf(t1, "%s%s%s\n", stline, sig, endline);
 			if (strlen(t1) > MXSIG)
 				err("t1 overflow (%d)", MXSIG);
 			append(t1);
