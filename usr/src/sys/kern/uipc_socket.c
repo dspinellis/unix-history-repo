@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_socket.c	7.10 (Berkeley) %G%
+ *	@(#)uipc_socket.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -22,6 +22,7 @@
 #include "user.h"
 #include "proc.h"
 #include "file.h"
+#include "malloc.h"
 #include "mbuf.h"
 #include "domain.h"
 #include "protosw.h"
@@ -113,7 +114,7 @@ solisten(so, backlog)
 	}
 	if (backlog < 0)
 		backlog = 0;
-	so->so_qlimit = MIN(backlog, SOMAXCONN);
+	so->so_qlimit = min(backlog, SOMAXCONN);
 	splx(s);
 	return (0);
 }
@@ -282,19 +283,20 @@ bad:
  * inform user that this would block and do nothing.
  * Otherwise, if nonblocking, send as much as possible.
  */
-sosend(so, nam, uio, flags, rights)
+sosend(so, nam, uio, flags, rights, control)
 	register struct socket *so;
 	struct mbuf *nam;
 	register struct uio *uio;
 	int flags;
-	struct mbuf *rights;
+	struct mbuf *rights, *control;
 {
-	struct mbuf *top = 0;
-	register struct mbuf *m, **mp;
-	register int space;
-	int len, rlen = 0, error = 0, s, dontroute, first = 1;
+	struct mbuf *top = 0, **mp;
+	register struct mbuf *m;
+	register int space, len;
+	int rlen = 0, error = 0, s, dontroute, first = 1, mlen;
+	int atomic = sosendallatonce(so);
 
-	if (sosendallatonce(so) && uio->uio_resid > so->so_snd.sb_hiwat)
+	if (atomic && uio->uio_resid > so->so_snd.sb_hiwat)
 		return (EMSGSIZE);
 	dontroute =
 	    (flags & MSG_DONTROUTE) && (so->so_options & SO_DONTROUTE) == 0 &&
@@ -327,10 +329,9 @@ restart:
 		else {
 			space = sbspace(&so->so_snd);
 			if (space <= rlen ||
-			   (sosendallatonce(so) &&
-				space < uio->uio_resid + rlen) ||
-			   (uio->uio_resid >= CLBYTES && space < CLBYTES &&
-			   so->so_snd.sb_cc >= CLBYTES &&
+			   (atomic && space < uio->uio_resid + rlen) ||
+			   (uio->uio_resid >= MCLBYTES && space < MCLBYTES &&
+			   so->so_snd.sb_cc >= MCLBYTES &&
 			   (so->so_state & SS_NBIO) == 0)) {
 				if (so->so_state & SS_NBIO) {
 					if (first)
@@ -347,43 +348,72 @@ restart:
 		splx(s);
 		mp = &top;
 		space -= rlen;
-		while (space > 0) {
-			MGET(m, M_WAIT, MT_DATA);
-			if (uio->uio_resid >= CLBYTES / 2 && space >= CLBYTES) {
-				MCLGET(m);
-				if (m->m_len != CLBYTES)
+		do {
+		   do {
+			if (top == 0) {
+				MGETHDR(m, M_WAIT, MT_DATA);
+				mlen = MHLEN;
+				m->m_pkthdr.len = 0;
+				m->m_pkthdr.rcvif = (struct ifnet *)0;
+			} else {
+				MGET(m, M_WAIT, MT_DATA);
+				mlen = MLEN;
+			}
+			if (uio->uio_resid >= MINCLSIZE && space >= MCLBYTES) {
+				MCLGET(m, M_WAIT);
+				if ((m->m_flags & M_EXT) == 0)
 					goto nopages;
-				len = MIN(CLBYTES, uio->uio_resid);
-				space -= CLBYTES;
+				mlen = MCLBYTES;
+#ifdef	MAPPED_MBUFS
+				len = min(MCLBYTES, uio->uio_resid);
+				if (len < mlen - max_hdr)
+					m->m_data += max_hdr;
+#else
+				len = min(MCLBYTES - max_hdr, uio->uio_resid);
+				m->m_data += max_hdr;
+#endif
+				space -= MCLBYTES;
 			} else {
 nopages:
-				len = MIN(MIN(MLEN, uio->uio_resid), space);
+				len = min(min(mlen, uio->uio_resid), space);
 				space -= len;
+				/*
+				 * For datagram protocols, leave room
+				 * for protocol headers in first mbuf.
+				 */
+				if (atomic && len < mlen)
+					MH_ALIGN(m, len);
 			}
 			error = uiomove(mtod(m, caddr_t), len, UIO_WRITE, uio);
 			m->m_len = len;
 			*mp = m;
+			top->m_pkthdr.len += len;
 			if (error)
 				goto release;
 			mp = &m->m_next;
-			if (uio->uio_resid <= 0)
+			if (uio->uio_resid <= 0) {
+				if ((flags & MSG_EOR) && top)
+					top->m_flags |= M_EOR;
 				break;
-		}
-		if (dontroute)
-			so->so_options |= SO_DONTROUTE;
-		s = splnet();					/* XXX */
-		error = (*so->so_proto->pr_usrreq)(so,
-		    (flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
-		    top, (caddr_t)nam, rights);
-		splx(s);
-		if (dontroute)
-			so->so_options &= ~SO_DONTROUTE;
-		rights = 0;
-		rlen = 0;
-		top = 0;
-		first = 0;
-		if (error)
-			break;
+			}
+		    } while (space > 0 && atomic);
+		    if (dontroute)
+			    so->so_options |= SO_DONTROUTE;
+		    s = splnet();				/* XXX */
+		    error = (*so->so_proto->pr_usrreq)(so,
+			(flags & MSG_OOB) ? PRU_SENDOOB : PRU_SEND,
+			top, (caddr_t)nam, rights, control);
+		    splx(s);
+		    if (dontroute)
+			    so->so_options &= ~SO_DONTROUTE;
+		    rights = 0;
+		    rlen = 0;
+		    top = 0;
+		    mp = &top;
+		    first = 0;
+		    if (error)
+			goto release;
+		} while (uio->uio_resid && space > 0);
 	} while (uio->uio_resid);
 
 release:
@@ -407,15 +437,15 @@ release:
  * Although the sockbuf is locked, new data may still be appended,
  * and thus we must maintain consistency of the sockbuf during that time.
  */
-soreceive(so, aname, uio, flags, rightsp)
+soreceive(so, aname, uio, flagsp, rightsp, controlp)
 	register struct socket *so;
 	struct mbuf **aname;
 	register struct uio *uio;
-	int flags;
-	struct mbuf **rightsp;
+	int *flagsp;
+	struct mbuf **rightsp, **controlp;
 {
 	register struct mbuf *m;
-	register int len, error = 0, s, offset;
+	register int flags, len, error = 0, s, offset;
 	struct protosw *pr = so->so_proto;
 	struct mbuf *nextrecord;
 	int moff;
@@ -424,6 +454,12 @@ soreceive(so, aname, uio, flags, rightsp)
 		*rightsp = 0;
 	if (aname)
 		*aname = 0;
+	if (controlp)
+		*controlp = 0;
+	if (flagsp)
+		flags = *flagsp &~ MSG_EOR;
+	else 
+		flags = 0;
 	if (flags & MSG_OOB) {
 		m = m_get(M_WAIT, MT_DATA);
 		error = (*pr->pr_usrreq)(so, PRU_RCVOOB,
@@ -443,6 +479,9 @@ bad:
 			m_freem(m);
 		return (error);
 	}
+	if (so->so_state & SS_ISCONFIRMING)
+		(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf *)0,
+		    (struct mbuf *)0, (struct mbuf *)0);
 
 restart:
 	sblock(&so->so_rcv);
@@ -476,7 +515,9 @@ restart:
 	m = so->so_rcv.sb_mb;
 	if (m == 0)
 		panic("receive 1");
-	nextrecord = m->m_act;
+if (m->m_type == 0)
+panic("receive 3a");
+	nextrecord = m->m_nextpkt;
 	if (pr->pr_flags & PR_ADDR) {
 		if (m->m_type != MT_SONAME)
 			panic("receive 1a");
@@ -488,15 +529,13 @@ restart:
 			sbfree(&so->so_rcv, m);
 			if (aname) {
 				*aname = m;
-				m = m->m_next;
-				(*aname)->m_next = 0;
-				so->so_rcv.sb_mb = m;
+				so->so_rcv.sb_mb = m->m_next;
+				m->m_next = 0;
+				m = so->so_rcv.sb_mb;
 			} else {
 				MFREE(m, so->so_rcv.sb_mb);
 				m = so->so_rcv.sb_mb;
 			}
-			if (m)
-				m->m_act = nextrecord;
 		}
 	}
 	if (m && m->m_type == MT_RIGHTS) {
@@ -517,15 +556,37 @@ restart:
 				MFREE(m, so->so_rcv.sb_mb);
 				m = so->so_rcv.sb_mb;
 			}
-			if (m)
-				m->m_act = nextrecord;
 		}
 	}
+	if (m && m->m_type == MT_CONTROL) {
+		if (flags & MSG_PEEK) {
+			if (controlp)
+				*controlp = m_copy(m, 0, m->m_len);
+			m = m->m_next;
+		} else {
+			sbfree(&so->so_rcv, m);
+			if (controlp) {
+				*controlp = m;
+				so->so_rcv.sb_mb = m->m_next;
+				m->m_next = 0;
+				m = so->so_rcv.sb_mb;
+			} else {
+				MFREE(m, so->so_rcv.sb_mb);
+				m = so->so_rcv.sb_mb;
+			}
+		}
+	}
+	if (m)
+		m->m_nextpkt = nextrecord;
 	moff = 0;
 	offset = 0;
 	while (m && uio->uio_resid > 0 && error == 0) {
-		if (m->m_type != MT_DATA && m->m_type != MT_HEADER)
+		if (m->m_type == MT_OOBDATA)
+			flags |= MSG_OOB;
+		else if (m->m_type != MT_DATA && m->m_type != MT_HEADER)
 			panic("receive 3");
+		if (m->m_flags & M_EOR)
+			flags |= MSG_EOR;
 		len = uio->uio_resid;
 		so->so_state &= ~SS_RCVATMARK;
 		if (so->so_oobmark && len > so->so_oobmark - offset)
@@ -541,18 +602,18 @@ restart:
 				m = m->m_next;
 				moff = 0;
 			} else {
-				nextrecord = m->m_act;
+				nextrecord = m->m_nextpkt;
 				sbfree(&so->so_rcv, m);
 				MFREE(m, so->so_rcv.sb_mb);
 				m = so->so_rcv.sb_mb;
 				if (m)
-					m->m_act = nextrecord;
+					m->m_nextpkt = nextrecord;
 			}
 		} else {
 			if (flags & MSG_PEEK)
 				moff += len;
 			else {
-				m->m_off += len;
+				m->m_data += len;
 				m->m_len -= len;
 				so->so_rcv.sb_cc -= len;
 			}
@@ -568,11 +629,18 @@ restart:
 				offset += len;
 		}
 	}
+	if (m && (flags & MSG_EOR)) {
+		flags &= ~MSG_EOR;
+		if ((flags & MSG_PEEK) == 0)
+			m->m_flags |= M_EOR;
+	}
 	if ((flags & MSG_PEEK) == 0) {
 		if (m == 0)
 			so->so_rcv.sb_mb = nextrecord;
-		else if (pr->pr_flags & PR_ATOMIC)
+		else if (pr->pr_flags & PR_ATOMIC) {
+			flags |= MSG_TRUNC;
 			(void) sbdroprecord(&so->so_rcv);
+		}
 		if (pr->pr_flags & PR_WANTRCVD && so->so_pcb)
 			(*pr->pr_usrreq)(so, PRU_RCVD, (struct mbuf *)0,
 			    (struct mbuf *)0, (struct mbuf *)0);
@@ -580,6 +648,8 @@ restart:
 		    pr->pr_domain->dom_externalize)
 			error = (*pr->pr_domain->dom_externalize)(*rightsp);
 	}
+	if (flagsp)
+		*flagsp |= flags;
 release:
 	sbunlock(&so->so_rcv);
 	splx(s);
