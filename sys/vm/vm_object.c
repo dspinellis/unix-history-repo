@@ -34,7 +34,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)vm_object.c	7.4 (Berkeley) 5/7/91
- *	$Id: vm_object.c,v 1.12 1993/12/21 05:51:02 davidg Exp $
+ *	$Id: vm_object.c,v 1.13 1993/12/22 12:51:59 davidg Exp $
  */
 
 /*
@@ -1222,23 +1222,12 @@ void vm_object_collapse(object)
 					vm_page_unlock_queues();
 				} else {
 				    pp = vm_page_lookup(object, new_offset);
-				    if (pp != NULL && !(pp->flags & PG_FAKE)) {
+				    if (pp != NULL) {
 					vm_page_lock_queues();
 					vm_page_free(p);
 					vm_page_unlock_queues();
 				    }
 				    else {
-					if (pp) {
-					    /*
-					     *  This should never happen -- the
-					     *  parent cannot have ever had an
-					     *  external memory object, and thus
-					     *  cannot have absent pages.
-					     */
-					    panic("vm_object_collapse: bad case");
-					    /* andrew@werple.apana.org.au - from
-					       mach 3.0 VM */
-					}
 					/*
 					 *	Parent now has no page.
 					 *	Move the backing object's page
