@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.2 83/08/12";
+static	char *sccsid = "@(#)cmd2.c	3.3 83/08/16";
 #endif
 
 #include "defs.h"
@@ -123,9 +123,10 @@ c_stat()
 		error("Can't open statistics window.");
 		return;
 	}
-	(void) wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\r\n");
-	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\r\n",
-		nread, nreadz, nreade, nreadc, wwnwrite, wwnwritec);
+	(void) wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\tntouched\tnmiss\r\n");
+	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\r\n",
+		nread, nreadz, nreade, nreadc, wwnwrite, wwnwritec,
+		wwntouched, wwnmiss);
 	waitnl(w);
 	closeiwin(w);
 }
