@@ -45,6 +45,7 @@ char copyright[] =
  * newfs: friendly front end to mkfs
  */
 #include <sys/param.h>
+#include <sys/ucred.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/disklabel.h>
