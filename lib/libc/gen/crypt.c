@@ -36,7 +36,7 @@
 
 #if defined(LIBC_SCCS) && !defined(lint)
 /* from static char sccsid[] = "@(#)crypt.c	5.11 (Berkeley) 6/25/91"; */
-static char rcsid[] = "$Header: /usr/chroot/CVS/386BSD/src/lib/libc/gen/crypt.c,v 1.4 1993/07/21 18:32:28 nate Exp $";
+static char rcsid[] = "$Header: /a/cvs/386BSD/src/lib/libc/gen/crypt.c,v 1.5 1993/08/27 22:04:55 nate Exp $";
 #endif /* LIBC_SCCS and not lint */
 
 #include <unistd.h>
@@ -80,6 +80,9 @@ crypt(pw, salt)
 	int             i, value;
 	unsigned short  crc;
 	unsigned long   t;
+
+	/* Ugly hack, but I'm too lazy to find the real problem - NW */
+	bzero(matrix, 128 * sizeof(long));
 
 	if (salt[0]) {
 		a = salt[0];
