@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.2 (Berkeley) %G%
+#	@(#)Makefile	5.3 (Berkeley) %G%
 
 CFLAGS=	-O -DLIBC_SCCS
 OBJS=	crt0.o gcrt0.o
@@ -8,9 +8,13 @@ all: ${OBJS}
 
 crt0.o: crt0.s
 	${CPP} -DCRT0 ${.ALLSRC} | ${AS} -o $@
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 gcrt0.o: crt0.s
 	${CPP} -DMCRT0 ${.ALLSRC} | ${AS} -o $@
+	@${LD} -x -r ${.TARGET}
+	@mv a.out ${.TARGET}
 
 install:
 	install -o ${BINOWN} -g ${BINGRP} -m 444 ${OBJS} \
