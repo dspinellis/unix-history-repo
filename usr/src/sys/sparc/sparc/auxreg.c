@@ -13,7 +13,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)auxreg.c	7.3 (Berkeley) %G%
+ *	@(#)auxreg.c	7.4 (Berkeley) %G%
  *
  * from: $Header: auxreg.c,v 1.7 92/06/17 05:21:54 torek Exp $ (LBL)
  */
