@@ -4,7 +4,7 @@
 static	char copyright[] =
 	    "@(#)Copyright (c) 1979 Regents of the University of California";
 
-static char sccsid[] = "@(#)main.c 1.9.1.1 %G%";
+static char sccsid[] = "@(#)main.c 2.2 %G%";
 #endif
 
 #include "whoami.h"
