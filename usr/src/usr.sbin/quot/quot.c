@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)quot.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)quot.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -278,7 +278,7 @@ qacct(ip)
 
 bread(fd, bno, buf, cnt)
 	int fd, cnt;
-	long bno;
+	off_t bno;
 	void *buf;
 {
 	(void)lseek(fd, bno, L_SET);
