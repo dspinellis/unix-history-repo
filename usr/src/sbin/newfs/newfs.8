@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)newfs.8	6.12 (Berkeley) %G%
+.\"     @(#)newfs.8	6.13 (Berkeley) %G%
 .\"
 .Dd 
 .Dt NEWFS 8
@@ -67,6 +67,10 @@ The following options define the general layout policies.
 .It Fl N
 Causes the file system parameters to be printed out
 without really creating the file system.
+.It Fl O
+Creates an 4.3BSD format filesystem.
+This options is primarily used to build root filesystems
+that can be understood by older boot ROMs.
 .It Fl b Ar block-size
 The block size of the file system in bytes.  
 .It Fl f Ar frag-size
