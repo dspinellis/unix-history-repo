@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)users.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)users.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -34,7 +34,6 @@ static char sccsid[] = "@(#)users.c	5.6 (Berkeley) %G%";
 
 #define NMAX		sizeof(utmp.ut_name)
 #define MAXUSERS	200
-#define UTMP_FILE	"/etc/utmp"
 
 static struct utmp utmp;		/* read structure */
 static int ncnt;			/* count of names */
@@ -44,8 +43,8 @@ main()
 {
 	register FILE *fp;		/* file pointer */
 
-	if (!(fp = fopen(UTMP_FILE, "r"))) {
-		perror(UTMP_FILE);
+	if (!(fp = fopen(_PATH_UTMP, "r"))) {
+		(void)fprintf(stderr, "users: can't open %s.\n", _PATH_UTMP);
 		exit(1);
 	}
 	while (fread((char *)&utmp, sizeof(utmp), 1, fp) == 1)

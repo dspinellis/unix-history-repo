@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.6 (Berkeley) %G%
+#	@(#)Makefile	4.7 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -37,11 +37,10 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g bin -m 755 find ${DESTDIR}/usr/bin/find
-	-[ -d ${DESTDIR}/usr/lib/find ] || mkdir ${DESTDIR}/usr/lib/find
-	install -s -o bin -g bin -m 755 bigram ${DESTDIR}/usr/lib/find/bigram
-	install -s -o bin -g bin -m 755 code ${DESTDIR}/usr/lib/find/code
-	install -c -o bin -g bin -m 755 updatedb.csh ${DESTDIR}/usr/lib/find/updatedb
+	install -s -o bin -g bin -m 755 find ${DESTDIR}/usr/bin
+	install -s -o bin -g bin -m 755 code bigram ${DESTDIR}/usr/libexec
+	install -c -o bin -g bin -m 755 updatedb.csh \
+	    ${DESTDIR}/usr/libexec/updatedb
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}

@@ -14,7 +14,7 @@
 # WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND
 # FITNESS FOR A PARTICULAR PURPOSE.
 #
-# @(#)Makefile	5.1 (Berkeley) %G%
+# @(#)Makefile	5.2 (Berkeley) %G%
 #
 
 CFLAGS=	-O
@@ -38,9 +38,9 @@ depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
 install: ${MAN}
-	install -s -o bin -g kmem -m 2755 w ${DESTDIR}/usr/ucb/w
-	rm -f ${DESTDIR}/usr/ucb/uptime
-	ln ${DESTDIR}/usr/ucb/w ${DESTDIR}/usr/ucb/uptime
+	install -s -o bin -g kmem -m 2755 w ${DESTDIR}/usr/bin
+	rm -f ${DESTDIR}/usr/bin/uptime
+	ln ${DESTDIR}/usr/bin/w ${DESTDIR}/usr/bin/uptime
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
 
 lint: ${SRCS}

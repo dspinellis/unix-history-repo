@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	4.10	(Berkeley)	%G%
+#	@(#)Makefile	4.11	(Berkeley)	%G%
 #
 # The word lists may be extended by adding special words.
 # The set of files containing words to be added are defined
@@ -26,7 +26,7 @@ all: spell hlist hlista hlistb hstop spellin spellout
 spell spellin spellout: ${LIBC}
 	${CC} ${CFLAGS} $@.c -o $@
 
-hlist: /usr/dict/words spellin
+hlist: spellin
 	spellin < words >hlist
 
 hlista: american ${SPECIAL} ${LOCAL} hlist spellin
@@ -47,24 +47,20 @@ cleandir: clean
 depend: ${SRCS}
 	mkdep -p ${CFLAGS} ${SRCS}
 
+DIR=	${DESTDIR}/usr/share/dict
+FILES=	hlista hlistb hstop hlist american british connectives \
+	propernames stop README words web2 web2a
 install: ${MAN}
-	-[ -d ${DESTDIR}/usr/dict/special ] || mkdir ${DESTDIR}/usr/dict/special
-	install -s -o bin -g bin -m 755 spell ${DESTDIR}/usr/lib/spell
-	install -s -o bin -g bin -m 755 spellin ${DESTDIR}/usr/bin/spellin
-	install -s -o bin -g bin -m 755 spellout ${DESTDIR}/usr/bin/spellout
+	-[ -d ${DIR}/special ] || mkdir ${DIR}/special
+	install -s -o bin -g bin -m 755 spell ${DESTDIR}/usr/libexec/spell
+	install -s -o bin -g bin -m 755 spellin ${DESTDIR}/usr/libexec/spellin
+	install -s -o bin -g bin -m 755 spellout ${DESTDIR}/usr/libexec/spellout
 	install -c -o bin -g bin -m 755 spell.sh ${DESTDIR}/usr/bin/spell
-	install -o bin -g bin -m 444 hlista ${DESTDIR}/usr/dict/hlista
-	install -o bin -g bin -m 444 hlistb ${DESTDIR}/usr/dict/hlistb
-	install -o bin -g bin -m 444 hstop ${DESTDIR}/usr/dict/hstop
-	install -o bin -g bin -m 444 hlist ${DESTDIR}/usr/dict/hlist
-	install -c -o bin -g bin -m 444 words ${DESTDIR}/usr/dict/words
-	install -c -o bin -g bin -m 444 american ${DESTDIR}/usr/dict/american
-	install -c -o bin -g bin -m 444 british ${DESTDIR}/usr/dict/british
-	install -c -o bin -g bin -m 444 stop ${DESTDIR}/usr/dict/stop
-	install -c -o bin -g bin -m 444 README ${DESTDIR}/usr/dict/README
-	install -c -o bin -g bin -m 444 special.4bsd ${DESTDIR}/usr/dict/special/4bsd
-	install -c -o bin -g bin -m 444 special.math ${DESTDIR}/usr/dict/special/math
+	install -c -o bin -g bin -m 444 ${FILES} ${DIR}
+	install -c -o bin -g bin -m 444 special.4bsd ${DIR}/special/4bsd
+	install -c -o bin -g bin -m 444 special.math ${DIR}/special/math
 	install -c -o bin -g bin -m 444 ${MAN} ${DESTDIR}/usr/man/cat1
+	cp -p -r papers ${DIR}; chmod 755 ${DIR}/papers/runinv
 	rm -f ${DESTDIR}/usr/man/cat1/spellin.0
 	rm -f ${DESTDIR}/usr/man/cat1/spellout.0
 	ln ${DESTDIR}/usr/man/cat1/spell.0 ${DESTDIR}/usr/man/cat1/spellin.0

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)egrep.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)egrep.c	5.12 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -45,31 +45,18 @@ static char sccsid[] = "@(#)egrep.c	5.11 (Berkeley) %G%";
      James A. Woods				Copyright (c) 1986
      NASA Ames Research Center
 */
-#include <stdio.h>
-#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <regexp.h>		/* must be henry spencer's version */
+#include <stdio.h>
+#include <ctype.h>
+#include "pathnames.h"
 
 #define	MIN(A, B)	((A) > (B) ? (B) : (A))
 
 #ifdef	SLOWSYS
 #define read	xread
-#endif
-/*
- * define existing [ef]?grep program locations below for use by execvp().
- * [execlp() would be used were it not for the possibility of
- * installation-dependent recursion.] 
- */
-#ifndef EGREPSTD
-#define	EGREPSTD	"/usr/bin/egrep"
-#endif
-#ifndef GREPSTD
-#define	GREPSTD		"/bin/grep"
-#endif
-#ifndef FGREPSTD
-#define	FGREPSTD	"/usr/bin/fgrep"
 #endif
 
 #define BUFSIZE	8192		/* make higher for cray */
@@ -881,15 +868,15 @@ kernighan(args)			/* "let others do the hard part ..." */
 	/* better would be fork/exec per punted file -- jaw */
 
 	while (firstfile && optind > firstfile)
-		args[firstfile++] = "/dev/null";
+		args[firstfile++] = _PATH_DEVNULL;
 	if (patind)
 		args[patind] = pattern;
 	(void) fflush(stdout);
 
 	if (grepflag)
-		execvp(GREPSTD, args), oops("can't exec old 'grep'");
+		execvp(_PATH_GREPSTD, args), oops("can't exec old 'grep'");
 	else if (fgrepflag)
-		execvp(FGREPSTD, args), oops("can't exec old 'fgrep'");
+		execvp(_PATH_FGREPSTD, args), oops("can't exec old 'fgrep'");
 	else
-		execvp(EGREPSTD, args), oops("can't exec old 'egrep'");
+		execvp(_PATH_EGREPSTD, args), oops("can't exec old 'egrep'");
 }

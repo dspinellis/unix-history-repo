@@ -1,13 +1,15 @@
 #ifndef lint
-static char sccsid[] = "@(#)enroll.c	4.2 %G%";
+static char sccsid[] = "@(#)enroll.c	4.3 %G%";
 #endif
 
+#include <sys/types.h>
+#include <pwd.h>
 #include "xmail.h"
-#include "pwd.h"
-#include "sys/types.h"
+#include "pathnames.h"
+
 MINT *a[42], *x, *b, *one, *c64, *t45, *z, *q, *r, *two, *t15;
 char buf[256];
-char maildir[] = { "/usr/spool/secretmail"};
+char maildir[] = _PATH_SECRETMAIL;
 main()
 {
 	int uid, i;

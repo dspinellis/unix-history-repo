@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)sort.c	4.14 (Berkeley) %G%";
+static	char *sccsid = "@(#)sort.c	4.15 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <sys/file.h>
@@ -6,6 +6,7 @@ static	char *sccsid = "@(#)sort.c	4.14 (Berkeley) %G%";
 #include <ctype.h>
 #include <signal.h>
 #include <sys/stat.h>
+#include "pathnames.h"
 
 #define	L	2048
 #define	N	7
@@ -20,7 +21,7 @@ static	char *sccsid = "@(#)sort.c	4.14 (Berkeley) %G%";
 #define rline(mp)	(fgets((mp)->l, L, (mp)->b) == NULL)
 
 FILE	*is, *os;
-char	*dirtry[] = {"/usr/tmp", "/tmp", NULL};
+char	*dirtry[] = {_PATH_TMP1, _PATH_TMP2, NULL};
 char	**dirs;
 char	file1[MAXPATHLEN];
 char	*file = file1;

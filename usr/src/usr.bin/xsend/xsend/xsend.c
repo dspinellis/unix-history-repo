@@ -1,18 +1,20 @@
 #ifndef lint
-static char sccsid[] = "@(#)xsend.c	4.5 %G%";
+static char sccsid[] = "@(#)xsend.c	4.6 %G%";
 #endif
 
-#include "xmail.h"
-#include <sys/types.h>
-#include <pwd.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/dir.h>
+#include <pwd.h>
+#include "xmail.h"
+#include "pathnames.h"
+
 extern int errno;
 struct stat stbuf;
 int uid, destuid;
 char *myname, *dest, *keyfile[128], line[128];
 struct direct *dbuf;
-char *maildir = "/usr/spool/secretmail/";
+char *maildir = _PATH_SECRETMAIL;
 FILE *kf, *mf;
 DIR *df;
 MINT *a[42], *cd[6][128];
@@ -74,13 +76,13 @@ main(argc, argv) char **argv;
 #endif
 	run();
 	{
-		char	hostname[32];
+		char	hostname[MAXHOSTNAMELEN];
 		FILE	*nf, *popen();
 		struct	passwd	*passp;
 
-		sprintf(buf, "/bin/mail %s", dest);
+		sprintf(buf, "%s %s", _PATH_MAIL, dest);
 		if ((nf = popen(buf, "w")) == NULL)
-			xfatal("cannot pipe to /bin/mail");
+			xfatal("cannot pipe to %s", _PATH_MAIL);
 		passp = getpwuid(getuid());
 		if (passp == 0){
 			pclose(nf);
