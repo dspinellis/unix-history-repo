@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)prf.c	7.1 (Berkeley) %G%
+ *	@(#)prf.c	7.2 (Berkeley) %G%
  */
 
 #include "../h/param.h"
@@ -168,7 +168,8 @@ getchar()
 	c = mfpr(RXDB)&0177;
 	if (c=='\r')
 		c = '\n';
-	putchar(c);
+	if (c != '\b' && c != '\177')
+		putchar(c);
 	return(c);
 }
 
@@ -190,6 +191,7 @@ gets(buf)
 		case '\b':
 			if (lp > buf) {
 				lp--;
+				putchar('\b');
 				putchar(' ');
 				putchar('\b');
 			}
