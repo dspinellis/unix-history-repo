@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -65,15 +65,32 @@ main(argc, argv)
 	int argc;
 	char **argv;
 {
+	extern int opterr, optind, _check_rhosts_file;
+	int ch;
 	int on = 1, fromlen;
 	struct sockaddr_in from;
 
 	openlog("rlogind", LOG_PID | LOG_AUTH, LOG_AUTH);
+
+	opterr = 0;
+	while ((ch = getopt(argc, argv, "l")) != EOF)
+		switch((char)ch) {
+		case 'l':
+			_check_rhosts_file = 0;
+			break;
+		case '?':
+		default:
+			syslog(LOG_ERR, "usage: rlogind [-l]");
+			break;
+		}
+	argc -= optind;
+	argv += optind;
+
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
 		fprintf(stderr, "%s: ", argv[0]);
 		perror("getpeername");
-		_exit(1);
+		exit(1);
 	}
 	if (setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof (on)) < 0) {
 		syslog(LOG_WARNING, "setsockopt (SO_KEEPALIVE): %m");
