@@ -12,12 +12,14 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)strip.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)strip.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
+
+#include <limits.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <a.out.h>
@@ -31,10 +33,12 @@ typedef struct nlist NLIST;
 
 #define	strx	n_un.n_strx
 
-void err __P((const char *fmt, ...));
+void err __P((int, const char *fmt, ...));
 void s_stab __P((const char *, int, EXEC *));
 void s_sym __P((const char *, int, EXEC *));
 void usage __P((void));
+
+int eval;
 
 int
 main(argc, argv)
@@ -63,18 +67,18 @@ main(argc, argv)
 	while (fn = *argv++) {
 		if ((fd = open(fn, O_RDWR)) < 0 ||
 		    (nb = read(fd, &head, sizeof(EXEC))) == -1) {
-			err("%s: %s", fn, strerror(errno));
+			err(0, "%s: %s", fn, strerror(errno));
 			continue;
 		}
 		if (nb != sizeof(EXEC) || N_BADMAG(head)) {
-			err("%s: %s", fn, strerror(EFTYPE));
+			err(0, "%s: %s", fn, strerror(EFTYPE));
 			continue;
 		}
 		sfcn(fn, fd, &head);
 		if (close(fd))
-			err("%s: %s", fn, strerror(errno));
+			err(0, "%s: %s", fn, strerror(errno));
 	}
-	exit(0);
+	exit(eval);
 }
 
 void
@@ -108,7 +112,7 @@ s_sym(fn, fd, ep)
 	if (lseek(fd, (off_t)0, SEEK_SET) == -1 ||
 	    write(fd, ep, sizeof(EXEC)) != sizeof(EXEC) ||
 	    ftruncate(fd, fsize))
-		err("%s: %s", fn, strerror(errno)); 
+		err(0, "%s: %s", fn, strerror(errno)); 
 }
 
 void
@@ -127,11 +131,19 @@ s_stab(fn, fd, ep)
 	if (ep->a_syms == 0)
 		return;
 
+	/* Check size. */
+	if (sb.st_size > SIZE_T_MAX) {
+		err(0, "%s: %s", fn, strerror(EFBIG));
+		return;
+	}
+
 	/* Map the file. */
 	if (fstat(fd, &sb) ||
 	    (ep = (EXEC *)mmap(NULL, (size_t)sb.st_size,
-	    PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t)0)) == (EXEC *)-1)
-		err("%s: %s", fn, strerror(errno));
+	    PROT_READ | PROT_WRITE, MAP_SHARED, fd, (off_t)0)) == (EXEC *)-1) {
+		err(0, "%s: %s", fn, strerror(errno));
+		return;
+	}
 
 	/*
 	 * Initialize old and new symbol pointers.  They both point to the
@@ -147,7 +159,7 @@ s_stab(fn, fd, ep)
 	 */
 	strbase = (char *)ep + N_STROFF(*ep);
 	if ((nstrbase = malloc((u_int)*(u_long *)strbase)) == NULL)
-		err("%s", strerror(errno));
+		err(1, "%s", strerror(errno));
 	nstr = nstrbase + sizeof(u_long);
 
 	/*
@@ -180,7 +192,7 @@ s_stab(fn, fd, ep)
 
 	/* Truncate to the current length. */
 	if (ftruncate(fd, (char *)nsym + len - (char *)ep))
-		err("%s: %s", fn, strerror(errno));
+		err(0, "%s: %s", fn, strerror(errno));
 	munmap((caddr_t)ep, (size_t)sb.st_size);
 }
 
@@ -199,9 +211,10 @@ usage()
 
 void
 #if __STDC__
-err(const char *fmt, ...)
+err(int fatal, const char *fmt, ...)
 #else
-err(fmt, va_alist)
+err(fatal, fmt, va_alist)
+	int fatal;
 	char *fmt;
         va_dcl
 #endif
@@ -216,5 +229,7 @@ err(fmt, va_alist)
 	(void)vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	(void)fprintf(stderr, "\n");
-	exit(1);
+	if (fatal)
+		exit(1);
+	eval = 1;
 }
