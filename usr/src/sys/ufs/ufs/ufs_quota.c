@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_quota.c	7.10 (Berkeley) %G%
+ *	@(#)ufs_quota.c	7.11 (Berkeley) %G%
  */
 #include "param.h"
 #include "kernel.h"
@@ -340,15 +340,15 @@ quotaon(p, mp, type, fname)
 	vp = nd.ni_vp;
 	VOP_UNLOCK(vp);
 	if (vp->v_type != VREG) {
-		vrele(vp);
+		(void) vn_close(vp, FREAD|FWRITE, p->p_ucred, p);
 		return (EACCES);
 	}
 	if (vfs_busy(mp)) {
-		vrele(vp);
+		(void) vn_close(vp, FREAD|FWRITE, p->p_ucred, p);
 		return (EBUSY);
 	}
 	if (*vpp != vp)
-		quotaoff(mp, type);
+		quotaoff(p, mp, type);
 	ump->um_qflags[type] |= QTF_OPENING;
 	mp->mnt_flag |= MNT_QUOTA;
 	vp->v_flag |= VSYSTEM;
@@ -371,13 +371,12 @@ quotaon(p, mp, type, fname)
 	/*
 	 * Search vnodes associated with this mount point,
 	 * adding references to quota file being opened.
-	 * NB: only need to add dquot's for inodes being modified;
-	 * vp->v_usecount == 0 below should use vp->v_writecnt == 0.
+	 * NB: only need to add dquot's for inodes being modified.
 	 */
 again:
 	for (vp = mp->mnt_mounth; vp; vp = nextvp) {
 		nextvp = vp->v_mountf;
-		if (vp->v_usecount == 0)
+		if (vp->v_writecount == 0)
 			continue;
 		if (vget(vp))
 			goto again;
@@ -391,7 +390,7 @@ again:
 	}
 	ump->um_qflags[type] &= ~QTF_OPENING;
 	if (error)
-		quotaoff(mp, type);
+		quotaoff(p, mp, type);
 	vfs_unbusy(mp);
 	return (error);
 }
@@ -399,7 +398,8 @@ again:
 /*
  * Q_QUOTAOFF - turn off disk quotas for a filesystem.
  */
-quotaoff(mp, type)
+quotaoff(p, mp, type)
+	struct proc *p;
 	struct mount *mp;
 	register int type;
 {
@@ -408,6 +408,7 @@ quotaoff(mp, type)
 	struct ufsmount *ump = VFSTOUFS(mp);
 	register struct dquot *dq;
 	register struct inode *ip;
+	int error;
 	
 	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
 		panic("quotaoff: not busy");
@@ -433,7 +434,7 @@ again:
 	}
 	dqflush(qvp);
 	qvp->v_flag &= ~VSYSTEM;
-	vrele(qvp);
+	error = vn_close(qvp, FREAD|FWRITE, p->p_ucred, p);
 	ump->um_quotas[type] = NULLVP;
 	crfree(ump->um_cred[type]);
 	ump->um_cred[type] = NOCRED;
@@ -443,7 +444,7 @@ again:
 			break;
 	if (type == MAXQUOTAS)
 		mp->mnt_flag &= ~MNT_QUOTA;
-	return (0);
+	return (error);
 }
 
 /*
