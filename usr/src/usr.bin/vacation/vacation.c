@@ -4,7 +4,7 @@
 # include <sysexits.h>
 # include <ctype.h>
 
-static char	SccsId[] =	"@(#)vacation.c	4.2		%G%";
+static char	SccsId[] =	"@(#)vacation.c	4.3		%G%";
 
 /*
 **  VACATION -- return a message to the sender when on vacation.
@@ -54,6 +54,10 @@ typedef struct
 
 extern DATUM fetch();
 
+
+
+bool	Debug = FALSE;
+
 main(argc, argv)
 	char **argv;
 {
@@ -67,6 +71,7 @@ main(argc, argv)
 	extern char *newstr();
 	extern char *getfrom();
 	extern bool knows();
+	extern bool junkmail();
 	extern time_t convtime();
 
 	/* process arguments */
@@ -77,6 +82,10 @@ main(argc, argv)
 		  case 'I':	/* initialize */
 			initialize();
 			exit(EX_OK);
+
+		  case 'd':	/* debug */
+			Debug = TRUE;
+			break;
 
 		  default:
 			usrerr("Unknown flag -%s", p);
@@ -108,8 +117,8 @@ main(argc, argv)
 	/* read message from standard input (just from line) */
 	from = getfrom();
 
-	/* check if this person is already informed */
-	if (!knows(from))
+	/* check if junk mail or this person is already informed */
+	if (!junkmail(from) && !knows(from))
 	{
 		/* mark this person as knowing */
 		setknows(from);
@@ -117,8 +126,13 @@ main(argc, argv)
 		/* send the message back */
 		(void) strcpy(buf, homedir);
 		(void) strcat(buf, "/.vacation.msg");
-		sendmessage(buf, from, myname);
-		/* never returns */
+		if (Debug)
+			printf("Sending %s to %s\n", buf, from);
+		else
+		{
+			sendmessage(buf, from, myname);
+			/*NOTREACHED*/
+		}
 	}
 	exit (EX_OK);
 }
@@ -161,6 +175,72 @@ getfrom()
 
 	/* return the sender address */
 	return (&line[5]);
+}
+/*
+**  JUNKMAIL -- read the header and tell us if this is junk/bulk mail.
+**
+**	Parameters:
+**		from -- the Return-Path of the sender.  We assume that
+**			anything from "*-REQUEST@*" is bulk mail.
+**
+**	Returns:
+**		TRUE -- if this is junk or bulk mail (that is, if the
+**			sender shouldn't receive a response).
+**		FALSE -- if the sender deserves a response.
+**
+**	Side Effects:
+**		May read the header from standard input.  When this
+**		returns the position on stdin is undefined.
+*/
+
+bool
+junkmail(from)
+	char *from;
+{
+	register char *p;
+	char buf[MAXLINE+1];
+	extern char *index();
+	extern char *rindex();
+	extern bool sameword();
+
+	/* test for sender == "*-REQUEST@*" */
+	p = rindex(from, '@');
+	if (p != NULL && p > &from[8])
+	{
+		*p = '\0';
+		if (sameword(&p[-8], "-REQUEST"))
+		{
+			*p = '@';
+			return (TRUE);
+		}
+		*p = '@';
+	}
+
+	/* read the header looking for a "Precedence:" line */
+	while (fgets(buf, MAXLINE, stdin) != NULL && buf[0] != '\n')
+	{
+		/* should ignore case, but this is reasonably safe */
+		if (strncmp(buf, "Precedence", 10) != 0 ||
+		    !(buf[10] == ':' || buf[10] == ' ' || buf[10] == '\t'))
+		{
+			continue;
+		}
+
+		/* find the value of this field */
+		p = index(buf, ':');
+		if (p == NULL)
+			continue;
+		while (*++p != '\0' && isspace(*p))
+			continue;
+		if (*p == '\0')
+			continue;
+
+		/* see if it is "junk" or "bulk" */
+		p[4] = '\0';
+		if (sameword(p, "junk") || sameword(p, "bulk"))
+			return (TRUE);
+	}
+	return (FALSE);
 }
 /*
 **  KNOWS -- predicate telling if user has already been informed.
@@ -358,4 +438,37 @@ newstr(s)
 	}
 	strcpy(p, s);
 	return (p);
+}
+/*
+**  SAMEWORD -- return TRUE if the words are the same
+**
+**	Ignores case.
+**
+**	Parameters:
+**		a, b -- the words to compare.
+**
+**	Returns:
+**		TRUE if a & b match exactly (modulo case)
+**		FALSE otherwise.
+**
+**	Side Effects:
+**		none.
+*/
+
+bool
+sameword(a, b)
+	register char *a, *b;
+{
+	char ca, cb;
+
+	do
+	{
+		ca = *a++;
+		cb = *b++;
+		if (isascii(ca) && isupper(ca))
+			ca = ca - 'A' + 'a';
+		if (isascii(cb) && isupper(cb))
+			cb = cb - 'A' + 'a';
+	} while (ca != '\0' && ca == cb);
+	return (ca == cb);
 }
