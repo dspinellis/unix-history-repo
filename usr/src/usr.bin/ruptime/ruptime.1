@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)ruptime.1	5.1 (Berkeley) %G%
+.\"	@(#)ruptime.1	6.1 (Berkeley) %G%
 .\"
-.TH RUPTIME 1C "8 March 1982"
+.TH RUPTIME 1C ""
 .UC 5
 .SH NAME
 ruptime \- show host status of local machines
@@ -12,6 +12,8 @@ ruptime \- show host status of local machines
 .B ruptime
 [
 .B \-a
+] [
+.B \-r
 ] [
 .B \-l
 ] [
@@ -28,7 +30,7 @@ these are formed from packets broadcast by each host
 on the network once a minute.
 .PP
 Machines for which no
-status report has been received for 5 minutes are shown as being down.
+status report has been received for 11 minutes are shown as being down.
 .PP
 Users idle an hour or more are not counted unless the
 .B \-a
@@ -44,6 +46,9 @@ flags specify sorting by
 load average,
 uptime,
 and number of users, respectively.
+The
+.B \-r
+flag reverses the sort order.
 .SH FILES
 .DT
 /usr/spool/rwho/whod.*	data files
