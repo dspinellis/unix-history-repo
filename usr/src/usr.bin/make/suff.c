@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)suff.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)suff.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*-
@@ -125,6 +125,7 @@ static int SuffSuffHasNameP __P((Suff *, char *));
 static int SuffSuffIsPrefix __P((Suff *, char *));
 static int SuffGNHasNameP __P((GNode *, char *));
 static void SuffFree __P((Suff *));
+static Suff* SuffCopy __P((Suff *));
 static void SuffInsert __P((Lst, Suff *));
 static Boolean SuffParseTransform __P((char *, Suff **, Suff **));
 static int SuffRebuildGraph __P((GNode *, Suff *));
@@ -446,7 +447,7 @@ SuffParseTransform(str, srcPtr, targPtr)
 		 * XXX: Use emptySuff over suffNull?
 		 */
 		*srcPtr = single;
-		*targPtr = suffNull;
+		*targPtr = SuffCopy(suffNull);
 		return(TRUE);
 	    }
 	    return (FALSE);
@@ -2088,6 +2089,37 @@ Suff_Init ()
     suffNull->flags =  	    SUFF_NULL;
 
 }
+
+
+/*-
+ *-----------------------------------------------------------------------
+ * SuffCopy  --
+ *	Create a copy of the source suffix.
+ *	Currently does not copy children or parents
+ *
+ * Results:
+ *	a new suffix is returned
+ *
+ * Side Effects:
+ *	none
+ *-----------------------------------------------------------------------
+ */
+static Suff *
+SuffCopy(s)
+    Suff *s;
+{
+    Suff *n = (Suff *) emalloc (sizeof (Suff));
+    n->name =       strdup (s->name);
+    n->nameLen =    s->nameLen;
+    n->searchPath = Lst_Init (FALSE);
+    Dir_Concat(suffNull->searchPath, s->searchPath);
+    n->children =   Lst_Init (FALSE);
+    n->parents =    Lst_Init (FALSE);
+    n->sNum =       s->sNum;   
+    n->flags = 	    s->flags;
+    return n;
+}
+
 
 /********************* DEBUGGING FUNCTIONS **********************/
 
