@@ -1,9 +1,11 @@
 #!/bin/sh
-#	dumpdev.sh	1.3	%G%
+#	dumpdev.sh	1.4	%G%
 #	shell script to dump a single device
 #	the script is called with a single
 #	parameter - which is the device to be dumped
 #
+#	A second parameter (if set) sets the debug switch which will
+#	simply print the parameters to dump and not alter any state
 PATH=:/etc:/bin:/usr/bin:
 #
 dumpdata=/etc/dumpdata
@@ -14,8 +16,13 @@ labelchk="t"
 dev=$1
 if [ "$1" = "" ]
 then
-	echo	Usage: doadump device-name
+	echo	'Usage: doadump device-name'
 	exit 1
+fi
+chkflg=no
+if [ "$2" != "" ]
+then
+	chkflg=yes
 fi
 #	device can be /dev/<name>
 #	so we'll look for that and split it off
@@ -77,6 +84,11 @@ fi
 #	now finally set the dump level and the tape range
 LEVEL=`expr "$decodethis" : '^\(.*\) '`
 TAPE=`expr "$decodethis" : '^.* \(.*\)$'`
+if [ "$chkflg" = yes ]
+then
+	echo "DUMP of /dev/$dev at level ${LEVEL} to tapes $TAPE"
+	exit 1
+fi
 $dump ou${labelchk}${LEVEL} $TAPE /dev/$dev
 #
 #	dump returns 1 on a successful dump
