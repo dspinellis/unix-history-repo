@@ -15,7 +15,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)MAKEDEV	5.9 (Berkeley) %G%
+#	@(#)MAKEDEV	5.10 (Berkeley) %G%
 #
 # Device "make" file.  Valid arguments:
 #	std	standard devices
@@ -37,6 +37,10 @@
 #	dr*	IKON DR-11W
 #	ik*	IKON DR-11W w/ E&S PS300
 #
+HOME=/; export HOME
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+export PATH
+
 umask 77
 for i
 do
