@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tcp_output.c	6.17 (Berkeley) %G%
+ *	@(#)tcp_output.c	6.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -70,8 +70,6 @@ again:
 	 * and go to transmit state.
 	 */
 	if (tp->t_force) {
-if (win == 0 && off)
-log(7, "persist offset %d\n", off);
 		if (win == 0)
 			win = 1;
 		else {
@@ -81,6 +79,34 @@ log(7, "persist offset %d\n", off);
 	}
 
 	len = MIN(so->so_snd.sb_cc, win) - off;
+	flags = tcp_outflags[tp->t_state];
+	if (SEQ_LT(tp->snd_nxt + len, tp->snd_una + so->so_snd.sb_cc))
+		flags &= ~TH_FIN;
+
+	if (len < 0) {
+		/*
+		 * If FIN has been sent but not acked,
+		 * but we haven't been called to retransmit,
+		 * len will be -1; transmit if acking, otherwise no need.
+		 * Otherwise, window shrank after we sent into it.
+		 * If window shrank to 0, cancel pending retransmit
+		 * and pull snd_nxt back to (closed) window.
+		 * We will enter persist state below.
+		 * If the window didn't close completely,
+		 * just wait for an ACK.
+		 */
+		if (flags & TH_FIN) {
+			if (tp->t_flags & TF_ACKNOW)
+				len = 0;
+			else
+				return (0);
+		} else if (win == 0) {
+			tp->t_timer[TCPT_REXMT] = 0;
+			tp->snd_nxt = tp->snd_una;
+			len = 0;
+		} else
+			return (0);
+	}
 	if (len > tp->t_maxseg) {
 		len = tp->t_maxseg;
 		/*
@@ -90,37 +116,23 @@ log(7, "persist offset %d\n", off);
 		if (tp->t_rxtshift == 0)
 			sendalot = 1;
 	}
-
-	flags = tcp_outflags[tp->t_state];
-	if (SEQ_LT(tp->snd_nxt + len, tp->snd_una + so->so_snd.sb_cc))
-		flags &= ~TH_FIN;
-
-	if (len < 0) {
-		/*
-		 * If FIN has been sent but not acked,
-		 * but we haven't been called to retransmit,
-		 * len will be -1; no need to transmit now.
-		 * Otherwise, window shrank after we sent into it.
-		 * If window shrank to 0, cancel pending retransmit
-		 * and pull snd_nxt back to (closed) window.
-		 * We will enter persist state below.
-		 * If the window didn't close completely,
-		 * just wait for an ACK.
-		 */
-		if (flags & TH_FIN || win != 0)
-			return (0);
-		tp->t_timer[TCPT_REXMT] = 0;
-		tp->snd_nxt = tp->snd_una;
-		len = 0;
-	}
 	win = sbspace(&so->so_rcv);
 
+
+	/*
+	 * If our state indicates that FIN should be sent
+	 * and we have not yet done so, or we're retransmitting the FIN,
+	 * then we need to send.
+	 */
+	if (flags & TH_FIN &&
+	    ((tp->t_flags & TF_SENTFIN) == 0 || tp->snd_nxt == tp->snd_una))
+		goto send;
 	/*
 	 * Send if we owe peer an ACK.
 	 */
 	if (tp->t_flags & TF_ACKNOW)
 		goto send;
-	if (flags & (TH_SYN|TH_RST|TH_FIN))
+	if (flags & (TH_SYN|TH_RST))
 		goto send;
 	if (SEQ_GT(tp->snd_up, tp->snd_una))
 		goto send;
@@ -216,7 +228,11 @@ send:
 	/*
 	 * Fill in fields, remembering maximum advertised
 	 * window for use in delaying messages about window sizes.
+	 * If resending a FIN, be sure not to use a new sequence number.
 	 */
+	if (flags & TH_FIN && tp->t_flags & TF_SENTFIN &&
+	    tp->snd_nxt != tp->snd_una)
+		tp->snd_nxt--;
 	ti->ti_seq = htonl(tp->snd_nxt);
 	ti->ti_ack = htonl(tp->rcv_nxt);
 	/*
@@ -303,8 +319,12 @@ send:
 		/*
 		 * Advance snd_nxt over sequence space of this segment.
 		 */
-		if (flags & (TH_SYN|TH_FIN))
+		if (flags & TH_SYN)
 			tp->snd_nxt++;
+		if (flags & TH_FIN) {
+			tp->snd_nxt++;
+			tp->t_flags |= TF_SENTFIN;
+		}
 		tp->snd_nxt += len;
 		if (SEQ_GT(tp->snd_nxt, tp->snd_max)) {
 			tp->snd_max = tp->snd_nxt;
