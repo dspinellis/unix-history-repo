@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)parser.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)parser.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -310,6 +310,8 @@ TRACE(("expecting DO got %s %s\n", tokname[got], got == TWORD ? wordtext : ""));
 			}
 			*app = NULL;
 			n1->nfor.args = ap;
+			if (lasttoken != TNL && lasttoken != TSEMI)
+				synexpect(-1);
 		} else {
 #ifndef GDB_HACK
 			static const char argvars[5] = {CTLVAR, VSNORMAL|VSQUOTE,
@@ -321,9 +323,13 @@ TRACE(("expecting DO got %s %s\n", tokname[got], got == TWORD ? wordtext : ""));
 			n2->narg.backquote = NULL;
 			n2->narg.next = NULL;
 			n1->nfor.args = n2;
+			/*
+			 * Newline or semicolon here is optional (but note
+			 * that the original Bourne shell only allowed NL).
+			 */
+			if (lasttoken != TNL && lasttoken != TSEMI)
+				tokpushback++;
 		}
-		if (lasttoken != TNL && lasttoken != TSEMI)
-			synexpect(-1);
 		checkkwd = 2;
 		if ((t = readtoken()) == TDO)
 			t = TDONE;
