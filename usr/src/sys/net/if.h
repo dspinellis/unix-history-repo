@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)if.h	6.7 (Berkeley) %G%
+ *	@(#)if.h	6.8 (Berkeley) %G%
  */
 
 /*
@@ -101,6 +101,32 @@ struct ifnet {
 	(ifq)->ifq_head = (m); \
 	(ifq)->ifq_len++; \
 }
+/*
+ * Packets destined for level-1 protocol input routines
+ * have a pointer to the receiving interface prepended to the data.
+ * IF_DEQUEUEIF extracts and returns this pointer when dequeueing the packet.
+ * IF_ADJ should be used otherwise to adjust for its presence.
+ */
+#define	IF_ADJ(m) { \
+	(m)->m_off += sizeof(struct ifnet *); \
+	(m)->m_len -= sizeof(struct ifnet *); \
+	if ((m)->m_len == 0) { \
+		struct mbuf *n; \
+		MFREE((m), n); \
+		(m) = n; \
+	} \
+}
+#define	IF_DEQUEUEIF(ifq, m, ifp) { \
+	(m) = (ifq)->ifq_head; \
+	if (m) { \
+		if (((ifq)->ifq_head = (m)->m_act) == 0) \
+			(ifq)->ifq_tail = 0; \
+		(m)->m_act = 0; \
+		(ifq)->ifq_len--; \
+		(ifp) = *(mtod((m), struct ifnet **)); \
+		IF_ADJ(m); \
+	} \
+}
 #define	IF_DEQUEUE(ifq, m) { \
 	(m) = (ifq)->ifq_head; \
 	if (m) { \
@@ -186,7 +212,7 @@ struct arpreq {
 #define	ATF_PUBL	8	/* publish entry (respond for other host) */
 
 #ifdef KERNEL
-#ifdef INET
+#if defined(INET) || defined(BBNNET)
 struct	ifqueue	ipintrq;		/* ip packet input queue */
 #endif
 struct	ifqueue rawintrq;		/* raw packet input queue */
