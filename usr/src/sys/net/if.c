@@ -1,4 +1,4 @@
-/*	if.c	4.7	82/02/03	*/
+/*	if.c	4.8	82/02/03	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -28,10 +28,12 @@ ifubareset(uban)
 if_attach(ifp)
 	struct ifnet *ifp;
 {
+	register struct ifnet **p = &ifnet;
 
 COUNT(IF_ATTACH);
-	ifp->if_next = ifnet;
-	ifnet = ifp;
+	while (*p)
+		p = &((*p)->if_next);
+	*p = ifp;
 }
 
 /*ARGSUSED*/
