@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.12	(Berkeley)	83/04/19";
+static char sccsid[] = "@(#)tape.c	3.13	(Berkeley)	83/05/03";
 #endif
 
 #include "restore.h"
@@ -114,8 +114,10 @@ setup()
 		while (--j);
 		endoftapemark.s_spcl.c_checksum = CHECKSUM - i;
 	}
-	vprintf(stdout, "Dump   date: %s", ctime(&spcl.c_date));
-	vprintf(stdout, "Dumped from: %s", ctime(&spcl.c_ddate));
+	if (vflag || command == 't') {
+		fprintf(stdout, "Dump   date: %s", ctime(&spcl.c_date));
+		fprintf(stdout, "Dumped from: %s", ctime(&spcl.c_ddate));
+	}
 	dumptime = spcl.c_ddate;
 	dumpdate = spcl.c_date;
 	if (stat(".", &stbuf) < 0) {
@@ -226,8 +228,8 @@ gethdr:
 		goto again;
 	}
 	if (tmpbuf.c_date != dumpdate || tmpbuf.c_ddate != dumptime) {
-		fprintf(stderr, "Wrong dump date (%s)\n",
-			ctime(&tmpbuf.c_date));
+		fprintf(stderr, "Wrong dump date got: %swanted %s",
+			ctime(&tmpbuf.c_date), ctime(dumpdate));
 		volno = 0;
 		goto again;
 	}
