@@ -1,0 +1,40 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)ik.4	5.1 (Berkeley) %G%
+.\"
+.TH IK 4 "27 July 1983"
+.UC 5
+.SH NAME
+ik \- Ikonas frame buffer, graphics device interface
+.SH SYNOPSIS
+.B "device ik0 at uba? csr 0172460 vector ikintr"
+.SH DESCRIPTION
+.I Ik
+provides an interface to an Ikonas frame buffer graphics device.
+Each minor device is a different frame buffer interface board.
+When the device is opened, its interface registers are mapped,
+via virtual memory, into the user processes address space.
+This allows the user process very high bandwidth to the frame buffer
+with no system call overhead.
+.PP
+Bytes written or read from the device are DMA'ed from or to the interface.
+The frame buffer XY address, its addressing mode, etc. must be set up by the
+user process before calling write or read.
+.PP
+Other communication with the driver is via ioctls.
+The IK_GETADDR ioctl returns the virtual address where the user process can
+find the interface registers.
+The IK_WAITINT ioctl suspends the user process until the ikonas device
+has interrupted (for whatever reason \(em the user process has to set
+the interrupt enables).
+.SH FILES
+/dev/ik
+.SH DIAGNOSTICS
+None.
+.SH BUGS
+An invalid access (e.g., longword) to a mapped interface register
+can cause the system to crash with a machine check.
+A user process could possibly cause infinite interrupts hence
+bringing things to a crawl.
