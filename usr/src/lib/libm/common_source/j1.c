@@ -1,7 +1,7 @@
 #ifndef lint
 static char sccsid[] =
-"@(#)j1.c	4.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)j1.c	4.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /*
 	floating point Bessel's function
@@ -44,11 +44,11 @@ static char sccsid[] =
 */
 
 #include <math.h>
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 #include <errno.h>
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
 static double zero = 0.e0;
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 static double pzero, qzero;
 static double tpi	= .6366197723675813430755350535e0;
 static double pio4	= .7853981633974483096156608458e0;
@@ -166,12 +166,12 @@ y1(arg) double arg;{
 
 	x = arg;
 	if(x <= 0.){
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 		extern double infnan();
 		return(infnan(EDOM));		/* NaN */
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
 		return(zero/zero);	/* IEEE machines: invalid operation */
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 	}
 	if(x > 8.){
 		asympt(x);

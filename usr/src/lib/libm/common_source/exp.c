@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)exp.c	4.3 (Berkeley) 8/21/85; 1.7 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)exp.c	4.3 (Berkeley) 8/21/85; 1.8 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* EXP(X)
  * RETURN THE EXPONENTIAL OF X
@@ -58,12 +58,12 @@ static char sccsid[] =
  * shown.
  */
 
-#if (defined(VAX)||defined(TAHOE))	/* VAX D format */
-#ifdef VAX
+#if defined(vax)||defined(tahoe)	/* VAX D format */
+#ifdef vax
 #define _0x(A,B)	0x/**/A/**/B
-#else	/* VAX */
+#else	/* vax */
 #define _0x(A,B)	0x/**/B/**/A
-#endif	/* VAX */
+#endif	/* vax */
 /* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
@@ -96,7 +96,7 @@ static long        p5x[] = { _0x(bb4b,3431), _0x(2683,95f5)};
 #define       p4    (*(double*)p4x)
 #define       p5    (*(double*)p5x)
 
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe)	*/
 static double
 p1     =  1.6666666666666601904E-1    , /*Hex  2^-3    *  1.555555555553E */
 p2     = -2.7777777777015593384E-3    , /*Hex  2^-9    * -1.6C16C16BEBD93 */
@@ -108,7 +108,7 @@ ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
 lnhuge =  7.1602103751842355450E2     , /*Hex  2^  9   *  1.6602B15B7ECF2 */
 lntiny = -7.5137154372698068983E2     , /*Hex  2^  9   * -1.77AF8EBEAE354 */
 invln2 =  1.4426950408889633870E0     ; /*Hex  2^  0   *  1.71547652B82FE */
-#endif
+#endif	/* defined(vax)||defined(tahoe)	*/
 
 double exp(x)
 double x;
@@ -116,9 +116,9 @@ double x;
 	double scalb(), copysign(), z,hi,lo,c;
 	int k,finite();
 
-#if (!defined(VAX)&&!defined(TAHOE))
+#if !defined(vax)&&!defined(tahoe)
 	if(x!=x) return(x);	/* x is NaN */
-#endif
+#endif	/* !defined(vax)&&!defined(tahoe) */
 	if( x <= lnhuge ) {
 		if( x >= lntiny ) {
 

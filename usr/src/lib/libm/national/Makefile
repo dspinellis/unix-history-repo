@@ -1,5 +1,5 @@
-# @(#)Makefile	1.3 (ucb.elefunt) %G%
-CFLAGS= -DNATIONAL -O
+# @(#)Makefile	1.4 (ucb.elefunt) %G%
+CFLAGS=	-O
 SRCS=cbrt.c sqrt.s support.s
 OBJS=cbrt.o sqrt.o support.o
 

@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.1	(ucb.elefunt)	%G%
+#	@(#)Makefile	1.2	(ucb.elefunt)	%G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a

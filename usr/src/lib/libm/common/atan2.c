@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)atan2.c	1.3 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)atan2.c	1.3 (Berkeley) 8/21/85; 1.6 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* ATAN2(Y,X)
  * RETURN ARG (X+iY)
@@ -90,12 +90,12 @@ static char sccsid[] =
  * shown.
  */
 
-#if (defined(VAX)||defined(TAHOE)) 	/* VAX D format */
-#ifdef VAX
+#if defined(vax)||defined(tahoe) 	/* VAX D format */
+#ifdef vax
 #define _0x(A,B)	0x/**/A/**/B
-#else	/* VAX */
+#else	/* vax */
 #define _0x(A,B)	0x/**/B/**/A
-#endif	/* VAX */
+#endif	/* vax */
 /*static double */
 /*athfhi =  4.6364760900080611433E-1    , /*Hex  2^ -1   *  .ED63382B0DDA7B */
 /*athflo =  1.9338828231967579916E-19   , /*Hex  2^-62   *  .E450059CFE92C0 */
@@ -154,7 +154,7 @@ static long    a11x[] = { _0x(3174,3e07), _0x(2d87,3cf7)};
 #define    a11	(*(double *)a11x)
 static long    a12x[] = { _0x(731a,bd6f), _0x(76d9,2f34)};
 #define    a12	(*(double *)a12x)
-#else 	/* IEEE double */
+#else 	/* defined(vax)||defined(tahoe) */
 static double 
 athfhi =  4.6364760900080609352E-1    , /*Hex  2^ -2   *  1.DAC670561BB4F */
 athflo =  4.6249969567426939759E-18   , /*Hex  2^-58   *  1.5543B8F253271 */
@@ -174,7 +174,7 @@ a8     = -5.8358371008508623523E-2    , /*Hex  2^ -5   * -1.DE125FDDBD793 */
 a9     =  4.9850617156082015213E-2    , /*Hex  2^ -5   *  1.9860524BDD807 */
 a10    = -3.6700606902093604877E-2    , /*Hex  2^ -5   * -1.2CA6C04C6937A */
 a11    =  1.6438029044759730479E-2    ; /*Hex  2^ -6   *  1.0D52174A1BB54 */
-#endif
+#endif 	/* defined(vax)||defined(tahoe) */
 
 double atan2(y,x)
 double  y,x;
@@ -183,10 +183,10 @@ double  y,x;
 	double copysign(),logb(),scalb(),t,z,signy,signx,hi,lo;
 	int finite(), k,m;
 
-#if (!defined(VAX)&&!defined(TAHOE))
+#if !defined(vax)&&!defined(tahoe)
     /* if x or y is NAN */
 	if(x!=x) return(x); if(y!=y) return(y);
-#endif
+#endif	/* !defined(vax)&&!defined(tahoe) */
 
     /* copy down the sign of y and x */
 	signy = copysign(one,y) ;  
@@ -201,7 +201,6 @@ double  y,x;
     /* when x = 0 */
 	if(x==zero) return(copysign(PIo2,signy));
 	    
-#if (!defined(VAX)&&!defined(TAHOE))
     /* when x is INF */
 	if(!finite(x))
 	    if(!finite(y)) 
@@ -211,7 +210,6 @@ double  y,x;
 
     /* when y is INF */
 	if(!finite(y)) return(copysign(PIo2,signy));
-#endif
 
     /* compute y/x */
 	x=copysign(x,one); 
@@ -274,13 +272,13 @@ begin:
 
     /* compute atan(t) for t in [-.4375, .4375] */
 	z = t*t;
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 	z = t*(z*(a1+z*(a2+z*(a3+z*(a4+z*(a5+z*(a6+z*(a7+z*(a8+
 			z*(a9+z*(a10+z*(a11+z*a12))))))))))));
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
 	z = t*(z*(a1+z*(a2+z*(a3+z*(a4+z*(a5+z*(a6+z*(a7+z*(a8+
 			z*(a9+z*(a10+z*a11)))))))))));
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 	z = lo - z; z += t; z += hi;
 
 	return(copysign((signx>zero)?z:PI-z,signy));

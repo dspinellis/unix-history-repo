@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)cbrt.c	1.1 (Berkeley) 5/23/85; 1.3 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)cbrt.c	1.1 (Berkeley) 5/23/85; 1.4 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* kahan's cube root (53 bits IEEE double precision)
  * for IEEE machines only
@@ -32,7 +32,7 @@ static char sccsid[] =
  * On a National machine, it has different ordering; therefore, this code 
  * must be compiled with flag -DNATIONAL. 
  */
-#if (!defined(VAX)&&!defined(TAHOE))
+#if !defined(vax)&&!defined(tahoe)
 
 static unsigned long B1 = 715094163, /* B1 = (682-0.03306235651)*2**20 */
 	             B2 = 696219795; /* B2 = (664-0.03306235651)*2**20 */
@@ -51,11 +51,11 @@ double x;
 	              *pt = (unsigned long *) &t,
 		      mexp,sign;
 
-#ifdef NATIONAL /* ordering of words in a floating points number */
+#ifdef national /* ordering of words in a floating points number */
 	int n0=1,n1=0;
-#else
+#else	/* national */
 	int n0=0,n1=1;
-#endif
+#endif	/* national */
 
 	mexp=px[n0]&0x7ff00000;
 	if(mexp==0x7ff00000) return(x); /* cbrt(NaN,INF) is itself */

@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)log1p.c	1.3 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)log1p.c	1.3 (Berkeley) 8/21/85; 1.6 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* LOG1P(x) 
  * RETURN THE LOGARITHM OF 1+x
@@ -75,13 +75,13 @@ static char sccsid[] =
  * shown.
  */
 
-#if (defined(VAX)||defined(TAHOE))	/* VAX D format */
+#if defined(vax)||defined(tahoe)	/* VAX D format */
 #include <errno.h>
-#ifdef VAX
+#ifdef vax
 #define _0x(A,B)	0x/**/A/**/B
-#else	/* VAX */
+#else	/* vax */
 #define _0x(A,B)	0x/**/B/**/A
-#endif	/* VAX */
+#endif	/* vax */
 /* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   , Hex  2^-39   *  .E7BCD5E4F1D9CC */
@@ -92,12 +92,12 @@ static long     sqrt2x[] = { _0x(04f3,40b5), _0x(de65,33f9)};
 #define    ln2hi    (*(double*)ln2hix)
 #define    ln2lo    (*(double*)ln2lox)
 #define    sqrt2    (*(double*)sqrt2x)
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe)	*/
 static double
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   , /*Hex  2^-33   *  1.A39EF35793C76 */
 sqrt2  =  1.4142135623730951455E0     ; /*Hex  2^  0   *  1.6A09E667F3BCD */
-#endif
+#endif	/* defined(vax)||defined(tahoe)	*/
 
 double log1p(x)
 double x;
@@ -107,9 +107,9 @@ double x;
 	double logb(),copysign(),scalb(),log__L(),z,s,t,c;
 	int k,finite();
 
-#if (!defined(VAX)&&!defined(TAHOE))
+#if !defined(vax)&&!defined(tahoe)
 	if(x!=x) return(x);	/* x is NaN */
-#endif
+#endif	/* !defined(vax)&&!defined(tahoe) */
 
 	if(finite(x)) {
 	   if( x > negone ) {
@@ -133,19 +133,19 @@ double x;
 	/* end of if (x > negone) */
 
 	    else {
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
 		extern double infnan();
 		if ( x == negone )
 		    return (infnan(-ERANGE));	/* -INF */
 		else
 		    return (infnan(EDOM));	/* NaN */
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
 		/* x = -1, return -INF with signal */
 		if ( x == negone ) return( negone/zero );
 
 		/* negative argument for log, return NaN with signal */
 	        else return ( zero / zero );
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 	    }
 	}
     /* end of if (finite(x)) */

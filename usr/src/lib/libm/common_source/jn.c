@@ -1,7 +1,7 @@
 #ifndef lint
 static char sccsid[] =
-"@(#)jn.c	4.2 (Berkeley) 8/21/85; 1.3 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)jn.c	4.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /*
 	floating point Bessel's function of
@@ -36,11 +36,11 @@ static char sccsid[] =
 */
 
 #include <math.h>
-#if defined(VAX)
+#if defined(vax)||defined(tahoe)
 #include <errno.h>
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
 static double zero = 0.e0;
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 
 double
 jn(n,x) int n; double x;{
@@ -92,12 +92,12 @@ yn(n,x) int n; double x;{
 	double y0(), y1();
 
 	if (x <= 0) {
-#if defined(VAX)
+#if defined(vax)||defined(tahoe)
 		extern double infnan();
 		return(infnan(EDOM));	/* NaN */
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
 		return(zero/zero);	/* IEEE machines: invalid operation */
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 	}
 	sign = 1;
 	if(n<0){

@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)cabs.c	1.2 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)cabs.c	1.2 (Berkeley) 8/21/85; 1.6 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* CABS(Z)
  * RETURN THE ABSOLUTE VALUE OF THE COMPLEX NUMBER  Z = X + iY
@@ -90,12 +90,12 @@ struct { double x, y;} z;
  * shown.
  */
 
-#if (defined(VAX)||defined(TAHOE))	/* VAX D format */
-#ifdef VAX
+#if defined(vax)||defined(tahoe)	/* VAX D format */
+#ifdef vax
 #define _0x(A,B)	0x/**/A/**/B
-#else	/* VAX */
+#else	/* vax */
 #define _0x(A,B)	0x/**/B/**/A
-#endif	/* VAX */
+#endif	/* vax */
 /* static double */
 /* r2p1hi =  2.4142135623730950345E0     , Hex  2^  2   *  .9A827999FCEF32 */
 /* r2p1lo =  1.4349369327986523769E-17   , Hex  2^-55   *  .84597D89B3754B */
@@ -106,12 +106,12 @@ static long     sqrt2x[] = { _0x(04f3,40b5), _0x(de65,33f9)};
 #define   r2p1hi    (*(double*)r2p1hix)
 #define   r2p1lo    (*(double*)r2p1lox)
 #define    sqrt2    (*(double*)sqrt2x)
-#else		/* IEEE double format */
+#else	/* defined(vax)||defined(tahoe)	*/
 static double
 r2p1hi =  2.4142135623730949234E0     , /*Hex  2^1     *  1.3504F333F9DE6 */
 r2p1lo =  1.2537167179050217666E-16   , /*Hex  2^-53   *  1.21165F626CDD5 */
 sqrt2  =  1.4142135623730951455E0     ; /*Hex  2^  0   *  1.6A09E667F3BCD */
-#endif
+#endif	/* defined(vax)||defined(tahoe)	*/
 
 double hypot(x,y)
 double x, y;
@@ -122,11 +122,9 @@ double x, y;
 	double copysign(),scalb(),logb(),sqrt(),t,r;
 	int finite(), exp;
 
-#if (!defined(VAX)&&!defined(TAHOE))
 	if(finite(x))
 	    if(finite(y))
 	    {	
-#endif
 		x=copysign(x,one);
 		y=copysign(y,one);
 		if(y > x) 
@@ -151,7 +149,6 @@ double x, y;
 		r=y/r;
 		return(x+r);
 
-#if (!defined(VAX)&&!defined(TAHOE))
 	    }
 
 	    else if(y==y)   	   /* y is +-INF */
@@ -163,9 +160,10 @@ double x, y;
 	         return (copysign(x,one));
 	else if(finite(y))
 	         return(x);		   /* x is NaN, y is finite */
+#if !defined(vax)&&!defined(tahoe)
 	else if(y!=y) return(y);  /* x and y is NaN */
+#endif	/* !defined(vax)&&!defined(tahoe) */
 	else return(copysign(y,one));   /* y is INF */
-#endif
 }
 
 /* A faster but less accurate version of cabs(x,y) */

@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)acosh.c	1.2 (Berkeley) 8/21/85; 1.4 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)acosh.c	1.2 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
+#endif	/* not lint */
 /* ACOSH(X)
  * RETURN THE INVERSE HYPERBOLIC COSINE OF X
  * DOUBLE PRECISION (VAX D FORMAT 56 BITS, IEEE DOUBLE 53 BITS)
@@ -52,12 +52,12 @@ static char sccsid[] =
  * shown.
  */
 
-#if (defined(VAX)||defined(TAHOE))	/* VAX D format */
-#ifdef VAX
+#if defined(vax)||defined(tahoe)	/* VAX D format */
+#ifdef vax
 #define _0x(A,B)	0x/**/A/**/B
-#else	/* VAX */
+#else	/* vax */
 #define _0x(A,B)	0x/**/B/**/A
-#endif	/* VAX */
+#endif	/* vax */
 /* static double */
 /* ln2hi  =  6.9314718055829871446E-1    , Hex  2^  0   *  .B17217F7D00000 */
 /* ln2lo  =  1.6465949582897081279E-12   ; Hex  2^-39   *  .E7BCD5E4F1D9CC */
@@ -65,20 +65,20 @@ static long     ln2hix[] = { _0x(7217,4031), _0x(0000,f7d0)};
 static long     ln2lox[] = { _0x(bcd5,2ce7), _0x(d9cc,e4f1)};
 #define    ln2hi    (*(double*)ln2hix)
 #define    ln2lo    (*(double*)ln2lox)
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
 static double
 ln2hi  =  6.9314718036912381649E-1    , /*Hex  2^ -1   *  1.62E42FEE00000 */
 ln2lo  =  1.9082149292705877000E-10   ; /*Hex  2^-33   *  1.A39EF35793C76 */
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
 
 double acosh(x)
 double x;
 {	
 	double log1p(),sqrt(),t,big=1.E20; /* big+1==big */
 
-#if (!defined(VAX)&&!defined(TAHOE))
+#if !defined(vax)&&!defined(tahoe)
 	if(x!=x) return(x);	/* x is NaN */
-#endif
+#endif	/* !defined(vax)&&!defined(tahoe) */
 
     /* return log1p(x) + log(2) if x is large */
 	if(x>big) {t=log1p(x)+ln2lo; return(t+ln2hi);} 

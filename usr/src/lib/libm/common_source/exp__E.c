@@ -13,8 +13,8 @@
 
 #ifndef lint
 static char sccsid[] =
-"@(#)exp__E.c	1.2 (Berkeley) 8/21/85; 1.5 (ucb.elefunt) %G%";
-#endif not lint
+"@(#)exp__E.c	1.2 (Berkeley) 8/21/85; 1.6 (ucb.elefunt) %G%";
+#endif	/* not lint */
 
 /* exp__E(x,c)
  * ASSUMPTION: c << x  SO THAT  fl(x+c)=x.
@@ -67,12 +67,12 @@ static char sccsid[] =
  * shown.
  */
 
-#if (defined(VAX)||defined(TAHOE))	/* VAX D format */
-#ifdef VAX
+#if defined(vax)||defined(tahoe)	/* VAX D format */
+#ifdef vax
 #define _0x(A,B)	0x/**/A/**/B
-#else	/* VAX */
+#else	/* vax */
 #define _0x(A,B)	0x/**/B/**/A
-#endif	/* VAX */
+#endif	/* vax */
 /* static double */
 /* p1     =  1.5150724356786683059E-2    , Hex  2^ -6   *  .F83ABE67E1066A */
 /* p2     =  6.3112487873718332688E-5    , Hex  2^-13   *  .845B4248CD0173 */
@@ -89,13 +89,13 @@ static long        q3x[] = { _0x(9eb4,36c9), _0x(c395,604a)};
 #define       q1    (*(double*)q1x)
 #define       q2    (*(double*)q2x)
 #define       q3    (*(double*)q3x)
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe)	*/
 static double 
 p1     =  1.3887401997267371720E-2    , /*Hex  2^ -7   *  1.C70FF8B3CC2CF */
 p2     =  3.3044019718331897649E-5    , /*Hex  2^-15   *  1.15317DF4526C4 */
 q1     =  1.1110813732786649355E-1    , /*Hex  2^ -4   *  1.C719538248597 */
 q2     =  9.9176615021572857300E-4    ; /*Hex  2^-10   *  1.03FC4CB8C98E8 */
-#endif
+#endif	/* defined(vax)||defined(tahoe)	*/
 
 double exp__E(x,c)
 double x,c;
@@ -105,11 +105,11 @@ double x,c;
 	if(copysign(x,one)>small) {
            z = x*x  ;
 	   p = z*( p1 +z* p2 );
-#if (defined(VAX)||defined(TAHOE))
+#if defined(vax)||defined(tahoe)
            q = z*( q1 +z*( q2 +z* q3 ));
-#else	/* IEEE double */
+#else	/* defined(vax)||defined(tahoe) */
            q = z*( q1 +z*  q2 );
-#endif
+#endif	/* defined(vax)||defined(tahoe) */
            xp= x*p     ; 
 	   xh= x*half  ;
            w = xh-(q-xp)  ;
