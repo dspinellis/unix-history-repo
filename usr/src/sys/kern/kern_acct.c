@@ -1,9 +1,10 @@
-/*
- * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986, 1989 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)kern_acct.c	7.16 (Berkeley) %G%
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)kern_acct.c	7.17 (Berkeley) %G%
  */
 
 #include "param.h"
