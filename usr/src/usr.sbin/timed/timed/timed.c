@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)timed.c	2.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)timed.c	2.3 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -422,6 +422,7 @@ char **argv;
 				if ((from.sin_addr.s_addr & ntp->mask) ==
 				    ntp->net) {
 					ntp->status = SLAVE;
+					rmnetmachs(ntp);
 					break;
 				}
 			}

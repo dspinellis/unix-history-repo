@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)master.c	2.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)master.c	2.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
@@ -420,6 +420,39 @@ struct sockaddr_in *addr;
 	header = ON;
 #endif
 	return(ret);
+}
+
+/*
+ * Remove all the machines from the host table that exist on the given
+ * network.  This is called when a master transitions to a slave on a
+ * given network.
+ */
+
+rmnetmachs(ntp)
+	register struct netinfo *ntp;
+{
+	int i;
+
+	if (trace)
+		prthp();
+	for (i = 1; i < slvcount; i++)
+		if ((hp[i].addr.sin_addr.s_addr & ntp->mask) == ntp->net)
+			rmmach(i--);
+	if (trace)
+		prthp();
+}
+
+/*
+ * remove the machine with the given index in the host table.
+ */
+rmmach(ind)
+	int ind;
+{
+	if (trace)
+		fprintf(fd, "rmmach: %s\n", hp[ind].name);
+	if (slvcount-ind-1 > 0)
+		bcopy(&hp[ind+1], &hp[ind], (slvcount-ind-1)*sizeof(hp[ind]));
+	slvcount--;
 }
 
 prthp()
