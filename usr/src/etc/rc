@@ -1,4 +1,4 @@
-#	@(#)rc	5.17 (Berkeley) %G%
+#	@(#)rc	5.18 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -54,7 +54,7 @@ trap "echo 'Reboot interrupted'; exit 1" 3
 
 swapon -a
 
-umount -a
+umount -a >/dev/null 2>&1
 mount -a -t nonfs
 rm -f /fastboot		# XXX
 
@@ -65,9 +65,11 @@ rm -f /var/spool/uucp/STST/*
 (cd /var/run; rm -rf *; cp /dev/null utmp; chmod 644 utmp)
 
 # set hostname, turn on network
+echo -n 'starting network'
 . /etc/netstart
+echo '.'
 
-mount -a -t nfs &	# XXX shouldn't need background
+mount -a -t nfs >/dev/null 2>&1 &	# XXX shouldn't need background
 
 echo -n 'starting system logger'
 rm -f /dev/log
@@ -106,14 +108,14 @@ fi
 
 echo preserving editor files
 (cd /var/tmp; /usr/libexec/ex3.7preserve -a)
-(cd /var/tmp; rm Ex[0-9][0-9][0-9][0-9][0-9] Rx[0-9][0-9][0-9][0-9][0-9])
+(cd /var/tmp; rm -f Ex[0-9][0-9][0-9][0-9][0-9] Rx[0-9][0-9][0-9][0-9][0-9])
 
 echo clearing /tmp
 
 # prune quickly with one rm, then use find to clean up /tmp/[lq]*
 # (not needed with mfs /tmp, but doesn't hurt there...)
 (cd /tmp; rm -rf [a-km-pr-zA-Z]* )
-(cd /tmp; find . ! -name . ! -name lost+found ! -name quotas -exec rm -r {} \; )
+(cd /tmp; find . ! -name . ! -name lost+found ! -name quotas -exec rm -rf {} \;)
 
 echo 'turning on accounting';	accton /var/account/acct
 
@@ -141,7 +143,7 @@ fi
 
 echo -n ' printer';		lpd
 
-echo -n ' portmap';		portmap &
+echo -n ' portmap';		portmap
 echo -n ' mountd';		mountd
 echo -n ' nfsd';		nfsd -u 0,0,4 -t 0,0
 echo -n ' nfsiod';		nfsiod 4
