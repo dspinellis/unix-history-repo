@@ -96,16 +96,15 @@ char	dont[] = { IAC, DONT, '%', 'c', 0 };
 char	will[] = { IAC, WILL, '%', 'c', 0 };
 char	wont[] = { IAC, WONT, '%', 'c', 0 };
 
-static char	sibuf[BUFSIZ], *sbp;
-static char	tibuf[BUFSIZ], *tbp;
+static Ring	netiring, ttyiring;
+static char	netibuf[BUFSIZ];
+static char	ttyibuf[BUFSIZ];
 static fd_set ibits, obits, xbits;
 
 
 int
 	connected,
 	net,
-	scc,
-	tcc,
 	showoptions,
 	In3270,		/* Are we in 3270 mode? */
 	ISend,		/* trying to send network data in */
@@ -197,10 +196,10 @@ init_telnet()
     SB_CLEAR();
     ClearArray(hisopts);
     ClearArray(myopts);
-    sbp = sibuf;
-    tbp = tibuf;
+    ring_init(&netiring, netibuf, sizeof netibuf);
+    ring_init(&ttyiring, ttyibuf, sizeof ttyibuf);
 
-    connected = net = scc = tcc = In3270 = ISend = donebinarytoggle = 0;
+    connected = net = In3270 = ISend = donebinarytoggle = 0;
     telnetport = 0;
 
 #if	defined(unix) && defined(TN3270)
@@ -457,18 +456,34 @@ SetIn3270()
 #endif	/* defined(TN3270) */
 
 
-static void
+static int
 telrcv()
 {
     register int c;
-    static int telrcv_state = TS_DATA;
-#   if defined(TN3270)
-    register int Scc;
-    register char *Sbp;
-#   endif /* defined(TN3270) */
+    register int scc;
+    register char *sbp;
+    int count;
+    int returnValue = 0;
 
-    while ((scc > 0) && (TTYROOM() > 2)) {
-	c = *sbp++ & 0xff, scc--;
+    scc = 0;
+    count = 0;
+    while (TTYROOM() > 2) {
+	if (scc == 0) {
+	    if (count) {
+		ring_sent_acked(&netiring, count);
+		returnValue = 1;
+		count = 0;
+	    }
+	    sbp = netiring.send;
+	    scc = ring_unsent_consecutive(&netiring);
+	    if (scc == 0) {
+		/* No more data coming in */
+		break;
+	    }
+	}
+
+	c = *sbp++ & 0xff, scc--; count++;
+
 	switch (telrcv_state) {
 
 	case TS_CR:
@@ -491,18 +506,14 @@ telrcv()
 #	    if defined(TN3270)
 	    if (In3270) {
 		*Ifrontp++ = c;
-		Sbp = sbp;
-		Scc = scc;
-		while (Scc > 0) {
-		    c = *Sbp++ & 0377, Scc--;
+		while (scc > 0) {
+		    c = *sbp++ & 0377, scc--; count++;
 		    if (c == IAC) {
 			telrcv_state = TS_IAC;
 			break;
 		    }
 		    *Ifrontp++ = c;
 		}
-		sbp = Sbp;
-		scc = Scc;
 	    } else
 #	    endif /* defined(TN3270) */
 		    /*
@@ -516,12 +527,12 @@ telrcv()
 		if (scc > 0) {
 		    c = *sbp&0xff;
 		    if (c == 0) {
-			sbp++, scc--;
+			sbp++, scc--; count++;
 			/* a "true" CR */
 			TTYADD('\r');
 		    } else if (!hisopts[TELOPT_ECHO] &&
 					(c == '\n')) {
-			sbp++, scc--;
+			sbp++, scc--; count++;
 			TTYADD('\n');
 		    } else {
 			TTYADD('\r');
@@ -683,6 +694,96 @@ telrcv()
 	    }
 	}
     }
+    ring_sent_acked(&netiring, count);
+    return returnValue||count;
+}
+
+static int
+telsnd(ring)
+Ring	*ring;			/* Input ring */
+{
+    int tcc;
+    int count;
+    int returnValue = 0;
+    char *tbp;
+
+    tcc = 0;
+    count = 0;
+    while (NETROOM() > 2) {
+	register int sc;
+	register int c;
+
+	if (tcc == 0) {
+	    if (count) {
+		ring_sent_acked(&ttyiring, count);
+		returnValue = 1;
+		count = 0;
+	    }
+	    tbp = ttyiring.send;
+	    tcc = ring_unsent_consecutive(&ttyiring);
+	    if (tcc == 0) {
+		break;
+	    }
+	}
+	c = *tbp++ & 0xff, sc = strip(c), tcc--; count++;
+	if (sc == escape) {
+	    command(0);
+	    tcc = 0;
+	    flushline = 1;
+	    break;
+	} else if (MODE_LINE(globalmode) && (sc == echoc)) {
+	    if (tcc > 0 && strip(*tbp) == echoc) {
+		tcc--; tbp++; count++;
+	    } else {
+		dontlecho = !dontlecho;
+		settimer(echotoggle);
+		setconnmode();
+		flushline = 1;
+		break;
+	    }
+	}
+	if (localchars) {
+	    if (TerminalSpecialChars(sc) == 0) {
+		break;
+	    }
+	}
+	if (!myopts[TELOPT_BINARY]) {
+	    switch (c) {
+	    case '\n':
+		    /*
+		     * If we are in CRMOD mode (\r ==> \n)
+		     * on our local machine, then probably
+		     * a newline (unix) is CRLF (TELNET).
+		     */
+		if (MODE_LOCAL_CHARS(globalmode)) {
+		    NETADD('\r');
+		}
+		NETADD('\n');
+		flushline = 1;
+		break;
+	    case '\r':
+		if (!crlf) {
+		    NET2ADD('\r', '\0');
+		} else {
+		    NET2ADD('\r', '\n');
+		}
+		flushline = 1;
+		break;
+	    case IAC:
+		NET2ADD(IAC, IAC);
+		break;
+	    default:
+		NETADD(c);
+		break;
+	    }
+	} else if (c == IAC) {
+	    NET2ADD(IAC, IAC);
+	} else {
+	    NETADD(c);
+	}
+    }
+    ring_sent_acked(&ttyiring, count);
+    return returnValue||count;		/* Non-zero if we did anything */
 }
 
 #if	defined(TN3270)
@@ -756,10 +857,6 @@ int	block;			/* should we block in the select ? */
     int returnValue = 0;
     static struct timeval TimeValue = { 0 };
 
-    if (scc < 0 && tcc < 0) {
-	return -1;
-    }
-
     if ((!MODE_LINE(globalmode) || flushline) && NETBYTES()) {
 	FD_SET(net, &obits);
     } 
@@ -772,7 +869,7 @@ int	block;			/* should we block in the select ? */
 	FD_SET(tin, &ibits);
     }
 #else	/* defined(TN3270) */
-    if ((tcc == 0) && NETROOM()) {
+    if (ring_empty_count(&netiring) && NETROOM()) {
 	FD_SET(tin, &ibits);
     }
 #endif	/* defined(TN3270) */
@@ -848,10 +945,7 @@ int	block;			/* should we block in the select ? */
 	int canread;
 
 	FD_CLR(net, &ibits);
-	if (scc == 0) {
-	    sbp = sibuf;
-	}
-	canread = sibuf + sizeof sibuf - (sbp+scc);
+	canread = ring_empty_consecutive(&netiring);
 #if	!defined(SO_OOBINLINE)
 	    /*
 	     * In 4.2 (and some early 4.3) systems, the
@@ -907,7 +1001,7 @@ int	block;			/* should we block in the select ? */
 	}
 	settimer(didnetreceive);
 #else	/* !defined(SO_OOBINLINE) */
-	c = recv(net, sbp+scc, canread, 0);
+	c = recv(net, netiring.add, canread, 0);
 #endif	/* !defined(SO_OOBINLINE) */
 	if (c < 0 && errno == EWOULDBLOCK) {
 	    c = 0;
@@ -915,9 +1009,9 @@ int	block;			/* should we block in the select ? */
 	    return -1;
 	}
 	if (netdata) {
-	    Dump('<', sbp+scc, c);
+	    Dump('<', netiring.add, c);
 	}
-	scc += c;
+	ring_added(&netiring, c);
 	returnValue = 1;
     }
 
@@ -931,10 +1025,7 @@ int	block;			/* should we block in the select ? */
 #endif	/* defined(MSDOS) */
 				    {
 	FD_CLR(tin, &ibits);
-	if (tcc == 0) {
-	    tbp = tibuf;	/* nothing left, reset */
-	}
-	c = TerminalRead(tin, tbp, tibuf+sizeof tibuf - tbp);
+	c = TerminalRead(tin, ttyiring.add, ring_empty_consecutive(&ttyiring));
 	if (c < 0 && errno == EWOULDBLOCK) {
 	    c = 0;
 	} else {
@@ -942,97 +1033,30 @@ int	block;			/* should we block in the select ? */
 	    /* EOF detection for line mode!!!! */
 	    if (c == 0 && MODE_LOCAL_CHARS(globalmode)) {
 			/* must be an EOF... */
-		*tbp = termEofChar;
+		*ttyiring.add = termEofChar;
 		c = 1;
 	    }
 #endif	/* defined(unix) */
 	    if (c <= 0) {
-		tcc = c;
 		return -1;
 	    }
 	}
-	tcc += c;
+	ring_added(&ttyiring, c);
 	returnValue = 1;		/* did something useful */
     }
 
 #   if defined(TN3270)
-    if (tcc > 0) {
+    if (ring_unsent_count(&ttyiring)) {
 	if (In3270) {
-	    c = DataFromTerminal(tbp, tcc);
+	    c = DataFromTerminal(ttyiring.send,
+					ring_unsent_consecutive(&ttyiring));
 	    if (c) {
 		returnValue = 1;
 	    }
-	    tcc -= c;
-	    tbp += c;
+	    ring_sent_acked(&ttyiring, c);
 	} else {
 #   endif /* defined(TN3270) */
-	    returnValue = 1;
-	    while (tcc > 0) {
-		register int sc;
-
-		if (NETROOM() < 2) {
-		    flushline = 1;
-		    break;
-		}
-		c = *tbp++ & 0xff, sc = strip(c), tcc--;
-		if (sc == escape) {
-		    command(0);
-		    tcc = 0;
-		    flushline = 1;
-		    break;
-		} else if (MODE_LINE(globalmode) && (sc == echoc)) {
-		    if (tcc > 0 && strip(*tbp) == echoc) {
-			tbp++;
-			tcc--;
-		    } else {
-			dontlecho = !dontlecho;
-			settimer(echotoggle);
-			setconnmode();
-			tcc = 0;
-			flushline = 1;
-			break;
-		    }
-		}
-		if (localchars) {
-		    if (TerminalSpecialChars(sc) == 0) {
-			break;
-		    }
-		}
-		if (!myopts[TELOPT_BINARY]) {
-		    switch (c) {
-		    case '\n':
-			    /*
-			     * If we are in CRMOD mode (\r ==> \n)
-			     * on our local machine, then probably
-			     * a newline (unix) is CRLF (TELNET).
-			     */
-			if (MODE_LOCAL_CHARS(globalmode)) {
-			    NETADD('\r');
-			}
-			NETADD('\n');
-			flushline = 1;
-			break;
-		    case '\r':
-			if (!crlf) {
-			    NET2ADD('\r', '\0');
-			} else {
-			    NET2ADD('\r', '\n');
-			}
-			flushline = 1;
-			break;
-		    case IAC:
-			NET2ADD(IAC, IAC);
-			break;
-		    default:
-			NETADD(c);
-			break;
-		    }
-		} else if (c == IAC) {
-		    NET2ADD(IAC, IAC);
-		} else {
-		    NETADD(c);
-		}
-	    }
+	    returnValue |= telsnd(&ttyiring);
 #   if defined(TN3270)
 	}
     }
@@ -1043,10 +1067,9 @@ int	block;			/* should we block in the select ? */
 	FD_CLR(net, &obits);
 	returnValue = netflush();
     }
-    if (scc > 0) {
+    if (ring_unsent_count(&netiring)) {
 #	if !defined(TN3270)
-	telrcv();
-	returnValue = 1;
+	returnValue |= telrcv();
 #	else /* !defined(TN3270) */
 	returnValue = Push3270();
 #	endif /* !defined(TN3270) */
@@ -1082,8 +1105,6 @@ telnet()
     tout = fileno(stdout);
     tin = fileno(stdin);
     setconnmode();
-    scc = 0;
-    tcc = 0;
     FD_ZERO(&ibits);
     FD_ZERO(&obits);
     FD_ZERO(&xbits);
@@ -1115,6 +1136,15 @@ telnet()
 
 #   if !defined(TN3270)
     for (;;) {
+	int schedValue;
+
+	while ((schedValue = Scheduler(0)) != 0) {
+	    if (schedValue == -1) {
+		setcommandmode();
+		return;
+	    }
+	}
+
 	if (Scheduler(SCHED_BLOCK) == -1) {
 	    setcommandmode();
 	    return;
