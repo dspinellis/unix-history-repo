@@ -10,7 +10,7 @@
  * their  experiences (good or bad) with these elementary function  codes,
  * using "sendbug 4bsd-bugs@BERKELEY", to the authors.
  */
-/* @(#)trig.h	1.1	1.1 (ucb.elefunt) %G% */
+/* @(#)trig.h	5.1	5.1 (ucb.elefunt) %G% */
 #if defined(vax)||defined(tahoe)
 #ifdef vax
 #define _0x(A,B)	0x/**/A/**/B
