@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rlogind.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)rlogind.c	5.2.1.1 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -70,7 +70,6 @@ int	cleanup();
 int	netf;
 extern	errno;
 char	*line;
-extern	char	*inet_ntoa();
 
 doit(f, fromp)
 	int f;
@@ -78,7 +77,6 @@ doit(f, fromp)
 {
 	int i, p, t, pid, on = 1;
 	register struct hostent *hp;
-	struct hostent hostent;
 	char c;
 
 	alarm(60);
@@ -90,11 +88,10 @@ doit(f, fromp)
 	hp = gethostbyaddr(&fromp->sin_addr, sizeof (struct in_addr),
 		fromp->sin_family);
 	if (hp == 0) {
-		/*
-		 * Only the name is used below.
-		 */
-		hp = &hostent;
-		hp->h_name = inet_ntoa(fromp->sin_addr);
+		char buf[BUFSIZ];
+
+		fatal(f, sprintf(buf, "Host name for your address (%s) unknown",
+			inet_ntoa(fromp->sin_addr)));
 	}
 	if (fromp->sin_family != AF_INET ||
 	    fromp->sin_port >= IPPORT_RESERVED)
@@ -150,7 +147,6 @@ gotpty:
 	ioctl(p, TIOCPKT, &on);
 	signal(SIGTSTP, SIG_IGN);
 	signal(SIGCHLD, cleanup);
-	setpgrp(0, 0);
 	protocol(f, p);
 	cleanup();
 }
