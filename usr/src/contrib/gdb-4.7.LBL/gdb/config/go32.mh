@@ -1,0 +1,6 @@
+
+MH_CFLAGS=-D__GO32__ -D__MSDOS__
+XDEPFILES= go32-xdep.o ser-go32.o
+XM_FILE= xm-go32.h
+NAT_FILE= nm-go32.h
+NATDEPFILES= go32-nat.o
