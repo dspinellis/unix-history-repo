@@ -1,17 +1,17 @@
-/*	ip_input.c	1.50	82/10/05	*/
+/*	ip_input.c	1.51	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/protosw.h"
 #include "../h/socket.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
 #include "../net/if.h"
-#include "../net/ip.h"			/* belongs before in.h */
-#include "../net/ip_var.h"
-#include "../net/ip_icmp.h"
-#include "../net/tcp.h"
+#include "../netinet/ip.h"			/* belongs before in.h */
+#include "../netinet/ip_var.h"
+#include "../netinet/ip_icmp.h"
+#include "../netinet/tcp.h"
 #include <time.h>
 #include "../h/kernel.h"
 #include <errno.h>

@@ -1,14 +1,14 @@
-/*	raw_imp.c	4.12	82/06/20	*/
+/*	raw_imp.c	4.13	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
 #include "../h/socketvar.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
 #include "../net/if.h"
-#include "../net/if_imp.h"
+#include "../netimp/if_imp.h"
 #include "../net/raw_cb.h"
 #include <errno.h>
 

@@ -1,4 +1,4 @@
-/*	tcp_debug.c	4.4	82/06/26	*/
+/*	tcp_debug.c	4.5	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,23 +7,23 @@
 #include "../h/socketvar.h"
 #define PRUREQUESTS
 #include "../h/protosw.h"
-#include "../net/in.h"
+#include "../netinet/in.h"
 #include "../net/route.h"
-#include "../net/in_pcb.h"
-#include "../net/in_systm.h"
+#include "../netinet/in_pcb.h"
+#include "../netinet/in_systm.h"
 #include "../net/if.h"
-#include "../net/ip.h"
-#include "../net/ip_var.h"
-#include "../net/tcp.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
+#include "../netinet/tcp.h"
 #define TCPSTATES
-#include "../net/tcp_fsm.h"
-#include "../net/tcp_seq.h"
+#include "../netinet/tcp_fsm.h"
+#include "../netinet/tcp_seq.h"
 #define	TCPTIMERS
-#include "../net/tcp_timer.h"
-#include "../net/tcp_var.h"
-#include "../net/tcpip.h"
+#include "../netinet/tcp_timer.h"
+#include "../netinet/tcp_var.h"
+#include "../netinet/tcpip.h"
 #define	TANAMES
-#include "../net/tcp_debug.h"
+#include "../netinet/tcp_debug.h"
 #include <errno.h>
 
 int	tcpconsdebug = 0;

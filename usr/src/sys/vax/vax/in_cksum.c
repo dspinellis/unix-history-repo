@@ -1,9 +1,9 @@
-/* in_cksum.c 1.12 82/06/20 */
+/* in_cksum.c 1.13 82/10/09 */
 
 #include <sys/types.h>
 #include "../h/mbuf.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
 
 /*
  * Checksum routine for Internet Protocol family headers.

@@ -1,4 +1,4 @@
-/*	in_pcb.c	4.31	82/09/26	*/
+/*	in_pcb.c	4.32	82/10/09	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -7,11 +7,11 @@
 #include "../h/mbuf.h"
 #include "../h/socket.h"
 #include "../h/socketvar.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
 #include "../net/if.h"
 #include "../net/route.h"
-#include "../net/in_pcb.h"
+#include "../netinet/in_pcb.h"
 #include "../h/protosw.h"
 
 struct	in_addr zeroin_addr;

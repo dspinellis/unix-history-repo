@@ -1,4 +1,4 @@
-/*	if_loop.c	4.13	82/06/20	*/
+/*	if_loop.c	4.14	82/10/09	*/
 
 /*
  * Loopback interface driver for protocol testing and timing.
@@ -8,11 +8,12 @@
 #include "../h/systm.h"
 #include "../h/mbuf.h"
 #include "../h/socket.h"
-#include "../net/in.h"
-#include "../net/in_systm.h"
+#include "../netinet/in.h"
+#include "../netinet/in_systm.h"
 #include "../net/if.h"
-#include "../net/ip.h"
-#include "../net/ip_var.h"
+#include "../net/netisr.h"
+#include "../netinet/ip.h"
+#include "../netinet/ip_var.h"
 #include "../h/mtpr.h"
 #include "../net/route.h"
 #include <errno.h>
