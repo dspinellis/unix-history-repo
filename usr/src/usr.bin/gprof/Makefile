@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.14 (Berkeley) %G%
+#	@(#)Makefile	5.15 (Berkeley) %G%
 #
 CFLAGS=	-O
 LIBC=	/lib/libc.a
@@ -32,11 +32,11 @@ gprof: ${OBJS} ${LIBC}
 
 gcrt0.h: FRC
 	-if [ -r gcrt0.h ] && \
-		cmp -s gcrt0.h ../../lib/libc/${MACHINE}/csu/gmon.h; then \
+		cmp -s gcrt0.h ../../lib/libc/csu/${MACHINE}/gmon.h; then \
 		:; \
 	else \
 		rm -f gcrt0.h; \
-		cp ../../lib/libc/${MACHINE}/csu/gmon.h gcrt0.h; \
+		cp ../../lib/libc/csu/${MACHINE}/gmon.h gcrt0.h; \
 	fi
 
 clean:
