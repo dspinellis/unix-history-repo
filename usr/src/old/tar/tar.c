@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)tar.c	4.9 (Berkeley) 82/05/07";
+static	char *sccsid = "@(#)tar.c	4.10 (Berkeley) 82/09/11";
 
 /*
  * Tape Archival Program
@@ -7,6 +7,7 @@ static	char *sccsid = "@(#)tar.c	4.9 (Berkeley) 82/05/07";
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <dir.h>
+#include <sys/ioctl.h>
 #include <sys/mtio.h>
 #include <signal.h>
 
@@ -367,7 +368,7 @@ putfile(longname, shortname)
 		fprintf(stderr, "tar: %s: cannot open file\n", longname);
 		return;
 	}
-	stat(shortname, &stbuf);
+	lstat(shortname, &stbuf);
 	if (tfile != NULL && checkupdate(longname) == 0) {
 		close(infile);
 		return;
@@ -554,6 +555,8 @@ gotit:
 			if (vflag)
 				fprintf(stderr, "x %s symbolic link to %s\n",
 				  dblock.dbuf.name, dblock.dbuf.linkname);
+#ifdef notdef
+			/* ignore alien orders */
 			chown(dblock.dbuf.name, stbuf.st_uid, stbuf.st_gid);
 			if (mflag == 0) {
 				time_t timep[2];
@@ -564,6 +567,7 @@ gotit:
 			}
 			if (pflag)
 				chmod(dblock.dbuf.name, stbuf.st_mode & 07777);
+#endif
 			continue;
 		}
 		if (dblock.dbuf.linkflag == '1') {
