@@ -1,4 +1,4 @@
-	@(#)syscalls.master	8.1 (Berkeley) %G%
+	@(#)syscalls.master	7.47 (Berkeley) %G%
 ; System call name/number master file.
 ; Processed to created init_sysent.c, syscalls.c and syscall.h.
 
@@ -25,7 +25,7 @@
 ; redistributions should be placed in the reserved range at the end
 ; of the current calls.
 
-0	STD	0 nosys indir
+0	STD	0 nosys syscall
 1	STD	1 exit
 2	STD	0 fork
 3	STD	3 read
@@ -261,7 +261,7 @@
 195	STD	2 setrlimit
 196	STD	4 getdirentries
 197	STD	8 mmap
-198	STD	0 nosys __indir
+198	STD	0 nosys __syscall
 199	STD	5 lseek
 200	STD	4 truncate
 201	STD	4 ftruncate
