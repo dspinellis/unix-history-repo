@@ -12,21 +12,22 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)ln.c	4.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)ln.c	4.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
 
 static int	dirflag,			/* undocumented force flag */
 		sflag,				/* symbolic, not hard, link */
 		(*linkf)();			/* system link call */
 
 main(argc, argv)
-	int	argc;
-	char	**argv;
+	int argc;
+	char **argv;
 {
 	extern int optind;
 	struct stat buf;
@@ -61,37 +62,37 @@ main(argc, argv)
 	default:			/* ln target1 target2 directory */
 		sourcedir = argv[argc - 1];
 		if (stat(sourcedir, &buf)) {
-			perror(sourcedir);
+			(void)fprintf(stderr,
+			    "ln: %s: %s\n", sourcedir, strerror(errno));
 			exit(1);
 		}
-		if ((buf.st_mode & S_IFMT) != S_IFDIR)
+		if (!S_ISDIR(buf.st_mode))
 			usage();
 		for (exitval = 0; *argv != sourcedir; ++argv)
 			exitval |= linkit(*argv, sourcedir, 1);
 		exit(exitval);
 	}
-	/*NOTREACHED*/
+	/* NOTREACHED */
 }
 
 static
 linkit(target, source, isdir)
-	char	*target, *source;
-	int	isdir;
+	char *target, *source;
+	int isdir;
 {
-	extern int	errno;
-	struct stat	buf;
-	char	path[MAXPATHLEN],
-		*cp, *rindex(), *strcpy();
+	struct stat buf;
+	char path[MAXPATHLEN], *cp;
 
 	if (!sflag) {
 		/* if target doesn't exist, quit now */
 		if (stat(target, &buf)) {
-			perror(target);
+			(void)fprintf(stderr,
+			    "ln: %s: %s\n", target, strerror(errno));
 			return(1);
 		}
 		/* only symbolic links to directories, unless -F option used */
 		if (!dirflag && (buf.st_mode & S_IFMT) == S_IFDIR) {
-			printf("%s is a directory.\n", target);
+			(void)printf("ln: %s is a directory.\n", target);
 			return(1);
 		}
 	}
@@ -107,7 +108,7 @@ linkit(target, source, isdir)
 	}
 
 	if ((*linkf)(target, source)) {
-		perror(source);
+		(void)fprintf(stderr, "ln: %s: %s\n", source, strerror(errno));
 		return(1);
 	}
 	return(0);
@@ -116,6 +117,7 @@ linkit(target, source, isdir)
 static
 usage()
 {
-	fputs("usage:\tln [-s] targetname [sourcename]\n\tln [-s] targetname1 targetname2 [... targetnameN] sourcedirectory\n", stderr);
+	(void)fprintf(stderr,
+	    "usage:\tln [-s] file1 file2\n\tln [-s] file ... directory\n");
 	exit(1);
 }
