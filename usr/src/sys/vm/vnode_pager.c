@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_pager.c	7.11 (Berkeley) %G%
+ *	@(#)vnode_pager.c	7.12 (Berkeley) %G%
  */
 
 /*
@@ -217,7 +217,7 @@ vnode_pager_putpage(pager, m, sync)
 		printf("vnode_pager_putpage(%x, %x)\n", pager, m);
 #endif
 	if (pager == NULL)
-		return;
+		return (FALSE);			/* ??? */
 	err = vnode_pager_io((vn_pager_t)pager->pg_data, m, UIO_WRITE);
 	if (err == VM_PAGER_OK) {
 		m->clean = TRUE;			/* XXX - wrong place */
