@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)main.c	1.13 (Berkeley) %G%";
+static	char *sccsid = "@(#)main.c	1.14 (Berkeley) %G%";
 #include "dump.h"
 
 int	notify = 0;	/* notify operator flag */
@@ -181,7 +181,8 @@ main(argc, argv)
 	getitime();		/* /etc/dumpdates snarfed */
 
 	msg("Date of this level %c dump: %s\n", incno, prdate(spcl.c_date));
-	msg("Date of last level %c dump: %s\n", incno, prdate(spcl.c_ddate));
+ 	msg("Date of last level %c dump: %s\n",
+		lastincno, prdate(spcl.c_ddate));
 	msg("Dumping %s ", disk);
 	if (dt != 0)
 		msgtail("(%s) ", dt->fs_file);
