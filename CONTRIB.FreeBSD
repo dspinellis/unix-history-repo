@@ -77,7 +77,7 @@ Mark Tinguely <tinguely@plains.nodak.edu> <tinguely@hookie.cs.ndsu.NoDak.edu>
 Martin Birgmeier
 Paul Kranenburg <pk@cs.few.eur.nl>
 Paul Mackerras <paulus@cs.anu.edu.au>
-Poul-Henning Kamp <phk@data.fls.dk>
+Poul-Henning Kamp <phk@login.dkuug.dk>
 Rod Shady <crt@tiamat.umd.umich.edu>
 Sascha Wildner <swildner@channelz.GUN.de>
 Sean Eric Fagan <sef@kithrup.com>
@@ -156,7 +156,7 @@ Paul Mackerras <paulus@cs.anu.edu.au>
 Paul Popelka <paulp@uts.amdahl.com>
 Peter da Silva <peter@NeoSoft.com>
 Phil Sutherland <philsuth@mycroft.dialix.oz.au>
-Poul-Henning Kamp <phk@data.fls.dk>
+Poul-Henning Kamp <phk@login.dkuug.dk>
 Ralf Friedl <friedl@informatik.uni-kl.de>
 Rich Murphey <rich@lamprey.utmb.edu>
 Rick Macklem <root@snowhite.cis.uoguelph.ca>
@@ -179,4 +179,4 @@ Wolfgang Solfrank <ws@tools.de>
 Wolfgang Stanglmeier <wolf@dentaro.GUN.de>
 Yuval Yarom <yval@cs.huji.ac.il>
 
-$Id$
+$Id: CONTRIB.FreeBSD,v 1.26 1994/01/31 06:53:04 wollman Exp $
