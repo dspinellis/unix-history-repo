@@ -1,12 +1,12 @@
-.\" Copyright (c) 1993 The Regents of the University of California.
-.\" All rights reserved.
+.\" Copyright (c) 1993
+.\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" This document is derived from software contributed to Berkeley by
 .\" Rick Macklem at The University of Guelph.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	5.1 (Berkeley) %G%
+.\"	@(#)0.t	8.1 (Berkeley) %G%
 .\"
 .(l C
 .sz 14
