@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -84,7 +84,7 @@ doit(f, fromp)
 	struct passwd *pwd;
 	int s, backoff;
 	struct hostent *hp;
-	struct hostent hostent;
+	char *hostname;
 	short port;
 	int pv[2], pid, ready, readfrom, cc;
 	char buf[BUFSIZ], sig;
@@ -134,7 +134,7 @@ doit(f, fromp)
 		}
 		fromp->sin_port = htons((u_short)port);
 		if (connect(s, fromp, sizeof (*fromp), 0) < 0) {
-			syslog(LOG_ERR, "connect: %m");
+			syslog(LOG_INFO, "connect second port: %m");
 			exit(1);
 		}
 	}
@@ -143,13 +143,10 @@ doit(f, fromp)
 	dup2(f, 2);
 	hp = gethostbyaddr(&fromp->sin_addr, sizeof (struct in_addr),
 		fromp->sin_family);
-	if (hp == 0) {
-		/*
-		 * Only the name is used below
-		 */
-		hp = &hostent;
-		hp->h_name = inet_ntoa(fromp->sin_addr);
-	}
+	if (hp)
+		hostname = hp->h_name;
+	else
+		hostname = inet_ntoa(fromp->sin_addr);
 	getstr(remuser, sizeof(remuser), "remuser");
 	getstr(locuser, sizeof(locuser), "locuser");
 	getstr(cmdbuf, sizeof(cmdbuf), "command");
@@ -168,7 +165,7 @@ doit(f, fromp)
 #endif
 	}
 	if (pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0' &&
-	    ruserok(hp->h_name, pwd->pw_uid == 0, remuser, locuser) < 0) {
+	    ruserok(hostname, pwd->pw_uid == 0, remuser, locuser) < 0) {
 		error("Permission denied.\n");
 		exit(1);
 	}
