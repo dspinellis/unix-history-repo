@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.33 89/08/23$
  *
- *	@(#)hpux_compat.c	7.8 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -22,7 +22,7 @@
 
 #include "param.h"
 #include "systm.h"
-#include "syscontext.h"
+#include "user.h"
 #include "kernel.h"
 #include "proc.h"
 #include "buf.h"
@@ -114,7 +114,7 @@ notimp(p, uap, retval, code, nargs)
 	error = nosys(p, uap, retval);
 #endif
 	uprintf("HP-UX system call %d not implemented\n", code);
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -134,11 +134,11 @@ hpuxwait3(p, uap, retval)
 {
 	/* rusage pointer must be zero */
 	if (uap->rusage)
-		RETURN (EINVAL);
+		return (EINVAL);
 	u.u_ar0[PS] = PSL_ALLCC;
 	u.u_ar0[R0] = uap->options;
 	u.u_ar0[R1] = uap->rusage;
-	RETURN (hpuxwait(p, uap, retval));
+	return (hpuxwait(p, uap, retval));
 }
 
 hpuxwait(p, uap, retval)
@@ -159,7 +159,7 @@ hpuxwait(p, uap, retval)
 	if (error == ERESTART)
 		error = EINTR;
 	if (error)
-		RETURN (error);
+		return (error);
 	sig = retval[1] & 0xFF;
 	if (sig == WSTOPPED) {
 		sig = (retval[1] >> 8) & 0xFF;
@@ -170,7 +170,7 @@ hpuxwait(p, uap, retval)
 	if (statp)
 		if (suword((caddr_t)statp, retval[1]))
 			error = EFAULT;
-	RETURN (error);
+	return (error);
 }
 
 hpuxwaitpid(p, uap, retval)
@@ -194,7 +194,7 @@ hpuxwaitpid(p, uap, retval)
 	if (error == ERESTART)
 		error = EINTR;
 	if (error)
-		RETURN (error);
+		return (error);
 	sig = retval[1] & 0xFF;
 	if (sig == WSTOPPED) {
 		sig = (retval[1] >> 8) & 0xFF;
@@ -205,7 +205,7 @@ hpuxwaitpid(p, uap, retval)
 	if (statp)
 		if (suword((caddr_t)statp, retval[1]))
 			error = EFAULT;
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -240,7 +240,7 @@ hpuxopen(p, uap, retval)
 		uap->mode |= FTRUNC;
 	if (mode & HPUXFEXCL)
 		uap->mode |= FEXCL;
-	RETURN (open(p, uap, retval));
+	return (open(p, uap, retval));
 }
 
 hpuxfcntl(p, uap, retval)
@@ -264,7 +264,7 @@ hpuxfcntl(p, uap, retval)
 	case F_SETFD:
 		break;
 	default:
-		RETURN (EINVAL);
+		return (EINVAL);
 	}
 	error = fcntl(p, uap, retval);
 	if (error == 0 && uap->arg == F_GETFL) {
@@ -277,7 +277,7 @@ hpuxfcntl(p, uap, retval)
 		if (mode & FEXCL)
 			*retval |= HPUXFEXCL;
 	}
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -302,7 +302,7 @@ hpuxread(p, uap, retval)
 		error = 0;
 		*retval = 0;
 	}
-	RETURN (error);
+	return (error);
 }
 
 hpuxwrite(p, uap, retval)
@@ -320,7 +320,7 @@ hpuxwrite(p, uap, retval)
 		error = 0;
 		*retval = 0;
 	}
-	RETURN (error);
+	return (error);
 }
 
 hpuxreadv(p, uap, retval)
@@ -338,7 +338,7 @@ hpuxreadv(p, uap, retval)
 		error = 0;
 		*retval = 0;
 	}
-	RETURN (error);
+	return (error);
 }
 
 hpuxwritev(p, uap, retval)
@@ -356,7 +356,7 @@ hpuxwritev(p, uap, retval)
 		error = 0;
 		*retval = 0;
 	}
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -374,16 +374,16 @@ hpuxdup(p, uap, retval)
 	int fd, error;
 
 	if ((unsigned)uap->i >= NOFILE || (fp = u.u_ofile[uap->i]) == NULL)
-		RETURN (EBADF);
+		return (EBADF);
 	if (error = ufalloc(0, &fd))
-		RETURN (error);
+		return (error);
 	*retval = fd;
 	u.u_ofile[fd] = fp;
 	u.u_pofile[fd] = u.u_pofile[uap->i] &~ UF_EXCLOSE;
 	fp->f_count++;
 	if (fd > u.u_lastfile)
 		u.u_lastfile = fd;
-	RETURN (0);
+	return (0);
 }
 
 hpuxuname(p, uap, retval)
@@ -440,7 +440,7 @@ hpuxuname(p, uap, retval)
 		error = EINVAL;
 		break;
 	}
-	RETURN (error);
+	return (error);
 }
 
 hpuxstat(p, uap, retval)
@@ -451,7 +451,7 @@ hpuxstat(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	RETURN (hpuxstat1(uap->fname, uap->hsb, FOLLOW));
+	return (hpuxstat1(uap->fname, uap->hsb, FOLLOW));
 }
 
 hpuxlstat(p, uap, retval)
@@ -462,7 +462,7 @@ hpuxlstat(p, uap, retval)
 	} *uap;
 	int *retval;
 {
-	RETURN (hpuxstat1(uap->fname, uap->hsb, NOFOLLOW));
+	return (hpuxstat1(uap->fname, uap->hsb, NOFOLLOW));
 }
 
 hpuxfstat(p, uap, retval)
@@ -479,7 +479,7 @@ hpuxfstat(p, uap, retval)
 
 	if ((unsigned)uap->fdes >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL)
-		RETURN (EBADF);
+		return (EBADF);
 
 	switch (fp->f_type) {
 
@@ -498,7 +498,7 @@ hpuxfstat(p, uap, retval)
 	/* is this right for sockets?? */
 	if (error == 0)
 		error = bsdtohpuxstat(&sb, uap->hsb);
-	RETURN (error);
+	return (error);
 }
 
 hpuxulimit(p, uap, retval)
@@ -535,7 +535,7 @@ hpuxulimit(p, uap, retval)
 		error = EINVAL;
 		break;
 	}
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -555,11 +555,11 @@ hpuxrtprio(cp, uap, retval)
 
 	if (uap->prio < RTPRIO_MIN && uap->prio > RTPRIO_MAX &&
 	    uap->prio != RTPRIO_NOCHG && uap->prio != RTPRIO_RTOFF)
-		RETURN (EINVAL);
+		return (EINVAL);
 	if (uap->pid == 0)
 		p = cp;
 	else if ((p = pfind(uap->pid)) == 0)
-		RETURN (ESRCH);
+		return (ESRCH);
 	nice = p->p_nice;
 	if (nice < NZERO)
 		*retval = (nice + 16) << 3;
@@ -568,11 +568,11 @@ hpuxrtprio(cp, uap, retval)
 	switch (uap->prio) {
 
 	case RTPRIO_NOCHG:
-		RETURN (0);
+		return (0);
 
 	case RTPRIO_RTOFF:
 		if (nice >= NZERO)
-			RETURN (0);
+			return (0);
 		nice = NZERO;
 		break;
 
@@ -583,7 +583,7 @@ hpuxrtprio(cp, uap, retval)
 	error = donice(cp, p, nice);
 	if (error == EACCES)
 		error = EPERM;
-	RETURN (error);
+	return (error);
 }
 
 hpuxadvise(p, uap, retval)
@@ -609,7 +609,7 @@ hpuxadvise(p, uap, retval)
 		error = EINVAL;
 		break;
 	}
-	RETURN (error);
+	return (error);
 }
 
 hpuxptrace(p, uap, retval)
@@ -632,7 +632,7 @@ hpuxptrace(p, uap, retval)
 		}
 	}
 	error = ptrace(p, uap, retval);
-	RETURN (error);
+	return (error);
 }
 
 hpuxgetdomainname(p, uap, retval)
@@ -645,7 +645,7 @@ hpuxgetdomainname(p, uap, retval)
 {
 	if (uap->len > domainnamelen + 1)
 		uap->len = domainnamelen + 1;
-	RETURN (copyout(domainname, uap->domainname, uap->len));
+	return (copyout(domainname, uap->domainname, uap->len));
 }
 
 hpuxsetdomainname(p, uap, retval)
@@ -659,13 +659,13 @@ hpuxsetdomainname(p, uap, retval)
 	int error;
 
 	if (error = suser(u.u_cred, &u.u_acflag))
-		RETURN (error);
+		return (error);
 	if (uap->len > sizeof (domainname) - 1)
-		RETURN (EINVAL);
+		return (EINVAL);
 	domainnamelen = uap->len;
 	error = copyin(uap->domainname, domainname, uap->len);
 	domainname[domainnamelen] = 0;
-	RETURN (error);
+	return (error);
 }
 
 #ifdef SYSVSHM
@@ -673,28 +673,28 @@ hpuxshmat(p, uap, retval)
 	struct proc *p;
 	int *uap, *retval;
 {
-	RETURN (shmat(p, uap, retval));
+	return (shmat(p, uap, retval));
 }
 
 hpuxshmctl(p, uap, retval)
 	struct proc *p;
 	int *uap, *retval;
 {
-	RETURN (shmctl(p, uap, retval));
+	return (shmctl(p, uap, retval));
 }
 
 hpuxshmdt(p, uap, retval)
 	struct proc *p;
 	int *uap, *retval;
 {
-	RETURN (shmdt(p, uap, retval));
+	return (shmdt(p, uap, retval));
 }
 
 hpuxshmget(p, uap, retval)
 	struct proc *p;
 	int *uap, *retval;
 {
-	RETURN (shmget(p, uap, retval));
+	return (shmget(p, uap, retval));
 }
 #endif
 
@@ -713,7 +713,7 @@ hpuxsemctl(p, uap, retval)
 	int *retval;
 {
 	/* XXX: should do something here */
-	RETURN (0);
+	return (0);
 }
 
 hpuxsemget(p, uap, retval)
@@ -726,7 +726,7 @@ hpuxsemget(p, uap, retval)
 	int *retval;
 {
 	/* XXX: should do something here */
-	RETURN (0);
+	return (0);
 }
 
 hpuxsemop(p, uap, retval)
@@ -739,7 +739,7 @@ hpuxsemop(p, uap, retval)
 	int *retval;
 {
 	/* XXX: should do something here */
-	RETURN (0);
+	return (0);
 }
 
 /* convert from BSD to HPUX errno */
@@ -854,13 +854,13 @@ hpuxioctl(p, uap, retval)
 
 	/* XXX */
 	if (com == HPUXTIOCGETP || com == HPUXTIOCSETP)
-		RETURN (getsettty(uap->fdes, com, uap->cmarg));
+		return (getsettty(uap->fdes, com, uap->cmarg));
 
 	if ((unsigned)uap->fdes >= NOFILE ||
 	    (fp = u.u_ofile[uap->fdes]) == NULL)
-		RETURN (EBADF);
+		return (EBADF);
 	if ((fp->f_flag & (FREAD|FWRITE)) == 0)
-		RETURN (EBADF);
+		return (EBADF);
 
 	/*
 	 * Interpret high order word to find
@@ -869,7 +869,7 @@ hpuxioctl(p, uap, retval)
 	 */
 	size = IOCPARM_LEN(com);
 	if (size > IOCPARM_MAX)
-		RETURN (ENOTTY);
+		return (ENOTTY);
 	if (size > sizeof (stkbuf)) {
 		memp = (caddr_t)malloc((u_long)size, M_IOCTLOPS, M_WAITOK);
 		data = memp;
@@ -880,7 +880,7 @@ hpuxioctl(p, uap, retval)
 			if (error) {
 				if (memp)
 					free(memp, M_IOCTLOPS);
-				RETURN (error);
+				return (error);
 			}
 		} else
 			*(caddr_t *)data = uap->cmarg;
@@ -941,7 +941,7 @@ hpuxioctl(p, uap, retval)
 		error = copyout(data, uap->cmarg, (u_int)size);
 	if (memp)
 		free(memp, M_IOCTLOPS);
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -963,7 +963,7 @@ hpuxgetcontext(p, uap, retval)
 		error = copyout(hpuxcontext, uap->buf, (u_int)len);
 	if (error == 0)
 		*retval = sizeof(hpuxcontext);
-	RETURN (error);
+	return (error);
 }
 
 /*
@@ -982,7 +982,7 @@ hpuxlockf(p, uap, retval)
 	log(LOG_DEBUG, "%d: lockf(%d, %d, %d)\n",
 	    p->p_pid, uap->fd, uap->func, uap->size);
 #endif
-	RETURN (0);
+	return (0);
 }
 
 /*
@@ -1002,11 +1002,11 @@ hpuxgetpgrp2(cp, uap, retval)
 		uap->pid = cp->p_pid;
 	p = pfind(uap->pid);
 	if (p == 0)
-		RETURN (ESRCH);
+		return (ESRCH);
 	if (u.u_uid && p->p_uid != u.u_uid && !inferior(p))
-		RETURN (EPERM);
+		return (EPERM);
 	*retval = p->p_pgid;
-	RETURN (0);
+	return (0);
 }
 
 /*
@@ -1023,8 +1023,8 @@ hpuxsetpgrp2(p, uap, retval)
 {
 	/* empirically determined */
 	if (uap->pgrp < 0 || uap->pgrp >= 30000)
-		RETURN (EINVAL);
-	RETURN (setpgrp(p, uap, retval));
+		return (EINVAL);
+	return (setpgrp(p, uap, retval));
 }
 
 /*
@@ -1237,7 +1237,7 @@ ohpuxtime(p, uap, retval)
 		error = copyout((caddr_t)&time.tv_sec, (caddr_t)uap->tp,
 				sizeof (long));
 	*retval = time.tv_sec;		/* XXX */
-	RETURN (error);
+	return (error);
 }
 
 ohpuxstime(p, uap, retval)
@@ -1253,13 +1253,13 @@ ohpuxstime(p, uap, retval)
 	tv.tv_sec = uap->time;
 	tv.tv_usec = 0;
 	if (error = suser(u.u_cred, &u.u_acflag))
-		RETURN (error);
+		return (error);
 
 	/* WHAT DO WE DO ABOUT PENDING REAL-TIME TIMEOUTS??? */
 	boottime.tv_sec += tv.tv_sec - time.tv_sec;
 	s = splhigh(); time = tv; splx(s);
 	resettodr();
-	RETURN (0);
+	return (0);
 }
 
 ohpuxftime(p, uap, retval)
@@ -1278,7 +1278,7 @@ ohpuxftime(p, uap, retval)
 	splx(s);
 	tb.timezone = tz.tz_minuteswest;
 	tb.dstflag = tz.tz_dsttime;
-	RETURN (copyout((caddr_t)&tb, (caddr_t)uap->tp, sizeof (tb)));
+	return (copyout((caddr_t)&tb, (caddr_t)uap->tp, sizeof (tb)));
 }
 
 ohpuxalarm(p, uap, retval)
@@ -1299,13 +1299,13 @@ ohpuxalarm(p, uap, retval)
 	if (uap->deltat == 0) {
 		timerclear(&p->p_realtimer.it_value);
 		splx(s);
-		RETURN (0);
+		return (0);
 	}
 	p->p_realtimer.it_value = time;
 	p->p_realtimer.it_value.tv_sec += uap->deltat;
 	timeout(realitexpire, (caddr_t)p, hzto(&p->p_realtimer.it_value));
 	splx(s);
-	RETURN (0);
+	return (0);
 }
 
 ohpuxnice(p, uap, retval)
@@ -1320,7 +1320,7 @@ ohpuxnice(p, uap, retval)
 	error = donice(p, p, (p->p_nice-NZERO)+uap->niceness);
 	if (error == 0)
 		*retval = p->p_nice - NZERO;
-	RETURN (error);
+	return (error);
 }
 
 ohpuxtimes(p, uap, retval)
@@ -1340,7 +1340,7 @@ ohpuxtimes(p, uap, retval)
 	error = copyout((caddr_t)&atms, (caddr_t)uap->tmsb, sizeof (atms));
 	if (error == 0)
 		*retval = scale50(&time) - scale50(&boottime); /* XXX */
-	RETURN (error);
+	return (error);
 }
 
 scale50(tvp)
@@ -1377,7 +1377,7 @@ ohpuxutime(p, uap, retval)
 	if (uap->tptr) {
 		error = copyin((caddr_t)uap->tptr, (caddr_t)tv, sizeof (tv));
 		if (error)
-			RETURN (error);
+			return (error);
 	} else
 		tv[0] = tv[1] = time.tv_sec;
 	ndp->ni_nameiop = LOOKUP | FOLLOW | LOCKLEAF;
@@ -1389,14 +1389,14 @@ ohpuxutime(p, uap, retval)
 	vattr.va_mtime.tv_sec = tv[1];
 	vattr.va_mtime.tv_usec = 0;
 	if (error = namei(ndp))
-		RETURN (error);
+		return (error);
 	vp = ndp->ni_vp;
 	if (vp->v_mount->mnt_flag & MNT_RDONLY)
 		error = EROFS;
 	else
 		error = VOP_SETATTR(vp, &vattr, ndp->ni_cred);
 	vput(vp);
-	RETURN (error);
+	return (error);
 }
 
 ohpuxpause(p, uap, retval)
@@ -1405,7 +1405,7 @@ ohpuxpause(p, uap, retval)
 {
 	(void) tsleep((caddr_t)&u, PPAUSE | PCATCH, "pause", 0);
 	/* always return EINTR rather than ERESTART... */
-	RETURN (EINTR);
+	return (EINTR);
 }
 
 /*
@@ -1422,10 +1422,10 @@ ohpuxfstat(p, uap, retval)
 	struct file *fp;
 
 	if ((unsigned)uap->fd >= NOFILE || (fp = u.u_ofile[uap->fd]) == NULL)
-		RETURN (EBADF);
+		return (EBADF);
 	if (fp->f_type != DTYPE_VNODE)
-		RETURN (EINVAL);
-	RETURN (ohpuxstat1((struct vnode *)fp->f_data, uap->sb));
+		return (EINVAL);
+	return (ohpuxstat1((struct vnode *)fp->f_data, uap->sb));
 }
 
 /*
@@ -1446,10 +1446,10 @@ ohpuxstat(p, uap, retval)
 	ndp->ni_segflg = UIO_USERSPACE;
 	ndp->ni_dirp = uap->fname;
 	if (error = namei(ndp))
-		RETURN (error);
+		return (error);
 	error = ohpuxstat1(ndp->ni_vp, uap->sb);
 	vput(ndp->ni_vp);
-	RETURN (error);
+	return (error);
 }
 
 int

@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_net.c 1.33 89/08/23$
  *
- *	@(#)hpux_net.c	7.2 (Berkeley) %G%
+ *	@(#)hpux_net.c	7.3 (Berkeley) %G%
  */
 
 /*
@@ -22,13 +22,15 @@
 
 #include "param.h"
 #include "systm.h"
-#include "syscontext.h"
 #include "kernel.h"
+#include "time.h"
+#include "errno.h"
 #include "proc.h"
 #include "file.h"
 #include "mbuf.h"
 #include "socket.h"
 #include "socketvar.h"
+#include "uio.h"
 #include "ktrace.h"
 #include "hpux.h"
 
@@ -86,7 +88,7 @@ hpuxnetioctl(p, uap, retval)
 	args = uap->args;
 	code = uap->call - MINBSDIPCCODE;
 	if (code < 0 || code >= NUMBSDIPC || hpuxtobsdipc[code].rout == NULL)
-		RETURN (EINVAL);
+		return (EINVAL);
 	if ((i = hpuxtobsdipc[code].nargs * sizeof (int)) &&
 	    (error = copyin((caddr_t)args, (caddr_t)uap, (u_int)i))) {
 #ifdef KTRACE
@@ -94,14 +96,14 @@ hpuxnetioctl(p, uap, retval)
                         ktrsyscall(p->p_tracep, code + MINBSDIPCCODE,
 				   hpuxtobsdipc[code].nargs);
 #endif
-		RETURN (error);
+		return (error);
 	}
 #ifdef KTRACE
         if (KTRPOINT(p, KTR_SYSCALL))
                 ktrsyscall(p->p_tracep, code + MINBSDIPCCODE,
 			   hpuxtobsdipc[code].nargs);
 #endif
-	RETURN ((*hpuxtobsdipc[code].rout)(p, uap, retval));
+	return ((*hpuxtobsdipc[code].rout)(p, uap, retval));
 }
 
 hpuxsetsockopt(p, uap, retval)
@@ -121,17 +123,17 @@ hpuxsetsockopt(p, uap, retval)
 
 	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		RETURN (error);
+		return (error);
 	if (uap->valsize > MLEN)
-		RETURN (EINVAL);
+		return (EINVAL);
 	if (uap->val) {
 		m = m_get(M_WAIT, MT_SOOPTS);
 		if (m == NULL)
-			RETURN (ENOBUFS);
+			return (ENOBUFS);
 		if (error = copyin(uap->val, mtod(m, caddr_t),
 		    (u_int)uap->valsize)) {
 			(void) m_free(m);
-			RETURN (error);
+			return (error);
 		}
 		if (uap->name == SO_LINGER) {
 			tmp = *mtod(m, int *);
@@ -148,7 +150,7 @@ hpuxsetsockopt(p, uap, retval)
 			m->m_len = sizeof(struct linger);
 		}
 	}
-	RETURN (sosetopt((struct socket *)fp->f_data, uap->level,
+	return (sosetopt((struct socket *)fp->f_data, uap->level,
 	    uap->name, m));
 }
 
@@ -169,11 +171,11 @@ hpuxgetsockopt(p, uap, retval)
 
 	fp = getsock(uap->s, &error);
 	if (fp == 0)
-		RETURN (error);
+		return (error);
 	if (uap->val) {
 		if (error = copyin((caddr_t)uap->avalsize, (caddr_t)&valsize,
 		    sizeof (valsize)))
-			RETURN (error);
+			return (error);
 	} else
 		valsize = 0;
 	if (error = sogetopt((struct socket *)fp->f_data, uap->level,
@@ -197,6 +199,6 @@ hpuxgetsockopt(p, uap, retval)
 bad:
 	if (m != NULL)
 		(void) m_free(m);
-	RETURN (error);
+	return (error);
 }
 #endif
