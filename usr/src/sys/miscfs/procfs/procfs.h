@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs.h	8.5 (Berkeley) %G%
+ *	@(#)procfs.h	8.6 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs.h,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -89,6 +89,7 @@ extern vfs_namemap_t *vfs_findname __P((vfs_namemap_t *, char *, int));
 
 /* <machine/reg.h> */
 struct reg;
+struct fpreg;
 
 #define PFIND(pid) ((pid) ? pfind(pid) : &proc0)
 extern int procfs_freevp __P((struct vnode *));
