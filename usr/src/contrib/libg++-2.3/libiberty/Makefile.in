@@ -1,0 +1,242 @@
+#
+# Makefile
+#   Copyright (C) 1990, 1991, 1992 Free Software Foundation
+#
+# This file is part of the libiberty library.
+# Libiberty is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Library General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# Libiberty is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Library General Public License for more details.
+#
+# You should have received a copy of the GNU Library General Public
+# License along with libiberty; see the file COPYING.LIB.  If
+# not, write to the Free Software Foundation, Inc., 675 Mass Ave,
+# Cambridge, MA 02139, USA.
+#
+
+# This file was written, and is maintained by K. Richard Pixley
+# <rich@cygnus.com>.
+
+#
+# Makefile for libiberty directory
+#
+
+srcdir = .
+
+prefix = /usr/local
+
+exec_prefix = $(prefix)
+bindir = $(exec_prefix)/bin
+libdir = $(exec_prefix)/lib
+
+datadir = $(prefix)/lib
+
+mandir = $(prefix)/man
+man1dir = $(mandir)/man1
+man2dir = $(mandir)/man2
+man3dir = $(mandir)/man3
+man4dir = $(mandir)/man4
+man5dir = $(mandir)/man5
+man6dir = $(mandir)/man6
+man7dir = $(mandir)/man7
+man8dir = $(mandir)/man8
+man9dir = $(mandir)/man9
+infodir = $(prefix)/info
+includedir = $(prefix)/include
+oldincludedir =
+docdir = $(datadir)/doc
+
+SHELL = /bin/sh
+
+INSTALL = install -c
+INSTALL_PROGRAM = $(INSTALL)
+INSTALL_DATA = $(INSTALL)
+
+AR = ar
+AR_FLAGS = cq
+
+CFLAGS = -g
+BISON = bison
+MAKEINFO = makeinfo
+RANLIB = ranlib
+
+XTRAFLAGS =
+
+TARGETLIB = libiberty.a
+
+CONFIG_H = lconfig.h
+NEEDED_LIST = lneeded-list
+
+# HOST_OFILES contains the list of objects that should be in the
+# library (in addition to the REQUIRED_OFILES and EXTRA_OFILES).
+# A configuration may override this with a fixed list a object files
+# names (hard to maintain), or some other way to generate a list.
+HOST_OFILES=`cat needed-list`
+
+# Extra targets that the top-level target depends on.
+# Specifically, what needs to be made before HOST_OFILES can be used.
+# Can be empty if HOST_OFILES is just a list of file names.
+DO_ALSO = needed-list
+
+# A configuration can specify extra .o files that should be included,
+# even if they are in libc. (Perhaps the libc version is buggy.)
+EXTRA_OFILES = 
+
+all:	$(TARGETLIB)
+.PHONY: check
+check:
+
+
+#### Host, target, and site specific Makefile fragments come in here.
+###
+
+.c.o:
+	$(CC) -c $(CFLAGS) -I. -I$(srcdir)/../include $(HDEFINES) $(XTRAFLAGS) $<
+
+# The default target just invokes make recursively.
+# However, the automatic configuration (in config/mh_default).
+# first causes it to figure out the objects missing in libc.
+info install-info clean-info:
+
+# NOTE: If you add new files to the library, edit 'functions.def'
+#       and add them to this list (alphabetical order please)
+CFILES = alloca.c argv.c basename.c bcmp.c bcopy.c bzero.c concat.c \
+	 cplus-dem.c fdmatch.c getcwd.c getopt.c getopt1.c getpagesize.c \
+         index.c insque.c memcmp.c memcpy.c memmove.c memset.c \
+         obstack.c random.c rename.c rindex.c sigsetmask.c spaces.c \
+         strchr.c strdup.c strerror.c strrchr.c strsignal.c \
+         strstr.c strtol.c strtoul.c vfork.c vfprintf.c vprintf.c vsprintf.c
+# These are always included in the library.
+REQUIRED_OFILES = argv.o basename.o concat.o cplus-dem.o fdmatch.o \
+	getopt.o getopt1.o obstack.o spaces.o strerror.o strsignal.o
+
+# Do we want/need any config overrides?
+#	 
+
+STAGESTUFF = $(TARGETLIB) *.o
+
+INSTALL_DEST = libdir
+install: install_to_$(INSTALL_DEST)
+
+install_to_libdir: all
+	-parent=`echo $(libdir)|sed -e 's@/[^/]*$$@@'`; \
+	if [ -d $$parent ] ; then true ; else mkdir $$parent ; fi
+	-if [ -d $(libdir) ] ; then true ; else mkdir $(libdir) ; fi
+	$(INSTALL_DATA) $(TARGETLIB) $(libdir)/$(TARGETLIB).n
+	$(RANLIB) $(libdir)/$(TARGETLIB).n
+	mv -f $(libdir)/$(TARGETLIB).n $(libdir)/$(TARGETLIB)
+
+install_to_tooldir: all
+	-parent=`echo $(tooldir)|sed -e 's@/[^/]*$$@@'`; \
+	if [ -d $$parent ] ; then true ; else mkdir $$parent ; fi
+	-if [ -d $(tooldir) ] ; then true ; else mkdir $(tooldir) ; fi
+	-if [ -d $(tooldir)/lib ] ; then true ; else mkdir $(tooldir)/lib ; fi
+	$(INSTALL_DATA) $(TARGETLIB) $(tooldir)/lib/$(TARGETLIB).n
+	$(RANLIB) $(tooldir)/lib/$(TARGETLIB).n
+	mv -f $(tooldir)/lib/$(TARGETLIB).n $(tooldir)/lib/$(TARGETLIB)
+
+# The default configuration adds to libiberty all those functions that are
+# missing in libc.  More precisely, it includes whatever $(CC) fails to find.
+# Then a sed+awk combination translates the ld error messages into
+# a list of .o files.
+
+needed-list: $(NEEDED_LIST)
+	cp $(NEEDED_LIST) needed-list
+
+lneeded-list: $(EXTRA_OFILES) needed.awk errors
+	awk -f needed.awk <errors >lneeded-list
+	echo $(EXTRA_OFILES) >>lneeded-list
+
+# Generate an awk script that looks for functions in functions.def
+
+needed.awk: $(srcdir)/functions.def Makefile
+	echo "# !Automatically generated from $(srcdir)/functions.def"\
+	  "- DO NOT EDIT!" >needed.awk
+	grep '^DEF(' < $(srcdir)/functions.def \
+	    | sed -e '/DEF/s|DEF.\([^,]*\).*|/\1/ { printf "\1.o " }|' \
+	    >>needed.awk
+
+config.h: $(CONFIG_H)
+	cp $(CONFIG_H) config.h
+
+lconfig.h: needed2.awk errors
+	echo "/* !Automatically generated from $(srcdir)/functions.def"\
+	  "- DO NOT EDIT! */" >lconfig.h
+	awk -f needed2.awk <errors >>lconfig.h
+
+# Generate an awk script that looks for variables in functions.def
+
+needed2.awk: $(srcdir)/functions.def Makefile
+	echo "# !Automatically generated from $(srcdir)/functions.def"\
+	  "- DO NOT EDIT!" >needed2.awk
+	grep '^DEFVAR(' < $(srcdir)/functions.def \
+	 | sed -e '/DEFVAR/s|DEFVAR.\([^,]*\).*|/\1/ { printf "#ifndef NEED_\1\\n#define NEED_\1\\n#endif\\n" }|' \
+	 >>needed2.awk
+	grep '^DEFFUNC(' < $(srcdir)/functions.def \
+	 | sed -e '/DEFFUNC/s|DEFFUNC.\([^,]*\).*|/\1/ { printf "#ifndef NEED_\1\\n#define NEED_\1\\n#endif\\n" }|' \
+	 >>needed2.awk
+
+dummy.o: $(srcdir)/dummy.c $(srcdir)/functions.def
+	$(CC) -c $(CFLAGS) -I. -I$(srcdir)/../include $(HDEFINES) $(XTRAFLAGS) $(srcdir)/dummy.c
+
+errors: dummy.o $(EXTRA_OFILES)
+	-($(CC) -o dummy $(LDFLAGS) dummy.o $(EXTRA_OFILES) $(LOADLIBES)) >errors 2>&1 || true
+
+$(HOST_OFILES) $(REQUIRED_OFILES) : config.h
+
+RULE1 = $(TARGETLIB)
+$(RULE1): $(REQUIRED_OFILES) $(DO_ALSO) .always.
+	@$(MAKE) RULE1=not-used RULE2=$(TARGETLIB) \
+	     HOST_OFILES="$(HOST_OFILES)" \
+	    "CC=$(CC)" "CFLAGS=$(CFLAGS)" \
+	    "AR=$(AR)" "AR_FLAGS=$(AR_FLAGS)" "RANLIB=$(RANLIB)" \
+	    "XTRAFLAGS=$(XTRAFLAGS)"
+
+# Rule invoked by recursive make in $(RULE1).
+RULE2 = not-used
+$(RULE2): $(REQUIRED_OFILES) $(HOST_OFILES)
+	rm -rf $(TARGETLIB)
+	$(AR) $(AR_FLAGS) $(TARGETLIB) \
+	  $(REQUIRED_OFILES) $(HOST_OFILES)
+	$(RANLIB) $(TARGETLIB)
+
+.always.:
+# Do nothing.
+
+.PHONEY: all etags tags ls clean stage1 stage2 .always.
+
+etags tags: TAGS
+
+TAGS: $(CFILES)
+	etags $(HFILES) $(CFILES)
+
+# Create a standalone demangler if so desired ("make demangle").
+
+demangle: ${srcdir}/cplus-dem.c
+	$(CC) -o $@ -DMAIN $(CFLAGS) -I. -I$(srcdir)/../include $(HDEFINES) $(XTRAFLAGS) \
+	  `echo $^ | sed 's,^\./,,'`
+
+ls:
+	@echo Makefile $(HFILES) $(CFILES)
+
+# Need to deal with profiled libraries, too.
+
+mostlyclean:
+	rm -f *.o core errs \#* *.E a.out
+	rm -f needed.awk needed2.awk errors dummy needed-list config.h
+	rm -f $(CONFIG_H) $(NEEDED_LIST)
+clean: mostlyclean
+	rm -f *.a
+distclean: clean
+	rm -f *~ Makefile config.status alloca-conf.h TAGS
+realclean: distclean
+
+force:
+
+Makefile: $(srcdir)/Makefile.in $(host_makefile_frag) $(target_makefile_frag)
+	$(SHELL) ./config.status
