@@ -3,7 +3,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)termcap.src	5.90 (Berkeley) %G%
+#	@(#)termcap.src	5.91 (Berkeley) %G%
 #
 
 #	Termcap source file
@@ -2853,7 +2853,7 @@ w6|wy60|Wyse 60 in native mode:\
 	:is=\Ed$\EcD\E'\Er\EH^C\Ed/\EO\Ee1\Ed*\E`@\E`9\E`1^N^T\EwG\Ew0^^^K:\
 	:k0=^A@\r:k1=^AA\r:k2=^AB\r:k3=^AC\r:k4=^AD\r:k5=^AE\r:k6=^AF\r:\
 	:k7=^AG\r:k8=^AH\r:k9=^AI\r:kb=\b:kd=\EOB:ke=200\EcU:kh=\E{:kl=\EOD:\
-	:km:kn#10:ko=bt,le,do,nd,up,dc,dl,ho,al:kr=\EOC:\
+	:kn#10:ko=bt,le,do,nd,up,dc,dl,ho,al:kr=\EOC:\
 	:ks=200\EZ0+\EOA\177\EZ0,\EOB\177\EZ0.\EOC\177\EZ0-\EOD\177\EZ0*\E{\177:\
 	:ku=\EOA:l0=F1:l1=F2:l2=F3:l3=F4:l4=F5:l5=F6:l6=F7:l7=F8:l8=F9:l9=F10:\
 	:le=\b:li#24:ll=^^^K:mb=\EG2:me=\EG0:mh=\EGp:mi:mr=\EG4:ms:nd=\f:pf=^T:\
