@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -38,8 +38,15 @@ static char sccsid[] = "@(#)pstat.c	5.30 (Berkeley) %G%";
 #include <sys/tty.h>
 #undef KERNEL
 #include <sys/conf.h>
+
+#ifdef SPPWAIT
+#define NEWVM
+#endif
+
+#ifndef NEWVM
 #include <sys/vm.h>
 #include <machine/pte.h>
+#endif
 #include <sys/kinfo.h>
 
 #include <nlist.h>
@@ -54,36 +61,41 @@ char	*fnlist	= NULL;
 char	*fcore	= NULL;
 
 struct nlist nl[] = {
-#define	STEXT	0
-	{ "_text" },
-#define	SPROC	1
-	{ "_proc" },
-#define	SFIL	2
-	{ "_file" },
-#define	SWAPMAP	3
+#define	SWAPMAP	0
 	{ "_swapmap" },
-#define	SNPROC	4
-	{ "_nproc" },
-#define	SNTEXT	5
-	{ "_ntext" },
-#define	SNFILE	6
-	{ "_nfile" },
-#define	SNSWAPMAP 7
+#define	SNSWAPMAP 1
 	{ "_nswapmap" },
-#define	SDMMIN	8
+#define	SDMMIN	2
 	{ "_dmmin" },
-#define	SDMMAX	9
+#define	SDMMAX	3
 	{ "_dmmax" },
-#define	SNSWDEV	10
+#define	SNSWDEV	4
 	{ "_nswdev" },
-#define	SSWDEVT	11
+#define	SSWDEVT	5
 	{ "_swdevt" },
-#define NLMANDATORY SSWDEVT	/* names up to here are mandatory */
-#define	SCONS	12
+#define	SFIL	6
+	{ "_file" },
+#define	SNFILE	7
+	{ "_nfile" },
+#ifdef NEWVM
+#define NLMANDATORY SNFILE	/* names up to here are mandatory */
+#else
+#define	STEXT	8
+	{ "_text" },
+#define	SNTEXT	9
+	{ "_ntext" },
+#define	SPROC	10
+	{ "_proc" },
+#define	SNPROC	11
+	{ "_nproc" },
+#define NLMANDATORY SNPROC	/* names up to here are mandatory */
+#endif
+
+#define	SCONS	NLMANDATORY + 1
 	{ "_cons" },
-#define	SPTY	13
+#define	SPTY	NLMANDATORY + 2
 	{ "_pt_tty" },
-#define	SNPTY	14
+#define	SNPTY	NLMANDATORY + 3
 	{ "_npty" },
 #ifdef vax
 #define	SDZ	(SNPTY+1)
@@ -695,6 +707,9 @@ putf(v, n)
 
 dotext()
 {
+#ifdef NEWVM
+	printf("no text table in this system\n");
+#else
 	register struct text *xp;
 	int ntext;
 	struct text *xtext, *atext;
@@ -750,10 +765,14 @@ dotext()
 		printf("\n");
 	}
 	free(xtext);
+#endif
 }
 
 doproc()
 {
+#ifdef NEWVM
+	printf("pstat: -p no longer supported\n");
+#else
 	struct proc *xproc, *aproc;
 	int nproc;
 	register struct proc *pp;
@@ -817,6 +836,7 @@ doproc()
 		printf("\n");
 	}
 	free(xproc);
+#endif
 }
 
 char mesg[] = "  LINE RAW CAN OUT  HWT LWT     ADDR COL STATE  SESS  PGID DISC\n";
@@ -994,6 +1014,9 @@ struct tty *atp;
  */
 dousr()
 {
+#ifdef NEWVM
+	printf("nothing left in user structure in this system\n");
+#else
 	register struct user *up;
 	register i, j, *ip;
 	register struct nameidata *nd;
@@ -1089,6 +1112,7 @@ dousr()
 	for (i = 0; i < sizeof(up->u_cru)/sizeof(int); i++)
 		printf("%ld ", ip[i]);
 	printf("\n");
+#endif
 }
 
 oatoi(s)
@@ -1159,6 +1183,13 @@ dofile()
 	free(xfile);
 }
 
+#ifdef NEWVM
+doswap()
+{
+	printf("swap statistics not yet supported in this system\n");
+}
+
+#else /* NEWVM */
 int dmmin, dmmax, nswdev;
 
 doswap()
@@ -1482,6 +1513,7 @@ done:
 badrmfree:
 	printf("bad rmfree\n");
 }
+#endif /* NEWVM */
 
 #include <varargs.h>
 
