@@ -6,206 +6,139 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)config.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)config.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
-#include <sys/param.h>
-#include <stdio.h>
+#include <sys/types.h>
+#include <sys/queue.h>
+
+#include <ctype.h>
+#include <err.h>
 #include <errno.h>
-#include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <pwd.h>
+#include <string.h>
+
+#include "config.h"
 #include "pathnames.h"
 
-#define	MAXLINE		1024
-
-extern char *progname;
-char *pathbuf, **arorder;
-
-static FILE *cfp;
+struct queue_entry head;
 
 /*
- * getpath --
- *	read in the configuration file, calling a function with the line
- *	from each matching section.
+ * config --
+ *
+ * Read the configuration file and build a doubly linked
+ * list that looks like:
+ *
+ *	tag1 <-> record <-> record <-> record
+ *	|
+ *	tag2 <-> record <-> record <-> record
  */
-char *
-getpath(sects)
-	char **sects;
+void
+config()
 {
-	register char **av, *p;
+	ENTRY *ep, *qp;
+	FILE *cfp;
 	size_t len;
-	char line[MAXLINE];
-	static int openconfig();
+	int lcnt;
+	char *p, *t;
 
-	openconfig();
-	while (fgets(line, sizeof(line), cfp)) {
-		if (!strchr(line, '\n')) {
-			(void)fprintf(stderr, "%s: config line too long.\n",
-			    progname);
-			exit(1);
-		}
-		p = strtok(line, " \t\n");
-		if (!p || *p == '#')
+	if ((cfp = fopen(_PATH_MANCONF, "r")) == NULL)
+		err(1, "%s", _PATH_MANCONF);
+	queue_init(&head);
+	for (lcnt = 1; (p = fgetline(cfp, &len)) != NULL; ++lcnt) {
+		if (!len)			/* Skip empty lines. */
 			continue;
-		for (av = sects; *av; ++av)
-			if (!strcmp(p, *av))
-				break;
-		if (!*av)
+		if (p[len - 1] != '\n') {	/* Skip corrupted lines. */
+			warnx("%s: line %d corrupted", _PATH_MANCONF, lcnt);
 			continue;
-		while (p = strtok((char *)NULL, " \t\n")) {
-			len = strlen(p);
-			if (p[len - 1] == '/')
-				for (av = arorder; *av; ++av)
-					cadd(p, len, *av);
-			else
-				cadd(p, len, (char *)NULL);
 		}
-	}
-	return(pathbuf);
-}
+		p[len - 1] = '\0';		/* Terminate the line. */
 
-cadd(add1, len1, add2)
-	char *add1, *add2;
-	register size_t len1;
-{
-	static size_t buflen, boff;
-	static char *bp, *endp;
-	register size_t len2;
-
-	len2 = add2 ? strlen(add2) : 0;
-	if (bp == NULL || bp + len1 + len2 + 2 >= endp) {
-		buflen += MAX(len1 + len2 + 2, 1024);
-		boff = bp ? bp - pathbuf : 0;
-		if ((pathbuf = realloc(pathbuf, buflen)) == NULL)
-			enomem();
-		bp = pathbuf + boff;
-		endp = pathbuf + buflen;
-	}
-	bcopy(add1, bp, len1);
-	bp += len1;
-	if (len2) {
-		bcopy(add2, bp, len2);
-		bp += len2;
-	}
-	*bp++ = ':';
-	*bp = '\0';
-}
-
-static
-openconfig()
-{
-	if (cfp) {
-		rewind(cfp);
-		return;
-	}
-	if (!(cfp = fopen(_PATH_MANCONF, "r"))) {
-		(void)fprintf(stderr, "%s: no configuration file %s.\n",
-		    progname, _PATH_MANCONF);
-		exit(1);
-	}
-}
-
-char **
-getdb()
-{
-	register char *p;
-	int cnt, num;
-	char **ar, line[MAXLINE];
-
-	ar = NULL;
-	num = 0;
-	cnt = -1;
-	openconfig();
-	while (fgets(line, sizeof(line), cfp)) {
-		if (!strchr(line, '\n')) {
-			(void)fprintf(stderr, "%s: config line too long.\n",
-			    progname);
-			exit(1);
-		}
-		p = strtok(line, " \t\n");
-#define	WHATDB	"_whatdb"
-		if (!p || *p == '#' || strcmp(p, WHATDB))
+						/* Skip leading space. */
+		for (; *p != '\0' && isspace(*p); ++p);
+						/* Skip empty/comment lines. */
+		if (*p == '\0' || *p == '#')
 			continue;
-		while (p = strtok((char *)NULL, " \t\n")) {
-			if (cnt == num - 1 &&
-			    !(ar = realloc(ar, (num += 30) * sizeof(char **))))
-				enomem();
-			if (!(ar[++cnt] = strdup(p)))
-				enomem();
-		}
-	}
-	if (ar) {
-		if (cnt == num - 1 &&
-		    !(ar = realloc(ar, ++num * sizeof(char **))))
-			enomem();
-		ar[++cnt] = NULL;
-	}
-	return(ar);
-}
-
-char **
-getorder()
-{
-	register char *p;
-	int cnt, num;
-	char **ar, line[MAXLINE];
-
-	ar = NULL;
-	num = 0;
-	cnt = -1;
-	openconfig();
-	while (fgets(line, sizeof(line), cfp)) {
-		if (!strchr(line, '\n')) {
-			(void)fprintf(stderr, "%s: config line too long.\n",
-			    progname);
-			exit(1);
-		}
-		p = strtok(line, " \t\n");
-#define	SUBDIR	"_subdir"
-		if (!p || *p == '#' || strcmp(p, SUBDIR))
+						/* Find first token. */
+		for (t = p; *t && !isspace(*t); ++t);
+		if (*t == '\0')			/* Need more than one token.*/
 			continue;
-		while (p = strtok((char *)NULL, " \t\n")) {
-			if (cnt == num - 1 &&
-			    !(ar = realloc(ar, (num += 30) * sizeof(char **))))
-				enomem();
-			if (!(ar[++cnt] = strdup(p)))
-				enomem();
+		*t = '\0';
+
+		for (qp = head.qe_next;		/* Find any matching tag. */
+		    qp != NULL && strcmp(p, qp->s); qp = qp->tags.qe_next);
+
+		if (qp == NULL)			/* Create a new tag. */
+			qp = addlist(p);
+
+		/*
+		 * Attach new records.  The keyword _build takes the rest of
+		 * the line as a single entity, everything else is white
+		 * space separated.  The reason we're not just using strtok(3)
+		 * for all of the parsing is so we don't get caught if a line
+		 * has only a single token on it.
+		 */
+		if (!strcmp(p, "_build")) {
+			while (*++t && isspace(*t));
+			if ((ep = malloc(sizeof(ENTRY))) == NULL ||
+			    (ep->s = strdup(t)) == NULL)
+				err(1, NULL);
+			queue_enter_tail(&qp->list, ep, ENTRY *, list);
+		} else while ((p = strtok(t + 1, " \t\n")) != NULL) {
+			if ((ep = malloc(sizeof(ENTRY))) == NULL ||
+			    (ep->s = strdup(p)) == NULL)
+				err(1, NULL);
+			queue_enter_tail(&qp->list, ep, ENTRY *, list);
+			t = NULL;
 		}
 	}
-	if (ar) {
-		if (cnt == num - 1 &&
-		    !(ar = realloc(ar, ++num * sizeof(char **))))
-			enomem();
-		ar[++cnt] = NULL;
-	}
-	return(ar);
 }
 
-getsection(sect)
-	char *sect;
+/*
+ * addlist --
+ *	Add a tag to the list.
+ */
+ENTRY *
+addlist(name)
+	char *name;
 {
-	register char *p;
-	char line[MAXLINE];
+	ENTRY *ep;
 
-	openconfig();
-	while (fgets(line, sizeof(line), cfp)) {
-		if (!strchr(line, '\n')) {
-			(void)fprintf(stderr, "%s: config line too long.\n",
-			    progname);
-			exit(1);
-		}
-		p = strtok(line, " \t\n");
-		if (!p || *p == '#')
-			continue;
-		if (!strcmp(p, sect))
-			return(1);
-	}
-	return(0);
+	if ((ep = malloc(sizeof(ENTRY))) == NULL ||
+	    (ep->s = strdup(name)) == NULL)
+		err(1, NULL);
+	queue_init(&ep->list);
+	queue_enter_head(&head, ep, ENTRY *, tags);
+	return (head.qe_next);
 }
 
-enomem()
+/*
+ * getlist --
+ *	Return the linked list for a tag if it exists.
+ */
+ENTRY *
+getlist(name)
+	char *name;
 {
-	(void)fprintf(stderr, "%s: %s\n", progname, strerror(ENOMEM));
-	exit(1);
+	ENTRY *qp;
+
+	for (qp = head.qe_next; qp != NULL; qp = qp->tags.qe_next)
+		if (!strcmp(name, qp->s))
+			return (qp);
+	return (NULL);
+}
+
+void
+debug(l)
+	char *l;
+{
+	ENTRY *ep, *qp;
+
+	(void)printf("%s ===============\n", l);
+	for (qp = head.qe_next; qp != NULL; qp = qp->tags.qe_next) {
+		printf("%s\n", qp->s);
+		for (ep = qp->list.qe_next; ep != NULL; ep = ep->list.qe_next)
+			printf("\t%s\n", ep->s);
+	}
 }
