@@ -1,9 +1,13 @@
 #ifndef lint
-static char sccsid[] = "@(#)sub1.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)sub1.c	4.6 (Berkeley) %G%";
 #endif
 
 # include "ldefs.c"
+# if __STDC__
 # include <stdarg.h>
+# else
+# include <varargs.h>
+#endif
 
 char *
 getl(p)	/* return next line of input, throw away trailing '\n' */
@@ -38,14 +42,23 @@ digit(c)
 	return(c>='0' && c <= '9');
 }
 
-error(s)
+#if __STDC__
+error(char *s, ...)
+#else
+error(s, va_alist)
 	char *s;
+	va_dcl
+#endif
 {
 	va_list ap;
 
 	fprintf(errorf,"\"%s\", line %d: (Error) ",
 		fptr > 0 ? sargv[fptr] : "<stdin>", yyline);
+#if __STDC__
 	va_start(ap, s);
+#else
+	va_start(ap);
+#endif
 	vfprintf(errorf, s, ap);
 	va_end(ap);
 	putc('\n', errorf);
@@ -63,14 +76,23 @@ error(s)
 	exit(1);	/* error return code */
 	}
 
-warning(s)
+#if __STDC__
+warning(char *s, ...)
+#else
+warning(s, va_alist)
 	char *s;
+	va_dcl
+#endif
 {
 	va_list ap;
 
 	fprintf(errorf,"\"%s\", line %d: (Warning) ",
 		fptr > 0 ? sargv[fptr] : "<stdin>", yyline);
+#if __STDC__
 	va_start(ap, s);
+#else
+	va_start(ap);
+#endif
 	vfprintf(errorf, s, ap);
 	va_end(ap);
 	putc('\n',errorf);
