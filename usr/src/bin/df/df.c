@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)df.c	4.12 %G%";
+static	char *sccsid = "@(#)df.c	4.13 %G%";
 #endif
 
 #include <stdio.h>
@@ -56,6 +56,7 @@ main(argc, argv)
 		(void) read(i, (char *)mtab, sizeof mtab);
 		(void) close(i);
 	}
+	sync();
 	printf("Filesystem    kbytes    used   avail capacity");
 	if (iflag)
 		printf(" iused   ifree  %%iused");
