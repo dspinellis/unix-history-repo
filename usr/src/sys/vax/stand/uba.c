@@ -1,4 +1,4 @@
-/*	uba.c	4.4	81/04/03	*/
+/*	uba.c	4.5	81/11/12	*/
 
 #include "../h/param.h"
 #include "../h/inode.h"
@@ -23,15 +23,17 @@ ubasetup(io, bdp)
 	unsigned v;
 	register struct pte *pte;
 	int o, temp, reg;
+	static int lastreg = 128+64;
 
-	if (bdp == 2) {
-		reg = 128+64;		/* for stupid ts-11 */
-		bdp = 0;
-	} else
-		reg = 0;
 	v = btop(io->i_ma);
 	o = (int)io->i_ma & PGOFSET;
 	npf = btoc(io->i_cc + o) +1;
+	if (bdp == 2) {
+		reg = lastreg;
+		lastreg += npf;
+		bdp = 0;
+	} else
+		reg = 0;
 	pte = &ubauba(io->i_unit)->uba_map[reg];
 	temp = (bdp << 21) | UBAMR_MRV;
 	if (bdp && (o & 01))
