@@ -7,6 +7,7 @@ static char sccsid[] = "@(#)ruserpass.c 4.2 %G%";
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 char	*renvlook(), *malloc(), *index(), *getenv(), *getpass(), *getlogin();
 struct	utmp *getutmp();
@@ -128,6 +129,7 @@ rnetrc(host, aname, apass)
 	char *hdir, buf[BUFSIZ];
 	int t;
 	struct stat stb;
+	extern int errno;
 
 	hdir = getenv("HOME");
 	if (hdir == NULL)
@@ -135,7 +137,8 @@ rnetrc(host, aname, apass)
 	sprintf(buf, "%s/.netrc", hdir);
 	cfile = fopen(buf, "r");
 	if (cfile == NULL) {
-		perror(buf);
+		if (errno != ENOENT)
+			perror(buf);
 		return;
 	}
 next:
