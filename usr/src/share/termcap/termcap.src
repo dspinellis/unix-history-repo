@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)termcap.src	5.68 (Berkeley) %G%
+#	@(#)termcap.src	5.69 (Berkeley) %G%
 #
 #	Termcap source file
 #	John Kunze, Berkeley
@@ -269,22 +269,22 @@ Be|pc6300plus|6300|6300plus:\
 # (4) Deletes sometime don't, especially when done fast - does this
 # suggest that I need to pad something?
 Bh|AT386|at386|386AT|386at|at/386 console:\
-	:am:bw:eo:xo:xt:\
-	:Co#8:NC#3:co#80:li#25:pa#63:kn#6:\
-	:@7=\E[Y:DC=\E[%dP:DL=\E[%dM:DO=\E[%dB:F1=\EOZ:\
-	:F2=\EOA:LE=\E[%dD:RI=\E[%dC:SF=\E[%dS:SR=\E[S:UP=\E[%dA:\
-	:ac=``aaffggjYk?lZm@nEooppqDrrsstCu4vAwBx3yyzz{{||}}~~:\
+	:am:bw:eo:xo:Co#8:NC#3:co#80:li#25:pa#64:kn#6:\
+	:@7=\E[Y:AL=\E[%dL:DC=\E[%dP:DL=\E[%dM:DO=\E[%dB:\
+	:F1=\EOZ:F2=\EOA:IC=\E[%d@:LE=\E[%dD:RI=\E[%dC:\
+	:SF=\E[%dS:SR=\E[%dT:UP=\E[%dA:\
+	:ac=``a1fxgqh0jYk?lZm@nEooppqDrrsstCu4vAwBx3yyzz{{||}}~~:\
 	:ae=\E[10m:al=\E[1L:as=\E[12m:bl=^G:cd=\E[J:ce=\E[K:\
 	:cl=\E[2J\E[H:cm=\E[%i%2;%2H:cr=\r:dc=\E[P:dl=\E[1M:\
-	:do=\E[B:ho=\E[H:ic=\E[1@:is=\E[0;10m:k1=\EOP:k2=\EOQ:\
-	:k3=\EOR:k4=\EOS:k5=\EOT:k6=\EOU:k7=\EOV:k8=\EOW:\
-	:k9=\EOX:k;=\EOY:kB=^]:kC=\E[2J:kD=\E[P:kI=\E[@:\
-	:kM=\E0:kN=\E[U:kP=\E[V:kb=\b:kd=\E[B:kh=\E[H:kl=\E[D:\
-	:kr=\E[C:ku=\E[A:le=\E[D:mb=\E[5m:md=\E[1m:\
+	:do=\E[B:ho=\E[H:ic=\E[1@:is=\E[0;10;39m:k1=\EOP:\
+	:k2=\EOQ:k3=\EOR:k4=\EOS:k5=\EOT:k6=\EOU:k7=\EOV:\
+	:k8=\EOW:k9=\EOX:k;=\EOY:kB=^]:kC=\E[2J:kD=\E[P:\
+	:kI=\E[@:kM=\E0:kN=\E[U:kP=\E[V:kb=\b:kd=\E[B:kh=\E[H:\
+	:kl=\E[D:kr=\E[C:ku=\E[A:le=\E[D:mb=\E[5m:md=\E[1m:\
 	:me=\E[0;10m:mk=\E[9m:mr=\E[7m:nd=\E[C:op=\E[0m:\
-	:se=\E[m:sf=\E[S:so=\E[7m:ta=\t:sr=\E[T:TC=\E[%d@:\
-	:IC=\E[%d@:ue=\E[m:up=\E[A:us=\E[4m:vb=^G:bc=\E[D:nl=\E[B:\
-	:ko=le,do,nd,up,dc,ho:
+	:se=\E[m:sf=\E[S:so=\E[43;30m:ta=\t:ue=\E[m:up=\E[A:\
+	:sr=\E[T:TC=\E[%d@:IC=\E[%d@:\
+	:us=\E[4m:vb=^G:bc=\E[D:nl=\E[B:ko=le,do,nd,up,dc,h
 Bf|s4|PC7300|unixpc|pc7300|7300|3b1|Safari 4:\
 	:so=\E[2;7m:DS=\E[2m:XS=\E[9m:KM=/usr/lib/ua/kmap.s4:tc=pc6300plus:
 # AT&T Teletype 610 Terminal
