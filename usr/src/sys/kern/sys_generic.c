@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sys_generic.c	8.7 (Berkeley) %G%
+ *	@(#)sys_generic.c	8.8 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -463,6 +463,7 @@ struct select_args {
 	fd_set	*in, *ou, *ex;
 	struct	timeval *tv;
 };
+
 select(p, uap, retval)
 	register struct proc *p;
 	register struct select_args *uap;
@@ -470,7 +471,7 @@ select(p, uap, retval)
 {
 	fd_set ibits[3], obits[3];
 	struct timeval atv;
-	int s, ncoll, error = 0, timo, doblock;
+	int s, ncoll, error, timo = 0;
 	u_int ni;
 
 	bzero((caddr_t)ibits, sizeof(ibits));
@@ -499,17 +500,10 @@ select(p, uap, retval)
 			error = EINVAL;
 			goto done;
 		}
-		/*
-		 * Don't let a short time get rounded down to zero
-		 * and cause us to sleep forever, but exactly zero
-		 * means "do not block".
-		 */
-		doblock = (atv.tv_usec || atv.tv_sec);
 		s = splclock();
 		timevaladd(&atv, (struct timeval *)&time);
 		splx(s);
-	} else
-		timo = 0;
+	}
 retry:
 	ncoll = nselcoll;
 	p->p_flag |= P_SELECT;
@@ -522,11 +516,15 @@ retry:
 			splx(s);
 			goto done;
 		}
-		timo = hzto(&atv);
 		/*
-		 * Avoid inadvertently sleeping forever.
+		 * If poll wait was tiny, this could be zero; we will
+		 * have to round it up to avoid sleeping forever.  If
+		 * we retry below, the timercmp above will get us out.
+		 * Note that if wait was 0, the timercmp will prevent
+		 * us from getting here the first time.
 		 */
-		if (doblock && timo == 0)
+		timo = hzto(&atv);
+		if (timo == 0)
 			timo = 1;
 	}
 	if ((p->p_flag & P_SELECT) == 0 || nselcoll != ncoll) {
@@ -534,7 +532,6 @@ retry:
 		goto retry;
 	}
 	p->p_flag &= ~P_SELECT;
-	doblock = 0;
 	error = tsleep((caddr_t)&selwait, PSOCK | PCATCH, "select", timo);
 	splx(s);
 	if (error == 0)
