@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)pathnames.h	5.1 (Berkeley) %G%
+ *	@(#)pathnames.h	5.2 (Berkeley) %G%
  */
 
 #include <paths.h>
@@ -24,7 +24,6 @@
 #define	_PATH_EXRECOVER		"/usr/libexec/ex3.7recover"
 #define	_PATH_EXPRESERVE	"/usr/libexec/ex3.7preserve"
 #define	_PATH_PRESERVE		"/var/preserve"
-#define	_PATH_TMP		"tmp"
 #ifndef VMUNIX
 #ifndef	vms
 #define	EXSTRINGS	"/usr/libexec/ex3.7strings"
