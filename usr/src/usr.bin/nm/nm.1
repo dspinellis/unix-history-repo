@@ -3,10 +3,8 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)nm.1	6.5 (Berkeley) %G%
+.\"     @(#)nm.1	6.6 (Berkeley) %G%
 .\"
-.Vx
-.Vx
 .Dd 
 .Dt NM 1
 .Os BSD 4
@@ -34,49 +32,49 @@ searches for the file
 and if present, displays the symbol
 table for
 .Pa a.out .
-.Pp
-.Tp Fl a
+.Bl -tag -width Fl
+.It Fl a
 Display symbol table entries inserted for use by debuggers.
-.Tp Fl g
+.It Fl g
 Restrict display to external (global) symbols.
-.Tp Fl n
+.It Fl n
 Present results in numerical order.
-.Tp Fl o
+.It Fl o
 Display full path or library name of object on every line.
-.Tp Fl p
+.It Fl p
 Do not sort at all.
-.Tp Fl r
+.It Fl r
 Reverse order sort.
-.Tp Fl u
+.It Fl u
 Display undefined symbols only.
-.Tp Fl w
+.It Fl w
 Warn about non-object archive members.
 Normally, nm will silently ignore all archive members which are not
 object files.
-.Tp
+.El
 .Pp
 Each symbol name is preceded by its value (a blank field if the symbol
 is undefined) and one of the following letters:
-.Tw Ds
-.Tp Fl
+.Bl -tag -width Ds -compact
+.It Fl
 debugger symbol table entries (see the
 .Fl a
 option).
-.Tp Li A
+.It Li A
 absolute
-.Tp Li B
+.It Li B
 bss segment symbol
-.Tp Li C
+.It Li C
 common symbol
-.Tp Li D
+.It Li D
 data segment symbol
-.Tp Li f
+.It Li f
 file name
-.Tp Li T
+.It Li T
 text segment symbol
-.Tp Li U
+.It Li U
 undefined
-.Tp
+.El
 .Pp
 If the symbol is local (non-external) the type letter is in lower case.
 The output is sorted alphabetically.
@@ -86,5 +84,7 @@ The output is sorted alphabetically.
 .Xr a.out 5 ,
 .Xr stab 5
 .Sh HISTORY
-.Nm Nm
-appeared in Version 6 AT&T UNIX.
+An
+.Nm nm
+command appeared in
+.At v6 .
