@@ -246,8 +246,8 @@ jkfprintf(tp, name, offset)
 		/* Should not happen */
 		return;
 	}
-	setuid(pw->pw_uid);
 	setgid(pw->pw_gid);
+	setuid(pw->pw_uid);
 
 	if ((fi = fopen(name, "r")) == NULL)
 		return;
