@@ -6,7 +6,9 @@
 #include <ctype.h>
 #include <string.h>
 #include <sys/file.h>
+#if !defined(__GNUC__)
 #include <alloca.h>
+#endif
 #ifndef O_ACCMODE
 #define O_ACCMODE (O_RDONLY | O_WRONLY | O_RDWR)
 #endif
