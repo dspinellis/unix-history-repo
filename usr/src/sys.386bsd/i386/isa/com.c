@@ -34,9 +34,10 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00019
+ * CURRENT PATCH LEVEL:         3       00045
  * --------------------         -----   ----------------------
  *
+ * 23 Sep 92	Rodney W. Grimes	Fix SILO overflow on 16550 UARTS
  * 30 Aug 92	Poul-Henning Kamp	Stabilize SLIP on lossy lines/UARTS
  * 09 Aug 92	Christoph Robitschko	Correct minor number on com ports
  */
@@ -147,7 +148,7 @@ struct isa_device *isdp;
 	comsoftCAR |= 1 << unit;	/* XXX */
 
 	/* look for a NS 16550AF UART with FIFOs */
-	outb(port+com_fifo, FIFO_ENABLE|FIFO_RCV_RST|FIFO_XMT_RST|FIFO_TRIGGER_14);
+	outb(port+com_fifo, FIFO_ENABLE|FIFO_RCV_RST|FIFO_XMT_RST|FIFO_TRIGGER_4);
 	DELAY(100);
 	if ((inb(port+com_iir) & IIR_FIFO_MASK) == IIR_FIFO_MASK) {
 		com_hasfifo |= 1 << unit;
@@ -513,7 +514,7 @@ comparam(tp, t)
 	outb(com+com_cfcr, cfcr);
 
 	if (com_hasfifo & (1 << unit))
-		outb(com+com_fifo, FIFO_ENABLE | FIFO_TRIGGER_14);
+		outb(com+com_fifo, FIFO_ENABLE | FIFO_TRIGGER_4);
 
 	return(0);
 }
@@ -663,7 +664,7 @@ cominit(unit, rate)
 	outb(com+com_ier, rate >> 8);
 	outb(com+com_cfcr, CFCR_8BITS);
 	outb(com+com_ier, IER_ERXRDY | IER_ETXRDY);
-	outb(com+com_fifo, FIFO_ENABLE|FIFO_RCV_RST|FIFO_XMT_RST|FIFO_TRIGGER_14);
+	outb(com+com_fifo, FIFO_ENABLE|FIFO_RCV_RST|FIFO_XMT_RST|FIFO_TRIGGER_4);
 	stat = inb(com+com_iir);
 	splx(s);
 }
