@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	6.55 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	6.56 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <sys/ioctl.h>
@@ -179,7 +179,6 @@ setdefaults(e)
 	TimeOuts.to_q_warning = 0;		/* option T */
 	PrivacyFlags = 0;			/* option p */
 	setdefuser();
-	setupaliases();
 	setupmaps();
 	setupmailers();
 }
@@ -199,97 +198,6 @@ setdefuser()
 		strcpy(defuserbuf, defpwent->pw_name);
 	else
 		strcpy(defuserbuf, "nobody");
-}
-/*
-**  SETUPMAPS -- set up map classes
-**
-**	Since these are compiled in, they cannot be in the config file.
-**
-*/
-
-setupmaps()
-{
-	register STAB *s;
-
-	/* host name lookup map */
-	{
-		extern bool host_map_init();
-		extern char *maphostname();
-
-		s = stab("host", ST_MAPCLASS, ST_ENTER);
-		s->s_mapclass.map_init = host_map_init;
-		s->s_mapclass.map_lookup = maphostname;
-	}
-
-	/* dequote map */
-	{
-		extern bool dequote_init();
-		extern char *dequote_map();
-
-		s = stab("dequote", ST_MAPCLASS, ST_ENTER);
-		s->s_mapclass.map_init = dequote_init;
-		s->s_mapclass.map_lookup = dequote_map;
-	}
-
-# ifdef DBM_MAP
-	/* dbm file access */
-	{
-		extern bool dbm_map_init();
-		extern char *dbm_map_lookup();
-
-		s = stab("dbm", ST_MAPCLASS, ST_ENTER);
-		s->s_mapclass.map_init = dbm_map_init;
-		s->s_mapclass.map_lookup = dbm_map_lookup;
-	}
-# endif
-
-# ifdef BTREE_MAP
-	/* new database file access -- btree files */
-	{
-		extern bool bt_map_init();
-		extern char *db_map_lookup();
-
-		s = stab("btree", ST_MAPCLASS, ST_ENTER);
-		s->s_mapclass.map_init = bt_map_init;
-		s->s_mapclass.map_lookup = db_map_lookup;
-	}
-# endif
-
-# ifdef HASH_MAP
-	/* new database file access -- hash files */
-	{
-		extern bool hash_map_init();
-		extern char *db_map_lookup();
-
-		s = stab("hash", ST_MAPCLASS, ST_ENTER);
-		s->s_mapclass.map_init = hash_map_init;
-		s->s_mapclass.map_lookup = db_map_lookup;
-	}
-# endif
-
-# ifdef NIS_MAP
-	/* NIS map access */
-	{
-		extern bool nis_map_init();
-		extern char *nis_map_lookup();
-
-		s = stab("nis", ST_MAPCLASS, ST_ENTER);
-		s->s_mapclass.map_init = nis_map_init;
-		s->s_mapclass.map_lookup = nis_map_lookup;
-	}
-# endif
-
-# ifdef USERDB_MAP
-	/* user database */
-	{
-		extern bool udb_map_init();
-		extern char *udb_map_lookup();
-
-		s = stab("udb", ST_MAPCLASS, ST_ENTER);
-		s->s_mapclass.map_init = udb_map_init;
-		s->s_mapclass.map_lookup = udb_map_lookup;
-	}
-# endif
 }
 /*
 **  HOST_MAP_INIT -- initialize host class structures

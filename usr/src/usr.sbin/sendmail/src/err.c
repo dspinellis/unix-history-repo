@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	6.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	6.18 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -352,8 +352,6 @@ fmtmsg(eb, to, num, eno, fmt, ap)
 	/* output the error code, if any */
 	if (eno != 0)
 	{
-		extern char *errstring();
-
 		(void) sprintf(eb, ": %s", errstring(eno));
 		eb += strlen(eb);
 	}
@@ -374,11 +372,11 @@ fmtmsg(eb, to, num, eno, fmt, ap)
 **		none.
 */
 
-char *
+const char *
 errstring(errno)
 	int errno;
 {
-	extern char *sys_errlist[];
+	extern const char *const sys_errlist[];
 	extern int sys_nerr;
 	static char buf[MAXLINE];
 # ifdef SMTP

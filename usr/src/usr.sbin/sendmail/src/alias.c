@@ -9,80 +9,13 @@
 # include "sendmail.h"
 # include <signal.h>
 # include <pwd.h>
-# ifdef DBM
-ERROR: DBM is no longer supported -- use NDBM instead.
-# endif
-# ifdef NEWDB
-# include <db.h>
-# endif
-# ifdef NDBM
-# include <ndbm.h>
-# endif
-# ifdef NIS_ALIASES
-# include <rpcsvc/ypclnt.h>
-# endif
 
 #ifndef lint
-#ifdef NEWDB
-#ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.45 (Berkeley) %G% (with NEWDB and NDBM)";
-#else
-static char sccsid[] = "@(#)alias.c	6.45 (Berkeley) %G% (with NEWDB)";
-#endif
-#else
-#ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.45 (Berkeley) %G% (with NDBM)";
-#else
-static char sccsid[] = "@(#)alias.c	6.45 (Berkeley) %G% (without NEWDB or NDBM)";
-#endif
-#endif
+static char sccsid[] = "@(#)alias.c	6.46 (Berkeley) %G%";
 #endif /* not lint */
-/*
-**  Alias data structures
-*/
-#define ALIASDB		struct _aliasdb
 
 
-ALIASDB
-{
-	ALIASCLASS	*ad_class;	/* class of this database */
-	char		*ad_name;	/* name of alias file */
-	char		*ad_domain;	/* name of (NIS) domain */
-	void		*ad_dbp;	/* ndbm/nis database pointer */
-#ifdef NEWDB
-	DB		*ad_ndbp;	/* newdb database pointer */
-#endif
-	short		ad_flags;	/* flag bits */
-};
-
-/* bits for ad_flags */
-#define ADF_VALID	0x0001		/* database initialized */
-#define ADF_WRITABLE	0x0002		/* open for write */
-#define ADF_IMPLHASH	0x0004		/* IMPL: underlying hash database */
-#define ADF_IMPLNDBM	0x0008		/* IMPL: underlying NDBM database */
-
-
-ALIASCLASS
-{
-	char	*ac_name;		/* name of alias class */
-	char	*(*ac_lookup)__P((ALIASDB *, char *, ENVELOPE *));
-					/* lookup func */
-	void	(*ac_store)__P((ALIASDB *, char *, char *, ENVELOPE *));
-					/* database store func */
-	bool	(*ac_init)__P((ALIASDB *, ENVELOPE *));
-					/* initialization func */
-	void	(*ac_rebuild)__P((ALIASDB *, FILE *, int, ENVELOPE *));
-					/* initialization func */
-	void	(*ac_close)__P((ALIASDB *, ENVELOPE *));
-					/* close function */
-	short	ac_flags;		/* flag bits */
-};
-
-/* bits for ac_flags */
-#define ACF_BUILDABLE	0x0001		/* can build a cached version */
-
-
-ALIASDB	AliasDB[MAXALIASDB + 1];	/* actual database list */
+MAP	AliasDB[MAXALIASDB + 1];	/* actual database list */
 int	NAliasDBs;			/* number of alias databases */
 /*
 **  ALIAS -- Compute aliases.
@@ -215,15 +148,19 @@ aliaslookup(name, e)
 	ENVELOPE *e;
 {
 	register int dbno;
-	register ALIASDB *ad;
+	register MAP *map;
 	register char *p;
+	char *nullargv[1];
 
+	nullargv[0] = NULL;
 	for (dbno = 0; dbno < NAliasDBs; dbno++)
 	{
-		ad = &AliasDB[dbno];
-		if (!bitset(ADF_VALID, ad->ad_flags))
+		auto int stat;
+
+		map = &AliasDB[dbno];
+		if (!bitset(MF_VALID, map->map_flags))
 			continue;
-		p = (*ad->ad_class->ac_lookup)(ad, name, e);
+		p = (*map->map_class->map_lookup)(map, name, nullargv, &stat);
 		if (p != NULL)
 			return p;
 	}
@@ -245,7 +182,7 @@ setalias(spec)
 	char *spec;
 {
 	register char *p;
-	register ALIASDB *ad;
+	register MAP *map;
 	char *class;
 	STAB *s;
 
@@ -265,20 +202,21 @@ setalias(spec)
 			syserr("Too many alias databases defined, %d max", MAXALIASDB);
 			return;
 		}
-		ad = &AliasDB[NAliasDBs];
+		map = &AliasDB[NAliasDBs];
+		bzero(map, sizeof *map);
 
 		p = strpbrk(p, " ,/:");
 		if (p != NULL && *p == ':')
 		{
-			/* explicit class listed */
+			/* map name */
 			*p++ = '\0';
 			class = spec;
 			spec = p;
 		}
 		else
 		{
-			/* implicit class */
 			class = "implicit";
+			map->map_flags = MF_OPTIONAL;
 		}
 
 		/* find end of spec */
@@ -288,7 +226,7 @@ setalias(spec)
 			*p++ = '\0';
 
 		/* look up class */
-		s = stab(class, ST_ALIASCLASS, ST_FIND);
+		s = stab(class, ST_MAPCLASS, ST_FIND);
 		if (s == NULL)
 		{
 			if (tTd(27, 1))
@@ -296,9 +234,12 @@ setalias(spec)
 		}
 		else
 		{
-			ad->ad_class = s->s_aliasclass;
-			ad->ad_name = newstr(spec);
-			NAliasDBs++;
+			map->map_class = s->s_mapclass;
+			if (map->map_class->map_parse(map, spec))
+			{
+				map->map_flags |= MF_VALID;
+				NAliasDBs++;
+			}
 		}
 	}
 }
@@ -327,33 +268,34 @@ initaliases(rebuild, e)
 	register ENVELOPE *e;
 {
 	int dbno;
-	register ALIASDB *ad;
+	register MAP *map;
 
 	for (dbno = 0; dbno < NAliasDBs; dbno++)
 	{
-		ad = &AliasDB[dbno];
+		map = &AliasDB[dbno];
 
 		if (tTd(27, 2))
 			printf("initaliases(%s:%s)\n",
-				ad->ad_class->ac_name, ad->ad_name);
+				map->map_class->map_cname, map->map_file);
 
 		if (rebuild)
 		{
-			rebuildaliases(ad, FALSE, e);
+			rebuildaliases(map, FALSE, e);
 		}
 		else
 		{
-			if (ad->ad_class->ac_init(ad, e))
+			if (map->map_class->map_open(map, O_RDONLY))
 			{
 				if (tTd(27, 4))
 					printf("%s:%s: valid\n",
-						ad->ad_class->ac_name,
-						ad->ad_name);
-				ad->ad_flags |= ADF_VALID;
+						map->map_class->map_cname,
+						map->map_file);
+				map->map_flags |= MF_VALID;
+				aliaswait(map, e);
 			}
 			else if (tTd(27, 4))
 				printf("%s:%s: invalid: %s\n",
-					ad->ad_class->ac_name, ad->ad_name,
+					map->map_class->map_cname, map->map_file,
 					errstring(errno));
 		}
 	}
@@ -364,9 +306,8 @@ initaliases(rebuild, e)
 **	This can decide to reopen or rebuild the alias file
 */
 
-aliaswait(ad, ext, e)
-	ALIASDB *ad;
-	char *ext;
+aliaswait(map, e)
+	MAP *map;
 	ENVELOPE *e;
 {
 	int atcnt;
@@ -380,8 +321,10 @@ aliaswait(ad, ext, e)
 	atcnt = SafeAlias * 2;
 	if (atcnt > 0)
 	{
+		auto int st;
+
 		while (atcnt-- >= 0 &&
-		       ad->ad_class->ac_lookup(ad, "@", e) == NULL)
+		       map->map_class->map_lookup(map, "@", NULL, &st) == NULL)
 		{
 			/*
 			**  Close and re-open the alias database in case
@@ -391,36 +334,36 @@ aliaswait(ad, ext, e)
 			if (tTd(27, 2))
 				printf("aliaswait: sleeping\n");
 
-			ad->ad_class->ac_close(ad, e);
+			map->map_class->map_close(map);
 			sleep(30);
-			ad->ad_class->ac_init(ad, e);
+			map->map_class->map_open(map, O_RDONLY);
 		}
 	}
 
 	/* see if we need to go into auto-rebuild mode */
-	if (stat(ad->ad_name, &stb) < 0)
+	if (map->map_class->map_rebuild == NULL ||
+	    stat(map->map_file, &stb) < 0)
 		return;
 	mtime = stb.st_mtime;
-	(void) strcpy(buf, ad->ad_name);
-	(void) strcat(buf, ext);
+	(void) strcpy(buf, map->map_file);
+	if (map->map_class->map_ext != NULL)
+		(void) strcat(buf, map->map_class->map_ext);
 	if (stat(buf, &stb) < 0 || stb.st_mtime < mtime || atcnt < 0)
 	{
 		/* database is out of date */
 		if (AutoRebuild && stb.st_ino != 0 && stb.st_uid == geteuid())
 		{
-			message("auto-rebuilding alias database %s",
-				ad->ad_name);
-			rebuildaliases(ad, TRUE, e);
+			message("auto-rebuilding alias database %s", buf);
+			rebuildaliases(map, TRUE, e);
 		}
 		else
 		{
 #ifdef LOG
 			if (LogLevel > 3)
 				syslog(LOG_INFO, "alias database %s out of date",
-					ad->ad_name);
+					buf);
 #endif /* LOG */
-			message("Warning: alias database %s out of date",
-				ad->ad_name);
+			message("Warning: alias database %s out of date", buf);
 		}
 	}
 }
@@ -428,7 +371,7 @@ aliaswait(ad, ext, e)
 **  REBUILDALIASES -- rebuild the alias database.
 **
 **	Parameters:
-**		ad -- the database to rebuild.
+**		map -- the database to rebuild.
 **		automatic -- set if this was automatically generated.
 **		e -- current envelope.
 **
@@ -440,15 +383,15 @@ aliaswait(ad, ext, e)
 **		DBM or DB version.
 */
 
-rebuildaliases(ad, automatic, e)
-	register ALIASDB *ad;
+rebuildaliases(map, automatic, e)
+	register MAP *map;
 	bool automatic;
 	register ENVELOPE *e;
 {
 	FILE *af;
 	void (*oldsigint)();
 
-	if (!bitset(ACF_BUILDABLE, ad->ad_class->ac_flags))
+	if (map->map_class->map_rebuild == NULL)
 		return;
 
 #ifdef LOG
@@ -457,31 +400,31 @@ rebuildaliases(ad, automatic, e)
 		extern char *username();
 
 		syslog(LOG_NOTICE, "alias database %s %srebuilt by %s",
-			ad->ad_name, automatic ? "auto" : "", username());
+			map->map_file, automatic ? "auto" : "", username());
 	}
 #endif /* LOG */
 
 	/* try to lock the source file */
-	if ((af = fopen(ad->ad_name, "r+")) == NULL)
+	if ((af = fopen(map->map_file, "r+")) == NULL)
 	{
 		if (tTd(27, 1))
 			printf("Can't open %s: %s\n",
-				ad->ad_name, errstring(errno));
-		ad->ad_flags &= ~ADF_VALID;
+				map->map_file, errstring(errno));
+		map->map_flags &= ~MF_VALID;
 		errno = 0;
 		return;
 	}
 
 	/* see if someone else is rebuilding the alias file */
-	if (!lockfile(fileno(af), ad->ad_name, LOCK_EX|LOCK_NB))
+	if (!lockfile(fileno(af), map->map_file, LOCK_EX|LOCK_NB))
 	{
 		/* yes, they are -- wait until done */
 		message("Alias file %s is already being rebuilt",
-			ad->ad_name);
+			map->map_file);
 		if (OpMode != MD_INITALIAS)
 		{
 			/* wait for other rebuild to complete */
-			(void) lockfile(fileno(af), ad->ad_name,
+			(void) lockfile(fileno(af), map->map_file,
 					LOCK_EX);
 		}
 		(void) fclose(af);
@@ -491,14 +434,19 @@ rebuildaliases(ad, automatic, e)
 
 	oldsigint = signal(SIGINT, SIG_IGN);
 
-	ad->ad_class->ac_rebuild(ad, af, automatic, e);
+	map->map_class->map_open(map, O_RDWR);
+	if (bitset(MF_VALID, map->map_flags))
+	{
+		map->map_class->map_rebuild(map, af, automatic);
+		readaliases(map, af, automatic, e);
+	}
 
 	/* close the file, thus releasing locks */
 	fclose(af);
 
 	/* add distinguished entries and close the database */
-	if (bitset(ADF_VALID, ad->ad_flags))
-		ad->ad_class->ac_close(ad, e);
+	if (bitset(MF_VALID, map->map_flags))
+		map->map_class->map_close(map);
 
 	/* restore the old signal */
 	(void) signal(SIGINT, oldsigint);
@@ -510,10 +458,10 @@ rebuildaliases(ad, automatic, e)
 **	when we are not going to use the DBM stuff.
 **
 **	Parameters:
-**		ad -- the alias database descriptor.
+**		map -- the alias database descriptor.
 **		af -- file to read the aliases from.
 **		automatic -- set if this was an automatic rebuild.
-**		e -- the current alias file.
+**		e -- the current envelope.
 **
 **	Returns:
 **		none.
@@ -523,9 +471,8 @@ rebuildaliases(ad, automatic, e)
 **		Optionally, builds the .dir & .pag files.
 */
 
-static
-readaliases(ad, af, automatic, e)
-	register ALIASDB *ad;
+readaliases(map, af, automatic, e)
+	register MAP *map;
 	FILE *af;
 	int automatic;
 	register ENVELOPE *e;
@@ -543,7 +490,7 @@ readaliases(ad, af, automatic, e)
 	**  Read and interpret lines
 	*/
 
-	FileName = ad->ad_name;
+	FileName = map->map_file;
 	LineNumber = 0;
 	naliases = bytes = longest = 0;
 	skipping = FALSE;
@@ -708,7 +655,7 @@ readaliases(ad, af, automatic, e)
 
 		lhssize = strlen(al.q_user);
 		rhssize = strlen(rhs);
-		ad->ad_class->ac_store(ad, al.q_user, rhs, e);
+		map->map_class->map_store(map, al.q_user, rhs);
 
 		if (al.q_paddr != NULL)
 			free(al.q_paddr);
@@ -728,799 +675,12 @@ readaliases(ad, af, automatic, e)
 	FileName = NULL;
 	if (Verbose || !automatic)
 		message("%s: %d aliases, longest %d bytes, %d bytes total",
-			ad->ad_name, naliases, longest, bytes);
+			map->map_file, naliases, longest, bytes);
 # ifdef LOG
 	if (LogLevel > 7)
 		syslog(LOG_INFO, "%s: %d aliases, longest %d bytes, %d bytes total",
-			ad->ad_name, naliases, longest, bytes);
+			map->map_file, naliases, longest, bytes);
 # endif /* LOG */
-}
-/*
-**  NDBM modules
-*/
-
-#ifdef NDBM
-
-/*
-**  NDBM_ALOOKUP -- look up alias in ndbm file
-*/
-
-char *
-ndbm_alookup(ad, name, e)
-	register ALIASDB *ad;
-	char *name;
-	ENVELOPE *e;
-{
-	int i;
-	datum rhs, lhs;
-	char keybuf[MAXNAME + 1];
-
-	if (tTd(27, 20))
-		printf("ndbm_lookup(%s)\n", name);
-
-	/* create a key for fetch */
-	i = strlen(name) + 1;
-	if (i > sizeof keybuf)
-		i = sizeof keybuf;
-	bcopy(name, keybuf, i);
-	if (!bitnset(M_USR_UPPER, LocalMailer->m_flags))
-		makelower(keybuf);
-
-	lhs.dsize = i;
-	lhs.dptr = keybuf;
-	rhs = dbm_fetch((DBM *) ad->ad_dbp, lhs);
-	return (rhs.dptr);
-}
-
-
-/*
-**  NDBM_ASTORE -- store a datum in the database
-*/
-
-void
-ndbm_astore(ad, lhs, rhs, e)
-	register ALIASDB *ad;
-	char *lhs;
-	char *rhs;
-	ENVELOPE *e;
-{
-	datum key;
-	datum data;
-	int stat;
-
-	key.dsize = strlen(lhs) + 1;
-	key.dptr = lhs;
-
-	data.dsize = strlen(rhs) + 1;
-	data.dptr = rhs;
-
-	stat = dbm_store((DBM *) ad->ad_dbp, key, data, DBM_INSERT);
-	if (stat > 0)
-	{
-		usrerr("050 Warning: duplicate alias name %s", lhs);
-		stat = dbm_store((DBM *) ad->ad_dbp, key, data, DBM_REPLACE);
-	}
-	if (stat != 0)
-		syserr("readaliases: dbm put (%s)", lhs);
-}
-
-
-/*
-**  NDBM_AINIT -- initialize DBM database
-*/
-
-bool
-ndbm_ainit(ad, e)
-	register ALIASDB *ad;
-	ENVELOPE *e;
-{
-	char buf[MAXNAME];
-
-	if (tTd(27, 2))
-		printf("ndbm_ainit(%s)\n", ad->ad_name);
-
-	/* open the database */
-	ad->ad_dbp = (void *) dbm_open(ad->ad_name, O_RDONLY, DBMMODE);
-	if (ad->ad_dbp == NULL)
-		return FALSE;
-
-	/* wait for @:@ to appear */
-	aliaswait(ad, ".pag", e);
-
-	return TRUE;
-}
-
-
-/*
-**  NDBM_AREBUILD -- rebuild hash database
-*/
-
-void
-ndbm_arebuild(ad, fp, automatic, e)
-	register ALIASDB *ad;
-	FILE *fp;
-	int automatic;
-	ENVELOPE *e;
-{
-	register DBM *db;
-	int i;
-	char buf[MAXNAME];
-
-	if (tTd(27, 2))
-		printf("ndbm_arebuild(%s)\n", ad->ad_name);
-
-	db = dbm_open(ad->ad_name, O_RDWR|O_CREAT|O_TRUNC, DBMMODE);
-	if (db == NULL)
-	{
-		syserr("ndbm_arebuild: cannot create %s", buf);
-		return;
-	}
-	ad->ad_dbp = (void *) db;
-	ad->ad_flags |= ADF_WRITABLE|ADF_VALID;
-
-	/* read and store the aliases */
-	readaliases(ad, fp, automatic, e);
-}
-
-/*
-**  NDBM_ACLOSE -- close the database
-*/
-
-void
-ndbm_aclose(ad, e)
-	register ALIASDB  *ad;
-	ENVELOPE *e;
-{
-	if (bitset(ADF_WRITABLE, ad->ad_flags))
-	{
-#ifdef YPCOMPAT
-		char buf[200];
-
-		(void) sprintf(buf, "%010ld", curtime());
-		ndbm_astore(ad, "YP_LAST_MODIFIED", buf, e);
-
-		(void) myhostname(buf, sizeof buf);
-		ndbm_astore(ad, "YP_MASTER_NAME", buf, e);
-#endif
-
-		/* write out the distinguished alias */
-		ndbm_astore(ad, "@", "@", e);
-	}
-	dbm_close((DBM *) ad->ad_dbp);
-}
-
-#endif
-/*
-**  HASH (NEWDB) Modules
-*/
-
-#ifdef NEWDB
-
-/*
-**  HASH_ALOOKUP -- look up alias in hash file
-*/
-
-char *
-hash_alookup(ad, name, e)
-	register ALIASDB *ad;
-	char *name;
-	ENVELOPE *e;
-{
-	int i;
-	DBT rhs, lhs;
-	int s;
-	char keybuf[MAXNAME + 1];
-
-	if (tTd(27, 20))
-		printf("hash_alookup(%s)\n", name);
-
-	/* create a key for fetch */
-	i = strlen(name) + 1;
-	if (i > sizeof keybuf)
-		i = sizeof keybuf;
-	bcopy(name, keybuf, i);
-	if (!bitnset(M_USR_UPPER, LocalMailer->m_flags))
-		makelower(keybuf);
-
-	lhs.size = i;
-	lhs.data = keybuf;
-	i = ad->ad_ndbp->get(ad->ad_ndbp, &lhs, &rhs, 0);
-	if (i == 0)
-		return (rhs.data);
-	return (NULL);
-}
-
-
-/*
-**  HASH_ASTORE -- store a datum in the database
-*/
-
-void
-hash_astore(ad, lhs, rhs, e)
-	register ALIASDB *ad;
-	char *lhs;
-	char *rhs;
-	ENVELOPE *e;
-{
-	int stat;
-	DBT key;
-	DBT data;
-
-	if (tTd(27, 20))
-		printf("hash_astore(%s, %s)\n", lhs, rhs);
-
-	key.size = strlen(lhs) + 1;
-	key.data = lhs;
-
-	data.size = strlen(rhs) + 1;
-	data.data = rhs;
-
-	stat = ad->ad_ndbp->put(ad->ad_ndbp, &key, &data, R_NOOVERWRITE);
-	if (stat > 0)
-	{
-		usrerr("050 Warning: duplicate alias name %s", lhs);
-		stat = ad->ad_ndbp->put(ad->ad_ndbp, &key, &data, 0);
-	}
-	if (stat != 0)
-		syserr("readaliases: db put (%s)", lhs);
-}
-
-
-/*
-**  HASH_AINIT -- initialize hash database
-*/
-
-bool
-hash_ainit(ad, e)
-	register ALIASDB *ad;
-	ENVELOPE *e;
-{
-	char buf[MAXNAME];
-
-	if (tTd(27, 2))
-		printf("hash_ainit(%s)\n", ad->ad_name);
-
-	/* open the database */
-	(void) strcpy(buf, ad->ad_name);
-	(void) strcat(buf, ".db");
-	ad->ad_ndbp = dbopen(buf, O_RDONLY, DBMMODE, DB_HASH, NULL);
-	if (ad->ad_ndbp == NULL)
-		return FALSE;
-
-	/* wait for @:@ to appear */
-	aliaswait(ad, ".db", e);
-	return TRUE;
-}
-
-
-/*
-**  HASH_AREBUILD -- rebuild hash database
-*/
-
-void
-hash_arebuild(ad, fp, automatic, e)
-	register ALIASDB *ad;
-	FILE *fp;
-	int automatic;
-	ENVELOPE *e;
-{
-	register DB *db;
-	char buf[MAXNAME];
-
-	if (tTd(27, 2))
-		printf("hash_arebuild(%s)\n", ad->ad_name);
-
-	(void) strcpy(buf, ad->ad_name);
-	(void) strcat(buf, ".db");
-	db = dbopen(buf, O_RDWR|O_CREAT|O_TRUNC, DBMMODE, DB_HASH, NULL);
-	if (db == NULL)
-	{
-		syserr("hash_arebuild: cannot create %s", buf);
-		return;
-	}
-	ad->ad_ndbp = db;
-	ad->ad_flags |= ADF_WRITABLE|ADF_VALID;
-
-	/* read and store the aliases */
-	readaliases(ad, fp, automatic, e);
-}
-
-
-/*
-**  HASH_ACLOSE -- add distinguished entries and close the database
-*/
-
-void
-hash_aclose(ad, e)
-	ALIASDB *ad;
-	ENVELOPE *e;
-{
-	if (tTd(27, 9))
-		printf("hash_aclose(%x)\n", ad->ad_flags);
-
-	if (bitset(ADF_WRITABLE, ad->ad_flags))
-	{
-		/* write out the distinguished alias */
-		hash_astore(ad, "@", "@", e);
-	}
-
-	if (ad->ad_ndbp->close(ad->ad_ndbp) != 0)
-		syserr("readaliases: db close failure");
-}
-
-#endif
-/*
-**  STAB (Symbol Table) Modules
-*/
-
-
-/*
-**  STAB_ALOOKUP -- look up alias in symbol table
-*/
-
-char *
-stab_alookup(ad, name, e)
-	register ALIASDB *ad;
-	char *name;
-	ENVELOPE *e;
-{
-	register STAB *s;
-
-	if (tTd(27, 20))
-		printf("stab_lookup(%s)\n", name);
-
-	s = stab(name, ST_ALIAS, ST_FIND);
-	if (s != NULL)
-		return (s->s_alias);
-	return (NULL);
-}
-
-
-/*
-**  STAB_ASTORE -- store in symtab (actually using during init, not rebuild)
-*/
-
-void
-stab_astore(ad, lhs, rhs, e)
-	register ALIASDB *ad;
-	char *lhs;
-	char *rhs;
-	ENVELOPE *e;
-{
-	register STAB *s;
-
-	s = stab(lhs, ST_ALIAS, ST_ENTER);
-	s->s_alias = newstr(rhs);
-}
-
-
-/*
-**  STAB_AINIT -- initialize (reads data file)
-*/
-
-bool
-stab_ainit(ad, e)
-	register ALIASDB *ad;
-	ENVELOPE *e;
-{
-	FILE *af;
-
-	if (tTd(27, 2))
-		printf("stab_ainit(%s)\n", ad->ad_name);
-
-	af = fopen(ad->ad_name, "r");
-	if (af == NULL)
-		return FALSE;
-
-	readaliases(ad, af, TRUE, e);
-}
-
-
-/*
-**  STAB_AREBUILD -- rebuild alias file
-*/
-
-void
-stab_arebuild(ad, fp, automatic, e)
-	ALIASDB *ad;
-	FILE *fp;
-	int automatic;
-	ENVELOPE *e;
-{
-	if (tTd(27, 2))
-		printf("stab_arebuild(%s)\n", ad->ad_name);
-
-	ad->ad_flags |= ADF_WRITABLE|ADF_VALID;
-}
-
-
-/*
-**  STAB_ACLOSE -- close symbol table (???)
-*/
-
-void
-stab_aclose(ad, e)
-	ALIASDB *ad;
-	ENVELOPE *e;
-{
-	/* ignore it */
-}
-/*
-**  NIS Modules
-*/
-
-#ifdef NIS_ALIASES
-
-/*
-**  NIS_ALOOKUP
-*/
-
-char *
-nis_alookup(ad, name, e)
-	ALIASDB *ad;
-	char *name;
-	ENVELOPE *e;
-{
-	auto char *vp;
-	auto int vsize;
-	int yperr;
-	int keylen;
-
-	if (tTd(27, 20))
-		printf("nis_lookup(%s)\n", name);
-
-	keylen = strlen(name);
-	yperr = yp_match(ad->ad_domain, ad->ad_name, name, keylen,
-			&vp, &vsize);
-	if (yperr == YPERR_KEY)
-		yperr = yp_match(ad->ad_domain, ad->ad_name, name, ++keylen,
-				&vp, &vsize);
-	if (yperr == 0)
-		return vp;
-
-	if (tTd(27, 10))
-		printf("nis_alookup: yp_match(%s, %s, %s) => %s\n",
-			ad->ad_domain, ad->ad_name, name, yperr_string(yperr));
-	if (yperr != YPERR_KEY && yperr != YPERR_BUSY)
-		ad->ad_flags &= ~ADF_VALID;
-	return NULL;
-}
-
-/*
-**  NIS_ASTORE
-*/
-
-void
-nis_astore(ad, lhs, rhs, e)
-	ALIASDB *ad;
-	char *lhs;
-	char *rhs;
-	ENVELOPE *e;
-{
-	/* nothing */
-}
-
-/*
-**  NIS_AINIT
-*/
-
-bool
-nis_ainit(ad, e)
-	ALIASDB *ad;
-	ENVELOPE *e;
-{
-	register char *p;
-	int yperr;
-	auto char *vp;
-	auto int vsize;
-
-	if (tTd(27, 2))
-		printf("nis_ainit(%s)\n", ad->ad_name);
-
-	p = strchr(ad->ad_name, '@');
-	if (p != NULL)
-	{
-		*p++ = '\0';
-		if (*p != '\0')
-			ad->ad_domain = p;
-	}
-	if (ad->ad_domain == NULL)
-		yp_get_default_domain(&ad->ad_domain);
-
-	if (*ad->ad_name == '\0')
-		ad->ad_name = "mail.aliases";
-
-	yperr = yp_match(ad->ad_domain, ad->ad_name, "@", 1,
-			&vp, &vsize);
-	if (tTd(27, 10))
-		printf("nis_ainit: yp_match(%s, %s) => %s\n",
-			ad->ad_domain, ad->ad_name, yperr_string(yperr));
-	if (yperr == 0 || yperr == YPERR_KEY || yperr == YPERR_BUSY)
-		return TRUE;
-	return FALSE;
-}
-
-/*
-**  NIS_AREBUILD
-*/
-
-void
-nis_arebuild(ad, fp, automatic, e)
-	ALIASDB *ad;
-	FILE *fp;
-	int automatic;
-	ENVELOPE *e;
-{
-	if (tTd(27, 2))
-		printf("nis_arebuild(%s)\n", ad->ad_name);
-}
-
-
-/*
-**  NIS_ACLOSE
-*/
-
-void
-nis_aclose(ad, e)
-	ALIASDB *ad;
-	ENVELOPE *e;
-{
-	/* nothing */
-}
-
-#endif /* NIS_ALIASES */
-/*
-**  Implicit Modules
-**
-**	Tries several types.  For back compatibility.
-*/
-
-/*
-**  IMPL_ALOOKUP -- lookup in best open database
-*/
-
-char *
-impl_alookup(ad, name, e)
-	ALIASDB *ad;
-	char *name;
-	ENVELOPE *e;
-{
-	if (tTd(27, 20))
-		printf("impl_lookup(%s)\n", name);
-
-#ifdef NEWDB
-	if (bitset(ADF_IMPLHASH, ad->ad_flags))
-		return hash_alookup(ad, name, e);
-#endif
-#ifdef NDBM
-	if (bitset(ADF_IMPLNDBM, ad->ad_flags))
-		return ndbm_alookup(ad, name, e);
-#endif
-	return stab_alookup(ad, name, e);
-}
-
-/*
-**  IMPL_ASTORE -- store in open databases
-*/
-
-void
-impl_astore(ad, lhs, rhs, e)
-	ALIASDB *ad;
-	char *lhs;
-	char *rhs;
-	ENVELOPE *e;
-{
-#ifdef NEWDB
-	if (bitset(ADF_IMPLHASH, ad->ad_flags))
-		hash_astore(ad, lhs, rhs, e);
-#endif
-#ifdef NDBM
-	if (bitset(ADF_IMPLNDBM, ad->ad_flags))
-		ndbm_astore(ad, lhs, rhs, e);
-#endif
-	stab_astore(ad, lhs, rhs, e);
-}
-
-/*
-**  IMPL_AINIT -- implicit database lookup
-*/
-
-bool
-impl_ainit(ad, e)
-	ALIASDB *ad;
-	ENVELOPE *e;
-{
-	struct stat stb;
-
-	if (tTd(27, 2))
-		printf("impl_ainit(%s)\n", ad->ad_name);
-
-	if (stat(ad->ad_name, &stb) < 0)
-	{
-		/* no alias file at all */
-		return FALSE;
-	}
-
-#ifdef NEWDB
-	ad->ad_flags |= ADF_IMPLHASH;
-	if (hash_ainit(ad, e))
-	{
-		return TRUE;
-	}
-	ad->ad_flags &= ~ADF_IMPLHASH;
-#endif
-#ifdef NDBM
-	ad->ad_flags |= ADF_IMPLNDBM;
-	if (ndbm_ainit(ad, e))
-	{
-		return TRUE;
-	}
-	ad->ad_flags &= ~ADF_IMPLNDBM;
-#endif
-
-	if (Verbose)
-		message("WARNING: cannot open alias database %s", ad->ad_name);
-
-	if (stab_ainit(ad, e))
-	{
-		return TRUE;
-	}
-
-	return FALSE;
-}
-
-/*
-**  IMPL_AREBUILD -- rebuild alias database
-*/
-
-void
-impl_arebuild(ad, fp, automatic, e)
-	ALIASDB *ad;
-	FILE *fp;
-	int automatic;
-	ENVELOPE *e;
-{
-#ifdef NEWDB
-	DB *ndb;
-	char buf[MAXNAME];
-#endif
-
-	if (tTd(27, 2))
-		printf("impl_arebuild(%s)\n", ad->ad_name);
-
-#ifdef NEWDB
-	(void) strcpy(buf, ad->ad_name);
-	(void) strcat(buf, ".db");
-	ndb = dbopen(buf, O_RDWR|O_CREAT|O_TRUNC, DBMMODE, DB_HASH, NULL);
-	if (ndb == NULL)
-	{
-		syserr("rebuildaliases: cannot create %s", buf);
-	}
-	else
-	{
-		ad->ad_ndbp = ndb;
-		ad->ad_flags |= ADF_IMPLHASH;
-#if defined(NDBM) && defined(YPCOMPAT)
-		if (access("/var/yp/Makefile", R_OK) != 0)
-#endif
-			goto readem;
-	}
-#endif
-
-#ifdef NDBM
-	ad->ad_dbp = (void *) dbm_open(ad->ad_name, O_RDWR|O_CREAT|O_TRUNC, DBMMODE);
-	if (ad->ad_dbp == NULL)
-	{
-		syserr("rebuildaliases: cannot create %s.{pag,dir}",
-			ad->ad_name);
-	}
-	else
-	{
-		ad->ad_flags |= ADF_IMPLNDBM;
-	}
-#endif
-
-	if (!bitset(ADF_IMPLHASH|ADF_IMPLNDBM, ad->ad_flags))
-		return;
-
-  readem:
-	ad->ad_flags |= ADF_WRITABLE|ADF_VALID;
-
-	/* read and store aliases */
-	readaliases(ad, fp, automatic, e);
-}
-
-
-/*
-**  IMPL_ACLOSE -- close any open database(s)
-*/
-
-void
-impl_aclose(ad, e)
-	ALIASDB *ad;
-	ENVELOPE *e;
-{
-#ifdef NEWDB
-	if (bitset(ADF_IMPLHASH, ad->ad_flags))
-		hash_aclose(ad, e);
-#endif
-
-#ifdef NDBM
-	if (bitset(ADF_IMPLNDBM, ad->ad_flags))
-		ndbm_aclose(ad, e);
-#endif
-}
-/*
-**  SETUPALIASES -- set up aliases classes
-*/
-
-#ifdef NEWDB
-ALIASCLASS	HashAClass =
-{
-	"hash",		hash_alookup,	hash_astore,
-	hash_ainit,	hash_arebuild,	hash_aclose,
-	ACF_BUILDABLE
-};
-#endif
-
-#ifdef NDBM
-ALIASCLASS	DbmAClass =
-{
-	"dbm",		ndbm_alookup,	ndbm_astore,
-	ndbm_ainit,	ndbm_arebuild,	ndbm_aclose,
-	ACF_BUILDABLE
-};
-#endif
-
-#ifdef NIS_ALIASES
-ALIASCLASS	NisAClass =
-{
-	"nis",		nis_alookup,	nis_astore,
-	nis_ainit,	nis_arebuild,	nis_aclose,
-	0
-};
-#endif
-
-ALIASCLASS	StabAClass =
-{
-	"stab",		stab_alookup,	stab_astore,
-	stab_ainit,	stab_arebuild,	stab_aclose,
-	0
-};
-
-ALIASCLASS	ImplAClass =
-{
-	"implicit",	impl_alookup,	impl_astore,
-	impl_ainit,	impl_arebuild,	impl_aclose,
-	ACF_BUILDABLE
-};
-
-setupaliases()
-{
-	register STAB *s;
-
-#ifdef NEWDB
-	s = stab("hash", ST_ALIASCLASS, ST_ENTER);
-	s->s_aliasclass = &HashAClass;
-#endif
-
-#ifdef NDBM
-	s = stab("dbm", ST_ALIASCLASS, ST_ENTER);
-	s->s_aliasclass = &DbmAClass;
-#endif
-
-#ifdef NIS_ALIASES
-	s = stab("nis", ST_ALIASCLASS, ST_ENTER);
-	s->s_aliasclass = &NisAClass;
-#endif
-
-#if !defined(NEWDB) && !defined(NDBM)
-	s = stab("stab", ST_ALIASCLASS, ST_ENTER);
-	s->s_aliasclass = &StabAClass;
-#endif
-
-	s = stab("implicit", ST_ALIASCLASS, ST_ENTER);
-	s->s_aliasclass = &ImplAClass;
 }
 /*
 **  FORWARD -- Try to forward mail
