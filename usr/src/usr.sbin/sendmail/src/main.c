@@ -6,7 +6,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)main.c	3.120		%G%);
+SCCSID(@(#)main.c	3.121		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -385,13 +385,14 @@ main(argc, argv)
 	{
 		char buf[MAXLINE];
 
-		printf("TEST MODE\nEnter <ruleset> <address>\n");
+		printf("ADDRESS TEST MODE\nEnter <ruleset> <address>\n");
 		for (;;)
 		{
 			register char **pvp;
+			char *q;
 			extern char **prescan();
 			extern char **rewrite();
-			char *q;
+			extern char *DelimChar;
 
 			printf("> ");
 			fflush(stdout);
@@ -402,20 +403,23 @@ main(argc, argv)
 			q = p;
 			while (*p != '\0' && !isspace(*p))
 				p++;
-			while (isspace(*p))
-				*p++ = '\0';
 			if (*p == '\0')
 				continue;
-			pvp = prescan(p, '\n');
-			rewrite(pvp, 3);
-			p = q;
-			while (*p != '\0')
+			*p = '\0';
+			do
 			{
-				q = p;
-				while (*p != '\0' && *p++ != ',')
+				pvp = prescan(++p, ',');
+				if (pvp == NULL)
 					continue;
-				rewrite(pvp, atoi(q));
-			}
+				rewrite(pvp, 3);
+				p = q;
+				while (*p != '\0')
+				{
+					rewrite(pvp, atoi(p));
+					while (*p != '\0' && *p++ != ',')
+						continue;
+				}
+			} while (*(p = DelimChar) != '\0');
 		}
 	}
 
