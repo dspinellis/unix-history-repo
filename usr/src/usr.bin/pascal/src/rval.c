@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rval.c 1.16 %G%";
+static char sccsid[] = "@(#)rval.c 1.17 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -843,6 +843,8 @@ cstrng:
 					error("%s not allowed on pointers - only allow = and <>" , opname );
 					return (NIL);
 				}
+				if (p != nl+TNIL && p1 != nl+TNIL && p != p1)
+					goto nonident;
 				break;
 			case TSTR:
 				if (c1 != TSTR)
