@@ -1,5 +1,5 @@
 #ifndef lint
-    static	char *sccsid = "@(#)arcs.c	1.13 (Berkeley) %G%";
+    static	char *sccsid = "@(#)arcs.c	1.14 (Berkeley) %G%";
 #endif lint
 
 #include "gprof.h"
@@ -483,9 +483,16 @@ inheritflags( childp )
 		continue;
 	    }
 	    childp -> printflag |= parentp -> printflag;
-	    childp -> propfraction += parentp -> propfraction
-					* ( ( (double) arcp -> arc_count )
-					  / ( (double) childp -> ncall ) );
+		/*
+		 *	if the child was never actually called
+		 *	(e.g. this arc is static (and all others are, too))
+		 *	no time propagates along this arc.
+		 */
+	    if ( childp -> ncall ) {
+		childp -> propfraction += parentp -> propfraction
+					    * ( ( (double) arcp -> arc_count )
+					      / ( (double) childp -> ncall ) );
+	    }
 	}
     } else {
 	    /*
@@ -501,9 +508,16 @@ inheritflags( childp )
 		}
 		parentp = arcp -> arc_parentp;
 		headp -> printflag |= parentp -> printflag;
-		headp -> propfraction += parentp -> propfraction
-					* ( ( (double) arcp -> arc_count )
-					  / ( (double) headp -> ncall ) );
+		    /*
+		     *	if the cycle was never actually called
+		     *	(e.g. this arc is static (and all others are, too))
+		     *	no time propagates along this arc.
+		     */
+		if ( headp -> ncall ) {
+		    headp -> propfraction += parentp -> propfraction
+					    * ( ( (double) arcp -> arc_count )
+					      / ( (double) headp -> ncall ) );
+		}
 	    }
 	}
 	for ( memp = headp ; memp ; memp = memp -> cnext ) {
