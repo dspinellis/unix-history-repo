@@ -9,11 +9,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)memcmp.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)memcmp.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/cdefs.h>
 #include <string.h>
-#include <sys/stdc.h>
 
 /*
  * Compare memory regions.

@@ -6,11 +6,11 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)memccpy.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)memccpy.c	5.7 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
+#include <sys/cdefs.h>
 #include <string.h>
-#include <sys/stdc.h>
 
 void *
 memccpy(t, f, c, n)
