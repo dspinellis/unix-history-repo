@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	7.36 (Berkeley) %G%
+ *	@(#)rtsock.c	7.37 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -176,7 +176,7 @@ route_output(m, so)
 			if (Bcmp(dst, rt_key(rt), dst->sa_len) != 0)
 				senderr(ESRCH);
 			if (netmask && (rn = rn_search(netmask,
-					    mask_rnhead)))
+					    mask_rnhead->rnh_treetop)))
 				netmask = (struct sockaddr *)rn->rn_key;
 			for (rn = rt->rt_nodes; rn; rn = rn->rn_dupedkey)
 				if (netmask == (struct sockaddr *)rn->rn_mask)
@@ -239,7 +239,9 @@ route_output(m, so)
 				    if (oifa && oifa->ifa_rtrequest)
 					oifa->ifa_rtrequest(RTM_DELETE,
 								rt, gate);
+				    IFAFREE(rt->rt_ifa);
 				    rt->rt_ifa = ifa;
+				    ifa->ifa_refcnt++;
 				    rt->rt_ifp = ifp;
 				}
 			}
