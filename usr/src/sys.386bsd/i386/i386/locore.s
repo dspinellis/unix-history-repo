@@ -37,10 +37,12 @@
  *
  * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
  * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         1       00030
+ * CURRENT PATCH LEVEL:         2       00064
  * --------------------         -----   ----------------------
  *
  * 06 Aug 92	Pace Willisson		Allow VGA memory to be mapped
+ * 28 Nov 92	Frank MacLachlan	Aligned addresses and data
+ *					on 32bit boundaries.
  */
 
 
@@ -70,6 +72,7 @@
 	.set	SYSPDROFF,0x3F8		# Page dir index of System Base
 
 #define	NOP	inb $0x84, %al ; inb $0x84, %al 
+#define	ALIGN32	.align 2	/* 2^2  = 4 */
 
 /*
  * PTmap is recursive pagemap at top of virtual address space.
@@ -379,6 +382,7 @@ _szsigcode:
 	 * Support routines for GCC
 	 */
 	.globl ___udivsi3
+	ALIGN32
 ___udivsi3:
 	movl 4(%esp),%eax
 	xorl %edx,%edx
@@ -386,9 +390,10 @@ ___udivsi3:
 	ret
 
 	.globl ___divsi3
+	ALIGN32
 ___divsi3:
 	movl 4(%esp),%eax
-	xorl %edx,%edx
+	#xorl %edx,%edx		/* not needed - cltd sign extends into %edx */
 	cltd
 	idivl 8(%esp)
 	ret
@@ -397,6 +402,7 @@ ___divsi3:
 	 * I/O bus instructions via C
 	 */
 	.globl	_inb
+	ALIGN32
 _inb:	movl	4(%esp),%edx
 	subl	%eax,%eax	# clr eax
 	NOP
@@ -405,6 +411,7 @@ _inb:	movl	4(%esp),%edx
 
 
 	.globl	_inw
+	ALIGN32
 _inw:	movl	4(%esp),%edx
 	subl	%eax,%eax	# clr eax
 	NOP
@@ -413,6 +420,7 @@ _inw:	movl	4(%esp),%edx
 
 
 	.globl	_rtcin
+	ALIGN32
 _rtcin:	movl	4(%esp),%eax
 	outb	%al,$0x70
 	subl	%eax,%eax	# clr eax
@@ -420,6 +428,7 @@ _rtcin:	movl	4(%esp),%eax
 	ret
 
 	.globl	_outb
+	ALIGN32
 _outb:	movl	4(%esp),%edx
 	NOP
 	movl	8(%esp),%eax
@@ -428,6 +437,7 @@ _outb:	movl	4(%esp),%edx
 	ret
 
 	.globl	_outw
+	ALIGN32
 _outw:	movl	4(%esp),%edx
 	NOP
 	movl	8(%esp),%eax
@@ -440,6 +450,7 @@ _outw:	movl	4(%esp),%edx
 	 */
 
 	.globl _bzero
+	ALIGN32
 _bzero:
 	pushl	%edi
 	movl	8(%esp),%edi
@@ -461,6 +472,7 @@ _bzero:
 	 */
 
 	.globl _fillw
+	ALIGN32
 _fillw:
 	pushl	%edi
 	movl	8(%esp),%eax
@@ -473,6 +485,7 @@ _fillw:
 	ret
 
 	.globl _bcopyb
+	ALIGN32
 _bcopyb:
 	pushl	%esi
 	pushl	%edi
@@ -493,6 +506,7 @@ _bcopyb:
 	 */
 
 	.globl	_bcopy,_ovbcopy
+	ALIGN32
 _ovbcopy:
 _bcopy:
 	pushl	%esi
@@ -514,6 +528,7 @@ _bcopy:
 	popl	%esi
 	xorl	%eax,%eax
 	ret
+	ALIGN32
 1:
 	addl	%ecx,%edi	/* copy backwards. */
 	addl	%ecx,%esi
@@ -537,6 +552,7 @@ _bcopy:
 
 #ifdef notdef
 	.globl	_copyout
+	ALIGN32
 _copyout:
 	movl	_curpcb, %eax
 	movl	$cpyflt, PCB_ONFAULT(%eax) # in case we page/protection violate
@@ -603,6 +619,7 @@ _copyout:
 	ret
 
 	.globl	_copyin
+	ALIGN32
 _copyin:
 	movl	_curpcb,%eax
 	movl	$cpyflt,PCB_ONFAULT(%eax) # in case we page/protection violate
@@ -628,6 +645,7 @@ _copyin:
 	movl	%eax,PCB_ONFAULT(%edx)
 	ret
 
+	ALIGN32
 cpyflt:
 	popl	%ebx
 	popl	%edi
@@ -638,6 +656,7 @@ cpyflt:
 	ret
 #else
 	.globl	_copyout
+	ALIGN32
 _copyout:
 	movl	_curpcb,%eax
 	movl	$cpyflt,PCB_ONFAULT(%eax) # in case we page/protection violate
@@ -662,6 +681,7 @@ _copyout:
 	ret
 
 	.globl	_copyin
+	ALIGN32
 _copyin:
 	movl	_curpcb,%eax
 	movl	$cpyflt,PCB_ONFAULT(%eax) # in case we page/protection violate
@@ -685,6 +705,7 @@ _copyin:
 	movl	%eax,PCB_ONFAULT(%edx)
 	ret
 
+	ALIGN32
 cpyflt: popl	%edi
 	popl	%esi
 	movl	_curpcb,%edx
@@ -696,6 +717,7 @@ cpyflt: popl	%edi
 
 	# insb(port,addr,cnt)
 	.globl	_insb
+	ALIGN32
 _insb:
 	pushl	%edi
 	movw	8(%esp),%dx
@@ -712,6 +734,7 @@ _insb:
 
 	# insw(port,addr,cnt)
 	.globl	_insw
+	ALIGN32
 _insw:
 	pushl	%edi
 	movw	8(%esp),%dx
@@ -727,6 +750,7 @@ _insw:
 
 	# outsw(port,addr,cnt)
 	.globl	_outsw
+	ALIGN32
 _outsw:
 	pushl	%esi
 	movw	8(%esp),%dx
@@ -742,6 +766,7 @@ _outsw:
 
 	# outsb(port,addr,cnt)
 	.globl	_outsb
+	ALIGN32
 _outsb:
 	pushl	%esi
 	movw	8(%esp),%dx
@@ -760,6 +785,7 @@ _outsb:
 	 * void lgdt(struct region_descriptor *rdp);
 	 */
 	.globl	_lgdt
+	ALIGN32
 _lgdt:
 	/* reload the descriptor table */
 	movl	4(%esp),%eax
@@ -786,6 +812,7 @@ _lgdt:
 	 * void lidt(struct region_descriptor *rdp);
 	 */
 	.globl	_lidt
+	ALIGN32
 _lidt:
 	movl	4(%esp),%eax
 	lidt	(%eax)
@@ -795,6 +822,7 @@ _lidt:
 	 * void lldt(u_short sel)
 	 */
 	.globl	_lldt
+	ALIGN32
 _lldt:
 	lldt	4(%esp)
 	ret
@@ -803,6 +831,7 @@ _lldt:
 	 * void ltr(u_short sel)
 	 */
 	.globl	_ltr
+	ALIGN32
 _ltr:
 	ltr	4(%esp)
 	ret
@@ -812,6 +841,7 @@ _ltr:
 	 */
 	.globl	_lcr3
 	.globl	_load_cr3
+	ALIGN32
 _load_cr3:
 _lcr3:
 	inb	$0x84,%al	# check wristwatch
@@ -823,6 +853,7 @@ _lcr3:
 
 	# tlbflush()
 	.globl	_tlbflush
+	ALIGN32
 _tlbflush:
 	inb	$0x84,%al	# check wristwatch
 	movl	%cr3,%eax
@@ -833,6 +864,7 @@ _tlbflush:
 
 	# lcr0(cr0)
 	.globl	_lcr0,_load_cr0
+	ALIGN32
 _lcr0:
 _load_cr0:
 	movl	4(%esp),%eax
@@ -841,12 +873,14 @@ _load_cr0:
 
 	# rcr0()
 	.globl	_rcr0
+	ALIGN32
 _rcr0:
 	movl	%cr0,%eax
 	ret
 
 	# rcr2()
 	.globl	_rcr2
+	ALIGN32
 _rcr2:
 	movl	%cr2,%eax
 	ret
@@ -854,6 +888,7 @@ _rcr2:
 	# rcr3()
 	.globl	_rcr3
 	.globl	__cr3
+	ALIGN32
 __cr3:
 _rcr3:
 	movl	%cr3,%eax
@@ -861,6 +896,7 @@ _rcr3:
 
 	# ssdtosd(*ssdp,*sdp)
 	.globl	_ssdtosd
+	ALIGN32
 _ssdtosd:
 	pushl	%ebx
 	movl	8(%esp),%ecx
@@ -884,6 +920,7 @@ _ssdtosd:
 /*
  * {fu,su},{byte,word}
  */
+	ALIGN32
 ALTENTRY(fuiword)
 ENTRY(fuword)
 	movl	_curpcb,%ecx
@@ -894,6 +931,7 @@ ENTRY(fuword)
 	movl	$0,PCB_ONFAULT(%ecx)
 	ret
 	
+	ALIGN32
 ENTRY(fusword)
 	movl	_curpcb,%ecx
 	movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
@@ -903,6 +941,7 @@ ENTRY(fusword)
 	movl	$0,PCB_ONFAULT(%ecx)
 	ret
 	
+	ALIGN32
 ALTENTRY(fuibyte)
 ENTRY(fubyte)
 	movl	_curpcb,%ecx
@@ -913,6 +952,7 @@ ENTRY(fubyte)
 	movl	$0,PCB_ONFAULT(%ecx)
 	ret
 	
+	ALIGN32
 fusufault:
 	movl	_curpcb,%ecx
 	xorl	%eax,%eax
@@ -920,6 +960,7 @@ fusufault:
 	decl	%eax
 	ret
 
+	ALIGN32
 ALTENTRY(suiword)
 ENTRY(suword)
 	movl	_curpcb,%ecx
@@ -951,6 +992,7 @@ ENTRY(suword)
 	movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	ret
 	
+	ALIGN32
 ENTRY(susword)
 	movl	_curpcb,%ecx
 	movl	$fusufault,PCB_ONFAULT(%ecx) #in case we page/protection violate
@@ -979,6 +1021,7 @@ movl	8(%esp),%eax
 	movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	ret
 
+	ALIGN32
 ALTENTRY(suibyte)
 ENTRY(subyte)
 	movl	_curpcb,%ecx
@@ -1008,6 +1051,7 @@ movl	8(%esp),%eax
 	movl	%eax,PCB_ONFAULT(%ecx) #in case we page/protection violate
 	ret
 
+	ALIGN32
 	ENTRY(setjmp)
 	movl	4(%esp),%eax
 	movl	%ebx, 0(%eax)		# save ebx
@@ -1020,6 +1064,7 @@ movl	8(%esp),%eax
 	xorl	%eax,%eax		# return (0);
 	ret
 
+	ALIGN32
 	ENTRY(longjmp)
 	movl	4(%esp),%eax
 	movl	 0(%eax),%ebx		# restore ebx
@@ -1051,6 +1096,7 @@ movl	8(%esp),%eax
  *
  * Call should be made at spl6(), and p->p_stat should be SRUN
  */
+	ALIGN32
 ENTRY(setrq)
 	movl	4(%esp),%eax
 	cmpl	$0,P_RLINK(%eax)	# should not be on q already
@@ -1077,6 +1123,7 @@ set2:	.asciz	"setrq"
  *
  * Call should be made at spl6().
  */
+	ALIGN32
 ENTRY(remrq)
 	movl	4(%esp),%eax
 	movzbl	P_PRI(%eax),%edx
@@ -1113,6 +1160,7 @@ sw0:	.asciz	"swtch"
  * to wait for something to come ready.
  */
 	.globl	Idle
+	ALIGN32
 Idle:
 idle:
 	call	_spl0
@@ -1130,6 +1178,7 @@ badsw:
 /*
  * Swtch()
  */
+	ALIGN32
 ENTRY(swtch)
 
 	incl	_cnt+V_SWTCH
@@ -1261,6 +1310,7 @@ swfnd:
 	ret
 
 	.globl	_mvesp
+	ALIGN32
 _mvesp:	movl	%esp,%eax
 	ret
 /*
@@ -1272,6 +1322,7 @@ _mvesp:	movl	%esp,%eax
  * Since this code requires a parameter from the "old" stack,
  * pass it back as a return value.
  */
+	ALIGN32
 ENTRY(swtch_to_inactive)
 	popl	%edx			# old pc
 	popl	%eax			# arg, our return value
@@ -1286,6 +1337,7 @@ ENTRY(swtch_to_inactive)
  * Update pcb, saving current processor state and arranging
  * for alternate return ala longjmp in swtch if altreturn is true.
  */
+	ALIGN32
 ENTRY(savectx)
 	movl	4(%esp), %ecx
 	movw	_cpl, %ax
@@ -1336,6 +1388,7 @@ ENTRY(savectx)
  * update profiling information for the user process.
  */
 
+	ALIGN32
 ENTRY(addupc)
 	pushl %ebp
 	movl %esp,%ebp
@@ -1365,6 +1418,7 @@ L1:
 	leave
 	ret
 
+	ALIGN32
 proffault:
 	/* if we get a fault, then kill profiling all together */
 	movl $0,PCB_ONFAULT(%edx)	/* squish the fault handler */
@@ -1374,6 +1428,7 @@ proffault:
 	ret
 
 .data
+	ALIGN32
 	.globl	_cyloffset, _curpcb
 _cyloffset:	.long	0
 	.globl	_proc0paddr
@@ -1473,6 +1528,7 @@ IDTVEC(rsvd13)
 IDTVEC(rsvd14)
 	pushl $0; TRAP(31)
 
+	ALIGN32
 alltraps:
 	pushal
 	nop
@@ -1498,6 +1554,7 @@ calltrap:
  * This code checks for a kgdb trap, then falls through
  * to the regular trap code.
  */
+	ALIGN32
 bpttraps:
 	pushal
 	nop
@@ -1518,6 +1575,7 @@ bpttraps:
  * Call gate entry for syscall
  */
 
+	ALIGN32
 IDTVEC(syscall)
 	pushfl	# only for stupid carry bit and more stupid wait3 cc kludge
 	pushal	# only need eax,ecx,edx - trap resaves others
@@ -1536,6 +1594,7 @@ IDTVEC(syscall)
 	popfl
 	lret
 
+	ALIGN32
 ENTRY(htonl)
 ENTRY(ntohl)
 	movl	4(%esp),%eax
@@ -1544,6 +1603,7 @@ ENTRY(ntohl)
 	xchgb	%al,%ah
 	ret
 
+	ALIGN32
 ENTRY(htons)
 ENTRY(ntohs)
 	movzwl	4(%esp),%eax
