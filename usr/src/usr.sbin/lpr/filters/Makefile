@@ -1,4 +1,4 @@
-#	Makefile	4.2	83/07/17
+#	Makefile	4.3	83/11/16
 #
 # makefile for line printer filters and associated programs
 #
@@ -89,7 +89,6 @@ installv: varian
 	install -s vpf ${DESTDIR}/${LIBDIR}/vpf
 	ln ${DESTDIR}/${LIBDIR}/vpf ${DESTDIR}/${LIBDIR}/vpfW
 	install -s vpsf ${DESTDIR}/${LIBDIR}/vpsf
-	ln ${DESTDIR}/${LIBDIR}/vpsf ${DESTDIR}/${LIBDIR}/vpsfW
 	install -s vdmp ${DESTDIR}/${LIBDIR}/vdmp
 	install -s vpltdmp ${DESTDIR}/${LIBDIR}/vpltdmp
 	install -s vplotf ${DESTDIR}/${LIBDIR}/vplotf
