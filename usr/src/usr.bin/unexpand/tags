@@ -1,0 +1,2 @@
+Munexpand	unexpand.c	/^main(argc, argv)$/
+tabify	unexpand.c	/^tabify(c)$/
