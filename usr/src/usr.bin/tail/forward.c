@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)forward.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)forward.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
