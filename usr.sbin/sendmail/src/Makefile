@@ -24,6 +24,7 @@ LDADD=	$(LIBUTIL)
 MAN1=	newaliases.1
 MAN5=	aliases.5
 MAN8=	sendmail.8 
+MLINKS=	sendmail.8 mailq.8
 LINKS=	/usr/sbin/sendmail /usr/bin/newaliases \
 	/usr/sbin/sendmail /usr/bin/mailq
 BINDIR=	/usr/sbin
