@@ -9,7 +9,7 @@ int	deltaps	= 3;	/* default change in ps */
 int	gsize	= 10;	/* default initial point size */
 int	gfont	= ITAL;	/* italic */
 int	ft;	/* default font */
-char	*device ="var";	/* device for "res" and "minsize" (default = varian) */
+char	*device ="va";	/* device for "res" and "minsize" (default = varian) */
 int	res	= 0;	/* resolution of typesetter; no default */
 int	minsize	= 0;	/* min size it can handle; no default */
 FILE	*curfile;	/* current input file */
