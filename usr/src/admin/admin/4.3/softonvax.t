@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)softonvax.t	5.3 (Berkeley) %G%
+.\"	@(#)softonvax.t	5.4 (Berkeley) %G%
 .\"
 .LG
 .B
@@ -162,13 +162,14 @@ the ABLE DH/DM (that replaces the ABLE DMAX) and EMULEX CS-11 are supported.
 The system also provides support for standard line printer
 interfaces emulating the DEC LP-11 or the parallel port of the DMF-32.
 Support for serial printers such as a DECWRITER-III and printer-plotters
-such as made by BENSON/VARIAN or VERSATEC is available with standard drivers.
+such as those made by BENSON/VARIAN or VERSATEC is 
+available with standard drivers.
 .PP
 This release supports any number
 of any of the devices described above.
 The devices may be placed arbitrarily on any
 available MASSBUS and UNIBUS interfaces.
-For the 8600 and the 8650 adapters may be on either of the SBIA's.
+For the 8600 and the 8650, adapters may be on either of the SBIA's.
 The system configures at boot time,
 locating available devices,
 using a system configuration compiled into the kernel.
