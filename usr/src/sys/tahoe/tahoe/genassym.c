@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)genassym.c	1.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)genassym.c	1.5 (Berkeley) %G%";
 #endif
 
 #include "../tahoe/pte.h"
@@ -30,6 +30,7 @@ main()
 
 	printf("#ifdef LOCORE\n");
 	printf("#define\tU_PROCP %d\n", &u->u_procp);
+	printf("#define\tU_EOSYS %d\n", &u->u_eosys);
 	printf("#define\tP_LINK %d\n", &p->p_link);
 	printf("#define\tP_RLINK %d\n", &p->p_rlink);
 	printf("#define\tP_XLINK %d\n", &p->p_xlink);
@@ -52,6 +53,8 @@ main()
 	printf("#define\tV_SYSCALL %d\n", &vm->v_syscall);
 	printf("#define\tV_INTR %d\n", &vm->v_intr);
 	printf("#define\tV_SOFT %d\n", &vm->v_soft);
+	printf("#define\tV_FPE %d\n", &vm->v_fpe);
+	printf("#define\tV_ALIGN %d\n", &vm->v_align);
 	printf("#define\tNBPG %d\n", NBPG);
 	printf("#define\tPGSHIFT %d\n", PGSHIFT);
 	printf("#define\tUPAGES %d\n", UPAGES);
