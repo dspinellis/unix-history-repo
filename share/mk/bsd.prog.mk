@@ -4,6 +4,7 @@
 .include "${.CURDIR}/../Makefile.inc"
 .endif
 
+#.SUFFIXES: .out .o .c .cc .cxx .C .y .l .s
 .SUFFIXES: .out .o .c .y .l .s
 
 CFLAGS+=${COPTS}
@@ -17,8 +18,8 @@ BINMODE?=	555
 LIBCRT0?=	/usr/lib/crt0.o
 LIBC?=		/usr/lib/libc.a
 LIBCOMPAT?=	/usr/lib/libcompat.a
-LIBCURSES?=	/usr/lib/libcurses.a
 LIBCRYPT?=	/usr/lib/libcrypt.a
+LIBCURSES?=	/usr/lib/libcurses.a
 LIBDBM?=	/usr/lib/libdbm.a
 LIBDES?=	/usr/lib/libdes.a
 LIBL?=		/usr/lib/libl.a
@@ -29,7 +30,7 @@ LIBMP?=		/usr/lib/libmp.a
 LIBPC?=		/usr/lib/libpc.a
 LIBPLOT?=	/usr/lib/libplot.a
 LIBRESOLV?=	/usr/lib/libresolv.a
-LIBRPC?=	/usr/lib/sunrpc.a
+LIBRPC?=	/usr/lib/librpc.a
 LIBTELNET?=	/usr/lib/libtelnet.a
 LIBTERM?=	/usr/lib/libterm.a
 LIBUTIL?=	/usr/lib/libutil.a
@@ -40,12 +41,19 @@ CLEANFILES+=strings
 	${CC} -E ${CFLAGS} ${.IMPSRC} | xstr -c -
 	@${CC} ${CFLAGS} -c x.c -o ${.TARGET}
 	@rm -f x.c
+
+#.cc.o .cxx.o .C.o:
+#	${CXX} -E ${CXXFLAGS} ${.IMPSRC} | xstr -c -
+#	@mv -f x.c x.cc
+#	@${CXX} ${CXXFLAGS} -c x.cc -o ${.TARGET}
+
 .endif
 
 .if defined(PROG)
 .if defined(SRCS)
 
-OBJS+=  ${SRCS:R:S/$/.o/g}
+DPSRCS+= ${SRCS:M*.h}
+OBJS+=  ${SRCS:N*.h:R:S/$/.o/g}
 
 .if defined(LDONLY)
 
@@ -64,7 +72,7 @@ ${PROG}: ${DPSRCS} ${OBJS} ${LIBC} ${DPADD}
 SRCS= ${PROG}.c
 
 ${PROG}: ${DPSRCS} ${SRCS} ${LIBC} ${DPADD}
-	${CC} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/${SRCS} ${LDADD}
+	${CC} ${LDFLAGS} ${CFLAGS} -o ${.TARGET} ${.CURDIR}/${SRCS} ${LDADD}
 
 MKDEP=	-p
 
@@ -100,8 +108,8 @@ clean: _PROGSUBDIR
 
 .if !target(cleandir)
 cleandir: _PROGSUBDIR
-	rm -f a.out [Ee]rrs mklog ${PROG} ${OBJS} ${CLEANFILES} \
-	      ${.CURDIR}/tags .depend
+	rm -f a.out [Ee]rrs mklog ${PROG} ${OBJS} ${CLEANFILES}
+	rm -f ${.CURDIR}/tags .depend
 	cd ${.CURDIR}; rm -rf obj;
 .endif
 
@@ -110,7 +118,15 @@ cleandir: _PROGSUBDIR
 depend: .depend _PROGSUBDIR
 .depend: ${DPSRCS} ${SRCS}
 .if defined(PROG)
-	mkdep ${MKDEP} ${CFLAGS:M-[ID]*} ${.ALLSRC:M*.c}
+	rm -f .depend
+	files="${.ALLSRC:M*.c}"; \
+	if [ "$$files" != "" ]; then \
+	  mkdep -a ${MKDEP} ${CFLAGS:M-[ID]*} $$files; \
+	fi
+#	files="${.ALLSRC:M*.cc} ${.ALLSRC:M*.C} ${.ALLSRC:M*.cxx}"; \
+#	if [ "$$files" != "  " ]; then \
+#	  mkdep -a ${MKDEP} -+ ${CXXFLAGS:M-[ID]*} $$files; \
+#	fi
 .endif
 .endif
 

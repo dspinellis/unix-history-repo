@@ -1,6 +1,9 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.10  1993/08/11  03:15:20  alm
+# added rules .f.po (and .f.o) from Jonas.
+#
 # Revision 1.9  1993/08/05  18:45:53  nate
 # Removed the ranlib statements from before the install (since it's done
 # after the install as well), and changed ranlib -> ${RANLIB}
@@ -51,6 +54,7 @@ BINMODE?=	555
 .MAIN: all
 
 # prefer .s to a .c, add .po, remove stuff not used in the BSD libraries
+#.SUFFIXES: .out .o .po .s .c .cc .cxx .C .f .y .l
 .SUFFIXES: .out .o .po .s .c .f .y .l
 
 .c.o:
@@ -62,6 +66,16 @@ BINMODE?=	555
 	${CC} -p ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
 	@${LD} -X -r ${.TARGET}
 	@mv a.out ${.TARGET}
+
+#.cc.o .cxx.o .C.o:
+#	${CXX} ${CXXFLAGS} -c ${.IMPSRC} 
+#	@${LD} -x -r ${.TARGET}
+#	@mv a.out ${.TARGET}
+
+#.cc.po .C.po .cxx.o:
+#	${CXX} -p ${CXXFLAGS} -c ${.IMPSRC} -o ${.TARGET}
+#	@${LD} -X -r ${.TARGET}
+#	@mv a.out ${.TARGET}
 
 .f.o:
 	${FC} ${RFLAGS} -o ${.TARGET} -c ${.IMPSRC} 
@@ -93,7 +107,7 @@ _LIBS=lib${LIB}.a
 
 all: ${_LIBS} # llib-l${LIB}.ln
 
-OBJS+=	${SRCS:R:S/$/.o/g}
+OBJS+=	${SRCS:N*.h:R:S/$/.o/g}
 
 lib${LIB}.a:: ${OBJS}
 	@echo building standard ${LIB} library
@@ -113,16 +127,16 @@ llib-l${LIB}.ln: ${SRCS}
 
 .if !target(clean)
 clean:
-	rm -f a.out Errs errs mklog ${CLEANFILES} ${OBJS} \
-	    lib${LIB}.a llib-l${LIB}.ln
+	rm -f a.out Errs errs mklog ${CLEANFILES} ${OBJS}
+	rm -f lib${LIB}.a llib-l${LIB}.ln
 	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
 .endif
 
 .if !target(cleandir)
 cleandir:
-	rm -f a.out Errs errs mklog ${CLEANFILES} ${OBJS} \
-	    lib${LIB}.a llib-l${LIB}.ln \
-	    ${.CURDIR}/tags .depend
+	rm -f a.out Errs errs mklog ${CLEANFILES} ${OBJS}
+	rm -f lib${LIB}.a llib-l${LIB}.ln
+	rm -f ${.CURDIR}/tags .depend
 	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
 	cd ${.CURDIR}; rm -rf obj;
 .endif
@@ -130,9 +144,17 @@ cleandir:
 .if !target(depend)
 depend: .depend
 .depend: ${SRCS}
-	mkdep ${CFLAGS:M-[ID+]*} ${AINC} ${.ALLSRC}
+	rm -f .depend
+	files="${.ALLSRC:M*.c}"; \
+	if [ "$$files" != "" ]; then \
+	  mkdep -a ${MKDEP} ${CFLAGS:M-[ID]*} $$files; \
+	fi
+#	files="${.ALLSRC:M*.cc} ${.ALLSRC:M*.C} ${.ALLSRC:M*.cxx}"; \
+#	if [ "$$files" != "  " ]; then \
+#	  mkdep -a ${MKDEP} -+ ${CXXFLAGS:M-[ID]*} $$files; \
+#	fi
 	@(TMP=/tmp/_depend$$$$; \
-	    sed -e 's/^\([^\.]*\).o:/\1.o \1.po:/' < .depend > $$TMP; \
+	    sed -e 's/^\([^\.]*\).o[ ]*:/\1.o \1.po:/' < .depend > $$TMP; \
 	    mv $$TMP .depend)
 .endif
 
