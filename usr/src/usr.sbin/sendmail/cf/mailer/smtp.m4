@@ -11,11 +11,34 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(@(#)smtp.m4	2.3 (Berkeley) %G%)
+VERSIONID(@(#)smtp.m4	2.4 (Berkeley) %G%)
 
-Msmtp,	P=[IPC], F=mDFMueXLC, S=11, R=11, A=IPC $h, E=\r\n
+Msmtp,	P=[IPC], F=mDFMueXLC, S=11, R=21, A=IPC $h, E=\r\n
 
 S11
+
+# do sender/recipient common rewriting
+R$+			$: $>19 $1
+
+# if already @ qualified, we are done
+R$* < @ $+ > $*		$@ $1 < @ $2 > $3		already qualified
+
+# unqualified names (e.g., "eric") "come from" $M
+R$+			$: $1 < @ $M >			user w/o host
+R$+ < @ >		$: $1 < @ $j >			in case $M undefined
+
+S21
+
+# do sender/recipient common rewriting
+R$+			$: $>19 $1
+
+# if already @ qualified, we are done
+R$* < @ $+ > $*		$@ $1 < @ $2 > $3		already qualified
+
+# unqualified names (e.g., "eric") are qualified by local host
+R$+ < @ >		$: $1 < @ $j >
+
+S19
 
 # pass <route-addr>s through
 R< @ $+ > $*		$@ < @ $1 > $2			resolve <route-addr>
@@ -28,10 +51,3 @@ ifdef(`CSNET_RELAY',
 `R$+ <@ $+ . CSNET >	$: $1 % $2 .CSNET < @ $C >	user@host.CSNET',
 	`dnl')
 R$+ <@ $+ . UUCP >	$: $2 ! $1 < @ $j >		user@host.UUCP
-
-# if already @ qualified, we are done
-R$+ < @ $+ >		$@ $1 < @ $2 >			already qualified
-
-# unqualified names (e.g., "eric") "come from" $M
-R$+			$: $1 < @ $M >			user w/o host
-R$+ < @ >		$: $1 < @ $j >			in case $M undefined
