@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rshd.c	5.17.1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)rshd.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -56,6 +56,24 @@ char	*index(), *rindex(), *strncat();
 /*VARARGS1*/
 int	error();
 
+#ifdef	KERBEROS
+#include <kerberos/krb.h>
+#define	VERSION_SIZE	9
+#define	OPTIONS		"lnkv"
+char	*strsave();
+char	authbuf[sizeof(AUTH_DAT)];
+char	tickbuf[sizeof(KTEXT_ST)];
+int	use_kerberos = 0, vacuous = 0;
+
+#define	OLD_RCMD		0x00
+#define	KERB_RCMD		0x00
+#define	KERB_RCMD_MUTUAL	0x03
+
+int	encrypt = 0;
+#else
+#define	OPTIONS	"ln"
+#endif
+
 /*ARGSUSED*/
 main(argc, argv)
 	int argc;
@@ -69,7 +87,7 @@ main(argc, argv)
 	openlog("rsh", LOG_PID | LOG_ODELAY, LOG_DAEMON);
 
 	opterr = 0;
-	while ((ch = getopt(argc, argv, "ln")) != EOF)
+	while ((ch = getopt(argc, argv, OPTIONS)) != EOF)
 		switch((char)ch) {
 		case 'l':
 			_check_rhosts_file = 0;
@@ -77,6 +95,15 @@ main(argc, argv)
 		case 'n':
 			keepalive = 0;
 			break;
+#ifdef	KERBEROS
+		case 'k':
+			use_kerberos = 1;
+			break;
+
+		case 'v':
+			vacuous = 1;
+			break;
+#endif
 		case '?':
 		default:
 			syslog(LOG_ERR, "usage: rshd [-l]");
@@ -86,6 +113,12 @@ main(argc, argv)
 	argc -= optind;
 	argv += optind;
 
+#ifdef	KERBEROS
+	if (use_kerberos && vacuous) {
+		syslog(LOG_ERR, "only one of -k and -v allowed");
+		exit(1);
+	}
+#endif
 
 	fromlen = sizeof (from);
 	if (getpeername(0, &from, &fromlen) < 0) {
@@ -130,6 +163,18 @@ doit(f, fromp)
 	int one = 1;
 	char remotehost[2 * MAXHOSTNAMELEN + 1];
 
+#ifdef	KERBEROS
+	AUTH_DAT	*kdata = (AUTH_DAT *) NULL;
+	KTEXT		ticket = (KTEXT) NULL;
+	char		instance[INST_SZ], version[VERSION_SIZE];
+	char		*h_name;
+	struct		sockaddr_in	fromaddr;
+	int		rc;
+	long		authopts;
+
+	fromaddr = *fromp;
+#endif
+
 	(void) signal(SIGINT, SIG_DFL);
 	(void) signal(SIGQUIT, SIG_DFL);
 	(void) signal(SIGTERM, SIG_DFL);
@@ -147,12 +192,14 @@ doit(f, fromp)
 		exit(1);
 	}
 
+#ifndef	KERBEROS
 	if (fromp->sin_port >= IPPORT_RESERVED ||
 	    fromp->sin_port < IPPORT_RESERVED/2) {
 		syslog(LOG_NOTICE, "Connection from %s on illegal port",
 			inet_ntoa(fromp->sin_addr));
 		exit(1);
 	}
+#endif
 
 	(void) alarm(60);
 	port = 0;
@@ -164,8 +211,18 @@ doit(f, fromp)
 			shutdown(f, 1+1);
 			exit(1);
 		}
+#ifdef	KERBEROS
+		if (c == OLD_RCMD || c == KERB_RCMD)
+			break;
+
+		if (c == KERB_RCMD_MUTUAL) {
+			encrypt = 1;
+			break;
+		}
+#else
 		if (c == 0)
 			break;
+#endif
 		port = port * 10 + c - '0';
 	}
 
@@ -177,16 +234,25 @@ doit(f, fromp)
 			syslog(LOG_ERR, "can't get stderr port: %m");
 			exit(1);
 		}
+#ifndef	KERBEROS
 		if (port >= IPPORT_RESERVED) {
 			syslog(LOG_ERR, "2nd port not reserved\n");
 			exit(1);
 		}
+#endif
 		fromp->sin_port = htons((u_short)port);
 		if (connect(s, fromp, sizeof (*fromp)) < 0) {
 			syslog(LOG_INFO, "connect second port: %m");
 			exit(1);
 		}
 	}
+
+#ifdef	KERBEROS
+	if (vacuous) {
+		error("rshd: remote host requires Kerberos authentication\n");
+		exit(1);
+	}
+#endif
 
 #ifdef notdef
 	/* from inetd, f is already on 0, 1, 2 */
@@ -232,7 +298,29 @@ doit(f, fromp)
 	} else
 		hostname = inet_ntoa(fromp->sin_addr);
 
-	getstr(remuser, sizeof(remuser), "remuser");
+#ifdef	KERBEROS
+	if (use_kerberos) {
+		h_name = strsave(hp->h_name);
+		kdata = (AUTH_DAT *) authbuf;
+		ticket = (KTEXT) tickbuf;
+		authopts = 0L;
+		strcpy(instance, "*");
+		version[VERSION_SIZE - 1] = '\0';
+		if (rc = krb_recvauth(authopts, f, ticket, "rcmd",
+			instance, &fromaddr,
+			(struct sockaddr_in *) 0,
+			kdata, "", (bit_64 *) 0, version)) {
+			fprintf(stderr,
+				"Kerberos authentication failure: %s\r\n",
+				  krb_err_txt[rc]);
+			exit(1);
+		}
+		free(h_name);
+		h_name = NULL;
+	} else
+#endif
+		getstr(remuser, sizeof(remuser), "remuser");
+
 	getstr(locuser, sizeof(locuser), "locuser");
 	getstr(cmdbuf, sizeof(cmdbuf), "command");
 	setpwent();
@@ -250,17 +338,44 @@ doit(f, fromp)
 #endif
 	}
 
-	if (pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0' &&
-	    ruserok(hostname, pwd->pw_uid == 0, remuser, locuser) < 0) {
-		error("Permission denied.\n");
-		exit(1);
-	}
+#ifdef	KERBEROS
+	if (use_kerberos) {
+		if (pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0') {
+			if (krb_kntoln(kdata, remuser) != KSUCCESS) {
+				error("Permission denied.\n");
+				exit(1);
+			}
+			if (kuserok(kdata, locuser) != 0) {
+				syslog(LOG_NOTICE, "Kerberos rlogin denied to %s.%s@%s",
+					kdata->pname, kdata->pinst, kdata->prealm);
+				error("Permission denied.\n");
+				exit(1);
+			}
+		}
+	} else
+#endif
+
+		if (pwd->pw_passwd != 0 && *pwd->pw_passwd != '\0' &&
+		    ruserok(hostname, pwd->pw_uid == 0, remuser, locuser) < 0) {
+			error("Permission denied.\n");
+			exit(1);
+		}
 
 	if (pwd->pw_uid && !access("/etc/nologin", F_OK)) {
 		error("Logins currently disabled.\n");
 		exit(1);
 	}
+#ifdef	KERBEROS
+	if (encrypt) {
+		char c = KERB_RCMD_MUTUAL;
+		(void) write(2, &c, 1);
+	} else {
+		char c = KERB_RCMD;
+		(void) write(2, &c, 1);
+	}
+#else
 	(void) write(2, "\0", 1);
+#endif
 
 	if (port) {
 		if (pipe(pv) < 0) {
@@ -312,10 +427,11 @@ doit(f, fromp)
 		setpgrp(0, getpid());
 		(void) close(s); (void) close(pv[0]);
 		dup2(pv[1], 2);
+		close(pv[1]);
 	}
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = "/bin/sh";
-	(void) close(f);
+	/* (void) close(f); */
 	(void) setgid((gid_t)pwd->pw_gid);
 	initgroups(pwd->pw_name, pwd->pw_gid);
 	(void) setuid((uid_t)pwd->pw_uid);
