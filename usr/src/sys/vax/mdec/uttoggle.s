@@ -1,4 +1,4 @@
-/*	uttoggle.s	4.1	83/02/16	*/
+/*	uttoggle.s	4.2	83/02/21	*/
 
 /*
  * Prototype toggle in bootstrap code for tm type tapes.
@@ -14,7 +14,7 @@ begin:
 	mnegw	$512,06(r2)
 	mnegw	$256,02(r2)
 	clrw	04(r2)
-	movw	$071,2(r2)
+	movw	$071,(r2)
 	halt
 	.align	2
 uba:	.long	0x20006000
