@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_put.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_put.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -162,7 +162,8 @@ __rec_iput(t, nrec, data, flags)
 
 	/* __rec_search pins the returned page. */
 	if ((e = __rec_search(t, nrec,
-	    nrec > t->bt_nrecs ? SINSERT : SEARCH)) == NULL)
+	    nrec > t->bt_nrecs || flags == R_IAFTER || flags == R_IBEFORE ?
+	    SINSERT : SEARCH)) == NULL)
 		return (RET_ERROR);
 
 	h = e->page;
