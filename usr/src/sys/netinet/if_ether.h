@@ -1,4 +1,4 @@
-/*	if_ether.h	6.1	83/07/29	*/
+/*	if_ether.h	6.2	83/09/26	*/
 
 /*
  * Structure of a 10Mb/s Ethernet header.
@@ -9,7 +9,7 @@ struct	ether_header {
 	u_short	ether_type;
 };
 
-#define	ETHERPUP_PUPTYPE	0x0400		/* PUP protocol */
+#define	ETHERPUP_PUPTYPE	0x0200		/* PUP protocol */
 #define	ETHERPUP_IPTYPE		0x0800		/* IP protocol */
 #define ETHERPUP_ARPTYPE	0x0806		/* Addr. resolution protocol */
 
