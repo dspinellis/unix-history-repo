@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)mkhosts.8	6.2 (Berkeley) %G%
+.\"	@(#)mkhosts.8	6.3 (Berkeley) %G%
 .\"
 .TH MKHOSTS 8 ""
 .UC 6
@@ -16,11 +16,13 @@ mkhosts \- generate hashed host table
 hostfile
 .SH DESCRIPTION
 .I Mkhosts
-is used to generated the hashed host database used by the
+is used to generated the hashed host database used by one version of the
 library routines
 .B gethostbyaddr()
 and
 .BR gethostbyname() .
+It is not used if host name translation is performed by
+.IR named (8).
 If the
 .B \-v
 option is supplied, each host will be listed as it is added.
@@ -48,5 +50,4 @@ will exit with a non-zero exit code if any errors are detected.
 .br
 \fIhostfile\fR.new.dir
 .SH SEE ALSO
-gethostbyaddr(3), gethostbyname(3), gettable(8), hosts(5), htable(8)
-.SH BUGS
+gethostbyname(3), gettable(8), hosts(5), htable(8), named(8)
