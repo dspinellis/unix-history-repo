@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)wall.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)wall.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -66,12 +66,10 @@ main(argc, argv)
 		exit(1);
 	}
 	/* NOSTRICT */
-	while (fread((char *)&utmp, sizeof(utmp), 1, fp) == 1) {
-		if (!utmp.ut_name[0] ||
-		    !strncmp(utmp.ut_name, IGNOREUSER, sizeof(utmp.ut_name)))
-			continue;
-		sendmsg(utmp.ut_line);
-	}
+	while (fread((char *)&utmp, sizeof(utmp), 1, fp) == 1)
+		if (utmp.ut_name[0] &&
+		    strncmp(utmp.ut_name, IGNOREUSER, sizeof(utmp.ut_name)))
+			sendmsg(utmp.ut_line);
 	exit(0);
 }
 
@@ -140,7 +138,10 @@ makemsg(argv)
 		fprintf(stderr, "wall: out of memory.\n");
 		exit(1);
 	}
-	(void)fread(mbuf, sizeof(*mbuf), mbufsize, fp);
+	if (fread(mbuf, sizeof(*mbuf), mbufsize, fp) != mbufsize) {
+		fprintf(stderr, "wall: can't read temporary file.\n");
+		exit(1);
+	}
 	(void)close(fd);
 }
 
@@ -149,7 +150,7 @@ sendmsg(line)
 {
 	extern int errno;
 	static char device[MAXNAMLEN] = "/dev/";
-	register int fd, flags, nread;
+	register int fd, flags, left, wret;
 	char *lp, *strcpy();
 
 	(void)strcpy(device + 5, line);
@@ -168,10 +169,11 @@ sendmsg(line)
 	else
 		flags = 0;
 	lp = mbuf;
-	while ((nread = write(fd, lp, mbufsize)) != mbufsize) {
-		if (mbufsize > 0) {
-			mbufsize -= nread;
-			lp += nread;
+	left = mbufsize;
+	while ((wret = write(fd, lp, left)) != left) {
+		if (wret >= 0) {
+			lp += wret;
+			left -= wret;
 		} else if (errno == EWOULDBLOCK) {
 			/* child resets FNDELAY if necessary; parent leaves */
 forkit:			if (fork()) {
