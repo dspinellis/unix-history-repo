@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_serv.c	7.39 (Berkeley) %G%
+ *	@(#)nfs_serv.c	7.40 (Berkeley) %G%
  */
 
 /*
@@ -29,6 +29,7 @@
  */
 
 #include "param.h"
+#include "proc.h"
 #include "file.h"
 #include "namei.h"
 #include "vnode.h"
@@ -37,6 +38,7 @@
 
 #include "../ufs/quota.h"
 #include "../ufs/inode.h"
+#include "../ufs/dir.h"
 
 #include "nfsv2.h"
 #include "nfs.h"
@@ -179,8 +181,7 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct proc *p;
 {
 	register struct nfsv2_fattr *fp;
-	struct nameidata nami;
-	register struct nameidata *ndp = &nami;
+	struct nameidata nd;
 	struct vnode *vp;
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
@@ -194,15 +195,14 @@ nfsrv_lookup(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	long len;
 	struct vattr va, *vap = &va;
 
-	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
-	ndp->ni_cred = cred;
-	ndp->ni_nameiop = LOOKUP | LOCKLEAF;
-	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
+	nd.ni_cred = cred;
+	nd.ni_nameiop = LOOKUP | LOCKLEAF;
+	if (error = nfs_namei(&nd, fhp, len, &md, &dpos, p))
 		nfsm_reply(0);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	bzero((caddr_t)fhp, sizeof(nfh));
 	fhp->fh_fsid = vp->v_mount->mnt_stat.f_fsid;
 	if (error = VFS_VPTOFH(vp, &fhp->fh_fid)) {
@@ -537,8 +537,7 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	register struct nfsv2_fattr *fp;
 	struct vattr va;
 	register struct vattr *vap = &va;
-	struct nameidata nami;
-	register struct nameidata *ndp = &nami;
+	struct nameidata nd;
 	register caddr_t cp;
 	register u_long *tl;
 	register long t1;
@@ -552,13 +551,13 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	fhandle_t *fhp;
 	long len;
 
-	ndinit(ndp);
+	nd.ni_nameiop = 0;
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
-	ndp->ni_cred = cred;
-	ndp->ni_nameiop = CREATE | LOCKPARENT | LOCKLEAF;
-	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
+	nd.ni_cred = cred;
+	nd.ni_nameiop = CREATE | LOCKPARENT | LOCKLEAF | SAVESTART;
+	if (error = nfs_namei(&nd, fhp, len, &md, &dpos, p))
 		nfsm_reply(0);
 	VATTR_NULL(vap);
 	nfsm_disect(tl, u_long *, NFSX_SATTR);
@@ -567,52 +566,68 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	 * otherwise just truncate to 0 length
 	 *   should I set the mode too ??
 	 */
-	if (ndp->ni_vp == NULL) {
+	if (nd.ni_vp == NULL) {
 		vap->va_type = IFTOVT(fxdr_unsigned(u_long, *tl));
 		if (vap->va_type == VNON)
 			vap->va_type = VREG;
 		vap->va_mode = nfstov_mode(*tl);
 		rdev = fxdr_unsigned(long, *(tl+3));
 		if (vap->va_type == VREG || vap->va_type == VSOCK) {
-			if (error = VOP_CREATE(ndp, vap, p))
+			vrele(nd.ni_startdir);
+			if (error = VOP_CREATE(&nd, vap, p))
 				nfsm_reply(0);
+			FREE(nd.ni_pnbuf, M_NAMEI);
 		} else if (vap->va_type == VCHR || vap->va_type == VBLK ||
 			vap->va_type == VFIFO) {
 			if (vap->va_type == VCHR && rdev == 0xffffffff)
 				vap->va_type = VFIFO;
 			if (vap->va_type == VFIFO) {
 #ifndef FIFO
-				VOP_ABORTOP(ndp);
-				vput(ndp->ni_dvp);
+				VOP_ABORTOP(&nd);
+				vput(nd.ni_dvp);
 				error = ENXIO;
-				nfsm_reply(0);
+				goto out;
 #endif /* FIFO */
 			} else if (error = suser(cred, (short *)0)) {
-				VOP_ABORTOP(ndp);
-				vput(ndp->ni_dvp);
-				nfsm_reply(0);
+				VOP_ABORTOP(&nd);
+				vput(nd.ni_dvp);
+				goto out;
 			} else
 				vap->va_rdev = (dev_t)rdev;
-			if (error = VOP_MKNOD(ndp, vap, cred, p))
+			if (error = VOP_MKNOD(&nd, vap, cred, p)) {
+				vrele(nd.ni_startdir);
 				nfsm_reply(0);
-			ndp->ni_nameiop = LOOKUP | LOCKLEAF | HASBUF;
-			if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
+			}
+			nd.ni_nameiop &= ~(OPMASK | LOCKPARENT | SAVESTART);
+			nd.ni_nameiop |= LOOKUP;
+			if (error = lookup(&nd, p)) {
+				free(nd.ni_pnbuf, M_NAMEI);
 				nfsm_reply(0);
+			}
+			FREE(nd.ni_pnbuf, M_NAMEI);
+			if (nd.ni_more) {
+				vrele(nd.ni_dvp);
+				vput(nd.ni_vp);
+				VOP_ABORTOP(&nd);
+				error = EINVAL;
+				nfsm_reply(0);
+			}
 		} else {
-			VOP_ABORTOP(ndp);
-			vput(ndp->ni_dvp);
+			VOP_ABORTOP(&nd);
+			vput(nd.ni_dvp);
 			error = ENXIO;
-			nfsm_reply(0);
+			goto out;
 		}
-		vp = ndp->ni_vp;
+		vp = nd.ni_vp;
 	} else {
-		vp = ndp->ni_vp;
-		ndp->ni_vp = NULLVP;
-		VOP_ABORTOP(ndp);
-		if (ndp->ni_dvp == vp)
-			vrele(ndp->ni_dvp);
+		vrele(nd.ni_startdir);
+		free(nd.ni_pnbuf, M_NAMEI);
+		vp = nd.ni_vp;
+		if (nd.ni_dvp == vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
+			vput(nd.ni_dvp);
+		VOP_ABORTOP(&nd);
 		vap->va_size = 0;
 		if (error = VOP_SETATTR(vp, vap, cred, p)) {
 			vput(vp);
@@ -633,14 +648,21 @@ nfsrv_create(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	nfsm_srvfillattr;
 	return (error);
 nfsmout:
-	VOP_ABORTOP(ndp);
-	if (ndp->ni_dvp == ndp->ni_vp)
-		vrele(ndp->ni_dvp);
+	if (nd.ni_nameiop)
+		vrele(nd.ni_startdir);
+	VOP_ABORTOP(&nd);
+	if (nd.ni_dvp == nd.ni_vp)
+		vrele(nd.ni_dvp);
 	else
-		vput(ndp->ni_dvp);
-	if (ndp->ni_vp)
-		vput(ndp->ni_vp);
+		vput(nd.ni_dvp);
+	if (nd.ni_vp)
+		vput(nd.ni_vp);
 	return (error);
+
+out:
+	vrele(nd.ni_startdir);
+	free(nd.ni_pnbuf, M_NAMEI);
+	nfsm_reply(0);
 }
 
 /*
@@ -654,8 +676,7 @@ nfsrv_remove(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	int *repstat;
 	struct proc *p;
 {
-	struct nameidata nami;
-	register struct nameidata *ndp = &nami;
+	struct nameidata nd;
 	register u_long *tl;
 	register long t1;
 	caddr_t bpos;
@@ -667,15 +688,14 @@ nfsrv_remove(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	fhandle_t *fhp;
 	long len;
 
-	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
-	ndp->ni_cred = cred;
-	ndp->ni_nameiop = DELETE | LOCKPARENT | LOCKLEAF;
-	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
+	nd.ni_cred = cred;
+	nd.ni_nameiop = DELETE | LOCKPARENT | LOCKLEAF;
+	if (error = nfs_namei(&nd, fhp, len, &md, &dpos, p))
 		nfsm_reply(0);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_type == VDIR &&
 		(error = suser(cred, (short *)0)))
 		goto out;
@@ -690,13 +710,13 @@ nfsrv_remove(mrep, md, dpos, cred, xid, mrq, repstat, p)
 		(void) vnode_pager_uncache(vp);
 out:
 	if (!error) {
-		error = VOP_REMOVE(ndp, p);
+		error = VOP_REMOVE(&nd, p);
 	} else {
-		VOP_ABORTOP(ndp);
-		if (ndp->ni_dvp == vp)
-			vrele(ndp->ni_dvp);
+		VOP_ABORTOP(&nd);
+		if (nd.ni_dvp == vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
+			vput(nd.ni_dvp);
 		vput(vp);
 	}
 	nfsm_reply(0);
@@ -714,24 +734,23 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	int *repstat;
 	struct proc *p;
 {
-	register struct nameidata *ndp;
 	register u_long *tl;
 	register long t1;
 	caddr_t bpos;
 	int error = 0;
 	char *cp2;
 	struct mbuf *mb, *mreq;
-	struct nameidata nami, tond;
+	struct nameidata fromnd, tond;
 	struct vnode *fvp, *tvp, *tdvp;
 	nfsv2fh_t fnfh, tnfh;
 	fhandle_t *ffhp, *tfhp;
 	long len, len2;
 	int rootflg = 0;
 
-	ndp = &nami;
-	ndinit(ndp);
 	ffhp = &fnfh.fh_generic;
 	tfhp = &tnfh.fh_generic;
+	fromnd.ni_nameiop = 0;
+	tond.ni_nameiop = 0;
 	nfsm_srvmtofh(ffhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
 	/*
@@ -740,23 +759,21 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	 */
 	if (cred->cr_uid == 0)
 		rootflg++;
-	ndp->ni_cred = cred;
-	ndp->ni_nameiop = DELETE | WANTPARENT | SAVESTARTDIR;
-	if (error = nfs_namei(ndp, ffhp, len, &md, &dpos))
+	fromnd.ni_cred = cred;
+	fromnd.ni_nameiop = DELETE | WANTPARENT | SAVESTART;
+	if (error = nfs_namei(&fromnd, ffhp, len, &md, &dpos, p))
 		nfsm_reply(0);
-	fvp = ndp->ni_vp;
+	fvp = fromnd.ni_vp;
 	nfsm_srvmtofh(tfhp);
 	nfsm_strsiz(len2, NFS_MAXNAMLEN);
 	if (rootflg)
 		cred->cr_uid = 0;
-	ndinit(&tond);
-	crhold(cred);
 	tond.ni_cred = cred;
 	tond.ni_nameiop = RENAME | LOCKPARENT | LOCKLEAF | NOCACHE
-		| SAVESTARTDIR;
-	if (error = nfs_namei(&tond, tfhp, len2, &md, &dpos)) {
-		VOP_ABORTOP(ndp);
-		vrele(ndp->ni_dvp);
+		| SAVESTART;
+	if (error = nfs_namei(&tond, tfhp, len2, &md, &dpos, p)) {
+		VOP_ABORTOP(&fromnd);
+		vrele(fromnd.ni_dvp);
 		vrele(fvp);
 		goto out1;
 	}
@@ -775,11 +792,20 @@ nfsrv_rename(mrep, md, dpos, cred, xid, mrq, repstat, p)
 		error = EXDEV;
 		goto out;
 	}
-	if (fvp == tdvp || fvp == tvp)
+	if (fvp == tdvp)
 		error = EINVAL;
+	/*
+	 * If source is the same as the destination (that is the
+	 * same vnode with the same name in the same directory),
+	 * then there is nothing to do.
+	 */
+	if (fvp == tvp && fromnd.ni_dvp == tdvp &&
+	    fromnd.ni_namelen == tond.ni_namelen &&
+	    !bcmp(fromnd.ni_ptr, tond.ni_ptr, fromnd.ni_namelen))
+		error = -1;
 out:
 	if (!error) {
-		error = VOP_RENAME(ndp, &tond, p);
+		error = VOP_RENAME(&fromnd, &tond, p);
 	} else {
 		VOP_ABORTOP(&tond);
 		if (tdvp == tvp)
@@ -788,22 +814,30 @@ out:
 			vput(tdvp);
 		if (tvp)
 			vput(tvp);
-		VOP_ABORTOP(ndp);
-		vrele(ndp->ni_dvp);
+		VOP_ABORTOP(&fromnd);
+		vrele(fromnd.ni_dvp);
 		vrele(fvp);
 	}
 	vrele(tond.ni_startdir);
+	FREE(tond.ni_pnbuf, M_NAMEI);
 out1:
-	vrele(ndp->ni_startdir);
-	crfree(cred);
+	vrele(fromnd.ni_startdir);
+	FREE(fromnd.ni_pnbuf, M_NAMEI);
 	nfsm_reply(0);
 	return (error);
+
 nfsmout:
-	if (ndp->ni_nameiop & SAVESTARTDIR)
-		vrele(ndp->ni_startdir);
-	VOP_ABORTOP(ndp);
-	vrele(ndp->ni_dvp);
-	vrele(fvp);
+	if (tond.ni_nameiop) {
+		vrele(tond.ni_startdir);
+		FREE(tond.ni_pnbuf, M_NAMEI);
+	}
+	if (fromnd.ni_nameiop) {
+		vrele(fromnd.ni_startdir);
+		FREE(fromnd.ni_pnbuf, M_NAMEI);
+		VOP_ABORTOP(&fromnd);
+		vrele(fromnd.ni_dvp);
+		vrele(fvp);
+	}
 	return (error);
 }
 
@@ -818,8 +852,7 @@ nfsrv_link(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	int *repstat;
 	struct proc *p;
 {
-	struct nameidata nami;
-	register struct nameidata *ndp = &nami;
+	struct nameidata nd;
 	register u_long *tl;
 	register long t1;
 	caddr_t bpos;
@@ -831,7 +864,6 @@ nfsrv_link(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	fhandle_t *fhp, *dfhp;
 	long len;
 
-	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	dfhp = &dnfh.fh_generic;
 	nfsm_srvmtofh(fhp);
@@ -841,29 +873,29 @@ nfsrv_link(mrep, md, dpos, cred, xid, mrq, repstat, p)
 		nfsm_reply(0);
 	if (vp->v_type == VDIR && (error = suser(cred, NULL)))
 		goto out1;
-	ndp->ni_cred = cred;
-	ndp->ni_nameiop = CREATE | LOCKPARENT;
-	if (error = nfs_namei(ndp, dfhp, len, &md, &dpos))
+	nd.ni_cred = cred;
+	nd.ni_nameiop = CREATE | LOCKPARENT;
+	if (error = nfs_namei(&nd, dfhp, len, &md, &dpos, p))
 		goto out1;
-	xp = ndp->ni_vp;
+	xp = nd.ni_vp;
 	if (xp != NULL) {
 		error = EEXIST;
 		goto out;
 	}
-	xp = ndp->ni_dvp;
+	xp = nd.ni_dvp;
 	if (vp->v_mount != xp->v_mount)
 		error = EXDEV;
 out:
 	if (!error) {
-		error = VOP_LINK(vp, ndp, p);
+		error = VOP_LINK(vp, &nd, p);
 	} else {
-		VOP_ABORTOP(ndp);
-		if (ndp->ni_dvp == ndp->ni_vp)
-			vrele(ndp->ni_dvp);
+		VOP_ABORTOP(&nd);
+		if (nd.ni_dvp == nd.ni_vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
-		if (ndp->ni_vp)
-			vrele(ndp->ni_vp);
+			vput(nd.ni_dvp);
+		if (nd.ni_vp)
+			vrele(nd.ni_vp);
 	}
 out1:
 	vrele(vp);
@@ -883,8 +915,7 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct proc *p;
 {
 	struct vattr va;
-	struct nameidata nami;
-	register struct nameidata *ndp = &nami;
+	struct nameidata nd;
 	register struct vattr *vap = &va;
 	register u_long *tl;
 	register long t1;
@@ -900,13 +931,12 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	long len, len2;
 
 	pathcp = (char *)0;
-	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
-	ndp->ni_cred = cred;
-	ndp->ni_nameiop = CREATE | LOCKPARENT;
-	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
+	nd.ni_cred = cred;
+	nd.ni_nameiop = CREATE | LOCKPARENT;
+	if (error = nfs_namei(&nd, fhp, len, &md, &dpos, p))
 		goto out;
 	nfsm_strsiz(len2, NFS_MAXPATHLEN);
 	MALLOC(pathcp, caddr_t, len2 + 1, M_TEMP, M_WAITOK);
@@ -922,32 +952,32 @@ nfsrv_symlink(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	nfsm_mtouio(&io, len2);
 	nfsm_disect(sp, struct nfsv2_sattr *, NFSX_SATTR);
 	*(pathcp + len2) = '\0';
-	if (ndp->ni_vp) {
-		VOP_ABORTOP(ndp);
-		if (ndp->ni_dvp == ndp->ni_vp)
-			vrele(ndp->ni_dvp);
+	if (nd.ni_vp) {
+		VOP_ABORTOP(&nd);
+		if (nd.ni_dvp == nd.ni_vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
-		vrele(ndp->ni_vp);
+			vput(nd.ni_dvp);
+		vrele(nd.ni_vp);
 		error = EEXIST;
 		goto out;
 	}
 	VATTR_NULL(vap);
 	vap->va_mode = fxdr_unsigned(u_short, sp->sa_mode);
-	error = VOP_SYMLINK(ndp, vap, pathcp, p);
+	error = VOP_SYMLINK(&nd, vap, pathcp, p);
 out:
 	if (pathcp)
 		FREE(pathcp, M_TEMP);
 	nfsm_reply(0);
 	return (error);
 nfsmout:
-	VOP_ABORTOP(ndp);
-	if (ndp->ni_dvp == ndp->ni_vp)
-		vrele(ndp->ni_dvp);
+	VOP_ABORTOP(&nd);
+	if (nd.ni_dvp == nd.ni_vp)
+		vrele(nd.ni_dvp);
 	else
-		vput(ndp->ni_dvp);
-	if (ndp->ni_vp);
-		vrele(ndp->ni_vp);
+		vput(nd.ni_dvp);
+	if (nd.ni_vp)
+		vrele(nd.ni_vp);
 	if (pathcp)
 		FREE(pathcp, M_TEMP);
 	return (error);
@@ -967,8 +997,7 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	struct vattr va;
 	register struct vattr *vap = &va;
 	register struct nfsv2_fattr *fp;
-	struct nameidata nami;
-	register struct nameidata *ndp = &nami;
+	struct nameidata nd;
 	register caddr_t cp;
 	register u_long *tl;
 	register long t1;
@@ -981,35 +1010,31 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	fhandle_t *fhp;
 	long len;
 
-	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
-	ndp->ni_cred = cred;
-	ndp->ni_nameiop = CREATE | LOCKPARENT | SAVESTARTDIR;
-	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
+	nd.ni_cred = cred;
+	nd.ni_nameiop = CREATE | LOCKPARENT;
+	if (error = nfs_namei(&nd, fhp, len, &md, &dpos, p))
 		nfsm_reply(0);
 	nfsm_disect(tl, u_long *, NFSX_UNSIGNED);
 	VATTR_NULL(vap);
 	vap->va_type = VDIR;
 	vap->va_mode = nfstov_mode(*tl++);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp != NULL) {
-		VOP_ABORTOP(ndp);
-		if (ndp->ni_dvp == vp)
-			vrele(ndp->ni_dvp);
+		VOP_ABORTOP(&nd);
+		if (nd.ni_dvp == vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
+			vput(nd.ni_dvp);
 		vrele(vp);
-		vrele(ndp->ni_startdir);
 		error = EEXIST;
 		nfsm_reply(0);
 	}
-	error = VOP_MKDIR(ndp, vap, p);
-	vrele(ndp->ni_startdir);
-	if (error)
+	if (error = VOP_MKDIR(&nd, vap, p))
 		nfsm_reply(0);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	bzero((caddr_t)fhp, sizeof(nfh));
 	fhp->fh_fsid = vp->v_mount->mnt_stat.f_fsid;
 	if (error = VFS_VPTOFH(vp, &fhp->fh_fid)) {
@@ -1024,13 +1049,13 @@ nfsrv_mkdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	nfsm_srvfillattr;
 	return (error);
 nfsmout:
-	VOP_ABORTOP(ndp);
-	if (ndp->ni_dvp == ndp->ni_vp)
-		vrele(ndp->ni_dvp);
+	VOP_ABORTOP(&nd);
+	if (nd.ni_dvp == nd.ni_vp)
+		vrele(nd.ni_dvp);
 	else
-		vput(ndp->ni_dvp);
-	if (ndp->ni_vp)
-		vrele(ndp->ni_vp);
+		vput(nd.ni_dvp);
+	if (nd.ni_vp)
+		vrele(nd.ni_vp);
 	return (error);
 }
 
@@ -1045,8 +1070,6 @@ nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	int *repstat;
 	struct proc *p;
 {
-	struct nameidata nami;
-	register struct nameidata *ndp = &nami;
 	register u_long *tl;
 	register long t1;
 	caddr_t bpos;
@@ -1057,16 +1080,16 @@ nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	nfsv2fh_t nfh;
 	fhandle_t *fhp;
 	long len;
+	struct nameidata nd;
 
-	ndinit(ndp);
 	fhp = &nfh.fh_generic;
 	nfsm_srvmtofh(fhp);
 	nfsm_srvstrsiz(len, NFS_MAXNAMLEN);
-	ndp->ni_cred = cred;
-	ndp->ni_nameiop = DELETE | LOCKPARENT | LOCKLEAF;
-	if (error = nfs_namei(ndp, fhp, len, &md, &dpos))
+	nd.ni_cred = cred;
+	nd.ni_nameiop = DELETE | LOCKPARENT | LOCKLEAF;
+	if (error = nfs_namei(&nd, fhp, len, &md, &dpos, p))
 		nfsm_reply(0);
-	vp = ndp->ni_vp;
+	vp = nd.ni_vp;
 	if (vp->v_type != VDIR) {
 		error = ENOTDIR;
 		goto out;
@@ -1074,7 +1097,7 @@ nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 	/*
 	 * No rmdir "." please.
 	 */
-	if (ndp->ni_dvp == vp) {
+	if (nd.ni_dvp == vp) {
 		error = EINVAL;
 		goto out;
 	}
@@ -1085,13 +1108,13 @@ nfsrv_rmdir(mrep, md, dpos, cred, xid, mrq, repstat, p)
 		error = EBUSY;
 out:
 	if (!error) {
-		error = VOP_RMDIR(ndp, p);
+		error = VOP_RMDIR(&nd, p);
 	} else {
-		VOP_ABORTOP(ndp);
-		if (ndp->ni_dvp == ndp->ni_vp)
-			vrele(ndp->ni_dvp);
+		VOP_ABORTOP(&nd);
+		if (nd.ni_dvp == nd.ni_vp)
+			vrele(nd.ni_dvp);
 		else
-			vput(ndp->ni_dvp);
+			vput(nd.ni_dvp);
 		vput(vp);
 	}
 	nfsm_reply(0);
