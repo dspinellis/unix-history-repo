@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 #	crt0	Normal C run time startoff
 #	mcrt0	C run time start off for profiling, ``prof'' conventions
@@ -82,13 +82,3 @@ lint:	crt0.c
 
 depend:
 	mkdep ${CFLAGS} ${SRCS}
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-crt0.o: crt0.c
-mon.o: mon.c
-gmon.o: gmon.c
-gmon.o:gmon.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

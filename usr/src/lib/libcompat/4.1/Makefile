@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.11 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 #
 DEFS=	-DLIBC_SCCS
 CFLAGS=	-O ${DEFS}
@@ -58,29 +58,3 @@ clean:
 depend:
 	mkdep ${CFLAGS} ${SRCS}
 
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-ftime.o: ftime.c /usr/include/sys/types.h /usr/include/sys/time.h
-ftime.o: /usr/include/time.h
-gtty.o: gtty.c /usr/include/sgtty.h /usr/include/sys/ioctl.h
-gtty.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-gtty.o: /usr/include/sys/ttydev.h
-nice.o: nice.c /usr/include/sys/time.h /usr/include/time.h
-nice.o: /usr/include/sys/resource.h
-pause.o: pause.c
-rand.o: rand.c
-stty.o: stty.c /usr/include/sgtty.h /usr/include/sys/ioctl.h
-stty.o: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-stty.o: /usr/include/sys/ttydev.h
-tell.o: tell.c
-times.o: times.c /usr/include/sys/time.h /usr/include/time.h
-times.o: /usr/include/sys/resource.h
-utime.o: utime.c /usr/include/sys/time.h /usr/include/time.h
-vlimit.o: vlimit.c /usr/include/sys/time.h /usr/include/time.h
-vlimit.o: /usr/include/sys/resource.h /usr/include/errno.h
-vtimes.o: vtimes.c /usr/include/sys/time.h /usr/include/time.h
-vtimes.o: /usr/include/sys/resource.h
-getpw.o: getpw.c /usr/include/stdio.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY

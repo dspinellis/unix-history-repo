@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.8 (Berkeley) %G%
+#	@(#)Makefile	5.9 (Berkeley) %G%
 #
 DEFS=	-DLIBC_SCCS
 FLAGS=	-I.. ${DEFS}
@@ -50,32 +50,3 @@ clean:
 
 depend:
 	mkdep ${CFLAGS} ${SRCS}
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-addd.o: addd.s /usr/include/tahoemath/fp.h ../DEFS.h
-addf.o: addf.s /usr/include/tahoemath//fp.h ../DEFS.h
-cmpd.o: cmpd.s ../DEFS.h
-cmpf.o: cmpf.s ../DEFS.h
-cvtdl.o: cvtdl.s /usr/include/tahoemath/fp.h ../DEFS.h
-cvtfl.o: cvtfl.s /usr/include/tahoemath/fp.h ../DEFS.h
-cvtld.o: cvtld.s /usr/include/tahoemath/fp.h ../DEFS.h
-cvtlf.o: cvtlf.s /usr/include/tahoemath/fp.h ../DEFS.h
-cvtud.o: cvtud.s /usr/include/tahoemath/fp.h ../DEFS.h
-cvtuf.o: cvtuf.s /usr/include/tahoemath/fp.h ../DEFS.h
-divd.o: divd.s /usr/include/tahoemath/fp.h ../DEFS.h
-divf.o: divf.s /usr/include/tahoemath/fp.h ../DEFS.h
-fnorm.o: fnorm.s /usr/include/tahoemath/fp.h ../DEFS.h
-fp_exp.o: fp_exp.s /usr/include/tahoemath/fp.h ../DEFS.h
-modf.o: modf.s /usr/include/tahoemath/fp.h ../DEFS.h
-muld.o: muld.s /usr/include/tahoemath/fp.h ../DEFS.h
-mulf.o: mulf.s /usr/include/tahoemath/fp.h ../DEFS.h
-negd.o: negd.s /usr/include/tahoemath/fp.h ../DEFS.h
-negf.o: negf.s /usr/include/tahoemath/fp.h ../DEFS.h
-sfnorm.o: sfnorm.s /usr/include/tahoemath/fp.h ../DEFS.h
-sfp_exp.o: sfp_exp.s /usr/include/tahoemath/fp.h ../DEFS.h
-subd.o: subd.s /usr/include/tahoemath/fp.h ../DEFS.h
-subf.o: subf.s /usr/include/tahoemath/fp.h ../DEFS.h
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
