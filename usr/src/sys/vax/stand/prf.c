@@ -1,4 +1,4 @@
-/*	prf.c	4.2	81/03/15	*/
+/*	prf.c	4.3	81/05/05	*/
 
 #include "../h/param.h"
 #include "../h/cons.h"
@@ -181,32 +181,6 @@ gets(buf)
 	lp = buf;
 	for (;;) {
 		c = getchar() & 0177;
-		if (c>='A' && c<='Z')
-			c -= 'A' - 'a';
-		if (lp != buf && *(lp-1) == '\\') {
-			lp--;
-			if (c>='a' && c<='z') {
-				c += 'A' - 'a';
-				goto store;
-			}
-			switch ( c) {
-			case '(':
-				c = '{';
-				break;
-			case ')':
-				c = '}';
-				break;
-			case '!':
-				c = '|';
-				break;
-			case '^':
-				c = '~';
-				break;
-			case '\'':
-				c = '`';
-				break;
-			}
-		}
 	store:
 		switch(c) {
 		case '\n':
