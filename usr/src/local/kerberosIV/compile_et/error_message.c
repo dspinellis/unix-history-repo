@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include "error_table.h"
 #include "mit-sipb-copyright.h"
-extern char *sys_errlist[];
+extern const char *const sys_errlist[];
 extern int sys_nerr;
 
 static char buffer[25];
