@@ -14,15 +14,16 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 # reorder gives an editor command for most common terminals
 # (in reverse order from n'th to 1'st most commonly used)
 # to move them to the front of termcap
 #
 MAN=	termcap.0
-TABS=	3101 aa aed512 beehive diablo dtc382 ibm3101 std stdcrt tandem653 \
-	teleray vt100 wyse-adds xerox1720 xerox1730 xerox1730-lm zenith29
+TABS=	3101 aa aed512 beehive diablo dtc382 hp700-wy ibm3101 \
+	std stdcrt tandem653 teleray vt100 wyse-adds \
+	xerox1720 xerox1730 xerox1730-lm zenith29
 
 all: termcap
 
