@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	8.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	8.11 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -90,6 +90,8 @@ syserr(fmt, va_alist)
 			CurEnv->e_id == NULL ? "NOQUEUE" : CurEnv->e_id,
 			&MsgBuf[4]);
 # endif /* LOG */
+	if (olderrno == EMFILE)
+		printopenfds(TRUE);
 	if (panic)
 	{
 #ifdef XLA
