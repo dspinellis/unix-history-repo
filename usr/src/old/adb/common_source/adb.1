@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)adb.1	5.3 (Berkeley) %G%
+.\"	@(#)adb.1	5.4 (Berkeley) %G%
 .\"
 .TH ADB 1 ""
 .UC 4
@@ -100,7 +100,7 @@ in the usual way in the address space of the subprocess.
 If the operating system is being debugged either post-mortem or using
 the special file
 .I /dev/mem
-to interactive examine and/or modify memory the maps are set to map
+to interactively examine and/or modify memory, the maps are set to map
 the kernel virtual addresses which start at 0x80000000 (on the VAX); see
 .SM ADDRESSES.
 .SH EXPRESSIONS
