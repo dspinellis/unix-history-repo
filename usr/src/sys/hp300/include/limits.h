@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)limits.h	8.2 (Berkeley) %G%
+ *	@(#)limits.h	8.3 (Berkeley) %G%
  */
 
 #define	CHAR_BIT	8		/* number of bits in a char */
@@ -42,13 +42,17 @@
 #define	LONG_MAX	2147483647	/* max value for a long */
 #define	LONG_MIN	(-2147483647-1)	/* min value for a long */
 
-#ifndef _ANSI_SOURCE
+#if !defined(_ANSI_SOURCE)
+#define	SSIZE_MAX	INT_MAX		/* max value for a ssize_t */
+
+#if !defined(_POSIX_SOURCE)
 #define	SIZE_T_MAX	UINT_MAX	/* max value for a size_t */
-#define	SSIZE_T_MAX	INT_MAX		/* max value for a ssize_t */
 
 /* GCC requires that quad constants be written as expressions. */
 #define	UQUAD_MAX	((u_quad_t)0-1)	/* max value for a uquad_t */
 					/* max value for a quad_t */
 #define	QUAD_MAX	((quad_t)(UQUAD_MAX >> 1))
 #define	QUAD_MIN	(-QUAD_MAX-1)	/* min value for a quad_t */
-#endif
+
+#endif /* !_POSIX_SOURCE */
+#endif /* !_ANSI_SOURCE */
