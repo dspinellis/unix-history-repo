@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.4 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -898,7 +898,7 @@ bool
 atobool(s)
 	register char *s;
 {
-	if (*s == '\0' || strchr("tTyY", *s) != NULL)
+	if (s == NULL || *s == '\0' || strchr("tTyY", *s) != NULL)
 		return (TRUE);
 	return (FALSE);
 }
