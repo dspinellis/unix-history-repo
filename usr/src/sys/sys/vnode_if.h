@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vnode_if.h	7.2 (Berkeley) %G%
+ *	@(#)vnode_if.h	7.3 (Berkeley) %G%
  */
 
 /*
@@ -265,20 +265,18 @@ extern struct vnodeop_desc vop_mmap_desc;
 struct vop_fsync_args {
 	struct vnodeop_desc *a_desc;
 	struct vnode *a_vp;
-	int  a_fflags;
 	struct ucred *a_cred;
 	int  a_waitfor;
 	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_fsync_desc;
 #define USES_VOP_FSYNC struct vop_fsync_args vop_fsync_a
-#define VOP_FSYNC(A0,A1,A2,A3,A4) \
+#define VOP_FSYNC(A0,A1,A2,A3) \
 		( vop_fsync_a.a_desc = VDESC(vop_fsync), \
 		vop_fsync_a.a_vp=(A0), \
-		vop_fsync_a.a_fflags=(A1), \
-		vop_fsync_a.a_cred=(A2), \
-		vop_fsync_a.a_waitfor=(A3), \
-		vop_fsync_a.a_p=(A4), \
+		vop_fsync_a.a_cred=(A1), \
+		vop_fsync_a.a_waitfor=(A2), \
+		vop_fsync_a.a_p=(A3), \
 		(VCALL((A0),VOFFSET(vop_fsync),&vop_fsync_a)))
 
 /* This is automatically generated.  Modify the corresponding .int file. */
@@ -421,16 +419,14 @@ struct vop_readdir_args {
 	struct vnode *a_vp;
 	struct uio *a_uio;
 	struct ucred *a_cred;
-	int *a_eofflagp;
 };
 extern struct vnodeop_desc vop_readdir_desc;
 #define USES_VOP_READDIR struct vop_readdir_args vop_readdir_a
-#define VOP_READDIR(A0,A1,A2,A3) \
+#define VOP_READDIR(A0,A1,A2) \
 		( vop_readdir_a.a_desc = VDESC(vop_readdir), \
 		vop_readdir_a.a_vp=(A0), \
 		vop_readdir_a.a_uio=(A1), \
 		vop_readdir_a.a_cred=(A2), \
-		vop_readdir_a.a_eofflagp=(A3), \
 		(VCALL((A0),VOFFSET(vop_readdir),&vop_readdir_a)))
 
 /* This is automatically generated.  Modify the corresponding .int file. */
@@ -470,14 +466,12 @@ extern struct vnodeop_desc vop_abortop_desc;
 struct vop_inactive_args {
 	struct vnodeop_desc *a_desc;
 	struct vnode *a_vp;
-	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_inactive_desc;
 #define USES_VOP_INACTIVE struct vop_inactive_args vop_inactive_a
-#define VOP_INACTIVE(A0,A1) \
+#define VOP_INACTIVE(A0) \
 		( vop_inactive_a.a_desc = VDESC(vop_inactive), \
 		vop_inactive_a.a_vp=(A0), \
-		vop_inactive_a.a_p=(A1), \
 		(VCALL((A0),VOFFSET(vop_inactive),&vop_inactive_a)))
 
 /* This is automatically generated.  Modify the corresponding .int file. */
@@ -675,18 +669,20 @@ extern struct vnodeop_desc vop_vfree_desc;
 struct vop_truncate_args {
 	struct vnodeop_desc *a_desc;
 	struct vnode *a_vp;
-	u_long  a_length;
+	off_t  a_length;
 	int  a_flags;
 	struct ucred *a_cred;
+	struct proc *a_p;
 };
 extern struct vnodeop_desc vop_truncate_desc;
 #define USES_VOP_TRUNCATE struct vop_truncate_args vop_truncate_a
-#define VOP_TRUNCATE(A0,A1,A2,A3) \
+#define VOP_TRUNCATE(A0,A1,A2,A3,A4) \
 		( vop_truncate_a.a_desc = VDESC(vop_truncate), \
 		vop_truncate_a.a_vp=(A0), \
 		vop_truncate_a.a_length=(A1), \
 		vop_truncate_a.a_flags=(A2), \
 		vop_truncate_a.a_cred=(A3), \
+		vop_truncate_a.a_p=(A4), \
 		(VCALL((A0),VOFFSET(vop_truncate),&vop_truncate_a)))
 
 /* This is automatically generated.  Modify the corresponding .int file. */
