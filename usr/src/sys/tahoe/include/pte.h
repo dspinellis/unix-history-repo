@@ -1,4 +1,4 @@
-/*	pte.h	1.5	87/07/11	*/
+/*	pte.h	1.6	88/05/02	*/
 
 /*
  * Tahoe page table entry
@@ -47,7 +47,7 @@ unsigned int
 #define	PG_SWAPM	0x02000000
 #define PG_N		0x01000000 /* Non-cacheable */
 #define	PG_M		0x00800000
-#define PG_U		0x00400000 /* not currently used */
+#define PG_U		0x00400000
 #define	PG_PFNUM	0x003fffff
 
 #define	PG_FZERO	0
@@ -65,6 +65,12 @@ unsigned int
  * Pte related macros
  */
 #define	dirty(pte)	((pte)->pg_m)
+
+/*
+ * Kernel virtual address to page table entry and to physical address.
+ */
+#define	kvtopte(va) (&Sysmap[((int)(va) &~ KERNBASE) >> PGSHIFT])
+#define	kvtophys(x) ((kvtopte(x)->pg_pfnum << PGSHIFT) | ((int)(x) & PGOFSET))
 
 #ifndef LOCORE
 #ifdef KERNEL
