@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)route.c	8.3 (Berkeley) %G%
+ *	@(#)route.c	8.3.1.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -284,20 +284,6 @@ ifa_ifwithroute(flags, dst, gateway)
 	}
 	if (ifa == 0)
 		ifa = ifa_ifwithnet(gateway);
-	if (ifa == 0) {
-		struct rtentry *rt = rtalloc1(dst, 0);
-		if (rt == 0)
-			return (0);
-		rt->rt_refcnt--;
-		if ((ifa = rt->rt_ifa) == 0)
-			return (0);
-	}
-	if (ifa->ifa_addr->sa_family != dst->sa_family) {
-		struct ifaddr *oifa = ifa;
-		ifa = ifaof_ifpforaddr(dst, ifa->ifa_ifp);
-		if (ifa == 0)
-			ifa = oifa;
-	}
 	return (ifa);
 }
 
@@ -341,7 +327,64 @@ rtgateinfo(info)
 }
 
 
-#define ROUNDUP(a) (a>0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
+int
+rtrequest1(req, info, ret_nrt)
+	int req;
+	register struct rt_addrinfo *info;
+	struct rtentry **ret_nrt;
+{
+	struct rt_addrinfo info;
+
+	bzero((caddr_t)&info, sizeof(info));
+	info.rti_flags = flags;
+	info.rti_info[RTAX_DST] = dst;
+	info.rti_info[RTAX_GATEWAY] = gateway;
+	info.rti_info[RTAX_NETMASK] = netmask;
+	return rtrequest1(req, &info, ret_nrt);
+}
+
+/*
+ * These (questionable) definitions of apparent local variables apply
+ * to the next two functions.  XXXXXX!!!
+ */
+#define dst	info->rti_info[RTAX_DST]
+#define gateway	info->rti_info[RTAX_GATEWAY]
+#define netmask	info->rti_info[RTAX_NETMASK]
+#define ifaaddr	info->rti_info[RTAX_IFA]
+#define ifpaddr	info->rti_info[RTAX_IFP]
+#define flags	info->rti_flags
+
+int
+rt_getifa(info)
+	register struct rt_addrinfo *info;
+{
+	struct ifaddr *ifa;
+	int error = 0;
+
+	/* ifp may be specified by sockaddr_dl
+		   when protocol address is ambiguous */
+	if (info->rti_ifp == 0 && ifpaddr && ifpaddr->sa_family == AF_LINK) {
+		ifa = ifa_ifwithnet(ifpaddr);
+		info->rti_ifp = ifa ? ifa->ifa_ifp : 0;
+	}
+	if (info->rti_ifa == 0) {
+		struct sockaddr *sa;
+
+		sa = ifaaddr ? ifaaddr : (gateway ? gateway : dst);
+		if (sa && info->rti_ifp)
+			info->rti_ifa = ifaof_ifpforaddr(sa, info->rti_ifp);
+		else if (dst && gateway)
+			info->rti_ifa = ifa_ifwithroute(flags, dst, gateway);
+		else if (sa)
+			info->rti_ifa = ifa_ifwithroute(flags, sa, sa);
+	}
+	if (ifa = info->rti_ifa) {
+		if (info->rti_ifp == 0)
+			info->rti_ifp = ifa->ifa_ifp;
+	} else
+		error = ENETUNREACH;
+	return error;
+}
 
 int
 rtrequest1(req, info, ret_nrt)
@@ -360,10 +403,15 @@ rtrequest1(req, info, ret_nrt)
 #define RTE(x) ((struct rtentry *)x)
 
 	if ((rnh = rt_tables[dst->sa_family]) == 0)
-		senderr(ESRCH);
+		senderr(EAFNOSUPPORT);
 	if (flags & RTF_HOST)
 		netmask = 0;
 	switch (req) {
+	case RTM_DELPKT:
+		if (rnh->rnh_deladdr == 0)
+			senderr(EOPNOTSUPP);
+		rn = rnh->rnh_delpkt(info->rti_pkthdr, (caddr_t)info, rnh);
+		goto delete;
 	case RTM_DELETE:
 		if ((ifaaddr || ifpaddr) && rnh->rnh_delete1) {
 			extern struct radix_node_head *mask_rnhead;
@@ -406,6 +454,10 @@ rtrequest1(req, info, ret_nrt)
 		break;
 
 
+	case RTM_ADDPKT:
+		if (rnh->rnh_addpkt == 0)
+			senderr(EOPNOTSUPP);
+		/*FALLTHROUGH*/
 	case RTM_ADD:
 		if (ifa == 0) {
 			if (error = rtgateinfo(info))
@@ -422,6 +474,11 @@ rtrequest1(req, info, ret_nrt)
 			Free(rt);
 			senderr(ENOBUFS);
 		}
+		if (req == RTM_ADDPKT) {
+			rn = rnh->rnh_addpkt(info->rti_pkthdr, (caddr_t)info,
+						rnh, rt->rt_nodes);
+			goto add; /* addpkt() must allocate space */
+		}
 		ndst = rt_key(rt);
 		if (netmask) {
 			rt_maskedcopy(dst, ndst, netmask);
@@ -429,6 +486,7 @@ rtrequest1(req, info, ret_nrt)
 			Bcopy(dst, ndst, dst->sa_len);
 		rn = rnh->rnh_addaddr((caddr_t)ndst, (caddr_t)netmask,
 					rnh, rt->rt_nodes);
+	add:
 		if (rn == 0) {
 			if (rt->rt_gwroute)
 				rtfree(rt->rt_gwroute);
@@ -446,10 +504,18 @@ rtrequest1(req, info, ret_nrt)
 			rt->rt_refcnt++;
 		}
 		break;
+	default:
+		error = EOPNOTSUPP;
 	}
 bad:
 	splx(s);
 	return (error);
+#undef dst
+#undef gateway
+#undef netmask
+#undef ifaaddr
+#undef ifpaddr
+#undef flags
 #undef dst
 #undef gateway
 #undef netmask
@@ -473,6 +539,7 @@ rtrequest(req, dst, gateway, netmask, flags, ret_nrt)
 	info.rti_info[RTAX_NETMASK] = netmask;
 	return rtrequest1(req, info, ret_nrt);
 }
+#define ROUNDUP(a) (a>0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
 
 int
 rt_setgate(rt0, dst, gate)
@@ -501,9 +568,6 @@ rt_setgate(rt0, dst, gate)
 	if (rt->rt_gwroute) {
 		rt = rt->rt_gwroute; RTFREE(rt);
 		rt = rt0; rt->rt_gwroute = 0;
-	}
-	if (rt->rt_flags & RTF_GATEWAY) {
-		rt->rt_gwroute = rtalloc1(gate, 1);
 	}
 	return 0;
 }
@@ -542,7 +606,10 @@ rtinit(ifa, cmd, flags)
 	register struct sockaddr *deldst;
 	struct mbuf *m = 0;
 	struct rtentry *nrt = 0;
+	struct radix_node_head *rnh;
+	struct radix_node *rn;
 	int error;
+	struct rt_addrinfo info;
 
 	dst = flags & RTF_HOST ? ifa->ifa_dstaddr : ifa->ifa_addr;
 	if (cmd == RTM_DELETE) {
@@ -552,42 +619,36 @@ rtinit(ifa, cmd, flags)
 			rt_maskedcopy(dst, deldst, ifa->ifa_netmask);
 			dst = deldst;
 		}
-		if (rt = rtalloc1(dst, 0)) {
-			rt->rt_refcnt--;
-			if (rt->rt_ifa != ifa) {
-				if (m)
-					(void) m_free(m);
-				return (flags & RTF_HOST ? EHOSTUNREACH
-							: ENETUNREACH);
-			}
+		if ((rnh = rt_tables[dst->sa_family]) == 0 ||
+		    (rn = rnh->rnh_lookup(dst, ifa->ifa_netmask, rnh)) == 0 ||
+		    (rn->rn_flags & RNF_ROOT) != 0 ||
+		    ((struct rtentry *)rn)->rt_ifa != ifa ||
+		    !equal(rt_key(rt), dst))
+		     {
+			if (m)
+				(void) m_free(m);
+			return (flags & RTF_HOST ? EHOSTUNREACH : ENETUNREACH);
 		}
 	}
-	error = rtrequest(cmd, dst, ifa->ifa_addr, ifa->ifa_netmask,
-			flags | ifa->ifa_flags, &nrt);
+	bzero((caddr_t)&info, sizeof(info));
+	info.rti_ifa = ifa;
+	info.rti_flags = flags | ifa->ifa_flags;
+	info.rti_info[RTAX_DST] = dst;
+	info.rti_info[RTAX_GATEWAY] = ifa->ifa_addr;
+	info.rti_info[RTAX_NETMASK] = ifa->ifa_netmask;
+	error = rtrequest1(cmd, &info, &nrt);
+
+	if (error == 0 && (rt = nrt)) {
+		rt_newaddrmsg(cmd, ifa, error, rt);
+		if (cmd == RTM_DELETE) {
+			if (rt->rt_refcnt <= 0) {
+				rt->rt_refcnt++;
+				rtfree(rt);
+			}
+		} else if (cmd == RTM_ADD)
+			rt->rt_refcnt--;
+	}
 	if (m)
 		(void) m_free(m);
-	if (cmd == RTM_DELETE && error == 0 && (rt = nrt)) {
-		rt_newaddrmsg(cmd, ifa, error, nrt);
-		if (rt->rt_refcnt <= 0) {
-			rt->rt_refcnt++;
-			rtfree(rt);
-		}
-	}
-	if (cmd == RTM_ADD && error == 0 && (rt = nrt)) {
-		rt->rt_refcnt--;
-		if (rt->rt_ifa != ifa) {
-			printf("rtinit: wrong ifa (%x) was (%x)\n", ifa,
-				rt->rt_ifa);
-			if (rt->rt_ifa->ifa_rtrequest)
-			    rt->rt_ifa->ifa_rtrequest(RTM_DELETE, rt, SA(0));
-			IFAFREE(rt->rt_ifa);
-			rt->rt_ifa = ifa;
-			rt->rt_ifp = ifa->ifa_ifp;
-			ifa->ifa_refcnt++;
-			if (ifa->ifa_rtrequest)
-			    ifa->ifa_rtrequest(RTM_ADD, rt, SA(0));
-		}
-		rt_newaddrmsg(cmd, ifa, error, nrt);
-	}
 	return (error);
 }

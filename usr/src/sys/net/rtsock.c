@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rtsock.c	8.6 (Berkeley) %G%
+ *	@(#)rtsock.c	8.6.1.1 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -151,6 +151,7 @@ route_output(m, so)
 	}
 	switch (rtm->rtm_type) {
 
+	case RTM_ADDPKT:
 	case RTM_ADD:
 		if (gate == 0)
 			senderr(EINVAL);
@@ -173,13 +174,14 @@ route_output(m, so)
 		break;
 
 	case RTM_DELPKT:
+	case RTM_DELPKT:
 		if  ((rnh = rt_tables[dst->sa_family]) == 0 ||
 		     rnh->rnh_delpkt == 0)
 			senderr(EAFNOSUPPORT);
 		error = rnh->rnh_delpkt(pkthdr, &info, rnh);
 
 	case RTM_DELETE:
-				rtm->rtm_flags, &saved_nrt);
+		error = rtrequest1(rtm->rtm_type, &info, &saved_nrt);
 		if (error == 0) {
 			(rt = saved_nrt)->rt_refcnt++;
 			goto report;
@@ -248,35 +250,29 @@ route_output(m, so)
 			break;
 
 		case RTM_CHANGE:
-			if (gate && rt_setgate(rt, rt_key(rt), gate))
-				senderr(EDQUOT);
 			/* new gateway could require new ifaddr, ifp;
 			   flags may also be different; ifp may be specified
 			   by ll sockaddr when protocol address is ambiguous */
-			if (ifpaddr && (ifa = ifa_ifwithnet(ifpaddr)) &&
-			    (ifp = ifa->ifa_ifp))
-				ifa = ifaof_ifpforaddr(ifaaddr ? ifaaddr : gate,
-							ifp);
-			else if ((ifaaddr && (ifa = ifa_ifwithaddr(ifaaddr))) ||
-				 (ifa = ifa_ifwithroute(rt->rt_flags,
-							rt_key(rt), gate)))
-				ifp = ifa->ifa_ifp;
-			if (ifa) {
+			if (error = rt_getifa(&info))
+				senderr(error);
+			if (gate && rt_setgate(rt, rt_key(rt), gate))
+				senderr(EDQUOT);
+			if (ifa = info.rti_ifa) {
 				register struct ifaddr *oifa = rt->rt_ifa;
 				if (oifa != ifa) {
 				    if (oifa && oifa->ifa_rtrequest)
 					oifa->ifa_rtrequest(RTM_DELETE,
-								rt, gate);
+								rt, &info);
 				    IFAFREE(rt->rt_ifa);
 				    rt->rt_ifa = ifa;
 				    ifa->ifa_refcnt++;
-				    rt->rt_ifp = ifp;
+				    rt->rt_ifp = info.rti_ifp;
 				}
 			}
 			rt_setmetrics(rtm->rtm_inits, &rtm->rtm_rmx,
 					&rt->rt_rmx);
 			if (rt->rt_ifa && rt->rt_ifa->ifa_rtrequest)
-			       rt->rt_ifa->ifa_rtrequest(RTM_ADD, rt, gate);
+			       rt->rt_ifa->ifa_rtrequest(RTM_ADD, rt, &info);
 			if (genmask)
 				rt->rt_genmask = genmask;
 			/*
@@ -361,16 +357,18 @@ rt_xaddrs(cp, cplim, rtinfo)
 	register struct rt_addrinfo *rtinfo;
 {
 	register struct sockaddr *sa;
-	register int i;
+	register int i, addrs = rtinfo->rti_addrs;
 	caddr_t cp0 = cp;
 
-	bzero(rtinfo->rti_info, sizeof(rtinfo->rti_info));
+	bzero(rtinfo, sizeof(*rtinfo));
+	rtinfo->rti_addrs = addrs;
 	for (i = 0; (i < RTAX_MAX) && (cp < cplim); i++) {
-		if ((rtinfo->rti_addrs & (1 << i)) == 0)
+		if ((addrs & (1 << i)) == 0)
 			continue;
 		rtinfo->rti_info[i] = sa = (struct sockaddr *)cp;
 		ADVANCE(cp, sa);
 	}
+	rtinfo->rti_pkthdr = cp;
 	return cp;
 }
 
