@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	7.10 (Berkeley) %G%
+ *	@(#)boot.c	7.11 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -79,10 +79,8 @@ copyunix(howto, devtype, aio)
 	register int io = aio, i;
 	char *addr;
 
-	i = read(io, (char *)&x, sizeof(x));
-	if (i != sizeof(x) || (x.a_magic != OMAGIC && x.a_magic != ZMAGIC
-	    && x.a_magic != NMAGIC)) {
-		printf("Bad format\n");
+	if (read(io, (char *)&x, sizeof(x)) != sizeof(x) || N_BADMAG(x)) {
+		printf("bad magic #\n");
 		return;
 	}
 	printf("%d", x.a_text);
