@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)map.c	8.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)map.c	8.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -549,6 +549,9 @@ void
 ndbm_map_close(map)
 	register MAP  *map;
 {
+	if (tTd(38, 9))
+		printf("ndbm_map_close(%s, %x)\n", map->map_file, map->map_mflags);
+
 	if (bitset(MF_WRITABLE, map->map_mflags))
 	{
 #ifdef NIS
