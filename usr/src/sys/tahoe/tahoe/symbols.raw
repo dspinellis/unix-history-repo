@@ -1,4 +1,5 @@
-#	symbols.raw	7.4	90/04/10
+#	@(#)symbols.raw	7.5 (Berkeley) %G%
+
 	_version
 #dmesg
 	_msgbuf
