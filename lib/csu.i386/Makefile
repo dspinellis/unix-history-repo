@@ -1,8 +1,8 @@
 #	from: @(#)Makefile	5.6 (Berkeley) 5/22/91
-#	$Id: Makefile,v 1.10 1994/06/03 05:35:04 jkh Exp $
+#	$Id: Makefile,v 1.11 1994/06/12 10:51:00 ache Exp $
 
 CFLAGS+=	-DLIBC_SCCS -DDYNAMIC
-OBJS=		crt0.o gcrt0.o c++rt0.o
+OBJS=		crt0.o mcrt0.o c++rt0.o
 CLEANFILES+=	gmon.o moncrt0.o core a.out
 .if defined(STARTUP_LOCALE)
 CFLAGS+=	-DSTARTUP_LOCALE
@@ -25,7 +25,7 @@ moncrt0.o: crt0.c
 	${LD} -x -r ${.TARGET}
 	mv a.out ${.TARGET}
 
-gcrt0.o: moncrt0.o gmon.o
+mcrt0.o: moncrt0.o gmon.o
 	${LD} -x -r -o ${.TARGET} moncrt0.o gmon.o
 
 gmon.o: gmon.c gmon.h
