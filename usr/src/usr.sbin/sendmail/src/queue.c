@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.22 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.23 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.22 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.23 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -70,7 +70,7 @@ queueup(df)
 	**  Create control file.
 	*/
 
-	newid = (e->e_id == NULL);
+	newid = (e->e_id == NULL) || !bitset(EF_INQUEUE, e->e_flags);
 
 	/* if newid, queuename will create a locked qf file in e->lockfp */
 	strcpy(tf, queuename(e, 't'));
@@ -79,11 +79,7 @@ queueup(df)
 		newid = FALSE;
 
 	/* if newid, just write the qf file directly (instead of tf file) */
-	if (newid)
-	{
-		tfp = e->e_lockfp;
-	}
-	else
+	if (!newid)
 	{
 		/* get a locked tf file */
 		for (i = 0; i < 128; i++)
@@ -1292,6 +1288,11 @@ queuename(e, type)
 		define('i', e->e_id, e);
 		if (tTd(7, 1))
 			printf("queuename: assigned id %s, env=%x\n", e->e_id, e);
+		if (tTd(7, 9))
+		{
+			printf("  lockfd=");
+			dumpfd(fileno(e->e_lockfp), TRUE, FALSE);
+		}
 # ifdef LOG
 		if (LogLevel > 93)
 			syslog(LOG_DEBUG, "%s: assigned id", e->e_id);
