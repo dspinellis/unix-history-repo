@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)hp.c	6.9 (Berkeley) %G%
+ *	@(#)hp.c	6.10 (Berkeley) %G%
  */
 
 #ifdef HPDEBUG
@@ -926,8 +926,10 @@ hpdump(dev)
 		hpaddr->hpof = HPOF_FMT22;
 	}
 	st = &hpst[mi->mi_type];
-	if (dumplo < 0 || dumplo + num >= st->sizes[minor(dev)&07].nblocks)
+	if (dumplo < 0)
 		return (EINVAL);
+	if (dumplo + num >= st->sizes[minor(dev)&07].nblocks)
+		num = st->sizes[minor(dev)&07].nblocks - dumplo;
 	while (num > 0) {
 		register struct pte *hpte = mba->mba_map;
 		register int i;
