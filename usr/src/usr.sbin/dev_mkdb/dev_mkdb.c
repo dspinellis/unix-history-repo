@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dev_mkdb.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)dev_mkdb.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -20,13 +20,17 @@ static char sccsid[] = "@(#)dev_mkdb.c	5.7 (Berkeley) %G%";
 #include <fcntl.h>
 #undef DIRBLKSIZ
 #include <dirent.h>
-struct nlist;	/* XXX bletch */
+#include <nlist.h>
 #include <kvm.h>
 #include <db.h>
 #include <errno.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <paths.h>
+#include <stdlib.h>
 #include <string.h>
+
+static void error(), usage();
 
 main(argc, argv)
 	int argc;
@@ -36,7 +40,10 @@ main(argc, argv)
 	register DIR *dirp;
 	register struct dirent *dp;
 	struct stat sb;
-	char bkeybuf[sizeof(sb.st_rdev) + 1];
+	struct {
+		mode_t type;
+		dev_t dev;
+	} bkey;
 	DB *db;
 	DBT data, key;
 	int ch;
@@ -65,12 +72,11 @@ main(argc, argv)
 		error(dbtmp);
 
 	/*
-	 * Character devices are stored using st_rdev as the key.
-	 * Block devices are stores using st_rdev followed by exactly
-	 * one NULL byte as the key.
+	 * Keys are a mode_t followed by a dev_t.  The former is the type of
+	 * the file (mode & S_IFMT), the latter is the st_rdev field.
 	 */
-	key.data = bkeybuf;
-	bkeybuf[sizeof(sb.st_rdev)] = NULL;
+	key.data = &bkey;
+	key.size = sizeof(bkey);
 	data.data = buf;
 	while (dp = readdir(dirp)) {
 		if (stat(dp->d_name, &sb)) {
@@ -78,15 +84,19 @@ main(argc, argv)
 				dp->d_name);
 			continue;
 		}
+
+		/* Create the key. */
 		if (S_ISCHR(sb.st_mode))
-			key.size = sizeof(sb.st_rdev);
+			bkey.type = S_IFCHR;
 		else if (S_ISBLK(sb.st_mode))
-			key.size = sizeof(sb.st_rdev) + 1;
+			bkey.type = S_IFBLK;
 		else
 			continue;
-		bcopy(&sb.st_rdev, bkeybuf, sizeof(sb.st_rdev));
-		/* 
-		 * Nul terminate the name so caller doesn't have to. 
+		bkey.dev = sb.st_rdev;
+
+		/*
+		 * Create the data; nul terminate the name so caller doesn't
+		 * have to.
 		 */
 		bcopy(dp->d_name, buf, dp->d_namlen);
 		buf[dp->d_namlen] = '\0';
@@ -103,6 +113,7 @@ main(argc, argv)
 	exit(0);
 }
 
+void
 error(n)
 	char *n;
 {
@@ -110,6 +121,7 @@ error(n)
 	exit(1);
 }
 
+void
 usage()
 {
 	(void)fprintf(stderr, "usage: dev_mkdb\n");
