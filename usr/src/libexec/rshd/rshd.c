@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)rshd.c	4.18 (Berkeley) %G%";
+static	char sccsid[] = "@(#)rshd.c	4.19 (Berkeley) %G%";
 #endif
 
 /*
@@ -198,8 +198,8 @@ doit(f, fromp)
 	if (*pwd->pw_shell == '\0')
 		pwd->pw_shell = "/bin/sh";
 	(void) close(f);
-	initgroups(pwd->pw_name, pwd->pw_gid);
 	(void) setgid(pwd->pw_gid);
+	initgroups(pwd->pw_name, pwd->pw_gid);
 	(void) setuid(pwd->pw_uid);
 	environ = envinit;
 	strncat(homedir, pwd->pw_dir, sizeof(homedir)-6);
