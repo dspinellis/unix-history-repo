@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mpool.h	5.2 (Berkeley) %G%
+ *	@(#)mpool.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -47,7 +47,7 @@ typedef struct MPOOL {
 	pgno_t	curcache;		/* Current number of cached pages. */
 	pgno_t	maxcache;		/* Max number of cached pages. */
 	pgno_t	npages;			/* Number of pages in the file. */
-	indx_t	pagesize;		/* File page size. */
+	u_long	pagesize;		/* File page size. */
 	int	fd;			/* File descriptor. */
 					/* Page in conversion routine. */
 	void    (*pgin) __P((void *, pgno_t, void *));
