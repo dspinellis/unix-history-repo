@@ -5,9 +5,9 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)buildmini	1.6 (Berkeley) %G%
+#	@(#)buildmini	1.7 (Berkeley) %G%
 #
-dist=/sys/tahoedist
+dist=/sys/tahoe/dist
 miniroot=dk4a
 minimnt=/tmp/mini
 
