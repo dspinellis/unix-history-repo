@@ -1,4 +1,4 @@
-/*	tty.h	4.10	82/02/08	*/
+/*	tty.h	4.11	82/03/15	*/
 
 #ifdef KERNEL
 #include "../h/ioctl.h"
@@ -120,6 +120,7 @@ short	tthiwat[NSPEEDS], ttlowat[NSPEEDS];
 #define	TS_RCOLL	004000		/* collision in read select */
 #define	TS_WCOLL	010000		/* collision in write select */
 #define	TS_NBIO		020000		/* tty in non-blocking mode */
+#define	TS_ASYNC	040000		/* tty in async i/o mode */
 
 /* define partab character types */
 #define	ORDINARY	0
