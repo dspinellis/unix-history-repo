@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tables.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)tables.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -211,7 +211,7 @@ rtdelete(rt)
 		syslog(LOG_ERR, "deleting route to interface %s (timed out)",
 			rt->rt_ifp->int_name);
 	TRACE_ACTION(DELETE, rt);
-	if (install && (rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL) == 0) &&
+	if (install && (rt->rt_state & (RTS_INTERNAL | RTS_EXTERNAL)) == 0 &&
 	    ioctl(s, SIOCDELRT, (char *)&rt->rt_rt))
 		perror("SIOCDELRT");
 	remque(rt);
