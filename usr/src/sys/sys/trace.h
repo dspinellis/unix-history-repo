@@ -1,13 +1,13 @@
-/*	trace.h	4.5	81/03/09	*/
+/*	trace.h	4.6	81/03/11	*/
 
 /*
  * File system buffer tracing points; all trace <dev, bn>
  */
-#define	TR_BREAD	0	/* buffer read */
-#define	TR_BWRITE	1	/* buffer written */
-#define	TR_MISS		2	/* cache miss */
-#define	TR_HIT		3	/* cache hit */
-#define	TR_RA		4	/* read ahead */
+#define	TR_BREADHIT	0	/* buffer read found in cache */
+#define	TR_BREADMISS	1	/* buffer read not in cache */
+#define	TR_BWRITE	2	/* buffer written */
+#define	TR_BREADHITRA	3	/* buffer read-ahead found in cache */
+#define	TR_BREADMISSRA	4	/* buffer read-ahead not in cache */
 #define	TR_XFODMISS	5	/* exe fod read */
 #define	TR_XFODHIT	6	/* exe fod read */
 #define	TR_BRELSE	7	/* brelse */
