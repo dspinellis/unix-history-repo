@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)refresh.c	5.22 (Berkeley) %G%";
+static char sccsid[] = "@(#)refresh.c	5.23 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <curses.h>
@@ -91,7 +91,7 @@ wrefresh(win)
 	for (wy = 0; wy < win->maxy; wy++) {
 #ifdef DEBUG
 		__TRACE("%d\t%d\t%d\n",
-		    wy, win->lines[wy]->firstch, win->lines[wy]->lastch);
+		    wy, *win->lines[wy]->firstchp, *win->lines[wy]->lastchp);
 #endif
 		if (!curwin)
 			curscr->lines[wy]->hash = win->lines[wy]->hash;
@@ -100,19 +100,19 @@ wrefresh(win)
 			if (makech(win, wy) == ERR)
 				return (ERR);
 			else {
-				if (win->lines[wy]->firstch >= win->ch_off)
-					win->lines[wy]->firstch = win->maxx +
+				if (*win->lines[wy]->firstchp >= win->ch_off)
+					*win->lines[wy]->firstchp = win->maxx +
 					    win->ch_off;
-				if (win->lines[wy]->lastch < win->maxx +
+				if (*win->lines[wy]->lastchp < win->maxx +
 				    win->ch_off)
-					win->lines[wy]->lastch = win->ch_off;
-				if (win->lines[wy]->lastch < 
-				    win->lines[wy]->firstch)
+					*win->lines[wy]->lastchp = win->ch_off;
+				if (*win->lines[wy]->lastchp < 
+				    *win->lines[wy]->firstchp)
 					win->lines[wy]->flags &= ~__ISDIRTY;
 			}
 #ifdef DEBUG
-		__TRACE("\t%d\t%d\n", win->lines[wy]->firstch, 
-			win->lines[wy]->lastch);
+		__TRACE("\t%d\t%d\n", *win->lines[wy]->firstchp, 
+			*win->lines[wy]->lastchp);
 #endif
 	}
 	
@@ -173,12 +173,12 @@ makech(win, wy)
 	}
 	if (!(win->lines[wy]->flags & __ISDIRTY))
 		return (OK);
-	wx = win->lines[wy]->firstch - win->ch_off;
+	wx = *win->lines[wy]->firstchp - win->ch_off;
 	if (wx >= win->maxx)
 		return (OK);
 	else if (wx < 0)
 		wx = 0;
-	lch = win->lines[wy]->lastch - win->ch_off;
+	lch = *win->lines[wy]->lastchp - win->ch_off;
 	if (lch < 0)
 		return (OK);
 	else if (lch >= win->maxx)
@@ -393,6 +393,7 @@ domvcur(oy, ox, ny, nx)
  * in order to optimize the change, e.g., scroll n lines as opposed to 
  * repainting the screen line by line.
  */
+
 
 static void
 quickch(win)
