@@ -1,5 +1,5 @@
 /* STARTUP PROCEDURE FOR UNIX FORTRAN PROGRAMS */
-char id_libF77[] = "@(#)main.c	2.14	%G%";
+char id_libF77[] = "@(#)main.c	2.15	%G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -89,6 +89,15 @@ extern unit units[];
 register struct action *act = &sig_act[s-1];
 /* print error message, then flush buffers */
 
+if (s == SIGHUP || s == SIGINT || s == SIGQUIT)
+	signal(s, SIG_IGN);	/* don't allow it again */
+else
+	signal(s, SIG_DFL);	/* shouldn't happen again, but ... */
+
+#if	vax
+sigsetmask(0);			/* don't block */
+#endif
+
 if (act->mesg)
 	{
 	fprintf(units[STDERR].ufd, "*** %s", act->mesg);
@@ -117,7 +126,6 @@ if(act->core)
 	/* now get a core */
 #if	vax
 	signal(SIGILL, SIG_DFL);
-	sigsetmask(0);
 #else	pdp11
 	signal(SIGIOT, SIG_DFL);
 #endif
