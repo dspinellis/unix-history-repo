@@ -250,7 +250,7 @@ struct isa_device *is;
 /*
  * Weeee.. We get to tell people we exist...
  */
-	printf(" address %s", ether_sprintf(sc->ec_addr));
+	printf(" address %s\n", ether_sprintf(sc->ec_addr));
 }
 
 ec_init(unit)
@@ -262,7 +262,7 @@ int unit;
 	u_short   ax, cx;
 
 	Bdry=0;
-printf("ecinit");
+/* printf("ecinit");  */
 /*
  * Address not known.
  */

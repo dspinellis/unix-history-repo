@@ -66,6 +66,9 @@
  * we_attach enhanced with link level address by Rodney W. Grimes, 1/30/93
  *
  * $Log: if_we.c,v $
+ * Revision 1.2  1993/07/29  12:07:10  davidg
+ * Added include of systm.h to get min/max/bcmp etc...
+ *
  * Revision 1.1.1.1  1993/06/12  14:58:01  rgrimes
  * Initial import, 0.1 + pk 0.2.4-B1
  *
@@ -345,7 +348,7 @@ weattach(is)
 	/*
 	 * Banner...
 	 */
-	printf(" %saddr %s",
+	printf(" %saddr %s\n",
 		(sc->we_type & WD_ETHERNET) ? "enet" : "slan",
 		ether_sprintf(sc->we_addr));
 }
@@ -709,7 +712,7 @@ werint(unit)
 		len = wer->we_count - 4;
 		if (len > 30 && len <= ETHERMTU+100)
 			weread(sc, (caddr_t)(wer + 1), len);
-		else printf("we%d: reject - bad length %d", unit, len);
+		else printf("we%d: reject - bad length %d\n", unit, len);
 
 outofbufs:
 		wecmd.cs_byte = inb(sc->we_io_nic_addr + WD_P0_COMMAND);
