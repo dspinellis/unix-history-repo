@@ -92,7 +92,7 @@
 **		Copyright 1980 Regents of the University of California
 */
 
-static char SccsId[] = "@(#)sccs.c	1.44 %G%";
+static char SccsId[] = "@(#)sccs.c	1.45 %G%";
 
 /*******************  Configuration Information  ********************/
 
@@ -139,7 +139,6 @@ struct sccsprog
 	char	*sccsname;	/* name of SCCS routine */
 	short	sccsoper;	/* opcode, see below */
 	short	sccsflags;	/* flags, see below */
-	char	*sccsklets;	/* valid key-letters on macros */
 	char	*sccspath;	/* pathname of binary implementing */
 };
 
@@ -173,27 +172,27 @@ struct sccsprog
 
 struct sccsprog SccsProg[] =
 {
-	"admin",	PROG,	REALUSER,	"",		PROGPATH(admin),
-	"chghist",	PROG,	0,		"",		PROGPATH(rmdel),
-	"comb",		PROG,	0,		"",		PROGPATH(comb),
-	"delta",	PROG,	0,		"mysrp",	PROGPATH(delta),
-	"get",		PROG,	0,		"ixbeskcl",	PROGPATH(get),
-	"help",		PROG,	NO_SDOT,	"",		PROGPATH(help),
-	"prt",		PROG,	0,		"",		PROGPATH(prt),
-	"rmdel",	PROG,	REALUSER,	"r",		PROGPATH(rmdel),
-	"what",		PROG,	NO_SDOT,	"",		PROGPATH(what),
-	"sccsdiff",	SHELL,	REALUSER,	"",		PROGPATH(sccsdiff),
-	"edit",		CMACRO,	NO_SDOT,	"ixbscl",	"get -e",
-	"delget",	CMACRO,	NO_SDOT,	"",		"delta/get -t",
-	"deledit",	CMACRO,	NO_SDOT,	"",		"delta/get -e -t",
-	"fix",		FIX,	NO_SDOT,	"",		NULL,
-	"clean",	CLEAN,	REALUSER,	"",		(char *) CLEANC,
-	"info",		CLEAN,	REALUSER,	"",		(char *) INFOC,
-	"check",	CLEAN,	REALUSER,	"",		(char *) CHECKC,
-	"tell",		CLEAN,	REALUSER,	"",		(char *) TELLC,
-	"unedit",	UNEDIT,	NO_SDOT,	"",		NULL,
-	"diffs",	DIFFS,	NO_SDOT|REALUSER, "",		NULL,
-	NULL,		-1,	0,		"",		NULL
+	"admin",	PROG,	REALUSER,	PROGPATH(admin),
+	"chghist",	PROG,	0,		PROGPATH(rmdel),
+	"comb",		PROG,	0,		PROGPATH(comb),
+	"delta",	PROG,	0,		PROGPATH(delta),
+	"get",		PROG,	0,		PROGPATH(get),
+	"help",		PROG,	NO_SDOT,	PROGPATH(help),
+	"prt",		PROG,	0,		PROGPATH(prt),
+	"rmdel",	PROG,	REALUSER,	PROGPATH(rmdel),
+	"what",		PROG,	NO_SDOT,	PROGPATH(what),
+	"sccsdiff",	SHELL,	REALUSER,	PROGPATH(sccsdiff),
+	"edit",		CMACRO,	NO_SDOT,	"get -e",
+	"delget",	CMACRO,	NO_SDOT,	"delta:mysrp/get:ixbeskecl -t",
+	"deledit",	CMACRO,	NO_SDOT,	"delta:mysrp/get:ixbeskecl -e -t",
+	"fix",		FIX,	NO_SDOT,	NULL,
+	"clean",	CLEAN,	REALUSER,	(char *) CLEANC,
+	"info",		CLEAN,	REALUSER,	(char *) INFOC,
+	"check",	CLEAN,	REALUSER,	(char *) CHECKC,
+	"tell",		CLEAN,	REALUSER,	(char *) TELLC,
+	"unedit",	UNEDIT,	NO_SDOT,	NULL,
+	"diffs",	DIFFS,	NO_SDOT|REALUSER, NULL,
+	NULL,		-1,	0,		NULL
 };
 
 /* one line from a p-file */
@@ -276,7 +275,7 @@ main(argc, argv)
 			SccsPath = ".";
 	}
 
-	i = command(argv, FALSE, FALSE, "");
+	i = command(argv, FALSE, "");
 	exit(i);
 }
 
@@ -303,10 +302,9 @@ main(argc, argv)
 **		none.
 */
 
-command(argv, forkflag, editflag, arg0)
+command(argv, forkflag, arg0)
 	char **argv;
 	bool forkflag;
-	bool editflag;
 	char *arg0;
 {
 	register struct sccsprog *cmd;
@@ -322,6 +320,7 @@ command(argv, forkflag, editflag, arg0)
 	int rval = 0;
 	extern char *index();
 	extern char *makefile();
+	char *editchs;
 	extern char *tail();
 
 # ifdef DEBUG
@@ -340,14 +339,22 @@ command(argv, forkflag, editflag, arg0)
 	*/
 
 	np = ap = &nav[1];
-	for (p = arg0, q = buf; *p != '\0' && *p != '/'; )
+	editchs = NULL;
+	for (p = arg0, q = buf; *p != '\0' && *p != '/' && *p != ':'; )
 	{
 		*np++ = q;
 		while (*p == ' ')
 			p++;
-		while (*p != ' ' && *p != '\0' && *p != '/')
+		while (*p != ' ' && *p != '\0' && *p != '/' && *p != ':')
 			*q++ = *p++;
 		*q++ = '\0';
+		if (*p == ':')
+		{
+			editchs = q;
+			while (*++p != '\0' && *p != '/')
+				*q++ = *p;
+			*q++ = '\0';
+		}
 	}
 	*np = NULL;
 	if (*ap == NULL)
@@ -374,8 +381,7 @@ command(argv, forkflag, editflag, arg0)
 		p = *argv;
 		if (*p == '-')
 		{
-			if (p[1] == '\0' || !editflag || cmd->sccsklets == NULL ||
-			    index(cmd->sccsklets, p[1]) != NULL)
+			if (p[1] == '\0' || editchs == NULL || index(editchs, p[1]) != NULL)
 				*np++ = p;
 		}
 		else
@@ -411,7 +417,7 @@ command(argv, forkflag, editflag, arg0)
 			q = p;
 			while (*p != '\0' && *p != '/')
 				p++;
-			rval = command(&ap[1], *p != '\0', TRUE, q);
+			rval = command(&ap[1], *p != '\0', q);
 			if (rval != 0)
 				break;
 		}
@@ -426,15 +432,15 @@ command(argv, forkflag, editflag, arg0)
 		}
 
 		/* get the version with all changes */
-		rval = command(&ap[1], TRUE, TRUE, "get -k");
+		rval = command(&ap[1], TRUE, "get -k");
 
 		/* now remove that version from the s-file */
 		if (rval == 0)
-			rval = command(&ap[1], TRUE, TRUE, "rmdel");
+			rval = command(&ap[1], TRUE, "rmdel:r");
 
 		/* and edit the old version (but don't clobber new vers) */
 		if (rval == 0)
-			rval = command(&ap[2], FALSE, TRUE, "get -e -g");
+			rval = command(&ap[2], FALSE, "get -e -g");
 		break;
 
 	  case CLEAN:
@@ -451,7 +457,7 @@ command(argv, forkflag, editflag, arg0)
 
 		/* get all the files that we unedited successfully */
 		if (i > 0)
-			rval = command(&ap[1], FALSE, FALSE, "get");
+			rval = command(&ap[1], FALSE, "get");
 		break;
 
 	  case DIFFS:		/* diff between s-file & edit file */
@@ -1051,7 +1057,7 @@ dodiff(getv, gfile)
 		/* in parent; run get */
 		OutFile = pipev[1];
 		close(pipev[0]);
-		rval = command(&getv[1], TRUE, FALSE, "get -s -k -p");
+		rval = command(&getv[1], TRUE, "get -s -k -p");
 		osig = signal(SIGINT, SIG_IGN);
 		while (((i = wait(&st)) >= 0 && i != pid) || errno == EINTR)
 			errno = 0;
