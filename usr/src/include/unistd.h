@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)unistd.h	5.25 (Berkeley) %G%
+ *	@(#)unistd.h	5.26 (Berkeley) %G%
  */
 
 #ifndef _UNISTD_H_
@@ -79,7 +79,6 @@ ssize_t	 write __P((int, const void *, size_t));
 int	 acct __P((const char *));
 int	 async_daemon __P((void));
 char	*brk __P((const char *));
-int	 chflags __P((const char *, long));
 int	 chroot __P((const char *));
 char	*crypt __P((const char *, const char *));
 int	 des_cipher __P((const char *, char *, long, int));
@@ -88,7 +87,6 @@ int	 encrypt __P((char *, int));
 void	 endusershell __P((void));
 int	 exect __P((const char *, char * const *, char * const *));
 int	 fchdir __P((int));
-int	 fchflags __P((int, long));
 int	 fchown __P((int, int, int));
 int	 fsync __P((int));
 #define	 ftruncate __ftruncate
