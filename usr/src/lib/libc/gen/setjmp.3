@@ -1,81 +1,110 @@
-.\" Copyright (c) 1980 Regents of the University of California.
-.\" All rights reserved.  The Berkeley software License Agreement
-.\" specifies the terms and conditions for redistribution.
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
 .\"
-.\"	@(#)setjmp.3	6.2 (Berkeley) %G%
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)setjmp.3	6.3 (Berkeley) %G%
 .\"
 .TH SETJMP 3 ""
 .UC 4
 .SH NAME
-setjmp, longjmp \- non-local goto
+sigsetjmp, siglongjmp, setjmp, longjmp, _setjmp, _longjmp \-
+non-local jumps
 .SH SYNOPSIS
 .nf
-.B #include <setjmp.h>
-.PP
-.B setjmp(env)
-.B jmp_buf env;
-.PP
-.B longjmp(env, val)
-.B jmp_buf env;
-.PP
-.B _setjmp(env)
-.B jmp_buf env;
-.PP
-.B _longjmp(env, val)
-.B jmp_buf env;
+.ft B
+#include <setjmp.h>
+
+sigsetjmp(sigjmp_buf env, int savemask);
+
+void
+siglongjmp(sigjmp_buf env, int val);
+
+setjmp(jmp_buf env);
+
+void
+longjmp(jmp_buf env, int val);
+
+_setjmp(jmp_buf env);
+
+void
+_longjmp(jmp_buf env, int val);
+.ft R
 .fi
 .SH DESCRIPTION
-These routines are useful for dealing with errors 
-and interrupts encountered in
-a low-level subroutine of a program.
+The
+.IR sigsetjmp ,
+.IR setjmp ,
+and
+.IR _setjmp
+functions save their calling environment in
+.IR env . 
+Each of these functions returns 0.
 .PP
-.I Setjmp 
-saves its stack environment in
-.I env
-for later use by
-.I longjmp.
-It returns value 0.
-.PP
-.I Longjmp
-restores the environment saved by the last call of
-.IR setjmp .
-It then returns in such a way that execution
-continues as if the call of 
+The corresponding 
+.I longjmp
+functions restore the environment saved by their respective versions
+of the
 .I setjmp
-had just returned the value
-.I val
-to the function that invoked
-.I setjmp,
-which must not itself have returned in the interim.
-All accessible data have values as of the time
-.I longjmp
-was called.
+function.
+They then return so that program execution continues as if the
+.I setjmp
+call had returned 
+.IR val ,
+instead of 0.
 .PP
-.I Setjmp
+Pairs of calls may be intermixed, i.e. both 
+.I sigsetjmp
+and
+.I siglongjmp
+and
+.I setjmp
 and
 .I longjmp
-save and restore the signal mask
-.IR sigmask (2),
+combinations may be used in the same program, however, individual
+calls may not, i.e. the 
+.I env
+argument to 
+.I sigsetjmp
+may not be passed to
+.IR longjmp .
+.PP
+The
+.I longjmp
+routines may not be called after the routine which called the
+.I setjmp
+routines returns.
+.PP
+All accessible data have values as of the time the
+.I longjmp
+routine was called.
+.PP
+.I Setjmp/longjmp
+pairs save and restore the signal mask (see 
+.IR sigmask (2)),
 while
-.I _setjmp
-and
-.I _longjmp
-manipulate only the C stack and registers.
-.SH ERRORS
+.I _setjmp/_longjmp
+pairs save and restore only the register set and the stack.
 .PP
+.I Sigsetjmp/siglongjmp
+pairs save and restore the signal mask if the argument
+.I savemask
+is non-zero, otherwise only the register set and the stack are saved.
+.SH ERRORS
 If the contents of the
-.B jmp_buf
+.I env
 are corrupted, or correspond to an environment that has already returned,
+the 
 .I longjmp
-calls the routine 
-.IR longjmperror .
+routine calls the routine
+.IR longjmperror (3).
 If
 .I longjmperror
-returns the program is aborted.
+returns the program is aborted (see abort(2)).
 The default version of 
 .I longjmperror
 prints the message ``longjmp botch'' to standard error and returns.
-User programs wishing to exit more gracefully can write their own
+User programs wishing to exit more gracefully should write their own
 versions of 
 .IR longjmperror .
 .SH "SEE ALSO"
