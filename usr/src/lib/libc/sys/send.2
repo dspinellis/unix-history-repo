@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)send.2	6.3 (Berkeley) %G%
+.\"	@(#)send.2	6.4 (Berkeley) %G%
 .\"
 .TH SEND 2 ""
 .UC 5
@@ -31,7 +31,7 @@ int tolen;
 .ft B
 cc = sendmsg(s, msg, flags)
 int cc, s;
-struct msghdr msg[];
+struct msghdr *msg;
 int flags;
 .fi
 .SH DESCRIPTION

@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)recv.2	6.3 (Berkeley) %G%
+.\"	@(#)recv.2	6.4 (Berkeley) %G%
 .\"
 .TH RECV 2 ""
 .UC 5
@@ -31,7 +31,7 @@ int *fromlen;
 .ft B
 cc = recvmsg(s, msg, flags)
 int cc, s;
-struct msghdr msg[];
+struct msghdr *msg;
 int flags;
 .ft R
 .SH DESCRIPTION
