@@ -1,0 +1,65 @@
+%    Copyright (C) 1992 Aladdin Enterprises.  All rights reserved.
+%    Distributed by Free Software Foundation, Inc.
+%
+% This file is part of Ghostscript.
+%
+% Ghostscript is distributed in the hope that it will be useful, but
+% WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
+% to anyone for the consequences of using it or for whether it serves any
+% particular purpose or works at all, unless he says so in writing.  Refer
+% to the Ghostscript General Public License for full details.
+%
+% Everyone is granted permission to copy, modify and redistribute
+% Ghostscript, but only under the conditions described in the Ghostscript
+% General Public License.  A copy of this license is supposed to have been
+% given to you along with Ghostscript so you can know your rights and
+% responsibilities.  It should be in a file named COPYING.  Among other
+% things, the copyright notice and this notice must be preserved on all
+% copies.
+
+% Trace individual operators or procedures.
+% <opref> is <opname> or <opname> <dict> (dict defaults to userdict).
+% <opref> traceop prints vmem usage before;
+% <opref> <numargs|preproc> prints arguments or runs proc before;
+% <opref> <numargs|preproc> <numresults|postproc>
+%    also prints results or runs proc after.
+% If traceflush is true, flush the output after each printout.
+/traceflush true def
+
+% Define the default "before" action
+/tracebefore { vmstatus 3 traceprint pop pop pop } def
+
+% Define the default "after" action
+/traceafter { } def
+
+/traceprint
+ { dup type /integertype eq
+    { 1 sub -1 0 { ( ) print index ==only } for }
+    { exec }
+   ifelse
+ } bind def
+/traceend
+ { traceflush { flush } if
+ } bind def
+/traceop
+ { userdict begin
+   dup type dup /nametype eq exch /dicttype eq or { { tracebefore } } if
+   1 index type dup /nametype eq exch /dicttype eq or { { traceafter } } if
+   /.tpost exch def /.tpre exch def
+   dup type /dicttype ne
+    { dup where not { userdict 1 index {} put userdict } if
+    } if
+   /.tdict exch def /.tname exch def
+   .tdict dup systemdict eq { pop userdict } if /.tddict exch def
+   [ .tname /=only cvx ( ) /print cvx
+     /.tpre load /traceprint cvx /traceend cvx
+     .tdict .tname get
+     dup xcheck
+      { dup type dup /arraytype eq exch /packedarraytype eq or
+         { /exec cvx
+	 } if
+      } if
+     /.tpost load /traceprint cvx (\n) /print cvx /traceend cvx
+   ] cvx .tddict exch .tname exch put end
+ } bind def
+/bind { } def		% disable
