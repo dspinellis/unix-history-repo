@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)vpf.c	4.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)vpf.c	4.8 (Berkeley) %G%";
 #endif
 
 /*
@@ -20,6 +20,7 @@ int	ov;
 int	lineno;
 int	varian = 1;	/* default is the varian */
 int	width = 132;	/* default line length */
+int	indent = 0;	/* default indent length */
 int	length = 58;	/* 80 for 11" long paper */
 int	npages = 1;
 int	literal;
@@ -27,7 +28,7 @@ char	*name;		/* user's login name */
 char	*host;		/* user's machine name */
 char	*acctfile;	/* accounting information file */
 
-main(argc, argv) 
+main(argc, argv)
 	int argc;
 	char *argv[];
 {
@@ -59,6 +60,12 @@ main(argc, argv)
 
 			case 'l':
 				length = atoi(&argv[0][2]);
+				break;
+
+			case 'i':
+				if ((i = atoi(&argv[0][2])) >= 0 &&
+				    i < LINELN - 1)
+					indent = i;
 				break;
 
 			case 'c':	/* Print input without throwing away
@@ -112,7 +119,7 @@ getline()
 		linebuf[col] = ' ';
 		ovbuf[col] = 0;
 	}
-	col = 0;
+	col = indent;
 	maxcol = 0;
 	for (;;) switch (c = getchar()) {
 
