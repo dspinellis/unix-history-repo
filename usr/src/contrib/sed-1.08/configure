@@ -1,0 +1,183 @@
+:
+# Guess values for system-dependant variables and create `Makefile'.
+# Copyright (C) 1991 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+# Usage: configure [+srcdir=DIR] [+host=HOST] [+gas] [+nfp] [TARGET]
+# All args except +srcdir=DIR are ignored.
+
+trap 'rm -f conftest conftest.c; exit 1' 1 3 15
+
+set +u # Make sure unset variables are ok.
+
+# Make sure we don't find the System V /etc/install.
+PATH=`echo $PATH|sed 's,^:,|,
+s,:$,|,
+s,:/usr/etc,,g
+s,/usr/etc:,,g
+s,:/etc,,g
+s,/etc:,,g
+s,|,:,g'`
+
+# A filename unique to this package, relative to the directory that
+# configure is in, which we can look for to find out if srcdir is correct.
+unique_file=sed.c
+
+for arg in $*; do
+  # Handle +srcdir with a space before the argument.
+  if [ x$next_srcdir = xyes ]; then srcdir=$arg; next_srcdir=
+  # Handle +host with a space before the argument.
+  elif [ x$next_host = xyes ]; then next_host=
+  else 
+    case $arg in
+     -srcdir=* | +srcdir=* | +srcdi=* | +srcd=* | +src=* | +sr=* | +s=*)
+	srcdir=`echo $arg | sed 's/[+-]s[a-z]*=//'` ;;
+     -srcdir | +srcdir | +srcdi | +srcd | +src | +sr | +s)
+	next_srcdir=yes ;;
+     -host=* | +host=* | +hos=* | +ho=* | +h=*) ;;
+     -host | +host | +hos | +ho | +h)
+	next_host=yes ;;
+     -gas | +gas | +ga | +g) ;;
+     -nfp | +nfp | +nf | +n) ;;
+     *) ;;
+    esac
+  fi
+done
+
+# Find the source files, if location was not specified.
+if [ x$srcdir = x ]; then
+  srcdirdefaulted=yes; srcdir=.
+  if [ ! -r $unique_file ]; then srcdir=..; fi
+fi
+if [ $srcdir != . ]; then VPATH='VPATH = $(srcdir)'; fi
+
+if [ ! -r $srcdir/$unique_file ]; then
+  if [ x$srcdirdefaulted = xyes ]; then
+    echo "$0: Can not find sources in \`.' or \`..'." 1>&2
+  else
+    echo "$0: Can not find sources in \`${srcdir}'." 1>&2
+  fi
+  exit 1
+fi
+
+if test "$RANDOM" = "$RANDOM"; then
+  # Plain old Bourne shell.
+  echo checking for gcc
+  test -z "$CC" -a -n "`gcc 2>&1`" && CC="gcc -O"
+
+  echo checking for install
+  if test -z "$INSTALL" -a -n "`install 2>&1`"; then
+    INSTALL="install -c"
+  fi
+else
+  # ksh, bash or zsh.
+  echo checking for gcc
+  test -z "$CC" && type gcc && CC="gcc -O"
+
+  echo checking for install
+  if test -z "$INSTALL" && type install; then
+    INSTALL="install -c"
+  fi
+fi
+
+CC=${CC-cc}
+INSTALL=${INSTALL-cp}
+INCLUDEDIR=${INCLUDEDIR-/usr/include}
+
+rm -f conftest conftest.c
+compile="$CC $DEFS conftest.c -o conftest $LIBS >/dev/null 2>&1"
+
+# Check for various header files.
+
+echo checking for ANSI C header files
+echo "#include <stdlib.h>
+#include <string.h>
+main() { exit(0); strerror(0); }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then
+  DEFS="$DEFS -DSTDC_HEADERS"
+fi
+rm -f conftest conftest.c
+
+echo checking for BSD string and memory functions
+echo "#include <strings.h>
+main() { exit(0); rindex(0, 0); bzero(0, 0); }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+  else DEFS="$DEFS -DUSG"
+fi
+rm -f conftest conftest.c
+
+# Check whether various functions exist.
+
+func=vfprintf
+echo checking for $func
+echo "main() { exit(0); ${func}(); }" > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+else DEFS="$DEFS -DNO_VFPRINTF"
+fi
+rm -f conftest conftest.c
+
+# Check other misc. things.
+
+echo checking for unsigned characters
+echo 'main() { char c = 255; exit(c < 0); }' > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then
+  DEFS="$DEFS -DCHAR_UNSIGNED"
+fi
+rm -f conftest conftest.c
+
+echo checking how to get alloca
+echo '
+#ifdef __GNUC__
+#define alloca __builtin_alloca
+#else
+#ifdef sparc
+#include <alloca.h>
+#else
+#ifdef _AIX
+#pragma alloca
+#else
+char *alloca ();
+#endif
+#endif
+#endif
+main() { char *p = (char *) alloca(1); exit(0); }' > conftest.c
+eval $compile
+if test -s conftest && ./conftest 2>/dev/null; then :
+elif test -d /usr/ucblib; then LIBS="$LIBS -L/usr/ucblib -lucb"
+else LIBS="$LIBS -lPW"
+fi
+rm -f conftest conftest.c
+
+trap 'rm -f Makefile config.status; exit 1' 1 3 15
+
+echo '# Generated automatically from Makefile.in by configure.' > Makefile
+sed -e "
+s,@srcdir@,$srcdir,
+s,@VPATH@,$VPATH,
+s,@CC@,$CC,
+s,@INSTALL@,$INSTALL,
+s,@DEFS@,$DEFS,
+s,@LIBS@,$LIBS,
+" $srcdir/Makefile.in >> Makefile
+
+echo "CC = $CC
+INSTALL = $INSTALL
+DEFS = $DEFS
+LIBS = $LIBS" > config.status

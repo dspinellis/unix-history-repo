@@ -1,0 +1,43 @@
+(These are sorted by how irritating they are.  The worst bugs are at the top.)
+
+- It is impossible to edit or view the same file more than once.  It is
+  also impossible to invoke Elvis twice with no arguments when in the same
+  directory.  This is caused by the way the temp file is named based on ".",
+  see function tmpstart() in tmp.c.
+
+- Inserting characters to make a line longer than BLKSIZE-1 (including the
+  newline) causes a crash.  BLKSIZE is 1024 by default.  The shift-J and :join
+  commands protect against this, but something like "9999a!<Esc>" will make
+  Elvis misbehave.  Also, huge files (more than about 500k) cannot be edited.
+
+- autoindent is confusingly different from vi when editing typical
+  indented C code - e.g. after <ESC>o<ESC>xxxxxxxxxxi (x's to column 1)
+  the last i indents again.
+
+  ^U backspaces to the beginning of the line, but it should only backspace to
+  the start of auto-indent.  (A second ^U could reasonably delete the indent
+  too)
+
+- The :@ and :source commands share a single buffer.  This means that they
+  can't call each other.  You can't run :source from within your .exrc file
+  either, for the same reason.
+
+- Commands which delete text before the cursor, such as `dB', don't move the
+  cursor, but they should.  
+
+- Using the substitute command, it is not possible to replace with multi-
+  line text using the ^V^M construct in the replacement string.  Vi allows
+  this as a special case.
+
+- The Elvis.prj file (used by Turbo-C under MS-DOS) does not force large model
+  and the text segment is > 64K.
+
+- The visual "put" commands can't be repeated by hitting ".".
+
+- "!!ls %" doesn't expand %
+
+- Sideways scrolling is unacceptable for slow terminals.
+
+- The ":set number" option is missing, among other things.
+
+- In DOS, the default colors are not very good.
