@@ -1,5 +1,7 @@
-/*	dz.c	3.16	%G%	*/
+/*	dz.c	3.17	%G%	*/
 
+#include "../conf/dz.h"
+#if NDZ11 > 0
 /*
  *  DZ-11 Driver
  */
@@ -28,12 +30,6 @@
  */
 #define	spl5	spl6
  
-#define DZADDR  (UBA0_DEV + 0160100)
-#ifdef DISTRIB
-#define	NDZ11	1
-#else
-#define NDZ11	4
-#endif
 #define NDZ 	(NDZ11*8)
  
 #define BITS7	020
@@ -472,3 +468,4 @@ dzreset()
 	}
 	dztimer();
 }
+#endif

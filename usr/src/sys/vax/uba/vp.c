@@ -1,5 +1,11 @@
-/*	vp.c	3.4	%G%	*/
+/*	vp.c	3.5	%G%	*/
 
+#include "../conf/vp.h"
+#if NVP > 0
+/*
+ * Versatec matrix printer/plotter
+ * dma interface driver
+ */
 #include "../h/param.h"
 #include "../h/dir.h"
 #include "../h/user.h"
@@ -9,10 +15,6 @@
 #include "../h/pte.h"
 #include "../h/uba.h"
 
-/*
- * Versatec matrix printer/plotter
- * dma interface driver
- */
 int	vpbdp = 1;
 
 unsigned minvpph();
@@ -29,8 +31,6 @@ struct	vpregs {
 	short	prcsr;
 	unsigned short prbuf;
 };
-
-#define	VPADDR	((struct vpregs *)(UBA0_DEV + 0177500))
 
 #define	ERROR	0100000
 #define	DTCINTR	040000
@@ -246,3 +246,4 @@ vpreset()
 	vp11.vp_count = vp11.vp_bp->b_bcount;
 	vpstart();
 }
+#endif

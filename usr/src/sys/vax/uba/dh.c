@@ -1,11 +1,13 @@
-/*	dh.c	3.16	%G%	*/
+/*	dh.c	3.17	%G%	*/
 
+#include "../conf/dh.h"
+#if NDH11 > 0
 /*
- *	DH-11 driver
- *	This driver calls on the DHDM driver.
- *	If the DH has no DM11-BB, then the latter will
- *	be fake. To insure loading of the correct DM code,
- *	lib2 should have dhdm.o, dh.o and dhfdm.o in that order.
+ * DH-11 driver
+ *
+ * Loaded with dhdm if there are DM-11's otherwise with dhfdm.
+ *
+ * NB: WE HAVEN'T TESTED dhdm CODE ON VAX.
  */
 
 #include "../h/param.h"
@@ -17,6 +19,7 @@
 #include "../h/pte.h"
 #include "../h/uba.h"
 #include "../h/bk.h"
+#include "../h/clist.h"
 
 /*
  * When running dz's using only SAE (silo alarm) on input
@@ -30,14 +33,7 @@
  */
 #define	spl5	spl6
 
-#define	DHADDR	((struct device *)(UBA0_DEV + 0160020))
-#define	NDH11	32	/* number of lines */
-#define UBACVT(x) (cbase + (short)((x)-(char *)cfree))
-
-struct cblock {
-	struct cblock *c_next;
-	char	c_info[CBSIZE];
-};
+#define	UBACVT(x) (cbase + (short)((x)-(char *)cfree))
 
 struct	tty dh11[NDH11];
 int	dhact;
@@ -48,7 +44,6 @@ int	ttrstrt();
 int	dh_ubinfo;
 int	cbase;
 int	getcbase;
-extern struct cblock cfree[];
 
 /*
  * Hardware control bits
