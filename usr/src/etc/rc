@@ -1,4 +1,4 @@
-#	@(#)rc	5.19 (Berkeley) %G%
+#	@(#)rc	5.20 (Berkeley) %G%
 
 # System startup script run by init on autoboot
 # or after single-user.
@@ -125,9 +125,12 @@ echo '.'
 
 echo -n starting network daemons:
 
-# $routedflags is imported from /etc/netstart;
-# if $routedflags == NO, routed isn't run.
-if [ X${routedflags} != X"NO" ]; then
+# $gated and $routedflags are imported from /etc/netstart.
+# If $gated == YES, gated is used; otherwise routed.
+# If $routedflags == NO, routed isn't run.
+if [ X${gated} = X"YES" -a -r /etc/gated.conf ]; then
+	echo -n ' gated';	gated $gateedflags
+elif [ X${routedflags} != X"NO" ]; then
 	echo -n ' routed';	routed $routedflags
 fi
 
