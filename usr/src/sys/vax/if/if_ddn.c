@@ -1,4 +1,4 @@
-/*	@(#)if_ddn.c	6.3 (Berkeley) %G% */
+/*	@(#)if_ddn.c	6.4 (Berkeley) %G% */
 
 
 /************************************************************************\
@@ -599,7 +599,6 @@ ddnioctl(ifp, cmd, data)
 {
 	struct ifaddr *ifa = (struct ifaddr *) data;
 	int s = splimp(), error = 0;
-	struct endevice *enaddr;
 
 	switch (cmd) {
 
@@ -723,7 +722,7 @@ int unit;
     	if (chan > 1)
     	    ddn_data(unit, chan, cc, cnt);
     	else
-    	    ddn_supr(unit, chan, cc, cnt);
+    	    ddn_supr(unit, chan, cc);
 
       }
 
@@ -752,7 +751,6 @@ static void x25_init(ds)
 struct ddn_softc *ds;
   {
     struct mbuf *m;
-    register u_char *bp;
 
 #ifdef DDNDEBUG
 if (ddn_debug > 0)
@@ -800,7 +798,6 @@ struct in_addr ip_addr;
   {
     register int lcn;
     register struct ddn_cb *dc;
-    struct mbuf *m_callbfr;
 
 #ifdef DDNDEBUG
 if (ddn_debug > 6)
@@ -1297,8 +1294,8 @@ int unit, chan, cc, rcnt;
 *									*
 \***********************************************************************/
 
-static void ddn_supr(unit, chan, cc, rcnt)
-int unit, chan, cc, rcnt;
+static void ddn_supr(unit, chan, cc)
+int unit, chan, cc;
 {
     register struct ddn_softc *ds = &ddn_softc[unit];
     u_char *p;
