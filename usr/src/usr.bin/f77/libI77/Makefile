@@ -1,6 +1,6 @@
 # Makefile for f77 I/O lib, libI77.a
 #
-# @(#)Makefile	1.1 (Berkeley) %G%
+# @(#)Makefile	1.2 (Berkeley) %G%
 
 CFLAGS	      = -O
 
@@ -142,25 +142,25 @@ f_errlist.o:	f_errlist.c
 		-ld -x -r $*.o
 		mv a.out $*.o
 
-backspace.o:	fio.h backspace.c
-dfe.o:		fio.h dfe.c
-due.o:		fio.h due.c
-iio.o:		fio.h lio.h iio.c
-inquire.o:	fio.h inquire.c
-rewind.o:	fio.h rewind.c
-rdfmt.o:	fio.h format.h rdfmt.c
-sue.o:		fio.h sue.c
-douio.o:	fio.h douio.c
-sfe.o:		fio.h sfe.c
-fmt.o:		fio.h format.h fmt.c
-dofio.o:	fio.h format.h dofio.c
-lwrite.o:	fio.h lio.h lwrite.c
-lread.o:	fio.h lio.h lread.c
-dolio.o:	fio.h lio.h dolio.c
-open.o:		fio.h open.c
-close.o:	fio.h close.c
-util.o:		fio.h util.c
-endfile.o:	fio.h endfile.c
-wrtfmt.o:	fio.h format.h wrtfmt.c
-err.o:		fiodefs.h err.c
-fmtlib.o:	fio.h fmtlib.c
+backspace.o:	fio.h f_errno.h fiodefs.h backspace.c
+dfe.o:		fio.h f_errno.h fiodefs.h dfe.c
+due.o:		fio.h f_errno.h fiodefs.h due.c
+iio.o:		fio.h f_errno.h fiodefs.h lio.h iio.c
+inquire.o:	fio.h f_errno.h fiodefs.h inquire.c
+rewind.o:	fio.h f_errno.h fiodefs.h rewind.c
+rdfmt.o:	fio.h f_errno.h fiodefs.h format.h rdfmt.c
+sue.o:		fio.h f_errno.h fiodefs.h sue.c
+douio.o:	fio.h f_errno.h fiodefs.h douio.c
+sfe.o:		fio.h f_errno.h fiodefs.h sfe.c
+fmt.o:		fio.h f_errno.h fiodefs.h format.h fmt.c
+dofio.o:	fio.h f_errno.h fiodefs.h format.h dofio.c
+lwrite.o:	fio.h f_errno.h fiodefs.h lio.h lwrite.c
+lread.o:	fio.h f_errno.h fiodefs.h lio.h lread.c
+dolio.o:	fio.h f_errno.h fiodefs.h lio.h dolio.c
+open.o:		fio.h f_errno.h fiodefs.h open.c
+close.o:	fio.h f_errno.h fiodefs.h close.c
+util.o:		fio.h f_errno.h fiodefs.h util.c
+endfile.o:	fio.h f_errno.h fiodefs.h endfile.c
+wrtfmt.o:	fio.h f_errno.h fiodefs.h format.h wrtfmt.c
+err.o:		fiodefs.h f_errno.h err.c
+fmtlib.o:	fio.h f_errno.h fiodefs.h fmtlib.c
