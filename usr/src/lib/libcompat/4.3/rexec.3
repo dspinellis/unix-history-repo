@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)rexec.3	6.3 (Berkeley) %G%
+.\"	@(#)rexec.3	6.4 (Berkeley) %G%
 .\"
-.TH REXEC 3X ""
+.TH REXEC 3 ""
 .UC 5
 .SH NAME
 rexec \- return stream to a remote command
@@ -74,11 +74,4 @@ and no
 provision is made for sending arbitrary signals to the remote process,
 although you may be able to get its attention by using out-of-band data.
 .SH SEE ALSO
-rcmd(3X), rexecd(8C)
-.SH BUGS
-There is no way to specify options to the
-.I socket
-call
-which
-.I rexec
-makes.
+rcmd(3), rexecd(8C)
