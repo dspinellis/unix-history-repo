@@ -31,7 +31,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)kern_malloc.c	7.25 (Berkeley) 5/8/91
- *	$Id: kern_malloc.c,v 1.2 1993/10/16 15:24:21 rgrimes Exp $
+ *	$Id: kern_malloc.c,v 1.3 1993/10/18 03:46:54 davidg Exp $
  */
 
 #include "param.h"
@@ -63,7 +63,7 @@ malloc(size, type, flags)
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
 
-	if (((unsigned long)type) > M_LAST)
+	if (((unsigned long)type) >= M_LAST)
 		panic("malloc - bogus type");
 #endif
 
