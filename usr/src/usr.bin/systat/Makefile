@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.1 (Berkeley) %G%
+#	@(#)Makefile	5.2 (Berkeley) %G%
 #
 DESTDIR=
 INCPATH=
@@ -18,7 +18,7 @@ systat: ${OBJS}
 	${CC} -o systat -O ${OBJS} ${LIBS}
 
 install: systat
-	install -s -g kmem -m 2755 systat ${DESTDIR}/usr/local/systat
+	install -s -g kmem -m 2755 systat ${DESTDIR}/usr/ucb/systat
 
 clean:
 	rm -f ${OBJS} systat core a.out errs
