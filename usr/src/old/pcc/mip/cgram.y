@@ -1,4 +1,4 @@
-/*	cgram.y	4.10	87/12/09	*/
+/*	cgram.y	4.11	87/12/09	*/
 
 /*
  * Grammar for the C compiler.
@@ -76,7 +76,8 @@ data_def:
 		|  oattributes fdeclarator {
 				defid( tymerge($1,$2), curclass==STATIC?STATIC:EXTDEF );
 #ifndef LINT
-				pfstab(stab[$2->tn.rval].sname);
+				if( nerrors == 0 )
+					pfstab(stab[$2->tn.rval].sname);
 #endif
 				}  function_body
 			={  
@@ -103,13 +104,13 @@ stmt_list:	   stmt_list statement
 r_dcl_stat_list	:  dcl_stat_list attributes SM
 			={  $2->in.op = FREE; 
 #ifndef LINT
-			    plcstab(blevel);
+			    if( nerrors == 0 ) plcstab(blevel);
 #endif
 			    }
 		|  dcl_stat_list attributes init_dcl_list SM
 			={  $2->in.op = FREE; 
 #ifndef LINT
-			    plcstab(blevel);
+			    if( nerrors == 0 ) plcstab(blevel);
 #endif
 			    }
 		;
@@ -374,7 +375,7 @@ compoundstmt:	   dcmpstmt
 dcmpstmt:	   begin r_dcl_stat_list stmt_list RC
 			={  
 #ifndef LINT
-			    prcstab(blevel);
+			    if( nerrors == 0 ) prcstab(blevel);
 #endif
 			    --blevel;
 			    if( blevel == 1 ) blevel = 0;
