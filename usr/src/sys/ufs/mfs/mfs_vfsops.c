@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)mfs_vfsops.c	7.15 (Berkeley) %G%
+ *	@(#)mfs_vfsops.c	7.16 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -139,6 +139,7 @@ mfs_start(mp, flags)
 	register struct mfsnode *mfsp = VTOMFS(vp);
 	register struct buf *bp;
 	register caddr_t base;
+	struct proc *p = u.u_procp;
 	int error = 0;
 
 	base = mfsp->mfs_baseoff;
@@ -148,16 +149,15 @@ mfs_start(mp, flags)
 			mfs_doio(bp, base);
 			wakeup((caddr_t)bp);
 		}
-		if (error = tsleep((caddr_t)vp, mfs_pri, "mfsidl", 0)) {
-			/*
-			 * Give other processes a chance to run.
-			 */
-			sleep(&lbolt, PVFS);
-			/*
-			 * We have received a signal, so try to unmount.
-			 */
-			(void) dounmount(mp, MNT_NOFORCE);
-		}
+		/*
+		 * If a non-ignored signal is received, try to unmount.
+		 * If that fails, clear the signal (it has been "processed"),
+		 * otherwise we will loop here, as tsleep will always return
+		 * EINTR/ERESTART.
+		 */
+		if (error = tsleep((caddr_t)vp, mfs_pri, "mfsidl", 0))
+			if (dounmount(mp, MNT_NOFORCE) != 0)
+				CLRSIG(p, CURSIG(p));
 	}
 	return (error);
 }
