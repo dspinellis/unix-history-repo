@@ -1,4 +1,4 @@
-/*	init_main.c	3.11	%G%	*/
+/*	init_main.c	3.12	%G%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -62,7 +62,18 @@ main(firstaddr)
 	u.u_procp = &proc[0];
 	u.u_cmask = CMASK;
 	for (i = 1; i < sizeof(u.u_limit)/sizeof(u.u_limit[0]); i++)
-		u.u_limit[i] = INFINITY;
+		switch (i) {
+
+		case LIM_STACK:
+			u.u_limit[i] = 512*1024;
+			continue;
+		case LIM_DATA:
+			u.u_limit[i] = ctob(MAXDSIZ);
+			continue;
+		default:
+			u.u_limit[i] = INFINITY;
+			continue;
+		}
 	clkstart();
 
 	/*
@@ -136,7 +147,6 @@ iinit()
 {
 	register struct buf *cp, *bp;
 	register struct filsys *fp;
-	register unsigned i, j;
 
 	(*bdevsw[major(rootdev)].d_open)(rootdev, 1);
 	bp = bread(rootdev, SUPERB);
@@ -153,13 +163,7 @@ iinit()
 	fp->s_ronly = 0;
 	fp->s_lasti = 1;
 	fp->s_nbehind = 0;
-	/* on boot, read VAX TODR register (GMT 10 ms.
-	*	clicks into current year) and set software time
-	*	in 'int time' (GMT seconds since year YRREF)
-	*/
-	for (i = 0 , j = YRREF ; j < YRCURR ; j++)
-		i += (SECYR + (j%4?0:SECDAY)) ;
-	time = udiv(mfpr(TODR),100) + i ;
+	clkinit(fp->s_time);
 	bootime = time;
 }
 
