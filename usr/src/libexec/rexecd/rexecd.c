@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rexecd.c	4.7 83/01/22";
+static char sccsid[] = "@(#)rexecd.c	4.8 83/02/21";
 #endif
 
 #include <sys/ioctl.h>
@@ -81,8 +81,10 @@ main(argc, argv)
 			sleep(1);
 			continue;
 		}
-		if (fork() == 0)
+		if (fork() == 0) {
+			signal(SIGCHLD, SIG_IGN);
 			doit(s, &from);
+		}
 		(void) close(s);
 	}
 }
