@@ -5,7 +5,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)wbuf.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)wbuf.c	5.5 (Berkeley) %G%";
 #endif LIBC_SCCS and not lint
 
 #include	<stdio.h>
@@ -35,16 +35,18 @@ tryagain:
 	if (iop->_flag&_IOLBF) {
 		base = iop->_base;
 		*iop->_ptr++ = c;
-		if (iop->_ptr >= base+iop->_bufsiz || c == '\n') {
-			n = write(fileno(iop), base, rn = iop->_ptr - base);
+		if ((rn = iop->_ptr - base) >= iop->_bufsiz || c == '\n') {
 			iop->_ptr = base;
 			iop->_cnt = 0;
-		} else
+		} else {
+			/* we got here because _cnt is wrong, so fix it */
+			iop->_cnt = -rn;
 			rn = n = 0;
+		}
 	} else if (iop->_flag&_IONBF) {
 		c1 = c;
 		rn = 1;
-		n = write(fileno(iop), &c1, rn);
+		base = &c1;
 		iop->_cnt = 0;
 	} else {
 		if ((base=iop->_base)==NULL) {
@@ -65,17 +67,22 @@ tryagain:
 				goto tryagain;
 			}
 			rn = n = 0;
-		} else if ((rn = n = iop->_ptr - base) > 0) {
-			iop->_ptr = base;
-			n = write(fileno(iop), base, n);
-		}
-		iop->_cnt = iop->_bufsiz-1;
-		*base++ = c;
+		} else
+			rn = iop->_ptr - base;
 		iop->_ptr = base;
+		iop->_cnt = iop->_bufsiz;
 	}
-	if (rn != n) {
-		iop->_flag |= _IOERR;
-		return(EOF);
+	while (rn > 0) {
+		if ((n = write(fileno(iop), base, rn)) <= 0) {
+			iop->_flag |= _IOERR;
+			return(EOF);
+		}
+		rn -= n;
+		base += n;
+	}
+	if ((iop->_flag&(_IOLBF|_IONBF)) == 0) {
+		iop->_cnt--;
+		*iop->_ptr++ = c;
 	}
 	return(c);
 }
@@ -92,16 +99,20 @@ fflush(iop)
 register FILE *iop;
 {
 	register char *base;
-	register n;
+	register n, rn;
 
-	if ((iop->_flag&(_IONBF|_IOWRT))==_IOWRT
-	 && (base=iop->_base)!=NULL && (n=iop->_ptr-base)>0) {
+	if ((iop->_flag&(_IONBF|_IOWRT))==_IOWRT &&
+	    (base = iop->_base) != NULL && (rn = n = iop->_ptr - base) > 0) {
 		iop->_ptr = base;
 		iop->_cnt = (iop->_flag&(_IOLBF|_IONBF)) ? 0 : iop->_bufsiz;
-		if (write(fileno(iop), base, n)!=n) {
-			iop->_flag |= _IOERR;
-			return(EOF);
-		}
+		do {
+			if ((n = write(fileno(iop), base, rn)) <= 0) {
+				iop->_flag |= _IOERR;
+				return(EOF);
+			}
+			rn -= n;
+			base += n;
+		} while (rn > 0);
 	}
 	return(0);
 }
