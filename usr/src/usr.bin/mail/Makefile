@@ -1,7 +1,7 @@
 #
 # Unix version 7.
 #
-# Sccs Id = "@(#)Makefile	1.4 %G%";
+# Sccs Id = "@(#)Makefile	1.5 %G%";
 #
 
 CFLAGS=-O -DVMUNIX -DV7
@@ -39,6 +39,9 @@ Mail:	$S $(OBJS) tags
 	$(CC) -n -o Mail $(OBJS) $(LIBES)
 	@size Mail
 
+mail.g:	$(SRCS)
+	/va/rigel/bin/cgraf $(SRCS) > mail.g
+
 install:
 	install -s Mail ${DESTDIR}/usr/ucb
 	cp Mail.help* ${DESTDIR}/usr/lib
@@ -66,11 +69,8 @@ fmt:	fmt.c head.c
 
 str.o: strings
 	$(XSTR)
-	$(CC) -S xs.c
-	$(ED) - <:rofix xs.s
-	$(AS) -o str.o xs.s
-	$(RM) xs.s
-	$(RM) xs.c
+	$(CC) -R -c xs.c
+	mv xs.o str.o
 
 cmdtab.o: cmdtab.c
 	$(CC) -S $(CFLAGS) cmdtab.c
