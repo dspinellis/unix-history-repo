@@ -1,36 +1,33 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd1.c	2.1 83/07/30";
+static	char *sccsid = "@(#)cmd1.c	2.1.1.1 83/08/09";
 #endif
 
 #include "defs.h"
 
-struct ww *doopen();
-
-dowindow()
+c_window()
 {
 	int col, row, xcol, xrow;
 	int id;
 
 	if ((id = findid()) < 0) {
-		if (terse)
-			Ding();
-		else
-			wwputs("Too many windows.  ", cmdwin);
+		error("Too many windows.");
 		return;
 	}
 	if (!terse)
-		wwputs("Upper left corner: ", cmdwin);
+		(void) wwputs("Upper left corner: ", cmdwin);
 	col = 0;
 	row = 1;
 	for (;;) {
 		wwsetcursor(row, col);
 		while (bpeekc() < 0)
 			bread();
-		switch (getpos(&row, &col, 0, 0)) {
+		switch (getpos(&row, &col, 1, 0)) {
 		case -1:
+			/*
 			WBoxActive = 0;
+			*/
 			if (!terse)
-				wwputs("\r\nCancelled.  ", cmdwin);
+				(void) wwputs("\r\nCancelled.  ", cmdwin);
 			return;
 		case 1:
 			break;
@@ -40,20 +37,24 @@ dowindow()
 		break;
 	}
 	if (!terse)
-		wwputs("\r\nLower right corner: ", cmdwin);
-	xcol = col + 1;
-	xrow = row + 1;
+		(void) wwputs("\r\nLower right corner: ", cmdwin);
+	xcol = col;
+	xrow = row;
 	for (;;) {
+		/*
 		Wbox(col, row, xcol - col + 1, xrow - row + 1);
+		*/
 		wwsetcursor(xrow, xcol);
 		wwflush();
 		while (bpeekc() < 0)
 			bread();
-		switch (getpos(&xrow, &xcol, row + 1, col + 1)) {
+		switch (getpos(&xrow, &xcol, row, col)) {
 		case -1:
+			/*
 			WBoxActive = 0;
+			*/
 			if (!terse)
-				wwputs("\r\nCancelled.  ", cmdwin);
+				(void) wwputs("\r\nCancelled.  ", cmdwin);
 			return;
 		case 1:
 			break;
@@ -62,33 +63,23 @@ dowindow()
 		}
 		break;
 	}
+	/*
 	WBoxActive = 0;
+	*/
 	if (!terse)
-		wwputs("\r\n", cmdwin);
-	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
-	if (doopen(id, xrow-row+1, xcol-col+1, row, col) == 0)
-		if (terse)
-			Ding();
-		else
-			wwputs("Can't open window.  ", cmdwin);
+		(void) wwputs("\r\n", cmdwin);
+	wwcurtowin(cmdwin);
+	if (openwin(id, xrow-row+1, xcol-col+1, row, col) == 0)
+		error("Can't open window.");
 }
 
 findid()
 {
-	register id;
-	char ids[10];
-	register struct ww *w;
+	register i;
 
-	for (id = 1; id <= NWINDOW; id++)
-		ids[id] = 0;
-	for (w = wwhead; w; w = w->ww_next) {
-		if (w->ww_ident < 1 || w->ww_ident > NWINDOW)
-			continue;
-		ids[w->ww_ident]++;
-	}
-	for (id = 1; id <= NWINDOW && ids[id]; id++)
+	for (i = 0; i < NWINDOW && window[i] != 0; i++)
 		;
-	return id < 10 ? id : -1;
+	return i < NWINDOW ? i : -1;
 }
 
 getpos(row, col, minrow, mincol)
@@ -142,32 +133,37 @@ register int *row, *col, minrow, mincol;
 			return 1;
 		default:
 			if (!terse)
-				wwputs("\r\nType [hjklHJKL] to move, return to enter position, escape to cancel.", cmdwin);
-			Ding();
+				(void) wwputs("\r\nType [hjklHJKL] to move, return to enter position, escape to cancel.", cmdwin);
+			wwbell();
 		}
 	}
 	return 0;
 }
 
 struct ww *
-doopen(id, nrow, ncol, row, col)
+openwin(id, nrow, ncol, row, col)
 int id, nrow, ncol, row, col;
 {
 	register struct ww *w;
 
+	if (row <= 0)
+		return 0;
 	if (id < 0 && (id = findid()) < 0)
 		return 0;
-	if ((w = wwopen(WW_PTY, id, nrow, ncol, row, col)) == 0)
+	if ((w = wwopen(WWO_PTY, nrow, ncol, row, col, 0)) == 0)
 		return 0;
-	reframe();
-	if (selwin == 0)
-		setselwin(w);
-	else
-		wwsetcurwin(cmdwin);
+	w->ww_id = id;
+	window[id] = w;
+	w->ww_hasframe = 1;
+	wwadd(w, (selwin ? selwin : wwhead.ww_back));
+	setselwin(w);
+	/*
+	wwupdate();
 	wwflush();
+	*/
 	switch (wwfork(w)) {
 	case -1:
-		doclose(w);
+		c_close(w);
 		return 0;
 	case 0:
 		execl(shell, shellname, 0);
@@ -181,11 +177,11 @@ reframe()
 {
 	register struct ww *w;
 
-	for (w = wwhead; w; w = w->ww_next) {
-		if (w == cmdwin)
-			continue;
-		wwunframe(w);
-		wwframe(w);
-		labelwin(w);
-	}
+	wwunframe(framewin);
+	for (w = wwhead.ww_back; w != &wwhead; w = w->ww_back)
+		if (w->ww_hasframe)
+			wwframe(w, framewin);
+	for (w = wwhead.ww_back; w != &wwhead; w = w->ww_back)
+		if (w->ww_hasframe)
+			labelwin(w);
 }

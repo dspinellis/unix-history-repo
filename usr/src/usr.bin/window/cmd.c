@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd.c	2.1 83/07/30";
+static	char *sccsid = "@(#)cmd.c	2.1.1.1 83/08/09";
 #endif
 
 #include "defs.h"
@@ -12,13 +12,15 @@ docmd()
 	register struct ww *w;
 
 	if (!terse)
-		Wunhide(cmdwin->ww_win);
+		wwadd(cmdwin, &wwhead);
+	/*
 	if (selwin != 0)
 		Woncursor(selwin->ww_win, 1);
+	*/
 top:
 	while ((c = bgetc()) >= 0) {
 		if (!terse)
-			wwputs("\r\n", cmdwin);
+			(void) wwputs("\r\n", cmdwin);
 		switch (c) {
 		default:
 			if (c == escapec)
@@ -32,18 +34,15 @@ top:
 		case CTRL([):
 		foo:
 			if (selwin == 0) {
-				if (terse)
-					Ding();
-				else
-					wwputs("No window.  ", cmdwin);
+				error("No window.");
 				continue;
 			}
 		}
 		switch (c) {
 		case '1': case '2': case '3': case '4': case '5':
 		case '6': case '7': case '8': case '9':
-			if ((w = wwfind(c - '0')) == 0) {
-				Ding();
+			if ((w = window[c - '1']) == 0) {
+				wwbell();
 				break;
 			}
 			setselwin(w);
@@ -54,81 +53,81 @@ top:
 			break;
 		case 'c':
 			if ((w = getwin()) != 0)
-				doclose(w);
+				c_close(w);
 			break;
 		case 'C':
-			doclose((struct ww *)0);
+			c_close((struct ww *)0);
 			break;
 		case 'Z':
-			if (terse)
-				Ding();
-			else
-				wwputs("Command Z is now C.  ", cmdwin);
+			error("Command Z is now C.");
 			break;
 		case 'w':
-			dowindow();
+			c_window();
 			break;
 		case 'S':
-			doshow();
+			c_show();
 			break;
 		case 'L':
-			dolist();
+			c_list();
 			break;
-		/*
-		case 'e':
-			doescape();
-			break;
-		case 'L':
-			dolabel();
-			break;
-		case 'r':
-			selwin->ww_refresh = 0;
-			break;
-		case 'R':
-			selwin->ww_refresh = 1;
-			break;
-		*/
 		case 's':
-			dostat();
+			c_stat();
+			break;
+		case 'M':
+			wwdumpsmap();
+			break;
+		case 'V':
+			if ((w = getwin()) != 0)
+				wwdumpnvis(w);
+			break;
+		case 'D':
+			if ((w = getwin()) != 0)
+				wwdumpcov(w);
+			break;
+		case 'W':
+			if ((w = getwin()) != 0)
+				wwdumpwin(w);
 			break;
 		case 't':
-			dotime(RUSAGE_SELF);
+			c_time(RUSAGE_SELF);
 			break;
 		case 'T':
-			dotime(RUSAGE_CHILDREN);
+			c_time(RUSAGE_CHILDREN);
 			break;
 		case ':':
-			docolon();
+			c_colon();
 			break;
 		case 'h':
-			Wcurleft(selwin->ww_win, 1);
+			(void) wwwrite(selwin, "\b", 1);
 			break;
 		case 'j':
-			Wcurdown(selwin->ww_win, 1);
+			(void) wwwrite(selwin, "\n", 1);
 			break;
 		case 'k':
-			Wcurup(selwin->ww_win, 1);
+			(void) wwwrite(selwin, "\033A", 2);
 			break;
 		case 'l':
-			Wcurright(selwin->ww_win, 1);
+			(void) wwwrite(selwin, "\033C", 2);
 			break;
+		/*
 		case CTRL(d):
-			doscroll(1);
+			c_scroll(1);
 			break;
 		case CTRL(u):
-			doscroll(-1);
+			c_scroll(-1);
 			break;
 		case CTRL(f):
-			doscroll(2);
+			c_scroll(2);
 			break;
 		case CTRL(b):
-			doscroll(-2);
+			c_scroll(-2);
 			break;
+		*/
 		case CTRL(l):
-			ScreenGarbaged = 1;
+			wwredraw();
 			break;
 		case '?':
-			dohelp();
+			c_help();
 			break;
 		case CTRL([):
 			goto out;
@@ -136,24 +135,21 @@ top:
 			wwsuspend();
 			break;
 		case 'q':
-			doquit();
+			c_quit();
 			if (quit)
 				goto out;
 			break;
 		case '.':
-			if (terse)
-				Ding();
-			else
-				wwputs("Use q to quit.  ", cmdwin);
+			error("Use q to quit.");
 			break;
 		default:
 			if (c == escapec) {
-				write(selwin->ww_pty, &escapec, 1);
+				(void) write(selwin->ww_pty, &escapec, 1);
 				goto out;
 			}
-			Ding();
 			if (!terse)
-				wwprintf(cmdwin, "Type ? for help.  ");
+				wwbell();
+			error("Type ? for help.");
 			break;
 		}
 	}
@@ -161,19 +157,24 @@ top:
 		wwsetcursor(0, 0);
 	else {
 		if (!terse)
-			wwputs("Command: ", cmdwin);
-		wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
+			(void) wwputs("Command: ", cmdwin);
+		wwsetcursor(wwcurrow(cmdwin), wwcurcol(cmdwin));
 	}
 	while (bpeekc() < 0)
 		bread();
 	goto top;
 out:
-	if (!quit)
-		wwsetcurwin(selwin);
+	if (!quit) {
+		curwin = selwin;
+		if (!terse) {
+			wwdelete(cmdwin);
+			reframe();
+		}
+	}
+	/*
 	if (selwin != 0)
 		Woncursor(selwin->ww_win, 0);
-	if (!terse)
-		Whide(cmdwin->ww_win);
+	*/
 }
 
 struct ww *
@@ -183,46 +184,69 @@ getwin()
 	struct ww *w = 0;
 
 	if (!terse)
-		wwputs("Which window? ", cmdwin);
-	wwsetcursor(WCurRow(cmdwin->ww_win), WCurCol(cmdwin->ww_win));
+		(void) wwputs("Which window? ", cmdwin);
+	wwsetcursor(wwcurrow(cmdwin), wwcurcol(cmdwin));
 	while ((c = bgetc()) < 0)
 		bread();
-	if (c < '1' || c > '9' || (w = wwfind(c - '0')) == 0)
-		Ding();
+	if (debug && c == 'c')
+		w = cmdwin;
+	else if (debug && c == 'f')
+		w = framewin;
+	else if (c >= '1' && c < NWINDOW + '1')
+		w = window[c - '1'];
+	if (w == 0)
+		wwbell();
 	if (!terse)
-		wwputs("\r\n", cmdwin);
+		(void) wwputs("\r\n", cmdwin);
 	return w;
 }
 
 setselwin(w)
 register struct ww *w;
 {
-	struct ww *oldselwin = selwin;
+	register struct ww *oldselwin = selwin;
 
 	if (w == oldselwin)
 		return;
 	if (selwin = w) {
-		labelwin(w);
-		/* bring it to the top just below cmdwin */
-		wwsetcurwin(w);
-		wwsetcurwin(cmdwin);
+		wwdelete(w);
+		/*
+		 * Stick it in front of the old selected window,
+		 * or behind everbody else.
+		 */
+		wwadd(w, (oldselwin ? oldselwin : &wwhead)->ww_back);
+		/*
 		Woncursor(w->ww_win, 1);
+		*/
 	}
+	/*
 	if (oldselwin) {
-		labelwin(oldselwin);
 		Woncursor(oldselwin->ww_win, 0);
 	}
+	*/
+	reframe();
 }
 
 labelwin(w)
 register struct ww *w;
 {
-	char buf[2];
-	int mode = w == selwin ? WINVERSE : 0;
+	int mode = w == selwin ? WWM_REV : 0;
 
-	buf[0] = w->ww_ident + '0';
-	buf[1] = 0;
-	wwlabel(w, 1, buf, mode);
-	if (w->ww_label)
-		wwlabel(w, 3, w->ww_label, mode);
+	if (w->ww_id >= 0) {
+		char buf[2];
+
+		buf[0] = w->ww_id + '1';
+		buf[1] = 0;
+		(void) wwlabel(w, framewin, 1, buf, mode);
+	}
+	if (w->ww_label) {
+		int col;
+
+		if (w->ww_center) {
+			col = (w->ww_w.nc - strlen(w->ww_label)) / 2;
+			col = MAX(3, col);
+		} else
+			col = 3;
+		(void) wwlabel(w, framewin, col, w->ww_label, mode);
+	}
 }
