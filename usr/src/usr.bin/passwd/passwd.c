@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)passwd.c	4.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)passwd.c	4.5 (Berkeley) %G%";
 #endif
 
 /*
@@ -14,11 +14,13 @@ static char sccsid[] = "@(#)passwd.c	4.4 (Berkeley) %G%";
 #include <pwd.h>
 #include <errno.h>
 
+char	temp[] = "/etc/ptmp";
+char	temp_pag[] = "/etc/ptmp.pag";
+char	temp_dir[] = "/etc/ptmp.dir";
 char	passwd[] = "/etc/passwd";
-char	temp[]	 = "/etc/ptmp";
+char	passwd_pag[] = "/etc/passwd.pag";
+char	passwd_dir[] = "/etc/passwd.dir";
 struct	passwd *pwd;
-struct	passwd *getpwent();
-int	endpwent();
 char	*strcpy();
 char	*crypt();
 char	*getpass();
@@ -50,14 +52,12 @@ main(argc, argv)
 		printf("Changing password for %s\n", uname);
 	} else
 		uname = argv[1];
-	while (((pwd = getpwent()) != NULL) && strcmp(pwd->pw_name, uname))
-		;
+	pwd = getpwnam(uname);
 	u = getuid();
 	if (pwd == NULL || (u != 0 && u != pwd->pw_uid)) {
 		printf("Permission denied.\n");
 		exit(1);
 	}
-	endpwent();
 	if (pwd->pw_passwd[0] && u != 0) {
 		strcpy(pwbuf, getpass("Old password:"));
 		pw = crypt(pwbuf, pwd->pw_passwd);
@@ -145,12 +145,11 @@ tryagain:
 	 * with new password.
 	 */
 	while ((pwd = getpwent()) != NULL) {
-		if (strcmp(pwd->pw_name,uname) == 0) {
+		if (strcmp(pwd->pw_name, uname) == 0) {
 			u = getuid();
 			if (u && u != pwd->pw_uid) {
 				fprintf(stderr, "passwd: permission denied.\n");
-				unlink(temp);
-				exit(1);
+				goto out;
 			}
 			pwd->pw_passwd = pw;
 			if (pwd->pw_gecos[0] == '*')
@@ -166,10 +165,36 @@ tryagain:
 			pwd->pw_shell);
 	}
 	endpwent();
-	if (rename(temp, passwd) < 0) {
-		fprintf(stderr, "passwd: "); perror("rename");
-		unlink(temp);
-		exit(1);
-	}
 	fclose(tf);
+	if (makedb(temp) < 0)
+		fprintf(stderr, "passwd: mkpasswd failed\n");
+	else if (rename(temp_pag, passwd_pag) < 0)
+		fprintf(stderr, "passwd: "), perror(temp_pag);
+	else if (rename(temp_dir, passwd_dir) < 0)
+		fprintf(stderr, "passwd: "), perror(temp_dir);
+	else if (rename(temp, passwd) < 0)
+		fprintf(stderr, "passwd: "), perror("rename");
+	else
+		exit(0);
+out:
+	unlink(temp_pag);
+	unlink(temp_dir);
+	unlink(temp);
+	exit(1);
+}
+
+makedb(file)
+	char *file;
+{
+	int status, pid, w;
+
+	if ((pid = vfork()) == 0) {
+		execl("/etc/mkpasswd", "mkpasswd", file, 0);
+		_exit(127);
+	}
+	while ((w = wait(&status)) != pid && w != -1)
+		;
+	if (w == -1 || status != 0)
+		status = -1;
+	return(status);
 }
