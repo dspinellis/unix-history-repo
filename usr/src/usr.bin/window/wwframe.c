@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwframe.c	3.11 83/11/23";
+static	char *sccsid = "@(#)wwframe.c	3.12 83/12/02";
 #endif
 
 #include "ww.h"
@@ -206,7 +206,7 @@ char code;
 		frame = tt.tt_frame[code & WWF_MASK] & WWC_CMASK;
 		f->ww_buf[r][c].c_w = frame;
 		if (wwsmap[r][c] == f->ww_index) {
-			wwtouched[r] = 1;
+			wwtouched[r] |= WWU_TOUCHED;
 			wwns[r][c].c_w = frame;
 		}
 	}

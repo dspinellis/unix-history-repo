@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwlabel.c	3.9 83/12/02";
+static	char *sccsid = "@(#)wwlabel.c	3.10 83/12/02";
 #endif
 
 #include "ww.h"
@@ -51,7 +51,7 @@ char *l;
 			else {
 				ns[j].c_w = (buf[j].c_w = mode | *p)
 						^ win[j] << WWC_MSHIFT;
-				touched = 1;
+				touched |= WWU_TOUCHED;
 			}
 			fmap[j] |= WWF_LABEL;
 		}

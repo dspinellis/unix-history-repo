@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)cmd2.c	3.13 83/11/02";
+static	char *sccsid = "@(#)cmd2.c	3.14 83/12/02";
 #endif
 
 #include "defs.h"
@@ -122,14 +122,16 @@ c_stat()
 {
 	register struct ww *w;
 
-	if ((w = openiwin(4, "IO Statics")) == 0) {
+	if ((w = openiwin(6, "IO Statics")) == 0) {
 		error("Can't open statistics window: %s.", wwerror());
 		return;
 	}
-	(void) wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\tnupdate\tntouchd\tnmiss\n");
-	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n",
-		nread, nreadz, nreade, nreadc, wwnwrite, wwnwritec,
-		wwnupdate, wwntouched, wwnmiss);
+	(void) wwprintf(w, "nread\tnreadz\tnreade\tnreadc\tnwrite\tnwritec\n");
+	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\t%d\n",
+		nread, nreadz, nreade, nreadc, wwnwrite, wwnwritec);
+	(void) wwprintf(w, "nupdate\tnupdlin\tnupdmis\tnmajlin\tnmajmis\n");
+	(void) wwprintf(w, "%d\t%d\t%d\t%d\t%d\n",
+		wwnupdate, wwnupdline, wwnupdmiss, wwnmajline, wwnmajmiss);
 	waitnl(w);
 	closeiwin(w);
 }

@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwdelete.c	3.10 83/11/29";
+static	char *sccsid = "@(#)wwdelete.c	3.11 83/12/02";
 #endif
 
 #include "ww.h"
@@ -16,14 +16,18 @@ register struct ww *w;
 		register j;
 		register char *smap = wwsmap[i];
 		register struct ww_char *ns = wwns[i];
-		register char *touched = &wwtouched[i];
+		register int nchanged = 0;
 
 		for (j = w->ww_i.l; j < w->ww_i.r; j++)
 			if (smap[j] == w->ww_index) {
 				smap[j] = WWX_NOBODY;
 				ns[j].c_w = ' ';
-				*touched = 1;
+				nchanged++;
 			}
+		if (nchanged > 4)
+			wwtouched[i] |= WWU_MAJOR|WWU_TOUCHED;
+		else if (nchanged > 0)
+			wwtouched[i] |= WWU_TOUCHED;
 	}
 
 	{
@@ -67,7 +71,7 @@ again:
 		register char *win = w->ww_win[i];
 		register union ww_char *buf = w->ww_buf[i];
 		int nvis = w->ww_nvis[i];
-		char touched = wwtouched[i];
+		int nchanged = 0;
 
 		for (j = ll; j < rr; j++) {
 			if (smap[j] != WWX_NOBODY)
@@ -78,11 +82,14 @@ again:
 			}
 			smap[j] = w->ww_index;
 			ns[j].c_w = buf[j].c_w ^ win[j] << WWC_MSHIFT;
-			touched = 1;
+			nchanged++;
 			if (win[j] == 0)
 				nvis++;
 		}
-		wwtouched[i] = touched;
+		if (nchanged > 4)
+			wwtouched[i] |= WWU_MAJOR|WWU_TOUCHED;
+		else if (nchanged > 0)
+			wwtouched[i] |= WWU_TOUCHED;
 		w->ww_nvis[i] = nvis;
 	}
 	if ((w = w->ww_forw) == &wwhead)

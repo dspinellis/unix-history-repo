@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwwrite.c	3.13 83/09/15";
+static	char *sccsid = "@(#)wwwrite.c	3.14 83/12/02";
 #endif
 
 #include "ww.h"
@@ -20,9 +20,9 @@ int n;
 			register i;
 			register union ww_char *bp;
 			union ww_char *bq;
-			int col;
+			int col, col1;
 
-			if (w->ww_insert) {
+			if (w->ww_insert) {	/* this is very slow */
 				n--;
 				wwinschar(w, w->ww_cur.r, w->ww_cur.c,
 					*p++ | w->ww_modes << WWC_MSHIFT);
@@ -37,40 +37,25 @@ int n;
 
 			i = bp - bq;
 			n -= i;
-			col = w->ww_cur.c;
+			col = MAX(w->ww_cur.c, w->ww_i.l);
 			w->ww_cur.c += i;
-			bp = bq;
-			if (col < w->ww_i.l) {
-				/* use col as a temporary */
-				col = w->ww_i.l - col;
-				bp += col;
-				i -= col;
-				col = w->ww_i.l;
-			}
-			if (i > w->ww_i.r - col)
-				i = w->ww_i.r - col;
+			col1 = MIN(w->ww_cur.c, w->ww_i.r);
 
 			if (w->ww_cur.r >= w->ww_i.t && w->ww_cur.r < w->ww_i.b)
 			{
-				register union ww_char *ns;
-				register char *smap;
-				register char *win;
-				char *touched;
+				register union ww_char *ns = wwns[w->ww_cur.r];
+				register char *smap = &wwsmap[w->ww_cur.r][col];
+				register char *win = w->ww_win[w->ww_cur.r];
+				char touched = wwtouched[w->ww_cur.r];
 
-				win = &w->ww_win[w->ww_cur.r][col];
-				smap = &wwsmap[w->ww_cur.r][col];
-				ns = &wwns[w->ww_cur.r][col];
-				touched = &wwtouched[w->ww_cur.r];
-				while (--i >= 0)
+				bp = w->ww_buf[w->ww_cur.r];
+				for (i = col; i < col1; i++)
 					if (*smap++ == w->ww_index) {
-						*touched = 1;
-						ns++->c_w = bp++->c_w
-							^ *win++ << WWC_MSHIFT;
-					} else {
-						ns++;
-						bp++;
-						win++;
+						touched |= WWU_TOUCHED;
+						ns[i].c_w = bp[i].c_w
+							^ win[i] << WWC_MSHIFT;
 					}
+				wwtouched[w->ww_cur.r] = touched;
 			}
 			if (w->ww_cur.c >= w->ww_w.r) {
 				w->ww_cur.c = w->ww_w.l;
