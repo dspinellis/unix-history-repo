@@ -4,7 +4,7 @@
 # include <log.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)err.c	2.1	%G%";
+static char	SccsId[] = "@(#)err.c	2.2	%G%";
 
 /*
 **  SYSERR -- Print error message.
@@ -44,6 +44,7 @@ syserr(fmt, a, b, c, d, e)
 			sprintf(p, ": error %d", errno);
 	}
 	printf("delivermail: %s\n", errbuf);
+	fflush(stdout);
 	Errors++;
 
 	/* determine exit status if not already set */
@@ -90,5 +91,6 @@ usrerr(fmt, a, b, c, d, e)
 		printf("%s... ", To);
 	printf(fmt, a, b, c, d, e);
 	printf("\n");
+	fflush(stdout);
 	return (-1);
 }
