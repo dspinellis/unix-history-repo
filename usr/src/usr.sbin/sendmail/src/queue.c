@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	6.48 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	6.49 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	6.48 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	6.49 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -73,10 +73,8 @@ queueup(e, queueall, announce)
 	bool newid;
 	register char *p;
 	MAILER nullmailer;
-	ADDRESS *lastctladdr;
 	char buf[MAXLINE], tf[MAXLINE];
 	extern char *macvalue();
-	extern ADDRESS *getctladdr();
 
 	/*
 	**  Create control file.
@@ -184,19 +182,12 @@ notemp:
 	fprintf(tfp, "S%s\n", e->e_from.q_paddr);
 
 	/* output list of error recipients */
-	lastctladdr = NULL;
+	printctladdr(NULL, tfp);
 	for (q = e->e_errorqueue; q != NULL; q = q->q_next)
 	{
 		if (!bitset(QDONTSEND|QBADADDR, q->q_flags))
 		{
-			ADDRESS *ctladdr;
-
-			ctladdr = getctladdr(q);
-			if (ctladdr != lastctladdr)
-			{
-				printctladdr(ctladdr, tfp);
-				lastctladdr = ctladdr;
-			}
+			printctladdr(q, tfp);
 			fprintf(tfp, "E%s\n", q->q_paddr);
 		}
 	}
@@ -207,14 +198,7 @@ notemp:
 		if (bitset(QQUEUEUP, q->q_flags) ||
 		    (queueall && !bitset(QDONTSEND|QBADADDR|QSENT, q->q_flags)))
 		{
-			ADDRESS *ctladdr;
-
-			ctladdr = getctladdr(q);
-			if (ctladdr != lastctladdr)
-			{
-				printctladdr(ctladdr, tfp);
-				lastctladdr = ctladdr;
-			}
+			printctladdr(q, tfp);
 			fprintf(tfp, "R%s\n", q->q_paddr);
 			if (announce)
 			{
@@ -331,23 +315,51 @@ notemp:
 }
 
 printctladdr(a, tfp)
-	ADDRESS *a;
+	register ADDRESS *a;
 	FILE *tfp;
 {
-	char *u;
-	struct passwd *pw;
-	extern struct passwd *getpwuid();
+	char *uname;
+	register struct passwd *pw;
+	register ADDRESS *q;
+	uid_t uid;
+	static ADDRESS *lastctladdr;
+	static uid_t lastuid;
+	extern ADDRESS *getctladdr();
 
+	/* initialization */
 	if (a == NULL)
 	{
-		fprintf(tfp, "C\n");
+		if (lastctladdr != NULL)
+			fprintf(tfp, "C\n");
+		lastctladdr = NULL;
+		lastuid = 0;
 		return;
 	}
-	if (a->q_uid == 0 || (pw = getpwuid(a->q_uid)) == NULL)
-		u = DefUser;
+
+	/* find the active uid */
+	q = getctladdr(a);
+	if (q == NULL)
+		uid = 0;
 	else
-		u = pw->pw_name;
-	fprintf(tfp, "C%s\n", u);
+		uid = q->q_uid;
+
+	/* if a is an alias, use that for printing */
+	if (a->q_alias != NULL)
+		a = a->q_alias;
+
+	/* check to see if this is the same as last time */
+	if (lastctladdr != NULL && uid == lastuid &&
+	    strcmp(lastctladdr->q_paddr, a->q_paddr) == 0)
+		return;
+	lastuid = uid;
+	lastctladdr = a;
+
+	if (uid == 0 || (pw = getpwuid(uid)) == NULL)
+		uname = DefUser;
+	else
+		uname = pw->pw_name;
+
+	fprintf(tfp, "C%s:%s\n", uname, a->q_paddr);
 }
 
 /*
@@ -1424,6 +1436,7 @@ setctluser(user)
 {
 	register ADDRESS *a;
 	struct passwd *pw;
+	char *p;
 
 	/*
 	**  See if this clears our concept of controlling user.
@@ -1438,6 +1451,10 @@ setctluser(user)
 
 	a = (ADDRESS *) xalloc(sizeof *a);
 	bzero((char *) a, sizeof *a);
+
+	p = strchr(user, ':');
+	if (p != NULL)
+		*p++ = '\0';
 	if ((pw = getpwnam(user)) != NULL)
 	{
 		a->q_home = newstr(pw->pw_dir);
@@ -1454,5 +1471,9 @@ setctluser(user)
 
 	a->q_flags |= QGOODUID|QPRIMARY;	/* flag as a "ctladdr"  */
 	a->q_mailer = LocalMailer;
+	if (p == NULL)
+		a->q_paddr = a->q_user;
+	else
+		a->q_paddr = newstr(p);
 	return a;
 }
