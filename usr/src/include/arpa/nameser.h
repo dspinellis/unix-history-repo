@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)nameser.h	5.12 (Berkeley) %G%
+ *	@(#)nameser.h	5.13 (Berkeley) %G%
  */
 
 /*
@@ -31,9 +31,12 @@
 #define CQUERYM		0x2		/* completion query (multiple) */
 #define CQUERYU		0x3		/* completion query (unique) */
 	/* non standard */
-#define UPDATEA		0xb		/* add resource record */
-#define UPDATED		0xc		/* delete resource record */
-#define UPDATEM		0xd		/* modify resource record */
+#define UPDATEA		0x9		/* add resource record */
+#define UPDATED		0xa		/* delete a specific resource record */
+#define UPDATEDA	0xb		/* delete all nemed resource record */
+#define UPDATEM		0xc		/* modify a specific resource record */
+#define UPDATEMA	0xd		/* modify all named resource record */
+
 #define ZONEINIT	0xe		/* initial zone transfer */
 #define ZONEREF		0xf		/* incremental zone referesh */
 
@@ -71,6 +74,7 @@
 #define T_UINFO		100		/* user (finger) information */
 #define T_UID		101		/* user ID */
 #define T_GID		102		/* group ID */
+#define T_UNSPEC	103		/* Unspecified format (binary data) */
 	/* Query type values which do not appear in resource records */
 #define T_AXFR		252		/* transfer zone of authority */
 #define T_MAILB		253		/* transfer mailbox records */
@@ -85,6 +89,15 @@
 #define C_CHAOS		3		/* for chaos net at MIT */
 	/* Query class values which do not appear in resource records */
 #define C_ANY		255		/* wildcard match */
+
+/*
+ * Status return codes for T_UNSPEC conversion routines
+ */
+#define CONV_SUCCESS 0
+#define CONV_OVERFLOW -1
+#define CONV_BADFMT -2
+#define CONV_BADCKSUM -3
+#define CONV_BADBUFLEN -4
 
 /*
  * Structure for query header, the order of the fields is machine and
