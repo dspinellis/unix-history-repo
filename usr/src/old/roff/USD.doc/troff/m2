@@ -1,4 +1,4 @@
-.\"	@(#)m2	5.1 (Berkeley) %G%
+.\"	@(#)m2	6.1 (Berkeley) %G%
 .\"
 .tr |
 .rm mx
@@ -200,7 +200,7 @@ the distance returned is the distance to the page bottom.
 A macro-invocation trap effective in the current diversion may be planted using \fBdt\fR.
 The \fB.t\fR register works in a diversion; if there is no subsequent trap a \fIlarge\fR
 distance is returned.
-For a description of input-line-count traps, see \fBit\fR below.
+For a description of input-line-count traps, see the \fBit\fR request below.
 .h1
 .bt
 \fB&de\fI|xx|yy\fR	-	\fI.yy=\fB..\fR	-	Define or redefine the macro \fIxx\fR.
