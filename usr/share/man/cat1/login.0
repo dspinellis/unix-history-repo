@@ -1,0 +1,64 @@
+LOGIN(1)                     BSD Reference Manual                     LOGIN(1)
+
+NNAAMMEE
+     llooggiinn - log into the computer
+
+SSYYNNOOPPSSIISS
+     llooggiinn [--ffpp] [--hh _h_o_s_t_n_a_m_e] [_u_s_e_r]
+
+DDEESSCCRRIIPPTTIIOONN
+     The llooggiinn utility logs users (and pseudo-users) into the computer system.
+
+     If no user is specified, or if a user is specified and authentication of
+     the user fails, llooggiinn prompts for a user name.  Authentication of users
+     is done via passwords.
+
+     The options are as follows:
+
+     --ff      The --ff option is used when a user name is specified to indicate
+             that proper authentication has already been done and that no
+             password need be requested.  This option may only be used by the
+             super-user or when an already logged in user is logging in as
+             themselves.
+
+     --hh      The --hh option specifies the host from which the connection was
+             received.  It is used by various daemons such as telnetd(8).
+             This option may only be used by the super-user.
+
+     --pp      By default, llooggiinn discards any previous environment.  The --pp op-
+             tion disables this behavior.
+
+     If the file _/_e_t_c_/_n_o_l_o_g_i_n exists, llooggiinn dislays its contents to the user
+     and exits.  This is used by shutdown(8) to prevent users from logging in
+     when the system is about to go down.
+
+     Immediately after logging a user in, llooggiinn displays the system copyright
+     notice, the date and time the user last logged in, the message of the day
+     as well as other information.  If the file ``_._h_u_s_h_l_o_g_i_n'' exists in the
+     user's home directory, all of these messages are suppressed.  This is to
+     simplify logins for non-human users, such as uucp(1).  LLooggiinn then records
+     an entry in the wtmp(5) and utmp(5) files and executes the user's command
+     interpretor.
+
+     Login enters information into the environment (see environ(7))  specify-
+     ing the user's home directory (HOME), command interpreter (SHELL), search
+     path (PATH), terminal type (TERM) and user name (both LOGNAME and USER).
+
+     The standard shells, csh(1) and sh(1),  do not fork before executing the
+     llooggiinn utility.
+
+FFIILLEESS
+     /etc/motd          message-of-the-day
+     /etc/nologin       disallows logins
+     /var/run/utmp      current logins
+     /var/log/wtmp      login account records
+     /var/mail/user     system mailboxes
+     .hushlogin         makes login quieter
+
+SSEEEE AALLSSOO
+     chpass(1),  passwd(1),  rlogin(1),  getpass(3),  utmp(5),  environ(7),
+
+HHIISSTTOORRYY
+     A llooggiinn appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 9, 1993                                1
