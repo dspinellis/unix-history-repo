@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)v6mail.c	4.2	(Berkeley)	%G%";
+static char sccsid[] = "@(#)v6mail.c	4.3	(Berkeley)	%G%";
 
 /*
  * Version 6 Cory mail--
@@ -711,7 +711,7 @@ char *file;
 	}
 	if (locked)
 		return(0);
-	sprintf(curlock,"%s%s",file,".mail");
+	sprintf(curlock,"%s%s",file,".lock");
 	sprintf(locktmp,"%s/tmXXXXXX",MAILDIR);
 	mktemp(locktmp);
 	unlink(locktmp);
