@@ -1,4 +1,4 @@
-/*	if_ec.c	4.1	82/04/11	*/
+/*	if_ec.c	4.2	82/04/11	*/
 
 #include "ec.h"
 #include "imp.h"
@@ -619,7 +619,7 @@ gottype:
 	ec = mtod(m, struct ec_header *);
 	for (i=0; i<6; i++)
 		ec->ec_shost[i] = es->es_enaddr[i];
-	if (dest & 0xffffff00 == 0)
+	if ((dest &~ 0xff) == 0)
 		for (i=0; i<6; i++)
 			ec->ec_dhost[i] = 0xff;
 	else {
