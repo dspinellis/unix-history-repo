@@ -1,7 +1,7 @@
 #
 # cursor package maker
 #
-# @(#)Makefile	1.11 (Berkeley) %G%
+# @(#)Makefile	1.12 (Berkeley) %G%
 #
 HEADERS=curses.h unctrl.h curses.ext
 CFILES=	box.c clear.c initscr.c endwin.c mvprintw.c mvscanw.c mvwin.c \
@@ -44,6 +44,9 @@ LDFLAGS=-n
 	${CC} ${CFLAGS} -p -c x.c
 	mv x.o $*.p
 
+.DEFAULT:
+	sccs get $@
+
 libcurses: ${HEADERS} crlib
 
 crlib: ${OBJS}
@@ -56,7 +59,7 @@ pcrlib: ${POBJS}
 	ranlib pcrlib
 
 test:	crlib test.o
-	${CC} ${LDFLAGS} ${CFLAGS} -o test test.o crlib -ltermlib
+	${CC} ${LDFLAGS} ${CFLAGS} -o test test.o -lcurses -ltermlib
 
 cat.o:	curses.h
 	${CC} -c ${CFLAGS} cat.c
@@ -85,6 +88,9 @@ tp:
 
 tar:
 	tar crvf curses.tar Makefile tags ${HEADERS} ${CFILES} llib-lcurses
+
+ar:
+	ar crv curses.ar Makefile tags ${HEADERS} ${CFILES} llib-lcurses
 
 llib-lcurses.ln: llib-lcurses
 	-(/lib/cpp -C -Dlint llib-lcurses | ${LPASS1} > llib-lcurses.ln ) 2>&1 | grep -v warning
