@@ -19,3 +19,6 @@ device snd1 at isa? port 0x388 irq 0 drq 0 vector sbintr
       If you have GravisUltrasound, uncomment 4
       If you have MPU-401, uncomment 5
 
+NOTE:  The MPU-401 driver may or may not work, and is unfortunately
+unverifiable since no one I know has one.  If you can test this,
+please let me know!	- Jordan Hubbard (jkh@freefall.cdrom.com)
