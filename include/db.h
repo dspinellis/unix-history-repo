@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)db.h	8.2 (Berkeley) 9/7/93
+ *	@(#)db.h	8.3 (Berkeley) 10/12/93
  */
 
 #ifndef _DB_H_
@@ -38,9 +38,10 @@
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
+#include <machine/endian.h>
 
 #include <limits.h>
-#include <machine/endian.h>
+#include <compat.h>
 
 #define	RET_ERROR	-1		/* Return values. */
 #define	RET_SUCCESS	 0
@@ -102,12 +103,12 @@ typedef struct __db {
 	DBTYPE type;			/* Underlying db type. */
 	int (*close)	__P((struct __db *));
 	int (*del)	__P((const struct __db *, const DBT *, u_int));
-	int (*fd)	__P((const struct __db *));
 	int (*get)	__P((const struct __db *, const DBT *, DBT *, u_int));
 	int (*put)	__P((const struct __db *, DBT *, const DBT *, u_int));
 	int (*seq)	__P((const struct __db *, DBT *, DBT *, u_int));
 	int (*sync)	__P((const struct __db *, u_int));
-	void *internal;			/* access method private */
+	void *internal;			/* Access method private. */
+	int (*fd)	__P((const struct __db *));
 } DB;
 
 #define	BTREEMAGIC	0x053162
