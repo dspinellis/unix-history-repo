@@ -1,3 +1,9 @@
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)5.t	1.2 (Berkeley) %G%
+.\"
 .ds RH "Advanced Topics
 .bp
 .nr H1 5
@@ -12,9 +18,9 @@
 .NL
 .PP
 A number of facilities have yet to be discussed.  For most users
-of the ipc the mechanisms already
+of the IPC the mechanisms already
 described will suffice in constructing distributed
-applications.  However, others will find need to utilize some
+applications.  However, others will find the need to utilize some
 of the features which we consider in this section.
 .NH 2
 Out of band data
@@ -23,11 +29,18 @@ The stream socket abstraction includes the notion of \*(lqout
 of band\*(rq data.  Out of band data is a logically independent 
 transmission channel associated with each pair of connected
 stream sockets.  Out of band data is delivered to the user
-independently of normal data along with the SIGURG signal.
+independently of normal data along with the SIGURG signal
+(if multiple sockets may have out of band data awaiting
+delivery, a \fIselect\fP call may be used to determine those
+sockets with such data).  A process can set the process group
+or process id to be informed by the SIGURG signal via the
+appropriate \fIfcntl\fP call, as described below for
+SIGIO.
+.PP
 In addition to the information passed, a logical mark is placed in
 the data stream to indicate the point at which the out
 of band data was sent.  The remote login and remote shell
-applications use this facility to propagate signals from between
+applications use this facility to propagate signals between
 client and server processes.  When a signal is expected to
 flush any pending output from the remote process(es), all
 data up to the mark in the data stream is discarded.
@@ -39,15 +52,16 @@ out of band message at a time.  This message may contain at least one
 byte of data, and at least one message may be pending delivery
 to the user at any one time.  For communications protocols which
 support only in-band signaling (i.e. the urgent data is
-delivered in sequence with the normal data) the system extracts
+delivered in sequence with the normal data), the system extracts
 the data from the normal data stream and stores it separately.
 This allows users to choose between receiving the urgent data
 in order and receiving it out of sequence without having to
-buffer all the intervening data.
+buffer all the intervening data.  It is not possible
+to ``peek'' (via MSG_PEEK) at out of band data.
 .PP
-To send an out of band message the SOF_OOB flag is supplied to
+To send an out of band message the MSG_OOB flag is supplied to
 a \fIsend\fP or \fIsendto\fP calls,
-while to receive out of band data SOF_OOB should be indicated
+while to receive out of band data MSG_OOB should be indicated
 when performing a \fIrecvfrom\fP or \fIrecv\fP call.
 To find out if the read pointer is currently pointing at
 the mark in the data stream, the SIOCATMARK ioctl is provided:
@@ -62,13 +76,15 @@ in the remote login process to flush output on receipt of an
 interrupt or quit signal is shown in Figure 5.
 .KF
 .DS
+#include <sys/ioctl.h>
+#include <sys/file.h>
+ ...
 oob()
 {
-	int out = 1+1;
+	int out = FWRITE;
 	char waste[BUFSIZ], mark;
 
-	signal(SIGURG, oob);
-	/* flush local terminal input and output */
+	/* flush local terminal output */
 	ioctl(1, TIOCFLUSH, (char *)&out);
 	for (;;) {
 		if (ioctl(rem, SIOCATMARK, &mark) < 0) {
@@ -79,7 +95,10 @@ oob()
 			break;
 		(void) read(rem, waste, sizeof (waste));
 	}
-	recv(rem, &mark, 1, SOF_OOB);
+	if (recv(rem, &mark, 1, MSG_OOB) < 0) {
+		perror("recv");
+		...
+	}
 	...
 }
 .DE
@@ -88,247 +107,87 @@ Figure 5.  Flushing terminal i/o on receipt of out of band data.
 .sp
 .KE
 .NH 2
+Interrupt driven socket i/o
+.PP
+The SIGIO signal allows a process to be notified
+via a signal when a socket (or more generally, a file
+descriptor) has data waiting to be read.  Use of
+the SIGIO facility requires three steps:  First,
+the process must set up a SIGIO signal handler
+by use of the \fIsignal\fP call.  Second,
+it must set the process id or process group id which is to receive
+notification of pending input to its own process id,
+or the process group id of its process group (note that
+the default process group of a socket is group zero).
+This is accomplished by use of a \fIfcntl\fP call.
+Third, it must turn on notification of pending i/o requests
+with another \fIfcntl\fP call.  Sample code to
+allow a given process to receive information on
+pending i/o requests as they occur for a socket \fIs\fP
+is given in Figure 6.  With slight change, this code can also
+be used to prepare for receipt of SIGURG signals.
+.KF
+.DS
+#include <fcntl.h>
+ ...
+int	io_handler();
+ ...
+signal(SIGIO, io_handler);
+
+/* Set the process receiving SIGIO/SIGURG signals to us */
+
+if (fcntl(s, F_SETOWN, getpid()) < 0) {
+	perror("fcntl F_SETOWN");
+	exit(1);
+}
+
+/* Allow receipt of asynchronous i/o signals */
+
+if (fcntl(s, F_SETFL, FASYNC) < 0) {
+	perror("fcntl F_SETFL, FASYNC");
+	exit(1);
+}
+.DE
+.ce
+Figure 6.  Use of asynchronous notification of i/o requests.
+.sp
+.KE
+.NH 2
 Signals and process groups
 .PP
 Due to the existence of the SIGURG and SIGIO signals each socket has an
-associated process group (just as is done for terminals).
-This process group is initialized to the process group of its
-creator, but may be redefined at a later time with the SIOCSPGRP
-ioctl:
-.DS
-ioctl(s, SIOCSPGRP, &pgrp);
-.DE
-A similar ioctl, SIOCGPGRP, is available for determining the
-current process group of a socket.
-.NH 2
-Pseudo terminals
-.PP
-Many programs will not function properly without a terminal
-for standard input and output.  Since a socket is not a terminal,
-it is often necessary to have a process communicating over
-the network do so through a \fIpseudo terminal\fP.  A pseudo
-terminal is actually a pair of devices, master and slave,
-which allow a process to serve as an active agent in communication
-between processes and users.  Data written on the slave side
-of a pseudo terminal is supplied as input to a process reading
-from the master side.  Data written on the master side is
-given the slave as input.  In this way, the process manipulating
-the master side of the pseudo terminal has control over the
-information read and written on the slave side.  The remote
-login server uses pseudo terminals for remote login sessions.
-A user logging in to a machine across the network is provided
-a shell with a slave pseudo terminal as standard input, output,
-and error.  The server process then handles the communication
-between the programs invoked by the remote shell and the user's
-local client process.  When a user sends an interrupt or quit
-signal to a process executing on a remote machine, the client
-login program traps the signal, sends an out of band message
-to the server process who then uses the signal number, sent
-as the data value in the out of band message, to perform a
-\fIkillpg\fP(2) on the appropriate process group.  
-.NH 2
-Internet address binding
-.PP
-Binding addresses to sockets in the Internet domain can be
-fairly complex.  Communicating processes are bound
-by an \fIassociation\fP.  An association 
-is composed of local and foreign
-addresses, and local and foreign ports.  Port numbers are
-allocated out of separate spaces, one for each Internet
-protocol.  Associations are always unique.  That is, there
-may never be duplicate <protocol, local address, local port, foreign
-address, foreign port> tuples. 
-.PP
-The bind system call allows a process to specify half of
-an association, <local address, local port>, while the connect
-and accept primitives are used to complete a socket's association.
-Since the association is created in two steps the association
-uniqueness requirement indicated above could be violated unless
-care is taken.  Further, it is unrealistic to expect user
-programs to always know proper values to use for the local address
-and local port since a host may reside on multiple networks and
-the set of allocated port numbers is not directly accessible
-to a user.
-.PP
-To simplify local address binding the notion of a
-\*(lqwildcard\*(rq address has been provided.  When an address
-is specified as INADDR_ANY (a manifest constant defined in
-<netinet/in.h>), the system interprets the address as 
-\*(lqany valid address\*(rq.  For example, to bind a specific
-port number to a socket, but leave the local address unspecified,
-the following code might be used:
-.DS
-#include <sys/types.h>
-#include <netinet/in.h>
- ...
-struct sockaddr_in sin;
- ...
-s = socket(AF_INET, SOCK_STREAM, 0);
-sin.sin_family = AF_INET;
-sin.sin_addr.s_addr = INADDR_ANY;
-sin.sin_port = MYPORT;
-bind(s, (char *)&sin, sizeof (sin));
-.DE
-Sockets with wildcarded local addresses may receive messages
-directed to the specified port number, and addressed to any
-of the possible addresses assigned a host.  For example,
-if a host is on a networks 46 and 10 and a socket is bound as
-above, then an accept call is performed, the process will be
-able to accept connection requests which arrive either from
-network 46 or network 10.
-.PP
-In a similar fashion, a local port may be left unspecified
-(specified as zero), in which case the system will select an
-appropriate port number for it.  For example:
-.DS
-sin.sin_addr.s_addr = MYADDRESS;
-sin.sin_port = 0;
-bind(s, (char *)&sin, sizeof (sin));
-.DE
-The system selects the port number based on two criteria.
-The first is that ports numbered 0 through 1023 are reserved
-for privileged users (i.e. the super user).  The second is
-that the port number is not currently bound to some other
-socket.  In order to find a free port number in the privileged
-range the following code is used by the remote shell server:
-.DS
-struct sockaddr_in sin;
- ...
-lport = IPPORT_RESERVED \- 1;
-sin.sin_addr.s_addr = INADDR_ANY;
- ...
-for (;;) {
-	sin.sin_port = htons((u_short)lport);
-	if (bind(s, (caddr_t)&sin, sizeof (sin)) >= 0)
-		break;
-	if (errno != EADDRINUSE && errno != EADDRNOTAVAIL) {
-		perror("socket");
-		break;
-	}
-	lport--;
-	if (lport == IPPORT_RESERVED/2) {
-		fprintf(stderr, "socket: All ports in use\en");
-		break;
-	}
-}
-.DE
-The restriction on allocating ports was done to allow processes
-executing in a \*(lqsecure\*(rq environment to perform authentication
-based on the originating address and port number.
-.PP
-In certain cases the algorithm used by the system in selecting
-port numbers is unsuitable for an application.  This is due to
-associations being created in a two step process.  For example,
-the Internet file transfer protocol, FTP, specifies that data
-connections must always originate from the same local port.  However,
-duplicate associations are avoided by connecting to different foreign
-ports.  In this situation the system would disallow binding the
-same local address and port number to a socket if a previous data
-connection's socket were around.  To override the default port
-selection algorithm then an option call must be performed prior
-to address binding:
-.DS
-setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (char *)0, 0);
-bind(s, (char *)&sin, sizeof (sin));
-.DE
-With the above call, local addresses may be bound which
-are already in use.  This does not violate the uniqueness
-requirement as the system still checks at connect time to
-be sure any other sockets with the same local address and
-port do not have the same foreign address and port (if an
-association already exists, the error EADDRINUSE is returned).
-.PP
-Local address binding by the system is currently
-done somewhat haphazardly when a host is on multiple
-networks.  Logically, one would expect
-the system to bind the local address associated with
-the network through which a peer was communicating.
-For instance, if the local host is connected to networks
-46 and 10 and the foreign host is on network 32, and
-traffic from network 32 were arriving via network
-10, the local address to be bound would be the host's address
-on network 10, not network 46.  This unfortunately, is
-not always the case.  For reasons too complicated to discuss
-here, the local address bound may be appear to be chosen
-at random.  This property of local address binding
-will normally be invisible to users unless the foreign
-host does not understand how to reach the address
-selected*.
-.FS
-* For example, if network 46 were unknown to the host on
-network 32, and the local address were bound to that located
-on network 46, then even though a route between the two hosts
-existed through network 10, a connection would fail.
-.FE
-.NH 2
-Broadcasting and datagram sockets
-.PP
-By using a datagram socket it is possible to send broadcast
-packets on many networks supported by the system (the network
-itself must support the notion of broadcasting; the system
-provides no broadcast simulation in software).  Broadcast
-messages can place a high load on a network since they force
-every host on the network to service them.  Consequently,
-the ability to send broadcast packets has been limited to
-the super user.
-.PP
-To send a broadcast message, an Internet datagram socket 
-should be created:
-.DS
-s = socket(AF_INET, SOCK_DGRAM, 0);
-.DE
-and at least a port number should be bound to the socket:
-.DS
-sin.sin_family = AF_INET;
-sin.sin_addr.s_addr = INADDR_ANY;
-sin.sin_port = MYPORT;
-bind(s, (char *)&sin, sizeof (sin));
-.DE
-Then the message should be addressed as:
-.DS
-dst.sin_family = AF_INET;
-dst.sin_addr.s_addr = INADDR_ANY;
-dst.sin_port = DESTPORT;
-.DE
-and, finally, a sendto call may be used:
-.DS
-sendto(s, buf, buflen, 0, &dst, sizeof (dst));
-.DE
-.PP
-Received broadcast messages contain the senders address
-and port (datagram sockets are anchored before
-a message is allowed to go out).  
-.NH 2
-Signals
-.PP
-Two new signals have been added to the system which may
-be used in conjunction with the interprocess communication
-facilities.  The SIGURG signal is associated with the existence
-of an \*(lqurgent condition\*(rq.  The SIGIO signal is used
-with \*(lqinterrupt driven i/o\*(rq (not presently implemented).
-SIGURG is currently supplied a process when out of band data
-is present at a socket.  If multiple sockets have out of band
-data awaiting delivery, a select call may be used to determine
-those sockets with such data.
+associated process number, just as is done for terminals.
+This value is initialized to zero,
+but may be redefined at a later time with the F_SETOWN
+\fIfcntl\fP, such as was done in the code above for SIGIO.
+To set the socket's process id for signals, positive arguments
+should be given to the \fIfcntl\fP call.  To set the socket's
+process group for signals, negative arguments should be 
+passed to \fIfcntl\fP.  Note that the process number indicates
+either the associated process id or the associated process
+group; it is impossible to specify both at the same time.
+A similar \fIfcntl\fP, F_GETOWN, is available for determining the
+current process number of a socket.
 .PP
 An old signal which is useful when constructing server processes
 is SIGCHLD.  This signal is delivered to a process when any
 children processes have changed state.  Normally servers use
 the signal to \*(lqreap\*(rq child processes after exiting.
 For example, the remote login server loop shown in Figure 2
-may be augmented as follows:
+may be augmented as shown in Figure 7.
+.KF
 .DS
 int reaper();
  ...
-sigset(SIGCHLD, reaper);
-listen(f, 10);
+signal(SIGCHLD, reaper);
+listen(f, 5);
 for (;;) {
 	int g, len = sizeof (from);
 
-	g = accept(f, &from, &len, 0);
+	g = accept(f, (struct sockaddr *)&from, &len,);
 	if (g < 0) {
 		if (errno != EINTR)
-			perror("rlogind: accept");
+			syslog(LOG_ERR, "rlogind: accept: %m");
 		continue;
 	}
 	...
@@ -343,6 +202,906 @@ reaper()
 		;
 }
 .DE
+.sp
+.ce
+Figure 7.  Use of the SIGCHLD signal.
+.sp
+.KE
 .PP
 If the parent server process fails to reap its children,
 a large number of \*(lqzombie\*(rq processes may be created.
+.NH 2
+Pseudo terminals
+.PP
+Many programs will not function properly without a terminal
+for standard input and output.  Since a socket is not a terminal,
+it is often necessary to have a process communicating over
+the network do so through a \fIpseudo terminal\fP.  A pseudo
+terminal is actually a pair of devices, master and slave,
+which allow a process to serve as an active agent in communication
+between processes and users.  Data written on the slave side
+of a pseudo terminal is supplied as input to a process reading
+from the master side, while data written on the master side is
+given to the slave as input.  In this way, the process manipulating
+the master side of the pseudo terminal has control over the
+information read and written on the slave side.
+The purpose of this abstraction is to
+preserve terminal semantics over a network connection \(em
+that is, the slave side looks like a normal terminal to
+any process reading from or writing to it.
+.PP
+For example, the remote
+login server uses pseudo terminals for remote login sessions.
+A user logging in to a machine across the network is provided
+a shell with a slave pseudo terminal as standard input, output,
+and error.  The server process then handles the communication
+between the programs invoked by the remote shell and the user's
+local client process.  When a user sends an interrupt or quit
+signal to a process executing on a remote machine, the client
+login program traps the signal, sends an out of band message
+to the server process who then uses the signal number, sent
+as the data value in the out of band message, to perform a
+\fIkillpg\fP(2) on the appropriate process group.  
+.PP
+Under 4.3BSD, the slave side of a pseudo terminal is
+\fI/dev/ttyxy\fP, where \fIx\fP is a single letter
+starting at `p' and perhaps continuing as far down
+as `t'.  \fIy\fP is a hexidecimal ``digit'' (i.e., a single
+character in the range 0 through 9 or `a' through `f').
+The master side of a pseudo terminal is \fI/dev/ptyxy\fP,
+where \fIx\fP and \fIy\fP correspond to the same letters
+in the slave side of the pseudo terminal.
+.PP
+In general, the method of obtaining a pair of master and
+slave pseudo terminals is made up of three components.
+First, the process must find a pseudo terminal which
+is not currently in use.  Having done so,
+it then opens both the master and the slave side of
+the device, taking care to open the master side of the device first.
+The process then \fIfork\fPs; the child closes
+the master side of the pseudo terminal, and \fIexec\fPs the
+appropriate program.  Meanwhile, the parent closes the
+slave side of the pseudo terminal and begins reading and
+writing from the master side.  Sample code making use of
+pseudo terminals is given in Figure 8; this code assumes
+that a connection on a socket \fIs\fP exists, connected
+to a peer who wants a service of some kind, and that the
+process has disassociated itself from a controlling terminal.
+.KF
+.DS
+gotpty = 0;
+for (c = 'p'; !gotpty && c <= 's'; c++) {
+	line = "/dev/ptyXX";
+	line[sizeof("/dev/pty")-1] = c;
+	line[sizeof("/dev/ptyp")-1] = '0';
+	if (stat(line, &statbuf) < 0)
+		break;
+	for (i = 0; i < 16; i++) {
+		line[sizeof("/dev/ptyp")-1] = "0123456789abcdef"[i];
+		master = open(line, O_RDWR);
+		if (master > 0) {
+			gotpty = 1;
+			break;
+		}
+	}
+}
+if (!gotpty) {
+	syslog(LOG_ERR, "All network ports in use");
+	exit(1);
+}
+
+line[sizeof("/dev/")-1] = 't';
+slave = open(line, O_RDWR);	/* \fIslave\fP is now slave side */
+if (slave < 0) {
+	syslog(LOG_ERR, "Cannot open slave pty %s", line);
+	exit(1);
+}
+
+ioctl(slave, TIOCGETP, &b);	/* Set slave tty modes */
+b.sg_flags = CRMOD|XTABS|ANYP;
+ioctl(slave, TIOCSETP, &b);
+
+i = fork();
+if (i < 0) {
+	syslog(LOG_ERR, "fork: %m");
+	exit(1);
+} else if (i) {		/* Parent */
+	close(slave);
+	...
+} else {		 /* Child */
+	(void) close(s);
+	(void) close(master);
+	dup2(slave, 0);
+	dup2(slave, 1);
+	dup2(slave, 2);
+	if (slave > 2)
+		(void) close(slave);
+	...
+}
+.DE
+.ce
+Figure 8.  Creation and use of a pseudo terminal
+.sp
+.KE
+.NH 2
+Selecting specific protocols
+.PP
+If the third argument to the \fIsocket\fP call is 0,
+\fIsocket\fP will select a default protocol to use with
+the returned socket of the type requested.  This
+protocol should be correct for almost every situation.
+Still, it is conceivable that the user may wish to specify
+a particular protocol for use with a given socket.
+.PP
+To obtain a particular protocol one selects the protocol number,
+as defined within the communication domain.  For the Internet
+domain the available protocols are defined in <\fInetinet/in.h\fP>
+or, better yet, one may use one of the library routines
+discussed in section 3, such as \fIgetprotobyname\fP:
+.DS
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+ ...
+pp = getprotobyname("newtcp");
+s = socket(AF_INET, SOCK_STREAM, pp->p_proto);
+.DE
+This would result in a socket \fIs\fP using a stream
+based connection, but with protocol type of ``newtcp''
+instead of the default ``tcp.''
+.PP
+In the NS domain, the available socket protocols are defined in
+<\fInetns/ns.h\fP>.  To create a raw socket for Xerox Error Protocol
+messages, one might use:
+.DS
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netns/ns.h>
+ ...
+s = socket(AF_NS, SOCK_RAW, NSPROTO_ERROR);
+.DE
+.NH 2
+Address binding
+.PP
+As was mentioned in section 2, 
+binding addresses to sockets in the Internet and NS domains can be
+fairly complex.  As a brief reminder, these associations
+are composed of local and foreign
+addresses, and local and foreign ports.  Port numbers are
+allocated out of separate spaces, one for each system and one
+for each domain on that system.
+Through the \fIbind\fP system call, a
+process may specify half of an association, the
+<local address, local port> part, while the
+\fIconnect\fP
+and \fIaccept\fP
+primitives are used to complete a socket's association by
+specifying the <foreign address, foreign port> part.
+Since the association is created in two steps the association
+uniqueness requirement indicated previously could be violated unless
+care is taken.  Further, it is unrealistic to expect user
+programs to always know proper values to use for the local address
+and local port since a host may reside on multiple networks and
+the set of allocated port numbers is not directly accessible
+to a user.
+.PP
+To simplify local address binding in the Internet domain the notion of a
+\*(lqwildcard\*(rq address has been provided.  When an address
+is specified as INADDR_ANY (a manifest constant defined in
+<netinet/in.h>), the system interprets the address as 
+\*(lqany valid address\*(rq.  For example, to bind a specific
+port number to a socket, but leave the local address unspecified,
+the following code might be used:
+.DS
+#include <sys/types.h>
+#include <netinet/in.h>
+ ...
+struct sockaddr_in sin;
+ ...
+s = socket(AF_INET, SOCK_STREAM, 0);
+sin.sin_family = AF_INET;
+sin.sin_addr.s_addr = htonl(INADDR_ANY);
+sin.sin_port = htons(MYPORT);
+bind(s, (struct sockaddr *) &sin, sizeof (sin));
+.DE
+Sockets with wildcarded local addresses may receive messages
+directed to the specified port number, and addressed to any
+of the possible addresses assigned to a host.  For example,
+if a host is on a networks 128.32 and 10 and a socket is bound as
+above, then an accept call is performed, the process will be
+able to accept connection requests which arrive either from
+network 128.32 or network 10.
+If a server process wished to only allow hosts on a
+given network connect to it, it would bind
+the address of the host on the appropriate network.  Such
+an address could perhaps be determined by a routine
+such as \fIgethostbynameandnet\fP, as mentioned in section 3.
+.PP
+In a similar fashion, a local port may be left unspecified
+(specified as zero), in which case the system will select an
+appropriate port number for it.  This shortcut will work
+both in the Internet and NS domains.  For example, to
+bind a specific local address to a socket, but to leave the
+local port number unspecified:
+.DS
+hp = gethostbyname(hostname);
+if (hp == NULL) {
+	...
+}
+bcopy(hp->h_addr, (char *) sin.sin_addr, hp->h_length);
+sin.sin_port = htons(0);
+bind(s, (struct sockaddr *) &sin, sizeof (sin));
+.DE
+The system selects the local port number based on two criteria.
+The first is that on 4BSD systems,
+local ports numbered 0 through 1023 (for the Xerox domain,
+0 through 3000) are reserved
+for privileged users (i.e., the super user).  The second is
+that the port number is not currently bound to some other
+socket.  In order to find a free Internet port number in the privileged
+range the \fIrresvport\fP library routine may be used as follows
+to return a stream socket in with a privileged port number:
+.DS
+int lport = IPPORT_RESERVED \- 1;
+int s;
+...
+s = rresvport(&lport);
+if (s < 0) {
+	if (errno == EAGAIN)
+		fprintf(stderr, "socket: all ports in use\en");
+	else
+		perror("rresvport: socket");
+	...
+}
+.DE
+The restriction on allocating ports was done to allow processes
+executing in a \*(lqsecure\*(rq environment to perform authentication
+based on the originating address and port number.  For example,
+the \fIrlogin\fP(1) command allows users to log in across a network
+without being asked for a password, if two conditions hold:
+First, the name of the system the user
+is logging in from is in the file
+\fI/etc/hosts.equiv\fP on the system he is logging
+in to (or the system name and the user name are in
+the user's \fI.rhosts\fP file in the user's home
+directory), and second, that the user's rlogin
+process is coming from a privileged port on the machine he is
+logging in from.  The port number and network address of the
+machine the user is logging in from can be determined either
+by the \fIfrom\fP value-result parameter to the \fIaccept\fP call, or
+from the \fIgetpeername\fP call.
+.PP
+In certain cases the algorithm used by the system in selecting
+port numbers is unsuitable for an application.  This is due to
+associations being created in a two step process.  For example,
+the Internet file transfer protocol, FTP, specifies that data
+connections must always originate from the same local port.  However,
+duplicate associations are avoided by connecting to different foreign
+ports.  In this situation the system would disallow binding the
+same local address and port number to a socket if a previous data
+connection's socket were around.  To override the default port
+selection algorithm then an option call must be performed prior
+to address binding:
+.DS
+ ...
+int	on = 1;
+ ...
+setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+bind(s, (struct sockaddr *) &sin, sizeof (sin));
+.DE
+With the above call, local addresses may be bound which
+are already in use.  This does not violate the uniqueness
+requirement as the system still checks at connect time to
+be sure any other sockets with the same local address and
+port do not have the same foreign address and port (if an
+association already exists, the error EADDRINUSE is returned).
+.NH 2
+Broadcasting and datagram sockets
+.PP
+By using a datagram socket it is possible to send broadcast
+packets on many networks supported by the system (the network
+itself must support the notion of broadcasting; the system
+provides no broadcast simulation in software).  Broadcast
+messages can place a high load on a network since they force
+every host on the network to service them.  Consequently,
+the ability to send broadcast packets has been limited
+to sockets which are explicitly marked as allowing broadcasting.
+.PP
+To send a broadcast message, a datagram socket 
+should be created:
+.DS
+s = socket(AF_INET, SOCK_DGRAM, 0);
+.DE
+or
+.DS
+s = socket(AF_NS, SOCK_DGRAM, 0);
+.DE
+The socket is marked as allowing broadcasting,
+.DS
+int	on = 1;
+
+setsockopt(s, SOL_SOCKET, SO_BROADCAST, &on, sizeof (on));
+.DE
+and at least a port number should be bound to the socket:
+.DS
+sin.sin_family = AF_INET;
+sin.sin_addr.s_addr = htonl(INADDR_ANY);
+sin.sin_port = htons(MYPORT);
+bind(s, (struct sockaddr *) &sin, sizeof (sin));
+.DE
+or, for the NS domain,
+.DS
+sns.sns_family = AF_NS;
+netnum = htonl(net);
+sns.sns_addr.x_net = *(union ns_net *) &netnum; /* insert net number */
+sns.sns_addr.x_port = htons(MYPORT);
+bind(s, (struct sockaddr *) &sns, sizeof (sns));
+.DE
+The destination address of the message to be broadcast
+depends on the network the message is to be broadcast
+on, and therefore requires some knowledge of the networks
+to which the host is connected.  Since this information should
+be obtained in a host-independent fashion, 4.3BSD provides a method of
+retrieving this information from the system data structures.
+The SIOCGIFCONF \fIioctl\fP call returns the interface
+configuration of a host in the form of a
+single \fIifconf\fP structure; this structure contains
+a ``data area'' which is made up of an array of
+of \fIifreq\fP structures, one for each network interface
+to which the host is connected.
+These structures are defined in
+\fI<net/if.h>\fP as follows:
+.DS
+.if t .ta .5i 1.0i 1.5i 3.5i
+.if n .ta .7i 1.4i 2.1i 3.4i
+struct ifconf {
+	int	ifc_len;		/* size of associated buffer */
+	union {
+		caddr_t	ifcu_buf;
+		struct	ifreq *ifcu_req;
+	} ifc_ifcu;
+};
+
+#define	ifc_buf	ifc_ifcu.ifcu_buf		/* buffer address */
+#define	ifc_req	ifc_ifcu.ifcu_req		/* array of structures returned */
+
+#define	IFNAMSIZ	16
+
+struct ifreq {
+	char	ifr_name[IFNAMSIZ];		/* if name, e.g. "en0" */
+	union {
+		struct	sockaddr ifru_addr;
+		struct	sockaddr ifru_dstaddr;
+		struct	sockaddr ifru_broadaddr;
+		short	ifru_flags;
+		caddr_t	ifru_data;
+	} ifr_ifru;
+};
+
+.if t .ta \w'  #define'u +\w'  ifr_broadaddr'u +\w'  ifr_ifru.ifru_broadaddr'u
+#define	ifr_addr	ifr_ifru.ifru_addr	/* address */
+#define	ifr_dstaddr	ifr_ifru.ifru_dstaddr	/* other end of p-to-p link */
+#define	ifr_broadaddr	ifr_ifru.ifru_broadaddr	/* broadcast address */
+#define	ifr_flags	ifr_ifru.ifru_flags	/* flags */
+#define	ifr_data	ifr_ifru.ifru_data	/* for use by interface */
+.DE
+The actual call which obtains the
+interface configuration is
+.DS
+struct ifconf ifc;
+char buf[BUFSIZ];
+
+ifc.ifc_len = sizeof (buf);
+ifc.ifc_buf = buf;
+if (ioctl(s, SIOCGIFCONF, (char *) &ifc) < 0) {
+	...
+}
+.DE
+After this call \fIbuf\fP will contain one \fIifreq\fP structure for
+each network to which the host is connected, and
+\fIifc.ifc_len\fP will have been modified to reflect the number
+of bytes used by the \fIifreq\fP structures.
+.PP
+For each structure
+there exists a set of ``interface flags'' which tell
+whether the network corresponding to that interface is
+up or down, point to point or broadcast, etc.  The
+SIOCGIFFLAGS \fIioctl\fP retrieves these
+flags for an interface specified by an \fIifreq\fP
+structure as follows:
+.DS
+struct ifreq *ifr;
+
+ifr = ifc.ifc_req;
+
+for (n = ifc.ifc_len / sizeof (struct ifreq); --n >= 0; ifr++) {
+	/*
+	 * We must be careful that we don't use an interface
+	 * devoted to an address family other than our own;
+	 * if we were interested in NS interfaces, the
+	 * AF_INET would be AF_NS.
+	 */
+	if (ifr->ifr_addr.sa_family != AF_INET)
+		continue;
+	if (ioctl(s, SIOCGIFFLAGS, (char *) ifr) < 0) {
+		...
+	}
+	if ((ifr->ifr_flags & IFF_UP) == 0 ||	/* Skip boring cases */
+	    (ifr->ifr_flags & (IFF_BROADCAST | IFF_POINTTOPOINT)) == 0)
+		continue;
+.DE
+.PP
+Once the flags have been obtained, the broadcast address 
+must be obtained.  In the case of broadcast networks this is
+done via the SIOCGIFBRDADDR \fIioctl\fP, while for point-to-point networks
+the address of the destination host is obtained with SIOCGIFDSTADDR.
+.DS
+struct sockaddr dst;
+
+if (ifr->ifr_flags & IFF_POINTTOPOINT) {
+	if (ioctl(s, SIOCGIFDSTADDR, (char *) ifr) < 0) {
+		...
+	}
+	bcopy((char *) ifr->ifr_dstaddr, (char *) &dst, sizeof (ifr->ifr_dstaddr));
+} else if (ifr->ifr_flags & IFF_BROADCAST) {
+	if (ioctl(s, SIOCGIFBRDADDR, (char *) ifr) < 0) {
+		...
+	}
+	bcopy((char *) ifr->ifr_broadaddr, (char *) &dst, sizeof (ifr->ifr_broadaddr));
+}
+.DE
+.PP
+After the appropriate \fIioctl\fP's have obtained the broadcast
+or destination address (now in \fIdst\fP), the \fIsendto\fP call may be
+used:
+.DS
+	sendto(s, buf, buflen, 0, (struct sockaddr *)&dst, sizeof (dst));
+}
+.DE
+In the above loop one \fIsendto\fP occurs for every
+interface the host is connected to which supports the notion of
+broadcast or point-to-point addressing.
+If a process only wished to send broadcast
+messages on a given network, code similar to that outlined above
+would be used, but the loop would need to find the
+correct destination address.
+.PP
+Received broadcast messages contain the senders address
+and port, as datagram sockets are bound before
+a message is allowed to go out.
+.NH 2
+Socket Options
+.PP
+It is possible to set and get a number of options on sockets
+via the \fIsetsockopt\fP and \fIgetsockopt\fP system calls.
+These options include such things as marking a socket for
+broadcasting, not to route, to linger on close, etc.
+The general forms of the calls are:
+.DS
+setsockopt(s, level, optname, optval, optlen);
+.DE
+and
+.DS
+getsockopt(s, level, optname, optval, optlen);
+.DE
+.PP
+The parameters to the calls are as follows: \fIs\fP
+is the socket on which the option is to be applied.
+\fILevel\fP specifies the protocol layer on which the
+option is to be applied; in most cases this is
+the ``socket level'', indicated by the symbolic constant
+SOL_SOCKET, defined in \fI<sys/socket.h>.\fP
+The actual option is specified in \fIoptname\fP, and is
+a symbolic constant also defined in \fI<sys/socket.h>\fP.
+\fIOptval\fP and \fIOptlen\fP point to the value of the
+option (in most cases, whether the option is to be turned
+on or off), and the length of the value of the option,
+respectively.
+For \fIgetsockopt\fP, \fIoptlen\fP is
+a value-result parameter, initially set to the size of
+the storage area pointed to by \fIoptval\fP, and modified
+upon return to indicate the actual amount of storage used.
+.PP
+An example should help clarify things.  It is sometimes
+useful to determine the type (e.g., stream, datagram, etc.)
+of an existing socket; programs
+under \fIinetd\fP (described below) may need to perform this
+task.  This can be accomplished as follows via the
+SO_TYPE socket option and the \fIgetsockopt\fP call:
+.DS
+#include <sys/types.h>
+#include <sys/socket.h>
+
+int type, size;
+
+size = sizeof (int);
+
+if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *) &type, &size) < 0) {
+	...
+}
+.DE
+After the \fIgetsockopt\fP call, \fItype\fP will be set
+to the value of the socket type, as defined in
+\fI<sys/socket.h>\fP.  If, for example, the socket were
+a datagram socket, \fItype\fP would have the value
+corresponding to SOCK_DGRAM.
+.NH 2
+NS Packet Sequences
+.PP
+The semantics of NS connections demand that
+the user both be able to look inside the network header associated
+with any incoming packet and be able to specify what should go
+in certain fields of an outgoing packet.  The header of an
+IDP-level packet looks like:
+.DS
+.if t .ta \w'struct  'u +\w"  struct ns_addr"u +2.0i
+struct idp {
+	u_short	idp_sum;	/* Checksum */
+	u_short	idp_len;	/* Length, in bytes, including header */
+	u_char	idp_tc;		/* Transport Control (i.e., hop count) */
+	u_char	idp_pt;		/* Packet Type (i.e., level 2 protocol) */
+	struct ns_addr	idp_dna;	/* Destination Network Address */
+	struct ns_addr	idp_sna;	/* Source Network Address */
+};
+.DE
+Most of the fields are filled in automatically; the only
+field that the user should be concerned with is the 
+\fIpacket type\fP field.  The standard values for this
+field are (as defined in <\fInetns/ns.h\fP>):
+.DS
+.if t .ta \w"  #define"u +\w"  NSPROTO_ERROR"u +1.0i
+#define NSPROTO_RI	1		/* Routing Information */
+#define NSPROTO_ECHO	2		/* Echo Protocol */
+#define NSPROTO_ERROR	3		/* Error Protocol */
+#define NSPROTO_PE	4		/* Packet Exchange */
+#define NSPROTO_SPP	5		/* Sequenced Packet */
+.DE
+For SPP connections, the contents of this field are
+automatically set to NSPROTO_SPP; for IDP packets,
+this value defaults to zero, which means ``unknown''.
+.PP
+The contents of a SPP header (minus the IDP header) are:
+.DS
+.if t .ta \w"  #define"u +\w"  u_short"u +2.0i
+struct sphdr {
+	u_char	sp_cc;		/* connection control */
+#define	SP_SP	0x80		/* system packet */
+#define	SP_SA	0x40		/* send acknowledgement */
+#define	SP_OB	0x20		/* attention (out of band data) */
+#define	SP_EM	0x10		/* end of message */
+	u_char	sp_dt;		/* datastream type */
+	u_short	sp_sid;		/* source connection identifier */
+	u_short	sp_did;		/* destination connection identifier */
+	u_short	sp_seq;		/* sequence number */
+	u_short	sp_ack;		/* acknowledge number */
+	u_short	sp_alo;		/* allocation number */
+};
+.DE
+Here, the items of interest are the \fIdatastream type\fP and
+the \fIconnection control\fP fields.  The semantics of the
+datastream type are defined by the application(s) in question;
+the value of this field is, by default, zero, but it can be
+used to indicate things such as Xerox's Bulk Data Transfer
+Protocol (in which case it is set to one).  The connection control
+field is a mask of the flags defined above.  The user may
+set or clear the end-of-message bit to indicate
+that a given message is the last of a given substream type,
+or may set/clear the attention bit as an alternate way to
+indicate that a packet should be sent out-of-band.
+.PP
+Using different calls to \fIsetsockopt\fP, is it possible
+to indicate whether prototype headers will be associated by
+the user with each outgoing packet (SO_HEADERS_ON_OUTPUT),
+to indicate whether the headers received by the system should be
+delivered to the user (SO_HEADERS_ON_INPUT), or to indicate
+default information that should be associated with all
+outgoing packets on a given socket (SO_DEFAULT_HEADERS).
+For example, to associate prototype headers with outgoing
+SPP packets, one might use:
+.DS
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netns/ns.h>
+#include <netns/sp.h>
+ ...
+struct sockaddr_ns sns, to;
+int s, on = 1;
+struct databuf {
+	struct sphdr proto_spp;	/* prototype header */
+	char buf[534];		/* max. possible data by Xerox std. */
+} buf;
+ ...
+s = socket(AF_NS, SOCK_SEQPACKET, 0);
+ ...
+bind(s, (struct sockaddr *) &sns, sizeof (sns));
+setsockopt(s, NSPROTO_SPP, SO_HEADERS_ON_OUTPUT, &on, sizeof(on));
+ ...
+buf.proto_spp.sp_dt = 1;	/* bulk data */
+buf.proto_spp.sp_cc = SP_EM;	/* end-of-message */
+strcpy(buf.buf, "hello world\en");
+sendto(s, (char *) &buf, sizeof(struct sphdr) + strlen("hello world\en"),
+    (struct sockaddr *) &to, sizeof(to));
+ ...
+.DE
+Note that one must be careful when writing headers; if the prototype
+header is not written with the data with which it is to be associated,
+the kernel will treat the first few bytes of the data as the
+header, with unpredictable results.
+To turn off the above association, and to indicate that packet
+headers received by the system should be passed up to the user,
+one might use:
+.DS
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netns/ns.h>
+#include <netns/sp.h>
+ ...
+struct sockaddr sns;
+int s, on = 1, off = 0;
+ ...
+s = socket(AF_NS, SOCK_SEQPACKET, 0);
+ ...
+bind(s, (struct sockaddr *) &sns, sizeof (sns));
+setsockopt(s, NSPROTO_SPP, SO_HEADERS_ON_OUTPUT, &off, sizeof(off));
+setsockopt(s, NSPROTO_SPP, SO_HEADERS_ON_INPUT, &on, sizeof(on));
+ ...
+.DE
+To indicate a default prototype header to be associated with
+the outgoing packets on an IDP datagram socket, one would use:
+.DS
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netns/ns.h>
+#include <netns/idp.h>
+ ...
+struct sockaddr sns;
+struct idp proto_idp;		/* prototype header */
+int s, on = 1;
+ ...
+s = socket(AF_NS, SOCK_DGRAM, 0);
+ ...
+bind(s, (struct sockaddr *) &sns, sizeof (sns));
+proto_idp.idp_pt = NSPROTO_PE;	/* packet exchange */
+setsockopt(s, NSPROTO_IDP, SO_DEFAULT_HEADERS, (char *) &proto_idp,
+    sizeof(proto_idp));
+ ...
+.DE
+.NH 2
+Three-way Handshake
+.PP
+The semantics of SPP connections indicates that a three-way
+handshake, involving changes in the datastream type, should \(em
+but is not absolutely required to \(em take place before a SPP
+connection is closed.  Almost all SPP connections are
+``well-behaved'' in this manner; when communicating with
+any process, it is best to assume that the three-way handshake
+is required unless it is known for certain that it is not
+required.  In a three-way close, the closing process
+indicates that it wishes to close the connection by sending
+a zero-length packet with end-of-message set and with
+datastream type 254.  The other side of the connection
+indicates that it is OK to close by sending a zero-length
+packet with end-of-message set and datastream type 255.  Finally,
+the closing process replies with a zero-length packet with 
+substream type 255; at this point, the connection is considered
+closed.  The following code fragments are simplified examples
+of how one might handle this three-way handshake at the user
+level; in the future, support for this type of close will
+probably be provided as part of the C library or as part of
+the kernel.  The first code fragment below illustrates how a process
+might handle three-way handshake if it sees that the process it
+is communicating with wants to close the connection:
+.DS
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netns/ns.h>
+#include <netns/sp.h>
+ ...
+#ifndef SPPSST_END
+#define SPPSST_END 254
+#define SPPSST_ENDREPLY 255
+#endif
+struct sphdr proto_sp;
+int s;
+ ...
+read(s, buf, BUFSIZE);
+if (((struct sphdr *)buf)->sp_dt == SPPSST_END) {
+	/*
+	 * SPPSST_END indicates that the other side wants to
+	 * close.
+	 */
+	proto_sp.sp_dt = SPPSST_ENDREPLY;
+	proto_sp.sp_cc = SP_EM;
+	setsockopt(s, NSPROTO_SPP, SO_DEFAULT_HEADERS, (char *)&proto_sp,
+	    sizeof(proto_sp));
+	write(s, buf, 0);
+	/*
+	 * Write a zero-length packet with datastream type = SPPSST_ENDREPLY
+	 * to indicate that the close is OK with us.  The packet that we
+	 * don't see (because we don't look for it) is another packet
+	 * from the other side of the connection, with SPPSST_ENDREPLY
+	 * on it it, too.  Once that packet is sent, the connection is
+	 * considered closed; note that we really ought to retransmit
+	 * the close for some time if we do not get a reply.
+	 */
+	close(s);
+}
+ ...
+.DE
+To indicate to another process that we would like to close the
+connection, the following code would suffice:
+.DS
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netns/ns.h>
+#include <netns/sp.h>
+ ...
+#ifndef SPPSST_END
+#define SPPSST_END 254
+#define SPPSST_ENDREPLY 255
+#endif
+struct sphdr proto_sp;
+int s;
+ ...
+proto_sp.sp_dt = SPPSST_END;
+proto_sp.sp_cc = SP_EM;
+setsockopt(s, NSPROTO_SPP, SO_DEFAULT_HEADERS, (char *)&proto_sp,
+    sizeof(proto_sp));
+write(s, buf, 0);	/* send the end request */
+proto_sp.sp_dt = SPPSST_ENDREPLY;
+setsockopt(s, NSPROTO_SPP, SO_DEFAULT_HEADERS, (char *)&proto_sp,
+    sizeof(proto_sp));
+/*
+ * We assume (perhaps unwisely)
+ * that the other side will send the
+ * ENDREPLY, so we'll just send our final ENDREPLY
+ * as if we'd seen theirs already.
+ */
+write(s, buf, 0);
+close(s);
+ ...
+.DE
+.NH 2
+Packet Exchange
+.PP
+The Xerox standard protocols include a protocol that is both
+reliable and datagram-oriented.  This protocol is known as
+Packet Exchange (PEX or PE) and, like SPP, is layered on top
+of IDP.  PEX is important for a number of things: Courier
+remote procedure calls may be expedited through the use
+of PEX, and many Xerox servers are located by doing a PEX
+``BroadcastForServers'' operation.  Although there is no
+implementation of PEX in the kernel,
+it may be simulated at the user level with some clever coding
+and the use of one peculiar \fIgetsockopt\fP.  A PEX packet
+looks like:
+.DS
+.if t .ta \w'struct  'u +\w"  struct idp"u +2.0i
+/*
+ * The packet-exchange header shown here is not defined
+ * as part of any of the system include files.
+ */
+struct pex {
+	struct idp	p_idp;	/* idp header */
+	u_short	ph_id[2];	/* unique transaction ID for pex */
+	u_short	ph_client;	/* client type field for pex */
+};
+.DE
+The \fIph_id\fP field is used to hold a ``unique id'' that
+is used in duplicate suppression; the \fIph_client\fP
+field indicates the PEX client type (similar to the packet
+type field in the IDP header).  PEX reliability stems from the
+fact that it is an idempotent (``I send a packet to you, you
+send a packet to me'') protocol.  Processes on each side of
+the connection may use the unique id to determine if they have
+seen a given packet before (the unique id field differs on each
+packet sent) so that duplicates may be detected, and to indicate
+which message a given packet is in response to.  If a packet with
+a given unique id is sent and no response is received in a given
+amount of time, the packet is retransmitted until it is decided
+that no response will ever be received.  To simulate PEX, one
+must be able to generate unique ids -- something that is hard to
+do at the user level with any real guarantee that the id is really
+unique.  Therefore, a means (via \fIgetsockopt\fP) has been provided
+for getting unique ids from the kernel.  The following code fragment
+indicates how to get a unique id:
+.DS
+long uniqueid;
+int s, idsize = sizeof(uniqueid);
+ ...
+s = socket(AF_NS, SOCK_DGRAM, 0);
+ ...
+/* get id from the kernel -- only on IDP sockets */
+getsockopt(s, NSPROTO_PE, SO_SEQNO, (char *)&uniqueid, &idsize);
+ ...
+.DE
+The retransmission and duplicate suppression code required to
+simulate PEX fully is left as an exercise for the reader.
+.NH 2
+Non-Blocking Sockets
+.PP
+It is occasionally convenient to make use of sockets
+which do not block; that is, i/o requests which
+would take time and
+would cause the process to wait for their completion are
+not executed, and an error code is returned.
+Once a socket has been created via
+the \fIsocket\fP call, it may be marked as non-blocking
+by \fIfcntl\fP as follows:
+.DS
+#include <fcntl.h>
+ ...
+int	s;
+ ...
+s = socket(AF_INET, SOCK_STREAM, 0);
+ ...
+if (fcntl(s, F_SETFL, FNDELAY) < 0)
+	perror("fcntl F_SETFL, FNDELAY");
+	exit(1);
+}
+ ...
+.DE
+.PP
+When performing non-blocking i/o on sockets, one must be
+careful to check for the error EWOULDBLOCK (stored in the
+global variable \fIerrno\fP), which occurs when
+an operation would normally block, but the socket it
+was performed on is marked as non-blocking.
+In particular, \fIaccept\fP, \fIconnect\fP, \fIsend\fP, \fIrecv\fP,
+\fIread\fP, and \fIwrite\fP can
+all return EWOULDBLOCK, and processes should be prepared
+to deal with such return codes.
+.NH 2
+Inetd
+.PP
+One of the daemons provided with 4.3BSD is \fIinetd\fP, the
+so called ``internet super-server.''  \fIInetd\fP is invoked at boot
+time, and determines from the file \fI/etc/inetd.conf\fP the
+servers for which it is to listen.  Once this information has been
+read and a pristine environment created, \fIinetd\fP proceeds
+to create one socket for each service it is to listen for,
+binding the appropriate port number to each socket.
+.PP
+\fIInetd\fP then performs a \fIselect\fP on all these
+sockets for read availability, waiting for somebody wishing
+a connection to the service corresponding to
+that socket.  \fIInetd\fP then performs an \fIaccept\fP on
+the socket in question, \fIfork\fPs, \fIdup\fPs the new
+socket to file descriptors 0 and 1 (stdin and
+stdout), closes other open file
+descriptors, and \fIexec\fPs the appropriate server.
+.PP
+Servers making use of \fIinetd\fP are considerably simplified,
+as \fIinetd\fP takes care of the majority of the IPC work
+required in establishing a connection.  The server invoked
+by \fIinetd\fP expects the socket connected to its client
+on file descriptors 0 and 1, and may immediately perform
+any operations such as \fIread\fP, \fIwrite\fP, \fIsend\fP,
+or \fIrecv\fP.  Indeed, servers may use
+buffered i/o as provided by the ``stdio'' conventions, as
+long as as they remember to use \fIfflush\fP when appropriate.
+.PP
+One call which may be of interest to individuals writing
+servers under \fIinetd\fP is the \fIgetpeername\fP call,
+which returns the address of the peer (process) connected
+on the other end of the socket.  For example, to log the
+Internet address in ``dot notation'' (e.g., ``128.32.0.4'')
+of a client connected to a server under
+\fIinetd\fP, the following code might be used:
+.DS
+struct sockaddr_in name;
+int namelen = sizeof (name);
+ ...
+if (getpeername(0, (struct sockaddr *)&name, &namelen) < 0) {
+	syslog(LOG_ERR, "getpeername: %m");
+	exit(1);
+} else
+	syslog(LOG_INFO, "Connection from %s", inet_ntoa(name.sin_addr));
+ ...
+.DE
+While the \fIgetpeername\fP call is especially useful when
+writing programs to run with \fIinetd\fP, it can be used
+at any time.  Be warned, however, that \fIgetpeername\fP will
+fail on UNIX domain sockets, as their addresses (i.e., pathnames)
+are inaccessible.

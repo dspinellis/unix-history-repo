@@ -1,7 +1,14 @@
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)4.t	1.2 (Berkeley) %G%
+.\"
 .ds RH "Client/Server Model
 .bp
 .nr H1 4
 .nr H2 0
+.sp 8i
 .bp
 .LG
 .B
@@ -19,13 +26,13 @@ in section 2.  In this section we will look more closely at the interactions
 between client and server, and consider some of the problems in developing
 client and server applications.
 .PP
-Client and server require a well known set of conventions before
+The client and server require a well known set of conventions before
 service may be rendered (and accepted).  This set of conventions
 comprises a protocol which must be implemented at both ends of a
 connection.  Depending on the situation, the protocol may be symmetric
 or asymmetric.  In a symmetric protocol, either side may play the 
 master or slave roles.  In an asymmetric protocol, one side is
-immutably recognized as the master, with the other the slave.  
+immutably recognized as the master, with the other as the slave.  
 An example of a symmetric protocol is the TELNET protocol used in
 the Internet for remote terminal emulation.  An example
 of an asymmetric protocol is the Internet file transfer protocol,
@@ -35,42 +42,53 @@ is a \*(lqclient process\*(rq and a \*(lqserver process\*(rq.  We
 will first consider the properties of server processes, then
 client processes.
 .PP
-A server process normally listens at a well know address for
-service requests.  Alternative schemes which use a service server
+A server process normally listens at a well known address for
+service requests.  That is, the server process remains dormant
+until a connection is requested by a client's connection
+to the server's address.  At such a time
+the server process ``wakes up'' and services the client,
+performing whatever appropriate actions the client requests of it.
+.PP
+Alternative schemes which use a service server
 may be used to eliminate a flock of server processes clogging the
-system while remaining dormant most of the time.  The Xerox
-Courier protocol uses the latter scheme.  When using Courier, a
-Courier client process contacts a Courier server at the remote
-host and identifies the service it requires.  The Courier server
-process then creates the appropriate server process based on a
-data base and \*(lqsplices\*(rq the client and server together,
-voiding its part in the transaction.  This scheme is attractive
-in that the Courier server process may provide a single contact
-point for all services, as well as carrying out the initial steps
-in authentication.  However, while this is an attractive possibility
-for standardizing access to services, it does introduce a certain
-amount of overhead due to the intermediate process involved.
-Implementations which provide this type of service within the
-system can minimize the cost of client server
-rendezvous.  The \fIportal\fP notion described
-in the \*(lq4.2BSD System Manual\*(rq embodies many of the ideas
-found in Courier, with the rendezvous mechanism implemented internal
-to the system.
+system while remaining dormant most of the time.  For Internet
+servers in 4.3BSD,
+this scheme has been implemented via \fIinetd\fP, the so called
+``internet super-server.''  \fIInetd\fP listens at a variety
+of ports, determined at start-up by reading a configuration file.
+When a connection is requested to a port on which \fIinetd\fP is
+listening, \fIinetd\fP executes the appropriate server program to handle the
+client.  With this method, clients are unaware that an
+intermediary such as \fIinetd\fP has played any part in the
+connection.  \fIInetd\fP will be described in more detail in
+section 5.
+.PP
+A similar alternative scheme is used by most Xerox services.  In general,
+the Courier dispatch process (if used) accepts connections from
+processes requesting services of some sort or another.  The client
+processes request a particular <program number, version number, procedure
+number> triple.  If the dispatcher knows of such a program, it is
+started to handle the request; if not, an error is reported to the
+client.  In this way, only one port is required to service a large
+variety of different requests.  Again, the Courier facilities are
+not available without the use and installation of the Courier
+compiler.  The information presented in this section applies only
+to NS clients and services that do not use Courier.
 .NH 2
 Servers
 .PP
-In 4.2BSD most servers are accessed at well known Internet addresses
-or UNIX domain names.  When a server is started at boot time it
-advertises it services by listening at a well know location.  For
+In 4.3BSD most servers are accessed at well known Internet addresses
+or UNIX domain names.  For
 example, the remote login server's main loop is of the form shown
 in Figure 2.
 .KF
-.if t .ta .5i 1.0i 1.5i 2.0i
-.if n .ta .7i 1.4i 2.1i 2.8i
+.if t .ta .5i 1.0i 1.5i 2.0i 2.5i 3.0i 3.5i
+.if n .ta .7i 1.4i 2.1i 2.8i 3.5i 4.2i 4.9i
+.sp 0.5i
 .DS
 main(argc, argv)
 	int argc;
-	char **argv;
+	char *argv[];
 {
 	int f;
 	struct sockaddr_in from;
@@ -83,14 +101,15 @@ main(argc, argv)
 	}
 	...
 #ifndef DEBUG
-	<<disassociate server from controlling terminal>>
-#endif
+	/* Disassociate server from controlling terminal */
 	...
-	sin.sin_port = sp->s_port;
+#endif
+
+	sin.sin_port = sp->s_port;	/* Restricted port -- see section 5 */
 	...
 	f = socket(AF_INET, SOCK_STREAM, 0);
 	...
-	if (bind(f, (caddr_t)&sin, sizeof (sin)) < 0) {
+	if (bind(f, (struct sockaddr *) &sin, sizeof (sin)) < 0) {
 		...
 	}
 	...
@@ -98,10 +117,10 @@ main(argc, argv)
 	for (;;) {
 		int g, len = sizeof (from);
 
-		g = accept(f, &from, &len);
+		g = accept(f, (struct sockaddr *) &from, &len);
 		if (g < 0) {
 			if (errno != EINTR)
-				perror("rlogind: accept");
+				syslog(LOG_ERR, "rlogind: accept: %m");
 			continue;
 		}
 		if (fork() == 0) {
@@ -114,7 +133,7 @@ main(argc, argv)
 .DE
 .ce
 Figure 2.  Remote login server.
-.sp
+.sp 0.5i
 .KE
 .PP
 The first step taken by the server is look up its service
@@ -132,37 +151,64 @@ if (sp == NULL) {
 .sp 1
 .in -5
 .fi
-This definition is used in later portions of the code to
+The result of the \fIgetservbyname\fP call
+is used in later portions of the code to
 define the Internet port at which it listens for service
 requests (indicated by a connection).
+.KS
 .PP
 Step two is to disassociate the server from the controlling
-terminal of its invoker.  This is important as the server will
+terminal of its invoker:
+.DS
+	for (i = 0; i < 3; ++i)
+		close(i);
+
+	open("/", O_RDONLY);
+	dup2(0, 1);
+	dup2(0, 2);
+
+	i = open("/dev/tty", O_RDWR);
+	if (i >= 0) {
+		ioctl(i, TIOCNOTTY, 0);
+		close(i);
+	}
+.DE
+.KE
+This step is important as the server will
 likely not want to receive signals delivered to the process
-group of the controlling terminal. 
+group of the controlling terminal.  Note, however, that
+once a server has disassociated itself it can no longer
+send reports of errors to a terminal, and must log errors
+via \fIsyslog\fP.
 .PP
 Once a server has established a pristine environment, it
 creates a socket and begins accepting service requests.
 The \fIbind\fP call is required to insure the server listens
-at its expected location.  The main body of the loop is
-fairly simple:
+at its expected location.  It should be noted that the
+remote login server listens at a restricted port number, and must
+therefore be run
+with a user-id of root.
+This concept of a ``restricted port number'' is 4BSD
+specific, and is covered in section 5.
+.PP
+The main body of the loop is fairly simple:
 .DS
 .if t .ta .5i 1.0i 1.5i 2.0i
 .if n .ta .7i 1.4i 2.1i 2.8i
 for (;;) {
 	int g, len = sizeof (from);
 
-	g = accept(f, &from, &len);
+	g = accept(f, (struct sockaddr *)&from, &len);
 	if (g < 0) {
 		if (errno != EINTR)
-			perror("rlogind: accept");
+			syslog(LOG_ERR, "rlogind: accept: %m");
 		continue;
 	}
-	if (fork() == 0) {
+	if (fork() == 0) {	/* Child */
 		close(f);
 		doit(g, &from);
 	}
-	close(g);
+	close(g);		/* Parent */
 }
 .DE
 An \fIaccept\fP call blocks the server until
@@ -170,12 +216,16 @@ a client requests service.  This call could return a
 failure status if the call is interrupted by a signal
 such as SIGCHLD (to be discussed in section 5).  Therefore,
 the return value from \fIaccept\fP is checked to insure
-a connection has actually been established.  With a connection
+a connection has actually been established, and
+an error report is logged via \fIsyslog\fP if an error
+has occurred.
+.PP
+With a connection
 in hand, the server then forks a child process and invokes
 the main body of the remote login protocol processing.  Note
 how the socket used by the parent for queueing connection
 requests is closed in the child, while the socket created as
-a result of the accept is closed in the parent.  The
+a result of the \fIaccept\fP is closed in the parent.  The
 address of the client is also handed the \fIdoit\fP routine
 because it requires it in authenticating clients.
 .NH 2
@@ -189,7 +239,7 @@ listening for client connections, while the client process is
 an active entity, initiating a connection when invoked.  
 .PP
 Let us consider more closely the steps taken
-by the client remote login process.  As in the server process
+by the client remote login process.  As in the server process,
 the first step is to locate the service definition for a remote
 login:
 .DS
@@ -212,14 +262,16 @@ With this accomplished, all that is required is to establish a
 connection to the server at the requested host and start up the
 remote login protocol.  The address buffer is cleared, then filled
 in with the Internet address of the foreign host and the port
-number at which the login process resides:
+number at which the login process resides on the foreign host:
 .DS
-bzero((char *)&sin, sizeof (sin));
-bcopy(hp->h_addr, (char *)sin.sin_addr, hp->h_length);
-sin.sin_family = hp->h_addrtype;
-sin.sin_port = sp->s_port;
+bzero((char *)&server, sizeof (server));
+bcopy(hp->h_addr, (char *) &server.sin_addr, hp->h_length);
+server.sin_family = hp->h_addrtype;
+server.sin_port = sp->s_port;
 .DE
-A socket is created, and a connection initiated.
+A socket is created, and a connection initiated.  Note
+that \fIconnect\fP implicitly performs a \fIbind\fP
+call, since \fIs\fP is unbound.
 .DS
 s = socket(hp->h_addrtype, SOCK_STREAM, 0);
 if (s < 0) {
@@ -227,7 +279,7 @@ if (s < 0) {
 	exit(3);
 }
  ...
-if (connect(s, (char *)&sin, sizeof (sin)) < 0) {
+if (connect(s, (struct sockaddr *) &server, sizeof (server)) < 0) {
 	perror("rlogin: connect");
 	exit(4);
 }
@@ -311,33 +363,39 @@ main()
 	...
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	...
-	bind(s, &sin, sizeof (sin));
+	on = 1;
+	if (setsockopt(s, SOL_SOCKET, SO_BROADCAST, &on, sizeof(on)) < 0) {
+		syslog(LOG_ERR, "setsockopt SO_BROADCAST: %m");
+		exit(1);
+	}
+	bind(s, (struct sockaddr *) &sin, sizeof (sin));
 	...
-	sigset(SIGALRM, onalrm);
+	signal(SIGALRM, onalrm);
 	onalrm();
 	for (;;) {
 		struct whod wd;
 		int cc, whod, len = sizeof (from);
 
-		cc = recvfrom(s, (char *)&wd, sizeof (struct whod), 0, &from, &len);
+		cc = recvfrom(s, (char *)&wd, sizeof (struct whod), 0,
+		    (struct sockaddr *)&from, &len);
 		if (cc <= 0) {
 			if (cc < 0 && errno != EINTR)
-				perror("rwhod: recv");
+				syslog(LOG_ERR, "rwhod: recv: %m");
 			continue;
 		}
 		if (from.sin_port != sp->s_port) {
-			fprintf(stderr, "rwhod: %d: bad from port\en",
+			syslog(LOG_ERR, "rwhod: %d: bad from port",
 				ntohs(from.sin_port));
 			continue;
 		}
 		...
 		if (!verify(wd.wd_hostname)) {
-			fprintf(stderr, "rwhod: malformed host name from %x\en",
+			syslog(LOG_ERR, "rwhod: malformed host name from %x",
 				ntohl(from.sin_addr.s_addr));
 			continue;
 		}
 		(void) sprintf(path, "%s/whod.%s", RWHODIR, wd.wd_hostname);
-		whod = open(path, FWRONLY|FCREATE|FTRUNCATE, 0666);
+		whod = open(path, O_RDONLY | O_CREAT | O_TRUNC, 0666);
 		...
 		(void) time(&wd.wd_recvtime);
 		(void) write(whod, (char *)&wd, cc);
@@ -347,6 +405,7 @@ main()
 .DE
 .ce
 Figure 4.  rwho server.
+.sp
 .KE
 .PP
 The second task performed by the server is to supply information
@@ -356,23 +415,27 @@ and broadcasting it on the local network for other rwho servers
 to hear.  The supply function is triggered by a timer and 
 runs off a signal.  Locating the system status
 information is somewhat involved, but uninteresting.  Deciding
-where to transmit the resultant packet does, however, indicates
-some problems with the current protocol.
+where to transmit the resultant packet
+is somewhat problematical, however.
 .PP
-Status information is broadcast on the local network.
+Status information must be broadcast on the local network.
 For networks which do not support the notion of broadcast another
 scheme must be used to simulate or
 replace broadcasting.  One possibility is to enumerate the
-known neighbors (based on the status received).  This, unfortunately,
-requires some bootstrapping information, as a
-server started up on a quiet network will have no
+known neighbors (based on the status messages received
+from other rwho servers).  This, unfortunately,
+requires some bootstrapping information,
+for a server will have no idea what machines are its
+neighbors until it receives status messages from them.
+Therefore, if all machines on a net are freshly booted,
+no machine will have any
 known neighbors and thus never receive, or send, any status information.
 This is the identical problem faced by the routing table management
 process in propagating routing status information.  The standard
 solution, unsatisfactory as it may be, is to inform one or more servers
 of known neighbors and request that they always communicate with
 these neighbors.  If each server has at least one neighbor supplied
-it, status information may then propagate through
+to it, status information may then propagate through
 a neighbor to hosts which
 are not (possibly) directly neighbors.  If the server is able to
 support networks which provide a broadcast capability, as well as
@@ -385,24 +448,32 @@ will receive status information from itself.  This can lead
 to an endless, wasteful, exchange of information.
 .FE
 .PP
-The second problem with the current scheme is that the rwho process
-services only a single local network, and this network is found by
-reading a file.  It is important that software operating in a distributed
+It is important that software operating in a distributed
 environment not have any site-dependent information compiled into it.
 This would require a separate copy of the server at each host and
-make maintenance a severe headache.  4.2BSD attempts to isolate
+make maintenance a severe headache.  4.3BSD attempts to isolate
 host-specific information from applications by providing system
-calls which return the necessary information\(dg.
+calls which return the necessary information*.
 .FS
-\(dg An example of such a system call is the \fIgethostname\fP(2)
+* An example of such a system call is the \fIgethostname\fP(2)
 call which returns the host's \*(lqofficial\*(rq name.
 .FE
-Unfortunately, no straightforward mechanism currently
-exists for finding the collection
-of networks to which a host is directly connected.  Thus the
-rwho server performs a lookup in a file
-to find its local network.  A better, though still
-unsatisfactory, scheme used by the routing process is to interrogate
-the system data structures to locate those directly connected
-networks.  A mechanism to acquire this information from the system
-would be a useful addition.
+A mechanism exists, in the form of an \fIioctl\fP call,
+for finding the collection
+of networks to which a host is directly connected.
+Further, a local network broadcasting mechanism
+has been implemented at the socket level.
+Combining these two features allows a process
+to broadcast on any directly connected local
+network which supports the notion of broadcasting
+in a site independent manner.  This allows 4.3BSD
+to solve the problem of deciding how to propagate
+status information in the case of \fIrwho\fP, or
+more generally in broadcasting:
+Such status information is broadcast to connected
+networks at the socket level, where the connected networks
+have been obtained via the appropriate \fIioctl\fP
+calls.
+The specifics of
+such broadcastings are complex, however, and will
+be covered in section 5.
