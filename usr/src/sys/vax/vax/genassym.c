@@ -15,6 +15,7 @@
 #include "../vaxuba/ubareg.h"
 #include "../vaxuba/ubavar.h"
 #include "../h/proc.h"
+#include "../h/text.h"
 #include "../vax/rpb.h"
 #include "../h/mbuf.h"
 #include "../h/msgbuf.h"
@@ -28,10 +29,12 @@ main()
 	register struct user *up = (struct user *)0;
 	register struct rusage *rup = (struct rusage *)0;
 	struct rpb *rp = (struct rpb *)0;
+	struct text *tp = (struct text *)0;
 
 	printf("#ifdef LOCORE\n");
 	printf("#define\tP_LINK %d\n", &p->p_link);
 	printf("#define\tP_RLINK %d\n", &p->p_rlink);
+	printf("#define\tP_XLINK %d\n", &p->p_xlink);
 	printf("#define\tP_ADDR %d\n", &p->p_addr);
 	printf("#define\tP_PRI %d\n", &p->p_pri);
 	printf("#define\tP_STAT %d\n", &p->p_stat);
@@ -41,6 +44,7 @@ main()
 	printf("#define\tP_P0BR %d\n", &p->p_p0br);
 	printf("#define\tP_SZPT %d\n", &p->p_szpt);
 	printf("#define\tP_TEXTP %d\n", &p->p_textp);
+	printf("#define\tP_FLAG %d\n", &p->p_flag);
 	printf("#define\tSSLEEP %d\n", SSLEEP);
 	printf("#define\tSRUN %d\n", SRUN);
 	printf("#define\tUBA_BRRVR %d\n", uba->uba_brrvr);
@@ -48,6 +52,7 @@ main()
 	printf("#define\tUH_VEC %d\n", &uh->uh_vec);
 	printf("#define\tUH_SIZE %d\n", sizeof (struct uba_hd));
 	printf("#define\tRP_FLAG %d\n", &rp->rp_flag);
+	printf("#define\tX_CADDR %d\n", &tp->x_caddr);
 	printf("#define\tV_SWTCH %d\n", &vm->v_swtch);
 	printf("#define\tV_TRAP %d\n", &vm->v_trap);
 	printf("#define\tV_SYSCALL %d\n", &vm->v_syscall);
