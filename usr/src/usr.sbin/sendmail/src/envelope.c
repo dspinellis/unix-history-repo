@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)envelope.c	6.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)envelope.c	6.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -425,7 +425,7 @@ setsender(from, e, delimptr, internal)
 	register char **pvp;
 	char *realname = NULL;
 	register struct passwd *pw;
-	char *delimchar = NULL;
+	char delimchar;
 	char buf[MAXNAME];
 	char pvpbuf[PSBUFSIZE];
 	extern struct passwd *getpwnam();
@@ -453,8 +453,9 @@ setsender(from, e, delimptr, internal)
 /*
 	SuprErrs = TRUE;
 */
+	delimchar = internal ? '\0' : ' ';
 	if (from == NULL ||
-	    parseaddr(from, &e->e_from, 1, ' ', delimptr, e) == NULL)
+	    parseaddr(from, &e->e_from, 1, delimchar, delimptr, e) == NULL)
 	{
 		/* log garbage addresses for traceback */
 # ifdef LOG
