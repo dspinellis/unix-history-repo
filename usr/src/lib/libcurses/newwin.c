@@ -1,7 +1,7 @@
 /*
  * allocate space for and set up defaults for a new window
  *
- * %G% (Berkeley) @(#)newwin.c	1.5
+ * %G% (Berkeley) @(#)newwin.c	1.6
  */
 
 # include	"curses.ext"
@@ -47,6 +47,7 @@ int	num_lines, num_cols, begy, begx;
 		else
 			for (sp = win->_y[i]; sp < win->_y[i] + nc; )
 				*sp++ = ' ';
+	win->_nextp = win;
 	return win;
 }
 
@@ -74,7 +75,10 @@ int		num_lines, num_cols, begy, begx; {
 	if (by < orig->_begy || bx < orig->_begx
 	    || by + nl > orig->_maxy + orig->_begy
 	    || bx + nc > orig->_maxx + orig->_begx) {
+# ifdef	DEBUG
 		fprintf(stderr, "returning ERR (1)\n");
+		fprintf(stderr, "SUBWIN(begx = %d, begy = %d,maxx = %d, maxy = %d, nl = %d, nc = %d, by = %d, bx = %d)\n", orig->_begx,orig->_begy,orig->_maxx,orig->_maxy, nl, nc, by, bx);
+# endif
 		return ERR;
 	}
 	if (nl == 0)
@@ -89,7 +93,9 @@ int		num_lines, num_cols, begy, begx; {
 	k = bx - orig->_begx;
 	for (i = 0; i < nl; i++)
 		win->_y[i] = &orig->_y[j++][k];
-	win->_flags = _SUBWIN;
+	win->_nextp = orig->_nextp;
+	orig->_nextp = win;
+	win->_orig = orig;
 	return win;
 }
 

@@ -1,4 +1,4 @@
-/* %G% (Berkeley) @(#)curses.h	1.11 */
+/* @(#)curses.h	1.12 (Berkeley) %G% */
 # ifndef WINDOW
 
 # include	<stdio.h>
@@ -13,11 +13,10 @@
 # define	ERR	(0)
 # define	OK	(1)
 
-# define	_SUBWIN		01
-# define	_ENDLINE	02
-# define	_FULLWIN	04
-# define	_SCROLLWIN	010
-# define	_FLUSH		020
+# define	_ENDLINE	001
+# define	_FULLWIN	002
+# define	_SCROLLWIN	004
+# define	_FLUSH		010
 # define	_STANDOUT	0200
 # define	_NOCHANGE	-1
 
@@ -43,16 +42,17 @@ extern char     *AL, *BC, *BT, *CD, *CE, *CL, *CM, *CR, *DC, *DL, *DM,
 extern bool	NONL, UPPERCASE, normtty, _pfast;
 
 struct _win_st {
-	short	_cury, _curx;
-	short	_maxy, _maxx;
-	short	_begy, _begx;
-	short	_flags;
-	bool	_clear;
-	bool	_leave;
-	bool	_scroll;
-	char	**_y;
-	short	*_firstch;
-	short	*_lastch;
+	short		_cury, _curx;
+	short		_maxy, _maxx;
+	short		_begy, _begx;
+	short		_flags;
+	bool		_clear;
+	bool		_leave;
+	bool		_scroll;
+	char		**_y;
+	short		*_firstch;
+	short		*_lastch;
+	struct _win_st	*_nextp, *_orig;
 };
 
 # define	WINDOW	struct _win_st
