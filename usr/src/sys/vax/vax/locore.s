@@ -1,4 +1,4 @@
-/*	locore.s	6.23	85/01/18	*/
+/*	locore.s	6.24	85/03/11	*/
 
 #include "psl.h"
 #include "pte.h"
@@ -701,7 +701,7 @@ start:
 	rei
 /* put signal trampoline code in u. area */
 1:	movab	_u,r0
-	movc3	$16,sigcode,PCB_SIGC(r0)
+	movc3	$19,sigcode,PCB_SIGC(r0)
 /* save reboot flags in global _boothowto */
 	movl	r11,_boothowto
 /* calculate firstaddr, and call main() */
@@ -710,15 +710,16 @@ start:
 /* proc[1] == /etc/init now running here; run icode */
 	pushl	$PSL_CURMOD|PSL_PRVMOD; pushl $0; rei
 
-/* signal trampoline code: it is known that this code takes exactly 16 bytes */
+/* signal trampoline code: it is known that this code takes exactly 19 bytes */
 /* in ../vax/pcb.h and in the movc3 above */
 sigcode:
-	calls	$4,5(pc)			# params pushed by sendsig
-	chmk	$139				# cleanup mask and onsigstack
-	rei
-	.word	0x7f				# registers 0-6 (6==sp/compat)
-	callg	(ap),*16(ap)
-	ret
+	calls	$4,8(pc)	# params pushed by sendsig
+	movl	sp,ap		# calls frame built by sendsig
+	chmk	$103		# cleanup mask and onsigstack
+	halt			# sigreturn() does not return!
+	.word	0x3f		# registers 0-5
+	callg	(ap),*16(ap)	# call the signal handler
+	ret			# return to code above
 
 /*
  * Primitives

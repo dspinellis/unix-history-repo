@@ -1,4 +1,4 @@
-/*	machdep.c	6.12	85/03/03	*/
+/*	machdep.c	6.13	85/03/11	*/
 
 #include "reg.h"
 #include "pte.h"
@@ -282,61 +282,59 @@ vmtime(otime, olbolt, oicr)
  *
  * Stack is set up to allow sigcode stored
  * in u. to call routine, followed by chmk
- * to sigcleanup routine below.  After sigcleanup
- * resets the signal mask and the stack, it
- * returns to user who then unwinds with the
- * rei at the bottom of sigcode.
+ * to sigreturn routine below.  After sigreturn
+ * resets the signal mask, the stack, the frame 
+ * pointer, and the argument pointer, it returns
+ * to the user specified pc, psl.
  */
 sendsig(p, sig, mask)
 	int (*p)(), sig, mask;
 {
-	register struct sigcontext *scp;	/* know to be r11 */
+	register struct sigcontext *scp;
 	register int *regs;
 	register struct sigframe {
 		int	sf_signum;
 		int	sf_code;
 		struct	sigcontext *sf_scp;
 		int	(*sf_handler)();
+		int	sf_argcount;
 		struct	sigcontext *sf_scpcopy;
-	} *fp;					/* known to be r9 */
+	} *fp;
 	int oonstack;
 
 	regs = u.u_ar0;
 	oonstack = u.u_onstack;
-	scp = (struct sigcontext *)regs[SP] - 1;
+	/*
+	 * Allocate and validate space for the signal handler
+	 * context. Note that if the stack is in P0 space, the
+	 * call to grow() is a nop, and the useracc() check
+	 * will fail if the process has not already allocated
+	 * the space with a `brk'.
+	 */
 	if (!u.u_onstack && (u.u_sigonstack & sigmask(sig))) {
-		fp = (struct sigframe *)u.u_sigsp - 1;
+		scp = (struct sigcontext *)u.u_sigsp - 1;
 		u.u_onstack = 1;
 	} else
-		fp = (struct sigframe *)scp - 1;
-	/*
-	 * Must build signal handler context on stack to be returned to
-	 * so that rei instruction in sigcode will pop ps and pc
-	 * off correct stack.  The remainder of the signal state
-	 * used in calling the handler must be placed on the stack
-	 * on which the handler is to operate so that the calls
-	 * in sigcode will save the registers and such correctly.
-	 */
-	if (!oonstack && (int)fp <= USRSTACK - ctob(u.u_ssize)) 
+		scp = (struct sigcontext *)regs[SP] - 1;
+	fp = (struct sigframe *)scp - 1;
+	if ((int)fp <= USRSTACK - ctob(u.u_ssize)) 
 		grow((unsigned)fp);
-	;
-#ifndef lint
-	asm("probew $3,$20,(r9)");
-	asm("jeql bad");
-#else
-	if (useracc((caddr_t)fp, sizeof (struct sigframe), 1))
-		goto bad;
-#endif
-	if (!u.u_onstack && (int)scp <= USRSTACK - ctob(u.u_ssize))
-		grow((unsigned)scp);
-	;			/* Avoid asm() label botch */
-#ifndef lint
-	asm("probew $3,$20,(r11)");
-	asm("beql bad");
-#else
-	if (useracc((caddr_t)scp, sizeof (struct sigcontext), 1))
-		goto bad;
-#endif
+	if (useracc((caddr_t)fp, sizeof (*fp) + sizeof (*scp), 1) == 0) {
+		/*
+		 * Process has trashed its stack; give it an illegal
+		 * instruction to halt it in its tracks.
+		 */
+		u.u_signal[SIGILL] = SIG_DFL;
+		sig = sigmask(SIGILL);
+		u.u_procp->p_sigignore &= ~sig;
+		u.u_procp->p_sigcatch &= ~sig;
+		u.u_procp->p_sigmask &= ~sig;
+		psignal(u.u_procp, SIGILL);
+		return;
+	}
+	/* 
+	 * Build the argument list for the signal handler.
+	 */
 	fp->sf_signum = sig;
 	if (sig == SIGILL || sig == SIGFPE) {
 		fp->sf_code = u.u_code;
@@ -346,64 +344,85 @@ sendsig(p, sig, mask)
 	fp->sf_scp = scp;
 	fp->sf_handler = p;
 	/*
-	 * Duplicate the pointer to the sigcontext structure.
-	 * This one doesn't get popped by the ret, and is used 
-	 * by sigcleanup to reset the signal state on inward return.
+	 * Build the calls argument frame to be used to call sigreturn
 	 */
+	fp->sf_argcount = 1;
 	fp->sf_scpcopy = scp;
-	/* sigcontext goes on previous stack */
+	/*
+	 * Build the signal context to be used by sigreturn.
+	 */
 	scp->sc_onstack = oonstack;
 	scp->sc_mask = mask;
-	/* setup rei */
-	scp->sc_sp = (int)&scp->sc_pc;
+	scp->sc_sp = regs[SP];
+	scp->sc_fp = regs[FP];
+	scp->sc_ap = regs[AP];
 	scp->sc_pc = regs[PC];
 	scp->sc_ps = regs[PS];
 	regs[SP] = (int)fp;
 	regs[PS] &= ~(PSL_CM|PSL_FPD);
 	regs[PC] = (int)u.u_pcb.pcb_sigc;
 	return;
-
-asm("bad:");
-bad:
-	/*
-	 * Process has trashed its stack; give it an illegal
-	 * instruction to halt it in its tracks.
-	 */
-	u.u_signal[SIGILL] = SIG_DFL;
-	sig = sigmask(SIGILL);
-	u.u_procp->p_sigignore &= ~sig;
-	u.u_procp->p_sigcatch &= ~sig;
-	u.u_procp->p_sigmask &= ~sig;
-	psignal(u.u_procp, SIGILL);
 }
 
 /*
- * Routine to cleanup state after a signal
+ * System call to cleanup state after a signal
  * has been taken.  Reset signal mask and
  * stack state from context left by sendsig (above).
- * Pop these values in preparation for rei which
- * follows return from this routine.
+ * Return to previous pc and psl as specified by
+ * context left by sendsig. Check carefully to
+ * make sure that the user has not modified the
+ * psl to gain improper priviledges or to cause
+ * a machine fault.
  */
-sigcleanup()
+sigreturn()
+{
+	struct a {
+		struct sigcontext *sigcntxp;
+	};
+	register struct sigcontext *scp;
+	register int *regs = u.u_ar0;
+
+	scp = ((struct a *)(u.u_ap))->sigcntxp;
+	if (useracc((caddr_t)scp, sizeof (*scp), 0) == 0)
+		return;
+	if ((scp->sc_ps & (PSL_MBZ|PSL_IPL|PSL_IS)) != 0 ||
+	    (scp->sc_ps & (PSL_PRVMOD|PSL_CURMOD)) != (PSL_PRVMOD|PSL_CURMOD) ||
+	    ((scp->sc_ps & PSL_CM) &&
+	     (scp->sc_ps & (PSL_FPD|PSL_DV|PSL_FU|PSL_IV)) != 0)) {
+		u.u_error = EINVAL;
+		return;
+	}
+	u.u_eosys = JUSTRETURN;
+	u.u_onstack = scp->sc_onstack & 01;
+	u.u_procp->p_sigmask = scp->sc_mask &~
+	    (sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP));
+	regs[FP] = scp->sc_fp;
+	regs[AP] = scp->sc_ap;
+	regs[SP] = scp->sc_sp;
+	regs[PC] = scp->sc_pc;
+	regs[PS] = scp->sc_ps;
+}
+
+/* XXX - BEGIN 4.2 COMPATIBILITY */
+/*
+ * Compatibility with 4.2 chmk $139 used by longjmp()
+ */
+osigcleanup()
 {
 	register struct sigcontext *scp;
+	register int *regs = u.u_ar0;
 
-	scp = (struct sigcontext *)fuword((caddr_t)u.u_ar0[SP]);
+	scp = (struct sigcontext *)fuword((caddr_t)regs[SP]);
 	if ((int)scp == -1)
 		return;
-#ifndef lint
-	/* only probe 12 here because that's all we need */
-	asm("prober $3,$12,(r11)");
-	asm("bnequ 1f; ret; 1:");
-#else
-	if (useracc((caddr_t)scp, sizeof (*scp), 0))
+	if (useracc((caddr_t)scp, 3 * sizeof (int), 0) == 0)
 		return;
-#endif
 	u.u_onstack = scp->sc_onstack & 01;
-	u.u_procp->p_sigmask =
-	    scp->sc_mask &~ (sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP));
-	u.u_ar0[SP] = scp->sc_sp;
+	u.u_procp->p_sigmask = scp->sc_mask &~
+	    (sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP));
+	regs[SP] = scp->sc_sp;
 }
+/* XXX - END 4.2 COMPATIBILITY */
 
 #ifdef notdef
 dorti()
