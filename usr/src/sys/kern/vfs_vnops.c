@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)vfs_vnops.c	7.5 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.6 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -276,7 +276,8 @@ vn_stat(vp, sb)
 	sb->st_ctime = vap->va_ctime.tv_sec;
 	sb->st_spare3 = 0;
 	sb->st_blksize = vap->va_blocksize;
-	sb->st_spare4[0] = sb->st_spare4[1] = 0;
+	sb->st_flags = vap->va_flags;
+	sb->st_gen = vap->va_gen;
 	/*
 	 * XXX THIS IS NOT CORRECT!!, but be sure to change ufs_getattr()
 	 * if you change it.
