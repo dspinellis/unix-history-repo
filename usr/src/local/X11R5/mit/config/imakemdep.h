@@ -127,7 +127,7 @@
 #define DEFAULT_CPP "/usr/lpp/X11/Xamples/util/cpp/cpp"
 #endif
 #if defined(hp9000) && !defined(DEFAULT_CPP)
-#define DEFAULT_CPP "/usr/libexec/cpp"
+#define DEFAULT_CPP "/usr/libexec/gcc2/cpp"
 #endif
 
 /*
