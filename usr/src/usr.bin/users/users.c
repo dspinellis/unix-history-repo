@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)users.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)users.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -48,12 +48,9 @@ main()
 	if (ncnt) {
 		qsort(names, ncnt, UT_NAMESIZE, scmp);
 		(void)printf("%s", names[0]);
-		for (cnt = 1; cnt < ncnt; ++cnt) {
-			while (cnt < ncnt - 1 &&
-			    !strncmp(names[cnt], names[cnt + 1], UT_NAMESIZE))
-				++cnt;
-			(void)printf(" %.*s", UT_NAMESIZE, names[cnt]);
-		}
+		for (cnt = 1; cnt < ncnt; ++cnt)
+			if (strncmp(names[cnt], names[cnt - 1], UT_NAMESIZE))
+				(void)printf(" %.*s", UT_NAMESIZE, names[cnt]);
 		(void)printf("\n");
 	}
 	exit(0);
