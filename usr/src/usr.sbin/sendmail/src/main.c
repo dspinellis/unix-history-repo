@@ -3,7 +3,7 @@
 # include <sys/ioctl.h>
 # include "sendmail.h"
 
-SCCSID(@(#)main.c	3.145		%G%);
+SCCSID(@(#)main.c	3.146		%G%);
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -69,7 +69,7 @@ main(argc, argv)
 	typedef int (*fnptr)();
 	STAB *st;
 	register int i;
-	int pass = 0;
+	bool readconfig = FALSE;
 	bool safecf = TRUE;		/* this conf file is sys default */
 	bool queuemode = FALSE;		/* process queue requests */
 	static bool reenter = FALSE;
@@ -77,7 +77,29 @@ main(argc, argv)
 	extern bool safefile();
 	extern time_t convtime();
 
+	/*
+	**  Do a quick prescan of the argument list.
+	**	We do this to find out if we can potentially thaw the
+	**	configuration file.  If not, we do the thaw now so that
+	**	the argument processing applies to this run rather than
+	**	to the run that froze the configuration.
+	*/
+
 	argv[argc] = NULL;
+	ac = argc;
+	av = argv;
+	while (--ac > 0)
+	{
+		if (strncmp(*++av, "-C", 2) == 0 || strncmp(*av, "-bz", 3) == 0)
+			break;
+	}
+	if (ac <= 0)
+		readconfig = !thaw(FreezeFile);
+
+	/*
+	**  Now do basic initialization
+	*/
+
 	InChannel = stdin;
 	OutChannel = stdout;
 	if (signal(SIGINT, SIG_IGN) != SIG_IGN)
@@ -107,10 +129,8 @@ main(argc, argv)
 	** Crack argv.
 	*/
 
-  crackargs:
 	ac = argc;
 	av = argv;
-	pass++;
 	p = rindex(*av, '/');
 	if (p++ == NULL)
 		p = *av;
@@ -181,7 +201,7 @@ main(argc, argv)
 					break;
 				}
 			}
-			if (from != NULL && pass <= 1)
+			if (from != NULL)
 			{
 				syserr("More than one \"from\" person");
 				break;
@@ -270,13 +290,9 @@ main(argc, argv)
 	**	Extract special fields for local use.
 	*/
 
-	if (pass <= 1)
-	{
-		if (!safecf || OpMode == MD_FREEZE || !thaw(FreezeFile))
-			readcf(ConfFile, safecf);
-		else
-			goto crackargs;
-	}
+	if (!safecf || OpMode == MD_FREEZE || readconfig)
+		readcf(ConfFile, safecf);
+
 	switch (OpMode)
 	{
 	  case MD_FREEZE:
