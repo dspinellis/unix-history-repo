@@ -1,0 +1,68 @@
+.pa 1
+.he 'TIMES(II)'2/10/73'TIMES(II)'
+.ti 0
+NAME		times -- get process times
+.sp
+.ti 0
+.nf
+SYNOPSIS	sys  times; buffer  / times = 43.; not in assembler
+.br
+.fi
+.li
+...
+.ti -8
+buffer:	.=.+[24.*3]
+.sp
+.ti 0
+DESCRIPTION	times_____
+returns time-accounting information
+for the system as a whole, for the current process,
+and for the terminated child processes
+of the current process.
+All the times are 2-word (32-bit) numbers, and the
+unit of measurement is 1/60 second.
+
+After the call, the buffer will appear as follows:
+
+buffer:
+.br
+system:
+	.=.+4		/ absolute time
+	.=.+4		/ total system time
+	.=.+4		/ total swap time
+	.=.+4		/ other I/O wait time
+	.=.+4		/ idle time
+	.=.+4		/ total user time
+
+process:
+	.=.+4		/ (ignore)
+	.=.+4		/ time in system
+	.=.+4		/ (ignore)
+	.=.+4		/ I/O wait time
+	.=.+4		/ (ignore)
+	.=.+4		/ processor time
+
+child:
+	.=.+24.
+
+The format of the "child" times is the same as
+that for the process times; the numbers are
+the sum of the times for all terminated direct
+or indirect descendants of the current process.
+
+The "absolute" time returned is the same as that
+given by time(II).
+The "total system times" are times since the last cold
+boot.
+.sp
+.ti 0
+FILES		--
+.sp
+.ti 0
+SEE ALSO	time(II), time(I)
+.sp
+.ti 0
+DIAGNOSTICS	--
+.sp
+.ti 0
+BUGS		--
