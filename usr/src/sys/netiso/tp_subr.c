@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_subr.c,v 5.3 88/11/18 17:28:43 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_subr.c,v $
- *	@(#)tp_subr.c	7.5 (Berkeley) %G%
+ *	@(#)tp_subr.c	7.6 (Berkeley) %G%
  *
  * The main work of data transfer is done here.
  * These routines are called from tp.trans.
@@ -164,10 +164,10 @@ tp_rtt_rtv( base_rtt, base_rtv, newmeas )
 	 */
 	base_rtv->tv_sec = 
 		SMOOTH( long,  TP_RTV_ALPHA, base_rtv->tv_sec, 
-			ABS( long, base_rtv->tv_sec - newmeas->tv_sec ));
+			ABS( long, base_rtt->tv_sec - newmeas->tv_sec ));
 	base_rtv->tv_usec = 
 		SMOOTH( long,  TP_RTV_ALPHA, base_rtv->tv_usec, 
-			ABS(long, base_rtv->tv_usec - newmeas->tv_usec ));
+			ABS(long, base_rtt->tv_usec - newmeas->tv_usec ));
 
 	/* update smoothed average rtt */
 	base_rtt->tv_sec = 
