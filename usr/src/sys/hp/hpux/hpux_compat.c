@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hpux_compat.c 1.33 89/08/23$
  *
- *	@(#)hpux_compat.c	7.5 (Berkeley) %G%
+ *	@(#)hpux_compat.c	7.6 (Berkeley) %G%
  */
 
 /*
@@ -203,15 +203,15 @@ hpuxwaitpid()
  * O_CREAT, O_TRUNC, and O_EXCL must be remapped,
  * O_SYNCIO (0100000) is removed entirely.
  */
-hpuxopen(scp)
-	register struct syscontext *scp;
-{
-	struct a {
+hpuxopen(p, uap, retval)
+	struct proc *p;
+	struct args {
 		char	*fname;
 		int	mode;
 		int	crtmode;
-	} *uap = (struct a *) scp->sc_ap;
-	struct nameidata *ndp = &scp->sc_nd;
+	} *uap;
+	int *retval;
+{
 	int mode;
 
 	mode = uap->mode;
@@ -230,10 +230,7 @@ hpuxopen(scp)
 		uap->mode |= FTRUNC;
 	if (mode & HPUXFEXCL)
 		uap->mode |= FEXCL;
-	ndp->ni_segflg = UIO_USERSPACE;
-	ndp->ni_dirp = uap->fname;
-	RETURN (copen(scp, uap->mode-FOPEN, uap->crtmode &~ scp->sc_cmask, ndp,
-		&scp->sc_retval1));
+	RETURN (open(p, uap, retval));
 }
 
 hpuxfcntl()
@@ -354,7 +351,11 @@ hpuxdup()
 	if (u.u_error)
 		return;
 	u.u_r.r_val1 = j;
-	dupit(j, fp, u.u_pofile[uap->i] &~ UF_EXCLOSE);
+	u.u_ofile[j] = fp;
+	u.u_pofile[j] = u.u_pofile[uap->i] &~ UF_EXCLOSE;
+	fp->f_count++;
+	if (j > u.u_lastfile)
+		u.u_lastfile = j;
 }
 
 hpuxuname()
