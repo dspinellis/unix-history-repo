@@ -1,4 +1,4 @@
-/*	mkmakefile.c	1.25	83/02/09	*/
+/*	mkmakefile.c	1.26	83/02/21	*/
 
 /*
  * Build the makefile for the system, from
