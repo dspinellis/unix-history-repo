@@ -9,7 +9,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)rec_open.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)rec_open.c	5.14 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -110,7 +110,7 @@ slow:			if ((t->bt_rfp = fdopen(rfd, "r")) == NULL)
 				goto einval;
 			}
 				
-			if (sb.st_size > SIZE_T_MAX) {
+			if (sb.st_size > (off_t)SIZE_T_MAX) {
 				errno = EFBIG;
 				goto err;
 			}
