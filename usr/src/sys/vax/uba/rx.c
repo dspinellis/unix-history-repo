@@ -1,4 +1,4 @@
-/*	rx.c	4.4	83/02/21	*/
+/*	rx.c	4.5	83/03/20	*/
 
 #include "rx.h"
 #if NFX > 0
@@ -62,18 +62,18 @@ struct rxerr {
 	short	rxcs;
 	short	rxdb;
 	short	rxxt[4];	/* error code dump from controller */
-} rxerr[NFX];
+} rxerr[NRX];
+/* End of per-drive data */
 
 struct	uba_device *rxdinfo[NRX];
 struct	uba_ctlr *rxminfo[NFX];
-int rxprobe(), rxslave(), rxattach(), rxdgo(), rxintr();
-int rxwatch(), rxphys();
+int rxprobe(), rxslave(), rxattach(), rxdgo(), rxintr(), rxwatch(), rxphys();
 u_short rxstd[] = { 0177170, 0177150, 0 };
 struct uba_driver fxdriver =
   { rxprobe, rxslave, rxattach, rxdgo, rxstd, "rx", rxdinfo, "fx", rxminfo };
 
 int	rxwstart;
-#define	RXUNIT(dev)	(minor(dev)>>4)
+#define	RXUNIT(dev)	(minor(dev)>>3)
 
 /* constants related to floppy data capacity */
 #define	RXSECS	2002				/* # sectors on a floppy */
@@ -128,8 +128,7 @@ rxopen(dev, flag)
 	register struct rx_softc *sc;
 	register struct uba_device *ui;
 
-	if (unit >= NRX || (minor(dev) & 0x8) ||
-	    (ui = rxdinfo[unit]) == 0 || ui->ui_alive == 0)
+	if (unit >= NRX || (ui = rxdinfo[unit]) == 0 || ui->ui_alive == 0)
 		return (ENXIO);
 	sc = &rx_softc[unit];
 	if (sc->sc_flags & RXF_OPEN)
@@ -156,7 +155,6 @@ rxstrategy(bp)
 	register struct buf *bp;
 {
 	struct uba_device *ui;
-	register struct rx_softc *sc;
 	register struct uba_ctlr *um;
 	int s;
 
@@ -260,6 +258,7 @@ rxstart(um)
 		rxmap(bp, &sector, &track);
 		rxc->rxc_state = RXS_READ;
 		rxaddr->rxcs = RX_READ | sc->sc_csbits;
+		printf("rxstart: (read) track=%d, sector=%d\n", track, sector);
 		while ((rxaddr->rxcs&RX_TREQ) == 0)
 			;
 		rxaddr->rxdb = (u_short)sector;
@@ -314,6 +313,7 @@ rxintr(dev)
 	rxc = &rx_ctlr[um->um_ctlr];
 	er = &rxerr[um->um_ctlr];
 	bp = um->um_tab.b_actf->b_actf;
+	printf("rxintr: unit=%d, state=0x%x\n", unit, rxc->rxc_state);
 	if ((rxaddr->rxcs & RX_ERR) &&
 	    rxc->rxc_state != RXS_RDSTAT && rxc->rxc_state != RXS_RDERR)
 		goto error;
@@ -507,7 +507,7 @@ rxreset(uban)
 		if ((um = rxminfo[ctlr]) == 0 || um->um_ubanum != uban ||
 		    um->um_alive == 0)
 			continue;
-		printf(" fx%d", ctlr);
+		printf(" fx%d: ", ctlr);
 		if (um->um_ubinfo) {
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
 			um->um_ubinfo = 0;
@@ -532,7 +532,7 @@ rxread(dev, uio)
 		return (ENXIO);
 	if (uio->uio_offset < 0 || (uio->uio_offset & SECMASK) != 0)
 		return (EIO);
-	return (physio(rxstrategy, &rrxbuf[ctlr], dev, B_READ, minrxphys));
+	return (physio(rxstrategy, &rrxbuf[ctlr], dev, B_READ, minrxphys, uio));
 }
 
 rxwrite(dev, uio)
@@ -546,14 +546,15 @@ rxwrite(dev, uio)
 		return (ENXIO);
 	if (uio->uio_offset < 0 || (uio->uio_offset & SECMASK) != 0)
 		return (EIO);
-	return (physio(rxstrategy, &rrxbuf[ctlr], dev, B_WRITE, minrxphys));
+	return(physio(rxstrategy, &rrxbuf[ctlr], dev, B_WRITE, minrxphys, uio));
 }
 
 /*
  * Control routine:
  * processes three kinds of requests:
  *
- *	(1) Set density according to that specified by the open device.
+ *	(1) Set density (i.e., format the diskette) according to 
+ *		  that specified by the open device.
  *	(2) Arrange for the next sector to be written with a deleted-
  *		  data mark.
  *	(3) Report whether the last sector read had a deleted-data mark
