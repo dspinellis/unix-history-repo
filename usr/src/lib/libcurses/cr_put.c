@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cr_put.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)cr_put.c	5.18 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -351,7 +351,7 @@ dontcr:	while (outline < destline) {
 		 * Move one char to the right.  We don't use ND space because
 		 * it's better to just print the char we are moving over.
 		 */
-		if (!in_refresh)
+		if (in_refresh)
 			if (plodflg)	/* Avoid a complex calculation. */
 				plodcnt--;
 			else {
