@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)union_subr.c	1.6 (Berkeley) %G%
+ *	@(#)union_subr.c	1.7 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -101,6 +101,10 @@ loop:
 				goto loop;
 			if (UNIONTOV(un) != undvp)
 				VOP_LOCK(UNIONTOV(un));
+
+			/*
+			 * Save information about the upper layer.
+			 */
 			if (uppervp != un->un_uppervp) {
 				if (un->un_uppervp)
 					vrele(un->un_uppervp);
@@ -108,10 +112,31 @@ loop:
 			} else if (uppervp) {
 				vrele(uppervp);
 			}
+
+			/*
+			 * Save information about the lower layer.
+			 * This needs to keep track of pathname
+			 * and directory information which union_vn_create
+			 * might need.
+			 */
 			if (lowervp != un->un_lowervp) {
-				if (un->un_lowervp)
+				if (un->un_lowervp) {
 					vrele(un->un_lowervp);
+					free(un->un_path, M_TEMP);
+					vrele(un->un_dirvp);
+				}
 				un->un_lowervp = lowervp;
+				if (cnp && (lowervp != NULLVP) &&
+				    (lowervp->v_type == VREG)) {
+					un->un_hash = cnp->cn_hash;
+					un->un_path = malloc(cnp->cn_namelen+1,
+							M_TEMP, M_WAITOK);
+					bcopy(cnp->cn_nameptr, un->un_path,
+							cnp->cn_namelen);
+					un->un_path[cnp->cn_namelen] = '\0';
+					VREF(dvp);
+					un->un_dirvp = dvp;
+				}
 			} else if (lowervp) {
 				vrele(lowervp);
 			}
@@ -149,13 +174,15 @@ loop:
 	un->un_lowervp = lowervp;
 	un->un_open = 0;
 	un->un_flags = 0;
-	if (uppervp == 0 && cnp) {
+	if (cnp && (lowervp != NULLVP) && (lowervp->v_type == VREG)) {
+		un->un_hash = cnp->cn_hash;
 		un->un_path = malloc(cnp->cn_namelen+1, M_TEMP, M_WAITOK);
 		bcopy(cnp->cn_nameptr, un->un_path, cnp->cn_namelen);
 		un->un_path[cnp->cn_namelen] = '\0';
 		VREF(dvp);
 		un->un_dirvp = dvp;
 	} else {
+		un->un_hash = 0;
 		un->un_path = 0;
 		un->un_dirvp = 0;
 	}
@@ -323,7 +350,8 @@ union_mkshadow(um, dvp, cnp, vpp)
 	 * The pathname buffer will be FREEed by VOP_MKDIR.
 	 */
 	cn.cn_pnbuf = malloc(cnp->cn_namelen+1, M_NAMEI, M_WAITOK);
-	bcopy(cnp->cn_nameptr, cn.cn_pnbuf, cnp->cn_namelen+1);
+	bcopy(cnp->cn_nameptr, cn.cn_pnbuf, cnp->cn_namelen);
+	cn.cn_pnbuf[cnp->cn_namelen] = '\0';
 
 	cn.cn_nameiop = CREATE;
 	cn.cn_flags = (LOCKPARENT|HASBUF|SAVENAME|ISLASTCN);
@@ -334,8 +362,10 @@ union_mkshadow(um, dvp, cnp, vpp)
 	cn.cn_hash = cnp->cn_hash;
 	cn.cn_consume = cnp->cn_consume;
 
+	VREF(dvp);
 	if (error = relookup(dvp, vpp, &cn))
 		return (error);
+	vrele(dvp);
 
 	if (*vpp) {
 		VOP_ABORTOP(dvp, &cn);
@@ -347,7 +377,7 @@ union_mkshadow(um, dvp, cnp, vpp)
 
 	VATTR_NULL(&va);
 	va.va_type = VDIR;
-	va.va_mode = UN_DIRMODE &~ p->p_fd->fd_cmask;
+	va.va_mode = UN_DIRMODE & ~p->p_fd->fd_cmask;
 
 	/* LEASE_CHECK: dvp is locked */
 	LEASE_CHECK(dvp, p, p->p_ucred, LEASE_WRITE);
@@ -377,8 +407,7 @@ union_vn_create(vpp, un, p)
 	struct vattr *vap = &vat;
 	int fmode = FFLAGS(O_WRONLY|O_CREAT|O_TRUNC|O_EXCL);
 	int error;
-	int hash;
-	int cmode = UN_FILEMODE &~ p->p_fd->fd_cmask;
+	int cmode = UN_FILEMODE & ~p->p_fd->fd_cmask;
 	char *cp;
 	struct componentname cn;
 
@@ -392,13 +421,14 @@ union_vn_create(vpp, un, p)
 	cn.cn_proc = p;
 	cn.cn_cred = p->p_ucred;
 	cn.cn_nameptr = cn.cn_pnbuf;
-	for (hash = 0, cp = cn.cn_nameptr; *cp != 0 && *cp != '/'; cp++)
-		hash += (unsigned char)*cp;
-	cn.cn_hash = hash;
+	cn.cn_hash = un->un_hash;
 	cn.cn_consume = 0;
 
+	VREF(un->un_dirvp);
 	if (error = relookup(un->un_dirvp, &vp, &cn))
 		return (error);
+	vrele(un->un_dirvp);
+
 	if (vp == NULLVP) {
 		VATTR_NULL(vap);
 		vap->va_type = VREG;
@@ -439,4 +469,22 @@ union_vn_create(vpp, un, p)
 bad:
 	vput(vp);
 	return (error);
+}
+
+int
+union_vn_close(vp, fmode)
+	struct vnode *vp;
+	int fmode;
+{
+	if (fmode & FWRITE)
+		--vp->v_writecount;
+	return (VOP_CLOSE(vp, fmode));
+}
+
+void
+union_removed_upper(un)
+	struct union_node *un;
+{
+	vrele(un->un_uppervp);
+	un->un_uppervp = NULLVP;
 }
