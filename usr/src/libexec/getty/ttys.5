@@ -1,4 +1,4 @@
-.\"	@(#)ttys.5	6.1 (Berkeley) %G%
+.\"	@(#)ttys.5	6.2 (Berkeley) %G%
 .\"
 .TH TTYS 5  ""
 .AT 3
@@ -16,7 +16,7 @@ There is one line in the
 .I ttys
 file per special file.
 Fields are separated by tabs and/or spaces.
-A field of more than one word may be enclosed by quotes.
+A field of more than one word should be enclosed in double quotes.
 Blank lines and comments can appear anywhere in the file; comments
 are delimited by `#' and new line. Unspecified fields default to
 the empty string or zero as appropriate.
@@ -28,20 +28,30 @@ which performs such tasks as baud-rate recognition, reading the login name,
 and calling
 .IR login (1).
 It can be, however, any command you wish, for example
-the start up for a window system terminal emulator or maintain other
-daemon processes.
-The third field is the type of terminal normally connected to the
-terminal special file as found in the
+the start up for a window system terminal emulator or some other
+daemon process.
+The third field is the type of terminal normally connected to that
+tty line, as found in the
 .IR termcap (5)
 data base file.
-The remaining fields are flags to be set in the
+The remaining fields set flags in the
 .I ty_status
 entry (see
 .IR getttyent (3))
-or for a window system process indicated by
-the "window" keyword that
-.IR init(8)
+or specify a window system process that
+.IR init (8)
 will maintain for the terminal line.
+As flag values,
+the strings `on' and `off' specify whether
+.I init
+should execute the command
+given in the second field,
+while `secure' in addition to `on' allows root to login on
+this line.  Note that these these flag strings should not be quoted.
+The string `window=' is followed by a quoted command
+string which
+.I init
+will execute.
 If the line ends in a comment, the comment is included in the
 .I ty_comment
 field of the ttyent structure.
@@ -52,7 +62,7 @@ Some examples:
 console "/etc/getty std.1200" vt100 on secure
 ttyd0 "/etc/getty d1200" dialup on
 ttyh0 "/etc/getty std.9600" hp2621-nl on
-ttyh1 "/etc/getty std.9600" plugboard on
+ttyh1 "/etc/getty std.9600" plugboard on John's office
 ttyp0 none network
 ttyp1 none network off
 ttyv0 "/etc/xpty -L :0" vs100 on window="/etc/X 0"
@@ -70,3 +80,5 @@ startup entry.
 /etc/ttys
 .SH "SEE ALSO"
 getttyent(3), gettytab(5), init(8), getty(8), login(1)
+.SH BUGS
+The parsing of the flags, window, and comment fields is stupid.
