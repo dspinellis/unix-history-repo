@@ -1,5 +1,6 @@
 #define	VAX780	1
 #define	VAX750	1
+#define	VAX730	1
 
 #include "../machine/pte.h"
 
@@ -25,6 +26,7 @@ main()
 	register struct uba_hd *uh = (struct uba_hd *)0;
 	register struct vmmeter *vm = (struct vmmeter *)0;
 	register struct user *up = (struct user *)0;
+	register struct rusage *rup = (struct rusage *)0;
 	struct rpb *rp = (struct rpb *)0;
 
 	printf("#ifdef LOCORE\n");
@@ -34,6 +36,11 @@ main()
 	printf("#define\tP_PRI %d\n", &p->p_pri);
 	printf("#define\tP_STAT %d\n", &p->p_stat);
 	printf("#define\tP_WCHAN %d\n", &p->p_wchan);
+	printf("#define\tP_TSIZE %d\n", &p->p_tsize);
+	printf("#define\tP_SSIZE %d\n", &p->p_ssize);
+	printf("#define\tP_P0BR %d\n", &p->p_p0br);
+	printf("#define\tP_SZPT %d\n", &p->p_szpt);
+	printf("#define\tP_TEXTP %d\n", &p->p_textp);
 	printf("#define\tSSLEEP %d\n", SSLEEP);
 	printf("#define\tSRUN %d\n", SRUN);
 	printf("#define\tUBA_BRRVR %d\n", uba->uba_brrvr);
@@ -46,12 +53,17 @@ main()
 	printf("#define\tV_SYSCALL %d\n", &vm->v_syscall);
 	printf("#define\tV_INTR %d\n", &vm->v_intr);
 	printf("#define\tV_PDMA %d\n", &vm->v_pdma);
+	printf("#define\tV_FAULTS %d\n", &vm->v_faults);
+	printf("#define\tV_PGREC %d\n", &vm->v_pgrec);
 	printf("#define\tUPAGES %d\n", UPAGES);
 	printf("#define\tCLSIZE %d\n", CLSIZE);
 	printf("#define\tSYSPTSIZE %d\n", SYSPTSIZE);
 	printf("#define\tUSRPTSIZE %d\n", USRPTSIZE);
 	printf("#define\tMSGBUFPTECNT %d\n", btoc(sizeof (struct msgbuf)));
 	printf("#define\tNMBCLUSTERS %d\n", NMBCLUSTERS);
+	printf("#define\tU_PROCP %d\n", &up->u_procp);
+	printf("#define\tU_RU %d\n", &up->u_ru);
+	printf("#define\tRU_MINFLT %d\n", &rup->ru_minflt);
 	printf("#else\n");
 	printf("asm(\".set\tU_ARG,%d\");\n", up->u_arg);
 	printf("asm(\".set\tU_QSAVE,%d\");\n", up->u_qsave);
