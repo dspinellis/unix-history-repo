@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wrterm.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)wrterm.c	5.2 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -40,7 +40,7 @@ wrtermcap(bp)
 			sep = "|";
 		}
 	(void)putchar(':');
-		
+
 	/*
 	 * Output fields, transforming any dangerous characters.  Skip
 	 * empty fields or fields containing only whitespace.
