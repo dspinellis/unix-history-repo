@@ -1,0 +1,12 @@
+whatis x
+whatis x.a
+stop at 31
+run
+print junk
+print junk.owner, junk.segment, junk.intrinsicCost
+stop at 50
+cont
+print x
+print x.a
+print x.b
+print x.c

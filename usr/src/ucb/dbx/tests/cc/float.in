@@ -1,0 +1,11 @@
+stop in main
+run
+step
+step
+print y
+print y + 2
+print 3.5*y
+stop in f
+cont
+where
+cont
