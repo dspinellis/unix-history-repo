@@ -1,0 +1,22 @@
+To install everything, you might use:
+cd /usr/local/bin; ln -s /usr/src/public/kermit-5a/bin/* .
+cd /usr/local/man/cat1; ln -s /usr/src/public/kermit-5a/man/cat1/* .
+
+To recompile, cd to kermit-5a and type 'make'.  Gcc should not report
+any errors or warnings.
+
+bin/kermit includes all features available for BSD4.3, while
+bin/kermit-minimal has minimum size and minimum features.
+
+I defined BSD43 in order to use ioctls, masked IEXTEN out in the
+terminal IO c_lflag in order to pass all control and special
+characters through (CTRL-v was not being passed though), and ifdefed
+out a call to ftime, which is missing on this system.
+
+The kermit sources are available from watsun.cc.columbia.edu
+[128.59.39.2] in /kermit/sw/cku179.tar.Z.  
+
+Rich Murphey                   409-772-3399
+Physiology & Biophysics F-41   Fax 409-772-3381
+Univ. of Texas Medical Branch  rich@rice.edu
+Galveston, Texas 77555-0641    rich@rice.UUCP
