@@ -1,6 +1,6 @@
 #!/bin/csh -f
 #
-#	@(#)updatedb.csh	4.7	(Berkeley)	89/05/03
+#	@(#)updatedb.csh	4.8	(Berkeley)	89/05/04
 #
 set SRCHPATHS = "/"			# directories to be put in the database
 set LIBDIR = /usr/libexec		# for subprograms
