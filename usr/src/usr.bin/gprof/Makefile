@@ -1,4 +1,4 @@
-SCCSID = @(#)Makefile	1.21 (Berkeley) %G%
+SCCSID = @(#)Makefile	1.22 (Berkeley) %G%
 
 DFLAGS = 
 CFLAGS = -O ${DFLAGS}
@@ -19,8 +19,8 @@ gprof: ${GPROFOBJS}
 
 install: gprof gprof.flat gprof.callg
 	install -s gprof ${DESTDIR}/usr/ucb/gprof
-	install -c gprof.flat ${DESTDIR}/usr/lib
-	install -c gprof.callg ${DESTDIR}/usr/lib
+	install -c -m 644 gprof.flat ${DESTDIR}/usr/lib
+	install -c -m 644 gprof.callg ${DESTDIR}/usr/lib
 
 clean:
 	${RM} ${GPROFOBJS} errs gprof
