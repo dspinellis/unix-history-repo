@@ -1,4 +1,4 @@
-/* @(#)errlst.c	4.5 (Berkeley) 82/05/02 */
+/* @(#)errlst.c	4.6 (Berkeley) 82/12/19 */
 char	*sys_errlist[] = {
 	"Error 0",
 	"Not owner",				/* 1 - EPERM */
@@ -77,5 +77,9 @@ char	*sys_errlist[] = {
 	"File name too long",			/* 63 - ENAMETOOLONG */
 	"Host is down",				/* 64 - EHOSTDOWN */
 	"Host is unreachable",			/* 65 - EHOSTUNREACH */
+	"Directory not empty",			/* 66 - ENOTEMPTY */
+	"Too many processes",			/* 67 - EPROCLIM */
+	"Too many users",			/* 68 - EUSERS */
+	"Disc quota exceeded",			/* 69 - EDQUOT */
 };
 int	sys_nerr = { sizeof sys_errlist/sizeof sys_errlist[0] };
