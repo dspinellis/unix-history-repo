@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.28	83/02/22	*/
+/*	ip_icmp.c	4.29	83/03/10	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -14,6 +14,7 @@
 #include "../netinet/in_systm.h"
 #include "../netinet/ip.h"
 #include "../netinet/ip_icmp.h"
+#include "../netinet/icmp_var.h"
 
 /*
  * ICMP routines: error generation, receive packet processing, and
@@ -28,7 +29,7 @@ int	icmpprintfs = 0;
  */
 icmp_error(oip, type, code)
 	struct ip *oip;
-	int type, code;
+	u_int type, code;
 {
 	register unsigned oiplen = oip->ip_hl << 2;
 	register struct icmp *icp;
@@ -37,23 +38,33 @@ icmp_error(oip, type, code)
 
 	if (icmpprintfs)
 		printf("icmp_error(%x, %d, %d)\n", oip, type, code);
+	icmpstat.icps_error++;
 	/*
 	 * Make sure that the old IP packet had 8 bytes of data to return;
 	 * if not, don't bother.  Also don't EVER error if the old
 	 * packet protocol was ICMP.
 	 */
-	if (oip->ip_len < 8 || oip->ip_p == IPPROTO_ICMP)
+	if (oip->ip_len < 8) {
+		icmpstat.icps_oldshort++;
 		goto free;
+	}
+	if (oip->ip_p == IPPROTO_ICMP) {
+		icmpstat.icps_oldicmp++;
+		goto free;
+	}
 
 	/*
 	 * First, formulate icmp message
 	 */
 	m = m_get(M_DONTWAIT, MT_HEADER);
-	if (m == 0)
+	if (m == NULL)
 		goto free;
 	m->m_len = oiplen + 8 + ICMP_MINLEN;
 	m->m_off = MMAXOFF - m->m_len;
 	icp = mtod(m, struct icmp *);
+	if (type > ICMP_IREQREPLY)
+		panic("icmp_error");
+	icmpstat.icps_outhist[type]++;
 	icp->icmp_type = type;
 	icp->icmp_void = 0;
 	if (type == ICMP_PARAMPROB) {
@@ -106,7 +117,7 @@ icmp_input(m)
 	register struct icmp *icp;
 	register struct ip *ip = mtod(m, struct ip *);
 	int icmplen = ip->ip_len, hlen = ip->ip_hl << 2;
-	int i, (*ctlfunc)(), type;
+	int (*ctlfunc)(), code, i;
 	extern u_char ip_protox[];
 
 	/*
@@ -115,8 +126,10 @@ icmp_input(m)
 	 */
 	if (icmpprintfs)
 		printf("icmp_input from %x, len %d\n", ip->ip_src, icmplen);
-	if (icmplen < ICMP_MINLEN)
+	if (icmplen < ICMP_MINLEN) {
+		icmpstat.icps_tooshort++;
 		goto free;
+	}
 	m->m_len -= hlen;
 	m->m_off += hlen;
 	/* need routine to make sure header is in this mbuf here */
@@ -124,7 +137,7 @@ icmp_input(m)
 	i = icp->icmp_cksum;
 	icp->icmp_cksum = 0;
 	if (i != in_cksum(m, icmplen)) {
-		printf("icmp: cksum %x\n", i);
+		icmpstat.icps_checksum++;
 		goto free;
 	}
 
@@ -134,7 +147,10 @@ icmp_input(m)
 	if (icmpprintfs)
 		printf("icmp_input, type %d code %d\n", icp->icmp_type,
 			icp->icmp_code);
-	switch (i = icp->icmp_type) {
+	if (icp->icmp_type > ICMP_IREQREPLY)
+		goto free;
+	icmpstat.icps_inhist[icp->icmp_type]++;
+	switch (icp->icmp_type) {
 
 	case ICMP_UNREACH:
 	case ICMP_TIMXCEED:
@@ -146,13 +162,15 @@ icmp_input(m)
 		 * higher level routines.
 		 */
 		icp->icmp_ip.ip_len = ntohs((u_short)icp->icmp_ip.ip_len);
-		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp))
+		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp)) {
+			icmpstat.icps_badlen++;
 			goto free;
+		}
 		if (icmpprintfs)
 			printf("deliver to protocol %d\n", icp->icmp_ip.ip_p);
-		type = i == ICMP_PARAMPROB ? 0 : icp->icmp_code;
+		code = icp->icmp_type == ICMP_PARAMPROB ? 0 : icp->icmp_code;
 		if (ctlfunc = inetsw[ip_protox[icp->icmp_ip.ip_p]].pr_ctlinput)
-			(*ctlfunc)(icmpmap[i] + type, (caddr_t)icp);
+			(*ctlfunc)(icmpmap[icp->icmp_type]+code, (caddr_t)icp);
 		goto free;
 
 	case ICMP_ECHO:
@@ -160,8 +178,10 @@ icmp_input(m)
 		goto reflect;
 
 	case ICMP_TSTAMP:
-		if (icmplen < ICMP_TSLEN)
+		if (icmplen < ICMP_TSLEN) {
+			icmpstat.icps_badlen++;
 			goto free;
+		}
 		icp->icmp_type = ICMP_TSTAMPREPLY;
 		icp->icmp_rtime = iptime();
 		icp->icmp_ttime = icp->icmp_rtime;	/* bogus, do later! */
@@ -174,8 +194,10 @@ icmp_input(m)
 	case ICMP_ECHOREPLY:
 	case ICMP_TSTAMPREPLY:
 	case ICMP_IREQREPLY:
-		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp))
+		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp)) {
+			icmpstat.icps_badlen++;
 			goto free;
+		}
 		icmpsrc.sin_addr = ip->ip_src;
 		icmpdst.sin_addr = ip->ip_dst;
 		raw_input(dtom(icp), &icmproto, (struct sockaddr *)&icmpsrc,
@@ -187,6 +209,7 @@ icmp_input(m)
 	}
 reflect:
 	ip->ip_len += hlen;		/* since ip_input deducts this */
+	icmpstat.icps_reflect++;
 	icmp_reflect(ip);
 	return;
 free:
