@@ -1,4 +1,4 @@
-/*	lfs_inode.c	4.12	82/06/10	*/
+/*	lfs_inode.c	4.13	82/06/29	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -12,9 +12,18 @@
 #include "../h/inline.h"
 
 #define	INOHSZ	63
+#if	((INOHSZ&(INOHSZ-1)) == 0)
+#define	INOHASH(dev,ino)	(((dev)+(ino))&(INOHSZ-1))
+#else
 #define	INOHASH(dev,ino)	(((dev)+(ino))%INOHSZ)
-short	inohash[INOHSZ];
-short	ifreel;
+#endif
+
+union ihead {				/* inode LRU cache, Chris Maltby */
+	union  ihead *ih_head[2];
+	struct inode *ih_chain[2];
+} ihead[INOHSZ];
+
+struct inode *ifreeh, **ifreet;
 
 /*
  * Initialize hash links for inodes
@@ -24,14 +33,49 @@ ihinit()
 {
 	register int i;
 	register struct inode *ip = inode;
+	register union  ihead *ih = ihead;
 
-	ifreel = 0;
-	for (i = 0; i < ninode-1; i++, ip++)
-		ip->i_hlink = i+1;
-	ip->i_hlink = -1;
-	for (i = 0; i < INOHSZ; i++)
-		inohash[i] = -1;
+	for (i = INOHSZ; --i >= 0; ih++) {
+		ih->ih_head[0] = ih;
+		ih->ih_head[1] = ih;
+	}
+	ifreeh = ip;
+	ifreet = &ip->i_freef;
+	ip->i_freeb = &ifreeh;
+	ip->i_forw = ip;
+	ip->i_back = ip;
+	for (i = ninode; --i > 0; ) {
+		++ip;
+		ip->i_forw = ip;
+		ip->i_back = ip;
+		*ifreet = ip;
+		ip->i_freeb = ifreet;
+		ifreet = &ip->i_freef;
+	}
+	ip->i_freef = NULL;
 }
+
+#ifdef notdef
+/*
+ * Find an inode if it is incore.
+ * This is the equivalent, for inodes,
+ * of ``incore'' in bio.c or ``pfind'' in subr.c.
+ */
+struct inode *
+ifind(dev, ino)
+	dev_t dev;
+	ino_t ino;
+{
+	register struct inode *ip;
+	register union  ihead *ih;
+
+	ih = &ihead[INOHASH(dev, ino)];
+	for (ip = ih->ih_chain[0]; ip != (struct inode *)ih; ip = ip->i_forw)
+		if (ino==ip->i_number && dev==ip->i_dev)
+			return (ip);
+	return ((struct inode *)0);
+}
+#endif notdef
 
 /*
  * Look up an inode by device,inumber.
@@ -54,18 +98,18 @@ iget(dev, fs, ino)
 	register struct fs *fs;
 	ino_t ino;
 {
-	register struct inode *ip;
+	register struct inode *ip;	/* known to be r11 - see "asm" below */
+	register union  ihead *ih;	/* known to be r10 - see "asm" below */
 	register struct mount *mp;
 	register struct buf *bp;
 	register struct dinode *dp;
-	register int slot;
+	register struct inode *iq;
 
 loop:
 	if (getfs(dev) != fs)
 		panic("iget: bad fs");
-	slot = INOHASH(dev, ino);
-	ip = &inode[inohash[slot]];
-	while (ip != &inode[-1]) {
+	ih = &ihead[INOHASH(dev, ino)];
+	for (ip = ih->ih_chain[0]; ip != (struct inode *)ih; ip = ip->i_forw)
 		if (ino == ip->i_number && dev == ip->i_dev) {
 			if ((ip->i_flag&ILOCK) != 0) {
 				ip->i_flag |= IWANT;
@@ -74,29 +118,58 @@ loop:
 			}
 			if ((ip->i_flag&IMOUNT) != 0) {
 				for (mp = &mount[0]; mp < &mount[NMOUNT]; mp++)
-				if (mp->m_inodp == ip) {
-					dev = mp->m_dev;
-					fs = mp->m_bufp->b_un.b_fs;
-					ino = ROOTINO;
-					goto loop;
-				}
+					if(mp->m_inodp == ip) {
+						dev = mp->m_dev;
+						fs = mp->m_bufp->b_un.b_fs;
+						ino = ROOTINO;
+						goto loop;
+					}
 				panic("no imt");
+			}
+			if (ip->i_count == 0) {		/* ino on free list */
+				if (iq = ip->i_freef)
+					iq->i_freeb = ip->i_freeb;
+				else
+					ifreet = ip->i_freeb;
+				*ip->i_freeb = iq;
+				ip->i_freef = NULL;
+				ip->i_freeb = NULL;
 			}
 			ip->i_count++;
 			ip->i_flag |= ILOCK;
 			return(ip);
 		}
-		ip = &inode[ip->i_hlink];
-	}
-	if (ifreel < 0) {
+
+	if ((ip = ifreeh) == NULL) {
 		tablefull("inode");
 		u.u_error = ENFILE;
 		return(NULL);
 	}
-	ip = &inode[ifreel];
-	ifreel = ip->i_hlink;
-	ip->i_hlink = inohash[slot];
-	inohash[slot] = ip - inode;
+	if (iq = ip->i_freef)
+		iq->i_freeb = &ifreeh;
+	ifreeh = iq;
+	ip->i_freef = NULL;
+	ip->i_freeb = NULL;
+	/*
+	 * Now to take inode off the hash chain it was on
+	 * (initially, or after an iflush, it is on a "hash chain"
+	 * consisting entirely of itself, and pointed to by no-one,
+	 * but that doesn't matter), and put it on the chain for
+	 * its new (ino, dev) pair
+	 */
+#ifndef	UNFAST
+	asm("remque	(r11),r0");
+	asm("insque	(r11),(r10)");
+#else
+		/* remque */
+	ip->i_back->i_forw = ip->i_forw;
+	ip->i_forw->i_back = ip->i_back;
+		/* insque */
+	ip->i_forw = ih->ih_chain[0];
+	ip->i_back = (struct inode *)ih;
+	ih->ih_chain[0]->i_back = ip;
+	ih->ih_chain[0] = ip;
+#endif
 	ip->i_dev = dev;
 	ip->i_fs = fs;
 	ip->i_number = ino;
@@ -109,6 +182,26 @@ loop:
 	 */
 	if ((bp->b_flags&B_ERROR) != 0) {
 		brelse(bp);
+		/*
+		 * the inode doesn't contain anything useful, so it would
+		 * be misleading to leave it on its hash chain.
+		 * 'iput' will take care of putting it back on the free list.
+		 */
+#ifndef	UNFAST
+		asm("remque	(r11),r0");
+#else
+		ip->i_back->i_forw = ip->i_forw;
+		ip->i_forw->i_back = ip->i_back;
+#endif
+		ip->i_forw = ip;
+		ip->i_back = ip;
+		/*
+		 * we also loose its inumber, just in case (as iput
+		 * doesn't do that any more) - but as it isn't on its
+		 * hash chain, I doubt if this is really necessary .. kre
+		 * (probably the two methods are interchangable)
+		 */
+		ip->i_number = 0;
 		iput(ip);
 		return(NULL);
 	}
@@ -154,24 +247,26 @@ irele(ip)
 		}
 		IUPDAT(ip, &time, &time, 0);
 		iunlock(ip);
-		i = INOHASH(ip->i_dev, ip->i_number);
-		x = ip - inode;
-		if (inohash[i] == x) {
-			inohash[i] = ip->i_hlink;
-		} else {
-			for (jp = &inode[inohash[i]]; jp != &inode[-1];
-			    jp = &inode[jp->i_hlink])
-				if (jp->i_hlink == x) {
-					jp->i_hlink = ip->i_hlink;
-					goto done;
-				}
-			panic("iput");
-		}
-done:
-		ip->i_hlink = ifreel;
-		ifreel = x;
 		ip->i_flag = 0;
-		ip->i_number = 0;
+		/*
+		 * Put the inode on the end of the free list.
+		 * Possibly in some cases it would be better to
+		 * put the inode at the head of the free list,
+		 * (eg: where i_mode == 0 || i_number == 0)
+		 * but I will think about that later .. kre
+		 * (i_number is rarely 0 - only after an i/o error in iget,
+		 * where i_mode == 0, the inode will probably be wanted
+		 * again soon for an ialloc, so possibly we should keep it)
+		 */
+		if (ifreeh) {
+			*ifreet = ip;
+			ip->i_freeb = ifreet;
+		} else {
+			ifreeh = ip;
+			ip->i_freeb = &ifreeh;
+		}
+		ip->i_freef = NULL;
+		ifreet = &ip->i_freef;
 	}
 	ip->i_count--;
 }
@@ -210,8 +305,6 @@ iupdat(ip, ta, tm, waitfor)
 		if (ip->i_flag&ICHG)
 			ip->i_ctime = time;
 		ip->i_flag &= ~(IUPD|IACC|ICHG);
-		dp = bp->b_un.b_dino + itoo(fp, ip->i_number);
-		dp->di_ic = ip->i_ic;
 		if (waitfor)
 			bwrite(bp);
 		else
@@ -460,6 +553,55 @@ wdir(ip)
 	bwrite(bp);
 	u.u_pdir->i_flag |= IUPD|ICHG;
 	iput(u.u_pdir);
+}
+
+/*
+ * remove any inodes in the inode cache belonging to dev
+ *
+ * There should not be any active ones, return error if any are found
+ * (nb: this is a user error, not a system err)
+ *
+ * Also, count the references to dev by block devices - this really
+ * has nothing to do with the object of the procedure, but as we have
+ * to scan the inode table here anyway, we might as well get the
+ * extra benefit.
+ *
+ * this is called from sumount()/sys3.c when dev is being unmounted
+ */
+iflush(dev)
+	dev_t dev;
+{
+	register struct inode *ip;	/* known to be r11 - see 'asm' below */
+	register open = 0;
+
+	for (ip = inode; ip < inodeNINODE; ip++) {
+		if (ip->i_dev == dev)
+			if (ip->i_count)
+				return(-1);
+			else {
+#ifndef	UNFAST
+				asm("remque	(r11),r0");
+#else
+				ip->i_back->i_forw = ip->i_forw;
+				ip->i_forw->i_back = ip->i_back;
+#endif
+				ip->i_forw = ip;
+				ip->i_back = ip;
+				/*
+				 * as i_count == 0, the inode was on the free
+				 * list already, just leave it there, it will
+				 * fall off the bottom eventually. We could
+				 * perhaps move it to the head of the free
+				 * list, but as umounts are done so
+				 * infrequently, we would gain very little,
+				 * while making the code bigger.
+				 */
+			}
+		else if (ip->i_count && (ip->i_mode&IFMT)==IFBLK &&
+		    ip->i_rdev == dev)
+			open++;
+	}
+	return (open);
 }
 
 #ifdef ilock
