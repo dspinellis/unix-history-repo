@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)raw_ip.c	6.6 (Berkeley) %G%
+ *	@(#)raw_ip.c	6.7 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -94,9 +94,59 @@ rip_output(m0, so)
 		ip->ip_src.s_addr = 0;
 	ip->ip_dst = ((struct sockaddr_in *)&rp->rcb_faddr)->sin_addr;
 	ip->ip_ttl = MAXTTL;
-	return (ip_output(m, (struct mbuf *)0, &rp->rcb_route, 
-	   IP_ROUTETOIF|IP_ALLOWBROADCAST));
+	return (ip_output(m, rp->rcb_options, &rp->rcb_route, 
+	   (so->so_options & SO_DONTROUTE) | IP_ALLOWBROADCAST));
 bad:
 	m_freem(m);
+	return (error);
+}
+
+/*
+ * Raw IP socket option processing.
+ */
+rip_ctloutput(op, so, level, optname, m)
+	int op;
+	struct socket *so;
+	int level, optname;
+	struct mbuf **m;
+{
+	int error = 0;
+	register struct rawcb *rp = sotorawcb(so);
+
+	if (level != IPPROTO_IP)
+		error = EINVAL;
+	else switch (op) {
+
+	case PRCO_SETOPT:
+		switch (optname) {
+		case IP_OPTIONS:
+			return (ip_pcbopts(&rp->rcb_options, *m));
+
+		default:
+			error = EINVAL;
+			break;
+		}
+		break;
+
+	case PRCO_GETOPT:
+		switch (optname) {
+		case IP_OPTIONS:
+			*m = m_get(M_WAIT, MT_SOOPTS);
+			if (rp->rcb_options) {
+				(*m)->m_off = rp->rcb_options->m_off;
+				(*m)->m_len = rp->rcb_options->m_len;
+				bcopy(mtod(rp->rcb_options, caddr_t),
+				    mtod(*m, caddr_t), (*m)->m_len);
+			} else
+				(*m)->m_len = 0;
+			break;
+		default:
+			error = EINVAL;
+			break;
+		}
+		break;
+	}
+	if (op == PRCO_SETOPT)
+		m_free(*m);
 	return (error);
 }
