@@ -1,4 +1,4 @@
-/*	af.h	4.1	83/01/11	*/
+/*	af.h	4.2	84/03/07	*/
 
 /*
  * Routing table management daemon.
@@ -12,8 +12,9 @@ struct afswitch {
 	int	(*af_netmatch)();	/* verifies net # matching */
 	int	(*af_output)();		/* interprets address for sending */
 	int	(*af_portmatch)();	/* packet from some other router? */
-	int	(*af_portcheck)();	/* packet from priviledged peer? */
+	int	(*af_portcheck)();	/* packet from privileged peer? */
 	int	(*af_checkhost)();	/* tells if address for host or net */
+	int	(*af_ishost)();		/* tells if address is valid */
 	int	(*af_canon)();		/* canonicalize address for compares */
 };
 
