@@ -1,0 +1,4 @@
+# Host configuration for SVR4.
+AR_FLAGS = cq
+RANLIB = echo >/dev/null
+INSTALL = /usr/ucb/install -c
