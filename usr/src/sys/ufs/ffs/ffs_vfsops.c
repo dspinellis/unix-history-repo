@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)ffs_vfsops.c	7.4 (Berkeley) %G%
+ *	@(#)ffs_vfsops.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -153,6 +153,7 @@ found:
 		dpart.part->p_fstype = FS_BSDFFS;
 		dpart.part->p_fsize = fs->fs_fsize;
 		dpart.part->p_frag = fs->fs_frag;
+		dpart.part->p_cpg = fs->fs_cpg;
 		fs->fs_dbsize = size;
 	}
 #ifdef SECSIZE
