@@ -1,4 +1,4 @@
-/*	rl.c	6.2	84/08/29	*/
+/*	rl.c	6.3	84/11/27	*/
 
 #include "rl.h"
 #if NRL > 0
@@ -57,6 +57,7 @@ struct	size {
 	 4520,		398,		/* B=cyl 398 thru 510 */
 	   -1,		0,		/* C=cyl   0 thru 511 */
 	 4520,		398,		/* D=cyl 398 thru 510 */
+	    0,          0,		/* E= Not Defined     */
 	    0,          0,		/* F= Not Defined     */
 	20440,	        0,		/* G=cyl   0 thru 510 */
 	    0,          0,		/* H= Not Defined     */
@@ -69,7 +70,7 @@ struct	uba_device	*rldinfo[NRL];
 struct	uba_device	*rlip[NHL][4];
 
 /* RL02 driver structure */
-u_short	rlstd[] = { 0174400 };
+u_short	rlstd[] = { 0174400, 0 };
 struct	uba_driver hldriver =
     { rlprobe, rlslave, rlattach, rldgo, rlstd, "rl", rldinfo, "hl", rlminfo };
 
@@ -138,9 +139,10 @@ rlslave(ui, reg)
 		rladdr->rlda.getstat = RL_RESET;
 		rladdr->rlcs = (ui->ui_slave <<8) | RL_GETSTAT; /* Get status*/
 		rlwait(rladdr);
-	} while ((rladdr->rlmp.getstat&RLMP_STATUS) != RLMP_STATOK && ++ctr<8);
+	} while ((rladdr->rlcs & (RL_CRDY|RL_ERR)) != RL_CRDY && ++ctr < 8);
+
 	if ((rladdr->rlcs & RL_DE) || (ctr >= 8))
-		return (0);
+		return (0); 
 	if ((rladdr->rlmp.getstat & RLMP_DT) == 0 ) {
 		printf("rl%d: rl01's not supported\n", ui->ui_slave);
 		return(0);
