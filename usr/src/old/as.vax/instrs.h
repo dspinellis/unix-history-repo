@@ -1,6 +1,6 @@
 /*
  *	Copyright (c) 1982 Regents of the University of California
- *	@(#)instrs.h 4.3 %G%
+ *	@(#)instrs.h 4.4 %G%
  */
 /*
  *	Argument data types
@@ -36,6 +36,7 @@
 #define	ACCW	(2<<TYPLG)			/* write */
 #define	ACCB	(4<<TYPLG)			/* branch displacement */
 #define	ACCA	(8<<TYPLG)			/* address only */
+#define	ACCV	(8<<TYPLG)			/* address only */
 #define	ACCM	(ACCR | ACCW)			/* modify */
 #define	ACCI	(ACCB | ACCR)			/* XFC code */
 
@@ -46,7 +47,7 @@
  *	easy to use and read.
  */
 /*
- *	For address
+ *	For real memory address
  */
 #define	A_AB	A_CONS(ACCA, TYPB)
 #define	A_AW	A_CONS(ACCA, TYPW)
@@ -57,6 +58,18 @@
 #define	A_AD	A_CONS(ACCA, TYPD)
 #define	A_AG	A_CONS(ACCA, TYPG)
 #define	A_AH	A_CONS(ACCA, TYPH)
+/*
+ *	For real memory addresses, or register addresses [sic]
+ */
+#define	A_VB	A_CONS(ACCV, TYPB)
+#define	A_VW	A_CONS(ACCV, TYPW)
+#define	A_VL	A_CONS(ACCV, TYPL)
+#define	A_VQ	A_CONS(ACCV, TYPQ)
+#define	A_VO	A_CONS(ACCV, TYPO)
+#define	A_VF	A_CONS(ACCV, TYPF)
+#define	A_VD	A_CONS(ACCV, TYPD)
+#define	A_VG	A_CONS(ACCV, TYPG)
+#define	A_VH	A_CONS(ACCV, TYPH)
 /*
  *	For branch displacement
  */
