@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)printjob.c	4.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)printjob.c	4.13 (Berkeley) %G%";
 #endif
 
 /*
@@ -420,7 +420,7 @@ print(format, file)
 		break;
 	case 'l':	/* like 'f' but pass control characters */
 		prog = IF;
-		av[1] = "-l";
+		av[1] = "-c";
 		av[2] = width;
 		av[3] = length;
 		av[4] = indent;
