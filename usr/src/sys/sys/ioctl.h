@@ -1,4 +1,4 @@
-/*	ioctl.h	4.24	82/12/05	*/
+/*	ioctl.h	4.25	82/12/13	*/
 /*
  * Ioctl definitions
  */
@@ -78,40 +78,10 @@ struct ltchars {
 #define	TIOCFLUSH	_IOW(t, 16, int)	/* flush buffers */
 #define	TIOCSETC	_IOW(t,17,struct tchars)/* set special characters */
 #define	TIOCGETC	_IOR(t,18,struct tchars)/* get special characters */
-/* locals, from 127 down */
-#define	TIOCLBIS	_IOW(t, 127, int)	/* bis local mode bits */
-#define	TIOCLBIC	_IOW(t, 126, int)	/* bic local mode bits */
-#define	TIOCLSET	_IOW(t, 125, int)	/* set entire local mode word */
-#define	TIOCLGET	_IOR(t, 124, int)	/* get local modes */
-#define	TIOCSBRK	_IO(t, 123)		/* set break bit */
-#define	TIOCCBRK	_IO(t, 122)		/* clear break bit */
-#define	TIOCSDTR	_IO(t, 121)		/* set data terminal ready */
-#define	TIOCCDTR	_IO(t, 120)		/* clear data terminal ready */
-#define	TIOCGPGRP	_IOR(t, 119, int)	/* get pgrp of tty */
-#define	TIOCSPGRP	_IOW(t, 118, int)	/* set pgrp of tty */
-#define	TIOCSLTC	_IOW(t,117,struct ltchars)/* set local special chars */
-#define	TIOCGLTC	_IOR(t,116,struct ltchars)/* get local special chars */
-#define	TIOCSTI		_IOW(t, 114, char)	/* simulate terminal input */
-#define	TIOCNOTTY	_IO(t, 113)		/* void tty association */
-#define	TIOCPKT		_IOW(t, 112, int)	/* pty: set/clear packet mode */
-#define		TIOCPKT_DATA		0x00	/* data packet */
-#define		TIOCPKT_FLUSHREAD	0x01	/* flush packet */
-#define		TIOCPKT_FLUSHWRITE	0x02	/* flush packet */
-#define		TIOCPKT_STOP		0x04	/* stop output */
-#define		TIOCPKT_START		0x08	/* start output */
-#define		TIOCPKT_NOSTOP		0x10	/* no more ^S, ^Q */
-#define		TIOCPKT_DOSTOP		0x20	/* now do ^S ^Q */
-#define	TIOCSTOP	_IO(t, 111)		/* stop output, like ^S */
-#define	TIOCSTART	_IO(t, 110)		/* start output, like ^Q */
-#define	TIOCMSET	_IOW(t, 109, int)	/* set all modem bits */
-#define	TIOCMBIS	_IOW(t, 108, int)	/* bis modem bits */
-#define	TIOCMBIC	_IOW(t, 107, int)	/* bic modem bits */
-#define	TIOCMGET	_IOR(t, 106, int)	/* get all modem bits */
-#define	TIOCREMOTE	_IO(t, 105)		/* remote input editing */
-#define	TIOCSET		_IOW(t, 104, long)	/* set tty flags */
-#define	TIOCBIS		_IOW(t, 103, long)	/* bis tty flags */
-#define	TIOCBIC		_IOW(t, 102, long)	/* bic tty flags */
-#define	TIOCGET		_IOR(t, 101, long)	/* get all tty flags */
+#define	TIOCSET		_IOW(t, 19, long)	/* set tty flags */
+#define	TIOCBIS		_IOW(t, 20, long)	/* bis tty flags */
+#define	TIOCBIC		_IOW(t, 21, long)	/* bic tty flags */
+#define	TIOCGET		_IOR(t, 22, long)	/* get all tty flags */
 #define		TANDEM		0x00000001	/* send stopc on out q full */
 #define		CBREAK		0x00000002	/* half-cooked mode */
 #define		LCASE		0x00000004	/* simulate lower case */
@@ -142,7 +112,7 @@ struct ltchars {
 #define		BSDELAY		0x00008000	/* \b delay */
 #define			BS0	0x00000000
 #define			BS1	0x00008000
-/* used to be local mode settings */
+#define 	ALLDELAY	(NLDELAY|TBDELAY|CRDELAY|VTDELAY|BSDELAY)
 #define		CRTBS		0x00010000	/* do backspacing for crt */
 #define		PRTERA		0x00020000	/* \ ... / erase */
 #define		CRTERA		0x00040000	/* " \b " to wipe out char */
@@ -159,7 +129,54 @@ struct ltchars {
 #define		PENDIN		0x20000000	/* tp->t_rawq needs reread */
 #define		DECCTQ		0x40000000	/* only ^Q starts after ^S */
 #define		NOFLSH		0x80000000	/* no output flush on signal */
-#define 	ALLDELAY	(NLDELAY|TBDELAY|CRDELAY|VTDELAY|BSDELAY)
+#define	TIOCCSET	_IOW(t,23,struct ttychars)/* set special characters */
+#define	TIOCCGET	_IOR(t,24,struct ttychars)/* get special characters */
+/* locals, from 127 down */
+#ifndef NOCOMPAT
+#define	TIOCLBIS	_IOW(t, 127, int)	/* bis local mode bits */
+#define	TIOCLBIC	_IOW(t, 126, int)	/* bic local mode bits */
+#define	TIOCLSET	_IOW(t, 125, int)	/* set entire local mode word */
+#define	TIOCLGET	_IOR(t, 124, int)	/* get local modes */
+#define		LCRTBS		(CRTBS>>16)
+#define		LPRTERA		(PRTERA>>16)
+#define		LCRTERA		(CRTERA>>16)
+#define		LTILDE		(TILDE>>16)
+#define		LMDMBUF		(MDMBUF>>16)
+#define		LLITOUT		(LITOUT>>16)
+#define		LTOSTOP		(TOSTOP>>16)
+#define		LFLUSHO		(FLUSHO>>16)
+#define		LNOHANG		(NOHANG>>16)
+#define		LCRTKIL		(CRTKIL>>16)
+#define		LCTLECH		(CTLECH>>16)
+#define		LPENDIN		(PENDIN>>16)
+#define		LDECCTQ		(DECCTQ>>16)
+#define		LNOFLSH		(NOFLSH>>16)
+#endif
+#define	TIOCSBRK	_IO(t, 123)		/* set break bit */
+#define	TIOCCBRK	_IO(t, 122)		/* clear break bit */
+#define	TIOCSDTR	_IO(t, 121)		/* set data terminal ready */
+#define	TIOCCDTR	_IO(t, 120)		/* clear data terminal ready */
+#define	TIOCGPGRP	_IOR(t, 119, int)	/* get pgrp of tty */
+#define	TIOCSPGRP	_IOW(t, 118, int)	/* set pgrp of tty */
+#define	TIOCSLTC	_IOW(t,117,struct ltchars)/* set local special chars */
+#define	TIOCGLTC	_IOR(t,116,struct ltchars)/* get local special chars */
+#define	TIOCSTI		_IOW(t, 114, char)	/* simulate terminal input */
+#define	TIOCNOTTY	_IO(t, 113)		/* void tty association */
+#define	TIOCPKT		_IOW(t, 112, int)	/* pty: set/clear packet mode */
+#define		TIOCPKT_DATA		0x00	/* data packet */
+#define		TIOCPKT_FLUSHREAD	0x01	/* flush packet */
+#define		TIOCPKT_FLUSHWRITE	0x02	/* flush packet */
+#define		TIOCPKT_STOP		0x04	/* stop output */
+#define		TIOCPKT_START		0x08	/* start output */
+#define		TIOCPKT_NOSTOP		0x10	/* no more ^S, ^Q */
+#define		TIOCPKT_DOSTOP		0x20	/* now do ^S ^Q */
+#define	TIOCSTOP	_IO(t, 111)		/* stop output, like ^S */
+#define	TIOCSTART	_IO(t, 110)		/* start output, like ^Q */
+#define	TIOCMSET	_IOW(t, 109, int)	/* set all modem bits */
+#define	TIOCMBIS	_IOW(t, 108, int)	/* bis modem bits */
+#define	TIOCMBIC	_IOW(t, 107, int)	/* bic modem bits */
+#define	TIOCMGET	_IOR(t, 106, int)	/* get all modem bits */
+#define	TIOCREMOTE	_IO(t, 105)		/* remote input editing */
 
 #define	OTTYDISC	0		/* old, v7 std tty driver */
 #define	NETLDISC	1		/* line discip for berk net */
