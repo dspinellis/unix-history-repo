@@ -1,4 +1,4 @@
-static	char sccsid[] = "@(#)pc.c 3.14 %G%";
+static	char sccsid[] = "@(#)pc.c 3.15 %G%";
 
 #include <stdio.h>
 #include <signal.h>
@@ -25,7 +25,7 @@ char	*tfile[2];
 
 char	*setsuf(), *savestr();
 
-int	Jflag, Sflag, Oflag, Tlflag, cflag, gflag, pflag;
+int	Jflag, Sflag, Oflag, Tlflag, cflag, gflag, pflag, wflag;
 int	debug;
 
 #define	NARGS	512
@@ -35,10 +35,10 @@ char	*pc0args[NARGS] =	{ "pc0", "-o", "XXX" };
 char	*pc1args[3] =		{ "pc1", 0, };
 char	*pc2args[2] =		{ "pc2", 0 };
 char	*c2args[4] =		{ "c2", 0, 0, 0 };
-int	pc3argx = 2;
+int	pc3argx = 1;
 #define	pc3args	pc0args
 #define	ldargs	pc0args
-/* char	*pc3args[NARGS] =	{ "pc3", /usr/lib/pcexterns.o, 0 }; */
+/* char	*pc3args[NARGS] =	{ "pc3", 0 }; */
 /* char	*ldargs[NARGS] =	{ "ld", "-X", "/lib/crt0.o", 0, }; */
 int	asargx;
 char	*asargs[6] =		{ "as", 0, };
@@ -161,14 +161,18 @@ main(argc, argv)
 				continue;
 			/* fall into ... */
 		case 'b':
-		case 'g':
 		case 's':
-		case 'w':
 		case 'z':
 		case 'C':
 			pc0args[pc0argx++] = argp;
-			if (argp[1] == 'g')
-				gflag = 1;
+			continue;
+		case 'w':
+			wflag = 1;
+			pc0args[pc0argx++] = argp;
+			continue;
+		case 'g':
+			gflag = 1;
+			pc0args[pc0argx++] = argp;
 			continue;
 		case 't':
 			fprintf(stderr, "pc: -t is default; -C for checking\n");
@@ -258,9 +262,11 @@ main(argc, argv)
 	}
 	if (errs || cflag || Sflag)
 		done();
-/* char	*pc3args[NARGS] =	{ "pc3", "/usr/lib/pcexterns.o", 0 }; */
+/* char	*pc3args[NARGS] =	{ "pc3", 0 }; */
 	pc3args[0] = "pc3";
-	pc3args[1] = "/usr/lib/pcexterns.o";
+	if (wflag)
+		pc3args[pc3argx++] = "-w";
+	pc3args[pc3argx++] = "/usr/lib/pcexterns.o";
 	for (i = 0; i < argc; i++) {
 		argp = argv[i];
 		if (!strcmp(argp, "-o"))
@@ -282,7 +288,7 @@ main(argc, argv)
 		}
 	}
 	pc3args[pc3argx] = 0;
-	if (dosys(pc3, pc3args, 0, 0))
+	if (dosys(pc3, pc3args, 0, 0) > 1)
 		done();
 /* char	*ldargs[NARGS] =	{ "ld", "-X", "/lib/crt0.o", 0, }; */
 	ldargs[0] = "ld";
