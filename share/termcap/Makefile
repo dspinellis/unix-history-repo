@@ -9,7 +9,7 @@ MAN5=	termcap.0
 all: termcap ${MAN5}
 
 termcap: reorder termcap.src
-	ex - ${.CURDIR}/termcap.src < ${.CURDIR}/reorder > /dev/null
+	ed - ${.CURDIR}/termcap.src < ${.CURDIR}/reorder > /dev/null
 
 clean:
 	rm -f termcap
