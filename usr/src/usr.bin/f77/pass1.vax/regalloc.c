@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)regalloc.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)regalloc.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -17,6 +17,17 @@ static char sccsid[] = "@(#)regalloc.c	5.2 (Berkeley) %G%";
  *
  * $History$
  * $Log:	regalloc.c,v $
+ * Revision 5.3  85/09/27  19:58:16  root
+ * Ended PCC confusion with sizes of objects in registers by forcing SHORT
+ * values in registers to be converted to INT.
+ * 
+ * Revision 5.2  85/09/26  19:36:22  donn
+ * Added a fix for a bug that allowed character variables which were
+ * arguments to subroutines to be made eligible to be register variables.
+ * 
+ * Revision 5.1  85/08/10  03:49:35  donn
+ * 4.3 alpha
+ * 
  * Revision 2.9  85/03/18  21:35:05  donn
  * Bob Corbett's hack to prevent conflicts between subroutine side effects
  * and register assignment.  Makes the code a lot worse...
@@ -1205,7 +1216,7 @@ Exprp ep;
 
 	      addrinfo = getaddr(ap);
 	      addrinfo->isset = YES;
-	      if (fixedaddress(ap))
+	      if (fixedaddress(ap) && ISREGTYPE(ap->vtype))
 		{
 		  varinfo = getvar(addrinfo, ap);
 		  if (ap->vstg != STGCONST)
