@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)netstat.h	5.3 (Berkeley) %G%
+ *	@(#)netstat.h	5.4 (Berkeley) %G%
  */
 
 #include <sys/cdefs.h>
@@ -32,50 +32,52 @@ int	af;		/* address family */
 char	*prog;		/* program name */
 
 
-int	kread __P((off_t addr, char *buf, int size));
+int	kread __P((u_long addr, char *buf, int size));
 char	*plural __P((int));
 char	*plurales __P((int));
 
-void	protopr __P((off_t, char *));
-void	tcp_stats __P((off_t, char *));
-void	udp_stats __P((off_t, char *));
-void	ip_stats __P((off_t, char *));
-void	icmp_stats __P((off_t, char *));
-void	protopr __P((off_t, char *));
+void	protopr __P((u_long, char *));
+void	tcp_stats __P((u_long, char *));
+void	udp_stats __P((u_long, char *));
+void	ip_stats __P((u_long, char *));
+void	icmp_stats __P((u_long, char *));
+void	protopr __P((u_long, char *));
 
-void	mbpr(off_t);
+void	mbpr(u_long);
 
-void	hostpr __P((off_t, off_t));
-void	impstats __P((off_t, off_t));
+void	hostpr __P((u_long, u_long));
+void	impstats __P((u_long, u_long));
+
+void	intpr __P((int, u_long));
 
 void	pr_rthdr __P(());
 void	pr_family __P((int));
-void	rt_stats __P((off_t));
+void	rt_stats __P((u_long));
 char	*ns_phost __P((struct sockaddr *));
 void	upHex __P((char *));
 
 char	*routename __P((u_long));
 char	*netname __P((u_long, u_long));
 char	*ns_print __P((struct sockaddr *));
-void	routepr __P((off_t));
+void	routepr __P((u_long));
 
-void	nsprotopr __P((off_t, char *));
-void	spp_stats __P((off_t, char *));
-void	idp_stats __P((off_t, char *));
-void	nserr_stats __P((off_t, char *));
+void	nsprotopr __P((u_long, char *));
+void	spp_stats __P((u_long, char *));
+void	idp_stats __P((u_long, char *));
+void	nserr_stats __P((u_long, char *));
 
-void	intpr __P((int, off_t));
+void	intpr __P((int, u_long));
 
-void	unixpr __P((struct protosw *));
+void	unixpr __P((u_long));
 
-void	esis_stats __P((off_t, char *));
-void	clnp_stats __P((off_t, char *));
-void	cltp_stats __P((off_t, char *));
-void	iso_protopr __P((off_t, char *));
-void	iso_protopr1 __P((off_t, int));
-void	tp_protopr __P((off_t, char *));
-void	tp_inproto __P((off_t));
+void	esis_stats __P((u_long, char *));
+void	clnp_stats __P((u_long, char *));
+void	cltp_stats __P((u_long, char *));
+void	iso_protopr __P((u_long, char *));
+void	iso_protopr1 __P((u_long, int));
+void	tp_protopr __P((u_long, char *));
+void	tp_inproto __P((u_long));
 void	tp_stats __P((caddr_t, caddr_t));
 
-void	mroutepr __P((off_t, off_t, off_t));
-void	mrt_stats __P((off_t, off_t));
+void	mroutepr __P((u_long, u_long, u_long));
+void	mrt_stats __P((u_long, u_long));

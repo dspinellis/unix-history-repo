@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iso.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)iso.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -91,7 +91,7 @@ extern void inetprint __P((struct in_addr *, int, char *));
  */
 void
 esis_stats(off, name)
-	off_t	off;
+	u_long	off;
 	char	*name;
 {
 	struct esis_stat esis_stat;
@@ -120,7 +120,7 @@ esis_stats(off, name)
  */
 void
 clnp_stats(off, name)
-	off_t off;
+	u_long off;
 	char *name;
 {
 	struct clnp_stat clnp_stat;
@@ -155,7 +155,7 @@ clnp_stats(off, name)
  */
 void
 cltp_stats(off, name)
-	off_t off;
+	u_long off;
 	char *name;
 {
 	struct cltpstat cltpstat;
@@ -179,7 +179,7 @@ union	{
 	char	data[128];
 } laddr, faddr;
 #define kget(o, p) \
-	(kread((off_t)(o), (char *)&p, sizeof (p)))
+	(kread((u_long)(o), (char *)&p, sizeof (p)))
 
 static	int first = 1;
 
@@ -191,7 +191,7 @@ static	int first = 1;
  */
 void
 iso_protopr(off, name)
-	off_t off;
+	u_long off;
 	char *name;
 {
 	struct isopcb cb;
@@ -220,7 +220,7 @@ iso_protopr(off, name)
 			break;
 		}
 		kget(isopcb.isop_socket, sockb);
-		iso_protopr1((off_t)next, 0);
+		iso_protopr1((u_long)next, 0);
 		putchar('\n');
 		prev = next;
 	}
@@ -228,7 +228,7 @@ iso_protopr(off, name)
 
 void
 iso_protopr1(kern_addr, istp)
-	off_t kern_addr;
+	u_long kern_addr;
 	int istp;
 {
 	if (first) {
@@ -279,7 +279,7 @@ iso_protopr1(kern_addr, istp)
 
 void
 tp_protopr(off, name)
-	off_t off;
+	u_long off;
 	char *name;
 {
 	struct tp_ref *tpr, *tpr_base;
@@ -291,7 +291,7 @@ tp_protopr(off, name)
 	tpr_base = (struct tp_ref *)malloc(size);
 	if (tpr_base == 0)
 		return;
-	kread((off_t)(tpkerninfo.tpr_base), (char *)tpr_base, size);
+	kread((u_long)(tpkerninfo.tpr_base), (char *)tpr_base, size);
 	for (tpr = tpr_base; tpr < tpr_base + tpkerninfo.tpr_size; tpr++) {
 		if (tpr->tpr_pcb == 0)
 			continue;
@@ -307,11 +307,11 @@ tp_protopr(off, name)
 		kget(tpcb.tp_sock, sockb);
 		if (tpcb.tp_npcb) switch(tpcb.tp_netservice) {
 			case IN_CLNS:
-				tp_inproto((off_t)tpkerninfo.tpr_base);
+				tp_inproto((u_long)tpkerninfo.tpr_base);
 				break;
 			default:
 				kget(tpcb.tp_npcb, isopcb);
-				iso_protopr1((off_t)tpcb.tp_npcb, 1);
+				iso_protopr1((u_long)tpcb.tp_npcb, 1);
 				break;
 		}
 		if (tpcb.tp_state >= tp_NSTATES)
@@ -324,7 +324,7 @@ tp_protopr(off, name)
 
 void
 tp_inproto(pcb)
-	off_t pcb;
+	u_long pcb;
 {
 	struct inpcb inpcb;
 	kget(tpcb.tp_npcb, inpcb);
@@ -436,7 +436,7 @@ isonetprint(iso, sufx, sufxlen, islocal)
 #ifdef notdef
 static void
 x25_protopr(off, name)
-	off_t off;
+	u_long off;
 	char *name;
 {
 	static char *xpcb_states[] = {
@@ -460,12 +460,12 @@ x25_protopr(off, name)
 		return;
 	while (xpcb.x_next != (struct isopcb *)off) {
 		next = isopcb.isop_next;
-		kread((off_t)next, &xpcb, sizeof (struct x25_pcb));
+		kread((u_long)next, &xpcb, sizeof (struct x25_pcb));
 		if (xpcb.x_prev != prev) {
 			printf("???\n");
 			break;
 		}
-		kread((off_t)xpcb.x_socket, &sockb, sizeof (sockb));
+		kread((u_long)xpcb.x_socket, &sockb, sizeof (sockb));
 
 		if (!aflag &&
 			xpcb.x_state == LISTENING ||

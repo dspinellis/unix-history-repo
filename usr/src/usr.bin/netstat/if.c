@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)if.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)if.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -31,7 +31,7 @@ static char sccsid[] = "@(#)if.c	5.17 (Berkeley) %G%";
 #define	YES	1
 #define	NO	0
 
-static void sidewaysintpr __P((unsigned, off_t));
+static void sidewaysintpr __P((unsigned, u_long));
 static void catchalarm __P(());
 
 /*
@@ -40,7 +40,7 @@ static void catchalarm __P(());
 void
 intpr(interval, ifnetaddr)
 	int interval;
-	off_t ifnetaddr;
+	u_long ifnetaddr;
 {
 	struct ifnet ifnet;
 	union {
@@ -49,7 +49,7 @@ intpr(interval, ifnetaddr)
 		struct ns_ifaddr ns;
 		struct iso_ifaddr iso;
 	} ifaddr;
-	off_t ifaddraddr;
+	u_long ifaddraddr;
 	struct sockaddr *sa;
 	char name[16];
 
@@ -80,10 +80,10 @@ intpr(interval, ifnetaddr)
 
 		if (ifaddraddr == 0) {
 			if (kread(ifnetaddr, (char *)&ifnet, sizeof ifnet) ||
-			    kread((off_t)ifnet.if_name, name, 16))
+			    kread((u_long)ifnet.if_name, name, 16))
 				return;
 			name[15] = '\0';
-			ifnetaddr = (off_t) ifnet.if_next;
+			ifnetaddr = (u_long) ifnet.if_next;
 			if (interface != 0 &&
 			    (strcmp(name, interface) != 0 || unit != ifnet.if_unit))
 				continue;
@@ -92,7 +92,7 @@ intpr(interval, ifnetaddr)
 			if ((ifnet.if_flags&IFF_UP) == 0)
 				*cp++ = '*';
 			*cp = '\0';
-			ifaddraddr = (off_t)ifnet.if_addrlist;
+			ifaddraddr = (u_long)ifnet.if_addrlist;
 		}
 		printf("%-5.5s %-5d ", name, ifnet.if_mtu);
 		if (ifaddraddr == 0) {
@@ -168,7 +168,7 @@ intpr(interval, ifnetaddr)
 					putchar(' ');
 				break;
 			}
-			ifaddraddr = (off_t)ifaddr.ifa.ifa_next;
+			ifaddraddr = (u_long)ifaddr.ifa.ifa_next;
 		}
 		printf("%8d %5d %8d %5d %5d",
 		    ifnet.if_ipackets, ifnet.if_ierrors,
@@ -204,16 +204,16 @@ u_char	signalled;			/* set if alarm goes off "early" */
 static void
 sidewaysintpr(interval, off)
 	unsigned interval;
-	off_t off;
+	u_long off;
 {
 	struct ifnet ifnet;
-	off_t firstifnet;
+	u_long firstifnet;
 	register struct iftot *ip, *total;
 	register int line;
 	struct iftot *lastif, *sum, *interesting;
 	int oldmask;
 
-	if (kread(off, (char *)&firstifnet, sizeof (off_t)))
+	if (kread(off, (char *)&firstifnet, sizeof (u_long)))
 		return;
 	lastif = iftot;
 	sum = iftot + MAXIF - 1;
@@ -225,7 +225,7 @@ sidewaysintpr(interval, off)
 		if (kread(off, (char *)&ifnet, sizeof ifnet))
 			break;
 		ip->ift_name[0] = '(';
-		if (kread((off_t)ifnet.if_name, ip->ift_name + 1, 15))
+		if (kread((u_long)ifnet.if_name, ip->ift_name + 1, 15))
 			break;
 		if (interface && strcmp(ip->ift_name + 1, interface) == 0 &&
 		    unit == ifnet.if_unit)
@@ -236,7 +236,7 @@ sidewaysintpr(interval, off)
 		ip++;
 		if (ip >= iftot + MAXIF - 2)
 			break;
-		off = (off_t) ifnet.if_next;
+		off = (u_long) ifnet.if_next;
 	}
 	lastif = ip;
 
@@ -306,7 +306,7 @@ loop:
 		sum->ift_oe += ip->ift_oe;
 		sum->ift_co += ip->ift_co;
 		sum->ift_dr += ip->ift_dr;
-		off = (off_t) ifnet.if_next;
+		off = (u_long) ifnet.if_next;
 	}
 	if (lastif - iftot > 0) {
 		printf("  %8d %5d %8d %5d %5d",

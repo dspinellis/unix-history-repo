@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)unix.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)unix.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -39,12 +39,13 @@ int	nfiles;
 extern	kvm_t *kvmd;
 
 void
-unixpr(unixsw)
-	struct protosw *unixsw;
+unixpr(off)
+	u_long	off;
 {
 	register struct file *fp;
 	struct socket sock, *so = &sock;
 	char *filebuf;
+	struct protosw *unixsw = (struct protosw *)off;
 
 	filebuf = (char *)kvm_getfiles(kvmd, KINFO_FILE, 0, &nfiles);
 	if (filebuf == 0) {
@@ -56,7 +57,7 @@ unixpr(unixsw)
 	for (fp = file; fp < fileNFILE; fp++) {
 		if (fp->f_count == 0 || fp->f_type != DTYPE_SOCKET)
 			continue;
-		if (kread((off_t)fp->f_data, (char *)so, sizeof (*so)))
+		if (kread((u_long)fp->f_data, (char *)so, sizeof (*so)))
 			continue;
 		/* kludge */
 		if (so->so_proto >= unixsw && so->so_proto <= unixsw + 2)
@@ -78,11 +79,11 @@ unixdomainpr(so, soaddr)
 	struct sockaddr_un *sa;
 	static int first = 1;
 
-	if (kread((off_t)so->so_pcb, (char *)unp, sizeof (*unp)))
+	if (kread((u_long)so->so_pcb, (char *)unp, sizeof (*unp)))
 		return;
 	if (unp->unp_addr) {
 		m = &mbuf;
-		if (kread((off_t)unp->unp_addr, (char *)m, sizeof (*m)))
+		if (kread((u_long)unp->unp_addr, (char *)m, sizeof (*m)))
 			m = (struct mbuf *)0;
 		sa = (struct sockaddr_un *)(m->m_dat);
 	} else
