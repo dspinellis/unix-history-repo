@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)checknr.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)checknr.c	4.2 (Berkeley) %G%";
 /*
  * checknr: check an nroff/troff input file for matching macro calls.
  * we also attempt to match size and font changes, but only the embedded
@@ -122,38 +122,59 @@ char **argv;
 	FILE *f;
 	int i;
 	char *cp;
+	char b1[4];
 
 	if (argc <= 1)
-		goto usage;
+		usage();
+	/* Figure out how many known commands there are */
+	while (knowncmds[ncmds])
+		ncmds++;
 	while (argc > 1 && argv[1][0] == '-') {
 		switch(argv[1][1]) {
+
+		/* -a: add pairs of macros */
 		case 'a':
-			/* -a: add pairs of macros */
 			i = strlen(argv[1]) - 2;
-			if (i % 6 != 0) {
-usage:
-				printf("Usage: nrc -s -f -a.xx.yy.xx.yy... (.xx, .yy)\n");
-				break;
-			}
+			if (i % 6 != 0)
+				usage();
 			/* look for empty macro slots */
 			for (i=0; br[i].opbr; i++)
 				;
 			for (cp=argv[1]+3; cp[-1]; cp += 6) {
-				br[i].opbr = cp;
-				br[i].clbr = cp+3;
-				cp[2] = cp[5] = 0;
+				br[i].opbr = malloc(3);
+				strncpy(br[i].opbr, cp, 2);
+				br[i].clbr = malloc(3);
+				strncpy(br[i].clbr, cp+3, 2);
+				addmac(br[i].opbr);	/* knows pairs are also known cmds */
+				addmac(br[i].clbr);
 				i++;
 			}
 			break;
+
+		/* -c: add known commands */
+		case 'c':
+			i = strlen(argv[1]) - 2;
+			if (i % 3 != 0)
+				usage();
+			for (cp=argv[1]+3; cp[-1]; cp += 3) {
+				if (cp[2] && cp[2] != '.')
+					usage();
+				strncpy(b1, cp, 2);
+				addmac(b1);
+			}
+			break;
+
+		/* -f: ignore font changes */
 		case 'f':
 			fflag = 1;
 			break;
+
+		/* -s: ignore size changes */
 		case 's':
 			sflag = 1;
 			break;
 		default:
-			printf("Illegal flag: %s\n", argv[1]);
-			break;
+			usage();
 		}
 		argc--; argv++;
 	}
@@ -174,6 +195,12 @@ usage:
 		process(stdin);
 	}
 	exit(0);
+}
+
+usage()
+{
+	printf("Usage: checknr -s -f -a.xx.yy.xx.yy... -c.xx.xx.xx...\n");
+	exit(1);
 }
 
 process(f)
@@ -397,11 +424,6 @@ int lineno;
 checkknown(mac)
 char *mac;
 {
-	/* First time figure out ncmds. */
-	if (ncmds == 0) {
-		while (knowncmds[ncmds])
-			ncmds++;
-	}
 
 	if (eq(mac, "."))
 		return;
@@ -419,7 +441,6 @@ addcmd(line)
 char *line;
 {
 	char *mac;
-	register char **src, **dest, **loc;
 
 	/* grab the macro being defined */
 	mac = line+4;
@@ -437,16 +458,26 @@ char *line;
 		printf("Only %d known commands allowed\n", MAXCMDS);
 		exit(1);
 	}
-	
-	/*
-	 * Add mac to the list.  We should really have some kind of tree
-	 * structure here but this is a quick-and-dirty job and I just don't
-	 * have time to mess with it.  (I wonder if this will come back to haunt
-	 * me someday?)  Anyway, I claim that .de is fairly rare in user
-	 * nroff programs, and the register loop below is pretty fast.
-	 */
+	addmac(mac);
+}
+
+/*
+ * Add mac to the list.  We should really have some kind of tree
+ * structure here but this is a quick-and-dirty job and I just don't
+ * have time to mess with it.  (I wonder if this will come back to haunt
+ * me someday?)  Anyway, I claim that .de is fairly rare in user
+ * nroff programs, and the register loop below is pretty fast.
+ */
+addmac(mac)
+char *mac;
+{
+	register char **src, **dest, **loc;
+
 	binsrch(mac);	/* it's OK to redefine something */
 	/* binsrch sets slot as a side effect */
+#ifdef DEBUG
+printf("binsrch(%s) -> %d\n", mac, slot);
+#endif
 	loc = &knowncmds[slot];
 	src = &knowncmds[ncmds-1];
 	dest = src+1;
@@ -455,6 +486,9 @@ char *line;
 	*loc = malloc(3);
 	strcpy(*loc, mac);
 	ncmds++;
+#ifdef DEBUG
+printf("after: %s %s %s %s %s, %d cmds\n", knowncmds[slot-2], knowncmds[slot-1], knowncmds[slot], knowncmds[slot+1], knowncmds[slot+2], ncmds);
+#endif
 }
 
 /*
