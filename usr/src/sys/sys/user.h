@@ -1,4 +1,4 @@
-/*	user.h	4.5	81/02/23	*/
+/*	user.h	4.6	81/03/03	*/
 
 #ifdef KERNEL
 #include "../h/pcb.h"
@@ -63,7 +63,9 @@ struct	user
 #define	EXCLOSE 01		/* auto-close on exec */
 	label_t u_ssav;			/* label variable for swapping */
 	int	(*u_signal[NSIG])();	/* disposition of signals */
-	int	u_cfcode;		/* ``code'' to trap when CM faulted */
+	int	u_code;			/* ``code'' to trap */
+/* on SIGILL code passes compatibility mode fault address  */
+/* on SIGFPE code passes more specific kind of floating point fault */
 	int	*u_ar0;			/* address of users saved R0 */
 	struct uprof {			/* profile arguments */
 		short	*pr_base;	/* buffer base */
