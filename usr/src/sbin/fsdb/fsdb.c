@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)fsdb.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)fsdb.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -36,6 +36,8 @@ static char sccsid[] = "@(#)fsdb.c	5.12 (Berkeley) %G%";
 #include <ufs/ufs/dinode.h>
 #include <ufs/ffs/fs.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <setjmp.h>
 #include <paths.h>
 
@@ -209,7 +211,6 @@ long		read_requests;
 long		actual_disk_reads;
 jmp_buf		env;
 
-extern char	*malloc(), *calloc();
 char		getachar();
 char		*getblk(), *fmtentry();
 void		err();
@@ -225,11 +226,10 @@ unsigned long	*print_check();
  *	and fsdb could not share stdin.
  */
 
-main(argc,argv)
+main(argc, argv)
 	short			argc;
 	char			**argv;
 {
-
 	register char		c, *cptr;
 	register short		i, j, *iptr;
 	register struct direct	*dirp;
@@ -257,7 +257,7 @@ main(argc,argv)
 			argc--; argv++;
 			continue;
 		}
-		if (strncmp("-p", argv[1],2) == 0) {
+		if (strncmp("-p", argv[1], 2) == 0) {
 			prompt = &argv[1][2];
 			argc--; argv++;
 			continue;
@@ -268,7 +268,7 @@ main(argc,argv)
 			continue;
 		}
 	}
-	if (argc!=2) {
+	if (argc != 2) {
 usage:
 		printf("usage:   %s [options] special\n", progname);
 		printf("options:\n");
@@ -281,14 +281,14 @@ usage:
 	/*
 	 * Attempt to open the special file.
 	 */
-	if ((fd = open(argv[1],wrtflag)) < 0) {
+	if ((fd = open(argv[1], wrtflag)) < 0) {
 		perror(argv[1]);
 		exit(1);
 	}
 	/*
 	 * Read in the super block and validate (not too picky).
 	 */
-	if (lseek(fd, SBLOCK * DEV_BSIZE, 0) == -1) {
+	if (lseek(fd, (off_t)(SBLOCK * DEV_BSIZE), SEEK_SET) == -1) {
 		perror(argv[1]);
 		exit(1);
 	}
@@ -306,14 +306,14 @@ usage:
 		fs->fs_nrpos = 8;
 #endif
 	printf("fsdb of %s %s -- last mounted on %s\n",
-		argv[1], wrtflag ? "(Opened for write)" : "(Read only)", 
+		argv[1], wrtflag ? "(Opened for write)" : "(Read only)",
 		&fs->fs_fsmnt[0]);
 	/*
 	 * Malloc buffers and set up cache.
 	 */
 	buffers = malloc(NBUF * BLKSIZE);
 	bhdr.fwd = bhdr.back = &bhdr;
-	for (i=0; i<NBUF; i++) {
+	for (i = 0; i < NBUF; i++) {
 		bp = &buf[i];
 		bp->blkaddr = buffers + (i * BLKSIZE);
 		bp->valid = 0;
@@ -347,7 +347,7 @@ usage:
 	}
 	current_pathp = -1;
 
-	signal(2,err);
+	signal(2, err);
 	setjmp(env);
 
 	getnextinput();
@@ -396,8 +396,8 @@ usage:
 				errcur_bytes = cur_bytes;
 				switch (objsz) {
 				case DIRECTORY:
-					if ((addr =
-					     getdirslot(dirslot+1)) == 0)
+					addr = getdirslot(dirslot + 1);
+					if (addr == 0)
 						should_print = 0;
 					if (error) {
 						ungetachar(c);
@@ -415,7 +415,8 @@ usage:
 				case CGRP:
 				case SB:
 					cur_cgrp++;
-					if ((addr=cgrp_check(cur_cgrp)) == 0) {
+					addr = cgrp_check(cur_cgrp);
+					if (addr == 0) {
 					     cur_cgrp--;
 					     continue;
 					}
@@ -679,13 +680,13 @@ calc:
 				temp = expr();
 				value = get(objsz);
 				if (!error)
-					put(value+temp,objsz);
+					put(value+temp, objsz);
 				continue;
 			case '-': /* =- operator */
 				temp = expr();
 				value = get(objsz);
 				if (!error)
-					put(value-temp,objsz);
+					put(value-temp, objsz);
 				continue;
 			case 'b':
 			case 'c':
@@ -697,7 +698,7 @@ calc:
 			case 'i':
 				addr = cur_ino;
 				fprnt('?', 'i');
-				continue; 
+				continue;
 			case 's':
 				fprnt('?', 's');
 				continue;
@@ -754,7 +755,7 @@ OTX:
 				if (error)
 					printf("syntax error\n");
 				else
-					put(value,objsz);
+					put(value, objsz);
 				continue;
 			}
 		}
@@ -1004,7 +1005,7 @@ showbase:
 			goto bad_syntax;
 
 		case 'f':
-			if (colon) 
+			if (colon)
 				colon = 0;
 			else
 				goto no_colon;
@@ -1284,7 +1285,7 @@ showbase:
 			goto bad_syntax;
 
 		case 'o':
-			if (colon) 
+			if (colon)
 				colon = 0;
 			else
 				goto no_colon;
@@ -1333,7 +1334,7 @@ showbase:
 				continue;
 			}
 			goto bad_syntax;
-				
+
 		case 'q':
 			if (!colon)
 				goto no_colon;
@@ -1402,12 +1403,12 @@ showbase:
 			goto bad_syntax;
 
 		case 'F': /* buffer status (internal use only) */
-			if (colon) 
+			if (colon)
 				colon = 0;
 			else
 				goto no_colon;
 			for (bp = bhdr.fwd; bp != &bhdr; bp = bp->fwd)
-				printf("%8x %d\n",bp->blkno,bp->valid);
+				printf("%8x %d\n", bp->blkno, bp->valid);
 			printf("\n");
 			printf("# commands\t\t%d\n", commands);
 			printf("# read requests\t\t%d\n", read_requests);
@@ -2083,7 +2084,7 @@ follow_path(level, inum)
 		    if ((level <= input_pathp) &&
 				       (strcmp(input_path[level], ".") == 0 ||
 					strcmp(input_path[level], "..") == 0)) {
-			if (strcmp(input_path[level],"..") == 0 &&
+			if (strcmp(input_path[level], "..") == 0 &&
 							 top->len >= 0) {
 			    free(top->fname[top->len]);
 			    top->len -= 1;
@@ -2416,11 +2417,11 @@ fill()
 		error++;
 	}
 }
-	
+
 /*
  * get - read a byte, short or long from the file system.
  *	The entire block containing the desired item is read
- *	and the appropriate data is extracted and returned. 
+ *	and the appropriate data is extracted and returned.
  */
 long
 get(lngth)
@@ -2666,14 +2667,15 @@ putf(c)
  *	fit in the size given without truncation.  If successful,
  *	the entire block is written back to the file system.
  */
-put(item,lngth)
+put(item, lngth)
 	long		item;
 	short		lngth;
 {
 
 	register char	*bptr, *sbptr;
 	register long	*vptr;
-	long		s_err,nbytes;
+	off_t		s_err;
+	long		nbytes;
 	long		olditem;
 
 	if (!wrtflag) {
@@ -2706,16 +2708,16 @@ put(item,lngth)
 		error++;
 		return;
 	}
-	if ((s_err = lseek(fd, addr & fs->fs_bmask, 0)) == -1) {
+	if ((s_err = lseek(fd, (off_t)(addr & fs->fs_bmask), SEEK_SET)) == -1) {
 		error++;
-		printf("seek error : %x\n",addr);
+		printf("seek error : %x\n", addr);
 		return(0);
 	}
 	if ((nbytes = write(fd, sbptr, BLKSIZE)) != BLKSIZE) {
 		error++;
-		printf("write error : addr   = %x\n",addr);
-		printf("            : s_err  = %x\n",s_err);
-		printf("            : nbytes = %x\n",nbytes);
+		printf("write error : addr   = %x\n", addr);
+		printf("            : s_err  = %qx\n", s_err);
+		printf("            : nbytes = %x\n", nbytes);
 		return(0);
 	}
 	if (!acting_on_inode && objsz != INODE && objsz != DIRECTORY) {
@@ -2754,7 +2756,8 @@ getblk(address)
 {
 
 	register struct buf	*bp;
-	long			s_err, nbytes;
+	off_t			s_err;
+	long			nbytes;
 	unsigned long		block;
 
 	read_requests++;
@@ -2771,16 +2774,17 @@ getblk(address)
 	bp = bhdr.back;
 	bp->blkno = block;
 	bp->valid = 0;
-	if ((s_err = lseek(fd, address & fs->fs_bmask, 0)) == -1) {
+	s_err = lseek(fd, (off_t)(address & fs->fs_bmask), SEEK_SET);
+	if (s_err == -1) {
 		error++;
-		printf("seek error : %x\n",address);
+		printf("seek error : %x\n", address);
 		return(0);
 	}
 	if ((nbytes = read(fd, bp->blkaddr, BLKSIZE)) != BLKSIZE) {
 		error++;
-		printf("read error : addr   = %x\n",address);
-		printf("           : s_err  = %x\n",s_err);
-		printf("           : nbytes = %x\n",nbytes);
+		printf("read error : addr   = %x\n", address);
+		printf("           : s_err  = %qx\n", s_err);
+		printf("           : nbytes = %x\n", nbytes);
 		return(0);
 	}
 	bp->valid++;
@@ -2815,7 +2819,7 @@ err()
 {
 	freemem(filenames, nfiles);
 	nfiles = 0;
-	signal(2,err);
+	signal(2, err);
 	addr = erraddr;
 	cur_ino = errino;
 	cur_inum = errinum;
@@ -2824,11 +2828,11 @@ err()
 	c_count = 0;
 	printf("\n?\n");
 	fseek(stdin, 0L, 2);
-	longjmp(env,0);
+	longjmp(env, 0);
 }
 
 /*
- * devcheck - check that the given mode represents a 
+ * devcheck - check that the given mode represents a
  *	special device. The IFCHR bit is on for both
  *	character and block devices.
  */
@@ -2871,7 +2875,8 @@ puta()
 	register int		i;
 	char			*sbptr;
 	short			terror = 0;
-	long			maxchars, s_err, nbytes, temp;
+	long			maxchars, nbytes, temp;
+	off_t			s_err;
 	long			taddr = addr, tcount = 0, item, olditem = 0;
 
 	if (!wrtflag) {
@@ -2935,16 +2940,16 @@ puta()
 	if (objsz == DIRECTORY && acting_on_directory)
 		for (i = tcount; i <= maxchars; i++)
 			*cptr++ = '\0';
-	if ((s_err = lseek(fd, addr & fs->fs_bmask, 0)) == -1) {
+	if ((s_err = lseek(fd, (off_t)(addr & fs->fs_bmask), SEEK_SET)) == -1) {
 		error++;
-		printf("seek error : %x\n",addr);
+		printf("seek error : %x\n", addr);
 		return(0);
 	}
 	if ((nbytes = write(fd, sbptr, BLKSIZE)) != BLKSIZE) {
 		error++;
-		printf("write error : addr   = %x\n",addr);
-		printf("            : s_err  = %x\n",s_err);
-		printf("            : nbytes = %x\n",nbytes);
+		printf("write error : addr   = %x\n", addr);
+		printf("            : s_err  = %qx\n", s_err);
+		printf("            : nbytes = %x\n", nbytes);
 		return(0);
 	}
 	if (!acting_on_inode && objsz != INODE && objsz != DIRECTORY) {
@@ -3081,10 +3086,10 @@ fprnt(style, po)
 					} else {
 						if ((i + 1) % 16 == 0)
 							print(*cptr++ & 0377,
-								2,-2,0);
+								2, -2, 0);
 						else
 							print(*cptr++ & 0377,
-								4,-2,0);
+								4, -2, 0);
 					}
 					addr += CHAR;
 					cur_bytes += CHAR;
@@ -3131,13 +3136,13 @@ otx:
 					   print_check(sptr, &tcount, tbase, i);
 					switch (po) {
 					case 'o':
-						printf("%06o ",*sptr++);
+						printf("%06o ", *sptr++);
 						break;
 					case 'd':
-						printf("%05d  ",*sptr++);
+						printf("%05d  ", *sptr++);
 						break;
 					case 'x':
-						printf("%04x   ",*sptr++);
+						printf("%04x   ", *sptr++);
 					}
 					addr += SHORT;
 					cur_bytes += SHORT;
@@ -3184,13 +3189,13 @@ OTX:
 					   print_check(lptr, &tcount, tbase, i);
 					switch (po) {
 					case 'O':
-						printf("%011o    ",*lptr++);
+						printf("%011o    ", *lptr++);
 						break;
 					case 'D':
-						printf("%010u     ",*lptr++);
+						printf("%010u     ", *lptr++);
 						break;
 					case 'X':
-						printf("%08x       ",*lptr++);
+						printf("%08x       ", *lptr++);
 					}
 					addr += LONG;
 					cur_bytes += LONG;
@@ -3300,7 +3305,7 @@ OTX:
 					printf("free\t");
 				else
 					print(tinode, 12, -8, 0);
-				printf("%s\n",&dirp->d_name[0]);
+				printf("%s\n", &dirp->d_name[0]);
 				erraddr = addr;
 				errcur_bytes = cur_bytes;
 				addr += dirp->d_reclen;
@@ -3333,12 +3338,12 @@ OTX:
 			if ((ip = (struct dinode *)getblk(addr)) == 0)
 				return;
 			for (i=1; i < fs->fs_ncg; i++)
-				if (addr < (cgimin(fs,i) << FRGSHIFT))
+				if (addr < (cgimin(fs, i) << FRGSHIFT))
 					break;
 			i--;
 			offset /= INODE;
-			temp = (addr - (cgimin(fs,i) << FRGSHIFT)) >> FRGSHIFT;
-			temp = (i * fs->fs_ipg) + fragstoblks(fs,temp) *
+			temp = (addr - (cgimin(fs, i) << FRGSHIFT)) >> FRGSHIFT;
+			temp = (i * fs->fs_ipg) + fragstoblks(fs, temp) *
 							INOPB(fs) + offset;
 			if (count + offset > INOPB(fs)) {
 				tcount = INOPB(fs) - offset;
@@ -3379,7 +3384,7 @@ OTX:
 
 				}
 				printf("i#: ");
-				print(temp,12,-8,0);
+				print(temp, 12, -8, 0);
 				printf("   md: ");
 				printf("%c", c);
 				for (mode = mode << 4; *++p; mode = mode << 1) {
@@ -3387,31 +3392,31 @@ OTX:
 						printf("%c", *p);
 					else
 						printf("-");
-				} 
+				}
 				printf("  uid: ");
-				print(ip->di_uid,8,-4,0);
+				print(ip->di_uid, 8, -4, 0);
 				printf("      gid: ");
-				print(ip->di_gid,8,-4,0);
+				print(ip->di_gid, 8, -4, 0);
 				printf("\n");
 				printf("ln: ");
-				print(ip->di_nlink,8,-4,0);
+				print(ip->di_nlink, 8, -4, 0);
 				printf("       bs: ");
-				print(ip->di_blocks,12,-8,0);
+				print(ip->di_blocks, 12, -8, 0);
 				printf("   sz : ");
-				print(ip->di_size,12,-8,0);
+				print(ip->di_size, 12, -8, 0);
 				printf("\n");
 				if (ip->di_mode & IFCHR) {
 					printf("maj: ");
-					print(ip->di_db[1] & 0377,4,-2,0);
+					print(ip->di_db[1] & 0377, 4, -2, 0);
 					printf("  min: ");
-					print(ip->di_db[0] & 0377,4,-2,0);
+					print(ip->di_db[0] & 0377, 4, -2, 0);
 					printf("\n");
 				} else {
 					for (i = 0; i < NDADDR; ) {
 						if (ip->di_db[i] == 0)
 							break;
-						printf("db#%x: ",i);
-						print(ip->di_db[i],11,-8,0);
+						printf("db#%x: ", i);
+						print(ip->di_db[i], 11, -8, 0);
 						if (++i % 4 == 0)
 							printf("\n");
 						else
@@ -3422,8 +3427,8 @@ OTX:
 					for (i = 0; i < NIADDR; i++) {
 						if (ip->di_ib[i] == 0)
 							break;
-						printf("ib#%x: ",i);
-						print(ip->di_ib[i],11,-8,0);
+						printf("ib#%x: ", i);
+						print(ip->di_ib[i], 11, -8, 0);
 						printf("  ");
 					}
 					if (i)
@@ -3711,7 +3716,7 @@ print_check(lptr, tcount, tbase, i)
 						lptr += temp;
 					*tcount -= temp;
 					i += temp;
-					addr += BYTESPERLINE; 
+					addr += BYTESPERLINE;
 					cur_bytes += BYTESPERLINE;
 				}
 				if (first_time)
@@ -3882,13 +3887,13 @@ printsb(fs)
 		}
 #endif
 	}
-	printf("\ncs[].cs_(nbfree,ndir,nifree,nffree):\n\t");
+	printf("\ncs[].cs_(nbfree, ndir, nifree, nffree):\n\t");
 	for (i = 0, j = 0; i < fs->fs_cssize; i += fs->fs_bsize, j++) {
 		size = fs->fs_cssize - i < fs->fs_bsize ?
 		    fs->fs_cssize - i : fs->fs_bsize;
 		fs->fs_csp[j] = (struct csum *)calloc(1, size);
-		lseek(fd, fsbtodb(fs, (fs->fs_csaddr + j * fs->fs_frag)) *
-		    fs->fs_fsize / fsbtodb(fs, 1), 0);
+		(void)lseek(fd, fsbtodb(fs, (fs->fs_csaddr + j * fs->fs_frag)) *
+		    fs->fs_fsize / fsbtodb(fs, 1), SEEK_SET);
 		if (read(fd, fs->fs_csp[j], size) != size) {
 			for (j--; j >= 0; j--)
 				free(fs->fs_csp[j]);
@@ -3919,7 +3924,7 @@ printsb(fs)
 printcg(cg)
 	struct cg *cg;
 {
-	int i,j;
+	int i, j;
 
 	printf("\ncg %d:\n", cg->cg_cgx);
 #ifdef FS_42POSTBLFMT
