@@ -1,4 +1,4 @@
-/*	llib-lc	1.23	85/10/28	*/
+/*	llib-lc	1.24	85/10/30	*/
 /* LINTLIBRARY */
 #include <sys/types.h>
 #include <fstab.h>
