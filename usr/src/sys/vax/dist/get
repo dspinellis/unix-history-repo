@@ -1,0 +1,81 @@
+#	@(#)get	4.1	%G%
+# Shell script to build a mini-root file system
+# in preparation for building a distribution tape.
+# The file system created here is image copied onto
+# tape, then image copied onto disk as the "first"
+# step in a cold boot of 4.1b-4.2 systems.
+#
+set -x
+if [ `pwd` = '/' ]
+then
+	echo You just '(almost)' destroyed the root
+	exit
+fi
+cp /sys/GENERIC/vmunix .
+rm -rf bin; mkdir bin
+rm -rf etc; mkdir etc
+rm -rf a; mkdir a
+rm -fr tmp; mkdir tmp
+rm -fr usr; mkdir usr usr/mdec
+rm -fr floppy; mkdir floppy
+cp /etc/mkfs etc; strip etc/mkfs
+cp /etc/restor etc; strip etc/restor
+cp /etc/init etc; strip etc/init
+cp /etc/mount etc; strip etc/mount
+cp /etc/mknod etc; strip etc/mknod
+cp /etc/fsck etc; strip etc/fsck
+cp /etc/umount etc; strip etc/umount
+cp /etc/arff etc; strip etc/arff
+cp /etc/flcopy etc; strip etc/flcopy
+cp /bin/mt bin; strip bin/mt
+cp /bin/ls bin; strip bin/ls
+cp /bin/sh bin; strip bin/sh
+cp /bin/mv bin; strip bin/mv
+cp /bin/sync bin; strip bin/sync
+cp /bin/cat bin; strip bin/cat
+cp /bin/mkdir bin; strip bin/mkdir
+cp /bin/stty bin; strip bin/stty; ln bin/stty bin/STTY
+cp /bin/echo bin; strip bin/echo
+cp /usr/mdec/* usr/mdec
+cp /sys/floppy/*boo* floppy
+cp /boot boot
+cp /.profile .profile
+cat >etc/fstab <<EOF
+/dev/hp0a:/a:xx:1:1
+/dev/up0a:/a:xx:1:1
+/dev/hk0a:/a:xx:1:1
+/dev/ra0a:/a:xx:1:1
+/dev/rb0a:/a:xx:1:1
+EOF
+cat >xtr <<'EOF'
+disc=${disc-$disk}
+: ${disc?'Usage: disc=xx tape=xx xtr'}
+: ${tape?'Usage: disc=xx tape=xx xtr'}
+set -x
+/etc/mkfs /dev/${disc}0a 15884
+sync
+/etc/fsck /dev/r${disc}0a
+/etc/mount /dev/${disc}0a /a
+/etc/restor rsf 3 /dev/${tape}0 /dev/${disc}0a
+sync
+/etc/umount /dev/${disc}0a
+/usr/mdec/installboot /usr/mdec/${disc}boot /usr/mdec/boot${disc} /dev/${disc}0a
+sync
+/etc/fsck /dev/r${disc}0a
+echo 'Root filesystem extracted'
+echo
+echo 'If this is a 780, update floppy'
+echo 'If this is a 730, update the cassette'
+EOF
+chmod +x xtr
+rm -rf dev; mkdir dev
+cp /sys/dist/MAKEDEV dev
+cd dev
+./MAKEDEV std hp0 hk0 up0 ra0 rb0
+./MAKEDEV ts0; mv rmt12 ts0; rm *mt*;
+./MAKEDEV tm0; mv rmt12 tm0; rm *mt*;
+./MAKEDEV ht0; mv rmt12 ht0; rm *mt*;
+./MAKEDEV ut0; mv rmt12 jt0; rm *ut*; mv jt0 ut0
+./MAKEDEV mt0; mv rmt4 xt0; rm *mt*; mv xt0 mt0
+cd ..
+sync
