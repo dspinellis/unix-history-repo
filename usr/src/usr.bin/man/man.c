@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)man.c	8.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)man.c	8.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -107,7 +107,7 @@ main(argc, argv)
 	if (!*argv)
 		usage();
 
-	if (!f_cat && !f_how)
+	if (!f_cat && !f_how && !f_where)
 		if (!isatty(1))
 			f_cat = 1;
 		else if ((pager = getenv("PAGER")) != NULL)
