@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)tip.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)tip.c	5.7 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -117,7 +117,7 @@ notnumber:
 	}
 	if (i == -1) {
 		printf("link down\n");
-		delock(uucplock);
+		(void)uu_unlock(uucplock);
 		exit(3);
 	}
 	setbuf(stdout, NULL);
@@ -133,7 +133,7 @@ notnumber:
 	setparity("even");			/* set the parity table */
 	if ((i = speed(number(value(BAUDRATE)))) == NULL) {
 		printf("tip: bad baud rate %d\n", number(value(BAUDRATE)));
-		delock(uucplock);
+		(void)uu_unlock(uucplock);
 		exit(3);
 	}
 
@@ -156,7 +156,7 @@ notnumber:
 	if (p = connect()) {
 		printf("\07%s\n[EOT]\n", p);
 		daemon_uid();
-		delock(uucplock);
+		(void)uu_unlock(uucplock);
 		exit(1);
 	}
 	if (!HW)
@@ -202,7 +202,7 @@ cleanup()
 {
 
 	daemon_uid();
-	delock(uucplock);
+	(void)uu_unlock(uucplock);
 	if (odisc)
 		ioctl(0, TIOCSETD, (char *)&odisc);
 	exit(0);

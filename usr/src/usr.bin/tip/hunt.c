@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)hunt.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)hunt.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include "tip.h"
@@ -33,10 +33,8 @@ hunt(name)
 	while (cp = getremote(name)) {
 		deadfl = 0;
 		uucplock = rindex(cp, '/')+1;
-		if (mlock(uucplock) < 0) {
-			delock(uucplock);
+		if (uu_lock(uucplock) < 0)
 			continue;
-		}
 		/*
 		 * Straight through call units, such as the BIZCOMP,
 		 * VADIC and the DF, must indicate they're hardwired in
@@ -61,7 +59,7 @@ hunt(name)
 			signal(SIGALRM, SIG_DFL);
 			return ((int)cp);
 		}
-		delock(uucplock);
+		(void)uu_unlock(uucplock);
 	}
 	signal(SIGALRM, f);
 	return (deadfl ? -1 : (int)cp);
