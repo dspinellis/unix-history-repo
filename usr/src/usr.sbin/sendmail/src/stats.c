@@ -9,24 +9,11 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)stats.c	5.7 (Berkeley) %G%";
+static char	SccsId[] = "@(#)stats.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 # include "sendmail.h"
-
-/*
-**  Statistics structure.
-*/
-
-struct statistics
-{
-	time_t	stat_itime;		/* file initialization time */
-	short	stat_size;		/* size of this structure */
-	long	stat_nf[MAXMAILERS];	/* # msgs from each mailer */
-	long	stat_bf[MAXMAILERS];	/* kbytes from each mailer */
-	long	stat_nt[MAXMAILERS];	/* # msgs to each mailer */
-	long	stat_bt[MAXMAILERS];	/* kbytes to each mailer */
-};
+# include "mailstats.h"
 
 struct statistics	Stat;
 
