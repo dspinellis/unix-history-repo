@@ -12,7 +12,7 @@ cpu		"VAX650"
 makeoptions	INLINEOPTS="-s"
 ident		GENERIC
 timezone	8 dst
-maxusers	8
+maxusers	32
 options		INET
 options		NS
 options		KADB
