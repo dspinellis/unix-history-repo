@@ -6,9 +6,10 @@ cpu		"i386"
 ident		ARGO
 timezone	8 dst
 maxusers	10
+options		FFS
+options		MFS
 options		INET
 options		NFS
-options		MFS
 # options		NS
 # options		KDB
 # options		QUOTA
