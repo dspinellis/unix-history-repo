@@ -1,0 +1,25 @@
+.\" Copyright (c) 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)munmap.2	6.1 (Berkeley) %G%
+.\"
+.TH MUNMAP 2 ""
+.UC 7
+.SH NAME
+munmap \- remove a mapping
+.SH SYNOPSIS
+.nf
+munmap(addr, len)
+.B caddr_t addr;
+.B int len;
+.fi
+.SH DESCRIPTION
+.PP
+The \fImunmap\fP system call
+deletes the mappings for the specified address range,
+and causes further references to addresses within the range
+to generate invalid memory references.
+.SH "SEE ALSO"
+msync.2, munmap.2, mprotect.2, madvise.2, mincore.2
