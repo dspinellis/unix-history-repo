@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	8.10 (Berkeley) %G%
+.\"	@(#)op.me	8.11 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:08-%''Sendmail Installation and Operation Guide'
@@ -43,7 +43,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 8.10
+Version 8.11
 .sp
 For Sendmail Version 8.6
 .)l
@@ -2096,6 +2096,14 @@ The
 .q restrictmailq
 option restricts printing the queue to the group that owns the queue directory.
 It is absurd to set this if you don't also protect the logs.
+.pp
+The
+.q restrictqrun
+option restricts people running the queue
+(that is, using the
+.b \-q
+command line flag)
+to root and the owner of the queue directory.
 .sh 2 "Send to Me Too"
 .pp
 Normally,
@@ -3740,15 +3748,21 @@ noexpn	Disallow EXPN entirely
 needvrfyhelo	Insist on HELO or EHLO command before VRFY
 novrfy	Disallow VRFY entirely
 restrictmailq	Restrict mailq command
+restrictqrun	Restrict \-q command line flag
 goaway	Disallow essentially all SMTP status queries
 .)b
 The
 .q goaway
 pseudo-flag sets all flags except
-.q restrictmailq .
+.q restrictmailq
+and
+.q restrictqrun .
 If mailq is restricted,
 only people in the same group as the queue directory
 can print the queue.
+If queue runs are restricted,
+only root and the owner of the queue directory
+can run the queue.
 .ip P\fIpostmaster\fP
 If set,
 copies of error messages will be sent to the named
@@ -6657,7 +6671,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 8.10
+.\"Version 8.11
 .\".ce 0
 .bp 2
 .ce
