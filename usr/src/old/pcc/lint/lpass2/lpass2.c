@@ -1,6 +1,5 @@
-
 #ifndef lint
-static char sccsid[] = "@(#)lpass2.c	1.3	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lpass2.c	1.4	(Berkeley)	%G%";
 #endif lint
 
 # include "manifest"

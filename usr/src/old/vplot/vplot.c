@@ -1,5 +1,8 @@
-/*  VPLOT: version 4.2				updated %G%
- *
+#ifndef lint
+static char sccsid[] = "@(#)vplot.c	4.3 (Berkeley) %G%";
+#endif
+
+/*
  *  Reads standard graphics input and produces a plot on the
  *  Varian or Versatec
  */
