@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tb.4	6.2 (Berkeley) %G%
+.\"	@(#)tb.4	6.3 (Berkeley) %G%
 .\"
 .TH TB 4 ""
 .UC 6
@@ -14,7 +14,7 @@ tb \- line discipline for digitizing devices
 This line discipline provides a polled interface to many common
 digitizing devices which are connected to a host through a serial line.
 When these devices stream data at high speed, the use of the
-line discpline is critical in minimizing the number of samples
+line discipline is critical in minimizing the number of samples
 that would otherwise be lost due to buffer exhaustion in the
 .IR tty (4)
 handler.
@@ -37,8 +37,8 @@ proximity information (when available), and a count
 of the number of samples received from the input device
 since it was opened.  In addition, devices such as the
 GTCO append tilt and pressure information to the end of
-the aforementioned structure.  For the Polehmus 3-D digitizer
-the structure read is completely different, refer to the
+the aforementioned structure.  For the Polhemus 3-D digitizer
+the structure read is completely different. Refer to the
 include file for a complete description.
 .PP
 While in tablet mode, normal teletype input and output functions take place.
@@ -56,7 +56,7 @@ The line discipline supports
 requests to get/set the operating mode, and to get/set the tablet type
 and operating mode by \fIor\fP-ing the two values together.
 .PP
-The line discpline supports digitizing devices which are
+The line discipline supports digitizing devices which are
 compatible with Hitachi, GTCO, or Polhemus protocol formats.
 For Hitachi there are several formats with that used in the
 newer model HDG-1111B the most common.
