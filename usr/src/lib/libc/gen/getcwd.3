@@ -1,0 +1,30 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)getcwd.3	5.1 (Berkeley) %G%
+.\"
+.TH GETWD 3 "25 February 1983"
+.UC 5
+.SH NAME
+getwd \- get current working directory pathname
+.SH SYNOPSIS
+.nf
+.B char *getwd(pathname)
+.B char *pathname;
+.fi
+.SH DESCRIPTION
+.I Getwd
+copies the absolute pathname of the current working directory to
+.I pathname
+and returns a pointer to the result.
+.SH LIMITATIONS
+Maximum pathname length is MAXPATHLEN characters (1024).
+.SH DIAGNOSTICS
+.I Getwd
+returns zero and places a message in
+.I pathname
+if an error occurs.
+.SH BUGS
+.I Getwd
+may fail to return to the current directory if an error occurs.
