@@ -1,4 +1,4 @@
-/*	proc.h	4.18	82/11/13	*/
+/*	proc.h	4.19	82/12/09	*/
 
 /*
  * One structure allocated per active
@@ -113,7 +113,7 @@ int	whichqs;		/* bit mask summarizing non-empty qs's */
 #define	STIMO	0x0040000	/* timing out during sleep */
 /* was SDETACH */
 #define	SNUSIG	0x0100000	/* using new signal mechanism */
-/* unused */
+#define	SOWEUPC	0x0200000	/* owe process an addupc() call at next ast */
 #define	SSEL	0x0400000	/* selecting; wakeup/waiting danger */
 #define	SLOGIN	0x0800000	/* a login process (legit child of init) */
 #define	SPTECHG	0x1000000	/* pte's for process have changed */
