@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)command.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)command.c	5.2 (Berkeley) %G%";
 #endif
 
 /*
@@ -390,7 +390,7 @@ varlookup(name)
 	if (isdigit(name))
 		return (name - '0');
 	if (isalpha(name))
-		return (isupper(name) ? name - 'a' + 10 : name - 'A' + 10);
+		return (isupper(name) ? name - 'A' + 10 : name - 'a' + 10);
 	return (-1);
 }
 
