@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.60 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.61 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -1518,7 +1518,7 @@ ufsfifo_close(vp, fflag, cred, p)
 #endif /* FIFO */
 
 /*
- * Make a new file.
+ * Allocate a new inode.
  */
 maknode(mode, ndp, ipp)
 	int mode;
