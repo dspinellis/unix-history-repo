@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)flock.2	6.1 (Berkeley) %G%
+.\"	@(#)flock.2	6.2 (Berkeley) %G%
 .\"
 .TH FLOCK 2 ""
 .UC 5
@@ -32,7 +32,7 @@ lock on the file associated with the file descriptor
 .IR fd .
 A lock is applied by specifying an
 .I operation
-parameter which is the inclusive or of
+parameter that is the inclusive or of
 LOCK_SH or LOCK_EX and, possibly, LOCK_NB.  To unlock
 an existing lock
 .I operation
@@ -60,7 +60,7 @@ the appropriate lock type; this results in the previous
 lock being released and the new lock applied (possibly
 after other processes have gained and released the lock).
 .PP
-Requesting a lock on an object which is already locked
+Requesting a lock on an object that is already locked
 normally causes the caller to blocked until the lock may be
 acquired.  If LOCK_NB is included in
 .IR operation ,
