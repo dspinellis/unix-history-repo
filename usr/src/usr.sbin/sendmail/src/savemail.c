@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)savemail.c	6.42 (Berkeley) %G%";
+static char sccsid[] = "@(#)savemail.c	6.43 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <pwd.h>
@@ -401,6 +401,9 @@ returntosender(msg, returnq, sendbody, e)
 	static int returndepth;
 	register ADDRESS *q;
 
+	if (returnq == NULL)
+		return (-1);
+
 	if (msg == NULL)
 		msg = "Unable to deliver mail";
 
@@ -648,19 +651,19 @@ errbody(fp, m, e)
 		if (SendBody)
 			putbody(fp, m, e->e_parent, e->e_msgboundary);
 		else
-			putline("", fp, m);
-		if (e->e_msgboundary != NULL)
-		{
-			putline("", fp, m);
-			(void) sprintf(buf, "--%s--", e->e_msgboundary);
-			putline(buf, fp, m);
-		}
+			putline("   ----- Message body suppressed -----", fp, m);
 	}
 	else
 	{
 		putline("  ----- No message was collected -----\n", fp, m);
 	}
 
+	if (e->e_msgboundary != NULL)
+	{
+		putline("", fp, m);
+		(void) sprintf(buf, "--%s--", e->e_msgboundary);
+		putline(buf, fp, m);
+	}
 	putline("", fp, m);
 
 	/*
