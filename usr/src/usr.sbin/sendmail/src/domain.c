@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	8.9 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	8.10 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	8.9 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	8.10 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -414,8 +414,10 @@ getcanonname(host, hbsize, trymx)
 	bool gotmx;
 	int qtype;
 	int loopcnt;
+	char *xp;
 	char nbuf[MAX(PACKETSZ, MAXDNAME*2+2)];
 	char *searchlist[MAXDNSRCH+2];
+	extern char *gethostalias();
 
 	if (tTd(8, 2))
 		printf("getcanonname(%s)\n", host);
@@ -438,6 +440,20 @@ cnameloop:
 	for (cp = host, n = 0; *cp; cp++)
 		if (*cp == '.')
 			n++;
+
+	if (n == 0 && (xp = gethostalias(host)) != NULL)
+	{
+		if (loopcnt++ > MAXCNAMEDEPTH)
+		{
+			syserr("loop in ${HOSTALIASES} file");
+		}
+		else
+		{
+			strncpy(host, xp, hbsize);
+			host[hbsize - 1] = '\0';
+			goto cnameloop;
+		}
+	}
 
 	dp = searchlist;
 	if (n > 0)
@@ -631,6 +647,54 @@ cnameloop:
 	host[hbsize - 1] = '\0';
 	return TRUE;
 }
+
+
+char *
+gethostalias(host)
+	char *host;
+{
+	char *fname;
+	FILE *fp;
+	register char *p;
+	char buf[MAXLINE];
+	static char hbuf[MAXDNAME];
+
+	fname = getenv("HOSTALIASES");
+	if (fname == NULL || (fp = fopen(fname, "r")) == NULL)
+		return NULL;
+	while (fgets(buf, sizeof buf, fp) != NULL)
+	{
+		for (p = buf; p != '\0' && !(isascii(*p) && isspace(*p)); p++)
+			continue;
+		if (*p == 0)
+		{
+			/* syntax error */
+			continue;
+		}
+		*p++ = '\0';
+		if (strcasecmp(buf, host) == 0)
+			break;
+	}
+
+	if (feof(fp))
+	{
+		/* no match */
+		fclose(fp);
+		return NULL;
+	}
+
+	/* got a match; extract the equivalent name */
+	while (*p != '\0' && isascii(*p) && isspace(*p))
+		p++;
+	host = p;
+	while (*p != '\0' && !(isascii(*p) && isspace(*p)))
+		p++;
+	*p = '\0';
+	strncpy(hbuf, host, sizeof hbuf - 1);
+	hbuf[sizeof hbuf - 1] = '\0';
+	return hbuf;
+}
+
 /*
 **  MAILB_LOOKUP -- do DNS mailbox lookup
 */
