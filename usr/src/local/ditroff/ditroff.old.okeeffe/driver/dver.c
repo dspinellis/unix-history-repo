@@ -1,4 +1,4 @@
-/*	dver.c	1.14	84/03/21
+/*	dver.c	1.15	84/05/24
  *
  * VAX Versatec driver for the new troff
  *
@@ -17,6 +17,7 @@
 #..\n	comment
 sn	size in points
 fn	font as number from 1 to n
+in	stipple as number from 1 to n
 cx	ascii character x
 Cxyz	funny char \(xyz. terminated by white space
 Hn	go to absolute horizontal position n
@@ -33,11 +34,16 @@ nb a	end of line (information only -- no action needed)
 w	paddable word space -- no action needed
 
 Dt ..\n	draw operation 't':
+	Dt d		set line thickness to d pixels
+	Ds d		set line style mask to d
 	Dl x y		line from here by x,y
 	Dc d		circle of diameter d with left side here
 	De x y		ellipse of axes x,y with left side here
 	Da x y r	arc counter-clockwise by x,y of radius r
 	D~ x y x y ...	B-spline curve by x,y then x,y ...
+	Dg x y x y ...	gremlin spline curve by x,y then x,y ...
+	Dq d n miny maxy [p dx dy curx endy]	polygon filled with d, has n
+			vectors, with extents from miny to maxy (no border)
 
 x ..\n	device control functions:
      x i	init
@@ -63,7 +69,7 @@ x ..\n	device control functions:
 
 /* #define DEBUGABLE		/* No, not debugable... */
 #define DRIVER			/* Yes, we're driving directly */
-#define	NFONTS	60		/* total number of fonts useable */
+#define	NFONTS	65		/* total number of fonts useable */
 #define	MAXSTATE 6		/* number of environments rememberable */
 #define OPENREAD 0		/* mode for openning files */
 #define RESTART	1		/* upon exit, return either RESTART */
@@ -81,7 +87,7 @@ x ..\n	device control functions:
 #define  vmot(n)	vgoto(vpos + (n))
 
 
-char	SccsId[]= "dver.c	1.14	84/03/21";
+char	SccsId[]= "dver.c	1.15	84/05/24";
 
 int	output	= 0;	/* do we do output at all? */
 int	nolist	= 0;	/* output page list if > 0 */
@@ -90,7 +96,8 @@ struct	dev	dev;
 struct	font	*fontbase[NFONTS+1];
 short *	pstab;		/* point size table pointer */
 int	nsizes;		/* number of sizes device is capable of printing */
-int	nfonts;		/* number of fonts device is capable of printing */
+int	nfonts = 1;	/* number of fonts device is capable of printing */
+int	nstips = 1;	/* number of stipple fonts device can print */
 int	nchtab;
 char *	chname;
 short *	chtab;
@@ -110,6 +117,8 @@ int	dbg	= 0;
 #endif
 int	size	= 1;	/* current point size (internal pstable index) */
 int	font	= 1;	/* current font - assume reasonable starting font */
+int	stip	= -1;	/* current stipple font - none to start with */
+int	stipmem	= 0;	/* current member from stipple font to use */
 int	hpos;		/* horizontal position we are to be at next; left = 0 */
 int	vpos;		/* current vertical position (down positive) */
 int	maxv;		/* farthest down the page we've been */
@@ -174,10 +183,12 @@ struct	fontdes {
 } fontdes[NFONTS+1];			/* is initialized at start of main */
 
 struct dispatch *dispatch;
+struct dispatch *stip_disp;
 int	cfnum = -1;
 int	cpsize = 10;
 int	cfont = 1;
 char	*bits;
+char	*stip_bits;
 int	fontwanted = 1;		/* flag:  "has a new font been requested?" */
 int	nfontnum = -1;
 int	npsize = 10;
@@ -351,6 +362,13 @@ register FILE *fp;
 			    sscanf(buf+1, "%d %d %d %d", &n, &m, &n1, &m1);
 			    drawarc(n, m, n1, m1);
 			    break;
+                        case 'q':	/* polygon */
+			    n = 1;			/* get stipple */
+			    while (isspace(buf[++n]));	/* number first */
+			    setfill(atoi(&(buf[n])));	/* set up stipple */
+			    while (isdigit(buf[++n]));
+			    polygon(&(buf[n]), fp);	/* draw polygon */
+                            break;
 			case '~':	/* wiggly line */
 			case 'g':	/* gremlin spline */
 			    drawwig(buf+1, fp, buf[0] == '~');
@@ -371,6 +389,10 @@ register FILE *fp;
 		case 's':
 			fscanf(fp, "%d", &n);
 			setsize(t_size(n));
+			break;
+		case 'i':
+			fscanf(fp, "%d", &n);
+			setstip(n);
 			break;
 		case 'f':
 			fscanf(fp, "%s", str);
@@ -452,7 +474,7 @@ FILE *fp;		/* returns -1 apon recieving "stop" command */
 		return -1;
 	case 'r':	/* resolution assumed when prepared */
 		fscanf(fp, "%d", &n);
-		if (n!=RES) error(FATAL,"Input computed with wrong resolution");
+		if (n!=RES) error(FATAL,"Input computed for wrong printer");
 		break;
 	case 'f':	/* font used */
 		fscanf(fp, "%d %s", &n, str);
@@ -531,6 +553,7 @@ fileinit()
 		error(FATAL, "can't read header for %s", temp);
 	nfonts = dev.nfonts;
 	nsizes = dev.nsizes;
+	nstips = dev.nstips;
 	nchtab = dev.nchtab;
 	filebase = calloc(1, dev.filesize);	/* enough room for whole file */
 	if (read(fin, filebase, dev.filesize) != dev.filesize)	/* at once */
@@ -551,6 +574,11 @@ fileinit()
 #ifdef DEBUGABLE
 		if (dbg > 1) fontprint(i);
 #endif
+	}
+	for (i = 1; i <= nstips; i++) {		/* add in stipple "filenames" */
+		if (nfonts + i <= NFONTS)
+			t_fp(nfonts + i, p, (char *)0);
+		p += strlen(p) + 1;
 	}
 	fontbase[0] = (struct font *)
 		calloc(1,3*255 + dev.nchtab + (128-32) + sizeof (struct font));
@@ -964,11 +992,61 @@ char *s, *si;
 setfont(n)	/* set font to n */
 int n;
 {
-	if (n < 0 || n > NFONTS)
+	if (n < 0 || n > nfonts)
 		error(FATAL, "illegal font %d", n);
 	if (vloadfont(n,pstab[size]) != -1)
 		font = n;
 }
+
+setstip(n)	/* set stipple font to n */
+int n;
+{
+	if (n < 1 || n > nstips)
+		error(FATAL, "illegal stipple %d", n);
+	stip = n;
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	setfill(stipple_number)
+ |
+ | Results:	sets the fill-pattern pointers (stip_disp and
+ |		stip_bits) for a particular stipple.  Takes stipple
+ |		font from current "stip" number.
+ *----------------------------------------------------------------------------*/
+
+setfill(number)
+int number;
+{
+	int curfont;		/* places to save current text font */
+	int cursize;
+
+					/* set global stipmem for polygon */
+	if (number < 0 || number >= DISPATCHSIZE)
+		stipmem = 0;
+	else
+		stipmem = number;
+
+	curfont = cfnum;		/* get pointers to */
+	cursize = cpsize;		/* the inuse font */
+	if (vloadfont(nfonts + stip, 0)) {
+	    stip_disp = (struct dispatch *) NULL;	/* stipple not here */
+	} else {
+	    if (fontwanted) {
+		if (getfont()) {
+		    stip_disp = (struct dispatch *) NULL;
+		} else {
+		    stip_disp = dispatch;	/* save for polygon routine */
+		    stip_bits = bits;
+		}
+	    } else {
+		stip_disp = dispatch;	/* save for polygon routine */
+		stip_bits = bits;
+	    }
+	}
+	vloadfont(curfont, cursize);
+}
+
 
 vloadfont(fnum, fsize)
 register int fnum;
@@ -1276,3 +1354,366 @@ register int y;
     *ptr |= 1 << (7 - (x & 07));
     if (y > maxv) maxv = y;
 }
+
+
+#define MAXX	0x7fff		/* largest positive int */
+#define MINX	0x8000		/* smallest negative int */
+#define MAXVECT	75
+
+typedef struct poly {
+	struct poly *next;	/* doublely-linked lists of vectors */
+	struct poly *prev;
+	int param;	/* bressenham line algorithm parameter */
+	short dy;	/* delta-y for calculating line */
+	short dx;	/* delta-x for calculating line */
+	short currx;	/* current x in this vector */
+	short endy;	/* where vector ends */
+} polyvector;
+
+int	rp_len;		/* length of the string in "buf" */
+char *	rp_ptr;		/* "walking" pointer into buf */
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	read_poly (input_buffer, file_pointer)
+ |
+ | Results:	gets an integer from buffer pointed to by rp_ptr,
+ |		and advances in the file.  If there is nothing left,
+ |		more can be read in from the file.  rp_ptr and rp_len
+ |		are set in "polygon".
+ *----------------------------------------------------------------------------*/
+
+read_poly(buf, fp)
+char *buf;
+FILE *fp;
+{
+	register int i;
+
+
+	if (*rp_ptr == '\n')
+	    return 0;
+
+	while (isspace(*++rp_ptr));	/* skip any leading spaces */
+	i = atoi(rp_ptr);		/* convert motion to curve points */
+	while (isdigit(*++rp_ptr));	/* skip number*/
+					/* if the amount we read wasn't the */
+					/*    whole thing, read some more in */
+	if (rp_len - (rp_ptr - buf) < 10 && *(buf + rp_len - 1) != '\n') {
+	    register char *cop = buf;
+
+	    while (*(cop++) = *(rp_ptr++));	/* what's left to beginning */
+	    if (fgets ((cop - 1), rp_len - (cop - buf), fp) == NULL)
+		error(FATAL, "unexpected end of input");
+	    rp_ptr = buf;
+	}
+
+	return i;
+}
+
+
+/*----------------------------------------------------------------------------*
+ | Routine:	polygon ( string, file )
+ |
+ | Results:	draws a polygon specified by the parameters encoded into the
+ |		string (and from the file, if necessary).  The parameters are
+ |		broken up into separate vectors.  The vectors are encoded as
+ |		follows:  (p dx dy curx endy); endy is the bottom of vector,
+ |		curx is where x starts;  dx, dy are the deltas for the line;
+ |		if dy is negative, p is the Bresenham line algorithm parameter,
+ |		otherwise p is the starting y.  All the active vectors must be
+ |		put first.
+ |
+ |		The polygon is filled with a stipple pattern from stip_disp
+ |		and stip_bits, which point to the stipple font.  The pattern
+ |		is defined by "stip" and "stipmem".
+ |
+ |		The scan-line algorithm implemented scans from top to
+ |		bottom (low y to high y).  It also scans, within a line,
+ |		from left to right (low x to high x).
+ |
+ | Bugs:	stipple pattern MUST be a power of two bytes "wide" and
+ |		square.  The square restriction comes from the fact that
+ |		the varian and versatec are respectively rotated.
+ *----------------------------------------------------------------------------*/
+
+polygon(buf, fp)
+char *buf;
+FILE *fp;
+{
+    int nexty;			/* at what y value the next vector starts */
+    int maxy, miny;		/* finds bounds of polygon */
+    polyvector *activehead;		/* doing fill, is active edge list */
+    polyvector *waitinghead;		/* edges waiting to be active */
+    register polyvector *vectptr;	/* random vector */
+    register int i;			/* random register */
+
+    char *topstipple;		/* points to beginning of stipple glyph */
+    char *leftstipple;		/* points to beginning of line of stipple */
+    char *leftpage;		/* points to the edge of a raster line */
+    int bytewidth;		/* glyph width in bytes */
+    int mask;			/* mask to pick off pixel index into stipple */
+    int bytemask;		/* mask to pick off byte index into stipple */
+
+
+    rp_len = strlen(buf);	/* length of the string in "buf" */
+    rp_ptr = buf;		/* "walking" pointer into buf */
+						/* if no stipple, don't fill */
+    if (stip_disp == (struct dispatch *) NULL || stip_bits == (char *) NULL)
+	goto leavepoly;
+
+    stip_disp += stipmem;			/* set up parameters for */
+    if (!stip_disp->nbytes) {			/* tiling with the stipple */
+#ifdef DEBUGABLE
+	error(!FATAL, "member not found: member %d, stipple %d", stipmem, stip);
+#endif
+	goto leavepoly;
+    }
+    topstipple = stip_bits + stip_disp->addr;
+    bytewidth = stip_disp->up + stip_disp->down;
+    for (i = 1 << 30; i && i != bytewidth; i = i >> 1)
+	;
+    if (i==0 || bytewidth<8 || bytewidth != stip_disp->right+stip_disp->left) {
+	error(!FATAL, "invalid stipple: number %d, member %d", stip, stipmem);
+	goto leavepoly;
+    }
+    mask = bytewidth - 1;
+    bytewidth = bytewidth >> 3;
+    bytemask = bytewidth - 1;
+
+    if ((i = read_poly(buf, fp)) < 2)	/* # of vects command holds */
+	goto leavepoly;
+    miny = read_poly(buf, fp);		/* get limits from command */
+    maxy = read_poly(buf, fp);
+
+    leftstipple = topstipple + (miny & mask) * bytewidth;
+    leftpage = buf0p + (miny - vorigin) * BYTES_PER_LINE;
+
+				/* allocate space for raster-fill algorithm*/
+    vectptr = (polyvector *) nalloc(sizeof(polyvector), i + 4);
+    if (vectptr == (polyvector *) NULL) {
+	error(!FATAL, "unable to allocate space for polygon");
+	return;
+    }
+
+    waitinghead = vectptr;
+    vectptr->param = miny - 1;		/* put dummy entry at start */
+    (vectptr++)->prev = NULL;
+    waitinghead->next = vectptr;
+    vectptr->prev = waitinghead;
+
+    while (i--) {
+	vectptr->next = vectptr + 1;
+	vectptr->param = read_poly(buf, fp);
+	vectptr->dx = read_poly(buf,fp);
+	vectptr->dy = read_poly(buf,fp);
+	vectptr->currx = read_poly(buf,fp);
+	(vectptr++)->endy = read_poly(buf,fp);
+	vectptr->prev = vectptr - 1;
+    }
+
+    vectptr->param = maxy + 1;		/* dummy entry at end, too */
+    vectptr->currx = vectptr->dx = vectptr->dy = 0;
+    vectptr->next = NULL;
+
+    activehead = ++vectptr;		/* two dummy entries for active list */
+    vectptr->currx = MINX;		/* head */
+    vectptr->endy = maxy + 1;
+    vectptr->param = vectptr->dx = vectptr->dy = 0;
+    activehead->next = ++vectptr;
+    activehead->prev = vectptr;
+    vectptr->prev = activehead;		/* tail */
+    vectptr->next = activehead;
+    vectptr->currx = MAXX;
+    vectptr->endy = maxy + 1;
+    vectptr->param = vectptr->dx = vectptr->dy = 0;
+
+    vectptr = waitinghead->next;	/* if anything is active already */
+    if (vectptr->dy < 0) {		/*   put them into the active list */
+	register polyvector *p;		/* random useful register pointer */
+
+	p = vectptr;
+	do {
+	    vectptr->dy = -vectptr->dy;
+	} while ((++vectptr)->dy < 0);
+
+	waitinghead->next = vectptr;	/* first, remove list from waiting */
+	(vectptr--)->prev = waitinghead;
+
+	activehead->next->prev = vectptr;	/* link in end */
+	vectptr->next = activehead->next;
+	activehead->next = p;			/* link in start */
+	p->prev = activehead;
+    }
+
+			/* main loop -- gets vectors off the waiting list, */
+			/* then displays spans while updating the vectors in */
+			/* the active list */
+    while (miny <= maxy) {
+	i = maxy + 1;		/* this is the NEXT time to get a new vector */
+	for (vectptr = waitinghead->next; vectptr != NULL; ) {
+	    if (miny == vectptr->param) {
+				/* the entry in waiting list (vectptr) is */
+				/*   ready to go into active list.  Need to */
+				/*   convert some vector stuff and sort the */
+				/*   entry into the list. */
+		register polyvector *p;	/* random vector pointers */
+		register polyvector *v;
+
+							/* convert this */
+		if (vectptr->dx < 0)			/* entry to active */
+		    vectptr->param = -((vectptr->dx >> 1) + (vectptr->dy >> 1));
+		else
+		    vectptr->param = (vectptr->dx >> 1) - (vectptr->dy >> 1);
+
+		p = vectptr;			/* remove from the */
+		vectptr = vectptr->next;	/* waiting list */
+		vectptr->prev = p->prev;
+		p->prev->next = vectptr;
+						/* find where it goes */
+						/* in the active list */
+						/* (sorted smallest first) */
+		for (v = activehead->next; v->currx < p->currx; v = v->next)
+		    ;
+		p->next = v;		/* insert into active list */
+		p->prev = v->prev;	/* before the one it stopped on */
+		v->prev = p;
+		p->prev->next = p;
+	    } else {
+		if (i > vectptr->param) {
+		    i = vectptr->param;
+		}
+		vectptr = vectptr->next;
+	    }
+	}
+	nexty = i;
+
+					/* print the polygon while there */
+					/* are no more vectors to add */
+	while (miny < nexty) {
+					/* remove any finished vectors */
+	    vectptr = activehead->next;
+	    do {
+		if (vectptr->endy <= miny) {
+		    vectptr->prev->next = vectptr->next;
+		    vectptr->next->prev = vectptr->prev;
+		}
+	    } while ((vectptr = vectptr->next) != activehead);
+
+					/* draw the span */
+	    vectptr = activehead->next;
+	    while (vectptr->next != activehead) {
+		register int start;	/* get the beginning */
+		register int length;	/*   and the end of span */
+		register char *glyph;
+		register char *raster;
+
+		start = vectptr->currx;
+		vectptr = vectptr->next;
+		length = vectptr->currx + 1;
+		vectptr = vectptr->next;
+
+					/* bound the polygon to the page */
+		if (start >= RASTER_LENGTH)
+		    break;
+		if (start < 0) start = 0;
+		if (length > RASTER_LENGTH) length = RASTER_LENGTH;
+		length -= start;		/* length is in pixels */
+
+		i = start & 7;
+		start = start >> 3;		/* start is in bytes */
+		raster = leftpage + start;
+		glyph = leftstipple + (start & bytemask);
+
+		if (i) {			/* do any piece of byte */
+		    register char data;		/* that hangs on the front */
+
+		    data = (*(glyph++)) & (0x7f >> --i);
+		    length -= 7 - i;
+		    if (length < 0) {		/* less than one byte wide? */
+			data &= 0xff << -length;
+			length = 0;	/* force clean stoppage */
+		    }
+		    *(raster++) |= data;
+					/* update glyph ptr after first byte */
+		    if (!(++start & bytemask))
+			glyph = leftstipple;
+		}
+						/* fill the line of raster */
+		while ((length -= 8) >= 0) {
+		    *(raster++) |= *(glyph++);
+		    if (!(++start & bytemask))
+			glyph = leftstipple;
+		}
+		if (length & 7) {	/* add any part hanging off the end */
+		    *raster |= (*glyph) & (0xff << -length);
+		}
+	    }
+
+#ifdef DEBUGABLE
+	    if (dbg) {
+		vectptr = activehead;
+		do {
+		    fprintf (stderr, "%d ", vectptr->currx);
+		    vectptr = vectptr->next;
+		} while (vectptr != activehead);
+	    }
+#endif
+					/* update the vectors */
+	    vectptr = activehead->next;
+	    do {
+		if (vectptr->dx > 0) {
+		    while (vectptr->param >= 0) {
+			vectptr->param -= vectptr->dy;
+			vectptr->currx++;
+		    }
+		    vectptr->param += vectptr->dx;
+		} else if (vectptr->dx < 0) {
+		    while (vectptr->param >= 0) {
+			vectptr->param -= vectptr->dy;
+			vectptr->currx--;
+		    }
+		    vectptr->param -= vectptr->dx;
+		}
+					/* must sort the vectors if updates */
+					/* caused them to cross */
+					/* also move to next vector here */
+		if (vectptr->currx < vectptr->prev->currx) {
+		    register polyvector *v;		/* vector to move */
+		    register polyvector *p;	/* vector to put it after */
+
+		    v = vectptr;
+		    p = v->prev;
+		    while (v->currx < p->currx)	/* find the */
+			p = p->prev;		/* right vector */
+
+		    vectptr = vectptr->next;	/* remove from spot */
+		    vectptr->prev = v->prev;
+		    v->prev->next = vectptr;
+
+		    v->prev = p;		/* put in new spot */
+		    v->next = p->next;
+		    p->next = v;
+		    v->next->prev = v;
+		} else {
+		    vectptr = vectptr->next;
+		}
+	    } while (vectptr != activehead);
+#ifdef DEBUGABLE
+	    if (dbg) fprintf(stderr, "line done\n");
+#endif
+
+	    if (++miny & mask) {
+		leftstipple += bytewidth;
+	    } else {
+		leftstipple = topstipple;
+	    }
+	    leftpage += BYTES_PER_LINE;
+	} /* while (miny < nexty) */
+    } /* while (miny <= maxy) */
+
+    nfree(waitinghead);		/* dump the space allocated for polygon */
+
+leavepoly:
+    while (*rp_ptr != '\n')
+	i = read_poly(buf, fp);
+}  /* polygon function */
