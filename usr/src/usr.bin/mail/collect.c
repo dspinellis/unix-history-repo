@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -28,7 +28,6 @@ static char sccsid[] = "@(#)collect.c	5.10 (Berkeley) %G%";
 
 #include "rcv.h"
 #include <sys/stat.h>
-#include <sys/wait.h>
 
 /*
  * Read a message from standard output and return a read file to it
@@ -53,18 +52,16 @@ FILE *
 collect(hp, printheaders)
 	struct header *hp;
 {
-	FILE *fp, *fbuf;
+	FILE *fbuf;
 	int lc, cc, escape, eof;
 	int collrub(), intack(), collcont();
 	register int c, t;
 	char linebuf[LINESIZE], *cp;
 	extern char tempMail[];
-	int notify();
 	char getsub;
 	int omask;
 
 	noreset++;
-	fp = NULL;
 	collf = NULL;
 
 	/*
@@ -83,12 +80,11 @@ collect(hp, printheaders)
 	}
 	sigsetmask(omask & ~(sigmask(SIGINT) | sigmask(SIGHUP)));
 
-	if ((fp = fopen(tempMail, "w+")) == NULL) {
+	if ((collf = fopen(tempMail, "w+")) == NULL) {
 		perror(tempMail);
 		goto err;
 	}
-	collf = fp;
-	remove(tempMail);
+	unlink(tempMail);
 
 	/*
 	 * If we are going to prompt for a subject,
@@ -111,10 +107,6 @@ collect(hp, printheaders)
 	eof = 0;
 	hadintr = 0;
 
-	/*
-	 * We can put the setjmp here because register variable
-	 * needs to be saved in the loop.
-	 */
 	if (!setjmp(coljmp)) {
 		signal(SIGCONT, collcont);
 		if (getsub)
@@ -153,7 +145,7 @@ cont:
 		    (value("dot") != NOSTR || value("ignoreeof") != NOSTR))
 			break;
 		if (linebuf[0] != escape || value("interactive") == NOSTR) {
-			if (putline(fp, linebuf) < 0)
+			if (putline(collf, linebuf) < 0)
 				goto err;
 			continue;
 		}
@@ -165,7 +157,7 @@ cont:
 			 * Otherwise, it's an error.
 			 */
 			if (c == escape) {
-				if (putline(fp, &linebuf[1]) < 0)
+				if (putline(collf, &linebuf[1]) < 0)
 					goto err;
 				else
 					break;
@@ -244,7 +236,7 @@ cont:
 			/*
 			 * Invoke a file:
 			 * Search for the file name,
-			 * then open it and copy the contents to fp.
+			 * then open it and copy the contents to collf.
 			 */
 			cp = &linebuf[2];
 			while (isspace(*cp))
@@ -270,7 +262,7 @@ cont:
 			cc = 0;
 			while (readline(fbuf, linebuf) >= 0) {
 				lc++;
-				if ((t = putline(fp, linebuf)) < 0) {
+				if ((t = putline(collf, linebuf)) < 0) {
 					fclose(fbuf);
 					goto err;
 				}
@@ -292,8 +284,8 @@ cont:
 			}
 			if ((cp = expand(cp)) == NOSTR)
 				break;
-			rewind(fp);
-			exwrite(cp, fp, 1);
+			rewind(collf);
+			exwrite(cp, collf, 1);
 			break;
 		case 'm':
 		case 'f':
@@ -310,7 +302,7 @@ cont:
 			cp = &linebuf[2];
 			while (any(*cp, " \t"))
 				cp++;
-			if (forward(cp, fp, c) < 0)
+			if (forward(cp, collf, c) < 0)
 				goto err;
 			goto cont;
 		case '?':
@@ -327,10 +319,10 @@ cont:
 			 * Print out the current state of the
 			 * message without altering anything.
 			 */
-			rewind(fp);
+			rewind(collf);
 			printf("-------\nMessage contains:\n");
 			puthead(hp, stdout, GTO|GSUBJECT|GCC|GBCC|GNL);
-			while ((t = getc(fp)) != EOF)
+			while ((t = getc(collf)) != EOF)
 				putchar(t);
 			goto cont;
 		case '|':
@@ -338,8 +330,8 @@ cont:
 			 * Pipe message through command.
 			 * Collect output as new message.
 			 */
-			rewind(fp);
-			fp = mespipe(fp, &linebuf[2]);
+			rewind(collf);
+			mespipe(collf, &linebuf[2]);
 			goto cont;
 		case 'v':
 		case 'e':
@@ -348,27 +340,26 @@ cont:
 			 * 'e' means to use EDITOR
 			 * 'v' means to use VISUAL
 			 */
-			rewind(fp);
-			if ((fp = mesedit(fp, c)) == NULL)
-				goto err;
+			rewind(collf);
+			mesedit(collf, c);
 			goto cont;
 		}
 	}
 	goto out;
 err:
-	if (fp != NULL) {
-		fclose(fp);
-		fp = NULL;
+	if (collf != NULL) {
+		fclose(collf);
+		collf = NULL;
 	}
 out:
-	if (fp != NULL)
-		rewind(fp);
+	if (collf != NULL)
+		rewind(collf);
 	signal(SIGINT, saveint);
 	signal(SIGHUP, savehup);
 	signal(SIGCONT, savecont);
 	sigsetmask(omask);
 	noreset = 0;
-	return(fp);
+	return collf;
 }
 
 /*
@@ -420,88 +411,22 @@ exwrite(name, fp, f)
 
 /*
  * Edit the message being collected on fp.
- * Write the message out onto some poorly-named temp file
- * and point an editor at it.
- *
  * On return, make the edit file the new temp file.
  */
-
-FILE *
 mesedit(fp, c)
 	FILE *fp;
 {
-	int pid;
-	union wait s;
-	FILE *fbuf;
-	register int t;
-	int (*sigint)(), (*sigcont)();
-	struct stat sbuf;
-	extern char tempEdit[];
-	register char *edit;
+	int (*sigint)() = signal(SIGINT, SIG_IGN);
+	int (*sigcont)() = signal(SIGCONT, SIG_DFL);
+	FILE *nf = run_editor(fp, (off_t)-1, c, 0);
 
-	sigint = signal(SIGINT, SIG_IGN);
-	sigcont = signal(SIGCONT, SIG_DFL);
-	if (stat(tempEdit, &sbuf) >= 0) {
-		printf("%s: file exists\n", tempEdit);
-		goto out;
+	if (nf != NULL) {
+		fseek(nf, (off_t)0, 2);
+		collf = nf;
+		fclose(fp);
 	}
-	close(creat(tempEdit, 0600));
-	if ((fbuf = fopen(tempEdit, "w")) == NULL) {
-		perror(tempEdit);
-		goto out;
-	}
-	while ((t = getc(fp)) != EOF)
-		putc(t, fbuf);
-	fflush(fbuf);
-	if (ferror(fbuf)) {
-		perror(tempEdit);
-		remove(tempEdit);
-		goto fix;
-	}
-	fclose(fbuf);
-	if ((edit = value(c == 'e' ? "EDITOR" : "VISUAL")) == NOSTR)
-		edit = c == 'e' ? EDITOR : VISUAL;
-	pid = vfork();
-	if (pid == 0) {
-		if (sigint != SIG_IGN)
-			signal(SIGINT, SIG_DFL);
-		execl(edit, edit, tempEdit, 0);
-		perror(edit);
-		_exit(1);
-	}
-	if (pid == -1) {
-		perror("fork");
-		remove(tempEdit);
-		goto out;
-	}
-	while (wait(&s) != pid)
-		;
-	if (s.w_status != 0) {
-		printf("Fatal error in \"%s\"\n", edit);
-		remove(tempEdit);
-		goto out;
-	}
-
-	/*
-	 * Now switch to new file.
-	 */
-
-	if ((fbuf = fopen(tempEdit, "a+")) == NULL) {
-		perror(tempEdit);
-		remove(tempEdit);
-		goto out;
-	}
-	remove(tempEdit);
-	collf = fbuf;
-	fclose(fp);
-	fp = fbuf;
-	goto out;
-fix:
-	perror(tempEdit);
-out:
-	signal(SIGCONT, sigcont);
-	signal(SIGINT, sigint);
-	return(fp);
+	(void) signal(SIGINT, sigint);
+	(void) signal(SIGCONT, sigcont);
 }
 
 /*
@@ -510,73 +435,42 @@ out:
  * New message collected from stdout.
  * Sh -c must return 0 to accept the new message.
  */
-
-FILE *
 mespipe(fp, cmd)
 	FILE *fp;
 	char cmd[];
 {
+	FILE *nf;
+	int (*sigint)() = signal(SIGINT, SIG_IGN);
+	int (*sigcont)() = signal(SIGCONT, SIG_DFL);
 	extern char tempEdit[];
-	register FILE *nf;
-	int pid;
-	union wait s;
-	int (*saveint)();
-	char *Shell;
 
 	if ((nf = fopen(tempEdit, "w+")) == NULL) {
 		perror(tempEdit);
-		return(fp);
+		goto out;
 	}
-	remove(tempEdit);
-	saveint = signal(SIGINT, SIG_IGN);
-	if ((Shell = value("SHELL")) == NULL)
-		Shell = "/bin/sh";
-	if ((pid = vfork()) == -1) {
-		perror("fork");
-		goto err;
-	}
-	if (pid == 0) {
-		int fd;
-		/*
-		 * stdin = current message.
-		 * stdout = new message.
-		 */
-
-		close(0);
-		dup(fileno(fp));
-		close(1);
-		dup(fileno(nf));
-		for (fd = getdtablesize(); --fd > 2;)
-			close(fd);
-		execl(Shell, Shell, "-c", cmd, 0);
-		perror(Shell);
-		_exit(1);
-	}
-	while (wait(&s) != pid)
-		;
-	if (s.w_status != 0 || pid == -1) {
-		fprintf(stderr, "\"%s\" failed!?\n", cmd);
-		goto err;
+	(void) unlink(tempEdit);
+	/*
+	 * stdin = current message.
+	 * stdout = new message.
+	 */
+	if (run_command(cmd, 0, fileno(fp), fileno(nf), NOSTR) < 0) {
+		(void) fclose(nf);
+		goto out;
 	}
 	if (fsize(nf) == 0) {
 		fprintf(stderr, "No bytes from \"%s\" !?\n", cmd);
-		goto err;
+		(void) fclose(nf);
+		goto out;
 	}
-
 	/*
 	 * Take new files.
 	 */
-
-	fseek(nf, 0L, 2);
+	(void) fseek(nf, 0L, 2);
 	collf = nf;
-	fclose(fp);
-	signal(SIGINT, saveint);
-	return(nf);
-
-err:
-	fclose(nf);
-	signal(SIGINT, saveint);
-	return(fp);
+	(void) fclose(fp);
+out:
+	(void) signal(SIGINT, sigint);
+	(void) signal(SIGCONT, sigcont);
 }
 
 /*

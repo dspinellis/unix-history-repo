@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)fio.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)fio.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -408,7 +408,7 @@ expand(name)
 	char xname[BUFSIZ];
 	char cmdbuf[BUFSIZ];
 	register int pid, l;
-	register char *cp, *Shell;
+	register char *cp, *shell;
 	int pivec[2];
 	struct stat sbuf;
 	union wait s;
@@ -442,20 +442,10 @@ expand(name)
 		return name;
 	}
 	sprintf(cmdbuf, "echo %s", name);
-	if ((pid = vfork()) == 0) {
-		Shell = value("SHELL");
-		if (Shell == NOSTR)
-			Shell = SHELL;
-		close(pivec[0]);
-		close(1);
-		dup(pivec[1]);
-		close(pivec[1]);
-		close(2);
-		execl(Shell, Shell, "-c", cmdbuf, 0);
-		_exit(1);
-	}
-	if (pid == -1) {
-		perror("fork");
+	if ((shell = value("SHELL")) == NOSTR)
+		shell = SHELL;
+	pid = start_command(shell, 0, -1, pivec[1], "-c", cmdbuf, NOSTR);
+	if (pid < 0) {
 		close(pivec[0]);
 		close(pivec[1]);
 		return NOSTR;

@@ -16,12 +16,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd1.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd1.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
-#include <sys/stat.h>
-#include <sys/wait.h>
 
 /*
  * Mail -- a mail program
@@ -452,25 +450,14 @@ mboxit(msgvec)
 folders()
 {
 	char dirname[BUFSIZ];
-	int pid, e;
-	union wait s;
+	char *cmd;
 
 	if (getfold(dirname) < 0) {
 		printf("No value set for \"folder\"\n");
-		return(-1);
+		return -1;
 	}
-	switch ((pid = fork())) {
-	case 0:
-		execlp("ls", "ls", dirname, 0);
-		_exit(1);
-
-	case -1:
-		perror("fork");
-		return(-1);
-
-	default:
-		while ((e = wait(&s)) != -1 && e != pid)
-			;
-	}
-	return(0);
+	if ((cmd = value("LISTER")) == NOSTR)
+		cmd = "ls";
+	(void) run_command(cmd, 0, -1, -1, dirname, NOSTR);
+	return 0;
 }

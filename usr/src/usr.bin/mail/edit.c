@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)edit.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)edit.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -37,11 +37,8 @@ static char sccsid[] = "@(#)edit.c	5.7 (Berkeley) %G%";
 editor(msgvec)
 	int *msgvec;
 {
-	char *edname;
 
-	if ((edname = value("EDITOR")) == NOSTR)
-		edname = EDITOR;
-	return(edit1(msgvec, edname));
+	return edit1(msgvec, 'e');
 }
 
 /*
@@ -51,11 +48,8 @@ editor(msgvec)
 visual(msgvec)
 	int *msgvec;
 {
-	char *edname;
 
-	if ((edname = value("VISUAL")) == NOSTR)
-		edname = VISUAL;
-	return(edit1(msgvec, edname));
+	return edit1(msgvec, 'v');
 }
 
 /*
@@ -63,134 +57,144 @@ visual(msgvec)
  * (which should not exist) and forking an editor on it.
  * We get the editor from the stuff above.
  */
-edit1(msgvec, ed)
+edit1(msgvec, type)
 	int *msgvec;
-	char *ed;
+	char type;
 {
+	int (*sigcont)() = signal(SIGCONT, SIG_DFL);
 	register int c;
-	int i, pid;
-	int (*sigint)(), (*sigquit)();
+	int i;
 	FILE *fp;
-	extern char tempEdit[];
-	char *edname = tempEdit;
 	register struct message *mp;
-	off_t fsize(), size;
-	struct stat statb;
-	time_t modtime;
-	union wait status;
+	off_t size;
 
-	/*
-	 * Set signals; locate editor.
-	 */
-	sigint = signal(SIGINT, SIG_IGN);
-	sigquit = signal(SIGQUIT, SIG_IGN);
 	/*
 	 * Deal with each message to be edited . . .
 	 */
 	for (i = 0; msgvec[i] && i < msgCount; i++) {
-		mp = &message[msgvec[i] - 1];
-		mp->m_flag |= MODIFY;
-		touch(msgvec[i]);
-		dot = mp;
-		/*
-		 * Copy the message into the edit file.
-		 * If we are in read only mode, make the
-		 * temporary message file readonly as well.
-		 */
-		if ((c = creat(edname, readonly ? 0400 : 0600)) < 0) {
-			perror(edname);
-			goto out;
-		}
-		if ((fp = fdopen(c, "w")) == NULL) {
-			perror(edname);
-			(void) unlink(edname);
-			goto out;
-		}
-		if (send(mp, fp, 0) < 0) {
-			perror(edname);
-			(void) fclose(fp);
-			(void) unlink(edname);
-			goto out;
-		}
-		(void) fflush(fp);
-		if (ferror(fp)) {
-			(void) unlink(edname);
-			(void) fclose(fp);
-			goto out;
-		}
-		if (fstat(fileno(fp), &statb) < 0)
-			modtime = 0;
-		else
-			modtime = statb.st_mtime;
-		(void) fclose(fp);
-		/*
-		 * Fork/execl the editor on the edit file.
-		 */
-		pid = vfork();
-		if (pid == -1) {
-			perror("fork");
-			(void) unlink(edname);
-			goto out;
-		}
-		if (pid == 0) {
-			if (sigint != SIG_IGN)
-				(void) signal(SIGINT, SIG_DFL);
-			if (sigquit != SIG_IGN)
-				(void) signal(SIGQUIT, SIG_DFL);
-			execl(ed, ed, edname, 0);
-			perror(ed);
-			_exit(1);
-		}
-		while (wait(&status) != pid)
-			;
-		/*
-		 * If in read only mode, just remove the editor
-		 * temporary and return.
-		 */
-		if (readonly) {
-			(void) unlink(edname);
-			continue;
-		}
-		/*
-		 * Now copy the message to the end of the
-		 * temp file.
-		 */
-		if (stat(edname, &statb) < 0) {
-			perror(edname);
-			goto out;
-		}
-		if (modtime == statb.st_mtime) {
-			(void) unlink(edname);
-			goto out;
-		}
-		if ((fp = fopen(edname, "r")) == NULL) {
-			perror(edname);
-			(void) unlink(edname);
-			goto out;
-		}
-		(void) unlink(edname);
-		(void) fseek(otf, (long) 0, 2);
-		size = ftell(otf);
-		mp->m_block = blockof(size);
-		mp->m_offset = offsetof(size);
-		mp->m_size = fsize(fp);
-		mp->m_lines = 0;
-		while ((c = getc(fp)) != EOF) {
-			if (c == '\n')
-				mp->m_lines++;
-			(void) putc(c, otf);
-			if (ferror(otf))
+		int (*sigint)();
+		int m = msgvec[i];
+
+		if (i > 0) {
+			char buf[100];
+			char *p;
+
+			printf("Edit message %d [ynq]? ", m);
+			if (fgets(buf, sizeof buf, stdin) == 0)
 				break;
+			for (p = buf; any(*p, " \t"); p++)
+				;
+			if (*p == 'q')
+				break;
+			if (*p == 'n')
+				continue;
 		}
-		if (ferror(otf))
-			perror("/tmp");
-		(void) fclose(fp);
+		dot = mp = &message[m - 1];
+		touch(m);
+		sigint = signal(SIGINT, SIG_IGN);
+		fp = run_editor(setinput(mp), mp->m_size, type, readonly);
+		if (fp != NULL) {
+			(void) fseek(otf, (long) 0, 2);
+			size = ftell(otf);
+			mp->m_block = blockof(size);
+			mp->m_offset = offsetof(size);
+			mp->m_size = fsize(fp);
+			mp->m_lines = 0;
+			mp->m_flag |= MODIFY;
+			rewind(fp);
+			while ((c = getc(fp)) != EOF) {
+				if (c == '\n')
+					mp->m_lines++;
+				if (putc(c, otf) == EOF)
+					break;
+			}
+			if (ferror(otf))
+				perror("/tmp");
+			(void) fclose(fp);
+		}
+		(void) signal(SIGINT, sigint);
+	}
+	(void) signal(SIGCONT, sigcont);
+	return 0;
+}
+
+/*
+ * Run an editor on the file at "fpp" of "size" bytes,
+ * and return a new file pointer.
+ * Signals must be handled by the caller.
+ * "Type" is 'e' for EDITOR, 'v' for VISUAL.
+ */
+FILE *
+run_editor(fp, size, type, readonly)
+	register FILE *fp;
+	off_t size;
+	char type;
+{
+	register FILE *nf = NULL;
+	register int t;
+	time_t modtime;
+	char *edit;
+	struct stat statb;
+	extern char tempEdit[];
+
+	if ((t = creat(tempEdit, readonly ? 0400 : 0600)) < 0) {
+		perror(tempEdit);
+		goto out;
+	}
+	if ((nf = fdopen(t, "w")) == NULL) {
+		perror(tempEdit);
+		(void) unlink(tempEdit);
+		goto out;
+	}
+	if (size >= 0)
+		while (--size >= 0 && (t = getc(fp)) != EOF)
+			(void) putc(t, nf);
+	else
+		while ((t = getc(fp)) != EOF)
+			(void) putc(t, nf);
+	(void) fflush(nf);
+	if (fstat(fileno(nf), &statb) < 0)
+		modtime = 0;
+	else
+		modtime = statb.st_mtime;
+	if (ferror(nf) || fclose(nf) < 0) {
+		perror(tempEdit);
+		(void) unlink(tempEdit);
+		nf = NULL;
+		goto out;
+	}
+	nf = NULL;
+	if ((edit = value(type == 'e' ? "EDITOR" : "VISUAL")) == NOSTR)
+		edit = type == 'e' ? EDITOR : VISUAL;
+	if (run_command(edit, 0, -1, -1, tempEdit, NOSTR) < 0) {
+		(void) unlink(tempEdit);
+		goto out;
 	}
 	/*
-	 * Restore signals and return.
+	 * If in read only mode or file unchanged, just remove the editor
+	 * temporary and return.
 	 */
+	if (readonly) {
+		(void) unlink(tempEdit);
+		goto out;
+	}
+	if (stat(tempEdit, &statb) < 0) {
+		perror(tempEdit);
+		goto out;
+	}
+	if (modtime == statb.st_mtime) {
+		(void) unlink(tempEdit);
+		goto out;
+	}
+	/*
+	 * Now switch to new file.
+	 */
+	if ((nf = fopen(tempEdit, "a+")) == NULL) {
+		perror(tempEdit);
+		(void) unlink(tempEdit);
+		goto out;
+	}
+	(void) unlink(tempEdit);
 out:
-	(void) signal(SIGINT, sigint);
-	(void) signal(SIGQUIT, sigquit);
-	return 0;
+	return nf;
 }

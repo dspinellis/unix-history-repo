@@ -16,67 +16,133 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.10 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
-#include <stdio.h>
 #include <sys/signal.h>
-#include <sys/types.h>
 #include <sys/wait.h>
-#include <errno.h>
 
-#define	tst(a,b)	(*mode == 'r'? (b) : (a))
-#define	RDR	0
-#define	WTR	1
-static	int	popen_pid[20];
+#define READ 0
+#define WRITE 1
+static int *pid = NULL;
 
 FILE *
-Popen(cmd,mode)
-char	*cmd;
-char	*mode;
+Popen(cmd, mode)
+	char *cmd;
+	char *mode;
 {
 	int p[2];
-	register int myside, hisside;
-	int pid;
-	char *argv[MAXARGC];
+	int myside, hisside, fd0, fd1;
 
+	if (pid == NULL)
+		pid = (int *) malloc((unsigned) sizeof (int) * getdtablesize());
 	if (pipe(p) < 0)
 		return NULL;
-	myside = tst(p[WTR], p[RDR]);
-	hisside = tst(p[RDR], p[WTR]);
-	if ((pid = vfork()) == 0) {
-		/* myside and hisside reverse roles in child */
-		close(myside);
-		dup2(hisside, tst(0, 1));
-		close(hisside);
-		(void) getrawlist(cmd, argv, MAXARGC);
-		execvp(argv[0], argv);
-		fprintf(stderr, "Cannot execute %s\n", argv[0]);
-		_exit(1);
+	if (*mode == 'r') {
+		myside = p[READ];
+		fd0 = -1;
+		hisside = fd1 = p[WRITE];
+	} else {
+		myside = p[WRITE];
+		hisside = fd0 = p[READ];
+		fd1 = -1;
 	}
-	if (pid == -1)
+	if ((pid[myside] = start_command(cmd, 0, fd0, fd1, NOSTR)) < 0) {
+		close(p[READ]);
+		close(p[WRITE]);
 		return NULL;
-	popen_pid[myside] = pid;
+	}
 	close(hisside);
 	return fdopen(myside, mode);
 }
 
 Pclose(ptr)
-FILE *ptr;
+	FILE *ptr;
 {
-	register f, r;
+	int i;
 	int omask;
-	union wait status;
-	extern int errno;
 
-	f = fileno(ptr);
+	i = fileno(ptr);
 	fclose(ptr);
-	omask = sigblock(sigmask(SIGINT)|sigmask(SIGQUIT)|sigmask(SIGHUP));
-	while((r = wait(&status)) != popen_pid[f] && r != -1 && errno != EINTR)
-		;
-	if(r == -1)
-		status.w_status = -1;
+	omask = sigblock(sigmask(SIGINT)|sigmask(SIGHUP));
+	i = wait_command(pid[i]);
 	sigsetmask(omask);
-	return (status.w_status);
+	return i;
+}
+
+/*
+ * Run a command without a shell, with optional arguments and splicing
+ * of stdin and stdout.  The command name can be a sequence of words.
+ * Signals must be handled by the caller.
+ * "Mask" contains the signals to ignore in the new process.
+ * SIGINT is enabled unless it's in the mask.
+ */
+/*VARARGS4*/
+run_command(cmd, mask, infd, outfd, a0, a1, a2)
+	char *cmd;
+	int infd, outfd;
+	char *a0, *a1, *a2;
+{
+	int pid;
+
+	if ((pid = start_command(cmd, mask, infd, outfd, a0, a1, a2)) < 0)
+		return -1;
+	return wait_command(pid);
+}
+
+/*VARARGS4*/
+start_command(cmd, mask, infd, outfd, a0, a1, a2)
+	char *cmd;
+	int infd, outfd;
+	char *a0, *a1, *a2;
+{
+	int pid;
+
+	if ((pid = vfork()) < 0) {
+		perror("fork");
+		return -1;
+	}
+	if (pid == 0) {
+		char *argv[100];
+		int i = getrawlist(cmd, argv, sizeof argv / sizeof *argv);
+
+		if ((argv[i++] = a0) != NOSTR &&
+		    (argv[i++] = a1) != NOSTR &&
+		    (argv[i++] = a2) != NOSTR)
+			argv[i] = NOSTR;
+		if (infd >= 0)
+			dup2(infd, 0);
+		if (outfd >= 0)
+			dup2(outfd, 1);
+		for (i = getdtablesize(); --i > 2;)
+			close(i);
+		for (i = 1; i <= NSIG; i++)
+			if (mask & sigmask(i))
+				(void) signal(i, SIG_IGN);
+		if ((mask & sigmask(SIGINT)) == 0)
+			(void) signal(SIGINT, SIG_DFL);
+		(void) sigsetmask(0);
+		execvp(argv[0], argv);
+		perror(argv[0]);
+		_exit(1);
+	}
+	return pid;
+}
+
+wait_command(pid)
+	int pid;
+{
+	union wait status;
+	int r;
+
+	while ((r = wait(&status)) >= 0 && r != pid)
+		;
+	if (r < 0)
+		return -1;
+	if (status.w_status != 0) {
+		printf("Fatal error in process.\n");
+		return -1;
+	}
+	return 0;
 }

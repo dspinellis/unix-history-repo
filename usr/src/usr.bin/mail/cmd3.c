@@ -16,12 +16,10 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmd3.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmd3.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
-#include <sys/stat.h>
-#include <sys/wait.h>
 
 /*
  * Mail -- a mail program
@@ -33,78 +31,44 @@ static char sccsid[] = "@(#)cmd3.c	5.13 (Berkeley) %G%";
  * Process a shell escape by saving signals, ignoring signals,
  * and forking a sh -c
  */
-
 shell(str)
 	char *str;
 {
-	int (*sigint)(), (*sigquit)();
-	union wait stat;
-	register int t;
-	char *Shell;
+	int (*sigint)() = signal(SIGINT, SIG_IGN);
+	int (*sigcont)() = signal(SIGCONT, SIG_DFL);
+	char *shell;
 	char cmd[BUFSIZ];
 
-	strcpy(cmd, str);
+	(void) strcpy(cmd, str);
 	if (bangexp(cmd) < 0)
 		return(-1);
-	if ((Shell = value("SHELL")) == NOSTR)
-		Shell = SHELL;
-	sigint = signal(SIGINT, SIG_IGN);
-	sigquit = signal(SIGQUIT, SIG_IGN);
-	t = vfork();
-	if (t == 0) {
-		if (sigint != SIG_IGN)
-			signal(SIGINT, SIG_DFL);
-		if (sigquit != SIG_IGN)
-			signal(SIGQUIT, SIG_DFL);
-		execl(Shell, Shell, "-c", cmd, (char *)0);
-		perror(Shell);
-		_exit(1);
-	}
-	while (wait(&stat) != t)
-		;
-	if (t == -1)
-		perror("fork");
-	signal(SIGINT, sigint);
-	signal(SIGQUIT, sigquit);
+	if ((shell = value("SHELL")) == NOSTR)
+		shell = SHELL;
+	(void) run_command(shell, 0, -1, -1, "-c", cmd, NOSTR);
+	(void) signal(SIGINT, sigint);
+	(void) signal(SIGCONT, sigcont);
 	printf("!\n");
-	return(0);
+	return 0;
 }
 
 /*
  * Fork an interactive shell.
  */
-
 /*ARGSUSED*/
 dosh(str)
 	char *str;
 {
-	int (*sigint)(), (*sigquit)();
-	union wait stat;
-	register int t;
-	char *Shell;
+	int (*sigint)() = signal(SIGINT, SIG_IGN);
+	int (*sigcont)() = signal(SIGCONT, SIG_DFL);
+	char *shell;
 
-	if ((Shell = value("SHELL")) == NOSTR)
-		Shell = SHELL;
-	sigint = signal(SIGINT, SIG_IGN);
-	sigquit = signal(SIGQUIT, SIG_IGN);
-	t = vfork();
-	if (t == 0) {
-		if (sigint != SIG_IGN)
-			signal(SIGINT, SIG_DFL);
-		if (sigquit != SIG_IGN)
-			signal(SIGQUIT, SIG_DFL);
-		execl(Shell, Shell, (char *)0);
-		perror(Shell);
-		_exit(1);
-	}
-	while (wait(&stat) != t)
-		;
-	if (t == -1)
-		perror("fork");
-	signal(SIGINT, sigint);
-	signal(SIGQUIT, sigquit);
+	if ((shell = value("SHELL")) == NOSTR)
+		shell = SHELL;
+	(void) run_command(shell, 0, -1, -1, NOSTR);
+	(void) signal(SIGINT, sigint);
+	(void) signal(SIGCONT, sigcont);
 	putchar('\n');
-	return(0);
+	return 0;
 }
 
 /*
