@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)nl.c 1.5 %G%";
+static	char sccsid[] = "@(#)nl.c 1.6 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -262,7 +262,9 @@ initnl()
 		MININT = -32768.;
 		MAXINT = 32767.;
 #ifndef	PI0
+#ifdef OBJ
 		genmx();
+#endif OBJ
 #endif
 	    }
 #endif
