@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_proc.c	7.7 (Berkeley) %G%
+ *	@(#)kern_proc.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -131,16 +131,20 @@ pgmv(p, pgid, mksess)
 	struct pgrp *opgrp;
 	register n;
 
+#ifdef DIAGNOSTIC
 	if (pgrp && mksess)	/* firewalls */
 		panic("pgmv: setsid into non-empty pgrp");
 	if (SESS_LEADER(p))
 		panic("pgmv: session leader attempted setpgrp");
+#endif
 	if (pgrp == NULL) {
 		/*
 		 * new process group
 		 */
+#ifdef DIAGNOSTIC
 		if (p->p_pid != pgid)
 			panic("pgmv: new pgrp and pid != pgid");
+#endif
 		MALLOC(pgrp, struct pgrp *, sizeof(struct pgrp), M_PGRP,
 		       M_WAITOK);
 		if (mksess) {
@@ -152,11 +156,14 @@ pgmv(p, pgid, mksess)
 				M_SESSION, M_WAITOK);
 			sess->s_leader = p;
 			sess->s_count = 1;
+			sess->s_ttyvp = NULL;
+			sess->s_ttyp = NULL;
+			p->p_flag &= ~SCTTY;
 			pgrp->pg_session = sess;
+#ifdef DIAGNOSTIC
 			if (p != u.u_procp)
 				panic("pgmv: mksession and p != u.u_procp");
-			u.u_ttyp = NULL;
-			u.u_ttyd = 0;
+#endif
 		} else {
 			pgrp->pg_session = p->p_session;
 			pgrp->pg_session->s_count++;
@@ -165,7 +172,7 @@ pgmv(p, pgid, mksess)
 		pgrp->pg_hforw = pgrphash[n=PIDHASH(pgid)];
 		pgrphash[n] = pgrp;
 		pgrp->pg_jobc = 0;
-		pgrp->pg_mem = 0;
+		pgrp->pg_mem = NULL;
 	}
 	/*
 	 * adjust eligibility of affected pgrps to participate in job control
@@ -235,6 +242,9 @@ pgdelete(pgrp)
 {
 	register struct pgrp **pgp = &pgrphash[PIDHASH(pgrp->pg_id)];
 
+	if (pgrp->pg_session->s_ttyp != NULL && 
+	    pgrp->pg_session->s_ttyp->t_pgrp == pgrp)
+		pgrp->pg_session->s_ttyp->t_pgrp = NULL;
 	for (; *pgp; pgp = &(*pgp)->pg_hforw)
 		if (*pgp == pgrp) {
 			*pgp = pgrp->pg_hforw;
