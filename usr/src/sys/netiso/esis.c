@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)esis.c	7.19 (Berkeley) %G%
+ *	@(#)esis.c	7.20 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -940,9 +940,9 @@ struct snpa_hdr	*shp;	/* subnetwork header */
 		}
 		if (mm = m_copy(m0, 0, M_COPYALL)) { /*can't block at interrupt level */
 			if (sbappendaddr(&rp->rcb_socket->so_rcv,
-							  &esis_dl, mm, (struct mbuf *)0) != 0)
+							  &esis_dl, mm, (struct mbuf *)0) != 0) {
 				sorwakeup(rp->rcb_socket);
-			else {
+			 } else {
 				IFDEBUG(D_ISISINPUT)
 					printf("Error in sbappenaddr, mm = 0x%x\n", mm);
 				ENDDEBUG
