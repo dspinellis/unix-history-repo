@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mloop.c	3.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)mloop.c	3.19 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "defs.h"
@@ -39,8 +39,13 @@ mloop()
 			if ((n = p - wwibp) > 0) {
 				if (!w->ww_ispty && w->ww_stopped)
 					startwin(w);
+#ifdef sun
+				while (--n >= 0)
+					(void) write(w->ww_pty, wwibp++, 1);
+#else
 				(void) write(w->ww_pty, wwibp, n);
 				wwibp = p;
+#endif
 			}
 			if (wwpeekc() == escapec) {
 				(void) wwgetc();
