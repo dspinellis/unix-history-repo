@@ -11,7 +11,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)pstat.c	5.35 (Berkeley) %G%";
+static char sccsid[] = "@(#)pstat.c	5.35 (Berkeley) 6/26/91";
 #endif /* not lint */
 
 /*
@@ -27,8 +27,8 @@ static char sccsid[] = "@(#)pstat.c	5.35 (Berkeley) %G%";
 #define NFS
 #include <sys/file.h>
 #include <sys/mount.h>
-#include <ufs/quota.h>
-#include <ufs/inode.h>
+#include <ufs/ufs/quota.h>
+#include <ufs/ufs/inode.h>
 #include <sys/stat.h>
 #include <nfs/nfsv2.h>
 #include <nfs/nfs.h>
@@ -73,20 +73,7 @@ struct nlist nl[] = {
 	{ "_nswdev" },
 #define	SSWDEVT	5
 	{ "_swdevt" },
-#ifdef NEWVM
 #define NLMANDATORY SSWDEVT	/* names up to here are mandatory */
-#else
-#define	STEXT	8
-	{ "_text" },
-#define	SNTEXT	9
-	{ "_ntext" },
-#define	SPROC	10
-	{ "_proc" },
-#define	SNPROC	11
-	{ "_nproc" },
-#define NLMANDATORY SNPROC	/* names up to here are mandatory */
-#endif
-
 #define	SCONS	NLMANDATORY + 1
 	{ "_cons" },
 #define	SPTY	NLMANDATORY + 2
@@ -654,13 +641,13 @@ loadvnodes(avnodes)
 {
 	int ret, copysize;
 	struct e_vnode *vnodebase;
+	struct e_vnode *kinfo_vnodes();
 
 	if (fcore != NULL) {
 		/*
-		 * add emulation of KINFO_VNODE here
+		 * do it by hand
 		 */
-		error("vnodes on dead kernel, not impl\n");
-		exit(1);
+		return (kinfo_vnodes(avnodes));
 	}
 	if ((ret = getkerninfo(KINFO_VNODE, NULL, NULL, 0)) == -1) {
 		syserror("can't get estimate for kerninfo");
@@ -686,6 +673,65 @@ loadvnodes(avnodes)
 	return (vnodebase);
 }
 
+/*
+ * simulate what a running kernel does in in kinfo_vnode
+ */
+struct e_vnode *
+kinfo_vnodes(avnodes)
+	int *avnodes;
+{
+	struct nlist vnl[] = {
+#define V_NUMV	0
+		{ "_numvnodes" },
+#define V_ROOTFS 1
+		{ "_rootfs" },
+		{""}
+	};
+	int numvnodes;
+	struct mount *rootfs, *mp, mount;
+	char *vbuf, *evbuf, *bp;
+	struct vnode *vp, vnode;
+	int num;
+
+#define VPTRSZ  sizeof (struct vnode *)
+#define VNODESZ sizeof (struct vnode)
+#define NVAL(indx)	vnl[(indx)].n_value
+
+	if (kvm_nlist(vnl) != 0) {
+		error("nlist vnl: %s", kvm_geterr());
+		exit(1);
+	}
+	numvnodes = getword(NVAL(V_NUMV));
+	if ((vbuf = (char *)malloc((numvnodes + 20) * (VPTRSZ + VNODESZ))) 
+	    == NULL) {
+		error("out of memory");
+		exit(1);
+	}
+	bp = vbuf;
+	evbuf = vbuf + (numvnodes + 20) * (VPTRSZ + VNODESZ);
+	mp = rootfs = (struct mount *)getword(NVAL(V_ROOTFS));
+	do {
+		kvm_read(mp, &mount, sizeof(mount));
+		for (vp = mount.mnt_mounth; vp; vp = vnode.v_mountf) {
+			kvm_read(vp, &vnode, sizeof (vnode));
+			if ((bp + VPTRSZ + VNODESZ) > evbuf) {
+				/* XXX - should realloc */
+				fprintf(stderr, "pstat: ran out of room for vnodes\n");
+				exit(1);
+			}
+			bcopy(&vp, bp, VPTRSZ);
+			bp += VPTRSZ;
+			bcopy(&vnode, bp, VNODESZ);
+			bp += VNODESZ;
+			num++;
+		}
+		mp = mount.mnt_next;
+	} while (mp != rootfs);
+	*avnodes = num;
+	return ((struct e_vnode *)vbuf);
+}
+	
+	
 u_long
 getword(loc)
 	int loc;
@@ -769,73 +815,8 @@ dotext()
 
 doproc()
 {
-#ifdef NEWVM
-	printf("pstat: -p no longer supported (use ps)\n");
-#else
-	struct proc *xproc, *aproc;
-	int nproc;
-	register struct proc *pp;
-	register loc, np;
-	/*
-	struct pte apte;
-	*/
-
-	nproc = getword(nl[SNPROC].n_value);
-	xproc = (struct proc *)calloc(nproc, sizeof (struct proc));
-	aproc = (struct proc *)getword(nl[SPROC].n_value);
-	if (nproc < 0 || nproc > 100000) {
-		fprintf(stderr, "number of procs is preposterous (%d)\n",
-			nproc);
-		return;
-	}
-	if (xproc == NULL) {
-		fprintf(stderr, "can't allocate memory for proc table\n");
-		return;
-	}
-	kvm_read(aproc, xproc, nproc * sizeof (struct proc));
-	np = 0;
-	for (pp=xproc; pp < &xproc[nproc]; pp++)
-		if (pp->p_stat)
-			np++;
-	if (totflg) {
-		printf("%3d/%3d processes\n", np, nproc);
-		return;
-	}
-	printf("%d/%d processes\n", np, nproc);
-	printf("   LOC    S        F POIP PRI      SIG  UID SLP TIM  CPU  NI    PID   PPID    ADDR   RSS SRSS SIZE    WCHAN    LINK   TEXTP\n");
-	for (pp=xproc; pp<&xproc[nproc]; pp++) {
-		if (pp->p_stat==0 && allflg==0)
-			continue;
-		printf("%8x", aproc + (pp - xproc));
-		printf(" %2d", pp->p_stat);
-		printf(" %8x", pp->p_flag);
-		printf(" %4d", pp->p_poip);
-		printf(" %3d", pp->p_pri);
-		printf(" %8x", pp->p_sig);
-		printf(" %4d", pp->p_uid);
-		printf(" %3d", pp->p_slptime);
-		printf(" %3d", pp->p_time);
-		printf(" %4d", pp->p_cpu&0377);
-		printf(" %3d", pp->p_nice);
-		printf(" %6d", pp->p_pid);
-		printf(" %6d", pp->p_ppid);
-		/* 
-		if (pp->p_flag & SLOAD) {
-			kvm_read(pp->p_addr, &apte, sizeof(apte));
-			printf(" %8x", apte.pg_pfnum);
-		} else
-			printf(" %8x", pp->p_swaddr);
-		*/
-		printf(" %4x", pp->p_rssize);
-		printf(" %4x", pp->p_swrss);
-		printf(" %5x", pp->p_dsize+pp->p_ssize);
-		printf(" %7x", clear(pp->p_wchan));
-		printf(" %7x", clear(pp->p_link));
-		printf(" %7x", clear(pp->p_textp));
-		printf("\n");
-	}
-	free(xproc);
-#endif
+	if (!totflg)
+		printf("pstat: -p no longer supported (use ps)\n");
 }
 
 char mesg[] = "  LINE RAW CAN OUT  HWT LWT     ADDR COL STATE  SESS  PGID DISC\n";
@@ -901,7 +882,7 @@ doqdss()
 
 	kvm_read(V(nl[SNQD].n_value), &nqd, sizeof(nqd));
 	printf("%d qd\n", nqd);
-	kvm_read((V(nl[SQD].n_value), tty, nqd * sizeof(struct tty) * 4);
+	kvm_read(V(nl[SQD].n_value), tty, nqd * sizeof(struct tty) * 4);
 	printf(mesg);
 	for (tp = tty; tp < &tty[nqd * 4]; tp += 4)
 		ttyprt(tp, tp - tty);
@@ -918,7 +899,8 @@ char *name;
 	if (tty == (struct tty *)0) 
 		return;
 	kvm_read(V(nl[number].n_value), &ntty, sizeof(ntty));
-	printf("%d %s lines\n", ntty, name);
+	printf("%d %s %s\n", ntty, name, (ntty == 1) ? "line" :
+	    "lines");
 	if (ntty > ttyspace) {
 		ttyspace = ntty;
 		if ((tty = (struct tty *)realloc(tty, ttyspace * sizeof(*tty))) == 0) {
