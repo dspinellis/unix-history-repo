@@ -1,23 +1,23 @@
-/*
- * Copyright (c) 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
- */
+/* $Header: rnd.c,v 1.7 88/07/28 19:10:55 arnold Exp $ */
 
-#ifndef lint
-static char sccsid[] = "@(#)rnd.c	5.1 (Berkeley) %G%";
-#endif not lint
+# include	"random.h"
 
 /*
  * code for when the good (berkeley) random number generator is around
  */
 
+long
 rnd(num)
+long	num;
 {
+	extern long	random();
+
 	return (random() % num);
 }
 
+void
 srnd(num)
+long	num;
 {
 	srandom(num);
 }
@@ -372,4 +372,4 @@ random()
 	return( i );
 }
 
-#endif	NO_RANDOM
+#endif	/* NO_RANDOM */
