@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)scan.c	2.11 (Berkeley) %G%";
+static char *sccsid ="@(#)scan.c	2.12 (Berkeley) %G%";
 #endif lint
 
 # include "pass1.h"
@@ -144,7 +144,7 @@ mainp1( argc, argv ) int argc; char *argv[]; {  /* control multiple files */
 		}
 
 # ifdef ONEPASS
-	p2init( argc, argv );
+	(void) p2init( argc, argv );
 # endif
 
 	for( i=0; i<SYMTSZ; ++i ) stab[i].stype = TNULL;
@@ -175,7 +175,7 @@ mainp1( argc, argv ) int argc; char *argv[]; {  /* control multiple files */
 	fpe_sigvec.sv_handler = fpe;
 	(void) sigvec(SIGFPE, &fpe_sigvec, (struct sigvec *) NULL);
 
-	yyparse();
+	(void) yyparse();
 	yyaccpt();
 
 	ejobcode( nerrors ? 1 : 0 );
@@ -1162,7 +1162,10 @@ lxtitle(){
 #ifdef FLEXNAMES
 #define	NSAVETAB	4096
 char	*savetab;
-int	saveleft;
+unsigned saveleft;
+char	*malloc();
+char	*calloc();
+char	*strncpy();
 
 char *
 savestr(cp)
@@ -1175,11 +1178,11 @@ savestr(cp)
 		saveleft = NSAVETAB;
 		if (len > saveleft)
 			saveleft = len;
-		savetab = (char *)malloc(saveleft);
+		savetab = malloc(saveleft);
 		if (savetab == 0)
 			cerror("Ran out of memory (savestr)");
 	}
-	strncpy(savetab, cp, len);
+	(void) strncpy(savetab, cp, len);
 	cp = savetab;
 	savetab += len;
 	saveleft -= len;
@@ -1259,5 +1262,6 @@ hash(s)
 		} while (i < HASHINC);
 	}
 	cerror("ran out of hash tables");
+	/*NOTREACHED*/
 }
 #endif
