@@ -1,4 +1,4 @@
-/*	mba.c	4.22	81/11/07	*/
+/*	mba.c	4.23	81/11/20	*/
 
 #include "mba.h"
 #if NMBA > 0
@@ -357,6 +357,7 @@ mbasetup(mi)
 	return (vaddr);
 }
 
+#if 0
 /*
  * Init and interrupt enable a massbus adapter.
  */
@@ -367,4 +368,5 @@ mbainit(mp)
 	mp->mba_cr = MBCR_INIT;
 	mp->mba_cr = MBCR_IE;
 }
+#endif
 #endif

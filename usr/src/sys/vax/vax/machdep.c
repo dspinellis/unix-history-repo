@@ -1,4 +1,4 @@
-/*	machdep.c	4.45	81/11/14	*/
+/*	machdep.c	4.46	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -492,6 +492,9 @@ boot(paniced, arghowto)
 	register int howto;		/* r11 == how to boot */
 	register int devtype;		/* r10 == major of root dev */
 
+#ifdef lint
+	printf("howto %d, devtype %d\n", howto, devtype);
+#endif
 	howto = arghowto;
 	if ((howto&RB_NOSYNC)==0 && waittime < 0 && bfreelist[0].b_forw) {
 		waittime = 0;
@@ -519,9 +522,6 @@ boot(paniced, arghowto)
 #endif
 	for (;;)
 		asm("halt");
-#ifdef lint
-	printf("howto %d, devtype %d\n", howto, devtype);
-#endif
 	/*NOTREACHED*/
 }
 

@@ -1,4 +1,4 @@
-/*	trap.c	4.10	81/07/09	*/
+/*	trap.c	4.11	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -217,12 +217,4 @@ nosys()
 {
 
 	u.u_error = 100;
-}
-
-/*
- * Ignored system call
- */
-nullsys()
-{
-
 }

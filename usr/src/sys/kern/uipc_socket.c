@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.7	81/11/20	*/
+/*	uipc_socket.c	4.8	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -78,7 +78,7 @@ COUNT(SOCREATE);
 	(*prp->pr_usrreq)(so, PRU_ATTACH, 0, asa);
 	if (so->so_error) {
 		error = so->so_error;
-		m_free(dtom(so));
+		(void) m_free(dtom(so));
 		return (error);
 	}
 	*aso = so;
@@ -94,7 +94,7 @@ COUNT(SOFREE);
 		return;
 	sbrelease(&so->so_snd);
 	sbrelease(&so->so_rcv);
-	m_free(dtom(so));
+	(void) m_free(dtom(so));
 }
 
 /*
@@ -348,7 +348,7 @@ restart:
 		if (so->so_options & SO_NBIO)
 			rcverr (EWOULDBLOCK);
 		sbunlock(&so->so_rcv);
-		sleep((caddr_t)&so->so_rcv.sb_cc, PZERO+1);
+		sbwait(&so->so_rcv);
 		goto restart;
 	}
 	m = so->so_rcv.sb_mb;

@@ -1,4 +1,4 @@
-/* ip_icmp.c 4.5 81/11/18 */
+/*	ip_icmp.c	4.6	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -210,7 +210,7 @@ n_time
 iptime()
 {
 	int s = spl6();
-	long t;
+	u_long t;
 
 	t = (time % SECDAY) * 1000 + lbolt * hz;
 	splx(s);

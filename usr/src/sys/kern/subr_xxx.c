@@ -1,4 +1,4 @@
-/*	subr_xxx.c	4.8	81/08/31	*/
+/*	subr_xxx.c	4.9	81/11/20	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -167,6 +167,7 @@ register c;
 }
 
 #include "ct.h"
+#if NCT > 0
 /*
  * Pick up and return the next character from the user's
  * write call at location u_base;
@@ -192,6 +193,7 @@ cpass()
 	u.u_base++;
 	return(c&0377);
 }
+#endif
 
 /*
  * Routine which sets a user error; placed in

@@ -1,6 +1,7 @@
-/*	Locore.c	4.14	81/11/18	*/
+/*	Locore.c	4.15	81/11/20	*/
 
 #include "dz.h"
+#include "mba.h"
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -66,6 +67,9 @@ lowinit()
 	consdout();
 #if NDZ > 0
 	dzdma();
+#endif
+#if NMBA > 0
+	mbintr(0);
 #endif
 	hardclock((caddr_t)0, 0);
 	softclock((caddr_t)0, 0);

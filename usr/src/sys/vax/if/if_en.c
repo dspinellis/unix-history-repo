@@ -1,4 +1,4 @@
-/* if_en.c 4.10 81/11/18 */
+/* if_en.c 4.11 81/11/20 */
 
 #include "en.h"
 /*
@@ -143,6 +143,7 @@ eninit(unit)
 #endif
 }
 
+#if 0
 enreset(uban)
 	int uban;
 {
@@ -161,6 +162,7 @@ enreset(uban)
 		printf("en%d ", unit);
 	}
 }
+#endif
 
 int	enlastdel = 25;
 int	enlastx = 0;
@@ -359,7 +361,7 @@ COUNT(ENRINT);
 	}
 #endif
 	ip = (struct ip *)((int)rpkt + L1822);
-	len = ntohs(ip->ip_len) + L1822;
+	len = ntohs((u_short *)ip->ip_len) + L1822;
 	if (len > sizeof(struct en_packet) || len < sizeof (struct ip)) {
 		printf("enrint: bad ip length %d\n", len);
 		goto flush;
