@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)hunt3.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)hunt3.c	4.2 (Berkeley) %G%";
 #endif
 
 #include "refer..c"
@@ -37,7 +37,9 @@ char *v[];
 		}
 	}
 	*p=0;
-	assert(p<buff+BSIZ);
+	if (p > buff + BSIZ)
+		fprintf(stderr, "query long than %d characters\n", BSIZ);
+	assert(p < buff + BSIZ);
 	if (sinput==0 && c<= 0) eof=1;
 # if D1
 	fprintf(stderr, "no. keys %d\n",n);
