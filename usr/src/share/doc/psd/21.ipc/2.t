@@ -3,12 +3,15 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	8.1 (Berkeley) %G%
+.\"	@(#)2.t	5.3 (Berkeley) %G%
 .\"
 .\".ds RH "Basics
 .bp
 .nr H1 2
 .nr H2 0
+.\" The next line is a major hack to get around internal changes in the groff
+.\" implementation of .NH.
+.nr nh*hl 1
 .bp
 .LG
 .B
