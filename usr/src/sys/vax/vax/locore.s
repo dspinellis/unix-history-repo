@@ -1,14 +1,16 @@
-/*	locore.s	4.25	81/02/21	*/
+/*	locore.s	4.26	81/02/23	*/
+
+#include "../h/mtpr.h"
+#include "../h/trap.h"
+#include "../h/psl.h"
+#include "../h/pte.h"
 
 	.set	HIGH,0x1f	# mask for total disable
 	.set	MCKVEC,4	# offset into scb of machine check vector
 	.set	NBPG,512
 	.set	PGSHIFT,9
 
-	.set	CLSIZE,2
 	.set	BSIZE,NBPG*CLSIZE
-	.set	MAXNBUF,128
-	.set	UPAGES,6	# size of user area, in pages
 	.set	NISP,3		# number of interrupt stack pages
 
 /*
@@ -211,10 +213,14 @@ _catcher:
 	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
 	PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ;PJ
 
-	.data
 	.globl	_cold
-_cold:
-	.long	1
+_cold:	.long	1
+	.globl	_cmap
+_cmap:	.long	0
+	.globl	_ecmap
+_ecmap:	.long	0
+	.data
+
 	.text
 SCBVEC(ustray):
 	blbc	_cold,1f
