@@ -350,7 +350,7 @@ api_init()
     if ((regs.x.bx == 0) && (sregs.es == 0)) {
 	return 0;		/* Interrupt not being handled */
     }
-#endif	defined(MSDOS)
+#endif	/* defined(MSDOS) */
 #if	defined(unix)
     if (api_open_api(0) == -1) {
 	return 0;
