@@ -1,5 +1,5 @@
 /*
-char id_system[] = "@(#)system_.c	1.2";
+char id_system[] = "@(#)system_.c	1.3";
  *
  * execute a unix command
  *
@@ -11,14 +11,19 @@ char id_system[] = "@(#)system_.c	1.2";
  */
 
 #include	"../libI77/fiodefs.h"
+#include	"../libI77/f_errno.h"
 
  
 long system_(s, n)
 char *s;
 long n;
 {
+	char buf[256];
 	int i;
 
+	if (n >= sizeof buf)
+		return(-(long)(errno=F_ERARG));
 	for (i = 0; i < MXUNIT; flush(i++)) ;
-	return((long)system(s));
+	g_char(s, n, buf);
+	return((long)system(buf));
 }
