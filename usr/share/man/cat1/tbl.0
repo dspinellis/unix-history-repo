@@ -1,0 +1,132 @@
+
+
+
+TBL(1)                 BSD Reference Manual                TBL(1)
+
+
+NNAAMMEE
+       tbl - format tables for troff
+
+SSYYNNOOPPSSIISS
+       ttbbll [ --CCvv ] [ _f_i_l_e_s...  ]
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual  page describes the GNU version of ttbbll, which
+       is part of the groff document formatting system.  ttbbll com-
+       piles  descriptions  of tables embedded within ttrrooffff input
+       files into commands that are understood  by  ttrrooffff.   Nor-
+       mally,  it should be invoked using the --tt option of ggrrooffff..
+       It is highly compatible with Unix ttbbll.  The output  gener-
+       ated  by  GNU  ttbbll cannot be processed with Unix ttrrooffff; it
+       must be processed with GNU ttrrooffff.  If no files  are  given
+       on  the  command line, the standard input will be read.  A
+       filename of -- will cause the standard input to be read.
+
+OOPPTTIIOONNSS
+       --CC     Recognize ..TTSS and ..TTEE even when followed by a char-
+              acter other than space or newline.
+
+       --vv     Print the version number.
+
+UUSSAAGGEE
+       Only  the  differences  between  GNU  ttbbll and Unix ttbbll are
+       described here.
+
+       Normally ttbbll attempts to prevent undesirable breaks in the
+       table  by  using  diversions.  This can sometimes interact
+       badly with macro packages' own  use  of  diversions,  when
+       footnotes, for example, are used.  The nnookkeeeepp option tells
+       ttbbll not to try and prevent breaks in this way.
+
+       The ddeecciimmaallppooiinntt option specifies the character to be rec-
+       ognized  as  the  decimal  point character in place of the
+       default period.  It  takes  an  argument  in  parentheses,
+       which must be a single character, as for the ttaabb option.
+
+       The  ff  format  modifier  can  be followed by an arbitrary
+       length font name in parentheses.
+
+       There is a dd format modifier which means that a vertically
+       spanning  entry  should  be  aligned  at the bottom of its
+       range.
+
+       There is no limit on the number of columns in a table, nor
+       any  limit on the number of text blocks.  All the lines of
+       a table are considered in deciding column widths, not just
+       the  first  200.   Table  continuation (..TT&&) lines are not
+       restricted to the first 200 lines.
+
+
+
+Groff Version 1.08         1 April 1993                         1
+
+
+
+
+
+
+
+
+TBL(1)                 BSD Reference Manual                TBL(1)
+
+
+       Numeric and alphabetic items may appear in the  same  col-
+       umn.
+
+       Numeric and alphabetic items may span horizontally.
+
+       ttbbll  uses  register,  string,  macro  and  diversion names
+       beginning with 33.  When using ttbbll you should  avoid  using
+       any names beginning with a 33.
+
+BBUUGGSS
+       You  should use ..TTSS HH/..TTHH in conjunction with a supporting
+       macro package for _a_l_l multi-page boxed tables.   If  there
+       is  no  header  that you wish to appear at the top of each
+       page of the table, place the ..TTHH  line  immediately  after
+       the  format  section.   Do  not enclose a multi-page table
+       within keep/release macros, or divert it in any other way.
+
+       A  text  block  within  a table must be able to fit on one
+       page.
+
+       The bbpp request cannot be used to force a page-break  in  a
+       multi-page table.  Instead, define BBPP as follows
+
+              ..ddee BBPP
+              ..iiee ''\\\\nn((..zz'''' ..bbpp \\\\$$11
+              ..eell \\!!..BBPP \\\\$$11
+              ....
+
+       and use BBPP instead of bbpp.
+
+SSEEEE AALLSSOO
+       ggrrooffff(1), ttrrooffff(1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Groff Version 1.08         1 April 1993                         2
+
+
+
+
+
