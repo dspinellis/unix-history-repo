@@ -1,9 +1,12 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yyprint.c 1.2 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)yyprint.c 1.3 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"	/* must be included for yy.h */
 #include "yy.h"
 
 char	*tokname();
@@ -68,7 +71,7 @@ tokname(tp , which )
 			cp = "number";
 			break;
 		case YSTRING:
-			cp = tp->Yylval;
+			cp = (char *) tp->Yylval;
 			cp = cp == NIL || cp[1] == 0 ? "character" : "string";
 			break;
 		case YDOTDOT:

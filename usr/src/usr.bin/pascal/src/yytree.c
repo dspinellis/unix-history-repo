@@ -1,10 +1,13 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yytree.c 1.1 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)yytree.c 1.2 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
 #include "tree.h"
+#include "tree_ty.h"
 
 extern	int *spacep;
 
@@ -48,31 +51,34 @@ extern	int *spacep;
 /*
  * Make a new list
  */
+struct tnode *
 newlist(new)
-	register int *new;
+	register struct tnode *new;
 {
 
-	if (new == NIL)
-		return (NIL);
-	return (tree3(T_LISTPP, new, spacep));
+	if (new == TR_NIL)
+		return (TR_NIL);
+	return ((struct tnode *) tree3(T_LISTPP, (int) new,
+					(struct tnode *) spacep));
 }
 
 /*
  * Add a new element to an existing list
  */
+struct tnode *
 addlist(vroot, new)
-	register int *vroot;
-	int *new;
+	register struct tnode *vroot;
+	struct tnode *new;
 {
-	register int *top;
+	register struct tnode *top;
 
-	if (new == NIL)
+	if (new == TR_NIL)
 		return (vroot);
-	if (vroot == NIL)
+	if (vroot == TR_NIL)
 		return (newlist(new));
-	top = vroot[2];
-	vroot[2] = spacep;
-	return (tree3(T_LISTPP, new, top));
+	top = vroot->list_node.next;
+	vroot->list_node.next = (struct tnode *) spacep;
+	return ((struct tnode *) tree3(T_LISTPP, (int) new, top));
 }
 
 /*
@@ -80,15 +86,16 @@ addlist(vroot, new)
  * We grab the top pointer and return it, zapping the spot
  * where it was so that the tree is not circular.
  */
+struct tnode *
 fixlist(vroot)
-	register int *vroot;
+	register struct tnode *vroot;
 {
-	register int *top;
+	register struct tnode *top;
 
-	if (vroot == NIL)
-		return (NIL);
-	top = vroot[2];
-	vroot[2] = NIL;
+	if (vroot == TR_NIL)
+		return (TR_NIL);
+	top = vroot->list_node.next;
+	vroot->list_node.next = TR_NIL;
 	return (top);
 }
 
@@ -103,17 +110,18 @@ fixlist(vroot)
  * to a field name within a WITH statement.
  * this extra field is set in lvalue, and used in VarCopy.
  */
+struct tnode *
 setupvar(var, init)
 	char *var;
-	register int *init;
+	register struct tnode *init;
 {
 
-	if (init != NIL)
+	if (init != TR_NIL)
 		init = newlist(init);
 #	ifndef PTREE
-	    return (tree4(T_VAR, NOCON, var, init));
+	    return (tree4(T_VAR, NOCON, (struct tnode *) var, init));
 #	else
-	    return tree5( T_VAR , NOCON , var , init , NIL );
+	    return tree5( T_VAR, NOCON, (struct tnode *) var, init, TR_NIL );
 #	endif
 }
 
@@ -124,15 +132,16 @@ setupvar(var, init)
      *	a pointer to the namelist entry of the record.
      *	this extra field is filled in in gtype, and used in RecTCopy.
      */
-setuptyrec( line , fldlst )
+struct tnode *
+setuptyrec( line , fldlist )
     int	line;
-    int	*fldlst;
+    struct tnode *fldlist;
     {
 
 #	ifndef PTREE
-	    return tree3( T_TYREC , line , fldlst );
+	    return tree3( T_TYREC , line , fldlist );
 #	else
-	    return tree4( T_TYREC , line , fldlst , NIL );
+	    return tree4( T_TYREC , line , fldlst , TR_NIL );
 #	endif
     }
 
@@ -143,14 +152,15 @@ setuptyrec( line , fldlst )
      *	a pointer to the namelist entry of the field.
      *	this extra field is set in lvalue, and used in SelCopy.
      */
+struct tnode *
 setupfield( field , other )
-    int	*field;
-    int	*other;
+    struct tnode *field;
+    struct tnode *other;
     {
 
 #	ifndef PTREE
-	    return tree3( T_FIELD , field , other );
+	    return tree3( T_FIELD , (int) field , other );
 #	else
-	    return tree4( T_FIELD , field , other , NIL );
+	    return tree4( T_FIELD , (int) field , other , TR_NIL );
 #	endif
     }

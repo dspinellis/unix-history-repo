@@ -1,11 +1,14 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)case.c 1.3 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)case.c 1.4 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
 #include "tree.h"
 #include "opcode.h"
+#include "tree_ty.h"
 
 /*
  * The structure used to
@@ -22,18 +25,18 @@ struct ct {
  * Caseop generates the
  * pascal case statement code
  */
-caseop(r)
-	int *r;
+caseop(rnode)
+	WHI_CAS *rnode;
 {
 	register struct nl *p;
 	register struct ct *ctab;
-	register *cs;
-	int *cl;
+	register struct tnode *cs;
+	extern char *lc;
 	double low, high;
 	short *brtab;
 	char *brtab0;
 	char *csend;
-	int w, i, j, m, n;
+	int w, j, m, n;
 	int goc;
 	bool nr;
 
@@ -45,17 +48,21 @@ caseop(r)
 	 *	low	lwb(p)
 	 *	high	upb(p)
 	 */
-	p = rvalue((int *) r[2], NLNIL , RREQ );
-	if (p != NIL) {
+	p = rvalue(rnode->expr, NLNIL , RREQ );
+
+	{
+	    register struct nl	*cl;
+
+	if (p != NLNIL) {
 		if (isnta(p, "bcsi")) {
 			error("Case selectors cannot be %ss", nameof(p));
-			p = NIL;
+			p = NLNIL;
 		} else {
 			cl = p;
-			if (p->class != RANGE)
+			if (p->class != (char) RANGE)
 				cl = p->type;
-			if (cl == NIL)
-				p = NIL;
+			if (cl == NLNIL)
+				p = NLNIL;
 			else {
 				w = width(p);
 #ifdef DEBUG
@@ -67,41 +74,55 @@ caseop(r)
 			}
 		}
 	}
+	} /* local declaration */
+	{
+	    struct tnode	*cl;	/* list node */
 	/*
 	 * Count # of cases
 	 */
 	n = 0;
-	for (cl = r[3]; cl != NIL; cl = cl[2]) {
-		cs = cl[1];
-		if (cs == NIL)
+	for (cl = rnode->stmnt_list; cl != TR_NIL;
+		cl = cl->list_node.next) {
+		cs = cl->list_node.list;;
+		if (cs == TR_NIL)
 			continue;
-		for (cs = cs[2]; cs != NIL; cs = cs[2])
+		for (cs = cs->c_stmnt.const_list; cs != TR_NIL;
+				cs = cs->list_node.next)
 			n++;
 	}
+	} /* local declaration */
 	/*
 	 * Allocate case table space
 	 */
-	ctab = i = malloc(n * sizeof *ctab);
+	{
+		char *i;
+	i = malloc((unsigned) n * sizeof *ctab);
 	if (i == 0) {
 		error("Ran out of memory (case)");
 		pexit(DIED);
+	}
+	ctab = (struct ct *) i;
 	}
 	/*
 	 * Check the legality of the
 	 * labels and count the number
 	 * of good labels
 	 */
+	{
+	    register struct tnode *cl;
 	m = 0;
-	for (cl = r[3]; cl != NIL; cl = cl[2]) {
-		cs = cl[1];
-		if (cs == NIL)
+	for (cl = rnode->stmnt_list; cl != TR_NIL;
+		cl = cl->list_node.next) {
+		cs = cl->list_node.list;
+		if (cs == TR_NIL)
 			continue;
-		line = cs[1];
-		for (cs = cs[2]; cs != NIL; cs = cs[2]) {
-			gconst(cs[1]);
-			if (p == NIL || con.ctype == NIL)
+		line = cs->c_stmnt.line_no;
+		for (cs = cs->c_stmnt.const_list; cs != TR_NIL;
+				cs =  cs->list_node.next) {
+			gconst(cs->list_node.list);
+			if (p == NLNIL || con.ctype == NIL)
 				continue;
-			if (incompat(con.ctype, p, NIL )) {
+			if (incompat(con.ctype, p, TR_NIL )) {
 				cerror("Case label type clashed with case selector expression type");
 				continue;
 			}
@@ -114,7 +135,9 @@ caseop(r)
 			m++;
 		}
 	}
-
+	} /* decl of cl */
+	{
+		register int i;
 	/*
 	 * Check for duplicate labels
 	 */
@@ -125,32 +148,37 @@ caseop(r)
 					continue;
 				if (j < i)
 					break;
-				error("Multiply defined label in case, lines %d and %d", ctab[i].cline, ctab[j].cline);
+				error("Multiply defined label in case, lines %d and %d", (char *) ctab[i].cline, (char *) ctab[j].cline);
 			}
+	}
 	/*
 	 * Put out case operator and
 	 * leave space for the
 	 * branch table
 	 */
-	if (p != NIL) {
-		put(2, O_CASE1OP + (w >> 1), n);
-		brtab = brtab0 = lc;
+	if (p != NLNIL) {
+		(void) put(2, O_CASE1OP + (w >> 1), n);
+		brtab0 = lc;
+		brtab = ((short *) brtab0);
 		putspace(n * 2);
-		put(1, O_CASEBEG);
+		(void) put(1, O_CASEBEG);
+		{
+		    int i;
 		for (i=0; i<m; i++)
 			if (w <= 2)
-				put(2 ,O_CASE1 + (w >> 1), (int)ctab[i].clong);
+				(void) put(2 ,O_CASE1 + (w >> 1), (int)ctab[i].clong);
 			else
-				put(2 ,O_CASE4, ctab[i].clong);
-		put(1, O_CASEEND);
+				(void) put(2 ,O_CASE4, ctab[i].clong);
+		}
+		(void) put(1, O_CASEEND);
 	}
 	csend = getlab();
-	put(2, O_TRA, csend);
+	(void) put(2, O_TRA, csend);
 	/*
 	 * Free the case
 	 * table space.
 	 */
-	free(ctab);
+	free((char *) ctab);
 	/*
 	 * Generate code for each
 	 * statement. Patch branch
@@ -159,31 +187,49 @@ caseop(r)
 	 * statement with a branch back
 	 * to the TRA above.
 	 */
+	{
+	    register struct tnode *cl;
 	nr = TRUE;
-	for (cl = r[3]; cl != NIL; cl = cl[2]) {
-		cs = cl[1];
-		if (cs == NIL)
+	for (cl = rnode->stmnt_list; cl != TR_NIL;
+			cl = cl->list_node.next) {
+		cs = cl->list_node.list;
+		if (cs == TR_NIL)
 			continue;
-		if (p != NIL)
-			for (cs = cs[2]; cs != NIL; cs = cs[2]) {
-				patchfil(brtab - 1, (long)(lc - brtab0), 1);
+		if (p != NLNIL)
+			for (cs = cs->c_stmnt.const_list; cs != TR_NIL;
+				cs =  cs->list_node.next) {
+#ifdef ADDR16
+				patchfil(((char *) (brtab - 1)),
+					(long)(lc - brtab0), 1);
+#endif ADDR16
+#ifdef ADDR32
+				
+				patchfil( ((unsigned long) (brtab - 1)),
+					(long)(lc - brtab0), 1);
+#endif ADDR32
 				brtab++;
 			}
-		cs = cl[1];
+		cs = cl->list_node.list;
 		putcnt();
 		level++;
-		statement(cs[3]);
-		nr = (noreach && nr);
-		noreach = 0;
-		put(2, O_TRA, csend);
+		statement(cs->c_stmnt.stmnt);
+		nr = (bool)(noreach && nr);
+		noreach = FALSE;
+		(void) put(2, O_TRA, csend);
 		level--;
 		if (gotos[cbn])
 			ungoto();
 	}
+	} /* decl of cl */
 	/*
 	 * Patch the termination branch
 	 */
-	patch(csend);
+#ifdef ADDR16
+	patch((char *) csend);
+#endif ADDR16
+#ifdef ADDR32
+	patch((unsigned long) csend);
+#endif ADDR32
 	noreach = nr;
 	if (goc != gocnt)
 		putcnt();

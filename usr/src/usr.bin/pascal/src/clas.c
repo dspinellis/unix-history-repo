@@ -1,10 +1,13 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)clas.c 1.6 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)clas.c 1.7 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
 #include "tree.h"
+#include "tree_ty.h"
 
 /*
  * This is the array of class
@@ -48,7 +51,7 @@ classify(p1)
 
 	p = p1;
 swit:
-	if (p == NIL) {
+	if (p == NLNIL) {
 		nocascade();
 		return (NIL);
 	}
@@ -82,7 +85,10 @@ swit:
 		case SCAL:
 			return (TSCAL);
 		default:
-			panic("clas");
+			{
+			    panic("clas");
+			    return(NIL);
+			}
 	}
 }
 
@@ -104,19 +110,20 @@ text(p)
  * its argument if its argument
  * is a SCALar else NIL.
  */
+struct nl *
 scalar(p1)
 	struct nl *p1;
 {
 	register struct nl *p;
 
 	p = p1;
-	if (p == NIL)
-		return (NIL);
+	if (p == NLNIL)
+		return (NLNIL);
 	if (p->class == RANGE)
 		p = p->type;
-	if (p == NIL)
-		return (NIL);
-	return (p->class == SCAL ? p : NIL);
+	if (p == NLNIL)
+		return (NLNIL);
+	return (p->class == SCAL ? p : NLNIL);
 }
 
 /*
@@ -178,6 +185,8 @@ isa(p, s)
  * Isnta is !isa
  */
 isnta(p, s)
+    struct nl *p;
+    char *s;
 {
 
 	return (!isa(p, s));
@@ -186,18 +195,22 @@ isnta(p, s)
 /*
  * "shorthand"
  */
+char *
 nameof(p)
+struct nl *p;
 {
 
 	return (clnames[classify(p)]);
 }
 
 #ifndef PI0
-nowexp(r)
-	int *r;
+/* find out for sure what kind of node this is being passed
+   possibly several different kinds of node are passed to it */
+int nowexp(r)
+	struct tnode *r;
 {
-	if (r[0] == T_WEXP) {
-		if (r[2] == NIL)
+	if (r->tag == T_WEXP) {
+		if (r->var_node.cptr == NIL)
 			error("Oct/hex allowed only on writeln/write calls");
 		else
 			error("Width expressions allowed only in writeln/write calls");
@@ -214,8 +227,8 @@ nowexp(r)
      *	    positives are parameters
      *	    negative evens are locals
      */
-whereis( level , offset , other_flags )
-    int		level;
+/*ARGSUSED*/
+whereis( offset , other_flags )
     int		offset;
     char	other_flags;
 {
@@ -225,6 +238,8 @@ whereis( level , offset , other_flags )
 #   endif OBJ
 #   ifdef PC
 	switch ( other_flags & ( NGLOBAL | NPARAM | NLOCAL | NNLOCAL) ) {
+	    default:
+		panic( "whereis" );
 	    case NGLOBAL:
 		return GLOBALVAR;
 	    case NPARAM:
@@ -233,8 +248,6 @@ whereis( level , offset , other_flags )
 		return NAMEDLOCALVAR;
 	    case NLOCAL:
 		return LOCALVAR;
-	    default:
-		panic( "whereis" );
 	}
 #   endif PC
 }

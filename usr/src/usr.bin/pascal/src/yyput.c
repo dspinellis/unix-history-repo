@@ -1,10 +1,13 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)yyput.c 1.2 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)yyput.c 1.3 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
 #include "tree.h"
+#include "tree_ty.h"	/* must be included for yy.h */
 #include "yy.h"
 
 /*
@@ -44,7 +47,8 @@ yyoutline()
 	register struct B *bp;
 
 	if (Recovery) {
-		bp = tree(6, T_BOTTLE, yyline, yylinpt, filename, yyseqid);
+		bp = (struct B *) tree(6, T_BOTTLE, yyline, yylinpt, filename,
+				yyseqid);
 		if (bottled != NIL)
 			bp->Bnext = bottled->Bnext, bottled->Bnext = bp;
 		else
@@ -138,7 +142,7 @@ yygetline(efile, seekp, eline, eseqid)
 		bp = buf;
 		if (efile != yygetfile) {
 			if ( yygetunit != NULL )
-			    fclose( yygetunit );
+			    (void) fclose( yygetunit );
 			yygetfile = efile;
 			yygetunit = fopen( yygetfile , "r" );
 			if (yygetunit < 0)
@@ -271,6 +275,6 @@ yyputfn(cp)
 		pchr('\n');
 #endif
 	gettime( cp );
-	printf("%s  %s:\n" , myctime( &tvec ) , cp );
+	printf("%s  %s:\n" , myctime( (int *) (&tvec) ) , cp );
 	hadsome = 1;
 }

@@ -1,9 +1,12 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)yycosts.c 1.4 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)yycosts.c 1.5 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"	/* must be included for yy.h */
 #include "yy.h"
 
 /*
@@ -153,7 +156,7 @@ repcost(what, with)
 		return(5);
 	if (what == ';' && (with == ',' || with == '.'))
 		return (CLIMIT - 1);
-	c = delcost(what) + inscost(with);
+	c = delcost(what) + inscost(with, what);
 	/*
 	 * It costs extra to replace something which has
 	 * semantics by something which doesn't.
@@ -226,8 +229,8 @@ yydocost(c)
 
 	printf("%4d\t", inscost(c, -1));
 	printf("%4d\t", delcost(c));
-	if (repcost(c, YID) != inscost(YID) + delcost(c))
+	if (repcost(c, YID) != inscost(YID, c) + delcost(c))
 		printf("%4d", repcost(c, YID));
-	printf("\t%s%s\n", charname(c));
+	printf("\t%s%s\n", charname(c,1));
 }
 #endif

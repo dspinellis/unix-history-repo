@@ -4,7 +4,9 @@
      *	editing config.c won't work
      */
 
-static	char *sccsid = "@(#)CONFIG.c	2.3 (Berkeley) 82/04/01";
+#ifndef lint
+static	char *sccsid = "@(#)CONFIG.c	2.4 (Berkeley) 83/08/19";
+#endif
 
     /*
      *	the version of translator
@@ -31,7 +33,12 @@ int	how_pathlen = sizeof("LIBDIR/")-1;
      *	things about the interpreter.
      *	these are not used by the compiler.
      */
+#ifndef PC
 char	*px_header = "LIBDIR/px_header";	/* px_header's name */
+#endif
+
+#ifdef PXP
 char	*pi_comp = "INSTALLDIR/pi";		/* the compiler's name */
 char	*px_intrp = "INSTALLDIR/px";		/* the interpreter's name */
 char	*px_debug = "INSTALLDIR/pdx";		/* the debugger's name */
+#endif

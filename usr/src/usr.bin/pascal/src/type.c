@@ -1,15 +1,19 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)type.c 1.8 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)type.c 1.9 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
 #include "tree.h"
 #include "objfmt.h"
+#include "tree_ty.h"
 
 /*
  * Type declaration part
  */
+/*ARGSUSED*/
 typebeg( lineofytype , r )
     int	lineofytype;
 {
@@ -69,7 +73,7 @@ typebeg( lineofytype , r )
 type(tline, tid, tdecl)
 	int tline;
 	char *tid;
-	register int *tdecl;
+	register struct tnode *tdecl;
 {
 	register struct nl *np;
 
@@ -78,7 +82,7 @@ type(tline, tid, tdecl)
 #ifndef PI0
 	enter(defnl(tid, TYPE, np, 0))->nl_flags |= NMOD;
 #else
-	enter(defnl(tid, TYPE, np, 0));
+	(void) enter(defnl(tid, TYPE, np, 0));
 	send(REVTYPE, tline, tid, tdecl);
 #endif
 
@@ -117,32 +121,33 @@ typeend()
  */
 struct nl *
 gtype(r)
-	register int *r;
+	register struct tnode *r;
 {
 	register struct nl *np;
-	register char *cp;
 	register int oline;
+#ifdef OBJ
 	long w;
+#endif
 
-	if (r == NIL)
-		return (NIL);
+	if (r == TR_NIL)
+		return (NLNIL);
 	oline = line;
-	if (r[0] != T_ID)
-		oline = line = r[1];
-	switch (r[0]) {
+	if (r->tag != T_ID)
+		oline = line = r->lined.line_no;
+	switch (r->tag) {
 		default:
 			panic("type");
 		case T_TYID:
 			r++;
 		case T_ID:
-			np = lookup(r[1]);
-			if (np == NIL)
+			np = lookup(r->char_const.cptr);
+			if (np == NLNIL)
 				break;
 			if (np->class != TYPE) {
 #ifndef PI1
-				error("%s is a %s, not a type as required", r[1], classes[np->class]);
+				error("%s is a %s, not a type as required", r->char_const.cptr, classes[np->class]);
 #endif
-				np = NIL;
+				np = NLNIL;
 				break;
 			}
 			np = np->type;
@@ -154,70 +159,70 @@ gtype(r)
 			np = tyrang(r);
 			break;
 		case T_TYPTR:
-			np = defnl(0, PTR, 0, 0 );
-			np -> ptr[0] = r[2];
+			np = defnl((char *) 0, PTR, NLNIL, 0 );
+			np -> ptr[0] = ((struct nl *) r->ptr_ty.id_node);
 			np->nl_next = forechain;
 			forechain = np;
 			break;
 		case T_TYPACK:
-			np = gtype(r[2]);
+			np = gtype(r->comp_ty.type);
 			break;
 		case T_TYARY:
 			np = tyary(r);
 			break;
 		case T_TYREC:
-			np = tyrec(r[2], 0);
+			np = tyrec(r->comp_ty.type, 0);
 #			ifdef PTREE
 				/*
 				 * mung T_TYREC[3] to point to the record
 				 * for RecTCopy
 				 */
-			    r[3] = np;
+			    r->comp_ty.nl_entry = np;
 #			endif
 			break;
 		case T_TYFILE:
-			np = gtype(r[2]);
-			if (np == NIL)
+			np = gtype(r->comp_ty.type);
+			if (np == NLNIL)
 				break;
 #ifndef PI1
 			if (np->nl_flags & NFILES)
 				error("Files cannot be members of files");
 #endif
-			np = defnl(0, FILET, np, 0);
+			np = defnl((char *) 0, FILET, np, 0);
 			np->nl_flags |= NFILES;
 			break;
 		case T_TYSET:
-			np = gtype(r[2]);
-			if (np == NIL)
+			np = gtype(r->comp_ty.type);
+			if (np == NLNIL)
 				break;
 			if (np->type == nl+TDOUBLE) {
 #ifndef PI1
 				error("Set of real is not allowed");
 #endif
-				np = NIL;
+				np = NLNIL;
 				break;
 			}
 			if (np->class != RANGE && np->class != SCAL) {
 #ifndef PI1
 				error("Set type must be range or scalar, not %s", nameof(np));
 #endif
-				np = NIL;
+				np = NLNIL;
 				break;
 			}
 #ifndef PI1
 			if (width(np) > 2)
 				error("Implementation restriction: sets must be indexed by 16 bit quantities");
 #endif
-			np = defnl(0, SET, np, 0);
+			np = defnl((char *) 0, SET, np, 0);
 			break;
 	}
 	line = oline;
-	w = lwidth(np);
 #ifndef PC
+	w = lwidth(np);
 	if (w >= TOOMUCH) {
 		error("Storage requirement of %s exceeds the implementation limit of %D by %D bytes",
-			nameof(np), (long)(TOOMUCH-1), (long)(w-TOOMUCH+1));
-		np = NIL;
+			nameof(np), (char *) (long)(TOOMUCH-1), (char *) (long)(w-TOOMUCH+1));
+		np = NLNIL;
 	}
 #endif
 	return (np);
@@ -226,22 +231,23 @@ gtype(r)
 /*
  * Scalar (enumerated) types
  */
+struct nl *
 tyscal(r)
-	int *r;
+	struct tnode *r;	/* T_TYSCAL */
 {
 	register struct nl *np, *op, *zp;
-	register *v;
+	register struct tnode *v;
 	int i;
 
-	np = defnl(0, SCAL, 0, 0);
+	np = defnl((char *) 0, SCAL, NLNIL, 0);
 	np->type = np;
-	v = r[2];
-	if (v == NIL)
-		return (NIL);
+	v = r->comp_ty.type;
+	if (v == TR_NIL)
+		return (NLNIL);
 	i = -1;
 	zp = np;
-	for (; v != NIL; v = v[2]) {
-		op = enter(defnl(v[1], CONST, np, ++i));
+	for (; v != TR_NIL; v = v->list_node.next) {
+		op = enter(defnl((char *) v->list_node.list, CONST, np, ++i));
 #ifndef PI0
 		op->nl_flags |= NMOD;
 #endif
@@ -256,43 +262,44 @@ tyscal(r)
 /*
  * Declare a subrange.
  */
+struct nl *
 tyrang(r)
-	register int *r;
+	register struct tnode *r;  /* T_TYRANG */
 {
 	register struct nl *lp, *hp;
 	double high;
 	int c, c1;
 
-	gconst(r[3]);
+	gconst(r->rang_ty.const2);
 	hp = con.ctype;
 	high = con.crval;
-	gconst(r[2]);
+	gconst(r->rang_ty.const1);
 	lp = con.ctype;
-	if (lp == NIL || hp == NIL)
-		return (NIL);
+	if (lp == NLNIL || hp == NLNIL)
+		return (NLNIL);
 	if (norange(lp) || norange(hp))
-		return (NIL);
+		return (NLNIL);
 	c = classify(lp);
 	c1 = classify(hp);
 	if (c != c1) {
 #ifndef PI1
 		error("Can't mix %ss and %ss in subranges", nameof(lp), nameof(hp));
 #endif
-		return (NIL);
+		return (NLNIL);
 	}
 	if (c == TSCAL && scalar(lp) != scalar(hp)) {
 #ifndef PI1
 		error("Scalar types must be identical in subranges");
 #endif
-		return (NIL);
+		return (NLNIL);
 	}
 	if (con.crval > high) {
 #ifndef PI1
 		error("Range lower bound exceeds upper bound");
 #endif
-		return (NIL);
+		return (NLNIL);
 	}
-	lp = defnl(0, RANGE, hp->type, 0);
+	lp = defnl((char *) 0, RANGE, hp->type, 0);
 	lp->range[0] = con.crval;
 	lp->range[1] = high;
 	return (lp);
@@ -321,38 +328,38 @@ norange(p)
  */
 struct nl *
 tyary(r)
-	int *r;
+	struct tnode *r;
 {
 	struct nl *np;
-	register *tl;
+	register struct tnode *tl;
 	register struct nl *tp, *ltp;
 	int i;
 
-	tp = gtype(r[3]);
-	if (tp == NIL)
-		return (NIL);
-	np = defnl(0, ARRAY, tp, 0);
+	tp = gtype(r->ary_ty.type);
+	if (tp == NLNIL)
+		return (NLNIL);
+	np = defnl((char *) 0, ARRAY, tp, 0);
 	np->nl_flags |= (tp->nl_flags) & NFILES;
 	ltp = np;
 	i = 0;
-	for (tl = r[2]; tl != NIL; tl = tl[2]) {
-		tp = gtype(tl[1]);
-		if (tp == NIL) {
-			np = NIL;
+	for (tl = r->ary_ty.type_list; tl != TR_NIL; tl = tl->list_node.next) {
+		tp = gtype(tl->list_node.list);
+		if (tp == NLNIL) {
+			np = NLNIL;
 			continue;
 		}
 		if (tp->class == RANGE && tp->type == nl+TDOUBLE) {
 #ifndef PI1
 			error("Index type for arrays cannot be real");
 #endif
-			np = NIL;
+			np = NLNIL;
 			continue;
 		}
 		if (tp->class != RANGE && tp->class != SCAL) {
 #ifndef PI1
 			error("Array index type is a %s, not a range or scalar as required", classes[tp->class]);
 #endif
-			np = NIL;
+			np = NLNIL;
 			continue;
 		}
 #ifndef PC
@@ -368,7 +375,7 @@ tyary(r)
 		ltp->chain = tp;
 		ltp = tp;
 	}
-	if (np != NIL)
+	if (np != NLNIL)
 		np->value[0] = i;
 	return (np);
 }
@@ -380,12 +387,12 @@ tyary(r)
  */
 foredecl()
 {
-	register struct nl *p, *q;
+	register struct nl *p;
 
-	for (p = forechain; p != NIL; p = p->nl_next) {
+	for (p = forechain; p != NLNIL; p = p->nl_next) {
 		if (p->class == PTR && p -> ptr[0] != 0)
 		{
-			p->type = gtype(p -> ptr[0]);
+			p->type = gtype((struct tnode *) p -> ptr[0]);
 #			ifdef PTREE
 			{
 			    if ( pUSE( p -> inTree ).PtrTType == pNIL ) {

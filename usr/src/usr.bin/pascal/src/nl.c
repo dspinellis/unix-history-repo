@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)nl.c 1.12 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)nl.c 1.13 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
@@ -273,13 +275,13 @@ initnl()
 #endif
 	ntab[0].nls_low = nl;
 	ntab[0].nls_high = &nl[INL];
-	defnl ( 0 , 0 , 0 , 0 );
+	(void) defnl ( (char *) 0 , 0 , NLNIL , 0 );
 
 	/*
 	 *	Types
 	 */
 	for ( cp = in_types ; *cp != 0 ; cp ++ )
-	    hdefnl ( *cp , TYPE , nlp , 0 );
+	    (void) hdefnl ( *cp , TYPE , nlp , 0 );
 
 	/*
 	 *	Ranges
@@ -287,7 +289,7 @@ initnl()
 	lp = in_ranges;
 	for ( ip = in_rclasses ; *ip != 0 ; ip ++ )
 	    {
-		np = defnl ( 0 , RANGE , nl+(*ip) , 0 );
+		np = defnl ( (char *) 0 , RANGE , nl+(*ip) , 0 );
 		nl[*ip].type = np;
 		np -> range[0] = *lp ++ ;
 		np -> range[1] = *lp ++ ;
@@ -302,32 +304,32 @@ initnl()
 	/*
 	 *	Boolean = boolean;
 	 */
-	hdefnl ( *cp++ , TYPE , nl+T1BOOL , 0 );
+	(void) hdefnl ( *cp++ , TYPE , (struct nl *) (nl+T1BOOL) , 0 );
 
 	/*
 	 *	intset = set of 0 .. 127;
 	 */
-	intset = *cp++;
-	hdefnl( intset , TYPE , nlp+1 , 0 );
-	defnl ( 0 , SET , nlp+1 , 0 );
-	np = defnl ( 0 , RANGE , nl+TINT , 0 );
+	intset = ((struct nl *) *cp++);
+	(void) hdefnl( (char *) intset , TYPE , nlp+1 , 0 );
+	(void) defnl ( (char *) 0 , SET , nlp+1 , 0 );
+	np = defnl ( (char *) 0 , RANGE , nl+TINT , 0 );
 	np -> range[0] = 0L;
 	np -> range[1] = 127L;
 
 	/*
 	 *	alfa = array [ 1 .. 10 ] of char;
 	 */
-	np = defnl ( 0 , RANGE , nl+TINT , 0 );
+	np = defnl ( (char *) 0 , RANGE , nl+TINT , 0 );
 	np -> range[0] = 1L;
 	np -> range[1] = 10L;
-	defnl ( 0 , ARRAY , nl+T1CHAR , 1 ) -> chain = np;
-	hdefnl ( *cp++ , TYPE , nlp-1 , 0 );
+	defnl ( (char *) 0 , ARRAY , nl+T1CHAR , 1 ) -> chain = np;
+	(void) hdefnl ( *cp++ , TYPE , nlp-1 , 0 );
 
 	/*
 	 *	text = file of char;
 	 */
-	hdefnl ( *cp++ , TYPE , nlp+1 , 0 );
-	np = defnl ( 0 , FILET , nl+T1CHAR , 0 );
+	(void) hdefnl ( *cp++ , TYPE , nlp+1 , 0 );
+	np = defnl ( (char *) 0 , FILET , nl+T1CHAR , 0 );
 	np -> nl_flags |= NFILES;
 
 	/*
@@ -361,10 +363,10 @@ initnl()
 		(nl + TBOOL)->chain = fp;
 	hdefnl ( *cp++ , CONST , nl + T4INT , 0 ) -> range[0] = MININT;
 	hdefnl ( *cp++ , CONST , nl + T4INT , 0 ) -> range[0] = MAXINT;
-	hdefnl ( *cp++ , CONST , nl + T1CHAR , 0 );
-	hdefnl ( *cp++ , CONST , nl + T1CHAR , 127 );
-	hdefnl ( *cp++ , CONST , nl + T1CHAR , '\007' );
-	hdefnl ( *cp++ , CONST , nl + T1CHAR , '\t' );
+	(void) hdefnl ( *cp++ , CONST , nl + T1CHAR , 0 );
+	(void) hdefnl ( *cp++ , CONST , nl + T1CHAR , 127 );
+	(void) hdefnl ( *cp++ , CONST , nl + T1CHAR , '\007' );
+	(void) hdefnl ( *cp++ , CONST , nl + T1CHAR , '\t' );
 
 	/*
 	 * Built-in functions and procedures
@@ -372,15 +374,15 @@ initnl()
 #ifndef PI0
 	ip = in_fops;
 	for ( cp = in_funcs ; *cp != 0 ; cp ++ )
-	    hdefnl ( *cp , FUNC , 0 , * ip ++ );
+	    (void) hdefnl ( *cp , FUNC , NLNIL , * ip ++ );
 	ip = in_pops;
 	for ( cp = in_procs ; *cp != 0 ; cp ++ )
-	    hdefnl ( *cp , PROC , 0 , * ip ++ );
+	    (void) hdefnl ( *cp , PROC , NLNIL , * ip ++ );
 #else
 	for ( cp = in_funcs ; *cp != 0 ; cp ++ )
-	    hdefnl ( *cp , FUNC , 0 , 0 );
+	    (void) hdefnl ( *cp , FUNC , NLNIL , 0 );
 	for ( cp = in_procs ; *cp != 0 , cp ++ )
-	    hdefnl ( *cp , PROC , 0 , 0 );
+	    (void) hdefnl ( *cp , PROC , NLNIL , 0 );
 #endif
 #	ifdef PTREE
 	    pTreeInit();
@@ -389,16 +391,20 @@ initnl()
 
 struct nl *
 hdefnl(sym, cls, typ, val)
+    char *sym;
+    int  cls;
+    struct nl *typ;
+    int val;
 {
 	register struct nl *p;
 
 #ifndef PI1
 	if (sym)
-		hash(sym, 0);
+		(void) hash(sym, 0);
 #endif
 	p = defnl(sym, cls, typ, val);
 	if (sym)
-		enter(p);
+		(void) enter(p);
 	return (p);
 }
 
@@ -414,7 +420,7 @@ nlfree(p)
 
 	nlp = p;
 	while (nlact->nls_low > nlp || nlact->nls_high < nlp) {
-		free(nlact->nls_low);
+		free((char *) nlact->nls_low);
 		nlact->nls_low = NIL;
 		nlact->nls_high = NIL;
 		--nlact;
@@ -425,7 +431,11 @@ nlfree(p)
 #endif PI
 
 
+#ifndef PC
+#ifndef OBJ
 char	*VARIABLE	= "variable";
+#endif PC
+#endif OBJ
 
 char	*classes[ ] = {
 	"undefined",
@@ -455,7 +465,11 @@ char	*classes[ ] = {
 	"formal function"
 };
 
+#ifndef PC
+#ifndef OBJ
 char	*snark	= "SNARK";
+#endif
+#endif
 
 #ifdef PI
 #ifdef DEBUG
@@ -496,13 +510,13 @@ char	*stars	= "\t***";
  * All the namelist is dumped if
  * to is NIL.
  */
+/*VARARGS*/
 dumpnl(to, rout)
 	struct nl *to;
 {
 	register struct nl *p;
-	register int j;
 	struct nls *nlsp;
-	int i, v, head;
+	int v, head;
 
 	if (opt('y') == 0)
 		return;
@@ -607,7 +621,7 @@ con:
 				}
 				v = p->value[1];
 			default:
-casedef:
+
 				if (v)
 					printf("\t<%d>", v);
 				else
@@ -700,7 +714,7 @@ defnl(sym, cls, typ, val)
 	/*
 	 * Zero out this entry
 	 */
-	q = p;
+	q = ((int *) p);
 	i = (sizeof *p)/(sizeof (int));
 	do
 		*q++ = 0;
@@ -728,10 +742,10 @@ defnl(sym, cls, typ, val)
 	nlp++;
 	if (nlp >= nlact->nls_high) {
 		i = NLINC;
-		cp = malloc(NLINC * sizeof *nlp);
+		cp = (char *) malloc(NLINC * sizeof *nlp);
 		if (cp == 0) {
 			i = NLINC / 2;
-			cp = malloc((NLINC / 2) * sizeof *nlp);
+			cp = (char *) malloc((NLINC / 2) * sizeof *nlp);
 		}
 		if (cp == 0) {
 			error("Ran out of memory (defnl)");
@@ -742,7 +756,7 @@ defnl(sym, cls, typ, val)
 			error("Ran out of name list tables");
 			pexit(DIED);
 		}
-		nlp = cp;
+		nlp = (struct nl *) cp;
 		nlact->nls_low = nlp;
 		nlact->nls_high = nlact->nls_low + i;
 	}
@@ -759,10 +773,11 @@ struct nl *
 nlcopy(p)
 	struct nl *p;
 {
-	register int *p1, *p2, i;
+	register struct nl *p1, *p2;
+	register int i;
 
 	p1 = p;
-	p = p2 = defnl(0, 0, 0, 0);
+	p = p2 = defnl((char *) 0, 0, NLNIL, 0);
 	i = (sizeof *p)/(sizeof (int));
 	do
 		*p2++ = *p1++;
@@ -804,7 +819,7 @@ enter(np)
 		if (rp->symbol == input->symbol || rp->symbol == output->symbol)
 			error("Pre-defined files input and output must not be redefined");
 #endif
-	i = rp->symbol;
+	i = (int) rp->symbol;
 	i &= 077;
 	hp = disptab[i];
 	if (rp->class != BADUSE && rp->class != FIELD)

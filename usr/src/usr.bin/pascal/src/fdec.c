@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fdec.c 1.23 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)fdec.c 1.24 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
@@ -37,7 +39,6 @@ funcfwd(fp)
 	if ( monflg ) {
 	    fp -> value[ NL_CNTR ] = bodycnts[ cbn ];
 	}
-	return (fp);
 }
 
 /*
@@ -48,6 +49,7 @@ funcfwd(fp)
  * otherwise.
  */
 
+struct nl *
 funcext(fp)
 	struct nl *fp;
 {
@@ -87,10 +89,11 @@ funcext(fp)
  * of the (function) and parameters
  * into the symbol table.
  */
+struct nl *
 funcbody(fp)
 	struct nl *fp;
 {
-	register struct nl *q, *p;
+	register struct nl *q;
 
 	cbn++;
 	if (cbn >= DSPLYSZ) {
@@ -113,7 +116,7 @@ funcbody(fp)
 	fp->ptr[2] = nlp;
 	if (fp->class != PROG) {
 		for (q = fp->chain; q != NIL; q = q->chain) {
-			enter(q);
+			(void) enter(q);
 #			ifdef PC
 			    q -> extra_flags |= NPARAM;
 #			endif PC
@@ -123,7 +126,7 @@ funcbody(fp)
 		/*
 		 * For functions, enter the fvar
 		 */
-		enter(fp->ptr[NL_FVAR]);
+		(void) enter(fp->ptr[NL_FVAR]);
 #		ifdef PC
 		    q = fp -> ptr[ NL_FVAR ];
 		    if (q -> type != NIL ) {
@@ -154,11 +157,11 @@ funcbody(fp)
  */
  segend()
  {
+#ifdef PC
 	register struct nl *p;
 	register int i,b;
 	char *cp;
 
-#ifdef PC
 	if ( monflg ) {
 	    error("Only the module containing the \"program\" statement");
 	    cerror("can be profiled with ``pxp''.\n");
@@ -172,8 +175,8 @@ funcbody(fp)
 			for (p = disptab[i]; p != NIL && (p->nl_block & 037) == b; p = p->nl_next) {
 			switch (p->class) {
 				case BADUSE:
-					cp = 's';
-					if (p->chain->ud_next == NIL)
+					cp = "s";
+					if (((struct udinfo *) (p->chain))->ud_next == NIL)
 						cp++;
 					eholdnl();
 					if (p->value[NL_KINDS] & ISUNDEF)
@@ -181,7 +184,7 @@ funcbody(fp)
 					else
 						nerror("%s improperly used on line%s", p->symbol, cp);
 					pnumcnt = 10;
-					pnums(p->chain);
+					pnums((struct udinfo *) (p->chain));
 					pchr('\n');
 					break;
 				
@@ -252,7 +255,9 @@ pnums(p)
 	printf(" %d", p->ud_line);
 }
 
+/*VARARGS*/
 nerror(a1, a2, a3)
+    char *a1,*a2,*a3;
 {
 
 	if (Fp != NIL) {

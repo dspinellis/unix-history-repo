@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)proc.c 1.18 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)proc.c 1.19 %G%";
+#endif
 
 #include "whoami.h"
 #ifdef OBJ
@@ -12,6 +14,7 @@ static char sccsid[] = "@(#)proc.c 1.18 %G%";
 #include "opcode.h"
 #include "objfmt.h"
 #include "tmps.h"
+#include "tree_ty.h"
 
 /*
  * The constant EXPOSIZE specifies the number of digits in the exponent
@@ -55,15 +58,17 @@ int rdxxxx[] = {
  * builtin procedures are handled here.
  */
 proc(r)
-	int *r;
+	struct tnode *r;
 {
 	register struct nl *p;
-	register int *alv, *al, op;
-	struct nl *filetype, *ap;
-	int argc, *argv, typ, fmtspec, strfmt, stkcnt, *file;
-	char fmt, format[20], *strptr;
-	int prec, field, strnglen, fmtlen, fmtstart, pu;
-	int *pua, *pui, *puz;
+	register struct tnode *alv, *al;
+ 	register int op;
+	struct nl *filetype, *ap, *al1;
+	int argc, typ, fmtspec, strfmt, stkcnt;
+	struct tnode *argv; 
+	char fmt, format[20], *strptr, *pu;
+	int prec, field, strnglen, fmtlen, fmtstart;
+	struct tnode *pua, *pui, *puz, *file;
 	int i, j, k;
 	int itemwidth;
 	struct tmps soffset;
@@ -80,24 +85,24 @@ proc(r)
 	 * defined and is that of a
 	 * procedure.
 	 */
-	p = lookup(r[2]);
+	p = lookup(r->pcall_node.proc_id);
 	if (p == NIL) {
-		rvlist(r[3]);
+		rvlist(r->pcall_node.arg);
 		return;
 	}
 	if (p->class != PROC && p->class != FPROC) {
 		error("Can't call %s, its %s not a procedure", p->symbol, classes[p->class]);
-		rvlist(r[3]);
+		rvlist(r->pcall_node.arg);
 		return;
 	}
-	argv = r[3];
+	argv = r->pcall_node.arg;
 
 	/*
 	 * Call handles user defined
 	 * procedures and functions.
 	 */
 	if (bn != 0) {
-		call(p, argv, PROC, bn);
+		(void) call(p, argv, PROC, bn);
 		return;
 	}
 
@@ -106,7 +111,7 @@ proc(r)
 	 * Count the arguments.
 	 */
 	argc = 0;
-	for (al = argv; al != NIL; al = al[2])
+	for (al = argv; al != TR_NIL; al = al->list_node.next)
 		argc++;
 
 	/*
@@ -128,21 +133,21 @@ proc(r)
 
 	case O_FLUSH:
 		if (argc == 0) {
-			put(1, O_MESSAGE);
+			(void) put(1, O_MESSAGE);
 			return;
 		}
 		if (argc != 1) {
 			error("flush takes at most one argument");
 			return;
 		}
-		ap = stklval(argv[1], NIL , LREQ );
-		if (ap == NIL)
+		ap = stklval(argv->list_node.list, NIL );
+		if (ap == NLNIL)
 			return;
 		if (ap->class != FILET) {
 			error("flush's argument must be a file, not %s", nameof(ap));
 			return;
 		}
-		put(1, op);
+		(void) put(1, op);
 		return;
 
 	case O_MESSAGE:
@@ -165,19 +170,20 @@ proc(r)
 			 * a character file.
 			 * Thus "output" will suit us fine.
 			 */
-			put(1, O_MESSAGE);
-		} else if (argv != NIL && (al = argv[1])[0] != T_WEXP) {
+			(void) put(1, O_MESSAGE);
+		} else if (argv != TR_NIL && (al = argv->list_node.list)->tag !=
+					T_WEXP) {
 			/*
 			 * If there is a first argument which has
 			 * no write widths, then it is potentially
 			 * a file name.
 			 */
 			codeoff();
-			ap = stkrval(argv[1], NIL , RREQ );
+			ap = stkrval(argv->list_node.list, NLNIL, (long) RREQ );
 			codeon();
-			if (ap == NIL)
-				argv = argv[2];
-			if (ap != NIL && ap->class == FILET) {
+			if (ap == NLNIL)
+				argv = argv->list_node.next;
+			if (ap != NLNIL && ap->class == FILET) {
 				/*
 				 * Got "write(f, ...", make
 				 * f the active file, and save
@@ -185,32 +191,32 @@ proc(r)
 				 * processing the rest of the
 				 * arguments to write.
 				 */
-				file = argv[1];
+				file = argv->list_node.list;
 				filetype = ap->type;
-				stklval(argv[1], NIL , LREQ );
-				put(1, O_UNIT);
+				(void) stklval(argv->list_node.list, NIL );
+				(void) put(1, O_UNIT);
 				/*
 				 * Skip over the first argument
 				 */
-				argv = argv[2];
+				argv = argv->list_node.next;
 				argc--;
 			} else {
 				/*
 				 * Set up for writing on 
 				 * standard output.
 				 */
-				put(1, O_UNITOUT);
+				(void) put(1, O_UNITOUT);
 				output->nl_flags |= NUSED;
 			}
 		} else {
-			put(1, O_UNITOUT);
+			(void) put(1, O_UNITOUT);
 			output->nl_flags |= NUSED;
 		}
 		/*
 		 * Loop and process each
 		 * of the arguments.
 		 */
-		for (; argv != NIL; argv = argv[2]) {
+		for (; argv != TR_NIL; argv = argv->list_node.next) {
 			/*
 			 * fmtspec indicates the type (CONstant or VARiable)
 			 *	and number (none, WIDTH, and/or PRECision)
@@ -224,22 +230,22 @@ proc(r)
 			stkcnt = 0;
 			fmt = 'D';
 			fmtstart = 1;
-			al = argv[1];
-			if (al == NIL)
+			al = argv->list_node.list;
+			if (al == TR_NIL)
 				continue;
-			if (al[0] == T_WEXP)
-				alv = al[1];
+			if (al->tag == T_WEXP)
+				alv = al->wexpr_node.expr1;
 			else
 				alv = al;
-			if (alv == NIL)
+			if (alv == TR_NIL)
 				continue;
 			codeoff();
-			ap = stkrval(alv, NIL , RREQ );
+			ap = stkrval(alv, NLNIL , (long) RREQ );
 			codeon();
-			if (ap == NIL)
+			if (ap == NLNIL)
 				continue;
 			typ = classify(ap);
-			if (al[0] == T_WEXP) {
+			if (al->tag == T_WEXP) {
 				/*
 				 * Handle width expressions.
 				 * The basic game here is that width
@@ -250,15 +256,17 @@ proc(r)
 				 * the stack and an indirection is
 				 * put into the format string.
 				 */
-				if (al[3] == OCT)
+				if (al->wexpr_node.expr3 == 
+						(struct tnode *) OCT)
 					fmt = 'O';
-				else if (al[3] == HEX)
+				else if (al->wexpr_node.expr3 == 
+						(struct tnode *) HEX)
 					fmt = 'X';
-				else if (al[3] != NIL) {
+				else if (al->wexpr_node.expr3 != TR_NIL) {
 					/*
 					 * Evaluate second format spec
 					 */
-					if ( constval(al[3])
+					if ( constval(al->wexpr_node.expr3)
 					    && isa( con.ctype , "i" ) ) {
 						fmtspec += CONPREC;
 						prec = con.crval;
@@ -283,8 +291,8 @@ proc(r)
 				/*
 				 * Evaluate first format spec
 				 */
-				if (al[2] != NIL) {
-					if ( constval(al[2])
+				if (al->wexpr_node.expr2 != TR_NIL) {
+					if ( constval(al->wexpr_node.expr2)
 					    && isa( con.ctype , "i" ) ) {
 						fmtspec += CONWIDTH;
 						field = con.crval;
@@ -317,24 +325,25 @@ proc(r)
 				 * Generalized write, i.e.
 				 * to a non-textfile.
 				 */
-				stklval(file, NIL , LREQ );
-				put(1, O_FNIL);
+				(void) stklval(file, NIL );
+				(void) put(1, O_FNIL);
 				/*
 				 * file^ := ...
 				 */
-				ap = rvalue(argv[1], NIL);
-				if (ap == NIL)
+				ap = rvalue(argv->list_node.list, NLNIL, LREQ);
+				if (ap == NLNIL)
 					continue;
-				if (incompat(ap, filetype, argv[1])) {
+				if (incompat(ap, filetype,
+						argv->list_node.list)) {
 					cerror("Type mismatch in write to non-text file");
 					continue;
 				}
 				convert(ap, filetype);
-				put(2, O_AS, width(filetype));
+				(void) put(2, O_AS, width(filetype));
 				/*
 				 * put(file)
 				 */
-				put(1, O_PUT);
+				(void) put(1, O_PUT);
 				continue;
 			}
 			/*
@@ -371,11 +380,11 @@ proc(r)
 				/* and fall through */
 			case TINT:
 				if (fmt != 'f') {
-					ap = stkrval(alv, NIL , RREQ );
+					ap = stkrval(alv, NLNIL, (long) RREQ );
 					stkcnt += sizeof(long);
 				} else {
-					ap = stkrval(alv, NIL , RREQ );
-					put(1, O_ITOD);
+					ap = stkrval(alv, NLNIL, (long) RREQ );
+					(void) put(1, O_ITOD);
 					stkcnt += sizeof(double);
 					typ = TDOUBLE;
 					goto tdouble;
@@ -395,15 +404,15 @@ proc(r)
 			case TCHAR:
 			     tchar:
 				if (fmtspec == NIL) {
-					put(1, O_FILE);
-					ap = stkrval(alv, NIL , RREQ );
+					(void) put(1, O_FILE);
+					ap = stkrval(alv, NLNIL, (long) RREQ );
 					convert(nl + T4INT, INT_TYP);
-					put(2, O_WRITEC,
+					(void) put(2, O_WRITEC,
 						sizeof(char *) + sizeof(int));
 					fmtspec = SKIP;
 					break;
 				}
-				ap = stkrval(alv, NIL , RREQ );
+				ap = stkrval(alv, NLNIL , (long) RREQ );
 				convert(nl + T4INT, INT_TYP);
 				stkcnt += sizeof(int);
 				fmt = 'c';
@@ -417,13 +426,13 @@ proc(r)
 				    clnames[typ]);
 				/* and fall through */
 			case TBOOL:
-				stkrval(alv, NIL , RREQ );
-				put(2, O_NAM, (long)listnames(ap));
+				(void) stkrval(alv, NLNIL , (long) RREQ );
+				(void) put(2, O_NAM, (long)listnames(ap));
 				stkcnt += sizeof(char *);
 				fmt = 's';
 				break;
 			case TDOUBLE:
-				ap = stkrval(alv, TDOUBLE , RREQ );
+				ap = stkrval(alv, (struct nl *) TDOUBLE , (long) RREQ );
 				stkcnt += sizeof(double);
 			     tdouble:
 				switch (fmtspec) {
@@ -453,7 +462,7 @@ proc(r)
 				fmtstart = 1 - REALSPC;
 				break;
 			case TSTR:
-				constval( alv );
+				(void) constval( alv );
 				switch ( classify( con.ctype ) ) {
 				    case TCHAR:
 					typ = TCHAR;
@@ -483,7 +492,7 @@ proc(r)
 				/*
 				 * push string to implement leading blank padding
 				 */
-				put(2, O_LVCON, 2);
+				(void) put(2, O_LVCON, 2);
 				putstr("", 0);
 				stkcnt += sizeof(char *);
 				break;
@@ -496,7 +505,8 @@ proc(r)
 			 * the stack
 			 */
 			if (fmtspec & VARPREC) {
-				ap = stkrval(al[3], NIL , RREQ );
+				ap = stkrval(al->wexpr_node.expr3, NLNIL ,
+						(long) RREQ );
 				if (ap == NIL)
 					continue;
 				if (isnta(ap,"i")) {
@@ -504,7 +514,7 @@ proc(r)
 					continue;
 				}
 				if ( opt( 't' ) ) {
-				    put(3, O_MAX, 0, 0);
+				    (void) put(3, O_MAX, 0, 0);
 				}
 				convert(nl+T4INT, INT_TYP);
 				stkcnt += sizeof(int);
@@ -517,12 +527,12 @@ proc(r)
 				if ( ( typ == TDOUBLE && fmtspec == VARWIDTH )
 				    || typ == TSTR ) {
 					soffset = sizes[cbn].curtmps;
-					tempnlp = tmpalloc(sizeof(long),
+					tempnlp = tmpalloc((long) (sizeof(long)),
 						nl+T4INT, REGOK);
-					put(2, O_LV | cbn << 8 + INDX, 
+					(void) put(2, O_LV | cbn << 8 + INDX, 
 					    tempnlp -> value[ NL_OFFS ] );
 				}
-				ap = stkrval(al[2], NIL , RREQ );
+				ap = stkrval(al->wexpr_node.expr2, NLNIL, (long) RREQ );
 				if (ap == NIL)
 					continue;
 				if (isnta(ap,"i")) {
@@ -537,29 +547,29 @@ proc(r)
 				case TDOUBLE:
 					if (fmtspec == VARWIDTH) {
 						fmt = 'e';
-						put(1, O_AS4);
-						put(2, O_RV4 | cbn << 8 + INDX,
+						(void) put(1, O_AS4);
+						(void) put(2, O_RV4 | cbn << 8 + INDX,
 						    tempnlp -> value[NL_OFFS] );
-					        put(3, O_MAX,
+					        (void) put(3, O_MAX,
 						    5 + EXPOSIZE + REALSPC, 1);
 						convert(nl+T4INT, INT_TYP);
 						stkcnt += sizeof(int);
-						put(2, O_RV4 | cbn << 8 + INDX, 
+						(void) put(2, O_RV4 | cbn << 8 + INDX, 
 						    tempnlp->value[NL_OFFS] );
 						fmtspec += VARPREC;
 						tmpfree(&soffset);
 					}
-					put(3, O_MAX, REALSPC, 1);
+					(void) put(3, O_MAX, REALSPC, 1);
 					break;
 				case TSTR:
-					put(1, O_AS4);
-					put(2, O_RV4 | cbn << 8 + INDX, 
+					(void) put(1, O_AS4);
+					(void) put(2, O_RV4 | cbn << 8 + INDX, 
 					    tempnlp -> value[ NL_OFFS ] );
-					put(3, O_MAX, strnglen, 0);
+					(void) put(3, O_MAX, strnglen, 0);
 					break;
 				default:
 					if ( opt( 't' ) ) {
-					    put(3, O_MAX, 0, 0);
+					    (void) put(3, O_MAX, 0, 0);
 					}
 					break;
 				}
@@ -596,22 +606,22 @@ proc(r)
 				sprintf(&format[1], "%%*.*%c", fmt);
 			fmtgen:
 				fmtlen = lenstr(&format[fmtstart], 0);
-				put(2, O_LVCON, fmtlen);
+				(void) put(2, O_LVCON, fmtlen);
 				putstr(&format[fmtstart], 0);
-				put(1, O_FILE);
+				(void) put(1, O_FILE);
 				stkcnt += 2 * sizeof(char *);
-				put(2, O_WRITEF, stkcnt);
+				(void) put(2, O_WRITEF, stkcnt);
 			}
 			/*
 			 * Write the string after its blank padding
 			 */
 			if (typ == TSTR) {
-				put(1, O_FILE);
-				put(2, CON_INT, 1);
+				(void) put(1, O_FILE);
+				(void) put(2, CON_INT, 1);
 				if (strfmt & VARWIDTH) {
-					put(2, O_RV4 | cbn << 8 + INDX , 
+					(void) put(2, O_RV4 | cbn << 8 + INDX , 
 					    tempnlp -> value[ NL_OFFS ] );
-					put(2, O_MIN, strnglen);
+					(void) put(2, O_MIN, strnglen);
 					convert(nl+T4INT, INT_TYP);
 					tmpfree(&soffset);
 				} else {
@@ -619,10 +629,10 @@ proc(r)
 					   (strfmt & CONWIDTH)) {
 						strnglen = field;
 					}
-					put(2, CON_INT, strnglen);
+					(void) put(2, CON_INT, strnglen);
 				}
-				ap = stkrval(alv, NIL , RREQ );
-				put(2, O_WRITES,
+				ap = stkrval(alv, NLNIL , (long) RREQ );
+				(void) put(2, O_WRITES,
 					2 * sizeof(char *) + 2 * sizeof(int));
 			}
 		}
@@ -642,7 +652,7 @@ proc(r)
 			case O_WRITLN:
 				if (filetype != nl+T1CHAR)
 					error("Can't 'writeln' a non text file");
-				put(1, O_WRITLN);
+				(void) put(1, O_WRITLN);
 				break;
 		}
 		return;
@@ -660,13 +670,13 @@ proc(r)
 		 * for the read and generate
 		 * code to make it the active file.
 		 */
-		if (argv != NIL) {
+		if (argv != TR_NIL) {
 			codeoff();
-			ap = stkrval(argv[1], NIL , RREQ );
+			ap = stkrval(argv->list_node.list, NLNIL, (long) RREQ );
 			codeon();
-			if (ap == NIL)
-				argv = argv[2];
-			if (ap != NIL && ap->class == FILET) {
+			if (ap == NLNIL)
+				argv = argv->list_node.next;
+			if (ap != NLNIL && ap->class == FILET) {
 				/*
 				 * Got "read(f, ...", make
 				 * f the active file, and save
@@ -674,49 +684,50 @@ proc(r)
 				 * processing the rest of the
 				 * arguments to read.
 				 */
-				file = argv[1];
+				file = argv->list_node.list;
 				filetype = ap->type;
-				stklval(argv[1], NIL , LREQ );
-				put(1, O_UNIT);
-				argv = argv[2];
+				(void) stklval(argv->list_node.list, NIL );
+				(void) put(1, O_UNIT);
+				argv = argv->list_node.next;
 				argc--;
 			} else {
 				/*
 				 * Default is read from
 				 * standard input.
 				 */
-				put(1, O_UNITINP);
+				(void) put(1, O_UNITINP);
 				input->nl_flags |= NUSED;
 			}
 		} else {
-			put(1, O_UNITINP);
+			(void) put(1, O_UNITINP);
 			input->nl_flags |= NUSED;
 		}
 		/*
 		 * Loop and process each
 		 * of the arguments.
 		 */
-		for (; argv != NIL; argv = argv[2]) {
+		for (; argv != TR_NIL; argv = argv->list_node.next) {
 			/*
 			 * Get the address of the target
 			 * on the stack.
 			 */
-			al = argv[1];
-			if (al == NIL)
+			al = argv->list_node.list;
+			if (al == TR_NIL)
 				continue;
-			if (al[0] != T_VAR) {
+			if (al->tag != T_VAR) {
 				error("Arguments to %s must be variables, not expressions", p->symbol);
 				continue;
 			}
 			ap = stklval(al, MOD|ASGN|NOUSE);
-			if (ap == NIL)
+			if (ap == NLNIL)
 				continue;
 			if (filetype != nl+T1CHAR) {
 				/*
 				 * Generalized read, i.e.
 				 * from a non-textfile.
 				 */
-				if (incompat(filetype, ap, argv[1] )) {
+				if (incompat(filetype, ap,
+					argv->list_node.list )) {
 					error("Type mismatch in read from non-text file");
 					continue;
 				}
@@ -724,19 +735,19 @@ proc(r)
 				 * var := file ^;
 				 */
 				if (file != NIL)
-					stklval(file, NIL , LREQ );
+					(void) stklval(file, NIL );
 				else /* Magic */
-					put(2, PTR_RV, (int)input->value[0]);
-				put(1, O_FNIL);
-				put(2, O_IND, width(filetype));
+					(void) put(2, PTR_RV, (int)input->value[0]);
+				(void) put(1, O_FNIL);
+				(void) put(2, O_IND, width(filetype));
 				convert(filetype, ap);
 				if (isa(ap, "bsci"))
 					rangechk(ap, ap);
-				put(2, O_AS, width(ap));
+				(void) put(2, O_AS, width(ap));
 				/*
 				 * get(file);
 				 */
-				put(1, O_GET);
+				(void) put(1, O_GET);
 				continue;
 			}
 			typ = classify(ap);
@@ -746,9 +757,9 @@ proc(r)
 				continue;
 			}
 			if (op != O_READE)
-				put(1, op);
+				(void) put(1, op);
 			else {
-				put(2, op, (long)listnames(ap));
+				(void) put(2, op, (long)listnames(ap));
 				warning();
 				if (opt('s')) {
 					standard();
@@ -761,7 +772,7 @@ proc(r)
 			 */
 			if (op != O_READ8 && op != O_READE)
 				rangechk(ap, op == O_READC ? ap : nl+T4INT);
-			gen(O_AS2, O_AS2, width(ap),
+			(void) gen(O_AS2, O_AS2, width(ap),
 				op == O_READ8 ? 8 : op == O_READ4 ? 4 : 2);
 		}
 		/*
@@ -772,7 +783,7 @@ proc(r)
 		if (p->value[0] == O_READLN) {
 			if (filetype != nl+T1CHAR)
 				error("Can't 'readln' a non text file");
-			put(1, O_READLN);
+			(void) put(1, O_READLN);
 		}
 		else if (argc == 0)
 			error("read requires an argument");
@@ -784,15 +795,15 @@ proc(r)
 			error("%s expects one argument", p->symbol);
 			return;
 		}
-		ap = stklval(argv[1], NIL , LREQ );
-		if (ap == NIL)
+		ap = stklval(argv->list_node.list, NIL );
+		if (ap == NLNIL)
 			return;
 		if (ap->class != FILET) {
 			error("Argument to %s must be a file, not %s", p->symbol, nameof(ap));
 			return;
 		}
-		put(1, O_UNIT);
-		put(1, op);
+		(void) put(1, O_UNIT);
+		(void) put(1, op);
 		return;
 
 	case O_RESET:
@@ -806,40 +817,42 @@ proc(r)
 			error("Two argument forms of reset and rewrite are non-standard");
 		}
 		codeoff();
-		ap = stklval(argv[1], MOD|NOUSE);
+		ap = stklval(argv->list_node.list, MOD|NOUSE);
 		codeon();
-		if (ap == NIL)
+		if (ap == NLNIL)
 			return;
 		if (ap->class != FILET) {
 			error("First argument to %s must be a file, not %s", p->symbol, nameof(ap));
 			return;
 		}
-		put(2, O_CON24, text(ap) ? 0: width(ap->type));
+		(void) put(2, O_CON24, text(ap) ? 0: width(ap->type));
 		if (argc == 2) {
 			/*
 			 * Optional second argument
 			 * is a string name of a
 			 * UNIX (R) file to be associated.
 			 */
-			al = argv[2];
+			al = argv->list_node.next;
 			codeoff();
-			al = stkrval(al[1], NOFLAGS , RREQ );
+			al = (struct tnode *) stkrval(al->list_node.list,
+					(struct nl *) NOFLAGS , (long) RREQ );
 			codeon();
-			if (al == NIL)
+			if (al == TR_NIL)
 				return;
-			if (classify(al) != TSTR) {
-				error("Second argument to %s must be a string, not %s", p->symbol, nameof(al));
+			if (classify((struct nl *) al) != TSTR) {
+				error("Second argument to %s must be a string, not %s", p->symbol, nameof((struct nl *) al));
 				return;
 			}
-			put(2, O_CON24, width(al));
-			al = argv[2];
-			al = stkrval(al[1], NOFLAGS , RREQ );
+			(void) put(2, O_CON24, width((struct nl *) al));
+			al = argv->list_node.next;
+			al = (struct tnode *) stkrval(al->list_node.list,
+					(struct nl *) NOFLAGS , (long) RREQ );
 		} else {
-			put(2, O_CON24, 0);
-			put(2, PTR_CON, NIL);
+			(void) put(2, O_CON24, 0);
+			(void) put(2, PTR_CON, NIL);
 		}
-		ap = stklval(argv[1], MOD|NOUSE);
-		put(1, op);
+		ap = stklval(argv->list_node.list, MOD|NOUSE);
+		(void) put(1, op);
 		return;
 
 	case O_NEW:
@@ -848,8 +861,9 @@ proc(r)
 			error("%s expects at least one argument", p->symbol);
 			return;
 		}
-		ap = stklval(argv[1], op == O_NEW ? ( MOD | NOUSE ) : MOD );
-		if (ap == NIL)
+		ap = stklval(argv->list_node.list,
+				op == O_NEW ? ( MOD | NOUSE ) : MOD );
+		if (ap == NLNIL)
 			return;
 		if (ap->class != PTR) {
 			error("(First) argument to %s must be a pointer, not %s", p->symbol, nameof(ap));
@@ -860,25 +874,26 @@ proc(r)
 			return;
 		if ((ap->nl_flags & NFILES) && op == O_DISPOSE)
 			op = O_DFDISP;
-		argv = argv[2];
-		if (argv != NIL) {
+		argv = argv->list_node.next;
+		if (argv != TR_NIL) {
 			if (ap->class != RECORD) {
 				error("Record required when specifying variant tags");
 				return;
 			}
-			for (; argv != NIL; argv = argv[2]) {
+			for (; argv != TR_NIL; argv = argv->list_node.next) {
 				if (ap->ptr[NL_VARNT] == NIL) {
 					error("Too many tag fields");
 					return;
 				}
-				if (!isconst(argv[1])) {
+				if (!isconst(argv->list_node.list)) {
 					error("Second and successive arguments to %s must be constants", p->symbol);
 					return;
 				}
-				gconst(argv[1]);
+				gconst(argv->list_node.list);
 				if (con.ctype == NIL)
 					return;
-				if (incompat(con.ctype, (ap->ptr[NL_TAG])->type , NIL )) {
+				if (incompat(con.ctype, (
+					ap->ptr[NL_TAG])->type , TR_NIL )) {
 					cerror("Specified tag constant type clashed with variant case selector type");
 					return;
 				}
@@ -892,7 +907,7 @@ proc(r)
 				ap = ap->ptr[NL_VTOREC];
 			}
 		}
-		put(2, op, width(ap));
+		(void) put(2, op, width(ap));
 		return;
 
 	case O_DATE:
@@ -901,14 +916,14 @@ proc(r)
 			error("%s expects one argument", p->symbol);
 			return;
 		}
-		ap = stklval(argv[1], MOD|NOUSE);
-		if (ap == NIL)
+		ap = stklval(argv->list_node.list, MOD|NOUSE);
+		if (ap == NLNIL)
 			return;
 		if (classify(ap) != TSTR || width(ap) != 10) {
 			error("Argument to %s must be a alfa, not %s", p->symbol, nameof(ap));
 			return;
 		}
-		put(1, op);
+		(void) put(1, op);
 		return;
 
 	case O_HALT:
@@ -916,8 +931,8 @@ proc(r)
 			error("halt takes no arguments");
 			return;
 		}
-		put(1, op);
-		noreach = 1;
+		(void) put(1, op);
+		noreach = TRUE; /* used to be 1 */
 		return;
 
 	case O_ARGV:
@@ -925,22 +940,22 @@ proc(r)
 			error("argv takes two arguments");
 			return;
 		}
-		ap = stkrval(argv[1], NIL , RREQ );
-		if (ap == NIL)
+		ap = stkrval(argv->list_node.list, NLNIL , (long) RREQ );
+		if (ap == NLNIL)
 			return;
 		if (isnta(ap, "i")) {
 			error("argv's first argument must be an integer, not %s", nameof(ap));
 			return;
 		}
-		al = argv[2];
-		ap = stklval(al[1], MOD|NOUSE);
-		if (ap == NIL)
+		al = argv->list_node.next;
+		ap = stklval(al->list_node.list, MOD|NOUSE);
+		if (ap == NLNIL)
 			return;
 		if (classify(ap) != TSTR) {
 			error("argv's second argument must be a string, not %s", nameof(ap));
 			return;
 		}
-		put(2, op, width(ap));
+		(void) put(2, op, width(ap));
 		return;
 
 	case O_STLIM:
@@ -948,16 +963,16 @@ proc(r)
 			error("stlimit requires one argument");
 			return;
 		}
-		ap = stkrval(argv[1], NIL , RREQ );
-		if (ap == NIL)
+		ap = stkrval(argv->list_node.list, NLNIL , (long) RREQ );
+		if (ap == NLNIL)
 			return;
 		if (isnta(ap, "i")) {
 			error("stlimit's argument must be an integer, not %s", nameof(ap));
 			return;
 		}
 		if (width(ap) != 4)
-			put(1, O_STOI);
-		put(1, op);
+			(void) put(1, O_STOI);
+		(void) put(1, op);
 		return;
 
 	case O_REMOVE:
@@ -966,17 +981,19 @@ proc(r)
 			return;
 		}
 		codeoff();
-		ap = stkrval(argv[1], NOFLAGS , RREQ );
+		ap = stkrval(argv->list_node.list, (struct nl *) NOFLAGS,
+				(long) RREQ );
 		codeon();
-		if (ap == NIL)
+		if (ap == NLNIL)
 			return;
 		if (classify(ap) != TSTR) {
 			error("remove's argument must be a string, not %s", nameof(ap));
 			return;
 		}
-		put(2, O_CON24, width(ap));
-		ap = stkrval(argv[1], NOFLAGS , RREQ );
-		put(1, op);
+		(void) put(2, O_CON24, width(ap));
+		ap = stkrval(argv->list_node.list, (struct nl *) NOFLAGS,
+				(long) RREQ );
+		(void) put(1, op);
 		return;
 
 	case O_LLIMIT:
@@ -984,37 +1001,37 @@ proc(r)
 			error("linelimit expects two arguments");
 			return;
 		}
-		al = argv[2];
-		ap = stkrval(al[1], NIL , RREQ );
+		al = argv->list_node.next;
+		ap = stkrval(al->list_node.list, NLNIL , (long) RREQ );
 		if (ap == NIL)
 			return;
 		if (isnta(ap, "i")) {
 			error("linelimit's second argument must be an integer, not %s", nameof(ap));
 			return;
 		}
-		ap = stklval(argv[1], NOFLAGS|NOUSE);
-		if (ap == NIL)
+		ap = stklval(argv->list_node.list, NOFLAGS|NOUSE);
+		if (ap == NLNIL)
 			return;
 		if (!text(ap)) {
 			error("linelimit's first argument must be a text file, not %s", nameof(ap));
 			return;
 		}
-		put(1, op);
+		(void) put(1, op);
 		return;
 	case O_PAGE:
 		if (argc != 1) {
 			error("page expects one argument");
 			return;
 		}
-		ap = stklval(argv[1], NIL , LREQ );
-		if (ap == NIL)
+		ap = stklval(argv->list_node.list, NIL );
+		if (ap == NLNIL)
 			return;
 		if (!text(ap)) {
 			error("Argument to page must be a text file, not %s", nameof(ap));
 			return;
 		}
-		put(1, O_UNIT);
-		put(1, op);
+		(void) put(1, O_UNIT);
+		(void) put(1, op);
 		return;
 
 	case O_ASRT:
@@ -1029,23 +1046,23 @@ proc(r)
 			 * Optional second argument is a string specifying
 			 * why the assertion failed.
 			 */
-			al = argv[2];
-			al = stkrval(al[1], NIL , RREQ );
-			if (al == NIL)
+			al = argv->list_node.next;
+			al1 =  stkrval(al->list_node.list, NLNIL , (long) RREQ );
+			if (al1 == NIL)
 				return;
-			if (classify(al) != TSTR) {
-				error("Second argument to assert must be a string, not %s", nameof(al));
+			if (classify(al1) != TSTR) {
+				error("Second argument to assert must be a string, not %s", nameof(al1));
 				return;
 			}
 		} else {
-			put(2, PTR_CON, NIL);
+			(void) put(2, PTR_CON, NIL);
 		}
-		ap = stkrval(argv[1], NIL , RREQ );
+		ap = stkrval(argv->list_node.list, NLNIL , (long) RREQ );
 		if (ap == NIL)
 			return;
 		if (isnta(ap, "b"))
 			error("Assert expression must be Boolean, not %ss", nameof(ap));
-		put(1, O_ASRT);
+		(void) put(1, O_ASRT);
 		return;
 
 	case O_PACK:
@@ -1054,11 +1071,11 @@ proc(r)
 			return;
 		}
 		pu = "pack(a,i,z)";
-		pua = argv[1];
-		al = argv[2];
-		pui = al[1];
-		alv = al[2];
-		puz = alv[1];
+		pua = argv->list_node.list;
+		al = argv->list_node.next;
+		pui = al->list_node.list;
+		alv = al->list_node.next;
+		puz = alv->list_node.list;
 		goto packunp;
 	case O_UNPACK:
 		if (argc != 3) {
@@ -1066,15 +1083,15 @@ proc(r)
 			return;
 		}
 		pu = "unpack(z,a,i)";
-		puz = argv[1];
-		al = argv[2];
-		pua = al[1];
-		alv = al[2];
-		pui = alv[1];
+		puz = argv->list_node.list;
+		al = argv->list_node.next;
+		pua = al->list_node.list;
+		alv = al->list_node.next;
+		pui = alv->list_node.list;
 packunp:
 		codeoff();
 		ap = stklval(pua, op == O_PACK ? NOFLAGS : MOD|NOUSE);
-		al = (struct nl *) stklval(puz, op == O_UNPACK ? NOFLAGS : MOD|NOUSE);
+		al1 = stklval(puz, op == O_UNPACK ? NOFLAGS : MOD|NOUSE);
 		codeon();
 		if (ap == NIL)
 			return;
@@ -1082,36 +1099,36 @@ packunp:
 			error("%s requires a to be an unpacked array, not %s", pu, nameof(ap));
 			return;
 		}
-		if (al->class != ARRAY) {
+		if (al1->class != ARRAY) {
 			error("%s requires z to be a packed array, not %s", pu, nameof(ap));
 			return;
 		}
-		if (al->type == NIL || ap->type == NIL)
+		if (al1->type == NIL || ap->type == NIL)
 			return;
-		if (al->type != ap->type) {
+		if (al1->type != ap->type) {
 			error("%s requires a and z to be arrays of the same type", pu, nameof(ap));
 			return;
 		}
-		k = width(al);
+		k = width(al1);
 		itemwidth = width(ap->type);
 		ap = ap->chain;
-		al = al->chain;
-		if (ap->chain != NIL || al->chain != NIL) {
+		al1 = al1->chain;
+		if (ap->chain != NIL || al1->chain != NIL) {
 			error("%s requires a and z to be single dimension arrays", pu);
 			return;
 		}
-		if (ap == NIL || al == NIL)
+		if (ap == NIL || al1 == NIL)
 			return;
 		/*
-		 * al is the range for z i.e. u..v
+		 * al1 is the range for z i.e. u..v
 		 * ap is the range for a i.e. m..n
 		 * i will be n-m+1
 		 * j will be v-u+1
 		 */
 		i = ap->range[1] - ap->range[0] + 1;
-		j = al->range[1] - al->range[0] + 1;
+		j = al1->range[1] - al1->range[0] + 1;
 		if (i < j) {
-			error("%s cannot have more elements in a (%d) than in z (%d)", pu, j, i);
+			error("%s cannot have more elements in a (%d) than in z (%d)", pu, (char *) j, (char *) i);
 			return;
 		}
 		/*
@@ -1119,16 +1136,16 @@ packunp:
 		 */
 		i -= j;
 		j = ap->range[0];
-		put(2, O_CON24, k);
-		put(2, O_CON24, i);
-		put(2, O_CON24, j);
-		put(2, O_CON24, itemwidth);
-		al = (struct nl *) stklval(puz, op == O_UNPACK ? NOFLAGS : MOD|NOUSE);
+		(void) put(2, O_CON24, k);
+		(void) put(2, O_CON24, i);
+		(void) put(2, O_CON24, j);
+		(void) put(2, O_CON24, itemwidth);
+		al1 = stklval(puz, op == O_UNPACK ? NOFLAGS : MOD|NOUSE);
 		ap = stklval(pua, op == O_PACK ? NOFLAGS : MOD|NOUSE);
-		ap = stkrval((int *) pui, NLNIL , RREQ );
+		ap = stkrval(pui, NLNIL , (long) RREQ );
 		if (ap == NIL)
 			return;
-		put(1, op);
+		(void) put(1, op);
 		return;
 	case 0:
 		error("%s is an unimplemented extension", p->symbol);

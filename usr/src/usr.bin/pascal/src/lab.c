@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lab.c 1.17 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)lab.c 1.18 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
@@ -11,6 +13,7 @@ static char sccsid[] = "@(#)lab.c 1.17 %G%";
 #   include	"pc.h"
 #   include	"pcops.h"
 #endif PC
+#include "tree_ty.h"
 
 /*
  * Label enters the definitions
@@ -18,7 +21,8 @@ static char sccsid[] = "@(#)lab.c 1.17 %G%";
  * into the namelist.
  */
 label(r, l)
-	int *r, l;
+	struct tnode *r;
+	int l;
 {
     static bool	label_order = FALSE;
     static bool	label_seen = FALSE;
@@ -26,7 +30,7 @@ label(r, l)
 	char	extname[ BUFSIZ ];
 #endif PC
 #ifndef PI0
-	register *ll;
+	register struct tnode *ll;
 	register struct nl *p, *lp;
 
 	lp = NIL;
@@ -65,13 +69,14 @@ label(r, l)
 	parts[ cbn ] |= LPRT;
 #endif
 #ifndef PI0
-	for (ll = r; ll != NIL; ll = ll[2]) {
-		l = getlab();
-		p = enter(defnl(ll[1], LABEL, 0, l));
+	for (ll = r; ll != TR_NIL; ll = ll->list_node.next) {
+		l = (int) getlab();
+		p = enter(defnl((char *) ll->list_node.list, LABEL, NLNIL,
+				(int) l));
 		/*
 		 * Get the label for the eventual target
 		 */
-		p->value[1] = getlab();
+		p->value[1] = (int) getlab();
 		p->chain = lp;
 		p->nl_flags |= (NFORWD|NMOD);
 		p->value[NL_GOLEV] = NOTYET;
@@ -84,8 +89,8 @@ label(r, l)
 		     * and provides a target for
 		     * gotos for this label via TRA.
 		     */
-		    putlab(l);
-		    put(2, O_GOTO | cbn<<8, (long)p->value[1]);
+		    (void) putlab((char *) l);
+		    (void) put(2, O_GOTO | cbn<<8, (long)p->value[1]);
 #		endif OBJ
 #		ifdef PC
 		    /*
@@ -94,7 +99,7 @@ label(r, l)
 		     *	which defines them.
 		     */
 		    extlabname( extname , p -> symbol , cbn );
-		    putprintf("	.globl	%s", 0, extname);
+		    putprintf("	.globl	%s", 0, (int) extname);
 		    if ( cbn == 1 ) {
 			stabglabel( extname , line );
 		    }
@@ -128,9 +133,9 @@ gotoop(s)
 	gocnt++;
 	p = lookup(s);
 	if (p == NIL)
-		return (NIL);
+		return;
 #	ifdef OBJ
-	    put(2, O_TRA4, (long)p->value[NL_ENTLOC]);
+	    (void) put(2, O_TRA4, (long)p->value[NL_ENTLOC]);
 #	endif OBJ
 #	ifdef PC
 	    if ( cbn == bn ) {
@@ -151,10 +156,10 @@ gotoop(s)
 		     * the rest of the program.
 		     */
 #		ifdef vax
-		    putprintf("	jmp	%s", 0, extname);
+		    putprintf("	jmp	%s", 0, (int) extname);
 #		endif vax
 #		ifdef mc68000
-		    putprintf("	jra	%s", 0, extname);
+		    putprintf("	jra	%s", 0, (int) extname);
 #		endif mc68000
 	    } else {
 		    /*
@@ -186,14 +191,14 @@ gotoop(s)
 		    p = lookup(s);
 		    putLV( extname , bn , 0 , NNLOCAL , P2PTR | P2CHAR );
 		} else {
-		    putLV( 0 , bn , -( DPOFF1 + sizeof( int ) ) , LOCALVAR ,
+		    putLV((char *) 0 , bn , -( DPOFF1 + sizeof( int ) ) , LOCALVAR ,
 			P2PTR | P2CHAR );
 		}
 		putop( P2CALL , P2INT );
 		putdot( filename , line );
 		putleaf( P2ICON , 0 , 0 , ADDTYPE( P2FTN | P2INT , P2PTR )
 			, "_longjmp" );
-		putLV( 0 , bn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
+		putLV((char *) 0 , bn , GOTOENVOFFSET , NLOCAL , P2PTR|P2STRTY );
 		extlabname( extname , p -> symbol , bn );
 		putLV( extname , 0 , 0 , NGLOBAL , P2PTR|P2STRTY );
 		putop( P2LISTOP , P2INT );
@@ -231,7 +236,7 @@ labeled(s)
 
 	p = lookup(s);
 	if (p == NIL)
-		return (NIL);
+		return;
 	if (bn != cbn) {
 		error("Label %s not defined in correct block", s);
 		return;
@@ -242,16 +247,16 @@ labeled(s)
 	}
 	p->nl_flags &= ~NFORWD;
 #	ifdef OBJ
-	    patch4(p->value[NL_ENTLOC]);
+	    patch4((PTR_DCL) p->value[NL_ENTLOC]);
 #	endif OBJ
 #	ifdef PC
 	    extlabname( extname , p -> symbol , bn );
-	    putprintf( "%s:" , 0 , extname );
+	    putprintf( "%s:" , 0 , (int) extname );
 #	endif PC
 	if (p->value[NL_GOLEV] != NOTYET)
 		if (p->value[NL_GOLEV] < level) {
 			recovered();
-			error("Goto %s from line %d is into a structured statement", s, p->value[NL_GOLINE]);
+			error("Goto %s from line %d is into a structured statement", s, (char *) p->value[NL_GOLINE]);
 		}
 	p->value[NL_GOLEV] = level;
 }

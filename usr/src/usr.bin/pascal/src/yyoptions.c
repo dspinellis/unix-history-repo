@@ -1,9 +1,12 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yyoptions.c 1.1 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)yyoptions.c 1.2 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"	/* must be included for yy.h */
 #include "yy.h"
 
 /*
@@ -13,15 +16,20 @@ static	char sccsid[] = "@(#)yyoptions.c 1.1 %G%";
  */
 options()
 {
-	register c, ch;
+	register c;
+#ifdef PI0
+	register ch;
+#endif
 	register char *optp;
-	int ok;
 
 	c = readch();
 	if (c != '$')
 		return (c);
 	do {
-		ch = c = readch();
+		c = readch();
+#		ifdef PI0
+		ch = c;
+#		endif
 		switch (c) {
 			case 'b':
 				optp = &opt( 'b' );

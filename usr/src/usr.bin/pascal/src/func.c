@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)func.c 1.9 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)func.c 1.10 %G%";
+#endif
 
 #include "whoami.h"
 #ifdef OBJ
@@ -10,6 +12,7 @@ static char sccsid[] = "@(#)func.c 1.9 %G%";
 #include "0.h"
 #include "tree.h"
 #include "opcode.h"
+#include "tree_ty.h"
 
 /*
  * Funccod generates code for
@@ -17,33 +20,34 @@ static char sccsid[] = "@(#)func.c 1.9 %G%";
  * call to generate calls to user
  * defined functions and procedures.
  */
-funccod(r)
-	int *r;
+struct nl
+*funccod(r)
+	struct tnode *r;
 {
 	struct nl *p;
 	register struct nl *p1;
 	struct nl *tempnlp;
-	register int *al;
+	register struct tnode *al;
 	register op;
-	int argc, *argv;
-	int tr[2], tr2[4];
+	int argc;
+	struct tnode *argv, tr, tr2;
 
 	/*
 	 * Verify that the given name
 	 * is defined and the name of
 	 * a function.
 	 */
-	p = lookup(r[2]);
-	if (p == NIL) {
-		rvlist(r[3]);
-		return (NIL);
+	p = lookup(r->pcall_node.proc_id);
+	if (p == NLNIL) {
+		rvlist(r->pcall_node.arg);
+		return (NLNIL);
 	}
 	if (p->class != FUNC && p->class != FFUNC) {
 		error("%s is not a function", p->symbol);
-		rvlist(r[3]);
-		return (NIL);
+		rvlist(r->pcall_node.arg);
+		return (NLNIL);
 	}
-	argv = r[3];
+	argv = r->pcall_node.arg;
 	/*
 	 * Call handles user defined
 	 * procedures and functions
@@ -54,7 +58,7 @@ funccod(r)
 	 * Count the arguments
 	 */
 	argc = 0;
-	for (al = argv; al != NIL; al = al[2])
+	for (al = argv; al != TR_NIL; al = al->list_node.next)
 		argc++;
 	/*
 	 * Built-in functions have
@@ -77,23 +81,24 @@ funccod(r)
 			if (argc != 0) {
 				error("%s takes no arguments", p->symbol);
 				rvlist(argv);
-				return (NIL);
+				return (NLNIL);
 			}
-			put(1, op);
+			(void) put(1, op);
 			return (nl+T4INT);
 		case O_EOF:
 		case O_EOLN:
 			if (argc == 0) {
-				argv = tr;
-				tr[1] = tr2;
-				tr2[0] = T_VAR;
-				tr2[2] = input->symbol;
-				tr2[1] = tr2[3] = NIL;
+				argv = (&tr);
+				tr.list_node.list = (&tr2);
+				tr2.tag = T_VAR;
+				tr2.var_node.cptr = input->symbol;
+				tr2.var_node.line_no = NIL;
+				tr2.var_node.qual = TR_NIL;
 				argc = 1;
 			} else if (argc != 1) {
 				error("%s takes either zero or one argument", p->symbol);
 				rvlist(argv);
-				return (NIL);
+				return (NLNIL);
 			}
 		}
 	/*
@@ -103,18 +108,22 @@ funccod(r)
 	if (argc != 1) {
 		error("%s takes exactly one argument", p->symbol);
 		rvlist(argv);
-		return (NIL);
+		return (NLNIL);
 	}
 	/*
 	 * Evaluate the argmument
 	 */
 	if (op == O_EOF || op == O_EOLN)
-		p1 = stklval((int *) argv[1], NLNIL , LREQ );
+		p1 = stklval(argv->list_node.list, NIL );
 	else
-		p1 = stkrval((int *) argv[1], NLNIL , RREQ );
-	if (p1 == NIL)
-		return (NIL);
+		p1 = stkrval(argv->list_node.list, NLNIL , (long) RREQ );
+	if (p1 == NLNIL)
+		return (NLNIL);
 	switch (op) {
+		case 0:
+			error("%s is an unimplemented 6000-3.4 extension", p->symbol);
+		default:
+			panic("func1");
 		case O_EXP:
 		case O_SIN:
 		case O_COS:
@@ -128,9 +137,9 @@ funccod(r)
 				convert( nl+T4INT , nl+TDOUBLE);
 			else if (isnta(p1, "d")) {
 				error("%s's argument must be integer or real, not %s", p->symbol, nameof(p1));
-				return (NIL);
+				return (NLNIL);
 			}
-			put(1, op);
+			(void) put(1, op);
 			if (op == O_UNDEF)
 				return (nl+TBOOL);
 			else if (op == O_EXPO)
@@ -140,30 +149,30 @@ funccod(r)
 		case O_SEED:
 			if (isnta(p1, "i")) {
 				error("seed's argument must be an integer, not %s", nameof(p1));
-				return (NIL);
+				return (NLNIL);
 			}
-			put(1, op);
+			(void) put(1, op);
 			return (nl+T4INT);
 		case O_ROUND:
 		case O_TRUNC:
 			if (isnta(p1, "d"))  {
 				error("%s's argument must be a real, not %s", p->symbol, nameof(p1));
-				return (NIL);
+				return (NLNIL);
 			}
-			put(1, op);
+			(void) put(1, op);
 			return (nl+T4INT);
 		case O_ABS2:
 		case O_SQR2:
 			if (isa(p1, "d")) {
-				put(1, op + O_ABS8-O_ABS2);
+				(void) put(1, op + O_ABS8-O_ABS2);
 				return (nl+TDOUBLE);
 			}
 			if (isa(p1, "i")) {
-				put(1, op + (width(p1) >> 2));
+				(void) put(1, op + (width(p1) >> 2));
 				return (nl+T4INT);
 			}
 			error("%s's argument must be an integer or real, not %s", p->symbol, nameof(p1));
-			return (NIL);
+			return (NLNIL);
 		case O_ORD2:
 			if (isa(p1, "bcis")) {
 				return (nl+T4INT);
@@ -176,12 +185,12 @@ funccod(r)
 			}
 			error("ord's argument must be of scalar type, not %s",
 				nameof(p1));
-			return (NIL);
+			return (NLNIL);
 		case O_SUCC2:
 		case O_PRED2:
 			if (isa(p1, "d")) {
 				error("%s is forbidden for reals", p->symbol);
-				return (NIL);
+				return (NLNIL);
 			}
 			if ( isnta( p1 , "bcsi" ) ) {
 				error("%s's argument must be of scalar type, not %s", p->symbol, nameof(p1));
@@ -191,58 +200,54 @@ funccod(r)
 			if (isa(p1, "i")) {
 				if (width(p1) <= 2) {
 					op += O_PRED24 - O_PRED2;
-					put(3, op, (int)tempnlp->range[0],
+					(void) put(3, op, (int)tempnlp->range[0],
 						(int)tempnlp->range[1]);
 				} else {
 					op++;
-					put(3, op, tempnlp->range[0],
+					(void) put(3, op, tempnlp->range[0],
 						tempnlp->range[1]);
 				}
 				return nl + T4INT;
 			} else {
-				put(3, op, (int)tempnlp->range[0],
+				(void) put(3, op, (int)tempnlp->range[0],
 					(int)tempnlp->range[1]);
 				return p1;
 			}
 		case O_ODD2:
 			if (isnta(p1, "i")) {
 				error("odd's argument must be an integer, not %s", nameof(p1));
-				return (NIL);
+				return (NLNIL);
 			}
-			put(1, op + (width(p1) >> 2));
+			(void) put(1, op + (width(p1) >> 2));
 			return (nl+TBOOL);
 		case O_CHR2:
 			if (isnta(p1, "i")) {
 				error("chr's argument must be an integer, not %s", nameof(p1));
-				return (NIL);
+				return (NLNIL);
 			}
-			put(1, op + (width(p1) >> 2));
+			(void) put(1, op + (width(p1) >> 2));
 			return (nl+TCHAR);
 		case O_CARD:
 			if (isnta(p1, "t")) {
 			    error("Argument to card must be a set, not %s", nameof(p1));
-			    return (NIL);
+			    return (NLNIL);
 			}
-			put(2, O_CARD, width(p1));
+			(void) put(2, O_CARD, width(p1));
 			return (nl+T2INT);
 		case O_EOLN:
 			if (!text(p1)) {
 				error("Argument to eoln must be a text file, not %s", nameof(p1));
-				return (NIL);
+				return (NLNIL);
 			}
-			put(1, op);
+			(void) put(1, op);
 			return (nl+TBOOL);
 		case O_EOF:
 			if (p1->class != FILET) {
 				error("Argument to eof must be file, not %s", nameof(p1));
-				return (NIL);
+				return (NLNIL);
 			}
-			put(1, op);
+			(void) put(1, op);
 			return (nl+TBOOL);
-		case 0:
-			error("%s is an unimplemented 6000-3.4 extension", p->symbol);
-		default:
-			panic("func1");
 	}
 }
 #endif OBJ

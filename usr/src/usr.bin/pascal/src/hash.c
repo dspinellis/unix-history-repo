@@ -1,9 +1,12 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)hash.c 1.4 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)hash.c 1.5 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"		/* must be included for yy.h */
 #include "yy.h"
 
 /*
@@ -85,15 +88,15 @@ inithash(hshtab)
 
 	htab[0].ht_low = hshtab;
 	htab[0].ht_high = &hshtab[HASHINC];
-	for (ip = yykey; *ip; ip += 2)
-		hash(ip[0], 0)[0] = ip;
+	for (ip = ((int *)yykey); *ip; ip += 2)
+		hash((char *) ip[0], 0)[0] = ((int) ip);
 	/*
 	 * If we are not running in "standard-only" mode,
 	 * we load the non-standard keywords.
 	 */
 	if (!opt('s'))
 		for (ip += 2; *ip; ip += 2)
-			hash(ip[0], 0)[0] = ip;
+			hash((char *) ip[0], 0)[0] = ((int) ip);
 	lastkey = (char *)ip;
 }
 
@@ -115,6 +118,7 @@ int *hash(s, save)
 	register i;
 	register char *cp;
 	int *sym;
+	struct cstruct *temp;
 	struct ht *htp;
 	int sh;
 
@@ -143,12 +147,12 @@ int *hash(s, save)
 	 */
 	for (htp = htab; htp < &htab[MAXHASH]; htp++) {
 		if (htp->ht_low == NIL) {
-			cp = (char *) calloc(sizeof ( int * ), HASHINC);
+			cp = (char *) pcalloc(sizeof ( int * ), HASHINC);
 			if (cp == 0) {
 				yerror("Ran out of memory (hash)");
 				pexit(DIED);
 			}
-			htp->ht_low = cp;
+			htp->ht_low = ((int *)cp);
 			htp->ht_high = htp->ht_low + HASHINC;
 			cp = s;
 			if (cp == NIL)
@@ -169,13 +173,14 @@ int *hash(s, save)
 				if (save != 0) {
 					*h = (int) savestr(cp);
 				} else
-					*h = s;
+					*h = ((int) s);
 				return (h);
 			}
-			sym = *h;
-			if (sym < lastkey && sym >= yykey)
-				sym = *sym;
-			if (sym->pchar == *cp && strcmp(sym, cp) == 0)
+			sym = ((int *) *h);
+			if (sym < ((int *) lastkey) && sym >= ((int *) yykey))
+				sym = ((int *) *sym);
+			temp = ((struct cstruct *) sym);
+			if (temp->pchar == *cp && pstrcmp((char *) sym, cp) == 0)
 				return (h);
 			h += i;
 			i += 2;
@@ -185,4 +190,6 @@ int *hash(s, save)
 	}
 	yerror("Ran out of hash tables");
 	pexit(DIED);
+	return (NIL);
+
 }

@@ -1,9 +1,12 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)yypanic.c 1.3 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)yypanic.c 1.4 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
+#include "tree_ty.h"	/* must be included for yy.h */
 #include "yy.h"
 
 struct yytok oldpos;
@@ -30,7 +33,7 @@ yyPerror(cp, kind)
 {
 	register int ishifts, brlev;
 
-	copy(&oldpos, &Y, sizeof oldpos);
+	copy((char *) (&oldpos), (char *) (&Y), sizeof oldpos);
 	brlev = 0;
 	if (yychar < 0)
 		yychar = yylex();
@@ -136,7 +139,7 @@ resume:
 	if (yyOshifts >= 2) {
 		if (yychar != -1)
 			unyylex(&Y);
-		copy(&Y, &oldpos, sizeof Y);
+		copy((char *) (&Y), (char *) (&oldpos), sizeof Y);
 		yerror(cp);
 		yychar = yylex();
 	}

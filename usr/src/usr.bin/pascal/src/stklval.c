@@ -1,12 +1,15 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)stklval.c 1.1 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)stklval.c 1.2 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
 #include "tree.h"
 #include "opcode.h"
 #include "objfmt.h"
+#include "tree_ty.h"
 
 /*
  * Lvalue computes the address
@@ -15,7 +18,8 @@ static	char sccsid[] = "@(#)stklval.c 1.1 %G%";
  */
 struct nl *
 stklval(r, modflag)
-	int *r, modflag;
+	struct  tnode *r;
+	int	modflag;
 {
 	/*
 	 * For the purposes of the interpreter stklval

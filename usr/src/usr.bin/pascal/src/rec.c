@@ -1,12 +1,15 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)rec.c 1.5 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)rec.c 1.6 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
 #include "tree.h"
 #include "opcode.h"
 #include "align.h"
+#include "tree_ty.h"
 
     /*
      *	set this to TRUE with adb to turn on record alignment/offset debugging.
@@ -21,7 +24,7 @@ bool	debug_records = FALSE;
  *
  * Each record has a main RECORD entry,
  * with an attached chain of fields as ->chain;
- * these include all the fields in all the variants of this record.
+ * these enclude all the fields in all the variants of this record.
  * Fields are cons'ed to the front of the ->chain list as they are discovered.
  * This is for reclook(), but not for sizing and aligning offsets.
  *
@@ -58,7 +61,8 @@ struct	nl *P0;
 
 struct nl *
 tyrec(r, off)
-	int *r, off;
+	struct tnode *r;
+	int	      off;
 {
 	struct nl	*recp;
 
@@ -69,7 +73,7 @@ tyrec(r, off)
 	     *	in this record and its variant subrecords.
 	     */
 	recp = tyrec1(r, TRUE);
-	rec_offsets(recp, 0);
+	rec_offsets(recp, (long) 0);
 	return recp;
 }
 
@@ -84,22 +88,22 @@ tyrec(r, off)
  */
 struct nl *
 tyrec1(r, first)
-	register int *r;
+	register struct tnode *r;	/* T_FLDLST */
 	bool first;
 {
 	register struct nl *p, *P0was;
 
 	DEBUG_RECORDS(fprintf(stderr,"[tyrec1] first=%d\n", first));
-	p = defnl(0, RECORD, 0, 0);
+	p = defnl((char *) 0, RECORD, NLNIL, 0);
 	P0was = P0;
 	if (first)
 		P0 = p;
 #ifndef PI0
 	p->align_info = A_MIN;
 #endif
-	if (r != NIL) {
-		fields(p, r[2]);
-		variants(p, r[3]);
+	if (r != TR_NIL) {
+		fields(p, r->fldlst.fix_list);
+		variants(p, r->fldlst.variant);
 	}
 	P0 = P0was;
 	return (p);
@@ -113,21 +117,22 @@ tyrec1(r, first)
  */
 fields(p, r)
 	struct nl *p;
-	int *r;
+	struct tnode *r;	/* T_LISTPP */
 {
-	register int	*fp, *tp, *ip;
+	register struct tnode	*fp, *tp, *ip;
 	struct nl	*jp;
 	struct nl	*fieldnlp;
 
 	DEBUG_RECORDS(fprintf(stderr,"[fields]\n"));
-	for (fp = r; fp != NIL; fp = fp[2]) {
-		tp = fp[1];
-		if (tp == NIL)
+	for (fp = r; fp != TR_NIL; fp = fp->list_node.next) {
+		tp = fp->list_node.list;
+		if (tp == TR_NIL)
 			continue;
-		jp = gtype(tp[3]);
-		line = tp[1];
-		for (ip = tp[2]; ip != NIL; ip = ip[2]) {
-		    fieldnlp = deffld(p, ip[1], jp);
+		jp = gtype(tp->rfield.type);
+		line = tp->rfield.line_no;
+		for (ip = tp->rfield.id_list; ip != TR_NIL;
+				    ip = ip->list_node.next) {
+		    fieldnlp = deffld(p, (char *) ip->list_node.list, jp);
 		    if ( p->ptr[NL_FIELDLIST] == NIL ) {
 			    /* newlist */
 			p->ptr[NL_FIELDLIST] = fieldnlp;
@@ -154,31 +159,31 @@ fields(p, r)
  */
 variants(p, r)
 	struct nl *p;
-	register int *r;
+	register struct tnode *r;	/* T_TYVARPT */
 {
-	register int *vc, *v;
-	int *vr;
+	register struct tnode *vc, *v;
+	struct nl *vr;
 	struct nl *ct;
 
 	DEBUG_RECORDS(fprintf(stderr,"[variants]\n"));
-	if (r == NIL)
+	if (r == TR_NIL)
 		return;
-	ct = gtype(r[3]);
-	if ( ( ct != NIL ) && ( isnta( ct , "bcsi" ) ) ) {
+	ct = gtype(r->varpt.type_id);
+	if ( ( ct != NLNIL ) && ( isnta( ct , "bcsi" ) ) ) {
 	    error("Tag fields cannot be %ss" , nameof( ct ) );
 	}
-	line = r[1];
+	line = r->varpt.line_no;
 	/*
 	 * Want it even if r[2] is NIL so
 	 * we check its type in "new" and "dispose"
 	 * calls -- link it to NL_TAG.
 	 */
-	p->ptr[NL_TAG] = deffld(p, r[2], ct);
-	for (vc = r[4]; vc != NIL; vc = vc[2]) {
-		v = vc[1];
-		if (v == NIL)
+	p->ptr[NL_TAG] = deffld(p, r->varpt.cptr, ct);
+	for (vc = r->varpt.var_list; vc != TR_NIL; vc = vc->list_node.next) {
+		v = vc->list_node.list;
+		if (v == TR_NIL)
 			continue;
-		vr = tyrec1(v[3], FALSE);
+		vr = tyrec1(v->tyvarnt.fld_list, FALSE);
 #ifndef PI0
 		DEBUG_RECORDS(
 		    fprintf(stderr,
@@ -188,9 +193,10 @@ variants(p, r)
 		    p->align_info = vr->align_info;
 		}
 #endif
-		line = v[1];
-		for (v = v[2]; v != NIL; v = v[2])
-			defvnt(p, v[1], vr, ct);
+		line = v->tyvarnt.line_no;
+		for (v = v->tyvarnt.const_list; v != TR_NIL;
+				v = v->list_node.next)
+			(void) defvnt(p, v->list_node.list, vr, ct);
 	}
 }
 
@@ -253,7 +259,7 @@ deffld(p, s, t)
 struct nl *
 defvnt(p, t, vr, ct)
 	struct nl *p, *vr;
-	int *t;
+	struct tnode *t;	/* CHAR_CONST or SIGN_CONST */
 	register struct nl *ct;
 {
 	register struct nl *av;
@@ -265,7 +271,7 @@ defvnt(p, t, vr, ct)
 #endif
 		ct = NIL;
 	}
-	av = defnl(0, VARNT, ct, 0);
+	av = defnl((char *) 0, VARNT, ct, 0);
 #ifndef PI1
 	if (ct != NIL)
 		uniqv(p);
@@ -339,12 +345,11 @@ rec_offsets(recp, offset)
     struct nl	*fieldnlp;	/* the current field */
     struct nl	*varntnlp;	/* the current variant */
     struct nl	*vrecnlp;	/* record for the current variant */
-    long	alignment;	/* maximum alignment for any variant */
 
     if ( recp == NIL ) {
 	return;
     }
-    origin = roundup(offset,recp->align_info);
+    origin = roundup((int) offset,(long) recp->align_info);
     if (origin != offset) {
 	fprintf(stderr,
 		"[rec_offsets] offset=%d recp->align_info=%d origin=%d\n",
@@ -362,7 +367,7 @@ rec_offsets(recp, offset)
     for (   fieldnlp = recp->ptr[NL_FIELDLIST];
 	    fieldnlp != NIL;
 	    fieldnlp = fieldnlp->ptr[NL_FIELDLIST] ) {
-	origin = roundup(origin,align(fieldnlp->type));
+	origin = roundup((int) origin,(long) align(fieldnlp->type));
 	fieldnlp->value[NL_OFFS] = origin;
 	DEBUG_RECORDS(
 	    fprintf(stderr,"[rec_offsets] symbol %s origin %d\n",
@@ -382,7 +387,7 @@ rec_offsets(recp, offset)
 	     */
 	fieldnlp = recp->ptr[NL_TAG];
 	if ( fieldnlp->symbol != NIL ) {
-	    origin = roundup(origin,align(fieldnlp->type));
+	    origin = roundup((int) origin,(long) align(fieldnlp->type));
 	    fieldnlp->value[NL_OFFS] = origin;
 	    DEBUG_RECORDS(fprintf(stderr,"[rec_offsets] tag %s origin\n",
 				    fieldnlp->symbol, origin));
@@ -399,7 +404,7 @@ rec_offsets(recp, offset)
 		fprintf(stderr,
 			"[rec_offsets] maxing variant %d align_info %d\n",
 			varntnlp->value[0], vrecnlp->align_info));
-	    origin = roundup(origin,vrecnlp->align_info);
+	    origin = roundup((int) origin,(long) vrecnlp->align_info);
 	}
 	DEBUG_RECORDS(
 	    fprintf(stderr, "[rec_offsets] origin of variants %d\n", origin));
@@ -432,5 +437,5 @@ rec_offsets(recp, offset)
 	fprintf(stderr,
 		"[rec_offsets] recp->value[NL_OFFS] %d ->align_info %d\n",
 		recp->value[NL_OFFS], recp->align_info));
-    recp->value[NL_OFFS] = roundup(recp->value[NL_OFFS],recp->align_info);
+    recp->value[NL_OFFS] = roundup(recp->value[NL_OFFS],(long) recp->align_info);
 }

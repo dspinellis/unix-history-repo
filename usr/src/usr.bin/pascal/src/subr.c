@@ -1,6 +1,8 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)subr.c 1.5 %G%";
+#ifndef lint
+static	char sccsid[] = "@(#)subr.c 1.6 %G%";
+#endif
 
 #include "whoami.h"
 #include "0.h"
@@ -53,8 +55,8 @@ myctime(tv)
 	int *tv;
 {
 	register char *cp, *dp;
+	extern char *ctime();
 	char *cpp;
-	register i;
 	static char mycbuf[26];
 
 	cpp = ctime(tv);
@@ -75,11 +77,12 @@ myctime(tv)
 inpflist(fp)
 	char *fp;
 {
-	register i, *pfp;
+	register i;
+	register char **pfp;
 
 	pfp = pflist;
 	for (i = pflstc; i > 0; i--)
-		if (strcmp(fp, *pfp++) == 0)
+		if (pstrcmp(fp, *pfp++) == 0)
 			return (1);
 	return (0);
 }
@@ -99,15 +102,15 @@ Perror(file, error)
 }
 
 int *
-calloc(num, size)
+pcalloc(num, size)
 	int num, size;
 {
-	register int p1, *p2, nbyte;
+	register int *p1, *p2, nbyte;
 
 	nbyte = (num*size+( ( sizeof ( int ) ) - 1 ) ) & ~( ( sizeof ( int ) ) - 1 );
-	if ((p1 = malloc(nbyte)) == 0)
+	if ((p1 = (int *) malloc((unsigned) nbyte)) == 0)
 		return (0);
-	p2 = p1;
+	p2 =  p1;
 	nbyte /= sizeof ( int );
 	do {
 		*p2++ = 0;
@@ -118,7 +121,7 @@ calloc(num, size)
 /*
  * Compare strings:  s1>s2: >0  s1==s2: 0  s1<s2: <0
  */
-strcmp(s1, s2)
+pstrcmp(s1, s2)
 	register char *s1, *s2;
 {
 
@@ -133,10 +136,11 @@ strcmp(s1, s2)
  * S1 must be large enough.
  * Return s1.
  */
-strcpy(s1, s2)
+char *
+pstrcpy(s1, s2)
 	register char *s1, *s2;
 {
-	register os1;
+	register char *os1;
 
 	os1 = s1;
 	while (*s1++ = *s2++)

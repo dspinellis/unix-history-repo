@@ -1,6 +1,9 @@
+
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)forop.c 1.16 %G%";
+#ifndef lint
+static char sccsid[] = "@(#)forop.c 1.16 2/28/83";
+#endif
 
 #include	"whoami.h"
 #include	"0.h"
@@ -12,6 +15,7 @@ static char sccsid[] = "@(#)forop.c 1.16 %G%";
 #    include	"pcops.h"
 #endif PC
 #include	"tmps.h"
+#include	"tree_ty.h"
 
     /*
      *	for-statements.
@@ -65,76 +69,81 @@ static char sccsid[] = "@(#)forop.c 1.16 %G%";
      *	  [3]	termination expression
      *	  [4]	statement
      */
-forop( arg )
-    int	*arg;
+forop( tree_node)
+    struct tnode	*tree_node;
     {
-	int		*lhs;
+	struct tnode	*lhs;
+	VAR_NODE	*lhs_node;
+	FOR_NODE	*f_node;
 	struct nl	*forvar;
 	struct nl	*fortype;
 #ifdef PC
 	int		forp2type;
 #endif PC
 	int		forwidth;
-	int		*init;
+	struct tnode	*init_node;
 	struct nl	*inittype;
 	struct nl	*initnlp;	/* initial value namelist entry */
-	int		*term;
+	struct tnode	*term_node;
 	struct nl	*termtype;
 	struct nl	*termnlp;	/* termination value namelist entry */
 	struct nl	*shadownlp;	/* namelist entry for the shadow */
-	int		*stat;
+	struct tnode	*stat_node;
 	int		goc;		/* saved gocnt */
 	int		again;		/* label at the top of the loop */
 	int		after;		/* label after the end of the loop */
 	struct nl	saved_nl;	/* saved namelist entry for loop var */
 
 	goc = gocnt;
-	forvar = NIL;
-	if ( arg == NIL ) {
+	forvar = NLNIL;
+	if ( tree_node == TR_NIL ) { 
 	    goto byebye;
 	}
-	if ( arg[2] == NIL ) {
+	f_node = &(tree_node->for_node);
+	if ( f_node->init_asg == TR_NIL ) {
 	    goto byebye;
 	}
-	line = arg[1];
+	line = f_node->line_no;
 	putline();
-	lhs = ( (int *) arg[2] )[2];
-	init = ( (int *) arg[2] )[3];
-	term = arg[3];
-	stat = arg[4];
-	if (lhs == NIL) {
+	lhs = f_node->init_asg->asg_node.lhs_var;
+	init_node = f_node->init_asg->asg_node.rhs_expr;
+	term_node = f_node->term_expr;
+	stat_node = f_node->for_stmnt;
+	if (lhs == TR_NIL) {
 nogood:
 	    if (forvar != NIL) {
 		forvar->value[ NL_FORV ] = FORVAR;
 	    }
-	    rvalue( init , NIL , RREQ );
-	    rvalue( term , NIL , RREQ );
-	    statement( stat );
+	    (void) rvalue( init_node , NLNIL , RREQ ); 
+	    (void) rvalue( term_node , NLNIL , RREQ );
+	    statement( stat_node );
 	    goto byebye;
 	}
+	else lhs_node = &(lhs->var_node);
 	    /*
 	     * and this marks the variable as used!!!
 	     */
-	forvar = lookup( lhs[2] );
+	forvar = lookup( lhs_node->cptr );
 	if ( forvar == NIL ) {
 	    goto nogood;
 	}
 	saved_nl = *forvar;
-	if ( lhs[3] != NIL ) {
+	if ( lhs_node->qual != TR_NIL ) {
 	    error("For variable %s must be unqualified", forvar->symbol);
 	    goto nogood;
 	}
 	if (forvar->class == WITHPTR) {
-	    error("For variable %s cannot be an element of a record", lhs[2]);
+	    error("For variable %s cannot be an element of a record", 
+			lhs_node->cptr);
 	    goto nogood;
 	}
 	if ( opt('s') &&
 	    ( ( bn != cbn ) ||
 #ifdef OBJ
-		(whereis(bn, forvar->value[NL_OFFS], 0) == PARAMVAR)
+		(whereis(forvar->value[NL_OFFS], 0) == PARAMVAR)
 #endif OBJ
 #ifdef PC
-		(whereis(bn, forvar->value[NL_OFFS], forvar->extra_flags)
+		(whereis(forvar->value[NL_OFFS], forvar->extra_flags)
 		    == PARAMVAR )
 #endif PC
 	    ) ) {
@@ -147,7 +156,7 @@ nogood:
 	codeoff();
 	fortype = lvalue( lhs , MOD , RREQ );
 	codeon();
-	if ( fortype == NIL ) {
+	if ( fortype == NLNIL ) {
 	    goto nogood;
 	}
 	if ( isnta( fortype , "bcis" ) ) {
@@ -156,7 +165,7 @@ nogood:
 	}
 	if ( forvar->value[ NL_FORV ] & FORVAR ) {
 	    error("Can't modify the for variable %s in the range of the loop", forvar->symbol);
-	    forvar = NIL;
+	    forvar = NLNIL;
 	    goto nogood;
 	}
 	forwidth = lwidth(fortype);
@@ -167,27 +176,27 @@ nogood:
 	     *	allocate temporaries for the initial and final expressions
 	     *	and maybe a register to shadow the for variable.
 	     */
-	initnlp = tmpalloc(sizeof(long), nl+T4INT, NOREG);
-	termnlp = tmpalloc(sizeof(long), nl+T4INT, NOREG);
-	shadownlp = tmpalloc(forwidth, fortype, REGOK);
+	initnlp = tmpalloc((long) sizeof(long), nl+T4INT, NOREG);
+	termnlp = tmpalloc((long) sizeof(long), nl+T4INT, NOREG);
+	shadownlp = tmpalloc((long) forwidth, fortype, REGOK);
 #	ifdef PC
 		/*
 		 * compute and save the initial expression
 		 */
-	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
+	    putRV((char *) 0 , cbn , initnlp -> value[ NL_OFFS ] ,
 		    initnlp -> extra_flags , P2INT );
 #	endif PC
 #	ifdef OBJ
-	    put(2, O_LV | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
+	    (void) put(2, O_LV | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
 #	endif OBJ
-	inittype = rvalue( init , fortype , RREQ );
-	if ( incompat( inittype , fortype , init ) ) {
+	inittype = rvalue( init_node , fortype , RREQ );
+	if ( incompat( inittype , fortype , init_node ) ) {
 	    cerror("Type of initial expression clashed with index type in 'for' statement");
-	    if (forvar != NIL) {
+	    if (forvar != NLNIL) {
 		forvar->value[ NL_FORV ] = FORVAR;
 	    }
-	    rvalue( term , NIL , RREQ );
-	    statement( stat );
+	    (void) rvalue( term_node , NLNIL , RREQ );
+	    statement( stat_node );
 	    goto byebye;
 	}
 #	ifdef PC
@@ -197,23 +206,23 @@ nogood:
 		/*
 		 * compute and save the termination expression
 		 */
-	    putRV( 0 , cbn , termnlp -> value[ NL_OFFS ] ,
+	    putRV((char *) 0 , cbn , termnlp -> value[ NL_OFFS ] ,
 		    termnlp -> extra_flags , P2INT );
 #	endif PC
 #	ifdef OBJ
-	    gen(O_AS2, O_AS2, sizeof(long), width(inittype));
+	    (void) gen(O_AS2, O_AS2, sizeof(long), width(inittype));
 		/*
 		 * compute and save the termination expression
 		 */
-	    put(2, O_LV | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
+	    (void) put(2, O_LV | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
 #	endif OBJ
-	termtype = rvalue( term , fortype , RREQ );
-	if ( incompat( termtype , fortype , term ) ) {
+	termtype = rvalue( term_node , fortype , RREQ );
+	if ( incompat( termtype , fortype , term_node ) ) {
 	    cerror("Type of limit expression clashed with index type in 'for' statement");
-	    if (forvar != NIL) {
+	    if (forvar != NLNIL) {
 		forvar->value[ NL_FORV ] = FORVAR;
 	    }
-	    statement( stat );
+	    statement( stat_node );
 	    goto byebye;
 	}
 #	ifdef PC
@@ -223,13 +232,13 @@ nogood:
 		/*
 		 * we can skip the loop altogether if !( init <= term )
 		 */
-	    after = getlab();
-	    putRV( 0 , cbn , initnlp -> value[ NL_OFFS ] ,
+	    after = (int) getlab();
+	    putRV((char *) 0 , cbn , initnlp -> value[ NL_OFFS ] ,
 		    initnlp -> extra_flags , P2INT );
-	    putRV( 0 , cbn , termnlp -> value[ NL_OFFS ] ,
+	    putRV((char *) 0 , cbn , termnlp -> value[ NL_OFFS ] ,
 		    termnlp -> extra_flags , P2INT );
-	    putop( ( arg[0] == T_FORU ? P2LE : P2GE ) , P2INT );
-	    putleaf( P2ICON , after , 0 , P2INT , 0 );
+	    putop( ( tree_node->tag == T_FORU ? P2LE : P2GE ) , P2INT );
+	    putleaf( P2ICON , after , 0 , P2INT, (char *) 0 );
 	    putop( P2CBRANCH , P2INT );
 	    putdot( filename , line );
 		/*
@@ -240,7 +249,7 @@ nogood:
 		 */
 	    if (opt('t')) {
 		precheck(fortype, "_RANG4", "_RSNG4");
-		putRV(0, cbn, termnlp -> value[NL_OFFS],
+		putRV((char *) 0, cbn, termnlp -> value[NL_OFFS],
 		    termnlp -> extra_flags, P2INT);
 		postcheck(fortype, nl+T4INT);
 		putdot(filename, line);
@@ -249,15 +258,15 @@ nogood:
 		 * assign the initial expression to the shadow
 		 * checking the assignment if necessary.
 		 */
-	    putRV(0, cbn, shadownlp -> value[NL_OFFS],
+	    putRV((char *) 0, cbn, shadownlp -> value[NL_OFFS],
 		shadownlp -> extra_flags, forp2type);
 	    if (opt('t')) {
 		precheck(fortype, "_RANG4", "_RSNG4");
-		putRV(0, cbn, initnlp -> value[NL_OFFS],
+		putRV((char *) 0, cbn, initnlp -> value[NL_OFFS],
 		    initnlp -> extra_flags, P2INT);
 		postcheck(fortype, nl+T4INT);
 	    } else {
-		putRV(0, cbn, initnlp -> value[NL_OFFS],
+		putRV((char *) 0, cbn, initnlp -> value[NL_OFFS],
 		    initnlp -> extra_flags, P2INT);
 	    }
 	    sconv(P2INT, forp2type);
@@ -266,29 +275,29 @@ nogood:
 		/*
 		 * put down the label at the top of the loop
 		 */
-	    again = getlab();
-	    putlab( again );
+	    again = (int) getlab();
+	    (void) putlab((char *) again );
 		/*
 		 * each time through the loop
 		 * assign the shadow to the for variable.
 		 */
-	    lvalue(lhs, NOUSE, RREQ);
-	    putRV(0, cbn, shadownlp -> value[NL_OFFS],
+	    (void) lvalue(lhs, NOUSE, RREQ);
+	    putRV((char *) 0, cbn, shadownlp -> value[NL_OFFS],
 		    shadownlp -> extra_flags, forp2type);
 	    putop(P2ASSIGN, forp2type);
 	    putdot(filename, line);
 #	endif PC
 #	ifdef OBJ
-	    gen(O_AS2, O_AS2, sizeof(long), width(termtype));
+	    (void) gen(O_AS2, O_AS2, sizeof(long), width(termtype));
 		/*
 		 * we can skip the loop altogether if !( init <= term )
 		 */
-	    put(2, O_RV4 | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
-	    put(2, O_RV4 | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
-	    gen(NIL, arg[0] == T_FORU ? T_LE : T_GE, sizeof(long),
+	    (void) put(2, O_RV4 | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
+	    (void) put(2, O_RV4 | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
+	    (void) gen(NIL, tree_node->tag == T_FORU ? T_LE : T_GE, sizeof(long),
 			sizeof(long));
-	    after = getlab();
-	    put(2, O_IF, after);
+	    after = (int) getlab();
+	    (void) put(2, O_IF, after);
 		/*
 		 * okay, so we have to execute the loop body,
 		 * but first, if checking is on,
@@ -296,31 +305,31 @@ nogood:
 		 * is assignment compatible with the control-variable.
 		 */
 	    if (opt('t')) {
-		put(2, O_LV | cbn<<8+INDX, shadownlp -> value[ NL_OFFS ] );
-		put(2, O_RV4 | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
+		(void) put(2, O_LV | cbn<<8+INDX, shadownlp -> value[ NL_OFFS ] );
+		(void) put(2, O_RV4 | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
 		rangechk(fortype, nl+T4INT);
-		gen(O_AS2, O_AS2, forwidth, sizeof(long));
+		(void) gen(O_AS2, O_AS2, forwidth, sizeof(long));
 	    }
 		/*
 		 * assign the initial expression to the shadow
 		 * checking the assignment if necessary.
 		 */
-	    put(2, O_LV | cbn<<8+INDX, shadownlp -> value[ NL_OFFS ] );
-	    put(2, O_RV4 | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
+	    (void) put(2, O_LV | cbn<<8+INDX, shadownlp -> value[ NL_OFFS ] );
+	    (void) put(2, O_RV4 | cbn<<8+INDX, initnlp -> value[ NL_OFFS ] );
 	    rangechk(fortype, nl+T4INT);
-	    gen(O_AS2, O_AS2, forwidth, sizeof(long));
+	    (void) gen(O_AS2, O_AS2, forwidth, sizeof(long));
 		/*
 		 * put down the label at the top of the loop
 		 */
-	    again = getlab();
-	    putlab( again );
+	    again = (int) getlab();
+	    (void) putlab( (char *) again );
 		/*
 		 * each time through the loop
 		 * assign the shadow to the for variable.
 		 */
-	    lvalue(lhs, NOUSE, RREQ);
-	    stackRV(shadownlp);
-	    gen(O_AS2, O_AS2, forwidth, sizeof(long));
+	    (void) lvalue(lhs, NOUSE, RREQ);
+	    (void) stackRV(shadownlp);
+	    (void) gen(O_AS2, O_AS2, forwidth, sizeof(long));
 #	endif OBJ
 	    /*
 	     *	shadowing the real for variable
@@ -339,13 +348,13 @@ nogood:
 	     * and don't forget ...
 	     */
 	putcnt();
-	statement( stat );
+	statement( stat_node );
 	    /*
 	     * wasn't that fun?  do we get to do it again?
 	     *	we don't do it again if ( !( forvar < limit ) )
 	     *	pretend we were doing this at the top of the loop
 	     */
-	line = arg[ 1 ];
+	line = f_node->line_no;
 #	ifdef PC
 	    if ( opt( 'p' ) ) {
 		if ( opt('t') ) {
@@ -355,19 +364,19 @@ nogood:
 		    putdot( filename , line );
 		} else {
 		    putRV( STMTCOUNT , 0 , 0 , NGLOBAL , P2INT );
-		    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
+		    putleaf( P2ICON , 1 , 0 , P2INT , (char *) 0 );
 		    putop( P2ASG P2PLUS , P2INT );
 		    putdot( filename , line );
 		}
 	    }
-	    /*rvalue( lhs , NIL , RREQ );*/
-	    putRV( 0 , cbn , shadownlp -> value[ NL_OFFS ] ,
+	    /*rvalue( lhs_node , NIL , RREQ );*/
+	    putRV( (char *) 0 , cbn , shadownlp -> value[ NL_OFFS ] ,
 		    shadownlp -> extra_flags , forp2type );
 	    sconv(forp2type, P2INT);
-	    putRV( 0 , cbn , termnlp -> value[ NL_OFFS ] ,
+	    putRV( (char *) 0 , cbn , termnlp -> value[ NL_OFFS ] ,
 		    termnlp -> extra_flags , P2INT );
-	    putop( ( arg[ 0 ] == T_FORU ? P2LT : P2GT ) , P2INT );
-	    putleaf( P2ICON , after , 0 , P2INT , 0 );
+	    putop( ( tree_node->tag == T_FORU ? P2LT : P2GT ) , P2INT );
+	    putleaf( P2ICON , after , 0 , P2INT , (char *) 0 );
 	    putop( P2CBRANCH , P2INT );
 	    putdot( filename , line );
 		/*
@@ -377,25 +386,25 @@ nogood:
 		 * termination value before we started.
 		 */
 	    /*lvalue( lhs , MOD , RREQ );*/
-	    putRV( 0 , cbn , shadownlp -> value[ NL_OFFS ] ,
+	    putRV( (char *) 0 , cbn , shadownlp -> value[ NL_OFFS ] ,
 		    shadownlp -> extra_flags , forp2type );
-	    /*rvalue( lhs , NIL , RREQ );*/
-	    putRV( 0 , cbn , shadownlp -> value[ NL_OFFS ] ,
+	    /*rvalue( lhs_node , NIL , RREQ );*/
+	    putRV( (char *) 0 , cbn , shadownlp -> value[ NL_OFFS ] ,
 		    shadownlp -> extra_flags , forp2type );
 	    sconv(forp2type, P2INT);
-	    putleaf( P2ICON , 1 , 0 , P2INT , 0 );
-	    putop( ( arg[0] == T_FORU ? P2PLUS : P2MINUS ) , P2INT );
+	    putleaf( P2ICON , 1 , 0 , P2INT , (char *) 0 );
+	    putop( ( tree_node->tag == T_FORU ? P2PLUS : P2MINUS ) , P2INT );
 	    sconv(P2INT, forp2type);
 	    putop( P2ASSIGN , forp2type );
 	    putdot( filename , line );
 		/*
 		 * and do it all again
 		 */
-	    putjbr( again );
+	    putjbr( (long) again );
 		/*
 		 * and here we are
 		 */
-	    putlab( after );
+	    (void) putlab( (char *) after );
 #	endif PC
 #	ifdef OBJ
 		/*
@@ -406,18 +415,18 @@ nogood:
 		 * and returning to the top of the loop.
 		 */
 	    putline();
-	    put(2, O_RV4 | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
-	    put(2, O_LV | cbn<<8+INDX, shadownlp -> value[ NL_OFFS ] );
-	    put(2, (arg[0] == T_FORU ? O_FOR1U : O_FOR1D) + (forwidth >> 1),
+	    (void) put(2, O_RV4 | cbn<<8+INDX, termnlp -> value[ NL_OFFS ] );
+	    (void) put(2, O_LV | cbn<<8+INDX, shadownlp -> value[ NL_OFFS ] );
+	    (void) put(2, (tree_node->tag == T_FORU ? O_FOR1U : O_FOR1D) + (forwidth >> 1),
 		    again);
 		/*
 		 * and here we are
 		 */
-	    patch( after );
+	    patch( (PTR_DCL) after );
 #	endif OBJ
 byebye:
-	noreach = 0;
-	if (forvar != NIL) {
+	noreach = FALSE;
+	if (forvar != NLNIL) {
 	    saved_nl.nl_flags |= NLFLAGS(forvar -> nl_flags) & (NUSED|NMOD);
 	    *forvar = saved_nl;
 	}
