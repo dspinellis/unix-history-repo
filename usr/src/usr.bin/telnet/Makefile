@@ -9,7 +9,7 @@
 # software without specific prior written permission. This software
 # is provided ``as is'' without express or implied warranty.
 #
-#	@(#)Makefile	1.8 (Berkeley) %G%
+#	@(#)Makefile	1.9 (Berkeley) %G%
 #
 
 # The following is the telnet makefile.  The sources are down one level
@@ -23,6 +23,11 @@ LIBC=	/lib/libc.a
 SRCS=	commands.c main.c network.c ring.c \
 	sys_bsd.c sys_dos.c telnet.c terminal.c \
 	tn3270.c utilities.c
+
+ALLHC=	${SRCS} \
+	Source/defines.h Source/externs.h Source/fdset.h Source/general.h \
+	Source/ring.h Source/types.h
+
 OBJS=	commands.o main.o network.o ring.o sys_bsd.o sys_dos.o \
 	telnet.o terminal.o tn3270.o utilities.o
 
@@ -34,17 +39,25 @@ telnet:	${OBJS} ${LIBC}
 clean: FRC
 	rm -f ${OBJS} core telnet
 
+clist:	FRC ${SRCS}
+	@for i in ${SRCS} ; \
+		do (echo ${DIRPATH}$$i); done
+
+hclist:	FRC ${ALLHC}
+	@for i in ${ALLHC} ; \
+		do (echo ${DIRPATH}$$i); done
+
 depend: FRC ${SRCS}
-	mkdep ${CFLAGS} ${SRCS}
+	mkdep ${CFLAGS} `make clist`
 
 install: FRC
 	install -s -o bin -g bin -m 755 telnet ${DESTDIR}/usr/ucb/telnet
 
-lint: FRC
-	lint ${CFLAGS} ${SRCS}
+lint: FRC ${SRCS}
+	lint ${CFLAGS} `make clist`
 
-tags: FRC
-	ctags ${SRCS}
+tags: FRC ${SRCS}
+	ctags `make hclist`
 
 FRC:
 
