@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)boot.c	7.4 (Berkeley) %G%
+ *	@(#)boot.c	7.5 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -150,21 +150,23 @@ loadpcs()
 	static int pcsdone = 0;
 	union cpusid sid;
 	char pcs[100];
-	char *closeparen;
+	char *cp;
 	char *index();
 
 	sid.cpusid = mfpr(SID);
 	if (sid.cpuany.cp_type!=VAX_750 || sid.cpu750.cp_urev<95 || pcsdone)
 		return;
 	printf("Updating 11/750 microcode: ");
-	strncpy(pcs, line, 99);
-	pcs[99] = 0;
-	closeparen = index(pcs, ')');
-	if (closeparen)
-		*(++closeparen) = 0;
-	else
-		return;
-	strcat(pcs, "pcs750.bin");
+	for (cp = line; *cp; cp++)
+		if (*cp == ')' || *cp == ':')
+			break;
+	if (*cp) {
+		strncpy(pcs, line, 99);
+		pcs[99] = 0;
+		i = cp - line + 1;
+	} else
+		i = 0;
+	strcpy(pcs + i, "pcs750.bin");
 	i = open(pcs, 0);
 	if (i < 0)
 		return;
