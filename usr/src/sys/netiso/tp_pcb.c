@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_pcb.c	7.11 (Berkeley) %G%
+ */
+
 /***********************************************************
 				Copyright IBM Corporation 1987
 
@@ -29,7 +38,6 @@ SOFTWARE.
  *
  * $Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_pcb.c,v $
- *	@(#)tp_pcb.c	7.10 (Berkeley) %G% *
  *
  *
  * This is the initialization and cleanup stuff - 
@@ -43,10 +51,6 @@ SOFTWARE.
  * and are called (obviously) during the closing phase.
  *
  */
-
-#ifndef lint
-static char *rcsid = "$Header: tp_pcb.c,v 5.4 88/11/18 17:28:24 nhall Exp $";
-#endif lint
 
 #include "types.h"
 #include "param.h"

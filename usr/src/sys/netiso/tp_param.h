@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_param.h	7.7 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -29,7 +38,6 @@ SOFTWARE.
  *
  * $Header: tp_param.h,v 5.3 88/11/18 17:28:18 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_param.h,v $
- *	@(#)tp_param.h	7.6 (Berkeley) %G% *
  *
  */
 

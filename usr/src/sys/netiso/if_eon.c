@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)if_eon.c	7.13 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -27,7 +36,6 @@ SOFTWARE.
 /*
  * $Header: if_eon.c,v 1.4 88/07/19 15:53:59 hagens Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/if_eon.c,v $ 
- *	@(#)if_eon.c	7.12 (Berkeley) %G% *
  *
  *	EON rfc 
  *  Layer between IP and CLNL
@@ -36,10 +44,6 @@ SOFTWARE.
  * Put together a current rfc986 address format and get the right offset
  * for the nsel
  */
-
-#ifndef lint
-static char *rcsid = "$Header: if_eon.c,v 1.4 88/07/19 15:53:59 hagens Exp $";
-#endif lint
 
 #ifdef EON
 #define NEON 1

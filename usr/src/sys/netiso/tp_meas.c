@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_meas.c	7.4 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -27,15 +36,10 @@ SOFTWARE.
 /*
  * $Header: tp_meas.c,v 5.2 88/11/18 17:28:04 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_meas.c,v $
- *	@(#)tp_meas.c	7.3 (Berkeley) %G% *
  * 
  * tp_meas.c : create a performance measurement event
  * in the circular buffer tp_Meas[]
  */
-
-#ifndef lint
-static char *rcsid = "$Header: tp_meas.c,v 5.2 88/11/18 17:28:04 nhall Exp $";
-#endif lint
 
 #include "types.h"
 #include "time.h"

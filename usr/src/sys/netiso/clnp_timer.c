@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)clnp_timer.c	7.5 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -26,11 +35,6 @@ SOFTWARE.
  */
 /* $Header: clnp_timer.c,v 4.2 88/06/29 14:59:05 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/clnp_timer.c,v $ */
-/*	@(#)clnp_timer.c	7.4 (Berkeley) %G% */
-
-#ifndef lint
-static char *rcsid = "$Header: clnp_timer.c,v 4.2 88/06/29 14:59:05 hagens Exp $";
-#endif lint
 
 #include "param.h"
 #include "mbuf.h"

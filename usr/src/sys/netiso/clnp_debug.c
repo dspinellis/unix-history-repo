@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)clnp_debug.c	7.5 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -26,11 +35,6 @@ SOFTWARE.
  */
 /* $Header: clnp_debug.c,v 4.2 88/06/29 14:58:34 hagens Exp $ */
 /* $Source: /usr/argo/sys/netargo/RCS/clnp_debug.c,v $ */
-/*	@(#)clnp_debug.c	7.4 (Berkeley) %G% */
-
-#ifndef lint
-static char *rcsid = "$Header: clnp_debug.c,v 4.2 88/06/29 14:58:34 hagens Exp $";
-#endif lint
 
 #include "types.h"
 #include "param.h"

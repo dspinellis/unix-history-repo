@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)iso_proto.c	7.8 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -26,17 +35,12 @@ SOFTWARE.
  */
 /* $Header: iso_proto.c,v 4.4 88/09/08 08:38:42 hagens Exp $ 
  * $Source: /usr/argo/sys/netiso/RCS/iso_proto.c,v $ 
- *	@(#)iso_proto.c	7.7 (Berkeley) %G% *
  *
  * iso_proto.c : protocol switch tables in the ISO domain
  *
  * ISO protocol family includes TP, CLTP, CLNP, 8208
  * TP and CLNP are implemented here.
  */
-
-#ifndef lint
-static char *rcsid = "$Header: iso_proto.c,v 4.4 88/09/08 08:38:42 hagens Exp $";
-#endif
 
 #ifdef	ISO
 #include "types.h"

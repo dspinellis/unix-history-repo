@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)iso_chksum.c	7.5 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -27,7 +36,6 @@ SOFTWARE.
 /* 
  * $Header: iso_chksum.c,v 4.7 88/07/29 15:31:26 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/iso_chksum.c,v $
- *	@(#)iso_chksum.c	7.4 (Berkeley) %G% *
  *
  * ISO CHECKSUM
  *
@@ -49,10 +57,6 @@ SOFTWARE.
  */
 
 #ifdef ISO
-#ifndef lint
-static char *rcsid = "$Header: iso_chksum.c,v 4.7 88/07/29 15:31:26 nhall Exp $";
-#endif
-
 #include "argo_debug.h"
 #include "param.h"
 #include "mbuf.h"

@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)iso_pcb.c	7.9 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -27,14 +36,9 @@ SOFTWARE.
 /*
  * $Header: iso_pcb.c,v 4.5 88/06/29 14:59:56 hagens Exp $
  * $Source: /usr/argo/sys/netiso/RCS/iso_pcb.c,v $
- *	@(#)iso_pcb.c	7.8 (Berkeley) %G%
  *
  * Iso address family net-layer(s) pcb stuff. NEH 1/29/87
  */
-
-#ifndef lint
-static char *rcsid = "$Header: iso_pcb.c,v 4.5 88/06/29 14:59:56 hagens Exp $";
-#endif
 
 #ifdef ISO
 

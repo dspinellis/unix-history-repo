@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)iso_snpac.c	7.13 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -26,11 +35,6 @@ SOFTWARE.
  */
 /* $Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $ */
 /* $Source: /usr/argo/sys/netiso/RCS/iso_snpac.c,v $ */
-/*	@(#)iso_snpac.c	7.12 (Berkeley) %G% */
-
-#ifndef lint
-static char *rcsid = "$Header: iso_snpac.c,v 1.8 88/09/19 13:51:36 hagens Exp $";
-#endif lint
 
 #ifdef ISO
 

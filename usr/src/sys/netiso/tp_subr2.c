@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_subr2.c	7.8 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -29,19 +38,14 @@ SOFTWARE.
  *
  * $Header: tp_subr2.c,v 5.5 88/11/18 17:28:55 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_subr2.c,v $
- *	@(#)tp_subr2.c	7.7 (Berkeley) %G%
  *
  * Some auxiliary routines:
- * 		tp_protocol_error: required by xebec- called when a combo of state,
- *			event, predicate isn't covered for by the transition file.
- *		tp_indicate: gives indications(signals) to the user process
- *		tp_getoptions: initializes variables that are affected by the options
- *          chosen.
+ * 	tp_protocol_error: required by xebec- called when a combo of state,
+ *	    event, predicate isn't covered for by the transition file.
+ *	tp_indicate: gives indications(signals) to the user process
+ *	tp_getoptions: initializes variables that are affected by the options
+ *	    chosen.
  */
-
-#ifndef lint
-static char *rcsid = "$Header: tp_subr2.c,v 5.5 88/11/18 17:28:55 nhall Exp $";
-#endif lint
 
 /* this def'n is to cause the expansion of this macro in the
  * routine tp_local_credit :

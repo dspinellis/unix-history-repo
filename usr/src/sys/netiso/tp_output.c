@@ -1,3 +1,12 @@
+/*-
+ * Copyright (c) 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)tp_output.c	7.9 (Berkeley) %G%
+ */
+
 /***********************************************************
 		Copyright IBM Corporation 1987
 
@@ -29,14 +38,9 @@ SOFTWARE.
  *
  * $Header: tp_output.c,v 5.4 88/11/18 17:28:08 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_output.c,v $
- *	@(#)tp_output.c	7.8 (Berkeley) %G% *
  *
  * In here is tp_ctloutput(), the guy called by [sg]etsockopt(),
  */
-
-#ifndef lint
-static char *rcsid = "$Header: tp_output.c,v 5.4 88/11/18 17:28:08 nhall Exp $";
-#endif lint
 
 #include "param.h"
 #include "mbuf.h"
