@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 1988 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1988, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Timoth C. Stoehr.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)rogue.h	5.6 (Berkeley) %G%
+ *	@(#)rogue.h	8.1 (Berkeley) %G%
  */
 
 /*
