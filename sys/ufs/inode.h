@@ -67,6 +67,8 @@ struct inode {
 	struct	dinode i_din;	/* the on-disk dinode */
 };
 
+#define	FASTLINK(ip)	(DFASTLINK((ip)->i_din))
+#define	i_symlink	i_din.di_symlink
 #define	i_mode		i_din.di_mode
 #define	i_nlink		i_din.di_nlink
 #define	i_uid		i_din.di_uid
@@ -87,6 +89,7 @@ struct inode {
 #define i_gen		i_din.di_gen
 #define	i_forw		i_chain[0]
 #define	i_back		i_chain[1]
+#define	i_di_spare	i_din.di_spare
 
 /* flags */
 #define	ILOCKED		0x0001		/* inode is locked */

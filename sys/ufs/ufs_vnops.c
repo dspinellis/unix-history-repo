@@ -1281,12 +1281,22 @@ ufs_symlink(ndp, vap, target, p)
 	struct proc *p;
 {
 	struct inode *ip;
+	int len = strlen(target);
 	int error;
 
 	error = maknode(IFLNK | vap->va_mode, ndp, &ip);
 	if (error)
 		return (error);
-	error = vn_rdwr(UIO_WRITE, ITOV(ip), target, strlen(target), (off_t)0,
+#ifdef FASTLINKS
+	if (len <= MAXFASTLINK) {
+		ip->i_din.di_spare[0] = len;
+		ip->i_size = len;
+		bcopy(target, ip->i_symlink, len);
+		ip->i_flag |= ICHG;
+		error = iupdat(ip, &time, &time, 1);
+	} else
+#endif
+	error = vn_rdwr(UIO_WRITE, ITOV(ip), target, len, (off_t)0,
 		UIO_SYSSPACE, IO_NODELOCKED, ndp->ni_cred, (int *)0,
 		(struct proc *)0);
 	iput(ip);
@@ -1328,8 +1338,11 @@ ufs_readlink(vp, uiop, cred)
 	struct uio *uiop;
 	struct ucred *cred;
 {
-
-	return (ufs_read(vp, uiop, 0, cred));
+	struct inode *ip = VTOI(vp);
+	if (FASTLINK(ip))
+		return (uiomove(ip->i_symlink, ip->i_size, uiop));
+	else
+		return (ufs_read(vp, uiop, 0, cred));
 }
 
 /*

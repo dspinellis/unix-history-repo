@@ -140,6 +140,8 @@ loop:
 	for (i = 0; i < MAXQUOTAS; i++)
 		ip->i_dquot[i] = NODQUOT;
 #endif
+	for (i=0; i < DI_SPARE_SZ; i++)
+		ip->i_di_spare[i] = (unsigned long)0L;
 	/*
 	 * Put it onto its hash chain and lock it so that other requests for
 	 * this inode will block if they arrive while we are sleeping waiting
@@ -406,6 +408,13 @@ itrunc(oip, length, flags)
 	struct inode tip;
 
 	vnode_pager_setsize(ITOV(oip), length);
+	if (FASTLINK(oip)) {
+		if (length != 0)
+			panic("itrunc fastlink to non-zero");
+		bzero(oip->i_symlink, MAXFASTLINK);
+		oip->i_size = 0;
+		oip->i_din.di_spare[0] = 0;
+	}
 	if (oip->i_size <= length) {
 		oip->i_flag |= ICHG|IUPD;
 		error = iupdat(oip, &time, &time, 1);

@@ -41,6 +41,8 @@
 #define	NDADDR	12		/* direct addresses in inode */
 #define	NIADDR	3		/* indirect addresses in inode */
 
+#define	MAXFASTLINK	(((NDADDR+NIADDR) * sizeof(daddr_t)) - 1)
+
 struct dinode {
 	u_short	di_mode;	/*  0: mode and type of file */
 	short	di_nlink;	/*  2: number of links to file */
@@ -53,13 +55,23 @@ struct dinode {
 	long	di_mtspare;
 	time_t	di_ctime;	/* 32: last time inode changed */
 	long	di_ctspare;
-	daddr_t	di_db[NDADDR];	/* 40: disk block addresses */
-	daddr_t	di_ib[NIADDR];	/* 88: indirect blocks */
+	union {
+		struct {
+			daddr_t	di_udb[NDADDR];	/* 40: disk block addresses */
+			daddr_t	di_uib[NIADDR];	/* 88: indirect blocks */
+		} di_addr;
+		char di_usymlink[MAXFASTLINK+1];
+	} di_un;
 	long	di_flags;	/* 100: status, currently unused */
 	long	di_blocks;	/* 104: blocks actually held */
 	long	di_gen;		/* 108: generation number */
-	long	di_spare[4];	/* 112: reserved, currently unused */
+#define	DI_SPARE_SZ	4		/* 112: spare for 4 longs */
+	u_long	di_spare[DI_SPARE_SZ];	/* reserved (unused) */
 };
+
+#define	di_db		di_un.di_addr.di_udb
+#define di_ib		di_un.di_addr.di_uib
+#define	di_symlink	di_un.di_usymlink
 
 #if BYTE_ORDER == LITTLE_ENDIAN || defined(tahoe) /* ugh! -- must be fixed */
 #define	di_size		di_qsize.val[0]
@@ -84,3 +96,8 @@ struct dinode {
 #define	IREAD		0400		/* read permission */
 #define	IWRITE		0200		/* write permission */
 #define	IEXEC		0100		/* execute permission */
+
+#define	DFASTLINK(di) \
+	((((di).di_mode & IFMT) == IFLNK) && \
+	 ((di).di_size <= MAXFASTLINK) && \
+	 ((di).di_size == (di).di_spare[0]))
