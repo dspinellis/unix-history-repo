@@ -15,9 +15,9 @@
  * from this software without specific prior written permission.
  * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)hd.c	7.3 (Berkeley) %G%
+ *	@(#)hd.c	7.4 (Berkeley) %G%
  */
 
 #include "hd.h"
@@ -216,7 +216,6 @@ hdslave(vi, vdaddr)
 	}
 	if (status.drs&DRS_FAULT)
 		printf(" (clearing fault)");
-	printf("\n");
 
 	lp = &dk->dk_label;
 #ifdef RAW_SIZE
@@ -571,7 +570,8 @@ hdcstart(vm)
 	/* mcb->priority = 0; */
 	mcb->interrupt = 1;
 	mcb->command = (bp->b_flags & B_READ) ? HCMD_READ:HCMD_WRITE;
-	mcb->cyl = sn / lp->d_secpercyl;
+	mcb->cyl = bp->b_cylin;
+/* assumes partition starts on cylinder boundary */
 	mcb->head = (sn / lp->d_nsectors) % lp->d_ntracks;
 	mcb->sector = sn % lp->d_nsectors;
 	mcb->drive = vi->ui_slave;
@@ -675,23 +675,22 @@ hdintr(ctlr)
 
 	if (master->mcs & (MCS_SOFTERROR | MCS_FATALERROR) || timedout)
 		hdcerror(ctlr, *(u_long *)master->xstatus);
-	else {
+	else 
 		hdc->hdc_wticks = 0;
-		if (vm->um_tab.b_active) {
-			vm->um_tab.b_active = 0;
-			vm->um_tab.b_actf = dp->b_forw;
-			dp->b_active = 0;
-			dp->b_errcnt = 0;
-			dp->b_actf = bp->av_forw;
-			bp->b_resid = 0;
-			vbadone(bp, &hdc->hdc_rbuf);
-			biodone(bp);
-			/* start up now, if more work to do */
-			if (dp->b_actf)
-				hdustart(vi);
-			else if (dk->dk_openpart == 0)
-				wakeup((caddr_t)dk);
-		}
+	if (vm->um_tab.b_active) {
+		vm->um_tab.b_active = 0;
+		vm->um_tab.b_actf = dp->b_forw;
+		dp->b_active = 0;
+		dp->b_errcnt = 0;
+		dp->b_actf = bp->av_forw;
+		bp->b_resid = 0;
+		vbadone(bp, &hdc->hdc_rbuf);
+		biodone(bp);
+		/* start up now, if more work to do */
+		if (dp->b_actf)
+			hdustart(vi);
+		else if (dk->dk_openpart == 0)
+			wakeup((caddr_t)dk);
 	}
 	/* if there are devices ready to transfer, start the controller. */
 	if (hdc->hdc_flags & HDC_WAIT) {
@@ -701,20 +700,67 @@ hdintr(ctlr)
 		hdcstart(vm);
 }
 
-hdioctl(dev, command, data, flag)
+hdioctl(dev, cmd, data, flag)
 	dev_t dev;
-	int command, flag;
+	int cmd, flag;
 	caddr_t data;
 {
+	register int unit;
+	register struct dksoftc *dk;
+	register struct disklabel *lp;
 	int error;
 
-	switch (command) {
+	unit = hdunit(dev);
+	dk = &dksoftc[unit];
+	lp = &dk->dk_label;
+	error = 0;
+	switch (cmd) {
+	case DIOCGDINFO:
+		*(struct disklabel *)data = *lp;
+		break;
+	case DIOCGPART:
+		((struct partinfo *)data)->disklab = lp;
+		((struct partinfo *)data)->part =
+		    &lp->d_partitions[hdpart(dev)];
+		break;
+	case DIOCSDINFO:
+		if ((flag & FWRITE) == 0)
+			error = EBADF;
+		else
+			error = setdisklabel(lp, (struct disklabel *)data,
+			    (dk->dk_state == OPENRAW) ? 0 : dk->dk_openpart);
+		if (error == 0 && dk->dk_state == OPENRAW)
+			dk->dk_state = OPEN;
+		break;
+	case DIOCWLABEL:
+		if ((flag & FWRITE) == 0)
+			error = EBADF;
+		else
+			dk->dk_wlabel = *(int *)data;
+		break;
+	case DIOCWDINFO:
+		if ((flag & FWRITE) == 0)
+			error = EBADF;
+		else if ((error = setdisklabel(lp, (struct disklabel *)data,
+		    (dk->dk_state == OPENRAW) ? 0 : dk->dk_openpart)) == 0) {
+			int wlab;
 
+			if (error == 0 && dk->dk_state == OPENRAW)
+				dk->dk_state = OPEN;
+			/* simulate opening partition 0 so write succeeds */
+			dk->dk_openpart |= (1 << 0);		/* XXX */
+			wlab = dk->dk_wlabel;
+			dk->dk_wlabel = 1;
+			error = writedisklabel(dev, hdstrategy, lp);
+			dk->dk_openpart = dk->dk_copenpart | dk->dk_bopenpart;
+			dk->dk_wlabel = wlab;
+		}
+		break;
 	default:
 		error = ENOTTY;
 		break;
 	}
-	return(error);
+	return (error);
 }
 
 /*
@@ -806,70 +852,7 @@ hdcerror(ctlr, code)
 	int ctlr;
 	u_long code;
 {
-	printf("hd%d: ", ctlr);
-	switch(code) {
-#define	P(op, msg)	case op: printf("%s\n", msg); return;
-	P(0x0100, "Invalid command code")
-	P(0x0221, "Total longword count too large")
-	P(0x0222, "Total longword count incorrect")
-	P(0x0223, "Longword count of zero not permitted")
-	P(0x0231, "Too many data chained items")
-	P(0x0232, "Data chain not permitted for this command")
-	P(0x0341, "Maximum logical cylinder address exceeded")
-	P(0x0342, "Maximum logical head address exceeded")
-	P(0x0343, "Maximum logical sectoraddress exceeded")
-	P(0x0351, "Maximum physical cylinder address exceeded")
-	P(0x0352, "Maximum physical head address exceeded")
-	P(0x0353, "Maximum physical sectoraddress exceeded")
-	P(0x0621, "Control store PROM revision incorrect")
-	P(0x0642, "Power fail detected")
-	P(0x0721, "Sector count test failed")
-	P(0x0731, "First access test failed")
-	P(0x0811, "Drive not online")
-	P(0x0812, "Drive not ready")
-	P(0x0813, "Drive seek error")
-	P(0x0814, "Drive faulted")
-	P(0x0815, "Drive reserved")
-	P(0x0816, "Drive write protected")
-	P(0x0841, "Timeout waiting for drive to go on-cylinder")
-	P(0x0851, "Timeout waiting for a specific sector address")
-	P(0x0921, "Correctable ECC error")
-	P(0x0A11, "Attempt to spill-off of physical boundary")
-	P(0x0A21, "Attempt to spill-off of logical boundary")
-	P(0x0A41, "Unknown DDC status (PSREAD)")
-	P(0x0A42, "Unknown DDC status (PSWRITE)")
-	P(0x0A51, "Track relocation limit exceeded")
-	P(0x0C00, "HFASM")
-	P(0x0C01, "data field error")
-	P(0x0C02, "sector not found")
-	P(0x0C03, "sector overrun")
-	P(0x0C04, "no data sync")
-	P(0x0C05, "FIFO data lost")
-	P(0x0C06, "correction failed")
-	P(0x0C07, "late interlock")
-	P(0x0D21, "Output data buffer parity error")
-	P(0x0D31, "Input data transfer FIFO indicates overflow")
-	P(0x0D32, "Input data buffer FIFO indicates overflow")
-	P(0x0D41, "Longword count != 0 indicates underflow")
-	P(0x0D42, "Output data buffer FIFO indicates underflow")
-	P(0x0E01, "FT timeout -- DDC interrupt")
-	P(0x0E02, "RDDB timeout -- IDTFINRDY -- and DDC interrupt")
-	P(0x0E03, "RDDB timeout -- DDC interrupt")
-	P(0x0E04, "RDDB timeout -- writing ZERO's to IDTF")
-	P(0x0E05, "RDDB timeout -- IDTFINRDY -- and IDBFEMPTY+")
-	P(0x0E06, "WRDB timeout -- ODTFOUTRDT -- and DDC interrupt")
-	P(0x0E07, "WRDB timeout -- ODTFOUTRDT -- and DDC interrupt")
-	P(0x0E08, "WRDB timeout -- DDC interrupt")
-	P(0x0E09, "WRDB timeout -- ODBFFULL+ and DDC interrupt")
-	P(0x0E0A, "VLT timeout -- DDC interrupt")
-	P(0x0E0B, "WRBA timeout -- ODTFOUTRDY-")
-	P(0x0F00, "Error log full")
-	default:
-		if (code >= 0x0B00 && code <= 0x0BFF)
-			printf("Unknown DDC status type 0x%x.", code&0xff);
-		else
-			printf("Unknown error %lx\n", code);
-	}
+	printf("hd%d: error %lx\n", ctlr, code);
 }
 
 #ifdef COMPAT_42
@@ -914,6 +897,7 @@ hdreadgeometry(dk)
 		return(1);
 	}
 	lp = &dk->dk_label;
+
 	/* 1K block in Harris geometry; convert to sectors for disklabels */
 	for (cnt = 0; cnt < GB_MAXPART; cnt++) {
 		lp->d_partitions[cnt].p_offset =
