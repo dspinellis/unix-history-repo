@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tcp_usrreq.c	8.1 (Berkeley) %G%
+ *	@(#)tcp_usrreq.c	8.2 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -328,6 +328,8 @@ tcp_ctloutput(op, so, level, optname, mp)
 	inp = sotoinpcb(so);
 	if (inp == NULL) {
 		splx(s);
+		if (op == PRCO_SETOPT && *mp)
+			(void) m_free(*mp);
 		return (ECONNRESET);
 	}
 	if (level != IPPROTO_TCP) {
@@ -360,7 +362,7 @@ tcp_ctloutput(op, so, level, optname, mp)
 			break;
 
 		default:
-			error = EINVAL;
+			error = ENOPROTOOPT;
 			break;
 		}
 		if (m)
@@ -379,7 +381,7 @@ tcp_ctloutput(op, so, level, optname, mp)
 			*mtod(m, int *) = tp->t_maxseg;
 			break;
 		default:
-			error = EINVAL;
+			error = ENOPROTOOPT;
 			break;
 		}
 		break;
