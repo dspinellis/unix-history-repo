@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)nfs_vfsops.c	7.26 (Berkeley) %G%
+ *	@(#)nfs_vfsops.c	7.27 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -15,6 +15,7 @@
 #include "ioctl.h"
 #include "signal.h"
 #include "proc.h"
+#include "namei.h"
 #include "vnode.h"
 #include "mount.h"
 #include "buf.h"
@@ -37,17 +38,6 @@
 /*
  * nfs vfs operations.
  */
-int nfs_mount();
-int nfs_start();
-int nfs_unmount();
-int nfs_root();
-int nfs_quotactl();
-int nfs_statfs();
-int nfs_sync();
-int nfs_fhtovp();
-int nfs_vptofh();
-int nfs_init();
-
 struct vfsops nfs_vfsops = {
 	nfs_mount,
 	nfs_start,
@@ -73,9 +63,10 @@ void nfs_disconnect();
 /*
  * nfs statfs call
  */
-nfs_statfs(mp, sbp)
+nfs_statfs(mp, sbp, p)
 	struct mount *mp;
 	register struct statfs *sbp;
+	struct proc *p;
 {
 	register struct vnode *vp;
 	register struct nfsv2_statfs *sfp;
@@ -98,7 +89,7 @@ nfs_statfs(mp, sbp)
 	cred->cr_ngroups = 1;
 	nfsm_reqhead(nfs_procids[NFSPROC_STATFS], cred, NFSX_FH);
 	nfsm_fhtom(vp);
-	nfsm_request(vp, NFSPROC_STATFS, curproc, 0);
+	nfsm_request(vp, NFSPROC_STATFS, p, 0);
 	nfsm_disect(sfp, struct nfsv2_statfs *, NFSX_STATFS);
 	sbp->f_type = MOUNT_NFS;
 	sbp->f_flags = nmp->nm_flag;
@@ -257,11 +248,12 @@ nfs_mountroot()
  * an error after that means that I have to release the mbuf.
  */
 /* ARGSUSED */
-nfs_mount(mp, path, data, ndp)
+nfs_mount(mp, path, data, ndp, p)
 	struct mount *mp;
 	char *path;
 	caddr_t data;
 	struct nameidata *ndp;
+	struct proc *p;
 {
 	int error;
 	struct nfs_args args;
@@ -303,6 +295,7 @@ mountnfs(argp, mp, nam, pth, hst, vpp)
 	struct vnode **vpp;
 {
 	register struct nfsmount *nmp;
+	struct proc *p = curproc;		/* XXX */
 	struct nfsnode *np;
 	int error;
 	fsid_t tfsid;
@@ -399,7 +392,7 @@ mountnfs(argp, mp, nam, pth, hst, vpp)
 	if (error = nfs_connect(nmp))
 		goto bad;
 
-	if (error = nfs_statfs(mp, &mp->mnt_stat))
+	if (error = nfs_statfs(mp, &mp->mnt_stat, p))
 		goto bad;
 	/*
 	 * A reference count is needed on the nfsnode representing the
@@ -428,9 +421,10 @@ bad:
 /*
  * unmount system call
  */
-nfs_unmount(mp, mntflags)
+nfs_unmount(mp, mntflags, p)
 	struct mount *mp;
 	int mntflags;
+	struct proc *p;
 {
 	register struct nfsmount *nmp;
 	struct nfsnode *np;
@@ -543,10 +537,9 @@ nfs_fhtovp(mp, fhp, vpp)
  * Vnode pointer to File handle, should never happen either
  */
 /* ARGSUSED */
-nfs_vptofh(mp, fhp, vpp)
-	struct mount *mp;
+nfs_vptofh(vp, fhp)
+	struct vnode *vp;
 	struct fid *fhp;
-	struct vnode **vpp;
 {
 
 	return (EINVAL);
@@ -556,9 +549,10 @@ nfs_vptofh(mp, fhp, vpp)
  * Vfs start routine, a no-op.
  */
 /* ARGSUSED */
-nfs_start(mp, flags)
+nfs_start(mp, flags, p)
 	struct mount *mp;
 	int flags;
+	struct proc *p;
 {
 
 	return (0);
@@ -567,11 +561,12 @@ nfs_start(mp, flags)
 /*
  * Do operations associated with quotas, not supported
  */
-nfs_quotactl(mp, cmd, uid, arg)
+nfs_quotactl(mp, cmd, uid, arg, p)
 	struct mount *mp;
 	int cmd;
 	uid_t uid;
 	caddr_t arg;
+	struct proc *p;
 {
 #ifdef lint
 	mp = mp; cmd = cmd; uid = uid; arg = arg;
