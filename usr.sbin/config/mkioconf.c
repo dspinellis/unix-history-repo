@@ -29,20 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         3       00158
- * --------------------         -----   ----------------------
- *
- * 27 Feb 93	Chris Demetriou		Add proper flag handling.
- * 08 Apr 93	Phil Sutherland		Add support for devices without irq's
- *		Rodney W. Grimes	Cleaned up indents, fixed table formats
- * 25 Apr 93	Bruce Evans		Support for intr-0.1
- * 25 Apr 93	Rodney W. Grimes	Reduce duplicate code with a common
- *					isa_devtab() routine.
- * 16 May 93	Rodney W. Grimes	Give warning on irq 2 and remap it to
- *					irq 9.
  */
 
 #ifndef lint

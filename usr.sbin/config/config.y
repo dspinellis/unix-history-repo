@@ -222,12 +222,18 @@ System_parameter_list:
 	;
 
 System_parameter:
-	  swap_spec
+	  addr_spec
+	| swap_spec
 	| root_spec
 	| dump_spec
 	| arg_spec
 	;
 	
+addr_spec:
+	  AT NUMBER
+		= { loadaddress = $2; };
+	;
+
 swap_spec:
 	  SWAP optional_on swap_device_list
 	;

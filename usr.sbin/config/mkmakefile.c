@@ -29,15 +29,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
- * --------------------         -----   ----------------------
- * CURRENT PATCH LEVEL:         2       00096
- * --------------------         -----   ----------------------
- *
- * 29 Jun 92	Chris G. Demetriou	Fix Version number update
- * 15 Feb 93	Julian Elischer		allow comments (leading #) in
- *					files and files.i386
  */
 
 #ifndef lint
@@ -199,6 +190,9 @@ makefile()
 		printf("warning: maxusers > %d (%d)\n", up->u_max, maxusers);
 	fprintf(ofp, "PARAM=-DTIMEZONE=%d -DDST=%d -DMAXUSERS=%d -DMAXFDESCS=%d\n",
 	    zone, dst, maxusers, maxfdescs);
+	if (loadaddress != -1) {
+		fprintf(ofp, "LOAD_ADDRESS=%X\n", loadaddress);
+	}
 	for (op = mkopt; op; op = op->op_next)
 		fprintf(ofp, "%s=%s\n", op->op_name, op->op_value);
 	if (debugging)
