@@ -1,0 +1,17 @@
+array.obj+
+awktab.obj+
+builtin.obj+
+dfa.obj+
+eval.obj+
+field.obj+
+io.obj+
+iop.obj+
+main.obj+
+missing.obj+
+msg.obj+
+node.obj+
+popen.obj+
+re.obj+
+version.obj+
+regex.obj+
+setargv.obj
