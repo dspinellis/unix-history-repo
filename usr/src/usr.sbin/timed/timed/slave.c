@@ -5,15 +5,12 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slave.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)slave.c	1.2 (Berkeley) %G%";
 #endif not lint
 
 #include "globals.h"
 #include <protocols/timed.h>
 #include <setjmp.h>
-
-#define OFF	0
-#define ON	1
 
 extern long delay1;
 extern long delay2;
@@ -31,21 +28,21 @@ slave()
 	int senddateack;
 	long electiontime, refusetime;
 	u_short seq;
-	char candidate[32];
+	char candidate[MAXHOSTNAMELEN];
 	struct tsp *msg, *readmsg();
 	extern int backoff;
-	struct sockaddr_in saveaddr;
+	struct sockaddr_in saveaddr, msaveaddr;
 	extern jmp_buf jmpenv;
 	struct timeval wait;
 	struct timeval time;
-	struct timezone tzone;
 	struct tsp *answer, *acksend();
 	int timeout();
 	char *date(), *strcpy();
 	long casual();
 	int bytenetorder();
+	char *olddate;
 
-	syslog(LOG_ERR, "timed: THIS MACHINE IS A SLAVE\n");
+	syslog(LOG_NOTICE, "THIS MACHINE IS A SLAVE");
 	if (trace) {
 		fprintf(fd, "THIS MACHINE IS A SLAVE\n");
 	}
@@ -81,16 +78,15 @@ loop:
 			break;
 		case TSP_SETTIME:
 			if (seq == msg->tsp_seq)
-				goto endsettime;
+				break;
 
 			seq = msg->tsp_seq;
 
-			(void)gettimeofday(&time, &tzone);
-			time.tv_sec = msg->tsp_time.tv_sec;
-			time.tv_usec = 500000;
-			(void)settimeofday(&time, &tzone);
-			syslog(LOG_ERR, "timed: date changed to: %s\n",
-							date());
+			olddate = date();
+			(void)settimeofday(&msg->tsp_time,
+				(struct timezone *)0);
+			syslog(LOG_NOTICE, "date changed by %s from: %s",
+				msg->tsp_name, olddate);
 			electiontime = time.tv_sec + delay2;
 
 			if (senddateack == ON) {
@@ -102,11 +98,10 @@ loop:
 				if (sendto(sock, (char *)msg, 
 						sizeof(struct tsp), 0,
 						&saveaddr, length) < 0) {
-					syslog(LOG_ERR, "timed: sendto: %m");
+					syslog(LOG_ERR, "sendto: %m");
 					exit(1);
 				}
 			}
-endsettime:
 			break;
 		case TSP_MASTERUP:
 			msg->tsp_type = TSP_SLAVEUP;
@@ -117,13 +112,14 @@ endsettime:
 			length = sizeof(struct sockaddr_in);
 			if (sendto(sock, (char *)msg, sizeof(struct tsp), 0, 
 						&from, length) < 0) {
-				syslog(LOG_ERR, "timed: sendto: %m");
+				syslog(LOG_ERR, "sendto: %m");
 				exit(1);
 			}
 			backoff = 1;
 			delay2 = casual((long)MINTOUT, (long)MAXTOUT);
 			(void)gettimeofday(&time, (struct timezone *)0);
 			electiontime = time.tv_sec + delay2;
+			refusetime = 0;
 			break;
 		case TSP_MASTERREQ:
 			(void)gettimeofday(&time, (struct timezone *)0);
@@ -143,7 +139,7 @@ endsettime:
 				if (sendto(sock, (char *)msg, 
 						sizeof(struct tsp), 0,
 						&saveaddr, length) < 0) {
-					syslog(LOG_ERR, "timed: sendto: %m");
+					syslog(LOG_ERR, "sendto: %m");
 					exit(1);
 				}
 				senddateack = ON;
@@ -162,7 +158,7 @@ endsettime:
 			if (trace) {
 				fprintf(fd, "Tracing ended on: %s\n", date());
 				(void)fflush(fd);
-				(void)close((int)fd);
+				(void)fclose(fd);
 			}
 			trace = OFF;
 			break;
@@ -182,11 +178,11 @@ endsettime:
 			server = from;
 			answer = acksend(msg, candidate, TSP_ACK);
 			if (answer == NULL) {
-				syslog(LOG_ERR, "timed: problem in election\n");
+				syslog(LOG_ERR, "problem in election\n");
 			}
 			break;
 		case TSP_MSITE:
-			saveaddr = from;
+			msaveaddr = from;
 			msg->tsp_type = TSP_MSITEREQ;
 			msg->tsp_vers = TSPVERSION;
 			(void)strcpy(msg->tsp_name, hostname);
@@ -197,8 +193,8 @@ endsettime:
 				bytenetorder(msg);
 				if (sendto(sock, (char *)msg, 
 						sizeof(struct tsp), 0,
-						&saveaddr, length) < 0) {
-					syslog(LOG_ERR, "timed: sendto: %m");
+						&msaveaddr, length) < 0) {
+					syslog(LOG_ERR, "sendto: %m");
 					exit(1);
 				}
 			}
@@ -230,15 +226,12 @@ endsettime:
  */
 answerdelay()
 {
-	struct timeval time, timeout;
+	struct timeval timeout;
 
-	(void)gettimeofday(&time, (struct timezone *)0);
-	timeout.tv_sec = time.tv_sec;
-	timeout.tv_usec = time.tv_usec + delay1;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = delay1;
 
-	while (timercmp(&time, &timeout, <)) {
-		(void)gettimeofday(&time, (struct timezone *)0);
-	}
-	
+	(void)select(0, (fd_set *)NULL, (fd_set *)NULL, (fd_set *)NULL,
+	    &timeout);
 	return;
 }
