@@ -1,5 +1,5 @@
 /*
- * @(#)ww.h	3.37 %G%	
+ * @(#)ww.h	3.38 %G%	
  */
 
 /*
@@ -94,7 +94,7 @@ struct ww_tty {
 union ww_char {
 	short c_w;		/* as a word */
 	struct {
-#ifndef mc68000
+#if defined(vax)
 		char C_c;	/* the character part */
 		char C_m;	/* the mode part */
 #else
