@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)state.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)state.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -26,7 +26,7 @@ int	not42 = 1;
  */
 unsigned char subbuffer[512], *subpointer= subbuffer, *subend= subbuffer;
 
-#define	SB_CLEAR()	subpointer = subbuffer;
+#define	SB_CLEAR()	subpointer = subbuffer
 #define	SB_TERM()	{ subend = subpointer; SB_CLEAR(); }
 #define	SB_ACCUM(c)	if (subpointer < (subbuffer+sizeof subbuffer)) { \
 				*subpointer++ = (c); \
@@ -35,6 +35,11 @@ unsigned char subbuffer[512], *subpointer= subbuffer, *subend= subbuffer;
 #define	SB_EOF()	(subpointer >= subend)
 #define	SB_LEN()	(subend - subpointer)
 
+#ifdef	ENV_HACK
+unsigned char *subsave;
+#define SB_SAVE()	subsave = subpointer;
+#define	SB_RESTORE()	subpointer = subsave;
+#endif
 
 
 /*
@@ -619,7 +624,7 @@ willoption(option)
 			break;
 #endif
 		case TELOPT_LFLOW:
-			func = localstat;
+			func = flowstat;
 			break;
 		}
 	    }
@@ -1033,6 +1038,14 @@ dontoption(option)
 
 }  /* end of dontoption */
 
+#ifdef	ENV_HACK
+int env_var = -1;
+int env_value = -1;
+#else	/* ENV_HACK */
+# define env_var ENV_VAR
+# define env_value ENV_VALUE
+#endif	/* ENV_HACK */
+
 /*
  * suboption()
  *
@@ -1221,9 +1234,119 @@ suboption()
 	else if (c != TELQUAL_INFO)
 		return;
 
+#ifdef	ENV_HACK
+	/*
+	 * We only want to do this if we haven't already decided
+	 * whether or not the other side has its VALUE and VAR
+	 * reversed.
+	 */
+	if (env_var < 0) {
+		register int last = -1;		/* invalid value */
+		int empty = 0;
+		int got_var = 0, got_value = 0, got_uservar = 0;
+
+		/*
+		 * The other side might have its VALUE and VAR values
+		 * reversed.  To be interoperable, we need to determine
+		 * which way it is.  If the first recognized character
+		 * is a VAR or VALUE, then that will tell us what
+		 * type of client it is.  If the fist recognized
+		 * character is a USERVAR, then we continue scanning
+		 * the suboption looking for two consecutive
+		 * VAR or VALUE fields.  We should not get two
+		 * consecutive VALUE fields, so finding two
+		 * consecutive VALUE or VAR fields will tell us
+		 * what the client is.
+		 */
+		SB_SAVE();
+		while (!SB_EOF()) {
+			c = SB_GET();
+			switch(c) {
+			case ENV_VAR:
+				if (last < 0 || last == ENV_VAR
+				    || (empty && (last == ENV_VALUE)))
+					goto env_var_ok;
+				got_var++;
+				last = ENV_VAR;
+				break;
+			case ENV_VALUE:
+				if (last < 0 || last == ENV_VALUE
+				    || (empty && (last == ENV_VAR)))
+					goto env_var_wrong;
+				got_value++;
+				last = ENV_VALUE;
+				break;
+			case ENV_USERVAR:
+				/* count strings of USERVAR as one */
+				if (last != ENV_USERVAR)
+					got_uservar++;
+				if (empty) {
+					if (last == ENV_VALUE)
+						goto env_var_ok;
+					if (last == ENV_VAR)
+						goto env_var_wrong;
+				}
+				last = ENV_USERVAR;
+				break;
+			case ENV_ESC:
+				if (!SB_EOF())
+					c = SB_GET();
+				/* FALL THROUGH */
+			default:
+				empty = 0;
+				continue;
+			}
+			empty = 1;
+		}
+		if (empty) {
+			if (last == ENV_VALUE)
+				goto env_var_ok;
+			if (last == ENV_VAR)
+				goto env_var_wrong;
+		}
+		/*
+		 * Ok, the first thing was a USERVAR, and there
+		 * are not two consecutive VAR or VALUE commands,
+		 * and none of the VAR or VALUE commands are empty.
+		 * If the client has sent us a well-formed option,
+		 * then the number of VALUEs received should always
+		 * be less than or equal to the number of VARs and
+		 * USERVARs received.
+		 *
+		 * If we got exactly as many VALUEs as VARs and
+		 * USERVARs, the client has the same definitions.
+		 *
+		 * If we get more VARs than the total number of VALUEs
+		 * and USERVARs, the client has the same definitions.
+		 *
+		 * If we got exactly as many VARs as VALUEs and
+		 * USERVARS, the client has reversed definitions.
+		 *
+		 * If we get more VALUEs than the total number of VARs
+		 * and USERVARs, the client has reversed definitions
+		 */
+		if ((got_uservar + got_var == got_value) ||
+		    (got_var > got_uservar + got_value)) {
+	    env_var_ok:
+			env_var = ENV_VAR;
+			env_value = ENV_VALUE;
+		} else if ((got_uservar + got_value == got_var) ||
+			   (got_value > got_uservar + got_var)) {
+	    env_var_wrong:
+			env_var = ENV_VALUE;
+			env_value = ENV_VAR;
+			DIAG(TD_OPTIONS, {sprintf(nfrontp,
+				"ENVIRON VALUE and VAR are reversed!\r\n");
+				nfrontp += strlen(nfrontp);});
+
+		}
+	}
+	SB_RESTORE();
+#endif
+
 	while (!SB_EOF()) {
 		c = SB_GET();
-		if ((c == ENV_VAR) || (c == ENV_USERVAR))
+		if ((c == env_var) || (c == ENV_USERVAR))
 			break;
 	}
 
@@ -1234,7 +1357,15 @@ suboption()
 	valp = 0;
 
 	while (!SB_EOF()) {
-		switch (c = SB_GET()) {
+		c = SB_GET();
+#ifdef	ENV_HACK
+		if (c == env_var)
+			c = ENV_VAR;
+		else if (c == env_value)
+			c = ENV_VALUE;
+#endif
+		switch (c) {
+
 		case ENV_VALUE:
 			*cp = '\0';
 			cp = valp = (char *)subpointer;

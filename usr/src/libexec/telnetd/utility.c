@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utility.c	5.10 (Berkeley) %G%";
+static char sccsid[] = "@(#)utility.c	5.11 (Berkeley) %G%";
 #endif /* not lint */
 
 #define PRINTOPTIONS
@@ -795,7 +795,7 @@ printsub(direction, pointer, length)
 		    case WONT:	cp = "WONT"; goto common2;
 		    common2:
 			i++;
-			if (TELOPT_OK((int)pointer[i]))
+			if (TELOPT_OK(pointer[i]))
 			    sprintf(nfrontp, " %s %s", cp, TELOPT(pointer[i]));
 			else
 			    sprintf(nfrontp, " %s %d", cp, pointer[i]);
@@ -881,8 +881,6 @@ printsub(direction, pointer, length)
 		    for (i = 2; i < length; i++ ) {
 			switch (pointer[i]) {
 			case ENV_VAR:
-			    if (pointer[1] == TELQUAL_SEND)
-				goto def_case;
 			    sprintf(nfrontp, "\" VAR " + noquote);
 			    nfrontp += strlen(nfrontp);
 			    noquote = 2;
@@ -901,8 +899,6 @@ printsub(direction, pointer, length)
 			    break;
 
 			case ENV_USERVAR:
-			    if (pointer[1] == TELQUAL_SEND)
-				goto def_case;
 			    sprintf(nfrontp, "\" USERVAR " + noquote);
 			    nfrontp += strlen(nfrontp);
 			    noquote = 2;

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termstat.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)termstat.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -139,25 +139,7 @@ localstat()
 	/*
 	 * Check for changes to flow control if client supports it.
 	 */
-	if (his_state_is_will(TELOPT_LFLOW)) {
-		if (tty_flowmode() != flowmode) {
-			flowmode = tty_flowmode();
-			(void) sprintf(nfrontp, "%c%c%c%c%c%c",
-					IAC, SB, TELOPT_LFLOW,
-					flowmode ? LFLOW_ON : LFLOW_OFF,
-					IAC, SE);
-			nfrontp += 6;
-		}
-		if (tty_restartany() != restartany) {
-			restartany = tty_restartany();
-			(void) sprintf(nfrontp, "%c%c%c%c%c%c",
-					IAC, SB, TELOPT_LFLOW,
-					restartany ? LFLOW_RESTART_ANY
-						   : LFLOW_RESTART_XON,
-					IAC, SE);
-			nfrontp += 6;
-		}
-	}
+	flowstat();
 
 	/*
 	 * Check linemode on/off state
@@ -342,6 +324,34 @@ done:
 }  /* end of localstat */
 #endif	/* LINEMODE */
 
+/*
+ * flowstat
+ *
+ * Check for changes to flow control
+ */
+	void
+flowstat()
+{
+	if (his_state_is_will(TELOPT_LFLOW)) {
+		if (tty_flowmode() != flowmode) {
+			flowmode = tty_flowmode();
+			(void) sprintf(nfrontp, "%c%c%c%c%c%c",
+					IAC, SB, TELOPT_LFLOW,
+					flowmode ? LFLOW_ON : LFLOW_OFF,
+					IAC, SE);
+			nfrontp += 6;
+		}
+		if (tty_restartany() != restartany) {
+			restartany = tty_restartany();
+			(void) sprintf(nfrontp, "%c%c%c%c%c%c",
+					IAC, SB, TELOPT_LFLOW,
+					restartany ? LFLOW_RESTART_ANY
+						   : LFLOW_RESTART_XON,
+					IAC, SE);
+			nfrontp += 6;
+		}
+	}
+}
 
 /*
  * clientstat
