@@ -1,0 +1,55 @@
+LEX(1)                       BSD Reference Manual                       LEX(1)
+
+NNAAMMEE
+     lleexx - generator of lexical analysis programs
+
+SSYYNNOOPPSSIISS
+     lleexx [--ttvvffnn] [_f_i_l_e] _._._.
+
+DDEESSCCRRIIPPTTIIOONN
+     The lleexx command generates programs to be used in simple lexical analyis
+     of text.  The input _f_i_l_e_s (standard input default) contain regular ex-
+     pressions to be searched for, and actions written in C to be executed
+     when expressions are found.
+
+     A C source program, 'lex.yy.c' is generated, to be compiled thus:
+
+           cc lex.yy.c.Fl ll
+
+     This program, when run, copies unrecognized portions of the input to the
+     output, and executes the associated C action for each regular expression
+     that is recognized.
+
+     The options have the following meanings.
+
+     --tt      Place the result on the standard output instead of in file
+             _l_e_x_._y_y_._c.
+
+     --vv      Print a one-line summary of statistics of the generated analyzer.
+
+     --nn      Opposite of --vv; --nn is default.
+
+     --ff      "Faster" compilation: don't bother to pack the resulting tables;
+             limited to small programs.
+
+EEXXAAMMPPLLEE
+           lex lexcommands
+
+     would draw lleexx instructions from the file _l_e_x_c_o_m_m_a_n_d_s, and place the out-
+     put in _l_e_x_._y_y_._c
+
+           %%
+           [A.Em -Z] putchar(yytext[0]+'a'-'A');
+           [ ]+$   ;
+           [ ]+    putchar(' ');
+
+     is an example of a lleexx program that would be put into a lleexx command file.
+     This program converts upper case to lower, removes blanks at the end of
+     lines, and replaces multiple blanks by single blanks.
+
+SSEEEE AALLSSOO
+     yacc(1),  sed(1)
+
+     M. E. Lesk, and E. Schmidt, _T_h_e _L_E_X _- _L_e_x_i_c_a_l _A_n_a_l_y_z_e_r _G_e_n_e_r_a_t_o_r.
+
+AT&T 7th Edition                August 9, 1991                               1

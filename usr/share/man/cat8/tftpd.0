@@ -1,0 +1,44 @@
+TFTPD(8)                  BSD System Manager's Manual                 TFTPD(8)
+
+NNAAMMEE
+     ttffttppdd - Internet Trivial File Transfer Protocol server
+
+SSYYNNOOPPSSIISS
+     ttffttppdd [--ll] [--nn] [_d_i_r_e_c_t_o_r_y _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     TTffttppdd is a server which supports the Internet Trivial File Transfer Pro-
+     tocol (RFC 783). The TFTP server operates at the port indicated in the
+     `tftp' service description; see services(5).  The server is normally
+     started by inetd(8).
+
+     The use of tftp(1) does not require an account or password on the remote
+     system.  Due to the lack of authentication information, ttffttppdd will allow
+     only publicly readable files to be accessed.  Files containing the string
+     ``/..../'' are not allowed.  Files may be written only if they already ex-
+     ist and are publicly writable.  Note that this extends the concept of
+     ``public'' to include all users on all hosts that can be reached through
+     the network; this may not be appropriate on all systems, and its implica-
+     tions should be considered before enabling tftp service.  The server
+     should have the user ID with the lowest possible privilege.
+
+     Access to files may be restricted by invoking ttffttppdd with a list of direc-
+     tories by including up to 20 pathnames as server program arguments in
+     _/_e_t_c_/_i_n_e_t_d_._c_o_n_f. In this case access is restricted to files whose names
+     are prefixed by the one of the given directories.  The given directories
+     are also treated as a search path for relative filename requests.
+
+     The options are:
+
+     --ll      Logs all requests using syslog(3).
+
+     --nn      Suppresses negative acknowledgement of requests for nonexistent
+             relative filenames.
+
+SSEEEE AALLSSOO
+     tftp(1),  inetd(8)
+
+HHIISSTTOORRYY
+     The ttffttppdd command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1

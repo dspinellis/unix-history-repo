@@ -1,0 +1,36 @@
+LFS_CLEANERD(8)           BSD System Manager's Manual          LFS_CLEANERD(8)
+
+NNAAMMEE
+     llffss__cclleeaanneerrdd - garbage collect a log-structured file system
+
+SSYYNNOOPPSSIISS
+     llffss__cclleeaanneerrdd [--ddss] _n_o_d_e
+
+DDEESSCCRRIIPPTTIIOONN
+     The llffss__cclleeaanneerrdd command starts a daemon process which garbage-collects
+     the log-structed file system residing at the point named by _n_o_d_e in the
+     global file system namespace.  This command is normally executed by
+     mount_lfs(8) when the log-structured file system is mounted.  The daemon
+     will exit within a few minutes of when the file system it was cleaning is
+     unmounted.
+
+     Garbage collection on a log-structured file system is done by scanning
+     the file system's segments for active, i.e. referenced, data and copying
+     it to new segments.  When all of the active data in a given segment has
+     been copied to a new segment that segment can be marked as empty, thus
+     reclaiming the space taken by the inactive data which was in it.
+
+     The following options are available:
+
+     --dd      Run in debug mode.  Do not become a daemon process, and print de-
+             bugging information.
+
+     --ss      When cleaning the file system, read data in small chunks.
+
+SSEEEE AALLSSOO
+     mount_lfs(8)
+
+HHIISSTTOORRYY
+     The llffss__cclleeaanneerrdd utility first appeared in 4.4BSD.
+
+4.4BSD                           June 5, 1993                                1

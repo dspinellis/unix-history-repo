@@ -1,0 +1,45 @@
+COMSAT(8)                 BSD System Manager's Manual                COMSAT(8)
+
+NNAAMMEE
+     ccoommssaatt - biff server
+
+SSYYNNOOPPSSIISS
+     ccoommssaatt
+
+DDEESSCCRRIIPPTTIIOONN
+     CCoommssaatt is the server process which receives reports of incoming mail and
+     notifies users if they have requested this service.  CCoommssaatt receives mes-
+     sages on a datagram port associated with the ``biff'' service specifica-
+     tion (see services(5) and inetd(8)).  The one line messages are of the
+     form:
+
+           user@mailbox-offset
+
+     If the _u_s_e_r specified is logged in to the system and the associated ter-
+     minal has the owner execute bit turned on (by a ``biff y''), the _o_f_f_s_e_t
+     is used as a seek offset into the appropriate mailbox file and the first
+     7 lines or 560 characters of the message are printed on the user's termi-
+     nal.  Lines which appear to be part of the message header other than the
+     ``From'', ``To'', ``Date'', or ``Subject'' lines are not included in the
+     displayed message.
+
+FFIILLEESS
+     /var/run/utmp  to find out who's logged on and on what terminals
+
+SSEEEE AALLSSOO
+     biff(1),  inetd(8)
+
+BBUUGGSS
+     The message header filtering is prone to error.  The density of the in-
+     formation presented is near the theoretical minimum.
+
+     Users should be notified of mail which arrives on other machines than the
+     one to which they are currently logged in.
+
+     The notification should appear in a separate window so it does not mess
+     up the screen.
+
+HHIISSTTOORRYY
+     The ccoommssaatt command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 4, 1993                                1
