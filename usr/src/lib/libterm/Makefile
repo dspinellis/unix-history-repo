@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.7 (Berkeley) %G%
+#	@(#)Makefile	5.8 (Berkeley) %G%
 #
 CFLAGS=	-O -DCM_N -DCM_GT -DCM_B -DCM_D
 LIBC=	/lib/libc.a
@@ -61,7 +61,7 @@ install: ${MAN}
 	ln ${DESTDIR}/usr/lib/libtermcap.a ${DESTDIR}/usr/lib/libtermlib.a
 	install -o bin -g bin -m 644 termcap_p.a \
 	    ${DESTDIR}/usr/lib/libtermcap_p.a
-	ranlib -t ${DESTDIR}/urs/lib/libtermcap_p.a
+	ranlib -t ${DESTDIR}/usr/lib/libtermcap_p.a
 	rm -f ${DESTDIR}/usr/lib/libtermlib_p.a
 	ln ${DESTDIR}/usr/lib/libtermcap_p.a ${DESTDIR}/usr/lib/libtermlib_p.a
 	install -c -o bin -g bin -m 444 termcap.0 ${DESTDIR}/usr/man/cat3
