@@ -33,9 +33,9 @@ struct afile {
 	ino_t	fnum;		/* inode number of file */
 	short	fflags;		/* mode&~S_IFMT, perhaps ISARG */
 	short	fnl;		/* number of links */
-	short	fuid;		/* owner id */
-	short	fgid;		/* group id */
-	long	fsize;		/* file size */
+	uid_t	fuid;		/* owner id */
+	gid_t	fgid;		/* group id */
+	off_t	fsize;		/* file size */
 	long	fblks;		/* number of blocks used */
 	time_t	fmtime;		/* time (modify or access or create) */
 	char	*fname;		/* file name */
@@ -75,14 +75,14 @@ main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	int i;
+	extern int optind;
 	struct afile *fp0, *fplast;
 	register struct afile *fp;
 	struct sgttyb sgbuf;
+	int ch, i;
+	time_t time();
 
-	argc--, argv++;
-	if (getuid() == 0)
-		Aflg++;
+	Aflg = !getuid();
 	(void) time(&now); sixmonthsago = now - 6L*30L*24L*60L*60L; now += 60;
 	twidth = 80;
 	if (isatty(1)) {
@@ -94,63 +94,65 @@ main(argc, argv)
 			usetabs = 1;
 	} else
 		usetabs = 1;
-	while (argc > 0 && **argv == '-') {
-		(*argv)++;
-		while (**argv) switch (*(*argv)++) {
-
-		case 'C':
-			Cflg = 1; break;
-		case 'q':
-			qflg = 1; break;
+	while ((ch = getopt(argc, argv, "1ACLFRacdfgilqrstu")) != EOF)
+		switch((char)ch) {
 		case '1':
 			Cflg = 0; break;
-		case 'a':
-			aflg++; break;
 		case 'A':
 			Aflg++; break;
+		case 'C':
+			Cflg = 1; break;
+		case 'L':
+			Lflg++; break;
+		case 'F':
+			Fflg++; break;
+		case 'R':
+			Rflg++; break;
+		case 'a':
+			aflg++; break;
 		case 'c':
 			cflg++; break;
 		case 'S':
 			Sflg++; /* fall into... */
-		case 's':
-			sflg++; break;
 		case 'd':
 			dflg++; break;
+		case 'f':
+			fflg++; break;
 		case 'g':
 			gflg++; break;
+		case 'i':
+			iflg++; break;
 		case 'l':
 			lflg++; break;
+		case 'q':
+			qflg = 1; break;
 		case 'r':
 			rflg = -1; break;
+		case 's':
+			sflg++; break;
 		case 't':
 			tflg++; break;
 		case 'u':
 			uflg++; break;
-		case 'i':
-			iflg++; break;
-		case 'f':
-			fflg++; break;
-		case 'L':
-			Lflg++; break;
-		case 'F':
-		        Fflg++; break;
-		case 'R':
-		        Rflg++; break;
-		}
-		argc--, argv++;
+		case '?':
+		default:
+			fputs("usage: ls [ -1ACLFRacdfgilqrstu ] [ file ]\n", stderr);
+			exit(1);
 	}
 	if (fflg) { 
 		aflg++; Sflg = 0; tflg = 0; /* -f: only turn off sort flags */
 	}
 	if (lflg)
 		Cflg = 0;
+	argc -= optind;
+	argv += optind;
 	if (argc == 0) {
 		argc++;
 		argv = &dotp;
 	}
-	fp = (struct afile *)calloc(argc, sizeof (struct afile));
+	fp = (struct afile *)calloc((u_int)argc, sizeof (struct afile));
 	if (fp == 0) {
-		fprintf(stderr, "ls: out of memory\n");
+		fputs("ls: out of memory\n", stderr);
 		exit(1);
 	}
 	fp0 = fp;
@@ -177,21 +179,21 @@ main(argc, argv)
 	}
 	if (fp < fplast) {
 		if (fp > fp0)
-			printf("\n");
+			putchar('\n');
 		for (;;) {
 			formatd(fp->fname, argc > 1);
 			while (subdirs) {
 				struct subdirs *t;
 
 				t = subdirs; subdirs = t->sd_next;
-				printf("\n");
+				putchar('\n');
 				formatd(t->sd_name, 1);
 				cfree(t->sd_name);
 				cfree((char *)t);
 			}
 			if (++fp == fplast)
 				break;
-			printf("\n");
+			putchar('\n');
 		}
 	}
 	exit(0);
@@ -214,7 +216,7 @@ formatd(name, title)
 	if (title)
 		printf("%s:\n", name);
 	if (lflg || sflg)
-		printf("total %ld\n", nkb);
+		printf("total %d\n", nkb);
 	formatf(dfp0, dfplast);
 	if (Rflg)
 		for (fp = dfplast - 1; fp >= dfp0; fp--) {
@@ -269,7 +271,7 @@ getdir(dir, pfp0, pfplast)
 			*pfp0 = (struct afile *)realloc((char *)*pfp0,
 			    2 * nent * sizeof (struct afile));
 			if (*pfp0 == 0) {
-				fprintf(stderr, "ls: out of memory\n");
+				fputs("ls: out of memory\n", stderr);
 				exit(1);
 			}
 			fp = *pfp0 + nent;
@@ -360,8 +362,9 @@ formatf(fp0, fplast)
 	struct afile *fp0, *fplast;
 {
 	register struct afile *fp;
-	int width = 0, w, nentry = fplast - fp0;
-	int i, j, columns, lines;
+	register int i, j, w;
+	int width = 0, nentry = fplast - fp0;
+	int columns, lines;
 	char *cp;
 
 	if (fp0 == fplast)
@@ -388,9 +391,9 @@ formatf(fp0, fplast)
 		for (j = 0; j < columns; j++) {
 			fp = fp0 + j * lines + i;
 			cp = fmtentry(fp);
-			printf("%s", cp);
+			fputs(cp, stdout);
 			if (fp + lines >= fplast) {
-				printf("\n");
+				putchar('\n');
 				break;
 			}
 			w = strlen(cp);
@@ -441,19 +444,18 @@ cat(dir, file)
 	char *dir, *file;
 {
 	static char dfile[BUFSIZ];
+	register int dlen;
 
-	if (strlen(dir)+1+strlen(file)+1 > BUFSIZ) {
-		fprintf(stderr, "ls: filename too long\n");
+	if ((dlen = strlen(dir))+1+strlen(file)+1 > BUFSIZ) {
+		fputs("ls: filename too long\n", stderr);
 		exit(1);
 	}
-	if (!strcmp(dir, "") || !strcmp(dir, ".")) {
-		(void) strcpy(dfile, file);
-		return (dfile);
-	}
+	if (!dir[0] || dir[0] == '.' && !dir[1])
+		return(strcpy(dfile, file));
 	(void) strcpy(dfile, dir);
-	if (dir[strlen(dir) - 1] != '/' && *file != '/')
-		(void) strcat(dfile, "/");
-	(void) strcat(dfile, file);
+	if (dir[dlen - 1] != '/' && *file != '/')
+		dfile[dlen++] = '/';
+	(void) strcpy(dfile + dlen, file);
 	return (dfile);
 }
 
@@ -464,11 +466,10 @@ savestr(str)
 	char *cp = malloc(strlen(str) + 1);
 
 	if (cp == NULL) {
-		fprintf(stderr, "ls: out of memory\n");
+		fputs("ls: out of memory\n", stderr);
 		exit(1);
 	}
-	(void) strcpy(cp, str);
-	return (cp);
+	return(strcpy(cp, str));
 }
 
 char	*fmtinum(), *fmtsize(), *fmtlstuff(), *fmtmode();
@@ -518,7 +519,7 @@ fmtinum(p)
 {
 	static char inumbuf[8];
 
-	(void) sprintf(inumbuf, "%6d ", p->fnum);
+	(void) sprintf(inumbuf, "%6ld ", p->fnum);
 	return (inumbuf);
 }
 
@@ -546,7 +547,7 @@ fmtlstuff(p)
 	  if (cp)
 		(void) sprintf(uname, "%-9.9s", cp);
 	  else
-		(void) sprintf(uname, "%-9d", p->fuid);
+		(void) sprintf(uname, "%-9u", p->fuid);
 	}
 /* get gname */
 	if (gflg) {
@@ -554,14 +555,14 @@ fmtlstuff(p)
 	  if (cp)
 		(void) sprintf(gname, "%-9.9s", cp);
 	  else
-		(void) sprintf(gname, "%-9d", p->fgid);
+		(void) sprintf(gname, "%-9u", p->fgid);
 	}
 /* get fsize */
 	if (p->ftype == 'b' || p->ftype == 'c')
 		(void) sprintf(fsize, "%3d,%4d",
 		    major(p->fsize), minor(p->fsize));
 	else if (p->ftype == 's')
-		(void) sprintf(fsize, "%8ld", 0);
+		(void) sprintf(fsize, "%8ld", 0L);
 	else
 		(void) sprintf(fsize, "%8ld", p->fsize);
 /* get ftime */
@@ -594,7 +595,7 @@ int	*m[] = { m1, m2, m3, m4, m5, m6, m7, m8, m9};
 char *
 fmtmode(lp, flags)
 	char *lp;
-	int flags;
+	register int flags;
 {
 	int **mp;
 
@@ -619,84 +620,49 @@ struct	utmp utmp;
 #define	NMAX	(sizeof (utmp.ut_name))
 #define SCPYN(a, b)	strncpy(a, b, NMAX)
 
-#define NUID	64	/* power of 2 */
-#define UIDMASK	0x3f
-#define NGID	300
-
-struct ncache {
-	int	uid;
-	char	name[NMAX+1];
-} nc[NUID];
-char	outrangename[NMAX+1];
-int	outrangeuid = -1;
-char	groups[NGID][NMAX+1];
-char	outrangegroup[NMAX+1];
-int	outrangegid = -1;
+#define NCACHE	64		/* power of 2 */
+#define CAMASK	NCACHE - 1
 
 char *
 getname(uid)
+	uid_t uid;
 {
-	register struct passwd *pw;
-	struct passwd *getpwent();
 	extern int _pw_stayopen;
-	register int cp;
+	static struct ncache {
+		uid_t	uid;
+		char	name[NMAX+1];
+	} c_uid[NCACHE];
+	register struct passwd *pw;
+	register struct ncache *cp;
 
 	_pw_stayopen = 1;
-	cp = uid & UIDMASK;
-	if (uid >= 0 && nc[cp].uid == uid && nc[cp].name[0])
-		return (nc[cp].name);
-	pw = getpwuid(uid);
-	if (!pw)
-		return (0);
-	nc[cp].uid = uid;
-	SCPYN(nc[cp].name, pw->pw_name);
-	return (nc[cp].name);
+	cp = c_uid + (uid & CAMASK);
+	if (cp->uid == uid && *cp->name)
+		return(cp->name);
+	if (!(pw = getpwuid(uid)))
+		return((char *)0);
+	cp->uid = uid;
+	SCPYN(cp->name, pw->pw_name);
+	return(cp->name);
 }
 
 char *
 getgroup(gid)
+	gid_t gid;
 {
+	static struct ncache {
+		gid_t	gid;
+		char	name[NMAX+1];
+	} c_gid[NCACHE];
 	register struct group *gr;
-	static init;
-	struct group *getgrent();
+	register struct ncache *cp;
 
-	if (gid >= 0 && gid < NGID && groups[gid][0])
-		return (&groups[gid][0]);
-	if (gid >= 0 && gid == outrangegid)
-		return (outrangegroup);
-rescan:
-	if (init == 2) {
-		if (gid < NGID)
-			return (0);
-		setgrent();
-		while (gr = getgrent()) {
-			if (gr->gr_gid != gid)
-				continue;
-			outrangegid = gr->gr_gid;
-			SCPYN(outrangegroup, gr->gr_name);
-			endgrent();
-			return (outrangegroup);
-		}
-		endgrent();
-		return (0);
-	}
-	if (init == 0)
-		setgrent(), init = 1;
-	while (gr = getgrent()) {
-		if (gr->gr_gid < 0 || gr->gr_gid >= NGID) {
-			if (gr->gr_gid == gid) {
-				outrangegid = gr->gr_gid;
-				SCPYN(outrangegroup, gr->gr_name);
-				return (outrangegroup);
-			}
-			continue;
-		}
-		if (groups[gr->gr_gid][0])
-			continue;
-		SCPYN(groups[gr->gr_gid], gr->gr_name);
-		if (gr->gr_gid == gid)
-			return (&groups[gid][0]);
-	}
-	init = 2;
-	goto rescan;
+	cp = c_gid + (gid & CAMASK);
+	if (cp->gid == gid && *cp->name)
+		return(cp->name);
+	if (!(gr = getgrgid(gid)))
+		return((char *)0);
+	cp->gid = gid;
+	SCPYN(cp->name, gr->gr_name);
+	return(cp->name);
 }
