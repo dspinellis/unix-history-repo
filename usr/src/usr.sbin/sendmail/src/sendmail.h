@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sendmail.h	6.51 (Berkeley) %G%
+ *	@(#)sendmail.h	6.52 (Berkeley) %G%
  */
 
 /*
@@ -15,7 +15,7 @@
 # ifdef _DEFINE
 # define EXTERN
 # ifndef lint
-static char SmailSccsId[] =	"@(#)sendmail.h	6.51		%G%";
+static char SmailSccsId[] =	"@(#)sendmail.h	6.52		%G%";
 # endif
 # else /*  _DEFINE */
 # define EXTERN extern
@@ -418,7 +418,6 @@ MCI
 	short		mci_errno;	/* error number on last connection */
 	short		mci_exitstat;	/* exit status from last connection */
 	short		mci_state;	/* SMTP state */
-	short		mci_options;	/* ESMTP options */
 	long		mci_maxsize;	/* max size this server will accept */
 	FILE		*mci_in;	/* input side of connection */
 	FILE		*mci_out;	/* output side of connection */
@@ -431,9 +430,13 @@ MCI
 
 
 /* flag bits */
-#define MCIF_VALID	00001		/* this entry is valid */
-#define MCIF_TEMP	00002		/* don't cache this connection */
-#define MCIF_CACHED	00004		/* currently in open cache */
+#define MCIF_VALID	000001		/* this entry is valid */
+#define MCIF_TEMP	000002		/* don't cache this connection */
+#define MCIF_CACHED	000004		/* currently in open cache */
+#define MCIF_ESMTP	000010		/* this host speaks ESMTP */
+#define MCIF_EXPN	000020		/* EXPN command supported */
+#define MCIF_SIZE	000040		/* SIZE option supported */
+#define MCIF_8BITMIME	000100		/* BODY=8BITMIME supported */
 
 /* states */
 #define MCIS_CLOSED	0		/* no traffic on this connection */
@@ -443,12 +446,6 @@ MCI
 #define MCIS_QUITING	4		/* running quit protocol */
 #define MCIS_SSD	5		/* service shutting down */
 #define MCIS_ERROR	6		/* I/O error on connection */
-
-/* options bits */
-#define MCIO_ESMTP	0x0001		/* this host speaks ESMTP */
-#define MCIO_EXPN	0x0002		/* EXPN command supported */
-#define MCIO_SIZE	0x0004		/* SIZE option supported */
-#define MCIO_8BITMIME	0x0008		/* BODY=8BITMIME supported */
 /*
 **  Mapping functions
 **
