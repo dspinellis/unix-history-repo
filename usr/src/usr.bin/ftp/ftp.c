@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -50,6 +50,9 @@ struct	sockaddr_in myctladdr;
 uid_t	getuid();
 sig_t	lostpeer();
 off_t	restart_point = 0;
+
+extern char *strerror();
+extern int errno;
 
 FILE	*cin, *cout;
 FILE	*dataconn();
@@ -470,7 +473,8 @@ sendrequest(cmd, local, remote, printnames)
 	} else {
 		fin = fopen(local, "r");
 		if (fin == NULL) {
-			perror(local);
+			fprintf(stderr, "local: %s: %s\n", local,
+				strerror(errno));
 			(void) signal(SIGINT, oldintr);
 			code = -1;
 			return;
@@ -500,7 +504,8 @@ sendrequest(cmd, local, remote, printnames)
 	if (restart_point &&
 	    (strcmp(cmd, "STOR") == 0 || strcmp(cmd, "APPE") == 0)) {
 		if (fseek(fin, (long) restart_point, 0) < 0) {
-			perror(local);
+			fprintf(stderr, "local: %s: %s\n", local,
+				strerror(errno));
 			restart_point = 0;
 			if (closefunc != NULL)
 				(*closefunc)(fin);
@@ -564,7 +569,8 @@ sendrequest(cmd, local, remote, printnames)
 			(void) fflush(stdout);
 		}
 		if (c < 0)
-			perror(local);
+			fprintf(stderr, "local: %s: %s\n", local,
+				strerror(errno));
 		if (d <= 0) {
 			if (d == 0)
 				fprintf(stderr, "netout: write returned 0?\n");
@@ -601,7 +607,8 @@ sendrequest(cmd, local, remote, printnames)
 			(void) fflush(stdout);
 		}
 		if (ferror(fin))
-			perror(local);
+			fprintf(stderr, "local: %s: %s\n", local,
+				strerror(errno));
 		if (ferror(dout)) {
 			if (errno != EPIPE)
 				perror("netout");
@@ -706,7 +713,8 @@ recvrequest(cmd, local, remote, mode, printnames)
 			char *dir = rindex(local, '/');
 
 			if (errno != ENOENT && errno != EACCES) {
-				perror(local);
+				fprintf(stderr, "local: %s: %s\n", local,
+					strerror(errno));
 				(void) signal(SIGINT, oldintr);
 				code = -1;
 				return;
@@ -717,14 +725,17 @@ recvrequest(cmd, local, remote, mode, printnames)
 			if (dir != NULL)
 				*dir = '/';
 			if (d < 0) {
-				perror(local);
+				fprintf(stderr, "local: %s: %s\n", local,
+					strerror(errno));
 				(void) signal(SIGINT, oldintr);
 				code = -1;
 				return;
 			}
 			if (!runique && errno == EACCES &&
 			    chmod(local, 0600) < 0) {
-				perror(local);
+				fprintf(stderr, "local: %s: %s\n", local,
+					strerror(errno));
+				(void) signal(SIGINT, oldintr);
 				(void) signal(SIGINT, oldintr);
 				code = -1;
 				return;
@@ -784,7 +795,8 @@ recvrequest(cmd, local, remote, mode, printnames)
 	} else {
 		fout = fopen(local, mode);
 		if (fout == NULL) {
-			perror(local);
+			fprintf(stderr, "local: %s: %s\n", local,
+				strerror(errno));
 			goto abort;
 		}
 		closefunc = fclose;
@@ -809,7 +821,8 @@ recvrequest(cmd, local, remote, mode, printnames)
 	case TYPE_L:
 		if (restart_point &&
 		    lseek(fileno(fout), (long) restart_point, L_SET) < 0) {
-			perror(local);
+			fprintf(stderr, "local: %s: %s\n", local,
+				strerror(errno));
 			if (closefunc != NULL)
 				(*closefunc)(fout);
 			return;
@@ -840,7 +853,8 @@ recvrequest(cmd, local, remote, mode, printnames)
 		}
 		if (d < c) {
 			if (d < 0)
-				perror(local);
+				fprintf(stderr, "local: %s: %s\n", local,
+					strerror(errno));
 			else
 				fprintf(stderr, "%s: short write\n", local);
 		}
@@ -862,7 +876,8 @@ recvrequest(cmd, local, remote, mode, printnames)
 			}
 			if (fseek(fout, 0L, L_INCR) < 0) {
 done:
-				perror(local);
+				fprintf(stderr, "local: %s: %s\n", local,
+					strerror(errno));
 				if (closefunc != NULL)
 					(*closefunc)(fout);
 				return;
@@ -911,7 +926,8 @@ break2:
 			bytes = -1;
 		}
 		if (ferror(fout))
-			perror(local);
+			fprintf(stderr, "local: %s: %s\n", local,
+				strerror(errno));
 		break;
 	}
 	if (closefunc != NULL)
@@ -1348,7 +1364,7 @@ gunique(local)
 	if (cp)
 		*cp = '/';
 	if (d < 0) {
-		perror(local);
+		fprintf(stderr, "local: %s: %s\n", local, strerror(errno));
 		return((char *) 0);
 	}
 	(void) strcpy(new, local);
