@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	4.2 (Berkeley) %G%
+#	@(#)Makefile	4.3 (Berkeley) %G%
 #
 
 # The following is the telnet makefile for tn3270, using the shared telnet
@@ -40,7 +40,7 @@
 #		around for talking to older systems.
 #
 
-DEFINES= -DTERMCAP -DSRCRT -DKLUDGELINEMODE
+DEFINES= -DTERMCAP -DSRCRT -DKLUDGELINEMODE -DUSE_TERMIO
 
 
 VPATH	=	../../telnet/Source
@@ -57,12 +57,12 @@ ACTION = sccs tell
 LIBC=	/lib/libc.a
 ALLH=	defines.h externs.h fdset.h general.h ring.h types.h
 SRCS=	commands.c main.c network.c ring.c \
-	sys_bsd.c sys_dos.c telnet.c terminal.c \
+	sys_bsd.c telnet.c terminal.c \
 	tn3270.c utilities.c
 ALLHC=		${ALLH} ${SRCS}
 ALLPRINT =	${ALLHC}
 ALLSOURCE=	${ALLHC} Makefile Makefile_ultrix
-OBJS=	commands.o main.o network.o ring.o sys_bsd.o sys_dos.o \
+OBJS=	commands.o main.o network.o ring.o sys_bsd.o \
 	telnet.o terminal.o tn3270.o utilities.o
 
 .c.o:
@@ -138,7 +138,6 @@ sys_bsd.o: ../../telnet/Source/ring.h ../../telnet/Source/fdset.h
 sys_bsd.o: ../../telnet/Source/defines.h ../../telnet/Source/externs.h
 sys_bsd.o: /usr/include/stdio.h /usr/include/setjmp.h
 sys_bsd.o: ../../telnet/Source/types.h
-sys_dos.o: ../../telnet/Source/sys_dos.c
 telnet.o: ../../telnet/Source/telnet.c /usr/include/sys/types.h
 telnet.o: /usr/include/curses.h /usr/include/stdio.h /usr/include/sgtty.h
 telnet.o: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
