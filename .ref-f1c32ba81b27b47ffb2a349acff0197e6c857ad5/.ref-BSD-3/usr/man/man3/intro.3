@@ -1,0 +1,92 @@
+.TH INTRO 3
+.SH NAME
+intro \- introduction to library functions
+.SH SYNOPSIS
+.B #include <stdio.h>
+.PP
+.B #include <math.h>
+.SH DESCRIPTION
+This section describes functions that may be found
+in various libraries, other than those functions
+that directly invoke UNIX system primitives,
+which are described in section 2.
+Functions are divided into various libraries distinguished
+by the section number at the top of the page:
+.TP 6n
+(3)
+These functions, together with those of section 2 and those
+marked (3S), constitute library
+.I libc,
+which is automatically loaded by the C compiler
+.IR cc (1)
+and the Fortran compiler
+.IR f77 (1).
+The link editor
+.IR ld (1)
+searches this library under the `\-lc' option.
+Declarations for some of these functions may be obtained
+from include files indicated on the appropriate pages.
+.TP
+(3M)
+These functions constitute the math library,
+.I libm.
+They are automatically loaded as needed by the Fortran compiler
+.IR f77 (1).
+The link editor searches this library under the `\-lm' option.
+Declarations for these functions may be obtained from
+the include file <math.h>.
+.TP 
+(3S)
+These functions constitute the
+`standard I/O package',
+see
+.IR stdio (3).
+These functions are in the library
+.I libc
+already mentioned.
+Declarations for these functions may be obtained from
+the include file <stdio.h>.
+.TP
+(3X)
+Various
+specialized libraries have not been given distinctive
+captions.
+The files in which these libraries are found are named
+on the appropriate pages.
+.SH FILES
+/lib/libc.a
+.br
+/lib/libm.a, /usr/lib/libm.a (one or the other)
+.SH SEE ALSO
+stdio(3),
+nm(1), ld(1), cc(1), f77(1), intro(2)
+.SH DIAGNOSTICS
+Functions in the math library (3M) may return
+conventional values when the function is undefined for the
+given arguments or when the value is not representable.
+In these cases the external variable
+.I errno
+(see
+.IR intro (2))
+is set to the value EDOM
+or ERANGE.
+The values of EDOM and ERANGE are defined in
+the include file
+.I <math.h>.
+.SH "ASSEMBLER (PDP-11)"
+In assembly language these functions may be accessed
+by simulating the C calling sequence.
+For example,
+.IR ecvt (3)
+might be called this way:
+.IP ""
+.globl	_ecvt
+.nf
+setd
+mov	$sign,\-(sp)
+mov	$decpt,\-(sp)
+mov	ndigit,\-(sp)
+movf	value,\-(sp)
+jsr	pc,_ecvt
+add	$14.,sp
+.fi

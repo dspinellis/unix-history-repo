@@ -1,0 +1,66 @@
+.2C $gsize 9$
+.nr PS 9
+.nr VS 11p
+.NH
+Introduction
+.PP
+``Mathematics is known in the trade as
+.ul
+difficult,
+or
+.ul
+penalty, copy
+because it is slower, more difficult,
+and more expensive to set in type
+than any other kind of copy normally
+occurring in books and journals.''
+[1]
+.PP
+One difficulty with mathematical text
+is the multiplicity of characters,
+sizes, and fonts.
+An expression such as
+.EQ
+lim from {x-> pi /2} ( tan~x) sup{sin~2x}~=~1
+.EN
+requires an intimate mixture of roman, italic and greek letters, in three sizes,
+and a special character or two.
+(``Requires'' is perhaps the wrong word,
+but mathematics has its own typographical conventions
+which are quite different from those
+of ordinary text.)
+Typesetting such an expression by traditional methods
+is still an essentially manual operation.
+.PP
+A second difficulty is the two dimensional character
+of mathematics,
+which the superscript and limits in the preceding example
+showed in its simplest form.
+This is carried further by
+.EQ
+a sub 0 + b sub 1 over
+  {a sub 1 + b sub 2 over
+    {a sub 2 + b sub 3 over
+      {a sub 3 + ... }}}
+.EN
+.sp
+and still further by 
+.EQ
+define emx "{e sup mx}"
+define mab "{m sqrt ab}"
+define sa "{sqrt a}"
+define sb "{sqrt b}"
+int dx over {a emx - be sup -mx} ~=~
+left { lpile {
+     1 over {2 mab} ~log~ {sa emx - sb} over {sa emx + sb}
+   above
+     1 over mab ~ tanh sup -1 ( sa over sb emx ) 
+   above
+     -1 over mab ~ coth sup -1 ( sa over sb emx )
+}
+.EN
+These examples also show line-drawing, built-up characters like braces and radicals,
+and a spectrum of positioning problems.
+(Section 6 shows
+what a user has to type to produce these
+on our system.)

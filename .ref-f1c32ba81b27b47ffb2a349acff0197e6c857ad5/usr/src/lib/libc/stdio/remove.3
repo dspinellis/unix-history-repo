@@ -1,0 +1,47 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)remove.3	5.1 (Berkeley) %G%
+.\"
+.TH REMOVE 3 ""
+.UC 7
+.SH NAME
+remove \- remove directory entry
+.SH SYNOPSIS
+.nf
+.ft B
+int
+remove(char *path);
+.ft R
+.fi
+.SH DESCRIPTION
+.I Remove
+is an alias for the 
+.IR unlink (2)
+system call.
+It deletes the file referenced by
+.IR path .
+.SH "SEE ALSO"
+unlink(2)
+.SH "RETURN VALUE"
+Upon successful completion, 
+.I remove
+returns 0.
+Otherwise, \-1 is returned and the global variable
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.I Remove 
+may fail and set
+.I errno
+for any of the errors specified for the routine
+.IR unlink (2).
+.SH STANDARDS
+The
+.I remove
+function conforms to ANSI X3.159-1989 (``ANSI C'').

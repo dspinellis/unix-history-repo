@@ -1,0 +1,56 @@
+.\" Copyright (c) 1982 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)abstract.me	5.1 (Berkeley) %G%
+.\"
+.sp 1
+.ce 1000
+Reprinted from
+Proceedings of the ACM SIGPLAN '82 Symposium on Compiler Construction
+SIGPLAN Notices 17, 6 (June 1982), pp 120-126\*[\(dg\*]
+.(f
+\(dgCopyright 1982 ACM 0-89791-074-5/82/006/0120 $00.75
+.br
+Permission to copy without fee all or part of this material
+is granted provided that the copies are not made or distributed for 
+direct commercial advantage, the ACM copyright notice and the title 
+of the publication and its date appear, and notice is given that
+copying is by permission of the Association for Computing Machinery.
+To copy otherwise, or to republish, requires a fee and / or
+specific permission.
+.)f
+.sp 2
+\fB\s+2gprof: a Call Graph Execution Profiler\s-2\fP\**
+.(f
+\**This work was supported by grant MCS80-05144
+from the National Science Foundation.
+.)f
+.sp 1
+by
+\fISusan L. Graham\fP
+\fIPeter B. Kessler\fP
+\fIMarshall K. McKusick\fP
+.sp 1
+Computer Science Division
+Electrical Engineering and Computer Science Department
+University of California, Berkeley
+Berkeley, California 94720
+.ce 0
+.sp 1
+.sp 0.5i
+.sh 0 "Abstract"
+.pp
+Large complex programs are composed of many small routines
+that implement abstractions for the routines that call them.
+To be useful, an execution profiler must attribute
+execution time in a way that is significant for the 
+logical structure of a program
+as well as for its textual decomposition.
+This data must then be displayed to the user
+in a convenient and informative way.
+The \fBgprof\fP profiler 
+accounts for the running time of called routines
+in the running time of the routines that call them.
+The design and use of this profiler is described.

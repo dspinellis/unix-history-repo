@@ -1,0 +1,42 @@
+.\" Copyright (c) 1980 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.roff%
+.\"
+.\"	@(#)manCh3.rno	6.2 (Berkeley) %G%
+.\"
+.NS 1 "Getting on and off the System"
+.sp
+.pp
+Startup FP from the shell by entering the command:
+.sp
+.ce
+.b "/usr/local/fp".
+.sp
+.pp
+The system will prompt you for input by indenting over six character
+positions.
+Exit from FP (back to the shell) with a  control/D (\fB^D\fP).
+.NS 2 "Comments"
+.pp
+A user may end any line (including a command) with a comment;
+the comment character is '#'.  The
+interpreter will ignore any character after the '#' until it encounters
+a  newline character or end-of-file, whichever comes first.
+.sp 4p
+.NS 2 "Breaks"
+.pp
+Breaks interrupt any work in progress causing the system
+to do a \s-2FRANZ\s+2 reset before returning control back to the user.
+.sp 4p
+.NS 2 "Non-Termination"
+.pp
+LISP's namestack may,
+on occasion,
+overflow.
+FP responds by printing \*(lqnon-terminating\*(rq and
+returning  bottom as the result of the application.  It does a 
+\s-2FRANZ\s+2 reset before returning control to
+the user.
+.sx 1
+.sp

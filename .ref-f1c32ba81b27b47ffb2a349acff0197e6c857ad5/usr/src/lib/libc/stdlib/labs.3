@@ -1,0 +1,31 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)labs.3	5.1 (Berkeley) %G%
+.\"
+.TH LABS 3 ""
+.UC 7
+.SH NAME
+labs \- return the absolute value of a long integer
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdlib.h>
+
+long
+labs(long j);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Labs
+returns the absolute value of the long integer
+.IR n .
+.SH SEE ALSO
+abs(3), floor(3)
+.SH STANDARDS
+.B Labs
+conforms to ANSI X3.159-1989 (``ANSI C'').
+.SH BUGS
+The absolute value of the most negative integer remains negative.

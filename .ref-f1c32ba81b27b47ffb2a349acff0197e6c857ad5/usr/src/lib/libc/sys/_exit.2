@@ -1,0 +1,67 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)_exit.2	6.5 (Berkeley) %G%
+.\"
+.Dt EXIT 2
+.Dd 
+.Os BSD 4
+.Sh NAME
+.Nm _exit
+.Nd terminate the calling process
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft void volatile
+.Fn _exit "int status"
+.Sh DESCRIPTION
+The
+.Fn _exit
+function
+terminates a process with the following consequences:
+.Bl -bullet
+.It
+All of the descriptors open in the calling process are closed.
+This may entail delays, for example, waiting for output to drain;
+a process in this state may not be killed, as it is already dying.
+.It
+If the parent process of the calling process has an outstanding
+.Xr wait
+call
+or is interested in the
+.Dv SIGCHLD
+signal,
+it is notified of the calling process's termination and
+the
+.Em status
+area is set as defined by
+.Xr wait 2 .
+.It
+The parent process-ID of all of the calling process's existing child
+processes are set to 1; the initialization process
+(see the DEFINITIONS section of
+.Xr intro 2 )
+inherits each of these processes.
+Any stopped children are restarted with a hangup signal
+.Pq Dv SIGHUP .
+.El
+.Pp
+Most C programs call the library routine
+.Xr exit 3 ,
+which flushes buffers, closes streams, unlinks temporary files, etc.,
+before
+calling
+.Fn _exit .
+.Sh RETURN VALUE
+.Fn _exit
+can never return.
+.Sh SEE ALSO
+.Xr fork 2 ,
+.Xr sigvec 2 ,
+.Xr wait 2 ,
+.Xr exit 3
+.Sh HISTORY
+An
+.Nm exit
+function call appeared in Version 6 AT&T UNIX.

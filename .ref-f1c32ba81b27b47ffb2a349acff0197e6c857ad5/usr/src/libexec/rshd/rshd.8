@@ -1,0 +1,170 @@
+.\" Copyright (c) 1983, 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)rshd.8	6.10 (Berkeley) %G%
+.\"
+.TH RSHD 8 ""
+.UC 5
+.SH NAME
+rshd \- remote shell server
+.SH SYNOPSIS
+.B rshd [-aln]
+.SH DESCRIPTION
+.I Rshd
+is the server for the 
+.IR rcmd (3)
+routine and, consequently, for the
+.IR rsh (1)
+program.  The server provides remote execution facilities
+with authentication based on privileged port numbers from trusted hosts.
+.PP
+.I Rshd
+listens for service requests at the port indicated in
+the ``cmd'' service specification; see
+.IR services (5).
+When a service request is received the following protocol
+is initiated:
+.IP 1)
+The server checks the client's source port.
+If the port is not in the range 512-1023, the server
+aborts the connection.
+.IP 2)
+The server reads characters from the socket up
+to a null (`\e0') byte.  The resultant string is
+interpreted as an ASCII number, base 10.
+.IP 3)
+If the number received in step 2 is non-zero,
+it is interpreted as the port number of a secondary
+stream to be used for the 
+.BR stderr .
+A second connection is then created to the specified
+port on the client's machine.  The source port of this
+second connection is also in the range 512-1023.
+.IP 4)
+The server checks the client's source address
+and requests the corresponding host name (see
+.IR gethostbyaddr (3),
+.IR hosts (5)
+and
+.IR named (8)).
+If the hostname cannot be determined,
+the dot-notation representation of the host address is used.
+If the hostname is in the same domain as the server (according to
+the last two components of the domain name),
+or if the
+.B \-a
+option is given,
+the addresses for the hostname are requested,
+verifying that the name and address correspond.
+If address verification fails, the connection is aborted
+with the message, ``Host address mismatch.''
+.IP 5)
+A null terminated user name of at most 16 characters
+is retrieved on the initial socket.  This user name
+is interpreted as the user identity on the
+.BR client 's
+machine.
+.IP 6)
+A null terminated user name of at most 16 characters
+is retrieved on the initial socket.  This user name
+is interpreted as a user identity to use on the
+.BR server 's
+machine.
+.IP 7)
+A null terminated command to be passed to a
+shell is retrieved on the initial socket.  The length of
+the command is limited by the upper bound on the size of
+the system's argument list.  
+.IP 8)
+.I Rshd
+then validates the user using
+.IR ruserok (3),
+which uses the file ``/etc/hosts.equiv'' and the ``.rhosts''
+file found in the user's home directory.  The
+.B \-l
+option prevents
+.IR ruserok (3)
+from doing any validation based on the user's ``.rhosts'' file,
+unless the user is the superuser.
+.IP 9)
+A null byte is returned on the initial socket
+and the command line is passed to the normal login
+shell of the user.  The
+shell inherits the network connections established
+by
+.IR rshd .
+.PP
+Transport-level keepalive messages are enabled unless the
+.B \-n
+option is present.
+The use of keepalive messages allows sessions to be timed out
+if the client crashes or becomes unreachable.
+.SH DIAGNOSTICS
+Except for the last one listed below,
+all diagnostic messages
+are returned on the initial socket,
+after which any network connections are closed.
+An error is indicated by a leading byte with a value of
+1 (0 is returned in step 9 above upon successful completion
+of all the steps prior to the execution of the login shell).
+.PP
+.B ``locuser too long''
+.br
+The name of the user on the client's machine is
+longer than 16 characters.
+.PP
+.B ``remuser too long''
+.br
+The name of the user on the remote machine is
+longer than 16 characters.
+.PP
+.B ``command too long ''
+.br
+The command line passed exceeds the size of the argument
+list (as configured into the system).
+.PP
+.B ``Login incorrect.''
+.br
+No password file entry for the user name existed.
+.PP
+.B ``No remote directory.''
+.br
+The 
+.I chdir
+command to the home directory failed.
+.PP
+.B ``Permission denied.''
+.br
+The authentication procedure described above failed.
+.PP
+.B ``Can't make pipe.''
+.br
+The pipe needed for the 
+.BR stderr ,
+wasn't created.
+.PP
+.B ``Can't fork; try again.''
+.br
+A
+.I fork
+by the server failed.
+.PP
+.B ``<shellname>: ...''
+.br
+The user's login shell could not be started.  This message is returned
+on the connection associated with the
+.BR stderr ,
+and is not preceded by a flag byte.
+.SH SEE ALSO
+rsh(1), rcmd(3), ruserok(3)
+.SH BUGS
+The authentication procedure used here assumes the integrity
+of each client machine and the connecting medium.  This is
+insecure, but is useful in an ``open'' environment.
+.PP
+A facility to allow all data exchanges to be encrypted should be
+present.
+.PP
+A more extensible protocol (such as Telnet) should be used.

@@ -1,0 +1,10 @@
+/*-
+ *	@(#)READ_ME	4.3 (Berkeley) %G%
+ */
+
+aux		Auxiliary programs, probably all out-of-date.
+cf		Configuration files.
+delivermail	Source for delivermail(1) (the old /bin/mail).
+doc		Documentation.
+rmail		Source for rmail(1).
+src		Source for the sendmail program itself.

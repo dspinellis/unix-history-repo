@@ -1,0 +1,19 @@
+#print
+Suppose the current line is
+
+now is the time for all good men
+
+and you type the substitute command
+
+s/t[ijk]/xx/
+
+what word is changed?  Type "answer WORD" where
+WORD is the word changed in the line.
+#copyin
+#user
+#uncopyin
+#match time
+#log
+#next
+34.1a 10
+33.1b 5

@@ -1,0 +1,41 @@
+.TH DMESG 1M
+.SH NAME
+dmesg \- collect system diagnostic messages to form error log
+.SH SYNOPSIS
+.B /etc/dmesg
+[ \- ]
+.SH DESCRIPTION
+.I Dmesg
+looks in a system buffer for recently printed diagnostic messages
+and prints them on the standard output.
+The messages are those printed by the system when device (hardware) errors occur
+and (occasionally) when system tables overflow non-fatally.
+If the
+.B \-
+flag is given, then
+.I dmesg
+computes (incrementally) the new messages since the last time it
+was run and places these on the standard output.
+This is typically used with
+.IR cron (8)
+to produce the error log
+.I /usr/adm/messages
+by running the command
+.IP
+/etc/dmesg \- >> /usr/adm/messages
+.LP
+every 10 minutes.
+.SH FILES
+.ta 2i
+/usr/adm/messages	error log (conventional location)
+.br
+/usr/adm/msgbuf	scratch file for memory of \- option
+.SH BUGS
+The system error message buffer is of small finite size.  As
+.I dmesg
+is run only every few minutes, not all error messages
+are guaranteed to be logged.  This can be construed as a blessing rather
+than a curse.
+.PP
+Error diagnostics generated immediately before a system crash will
+never get logged.

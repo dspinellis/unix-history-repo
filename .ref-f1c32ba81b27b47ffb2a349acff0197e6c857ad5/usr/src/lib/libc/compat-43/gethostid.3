@@ -1,0 +1,40 @@
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)gethostid.3	6.6 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETHOSTID 2
+.Os BSD 4.2
+.Sh NAME
+.Nm gethostid ,
+.Nm sethostid
+.Nd get/set unique identifier of current host
+.Sh SYNOPSIS
+.Fd #include <unistd.h>
+.Ft long
+.Fn gethostid void
+.Ft int
+.Fn sethostid "long hostid"
+.Sh DESCRIPTION
+.Fn Sethostid
+establishes a 32-bit identifier for the
+current processor that is intended to be unique among all
+UNIX systems in existence.  This is normally a DARPA Internet
+address for the local machine.  This call is allowed only to the
+super-user and is normally performed at boot time.
+.Pp
+.Fn Gethostid
+returns the 32-bit identifier for the current processor.
+.Sh SEE ALSO
+.Xr hostid 1 ,
+.Xr gethostname 2
+.Sh BUGS
+32 bits for the identifier is too small.
+.Sh HISTORY
+The
+.Nm
+function call appeared in
+.Bx 4.2 .

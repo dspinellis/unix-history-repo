@@ -1,0 +1,921 @@
+.\" Copyright (c) 1988 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Computer Consoles Inc.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)fsdb.8	6.3 (Berkeley) %G%
+.\"
+.TH FSDB 8 ""
+.UC 7
+.SH NAME
+fsdb \- file system debugger
+.SH SYNOPSIS
+.B fsdb
+.RB [ options ]
+special
+.SH OPTIONS
+The options available to
+.I fsdb\^
+are:
+.RS
+.PD 0
+.TP 13
+.B -?
+display usage
+.TP 13
+.B -o
+override some error conditions
+.TP 13
+.B "-p'string'\^"
+set prompt to string
+.TP 13
+.B -w
+open for write
+.PD
+.RE
+.SH DESCRIPTION
+Since
+.I fsdb
+reads the disk raw,
+it is able to circumvent normal
+file system security.
+Extreme caution is advised
+in determining its availability
+on the system.
+Suggested permissions are 600
+and owned by bin.
+.PP
+.I Fsdb\^
+can be used
+to patch up 
+a damaged file system
+after a crash.
+It has conversions
+to translate block and i-numbers
+into their corresponding disk addresses.
+Also included are mnemonic offsets
+to access different parts
+of an inode.
+These greatly simplify the process
+of correcting control block entries
+or descending the file system tree.
+.PP
+.I Fsdb\^
+contains several error-checking routines
+to verify inode and block addresses.
+These can be disabled if necessary 
+by invoking 
+.I fsdb\^
+with the
+.IR \-o
+option
+or by the use of the
+.IR o
+command.
+.PP
+.I Fsdb\^
+reads a block at a time
+and will therefore work with raw as well as block
+I/O. 
+A buffer management routine 
+is used to retain commonly used
+blocks of data
+in order to reduce the number of read system calls.
+All assignment operations result
+in an immediate write-through
+of the corresponding block.
+Note that in order to modify
+any portion of the disk,
+.IR fsdb
+must be invoked with the
+.IR -w
+option.
+.PP
+Wherever possible,
+.IR adb- like
+syntax was adopted
+to promote the use
+of
+.IR fsdb
+through familiarity.
+.PP
+Numbers are considered hexadecimal by default.
+However, the user has control over how data is
+to be displayed
+or accepted.
+The
+.IR base
+command will display
+or set the input/output base.
+Once set,
+all input will default to this base
+and all output will be shown in this base.
+The base can be overriden temporarily for input by
+preceding hexadecimal numbers with '0x', preceding
+decimal numbers with '0t', or
+octal numbers with '0'.
+Hexadecimal numbers beginning with a-f or A-F must
+be preceded with '0x'
+to distinguish them from commands.
+.PP
+Disk addressing by
+.IR fsdb
+is at the byte level.
+However,
+.IR fsdb
+offers many commands to convert
+a desired inode, directory entry,
+block, superblock etc. to a
+byte address.
+Once the address has been calculated,
+.IR fsdb
+will record the result in
+.IR dot
+(see next paragraph).
+.PP
+Several global values are maintained by
+.IR fsdb :
+the current base (referred to as
+.IR base ),
+the current address (referred to as
+.IR dot ),
+the current inode (referred to as
+.IR inode ),
+the current count (referred to as
+.IR count ),
+and the current type (referred to as
+.IR type ).
+Most commands use the preset value of
+.IR dot
+in
+their execution.
+For example,
+.RS
+.PD 0
+.TP 7.2n
+> 2:inode
+.PD
+.RE
+will first set the value of
+.IR dot
+to 2, ':' will alert the start of a command,
+and the
+.IR inode
+command will set
+.IR inode
+to 2.
+A count is specified after a ','.
+Once set,
+.IR count
+will remain at this value
+until a new command is encountered
+which will then reset the value back to 1 (the default).
+So, if
+.RS
+.PD 0
+.TP 7.2n
+> 2000,400/X
+.PD
+.RE
+is typed,
+400 hex longs are listed
+from 2000,
+and when completed,
+the value of
+.IR dot
+will be 2000 + 400 * sizeof (long).
+If a carriage-return is then typed,
+the output routine will use the
+current values of
+.IR dot ,
+.IR count ,
+and
+.IR type
+and display 400 more hex longs.
+A '*' will cause the entire block to
+be displayed.
+.PP
+End of fragment, block and file are maintained by
+.IR fsdb.
+When displaying data as fragments or blocks,
+an error message will be displayed when the end of fragment
+or block is reached.
+When displaying data using the
+.IR db,
+.IR ib,
+.IR directory,
+or
+.IR file
+commands an error message is displayed if the
+end of file is reached.
+This is mainly needed
+to avoid passing the
+end of a directory or file
+and getting unknown and unwanted results.
+.PP
+An example showing several commands and
+the use of carriage-return would be:
+.RS
+.PD 0
+.TP 7.2n
+> 2:ino; 0:dir?d
+.br
+or
+.PD
+.RE
+.RS
+.PD 0
+.TP 7.2n
+> 2:ino; 0:db:block?d
+.PD
+.RE
+The two examples are synonymous for getting to the first
+directory entry of the root of the file system.
+Once there,
+subsequent carriage-returns (or +, -) will advance to subsequent
+entries.
+Note that
+.RS
+.PD 0
+.TP 7.2n
+> 2:inode; :ls
+.br
+or
+.PD
+.RE
+.RS
+.PD 0
+.TP 7.2n
+> :ls /
+.PD
+.RE
+is again synonymous.
+.SH EXPRESSIONS
+.PP
+The symbols recognized by
+.I fsdb\^
+are:
+.TP 7.2n
+.B carriage-return
+update the value of
+.IR dot
+by the current value of
+.IR type
+and display using the current value of
+.IR count .
+.TP 7.2n
+.B #
+numeric expressions may be composed of +, -, *, and % operators
+(evaluated left to right) and may use parentheses.  Once evaluated,
+the value of
+.IR dot
+is updated.
+.TP 7.2n
+.BI , " count"\^
+count indicator.  The global value of
+.IR count
+will be updated to 
+.IR count .
+The value of
+.IR count
+will remain until a new command is run.
+A count specifier of '*' will attempt to show a
+.IR blocks's
+worth of information.
+The default for
+.IR count
+is 1.
+.TP 7.2n
+.BI ? " f\^"
+display in structured style with format
+specifier
+.IR f
+(see FORMATTED OUTPUT section).
+.TP 7.2n
+.BI / " f\^"
+display in unstructured style with format
+specifier
+.IR f
+(see FORMATTED OUTPUT section).
+.TP 7.2n
+.B .
+the value of
+.IR dot .
+.TP 7.2n
+.BI + "e\^"
+increment the value of
+.IR dot
+by the expression
+.IR e.
+The amount actually incremented is dependent
+on the size of
+.IR type :
+.br
+.nf
+     dot = dot + e * sizeof (type)
+.fi
+The default for
+.IR e
+is 1.
+.TP 7.2n
+.BI - "e\^"
+decrement the value of
+.IR dot
+by the expression
+.IR e
+(see +).
+.TP 7.2n
+.BI * "e\^"
+multiply the value of
+.IR dot
+by the expression
+.IR e.
+Multiplication and division don't
+use
+.IR type.
+In the above calculation of
+.IR dot ,
+consider the
+sizeof (
+.IR type )
+to be 1.
+.TP 7.2n
+.BI % "e\^"
+divide the value of
+.IR dot
+by the expression
+.IR e
+(see *).
+.TP 7.2n
+.BI < " name\^"
+restore an address saved in register
+.IR name .
+.IR name
+must be a single letter or digit.
+.TP 7.2n
+.BI > " name\^"
+save an address in register
+.IR name .
+.IR name
+must be a single letter or digit.
+.TP 7.2n
+.BI = " f"
+display indicator.
+If
+.IR f
+is a legitimate format specifier
+(see FORMATTED OUTPUT
+section),
+then the value of
+.IR dot
+is displayed using
+format specifier
+.IR f .
+Otherwise,
+assignment is assumed
+(see next item).
+.TP 7.2n
+.BI = " [s] [e]\^"
+assignment indicator.
+The address pointed to by
+.IR dot
+has its contents changed to the value of the
+expression
+.IR e
+or to the
+.IR ASCII
+representation of the
+quoted (") string
+.IR s.
+This may be useful for changing
+directory names or
+.IR ASCII
+file information.
+.TP 7.2n
+.BI =+ " e\^"
+incremental assignment.
+The address pointed to by
+.IR dot
+has its contents incremented by expression
+.IR e .
+.TP 7.2n
+.BI =- " e\^"
+decremental assignment.
+The address pointed to by
+.IR dot
+has its contents decremented by expression
+.IR e .
+.SH COMMANDS
+.PP
+A command must be prefixed by a ':' character.
+Only enough letters of the command
+to uniquely
+distinguish it are needed.
+Multiple commands may be entered
+on one line by separating
+them by a space, tab or ';'.
+.PP
+In order to view a potentially
+unmounted disk in a reasonable
+manner,
+.I fsdb\^
+offers the
+.IR cd ,
+.IR pwd ,
+.IR ls
+and
+.IR find
+commands.
+The functionality of these
+commands substantially matches those of
+its
+.IR UNIX
+counterparts
+(see individual command for details).
+The '*', '?', and '[-]' wild card
+characters are available.
+.TP 7.2n
+.BI base=b
+display or set base.  As stated above,
+all input and output is governed by
+the current
+.IR base .
+If the '=b' is left off,
+the current
+.IR base
+is displayed.
+Otherwise, the current
+.IR base
+is set
+to
+.IR b.
+Note that this is interpreted
+using the old value of
+.IR base ,
+so to ensure correctness use the '0', '0t', or '0x'
+prefix when changing the
+.IR base.
+The default for
+.IR base
+is hexadecimal.
+.TP 7.2n
+.B block
+convert the value of
+.IR dot
+to a block address.
+.TP 7.2n
+.B cd dir
+change the current directory
+to directory
+.IR dir.
+The current values of
+.IR inode
+and
+.IR dot
+are also updated.
+If no
+.IR dir
+is specified,
+then change directories to
+inode 2 ("/").
+.TP 7.2n
+.B cg
+convert the value of
+.IR dot
+to a cylinder group.
+.TP 7.2n
+.B directory
+If the current
+.IR inode
+is a directory,
+then the value of
+.IR dot
+is converted to a directory
+slot offset in that directory
+and
+.IR dot
+now points to
+this entry.
+.TP 7.2n
+.B file
+the value of
+.IR dot
+is taken as
+a relative block count from the
+beginning of the file.
+The value of
+.IR dot
+is updated to the first byte
+of this block.
+.IR
+.TP 7.2n
+.BI find " dir [-name n] [-inum i]\^"
+find files by name or i-number.
+.IR find
+recursively searches
+directory
+.IR dir
+and below for filenames whose
+i-number matches
+.IR i
+or whose name
+matches pattern
+.IR n .
+Note that only one of the two options
+(-name or -inum)
+may be used at one time.
+Also, the -print is not needed or
+accepted.
+.TP 7.2n
+.BI fill "=p\^"
+fill an area of disk with pattern
+.IR p.
+The area of disk
+is delimited by
+.IR dot
+and
+.IR count .
+.TP 7.2n
+.B fragment
+convert the value of
+.IR dot
+to
+a fragment address.
+The only difference between the
+.IR fragment
+command and the
+.IR block
+command is the amount that
+is able to be displayed.
+.TP 7.2n
+.B inode
+convert the value of
+.IR dot
+to an inode address.
+If successful,
+the current value of
+.IR inode
+will be updated as well as
+the value of
+.IR dot.
+As a convenient shorthand,
+if ':inode' appears at the
+beginning of the line,
+the value of
+.IR dot
+is set to the current
+.IR inode
+and that inode is displayed
+in inode format.
+.TP 7.2n
+.BI ls " [-R] [-l] pat1 pat2 ...\^"
+list directories or files.
+If no file is specified,
+the current directory is assumed.
+Either or both of the
+options may be used (but, if used,
+.IR must
+be specified before the
+filename specifiers).
+Also, as stated above,
+wild card characters are
+available and multiple
+arguments may be given.
+The long listing shows only
+the i-number and the name;
+use the
+.IR inode
+command with '?i'
+to get more information.
+.TP 7.2n
+.B override
+toggle the value of override.
+Some error conditions may be
+overriden
+if override is toggled on.
+.TP 7.2n
+.BI prompt " p\^"
+change the fsdb prompt to
+.IR p.
+.IR p
+must be surrounded by (")s.
+.TP 7.2n
+.B pwd
+display the current working directory.
+.TP 7.2n
+.B quit
+quit
+.IR fsdb .
+.TP 7.2n
+.B sb
+the value of
+.IR dot
+is taken as a cylinder group
+number and then converted to
+the address of the superblock
+in that cylinder group.
+As a shorthand, ':sb' at
+the beginning of a line
+will set the value of
+.IR dot
+to 
+.IR the
+superblock and display it
+in superblock format.
+.TP 7.2n
+.B !
+escape to shell
+.SH INODE COMMANDS
+In addition to the above commands,
+there are several commands that deal with inode
+fields and operate directly on the current
+.IR inode
+(they still require the ':').
+They may be used to more easily display
+or change the particular fields.
+The value of
+.IR dot
+is only used by the ':db'
+and ':ib' commands.
+Upon completion of the command,
+the value of
+.IR dot
+is changed to point to
+that particular field.
+For example,
+.RS
+.PD 0
+.TP 7.2n
+> :ln=+1
+.PD
+.RE
+would
+increment the link count of the current
+.IR inode
+and set the value of
+.IR dot
+to the address of the link
+count field.
+.TP 7.2n
+.B at
+access time.
+.TP 7.2n
+.B bs
+block size.
+.TP 7.2n
+.B ct
+creation time.
+.TP 7.2n
+.B db
+use the current value of
+.IR dot
+as a direct block index,
+where direct blocks number from
+0 - 11.
+In order to display the block
+itself, you need to 'pipe' this
+result into the
+.IR block
+or
+.IR fragment
+command.
+For example,
+.br
+.nf
+     > 1:db:block,20/X
+.fi
+would get the contents of
+data block field 1 from the inode and
+convert it to a block address.
+20 longs are then displayed in hexadecimal
+(see FORMATTED OUTPUT section).
+.TP 7.2n
+.B gid
+group id.
+.TP 7.2n
+.B ib
+use the current value of
+.IR dot
+as an indirect block index
+where indirect blocks number from
+0 - 2.
+This will only get the indirect block itself
+(the block containing the pointers to the actual blocks).
+Use the
+.IR file
+command and start at block 12 to get to the actual
+blocks.
+.TP 7.2n
+.B ln
+link count.
+.TP 7.2n
+.B mt
+modification time.
+.TP 7.2n
+.B md
+mode.
+.TP 7.2n
+.B maj
+major device number.
+.TP 7.2n
+.B min
+minor device number.
+.TP 7.2n
+.B nm
+although listed here,
+this command actually
+operates on the directory
+name field.
+Once poised at the desired
+directory entry (using the
+.IR directory
+command),
+this command will allow
+you to change or display
+the directory name.
+For example,
+.br
+.nf
+     > 7:dir:nm="foo"
+.fi
+will get the 7th directory
+entry of the current
+.IR inode
+and change its name to foo.
+Note that names
+cannot be made larger than the
+field is set up for.
+If an attempt is made,
+the string is truncated to fit
+and a warning message to this
+effect is displayed.
+.TP 7.2n
+.B sz
+file size.
+.TP 7.2n
+.B uid
+user id.
+.SH FORMATTED OUTPUT
+.PP
+There are two styles
+and many format types.
+The two styles are structured and
+unstructured.
+Structured output is used to display
+inodes, directories, superblocks and the
+like.
+Unstructured just displays
+raw data.
+The following table shows the
+different ways of displaying:
+.TP 7.2n
+.B ?
+.RS
+.PD 0
+.TP 13
+.B c
+display as cylinder groups
+.TP 13
+.B i
+display as inodes
+.TP 13
+.B d
+display as directories
+.TP 13
+.B s
+display as superblocks
+.PD
+.RE
+.TP 7.2n
+.B /
+.RS
+.PD 0
+.TP 13
+.B b
+display as bytes
+.TP 13
+.B c
+display as characters
+.TP 13
+.B o O
+display as octal shorts or longs
+.TP 13
+.B d D
+display as decimal shorts or longs
+.TP 13
+.B x X
+display as hexadecimal shorts or longs
+.PD
+.RE
+.PP
+The format specifier immediately follows
+the '/' or '?' character.
+The values displayed by '/b' and all '?'
+formats are displayed in the current
+.IR base .
+Also,
+.IR type
+is appropriately updated
+upon completion.
+.SH EXAMPLES
+.TP 16
+> 2000+400%(20+20)=D
+will display 2010 in decimal (use of
+.IR fsdb
+as a calculator
+for complex arithmetic).
+.TP 16
+> 386:ino?i
+display i-number 386 in an inode format.
+This now becomes the current
+.IR inode .
+.TP 16
+> :ln=4
+changes the link count for the 
+current
+.IR inode
+to 4.
+.TP 16
+> :ln=+1
+increments the link count by 1.
+.TP 16
+> :ct=X
+display the creation time as a hexadecimal long.
+.TP 16
+> :mt=t
+display the modification time in time format.
+.TP 16
+> 0:file/c
+displays, in
+.IR ASCII ,
+block zero of the file associated
+with the
+current
+.IR inode .
+.TP 16
+> 2:ino,*?d
+displays the first blocks worth of directory entries for
+the root inode of this file system.
+It will stop prematurely if the eof is reached.
+.TP 16
+> 5:dir:inode; 0:file,*/c
+changes the current inode to that
+associated with the 5th directory entry
+(numbered from zero)
+of the current
+.IR inode.
+The first logical block of the file
+is then displayed in
+.IR ASCII .
+.TP 16
+> :sb
+displays the superblock of this file system.
+.TP 16
+> 1:cg?c
+displays cylinder group information and summary
+for cylinder group 1.
+.TP 16
+> 2:inode; 7:dir=3
+changes the i-number for the 
+seventh directory slot in the root directory to 3.
+.TP 16
+> 7:dir:nm="name"
+changes the name field
+in the directory slot to
+.IR name .
+.TP 16
+> 2:db:block,*?d
+displays the third block of the current
+.IR inode
+as directory entries.
+.TP 16
+> 3c3:fragment,20:fill=0x20
+get fragment 3c3 and fill 20
+.IR type
+elements
+with 0x20.
+.TP 16
+> 2050=0xffff
+set the contents of address 2050 to 0xffffffff.
+0xffffffff may be truncated depending on the current
+.IR type.
+.TP 16
+> 1c92434="this is some text"
+will place the
+.IR ASCII
+for the string at
+1c92434.
+.SH SEE ALSO
+fsck(8), dir(4), fs(5).
+.SH BUGS
+.PP
+Extreme caution is advised in
+determining the availability
+of
+.IR fsdb
+on the system.
+Suggested permissions are 600 and
+owned by bin.

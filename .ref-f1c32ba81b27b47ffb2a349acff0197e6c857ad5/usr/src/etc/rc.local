@@ -1,0 +1,21 @@
+#
+# site-specific startup actions, daemons
+#
+#	@(#)rc.local	5.4 (Berkeley) %G%
+#
+
+T=/tmp/_motd
+rm -f $T
+strings /vmunix | grep UNIX > $T
+echo "" >> $T
+sed '1,/^$/d' < /etc/motd >> $T
+cp $T /etc/motd
+chmod 666 /etc/motd
+rm -f $T
+
+echo -n 'starting local daemons:'
+
+# Kerberos runs ONLY on the Kerberos server machine
+#echo -n ' kerberos';	kerberos >> /var/log/kerberos.log &
+
+echo '.'

@@ -1,0 +1,330 @@
+.\" Copyright (c) 1980, 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)sigaction.2	6.1 (Berkeley) %G%
+.\"
+.TH SIGACTION 2 ""
+.UC 7
+.ie t .ds d \(dg
+.el .ds d \z'|+'
+.ie t .ds p \(dd
+.el .ds p \z'|='
+.ie t .ds b \(bu
+.el .ds b @
+.SH NAME
+sigaction \- software signal facilities
+.SH SYNOPSIS
+.nf
+.B #include <signal.h>
+.PP
+.B struct sigaction {
+.B	void	(*sa_handler)();
+.B	sigset_t	sa_mask;
+.B	int	sa_flags;
+.B };
+.PP
+.B sigaction(sig, act, oact)
+.B int sig;
+.B struct sigaction *act, *oact;
+.fi
+.SH DESCRIPTION
+The system defines a set of signals that may be delivered to a process.
+Signal delivery resembles the occurence of a hardware interrupt:
+the signal is blocked from further occurrence, the current process 
+context is saved, and a new one is built.  A process may specify a
+.I handler
+to which a signal is delivered, or specify that a signal is to be 
+.IR ignored .
+A process may also specify that a default action is to be taken
+by the system when a signal occurs.
+A signal may also be
+.IR blocked ,
+in which case its delivery is postponed until it is
+.IR unblocked .
+The action to be taken on delivery is determined at the time
+of delivery.
+Normally, signal handlers execute on the current stack
+of the process.  This may be changed, on a per-handler basis,
+so that signals are taken on a special
+.IR "signal stack" .
+.PP
+Signal routines execute with the signal that caused their
+invocation
+.IR blocked ,
+but other signals may yet occur.
+A global 
+.I "signal mask"
+defines the set of signals currently blocked from delivery
+to a process.  The signal mask for a process is initialized
+from that of its parent (normally empty).  It
+may be changed with a
+.IR sigprocmask (2)
+call, or when a signal is delivered to the process.
+.PP
+When a signal
+condition arises for a process, the signal is added to a set of
+signals pending for the process.
+If the signal is not currently
+.I blocked
+by the process then it is delivered to the process.
+Signals may be delivered any time a process enters the operating system
+(e.g., during a system call, page fault or trap, or clock interrupt).
+If multiple signals are ready to be delivered at the same time,
+any signals that could be caused by traps are delivered first.
+Additional signals may be processed at the same time, with each
+appearing to interrupt the handlers for the previous signals
+before their first instructions.
+The set of pending signals is returned by the
+.IR sigpending (2)
+function.
+When a caught signal
+is delivered, the current state of the process is saved,
+a new signal mask is calculated (as described below), 
+and the signal handler is invoked.  The call to the handler
+is arranged so that if the signal handling routine returns
+normally the process will resume execution in the context
+from before the signal's delivery.
+If the process wishes to resume in a different context, then it
+must arrange to restore the previous context itself.
+.PP
+When a signal is delivered to a process a new signal mask is
+installed for the duration of the process' signal handler
+(or until a
+.I sigprocmask
+call is made).
+This mask is formed by taking the union of the current signal mask set,
+the signal to be delivered, and 
+the signal mask associated with the handler to be invoked.
+.PP
+.I Sigaction
+assigns an action for a specific signal.
+If
+.I act
+is non-zero, it
+specifies an action (SIG_DFL, SIG_IGN, or a handler routine) and mask
+to be used when delivering the specified signal.
+If 
+.I oact
+is non-zero, the previous handling information for the signal
+is returned to the user.
+.PP
+Once a signal handler is installed, it remains installed
+until another
+.I sigaction
+call is made, or an 
+.IR execve (2)
+is performed.
+The default action for a signal may be reinstated by setting
+.I sa_handler
+to SIG_DFL.
+The default actions are termination, possibly with a core image;
+no action; stopping the process; or continuing the process.
+See the signal list below for each signal's default action.
+If
+.I sa_handler
+is SIG_IGN the signal is subsequently ignored,
+and pending instances of the signal are discarded.
+.PP
+Options may be specified by setting
+.IR sa_flags .
+If the SA_NOCLDSTOP bit is set when installing a catching function
+for the SIGCHLD signal,
+the SIGCHLD signal will be generated only when a child process exits,
+not when a child process stops.
+Further, if the SA_ONSTACK bit is set in
+.I sa_flags,
+the system will deliver the signal to the process on a
+.IR "signal stack" ,
+specified with
+.IR sigstack (2).
+.PP
+If a caught signal occurs during certain system calls,
+the call may be forced to terminate prematurely
+with an EINTR error return,
+or the call may be restarted.
+Restart of pending calls is requested
+by setting the SA_RESTART bit in
+.I sa_flags.
+The affected system calls include
+.IR read (2),
+.IR write (2),
+.IR sendto (2),
+.IR recvfrom (2),
+.IR sendmsg (2)
+and
+.IR recvmsg (2)
+on a communications channel or a slow device (such as a terminal,
+but not a regular file)
+and during a
+.IR wait (2)
+or
+.IR ioctl (2).
+However, calls that have already committed are not restarted,
+but instead return a partial success (for example, a short read count).
+.PP
+After a
+.IR fork (2)
+or
+.IR vfork (2)
+the child inherits
+all signals, the signal mask, the signal stack,
+and the restart/interrupt flags.
+.PP
+.IR  Execve (2)
+resets all
+caught signals to default action and
+resets all signals to be caught on the user stack.
+Ignored signals remain ignored;
+the signal mask remains the same;
+signals that restart pending system calls continue to do so.
+.PP
+The following is a list of all signals
+with names as in the include file
+.RI < signal.h >:
+.LP
+.nf
+.RS
+.ta \w'SIGVTALRM\0\0\0'u +\w'15*\*p\0\0'u
+SIGHUP	1	hangup
+SIGINT	2	interrupt
+SIGQUIT	3*	quit
+SIGILL	4*	illegal instruction
+SIGTRAP	5*\*p	trace trap
+SIGABRT	6*	\fIabort\fP() call (formerly SIGIOT)
+SIGEMT	7*\*p	EMT instruction
+SIGFPE	8*	floating point exception
+SIGKILL	9	kill (cannot be caught, blocked, or ignored)
+SIGBUS	10*\*p	bus error
+SIGSEGV	11*	segmentation violation
+SIGSYS	12*\*p	bad argument to system call
+SIGPIPE	13	write on a pipe with no one to read it
+SIGALRM	14	alarm clock
+SIGTERM	15	software termination signal
+SIGURG	16\*b\*p	urgent condition present on socket
+SIGSTOP	17\*d	stop (cannot be caught, blocked, or ignored)
+SIGTSTP	18\*d	stop signal generated from keyboard
+SIGCONT	19\*b	continue after stop
+SIGCHLD	20\*b	child status has changed
+SIGTTIN	21\*d	background read attempted from control terminal
+SIGTTOU	22\*d	background write attempted to control terminal
+SIGIO	23\*b\*p	i/o is possible on a descriptor (see \fIfcntl\fP(2))
+SIGXCPU	24\*p	cpu time limit exceeded (see \fIsetrlimit\fP(2))
+SIGXFSZ	25\*p	file size limit exceeded (see \fIsetrlimit\fP(2))
+SIGVTALRM	26\*p	virtual time alarm (see \fIsetitimer\fP(2))
+SIGPROF	27\*p	profiling timer alarm (see \fIsetitimer\fP(2))
+SIGWINCH	28\*b\*p	window size change
+SIGINFO	29\*b\*p	status request from keyboard
+SIGUSR1	30	user-defined signal 1
+SIGUSR2	31	user-defined signal 2
+.RE
+.fi
+.PP
+The default signal action is termination
+if the signal is not caught or ignored,
+except for signals marked with \*b or \*d.
+The starred signals in the list above cause termination with a core image.
+Signals marked with \*b are discarded if the action
+is SIG_DFL; signals marked
+with \*d cause the process to stop.
+The signals marked with \*p are not defined by POSIX.
+.SH NOTES
+The mask specified in 
+.I act
+is not allowed to block SIGKILL or SIGSTOP.
+This is done silently by the system.
+.SH "RETURN VALUE
+A 0 value indicated that the call succeeded.  A \-1 return value
+indicates an error occurred and
+.I errno
+is set to indicated the reason.
+.SH ERRORS
+.I Sigaction
+will fail and no new signal handler will be installed if one
+of the following occurs:
+.TP 15
+[EFAULT]
+Either
+.I act
+or 
+.I oact
+points to memory that is not a valid part of the process
+address space.
+.TP 15
+[EINVAL]
+.I Sig
+is not a valid signal number.
+.TP 15
+[EINVAL]
+An attempt is made to ignore or supply a handler for SIGKILL
+or SIGSTOP.
+.SH STANDARDS
+The
+.I sigaction
+function is defined by POSIX.1.
+The SA_ONSTACK and SA_RESTART flags are Berkeley extensions,
+as are the signals marked with \*p.
+Most of those signals are available on most BSD-derived systems.
+.SH "SEE ALSO"
+kill(1), ptrace(2), kill(2),
+sigaction(2), sigprocmask(2), sigsetops(2), sigsuspend(2),
+sigblock(2), sigsetmask(2), sigpause(2),
+sigstack(2), sigvec(2), setjmp(3), siginterrupt(3), tty(4)
+.SH "NOTES  (VAX-11)"
+The handler routine can be declared:
+.PP
+    void handler(sig, code, scp)
+    int sig, code;
+    struct sigcontext *scp;
+.PP
+Here
+.I sig
+is the signal number, into which the hardware faults and traps are
+mapped as defined below. 
+.I Code
+is a parameter that is either a constant
+as given below or, for compatibility mode faults, the code provided by
+the hardware (Compatibility mode faults are distinguished from the
+other SIGILL traps by having PSL_CM set in the psl).
+.I Scp
+is a pointer to the
+.I sigcontext
+structure (defined in
+.RI < signal.h >),
+used to restore the context from before the signal.
+.PP
+The following defines the mapping of hardware traps to signals
+and codes.  All of these symbols are defined in
+.RI < signal.h >:
+.LP
+.ta \w'     Floating/decimal divide by zero   'u +\w'15*  'u +8n
+.nf
+   Hardware condition	Signal	Code
+
+Arithmetic traps:
+   Integer overflow	SIGFPE	FPE_INTOVF_TRAP
+   Integer division by zero	SIGFPE	FPE_INTDIV_TRAP
+   Floating overflow trap	SIGFPE	FPE_FLTOVF_TRAP
+   Floating/decimal division by zero	SIGFPE	FPE_FLTDIV_TRAP
+   Floating underflow trap	SIGFPE	FPE_FLTUND_TRAP
+   Decimal overflow trap	SIGFPE	FPE_DECOVF_TRAP
+   Subscript-range	SIGFPE	FPE_SUBRNG_TRAP
+   Floating overflow fault	SIGFPE	FPE_FLTOVF_FAULT
+   Floating divide by zero fault	SIGFPE	FPE_FLTDIV_FAULT
+   Floating underflow fault	SIGFPE	FPE_FLTUND_FAULT
+Length access control	SIGSEGV
+Protection violation	SIGBUS
+Reserved instruction	SIGILL	ILL_RESAD_FAULT
+Customer-reserved instr.	SIGEMT
+Reserved operand	SIGILL	ILL_PRIVIN_FAULT
+Reserved addressing	SIGILL	ILL_RESOP_FAULT
+Trace pending	SIGTRAP
+Bpt instruction	SIGTRAP
+Compatibility-mode	SIGILL	hardware supplied code
+Chme	SIGSEGV
+Chms	SIGSEGV
+Chmu	SIGSEGV
+.fi
+.SH BUGS
+This manual page is still confusing.

@@ -1,0 +1,40 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)div.3	5.1 (Berkeley) %G%
+.\"
+.TH DIV 3 ""
+.UC 7
+.SH NAME
+div \- return quotient and remainder from division
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdlib.h>
+
+div_t
+div(int num, int denom);
+.ft R
+.fi
+.SH DESCRIPTION
+.I Div
+computes the value
+.I num/denom
+and returns the quotient and remainder in a structure named
+.B div_t
+that contains two
+.BR int
+members named
+.B quot
+and
+.BR rem .
+.SH SEE ALSO
+ldiv(3)
+.SH STANDARDS
+.B Div
+conforms to ANSI X3.159-1989 (``ANSI C'').

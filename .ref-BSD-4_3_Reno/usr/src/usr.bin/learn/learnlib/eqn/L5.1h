@@ -1,0 +1,48 @@
+#once #create message
+.ND
+.tr %$
+.EQ
+delim $$
+.EN
+.LP
+One thing that you will occasionally need
+is to be able to get a literal { or } in your
+output, for an expression like
+.EQ
+{ "{" a + b "}" } over 2
+.EN
+The way to do this is to place the braces
+that are really to appear ______inside ______quotes,
+like this:
+   .EQ
+   { "{" a + b "}" } over 2
+   .EN
+.br
+The quotes temporarily turn off the special meaning
+of the braces so that you can have them printed.
+
+The file "Example" has a lot of square brackets in
+it.  Modify them so they are all braces when they are
+printed - so they look like this - then type "ready".
+.pl 1
+#once #create Ref
+.LP
+.EQ
+f"{" x sub 1 ,..., x sub n "}" ~=~ "{" x sub 1 ,..., x sub n "}"
+.EN
+.pl 1
+#once #create Example
+.LP
+.EQ
+f[ x sub 1 ,..., x sub n ] ~=~ [ x sub 1 ,..., x sub n ]
+.EN
+.pl 1
+#
+#once neqn Ref | nroff >X1 &
+#once neqn message Ref | nroff -T$term %s/tinyms -
+#user
+neqn Example | nroff >X2
+#cmp X1 X2
+#log
+#next
+6.1a 10

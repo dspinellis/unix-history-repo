@@ -1,0 +1,18 @@
+#include	<stdio.h>
+char	*direct	= "/usr/lib/learn";	/* CHANGE THIS ON YOUR SYSTEM */
+int	more;
+char	*level;
+int	speed;
+char	*sname;
+char	*todo;
+FILE	*incopy	= NULL;
+int	didok;
+int	sequence	= 1;
+int	comfile	= -1;
+int	status;
+int	wrong;
+char	*pwline;
+char	*dir;
+FILE	*scrin;
+int	logging	= 1;	/* set to 0 to turn off logging */
+int	ask;

@@ -1,0 +1,100 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)times.3	6.3 (Berkeley) %G%
+.\"
+.TH TIMES 3 ""
+.UC 4
+.SH NAME
+times \- process times
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/times.h>
+
+clock_t times(struct tms *tp);
+.ft R
+.fi
+.SH DESCRIPTION
+.ft B
+This interface is obsoleted by getrusage(2) and gettimeofday(3).
+.ft R
+.PP
+The
+.I times
+function returns the value of time in CLK_TCK's of a second since
+0 hours, 0 minutes, 0 seconds, January 1, 1970, Coordinated Universal
+Time.
+.PP
+It also fills in the structure pointed to by
+.I tp
+with time-accounting information.
+.PP
+The
+.I tms
+structure is defined as follows:
+.sp
+typedef struct {
+.RS
+clock_t tms_utime;
+.br
+clock_t tms_stime;
+.br
+clock_t tms_cutime;
+.br
+clock_t tms_cstime;
+.br
+.RE
+}
+.PP
+The elements of this structure are defined as follows:
+.TP
+tms_utime
+The CPU time charged for the execution of user instructions.
+.TP
+tms_stime
+The CPU time charged for execution by the system on behalf of
+the process.
+.TP
+tms_cutime
+The sum of the
+.IR tms_utime s
+and
+.IR tms_cutime s
+of the child processes.
+.TP
+tms_cstime
+The sum of the
+.IR tms_stime s
+and
+.IR tms_cstime s
+of the child processes.
+.PP
+All times are in CLK_TCK's of a second.
+.PP
+The times of a terminated child process are included in the
+.I tms_cutime
+and
+.I tms_cstime
+elements of the parent when one of the
+.IR wait ()
+functions returns the process ID of the terminated child to the parent
+(see
+.IR wait (2)).
+If an error occurs,
+.I times
+returns ((clock_t)-1), and sets errno to indicate the error.
+.SH ERRORS
+.I Times
+may fail and set errno for any of the errors specified for the library
+routines
+.IR getrusage (2)
+and
+.IR gettimeofday (2).
+.SH "SEE ALSO"
+time(1), getrusage(2), gettimeofday(2), wait(2)
+.SH STANDARDS
+.B Times
+conforms to POSIX Std 1003.1-1988.

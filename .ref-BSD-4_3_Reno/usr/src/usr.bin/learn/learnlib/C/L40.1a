@@ -1,0 +1,56 @@
+#print
+Write a subroutine
+	errmess(n)
+which looks at its argument and prints
+one of the following messages:
+  n     message (follow it by a newline)
+  1       ?
+  2       syntax error
+  3       bad syntax error
+  4       fatal error
+  5       I give up.
+anything else	eh?
+Leave the routine on errmess.c, compiled and tested
+as usual.  Then type "ready".
+#once #create Ref
+eh?
+eh?
+I give up.
+fatal error
+bad syntax error
+syntax error
+?
+#once #create tzaqc.c
+main()
+{
+	errmess (23069);
+	errmess (-2000);
+	errmess (5);
+	errmess (4);
+	errmess (3);
+	errmess (2);
+	errmess (1);
+}
+#user
+cc tzaqc.c errmess.o
+a.out >xxx
+#cmp Ref xxx
+#succeed
+/*  a possible solution */
+char *message[] = {
+	"eh?",
+	"?",
+	"syntax error",
+	"bad syntax error",
+	"fatal error",
+	"I give up.",
+	};
+errmess(n)
+{
+	if (n < 0 || n > 5)
+		n = 0;
+	printf("%s\n", message[n]);
+}
+#log
+#next
+41.1a 10

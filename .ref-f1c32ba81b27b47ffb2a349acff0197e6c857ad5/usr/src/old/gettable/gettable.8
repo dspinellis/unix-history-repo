@@ -1,0 +1,76 @@
+.\" Copyright (c) 1983, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)gettable.8	6.5 (Berkeley) %G%
+.\"
+.Dd 
+.Dt GETTABLE 8
+.Os BSD 4.2
+.Sh NAME
+.Nm gettable
+.Nd get
+.Tn NIC
+format host tables from a host 
+.Sh SYNOPSIS
+.Nm gettable
+.Op Fl v
+.Ar host
+.Op Ar outfile
+.Sh DESCRIPTION
+.Nm Gettable
+is a simple program used to obtain the
+.Tn NIC
+standard
+host tables from a
+.Dq nicname
+server.  The indicated
+.Ar host
+is queried for the tables.  The tables, if retrieved,
+are placed in the file
+.Ar outfile
+or by default,
+.Pa hosts.txt .
+.Pp
+Available option:
+.Bl -tag -width Ds
+.It Fl v
+Get just the version number instead of the complete host table
+and put the output in the file
+.Ar outfile
+or by default,
+.Pa hosts.ver .
+.El
+.Pp
+.Nm Gettable
+operates by opening a
+.Tn TCP
+connection to the port indicated
+in the service specification for ``nicname''.  A request
+is then made for
+.Dq ALL
+names and the resultant information
+is placed in the output file.
+.Pp
+.Nm Gettable
+is best used in conjunction with the
+.Xr htable 8
+program which converts the
+.Tn NIC
+standard file format to
+that used by the network library lookup routines.
+.Sh SEE ALSO
+.Xr intro 3 ,
+.Xr htable 8 ,
+.Xr named 8
+.Sh BUGS
+If the name-domain system provided network name mapping well as host
+name mapping,
+.Nm gettable
+would no longer be needed.
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.2 .

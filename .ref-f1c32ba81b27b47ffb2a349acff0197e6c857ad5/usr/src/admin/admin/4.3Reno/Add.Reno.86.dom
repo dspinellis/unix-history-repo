@@ -1,0 +1,70 @@
+.\" @(#)Add.Reno.86.dom	1.1 (CSRG - distribution) %G%
+.ND
+.nh
+.nr LL 6.75i
+.LP
+.ce 5
+RENO ADDENDUM
+.sp 2
+to
+.sp 2
+FOURTH BERKELEY SOFTWARE DISTRIBUTION
+.sp 2
+LICENSE (4/86) AGREEMENT BETWEEN
+.sp 2
+THE REGENTS OF THE UNIVERSITY OF CALIFORNIA AND THE LICENSEE
+.sp 2
+.LP
+The above-referenced License Agreement (``Agreement'') 
+entered into between The Regents of the University of California
+(``Regents'') and the below-named Licensee controls Licensee's use
+of release 4.3 of Regents' Fourth Berkeley Software Distribution
+(``4BSD'') which was distributed upon execution of the Agreement.
+The 4.3BSD-Reno version of 4.3BSD is hereby made available to Licensee
+under the same terms and conditions set forth in the Agreement 
+with the following additional terms and conditions:
+.sp 1
+.RS
+.IP 1.
+4.3BSD-Reno is a test release.
+.IP 2.
+Sublicensing of 4.3BSD-Reno is allowed only until one (1) year after the
+first shipment by Regents to any licensee of 4.4BSD.
+.IP 3.
+Licensee may not include 4.3BSD-Reno or any portion thereof in any
+sublicenses entered into after the one (1) year period specified above.
+.IP 4.
+After the one (1) year period specified above, Licensee may continue
+to use 4.3BSD-Reno for its internal purposes only.
+.IP 5.
+After the first shipment by Regents to any licensee of 4.4BSD, Licensee
+shall endeavor to replace any 4.3BSD-Reno software or
+software derived from 4.3BSD-Reno sublicensed to others with
+equivalent portions of 4.4BSD.
+.sp 1
+.RE
+.LP
+IN WITNESS WHEREOF, Regents and Licensee have executed this
+Reno Addendum on the dates specified below.  The 
+effective date of this amendment shall be the date of execution by
+Regents.
+.sp 4
+.TS
+expand tab(~);
+cw(2.9375i) cw(0.75i) cw(2.9375i).
+THE REGENTS OF THE UNIVERSITY~~
+\v'-10p'\l'2.9375i'~~\l'2.9375i'
+\v'-7p'OF CALIFORNIA~~
+\v'-17p'\l'2.9375i'~~\l'2.9375i'
+\v'-15p'(LICENSOR)~~(LICENSEE)
+.T&
+lw(2.9375i) cw(0.75i) lw(2.9375i).
+~
+~
+~
+By\l'2.75i'~~By\l'2.75i'
+~
+Title\l'2.625i'~~Title\l'2.625i'
+~
+Date\l'2.625i'~~Date\l'2.625i'
+.TE

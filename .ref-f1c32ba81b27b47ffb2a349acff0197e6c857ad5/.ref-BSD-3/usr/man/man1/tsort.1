@@ -1,0 +1,28 @@
+.TH TSORT 1 
+.SH NAME
+tsort \- topological sort
+.SH SYNOPSIS
+.B tsort
+[ file ]
+.SH DESCRIPTION
+.I Tsort
+produces on the standard output a totally ordered list of items
+consistent with a partial ordering of items
+mentioned in the input
+.IR file .
+If no
+.I file
+is specified, the standard input is understood.
+.PP
+The input consists of pairs of items (nonempty strings)
+separated by blanks.
+Pairs of different items indicate ordering.
+Pairs of identical items indicate presence, but not ordering.
+.SH "SEE ALSO"
+lorder(1)
+.SH DIAGNOSTICS
+Odd data: there is an odd number of fields in the input file.
+.SH BUGS
+Uses a quadratic algorithm;
+not worth fixing for the typical use of ordering
+a library archive file.

@@ -1,0 +1,151 @@
+.\"	@(#)plot.3	6.3 (Berkeley) %G%
+.\"
+.TH PLOT 3 ""
+.AT 3
+.SH NAME
+plot: openpl, erase, label, line, circle, arc, move, cont, point, linemod, space, closepl \- graphics interface
+.SH SYNOPSIS
+.nf
+.B openpl()
+.PP
+.B erase()
+.PP
+.B label(s)
+.B char s[];
+.PP
+.B line(x1, y1, x2, y2)
+.PP
+.B circle(x, y, r)
+.PP
+.B arc(x, y, x0, y0, x1, y1)
+.PP
+.B move(x, y)
+.PP
+.B cont(x, y)
+.PP
+.B point(x, y)
+.PP
+.B linemod(s)
+.B char s[];
+.PP
+.B space(x0, y0, x1, y1)
+.PP
+.B closepl()
+.fi
+.PP
+.ft R
+.SH DESCRIPTION
+These subroutines generate graphic output in a relatively
+device-independent manner.  See
+.IR  plot (5)
+for a description of their effect.
+.I Openpl
+must be used before any of the others to open the device for writing.
+.I Closepl
+flushes the output.
+.PP
+String arguments to
+.I label
+and
+.I linemod
+are null-terminated, and do not contain newlines.
+.PP
+Various flavors of these functions exist for different output devices. 
+They are obtained by the following
+.IR ld (1)
+options:
+.TP 8n
+.B \-lplot
+device-independent graphics stream on standard output for 
+.IR plot (1)
+filters
+.br
+.ns
+.TP
+.B \-l300
+GSI 300 terminal
+.br
+.ns
+.TP
+.B \-l300s
+GSI 300S terminal
+.br
+.ns
+.TP
+.B \-l450
+GSI 450 terminal
+.br
+.ns
+.TP
+.B \-l4013
+Tektronix 4013 terminal
+.br
+.ns
+.TP
+.B \-l4014
+Tektronix 4014 and 4015 terminals with the Enhanced Graphics Module (Use
+.B \-l4013
+for 4014's or 4015's without the Enhanced Graphics Module)
+.br
+.ns
+.TP
+.B \-lplotaed
+AED 512 color graphics terminal
+.br
+.ns
+.TP
+.B \-lplotbg
+BBN bitgraph graphics terminal
+.br
+.ns
+.TP
+.B \-lplotdumb
+Dumb terminals without cursor addressing or line printers
+.br
+.ns
+.TP
+.B \-lplotgigi
+DEC Gigi terminals
+.br
+.ns
+.TP
+.B \-lvt0
+DEC vt100 terminals
+.br
+.ns
+.TP
+.B \-lplot2648
+Hewlett Packard 2648 graphics terminal
+.br
+.ns
+.TP
+.B \-lplot7221
+Hewlett Packard 7221 graphics terminal
+.br
+.ns
+.TP
+.B \-lplotimagen
+Imagen laser printer (default 240 dots-per-inch resolution).
+.PP
+On many devices, it is necessary to pause after
+.IR erase (),
+otherwise plotting commands are lost.
+The pause is normally done by the tty driver if at login time,
+.I tset
+found a
+.I df
+field in the
+.IR termcap (5)
+entry for the terminal.
+If a pause is needed but not automatically being generated,
+add
+.RS
+.nf
+flush(stdout);
+sleep(1);
+.fi
+.RE
+after each
+.IR erase ().
+.SH "SEE ALSO"
+plot(5), plot(1G), plot(3F), graph(1G)

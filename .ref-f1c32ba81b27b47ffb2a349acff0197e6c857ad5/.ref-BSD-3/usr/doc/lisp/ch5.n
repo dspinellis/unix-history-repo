@@ -1,0 +1,204 @@
+.Lc Input/Output 5
+.\".ch 5
+The following functions are used to read and write to and from external devices
+and programs (through pipes).
+All I/O goes through the lisp data type called the port.
+A port may be open for either reading or writing but not both
+simultaneously.
+There are only a limited number of ports (20) and they will not be reclaimed
+unless you 
+.i close
+them.
+All ports are reclaimed by a 
+.i resetio
+call but this drastic step won't be necessary if the program closes
+what it uses.
+If you don't supply a port argument to a function which requires one
+or if you supply a bad port argument (such as nil)
+then 
+.Fr
+will use the default port according to this scheme.
+If you are reading then the default port is the value of the symbol
+.i piport 
+and if you are writing it is the value of the symbol
+.i poport .
+Furthermore if the value of piport or poport is not a valid port then
+the standard input or standard output will be used, respectively.
+The standard input and standard output are usually the keyboard and
+terminal display unless your job is running in the background and its
+input or output is connected to a pipe.
+.Lf close "'p_port"
+.Re
+t
+.Se
+the specified port is drained and closed, releasing the port.
+.No
+The standard defaults are not used in this case since you probably never
+want to close the standard output or standard input.
+.Lf drain "['p_port]"
+.Re
+nil
+.Se
+If this is an output port then
+the characters in the output buffer are all sent to the device.
+If this is an input port then all pending characters are flushed.
+The default port for this function is the default output port.
+.Lf flatsize "'g_form 'x_max"
+.Re
+the minumum of x_max and
+the number of characters required to print g_form using patom (that is,
+no escapes).
+.No
+flatsize only knows about lists, symbols, fixnums and flonums.
+.\".pg
+.Lf infile "'s_filename"
+.Re
+a port ready to read s_filename.
+.Se
+this tries to open s_filename and if it cannot or if there are no
+ports available it gives an error message.
+.No
+to allow your program to continue on a file not found error you can
+use something like:
+.br
+(cond ((null (setq myport (car (errset (infile name) nil))))
+.br      
+\ \ \ \ \ \ \ \ (patom '"couldn't open the file")))
+.br
+which will set myport to the port to read from if the file exists
+or will print a message if it couldn't open it and also set myport to nil.
+.Lf load "'s_filename"
+.Re
+nil
+.Se
+the given filename or one similar to it is loaded.
+The sequence of places searched is this: 
+.in +12n
+.np
+s_filename.l in the current directory
+.np
+/usr/lib/lisp/s_filename.l 
+.np
+s_filename in the current directory
+.np
+/usr/lib/lisp/s_filename
+.No
+load required a port to open the file s_filename.
+It then lambda binds the symbol piport to this port and reads and
+evaluates the form.
+.Lf makereadtable "['s_flag]"
+.Wh
+if s_flag is not present it is assumed to be nil.
+.Re
+a readtable equal to the original readtable if s_flag is non nil, or else
+equal to the current readtable.
+See chapter XX for a description of readtables and their uses.
+.Lf nwritn "['p_port]"
+.Re
+the number of characters in the buffer
+of the given port but not yet written out to the file or device.
+The buffer is flushed 
+automatically after the buffer (of 512 characters) is filled
+or when 
+.i terpr
+is called.
+.Lf outfile "'s_filename"
+.Re
+a port or nil
+.Se
+this opens a port to write s_filename.
+The file opened is truncated by the outfile if it existed beforehand.
+If there are no free ports, outfile returns nil.
+.\".pg
+.Lf patom "'g_exp ['p_port]"
+.Re
+g_exp
+.Se
+g_exp is printed to the given port or the default port.
+If g_exp is a symbol then the print name is printed without
+any escape characters around special characters in the print name.
+If g_exp is a list then patom has the same effect as print.
+.Lf pntlen "'xfs_arg"
+.Wh
+xfs_arg is a fixnum, flonum or symbol.
+.Re
+the number of characters needed to print  xfs_arg.
+.Lf portp "'g_arg"
+.Re
+t iff g_arg is a port.
+.Lf princ "'g_arg ['p_port]"
+.Eq
+patom.
+.Lf print "'g_arg ['p_port]"
+.Re
+nil
+.Se
+prints g_arg on the port p_port or the default port.
+.Im
+we must decide soon whether we will print a cr-lf too.
+.Lf ratom  "['p_port]"
+.Re
+the next atom read from the given or default port.
+.Lf read "['p_port]"
+.Re
+the next lisp exppression read from the given or default port.
+.Lf readc "['p_port]"
+.Re
+the next character read from the given or default port.
+.Lf readlist "'l_arg"
+.Re
+the lisp expression read from the list of characters in l_arg.
+.Im
+check this one out.
+.\".pg
+.Lf resetio
+.Re
+nil
+.Se
+all ports except the standard intput, output and error
+are closed.
+.Lf setsyntax "'s_symbol 'x_code"
+.Re
+t
+.Se
+this sets the code for s_symbol to x_code in the current readtable.
+See the section on the reader, \(sc X.Y, for details.
+.Lf terpr "['p_port]"
+.Re
+nil
+.Se
+a terminate line  character sequence
+is sent to the given port or the default port.
+This will also flush the buffer.
+.Lf terpri "['p_port]"
+.Eq
+terpr.
+.Lf tyi "['p_port]"
+.Re
+the fixnum representation of the next character read.
+.No
+Upon end of file, -1 is returned.
+If you are reading from a file then succeeding 
+.b tyi 's
+will return -1 without waiting.
+.Lf tyipeek "['p_port]"
+.Re
+the fixnum representation of the next character to be read.
+.No
+This does not actually read the character, it just peeks at it.
+.Lf tyo "'x_char ['p_port]"
+.Re
+x_char.
+.Se
+the fixnum representation of a character, x_code, is printed as a
+character on the given output port or the default output port.
+.Lf zapline 
+.Re
+nil
+.Se
+all characters up to and including the line termination character
+are read and discarded from the last port used
+for input.
+.No
+this is used as the macro function for the semicolon character when
+it acts as a comment character.

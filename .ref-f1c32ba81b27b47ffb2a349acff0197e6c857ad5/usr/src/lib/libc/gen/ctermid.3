@@ -1,0 +1,51 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)ctermid.3	5.1 (Berkeley) %G%
+.\"
+.TH CTERMID 3 ""
+.UC 7
+.SH NAME
+ctermid \- generate terminal pathname
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+.sp
+char *ctermid(char *buf);
+.ft R
+.fi
+.SH DESCRIPTION
+The
+.I ctermid
+function generates a string, that, when used as a pathname, refers to
+the current controlling terminal for the current process.
+.PP
+If
+.I buf
+is a NULL pointer, a pointer to a static area is returned.
+Otherwise, the pathname is copied into the memory referenced by
+.IR buf .
+.I Buf
+is assumed to be at least L_ctermid (as defined in the include
+file <stdio.h>) bytes long.
+.PP
+The current implementation simply returns ``/dev/tty''.
+.SH RETURN
+Upon successful completion, a non-NULL pointer is returned.
+Otherwise, a NULL pointer is returned and
+.I errno
+is set to indicate the error.
+.SH ERRORS
+The current implementation detects no error conditions.
+.SH "SEE ALSO"
+ttyname(3)
+.SH STANDARDS
+.I Ctermid
+conforms to IEEE Std 1003.1-1988 (``POSIX'').
+.SH BUGS
+By default, all information is contained in a static buffer which is
+overwritten by each new call.
+It must be copied elsewhere to be retained.

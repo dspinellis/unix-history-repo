@@ -1,0 +1,670 @@
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)pubuse	6.2 (Berkeley) %G%
+.\"
+..... use tbl and troff \-ms
+.if \nP=0 .IM
+.TL
+Updating Publication Lists
+.AU
+M. E. Lesk
+.NH
+Introduction.
+.PP
+.\".if \nP>0 .pn 14
+This note describes several commands to update the
+publication lists.
+The data base consisting of these lists is kept in
+a set of files in
+the directory
+.I /usr/dict/papers
+on the Version 7
+.UX
+system.
+The reason for having special commands to update these files is
+that they are indexed, and the only reasonable way to find the
+items to be updated is to use the index.
+However, altering the files
+destroys the usefulness of the index,
+and makes further editing difficult.
+So the recommended procedure is to
+.IP (1)
+Prepare additions, deletions, and changes in separate files.
+.IP (2)
+Update the data base and reindex.
+.LP
+Whenever you make changes, etc. it is necessary to run
+the ``add & index'' step before logging off; otherwise the
+changes do not take effect.
+The next section shows the format of the files
+in the data base.
+After that, the procedures for
+preparing additions, preparing changes, preparing deletions,
+and updating the public data base are given.
+.NH
+Publication Format.
+.PP
+The format of a data base entry is given completely in ``Some Applications
+of Inverted Indexes on UNIX'' by M. E. Lesk,
+the first part of this report,
+.if \nP=0 (also TM 77-1274-17)
+and is summarized here via a few examples.
+In each example, first the output format for an item is shown,
+and then the corresponding data base entry.
+.LP
+.DS
+.ti 0
+Journal article:
+.fi
+.ll 5i
+A. V. Aho, D. J. Hirschberg, and J. D. Ullman, ``Bounds
+on the Complexity of the Maximal Common Subsequence Problem,''
+.I
+J. Assoc. Comp. Mach.,
+.R
+vol. 23, no. 1, pp. 1-12 (Jan. 1976).
+.nf
+.ll
+.sp
+%T Bounds on the Complexity of the Maximal Common
+Subsequence Problem
+%A A. V. Aho
+%A D. S. Hirschberg
+%A J. D. Ullman
+%J J. Assoc. Comp. Mach.
+%V 23
+%N 1
+%P 1-12
+%D Jan. 1976
+.if \nP=0 %M TM 75-1271-7
+.if \nP>0 %M Memo abcd...
+.DE
+.DS
+.ti 0
+Conference proceedings:
+.fi
+.ll 5i
+B. Prabhala and R. Sethi, ``Efficient Computation of Expressions with Common
+Subexpressions,''
+.I
+Proc. 5th ACM Symp. on Principles of Programming Languages,
+.R
+pp. 222-230, Tucson, Ariz. (January 1978).
+.nf
+.ll
+.sp
+%A B. Prabhala
+%A R. Sethi
+%T Efficient Computation of Expressions with
+Common Subexpressions
+%J Proc. 5th ACM Symp. on Principles
+of Programming Languages
+%C Tucson, Ariz.
+%D January 1978
+%P 222-230
+.DE
+.DS
+.ti 0
+Book:
+.fi
+.ll 5i
+B. W. Kernighan and P. J. Plauger,
+.I
+Software Tools,
+.R
+Addison-Wesley, Reading, Mass. (1976).
+.nf
+.ll
+.sp
+%T Software Tools
+%A B. W. Kernighan
+%A P. J. Plauger
+%I Addison-Wesley
+%C Reading, Mass.
+%D 1976
+.DE
+.DS
+.ti 0
+Article within book:
+.fi
+.ll 5i
+J. W. de Bakker, ``Semantics of Programming Languages,''
+pp. 173-227 in
+.I
+Advances in Information Systems Science, Vol. 2,
+.R
+ed. J. T. Tou, Plenum Press, New York, N. Y. (1969).
+.nf
+.ll
+.sp
+%A J. W. de Bakker
+%T Semantics of programming languages
+%E J. T. Tou
+%B Advances in Information Systems Science, Vol. 2
+%I Plenum Press
+%C New York, N. Y.
+%D 1969
+%P 173-227
+.DE
+.DS
+.ti 0
+Technical Report:
+.fi
+.ll 5i
+F. E. Allen, ``Bibliography on Program Optimization,''
+Report RC-5767, IBM T. J. Watson Research Center,
+Yorktown Heights, N. Y. (1975).
+.nf
+.ll
+.sp
+%A F. E. Allen
+%D 1975
+%T Bibliography on Program Optimization
+%R Report RC-5767
+%I IBM T. J. Watson Research Center
+%C Yorktown Heights, N. Y.
+.DE
+.DS
+.di xx
+.ti 0
+Technical Memorandum:
+.fi
+.ll 5i
+A. V. Aho, B. W. Kernighan and P. J. Weinberg,
+``AWK \- Pattern Scanning and Processing Language'',
+TM 77-1271-5, TM 77-1273-12, TM 77-3444-1 (1977).
+.nf
+.ll
+.sp
+%T AWK \- Pattern Scanning and Processing Language
+%A A. V. Aho
+%A B. W. Kernighan
+%A P. J. Weinberger
+%M TM 77-1271-5, TM 77-1273-12, TM 77-3444-1
+%D 1977
+.di
+.if \nP=0 .xx
+.rm xx
+.DE
+.LP
+Other forms of publication can be entered similarly.
+Note that conference
+proceedings are entered as if journals,
+with the conference name on a
+.I %J
+line.
+This is also sometimes appropriate for obscure publications
+such as series of lecture notes.
+When something is both a report and an article, or
+both a memorandum and an article, enter all necessary information
+for both; see the first article above, for example.
+Extra information (such as ``In preparation'' or ``Japanese translation'')
+should be placed on a line beginning
+.I %O .
+The most common use of %O lines now is for ``Also in ...'' to give
+an additional reference to a secondary appearance of the same paper.
+.PP
+Some of the possible fields of a citation are:
+.TS
+c c 5 c c
+a l   a l .
+Letter	Meaning	Letter	Meaning
+A	Author	K	Extra keys
+B	Book including item	N	Issue number
+C	City of publication	O	Other
+D	Date	P	Page numbers
+E	Editor of book	R	Report number
+I	Publisher (issuer)	T	Title of item
+J	Journal name	V	Volume number
+.TE
+Note that
+.I %B
+is used to indicate the title
+of a book containing the article being entered;
+when an item is an entire book, the title should
+be entered with a
+.I %T
+as usual.
+.PP
+Normally, the order of items does not matter.  The only exception is
+that if there are multiple authors (%A lines) the order of authors
+should be that on the paper.
+If a line is too long, it may be continued on to the next line;
+any line not beginning with % or . (dot) is assumed to be
+a continuation of the previous line.
+Again, see the first article above for an example of a long title.
+Except for authors, do not repeat any items; if two %J lines are
+given, for example, the first is ignored.
+Multiple items on the same file should be separated by blank lines.
+.PP
+Note that in formatted printouts of the file, the
+exact appearance of the items is determined by
+a set of macros and the formatting programs.
+Do not try to adjust fonts, punctuation, etc. by editing
+the data base; it is wasted effort.  In case someone has
+a real need for a differently-formatted output, a new set
+of macros can easily be generated to provide alternative
+appearances of the citations.
+.NH
+Updating and Re-indexing.
+.PP
+This section describes the commands that are used to manipulate
+and change the data base.
+It explains the procedures for (a) finding references in the data base,
+(b) adding new references, (c) changing existing references, and (d)
+deleting references.
+Remember that all changes, additions, and deletions are done by preparing
+separate files and then running an `update and reindex' step.
+.PP
+.I
+Checking what's there now.
+.R
+Often you will want to know what is currently in the data base.
+There is a special command
+.I lookbib
+to look for things and print them
+out.
+It searches for articles based on words in the title, or the author's name,
+or the date.
+For example, you could find the first paper above with
+.DS
+lookbib aho ullman maximal subsequence 1976
+.DE
+or
+.DS
+lookbib aho ullman hirschberg
+.DE
+.LP
+If you don't give enough words, several items will be found;
+if you spell some wrong, nothing will be found.
+There are around 4300 papers in the public file; you should
+always use this command to check when you are not sure
+whether a certain paper is there or not.
+.PP
+.I
+Additions.
+.R
+To add new papers, just type in, on one or more files, the citations
+for the new papers.
+Remember to check first if the papers are already in the data base.
+For example, if a paper has a previous memo version, this should
+be treated as a change to an existing entry, rather than
+a new entry.
+If several new papers are being typed on the same file, be
+sure that there is a blank line between each two papers.
+.PP
+.I
+Changes.
+.R
+To change an item, it should be extracted onto a file.
+This is done with the command
+.DS
+pub.chg key1 key2 key3 ...
+.DE
+where the items key1, key2, key3, etc. are
+a set of keys that will find the paper,
+as in the
+.I lookbib
+command.
+That is, if
+.DS
+lookbib johnson yacc cstr
+.DE
+will find a item (to, in this case, Computing Science Technical Report
+No. 32, ``YACC: Yet Another Compiler-Compiler,''
+by S. C. Johnson)
+then
+.DS
+pub.chg johnson yacc cstr
+.DE
+will permit you to edit the item.
+The
+.I pub.chg
+command
+extracts the item onto a file named ``bibxxx'' where ``xxx''
+is a 3-digit number, e.g. ``bib234''.
+The command will print the file name it has chosen.
+If the set of keys finds more than one paper (or no papers) an
+error message is printed and no file is written.
+Each reference to be changed must be extracted with a separate
+.I pub.chg
+command, and each will be placed on a separate file.
+You should then edit the ``bibxxx'' file as desired to change the item,
+using the UNIX editor.
+Do not delete or change the first line of the file, however, which begins
+.I %#
+and is a special code line to tell the update program
+which item is being altered.
+You may delete or change other lines, or add lines, as you wish.
+The changes are not actually made in the public data
+base until you run the update command
+.I pub.run
+(see below).
+Thus, if after extracting an item and modifying it, you decide
+that you'd rather leave things as they were, delete the
+``bibxxx'' file, and your change request will disappear.
+.PP
+.I
+Deletions.
+.R
+To delete an entry from the data base,
+type the command
+.DS
+pub.del key1 key2 key3 ...
+.DE
+where the items key1, key2, etc. are a set
+of keys that will find the paper, as with the
+.I lookbib
+command.
+That is, if
+.DS
+lookbib Aho hirschberg ullman
+.DE
+will find a paper,
+.DS
+pub.del aho hirschberg ullman
+.DE
+deletes it.
+Note that upper and lower case are equivalent in keys.
+The
+.I pub.del
+command will print the entry being deleted.
+It also gives the name of a ``bibxxx'' file on which the deletion
+command is stored.
+The actual deletion is not done until the changes, additions, etc.
+are processed, as with the
+.I pub.chg
+command.
+If, after seeing the item to be deleted, you change your
+mind about throwing it away, delete the ``bibxxx'' file
+and the delete request disappears.
+Again, if the list of keys does not uniquely identify one paper,
+an error message is given.
+.PP
+Remember that the default versions of the commands described here
+edit a public data base.
+Do not delete
+items unless you are sure deletion is proper; usually this
+means that there are duplicate entries for the same paper.
+Otherwise, view requests for deletion with skepticism; even
+if one person has no need for a particular item in the data base,
+someone else may want it there.
+.PP
+If an item is correct, but should not appear in the ``List of Publications''
+as normally produced, add the line
+.DS
+%K DNL
+.DE
+to the item.
+This preserves the item intact, but implies ``Do Not List'' to the
+to the commands that print publication lists.
+The DNL line is normally used for some technical reports,
+minor memoranda, or other
+low-grade publications.
+.PP
+.I
+Update and reindex.
+.R
+When you have completed a session of changes, you should
+type the command
+.DS
+pub.run file1 file2 ...
+.DE
+where the names ``file1'', ... are the new files of additions you
+have prepared.
+You need not list the ``bibxxx'' files representing changes and
+deletions; they are processed automatically.
+All of the new items are edited into the standard
+public data base, and then a new index is made.  This process
+takes about 15 minutes; during this time,
+searches of the data base will be slower.
+.PP
+Normally, you should execute
+.I pub.run
+just before you logoff after performing
+some edit requests.
+However, if you don't, the various change request files remain
+in your directory
+until you finally do execute
+.I pub.run.
+When the changes are processed, the ``bibxxx'' files are deleted.
+It is not desirable to wait too long before processing changes,
+however, to avoid conflicts with someone else who wishes to change
+the same file.
+If executing
+.I pub.run
+produces the message ``File bibxxx too old''
+it means that someone else has been editing the same file
+between the time you prepared your changes, and the time you typed
+.I pub.run.
+You must delete such old change files and
+re-enter them.
+.PP
+Note that although
+.I pub.run
+discards the ``bibxxx'' files after
+processing them, your files of additions are left around
+even after
+.I pub.run
+is finished.
+If they were typed in only for purposes of
+updating the data base, you may delete them
+after they have been processed by
+.I pub.run.
+.PP
+.I
+Example.
+.R
+Suppose, for example, that you wish to
+.IP (1)
+Add to the data base the memos ``The Dilogarithm Function of a Real Argument''
+by R. Morris, and
+``UNIX Software Distribution by Communication Link,''
+by M. E. Lesk and A. S. Cohen;
+.IP (2)
+Delete from the data base the item
+``Cheap Typesetters'', by M. E. Lesk,
+SIGLASH Newsletter, 1973;
+and
+.IP (3)
+Change ``J. Assoc. Comp. Mach.'' to ``Jour. ACM'' in the citation
+for Aho, Hirschberg, and Ullman shown above.
+.LP
+The procedure would be as follows.
+First, you would make a file
+containing the additions,
+here called ``new.1'', in the normal way using the UNIX editor.
+In the script shown below, the computer prompts are
+.if n underlined.
+.if t in italics.
+.DS
+.if n _$ ed new.1
+.if t \f2$\f1 ed new.1
+.if n _?
+.if t \f2?\f1
+a
+%T The Dilogarithm Function of a Real Argument
+%A Robert Morris
+.if \nP=0 %M TM 78-1271-1
+.if \nP>0 %M abcd
+%D 1978
+
+%T UNIX Software Distribution by Communication Link
+%A M. E. Lesk
+%A A. S. Cohen
+.if \nP=0 %M TM 78-1274-1, 78-8234-1
+.if \nP>0 %M abcd
+%D 1978
+.
+w new.1
+.if n _1_9_9
+.if t \f2199\f1
+q
+.DE
+Next you would specify the deletion, which would be done with the
+.I pub.del
+command:
+.DS
+.if n _$ pub.del lesk cheap typesetters siglash
+.if t \f2$\f1 pub.del lesk cheap typesetters siglash
+.ti 0
+to which the computer responds:
+
+.if n W_i_l_l_ d_e_l_e_t_e_:_  (_f_i_l_e_ b_i_b_1_7_6_)_
+.if t \f2Will delete:  (file bib176)\f1
+
+.if n %_T_ C_h_e_a_p_ T_y_p_e_s_e_t_t_e_r_s_
+.if t \f2%T Cheap Typesetters\f1
+.if n %_A_ M_._ E_._ L_e_s_k_
+.if t \f2%A M. E. Lesk\f1
+.if n %_J_ A_C_M_ S_I_G_L_A_S_H_ N_e_w_s_l_e_t_t_e_r_
+.if t \f2%J ACM SIGLASH Newsletter\f1
+.if n %_V_ 6_
+.if t \f2%V 6\f1
+.if n %_N_ 4_
+.if t \f2%N 4\f1
+.if n %_P_ 1_4_-_1_6_
+.if t \f2%P 14-16\f1
+.if n %_D_ O_c_t_o_b_e_r_ 1_9_7_3_
+.if t \f2%D October 1973\f1
+.DE
+And then you would extract the Aho, Hirschberg and Ullman paper.
+The dialogue involved is shown below.
+First run
+.I pub.chg
+to extract the paper; it responds by printing
+the citation and informing you that it was placed on file \f2bib123\f1.
+That file is then edited.
+.DS
+.if n _$ pub.chg aho hirschberg ullman
+.if t \f2$\f1 pub.chg aho hirschberg ullman
+.if n _E_x_t_r_a_c_t_i_n_g _a_s _f_i_l_e _b_i_b_1_2_3
+.if t \f2Extracting as file bib123\f1
+.if n _%_T _B_o_u_n_d_s _o_n _t_h_e _C_o_m_p_l_e_x_i_t_y _o_f _t_h_e _M_a_x_i_m_a_l
+.if t \f2%T Bounds on the Complexity of the Maximal\f1
+.if n _C_o_m_m_o_n _S_u_b_s_e_q_u_e_n_c_e _P_r_o_b_l_e_m
+.if t \f2Common Subsequence Problem\f1
+.if n _%_A _A_. _V_. _A_h_o
+.if t \f2%A A. V. Aho\f1
+.if n _%_A _D_. _S_. _H_i_r_s_c_h_b_e_r_g
+.if t \f2%A D. S. Hirschberg\f1
+.if n _%_A _J_. _D_. _U_l_l_m_a_n
+.if t \f2%A J. D. Ullman\f1
+.if n _%_J _J_. _A_s_s_o_c_. _C_o_m_p_. _M_a_c_h_.
+.if t \f2%J J. Assoc. Comp. Mach.\f1
+.if n _%_V _2_3
+.if t \f2%V 23\f1
+.if n _%_N _1
+.if t \f2%N 1\f1
+.if n _%_P _1_-_1_2
+.if t \f2%P 1-12\f1
+.if \nP=0 .if n _%_M _T_M _7_5_-_1_2_7_1_-_7
+.if \nP>0 .if n %_M_ M_e_m_o_ n_u_m_b_e_r_
+.if \nP=0 .if t \f2%M TM 75-1271-7\f1
+.if \nP>0 .if t \f2%M abcd\f1
+.if n _%_D _J_a_n_. _1_9_7_6
+.if t \f2%D Jan. 1976\f1
+
+.if n _$ ed bib123
+.if t \f2$\f1 ed bib123
+.if n _3_1_2
+.if t \f2312\f1
+/Assoc/s/ J/ Jour/p
+.if n _%_J _J_o_u_r_. _A_s_s_o_c_. _C_o_m_p_. _M_a_c_h_.
+.if t \f2%J Jour. Assoc. Comp. Mach.\f1
+s/Assoc.*/ACM/p
+.if n _%_J _J_o_u_r_. _A_C_M
+.if t \f2%J Jour. ACM\f1
+1,$p
+.if n _%_# _/_u_s_r_/_d_i_c_t_/_p_a_p_e_r_s_/_p_7_6 _2_3_3 _2_4_5 _c_h_a_n_g_e
+.if t \f2%# /usr/dict/papers/p76 233 245 change\f1
+.if n _%_T _B_o_u_n_d_s _o_n _t_h_e _C_o_m_p_l_e_x_i_t_y _o_f _t_h_e _M_a_x_i_m_a_l
+.if t \f2%T Bounds on the Complexity of the Maximal\f1
+.if n _C_o_m_m_o_n _S_u_b_s_e_q_u_e_n_c_e _P_r_o_b_l_e_m
+.if t \f2Common Subsequence Problem\f1
+.if n _%_A _A_. _V_. _A_h_o
+.if t \f2%A A. V. Aho\f1
+.if n _%_A _D_. _S_. _H_i_r_s_c_h_b_e_r_g
+.if t \f2%A D. S. Hirschberg\f1
+.if n _%_A _J_. _D_. _U_l_l_m_a_n
+.if t \f2%A J. D. Ullman\f1
+.if n _%_J _J_o_u_r_. _A_C_M
+.if t \f2%J Jour. ACM\f1
+.if n _%_V _2_3
+.if t \f2%V 23\f1
+.if n _%_N _1
+.if t \f2%N 1\f1
+.if n _%_P _1_-_1_2
+.if t \f2%P 1-12\f1
+.if \nP=0 .if n _%_M _T_M _7_5_-_1_2_7_1_-_7
+.if \nP>0 .if n _%_M _M_e_m_o _n_u_m_b_e_r
+.if \nP=0 .if t \f2%M TM 75-1271-7\f1
+.if \nP>0 .if t \f2%M abcd\f1
+.if n _%_D _J_a_n_. _1_9_7_6
+.if t \f2%D Jan. 1976\f1
+
+w
+.if n _2_9_2
+.if t \f2292\f1
+q
+.if n _$
+.if t \f2$\f1
+.DE
+Finally, execute
+.I pub.run ,
+making sure to remember that you
+have prepared a new file ``new.1'':
+.DS
+\f2$\f1 pub.run new.1
+.DE
+and about fifteen minutes later the new index would be complete
+and all the changes would be included.
+.NH
+Printing a Publication List
+.PP
+There are two commands for printing a publication list,
+depending on whether you want to print one person's list,
+or the list of many people.
+To print a list for one person, use the
+.I pub.indiv
+command:
+.DS
+pub.indiv M Lesk
+.DE
+This runs off the list for M. Lesk and puts it in file ``output''.
+Note that no `.' is given after the initial.
+In case of ambiguity two initials can be used.
+Similarly, to get the list for group of people, say
+.DS
+pub.org xxx
+.DE
+which prints all the publications of the members of organization
+.I xxx ,
+taking the names for the list in the file
+.I /usr/dict/papers/centlist/xxx .
+This command should normally be run in the background; it takes
+perhaps 15 minutes.
+Two options are available with these commands:
+.DS
+pub.indiv \-p M Lesk
+.DE
+prints only the papers, leaving out unpublished notes, patents, etc.
+Also
+.DS
+pub.indiv \-t M Lesk | gcat
+.DE
+prints a typeset copy, instead of a computer printer copy.
+In this case it has been directed to an alternate typesetter with the
+`gcat' command.
+These options may be used together, and may be used with the
+.I pub.org
+command as well.
+For example, to print
+only the papers for all of organization zzz and typeset them,
+you could type
+.DS
+pub.center \-t \-p zzz | gcat &
+.DE
+These publication lists are printed double column with a citation style
+taken from a set of publication list macros; the macros, of course, can be
+changed easily to adjust the format of the lists.

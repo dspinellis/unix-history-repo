@@ -1,0 +1,21 @@
+set append dot save
+alias staff bill kridle kurt sklower schmidt ozalp jkf mark
+alias f77 research^sif fateman biddulp schulman sklower char jkf bill vax:tbl vax135^tbl derek graham kahan rabin dlw michael
+alias ada mark earl halbert graham ing70:douglas
+alias ex bill mark doucette earl geoff halbert jkf sklower vax135^hpk mhtsa^ark mhtsa^steve research^chuck ingres:eric erics houxt^bruce vax:englar mhtsa^wh5ess^houxp^3724sjb mhtsa^wh5ess^ber vax135^adb michael d:kirk cory:cc-09
+alias exupdate vax135^hpk mhtsa^ark ing70:eric d:kirk
+alias ken research^ken
+alias dmr research^dmr
+alias scj vax:scj research^scj
+alias bwk research^bwk
+alias tbl vax135^tbl vax:tbl
+alias katseff vax135^hpk vax:katseff
+alias vax135^katseff vax135^hpk
+alias hpk vax135^hpk
+alias jfr vax135^jfr
+alias sif research^sif
+alias lisp fateman sklower rowan jkf turner halbert char vax:tbl vax135^tbl bernard pjw drb erics bill vax135^jmg
+alias rjf fateman
+alias contest /usr/news/contest
+alias srb research^srb
+alias v7bugs bill ucsfcgl!tom michael dlw ingvax:eric /usr/bill/v7bugs dmr kridle

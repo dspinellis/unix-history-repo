@@ -1,0 +1,96 @@
+.\" Copyright (c) 1983, 1986, 1991 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)syslogd.8	6.10 (Berkeley) %G%
+.\"
+.Dd 
+.Dt SYSLOGD 8
+.Os BSD 4.2
+.Sh NAME
+.Nm syslogd
+.Nd log systems messages
+.Sh SYNOPSIS
+.Nm syslogd
+.Op Fl f Ar config_file
+.Op Fl m Ar mark_interval
+.Op Fl p Ar log_socket
+.Sh DESCRIPTION
+.Nm Syslogd
+reads and logs messages to the system console, log files, other
+machines and/or users as specified by its configuration file.
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl f
+Specify the pathname of an alternate configuration file;
+the default is
+.Pa /etc/syslog.conf .
+.It Fl m
+Select the number of minutes between ``mark'' messages;
+the default is 20 minutes.
+.It Fl p
+Specify the pathname of an alternate log socket;
+the default is
+.Pa /dev/log .
+.El
+.Pp
+.Nm Syslogd
+reads its configuration file when it starts up and whenever it
+receives a hangup signal.
+For information on the format of the configuration file,
+see
+.Xr syslog.conf 5 .
+.Pp
+.Nm Syslogd
+reads messages from the
+.Tn UNIX
+domain socket
+.Pa /dev/log ,
+from an Internet domain socket specified in
+.Pa /etc/services ,
+and from the special device
+.Pa /dev/klog
+(to read kernel messages).
+.Pp
+.Nm Syslogd
+creates the file
+.Pa /var/run/syslog.pid ,
+and stores its process
+id there.
+This can be used to kill or reconfigure
+.Nm syslogd .
+.Pp
+The message sent to
+.Nm syslogd
+should consist of a single line.
+The message can contain a priority code, which should be a preceding
+decimal number in angle braces, for example,
+.Sq Aq 5.
+This priority code should map into the priorities defined in the
+include file
+.Aq Pa sys/syslog.h .
+.Sh FILES
+.Bl -tag -width /var/run/syslog.pid -compact
+.It Pa /etc/syslog.conf
+The configuration file.
+.It Pa /var/run/syslog.pid
+The process id of current
+.Nm syslogd .
+.It Pa /dev/log
+Name of the
+.Tn UNIX
+domain datagram log socket.
+.It Pa /dev/klog
+The kernel log device.
+.El
+.Sh SEE ALSO
+.Xr logger 1 ,
+.Xr syslog 3 ,
+.Xr services 5 ,
+.Xr syslog.conf 5
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3 .

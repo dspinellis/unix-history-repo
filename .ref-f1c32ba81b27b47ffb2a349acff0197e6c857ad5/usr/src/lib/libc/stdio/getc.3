@@ -1,0 +1,99 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getc.3	6.5 (Berkeley) %G%
+.\"
+.TH GETC 3 ""
+.UC 7
+.SH NAME
+fgetc, getc, getchar, getw \- get a character or word from a stream
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+
+int
+fgetc(FILE *stream);
+
+int
+getc(FILE *stream);
+
+int
+getchar();
+
+int
+getw(FILE *stream);
+.ft R
+.fi
+.SH DESCRIPTION
+.I Fgetc
+returns the next input character from the given
+.IR stream ,
+or the next character pushed back via
+.IR ungetc .
+.PP
+.I Getc
+acts essentially identically to
+.IR fgetc ,
+but is a macro that expands in-line.
+.PP
+.I Getchar
+is identical to ``getc(stdin)''.
+.PP
+.I Getw
+returns the next
+.B int
+from the named input
+.IR stream .
+.SH "RETURN VALUE"
+These functions return the integer constant
+.B EOF
+at end-of-file, upon read error, or if an attempt is made to read a
+write-only stream.
+Callers must use 
+.I feof 
+and
+.I ferror
+to distinguish between end-of-file and error.
+If an error occurs, the global variable
+.I errno
+is set to indicate the error.
+The end-of-file condition is remembered, even on a terminal, and all
+subsequent attempts to read will return
+.B EOF
+until the condition is cleared with
+.IR clearerr .
+.SH "SEE ALSO"
+ferror(3), fread(3), fopen(3), putc(3), ungetc(3)
+.SH BUGS
+Since
+.B EOF
+is a valid integer value,
+.I feof
+and
+.I ferror
+must be used to check for failure after calling
+.IR getw .
+The size and byte order of an
+.B int
+varies from one machine to another, and
+.I getw
+is not recommended for portable applications.
+.PP
+Because it is implemented as a macro,
+.I getc
+treats a
+.I stream
+argument with side effects incorrectly.
+In particular, ``getc(*f++);'' may not work sensibly.
+.SH STANDARDS
+.IR Fgetc ,
+.IR getc
+and
+.I getchar
+conform to ANSI X3.159-1989 (``ANSI C'').

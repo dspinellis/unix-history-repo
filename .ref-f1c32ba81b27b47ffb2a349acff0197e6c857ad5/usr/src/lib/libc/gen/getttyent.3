@@ -1,0 +1,122 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)getttyent.3	6.6 (Berkeley) %G%
+.\"
+.TH GETTTYENT 3  ""
+.UC 6
+.SH NAME
+getttyent, getttynam, setttyent, endttyent \- get ttys file entry
+.SH SYNOPSIS
+.nf
+.B #include <ttyent.h>
+.PP
+.B struct ttyent *getttyent()
+.PP
+.B struct ttyent *getttynam(name)
+.B char *name;
+.PP
+.B setttyent()
+.PP
+.B endttyent()
+.fi
+.SH DESCRIPTION
+.I Getttyent,
+and
+.I getttynam
+each return a pointer to an object, with the following structure,
+containing the broken-out fields of a line from the tty description
+file.
+.sp
+.nf
+struct ttyent {
+	char	*ty_name;			/* terminal device name */
+	char	*ty_getty;		/* command to execute */
+	char	*ty_type;			/* terminal type */
+#define	TTY_ON		0x01	/* enable logins */
+#define	TTY_SECURE	0x02	/* allow uid of 0 to login */
+	int	ty_status;		/* flag values */
+	char	*ty_window;		/* command for window manager */
+	char	*ty_comment;		/* comment field */
+};
+.fi
+.PP
+The fields are as follows:
+.TP
+ty_name
+The name of the character-special file.
+.TP
+ty_getty
+The name of the command invoked by
+.IR init (8)
+to initialize tty line characteristics.
+.TP
+ty_type
+The name of the default terminal type connected to this tty line.
+.TP
+ty_status
+A mask of bit fields which indicate various actions allowed on this
+tty line.
+The possible flags are as follows:
+.IP
+TTY_ON
+.IP
+Enables logins (i.e.,
+.IR init (8)
+will start the command referenced by
+.I ty_getty
+on this entry).
+.IP
+TTY_SECURE
+.IP
+Allow users with a uid of 0 to login on this terminal.
+.TP
+ty_window
+The command to execute for a window system associated with the line.
+.TP
+ty_comment
+Any trailing comment field, with any leading hash marks (``#'') or
+whitespace removed.
+.PP
+If any of the fields pointing to character strings are unspecified,
+they are returned as null pointers.
+The field
+.I ty_status
+will be zero if no flag values are specified.
+.PP
+See
+.IR ttys (5)
+for a more complete discussion of the meaning and usage of the
+fields.
+.PP
+.I Getttyent
+reads the next line from the ttys file, opening the file if necessary.
+.I Setttyent
+rewinds the file if open, or opens the file if it is unopened.
+.I Endttyent
+closes any open files.
+.PP
+.I Getttynam
+searches from the beginning of the file until a matching
+.I name
+is found
+(or until EOF is encountered).
+.SH FILES
+/etc/ttys
+.SH "SEE ALSO"
+login(1), ttyslot(3), gettytab(5), termcap(5), ttys(5), getty(8), init(8)
+.SH DIAGNOSTICS
+The routines
+.I getttyent
+and
+.I getttynam
+return a null pointer on EOF or error.
+.I Setttyent
+and
+.I endttyent
+return 0 on failure and 1 on success.
+.SH BUGS
+All information is contained in a static area so it must be copied if
+it is to be saved.

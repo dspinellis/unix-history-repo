@@ -1,0 +1,71 @@
+.\"	@(#)NISTreport.03.90	1.1	90/04/11
+.\" *troff -me
+.sp 2
+.ce 100
+\fB\s+2Interim Report on Operating Systems Research
+in the Berkeley UNIX Project\s-2\fP
+January 1, 1990 \- March 31, 1990
+.sp 2
+Susan L. Graham
+Domenico Ferrari
+Marshall Kirk McKusick
+Michael J. Karels
+Keith Sklower
+.ce 0
+.sp 2
+.pp
+Berkeley continues to  participate in the POSIX Standardization effort
+that most recently involved attending the January POSIX meeting.
+We attended the February IETF meeting and have been collaborating
+with the gated and SNMP developers for more efficient interfaces
+for obtaining network management information.
+.pp
+We are revising the routing code to permit link-level access for ISO IS-IS.
+We are preparing a proposal for an addition to the IS-IS protocol
+for allowing summaries at the LAN level for level 1 routers.
+.pp
+We have submitted revised ESIS code to NIST for testing,
+which we believe fixes problems reported earlier.
+We have been pursuing other reported bugs in ISO ESIS code,
+though we have been unable to replicate problems reported by NIST.
+.pp
+We have incorporated the code from MITRE that contends with
+the congestion-experienced bit.
+We corrected another protocol error reported by NIST
+about initial credit allocations.
+We have responded to another reported bug about transmission
+of user-confirm-data.
+.pp
+We are continuing our development of X.25 support for CLNP and CONS.
+The development emphasizes graceful co-existence with IP over public
+data networks and the DDN.
+The implementation should work over a variety of drivers
+(including front-end processors), and with the possibility of multiple
+X.25 interface boards on a given machine.
+.pp
+We have received evaluations of the COS tests for the TP4/CLNP
+implementation and have begun reviewing them.
+.pp
+We have begun to test recent revisions to the routing layer
+that permit link-level access for ISO IS-IS, and have revised the
+code that does CLNP over IP encapsulation.
+.pp
+We have made the latest BSD system run on the VAX,
+which includes support for NFS.
+.pp
+In collaboration with the Open Software Foundation,
+we participated in Sun Microsystems Connectathon
+that brought together more than eighty NFS vendors
+to test interoperability.
+Only one bug was discovered in our NFS implementation.
+.pp
+We structurally reorganized the kernel to reduce the
+number of global variables (important for security
+considerations) and formalized several major interfaces
+to improve modularity.
+.pp
+We are bringing most projects to a close in preparation
+for making a distribution by the end of the next quarter.
+This will allow a coherent starting point for those
+groups that wish to continue this work when this project
+is terminated at the end of June.

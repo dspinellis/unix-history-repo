@@ -1,0 +1,31 @@
+.UC
+.TH VALLOC 3
+.SH NAME
+valloc, vfree \- aligned memory allocator
+.SH SYNOPSIS
+.B char *valloc(size)
+.br
+.B unsigned size;
+.sp .1i
+.B vfree(cp)
+.br
+char *cp;
+.SH DESCRIPTION
+.I Valloc
+allocates
+.I size
+bytes aligned on a boundary adequate for
+.I vread
+(2)).
+It is implemented by calling
+.I malloc
+(3) with a slightly larger request, saving the true beginning of the block
+allocated, and returning a properly aligned pointer.
+.I Vfree
+must be used to dispose of the block.
+.SH DIAGNOSTICS
+.I Valloc
+returns a null pointer (0) if there is no available memory
+or if the arena has been detectably corrupted by storing outside the bounds
+of a block.
+.SH BUGS

@@ -1,0 +1,64 @@
+.\" Copyright (c) 1988 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strtok.3	5.5 (Berkeley) %G%
+.\"
+.TH STRTOK 3 ""
+.UC 3
+.SH NAME
+strtok, strsep \- string token operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+char *
+strtok(char *str, const char *sep);
+.ft R
+.fi
+.SH DESCRIPTION
+.ft B
+This interface is obsoleted by strsep(3).
+.ft R
+.PP
+.I Strtok
+is used to isolate sequential tokens in a null-terminated string,
+.IR str .
+These tokens are separated in the string by
+.B "one or more"
+of the characters in
+.IR sep .
+The first time that
+.I strtok
+is called,
+.I str
+should be specified; subsequent calls, wishing to obtain further tokens
+from the same string, should pass a null pointer instead.
+The separator string,
+.IR sep ,
+must be supplied each time, and may change between calls.
+.PP
+.I Strtok
+returns a pointer to the start of each subsequent token in the string,
+after replacing the token itself with a NUL character.
+When no more tokens remain, a null pointer is returned.
+.SH SEE ALSO
+index(3), memchr(3), rindex(3), strchr(3), strcspn(3), strpbrk(3), strrchr(3),
+strsep(3), strspn(3), strstr(3)
+.SH STANDARDS
+.B Strtok
+conforms to ANSI X3.159-1989 (``ANSI C'').
+.SH BUGS
+There is no way to get tokens from multiple strings simultaneously.
+.PP
+The System V
+.B strtok
+will, if handed a string containing only delimiter characters,
+not alter the next starting point, so that a call to
+.B strtok
+with a different (or empty) delimiter string
+may return a non-NULL value.
+Since this implementation always alters the next starting point,
+such a sequence of calls would always return NULL.

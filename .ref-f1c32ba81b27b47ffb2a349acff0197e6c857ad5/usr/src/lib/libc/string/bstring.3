@@ -1,0 +1,67 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)bstring.3	6.6 (Berkeley) %G%
+.\"
+.TH BSTRING 3 ""
+.UC
+.SH NAME
+bcmp, bcopy, bzero, memccpy, memchr, memcmp, memcpy, memmove,
+memset \- byte string operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+int
+bcmp(const char *b1, const char *b2, size_t len);
+
+void
+bcopy(const char *src, char *dst, size_t len);
+
+void
+bzero(char *b, size_t len);
+
+void *
+memchr(const void *b, int c, size_t len);
+
+int
+memcmp(const void *b1, const void *b2, size_t len);
+
+char *
+memccpy(char *dst, const char *src, int c, size_t len);
+
+void *
+memcpy(void *dst, const void *src, size_t len);
+
+void *
+memmove(void *dst, const void *src, size_t len);
+
+void *
+memset(void *b, int c, size_t len)
+.ft R
+.fi
+.SH DESCRIPTION
+These functions operate on variable length strings of bytes.
+They do not check for terminating null bytes as the routines
+listed in
+.IR string (3)
+do.
+.PP
+See the specific manual pages for more information.
+.SH SEE\ ALSO
+bcmp(3), bcopy(3), bzero(3), memccpy(3), memchr(3), memcmp(3), memcpy(3),
+memmove(3), memset(3)
+.SH STANDARDS
+.IR Memchr ,
+.IR memcmp ,
+.IR memcpy ,
+.IR memmove ,
+and
+.I memset
+conform to ANSI X3.159-1989 (``ANSI C'').

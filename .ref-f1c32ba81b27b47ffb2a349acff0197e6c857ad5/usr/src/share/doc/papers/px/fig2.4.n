@@ -1,0 +1,31 @@
+.\" Copyright (c) 1979 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)fig2.4.n	5.2 (Berkeley) %G%
+.\"
+.KF
+.TS
+center, box;
+cw(15).
+\s-2CASEOP\s0
+_
+No. of cases
+_
+.sp
+Case
+transfer
+table
+.sp
+_
+.sp
+Array of case
+label values
+.sp
+.TE
+.sp
+.ce
+Figure 2.4 \- Case data structure
+.sp
+.KE

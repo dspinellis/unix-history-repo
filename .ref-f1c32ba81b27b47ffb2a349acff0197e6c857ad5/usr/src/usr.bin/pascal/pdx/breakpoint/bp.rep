@@ -1,0 +1,26 @@
+/*-
+ * Copyright (c) 1982 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)bp.rep	5.2 (Berkeley) %G%
+ */
+
+/*
+ * breakpoint representation
+ */
+
+typedef struct bpinfo {
+	unsigned int bpid;
+	ADDRESS bpaddr;	
+	BPTYPE bptype;
+	SYM *bpblock;
+	NODE *bpcond;
+	NODE *bpnode;
+	LINENO bpline;
+	struct bpinfo *bpnext;
+} BPINFO;
+
+BPINFO *bphead;
+BPINFO *newbp();

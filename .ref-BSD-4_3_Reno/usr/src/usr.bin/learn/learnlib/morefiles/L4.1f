@@ -1,0 +1,48 @@
+#print
+Another useful command is "tail", which will print the last
+10 lines of a file.  This is handy when you want to see how 
+far something got before it stopped, or what the last thing
+in a file is.  To use "tail", all you need to say is
+  tail file
+What is the first word on the next to last line of the file
+called "Ref" in this directory.
+Type "answer WORD", where WORD is the word you found.
+#create Ref
+   Now Abraham Lincoln was master of the White House.  But he was
+President of only part of the United States.  For the Southern
+States has taken down the Star-Spangled Banner and raised the flag
+of the Confederacy in its stead.  Sad and silent, Lincoln gazed
+through his spyglass at the Confederate flag that fluttered in the
+wind on the other side of the Potomac River in Virginia.  He pondered
+how to get the Southern States back into the Union.  He needed
+quiet to think what to do.  But from morning till night the White
+House was crowded with people seeking his help.
+   About a hundred and fifty years after the pilgrims settled in
+this country, a young hunter picked up his gun.  He tossed it onto
+his shoulder and followed a buffalo trail across the mountains into
+what is now Kentucky.
+   His name was Daniel Boone.
+   He found wild country.  There were no settlers, no roads.  Indians
+hunted in the woods for food.  The country was beautiful and dangerous.
+But here was rich, free land -- miles and miles of it.
+   Many settlers, besides the Pilgrims, had come to the shores of
+America.  But they had stayed on the safe land between the sea and
+the mountains.
+   Columbus discovered America in 1492.  Later, other explorers
+visited the new land.  They told people in Europe of the forests,
+furs, and fish they found.  Many Europeans decided to settle in
+this wonderful land.  But some of the first settlers starved to
+death during the hard winters.  Others lived to build settlements
+or colonies for their mother countries.  Colonial America was
+beginning.  In 1607, three ships brought men from England to what
+is now Jamestown, Virginia.  They were looking for gold.
+   The leader, Captain John Smith, taught the men to build houses
+of stakes and branches.  They plastered the walls of the houses with
+mud.
+#copyin
+#user
+#uncopyin
+#match of
+#log
+#next
+4.1g 10

@@ -1,0 +1,18 @@
+#print
+You can remove several files at once with the "rm" command.
+And you can use the familiar "*" and "?" characters
+to abbreviate several file names.  BUT BE CAREFUL -
+"rm" is irreversible, and it is all too easy to type something
+like "rm *" and get rid of all your files.
+In this directory are two files named 
+"part1" and "part2".
+Remove both; then type "ready".
+#create part1
+#create part2
+#user
+test ! -r part1 && test ! -r part2
+#log
+#next
+11.1a 10
+11.2a 5
+11.3a 2

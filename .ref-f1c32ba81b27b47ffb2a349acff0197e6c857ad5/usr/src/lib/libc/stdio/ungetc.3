@@ -1,0 +1,55 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)ungetc.3	6.3 (Berkeley) %G%
+.\"
+.TH UNGETC 3 ""
+.UC 7
+.SH NAME
+ungetc \- push character back into input stream
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+
+int
+ungetc(int c, FILE *stream);
+.fr R
+.fi
+.SH DESCRIPTION
+.I Ungetc
+pushes the integer
+.I c
+(converted to an ``unsigned char'') back on an input stream, so that
+the next
+.I getc
+call on that stream will return
+.IR c .
+.I Ungetc 
+returns 
+.IR c .
+.PP
+One character of pushback is always guaranteed, but as long as there is
+sufficient memory, an effectively infinite amount of pushback is allowed.
+Attempts to push
+.B EOF
+are rejected.
+.PP
+A successful call to
+.I fseek
+erases all memory of pushed back characters.
+.SH "SEE ALSO"
+getc(3), fseek(3), setvbuf(3)
+.SH "RETURN VALUE"
+.I Ungetc
+returns
+.SM
+.B EOF
+if it cannot push back the given character for any reason
+(this includes attempts to push
+.BR EOF ).

@@ -1,0 +1,78 @@
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)uuxqt.8	6.4 (Berkeley) %G%
+.\"
+.Dd 
+.Dt UUXQT 8
+.Os BSD 4.3
+.Sh NAME
+.Nm uuxqt
+.Nd
+.Tn UUCP
+execution file interpreter
+.Sh SYNOPSIS
+.Nm uuxqt
+.Op Fl x Ar debug
+.Sh DESCRIPTION
+.Nm Uuxqt
+interprets
+.Em execution files
+created on a remote system via
+.Xr uux 1
+and transferred to the local system via
+.Xr uucico 8 .
+When a user uses
+.Xr uux
+to request remote command execution, it is
+.Nm uuxqt
+that actually executes the command. 
+.Pp
+Option availble:
+.Bl -tag -width Ar
+.It Fl x Ns Ar debug
+Normally,
+.Nm uuxqt
+is forked from
+.Xr uucico 8
+to process queued execution files;
+for debugging, it may also be run manually by the
+.Tn UUCP
+administrator.
+.El
+.Pp
+.Nm Uuxqt
+runs in its own subdirectory
+.Pa /var/spool/uucp/XTMP .
+It copies intermediate files to this directory when necessary.
+.Sh FILES
+.Bl -tag -width /var/spool/uucp/LCK/LCK.XQT -compact
+.It Pa /usr/lib/uucp/L.cmds
+Remote command permissions list
+.It Pa /usr/lib/uucp/USERFILE
+Remote directory tree permissions list
+.It Pa /var/spool/uucp/LOGFILE
+.Tn UUCP
+system activity log
+.It Pa /var/spool/uucp/LCK/LCK.XQT
+.Nm Uuxqt
+lock file
+.It Pa /var/spool/uucp/X./
+Incoming execution file directory
+.It Pa /var/spool/uucp/XTMP
+.Nm Uuxqt
+running directory
+.El
+.Sh SEE ALSO
+.Xr uucp 1 ,
+.Xr uux 1 ,
+.Xr L.cmds 5 ,
+.Xr USERFILE 5 ,
+.Xr uucico 8
+.Sh HISTORY
+The
+.Nm
+command appeared in
+.Bx 4.3 .

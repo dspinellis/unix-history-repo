@@ -1,0 +1,21 @@
+#print
+This program will try to help you learn how to use the editor.
+You should really know, before starting this, how to use files
+and how to type.
+There is a "learn files" procedure to teach you about files.
+Just to review, the current directory contains some files
+whose name begins with "do"; they describe something you should do.
+Find out what, do that, and then type "ready".
+#create ohio
+#create do1
+There is a file in this
+directory named for a state.
+#create do2
+Change the name of that file
+to 'iowa'.
+#user
+test ! -r ohio && test -r iowa
+#log
+#next
+2.1a 1
+2.2a 10

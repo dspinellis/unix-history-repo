@@ -1,0 +1,160 @@
+.TH BPROC 8 VAX-11
+.UC
+.tr |
+.SH NAME
+boot procedures \- UNIX startup
+.SH DESCRIPTION
+.I "How to start UNIX.||"
+UNIX is started by placing it in memory
+at location zero and transferring to zero.
+Since the system is not reenterable,
+it is necessary to read it in from disk or tape.
+.PP
+To boot from disk: type the console command ``BOOT''
+(which may be abbreviated ``B'')
+when the console is in LSI-11 mode.
+It may be necessary to type control-P
+to gain the attention of the LSI-11.
+This loads and executes a standalone boot program
+.I boot
+off the floppy.
+The boot program relocates itself into high memory, and types a `:'
+as a prompt on the console.
+It then reads from the console a device specification (see below) followed
+immediately by a pathname.
+.I Boot
+finds the corresponding file on the given device, loads that file
+into memory location zero, and starts the program at the entry address
+specified in the program header (after clearing off the high bit
+of the specified entry address.)
+Normal line editing character can be used in specifying the pathname.
+.PP
+If you have an rp06 or rm03 disk and wish to boot off of a file
+system which starts at cylinder 0 of unit 0, you can type ``hp(0,0)vmunix''
+to the boot prompt.  On Ernie Co-vax, ``up(0,0)vmunix'' would specify
+a UNIBUS ampex 9300 drive.
+.PP
+.B "Device specifications."
+A device specificaion has the following form:
+.IP
+device(unit, minor)
+.PP
+where
+.I device
+is the type of the device to be searched,
+.I unit
+is the unit number of the device,
+and
+.I minor
+is the minor device index.
+The following list of supported devices may vary from installation to
+installation:
+.ta 5 10
+.nf
+	rp	RP06 or RM03 on MASSBUS
+	up	AMPEX 9300 on UNIBUS
+	ht	TE16
+.fi
+.PP
+For tapes, the minor device number gives a file offset.
+.PP
+.B "Emergency bootstraps."
+If the console BOOT command does not work, here is a position-independent
+program which will read the boot block (block 0) from a RP06 or RM03 disk,
+on the MASSBUSS; the boot block will then boot in the file
+.B /boot
+off the file system at cylinder 0 of the RP, in the same way that the
+console floppy would bring the program in.
+.PP
+.nf
+.if n .ta 3 14 21 41 49
+.if t .ta .3i 1i 1.6i 3.5i
+RP06 disk (MBA 0, drive 0)
+	00009fde	moval	*$0x20010000,r1	# MBA 0
+	\0\0512001
+	d0      	movl	$1,4(r1)	# initialize MBA
+	\0\004a101
+	d0      	movl	$0x13,0x400(r1)	# volume valid
+	0400c113
+	10008f32	cvtwl	$0x1000,0x424(r1)	# 16-bit format
+	\0\00424c1
+	d4      	clrl	12(r1)	# map reg. 0, offset 0
+	\0\0\0\00ca1
+	8fd0    	movl	$0x80000000,0x800(r1)	# valid, page 0/0
+	80000000
+	\0\00800c1
+	32      	cvtwl	$-512,16(r1)	# byte count
+	a1fe008f
+	\0\0\0\0\0\010
+	28c1d4  	clrl	0x428(r1)	# cylinder
+	\0\0\0\0\0\004
+	14c1d4  	clrl	0x414(r1)	# sector, track
+	\0\0\0\0\0\004
+	c139d0  	movl	$0x39,0x400(r1)	# read 1 block
+	\0\0\0\00400
+	\0\000    	halt
+.fi
+.PP
+To boot from magnetic tape:  The
+.IR tp (1)
+command places the bootstrap program
+.I mboot
+on block 0 of the tape.  When read into memory at location 0 and executed,
+.I mboot
+prompts with an equal sign `=', reads a file name from the console,
+then loads and executes that file from the
+.I tp
+tape.  Unfortunately DEC does not provide a console command to read
+a block from tape to memory.  Here is a position-independent program
+which does:
+.PP
+.nf
+TM03 magtape (MBA 1, drive 0) from load point:
+.if n .ta 3 14 21 41 49
+.if t .ta .3i 1i 1.6i 3.5i
+	20009fde	moval	*$0x20012000,r1	# MBA 1
+	\0\0512001
+	d0      	movl	$1,4(r1)	# initialize
+	\0\004a101
+	32      	cvtwl	$0x14c0,0x424(r1)	# drive characteristics
+	c114c08f
+	\0\0\0\00424
+	a1d4    	clrl	12(r1)	# map reg. 0, offset 0
+	\0\0\0\0\0\00c
+	008fd0  	movl	$0x80000000,0x800(r1)	# valid, page 0/0
+	c1800000
+	\0\0\0\00800
+	8f32    	cvtwl	$-512,16(r1)	# byte count
+	10a1fe00
+	00c139d0	movl	$0x39,0x400(r1)	# read 1 block
+	\0\0\0\0\0\004
+	\0\0\0\000  	halt
+Then give the console command ``START 0\er''.
+.fi
+.PP
+.I mboot
+does not perform character erase and line kill editing.  Instead,
+it starts over with the prompt for file name whenever the requested
+file cannot be found.
+.PP
+Be sure that
+.I mboot
+exists whenever a
+.I tp
+tape is made.  Remember to put an appropriate block 0 boot and a
+.IR /boot
+in file systems when running
+.IR mkfs .
+.SH FILES
+.ta \w'/usr/mdec/mboot   'u
+/vmunix	UNIX code
+.br
+/usr/mdec/uboot	rp disk bootstrap
+.br
+/boot	backup system bootstrap
+.br
+/usr/mdec/mboot	
+.IR tp ""
+magtape bootstrap
+.SH "SEE ALSO"
+tp(1), init.vm(8)

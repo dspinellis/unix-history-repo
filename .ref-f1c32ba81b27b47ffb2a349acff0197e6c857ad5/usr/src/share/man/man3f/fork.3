@@ -1,0 +1,54 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)fork.3	6.2 (Berkeley) %G%
+.\"
+.TH FORK 3F ""
+.UC 5
+.SH NAME
+fork \- create a copy of this process
+.SH SYNOPSIS
+.B integer function fork()
+.SH DESCRIPTION
+.I Fork
+creates a copy of the calling process.
+The only distinction between the 2 processes is that the value
+returned to one of them (referred to as the `parent' process)
+will be the process id of the copy.
+The copy is usually referred to as the `child' process.
+The value returned to the `child' process will be zero.
+.PP
+All logical units open for writing are flushed before the fork to avoid
+duplication of the contents of I/O buffers in the external file(s).
+.PP
+If the returned value is negative, it indicates an error and will be
+the negation of the system error code.
+See perror(3F).
+.PP
+A corresponding
+.I exec
+routine has not been provided because there is no satisfactory way to
+retain open logical units across the exec.
+However, the usual function of
+.I fork/exec
+can be performed using
+.IR system (3F).
+.if 0 \{
+A pipe can be opened to another process using the f77
+.B open
+statement with
+.sp 1
+.ti +5
+.B "file=\(fm\fIprocess\fB\(fm, status=\(fmpipe\(fm, access=\(fmread\(fm"
+.br
+or
+.br
+.ti +5
+.B "file=\(fm\fIprocess\fB\(fm, status=\(fmpipe\(fm, access=\(fmwrite\(fm"
+\}
+.SH FILES
+.ie \nM /usr/ucb/lib/libU77.a
+.el /usr/lib/libU77.a
+.SH "SEE ALSO"
+fork(2), wait(3F), kill(3F), system(3F), perror(3F)

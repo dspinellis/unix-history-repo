@@ -1,0 +1,18 @@
+.TH FILE 1 
+.SH NAME
+file \- determine file type
+.SH SYNOPSIS
+.B file
+file ...
+.SH DESCRIPTION
+.I File
+performs a series of tests on each argument
+in an attempt to classify it.
+If an argument appears to be ascii,
+.I file
+examines the first 512 bytes
+and tries to guess its language.
+.SH BUGS
+It often makes mistakes.
+In particular it often suggests that
+command files are C programs.

@@ -1,0 +1,44 @@
+/*-
+ * Copyright (c) 1982 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * %sccs.include.redist.c%
+ *
+ *	@(#)sym.rep	5.3 (Berkeley) %G%
+ */
+
+/*
+ * This file contains the definition of the representation of the SYM type.
+ */
+
+struct sym {
+	char *symbol;
+	char class;
+	char blkno;
+	SYM *type;
+	SYM *chain;
+	union {
+		int offset;		/* variable address */
+		long iconval;		/* integer constant value */
+		double fconval;		/* floating constant value */
+		struct {		/* range bounds */
+			long lower;
+			long upper;
+		} rangev;
+		struct {		/* address of function value, code */
+			int offset;
+			ADDRESS codeloc;
+		} funcv;
+		struct {		/* variant record info */
+			int size;
+			SYM *vtorec;
+			SYM *vtag;
+		} varnt;
+		struct {		/* information for reserved words */
+			int toknum;
+			int tokval;
+		} token;
+	} symvalue;
+	SYM *func;
+	SYM *next_sym;
+};

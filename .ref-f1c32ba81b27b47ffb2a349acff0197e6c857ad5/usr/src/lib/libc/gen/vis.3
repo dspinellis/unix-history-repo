@@ -1,0 +1,148 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)vis.3	5.6 (Berkeley) %G%
+.\"
+.TH VIS 3 ""
+.UC 7
+.SH NAME
+vis \- visually encode characters
+.SH SYNOPSIS
+.nf
+.ft B
+#include <vis.h>
+
+char *vis(dst, c, flag, nextc)
+char *dst, c, nextc;
+int flag;
+
+int strvis(dst, src, flag)
+char *dst, *src;
+int flag;
+
+int strvisx(dst, src, len, flag)
+char *dst, *src;
+int len, flag;
+
+.ft R
+.fi
+.SH DESCRIPTION
+.I Vis
+copies into dst a string which represents the character c.  If
+c needs no encoding, it is copied in unaltered.  The string is
+null terminated, and a pointer to the end of the string is
+returned.  The maximum length of any encoding is four
+characters (not including the trailing NULL); thus, when
+encoding a set of characters into a buffer, the size of the buffer should
+be four times the number of characters encoded, plus one for the trailing NULL.
+The flag parameter is used for altering the default range of
+characters considered for encoding and for altering the visual
+representation.
+The additional character, nextc, is only used when selecting the
+VIS_CSTYLE encoding format (explained below).
+.PP
+Strvis and strvisx copy into dst a visual representation of
+the string src.  Strvis encodes characters from src up to the
+first NULL.  Strvisx encodes exactly len characters from src (this
+is useful for encoding a block of data that may contain NULL's).
+Both forms NULL terminate dst.  Dst must be four times the number
+of characters encoded from src (plus one for the NULL).  Both
+forms return the number of characters in dst (not including
+the trailing NULL).
+.PP
+The encoding is a unique, invertible representation comprised entirely of
+graphic characters; it can be decoded back into the original form using 
+the unvis(3) or strunvis(3) functions.
+.PP
+There are two parameters that can be controlled: the range of
+characters that are encoded, and the type
+of representation used.  
+By default, all non-graphic characters (see isgraph(3))
+except space, tab, and newline are encoded.  The following flags
+alter this:
+.TP
+VIS_SP
+Also encode space.
+.TP
+VIS_TAB		
+Also encode tab.
+.TP
+VIS_NL
+Also encode newline.
+.TP
+VIS_WHITE	
+Synonym for VIS_SP | VIS_TAB | VIS_NL.
+.TP
+VIS_SAFE	
+Only encode "unsafe" characters.  Unsafe means control
+characters which may cause common terminals to perform
+unexpected functions.  Currently this form allows space,
+tab, newline, backspace, bell, and return - in addition
+to all graphic characters - unencoded. 
+.PP
+There are three forms of encoding.
+All forms use the backslash character (``\e'') to introduce a special
+sequence; two backslashes are used to represent a real backslash.
+These are the visual formats:
+.TP
+(default)
+Use an ``M'' to represent meta characters (characters with the 8th
+bit set), and use carat (``^'') to represent control characters see
+(\fIiscntrl\fP(3)).
+The following formats are used:
+.RS
+.TP
+\e^C
+Represents the control character ``C''.
+Spans characters \e000 through \e037, and \e177 (as \e^?).
+.TP
+\eM-C
+Represents character ``C'' with the 8th bit set.
+Spans characters \e241 through \e376.
+.TP
+\eM^C
+Represents control character ``C'' with the 8th bit set.
+Spans characters \e200 through \e237, and \e377 (as \eM^?).
+.TP
+\e040
+Represents ACSII space.
+.TP
+\e240
+Represents Meta-space.
+.sp
+.RE
+.TP
+VIS_CSTYLE
+Use C-style backslash sequences to represent standard non-printable
+characters.
+The following sequences are used to represent the indicated characters:
+.sp
+.nf
+\ea   - BEL (007)
+\eb   - BS  (010)
+\ef   - NP  (014)
+\en   - NL  (012)
+\er   - CR  (015)
+\et   - HT  (011)
+\ev   - VT  (013)
+\e0   - NUL (000)
+.fi
+.sp
+When using this format, the nextc parameter is looked at to determine
+if a NULL character can be encoded as ``\e0'' instead of ``\e000''.
+If nextc is an octal digit, the latter representation is used to
+avoid ambiguity.
+.TP
+VIS_OCTAL
+Use a three digit octal sequence.  The form is ``\eddd'' where
+d represents an octal digit.
+.PP
+There is one additional flag, VIS_NOSLASH, which inhibits the
+doubling of backslashes and the backslash before the default
+format (that is, control characters are represented by ^C and
+meta characters as M-C).  With this flag set, the encoding is
+ambiguous and non-invertible.
+.SH "SEE ALSO"
+vis(1), unvis(1), unvis(3)

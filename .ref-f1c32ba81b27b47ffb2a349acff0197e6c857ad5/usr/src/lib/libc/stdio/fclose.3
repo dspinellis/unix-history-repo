@@ -1,0 +1,57 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)fclose.3	6.5 (Berkeley) %G%
+.\"
+.TH FCLOSE 3 ""
+.UC 7
+.SH NAME
+fclose \- close a stream
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+
+int
+fclose(FILE *stream);
+.ft R
+.fi
+.SH DESCRIPTION
+.I Fclose
+dissociates the named
+.I stream
+from its underlying file or set of functions.
+If the stream was being used for output, any buffered data is written
+first, using
+.IR fflush (3).
+.SH "RETURN VALUE"
+Upon successful completion 0 is returned.
+Otherwise,
+.B EOF
+is returned and the global variable
+.I errno
+is set to indicate the error.
+In either case no further access to the stream is possible. 
+.SH ERRORS
+.TP 15
+[EBADF]
+.I Stream
+is not an open stream.
+.PP
+.I Fclose
+may also fail and set 
+.I errno
+for any of the errors specified for the routines
+.IR close (2)
+or 
+.IR fflush (3).
+.SH STANDARDS
+.I Fclose
+conforms to ANSI X3.159-1989 (``ANSI C'').
+.SH "SEE ALSO"
+close(2), fflush(3), fopen(3), setbuf(3)

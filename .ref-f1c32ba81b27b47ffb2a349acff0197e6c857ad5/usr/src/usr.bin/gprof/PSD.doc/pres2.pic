@@ -1,0 +1,26 @@
+.\" Copyright (c) 1986 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)pres2.pic	5.2 (Berkeley) %G%
+.\"
+.PS
+ellipse ht .3i wid .6i "\s-1CALC1\s+1"
+ellipse ht .3i wid .6i "\s-1CALC2\s+1" at 1st ellipse + (.75i,0i)
+ellipse ht .3i wid .6i "\s-1CALC3\s+1" at 1st ellipse + (1.5i,0i)
+ellipse ht .3i wid .8i "\s-1FORMAT1\s+1" at 1st ellipse - (0i,.5i)
+ellipse ht .3i wid .8i "\s-1FORMAT2\s+1" at 3rd ellipse - (0i,.5i)
+ellipse ht .3i wid .75i "\s-1\"WRITE\"\s+1" at 5th ellipse - (.75i,.5i)
+line <- from 1st ellipse up .5i left .4i chop .1825i
+line <- from 1st ellipse up .5i right .4i chop .1825i
+line <- from 2nd ellipse up .5i left .4i chop .1825i
+line <- from 2nd ellipse up .5i right .4i chop .1825i
+line <- from 3rd ellipse up .5i left .4i chop .1825i
+line <- from 3rd ellipse up .5i right .4i chop .1825i
+arrow from 1st ellipse to 4th ellipse chop .15i
+arrow from 2nd ellipse to 5th ellipse chop 
+arrow from 3rd ellipse to 5th ellipse chop .15i
+arrow from 4th ellipse to 6th ellipse chop
+arrow from 5th ellipse to 6th ellipse chop
+.PE

@@ -1,0 +1,37 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This manual is derived from one contributed to Berkeley by
+.\" Michael Rendell of Memorial University of Newfoundland.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)tsort.1	6.4 (Berkeley) %G%
+.\"
+.TH tsort 1 ""
+.AT 3
+.SH NAME
+tsort \- topological sort of a directed graph
+.SH SYNOPSIS
+.nf
+.ft B
+tsort [ file ]
+.ft R
+.fi
+.SH DESCRIPTION
+.I Tsort
+takes a list of pairs of node names representing directed arcs in
+a graph and prints the nodes in topological order on standard output.
+Input is taken from the named file, or from standard input if no file
+is given.
+.PP
+Node names in the input are separated by white space and there must be an
+even number of nodes.
+.PP
+Presence of a node in a graph can be represented by an arc from the node
+to itself.
+This is useful when a node is not connected to any other nodes.
+.PP
+If the graph contains a cycle (and therefore cannot be properly sorted),
+one of the arcs in the cycle is ignored and the sort continues.
+Cycles are reported on standard error.

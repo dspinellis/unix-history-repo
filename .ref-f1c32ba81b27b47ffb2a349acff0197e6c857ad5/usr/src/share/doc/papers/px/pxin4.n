@@ -1,0 +1,41 @@
+.\" Copyright (c) 1979 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)pxin4.n	5.2 (Berkeley) %G%
+.\"
+.if !\n(xx .so tmac.p
+.nr H1 3
+.if n .ND
+.NH
+Conclusions
+.PP
+It is appropriate to consider,
+given the amount of time invested in rewriting the interpreter,
+whether the time was well spent, or whether a code-generator
+could have been written with an equivalent amount of effort.
+The Berkeley Pascal system is being modified to interface
+to the code generator of the portable C compiler with
+not much more work than was involved in rewritting
+.I px .
+However this compiler will probably not supercede the interpreter
+in an instructional environment as the
+necessary loading and assembly processes will slow the
+compilation process to a noticeable degree.
+This effect will be further exaggerated because
+student users spend more time in compilation than in execution.
+Measurements over the course of a quarter at Berkeley with a mixture
+of students from beginning programming to upper division compiler
+construction show that the amount of time in compilation exceeds the amount
+of time spent in the interpreter, the ratio being approximately 60/40.
+.PP
+A more promising approach might have been a throw-away code generator
+such as was done for the
+.SM
+WATFIV
+.NL
+system.
+However the addition of high-quality post-mortem and interactive
+debugging facilities become much more difficult to provide than
+in the interpreter environment.

@@ -1,0 +1,248 @@
+#!/bin/sh -
+#
+# Copyright (c) 1990 The Regents of the University of California.
+# All rights reserved.
+#
+# %sccs.include.redist.sh%
+#
+#	@(#)MAKEDEV	5.2 (Berkeley) %G%
+#
+# Device "make" file.  Valid arguments:
+#	std	standard devices
+#	local	configuration specific devices
+# Tapes:
+#	ct*	HP300 HP-IB cartridge tape
+# Disks:
+#	cd*	"concatenated" pseudo-disks
+#	rd*	HP300 HP-IB disks
+#	sd*	HP300 SCSI disks
+#	vnd*	"file" pseudo-disks
+# Terminal multiplexors:
+#	dca*	HP200/300 single port serial interface
+#	dcm*	HP200/300 4 port serial mux interface
+# Pseudo terminals:
+#	pty*	set of 16 master and slave pseudo terminals
+# Printers:
+# Call units:
+# Special purpose devices:
+#	flog*	kernel logging device
+#	grf*	raw interface to HP300 graphics devices
+#	ite*	terminal emulator interface to HP300 graphics devices
+#	hil	HP300 HIL input devices
+
+PATH=/sbin:/bin/:/usr/bin
+umask 77
+for i
+do
+case $i in
+
+std)
+	mknod console		c 0 0
+	mknod drum		c 3 0	; chmod 640 drum ; chgrp kmem drum
+	mknod kmem		c 2 1	; chmod 640 kmem ; chgrp kmem kmem
+	mknod mem		c 2 0	; chmod 640 mem ; chgrp kmem mem
+	mknod null		c 2 2	; chmod 666 null
+	mknod tty		c 1 0	; chmod 666 tty
+	mknod klog		c 6 0	; chmod 600 klog
+	mknod stdin		c 53 0	; chmod 666 stdin
+	mknod stdout		c 53 1	; chmod 666 stdout
+	mknod stderr		c 53 2	; chmod 666 stderr
+	mkdir fd > /dev/null 2>&1
+	(cd fd && eval `echo "" | awk ' BEGIN { \
+		for (i = 0; i < 64; i++) \
+			printf("mknod %d c 53 %d;", i, i)}'`)
+	chown -R bin.bin fd
+	chmod 555 fd
+	chmod 666 fd/*
+	;;
+
+ct*)
+	umask 0 ; unit=`expr $i : '..\(.*\)'`
+	case $i in
+	ct*) blk=0; chr=7;;
+	esac
+	case $unit in
+	0|1|2|3|4|5|6|7)
+		four=`expr $unit + 4` ; eight=`expr $unit + 8`
+		twelve=`expr $unit + 12`; twenty=`expr $unit + 20`
+		#
+		# block devices don't work so don't make them
+		#mknod ct$unit	b $blk $unit
+		#mknod ct$four	b $blk $four
+		#mknod ct$eight	b $blk $eight
+		#mknod ct$twelve	b $blk $twelve
+		#mknod nct$unit	b $blk $four ;: sanity w/pdp11 v7
+		#mknod nct$eight	b $blk $twelve ;: ditto
+		#
+		mknod rct$unit	c $chr $unit
+		mknod rct$four	c $chr $four
+		mknod rct$eight	c $chr $eight
+		mknod rct$twelve	c $chr $twelve
+		ln rct$four nrct$unit ;: sanity w/pdp11 v7
+		ln rct$twelve nrct$eight ;: ditto
+		;;
+	*)
+		echo bad unit for tape in: $1
+		;;
+	esac
+	umask 77
+	;;
+
+cd*|fd*|rd*|sd*)
+	umask 2 ; unit=`expr $i : '..\(.*\)'`
+	case $i in
+	rd*) name=rd; blk=2; chr=9;;
+	sd*) name=sd; blk=4; chr=8;;
+	cd*) name=cd; blk=5; chr=17;;
+	vnd*) name=vnd; blk=6; chr=19;;
+	esac
+	case $unit in
+	0|1|2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|\
+	17|18|19|20|21|22|23|24|25|26|27|28|29|30|31)
+		mknod ${name}${unit}c	b $blk `expr $unit '*' 8 + 2`
+		mknod r${name}${unit}c	c $chr `expr $unit '*' 8 + 2`
+		if [ $name != cd -a $name != vnd ]
+		then
+		mknod ${name}${unit}a	b $blk `expr $unit '*' 8 + 0`
+		mknod ${name}${unit}b	b $blk `expr $unit '*' 8 + 1`
+		mknod ${name}${unit}d	b $blk `expr $unit '*' 8 + 3`
+		mknod ${name}${unit}e	b $blk `expr $unit '*' 8 + 4`
+		mknod ${name}${unit}f	b $blk `expr $unit '*' 8 + 5`
+		mknod ${name}${unit}g	b $blk `expr $unit '*' 8 + 6`
+		mknod ${name}${unit}h	b $blk `expr $unit '*' 8 + 7`
+		mknod r${name}${unit}a	c $chr `expr $unit '*' 8 + 0`
+		mknod r${name}${unit}b	c $chr `expr $unit '*' 8 + 1`
+		mknod r${name}${unit}d	c $chr `expr $unit '*' 8 + 3`
+		mknod r${name}${unit}e	c $chr `expr $unit '*' 8 + 4`
+		mknod r${name}${unit}f	c $chr `expr $unit '*' 8 + 5`
+		mknod r${name}${unit}g	c $chr `expr $unit '*' 8 + 6`
+		mknod r${name}${unit}h	c $chr `expr $unit '*' 8 + 7`
+		fi
+		chgrp operator ${name}${unit}[a-h] r${name}${unit}[a-h]
+		chmod 640 ${name}${unit}[a-h] r${name}${unit}[a-h]
+		;;
+	*)
+		echo bad unit for disk in: $i
+		;;
+	esac
+	umask 77
+	;;
+
+dca*)
+	unit=`expr $i : 'dca\(.*\)'`
+	case $unit in
+	0)
+		mknod tty0 c 12 0
+		;;
+	*)
+		echo bad unit for dca in: $i
+		;;
+	esac
+	;;
+
+dcm*)
+	unit=`expr $i : 'dcm\(.*\)'`
+	case $unit in
+	0|1|2|3)
+	        eval `echo $unit | awk ' { unit = $1; u = 4 * $1 } END {
+	        for (i = 0; i < 4; i++)
+                printf("mknod tty0%x c 15 %d; ",u+i,u+i); }'`
+        ;;
+	*)
+		echo bad unit for dcm in: $i
+		;;
+	esac
+	;;
+
+ite*)
+	unit=`expr $i : 'ite\(.*\)'`
+	case $unit in
+	0|1|2|3)
+		mknod ttye${unit} c 13 ${unit}
+		;;
+	*)
+		echo bad unit for ite in: $i
+		;;
+	esac
+	;;
+
+grf*)
+	unit=`expr $i : 'grf\(.*\)'`
+	case $unit in
+	0|1|2|3)
+		mknod grf${unit} c 10 ${unit}; chmod 666 grf${unit}
+		echo "grf${unit}: use MAKEDEV.hpux to make HP-UX names for device"
+		;;
+	*)
+		echo bad unit for grf in: $i
+		;;
+	esac
+	;;
+
+hil)
+	for unit in 0 1 2 3 4 5 6 7
+	do
+		mknod hil${unit} c 14 ${unit}
+		if [ -f /usr/local/hilinfo ]
+		then
+			case `/usr/local/hilinfo -t hil${unit}` in
+			mouse)
+				if [ ! -f locator ]
+				then
+					ln hil${unit} locator
+				fi
+				;;
+			keyboard)
+				if [ ! -f keyboard ]
+				then
+					ln hil${unit} keyboard
+				fi
+				;;
+			*)
+				;;
+			esac
+		fi
+	done
+	if [ ! -f /usr/local/hilinfo ]
+	then
+		ln hil1 keyboard
+		ln hil3 locator
+	fi
+	chmod 666 hil*
+	echo "hil: use MAKEDEV.hpux to make HP-UX names for devices"
+	;;
+
+pty*)
+	class=`expr $i : 'pty\(.*\)'`
+	case $class in
+	0) offset=0 name=p;;
+	1) offset=16 name=q;;
+	2) offset=32 name=r;;
+	3) offset=48 name=s;;
+# Note that telnetd, rlogind, and xterm (at least) only look at p-s.
+	4) offset=64 name=t;;
+	*) echo bad unit for pty in: $i;;
+	esac
+	case $class in
+	0|1|2|3|4)
+		umask 0
+		eval `echo $offset $name | awk ' { b=$1; n=$2 } END {
+			for (i = 0; i < 16; i++)
+				printf("mknod tty%s%x c 4 %d; \
+					mknod pty%s%x c 5 %d; ", \
+					n, i, b+i, n, i, b+i); }'`
+		umask 77
+		if [ $class = 1 ]; then
+			mv ttyqf ttyv0; mv ptyqf ptyv0
+		fi
+		;;
+	esac
+	;;
+
+local)
+	umask 0
+	sh MAKEDEV.local
+	;;
+
+esac
+done

@@ -1,0 +1,93 @@
+.TH FOPEN 3 4/8/79 3
+.SH NAME
+fopen, freopen \- open a stream
+.SH SYNOPSIS
+.B #include <nstdio.h>
+.PP
+.SM
+.B FILE
+.B *fopen(filename, type)
+.br
+.B char *filename, *type;
+.PP
+.SM
+.B FILE
+.B *freopen(filename, type, stream)
+.br
+.B char *filename, *type;
+.br
+.SM
+.B FILE
+.B *stream;
+.SH DESCRIPTION
+.I Fopen
+opens the file named by
+.I filename
+and associates a stream with it.
+.I Fopen
+returns a pointer to be used to identify
+the stream in subsequent operations.
+.PP
+.I Type
+is a character string having one of the following values:
+.TP 5
+"r"
+open for reading
+.ns
+.TP 5
+"w"
+create for writing
+.ns
+.TP 5
+"rw" or "w+"
+Create for concurrent read/write access.
+The file is first truncated, if it exists,
+and created if it does not.
+.ns
+.TP 5
+"a"
+Append: open for writing at end
+of file, or create for writing
+.ns
+.TP 5
+"ra" or "a+"
+Read and append: open for concurrent read/write access  at end
+of file, or create file and open with such access
+.ns
+.TP 5
+"r+"
+Read and write: open for both reading and writing
+but do not truncate the file first.
+.PP
+.I Freopen
+substitutes the named file in place
+of the open
+.IR stream .
+It returns the original value of
+.IR stream .
+The original stream is closed.
+.PP
+.I Freopen
+is typically used to attach the preopened
+constant names,
+.B stdin, stdout, stderr,
+to specified files.
+.SH "SEE ALSO"
+open(2),
+fclose(3)
+.SH DIAGNOSTICS
+.I Fopen
+and 
+.I freopen
+return the pointer
+.SM
+.B NULL
+if
+.I filename
+cannot be accessed.
+.SH BUGS
+The "+" syntax is included merely for compatibility with the USG
+stdio, and is not to be viewed as true support.
+The USG stdio has restrictions on how you can switch from reading
+to writing or vice versa.
+LibNS has no such restrictions, at a small runtime cost.

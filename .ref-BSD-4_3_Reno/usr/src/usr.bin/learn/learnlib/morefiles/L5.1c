@@ -1,0 +1,40 @@
+#print
+Another use for pipes is to replace a command sequence that we
+did earlier with "cat", "pr" and a temporary file.  If you have
+a bunch of small files, using "pr" on them directly wastes
+paper, since each file takes a page.  You could say
+  cat memo* >temp
+  pr temp
+  rm temp
+but this is a nuisance (and the output will
+have the title "temp" on each page).  So use
+a pipe instead.
+In this directory there are some files whose
+names begin with "word".  Use "cat", "pr" and a pipe
+to print them, then type "ready".
+#create word1
+now
+is
+the
+time
+for
+all
+#create word2
+good
+men
+to
+come
+to
+the
+aid
+#create word3
+of
+their
+party.
+#copyin
+#user
+#uncopyin
+grep 'cat word.*| *pr' <.copy >/dev/null
+#log
+#next
+5.1d 10

@@ -1,0 +1,123 @@
+.TH UUCP 1C
+.SH NAME
+uucp, uulog \- unix to unix copy
+.SH SYNOPSIS
+.B uucp
+[ option ] ...
+source-file ...  destination-file
+.PP
+.B uulog
+[ option ] ...
+.SH DESCRIPTION
+.I Uucp
+copies files named by the source-file arguments
+to the destination-file argument.
+A file name may be a path name on your machine, or may 
+have the form
+.IP
+system-name!pathname
+.LP
+where `system-name' is taken from a list of system names
+which
+.I uucp
+knows about.
+Shell metacharacters ?*[] appearing in the pathname part
+will be expanded on the appropriate system.
+.PP
+Pathnames may be one of
+.IP (1)
+a full pathname;
+.IP (2)
+a pathname preceded by
+.IR ~user ;
+where
+.I user
+is a userid on the specified system
+and is replaced by that user's login directory;
+.IP (3)
+anything else is prefixed by the current directory.
+.PP
+If the result is an erroneous pathname for the remote system
+the copy will fail.
+If the destination-file is a directory, the last part of the
+source-file name is used.
+.ig
+If a simple
+.I ~user
+destination is inaccessible to 
+.I uucp,
+data is copied to a spool directory and the user
+is notified by
+.IR mail (1).
+..
+.PP
+.I Uucp
+preserves execute permissions across the transmission
+and gives 0666 read and write permissions (see
+.IR chmod (2)).
+.PP
+The following options are interpreted by
+.IR uucp .
+.TP 
+.B \-d
+Make all necessary directories for the file copy.
+.TP 
+.B \-c
+Use the source file when copying out rather than
+copying the file to the spool directory.
+.TP 
+.B \-m
+Send mail to the requester when the copy is complete.
+.PP
+.I Uulog
+maintains a summary log
+of 
+.I uucp
+and
+.IR uux (1)
+transactions in the file
+`/usr/spool/uucp/LOGFILE' by gathering
+information from partial log files named `/usr/spool/uucp/LOG.*.?'.
+It removes the partial log files.
+.PP
+The options cause 
+.I uulog 
+to print logging information:
+.TP
+.BI \-s sys
+Print information about work involving system
+.I sys.
+.TP
+.BI \-u user
+Print information about work done for the specified
+.I user.
+.SH FILES
+/usr/spool/uucp - spool directory
+.br
+/usr/lib/uucp/* - other data and program files
+.SH SEE ALSO
+uux(1), mail(1)
+.br
+D. A. Nowitz,
+.I Uucp Implementation Description
+.SH WARNING
+The domain of remotely accessible files can
+(and for obvious security reasons, usually should)
+be severely restricted.
+You will very likely not be able to fetch files
+by pathname;
+ask a responsible person on the remote system to
+send them to you.
+For the same reasons you will probably not be able
+to send files to arbitrary pathnames.
+.SH BUGS
+.br
+All files received by
+.I uucp
+will be owned by uucp.
+.br
+The \-m option will only work sending files or receiving
+a single file.
+(Receiving multiple files specified by special shell
+characters ?*[] will not activate
+the \-m option.)

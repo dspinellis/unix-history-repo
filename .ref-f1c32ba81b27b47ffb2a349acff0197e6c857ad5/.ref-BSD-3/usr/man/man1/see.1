@@ -1,0 +1,19 @@
+.TH SEE 1 2/24/79
+.UC
+.SH NAME
+see \- see what a file has in it
+.SH SYNOPSIS
+.B see
+[
+.B \- 
+] [ name ... ]
+.SH DESCRIPTION
+.I See
+prints a file which contains non-printing characters in a readable format.
+Control characters print like ^I for tab.
+Delete prints as ^?.
+Ends of lines are marked with `$' unless the `\-' option is given
+.SH "SEE ALSO"
+cat(1), ex(1)
+.SH AUTHOR
+William Joy

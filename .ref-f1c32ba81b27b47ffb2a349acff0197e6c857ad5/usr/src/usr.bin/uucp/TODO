@@ -1,0 +1,24 @@
+TODO	5.1	83/07/02
+xmv takes so long the other site times out.
+	(Partially fixed w/ cntrl.c kludge.)
+Documentation
+
+zombies due to un-waited for uucp-s. in xqt.c
+uudiff, man pages.
+McGeady glitches
+do not start uucico if /etc/shutdown exists
+Change caught hangups, etc. to put notice in STST.<remote>
+in logent.c, add clock to output?
+security of PATH, popen, etc.
+uuname use Sysfiles?
+make mvspoolfiles
+location of ASSERT on # LOG fields
+uusnap erroneously announces 'retry time' for things like NODEV.
+CF_LOCK not properly returned by conn, resulting in long wait.
+Get rid of dup2.
+uudemon vs uu....
+'uucp remote!file inaccessiblelocalfile' should fail right away?
+make cpuucico  does not re-make uucico first
+NO DEVICE is not very informative
+compute acu, comm line for rvmacx
+is fixline used everywhere needed in condevs.c?

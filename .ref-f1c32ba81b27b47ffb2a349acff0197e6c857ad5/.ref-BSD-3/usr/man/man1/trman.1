@@ -1,0 +1,17 @@
+.TH TRMAN 1 2/24/79
+.UC
+.SH NAME
+trman \- translate version 6 manual macros to version 7 macros
+.SH SYNOPSIS
+.B trman
+[ file  ]
+.SH DESCRIPTION
+.I Trman
+reads the input file, which should be nroff/troff input and attempts
+to translate the version 6 manual sections therein to version 7 format.
+It is largely successful, but seems to have trouble
+with indented paragraphs and complicated font control.
+You should expect to have to fix up long sections by hand somewhat.
+.SH SEE ALSO
+man(7)
+.SH BUGS

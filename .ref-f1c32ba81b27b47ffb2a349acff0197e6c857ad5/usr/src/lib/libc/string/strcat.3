@@ -1,0 +1,56 @@
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" This code is derived from software contributed to Berkeley by
+.\" Chris Torek.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"	@(#)strcat.3	5.3 (Berkeley) %G%
+.\"
+.TH STRCAT 3 ""
+.UC 4
+.SH NAME
+strcat \- concatenate strings
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+
+char *
+strcat(char *s, const char *append);
+
+char *
+strncat(char *s, const char *append, size_t count);
+.ft R
+.fi
+.SH DESCRIPTION
+.B Strcat
+and
+.B strncat
+append a copy of the null-terminated string
+.I append
+to the end of the null-terminated string
+.IR s ,
+then add a terminating '\e0'.
+The string
+.I s
+must have sufficient space to hold the result.
+.PP
+.B Strncat
+appends at most
+.I count
+characters.
+.PP
+.B Strcat
+and
+.B strncat
+return the pointer
+.IR s .
+.SH SEE ALSO
+bcopy(3), memccpy(3), memcpy(3), memmove(3), strcpy(3)
+.SH STANDARDS
+.B Strcat
+and
+.B strncat
+conform to ANSI X3.159-1989 (``ANSI C'').

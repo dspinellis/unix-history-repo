@@ -1,0 +1,29 @@
+.\"
+.\" Copyright (c) 1990 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" %sccs.include.redist.man%
+.\"
+.\"     @(#)tmac.andoc	5.5 (Berkeley) %G%
+.\"
+.\" 132 section one files still have not ben upgraded from tmac.doc.old
+.\" once those are done this `.de Vx' can go away.
+.nr Vx 0
+.de Vx
+.nr Vx 1
+.so /usr/share/tmac/tmac.doc.old
+..
+.de Dd
+.if \\n(vX==0 \{\
+.	rn Dd xX
+.	so /usr/share/tmac/tmac.doc
+.	Dd \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8
+.	rm xX
+.\}
+..
+.de TH
+.rn TH xX
+.so /usr/share/tmac/tmac.an.old
+.TH \\$1 \\$2 \\$3 \\$4 \\$5 \\$6 \\$7 \\$8
+.rm xX
+..

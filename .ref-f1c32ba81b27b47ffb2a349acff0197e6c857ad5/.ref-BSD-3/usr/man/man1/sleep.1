@@ -1,0 +1,32 @@
+.TH SLEEP 1 
+.SH NAME
+sleep \- suspend execution for an interval
+.SH SYNOPSIS
+.B sleep
+time
+.SH DESCRIPTION
+.I Sleep
+suspends execution for
+.I time
+seconds.
+It is used to execute a command
+after a certain amount of time as in:
+.PP
+	(sleep 105; command)&
+.PP
+or to execute a command every so often, as in:
+.PP
+	while true
+.br
+	do
+.br
+		command
+.br
+		sleep 37
+.br
+	done
+.SH "SEE ALSO"
+alarm(2), sleep(3)
+.SH BUGS
+.I Time
+must be less than 2147483647 seconds.

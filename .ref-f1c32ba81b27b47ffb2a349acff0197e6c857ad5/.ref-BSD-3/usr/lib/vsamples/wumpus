@@ -1,0 +1,14 @@
+.ft 3
+Wumpus font, 36 point, characters `A' and `B'
+.sp 2i
+.ft 1
+.ps 36
+.vs 36
+.lg 0
+.nh
+.na
+A
+B
+.sp
+abcdefghijklmnopqrstuvwxyz
+ABCDEFGHIJKLMNOPQRSTUVWXYZ

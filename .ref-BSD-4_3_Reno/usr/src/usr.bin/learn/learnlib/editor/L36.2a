@@ -1,0 +1,21 @@
+#print
+So far all the special characters in the substitute
+command are used to select the string to be replaced.
+There is one character used in the new string to be inserted.
+It is '&' which when used on the right hand side of a substitution,
+refers to the expression given on the left hand side.
+For example, the command
+
+s/the/&m/
+
+changes "the" into "them".  Try that on file "text";
+then rewrite the file and type "ready".
+#create Ref
+we went to see them yesterday.
+#create text
+we went to see the yesterday.
+#user
+#cmp text Ref
+#log
+#next
+36.2b 5

@@ -1,0 +1,76 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)icheck.8	6.3 (Berkeley) %G%
+.\"
+.TH ICHECK 8 ""
+.UC 4
+.SH NAME
+icheck \- file system storage consistency check
+.SH SYNOPSIS
+.B icheck
+[
+.B \-b
+numbers ]
+[ filesystem ]
+.SH DESCRIPTION
+.B N.B.:
+.I Icheck
+is obsoleted for normal consistency checking by
+.IR fsck (8).
+.PP
+.I Icheck
+examines a file system,
+builds a bit map of used blocks,
+and compares this bit map against
+the free map maintained on the file system.
+If the file system is not specified,
+a set of default file systems
+is checked.
+The normal output of
+.I icheck
+includes a report of
+.IP ""
+The total number of files and the numbers of
+regular, directory, block special and character special files.
+.IP ""
+The total number of blocks in use and the numbers of 
+single-, double-, and triple-indirect blocks and directory blocks.
+.IP ""
+The number of free blocks.
+.IP ""
+The number of blocks missing; i.e. not in any file
+nor in any free map.
+.PP
+Following the
+.B \-b
+option is a list of block numbers;
+whenever any of the named blocks turns up in a file,
+a diagnostic is produced.
+.PP
+.I Icheck
+is faster if the raw version of the special file is used,
+since it reads the i-list many blocks at a time.
+.SH FILES
+Default file systems vary with installation.
+.SH "SEE ALSO"
+fsck(8), dcheck(8), ncheck(8),
+fs(5), clri(8)
+.SH DIAGNOSTICS
+For duplicate blocks
+and bad blocks (which lie outside the file system)
+.I icheck
+announces the difficulty, the i-number, and the kind of block involved.
+If a read error is encountered,
+the block number of the bad block is printed and
+.I icheck
+considers it to contain 0.
+.SH BUGS
+Since
+.I icheck
+is inherently two-pass in nature, extraneous diagnostics
+may be produced if applied to active file systems.
+.PP
+It believes even preposterous super-blocks and
+consequently can get core images.

@@ -1,0 +1,627 @@
+.\" %sccs.include.proprietary.roff%
+.\"
+.\"	@(#)u1	6.2 (Berkeley) %G%
+.\"
+.nr PS 9
+.if t .nr VS 11
+.if n .ls 2
+.if t .2C
+.nr PI .25i
+.SH
+INTRODUCTION
+.PP
+From the user's point of view,
+the
+.UC UNIX
+operating system
+is easy
+to learn and use,
+and presents few of the usual impediments
+to getting the job done.
+It is hard, however, for the beginner
+to know where to start,
+and how to make the best use 
+of the facilities available.
+The purpose of this introduction
+is to help new users
+get used to the main ideas of 
+the
+.UC UNIX
+system
+and start making effective use of it quickly.
+.PP
+You should have a couple of other documents with you
+for easy reference as you read this one.
+The most important is
+.ul
+The
+.ul
+.UC UNIX
+.IT Programmer's
+.IT Manual \|;
+it's often easier to tell you to read about something
+in the manual
+than to repeat its contents here.
+The other useful document is
+.ul
+A Tutorial Introduction to the
+.ul
+.UC UNIX
+.ul
+Text Editor,
+which will tell you how to use the editor
+to get text \(em
+programs, data, documents \(em
+into the computer.
+.PP
+A word of warning:
+the
+.UC UNIX
+system
+has become quite popular,
+and there are several major variants
+in widespread use.
+Of course details also change with time.
+So although the basic structure of 
+.UC UNIX
+and how to use it is common to all versions,
+there will certainly be a few things
+which are different on your system from
+what is described here.
+We have tried to minimize the problem,
+but be aware of it.
+In cases of doubt,
+this paper describes Version 7 
+.UC UNIX .
+.PP
+This paper has five sections:
+.IP "\ \ 1."
+Getting Started:
+How to log in,
+how to type,
+what to do about mistakes in typing,
+how to log out.
+Some of this is dependent on which
+system
+you log into
+(phone numbers, for example)
+and what terminal you use,
+so this section must necessarily be supplemented
+by local information.
+.IP "\ \ 2."
+Day-to-day Use:
+Things you need every day to use
+the system
+effectively:
+generally useful commands;
+the file system.
+.IP "\ \ 3."
+Document Preparation:
+Preparing manu\%scripts is one of the most common uses
+for
+.UC UNIX
+systems.
+This section contains advice,
+but not
+extensive instructions on any
+of the formatting tools.
+.IP "\ \ 4."
+Writing Programs:
+.UC UNIX
+is an excellent system for developing programs.
+This section talks about some of the tools,
+but again is not a tutorial in any of the programming languages
+provided by the system.
+.IP "\ \ 5."
+A
+.UC UNIX
+Reading List.
+An annotated bibliography of 
+documents that new users should be aware of.
+.SH
+I.  GETTING STARTED
+.SH
+Logging In
+.PP
+You must have a 
+.UC UNIX
+login name, which you can get from
+whoever administers your system.
+You also need to know the phone number,
+unless your system uses permanently connected terminals.
+The
+.UC UNIX
+system
+is capable of dealing with a wide variety of terminals:
+Terminet 300's; Execuport, TI and similar
+portables;
+video (CRT) terminals like the HP2640, etc.;
+high-priced graphics terminals like the Tektronix 4014;
+plotting terminals like those from GSI and DASI;
+and even the venerable
+Teletype in its various forms.
+But note:
+.UC UNIX
+is strongly oriented towards devices with 
+.ul
+lower case.
+If your terminal produces only upper case (e.g., model 33 Teletype, some video and portable terminals),
+life will be so difficult that you should look for another
+terminal.
+.PP
+Be sure to set the switches appropriately on your device.
+Switches that might need to be adjusted include the speed,
+upper/lower case mode,
+full duplex, even parity, and any others
+that local wisdom advises.
+Establish a connection using whatever
+magic is needed for your terminal;
+this may involve dialing a telephone call or merely flipping a switch.
+In either case,
+.UC UNIX
+should type
+.UL login: '' ``
+at you.
+If it types garbage, you may be at the wrong speed;
+check the switches.
+If that fails,
+push the ``break'' or ``interrupt'' key a few times, slowly.
+If that fails to produce a login message, consult a guru.
+.PP
+When you get a
+.UL login:
+message,
+type your
+login name
+.ul
+in lower case.
+Follow it by a 
+.UC RETURN ;
+the system will not do anything until you type a
+.UC RETURN .
+If a password is required,
+you will be asked for it,
+and (if possible)
+printing will be turned off while you type it.
+Don't forget
+.UC RETURN .
+.PP
+The culmination of your login efforts is a
+``prompt character,''
+a single character that indicates that
+the system
+is ready to accept commands from you.
+The prompt character is usually a 
+dollar sign
+.UL $
+or a
+percent sign
+.UL % .
+(You may also get a message of the day just before the
+prompt character, or a notification that you have mail.)
+.SH
+Typing Commands
+.PP
+Once you've seen the prompt character, you can type commands,
+which are
+requests that
+the system
+do something.
+Try typing
+.P1
+date
+.P2
+followed by 
+.UC RETURN.
+You should get back something like
+.P1
+Mon Jan 16 14:17:10 EST 1978
+.P2
+Don't forget the
+.UC RETURN
+after the command,
+or nothing will happen.
+If you think you're being ignored,
+type a
+.UC RETURN ;
+something should happen.
+.UC RETURN
+won't be mentioned
+again,
+but don't forget it \(em
+it has to be there
+at the end of each line.
+.PP
+Another command you might try is
+.UL who ,
+which tells you everyone who is currently logged in:
+.P1
+who
+.P2
+gives something like
+.P1
+.ta .5i 1i
+mb	tty01	Jan 16    09:11
+ski	tty05	Jan 16    09:33
+gam	tty11	Jan 16    13:07
+.P2
+The time is when the user logged in;
+``ttyxx'' is the system's idea of what terminal
+the user is on.
+.PP
+If you make a mistake typing the command name,
+and refer to a non-existent command,
+you will be told.
+For example, if you type
+.P1
+whom
+.P2
+you will be told 
+.P1
+whom: not found
+.P2
+Of course, if you inadvertently type the name of some other command,
+it will run,
+with more or less mysterious results.
+.SH
+Strange Terminal Behavior
+.PP
+Sometimes you can get into a state
+where your terminal acts strangely.
+For example,
+each letter may be typed twice,
+or the
+.UC RETURN
+may not cause a line feed
+or a return to the left margin.
+You can often fix this by logging out and logging back in.\(dg
+.FS
+\(dg In Berkeley Unix, the command "reset<control-j>"
+will often reset a terminal apparently in a strange state because a fullscreen
+editor crashed.
+.FE
+.FE
+Or you can read the description of the command
+.UL stty
+in section 1 of the manual.
+To get intelligent treatment of
+tab characters
+(which are much used in
+.UC UNIX )
+if your terminal doesn't have tabs,
+type the command
+.P1
+stty \-tabs
+.P2
+and the system will convert each tab into the right number
+of blanks for you.
+If your terminal does have computer-settable tabs,
+the command
+.UL tabs
+will set the stops correctly for you.
+.SH
+Mistakes in Typing
+.PP
+If you make a typing mistake, and see it before
+.UC RETURN
+has been typed,
+there are two ways to recover.
+The sharp-character
+.UL #
+erases the last character typed;
+in fact successive uses of
+.UL #
+erase characters back to
+the beginning of the line (but not beyond).
+So if you type badly, you can correct as you go:
+.P1
+dd#atte##e
+.P2
+is the same as
+.UL date .\(dd
+.FS
+\(dd Many installations set the erase character for display terminals to
+the delete or backspace key. "stty all" tells you what it actually is.
+.FE
+.PP
+The at-sign
+.UL @
+erases all of the characters
+typed so far
+on the current input line,
+so if the line is irretrievably fouled up, type an
+.UL @
+and start the line over.
+.PP
+What if you must enter a sharp or at-sign
+as part of the text?
+If you precede either
+.UL #
+or
+.UL @
+by a backslash
+.UL \e ,
+it loses its erase meaning.
+So to enter a sharp or at-sign in something, type
+.UL \e# 
+or
+.UL \e@ .
+The system will always echo a newline at you after your at-sign,
+even if preceded by a backslash.
+Don't worry \(em
+the at-sign has been recorded.
+.PP
+To erase a backslash,
+you have to type two sharps or two at-signs, as in
+.UL \e## .
+The backslash is used extensively in
+.UC UNIX
+to indicate that the following character is in some way special.
+.SH
+Read-ahead
+.PP
+.UC UNIX
+has full read-ahead,
+which means that you can type as fast as you want,
+whenever you want,
+even when some command is typing at you.
+If you type during output,
+your input characters will appear intermixed with the output characters,
+but they will be stored away
+and interpreted in the correct order.
+So you can type several commands one after another without
+waiting for the first to finish or even begin.
+.SH
+Stopping a Program
+.PP
+You can stop most programs by
+typing the character
+.UC DEL '' ``
+(perhaps called ``delete'' or ``rubout'' on your terminal).
+The ``interrupt'' or ``break'' key found on most terminals
+can also be used.\(dg
+.FS
+\(dg In Berkeley Unix, "control-c" is the usual way to stop programs. "stty all"
+tells you the value of your "intr" key.
+.FE
+In a few programs, like the text editor,
+.UC DEL
+stops whatever the program is doing but leaves you in that program.
+Hanging up the phone will stop most programs.\(dd
+.FS
+\(dd If you use the c shell, programs running in the background continue 
+running even if you hang up.
+.FE
+.SH
+Logging Out
+.PP
+The easiest way to log out is to hang up the phone.
+You can also type
+.P1
+login
+.P2
+and let someone else use the terminal you were on.*
+.FS
+* "control-d" and "logout" are other alternatives.
+.FE
+It is usually not sufficient just to turn off the terminal.
+Most
+.UC UNIX
+systems
+do not use a time-out mechanism, so you'll be
+there forever unless you hang up.
+.SH
+Mail
+.PP
+When you log in, you may sometimes get the message
+.P1
+You have mail.
+.P2
+.UC UNIX
+provides a postal system so you can
+communicate with
+other users of the system.
+To read your mail,
+type the command
+.P1
+mail
+.P2
+Your mail will be printed,
+one message at a time,
+most recent message first.\(dd
+.FS
+\(dd The Berkeley mail program lists the headers of some number of unread pieces 
+of mail in the order of their receipt.
+.FE
+After each message,
+.UL mail
+waits for you to say what to do with it.
+The two basic responses are
+.UL d ,
+which deletes the message,
+and
+.UC RETURN ,
+which does not
+(so it will still be there the next time you read your mailbox).
+Other responses are described in the manual.
+(Earlier versions of
+.UL mail
+do not process one message at a time,
+but are otherwise similar.)
+.PP
+How do you send mail to someone else?
+Suppose it is to go to ``joe'' (assuming ``joe'' is someone's login name).
+The easiest way is this:
+.P1
+mail joe
+.ft I
+now type in the text of the letter
+on as many lines as you like ...
+After the last line of the letter
+type the character ``control-d'',
+that is, hold down ``control'' and type
+a letter ``d''.
+.P2
+And that's it.
+The ``control-d'' sequence, often called ``EOF'' for end-of-file, is used throughout 
+the system
+to mark the end of input from a terminal,
+so you might as well get used to it.
+.PP
+For practice, send mail to yourself.
+(This isn't as strange as it might sound \(em
+mail to oneself is a handy reminder mechanism.)
+.PP
+There are other ways to send mail \(em
+you can send a previously prepared letter,
+and you can mail to a number of people all at once.
+For more details see
+.UL mail (1).
+(The notation
+.UL mail (1)
+means the command 
+.UL mail
+in section 1
+of the
+.ul
+.UC UNIX
+.ul
+.IT Programmer's
+.IT Manual .)
+.SH
+Writing to other users\(dg
+.FS
+\(dg Although "write" works on Berkeley
+.UC UNIX,
+there is a much nicer way of communicating using display-terminals \(em
+"talk" splits the screen into two sections, and both of you can type 
+simultaneously (see talk(1)).
+.FE
+.PP
+At some point, 
+out of the blue will come a message
+like
+.P1
+Message from joe tty07...
+.P2
+accompanied by a startling beep.
+It means that Joe wants to talk to you,
+but unless you take explicit action you won't be able to talk back.
+To respond,
+type the command
+.P1
+write joe
+.P2
+This establishes a two-way communication path.
+Now whatever Joe types on his terminal will appear on yours
+and vice versa.
+The path is slow, rather like talking to the moon.
+(If you are in the middle of something, you have to
+get to a state where you can type a command.
+Normally, whatever program you are running has to terminate or be terminated.
+If you're editing, you can escape temporarily from the editor \(em
+read the editor tutorial.)
+.PP
+A protocol is needed to keep what you type from getting
+garbled up with what Joe types. 
+Typically it's like this:
+.P1
+.tr --
+.fi
+.ft R
+Joe types
+.UL write
+.UL smith
+and waits.
+.br
+Smith types
+.UL write
+.UL joe
+and waits.
+.br
+Joe now types his message
+(as many lines as he likes).
+When he's ready for a reply, he
+signals it by typing
+.UL (o) ,
+which
+stands for ``over''.
+.br
+Now Smith types a reply, also
+terminated by
+.UL (o) .
+.br
+This cycle repeats until
+someone gets tired; he then
+signals his intent to quit with
+.UL (oo) ,
+for ``over
+and out''.
+.br
+To terminate
+the conversation, each side must
+type a ``control-d'' character alone
+on a line. (``Delete'' also works.)
+When the other person types his ``control-d'',
+you will get the message
+.UL EOF
+on your terminal.
+.P2
+.PP
+If you write to someone who isn't logged in,
+or who doesn't want to be disturbed,
+you'll be told.
+If the target is logged in but doesn't answer
+after a decent interval,
+simply type ``control-d''.
+.SH
+On-line Manual
+.PP
+The 
+.ul
+.UC UNIX
+.ul
+Programmer's Manual
+is typically kept on-line.
+If you get stuck on something,
+and can't find an expert to assist you,
+you can print on your terminal some manual section that might help.
+This is also useful for getting the most up-to-date
+information on a command.
+To print a manual section, type
+``man command-name''.
+Thus to read up on the 
+.UL who
+command,
+type
+.P1
+man who
+.P2
+and, of course,
+.P1
+man man
+.P2
+tells all about the
+.UL man
+command.
+.SH
+Computer Aided Instruction
+.PP
+Your
+.UC UNIX
+system may have available
+a program called
+.UL learn ,
+which provides computer aided instruction on
+the file system and basic commands,
+the editor,
+document preparation,
+and even C programming.
+Try typing the command
+.P1
+learn
+.P2
+If 
+.UL learn
+exists on your system,
+it will tell you what to do from there.

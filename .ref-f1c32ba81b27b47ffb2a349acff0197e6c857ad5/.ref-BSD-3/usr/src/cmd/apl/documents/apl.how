@@ -1,0 +1,182 @@
+.nr PO .5i
+.de B
+.ft B
+..
+.RP
+.TL
+The UNIX APL Interpreter -- UCSF Version
+.AU
+H. Ross Harvey
+.AI
+UCSF Computer Graphics Laboratory
+.AB
+The UNIX APL interpreter is an incremental `compiler' which
+employs a multi-pass translator to produce an intermediate
+code. This technique is much faster
+than the normal interpretive method and requires less memory.
+The action of the translator is visible
+in only one way: poor run-time error reporting.
+The UCSF APL version features a 50K byte workspace, a simple
+file access procedure, character comparisons and an extended
+set of I-beams. The interpreter itself has been made much more
+reliable and the error messages have been improved.
+.AE
+.ND
+.PP
+UNIX APL is a very well written package containing all the
+APL 360 operators plus execute, scan, and relational character
+operators. UNIX APL does not have a trace feature or a state
+indicator.
+.NH 1
+Major Data Structures
+.NH 2
+Overview
+.PP
+Functions are compiled when they are first referenced;
+this compiled code is then stored in memory. Data always
+resides in memory, although there is a facility for
+reading and write files. The source
+code to the functions is maintained in the disk-saved workspaces,
+in the APL temporary file, and possibly as single user files.
+The generated code usually consists of single-byte values
+which are indices into the array \fBexop\fR.
+This array contains the addresses of functions implementing the
+APL operators. A reference to a variable will be specified by the
+\fBNAME\fR
+operator and the two-byte address of an \fBitem\fR or \fBnlist\fR
+structure. A reference to a constant will be specified by the
+\fBELID\fR or \fBCONST\fR operator and an eight-byte double constant.
+.NH 2
+The Item and Nlist Structures
+.PP
+The item and nlist structures are:
+.DS
+.B
+struct item {		    struct	nlist {
+	char	rank;		    char	use;
+	char	type;		    char	type;
+	int	size;		    int	*itemp;
+	int	index;		    char	*namep;
+	data	*datap;		    int	label;
+	int	dim[0];	    };
+};
+.R
+.DE
+The \fBrank\fR element is precisly the APL rank of the variable.
+The \fBtype\fR element may contain one status byte.
+The \fBuse\fR element contains the same information as the type
+element of the item structure. \fBItemp\fR usually points to
+the item structure describing a variable or function whose name
+is addressed by the \fBnamep\fR element.
+If the nlist structure describes a function, then itemp will
+be zero until the function is referenced and compiled; if
+the nlist structure describes some other type of variable, itemp
+will be zero until the variable has been set.
+\fBSize\fR is the total number
+of elements in the vector and index is an index into the
+currently selected member. \fBDatap\fR points to the actual data
+and dim[] (actually dim[rank]) naturally contains the various
+dimensions of the object.
+Since the \fBtype\fR field
+indicates important information such as whether the data
+can be destroyed, it is important to understand the
+meaning of the different types.
+.IP DA 10
+This indicates numeric data \fInot\fR associated with
+some variable. This attribute is given to data which
+exists only on the stack in some way as an intermediate
+value. Objects of type \fBDA\fR may be overwritten if necessary
+and \fBwill\fR be deallocated if they are found on the
+stack after a line is executed.
+.IP LV
+\fBLV\fR indicates an \fBlvalue\fR or assignable quantity. This descriptor
+declares that the element is the actual data of some variable. It
+can not be overwritten or de-allocated. It also specifies that
+the pointed-to structure is not an item structure at all
+but is in fact the nlist structure. In this case, the
+\fBuse\fR member will specify the actual data type
+and the \fBitemp\fR member will point to an \fBitem\fR structure.
+.IP CH
+This indicates character data.
+.IP QD
+This is the \fBquad\fR variable. A reference to a quantity of this
+type will cause the appropriate processing (an expression is read
+and evaluated) and result in an element of type \fBDA\fR being placed
+on the stack.
+.IP QQ
+\fBQQ\fR refers to a quote-quad variable. A line of text is read from the
+terminal and placed (as type \fBCH\fR) on the stack.
+.IP IN
+This is integer data. This type is not fully supported so it
+works only when the next operator is expecting an integer.
+.IP EL
+This data type is used for data entered literally in function
+calls. \fBEL\fR data is deallocated in the UCSF version.
+.IP "NF MF DF"
+These types specify functions which are to be called with
+0, 1 or 2 arguments.
+.NH 2
+The Env Structure
+.PP
+The \fBenv\fR structure contains the index origin, printing
+precision, terminal width, and fuzz factor associated with the
+current workspace. When a saved workspace is loaded, these
+parameters are restored to their state at the time the workspace
+was saved.
+.NH 2
+The Nlist Array
+.PP
+The \fBnlist\fR structure described above is found in an
+array of structures which is also called \fBnlist\fR.
+This array is maintained by ???????.
+.NH 2
+The Labldefs Structure
+.PP
+The \fBlabldefs\fR structure is the start of a linked list
+containing label-name/line-number pairs. This list is allocated
+dynamically and is used only when a function is being compiled.
+.NH 2
+The Idx Structure
+.PP
+The \fBidx\fR structure is used ????????.
+.NH 2
+The Stack
+.PP
+Most operators take their source operands from the top
+of the internal stack. Most operators place their
+results on the top of the stack. In addition, local
+variables require space on the stack at each entrance
+to the function with which they are bound.
+The principle objects
+involved here are:
+.DS
+.I
+struct item **sp, **stack, **staktop;
+.R
+.DE
+The address of a memory block of size \fIsizeof(sp)*STKS\fR is
+initially assigned to \fBstack\fR. The variable \fBsp\fR
+points the the top of the stack.
+A call to the machine-coded function \fBpush(\fIaddress\fB)\fR
+will place \fIaddress\fR on top of the stack, incrementing
+\fBsp\fR appropriatly. \fBStaktop\fR marks the top of the
+current stack; if \fBpush(...)\fR finds that \fBsp\fR
+has passed \fBstaktop\fR, a call to \fBnewstak()\fR will
+allocate a new (contiguous) stack that is \fBSTKS\fR words
+larger. The information on the old stack is copied to the
+new one; \fBstack\fR is assigned the address of the new
+stack, and the memory occupied by the old stack is freed.
+.PP
+The function \fBReset\fR is called when APL returns
+to the top command level or when any error is detected.
+\fBReset\fR frees the current stack and allocates a
+new stack of size \fBSTKS\fR. This is done to ensure
+the integrity of the stack in the face of errors such
+as \fIWS EXCEEDED\fR or \fBINTERRUPT\fR. In addition,
+recursive or deeply nested function calls
+will cause a large amount of memory to be allocated to
+the stack. It is considered desireable to reset the stack
+to a small default value when possible. This prevents
+intentional or accidental recursion from impairing
+the operation of the interpreter by permanently allocating
+a large block of memory.

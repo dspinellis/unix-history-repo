@@ -1,0 +1,964 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)tty.4	6.8 (Berkeley) %G%
+.\"
+.TH TTY 4 ""
+.UC 4
+.SH NAME
+tty \- general terminal interface
+.SH SYNOPSIS
+.B #include <sgtty.h>
+.SH DESCRIPTION
+This section describes
+both a particular special file
+.B /dev/tty
+and the terminal drivers used for conversational computing.
+.LP
+.B Line disciplines.
+.PP
+The system provides different
+.I "line disciplines"
+for controlling communications lines.
+In this version of the system there are two disciplines available for use
+with terminals:
+.IP "old" 8
+The old (Version 7) terminal driver.  This is sometimes used when using the
+standard shell
+.IR sh (1).
+.IP "new"
+The standard Berkeley terminal driver, with features for job control;
+this must be used when using
+.IR csh (1).
+.LP
+Line discipline switching is accomplished with the TIOCSETD 
+.IR ioctl :
+.IP
+.B "int ldisc = LDISC;"
+.br
+.B "ioctl(f, TIOCSETD, &ldisc);"
+.LP
+where LDISC is OTTYDISC for the standard tty driver
+and NTTYDISC for the ``new'' driver.
+The standard (currently old) tty driver is discipline 0 by convention.
+Other disciplines may exist for special purposes, such as use of communications
+lines for network connections.
+The current line discipline can be obtained with the TIOCGETD
+.IR ioctl .
+Pending input is discarded when the line discipline is changed.
+.PP
+All of the low-speed asynchronous
+communications ports can use any
+of the available line disciplines, no matter what
+hardware is involved.
+The remainder of this section discusses the
+\*(lqold\*(rq and \*(lqnew\*(rq disciplines.
+.LP
+.B "The control terminal."
+.LP
+When a terminal file is opened, it causes the process to wait until a
+connection is established.  In practice, user programs seldom open
+these files; they are opened by
+.IR getty (8)
+or
+.IR rlogind (8C)
+and become a user's standard input and output file.
+.PP
+If a process which has no control terminal opens a terminal file, then
+that terminal file becomes the control terminal for that process.
+The control terminal is thereafter inherited by a child process during a
+.IR fork (2),
+even if the control terminal is closed.
+.LP
+The file
+.B /dev/tty
+is, in each process, a synonym for a
+.I "control terminal"
+associated with that process.  It is useful for programs that wish to
+be sure of writing messages on the terminal
+no matter how output has been redirected.
+It can also be used for programs that demand a file name
+for output, when typed output is desired
+and it is tiresome to find out which terminal
+is currently in use.
+.LP
+A process can remove the association it has with its controlling
+terminal by opening the file
+.B /dev/tty
+and issuing an
+.IP
+.B "ioctl(f, TIOCNOTTY, 0);"
+.LP
+This is often desirable in server processes.
+.LP
+.B "Process groups."
+.LP
+Command processors such as
+.IR csh (1)
+can arbitrate the terminal between different
+.I jobs
+by placing related jobs in a single process group and associating this
+process group with the terminal.  A terminal's associated process group
+may be set using the TIOCSPGRP
+.IR ioctl (2):
+.IP
+.B "ioctl(fildes, TIOCSPGRP, &pgrp);"
+.LP
+or examined using TIOCGPGRP, which returns the current
+process group in
+.IR pgrp .
+The new terminal driver aids in this arbitration by restricting access
+to the terminal by processes which are not in the current process group;
+see
+.B "Job access control"
+below.
+.LP
+.B "Modes."
+.PP
+The terminal drivers have three major modes, characterized by the
+amount of processing on the input and output characters:
+.IP cooked 10
+The normal mode.  In this mode lines of input are collected and input editing
+is done.  The edited line is made available when it is completed by
+a newline,
+or when the \fIt_brkc\fP character (normally undefined)
+or \fIt_eofc\fP character (normally an EOT, control-D, hereafter ^D)
+is entered.
+A carriage return is usually made synonymous with newline in this mode,
+and replaced with a newline whenever it is typed.
+All driver functions
+(input editing, interrupt generation,
+output processing such as delay generation and tab expansion, etc.)
+are available in this mode.
+.IP CBREAK 10
+This mode eliminates the character, word, and line editing input facilities,
+making the input character available to the user program as it is typed.
+Flow control, literal-next and interrupt processing are still done in this mode.
+Output processing is done.
+.IP RAW 10
+This mode eliminates all input processing and makes all input characters
+available as they are typed; no output processing is done either.
+.PP
+The style of input processing can also be very different when
+the terminal is put in non-blocking I/O mode; see
+the FNDELAY flag described in
+.IR fcntl (2).
+In this case a
+.IR read (2)
+from the control terminal will never block, but rather
+return an error indication (EWOULDBLOCK) if there is no
+input available.
+.PP
+A process may also request that a SIGIO signal be sent it whenever input
+is present and also whenever output queues fall below the low-water mark.
+To enable this mode the FASYNC flag should be set using
+.IR fcntl (2).
+.LP
+.B "Input editing."
+.LP
+A UNIX terminal ordinarily operates in full-duplex mode.
+Characters may be typed at any time,
+even while output is occurring, and are only lost when the
+system's character input buffers become completely
+choked, which is rare,
+or when the user has accumulated the maximum allowed number of
+input characters that have not yet been read by some program.
+Currently this limit is 256 characters.
+In RAW mode, the terminal driver
+throws away all input and output without notice when the limit is reached.
+In CBREAK or cooked mode it refuses to accept any further input and,
+if in the new line discipline, rings the terminal bell.
+.PP
+Input characters are normally accepted in either even or odd parity
+with the parity bit being stripped off before the character is given to
+the program.  By clearing either the EVEN or ODD bit in the flags word
+it is possible to have input characters with that parity discarded (see the
+\fBSummary\fR below.)
+.PP
+In all of the line disciplines, it is possible to simulate terminal
+input using the TIOCSTI
+.IR ioctl ,
+which takes, as its third argument,
+the address of a character.  The system pretends that this character
+was typed on the argument terminal, which must be the control terminal except
+for the super-user (this call is not in standard version 7 UNIX).
+.PP
+Input characters are normally echoed by putting them in an output queue
+as they arrive.  This may be disabled by clearing the ECHO bit in the
+flags word using the
+.IR stty (3C)
+call or the TIOCSETN or TIOCSETP
+.IR ioctl s
+(see the \fBSummary\fR below).
+.PP
+In cooked mode, terminal input is processed in units of lines.
+A program attempting
+to read will normally be suspended until an entire line has been
+received
+(but see the description of SIGTTIN in \fBJob access control\fR
+and of FIONREAD in
+\fBSummary\fR, both below.)
+No matter how many characters are requested
+in the read call, at most one line will be returned.
+It is not, however, necessary to read a whole line at
+once; any number of characters may be
+requested in a read, even one, without losing information.
+.PP
+During input, line editing is normally done, with the erase character
+.I sg_erase
+(by default, DELETE)
+logically erasing the last character typed and the
+.I sg_kill
+character (default, ^U: control-U)
+logically erasing the entire current input line.
+These characters
+never erase beyond the beginning of the current input line or an eof.
+These characters may be entered literally by
+preceding them with `\e\|'; the `\e\|' will normally be erased when the
+character is typed.
+.PP
+The drivers normally treat either a carriage return or a newline character
+as terminating an input line, replacing the return with a newline and echoing
+a return and a line feed.
+If the CRMOD bit is cleared in the local mode word then the processing
+for carriage return is disabled, and it is simply echoed as a return,
+and does not terminate cooked mode input.
+.PP
+In the new driver there is a literal-next character (normally ^V)
+which can be typed
+in both cooked and CBREAK mode preceding
+.I any
+character to prevent its special meaning to the terminal handler.
+This is to be preferred to the
+use of `\e\|' escaping erase and kill characters, but `\e\|' is
+retained with its old function in the new line discipline.
+.PP
+The new terminal driver also provides two other editing characters in
+normal mode.  The word-erase character, normally ^W, erases the preceding
+word, but not any spaces before it.  For the purposes of ^W, a word
+is defined as a sequence of non-blank characters, with tabs counted as
+blanks.
+Finally, the reprint character, normally ^R, retypes the pending input beginning
+on a new line.  Retyping occurs automatically in cooked mode if characters
+which would normally be erased from the screen are fouled by program output.
+.LP
+.B "Input echoing and redisplay"
+.LP
+The terminal driver has several modes (not present in standard UNIX
+Version 7 systems) for handling the echoing of
+terminal input, controlled by bits in a local mode word.
+.LP
+.I "Hardcopy terminals."
+When a hardcopy terminal is in use, the LPRTERA bit is normally set in
+the local mode word.  Characters which are logically erased are
+then printed out backwards preceded by `\e\|' and followed by `/' in this mode.
+.LP
+.I "CRT terminals."
+When a CRT terminal is in use, the LCRTBS bit is normally set in the local
+mode word.  The terminal driver then echoes the proper number of erase
+characters when input is erased; in the normal case where the erase
+character is a ^H this causes the cursor of the terminal to back up
+to where it was before the logically erased character was typed.
+If the input has become fouled due to interspersed asynchronous output,
+the input is automatically retyped.
+.LP
+.I "Erasing characters from a CRT."
+When a CRT terminal is in use, the LCRTERA bit may be set to cause
+input to be erased from the screen with a \*(lqbackspace-space-backspace\*(rq
+sequence when character or word deleting sequences are used.
+A LCRTKIL bit may be set as well, causing the input to
+be erased in this manner on line kill sequences as well.
+.LP
+.I "Echoing of control characters."
+If the LCTLECH bit is set in the local state word, then non-printing (control)
+characters are normally echoed as ^X (for some X)
+rather than being echoed unmodified; delete is echoed as ^?.
+.LP
+The normal modes for use on CRT terminals are speed dependent.
+At speeds less than 1200 baud, the LCRTERA and LCRTKILL processing
+is painfully slow, and
+.IR stty (1)
+normally just sets LCRTBS and LCTLECH; at
+speeds of 1200 baud or greater all of these bits are normally set.
+.IR Stty (1)
+summarizes these option settings and the use of the new terminal
+driver as
+\*(lqnewcrt.\*(rq
+.LP
+.B "Output processing."
+.PP
+When one or more
+characters are written, they are actually transmitted
+to the terminal as soon as previously-written characters
+have finished typing.
+(As noted above, input characters are normally 
+echoed by putting them in the output queue
+as they arrive.)
+When a process produces characters more rapidly than they can be typed,
+it will be suspended when its output queue exceeds some limit.
+When the queue has drained down to some threshold
+the program is resumed.
+Even parity is normally generated on output.
+The EOT character is not transmitted in cooked mode to prevent terminals
+that respond to it from hanging up; programs using RAW or CBREAK mode
+should be careful.
+.PP
+The terminal drivers provide necessary processing for cooked and CBREAK mode
+output including delay generation for certain special characters and parity
+generation.   Delays are available after backspaces ^H, form feeds ^L,
+carriage returns ^M, tabs ^I and newlines ^J.  The driver will also optionally
+expand tabs into spaces, where the tab stops are assumed to be set every
+eight columns, and optionally convert newlines to carriage returns
+followed by newline.  These functions are controlled by bits in the tty
+flags word; see \fBSummary\fR below.
+.PP
+The terminal drivers provide for mapping between upper and lower case
+on terminals lacking lower case, and for other special processing on
+deficient terminals.
+.PP
+Finally, in the new terminal driver, there is a output flush character,
+normally ^O, which sets the LFLUSHO bit in the local mode word, causing
+subsequent output to be flushed until it is cleared by a program or more
+input is typed.  This character has effect in both cooked and CBREAK modes
+and causes pending input to be retyped if there is any pending input.
+An
+.I ioctl
+to flush the characters in the input or output queues, TIOCFLUSH,
+is also available.
+.LP
+.B "Upper case terminals and Hazeltines"
+.PP
+If the LCASE bit is set in the tty flags, then
+all upper-case letters are mapped into
+the corresponding lower-case letter.
+The upper-case letter may be generated by preceding
+it by `\\'.
+Upper case letters are preceded by a `\e\|' when output.
+In addition, the following escape sequences can be generated
+on output and accepted on input:
+.PP
+.nf
+for	\`	|	~	{	}
+use	\e\|\'	\e\|!	\e\|^	\e\|(	\e\|)
+.fi
+.PP
+To deal with Hazeltine terminals, which do not understand that ~ has
+been made into an ASCII character, the LTILDE bit may be set in the local
+mode word; in this case the character
+~ will be replaced with the character \` on output.
+.LP
+.B "Flow control."
+.PP
+There are two characters (the stop character, normally ^S, and the
+start character, normally ^Q) which cause output to be suspended and
+resumed respectively.  Extra stop characters typed when output
+is already stopped have no effect, unless the start and stop characters
+are made the same, in which case output resumes.
+.PP
+A bit in the flags word may be set to put the terminal into TANDEM mode.
+In this mode the system produces a stop character (default ^S) when
+the input queue is in danger of overflowing, and a start character (default
+^Q) when the input has drained sufficiently.  This mode is useful
+when the terminal is actually another machine that obeys those
+conventions.
+.LP
+.B "Line control and breaks."
+.LP
+There are several
+.I ioctl
+calls available to control the state of the terminal line.
+The TIOCSBRK
+.I ioctl
+will set the break bit in the hardware interface
+causing a break condition to exist; this can be cleared (usually after a delay
+with
+.IR sleep (3))
+by TIOCCBRK.
+Break conditions in the input are reflected as a null character in RAW mode
+or as the interrupt character in cooked or CBREAK mode.
+The TIOCCDTR
+.I ioctl
+will clear the data terminal ready condition; it can
+be set again by TIOCSDTR.
+.PP
+When the carrier signal from the dataset drops (usually
+because the user has hung up his terminal) a
+SIGHUP hangup signal is sent to the processes in the distinguished
+process group of the terminal; this usually causes them to terminate.
+The SIGHUP can be suppressed by setting the LNOHANG bit in the local
+state word of the driver.
+Access to the terminal by other processes is then normally revoked,
+so any further reads will fail, and programs that read a terminal and test for
+end-of-file on their input will terminate appropriately.
+.PP
+It is possible to ask that the phone line be hung up on the last close
+with the TIOCHPCL
+.IR ioctl ;
+this is normally done on the outgoing lines and dialups.
+.LP
+.B "Interrupt characters."
+.PP
+There are several characters that generate interrupts in cooked and CBREAK
+mode; all are sent to the processes in the control group of the terminal,
+as if a TIOCGPGRP
+.I ioctl
+were done to get the process group and then a
+.IR killpg (2)
+system call were done,
+except that these characters also flush pending input and output when
+typed at a terminal
+(\fI\z'a\`'la\fR TIOCFLUSH).
+The characters shown here are the defaults; the field names in the structures
+(given below)
+are also shown.
+The characters may be changed.
+.IP ^C
+\fBt_intrc\fR (ETX) generates a SIGINT signal.
+This is the normal way to stop a process which is no longer interesting,
+or to regain control in an interactive program.
+.IP ^\e
+\fBt_quitc\fR (FS) generates a SIGQUIT signal.
+This is used to cause a program to terminate and produce a core image,
+if possible,
+in the file
+.B core
+in the current directory.
+.IP ^Z
+\fBt_suspc\fR (EM) generates a SIGTSTP signal, which is used to suspend
+the current process group.
+.IP ^Y
+\fBt_dsuspc\fR (SUB) generates a SIGTSTP signal as ^Z does, but the
+signal is sent when a program attempts to read the ^Y, rather than when
+it is typed.
+.LP
+.B "Job access control."
+.PP
+When using the new terminal driver,
+if a process which is not in the distinguished process group of its
+control terminal attempts to read from that terminal its process group is
+sent a SIGTTIN signal.  This signal normally causes the members of
+that process group to stop. 
+If, however, the process is ignoring SIGTTIN, has SIGTTIN blocked,
+or is in the middle of process creation using
+.IR vfork (2)),
+the read will return \-1 and set
+.I errno
+to EIO.
+.PP
+When using the new terminal driver with the LTOSTOP bit set in the local
+modes, a process is prohibited from writing on its control terminal if it is
+not in the distinguished process group for that terminal.
+Processes which are holding or ignoring SIGTTOU signals
+or which are in the middle of a
+.IR vfork (2)
+are excepted and allowed to produce output.
+.LP
+.B "Terminal/window sizes."
+.LP
+In order to accommodate terminals and workstations with variable-sized
+windows, the terminal driver provides a mechanism for obtaining and setting
+the current terminal size.
+The driver does not use this information internally, but only stores it
+and provides a uniform access mechanism.
+When the size is changed, a SIGWINCH signal is sent to the terminal's process
+group so that knowledgeable programs may detect size changes.
+This facility was added in 4.3BSD and is not available in earlier
+versions of the system.
+.LP
+.B "Summary of modes."
+.LP
+Unfortunately, due to the evolution of the terminal driver,
+there are 4 different structures which contain various portions of the
+driver data.  The first of these (\fBsgttyb\fR)
+contains that part of the information
+largely common between version 6 and version 7 UNIX systems.
+The second contains additional control characters added in version 7.
+The third is a word of local state added in 4BSD,
+and the fourth is another structure of special characters added for the
+new driver.  In the future a single structure may be made available
+to programs which need to access all this information; most programs
+need not concern themselves with all this state.
+.de Ul
+.ie t \\$1\l'|0\(ul'
+.el \fI\\$1\fP
+..
+.LP
+.Ul "Basic modes: sgtty."
+.PP
+The basic
+.IR ioctl s
+use the structure
+defined in
+.IR <sgtty.h> :
+.PP
+.ta .5i 1i
+.nf
+.ft 3
+struct sgttyb {
+	char	sg_ispeed;
+	char	sg_ospeed;
+	char	sg_erase;
+	char	sg_kill;
+	short	sg_flags;
+};
+.ft R
+.fi
+.PP
+The
+.I sg_ispeed 
+and 
+.I sg_ospeed
+fields describe the input and output speeds of the
+device according to the following table,
+which corresponds to the DEC DH-11 interface.
+If other hardware is used,
+impossible speed changes are ignored.
+Symbolic values in the table are as defined in
+.IR <sgtty.h> .
+.PP
+.nf
+.ta \w'B9600   'u +5n
+B0	0	(hang up dataphone)
+B50	1	50 baud
+B75	2	75 baud
+B110	3	110 baud
+B134	4	134.5 baud
+B150	5	150 baud
+B200	6	200 baud
+B300	7	300 baud
+B600	8	600 baud
+B1200	9	1200 baud
+B1800	10	1800 baud
+B2400	11	2400 baud
+B4800	12	4800 baud
+B9600	13	9600 baud
+EXTA	14	External A
+EXTB	15	External B
+.fi
+.DT
+.PP
+Code conversion and line control required for
+IBM 2741's (134.5 baud)
+must be implemented by the user's
+program.
+The half-duplex line discipline
+required for the 202 dataset (1200 baud)
+is not supplied; full-duplex 212 datasets work fine.
+.PP
+The
+.I sg_erase
+and
+.I sg_kill
+fields of the argument structure
+specify the erase and kill characters respectively.
+(Defaults are DELETE and ^U.)
+.PP
+The
+.I sg_flags
+field of the argument structure
+contains several bits that determine the
+system's treatment of the terminal:
+.PP
+.ta \w'ALLDELAY 'u +\w'0100000 'u
+.nf
+ALLDELAY	0177400	Delay algorithm selection
+BSDELAY	0100000	Select backspace delays (not implemented):
+BS0	0
+BS1	0100000
+VTDELAY	0040000	Select form-feed and vertical-tab delays:
+FF0	0
+FF1	0040000
+CRDELAY	0030000	Select carriage-return delays:
+CR0	0
+CR1	0010000
+CR2	0020000
+CR3	0030000
+TBDELAY	0006000	Select tab delays:
+TAB0	0
+TAB1	0002000
+TAB2	0004000
+XTABS	0006000
+NLDELAY	0001400	Select new-line delays:
+NL0	0
+NL1	0000400
+NL2	0001000
+NL3	0001400
+EVENP	0000200	Even parity allowed on input
+ODDP	0000100	Odd parity allowed on input
+RAW	0000040	Raw mode: wake up on all characters, 8-bit interface
+CRMOD	0000020	Map CR into LF; output LF as CR-LF
+ECHO	0000010	Echo (full duplex)
+LCASE	0000004	Map upper case to lower on input and lower to upper on output
+CBREAK	0000002	Return each character as soon as typed
+TANDEM	0000001	Automatic flow control
+.DT
+.fi
+.PP
+The delay bits specify how long
+transmission stops to allow for mechanical or other movement
+when certain characters are sent to the terminal.
+In all cases a value of 0 indicates no delay.
+.PP
+Backspace delays are currently ignored but might
+be used for Terminet 300's.
+.PP
+If a form-feed/vertical tab delay is specified,
+it lasts for about 2 seconds.
+.PP
+Carriage-return delay type 1 lasts about .08 seconds
+and is suitable for the Terminet 300.
+Delay type 2 lasts about .16 seconds and is suitable
+for the VT05 and the TI 700.
+Delay type 3 is suitable for the concept-100 and pads lines
+to be at least 9 characters at 9600 baud.
+.PP
+New-line delay type 1 is dependent on the current column
+and is tuned for Teletype model 37's.
+Type 2 is useful for the VT05 and is about .10 seconds.
+Type 3 is unimplemented and is 0.
+.PP
+Tab delay type 1 is dependent on the amount of movement
+and is tuned to the Teletype model
+37.
+Type 3, called XTABS,
+is not a delay at all but causes tabs to be replaced
+by the appropriate number of spaces on output.
+.PP
+The flags for even and odd parity control parity checking on input
+and generation on output in cooked and CBREAK mode
+(unless LPASS8 is enabled, see below).
+Even parity is generated on output unless ODDP is set and EVENP
+is clear, in which case odd parity is generated.
+Input characters with the wrong parity, as determined by EVENP and
+ODDP, are ignored in cooked and CBREAK mode.
+.PP
+RAW
+disables all processing save output flushing with LFLUSHO;
+full 8 bits of input are given as soon as
+it is available; all 8 bits are passed on output.
+A break condition in the input is reported as a null character.
+If the input queue overflows in raw mode all data in the input and output
+queues are discarded; this applies to both new and old drivers.
+.PP
+CRMOD causes input carriage returns to be turned into
+new-lines, and output and echoed new-lines to be output as a carriage return
+followed by a line feed.
+.PP
+CBREAK is a sort of half-cooked (rare?) mode.
+Programs can read each character as soon as typed, instead
+of waiting for a full line;
+all processing is done except the input editing:
+character and word erase and line kill, input reprint,
+and the special treatment of \e and EOT are disabled.
+.PP
+TANDEM mode causes the system to produce
+a stop character (default ^S) whenever the input
+queue is in danger of overflowing, and a start character
+(default ^Q)
+when the input queue has drained sufficiently.
+It is useful for flow control when the `terminal'
+is really another computer which understands the conventions.
+.LP
+.B Note:
+The same ``stop'' and ``start'' characters are used for both directions
+of flow control; the
+.I t_stopc
+character is accepted on input as the character that stops output and is
+produced on output as the character to stop input, and the
+.I t_startc
+character is accepted on input as the character that restarts output and is
+produced on output as the character to restart input.
+.LP
+.Ul "Basic ioctls"
+.PP
+A large number of
+.IR ioctl (2)
+calls apply to terminals.  Some have the general form:
+.PP
+.B #include <sgtty.h>
+.PP
+.B ioctl(fildes, code, arg)
+.br
+.B struct sgttyb *arg;
+.PP
+The applicable codes are:
+.IP TIOCGETP 15
+Fetch the basic parameters associated with the terminal, and store
+in the pointed-to \fIsgttyb\fR structure.
+.IP TIOCSETP
+Set the parameters according to the pointed-to \fIsgttyb\fR structure.
+The interface delays until output is quiescent,
+then throws away any unread characters,
+before changing the modes.
+.IP TIOCSETN
+Set the parameters like TIOCSETP but do not delay or flush input.
+Input is not preserved, however, when changing to or from RAW.
+.PP
+With the following codes
+.I arg
+is ignored.
+.IP TIOCEXCL 15
+Set \*(lqexclusive-use\*(rq mode:
+no further opens are permitted until the file has been closed.
+.IP TIOCNXCL
+Turn off \*(lqexclusive-use\*(rq mode.
+.IP TIOCHPCL
+When the file is closed for the last time,
+hang up the terminal.
+This is useful when the line is associated
+with an ACU used to place outgoing calls.
+.PP
+With the following codes
+.I arg
+is a pointer to an
+.BR int .
+.IP TIOCGETD 15
+.I arg
+is a pointer to an
+.B int
+into which is placed the current line discipline number.
+.IP TIOCSETD
+.I arg
+is a pointer to an
+.B int
+whose value becomes the current line discipline number.
+.IP TIOCFLUSH
+If the
+.B int
+pointed to by
+.I arg
+has a zero value, all characters waiting in input or output queues are flushed.
+Otherwise, the value of the
+.B int
+is for the FREAD and FWRITE bits defined in
+.BR <sys/file.h> ;
+if the FREAD bit is set, all characters waiting in input queues are flushed,
+and if the FWRITE bit is set, all characters waiting in output queues are
+flushed.
+.LP
+The remaining calls are not available in vanilla version 7 UNIX.
+In cases where arguments are required, they are described; \fIarg\fR
+should otherwise be given as 0.
+.IP TIOCSTI 15
+the argument points to a character which the system
+pretends had been typed on the terminal.
+.IP TIOCSBRK 15
+the break bit is set in the terminal.
+.IP TIOCCBRK
+the break bit is cleared.
+.IP TIOCSDTR 
+data terminal ready is set.
+.IP TIOCCDTR
+data terminal ready is cleared.
+.IP TIOCSTOP 15
+output is stopped as if the ``stop'' character had been typed.
+.IP TIOCSTART
+output is restarted as if the ``start'' character had been typed.
+.IP TIOCGPGRP
+.I arg
+is a pointer to an
+.B int
+into which is placed the process group ID of the process group
+for which this terminal is the control terminal.
+.IP TIOCSPGRP
+.I arg
+is a pointer to an
+.B int
+which is the value to which the process group ID
+for this terminal will be set.
+.IP TIOCOUTQ
+returns in the
+.B int
+pointed to by
+.I arg
+the number of characters queued for output to the terminal.
+.IP FIONREAD
+returns in the
+.B int
+pointed to by
+.I arg
+the number of characters immediately readable from the argument descriptor.
+This works for files, pipes, and terminals.
+.PP
+.Ul Tchars
+.PP
+The second structure associated with each terminal specifies
+characters that are special in both the old and new terminal interfaces:
+The following structure is defined in
+.IR <sys/ioctl.h> ,
+which is automatically included in
+.IR <sgtty.h> :
+.PP
+.nf
+.ft 3
+.ta .5i 1i 2i 
+struct tchars {
+	char	t_intrc;	/* interrupt */
+	char	t_quitc;	/* quit */
+	char	t_startc;	/* start output */
+	char	t_stopc;	/* stop output */
+	char	t_eofc;		/* end-of-file */
+	char	t_brkc;		/* input delimiter (like nl) */
+};
+.DT
+.fi
+.ft R
+.PP
+The default values for these characters are
+^C, ^\e\|, ^Q, ^S, ^D, and \-1.
+A character value of \-1
+eliminates the effect of that character.
+The
+.I t_brkc
+character, by default \-1,
+acts like a new-line in that it terminates a `line,'
+is echoed, and is passed to the program.
+The `stop' and `start' characters may be the same,
+to produce a toggle effect.
+It is probably counterproductive to make
+other special characters (including erase and kill)
+identical.
+The applicable
+.I ioctl
+calls are:
+.IP TIOCGETC 12
+Get the special characters and put them in the specified structure.
+.IP TIOCSETC 12
+Set the special characters to those given in the structure.
+.LP
+.Ul "Local mode"
+.PP
+The third structure associated with each terminal is a local mode word.
+The bits of the local mode word are:
+.sp
+.nf
+LCRTBS	000001	Backspace on erase rather than echoing erase
+LPRTERA	000002	Printing terminal erase mode
+LCRTERA	000004	Erase character echoes as backspace-space-backspace
+LTILDE	000010	Convert ~ to \` on output (for Hazeltine terminals)
+LMDMBUF	000020	Stop/start output when carrier drops
+LLITOUT	000040	Suppress output translations
+LTOSTOP	000100	Send SIGTTOU for background output
+LFLUSHO	000200	Output is being flushed
+LNOHANG	000400	Don't send hangup when carrier drops
+LETXACK	001000	Diablo style buffer hacking (unimplemented)
+LCRTKIL	002000	BS-space-BS erase entire line on line kill
+LPASS8	004000	Pass all 8 bits through on input, in any mode
+LCTLECH	010000	Echo input control chars as ^X, delete as ^?
+LPENDIN	020000	Retype pending input at next read or input character
+LDECCTQ	040000	Only ^Q restarts output after ^S, like DEC systems
+LNOFLSH	100000	Inhibit flushing of pending I/O when an interrupt character is typed.
+.fi
+.sp
+The applicable
+.I ioctl
+functions are:
+.IP TIOCLBIS 15
+.I arg
+is a pointer to an
+.B int
+whose value is a mask containing the bits to be set in the local mode word.
+.IP TIOCLBIC
+.I arg
+is a pointer to an
+.B int
+whose value is a mask containing the bits to be cleared in the local mode word.
+.IP TIOCLSET
+.I arg
+is a pointer to an
+.B int
+whose value is stored in the local mode word.
+.IP TIOCLGET
+.I arg
+is a pointer to an
+.B int
+into which the current local mode word is placed.
+.LP
+.Ul "Local special chars"
+.PP
+The
+final control structure associated with each terminal is the
+.I ltchars
+structure which defines control characters
+for the new terminal driver.
+Its structure is:
+.nf
+.sp
+.ta .5i 1i 2i
+.ft B
+struct ltchars {
+	char	t_suspc;	/* stop process signal */
+	char	t_dsuspc;	/* delayed stop process signal */
+	char	t_rprntc;	/* reprint line */
+	char	t_flushc;	/* flush output (toggles) */
+	char	t_werasc;	/* word erase */
+	char	t_lnextc;	/* literal next character */
+};
+.ft R
+.fi
+.sp
+The default values for these characters are ^Z, ^Y, ^R, ^O, ^W, and ^V.
+A value of \-1 disables the character.
+.PP
+The applicable \fIioctl\fR functions are:
+.IP TIOCSLTC 12
+.I arg
+is a pointer to an
+.I ltchars
+structure which defines the new local special characters.
+.IP TIOCGLTC 12
+.I arg
+is a pointer to an
+.I ltchars
+structure into which is placed the current set of local special characters.
+.LP
+.Ul "Window/terminal sizes"
+.PP
+Each terminal has provision for storage of the current terminal or window
+size in a
+.I winsize
+structure, with format:
+.nf
+.sp
+.ft B
+.ta .5i +\w'unsigned short\ \ \ \ 'u +\w'ws_ypixel;\ \ \ \ \ 'u
+struct winsize {
+	unsigned short	ws_row;	/* rows, in characters */
+	unsigned short	ws_col;	/* columns, in characters */
+	unsigned short	ws_xpixel;	/* horizontal size, pixels */
+	unsigned short	ws_ypixel;	/* vertical size, pixels */
+};
+.ft R
+.fi
+.LP
+A value of 0 in any field is interpreted as ``undefined;''
+the entire structure is zeroed on final close.
+.PP
+The applicable \fIioctl\fP functions are:
+.IP TIOCGWINSZ
+.I arg
+is a pointer to a
+.B "struct winsize"
+into which will be placed the current terminal or window size information.
+.IP TIOCSWINSZ
+.I arg
+is a pointer to a
+.B "struct winsize"
+which will be used to set the current terminal or window size information.
+If the new information is different than the old information,
+a SIGWINCH signal will be sent to the terminal's process group.
+.SH FILES
+/dev/tty
+.br
+/dev/tty*
+.br
+/dev/console
+.SH SEE ALSO
+csh(1),
+stty(1),
+tset(1),
+ioctl(2),
+sigvec(2),
+stty(3C),
+getty(8)
