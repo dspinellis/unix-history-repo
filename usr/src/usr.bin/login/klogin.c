@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)klogin.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)klogin.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef KERBEROS
@@ -62,8 +62,6 @@ klogin(pw, localhost, password)
 
 	kerror = krb_get_pw_in_tkt(PRINCIPAL_NAME, PRINCIPAL_INST,
 		    realm, INITIAL_TICKET, realm, DEFAULT_TKT_LIFE, password);
-syslog(LOG_ERR, "retval of get_pw_in_tkt: %s", krb_err_txt[kerror]);
-
 	/*
 	 * If we got a TGT, get a local "rcmd" ticket and check it so as to
 	 * ensure that we are not talking to a bogus Kerberos server.
