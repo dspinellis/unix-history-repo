@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -48,7 +48,6 @@ collect(hp, printheaders)
 {
 	FILE *fbuf;
 	int lc, cc, escape, eofcount;
-	int collint(), collhup(), collstop();
 	register int c, t;
 	char linebuf[LINESIZE], *cp;
 	extern char tempMail[];
@@ -500,6 +499,7 @@ forward(ms, fp, f)
  * Print (continue) when continued after ^Z.
  */
 /*ARGSUSED*/
+void
 collstop(s)
 {
 	sig_t old_action = signal(s, SIG_DFL);
@@ -520,6 +520,7 @@ collstop(s)
  * Then jump out of the collection loop.
  */
 /*ARGSUSED*/
+void
 collint(s)
 {
 	/*
@@ -542,6 +543,7 @@ collint(s)
 }
 
 /*ARGSUSED*/
+void
 collhup(s)
 {
 	rewind(collf);
