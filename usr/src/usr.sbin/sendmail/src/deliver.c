@@ -17,7 +17,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	5.34 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	5.35 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -476,7 +476,7 @@ markfailure(e, q, rcode)
 {
 	if (rcode == EX_OK)
 		return;
-	else if (rcode != EX_TEMPFAIL)
+	else if (rcode != EX_TEMPFAIL && rcode != EX_IOERR && rcode != EX_OSERR)
 		q->q_flags |= QBADADDR;
 	else if (curtime() > e->e_ctime + TimeOut)
 	{
@@ -1490,6 +1490,7 @@ sendall(e, mode)
 				(void) strcat(obuf, "owner");
 			else
 				(void) strcat(obuf, qq->q_user);
+			makelower(obuf);
 			if (aliaslookup(obuf) == NULL)
 				continue;
 
