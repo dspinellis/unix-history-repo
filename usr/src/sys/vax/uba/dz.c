@@ -1,4 +1,4 @@
-/*	dz.c	4.19	%G%	*/
+/*	dz.c	4.20	%G%	*/
 
 #include "dz.h"
 #if NDZ > 0
@@ -223,6 +223,7 @@ dzrint(dz)
 	register struct device *dzaddr;
 	register struct tty *tp0;
 	register int unit;
+	int overrun = 0;
  
 	if ((dzact & (1<<dz)) == 0)
 		return;
@@ -242,8 +243,10 @@ dzrint(dz)
 				c = 0;
 			else
 				c = tun.t_intrc;
-		if (c&DZ_DO)
-			printf("o");
+		if (c&DZ_DO && overrun == 0) {
+			printf("dz%d: silo overflow\n", dz);
+			overrun = 1;
+		}
 		if (c&DZ_PE)	
 			if (((tp->t_flags & (EVENP|ODDP)) == EVENP)
 			  || ((tp->t_flags & (EVENP|ODDP)) == ODDP))
@@ -473,16 +476,13 @@ dzreset(uban)
 	register int unit;
 	register struct tty *tp;
 	register struct uba_dinfo *ui;
-	int any = 0;
 
 	for (unit = 0; unit < NDZLINE; unit++) {
 		ui = dzinfo[unit >> 3];
 		if (ui == 0 || ui->ui_ubanum != uban || ui->ui_alive == 0)
 			continue;
-		if (any == 0) {
-			printf(" dz");
-			any++;
-		}
+		if (unit%8 == 0)
+			printf(" dz%d", unit>>3);
 		tp = &dz_tty[unit];
 		if (tp->t_state & (ISOPEN|WOPEN)) {
 			dzparam(unit);
