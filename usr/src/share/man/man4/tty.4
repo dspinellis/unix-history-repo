@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)tty.4	6.7 (Berkeley) %G%
+.\"	@(#)tty.4	6.8 (Berkeley) %G%
 .\"
 .TH TTY 4 ""
 .UC 4
@@ -453,7 +453,9 @@ Processes which are holding or ignoring SIGTTOU signals
 or which are in the middle of a
 .IR vfork (2)
 are excepted and allowed to produce output.
+.LP
 .B "Terminal/window sizes."
+.LP
 In order to accommodate terminals and workstations with variable-sized
 windows, the terminal driver provides a mechanism for obtaining and setting
 the current terminal size.
