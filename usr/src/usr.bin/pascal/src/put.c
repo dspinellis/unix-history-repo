@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)put.c 1.7 %G%";
+static	char sccsid[] = "@(#)put.c 1.8 %G%";
 
 #include "whoami.h"
 #include "opcode.h"
@@ -470,7 +470,7 @@ getnext(next, new)
 #ifdef OBJ
 	if (opt('k') && cgenflg >= 0)
 		printf(")#%5d\t\t\"%s\"\n", lc-HEADER_BYTES, next->symbol);
-#endif
+#endif OBJ
 	return(next->symbol);
 }
 
