@@ -1,9 +1,10 @@
-/*
- * Copyright (c) 1982, 1986 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982, 1986 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)vmparam.h	7.3 (Berkeley) %G%
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)vmparam.h	7.4 (Berkeley) %G%
  */
 
 /*

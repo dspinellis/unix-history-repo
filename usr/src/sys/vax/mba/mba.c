@@ -1,9 +1,10 @@
-/*
- * Copyright (c) 1982 Regents of the University of California.
- * All rights reserved.  The Berkeley software License Agreement
- * specifies the terms and conditions for redistribution.
+/*-
+ * Copyright (c) 1982 The Regents of the University of California.
+ * All rights reserved.
  *
- *	@(#)mba.c	7.5 (Berkeley) %G%
+ * %sccs.include.proprietary.c%
+ *
+ *	@(#)mba.c	7.6 (Berkeley) %G%
  */
 
 #include "mba.h"
