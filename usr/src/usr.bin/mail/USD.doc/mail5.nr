@@ -3,9 +3,8 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)mail5.nr	8.1 (Berkeley) %G%
+.\"	@(#)mail5.nr	8.2 (Berkeley) %G%
 .\"
-.bp
 .sh 1 "Additional features"
 .pp
 This section describes some additional commands useful for
