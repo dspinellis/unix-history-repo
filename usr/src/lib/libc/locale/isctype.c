@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)isctype.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)isctype.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #define _ANSI_LIBRARY
@@ -114,12 +114,12 @@ toascii(c)
 tolower(c)
 	int c;
 {
-	return (c - 'A' + 'a');
+	return (isupper(c) ? c - 'A' + 'a' : c);
 }
 
 #undef toupper
 toupper(c)
 	int c;
 {
-	return (c - 'a' + 'A');
+	return (islower(c) ? c - 'a' + 'A' : c);
 }
