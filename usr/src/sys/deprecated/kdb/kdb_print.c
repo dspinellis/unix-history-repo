@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_print.c	7.10 (Berkeley) %G%
+ *	@(#)kdb_print.c	7.11 (Berkeley) %G%
  */
 
 #include "machine/mtpr.h"
@@ -174,10 +174,14 @@ printtrace(modif)
 		break;
 
 	case 'i': {
+		register struct vnode *vp;
 		register struct inode *ip;
 
 		printf("Locked inodes\n");
-		for (ip = inode; ip < inodeNINODE; ip++) {
+		for (vp = vnode; vp < vnodeNVNODE; vp++) {
+			if (vp->v_tag != VT_UFS)
+				continue;
+			ip = VTOI(vp);
 			if ((ip->i_flag & ILOCKED) == 0)
 				continue;
 			printf("inode %d dev 0x%x type %d\n", ip->i_number,
