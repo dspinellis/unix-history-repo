@@ -44,6 +44,9 @@ is interpreted relative to
 .I which
 (a process identifier for PRIO_PROCESS, process group
 identifier for PRIO_PGRP, and a user ID for PRIO_USER).
+A zero value of
+.I who
+denotes the current process, process group, or user.
 .I Prio
 is a value in the range \-20 to 20.  The default priority is 0;
 lower priorities cause more favorable scheduling.
