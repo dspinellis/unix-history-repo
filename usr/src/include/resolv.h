@@ -1,9 +1,10 @@
+
 /*
  * Copyright (c) 1983 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)resolv.h	5.2 (Berkeley) %G%
+ *	@(#)resolv.h	5.3 (Berkeley) %G%
  */
 
 /*
@@ -11,11 +12,16 @@
  */
 
 
+#define	MAXNS		3		/* max # name servers we'll track */
+
+
 struct state {
-	int	retrans;		/* retransmition time interval */
+	int	retrans;	 	/* retransmition time interval */
 	int	retry;			/* number of times to retransmit */
 	int	options;		/* option flags - see below. */
-	struct	sockaddr_in nsaddr;	/* address of name server */
+	int	nscount;		/* number of name servers */
+	struct	sockaddr_in nsaddr_list[MAXNS];	/* address of name server */
+#define	nsaddr	nsaddr_list[0]		/* for backward compatibility */
 	u_short	id;			/* current packet id */
 	char	defdname[MAXDNAME];	/* default domain */
 };
