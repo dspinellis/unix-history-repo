@@ -4,8 +4,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)radix.h	7.6 (Berkeley) %G%
+ *	@(#)radix.h	7.7 (Berkeley) %G%
  */
+
+#ifndef _RADIX_H_
+#define	_RADIX_H_
 
 /*
  * Radix search tree node layout.
@@ -70,10 +73,13 @@ extern struct radix_mask {
 
 struct radix_node_head {
 	struct	radix_node *rnh_treetop;
-	struct	radix_node *(*rnh_add)();
-	struct	radix_node *(*rnh_delete)();
-	struct	radix_node *(*rnh_match)();
-	int	(*rnh_walk)();
+	struct	radix_node *(*rnh_add) __P((caddr_t v, caddr_t netmask,
+		struct radix_node *head, struct radix_node treenodes[]));
+	struct	radix_node *(*rnh_delete) __P((caddr_t v, caddr_t netmask,
+		struct radix_node *head));
+	struct	radix_node *(*rnh_match) __P((caddr_t v,
+		struct radix_node *head));
+	int	(*rnh_walk) __P((struct radix_node *rn, int (*f)(), void *w));
 	struct	radix_node rnh_nodes[3];
 };
 
@@ -92,3 +98,4 @@ struct radix_node_head {
 
 int	rn_inithead __P((void **, int));
 #endif /*KERNEL*/
+#endif /* _RADIX_H_ */
