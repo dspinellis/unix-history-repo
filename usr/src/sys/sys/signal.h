@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)signal.h	7.22 (Berkeley) %G%
+ *	@(#)signal.h	7.23 (Berkeley) %G%
  */
 
 #ifndef	_SYS_SIGNAL_H_
@@ -77,6 +77,9 @@ struct	sigaction {
 #ifndef _POSIX_SOURCE
 #define SA_ONSTACK	0x0001	/* take signal on signal stack */
 #define SA_RESTART	0x0002	/* restart system on signal return */
+#ifdef COMPAT_SUNOS
+#define	SA_USERTRAMP	0x0100	/* do not bounce off kernel's sigtramp */
+#endif
 #endif
 #define SA_NOCLDSTOP	0x0004	/* do not generate SIGCHLD on child stop */
 
