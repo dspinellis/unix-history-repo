@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)conf.c	6.11 (Berkeley) %G%
+ *	@(#)conf.c	6.12 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -70,6 +70,21 @@ int	tmioctl(),tmdump(),tmreset();
 #define	tmioctl		nodev
 #define	tmdump		nodev
 #define	tmreset		nulldev
+#endif
+
+#include "tms.h"
+#if NTMS > 0
+int	tmscpopen(),tmscpclose(),tmscpstrategy(),tmscpread(),tmscpwrite();
+int	tmscpioctl(),tmscpdump(),tmscpreset();
+#else
+#define	tmscpopen	nodev
+#define	tmscpclose	nodev
+#define	tmscpstrategy	nodev
+#define	tmscpread	nodev
+#define	tmscpwrite	nodev
+#define	tmscpioctl	nodev
+#define	tmscpdump	nodev
+#define	tmscpreset	nulldev
 #endif
 
 #include "ts.h"
@@ -236,6 +251,8 @@ struct bdevsw	bdevsw[] =
 	  0,		0 },
 	{ rlopen,	nodev,		rlstrategy,	rldump,		/*14*/
 	  rlsize,	0 },
+	{ tmscpopen,	tmscpclose,	tmscpstrategy,	tmscpdump,	/*15*/
+	  0,		B_TAPE },
 };
 int	nblkdev = sizeof (bdevsw) / sizeof (bdevsw[0]);
 
@@ -599,10 +616,9 @@ struct cdevsw	cdevsw[] =
 	dmzopen,        dmzclose,       dmzread,        dmzwrite,       /*37*/
 	dmzioctl,       dmzstop,        dmzreset,       dmz_tty,
 	ttselect,       nodev,
-/* 38-42 reserved to local sites */
-	nodev,		nodev,		nodev,		nodev,		/*38*/
-	nodev,		nulldev,	nulldev,	0,
-	nodev,		nodev,
+	tmscpopen,	tmscpclose,	tmscpread,	tmscpwrite,	/*38*/
+	tmscpioctl,	nodev,		tmscpreset,	0,
+	seltrue,	nodev,
 	nodev,		nodev,		nodev,		nodev,		/*39*/
 	nodev,		nulldev,	nulldev,	0,
 	nodev,		nodev,
@@ -612,6 +628,7 @@ struct cdevsw	cdevsw[] =
 	nodev,		nodev,		nodev,		nodev,		/*41*/
 	nodev,		nulldev,	nulldev,	0,
 	nodev,		nodev,
+/* 42-50 reserved to local sites */
 	nodev,		nodev,		nodev,		nodev,		/*42*/
 	nodev,		nulldev,	nulldev,	0,
 	nodev,		nodev,
