@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1983 Regents of the University of California.
+ * Copyright (c) 1983,1991 The Regents of the University of California.
  * All rights reserved.
  *
  * %sccs.include.redist.c%
@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)inetd.c	5.29 (Berkeley) %G%";
+static char sccsid[] = "@(#)inetd.c	5.30 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -700,7 +700,7 @@ setproctitle(a, s)
 /*
  * Internet services provided internally by inetd:
  */
-#define	BUFSIZE	4096
+#define	BUFSIZE	8192
 
 /* ARGSUSED */
 echo_stream(s, sep)		/* Echo service -- echo data back */
@@ -737,13 +737,14 @@ discard_stream(s, sep)		/* Discard service -- ignore data */
 	int s;
 	struct servtab *sep;
 {
+	int ret;
 	char buffer[BUFSIZE];
 
 	setproctitle(sep->se_service, s);
 	while (1) {
-		while (read(s, buffer, sizeof(buffer)) > 0)
+		while ((ret = read(s, buffer, sizeof(buffer))) > 0)
 			;
-		if (errno != EINTR)
+		if (ret == 0 || errno != EINTR)
 			break;
 	}
 	exit(0);
