@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwiomux.c	3.14 %G%";
+static char sccsid[] = "@(#)wwiomux.c	3.15 %G%";
 #endif
 
 /*
@@ -10,6 +10,7 @@ static char sccsid[] = "@(#)wwiomux.c	3.14 %G%";
 
 #include "ww.h"
 #include <sys/time.h>
+#include <sys/types.h>
 
 /*
  * Multiple window output handler.
@@ -25,7 +26,7 @@ static char sccsid[] = "@(#)wwiomux.c	3.14 %G%";
 wwiomux()
 {
 	register struct ww *w;
-	int imask;
+	fd_set imask;
 	register n;
 	register char *p;
 	char c;
@@ -36,13 +37,13 @@ loop:
 	if (wwinterrupt())
 		return;
 
-	imask = 0;
+	FD_ZERO(&imask);
 	noblock = 0;
 	for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw) {
 		if (w->ww_pty < 0)
 			continue;
 		if (w->ww_obq < w->ww_obe)
-			imask |= 1 << w->ww_pty;
+			FD_SET(w->ww_pty, &imask);
 		if (w->ww_obq > w->ww_obp && !w->ww_stopped)
 			noblock = 1;
 	}
@@ -61,7 +62,7 @@ loop:
 		}
 	}
 	wwnselect++;
-	n = select(wwdtablesize, &imask, (int *)0, (int *)0,
+	n = select(wwdtablesize, &imask, (fd_set *)0, (fd_set *)0,
 		noblock ? &tv : (struct timeval *)0);
 	wwsetjmp = 0;
 
@@ -71,7 +72,7 @@ loop:
 		wwnselectz++;
 	else
 		for (w = wwhead.ww_forw; w != &wwhead; w = w->ww_forw) {
-			if (w->ww_pty < 0 || (imask & 1 << w->ww_pty) == 0)
+			if (w->ww_pty < 0 || !FD_ISSET(w->ww_pty, &imask))
 				continue;
 			wwnwread++;
 			p = w->ww_obq;
