@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)files.c	4.4 (Berkeley) 82/04/20";
+static	char *sccsid = "@(#)files.c	4.5 (Berkeley) 82/06/17";
 /* UNIX DEPENDENT PROCEDURES */
 
 
@@ -148,7 +148,7 @@ if(*s == '(')
 	return(lookarch(filename));
 
 #if vax
-if (lstat(filename, &buf) < 0)
+if (stat(filename, &buf) < 0)
 #else
 if(stat(filename,&buf) < 0) 
 #endif
@@ -461,11 +461,7 @@ int word;
 #include <sys/stat.h>
 struct stat buf;
 
-#if vax
-lstat(f, &buf);
-#else
 stat(f, &buf);
-#endif
 arlen = buf.st_size;
 
 arfd = fopen(f, "r");
