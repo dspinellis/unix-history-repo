@@ -2,7 +2,7 @@
 # include <sgtty.h>
 # include <signal.h>
 
-static char	SccsId[] =	"@(#)cpr.c	1.4		%G%";
+static char	SccsId[] =	"@(#)cpr.c	1.5		%G%";
 
 /*
 **  CPR -- print on concept 108
@@ -43,14 +43,13 @@ main(argc, argv)
 	while (--argc > 0)
 	{
 		p = *++argv;
-		if (*p == '-')
+		if (*p != '-')
+			break;
+		switch (*++p)
 		{
-			switch (*++p)
-			{
-			  case 'f':
-				FormFeedFollowing = TRUE;
-				break;
-			}
+		  case 'f':
+			FormFeedFollowing = TRUE;
+			break;
 		}
 	}
 
@@ -61,14 +60,15 @@ main(argc, argv)
 	setupterm();
 
 	/* print the appropriate files */
-	if (argc < 2)
+	if (argc < 1)
 		copyfile();
 	else
 	{
-		while (--argc > 0)
+		while (argc-- > 0)
 		{
-			if (freopen(*++argv, "r", stdin) == NULL)
-				perror(*argv);
+			p = *argv++;
+			if (freopen(p, "r", stdin) == NULL)
+				perror(p);
 			else
 				copyfile();
 		}
