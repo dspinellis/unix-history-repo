@@ -1,4 +1,4 @@
-/*	protosw.h	4.16.1.1	83/09/09	*/
+/*	protosw.h	4.16.1.2	83/09/09	*/
 
 /*
  * Protocol switch table.
@@ -125,24 +125,26 @@ char *prurequests[] = {
 #define	PRC_UNREACH_HOST	9	/* no route to host */
 #define	PRC_UNREACH_PROTOCOL	10	/* dst says bad protocol */
 #define	PRC_UNREACH_PORT	11	/* bad port # */
-#define	PRC_UNREACH_SRCFAIL	12	/* source route failed */
-#define	PRC_REDIRECT_NET	13	/* net routing redirect */
-#define	PRC_REDIRECT_HOST	14	/* host routing redirect */
-#define	PRC_REDIRECT_TOSNET	15	/* redirect for type of service & net */
-#define	PRC_REDIRECT_TOSHOST	16	/* redirect for tos & host */
-#define	PRC_TIMXCEED_INTRANS	17	/* packet lifetime expired in transit */
-#define	PRC_TIMXCEED_REASS	18	/* lifetime expired on reass q */
-#define	PRC_PARAMPROB		19	/* header incorrect */
+#define	PRC_UNREACH_NEEDFRAG	12	/* IP_DF caused drop */
+#define	PRC_UNREACH_SRCFAIL	13	/* source route failed */
+#define	PRC_REDIRECT_NET	14	/* net routing redirect */
+#define	PRC_REDIRECT_HOST	15	/* host routing redirect */
+#define	PRC_REDIRECT_TOSNET	16	/* redirect for type of service & net */
+#define	PRC_REDIRECT_TOSHOST	17	/* redirect for tos & host */
+#define	PRC_TIMXCEED_INTRANS	18	/* packet lifetime expired in transit */
+#define	PRC_TIMXCEED_REASS	19	/* lifetime expired on reass q */
+#define	PRC_PARAMPROB		20	/* header incorrect */
 
-#define	PRC_NCMDS		20
+#define	PRC_NCMDS		21
 
 #ifdef PRCREQUESTS
 char	*prcrequests[] = {
-	"IFDOWN",	   "ROUTEDEAD",	   "#2",	    "#3",
-	"QUENCH",	   "MSGSIZE",	   "HOSTDEAD",	    "HOSTUNREACH",
-	"NET-UNREACH",	   "HOST-UNREACH", "PROTO-UNREACH", "PORT-UNREACH",
-	"SRCFAIL-UNREACH", "NET-REDIRECT", "HOST-REDIRECT", "TOSNET-REDIRECT",
-	"TOSHOST-REDIRECT","TX-INTRANS",   "TX-REASS",	    "PARAMPROB"
+	"IFDOWN", "ROUTEDEAD", "#2", "#3",
+	"QUENCH", "MSGSIZE", "HOSTDEAD", "HOSTUNREACH",
+	"NET-UNREACH", "HOST-UNREACH", "PROTO-UNREACH", "PORT-UNREACH",
+	"FRAG-UNREACH", "SRCFAIL-UNREACH", "NET-REDIRECT", "HOST-REDIRECT",
+	"TOSNET-REDIRECT", "TOSHOST-REDIRECT", "TX-INTRANS", "TX-REASS",
+	"PARAMPROB"
 };
 #endif
 
