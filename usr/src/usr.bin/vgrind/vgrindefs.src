@@ -26,7 +26,7 @@ C|c:\
 	:le=\e':tl:\
 	:kw=asm auto break case char continue default do double else enum\
 	extern float for fortran goto if int long register return short\
-	sizeof static struct switch typedef union unsigned while #define\
+	sizeof static struct switch typedef union unsigned void while #define\
 	#else #endif #if #ifdef #ifndef #include #undef # define else endif\
 	if ifdef ifndef include undef:
 ISP|isp|i:\
