@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)fts.3	5.17 (Berkeley) %G%
+.\"     @(#)fts.3	5.18 (Berkeley) %G%
 .\"
 .Dd 
 .Dt FTS 3
@@ -16,7 +16,7 @@
 .Fd #include <sys/stat.h>
 .Fd #include <fts.h>
 .Ft FTS *
-.Fn fts_open "char * const *path_argv" "int options" "int *compar(const FTSENT *, const FTSENT *)"
+.Fn fts_open "char * const *path_argv" "int options" "int *compar(const FTSENT **, const FTSENT **)"
 .Ft FTSENT *
 .Fn fts_read "FTS *ftsp"
 .Ft FTSENT *
