@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.25 (Berkeley) %G%
+.\"	@(#)op.me	6.26 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,7 +40,7 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.25
+Version 6.26
 .sp
 For Sendmail Version 6.40
 .)l
@@ -1478,6 +1478,20 @@ This allows a recipient to fix the problem even if it occurs
 at the beginning of a long weekend.
 RFC 1123 section 5.3.1.1 says that this parameter
 should be ``at least 4\-5 days''.
+.pp
+The
+.b T
+option can also take a second timeout indicating a time after which
+a warning message should be sent;
+the two timeouts are separated by a slash.
+For example, the value
+.(b
+5d/4h
+.)b
+causes email to fail after five days,
+but a warning message will be sent after four hours.
+This should be large enough that the message will have been tried
+several times.
 .sh 2 "Forking During Queue Runs"
 .pp
 By setting the
@@ -3397,13 +3411,18 @@ for standard time and
 .i D
 for daylight time;
 this is only used under version six.
-.ip T\fItime\fP
+.ip T\fIrtime/wtime\fP
 Set the queue timeout to
-.i time .
+.i rtime .
 After this interval,
 messages that have not been successfully sent
 will be returned to the sender.
-Defaults to three days.
+Defaults to five days.
+The optional
+.i wtime
+is the time after which a warning message is sent.
+If it is missing or zero
+then no warning messages are sent.
 .ip u\fIn\fP
 Set the default userid for mailers to
 .i n .
@@ -5327,10 +5346,12 @@ Run eight bit clean.
 .pp
 The
 .b r
-(read timeout)
-and
+(read timeout),
 .b I
-(use BIND)
+(use BIND),
+and
+.b T
+(queue timeout)
 options have been extended to pass in more information.
 .sh 2 "New Mailer Flag"
 .pp
@@ -5795,7 +5816,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.25
+.\"Version 6.26
 .\".ce 0
 .pn 2
 .bp
