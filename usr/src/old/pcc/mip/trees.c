@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid ="@(#)trees.c	4.25 (Berkeley) %G%";
+static char *sccsid ="@(#)trees.c	4.26 (Berkeley) %G%";
 #endif
 
 # include "pass1.h"
@@ -150,8 +150,11 @@ buildtree( o, l, r ) register NODE *l, *r; {
 		case GE:
 		case EQ:
 		case NE:
-			if( l->in.type == ENUMTY && r->in.type == ENUMTY )
+			if( l->in.type == ENUMTY && r->in.type == ENUMTY ){
+				p = block( o, l, r, INT, 0, INT );
 				chkpun( p );
+				p->in.op = FREE;
+				}
 
 		case ANDAND:
 		case OROR:
@@ -358,7 +361,6 @@ buildtree( o, l, r ) register NODE *l, *r; {
 				(l->fn.csiz +1) >= 0 ){
 				/* nonunique name && structure defined */
 				char * memnam, * tabnam;
-				register k;
 				int j;
 				int memi;
 				j=dimtab[l->fn.csiz+1];
@@ -377,6 +379,7 @@ buildtree( o, l, r ) register NODE *l, *r; {
 # endif
 					if( stab[memi].sflags & SNONUNIQ ){
 #ifndef FLEXNAMES
+						register k;
 						for( k=0; k<NCHNAM; ++k ){
 							if(*memnam++!=*tabnam)
 								goto next;
