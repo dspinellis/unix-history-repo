@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	7.3 (Berkeley) %G%
+#	@(#)Makefile	7.4 (Berkeley) %G%
 #
 DESTDIR=/
 INCPATH=-I. -I../h
@@ -12,11 +12,12 @@ COPTS=	-DCOMPAT_42 -DVAX780 -DVAX750 -DVAX730 -DVAX8600
 730OPTS=-O ${INCPATH} -DSTANDALONE -DVAX730
 RELOC=	70000
 
-SRCS=	sys.c conf.c prf.c machdep.c \
+SRCS=	boot.c bootxx.c format.c copy.c drtest.c \
+	sys.c conf.c prf.c machdep.c \
 	autoconf.c hp.c hpmaptype.c ht.c idc.c mba.c mt.c rk.c \
 	rl.c tm.c ts.c up.c upmaptype.c uba.c uda.c ut.c \
 	drtest.c format.c ../vax/dkbad.c
-DUMMIES= bootxx.c confxx.c
+DUMMIES= confxx.c
 DRIVERS=autoconf.o hp.o hpmaptype.o ht.o idc.o mba.o mt.o \
 	rk.o rl.o tm.o ts.o \
 	up.o upmaptype.o uba.o uda.o ut.o
@@ -37,13 +38,12 @@ ${LIBSA}: sys.o conf.o ${DRIVERS} prf.o machdep.o dkbad.o
 	ranlib ${LIBSA}
 
 ${DRIVERS}: savax.h
-	cc -c -S ${COPTS} $*.c
+	cc -c -S ${CFLAGS} $*.c
 	/lib/c2 -i $*.s | as -o $*.o
 	rm -f $*.s
 
 dkbad.o: ../vax/dkbad.c
 	${CC} -c ${CFLAGS} ../vax/dkbad.c
-
 # startups
 
 srt0.o: srt0.c ../vax/mtpr.h ../vax/cpu.h
@@ -64,7 +64,7 @@ tpboot:	tpboot.o relsrt0.o ${LIBSA}
 tpboot.o: boot.c ../h/param.h ../h/inode.h ../h/fs.h
 tpboot.o: saio.h ../h/reboot.h ../h/vm.h 
 	cp boot.c tpboot.c; chmod +w tpboot.c
-	cc -c -O -DJUSTASK tpboot.c
+	cc -c ${CFLAGS} -DJUSTASK tpboot.c
 	rm -f tpboot.c
 
 tpcopy:	copy.o tpsrt0.o ${LIBSA}
@@ -73,7 +73,7 @@ tpcopy:	copy.o tpsrt0.o ${LIBSA}
 
 tpformat: format.o tpsrt0.o confhpup.o ${LIBSA}
 	cp format.c tpformat.c; chmod +w tpformat.c
-	cc -c -O -DJUSTEXIT tpformat.c
+	cc -c ${CFLAGS} -DJUSTEXIT tpformat.c
 	rm -f tpformat.c
 	ld -N tpsrt0.o tpformat.o confhpup.o ${LIBSA} -lc
 	strip a.out; dd if=a.out of=tpformat ibs=32 skip=1; rm -f a.out
@@ -85,7 +85,7 @@ boot:	boot.o relsrt0.o bootconf.o ${LIBSA}
 
 bootconf.o: conf.o
 	cp conf.c bootconf.c
-	cc -c ${COPTS} -DBOOT bootconf.c
+	cc -c ${CFLAGS} -DBOOT bootconf.c
 	rm -f bootconf.c
 
 copy:	copy.o srt0.o conf.o ${LIBSA}
@@ -133,56 +133,47 @@ drtest:	drtest.o srt0.o confhpup.o ${LIBSA}
 
 # getting booted from disc
 
-boothk: relsrt0.o boothk.o confrk.o sm_sys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o boothk.o confrk.o sm_sys.o ${LIBSA} -lc
+boothk: relsrt0.o bootxx.o confrk.o sm_sys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootxx.o confrk.o sm_sys.o ${LIBSA} -lc
 	size a.out
 	strip a.out;dd if=a.out of=boothk ibs=32 skip=1;rm -f a.out
 	ls -l boothk
 
-boothp: relsrt0.o boothp.o confhp.o sm_hp.o sm_sys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o boothp.o confhp.o sm_hp.o sm_sys.o ${LIBSA} -lc
+boothp: relsrt0.o bootxx.o confhp.o sm_hp.o sm_sys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootxx.o confhp.o sm_hp.o sm_sys.o ${LIBSA} -lc
 	size a.out
 	strip a.out;dd if=a.out of=boothp ibs=32 skip=1;rm -f a.out
 	ls -l boothp
 
-bootup: relsrt0.o bootup.o confup.o sm_up.o sm_sys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootup.o confup.o sm_up.o sm_sys.o ${LIBSA} -lc
+bootup: relsrt0.o bootxx.o confup.o sm_up.o sm_sys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootxx.o confup.o sm_up.o sm_sys.o ${LIBSA} -lc
 	size a.out
 	strip a.out;dd if=a.out of=bootup ibs=32 skip=1;rm -f a.out
 	ls -l bootup
 
-bootra: relsrt0.o bootra.o confra.o sm_sys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootra.o confra.o sm_sys.o ${LIBSA} -lc
+bootra: relsrt0.o bootxx.o confra.o sm_sys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootxx.o confra.o sm_sys.o ${LIBSA} -lc
 	size a.out
 	strip a.out;dd if=a.out of=bootra ibs=32 skip=1;rm -f a.out
 	ls -l bootra
 
-bootrl: relsrt0.o bootrl.o confrl.o sm_sys.o ${LIBSA}
-	ld -N -T ${RELOC} relsrt0.o bootrl.o confrl.o sm_sys.o ${LIBSA} -lc
+bootrl: relsrt0.o bootxx.o confrl.o sm_sys.o ${LIBSA}
+	ld -N -T ${RELOC} relsrt0.o bootxx.o confrl.o sm_sys.o ${LIBSA} -lc
 	size a.out
 	strip a.out;dd if=a.out of=bootrl ibs=32 skip=1;rm -f a.out
 	ls -l bootrl
 
-boothp.o: boothp.c bootxx.o
-boothk.o: boothk.c bootxx.o
-bootup.o: bootup.c bootxx.o
-bootra.o: bootra.c bootxx.o
-bootrl.o: bootrl.c bootxx.o
-
-bootxx.o:
-	touch bootxx.o
-
 sm_hp.o: hp.o
 	-rm -f sm_hp.c
 	-ln -s hp.c sm_hp.c
-	cc -S -DSMALL ${COPTS} sm_hp.c
+	cc -S -DSMALL ${CFLAGS} sm_hp.c
 	/lib/c2 -i sm_hp.s | as -o sm_hp.o
 	rm -f sm_hp.s sm_hp.c
 
 sm_up.o: up.o
 	-rm -f sm_up.c
 	-ln -s up.c sm_up.c
-	cc -S -DSMALL ${COPTS} sm_up.c
+	cc -S -DSMALL ${CFLAGS} sm_up.c
 	/lib/c2 -i sm_up.s | as -o sm_up.o
 	rm -f sm_up.s sm_up.c
 
@@ -191,22 +182,6 @@ sm_sys.o: sys.o
 	-ln -s sys.c sm_sys.c
 	cc -c -DSMALL ${CFLAGS} sm_sys.c
 	-rm -f sm_sys.c
-
-boothk.c: bootxx.c
-	-rm -f boothk.c
-	sed -e 's/xx/hk/g' <bootxx.c >boothk.c
-boothp.c: bootxx.c
-	-rm -f boothp.c
-	sed -e 's/xx/hp/g' <bootxx.c >boothp.c
-bootup.c: bootxx.c
-	-rm -f bootup.c
-	sed -e 's/xx/up/g' <bootxx.c >bootup.c
-bootra.c: bootxx.c
-	-rm -f bootra.c
-	sed -e 's/xx/ra/g' <bootxx.c >bootra.c
-bootrl.c: bootxx.c
-	-rm -f bootrl.c
-	sed -e 's/xx/rl/g' <bootxx.c >bootrl.c
 
 confrk.o: confrk.c confxx.o
 confhp.o: confhp.c confxx.o
