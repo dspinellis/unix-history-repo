@@ -6,7 +6,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.15 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/cdefs.h>
@@ -36,10 +36,6 @@ static char *fts_path();
 #define	BCHILD		1		/* from fts_children */
 #define	BREAD		2		/* from fts_read */
 
-/* fts_level values */
-#define	ROOTLEVEL	 0
-#define	ROOTPARENTLEVEL	-1
-
 FTS *
 fts_open(argv, options, compar)
 	char * const *argv;
@@ -66,7 +62,7 @@ fts_open(argv, options, compar)
 	/* Allocate/initialize root's parent. */
 	if (!(parent = fts_alloc(sp, "", 0)))
 		goto mem1;
-	parent->fts_level = ROOTPARENTLEVEL;
+	parent->fts_level = FTS_ROOTPARENTLEVEL;
 
 	/* Allocate/initialize root(s). */
 	maxlen = -1;
@@ -97,7 +93,7 @@ fts_open(argv, options, compar)
 				tmp = p;
 			}
 		}
-		p->fts_level = ROOTLEVEL;
+		p->fts_level = FTS_ROOTLEVEL;
 		p->fts_parent = parent;
 	}
 	if (compar && nitems > 1)
@@ -169,12 +165,7 @@ fts_load(sp, p)
 		return(0);
 	need_to_cd = 1;
 
-	/*
-	 * Special case error condition -- if we can't find the root of the
-	 * traversal, make sure the user notices the error.
-	 */
-	if ((p->fts_info = fts_stat(sp, p, 0)) == FTS_NS)
-		p->fts_info = FTS_ERR;
+	p->fts_info = fts_stat(sp, p, 0);
 	return(1);
 }
 
@@ -190,7 +181,7 @@ fts_close(sp)
 		 * structure points to the root list, so we step through to
 		 * the end of the root list which has a valid parent pointer.
 		 */
-		for (p = sp->fts_cur; p->fts_level > ROOTPARENTLEVEL;) {
+		for (p = sp->fts_cur; p->fts_level > FTS_ROOTPARENTLEVEL;) {
 			freep = p;
 			p = p->fts_link ? p->fts_link : p->fts_parent;
 			free(freep);
@@ -227,7 +218,7 @@ fts_close(sp)
  * paths to be written as "//foo".
  */
 #define	NAPPEND(p) \
-	(p->fts_level == ROOTLEVEL && p->fts_pathlen == 1 && \
+	(p->fts_level == FTS_ROOTLEVEL && p->fts_pathlen == 1 && \
 	    p->fts_path[0] == '/' ? 0 : p->fts_pathlen)
 
 FTSENT *
@@ -313,7 +304,7 @@ next:	tmp = p;
 		free(tmp);
 
 		/* If reached the top, load the paths for the next root. */
-		if (p->fts_level == ROOTLEVEL) {
+		if (p->fts_level == FTS_ROOTLEVEL) {
 			if (!fts_load(sp, p)) {
 				SET(FTS_STOP);
 				return(NULL);
@@ -339,7 +330,7 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 	p = tmp->fts_parent;
 	free(tmp);
 
-	if (p->fts_level == ROOTPARENTLEVEL) {
+	if (p->fts_level == FTS_ROOTPARENTLEVEL) {
 		/*
 		 * Done; free everything up and set errno to 0 so the user
 		 * can distinguish between error and EOF.
@@ -363,7 +354,7 @@ name:		t = sp->fts_path + NAPPEND(p->fts_parent);
 		p->fts_cderr = 0;
 		p->fts_info = FTS_ERR;
 	} else {
-		if (p->fts_level != ROOTLEVEL && CHDIR(sp, "..")) {
+		if (p->fts_level != FTS_ROOTLEVEL && CHDIR(sp, "..")) {
 			SET(FTS_STOP);
 			return(NULL);
 		}
@@ -419,7 +410,7 @@ fts_children(sp)
 	 * directory is, so we can't get back so that the upcoming chdir by
 	 * fts_read will work.
 	 */
-	if (p->fts_level != ROOTLEVEL || p->fts_accpath[0] == '/' ||
+	if (p->fts_level != FTS_ROOTLEVEL || p->fts_accpath[0] == '/' ||
 	    ISSET(FTS_NOCHDIR))
 		return(sp->fts_child = fts_build(sp, BCHILD));
 
@@ -657,7 +648,7 @@ fts_stat(sp, p, follow)
 
 		dev = p->fts_statb.st_dev;
 		ino = p->fts_statb.st_ino;
-		for (t = p->fts_parent; t->fts_level > ROOTLEVEL;
+		for (t = p->fts_parent; t->fts_level > FTS_ROOTLEVEL;
 		    t = t->fts_parent)
 			if (ino == t->fts_statb.st_ino &&
 			    dev == t->fts_statb.st_dev) {
