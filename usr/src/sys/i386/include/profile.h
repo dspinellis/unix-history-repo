@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)profile.h	7.2 (Berkeley) %G%
+ *	@(#)profile.h	8.1 (Berkeley) %G%
  */
 
 #define	_MCOUNT_DECL static inline void _mcount

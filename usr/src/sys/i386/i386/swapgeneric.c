@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)swapgeneric.c	5.6 (Berkeley) %G%
+ *	@(#)swapgeneric.c	8.1 (Berkeley) %G%
  */
 
 #include <machine/pte.h>
