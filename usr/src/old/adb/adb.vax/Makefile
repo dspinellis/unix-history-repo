@@ -1,5 +1,5 @@
 #
-#	Makefile	4.3	82/10/27
+#	Makefile	4.4	86/06/07
 #
 DESTDIR= 
 DFLAGS = -DADB
@@ -12,7 +12,7 @@ OFILES= access.o command.o expr.o format.o input.o main.o message.o \
 #
 #	path to the directory containing as
 #
-AS =	/usr/src/bin/as
+AS =	../as
 
 adb:	${OFILES}
 	${CC} -o adb ${OFILES}
@@ -45,7 +45,7 @@ install:
 	install -s adb ${DESTDIR}/bin
 
 clean:
-	rm -f adb ${OFILES}
+	rm -f adb instrs.adb errs ${OFILES}
 
 print:
 	@ls -l | pr
