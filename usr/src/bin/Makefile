@@ -1,11 +1,11 @@
-#	Makefile	4.15	83/07/03
+#	Makefile	4.16	83/08/14
 #
 DESTDIR=
 CFLAGS=	-O
 
 # Programs that live in subdirectories, and have makefiles of their own.
 #
-SUBDIR=	adb as awk csh diff make sed sh spell tp
+SUBDIR=	adb as awk csh diff make sed sh tp
 
 # Shell scripts that need only be installed and are never removed.
 #
