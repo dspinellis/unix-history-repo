@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)swab.3	6.2 (Berkeley) %G%
+.\"	@(#)swab.3	6.3 (Berkeley) %G%
 .\"
 .TH SWAB 3  ""
 .AT 3
@@ -13,6 +13,8 @@ swab \- swap bytes
 .SH SYNOPSIS
 .nf
 .ft B
+#include <string.h>
+
 void
 swab(const char *src, char *dst, size_t len);
 .ft R

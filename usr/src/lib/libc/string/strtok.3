@@ -13,7 +13,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)strtok.3	5.3 (Berkeley) %G%
+.\"	@(#)strtok.3	5.4 (Berkeley) %G%
 .\"
 .TH STRTOK 3 ""
 .UC 3
@@ -22,6 +22,8 @@ strtok, strsep \- string token operations
 .SH SYNOPSIS
 .nf
 .ft B
+#include <string.h>
+
 char *
 strtok(char *str, const char *sep);
 .ft R
