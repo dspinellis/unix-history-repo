@@ -1,4 +1,4 @@
-/*	machdep.c	3.5	%H%	*/
+/*	machdep.c	3.6	%H%	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -13,7 +13,7 @@
 #include "../h/proc.h"
 #include "../h/psl.h"
 
-char	version[] = "VM/UNIX (Berkeley Version 3.1) 4/2/80 \n";
+char	version[] = "VM/UNIX (Berkeley Version 3.6) %H% \n";
 int	icode[] =
 {
 	0x9f19af9f,	/* pushab [&"init.vm",0]; pushab */
@@ -22,7 +22,7 @@ int	icode[] =
 	0x2ffe110b,	/* $exec; brb .; "/ */
 	0x2f637465,	/* etc/ */
 	0x74696e69,	/* init */
-	0x00000000,	/* \0\0\0";  0 */	/* was .vm" */
+	0x006d762e,	/* .vm";  0 */
 	0x00000014,	/* [&"init", */
 	0x00000000,	/* 0] */
 };
@@ -158,6 +158,51 @@ asm("bad:");
 bad:
 	printf("%d: cant send signal\n", u.u_procp->p_pid);
 	psignal(u.u_procp, SIGKILL);
+}
+
+dorti()
+{
+	struct frame {
+		int	handler;
+		unsigned int
+			psw:16,
+			mask:12,
+			:1,
+			s:1,
+			spa:2;
+		int	savap;
+		int	savfp;
+		int	savpc;
+	} frame;
+	register int sp;
+	register int reg, mask;
+	extern int ipcreg[];
+	int n;
+
+	(void) copyin((caddr_t)u.u_ar0[FP], (caddr_t)&frame, sizeof (frame));
+	sp = u.u_ar0[FP] + sizeof (frame);
+	u.u_ar0[PC] = frame.savpc;
+	u.u_ar0[FP] = frame.savfp;
+	u.u_ar0[AP] = frame.savap;
+	mask = frame.mask;
+	for (reg = 0; reg <= 11; reg++) {
+		if (mask&1) {
+			u.u_ar0[ipcreg[reg]] = fuword(sp);
+			sp += 4;
+		}
+		mask >>= 1;
+	}
+	sp += frame.spa;
+	u.u_ar0[PS] = (u.u_ar0[PS] & 0xffff0000) | frame.psw;
+	if (frame.s)
+		sp += 4 + (fuword(sp) & 0xff) << 2;
+	/* phew, now the rei */
+	u.u_ar0[PC] = fuword(sp);
+	sp += 4;
+	u.u_ar0[PS] = fuword(sp);
+	sp += 4;
+	u.u_ar0[PS] |= PSL_CURMOD|PSL_PRVMOD;
+	u.u_ar0[PS] &= ~PSL_USERCLR;
 }
 
 /*
