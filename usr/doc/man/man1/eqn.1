@@ -1,0 +1,169 @@
+.EQ
+delim $$
+.EN
+.th EQN I 2/22/74
+.sh NAME
+eqn  \*-  typeset mathematics
+.sh SYNOPSIS
+.bd eqn
+[ file ] ...
+.sh DESCRIPTION
+.it Eqn
+is a
+troff (I)
+preprocessor
+for typesetting mathematics
+on the Graphics Systems phototypesetter.
+Usage is almost always
+.s3
+	eqn file ... | troff
+.s3
+If no files are specified, 
+.it eqn
+reads from the standard input.
+A line beginning with ``.EQ'' marks the start of an equation;
+the end of an equation
+is marked by a line beginning with ``.EN''.
+Neither of these lines is altered or defined by
+.it eqn,
+so you can define them yourself to get
+centering, numbering, etc.
+All other lines are treated as comments, and passed through
+untouched.
+.s3
+Spaces, tabs, newlines, braces, double quotes,
+tilde and circumflex are the only delimiters.
+Braces ``{}'' are used for grouping.
+Use tildes ``~'' to get extra spaces in an equation.
+.s3
+.vs 13p
+Subscripts and superscripts are produced with the keywords
+.bd sub
+and
+.bd sup.
+Thus
+.it "x sub i" 
+makes
+$x sub i$, 
+.it "a sub i sup 2"
+produces
+$a sub i sup 2$,
+and
+.it "e sup {x sup 2 + y sup 2}"
+gives
+$e sup {x sup 2 + y sup 2}$.
+Fractions are made with
+.bd over.
+.it "a over b"
+is $a over b$ and
+.it "1 over sqrt {ax sup 2 +bx+c}"
+is
+$1 over sqrt {ax sup 2 +bx+c}$ .
+.bd sqrt
+makes square roots.
+.s3
+The keywords
+.bd from
+and
+.bd to
+introduce lower and upper
+limits on arbitrary things:
+$lim from {n-> inf} sum from 0 to n x sub i$
+is made with
+.it "lim from {n-> inf} sum from 0 to n x sub i."
+Left and right brackets, braces, etc., of the right height are made with
+.bd left
+and
+.bd right:
+.it "left [ x sup 2 + y sup 2 over alpha right ] ~=~1"
+produces
+$left [ x sup 2 + y sup 2 over alpha right ] ~=~1$.
+The
+.bd right
+clause is optional.
+.s3
+Vertical piles of things are made with 
+.bd "pile, lpile, cpile,"
+and
+.bd rpile:
+.it "pile {a above b above c}"
+produces
+$pile {a above b above c}$.
+There can be an arbitrary number of elements in a pile.
+.bd lpile
+left-justifies,
+.bd pile
+and
+.bd cpile
+center, with different vertical spacing,
+and 
+.bd rpile
+right justifies.
+.s3
+.vs 12p
+Diacritical marks are made with
+.bd dot,
+.bd dotdot,
+.bd hat,
+.bd bar:
+.it "x dot = f(t) bar"
+is
+$x dot = f(t) bar$.
+Default sizes and fonts can be changed with
+.bd "size n"
+and various of
+.bd roman,
+.bd italic,
+and
+.bd bold.
+.s3
+Keywords like 
+.it sum
+.EQ
+( sum )
+.EN
+.it int
+.EQ
+( int )
+.EN
+.it inf
+.EQ
+( inf )
+.EN
+and shorthands like
+>=
+.EQ
+(>=)
+.EN
+\*->
+.EQ
+(->),
+.EN
+!=
+.EQ
+( != ),
+.EN
+are recognized.
+Spell out Greek letters in the desired case, as in
+.it "alpha, GAMMA."
+Mathematical words like sin, cos, log are made Roman automatically.
+Troff (I)
+four-character escapes like \\(bs (\(bs)
+can be used anywhere.
+Strings enclosed in double quotes "..."
+are passed through untouched.
+.sh "SEE ALSO"
+A System for Typesetting Mathematics
+(Computer Science Technical Report #17, Bell Laboratories, 1974.)
+.br
+TROFF Users' Manual (internal memorandum)
+.br
+TROFF Made Trivial (internal memorandum)
+.br
+troff (I), neqn (I)
+.sh BUGS
+Undoubtedly.
+Watch out for small or large point sizes \*-
+it's tuned too well for size 10.
+Be cautious if inserting horizontal or vertical motions,
+and of backslashes in general.

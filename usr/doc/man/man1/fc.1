@@ -1,0 +1,236 @@
+.th FC I 8/20/73
+.sh NAME
+fc \*- Fortran compiler
+.sh SYNOPSIS
+.bd fc
+[
+.bd \*-c
+] sfile1.f ... ofile1 ...
+.sh DESCRIPTION
+.it Fc
+is the UNIX Fortran compiler.
+It accepts three types of arguments:
+.s3
+Arguments whose names end with `.f' are assumed to be
+Fortran source program units; they are compiled, and
+the object program is left on the file sfile1.o (i.e.
+the file whose name is that of the source with `.o' substituted
+for `.f').
+.s3
+Other arguments (except for
+\fB\*-c\fR)
+are assumed
+to be either loader flags, or
+object programs, typically produced by an earlier
+.it fc
+run,
+or perhaps libraries of Fortran-compatible routines.
+These programs, together with the results of any
+compilations specified, are loaded (in the order
+given) to produce an executable program with name
+.bd a.out.
+.s3
+The
+.bd \*-c
+argument suppresses the loading phase, as does
+any syntax error in any of the routines being compiled.
+.s3
+The following is a list
+of differences between
+.it fc
+and ANSI standard Fortran (also see the BUGS section):
+.s3
+.lp +4 4
+1.	Arbitrary combination of types is allowed
+in expressions.  Not all combinations are expected to
+be supported at runtime.
+All of the normal
+conversions involving integer, real, double
+precision and complex are allowed.
+.s3
+.lp +4 4
+2.	Two forms of ``implicit'' statements are recognized:
+.bd "implicit integer /i\*-n/",
+or
+.bd "implicit integer (i\-n)."
+.s3
+.lp +4 4
+3.	The types
+doublecomplex, logical*1,
+integer*1, integer*2,
+integer*4 (same as integer),
+real*4 (real),
+and real*8 (double precision)
+are supported.
+.s3
+.lp +4 4
+4.	\fB&\fR as the first character of a line
+signals a continuation card.
+.s3
+.lp +4 4
+5.	\fBc\fR as the first character of a line signals a comment.
+.s3
+.lp +4 4
+6.	All keywords are recognized in lower case.
+.s3
+.lp +4 4
+7.	The notion of `column 7' is not implemented.
+.s3
+.lp +4 4
+8.	G-format input is free form\*-
+leading blanks are ignored, the first blank after the start
+of the number terminates the field.
+.s3
+.lp +4 4
+9.	A comma in any numeric or logical input field terminates
+the field.
+.s3
+.lp +4 4
+10.	There is no carriage control on output.
+.s3
+.lp +4 4
+11.	A sequence of
+.it n
+characters in double quotes `"' is equivalent to
+.it n
+.bd h
+followed by those characters.
+.s3
+.lp +4 4
+12.	In
+.bd data
+statements, a hollerith string may initialize an array
+or a sequence of array elements.
+.s3
+.lp +4 4
+13.	The number of storage units requested by a binary
+.bd read
+must be identical to the number contained
+in the record being read.
+.s3
+.lp +4 4
+14.	If the first character in an input file is ``#'',
+a preprocessor identical to the C preprocessor
+is called, which implements ``#define'' and ``#include''
+preprocessor statements.
+(See the C reference manual for details.)
+The preprocessor does not recognize
+Hollerith strings written with
+\fIn\*|\fBh\fR.
+.s3
+.i0
+In I/O statements, only unit numbers 0-19 are supported.
+Unit number
+.it n
+refers to file
+fort\fInn;\fR
+(e.g. unit 9 is file `fort09').
+For input, the file must exist;
+for output, it will be created.
+Unit 5 is permanently associated with
+the standard input file; unit 6 with the
+standard output file.
+Also see
+.it setfil
+(III)
+for a way to associate unit numbers with named files.
+.sh FILES
+.ta 1.5i
+.nf
+a.out	loaded output
+f.tmp[123]	temporary (deleted)
+/usr/fort/fc1	compiler proper
+/lib/fr0.o	runtime startoff
+/lib/filib.a	interpreter library
+/lib/libf.a	builtin functions, etc.
+/lib/liba.a	system library
+.fi
+.sh "SEE ALSO"
+rc (I), which announces a more pleasant Fortran dialect;
+the ANSI standard;
+ld (I) for loader flags.
+For some subroutines, try
+ierror, getarg, setfil (III).
+.sh DIAGNOSTICS
+Compile-time diagnostics are given in English,
+accompanied if possible with the offending
+line number and source line with an underscore where the error
+occurred.
+Runtime diagnostics
+are given by number as follows:
+.s3
+.lp +5 5
+1	invalid log argument
+.lp +5 5
+2	bad arg count to amod
+.lp +5 5
+3	bad arg count to atan2
+.lp +5 5
+4	excessive argument to cabs
+.lp +5 5
+5	exp too large in cexp
+.lp +5 5
+6	bad arg count to cmplx
+.lp +5 5
+7	bad arg count to dim
+.lp +5 5
+8	excessive argument to exp
+.lp +5 5
+9	bad arg count to idim
+.lp +5 5
+10	bad arg count to isign
+.lp +5 5
+11	bad arg count to mod
+.lp +5 5
+12	bad arg count to sign
+.lp +5 5
+13	illegal argument to sqrt
+.lp +5 5
+14	assigned/computed goto out of range
+.lp +5 5
+15	subscript out of range
+.lp +5 5
+16	real**real overflow
+.lp +5 5
+17	(negative real)**real
+.lp +5 5
+100	illegal I/O unit number
+.lp +5 5
+101	inconsistent use of I/O unit
+.lp +5 5
+102	cannot create output file
+.lp +5 5
+103	cannot open input file
+.lp +5 5
+104	EOF on input file
+.lp +5 5
+105	illegal character in format
+.lp +5 5
+106	format does not begin with (
+.lp +5 5
+107	no conversion in format but non-empty list
+.lp +5 5
+108	excessive parenthesis depth in format
+.lp +5 5
+109	illegal format specification
+.lp +5 5
+110	illegal character in input field
+.lp +5 5
+111	end of format in hollerith specification
+.lp +5 5
+112	bad argument to setfil
+.lp +5 5
+120	bad argument to ierror
+.lp +5 5
+999	unimplemented input conversion
+.i0
+.sh BUGS
+The following is a list of
+those features not yet implemented:
+.br
+arithmetic statement functions
+.br
+scale factors on input
+.br
+.bd Backspace
+statement.

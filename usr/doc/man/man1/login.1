@@ -1,0 +1,59 @@
+.th LOGIN I 3/15/72
+.sh NAME
+login  \*-  sign onto UNIX
+.sh SYNOPSIS
+.bd login
+[ username ]
+.sh DESCRIPTION
+The
+.it login
+command
+is used when a user initially
+signs onto UNIX, or it may be used at any time to change
+from one user to another.
+The latter case is the one summarized above and
+described here.
+See `How to Get Started' for how to dial up initially.
+.s3
+If
+.it login
+is invoked without an argument,
+it asks for a user name, and, if
+appropriate, a password.
+Echoing is turned off (if possible) during the typing of the password,
+so it will not appear on the written record of the
+session.
+.s3
+After a successful login,
+accounting files are updated and
+the user is informed of the
+existence of
+.it .mail
+and message-of-the-day files.
+.it Login
+initializes the user and group IDs and the working directory,
+then executes a command interpreter (usually
+.it sh
+(I)) according to specifications found in a password file.
+.s3
+Login is recognized by the Shell
+and executed directly (without forking).
+.sh FILES
+/etc/utmp	accounting
+.br
+/usr/adm/wtmp	accounting
+.br
+.li
+.mail		mail
+.br
+/etc/motd	message-of-the-day
+.br
+/etc/passwd	password file
+.sh "SEE ALSO"
+init (VIII), getty (VIII), mail (I), passwd (I), passwd (V)
+.sh DIAGNOSTICS
+`login incorrect,'
+if the name or the password is bad.
+`No Shell,', `cannot open password file,' `no directory':
+consult a UNIX programming counselor.
+.sh BUGS
