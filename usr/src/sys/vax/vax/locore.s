@@ -1,4 +1,4 @@
-/*	locore.s	4.82	83/06/17	*/
+/*	locore.s	4.83	83/06/19	*/
 
 #include "../machine/psl.h"
 #include "../machine/pte.h"
@@ -1158,8 +1158,8 @@ kacerr:
  *	CLSIZE of 2, USRSTACK of 0x7ffff000, any bit fields
  *	in pte's or the core map
  */
-	.globl	Fastreclaim
 	.text
+	.globl	Fastreclaim
 Fastreclaim:
 	PUSHR
 	extzv	$9,$23,28(sp),r3	# virtual address
@@ -1223,10 +1223,17 @@ Fastreclaim:
 	mtpr	r0,$TBIS		# tbiscl(v); 
 	tstl	r2
 	jeql	2f			# if (type == CTEXT) 
-	pushl	r4
-	pushl	r3
-	pushl	P_TEXTP(r5)		#	distpte(p->p_textp,
-	calls	$3,_distpte		#	    vtotp(p, v), pte); 
+	movl	P_TEXTP(r5),r0
+	movl	X_CADDR(r0),r5		# for (p = p->p_textp->x_caddr; p; ) {
+	jeql	2f
+	ashl	$2,r3,r3
+3:
+	addl3	P_P0BR(r5),r3,r0	#	tpte = tptopte(p, tp);
+	bisb2	$1,P_FLAG+3(r5)		#	p->p_flag |= SPTECHG;
+	movl	(r4),(r0)+		#	for (i = 0; i < CLSIZE; i++)
+	movl	4(r4),(r0)		#		tpte[i] = pte[i];
+	movl	P_XLINK(r5),r5		#	p = p->p_xlink;
+	jneq	3b			# }
 2:					# collect a few statistics...
 	incl	_cnt+V_FAULTS		# cnt.v_faults++; 
 	incl	_u+U_RU+RU_MINFLT	# u.u_ru.ru_minflt++;
