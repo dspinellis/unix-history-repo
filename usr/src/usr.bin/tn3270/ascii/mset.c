@@ -30,8 +30,12 @@ static	char	sccsid[] = "@(#)mset.c	3.1  10/29/86";
  *		setenv MAP3270 "`mset`"
  */
 
-#include <curses.h>
+#include <stdio.h>
+#if	defined(unix)
 #include <strings.h>
+#else	/* defined(unix) */
+#include <string.h>
+#endif	/* defined(unix) */
 #include "keyboard/state.h"
 #define LETS_SEE_ASCII
 #include "keyboard/m4.out"
@@ -147,6 +151,7 @@ char *begin, *tc_name;
     static char suffix = 'A';
     int new = strcmp(savename, tc_name);
     char delim = new ? ';' : '|';
+    char *uncontrol();
 
     st1 = begin;
 
@@ -229,7 +234,7 @@ char *begin, *tc_name;
 	    }
 	    break;
 	default:
-	    st2 = unctrl(pchar);
+	    st2 = uncontrol(pchar);
 	    while ((pchar = *st2++) != 0) {
 		switch (pchar) {
 		case '"':

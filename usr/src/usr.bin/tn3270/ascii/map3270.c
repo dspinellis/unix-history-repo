@@ -46,8 +46,11 @@ static	char	sccsid[] = "@(#)map3270.c	3.1  10/29/86";
 
 #include <stdio.h>
 #include <ctype.h>
-#include <curses.h>
+#if	defined(unix)
 #include <strings.h>
+#else	/* defined(unix) */
+#include <string.h>
+#endif	/* defined(unix) */
 
 #define	IsPrint(c)	((isprint(c) && !isspace(c)) || ((c) == ' '))
 
@@ -108,7 +111,7 @@ static char keys3a[] =
 
 static	int	Empty = 1,		/* is the unget lifo empty? */
 		Full = 0;		/* is the unget lifo full? */
-static	lexicon	lifo[200] = 0;		/* character stack for parser */
+static	lexicon	lifo[200] = { 0 };	/* character stack for parser */
 static	int	rp = 0,			/* read pointer into lifo */
 		wp = 0;			/* write pointer into lifo */
 
@@ -233,6 +236,34 @@ lexicon c;			/* character to unget */
 	Empty = 0;
     }
 }
+
+/*
+ * Construct a control character sequence
+ * for a special character.
+ */
+#if	defined(DEBUG)
+char *
+uncontrol(c)
+	register int c;
+{
+	static char buf[3];
+
+	if (c == 0x7f)
+		return ("^?");
+	if (c == '\377') {
+		return "-1";
+	}
+	if (c >= 0x20) {
+		buf[0] = c;
+		buf[1] = 0;
+	} else {
+		buf[0] = '^';
+		buf[1] = '@'+c;
+		buf[2] = 0;
+	}
+	return (buf);
+}
+#endif	/* defined(DEBUG) */
 
 /* compare two strings, ignoring case */
 
@@ -485,7 +516,7 @@ char			*identifier;	/* for error messages */
     }
 #   ifdef	DEBUG
 	if (debug) {
-	    fprintf(stderr, "%s", unctrl(*string));
+	    fprintf(stderr, "%s", uncontrol(*string));
 	}
 #   endif	/* DEBUG */
     pState = GetState();
@@ -756,9 +787,9 @@ char *keybdPointer;
     doPaste = 0;
 
     if ((ourFile = fopen(filename, "r")) == NULL) {
-#   if !defined(msdos)
+#   if !defined(MSDOS)
 	fprintf(stderr, "Unable to open file %s\n", filename);
-#   endif /* !defined(msdos) */
+#   endif /* !defined(MSDOS) */
 	Return(0);
     }
     lex = Get();
@@ -791,10 +822,10 @@ char *keybdPointer;
 	}
 	lex = Get();
     }
-#if !defined(msdos)
+#if !defined(MSDOS)
     fprintf(stderr, "Unable to find entry for %s in file %s\n", keybdPointer,
 		    filename);
-#endif	/* !defined(msdos) */
+#endif	/* !defined(MSDOS) */
     Return(0);
 }
 
@@ -846,9 +877,9 @@ int	pickyarg;		/* Should we be picky? */
     environPointer = getenv("MAP3270");
     if (environPointer
 	    && (environPointer[0] != '/')
-#if	defined(msdos)
+#if	defined(MSDOS)
 	    && (environPointer[0] != '\\')
-#endif	defined(msdos)
+#endif	/* defined(MSDOS) */
 	    && (strncmp(keybdPointer, environPointer,
 			strlen(keybdPointer) != 0)
 		|| (environPointer[strlen(keybdPointer)] != '{'))) /* } */
@@ -857,20 +888,20 @@ int	pickyarg;		/* Should we be picky? */
     }
 
     if ((!environPointer)
-#if	defined(msdos)
+#if	defined(MSDOS)
 		|| (*environPointer == '\\')
-#endif	/* defined(msdos) */
+#endif	/* defined(MSDOS) */
 		|| (*environPointer == '/')) {
 	usePointer = 0;
 	GotIt = 0;
 	if (!keybdPointer) {
-#if !defined(msdos)
+#if !defined(MSDOS)
 	    fprintf(stderr, "%s%s%s%s",
 		"Neither the KEYBD environment variable nor the TERM ",
 		"environment variable\n(one of which is needed to determine ",
 		"the type of keyboard you are using)\n",
 		"is set.  To set it, say 'setenv KEYBD <type>'\n");
-#endif	/* !defined(msdos) */
+#endif	/* !defined(MSDOS) */
 	} else {
 	    if (environPointer) {
 		GotIt = Position(environPointer, keybdPointer);
@@ -888,9 +919,9 @@ int	pickyarg;		/* Should we be picky? */
 	    }
 	}
 	if (!GotIt) {
-#if !defined(msdos)
+#if !defined(MSDOS)
 	    fprintf(stderr, "Using default key mappings.\n");
-#endif	/* !defined(msdos) */
+#endif	/* !defined(MSDOS) */
 	    environPointer = keys3a;	/* use incore table */
 	    usePointer = 1;		/* flag use of non-file */
 	}
