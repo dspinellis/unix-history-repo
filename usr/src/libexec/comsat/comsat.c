@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)comsat.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)comsat.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -41,6 +41,8 @@ static char sccsid[] = "@(#)comsat.c	5.13 (Berkeley) %G%";
 #include <netdb.h>
 #include <syslog.h>
 #include <strings.h>
+
+#include "pathnames.h"
 
 /*
  * comsat
@@ -73,12 +75,12 @@ main(argc, argv)
 		exit(1);
 	}
 	openlog("comsat", LOG_PID, LOG_DAEMON);
-	if (chdir("/usr/spool/mail")) {
-		syslog(LOG_ERR, "chdir: /usr/spool/mail");
+	if (chdir(_PATH_MAIL)) {
+		syslog(LOG_ERR, "chdir: %s: %m", _PATH_MAIL);
 		exit(1);
 	}
-	if ((uf = open("/etc/utmp", O_RDONLY, 0)) < 0) {
-		syslog(LOG_ERR, ".main: /etc/utmp: %m");
+	if ((uf = open(_PATH_UTMP, O_RDONLY, 0)) < 0) {
+		syslog(LOG_ERR, ".main: %s: %m", _PATH_UTMP);
 		(void) recv(0, msgbuf, sizeof (msgbuf) - 1, 0);
 		exit(1);
 	}
