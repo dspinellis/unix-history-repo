@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lpc.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpc.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -201,7 +201,7 @@ help(argc, argv)
 		extern int NCMDS;
 
 		printf("Commands may be abbreviated.  Commands are:\n\n");
-		for (c = cmdtab; c < &cmdtab[NCMDS - 1]; c++) {
+		for (c = cmdtab; c->c_name; c++) {
 			int len = strlen(c->c_name);
 
 			if (len > width)
@@ -215,7 +215,8 @@ help(argc, argv)
 		for (i = 0; i < lines; i++) {
 			for (j = 0; j < columns; j++) {
 				c = cmdtab + j * lines + i;
-				printf("%s", c->c_name);
+				if (c->c_name)
+					printf("%s", c->c_name);
 				if (c + lines >= &cmdtab[NCMDS]) {
 					printf("\n");
 					break;
