@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)atrun.c	5.5 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -27,11 +27,10 @@ static char sccsid[] = "@(#)atrun.c	5.4 (Berkeley) %G%";
  *
  */
 # include <stdio.h>
-# include <sys/types.h>
+# include <sys/param.h>
 # include <sys/dir.h>
 # include <sys/file.h>
 # include <sys/time.h>
-# include <sys/param.h>
 #ifdef notdef
 # include <sys/quota.h>
 #endif
@@ -372,7 +371,7 @@ char *user;
 char *jobname;
 int exitstatus;
 {
-	char ch;			/* scratch variable */
+	int ch;				/* scratch variable */
 	char mailtouser[100];		/* the process we use to send mail */
 	FILE *mailptr;			/* I/O stream to the mail process */
 	FILE *errptr;			/* I/O stream to file containing error
@@ -433,7 +432,7 @@ int exitstatus;
 			fputc('\t',mailptr);
 			while ((ch = fgetc(errptr)) != EOF) {
 				fputc(ch,mailptr);
-				if (ch == '\n')
+				if (ch == (int)'\n')
 					fputc('\t',mailptr);
 			}
 			fclose(errptr);
