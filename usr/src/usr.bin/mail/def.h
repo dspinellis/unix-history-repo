@@ -1,4 +1,4 @@
-/*	def.h	2.13	83/08/11	*/
+/*	def.h	2.14	85/01/09	*/
 
 #include <sys/types.h>
 #include <signal.h>
@@ -248,7 +248,6 @@ struct ignore {
  */
 #ifdef VMUNIX
 #define	sigset(s, a)	signal(s, a)
-#define	mask(s)		(1 << ((s) - 1))
 #define	sigsys(s, a)	signal(s, a)
 #endif
 
