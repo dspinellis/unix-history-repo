@@ -1,14 +1,10 @@
-/*	prf.c	1.1	86/01/12	*/
+/*	prf.c	1.2	86/11/04	*/
 /*	prf.c	4.3	81/05/05	*/
 
 #include "../machine/mtpr.h"
 
 #include "param.h"
 #include "../tahoe/cp.h"
-#ifdef NOIO
-#define CINADR	0xf0000		/* Dummy keyboard (memory mapped) */
-#define COUTADR	0xf1000		/* Dummy screen 	-,,-	  */
-#endif
 
 /*
  * Scaled down version of C Library printf.
@@ -47,7 +43,7 @@ prf(fmt, adx)
 
 loop:
 	while ((c = *fmt++) != '%') {
-		if(c == '\0')
+		if (c == '\0')
 			return;
 		putchar(c);
 	}
@@ -82,11 +78,9 @@ number:
 		printn((u_long)b, *s++);
 		any = 0;
 		if (b) {
-			putchar('<');
 			while (i = *s++) {
 				if (b & (1 << (i-1))) {
-					if (any)
-						putchar(',');
+					putchar(any? ',' : '<');
 					any = 1;
 					for (; (c = *s) > 32; s++)
 						putchar(c);
@@ -94,7 +88,8 @@ number:
 					for (; *s > 32; s++)
 						;
 			}
-			putchar('>');
+			if (any)
+				putchar('>');
 		}
 		break;
 
@@ -134,41 +129,21 @@ printn(n, b)
 
 /*
  * Print a character on console.
- * Attempts to save and restore device
- * status.
- *
- * Whether or not printing is inhibited,
- * the last MSGBUFS characters
- * are saved in msgbuf for inspection later.
  */
-#ifdef NOIO
-char	*coutadr=(char *)COUTADR;
-putchar(c)
-	register c;
-{
-	*coutadr++ = c;
-}
-
-char	*cinadr=(char *)CINADR;
-getchar()
-{
-	return( *cinadr++ );
-}
-
-#else
 struct	cpdcb_o cpout;
 struct	cpdcb_i cpin;
 
 /* console requires even parity */
 #define EVENP
+
 putchar(c)
-char c;
+	char c;
 {
 	int time;
 #ifdef EVENP
 	register mask, par;
 
-	for(par=0, mask=1; mask!=0200; mask<<=1, par<<=1)
+	for (par = 0, mask = 1; mask != 0200; mask <<= 1, par <<= 1)
 		par ^= c&mask;
 	c |= par;
 #endif EVENP
@@ -177,49 +152,34 @@ char c;
 	cpout.cp_hdr.cp_count = 1;
 	cpout.cp_buf[0] = c;
 	mtpr(CPMDCB, &cpout);
-#ifdef SIMIO
-	simout(&cpout);
-#endif
 	time = 100000;				/* Delay loop */
 	while (time--) {
-		uncache (&cpout.cp_hdr.cp_unit) ;
-		if (cpout.cp_hdr.cp_unit & CPDONE) break;
+		uncache(&cpout.cp_hdr.cp_unit);
+		if (cpout.cp_hdr.cp_unit & CPDONE)
+			break;
 	}
-	if (c == '\n') putchar ('\r');
+	if (c == '\n')
+		putchar ('\r');
 }
-
-#ifdef SIMIO
-simout(addr)
-{
-	asm(".byte 0x4");
-}
-simin(addr)
-{
-	asm(".byte 0x3");
-}
-#endif
 
 getchar()
 {
-	char	c;
+	char c;
 
 	cpin.cp_hdr.cp_unit = CPCONS;	/* Resets done bit */
 	cpin.cp_hdr.cp_comm = CPREAD;
 	cpin.cp_hdr.cp_count = 1;
 	mtpr(CPMDCB, &cpin);
-#ifdef SIMIO
-	simin(&cpin);
-#endif
 	while ((cpin.cp_hdr.cp_unit & CPDONE) == 0) 
-		uncache (&cpin.cp_hdr.cp_unit);
-	uncache (&cpin.cpi_buf[0]);
+		uncache(&cpin.cp_hdr.cp_unit);
+	uncache(&cpin.cpi_buf[0]);
 	c = cpin.cpi_buf[0] & 0x7f;
-	if (c == '\r')  c = '\n';
-	putchar(c);
-	return(c);
+	if (c == '\r')
+		c = '\n';
+	if (c != '\b' && c != '\177')
+		putchar(c);
+	return (c);
 }
-#endif
-
 
 gets(buf)
 	char *buf;
@@ -230,7 +190,6 @@ gets(buf)
 	lp = buf;
 	for (;;) {
 		c = getchar() & 0177;
-	store:
 		switch(c) {
 		case '\n':
 		case '\r':
@@ -238,9 +197,16 @@ gets(buf)
 			*lp++ = '\0';
 			return;
 		case '\b':
+		case '\177':
+			if (lp > buf) {
+				lp--;
+				putchar('\b');
+				putchar(' ');
+				putchar('\b');
+			}
+			continue;
 		case '#':
-			lp--;
-			if (lp < buf)
+			if (--lp < buf)
 				lp = buf;
 			continue;
 		case '@':
