@@ -8,11 +8,11 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regexec.c	5.3 (Berkeley) %G%
+ *	@(#)regexec.c	5.4 (Berkeley) %G%
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)regexec.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)regexec.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -33,6 +33,8 @@ static char sccsid[] = "@(#)regexec.c	5.3 (Berkeley) %G%";
 #include "utils.h"
 #include "regex2.h"
 
+static int nope = 0;		/* for use in asserts; shuts lint up */
+
 /* macros for manipulating states, small version */
 #define	states	long
 #define	states1	states		/* for later use in regexec() decision */
@@ -47,14 +49,14 @@ static char sccsid[] = "@(#)regexec.c	5.3 (Berkeley) %G%";
 #define	STATETEARDOWN(m)	/* nothing */
 #define	SETUP(v)	((v) = 0)
 #define	onestate	int
-#define	INIT(o, n)	((o) = 1 << (n))
+#define	INIT(o, n)	((o) = (unsigned)1 << (n))
 #define	INC(o)	((o) <<= 1)
 #define	ISSTATEIN(v, o)	((v) & (o))
 /* some abbreviations; note that some of these know variable names! */
 /* do "if I'm here, I can also be there" etc without branches */
-#define	FWD(dst, src, n)	((dst) |= ((src)&(here)) << (n))
-#define	BACK(dst, src, n)	((dst) |= ((src)&(here)) >> (n))
-#define	ISSETBACK(v, n)	((v) & (here >> (n)))
+#define	FWD(dst, src, n)	((dst) |= ((unsigned)(src)&(here)) << (n))
+#define	BACK(dst, src, n)	((dst) |= ((unsigned)(src)&(here)) >> (n))
+#define	ISSETBACK(v, n)	((v) & ((unsigned)here >> (n)))
 /* function names */
 #define SNAMES			/* engine.c looks after details */
 
@@ -111,6 +113,14 @@ static char sccsid[] = "@(#)regexec.c	5.3 (Berkeley) %G%";
 
 /*
  - regexec - interface for matching
+ = extern int regexec(const regex_t *preg, const char *string, size_t nmatch, \
+ =					regmatch_t pmatch[], int eflags);
+ = #define	REG_NOTBOL	00001
+ = #define	REG_NOTEOL	00002
+ = #define	REG_STARTEND	00004
+ = #define	REG_TRACE	00400	// tracing of execution
+ = #define	REG_LARGE	01000	// force large representation
+ = #define	REG_BACKR	02000	// force use of backref code
  *
  * We put this here so we can exploit knowledge of the state representation
  * when choosing which matcher to call.  Also, by this point the matchers
@@ -136,10 +146,11 @@ int eflags;
 	assert(!(g->iflags&BAD));
 	if (g->iflags&BAD)		/* backstop for no-debug case */
 		return(REG_BADPAT);
-	eflags = GOODFLAGS(eflags);	/* xxx should we complain? */
+	if (eflags != GOODFLAGS(eflags))
+		return(REG_INVARG);
 
 	if (g->nstates <= CHAR_BIT*sizeof(states1) && !(eflags&REG_LARGE))
-		return(smatcher(g, (uchar *)string, nmatch, pmatch, eflags));
+		return(smatcher(g, (char *)string, nmatch, pmatch, eflags));
 	else
-		return(lmatcher(g, (uchar *)string, nmatch, pmatch, eflags));
+		return(lmatcher(g, (char *)string, nmatch, pmatch, eflags));
 }

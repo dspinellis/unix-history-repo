@@ -8,9 +8,23 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)regex2.h	5.1 (Berkeley) %G%
+ *	@(#)regex2.h	5.2 (Berkeley) %G%
  */
 
+/*
+ * First, the stuff that ends up in the outside-world include file
+ = typedef off_t regoff_t;
+ = typedef struct {
+ = 	int re_magic;
+ = 	size_t re_nsub;		// number of parenthesized subexpressions
+ =	const char *re_endp;	// end pointer for REG_PEND
+ = 	struct re_guts *re_g;	// none of your business :-)
+ = } regex_t;
+ = typedef struct {
+ = 	regoff_t rm_so;		// start of match
+ = 	regoff_t rm_eo;		// end of match
+ = } regmatch_t;
+ */
 /*
  * internals of regex_t
  */
@@ -39,7 +53,7 @@ typedef unsigned long sop;	/* strip operator */
 typedef long sopno;
 #define	OPRMASK	0xf8000000
 #define	OPDMASK	0x07ffffff
-#define	OPSHIFT	27
+#define	OPSHIFT	((unsigned)27)
 #define	OP(n)	((n)&OPRMASK)
 #define	OPND(n)	((n)&OPDMASK)
 #define	SOP(op, opnd)	((op)|(opnd))
@@ -63,6 +77,8 @@ typedef long sopno;
 #define	OOR1	(16<<OPSHIFT)	/* | pt. 1	back to OOR1 or OCH_	*/
 #define	OOR2	(17<<OPSHIFT)	/* | pt. 2	fwd to OOR2 or O_CH	*/
 #define	O_CH	(18<<OPSHIFT)	/* end choice	back to OOR1		*/
+#define	OBOW	(19<<OPSHIFT)	/* begin word	-			*/
+#define	OEOW	(20<<OPSHIFT)	/* end word	-			*/
 
 /*
  * Structure for [] character-set representation.  Character sets are
@@ -81,15 +97,18 @@ typedef struct {
 	uchar mask;		/* bit within array */
 	uchar hash;		/* hash code */
 	size_t smultis;
-	uchar *multis;		/* -> uchar[smulti]  ab\0cd\0ef\0\0 */
+	char *multis;		/* -> char[smulti]  ab\0cd\0ef\0\0 */
 } cset;
 /* note that CHadd and CHsub are unsafe, and CHIN doesn't yield 0/1 */
-#define	CHadd(cs, c)	((cs)->ptr[(c)] |= (cs)->mask, (cs)->hash += (c))
-#define	CHsub(cs, c)	((cs)->ptr[(c)] &= ~(cs)->mask, (cs)->hash -= (c))
-#define	CHIN(cs, c)	((cs)->ptr[(c)] & (cs)->mask)
-#define	MCadd(cs, cp)	mcadd(p, cs, cp)	/* regcomp() internal fns */
-#define	MCsub(cs, cp)	mcsub(p, cs, cp)
-#define	MCin(cs, cp)	mcin(p, cs, cp)
+#define	CHadd(cs, c)	((cs)->ptr[(uchar)(c)] |= (cs)->mask, (cs)->hash += (c))
+#define	CHsub(cs, c)	((cs)->ptr[(uchar)(c)] &= ~(cs)->mask, (cs)->hash -= (c))
+#define	CHIN(cs, c)	((cs)->ptr[(uchar)(c)] & (cs)->mask)
+#define	MCadd(cs, cp)	mcadd(cs, cp)	/* regcomp() internal fns */
+#define	MCsub(cs, cp)	mcsub(cs, cp)
+#define	MCin(cs, cp)	mcin(cs, cp)
+
+/* stuff for character categories */
+typedef unsigned char cat_t;
 
 /*
  * main compiled-expression structure
@@ -110,11 +129,18 @@ struct re_guts {
 #		define	USEBOL	01	/* used ^ */
 #		define	USEEOL	02	/* used $ */
 #		define	BAD	04	/* something wrong */
+	int nbol;		/* number of ^ used */
+	int neol;		/* number of $ used */
 	int ncategories;	/* how many character categories */
-	uchar *categories;	/* -> uchar[NUC] */
+	cat_t *categories;	/* ->catspace[-CHAR_MIN] */
 	char *must;		/* match must contain this string */
 	int mlen;		/* length of must */
 	size_t nsub;		/* copy of re_nsub */
 	int backrefs;		/* does it use back references? */
 	sopno nplus;		/* how deep does it nest +s? */
+	/* catspace must be last */
+	cat_t catspace[1];	/* actually [NC] */
 };
+
+/* misc utilities */
+#define	OUT	(CHAR_MAX+1)	/* a non-character value */

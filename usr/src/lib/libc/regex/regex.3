@@ -7,31 +7,39 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)regex.3	5.1 (Berkeley) %G%
+.\"	@(#)regex.3	5.2 (Berkeley) %G%
 .\"
 .TH REGEX 3 ""
 .SH NAME
 regcomp, regexec, regerror, regfree \- regular-expression library
+.de ZR
+.\" one other place knows this name:  the SEE ALSO section
+.IR re_format (7) \\$1
+..
+.SH NAME
+regcomp, regexec, regerror, regfree \- regular-expression library
 .SH SYNOPSIS
 .ft B
+.\".na
 #include <sys/types.h>
 .br
 #include <regex.h>
-.sp 0.5
-int regcomp(regex_t *preg, const char *pattern, int cflags);
-.br
-int regexec(const regex_t *preg, const char *string,
-	size_t nmatch, regmatch_t pmatch[], int eflags);
-.br
-size_t regerror(int errcode, const regex_t *preg,
-	char *errbuf, size_t errbuf_size);
-.br
-void regfree(regex_t *preg);
+.HP 10
+int regcomp(regex_t\ *preg, const\ char\ *pattern, int\ cflags);
+.HP
+int\ regexec(const\ regex_t\ *preg, const\ char\ *string,
+size_t\ nmatch, regmatch_t\ pmatch[], int\ eflags);
+.HP
+size_t\ regerror(int\ errcode, const\ regex_t\ *preg,
+char\ *errbuf, size_t\ errbuf_size);
+.HP
+void\ regfree(regex_t\ *preg);
+.\".ad
 .ft
 .SH DESCRIPTION
 These routines implement POSIX 1003.2 regular expressions (``RE''s);
 see
-.IR re_format (7).
+.ZR .
 .I Regcomp
 compiles an RE written as a string into an internal form,
 .I regexec
@@ -71,10 +79,24 @@ is the bitwise OR of zero or more of the following flags:
 Compile modern (``extended'') REs,
 rather than the obsolete (``basic'') REs that
 are the default.
+.IP REG_BASIC
+This is a synonym for 0,
+provided as a counterpart to REG_EXTENDED to improve readability.
+.IP REG_NOSPEC
+Compile with recognition of all special characters turned off.
+All characters are thus considered ordinary,
+so the ``RE'' is a literal string.
+This is an extension,
+compatible with but not specified by POSIX 1003.2,
+and should be used with
+caution in software intended to be portable to other systems.
+REG_EXTENDED and REG_NOSPEC may not be used
+in the same call to
+.IR regcomp .
 .IP REG_ICASE
 Compile for matching that ignores upper/lower case distinctions.
 See
-.I re_format (7).
+.ZR .
 .IP REG_NOSUB
 Compile for matching that need only report success or failure,
 not what was matched.
@@ -88,12 +110,32 @@ a `^' anchor matches the null string after any newline in the string
 in addition to its normal function,
 and the `$' anchor matches the null string before any newline in the
 string in addition to its normal function.
+.IP REG_PEND
+The regular expression ends,
+not at the first NUL,
+but just before the character pointed to by the
+.I re_endp
+member of the structure pointed to by
+.IR preg .
+The
+.I re_endp
+member is of type
+.IR const\ char\ * .
+This flag permits inclusion of NULs in the RE;
+they are considered ordinary characters.
+This is an extension,
+compatible with but not specified by POSIX 1003.2,
+and should be used with
+caution in software intended to be portable to other systems.
 .PP
 When successful,
 .I regcomp
 returns 0 and fills in the structure pointed to by
 .IR preg .
-One member of that structure is publicized:
+One member of that structure
+(other than
+.IR re_endp )
+is publicized:
 .IR re_nsub ,
 of type
 .IR size_t ,
@@ -156,9 +198,12 @@ This is an extension,
 compatible with but not specified by POSIX 1003.2,
 and should be used with
 caution in software intended to be portable to other systems.
+Note that a non-zero \fIrm_so\fR does not imply REG_NOTBOL;
+REG_STARTEND affects only the location of the string,
+not how it is matched.
 .PP
 See
-.IR re_format (7)
+.ZR
 for a discussion of what is matched in situations where an RE or a
 portion thereof could match any of several substrings of
 .IR string .
@@ -233,12 +278,18 @@ If REG_STARTEND is specified,
 .I pmatch
 must point to at least one
 .I regmatch_t
-even if
+(even if
 .I nmatch
-is 0 or REG_NOSUB was specified.
-In such a case, the value of
+is 0 or REG_NOSUB was specified),
+to hold the input offsets for REG_STARTEND.
+Use for output is still entirely controlled by
+.IR nmatch ;
+if
+.I nmatch
+is 0 or REG_NOSUB was specified,
+the value of
 .IR pmatch [0]
-will not be changed by
+will not be changed by a successful
 .IR regexec .
 .PP
 .I Regerror
@@ -248,7 +299,7 @@ from either
 .I regcomp
 or
 .I regexec
-to a printable message.
+to a human-readable, printable message.
 If
 .I preg
 is non-NULL,
@@ -284,6 +335,35 @@ is 0,
 .I errbuf
 is ignored but the return value is still correct.
 .PP
+If the
+.I errcode
+given to
+.I regerror
+is first ORed with REG_ITOA,
+the ``message'' that results is the printable name of the error code,
+e.g. ``REG_NOMATCH'',
+rather than an explanation thereof.
+If
+.I errcode
+is REG_ATOI,
+then
+.I preg
+shall be non-NULL and the
+.I re_endp
+member of the structure it points to
+must point to the printable name of an error code;
+in this case, the result in
+.I errbuf
+is the decimal digits of
+the numeric value of the error code
+(0 if the name is not recognized).
+REG_ITOA and REG_ATOI are intended primarily as debugging facilities;
+they are extensions,
+compatible with but not specified by POSIX 1003.2,
+and should be used with
+caution in software intended to be portable to other systems.
+Be warned also that they are considered experimental and changes are possible.
+.PP
 .I Regfree
 frees any dynamically-allocated storage associated with the compiled RE
 pointed to by
@@ -307,7 +387,7 @@ forbidden by the RE grammar.
 This implementation treats them as follows.
 .PP
 See
-.IR re_format (7)
+.ZR
 for a discussion of the definition of case-independent matching.
 .PP
 There is no particular limit on the length of REs,
@@ -317,8 +397,9 @@ to RE complexity, except for bounded repetitions.
 See BUGS for one short RE using them
 that will run almost any system out of memory.
 .PP
-Any backslashed character other than the ones specifically legitimized
-by 1003.2 produces a REG_EESCAPE error.
+A backslashed character other than one specifically given a magic meaning
+by 1003.2 (such magic meanings occur only in obsolete [``basic''] REs)
+is taken as an ordinary character.
 .PP
 Any unmatched [ is a REG_EBRACK error.
 .PP
@@ -374,6 +455,7 @@ REG_ESPACE	ran out of memory
 REG_BADRPT	?, *, or + operand invalid
 REG_EMPTY	empty (sub)expression
 REG_ASSERT	``can't happen''\(emyou found a bug
+REG_INVARG	invalid argument, e.g. negative-length string
 .fi
 .SH HISTORY
 Written by Henry Spencer at University of Toronto,
@@ -427,5 +509,6 @@ For example, does
 `a\e(\e(b\e)*\e2\e)*d' match `abbbd'?
 Until the standard is clarified,
 behavior in such cases should not be relied on.
-.SH AUTHOR
-Henry Spencer
+.PP
+The implementation of word-boundary matching is a bit of a kludge,
+and bugs may lurk in combinations of word-boundary matching and anchoring.
