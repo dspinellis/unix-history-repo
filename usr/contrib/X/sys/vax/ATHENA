@@ -1,0 +1,78 @@
+#
+# 	$Source: /source/sys/conf/RCS/ATHENA,v $
+#	$Author: jg $
+#	$Locker:  $
+#	$Log:	ATHENA,v $
+# Revision 1.6  84/07/17  13:02:02  jg
+# fix spelling mistake of previous version
+# 
+# Revision 1.5  84/07/17  12:11:03  jg
+# get rid of 730 configuration, add 780 configuration
+# and add support for more VS100's
+# 
+# Revision 1.4  84/06/23  17:48:39  jis
+# Added ChaosNet support.
+# 
+# Revision 1.3  84/06/01  01:46:57  jis
+# Moved vv0 device from csr 0164000 => 164400
+# 
+# Revision 1.2  84/05/29  16:42:27  jis
+# Added vv0, dmf and dmc0 devices.
+# 
+#
+# Revision 1.1  84/05/16  18:46:01  root
+# Initial revision
+#
+# ATHENA VAX
+#
+machine		vax
+cpu		"VAX780"
+cpu		"VAX750"
+ident		ATHENA
+timezone	5 dst
+maxusers	16
+options		INET,ATHENA,QUOTA,COMPAT,"BSD42",CHAOS
+
+config		vmunix		root on ra0 swap on ra0 and ra1
+config		rlvmunix	root on rl
+
+
+controller	uba0	at nexus ?
+controller	uba1	at nexus ?
+controller	mba0	at nexus ?
+
+controller	uda0	at uba? csr 0172150		vector udintr
+disk		ra0	at uda0 drive 0
+disk		ra1	at uda0 drive 1
+disk		ra2	at uda0 drive 2
+disk		ra3	at uda0 drive 3
+
+controller	hl0	at uba? csr 0174400		vector rlintr
+disk		rl0	at hl0 drive 0
+disk		rl1	at hl0 drive 1
+master		mt0	at mba? drive?	
+tape		mu0	at mt0 slave 0
+tape		mu1	at mt0 slave 1
+device		dz0	at uba? csr 0160100 flags 0xff	vector dzrint dzxint
+device		dz1	at uba? csr 0160110 flags 0xfc	vector dzrint dzxint
+device		dmf0	at uba? csr 0160340 flags 0xffff
+	vector dmfsrint dmfsxint dmfdaint dmfdbint dmfrint dmfxint dmflint
+device		dmf1	at uba? csr 0160400 flags 0xffff
+	vector dmfsrint dmfsxint dmfdaint dmfdbint dmfrint dmfxint dmflint
+device		lp0	at uba? csr 0177514		vector lpintr
+device		lp1	at uba? csr 0164004		vector lpintr
+device		vs0	at uba? csr 0160440		vector vsintr
+device		vs1	at uba? csr 0160500		vector vsintr
+device		vs2	at uba? csr 0160540		vector vsintr
+device		vs3	at uba? csr 0160600		vector vsintr
+
+pseudo-device	pty
+pseudo-device	inet
+pseudo-device	ether
+pseudo-device	loop
+pseudo-device	chaos
+pseudo-device	chether
+pseudo-device	chip
+device		de0	at uba? csr 0174510 vector deintr
+device		vv0	at uba? csr 0164400 vector vvrint vvxint
+device		dmc0	at uba? csr 0160070 vector dmcrint dmcxint
