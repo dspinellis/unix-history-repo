@@ -22,7 +22,7 @@
  * from: $Header: /sprite/src/kernel/vm/ds3100.md/vmPmaxAsm.s,
  *	v 1.1 89/07/10 14:27:41 nelson Exp $ SPRITE (DECWRL)
  *
- *	@(#)locore.s	7.9 (Berkeley) %G%
+ *	@(#)locore.s	7.10 (Berkeley) %G%
  */
 
 /*
@@ -31,6 +31,7 @@
  */
 
 #include <sys/errno.h>
+#include <sys/syscall.h>
 
 #include <machine/param.h>
 #include <machine/vmparam.h>
@@ -129,6 +130,20 @@ icodeEnd:
 szicode:
 	.word	(9 + 3 + 3) * 4		# compute icodeEnd - icode
 	.text
+
+/*
+ * This code is copied the user's stack for returning from signal handlers
+ * (see sendsig() and sigreturn()). We have to compute the address
+ * of the sigcontext struct for the sigreturn call.
+ */
+	.globl	sigcode
+sigcode:
+	addu	a0, sp, 16		# address of sigcontext 
+	li	v0, SYS_sigreturn	# sigreturn(scp)
+	syscall
+	break	0			# just in case sigreturn fails
+	.globl	esigcode
+esigcode:
 
 /*
  * Primitives
