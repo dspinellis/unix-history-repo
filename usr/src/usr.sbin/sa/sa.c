@@ -1,5 +1,5 @@
 #ifndef lint
-static char *sccsid = "@(#)sa.c	4.12 (Berkeley) %G%";
+static char *sccsid = "@(#)sa.c	4.13 (Berkeley) %G%";
 #endif
 
 /*
@@ -276,7 +276,7 @@ int	(*cmp)();
 
 /* we assume pagesize is at least 1k */
 int	pgdiv;
-#define	pgtok(x)	((x) / pgdiv)
+#define	pgtok(x)	((x) * pgdiv)
 
 extern	tcmp(), ncmp(), bflgcmp(), dcmp(), Dcmp(), kcmp(), Kcmp();
 extern	double sum();
