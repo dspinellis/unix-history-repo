@@ -12,7 +12,7 @@ static char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)mail.local.c	8.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)mail.local.c	8.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -107,7 +107,7 @@ main(argc, argv)
 		(void) close(fd);
 
 	/* use a reasonable umask */
-	(void) umask(0077)
+	(void) umask(0077);
 
 #ifdef LOG_MAIL
 	openlog("mail.local", 0, LOG_MAIL);
