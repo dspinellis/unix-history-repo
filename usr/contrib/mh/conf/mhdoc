@@ -1,0 +1,13 @@
+: run this script through /bin/sh
+
+echo grinding...
+
+sed -f doc/config.sed < doc/tmac.h > ../doc/tmac.h
+sed -f doc/config.sed < doc/tmac.hdr > ../doc/tmac.me
+
+for f in doc/*.rf
+do
+    sed -f doc/config.sed < $f > ../doc/`basename $f .rf`.me
+done
+
+exit 0
