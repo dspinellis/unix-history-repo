@@ -1,8 +1,7 @@
 #ifndef lint
-static char sccsid[] = "@(#)log.c	4.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)log.c	4.6 (Berkeley) %G%";
 #endif
 
-#ifdef ACULOG
 #include "tip.h"
 
 static	FILE *flog = NULL;
@@ -47,8 +46,9 @@ logent(group, num, acu, message)
 loginit()
 {
 
+#ifdef ACULOG
 	flog = fopen(value(LOG), "a");
 	if (flog == NULL)
 		fprintf(stderr, "can't open log file\r\n");
-}
 #endif
+}
