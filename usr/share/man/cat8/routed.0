@@ -1,0 +1,183 @@
+ROUTED(8)                 BSD System Manager's Manual                ROUTED(8)
+
+NNAAMMEE
+     rroouutteedd - network routing daemon
+
+SSYYNNOOPPSSIISS
+     rroouutteedd [--dd] [--gg] [--qq] [--ss] [--tt] [_l_o_g_f_i_l_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     RRoouutteedd is invoked at boot time to manage the network routing tables.  The
+     routing daemon uses a variant of the Xerox NS Routing Information Proto-
+     col in maintaining up to date kernel routing table entries.  It used a
+     generalized protocol capable of use with multiple address types, but is
+     currently used only for Internet routing within a cluster of networks.
+
+     In normal operation rroouutteedd listens on the udp(4) socket for the route(8)
+     service (see services(5))  for routing information packets.  If the host
+     is an internetwork router, it periodically supplies copies of its routing
+     tables to any directly connected hosts and networks.
+
+     When rroouutteedd is started, it uses the SIOCGIFCONF ioctl(2) to find those
+     directly connected interfaces configured into the system and marked
+     ``up'' (the software loopback interface is ignored).  If multiple inter-
+     faces are present, it is assumed that the host will forward packets be-
+     tween networks.  RRoouutteedd then transmits a _r_e_q_u_e_s_t packet on each interface
+     (using a broadcast packet if the interface supports it) and enters a
+     loop, listening for _r_e_q_u_e_s_t and _r_e_s_p_o_n_s_e packets from other hosts.
+
+     When a _r_e_q_u_e_s_t packet is received, rroouutteedd formulates a reply based on the
+     information maintained in its internal tables.  The _r_e_s_p_o_n_s_e packet gen-
+     erated contains a list of known routes, each marked with a ``hop count''
+     metric (a count of 16, or greater, is considered ``infinite'').  The met-
+     ric associated with each route returned provides a metric _r_e_l_a_t_i_v_e _t_o _t_h_e
+     _s_e_n_d_e_r.
+
+     _R_e_s_p_o_n_s_e packets received by rroouutteedd are used to update the routing tables
+     if one of the following conditions is satisfied:
+
+     1.   No routing table entry exists for the destination network or host,
+          and the metric indicates the destination is ``reachable'' (i.e. the
+          hop count is not infinite).
+
+     2.   The source host of the packet is the same as the router in the ex-
+          isting routing table entry.  That is, updated information is being
+          received from the very internetwork router through which packets for
+          the destination are being routed.
+
+     3.   The existing entry in the routing table has not been updated for
+          some time (defined to be 90 seconds) and the route is at least as
+          cost effective as the current route.
+
+     4.   The new route describes a shorter route to the destination than the
+          one currently stored in the routing tables; the metric of the new
+          route is compared against the one stored in the table to decide
+          this.
+
+     When an update is applied, rroouutteedd records the change in its internal ta-
+     bles and updates the kernel routing table.  The change is reflected in
+     the next _r_e_s_p_o_n_s_e packet sent.
+
+     In addition to processing incoming packets, rroouutteedd also periodically
+     checks the routing table entries.  If an entry has not been updated for 3
+     minutes, the entry's metric is set to infinity and marked for deletion.
+     Deletions are delayed an additional 60 seconds to insure the invalidation
+     is propagated throughout the local internet.
+
+     Hosts acting as internetwork routers gratuitously supply their routing
+     tables every 30 seconds to all directly connected hosts and networks.
+     The response is sent to the broadcast address on nets capable of that
+     function, to the destination address on point-to-point links, and to the
+     router's own address on other networks.  The normal routing tables are
+     bypassed when sending gratuitous responses.  The reception of responses
+     on each network is used to determine that the network and interface are
+     functioning correctly.  If no response is received on an interface, an-
+     other route may be chosen to route around the interface, or the route may
+     be dropped if no alternative is available.
+
+     Options supported by rroouutteedd:
+
+     --dd      Enable additional debugging information to be logged, such as bad
+             packets received.
+
+     --gg      This flag is used on internetwork routers to offer a route to the
+             ``default'' destination.  This is typically used on a gateway to
+             the Internet, or on a gateway that uses another routing protocol
+             whose routes are not reported to other local routers.
+
+     --ss      Supplying this option forces rroouutteedd to supply routing information
+             whether it is acting as an internetwork router or not.  This is
+             the default if multiple network interfaces are present, or if a
+             point-to-point link is in use.
+
+     --qq      This is the opposite of the --ss option.
+
+     --tt      If the --tt option is specified, all packets sent or received are
+             printed on the standard output.  In addition, rroouutteedd will not di-
+             vorce itself from the controlling terminal so that interrupts
+             from the keyboard will kill the process.
+
+     Any other argument supplied is interpreted as the name of file in which
+     rroouutteedd's actions should be logged.  This log contains information about
+     any changes to the routing tables and, if not tracing all packets, a his-
+     tory of recent messages sent and received which are related to the
+     changed route.
+
+     In addition to the facilities described above, rroouutteedd supports the notion
+     of ``distant'' _p_a_s_s_i_v_e and _a_c_t_i_v_e gateways.  When rroouutteedd is started up,
+     it reads the file _/_e_t_c_/_g_a_t_e_w_a_y_s to find gateways which may not be located
+     using only information from the SIOGIFCONF ioctl(2).  Gateways specified
+     in this manner should be marked passive if they are not expected to ex-
+     change routing information, while gateways marked active should be will-
+     ing to exchange routing information (i.e.  they should have a rroouutteedd pro-
+     cess running on the machine).  Routes through passive gateways are in-
+     stalled in the kernel's routing tables once upon startup.  Such routes
+     are not included in any routing information transmitted.  Active gateways
+     are treated equally to network interfaces.  Routing information is dis-
+     tributed to the gateway and if no routing information is received for a
+     period of the time, the associated route is deleted.  Gateways marked
+     _e_x_t_e_r_n_a_l are also passive, but are not placed in the kernel routing table
+     nor are they included in routing updates.  The function of external en-
+     tries is to inform rroouutteedd that another routing process will install such
+     a route, and that alternate routes to that destination should not be in-
+     stalled.  Such entries are only required when both routers may learn of
+     routes to the same destination.
+
+     The _/_e_t_c_/_g_a_t_e_w_a_y_s is comprised of a series of lines, each in the follow-
+     ing format:
+
+     <nneett | hhoosstt> _n_a_m_e_1 ggaatteewwaayy _n_a_m_e_2 mmeettrriicc _v_a_l_u_e <ppaassssiivvee | aaccttiivvee |
+     eexxtteerrnnaall>
+
+
+     The nneett or hhoosstt keyword indicates if the route is to a network or specif-
+     ic host.
+
+     _N_a_m_e_1 is the name of the destination network or host.  This may be a sym-
+     bolic name located in _/_e_t_c_/_n_e_t_w_o_r_k_s or _/_e_t_c_/_h_o_s_t_s (or, if started after
+     named(8),  known to the name server), or an Internet address specified in
+     ``dot'' notation; see inet(3).
+
+     _N_a_m_e_2 is the name or address of the gateway to which messages should be
+     forwarded.
+
+     _V_a_l_u_e is a metric indicating the hop count to the destination host or
+     network.
+
+     One of the keywords ppaassssiivvee, aaccttiivvee or eexxtteerrnnaall indicates if the gateway
+     should be treated as _p_a_s_s_i_v_e or _a_c_t_i_v_e (as described above), or whether
+     the gateway is _e_x_t_e_r_n_a_l to the scope of the rroouutteedd protocol.
+
+     Internetwork routers that are directly attached to the Arpanet or Milnet
+     should use the Exterior Gateway Protocol (EGP) to gather routing informa-
+     tion rather then using a static routing table of passive gateways.  EGP
+     is required in order to provide routes for local networks to the rest of
+     the Internet system.  Sites needing assistance with such configurations
+     should contact the Computer Systems Research Group at Berkeley.
+
+FFIILLEESS
+     /etc/gateways  for distant gateways
+
+SSEEEE AALLSSOO
+     udp(4),  icmp(4),  XNSrouted(8),  htable(8)
+
+     _I_n_t_e_r_n_e_t _T_r_a_n_s_p_o_r_t _P_r_o_t_o_c_o_l_s, XSIS 028112, Xerox System Integration
+     Standard.
+
+BBUUGGSS
+     The kernel's routing tables may not correspond to those of rroouutteedd when
+     redirects change or add routes.  RRoouutteedd should note any redirects re-
+     ceived by reading the ICMP packets received via a raw socket.
+
+     RRoouutteedd should incorporate other routing protocols, such as Xerox NS
+     (XNSrouted(8))  and EGP. Using separate processes for each requires con-
+     figuration options to avoid redundant or competing routes.
+
+     RRoouutteedd should listen to intelligent interfaces, such as an IMP, to gather
+     more information.  It does not always detect unidirectional failures in
+     network interfaces (e.g., when the output side fails).
+
+HHIISSTTOORRYY
+     The rroouutteedd command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 5, 1993                                3
