@@ -1,5 +1,5 @@
 #ifndef	lint
-static char *sccsid = "@(#)find.c	4.13 (Berkeley) %G%";
+static char *sccsid = "@(#)find.c	4.14 (Berkeley) %G%";
 #endif
 
 #include <stdio.h>
@@ -1163,9 +1163,20 @@ list(file, stp)
 		sprintf(fsize, "%8ld", stp->st_size);
 #ifdef	S_IFLNK
 		if (pmode[0] == 'l') {
-			who = readlink(file, flink, sizeof flink - 1);
+			/*
+			 * Need to get the tail of the file name, since we have
+			 * already chdir()ed into the directory of the file
+			 */
+			cp = rindex(file, '/');
+			if (cp == NULL)
+				cp = file;
+			else
+				cp++;
+			who = readlink(cp, flink, sizeof flink - 1);
 			if (who >= 0)
 				flink[who] = '\0';
+			else
+				flink[0] = '\0';
 		}
 #endif
 	}
