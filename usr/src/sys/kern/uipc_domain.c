@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)uipc_domain.c	7.7 (Berkeley) %G%
+ *	@(#)uipc_domain.c	7.8 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -40,6 +40,9 @@ domaininit()
 #endif
 #ifdef RMP
 	ADDDOMAIN(rmp);
+#endif
+#ifdef CCITT
+	ADDDOMAIN(ccitt);
 #endif
 #include "imp.h"
 #if NIMP > 0
