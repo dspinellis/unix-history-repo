@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ext.h	5.3 (Berkeley) %G%
+ *	@(#)ext.h	5.4 (Berkeley) %G%
  */
 
 /*
@@ -54,7 +54,7 @@ extern char	*neturg;		/* one past last bye of urgent data */
 
 extern int	pcc, ncc;
 
-#ifdef CRAY2
+#if defined(CRAY2) && defined(UNICOS5)
 extern int unpcc;  /* characters left unprocessed by CRAY-2 terminal routine */
 extern char *unptyip;  /* pointer to remaining characters in buffer */
 #endif
@@ -81,7 +81,7 @@ extern struct {
 } clocks;
 
 
-#ifdef CRAY2
+#if	defined(CRAY2) && defined(UNICOS5)
 extern int	needtermstat;
 #endif
 

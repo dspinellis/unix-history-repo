@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)sys_term.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)sys_term.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -135,7 +135,7 @@ set_termbuf()
 #else	/* USE_TERMIO */
 	if (bcmp((char *)&termbuf, (char *)&termbuf2, sizeof(termbuf)))
 		(void) ioctl(pty, TCSETA, (char *)&termbuf);
-# ifdef	CRAY2
+# if	defined(CRAY2) && defined(UNCIOS5)
 	needtermstat = 1;
 # endif
 #endif	/* USE_TERMIO */
@@ -156,68 +156,72 @@ set_termbuf()
 #ifndef	USE_TERMIO
 spcset(func, valp, valpp)
 int func;
-unsigned char *valp;
-unsigned char **valpp;
+cc_t *valp;
+cc_t **valpp;
 {
 	switch(func) {
 	case SLC_EOF:
 		*valp = termbuf.tc.t_eofc;
-		*valpp = (unsigned char *)&termbuf.tc.t_eofc;
+		*valpp = (cc_t *)&termbuf.tc.t_eofc;
 		return(SLC_VARIABLE);
 	case SLC_EC:
 		*valp = termbuf.sg.sg_erase;
-		*valpp = (unsigned char *)&termbuf.sg.sg_erase;
+		*valpp = (cc_t *)&termbuf.sg.sg_erase;
 		return(SLC_VARIABLE);
 	case SLC_EL:
 		*valp = termbuf.sg.sg_kill;
-		*valpp = (unsigned char *)&termbuf.sg.sg_kill;
+		*valpp = (cc_t *)&termbuf.sg.sg_kill;
 		return(SLC_VARIABLE);
 	case SLC_IP:
 		*valp = termbuf.tc.t_intrc;
-		*valpp = (unsigned char *)&termbuf.tc.t_intrc;
+		*valpp = (cc_t *)&termbuf.tc.t_intrc;
 		return(SLC_VARIABLE|SLC_FLUSHIN|SLC_FLUSHOUT);
 	case SLC_ABORT:
 		*valp = termbuf.tc.t_quitc;
-		*valpp = (unsigned char *)&termbuf.tc.t_quitc;
+		*valpp = (cc_t *)&termbuf.tc.t_quitc;
 		return(SLC_VARIABLE|SLC_FLUSHIN|SLC_FLUSHOUT);
 	case SLC_XON:
 		*valp = termbuf.tc.t_startc;
-		*valpp = (unsigned char *)&termbuf.tc.t_startc;
+		*valpp = (cc_t *)&termbuf.tc.t_startc;
 		return(SLC_VARIABLE);
 	case SLC_XOFF:
 		*valp = termbuf.tc.t_stopc;
-		*valpp = (unsigned char *)&termbuf.tc.t_stopc;
+		*valpp = (cc_t *)&termbuf.tc.t_stopc;
 		return(SLC_VARIABLE);
 	case SLC_AO:
 		*valp = termbuf.ltc.t_flushc;
-		*valpp = (unsigned char *)&termbuf.ltc.t_flushc;
+		*valpp = (cc_t *)&termbuf.ltc.t_flushc;
 		return(SLC_VARIABLE);
 	case SLC_SUSP:
 		*valp = termbuf.ltc.t_suspc;
-		*valpp = (unsigned char *)&termbuf.ltc.t_suspc;
+		*valpp = (cc_t *)&termbuf.ltc.t_suspc;
 		return(SLC_VARIABLE);
 	case SLC_EW:
 		*valp = termbuf.ltc.t_werasc;
-		*valpp = (unsigned char *)&termbuf.ltc.t_werasc;
+		*valpp = (cc_t *)&termbuf.ltc.t_werasc;
 		return(SLC_VARIABLE);
 	case SLC_RP:
 		*valp = termbuf.ltc.t_rprntc;
-		*valpp = (unsigned char *)&termbuf.ltc.t_rprntc;
+		*valpp = (cc_t *)&termbuf.ltc.t_rprntc;
 		return(SLC_VARIABLE);
 	case SLC_LNEXT:
 		*valp = termbuf.ltc.t_lnextc;
-		*valpp = (unsigned char *)&termbuf.ltc.t_lnextc;
+		*valpp = (cc_t *)&termbuf.ltc.t_lnextc;
+		return(SLC_VARIABLE);
+	case SLC_FORW1:
+		*valp = termbuf.tc.t_brkc;
+		*valpp = (cc_t *)&termbuf.ltc.t_lnextc;
 		return(SLC_VARIABLE);
 	case SLC_BRK:
 	case SLC_SYNCH:
 	case SLC_AYT:
 	case SLC_EOR:
-		*valp = 0;
-		*valpp = 0;
+		*valp = (cc_t)0;
+		*valpp = (cc_t *)0;
 		return(SLC_DEFAULT);
 	default:
-		*valp = 0;
-		*valpp = 0;
+		*valp = (cc_t)0;
+		*valpp = (cc_t *)0;
 		return(SLC_NOSUPPORT);
 	}
 }
@@ -226,14 +230,14 @@ unsigned char **valpp;
 
 spcset(func, valp, valpp)
 int func;
-unsigned char *valp;
-unsigned char **valpp;
+cc_t *valp;
+cc_t **valpp;
 {
 
 #define	setval(a, b)	*valp = termbuf.c_cc[a]; \
 			*valpp = &termbuf.c_cc[a]; \
 			return(b);
-#define	defval(a)	*valp = (a); *valpp = 0; return(SLC_DEFAULT);
+#define	defval(a) *valp = ((cc_t)a); *valpp = (cc_t *)0; return(SLC_DEFAULT);
 
 	switch(func) {
 	case SLC_EOF:
@@ -288,6 +292,14 @@ unsigned char **valpp;
 #else
 		defval(0);
 #endif
+#ifdef	VEOL
+	case SLC_FORW1:
+		setval(VEOL, SLC_VARIABLE);
+#endif
+#ifdef	VEOL2
+	case SLC_FORW2:
+		setval(VEOL2, SLC_VARIABLE);
+#endif
 
 	case SLC_BRK:
 	case SLC_SYNCH:
@@ -302,6 +314,22 @@ unsigned char **valpp;
 	}
 }
 #endif	/* USE_TERMIO */
+
+#ifdef CRAY
+/*
+ * getnpty()
+ *
+ * Return the number of pty's configured into the system.
+ */
+getnpty()
+{
+#ifdef _SC_CRAY_NPTY
+	return sysconf(_SC_CRAY_NPTY);
+#else
+	return 128;
+#endif /* _SC_CRAY_NPTY */
+}
+#endif /* CRAY */
 
 /*
  * getpty()
@@ -604,7 +632,7 @@ tty_rspeed(val)
 #endif
 }
 
-#ifdef	CRAY2
+#if	defined(CRAY2) && defined(UNICOS5)
 tty_isnewmap()
 {
 	return((termbuf.c_oflag & OPOST) && (termbuf.c_oflag & ONLCR) &&
@@ -618,7 +646,10 @@ extern	struct utmp wtmp;
 extern char wtmpf[];
 # else	/* NEWINIT */
 int	gotalarm;
-nologinproc()
+/* ARGSUSED */
+void
+nologinproc(sig)
+int sig;
 {
 	gotalarm++;
 }
@@ -661,7 +692,7 @@ getptyslave()
 
 	init_termbuf();
 #ifndef	USE_TERMIO
-	termbuf.sg.sg_flags |= CRMOD|ANYP|ECHO;
+	termbuf.sg.sg_flags |= CRMOD|ANYP|ECHO|XTABS;
 	termbuf.sg.sg_ospeed = termbuf.sg.sg_ispeed = B9600;
 #else
 	termbuf.c_lflag |= ECHO;
@@ -746,7 +777,7 @@ char *host;
 
 	extern char *ptyip;
 	struct init_request request;
-	int nologinproc();
+	void nologinproc();
 	register int n;
 
 	/*
@@ -764,6 +795,10 @@ char *host;
 	SCPYN(request.tty_id, &line[8]);
 	SCPYN(request.host, host);
 	SCPYN(request.term_type, &terminaltype[5]);
+#if	defined(UNICOS5)
+	request.signal = SIGCLD;
+	request.pid = getpid();
+#endif
 	if (write(i, (char *)&request, sizeof(request)) < 0) {
 		char tbuf[128];
 		(void) sprintf(tbuf, "Can't write to %s\n", INIT_FIFO);
@@ -772,12 +807,14 @@ char *host;
 	(void) close(i);
 	(void) signal(SIGALRM, nologinproc);
 	for (i = 0; ; i++) {
+		char tbuf[128];
 		alarm(15);
 		n = read(pty, ptyip, BUFSIZ);
 		if (i == 3 || n >= 0 || !gotalarm)
 			break;
 		gotalarm = 0;
-		(void) write(net, "telnetd: waiting for /etc/init to start login process.\r\n", 56);
+		sprintf(tbuf, "telnetd: waiting for /etc/init to start login process on %s\r\n", line);
+		(void) write(net, tbuf, strlen(tbuf));
 	}
 	if (n < 0 && gotalarm)
 		fatal(net, "/etc/init didn't start login process");
@@ -785,14 +822,6 @@ char *host;
 	alarm(0);
 	(void) signal(SIGALRM, SIG_DFL);
 
-	/*
-	 * Set tab expansion the way we like, in case init did something
-	 * different.
-	 */
-	init_termbuf();
-	termbuf.c_oflag &= ~TABDLY;
-	termbuf.c_oflag |= TAB0;
-	set_termbuf();
 	return;
 #endif	/* NEWINIT */
 }
@@ -843,7 +872,7 @@ char *host;
 	 * set ttyp modes as we like them to be
 	 */
 	init_termbuf();
-	termbuf.c_oflag = OPOST|ONLCR;
+	termbuf.c_oflag = OPOST|ONLCR|TAB3;
 	termbuf.c_iflag = IGNPAR|ISTRIP|ICRNL|IXON;
 	termbuf.c_lflag = ISIG|ICANON|ECHO|ECHOE|ECHOK;
 	termbuf.c_cflag = EXTB|HUPCL|CS8;
@@ -925,7 +954,7 @@ cleanup()
 	kill(0, SIGHUP);
 # else	/* NEWINIT */
 	(void) shutdown(net, 2);
-	sleep(5);
+	sleep(2);
 # endif	/* NEWINT */
 #endif	/* CRAY */
 	exit(1);
