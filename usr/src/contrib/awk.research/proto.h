@@ -22,7 +22,6 @@ ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
 ****************************************************************/
 
-extern	int	yywrap(void);
 extern	void	setfname(Cell *);
 extern	int	constnode(Node *);
 extern	uchar	*strnode(Node *);
@@ -31,12 +30,8 @@ extern	int	yyparse(void);
 
 extern	int	yylex(void);
 extern	void	startreg(void);
-extern	int	input(void);
-extern	void	unput(int);
+extern	int	lex_input(void);
 extern	void	unputstr(char *);
-extern	int	yylook(void);
-extern	int	yyback(int *, int);
-extern	int	yyinput(void);
 
 extern	fa	*makedfa(uchar *, int);
 extern	fa	*mkdfa(uchar *, int);
@@ -66,6 +61,7 @@ extern	void	freefa(fa *);
 
 extern	int	main(int, uchar **);
 extern	int	pgetc(void);
+extern	void	init_input_source(void);
 
 extern	Node	*nodealloc(int);
 extern	Node	*exptostat(Node *);
@@ -130,7 +126,7 @@ extern	void	eprint(void);
 extern	void	bclass(int);
 extern	double	errcheck(double, uchar *);
 extern	int	isclvar(uchar *);
-extern	int	isnumber(uchar *);
+extern	int	is_a_number(uchar *);
 
 extern	void	run(Node *);
 extern	Cell	*r_execute(Node *);
