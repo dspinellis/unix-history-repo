@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)util.c	8.36 (Berkeley) %G%";
+static char sccsid[] = "@(#)util.c	8.37 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -1387,9 +1387,9 @@ dumpfd(fd, printclosed, logit)
 	  default:
 defprint:
 		if (sizeof st.st_size > 4)
-			fmtstr = "dev=%d/%d, ino=%d, nlink=%d, u/gid=%d/%d, size=%qd",
+			fmtstr = "dev=%d/%d, ino=%d, nlink=%d, u/gid=%d/%d, size=%qd";
 		else
-			fmtstr = "dev=%d/%d, ino=%d, nlink=%d, u/gid=%d/%d, size=%ld",
+			fmtstr = "dev=%d/%d, ino=%d, nlink=%d, u/gid=%d/%d, size=%ld";
 		sprintf(p, fmtstr,
 			major(st.st_dev), minor(st.st_dev), st.st_ino,
 			st.st_nlink, st.st_uid, st.st_gid, st.st_size);
