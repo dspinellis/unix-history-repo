@@ -1,5 +1,5 @@
 # Description file for the Make command
-# Makefile 4.1 81/02/28
+# Makefile 4.2 82/10/18
 
 P = und -3 | opr -r2
 T =
@@ -16,11 +16,11 @@ all:	make
 
 cmp:	make
 	cmp make /bin/make
-	rm *.o gram.c make
+	rm -f *.o gram.c make
 
 cp:	make
 	cp make /bin/make
-	rm *.o gram.c make
+	rm -f *.o gram.c make
 
 make:  $(OBJECTS)
 	$(CC) -n -s $(CFLAGS) $(OBJECTS) $(LIBES) -o make
@@ -28,7 +28,7 @@ make:  $(OBJECTS)
 $(OBJECTS):  defs
 
 clean:
-	-rm *.o gram.c
+	-rm -f *.o gram.c
 
 install:
 	install make $(DESTDIR)/bin/make
@@ -46,7 +46,7 @@ save: # Write files on Spider store.
 
 test: 1zap 2zap
 	diff 1zap 2zap
-	rm 1zap 2zap
+	rm -f 1zap 2zap
 
 1zap:
 	./make -dp | grep -v TIME >1zap
@@ -62,7 +62,7 @@ time1 time2 :
 
 lint :  dosys.c doname.c files.c main.c misc.c ident.c gram.c
 	$(LINT) dosys.c doname.c files.c main.c misc.c ident.c gram.c
-	rm gram.c
+	rm -f gram.c
 
 src:
 	cp $(FILES) /usr/src/cmd/make
