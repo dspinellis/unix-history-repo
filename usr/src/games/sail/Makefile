@@ -1,7 +1,7 @@
 #
 # Sail - Wooden Ships And Iron Men
 #
-# Makefile	@(#)Makefile	2.1 83/10/31
+# Makefile	@(#)Makefile	2.2 83/10/31
 #
 CC=	cc
 CTAGS=	ctags -w
@@ -31,7 +31,7 @@ DRIVER=		lib/saildriver
 SAIL.LOG=	sail.log
 LOGFILE=	lib/saillog
 DESTDIR=
-TARGET=		$(TARGET)/usr/games
+TARGET=		$(DESTDIR)/usr/games
 
 all: sail driver sail.log
 
@@ -57,13 +57,13 @@ ${HDRS} ${CTAGFILES}:
 clean: 
 	rm -f ${DOBJS} ${POBJS} ${LOBJS} ${COMMONOBJS} ${JUNKFILES}
 
-install: sail driver sail.log logfile
+install: sail driver sail.log $(TARGET)/$(LOGFILE)
 	install -s -m 4711 -o ${SAILMASTER} sail ${TARGET}/${SAIL}
 	install -s -m 4711 -o ${SAILMASTER} driver ${TARGET}/${DRIVER}
 	install -s -m 711 sail.log ${TARGET}/${SAIL.LOG}
 	install sail.6 /usr/man/man6
 
-logfile:
+logfile $(TARGET)/$(LOGFILE):
 	cp /dev/null ${TARGET}/${LOGFILE}
 	chown ${SAILMASTER} ${TARGET}/${LOGFILE}
 	chmod 644 ${TARGET}/${LOGFILE}
