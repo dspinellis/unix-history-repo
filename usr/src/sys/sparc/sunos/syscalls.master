@@ -1,4 +1,4 @@
-	@(#)syscalls.master	8.1 (Berkeley) %G%
+	@(#)syscalls.master	7.4 (Berkeley) %G%
 ; System call name/number master file (or rather, slave, from SunOS).
 ; Processed to created sun_sysent.c, sun_syscalls.c and sun_syscall.h.
 
@@ -19,8 +19,8 @@
 
 ; #ifdef's, etc. may be included, and are copied to the output files.
 
-0	UNIMPL	0 indir or out-of-range
-1	STD	1 rexit exit
+0	UNIMPL	0 nosys syscall
+1	STD	1 exit
 2	STD	0 fork
 3	STD	3 read
 4	STD	3 write
@@ -52,7 +52,7 @@
 30	COMPAT	2 sun_utime
 31	UNIMPL	0 was stty
 32	UNIMPL	0 was gtty
-33	STD	2 saccess access
+33	STD	2 access
 34	COMPAT	1 sun_nice
 35	COMPAT	1 sun_ftime
 36	STD	0 sync
@@ -70,7 +70,7 @@
 48	COMPAT	2 sun_ssig
 49	UNIMPL	0 reserved for USG
 50	UNIMPL	0 reserved for USG
-51	STD	1 sysacct acct
+51	STD	1 acct
 52	UNIMPL	0 nosys
 53	STD	4 sun_mctl
 54	STD	3 sun_ioctl
