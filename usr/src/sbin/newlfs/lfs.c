@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lfs.c	5.23 (Berkeley) %G%";
+static char sccsid[] = "@(#)lfs.c	5.24 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -53,9 +53,9 @@ u_quad_t maxtable[] = {
 	/* 1024 */ NDADDR + 256 + 256 * 256 + 256 * 256 * 256,
 	/* 2048 */ NDADDR + 512 + 512 * 512 + 512 * 512 * 512,
 	/* 4096 */ NDADDR + 1024 + 1024 * 1024 + 1024 * 1024 * 1024,
-	/* 8192 */ 2 ^ 31,
-	/* 16 K */ 2 ^ 31,
-	/* 32 K */ 2 ^ 31
+	/* 8192 */ 1 << 31,
+	/* 16 K */ 1 << 31,
+	/* 32 K */ 1 << 31,
 };
 
 static struct lfs lfs_default =  {
