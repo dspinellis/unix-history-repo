@@ -64,6 +64,7 @@ static char sccsid[] = "@(#)exec.c	5.2 (Berkeley) 3/13/91";
 #include "error.h"
 #include "init.h"
 #include "mystring.h"
+#include "jobs.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
