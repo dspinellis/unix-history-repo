@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.15 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.16 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.15 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.16 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -69,7 +69,8 @@ getmxrr(host, mxhosts, localhost, rcode)
 	register char *bp;
 	HEADER *hp;
 	querybuf answer;
-	int ancount, qdcount, buflen, seenlocal;
+	int ancount, qdcount, buflen;
+	bool seenlocal;
 	u_short pref, localpref, type, prefer[MAXMXHOSTS];
 	int weight[MAXMXHOSTS];
 
@@ -114,7 +115,7 @@ getmxrr(host, mxhosts, localhost, rcode)
 		if ((n = dn_skipname(cp, eom)) < 0)
 			goto punt;
 	nmx = 0;
-	seenlocal = 0;
+	seenlocal = FALSE;
 	buflen = sizeof(hostbuf) - 1;
 	bp = hostbuf;
 	ancount = ntohs(hp->ancount);
@@ -140,11 +141,11 @@ getmxrr(host, mxhosts, localhost, rcode)
 				   (u_char *)bp, buflen)) < 0)
 			break;
 		cp += n;
-		if (!strcasecmp(bp, localhost))
+		if (strcasecmp(bp, localhost) == 0)
 		{
-			if (seenlocal == 0 || pref < localpref)
+			if (!seenlocal || pref < localpref)
 				localpref = pref;
-			seenlocal = 1;
+			seenlocal = TRUE;
 			continue;
 		}
 		weight[nmx] = mxrand(bp);
@@ -171,6 +172,8 @@ punt:
 			*bp = '\0';
 		}
 		nmx = 1;
+		prefer[0] = 0;
+		weight[0] = 0;
 	}
 
 	/* sort the records */
