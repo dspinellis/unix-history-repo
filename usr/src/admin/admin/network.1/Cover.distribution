@@ -1,0 +1,88 @@
+.\" @(#)Cover.distribution	1.1 (Berkeley) %G%
+.so HEADERS
+.UC
+.OF ''''
+.EF ''''
+.sp .5i
+.ti 3.5i
+March, 1989
+.sp 2
+.PP
+This is a distribution kit for the first release of the BSD networking software.
+This software is
+Copyright \(co 1989 The Regents of the University of California,
+but may be used and redistributed freely with due credit to the University;
+see the license agreement for details.
+(Note: your countersigned license agreement will be sent under separate cover.)
+.PP
+This package contains one 1200' 1600 BPI magnetic tape
+which contains the C source code for the networking software
+and troff-format manual pages and other documentation.
+It is in \fItar\fP format with a blocking factor of 20.
+It can be extracted into the current directory with a command such as
+``tar x,''
+``tar xf \fItapename\fP,''
+or
+``tar xbf 20 \fItapename\fP.''
+Each program is in a separate directory which contains both the source
+and the manual page(s) for the program.
+The kernel-related sources are under the \fBsys\fP directory,
+the include files meant for /usr/include are in the \fBinclude\fP directory, and
+the library routines are in the \fBlib\fP directory.
+Additional documentation is in the \fBdoc\fP and \fBman\fP directories.
+.PP
+It should be noted that this software has only been tested for compilation
+and operation with the 4.3BSD-tahoe Berkeley distribution
+or more recent systems now running on our development machines.
+We cannot ensure that this software will compile or run on any other
+systems.
+Only very limited support will be provided by our group.
+In particular,
+we cannot provide assistance with installation of this software on
+other systems.
+We are, however, interested in any fixes that you find it necessary to
+apply.
+.PP
+Bug reports about this distribution can be submitted using the sendbug
+program on the tape, which will submit a formatted report to  
+``4bsd-bugs@Berkeley.EDU'' on the Internet.
+On the uucp net, modify sendbug 
+to send to ``ucbvax!4bsd-bugs'' by an appropriate path.
+Ideas for improvement of the system
+should be sent to ``4bsd-ideas'', in the same network context.
+If you have changes or other software which you would be willing
+to share with others, let us know.  
+.sp 2
+.ti 2.5i
+Good Luck,
+.sp
+.ti 3.0i
+.br
+Mike Karels
+.ti 3.5i
+.br
+karels@Berkeley.EDU
+.br
+.ti 3.5i
+ucbvax!karels
+.sp
+.ti 3.0i
+.br
+Kirk McKusick
+.br
+.ti 3.5i
+mckusick@Berkeley.EDU
+.br
+.ti 3.5i
+ucbvax!mckusick
+.sp
+.ti 3.0i
+.br
+Keith Bostic
+.ti 3.5i
+.br
+bostic@Berkeley.EDU
+.ti 3.5i
+.br
+uunet!keith
+
