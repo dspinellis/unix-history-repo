@@ -1,4 +1,4 @@
-/*	uipc_syscalls.c	4.42	83/01/13	*/
+/*	uipc_syscalls.c	4.43	83/03/04	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -266,10 +266,9 @@ sendto()
 	}
 	u.u_error = sockname(&to, uap->to, uap->tolen);
 	if (u.u_error)
-		goto bad;
+		return;
 	u.u_error = sosend(fp->f_socket, to, &auio, uap->flags);
 	u.u_r.r_val1 = uap->len - auio.uio_resid;
-bad:
 	m_freem(to);
 }
 
