@@ -1,16 +1,18 @@
 #ifndef lint
-static	char *sccsid = "@(#)tunefs.c	4.2 (Berkeley) %G%";
+static	char *sccsid = "@(#)tunefs.c	4.3 (Berkeley) %G%";
 #endif lint
 
 /*
  * tunefs: change layout parameters to an existing file system.
  */
 
-#include <stdio.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/fs.h>
 #include <sys/inode.h>
+
+#include <stdio.h>
+#include <fstab.h>
 
 union {
 	struct	fs sb;
@@ -30,11 +32,15 @@ main(argc, argv)
 	int Aflag = 0;
 	char device[MAXPATHLEN];
 	extern char *sprintf();
+	struct fstab *fs;
 
 	argc--, argv++; 
 	if (argc < 2)
 		goto usage;
 	special = argv[argc - 1];
+	fs = getfsfile(special);
+	if (fs)
+		special = fs->fs_spec;
 again:
 	if (stat(special, &st) < 0) {
 		if (*special != '/') {
