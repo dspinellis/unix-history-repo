@@ -3,10 +3,10 @@
 # include "sendmail.h"
 
 # ifndef SMTP
-SCCSID(@(#)usersmtp.c	4.1		%G%	(no SMTP));
+SCCSID(@(#)usersmtp.c	4.2		%G%	(no SMTP));
 # else SMTP
 
-SCCSID(@(#)usersmtp.c	4.1		%G%);
+SCCSID(@(#)usersmtp.c	4.2		%G%);
 
 
 
@@ -48,12 +48,16 @@ int	SmtpState;			/* connection state, see below */
 **		creates connection and sends initial protocol.
 */
 
+jmp_buf	CtxGreeting;
+
 smtpinit(m, pvp)
 	struct mailer *m;
 	char **pvp;
 {
 	register int r;
+	EVENT *gte;
 	char buf[MAXNAME];
+	extern greettimeout();
 
 	/*
 	**  Open the connection to the mailer.
@@ -80,10 +84,15 @@ smtpinit(m, pvp)
 
 	/*
 	**  Get the greeting message.
-	**	This should appear spontaneously.
+	**	This should appear spontaneously.  Give it two minutes to
+	**	happen.
 	*/
 
+	if (setjmp(CtxGreeting) != 0)
+		return (EX_TEMPFAIL);
+	gte = setevent(120, greettimeout, 0);
 	r = reply(m);
+	clrevent(gte);
 	if (r < 0 || REPLYTYPE(r) != 2)
 		return (EX_TEMPFAIL);
 
@@ -153,6 +162,14 @@ smtpinit(m, pvp)
 	else if (r == 552)
 		return (EX_UNAVAILABLE);
 	return (EX_PROTOCOL);
+}
+
+
+static
+greettimeout()
+{
+	/* timeout reading the greeting message */
+	longjmp(CtxGreeting, 1);
 }
 /*
 **  SMTPRCPT -- designate recipient.

@@ -8,7 +8,7 @@
 # include "sendmail.h"
 # include "conf.h"
 
-SCCSID(@(#)util.c	4.1		%G%);
+SCCSID(@(#)util.c	4.2		%G%);
 
 /*
 **  STRIPQUOTES -- Strip quotes & quote bits from a string.
@@ -609,7 +609,7 @@ xunlink(f)
 # endif LOG
 }
 /*
-**  SFGETS -- "safe" fgets -- times out.
+**  SFGETS -- "safe" fgets -- times out and ignores random interrupts.
 **
 **	Parameters:
 **		buf -- place to put the input line.
@@ -624,7 +624,7 @@ xunlink(f)
 **		none.
 */
 
-static bool	TimeoutFlag;
+static jmp_buf	CtxReadTimeout;
 
 char *
 sfgets(buf, siz, fp)
@@ -636,25 +636,36 @@ sfgets(buf, siz, fp)
 	register char *p;
 	extern readtimeout();
 
+	/* set the timeout */
 	if (ReadTimeout != 0)
+	{
+		if (setjmp(CtxReadTimeout) != 0)
+		{
+			syserr("sfgets: timeout on read (mailer may be hung)");
+			return (NULL);
+		}
 		ev = setevent(ReadTimeout, readtimeout, 0);
-	TimeoutFlag = FALSE;
+	}
+
+	/* try to read */
 	do
 	{
 		errno = 0;
 		p = fgets(buf, siz, fp);
-	} while (!(p != NULL || TimeoutFlag || errno != EINTR));
+	} while (p == NULL && errno == EINTR);
+
+	/* clear the event if it has not sprung */
 	clrevent(ev);
+
+	/* clean up the books and exit */
 	LineNumber++;
-	if (TimeoutFlag)
-		syserr("sfgets: timeout on read (mailer may be hung)");
 	return (p);
 }
 
 static
 readtimeout()
 {
-	TimeoutFlag = TRUE;
+	longjmp(CtxReadTimeout, 1);
 }
 /*
 **  FGETFOLDED -- like fgets, but know about folded lines.
