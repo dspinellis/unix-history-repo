@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.5 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <signal.h>
@@ -176,28 +176,19 @@ cmdloop(top) {
 			flushout(&output);
 		}
 		n = parsecmd(inter);
-#ifdef DEBUG
-		/* showtree(n); */
-#endif
+		/* showtree(n); DEBUG */
 		if (n == NEOF) {
-			if (Iflag == 0 || !top || numeof >= 50)
+			if (!top || numeof >= 50)
 				break;
-			out2str("\nUse \"exit\" to leave shell.\n");
+			if (!stoppedjobs()) {
+				if (!Iflag)
+					break;
+				out2str("\nUse \"exit\" to leave shell.\n");
+			}
 			numeof++;
 		} else if (n != NULL && nflag == 0) {
-			if (inter) {
-				INTOFF;
-				if (prevcmd)
-					freefunc(prevcmd);
-				prevcmd = curcmd;
-				curcmd = copyfunc(n);
-				INTON;
-			}
+			job_warning = (job_warning == 2) ? 1 : 0;
 			evaltree(n, 0);
-#ifdef notdef
-			if (exitstatus)				      /*DEBUG*/
-				outfmt(&errout, "Exit status 0x%X\n", exitstatus);
-#endif
 		}
 		popstackmark(&smark);
 	}
@@ -268,27 +259,12 @@ dotcmd(argc, argv)  char **argv; {
 
 
 exitcmd(argc, argv)  char **argv; {
+	if (stoppedjobs())
+		return;
 	if (argc > 1)
 		exitstatus = number(argv[1]);
 	exitshell(exitstatus);
 }
-
-
-lccmd(argc, argv)  char **argv; {
-	if (argc > 1) {
-		defun(argv[1], prevcmd);
-		return 0;
-	} else {
-		INTOFF;
-		freefunc(curcmd);
-		curcmd = prevcmd;
-		prevcmd = NULL;
-		INTON;
-		evaltree(curcmd, 0);
-		return exitstatus;
-	}
-}
-
 
 
 #ifdef notdef

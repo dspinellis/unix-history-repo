@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)jobs.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)jobs.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "shell.h"
@@ -802,7 +802,29 @@ waitproc(block, status)
 #endif
 }
 
+/*
+ * return 1 if there are stopped jobs, otherwise 0
+ */
+int job_warning = 0;
+int
+stoppedjobs() 
+{
+	int i;
 
+	if (job_warning)
+		return (0);
+	for (i = 0; i <= njobs; i++) {
+		if (jobtab[i].used == 0)
+			continue;
+		if (jobtab[i].state == JOBSTOPPED) {
+			out2str("You have stopped jobs.\n");
+			job_warning = 2;
+			return (1);
+		}
+	}
+
+	return (0);
+}
 
 /*
  * Return a string identifying a command (to be printed by the

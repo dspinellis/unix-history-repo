@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)jobs.h	5.1 (Berkeley) %G%
+ *	@(#)jobs.h	5.2 (Berkeley) %G%
  */
 
 /* Mode argument to forkshell.  Don't change FORK_FG or FORK_BG. */
@@ -49,6 +49,7 @@ struct job {
 };
 
 extern short backgndpid;	/* pid of last background process */
+extern int job_warning;		/* user was warned about stopped jobs */
 
 
 #ifdef __STDC__
