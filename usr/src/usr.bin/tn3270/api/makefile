@@ -1,7 +1,7 @@
 CFLAGS = -g
 PRINT = lpr -p
 
-ALLC = apilib.c api_bsd.c api_exch.c
+ALLC = apilib.c api_bsd.c api_exch.c tnrecv.c
 ALLH = apilib.h api_exch.h
 
 ALLPRINT = ${ALLH} ${ALLC}
@@ -14,6 +14,10 @@ apilib.a: ${ALLO}
 	@-/bin/rm $@
 	ar cr $@ ${ALLO}
 	ranlib $@
+
+tnrecv:	tnrecv.o apilib.a ../ascii/disp_asc.o ../ascii/astosc.o
+	${CC} ${CFLAGS} -o $@ tnrecv.o apilib.a \
+				../ascii/disp_asc.o ../ascii/astosc.o
 
 clean:
 	-/bin/rm ${ALLO} errs apilib.a
@@ -59,3 +63,6 @@ depend:
 apilib.o: ../api/api.h apilib.h
 api_bsd.o: ../api/api.h api_exch.h
 api_exch.o: api_exch.h
+tnrecv.o: apilib.h tncomp.h ../api/api.h ../ctlr/function.h ../ctlr/hostctlr.h
+tnrecv.o: ../ctlr/oia.h ../ctlr/screen.h ../ascii/disp_asc.h ../ascii/astosc.h
+tnrecv.o: ../general/general.h
