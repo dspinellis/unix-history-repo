@@ -25,7 +25,7 @@ with out their support.
 
 FreeBSD core:
 Andrew Moore <alm@netcom.com>
-J.T. Conklin <conklin@talisman.kaleida.com>
+J.T. Conklin <jtc@winsey.com>
 David Greenman <davidg@implode.rain.com>
 Jordan K. Hubbard <jkh@whisker.lotus.ie>
 Nate Williams <nate@bsd.coe.montana.edu>
@@ -42,12 +42,13 @@ Bruce Evans <bde@kralizec.zeta.org.au>
 Charles Hannum
 Chris G. Demetriou <cdg@sun-lamp.cs.berkeley.edu>
 Chris Torek <torek@ee.lbl.gov>
-Christoph Robitschko <chmr@edvz.tu-graz.ac.at> <chmr@fstgds01.tu-graz.ac.at>
+Christoph Robitschko <chmr@edvz.tu-graz.ac.at>
 Dave Burgess <burgess@hrd769.brooks.af.mil>
 Dave Rivers <rivers@ponds.uucp>
 David Dawes <dawes@physics.su.OZ.AU>
 Frank Maclachlan <fpm@crash.cts.com>
 Gary A. Browning <gab10@griffcd.amdahl.com>
+Garrett A. Wollman <wollman@uvm-gen.EMBA.UVM.EDU>
 Guido van Rooij <guido@gvr.win.tue.nl>
 Havard Eidnes <Havard.Eidnes@runit.sintef.no>
 Ishii Masahiro, R. Kym Horsell
@@ -64,7 +65,7 @@ Paul Mackerras <paulus@cs.anu.edu.au>
 Poul-Henning Kamp <phk@data.fls.dk>
 Sascha Wildner <swildner@channelz.GUN.de>
 Scotty ?
-Scott Mace <smace@tenet.edu>
+Scott Mace <emace@tenet.edu>
 Sean Eric Fagan <sef@kithrup.com>
 Terry Lee <terry@uivlsi.csl.uiuc.edu> <terry@uivlsisd.csl.uiuc.edu>
 Theo Deraadt <deraadt@fsa.ca>
@@ -87,7 +88,7 @@ Bruce Evans <bde@kralizec.zeta.org.au>
 Charles Hannum
 Chris G. Demetriou <cdg@sun-lamp.cs.berkeley.edu>
 Chris Torek <torek@ee.lbl.gov>
-Christoph Robitschko <chmr@edvz.tu-graz.ac.at> <chmr@fstgds01.tu-graz.ac.at>
+Christoph Robitschko <chmr@edvz.tu-graz.ac.at>
 Daniel Poirot <poirot@aio.jsc.nasa.gov>
 Dave Burgess <burgess@hrd769.brooks.af.mil>
 Dave Rivers <rivers@ponds.uucp>
@@ -105,7 +106,7 @@ Havard Eidnes <Havard.Eidnes@runit.sintef.no>
 Herb Peyerl <hpeyerl@novatel.cuc.ab.ca
 Holger Viet <Holget.Veit@gmd.de>
 Ishii Masahiro, R. Kym Horsell
-J.T. Conklin <conklin@talisman.kaleida.com>
+J.T. Conklin <jtc@winsey.com>
 Jagane D Sundar < jagane@netcom.com >
 James Clark <jjc@jclark.com>
 James Jegers <jimj@miller.cs.uwm.edu>
