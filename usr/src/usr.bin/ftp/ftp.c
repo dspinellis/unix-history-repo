@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)ftp.c	5.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)ftp.c	5.38 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -569,10 +569,8 @@ sendrequest(cmd, local, remote, printnames)
 		if (c < 0)
 			fprintf(stderr, "local: %s: %s\n", local,
 				strerror(errno));
-		if (d <= 0) {
-			if (d == 0)
-				fprintf(stderr, "netout: write returned 0?\n");
-			else if (errno != EPIPE) 
+		if (d < 0) {
+			if (errno != EPIPE) 
 				perror("netout");
 			bytes = -1;
 		}
