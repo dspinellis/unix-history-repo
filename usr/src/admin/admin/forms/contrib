@@ -1,13 +1,13 @@
 
 				(date)
 
-Michael Karels
+Dr. Marshall Kirk McKusick
 Computer Systems Research Group
 Computer Science Division
 University of California
 Berkeley, CA  94720
 
-Dear Mr. Karels:
+Dear Dr. McKusick:
 
 Enclosed you will find the material known as (___________________)
 for inclusion in Berkeley Software Distributions if you find it
@@ -20,16 +20,14 @@ this material.
 
 It is understood that the term "inclusion" referred to in the above
 paragraph means that The Regents have the right to distribute the
-material to whomever it deems appropriate, provided that legal
-obligations to AT&T are met prior to such distribution.  We understand
-that the terms and conditions of the license under which the Berkeley
-Software Distribution are made available may be modified at any time
-by The Regents of the University of California.
+material to whomever it deems appropriate. We understand that the
+terms and conditions of the license under which the Berkeley Software
+Distribution are made available may be modified at any time by The
+Regents of the University of California.
 
 It is further understood that licensees of Berkeley Software Distributions
 have the right to sublicense Berkeley Software Distributions, with or
-without modifications they may wish to make, provided that their
-legal obligations to AT&T are met.
+without modifications they may wish to make.
 
 We also understand that you will attempt to ensure that the enclosed
 material is distributed with the same provision regarding proper credit
@@ -44,12 +42,10 @@ a contractual relationship; rather, we are providing this material
 for use in the Berkeley Software Distribution in order to make a
 contribution to the community of UNIX users.
 
-[Strike if not applicable]  Parts of this material are based on
-proprietary material of AT&T which we obtained under the terms
-of our (name of license) license.  We are conveying it to you with
-the understanding that you will treat those parts as if you received
-them directly from AT&T pursuant to your license for that proprietary
-material.
+This software is entirely our own work or derived from work which
+permits redistribution under the terms of this agreement. None of
+this material is based on proprietary material of AT&T or proprietary
+material of any other company or organization.
 
 
 (name)
