@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)slcompress.c	7.8 (Berkeley) %G%
+ *	@(#)slcompress.c	7.9 (Berkeley) %G%
  */
 
 /*
@@ -39,7 +39,6 @@
 #ifndef KERNEL
 #define ovbcopy bcopy
 #endif
-
 
 void
 sl_compress_init(comp)
@@ -113,8 +112,7 @@ sl_compress_init(comp)
 	} \
 }
 
-
-u_char
+u_int
 sl_compress_tcp(m, ip, comp, compress_cid)
 	struct mbuf *m;
 	register struct ip *ip;
