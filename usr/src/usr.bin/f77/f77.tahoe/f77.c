@@ -728,10 +728,7 @@ obj = setdoto(s);
 		if( sys(buff) )
 			rmf(optzfname);
 		else
-			{
-			sprintf(buff,"mv %s %s", optzfname, asmpass2);
-			sys(buff);
-			}
+			(void)rename(optzfname, asmpass2);
 		}
 #	endif
 #endif
