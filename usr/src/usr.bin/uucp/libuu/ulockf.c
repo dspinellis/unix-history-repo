@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)ulockf.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)ulockf.c	5.6	(Berkeley) %G%";
 #endif
 
 #include "uucp.h"
@@ -60,22 +60,32 @@ time_t atime;
 				return FAIL; /* process is still running */
 		}
 #endif BSD4_2 || USG
-		assert("DEAD LOCK", file, errno);
+		syslog(LOG_WARNING, "%s: dead lock %s", Rmtname, file);
 		logent(file, "DEAD LOCK");
 		(void) unlink(file);
 		sleep(5);	/* avoid a possible race */
-		ASSERT(i++ < 5, "CAN'T GET LOCKFILE", tempfile, errno);
+		if (i++ >= 5) {
+			syslog(LOG_ERR, "%s: can't get lockfile %s: %m",
+				Rmtname, tempfile);
+			cleanup(FAIL);
+		}
 	}
 
 	for (i = 0; i < Nlocks; i++) {
 		if (Lockfile[i] == NULL)
 			break;
 	}
-	ASSERT(i < MAXLOCKS, "TOO MANY LOCKS", CNULL, i);
+	if (i >= MAXLOCKS) {
+		syslog(LOG_ERR, "Too many locks");
+		cleanup(FAIL);
+	}
 	if (i >= Nlocks)
 		i = Nlocks++;
 	p = malloc((unsigned)(strlen(file)+1));
-	ASSERT(p != NULL, "CAN NOT ALLOCATE FOR", file, 0);
+	if (p == NULL) {
+		syslog(LOG_ERR, "malloc failed: %m");
+		cleanup(FAIL);
+	}
 	strcpy(p, file);
 	Lockfile[i] = p;
 
