@@ -34,6 +34,13 @@
  * SUCH DAMAGE.
  *
  *	@(#)pccons.c	5.11 (Berkeley) 5/21/91
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00010
+ * --------------------         -----   ----------------------
+ *
+ * 21 Aug 92    Frank Maclachlan        Fixed back-scroll system crash
  */
 static char rcsid[] = "$Header: /usr/bill/working/sys/i386/isa/RCS/pccons.c,v 1.2 92/01/21 14:35:28 william Exp $";
 
@@ -344,10 +351,11 @@ pcstart(tp)
 	if (RB_LEN(&tp->t_out) == 0)
 		goto out;
 	c = getc(&tp->t_out);
-	/*tp->t_state |= TS_BUSY;*/
+	tp->t_state |= TS_BUSY;				/* 21 Aug 92*/
 	splx(s);
 	sput(c, 0);
 	(void)spltty();
+	tp->t_state &= ~TS_BUSY;			/* 21 Aug 92*/
 	} while(1);
 out:
 	splx(s);
