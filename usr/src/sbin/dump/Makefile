@@ -1,4 +1,4 @@
-# sccsid = "@(#)Makefile	1.7 (Berkeley) %G%"
+# sccsid = "@(#)Makefile	1.8 (Berkeley) %G%"
 #
 #	dump.h			header file
 #	dumpitime.c		reads /etc/ddate
@@ -22,22 +22,32 @@ SRCS =  \
 	dumpmain.c dumpoptr.c dumprmt.c dumprtape.c \
 	dumptraverse.c unctime.c
 
-OBJS = \
-	dumpitime.o \
-	dumpmain.o dumpoptr.o \
+OBJS = dumpitime.o dumpmain.o dumpoptr.o \
+	dumptape.o dumptraverse.o unctime.o
+
+ROBJS = dumpitime.o dumprmain.o dumpoptr.o \
 	dumprmt.o dumprtape.o dumptraverse.o unctime.o $(NETSER)/rcmd.o
 
 DFLAGS =
-CFLAGS = -O $(DFLAGS) -DRDUMP
+CFLAGS = -O $(DFLAGS)
 
-rdump:	$(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o rdump -ljobs
+all: dump rdump
 
-install:
+rdump:	$(ROBJS)
+	$(CC) $(CFLAGS) $(ROBJS) -o rdump -ljobs
+
+dump:	$(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o dump
+
+install: rdump dump
 	install -s rdump $(DESTDIR)/etc
+	install -s dump $(DESTDIR)/etc
+
+dumprmain.o: dumprmain.c
+	cc -c -DRDUMP dumprmain.c
 
 clean:
-	rm -f *.o rdump
+	rm -f *.o rdump dump errs
 
 lint:
 	lint $(DFLAGS) $(SRCS)
