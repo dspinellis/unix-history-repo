@@ -10,7 +10,7 @@
  * Auxiliary functions.
  */
 
-static char *SccsId = "@(#)aux.c	2.4 %G%";
+static char *SccsId = "@(#)aux.c	2.5 %G%";
 
 /*
  * Return a pointer to a dynamic copy of the argument.
@@ -753,3 +753,14 @@ strncmp(as1, as2, an)
 	return(n<0 ? 0 : *s1 - *--s2);
 }
 
+#ifndef SIGRETRO
+
+/*
+ * This routine is used by the sigretro package to
+ * reset held signals to ignored signals.  If you're not
+ * using sigretro, you don't need to do anything, but you DO
+ * need this stub to keep everyone happy.
+ */
+sigchild() {}
+
+#endif SIGRETRO
