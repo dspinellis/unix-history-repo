@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)popen.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)popen.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "rcv.h"
@@ -66,6 +66,13 @@ Fclose(fp)
 	return fclose(fp);
 }
 
+/*
+ * XXX
+ * The old mail code used getdtablesize() to return the max number of
+ * file descriptors.  That's a *real* big number now.  Fake it.
+ */
+#define	MAX_FILE_DESCRIPTORS		64
+#define	MAX_FILE_DESCRIPTORS_TO_CLOSE	20
 FILE *
 Popen(cmd, mode)
 	char *cmd;
@@ -76,7 +83,7 @@ Popen(cmd, mode)
 	FILE *fp;
 
 	if (pid == 0)
-		pid = (int *) malloc((unsigned) sizeof (int) * getdtablesize());
+		pid = malloc((u_int)sizeof (int) * MAX_FILE_DESCRIPTORS);
 	if (pipe(p) < 0)
 		return NULL;
 	if (*mode == 'r') {
@@ -221,7 +228,7 @@ prepare_child(mask, infd, outfd)
 		dup2(infd, 0);
 	if (outfd >= 0)
 		dup2(outfd, 1);
-	for (i = getdtablesize(); --i > 2;)
+	for (i = MAX_FILE_DESCRIPTORS_TO_CLOSE; --i > 2;)
 		close(i);
 	for (i = 1; i <= NSIG; i++)
 		if (mask & sigmask(i))
