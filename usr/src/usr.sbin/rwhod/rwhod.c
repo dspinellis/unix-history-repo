@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)rwhod.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)rwhod.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -378,7 +378,7 @@ configure(s)
 		return (0);
 	}
 	ifr = ifc.ifc_req;
-#ifdef RTM_ADD
+#ifdef AF_LINK
 #define max(a, b) (a > b ? a : b)
 #define size(p)	max((p).sa_len, sizeof(p))
 #else
