@@ -1,4 +1,4 @@
-#	@(#)Makefile	5.19 (Berkeley) %G%
+#	@(#)Makefile	5.20 (Berkeley) %G%
 
 # BROKEN: tn3270
 SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar cap_mkdb \
@@ -14,8 +14,8 @@ SUBDIR=	apply ar at awk banner basename bc bdes biff cal calendar cap_mkdb \
 	split strings strip struct su talk tcopy tee telnet tftp \
 	time tip touch tput tr true tset tsort tty ul uname unexpand \
 	unifdef uniq units unvis users uucp uudecode uuencode vacation \
-	vgrind vis vmstat w wall wc what who whois window write xargs \
-	xinstall xsend xstr yacc yes
+	vgrind vis vmstat w wall wc what whereis who whois window write \
+	xargs xinstall xsend xstr yacc yes
 
 # Cmp, look and tail all use mmap, so new-VM only.
 # F77 and pascal are VAX/Tahoe only.
