@@ -1,13 +1,13 @@
 /*-
- * Copyright (c) 1992 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1992, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * Ralph Campbell and Rick Macklem.
  *
  * %sccs.include.redist.c%
  *
- *	@(#)sii.c	7.8 (Berkeley) %G%
+ *	@(#)sii.c	8.1 (Berkeley) %G%
  *
  * from: $Header: /sprite/src/kernel/dev/ds3100.md/RCS/devSII.c,
  *	v 9.2 89/09/14 13:37:41 jhh Exp $ SPRITE (DECWRL)";
