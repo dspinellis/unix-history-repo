@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)uba.c	7.2 (Berkeley) %G%
+ *	@(#)uba.c	7.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -17,7 +17,7 @@
 #include "user.h"
 #include "proc.h"
 #include "conf.h"
-#include "dk.h"
+#include "dkstat.h"
 #include "kernel.h"
 
 #include "../vax/cpu.h"
