@@ -2,32 +2,30 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	7.55 (Berkeley) %G%
+ *	@(#)init_main.c	7.56 (Berkeley) %G%
  */
 
-#include "param.h"
-#include "filedesc.h"
-#include "kernel.h"
-#include "fs.h"
-#include "mount.h"
-#include "map.h"
-#include "proc.h"
-#include "resourcevar.h"
-#include "signalvar.h"
-#include "systm.h"
-#include "inode.h"
-#include "conf.h"
-#include "buf.h"
-#include "clist.h"
-#include "protosw.h"
-#include "quota.h"
-#include "reboot.h"
-#include "user.h"
+#include <sys/param.h>
+#include <sys/filedesc.h>
+#include <sys/kernel.h>
+#include <sys/mount.h>
+#include <sys/map.h>
+#include <sys/proc.h>
+#include <sys/resourcevar.h>
+#include <sys/signalvar.h>
+#include <sys/systm.h>
+#include <sys/vnode.h>
+#include <sys/conf.h>
+#include <sys/buf.h>
+#include <sys/clist.h>
+#include <sys/protosw.h>
+#include <sys/reboot.h>
+#include <sys/user.h>
 
 
-#include "machine/cpu.h"
+#include <machine/cpu.h>
 
-#include "vm/vm.h"
+#include <vm/vm.h>
 
 #ifdef HPFPLIB
 char	copyright[] =
