@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iso.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)iso.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -50,6 +50,11 @@ SOFTWARE.
 #include <errno.h>
 #include <net/if.h>
 #include <net/route.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/in_pcb.h>
+#include <netinet/ip_var.h>
 #include <netiso/iso.h>
 #include <netiso/iso_errno.h>
 #include <netiso/clnp.h>
@@ -181,12 +186,13 @@ iso_protopr(off, name)
 {
 	struct isopcb cb;
 	register struct isopcb *prev, *next;
-	int istp = (strcmp(name, "tp") == 0);
 
 	if (off == 0) {
 		printf("%s control block: symbol not in namelist\n", name);
 		return;
 	}
+	if (strcmp(name, "tp") == 0)
+		return tp_protopr(off, name);
 	kget(off, cb);
 	isopcb = cb;
 	prev = (struct isopcb *)off;
@@ -201,68 +207,117 @@ iso_protopr(off, name)
 			break;
 		}
 		kget(isopcb.isop_socket, sockb);
-		if (istp) {
-			kget(sockb.so_tpcb, tpcb);
-			if (tpcb.tp_state == ST_ERROR)
-				fprintf(stderr,"addr: 0x%x, prev 0x%x\n", next, prev);
-			if (!aflag &&
-				tpcb.tp_state == TP_LISTENING ||
-				tpcb.tp_state == TP_CLOSED ||
-				tpcb.tp_state == TP_REFWAIT) {
-				prev = next;
-				continue;
-			}
-		}
-		if (first) {
-			printf("Active ISO net connections");
-			if (aflag)
-				printf(" (including servers)");
-			putchar('\n');
-			if (Aflag)
-				printf("%-8.8s ", "PCB");
-			printf(Aflag ?
-				"%-5.5s %-6.6s %-6.6s  %-18.18s %-18.18s %s\n" :
-				"%-5.5s %-6.6s %-6.6s  %-22.22s %-22.22s %s\n",
-				"Proto", "Recv-Q", "Send-Q",
-				"Local Address", "Foreign Address", "(state)");
-			first = 0;
-		}
-		if (Aflag)
-			printf("%8x ",
-				(istp ? (off_t)sockb.so_tpcb : (off_t)next));
-		printf("%-5.5s %6d %6d ", name, sockb.so_rcv.sb_cc,
-			sockb.so_snd.sb_cc);
-		if (isopcb.isop_laddr == 0)
-			printf("*.*\t");
-		else {
-			if ((char *)isopcb.isop_laddr == ((char *)next) +
-				_offsetof(struct isopcb, isop_sladdr))
-				laddr.siso = isopcb.isop_sladdr;
-			else
-				kget(isopcb.isop_laddr, laddr);
-			isonetprint(&laddr, 1);
-		}
-		if (isopcb.isop_faddr == 0)
-			printf("*.*\t");
-		else {
-			if ((char *)isopcb.isop_faddr == ((char *)next) +
-				_offsetof(struct isopcb, isop_sfaddr))
-				faddr.siso = isopcb.isop_sfaddr;
-			else
-				kget(isopcb.isop_faddr, faddr);
-			isonetprint(&faddr, 0);
-		}
-		if (istp) {
-			if (tpcb.tp_state >= tp_NSTATES)
-				printf(" %d", tpcb.tp_state);
-			else
-				printf(" %-12.12s", tp_sstring[tpcb.tp_state]);
-		}
+		iso_protopr1((off_t)next, 0);
 		putchar('\n');
 		prev = next;
 	}
 }
 
+iso_protopr1(kern_addr, istp)
+off_t kern_addr;
+{
+	if (first) {
+		printf("Active ISO net connections");
+		if (aflag)
+			printf(" (including servers)");
+		putchar('\n');
+		if (Aflag)
+			printf("%-8.8s ", "PCB");
+		printf(Aflag ?
+			"%-5.5s %-6.6s %-6.6s  %-18.18s %-18.18s %s\n" :
+			"%-5.5s %-6.6s %-6.6s  %-22.22s %-22.22s %s\n",
+			"Proto", "Recv-Q", "Send-Q",
+			"Local Address", "Foreign Address", "(state)");
+		first = 0;
+	}
+	if (Aflag)
+			printf("%8x ",
+					(sockb.so_pcb ? (off_t)sockb.so_pcb : (off_t)kern_addr));
+	printf("%-5.5s %6d %6d ", "tp", sockb.so_rcv.sb_cc, sockb.so_snd.sb_cc);
+	if (istp && tpcb.tp_lsuffixlen) {
+			hexprint(tpcb.tp_lsuffixlen, tpcb.tp_lsuffix, "()");
+			printf("\t");
+	} else if (isopcb.isop_laddr == 0)
+			printf("*.*\t");
+	else {
+			if ((char *)isopcb.isop_laddr == ((char *)kern_addr) +
+					_offsetof(struct isopcb, isop_sladdr))
+					laddr.siso = isopcb.isop_sladdr;
+			else
+					kget(isopcb.isop_laddr, laddr);
+			isonetprint(&laddr, 1);
+	}
+	if (istp && tpcb.tp_fsuffixlen) {
+			hexprint(tpcb.tp_fsuffixlen, tpcb.tp_fsuffix, "()");
+			printf("\t");
+	} else if (isopcb.isop_faddr == 0)
+		printf("*.*\t");
+	else {
+		if ((char *)isopcb.isop_faddr == ((char *)kern_addr) +
+			_offsetof(struct isopcb, isop_sfaddr))
+			faddr.siso = isopcb.isop_sfaddr;
+		else
+			kget(isopcb.isop_faddr, faddr);
+		isonetprint(&faddr, 0);
+	}
+}
+
+tp_protopr(off, name)
+off_t off;
+char *name;
+{
+	struct tp_ref *tpr, *tpr_base;
+	struct tp_refinfo tpkerninfo;
+	int size;
+
+	kget(off, tpkerninfo);
+	size = tpkerninfo.tpr_size * sizeof (*tpr);
+	tpr_base = (struct tp_ref *)malloc(size);
+	if (tpr_base == 0)
+		return;
+	kvm_read((off_t)(tpkerninfo.tpr_base), (char *)tpr_base, size);
+	for (tpr = tpr_base; tpr < tpr_base + tpkerninfo.tpr_size; tpr++) {
+		if (tpr->tpr_pcb == 0)
+			continue;
+		kget(tpr->tpr_pcb, tpcb);
+		if (tpcb.tp_state == ST_ERROR)
+			printf("undefined tpcb state: 0x%x\n", tpr->tpr_pcb);
+		if (!aflag &&
+			(tpcb.tp_state == TP_LISTENING ||
+			 tpcb.tp_state == TP_CLOSED ||
+			 tpcb.tp_state == TP_REFWAIT)) {
+			continue;
+		}
+		kget(tpcb.tp_sock, sockb);
+		if (tpcb.tp_npcb) switch(tpcb.tp_netservice) {
+			case IN_CLNS:
+				tp_inproto(tpkerninfo.tpr_base);
+				break;
+			default:
+				kget(tpcb.tp_npcb, isopcb);
+				iso_protopr1(tpcb.tp_npcb, 1);
+				break;
+		}
+		if (tpcb.tp_state >= tp_NSTATES)
+			printf(" %d", tpcb.tp_state);
+		else
+			printf(" %-12.12s", tp_sstring[tpcb.tp_state]);
+		putchar('\n');
+	}
+}
+tp_inproto(pcb)
+off_t pcb;
+{
+	struct inpcb inpcb;
+	kget(tpcb.tp_npcb, inpcb);
+	if (!aflag && inet_lnaof(inpcb.inp_laddr) == INADDR_ANY)
+		return;
+	if (Aflag)
+		printf("%8x ", pcb);
+	printf("%-5.5s %6d %6d ", "tpip", sockb.so_rcv.sb_cc, sockb.so_snd.sb_cc);
+	inetprint(&inpcb.inp_laddr, inpcb.inp_lport, "tp");
+	inetprint(&inpcb.inp_faddr, inpcb.inp_fport, "tp");
+}
 /*
  * Pretty print an iso address (net address + port).
  * If the nflag was specified, use numbers instead of names.
@@ -566,42 +621,6 @@ int indent;
 	fprintf(OUT,
 		"\t%*s%d tp 0 connection%s\n",  indent, " ",
 		s->ts_tp0_conn ,plural(s->ts_tp0_conn));
-	{
-		register int j, div;
-		register float f;
-		static char *name[]= {
-			"~LOCAL, PDN", 
-			"~LOCAL,~PDN",
-			" LOCAL,~PDN",
-			" LOCAL, PDN"
-		};
-#define factor(i) \
-	div = (s->ts_rtt[(i)].tv_sec * 1000000) + \
-		s->ts_rtt[(i)].tv_usec ;\
-	if(div) {\
-		f = ((s->ts_rtv[(i)].tv_sec * 1000000) + \
-				s->ts_rtv[(i)].tv_usec)/div;  \
-		div = (int) (f + 0.5);\
-	}
-
-		fprintf(OUT, 
-			"\n%*sRound trip times, listed in (sec: usec):\n", indent, " ");
-		fprintf(OUT, 
-			"\t%*s%11.11s  %12.12s | %12.12s | %s\n", indent, " ",
-				"Category",
-				"Smoothed avg", "Deviation", "Deviation/Avg");
-		for( j=0; j<=3; j++) {
-			factor(j);
-			fprintf(OUT,
-				"\t%*s%11.11s: %5d:%-6d | %5d:%-6d | %-6d\n", indent, " ",
-				name[j],
-				s->ts_rtt[j].tv_sec,
-				s->ts_rtt[j].tv_usec,
-				s->ts_rtv[j].tv_sec,
-				s->ts_rtv[j].tv_usec,
-				div);
-		}
-	}
 	fprintf(OUT,
 "\n%*sTpdus RECVD [%d valid, %3.6f %% of total (%d); %d dropped]\n",indent," ",
 		s->ts_tpdu_rcvd ,
