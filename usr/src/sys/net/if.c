@@ -1,10 +1,11 @@
-/*	if.c	4.28	83/05/27	*/
+/*	if.c	4.29	83/06/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
 #include "../h/socket.h"
 #include "../h/protosw.h"
-#include "../h/time.h"
+#include "../h/dir.h"
+#include "../h/user.h"
 #include "../h/kernel.h"
 #include "../h/ioctl.h"
 #include "../h/errno.h"
@@ -35,7 +36,7 @@ ifinit()
 	if_slowtimo();
 }
 
-#if vax
+#ifdef vax
 /*
  * Call each interface on a Unibus reset.
  */
@@ -174,47 +175,62 @@ if_slowtimo()
 }
 
 /*
- * Service a socket ioctl request directed
- * to an interface.
+ * Map interface name to
+ * interface structure pointer.
  */
-ifrequest(cmd, data)
+struct ifnet *
+ifunit(name)
+	register char *name;
+{
+	register char *cp;
+	register struct ifnet *ifp;
+	int unit;
+
+	for (cp = name; cp < name + IFNAMSIZ && *cp; cp++)
+		if (*cp >= '0' && *cp <= '9')
+			break;
+	if (*cp == '\0' || cp == name + IFNAMSIZ)
+		return ((struct ifnet *)0);
+	unit = *cp - '0', *cp = 0;
+	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
+		if (bcmp(ifp->if_name, name, (unsigned)(cp - name)))
+			continue;
+		if (unit == ifp->if_unit)
+			break;
+	}
+	return (ifp);
+}
+
+/*
+ * Interface ioctls.
+ */
+ifioctl(cmd, data)
 	int cmd;
 	caddr_t data;
 {
 	register struct ifnet *ifp;
 	register struct ifreq *ifr;
-	register char *cp;
-	int unit, s;
 
-	ifr = (struct ifreq *)data;
-	for (cp = ifr->ifr_name; *cp; cp++)
-		if (*cp >= '0' && *cp <= '9')
-			break;
-	if (*cp == 0)
-		return (ENXIO);		/* couldn't find unit */
-	unit = *cp - '0', *cp = 0;
-	for (ifp = ifnet; ifp; ifp = ifp->if_next) {
-		if (bcmp(ifp->if_name, ifr->ifr_name,
-		    (unsigned)(cp - ifr->ifr_name)))
-			continue;
-		if (unit == ifp->if_unit)
-			goto found;
+	switch (cmd) {
+
+	case SIOCGIFCONF:
+		return (ifconf(cmd, data));
+
+	case SIOCSIFADDR:
+	case SIOCSIFFLAGS:
+	case SIOCSIFDSTADDR:
+		if (!suser())
+			return (u.u_error);
+		break;
 	}
-	return (ENXIO);
-
-found:
+	ifr = (struct ifreq *)data;
+	ifp = ifunit(ifr->ifr_name);
+	if (ifp == 0)
+		return (ENXIO);
 	switch (cmd) {
 
 	case SIOCGIFADDR:
 		ifr->ifr_addr = ifp->if_addr;
-		break;
-
-	case SIOCSIFADDR:
-		if_rtinit(ifp, -1);	/* delete previous route */
-		s = splimp();
-		ifp->if_addr = ifr->ifr_addr;
-		(*ifp->if_init)(unit);
-		splx(s);
 		break;
 
 	case SIOCGIFDSTADDR:
@@ -223,30 +239,14 @@ found:
 		ifr->ifr_dstaddr = ifp->if_dstaddr;
 		break;
 
-	case SIOCSIFDSTADDR:
-		if ((ifp->if_flags & IFF_POINTOPOINT) == 0)
-			return (EINVAL);
-		s = splimp();
-		ifp->if_dstaddr = ifr->ifr_dstaddr;
-		splx(s);
-		break;
-
 	case SIOCGIFFLAGS:
 		ifr->ifr_flags = ifp->if_flags;
 		break;
 
-	case SIOCSIFFLAGS:
-		if ((ifr->ifr_flags & IFF_UP) == 0 &&
-		    (ifp->if_flags & IFF_UP)) {
-			s = splimp();
-			if_down(ifp);
-			splx(s);
-		}
-		ifp->if_flags = ifr->ifr_flags;
-		break;
-
 	default:
-		return (EINVAL);
+		if (ifp->if_ioctl == 0)
+			return (EOPNOTSUPP);
+		return ((*ifp->if_ioctl)(cmd, data));
 	}
 	return (0);
 }
