@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)screen.c	8.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)screen.c	8.2 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -20,10 +20,18 @@ static char sccsid[] = "@(#)screen.c	8.1 (Berkeley) %G%";
 #include <stdio.h>
 #include <less.h>
 
+#define TERMIOS 1
+
 #if TERMIO
 #include <termio.h>
 #else
+#if TERMIOS
+#include <termios.h>
+#define TAB3 0
+#include <sys/ioctl.h>
+#else
 #include <sgtty.h>
+#endif
 #endif
 
 #ifdef TIOCGWINSZ
@@ -98,22 +106,36 @@ char *tgoto();
 raw_mode(on)
 	int on;
 {
+#if TERMIO || TERMIOS
+
 #if TERMIO
 	struct termio s;
 	static struct termio save_term;
+#else
+	struct termios s;
+	static struct termios save_term;
+#endif
 
 	if (on)
 	{
 		/*
 		 * Get terminal modes.
 		 */
+#if TERMIO
 		(void)ioctl(2, TCGETA, &s);
+#else
+		tcgetattr(2, &s);
+#endif
 
 		/*
 		 * Save modes and set certain variables dependent on modes.
 		 */
 		save_term = s;
+#if TERMIO
 		ospeed = s.c_cflag & CBAUD;
+#else
+		ospeed = cfgetospeed(&s);
+#endif
 		erase_char = s.c_cc[VERASE];
 		kill_char = s.c_cc[VKILL];
 		werase_char = s.c_cc[VWERASE];
@@ -123,7 +145,9 @@ raw_mode(on)
 		 */
 		s.c_lflag &= ~(ICANON|ECHO|ECHOE|ECHOK|ECHONL);
 		s.c_oflag |=  (OPOST|ONLCR|TAB3);
+#if TERMIO
 		s.c_oflag &= ~(OCRNL|ONOCR|ONLRET);
+#endif
 		s.c_cc[VMIN] = 1;
 		s.c_cc[VTIME] = 0;
 	} else
@@ -133,7 +157,11 @@ raw_mode(on)
 		 */
 		s = save_term;
 	}
+#if TERMIO
 	(void)ioctl(2, TCSETAW, &s);
+#else
+	tcsetattr(2, TCSADRAIN, &s);
+#endif
 #else
 	struct sgttyb s;
 	struct ltchars l;
