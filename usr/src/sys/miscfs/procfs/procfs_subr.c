@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs_subr.c	8.5 (Berkeley) %G%
+ *	@(#)procfs_subr.c	8.6 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs_subr.c,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -59,6 +59,7 @@ procfs_allocvp(mp, vpp, pid, pfs_type)
 	long pid;
 	pfstype pfs_type;
 {
+	struct proc *p = curproc;	/* XXX */
 	struct pfsnode *pfs;
 	struct vnode *vp;
 	struct pfsnode **pp;
@@ -70,7 +71,7 @@ loop:
 		if (pfs->pfs_pid == pid &&
 		    pfs->pfs_type == pfs_type &&
 		    vp->v_mount == mp) {
-			if (vget(vp, 0))
+			if (vget(vp, 0, p))
 				goto loop;
 			*vpp = vp;
 			return (0);
