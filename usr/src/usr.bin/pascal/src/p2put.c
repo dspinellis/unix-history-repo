@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)p2put.c 1.13 %G%";
+static	char sccsid[] = "@(#)p2put.c 1.14 %G%";
 
     /*
      *	functions to help pi put out
@@ -94,9 +94,10 @@ putlbracket(ftnno, sizesp)
 #   endif vax
 #   ifdef mc68000
 	    /*
-	     *	this is a5 and d7 mashed together.
+	     *	this is how /lib/f1 wants it.
 	     */
-	maxtempreg = (5 << 4) | (7);
+	maxtempreg =	(sizesp->curtmps.next_avail[REG_ADDR] << 4)
+		      | (sizesp->curtmps.next_avail[REG_DATA]);
 #   endif mc68000
     alignedframesize =
 	roundup(BITSPERBYTE * -sizesp->curtmps.om_off, BITSPERBYTE * A_STACK);
@@ -112,7 +113,7 @@ putlbracket(ftnno, sizesp)
 
     /*
      *	emit a right bracket operator
-     *	which for the binary (fortran) interface
+     *	which for the binary interface
      *	forces the stack allocate and register mask
      */
 putrbracket( ftnno )

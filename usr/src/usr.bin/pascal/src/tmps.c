@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)tmps.c 1.9 %G%";
+static char sccsid[] = "@(#)tmps.c 1.10 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -18,22 +18,26 @@ static char sccsid[] = "@(#)tmps.c 1.9 %G%";
  */
 #ifdef PC
     /*
-     *	registers are allocated from highreg towards lowreg.
-     *	registers are of size regsize.
-     *	stack variables are allocated on a downward growing stack.
+     *	register temporaries
+     *	- are allocated from highreg towards lowreg.
+     *	- are of size regsize.
+     *	- register numbers from the various register types are mapped to 
+     *	  integer register numbers using the offsets.  (cf. pcc/mac2defs)
+     *
+     *	stack temporaries
+     *	- are allocated on a downward growing stack.
      */
 
 #ifdef vax
     /*
      *	first pass register declaration constants
      */
-#   define	LONGREGTYPE	0
 struct	regtype {
     long	lowreg;
     long	highreg;
     long	regsize;
 } regtypes[NUMREGTYPES] = {
-	{ 6, 11, 4 },
+	{ 6, 11, 4 },		/* r6..r11 */
 };
 #endif vax
 
@@ -41,15 +45,13 @@ struct	regtype {
     /*
      *	first pass register declaration constants
      */
-#   define	DATAREGTYPE	0
-#   define	ADDRREGTYPE	1
 struct	regtype {
     long	lowreg;
     long	highreg;
     long	regsize;
 } regtypes[NUMREGTYPES] = {
-	{ 2, 7, 0 },		/* off for now */
-	{ 2, 5, 0 },		/* off for now */
+	{ 2, 7, 4 },		/* d2..d7 */
+	{ 2, 5, 4 },		/* a2..a5 */
 };
 #endif mc68000
 #endif PC
@@ -94,12 +96,43 @@ tmpalloc(size, type, mode)
 			if (offset < op->low_water[REG_GENERAL]) {
 				op->low_water[REG_GENERAL] = offset;
 			}
-			nlp = defnl( 0 , VAR , type , offset );
+			nlp = defnl(0, VAR, type,
+				offset + regtypes[REG_GENERAL].regno_offset );
 			nlp -> extra_flags = NLOCAL | NREGVAR;
 			putlbracket(ftnno, op);
 			return nlp;
 		}
 #	    endif vax
+#	    ifdef mc68000
+		if (  mode == REGOK
+		   && type != nl + TPTR
+		   && size == regtypes[REG_DATA].regsize
+		   && op->curtmps.next_avail[REG_DATA]
+			    >= regtypes[REG_DATA].lowreg) {
+			offset = op->curtmps.next_avail[REG_DATA]--;
+			if (offset < op->low_water[REG_DATA]) {
+				op->low_water[REG_DATA] = offset;
+			}
+			nlp = defnl(0, VAR, type, offset + DATA_REG_OFFSET );
+			nlp -> extra_flags = NLOCAL | NREGVAR;
+			putlbracket(ftnno, op);
+			return nlp;
+		}
+		if (  mode == REGOK
+		   && type == nl + TPTR
+		   && size == regtypes[REG_ADDR].regsize
+		   && op->curtmps.next_avail[REG_ADDR]
+			    >= regtypes[REG_ADDR].lowreg) {
+			offset = op->curtmps.next_avail[REG_ADDR]--;
+			if (offset < op->low_water[REG_ADDR]) {
+				op->low_water[REG_ADDR] = offset;
+			}
+			nlp = defnl(0, VAR, type, offset + ADDR_REG_OFFSET );
+			nlp -> extra_flags = NLOCAL | NREGVAR;
+			putlbracket(ftnno, op);
+			return nlp;
+		}
+#	    endif mc68000
 #	endif PC
 	if (type == NIL) {
 	    alignment = A_STACK;
@@ -130,7 +163,6 @@ tmpfree(restore)
     bool			change = FALSE;
 
 #   ifdef PC
-	    /* i think this never gives back storage!	... peter */
 #	ifdef vax
 	    if (restore->next_avail[REG_GENERAL]
 		> op->curtmps.next_avail[REG_GENERAL]) {
@@ -139,6 +171,20 @@ tmpfree(restore)
 		    change = TRUE;
 	    }
 #	endif vax
+#	ifdef mc68000
+	    if (restore->next_avail[REG_DATA]
+		> op->curtmps.next_avail[REG_DATA]) {
+		    op->curtmps.next_avail[REG_DATA]
+			= restore->next_avail[REG_DATA];
+		    change = TRUE;
+	    }
+	    if (restore->next_avail[REG_ADDR]
+		> op->curtmps.next_avail[REG_ADDR]) {
+		    op->curtmps.next_avail[REG_ADDR]
+			= restore->next_avail[REG_ADDR];
+		    change = TRUE;
+	    }
+#	endif mc68000
 #   endif PC
     if (restore->om_off > op->curtmps.om_off) {
 	    op->curtmps.om_off = restore->om_off;
