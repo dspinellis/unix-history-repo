@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)iso.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)iso.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -42,7 +42,6 @@ SOFTWARE.
 
 #include <sys/param.h>
 #include <sys/mbuf.h>
-#define KERNEL
 #include <sys/time.h>
 #include <sys/domain.h>
 #include <sys/protosw.h>
