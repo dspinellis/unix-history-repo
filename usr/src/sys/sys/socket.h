@@ -1,4 +1,4 @@
-/*	socket.h	6.1	83/07/29	*/
+/*	socket.h	6.2	84/08/29	*/
 
 /*
  * Definitions related to sockets: types, address families, options.
@@ -21,10 +21,20 @@
 #define	SO_REUSEADDR	0x04		/* allow local address reuse */
 #define	SO_KEEPALIVE	0x08		/* keep connections alive */
 #define	SO_DONTROUTE	0x10		/* just use interface addresses */
-				/* 0x20 was SO_NEWFDONCONN */
+#define	SO_BROADCAST	0x20		/* permit sending of broadcast msgs */
 #define	SO_USELOOPBACK	0x40		/* bypass hardware when possible */
 #define	SO_LINGER	0x80		/* linger on close if data present */
-#define	SO_DONTLINGER	(~SO_LINGER)	/* ~SO_LINGER */
+
+/*
+ * Pseudo flags for disabling options.
+ */
+#define	SO_DONTDEBUG		(~SO_DEBUG)
+#define	SO_DONTREUSEADDR	(~SO_REUSEADDR)
+#define	SO_DONTKEEPALIVE	(~SO_KEEPALIVE)
+#define	SO_ROUTE		(~SO_DONTROUTE)
+#define	SO_DONTBROADCAST	(~SO_BROADCAST)
+#define	SO_DONTUSELOOPBACK	(~SO_LOOPBACK)
+#define	SO_DONTLINGER		(~SO_LINGER)
 
 /*
  * Address families.
