@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_malloc.c	7.25.1.1 (Berkeley) %G%
+ *	@(#)kern_malloc.c	7.26 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -25,6 +25,22 @@ long malloc_reentered;
 #define IN { if (malloc_reentered) panic("malloc reentered");\
 			else malloc_reentered = 1;}
 #define OUT (malloc_reentered = 0)
+
+#ifdef DIAGNOSTIC
+/*
+ * This structure serves two purposes.
+ * The first is to provide a set of masks to catch unaligned frees.
+ * The second is to provide known text to copy into free objects so
+ * that modifications after frees can be detected.
+ */
+#define WEIRD_ADDR 0xdeadbeef
+long addrmask[] = { WEIRD_ADDR,
+	0x00000001, 0x00000003, 0x00000007, 0x0000000f,
+	0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff,
+	0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff,
+	0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff,
+};
+#endif /* DIAGNOSTIC */
 
 /*
  * Allocate a block of memory
@@ -65,6 +81,9 @@ malloc(size, type, flags)
 		tsleep((caddr_t)ksp, PSWP+2, memname[type], 0);
 		IN;
 	}
+#endif
+#ifdef DIAGNOSTIC
+	copysize = 1 << indx < sizeof addrmask ? 1 << indx : sizeof addrmask;
 #endif
 	if (kbp->kb_next == NULL) {
 		if (size > MAXALLOCSAVE)
@@ -152,15 +171,6 @@ long addrmask[] = { 0x00000000,
 };
 #endif /* DIAGNOSTIC */
 
-#ifdef DIAGNOSTIC
-long addrmask[] = { 0x00000000,
-	0x00000001, 0x00000003, 0x00000007, 0x0000000f,
-	0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff,
-	0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff,
-	0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff,
-};
-#endif /* DIAGNOSTIC */
-
 /*
  * Free a block of memory allocated by malloc.
  */
@@ -171,8 +181,12 @@ free(addr, type)
 {
 	register struct kmembuckets *kbp;
 	register struct kmemusage *kup;
-	long alloc, size;
+	long size;
 	int s;
+#ifdef DIAGNOSTIC
+	caddr_t cp;
+	long alloc, copysize;
+#endif
 #ifdef KMEMSTATS
 	register struct kmemstats *ksp = &kmemstats[type];
 #endif
@@ -191,7 +205,13 @@ free(addr, type)
 	}
 #endif /* DIAGNOSTIC */
 	size = 1 << kup->ku_indx;
+	kbp = &bucket[kup->ku_indx];
+	s = splimp();
 #ifdef DIAGNOSTIC
+	/*
+	 * Check for returns of data that do not point to the
+	 * beginning of the allocation.
+	 */
 	if (type == M_NAMEI)
 		curproc->p_spare[0]--;
 	if (size > NBPG * CLSIZE)
@@ -204,8 +224,6 @@ free(addr, type)
 		panic("free: unaligned addr");
 	}
 #endif /* DIAGNOSTIC */
-	kbp = &bucket[kup->ku_indx];
-	s = splimp();
 	IN;
 	if (size > MAXALLOCSAVE) {
 		kmem_free(kmem_map, (vm_offset_t)addr, ctob(kup->ku_pagecnt));
@@ -223,6 +241,27 @@ free(addr, type)
 		splx(s);
 		return;
 	}
+#ifdef DIAGNOSTIC
+	/*
+	 * Check for multiple frees. Use a quick check to see if
+	 * it looks free before laboriously searching the freelist.
+	 */
+	*(caddr_t *)addr = (char *)WEIRD_ADDR;
+	copysize = size < sizeof addrmask ? size : sizeof addrmask;
+	if (!bcmp(addrmask, addr, copysize)) {
+		for (cp = kbp->kb_next; cp; cp = *(caddr_t *)cp) {
+			if (addr == cp) {
+				printf("multiply freed item 0x%x\n", addr);
+				panic("free: duplicated free");
+			}
+		}
+	}
+	/*
+	 * Copy in known text to detect modification after freeing
+	 * and to make it look free.
+	 */
+	bcopy(addrmask, addr, copysize);
+#endif /* DIAGNOSTIC */
 	if (size == 128) {
 		long *lp = (long *)addr;
 		lp[0] = lp[1] = lp[3] = lp[4] = -1;
