@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: machparam.h 1.11 89/08/14$
  *
- *	@(#)param.h	7.3 (Berkeley) %G%
+ *	@(#)param.h	7.4 (Berkeley) %G%
  */
 
 /*
@@ -39,6 +39,7 @@
 #define	CLSIZE		1
 #define	CLSIZELOG2	0
 
+/* NOTE: SSIZE, SINCR and UPAGES must be multiples of CLSIZE */
 #define	SSIZE		1		/* initial stack size/NBPG */
 #define	SINCR		1		/* increment of stack/NBPG */
 
@@ -95,8 +96,8 @@
 
 /*
  * Map a ``block device block'' to a file system block.
- * This should be device dependent, and will be if we
- * add an entry to cdevsw/bdevsw for that purpose.
+ * This should be device dependent, and should use the bsize
+ * field from the disk label.
  * For now though just use DEV_BSIZE.
  */
 #define	bdbtofsb(bn)	((bn) / (BLKDEV_IOSIZE/DEV_BSIZE))
@@ -114,10 +115,40 @@
 #define hp300_ptob(x)		((unsigned)(x) << PGSHIFT)
 
 /*
- * Macros to decode processor status word.
+ * spl functions; all but spl0 are done in-line
  */
-#define	USERMODE(ps)	(((ps) & PSL_S) == 0)
-#define	BASEPRI(ps)	(((ps) & PSL_IPL7) == 0)
+#include <machine/psl.h>
+
+#define _spl(s) \
+({ \
+        register int _spl_r; \
+\
+        asm __volatile ("clrl %0; movew sr,%0; movew %1,sr" : \
+                "&=d" (_spl_r) : "di" (s)); \
+        _spl_r; \
+})
+
+/* spl0 requires checking for software interrupts */
+#define spl1()  _spl(PSL_S|PSL_IPL1)
+#define spl2()  _spl(PSL_S|PSL_IPL2)
+#define spl3()  _spl(PSL_S|PSL_IPL3)
+#define spl4()  _spl(PSL_S|PSL_IPL4)
+#define spl5()  _spl(PSL_S|PSL_IPL5)
+#define spl6()  _spl(PSL_S|PSL_IPL6)
+#define spl7()  _spl(PSL_S|PSL_IPL7)
+
+#define splsoftclock()  spl1()
+#define splnet()        spl1()
+#define splbio()        spl5()
+#define splimp()        spl5()
+#define spltty()        spl5()
+#define splclock()      spl6()
+#define splvm()         spl6()
+#define splhigh()       spl7()
+#define splsched()      spl7()
+
+/* watch out for side effects */
+#define splx(s)         (s & PSL_IPL ? _spl(s) : spl0())
 
 #ifdef KERNEL
 #ifndef LOCORE
@@ -136,6 +167,6 @@ int	cpuspeed;
  */
 #define HPMMMASK	0xF0000000
 #define ISHPMMADDR(v)	\
-    ((u.u_pcb.pcb_flags&PCB_HPUXMMAP) && ((unsigned)(v)&HPMMMASK) != HPMMMASK)
+    ((curproc->p_addr->u_pcb.pcb_flags&PCB_HPUXMMAP) && ((unsigned)(v)&HPMMMASK) != HPMMMASK)
 #define HPMMBASEADDR(v)	((unsigned)(v) & ~HPMMMASK)
 #endif
