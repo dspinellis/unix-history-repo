@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)fts.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)fts.c	5.2 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -41,6 +41,7 @@ char *malloc(), *realloc();
 	    p->path[0] == '/' ? 0 : p->pathlen)
 
 #define	CHDIR(sp, path)	(!(sp->options & FTS_NOCHDIR) && chdir(path))
+#define	FCHDIR(sp, fd)	(!(sp->options & FTS_NOCHDIR) && fchdir(fd))
 
 #define	ROOTLEVEL	0
 #define	ROOTPARENTLEVEL	-1
@@ -253,20 +254,10 @@ ftsread(sp)
 				sp->child = NULL;
 			}
 		} else {
-			if (sp->child) {
-				/* cd into child directory */
-				if (CHDIR(sp, p->accpath)) {
-					sp->options |= FTS__STOP;
-					p->info = FTS_ERR;
-					return(p);
-				}
-			} else if (!(sp->child = fts_build(sp, 1)))
+			if (!sp->child && (!(sp->child = fts_build(sp, 1))))
 				return(p);
 			p = sp->child;
 			sp->child = NULL;
-			cp = sp->path + NAPPEND(p->parent);
-			*cp++ = '/';
-			bcopy(p->name, cp, p->namelen + 1);
 			return(sp->cur = p);
 		}
 	else if (p->info == FTS_SL && instr == FTS_FOLLOW) {
@@ -380,45 +371,28 @@ ftschildren(sp)
 		return(NULL);
 	if (sp->child)
 		fts_lfree(sp->child);
-	if (sp->child = fts_build(sp, 0)) {
-		/*
-		 * have to cd up so that the fields of the current node
-		 * as returned from readfts will be correct.
-		 */
-		if (CHDIR(sp, "..")) {
-			sp->options |= FTS__STOP;
-			return(NULL);
-		}
-	}
-	return(sp->child);
+	return(sp->child = fts_build(sp, 0));
 }
 
 #define	ISDOT(a)	(a[0] == '.' && (!a[1] || a[1] == '.' && !a[2]))
 
 static FTSENT *
-fts_build(sp, set_node_errors)
+fts_build(sp, set_node)
 	register FTS *sp;
-	int set_node_errors;
+	int set_node;
 {
 	register struct dirent *dp;
 	register FTSENT *p, *head;
 	register int nitems;
 	DIR *dirp;
-	int len, level, maxlen, nlinks, saved_errno;
+	int descend, len, level, maxlen, nlinks, saved_errno;
 	char *cp;
 
 	p = sp->cur;
 	if (!(dirp = opendir(p->accpath))) {
-		if (set_node_errors) {
+		if (set_node) {
 			errno = 0;
 			p->info = FTS_DNR;
-		}
-		return(NULL);
-	}
-	if (CHDIR(sp, p->accpath)) {
-		if (set_node_errors) {
-			errno = 0;
-			p->info = FTS_DNX;
 		}
 		return(NULL);
 	}
@@ -444,6 +418,18 @@ fts_build(sp, set_node_errors)
 
 	level = p->level + 1;
 
+	if (nlinks || set_node) {
+		if (FCHDIR(sp, dirfd(dirp))) {
+			if (set_node) {
+				errno = 0;
+				p->info = FTS_DNX;
+			}
+			return(NULL);
+		}
+		descend = 1;
+	} else
+		descend = 0;
+
 	/* read the directory, attching each new entry to the `link' pointer */
 	for (head = NULL, nitems = 0; dp = readdir(dirp);) {
 		if (ISDOT(dp->d_name) && !(sp->options & FTS_SEEDOT))
@@ -460,9 +446,9 @@ fts_build(sp, set_node_errors)
 				saved_errno = errno;
 				(void)free((char *)p);
 mem1:				fts_lfree(head);
-				if (set_node_errors)
+				if (set_node)
 					p->info = FTS_ERR;
-				if (CHDIR(sp, "..")) {
+				if (descend && CHDIR(sp, "..")) {
 					saved_errno = errno;
 					sp->options |= FTS__STOP;
 				}
@@ -495,11 +481,15 @@ mem1:				fts_lfree(head);
 	}
 	(void)closedir(dirp);
 
+	if (descend && (!nitems || !set_node) && CHDIR(sp, "..")) {
+		sp->options |= FTS__STOP;
+		p->info = FTS_ERR;
+		*--cp = '\0';
+		return(NULL);
+	}
+
 	if (!nitems) {
-		if (CHDIR(sp, "..")) {
-			sp->options |= FTS__STOP;
-			p->info = FTS_ERR;
-		} else if (set_node_errors)
+		if (set_node)
 			p->info = FTS_DP;
 		*--cp = '\0';
 		return(NULL);
@@ -508,7 +498,7 @@ mem1:				fts_lfree(head);
 	if (sp->compar && nitems > 1)
 		head = fts_sort(head, nitems);
 
-	if (set_node_errors)
+	if (set_node)
 		bcopy(head->name, cp, head->namelen + 1);
 	else
 		*--cp = '\0';
