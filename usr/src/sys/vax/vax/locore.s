@@ -1,7 +1,7 @@
 /*
  * Machine Language Assist for UC Berkeley Virtual Vax/Unix
  *
- *	locore.s		4.5	%G%
+ *	locore.s		4.6	%G%
  */
 
 	.set	HIGH,31		# mask for total disable
@@ -28,7 +28,7 @@
 	.globl	Scbbase
 Scbbase:
 	.long	Xstray + INTSTK		# unused
-	.long	Xmachcheck + HALT	# machine check interrupt
+	.long	Xmachcheck + INTSTK	# machine check interrupt
 	.long	Xkspnotval + INTSTK	# kernel stack not valid
 	.long	Xpowfail + HALT		# power fail
 	.long	Xprivinflt		# privileged instruction 
