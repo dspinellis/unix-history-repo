@@ -9,9 +9,9 @@
  *
  * %sccs.include.redist.c%
  *
- * from: Utah $Hdr: uipc_shm.c 1.9 89/08/14$
+ * from: Utah $Hdr: uipc_shm.c 1.11 92/04/23$
  *
- *	@(#)sysv_shm.c	7.17 (Berkeley) %G%
+ *	@(#)sysv_shm.c	7.18 (Berkeley) %G%
  */
 
 /*
@@ -33,10 +33,6 @@
 #include "vm/vm_kern.h"
 #include "vm/vm_inherit.h"
 #include "vm/vm_pager.h"
-
-#ifdef HPUXCOMPAT
-#include "hp/hpux/hpux.h"
-#endif
 
 int	shmat(), shmctl(), shmdt(), shmget();
 int	(*shmcalls[])() = { shmat, shmctl, shmdt, shmget };
@@ -235,18 +231,6 @@ shmctl(p, uap, retval)
 		if (shp->shm_nattch <= 0)
 			shmfree(shp);
 		break;
-
-#ifdef HPUXCOMPAT
-	case SHM_LOCK:
-	case SHM_UNLOCK:
-		/* don't really do anything, but make them think we did */
-		if ((p->p_flag & SHPUX) == 0)
-			return (EINVAL);
-		if (cred->cr_uid && cred->cr_uid != shp->shm_perm.uid &&
-		    cred->cr_uid != shp->shm_perm.cuid)
-			return (EPERM);
-		break;
-#endif
 
 	default:
 		return (EINVAL);
