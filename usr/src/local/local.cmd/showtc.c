@@ -1,5 +1,5 @@
 #ifndef LINT
-static char *sccsid="@(#)showtc.c	1.5	(Berkeley) %G%";
+static char *sccsid="@(#)showtc.c	1.6	(Berkeley) %G%";
 #endif
 
 /*
@@ -9,6 +9,7 @@ static char *sccsid="@(#)showtc.c	1.5	(Berkeley) %G%";
 **	-D	look for duplicate names and print termcap file
 **	-S	sort entries before display
 **	-T	trace (-DDEBUG only)
+**	-U	print unknown capabilities
 **	-b	show bare entries
 **	-d	-D and stop
 **	-f	following arg is FULL PATHNAME of termcap file
@@ -40,7 +41,7 @@ struct TcName {
 	long	file_pos;
 } tcNames[NOENTRIES];
 
-#define NOCAPS	97
+#define NOCAPS	105
 
 struct Caps {
 	char	*cap;
@@ -52,6 +53,7 @@ struct Caps {
 	"am",	"Has automatic margins",
 	"as",	"Start alternate character set",
 	"bc",	"Backspace if not ^H",
+	"bl",	"Audible Bell",
 	"bs",	"Can backspace with ^H",
 	"bt",	"Back tab",
 	"bw",	"Backspace wraps from col 0 to last col",
@@ -106,11 +108,18 @@ struct Caps {
 	"kr",	"Sent by right arrow key",
 	"ks",	"Put in \"keypad transmit\" mode",
 	"ku",	"Sent by up arrow key",
+	"le",	"Move left",
 	"li",	"Number of lines on screen or page",
 	"ll",	"Last line, first column (if no cm)",
 	"ma",	"Arrow key map, used by vi V2 only",
+	"mb",	"Enter blinking mode",
+	"md",	"Enter bold mode",
+	"me",	"Reset video attributes",
+	"mh",	"Enter halfbright mode",
 	"mi",	"Safe to move while in insert mode",
+	"mk",	"Enter protected mode",
 	"ml",	"Memory lock on above cursor.",
+	"mr",	"Enter reverse video mode",
 	"ms",	"Ok to move while in standout/underline mode",
 	"mu",	"Memory unlock (turn off memory lock).",
 	"nc",	"No working CR (DM2500,H2000)",
@@ -156,6 +165,7 @@ int		dflag = NO;
 int		nflag = NO;
 int		gflag = NO;
 int		bflag = NO;
+int		Uflag = NO;
 int		tc_loopc;		/* loop counter */
 char		*tcfile;		/* termcap database pathname */
 char		tcbuf[1024];		/* buffer for termcap description */
@@ -214,6 +224,10 @@ main(argc, argv, envp)
 				/* look for duplicated names */
 				case 'D':
 					dflag = YES;
+					continue;
+
+				case 'U':
+					Uflag = YES;
 					continue;
 
 				/* strip the two name off */
@@ -530,10 +544,13 @@ prnt_ent(buf)
 
 	printf("%s\n", name);
 	for (cp = caps; *cp; cp++)
-		if (sflag)
+		if (Uflag) {
+			if (unknowncap(*cp)) {
+				printf("%3.3s\n", *cp);
+			}
+		} else if (sflag) {
 			printf("%-45s %s\n", getdesc(*cp), *cp);
-		else
-		{
+		} else {
 			printf("%2.2s  %-45s %s\n", name, getdesc(*cp), *cp);
 		}
 	(void) putchar('\n');
@@ -679,4 +696,15 @@ getdesc(key)
 		if (strncmp(key, capList[i].cap, 2) == 0)
 			return (capList[i].desc);
 	return("");
+}
+
+unknowncap(key)
+	char		*key;
+{
+	register int	i;
+
+	for (i = 0; i <= NOCAPS; i++)
+		if (strncmp(key, capList[i].cap, 2) == 0)
+			return (0);
+	return(1);
 }
