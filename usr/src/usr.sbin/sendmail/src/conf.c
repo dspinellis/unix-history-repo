@@ -36,7 +36,7 @@
 
 
 
-SCCSID(@(#)conf.c	3.54		%G%);
+SCCSID(@(#)conf.c	3.55		%G%);
 /*
 **  Header info table
 **	Final (null) entry contains the flags used for any other field.
@@ -75,9 +75,10 @@ struct hdrinfo	HdrInfo[] =
 **  ARPANET error message numbers.
 */
 
-char	Arpa_Info[] =	"050";	/* arbitrary info */
-char	Arpa_Syserr[] =	"451";	/* some (transient) system error */
-char	Arpa_Usrerr[] =	"554";	/* some (fatal) user error */
+char	Arpa_Info[] =		"050";	/* arbitrary info */
+char	Arpa_TSyserr[] =	"451";	/* some (transient) system error */
+char	Arpa_PSyserr[] =	"554";	/* some (permanent) system error */
+char	Arpa_Usrerr[] =		"554";	/* some (fatal) user error */
 
 
 

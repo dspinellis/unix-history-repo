@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-SCCSID(@(#)err.c	3.28		%G%);
+SCCSID(@(#)err.c	3.29		%G%);
 
 /*
 **  SYSERR -- Print error message.
@@ -31,10 +31,16 @@ static char	MsgBuf[BUFSIZ*2];	/* text of most recent message */
 syserr(fmt, a, b, c, d, e)
 	char *fmt;
 {
-	extern char Arpa_Syserr[];
+	extern char Arpa_PSyserr[];
+	extern char Arpa_TSyserr[];
+	register char *p;
 
 	/* format and output the error message */
-	fmtmsg(MsgBuf, (char *) NULL, Arpa_Syserr, fmt, a, b, c, d, e);
+	if (errno == 0)
+		p = Arpa_PSyserr;
+	else
+		p = Arpa_TSyserr;
+	fmtmsg(MsgBuf, (char *) NULL, p, fmt, a, b, c, d, e);
 	putmsg(MsgBuf);
 
 	/* mark the error as having occured */
