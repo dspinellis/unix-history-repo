@@ -19,7 +19,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)ctime.c	5.18 (Berkeley) %G%";
+static char sccsid[] = "@(#)ctime.c	5.19 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 /*
@@ -49,8 +49,7 @@ static char sccsid[] = "@(#)ctime.c	5.18 (Berkeley) %G%";
 
 #else /* !defined __STDC__ */
 
-#define ASTERISK	*
-#define P(s)		(/ASTERISK s ASTERISK/)
+#define P(s)		()
 #define const
 #define volatile
 
