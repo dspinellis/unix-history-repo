@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)ip_icmp.c	7.8.1.3 (Berkeley) %G%
+ *	@(#)ip_icmp.c	7.13 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -222,18 +222,20 @@ icmp_input(m, hlen)
 		/*
 		 * Problem with datagram; advise higher level routines.
 		 */
-		icp->icmp_ip.ip_len = ntohs((u_short)icp->icmp_ip.ip_len);
-		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp)) {
+		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp) ||
+		    icp->icmp_ip.ip_hl < (sizeof(struct ip) >> 2)) {
 			icmpstat.icps_badlen++;
 			goto freeit;
 		}
+		NTOHS(icp->icmp_ip.ip_len);
 #ifdef ICMPPRINTFS
 		if (icmpprintfs)
 			printf("deliver to protocol %d\n", icp->icmp_ip.ip_p);
 #endif
 		icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
 		if (ctlfunc = inetsw[ip_protox[icp->icmp_ip.ip_p]].pr_ctlinput)
-			(*ctlfunc)(code, (struct sockaddr *)&icmpsrc);
+			(*ctlfunc)(code, (struct sockaddr *)&icmpsrc,
+			    (caddr_t) &icp->icmp_ip);
 		break;
 
 	badcode:
@@ -339,7 +341,7 @@ reflect:
 raw:
 	icmpsrc.sin_addr = ip->ip_src;
 	icmpdst.sin_addr = ip->ip_dst;
-	raw_input(m, &icmproto, (struct sockaddr *)&icmpsrc,
+	(void) raw_input(m, &icmproto, (struct sockaddr *)&icmpsrc,
 	    (struct sockaddr *)&icmpdst);
 	return;
 
