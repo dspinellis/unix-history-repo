@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)conf.c	8.74 (Berkeley) %G%";
+static char sccsid[] = "@(#)conf.c	8.75 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -812,6 +812,55 @@ getla()
 #endif
 #endif
 #endif
+
+
+/*
+ * Copyright 1989 Massachusetts Institute of Technology
+ *
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the name of M.I.T. not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  M.I.T. makes no representations about the
+ * suitability of this software for any purpose.  It is provided "as is"
+ * without express or implied warranty.
+ *
+ * M.I.T. DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL M.I.T.
+ * BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
+ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ *
+ * Authors:  Many and varied...
+ */
+
+/* Non Apollo stuff removed by Don Lewis 11/15/93 */
+#ifndef lint
+static char  rcsid[] = "@(#)$Id: getloadavg.c,v 1.16 1991/06/21 12:51:15 paul Exp $";
+#endif /* !lint */
+
+#   ifdef apollo
+# undef volatile
+#    include <apollo/base.h>
+#    include <apollo/time.h>
+#    include <sys/types.h>
+
+/* ARGSUSED */
+int getloadavg( call_data )
+     caddr_t	call_data;	/* pointer to (double) return value */
+{
+     double *avenrun = (double *) call_data;
+     int i;
+     status_$t      st;
+     long loadav[3];
+     proc1_$get_loadav(loadav, &st);
+     *avenrun = loadav[0] / (double) (1 << 16);
+     return(0);
+}
+#   endif /* apollo */
 /*
 **  SHOULDQUEUE -- should this message be queued or sent?
 **
