@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)wall.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)wall.c	5.14 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -27,6 +27,7 @@ static char sccsid[] = "@(#)wall.c	5.13 (Berkeley) %G%";
 #include <utmp.h>
 #include <pwd.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <paths.h>
 
 #define	IGNOREUSER	"sleeper"
@@ -89,13 +90,13 @@ makemsg(fname)
 {
 	register int ch, cnt;
 	struct tm *lt;
-	struct passwd *pw, *getpwuid();
+	struct passwd *pw;
 	struct stat sbuf;
 	time_t now, time();
 	FILE *fp;
 	int fd;
 	char *p, *whom, hostname[MAXHOSTNAMELEN], lbuf[100], tmpname[15];
-	char *getlogin(), *malloc(), *strcpy(), *ttyname();
+	char *getlogin(), *strcpy(), *ttyname();
 
 	(void)strcpy(tmpname, _PATH_TMP);
 	(void)strcat(tmpname, "/wall.XXXXXX");

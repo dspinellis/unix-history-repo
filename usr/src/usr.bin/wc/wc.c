@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)wc.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)wc.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 /* wc line, word and char count */
@@ -92,7 +92,6 @@ main(argc, argv)
 	exit(0);
 }
 
-static
 cnt(file)
 	char *file;
 {
