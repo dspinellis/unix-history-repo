@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)lcmd1.c	3.12 84/01/11";
+static	char *sccsid = "@(#)lcmd1.c	3.13 84/01/12";
 #endif
 
 #include "defs.h"
@@ -208,6 +208,33 @@ register struct value *v;
 	v->v_num = wwcursormodes;
 	if (a->arg_vtype != V_ERR)
 		wwsetcursormodes(a->arg_num);
+}
+
+struct lcmd_arg arg_unset[] = {
+	{ "variable",	1,	ARG_ANY },
+	{ 0,		0,	0 }
+};
+
+l_unset(v)
+register struct value *v;
+{
+	register struct lcmd_arg *a = arg_unset;
+
+	v->v_type = V_NUM;
+	switch (a->arg_vtype) {
+	case V_ERR:
+		v->v_num = -1;
+		return;
+	case V_NUM:
+		if ((a->arg_str = str_cpy(a->arg_num)) == 0) {
+			error("Out of memory.");
+			v->v_num = -1;
+			return;
+		}
+		a->arg_vtype = V_STR;
+		break;
+	}
+	v->v_num = var_unset(a->arg_str);
 }
 
 struct ww *
