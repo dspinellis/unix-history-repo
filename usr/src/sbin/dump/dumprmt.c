@@ -60,10 +60,12 @@ rmtgetconn()
 	if (pw && pw->pw_name)
 		name = pw->pw_name;
 	rmtape = rcmd(&rmtpeer, sp->s_port, name, name, "/etc/rmt", 0);
+#ifdef notdef	/* broken */
 	size = ntrec * TP_BSIZE;
 	while (size > TP_BSIZE &&
 	    setsockopt(rmtape, SOL_SOCKET, SO_SNDBUF, &size, sizeof (size)) < 0)
 		size -= TP_BSIZE;
+#endif notdef
 }
 
 rmtopen(tape, mode)
