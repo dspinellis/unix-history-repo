@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 1982, 1986 Regents of the University of California.
+ * Copyright (c) 1982, 1986, 1989 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.10 (Berkeley) %G%
+ *	@(#)param.h	7.11 (Berkeley) %G%
  */
 
-#define	BSD	198810		/* system version  (year & month) */
+#define	BSD	198908		/* system version  (year & month) */
 #define BSD4_3	1
 
 #include <sys/syslimits.h>
@@ -57,13 +57,14 @@
  */
 #ifdef KERNEL
 #include "signal.h"
-#else
-#include <signal.h>
-#endif
 
 #define	ISSIG(p) \
-	((p)->p_sig && ((p)->p_flag&STRC || \
-	 ((p)->p_sig &~ ((p)->p_sigignore | (p)->p_sigmask))) && issig())
+	((p)->p_sig && \
+	    ((p)->p_flag&STRC || ((p)->p_sig &~ (p)->p_sigmask)) && issig())
+
+#else
+#include <sys/signal.h>
+#endif
 
 /*
  * Machine type dependent parameters.
@@ -76,7 +77,9 @@
 
 #define	NBPW	sizeof(int)	/* number of bytes in an integer */
 
+#ifndef NULL
 #define	NULL	0
+#endif
 #define	CMASK	022		/* default mask for file creation */
 #define	NODEV	(dev_t)(-1)
 
