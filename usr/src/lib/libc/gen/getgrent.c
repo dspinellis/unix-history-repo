@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)getgrent.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)getgrent.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -115,11 +115,13 @@ grscan(search, gid, name)
 	register char *name;
 {
 	register char *cp, **m;
+	char *bp;
 	char *fgets(), *strsep(), *index();
 
 	for (;;) {
 		if (!fgets(line, sizeof(line), _gr_fp))
 			return(0);
+		bp = line;
 		/* skip lines that are too big */
 		if (!index(line, '\n')) {
 			int ch;
@@ -128,11 +130,11 @@ grscan(search, gid, name)
 				;
 			continue;
 		}
-		_gr_group.gr_name = strsep(line, ":\n");
+		_gr_group.gr_name = strsep(&bp, ":\n");
 		if (search && name && strcmp(_gr_group.gr_name, name))
 			continue;
-		_gr_group.gr_passwd = strsep((char *)NULL, ":\n");
-		if (!(cp = strsep((char *)NULL, ":\n")))
+		_gr_group.gr_passwd = strsep(&bp, ":\n");
+		if (!(cp = strsep(&bp, ":\n")))
 			continue;
 		_gr_group.gr_gid = atoi(cp);
 		if (search && gid && _gr_group.gr_gid != gid)
@@ -142,7 +144,7 @@ grscan(search, gid, name)
 				*m = NULL;
 				break;
 			}
-			if ((*m = strsep((char *)NULL, ", \n")) == NULL)
+			if ((*m = strsep(&bp, ", \n")) == NULL)
 				break;
 		}
 		return(1);
