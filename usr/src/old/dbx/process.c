@@ -1,6 +1,6 @@
 /* Copyright (c) 1982 Regents of the University of California */
 
-static char sccsid[] = "@(#)process.c 1.11 %G%";
+static char sccsid[] = "@(#)process.c 1.12 %G%";
 
 /*
  * Process management.
@@ -14,6 +14,7 @@ static char sccsid[] = "@(#)process.c 1.11 %G%";
 #include "machine.h"
 #include "events.h"
 #include "tree.h"
+#include "eval.h"
 #include "operators.h"
 #include "source.h"
 #include "object.h"
@@ -31,6 +32,8 @@ static char sccsid[] = "@(#)process.c 1.11 %G%";
 typedef struct Process *Process;
 
 Process process;
+
+#define DEFSIG -1
 
 #include "machine.h"
 
@@ -285,7 +288,7 @@ public run()
     start(argv, infile, outfile);
     just_started = true;
     isstopped = false;
-    cont();
+    cont(0);
 }
 
 /*
@@ -376,7 +379,7 @@ int signo;
     if (p->status != STOPPED) {
 	if (p->signo != 0) {
 	    error("program terminated by signal %d", p->signo);
-	} else {
+	} else if (not runfirst) {
 	    error("program unexpectedly exited with %d", p->exitval);
 	}
     }
@@ -448,7 +451,7 @@ public stepto(addr)
 Address addr;
 {
     setbp(addr);
-    resume(0);
+    resume(DEFSIG);
     unsetbp(addr);
     if (not isbperr()) {
 	printstatus();
@@ -500,9 +503,11 @@ public printloc()
     printf("in ");
     printname(stdout, curfunc);
     putchar(' ');
-    if (curline > 0) {
+    if (curline > 0 and not useInstLoc) {
 	printsrcpos();
     } else {
+	useInstLoc = false;
+	curline = 0;
 	printf("at 0x%x", pc);
     }
 }
@@ -548,15 +553,15 @@ Process p;
  * outside this module.
  *
  * They invoke "pio" which eventually leads to a call to "ptrace".
- * The system generates an I/O error when a ptrace fails, we assume
- * during a read/write to the process that such an error is due to
- * a misguided address and ignore it.
+ * The system generates an I/O error when a ptrace fails.  During reads
+ * these are ignored, during writes they are reported as an error, and
+ * for anything else they cause a fatal error.
  */
 
 extern Intfunc *onsyserr();
 
 private badaddr;
-private rwerr();
+private read_err(), write_err();
 
 /*
  * Read from the process' instruction area.
@@ -569,7 +574,7 @@ int nbytes;
 {
     Intfunc *f;
 
-    f = onsyserr(EIO, rwerr);
+    f = onsyserr(EIO, read_err);
     badaddr = addr;
     if (coredump) {
 	coredump_readtext(buff, addr, nbytes);
@@ -594,7 +599,7 @@ int nbytes;
     if (coredump) {
 	error("no process to write to");
     }
-    f = onsyserr(EIO, rwerr);
+    f = onsyserr(EIO, write_err);
     badaddr = addr;
     pio(process, PWRITE, TEXTSEG, buff, addr, nbytes);
     onsyserr(EIO, f);
@@ -611,7 +616,7 @@ int nbytes;
 {
     Intfunc *f;
 
-    f = onsyserr(EIO, rwerr);
+    f = onsyserr(EIO, read_err);
     badaddr = addr;
     if (coredump) {
 	coredump_readdata(buff, addr, nbytes);
@@ -635,24 +640,28 @@ int nbytes;
     if (coredump) {
 	error("no process to write to");
     }
-    f = onsyserr(EIO, rwerr);
+    f = onsyserr(EIO, write_err);
     badaddr = addr;
     pio(process, PWRITE, DATASEG, buff, addr, nbytes);
     onsyserr(EIO, f);
 }
 
 /*
- * Error handler.
+ * Trap for errors in reading or writing to a process.
+ * The current approach is to "ignore" read errors and complain
+ * bitterly about write errors.
  */
 
-private rwerr()
+private read_err()
 {
     /*
-     * Current response is to ignore the error and let the result
-     * (-1) ripple back up to the process.
-     *
-    error("bad read/write process address 0x%x", badaddr);
+     * Ignore.
      */
+}
+
+private write_err()
+{
+    error("can't write to process (address 0x%x)", badaddr);
 }
 
 /*
@@ -661,7 +670,7 @@ private rwerr()
 
 /*
  * This magic macro enables us to look at the process' registers
- * in its user structure.  Very gross.
+ * in its user structure.
  */
 
 #define regloc(reg)     (ctob(UPAGES) + ( sizeof(int) * (reg) ))
@@ -710,8 +719,8 @@ String outfile;
     int status;
     Fileid in, out;
 
-    if (p->pid != 0) {          	/* child already running? */
-	ptrace(PKILL, p->pid, 0, 0);    /* ... kill it! */
+    if (p->pid != 0) {			/* child already running? */
+	ptrace(PKILL, p->pid, 0, 0);	/* ... kill it! */
 	pwait(p->pid, &status);		/* wait for it to exit */
 	unptraced(p->pid);
     }
@@ -796,7 +805,7 @@ Process p;
 {
     int status;
 
-    setinfo(p, 0);
+    setinfo(p, DEFSIG);
     sigs_off();
     ptrace(SSTEP, p->pid, p->reg[PROGCTR], p->signo);
     pwait(p->pid, &status);
@@ -881,6 +890,7 @@ register int status;
     p->exitval = ((status >> 8)&0377);
     if (p->signo != STOPPED) {
 	p->status = FINISHED;
+	p->pid = 0;
     } else {
 	p->status = p->signo;
 	p->signo = p->exitval;
@@ -905,7 +915,11 @@ int signo;
     register int i;
     register int r;
 
-    if (istraced(p)) {
+    if (signo == DEFSIG) {
+	if (istraced(p)) {
+	    p->signo = 0;
+	}
+    } else {
 	p->signo = signo;
     }
     for (i = 0; i < NREG; i++) {
