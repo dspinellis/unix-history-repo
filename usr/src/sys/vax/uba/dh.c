@@ -1,4 +1,4 @@
-/*	dh.c	4.32	81/04/22	*/
+/*	dh.c	4.33	81/05/09	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -539,7 +539,7 @@ dhstart(tp)
 	 */
 	if (tp->t_outq.c_cc == 0)
 		goto out;
-	if (tp->t_flags & RAW)
+	if (tp->t_flags&RAW || tp->t_local&LLITOUT)
 		nch = ndqb(&tp->t_outq, 0);
 	else {
 		nch = ndqb(&tp->t_outq, 0200);
