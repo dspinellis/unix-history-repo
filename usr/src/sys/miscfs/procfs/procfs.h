@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)procfs.h	8.8 (Berkeley) %G%
+ *	@(#)procfs.h	8.9 (Berkeley) %G%
  *
  * From:
  *	$Id: procfs.h,v 3.2 1993/12/15 09:40:17 jsp Exp $
@@ -152,12 +152,13 @@ int	procfs_readlink __P((struct vop_readlink_args *));
 int	procfs_abortop __P((struct vop_abortop_args *));
 int	procfs_inactive __P((struct vop_inactive_args *));
 int	procfs_reclaim __P((struct vop_reclaim_args *));
-#define procfs_lock ((int (*) __P((struct vop_lock_args *))) nullop)
-#define procfs_unlock ((int (*) __P((struct vop_unlock_args *))) nullop)
+#define procfs_lock ((int (*) __P((struct  vop_lock_args *)))vop_nolock)
+#define procfs_unlock ((int (*) __P((struct  vop_unlock_args *)))vop_nounlock)
 int	procfs_bmap __P((struct vop_bmap_args *));
 #define	procfs_strategy ((int (*) __P((struct vop_strategy_args *))) procfs_badop)
 int	procfs_print __P((struct vop_print_args *));
-#define procfs_islocked ((int (*) __P((struct vop_islocked_args *))) nullop)
+#define procfs_islocked \
+	((int (*) __P((struct vop_islocked_args *)))vop_noislocked)
 #define procfs_advlock ((int (*) __P((struct vop_advlock_args *))) procfs_badop)
 #define procfs_blkatoff ((int (*) __P((struct vop_blkatoff_args *))) procfs_badop)
 #define procfs_valloc ((int (*) __P((struct vop_valloc_args *))) procfs_badop)
