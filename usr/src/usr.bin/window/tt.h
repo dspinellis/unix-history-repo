@@ -1,5 +1,5 @@
 /*
- * @(#)tt.h	3.13 %G%
+ * @(#)tt.h	3.14 %G%
  */
 
 /*
@@ -26,6 +26,8 @@ struct tt {
 	int (*tt_clreol)();
 	int (*tt_clreos)();
 	int (*tt_clear)();
+	int (*tt_setinsert)();		/* set insert mode */
+	int (*tt_setmodes)();		/* set display modes */
 
 		/* internal variables */
 	char tt_modes;			/* the current display modes */

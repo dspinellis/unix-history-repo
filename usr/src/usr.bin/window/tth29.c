@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tth29.c	3.2 %G%";
+static char sccsid[] = "@(#)tth29.c	3.3 %G%";
 #endif
 
 /*
@@ -22,25 +22,8 @@ kC|h29|heath-29|z29|zenith-29:\
 	:es:hs:ts=\Ej\Ex5\Ex1\EY8%+ \Eo:fs=\Ek\Ey5:ds=\Ey1:us=\Es8:ue=\Es0:
 */
 
-#define NCOL	80
-#define NROW	24
-
-extern char *gen_VS;
-extern char *gen_VE;
-
-extern int h19_msp10c;
-
 #define pc(c)	ttputc('c')
 #define esc()	pc(\033)
-#define PAD(ms10) { \
-	register i; \
-	for (i = ((ms10) + 5) / h19_msp10c; --i >= 0;) \
-		pc(\0); \
-}
-#define ICPAD() PAD((NCOL - tt.tt_col) * 1)	/* 0.1 ms per char */
-#define ILPAD() PAD((NROW - tt.tt_row) * 10)	/* 1 ms per char */
-
-#define h29_setinsert(m) (esc(), (tt.tt_insert = (m)) ? pc(@) : pc(O))
 
 h29_setmodes(new)
 register new;
@@ -65,60 +48,11 @@ register new;
 	tt.tt_modes = new;
 }
 
-h29_putc(c)
-register char c;
-{
-	if (tt.tt_nmodes != tt.tt_modes)
-		h29_setmodes(tt.tt_nmodes);
-	if (tt.tt_ninsert != tt.tt_insert)
-		h29_setinsert(tt.tt_ninsert);
-	ttputc(c);
-	if (tt.tt_insert)
-		ICPAD();
-	if (++tt.tt_col == NCOL)
-		tt.tt_col = NCOL - 1;
-}
-
-h29_write(p, n)
-register char *p;
-register n;
-{
-	if (tt.tt_nmodes != tt.tt_modes)
-		h29_setmodes(tt.tt_nmodes);
-	if (tt.tt_ninsert != tt.tt_insert)
-		h29_setinsert(tt.tt_ninsert);
-	if (tt.tt_insert) {
-		while (--n >= 0) {
-			ttputc(*p++);
-			ICPAD();
-			tt.tt_col++;
-		}
-	} else {
-		tt.tt_col += n;
-		while (--n >= 0)
-			ttputc(*p++);
-	}
-	if (tt.tt_col == NCOL)
-		tt.tt_col = NCOL - 1;
-}
-
-h29_end()
-{
-	h29_setmodes(0);
-	h29_setinsert(0);
-	if (gen_VE)
-		ttputs(gen_VE);
-	esc();
-	pc(v);
-}
-
 tt_h29()
 {
 	if (tt_h19() < 0)
 		return -1;
-	tt.tt_putc = h29_putc;
-	tt.tt_write = h29_write;
-	tt.tt_end = h29_end;
+	tt.tt_setmodes = h29_setmodes;
 	tt.tt_availmodes = WWM_BLK|WWM_UL|WWM_REV|WWM_GRP;
 	return 0;
 }
