@@ -1,4 +1,4 @@
-/* tcp_input.c 1.17 81/11/01 */
+/* tcp_input.c 1.18 81/11/03 */
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -262,7 +262,7 @@ input:
 			}
 			tp->t_finack = T_2ML;
 			tp->tc_flags &= ~TC_WAITED_2_ML;
-			nstate = j ? TIME_WAIT : CLOSING1;	/* 28:26 */
+			nstate = j ? TIME_WAIT : CLOSING;	/* 28:26 */
 			break;
 
 		case FIN_W2:
@@ -289,7 +289,7 @@ input:
 		}
 		goto input;
 
-	case CLOSING1:
+	case CLOSING:
 		j = ack_fin(tp, n);
 		if (n->th_flags&TH_FIN) {
 			tcp_ctldat(tp, n, 0);
@@ -312,7 +312,7 @@ input:
 		}
 		goto input;
 
-	case CLOSING2:
+	case LAST_ACK:
 		if (ack_fin(tp, n)) {
 			if (rcv_empty(tp)) {			/* 16 */
 				tcp_close(tp, UCLOSED);
