@@ -1,18 +1,45 @@
-/*	config.h	1.10	82/10/25	*/
+/*	config.h	1.11	83/05/18	*/
 
 /*
  * Config.
  */
+#include <sys/types.h>
+
+#define	NODEV	((dev_t)-1)
+
 struct file_list {
+	struct	file_list *f_next;	
 	char	*f_fn;			/* the name */
 	int	f_type;			/* see below */
-	struct	file_list *f_next;	
 	char	*f_needs;
+	/*
+	 * Random values:
+	 *	swap space parameters for swap areas
+	 *	root device, etc. for system specifications
+	 */
+	union {
+		struct {		/* when swap specification */
+			dev_t	fuw_swapdev;
+			int	fuw_swapsize;
+		} fuw;
+		struct {		/* when system specification */
+			dev_t	fus_rootdev;
+			dev_t	fus_argdev;
+			dev_t	fus_dumpdev;
+		} fus;
+	} fun;
+#define	f_swapdev	fun.fuw.fuw_swapdev
+#define	f_swapsize	fun.fuw.fuw_swapsize
+#define	f_rootdev	fun.fus.fus_rootdev
+#define	f_argdev	fun.fus.fus_argdev
+#define	f_dumpdev	fun.fus.fus_dumpdev
 };
 #define DRIVER		1
 #define NORMAL		2
 #define	INVISIBLE	3
 #define	PROFILING	4
+#define	SYSTEMSPEC	5
+#define	SWAPSPEC	6
 
 struct	idlst {
 	char	*id;
@@ -96,11 +123,13 @@ int	seen_mba, seen_uba;
 
 struct	device *connect();
 struct	device *dtab;
+dev_t	nametodev();
+char	*devtoname();
 
 char	errbuf[80];
 int	yyline;
 
-struct	file_list *ftab, *conf_list, *confp;
+struct	file_list *ftab, *conf_list, **confp;
 char	*PREFIX;
 
 int	timezone, hadtz;

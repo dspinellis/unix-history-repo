@@ -1,4 +1,4 @@
-/*	mkmakefile.c	1.26	83/04/24	*/
+/*	mkmakefile.c	1.27	83/05/18	*/
 
 /*
  * Build the makefile for the system, from
@@ -325,8 +325,10 @@ do_objs(fp)
 		if (tp->f_type == INVISIBLE)
 			continue;
 		sp = tail(tp->f_fn);
-		for (fl = conf_list; fl != 0; fl = fl->f_next) {
-			(void) sprintf(swapname, "swap%s.c", fl->f_fn);
+		for (fl = conf_list; fl; fl = fl->f_next) {
+			if (fl->f_type != SWAPSPEC)
+				continue;
+			sprintf(swapname, "swap%s.c", fl->f_fn);
 			if (eq(sp, swapname))
 				goto cont;
 		}
@@ -340,7 +342,8 @@ do_objs(fp)
 		fprintf(fp, "%s ", sp);
 		lpos += len + 1;
 		*cp = och;
-cont:;
+cont:
+		;
 	}
 	if (lpos != 8)
 		putc('\n', fp);
@@ -484,69 +487,92 @@ do_load(f)
 {
 	register struct file_list *fl;
 	int first = 1;
-	char swapname[32];
+	struct file_list *do_systemspec();
 
-	for (fl = conf_list; fl != 0; fl = fl->f_next) {
-		fprintf(f, "%s: makefile locore.o ${OBJS} param.o",
-		    fl->f_needs);
-		fprintf(f, " ioconf.o swap%s.o\n", fl->f_fn);
-		fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n",
-		    fl->f_needs, fl->f_needs);
-		if (first) {
-			first = 0;
-			fprintf(f, "\t@sh ../conf/newvers.sh\n");
-			fprintf(f, "\t@${CC} $(CFLAGS) -c vers.c\n");
-		}
-		switch (machine) {
-
-		case MACHINE_VAX:
-			fprintf(f, "\t@${LD} -n -o %s -e start -x -T 80000000 ",
-				fl->f_needs);
-			fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
-			fprintf(f, "swap%s.o\n", fl->f_fn);
-			break;
-
-		case MACHINE_SUN:
-			fprintf(f, "\t@${LD} -o %s -e start -x -T 4000 ",
-				fl->f_needs);
-			fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
-			fprintf(f, "swap%s.o\n", fl->f_fn);
-			break;
-		}
-		fprintf(f, "\t@echo rearranging symbols\n");
-		fprintf(f, "\t@-symorder ../%s/symbols.sort %s\n",
-		    machinename, fl->f_needs);
-		fprintf(f, "\t@size %s\n", fl->f_needs);
-		fprintf(f, "\t@chmod 755 %s\n\n", fl->f_needs);
-	}
-	for (fl = conf_list; fl != 0; fl = fl->f_next) {
-		(void) sprintf(swapname, "swap%s.c", fl->f_fn);
-		if (fltail_lookup(swapname) != 0)
+	fl = conf_list;
+	while (fl) {
+		if (fl->f_type != SYSTEMSPEC) {
+			fl = fl->f_next;
 			continue;
-		fprintf(f, "swap%s.o: ../%s/swap%s.c\n",
-		    fl->f_fn, machinename, fl->f_fn);
-		switch (machine) {
-
-		case MACHINE_VAX:
-			fprintf(f, "\t${CC} -I. -c -S ${COPTS}");
-			fprintf(f, " ../%s/swap%s.c\n", machinename, fl->f_fn);
-			fprintf(f, "\t${C2} swap%s.s | sed -f ../%s/asm.sed",
-			    fl->f_fn, machinename);
-			fprintf(f, " | ${AS} -o swap%s.o\n",
-			    fl->f_fn);
-			fprintf(f, "\trm -f swap%s.s\n\n", fl->f_fn);
-			break;
-
-		case MACHINE_SUN:
-			fprintf(f, "\t${CC} -I. -c -O ${COPTS} ");
-			fprintf(f, "../%s/swap%s.c\n\n", machinename, fl->f_fn);
-			break;
 		}
+		fl = do_systemspec(f, fl, first);
+		if (first)
+			first = 0;
 	}
 	fprintf(f, "all:");
 	for (fl = conf_list; fl != 0; fl = fl->f_next)
-		fprintf(f, " %s", fl->f_needs);
+		if (fl->f_type == SYSTEMSPEC)
+			fprintf(f, " %s", fl->f_needs);
 	fprintf(f, "\n");
+}
+
+struct file_list *
+do_systemspec(f, fl, first)
+	FILE *f;
+	register struct file_list *fl;
+	int first;
+{
+
+	fprintf(f, "%s: makefile locore.o ${OBJS} param.o", fl->f_needs);
+	fprintf(f, " ioconf.o swap%s.o\n", fl->f_fn);
+	fprintf(f, "\t@echo loading %s\n\t@rm -f %s\n",
+	    fl->f_needs, fl->f_needs);
+	if (first) {
+		fprintf(f, "\t@sh ../conf/newvers.sh\n");
+		fprintf(f, "\t@${CC} $(CFLAGS) -c vers.c\n");
+	}
+	switch (machine) {
+
+	case MACHINE_VAX:
+		fprintf(f, "\t@${LD} -n -o %s -e start -x -T 80000000 ",
+			fl->f_needs);
+		break;
+
+	case MACHINE_SUN:
+		fprintf(f, "\t@${LD} -o %s -e start -x -T 4000 ",
+			fl->f_needs);
+		break;
+	}
+	fprintf(f, "locore.o ${OBJS} vers.o ioconf.o param.o ");
+	fprintf(f, "swap%s.o\n", fl->f_fn);
+	fprintf(f, "\t@echo rearranging symbols\n");
+	fprintf(f, "\t@-symorder ../%s/symbols.sort %s\n",
+	    machinename, fl->f_needs);
+	fprintf(f, "\t@size %s\n", fl->f_needs);
+	fprintf(f, "\t@chmod 755 %s\n\n", fl->f_needs);
+	do_swapspec(f, fl->f_fn);
+	for (fl = fl->f_next; fl->f_type == SWAPSPEC; fl = fl->f_next)
+		;
+	return (fl);
+}
+
+do_swapspec(f, name)
+	FILE *f;
+	register char *name;
+{
+
+	if (!eq(name, "generic")) {
+		fprintf(f, "swap%s.o: swap%s.c\n", name, name);
+		fprintf(f, "\t${CC} -I. -c -O ${COPTS} swap%s.c\n\n", name);
+		return;
+	}
+	fprintf(f, "swapgeneric.o: ../%s/swapgeneric.c\n", machinename);
+	switch (machine) {
+
+	case MACHINE_VAX:
+		fprintf(f, "\t${CC} -I. -c -S ${COPTS} ");
+		fprintf(f, "../%s/swapgeneric.c\n", machinename);
+		fprintf(f, "\t${C2} swapgeneric.s | sed -f ../%s/asm.sed",
+		    machinename);
+		fprintf(f, " | ${AS} -o swapgeneric.o\n");
+		fprintf(f, "\trm -f swapgeneric.s\n\n");
+		break;
+
+	case MACHINE_SUN:
+		fprintf(f, "\t${CC} -I. -c -O ${COPTS} ");
+		fprintf(f, "../%s/swapgeneric.c\n\n", machinename);
+		break;
+	}
 }
 
 char *

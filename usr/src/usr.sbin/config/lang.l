@@ -1,5 +1,5 @@
 %{
-/*	lang.l	1.12	82/10/25	*/
+/*	lang.l	1.13	83/05/18	*/
 
 #include <ctype.h>
 #include "y.tab.h"
@@ -15,15 +15,42 @@ struct kt {
 	char *kt_name;
 	int kt_val;
 } key_words[] = {
-	"machine", MACHINE,
-	"cpu", CPU, "ident", IDENT, "config", CONFIG, "options", OPTIONS,
-	"device", DEVICE, "controller", CONTROLLER, "uba", UBA, "mba", MBA,
-	"csr", CSR, "nexus", NEXUS, "drive", DRIVE, "vector", VECTOR,
-	"pseudo-device", PSEUDO_DEVICE, "flags", FLAGS, "trace", TRACE,
-	"disk", DISK, "tape", DEVICE, "slave", SLAVE, "at", AT,
-	"hz", HZ, "timezone", TIMEZONE, "dst", DST, "maxusers", MAXUSERS,
-	"master", MASTER, "priority", PRIORITY,
-	0,0,
+	{ "and",	AND },
+	{ "args",	ARGS },
+	{ "at",		AT },
+	{ "config",	CONFIG },
+	{ "controller",	CONTROLLER },
+	{ "cpu",	CPU },
+	{ "csr",	CSR },
+	{ "device",	DEVICE },
+	{ "disk",	DISK },
+	{ "drive",	DRIVE },
+	{ "dst",	DST },
+	{ "dumps",	DUMPS },
+	{ "flags",	FLAGS },
+	{ "hz",		HZ },
+	{ "ident",	IDENT },
+	{ "machine",	MACHINE },
+	{ "major",	MAJOR },
+	{ "master",	MASTER },
+	{ "maxusers",	MAXUSERS },
+	{ "mba",	MBA },
+	{ "minor",	MINOR },
+	{ "nexus",	NEXUS },
+	{ "on",		ON },
+	{ "options",	OPTIONS },
+	{ "priority",	PRIORITY },
+	{ "pseudo-device",PSEUDO_DEVICE },
+	{ "root",	ROOT },
+	{ "size",	SIZE },
+	{ "slave",	SLAVE },
+	{ "swap",	SWAP },
+	{ "tape",	DEVICE },
+	{ "timezone",	TIMEZONE },
+	{ "trace",	TRACE },
+	{ "uba",	UBA },
+	{ "vector",	VECTOR },
+	{ 0, 0 },
 };
 %}
 WORD	[A-Za-z_][-A-Za-z_]*
@@ -42,7 +69,7 @@ WORD	[A-Za-z_][-A-Za-z_]*
 		}
 \"[^"]+\"	{
 			yytext[strlen(yytext)-1] = '\0';
-			yylval.val = yytext + 1;
+			yylval.str = yytext + 1;
 			return ID;
 		}
 0[0-7]*		{

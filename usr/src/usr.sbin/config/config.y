@@ -1,14 +1,49 @@
 %union {
 	char	*str;
 	int	val;
+	struct	file_list *file;
 	struct	idlst *lst;
 }
 
+%token	AND
+%token	ANY
+%token	ARGS
+%token	AT
+%token	COMMA
+%token	CONFIG
+%token	CONTROLLER
+%token	CPU
+%token	CSR
+%token	DEVICE
+%token	DISK
+%token	DRIVE
+%token	DST
+%token	DUMPS
+%token	EQUALS
+%token	FLAGS
+%token	HZ
+%token	IDENT
 %token	MACHINE
-%token	CPU IDENT CONFIG ANY DEVICE UBA MBA NEXUS CSR DRIVE VECTOR OPTIONS
-%token	CONTROLLER PSEUDO_DEVICE FLAGS SEMICOLON TRACE
-%token	DISK SLAVE HZ TIMEZONE DST MAXUSERS
-%token	MASTER PRIORITY COMMA MINUS EQUALS AT
+%token	MAJOR
+%token	MASTER
+%token	MAXUSERS
+%token	MBA
+%token	MINOR
+%token	MINUS
+%token	NEXUS
+%token	ON
+%token	OPTIONS
+%token	PRIORITY
+%token	PSEUDO_DEVICE
+%token	ROOT
+%token	SEMICOLON
+%token	SIZE
+%token	SLAVE
+%token	SWAP
+%token	TIMEZONE
+%token	TRACE
+%token	UBA
+%token	VECTOR
 
 %token	<str>	ID
 %token	<val>	NUMBER
@@ -18,12 +53,20 @@
 %type	<str>	Opt_value
 %type	<str>	Dev
 %type	<lst>	Id_list
+%type	<val>	optional_size
+%type	<str>	device_name
+%type	<val>	major_minor
+%type	<val>	arg_device_spec
+%type	<val>	root_device_spec
+%type	<val>	dump_device_spec
+%type	<file>	swap_device_spec
 
 %{
 
-/*	config.y	1.16	82/10/25	*/
+/*	config.y	1.17	83/05/18	*/
 
 #include "config.h"
+#include <ctype.h>
 #include <stdio.h>
 
 struct	device cur;
@@ -36,6 +79,7 @@ char	*malloc();
 %%
 Configuration:
 	Many_specs
+		= { verifysystemspecs(); }
 		;
 
 Many_specs:
@@ -81,8 +125,8 @@ Config_spec:
 		|
 	IDENT ID
 	      = { ident = ns($2); } |
-	CONFIG Save_id ID
-	      = { mkconf(temp_id, $3); free(temp_id); } |
+	System_spec
+		|
 	HZ NUMBER
 	      = { yyerror("HZ specification obsolete; delete"); } |
 	TIMEZONE NUMBER
@@ -103,6 +147,156 @@ Config_spec:
 	      = { timezone = -$3; dst = 1; check_tz(); } |
 	MAXUSERS NUMBER
 	      = { maxusers = $2; };
+
+System_spec:
+	  System_id System_parameter_list
+		= { checksystemspec(*confp); }
+	;
+		
+System_id:
+	  CONFIG Save_id
+		= { mkconf($2); }
+	;
+
+System_parameter_list:
+	  System_parameter_list System_parameter
+	| System_parameter
+	;
+
+System_parameter:
+	  swap_spec
+	| root_spec
+	| dump_spec
+	| arg_spec
+	;
+	
+swap_spec:
+	  SWAP optional_on swap_device_list
+	;
+	
+swap_device_list:
+	  swap_device_list AND swap_device
+	| swap_device
+	;
+	
+swap_device:
+	  swap_device_spec optional_size
+	      = { mkswap(*confp, $1, $2); }
+	;
+
+swap_device_spec:
+	  device_name
+		= {
+			struct file_list *fl = newswap();
+
+			if (eq($1, "generic"))
+				fl->f_fn = $1;
+			else {
+				fl->f_swapdev = nametodev($1, 0, 'b');
+				fl->f_fn = devtoname(fl->f_swapdev);
+			}
+			$$ = fl;
+		}
+	| major_minor
+		= {
+			struct file_list *fl = newswap();
+
+			fl->f_swapdev = $1;
+			fl->f_fn = devtoname($1);
+			$$ = fl;
+		}
+	;
+
+root_spec:
+	  ROOT optional_on root_device_spec
+		= {
+			struct file_list *fl = *confp;
+
+			if (fl && fl->f_rootdev != NODEV)
+				yyerror("extraneous root device specification");
+			else
+				fl->f_rootdev = $3;
+		}
+	;
+
+root_device_spec:
+	  device_name
+		= { $$ = nametodev($1, 0, 'a'); }
+	| major_minor
+	;
+
+dump_spec:
+	  DUMPS optional_on dump_device_spec
+		= {
+			struct file_list *fl = *confp;
+
+			if (fl && fl->f_dumpdev != NODEV)
+				yyerror("extraneous dump device specification");
+			else
+				fl->f_dumpdev = $3;
+		}
+
+	;
+
+dump_device_spec:
+	  device_name
+		= { $$ = nametodev($1, 0, 'b'); }
+	| major_minor
+	;
+
+arg_spec:
+	  ARGS optional_on arg_device_spec
+		= {
+			struct file_list *fl = *confp;
+
+			if (fl && fl->f_argdev != NODEV)
+				yyerror("extraneous arg device specification");
+			else
+				fl->f_argdev = $3;
+		}
+	;
+
+arg_device_spec:
+	  device_name
+		= { $$ = nametodev($1, 0, 'b'); }
+	| major_minor
+	;
+
+major_minor:
+	  MAJOR NUMBER MINOR NUMBER
+		= { $$ = makedev($2, $4); }
+	;
+
+optional_on:
+	  ON
+	| /* empty */
+	;
+
+optional_size:
+	  SIZE NUMBER
+	      = { $$ = $2; }
+	| /* empty */
+	      = { $$ = 0; }
+	;
+
+device_name:
+	  Save_id
+		= { $$ = $1; }
+	| Save_id NUMBER
+		= {
+			char buf[80];
+
+			(void) sprintf(buf, "%s%d", $1, $2);
+			$$ = ns(buf); free($1);
+		}
+	| Save_id NUMBER ID
+		= {
+			char buf[80];
+
+			(void) sprintf(buf, "%s%d%s", $1, $2, $3);
+			$$ = ns(buf); free($1);
+		}
+	;
 
 Opt_list:
 	Opt_list COMMA Option
@@ -253,7 +447,7 @@ yyerror(s)
 	char *s;
 {
 
-	fprintf(stderr, "config: %s at line %d\n", s, yyline);
+	fprintf(stderr, "config: line %d: %s\n", yyline, s);
 }
 
 /*
@@ -290,19 +484,76 @@ newdev(dp)
 /*
  * note that a configuration should be made
  */
-mkconf(dev, sysname)
-	char *dev, *sysname;
+mkconf(sysname)
+	char *sysname;
 {
-	register struct file_list *fl;
+	register struct file_list *fl, **flp;
 
 	fl = (struct file_list *) malloc(sizeof *fl);
-	fl->f_fn = ns(dev);
-	fl->f_needs = ns(sysname);
-	if (confp == 0)
-		conf_list = fl;
+	fl->f_type = SYSTEMSPEC;
+	fl->f_needs = sysname;
+	fl->f_rootdev = NODEV;
+	fl->f_argdev = NODEV;
+	fl->f_dumpdev = NODEV;
+	fl->f_fn = 0;
+	fl->f_next = 0;
+	for (flp = confp; *flp; flp = &(*flp)->f_next)
+		;
+	*flp = fl;
+	confp = flp;
+}
+
+struct file_list *
+newswap()
+{
+	struct file_list *fl = (struct file_list *)malloc(sizeof (*fl));
+
+	fl->f_type = SWAPSPEC;
+	fl->f_next = 0;
+	fl->f_swapdev = NODEV;
+	fl->f_swapsize = 0;
+	fl->f_needs = 0;
+	fl->f_fn = 0;
+	return (fl);
+}
+
+/*
+ * Add a swap device to the system's configuration
+ */
+mkswap(system, fl, size)
+	struct file_list *system, *fl;
+	int size;
+{
+	register struct file_list **flp;
+	char *cp, name[80];
+
+	if (system == 0 || system->f_type != SYSTEMSPEC) {
+		yyerror("\"swap\" spec precedes \"config\" specification");
+		return;
+	}
+	if (size < 0) {
+		yyerror("illegal swap partition size");
+		return;
+	}
+	/*
+	 * Append swap description to the end of the list.
+	 */
+	flp = &system->f_next;
+	for (; *flp && (*flp)->f_type == SWAPSPEC; flp = &(*flp)->f_next)
+		;
+	fl->f_next = *flp;
+	*flp = fl;
+	/*
+	 * If first swap device for this system,
+	 * set up f_fn field to insure swap
+	 * files are created with unique names.
+	 */
+	if (system->f_fn)
+		return;
+	if (eq(fl->f_fn, "generic"))
+		system->f_fn = ns(fl->f_fn);
 	else
-		confp->f_next = fl;
-	confp = fl;
+		system->f_fn = ns(system->f_needs);
 }
 
 /*
@@ -438,4 +689,176 @@ check_tz()
 		yyerror("timezone is unreasonable");
 	else
 		hadtz = 1;
+}
+
+/*
+ * Check system specification and apply defaulting
+ * rules on root, argument, dump, and swap devices.
+ */
+checksystemspec(fl)
+	register struct file_list *fl;
+{
+	char buf[BUFSIZ];
+	register struct file_list *swap;
+	int generic;
+
+	if (fl == 0 || fl->f_type != SYSTEMSPEC) {
+		yyerror("internal error, bad system specification");
+		exit(1);
+	}
+	swap = fl->f_next;
+	generic = swap && swap->f_type == SWAPSPEC && eq(swap->f_fn, "generic");
+	if (fl->f_rootdev == NODEV && !generic) {
+		yyerror("no root device specified");
+		exit(1);
+	}
+	/*
+	 * Default swap area to be in 'b' partition of root's
+	 * device.  If root specified to be other than on 'a'
+	 * partition, give warning, something probably amiss.
+	 */
+	if (swap == 0 || swap->f_type != SWAPSPEC) {
+		dev_t dev;
+
+		swap = newswap();
+		dev = fl->f_rootdev;
+		if (minor(dev) & 07) {
+			sprintf(buf, 
+"Warning, swap defaulted to 'b' partition with root on '%c' partition",
+				(minor(dev) & 07) + 'a');
+			yyerror(buf);
+		}
+		swap->f_swapdev =
+		   makedev(major(dev), (minor(dev) &~ 07) | ('b' - 'a'));
+		swap->f_fn = devtoname(swap->f_swapdev);
+		mkswap(fl, swap, 0);
+	}
+	/*
+	 * Make sure a generic swap isn't specified, along with
+	 * other stuff (user must really be confused).
+	 */
+	if (generic) {
+		if (fl->f_rootdev != NODEV)
+			yyerror("root device specified with generic swap");
+		if (fl->f_argdev != NODEV)
+			yyerror("arg device specified with generic swap");
+		if (fl->f_dumpdev != NODEV)
+			yyerror("dump device specified with generic swap");
+		return;
+	}
+	/*
+	 * Default argument device and check for oddball arrangements.
+	 */
+	if (fl->f_argdev == NODEV)
+		fl->f_argdev = swap->f_swapdev;
+	if (fl->f_argdev != swap->f_swapdev)
+		yyerror("Warning, arg device different than primary swap");
+	/*
+	 * Default dump device and warn if place is not a
+	 * swap area or the argument device partition.
+	 */
+	if (fl->f_dumpdev == NODEV)
+		fl->f_dumpdev = swap->f_swapdev;
+	if (fl->f_dumpdev != swap->f_swapdev && fl->f_dumpdev != fl->f_argdev) {
+		struct file_list *p = swap->f_next;
+
+		for (; p && p->f_type == SWAPSPEC; p = p->f_next)
+			if (fl->f_dumpdev == p->f_swapdev)
+				return;
+		sprintf(buf, "Warning, orphaned dump device, %s",
+			"do you know what you're doing");
+		yyerror(buf);
+	}
+}
+
+/*
+ * Verify all devices specified in the system specification
+ * are present in the device specifications.
+ */
+verifysystemspecs()
+{
+	register struct file_list *fl;
+	dev_t checked[50], *verifyswap();
+	register dev_t *pchecked = checked;
+
+	for (fl = conf_list; fl; fl = fl->f_next) {
+		if (fl->f_type != SYSTEMSPEC)
+			continue;
+		if (!finddev(fl->f_rootdev))
+			deverror(fl->f_needs, "root");
+		*pchecked++ = fl->f_rootdev;
+		pchecked = verifyswap(fl->f_next, checked, pchecked);
+#define	samedev(dev1, dev2) \
+	((minor(dev1) &~ 07) != (minor(dev2) &~ 07))
+		if (!alreadychecked(fl->f_dumpdev, checked, pchecked)) {
+			if (!finddev(fl->f_dumpdev))
+				deverror(fl->f_needs, "dump");
+			*pchecked++ = fl->f_dumpdev;
+		}
+		if (!alreadychecked(fl->f_argdev, checked, pchecked)) {
+			if (!finddev(fl->f_argdev))
+				deverror(fl->f_needs, "arg");
+			*pchecked++ = fl->f_argdev;
+		}
+	}
+}
+
+/*
+ * Do as above, but for swap devices.
+ */
+dev_t *
+verifyswap(fl, checked, pchecked)
+	register struct file_list *fl;
+	dev_t checked[];
+	register dev_t *pchecked;
+{
+
+	for (;fl && fl->f_type == SWAPSPEC; fl = fl->f_next) {
+		if (eq(fl->f_fn, "generic"))
+			continue;
+		if (alreadychecked(fl->f_swapdev, checked, pchecked))
+			continue;
+		if (!finddev(fl->f_swapdev))
+			fprintf(stderr,
+			   "config: swap device %s not configured", fl->f_fn);
+		*pchecked++ = fl->f_swapdev;
+	}
+	return (pchecked);
+}
+
+/*
+ * Has a device already been checked
+ * for it's existence in the configuration?
+ */
+alreadychecked(dev, list, last)
+	dev_t dev, list[];
+	register dev_t *last;
+{
+	register dev_t *p;
+
+	for (p = list; p < last; p++)
+		if (samedev(*p, dev))
+			return (1);
+	return (0);
+}
+
+deverror(systemname, devtype)
+	char *systemname, *devtype;
+{
+
+	fprintf(stderr, "config: %s: %s device not configured\n",
+		systemname, devtype);
+}
+
+/*
+ * Look for the device in the list of
+ * configured hardware devices.  Must
+ * take into account stuff wildcarded.
+ */
+finddev(dev)
+	dev_t dev;
+{
+
+	/* punt on this right now */
+	return (1);
 }
