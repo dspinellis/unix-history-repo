@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	5.10.1.2 (Berkeley) %G%
+#	@(#)Makefile	5.12 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -24,7 +24,7 @@ LIBC=	/lib/libc.a
 #
 # doctor removed until lisp works
 SUBDIR=	adventure atc backgammon battlestar boggle btlgammon canfield \
-	cribbage dm fortune hack hangman hunt mille monop \
+	cribbage dm fortune gnuchess hack hangman hunt larn mille monop \
 	phantasia quiz robots rogue sail snake trek \
 	games.${MACHINE}
 
@@ -34,13 +34,13 @@ SCRIPT=	wargames
 
 # C sources that live in the current directory
 #
-SRCS=	arithmetic.c banner.c bcd.c factor.c fish.c number.c ppt.c primes.c \
-	rain.c worm.c worms.c wump.c
+SRCS=	arithmetic.c banner.c bcd.c factor.c fish.c morse.c number.c ppt.c \
+	primes.c rain.c worm.c worms.c wump.c
 
 # C programs that live in the current directory and do not need
 # explicit make lines.
 #
-STD=	arithmetic banner bcd factor fish number ppt wump
+STD=	arithmetic banner bcd factor fish morse number ppt wump
 
 # C programs that live in the current directory and need explicit make lines.
 #
@@ -50,7 +50,7 @@ NSTD=	primes rain worm worms
 HIDE=	fish wump worm
 
 # programs that don't
-NOHIDE=	arithmetic banner bcd factor number ppt primes rain worms
+NOHIDE=	arithmetic banner bcd factor morse number ppt primes rain worms
 
 # Programs that require a lisp interpreter or compiler
 LISP=	doctor
@@ -116,19 +116,17 @@ ppt: ppt.c /usr/include/stdio.h
 primes: primes.c /usr/include/stdio.h /usr/include/math.h
 rain: rain.c /usr/include/sys/types.h /usr/include/stdio.h /usr/include/sgtty.h
 rain: /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-rain: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
-rain: /usr/include/signal.h /usr/include/machine/trap.h
+rain: /usr/include/sys/ttydev.h /usr/include/signal.h
+rain: /usr/include/machine/trap.h
 worm: worm.c /usr/include/ctype.h /usr/include/curses.h /usr/include/stdio.h
 worm: /usr/include/sgtty.h /usr/include/sys/ioctl.h /usr/include/sys/ttychars.h
-worm: /usr/include/sys/ttydefaults.h /usr/include/sys/ttydev.h
-worm: /usr/include/signal.h /usr/include/machine/trap.h
+worm: /usr/include/sys/ttydev.h /usr/include/signal.h
+worm: /usr/include/machine/trap.h
 worms: worms.c /usr/include/sys/types.h /usr/include/stdio.h
 worms: /usr/include/sgtty.h /usr/include/sys/ioctl.h
-worms: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-worms: /usr/include/sys/ttydev.h /usr/include/signal.h
-worms: /usr/include/machine/trap.h
+worms: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
+worms: /usr/include/signal.h /usr/include/machine/trap.h
 wump: wump.c /usr/include/stdio.h /usr/include/sgtty.h /usr/include/sys/ioctl.h
-wump: /usr/include/sys/ttychars.h /usr/include/sys/ttydefaults.h
-wump: /usr/include/sys/ttydev.h
+wump: /usr/include/sys/ttychars.h /usr/include/sys/ttydev.h
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY
