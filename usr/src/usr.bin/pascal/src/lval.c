@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)lval.c 1.7 %G%";
+static char sccsid[] = "@(#)lval.c 1.8 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -309,6 +309,8 @@ arycod(np, el)
 	int *el;
 {
 	register struct nl *p, *ap;
+	long sub;
+	bool constsub;
 	int i, d, v, v1;
 	int w;
 
@@ -326,16 +328,26 @@ arycod(np, el)
 			return (-1);
 		}
 		p = p->chain;
-#		ifdef PC
-		    precheck( p , "_SUBSC" , "_SUBSCZ" );
-#		endif PC
-		ap = rvalue(el[1], NLNIL , RREQ );
-		if (ap == NIL) {
+		if (constsub = constval(el[1])) {
+		    ap = con.ctype;
+		    sub = con.crval;
+		    if (sub < p->range[0] || sub > p->range[1]) {
+			error("Subscript value of %D is out of range", sub);
 			return (0);
+		    }
+		    sub -= p->range[0];
+		} else {
+#		    ifdef PC
+			precheck( p , "_SUBSC" , "_SUBSCZ" );
+#		    endif PC
+		    ap = rvalue(el[1], NLNIL , RREQ );
+		    if (ap == NIL) {
+			    return (0);
+		    }
+#		    ifdef PC
+			postcheck( p );
+#		    endif PC
 		}
-#		ifdef PC
-		    postcheck( p );
-#		endif PC
 		if (incompat(ap, p->type, el[1])) {
 			cerror("Array index type incompatible with declared index type");
 			if (d != 1) {
@@ -345,6 +357,16 @@ arycod(np, el)
 		}
 		w = aryconst(np, i);
 #		ifdef OBJ
+		    if (constsub) {
+			sub *= w;
+			if (sub != 0) {
+			    w = width(ap);
+			    put(2, w <= 2 ? O_CON2 : O_CON4, sub);
+			    gen(NIL, T_ADD, sizeof(char *), w);
+			}
+			el = el[2];
+			continue;
+		    }
 		    if (opt('t') == 0) {
 			    switch (w) {
 			    case 8:
@@ -359,11 +381,22 @@ arycod(np, el)
 		    }
 		    put(4, width(ap) != 4 ? O_INX2 : O_INX4, w,
 			(short)p->range[0], (short)(p->range[1]));
+		    el = el[2];
+		    continue;
 #		endif OBJ
 #		ifdef PC
 			/*
 			 *	subtract off the lower bound
 			 */
+		    if (constsub) {
+			sub *= w;
+			if (sub != 0) {
+			    putleaf( P2ICON , sub , 0 , P2INT , 0 );
+			    putop(P2PLUS, ADDTYPE(p2type(np->type), P2PTR));
+			}
+			el = el[2];
+			continue;
+		    }
 		    if ( p -> range[ 0 ] != 0 ) {
 			putleaf( P2ICON , p -> range[0] , 0 , P2INT , 0 );
 			putop( P2MINUS , P2INT );
