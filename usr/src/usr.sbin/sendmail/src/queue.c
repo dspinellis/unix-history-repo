@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.44 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.45 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.44 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.45 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -140,6 +140,15 @@ queueup(df)
 
 	/* output creation time */
 	fprintf(tfp, "T%ld\n", e->e_ctime);
+
+	/* output inode number of data file */
+	fprintf(tfp, "I%ld\n", e->e_dfino);
+
+	/* output last delivery time */
+	fprintf(tfp, "K%ld\n", e->e_dtime);
+
+	/* output number of delivery attempts */
+	fprintf(tfp, "N%d\n", e->e_ntries);
 
 	/* output type and name of data file */
 	if (e->e_bodytype != NULL)
@@ -1120,6 +1129,18 @@ readqf(e)
 
 		  case 'T':		/* init time */
 			e->e_ctime = atol(&bp[1]);
+			break;
+
+		  case 'I':		/* data file's inode number */
+			e->e_dfino = atol(&buf[1]);
+			break;
+
+		  case 'K':		/* time of last deliver attempt */
+			e->e_dtime = atol(&buf[1]);
+			break;
+
+		  case 'N':		/* number of delivery attempts */
+			e->e_ntries = atoi(&buf[1]);
 			break;
 
 		  case 'P':		/* message priority */

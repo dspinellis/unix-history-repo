@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)collect.c	8.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)collect.c	8.20 (Berkeley) %G%";
 #endif /* not lint */
 
 # include <errno.h>
@@ -98,6 +98,8 @@ collect(fp, smtpmode, requeueflag, hdrp, e)
 
 	if (!headeronly)
 	{
+		struct stat stbuf;
+
 		e->e_df = queuename(e, 'd');
 		e->e_df = newstr(e->e_df);
 		if ((tf = dfopen(e->e_df, O_WRONLY|O_CREAT|O_TRUNC, FileMode)) == NULL)
@@ -106,6 +108,10 @@ collect(fp, smtpmode, requeueflag, hdrp, e)
 			e->e_flags |= EF_NORETURN;
 			finis();
 		}
+		if (fstat(fileno(tf), &stbuf) < 0)
+			e->e_dfino = -1;
+		else
+			e->e_dfino = stbuf.st_ino;
 		HasEightBits = FALSE;
 	}
 

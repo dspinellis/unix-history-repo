@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.92 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.93 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -309,6 +309,7 @@ sendenvelope(e, mode)
 	register ADDRESS *q;
 	char *qf;
 	char *id;
+	bool didany;
 
 	/*
 	**  If we have had global, fatal errors, don't bother sending
@@ -428,6 +429,7 @@ sendenvelope(e, mode)
 
 	e->e_nsent = 0;
 	e->e_flags |= EF_GLOBALERRS;
+	didany = FALSE;
 
 	/* now run through the queue */
 	for (q = e->e_sendqueue; q != NULL; q = q->q_next)
@@ -468,9 +470,15 @@ sendenvelope(e, mode)
 			}
 # endif /* QUEUE */
 			(void) deliver(e, q);
+			didany = TRUE;
 		}
 	}
 	Verbose = oldverbose;
+	if (didany)
+	{
+		e->e_dtime = curtime();
+		e->e_ntries++;
+	}
 
 #ifdef XDEBUG
 	checkfd012("end of sendenvelope");
