@@ -1,5 +1,5 @@
 /* Copyright (c) 1980 Regents of the University of California */
-/* "@(#)astoks.h 4.1 %G%" */
+/* "@(#)astoks.h 4.2 %G%" */
 /*
  *	Message to the wary:  The order of tokens has been
  *	hand optimized and assigned to that all switch statements
@@ -39,6 +39,7 @@
 # define ILINENO 	19
 # define IABORT 	20
 # define IFILL		21
+# define IQUAD		22
 /*
  *	Tokens between ISTAB and REG are used in the per token switch
  */
