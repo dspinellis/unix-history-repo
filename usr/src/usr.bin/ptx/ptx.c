@@ -1,5 +1,6 @@
-static char *sccsid = "@(#)ptx.c	4.2 (Berkeley) %G%";
-#
+#ifndef lint
+static char *sccsid = "@(#)ptx.c	4.3 (Berkeley) %G%";
+#endif /* not lint */
 
 /*	permuted title index
 	ptx [-t] [-i ignore] [-o only] [-w num] [-f] [input] [output]
@@ -14,7 +15,6 @@ static char *sccsid = "@(#)ptx.c	4.2 (Berkeley) %G%";
 	the -t flag says the output is for troff and the
 	output is then wider.
 
-	make: cc ptx.c -lS
 	*/
 
 #include <stdio.h>
@@ -245,7 +245,7 @@ char **argv;
 
 
 	getsort();
-	if(*sortfile)
+	if(sortfile)
 		unlink(sortfile);
 	exit(0);
 }
@@ -500,7 +500,7 @@ char *strt, *end;
 onintr()
 {
 
-	if(*sortfile)
+	if(sortfile)
 		unlink(sortfile);
 	exit(1);
 }
