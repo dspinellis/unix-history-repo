@@ -1,5 +1,5 @@
 #ifndef lint
-static	char sccsid[] = "@(#)runpcs.c	4.5 %G%";
+static	char sccsid[] = "@(#)runpcs.c	4.6 %G%";
 #endif
 /*
  *
@@ -232,17 +232,19 @@ delbp()
 		DO	IF bkptr->flag
 			THEN a=bkptr->loc;
 				IF a < txtmap.e1 THEN
-				ptrace(PT_WRITE_I,pid,a,
-					(bkptr->ins&0xFF)|(ptrace(PT_READ_I,pid,a,0)&~0xFF));
+					ptrace(PT_WRITE_I,pid,a,bkptr->ins);
 				ELSE
-				ptrace(PT_WRITE_D,pid,a,
-					(bkptr->ins&0xFF)|(ptrace(PT_READ_D,pid,a,0)&~0xFF));
+					ptrace(PT_WRITE_D,pid,a,bkptr->ins);
 				FI
 			FI
 		OD
 		bpstate=BPOUT;
 	FI
 }
+
+#ifdef vax
+#define	SETBP(ins)	(BPT | ((ins) &~ 0xFF))
+#endif
 
 setbp()
 {
@@ -256,10 +258,10 @@ setbp()
 		   THEN a = bkptr->loc;
 			IF a < txtmap.e1 THEN
 				bkptr->ins = ptrace(PT_READ_I, pid, a, 0);
-				ptrace(PT_WRITE_I, pid, a, BPT | (bkptr->ins&~0xFF));
+				ptrace(PT_WRITE_I, pid, a, SETBP(bkptr->ins));
 			ELSE
 				bkptr->ins = ptrace(PT_READ_D, pid, a, 0);
-				ptrace(PT_WRITE_D, pid, a, BPT | (bkptr->ins&~0xFF));
+				ptrace(PT_WRITE_D, pid, a, SETBP(bkptr->ins));
 			FI
 			IF errno
 			THEN prints("cannot set breakpoint: ");
