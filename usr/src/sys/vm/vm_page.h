@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vm_page.h	7.5 (Berkeley) %G%
+ *	@(#)vm_page.h	7.6 (Berkeley) %G%
  *
  *
  * Copyright (c) 1987, 1990 Carnegie-Mellon University.
@@ -176,8 +176,6 @@ simple_lock_data_t	vm_page_queue_free_lock;
 void		vm_page_startup __P((vm_offset_t *start, vm_offset_t *end));
 vm_page_t	vm_page_lookup __P((vm_object_t object, vm_offset_t offset));
 vm_page_t	vm_page_alloc __P((vm_object_t object, vm_offset_t offset));
-void		vm_page_init __P((vm_page_t mem, vm_object_t object,
-			vm_offset_t offset));
 void		vm_page_free __P((vm_page_t mem));
 void		vm_page_activate __P((vm_page_t mem));
 void		vm_page_deactivate __P((vm_page_t mem));
@@ -213,5 +211,30 @@ void		vm_set_page_size __P((void));
 #define	vm_page_unlock_queues()	simple_unlock(&vm_page_queue_lock)
 
 #define vm_page_set_modified(m)	{ (m)->clean = FALSE; }
+
+#ifdef DEBUG
+#define	VM_PAGE_DEBUG_INIT(m) ((m)->pagerowned = 0, (m)->ptpage = 0)
+#else
+#define	VM_PAGE_DEBUG_INIT(m)
+#endif
+
+#define	VM_PAGE_INIT(mem, object, offset) { \
+	(mem)->busy = TRUE; \
+	(mem)->tabled = FALSE; \
+	vm_page_insert((mem), (object), (offset)); \
+	(mem)->absent = FALSE; \
+	(mem)->fictitious = FALSE; \
+	(mem)->page_lock = VM_PROT_NONE; \
+	(mem)->unlock_request = VM_PROT_NONE; \
+	(mem)->laundry = FALSE; \
+	(mem)->active = FALSE; \
+	(mem)->inactive = FALSE; \
+	(mem)->wire_count = 0; \
+	(mem)->clean = TRUE; \
+	(mem)->copy_on_write = FALSE; \
+	(mem)->fake = TRUE; \
+	VM_PAGE_DEBUG_INIT(mem); \
+}
+
 #endif	KERNEL
 #endif	_VM_PAGE_
