@@ -1,4 +1,4 @@
-/*	%H%	3.13	kern_clock.c	*/
+/*	%H%	3.14	kern_clock.c	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -227,16 +227,18 @@ out:
 		 */
 		if (bclnlist != NULL)
 			wakeup((caddr_t)&proc[2]);
-#ifdef ERNIE
 		if (USERMODE(ps)) {
 			pp = u.u_procp;
+#ifdef ERNIE
 			if (pp->p_uid)
 				if (pp->p_nice == NZERO && u.u_vm.vm_utime > 600 * HZ)
 					pp->p_nice = NZERO+4;
 			(void) setpri(pp);
 			pp->p_pri = pp->p_usrpri;
-		}
 #endif
+			if (u.u_vm.vm_utime+u.u_vm.vm_stime > u.u_limit[LIM_CPU])
+				psignal(pp, SIGXCPU);
+		}
 	}
 	if (!BASEPRI(ps))
 		unhang();
