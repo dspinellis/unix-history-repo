@@ -1,8 +1,8 @@
 PUSHDIVERT(-1)
 #
 # Copyright (c) 1983 Eric P. Allman
-# Copyright (c) 1988 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1988, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
@@ -15,7 +15,7 @@ POPDIVERT
 ###  USENET Mailer specification ###
 ####################################
 
-VERSIONID(`@(#)usenet.m4	6.2 (Berkeley) %G%')
+VERSIONID(`@(#)usenet.m4	8.1 (Berkeley) %G%')
 
 Musenet,	P=USENET_MAILER_PATH, F=USENET_MAILER_FLAGS, S=10, R=20,
 		A=inews USENET_MAILER_ARGS $u

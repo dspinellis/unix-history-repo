@@ -1,8 +1,8 @@
 PUSHDIVERT(-1)
 #
 # Copyright (c) 1983 Eric P. Allman
-# Copyright (c) 1988 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1988, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
@@ -14,7 +14,7 @@ POPDIVERT
 ###   SMTP Mailer specification   ###
 #####################################
 
-VERSIONID(`@(#)smtp.m4	6.10 (Berkeley) %G%')
+VERSIONID(`@(#)smtp.m4	8.1 (Berkeley) %G%')
 
 Msmtp,		P=[IPC], F=CONCAT(mDFMueXC, SMTP_MAILER_FLAGS), S=11, R=21, E=\r\n,
 		ifdef(`_OLD_SENDMAIL_',, `L=990, ')A=IPC $h

@@ -1,8 +1,8 @@
 PUSHDIVERT(-1)
 #
 # Copyright (c) 1983 Eric P. Allman
-# Copyright (c) 1988 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1988, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 #	This assumes you already have Sam Leffler's FAX software.
 #
@@ -16,7 +16,7 @@ POPDIVERT
 ###   FAX Mailer specification   ###
 ####################################
 
-VERSIONID(`@(#)fax.m4	6.2 (Berkeley) %G%')
+VERSIONID(`@(#)fax.m4	8.1 (Berkeley) %G%')
 
 Mfax,		P=FAX_MAILER_PATH, F=DFMhu, S=14, R=24, M=100000,
 		A=mailfax $u $h $f

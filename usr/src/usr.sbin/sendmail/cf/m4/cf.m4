@@ -1,8 +1,8 @@
 divert(0)dnl
 #
 # Copyright (c) 1983 Eric P. Allman
-# Copyright (c) 1988 The Regents of the University of California.
-# All rights reserved.
+# Copyright (c) 1988, 1993
+#	The Regents of the University of California.  All rights reserved.
 #
 # %sccs.include.redist.sh%
 #
@@ -118,4 +118,4 @@ define(`confCW_FILE', `/etc/sendmail.cw')
 define(`confMIME_FORMAT_ERRORS', `True')
 
 divert(0)dnl
-VERSIONID(`@(#)cf.m4	6.17 (Berkeley) %G%')
+VERSIONID(`@(#)cf.m4	8.1 (Berkeley) %G%')
