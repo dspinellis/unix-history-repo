@@ -1,6 +1,6 @@
-SCCSID = "@(#)Makefile 1.12 %G%"
+SCCSID = "@(#)Makefile 1.13 %G%"
 WHOAMI = pc
-INSTALLNAME = /usr/lib/pc0
+INSTALLNAME = $(DESTDIR)/usr/lib/pc0
 VERSION = 2.0
 
 MKSTR = /usr/ucb/mkstr
@@ -13,7 +13,7 @@ LDFLAGS = -z
 
 SRCDIR = /usr/src/cmd/pc0
 INSTALLDIR = /usr/ucb
-LIBDIR = /usr/lib
+LIBDIR = ${DESTDIR}/usr/lib
 TMPDIR = tmp
 
 ERRORSTRINGS = pi2.0strings
@@ -92,7 +92,6 @@ clean:
 	${RM} version Version.c
 	${RM} a.out core *.list *.bak
 	${RM} opc.c opc pic tags
-	sccs clean
 
 print:	sources
 	@pr makefile READ_ME
@@ -106,7 +105,6 @@ print:	sources
 	@pr yy.h yy*.c
 
 install: a.out
-	sccs check
 	cp ${ERRORSTRINGS} ${LIBDIR}/${ERRORSTRINGS}
 	cp ${INSTALLDIR}/pi ${INSTALLDIR}/pi.bak
 	cp a.out ${INSTALLDIR}/pi
