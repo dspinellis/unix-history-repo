@@ -1,6 +1,11 @@
 #	@(#)bsd.lib.mk	5.26 (Berkeley) 5/2/91
 #
 # $Log: bsd.lib.mk,v $
+# Revision 1.23  1993/12/04  20:04:31  ats
+# Added rules for ".S" to ".o" etc. Added ".S" to the known suffixes.
+# This is necessary to change all .s to .S files in the libc to get
+# make depend running again.
+#
 # Revision 1.22  1993/11/13  20:19:14  paul
 # Commented out ALL ld -x -r lines.
 #
@@ -128,7 +133,7 @@ BINMODE?=	555
 # prefer .s to a .c, add .po, remove stuff not used in the BSD libraries
 # .so used for PIC object files
 .SUFFIXES:
-.SUFFIXES: .out .o .po .so .s .S .c .cc .cxx .C .f .y .l
+.SUFFIXES: .out .o .po .so .s .S .c .cc .cxx .m .C .f .y .l
 
 .c.o:
 	${CC} ${CFLAGS} -c ${.IMPSRC} 
@@ -196,17 +201,19 @@ BINMODE?=	555
 	${CPP} -E -DPIC ${CFLAGS:M-[ID]*} ${AINC} ${.IMPSRC} | \
 	   ${AS} -k -o ${.TARGET}
 
+.m.o:
+	${CC} ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
+#	@${LD} -X -r ${.TARGET}
+#	@mv a.out ${.TARGET}
+
 .if !defined(NOPROFILE)
 _LIBS=lib${LIB}.a lib${LIB}_p.a
 .else
 _LIBS=lib${LIB}.a
 .endif
 
-.if !defined(NOPIC)
-_LIBS+=lib${LIB}_pic.a
-.if defined(SHLIB_MAJOR) && defined(SHLIB_MINOR)
+.if !defined(NOPIC) && (defined(SHLIB_MAJOR) && defined(SHLIB_MINOR))
 _LIBS+=lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR}
-.endif
 .endif
 
 .if !defined(PICFLAG)
@@ -231,17 +238,12 @@ lib${LIB}_p.a:: ${POBJS}
 	${RANLIB} lib${LIB}_p.a
 
 SOBJS+= ${OBJS:.o=.so}
-lib${LIB}_pic.a:: ${SOBJS}
-	@echo building shared object ${LIB} library
-	@rm -f lib${LIB}_pic.a
-	@${AR} cTq lib${LIB}_pic.a `lorder ${SOBJS} | tsort` ${LDADD}
-	${RANLIB} lib${LIB}_pic.a
-
-lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR}: lib${LIB}_pic.a
+lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR}: ${SOBJS}
 	@echo building shared ${LIB} library \(version ${SHLIB_MAJOR}.${SHLIB_MINOR}\)
 	@rm -f lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR}
-	$(LD) -Bshareable -Bforcearchive \
-	    -o lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR} lib${LIB}_pic.a
+	@$(LD) -Bshareable \
+	    -o lib${LIB}.so.${SHLIB_MAJOR}.${SHLIB_MINOR} \
+	    `lorder ${SOBJS} | tsort` ${LDADD}
 
 llib-l${LIB}.ln: ${SRCS}
 	${LINT} -C${LIB} ${CFLAGS} ${.ALLSRC:M*.c}
@@ -252,7 +254,7 @@ clean:
 	rm -f lib${LIB}.a llib-l${LIB}.ln
 	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
 	rm -f ${SOBJS} shared/*.o
-	rm -f lib${LIB}.a lib${LIB}_p.a lib${LIB}_pic.a llib-l${LIB}.ln
+	rm -f lib${LIB}.a lib${LIB}_p.a llib-l${LIB}.ln
 	rm -f lib${LIB}.so.*.*
 .endif
 
@@ -262,7 +264,8 @@ cleandir:
 	rm -f lib${LIB}.a llib-l${LIB}.ln
 	rm -f ${.CURDIR}/tags .depend
 	rm -f ${POBJS} profiled/*.o lib${LIB}_p.a
-	rm -f ${SOBJS} shared/*.o lib${LIB}_pic.a 
+	rm -f ${SOBJS} shared/*.o
+	rm -f lib${LIB}.so.*.*
 	cd ${.CURDIR}; rm -rf obj;
 .endif
 
@@ -286,12 +289,6 @@ realinstall: beforeinstall
 	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
 	    lib${LIB}_p.a ${DESTDIR}${LIBDIR}
 	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}_p.a
-.endif
-.if !defined(NOPIC) && defined(INSTALL_PIC_ARCHIVE)
-#       ranlib lib${LIB}_pic.a
-	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
-	    lib${LIB}_pic.a ${DESTDIR}${LIBDIR}
-	${RANLIB} -t ${DESTDIR}${LIBDIR}/lib${LIB}_pic.a
 .endif
 .if !defined(NOPIC) && defined(SHLIB_MAJOR) && defined(SHLIB_MINOR)
 	install ${COPY} -o ${LIBOWN} -g ${LIBGRP} -m ${LIBMODE} \
