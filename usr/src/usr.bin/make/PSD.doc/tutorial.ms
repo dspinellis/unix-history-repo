@@ -1,24 +1,22 @@
-'\"
-'\" This file contains a tutorial for pmake.
-'\"
-'\" $Id: tutorial.ms,v 1.4 89/01/08 20:20:22 adam Exp Locker: adam $
-'\"
-'\" Copyright (c) 1988, 1989 by the Regents of the University of California
 '\" Copyright (c) 1988, 1989 by Adam de Boor
 '\" Copyright (c) 1989 by Berkeley Softworks
+'\" Copyright (c) 1988, 1989, 1993
+'\"	The Regents of the University of California.  All rights reserved.
 '\"
-'\" Permission to use, copy, modify, and distribute this
-'\" software and its documentation for any non-commercial purpose
-'\" and without fee is hereby granted, provided that the above copyright
-'\" notice appears in all copies.  The University of California,
-'\" Berkeley Softworks and Adam de Boor make no representations about
-'\" the suitability of this software for any purpose.  It is provided
-'\" "as is" without express or implied warranty.
+'\" This code is derived from software contributed to Berkeley by
+'\" Adam de Boor.
 '\"
+'\" %sccs.include.redist.roff%
+'\"
+'\"	@(#)tutorial.ms	5.2 (Berkeley) %G%
+'\"
+
 '\" xH is a macro to provide numbered headers that are automatically stuffed
 '\" into a table-of-contents, properly indented, etc. If the first argument
 '\" is numeric, it is taken as the depth for numbering (as for .NH), else
 '\" the default (1) is assumed.
+'\"
+'\" $Id: tutorial.ms,v 1.4 89/01/08 20:20:22 adam Exp Locker: adam $
 '\"
 '\" @P The initial paragraph distance.
 '\" @Q The piece of section number to increment (or 0 if none given)
