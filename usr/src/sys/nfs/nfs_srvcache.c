@@ -17,7 +17,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)nfs_srvcache.c	7.2 (Berkeley) %G%
+ *	@(#)nfs_srvcache.c	7.3 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -55,7 +55,7 @@ static struct nfsrvcache nfsrvcache[NFSRVCACHESIZ];
 /*
  * Static array that defines which nfs rpc's are nonidempotent
  */
-static int nonidempotent[NFS_NPROCS] = {
+int nonidempotent[NFS_NPROCS] = {
 	FALSE,
 	FALSE,
 	TRUE,
