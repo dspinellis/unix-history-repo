@@ -1,3 +1,0 @@
-Most of lint's source files are shared with the portable
-compiler: they are found in /usr/src/cmd/mip.
-The files here are only those which are unique to lint.
