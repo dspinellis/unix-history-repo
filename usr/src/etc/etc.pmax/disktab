@@ -1,5 +1,5 @@
 #
-#	@(#)disktab	5.3 (Berkeley) %G%
+#	@(#)disktab	5.4 (Berkeley) %G%
 #
 
 # Disk geometry and partition layout tables. 
@@ -83,3 +83,10 @@ rz57|RZ57|DEC RZ57 Winchester:\
         :pf#524546:of#1429504:bf#8192:ff#1024:\
         :pg#614400:og#217088:bg#8192:fg#1024:\
         :ph#1122562:oh#831488:bh#8192:fh#1024:
+
+ep976|EP976|EPSON HMD-976 Winchester:\
+	:dt=SCSI:ty=winchester:ns#34:nt#6:nc#670:\
+	:pa#32768:oa#0:ba#8192:fa#1024:\
+	:pb#69664:ob#32768:bb#8192:fb#1024:tb=swap:\
+	:pc#136680:oc#0:bc#8192:fc#1024:\
+        :pg#34248:og#102432:bg#8192:fg#1024:
