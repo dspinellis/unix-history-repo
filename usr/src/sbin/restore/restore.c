@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)restore.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)restore.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "restore.h"
@@ -385,13 +385,23 @@ nodeupdates(name, ino, type)
 		break;
 
 	/*
+	 * If we find a directory entry for a file that is not on
+	 * the tape, then we must have found a file that was created
+	 * while the dump was in progress. Since we have no contents
+	 * for it, we discard the name knowing that it will be on the
+	 * next incremental tape.
+	 */
+	case NIL:
+		fprintf(stderr, "%s: not found on tape\n", name);
+		break;
+
+	/*
 	 * If any of these arise, something is grievously wrong with
 	 * the current state of the symbol table.
 	 */
 	case INOFND|NAMEFND|MODECHG:
 	case NAMEFND|MODECHG:
 	case INOFND|MODECHG:
-	case NIL:
 		panic("[%s] %s: inconsistent state\n", keyval(key), name);
 		break;
 
