@@ -1,4 +1,4 @@
-/*	locore.s	1.14	87/05/29	*/
+/*	locore.s	1.15	87/05/31	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -965,31 +965,36 @@ ENTRY(ovbcopy, R3|R4)
  *
  * copyinstr(fromaddr, toaddr, maxlength, &lencopied)
  */
-ENTRY(copyinstr, R3|R4|R5)
+ENTRY(copyinstr, 0)
 	movl	12(fp),r5		# r5 = max length
-	jlss	8f
+	jlss	5f
+	movl	8(fp),r4		# r4 = kernel address
 	movl	4(fp),r0		# r0 = user address
-	movl	r0,r3			# r3 = copy of src for null byte test
 	andl3	$(NBPG*CLSIZE-1),r0,r2	# r2 = bytes on first page
 	subl3	r2,$(NBPG*CLSIZE),r2
-	movl	8(fp),r1		# r1 = kernel address
 1:
 	cmpl	r5,r2			# r2 = min(bytes on page, length left);
 	jgeq	2f
 	movl	r5,r2
 2:
 	prober	$1,(r0),r2		# bytes accessible?
-	jeql	8f
+	jeql	5f
 	subl2	r2,r5			# update bytes left count
-	addl2	r2,r3			# calculate src+count
-	movs3				# copy in next piece
-	subl3	r0,r3,r2		# null byte found?
+	movl	r2,r3			# r3 = saved count
+	movl	r0,r1
+	cmps3				# check for null
+	tstl	r2
 	jneq	3f
+	subl2	r3,r0			# back up r0
+	movl	r4,r1
+	movl	r3,r2
+	movblk				# copy in next piece
+	movl	r1,r4
 	movl	$(NBPG*CLSIZE),r2	# check next page
 	tstl	r5			# run out of space?
 	jneq	1b
 	movl	$ENOENT,r0		# set error code and return
-	jbr	9f
+	jbr	6f
 3:
 	tstl	16(fp)			# return length?
 	beql	4f
@@ -997,15 +1002,20 @@ ENTRY(copyinstr, R3|R4|R5)
 	subl2	r2,r5			#	- unused on this page
 	addl3	$1,r5,*16(fp)		#	+ the null byte
 4:
+	movl	r4,r1
+	subl3	r2,r3,r2		# calc char cnt
+	subl2	r2,r0			# back up r0
+	incl	r2			# add on null byte
+	movblk				# copy last piece
 	clrl	r0
 	ret
-8:
+5:
 	movl	$EFAULT,r0
-9:
+6:
 	tstl	16(fp)
-	beql	1f
+	beql	7f
 	subl3	r5,12(fp),*16(fp)
-1:
+7:
 	ret
 
 /*
@@ -1014,48 +1024,51 @@ ENTRY(copyinstr, R3|R4|R5)
  *
  * copyoutstr(fromaddr, toaddr, maxlength, &lencopied)
  */
-ENTRY(copyoutstr, R3|R4|R5)
+ENTRY(copyoutstr, 0)
 	movl	12(fp),r5		# r5 = max length
-	jlss	8b
+	jlss	5b
 	movl	4(fp),r0		# r0 = kernel address
-	movl	r0,r3			# r3 = copy of src for null byte test
-	movl	8(fp),r1		# r1 = user address
-	andl3	$(NBPG*CLSIZE-1),r1,r2	# r2 = bytes on first page
+	movl	8(fp),r4		# r4 = user address
+	andl3	$(NBPG*CLSIZE-1),r4,r2	# r2 = bytes on first page
 	subl3	r2,$(NBPG*CLSIZE),r2
 1:
 	cmpl	r5,r2			# r2 = min(bytes on page, length left);
 	jgeq	2f
 	movl	r5,r2
 2:
-	probew	$1,(r1),r2		# bytes accessible?
-	jeql	8b
+	probew	$1,(r4),r2		# bytes accessible?
+	jeql	5b
 	subl2	r2,r5			# update bytes left count
-	addl2	r2,r3			# calculate src+count
-#ifdef notdef
-	movs3				# copy out next piece
-#else
+	movl	r2,r3			# r3 = saved count
+	movl	r0,r1
+# This is a workaround for a microcode bug that causes
+# a trap type 9 when cmps3/movs3 touches the last byte
+# on a valid page immediately followed by an invalid page.
+#ifdef good_cmps3
+	cmps3				# check for null
 	tstl	r2
-	beql	6f
-4:
-	movb	(r0),(r1)
-	beql	5f
-	incl	r0
-	incl	r1
-	decl	r2
-	bneq	4b
-	jbr	6f
-5:
-	incl	r1
-	decl	r2
-6:
-#endif
-	subl3	r0,r3,r2		# null byte found?
 	jneq	3b
+#else
+	decl	r2
+	cmps3				# check for null up to last byte
+	incl	r2
+	cmpl	$1,r2			# get to last byte on page?
+	bneq	3b
+	tstb	(r0)			# last byte on page null?
+	beql	9f
+	incl	r0			# not null, so bump pointer
+9:
+#endif notdef
+	subl2	r3,r0			# back up r0
+	movl	r4,r1
+	movl	r3,r2
+	movblk				# copy out next piece
+	movl	r1,r4
 	movl	$(NBPG*CLSIZE),r2	# check next page
 	tstl	r5			# run out of space?
 	jneq	1b
 	movl	$ENOENT,r0		# set error code and return
-	jbr	9b
+	jbr	6b
 
 /*
  * Copy a null terminated string from one point to another in
@@ -1063,27 +1076,23 @@ ENTRY(copyoutstr, R3|R4|R5)
  *
  * copystr(fromaddr, toaddr, maxlength, &lencopied)
  */
-ENTRY(copystr, R3|R4|R5)
-	movl	12(fp),r5		# r5 = max length
-	jlss	8b
+ENTRY(copystr, 0)
+	movl	12(fp),r3		# r3 = max length
+	jlss	5b
 	movl	4(fp),r0		# r0 = src address
-	movl	r0,r3			# r3 = copy of src for null byte test
-	movl	8(fp),r1		# r1 = dest address
-1:
-	movzwl	$65535,r2		# r2 = bytes in first chunk
-	cmpl	r5,r2			# r2 = min(bytes in chunk, length left);
-	jgeq	2f
-	movl	r5,r2
-2:
-	subl2	r2,r5			# update bytes left count
-	addl2	r2,r3			# calculate src+count
-	movs3				# copy next piece
-	subl3	r0,r3,r2		# null byte found?
+	movl	8(fp),r4		# r4 = dest address
+	clrl	r5			# r5 = bytes left
+	movl	r3,r2			# r2 = max bytes to copy
+	movl	r0,r1
+	cmps3				# check for null
+	tstl	r2
 	jneq	3b
-	tstl	r5			# run out of space?
-	jneq	1b
+	subl2	r3,r0			# back up r0
+	movl	r4,r1
+	movl	r3,r2
+	movblk				# copy next piece
 	movl	$ENOENT,r0		# set error code and return
-	jbr	9b
+	jbr	6b
 
 /*
  * Copy a block of data from the user address space into
