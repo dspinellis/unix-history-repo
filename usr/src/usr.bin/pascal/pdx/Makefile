@@ -1,6 +1,6 @@
 # Copyright (c) 1982 Regents of the University of California
 #
-#	@(#)Makefile	1.9	(Berkeley)	%G%
+#	@(#)Makefile	1.10	(Berkeley)	%G%
 #
 # make file for pdx
 #
@@ -10,11 +10,10 @@
 # declarations (since you can't have forward type references in C).
 # It also defines various things of general use and includes <stdio.h>.
 #
-# The subdirectory "library" contains routines which are generally useful
-# and are independent from pdx.  These are compiled into a separate archive
-# and they must be made independently from pdx.
+# The file "library.c" contains routines which are generally useful
+# and are independent from pdx.
 #
-# N.B.: My version of cerror automatically catches certain erros
+# N.B.: My version of cerror in "cerror.s" automatically catches certain errors
 #	such as out of memory, I/O error.  If you re-make pdx with
 #	the standard cerror, the program could fault unexpectedly.
 #
@@ -24,17 +23,13 @@
 #
 
 HOME	= /usr/src/cmd/pdx
-LIB	= ${HOME}/library/pdxlib
+LIB	= library.o cerror.o
 PASCAL	= /usr/src/cmd/pascal/
 INSTALL	= /usr/ucb/pdx
 
-#
-# LDFLAGS should be -i for pdp-11
-#
-
 RM	= /bin/rm -f
 CFLAGS	= -Disvaxpx -I.. -I${PASCAL} -DOBJ -DVAX -O
-LDFLAGS	=
+LDFLAGS	= # -i for pdp-11
 
 .c.o:
 	@echo "compiling $*.c"
@@ -43,6 +38,10 @@ LDFLAGS	=
 	    if ($$a:h != $$a) chdir $$a:h; \
 	    ${CC} ${CFLAGS} -c $$a:t \
 	'
+
+.s.o:
+	@echo "assembling $*.s"
+	@cc -c $*.s
 
 #
 # source directory specifications
@@ -53,7 +52,7 @@ SYMTAB		= symtab/
 SOURCE		= source/
 COMMAND		= command/
 TREE		= tree/
-SYM			= sym/
+SYM		= sym/
 BREAKPOINT	= breakpoint/
 RUNTIME		= runtime/
 OBJECT		= object/
@@ -147,7 +146,7 @@ OBJS =\
 	${PROCOBJ}\
 	${MACHOBJ}
 
-a.out: ${OBJS}
+a.out: ${OBJS} ${LIB}
 	@echo "linking"
 	@cc ${LDFLAGS} ${OBJS} ${LIB}
 
