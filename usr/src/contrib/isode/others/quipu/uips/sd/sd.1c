@@ -1,0 +1,115 @@
+.\"$Header: /f/osi/others/quipu/uips/sd/RCS/sd.1c,v 7.1 91/02/22 09:32:19 mrose Interim $"
+.TH SD 1C "16 Jan 1909"
+.SH NAME
+sd \- Full-screen directory user agent.
+.SH SYNOPSIS
+.B sd
+.SH DESCRIPTION
+.PP
+The \fIsd\fR program implements a simple window interface to
+an X500 OSI directory.
+It is derived from an original interface called "widget".
+.PP
+
+\fISd\fR runs on most cursor-addressable terminals, providing a full-screen
+character-driven interface suitable for novice users.
+It is based on the notion of "widgets" as characterized by the 
+X-windows system and attempts to simulate button,
+dialogue and text widgets.
+Functions are invoked by pressing the initial letter of the 
+function name displayed in the widget.
+.PP
+List and Search operations within the directory are conducted relative
+to an area displayed in the \fISearch Area\fR widget.
+An instance of this could be,
+.sp
+.in +.5i
+.nf
+\*(lqGB, Brunel University.\*(rq
+.fi
+.in -.5i
+.sp
+.PP
+List returns a list of entries held below the 'Search Area'.
+In the above case,
+a call to list would return a list of departments in Brunel University.
+.PP
+A search is performed on the basis of
+a search value 
+(or attribute)
+which describes some aspect of the
+object 
+(i.e. it's name,
+location etc.)
+and a type,
+which associates the object being searched
+for with one of a given set of types
+(i.e. Person, Place, Organization, Department).
+The search value is displayed in the \fISearch For\fR field
+and it's type is shown in the \fIType\fR field.
+Any search will return a list of objects that match
+the given search value within the current search area.
+To display information on or move to a listed object the list number
+of that object must be entered.
+.PP
+An example of a simple search is shown below.
+Here the target is the directory object for
+\*(lqProfessor Polonius Plum\*(rq
+of Brunel University.
+The search is initiated with
+the search area set to \*(lqGB, Brunel University.\*(rq,
+a value \*(lqPlum\*(rq and type \*(lqPerson\*(rq,
+with the directory then returning,
+.sp
+.in +.5i
+.nf
+1 Computer Science, Polonius Plum
+.br
+2 Law, Plumley Farquarson
+.fi
+.in -.5i
+.sp
+Subsequently entering '1' would then give,
+.sp
+.in +.5i
+.nf
+commonName      - Polonius Plum
+.br
+surname         - Plum
+.br
+userClass       - staff
+.br
+rfc822Mailbox	- P.Plum@brunel.ac.uk
+.br
+description	- "ruddy faced and gat toothed"
+.fi
+.in -.5i
+.PP
+A standard search strategy in \fIsd\fR,
+and most other directory interfaces,
+is to move to a suitable search area,
+i.e. an \*(lqarea\*(rq in which the real world object is contained,
+and to then search using an appropriate value and type.
+.PP
+In order to make \fIsd\fR simple to understand
+there are no facilities for modifying entries.
+.br
+.SH "OPTIONS"
+.TP 12
+.BI \-c
+Bind to named directory system agent.
+Pod binds to your local dsa,
+if not otherwise requested.
+.TP
+.SH "SEE ALSO"
+dish(1c) widget(1c)
+.br
+\fIThe ISO Development Environment: User's Manual, Volume 5: QUIPU\fR
+.br
+ISO 9594:
+\fIInformation Processing \-\- Open Systems Interconnection \-\-
+The Directory\fR
+.SH AUTHOR
+Damanjit.Mahl@brunel.ac.uk
+.br
+Andrew.Findlay@brunel.ac.uk

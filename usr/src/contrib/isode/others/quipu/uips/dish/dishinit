@@ -1,0 +1,15 @@
+#The name of the manager of the Local DSA
+manager: c=GB@o=University College London@ou=Computer Science@cn=incads
+#Their passowrd
+password: If_only_I_could_tell
+#The part of the tree that should be searched fo users
+local: @c=GB@o=University College London@ou=Computer Science
+
+##Anything after this line is copied into the users ~/.quipurc file
+notype: acl
+notype: treestructure
+notype: masterdsa
+notype: slavedsa
+notype: objectclass
+cache_time: 30
+connect_time: 2

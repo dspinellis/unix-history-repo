@@ -1,0 +1,96 @@
+.TH RFA 1C "31 Oct 1990"
+.\" $Header: /f/osi/others/rfa/RCS/rfa.1c,v 7.2 91/02/22 09:28:11 mrose Interim $
+.\"
+.\"
+.\" $Log:	rfa.1c,v $
+.\" Revision 7.2  91/02/22  09:28:11  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.1  91/01/14  13:54:43  mrose
+.\" update
+.\" 
+Revision 1.1  91/01/04  16:27:11  ow
+Initial revision
+
+.\" 
+.SH NAME
+rfa \- remote file access and management \-\- initiator
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B rfa
+\%[\0-u\0username\0 -p\0password\0]
+\%[\0-h\0hostname\0]
+\%[\0-c\0command\0]
+\%[\0-q\0]
+.in -.5i
+.SH DESCRIPTION
+The RFA client (\fBrfa\fP) provides an interactive mode and a command mode.
+.LP
+The name of the host (as defined in the
+\fBisoentities\fP database) where the
+remote site is located can be specified using the
+\fB-h\fP option. Because the RFA client
+binds to the remote RFA server with a username that must be valid at the
+remote site, the \fB-u\fP and
+\fB-p\fP options can be used to specify the
+username and the password for the remote site. The
+\fB-q\fP option directs
+\fBrfa\fP to run in quit-mode, where only
+severe errors are reported and no user interaction is performed. Using
+the \fB-c\fP option, a command can be
+passed to rfa in command mode. This can be any command described
+below.
+.LP
+If the rfa is called without the
+\fB-c\fP option, is runs in interactive
+mode. The \fBrfa\fP provides the following
+commands. A command can be abbreviated with its unambiguous
+prefix.
+.sp
+If the \fIchown\fR, \fIchgrp\fR and \fIchmod\fR options in the rfatailor
+file are set to \fIon\fR, rfa should run under the effective uid of
+root, otherwise it will not be able to change permissions of files.
+.SH FILES
+
+.sp
+.in +.5i
+.nf
+.ta \w'\fIunregister\fR  'u
+\fIoperation\fR	\fIdescription\fR
+\fBget\fR         update a local SLAVE file according to the remote MASTER
+\fBlock\fR        request lock for a local file
+\fBunlock\fR      release lock for a local file
+\fBrlist\fR       list files in the remote directory
+\fBlist\fR        list files in a local directory
+\fBpwd\fR         print the current directory path
+\fBcd\fR          change the current directory path
+\fBmaster\fR      make a local file a MASTER version
+\fBslave\fR       make a local file a SLAVE version
+\fBunregister\fR  unregister a previously MASTER or SLAVE file
+\fBsetreq\fR      set file transfer mode to 'request'
+\fBsetauto\fR     set file transfer mode to 'automatic'
+\fBsyncdir\fR     synchronize files in a directory with the remote site
+\fBrsyncdir\fR    recursively synchronize files in a directory with the 
+		  remote site
+\fBtimesync\fR    syncronize local time with masters clock
+\fBquit,exit\fR   terminate RFA session
+.re
+.fi
+.in -.5i
+.sp
+
+.SH FILES
+.nf
+.ta \w'\*(EDisoservices  'u
+\*(ED~/.rfarc	user rcfile for RFA
+\*(EDrfatailor	common tailoring for RFA
+\*(EDisoentities	ISODE entities database
+\*(EDisobjects	ISODE objects database
+\*(EDisoservices	ISODE services database
+.re
+.fi
+.SH DIAGNOSTICS
+Obvious.
+.SH AUTHOR
+Oliver Wenzel, GMD FOKUS, Berlin

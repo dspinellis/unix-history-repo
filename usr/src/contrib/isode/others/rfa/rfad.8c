@@ -1,0 +1,50 @@
+.TH RFAD 8C "9 Nov 1990"
+.\" $Header: /f/osi/others/rfa/RCS/rfad.8c,v 7.2 91/02/22 09:28:21 mrose Interim $
+.\"
+.\"
+.\" $Log:	rfad.8c,v $
+.\" Revision 7.2  91/02/22  09:28:21  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.1  91/01/14  13:54:58  mrose
+.\" update
+.\" 
+Revision 1.1  91/01/04  16:27:23  ow
+Initial revision
+
+.\" 
+.SH NAME
+rfad \- remote file access service \-\- responder
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B \*(SDros.rfa
+\fImagic\0arguments\fR
+.in -.5i
+(under \fI\*(SDtsapd\fR\0)
+.SH DESCRIPTION
+The \fIrfad\fR server implements the remote file access service
+using remote operations services.
+.sp
+Formally,
+it is known as the \*(lqrfa\*(rq,
+responding with the \*(lqrfa\*(rq application context
+utilizing the \*(lqrfa pci\*(rq presentation context.
+.sp
+If the \fIchown\fR, \fIchgrp\fR and \fIchmod\fR options in the rfatailor
+file are set to \fIon\fR, ros.rfa should run under the effective uid of
+root, otherwise it will not be able to change permissions of files.
+.SH FILES
+.nf
+.ta \w'\*(LDisoservices  'u
+\*(EDisoentities	ISODE entities database
+\*(EDisobjects	ISODE objects database
+\*(EDisoservices	ISODE services database
+\*(LDrfatailor	rfa tailoring file
+\*(LDrfa.log	rfa logging file
+.re
+.fi
+.SH DIAGNOSTICS
+Obvious.
+.SH AUTHOR
+Oliver Wenzel, GMD Berlin, Germany

@@ -1,0 +1,5 @@
+#!/bin/sh
+echo Searching for Org Units matching $1 under: 
+showname $2
+echo "" 
+exec search -filter "ou~=$1 | ou=\*$1\*" -type description -type telephonenumber -show $2

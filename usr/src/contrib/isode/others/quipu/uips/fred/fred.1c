@@ -1,0 +1,459 @@
+.TH FRED 1C "06 Jan 1990"
+.\" $Header: /f/osi/others/quipu/uips/fred/RCS/fred.1c,v 7.10 91/02/22 09:30:39 mrose Interim $
+.\"
+.\"
+.\" $Log:	fred.1c,v $
+.\" Revision 7.10  91/02/22  09:30:39  mrose
+.\" Interim 6.8
+.\" 
+.\" Revision 7.9  90/10/29  08:10:08  mrose
+.\" touch-up
+.\" 
+.\" Revision 7.8  90/10/28  23:21:01  mrose
+.\" server
+.\" 
+.\" Revision 7.7  90/10/23  20:42:23  mrose
+.\" update
+.\" 
+.\" Revision 7.6  90/10/18  11:33:48  mrose
+.\" psi
+.\" 
+.\" Revision 7.5  90/07/09  14:41:12  mrose
+.\" sync
+.\" 
+.\" Revision 7.4  90/06/11  10:55:09  mrose
+.\" UFN
+.\" 
+.\" Revision 7.3  90/03/22  08:36:32  mrose
+.\" touch-up
+.\" 
+.\" Revision 7.2  90/03/08  08:05:04  mrose
+.\" phone
+.\" 
+.\" Revision 7.1  90/01/11  18:36:25  mrose
+.\" real-sync
+.\" 
+.\" Revision 7.0  89/11/23  22:08:54  mrose
+.\" Release 6.0
+.\" 
+.SH NAME
+fred \- a white pages user interface (FRont-End to Dish)
+.SH SYNOPSIS
+.in +.5i
+.ti -.5i
+.B fred
+\%[options]
+\%[command\0arguments\0...]
+.sp
+.ti -.5i
+.B whois
+arguments\0...
+(as in \*(lq\fBfred\0whois\fR\0smith\0\fB-org\fR\0psi\*(rq)
+.in -.5i
+.SH DESCRIPTION
+The \fIfred\fR program is a front-end to the OSI Directory,
+and in particular the \fIdish\fR\0(1c) program.
+It is most useful as an interface to the white pages service.
+.PP
+The \fIfred\fR program is meant to be similar to the WHOIS service
+familiar to most users of the network.
+There are some differences however.
+.PP
+First,
+users in the white pages are uniquely identified by
+their \fIdistinguished name\fR, e.g.,
+.sp
+.in +.5i
+.nf
+\*(lq@c=US@o=Performance Systems International@cn=Manager\*(rq
+.fi
+.in -.5i
+.sp
+In contrast,
+users of the WHOIS service are uniquely identified by their WHOIS
+handle,
+a brief key, e.g., \*(lqMTR\*(rq.
+Since distinguished names are much longer than WHOIS handles,
+\fIfred\fR maintains a list of aliases during its execution.
+When an entry for something is retrieved,
+it is assigned a numeric alias for its name.
+.PP
+Second,
+searches in the white pages are relative to an \*(lqarea\*(rq.
+The default area is set by your system administrator.
+It can be changed using the \fIarea\fR command.
+Because the white pages are distributed,
+searches occurring at higher areas are more expensive in terms of
+time,
+networking resources, etc.
+.PP
+Third,
+the white pages are highly structured.
+As such,
+you can potentially retrieve much more detailed information about an entry.
+Although the \fIfred\fR should prove useful for the majority of
+queries,
+it is purposefully limited in its searching capabilities.
+Users desiring a more powerful interface,
+should use \fIdish\fR\0(1c) directly.
+.SH EXAMPLES
+The command syntax,
+while meant to be intuitive,
+is tedious.
+Here are a few simple examples:
+.IP whois\0\*(lqsmith\*(rq
+looks for any entries with this name in the default area
+(choice of matching on the entry's surname or fullname is based on the
+value of the `namesearch' variable).
+.IP whois\0surname\0\*(lqsmith\*(rq
+looks for any entries with this surname.
+.IP whois\0fullname\0\*(lqjohn\0smith\*(rq
+looks for any entries with this fullname.
+.IP whois\0\*(lqsmith\*(rq\0\-org\0psi
+looks for any entries with this name in any organization with
+\*(lqpsi\*(rq in its name.
+This is probably the most common usage of the program.
+.IP whois\0\*(lqsmith\*(rq\0\-area\0\*(lq@c=US@o=Performance\0Systems\0International\*(rq
+could be used if you already know the \*(lqarea\*(rq that the user resides in.
+.IP whois\0smith@psi
+is identical to the preceeding example.
+.IP whois\0\*(lqsmith\*(rq\0\-area\017
+could be used if an alias were already established for this area.
+.IP whois\0@c=US@cn=Manager
+looks for the entry with this distinguished name (handle).
+.IP whois\0!7
+could be used if an alias were already established for this entry.
+.IP whois\0smith@cheetah.ca.psi.com
+looks for any entries with the given mailbox.
+.IP whois\0\-title\0operator
+looks for any entries who are operators.
+.IP whois\0-org\0*
+reports on all registered organizations (in the default geographical area).
+.IP whois\0-org\0*\0-geo\0@c=GB
+reports on all registered organizations under @c=GB.
+.PP
+Here is a somewhat more common example:
+.sp
+.in +.5i
+.nf
+fred> whois schoffstall -org psi
+Trying @c=US@o=Performance Systems International ...
+3 matches found.
+  2. Marvin Schoffstall                         marv@psi.com
+  3. Martin Schoffstall                         schoff@psi.com
+  4. Steve Schoffstall                          steve@psi.com
+
+fred> whois !3
+Martin Schoffstall (3)                          schoff@psi.com
+    ...
+.fi
+.in -.5i
+.SH COMMANDS
+On start-up, \fIfred\fR will read a file called \fBfredrc\fR in the
+ISODE system directory (usually \fB\*(ED\fR\0).
+Then,
+\fIfred\fR reads the file \fB\&.fredrc\fR in the user's home directory.
+These files, if present, contain user-preference commands.
+Afterwards,
+\fIfred\fR prompts for commands.
+.PP
+Typing INTR at the top\-level does nothing,
+but typing it twice in a row at the top\-level terminates \fIfred\fR;
+typing INTR during additional prompting causes \fIfred\fR to abort
+the command.
+.TP
+.B alias\fR\0\%[name]
+With no arguments,
+prints all aliases defined for this session.
+With an argument,
+defines a numeric alias for that name.
+.TP
+.B area\fR\0\%[\%[record-type] location]
+With no arguments,
+prints the default area used by the \fIwhois\fR command when
+consulting the white pages.
+With a single argument,
+this sets the default area.
+The distinguished value \*(lq\&.\&.\*(rq may be used to go up one
+level in the tree.
+If the value is relative (i.e., does not start with the
+\*(lq@\*(rq-sign),
+then the value is appended onto the current location.
+With two arguments,
+this sets the default area for searches of the indicated record type
+(which are described in the next section).
+This is particularly useful since it also provides heuristics to the
+\fIwhois\fR command as to the depth to be used for searching.
+.TP
+.B edit
+Invokes an editor to modify the user's entry in the white pages.
+.TP
+.B help\fR\0\%[command\0...]
+Prints help information.
+For detailed information, try \*(lqhelp\0?\*(rq.
+.TP
+.B manual
+Prints this detailed documentation about \fIfred\fR.
+.TP
+.B quit
+Terminates \fIfred\fR.
+.TP
+.B report\fR\0\%[subject]
+Allows you to enter a report that is mailed to your local white pages manager.
+.TP
+.B set\fR\0\%[variable\0\%[value]]
+Manipulates \fIfred\fR's settings:
+.sp
+.in +.5i
+.nf
+.ta \w'\fBnamesearch\fR  'u
+\fBvariable\fR	\fBfunction\fR
+debug	debug \fIfred\fR
+manager	mail-address of local white pages manager
+namesearch	type of name used for matching,
+	either \*(lqfullname\*(rq, \*(lqsurname\*(rq,
+	or \*(lqfriendly\*(rq
+pager	program to use for terminal pagination
+phone	display phone numbers in one-liner
+query	confirm two-step operations
+server	IP-address of directory assistance server
+soundex	use soundex for matching,
+	when no wildcards are present
+timelimit	maximum number of seconds to
+	spend searching
+verbose	verbose interaction
+watch	watch dialogue with \fIdish\fR
+.re
+.fi
+.in -.5i
+.TP
+.B thisis\fR\0\%[name\0\%[password]]
+Tells the white pages service who you are.
+This is only needed when you want to modify your own entry.
+Normally,
+this is determined automatically when \fIfred\fR starts.
+.TP
+.B whois\fR\0\%[arguments\0...]
+Consults the white pages.
+.SH WHOIS
+If the value of the `namesearch' variable is \*(lqfriendly\*(rq,
+then Kille's user-friendly name notation is used.
+Kille's notation is ordered but untyped,
+with components separated by commas.
+Typical names include:
+.sp
+.in +.5i
+.nf
+rose, psi
+kille, cs, ucl, gb
+L. Eagle, \*(lqSue, Grabbit and Runn\*(rq, GB
+.fi
+.in -.5i
+.sp
+Note that you don't have to know all of the components\0--\0just list
+what you know, left-to-right, starting with the person's name.
+The user-friendly searching algorithim will usually figure out what
+you mean.
+This is the preferred syntax as it is the most intuitive.
+.PP
+Otherwise,
+the syntax of the \fIwhois\fR command is similar to that provided by
+the WHOIS service:
+.sp
+.in +.5i
+.nf
+input-field \%[record-type] \%[area-designator] \%[output-control]
+.fi
+.in -.5i
+.sp
+These four components may occur in any order.
+Only the \fIinput-field\fR need be present.
+.SS "INPUT FIELD"
+This component tells the white pages what to look for.
+.TP
+.B \&.<name>\fR\0or\0\fBname\fR\0<name>
+gives the name of the target.
+.br
+.B \fBsurname\fR\0<name>
+.br
+.B \fBfullname\fR\0<name>
+.sp
+Searching for names follows these rules:
+if the \*(lq*\*(rq-sign appears at the beginning and/or end of the name,
+then wildcard-style matching is used:
+the \*(lq*\*(rq-sign matches zero or more characters at the beginning
+or end of a name.
+Otherwise,
+if soundex has been enabled (set the variable `soundex' to `on'),
+then imprecise matching occurs according to a Soundex algorithm.
+Otherwise,
+if searching is to occur for a person's surname,
+then a case-insensitive match is used.
+Finally,
+as a last resort,
+\fIfred\fR will force a rather liberal wildcard-style match.
+.sp
+For compatibility with the WHOIS service,
+an input field of \*(lqNAME.\*(rq is equivalent to \*(lqNAME*\*(rq
+(i.e., a partial match for names having the given prefix).
+Similarly,
+an input field of \*(lq*NAME\*(rq is equivalent to
+\*(lqNAME\0expand\*(rq.
+Thus, to have wildcard matching at the beginning of the name,
+use two \*(lq*\*(rq-signs,
+e.g., \*(lq**inc\*(rq matches names ending in \*(lqinc\*(rq.
+(A terrible hack, but that's the price one pays to be consistent with the
+WHOIS service.)
+.TP
+.B !<handle>\fR\0or\0\fBhandle\fR\0<handle>
+gives the unique handle (distinguished name) of the target.
+This may be an alias rather than a distinguished name.
+.TP
+.B mailbox\fR\0<mailbox>
+gives the mailbox of the target.
+.PP
+If a keyword is not given,
+then \fIfred\fR attempts to intuit which kind of input field is being provided.
+In most cases,
+\fIfred\fR will treat field as a name,
+unless it contains the \*(lq@\*(rq-sign,
+which makes it either a handle or a mailbox.
+.SS "RECORD TYPE"
+This component tells the white pages what kind of entry to look for.
+.sp
+.in +.5i
+.nf
+\fIperson\fR or \fI-title\fR\0NAME,
+\fIorganization\fR,
+\fIunit\fR (a division under an organization),
+\fIrole\fR (a role within an organization),
+\fIlocality\fR, or
+\fIdsa\fR (a white pages server).
+.fi
+.in -.5i
+.sp
+If this component is not present,
+\fIfred\fR will not limit its search to any particular kind of entry.
+.SS "AREA DESIGNATOR"
+This component takes one of two forms.
+The most common form is one of the switches:
+.sp
+.in +.5i
+.nf
+\fI-org\fR (short for \fI-organization\fR\0),
+\fI-unit\fR, or,
+\fI-locality\fR,
+.fi
+.in -.5i
+.sp
+followed by a name.
+For example,
+.sp
+.in +.5i
+.nf
+\&\-org psi
+.fi
+.in -.5i
+.sp
+tells \fIfred\fR to limit the search to those organizations whose name
+contains \*(lqpsi\*(rq.
+.PP
+In addition
+the switch `-geo' followed by a location in the white pages may be
+used to override the default area for searching for these objects.
+For example,
+.sp
+.in +.5i
+.nf
+\&\-org ucl \&\-area @c=GB
+.fi
+.in -.5i
+.sp
+tells \fIfred\fR to limit the search to those organizations whose name
+contains \*(lqucl\*(rq that reside directly under @c=GB.
+.PP
+In the second form,
+the area designator consists of the switch \fI-area\fR followed by a
+location in the white pages;
+e.g.,
+.sp
+.in +.5i
+.nf
+\&\-area \*(lq@c=US@o=Performance Systems International\*(rq
+.fi
+.in -.5i
+.sp
+Note the use of double-quotes to make the string following area appear
+as a single argument.
+If an alias has already been established for this location,
+then the number of the alias can be used instead.
+.SS "OUTPUT CONTROL"
+.TP
+.B expand\fR\0or\0\fB*\fR
+give a detailed listing and show children of matched entries.
+.TP
+.B \~
+The opposite of \fIexpand\fR.
+(Included for compatibility with the WHOIS service.)
+.TP
+.B subdisplay\fR\0or\0\fB%\fR
+give a one-line listing and show children of matched entries.
+.TP
+.B full\fR\0or\0\fB|\fR
+give a detailed listing,
+even on ambiguous matches
+.TP
+.B summary\fR\0or\0\fB$\fR
+give a one-line listing,
+even on unique matches.
+.SH OPTIONS
+.TP
+.B \-f
+Inhibits reading of the user's \fB\&.fredrc\fR on startup.
+.TP
+.B \-v
+Sets \fBverbose\fR (default for interactive use).
+.TP
+.B \-w
+Sets \fBwatch\fR.
+.SH FILES
+.nf
+.ta \w'\*(EDdsaptailor  'u
+\*(EDdsaptailor	system QUIPU tailoring file
+$HOME/\&.quipurc	user's QUIPU tailoring file
+\*(EDfredrc	system runcom file
+$HOME/\&.fredrc	user's runcom file
+.re
+.fi
+.SH "SEE ALSO"
+dish(1c),
+.br
+\fIPSI White Pages Pilot Project: User's Guide\fR,
+.br
+\fIUsing the OSI Directory to achieve User Friendly Naming\fR,
+.br
+\fIThe ISO Development Environment: User's Manual--Volume 5: QUIPU\fR
+.SH DIAGNOSTICS
+All obvious.
+.SH AUTHOR
+Marshall T. Rose,
+Performance Systems International
+.SH BUGS
+The emulation of the old \fIwhois\fR command format is imperfect.
+Most notably,
+you need to quote names so they appear as a single token to the \fIfred\fR.
+For example:
+.sp
+.in +.5i
+% fred whois\0\*(lqDal\0Santo\*(rq
+.in -.5i
+.sp
+won't work,
+whilst
+.sp
+.in +.5i
+% fred whois\0'\*(lqDal\0Santo\*(rq'
+.in -.5i
+.sp
+will work (the shell strips off one layer of quoting).
+That's progress for you.
