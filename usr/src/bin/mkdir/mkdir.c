@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)mkdir.c	4.4 (Berkeley) %G%";
+static char *sccsid = "@(#)mkdir.c	4.5 (Berkeley) %G%";
 /*
  * make directory
  */
@@ -10,7 +10,7 @@ main(argc, argv)
 	int errors = 0;
 
 	if (argc < 2) {
-		fprintf(stderr, "mkdir: arg count\n");
+		fprintf(stderr, "usage: %s directory ...\n", argv[0]);
 		exit(1);
 	}
 	while (--argc)
