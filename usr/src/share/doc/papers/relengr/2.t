@@ -1,4 +1,4 @@
-.\"	@(#)2.t	1.4	(Copyright 1989 M. K. McKusick)	89/02/23
+.\"	@(#)2.t	1.5	(Copyright 1989 M. K. McKusick)	89/02/23
 .NH
 System Development
 .PP
@@ -105,5 +105,5 @@ the integration cost for many vendors will be too high,
 causing them to ignore the releases.
 Finally,
 the process of release engineering is long and tedious.
-Frequent releases slows the rate of development and
+Frequent releases slow the rate of development and
 causes undue tedium to the staff.

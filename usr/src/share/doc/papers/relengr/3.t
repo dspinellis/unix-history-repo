@@ -1,4 +1,4 @@
-.\"	@(#)3.t	1.4	(Copyright 1989 M. K. McKusick)	89/02/23
+.\"	@(#)3.t	1.5	(Copyright 1989 M. K. McKusick)	89/02/23
 .NH
 System Release
 .PP
@@ -26,7 +26,7 @@ and needs wider testing to find more obscure problems.
 For example, \*(b3 alpha was distributed to about fifteen
 sites, while \*(b3 beta ran at more than a hundred.
 .NH 2
-The Alpha Distribution
+Alpha Distribution Development
 .PP
 The first step in creating an alpha distribution is to evaluate the
 existing state of the system and to decide what software should be
@@ -112,7 +112,7 @@ These sites are usually composed of groups that are contributing
 software to the distribution or groups that have a particular expertise
 with some portion of the system.
 .NH 2
-The Beta Distribution
+Beta Distribution Development
 .PP
 After the alpha tape is created,
 the distribution filesystem is mounted read-only.
@@ -228,7 +228,7 @@ contributors themselves by logging directly into the master machine.
 After the stream of bug reports has slowed down
 to a reasonable level,
 .SM CSRG
-begins a carefully review of all the changes to the
+begins a careful review of all the changes to the
 system since the previous release.
 The review is done by running a recursive
 .PN diff
@@ -290,7 +290,7 @@ as spurious changes made after the system has been
 .PN diff ed
 are unlikely to be caught.
 .NH 2
-The Final Distribution
+Final Distribution Development
 .PP
 The beta distribution goes to more sites than the
 alpha distribution for three main reasons.
@@ -321,7 +321,7 @@ and to ensure that everything affected by the change is rebuilt and tested.
 Thus, a change to a C library routine requires that the entire
 system be rebuilt.
 .PP
-During this period the documentation is all printed out and proofread.
+During this period, the documentation is all printed out and proofread.
 As minor changes are made to the manual pages and documentation,
 the affected pages must be reprinted.
 .PP
