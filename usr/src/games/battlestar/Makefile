@@ -4,7 +4,7 @@
 # the terms of the Berkeley Software License Agreement.
 #
 
-# @(#)Makefile	1.6 %G%
+# @(#)Makefile	1.7 %G%
 
 CFLAGS=		-O
 OBJS=		battlestar.o com1.o com2.o com3.o com4.o com5.o com6.o com7.o \
@@ -22,6 +22,8 @@ MAN=		$(DESTDIR)/usr/man/man6/battlestar.6
 
 battlestar: $(OBJS)
 	cc -o battlestar $(OBJS) $(LIBS)
+
+$(OBJS): externs.h
 
 lint: $(CFILES) 
 	lint $(LINTFLAGS) $(CFILES) $(LIBS) 
