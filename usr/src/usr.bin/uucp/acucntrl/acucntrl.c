@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)acucntrl.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)acucntrl.c	5.8 (Berkeley) %G%";
 #endif
 
 /*  acucntrl - turn around tty line between dialin and dialout
@@ -46,7 +46,6 @@ static char sccsid[] = "@(#)acucntrl.c	5.7 (Berkeley) %G%";
 /* #define SENSECARRIER */
 
 #include "uucp.h"
-#ifdef DIALINOUT
 #include <sys/buf.h>
 #include <signal.h>
 #include <sys/conf.h>
@@ -729,4 +728,3 @@ prefix(s1, s2)
 			return (1);
 	return (c == '\0');
 }
-#endif DIALINOUT
