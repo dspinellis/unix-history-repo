@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)dprog.c	4.3	(Berkeley)	89/05/11";
+static char sccsid[] = "@(#)dprog.c	4.4	(Berkeley)	91/03/01";
 #endif not lint
 
 /*
@@ -336,7 +336,8 @@ getargc()
 				nflag=0;
 				wordf=fopen(filename,"r");
 				if(wordf == NULL){
-					fprintf("diction can't open %s\n",filename);
+					fprintf(stderr,
+					    "diction can't open %s\n",filename);
 					exit(2);
 				}
 				return(getc(wordf));
