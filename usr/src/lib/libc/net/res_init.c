@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_init.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	5.8 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -93,11 +93,9 @@ res_init()
 		(void) fclose(fp);
 	}
 	if (_res.defdname[0] == 0) {
-		if (gethostname(buf, sizeof(_res.defdname)) == -1)
-			return(-1);
-		if ((cp = index(buf, '.')) == NULL)
-			return(-1);
-		(void)strcpy(_res.defdname, cp + 1);
+		if (gethostname(buf, sizeof(_res.defdname)) == 0 &&
+		    (cp = index(buf, '.')))
+			(void)strcpy(_res.defdname, cp + 1);
 	}
 
 #ifdef DEBUG
