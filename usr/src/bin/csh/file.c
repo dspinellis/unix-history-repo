@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)file.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)file.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #ifdef FILEC
@@ -19,6 +19,12 @@ static char sccsid[] = "@(#)file.c	5.16 (Berkeley) %G%";
 #include <pwd.h>
 #include <stdlib.h>
 #include <unistd.h>
+#if __STDC__
+# include <stdarg.h>
+#else
+# include <varargs.h>
+#endif
+
 #include "csh.h"
 #include "extern.h"
 
@@ -75,7 +81,6 @@ static void
 setup_tty(on)
     int     on;
 {
-#ifdef TERMIOS
     static struct termios tchars;
 
     if (on) {
@@ -93,29 +98,6 @@ setup_tty(on)
 	tchars.c_cc[VEOL] = _POSIX_VDISABLE;
 	(void) tcsetattr(SHIN, TCSANOW, &tchars);
     }
-#else
-    struct sgttyb sgtty;
-    static struct tchars tchars;/* INT, QUIT, XON, XOFF, EOF, BRK */
-
-    if (on) {
-	(void) ioctl(SHIN, TIOCGETC, (ioctl_t) & tchars);
-	tchars.t_brkc = ESC;
-	(void) ioctl(SHIN, TIOCSETC, (ioctl_t) & tchars);
-	/*
-	 * This must be done after every command: if the tty gets into raw or
-	 * cbreak mode the user can't even type 'reset'.
-	 */
-	(void) ioctl(SHIN, TIOCGETP, (ioctl_t) & sgtty);
-	if (sgtty.sg_flags & (RAW | CBREAK)) {
-	    sgtty.sg_flags &= ~(RAW | CBREAK);
-	    (void) ioctl(SHIN, TIOCSETP, (ioctl_t) & sgtty);
-	}
-    }
-    else {
-	tchars.t_brkc = -1;
-	(void) ioctl(SHIN, TIOCSETC, (ioctl_t) & tchars);
-    }
-#endif
 }
 
 /*
@@ -124,7 +106,6 @@ setup_tty(on)
 static void
 back_to_col_1()
 {
-#ifdef TERMIOS
     struct termios tty, tty_normal;
     int     omask;
 
@@ -137,19 +118,6 @@ back_to_col_1()
     (void) write(SHOUT, "\r", 1);
     (void) tcsetattr(SHOUT, TCSANOW, &tty_normal);
     (void) sigsetmask(omask);
-#else
-    struct sgttyb tty, tty_normal;
-    int     omask;
-
-    omask = sigblock(sigmask(SIGINT));
-    (void) ioctl(SHIN, TIOCGETP, (ioctl_t) & tty);
-    tty_normal = tty;
-    tty.sg_flags &= ~CRMOD;
-    (void) ioctl(SHIN, TIOCSETN, (ioctl_t) & tty);
-    (void) write(SHOUT, "\r", 1);
-    (void) ioctl(SHIN, TIOCSETN, (ioctl_t) & tty_normal);
-    (void) sigsetmask(omask);
-#endif
 }
 
 /*
@@ -159,7 +127,6 @@ static void
 pushback(string)
     Char   *string;
 {
-#ifdef TERMIOS
     register Char *p;
     struct termios tty, tty_normal;
     int     omask;
@@ -175,23 +142,6 @@ pushback(string)
 	(void) ioctl(SHOUT, TIOCSTI, (ioctl_t) & c);
     (void) tcsetattr(SHOUT, TCSANOW, &tty_normal);
     (void) sigsetmask(omask);
-#else
-    register Char *p;
-    struct sgttyb tty, tty_normal;
-    int     omask;
-    char    c;
-
-    omask = sigblock(sigmask(SIGINT));
-    (void) ioctl(SHOUT, TIOCGETP, (ioctl_t) & tty);
-    tty_normal = tty;
-    tty.sg_flags &= ~ECHO;
-    (void) ioctl(SHOUT, TIOCSETN, (ioctl_t) & tty);
-
-    for (p = string; c = *p; p++)
-	(void) ioctl(SHOUT, TIOCSTI, (ioctl_t) & c);
-    (void) ioctl(SHOUT, TIOCSETN, (ioctl_t) & tty_normal);
-    (void) sigsetmask(omask);
-#endif
 }
 
 /*
@@ -336,17 +286,11 @@ tilde(new, old)
 static void
 retype()
 {
-#ifdef TERMIOS
     struct termios tty;
 
     (void) tcgetattr(SHOUT, &tty);
     tty.c_lflag |= PENDIN;
     (void) tcsetattr(SHOUT, TCSANOW, &tty);
-#else
-    int     pending_input = LPENDIN;
-
-    (void) ioctl(SHOUT, TIOCLBIS, (ioctl_t) & pending_input);
-#endif
 }
 
 static void
