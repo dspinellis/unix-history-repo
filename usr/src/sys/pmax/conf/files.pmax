@@ -1,5 +1,5 @@
 pmax/pmax/autoconf.c		standard
-pmax/pmax/clock.c		standard device-driver
+pmax/pmax/clock.c		standard
 pmax/pmax/conf.c		standard
 pmax/pmax/cons.c		standard
 pmax/pmax/fp.s			standard
