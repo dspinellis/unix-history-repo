@@ -1,35 +1,73 @@
-.\" Copyright (c) 1987 The Regents of the University of California.
+.\" Copyright (c) 1980, 1991 Regents of the University of California.
 .\" All rights reserved.
 .\"
-.\" %sccs.include.proprietary.roff%
+.\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)time.1	6.3 (Berkeley) %G%
+.\"     @(#)time.1	6.4 (Berkeley) %G%
 .\"
-.TH TIME 1 ""
-.UC 4
-.SH NAME
-time \- time a command
-.SH SYNOPSIS
-.B time
-[-l] command
-.SH DESCRIPTION
-The given command is executed; after it is complete, \fItime\fP
-prints the elapsed time during the command, the time spent in the
-system, and the time spent in execution of the command.  Times are
-reported in seconds.  If the \fB-l\fP option is supplied, the
-contents of the \fIrusage\fP structure are printed as well.
-.PP
-On a PDP-11, the execution time can depend on what kind of memory
-the program happens to land in; the user time in MOS is often half
-what it is in core.
-.PP
-The times are printed on the diagnostic output stream, ``stderr''.
-.PP
-\fITime\fP is a built-in command to \fIcsh\fP(1), with a much different
-syntax.  This command is available as ``/bin/time'' to \fIcsh\fP users.
-.SH BUGS
-Elapsed time is accurate to the second, while the CPU times are measured
-to the 100th second.  Thus the sum of the CPU times can be up to a second
-larger than the elapsed time.
-.SH "SEE ALSO"
-include/sys/h/resource.h
+.Dd 
+.Dt TIME 1
+.Os BSD 4
+.Sh NAME
+.Nm time
+.Nd time command execution
+.Sh SYNOPSIS
+.Nm time
+.Op Fl l
+.Ar command
+.Sh DESCRIPTION
+The
+.Nm time
+utility
+executes and
+times
+.Ar command
+by initiating a timer and passing the
+.Ar command
+to the
+shell.
+After the
+.Ar command
+finishes,
+.Nm time
+writes to the standard error stream,
+(in seconds): 
+the total time elapsed,
+time consumed by system overhead,
+and the time used to execute the
+.Ar command
+process.
+.Pp
+Available options:
+.Bl -tag -width Ds
+.It Fl l
+The contents of the
+.Em rusage
+structure are printed as well.
+.El
+.Pp
+The
+.Xr csh 1
+has its own and syntactically different builtin version of
+.Nm time.
+The command described here
+is available as
+.Pa /bin/time
+to
+.Xr csh
+users.
+.Sh BUGS
+The granularity of seconds on micro processors is crude and
+can result in times being reported for CPU usage which are too large by
+a second.
+.Sh SEE ALSO
+.Xr csh 1
+.Sh FILES
+.Bl -tag -width /usr/include/sys/h/resource.h -compact
+.It Pa /usr/include/sys/h/resource.h
+.El
+.Sh HISTORY
+A
+.Nm
+command appeared in
+.At v6 .
