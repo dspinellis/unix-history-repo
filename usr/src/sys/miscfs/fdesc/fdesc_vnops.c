@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)fdesc_vnops.c	8.3 (Berkeley) %G%
+ *	@(#)fdesc_vnops.c	8.4 (Berkeley) %G%
  *
  * $Id: fdesc_vnops.c,v 1.12 1993/04/06 16:17:17 jsp Exp $
  */
@@ -60,7 +60,7 @@ loop:
 	if (ix >= 0 && ix < FD_MAX) {
 		nvpp = &fdescvp[ix];
 		if (*nvpp) {
-			if (vget(*nvpp))
+			if (vget(*nvpp, 1))
 				goto loop;
 			VOP_UNLOCK(*nvpp);
 			*vpp = *nvpp;
