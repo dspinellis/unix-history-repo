@@ -1,5 +1,5 @@
 /*
-char id_util[] = "@(#)util.c	1.4";
+char id_util[] = "@(#)util.c	1.5";
  *
  * utility routines
  */
@@ -31,20 +31,37 @@ canseek(f) FILE *f; /*SYSDEP*/
 
 nowreading(x) unit *x;
 {
-	long loc;
-	x->uwrt = NO;
-	loc=ftell(x->ufd);
-	freopen(x->ufnm,"r",x->ufd);
-	fseek(x->ufd,loc,0);
+	return(now_acc(x,"r"));
 }
 
 nowwriting(x) unit *x;
 {
+	return(now_acc(x,"a"));
+}
+
+now_acc(x,mode)
+unit *x; char *mode;
+{
 	long loc;
-	x->uwrt = YES;
-	loc=ftell(x->ufd);
-	freopen(x->ufnm,"a",x->ufd);
-	fseek(x->ufd,loc,0);
+
+	if (!x->ufnm)
+	{
+		errno = EBADF;
+		return(NO);
+	}
+	if (x->useek)
+		loc=ftell(x->ufd);
+	if (freopen(x->ufnm,mode,x->ufd))
+	{
+		if (x->useek)
+			fseek(x->ufd,loc,0);
+		x->uwrt = (*mode=='a');
+		return(YES);
+	}
+	if (x->ufd = fopen(x->ufnm, (*mode=='a')? "r":"a"))
+		if (x->useek)
+			fseek(x->ufd,loc,0);
+	return(NO);
 }
 
 g_char(a,alen,b) char *a,*b; ftnlen alen;
