@@ -1,4 +1,10 @@
-/*	ip_output.c	6.7	85/03/18	*/
+/*
+ * Copyright (c) 1982 Regents of the University of California.
+ * All rights reserved.  The Berkeley software License Agreement
+ * specifies the terms and conditions for redistribution.
+ *
+ *	@(#)ip_output.c	6.8 (Berkeley) %G%
+ */
 
 #include "param.h"
 #include "mbuf.h"
@@ -85,6 +91,21 @@ ip_output(m, opt, ro, flags)
 	if (ro->ro_rt->rt_flags & (RTF_GATEWAY|RTF_HOST))
 		dst = (struct sockaddr_in *)&ro->ro_rt->rt_gateway;
 gotif:
+#ifndef notdef
+	/*
+	 * If source address not specified yet, use address
+	 * of outgoing interface.
+	 */
+	if (ip->ip_src.s_addr == INADDR_ANY) {
+		register struct in_ifaddr *ia;
+
+		for (ia = in_ifaddr; ia; ia = ia->ia_next)
+			if (ia->ia_ifp == ifp) {
+				ip->ip_src = IA_SIN(ia)->sin_addr;
+				break;
+			}
+	}
+#endif
 	/*
 	 * Look for broadcast address and
 	 * and verify user is allowed to send
