@@ -6,7 +6,7 @@
 Please mail all suggestions and additions to <FreeBSD-FAQ@freefall.cdrom.com>
 
 
-Revision: $Id: FreeBSD.FAQ,v 1.31 1994/06/11 17:58:17 gclarkii Exp $
+Revision: $Id: FreeBSD.FAQ,v 1.32 1994/06/11 18:00:34 gclarkii Exp $
 
 All entries marked <CURRENT> are for FreeBSD-current.  All other entries
 are for both version 1.1 and current.
@@ -640,6 +640,12 @@ The part you are concerned with are the major and minor device numbers.
 
 3. If /dev/vga exists that it is a symlink to /dev/ttyv0.
 
+5.9:  I've had a couple of system panics and would like to be able
+      browse the system dumps.  The normal kernel is stripped and
+      I don't want to run a bloated kernel.  What can I do?
+
+Please retrieve the file FAQ/OTHER-FAQS/FreeBSD.kdebug.FAQ.  This
+file covers the instructions for looking at system dumps.
 
 
 6 Kernel Configuration
