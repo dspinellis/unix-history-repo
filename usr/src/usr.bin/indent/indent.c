@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)indent.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)indent.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*-
@@ -82,8 +82,8 @@ main(argc, argv)
 
 
     /*-----------------------------------------------*\
-|		      INITIALIZATION		      |
-\*-----------------------------------------------*/
+    |		      INITIALIZATION		      |
+    \*-----------------------------------------------*/
 
 
     ps.p_stack[0] = stmt;	/* this is the parser's stack */
@@ -93,8 +93,6 @@ main(argc, argv)
     combuf[0] = codebuf[0] = labbuf[0] = ' ';	/* set up code, label, and
 						 * comment buffers */
     combuf[1] = codebuf[1] = labbuf[1] = '\0';
-    ps.else_if = 1;		/* Default else-if special processing to
-				 * on */
     s_lab = e_lab = labbuf + 1;
     s_code = e_code = codebuf + 1;
     s_com = e_com = combuf + 1;
@@ -121,37 +119,23 @@ main(argc, argv)
 
 
     /*--------------------------------------------------*\
-|   COMMAND LINE SCAN
-\*--------------------------------------------------
-*/
+    |   COMMAND LINE SCAN
+    \*--------------------------------------------------*/
 
-    max_col = 78;		/* -l78 */
-    lineup_to_parens = 1;	/* -lp */
-    ps.ljust_decl = 0;		/* -ndj */
-    ps.com_ind = 33;		/* -c33 */
-    star_comment_cont = 1;	/* -sc */
-    ps.ind_size = 8;		/* -i8 */
-    verbose = 0;
-    ps.decl_indent = 16;	/* -di16 */
-    ps.indent_parameters = 1;	/* -ip */
-    ps.decl_com_ind = 0;	/* if this is not set to some positive
-				 * value by an arg, we will set this equal
-				 * to ps.com_ind */
-    btype_2 = 1;		/* -br */
-    cuddle_else = 1;		/* -ce */
-    ps.unindent_displace = 0;	/* -d0 */
-    ps.case_indent = 0;		/* -cli0 */
-    format_col1_comments = 1;	/* -fc1 */
-    procnames_start_line = 1;	/* -psl */
-    proc_calls_space = 0;	/* -npcs */
-    comment_delimiter_on_blankline = 1;	/* -cdb */
-    ps.leave_comma = 1;		/* -nbc */
+    set_defaults();
 
+    /*
+     * Unfortunately, we must look for -npro here because the profiles
+     * are read before the command line arguments.
+     */
     for (i = 1; i < argc; ++i)
 	if (strcmp(argv[i], "-npro") == 0)
 	    break;
     if (i >= argc)
 	set_profile();
+
+    input = 0;			/* cancel -st if it was in the profiles, */
+    output = 0;			/* as it doesn't make any sense there. */
 
     for (i = 1; i < argc; ++i) {
 
@@ -163,33 +147,33 @@ main(argc, argv)
 		in_name = argv[i];	/* remember name of input file */
 		input = fopen(in_name, "r");
 		if (input == 0) {	/* check for open error */
-		    printf("Can't open %s\n", argv[i]);
-		    exit();
+		    fprintf(stderr, "indent: can't open %s\n", argv[i]);
+		    exit(1);
 		}
 		continue;
 	    } else if (output == 0) {	/* we have the output file */
 		out_name = argv[i];	/* remember name of output file */
 		if (strcmp(in_name, out_name) == 0) {	/* attempt to overwrite
 							 * the file */
-		    printf("Input and output files must be different\n");
-		    exit();
+		    fprintf(stderr, "indent: input and output files must be different\n");
+		    exit(1);
 		}
 		output = fopen(out_name, "w");
 		if (output == 0) {	/* check for create error */
-		    printf("Can't create %s\n", argv[i]);
-		    exit();
+		    fprintf(stderr, "indent: can't create %s\n", argv[i]);
+		    exit(1);
 		}
 		continue;
 	    }
-	    printf("Unknown parameter: %s\n", argv[i]);
-	    exit();
+	    fprintf(stderr, "indent: unknown parameter: %s\n", argv[i]);
+	    exit(1);
 	} else
 	    set_option(argv[i]);
 
     }				/* end of for */
     if (input == 0) {
 	printf("Usage: indent file [ outfile ] [ options ]\n");
-	exit();
+	exit(1);
     }
     if (output == 0)
 	if (troff)
@@ -198,13 +182,20 @@ main(argc, argv)
 	    out_name = in_name;
 	    bakcopy();
 	}
+
+    /*
+     * Adjust parameters that are out of range, or set defaults if
+     * no values were specified.
+     */
     if (ps.com_ind <= 1)
 	ps.com_ind = 2;		/* dont put normal comments before column
 				 * 2 */
     if (block_comment_max_col <= 0)
 	block_comment_max_col = max_col;
     if (ps.decl_com_ind <= 0)	/* if not specified by user, set this */
-	ps.decl_com_ind = ps.ljust_decl ? (ps.com_ind <= 10 ? 2 : ps.com_ind - 8) : ps.com_ind;
+	ps.decl_com_ind = ps.ljust_decl ? ps.com_ind - 8 : ps.com_ind;
+    if (ps.decl_com_ind <= 1)
+	ps.decl_com_ind = 2;
     if (continuation_indent == 0)
 	continuation_indent = ps.ind_size;
     fill_buffer();		/* get first batch of stuff into input
@@ -319,7 +310,7 @@ main(argc, argv)
 									 * overflow */
 				diag(1, "Internal buffer overflow - Move big comment from right after if, while, or whatever.");
 				fflush(output);
-				exit();
+				exit(1);
 			    }
 			}
 			*sc_end++ = '/';	/* add ending slash */
@@ -394,7 +385,7 @@ check_type:
 		       (1.0 * ps.com_lines) / code_lines);
 	    }
 	    fflush(output);
-	    exit();
+	    exit(ps.tos <= 1);
 	}
 	if (
 	    (type_code != comment) &&
@@ -441,8 +432,8 @@ check_type:
 
 
 	/*----------------------------------------------------*\
-|   do switch on type of token scanned
-\*----------------------------------------------------*/
+	|   do switch on type of token scanned
+	\*----------------------------------------------------*/
 	switch (type_code) {	/* now, decide what to do with the token */
 
 	    case form_feed:	/* found a form feed in line */
@@ -717,7 +708,7 @@ check_type:
 		if (ps.in_parameter_declaration)
 		    prefix_blankline_requested = 0;
 
-		if (ps.p_l_follow > 0) {	/* check for preceeding
+		if (ps.p_l_follow > 0) {	/* check for preceding
 						 * unbalanced parens */
 		    diag(1, "Unbalanced parens");
 		    ps.p_l_follow = 0;
@@ -1057,260 +1048,54 @@ check_type:
 };
 
 /*
- * copy input file to backup file if in_name is /blah/blah/blah/file, then
- * backup file will be ".Bfile" then make the backup file the input and
- * original input file the output 
+ * copy input file to backup file.  If in_name is /blah/blah/blah/file, then
+ * backup file will be "file.BAK".  Then make the backup file the input and
+ * original input file the output.
  */
 bakcopy()
 {
     int         n,
                 bakchn;
-    char        buff[512];
+    char        buff[BUFSIZ];
     register char *p;
+    char *rindex();
 
-    /* construct file name .Bfile */
-    for (p = in_name; *p; p++);	/* skip to end of string */
-    while (p > in_name && *p != '/')	/* find last '/' */
-	p--;
-    if (*p == '/')
+    if ((p = rindex(in_name, '/')) != NULL)
 	p++;
+    else
+	p = in_name;
     sprintf(bakfile, "%s.BAK", p);
 
     /* copy in_name to backup file */
     bakchn = creat(bakfile, 0600);
     if (bakchn < 0) {
-	printf("can't create backup file \"%s\"\n", bakfile);
-	exit();
+	fprintf(stderr, "indent: can't create backup file \"%s\"\n", bakfile);
+	exit(1);
     }
-    while (n = read(fileno(input), buff, 512))
-	write(bakchn, buff, n);
+    while ((n = read(fileno(input), buff, sizeof buff)) > 0)
+	if (write(bakchn, buff, n) != n) {
+	    fprintf(stderr, "indent: error writing backup file \"%s\"\n",
+		bakfile);
+	    exit(1);
+	}
+    if (n < 0) {
+	fprintf(stderr, "indent: error reading input file \"%s\"\n", in_name);
+	exit(1);
+    }
     close(bakchn);
     fclose(input);
 
     /* re-open backup file as the input file */
     input = fopen(bakfile, "r");
-    if (input < 0) {
-	printf("can't re-open backup file\n");
-	exit();
+    if (input == NULL) {
+	fprintf(stderr, "indent: can't re-open backup file\n");
+	exit(1);
     }
     /* now the original input file will be the output */
     output = fopen(in_name, "w");
-    if (output == 0) {
-	printf("can't create %s\n", in_name);
+    if (output == NULL) {
+	fprintf(stderr, "indent: can't create %s\n", in_name);
 	unlink(bakfile);
-	exit();
+	exit(1);
     }
-}
-
-
-char       *param_start;
-
-eqin(s1, s2)
-    register char *s1;
-    register char *s2;
-{
-    while (*s1) {
-	if (*s1++ != *s2++)
-	    return (false);
-    }
-    param_start = s2;
-    return (true);
-}
-
-
-set_option(arg)
-    char       *arg;
-{
-    if (!eqin("-npro", arg))
-	if (eqin("-lc", arg))	/* comment line length */
-	    block_comment_max_col = atoi(param_start);
-	else if (eqin("-lp", arg))
-	    lineup_to_parens = 1;
-	else if (eqin("-nlp", arg))
-	    lineup_to_parens = 0;
-	else if (eqin("-l", arg))	/* line length */
-	    max_col = atoi(param_start);
-	else if (eqin("-psl", arg))	/* if true, the names of
-					 * procedures being defined get
-					 * placed in column 1 (ie. a
-					 * newline is placed between the
-					 * type of the procedure and its
-					 * name) */
-	    procnames_start_line = 1;
-	else if (eqin("-npsl", arg))
-	    procnames_start_line = 0;
-	else if (eqin("-fc1", arg))
-	    format_col1_comments = 1;
-	else if (eqin("-nfc1", arg))
-	    format_col1_comments = 0;
-	else if (eqin("-pcs", arg))	/* If true, procedure calls look
-					 * like: foo(bar) rather than foo
-					 * (bar) */
-	    proc_calls_space = 1;
-	else if (eqin("-npcs", arg))
-	    proc_calls_space = 0;
-	else if (eqin("-ip", arg))	/* indent parameters */
-	    ps.indent_parameters = 1;
-	else if (eqin("-nip", arg))	/* no indent parameters */
-	    ps.indent_parameters = 0;
-	else if (eqin("-cli", arg)) {	/* case label indent */
-	    extern float atof();
-
-	    ps.case_indent = atof(param_start);
-	}
-	else if (eqin("-ci",arg))
-	    continuation_indent = atoi(param_start);
-	else if (eqin("-cdb", arg))	/* comment delimiters should be on
-					 * lines by themselves */
-	    comment_delimiter_on_blankline = 1;
-	else if (eqin("-ncdb", arg))	/* comment delimiters shouldnt be
-					 * on lines by themselves */
-	    comment_delimiter_on_blankline = 0;
-	else if (eqin("-i", arg))	/* indent width */
-	    ps.ind_size = atoi(param_start);
-	else if (eqin("-cd", arg))	/* indent for comments on
-					 * declarations */
-	    ps.decl_com_ind = atoi(param_start);
-	else if (eqin("-ce", arg))	/* true iff 'else' should cuddle
-					 * up to '}' */
-	    cuddle_else = 1;
-	else if (eqin("-c", arg))	/* comment indent */
-	    ps.com_ind = atoi(param_start);
-	else if (eqin("-v", arg))	/* spew out rubbish */
-	    verbose = true;
-	else if (eqin("-nv", arg))	/* keep quiet */
-	    verbose = false;
-	else if (eqin("-dj", arg))
-	    ps.ljust_decl = true;
-	else if (eqin("-ndj", arg))
-	    ps.ljust_decl = false;
-	else if (eqin("-nbc", arg))	/* dont break after commas in
-					 * declarations */
-	    ps.leave_comma = true;
-	else if (eqin("-bc", arg))	/* break after commas in
-					 * declarations */
-	    ps.leave_comma = false;
-	else if (eqin("-di", arg))	/* indent from type to varname in
-					 * a declaration */
-	    ps.decl_indent = atoi(param_start);
-	else if (eqin("-d", arg))
-	    ps.unindent_displace = atoi(param_start);
-	else if (eqin("-br", arg))
-	    btype_2 = true;
-	else if (eqin("-bl", arg))
-	    btype_2 = false;
-	else if (eqin("-st", arg)) {	/* input and output on standard IO */
-	    if (input == 0)
-		input = stdin;
-	    if (output == 0)
-		output = stdout;
-	} else if (eqin("-ei", arg))	/* else-ifs should be stuck
-					 * together */
-	    ps.else_if = 1;
-	else if (eqin("-nei", arg))	/* else-ifs should be broken apart */
-	    ps.else_if = 0;
-	else if (eqin("-nce", arg))	/* else should always start a line */
-	    cuddle_else = 0;
-	else if (eqin("-sc", arg))	/* comment continuations should
-					 * start with a * */
-	    star_comment_cont = 1;
-	else if (eqin("-nsc", arg))
-	    star_comment_cont = 0;	/* comments shouldnt start with a
-					 * star */
-	else if (eqin("-bap", arg))	/* blanklines after procedures */
-	    blanklines_after_procs = 1;
-	else if (eqin("-nbap", arg))	/* blanklines after procedures */
-	    blanklines_after_procs = 0;
-	else if (eqin("-sob", arg))	/* swallow optional blanklines */
-	    swallow_optional_blanklines = 1;
-	else if (eqin("-nsob", arg))	/* swallow optional blanklines */
-	    swallow_optional_blanklines = 0;
-	else if (eqin("-bad", arg))	/* blanklines after declarations */
-	    blanklines_after_declarations = 1;
-	else if (eqin("-nbad", arg))	/* blanklines after declarations */
-	    blanklines_after_declarations = 0;
-	else if (eqin("-bbb", arg))	/* blanklines before blockcomments */
-	    blanklines_before_blockcomments = 1;
-	else if (eqin("-nbbb", arg))	/* blanklines before blockcomments */
-	    blanklines_before_blockcomments = 0;
-	else if (eqin("-troff", arg))
-	    troff = 1;
-	else if (arg[0] == '-' && arg[1] == 'T')	/* -Ttypename */
-	    addkey(arg + 2, 4);
-	else {			/* illegal arg given */
-	    printf("Unknown parameter: %s\n", arg);
-	    exit();
-	}
-}
-
-
-/*
- * GETPRO - get profile file profile file is max 127 characters 
- */
-getpro(name, buf, len)
-    char       *name,		/* profile file name, as in '.indent.pro' */
-               *buf;		/* will receive contents of .pro file */
-{
-    register    chn,
-                n;
-    char        file[100];
-
-    file[0] = 0;
-    strcat(file, getenv("HOME"));
-    strcat(file, "/");
-    strcat(file, name);
-    if ((chn = open(name, 0)) < 0)
-	chn = open(file, 0);
-    if (chn < 0)
-	return (-1);
-    n = read(chn, buf, len);
-    if (n < 0)
-	return (-1);
-    buf[n--] = 0;		/* null terminate line */
-    if (buf[n] == '\n')
-	buf[n] = 0;
-    close(chn);
-    return (0);
-}
-
-
-/*
- * strip off arguments in a string: p is address of a character pointer
- * nextchr returns pointer to front of first arg arg is null terminated. p
- * is reset to after arg for subsequent calls 
- */
-char       *
-nxtarg(p)
-    char      **p;
-{
-    register char *f,
-               *b;
-
-    f = *p;
-    while (*f && *f <= ' ')
-	f++;
-    b = f;
-    while (*b > ' ')
-	b++;
-    if (*b != 0)
-	*b++ = 0;
-    *p = b;
-    return (f);
-}
-
-
-set_profile()
-{
-    char        line[1000],
-               *b;
-    register char *f;
-    extern char *nxtarg();
-
-    if (getpro(".indent.pro", line, sizeof line) < 0)
-	return;
-    b = line;
-    if (verbose)
-	printf("profile: %s\n", b);
-    while (*(f = nxtarg(&b)))
-	set_option(f);
 }
