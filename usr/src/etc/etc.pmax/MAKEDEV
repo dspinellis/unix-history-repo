@@ -5,14 +5,14 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)MAKEDEV	5.1 (Berkeley) %G%
+#	@(#)MAKEDEV	5.2 (Berkeley) %G%
 #
 
 # Device "make" file.  Valid arguments:
 #	std	standard devices
 #	local	configuration specific devices
 # Tapes:
-#	tz*	DEC TK50 cartridge tape
+#	tz*	SCSI tapes, DEC TK50 cartridge tape
 # Disks:
 #	rz*	SCSI disks
 #	vnd*	"file" pseudo-disks
@@ -59,10 +59,15 @@ tz*)
 	esac
 	case $unit in
 	0|1|2|3|4|5|6)
-		unit2=`expr $unit \* 2`
-		unit3=`expr $unit \* 2 + 1`
-		mknod rmt$unit c $chr $unit2
-		mknod nrmt$unit c $chr $unit3
+		unit0=`expr $unit \* 16`
+		unit1=`expr $unit \* 16 + 1`
+		unit2=`expr $unit \* 16 + 2`
+		unit3=`expr $unit \* 16 + 3`
+		mknod rmt$unit c $chr $unit0
+		mknod nrmt$unit c $chr $unit1
+		mknod rmth$unit c $chr $unit2
+		mknod nrmth$unit c $chr $unit3
+		chmod 666 rmt$unit nrmt$unit rmth$unit nrmth$unit
 		;;
 	*)
 		echo bad unit for tape in: $1
