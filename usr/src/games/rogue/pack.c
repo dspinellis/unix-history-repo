@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)pack.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)pack.c	5.4 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -267,6 +267,7 @@ unsigned short mask;
 
 		if (ch == LIST) {
 			check_message();
+			mask = tmask;
 			inventory(&rogue.pack, mask);
 		} else {
 			break;
