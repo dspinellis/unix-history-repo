@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rexec.c	4.6 83/03/19";
+static char sccsid[] = "@(#)rexec.c	4.7 83/08/17";
 #endif
 
 #include <sys/types.h>
@@ -36,7 +36,7 @@ rexec(ahost, rport, name, pass, cmd, fd2p)
 	*ahost = hp->h_name;
 	ruserpass(hp->h_name, &name, &pass);
 retry:
-	s = socket(0, SOCK_STREAM, 0, 0);
+	s = socket(AF_INET, SOCK_STREAM, 0);
 	if (s < 0) {
 		perror("rexec: socket");
 		return (-1);
@@ -61,7 +61,7 @@ retry:
 		char num[8];
 		int s2, sin2len;
 		
-		s2 = socket(0, SOCK_STREAM, 0, 0);
+		s2 = socket(AF_INET, SOCK_STREAM, 0);
 		if (s2 < 0) {
 			(void) close(s);
 			return (-1);
