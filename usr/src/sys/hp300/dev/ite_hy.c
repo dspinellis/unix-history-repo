@@ -12,7 +12,7 @@
  *
  * from: Utah $Hdr: ite_hy.c 1.2 92/12/20$
  *
- *	@(#)ite_hy.c	7.3 (Berkeley) %G%
+ *	@(#)ite_hy.c	7.4 (Berkeley) %G%
  */
 
 #include "ite.h"
@@ -98,7 +98,8 @@ hyper_ite_fontinit(ip)
 	int c, l, b;
 	int stride, width;
 
-	dp = (u_char *)getword(ip, getword(ip, FONTROM) + FONTADDR) + FONTDATA;
+	dp = (u_char *)(getword(ip, getword(ip, FONTROM) + FONTADDR) +
+	    ip->regbase) + FONTDATA;
 	stride = ip->fbwidth >> 3;
 	width = (ip->ftwidth + 7) / 8;
 
