@@ -9,7 +9,7 @@
  * Startup -- interface with user.
  */
 
-static char *SccsId = "@(#)main.c	1.2 %G%";
+static char *SccsId = "@(#)main.c	1.3 %G%";
 
 /*
  * Find out who the user is, copy his mail file (if exists) into
@@ -168,6 +168,13 @@ main(argc, argv)
 			 * User doesn't want to source /usr/lib/Mail.rc
 			 */
 			nosrc++;
+			break;
+
+		case 'N':
+			/*
+			 * Avoid initial header printing.
+			 */
+			noheader++;
 			break;
 
 		default:
