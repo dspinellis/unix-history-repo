@@ -9,7 +9,7 @@
  * Startup -- interface with user.
  */
 
-static char *SccsId = "@(#)main.c	2.3 %G%";
+static char *SccsId = "@(#)main.c	2.4 %G%";
 
 /*
  * Find out who the user is, copy his mail file (if exists) into
@@ -30,6 +30,7 @@ main(argc, argv)
 	int mustsend, uflag;
 	FILE *ibuf, *ftat;
 	extern char _sobuf[];
+	struct sgttyb tbuf;
 
 #ifdef signal
 	Siginit();
@@ -47,6 +48,12 @@ main(argc, argv)
 	mypid = getpid();
 	intty = isatty(0);
 	outtty = isatty(1);
+	if (outtty) {
+		gtty(1, &tbuf);
+		baud = tbuf.sg_ospeed;
+	}
+	else
+		baud = B9600;
 	image = -1;
 	setbuf(stdout, _sobuf);
 
