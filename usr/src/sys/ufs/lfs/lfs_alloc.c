@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.43 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.44 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -175,7 +175,7 @@ lfs_vcreate(mp, ino, vpp)
 
 /* Free an inode. */
 /* ARGUSED */
-void
+int
 lfs_vfree (ap)
 	struct vop_vfree_args *ap;
 #define vp (ap->a_pvp)
@@ -224,7 +224,10 @@ lfs_vfree (ap)
 	/* Set superblock modified bit and decrement file count. */
 	fs->lfs_fmod = 1;
 	--fs->lfs_nfiles;
+	return (0);
 }
 #undef vp
 #undef notused1
 #undef notused2
+
+
