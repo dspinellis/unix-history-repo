@@ -1,4 +1,4 @@
-#	@(#)Makefile	4.2	(Berkeley)	%G%
+#	@(#)Makefile	4.3	(Berkeley)	%G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -14,7 +14,7 @@ SUBDIR=	adventure backgammon boggle compat cribbage doctor fortune \
 
 # Shell scripts that need only be installed and are never removed.
 #
-SCRIPT=	ching
+#SCRIPT=	
 
 # C programs that live in the current directory and do not need
 # explicit make lines.
@@ -36,8 +36,9 @@ ${STD}:
 install:
 	for i in ${SUBDIR}; do \
 		(cd $$i; make ${MFLAGS} DESTDIR=${DESTDIR} install); done
-	for i in ${SCRIPT}; do (install -c $$i ${DESTDIR}/usr/games/$$i); done
+#	for i in ${SCRIPT}; do (install -c $$i ${DESTDIR}/usr/games/$$i); done
 	for i in ${STD} ${NSTD}; do (install $$i ${DESTDIR}/usr/games/$$i); done
+	install -c chess.bin ${DESTDIR}/usr/games/lib/chess
 
 clean:
 	rm -f a.out core *.s *.o
