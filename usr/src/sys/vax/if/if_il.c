@@ -1,4 +1,4 @@
-/*	if_il.c	6.1	83/07/29	*/
+/*	if_il.c	6.2	83/09/24	*/
 
 #include "il.h"
 
@@ -149,9 +149,6 @@ ilattach(ui)
 	ifp->if_output = iloutput;
 	ifp->if_ioctl = ilioctl;
 	ifp->if_reset = ilreset;
-	ifp->if_watchdog = ilwatch;
-	is->is_scaninterval = ILWATCHINTERVAL;
-	ifp->if_timer = is->is_scaninterval;
 	is->is_ifuba.ifu_flags = UBA_CANTWAIT;
 #ifdef notdef
 	is->is_ifuba.ifu_flags |= UBA_NEEDBDP;
@@ -203,6 +200,9 @@ ilinit(unit)
 	}
 	is->is_ubaddr = uballoc(ui->ui_ubanum, (caddr_t)&is->is_stats,
 	    sizeof (struct il_stats), 0);
+	ifp->if_watchdog = ilwatch;
+	is->is_scaninterval = ILWATCHINTERVAL;
+	ifp->if_timer = is->is_scaninterval;
 	addr = (struct ildevice *)ui->ui_addr;
 
 	/*
