@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.83 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.84 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -30,8 +30,9 @@
 #include <ufs/ufs/ufsmount.h>
 #include <ufs/ufs/ufs_extern.h>
 
-int ufs_chmod __P((struct vnode *, int, struct proc *));
-int ufs_chown __P((struct vnode *, u_int, u_int, struct proc *));
+int ufs_chmod __P((struct vnode *, int, struct ucred *, struct proc *));
+int ufs_chown
+	__P((struct vnode *, u_int, u_int, struct ucred *, struct proc *));
 
 #ifdef _NOQUAD
 #define	SETHIGH(q, h)	(q).val[_QUAD_HIGHWORD] = (h)
@@ -283,7 +284,7 @@ ufs_setattr(vp, vap, cred, p)
 	 * Go through the fields and update iff not VNOVAL.
 	 */
 	if (vap->va_uid != (u_short)VNOVAL || vap->va_gid != (u_short)VNOVAL)
-		if (error = ufs_chown(vp, vap->va_uid, vap->va_gid, p))
+		if (error = ufs_chown(vp, vap->va_uid, vap->va_gid, cred, p))
 			return (error);
 	if (vap->va_size != VNOVAL) {
 		if (vp->v_type == VDIR)
@@ -306,7 +307,7 @@ ufs_setattr(vp, vap, cred, p)
 	}
 	error = 0;
 	if (vap->va_mode != (u_short)VNOVAL)
-		error = ufs_chmod(vp, (int)vap->va_mode, p);
+		error = ufs_chmod(vp, (int)vap->va_mode, cred, p);
 	if (vap->va_flags != VNOVAL) {
 		if (cred->cr_uid != ip->i_uid &&
 		    (error = suser(cred, &p->p_acflag)))
@@ -327,12 +328,12 @@ ufs_setattr(vp, vap, cred, p)
  * Inode must be locked before calling.
  */
 static int
-ufs_chmod(vp, mode, p)
+ufs_chmod(vp, mode, cred, p)
 	register struct vnode *vp;
 	register int mode;
+	register struct ucred *cred;
 	struct proc *p;
 {
-	register struct ucred *cred = p->p_ucred;
 	register struct inode *ip = VTOI(vp);
 	int error;
 
@@ -358,14 +359,14 @@ ufs_chmod(vp, mode, p)
  * inode must be locked prior to call.
  */
 static int
-ufs_chown(vp, uid, gid, p)
+ufs_chown(vp, uid, gid, cred, p)
 	register struct vnode *vp;
 	u_int uid;
 	u_int gid;
+	struct ucred *cred;
 	struct proc *p;
 {
 	register struct inode *ip = VTOI(vp);
-	register struct ucred *cred = p->p_ucred;
 	uid_t ouid;
 	gid_t ogid;
 	int error = 0;
