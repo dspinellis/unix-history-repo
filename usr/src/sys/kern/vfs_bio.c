@@ -12,7 +12,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_bio.c	8.9 (Berkeley) %G%
+ *	@(#)vfs_bio.c	8.10 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -494,7 +494,7 @@ loop:
 		bp->b_flags |= B_BUSY;
 		splx(s);
 		if (bp->b_bcount != size) {
-			printf("getblk: stray size");
+			printf("getblk: stray size\n");
 			bp->b_flags |= B_INVAL;
 			VOP_BWRITE(bp);
 			goto loop;
