@@ -1,8 +1,11 @@
 #ifndef lint
-static	char *sccsid = "@(#)startup.c	2.1.1.1 83/08/09";
+static	char *sccsid = "@(#)startup.c	3.1 83/08/11";
 #endif
 
 #include "defs.h"
+
+struct ww *doopen();
+char *getenv();
 
 doconfig()
 {
@@ -11,7 +14,7 @@ doconfig()
 
 	if ((home = getenv("HOME")) == 0)
 		home = "";
-	(void) sprintf(buf, "%s/.windowrc", home);
+	sprintf(buf, "%s/.windowrc", home);
 	return dosource(buf);
 }
 
@@ -23,12 +26,12 @@ dodefault()
 	struct ww *w;
 	register r = wwnrow / 2;
 
-	if ((w = openwin(-1, r + 1, wwncol, 0, 0)) == 0)
+	if ((w = doopen(-1, r + 1, wwncol, 0, 0)) == 0)
 		goto bad;
-	if (openwin(-1, wwnrow - r, wwncol, r, 0) == 0)
+	if (doopen(-1, wwnrow - r, wwncol, r, 0) == 0)
 		goto bad;
 	setselwin(w);
 	return;
 bad:
-	(void) wwputs("Can't open default windows.  ", cmdwin);
+	wwputs("Can't open default windows.  ", cmdwin);
 }
