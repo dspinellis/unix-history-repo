@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)adduser.8	6.2 (Berkeley) %G%
+.\"	@(#)adduser.8	6.3 (Berkeley) %G%
 .\"
 .TH ADDUSER 8 ""
 .UC 4
@@ -10,9 +10,9 @@
 adduser \- procedure for adding new users
 .SH DESCRIPTION
 A new user must choose a login name, which must not already appear in
-.I /etc/passwd.
-An account can be added by editing a line into the passwd file; this must
-be done with the password file locked e.g. by using
+\fI/etc/passwd\fP or \fI/usr/lib/aliases\fP.  An account can be added
+by editing a line into the passwd file; this must be done with the
+password file locked e.g. by using
 .IR vipw (8).
 .PP
 A new user is given a group and user id.
@@ -90,7 +90,7 @@ automatically at each login.
 .br
 /usr/skel	skeletal login directory
 .SH SEE ALSO
-passwd(1), finger(1), chsh(1), chfn(1), passwd(5), vipw(8)
+passwd(1), finger(1), chsh(1), chfn(1), aliases(5), passwd(5), vipw(8)
 .SH BUGS
 User information should be stored in its own data base separate from
 the password file.
