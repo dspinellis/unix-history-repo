@@ -3,7 +3,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	5.3 (Berkeley) %G%
+#	@(#)Makefile	5.4 (Berkeley) %G%
 #
 DESTDIR=
 CFLAGS=	-O
@@ -51,6 +51,7 @@ lint:
 
 depend:
 	cc -M ${INCPATH} ${LOCSRCS} ${RMTSRCS} | \
+	sed 's/${MACHINE}/$${MACHINE}/' | \
 	awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
 		else { if (length(rec $$2) > 78) { print rec; rec = $$0; } \
 		       else rec = rec " " $$2 } } \
@@ -68,12 +69,13 @@ depend:
 # DO NOT DELETE THIS LINE -- make depend uses it
 
 
-langpats.o: langpats.c /sys/vax/inline/inline.h
-main.o: /sys/vax/inline/main.c /usr/include/stdio.h /usr/include/ctype.h
-main.o: /sys/vax/inline/inline.h
-machdep.o: /sys/vax/inline/machdep.c /usr/include/stdio.h /usr/include/ctype.h
-machpats.o: /sys/vax/inline/machpats.c /sys/vax/inline/inline.h
-libcpats.o: /sys/vax/inline/libcpats.c /sys/vax/inline/inline.h
+langpats.o: langpats.c /sys/${MACHINE}/inline/inline.h
+main.o: /sys/${MACHINE}/inline/main.c /usr/include/stdio.h /usr/include/ctype.h
+main.o: /sys/${MACHINE}/inline/inline.h
+machdep.o: /sys/${MACHINE}/inline/machdep.c /usr/include/stdio.h
+machdep.o: /usr/include/ctype.h /sys/${MACHINE}/inline/inline.h
+machpats.o: /sys/${MACHINE}/inline/machpats.c /sys/${MACHINE}/inline/inline.h
+libcpats.o: /sys/${MACHINE}/inline/libcpats.c /sys/${MACHINE}/inline/inline.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above
