@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)sync.c	1.4 83/10/14";
+static	char *sccsid = "@(#)sync.c	1.5 83/10/28";
 #endif
 
 #include "externs.h"
@@ -168,8 +168,7 @@ int a, b, c, d;
 		}
 	case W_SIGNAL:
 		if (isplayer) {
-			(void) putchar('\7');
-			Signal("%s (%c%c): %s", ship, a);
+			Signal("\7%s (%c%c): %s", ship, a);
 		}
 		break;
 	case W_CREW: {

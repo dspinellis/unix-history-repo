@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)pl_3.c	1.4 83/10/14";
+static	char *sccsid = "@(#)pl_3.c	1.5 83/10/28";
 #endif
 
 #include "player.h"
@@ -249,60 +249,5 @@ unfoulplayer()
 			} else
 				Signal("Attempt fails.", (struct ship *)0);
 		}
-	}
-}
-
-lookout()
-{
-	register struct ship *sp;
-	char buf[3];
-	register char c;
-
-	sgetstr("What ship? ", buf, sizeof buf);
-	foreachship(sp) {
-		c = *countryname[sp->nationality];
-		if ((c == *buf || tolower(c) == *buf || colours(sp) == *buf)
-		    && (sp->file->stern == buf[1] || sterncolour(sp) == buf[1]))
-		{
-			eyeball(sp);
-			return;
-		}
-	}
-	Signal("No such ship.", (struct ship *)0);
-}
-
-char *
-saywhat(sp, flag)
-register struct ship *sp;
-char flag;
-{
-	if (sp->file->captain[0])
-		return sp->file->captain;
-	else if (sp->file->struck)
-		return "(struck)";
-	else if (sp->file->captured != 0)
-		return "(captured)";
-	else if (flag)
-		return "(available)";
-	else
-		return "(computer)";
-}
-
-eyeball(ship)
-register struct ship *ship;
-{
-	int i;
-
-	if (ship == 0)
-		Signal("No more ships left.", (struct ship *)0);
-	else if (ship->file->dir != 0) {
-		Signal("Sail ho! (range %d, %s)",
-			(struct ship *)0, range(ms, ship), saywhat(ship, 0));
-		i = portside(ms, ship, 1) - mf->dir;
-		if (i <= 0)
-			i += 8;
-		Signal("%s (%c%c) %s %s %s.",
-			ship, countryname[ship->nationality],
-			classname[ship->specs->class], directionname[i]);
 	}
 }
