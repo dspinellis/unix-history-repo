@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_resource.c	7.17 (Berkeley) %G%
+ *	@(#)kern_resource.c	7.18 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -153,7 +153,7 @@ donice(curp, chgp, n)
 	return (0);
 }
 
-#ifdef COMPAT_43
+#if defined(COMPAT_43) || defined(COMPAT_SUNOS)
 /* ARGSUSED */
 setrlimit(p, uap, retval)
 	struct proc *p;
@@ -196,7 +196,7 @@ getrlimit(p, uap, retval)
 		olim.rlim_max = 0x7fffffff;
 	return (copyout((caddr_t)&olim, (caddr_t)uap->rlp, sizeof(olim)));
 }
-#endif /* COMPAT_43 */
+#endif /* COMPAT_43 || COMPAT_SUNOS */
 
 /* ARGSUSED */
 __setrlimit(p, uap, retval)
