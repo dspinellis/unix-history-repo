@@ -29,7 +29,7 @@ SOFTWARE.
  *
  * $Header: tp_user.h,v 5.2 88/11/04 15:44:44 nhall Exp $
  * $Source: /usr/argo/sys/netiso/RCS/tp_user.h,v $
- *	@(#)tp_user.h	7.5 (Berkeley) %G%
+ *	@(#)tp_user.h	7.6 (Berkeley) %G%
  *
  * These are the values a real-live user ;-) needs. 
  */
@@ -81,12 +81,6 @@ struct tp_conn_param {
 	u_char	p_netservice;
 };
 
-struct tp_control_hdr {
-	u_short cmsg_len;
-	u_short	cmsg_type;	/* TPOPT_[CONN,DISC,CFRM]_DATA */
-	u_short cmsg_level;	/* e.g. SOL_SOCKET, _TRANSPORT, etc. */
-/*	u_char	cmsg_data[msg_len - sizeof(tp_control_hdr)]; */
-};
 /*
  * These sockopt level definitions should be considered for socket.h
  */
