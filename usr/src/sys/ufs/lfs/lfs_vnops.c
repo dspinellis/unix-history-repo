@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vnops.c	7.93 (Berkeley) %G%
+ *	@(#)lfs_vnops.c	7.94 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -195,7 +195,7 @@ lfs_read(ap)
 	register struct inode *ip = VTOI(vp);
 	register struct uio *uio = ap->a_uio;
 	register struct lfs *fs;
-	struct buf *bp;
+	struct buf *bp1, *bp2;
 	daddr_t lbn, bn, rablock;
 	off_t diff;
 	int error = 0, size;
@@ -218,13 +218,15 @@ lfs_read(ap)
 	    (u_quad_t)uio->uio_offset + uio->uio_resid > fs->lfs_maxfilesize)
 		return (EFBIG);
 	ip->i_flag |= IACC;
+	bp1 = bp2 = NULL;
+	IUNLOCK(ip);
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
 		n = min((unsigned)(fs->lfs_bsize - on), uio->uio_resid);
 		diff = ip->i_size - uio->uio_offset;
 		if (diff <= 0)
-			return (0);
+			break;
 		if (diff < n)
 			n = diff;
 		size = blksize(fs);
@@ -233,20 +235,23 @@ lfs_read(ap)
 		if (vp->v_lastr + 1 == lbn &&
 		    lblktosize(fs, rablock) < ip->i_size)
 			error = breadn(ITOV(ip), lbn, size, &rablock,
-				&size, 1, NOCRED, &bp);
+				&size, 1, NOCRED, &bp1);
 		else
-			error = bread(ITOV(ip), lbn, size, NOCRED, &bp);
+			error = bread(ITOV(ip), lbn, size, NOCRED, &bp1);
+		if (bp2)
+			brelse(bp2);
+		bp2 = bp1;
 		vp->v_lastr = lbn;
-		n = min(n, size - bp->b_resid);
-		if (error) {
-			brelse(bp);
-			return (error);
-		}
-		error = uiomove(bp->b_un.b_addr + on, (int)n, uio);
+		n = min(n, size - bp2->b_resid);
+		if (error)
+			break;
+		error = uiomove(bp2->b_un.b_addr + on, (int)n, uio);
 		if (n + on == fs->lfs_bsize || uio->uio_offset == ip->i_size)
-			bp->b_flags |= B_AGE;
-		brelse(bp);
+			bp2->b_flags |= B_AGE;
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
+	if (bp2)
+		brelse(bp2);
+	ILOCK(ip);
 	return (error);
 }
 
@@ -268,7 +273,7 @@ lfs_write(ap)
 	register struct lfs *fs;
 	register ioflag = ap->a_ioflag;
 	struct timeval tv;
-	struct buf *bp;
+	struct buf *bp1, *bp2;
 	daddr_t lbn;
 	off_t osize;
 	int n, on, flags, newblock;
@@ -315,29 +320,48 @@ lfs_write(ap)
 	if (uio->uio_offset < 0 ||
 	    (u_quad_t)uio->uio_offset + uio->uio_resid > fs->lfs_maxfilesize)
 		return (EFBIG);
+
+	/*
+	 * XXX
+	 * FFS uses the VOP_LOCK to provide serializability of multi-block
+	 * reads and writes.  Since the cleaner may need to interrupt and
+	 * clean a vnode, this isn't such a good idea for us.  We use 
+	 * ordered locking instead.  Hold buffer N busy until buffer N+1
+	 * has been obtained.  We get much better concurrency that way.
+	 */
+	bp1 = bp2 = NULL;
+	IUNLOCK(ip);
 	do {
 		lbn = lblkno(fs, uio->uio_offset);
 		on = blkoff(fs, uio->uio_offset);
 		n = min((unsigned)(fs->lfs_bsize - on), uio->uio_resid);
 		lfs_check(vp, lbn);
-		if (error = lfs_balloc(vp, n, lbn, &bp)) {
-			if (bp)
-				brelse(bp);
+		if (error = lfs_balloc(vp, n, lbn, &bp1))
 			break;
-		}
+		if (bp2)
+			error = VOP_BWRITE(bp2);
+		bp2 = NULL;
+		if (error)
+			break;
 		if (uio->uio_offset + n > ip->i_size) {
 			ip->i_size = uio->uio_offset + n;
 			vnode_pager_setsize(vp, (u_long)ip->i_size);
 		}
 		size = blksize(fs);
 		(void) vnode_pager_uncache(vp);
-		n = min(n, size - bp->b_resid);
-		error = uiomove(bp->b_un.b_addr + on, n, uio);
-		if (!error)
-			error = VOP_BWRITE(bp);
+		n = min(n, size - bp1->b_resid);
+		error = uiomove(bp1->b_un.b_addr + on, n, uio);
+		/* XXX Why is this in the loop? */
 		if (ap->a_cred->cr_uid != 0)
 			ip->i_mode &= ~(ISUID|ISGID);
+		bp2 = bp1;
+		bp1 = NULL;
 	} while (error == 0 && uio->uio_resid > 0 && n != 0);
+	if (bp1)
+		brelse(bp1);
+	if (bp2)
+		error = VOP_BWRITE(bp2);
+
 	if (error) {
 		if (ioflag & IO_UNIT) {
 			(void)VOP_TRUNCATE(vp, osize, ioflag & IO_SYNC,
@@ -345,13 +369,15 @@ lfs_write(ap)
 			uio->uio_offset -= resid - uio->uio_resid;
 			uio->uio_resid = resid;
 		}
-	}
+	} 
+
 	if (!error && (ioflag & IO_SYNC)) {
 		tv = time;
 		if (!(error = VOP_UPDATE(vp, &tv, &tv, 1)))
 			error = VOP_FSYNC(vp, ap->a_cred, MNT_WAIT,
 			    uio->uio_procp);
 	}
+	ILOCK(ip);
 	return (error);
 }
 
