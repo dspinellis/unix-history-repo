@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)dr_1.c	1.6 83/10/14";
+static	char *sccsid = "@(#)dr_1.c	1.7 83/10/14";
 #endif
 
 #include "driver.h"

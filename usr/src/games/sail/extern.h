@@ -1,5 +1,5 @@
 /*
- * @(#)extern.h	1.7 83/10/10
+ * @(#)extern.h	1.8 83/10/14
  */
 #include <stdio.h>
 #include <signal.h>
@@ -134,7 +134,6 @@ struct File {
 	char drift;			/* 82 */
 	struct snag fouls[NSHIP];	/* 84 */
 	struct snag grapples[NSHIP];	/* 124 */
-	char signal[60];		/* 164 */
 	char RH;			/* 224 */
 	char RG;			/* 226 */
 	char RR;			/* 228 */
@@ -230,6 +229,7 @@ int turn;
 int game;
 int alive;
 int people;
+char isplayer;
 
 char *info();
 char *quality();
