@@ -4,7 +4,7 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)get	4.23 (Berkeley) %G%
+#	@(#)get	4.24 (Berkeley) %G%
 #
 # Shell script to build a mini-root file system
 # in preparation for building a distribution tape.
@@ -110,6 +110,6 @@ cd dev
 ./MAKEDEV tm0; mv rmt12 tm0; rm *mt*;
 ./MAKEDEV ht0; mv rmt12 ht0; rm *mt*;
 ./MAKEDEV ut0; mv rmt12 ut0; rm *mt*;
-./MAKEDEV mt0; mv rmt4 xt0; rm *mt*; mv xt0 mt0
+./MAKEDEV mt0; mv rmt12 xt0; rm *mt*; mv xt0 mt0
 cd ..
 sync
