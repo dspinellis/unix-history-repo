@@ -1,4 +1,4 @@
-/*	displayq.c	4.5	83/06/02	*/
+/*	displayq.c	4.6	83/06/15	*/
 /*
  * Routines to display the state of the queue.
  */
@@ -116,7 +116,7 @@ displayq(format)
 		return(0);
 	}
 	fp = fopen(LO, "r");
-	if (fp == NULL || flock(fileno(fp), FSHLOCK|FNBLOCK) == 0) {
+	if (fp == NULL || flock(fileno(fp), LOCK_SH|LOCK_NB) == 0) {
 		if (fp != NULL)
 			fclose(fp);
 		garbage = nitems;
@@ -141,7 +141,9 @@ displayq(format)
 		 */
 		if (sendtorem)
 			printf("\n%s: ", host);
-		if ((fd = open(ST, FRDONLY|FSHLOCK)) >= 0) {
+		fd = open(ST, O_RDONLY);
+		if (fd >= 0) {
+			(void) flock(fd, LOCK_SH);
 			while ((i = read(fd, line, sizeof(line))) > 0)
 				(void) fwrite(line, 1, i, stdout);
 			(void) close(fd);

@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lpc.c	4.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)lpc.c	4.3 (Berkeley) %G%";
 #endif
 
 /*
@@ -51,7 +51,7 @@ main(argc, argv)
 	fromatty = isatty(fileno(stdin));
 	top = setjmp(toplevel) == 0;
 	if (top)
-		sigset(SIGINT, intr);
+		signal(SIGINT, intr);
 	for (;;) {
 		cmdscanner(top);
 		top = 1;

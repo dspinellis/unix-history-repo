@@ -1,4 +1,4 @@
-/*	printjob.c	4.6	83/06/02	*/
+/*	printjob.c	4.7	83/06/15	*/
 /*
  * printjob -- print jobs in the queue.
  *
@@ -44,12 +44,12 @@ printjob()
 	init();					/* set up capabilities */
 	(void) close(1);			/* set up log file */
 	(void) close(2);
-	if (open(LF, FWRONLY|FAPPEND, 0) < 0)
-		(void) open("/dev/null", FWRONLY);
+	if (open(LF, O_WRONLY|O_APPEND) < 0)
+		(void) open("/dev/null", O_WRONLY);
 	dup(1);
 	pid = getpid();				/* for use with lprm */
 	setpgrp(0, pid);
-	sigset(SIGINT, onintr);
+	signal(SIGINT, onintr);
 
 	/*
 	 * uses short form file names
@@ -60,12 +60,14 @@ printjob()
 	}
 	if (stat(LO, &stb) == 0 && (stb.st_mode & 0100))
 		exit(0);		/* printing disabled */
-	if ((lfd = open(LO, FWRONLY|FCREATE|FTRUNCATE|FEXLOCK|FNBLOCK, 0664)) < 0) {
+	lfd = open(LO, O_WRONLY|O_CREAT, 0664);
+	if (lfd < 0 || flock(lfd, LOCK_EX|LOCK_NB) < 0) {
 		if (errno == EWOULDBLOCK)	/* active deamon present */
 			exit(0);
 		log("cannot create %s", LO);
 		exit(1);
 	}
+	ftruncate(lfd, 0);
 	/*
 	 * write process id for others to know
 	 */
@@ -334,7 +336,7 @@ print(format, file)
 	int pid, p[2], stopped = 0;
 	union wait status;
 
-	if ((fi = open(file, FRDONLY, 0)) < 0) {
+	if ((fi = open(file, O_RDONLY)) < 0) {
 		log("%s: open failure <errno = %d>", file, errno);
 		return(-1);
 	}
@@ -586,7 +588,7 @@ sendfile(type, file)
 	char buf[BUFSIZ];
 	int sizerr;
 
-	if ((f = open(file, FRDONLY, 0)) < 0 || fstat(f, &stb) < 0) {
+	if ((f = open(file, O_RDONLY)) < 0 || fstat(f, &stb) < 0) {
 		log("file (%s) open failure <errno = %d>", file, errno);
 		return(-1);
 	}
@@ -937,7 +939,7 @@ openpr()
 
 	if (*LP) {
 		for (i = 1; ; i = i < 32 ? i << 1 : i) {
-			pfd = open(LP, RW ? FRDWR : FWRONLY, 0);
+			pfd = open(LP, RW ? O_RDWR : O_WRONLY);
 			if (pfd >= 0)
 				break;
 			if (errno == ENOENT) {
@@ -1083,8 +1085,10 @@ status(msg, a1, a2, a3)
 	char buf[BUFSIZ];
 
 	umask(0);
-	if ((fd = open(ST, FWRONLY|FCREATE|FTRUNCATE|FEXLOCK, 0664)) < 0)
+	fd = open(ST, O_WRONLY|O_CREAT, 0664);
+	if (fd < 0 || flock(fd, LOCK_EX) < 0)
 		fatal("cannot create status file");
+	ftruncate(fd, 0);
 	sprintf(buf, msg, a1, a2, a3);
 	strcat(buf, "\n");
 	(void) write(fd, buf, strlen(buf));
