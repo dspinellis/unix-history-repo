@@ -1,9 +1,12 @@
-/*	mba.c	6.2	84/08/29	*/
+/*	mba.c	6.3	84/09/25	*/
 
 #include "mba.h"
 #if NMBA > 0
 /*
  * Massbus driver, arbitrates a massbus among attached devices.
+ *
+ * OPTION:
+ *	MTRDREV - Enable mag tape read backwards error recovery
  */
 #include "../machine/pte.h"
 
@@ -190,13 +193,30 @@ loop:
 	 */
 	mbp = mi->mi_mba;
 	mbp->mba_sr = -1;	/* conservative */
+#ifdef MTRDREV
+	if (bp->b_bcount >= 0) {
+		mbp->mba_var = mbasetup(mi);
+		mbp->mba_bcr = -bp->b_bcount;
+	} else {
+		mbp->mba_var = mbasetup(mi) - bp->b_bcount - 1;
+		mbp->mba_bcr = bp->b_bcount;
+	}
+#else
 	mbp->mba_var = mbasetup(mi);
 	mbp->mba_bcr = -bp->b_bcount;
+#endif
 	mi->mi_drv->mbd_cs1 = com;
 	if (mi->mi_dk >= 0) {
 		dk_busy |= 1 << mi->mi_dk;
 		dk_xfer[mi->mi_dk]++;
+#ifdef MTRDREV
+		if (bp->b_bcount >= 0)
+			dk_wds[mi->mi_dk] += bp->b_bcount >> 6;
+		else
+			dk_wds[mi->mi_dk] += -(bp->b_bcount) >> 6;
+#else
 		dk_wds[mi->mi_dk] += bp->b_bcount >> 6;
+#endif
 	}
 }
 
@@ -396,7 +416,14 @@ mbasetup(mi)
 
 	v = btop(bp->b_un.b_addr);
 	o = (int)bp->b_un.b_addr & PGOFSET;
+#ifdef MTRDREV
+	if (bp->b_bcount >= 0)
+		npf = btoc(bp->b_bcount + o);
+	else
+		npf = btoc(-(bp->b_bcount) + o);
+#else
 	npf = btoc(bp->b_bcount + o);
+#endif
 	rp = bp->b_flags&B_DIRTY ? &proc[2] : bp->b_proc;
 	if ((bp->b_flags & B_PHYS) == 0)
 		pte = &Sysmap[btop(((int)bp->b_un.b_addr)&0x7fffffff)];

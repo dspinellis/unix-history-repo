@@ -1,4 +1,4 @@
-/*	mtreg.h	6.1	83/07/29	*/
+/*	mtreg.h	6.2	84/09/25	*/
 
 /*
  * TU78 registers.
@@ -76,6 +76,7 @@ struct mtdevice {
 
 /* mter */
 #define	MTER_INTCODE	0377		/* mask for interrupt code */
+#define MTER_FAILCODE	0176000		/* failure code */
 
 /* interrupt codes */
 #define	MTER_DONE	001		/* operation complete */
