@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)if_le.c	8.1 (Berkeley) %G%
+ *	@(#)if_le.c	8.2 (Berkeley) %G%
  *
  * from: $Header: if_le.c,v 1.23 93/04/21 02:39:38 torek Exp $
  */
