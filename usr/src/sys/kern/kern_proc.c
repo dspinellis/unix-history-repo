@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.56	82/12/28	*/
+/*	kern_proc.c	4.57	83/01/17	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -328,7 +328,6 @@ badarg:
 		} while(c&0377);
 	}
 	(void) suword((caddr_t)ap, 0);
-	(void) suword((caddr_t)ucp, 0);
 	setregs();
 bad:
 	if (bp)
