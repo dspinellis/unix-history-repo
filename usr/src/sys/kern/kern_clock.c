@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)kern_clock.c	7.22 (Berkeley) %G%
+ *	@(#)kern_clock.c	7.23 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -390,7 +390,7 @@ statclock(frame)
 		if (g->state == GMON_PROF_ON) {
 			i = CLKF_PC(frame) - g->lowpc;
 			if (i < g->textsize)
-				kcount[s / (HISTFRACTION * sizeof(*kcount))]++;
+				kcount[i / (HISTFRACTION * sizeof(*kcount))]++;
 		}
 #endif
 		if (--pscnt > 0)
