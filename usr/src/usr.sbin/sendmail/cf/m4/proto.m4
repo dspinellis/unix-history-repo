@@ -8,7 +8,7 @@ divert(-1)
 #
 divert(0)
 
-VERSIONID(`@(#)proto.m4	8.3 (Berkeley) %G%')
+VERSIONID(`@(#)proto.m4	8.4 (Berkeley) %G%')
 
 MAILER(local)dnl
 
@@ -489,9 +489,8 @@ R$*:;<@>		$#error $@ USAGE $: "list:; syntax illegal for recipient addresses"
 
 ifdef(`_MAILER_smtp_',
 `# handle numeric address spec
-ifdef(`_NO_CANONIFY_',
-`R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	numeric internet addr',
-	`dnl')
+ifdef(`_NO_CANONIFY_', `dnl',
+`R$* < @ [ $+ ] > $*	$: $1 < @ $[ [$2] $] > $3	numeric internet addr')
 R$* < @ [ $+ ] > $*	$: $>_SET_98_ $1 < @ [ $2 ] > $3	numeric internet spec
 R$* < @ [ $+ ] > $*	$#smtp $@ [$2] $: $1 @ [$2] $3	still numeric: send',
 	`dnl')
@@ -555,11 +554,10 @@ R$*<@$*.UUCP>$*		$#smtp $@ $Y $: @ $Y : $1 @ $2.UUCP $3	uucp mail',
 R< @ $+ .UUCP > : $+	$#uucp $@ $1 $: $2		@host.UUCP:...
 R$+ < @ $+ .UUCP >	$#uucp $@ $2 $: $1		user@host.UUCP',
 	`dnl')')
-
 ifdef(`_MAILER_USENET_', `
 # addresses sent to net.group.USENET will get forwarded to a newsgroup
 R$+ . USENET		$# usenet $: $1',
-`dnl')
+	`dnl')
 
 ifdef(`_LOCAL_RULES_',
 `# figure out what should stay in our local mail system
