@@ -36,7 +36,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)pk_input.c	7.14 (Berkeley) 7/16/91
- *	$Id$
+ *	$Id: pk_input.c,v 1.2 1993/10/16 19:46:50 rgrimes Exp $
  */
 
 #include "param.h"
@@ -697,7 +697,7 @@ struct socket *so;
 {
 	register struct mbuf *m;
 	struct cmsghdr cmsghdr;
-	if (m = m_copym (m, 0, (int)M_COPYALL)) {
+	if (m = m_copym (m, 0, (int)M_COPYALL), M_DONTWAIT) {
 		int off = fp - mtod (m0, octet *);
 		int len = m->m_pkthdr.len - off + sizeof (cmsghdr);
 		cmsghdr.cmsg_len = len;
