@@ -1,4 +1,4 @@
-/*	up.c	4.35	81/04/01	*/
+/*	up.c	4.36	81/04/02	*/
 
 #include "up.h"
 #if NSC > 0
@@ -6,11 +6,8 @@
  * UNIBUS disk driver with overlapped seeks and ECC recovery.
  *
  * TODO:
- *	Add reading of bad sector information and disk layout from sector 1
  *	Add bad sector forwarding code
- *	Check multiple drive handling
- *	Check unibus reset code
- *	Check that offset recovery code, etc works
+ *	Check that offset recovery code works
  */
 
 #include "../h/param.h"
@@ -94,8 +91,10 @@ struct	upst {
 };
 
 u_char	up_offset[16] = {
-    UP_P400, UP_M400, UP_P400, UP_M400, UP_P800, UP_M800, UP_P800, UP_M800, 
-    UP_P1200, UP_M1200, UP_P1200, UP_M1200, 0, 0, 0, 0
+    UPOF_P400, UPOF_M400, UPOF_P400, UPOF_M400,
+    UPOF_P800, UPOF_M800, UPOF_P800, UPOF_M800, 
+    UPOF_P1200, UPOF_M1200, UPOF_P1200, UPOF_M1200,
+    0, 0, 0, 0
 };
 
 struct	buf	rupbuf[NUP];
@@ -133,7 +132,7 @@ upslave(ui, reg)
 
 	upaddr->upcs1 = 0;		/* conservative */
 	upaddr->upcs2 = ui->ui_slave;
-	if (upaddr->upcs2&UP_NED) {
+	if (upaddr->upcs2&UPCS2_NED) {
 		upaddr->upcs1 = UP_DCLR|UP_GO;
 		return (0);
 	}
@@ -264,17 +263,17 @@ upustart(ui)
 	 * If drive has just come up,
 	 * setup the pack.
 	 */
-	if ((upaddr->upds & UP_VV) == 0) {
+	if ((upaddr->upds & UPDS_VV) == 0) {
 		/* SHOULD WARN SYSTEM THAT THIS HAPPENED */
 		upaddr->upcs1 = UP_IE|UP_DCLR|UP_GO;
 		upaddr->upcs1 = UP_IE|UP_PRESET|UP_GO;
-		upaddr->upof = UP_FMT22;
+		upaddr->upof = UPOF_FMT22;
 		didie = 1;
 	}
 	/*
 	 * If drive is offline, forget about positioning.
 	 */
-	if ((upaddr->upds & (UP_DPR|UP_MOL)) != (UP_DPR|UP_MOL))
+	if ((upaddr->upds & (UPDS_DPR|UPDS_MOL)) != (UPDS_DPR|UPDS_MOL))
 		goto done;
 	/*
 	 * If there is only one drive,
@@ -384,14 +383,14 @@ loop:
 	 * Check that it is ready and online
 	 */
 	waitdry = 0;
-	while ((upaddr->upds&UP_DRY) == 0) {
+	while ((upaddr->upds&UPDS_DRY) == 0) {
 		if (++waitdry > 512)
 			break;
 		upwaitdry++;
 	}
-	if ((upaddr->upds & UP_DREADY) != UP_DREADY) {
+	if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY) {
 		printf("up%d: not ready", dkunit(bp));
-		if ((upaddr->upds & UP_DREADY) != UP_DREADY) {
+		if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY) {
 			printf("\n");
 			um->um_tab.b_active = 0;
 			um->um_tab.b_errcnt = 0;
@@ -476,14 +475,14 @@ upintr(sc21)
 	 * Check for and process errors on
 	 * either the drive or the controller.
 	 */
-	if ((upaddr->upds&UP_ERR) || (upaddr->upcs1&UP_TRE)) {
+	if ((upaddr->upds&UPDS_ERR) || (upaddr->upcs1&UP_TRE)) {
 		waitdry = 0;
-		while ((upaddr->upds & UP_DRY) == 0) {
+		while ((upaddr->upds & UPDS_DRY) == 0) {
 			if (++waitdry > 512)
 				break;
 			upwaitdry++;
 		}
-		if (upaddr->uper1&UP_WLE) {
+		if (upaddr->uper1&UPER1_WLE) {
 			/*
 			 * Give up on write locked devices
 			 * immediately.
@@ -509,7 +508,7 @@ upintr(sc21)
 			 * Otherwise fall through and retry the transfer
 			 */
 			um->um_tab.b_active = 0;	 /* force retry */
-			if ((upaddr->uper1&(UP_DCK|UP_ECH))==UP_DCK)
+			if ((upaddr->uper1&(UPER1_DCK|UPER1_ECH))==UPER1_DCK)
 				if (upecc(ui))
 					return;
 		}
@@ -543,7 +542,7 @@ upintr(sc21)
 	case 2:
 		if (um->um_tab.b_errcnt < 16 || (bp->b_flags&B_READ) == 0)
 			goto donerecal;
-		upaddr->upof = up_offset[um->um_tab.b_errcnt & 017] | UP_FMT22;
+		upaddr->upof = up_offset[um->um_tab.b_errcnt & 017] | UPOF_FMT22;
 		upaddr->upcs1 = UP_IE|UP_OFFSET|UP_GO;
 		goto nextrecal;
 	nextrecal:
@@ -565,9 +564,9 @@ upintr(sc21)
 		 * return to centerline.
 		 */
 		if (um->um_tab.b_errcnt >= 16) {
-			upaddr->upof = UP_FMT22;
+			upaddr->upof = UPOF_FMT22;
 			upaddr->upcs1 = UP_RTC|UP_GO|UP_IE;
-			while (upaddr->upds & UP_PIP)
+			while (upaddr->upds & UPDS_PIP)
 				DELAY(25);
 			needie = 0;
 		}
@@ -671,8 +670,10 @@ upecc(ui)
 	printf("up%d%c: soft ecc sn%d\n", dkunit(bp),
 	    'a'+(minor(bp->b_dev)&07), bp->b_blkno + npf);
 	mask = up->upec2;
+#ifdef UPECCDEBUG
 	printf("npf %d reg %x o %d mask %o pos %d\n", npf, reg, o, mask,
 	    up->upec1);
+#endif
 	/*
 	 * Flush the buffered data path, and compute the
 	 * byte and bit position of the error.  The variable i
@@ -693,11 +694,15 @@ upecc(ui)
 	while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
 		addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
 		    (byte & PGOFSET);
+#ifdef UPECCDEBUG
 		printf("addr %x map reg %x\n",
 		    addr, *(int *)(&ubp->uba_map[reg+btop(byte)]));
 		printf("old: %x, ", getmemc(addr));
+#endif
 		putmemc(addr, getmemc(addr)^(mask<<bit));
+#ifdef UPECCDEBUG
 		printf("new: %x\n", getmemc(addr));
+#endif
 		byte++;
 		i++;
 		bit -= 8;
@@ -759,7 +764,7 @@ upreset(uban)
 			printf("<%d>", (um->um_ubinfo>>28)&0xf);
 			ubadone(um);
 		}
-		((struct updevice *)(um->um_addr))->upcs2 = UP_CLR;
+		((struct updevice *)(um->um_addr))->upcs2 = UPCS2_CLR;
 		for (unit = 0; unit < NUP; unit++) {
 			if ((ui = updinfo[unit]) == 0)
 				continue;
@@ -839,12 +844,12 @@ updump(dev)
 	DELAY(100);
 	if ((upaddr->upcs1&UP_DVA) == 0)
 		return (EFAULT);
-	if ((upaddr->upds & UP_VV) == 0) {
+	if ((upaddr->upds & UPDS_VV) == 0) {
 		upaddr->upcs1 = UP_DCLR|UP_GO;
 		upaddr->upcs1 = UP_PRESET|UP_GO;
-		upaddr->upof = UP_FMT22;
+		upaddr->upof = UPOF_FMT22;
 	}
-	if ((upaddr->upds & UP_DREADY) != UP_DREADY)
+	if ((upaddr->upds & UPDS_DREADY) != UPDS_DREADY)
 		return (EFAULT);
 	st = &upst[ui->ui_type];
 	sizes = phys(struct size *, st->sizes);
@@ -875,7 +880,7 @@ updump(dev)
 		do {
 			DELAY(25);
 		} while ((upaddr->upcs1 & UP_RDY) == 0);
-		if (upaddr->upcs1&UP_ERR)
+		if (upaddr->upds&UPDS_ERR)
 			return (EIO);
 		start += blk*NBPG;
 		num -= blk;

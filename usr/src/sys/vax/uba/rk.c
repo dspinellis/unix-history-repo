@@ -1,4 +1,4 @@
-/*	rk.c	4.32	81/03/21	*/
+/*	rk.c	4.33	81/04/02	*/
 
 #include "rk.h"
 #if NHK > 0
@@ -335,7 +335,6 @@ rkintr(rk11)
 	sc->sc_wticks = 0;
 	sc->sc_softas = 0;
 	if (um->um_tab.b_active) {
-		ubadone(um);
 		dp = um->um_tab.b_actf;
 		bp = dp->b_actf;
 		ui = rkdinfo[dkunit(bp)];
@@ -425,6 +424,7 @@ retry:
 					needie = 0;
 		}
 		as &= ~(1<<ui->ui_slave);
+		ubadone(um);
 	}
 	for (unit = 0; as; as >>= 1, unit++)
 		if (as & 1) {
