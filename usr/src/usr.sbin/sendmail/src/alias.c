@@ -25,15 +25,15 @@ ERROR: DBM is no longer supported -- use NDBM instead.
 #ifndef lint
 #ifdef NEWDB
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.40 (Berkeley) %G% (with NEWDB and NDBM)";
+static char sccsid[] = "@(#)alias.c	6.41 (Berkeley) %G% (with NEWDB and NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.40 (Berkeley) %G% (with NEWDB)";
+static char sccsid[] = "@(#)alias.c	6.41 (Berkeley) %G% (with NEWDB)";
 #endif
 #else
 #ifdef NDBM
-static char sccsid[] = "@(#)alias.c	6.40 (Berkeley) %G% (with NDBM)";
+static char sccsid[] = "@(#)alias.c	6.41 (Berkeley) %G% (with NDBM)";
 #else
-static char sccsid[] = "@(#)alias.c	6.40 (Berkeley) %G% (without NEWDB or NDBM)";
+static char sccsid[] = "@(#)alias.c	6.41 (Berkeley) %G% (without NEWDB or NDBM)";
 #endif
 #endif
 #endif /* not lint */
@@ -472,7 +472,8 @@ rebuildaliases(ad, automatic, e)
 	fclose(af);
 
 	/* add distinguished entries and close the database */
-	ad->ad_class->ac_close(ad, e);
+	if (bitset(ADF_VALID, ad->ad_flags))
+		ad->ad_class->ac_close(ad, e);
 
 	/* restore the old signal */
 	(void) signal(SIGINT, oldsigint);
@@ -822,11 +823,11 @@ ndbm_arebuild(ad, fp, e)
 	db = dbm_open(ad->ad_name, O_RDWR|O_CREAT|O_TRUNC, DBMMODE);
 	if (db == NULL)
 	{
-		syserr("readaliases: cannot create %s", buf);
+		syserr("ndbm_arebuild: cannot create %s", buf);
 		return;
 	}
 	ad->ad_dbp = (void *) db;
-	ad->ad_flags |= ADF_WRITABLE;
+	ad->ad_flags |= ADF_WRITABLE|ADF_VALID;
 
 	/* read and store the aliases */
 	readaliases(ad, fp, e);
@@ -979,14 +980,16 @@ hash_arebuild(ad, fp, e)
 	if (tTd(27, 2))
 		printf("hash_arebuild(%s)\n", ad->ad_name);
 
+	(void) strcpy(buf, ad->ad_name);
+	(void) strcat(buf, ".db");
 	db = dbopen(buf, O_RDWR|O_CREAT|O_TRUNC, DBMMODE, DB_HASH, NULL);
 	if (db == NULL)
 	{
-		syserr("readaliases: cannot create %s", buf);
+		syserr("hash_arebuild: cannot create %s", buf);
 		return;
 	}
 	ad->ad_ndbp = db;
-	ad->ad_flags |= ADF_WRITABLE;
+	ad->ad_flags |= ADF_WRITABLE|ADF_VALID;
 
 	/* read and store the aliases */
 	readaliases(ad, fp, e);
@@ -1100,7 +1103,7 @@ stab_arebuild(ad, fp, e)
 	if (tTd(27, 2))
 		printf("stab_arebuild(%s)\n", ad->ad_name);
 
-	ad->ad_flags |= ADF_WRITABLE;
+	ad->ad_flags |= ADF_WRITABLE|ADF_VALID;
 }
 
 
@@ -1201,8 +1204,6 @@ nis_arebuild(ad, fp, e)
 {
 	if (tTd(27, 2))
 		printf("nis_arebuild(%s)\n", ad->ad_name);
-
-	/* nothing */
 }
 
 
@@ -1364,7 +1365,7 @@ impl_arebuild(ad, fp, e)
 		return;
 
   readem:
-	ad->ad_flags |= ADF_WRITABLE;
+	ad->ad_flags |= ADF_WRITABLE|ADF_VALID;
 
 	/* read and store aliases */
 	readaliases(ad, fp, e);
