@@ -1,5 +1,5 @@
 LIB=F77
-CFLAGS+= -O -I.. -DSkip_f2c_Undefs -DIEEE_drem
+CFLAGS+= -DSkip_f2c_Undefs -DIEEE_drem
 
 MISC =	Version.c main.c s_rnge.c abort_.c getarg_.c iargc_.c getenv_.c\
 	signal_.c s_stop.c s_paus.c system_.c cabs.c\
