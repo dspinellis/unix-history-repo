@@ -16,7 +16,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)inet_makeaddr.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)inet_makeaddr.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)inet_makeaddr.c	5.3 (Berkeley) %G%";
  */
 struct in_addr
 inet_makeaddr(net, host)
-	int net, host;
+	u_long net, host;
 {
 	u_long addr;
 
@@ -36,8 +36,10 @@ inet_makeaddr(net, host)
 		addr = (net << IN_CLASSA_NSHIFT) | (host & IN_CLASSA_HOST);
 	else if (net < 65536)
 		addr = (net << IN_CLASSB_NSHIFT) | (host & IN_CLASSB_HOST);
-	else
+	else if (net < 16777216L)
 		addr = (net << IN_CLASSC_NSHIFT) | (host & IN_CLASSC_HOST);
+	else
+		addr = net | host;
 	addr = htonl(addr);
 	return (*(struct in_addr *)&addr);
 }
