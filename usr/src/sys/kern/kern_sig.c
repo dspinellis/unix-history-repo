@@ -3,13 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kern_sig.c	7.4 (Berkeley) %G%
+ *	@(#)kern_sig.c	7.5 (Berkeley) %G%
  */
-
-#include "../machine/reg.h"
-#include "../machine/pte.h"
-#include "../machine/psl.h"
-#include "../machine/mtpr.h"
 
 #include "param.h"
 #include "systm.h"
@@ -27,6 +22,11 @@
 #include "acct.h"
 #include "uio.h"
 #include "kernel.h"
+
+#include "machine/reg.h"
+#include "machine/pte.h"
+#include "machine/psl.h"
+#include "machine/mtpr.h"
 
 #define	cantmask	(sigmask(SIGKILL)|sigmask(SIGCONT)|sigmask(SIGSTOP))
 #define	stopsigmask	(sigmask(SIGSTOP)|sigmask(SIGTSTP)| \

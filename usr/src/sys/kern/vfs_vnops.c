@@ -3,10 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_vnops.c	7.1 (Berkeley) %G%
+ *	@(#)vfs_vnops.c	7.2 (Berkeley) %G%
  */
-
-#include "../machine/reg.h"
 
 #include "param.h"
 #include "systm.h"
@@ -21,6 +19,8 @@
 #include "socket.h"
 #include "socketvar.h"
 #include "proc.h"
+
+#include "machine/reg.h"
 
 /*
  * Check mode permission on inode pointer.

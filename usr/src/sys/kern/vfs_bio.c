@@ -3,10 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)vfs_bio.c	7.3 (Berkeley) %G%
+ *	@(#)vfs_bio.c	7.4 (Berkeley) %G%
  */
-
-#include "../machine/pte.h"
 
 #include "param.h"
 #include "systm.h"
@@ -18,6 +16,8 @@
 #include "seg.h"
 #include "vm.h"
 #include "trace.h"
+
+#include "machine/pte.h"
 
 /*
  * Read in (if necessary) the block and return a buffer pointer.

@@ -14,7 +14,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)qv.c	1.9 (Berkeley) %G%
+ *	@(#)qv.c	1.10 (Berkeley) %G%
  */
 
 /*
@@ -107,7 +107,7 @@
 #include "qv.h"
 #if NQV > 0
 
-#include "../machine/pte.h"
+#include "machine/pte.h"
 
 #include "param.h"
 #include "conf.h"
@@ -124,8 +124,8 @@
 #include "uio.h"
 #include "kernel.h"
 #include "syslog.h"
-#include "../machine/cpu.h"
-#include "../machine/mtpr.h"
+#include "machine/cpu.h"
+#include "machine/mtpr.h"
 #include "ubareg.h"
 #include "ubavar.h"
 

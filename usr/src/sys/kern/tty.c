@@ -3,10 +3,8 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty.c	7.13 (Berkeley) %G%
+ *	@(#)tty.c	7.14 (Berkeley) %G%
  */
-
-#include "../machine/reg.h"
 
 #include "param.h"
 #include "systm.h"
@@ -29,6 +27,8 @@
 #include "uio.h"
 #include "kernel.h"
 #include "syslog.h"
+
+#include "machine/reg.h"
 #include "syslog.h"
 
 /*

@@ -59,7 +59,7 @@ static char *rcsid = "$Header: if_eon.c,v 1.4 88/07/19 15:53:59 hagens Exp $";
 #include "../net/iftypes.h"
 #include "../net/netisr.h"
 #include "../net/route.h"
-#include "../machine/mtpr.h"
+#include "machine/mtpr.h"
 
 #include "../netinet/in.h"
 #include "../netinet/in_systm.h"
@@ -88,7 +88,7 @@ extern 	int				ip_output();
 struct ifnet			eonif[NEON];
 
 #ifdef FAKEIOCCDEV
-#include "../machine/io.h"
+#include "machine/io.h"
 #include "../machineio/ioccvar.h"
 
 #define EON_FAKE_CSR 0

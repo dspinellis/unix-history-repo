@@ -3,14 +3,10 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)sys_process.c	7.4 (Berkeley) %G%
+ *	@(#)sys_process.c	7.5 (Berkeley) %G%
  */
 
 #define IPCREG
-#include "../machine/reg.h"
-#include "../machine/psl.h"
-#include "../machine/pte.h"
-
 #include "param.h"
 #include "systm.h"
 #include "dir.h"
@@ -23,6 +19,10 @@
 #include "buf.h"
 #include "acct.h"
 #include "ptrace.h"
+
+#include "machine/reg.h"
+#include "machine/psl.h"
+#include "machine/pte.h"
 
 /*
  * Priority for tracing
