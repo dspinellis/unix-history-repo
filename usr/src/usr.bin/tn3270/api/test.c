@@ -4,6 +4,8 @@
 #include "apilib.h"
 #include "../ctlr/oia.h"
 
+static char mybuffer[2000];
+
 api_perror(string)
 char *string;
 {
@@ -36,6 +38,7 @@ int	type;
 
 main()
 {
+    register int i;
     int session_id;
     OIA oia;
     QuerySessionIdParms id;
@@ -204,6 +207,29 @@ main()
     } else {
 	printf("Disconnected from keyboard.\n");
     }
+    /* Time copy services */
+
+    for (i = 0; i < 100; i++) {
+	copy.copy_mode = 0;
+	copy.rc = copy.function_id = 0;
+	copy.source.session_id = session_id;
+	copy.source.characteristics = 0;
+	copy.source.session_type = TYPE_DFT;
+	copy.source.begin = 0;
+
+	copy.source_end = 1920;
+
+	copy.target.session_id = 0;
+	copy.target.buffer = mybuffer;
+	copy.target.characteristics = 0;
+	copy.target.session_type = TYPE_DFT;
+
+	if (api_copy_string(&copy) == -1) {
+	    api_perror("api_copy_string");
+	    break;
+	}
+    }
+    printf("Copied data out.\n");
 
     (void) api_finish();
 
