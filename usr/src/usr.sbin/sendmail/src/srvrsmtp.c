@@ -20,9 +20,9 @@
 
 #ifndef lint
 #ifdef SMTP
-static char sccsid[] = "@(#)srvrsmtp.c	5.26 (Berkeley) %G% (with SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.27 (Berkeley) %G% (with SMTP)";
 #else
-static char sccsid[] = "@(#)srvrsmtp.c	5.26 (Berkeley) %G% (without SMTP)";
+static char sccsid[] = "@(#)srvrsmtp.c	5.27 (Berkeley) %G% (without SMTP)";
 #endif
 #endif /* not lint */
 
@@ -233,6 +233,7 @@ smtp()
 			if (runinchild("SMTP-MAIL") > 0)
 				break;
 			define('s', sendinghost, CurEnv);
+			define('r', "SMTP", CurEnv);
 			initsys();
 			setproctitle("%s %s: %s", CurEnv->e_id,
 				CurHostName, inp);
