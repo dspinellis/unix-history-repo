@@ -1,9 +1,9 @@
-.\" Copyright (c) 1983, 1993
+.\" Copyright (c) 1983, 1993, 1994
 .\"	The Regents of the University of California.  All rights reserved.
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)0.t	8.2 (Berkeley) %G%
+.\"	@(#)0.t	8.3 (Berkeley) %G%
 .\"
 .if n .ND
 .TL
@@ -27,7 +27,7 @@ Berkeley, CA  94720
 .AB
 This document summarizes the system calls
 provided by the 4.4BSD operating system.
-It does not attempt to act as a tutorial for use of the system
+It does not attempt to act as a tutorial for use of the system,
 nor does it attempt to explain or justify the design of the
 system facilities.
 It gives neither motivation nor implementation details,
@@ -78,8 +78,8 @@ network server processes.
 .Sh 0 "Notation and Types
 .PP
 The notation used to describe system calls is a variant of a
-C language call, consisting of a prototype call followed by
-declaration of parameters and results.
+C language function call, consisting of a prototype call followed by
+the declaration of parameters and results.
 An additional keyword \fBresult\fP, not part of the normal C language,
 is used to indicate which of the declared entities receive results.
 As an example, consider the \fIread\fP call, as described in
@@ -87,29 +87,59 @@ section
 .Xr 2.1.1 :
 .DS
 cc = read(fd, buf, nbytes);
-result int cc; int fd; result char *buf; int nbytes;
+result ssize_t cc; int fd; result void *buf; size_t nbytes;
 .DE
 The first line shows how the \fIread\fP routine is called, with
 three parameters.
-As shown on the second line \fIcc\fP is an integer and \fIread\fP also
-returns information in the parameter \fIbuf\fP.
+As shown on the second line,
+the return value \fIcc\fP is a size_t and \fIread\fP
+also returns information in the parameter \fIbuf\fP.
 .PP
-Description of all error conditions arising from each system call
-is not provided here; they appear in section
+The descriptions of error conditions arising from each system call
+are not provided here; they appear in section
 .Xr 2
-of the programmer's reference manual.
+of the Programmer's Reference Manual.
 In particular, when accessed from the C language,
 many calls return a characteristic \-1 value
 when an error occurs, returning the error code in the global variable
 \fIerrno\fP.
 Other languages may present errors in different ways.
 .PP
-A number of system standard types are defined in the include file
+A number of system standard types are defined by the include file
 .I <sys/types.h>
 and used in the specifications here and in many C programs.
-These include \fBcaddr_t\fP giving a memory address (typically as
-a character pointer), 
-\fBoff_t\fP giving a file offset (typically as a 64-bit integer),
-and a set of unsigned types \fBu_char\fP, \fBu_short\fP, \fBu_int\fP
-and \fBu_long\fP, shorthand names for \fBunsigned char\fP, \fBunsigned
-short\fP, etc.
+.sp
+.ft C
+.TS
+l l l.
+Type	Value
+_
+caddr_t	char *	/* a memory address */
+clock_t	unsigned long	/* count of CLK_TCK's */
+gid_t	unsigned long	/* group ID */
+int16_t	short	/* 16-bit integer */
+int32_t	int	/* 32-bit integer */
+int64_t	long long	/* 64-bit integer */
+int8_t	signed char	/* 8-bit integer */
+mode_t	unsigned short	/* file permissions */
+off_t	quad_t	/* file offset */
+pid_t	long	/* process ID */
+qaddr_t	quad_t *
+quad_t	long long
+size_t	unsigned int	/* count of bytes */
+ssize_t	int	/* signed size_t */
+time_t	long	/* seconds since the Epoch */
+u_char	unsigned char
+u_int	unsigned int
+u_int16_t	unsigned short	/* unsigned 16-bit integer */
+u_int32_t	unsigned int	/* unsigned 32-bit integer */
+u_int64_t	unsigned long long	/* unsigned 64-bit integer */
+u_int8_t	unsigned char	/* unsigned 8-bit integer */
+u_long	unsigned long
+u_quad_t	unsigned long long
+u_short	unsigned short
+uid_t	unsigned long	/* user ID */
+uint	unsigned int	/* System V compatibility */
+ushort	unsigned short	/* System V compatibility */
+.TE
+.ft R

@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.6.t	8.3 (Berkeley) %G%
+.\"	@(#)1.6.t	8.4 (Berkeley) %G%
 .\"
 .Sh 2 "Resource controls
 .Sh 3 "Process priorities
@@ -50,7 +50,7 @@ current process (RUSAGE_SELF),
 or all its terminated descendent processes (RUSAGE_CHILDREN):
 .DS
 .Fd getrusage 2 "get information about resource utilization
-getrusage(who, rusage)
+getrusage(who, rusage);
 int who; result struct rusage *rusage;
 .DE
 The information is returned in a structure defined in \fI<sys/resource.h>\fP:
@@ -88,12 +88,12 @@ and
 calls:
 .DS
 .Fd getrlimit 2 "get maximum system resource consumption
-getrlimit(resource, rlp)
+getrlimit(resource, rlp);
 int resource; result struct rlimit *rlp;
 .DE
 .DS
 .Fd setrlimit 2 "set maximum system resource consumption
-setrlimit(resource, rlp)
+setrlimit(resource, rlp);
 int resource; struct rlimit *rlp;
 .DE
 The resources that may currently be controlled include:

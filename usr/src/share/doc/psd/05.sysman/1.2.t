@@ -3,16 +3,18 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.2.t	8.5 (Berkeley) %G%
+.\"	@(#)1.2.t	8.6 (Berkeley) %G%
 .\"
 .Sh 2 "Memory management
 .Sh 3 "Text, data, and stack
 .PP
 Each process begins execution with three logical areas of memory
 called text, data, and stack.  
-The text area is read-only and shared, while the data and stack
-areas are private to the process.  Both the data and stack areas may
-be extended and contracted on program request.  The call:
+The text area is read-only and shared,
+while the data and stack areas are writable and private to the process.
+Both the data and stack areas may be extended and contracted on program
+request.
+The call:
 .DS
 .Fd brk 1 "set data section size
 brk(addr);
@@ -26,12 +28,12 @@ and the base of the new area returned with the call:
 addr = sbrk(incr);
 result caddr_t addr; int incr;
 .DE
-Application programs usually use the library routines
-.Fn malloc ,
+Application programs normally use the library routines
+.Fn malloc
 and
-.Fn free
-that provide a more convenient interface to
-.Fn brk ,
+.Fn free ,
+which provide a more convenient interface than
+.Fn brk
 and
 .Fn sbrk .
 .LP
@@ -48,7 +50,8 @@ Protection and sharing options are defined in \fI<sys/mman.h>\fP as:
 .TS
 l s
 l l.
-Protections are chosen from these bits, or-ed together
+Protections are chosen from these bits, or-ed together:
+
 PROT_READ	/* pages can be read */
 PROT_WRITE	/* pages can be written */
 PROT_EXEC	/* pages can be executed */
@@ -58,7 +61,8 @@ PROT_EXEC	/* pages can be executed */
 .TS
 l s
 l l.
-Flags contain sharing type and options. Sharing options, choose one
+Flags contain sharing type and options.  Sharing options, choose one:
+
 MAP_SHARED	/* share changes */
 MAP_PRIVATE	/* changes are private */
 .TE
@@ -67,25 +71,25 @@ MAP_PRIVATE	/* changes are private */
 .TS
 l s
 l l.
-Other flags \(dg
+Option flags\(dg:
+
 MAP_ANON	/* allocated from virtual memory; \fIfd\fP ignored */
 MAP_FIXED	/* map addr must be exactly as requested */
 MAP_NORESERVE	/* don't reserve needed swap area */
 MAP_INHERIT	/* region is retained after exec */
 MAP_HASSEMAPHORE	/* region may contain semaphores */
-MAP_RENAME	/* Sun: rename private pages to file */
 .TE
 .DE
 .FS
-\(dg Currently only MAP_ANON and MAP_FIXED are implemented.
+\(dg In 4.4BSD, only MAP_ANON and MAP_FIXED are implemented.
 .FE
-The cpu-dependent size of a page is returned by the
+The size of a page is cpu-dependent, and is returned by the
 .Fn sysctl
 interface described in section
 .Xr 1.7.1 .
-For convenience and backward compatibility, the
+The
 .Fn getpagesize
-library routine is provided:
+library routine is provided for convenience and backward compatibility:
 .DS
 .Fd getpagesize 0 "get system page size
 pagesize = getpagesize();
@@ -107,9 +111,11 @@ for the convenience of the system,
 it may differ from that supplied
 unless the MAP_FIXED flag is given,
 in which case the exact address will be used or the call will fail.
-The \fIaddr\fP and \fIpos\fP parameters
-must be multiples of the pagesize,
-\fIlen\fP will be rounded by the system as necessary.
+The \fIaddr\fP parameter
+must be a multiple of the pagesize (if MAP_FIXED is given).
+If \fIpos\fP and \fIlen\fP are not a multiple of pagesize,
+they will be rounded by the system as necessary;
+the rounding may cause the mapped region to extend past the specified range.
 A successful
 .Fn mmap
 will delete any previous mapping
@@ -160,6 +166,7 @@ If \fIlen\fP is non-zero, only the pages containing \fIaddr\fP and \fIlen\fP
 succeeding locations will be examined.
 Any required synchronization of memory caches
 will also take place at this time.
+.LP
 Filesystem operations on a file that is mapped for shared modifications
 are currently unpredictable except after an
 .Fn msync .
@@ -210,7 +217,6 @@ MADV_RANDOM	/* expect random page references */
 MADV_SEQUENTIAL	/* expect sequential references */
 MADV_WILLNEED	/* will need these pages */
 MADV_DONTNEED	/* don't need these pages */
-MADV_SPACEAVAIL	/* ensure that resources are reserved */
 .TE
 .DE
 The
@@ -219,8 +225,8 @@ function allows a process to obtain information
 about whether pages are memory resident:
 .DS
 .Fd mincore 3 "get advise about use of memory
-mincore(addr, len, vec)
-caddr_t addr; int len; result char *vec;
+mincore(addr, len, vec);
+caddr_t addr; size_t len; result char *vec;
 .DE
 Here the current memory residency of the pages is returned
 in the character array \fIvec\fP, with a value of 1 meaning
@@ -250,7 +256,7 @@ caddr_t addr; size_t len;
 After the
 .Fn munlock
 call, the pages in the specified address range are still accessible
-but may be paged out if memory is short and they are not accessed.
+but may be paged out if memory is needed and they are not accessed.
 .Sh 3 "Synchronization primitives
 Primitives are provided for synchronization using semaphores
 in shared memory.\(dd
@@ -258,7 +264,7 @@ in shared memory.\(dd
 \(dd All currently unimplemented, no entry points exists.
 .FE
 These primitives are expected to be superseded by the semaphore
-interface being specified by the POSIX Pthread standard.
+interface being specified by the POSIX 1003 Pthread standard.
 They are provided as an efficient interim solution.
 Application programmers are encouraged to use the Pthread interface
 when it becomes available.
@@ -269,12 +275,12 @@ The MAP_HASSEMAPHORE flag must have been specified when the region was created.
 To acquire a lock a process calls:
 .DS
 .Fd mset 2 "acquire and set a semaphore
-value = mset(sem, wait)
+value = mset(sem, wait);
 result int value; semaphore *sem; int wait;
 .DE
 .Fn Mset
 indivisibly tests and sets the semaphore \fIsem\fP.
-If the the previous value is zero, the process has acquired the lock and
+If the previous value is zero, the process has acquired the lock and
 .Fn mset
 returns true immediately.
 Otherwise, if the \fIwait\fP flag is zero,
@@ -286,7 +292,7 @@ relinquishes the processor until notified that it should retry.
 To release a lock a process calls:
 .DS
 .Fd mclear 2 "release a semaphore and awaken waiting processes
-mclear(sem)
+mclear(sem);
 semaphore *sem;
 .DE
 .Fn Mclear
@@ -308,7 +314,7 @@ A process may relinquish the processor by calling
 with a set semaphore:
 .DS
 .Fd msleep 1 "wait for a semaphore
-msleep(sem)
+msleep(sem);
 semaphore *sem;
 .DE
 If the semaphore is still set when it is checked by the kernel,
@@ -318,7 +324,7 @@ until some other process issues an
 for the same semaphore within the region using the call:
 .DS
 .Fd mwakeup 1 "awaken process(es) sleeping on a semaphore
-mwakeup(sem)
+mwakeup(sem);
 semaphore *sem;
 .DE
 An

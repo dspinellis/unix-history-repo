@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)1.7.t	8.3 (Berkeley) %G%
+.\"	@(#)1.7.t	8.4 (Berkeley) %G%
 .\"
 .Sh 2 "System operation support
 .LP
@@ -17,7 +17,7 @@ function allows any process to retrieve system information
 and allows processes with appropriate privileges to set system configurations.
 .DS
 .Fd sysctl 6 "get or set system information
-sysctl(name, namelen, oldp, oldlenp, newp, newlen)
+sysctl(name, namelen, oldp, oldlenp, newp, newlen);
 int *name; u_int namelen; result void *oldp; result size_t *oldlenp;
 void *newp; size_t newlen;
 .DE
@@ -44,11 +44,12 @@ rather than slash-separated strings.
 The information is copied into the buffer specified by \fIoldp\fP.
 The size of the buffer is given by the location specified by \fIoldlenp\fP
 before the call,
-and that location gives the amount of data copied after a successful call.
+and that location is filled in with the amount of data copied after
+a successful call.
 If the amount of data available is greater
 than the size of the buffer supplied,
 the call supplies as much data as fits in the buffer provided
-and returns with the error code ENOMEM.
+and returns an error.
 .PP
 To set a new value, \fInewp\fP
 is set to point to a buffer of length \fInewlen\fP
@@ -65,6 +66,7 @@ in the include files listed here:
 .TS
 l l l.
 Name	Next Level Names	Description
+_
 CTL\_DEBUG	sys/sysctl.h	Debugging
 CTL\_FS	sys/sysctl.h	Filesystem
 CTL\_HW	sys/sysctl.h	Generic CPU, I/O
@@ -92,16 +94,15 @@ The argument \fIdata\fP describes the filesystem object to be mounted
 according to the \fItype\fP.
 The contents of the filesystem become available through the
 new mount point \fIdir\fP.
-Any files in \fIdir\fP at the time of a successful mount
-are swept under the carpet so to speak,
-and are unavailable until the filesystem is unmounted.
-The \fIflags\fP specifies generic properties,
+Any files in or below \fIdir\fP at the time of a successful mount
+disappear from the name space until the filesystem is unmounted.
+The \fIflags\fP value specifies generic properties,
 such as a request to mount the filesystem read-only.
 .LP
-Information about all the mounted filesystems can be obtained with the call:
+Information about all mounted filesystems can be obtained with the call:
 .DS
 .Fd getfsstat 3 "get list of all mounted filesystems
-getfsstat(buf, bufsize, flags)
+getfsstat(buf, bufsize, flags);
 result struct statfs *buf; long bufsize, int flags;
 .DE
 .LP
@@ -129,7 +130,7 @@ The call:
 .Fd sync 0 "force completion of pending disk writes (flush cache)
 sync();
 .DE
-schedules input/output to clean all system buffer caches.
+schedules I/O to flush all modified disk blocks resident in the kernel.
 (This call does not require privileged status.)
 Files can be selectively flushed to disk using the
 .Fn fsync
@@ -139,12 +140,13 @@ call (see section
 The call:
 .DS
 .Fd reboot 1 "reboot system or halt processor
-reboot(how)
+reboot(how);
 int how;
 .DE
 causes a machine halt or reboot.  The call may request a reboot
 by specifying \fIhow\fP as RB_AUTOBOOT, or that the machine be halted
-with RB_HALT.  These constants are defined in \fI<sys/reboot.h>\fP.
+with RB_HALT, among other options.
+These constants are defined in \fI<sys/reboot.h>\fP.
 .Sh 3 "Accounting
 .PP
 The system optionally keeps an accounting record in a file
@@ -156,5 +158,5 @@ The accounting may be enabled to a file \fIname\fP by doing:
 acct(path);
 char *path;
 .DE
-If \fIpath\fP is null, then accounting is disabled.  Otherwise,
-the named file becomes the accounting file.
+If \fIpath\fP is NULL, then accounting is disabled.
+Otherwise, the named file becomes the accounting file.
