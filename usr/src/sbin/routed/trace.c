@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)trace.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)trace.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -19,6 +19,7 @@ static char sccsid[] = "@(#)trace.c	5.5 (Berkeley) %G%";
  */
 #define	RIPCMDS
 #include "defs.h"
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/signal.h>
 
@@ -81,9 +82,16 @@ traceoff()
 {
 	if (!traceactions)
 		return;
-	if (ftrace != NULL)
+	if (ftrace != NULL) {
+		int fd = open("/dev/null", O_RDWR);
+
+		fprintf(ftrace, "Tracing disabled\n");
+		(void) dup2(fd, 1);
+		(void) dup2(fd, 2);
+		(void) close(fd);
 		fclose(ftrace);
-	ftrace = NULL;
+		ftrace = NULL;
+	}
 	traceactions = 0;
 	tracehistory = 0;
 }
