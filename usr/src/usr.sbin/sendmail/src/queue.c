@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.10 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.11 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.10 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.11 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -75,10 +75,14 @@ queueup(e, queueall, announce)
 	*/
 
 	newid = (e->e_id == NULL);
+
+	/* if newid, queuename will create a locked qf file in e->lockfp */
 	strcpy(tf, queuename(e, 't'));
 	tfp = e->e_lockfp;
 	if (tfp == NULL)
 		newid = FALSE;
+
+	/* if newid, just write the qf file directly (instead of tf file) */
 	if (newid)
 	{
 		tfp = e->e_lockfp;
@@ -309,9 +313,12 @@ queueup(e, queueall, announce)
 
 	if (!newid)
 	{
+		/* rename (locked) tf to be (locked) qf */
 		qf = queuename(e, 'q');
 		if (rename(tf, qf) < 0)
 			syserr("cannot rename(%s, %s), df=%s", tf, qf, e->e_df);
+
+		/* close and unlock old (locked) qf */
 		if (e->e_lockfp != NULL)
 			(void) xfclose(e->e_lockfp, "queueup lockfp", e->e_id);
 		e->e_lockfp = tfp;
@@ -923,6 +930,21 @@ readqf(e, announcefile)
 		return FALSE;
 	}
 
+	if (!lockfile(fileno(qfp), qf, LOCK_EX|LOCK_NB))
+	{
+		/* being processed by another queuer */
+		if (tTd(40, 8))
+			printf("readqf(%s): locked\n", qf);
+		if (Verbose)
+			printf("%s: locked\n", e->e_id);
+# ifdef LOG
+		if (LogLevel > 19)
+			syslog(LOG_DEBUG, "%s: locked", e->e_id);
+# endif /* LOG */
+		(void) fclose(qfp);
+		return FALSE;
+	}
+
 	/*
 	**  Check the queue file for plausibility to avoid attacks.
 	*/
@@ -948,23 +970,8 @@ readqf(e, announcefile)
 # endif /* LOG */
 		if (tTd(40, 8))
 			printf("readqf(%s): bogus file\n", qf);
-		fclose(qfp);
 		rename(qf, queuename(e, 'Q'));
-		return FALSE;
-	}
-
-	if (!lockfile(fileno(qfp), qf, LOCK_EX|LOCK_NB))
-	{
-		/* being processed by another queuer */
-		if (tTd(40, 8))
-			printf("readqf(%s): locked\n", qf);
-		if (Verbose)
-			printf("%s: locked\n", e->e_id);
-# ifdef LOG
-		if (LogLevel > 19)
-			syslog(LOG_DEBUG, "%s: locked", e->e_id);
-# endif /* LOG */
-		(void) fclose(qfp);
+		fclose(qfp);
 		return FALSE;
 	}
 
@@ -976,7 +983,18 @@ readqf(e, announcefile)
 		return FALSE;
 	}
 
-	/* save this lock */
+	if (st.st_nlink == 0)
+	{
+		/*
+		**  Race condition -- we got a file just as it was being
+		**  unlinked.  Just assume it is zero length.
+		*/
+
+		fclose(qfp);
+		return FALSE;
+	}
+
+	/* good file -- save this lock */
 	e->e_lockfp = qfp;
 
 	/* do basic system initialization */
