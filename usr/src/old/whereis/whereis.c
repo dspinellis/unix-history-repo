@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)whereis.c	4.8 (Berkeley) %G%";
+static char *sccsid = "@(#)whereis.c	4.9 (Berkeley) %G%";
 
 #include <sys/param.h>
 #include <stdio.h>
@@ -17,6 +17,7 @@ static char *bindirs[] = {
 	"/usr/new",
 	"/usr/old",
 	"/usr/hosts",
+	"/usr/include",
 	0
 };
 static char *mandirs[] = {
@@ -41,15 +42,13 @@ static char *srcdirs[]  = {
 	"/usr/src/local",
 	"/usr/src/new",
 	"/usr/src/old",
+	"/usr/src/include",
 	"/usr/src/lib/libc/gen",
 	"/usr/src/lib/libc/stdio",
 	"/usr/src/lib/libc/sys",
 	"/usr/src/lib/libc/net/common",
 	"/usr/src/lib/libc/net/inet",
 	"/usr/src/lib/libc/net/misc",
-	"/usr/src/ucb/netser",
-	"/usr/src/ucb/netser/misc",
-	"/usr/src/ucb/arpanet",
 	"/usr/src/ucb/pascal",
 	"/usr/src/ucb/pascal/utilities",
 	"/usr/src/undoc",
@@ -75,12 +74,6 @@ main(argc, argv)
 	char *argv[];
 {
 
-#ifdef CORY
-	if (getuid() == 0)
-		nice(-20);
-	if (((getuid() >> 8) & 0377) > 10)
-		setuid(getuid());
-#endif
 	argc--, argv++;
 	if (argc == 0) {
 usage:
