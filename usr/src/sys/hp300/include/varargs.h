@@ -4,17 +4,14 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)varargs.h	5.1 (Berkeley) %G%
+ *	@(#)varargs.h	5.2 (Berkeley) %G%
  */
 
-typedef char *va_list;
+#include <stdarg.h>
 
-#define	__va_round(type) \
-	(((sizeof(type) + sizeof(int) - 1) / sizeof(int)) * sizeof(int))
-
-#define	va_arg(ap, type) \
-	((type *)(ap += __va_round(type)))[-1]
+#undef	va_dcl
 #define	va_dcl	int va_alist;
-#define	va_end(ap)
+
+#undef	va_start
 #define	va_start(ap) \
 	ap = (char *)&va_alist
