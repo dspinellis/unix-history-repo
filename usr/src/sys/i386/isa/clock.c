@@ -1,6 +1,6 @@
 /*-
- * Copyright (c) 1990 The Regents of the University of California.
- * All rights reserved.
+ * Copyright (c) 1990, 1993
+ *	The Regents of the University of California.  All rights reserved.
  *
  * This code is derived from software contributed to Berkeley by
  * William Jolitz and Don Ahn.
@@ -10,7 +10,7 @@
  *	from: @(#)clock.c	7.2 (Berkeley) 5/12/91
  *	from NetBSD: Id: clock.c,v 1.6 1993/05/22 08:01:07 cgd Exp 
  *
- *	@(#)clock.c	7.4 (Berkeley) %G%
+ *	@(#)clock.c	8.1 (Berkeley) %G%
  *
  */
 
