@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.61 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.62 (Berkeley) %G%
  */
 
 /*
@@ -413,9 +413,8 @@ vinvalbuf(vp, save)
 			bp->b_flags |= B_BUSY;
 			splx(s);
 			if (save && (bp->b_flags & B_DELWRI)) {
-				dirty++;			/* XXX */
-				if (vp->v_mount->mnt_stat.f_type != MOUNT_LFS)
-					(void) bwrite(bp);
+				dirty++;
+				(void) VOP_BWRITE(bp);
 				break;
 			}
 			if (bp->b_vp != vp)
