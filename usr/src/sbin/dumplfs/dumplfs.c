@@ -12,14 +12,16 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumplfs.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumplfs.c	5.3 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
 #include <sys/mount.h>
 #include <sys/file.h>
-#include <ufs/dinode.h>
-#include "lfs.h"				/* XXX fix this */
+
+#include <ufs/ufs/dinode.h>
+#include <ufs/lfs/lfs.h>
+
 #include <time.h>
 #include <fstab.h>
 #include <errno.h>
@@ -30,13 +32,14 @@ static char sccsid[] = "@(#)dumplfs.c	5.2 (Berkeley) %G%";
 #include "extern.h"
 
 static void	addseg __P((char *));
+static void	dump_cleaner_info __P((struct lfs *, void *));
 static void	dump_dinode __P((struct dinode *));
-static void	dump_ifile __P((int, LFS *, int));
+static void	dump_ifile __P((int, struct lfs *, int));
 static int	dump_ipage_ifile __P((int, IFILE *, int));
-static int	dump_ipage_segusage __P((LFS *, int, IFILE *, int));
-static daddr_t	dump_segment __P((int, int, daddr_t, LFS *, int));
-static int	dump_sum __P((SEGSUM *, int, daddr_t));
-static void	dump_super __P((LFS *));
+static int	dump_ipage_segusage __P((struct lfs *, int, IFILE *, int));
+static void	dump_segment __P((int, int, daddr_t, struct lfs *, int));
+static int	dump_sum __P((struct lfs *, SEGSUM *, int, daddr_t));
+static void	dump_super __P((struct lfs *));
 static void	usage __P((void));
 
 typedef struct seglist SEGLIST;
@@ -69,11 +72,11 @@ char *special;
 		    i, ip->if_version, ip->if_daddr, \
 		    ctime((time_t *)&ip->if_st_atime))
 int
-main (argc, argv)
+main(argc, argv)
 	int argc;
 	char *argv[];
 {
-	LFS lfs_sb1, lfs_sb2, *lfs_master;
+	struct lfs lfs_sb1, lfs_sb2, *lfs_master;
 	daddr_t seg_addr;
 	int ch, do_allsb, do_ientries, fd, segnum;
 
@@ -104,14 +107,15 @@ main (argc, argv)
 		err("%s: %s", special, strerror(errno));
 
 	/* Read the first superblock */
-	get(fd, LFS_LABELPAD, &lfs_sb1, sizeof(LFS));
+	get(fd, LFS_LABELPAD, &lfs_sb1, sizeof(struct lfs));
 	daddr_shift = lfs_sb1.lfs_bshift - lfs_sb1.lfs_fsbtodb;
 
 	/*
 	 * Read the second superblock and figure out which check point is
 	 * most up to date.
 	 */
-	get(fd, lfs_sb1.lfs_sboffs[1] << daddr_shift, &lfs_sb2, sizeof(LFS));
+	get(fd,
+	    lfs_sb1.lfs_sboffs[1] << daddr_shift, &lfs_sb2, sizeof(struct lfs));
 
 	lfs_master = &lfs_sb1;
 	if (lfs_sb1.lfs_tstamp < lfs_sb2.lfs_tstamp)
@@ -142,26 +146,22 @@ main (argc, argv)
 
 /*
  * We are reading all the blocks of an inode and dumping out the ifile table.
- * This code can be made tigher, but this is a first pass at getting the stuff
+ * This code could be tighter, but this is a first pass at getting the stuff
  * printed out rather than making this code incredibly efficient.
  */
 static void
 dump_ifile(fd, lfsp, do_ientries)
 	int fd;
-	LFS *lfsp;
+	struct lfs *lfsp;
 	int do_ientries;
 {
 	IFILE *ipage;
 	struct dinode *dip, *dpage;
-	daddr_t addr, *addrp, *iaddrp;
-	daddr_t	*dindir;
-	daddr_t	*indir;
-	int block_limit, nblocks;
-	int i, j, inum, nsupb, psize;
+	daddr_t addr, *addrp, *dindir, *iaddrp, *indir;
+	int block_limit, i, inum, j, nblocks, nsupb, psize;
 
 	psize = lfsp->lfs_bsize;
 	addr = lfsp->lfs_idaddr;
-	nsupb = lfsp->lfs_bsize / sizeof(SEGUSE);
 
 	if (!(dip = dpage = malloc(psize)))
 		err("%s", strerror(errno));
@@ -188,16 +188,23 @@ dump_ifile(fd, lfsp, do_ientries)
 	for (inum = 0, addrp = dip->di_db, i = 0; i < block_limit;
 	    i++, addrp++) {
 		get(fd, *addrp << daddr_shift, ipage, psize);
+		if (i < lfsp->lfs_cleansz) {
+			dump_cleaner_info(lfsp, ipage);
+			continue;
+		} else 
+			i -= lfsp->lfs_cleansz;
 
 		if (i < lfsp->lfs_segtabsz) {
-			inum = dump_ipage_segusage(lfsp, inum, ipage, nsupb);
+			inum = dump_ipage_segusage(lfsp, inum, ipage, 
+			    lfsp->lfs_sepb);
 			if (!inum)
 				if(!do_ientries)
-					goto e0;
+					goto e1;
 				else
 					print_iheader;
 		} else
 			inum = dump_ipage_ifile(inum, ipage, lfsp->lfs_ifpb);
+
 	}
 
 	if (nblocks <= NDADDR)
@@ -212,8 +219,15 @@ dump_ifile(fd, lfsp, do_ientries)
 		if (*addrp == LFS_UNUSED_DADDR)
 			break;
 		get(fd, *addrp << daddr_shift,ipage, psize);
+		if (i < lfsp->lfs_cleansz) {
+			dump_cleaner_info(lfsp, ipage);
+			continue;
+		} else 
+			i -= lfsp->lfs_cleansz;
+
 		if (i < lfsp->lfs_segtabsz) {
-			inum = dump_ipage_segusage(lfsp, inum, ipage, nsupb);
+			inum = dump_ipage_segusage(lfsp, inum, ipage, 
+			    lfsp->lfs_sepb);
 			if (!inum)
 				if(!do_ientries)
 					goto e1;
@@ -239,9 +253,15 @@ dump_ifile(fd, lfsp, do_ientries)
 			if (*addrp == LFS_UNUSED_DADDR)
 				break;
 			get(fd, *addrp << daddr_shift, ipage, psize);
+			if (i < lfsp->lfs_cleansz) {
+				dump_cleaner_info(lfsp, ipage);
+				continue;
+			} else 
+				i -= lfsp->lfs_cleansz;
+
 			if (i < lfsp->lfs_segtabsz) {
 				inum = dump_ipage_segusage(lfsp,
-				    inum, ipage, nsupb);
+				    inum, ipage, lfsp->lfs_sepb);
 				if (!inum)
 					if(!do_ientries)
 						goto e2;
@@ -276,7 +296,7 @@ dump_ipage_ifile(i, pp, tot)
 
 static int
 dump_ipage_segusage(lfsp, i, pp, tot)
-	LFS *lfsp;
+	struct lfs *lfsp;
 	int i;
 	IFILE *pp;
 	int tot;
@@ -323,36 +343,44 @@ dump_dinode(dip)
 }
 
 static int
-dump_sum(sp, segnum, addr)
+dump_sum(lfsp, sp, segnum, addr)
+	struct lfs *lfsp;
 	SEGSUM *sp;
 	int segnum;
 	daddr_t addr;
 {
 	FINFO *fp;
 	long *dp;
-	int i, j, sb;
+	int i, j;
 	int ck;
+	int numblocks;
 
-	if (sp->ss_cksum != (ck = cksum(&sp->ss_next, 
-	    LFS_SUMMARY_SIZE - sizeof(sp->ss_cksum))))
+	if (sp->ss_sumsum != (ck = cksum(&sp->ss_datasum, 
+	    LFS_SUMMARY_SIZE - sizeof(sp->ss_sumsum))))
 		(void)printf("dumplfs: %s %d address %lx\n",
 		    "corrupt summary block; segment", segnum, addr);
 
 	(void)printf("Segment Summary Info\n");
-	(void)printf("\t%s%X   \t%s%X   \t%s%X   \n",
+	(void)printf("\t%s%X\t%s%d\t%s%d\t%s%X\t%s%X\n",
 		"next     ", sp->ss_next,
-		"prev     ", sp->ss_prev,
-		"nextsum  ", sp->ss_nextsum );
-	(void)printf("\t%s%d\t%s%d\t%s%X\n",
 		"nfinfo   ", sp->ss_nfinfo,
 		"ninos    ", sp->ss_ninos,
-		"cksum    ", sp->ss_cksum );
+		"sumsum   ", sp->ss_sumsum,
+		"datasum  ", sp->ss_datasum );
 	(void)printf("\tcreate   %s", ctime((time_t *)&sp->ss_create));
 
-	sb = 0;
+	numblocks = (sp->ss_ninos + INOPB(lfsp) - 1) / INOPB(lfsp);
+
+	/* Dump out inode disk addresses */
+	dp = (daddr_t *)sp;
+	dp += LFS_SUMMARY_SIZE / sizeof(daddr_t);
+	printf("\tInode addresses:");
+	for (dp--, i = 0; i < numblocks; i += INOPB(lfsp))
+		printf("\t%X", *dp--);
+
+	printf("\n");
 	for (fp = (FINFO *)(sp + 1), i = 0; i < sp->ss_nfinfo; i++) {
-		if (fp->fi_ino == LFS_UNUSED_INUM)
-			sb = 1;
+		numblocks += fp->fi_nblocks;
 		(void)printf("File Info for file: %d version %d nblocks %d\n",
 		    fp->fi_ino, fp->fi_version, fp->fi_nblocks);
 		dp = &(fp->fi_blocks[0]);
@@ -365,45 +393,63 @@ dump_sum(sp, segnum, addr)
 			(void)printf("\n");
 		fp = (FINFO *)dp;
 	}
-	return (sb);
+	return (numblocks);
 }
 
-static daddr_t
+static void
 dump_segment(fd, segnum, addr, lfsp, dump_sb)
 	int fd, segnum;
 	daddr_t addr;
-	LFS *lfsp;
+	struct lfs *lfsp;
 	int dump_sb;
 {
-	LFS lfs_sb;
+	struct lfs lfs_sb, *sbp;
 	SEGSUM *sump;
 	char sumblock[LFS_SUMMARY_SIZE];
-	int sum_offset;
-	int sb;
+	int did_one, nblocks, sb;
+	off_t sum_offset, super_off;
 
 	(void)printf("\nSegment Number %d (Disk Address %X)\n",
 	    addr >> (lfsp->lfs_segshift - daddr_shift), addr);
-	sum_offset = (addr << (lfsp->lfs_bshift - lfsp->lfs_fsbtodb)) +
-	    (lfsp->lfs_ssize << lfsp->lfs_bshift) - LFS_SUMMARY_SIZE;
+	sum_offset = (addr << (lfsp->lfs_bshift - lfsp->lfs_fsbtodb));
 
 	sb = 0;
+	did_one = 0;
 	do {
 		get(fd, sum_offset, sumblock, LFS_SUMMARY_SIZE);
 		sump = (SEGSUM *)sumblock;
-		sb = sb || dump_sum(sump, segnum, addr);
-		sum_offset = (sump->ss_nextsum == -1 ? 0 :
-		    sump->ss_nextsum << daddr_shift);
+		if (sump->ss_sumsum != cksum (&sump->ss_datasum, 
+			LFS_SUMMARY_SIZE - sizeof(sump->ss_sumsum))) {
+			sbp = (struct lfs *)sump;
+			if (sb = (sbp->lfs_magic == LFS_MAGIC)) {
+				super_off = sum_offset;
+				sum_offset += LFS_SBPAD;
+			} else if (did_one)
+				break;
+			else {
+				printf("Segment at %X corrupt\n", addr);
+				break;
+			}
+		} else {
+			nblocks = dump_sum(lfsp, sump, segnum, addr);
+			if (nblocks)
+				sum_offset += (nblocks << lfsp->lfs_bshift);
+			else
+				sum_offset = 0;
+			did_one = 1;
+		}
 	} while (sum_offset);
+
 	if (dump_sb && sb)  {
-		get(fd, addr << daddr_shift, &lfs_sb, sizeof(LFS));
+		get(fd, super_off, &lfs_sb, sizeof(struct lfs));
 		dump_super(&lfs_sb);
 	}
-	return (sump->ss_prev);
+	return;
 }
 
 static void
 dump_super(lfsp)
-	LFS *lfsp;
+	struct lfs *lfsp;
 {
 	int i;
 
@@ -424,9 +470,10 @@ dump_super(lfsp)
 		"ifpb     ", lfsp->lfs_ifpb,
 		"nindir   ", lfsp->lfs_nindir);
 
-	(void)printf("%s%d\t%s%d\t%s%d\n",
+	(void)printf("%s%d\t%s%d\t%s%d\t%s%d\n",
 		"nseg     ", lfsp->lfs_nseg,
 		"nspf     ", lfsp->lfs_nspf,
+		"cleansz  ", lfsp->lfs_cleansz,
 		"segtabsz ", lfsp->lfs_segtabsz);
 
 	(void)printf("%s%X\t%s%d\t%s%X\t%s%d\n",
@@ -455,11 +502,13 @@ dump_super(lfsp)
 		"free     ", lfsp->lfs_free,
 		"idaddr   ", lfsp->lfs_idaddr,
 		"ifile    ", lfsp->lfs_ifile);
-	(void)printf("%s%X\t%s%d\t%s%X\t%s%X\n",
+	(void)printf("%s%X\t%s%d\t%s%X\t%s%X\t%s%X\t%s%X\n",
 		"bfree    ", lfsp->lfs_bfree,
 		"nfiles   ", lfsp->lfs_nfiles,
 		"lastseg  ", lfsp->lfs_lastseg,
-		"nextseg  ", lfsp->lfs_nextseg);
+		"nextseg  ", lfsp->lfs_nextseg,
+		"curseg   ", lfsp->lfs_curseg,
+		"offset   ", lfsp->lfs_offset);
 	(void)printf("tstamp   %s", ctime((time_t *)&lfsp->lfs_tstamp));
 }
 
@@ -474,6 +523,14 @@ addseg(arg)
 	p->next = seglist;
 	p->num = atoi(arg);
 	seglist = p;
+}
+
+static void
+dump_cleaner_info(lfsp, ipage)
+	struct lfs *lfsp;
+	void *ipage;
+{
+	return;
 }
 
 static void
