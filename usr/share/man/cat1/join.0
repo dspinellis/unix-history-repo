@@ -1,0 +1,98 @@
+JOIN(1)                      BSD Reference Manual                      JOIN(1)
+
+NNAAMMEE
+     jjooiinn - relational database operator
+
+SSYYNNOOPPSSIISS
+     jjooiinn [--aa _f_i_l_e___n_u_m_b_e_r | --vv _f_i_l_e___n_u_m_b_e_r] [--ee _s_t_r_i_n_g] [--jj _f_i_l_e___n_u_m_b_e_r _f_i_e_l_d]
+          [--oo _l_i_s_t] [--tt _c_h_a_r] [--11 _f_i_e_l_d] [--22 _f_i_e_l_d] _f_i_l_e_1 _f_i_l_e_2
+
+DDEESSCCRRIIPPTTIIOONN
+     The join utility performs an ``equality join'' on the specified files and
+     writes the result to the standard output.  The ``join field'' is the
+     field in each file by which the files are compared.  The first field in
+     each line is used by default.  There is one line in the output for each
+     pair of lines in _f_i_l_e_1 and _f_i_l_e_2 which have identical join fields.  Each
+     output line consists of the join field, the remaining fields from _f_i_l_e_1
+     and then the remaining fields from _f_i_l_e_2.
+
+     The default field separators are tab and space characters.  In this case,
+     multiple tabs and spaces count as a single field separator, and leading
+     tabs and spaces are ignored.  The default output field separator is a
+     single space character.
+
+     Many of the options use file and field numbers.  Both file numbers and
+     field numbers are 1 based, i.e. the first file on the command line is
+     file number 1 and the first field is field number 1.  The following op-
+     tions are available:
+
+     --aa _f_i_l_e___n_u_m_b_e_r
+                 In addition to the default output, produce a line for each
+                 unpairable line in file _f_i_l_e___n_u_m_b_e_r.
+
+     --ee _s_t_r_i_n_g   Replace empty output fields with _s_t_r_i_n_g.
+
+     --oo _l_i_s_t     The --oo option specifies the fields that will be output from
+                 each file for each line with matching join fields.  Each ele-
+                 ment of _l_i_s_t has the form `file_number.field', where
+                 _f_i_l_e___n_u_m_b_e_r is a file number and _f_i_e_l_d is a field number.
+                 The elements of list must be either comma (``,'') or whites-
+                 pace separated.  (The latter requires quoting to protect it
+                 from the shell, or, a simpler approach is to use multiple --oo
+                 options.)
+
+     --tt _c_h_a_r     Use character _c_h_a_r as a field delimiter for both input and
+                 output.  Every occurrence of _c_h_a_r in a line is significant.
+
+     --vv _f_i_l_e___n_u_m_b_e_r
+                 Do not display the default output, but display a line for
+                 each unpairable line in file _f_i_l_e___n_u_m_b_e_r. The options --vv _1
+                 and --vv _2 may be specified at the same time.
+
+     --11 _f_i_e_l_d    Join on the _f_i_e_l_d'th field of file 1.
+
+     --22 _f_i_e_l_d    Join on the _f_i_e_l_d'th field of file 2.
+
+     When the default field delimiter characters are used, the files to be
+     joined should be ordered in the collating sequence of sort(1),  using the
+     --bb option, on the fields on which they are to be joined, otherwise jjooiinn
+     may not report all field matches.  When the field delimiter characters
+     are specified by the --tt option, the collating sequence should be the same
+     as sort without the --bb option.
+
+     If one of the arguments _f_i_l_e_1 or _f_i_l_e_2 is ``-'', the standard input is
+     used.
+
+
+     The jjooiinn utility exits 0 on success, and >0 if an error occurs.
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     For compatibility with historic versions of jjooiinn, the following options
+     are available:
+
+     --aa          In addition to the default output, produce a line for each
+                 unpairable line in both file 1 and file 2.
+
+     --jj11 _f_i_e_l_d   Join on the _f_i_e_l_d'th field of file 1.
+
+     --jj22 _f_i_e_l_d   Join on the _f_i_e_l_d'th field of file 2.
+
+     --jj _f_i_e_l_d    Join on the _f_i_e_l_d'th field of both file 1 and file 2.
+
+     --oo _l_i_s_t _._._.
+                 Historical implementations of jjooiinn permitted multiple argu-
+                 ments to the --oo option.  These arguments were of the form
+                 ``file_number.field_number'' as described for the current --oo
+                 option.  This has obvious difficulties in the presence of
+                 files named ``1.2''.
+
+     These options are available only so historic shellscripts don't require
+     modification and should not be used.
+
+SSTTAANNDDAARRDDSS
+     The jjooiinn command is expected to be IEEE Std1003.2 (``POSIX'') compatible.
+
+SSEEEE AALLSSOO
+     awk(1),  comm(1),  paste(1),  sort(1),  uniq(1)
+
+4.4BSD                           June 6, 1993                                2

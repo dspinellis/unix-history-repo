@@ -1,0 +1,40 @@
+GCORE(1)                     BSD Reference Manual                     GCORE(1)
+
+NNAAMMEE
+     ggccoorree - get core images of running process
+
+SSYYNNOOPPSSIISS
+     ggccoorree [--ss] [--cc _c_o_r_e] _e_x_e_c _p_i_d
+
+DDEESSCCRRIIPPTTIIOONN
+     GGccoorree creates a core image of the specified process, suitable for use
+     with gdb(1).  By default, the core is written to the file ``_c_o_r_e_._<_p_i_d_>''.
+     Both the executable image, _e_x_e_c, and the process identifier, _p_i_d, must be
+     given on the command line.
+
+     The options are:
+
+     --cc      Write the core file to the specified file instead of
+             ``_c_o_r_e_._<_p_i_d_>''.
+
+     --ss      Stop the process while gathering the core image, and resume it
+             when done.  This guarantees that the resulting core dump will be
+             in a consistent state.  The process is resumed even if it was al-
+             ready stopped.  The same effect can be achieved manually with
+             kill(1).
+
+FFIILLEESS
+     core.<pid>         The core image.
+
+HHIISSTTOORRYY
+     GGccoorree appeared in 4.2BSD.
+
+BBUUGGSS
+     Context switches or paging activity that occur while ggccoorree is running may
+     cause the program to become confused.  For best results, use -s to tem-
+     porarily stop the target process.
+
+     GGccoorree is not compatible with the original 4.2BSD version.  In particular,
+     4.4BSD requires the _e_x_e_c argumemt.
+
+4.2 Berkeley Distribution        June 6, 1993                                1

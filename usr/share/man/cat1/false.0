@@ -1,0 +1,23 @@
+FALSE(1)                     BSD Reference Manual                     FALSE(1)
+
+NNAAMMEE
+     ffaallssee - return false value
+
+SSYYNNOOPPSSIISS
+     ffaallssee
+
+DDEESSCCRRIIPPTTIIOONN
+     FFaallssee is usually used in a Bourne shell script.  It tests for the appro-
+     priate status "false" before running (or failing to run) a list of com-
+     mands.
+
+     The ffaallssee utility always exits with a value other than zero.
+
+SSEEEE AALLSSOO
+     csh(1),  sh(1),  true(1)
+
+SSTTAANNDDAARRDDSS
+     The ffaallssee utility is expected to be IEEE Std1003.2 (``POSIX'') compati-
+     ble.
+
+4.2 Berkeley Distribution        June 6, 1993                                1

@@ -1,0 +1,79 @@
+AR(5)                       BSD Programmer's Manual                      AR(5)
+
+NNAAMMEE
+     aarr - archive (library) file format
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<aarr..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+     The archive command aarr combines several files into one.  Archives are
+     mainly used as libraries of object files intended to be loaded using the
+     link-editor ld(1).
+
+     A file created with aarr begins with the ``magic'' string "!<arch>\n".  The
+     rest of the archive is made up of objects, each of which is composed of a
+     header for a file, a possible file name, and the file contents.  The
+     header is portable between machine architectures, and, if the file con-
+     tents are printable, the archive is itself printable.
+
+     The header is made up of six variable length ASCII fields, followed by a
+     two character trailer.  The fields are the object name (16 characters),
+     the file last modification time (12 characters), the user and group id's
+     (each 6 characters), the file mode (8 characters) and the file size (10
+     characters).  All numeric fields are in decimal, except for the file mode
+     which is in octal.
+
+     The modification time is the file _s_t___m_t_i_m_e field, i.e., CUT seconds since
+     the epoch.  The user and group id's are the file _s_t___u_i_d and _s_t___g_i_d
+     fields.  The file mode is the file _s_t___m_o_d_e field.  The file size is the
+     file _s_t___s_i_z_e field.  The two-byte trailer is the string "`\n".
+
+     Only the name field has any provision for overflow.  If any file name is
+     more than 16 characters in length or contains an embedded space, the
+     string "#1/" followed by the ASCII length of the name is written in the
+     name field.  The file size (stored in the archive header) is incremented
+     by the length of the name.  The name is then written immediately follow-
+     ing the archive header.
+
+     Any unused characters in any of these fields are written as space charac-
+     ters.  If any fields are their particular maximum number of characters in
+     length, there will be no separation between the fields.
+
+     Objects in the archive are always an even number of bytes long; files
+     which are an odd number of bytes long are padded with a newline (``\n'')
+     character, although the size in the header does not reflect this.
+
+SSEEEE AALLSSOO
+     ar(1),  stat(2)
+
+HHIISSTTOORRYY
+     There have been at least four aarr formats.  The first was denoted by the
+     leading ``magic'' number 0177555 (stored as type int).  These archives
+     were almost certainly created on a 16-bit machine, and contain headers
+     made up of five fields.  The fields are the object name (8 characters),
+     the file last modification time (type long), the user id (type char), the
+     file mode (type char) and the file size (type unsigned int).  Files were
+     padded to an even number of bytes.
+
+     The second was denoted by the leading ``magic'' number 0177545 (stored as
+     type int).  These archives may have been created on either 16 or 32-bit
+     machines, and contain headers made up of six fields.  The fields are the
+     object name (14 characters), the file last modification time (type long),
+     the user and group id's (each type char), the file mode (type int) and
+     the file size (type long).  Files were padded to an even number of bytes.
+     For more information on converting from this format see arcv(8).
+
+     The current archive format (without support for long character names and
+     names with embedded spaces) was introduced in 4.0BSD. The headers were
+     the same as the current format, with the exception that names longer than
+     16 characters were truncated, and names with embedded spaces (and often
+     trailing spaces) were not supported.  It has been extended for these rea-
+     sons, as described above.  This format first appeared in 4.4BSD.
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     No archive format is currently specified by any standard.  AT&T System V
+     UNIX has historically distributed archives in a different format from all
+     of the above.
+
+4.4BSD                           June 9, 1993                                2

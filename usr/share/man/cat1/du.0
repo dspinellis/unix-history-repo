@@ -1,0 +1,48 @@
+DU(1)                        BSD Reference Manual                        DU(1)
+
+NNAAMMEE
+     dduu - display disk usage statistics
+
+SSYYNNOOPPSSIISS
+     dduu [--aa | --ss] [--HHhhxx] [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     The dduu utility displays the file system block usage for each file argu-
+     ment and for each directory in the file hierarchy rooted in each directo-
+     ry argument.  If no file is specified, the block usage of the hierarchy
+     rooted in the current directory is displayed.  The number of blocks are
+     in the same units as that returned by the stat(2) system call, i.e.
+     512-byte blocks.  Partial numbers of blocks are rounded up.
+
+     The options are as follows:
+
+     --aa      Display an entry for each file in the file hierarchy.
+
+     --ss      Display only the grand total for the specified files.
+
+     --HH      When encountering a symbolic link on the command line, follow it.
+             All other symbolic links encountered in the traversal are not
+             followed.
+
+     --hh      When encountering a symbolic link anywhere in the traversal, fol-
+             low it.
+
+     --xx      Filesystem mount points are not traversed.
+
+     DDuu references symbolic links as the links themselves unless the --HH or --hh
+     flags are specified, in which case behavior is as detailed above.
+
+     Files having multiple hard links are counted (and displayed) a single
+     time per dduu execution.
+
+EENNVVIIRROONNMMEENNTTAALL VVAARRIIAABBLLEESS
+     BLOCKSIZE  If the environmental variable BLOCKSIZE is set, the block
+                counts will be displayed in units of that size block.
+
+SSEEEE AALLSSOO
+     df(1),  fts(3),  symlink(7),  quot(8)
+
+HHIISSTTOORRYY
+     A dduu command appeared in Version 6 AT&T UNIX.
+
+4.4BSD                           June 6, 1993                                1

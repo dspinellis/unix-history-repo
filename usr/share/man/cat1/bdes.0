@@ -1,0 +1,330 @@
+
+
+
+BDES(1)                BSD Reference Manual               BDES(1)
+
+
+NNAAMMEE
+       bdes - encrypt/decrypt using the Data Encryption Standard
+
+SSYYNNOOPPSSIISS
+       bbddeess [[ --aabbddpp ]] [[ --FF NN ]] [[ --ff NN ]] [[ --kk kkeeyy ]]
+            [[ --mm NN ]] [[ --oo NN ]] [[ --vv vveeccttoorr ]]
+
+DDEESSCCRRIIPPTTIIOONN
+       _B_d_e_s  implements  all  DES modes of operation described in
+       FIPS PUB 81, including alternative  cipher  feedback  mode
+       and  both authentication modes.  _B_d_e_s reads from the stan-
+       dard input and writes to the standard output.  By default,
+       the  input  is encrypted using cipher block chaining mode.
+       Using the same key for encryption and decryption preserves
+       plain text.
+
+       All  modes  but  the  electronic code book mode require an
+       initialization vector; if none is supplied, the zero  vec-
+       tor  is used.  If no _k_e_y is specified on the command line,
+       the user is prompted for  one  (see  _g_e_t_p_a_s_s(3)  for  more
+       details).
+
+       The options are as follows:
+
+       -a     The key and initialization vector strings are to be
+              taken as ASCII, suppressing the special interpreta-
+              tion  given  to leading ``0X'', ``0x'', ``0B'', and
+              ``0b'' characters.  This flag applies to  _b_o_t_h  the
+              key and initialization vector.
+
+       -b     Use electronic code book mode.
+
+       -d     Decrypt the input.
+
+       -F     Use  _N-bit  alternative cipher feedback mode.  Cur-
+              rently _N must be a multiple of 7 between 7  and  56
+              inclusive (this does not conform to the alternative
+              CFB mode specification).
+
+       -f     Use _N-bit cipher feedback mode.  Currently  _N  must
+              be a multiple of 8 between 8 and 64 inclusive (this
+              does not conform to the standard CFB mode  specifi-
+              cation).
+
+       -k     Use _k_e_y as the cryptographic key.
+
+       -m     Compute  a  message  authentication code (MAC) of _N
+              bits on the input.  The value of _N must be  between
+              1  and  64  inclusive; if _N is not a multiple of 8,
+              enough 0 bits will be added to pad the  MAC  length
+              to  the  nearest  multiple  of  8.  Only the MAC is
+
+
+
+4.3 Berkeley Distribution June 29, 1993                         1
+
+
+
+
+
+
+
+
+BDES(1)                BSD Reference Manual               BDES(1)
+
+
+              output.  MACs are only available  in  cipher  block
+              chaining mode or in cipher feedback mode.
+
+       -o     Use  _N-bit  output feedback mode.  Currently _N must
+              be a multiple of 8 between 8 and 64 inclusive (this
+              does not conform to the OFB mode specification).
+
+       -p     Disable the resetting of the parity bit.  This flag
+              forces the parity bit of the  key  to  be  used  as
+              typed,  rather than making each character be of odd
+              parity.  It is used only if the  key  is  given  in
+              ASCII.
+
+       -v     Set the initialization vector to _v_e_c_t_o_r; the vector
+              is interpreted in the same way  as  the  key.   The
+              vector is ignored in electronic codebook mode.
+
+       The  key  and initialization vector are taken as sequences
+       of ASCII characters which are then mapped into  their  bit
+       representations.   If either begins with ``0X'' or ``0x'',
+       that one is taken as  a  sequence  of  hexadecimal  digits
+       indicating  the  bit pattern; if either begins with ``0B''
+       or ``0b'', that one is taken as a sequence of binary  dig-
+       its  indicating the bit pattern.  In either case, only the
+       leading 64 bits of the key or  initialization  vector  are
+       used,  and  if  fewer  than 64 bits are provided, enough 0
+       bits are appended to pad the key to 64 bits.
+
+       According to the DES standard, the low-order bit  of  each
+       character  in the key string is deleted.  Since most ASCII
+       representations set the high-order bit to 0, simply delet-
+       ing  the low-order bit effectively reduces the size of the
+       key space from 256 to 248  keys.   To  prevent  this,  the
+       high-order  bit  must be a function depending in part upon
+       the low-order bit; so, the high-order bit is set to  what-
+       ever value gives odd parity.  This preserves the key space
+       size.  Note this resetting of the parity bit is  _n_o_t  done
+       if  the key is given in binary or hex, and can be disabled
+       for ASCII keys as well.
+
+       The DES is considered  a  very  strong  cryptosystem,  and
+       other  than  table lookup attacks, key search attacks, and
+       Hellman's time-memory tradeoff  (all  of  which  are  very
+       expensive  and  time-consuming),  no cryptanalytic methods
+       for breaking the DES are known in the open literature.  No
+       doubt  the  choice  of  keys and key security are the most
+       vulnerable aspect of _b_d_e_s.
+
+IIMMPPLLEEMMEENNTTAATTIIOONN NNOOTTEESS
+       For implementors wishing to write software compatible with
+       this  program,  the  following  notes  are provided.  This
+
+
+
+4.3 Berkeley Distribution June 29, 1993                         2
+
+
+
+
+
+
+
+
+BDES(1)                BSD Reference Manual               BDES(1)
+
+
+       software is believed to be compatible with the implementa-
+       tion  of  the  data encryption standard distributed by Sun
+       Microsystems, Inc.
+
+       In the ECB and CBC modes, plaintext is encrypted in  units
+       of 64 bits (8 bytes, also called a block).  To ensure that
+       the plaintext  file  is  encrypted  correctly,  _b_d_e_s  will
+       (internally)  append from 1 to 8 bytes, the last byte con-
+       taining an integer stating how many bytes  of  that  final
+       block are from the plaintext file, and encrypt the result-
+       ing block.  Hence, when decrypting,  the  last  block  may
+       contain  from  0  to 7 characters present in the plaintext
+       file, and the last byte tells how many.  Note that if dur-
+       ing  decryption the last byte of the file does not contain
+       an integer between 0 and 7, either the file has been  cor-
+       rupted  or  an  incorrect  key  has been given.  A similar
+       mechanism is used for the OFB and CFB modes,  except  that
+       those  simply require the length of the input to be a mul-
+       tiple of the mode size, and the  final  byte  contains  an
+       integer  between  0  and one less than the number of bytes
+       being used as the mode.  (This was another reason that the
+       mode size must be a multiple of 8 for those modes.)
+
+       Unlike  Sun's  implementation,  unused  bytes of that last
+       block are not filled with random data, but instead contain
+       what  was  in those byte positions in the preceding block.
+       This is quicker and more portable, and does not weaken the
+       encryption significantly.
+
+       If the key is entered in ASCII, the parity bits of the key
+       characters are set so that each key character  is  of  odd
+       parity.   Unlike  Sun's  implementation, it is possible to
+       enter binary or hexadecimal keys on the command line,  and
+       if  this  is  done,  the  parity bits are _n_o_t reset.  This
+       allows testing using arbitrary bit patterns as keys.
+
+       The Sun implementation always uses an initialization  vec-
+       tor  of  0  (that  is, all zeroes).  By default, _b_d_e_s does
+       too, but this may be changed from the command line.
+
+SSEEEE AALLSSOO
+       crypt(1), crypt(3), getpass(3)
+
+       _D_a_t_a _E_n_c_r_y_p_t_i_o_n _S_t_a_n_d_a_r_d, Federal  Information  Processing
+       Standard  #46,  National Bureau of Standards, U.S. Depart-
+       ment of Commerce, Washington DC (Jan. 1977)
+
+       _D_E_S _M_o_d_e_s _o_f  _O_p_e_r_a_t_i_o_n,  Federal  Information  Processing
+       Standard  #81,  National Bureau of Standards, U.S. Depart-
+       ment of Commerce Washington DC (Dec. 1980)
+
+
+
+
+4.3 Berkeley Distribution June 29, 1993                         3
+
+
+
+
+
+
+
+
+BDES(1)                BSD Reference Manual               BDES(1)
+
+
+       Dorothy Denning, _C_r_y_p_t_o_g_r_a_p_h_y _a_n_d _D_a_t_a _S_e_c_u_r_i_t_y,  Addison-
+       Wesley Publishing Co., Reading, MA (C)1982.
+
+       Matt  Bishop,  _I_m_p_l_e_m_e_n_t_a_t_i_o_n  _N_o_t_e_s _o_n _b_d_e_s_(_1_), Technical
+       Report PCS-TR-91-158, Department of Mathematics  and  Com-
+       puter Science, Dartmouth College, Hanover, NH  03755 (Apr.
+       1991).
+
+DDIISSCCLLAAIIMMEERR
+       THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+       ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+       IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+       ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+       FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+       DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+       OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+       HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+       LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+       OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+       SUCH DAMAGE.
+
+BBUUGGSS
+       There is a controversy raging over whether  the  DES  will
+       still  be  secure  in a few years.  The advent of special-
+       purpose hardware could reduce the cost of any of the meth-
+       ods  of attack named above so that they are no longer com-
+       putationally infeasible.
+
+       As the key or  key  schedule  is  stored  in  memory,  the
+       encryption  can  be  compromised  if  memory  is readable.
+       Additionally, programs which display  programs'  arguments
+       may  compromise the key and initialization vector, if they
+       are specified on the command line.   To  avoid  this  _b_d_e_s
+       overwrites its arguments, however, the obvious race cannot
+       currently be avoided.
+
+       Certain specific  keys  should  be  avoided  because  they
+       introduce  potential  weaknesses;  these  keys, called the
+       _w_e_a_k and _s_e_m_i_w_e_a_k keys, are (in hex notation, where  p  is
+       either 0 or 1, and P is either e or f):
+
+                 0x0p0p0p0p0p0p0p0p        0x0p1P0p1P0p0P0p0P
+                 0x0pep0pep0pfp0pfp        0x0pfP0pfP0pfP0pfP
+                 0x1P0p1P0p0P0p0P0p        0x1P1P1P1P0P0P0P0P
+                 0x1Pep1Pep0Pfp0Pfp        0x1PfP1PfP0PfP0PfP
+                 0xep0pep0pfp0pfp0p        0xep1Pep1pfp0Pfp0P
+                 0xepepepepepepepep        0xepfPepfPfpfPfpfP
+                 0xfP0pfP0pfP0pfP0p        0xfP1PfP1PfP0PfP0P
+                 0xfPepfPepfPepfPep        0xfPfPfPfPfPfPfPfP
+
+       This  is  inherent  in  the  DES  algorithm (see Moore and
+
+
+
+4.3 Berkeley Distribution June 29, 1993                         4
+
+
+
+
+
+
+
+
+BDES(1)                BSD Reference Manual               BDES(1)
+
+
+       Simmons, Cycle structure of the DES with  weak  and  semi-
+       weak keys, _A_d_v_a_n_c_e_s _i_n _C_r_y_p_t_o_l_o_g_y _- _C_r_y_p_t_o _'_8_6 _P_r_o_c_e_e_d_i_n_g_s
+       _, Springer-Verlag New York, (C)1987, pp. 9-32.)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+4.3 Berkeley Distribution June 29, 1993                         5
+
+
+
+
+

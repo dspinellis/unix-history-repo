@@ -1,0 +1,25 @@
+OD(1)                        BSD Reference Manual                        OD(1)
+
+NNAAMMEE
+     oodd - octal, decimal, hex, ascii dump
+
+SSYYNNOOPPSSIISS
+     oodd [--aaBBbbccDDddeeFFffHHhhIIiiLLllOOoovvXXxx] [[++]offset[..][BBbb]] _f_i_l_e
+
+DDEESSCCRRIIPPTTIIOONN
+     OOdd has been deprecated in favor of hexdump(1).
+
+     Hexdump,  if called as oodd, provides compatibility for the options listed
+     above.
+
+     It does not provide compatibility for the --ss option (see strings(1))  or
+     the --PP, --pp, or --ww options, nor is compatibility provided for the ``la-
+     bel'' component of the offset syntax.
+
+SSEEEE AALLSSOO
+     hexdump(1),  strings(1)
+
+BBUUGGSS
+     Quite a few.
+
+4.4BSD                           July 20, 1993                               1

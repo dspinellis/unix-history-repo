@@ -1,0 +1,39 @@
+DICTION(1)                   BSD Reference Manual                   DICTION(1)
+
+NNAAMMEE
+     ddiiccttiioonn, eexxppllaaiinn - print wordy sentences; thesaurus for diction
+
+SSYYNNOOPPSSIISS
+     ddiiccttiioonn [--ff _p_f_i_l_e] [--mmll] [--mmmm] [--nn] _f_i_l_e _._._.
+     eexxppllaaiinn
+
+DDEESSCCRRIIPPTTIIOONN
+     DDiiccttiioonn finds all sentences in a document that contain phrases from a da-
+     ta base of bad or wordy diction.  Each phrase is bracketed with `[]'. Be-
+     cause ddiiccttiioonn runs deroff(1) before looking at the text, formatting head-
+     er files should be included as part of the input.
+
+     --ff _p_f_i_l_e_.
+               Use _p_f_i_l_e as a pattern file in addition to the default file.
+
+     --mmll       causes deroff(1) to skip lists, should be used if the document
+               contains many lists of non-sentences.
+
+     --mmmm       The default macro package, --mmss, may be overridden with the flag
+               --mmmm.
+
+     --nn        Suppress usage of default file.
+
+     EExxppllaaiinn is an interactive thesaurus for the phrases found by diction.
+
+SSEEEE AALLSSOO
+     deroff(1)
+
+BBUUGGSS
+     Use of non-standard formatting macros may cause incorrect sentence
+     breaks.  In particular, ddiiccttiioonn doesn't grok --mmee.
+
+HHIISSTTOORRYY
+     The ddiiccttiioonn command appeared in 4BSD.
+
+4.4BSD                           June 6, 1993                                1
