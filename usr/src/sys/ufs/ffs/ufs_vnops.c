@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_vnops.c	7.111 (Berkeley) %G%
+ *	@(#)ufs_vnops.c	7.112 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -1555,15 +1555,22 @@ start:
 			if (p->p_pid == ip->i_lockholder)
 				panic("locking against myself");
 			ip->i_lockwaiter = p->p_pid;
-		}
+		} else
+			ip->i_lockwaiter = -1;
 #endif
 		(void) sleep((caddr_t)ip, PINOD);
 		goto start;
 	}
 #ifdef DIAGNOSTIC
 	ip->i_lockwaiter = 0;
+	if (ip->i_lockholder != 0)
+		panic("lockholder (%d) != 0", ip->i_lockholder);
+	if (p && p->p_pid == 0)
+		printf("locking by process 0\n");
 	if (p)
 		ip->i_lockholder = p->p_pid;
+	else
+		ip->i_lockholder = -1;
 #endif
 	ip->i_flag |= ILOCKED;
 	return (0);
@@ -1572,6 +1579,7 @@ start:
 /*
  * Unlock an inode.  If WANT bit is on, wakeup.
  */
+int lockcount = 90;
 int
 ufs_unlock(ap)
 	struct vop_unlock_args /* {
@@ -1579,12 +1587,17 @@ ufs_unlock(ap)
 	} */ *ap;
 {
 	register struct inode *ip = VTOI(ap->a_vp);
+	struct proc *p = curproc;	/* XXX */
 
+#ifdef DIAGNOSTIC
 	if ((ip->i_flag & ILOCKED) == 0) {
 		vprint("ufs_unlock: unlocked inode", ap->a_vp);
 		panic("ufs_unlock NOT LOCKED");
 	}
-#ifdef DIAGNOSTIC
+	if (p && p->p_pid != ip->i_lockholder && p->p_pid > -1 &&
+	    ip->i_lockholder > -1 && lockcount++ < 100)
+		panic("unlocker (%d) != lock holder (%d)",
+		    p->p_pid, ip->i_lockholder);
 	ip->i_lockholder = 0;
 #endif
 	ip->i_flag &= ~ILOCKED;
