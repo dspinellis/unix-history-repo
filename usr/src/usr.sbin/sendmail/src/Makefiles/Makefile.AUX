@@ -5,7 +5,7 @@
 #  old make program (I recommend that you get and port the new make if you
 #  are going to be doing any signficant work on sendmail).
 #
-#	@(#)Makefile.AUX	8.7 (Berkeley) %G%
+#	@(#)Makefile.AUX	8.8 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -26,25 +26,25 @@ ENVDEF=	-D_POSIX_SOURCE
 # see also conf.h for additional compilation flags
 
 # include directories
-INCDIRS=-I/usr/sww/include
+INCDIRS=
 
 # loader options
 LDOPTS=
 
 # library directories
-LIBDIRS=-L/usr/sww/lib
+LIBDIRS=
 
 # libraries required on your system
-LIBS=	-ldbm -lposix
+LIBS=	-ldbm -lposix -lmalloc
 
 # location of sendmail binary (usually /usr/sbin or /usr/lib)
-BINDIR=	${DESTDIR}/usr/sbin
+BINDIR=	${DESTDIR}/usr/lib
 
 # location of sendmail.st file (usually /var/log or /usr/lib)
-STDIR=	${DESTDIR}/var/log
+STDIR=	${DESTDIR}/usr/lib
 
 # location of sendmail.hf file (usually /usr/share/misc or /usr/lib)
-HFDIR=	${DESTDIR}/usr/share/misc
+HFDIR=	${DESTDIR}/usr/lib
 
 # additional .o files needed
 OBJADD=
