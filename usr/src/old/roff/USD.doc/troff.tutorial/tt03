@@ -1,4 +1,4 @@
-.\"	@(#)tt03	5.1 (Berkeley) %G%
+.\"	@(#)tt03	6.1 (Berkeley) %G%
 .\"
 .NH
 Fonts and Special Characters
@@ -92,10 +92,8 @@ what fonts are physically mounted on the typesetter:
 ^fp 3 H
 .P2
 says that the Helvetica font is mounted on position 3.
-(For a complete list of fonts and what they look like,
-see the 
-.UL troff 
-manual.)
+(The complete list of font sizes and styles depends on
+your typesetter or laser printer.)
 Appropriate
 .BD .fp
 commands should appear at the beginning of your document
@@ -107,7 +105,7 @@ by using font numbers instead of names;
 for example,
 .BD \ef3
 and
-.BD .ft~3
+.BD .ft\ 3
 mean `whatever font is mounted at position 3',
 and thus work for any setting.
 Normal settings are roman font on 1, italic on 2,
@@ -192,10 +190,10 @@ that is, to translate \(mi into \(em.
 .PP
 Some characters are automatically translated into others:
 grave  \(ga  and acute  \(aa  accents (apostrophes) become open and close single quotes
-`~';
+`\|'\|;
 the combination of ``...'' is generally preferable to the double quotes "...".
 Similarly a typed minus sign becomes a hyphen -.
 To print an explicit \- sign, use
-.BD \e- .
+.BD \e\|- .
 To get a backslash printed, use
 .BD \ee .
