@@ -16,7 +16,7 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)fortune.6	6.6 (Berkeley) %G%
+.\"	@(#)fortune.6	6.7 (Berkeley) %G%
 .\"
 .TH FORTUNE 6 ""
 .UC 4
@@ -40,10 +40,13 @@ fortune \- print a random, hopefully interesting, adage
 When
 .I fortune
 is run with no arguments it prints out a random epigram.
+Epigrams are divided into several categories, where each category
+is subdivided into those which are potentially offensive and those
+which are not.
 The options are as follows:
 .TP
 .B \-a
-Choose from either list of maxims.
+Choose from all lists of maxims, both offensive and not.
 .TP
 .B \-e
 Consider all fortune files to be of equal size (see discussion below
@@ -64,11 +67,13 @@ See
 for a description of patterns.
 .TP
 .B \-o
-Choose from an alternate list of potentially offensive aphorisms.
+Choose only from potentially offensive aphorisms.
 .ft B
-Please, please, please do not request a potentially offensive fortune
-if you do not believe, deep down in your heart, that you are willing
+Please, please, please request a potentially offensive fortune if and
+only if you believe, deep down in your heart, that you are willing
 to be offended.
+(And that if you are, you'll just quit using -o rather than give us
+grief about it, okay?)
 .ft R
 .PP
 .in +5
@@ -132,7 +137,7 @@ fortune 90% funny 10% not-funny
 .RE
 will pick out 90% of its fortunes from
 .B funny
-(the ``10% not-funny'' is unecessary, since 10% is all that's left).
+(the ``10% not-funny'' is unnecessary, since 10% is all that's left).
 The
 .B \-e
 option says to consider all files equal;
