@@ -1,6 +1,6 @@
 # include "sendmail.h"
 
-static char	SccsId[] = "@(#)parseaddr.c	3.19.1.1	%G%";
+static char	SccsId[] = "@(#)parseaddr.c	3.20	%G%";
 
 /*
 **  PARSE -- Parse an address
@@ -36,12 +36,6 @@ static char	SccsId[] = "@(#)parseaddr.c	3.19.1.1	%G%";
 **
 **	Side Effects:
 **		none
-**
-**	Called By:
-**		main
-**		sendto
-**		alias
-**		savemail
 */
 
 # define DELIMCHARS	"$()<>,;\\\"\r\n"	/* word delimiters */
@@ -239,8 +233,8 @@ prescan(addr, delim)
 				break;
 
 			  case ATOM:		/* regular atom */
-				state = nstate;
-				if (state != ATOM)
+				/* state = nstate; */
+				if (nstate != ATOM)
 				{
 					state = EOTOK;
 					p--;
@@ -260,7 +254,7 @@ prescan(addr, delim)
 			  case SPACE:		/* linear white space */
 				state = nstate;
 				space = TRUE;
-				continue;
+				break;
 
 			  case OPER:		/* operator */
 				if (nstate == SPACE)
@@ -314,9 +308,7 @@ prescan(addr, delim)
 				syserr("prescan: unknown state %d", state);
 			}
 
-			if (state == OPER)
-				space = FALSE;
-			else if (state == EOTOK)
+			if (state == EOTOK || state == SPACE)
 				break;
 			if (c == '$' && delim == '\t')
 			{
@@ -330,8 +322,6 @@ prescan(addr, delim)
 				usrerr("Address too long");
 				return (NULL);
 			}
-			if (space)
-				*q++ = SPACESUB;
 			*q++ = c;
 
 			/* decide whether this represents end of token */
@@ -486,7 +476,7 @@ rewrite(pvp, ruleset)
 	extern bool sameword();
 
 # ifdef DEBUG
-	if (Debug > 10)
+	if (Debug > 9)
 	{
 		printf("rewrite: original pvp:\n");
 		printav(pvp);
@@ -627,13 +617,17 @@ rewrite(pvp, ruleset)
 			*avp++ = NULL;
 			bmove((char *) npvp, (char *) pvp, (avp - npvp) * sizeof *avp);
 # ifdef DEBUG
-			if (Debug)
+			if (Debug > 3)
 			{
 				char **vp;
 
 				printf("rewritten as `");
 				for (vp = pvp; *vp != NULL; vp++)
+				{
+					if (vp != pvp)
+						printf("_");
 					xputs(*vp);
+				}
 				printf("'\n");
 			}
 # endif DEBUG
@@ -816,12 +810,50 @@ buildaddr(tv, a)
 	/* figure out the user */
 	if (**tv != CANONUSER)
 		syserr("buildaddr: no user");
-	buf[0] = '\0';
-	while (**++tv != NULL)
-		(void) strcat(buf, *tv);
+	cataddr(++tv, buf, sizeof buf);
 	a->q_user = buf;
 
 	return (a);
+}
+/*
+**  CATADDR -- concatenate pieces of addresses (putting in <LWSP> subs)
+**
+**	Parameters:
+**		pvp -- parameter vector to rebuild.
+**		buf -- buffer to build the string into.
+**		sz -- size of buf.
+**
+**	Returns:
+**		none.
+**
+**	Side Effects:
+**		Destroys buf.
+*/
+
+cataddr(pvp, buf, sz)
+	char **pvp;
+	char *buf;
+	register int sz;
+{
+	bool oatomtok = FALSE;
+	bool natomtok = FALSE;
+	register int i;
+	register char *p;
+
+	p = buf;
+	sz--;
+	while (*pvp != NULL && (i = strlen(*pvp)) < sz)
+	{
+		natomtok = (toktype(**pvp) == ATOM);
+		if (oatomtok && natomtok)
+			*p++ = SPACESUB;
+		(void) strcpy(p, *pvp);
+		oatomtok = natomtok;
+		p += i;
+		sz -= i;
+		pvp++;
+	}
+	*p = '\0';
 }
 /*
 **  SAMEADDR -- Determine if two addresses are the same

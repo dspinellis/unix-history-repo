@@ -5,7 +5,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char	SccsId[] = "@(#)main.c	3.27	%G%";
+static char	SccsId[] = "@(#)main.c	3.28	%G%";
 
 /*
 **  SENDMAIL -- Post mail to a set of destinations.
@@ -707,10 +707,7 @@ setfrom(from, realname)
 		finis();
 	}
 	rewrite(pvp, 1);
-	frombuf[0] = '\0';
-	while (*pvp != NULL)
-		(void) strcat(frombuf, *pvp++);
-
+	cataddr(pvp, frombuf, sizeof frombuf);
 	define('f', newstr(frombuf));
 }
 /*
