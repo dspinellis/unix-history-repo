@@ -14,13 +14,13 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)kern_ktrace.c	7.5 (Berkeley) %G%
+ *	@(#)kern_ktrace.c	7.6 (Berkeley) %G%
  */
 
 #ifdef KTRACE
 
 #include "param.h"
-#include "user.h"
+#include "syscontext.h"
 #include "proc.h"
 #include "file.h"
 #include "vnode.h"
@@ -48,8 +48,9 @@ ktrgetheader(type)
 	return (kth);
 }
 
-ktrsyscall(vp, code, narg)
+ktrsyscall(vp, code, narg, args)
 	struct vnode *vp;
+	int code, narg, args[];
 {
 	struct	ktr_header *kth = ktrgetheader(KTR_SYSCALL);
 	struct	ktr_syscall *ktp;
@@ -63,7 +64,7 @@ ktrsyscall(vp, code, narg)
 	ktp->ktr_narg = narg;
 	argp = (int *)((char *)ktp + sizeof(struct ktr_syscall));
 	for (i = 0; i < narg; i++)
-		*argp++ = u.u_arg[i];
+		*argp++ = args[i];
 	kth->ktr_buf = (caddr_t)ktp;
 	kth->ktr_len = len;
 	ktrwrite(vp, kth);
@@ -71,8 +72,9 @@ ktrsyscall(vp, code, narg)
 	FREE(kth, M_TEMP);
 }
 
-ktrsysret(vp, code)
+ktrsysret(vp, code, error, retval)
 	struct vnode *vp;
+	int code, error, retval;
 {
 	struct ktr_header *kth = ktrgetheader(KTR_SYSRET);
 	struct ktr_sysret ktp;
@@ -80,8 +82,8 @@ ktrsysret(vp, code)
 	if (kth == NULL)
 		return;
 	ktp.ktr_code = code;
-	ktp.ktr_error = u.u_error;
-	ktp.ktr_retval = u.u_r.r_val1;		/* what about val2 ? */
+	ktp.ktr_error = error;
+	ktp.ktr_retval = retval;		/* what about val2 ? */
 
 	kth->ktr_buf = (caddr_t)&ktp;
 	kth->ktr_len = sizeof(struct ktr_sysret);
@@ -105,8 +107,9 @@ ktrnamei(vp, path)
 	FREE(kth, M_TEMP);
 }
 
-ktrgenio(vp, fd, rw, iov, len)
+ktrgenio(vp, fd, rw, iov, len, error)
 	struct vnode *vp;
+	int fd;
 	enum uio_rw rw;
 	register struct iovec *iov;
 {
@@ -115,7 +118,7 @@ ktrgenio(vp, fd, rw, iov, len)
 	register caddr_t cp;
 	register int resid = len, cnt;
 	
-	if (kth == NULL || u.u_error)
+	if (kth == NULL || error)
 		return;
 	MALLOC(ktp, struct ktr_genio *, sizeof(struct ktr_genio) + len,
 		M_TEMP, M_WAITOK);
@@ -165,14 +168,17 @@ ktrpsig(vp, sig, action, mask, code)
 /*
  * ktrace system call
  */
-ktrace()
-{
-	register struct a {
+/* ARGSUSED */
+ktrace(curp, uap, retval)
+	struct proc *curp;
+	register struct args {
 		char	*fname;
 		int	ops;
 		int	facs;
 		int	pid;
-	} *uap = (struct a *)u.u_ap;
+	} *uap;
+	int *retval;
+{
 	register struct vnode *vp = NULL;
 	register struct nameidata *ndp = &u.u_nd;
 	register struct proc *p;
@@ -180,26 +186,26 @@ ktrace()
 	struct pgrp *pg;
 	register int facs = uap->facs;
 	register int ret = 0;
+	int error = 0;
 
 	/*
 	 * Until security implications are thought through,
 	 * limit tracing to root (unless ktrace_nocheck is set).
 	 */
-	if (!ktrace_nocheck && (u.u_error = suser(u.u_cred, &u.u_acflag)))
-		return;
+	if (!ktrace_nocheck && (error = suser(u.u_cred, &u.u_acflag)))
+		RETURN (error);
 	if (ops != KTROP_CLEAR) {
 		/*
 		 * an operation which requires a file argument.
 		 */
 		ndp->ni_segflg = UIO_USERSPACE;
 		ndp->ni_dirp = uap->fname;
-		if (u.u_error = vn_open(ndp, FREAD|FWRITE, 0))
-			return;
+		if (error = vn_open(ndp, FREAD|FWRITE, 0))
+			RETURN (error);
 		vp = ndp->ni_vp;
 		if (vp->v_type != VREG) {
-			u.u_error = EACCES;
 			vrele(vp);
-			return;
+			RETURN (EACCES);
 		}
 	}
 	/*
@@ -219,7 +225,7 @@ ktrace()
 	 * need something to (un)trace
 	 */
 	if (!facs) {
-		u.u_error = EINVAL;
+		error = EINVAL;
 		goto done;
 	}
 	/* 
@@ -228,7 +234,7 @@ ktrace()
 	if (uap->pid < 0) {
 		pg = pgfind(-uap->pid);
 		if (pg == NULL) {
-			u.u_error = ESRCH;
+			error = ESRCH;
 			goto done;
 		}
 		for (p = pg->pg_mem; p != NULL; p = p->p_pgrpnxt)
@@ -240,7 +246,7 @@ ktrace()
 	} else {
 		p = pfind(uap->pid);
 		if (p == NULL) {
-			u.u_error = ESRCH;
+			error = ESRCH;
 			goto done;
 		}
 		if (ops&KTRFLAG_DESCEND)
@@ -249,10 +255,11 @@ ktrace()
 			ret |= ktrops(p, ops, facs, vp);
 	}
 	if (!ret)
-		u.u_error = EPERM;
+		error = EPERM;
 done:
 	if (vp != NULL)
 		vrele(vp);
+	RETURN (error);
 }
 
 ktrops(p, ops, facs, vp)
