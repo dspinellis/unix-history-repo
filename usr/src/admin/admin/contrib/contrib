@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.45 (Berkeley) %G%
+.\"	@(#)contrib	5.46 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -233,10 +233,12 @@ jn(3)	Sun Microsystems, Inc.
 join(1)	David Goodenough
 join(1)	Michiro Hikida
 join(1)	Steve Hayman
+jot(1)	John Kunze
 jove(1)	Jonathon Payne
 kermit(1)	Columbia University
 kvm(3)	Peter Shipley
 kvm(3)	Steven McCanne
+lam(1)	John Kunze
 larn(6)	Noah Morgan
 lastcomm(1)	Len Edmondson
 lex(1)	Vern Paxson
@@ -295,6 +297,7 @@ rdist(1)	Michael Cooper
 regex(3)	Henry Spencer
 robots(6)	Ken Arnold
 rogue(6)	Timothy C. Stoehr
+rs(1)	John Kunze
 sail(6)	David Riggle
 sail(6)	Edward Wang
 sccs(1)	Eric Allman
