@@ -1,11 +1,15 @@
 #ifndef lint
-static	char *sccsid = "@(#)wwenviron.c	3.2 83/08/18";
+static	char *sccsid = "@(#)wwenviron.c	3.3 83/08/31";
 #endif
 
 #include "ww.h"
 
 extern char **environ;
 
+/*
+ * Set up the environment of this process to run in window 'wp'.
+ * Can't report errors in any intelligent way, so don't.
+ */
 wwenviron(wp)
 register struct ww *wp;
 {
@@ -21,17 +25,27 @@ register struct ww *wp;
 	for (i = wwdtablesize - 1; i > 2; i--)
 		(void) close(i);
 
-	i = open("/dev/tty");
-	(void) ioctl(i, (int)TIOCNOTTY, (char *)0);
+	i = open("/dev/tty", 0);
+	if (i < 0) {
+		perror("/dev/tty");
+		return;
+	}
+	if (ioctl(i, (int)TIOCNOTTY, (char *)0) < 0) {
+		perror("ioctl(TIOCNOTTY)");
+		return;
+	}
 	(void) close(i);
-	(void) open(wp->ww_ttyname, 0);
+	if (open(wp->ww_ttyname, 0) < 0) {
+		perror(wp->ww_ttyname);
+		return;
+	}
 
 	for (i = 0, p = environ; *p; p++, i++)
 		;
 	if ((env = (char **)malloc((unsigned)(i + 3) * sizeof (char *))) == 0)
-		return;			/* can't report error */
+		return;
 	if ((tbuf = malloc((unsigned) 1024)) == 0)
-		return;			/* can't report error */
+		return;
 	for (p = environ, q = env; *p; p++, q++) {
 		if (strncmp(*p, "TERM=", 5) == 0)
 			*q = WWT_TERM;
