@@ -391,7 +391,7 @@ str_to_event(str, last)
 		/*
 		 * pattern 
 		 */
-		he = history(hist, H_NEXT_STR, str);
+		he = history(hist, H_PREV_STR, str);
 		if (he == NULL)
 			error("history pattern not found: %s", str);
 	}
