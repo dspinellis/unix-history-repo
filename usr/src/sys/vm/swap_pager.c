@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: swap_pager.c 1.4 91/04/30$
  *
- *	@(#)swap_pager.c	7.16 (Berkeley) %G%
+ *	@(#)swap_pager.c	7.17 (Berkeley) %G%
  */
 
 /*
@@ -882,7 +882,12 @@ swap_pager_iodone(bp)
 		bswlist.b_flags &= ~B_WANTED;
 		thread_wakeup((int)&bswlist);
 	}
-	thread_wakeup((int) &vm_pages_needed);
+	/*
+	 * Only kick the pageout daemon if we are really hurting
+	 * for pages, otherwise this page will be picked up later.
+	 */
+	if (cnt.v_free_count < cnt.v_free_min)
+		thread_wakeup((int) &vm_pages_needed);
 	splx(s);
 }
 #endif
