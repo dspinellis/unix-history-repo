@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)su.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)su.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -95,12 +95,9 @@ again:
 	if (strcmp(pwd->pw_passwd, crypt(password, pwd->pw_passwd)) != 0) {
 		fprintf(stderr, "Sorry\n");
 		if (pwd->pw_uid == 0) {
-			FILE *console = fopen("/dev/console", "w");
-			if (console != NULL) {
-				fprintf(console, "BADSU: %s %s\r\n",
+			openlog("su", 0, 0);
+			syslog(LOG_SECURITY, "BAD SU %s on %s",
 					getlogin(), ttyname(2));
-				fclose(console);
-			}
 		}
 		exit(2);
 	}
