@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)egrep.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)egrep.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -528,6 +528,7 @@ submatch(file, pat, str, strend, k, altindex)
 	return (s + 1);
 }
 
+#ifndef NOKANJI
 /*
  * EUC code disambiguation -- scan backwards to first 7-bit code, while
  * counting intervening 8-bit codes.  If odd, reject unaligned Kanji pattern. 
@@ -550,6 +551,7 @@ kanji(str, s, k)
 #endif  CHINESE
 	return ((j & 01) ? NULL : k);
 }
+#endif
 
 /*
  * Compute "Boyer-Moore" delta table -- put skip distance in delta0[c] 
