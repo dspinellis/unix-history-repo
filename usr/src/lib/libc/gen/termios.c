@@ -6,13 +6,16 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)termios.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)termios.c	5.6 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/types.h>
 #include <sys/errno.h>
 #include <sys/ioctl.h>
 #include <sys/tty.h>
+#define KERNEL	/* XXX - FREAD and FWRITE was ifdef'd KERNEL*/
+#include <sys/fcntl.h>
+#undef KERNEL
 #include <termios.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -55,6 +58,7 @@ tcsetpgrp(fd, pgrp)
 	pid_t pgrp;
 #endif
 {
+
 	return(ioctl(fd, TIOCSPGRP, &pgrp));
 }
 
@@ -65,6 +69,7 @@ tcgetpgrp(fd)
 
 	if (ioctl(fd, TIOCGPGRP, &s) < 0)
 		return((pid_t)-1);
+
 	return((pid_t)s);
 }
 
@@ -72,6 +77,7 @@ speed_t
 cfgetospeed(t)
 	const struct termios *t;
 {
+
 	return(t->c_ospeed);
 }
 
@@ -79,6 +85,7 @@ speed_t
 cfgetispeed(t)
 	const struct termios *t;
 {
+
 	return(t->c_ispeed);
 }
 
@@ -88,7 +95,8 @@ cfsetospeed(t, speed)
 	speed_t speed;
 {
 	t->c_ospeed = speed;
-	return 0;
+
+	return (0);
 }
 
 int
@@ -97,7 +105,8 @@ cfsetispeed(t, speed)
 	speed_t speed;
 {
 	t->c_ispeed = speed;
-	return 0;
+
+	return (0);
 }
 
 void
@@ -106,6 +115,8 @@ cfsetspeed(t, speed)
 	speed_t speed;
 {
 	t->c_ispeed = t->c_ospeed = speed;
+
+	return (0)
 }
 
 /*
@@ -123,4 +134,84 @@ cfmakeraw(t)
 	t->c_cflag &= ~(CSIZE|PARENB);
 	t->c_cflag |= CS8;
 	/* set MIN/TIME */
+}
+
+tcsendbreak(fd, len)
+	int fd, len;
+{
+	struct timeval sleepytime;
+
+	sleepytime.tv_sec = 0;
+	sleepytime.tv_usec = 400000;
+	if (ioctl(fd, TIOCSBRK, 0) == -1)
+		return (-1);
+	select(0, 0, 0, 0, &sleepytime);
+	if (ioctl(fd, TIOCCBRK, 0) == -1)
+		return (-1);
+
+	return (0);
+}
+
+tcdrain(fd)
+	int fd;
+{
+	if (ioctl(fd, TIOCDRAIN, 0) == -1)
+		return (-1);
+
+	return (0);
+}
+
+tcflush(fd, which)
+	int fd, which;
+{
+	int com;
+
+	switch (which) {
+	case TCIFLUSH:
+		com = FREAD;
+		break;
+	case TCOFLUSH:
+		com = FWRITE;
+		break;
+	case TCIOFLUSH:
+		com = FREAD | FWRITE;
+		break;
+	default:
+		errno = EINVAL;
+		return (-1);
+	}
+	if (ioctl(fd, TIOCFLUSH, &com) == -1)
+		return (-1);
+
+	return (0);
+}
+
+tcflow(fd, action)
+	int fd, action;
+{
+	switch (action) {
+	case TCOOFF:
+		return (ioctl(fd, TIOCSTOP, 0));
+		break;
+	case TCOON:
+		return (ioctl(fd, TIOCSTART, 0));
+		break;
+	case TCIOFF:
+	case TCION: {		/* these posix functions are STUPID */
+		struct termios term;
+		char c;
+
+		if (tcgetattr(fd, &term) == -1);
+			return (-1);
+		c = term.c_cc[action == TCIOFF ? VSTOP : VSTART];
+		if (c != _POSIX_VDISABLE && write(fd, &c, 1) == -1)
+			return (-1);
+		break;
+	}
+	default:
+		errno = EINVAL;
+		return (-1);
+	}
+
+	return (0);
 }
