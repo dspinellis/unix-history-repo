@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.26 (Berkeley) %G%
+ *	@(#)lfs.h	7.27 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -112,8 +112,10 @@ struct lfs {
 	daddr_t	lfs_sboffs[LFS_MAXNUMSB];
 
 /* These fields are set at mount time and are meaningless on disk. */
+	struct	segment *lfs_sp;	/* current segment being written */
 	struct	vnode *lfs_ivnode;	/* vnode for the ifile */
 	u_long	lfs_seglock;		/* single-thread the segment writer */
+	pid_t	lfs_lockpid;		/* pid of lock holder */
 	u_long	lfs_iocount;		/* number of ios pending */
 	u_long	lfs_writer;		/* don't allow any dirops to start */
 	u_long	lfs_dirops;		/* count of active directory ops */
@@ -140,12 +142,6 @@ struct lfs {
 #define	LFS_IFILE_INUM	1		/* IFILE inode number */
 #define	LOSTFOUNDINO	3		/* lost+found inode number */
 #define	LFS_FIRST_INUM	4		/* first free inode number */
-
-/*
- * Used to access the first spare of the dinode which we use to store
- * the ifile number so we can identify them
- */
-#define	di_inum	di_spare[0]
 
 /* Address calculations for metadata located in the inode */
 #define	S_INDIR(fs)	-NDADDR
@@ -294,6 +290,7 @@ struct segment {
 	daddr_t *start_lbp;		/* beginning lbn for this set */
 #define	SEGM_CKP	0x01		/* doing a checkpoint */
 #define	SEGM_CLEAN	0x02		/* cleaner call; don't sort */
+#define	SEGM_SYNC	0x04		/* wait for segment */
 	u_long	seg_flags;		/* run-time flags for this segment */
 };
 
@@ -306,4 +303,24 @@ struct segment {
 
 #define ISSPACE_XXX(F, BB) \
 	((F)->lfs_bfree >= (BB))
+
+#define DOSTATS
+#ifdef DOSTATS
+/* Statistics Counters */
+struct lfs_stats {
+	int	segsused;
+	int	psegwrites;
+	int	psyncwrites;
+	int	pcleanwrites;
+	int	blocktot;
+	int	cleanblocks;
+	int	ncheckpoints;
+	int	nwrites;
+	int	nsync_writes;
+	int	wait_exceeded;
+	int	write_exceeded;
+	int	flush_invoked;
+};
+extern struct lfs_stats lfs_stats;
+#endif
 
