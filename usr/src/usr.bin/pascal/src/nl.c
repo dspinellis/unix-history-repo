@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)nl.c 1.9 %G%";
+static	char sccsid[] = "@(#)nl.c 1.10 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -68,7 +68,7 @@ int in_rclasses[] =
 
 long in_ranges[] =
     {
-	-128L	 , 128L ,
+	-128L	 , 127L ,
 	-32768L	 , 32767L ,
 	-2147483648L , 2147483647L ,
 	0L		 , 127L ,
