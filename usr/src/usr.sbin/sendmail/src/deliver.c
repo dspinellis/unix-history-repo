@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.125 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.126 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -2033,13 +2033,20 @@ mailfile(filename, ctladdr, e)
 		/* child -- actually write to file */
 		struct stat stb;
 		MCI mcibuf;
+		int oflags = O_WRONLY|O_APPEND;
 
 		(void) setsignal(SIGINT, SIG_DFL);
 		(void) setsignal(SIGHUP, SIG_DFL);
 		(void) setsignal(SIGTERM, SIG_DFL);
 		(void) umask(OldUmask);
 
+#ifdef HASLSTAT
+		if ((SafeFileEnv != NULL ? lstat(filename, &stb)
+					 : stat(filename, &stb)) < 0)
+#else
 		if (stat(filename, &stb) < 0)
+#endif
+		{
 			stb.st_mode = FileMode;
 		mode = stb.st_mode;
 
@@ -2066,6 +2073,23 @@ mailfile(filename, ctladdr, e)
 			}
 		}
 
+		if (SafeFileEnv != NULL && SafeFileEnv[0] != NULL)
+		{
+			int i;
+
+			if (chroot(SafeFileEnv) < 0)
+			{
+				syserr("mailfile: Cannot chroot(%s)",
+					SafeFileEnv);
+				exit(EX_CANTCREAT);
+			}
+			i = strlen(SafeFileEnv);
+			if (strncmp(SafeFileEnv, filename, i) == 0)
+				filename += i;
+		}
+		if (chdir("/") < 0)
+			syserr("mailfile: cannot chdir(/)");
+
 		if (!bitset(S_ISGID, mode) || setgid(stb.st_gid) < 0)
 		{
 			if (ctladdr != NULL && ctladdr->q_uid != 0)
@@ -2088,7 +2112,7 @@ mailfile(filename, ctladdr, e)
 		}
 		FileName = filename;
 		LineNumber = 0;
-		f = dfopen(filename, O_WRONLY|O_CREAT|O_APPEND, FileMode);
+		f = dfopen(filename, oflags, FileMode);
 		if (f == NULL)
 		{
 			message("554 cannot open: %s", errstring(errno));

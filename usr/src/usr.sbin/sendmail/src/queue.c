@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef QUEUE
-static char sccsid[] = "@(#)queue.c	8.65 (Berkeley) %G% (with queueing)";
+static char sccsid[] = "@(#)queue.c	8.66 (Berkeley) %G% (with queueing)";
 #else
-static char sccsid[] = "@(#)queue.c	8.65 (Berkeley) %G% (without queueing)";
+static char sccsid[] = "@(#)queue.c	8.66 (Berkeley) %G% (without queueing)";
 #endif
 #endif /* not lint */
 
@@ -1019,6 +1019,7 @@ readqf(e)
 	char buf[MAXLINE];
 	extern long atol();
 	extern ADDRESS *setctluser();
+	extern void loseqfile();
 
 	/*
 	**  Read and process the file.
@@ -1074,7 +1075,7 @@ readqf(e)
 # endif /* LOG */
 		if (tTd(40, 8))
 			printf("readqf(%s): bogus file\n", qf);
-		rename(qf, queuename(e, 'Q'));
+		loseqfile(e, "bogus file uid in mqueue");
 		fclose(qfp);
 		return FALSE;
 	}
@@ -1281,7 +1282,7 @@ readqf(e)
 			syserr("readqf: %s: line %d: bad line \"%s\"",
 				qf, LineNumber, bp);
 			fclose(qfp);
-			rename(qf, queuename(e, 'Q'));
+			loseqfile(e, "unrecognized line");
 			return FALSE;
 		}
 
@@ -1717,4 +1718,32 @@ setctluser(user)
 	else
 		a->q_paddr = newstr(p);
 	return a;
+}
+/*
+**  LOSEQFILE -- save the qf as Qf and try to let someone know
+**
+**	Parameters:
+**		e -- the envelope (e->e_id will be used).
+**		why -- reported to whomever can hear.
+**
+**	Returns:
+**		none.
+*/
+
+void
+loseqfile(e, why)
+	register ENVELOPE *e;
+	char *why;
+{
+	char buf[40];
+
+	if (e == NULL || e->e_id == NULL)
+		return;
+	if (strlen(e->e_id) > sizeof buf - 4)
+		return;
+	strcpy(buf, queuename(e, 'q'));
+	rename(buf, queuename(e, 'Q'));
+#ifdef LOG
+	syslog(LOG_ALERT, "Losing %s: %s", buf, why);
+#endif
 }
