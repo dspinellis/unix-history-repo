@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)tunefs.c	4.3 (Berkeley) %G%";
+static	char *sccsid = "@(#)tunefs.c	4.4 (Berkeley) %G%";
 #endif lint
 
 /*
@@ -138,7 +138,7 @@ again:
 usage:
 	fprintf(stderr, "Usage: tunefs tuneup-options special-device\n");
 	fprintf(stderr, "where tuneup-options are:\n");
-	fprintf(stderr, "\t-a maximum contigouous blocks\n");
+	fprintf(stderr, "\t-a maximum contiguous blocks\n");
 	fprintf(stderr, "\t-d rotational delay between contiguous blocks\n");
 	fprintf(stderr, "\t-e maximum blocks per file in a cylinder group\n");
 	fprintf(stderr, "\t-m minimum percentage of free space\n");
