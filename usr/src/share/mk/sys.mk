@@ -49,6 +49,9 @@ SHELL		?=	sh
 YACC		?=	yacc
 YFLAGS		?=	-d
 
+.c:
+	${CC} ${CFLAGS} ${.IMPSRC} -o ${.TARGET}
+
 .c.o:
 	${CC} ${CFLAGS} -c ${.IMPSRC}
 
