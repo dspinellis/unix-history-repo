@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)system_.c	5.2	%G%
+ *	@(#)system_.c	5.3	%G%
  */
 
 /*
@@ -40,20 +40,19 @@ long n;
 }
 
 /*
- * this is a sane version of the libc/stdio routine.
+ * this is a sane version of the libc routine.
  */
 
-#include	<signal.h>
-
-char	*getenv();
-char	*rindex();
+#include <sys/signal.h>
+#include <stdlib.h>
+#include <string.h>
 
 system(s)
 char *s;
 {
 	register sig_t istat, qstat;
 	int status, pid, w;
-	char	*shname, *shell;
+	char *shname, *shell;
 
 	if ((shell = getenv("SHELL")) == NULL)
 		shell = "/bin/sh";
@@ -63,10 +62,13 @@ char *s;
 	else
 		shname = shell;
 
-	if ((pid = fork()) == 0) {
-		execl(shell, shname, "-c", s, 0);
+	if ((pid = vfork()) == 0) {
+		execl(shell, shname, "-c", s, (char *)0);
 		_exit(127);
 	}
+	if (pid == -1)
+		return(-1);
+
 	istat = signal(SIGINT, SIG_IGN);
 	qstat = signal(SIGQUIT, SIG_IGN);
 	while ((w = wait(&status)) != pid && w != -1)
