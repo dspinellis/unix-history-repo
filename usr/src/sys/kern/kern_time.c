@@ -1,4 +1,4 @@
-/*	kern_time.c	5.5	82/09/08	*/
+/*	kern_time.c	5.6	82/09/08	*/
 
 #include "../h/param.h"
 #include "../h/dir.h"		/* XXX */
@@ -275,3 +275,28 @@ oftime()
 		u.u_error = EFAULT;
 }
 #endif
+oalarm()
+{
+	register struct a {
+		int	deltat;
+	} *uap = (struct a *)u.u_ap;
+	register struct proc *p = u.u_procp;
+	struct timeval atv;
+	int s = spl7();
+
+	untimeout(unrto, p);
+	timerclear(&p->p_realtimer.it_interval);
+	u.u_r.r_val1 = 0;
+	if (timerisset(&p->p_realtimer.it_value) &&
+	    timercmp(&p->p_realtimer.it_value, &time, >))
+		u.u_r.r_val1 = p->p_realtimer.it_value.tv_sec - time.tv_sec;
+	if (uap->deltat == 0) {
+		splx(s);
+		return;
+	}
+	p->p_realtimer.it_value = time;
+	p->p_realtimer.it_value.tv_sec += uap->deltat;
+	timeout(unrto, p, hzto(&p->p_realtimer.it_value));
+	splx(s);
+}
+
