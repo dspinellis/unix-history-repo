@@ -3,7 +3,7 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)deliver.c	3.136		%G%);
+SCCSID(@(#)deliver.c	3.137		%G%);
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.

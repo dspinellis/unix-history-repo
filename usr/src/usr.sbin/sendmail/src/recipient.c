@@ -2,10 +2,10 @@
 # include "sendmail.h"
 # include <sys/stat.h>
 
-SCCSID(@(#)recipient.c	3.48		%G%);
+SCCSID(@(#)recipient.c	3.49		%G%);
 
 /*
-**  SENDTO -- Designate a send list.
+**  SENDTOLIST -- Designate a send list.
 **
 **	The parameter is a comma-separated list of people to send to.
 **	This routine arranges to send to all of them.
@@ -28,7 +28,7 @@ SCCSID(@(#)recipient.c	3.48		%G%);
 
 # define MAXRCRSN	10
 
-sendto(list, ctladdr, sendq)
+sendtolist(list, ctladdr, sendq)
 	char *list;
 	ADDRESS *ctladdr;
 	ADDRESS **sendq;
@@ -465,7 +465,7 @@ include(fname, msg, ctladdr, sendq)
 		CurEnv->e_to = oldto;
 		message(Arpa_Info, "%s to %s", msg, buf);
 		AliasLevel++;
-		sendto(buf, ctladdr, sendq);
+		sendtolist(buf, ctladdr, sendq);
 		AliasLevel--;
 	}
 
@@ -510,7 +510,7 @@ sendtoargv(argv)
 				argv += 2;
 			}
 		}
-		sendto(p, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
+		sendtolist(p, (ADDRESS *) NULL, &CurEnv->e_sendqueue);
 	}
 }
 /*
