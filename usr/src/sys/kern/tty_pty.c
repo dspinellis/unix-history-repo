@@ -1,4 +1,4 @@
-/*	tty_pty.c	4.20	82/03/15	*/
+/*	tty_pty.c	4.21	82/03/23	*/
 
 /*
  * Pseudo-teletype Driver
@@ -76,6 +76,7 @@ ptsclose(dev)
 
 	tp = &pt_tty[minor(dev)];
 	(*linesw[tp->t_line].l_close)(tp);
+	ttyclose(tp);
 }
 
 ptsread(dev)
