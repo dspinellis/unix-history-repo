@@ -11,7 +11,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)telnet.c	5.30 (Berkeley) %G%";
+static char sccsid[] = "@(#)telnet.c	5.31 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -428,7 +428,7 @@ telrcv()
 		    c = *sbp++ & 0377, scc--; count++;
 		    if (c == IAC) {
 			telrcv_state = TS_IAC;
-			continue;
+			break;
 		    }
 		    *Ifrontp++ = c;
 		}
@@ -844,7 +844,7 @@ telnet()
 		/* If there is data waiting to go out to terminal, don't
 		 * schedule any more data for the terminal.
 		 */
-	if (ring_full_count(ttyoring)) {
+	if (ring_full_count(&ttyoring)) {
 	    schedValue = 1;
 	} else {
 	    if (shell_active) {
