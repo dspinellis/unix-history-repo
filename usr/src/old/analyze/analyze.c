@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)analyze.c	4.3 (Berkeley) %G%";
+static char *sccsid = "@(#)analyze.c	4.4 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/dir.h>
@@ -29,9 +29,9 @@ int	uflg;
 
 #define	clear(x)	((int)x & 0x7fffffff)
 
-struct	proc *proc;
+struct	proc *proc, *aproc;
 int	nproc;
-struct	text *text;
+struct	text *text, *atext;
 int	ntext;
 struct	mapent *swapmap;
 int	nswapmap;
@@ -200,7 +200,7 @@ usage:
 	}
 	vprintf("usrpt %x\nUsrptma %x\nfirstfree %x\nmaxfree %x\nfreemem %x\n",
 		    usrpt, Usrptma, firstfree, maxfree, freemem);
-	{ struct proc *aproc; 
+	{
 	  lseek(fcore, (long)clear(nl[X_PROC].n_value), 0);
 	  read(fcore, (char *)&aproc, sizeof aproc);
 	  lseek(fcore, (long)clear(nl[X_NPROC].n_value), 0);
@@ -214,7 +214,7 @@ usage:
 		exit(1);
 	  }
 	}
-	{ struct text *atext;
+	{
 	  lseek(fcore, (long)clear(nl[X_TEXT].n_value), 0);
 	  read(fcore, (char *)&atext, sizeof atext);
 	  lseek(fcore, (long)clear(nl[X_NTEXT].n_value), 0);
@@ -291,7 +291,7 @@ usage:
 		}
 		p->p_p0br = (struct pte *)p0br;
 		p->p_addr = uaddr(p);
-		p->p_textp = &text[p->p_textp - (struct text *)nl[X_TEXT].n_value];
+		p->p_textp = &text[p->p_textp - atext];
 		if (p->p_pid == 2)
 			continue;
 		if (getu(p))
@@ -683,19 +683,30 @@ dumpcm(cp, pg)
 	printf("cm %x %s page %x ", cm, cp, pg);
 	c = &cmap[cm];
 	printf("\t[%x, %x", c->c_page, c->c_ndx);
-	if (c->c_type != CTEXT)
+	if (c->c_type == CSYS)
+		goto skip;
+	if (c->c_type != CTEXT) {
+		if (c->c_ndx >= nproc) {
+			printf(" [text c->c_ndx %d?]", c->c_ndx);
+			goto skip;
+		}
 		printf(" (=pid %d)", proc[c->c_ndx].p_pid);
-	else {
-		pslot=(text[c->c_ndx].x_caddr - (struct proc *)nl[X_PROC].n_value);
+	} else {
+		if (c->c_ndx >= ntext) {
+			printf(" [text c->c_ndx %d?]", c->c_ndx);
+			goto skip;
+		}
+		pslot= (text[c->c_ndx].x_caddr - aproc);
 		printf(" (=pid");
 		for(;;) {
 			printf(" %d", proc[pslot].p_pid);
 			if (proc[pslot].p_xlink == 0)
 				break;
-			pslot=(proc[pslot].p_xlink - (struct proc *)nl[X_PROC].n_value);
+			pslot= (proc[pslot].p_xlink - aproc);
 		}
 		printf(")");
 	}
+skip:
 	printf("] ");
 	printf(tynames[c->c_type]);
 	if (c->c_free)
