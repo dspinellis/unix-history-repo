@@ -254,7 +254,7 @@ again:
 			if (first == 0) {
                                 (void)seteuid(suid);
                                 (void)setegid(sgid);
-                                (void)setgroups(1, (int *)&sgid);
+                                (void)setgroups(1, &sgid);
                         }
 			return(0);
 		}
