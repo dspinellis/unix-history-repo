@@ -93,13 +93,11 @@ struct	mbuf *neget();
  * Ethernet software status per interface.
  *
  * Each interface is referenced by a network interface structure,
- * ns_if, which the routing code uses to locate the interface.
+ * arpcom.ac_if, which the routing code uses to locate the interface.
  * This structure contains the output queue for the interface, its address, ...
  */
 struct	ne_softc {
-	struct	arpcom ns_ac;		/* Ethernet common part */
-#define	ns_if	ns_ac.ac_if		/* network-visible interface */
-#define	ns_addr	ns_ac.ac_enaddr		/* hardware Ethernet address */
+	struct	arpcom arpcom;		/* Ethernet common part */
 	int	ns_flags;
 #define	DSF_LOCK	1		/* block re-entering enstart */
 	int	ns_oactive ;
@@ -228,7 +226,7 @@ word:
 	nefetch (ns, (caddr_t)boarddata, 0, sizeof(boarddata));
 
 	for(i=0; i < 6; i++)
-		ns->ns_addr[i] = boarddata[i];
+		ns->arpcom.ac_enaddr[i] = boarddata[i];
 	splx(s);
 	return (1);
 }
@@ -329,14 +327,15 @@ neattach(dvp)
 {
 	int unit = dvp->id_unit;
 	register struct ne_softc *ns = &ne_softc[unit];
-	register struct ifnet *ifp = &ns->ns_if;
+	register struct ifnet *ifp = &ns->arpcom.ac_if;
 
 	ifp->if_unit = unit;
 	ifp->if_name = nedriver.name ;
 	ifp->if_mtu = ETHERMTU;
-	printf ("ne%d: NE%s address %s", unit,
-		  (ns->ns_mode & DSDC_WTS) ? "2000" : "1000",
-		  ether_sprintf(ns->ns_addr)) ;
+	printf ("ne%d: address %s, type NE%s\n",
+		unit,
+		ether_sprintf(ns->arpcom.ac_enaddr),
+		(ns->ns_mode &DSDC_WTS) ? "2000" : "1000");
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_NOTRAILERS;
 	ifp->if_init = neinit;
 	ifp->if_output = ether_output;
@@ -355,7 +354,7 @@ neinit(unit)
 	int unit;
 {
 	register struct ne_softc *ns = &ne_softc[unit];
-	struct ifnet *ifp = &ns->ns_if;
+	struct ifnet *ifp = &ns->arpcom.ac_if;
 	int s;
 	int i; char *cp;
 	register nec = ns->ns_port;
@@ -367,7 +366,7 @@ neinit(unit)
 
 	/* set physical address on ethernet */
 	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG1|DSCM_STOP);
-	for (i=0 ; i < 6 ; i++) outb(nec+ds1_par0+i,ns->ns_addr[i]);
+	for (i=0 ; i < 6 ; i++) outb(nec+ds1_par0+i,ns->arpcom.ac_enaddr[i]);
 
 	/* clr logical address hash filter for now */
 	for (i=0 ; i < 8 ; i++) outb(nec+ds1_mar0+i,0xff);
@@ -396,7 +395,7 @@ neinit(unit)
 	outb(nec+ds0_dcr, ns->ns_mode);
 	outb (nec+ds0_imr, 0xff);
 
-	ns->ns_if.if_flags |= IFF_RUNNING;
+	ns->arpcom.ac_if.if_flags |= IFF_RUNNING;
 	ns->ns_flags &= ~DSF_LOCK;
 	ns->ns_oactive = 0; ns->ns_mask = ~0;
 	nestart(ifp);
@@ -423,7 +422,7 @@ nestart(ifp)
 	if (ns->ns_flags & DSF_LOCK)
 		return;
 
-	if ((ns->ns_if.if_flags & IFF_RUNNING) == 0)
+	if ((ns->arpcom.ac_if.if_flags & IFF_RUNNING) == 0)
 		return;
 
 	/*
@@ -435,7 +434,7 @@ nestart(ifp)
 	if (inb(nec+ds_cmd) & DSCM_TRANS)
 		return;
 
-	IF_DEQUEUE(&ns->ns_if.if_snd, m);
+	IF_DEQUEUE(&ns->arpcom.ac_if.if_snd, m);
  
 	if (m == 0)
 		return;
@@ -544,7 +543,7 @@ loop:
 		(void) inb(nec+ 0xD);
 		(void) inb(nec + 0xE);
 		(void) inb(nec + 0xF);
-		ns->ns_if.if_ierrors++;
+		ns->arpcom.ac_if.if_ierrors++;
 	}
 
 	/* We received something; rummage thru tiny ring buffer */
@@ -610,15 +609,15 @@ loop:
 	if (isr & DSIS_TXE) {
 		ns->ns_flags &= ~DSF_LOCK;
 		/* Need to read these registers to clear status */
-		ns->ns_if.if_collisions += inb(nec+ds0_tbcr0);
-		ns->ns_if.if_oerrors++;
+		ns->arpcom.ac_if.if_collisions += inb(nec+ds0_tbcr0);
+		ns->arpcom.ac_if.if_oerrors++;
 	}
 
 	/* Packet Transmitted */
 	if (isr & DSIS_TX) {
 		ns->ns_flags &= ~DSF_LOCK;
-		++ns->ns_if.if_opackets;
-		ns->ns_if.if_collisions += inb(nec+ds0_tbcr0);
+		++ns->arpcom.ac_if.if_opackets;
+		ns->arpcom.ac_if.if_collisions += inb(nec+ds0_tbcr0);
 	}
 
 	/* Receiver ovverun? */
@@ -636,7 +635,7 @@ loop:
 
 	/* Any more to send? */
 	outb (nec+ds_cmd, DSCM_NODMA|DSCM_PG0|DSCM_START);
-	nestart(&ns->ns_if);
+	nestart(&ns->arpcom.ac_if);
 	outb (nec+ds_cmd, cmd);
 	outb (nec+ds0_imr, 0xff);
 
@@ -658,7 +657,7 @@ nerecv(ns)
 {
 	int len,i;
 
-	ns->ns_if.if_ipackets++;
+	ns->arpcom.ac_if.if_ipackets++;
 	len = ns->ns_ph.pr_sz0 + (ns->ns_ph.pr_sz1<<8);
 	if(len < ETHER_MIN_LEN || len > ETHER_MAX_LEN)
 		return;
@@ -729,10 +728,10 @@ neread(ns, buf, len)
 	 * information to be at the front, but we still have to drop
 	 * the type and length which are at the front of any trailer data.
 	 */
-	m = neget(buf, len, off, &ns->ns_if);
+	m = neget(buf, len, off, &ns->arpcom.ac_if);
 	if (m == 0) return;
 
-	ether_input(&ns->ns_if, eh, m);
+	ether_input(&ns->arpcom.ac_if, eh, m);
 }
 
 /*
@@ -850,7 +849,8 @@ neioctl(ifp, cmd, data)
 			register struct ns_addr *ina = &(IA_SNS(ifa)->sns_addr);
 
 			if (ns_nullhost(*ina))
-				ina->x_host = *(union ns_host *)(ns->ns_addr);
+				ina->x_host =
+					*(union ns_host *)(ns->arpcom.ac_enaddr);
 			else {
 				/* 
 				 * The manual says we can't change the address 
@@ -859,7 +859,8 @@ neioctl(ifp, cmd, data)
 				 */
 				ifp->if_flags &= ~IFF_RUNNING; 
 				bcopy((caddr_t)ina->x_host.c_host,
-				    (caddr_t)ns->ns_addr, sizeof(ns->ns_addr));
+				    (caddr_t)ns->arpcom.ac_enaddr,
+					sizeof(ns->arpcom.ac_enaddr));
 			}
 			neinit(ifp->if_unit); /* does ne_setaddr() */
 			break;
@@ -883,8 +884,8 @@ neioctl(ifp, cmd, data)
 
 #ifdef notdef
 	case SIOCGHWADDR:
-		bcopy((caddr_t)ns->ns_addr, (caddr_t) &ifr->ifr_data,
-			sizeof(ns->ns_addr));
+		bcopy((caddr_t)ns->arpcom.ac_enaddr, (caddr_t) &ifr->ifr_data,
+			sizeof(ns->arpcom.ac_enaddr));
 		break;
 #endif
 
