@@ -5,7 +5,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)conf.h	8.92 (Berkeley) %G%
+ *	@(#)conf.h	8.93 (Berkeley) %G%
  */
 
 /*
@@ -552,9 +552,17 @@ extern void		*malloc();
 
 /*
 **  Linux 0.99pl10 and above...
-**	From Karl London <karl@borg.demon.co.uk> and John Kennedy
-**	<warlock@csuchico.edu>.  Conversion for "native (non-BSD)
-**	mode" from Florian La Roche <rzsfl@rzluxt.rz.uni-sb.de>.
+**
+**  Thanks to, in reverse order of contact:
+**
+**	John Kennedy <warlock@csuchico.edu>
+**	Florian La Roche <rzsfl@rz.uni-sb.de>
+**	Karl London <karl@borg.demon.co.uk>
+**
+**  Last compiled against:	[03/02/94 @ 05:34 PM (Wednesday)]
+**	sendmail 8.6.6.b9	named 4.9.2-931205-p1	db-1.73
+**	gcc 2.5.8		libc.so.4.5.19
+**	slackware 1.1.2		linux 0.99.15
 */
 
 #ifdef __linux__
@@ -563,15 +571,13 @@ extern void		*malloc();
 # define HASUNAME	1	/* use System V uname(2) system call */
 # define HASUNSETENV	1	/* has unsetenv(3) call */
 # define ERRLIST_PREDEFINED	/* don't declare sys_errlist */
-# define GIDSET_T	gid_t
-# define sleep		sleepXX
+# define GIDSET_T	gid_t	/* from <linux/types.h> */
 # ifndef LA_TYPE
-#  define LA_TYPE	LA_FLOAT
+#  define LA_TYPE	LA_PROC
 # endif
-# define SFS_TYPE	SFS_MOUNT	/* use <sys/mount.h> statfs() impl */
-# include <linux/fs.h>
+# define SFS_TYPE	SFS_VFS		/* use <sys/vfs.h> statfs() impl */
 # include <sys/sysmacros.h>
-# undef atol
+# undef atol			/* wounded in <stdlib.h> */
 #endif
 
 
