@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)glob.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)glob.c	5.21 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -740,9 +740,9 @@ Gmatch(string, pattern)
 			return (0);
 		if (match)
 		    continue;
-		if (rangec == '-') {
-		    match = (stringc <= *pattern &&
-			     *(pattern - 2) <= stringc);
+		if (rangec == '-' && *(pattern - 2) != '[' && *pattern != ']') {
+		    match = (stringc <= (*pattern & TRIM) &&
+			     (*(pattern - 2) & TRIM) <= stringc);
 		    pattern++;
 		}
 		else
