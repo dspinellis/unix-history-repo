@@ -1,4 +1,4 @@
-#	@(#)Makefile	1.5 (Berkeley) %G%
+#	@(#)Makefile	1.6 (Berkeley) %G%
 
 DIR=	papers/memfs
 SRCS=	0.t 1.t
@@ -6,9 +6,10 @@ MACROS=	-ms
 REFER=	/a/staff/mckusick/book/ref/refer -m -n -e -l -s -p ref.bib
 EXTRA=	ref.bib A.t tmac.srefs
 CLEANFILES=ref.bib.i? A.gt paper.t
+PRINTER=ps
 
 paper.${PRINTER}: paper.t
-	${ROFF} ${SRCS} tmac.srefs paper.t > ${.TARGET}
+	${ROFF} tmac.srefs paper.t > ${.TARGET}
 
 paper.t: ${SRCS} ref.bib.ia A.gt
 	${REFER} ${SRCS} A.gt > ${.TARGET}
