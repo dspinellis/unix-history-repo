@@ -9,7 +9,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)mk-amd-map.c	5.7 (Berkeley) %G%
+ *	@(#)mk-amd-map.c	5.8 (Berkeley) %G%
  *
  * $Id: mk-amd-map.c,v 5.2.2.1 1992/02/09 15:09:18 jsp beta $
  */
@@ -28,7 +28,7 @@ char copyright[] = "\
 
 #ifndef lint
 static char rcsid[] = "$Id: mk-amd-map.c,v 5.2.2.1 1992/02/09 15:09:18 jsp beta $";
-static char sccsid[] = "@(#)mk-amd-map.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mk-amd-map.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "am.h"
@@ -295,7 +295,8 @@ char *argv[];
 
 	if (mapd || printit) {
 		int error = read_file(mapf, map, mapd);
-		dbm_close(mapd);
+		if (mapd)
+			dbm_close(mapd);
 		(void) fclose(mapf);
 		if (printit) {
 			if (error) {
