@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)gethostbyname.3	6.4 (Berkeley) %G%
+.\"	@(#)gethostbyname.3	6.5 (Berkeley) %G%
 .\"
 .TH GETHOSTBYNAME 3N ""
 .UC 5
@@ -36,8 +36,8 @@ and
 each return a pointer to an object with the
 following structure.
 This structure contains either the information obtained from the name server,
-.IR named (8)
-or broken-out fields in a line in 
+.IR named (8),
+or broken-out fields from a line in 
 .IR /etc/hosts .
 If the local name server is not running these routines do a lookup in
 .IR /etc/hosts .
@@ -94,7 +94,7 @@ closes the TCP connection.
 .SH DIAGNOSTICS
 .PP
 Error return status from 
-.I Gethostbyname
+.I gethostbyname
 and
 .I gethostbyaddr
 is indicated by return of a null pointer.
@@ -127,31 +127,33 @@ of request to the name server will result in an answer.
 hosts(5), resolver(3), named(8)
 .SH CAVEAT
 .PP
-.IR Gethostent
+.I Gethostent
 is defined, and
-.IR sethostent 
-is redefined,
+.I sethostent
+and
+.I endhostent
+are redefined,
 when
 .IR libc
 is built to use only the routines to lookup in
 .IR /etc/hosts 
 and not the name server.
 .PP
-.IR Gethostent
+.I Gethostent
 reads the next line of
-.IR /etc/hosts
+.IR /etc/hosts ,
 opening the file if necessary.
 .PP
-.IR Sethostent 
-is redefined to open and rewind the file.  If
+.I Sethostent 
+is redefined to open and rewind the file.  If the
 .I stayopen
-flag is non-zero,
+argument is non-zero,
 the hosts data base will not be closed after each call to
-.IR gethostent
-(either directly, or indirectly through 
-.IR gethostbyname
+.I gethostbyname
 or
-.IR gethostbyaddr).
+.IR gethostbyaddr .
+.I Endhostent
+is redefined to close the file.
 .SH BUGS
 All information
 is contained in a static area
