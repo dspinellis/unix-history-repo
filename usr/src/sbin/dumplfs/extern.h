@@ -4,10 +4,9 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)extern.h	8.1 (Berkeley) %G%
+ *	@(#)extern.h	8.2 (Berkeley) %G%
  */
 
-void	err __P((const char *, ...));
 void	get __P((int, off_t, void *, size_t));
 
 extern char *special;
