@@ -14,10 +14,12 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)sgtty.h	4.4 (Berkeley) %G%
+ *	@(#)sgtty.h	4.5 (Berkeley) %G%
  */
 
 #ifndef	_IOCTL_
+#ifndef USE_OLD_TTY
 #define	USE_OLD_TTY
+#endif
 #include <sys/ioctl.h>
 #endif
