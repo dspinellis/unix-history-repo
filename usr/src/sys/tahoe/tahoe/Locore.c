@@ -1,4 +1,4 @@
-/*	Locore.c	1.4	87/06/06	*/
+/*	Locore.c	1.5	87/06/06	*/
 
 #include "../tahoe/mtpr.h"
 #include "../tahoe/trap.h"
@@ -132,7 +132,6 @@ lowinit()
 	boothowto = 0;
 	if (rmget((struct map *)0, 0, 0) == 0)
 		return;
-	cp = calloc(0); cfreemem(cp, 0);
 	dumpflag = 0; dumpflag = dumpflag;
 #if !defined(GPROF)
 	cp = (caddr_t)&etext;
