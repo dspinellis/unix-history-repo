@@ -2,14 +2,14 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)vp.4	4.1 (Berkeley) %G%
+.\"	@(#)vp.4	5.1 (Berkeley) %G%
 .\"
-.TH VP 4 5/10/81
+.TH VP 4 "27 July 1983"
 .UC 4
 .SH NAME
 vp \- Versatec interface
 .SH SYNOPSIS
-device vp0 at uba? csr 0177510 vector vpintr vpintr
+.B "device vp0 at uba0 csr 0177510 vector vpintr vpintr"
 .SH DESCRIPTION
 The Versatec printer/plotter is normally used with the programs
 .IR vpr (1),
@@ -18,48 +18,24 @@ or
 .IR vtroff (1).
 This description is designed for those who wish to drive the Versatec directly.
 .PP
-The Versatec at Berkeley is 36\*(rq wide, and has 440 characters per line
-and 7040 dots per line in plot mode (this is actually slightly less than
-36\*(rq of dots.)
-The paper used is continuous roll paper, and comes in 500' rolls.
-.PP
 To use the Versatec yourself, you must realize that you cannot open the
 device,
 .I /dev/vp0
 if there is a daemon active.
 You can see if there is a daemon active by doing a
-.IR ps (1),
-or by looking in the directory
-.I /usr/spool/vpd.
-If there is a file
-.I lock
-there, then there is probably a daemon
-.IR /usr/lib/vpd
-running.
-If not, you should remove the
-.I lock.
+.IR lpq (1),
+and seeing if there are any files being sent.
 .PP
-In any case, when your program tries to open the device
-.I /dev/vp0
-you may get one of two errors.
-The first of these
-ENXIO
-indicates that the Versatec is already in use.
-Your program can then
-.IR sleep (2)
-and try again in a while, or give up.
-The second is
-EIO
-and indicates that the Versatec is offline.
-.PP
-To set the Versatec into plot mode you should include <vcmd.h> and use the
+To set the Versatec into plot mode you should include
+.RI < sys/vcmd.h >
+and use the
 .IR ioctl (2)
 call
 .IP
 ioctl(fileno(vp), VSETSTATE, plotmd);
 .PP
 where
-.B plotmd
+.I plotmd
 is defined to be
 .IP
 \fBint\fR plotmd[] = { VPLOT, 0, 0 };
@@ -80,7 +56,7 @@ by sending it a EOT after putting it back into print mode, i.e. by
 	write(fileno(vp), "\e04", 1);
 .fi
 .PP
-.IR N.B. :
+.BR N.B. :
 If you use the standard I/O library with the Versatec you
 .B must
 do
@@ -94,7 +70,8 @@ is declared
 \fBchar\fR vpbuf[BUFSIZ];
 .PP
 otherwise the standard I/O library, thinking that the Versatec
-is a terminal (since it is a character special file) will not adequately buffer
+is a terminal (since it is a character special file) will
+not adequately buffer
 the data you are sending to the Versatec.
 This will cause it to run
 .B extremely
@@ -102,17 +79,26 @@ slowly and tends to grind the system to a halt.
 .SH FILES
 /dev/vp0
 .SH SEE ALSO
-vfont(5), vpr(1), vtroff(1), va(4)
+vfont(5),
+lpr(1),
+lpd(8),
+vtroff(1),
+va(4)
 .SH DIAGNOSTICS
-None.
+The following error numbers are significant at the
+time the device is opened.
+.TP 10
+[ENXIO]
+The device is already in use.
+.TP
+[EIO]
+The device is offline.
 .SH BUGS
-The configuration part of the driver assumes that the device is setup to
-vector print mode through 0174 and plot mode through 0200.  Since the
-driver doesn't care whether the device considers the interrupt to be
-a print or a plot interrupt, it would be preferable to have these be
-the same.  This since the configuration program can't be sure at boot
-time which vector interrupted and where the interrupt vectors actually are.
-For the time being, since our versatec is vectored as described above,
-we specify that it has two interrupt vectors and are careful to detect
-an interrupt through 0200 at boot time and (manually) pretend the interrupt
-came through 0174.
+The configuration part of the driver assumes that the device is set up to
+vector print mode through 0174 and plot mode through 0200.
+As the configuration program can't be sure
+which vector interrupted at boot time,
+we specify that it has two interrupt vectors,
+and if an interrupt comes through 0200 it is reset to 0174.
+This is safe for devices with one or two vectors at these two addresses.
+Other configurations with 2 vectors may require changes in the driver.
