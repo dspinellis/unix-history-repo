@@ -1,0 +1,108 @@
+.\" Copyright (c) 1989 The Regents of the University of California.
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms are permitted
+.\" provided that the above copyright notice and this paragraph are
+.\" duplicated in all such forms and that any documentation,
+.\" advertising materials, and other materials related to such
+.\" distribution and use acknowledge that the software was developed
+.\" by the University of California, Berkeley.  The name of the
+.\" University may not be used to endorse or promote products derived
+.\" from this software without specific prior written permission.
+.\" THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\" WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.\"
+.\"	@(#)chflags.2	6.1 (Berkeley) %G%
+.\"
+.TH CHFALGS 2 ""
+.UC 7
+.SH NAME
+chflags, fchflags \- set file flags
+.SH SYNOPSIS
+.nf
+.ft B
+chflags(path, flags)
+char *path;
+long flags;
+.LP
+.ft B
+fchflags(fd, flags)
+int fd;
+long flags;
+.fi
+.ft R
+.SH DESCRIPTION
+The file whose name
+is given by \fIpath\fP
+or referenced by the descriptor
+.I fd
+has its flags changed to
+.IR flags .
+.PP
+Only the owner of a file (or the super-user) may change the flags.
+The owner may only change the lower 16 bits of the flags;
+the super-user may change all 32 bits of the flags.
+.SH RETURN VALUE
+Upon successful completion, a value of 0 is returned.
+Otherwise, \-1 is returned and the global variable
+.I errno
+is set to indicate the error.
+.SH ERRORS
+.I Chflags
+fails if one or more of the following are true:
+.TP 15
+[ENOTDIR]
+A component of the path prefix is not a directory.
+.TP 15
+[EINVAL]
+The pathname contains a character with the high-order bit set.
+.TP 15
+[ENAMETOOLONG]
+A component of a pathname exceeded 255 characters,
+or an entire path name exceeded 1023 characters.
+.TP 15
+[ENOENT]
+The named file does not exist.
+.TP 15
+[EACCES]
+Search permission is denied for a component of the path prefix.
+.TP 15
+[ELOOP]
+Too many symbolic links were encountered in translating the pathname.
+.TP 15
+[EPERM]
+The effective user ID does not match the owner of the file and
+the effective user ID is not the super-user.
+.TP 15
+[EROFS]
+The named file resides on a read-only file system.
+.TP 15
+[EFAULT]
+.I Path
+points outside the process's allocated address space.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
+.PP
+.I Fchmod
+will fail if:
+.TP 15
+[EBADF]
+The descriptor is not valid.
+.TP 15
+[EINVAL]
+.I Fd
+refers to a socket, not to a file.
+.TP 15
+[EPERM]
+The effective user ID does not match the owner of the file and
+the effective user ID is not the super-user.
+.TP 15
+[EROFS]
+The file resides on a read-only file system.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
+.SH "SEE ALSO"
+chmod(2), open(2), chown(2), stat(2)
