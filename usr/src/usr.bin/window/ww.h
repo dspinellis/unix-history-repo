@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ww.h	3.62 (Berkeley) %G%
+ *	@(#)ww.h	3.63 (Berkeley) %G%
  */
 
 #ifdef OLD_TTY
@@ -224,7 +224,7 @@ int wwnselect, wwnselecte, wwnselectz;
 #define wwupdate()	wwupdate1(0, wwnrow);
 
 	/* things for handling input */
-int wwrint();		/* interrupt handler */
+void wwrint();		/* interrupt handler */
 struct ww *wwcurwin;	/* window to copy input into */
 char *wwib;		/* input (keyboard) buffer */
 char *wwibe;		/* wwib + sizeof buffer */

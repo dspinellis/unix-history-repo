@@ -9,7 +9,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)wwchild.c	3.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)wwchild.c	3.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "ww.h"
@@ -27,7 +27,8 @@ wwchild()
 	char collected = 0;
 
 	olderrno = errno;
-	while ((pid = wait3(&w, WNOHANG|WUNTRACED, (struct rusage *)0)) > 0) {
+	while ((pid =
+	    wait3((int *)&w, WNOHANG|WUNTRACED, (struct rusage *)0)) > 0) {
 		for (wp = wwindex; wp < &wwindex[NWW]; wp++) {
 			if (*wp && (*wp)->ww_state == WWS_HASPROC
 			    && (*wp)->ww_pid == pid) {
