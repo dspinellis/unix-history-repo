@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)res_init.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)res_init.c	5.4 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
@@ -14,6 +14,18 @@ static char sccsid[] = "@(#)res_init.c	5.3 (Berkeley) %G%";
 #include <stdio.h>
 #include <arpa/nameser.h>
 #include <arpa/resolv.h>
+
+/*
+ * Resolver configuration file. Contains the address of the
+ * inital name server to query and the default domain for
+ * non fully qualified domain names.
+ */
+
+#ifdef CONFFILE
+char	*conffile = CONFFILE;
+#else
+char	*conffile = "/usr/local/lib/resolv.conf";
+#endif
 
 /*
  * Resolver state default settings
@@ -42,7 +54,7 @@ res_init()
 	_res.nsaddr.sin_port = htons(NAMESERVER_PORT);
 
 	/* first try reading the config file */
-	if ((fp = fopen(CONFFILE, "r")) != NULL) {
+	if ((fp = fopen(conffile, "r")) != NULL) {
 		if (fgets(_res.defdname, sizeof(_res.defdname), fp) == NULL)
 			_res.defdname[0] = '\0';
 		else if ((cp = index(_res.defdname, '\n')) != NULL)
