@@ -3295,6 +3295,7 @@ pc3|ibmpc3|IBM PC 386BSD Console:\
 	:li#25:\
 	:ms:\
 	:nd=\E[C:\
+	:pt:\
 	:rs=\E[m:\
 	:se=\E[m:\
 	:sf=\E[S:\
