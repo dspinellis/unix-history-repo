@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.26 (Berkeley) %G%
+.\"	@(#)op.me	6.27 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.26
+Version 6.27
 .sp
-For Sendmail Version 6.40
+For Sendmail Version 6.42
 .)l
 .sp 2
 .pp
@@ -5686,6 +5686,15 @@ This line is printed by the
 command,
 and is generally used to store status information.
 It can contain any text.
+.ip F
+Flag bits, represented as one letter per flag.
+Defined flag bits are
+.b r
+indicating that this is a response message
+and
+.b w
+indicating that a warning message has been sent
+announcing that the mail has been delayed.
 .ip $
 A macro definition.
 The values of certain macros
@@ -5816,7 +5825,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.26
+.\"Version 6.27
 .\".ce 0
 .pn 2
 .bp
