@@ -14,7 +14,7 @@
 # IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 # WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #
-#	@(#)Makefile	1.9 (Berkeley) %G%
+#	@(#)Makefile	1.10 (Berkeley) %G%
 #
 # This high quality math library is intended to run on either a VAX in
 # D_floating format or a machine that conforms to the IEEE standard 754
@@ -45,6 +45,9 @@ SRCS=	acosh.c asincos.c asinh.c atan.c atanh.c cosh.c erf.c \
 OBJS=	acosh.o asincos.o asinh.o atan.o atanh.o cosh.o erf.o \
 	exp.o exp__E.o expm1.o floor.o lgamma.o j0.o j1.o jn.o \
 	log.o log10.o log1p.o log__L.o pow.o sinh.o tanh.o 
+MAN=	abs.0 asinh.0 erf.0 exp.0 floor.0 hypot.0 ieee.0 infnan.0 j0.0 \
+	lgamma.0 math.0 sin.0 sinh.0 sqrt.0
+MDIR=	${DESTDIR}/usr/man/cat3
 
 .c.o:
 ####	generate additional code for profiling (-p)
@@ -60,8 +63,12 @@ OBJS=	acosh.o asincos.o asinh.o atan.o atanh.o cosh.o erf.o \
 all: libm.a libm_p.a
 
 libm.a libm_p.a: ${OBJS} more.${MACHINE}
-	cd profiled; ar cru ../libm_p.a ${OBJS}
-	ar cru libm.a ${OBJS}
+	@echo building normal libm
+	@ar cru libm.a ${OBJS}
+	ranlib libm.a
+	@echo building profiled libm
+	@cd profiled; ar cru ../libm_p.a ${OBJS}
+	ranlib libm_p.a
 
 more.ieee: FRC
 	for i in common ieee; do (cd $$i; make ${MFLAGS}); done
@@ -75,53 +82,59 @@ more.tahoe: FRC
 more.vax: FRC
 	cd vax; make "CFLAGS=${CFLAGS}"
 
-clean: FRC
+clean: 
 	rm -f ${OBJS} profiled/*.o core libm.a libm_p.a
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} clean); done
 
-depend: FRC
+cleandir: clean
+	rm -f ${MAN} tags .depend
+
+depend: 
 	mkdep ${CFLAGS} ${SRCS}
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} depend); done
 
-install: FRC
-	install -o bin -g bin -m 644 libm.a ${DESTDIR}/usr/lib/libm.a
-	ranlib ${DESTDIR}/usr/lib/libm.a
-	install -o bin -g bin -m 644 libm_p.a ${DESTDIR}/usr/lib/libm_p.a
-	ranlib ${DESTDIR}/usr/lib/libm_p.a
+install: ${MAN}
+	install -o bin -g bin -m 444 libm.a ${DESTDIR}/usr/lib/libm.a
+	ranlib -t ${DESTDIR}/usr/lib/libm.a
+	install -o bin -g bin -m 444 libm_p.a ${DESTDIR}/usr/lib/libm_p.a
+	ranlib -t ${DESTDIR}/usr/lib/libm_p.a
+	install -c -o bin -g bin -m 444 ${MAN} ${MDIR}
+	rm -f ${MDIR}/acosh.0; ln ${MDIR}/asinh.0 ${MDIR}/acosh.0
+	rm -f ${MDIR}/atanh.0; ln ${MDIR}/asinh.0 ${MDIR}/atanh.0
+	rm -f ${MDIR}/erfc.0; ln ${MDIR}/erf.0 ${MDIR}/erfc.0
+	rm -f ${MDIR}/expm1.0; ln ${MDIR}/exp.0 ${MDIR}/expm1.0
+	rm -f ${MDIR}/log.0; ln ${MDIR}/exp.0 ${MDIR}/log.0
+	rm -f ${MDIR}/log10.0; ln ${MDIR}/exp.0 ${MDIR}/log10.0
+	rm -f ${MDIR}/log1p.0; ln ${MDIR}/exp.0 ${MDIR}/log1p.0
+	rm -f ${MDIR}/pow.0; ln ${MDIR}/exp.0 ${MDIR}/pow.0
+	rm -f ${MDIR}/fabs.0; ln ${MDIR}/floor.0 ${MDIR}/fabs.0
+	rm -f ${MDIR}/ceil.0; ln ${MDIR}/floor.0 ${MDIR}/ceil.0
+	rm -f ${MDIR}/rint.0; ln ${MDIR}/floor.0 ${MDIR}/rint.0
+	rm -f ${MDIR}/cabs.0; ln ${MDIR}/hypot.0 ${MDIR}/cabs.0
+	rm -f ${MDIR}/copysign.0; ln ${MDIR}/ieee.0 ${MDIR}/copysign.0
+	rm -f ${MDIR}/drem.0; ln ${MDIR}/ieee.0 ${MDIR}/drem.0
+	rm -f ${MDIR}/finite.0; ln ${MDIR}/ieee.0 ${MDIR}/finite.0
+	rm -f ${MDIR}/logb.0; ln ${MDIR}/ieee.0 ${MDIR}/logb.0
+	rm -f ${MDIR}/scalb.0; ln ${MDIR}/ieee.0 ${MDIR}/scalb.0
+	rm -f ${MDIR}/j1.0; ln ${MDIR}/j0.0 ${MDIR}/j1.0
+	rm -f ${MDIR}/jn.0; ln ${MDIR}/j0.0 ${MDIR}/jn.0
+	rm -f ${MDIR}/y0.0; ln ${MDIR}/j0.0 ${MDIR}/y0.0
+	rm -f ${MDIR}/y1.0; ln ${MDIR}/j0.0 ${MDIR}/y1.0
+	rm -f ${MDIR}/yn.0; ln ${MDIR}/j0.0 ${MDIR}/yn.0
+	rm -f ${MDIR}/gamma.0; ln ${MDIR}/lgamma.0 ${MDIR}/gamma.0
+	rm -f ${MDIR}/tan.0; ln ${MDIR}/sin.0 ${MDIR}/tan.0
+	rm -f ${MDIR}/acos.0; ln ${MDIR}/sin.0 ${MDIR}/acos.0
+	rm -f ${MDIR}/asin.0; ln ${MDIR}/sin.0 ${MDIR}/asin.0
+	rm -f ${MDIR}/atan.0; ln ${MDIR}/sin.0 ${MDIR}/atan.0
+	rm -f ${MDIR}/atan2.0; ln ${MDIR}/sin.0 ${MDIR}/atan2.0
+	rm -f ${MDIR}/cos.0; ln ${MDIR}/sin.0 ${MDIR}/cos.0
+	rm -f ${MDIR}/cosh.0; ln ${MDIR}/sinh.0 ${MDIR}/cosh.0
 
-lint: FRC
+lint: ${SRCS}
 	lint ${CFLAGS} ${SRCS}
 
-tags: FRC
+tags: ${SRCS}
 	ctags ${SRCS}
 	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS} tags); done
 
 FRC:
-
-# DO NOT DELETE THIS LINE -- mkdep uses it.
-# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
-
-acosh.o: acosh.c
-asincos.o: asincos.c
-asinh.o: asinh.c
-atan.o: atan.c
-atanh.o: atanh.c /usr/include/errno.h
-cosh.o: cosh.c
-erf.o: erf.c
-exp.o: exp.c
-exp__E.o: exp__E.c
-expm1.o: expm1.c
-floor.o: floor.c
-lgamma.o: lgamma.c /usr/include/math.h /usr/include/errno.h
-j0.o: j0.c /usr/include/math.h /usr/include/errno.h
-j1.o: j1.c /usr/include/math.h /usr/include/errno.h
-jn.o: jn.c /usr/include/math.h /usr/include/errno.h
-log.o: log.c /usr/include/errno.h
-log10.o: log10.c
-log1p.o: log1p.c /usr/include/errno.h
-log__L.o: log__L.c
-pow.o: pow.c /usr/include/errno.h
-sinh.o: sinh.c
-tanh.o: tanh.c
-
-# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
