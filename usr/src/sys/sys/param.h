@@ -3,17 +3,21 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)param.h	7.20 (Berkeley) %G%
+ *	@(#)param.h	7.21 (Berkeley) %G%
  */
 
-#define	BSD	199006		/* June, 1990 system version (year & month) */
+#define	BSD	199103		/* March, 1991 system version (year & month) */
 #define BSD4_3	1
 #define BSD4_4	0.5
 
 #include <sys/syslimits.h>
 
+#ifndef LOCORE
+#include <sys/types.h>
+#endif
+
 /*
- * Machine-independent constants
+ * Machine-independent constants (some used in following include files)
  */
 #define	MAXUPRC		CHILD_MAX	/* max processes per user */
 #define	NOFILE		OPEN_MAX	/* max open files per process */
@@ -27,32 +31,6 @@
 	/* MAXLOGNAME must be >= UT_NAMESIZE (<utmp.h>) */
 
 #define	NOGROUP		65535		/* marker for empty group set member */
-
-/*
- * Priorities.  Note that with 32 run queues,
- * differences less than 4 are insignificant.
- */
-#define	PSWP	0
-#define	PVM	4
-#define	PINOD	8
-#define	PRIBIO	16
-#define	PVFS	20
-#define	PSOCK	24
-#define	PZERO	25		/* No longer magic, shouldn't be here XXX */
-#define	PWAIT	32
-#define	PLOCK	36
-#define	PPAUSE	40
-#define	PUSER	50
-#define	MAXPRI	127		/* priorities range from 0 through MAXPRI */
-
-#define	PRIMASK	0x0ff
-#define	PCATCH	0x100		/* or'd with pri for tsleep to check signals */
-
-#define	NZERO	0		/* default "nice" */
-
-#ifndef LOCORE
-#include <sys/types.h>
-#endif
 
 /*
  * More types and definitions used throughout the kernel
@@ -77,6 +55,28 @@
 #include <machine/param.h>
 #include <machine/endian.h>
 #include <machine/limits.h>
+
+/*
+ * Priorities.  Note that with 32 run queues,
+ * differences less than 4 are insignificant.
+ */
+#define	PSWP	0
+#define	PVM	4
+#define	PINOD	8
+#define	PRIBIO	16
+#define	PVFS	20
+#define	PSOCK	24
+#define	PZERO	25		/* No longer magic, shouldn't be here XXX */
+#define	PWAIT	32
+#define	PLOCK	36
+#define	PPAUSE	40
+#define	PUSER	50
+#define	MAXPRI	127		/* priorities range from 0 through MAXPRI */
+
+#define	PRIMASK	0x0ff
+#define	PCATCH	0x100		/* or'd with pri for tsleep to check signals */
+
+#define	NZERO	0		/* default "nice" */
 
 #define	NBPW	sizeof(int)	/* number of bytes in an integer */
 
