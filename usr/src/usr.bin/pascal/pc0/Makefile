@@ -1,4 +1,4 @@
-SCCSID = "@(#)Makefile 1.47 %G%"
+SCCSID = "@(#)Makefile 1.48 %G%"
 
 INSTALLDIR = $(DESTDIR)/usr/lib
 INSTALLNAME = ${INSTALLDIR}/pc0
@@ -64,6 +64,9 @@ ${OBJS}:
 	cd ${SRCDIR}; ${MKSTR} - ${BINDIR}/${ERRORSTRINGS} ${BINDIR}/ $*.c
 	${CC} ${CFLAGS} -I. -I${SRCDIR} -c $*.c
 	${RM} $*.c
+
+lint:
+	cd ${SRCDIR}; lint -I. -I${BINDIR} ${SRCS}  ${BINDIR}/*.c
 
 whoami.h:
 	${GET} ${REL} piwhoami.h
