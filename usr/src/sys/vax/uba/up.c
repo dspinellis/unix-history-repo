@@ -799,8 +799,10 @@ upecc(ui, flag)
 		 * transfer.
 		 */
 		while (i < 512 && (int)ptob(npf)+i < bp->b_bcount && bit > -11) {
-			addr = ptob(ubp->uba_map[reg+btop(byte)].pg_pfnum)+
-				(byte & PGOFSET);
+			struct pte pte;
+
+			pte = ubp->uba_map[reg + btop(byte)];
+			addr = ptob(pte.pg_pfnum) + (byte & PGOFSET);
 #ifdef UPECCDEBUG
 			printf("addr %x map reg %x\n",
 				addr, *(int *)(&ubp->uba_map[reg+btop(byte)]));
