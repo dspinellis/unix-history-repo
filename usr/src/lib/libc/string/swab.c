@@ -2,6 +2,9 @@
  * Copyright (c) 1988 Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Jeffrey Mogul.
+ *
  * Redistribution and use in source and binary forms are permitted
  * provided that the above copyright notice and this paragraph are
  * duplicated in all such forms and that any documentation,
@@ -16,14 +19,12 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)swab.c	5.4 (Berkeley) %G%";
+static char sccsid[] = "@(#)swab.c	5.5 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
-/*
- * Swab bytes
- * Jeffrey Mogul, Stanford
- */
+#include <string.h>
 
+void
 swab(from, to, n)
 	register char *from, *to;
 	register int n;
