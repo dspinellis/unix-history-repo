@@ -1,0 +1,122 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"	@(#)tar.5	5.1 (Berkeley) %G%
+.\"
+.TH TAR 5  "15 January 1983"
+.UC 5
+.SH NAME
+tar \- tape archive file format
+.SH DESCRIPTION
+.IR Tar ,
+(the tape archive command)
+dumps several files into one, in a medium suitable for transportation.
+.PP
+A ``tar tape'' or file is a series of blocks.  Each block is of size TBLOCK.
+A file on the tape is represented by a header block which describes
+the file, followed by zero or more blocks which give the contents of the
+file.  At the end of the tape are two blocks filled with binary
+zeros, as an end-of-file indicator.  
+.PP
+The blocks are grouped for physical I/O operations.  Each group of
+.I n
+blocks (where
+.I n
+is set by the 
+.B b
+keyletter on the 
+.IR tar (1)
+command line \(em default is 20 blocks) is written with a single system
+call; on nine-track tapes, the result of this write is a single tape
+record.  The last group is always written at the full size, so blocks after
+the two zero blocks contain random data.  On reading, the specified or
+default group size is used for the
+first read, but if that read returns less than a full tape block, the reduced
+block size is used for further reads.
+.PP
+The header block looks like:
+.RS
+.PP
+.nf
+#define TBLOCK	512
+#define NAMSIZ	100
+
+union hblock {
+	char dummy[TBLOCK];
+	struct header {
+		char name[NAMSIZ];
+		char mode[8];
+		char uid[8];
+		char gid[8];
+		char size[12];
+		char mtime[12];
+		char chksum[8];
+		char linkflag;
+		char linkname[NAMSIZ];
+	} dbuf;
+};
+.ta \w'#define 'u +\w'SARMAG 'u
+.fi
+.RE
+.LP
+.IR Name
+is a null-terminated string.
+The other fields are zero-filled octal numbers in ASCII.  Each field
+(of width w) contains w-2 digits, a space, and a null, except
+.IR size
+and
+.IR mtime ,
+which do not contain the trailing null.
+.IR Name
+is the name of the file, as specified on the 
+.I tar
+command line.  Files dumped because they were in a directory which
+was named in the command line have the directory name as prefix and
+.I /filename
+as suffix.
+.  \"Whatever format was used in the command line
+.  \"will appear here, such as
+.  \".I \&./yellow
+.  \"or
+.  \".IR \&../../brick/./road/.. .
+.  \"To retrieve a file from a tar tape, an exact prefix match must be specified,
+.  \"including all of the directory prefix information used on the command line
+.  \"that dumped the file (if any).
+.IR Mode
+is the file mode, with the top bit masked off.
+.IR Uid
+and
+.IR gid
+are the user and group numbers which own the file.
+.IR Size
+is the size of the file in bytes.  Links and symbolic links are dumped
+with this field specified as zero.
+.IR Mtime
+is the modification time of the file at the time it was dumped.
+.IR Chksum
+is a decimal ASCII value which represents the sum of all the bytes in the
+header block.  When calculating the checksum, the 
+.IR chksum
+field is treated as if it were all blanks.
+.IR Linkflag
+is ASCII `0' if the file is ``normal'' or a special file, ASCII `1'
+if it is an hard link, and ASCII `2'
+if it is a symbolic link.  The name linked-to, if any, is in
+.IR linkname,
+with a trailing null.
+Unused fields of the header are binary zeros (and are included in the
+checksum).
+.PP
+The first time a given i-node number is dumped, it is dumped as a regular
+file.  The second and subsequent times, it is dumped as a link instead.
+Upon retrieval, if a link entry is retrieved, but not the file it was
+linked to, an error message is printed and the tape must be manually
+re-scanned to retrieve the linked-to file.
+.PP
+The encoding of the header is designed to be portable across machines.
+.SH "SEE ALSO"
+tar(1)
+.SH BUGS
+Names or linknames longer than NAMSIZ produce error reports and cannot be
+dumped.
