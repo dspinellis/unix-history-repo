@@ -5,13 +5,13 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cmdtab.c	5.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)cmdtab.c	5.2 (Berkeley) %G%";
 #endif not lint
 
 #include "tip.h"
 
 extern	int shell(), getfl(), sendfile(), chdirectory();
-extern	int finish(), help(), pipefile(), consh(), variable();
+extern	int finish(), help(), pipefile(), pipeout(), consh(), variable();
 extern	int cu_take(), cu_put(), dollar(), genbrk(), suspend();
 
 esctable_t etable[] = {
@@ -21,6 +21,7 @@ esctable_t etable[] = {
 	{ 't',	NORM,	"take file from remote UNIX",	 cu_take },
 	{ 'p',	NORM,	"put file to remote UNIX",	 cu_put },
 	{ '|',	NORM,	"pipe remote file",		 pipefile },
+	{ '$',	NORM,	"pipe local command to remote host", pipeout },
 #ifdef CONNECT
 	{ 'C',  NORM,	"connect program to remote host",consh },
 #endif
