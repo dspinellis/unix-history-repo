@@ -1,4 +1,4 @@
-#	@(#)Makefile	8.1 (Berkeley) %G%
+#	@(#)Makefile	8.2 (Berkeley) %G%
 
 DESTDIR=
 STAND=	../../stand
@@ -70,8 +70,8 @@ clean cleandir:
 
 install:
 	./mkboot boot rzboot bootrz
-	install -s -o bin -g bin -m 444 rzboot ${DESTDIR}/usr/mdec
-	install -s -o bin -g bin -m 444 bootrz ${DESTDIR}/usr/mdec
+	install -o bin -g bin -m 444 rzboot ${DESTDIR}/usr/mdec
+	install -o bin -g bin -m 444 bootrz ${DESTDIR}/usr/mdec
 
 depend: ${SRCS}
 	mkdep ${INCPATH} ${DEFS} ${SRCS}
