@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)proc.c 1.2 %G%";
+static	char sccsid[] = "@(#)proc.c 1.3 %G%";
 
 #include "whoami.h"
 #ifdef OBJ
@@ -364,10 +364,11 @@ proc(r)
 				fmt = 'c';
 				break;
 			case TSCAL:
+				warning();
 				if (opt('s')) {
 					standard();
-					error("Writing scalars to text files is non-standard");
 				}
+				error("Writing scalars to text files is non-standard");
 			case TBOOL:
 				stkrval(alv, NIL , RREQ );
 				put(2, O_NAM, listnames(ap));
@@ -690,10 +691,11 @@ proc(r)
 				put(1, op);
 			else {
 				put(2, op, listnames(ap));
+				warning();
 				if (opt('s')) {
 					standard();
-					error("Reading of enumerated types is non-standard");
 				}
+				error("Reading scalars from text files is non-standard");
 			}
 			/*
 			 * Data read is on the stack.
