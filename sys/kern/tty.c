@@ -32,7 +32,7 @@
  * SUCH DAMAGE.
  *
  *	from: @(#)tty.c	7.44 (Berkeley) 5/28/91
- *	$Id: tty.c,v 1.14 1994/01/11 18:09:36 ache Exp $
+ *	$Id: tty.c,v 1.16 1994/01/28 23:17:43 ache Exp $
  */
 
 #include "param.h"
@@ -347,6 +347,7 @@ ttstart(tp)
 		(*tp->t_oproc)(tp);
 }
 
+#ifdef notused
 void
 ttrstrt(tp)				/* XXX */
 	struct tty *tp;
@@ -359,6 +360,7 @@ ttrstrt(tp)				/* XXX */
 	tp->t_state &= ~TS_TIMEOUT;
 	ttstart(tp);
 }
+#endif /* notused */
 
 
 /*
@@ -1334,9 +1336,8 @@ ttread(tp, uio, flag)
 	register cc_t *cc = tp->t_cc;
 	register struct proc *p = curproc;
 	int s, first, error = 0, rblen;
-	struct timeval stime;
 	int has_stime = 0, last_cc = 0;
-	long slp = 0;
+	long slp = 0;		/* XXX this should be renamed `timo'. */
 
 loop:
 	lflag = tp->t_lflag;
@@ -1376,6 +1377,8 @@ loop:
 	if ((lflag & ICANON) == 0) {
 		int m = cc[VMIN];
 		long t = cc[VTIME];
+		struct timeval stime, timecopy;
+		int x;
 
 		/*
 		 * Check each of the four combinations.
@@ -1390,9 +1393,10 @@ loop:
 				goto sleep;
 			if (rblen > 0)
 				goto read;
-			/* Cheat here */
-			flag |= IO_NDELAY;
-			goto sleep;
+
+			/* m, t and rblen are all 0.  0 is enough input. */
+			splx(s);
+			return (0);
 		}
 		t *= 100000;		/* time in us */
 #define diff(t1, t2) (((t1).tv_sec - (t2).tv_sec) * 1000000 + \
@@ -1402,34 +1406,39 @@ loop:
 				goto sleep;
 			if (rblen >= m)
 				goto read;
+			x = splclock();
+			timecopy = time;
+			splx(x);
 			if (!has_stime) {
 				/* first character, start timer */
 				has_stime = 1;
-				stime = time;
+				stime = timecopy;
 				slp = t;
 			} else if (rblen > last_cc) {
 				/* got a character, restart timer */
-				stime = time;
+				stime = timecopy;
 				slp = t;
 			} else {
 				/* nothing, check expiration */
-				slp = t - diff(time, stime);
+				slp = t - diff(timecopy, stime);
 			}
 			last_cc = rblen;
 		} else {	/* m == 0 */
 			if (rblen > 0)
 				goto read;
+			x = splclock();
+			timecopy = time;
+			splx(x);
 			if (!has_stime) {
 				has_stime = 1;
-				stime = time;
+				stime = timecopy;
 				slp = t;
 			} else {
-				slp = t - diff(time, stime);
-				/* Cheat here */
+				slp = t - diff(timecopy, stime);
 				if (slp <= 0) {
-					slp = 0;
-					flag |= IO_NDELAY;
-					goto sleep;
+					/* Timed out, but 0 is enough input. */
+					splx(s);
+					return (0);
 				}
 			}
 		}
@@ -1440,14 +1449,13 @@ loop:
 			 * of the target, so we round up.
 			 * The formula is ceiling(slp * hz/1000000).
 			 * 32-bit arithmetic is enough for hz < 169.
-			 *
-			 * Also, use plain wakeup() not ttwakeup().
+			 * XXX see hzto() for how to avoid overflow if hz
+			 * is large (divide by `tick' and/or arrange to
+			 * use hzto() if hz is large).
 			 */
 			slp = (long) (((u_long)slp * hz) + 999999) / 1000000;
-			timeout((timeout_func_t)wakeup, (caddr_t)qp, slp);
 			goto sleep;
-		}
-		else
+		} else
 			slp = 0;
 	}
 	if (rblen <= 0) {
@@ -1461,16 +1469,19 @@ sleep:
 		 */
 		carrier = (tp->t_state&TS_CARR_ON) || (tp->t_cflag&CLOCAL);
 		if (!carrier && tp->t_state&TS_ISOPEN) {
-			if (slp)
-				untimeout((timeout_func_t)wakeup, (caddr_t)qp);
 			splx(s);
 			return (0);	/* EOF */
 		}
 		if (flag & IO_NDELAY) {
-			if (slp)
-				untimeout((timeout_func_t)wakeup, (caddr_t)qp);
 			splx(s);
 			return (EWOULDBLOCK);
+		}
+		if (slp) {
+			/*
+			 * Use plain wakeup() not ttwakeup().
+			 * XXX why not use the timeout built into tsleep?
+			 */
+			timeout((timeout_func_t)wakeup, (caddr_t)qp, (int)slp);
 		}
 		error = ttysleep(tp, (caddr_t)&tp->t_raw, TTIPRI | PCATCH,
 		    carrier ? ttyin : ttopen, 0);
@@ -1481,6 +1492,12 @@ sleep:
 		splx(s);
 		if (error)
 			return (error);
+		/*
+		 * XXX what happens if ICANON, MIN or TIME changes or
+		 * another process eats some input while we are asleep
+		 * (not just here)?  It would be safest to detect changes
+		 * and reset our state variables (has_stime and last_cc).
+		 */
 		goto loop;
 	}
 
