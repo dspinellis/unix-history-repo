@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)kvm_mkdb.c	5.14 (Berkeley) %G%";
+static char sccsid[] = "@(#)kvm_mkdb.c	5.15 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -21,20 +21,22 @@ static char sccsid[] = "@(#)kvm_mkdb.c	5.14 (Berkeley) %G%";
 #include <db.h>
 #include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <paths.h>
 
-char *tmp;
-#define basename(cp)	((tmp=rindex((cp), '/')) ? tmp+1 : (cp))
+#include "extern.h"
 
+static void usage __P(());
+
+int
 main(argc, argv)
 	int argc;
 	char **argv;
 {
-	extern int optind;
 	DB *db;
 	int ch;
-	char *nlistpath, *nlistname, dbtemp[MAXPATHLEN], dbname[MAXPATHLEN];
+	char *p, *nlistpath, *nlistname, dbtemp[MAXPATHLEN], dbname[MAXPATHLEN];
 
 	while ((ch = getopt(argc, argv, "")) != EOF)
 		switch((char)ch) {
@@ -48,13 +50,20 @@ main(argc, argv)
 	if (argc > 1)
 		usage();
 
+	/* If the existing db file matches the currently running kernel, exit */
+	if (testdb())
+		exit(0);
+
+#define	basename(cp)	((p = rindex((cp), '/')) != NULL ? p + 1 : (cp))
 	nlistpath = argc > 1 ? argv[0] : _PATH_UNIX;
 	nlistname = basename(nlistpath);
 
-	(void)sprintf(dbtemp, "%skvm_%s.tmp", _PATH_VARRUN, nlistname);
-	(void)sprintf(dbname, "%skvm_%s.db", _PATH_VARRUN, nlistname);
+	(void)snprintf(dbtemp, sizeof(dbtemp), "%skvm_%s.tmp",
+	    _PATH_VARDB, nlistname);
+	(void)snprintf(dbname, sizeof(dbname), "%skvm_%s.db",
+	    _PATH_VARDB, nlistname);
 	(void)umask(0);
-	db = dbopen(dbtemp, O_CREAT|O_WRONLY|O_EXCL,
+	db = dbopen(dbtemp, O_CREAT|O_EXLOCK|O_TRUNC|O_WRONLY,
 	    S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH, DB_HASH, NULL);
 	if (!db) {
 		(void)fprintf(stderr,
@@ -71,6 +80,7 @@ main(argc, argv)
 	exit(0);
 }
 
+void
 error(n)
 	char *n;
 {
@@ -84,6 +94,7 @@ error(n)
 	exit(1);
 }
 
+void
 usage()
 {
 	(void)fprintf(stderr, "usage: kvm_mkdb [file]\n");
