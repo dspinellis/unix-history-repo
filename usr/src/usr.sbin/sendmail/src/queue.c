@@ -4,7 +4,7 @@
 # include <signal.h>
 # include <errno.h>
 
-static char	SccsId[] =	"@(#)queue.c	3.2	%G%";
+static char	SccsId[] =	"@(#)queue.c	3.3	%G%";
 
 /*
 **  QUEUEUP -- queue a message up for future transmission.
@@ -127,11 +127,31 @@ queueup(df)
 **		runs things in the mail queue.
 */
 
-bool	ReorderQueue;
+bool	ReorderQueue;		/* if set, reorder the send queue */
+int	QueuePid;		/* pid of child running queue */
 
-runqueue()
+runqueue(forkflag)
+	bool forkflag;
 {
 	extern reordersig();
+
+	if (QueueIntvl != 0)
+	{
+		signal(SIGALRM, reordersig);
+		alarm(QueueIntvl);
+	}
+
+	if (forkflag)
+	{
+		QueuePid = dofork();
+		if (QueuePid > 0)
+		{
+			/* parent */
+			return;
+		}
+		else
+			alarm(0);
+	}
 
 	for (;;)
 	{
@@ -146,16 +166,11 @@ runqueue()
 			/* no work?  well, maybe later */
 			if (QueueIntvl == 0)
 				break;
-			sleep(QueueIntvl);
+			pause();
 			continue;
 		}
 
 		ReorderQueue = FALSE;
-		if (QueueIntvl != 0)
-		{
-			signal(SIGALRM, reordersig);
-			alarm(QueueIntvl);
-		}
 
 		/*
 		**  Process them once at a time.
@@ -196,7 +211,35 @@ runqueue()
 
 reordersig()
 {
-	ReorderQueue = TRUE;
+	if (QueuePid == 0)
+	{
+		/* we are in a child doing queueing */
+		ReorderQueue = TRUE;
+	}
+	else
+	{
+		/* we are in a parent -- poke child or start new one */
+		if (kill(QueuePid, SIGALRM) < 0)
+		{
+			/* no child -- get zombie & start new one */
+			static int st;
+
+			wait(&st);
+			QueuePid = dofork();
+			if (QueuePid == 0)
+			{
+				/* new child; run queue */
+				runqueue();
+				finis();
+			}
+		}
+	}
+
+	/*
+	**  Arrange to get this signal again.
+	*/
+
+	alarm(QueueIntvl);
 }
 /*
 **  ORDERQ -- order the work queue.

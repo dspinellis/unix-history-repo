@@ -6,7 +6,7 @@
 # include <syslog.h>
 # endif LOG
 
-static char SccsId[] = "@(#)deliver.c	3.50	%G%";
+static char SccsId[] = "@(#)deliver.c	3.51	%G%";
 
 /*
 **  DELIVER -- Deliver a message to a list of addresses.
@@ -341,6 +341,28 @@ deliver(firstto, editfcn)
 			break;\
 		sleep((unsigned) NFORKTRIES - i);\
 	}\
+}
+/*
+**  DOFORK -- simple fork interface to DOFORK.
+**
+**	Parameters:
+**		none.
+**
+**	Returns:
+**		pid of child in parent.
+**		zero in child.
+**		-1 on error.
+**
+**	Side Effects:
+**		returns twice, once in parent and once in child.
+*/
+
+dofork()
+{
+	register int pid;
+
+	DOFORK(fork);
+	return (pid);
 }
 /*
 **  SENDOFF -- send off call to mailer & collect response.
