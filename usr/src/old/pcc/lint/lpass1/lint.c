@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)lint.c	1.11	(Berkeley)	%G%";
+static char sccsid[] = "@(#)lint.c	1.12	(Berkeley)	%G%";
 #endif lint
 
 # include "pass1.h"
@@ -409,7 +409,7 @@ lprt( p, down, uses ) register NODE *p; {
 			int lty;
 
 			fsave( ftitle );
-			if (hflag && !nflag)
+			if (!nflag)
 				doform(p, sp, acount);
 			/*
 			 * if we're generating a library -C then
@@ -465,6 +465,8 @@ lprt( p, down, uses ) register NODE *p; {
 			if( uses & VALSET ) q->sflags |= SSET;
 			if( uses & VALUSED ) q->sflags |= SREF;
 			if( uses & VALADDR ) q->sflags |= (SREF|SSET);
+			if (uses & (VALSET | VALADDR))
+				q->suse = -lineno;
 			if( p->tn.lval == 0 ){
 				lnp->lid = id;
 				lnp->flgs = (uses&VALADDR)?0:((uses&VALSET)?VALSET:VALUSED);
@@ -868,7 +870,7 @@ bycode(t, i)
 	extern char *	calloc();
 	extern char *	realloc();
 
-	if (!hflag || nflag || strapped)
+	if (nflag || strapped)
 		return;
 	if (i == 0)
 		if (subscr < (SBUFSIZE - 1))
@@ -1111,7 +1113,7 @@ register struct symtab *	sp;
 	register int		suppressed;
 	static char		errbuf[132];
 
-	if (!hflag || nflag || strapped)
+	if (nflag || strapped)
 		return NULL;
 	cp = sp->sname;
 	for (ip = items; ; ++ip)
@@ -1137,7 +1139,11 @@ register struct symtab *	sp;
 	/*
 	** cp now points to format string.
 	*/
-	basep = pflag ? ip->ptable : ip->btable;
+	/*
+	** For now, ALWAYS use "portable" table, rather than doing this:
+	**	basep = pflag ? ip->ptable : ip->btable;
+	*/
+	basep = ip->ptable;
 	for ( ; ; ) {
 		if (*cp == '\0')
 			return (i == acount) ? NULL : pfacm;
