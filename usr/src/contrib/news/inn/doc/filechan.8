@@ -1,0 +1,133 @@
+.\" $Revision: 1.14 $
+.TH FILECHAN 8
+.SH NAME
+filechan \- file-writing backend for InterNetNews
+.SH SYNOPSIS
+.B filechan
+[
+.BI \-d " directory"
+]
+[
+.BI \-f " fields"
+]
+[
+.BI \-m " mapfile"
+]
+[
+.BI \-p " pidfile"
+]
+.SH DESCRIPTION
+.I Filechan
+reads lines from standard input and copies certain fields in
+each line into files named by other fields within the line.
+.I Filechan
+is intended to be called by
+.IR innd (8)
+as a channel feed.
+(It is not a full exploder and does not accept commands; see
+.IR newsfeeds (5) for a description of the difference and
+.IR buffchan (8) for an exploder program.)
+.PP
+.I Filechan
+input is interpreted as a set of lines.
+Each line contains a fixed number of initial fields, followed by a
+variable number of filename fields.
+All fields in a line are separated by whitespace.
+The default number of initial fields is one; the ``\-f'' flag may be
+used to specify a different number of fields.
+.PP
+For each line of input,
+.I filechan
+writes the initial fields, separated by whitespace and followed by a
+newline, to each of the files named in the filename fields.
+When writing to a file,
+.I filechan
+opens it in append mode and tries to lock it and change the
+ownership to the user and group who owns the directory where the file is
+being written.
+.PP
+By default,
+.I filechan
+writes its arguments into the directory
+.\" =()<.IR @<_PATH_BATCHDIR>@ .>()=
+.IR /var/spool/news/out.going .
+The ``\-d'' flag may be used to specify a directory the program should
+change to before starting.
+.PP
+If the ``\-p'' flag is used, the program will write a line containing
+its process ID (in text) to the specified file.
+.PP
+If
+.I filechan
+is invoked with ``\-f 2'' and given the following input:
+.RS
+.nf
+news/software/b/132 <1643@munnari.oz.au> foo uunet
+news/software/b/133 <102060@litchi.foo.com> uunet munnari
+comp/sources/unix/2002 <999@news.foo.com> foo uunet munnari
+.fi
+.RE
+.PP
+Then the file
+.I foo
+will have these lines:
+.RS
+.nf
+news/software/b/132 <1643@munnari.oz.au>
+comp/sources/unix/2002 <999@news.foo.com>
+.fi
+.RE
+.sp
+the file
+.I munnari
+will have these lines:
+.RS
+.nf
+news/software/b/133 <102060@litchi.foo.com>
+comp/sources/unix/2002 <999@news.foo.com>
+.fi
+.RE
+.sp
+and the file
+.I uunet
+will have these lines:
+.RS
+.nf
+news/software/b/132 <1643@munnari.oz.au>
+news/software/b/133 <102060@litchi.foo.com>
+comp/sources/unix/2002 <999@news.foo.com>
+.fi
+.RE
+.PP
+Because the time window in which a file is open is very small, complicated
+flushing and locking protocols are not needed; a
+.IR mv (1)
+followed by a
+.IR sleep (1)
+for a couple of seconds is sufficient.
+.PP
+A map file may be specified by using the ``\-m'' flag.
+Blank lines and lines starting with a number sign (``#'') are ignored.
+All other lines should have two host names separated by a colon.
+The first field is the name that may appear in the input stream;
+the second field names the file to be used when the name in the first
+field appears.
+For example, the following map file may be used to map the short
+names above to the full domain names:
+.RS
+# This is a comment
+uunet:news.uu.net
+foo:foo.com
+munnari:munnari.oz.au
+.RE
+.SH HISTORY
+Written by Robert Elz <kre@munnari.oz.au>, flags added by Rich $alz
+<rsalz@uunet.uu.net>.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: filechan.8,v 1.14 1993/03/18 21:03:36 rsalz Exp $
+.SH "SEE ALSO"
+buffchan(8),
+innd(8),
+newsfeeds(5).

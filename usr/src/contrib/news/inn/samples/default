@@ -1,0 +1,22 @@
+#! /bin/sh
+##  $Revision: 1.10 $
+##  Default control-message handler
+
+##  Set prog to null; that will leave the name of the message in $1
+PROG=default
+##  Some shells don't pass in $* unless we explicitly pass it in here.
+##  =()<. @<_PATH_PARSECTL>@ "$@">()=
+. /var/spool/news/data/parsecontrol "$@"
+
+case ${ACTION} in
+mail)
+    ${MAILCMD} -s "Unknown control message by ${FROM}" \
+	    ${NEWSMASTER} <${ARTICLE}
+    ;;
+doit|logit)
+    ${WRITELOG} ${LOGFILE} "Unknown control message by ${FROM}" \
+	    ${NEWSMASTER} <${ARTICLE}
+    ;;
+esac
+
+exit

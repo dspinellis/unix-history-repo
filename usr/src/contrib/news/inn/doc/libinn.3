@@ -1,0 +1,542 @@
+.\" $Revision: 1.20 $
+.TH LIBINN 3
+.SH NAME
+libinn \- InterNetNews library routines
+.SH SYNOPSIS
+.nf
+.ta \w'    unsigned long    'u
+.B
+#include "libinn.h"
+
+.B "typedef struct _TIMEINFO {"
+.B "    time_t	time;"
+.B "    long	usec;"
+.B "    long	tzone;
+.B "} TIMEINFO;"
+
+.B "char *"
+.B "GenerateMessageID()"
+
+.B "void"
+.B "HeaderCleanFrom(from)"
+.B "    char	*from;"
+
+.B "char *"
+.B "HeaderFind(Article, Header, size)"
+.B "    char	*Article;"
+.B "    char	*Header;"
+.B "    int	size;"
+
+.B "FILE *"
+.B "CAopen(FromServer, ToServer)"
+.B "    FILE	*FromServer;"
+.B "    FILE	*ToServer;"
+
+.B "FILE *"
+.B "CAlistopen(FromServer, ToServer, request)"
+.B "    FILE	*FromServer;"
+.B "    FILE	*ToServer;"
+.B "    char	*request;"
+
+.B "void"
+.B "CAclose()"
+
+.B "struct _DDHANDLE *"
+.B "DDstart(FromServer, ToServer)"
+.B "    FILE	*FromServer;"
+.B "    FILE	*ToServer;"
+
+.B "void"
+.B "DDcheck(h, group)"
+.B "    DDHANDLE	*h;"
+.B "    char	*group;"
+
+.B "char *"
+.B "DDend(h)"
+.B "    DDHANDLE	*h;"
+
+.B "void"
+.B "CloseOnExec(fd, flag)"
+.B "    int	fd;"
+.B "    int	flag;"
+
+.B "int"
+.B "SetNonBlocking(fd, flag)"
+.B "    int	fd;"
+.B "    int	flag;"
+
+.B "int"
+.B "LockFile(fd, flag)"
+.B "    int	fd;"
+.B "    int	flag;"
+
+.B "char *"
+.B "GetConfigValue(value)"
+.B "    char	*value;"
+
+.B "char *"
+.B "GetFileConfigValue(value)"
+.B "    char	*value;"
+
+.B "char *"
+.B "GetFQDN()"
+
+.B "char *"
+.B "GetModeratorAddress(group)"
+.B "    char	*group;"
+
+.B "int"
+.B "GetResourceUsage(usertime, systime)"
+.B "    double	*usertime;"
+.B "    double	*systime;"
+
+.B "int"
+.B "GetTimeInfo(now)"
+.B "    TIMEINFO	*now;"
+
+.B "int"
+.B "NNTPlocalopen(FromServerp, ToServerp, errbuff)"
+.B "    FILE	**FromServerp;"
+.B "    FILE	**ToServerp;"
+.B "    char	*errbuff;"
+
+.B "int"
+.B "NNTPremoteopen(FromServerp, ToServerp, errbuff)"
+.B "    FILE	**FromServerp;"
+.B "    FILE	**ToServerp;"
+.B "    char	*errbuff;"
+
+.B "int"
+.B "NNTPconnect(host, FromServerp, ToServerp, errbuff)"
+.B "    char	*host;"
+.B "    FILE	**FromServerp;"
+.B "    FILE	**ToServerp;"
+.B "    char	*errbuff;"
+
+.B "int"
+.B "NNTPcheckarticle(text)"
+.B "    char	*text;"
+
+.B "int"
+.B "NNTPsendarticle(text, ToServer, Terminate)"
+.B "    char	*text;"
+.B "    FILE	*ToServer;"
+.B "    int	Terminate;"
+
+.B "int"
+.B "NNTPsendpassword(server, FromServer, ToServer)"
+.B "    char	*server;"
+.B "    FILE	*FromServer;"
+.B "    FILE	*ToServer;"
+
+.B "void"
+.B "Radix32(value, p)
+.B "    unsigned long	value;"
+.B "    char	*p;"
+
+.B "char *"
+.B "ReadInFile(name, Sbp)"
+.B "    char	*name;"
+.B "    struct stat	*Sbp;"
+
+.B "char *"
+.B "ReadInDescriptor(fd, Sbp)"
+.B "    int	fd;"
+.B "    struct stat	*Sbp;"
+
+.B "char *"
+.B "INNVersion()"
+.fi
+.SH DESCRIPTION
+.I Libinn
+is a library of utility routines for manipulating Usenet articles and
+related data.
+It is not necessary to use the header file
+.IR libinn.h ;
+if it is not available, it is only necessary to properly declare the
+.I TIMEINFO
+datatype, as given above.
+.PP
+.I GenerateMessageID
+uses the current time, process-ID, and fully-qualified domain name of the
+local host to create a Message-ID header that is highly likely to be unique.
+The returned value points to static space that is reused on subsequent calls.
+.PP
+.I HeaderCleanFrom
+removes the extraneous information from the value of a ``From'' or ``Reply-To''
+header and leaves just the official mailing address.
+In particular, the following transformations are made to the
+.I from
+parameter:
+.RS
+.nf
+.ta \w'stuff <address>  'u
+address	-->  address
+address (stuff)	-->  address
+stuff <address>	-->  address
+.fi
+.RE
+The transformations are simple, based on RFC\ 1036 which limits the format
+of the header.
+.PP
+.I HeaderFind
+searches through
+.I Article
+looking for the specified
+.IR Header .
+.I Size
+should be the length of the header name.
+It returns a pointer to the value of the header, skipping leading whitespace,
+or NULL if the header cannot be found.
+.I Article
+should be a standard C string containing the text of the article; the end
+of the headers is indicated by a blank line \(em two consecutive \en
+characters.
+.PP
+.I CAopen
+and
+.I CAclose
+provide news clients with access to the active file; the ``CA'' stands for
+.IR C lient
+.IR A ctive.
+.I CAopen
+opens the
+.IR active (5)
+file for reading.
+It returns a pointer to an open FILE, or NULL on error.
+If a local or NFS-mounted copy exists,
+.I CAopen
+will use that file.
+The
+.I FromServer
+and
+.I ToServer
+parameters should be FILE's connected to the NNTP server for input and
+output, respectively.
+See
+.I NNTPremoteopen
+or
+.IR NNTPlocalopen ,
+below.
+If either parameter is NULL, then
+.I CAopen
+will just return NULL if the file is not locally available.
+If they are not NULL,
+.I CAopen
+will use them to query the NNTP server using
+the ``list'' command to make a local temporary copy.
+.PP
+The
+.I CAlistopen
+sends a ``list'' command to the server and returns a temporary file
+containing the results.
+The
+.I request
+parameter, if not NULL, will be sent as an argument to the command.
+Unlike
+.IR CAopen ,
+this routine will never use a locally-available copy of the active file.
+.PP
+.I CAclose
+closes the active file and removes any temporary file that might have
+been created by
+.I CAopen
+or
+.IR CAlistopen .
+.PP
+.I CloseOnExec
+can make a descriptor ``close-on-exec'' so that it is not shared
+with any child processes.
+If the flag is non-zero, the file is so marked; if zero, the ``close-on-exec''
+mode is cleared.
+.PP
+.IR DDstart ,
+.IR DDcheck ,
+and
+.I DDend
+are used to set the Distribution header; the ``DD'' stands for
+.IR D efault
+.IR D istribution.
+The
+.IR distrib.pats (5)
+file is consulted to determine the proper value for the Distribution
+header after all newsgroups have been checked.
+.I DDstart
+begins the parsing.
+It returns a pointer to an opaque handle that should be used on subsequent
+calls.
+The
+.I FromServer
+and
+.I ToServer
+parameters should be FILE's connected to the NNTP server for input and
+output, respectively.
+If either parameter is NULL, then an empty default will ultimately be returned
+if the file is not locally available.
+.PP
+.I DDcheck
+should be called
+with the handle,
+.IR h ,
+returned by
+.I DDstart
+and a newgroups,
+.IR group ,
+to check.
+It can be called as often as necessary.
+.PP
+.I DDend
+releases any state maintained in the handle and returns an allocated copy
+of the text that should be used for the Distribution header.
+.PP
+.I SetNonBlocking
+enables (if
+.I flag
+is non-zero) or disables (if
+.I flag
+is zero) non-blocking I/O on the indicated descriptor.
+It returns \-1 on failure or zero on success.
+.PP
+.I LockFile
+tries to lock the file descriptor
+.IR fd .
+If
+.I flag
+is non-zero it will block until the lock can be made, otherwise
+it will return \-1 if the file cannot be locked.
+It returns \-1 on failure or zero on success.
+.PP
+.I GetConfigValue
+returns the value of the specified configuration parameter.
+See
+.IR inn.conf (5)
+for details on the parameters and their interpretation.
+The returned value points to static space that is reused on subsequent calls.
+.PP
+.I GetFileConfigValue
+returns the specified configuration parameter from the
+.I inn.conf
+file without checking for any defaults.
+The returned value points to static space that is reused on subsequent calls,
+or NULL if the value is not present.
+.PP
+.I GetFQDN
+returns the fully-qualified domain name of the local host.
+The returned value points to static space that is reused on subsequent calls,
+or NULL on error.
+.PP
+.I GetModeratorAddress
+returns the mailing address of the moderator for specified
+.I group
+or NULL on error.
+See
+.IR moderators (5)
+for details on how the address is determined.
+.I GetModeratorAddress
+does no checking to see if the specified group is actually moderated.
+The returned value points to static space that is reused on subsequent
+calls.
+.PP
+.I GetResourceUsage
+fills in the
+.I usertime
+and
+.I systime
+parameters with the total user and system time used by the current
+process and any children it may have spawned.
+It gets the values by doing a
+.\" =()<.ie '@<RES_STYLE>@'RUSAGE' .ds R$ getrusage>()=
+.ie 'RUSAGE'RUSAGE' .ds R$ getrusage
+.el ds R$ times
+.IR \*(R$ (2)
+system call.
+It returns \-1 on failure, or zero on success.
+.PP
+.I GetTimeInfo
+fills in the
+.I now
+parameter with information about the current time and tzone.
+.\" =()<.ie '@<HAVE_GETTIMEOFDAY>@'DO' \{\>()=
+.ie 'DO'DO' \{\
+The ``time'' and ``usec'' fields will be filled in by a call to
+.IR gettimeofday (2).\}
+.el \{\
+The ``time'' field will be filled in by a call to
+.IR time (2),
+and the ``usec'' field will be set to zero.\}
+The ``tzone'' field will be filled in with the current offset from GMT.
+.\" =()<.ie '@<HAVE_TM_GMTOFF>@'DO' \{\>()=
+.ie 'DONT'DO' \{\
+This is done by calling
+.IR localtime (3)
+and taking the value of the ``tm_gmtoff'' field, negating it, and dividing
+it by 60.\}
+.el \{\
+This is done by calling
+.IR localtime (3)
+and comparing the value with that returned by a call to
+.IR gmtime (3).\}
+For efficiency, the ``tzone'' field is only recalculated if more than an
+hour pass passed since the last time
+.I GetTimeInfo
+has been called.
+This routine returns \-1 on failure, or zero on success.
+.PP
+.I NNTPlocalopen
+.\" =()<.ie '@<HAVE_UNIX_DOMAIN>@'DO' \{\>()=
+.ie 'DO'DO' \{\
+opens a connection to the private port of an InterNetNews server running on
+the local host.
+It returns \-1 on failure, or zero on success.
+.I FromServerp
+and
+.I ToServerp
+will be filled in with FILE's which can be used to communicate
+with the server.
+.I Errbuff
+can either be NULL or a pointer to a buffer at least 512 bytes long.
+If not NULL, and the server refuses the connection, then it will be
+filled in with the text of the server's reply.
+This routine is not for general use.\}
+.el \{\
+is a stub routine, for compatibility with systems that have Unix-domain
+stream sockets.
+It always returns \-1.\}
+.PP
+.I NNTPremoteopen
+does the same except that it calls
+.I GetConfigValue
+to find the name of the local server, and opens a connection to the
+standard NNTP port.
+Any client program can use this routine.
+It returns \-1 on failure, or zero on success.
+.PP
+.I NNTPconnect
+is the same as
+.I NNTPremoteopen
+except that the desired host is given as the
+.I host
+parameter.
+.PP
+.I NNTPcheckarticle
+verifies that the
+.I text
+meets the NNTP limitations on line length.
+It returns \-1 on failure, or zero if the text is valid.
+.PP
+.I NNTPsendarticle
+writes
+.I text
+on
+.I ToServer
+using NNTP conventions for line termination.
+The text should consist of one or more lines ending with a newline.
+If
+.I Terminate
+is non-zero, then the routine will also write the NNTP data-termination
+marker on the stream.
+It returns \-1 on failure, or zero on success.
+.PP
+.I NNTPsendpassword
+sends authentication information to an NNTP server by finding the appropriate
+entry in the
+.IR passwd.nntp (5)
+file.
+.I Server
+contains the name of the host;
+.I GetConfigValue
+will be used if
+.I server
+is NULL.
+.I FromServer
+and
+.I ToServer
+should be FILE's that are connected to the server.
+No action is taken if the specified host is not listed in the password file.
+.PP
+.I Radix32
+converts the number in
+.I value
+into a radix-32 string into the buffer pointed to by
+.IR p .
+The number is split into five-bit pieces and each pieces is converted
+into a character using the alphabet
+.I "0..9a..v"
+to represent the numbers 0..32.
+Only the lowest 32 bits of
+.I value
+are used, so
+.I p
+need only point to a buffer of eight bytes (seven characters and the
+trailing \e0).
+.PP
+.I ReadInFile
+reads the file named
+.I name
+into allocated memory, appending a terminating \e0 byte.
+It returns a pointer to the space, or NULL on error.
+If
+.I Sbp
+is not NULL, it is taken as the address of a place to store the results
+of a
+.IR stat (2)
+call.
+.PP
+.I ReadInDescriptor
+performs the same function as
+.I ReadInFile
+except that
+.I fd
+refers to an already-open file.
+.PP
+.I INNVersion
+returns a pointer to a string identifying the INN version, suitable for
+printing in logon banners.
+.SH EXAMPLES
+.RS
+.nf
+char	*p;
+char	*Article;
+char	buff[256];
+FILE	*F;
+FILE	*ToServer;
+FILE	*FromServer;
+
+if ((p = HeaderFind(Article, "From", 4)) == NULL)
+    Fatal("Can't find From line");
+(void)strcpy(buff, p);
+HeaderCleanFrom(buff);
+
+if ((F = CAopen(FromServer, ToServer)) == NULL)
+    Fatal("Can't open active file");
+
+/* Don't pass the file on to our children. */
+CloseOnExec(fileno(F), 1);
+
+/* Make a local copy. */
+p = ReadInDescriptor(fileno(F), (struct stat *)NULL);
+
+/* Close the file. */
+CAclose();
+
+if (NNTPremoteopen(&FromServer, &ToServer) < 0)
+    Fatal("Can't connect to server");
+
+if ((p = GetModeratorAddress("comp.sources.unix")) == NULL)
+    Fatal("Can't find moderator's address");
+.fi
+.RE
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: libinn.3,v 1.20 1993/01/29 16:43:01 rsalz Exp $
+.SH "SEE ALSO"
+active(5),
+dbz(3z),
+parsedate(3),
+inn.conf(5),
+inndcomm(3),
+moderators(5),
+passwd.nntp(5).

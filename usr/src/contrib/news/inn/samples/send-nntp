@@ -1,0 +1,76 @@
+#! /bin/sh
+##  $Revision: 1.16 $
+##  SH script to send NNTP news out.
+
+##  =()<. @<_PATH_SHELLVARS>@>()=
+. /var/spool/news/data/innshellvars
+
+PROGNAME=`basename $0`
+LOG=${MOST_LOGS}/${PROGNAME}.log
+
+##  Go to where the action is, start logging
+cd $BATCH
+umask 002
+DEBUG=""
+if [ "X$1" = X-d ] ; then
+    DEBUG="-d"
+    shift
+else
+    test ! -f ${LOG} && touch ${LOG}
+    chmod 0660 ${LOG}
+    exec >>${LOG} 2>&1
+fi
+
+echo "${PROGNAME}: [$$] begin `date`"
+
+##  List of sitename:hostname pairs to send to
+if [ -n "$1" ] ; then
+    LIST="$*"
+else
+    LIST="site:site.their.domain"
+    LIST="${LIST} site2:foo.bar.com"
+fi
+
+for L in ${LIST} ; do
+    case $L in
+    *:*)
+	SITE=`expr $L : '\(.*\):.*'`
+	HOST=`expr $L : '.*:\(.*\)'`
+	;;
+    *)
+	SITE=$L
+	HOST=$L
+	;;
+    esac
+    LOCK=NNTP_LOCK.${HOST}
+    BATCHFILE=${HOST}.nntp
+    LOCK=${LOCKS}/LOCK.${L}
+    trap 'rm -f ${LOCK} ; exit 1' 1 2 3 15
+    shlock -p $$ -f ${LOCK} || {
+	echo "${PROGNAME}: [$$] ${HOST} locked by `cat ${LOCK}`"
+	continue
+    }
+    if [ -f ${SITE}.work ] ; then
+	cat ${SITE}.work >>${BATCHFILE}
+	rm -f ${SITE}.work
+    fi
+    if [ ! -f ${SITE} -o ! -s ${SITE} ] ; then
+	if [ ! -f ${BATCHFILE} -o ! -s ${BATCHFILE} ] ; then
+	    rm -f ${LOCK}
+	    continue
+	fi
+    fi
+    mv ${SITE} ${SITE}.work
+    if ctlinnd -s -t30 flush ${SITE} ; then
+	cat ${SITE}.work >>${BATCHFILE}
+	rm -f ${SITE}.work
+	if [ -s ${BATCHFILE} ] ; then
+	    echo "${PROGNAME}: [$$] begin ${HOST}"
+	    time innxmit ${DEBUG} ${HOST} ${BATCH}/${BATCHFILE}
+	    echo "${PROGNAME}: [$$] end   ${HOST}"
+	fi
+    fi
+    rm -f ${LOCK}
+done
+
+echo "${PROGNAME}: [$$] end   `date`"

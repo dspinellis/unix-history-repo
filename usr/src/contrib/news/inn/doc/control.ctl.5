@@ -1,0 +1,125 @@
+.\" $Revision: 1.4 $
+.TH CONTROL.CTL 5
+.SH NAME
+control.ctl \- specify handling of Usenet control messages
+.SH DESCRIPTION
+The file
+.\" =()<.I @<_PATH_CONTROLCTL>@>()=
+.I /var/spool/news/data/control.ctl
+is used to determine what action is taken when a control message
+is received.
+It is read by the
+.I parsecontrol
+script, which is called by all the control scripts.
+(For an explanation of how the control scripts are invoked, see
+.IR innd (8).)
+.PP
+The file consists of a series of lines; blank lines and lines beginning
+with a number sign (``#'') are ignored.
+All other lines consist of four fields separated by a colon:
+.RS
+message:from:newsgroups:action
+.RE
+.PP
+The first field is the name of the message for which this line is valid.
+It should be either the name of the control message, or the word ``all''
+to mean that it is valid for all messaages.
+.PP
+The second field is a shell-style pattern that matches the email address
+of the person posting the message.
+(The poster's address is first converted to lowercase.)
+The matching is done using the shell's
+.I case
+statement; see
+.I sh (1)
+for details.
+.PP
+If the control message is ``newgroup'' or ``rmgroup'' then the third
+field specifies the shell-style pattern that must match the group
+being created or removed.
+If the control message is of a different type, then this field is
+ignored.
+.PP
+The fourth field specifies what action to take if this line is selected
+for the message.
+The following actions are understood:
+.TP
+.B doit
+The action requested by the control message should be performed.
+In most cases the control script will also send mail to
+.\" =()<@<NEWSMASTER>@.>()=
+usenet.
+.TP
+.B doifarg
+If the control message has an argument, this is treated as a ``doit'' action.
+If no argument was given, it is treated as a ``mail'' entry.
+This is used in ``sendsys'' entries
+script so that a site can request its own
+.IR newsfeeds (5)
+entry by posting a ``sendsys mysite'' article.
+On the other hand, ``sendsys bombs'' ask that the
+.I newsfeeds
+file be sent; by using ``doifarg'' such messages will not be processed
+automatically.
+.TP
+.BI doit= file
+The action is performed, but a log entry is written to the specified
+log file,
+.IR file .
+If
+.I file
+is the word ``mail'' then the record is mailed.
+A null string is equivalent to /dev/null.
+A pathname that starts with a slash is taken as the absolute filename to
+use as the log.
+All other pathnames are written to
+.\" =()<.IR @<_PATH_MOST_LOGS>@/ file .log .>()=
+.IR /var/spool/news/data/ file .log .
+The log is written by
+.I writelog
+(see
+.IR newslog (8)).
+.TP
+.B drop
+No action is taken; the message is ignored.
+.TP
+.B log
+A one-line log notice is sent to standard error.
+.I Innd
+normally directs this to the file
+.\" =()<.IR @<_PATH_ERRLOG>@ .>()=
+.IR /var/spool/news/data/errlog .
+.TP
+.BI log =file
+A log entry is written to the specified log file,
+.IR file ,
+which is interpreted as described above.
+.TP
+.B mail
+A mail message is sent to the news administrator.
+.PP
+Lines are matched in order; the last match found in the file is the one
+that is used.
+For example, with the following three lines:
+.RS
+.nf
+newgroup:*:*:drop
+newgroup:tale@*.uu.net:comp.*|misc.*|news.*|rec.*|sci.*|soc.*|talk.*:doit
+newgroup:kre@munnari.oz.au:aus.*:mail
+.fi
+.RE
+A newgroup coming from ``tale'' at a UUNET machine will be honored if
+it is in one the mainstream Usenet hieararchy.
+If ``kre'' posts a newgroup message creating ``aus.foo'', then mail will
+be sent.
+All other newgroup messages are ignored.
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: control.ctl.5,v 1.4 1993/01/29 16:42:34 rsalz Exp $
+.SH "SEE ALSO"
+innd(8),
+newsfeeds(5),
+scanlogs(8).

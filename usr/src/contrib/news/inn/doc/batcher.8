@@ -1,0 +1,178 @@
+.\" $Revision: 1.13 $
+.TH BATCHER 8
+.SH NAME
+batcher \- article batching backend for InterNetNews
+.SH SYNOPSIS
+.B batcher
+[
+.BI \-a " arts"
+]
+[
+.BI \-A " total_arts"
+]
+[
+.BI \-b " size"
+]
+[
+.BI \-B " total_size"
+]
+[
+.BI \-i " string"
+]
+[
+.BI \-N " num_batches"
+]
+[
+.BI \-p " process"
+]
+[
+.B \-r
+]
+[
+.BI \-s " separator"
+]
+[
+.BI \-S " alt_spool"
+]
+[
+.B \-v
+]
+.I host
+[
+.I input
+]
+.SH DESCRIPTION
+.I Batcher
+reads uses a list of files to prepare news batches for the specified
+.IR host .
+It is normally invoked by a script run out of
+.IR cron (8)
+that uses
+.IR shlock (1)
+to lock the host name, followed by a
+.IR ctlinnd (8)
+command to flush the batchfile.
+.PP
+.I Batcher
+reads the named
+.I input
+file, or standard input if no file is given.
+Relative pathnames are interpreted from the
+.\" =()<.I @<_PATH_BATCHDIR>@>()=
+.I /var/spool/news/out.going
+directory.
+The input is taken as a set of lines.
+Blank lines and lines starting with a number sign (``#'') are ignored.
+All other lines should consist of one or two fields separated by a single space.
+The first field is the name of a file holding an article; if it is not an
+an absolute pathname it is taken relative to the news spool directory,
+.\" =()<.IR @<_PATH_SPOOL>@ .>()=
+.IR /var/spool/news/spool .
+The second field, if present, specifies the size of the article in bytes.
+.PP
+The ``\-S'' flag may be used to specify an alternate spool directory to
+use if the article is not found; this would normally be an NFS-mounted
+spool directory of a master server with longer expiration times.
+.PP
+By default, the program sets its standard error to
+.\" =()<.IR @<_PATH_ERRLOG>@ .>()=
+.IR /var/spool/news/data/errlog .
+To suppress this redirection, use the ``\-r'' flag.
+Upon exit,
+.I batcher
+reports statistics via
+.IR syslog (3).
+If the ``\-v'' flag is used, they will also be printed on the standard
+output.
+.PP
+.I Batcher
+collects the text of the named articles into batches.
+To limit the size of each batch, use the ``\-b'' flag.
+The default size is 60 kilobytes.
+Using ``\-b0'' allows unlimited batch sizes.
+To limit the number of articles in each batch, use the ``\-a'' flag.
+The default is no limit.
+A new batch will be started when either the byte count or number of
+articles written exceeds the specified limits.
+.PP
+To limit the total number of bytes written for all batches, use the ``\-B''
+flag.
+To limit the total number of articles that can be batched use the ``\-A''
+flag.
+To limit the total number of batches that should be created use the ``\-N''
+flag.
+In all three cases, the default is zero, which is taken to mean no limit.
+.PP
+A batch starts with an identifying line to specify the unpacking method
+to be used on the receiving end.
+When the ``\-i'' flag is used, the initial string,
+.IR string ,
+followed by a newline, will be output at the start of every batch.
+The default is to have no initial string.
+.PP
+Each article starts with a separator line to indicate the size of the article.
+To specify the separator use the ``\-s'' flag.
+This is a
+.IR sprintf (3)
+format string which can have a single ``%ld'' parameter which will be given
+the size of the article.
+If the separator is not empty, then the string and a newline will be output
+before every article.
+The default separator is ``#! rnews %ld''.
+.PP
+By default, batches are written to standard output, which
+is not useful when more than one output batch is created.
+Use the ``\-p'' flag to specify the shell command that should be
+created (via
+.IR popen (3))
+whenever a new batch is started.
+The process is a
+.I sprintf
+format string which can have a single ``%s'' parameter which will be given
+the host name.
+A common value is:
+.RS
+.nf
+( echo '#! cunbatch' ; exec compress ) | uux \- \-r \-z %s!rnews
+.fi
+.RE
+.PP
+If the input is exhausted,
+.I batcher
+will exit with a zero status.
+If any of the limits specified with the ``\-B,'' ``\-A,'' or ``\-N'' flags
+is reached, or if there is an error writing the batch, then
+.I batcher
+will try to spool the input, copying it to a file.
+If there was no input filename, the standard input will be copied to
+.\" =()<.IR @<_PATH_BATCHDIR>@/ host>()=
+.IR /var/spool/news/out.going/ host
+and the program will exit.
+If an input filename was given, a temporary file named
+.IR input .bch
+(if
+.I input
+is an absolute pathname)
+or
+.\" =()<.IR @<_PATH_BATCHDIR>@/ input.bch>()=
+.IR /var/spool/news/out.going/ input.bch
+(if the filename does not begin with a slash) is created.
+Once the input is copied,
+.I batcher
+will try to rename this temporary file to be the name of the input file,
+and then exit.
+.PP
+Upon receipt of an interrupt or termination signal,
+.I batcher
+will finish sending the current article, close the batch, and then
+rewrite the batchfile according as described in the previous paragraph.
+.SH HISTORY
+Written by Rich $alz <rsalz@uunet.uu.net> for InterNetNews.
+.de R$
+This is revision \\$3, dated \\$4.
+..
+.R$ $Id: batcher.8,v 1.13 1992/09/14 19:21:00 rsalz Exp $
+.SH "SEE ALSO"
+ctlinnd(8),
+newsfeeds(5),
+shlock(1).
