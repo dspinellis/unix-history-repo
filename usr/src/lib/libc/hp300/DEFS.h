@@ -8,20 +8,31 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)DEFS.h	5.1 (Berkeley) %G%
+ *	@(#)DEFS.h	5.2 (Berkeley) %G%
  */
 
+#ifdef __STDC__
 #ifdef PROF
-#ifdef __GNUC__
+#if __GNUC__ >= 2
+#define	ENTRY(x) \
+	.globl _ ## x; .even; _ ## x:; .data; PROF ## x:; .long 0; .text; \
+	link a6,\#0; lea PROF ## x,a0; jsr mcount; unlk a6
+#else
+#define	ENTRY(x) \
+	.globl _ ## x; .even; _ ## x:; .data; PROF ## x:; .long 0; .text; \
+	link a6,#0; lea PROF ## x,a0; jsr mcount; unlk a6
+#endif
+#else
+#define	ENTRY(x) \
+	.globl _ ## x; .even; _ ## x:
+#endif
+#else
+#ifdef PROF
 #define	ENTRY(x) \
 	.globl _/**/x; .even; _/**/x:; .data; PROF/**/x:; .long 0; .text; \
 	link a6,#0; lea PROF/**/x,a0; jsr mcount; unlk a6
 #else
 #define	ENTRY(x) \
-	.globl _/**/x; .even; _/**/x:; .data; PROF/**/x:; .long 0; .text; \
-	lea PROF/**/x,a0; jsr mcount
-#endif
-#else
-#define	ENTRY(x) \
 	.globl _/**/x; .even; _/**/x:
+#endif
 #endif
