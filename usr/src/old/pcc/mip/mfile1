@@ -258,9 +258,9 @@ char *exname(), *exdcon();
 # endif
 
 # define BCSZ 100 /* size of the table to save break and continue labels */
-# define SYMTSZ 1300 /* size of the symbol table (was 500) */
-# define DIMTABSZ 2000 /* size of the dimension/size table (was 800) */
-# define PARAMSZ 150 /* size of the parameter stack */
+# define SYMTSZ 3000 /* size of the symbol table (was 500) */
+# define DIMTABSZ 4200 /* size of the dimension/size table (was 800) */
+# define PARAMSZ 300 /* size of the parameter stack */
 # define SWITSZ 500 /* size of switch table */
 /*	special interfaces for yacc alone */
 /*	These serve as abbreviations of 2 or more ops:
