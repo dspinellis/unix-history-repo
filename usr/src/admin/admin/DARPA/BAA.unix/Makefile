@@ -3,12 +3,13 @@
 # All rights reserved.  The Berkeley software License Agreement
 # specifies the terms and conditions for redistribution.
 #
-#	@(#)Makefile	1.2 (Berkeley) %G%
+#	@(#)Makefile	1.3 (Berkeley) %G%
 #
 V1SRCS=	A.t B.t C.t D.t E.t F.t G.t H.t I.t J.t
 V2SRCS=	V2A.t V2B.t
 MACROS=	-ms
 PRINTER=Plz
+TBL=	dtbl -${PRINTER}
 TROFF=	ditroff -${PRINTER}
 
 all: V1.${PRINTER} V2.${PRINTER}
@@ -17,7 +18,7 @@ V1.${PRINTER}: ${V1SRCS}
 	${TROFF} ${MACROS} -t ${V1SRCS} | psdit >V1.${PRINTER}
 
 V2.${PRINTER}: ${V2SRCS}
-	${TROFF} ${MACROS} -t ${V2SRCS} | psdit >V2.${PRINTER}
+	${TBL} ${V2SRCS} | ${TROFF} ${MACROS} -t | psdit >V2.${PRINTER}
 
 print: V1.${PRINTER} V2.${PRINTER}
 	lpr -${PRINTER} V1.${PRINTER} V2.${PRINTER}
