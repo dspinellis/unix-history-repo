@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)mp.h	5.1 (Berkeley) %G%
+ *	@(#)mp.h	5.2 (Berkeley) %G%
  */
 
 #define MINT struct mint
@@ -19,7 +19,7 @@ MINT
 #define shfree(u) { if(dbg) fprintf(stderr, "free %o\n", u); free((char *)u);}
 extern int dbg;
 #endif
-#ifndef vax
+#if !defined(vax) && !defined(i386)
 struct half
 {	short high;
 	short low;
