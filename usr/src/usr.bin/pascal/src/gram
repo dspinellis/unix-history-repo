@@ -1,4 +1,4 @@
-"@(#)gram 1.4 %G%"
+"@(#)gram 1.7 %G%"
 /yyval/s/int/union semstack/
 s/ 0//
 /yypv/s/int/union semstack/
@@ -16,12 +16,6 @@ s/ 0//
 /yyclearin/d
 /yyerrok/d
 1;/^##/d
-/yyact/s\[]/& =/
-/yypact/s\[]/& =/
-/yyr1/s\[]/& =/
-/yyr2/s\[]/& =/
-/yygo/s\[]/& =/
-/yypgo/s\[]/& =/
 $a
 
 yyEactr(__np__, var)
@@ -39,7 +33,6 @@ g/@@/ka\
 'am$\
 a\
 }\
-break;
 $a
 }
 }
@@ -49,5 +42,16 @@ $a
 /int nnonter/d
 /int nstate/d
 /int yyerrval/d
+/yyact\[/s/ {/ = {/
+/yypact/s/ {/ = {/
+/yyr1/s/ {/ = {/
+/yyr2/s/ {/ = {/
+/yygo/s/ {/ = {/
+/yypgo/s/ {/ = {/
+/static/i
+\#ifndef lint
+.
+/static/a
+\#endif
 w!
 q
