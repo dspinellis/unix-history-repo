@@ -1,5 +1,5 @@
 # Makefile for the f77 I/O library
-#	@(#)makefile	1.16	%G%
+#	@(#)makefile	1.17	%G%
 # Originally written by P. Weinberger, Bell Labs, Murray Hill, N.J.
 # Modified by D. Wasley, Univ of California, Berkeley, Calif.
 
@@ -21,13 +21,13 @@ SOURCES = backspace.c close.c dfe.c due.c endfile.c err.c fmt.c \
 	fmtlib.c iio.c inquire.c lwrite.c lread.c dolio.c open.c \
 	rdfmt.c rewind.c sfe.c sue.c douio.c util.c wrtfmt.c \
 	dofio.c f_errlist.c yes_66.c no_66.c \
-	f_errno.h fiodefs.h fio.h format.h lio.h
+	f_errno.h fiodefs.h fio.h format.h lio.h ioinit.f
 
 OBJECTS = dfe.o due.o iio.o sue.o sfe.o lread.o lwrite.o \
 	dofio.o douio.o dolio.o \
 	rdfmt.o wrtfmt.o fmt.o fmtlib.o \
 	backspace.o rewind.o open.o close.o endfile.o inquire.o \
-	yes_66.o err.o no_66.o util.o f_errlist.o
+	yes_66.o err.o no_66.o util.o f_errlist.o ioinit.o
 
 all:	$(LIB)
 
@@ -78,6 +78,11 @@ fmtlib.o:	fio.h fmtlib.c
 	cc $(CFLAGS) -c $*.c
 	-ld -r -x $*.o
 	mv a.out $*.o
+
+ioinit.o:	ioinit.f
+	f77 -O -c ioinit.f
+	-ld -r -x ioinit.o
+	mv a.out ioinit.o
 
 f_errlist.o:	f_errlist.c
 	cc $(CFLAGS) -c f_errlist.c
@@ -251,3 +256,6 @@ lio.h:	SCCS/s.lio.h
 	@rm -f lio.h
 	get SCCS/s.lio.h
 
+ioinit.f:	SCCS/s.ioinit.f
+	@rm -f ioinit.f
+	get SCCS/s.ioinit.f
