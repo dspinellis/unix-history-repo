@@ -1,4 +1,4 @@
-/*	getprotoent.c	4.4	82/12/17	*/
+/*	getprotoent.c	4.5	83/01/02	*/
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -64,7 +64,7 @@ again:
 	q = proto.p_aliases = proto_aliases;
 	if (p != NULL) {
 		cp = p;
-		while (*cp) {
+		while (cp && *cp) {
 			if (*cp == ' ' || *cp == '\t') {
 				cp++;
 				continue;
@@ -72,7 +72,7 @@ again:
 			if (q < &proto_aliases[MAXALIASES - 1])
 				*q++ = cp;
 			cp = any(cp, " \t");
-			if (*cp != NULL)
+			if (cp != NULL)
 				*cp++ = '\0';
 		}
 	}

@@ -1,4 +1,4 @@
-/*	getservent.c	4.4	82/12/17	*/
+/*	getservent.c	4.5	83/01/02	*/
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -66,19 +66,18 @@ again:
 	serv.s_proto = cp;
 	q = serv.s_aliases = serv_aliases;
 	cp = any(cp, " \t");
-	if (cp != NULL) {
+	if (cp != NULL)
 		*cp++ = '\0';
-		while (*cp) {
-			if (*cp == ' ' || *cp == '\t') {
-				cp++;
-				continue;
-			}
-			if (q < &serv_aliases[MAXALIASES - 1])
-				*q++ = cp;
-			cp = any(cp, " \t");
-			if (*cp != NULL)
-				*cp++ = '\0';
+	while (cp && *cp) {
+		if (*cp == ' ' || *cp == '\t') {
+			cp++;
+			continue;
 		}
+		if (q < &serv_aliases[MAXALIASES - 1])
+			*q++ = cp;
+		cp = any(cp, " \t");
+		if (cp != NULL)
+			*cp++ = '\0';
 	}
 	*q = NULL;
 	return (&serv);

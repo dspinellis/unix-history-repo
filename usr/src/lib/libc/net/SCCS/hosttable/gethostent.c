@@ -1,4 +1,4 @@
-/*	gethostent.c	4.4	82/12/17	*/
+/*	gethostent.c	4.5	83/01/02	*/
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -70,19 +70,18 @@ again:
 	host.h_name = cp;
 	q = host.h_aliases = host_aliases;
 	cp = any(cp, " \t");
-	if (cp != NULL) {
+	if (cp != NULL) 
 		*cp++ = '\0';
-		while (*cp) {
-			if (*cp == ' ' || *cp == '\t') {
-				cp++;
-				continue;
-			}
-			if (q < &host_aliases[MAXALIASES - 1])
-				*q++ = cp;
-			cp = any(cp, " \t");
-			if (*cp != NULL)
-				*cp++ = '\0';
+	while (cp && *cp) {
+		if (*cp == ' ' || *cp == '\t') {
+			cp++;
+			continue;
 		}
+		if (q < &host_aliases[MAXALIASES - 1])
+			*q++ = cp;
+		cp = any(cp, " \t");
+		if (cp != NULL)
+			*cp++ = '\0';
 	}
 	*q = NULL;
 	return (&host);
