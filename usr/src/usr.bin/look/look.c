@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)look.c	4.1 (Berkeley) %G%";
+static char *sccsid = "@(#)look.c	4.2 (Berkeley) %G%";
 #include <stdio.h>
 #include <ctype.h>
 
@@ -110,6 +110,7 @@ char **argv;
 		}
 		break;
 	}
+	exit(0);
 }
 
 compare(s,t)
