@@ -1,0 +1,66 @@
+
+
+
+PASTE(1L)                                               PASTE(1L)
+
+
+NNAAMMEE
+       paste - merge lines of files
+
+SSYYNNOOPPSSIISS
+       ppaassttee [-s] [-d delim-list] [--serial] [--delimiters=delim-
+       list] [file...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page  documents  the  GNU  version  of  ppaassttee.
+       ppaassttee  prints lines consisting of sequentially correspond-
+       ing lines of each given file, separated  by  TABs,  termi-
+       nated  by  a newline.  If no files are given, the standard
+       input is used.  A file name of `-' means standard input.
+
+   OOPPTTIIOONNSS
+       -_s, --_s_e_r_i_a_l
+              Paste the lines of one file at a time  rather  than
+              one line from each file.
+
+       -_d, --_d_e_l_i_m_i_t_e_r_s _d_e_l_i_m-_l_i_s_t
+              Consecutively  use  the  characters  in  _d_e_l_i_m-_l_i_s_t
+              instead of TAB  to  separate  merged  lines.   When
+              _d_e_l_i_m-_l_i_s_t  is exhausted, start again at its begin-
+              ning.
+
+       The long-named options can be introduced with `+' as  well
+       as  `--', for compatibility with previous releases.  Even-
+       tually support for `+' will  be  removed,  because  it  is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

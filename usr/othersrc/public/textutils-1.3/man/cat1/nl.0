@@ -1,0 +1,198 @@
+
+
+
+NL(1L)                                                     NL(1L)
+
+
+NNAAMMEE
+       nl - number lines of files
+
+SSYYNNOOPPSSIISS
+       nnll  [-h  header-style]  [-b  body-style] [-f footer-style]
+       [-p] [-d cc] [-v start-number] [-i increment]  [-l  lines]
+       [-s  line-separator]  [-w  line-no-width]  [-n {ln,rn,rz}]
+       [--header-numbering=style]        [--body-numbering=style]
+       [--footer-numbering=style]  [--first-page=number] [--page-
+       increment=number]      [--no-renumber]      [--join-blank-
+       lines=number]    [--number-separator=string]    [--number-
+       width=number]   [--number-format={ln,rn,rz}]   [--section-
+       delimiter=cc] [file...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This  manual  page  documents  the  GNU version of nnll.  nnll
+       copies each given file, or the standard input if none  are
+       given  or  when a file named `-' is given, to the standard
+       output, with line numbers added to  some  or  all  of  the
+       lines.
+
+       nnll considers its input to be composed of logical pages; by
+       default, the line number is reset to 1 at the top of  each
+       logical  page.  nnll treats all of the input files as a sin-
+       gle document; it does not reset line  numbers  or  logical
+       pages between files.
+
+       A  logical  page consists of three sections: header, body,
+       and footer.  Any of the sections can be empty.   Each  can
+       be numbered in a different style from the others.
+
+       The  beginnings of the sections of logical pages are indi-
+       cated in the input  file  by  a  line  containing  nothing
+       except one of the delimeter strings shown below:
+
+
+       \:\:\: start of header
+       \:\: start of body
+       \: start of footer
+
+       The  two  characters from which these strings are made can
+       be changed with an option (see below), but the pattern and
+       length of each string cannot be changed.
+
+       The  section  delimiter  strings  are replaced by an empty
+       line on output.  Any text that comes before the first sec-
+       tion  delimiter  string in the input file is considered to
+       be part of a body section, so a file that does not contain
+       any  section delimiter strings is considered to consist of
+       a single body section.
+
+   OOPPTTIIOONNSS
+       -_h, --_h_e_a_d_e_r-_n_u_m_b_e_r_i_n_g=_s_t_y_l_e
+              See --footer-numbering.
+
+
+
+                                                                1
+
+
+
+
+
+NL(1L)                                                     NL(1L)
+
+
+       -_b, --_b_o_d_y-_n_u_m_b_e_r_i_n_g=_s_t_y_l_e
+              See --footer-numbering.
+
+       -_f, --_f_o_o_t_e_r-_n_u_m_b_e_r_i_n_g=_s_t_y_l_e
+              Select the numbering style for lines in the  footer
+              section  of  each logical page.  When a line is not
+              numbered, the current line  number  is  not  incre-
+              mented,  but the line number separator character is
+              still prepended to the line.  The styles are:
+
+              a      number all lines
+
+              t      number  only  nonempty  lines  (default  for
+                     body)
+
+              n      number  no  lines  (default  for  header and
+                     footer)
+
+              p_r_e_g_e_x_p
+                     number only lines that contain a  match  for
+                     _r_e_g_e_x_p
+
+       -_p, --_n_o-_r_e_n_u_m_b_e_r
+              Do not reset the line number at the start of a log-
+              ical page.
+
+       -_v, --_f_i_r_s_t-_p_a_g_e=_n_u_m_b_e_r
+              Set the initial line number on each logical page to
+              _n_u_m_b_e_r (default 1).
+
+       -_i, --_p_a_g_e-_i_n_c_r_e_m_e_n_t=_n_u_m_b_e_r
+              Increment line numbers by _n_u_m_b_e_r (default 1).
+
+       -_l, --_j_o_i_n-_b_l_a_n_k-_l_i_n_e_s=_n_u_m_b_e_r
+              Consider _n_u_m_b_e_r (default 1) consecutive empty lines
+              to be one logical line for numbering, and only num-
+              ber the last one.  Where fewer than _n_u_m_b_e_r consecu-
+              tive empty lines occur, do  not  number  them.   An
+              empty  line is one that contains no characters, not
+              even spaces or tabs.
+
+       -_s, --_n_u_m_b_e_r-_s_e_p_a_r_a_t_o_r=_s_t_r_i_n_g
+              Separate the line number from the text line in  the
+              output with _s_t_r_i_n_g (default is a TAB character).
+
+       -_w, --_n_u_m_b_e_r-_w_i_d_t_h=_n_u_m_b_e_r
+              Use _n_u_m_b_e_r characters for line numbers (default 6).
+
+       -_n, --_n_u_m_b_e_r-_f_o_r_m_a_t={_l_n,_r_n,_r_z}
+              Select the line numbering format:
+
+              ln     left justified, no leading zeros
+
+              rn     right justified, no leading zeros (default)
+
+
+
+                                                                2
+
+
+
+
+
+NL(1L)                                                     NL(1L)
+
+
+              rz     right justified, leading zeros
+
+       -_d, --_s_e_c_t_i_o_n-_d_e_l_i_m_i_t_e_r=_c_c
+              Set the two delimeter characters that indicate  the
+              beginnings of logical page sections; if only one is
+              given, the second remains ':'.  To enter  '\',  use
+              '\\'.
+
+       The  long-named options can be introduced with `+' as well
+       as `--', for compatibility with previous releases.   Even-
+       tually  support  for  `+'  will  be removed, because it is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                3
+
+

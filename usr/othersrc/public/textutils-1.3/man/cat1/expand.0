@@ -1,0 +1,66 @@
+
+
+
+EXPAND(1L)                                             EXPAND(1L)
+
+
+NNAAMMEE
+       expand - convert tabs to spaces
+
+SSYYNNOOPPSSIISS
+       eexxppaanndd  [-tab1[,tab2[,...]]]  [-t  tab1[,tab2[,...]]] [-i]
+       [--tabs=tab1[,tab2[,...]]] [--initial] [file...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents  the  GNU  version  of  eexxppaanndd.
+       eexxppaanndd  writes  the  contents  of  each given file, or the
+       standard input if none are given or when a file named  `-'
+       is given, to the standard output, with tab characters con-
+       verted to the appropriate number of spaces.   By  default,
+       eexxppaanndd   converts   all  tabs  to  spaces.   It  preserves
+       backspace characters in the  output;  they  decrement  the
+       column  count for tab calculations.  The default action is
+       equivalent to -8 (set tabs every 8 columns).
+
+   OOPPTTIIOONNSS
+       -, -_t, --_t_a_b_s _t_a_b_1[,_t_a_b_2[,...]]
+              If only one tab stop is given, set  the  tabs  _t_a_b_1
+              spaces  apart instead of the default 8.  Otherwise,
+              set the tabs at columns _t_a_b_1, _t_a_b_2, etc.  (numbered
+              from  0)  and  replace any tabs beyond the tabstops
+              given with single  spaces.   If  the  tabstops  are
+              specified with the -_t or --_t_a_b_s option, they can be
+              separated by blanks as well as by commas.
+
+       -_i, --_i_n_i_t_i_a_l
+              Only convert initial tabs (those that  precede  all
+              non  space  or  tab  characters)  on  each  line to
+              spaces.
+
+       The long-named options can be introduced with `+' as  well
+       as  `--', for compatibility with previous releases.  Even-
+       tually support for `+' will  be  removed,  because  it  is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+

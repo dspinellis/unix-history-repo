@@ -1,0 +1,66 @@
+
+
+
+TAC(1L)                                                   TAC(1L)
+
+
+NNAAMMEE
+       tac - concatenate and print files in reverse
+
+SSYYNNOOPPSSIISS
+       ttaacc  [-br]  [-s separator] [--before] [--regex] [--separa-
+       tor=separator] [file...]
+
+DDEESSCCRRIIPPTTIIOONN
+       This manual page documents the GNU version  of  ttaacc.   ttaacc
+       copies  each given file, or the standard input if none are
+       given or when a file name of `-' is  encountered,  to  the
+       standard  output  with  the order of the records reversed.
+       The records are separated by instances of a string,  or  a
+       newline  if  none  is  given.   By  default, the separator
+       string is attached to the end of the record that  it  fol-
+       lows in the file.
+
+   OOPPTTIIOONNSS
+       -_b, --_b_e_f_o_r_e
+              The  separator  is attached to the beginning of the
+              record that it precedes in the file.
+
+       -_r, --_r_e_g_e_x
+              The separator is a regular expression.
+
+       -_s, --_s_e_p_a_r_a_t_o_r _s_e_p_a_r_a_t_o_r
+              Use _s_e_p_a_r_a_t_o_r as the record separator.
+
+       The long-named options can be introduced with `+' as  well
+       as  `--', for compatibility with previous releases.  Even-
+       tually support for `+' will  be  removed,  because  it  is
+       incompatible with the POSIX.2 standard.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                1
+
+
