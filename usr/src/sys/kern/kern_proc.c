@@ -1,4 +1,4 @@
-/*	kern_proc.c	4.30	82/08/10	*/
+/*	kern_proc.c	4.31	82/08/11	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -21,6 +21,7 @@
 #include "../h/file.h"
 #include "../h/quota.h"
 #include "../h/descrip.h"
+#include "../h/uio.h"
 
 /*
  * exec system call, with and without environments.
@@ -50,6 +51,8 @@ exece()
 	swblk_t bno;
 	char cfname[MAXNAMLEN + 1];
 	char cfarg[SHSIZE];
+	struct uio uio;
+	struct iovec iovec;
 
 	if ((ip = namei(uchar, 0, 1)) == NULL)
 		return;
@@ -88,14 +91,16 @@ exece()
 	 * ONLY ONE ARGUMENT MAY BE PASSED TO THE SHELL FROM
 	 * THE ASCII LINE.
 	 */
-	u.u_base = (caddr_t)&u.u_exdata;
-	u.u_count = sizeof(u.u_exdata);
-	u.u_offset = 0;
-	u.u_segflg = 1;
-	readi(ip);
-	u.u_segflg = 0;
+	uio.uio_iov = &iovec;
+	uio.uio_iovcnt = 1;
+	iovec.iov_base = (caddr_t)&u.u_exdata;
+	iovec.iov_len = sizeof (u.u_exdata);
+	uio.uio_offset = 0;
+	uio.uio_segflg = 1;
+	u.u_error = readip(ip, &uio);
 	if (u.u_error)
 		goto bad;
+	u.u_count = uio.uio_resid;
 	if (u.u_count > sizeof(u.u_exdata) - sizeof(u.u_exdata.Ux_A) &&
 	    u.u_exdata.ux_shell[0] != '#') {
 		u.u_error = ENOEXEC;
