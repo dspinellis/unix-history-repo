@@ -11,18 +11,20 @@ CFLAGS	= $(OPTIMIZE) $(INCLUDES) $(DEFINES)
 # Lint flags
 LINTFLAGS	= -hbxaz
 
-ALLC = dohits.c ectype.c mkastosc.c mkdctype.c mkdstoas.c mkhits.c prt3270.c
+ALLC = dohits.c ectype.c mkastosc.c mkdctype.c \
+		mkastods.c mkdstoas.c mkhits.c prt3270.c
 
 ALLH = dohits.h ectype.h
 
-ALLO =	prt3270.o mkdctype.o ectype.o mkdstoas.o mkhits.o dohits.o mkastosc.o
+ALLO =	prt3270.o mkdctype.o ectype.o \
+		mkastods.o mkdstoas.o mkhits.o dohits.o mkastosc.o
 
-ALLEXE = prt3270 mkdctype ectype mkdstoas mkhits mkastosc
+ALLEXE = prt3270 mkdctype ectype mkastods mkdstoas mkhits mkastosc
 
 tools:
 	@echo Need to specify WHICH tool ...
 
-all:	mkastosc mkhits mkdstoas mkdctype prt3270
+all:	mkastosc mkhits mkastods mkdstoas mkdctype prt3270
 	@echo done.
 
 prt3270:	prt3270.o ../system/globals.o ../ascii/ebctab.o
@@ -32,6 +34,10 @@ prt3270:	prt3270.o ../system/globals.o ../ascii/ebctab.o
 mkastosc:	mkastosc.o dohits.o ../ascii/asctab.o ../ctlr/ebc_disp.o
 	$(CC) $(CFLAGS) -o mkastosc mkastosc.o dohits.o \
 			../ascii/asctab.o ../ctlr/ebc_disp.o
+
+mkastods:	mkastods.o ../ascii/asctab.o ../ctlr/ebc_disp.o
+	$(CC) $(CFLAGS) -o mkastods mkastods.o ../ascii/asctab.o \
+						../ctlr/ebc_disp.o
 
 mkdstoas:	mkdstoas.o ../ascii/ebctab.o ../ctlr/ebc_disp.o
 	$(CC) $(CFLAGS) -o mkdstoas mkdstoas.o ../ascii/ebctab.o \
