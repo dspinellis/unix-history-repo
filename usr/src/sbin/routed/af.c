@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)af.c	4.6 %G%";
+static char sccsid[] = "@(#)af.c	4.7 %G%";
 #endif
 
 #include <sys/types.h>
@@ -38,7 +38,7 @@ inet_hash(sin, hp)
 	struct afhash *hp;
 {
 
-	hp->afh_nethash = IN_NETOF(sin->sin_addr);
+	hp->afh_nethash = in_netof(sin->sin_addr);
 	hp->afh_hosthash = sin->sin_addr.s_addr;
 #if vax || pdp11
 	hp->afh_hosthash = ntohl(hp->afh_hosthash);
@@ -50,7 +50,7 @@ inet_netmatch(sin1, sin2)
 	struct sockaddr_in *sin1, *sin2;
 {
 
-	return (IN_NETOF(sin1->sin_addr) == IN_NETOF(sin2->sin_addr));
+	return (in_netof(sin1->sin_addr) == in_netof(sin2->sin_addr));
 }
 
 /*
@@ -104,17 +104,13 @@ inet_output(s, sin, size)
 }
 
 /*
- * Return 1 if the address is for an Internet host,
- * otherwise assume it's a network address (broadcast).
+ * Return 1 if the address is believed
+ * for an Internet host -- THIS IS A KLUDGE.
  */
 inet_checkhost(sin)
 	struct sockaddr_in *sin;
 {
-	extern struct in_addr if_makeaddr();
-	struct in_addr netaddr;
-
-	netaddr = if_makeaddr(IN_NETOF(sin->sin_addr), INADDR_ANY);
-	return (netaddr.s_addr != sin->sin_addr.s_addr);
+	return (in_lnaof(sin->sin_addr) != 0);
 }
 
 inet_canon(sin)

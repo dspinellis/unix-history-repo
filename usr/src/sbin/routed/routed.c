@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)routed.c	4.21 %G%";
+static char sccsid[] = "@(#)routed.c	4.22 %G%";
 #endif
 
 /*
@@ -339,7 +339,7 @@ gwkludge()
 		bzero((char *)ifp, sizeof (*ifp));
 		ifp->int_flags = IFF_REMOTE;
 		/* can't identify broadcast capability */
-		ifp->int_net = IN_NETOF(dst.sin_addr);
+		ifp->int_net = in_netof(dst.sin_addr);
 		if ((*afswitch[dst.sin_family].af_checkhost)(&dst)) {
 			ifp->int_flags |= IFF_POINTOPOINT;
 			ifp->int_dstaddr = *((struct sockaddr *)&dst);
@@ -893,8 +893,49 @@ if_makeaddr(net, host)
 		addr = (net << 16) | host;
 	else
 		addr = (net << 8) | host;
-#ifdef vax
+#if vax || pdp11
 	addr = htonl(addr);
 #endif
 	return (*(struct in_addr *)&addr);
+}
+
+/*
+ * Return the network number from an internet
+ * address; handles class a/b/c network #'s.
+ */
+in_netof(in)
+	struct in_addr in;
+{
+#if vax || pdp11
+	register u_long net;
+
+	if ((in.s_addr&IN_CLASSA) == 0)
+		return (in.s_addr & IN_CLASSA_NET);
+	if ((in.s_addr&IN_CLASSB) == 0)
+		return ((int)htons((u_short)(in.s_addr & IN_CLASSB_NET)));
+	net = htonl((u_long)(in.s_addr & IN_CLASSC_NET));
+	net >>= 8;
+	return ((int)net);
+#else
+	return (IN_NETOF(in));
+#endif
+}
+
+/*
+ * Return the local network address portion of an
+ * internet address; handles class a/b/c network
+ * number formats.
+ */
+in_lnaof(in)
+	struct in_addr in;
+{
+#if vax || pdp11
+#define	IN_LNAOF(in) \
+	(((in).s_addr&IN_CLASSA) == 0 ? (in).s_addr&IN_CLASSA_LNA : \
+		((in).s_addr&IN_CLASSB) == 0 ? (in).s_addr&IN_CLASSB_LNA : \
+			(in).s_addr&IN_CLASSC_LNA)
+	return ((int)htonl((u_long)IN_LNAOF(in)));
+#else
+	return (IN_LNAOF(in));
+#endif
 }
