@@ -1,5 +1,5 @@
 /*-
- *	@(#)READ_ME	8.8 (Berkeley) %G%
+ *	@(#)READ_ME	8.9 (Berkeley) %G%
  */
 
 			SENDMAIL RELEASE 8
@@ -113,11 +113,9 @@ relevant to sendmail) are:
 	RFC987	Mapping between RFC822 and X.400
 	RFC1049	Content-Type header field (extension to RFC822)
 
-Unfortunately, for a variety of reasons the Makefiles are for the new
-Berkeley "make" and will not work on the old, traditional make.  I urge
-you to get this make from Net2 (available on many public FTP archives).
-Failing that, some directories have a "Makefile.dist" that will work on
-older versions of make (but don't have the niceties included).
+Warning to AIX users: this version of sendmail does not implement
+MB, MR, or MG DNS resource records, as defined as experiments in
+RFC883.
 
 
 +-------------------+
@@ -133,6 +131,10 @@ is highly recommended; it gets rid of several stupid limits, it's much
 faster, and the interface is nicer to animals and plants.  You will
 also probably find that you have to add -I/where/you/put/db/include
 to the sendmail makefile to get db.h to work properly.
+
+Be sure you remove ndbm.h and ndbm.o from the db distribution.  These
+will cause problems with sendmail because sendmail already understands
+about NEWDB and NDBM coexisting.
 
 
 +-------------+
@@ -163,7 +165,13 @@ in toto:
 	BINDIR?=	/usr/sbin
 
 The other directories should all have Makefile.dist files that work
-on the old make.  For more details, see src/READ_ME.
+on the old make, albeit without all the niceties included.
+
+You can also get a new Berkeley make from the Net2 release (available
+on many public FTP archives).  This version should also interpret old
+Makefiles, so you could drop it in as your default make.
+
+For more details, see src/READ_ME.
 
 
 +---------------------+
