@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)slc.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)slc.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "telnetd.h"
@@ -125,7 +125,8 @@ start_slc(getit)
 	slcchange = 0;
 	if (getit)
 		init_termbuf();
-	(void) sprintf(slcbuf, "%c%c%c%c", IAC, SB, TELOPT_LINEMODE, LM_SLC);
+	(void) sprintf((char *)slcbuf,
+	    "%c%c%c%c", IAC, SB, TELOPT_LINEMODE, LM_SLC);
 	slcptr = slcbuf + 4;
 
 }  /* end of start_slc */
@@ -164,7 +165,7 @@ register unsigned char **bufp;
 			*bufp = &slcbuf[4];
 			return(slcptr - slcbuf - 4);
 		} else {
-			(void) sprintf(slcptr, "%c%c", IAC, SE);
+			(void) sprintf((char *)slcptr, "%c%c", IAC, SE);
 			slcptr += 2;
 			len = slcptr - slcbuf;
 			writenet(slcbuf, len);

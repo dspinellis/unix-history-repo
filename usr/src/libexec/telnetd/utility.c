@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)utility.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)utility.c	5.6 (Berkeley) %G%";
 #endif /* not lint */
 
 #define PRINTOPTIONS
@@ -404,14 +404,15 @@ char *where;
 			putstr(editedhost);
 			break;
 
-		case 'd':
+		case 'd': {
+			char fmt[] = "%l:% %P on %A, %d %B %Y";
+
+			fmt[4] = 'M';		/* I *hate* SCCS... */
 			(void)time(&t);
-						/* SCCS *likes* utility.c... */
-			fmt = "%l:% %P on %A, %d %B %Y";
-			fmt[4] = 'M';
-			(void)strftime(db, sizeof(db), fmt, &t);
+			(void)strftime(db, sizeof(db), fmt, localtime(&t));
 			putstr(db);
 			break;
+		}
 
 		case '%':
 			putchr('%');
