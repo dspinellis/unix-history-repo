@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)termout.c	3.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)termout.c	3.9 (Berkeley) %G%";
 #endif /* not lint */
 
 #if defined(unix)
@@ -512,11 +512,12 @@ FastScreen()
 		    *tmp++ = 0;			/* close out */
 		    addstr((char *)tmpbuf);
 		    tmp = tmpbuf;
-		    tmpend = tmpbuf + NumberColumns - ScreenLineOffset(p-Host);
+		    tmpend = tmpbuf+NumberColumns-ScreenLineOffset(p-Host)-1;
 		}
+		standend();
+		addch(' ');
 		fieldattr = FieldAttributesPointer(p);	/* Get attributes */
 		DoAttribute(fieldattr);	/* Set standout, non-display */
-		*tmp++ = ' ';
 	    } else {
 		if (fieldattr) {	/* Should we display? */
 				/* Display translated data */
