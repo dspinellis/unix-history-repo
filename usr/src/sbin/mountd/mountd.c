@@ -15,7 +15,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)mountd.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)mountd.c	5.17 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -45,8 +45,6 @@ static char sccsid[] = "@(#)mountd.c	5.16 (Berkeley) %G%";
 #include <nfs/rpcv2.h>
 #include <nfs/nfsv2.h>
 #include "pathnames.h"
-
-#define DEF_NAME "default"
 
 #define MNT_HOST   0
 #define MNT_GROUP  1
@@ -684,15 +682,11 @@ get_exportlist()
 			}
 			tgrp->anoncr = anoncr;
 			tgrp->exflags = exflags;
-			hpe->h_name = (char *)malloc(sizeof(DEF_NAME)+1);
-			if (hpe->h_name == NULL) {
-				syslog(LOG_ERR,"No more memory: mountd Failed");
-				exit(2);
-			}
-			strcpy(hpe->h_name,DEF_NAME);
+			tgrp->type = MNT_HOST;
+			hpe->h_name = (char *)0;
 			hpe->h_addrtype = AF_INET;
 			hpe->h_length = sizeof (u_long);
-			hpe->h_addr_list = INADDR_ANY;
+			hpe->h_addr_list = (char **)0;
 			tgrp->gr_ptr.gt_hostent = hpe;
 			tgrp->gr_next = ep->ex_groups;
 			ep->ex_groups = tgrp;
@@ -761,10 +755,10 @@ do_mount(ep, grp, exflags, anoncrp, dirplen)
 	done = FALSE;
 	while(!done) {
 		if (grp->type == MNT_HOST) {
-			if (!strcmp(grp->gr_ptr.gt_hostent->h_name, DEF_NAME))
-				sin.sin_addr.s_addr = INADDR_ANY;
-			else
+			if (grp->gr_ptr.gt_hostent->h_name)
 				sin.sin_addr.s_addr = **addrp;
+			else
+				sin.sin_addr.s_addr = INADDR_ANY;
 			args.saddr = (struct sockaddr *)&sin;
 			args.slen = sizeof(sin);
 #ifdef ISO
@@ -915,7 +909,7 @@ do_opt(cpopt, ep, exflagsp, cr)
 	struct ucred *cr;
 {
 	register char *cpoptarg, *cpoptend;
-	int allflag;
+	int allflag = 1;
 
 	while (cpopt && *cpopt) {
 		if (cpoptend = index(cpopt, ','))
@@ -1031,8 +1025,7 @@ get_mountlist()
 	char str[STRSIZ];
 	FILE *mlfile;
 
-	if (((mlfile = fopen(_PATH_RMOUNTLIST, "r")) == NULL) &&
-	    ((mlfile = fopen(_PATH_RMOUNTLIST, "w")) == NULL)) {
+	if ((mlfile = fopen(_PATH_RMOUNTLIST, "r")) == NULL) {
 		syslog(LOG_ERR, "Can't open %s", _PATH_RMOUNTLIST);
 		return;
 	}
@@ -1071,6 +1064,7 @@ del_mlist(hostp, dirp)
 	register char *hostp, *dirp;
 {
 	register struct mountlist *mlp, **mlpp;
+	struct mountlist *mlp2;
 	FILE *mlfile;
 	int fnd = 0;
 
@@ -1080,11 +1074,13 @@ del_mlist(hostp, dirp)
 		if (!strcmp(mlp->ml_host, hostp) &&
 		    (!dirp || !strcmp(mlp->ml_dirp, dirp))) {
 			fnd = 1;
-			*mlpp = mlp->ml_next;
-			free((caddr_t)mlp);
+			mlp2 = mlp;
+			*mlpp = mlp = mlp->ml_next;
+			free((caddr_t)mlp2);
+		} else {
+			mlpp = &mlp->ml_next;
+			mlp = mlp->ml_next;
 		}
-		mlpp = &mlp->ml_next;
-		mlp = mlp->ml_next;
 	}
 	if (fnd) {
 		if ((mlfile = fopen(_PATH_RMOUNTLIST, "w")) == NULL) {
@@ -1178,11 +1174,13 @@ free_grp(grp)
 	register char **addrp;
 
 	if (grp->type == MNT_HOST) {
-		addrp = grp->gr_ptr.gt_hostent->h_addr_list;
-		while (addrp && *addrp)
-			free(*addrp++);
-		free((caddr_t)grp->gr_ptr.gt_hostent->h_addr_list);
-		free(grp->gr_ptr.gt_hostent->h_name);
+		if (grp->gr_ptr.gt_hostent->h_name) {
+			addrp = grp->gr_ptr.gt_hostent->h_addr_list;
+			while (addrp && *addrp)
+				free(*addrp++);
+			free((caddr_t)grp->gr_ptr.gt_hostent->h_addr_list);
+			free(grp->gr_ptr.gt_hostent->h_name);
+		}
 		free((caddr_t)grp->gr_ptr.gt_hostent);
 	}
 #ifdef ISO
