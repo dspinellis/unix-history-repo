@@ -8,7 +8,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)pmap.h	7.7 (Berkeley) %G%
+ *	@(#)pmap.h	7.8 (Berkeley) %G%
  */
 
 #ifndef	_PMAP_MACHINE_
@@ -70,6 +70,7 @@ typedef struct pmap {
 extern	char *pmap_attributes;		/* reference and modify bits */
 extern	struct pmap kernel_pmap_store;
 #define kernel_pmap (&kernel_pmap_store)
+#define	pmap_wired_count(pmap) 	((pmap)->pm_stats.wired_count)
 #endif	/* KERNEL */
 
 #endif	/* _PMAP_MACHINE_ */
