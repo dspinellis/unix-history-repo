@@ -1,0 +1,297 @@
+.SH
+IV.  PROGRAMMING
+.PP
+.UC UNIX
+is a marvelously pleasant and productive system for
+writing programs;
+productivity seems to be an order of magnitude higher
+than on other interactive systems.
+.PP
+There will be no attempt made to teach any of
+the programming languages available on
+.UC UNIX ,
+but a few words of advice are in order.
+First,
+.UC UNIX
+is written in C,
+as is most of the applications code.
+If you are undertaking anything substantial,
+C is the only reasonable choice.
+More on that in a moment.
+But remember that there are quite a few programs already written,
+some of which have substantial power.
+.PP
+The editor can be made to do things that would normally
+require special programs on other systems.
+For example, to list the first and last lines of each of a
+set of files, say a book,
+you could laboriously type
+.B1
+ed
+e chap1.1
+1p
+$p
+e chap1.2
+1p
+$p
+ etc.
+.B2
+But instead you can do the job once and for all.
+Type
+.B1
+ls chap* >temp
+.B2
+to get the list of filenames into a file.
+Then edit this file to make the necessary
+series of editing commands
+(using the global commands of
+.C ed ),
+and write it into ``script''.
+Now the command
+.B1
+ed <script
+.B2
+will produce
+the same output as the laborious hand typing.
+.PP
+The pipe mechanism lets you fabricate quite complicated operations
+out of spare parts already built.
+For example, the first draft of the 
+.C spell
+program was (roughly)
+.B1
+.ne 7
+cat ... 	(collect the files)
+| tr ...	(put each word on a new line,
+	  delete punctuation, etc.)
+| sort	(into dictionary order)
+| uniq	(strip out duplicates)
+| comm	(list words found in text but
+	  not in dictionary)
+.B2
+.SH
+Programming the Shell
+.PP
+An option often overlooked by newcomers
+is that the shell is itself a programming language,
+and since
+.UC UNIX
+already has a host of building-block programs,
+you can sometimes avoid writing a special purpose program
+merely by piecing together some of the building blocks
+with shell command files.
+.PP
+As an unlikely example,
+suppose you want to count
+the number of users on the machine every hour.
+You could type
+.B1
+.ne 2
+date
+who | wc -l
+.B2
+every hour, and write down the numbers, but that is rather primitive.
+The next step is probably to say
+.B1
+(date; who | wc -l) >>users
+.B2
+which uses ``>>'' to 
+.ul
+append
+to the end of the file ``users''.
+(We haven't mentioned ``>>'' before _
+it's another service of the shell.)
+Now all you have to do is to put a loop around this,
+and ensure that it's done every hour.
+Thus, place the following commands into a file, say ``count'':
+.B1
+.ne 4
+: loop
+(date; who | wc -l) >>users
+sleep  3600
+goto loop
+.B2
+The command 
+.C :
+is followed by a space and a label,
+which you can then 
+.C goto .
+Notice that it's quite legal to branch backwards.
+Now if you issue the command
+.B1
+sh  count  &
+.B2
+the users will be counted every hour,
+and you can go on with other things.
+(You will have to use
+.C kill
+to stop counting.)
+.PP
+If you would like ``every hour'' to be a parameter,
+you can arrange for that too:
+.B1
+.ne 4
+: loop
+(date; who | wc - l) >>users
+sleep  $1
+goto loop
+.B2
+``$1'' means the first argument when this procedure is invoked.
+If you say
+.B1
+sh count 60
+.B2
+it will count every minute.
+A shell program can have up to nine arguments,
+``$1'' through ``$9''.
+.PP
+The other aspect of programming is conditional testing.
+The
+.C if
+command
+can test conditions and execute commands accordingly.
+As a simple example, suppose you want to add to your login sequence
+something to print your mail if you have some.
+Thus, knowing that mail is stored in a file called
+`mailbox', you could say
+.B1
+if -r mailbox  mail
+.B2
+This says
+``if the file `mailbox' is readable, execute the
+.C mail
+command.''
+.PP
+As another example, you could arrange that the
+``count''
+procedure count every hour by default,
+but allow an optional argument to specify a different time.
+Simply replace the ``sleep $1'' line by
+.B1
+.ne 2
+if $1x = x sleep 3600
+if $1x != x sleep $1
+.B2
+The construction
+.B1
+if $1x = x
+.B2
+tests whether ``$1'', the first argument, was present or absent.
+.PP
+More complicated conditions can be tested:
+you can find out the status of an executed command,
+and you can combine conditions with `and', `or',
+`not' and parentheses _
+see
+.SE if (I).
+You should also read
+.SE shift (I)
+which describes how to manipulate arguments to shell command files.
+.SH
+Programming in C
+.PP
+As we said, C is the language of choice:
+everything in
+.UC UNIX
+is tuned to it.
+It is also a remarkably easy language to use
+once you get started.
+Sections II and III of the manual
+describe the system interfaces, that is,
+how you do I/O
+and similar functions.
+.PP
+You can write quite significant C programs
+with the level of I/O and system interface described in
+.ul
+Programming in C: A Tutorial,
+if you use existing programs and pipes to help.
+For example, rather than learning how to open and close files
+you can (at least temporarily) write a program that reads
+from its standard input,
+and use
+.C cat
+to concatentate several files into it.
+This may not be adequate for the long run,
+but for the early stages it's just right.
+.PP
+There are a number of supporting programs that go with C.
+The C debugger,
+.C cdb ,
+is marginally useful for digging through the dead bodies
+of C programs.
+.C db ,
+the assembly language debugger, is actually more useful most
+of the time,
+but you have to know more about the machine
+and system to use it well.
+The most effective debugging tool is still
+careful thought, coupled with judiciously placed
+print statements.
+.PP
+You can instrument C programs and thus find out
+where they spend their time and what parts are worth optimising.
+Compile the routines with the ``-p'' option;
+after the test run use
+.C prof
+to print an execution profile.
+The command
+.C time
+will give you the gross run-time statistics
+of a program, but it's not super accurate or reproducible.
+.PP
+C programs that don't depend too much on special features of 
+.UC UNIX
+can be moved to the Honeywell 6070
+and
+.UC IBM
+370 systems
+with modest effort.
+Read 
+.ul 3
+The
+.UC GCOS
+C Library
+by M. E. Lesk and B. A. Barres for details.
+.SH
+Miscellany
+.PP
+If you 
+.ul
+have
+to use Fortran,
+you might consider
+.C ratfor ,
+which gives you the decent control structures
+and free-form input that characterize C,
+yet lets you write code that
+is still portable to other environments.
+Bear in mind that
+.UC UNIX
+Fortran
+tends to produce large and relatively slow-running
+programs.
+Furthermore, supporting software like
+.C db ,
+.C prof ,
+etc., are all virtually useless with Fortran programs.
+.PP
+If you want to use assembly language
+(all heavens forfend!),
+try the implementation language
+.UC LIL,
+which gives you many of the advantages of a high-level language,
+like decent control flow structures,
+but still lets you get close to the machine
+if you really want to.
+.PP
+If your application requires you to translate
+a language into a set of actions or another language,
+you are in effect building a compiler,
+though probably a small one.
+In that case,
+you should be using
+the
+.C yacc
+compiler-compiler, 
+which helps you develop a compiler quickly.

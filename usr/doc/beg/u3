@@ -1,0 +1,431 @@
+.sp
+.SH
+III. DOCUMENT PREPARATION
+.sp
+.PP
+.UC UNIX
+is extensively used for document preparation.
+There are three major 
+.ul
+formatting
+programs,
+that is,
+programs which produce a text with
+justified right margins, automatic page numbering and titling,
+automatic hyphenation,
+and the like.
+The simplest of these formatters is
+.C roff ,
+which
+in fact is simple enough that if you type almost any text
+into a file and
+``roff'' 
+it,
+you will get plausibly formatted output.
+You can do better with a little knowledge,
+but basically it's 
+easy to learn and use.
+We'll get back to 
+.C roff
+shortly.
+.PP
+.C nroff
+is similar to
+.C roff
+but does much less for you automatically.
+It will do a great deal more,
+once you know how to use it.
+.PP
+Both
+.C roff
+and
+.C nroff
+are designed to produce output on terminals,
+line-printers, and the like.
+The third formatter,
+.C troff
+(pronounced ``tee-roff''),
+instead drives a Graphic Systems phototypesetter,
+which produces very high quality output on photographic paper.
+This 
+paper
+was printed on the phototypesetter by
+.C troff .
+.if n (Or at least it will be.)
+.PP
+Because
+.C nroff
+and
+.C troff
+are relatively hard to learn to use effectively,
+several
+``packages'' of canned formatting requests are available
+which let you do things
+like paragraphs, running titles, multi-column output,
+and so on, with little effort.
+Regrettably, details vary from system to system.
+.SH
+ROFF
+.PP
+The basic idea of
+.C roff
+(and of
+.C nroff
+and
+.C troff ,
+for that matter)
+is that the text to be formatted
+contains within it ``formatting commands''
+that indicate in detail how the formatted text is to look.
+For example, there might be commands that specify how long lines are,
+whether to use single or double spacing,
+and what running titles to use on each page.
+In general, you don't have to spell
+out all of the possible formatting details.
+Most of them have
+``default values'',
+which you will get if you say nothing at all.
+For example,
+unless you take special precautions,
+you'll get single-spaced output, 65-character lines,
+justified right margins, and 58 text lines per page
+when you 
+.C roff
+a file.
+This is the reason that
+.C roff
+is so simple _
+most of the decisions have already been made
+for you.
+.PP
+Some things do have to be done, however.
+If you want a document
+broken into paragraphs, you have to tell
+.C roff
+where to add the extra blank lines.
+This is done with the
+``.sp'' command:
+.B1
+.ne 3
+this is the end of one paragraph.
+^sp
+This begins the next paragraph ...
+.B2
+In
+.C roff
+(and in
+.C nroff
+and
+.C troff ),
+formatting commands consist of a period followed by two letters,
+and they must appear at the beginning of a line, all by themselves.
+The ``.sp'' command tells
+.C roff
+to finish printing any of the previous
+line
+that might be still unprinted,
+then print a blank line before continuing.
+You can have more space if you wish;
+``.sp 2'' asks for 2 spaces, and so on.
+.PP
+If you simply want to
+ensure that subsequent text appears on a fresh output line,
+you can use the command ``.br'' (for ``break'')
+instead of ``.sp''.
+.PP
+Most of the other commonly-used
+.C roff
+commands are equally simple.
+For example you can center one or more lines with the ``.ce'' command.
+.B1
+.ne 3
+^ce
+Title of Paper
+^sp 2
+.B2
+causes the title to be centered,
+then followed by two blank lines.
+As with ``.sp'', ``.ce'' can be followed by a number;
+in that case, that many input lines are centered.
+.PP
+``.ul'' underlines lines, and can also be followed by a number:
+.B1
+.ne 5
+^ce 2
+^ul 2
+An Earth-shaking Paper
+^sp
+John Q. Scientist
+.B2
+will center and underline the two text lines.
+Notice that the ``.sp'' between them
+is not part of the line count.
+.PP
+You can get multiple-line spacing instead of the default single-spacing
+with the ``.ls'' command:
+.B1
+^ls 2
+.B2
+causes double spacing.
+.PP
+If you're typing things like tables,
+you will not want the automatic filling-up and justification
+of output lines that is done by default.
+You can turn this off with the command
+``.nf'' (no-fill),
+and then back on again with ``.fi'' (fill).
+Thus
+.B1
+.ne 7
+this section is filled by default.
+^nf
+here lines will appear just
+as you typed them _
+no extra spaces, no moving of words.
+^fi
+Now go back to filling up output lines.
+.B2
+.PP
+You can change the line-length with ``.ll'',
+and the left margin (the indent) by ``.in''.
+These are often used together to make offset blocks of text:
+.B1
+^ll \-10
+^in +10
+.fi
+.ll -5
+this text will be moved 10 spaces to the right
+and the lines will also be shortened 10 characters from the right.
+The ``+'' and ``\-'' mean to 
+.ul
+change
+the previous value by that much.
+Now revert:
+.ll +5
+.nf
+^ll +10
+^in \-10
+.B2
+Notice that ``.ll +10'' adds ten characters to the line length,
+while ``.ll 10'' makes the line ten characters
+.ul
+long.
+.PP
+The ``.ti'' command
+indents (in either direction) just like ``.in'', except for only one line.
+Thus to make a new paragraph with a 10-character indent,
+you would say
+.B1
+.ne 3
+^sp
+^ti +10
+New paragraph ...
+.B2
+.PP
+You can put running titles on both top and bottom of each page,
+like this:
+.B1
+.ne 2
+^he "left top"center top"right top"
+^fo "left bottom"center bottom"right bottom"
+.B2
+The header or footer is divided into three parts,
+which are marked off by any character you like.
+(We used a double quote.)
+If there's nothing between the markers, that part
+of the title will be blank.
+If you use a percent sign anywhere in ``.he'' or ``.fo'',
+the current page number will be inserted.
+So to get centered page numbers with dashes around them,
+at the top,
+use
+.B1
+^he ""\- % \-""
+.B2
+You can skip to the top of a new page at any time
+with the ``.bp'' command;
+if ``.bp'' is followed by a number,
+that will be the new page number.
+.PP
+The foregoing is probably enough about 
+.C roff
+for you to go off and format most everyday documents.
+Read
+.SE roff (I)
+for more details.
+.SH
+Hints for Preparing Documents
+.PP
+Most documents go through several versions (always more than you expected) before they
+are finally finished.
+Accordingly, you should do whatever possible to make
+the job of changing them easy.
+.PP
+First, when you do the purely mechanical operations of typing,
+type so subsequent editing will be easy.
+Start each sentence on a new line.
+Make lines short,
+and break lines at natural places,
+such as after commas and semicolons,
+rather than randomly.
+Since most people change documents by rewriting phrases
+and adding, deleting and rearranging sentences,
+these precautions simplify any editing
+you have to do later.
+.PP
+The second aspect of making change easy
+is not to commit yourself to formatting details too early.
+For example, if you decide that each paragraph is to have
+a space and an indent of 10 characters,
+you might type, before each,
+.B1
+.ne 2
+^sp
+^ti +10
+.B2
+But what happens when later you decide that it would have
+been better to have
+no space and an indent of only 5 characters?
+It's tedious indeed to go back and patch this up.
+.PP
+Fortunately, all of the formatters let
+you delay decisions until the actual moment of running.
+The secret is to define a new operation
+(called a
+.ul
+macro),
+for each formatting operation you want to do,
+like making a new paragraph.
+You can say, in all three formatters,
+.B1
+.ne 4
+^de PP
+.ne 2
+^sp
+^ti +10
+^^
+.B2
+This
+.ul
+defines
+``.PP''
+as a new
+.C roff
+(or
+.C nroff 
+or
+.C troff )
+operation,
+whose meaning is exactly
+.B1
+^sp
+^ti +10
+.B2
+(The ``..'' marks the end of the definition.)
+Whenever ``.PP'' is encountered in the text,
+it is as if you had typed 
+the two lines of the definition
+in place of it.
+.PP
+The beauty of this scheme is that now, if you change your mind
+about what a paragraph should look like,
+you can change the formatted output
+merely by changing the definition of
+``.PP''
+and re-running the formatter.
+.PP
+As a rule of thumb, for all but the most trivial jobs,
+you should type a document in terms of a set of macros
+like ``.PP'',
+and then define them appropriately.
+As long as you have entered the text in some systematic way,
+it can always be cleaned up and re-formatted
+by a judicious combination of
+editing and macro definitions.
+The packages of formatting commands
+that we mentioned earlier are simply collections
+of macros designed for particular formatting tasks.
+.PP
+One of the main differences between
+.C roff
+and the other formatters
+is that macros in
+.C roff
+can only be lines of text and formatting commands.
+In
+.C nroff 
+and
+.C troff ,
+macros may have arguments,
+so they can have different effects
+depending on how they are called
+(in exactly the same way that the ``.sp'' command
+has an argument, the number of spaces you want).
+.SH
+Miscellany
+.PP
+In addition to the basic formatters,
+.UC UNIX
+provides
+a host of supporting programs.
+.C eqn
+and
+.C neqn
+let you integrate mathematics
+into the text of a document,
+in a language that closely resembles the way
+you would speak it aloud.
+.C spell
+and
+.C typo
+detect possible spelling mistakes in a document.
+.C grep
+looks for lines
+containing a particular text pattern 
+(rather like the editor's context search does,
+but on a whole series of files).
+For example,
+.B1
+grep  "ing$"  chap*
+.B2
+will find all lines ending
+in the letters ``ing'' in the series of files ``chap*''.
+(It is almost always a good practice to put quotes around
+the pattern you're searching for,
+in case it contains characters that have a special meaning for the shell.)
+.PP
+.C wc
+counts the words and (optionally) lines in a set of files.
+.C tr
+translates characters into other characters;
+for example it will convert upper to lower case and vice versa.
+This translates upper into lower:
+.B1
+tr  "[A-Z]"  "[a-z]"
+.B2
+.PP
+.C diff
+prints a list of the differences between
+two files,
+so you can compare
+two versions of something automatically
+(which certainly beats proofreading by hand).
+.C sort
+sorts files in a variety of ways;
+.C cref
+makes cross-references;
+.C ptx
+makes a permuted index
+(keyword-in-context listing).
+.PP
+Most of these programs are either independently documented
+(like
+.C eqn
+and
+.C neqn ),
+or are sufficiently simple that the description in
+the
+.ul 2
+.UC UNIX
+Programmer's Manual
+is adequate explanation.

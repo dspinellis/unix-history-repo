@@ -1,0 +1,90 @@
+.sp 3
+.SH Index
+Index
+.LP
+.sp 2
+.nf
+& (asynchronous process)  8
+; (multiple processes)  8
+* (pattern match)  5
+[ ] (pattern match)  6
+? (pattern match)  6
+<> (redirect I/O)  7
+>> (file append)  12
+backslash (\\)  2
+cat (concatenate files)  4
+cdb (C debugger)  12
+chdir (change directory)  7
+chmod (change protection)  7
+command arguments  4
+command files  8
+cp (copy files)  5
+cref (cross reference)  11
+date  2
+db (assembly debugger)  13
+delete (DEL)  2
+diff (file comparison)  11
+directories  7
+document formatting  9
+ed (editor)  3
+editor programming  11
+EOT (end of file)  3
+eqn (mathematics)  11
+erase character (#)  2
+file system structure  6
+filenames  5
+file protection  7
+goto  12
+grep (pattern matching)  11
+if (condition test)  12
+index  14
+kill a program  8
+kill a character (@)  2
+lil (high-level assembler)  13
+login  1
+logout  2
+ls (list file names)  4
+macro for formatting  10
+mail  2
+multi-columns printing (pr)  5
+mv (move files)  5
+nroff  9
+on-line manual  3
+opr (offline print)  5
+pathname  6
+pattern match in filenames  5
+pipes ( | )  8
+pr (print files)  4
+prof (run-time monitor)  13
+protection  7
+ptx (permuted index)  11
+pwd (working directory)  7
+quotes  6
+ratfor (decent Fortran)  13
+readahead  2
+reading list  13
+redirect I/O (<>)  7
+RETURN key  1
+rm (remove files)  5
+rmdir (remove directory)  7
+roff (text formatting)  9
+root (of file system)  6
+shell (command interpreter)  8
+shell arguments ($)  12
+shell programming  12
+shift (shell arguments)  12
+sleep  12
+sort  11
+spell (find spelling mistakes)
+stopping a program  2
+stty (set terminal options)  2
+tabs (set tab stops)  2
+terminal types  1
+time (time programs)  13
+tr (translate characters)  11
+troff (typesetting)  9
+typo (find spelling mistakes)  11
+wc (word count)  11
+who (who is looged in)  2
+write (to a user)  3
+yacc (compiler-compiler)  13

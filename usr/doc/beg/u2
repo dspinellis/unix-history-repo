@@ -1,0 +1,867 @@
+.SH
+II.  DAY-TO-DAY USE
+.SH
+Creating Files _ The Editor
+.PP
+If we have to type a paper or a letter or a program,
+how do we get the information stored in the machine?
+Most of these tasks are done with
+the
+.UC UNIX
+``text editor''
+.C ed .
+Since
+.C ed
+is thoroughly documented in 
+.SE ed (I) 
+and explained in
+.ul
+A Tutorial Introduction to the UNIX Text Editor,
+we won't spend any time here describing how to use it.
+All we want it for right now is to make some
+.ul
+files.
+(A file is just a collection of information stored in the machine,
+a simplistic but adequate definition.)
+.PP
+To create a file with some text in it, do the following:
+.B1
+ ed	(invokes the text editor)
+ a	(command to ``ed'', to add text)
+.I
+ now type in
+ whatever text you want ...
+.R
+ \fB.\fP	(signals the end of adding text)
+.B2
+At this point we could do various editing operations
+on the text we typed in, such as correcting spelling mistakes,
+rearranging paragraphs and the like.
+Finally, we write the information we have typed
+into a file with the editor command ``w'':
+.B1
+w junk
+.B2
+.C ed
+will respond with the number of characters it wrote
+into the file called ``junk''.
+.PP
+Suppose we now add a few more lines with ``a'',
+terminate them with ``.'',
+and write the whole thing out as ``temp'', using
+.B1
+w temp
+.B2
+We should now have two files, a smaller one called ``junk'' and a bigger one
+(bigger by the extra lines) called ``temp''.
+Type a ``q'' to quit the editor.
+.SH
+What files are out there?
+.PP
+The
+.C ls
+(for ``list'') command lists the names
+(not contents) of any of the files that
+.UC UNIX
+knows about.
+If we type
+.B1
+ls
+.B2
+the response will be
+.B1
+junk
+temp
+.B2
+which are indeed our two files.
+They are sorted into alphabetical order automatically,
+but other variations are possible.
+For example,
+if we add the optional argument ``-t'',
+.B1
+ls -t
+.B2
+lists them in the order in which they were last changed,
+most recent first.
+The ``-l'' option gives a ``long'' listing:
+.B1
+ls -l
+.B2
+will produce something like
+.B1
+-rw-rw-rw-  1 bwk   41 Sep 22 12:56 junk
+-rw-rw-rw-  1 bwk   78 Sep 22 12:57 temp
+.B2
+The date and time are of the last change to the file.
+The 41 and 78 are the number of characters
+(you got the same thing from
+.C ed ).
+``bwk'' is the owner of the file _ the person
+who created it.
+The ``-rw-rw-rw-'' tells who has permission to read and write the file,
+in this case everyone.
+.PP
+Options can be combined:
+``ls -lt'' would give the same thing,
+but sorted into time order.
+You can also name the files you're interested in,
+and 
+.C ls
+will list the information about them only.
+More details can be found in  
+.SE ls (I).
+.PP
+It is generally true of
+.UC UNIX
+programs that ``flag'' arguments like ``-t''
+precede filename arguments.
+.SH
+Printing Files
+.PP
+Now that you've got a file of text,
+how do you print it so people can look at it?
+There are a host of programs that do that,
+probably more than are needed.
+.PP
+One simple thing is to use the editor,
+since printing is often done just before making changes anyway.
+You can say
+.B1
+ed junk
+1,$p
+.B2
+.C ed
+will reply with the count of the characters in ``junk''
+and then print all the lines in the file.
+After you learn how to use the editor,
+you can be selective about the parts you print.
+.PP
+There are times when it's not feasible to use the editor for printing.
+For example, there is a limit on how big a file
+.C ed
+can handle
+(about 65,000 characters or 4000 lines).
+Secondly, 
+it
+will only print one file at a time,
+and sometimes you want to print several, one after another.
+So here are a couple of alternatives.
+.PP
+First is
+.C cat ,
+the simplest of all the printing programs.
+.C cat
+simply copies all the files in a list onto the terminal.
+So you can say
+.B1
+cat junk
+.B2
+or, to print two files,
+.B1
+cat junk temp
+.B2
+The two files are simply concatenated (hence the name ``cat'')
+onto the terminal.
+.PP
+.C pr
+produces formatted printouts of files.
+As with 
+.C cat ,
+.C pr
+prints all the files in a list.
+The difference is that it produces 
+headings with date, time, page number and file name
+at the top of each page,
+and
+extra lines to skip over the fold in the paper.
+Thus,
+.B1
+pr junk temp
+.B2
+will list ``junk'' neatly,
+then skip to the top of a new page and list
+``temp'' neatly.
+.PP
+.C pr
+will also produce multi-column output:
+.B1
+pr -3 junk 
+.B2
+prints ``junk'' in 3-column format.
+You can use any reasonable number in place of ``3''
+and 
+.C pr
+will do its best.
+.PP
+It should be noted that
+.C pr
+is
+.ul
+not
+a formatting program in the sense of shuffling lines around
+and justifying margins.
+The true formatters are
+.C roff ,
+.C nroff ,
+and
+.C troff ,
+which we will get to in the section on document preparation.
+.PP
+There are also programs that print files
+on a high-speed printer.
+Look in your manual under
+.C opr
+and
+.C lpr .
+Which to use depends on the hardware configuration
+of your machine.
+.SH
+Shuffling Files About
+.PP
+Now that you have some files in the file system
+and some experience in printing them,
+you can try bigger things.
+For example,
+you can move a file from one place to another
+(which amounts to giving a file a new name),
+like this:
+.B1
+mv junk precious
+.B2
+This means that what used to be ``junk'' is now ``precious''.
+If you do an
+.C ls
+command now,
+you will get
+.B1
+precious
+temp
+.B2
+Beware that if you move a file to another one
+that already exists,
+the already existing contents are lost forever.
+.PP
+If you want
+to make a
+.ul
+copy
+of a file (that is, to have two versions of something),
+you can use the 
+.C cp
+command:
+.B1
+cp precious temp1
+.B2
+makes a duplicate copy of 
+``precious''
+in
+``temp1''.
+.PP
+Finally, when you get tired of creating and moving
+files,
+there is a command to remove files from the file system,
+called
+.C rm .
+.B1
+rm temp temp1
+.B2
+will remove all of the files named.
+You will get a warning message if one of the named files wasn't there.
+.SH
+Filename, What's in a
+.PP
+So far we have used filenames without ever saying what's
+a legal name,
+so it's time for a couple of rules.
+First, filenames are limited to 14 characters,
+which is enough to be descriptive.
+Second, although you can use almost any character
+in a filename,
+common sense says you should stick to ones that are visible,
+and that you should probably avoid characters that might be used
+with other meanings.
+We already saw, for example,
+that in the
+.C ls
+command,
+``ls -t'' meant to list in time order.
+So if you had a file whose name
+was ``-t'',
+you would have a tough time listing it by name.
+There are a number of other characters which
+have special meaning either to
+.UC UNIX
+as a whole or to numerous commands.
+To avoid pitfalls,
+you would probably do well to 
+use only letters, numbers and the period.
+(Don't use the period as the first character of a filename,
+for reasons too complicated to go into.)
+.sp
+.PP
+On to some more positive suggestions.
+Suppose you're typing a large document
+like a book.
+Logically this divides into many small pieces,
+like chapters and perhaps sections.
+Physically it must be divided too,
+for 
+.C ed
+will not handle big files.
+Thus you should type the document as a number of files.
+You might have a separate file for each chapter,
+called
+.B1
+.ne 3
+chap1
+chap2
+etc...
+.B2
+Or, if each chapter were broken into several files, you might have
+.B1
+.ne 7
+chap1.1
+chap1.2
+chap1.3
+ ...
+chap2.1
+chap2.2
+ ...
+.B2
+You can now tell at a glance where a particular file fits into the whole.
+.PP
+There are advantages to a systematic naming convention which are not obvious
+to the novice
+.UC UNIX 
+user.
+What if you wanted to print the whole book?
+You could say
+.B1
+pr chap1.1 chap1.2 chap1.3 ......
+.B2
+but you would get tired pretty fast, and would probably even make mistakes.
+Fortunately, there is a shortcut.
+You can say
+.B1
+pr chap*
+.B2
+The ``*'' means ``anything at all'',
+so this translates into ``print all files
+whose names begin with `chap' '',
+listed in alphabetical order.
+This shorthand notation
+is not a property of the
+.C pr
+command, by the way.
+It is system-wide, a service of the program
+that interprets commands
+(the ``shell''
+.SE sh (I)).
+Using that fact, you can see how to list the files of the book:
+.B1
+ls chap*
+.B2
+produces
+.B1
+.ne 4
+chap1.1
+chap1.2
+chap1.3
+ ...
+.B2
+The ``*'' is not limited to the last position in a filename _
+it can be anywhere.
+Thus
+.B1
+rm *junk*
+.B2
+removes all files that contain ``junk''
+as any part of their name.
+As a special case, ``*'' by itself matches every filename,
+so
+.B1
+pr *
+.B2
+prints all the files
+(alphabetical order),
+and
+.B1
+rm *
+.B2
+removes
+.ul
+all files.
+(You had better be sure that's what you wanted to say!)
+.PP
+The ``*'' is not the only pattern-matching feature available.
+Suppose you want to print only chapters 1 through 4 and 9 of the
+book.
+Then you can say
+.B1
+pr chap[12349]*
+.B2
+The ``[...]'' 
+means to match any of the characters inside the brackets.
+You can also do this 
+with
+.B1
+pr chap[1-49]*
+.B2
+``[a-z]'' matches any character in the range
+.ul
+a
+through
+.ul 
+z.
+There is also a ``?'' character, which matches any single character,
+so
+.B1
+pr ?
+.B2
+will print all files which have single-character names.
+.PP
+Of these niceties,
+``*'' is probably the most useful,
+and you should get used to it.
+The others are frills, but worth knowing.
+.PP
+If you should ever have to turn off the special meaning
+of ``*'', ``?'', etc.,
+enclose the entire argument in quotes (single or double),
+as in
+.B1
+ls "?"
+.B2
+.SH
+What's in a Filename, Continued
+.PP
+When you first made that file called ``junk'',
+how did 
+.UC UNIX
+know that there wasn't another ``junk'' somewhere else,
+especially since the person in the next office is also
+reading this tutorial?
+The reason is that generally each user of 
+.UC UNIX
+has his own ``directory'',
+which contains only the files that belong to him.
+When you create a new file,
+unless you take special action,
+the new file is made in your own directory,
+and is unrelated to any other file of the same name
+that might exist in someone else's directory.
+.PP
+The set of all files that
+.UC UNIX
+knows about are organized into a (usually big) tree,
+with your files located several branches up into the tree.
+It is possible for you to ``walk'' around this tree,
+and to find any file in the system, by starting at the root
+of the tree and walking along the right set of branches.
+.PP
+To begin, type 
+.B1
+ls /
+.B2
+``/'' is the name of the root of the tree (a convention used
+by
+.UC UNIX ).
+You will get a response something like this:
+.B1
+.ne 6
+bin
+dev
+etc
+lib
+tmp
+usr
+.B2
+This is a collection of the basic directories of files
+that
+.UC UNIX
+knows about.
+On most
+systems,
+``usr'' is a directory that contains all the
+normal users of the system, like you.
+Now try
+.B1
+ls  /usr
+.B2
+This should list a long series of names,
+among which is your own login name.
+Finally, try
+.B1
+ls  /usr/your-name
+.B2
+You should get what you get from a plain
+.B1
+ls
+.B2
+Now try
+.B1
+cat  /usr/your-name/junk
+.B2
+(if ``junk'' is still around).
+The name
+.B1
+/usr/your-name/junk
+.B2
+is called the ``pathname'' of the file that
+you normally think of as ``junk''.
+``Pathname'' has an obvious meaning:
+it represents the full name of the path you have to follow
+through the tree of directories to get to a particular file.
+It is a universal rule in
+.UC  UNIX
+that anywhere you can use an ordinary filename,
+you can use a pathname.
+.PP
+Here is a picture which may make this clearer:
+.B1 1
+.vs 9p
+.if t .tr /\(sl
+.ce 100
+.ne 12
+(root)
+/ | \\
+/  |  \\
+/   |   \\
+  bin    etc    usr    dev   tmp 
+/ | \\   / | \\   / | \\   / | \\   / | \\
+/  |  \\
+/   |   \\
+adam  eve   mary
+/        /   \\        \\
+             /     \\       junk
+junk  temp
+.ce 0
+.br
+.tr //
+.B2
+.PP
+Notice that Mary's ``junk'' is unrelated to Eve's.
+.PP
+This isn't too exciting if all the files of interest are in your own
+directory, but if you work with someone else
+or on several projects concurrently,
+it becomes handy indeed.
+For example, your friends can print your book by saying
+.B1
+pr  /usr/your-name/chap*
+.B2
+Similarly, you can find out what files your neighbor has
+by saying
+.B1
+ls  /usr/neighbor-name
+.B2
+or make your own copy of one of his files by
+.B1
+cp  /usr/your-neighbor/his-file  yourfile
+.B2
+.PP
+(If your neighbor doesn't want you poking around in his files,
+or vice versa,
+privacy can be arranged.
+Each file and directory can have read-write-execute permissions for the owner,
+a group, and everyone else,
+to control access.
+See
+.SE ls (I)
+and
+.SE chmod (I)
+for details.
+As a matter of observed fact,
+most users most of the time find openness of more
+benefit than privacy.)
+.PP
+As a final experiment with pathnames, try
+.B1
+ls  /bin  /usr/bin
+.B2
+Do some of the names look familiar?
+When you run a program, by typing its name after a ``%'',
+the system simply looks for a file of that name.
+It looks first in your directory
+(where it typically doesn't find it),
+then in ``/bin'' and finally in ``/usr/bin''.
+There is nothing magic about commands like
+.C cat
+or
+.C ls ,
+except that they have been collected into two places to be easy to find and administer.
+.sp
+.PP
+What if you work regularly with someone else on common information
+in his directory?
+You could just log in as your friend each time you want to,
+but you can also say
+``I want to work on his files instead of my own''.
+This is done by changing the directory that you are
+currently in:
+.B1
+chdir  /usr/your-friend
+.B2
+Now when you use a filename in something like
+.C cat
+or
+.C pr ,
+it refers to the file in ``your-friend's'' directory.
+Changing directories doesn't affect any permissions associated
+with a file _
+if you couldn't access a file from your own directory,
+changing to another directory won't alter that fact.
+.PP
+If you forget what directory you're in, type
+.B1
+pwd
+.B2
+(``print working directory'')
+to find out.
+.PP
+It is often convenient to arrange one's files
+so that all the files related to one thing are in a directory separate
+from other projects.
+For example, when you write your book, you might want to keep all the text
+in a directory called book.
+So make one with
+.B1
+mkdir book
+.B2
+then go to it with
+.B1
+chdir book
+.B2
+then start typing chapters.
+The book is now found in (presumably)
+.B1
+/usr/your-name/book
+.B2
+To delete a directory, see
+.SE rmdir (I).
+.PP
+You can go up one level in the tree of files 
+by saying
+.B1
+chdir ..
+.B2
+``..'' is the name of the parent of whatever directory you are currently in.
+For completeness, ``.'' is an alternate name
+for the directory you are in.
+.SH
+Using Files instead of the Terminal
+.PP
+Most of the commands we have seen so far produce output
+on the terminal;
+some, like the editor, also take their input from the terminal.
+It is universal in
+.UC UNIX
+that the terminal can be replaced by a file
+for either or both of input and output.
+As one example, you could say
+.B1
+ls
+.B2
+to get a list of files.
+But you can also say
+.B1
+ls >filelist
+.B2
+to get a list of your files in the file ``filelist''.
+(``filelist'' will be created if it doesn't already exist,
+or overwritten if it does.)
+The symbol ``>'' is used throughout
+.UC UNIX
+to mean ``put the output on the following file,
+rather than on the terminal''.
+Nothing is produced on the terminal.
+As another example, you could concatenate
+several files into one by capturing the output of
+.C cat
+in a file:
+.B1
+cat  f1  f2  f3 >temp
+.B2
+.PP
+Similarly, the symbol ``<'' means to take the input
+for a program from the following file,
+instead of from the terminal.
+Thus, you could make up a script of commonly used editing commands
+and put them into a file called ``script''.
+Then you can run the script on a file by saying
+.B1
+ed file <script
+.B2
+.SH
+Pipes
+.PP
+One of the novel contributions of
+.UC UNIX
+is the idea of a
+.ul
+pipe.
+A pipe is simply a way to connect the output of one program
+to the input of another program,
+so the two run as a sequence of processes _
+a pipe-line.
+.PP
+For example,
+.B1
+pr  f  g  h
+.B2
+will print the files
+``f'', ``g'' and ``h'',
+beginning each on a new page.
+Suppose you want
+them run together instead.
+You could say
+.B1
+.ne 3
+cat  f  g  h  >temp
+pr  temp
+rm  temp
+.B2
+but this is more work than necessary.
+Clearly what we want is to take the output of
+.C cat
+and
+connect it to the input of
+.C pr .
+So let us use a pipe:
+.B1
+cat  f  g  h  |  pr
+.B2
+The vertical bar means to
+take the output from
+.C cat ,
+which would normally have gone to the terminal,
+and put it into
+.C pr ,
+which formats it neatly.
+.PP
+Any program
+that reads from the terminal
+can read from a pipe instead;
+any program that writes on the terminal can drive
+a pipe.
+You can have as many elements in a pipeline as you wish.
+.PP
+Many
+.UC UNIX
+programs are written so that they will take their input from one or more files
+if file arguments are given;
+if no arguments are given they will read from the terminal,
+and thus can be used in pipelines.
+.SH
+The Shell
+.PP
+We have already mentioned once or twice the mysterious
+``shell,''
+which is in fact
+.SE sh (I).
+The shell is the program that interprets what you type as
+commands and arguments.
+It also looks after translating ``*'', etc.,
+into lists of filenames.
+.PP
+The shell has other capabilities too.
+For example, you can start two programs with one command line
+by separating the commands with a semicolon;
+the shell recognizes the semicolon and
+breaks the line into two commands.
+Thus
+.B1
+date; who
+.B2
+does both commands before returning with a ``%''.
+.PP
+You can also have more than one program running
+.ul
+simultaneously
+if you wish.
+For example, if you are doing something time-consuming,
+like the editor script
+of an earlier section,
+and you don't want to wait around for the results before starting something else,
+you can say
+.B1
+ed  file  <script &
+.B2
+The ampersand at the end of a command line
+says ``start this command running,
+then take further commands from the terminal immediately.''
+Thus the script will begin,
+but you can do something else at the same time.
+Of course, to keep the output from interfering
+with what you're doing on the terminal,
+it would be better to have said
+.B1
+ed  file  <script >lines &
+.B2
+which would save the output lines in a file
+called
+``lines''.
+.PP
+When you initiate a command with ``&'',
+.UC UNIX
+replies with a number
+called the process number,
+which identifies the command in case you later want
+to stop it.
+If you do, you can say
+.B1
+kill process-number
+.B2
+You might also read
+.SE ps (I).
+.PP
+You can say
+.B1 1
+(command-1; command-2; command-3) &
+.B2
+to start these commands in the background,
+or you can start a background pipeline with
+.B1
+command-1 | command-2 &
+.B2
+.PP
+Just as you can tell the editor
+or some similar program to take its input
+from a file instead of from the terminal,
+you can tell the shell to read a file
+to get commands.
+(Why not? The shell after all is just a program,
+albeit a clever one.)
+For instance, suppose you want to set tabs on
+your terminal, and find out the date
+and who's on the system every time you log in.
+Then you can put the three necessary commands
+(
+.C tabs ;
+.C date ;
+.C who )
+into a file, let's call it  ``xxx'',
+and then run it with
+either
+.B1
+sh xxx
+.B2
+or
+.B1
+sh <xxx
+.B2
+This says to run the shell with the file ``xxx'' as input.
+The effect is as if you had typed 
+the contents of ``xxx''
+on the terminal.
+(If this is to be a regular thing,
+you can eliminate the 
+need to type
+``sh'';
+see
+.SE chmod (I)
+and
+.SE sh (I).)
+.PP
+The shell has quite a few other capabilities as well,
+some of which we'll get to in the section on programming.
