@@ -1,4 +1,4 @@
-.\"	@(#)contrib	5.29 (Berkeley) %G%
+.\"	@(#)contrib	5.30 (Berkeley) %G%
 .\"
 .\" To build a document, pipe the bottom list through column -c140, making
 .\" it two columns wide (remove the .TE at the end of the file first).
@@ -48,7 +48,7 @@ Job control	Jim Kulp
 Kerberos	Project Athena and MIT
 Math library (libm)	K.C. Ng, Z-S. Alex Liu, S. McDonald, P. Tang and W. Kahan
 NFS	Rick Macklem
-NFS automounter	Jan Pendry
+NFS automounter	Jan-Simon Pendry
 Network device drivers	Micom-Interlan and Excelan
 Omron Luna support	Akito Fujita
 Quotas	Robert Elz
@@ -76,12 +76,14 @@ item, program, library routine or program maintenance for the BSD system.
 .ps 9
 .vs 11
 .nf
+.TS
+l l.
 386 device drivers	Carnegie-Mellon University Mach project
 386 device drivers	Don Ahn, Sean Fagan and Tim Tucker
 HCX device drivers	Harris Corp.
-Kernel enhancements	Robert Elz, Peter Ivanov, Ian Johnstone,
-	Piers Lauder, John Lions, Tim Long,
-	Chris Maltby, Greg Rose and John Wainwright 
+Kernel enhancements	Robert Elz, Peter Ivanov, Ian Johnstone, Piers Lauder,
+	John Lions, Tim Long, Chris Maltby, Greg Rose and John Wainwright 
+.TE
 .fi
 .TS
 l l l l.
