@@ -1,3 +1,7 @@
+.\" $Source: /mit/kerberos/src/man/RCS/rlogin.1,v $
+.\" $Author: jtkohl $
+.\" $Header: rlogin.1,v 4.1 89/01/23 11:39:19 jtkohl Exp $
+.\"
 .\" Copyright (c) 1983 The Regents of the University of California.
 .\" All rights reserved.
 .\"
@@ -13,9 +17,9 @@
 .\" IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
 .\" WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 .\"
-.\"	@(#)rlogin.1	6.10 (Berkeley) %G%
+.\"	@(#)rlogin.1	6.9 (Berkeley) 9/19/88
 .\"
-.TH RLOGIN 1 ""
+.TH RLOGIN 1 "Kerberos Version 4.0" "UCB/MIT Project Athena"
 .UC 5
 .SH NAME
 rlogin \- remote login
@@ -26,6 +30,14 @@ rhost [
 ] [
 .B \-8
 ] [
+.B \-7
+] [
+.B \-d
+] [
+.B \-k
+realm ] [
+.B \-x
+] [
 .B \-L
 ] [
 .B \-l
@@ -35,6 +47,14 @@ rhost [
 \fB\-e\fR\fIc\fR
 ] [
 .B \-8
+] [
+.B \-7
+] [
+.B \-d
+] [
+.B \-k
+realm ] [
+.B \-x
 ] [
 .B \-L
 ] [
@@ -47,45 +67,30 @@ connects your terminal on the current local host system
 to the remote host system
 .I rhost.
 .PP
-Each host has a file
-.I /etc/hosts.equiv
-which contains a list of \fIrhost\fR's with which it shares account names.
-(The host names must be the standard names as described in
-.IR rsh (1C).)
-When you
-.I rlogin
-as the same user on an equivalent host, you don't need
-to give a password.
-Each user may also have a private equivalence list in a file \&.rhosts
-in his login directory.  Each line in this file should contain an \fIrhost\fP
-and a \fIusername\fP separated by a space, giving additional cases
-where logins without passwords are to be permitted.
-If the originating user is not equivalent to the remote user, then
+The version built to use the Kerberos authentication from
+MIT Project Athena first attempts
+to use the Kerberos authorization mechanism, described below.
+If this fails, the standard Berkeley \fIrhosts\fP mechanism is used
+for authorization to use a remote account.
+.PP
+Each user may have a private authorization list in a file \&.klogin
+in his login directory.  Each line in this file should contain a
+Kerberos principal name of the form 
+.IR principal.instance@realm .
+If the originating user is authenticated to one of the principals named
+in \&.klogin, access is granted to the account.  The principal
+\fIaccountname\fP.@\fIlocalrealm\fP is granted access if there is no
+\&.klogin file. 
+Otherwise
 a login and password will be prompted for on the remote machine as in
 .IR login (1).
-The
-.B -l
-option allows you to specify an alternative user name to
-be used when logging into the remote site.
-To avoid some security problems, the \&.rhosts file must be owned by
-either the remote user or root.
+To avoid some security problems, the \&.klogin file must be owned by
+the remote user.
 .PP
-The remote terminal type is the same as your local
-terminal type (as given in your environment TERM variable).
-The terminal or window size is also copied to the remote system
-if the server supports the option,
-and changes in size are reflected as well.
-All echoing takes place at the remote site, so that (except for
-delays) the rlogin is transparent.  Flow control via ^S and ^Q and
-flushing of input and output on interrupts are handled properly.
-The optional argument
-.B \-8
-allows an eight-bit input data path at all times;
-otherwise parity bits are stripped except when the remote side's
-stop and start characters are other than ^S/^Q.
-The argument
-.B \-L
-allows the rlogin session to be run in litout mode.
+If Kerberos authentication fails,
+an error message is printed and the standard UCB rlogin is
+used instead.
+.PP
 A line of the form ``~.'' disconnects from the remote host, where
 ``~'' is the escape character.
 Similarly, the line ``~^Z'' (where ^Z, control-Z, is the suspend character)
@@ -93,14 +98,51 @@ will suspend the rlogin session.
 Substitution of the delayed-suspend character (normally ^Y)
 for the suspend character suspends the send portion of the rlogin,
 but allows output from the remote system.
-A different escape character may
-be specified by the
+.PP
+All echoing takes place at the remote site, so that (except for
+delays) the rlogin is transparent.  Flow control via ^S and ^Q and
+flushing of input and output on interrupts are handled properly.
+.PP
+The
+.B \-8
+option allows an eight-bit input data path at all times;
+otherwise parity bits are stripped except when the remote side's
+stop and start characters are other than ^S/^Q. Eight-bit mode is the default.
+.PP
+The
+.B \-L
+option allows the rlogin session to be run in litout mode.
+.PP
+The
 .B \-e
-option.
-There is no space separating this option flag and the argument
+option allows specification of a different escape character.
+There is no space separating this option flag and the new escape
 character.
+.PP
+The
+.B \-7
+option forces seven-bit transmissions.
+.PP
+The
+.B \-d
+option turns on socket debugging (see \fIsetsockopt(2)\fR) on the TCP
+sockets used for communication with the remote host.
+.PP
+The
+.B \-k
+option requests rlogin to obtain tickets for the remote host in realm
+.I realm
+instead of the remote host's realm as determined by 
+.IR krb_realmofhost (3).
+.PP
+The
+.B \-x
+option turns on DES encryption for all data passed via the
+rlogin session.
+This may reduces response time and increases CPU utilization while
+providing increased security.
 .SH SEE ALSO
-rsh(1C)
+rsh(1), kerberos(3), krb_sendauth(3), krb_realmofhost(3)
 .SH FILES
 /usr/hosts/*		for \fIrhost\fP version of the command
 .SH BUGS
