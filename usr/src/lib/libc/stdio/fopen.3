@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fopen.3	6.2 (Berkeley) %G%
+.\"	@(#)fopen.3	6.3 (Berkeley) %G%
 .\"
 .TH FOPEN 3S  ""
 .UC 4
@@ -56,7 +56,7 @@ append: open for writing at end of file, or create for writing
 .PP
 In addition, each
 .I type
-may be followed by a '+' to have the file opened for reading and writing.
+may be followed by a "+" to have the file opened for reading and writing.
 "r+" positions the stream at the beginning of the file, "w+" creates
 or truncates it, and "a+" positions it at the end.  Both reads and writes
 may be used on read/write streams, with the limitation that an
@@ -107,7 +107,7 @@ The read/write
 do not exist on all systems.  Those systems without
 read/write modes will probably treat the 
 .I type
-as if the '+' was not present.  These are unreliable in any event.
+as if the "+" was not present.  These are unreliable in any event.
 .PP
 In order to support the same number of open files as does the system,
 .I fopen

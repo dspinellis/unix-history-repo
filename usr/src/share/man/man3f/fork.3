@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)fork.3	6.1 (Berkeley) %G%
+.\"	@(#)fork.3	6.2 (Berkeley) %G%
 .\"
 .TH FORK 3F ""
 .UC 5
@@ -14,10 +14,10 @@ fork \- create a copy of this process
 .I Fork
 creates a copy of the calling process.
 The only distinction between the 2 processes is that the value
-returned to one of them (referred to as the 'parent' process)
-will be the process id if the copy.
-The copy is usually referred to as the 'child' process.
-The value returned to the 'child' process will be zero.
+returned to one of them (referred to as the `parent' process)
+will be the process id of the copy.
+The copy is usually referred to as the `child' process.
+The value returned to the `child' process will be zero.
 .PP
 All logical units open for writing are flushed before the fork to avoid
 duplication of the contents of I/O buffers in the external file(s).
