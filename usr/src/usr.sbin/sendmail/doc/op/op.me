@@ -4,7 +4,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)op.me	6.46 (Berkeley) %G%
+.\"	@(#)op.me	6.47 (Berkeley) %G%
 .\"
 .\" eqn op.me | pic | troff -me
 .eh 'SMM:07-%''Sendmail Installation and Operation Guide'
@@ -40,9 +40,9 @@ University of California, Berkeley
 Mammoth Project
 eric@CS.Berkeley.EDU
 .sp
-Version 6.46
+Version 6.47
 .sp
-For Sendmail Version 6.57
+For Sendmail Version 6.60
 .)l
 .sp 2
 .pp
@@ -3993,11 +3993,6 @@ on successful matches.
 For example, the default
 .i host
 map appends a dot on successful matches.
-.ip "\-d\fIdomain\fP"
-Use the indicated
-.i domain
-instead of the default domain.
-Used only for NIS maps.
 .ip "\-f"
 Fold upper to lower case before looking up the key.
 .ip "\-m"
@@ -4020,7 +4015,8 @@ and
 to the given filename;
 the two
 .i db -based
-maps do not.
+maps append
+.q \&.db .
 .pp
 The program
 .i makemap (8)
@@ -4861,6 +4857,9 @@ exists and is readable.
 This is intended for compatibility with Sun Microsystems'
 .i mkalias
 program used on YP masters.
+.ip _AIX3
+Compile for IBM AIX 3.x.
+This has only been tested on 3.2.3.
 .ip SYSTEM5
 Set all of the compilation parameters appropriate for System V.
 .ip LOCKF
@@ -5812,7 +5811,7 @@ Nakamura Motonori, Kyoto University
 John Gardiner Myers, Carnegie Mellon University
 Neil Rickert, Northern Illinois University
 Eric Wassenaar, National Institute for Nuclear and High Energy Physics, Amsterdam
-Christophe Wolfhugel, INSA (???)
+Christophe Wolfhugel, Herve Schauer Consultants (Paris)
 .)l
 I apologize for anyone I have omitted, misspelled, misattributed, or
 otherwise missed.
@@ -6220,7 +6219,7 @@ A transcript of the current session.
 .\"Eric Allman
 .\"Britton-Lee, Inc.
 .\".sp
-.\"Version 6.46
+.\"Version 6.47
 .\".ce 0
 .pn 2
 .bp
