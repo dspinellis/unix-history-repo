@@ -16,7 +16,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)commands.c	1.24 (Berkeley) %G%";
+static char sccsid[] = "@(#)commands.c	1.25 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -53,6 +53,10 @@ static char sccsid[] = "@(#)commands.c	1.24 (Berkeley) %G%";
 # endif /* CRAY */
 #include <netinet/ip.h>
 #endif /* SRCRT */
+
+#if defined(CRAY) && defined(IP_TOS) && !defined(HAS_IP_TOS)
+# define HAS_IP_TOS
+#endif
 
 
 char	*hostname;
@@ -1563,7 +1567,7 @@ char	*argv[];
 }
 
 
-#if	defined(IP_TOS) && defined(NEED_GETTOS)
+#if	defined(NEED_GETTOS)
 struct tosent {
 	char	*t_name;	/* name */
 	char	**t_aliases;	/* alias list */
@@ -1601,9 +1605,9 @@ tn(argc, argv)
     char *srp = 0, *strrchr();
     unsigned long sourceroute(), srlen;
 #endif
-#ifdef IP_TOS
+#if defined(HAS_IP_TOS) || defined(NEED_GETTOS)
     struct tosent *tp;
-#endif /* IP_TOS */
+#endif /* defined(HAS_IP_TOS) || defined(NEED_GETTOS) */
 
 
     if (connected) {
@@ -1711,12 +1715,12 @@ tn(argc, argv)
 	if (srp && setsockopt(net, IPPROTO_IP, IP_OPTIONS, (char *)srp, srlen) < 0)
 		perror("setsockopt (IP_OPTIONS)");
 #endif
-#ifdef IP_TOS
+#if	defined(HAS_IP_TOS) || defined(NEED_GETTOS)
 	if ((tp = gettosbyname("telnet", "tcp")) &&
 	    (setsockopt(net, IPPROTO_IP, IP_TOS, &tp->t_tos, sizeof(int)) < 0))
 		perror("telnet: setsockopt TOS (ignored)");
+#endif	/* defined(HAS_IP_TOS) || defined(NEED_GETTOS) */
 
-#endif /* IP_TOS */
 	if (debug && SetSockOpt(net, SOL_SOCKET, SO_DEBUG, 1) < 0) {
 		perror("setsockopt (SO_DEBUG)");
 	}
