@@ -5,7 +5,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)run.test	5.12 (Berkeley) %G%
+#	@(#)run.test	5.13 (Berkeley) %G%
 #
 
 # db regression tests
@@ -29,6 +29,7 @@ main()
 	test9
 	test10
 	test11
+	test12
 	test20
 	rm -f $TMP1 $TMP2 $TMP3
 	exit 0
@@ -67,7 +68,7 @@ test1()
 	fi
 }
 
-# Take the first hundred entries in the dictionary, and give them
+# Take the first 200 entries in the dictionary, and give them
 # each a medium size data entry.
 test2()
 {
@@ -435,6 +436,29 @@ test11()
 		if (cmp -s $TMP1 $TMP3) ; then
 		else
 			printf "test11: type $type: failed\n"
+			exit 1
+		fi
+	done
+}
+
+# Take the first 20000 entries in the dictionary, reverse them, and give
+# them each a small size data entry.  Use a small page size to make sure
+# the btree split code gets hammered.
+test12()
+{
+	printf "Test 12: btree: lots of keys, small page size\n"
+	mdata=abcdefghijklmnopqrstuvwxy
+	echo $mdata |
+	awk '{ for (i = 1; i < 20001; ++i) print $0 }' > $TMP1
+	for type in btree; do
+		rm -f $TMP2 $TMP3
+		for i in `sed 20000q $DICT | rev`; do
+			printf "p\nk%s\nd%s\ng\nk%s\n" $i $mdata $i
+		done > $TMP2
+		$PROG -i psize=512 -o $TMP3 $type $TMP2
+		if (cmp -s $TMP1 $TMP3) ; then
+		else
+			printf "test12: type %s: failed\n" $type
 			exit 1
 		fi
 	done
