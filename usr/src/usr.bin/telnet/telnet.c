@@ -1,5 +1,4 @@
-/*	telnet.c	4.3	82/03/01	*/
-
+static char sccsid[] = "@(#)telnet.c	4.4 (Berkeley) %G%";
 /*
  * User telnet program.
  */
