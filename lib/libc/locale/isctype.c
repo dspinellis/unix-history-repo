@@ -153,7 +153,7 @@ toascii(c)
 	return (c & 0177);
 }
 
-#undef tolower
+#undef toupper
 int
 toupper(c)
 	int c;
@@ -161,7 +161,7 @@ toupper(c)
         return((c & _CRMASK) ? ___toupper(c) : _CurrentRuneLocale->mapupper[c]);
 }
 
-#undef toupper
+#undef tolower
 int
 tolower(c)
 	int c;
