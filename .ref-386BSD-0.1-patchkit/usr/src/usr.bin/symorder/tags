@@ -1,6 +1,0 @@
-Msymorder	symorder.c	/^main(argc, argv)$/
-badfmt	symorder.c	/^badfmt(why)$/
-error	symorder.c	/^error(n)$/
-inlist	symorder.c	/^inlist(p)$/
-reorder	symorder.c	/^reorder(st1, st2, entries)$/
-usage	symorder.c	/^usage()$/
