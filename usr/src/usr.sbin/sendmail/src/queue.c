@@ -5,10 +5,10 @@
 # include <errno.h>
 
 # ifndef QUEUE
-SCCSID(@(#)queue.c	3.64		%G%	(no queueing));
+SCCSID(@(#)queue.c	3.65		%G%	(no queueing));
 # else QUEUE
 
-SCCSID(@(#)queue.c	3.64		%G%);
+SCCSID(@(#)queue.c	3.65		%G%);
 
 /*
 **  Work queue.
@@ -75,6 +75,10 @@ queueup(df)
 
 	/* output name of data file */
 	fprintf(f, "D%s\n", df);
+
+	/* message from envelope, if it exists */
+	if (e->e_message != NULL)
+		fprintf(tfp, "M%s\n", e->e_message);
 
 	/* output name of sender */
 	fprintf(f, "S%s\n", CurEnv->e_from.q_paddr);
@@ -476,6 +480,10 @@ readqf(e, full)
 				(void) chompheader(&buf[1], FALSE);
 			break;
 
+		  case 'M':		/* message */
+			e->e_message = newstr(&buf[1]);
+			break;
+
 		  case 'S':		/* sender */
 			if (Verbose)
 				message(Arpa_Info, "Sender: %s", &buf[1]);
@@ -500,11 +508,6 @@ readqf(e, full)
 
 			/* make sure that big things get sent eventually */
 			e->e_msgpriority -= WKTIMEFACT;
-			break;
-
-		  case 'M':		/* define macro */
-			if (full)
-				define(buf[1], newstr(&buf[2]), e);
 			break;
 
 		  default:
@@ -559,9 +562,10 @@ printqueue()
 	for (w = WorkQ; w != NULL; w = w->w_next)
 	{
 		struct stat st;
-		char lf[20];
 		auto time_t submittime = 0;
 		long dfsize = -1;
+		char lf[20];
+		char message[MAXLINE];
 
 		printf("%7s", w->w_name + 2);
 		strcpy(lf, w->w_name);
@@ -578,12 +582,23 @@ printqueue()
 			errno = 0;
 			continue;
 		}
+		message[0] = '\0';
 		while (fgets(buf, sizeof buf, f) != NULL)
 		{
 			fixcrlf(buf, TRUE);
 			switch (buf[0])
 			{
+			  case 'M':	/* error message */
+				strcpy(message, &buf[1]);
+				break;
+
 			  case 'S':	/* sender name */
+				if (message[0] != '\0')
+				{
+					(void) strcat(buf, " (");
+					(void) strcat(buf, message);
+					(void) strcat(buf, ")");
+				}
 				printf("%8d %.16s %.40s", dfsize,
 					ctime(&submittime), &buf[1]);
 				break;
