@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	8.11 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	8.12 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -50,6 +50,7 @@ struct vfsops lfs_vfsops = {
 	lfs_fhtovp,
 	lfs_vptofh,
 	lfs_init,
+	lfs_sysctl,
 };
 
 int
@@ -255,7 +256,7 @@ lfs_mountfs(devvp, mp, p)
 	dev = devvp->v_rdev;
 	mp->mnt_data = (qaddr_t)ump;
 	mp->mnt_stat.f_fsid.val[0] = (long)dev;
-	mp->mnt_stat.f_fsid.val[1] = MOUNT_LFS;
+	mp->mnt_stat.f_fsid.val[1] = lfs_mount_type;
 	mp->mnt_maxsymlinklen = fs->lfs_maxsymlinklen;
 	mp->mnt_flag |= MNT_LOCAL;
 	ump->um_mountp = mp;
@@ -357,7 +358,6 @@ lfs_statfs(mp, sbp, p)
 	fs = ump->um_lfs;
 	if (fs->lfs_magic != LFS_MAGIC)
 		panic("lfs_statfs: magic");
-	sbp->f_type = MOUNT_LFS;
 	sbp->f_bsize = fs->lfs_bsize;
 	sbp->f_iosize = fs->lfs_bsize;
 	sbp->f_blocks = dbtofsb(fs,fs->lfs_dsize);
@@ -368,6 +368,7 @@ lfs_statfs(mp, sbp, p)
 	sbp->f_files = fs->lfs_nfiles;
 	sbp->f_ffree = sbp->f_bfree * INOPB(fs);
 	if (sbp != &mp->mnt_stat) {
+		sbp->f_type = mp->mnt_vfc->vfc_typenum;
 		bcopy((caddr_t)mp->mnt_stat.f_mntonname,
 			(caddr_t)&sbp->f_mntonname[0], MNAMELEN);
 		bcopy((caddr_t)mp->mnt_stat.f_mntfromname,
@@ -544,4 +545,18 @@ lfs_vptofh(vp, fhp)
 	ufhp->ufid_ino = ip->i_number;
 	ufhp->ufid_gen = ip->i_gen;
 	return (0);
+}
+
+/*
+ * Initialize the filesystem, most work done by ufs_init.
+ */
+int lfs_mount_type;
+
+int
+lfs_init(vfsp)
+	struct vfsconf *vfsp;
+{
+
+	lfs_mount_type = vfsp->vfc_typenum;
+	return (ufs_init(vfsp));
 }
