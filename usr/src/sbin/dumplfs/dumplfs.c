@@ -12,7 +12,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)dumplfs.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)dumplfs.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -167,15 +167,15 @@ dump_ifile(fd, lfsp, do_ientries)
 	psize = lfsp->lfs_bsize;
 	addr = lfsp->lfs_idaddr;
 
-	if (!(dip = dpage = malloc(psize)))
+	if (!(dpage = malloc(psize)))
 		err("%s", strerror(errno));
-	get(fd, addr << daddr_shift, dip, psize);
+	get(fd, addr << daddr_shift, dpage, psize);
 
-	for (i = 0; i < lfsp->lfs_inopb; i++, dip++)
+	for (dip = dpage + INOPB(lfsp) - 1; dip >= dpage; --dip)
 		if (dip->di_inum == LFS_IFILE_INUM)
 			break;
 
-	if (i >= lfsp->lfs_inopb)
+	if (dip < dpage)
 		err("unable to locate ifile inode");
 
 	(void)printf("\nIFILE inode\n");
@@ -528,8 +528,11 @@ dump_super(lfsp)
 		"free     ", lfsp->lfs_free,
 		"idaddr   ", lfsp->lfs_idaddr,
 		"ifile    ", lfsp->lfs_ifile);
-	(void)printf("%s0x%X\t%s%d\t%s0x%X\t%s0x%X\n%s0x%X\t%s0x%X\t",
+	(void)printf("%s%d\t%s%d\t%s%d\n",
 		"bfree    ", lfsp->lfs_bfree,
+		"avail    ", lfsp->lfs_avail,
+		"uinodes  ", lfsp->lfs_uinodes);
+	(void)printf("%s%d\t%s0x%X\t%s0x%X\n%s0x%X\t%s0x%X\t",
 		"nfiles   ", lfsp->lfs_nfiles,
 		"lastseg  ", lfsp->lfs_lastseg,
 		"nextseg  ", lfsp->lfs_nextseg,
@@ -537,13 +540,14 @@ dump_super(lfsp)
 		"offset   ", lfsp->lfs_offset);
 	(void)printf("tstamp   %s", ctime((time_t *)&lfsp->lfs_tstamp));
 	(void)printf("\nIn-Memory Information\n");
-	(void)printf("%s%d\t%s0x%X\t%s%d\t%s%d\t%s%d\n",
+	(void)printf("%s%d\t%s0x%X\t%s%d%s%d\t%s%d\n",
 		"seglock  ", lfsp->lfs_seglock,
 		"iocount  ", lfsp->lfs_iocount,
 		"writer   ", lfsp->lfs_writer,
 		"dirops   ", lfsp->lfs_dirops,
-		"doifile  ", lfsp->lfs_doifile );
-	(void)printf("%s%d\t%s0x%X\t%s%d\n",
+		"doifile  ", lfsp->lfs_doifile);
+	(void)printf("%s%d\t%s%d\t%s0x%X\t%s%d\n",
+		"nactive  ", lfsp->lfs_nactive,
 		"fmod     ", lfsp->lfs_fmod,
 		"clean    ", lfsp->lfs_clean,
 		"ronly    ", lfsp->lfs_ronly);
