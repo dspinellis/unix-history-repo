@@ -1,4 +1,4 @@
-/*	lpa.c	4.1	82/05/27	*/
+/*	lpa.c	4.2	82/07/15	*/
 #include "lpa.h"
 #if NLPA > 0
 
@@ -190,7 +190,7 @@ caddr_t reg;
 	br = 0x15;
 	cvec = 0330;
 TRACER("PROBE\n");
-	return (1);
+	return (sizeof (struct lpadevice));
 }
 
 /*

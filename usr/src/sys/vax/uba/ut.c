@@ -1,4 +1,4 @@
-/*	ut.c	4.13	82/07/13	*/
+/*	ut.c	4.14	82/07/15	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -90,6 +90,7 @@ utprobe(reg)
 	 */
 	((struct utdevice *) reg)->utcs1 = UT_IE|UT_NOP|UT_RDY;
 	DELAY(10000);
+	return (sizeof (struct utdevice));
 }
 
 /*ARGSUSED*/

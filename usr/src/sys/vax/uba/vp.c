@@ -1,4 +1,4 @@
-/*	vp.c	4.14	82/05/19	*/
+/*	vp.c	4.15	82/07/15	*/
 
 #include "vp.h"
 #if NVP > 0
@@ -100,6 +100,7 @@ vpprobe(reg)
 		cvec = 0174;
 	}
 #endif
+	return (sizeof (struct vpdevice));
 }
 
 /*ARGSUSED*/

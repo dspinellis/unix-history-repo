@@ -1,4 +1,4 @@
-/*	tm.c	4.49	82/07/13	*/
+/*	tm.c	4.50	82/07/15	*/
 
 #include "te.h"
 #include "ts.h"
@@ -143,7 +143,7 @@ tmprobe(reg)
 	 */
 	if (badaddr((caddr_t)&((struct tmdevice *)reg)->tmrd, 2))
 		return (0);
-	return (1);
+	return (sizeof (struct tmdevice));
 }
 
 /*

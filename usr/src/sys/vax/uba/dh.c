@@ -1,4 +1,4 @@
-/*	dh.c	4.45	82/07/13	*/
+/*	dh.c	4.46	82/07/15	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -177,7 +177,7 @@ dhprobe(reg)
 	if (cvec && cvec != 0x200)
 		cvec -= 4;		/* transmit -> receive */
 #endif
-	return (1);
+	return (sizeof (struct dhdevice));
 }
 
 /*

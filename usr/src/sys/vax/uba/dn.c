@@ -1,4 +1,4 @@
-/*	dn.c	4.4	82/04/25	*/
+/*	dn.c	4.5	82/07/15	*/
 
 #include "dn.h"
 #if NDN > 0
@@ -63,6 +63,7 @@ dnprobe(reg)
 	dnaddr->dn_reg[0] = MENABLE|IENABLE|DONE;
 	DELAY(5);
 	dnaddr->dn_reg[0] = 0;
+	return (sizeof (struct dndevice));
 }
 
 dnattach(ui)

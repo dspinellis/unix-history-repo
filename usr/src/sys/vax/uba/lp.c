@@ -1,4 +1,4 @@
-/*	lp.c	4.25	82/06/14	*/
+/*	lp.c	4.26	82/07/15	*/
 
 #include "lp.h"
 #if NLP > 0
@@ -90,13 +90,12 @@ lpprobe(reg)
 #ifdef INGVAX
 	br = 0x14;
 	cvec = 0200;
-	return (1);
 #else
 	lpaddr->lpsr = IENABLE;
 	DELAY(5);
 	lpaddr->lpsr = 0;
-	return (1);
 #endif
+	return (sizeof (struct lpdevice));
 }
 
 /*ARGSUSED*/

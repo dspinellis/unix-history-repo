@@ -1,4 +1,4 @@
-/*	dmf.c	4.3	82/05/27	*/
+/*	dmf.c	4.4	82/07/15	*/
 
 #include "dmf.h"
 #if NDMF > 0
@@ -188,7 +188,7 @@ dmfprobe(reg, ctlr)
 	cvec = (uba_hd[numuba].uh_lastiv -= 4*8);
 	dmfaddr->dmfccsr0 = cvec >> 2;
 	/* NEED TO SAVE IT SOMEWHERE FOR OTHER DEVICES */
-	return (1);
+	return (sizeof (struct dmfdevice));
 }
 
 /*

@@ -1,4 +1,4 @@
-/*	idc.c	4.1	82/05/26	*/
+/*	idc.c	4.2	82/07/15	*/
 
 #include "rb.h"
 #if NIDC > 0
@@ -130,7 +130,7 @@ idcprobe(reg)
 	while ((idcaddr->idccsr & IDC_CRDY) == 0)
 		;
 	idcaddr->idccsr = IDC_ATTN|IDC_CRDY;
-	return (1);
+	return (sizeof (struct idcdevice));
 }
 
 idcslave(ui, reg)

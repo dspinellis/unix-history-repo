@@ -1,4 +1,4 @@
-/*	ct.c	4.7	81/11/18	*/
+/*	ct.c	4.8	82/07/15	*/
 
 #include "ct.h"
 #if NCT > 0
@@ -56,6 +56,7 @@ ctprobe(reg)
 	ctaddr->ctcsr = IENABLE;
 	DELAY(10000);
 	ctaddr->ctcsr = 0;
+	return (sizeof (struct ctdevice));
 }
 
 /*ARGSUSED*/
