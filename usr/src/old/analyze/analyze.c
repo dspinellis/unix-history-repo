@@ -1,4 +1,4 @@
-static char *sccsid = "@(#)analyze.c	4.5 (Berkeley) %G%";
+static char *sccsid = "@(#)analyze.c	4.6 (Berkeley) %G%";
 #include <stdio.h>
 #include <sys/param.h>
 #include <sys/dir.h>
@@ -27,7 +27,11 @@ int	uflg;
 /* use vprintf with care; it plays havoc with ``else's'' */
 #define	vprintf	if (vflg) printf
 
+#ifdef vax
 #define	clear(x)	((int)x & 0x7fffffff)
+#else
+#define clear(x)	((int)x)
+#endif
 
 struct	proc *proc, *aproc;
 int	nproc;
@@ -76,7 +80,7 @@ int	ndblks;
 #define	DPAGET	5
 
 union	{
-	char buf[UPAGES][512];
+	char buf[UPAGES][NBPG];
 	struct user U;
 } u_area;
 #define	u	u_area.U
@@ -125,6 +129,9 @@ main(argc, argv)
 	register int i;
 	int w, a;
 
+#ifdef DEBUG
+	setbuf(stdout, NULL);
+#endif
 	argc--, argv++;
 	while (argc > 0 && argv[0][0] == '-') {
 		register char *cp = *argv++;
@@ -186,7 +193,7 @@ usage:
 		    argc > 1 ? argv[1] : "/vmunix");
 		exit(1);
 	}
-	for (np = nl; np->n_name[0]; np++)
+	for (np = nl; np->n_name; np++)
 		vprintf("%8.8s %x\n", np->n_name ,np->n_value );
 	usrpt = (struct pte *)clear(nl[X_USRPT].n_value);
 	Usrptma = (struct pte *)clear(nl[X_PTMA].n_value);
@@ -284,14 +291,16 @@ usage:
 			/* i = ctopt(btoc(u.u_exdata.ux_dsize)); */
 			i = clrnd(ctopt(p->p_tsize + p->p_dsize + p->p_ssize));
 			printf("swapped, swaddr %x\n", p->p_swaddr);
-			duse(p->p_swaddr, clrnd(ctod(UPAGES)), DUDOT, p - proc);
+			duse(p->p_swaddr, ctod(clrnd(UPAGES)), DUDOT, p - proc);
 			duse(p->p_swaddr + ctod(UPAGES),
-			    clrnd(i - p->p_tsize / NPTEPG), DPAGET, p - proc); 
+			    ctod(clrnd(i - p->p_tsize / NPTEPG)), 
+				DPAGET, p - proc); 
 			    /* i, DPAGET, p - proc); */
 		}
 		p->p_p0br = (struct pte *)p0br;
 		p->p_addr = uaddr(p);
-		p->p_textp = &text[p->p_textp - atext];
+		if (p->p_textp)
+			p->p_textp = &text[p->p_textp - atext];
 		if (p->p_pid == 2)
 			continue;
 		if (getu(p))
@@ -338,13 +347,16 @@ usage:
 	}
 	for (xp = &text[0]; xp < text+ntext; xp++)
 		if (xp->x_iptr) {
-			for (i = 0; i < xp->x_size; i += DMTEXT)
+			int size = ctod(xp->x_size);
+
+			for (i = 0; i < size; i += DMTEXT)
 				duse(xp->x_daddr[i],
-				    (xp->x_size - i) > DMTEXT
-					? DMTEXT : xp->x_size - i,
+				    (size - i) > DMTEXT
+					? DMTEXT : size - i,
 				    DTEXT, xp - text);
 			if (xp->x_flag & XPAGI)
-				duse(xp->x_ptdaddr, clrnd(ctopt(xp->x_size)),
+				duse(xp->x_ptdaddr, 
+					ctod(clrnd(ctopt(xp->x_size))),
 				    DTEXT, xp - text);
 		}
 	dmcheck();
@@ -436,7 +448,7 @@ dmcheck()
 
 	for (smp = swapmap; smp->m_size; smp++)
 		duse(smp->m_addr, smp->m_size, DFREE, 0);
-	duse(CLSIZE, DMTEXT - CLSIZE, DFREE, 0);
+	duse(ctod(CLSIZE), DMTEXT - ctod(CLSIZE), DFREE, 0);
 	qsort(dblks, ndblks, sizeof (struct dblks), dsort);
 	d = &dblks[ndblks - 1];
 	if (d->d_first > 1)
@@ -541,7 +553,7 @@ checkpg(p, pte, type)
 		return (0);
 	if (cmap[pgtocm(pte->pg_pfnum)].c_intrans || pte->pg_m || pte->pg_swapm)
 		return (0);
-	lseek(fswap, (long)(NBPG * dblock), 0);
+	lseek(fswap, (long)(DEV_BSIZE * dblock), 0);
 	if (read(fswap, swapg, NBPG) != NBPG) {
 		fprintf(stderr,"swap page %x: ", dblock);
 		perror("read");
@@ -779,12 +791,14 @@ vtod(p, v, dmap, smap)
 {
 	struct dblock db;
 
-	if (v < p->p_tsize)
+	if (isatsv(p, v)) {
+		v = ctod(vtotp(p, v));
 		return(p->p_textp->x_daddr[v / DMTEXT] + v % DMTEXT);
+	}
 	if (isassv(p, v))
-		vstodb(vtosp(p, v), 1, smap, &db, 1);
+		vstodb(ctod(vtosp(p, v)), ctod(1), smap, &db, 1);
 	else
-		vstodb(vtodp(p, v), 1, dmap, &db, 0);
+		vstodb(ctod(vtodp(p, v)), ctod(1), dmap, &db, 0);
 	return (db.db_base);
 }
 
