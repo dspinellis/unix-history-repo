@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)dhu.c	7.13 (Berkeley) %G%
+ *	@(#)dhu.c	7.14 (Berkeley) %G%
  */
 
 /*
@@ -494,7 +494,7 @@ dhuparam(tp, want)
 		tp->t_cflag |= HUPCL;
 		(void)dhumctl(unit, DHU_OFF, DMSET);
 		splx(s);
-		return;
+		return (0);
 	}
 
 	if ((outcode = ttspeedtab(want->c_ospeed, dhuspeedtab)) >= 0)
@@ -543,6 +543,7 @@ dhuparam(tp, want)
 	addr->dhucsr = DHU_SELECT(unit) | DHU_IE;
 	addr->dhulpr = lpar;
 	splx(s);
+	return (0);
 }
 
 /*
