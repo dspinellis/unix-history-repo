@@ -107,13 +107,17 @@ clkreld()
 clkinit(base)
 time_t base;
 {
+	long deltat;
 
-	for (time = ((unsigned)mfpr(TODR))/100; time < base; time += SECYR)
+	for (time = ((unsigned)mfpr(TODR))/100; time < base - SECYR/2; time += SECYR)
 		;
 	clkset();
-	if (time - base >= SECDAY*2)
-		printf("warning: lost %d days; check the date\n",
-		    (time-base) / SECDAY);
+	deltat = time - base;
+	if (deltat < 0)
+		deltat = -deltat;
+	if ((deltat < 0 ? -deltat : deltat) >= 2*SECDAY)
+		printf("warning: %s %d days; check the date\n",
+		    deltat < 0 ? "lost" : "gained", deltat / SECDAY);
 }
 
 clkset()
