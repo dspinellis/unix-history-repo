@@ -2,15 +2,30 @@
  * Copyright (c) 1989 The Regents of the University of California.
  * All rights reserved.
  *
+ * This code is derived from software contributed to Berkeley by
+ * Ozan Yigit.
+ *
  * %sccs.include.redist.c%
  *
- *	@(#)pathnames.h	5.3 (Berkeley) %G%
+ *	@(#)pathnames.h	5.4 (Berkeley) %G%
  */
 
 /*
- * definitions of diversion files. If the name of
- * the file is changed, adjust UNIQUE to point to the
- * wildcard (*) character in the filename.
+ * Definitions of diversion files.  If the name of the file is changed,
+ * adjust UNIQUE to point to the wildcard (*) character in the filename.
  */
-#define	DIVNAM	"/tmp/m4*XXXXXX"	/* unix diversion files */
-#define	UNIQUE	7			/* unique char location */
+
+#ifdef msdos
+#define _PATH_DIVNAME	"\\M4*XXXXXX"		/* msdos diversion files */
+#define	UNIQUE		3			/* unique char location */
+#endif
+
+#ifdef unix
+#define _PATH_DIVNAME	"/tmp/m4.0XXXXXX"	/* unix diversion files */
+#define UNIQUE		8			/* unique char location */
+#endif
+
+#ifdef vms
+#define _PATH_DIVNAME	"sys$login:m4*XXXXXX"	/* vms diversion files */
+#define UNIQUE		12			/* unique char location */
+#endif

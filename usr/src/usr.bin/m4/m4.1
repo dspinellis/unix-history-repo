@@ -6,7 +6,7 @@
 .\"
 .\" %sccs.include.proprietary.man%
 .\"
-.\"	@(#)m4.1	6.10 (Berkeley) %G%
+.\"	@(#)m4.1	6.11 (Berkeley) %G%
 .\"
 .Dd 
 .Os ATT 7
@@ -22,10 +22,8 @@ and
 .Op options
 .Sh DESCRIPTION
 .Nm M4
-is a macro language
-preprocessor
-for Ratfor, Pascal, and similar languages which do not
-have a built-in macro processing capability.
+is a macro language preprocessor for Ratfor, Pascal, and similar languages
+which do not have a built-in macro processing capability.
 .Nm M4
 reads standard input, and writes the results to the standard output.
 .Pp
@@ -101,6 +99,11 @@ if the first argument is defined,
 the value is the second argument,
 otherwise the third.
 If there is no third argument, the value is null.
+A word indicating the current operating system is predefined
+(e.g.
+.I unix
+or
+.IR vms ).
 .It Ic shift
 .Ar shift(arg, arg, arg, ...)
 returns all but its first argument.
@@ -347,9 +350,7 @@ since
 .Ic eval
 does not handle character constants.)
 .Sh SEE ALSO
-.Xr cc 1 ,
-.Xr cpp 1 .
-.Xr m4 1
+.Xr cpp 1
 .Rs
 .%T "The M4 Macro Processor"
 .%A B. W. Kernighan
@@ -362,5 +363,5 @@ command appeared in
 .At v7 .
 The
 .Nm M4
-command this page describes is derived from code
-contributed by Ozan S. Yigit.
+command this page describes is derived from code contributed by
+Ozan S. Yigit.
