@@ -22,7 +22,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)lastcomm.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)lastcomm.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
 /*
@@ -42,7 +42,6 @@ struct	acct buf[DEV_BSIZE / sizeof (struct acct)];
 
 time_t	expand();
 char	*flagbits();
-char	*getname();
 char	*getdev();
 
 main(argc, argv)
@@ -55,7 +54,7 @@ main(argc, argv)
 	register int bn, cc;
 	struct stat sb;
 	int ch, fd;
-	char *acctfile, *strcpy(), *ctime();
+	char *acctfile, *ctime(), *strcpy(), *user_from_uid();
 	long lseek();
 
 	acctfile = _PATH_ACCT;
@@ -101,12 +100,10 @@ main(argc, argv)
 				continue;
 			x = expand(acp->ac_utime) + expand(acp->ac_stime);
 			printf("%-*.*s %s %-*s %-*s %6.2f secs %.16s\n",
-				fldsiz(acct, ac_comm),
-				fldsiz(acct, ac_comm),
+				fldsiz(acct, ac_comm), fldsiz(acct, ac_comm),
 				acp->ac_comm, flagbits(acp->ac_flag),
-				fldsiz(utmp, ut_name),
-				(cp = getname(acp->ac_uid)) ? cp : "",
-				fldsiz(utmp, ut_line), getdev(acp->ac_tty),
+				UT_NAMESIZE, user_from_uid(acp->ac_uid), 
+				UT_LINESIZE, getdev(acp->ac_tty),
 				x / (double)AHZ, ctime(&acp->ac_btime));
 		}
 	}
@@ -149,46 +146,18 @@ ok(argv, acp)
 	register struct acct *acp;
 {
 	register char *cp;
+	char *user_from_uid();
 
 	do {
-		if ((cp = getname(acp->ac_uid)) && !strcmp(cp, *argv) ||
-		    (cp = getdev(acp->ac_tty)) && !strcmp(cp, *argv) ||
-		    !strncmp(acp->ac_comm, *argv, fldsiz(acct, ac_comm)))
+		cp = user_from_uid(acp->ac_uid);
+		if (!strcmp(cp, *argv)) 
+			return(1);
+		if ((cp = getdev(acp->ac_tty)) && !strcmp(cp, *argv))
+			return(1);
+		if (!strncmp(acp->ac_comm, *argv, fldsiz(acct, ac_comm)))
 			return(1);
 	} while (*++argv);
 	return(0);
-}
-
-/* should be done with nameserver or database */
-
-#include <pwd.h>
-
-struct	utmp utmp;
-#define	NMAX	(sizeof (utmp.ut_name))
-#define SCPYN(a, b)	strncpy(a, b, NMAX)
-
-#define NCACHE	64		/* power of 2 */
-#define CAMASK	NCACHE - 1
-
-char *
-getname(uid)
-	uid_t uid;
-{
-	static struct ncache {
-		uid_t	uid;
-		char	name[NMAX+1];
-	} c_uid[NCACHE];
-	register struct passwd *pw;
-	register struct ncache *cp;
-
-	cp = c_uid + (uid & CAMASK);
-	if (cp->uid == uid && *cp->name)
-		return(cp->name);
-	if (!(pw = getpwuid(uid)))
-		return((char *)0);
-	cp->uid = uid;
-	SCPYN(cp->name, pw->pw_name);
-	return(cp->name);
 }
 
 #include <sys/dir.h>
@@ -198,7 +167,7 @@ getname(uid)
 
 struct	devhash {
 	dev_t	dev_dev;
-	char	dev_name [fldsiz(utmp, ut_line) + 1];
+	char	dev_name [UT_LINESIZE + 1];
 	struct	devhash * dev_nxt;
 };
 struct	devhash *dev_hash[N_DEVS];
@@ -228,8 +197,8 @@ setupdevs()
 			continue;
 		if (dp->d_name[0] != 't' && strcmp(dp->d_name, "console"))
 			continue;
-		strncpy(hashtab->dev_name, dp->d_name, fldsiz(utmp, ut_line));
-		hashtab->dev_name[fldsiz(utmp, ut_line)] = 0;
+		(void)strncpy(hashtab->dev_name, dp->d_name, UT_LINESIZE);
+		hashtab->dev_name[UT_LINESIZE] = 0;
 		hashtab->dev_nxt = dev_chain;
 		dev_chain = hashtab;
 		hashtab++;
@@ -266,7 +235,7 @@ getdev(dev)
 		}
 	for (hp = dev_chain; hp; hp = nhp) {
 		nhp = hp->dev_nxt;
-		strcpy(name, _PATH_DEV);
+		(void)strcpy(name, _PATH_DEV);
 		strcat(name, hp->dev_name);
 		if (stat(name, &statb) < 0)	/* name truncated usually */
 			continue;
