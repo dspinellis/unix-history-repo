@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_conf.c	7.8 (Berkeley) %G%
+ *	@(#)vfs_conf.c	7.9 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -193,21 +193,25 @@ extern struct vnodeopv_desc nfsv2_vnodeop_opv_desc;
 extern struct vnodeopv_desc spec_nfsv2nodeop_opv_desc;
 extern struct vnodeopv_desc fifo_nfsv2nodeop_opv_desc;
 
-
 struct vnodeopv_desc *vfs_opv_descs[] = {
 	&ffs_vnodeop_opv_desc,
 	&ffs_specop_opv_desc,
 	&ffs_fifoop_opv_desc,
-	&lfs_vnodeop_opv_desc,
-	&lfs_specop_opv_desc,
-	&lfs_fifoop_opv_desc,
-	&mfs_vnodeop_opv_desc,
 	&dead_vnodeop_opv_desc,
 	&fifo_vnodeop_opv_desc,
 	&spec_vnodeop_opv_desc,
+#ifdef LFS
+	&lfs_vnodeop_opv_desc,
+	&lfs_specop_opv_desc,
+	&lfs_fifoop_opv_desc,
+#endif
+#ifdef MFS
+	&mfs_vnodeop_opv_desc,
+#endif
+#ifdef NFS
 	&nfsv2_vnodeop_opv_desc,
 	&spec_nfsv2nodeop_opv_desc,
 	&fifo_nfsv2nodeop_opv_desc,
+#endif
 	NULL
 };
-
