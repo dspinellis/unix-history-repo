@@ -76,7 +76,6 @@ ufs/ufs_quota.c		optional quota
 ufs/mfs_vnops.c		optional mfs
 ufs/mfs_vfsops.c	optional mfs
 nfs/nfs_bio.c		optional nfs
-nfs/nfs_client.c	optional nfs
 nfs/nfs_node.c		optional nfs
 nfs/nfs_serv.c		optional nfs
 nfs/nfs_socket.c	optional nfs
@@ -84,6 +83,7 @@ nfs/nfs_srvcache.c	optional nfs
 nfs/nfs_subs.c		optional nfs
 nfs/nfs_syscalls.c	optional nfs
 nfs/nfs_vfsops.c	optional nfs
+nfs/nfs_vnops.c		optional nfs
 kdb/kdb_access.c	optional kadb
 kdb/kdb_command.c	optional kadb
 kdb/kdb_ctype.c		optional kadb
