@@ -11,7 +11,7 @@
  */
 
 #if defined(LIBC_SCCS) && !defined(lint)
-static char sccsid[] = "@(#)vfprintf.c	5.3 (Berkeley) %G%";
+static char sccsid[] = "@(#)vfprintf.c	5.4 (Berkeley) %G%";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
@@ -23,11 +23,12 @@ static char sccsid[] = "@(#)vfprintf.c	5.3 (Berkeley) %G%";
 	r = argsize&LONGINT ? va_arg(argp, long) : \
 	    argsize&SHORTINT ? va_arg(argp, short) : va_arg(argp, int);
 
+#define	MAXBUF		1024			/* should hold any number */
+#define	MAXEXP		10			/* should hold any exponent */
+
 #define	DEFPREC		6			/* default precision */
-#define	MAXBUF		1024
-#define	PUTC(ch, fd)	{ ++cnt; putc(ch, fd); }
-#define	todigit(ch)	((ch) - '0')
-#define	tochar(ch)	((ch) + '0')
+
+#define	PUTC(ch, fd)	{++cnt; putc(ch, fd);}
 
 #define	LONGINT		0x01
 #define	LONGDBL		0x02
@@ -43,7 +44,7 @@ x_doprnt(fmt, argp, fp)
 	register int base;
 	register char *digs, *bp, *t, padc;
 	double _double;
-	char argsize, printsign, buf[MAXBUF], *fcvt();
+	char argsize, printsign, buf[MAXBUF], *ecvt(), *fcvt();
 	int alternate, cnt, decpt, n, ladjust, width, prec, sign, size;
 
 	for (cnt = 0; *fmt; ++fmt) {
@@ -87,7 +88,7 @@ flags:		switch (*++fmt) {
 			else if (isdigit(*fmt)) {
 				prec = 0;
 				do {
-					prec = 10 * prec + todigit(*fmt);
+					prec = 10 * prec + *fmt - '0';
 				} while isdigit(*++fmt);
 				--fmt;
 			}
@@ -105,7 +106,7 @@ flags:		switch (*++fmt) {
 		case '1': case '2': case '3': case '4':
 		case '5': case '6': case '7': case '8': case '9':
 			do {
-				width = 10 * width + todigit(*fmt);
+				width = 10 * width + *fmt - '0';
 			} while isdigit(*++fmt);
 			--fmt;
 		case 'L':
@@ -125,13 +126,30 @@ flags:		switch (*++fmt) {
 		case 'c':
 			PUTC(va_arg(argp, int), fp);
 			break;
+		case 'E':
+		case 'e':
+			if (prec == -1)
+				prec = DEFPREC;
+			_double = va_arg(argp, double);
+			t = ecvt(_double, prec + 1, &decpt, &sign);
+			bp = buf;
+			*bp++ = *t ? *t++ : '0';
+			if (alternate || prec > 0)
+				*bp++ = '.';
+			while (prec--)
+				*bp++ = *t ? *t++ : '0';
+			*bp++ = *fmt;
+			*bp++ = (decpt > 0 || !_double) ? '+' : '-';
+			/* we know exponents <= 99 */
+			--decpt;
+			*bp++ = (int)decpt / 10 + '0';
+			*bp++ = (int)decpt % 10 + '0';
+			goto pbuf;
 		case 'f':
 			if (prec == -1)
 				prec = DEFPREC;
 			_double = va_arg(argp, double);
 			t = fcvt(_double, prec + 1, &decpt, &sign);
-			if (sign)
-				printsign = '-';
 			bp = buf;
 			if (decpt >= 0)
 				for (;;) {
@@ -147,7 +165,9 @@ flags:		switch (*++fmt) {
 			}
 			while (prec--)
 				*bp++ = *t ? *t++ : '0';
-			size = bp - buf;
+pbuf:			size = bp - buf;
+			if (sign || printsign)
+				PUTC(sign ? '-' : printsign, fp);
 			if (size < width && !ladjust)
 				do {
 					PUTC(padc, fp);
@@ -190,7 +210,7 @@ flags:		switch (*++fmt) {
 					PUTC(padc, fp);
 				} while (--width > size);
 			PUTC('0', fp);
-			goto num3;
+			goto num2;
 			break;
 		case 'p':
 		case 's':
@@ -241,7 +261,7 @@ num1:			bp = buf + sizeof(buf) - 1;
 				do {
 					PUTC(padc, fp);
 				} while (--width > size);
-num3:			while (++bp != &buf[MAXBUF])
+num2:			while (++bp != &buf[MAXBUF])
 				PUTC(*bp, fp);
 			for (; width > size; --width)
 				PUTC(padc, fp);
@@ -254,4 +274,3 @@ num3:			while (++bp != &buf[MAXBUF])
 	}
 	return(ferror(fp) ? -1 : cnt);
 }
-
