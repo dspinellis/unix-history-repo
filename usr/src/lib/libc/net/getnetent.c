@@ -1,4 +1,4 @@
-/*	getnetent.c	4.3	82/10/06	*/
+/*	getnetent.c	4.4	82/10/07	*/
 
 #include <stdio.h>
 #include <sys/socket.h>
@@ -61,7 +61,7 @@ again:
 	p = any(cp, " \t");
 	if (p != NULL)
 		*p++ = '\0';
-	net.n_net = inet_addr(cp);
+	net.n_net = inet_network(cp);
 	net.n_addrtype = AF_INET;
 	net.n_aliases = net_aliases;
 	q = net_aliases, cp = p;
