@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)func.c	5.38 (Berkeley) %G%";
+static char sccsid[] = "@(#)func.c	5.39 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -666,8 +666,8 @@ search(type, level, goal)
 	    if (lastchr(aword) != ':')
 		break;
 	    aword[Strlen(aword) - 1] = 0;
-	    if (type == T_GOTO && eq(aword, goal) ||
-		type == T_SWITCH && eq(aword, STRdefault))
+	    if ((type == T_GOTO && eq(aword, goal)) ||
+		(type == T_SWITCH && eq(aword, STRdefault)))
 		level = -1;
 	    break;
 
@@ -734,8 +734,8 @@ getword(wp)
 		*wp++ = c;
 		*wp = 0;	/* end the string b4 test */
 	    }
-	} while ((d || !(kwd = keyword(owp)) && c != ' '
-		  && c != '\t') && c != '\n');
+	} while ((d || (!(kwd = keyword(owp)) && c != ' '
+		  && c != '\t')) && c != '\n');
     } while (wp == 0);
 
     /*
@@ -895,10 +895,10 @@ xecho(sep, v)
     }
     if (sep == ' ' && *v && eq(*v, STRmn))
 	nonl++, v++;
-    while (cp = *v++) {
+    while ((cp = *v++) != NULL) {
 	register int c;
 
-	while (c = *cp++)
+	while ((c = *cp++) != '\0')
 	    (void) vis_fputc(c | QUOTE, cshout);
 
 	if (*v)
@@ -1098,16 +1098,16 @@ static struct limits {
     int     limdiv;
     char   *limscale;
 }       limits[] = {
-    RLIMIT_CPU,		"cputime",	1,	"seconds",
-    RLIMIT_FSIZE,	"filesize",	1024,	"kbytes",
-    RLIMIT_DATA,	"datasize",	1024,	"kbytes",
-    RLIMIT_STACK,	"stacksize",	1024,	"kbytes",
-    RLIMIT_CORE,	"coredumpsize", 1024,	"kbytes",
-    RLIMIT_RSS,		"memoryuse",	1024,	"kbytes",
-    RLIMIT_MEMLOCK,	"memorylocked",	1024,	"kbytes",
-    RLIMIT_NPROC,	"maxproc",	1,	"",
-    RLIMIT_NOFILE,	"openfiles",	1,	"",
-    -1,			NULL,		0,	NULL
+    { RLIMIT_CPU,	"cputime",	1,	"seconds" },
+    { RLIMIT_FSIZE,	"filesize",	1024,	"kbytes" },
+    { RLIMIT_DATA,	"datasize",	1024,	"kbytes" },
+    { RLIMIT_STACK,	"stacksize",	1024,	"kbytes" },
+    { RLIMIT_CORE,	"coredumpsize", 1024,	"kbytes" },
+    { RLIMIT_RSS,	"memoryuse",	1024,	"kbytes" },
+    { RLIMIT_MEMLOCK,	"memorylocked",	1024,	"kbytes" },
+    { RLIMIT_NPROC,	"maxproc",	1,	"" },
+    { RLIMIT_NOFILE,	"openfiles",	1,	"" },
+    { -1,		NULL,		0,	NULL }
 };
 
 static struct limits *findlim();
@@ -1391,6 +1391,8 @@ doeval(v, t)
     int     oSHIN;
     int     oSHOUT;
     int     oSHERR;
+
+    UNREGISTER(v);
 
     oevalvec = evalvec;
     oevalp = evalp;

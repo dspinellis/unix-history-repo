@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)proc.h	5.7 (Berkeley) %G%
+ *	@(#)proc.h	5.8 (Berkeley) %G%
  */
 
 /*

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)char.h	5.7 (Berkeley) %G%
+ *	@(#)char.h	5.8 (Berkeley) %G%
  */
 
 #include <ctype.h>

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)str.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)str.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #define MALLOC_INCR	128
@@ -139,7 +139,7 @@ s_strcpy(dst, src)
     register Char *sdst;
 
     sdst = dst;
-    while (*dst++ = *src++)
+    while ((*dst++ = *src++) != '\0')
 	continue;
     return (sdst);
 }
@@ -175,7 +175,7 @@ s_strcat(dst, src)
     while (*dst++)
 	continue;
     --dst;
-    while (*dst++ = *src++)
+    while ((*dst++ = *src++) != '\0')
 	continue;
     return (sdst);
 }
@@ -309,7 +309,7 @@ s_strsave(s)
     for (p = s; *p++;)
 	continue;
     n = p = (Char *) xmalloc((size_t) ((p - s) * sizeof(Char)));
-    while (*p++ = *s++)
+    while ((*p++ = *s++) != '\0')
 	continue;
     return (n);
 }
@@ -331,9 +331,9 @@ s_strspl(cp, dp)
 	continue;
     ep = (Char *) xmalloc((size_t)
 			  (((p - cp) + (q - dp) - 1) * sizeof(Char)));
-    for (p = ep, q = cp; *p++ = *q++;)
+    for (p = ep, q = cp; (*p++ = *q++) != '\0';)
 	continue;
-    for (p--, q = dp; *p++ = *q++;)
+    for (p--, q = dp; (*p++ = *q++) != '\0';)
 	continue;
     return (ep);
 }

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exec.c	5.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)exec.c	5.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -63,7 +63,7 @@ static Char *expath;		/* Path for exerr */
 #define HSHMUL		243
 static char xhash[HSHSIZ / 8];
 
-#define hash(a, b)	((a) * HSHMUL + (b) & HSHMASK)
+#define hash(a, b)	(((a) * HSHMUL + (b)) & HSHMASK)
 #define bit(h, b)	((h)[(b) >> 3] & 1 << ((b) & 7))	/* bit test */
 #define bis(h, b)	((h)[(b) >> 3] |= 1 << ((b) & 7))	/* bit set */
 static int hits, misses;
@@ -441,7 +441,7 @@ dohash(v, t)
 		continue;
 	    if (dp->d_name[0] == '.' &&
 		(dp->d_name[1] == '\0' ||
-		 dp->d_name[1] == '.' && dp->d_name[2] == '\0'))
+		 (dp->d_name[1] == '.' && dp->d_name[2] == '\0')))
 		continue;
 	    hashval = hash(hashname(str2short(dp->d_name)), i);
 	    bis(xhash, hashval);
@@ -608,7 +608,7 @@ dowhich(v, c)
     lex[2].word = STRret;
 
     while (*++v) {
-	if (vp = adrof1(*v, &aliases)) {
+	if ((vp = adrof1(*v, &aliases)) != NULL) {
 	    (void) fprintf(cshout, "%s: \t aliased to ", vis_str(*v));
 	    blkpr(cshout, vp->vec);
 	    (void) fputc('\n', cshout);
@@ -675,7 +675,7 @@ tellmewhat(lex)
 	}
     }
 
-    if (i = iscommand(strip(sp->word))) {
+    if ((i = iscommand(strip(sp->word))) != 0) {
 	register Char **pv;
 	register struct varent *v;
 	bool    slash = any(short2str(sp->word), '/');

@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	5.12 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	5.13 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -354,9 +354,9 @@ stderror(id, va_alist)
 	seterr = NULL;
     }
 
-    if (v = pargv)
+    if ((v = pargv) != NULL)
 	pargv = 0, blkfree(v);
-    if (v = gargv)
+    if ((v = gargv) != NULL)
 	gargv = 0, blkfree(v);
 
     (void) fflush(cshout);

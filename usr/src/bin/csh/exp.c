@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)exp.c	5.15 (Berkeley) %G%";
+static char sccsid[] = "@(#)exp.c	5.16 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -195,7 +195,7 @@ exp2c(vp, ignore)
 #ifdef EDEBUG
     etracc("exp2c p1", p1, vp);
 #endif
-    if (i = isa(**vp, EQOP)) {
+    if ((i = isa(**vp, EQOP)) != 0) {
 	(*vp)++;
 	if (i == EQMATCH || i == NOTEQMATCH)
 	    ignore |= NOGLOB;
@@ -243,7 +243,7 @@ exp3(vp, ignore)
 #ifdef EDEBUG
     etracc("exp3 p1", p1, vp);
 #endif
-    if (i = isa(**vp, RELOP)) {
+    if ((i = isa(**vp, RELOP)) != 0) {
 	(*vp)++;
 	if (**vp && eq(**vp, STRequal))
 	    i |= 1, (*vp)++;

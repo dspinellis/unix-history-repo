@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)lex.c	5.27 (Berkeley) %G%";
+static char sccsid[] = "@(#)lex.c	5.28 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -335,7 +335,7 @@ getC1(flag)
     register Char c;
 
     while (1) {
-	if (c = peekc) {
+	if ((c = peekc) != '\0') {
 	    peekc = 0;
 	    return (c);
 	}
@@ -348,12 +348,12 @@ getC1(flag)
 		return (c);
 	    }
 	}
-	if (c = peekd) {
+	if ((c = peekd) != '\0') {
 	    peekd = 0;
 	    return (c);
 	}
 	if (exclp) {
-	    if (c = *exclp++)
+	    if ((c = *exclp++) != '\0')
 		return (c);
 	    if (exclnxt && --exclc >= 0) {
 		exclnxt = exclnxt->next;
@@ -446,7 +446,7 @@ getdol()
 #endif
 	    /* we know that np < &name[4] */
 	    ep = &np[MAXVARLEN];
-	    while (c = getC(DOEXCL)) {
+	    while ((c = getC(DOEXCL)) != '\0'){
 		if (!Isdigit(c))
 		    break;
 		if (np < ep)
@@ -459,7 +459,7 @@ getdol()
 	    /* we know that np < &name[4] */
 	    ep = &np[MAXVARLEN];
 	    toolong = 0;
-	    while (c = getC(DOEXCL)) {
+	    while ((c = getC(DOEXCL)) != '\0') {
 		/* Bugfix for ${v123x} from Chris Torek, DAS DEC-90. */
 		if (!letter(c) && !Isdigit(c))
 		    break;
@@ -976,7 +976,7 @@ domod(cp, type)
     case 'x':
     case 'q':
 	wp = Strsave(cp);
-	for (xp = wp; c = *xp; xp++)
+	for (xp = wp; (c = *xp) != '\0'; xp++)
 	    if ((c != ' ' && c != '\t') || type == 'q')
 		*xp |= QUOTE;
 	return (wp);
@@ -1301,7 +1301,7 @@ readc(wanteof)
     static  sincereal;
 
     aret = F_SEEK;
-    if (c = peekread) {
+    if ((c = peekread) != '\0') {
 	peekread = 0;
 	return (c);
     }
@@ -1309,7 +1309,7 @@ top:
     aret = F_SEEK;
     if (alvecp) {
 	aret = A_SEEK;
-	if (c = *alvecp++)
+	if ((c = *alvecp++) != '\0')
 	    return (c);
 	if (alvec && *alvec) {
 		alvecp = *alvec++;
@@ -1322,7 +1322,7 @@ top:
 	}
     }
     if (alvec) {
-	if (alvecp = *alvec) {
+	if ((alvecp = *alvec) != '\0') {
 	    alvec++;
 	    goto top;
 	}
@@ -1331,7 +1331,7 @@ top:
     }
     if (evalp) {
 	aret = E_SEEK;
-	if (c = *evalp++)
+	if ((c = *evalp++) != '\0')
 	    return (c);
 	if (evalvec && *evalvec) {
 	    evalp = *evalvec++;
@@ -1345,7 +1345,7 @@ top:
 	    doneinp = 1;
 	    reset();
 	}
-	if (evalp = *evalvec) {
+	if ((evalp = *evalvec) != '\0') {
 	    evalvec++;
 	    goto top;
 	}

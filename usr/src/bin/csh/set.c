@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)set.c	5.19 (Berkeley) %G%";
+static char sccsid[] = "@(#)set.c	5.20 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -75,7 +75,7 @@ doset(v, t)
 	    hadsub++;
 	    p = getinx(p, &subscr);
 	}
-	if (op = *p) {
+	if ((op = *p) != '\0') {
 	    *p++ = 0;
 	    if (*p == 0 && *v && **v == '(')
 		p = *v++;
@@ -151,7 +151,7 @@ doset(v, t)
 	else if (eq(vp, STRfilec))
 	    filec = 1;
 #endif
-    } while (p = *v++);
+    } while ((p = *v++) != NULL);
 }
 
 static Char *
@@ -228,7 +228,7 @@ dolet(v, t)
 	}
 	if (*p == 0 && *v)
 	    p = *v++;
-	if (op = *p)
+	if ((op = *p) != '\0')
 	    *p++ = 0;
 	else
 	    stderror(ERR_NAME | ERR_ASSIGN);
@@ -279,7 +279,7 @@ dolet(v, t)
 	xfree((ptr_t) vp);
 	if (c != '=')
 	    xfree((ptr_t) p);
-    } while (p = *v++);
+    } while ((p = *v++) != NULL);
 }
 
 static Char *
@@ -483,7 +483,7 @@ setq(name, vec, p)
     register f;
 
     f = 0;			/* tree hangs off the header's left link */
-    while (c = p->v_link[f]) {
+    while ((c = p->v_link[f]) != NULL) {
 	if ((f = *name - *c->v_name) == 0 &&
 	    (f = Strcmp(name, c->v_name)) == 0) {
 	    blkfree(c->vec);
@@ -531,7 +531,7 @@ unset1(v, head)
 
     while (*++v) {
 	cnt = 0;
-	while (vp = madrof(*v, head->v_left))
+	while ((vp = madrof(*v, head->v_left)) != NULL)
 	    unsetv1(vp), cnt++;
 	if (cnt == 0)
 	    setname(vis_str(*v));
@@ -583,7 +583,7 @@ unsetv1(p)
      */
     pp = p->v_parent;
     f = pp->v_right == p;
-    if (pp->v_link[f] = c)
+    if ((pp->v_link[f] = c) != NULL)
 	c->v_parent = pp;
     /*
      * Free the deleted node, and rebalance.
@@ -704,7 +704,7 @@ balance(p, f, d)
      * is the branch of p from which we have come; ff is the branch of pp which
      * is p.
      */
-    for (; pp = p->v_parent; p = pp, f = ff) {
+    for (; (pp = p->v_parent) != NULL; p = pp, f = ff) {
 	ff = pp->v_right == p;
 	if (f ^ d) {		/* right heavy */
 	    switch (p->v_bal) {
