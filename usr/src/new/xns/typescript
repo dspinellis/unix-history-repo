@@ -1,0 +1,841 @@
+Script started on Mon Nov 16 16:14:16 1987
+% Make    make -f M.k
+for Dir in xnslib compiler courierlib morexnslib daemon examples; do  (cd $Dir; make  install); done
+cc -c -O -I. -p client.c
+mv client.o profiled/client.o
+cc -c -O -I. client.c
+cc -c -O -I. -p server.c
+mv server.o profiled/server.o
+cc -c -O -I. server.c
+cc -c -O -I. -p readwrite.c
+mv readwrite.o profiled/readwrite.o
+cc -c -O -I. readwrite.c
+cc -c -O -I. -p misc.c
+mv misc.o profiled/misc.o
+cc -c -O -I. misc.c
+cc -c -O -I. -p bdt.c
+mv bdt.o profiled/bdt.o
+cc -c -O -I. bdt.c
+cc -c -O -I. -p names.c
+mv names.o profiled/names.o
+cc -c -O -I. names.c
+cc -c -O -I. -p options.c
+mv options.o profiled/options.o
+cc -c -O -I. options.c
+cc -c -O -I. -D'COURLIB="/usr/new/lib/xnscourier"' -p lookahead.c
+mv lookahead.o profiled/lookahead.o
+cc -c -O -I. -D'COURLIB="/usr/new/lib/xnscourier"' lookahead.c
+cc -c -O -I. -p sppclose.c
+mv sppclose.o profiled/sppclose.o
+cc -c -O -I. sppclose.c
+cc -c -O -I. -D'CSERVICES="/usr/new/lib/xnscourier/Courierservices"'  -p getcourierent.c
+mv getcourierent.o  profiled/getcourierent.o
+cc -c -O -I. -D'CSERVICES="/usr/new/lib/xnscourier/Courierservices"'  getcourierent.c
+cc -c -O -I. -p getcservice.c
+mv getcservice.o profiled/getcservice.o
+cc -c -O -I. getcservice.c
+cc -c -O -I. -p except.c
+mv except.o profiled/except.o
+cc -c -O -I. except.c
+mkdir ../include
+mkdir: ../include: File exists
+*** Exit 1 (ignored)
+mkdir ../include/xnscourier
+mkdir: ../include/xnscourier: File exists
+*** Exit 1 (ignored)
+install -c -m 644 courier.h ../include/xnscourier
+install -c -m 644 courierdb.h ../include/xnscourier
+install -c -m 644 realcourierconnection.h ../include/xnscourier
+install -c -m 644 courierconnection.h ../include/xnscourier
+install -c -m 644 except.h ../include/xnscourier
+ar cr ../lib/libcourier.a client.o server.o readwrite.o misc.o bdt.o names.o options.o  lookahead.o sppclose.o getcourierent.o getcservice.o except.o
+cd profiled; ar cr ../../lib/libcourier_p.a client.o server.o readwrite.o misc.o bdt.o names.o options.o  lookahead.o sppclose.o getcourierent.o getcservice.o except.o 
+ranlib ../lib/libcourier.a ../lib/libcourier_p.a
+cc -I../include -DDEBUG -O -c checktype.c
+cc -I../include -DDEBUG -O -c constants.c
+cc -I../include -DDEBUG -O -c constantcode.c
+cc -I../include -DDEBUG -O -c code.c
+expect one shift/reduce conflict
+yacc -d courier.y
+
+conflicts: 1 shift/reduce
+cc -I../include -DDEBUG -O -c y.tab.c
+lex scanner.l
+cc -I../include -DDEBUG -O -c lex.yy.c
+cc -I../include -DDEBUG -O -c main.c
+cc -I../include -DDEBUG -O -c misc.c
+cc -I../include -DDEBUG -O -c procedures.c
+cc -I../include -DDEBUG -O -c symbols.c
+cc -I../include -DDEBUG -O -c types.c
+cc -I../include -DDEBUG -O -c typecode.c
+cc -I../include -DDEBUG -O -o xnscourier checktype.o constants.o constantcode.o code.o lex.yy.o main.o  misc.o procedures.o symbols.o types.o typecode.o y.tab.o -ll  ../lib/libcourier.a 
+install -c -s xnscourier ../bin/xnscourier
+*** Exit 1 (ignored)
+rm -f Courierservices
+sed -e 's@/usr/local/lib/courier@../xnscourier@g' services.txt >Courierservices
+../bin/xnscourier Time2.cr
+install -c -m 644 Time2.h ../include/xnscourier/Time2.h
+install -c -m 644 Time2.cr ../xnscourier/Time2.cr
+../bin/xnscourier Authentication1.cr
+install -c -m 644 Authentication1.h ../include/xnscourier/Authentication1.h
+install -c -m 644 Authentication1.cr ../xnscourier/Authentication1.cr
+../bin/xnscourier BulkData1.cr
+BulkData1.cr: 26: Warning: Stream definition of ``StreamOfUnspecified'';
+                        recursion treated as Nil record
+install -c -m 644 BulkData1.h ../include/xnscourier/BulkData1.h
+install -c -m 644 BulkData1.cr ../xnscourier/BulkData1.cr
+../bin/xnscourier Clearinghouse2.cr
+BulkData1.cr: 54: Warning: Stream definition of ``StreamOfUnspecified'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 76: Warning: Stream definition of ``StreamOfDomain'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 82: Warning: Stream definition of ``StreamOfDomainName'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 88: Warning: Stream definition of ``StreamOfObject'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 94: Warning: Stream definition of ``StreamOfObjectName'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 100: Warning: Stream definition of ``StreamOfOrganization'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 106: Warning: Stream definition of ``StreamOfThreePartName'';
+                        recursion treated as Nil record
+install -c -m 644 Clearinghouse2.h ../include/xnscourier/Clearinghouse2.h
+install -c -m 644 Clearinghouse2.cr ../xnscourier/Clearinghouse2.cr
+../bin/xnscourier Authentication2.cr
+install -c -m 644 Authentication2.h ../include/xnscourier/Authentication2.h
+install -c -m 644 Authentication2.cr ../xnscourier/Authentication2.cr
+../bin/xnscourier Printing3.cr
+BulkData1.cr: 66: Warning: Stream definition of ``StreamOfUnspecified'';
+                        recursion treated as Nil record
+Printing3.cr: 98: Warning: Enumerator ``available'' already declared;
+                        using name ``available4_3_29'' instead
+Printing3.cr: 98: Warning: Enumerator ``busy'' already declared;
+                        using name ``busy4_3_30'' instead
+Printing3.cr: 98: Warning: Enumerator ``disabled'' already declared;
+                        using name ``disabled4_3_31'' instead
+Printing3.cr: 99: Warning: Enumerator ``available'' already declared;
+                        using name ``available4_3_32'' instead
+Printing3.cr: 99: Warning: Enumerator ``busy'' already declared;
+                        using name ``busy4_3_33'' instead
+Printing3.cr: 99: Warning: Enumerator ``disabled'' already declared;
+                        using name ``disabled4_3_34'' instead
+Printing3.cr: 106: Warning: Enumerator ``unknown'' already declared;
+                        using name ``unknown4_3_41'' instead
+Printing3.cr: 139: Warning: Enumerator ``aborted'' already declared;
+                        using name ``aborted4_3_46'' instead
+install -c -m 644 Printing3.h ../include/xnscourier/Printing3.h
+install -c -m 644 Printing3.cr ../xnscourier/Printing3.cr
+../bin/xnscourier Authentication3.cr
+install -c -m 644 Authentication3.h ../include/xnscourier/Authentication3.h
+install -c -m 644 Authentication3.cr ../xnscourier/Authentication3.cr
+../bin/xnscourier Clearinghouse3.cr
+BulkData1.cr: 39: Warning: Stream definition of ``StreamOfUnspecified'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 61: Warning: Stream definition of ``StreamOfDomain'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 67: Warning: Stream definition of ``StreamOfDomainName'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 73: Warning: Stream definition of ``StreamOfObject'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 79: Warning: Stream definition of ``StreamOfObjectName'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 85: Warning: Stream definition of ``StreamOfOrganization'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 91: Warning: Stream definition of ``StreamOfThreePartName'';
+                        recursion treated as Nil record
+install -c -m 644 Clearinghouse3.h ../include/xnscourier/Clearinghouse3.h
+install -c -m 644 Clearinghouse3.cr ../xnscourier/Clearinghouse3.cr
+../bin/xnscourier Filing4.cr
+BulkData1.cr: 67: Warning: Stream definition of ``StreamOfUnspecified'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 118: Warning: Stream definition of ``StreamOfDomain'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 124: Warning: Stream definition of ``StreamOfDomainName'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 130: Warning: Stream definition of ``StreamOfObject'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 136: Warning: Stream definition of ``StreamOfObjectName'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 142: Warning: Stream definition of ``StreamOfOrganization'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 148: Warning: Stream definition of ``StreamOfThreePartName'';
+                        recursion treated as Nil record
+Filing4.cr: 598: Warning: Stream definition of ``StreamOfAttributeSequence'';
+                        recursion treated as Nil record
+install -c -m 644 Filing4.h ../include/xnscourier/Filing4.h
+install -c -m 644 Filing4.cr ../xnscourier/Filing4.cr
+../bin/xnscourier Filing5.cr
+BulkData1.cr: 66: Warning: Stream definition of ``StreamOfUnspecified'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 117: Warning: Stream definition of ``StreamOfDomain'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 123: Warning: Stream definition of ``StreamOfDomainName'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 129: Warning: Stream definition of ``StreamOfObject'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 135: Warning: Stream definition of ``StreamOfObjectName'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 141: Warning: Stream definition of ``StreamOfOrganization'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 147: Warning: Stream definition of ``StreamOfThreePartName'';
+                        recursion treated as Nil record
+Filing5.cr: 594: Warning: Stream definition of ``StreamOfAttributeSequence'';
+                        recursion treated as Nil record
+install -c -m 644 Filing5.h ../include/xnscourier/Filing5.h
+install -c -m 644 Filing5.cr ../xnscourier/Filing5.cr
+../bin/xnscourier Filing6.cr
+BulkData1.cr: 62: Warning: Stream definition of ``StreamOfUnspecified'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 98: Warning: Stream definition of ``StreamOfDomain'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 104: Warning: Stream definition of ``StreamOfDomainName'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 110: Warning: Stream definition of ``StreamOfObject'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 116: Warning: Stream definition of ``StreamOfObjectName'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 122: Warning: Stream definition of ``StreamOfOrganization'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 128: Warning: Stream definition of ``StreamOfThreePartName'';
+                        recursion treated as Nil record
+Filing6.cr: 665: Warning: Stream definition of ``StreamOfAttributeSequence'';
+                        recursion treated as Nil record
+Filing6.cr: 682: Warning: Stream definition of ``StreamOfAsciiText'';
+                        recursion treated as Nil record
+install -c -m 644 Filing6.h ../include/xnscourier/Filing6.h
+install -c -m 644 Filing6.cr ../xnscourier/Filing6.cr
+../bin/xnscourier FilingSubset1.cr
+BulkData1.cr: 66: Warning: Stream definition of ``StreamOfUnspecified'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 102: Warning: Stream definition of ``StreamOfDomain'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 108: Warning: Stream definition of ``StreamOfDomainName'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 114: Warning: Stream definition of ``StreamOfObject'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 120: Warning: Stream definition of ``StreamOfObjectName'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 126: Warning: Stream definition of ``StreamOfOrganization'';
+                        recursion treated as Nil record
+Clearinghouse3.cr: 132: Warning: Stream definition of ``StreamOfThreePartName'';
+                        recursion treated as Nil record
+FilingSubset1.cr: 669: Warning: Stream definition of ``StreamOfAttributeSequence'';
+                        recursion treated as Nil record
+FilingSubset1.cr: 686: Warning: Stream definition of ``StreamOfAsciiText'';
+                        recursion treated as Nil record
+install -c -m 644 FilingSubset1.h ../include/xnscourier/FilingSubset1.h
+install -c -m 644 FilingSubset1.cr ../xnscourier/FilingSubset1.cr
+cc -O -I../include -p -c Time2_support.c
+mv Time2_support.o profiled/Time2.o
+cc -O -I../include -c Time2_support.c
+mv Time2_support.o Time2.o
+if [ -f Time2_client.c ]; then cc -O -I../include -p -c Time2_client.c;  mv Time2_client.o profiled/Time2_c.o;  cc -O -I../include -c Time2_client.c;  mv Time2_client.o Time2_c.o;  fi
+*** Exit 1 (ignored)
+if [ -f Time2_server.c ]; then cc -O -I../include -p -c Time2_server.c;  mv Time2_server.o profiled/Time2_s.o;  cc -O -I../include -c Time2_server.c;  mv Time2_server.o Time2_s.o;  fi
+*** Exit 1 (ignored)
+cc -O -I../include -p -c Authentication1_support.c
+mv Authentication1_support.o profiled/Authentication1.o
+cc -O -I../include -c Authentication1_support.c
+mv Authentication1_support.o Authentication1.o
+if [ -f Authentication1_client.c ]; then cc -O -I../include -p -c Authentication1_client.c;  mv Authentication1_client.o profiled/Authentication1_c.o;  cc -O -I../include -c Authentication1_client.c;  mv Authentication1_client.o Authentication1_c.o;  fi
+*** Exit 1 (ignored)
+if [ -f Authentication1_server.c ]; then cc -O -I../include -p -c Authentication1_server.c;  mv Authentication1_server.o profiled/Authentication1_s.o;  cc -O -I../include -c Authentication1_server.c;  mv Authentication1_server.o Authentication1_s.o;  fi
+*** Exit 1 (ignored)
+cp Authentication1.o Authent1.o
+mv Authentication1_c.o Authent1_c.o
+mv: Authentication1_c.o: Cannot access: No such file or directory
+*** Exit 1 (ignored)
+mv Authentication1_s.o Authent1_s.o
+mv: Authentication1_s.o: Cannot access: No such file or directory
+*** Exit 1 (ignored)
+mv profiled/Authentication1.o profiled/Authent1.o
+mv profiled/Authentication1_c.o profiled/Authent1_c.o
+mv: profiled/Authentication1_c.o: Cannot access: No such file or directory
+*** Exit 1 (ignored)
+mv profiled/Authentication1_s.o profiled/Authent1_s.o
+mv: profiled/Authentication1_s.o: Cannot access: No such file or directory
+*** Exit 1 (ignored)
+cc -O -I../include -p -c BulkData1_support.c
+mv BulkData1_support.o profiled/BulkData1.o
+cc -O -I../include -c BulkData1_support.c
+mv BulkData1_support.o BulkData1.o
+if [ -f BulkData1_client.c ]; then cc -O -I../include -p -c BulkData1_client.c;  mv BulkData1_client.o profiled/BulkData1_c.o;  cc -O -I../include -c BulkData1_client.c;  mv BulkData1_client.o BulkData1_c.o;  fi
+if [ -f BulkData1_server.c ]; then cc -O -I../include -p -c BulkData1_server.c;  mv BulkData1_server.o profiled/BulkData1_s.o;  cc -O -I../include -c BulkData1_server.c;  mv BulkData1_server.o BulkData1_s.o;  fi
+cc -O -I../include -p -c Clearinghouse2_support.c
+mv Clearinghouse2_support.o profiled/Clearinghouse2.o
+cc -O -I../include -c Clearinghouse2_support.c
+mv Clearinghouse2_support.o Clearinghouse2.o
+if [ -f Clearinghouse2_client.c ]; then cc -O -I../include -p -c Clearinghouse2_client.c;  mv Clearinghouse2_client.o profiled/Clearinghouse2_c.o;  cc -O -I../include -c Clearinghouse2_client.c;  mv Clearinghouse2_client.o Clearinghouse2_c.o;  fi
+if [ -f Clearinghouse2_server.c ]; then cc -O -I../include -p -c Clearinghouse2_server.c;  mv Clearinghouse2_server.o profiled/Clearinghouse2_s.o;  cc -O -I../include -c Clearinghouse2_server.c;  mv Clearinghouse2_server.o Clearinghouse2_s.o;  fi
+cp Clearinghouse2.o CH2.o
+mv Clearinghouse2_c.o CH2_c.o
+mv Clearinghouse2_s.o CH2_s.o
+mv profiled/Clearinghouse2.o profiled/CH2.o
+mv profiled/Clearinghouse2_c.o profiled/CH2_c.o
+mv profiled/Clearinghouse2_s.o profiled/CH2_s.o
+cc -O -I../include -p -c Authentication2_support.c
+mv Authentication2_support.o profiled/Authentication2.o
+cc -O -I../include -c Authentication2_support.c
+mv Authentication2_support.o Authentication2.o
+if [ -f Authentication2_client.c ]; then cc -O -I../include -p -c Authentication2_client.c;  mv Authentication2_client.o profiled/Authentication2_c.o;  cc -O -I../include -c Authentication2_client.c;  mv Authentication2_client.o Authentication2_c.o;  fi
+if [ -f Authentication2_server.c ]; then cc -O -I../include -p -c Authentication2_server.c;  mv Authentication2_server.o profiled/Authentication2_s.o;  cc -O -I../include -c Authentication2_server.c;  mv Authentication2_server.o Authentication2_s.o;  fi
+cp Authentication2.o Authent2.o
+mv Authentication2_c.o Authent2_c.o
+mv Authentication2_s.o Authent2_s.o
+mv profiled/Authentication2.o profiled/Authent2.o
+mv profiled/Authentication2_c.o profiled/Authent2_c.o
+mv profiled/Authentication2_s.o profiled/Authent2_s.o
+cc -O -I../include -p -c Printing3_support.c
+mv Printing3_support.o profiled/Printing3.o
+cc -O -I../include -c Printing3_support.c
+mv Printing3_support.o Printing3.o
+if [ -f Printing3_client.c ]; then cc -O -I../include -p -c Printing3_client.c;  mv Printing3_client.o profiled/Printing3_c.o;  cc -O -I../include -c Printing3_client.c;  mv Printing3_client.o Printing3_c.o;  fi
+if [ -f Printing3_server.c ]; then cc -O -I../include -p -c Printing3_server.c;  mv Printing3_server.o profiled/Printing3_s.o;  cc -O -I../include -c Printing3_server.c;  mv Printing3_server.o Printing3_s.o;  fi
+../bin/xnscourier CHEntries0.cr
+BulkData1.cr: 77: Warning: Stream definition of ``StreamOfUnspecified'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 99: Warning: Stream definition of ``StreamOfDomain'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 105: Warning: Stream definition of ``StreamOfDomainName'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 111: Warning: Stream definition of ``StreamOfObject'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 117: Warning: Stream definition of ``StreamOfObjectName'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 123: Warning: Stream definition of ``StreamOfOrganization'';
+                        recursion treated as Nil record
+Clearinghouse2.cr: 129: Warning: Stream definition of ``StreamOfThreePartName'';
+                        recursion treated as Nil record
+CHEntries0.cr: 123: ``ibm3270Host'' already defined
+                        Declaration skipped
+CHEntries0.cr: 132: ``PortClientType'' is unrecognized
+                        Declaration skipped
+install -c -m 644 CHEntries0.h ../include/xnscourier/CHEntries0.h
+install -c -m 644 CHEntries0.cr ../xnscourier/CHEntries0.cr
+cc -O -I../include -p -c CHEntries0_support.c
+mv CHEntries0_support.o profiled/CHEntries0.o
+cc -O -I../include -c CHEntries0_support.c
+mv CHEntries0_support.o CHEntries0.o
+if [ -f CHEntries0_client.c ]; then cc -O -I../include -p -c CHEntries0_client.c;  mv CHEntries0_client.o profiled/CHEntries0_c.o;  cc -O -I../include -c CHEntries0_client.c;  mv CHEntries0_client.o CHEntries0_c.o;  fi
+*** Exit 1 (ignored)
+if [ -f CHEntries0_server.c ]; then cc -O -I../include -p -c CHEntries0_server.c;  mv CHEntries0_server.o profiled/CHEntries0_s.o;  cc -O -I../include -c CHEntries0_server.c;  mv CHEntries0_server.o CHEntries0_s.o;  fi
+*** Exit 1 (ignored)
+cp ../include/xnscourier/CHEntries0.h ../include/xnscourier/CHEntries.h
+cp CHEntries0.o CHEntries.o
+mv profiled/CHEntries0.o profiled/CHEntries.o
+cc -O -I../include -p -c Authentication3_support.c
+mv Authentication3_support.o profiled/Authentication3.o
+cc -O -I../include -c Authentication3_support.c
+mv Authentication3_support.o Authentication3.o
+if [ -f Authentication3_client.c ]; then cc -O -I../include -p -c Authentication3_client.c;  mv Authentication3_client.o profiled/Authentication3_c.o;  cc -O -I../include -c Authentication3_client.c;  mv Authentication3_client.o Authentication3_c.o;  fi
+if [ -f Authentication3_server.c ]; then cc -O -I../include -p -c Authentication3_server.c;  mv Authentication3_server.o profiled/Authentication3_s.o;  cc -O -I../include -c Authentication3_server.c;  mv Authentication3_server.o Authentication3_s.o;  fi
+cp Authentication3.o Authent3.o
+mv Authentication3_c.o Authent3_c.o
+mv Authentication3_s.o Authent3_s.o
+mv profiled/Authentication3.o profiled/Authent3.o
+mv profiled/Authentication3_c.o profiled/Authent3_c.o
+mv profiled/Authentication3_s.o profiled/Authent3_s.o
+cc -O -I../include -p -c Clearinghouse3_support.c
+mv Clearinghouse3_support.o profiled/Clearinghouse3.o
+cc -O -I../include -c Clearinghouse3_support.c
+mv Clearinghouse3_support.o Clearinghouse3.o
+if [ -f Clearinghouse3_client.c ]; then cc -O -I../include -p -c Clearinghouse3_client.c;  mv Clearinghouse3_client.o profiled/Clearinghouse3_c.o;  cc -O -I../include -c Clearinghouse3_client.c;  mv Clearinghouse3_client.o Clearinghouse3_c.o;  fi
+if [ -f Clearinghouse3_server.c ]; then cc -O -I../include -p -c Clearinghouse3_server.c;  mv Clearinghouse3_server.o profiled/Clearinghouse3_s.o;  cc -O -I../include -c Clearinghouse3_server.c;  mv Clearinghouse3_server.o Clearinghouse3_s.o;  fi
+cp Clearinghouse3.o CH3.o
+mv Clearinghouse3_c.o CH3_c.o
+mv Clearinghouse3_s.o CH3_s.o
+mv profiled/Clearinghouse3.o profiled/CH3.o
+mv profiled/Clearinghouse3_c.o profiled/CH3_c.o
+mv profiled/Clearinghouse3_s.o profiled/CH3_s.o
+cc -O -I../include -p -c Filing4_support.c
+mv Filing4_support.o profiled/Filing4.o
+cc -O -I../include -c Filing4_support.c
+mv Filing4_support.o Filing4.o
+if [ -f Filing4_client.c ]; then cc -O -I../include -p -c Filing4_client.c;  mv Filing4_client.o profiled/Filing4_c.o;  cc -O -I../include -c Filing4_client.c;  mv Filing4_client.o Filing4_c.o;  fi
+if [ -f Filing4_server.c ]; then cc -O -I../include -p -c Filing4_server.c;  mv Filing4_server.o profiled/Filing4_s.o;  cc -O -I../include -c Filing4_server.c;  mv Filing4_server.o Filing4_s.o;  fi
+cc -O -I../include -p -c Filing5_support.c
+mv Filing5_support.o profiled/Filing5.o
+cc -O -I../include -c Filing5_support.c
+mv Filing5_support.o Filing5.o
+if [ -f Filing5_client.c ]; then cc -O -I../include -p -c Filing5_client.c;  mv Filing5_client.o profiled/Filing5_c.o;  cc -O -I../include -c Filing5_client.c;  mv Filing5_client.o Filing5_c.o;  fi
+if [ -f Filing5_server.c ]; then cc -O -I../include -p -c Filing5_server.c;  mv Filing5_server.o profiled/Filing5_s.o;  cc -O -I../include -c Filing5_server.c;  mv Filing5_server.o Filing5_s.o;  fi
+cc -O -I../include -p -c Filing6_support.c
+mv Filing6_support.o profiled/Filing6.o
+cc -O -I../include -c Filing6_support.c
+mv Filing6_support.o Filing6.o
+if [ -f Filing6_client.c ]; then cc -O -I../include -p -c Filing6_client.c;  mv Filing6_client.o profiled/Filing6_c.o;  cc -O -I../include -c Filing6_client.c;  mv Filing6_client.o Filing6_c.o;  fi
+if [ -f Filing6_server.c ]; then cc -O -I../include -p -c Filing6_server.c;  mv Filing6_server.o profiled/Filing6_s.o;  cc -O -I../include -c Filing6_server.c;  mv Filing6_server.o Filing6_s.o;  fi
+cc -O -I../include -p -c FilingSubset1_support.c
+mv FilingSubset1_support.o profiled/FilingSubset1.o
+cc -O -I../include -c FilingSubset1_support.c
+mv FilingSubset1_support.o FilingSubset1.o
+if [ -f FilingSubset1_client.c ]; then cc -O -I../include -p -c FilingSubset1_client.c;  mv FilingSubset1_client.o profiled/FilingSubset1_c.o;  cc -O -I../include -c FilingSubset1_client.c;  mv FilingSubset1_client.o FilingSubset1_c.o;  fi
+if [ -f FilingSubset1_server.c ]; then cc -O -I../include -p -c FilingSubset1_server.c;  mv FilingSubset1_server.o profiled/FilingSubset1_s.o;  cc -O -I../include -c FilingSubset1_server.c;  mv FilingSubset1_server.o FilingSubset1_s.o;  fi
+cp FilingSubset1.o FSubset1.o
+mv FilingSubset1_c.o FSubset1_c.o
+mv FilingSubset1_s.o FSubset1_s.o
+mv profiled/FilingSubset1.o profiled/FSubset1.o
+mv profiled/FilingSubset1_c.o profiled/FSubset1_c.o
+mv profiled/FilingSubset1_s.o profiled/FSubset1_s.o
+ar rv ../lib/libcourier.a Time2.o Authent1.o BulkData1.o CH2.o Authent2.o Printing3.o CHEntries.o  Authent3.o CH3.o Filing4.o Filing5.o Filing6.o FSubset1.o *_c.o
+a - Time2.o
+a - Authent1.o
+a - BulkData1.o
+a - CH2.o
+a - Authent2.o
+a - Printing3.o
+a - CHEntries.o
+a - Authent3.o
+a - CH3.o
+a - Filing4.o
+a - Filing5.o
+a - Filing6.o
+a - FSubset1.o
+a - Authent2_c.o
+a - Authent3_c.o
+a - BulkData1_c.o
+a - CH2_c.o
+a - CH3_c.o
+a - FSubset1_c.o
+a - Filing4_c.o
+a - Filing5_c.o
+a - Filing6_c.o
+a - Printing3_c.o
+cd profiled; ar rv ../../lib/libcourier_p.a Time2.o Authent1.o BulkData1.o CH2.o Authent2.o Printing3.o CHEntries.o  Authent3.o CH3.o Filing4.o Filing5.o Filing6.o FSubset1.o *_c.o
+a - Time2.o
+a - Authent1.o
+a - BulkData1.o
+a - CH2.o
+a - Authent2.o
+a - Printing3.o
+a - CHEntries.o
+a - Authent3.o
+a - CH3.o
+a - Filing4.o
+a - Filing5.o
+a - Filing6.o
+a - FSubset1.o
+a - Authent2_c.o
+a - Authent3_c.o
+a - BulkData1_c.o
+a - CH2_c.o
+a - CH3_c.o
+a - FSubset1_c.o
+a - Filing4_c.o
+a - Filing5_c.o
+a - Filing6_c.o
+a - Printing3_c.o
+ranlib ../lib/libcourier.a ../lib/libcourier_p.a
+for i in Time2.cr Authentication1.cr BulkData1.cr Clearinghouse2.cr  Authentication2.cr Printing3.cr  Authentication3.cr Clearinghouse3.cr  Filing4.cr Filing5.cr Filing6.cr FilingSubset1.cr; do  (install -c -m 644 $i ../xnscourier/$i); done
+for i in Time2.h Authentication1.h BulkData1.h Clearinghouse2.h  Authentication2.h Printing3.h  Authentication3.h Clearinghouse3.h  Filing4.h Filing5.h Filing6.h FilingSubset1.h; do  (install -c -m 644 $i ../include/xnscourier/$i); done
+install -c -m 644 CHEntries0.cr ../xnscourier/CHEntries0.cr
+cp CHEntries0.h ../include/xnscourier/CHEntries.h
+cp CHEntries0.h ../include/xnscourier/CHEntries0.h
+cp Courierservices ../xnscourier/Courierservices
+chmod 644 ../xnscourier/Courierservices
+date > install
+for Dir in xnsbfs ch auth; do (cd $Dir; make DESTDIR= DESTBIN=/usr/new DESTCOURIER=/usr/new/lib/xnscourier  CHDEFAULT=""  LIBDIR=../../lib MANDIR=../../man  INCDIR=../../include COURIERDIR=../../xnscourier CC=cc install); done
+cc -O -I../../include -c xnsbfs.c
+cc -O -I../../include -c bfsgetdoms.c
+cc  -o xnsbfs xnsbfs.o bfsgetdoms.o ../../lib/libcourier.a
+install -s -c xnsbfs ../../bin
+cp ../../courierlib/Clearinghouse2_defs.h .
+cc -c -p -O -I../../include -D'BFS="/usr/new/xnsbfs"'  CHlookup.c
+"CHlookup.c", line 200: warning: struct/union or struct/union pointer required
+mv CHlookup.o profiled/CHlookup.o
+cc -c -O -I../../include -D'BFS="/usr/new/xnsbfs"'  CHlookup.c
+"CHlookup.c", line 200: warning: struct/union or struct/union pointer required
+cc -c -O -I../../include -p CHenumerate.c -I../../include/xnscourier
+mv CHenumerate.o profiled/CHenumerate.o
+cc -c -O -I../../include CHenumerate.c -I../../include/xnscourier
+cc -c -O -I../../include -p CHenumalias.c -I../../include/xnscourier
+mv CHenumalias.o profiled/CHenumalias.o
+cc -c -O -I../../include CHenumalias.c -I../../include/xnscourier
+cc -c -O -I../../include -p CHstrtoname.c -I../../include/xnscourier
+mv CHstrtoname.o profiled/CHstrtoname.o
+cc -c -O -I../../include CHstrtoname.c -I../../include/xnscourier
+cc -c -p -O -I../../include  -D'CHADDRS="/usr/new/lib/xnscourier/CH.addrs"'  -D'CHDEFPATH="/usr/new/lib/xnscourier/CH.default"'  CHdefault.c
+mv CHdefault.o profiled/CHdefault.o
+cc -c -O -I../../include  -D'CHADDRS="/usr/new/lib/xnscourier/CH.addrs"'  -D'CHDEFPATH="/usr/new/lib/xnscourier/CH.default"'  CHdefault.c
+cc -c -O -I../../include -p CHusername.c -I../../include/xnscourier
+mv CHusername.o profiled/CHusername.o
+cc -c -O -I../../include CHusername.c -I../../include/xnscourier
+cc -c -O -I../../include -p CHretrieve.c -I../../include/xnscourier
+mv CHretrieve.o profiled/CHretrieve.o
+cc -c -O -I../../include CHretrieve.c -I../../include/xnscourier
+if "" is not the local domain:organization
+edit Makefile to change CHDEFAULT and rerun make
+echo "" | cat CH.stencil - > CH.default
+../../bin/xnsbfs > clearinghouse.addresses
+(test -s clearinghouse.addresses ||  echo ERROR: no local CH found. Edit clearinghouse.addresses and rerun make)
+*** Exit 1
+
+Stop.
+*** Exit 1
+
+Stop.
+*** Exit 1
+
+Stop.
+589.7u 263.8s 20:48 68% 51+111k 5913+9049io 1533pf+0w
+% dirs
+/usr/src/local/newerxns 
+% dirs
+/usr/src/local/newerxns 
+% ls
+CHANGES     README      courierlib  etc         lib         typescript
+M.k         bin         daemon      examples    man         xnscourier
+Makefile    compiler    doc         include     morexnslib  xnslib
+% cd cat /u         cat /usr/new/lib/x*r/cl*
+8E0#00.00.AA.00.75.F1   ":Evans:Berkeley.EECS" ":Cory:Berkeley.EECS"
+% dirs
+/usr/src/local/newerxns 
+% cd    cd xns   morexns/ lib/ch
+% cp /usr/new/lib/x*r/cl* .
+% cd ../..
+% !ma
+make -f M.k
+for Dir in xnslib compiler courierlib morexnslib daemon examples; do  (cd $Dir; make  install); done
+mkdir ../include
+mkdir: ../include: File exists
+*** Exit 1 (ignored)
+mkdir ../include/xnscourier
+mkdir: ../include/xnscourier: File exists
+*** Exit 1 (ignored)
+install -c -m 644 courier.h ../include/xnscourier
+install -c -m 644 courierdb.h ../include/xnscourier
+install -c -m 644 realcourierconnection.h ../include/xnscourier
+install -c -m 644 courierconnection.h ../include/xnscourier
+install -c -m 644 except.h ../include/xnscourier
+ar cr ../lib/libcourier.a client.o server.o readwrite.o misc.o bdt.o names.o options.o  lookahead.o sppclose.o getcourierent.o getcservice.o except.o
+cd profiled; ar cr ../../lib/libcourier_p.a client.o server.o readwrite.o misc.o bdt.o names.o options.o  lookahead.o sppclose.o getcourierent.o getcservice.o except.o 
+ranlib ../lib/libcourier.a ../lib/libcourier_p.a
+install -c -s xnscourier ../bin/xnscourier
+*** Exit 1 (ignored)
+ar rv ../lib/libcourier.a Time2.o Authent1.o BulkData1.o CH2.o Authent2.o Printing3.o CHEntries.o  Authent3.o CH3.o Filing4.o Filing5.o Filing6.o FSubset1.o *_c.o
+r - Time2.o
+r - Authent1.o
+r - BulkData1.o
+r - CH2.o
+r - Authent2.o
+r - Printing3.o
+r - CHEntries.o
+r - Authent3.o
+r - CH3.o
+r - Filing4.o
+r - Filing5.o
+r - Filing6.o
+r - FSubset1.o
+r - Authent2_c.o
+r - Authent3_c.o
+r - BulkData1_c.o
+r - CH2_c.o
+r - CH3_c.o
+r - FSubset1_c.o
+r - Filing4_c.o
+r - Filing5_c.o
+r - Filing6_c.o
+r - Printing3_c.o
+cd profiled; ar rv ../../lib/libcourier_p.a Time2.o Authent1.o BulkData1.o CH2.o Authent2.o Printing3.o CHEntries.o  Authent3.o CH3.o Filing4.o Filing5.o Filing6.o FSubset1.o *_c.o
+r - Time2.o
+r - Authent1.o
+r - BulkData1.o
+r - CH2.o
+r - Authent2.o
+r - Printing3.o
+r - CHEntries.o
+r - Authent3.o
+r - CH3.o
+r - Filing4.o
+r - Filing5.o
+r - Filing6.o
+r - FSubset1.o
+r - Authent2_c.o
+r - Authent3_c.o
+r - BulkData1_c.o
+r - CH2_c.o
+r - CH3_c.o
+r - FSubset1_c.o
+r - Filing4_c.o
+r - Filing5_c.o
+r - Filing6_c.o
+r - Printing3_c.o
+ranlib ../lib/libcourier.a ../lib/libcourier_p.a
+for i in Time2.cr Authentication1.cr BulkData1.cr Clearinghouse2.cr  Authentication2.cr Printing3.cr  Authentication3.cr Clearinghouse3.cr  Filing4.cr Filing5.cr Filing6.cr FilingSubset1.cr; do  (install -c -m 644 $i ../xnscourier/$i); done
+for i in Time2.h Authentication1.h BulkData1.h Clearinghouse2.h  Authentication2.h Printing3.h  Authentication3.h Clearinghouse3.h  Filing4.h Filing5.h Filing6.h FilingSubset1.h; do  (install -c -m 644 $i ../include/xnscourier/$i); done
+install -c -m 644 CHEntries0.cr ../xnscourier/CHEntries0.cr
+cp CHEntries0.h ../include/xnscourier/CHEntries.h
+cp CHEntries0.h ../include/xnscourier/CHEntries0.h
+cp Courierservices ../xnscourier/Courierservices
+chmod 644 ../xnscourier/Courierservices
+date > install
+for Dir in xnsbfs ch auth; do (cd $Dir; make DESTDIR= DESTBIN=/usr/new DESTCOURIER=/usr/new/lib/xnscourier  CHDEFAULT=""  LIBDIR=../../lib MANDIR=../../man  INCDIR=../../include COURIERDIR=../../xnscourier CC=cc install); done
+install -s -c xnsbfs ../../bin
+ar rv ../../lib/libcourier.a CHlookup.o CHenumerate.o CHenumalias.o CHstrtoname.o CHdefault.o  CHusername.o CHretrieve.o
+a - CHlookup.o
+a - CHenumerate.o
+a - CHenumalias.o
+a - CHstrtoname.o
+a - CHdefault.o
+a - CHusername.o
+a - CHretrieve.o
+cd profiled; ar rv ../../../lib/libcourier_p.a CHlookup.o CHenumerate.o CHenumalias.o CHstrtoname.o CHdefault.o  CHusername.o CHretrieve.o
+a - CHlookup.o
+a - CHenumerate.o
+a - CHenumalias.o
+a - CHstrtoname.o
+a - CHdefault.o
+a - CHusername.o
+a - CHretrieve.o
+ranlib ../../lib/libcourier.a ../../lib/libcourier_p.a
+rm -rf ../../include/xnscourier/CH.h  ../../xnscourier/CH.addrs  ../../xnscourier/CH.default
+cp CH.h ../../include/xnscourier        
+cp clearinghouse.addresses ../../xnscourier/CH.addrs
+cp CH.default ../../xnscourier
+chmod 644 ../../include/xnscourier/CH.h  ../../xnscourier/CH.addrs ../../xnscourier/CH.default
+cc -c -O -I. -I../../include -p simpleauth.c
+mv simpleauth.o profiled/simpleauth.o
+cc -c -O -I. -I../../include simpleauth.c
+cc -c -O -I. -I../../include -p getXNSpass.c
+mv getXNSpass.o profiled/getXNSpass.o
+cc -c -O -I. -I../../include getXNSpass.c
+cc -c -O -I. -I../../include -p getXNSuser.c
+mv getXNSuser.o profiled/getXNSuser.o
+cc -c -O -I. -I../../include getXNSuser.c
+cp ../../courierlib/Authentication2_defs.h .
+cc -c -p -O -I. -I../../include Authcredcheck.c -I../../include/xnscourier
+mv Authcredcheck.o profiled/Authcredcheck.o
+cc -c -O -I. -I../../include Authcredcheck.c -I../../include/xnscourier
+cc -c -p -O -I. -I../../include -D'BFS="/usr/new/xnsbfs -a"' Authlookup.c
+mv Authlookup.o profiled/Authlookup.o
+cc -c -O -I. -I../../include -D'BFS="/usr/new/xnsbfs -a"' Authlookup.c
+ar rv ../../lib/libcourier.a simpleauth.o getXNSpass.o getXNSuser.o Authcredcheck.o Authlookup.o
+a - simpleauth.o
+a - getXNSpass.o
+a - getXNSuser.o
+a - Authcredcheck.o
+a - Authlookup.o
+cd profiled; ar rv ../../../lib/libcourier_p.a simpleauth.o getXNSpass.o getXNSuser.o Authcredcheck.o Authlookup.o
+a - simpleauth.o
+a - getXNSpass.o
+a - getXNSuser.o
+a - Authcredcheck.o
+a - Authlookup.o
+ranlib ../../lib/libcourier.a ../../lib/libcourier_p.a
+cc -O -I../include -c xnscourierd.c
+cc -O -I../include -o xnscourierd xnscourierd.o ../lib/libcourier.a
+install -s -c xnscourierd ../xnscourier/xnscourierd
+for Dir in print gap ch xnscreds  filing_common filing_servers filing_client  remotetool archive vpfile; do  (cd $Dir;  make DESTDIR= DESTBIN=/usr/new DESTCOURIER=/usr/new/lib/xnscourier  DESTETC=/etc BINDIR=../../bin LIBDIR=../../lib  ETCDIR=../../etc MANDIR=../../man INCDIR=../../include  COURIERDIR=../../xnscourier CC=cc install);  done
+cc -O -I../../include -I../../courierlib -c getprintstatus.c
+cc -g -o getprintstatus getprintstatus.o ../../lib/libcourier.a
+cc -O -I../../include -I../../courierlib -c printtest.c
+cc -g -o printtest printtest.o  ../../lib/libcourier.a
+cc -O -I../../include -I../../courierlib -c xnsprint.c
+"xnsprint.c", line 161: warning: enumeration type clash, operator =
+"xnsprint.c", line 162: warning: enumeration type clash, operator =
+"xnsprint.c", line 163: warning: enumeration type clash, operator =
+"xnsprint.c", line 192: warning: enumeration type clash, operator =
+"xnsprint.c", line 450: warning: illegal pointer combination
+"xnsprint.c", line 451: warning: enumeration type clash, operator =
+"xnsprint.c", line 453: warning: enumeration type clash, operator =
+"xnsprint.c", line 458: warning: illegal pointer combination
+"xnsprint.c", line 459: warning: enumeration type clash, operator =
+"xnsprint.c", line 461: warning: enumeration type clash, operator =
+"xnsprint.c", line 463: warning: enumeration type clash, operator =
+"xnsprint.c", line 469: warning: illegal combination of pointer and integer, op :
+cc -g -o xnsprint xnsprint.o ../../lib/libcourier.a
+install -s -c getprintstatus ../../bin
+install -s -c xnsprint ../../bin
+../../bin/xnscourier -I../../xnscourier GAP3.cr
+cc -O -I../../include -c gaptelnetd.c
+cc -O -I../../include -c GAP3_support.c
+sed -e '/^Server(/,/^}/d' GAP3_server.c > GAP3_serverx.c
+cc -O -I../../include -c GAP3_serverx.c
+cc -o GAP3d -g gaptelnetd.o  GAP3_support.o GAP3_serverx.o ../../lib/libcourier.a
+../../bin/xnscourier -I../../xnscourier GAP2.cr
+cc -c -O -I../../include gaptelnet.c
+cc -O -I../../include -c GAP3_client.c
+cc -o gaptelnet -g gaptelnet.o  GAP3_support.o GAP3_client.o  ../../lib/libcourier.a
+install -c -s GAP3d ../../xnscourier/GAP3d
+install -c -s GAP2d ../../xnscourier/GAP2d
+install: open: GAP2d: No such file or directory
+*** Exit 1 (ignored)
+install -c -m 644 GAP3.cr ../../xnscourier/GAP3.cr
+install -c -m 644 GAP3.h ../../include/xnscourier/GAP3.h
+install -c -m 644 GAP2.cr ../../xnscourier/GAP2.cr
+install -c -m 644 GAP2.h ../../include/xnscourier/GAP2.h
+install -c -s gaptelnet ../../bin/gaptelnet
+cp ../../courierlib/Clearinghouse2_defs.h .
+cp ../../courierlib/Clearinghouse2.h .
+cc -O -I../../include -c enumerate.c
+cc -g -o enumerate enumerate.o ../../lib/libcourier.a
+cc -O -I../../include -c listaddr.c
+cc -g -o listaddr listaddr.o ../../lib/libcourier.a
+cc -O -I../../include -c listaliasof.c
+cc -g -o listaliasof listaliasof.o  ../../lib/libcourier.a
+cc -O -I../../include -c listproperties.c
+cc -g -o listproperties listproperties.o  ../../lib/libcourier.a
+cc -O -I../../include -c registerhost.c
+cc -g -o registerhost registerhost.o ../../lib/libcourier.a
+install -s -c registerhost ../../bin
+cc -g -O -I../../include -c xnscreds.c
+cc: warning: -g disables -O
+cc -g xnscreds.o  ../../lib/libcourier.a  -o xnscreds
+install -c -s xnscreds ../../bin/xnscreds
+install -c -m 644 filetypes.h ../../include/xnscourier/filetypes.h
+install -c -m 644 filing_server.h ../../include/xnscourier/filing_server.h
+cc -O -I. -I../../include -c misc.c
+cc -c -O -I. -I../../include get_type.c
+cc -c -I../../courierlib -I../../include -I../../include/xnscourier errmsg.c
+cc -c -O -I. -I../../include -o Make2ndCreds.o MakeSecondaryCreds.c
+sed -e 's/typedef Filing4_[^ ]* /&FILING_/'  -e 's/#define Filing4_[^ ]* /&FILING_/g'  -e '/#define Filing4_/!s/#define /#define FILING_/g'  -e 's/^    /&FILING_/'  -e 's/^} /&FILING_/'  -e 's/#include "Filing4.h"/#include <xnscourier\/Filing4.h>/'  ../../courierlib/Filing4_defs.h >filingV4.h
+sed -e 's/typedef Clearinghouse2_[^ ]* /&CLEARINGHOUSE_/'  -e 's/#define Clearinghouse2_[^ ]* /&CLEARINGHOUSE_/g'  -e '/#define Clearinghouse2_/!s/#define /#define CLEARINGHOUSE_/g'  -e 's/^  /&CLEARINGHOUSE_/'  -e 's/^} /&CLEARINGHOUSE_/'  -e '/#include/D'  ../../courierlib/Clearinghouse2_defs.h >clearinghouseV2.h
+sed -e 's/typedef Authentication2_[^ ]* /&AUTHENTICATION_/'  -e 's/#define Authentication2_[^ ]* /&AUTHENTICATION_/g'  -e '/#define Authentication2_/!s/#define /#define AUTHENTICATION_/g'  -e 's/^    /&AUTHENTICATION_/'  -e 's/^} /&AUTHENTICATION_/'  -e '/#include/D'  ../../courierlib/Authentication2_defs.h >authenticationV2.h
+expect enumeration type clashes (for now)
+cc -c -O -I. -I../../include -DFILING4=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  -DROOTNOTALLOWED filingd.c -o filingd_F4.o
+"filingd.c", line 3493: warning: enumeration type clash, operator =
+"filingd.c", line 3558: warning: enumeration type clash, operator ==
+"filingd.c", line 3590: warning: enumeration type clash, operator ==
+"filingd.c", line 3614: warning: enumeration type clash, operator ==
+cc -c -O -I. -I../../include -DFILING4=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  system_interface.c -o system_F4.o
+expect enumeration type clashes (for now)
+cc -c -O -I. -I../../include -DFILING4=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  filing_errors.c -o errors_F4.o
+"filing_errors.c", line 64: warning: enumeration type clash, operator =
+"filing_errors.c", line 80: warning: enumeration type clash, operator =
+"filing_errors.c", line 133: warning: enumeration type clash, operator =
+"filing_errors.c", line 134: warning: enumeration type clash, operator =
+"filing_errors.c", line 149: warning: enumeration type clash, operator =
+"filing_errors.c", line 150: warning: enumeration type clash, operator =
+"filing_errors.c", line 193: warning: enumeration type clash, operator =
+"filing_errors.c", line 194: warning: enumeration type clash, operator =
+"filing_errors.c", line 209: warning: enumeration type clash, operator =
+"filing_errors.c", line 210: warning: enumeration type clash, operator =
+cc -c -O -I. -I../../include -DFILING4=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  attribute.c -o attribute_F4.o
+cc -c -O -I. -I../../include -DFILING4=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  VPsupport.c -o VPsupport_F4.o
+sed -e 's/typedef Filing5_[^ ]* /&FILING_/'  -e 's/#define Filing5_[^ ]* /&FILING_/g'  -e '/#define Filing5_/!s/#define /#define FILING_/g'  -e 's/^    /&FILING_/'  -e 's/^} /&FILING_/'  -e 's/#include "Filing5.h"/#include <xnscourier\/Filing5.h>/'  ../../courierlib/Filing5_defs.h >filingV5.h
+expect enumeration type clashes (for now)
+cc -c -O -I. -I../../include -DFILING5=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  -DROOTNOTALLOWED filingd.c -o filingd_F5.o
+"filingd.c", line 3493: warning: enumeration type clash, operator =
+"filingd.c", line 3558: warning: enumeration type clash, operator ==
+"filingd.c", line 3590: warning: enumeration type clash, operator ==
+"filingd.c", line 3614: warning: enumeration type clash, operator ==
+cc -c -O -I. -I../../include -DFILING5=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  system_interface.c -o system_F5.o
+expect enumeration type clashes (for now)
+cc -c -O -I. -I../../include -DFILING5=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  filing_errors.c -o errors_F5.o
+"filing_errors.c", line 64: warning: enumeration type clash, operator =
+"filing_errors.c", line 80: warning: enumeration type clash, operator =
+"filing_errors.c", line 133: warning: enumeration type clash, operator =
+"filing_errors.c", line 134: warning: enumeration type clash, operator =
+"filing_errors.c", line 149: warning: enumeration type clash, operator =
+"filing_errors.c", line 150: warning: enumeration type clash, operator =
+"filing_errors.c", line 193: warning: enumeration type clash, operator =
+"filing_errors.c", line 194: warning: enumeration type clash, operator =
+"filing_errors.c", line 209: warning: enumeration type clash, operator =
+"filing_errors.c", line 210: warning: enumeration type clash, operator =
+cc -c -O -I. -I../../include -DFILING5=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  attribute.c -o attribute_F5.o
+cc -c -O -I. -I../../include -DFILING5=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  VPsupport.c -o VPsupport_F5.o
+sed -e 's/typedef Filing6_[^ ]* /&FILING_/'  -e 's/#define Filing6_[^ ]* /&FILING_/g'  -e '/#define Filing6_/!s/#define /#define FILING_/g'  -e 's/^    /&FILING_/'  -e 's/^} /&FILING_/'  -e 's/#include "Filing6.h"/#include <xnscourier\/Filing6.h>/'  ../../courierlib/Filing6_defs.h >filingV6.h
+sed -e 's/typedef Clearinghouse3_[^ ]* /&CLEARINGHOUSE_/'  -e 's/#define Clearinghouse3_[^ ]* /&CLEARINGHOUSE_/g'  -e '/#define Clearinghouse3_/!s/#define /#define CLEARINGHOUSE_/g'  -e 's/^  /&CLEARINGHOUSE_/'  -e 's/^} /&CLEARINGHOUSE_/'  -e '/#include/D'  ../../courierlib/Clearinghouse3_defs.h >clearinghouseV3.h
+sed -e 's/typedef Authentication3_[^ ]* /&AUTHENTICATION_/'  -e 's/#define Authentication3_[^ ]* /&AUTHENTICATION_/g'  -e '/#define Authentication3_/!s/#define /#define AUTHENTICATION_/g'  -e 's/^    /&AUTHENTICATION_/'  -e 's/^} /&AUTHENTICATION_/'  -e '/#include/D'  ../../courierlib/Authentication3_defs.h >authenticationV3.h
+expect enumeration type clashes (for now)
+cc -c -O -I. -I../../include -DFILING6=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  -DROOTNOTALLOWED filingd.c -o filingd_F6.o
+"filingd.c", line 3493: warning: enumeration type clash, operator =
+"filingd.c", line 3558: warning: enumeration type clash, operator ==
+"filingd.c", line 3590: warning: enumeration type clash, operator ==
+"filingd.c", line 3614: warning: enumeration type clash, operator ==
+cc -c -O -I. -I../../include -DFILING6=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  system_interface.c -o system_F6.o
+expect enumeration type clashes (for now)
+cc -c -O -I. -I../../include -DFILING6=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  filing_errors.c -o errors_F6.o
+"filing_errors.c", line 64: warning: enumeration type clash, operator =
+"filing_errors.c", line 80: warning: enumeration type clash, operator =
+"filing_errors.c", line 116: warning: enumeration type clash, operator =
+"filing_errors.c", line 133: warning: enumeration type clash, operator =
+"filing_errors.c", line 134: warning: enumeration type clash, operator =
+"filing_errors.c", line 149: warning: enumeration type clash, operator =
+"filing_errors.c", line 150: warning: enumeration type clash, operator =
+"filing_errors.c", line 193: warning: enumeration type clash, operator =
+"filing_errors.c", line 194: warning: enumeration type clash, operator =
+"filing_errors.c", line 209: warning: enumeration type clash, operator =
+"filing_errors.c", line 210: warning: enumeration type clash, operator =
+cc -c -O -I. -I../../include -DFILING6=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  attribute.c -o attribute_F6.o
+cc -c -O -I. -I../../include -DFILING6=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  VPsupport.c -o VPsupport_F6.o
+cc -c -O -I. -I../../include -DFILING6=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  unixcreds.c -o unixcreds_F6.o
+"unixcreds.c", line 62: warning: enumeration type clash, operator !=
+sed -e 's/typedef FilingSubset1_[^ ]* /&FILING_/'  -e 's/#define FilingSubset1_[^ ]* /&FILING_/g'  -e '/#define FilingSubset1_/!s/#define /#define FILING_/g'  -e 's/^  /&FILING_/'  -e 's/^} /&FILING_/'  -e 's/#include "FilingSubset1.h"/#include <xnscourier\/FilingSubset1.h>/'  ../../courierlib/FilingSubset1_defs.h >filingsubsetV1.h
+expect enumeration type clashes (for now)
+cc -c -O -I. -I../../include -DFILINGSUBSET1=1  -DROOTNOTALLOWED filingd.c -o filingd_FS1.o
+"filingd.c", line 3493: warning: enumeration type clash, operator =
+"filingd.c", line 3558: warning: enumeration type clash, operator ==
+cc -c -O -I. -I../../include -DFILINGSUBSET1=1  system_interface.c -o system_FS1.o
+expect enumeration type clashes (for now)
+cc -c -O -I. -I../../include -DFILINGSUBSET1=1  filing_errors.c -o errors_FS1.o
+"filing_errors.c", line 64: warning: enumeration type clash, operator =
+"filing_errors.c", line 80: warning: enumeration type clash, operator =
+"filing_errors.c", line 116: warning: enumeration type clash, operator =
+"filing_errors.c", line 133: warning: enumeration type clash, operator =
+"filing_errors.c", line 134: warning: enumeration type clash, operator =
+"filing_errors.c", line 149: warning: enumeration type clash, operator =
+"filing_errors.c", line 150: warning: enumeration type clash, operator =
+"filing_errors.c", line 193: warning: enumeration type clash, operator =
+"filing_errors.c", line 194: warning: enumeration type clash, operator =
+"filing_errors.c", line 209: warning: enumeration type clash, operator =
+"filing_errors.c", line 210: warning: enumeration type clash, operator =
+cc -c -O -I. -I../../include -DFILINGSUBSET1=1  attribute.c -o attribute_FS1.o
+cc -c -O -I. -I../../include -DFILINGSUBSET1=1  VPsupport.c -o VPsupport_FS1.o
+cc -c -O -I. -I../../include -DFILINGSUBSET1=1 -DFILETOOLCOMPATIBILITY -DEXTENSIONS  unixcreds.c -o unixcreds_FS1.o
+"unixcreds.c", line 62: warning: enumeration type clash, operator !=
+ar cr ../../lib/lib_filing.a misc.o get_type.o errmsg.o Make2ndCreds.o 
+ranlib ../../lib/lib_filing.a
+ar cr ../../lib/lib_filing4.a filingd_F4.o system_F4.o errors_F4.o  attribute_F4.o VPsupport_F4.o 
+ranlib ../../lib/lib_filing4.a
+ar cr ../../lib/lib_filing5.a filingd_F5.o system_F5.o errors_F5.o  attribute_F5.o VPsupport_F5.o 
+ranlib ../../lib/lib_filing5.a
+ar cr ../../lib/lib_filing6.a filingd_F6.o system_F6.o errors_F6.o  attribute_F6.o VPsupport_F6.o unixcreds_F6.o
+ranlib ../../lib/lib_filing6.a
+ar cr ../../lib/lib_filingsubset1.a filingd_FS1.o system_FS1.o errors_FS1.o  attribute_FS1.o VPsupport_FS1.o unixcreds_FS1.o
+ranlib ../../lib/lib_filingsubset1.a
+cc -g ../../courierlib/Filing4_s.o  ../../lib/lib_filing4.a  ../../lib/lib_filing.a ../../lib/libcourier.a  -o Filing4d
+cc -g ../../courierlib/Filing5_s.o  ../../lib/lib_filing5.a  ../../lib/lib_filing.a ../../lib/libcourier.a  -o Filing5d
+cc -g ../../courierlib/Filing6_s.o  ../../lib/lib_filing6.a  ../../lib/lib_filing.a ../../lib/libcourier.a  -o Filing6d
+cc -g ../../courierlib/FSubset1_s.o  ../../lib/lib_filingsubset1.a ../../lib/lib_filing.a  ../../lib/lib_filingsubset1.a ../../lib/libcourier.a  -o FilingSubset1d
+install -c -s Filing4d ../../xnscourier/Filing4d
+install -c -s Filing5d ../../xnscourier/Filing5d
+install -c -s Filing6d ../../xnscourier/Filing6d
+install -c -s FilingSubset1d ../../xnscourier/FilingSubset1d
+cc -g -O -I../../include -DXEROXFSCOMPATIBILITY -c cmds.c
+cc: warning: -g disables -O
+cc -g -O -I../../include -DXEROXFSCOMPATIBILITY -c cmdtab.c
+cc: warning: -g disables -O
+cc -g -O -I../../include -DXEROXFSCOMPATIBILITY -c xnftp.c
+cc: warning: -g disables -O
+"xnftp.c", line 333: warning: enumeration type clash, operator =
+cc -g -O -I../../include -DXEROXFSCOMPATIBILITY -c glob.c
+cc: warning: -g disables -O
+cc -g -O -I../../include -DXEROXFSCOMPATIBILITY -c main.c
+cc: warning: -g disables -O
+"main.c", line 150: warning: statement not reached
+cc -g cmds.o cmdtab.o xnftp.o glob.o main.o  ../../lib/lib_filing.a ../../lib/libcourier.a  ../../lib/lib_filing4.a ../../lib/libcourier.a  -o xnsftp
+install -c -s xnsftp ../../bin/xnsftp
+cc -c -g -O -I../../include -DXEROXFSCOMPATIBILITY -o xnsbrowse.o xnsremote.c
+cc: warning: -g disables -O
+cc -g xnsbrowse.o  ../../lib/lib_filing.a  ../../lib/libcourier.a ../../lib/lib_filing4.a  ../../lib/libcourier.a  -o xnsbrowse
+cc -c -g -O -I../../include -DXEROXFSCOMPATIBILITY -DXNSPRINT='"/usr/new/xnsprint"'  -DMAHA='"/usr/new/maha"' -DPRINTOPTION  -o xnsrprint.o xnsremote.c
+cc: warning: -g disables -O
+cc -g xnsrprint.o ../../lib/lib_filing.a  ../../lib/libcourier.a ../../lib/lib_filing4.a  ../../lib/libcourier.a  -o xnsrprint
+install -c -s xnsbrowse ../../bin/xnsbrowse
+install -c -s xnsrprint ../../bin/xnsrprint
+cc -c -g -O -I../../include -DXEROXFSCOMPATIBILITY xnsarchive.c
+cc: warning: -g disables -O
+cc -g xnsarchive.o ../../lib/lib_filing.a  ../../lib/libcourier.a ../../lib/lib_filing4.a  ../../lib/libcourier.a  -o xnsarchive
+cc -c -g -O -I../../include -DXEROXFSCOMPATIBILITY xnsrestore.c
+cc: warning: -g disables -O
+cc -g xnsrestore.o ../../lib/lib_filing.a  ../../lib/libcourier.a ../../lib/lib_filing4.a  ../../lib/libcourier.a  -o xnsrestore
+install -c -s xnsarchive ../../bin/xnsarchive
+install -c -s xnsrestore ../../bin/xnsrestore
+cc -g -O -I../../include -DXEROXFSCOMPATIBILITY -c vpfile.c
+cc: warning: -g disables -O
+cc -g vpfile.o ../../lib/lib_filing.a  ../../lib/libcourier.a ../../lib/lib_filing4.a  ../../lib/libcourier.a  -o vpfile
+install -c -s vpfile ../../bin/vpfile
+339.5u 163.3s 15:26 54% 39+124k 13319+10206io 886pf+0w
+% ^D
+script done on Mon Nov 16 17:04:31 1987
