@@ -1,4 +1,4 @@
-/*	ut.c	4.28	83/02/20	*/
+/*	ut.c	4.29	83/03/06	*/
 
 #include "tj.h"
 #if NUT > 0
@@ -742,14 +742,10 @@ utioctl(dev, cmd, data, flag)
 		switch(mtop->mt_op) {
 
 		case MTWEOF:
-			callcount = mtop->mt_count;
-			fcount = 1;
-			break;
-
 		case MTFSF: case MTBSF:
 		case MTFSR: case MTBSR:
-			callcount = 1;
-			fcount = mtop->mt_count;
+			callcount = mtop->mt_count;
+			fcount = 1;
 			break;
 
 		case MTREW: case MTOFFL: case MTNOP:
@@ -764,10 +760,6 @@ utioctl(dev, cmd, data, flag)
 			return (EINVAL);
 		while (--callcount >= 0) {
 			utcommand(dev, utops[mtop->mt_op], fcount);
-			/* note this depends on the mtop values */
-			if ((mtop->mt_op >= MTFSF && mtop->mt_op <= MTBSR) &&
-			    bp->b_resid)
-				return (EIO);
 			if ((bp->b_flags&B_ERROR) || (sc->sc_dsreg&UTDS_BOT))
 				break;
 		}
