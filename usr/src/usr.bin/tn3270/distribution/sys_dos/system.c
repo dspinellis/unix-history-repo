@@ -4,6 +4,47 @@
 #include "../api/api.h"
 #include "spint.h"
 
+#include "../general/globals.h"
+
+
+static Spint spinted;
+static char command[256];
+static int need_to_start = 0;
+
+/*
+ * shell_continue() actually runs the command, and looks for API
+ * requests coming back in.
+ *
+ * We are called from the main loop in telnet.c.
+ */
+
+int
+shell_continue()
+{
+    /*
+     * spint_start() returns when either the command has finished, or when
+     * the required interrupt comes in.  In the latter case, the appropriate
+     * thing to do is to process the interrupt, and then return to
+     * the interrupt issuer by calling spint_continue().
+     */
+    if (need_to_start) {
+	need_to_start = 0;
+	spint_start(command, &spinted);
+    }
+
+    if (spinted.done == 0) {
+	/* Process request */
+	handle_api(&spinted.regs, &spinted.sregs);
+	spint_continue(&spinted);
+    } else {
+	if (spinted.rc != 0) {
+	    fprintf(stderr, "Process generated a return code of 0x%x.\n",
+								spinted.rc);
+	}
+	shell_active = 0;
+    }
+    return shell_active;
+}
 
 
 /*
@@ -18,8 +59,6 @@ shell(argc,argv)
 int	argc;
 char	*argv[];
 {
-    Spint spinted;
-    char command[256];
 
     ClearElement(spinted);
     spinted.int_no = API_INTERRUPT_NUMBER;
@@ -51,22 +90,7 @@ char	*argv[];
 	}
 	command[0] = length;
     }
-
-    /*
-     * spint_start() returns when either the command has finished, or when
-     * the required interrupt comes in.  In the latter case, the appropriate
-     * thing to do is to process the interrupt, and then return to
-     * the interrupt issuer by calling spint_continue().
-     */
-    spint_start(command, &spinted);
-    while (spinted.done == 0) {
-	/* Process request */
-	handle_api(&spinted.regs, &spinted.sregs);
-	spint_continue(&spinted);
-    }
-    if (spinted.rc != 0) {
-	fprintf(stderr, "Process generated a return code of 0x%x.\n",
-								spinted.rc);
-    }
-    return 0;
+    need_to_start = 1;
+    shell_active = 1;
+    return 1;			/* Go back to main loop */
 }
