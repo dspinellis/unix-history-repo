@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)err.c	5.11 (Berkeley) %G%";
+static char sccsid[] = "@(#)err.c	5.12 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/types.h>
@@ -189,7 +189,7 @@ static char *errorlist[] =
 #define ERR_HISTUS	78
     "Usage: history [-rh] [# number of events]",
 #define ERR_SPDOLLT	79
-    "$ or < not allowed with $# or $?",
+    "$, ! or < not allowed with $# or $?",
 #define ERR_NEWLINE	80
     "Newline in variable name",
 #define ERR_SPSTAR	81
