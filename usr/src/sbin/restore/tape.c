@@ -1,7 +1,7 @@
 /* Copyright (c) 1983 Regents of the University of California */
 
 #ifndef lint
-static char sccsid[] = "@(#)tape.c	3.4	(Berkeley)	83/02/27";
+static char sccsid[] = "@(#)tape.c	3.5	(Berkeley)	83/02/28";
 #endif
 
 #include "restore.h"
@@ -16,7 +16,6 @@ static long	fssize;
 static int	mt = -1;
 static int	pipein = 0;
 static char	*magtape;
-static int	insetup = 0;
 static int	bct = NTREC+1;
 static char	tbf[NTREC*TP_BSIZE];
 static union	u_spcl endoftapemark;
@@ -72,7 +71,6 @@ setup()
 	extern int xtrmap(), xtrmapskip();
 
 	vprintf(stdout, "Verify tape and initialize maps\n");
-	insetup = 1;
 #ifdef RRESTOR
 	if ((mt = rmtopen(magtape, 0)) < 0)
 #else
@@ -162,7 +160,6 @@ setup()
 	curfile.action = USING;
 	getfile(xtrmap, xtrmapskip);
 	dumpmap = map;
-	insetup = 0;
 }
 
 getvol(nextvol)
@@ -184,12 +181,16 @@ getvol(nextvol)
 		dumpnum = 1;
 	}
 	if (pipein) {
-		if (volno != 1 || nextvol != 1)
+		if (nextvol != 1)
 			panic("Changing volumes on pipe input?\n");
-		return;
+		if (volno == 1)
+			return;
+		goto gethdr;
 	}
 	savecnt = blksread;
 again:
+	if (pipein)
+		done(1); /* pipes do not get a second chance */
 	if (command == 'R' || command == 'r' || curfile.action != SKIP)
 		newvol = nextvol;
 	else 
@@ -219,6 +220,7 @@ again:
 		fprintf(stderr, "Cannot open tape!\n");
 		goto again;
 	}
+gethdr:
 	volno = newvol;
 	flsht();
 	if (readhdr(&tmpbuf) == FAIL) {
@@ -242,6 +244,8 @@ again:
 		blksread = savecnt;
 		return;
 	}
+	if (readhdr(&spcl) == FAIL)
+		panic("no header after volume mark!\n");
 	findinode(&spcl, curfile.action == UNKNOWN ? 1 : 0);
 	if (gettingfile) {
 		gettingfile = 0;
@@ -328,6 +332,20 @@ extractfile(name)
 	/* NOTREACHED */
 }
 
+/*
+ * skip over bit maps on the tape
+ */
+skipmaps()
+{
+
+	while (checktype(&spcl, TS_CLRI) == GOOD ||
+	       checktype(&spcl, TS_BITS) == GOOD)
+		skipfile();
+}
+
+/*
+ * skip over a file on the tape
+ */
 skipfile()
 {
 	extern int null();
@@ -351,9 +369,9 @@ getfile(f1, f2)
 
 	if (checktype(&spcl, TS_END) == GOOD)
 		panic("ran off end of tape\n");
-	if (!insetup && checktype(&spcl, TS_INODE) == FAIL)
+	if (ishead(&spcl) == FAIL)
 		panic("not at beginning of a file\n");
-	if (setjmp(restart) != 0)
+	if (!gettingfile && setjmp(restart) != 0)
 		return;
 	gettingfile++;
 loop:
@@ -753,18 +771,14 @@ findinode(header, complain)
 			header->c_dinode.di_size = header->c_count * TP_BSIZE;
 			for (i = 0; i < header->c_count; i++)
 				header->c_addr[i]++;
-			if (insetup)
-				break;
-			skipfile();
+			break;
 		}
 		if (checktype(header, TS_BITS) == GOOD) {
 			curfile.name = "<file dump list>";
 			header->c_dinode.di_size = header->c_count * TP_BSIZE;
 			for (i = 0; i < header->c_count; i++)
 				header->c_addr[i]++;
-			if (insetup)
-				break;
-			skipfile();
+			break;
 		}
 		while (gethead(header) == FAIL)
 			skipcnt++;
