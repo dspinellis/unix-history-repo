@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)ufs_lookup.c	7.51 (Berkeley) %G%
+ *	@(#)ufs_lookup.c	7.52 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -43,8 +43,8 @@ int	dirchk = 0;
  * exists, lookup returns both the target and its parent directory locked.
  * When creating or renaming and LOCKPARENT is specified, the target may
  * not be ".".  When deleting and LOCKPARENT is specified, the target may
- * be "."., but the caller must check to ensure it does an vrele and iput
- * instead of two iputs.
+ * be "."., but the caller must check to ensure it does an vrele and vput
+ * instead of two vputs.
  *
  * Overall outline of ufs_lookup:
  *
@@ -85,7 +85,7 @@ ufs_lookup(ap)
 	int numdirpasses;		/* strategy for directory search */
 	doff_t endsearch;		/* offset to end directory search */
 	doff_t prevoff;			/* prev entry dp->i_offset */
-	struct inode *pdp;		/* saved dp during symlink work */
+	struct vnode *pdp;		/* saved dp during symlink work */
 	struct vnode *tdp;		/* returned by VFS_VGET */
 	doff_t enduseful;		/* pointer past last used dir slot */
 	u_long bmask;			/* block offset mask */
@@ -131,22 +131,22 @@ ufs_lookup(ap)
 		 * See comment below starting `Step through' for
 		 * an explaination of the locking protocol.
 		 */
-		pdp = dp;
+		pdp = vdp;
 		dp = VTOI(*vpp);
 		vdp = *vpp;
 		vpid = vdp->v_id;
-		if (pdp == dp) {   /* lookup on "." */
+		if (pdp == vdp) {   /* lookup on "." */
 			VREF(vdp);
 			error = 0;
 		} else if (flags & ISDOTDOT) {
-			IUNLOCK(pdp);
+			VOP_UNLOCK(pdp);
 			error = vget(vdp);
 			if (!error && lockparent && (flags & ISLASTCN))
-				ILOCK(pdp);
+				error = VOP_LOCK(pdp);
 		} else {
 			error = vget(vdp);
 			if (!lockparent || error || !(flags & ISLASTCN))
-				IUNLOCK(pdp);
+				VOP_UNLOCK(pdp);
 		}
 		/*
 		 * Check that the capability number did not change
@@ -155,14 +155,14 @@ ufs_lookup(ap)
 		if (!error) {
 			if (vpid == vdp->v_id)
 				return (0);
-			ufs_iput(dp);
-			if (lockparent && pdp != dp &&
-			    (flags & ISLASTCN))
-				IUNLOCK(pdp);
+			vput(vdp);
+			if (lockparent && pdp != vdp && (flags & ISLASTCN))
+				VOP_UNLOCK(pdp);
 		}
-		ILOCK(pdp);
-		dp = pdp;
-		vdp = ITOV(dp);
+		if (error = VOP_LOCK(pdp))
+			return (error);
+		vdp = pdp;
+		dp = VTOI(pdp);
 		*vpp = NULL;
 	}
 
@@ -375,7 +375,7 @@ searchloop:
 		 */
 		cnp->cn_flags |= SAVENAME;
 		if (!lockparent)
-			IUNLOCK(dp);
+			VOP_UNLOCK(vdp);
 		return (EJUSTRETURN);
 	}
 	/*
@@ -451,7 +451,7 @@ found:
 		}
 		*vpp = tdp;
 		if (!lockparent)
-			IUNLOCK(dp);
+			VOP_UNLOCK(vdp);
 		return (0);
 	}
 
@@ -476,12 +476,12 @@ found:
 		*vpp = tdp;
 		cnp->cn_flags |= SAVENAME;
 		if (!lockparent)
-			IUNLOCK(dp);
+			VOP_UNLOCK(vdp);
 		return (0);
 	}
 
 	/*
-	 * Step through the translation in the name.  We do not `iput' the
+	 * Step through the translation in the name.  We do not `vput' the
 	 * directory because we may need it again if a symbolic link
 	 * is relative to the current directory.  Instead we save it
 	 * unlocked as "pdp".  We must get the target inode before unlocking
@@ -499,15 +499,18 @@ found:
 	 * work if the file system has any hard links other than ".."
 	 * that point backwards in the directory structure.
 	 */
-	pdp = dp;
+	pdp = vdp;
 	if (flags & ISDOTDOT) {
-		IUNLOCK(pdp);	/* race to get the inode */
+		VOP_UNLOCK(pdp);	/* race to get the inode */
 		if (error = VFS_VGET(vdp->v_mount, dp->i_ino, &tdp)) {
-			ILOCK(pdp);
+			VOP_LOCK(pdp);
 			return (error);
 		}
-		if (lockparent && (flags & ISLASTCN))
-			ILOCK(pdp);
+		if (lockparent && (flags & ISLASTCN) &&
+		    (error = VOP_LOCK(pdp))) {
+			vput(tdp);
+			return (error);
+		}
 		*vpp = tdp;
 	} else if (dp->i_number == dp->i_ino) {
 		VREF(vdp);	/* we want ourself, ie "." */
@@ -516,7 +519,7 @@ found:
 		if (error = VFS_VGET(vdp->v_mount, dp->i_ino, &tdp))
 			return (error);
 		if (!lockparent || !(flags & ISLASTCN))
-			IUNLOCK(pdp);
+			VOP_UNLOCK(pdp);
 		*vpp = tdp;
 	}
 
@@ -872,34 +875,32 @@ ufs_dirempty(ip, parentino, cred)
 /*
  * Check if source directory is in the path of the target directory.
  * Target is supplied locked, source is unlocked.
- * The target is always iput before returning.
+ * The target is always vput before returning.
  */
 int
 ufs_checkpath(source, target, cred)
 	struct inode *source, *target;
 	struct ucred *cred;
 {
-	struct dirtemplate dirbuf;
-	register struct inode *ip;
 	struct vnode *vp;
 	int error, rootino, namlen;
+	struct dirtemplate dirbuf;
 
-	ip = target;
-	if (ip->i_number == source->i_number) {
+	vp = ITOV(target);
+	if (target->i_number == source->i_number) {
 		error = EEXIST;
 		goto out;
 	}
 	rootino = ROOTINO;
 	error = 0;
-	if (ip->i_number == rootino)
+	if (target->i_number == rootino)
 		goto out;
 
 	for (;;) {
-		if ((ip->i_mode & IFMT) != IFDIR) {
+		if (vp->v_type != VDIR) {
 			error = ENOTDIR;
 			break;
 		}
-		vp = ITOV(ip);
 		error = vn_rdwr(UIO_READ, vp, (caddr_t)&dirbuf,
 			sizeof (struct dirtemplate), (off_t)0, UIO_SYSSPACE,
 			IO_NODELOCKED, cred, (int *)0, (struct proc *)0);
@@ -925,16 +926,17 @@ ufs_checkpath(source, target, cred)
 		}
 		if (dirbuf.dotdot_ino == rootino)
 			break;
-		ufs_iput(ip);
-		if (error = VFS_VGET(vp->v_mount, dirbuf.dotdot_ino, &vp))
+		vput(vp);
+		if (error = VFS_VGET(vp->v_mount, dirbuf.dotdot_ino, &vp)) {
+			vp = NULL;
 			break;
-		ip = VTOI(vp);
+		}
 	}
 
 out:
 	if (error == ENOTDIR)
 		printf("checkpath: .. not a directory\n");
-	if (ip != NULL)
-		ufs_iput(ip);
+	if (vp != NULL)
+		vput(vp);
 	return (error);
 }
