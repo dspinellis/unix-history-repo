@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)dcheck.c	5.2 (Berkeley) %G%";
+static char sccsid[] = "@(#)dcheck.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -28,7 +28,7 @@ static char sccsid[] = "@(#)dcheck.c	5.2 (Berkeley) %G%";
 
 union {
 	struct	fs fs;
-	char pad[MAXBSIZE];
+	char pad[SBSIZE];
 } fsun;
 #define	sblock	fsun.fs
 
@@ -38,7 +38,7 @@ struct dirstuff {
 	char dbuf[MAXBSIZE];
 };
 
-struct	dinode	itab[MAXIPG];
+struct	dinode	itab[MAXBSIZE / sizeof(struct dinode)];
 struct	dinode	*gip;
 ino_t	ilist[NB];
 
@@ -117,20 +117,28 @@ char *file;
 		ecount[i] = 0;
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
-		    sblock.fs_ipg * sizeof (struct dinode));
-		for (j = 0; j < sblock.fs_ipg; j++) {
-			pass1(&itab[j]);
-			ino++;
+		for (i = 0;
+		     i < sblock.fs_ipg / INOPF(&sblock);
+		     i += sblock.fs_frag) {
+			bread(fsbtodb(&sblock, cgimin(&sblock, c) + i),
+			    (char *)itab, sblock.fs_bsize);
+			for (j = 0; j < INOPB(&sblock); j++) {
+				pass1(&itab[j]);
+				ino++;
+			}
 		}
 	}
 	ino = 0;
 	for (c = 0; c < sblock.fs_ncg; c++) {
-		bread(fsbtodb(&sblock, cgimin(&sblock, c)), (char *)itab,
-		    sblock.fs_ipg * sizeof (struct dinode));
-		for (j = 0; j < sblock.fs_ipg; j++) {
-			pass2(&itab[j]);
-			ino++;
+		for (i = 0;
+		     i < sblock.fs_ipg / INOPF(&sblock);
+		     i += sblock.fs_frag) {
+			bread(fsbtodb(&sblock, cgimin(&sblock, c) + i),
+			    (char *)itab, sblock.fs_bsize);
+			for (j = 0; j < INOPB(&sblock); j++) {
+				pass2(&itab[j]);
+				ino++;
+			}
 		}
 	}
 	free(ecount);
