@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)mvprintw.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)mvprintw.c	5.8 (Berkeley) %G%";
 #endif /* not lint */
 
 #if __STDC__
@@ -65,7 +65,7 @@ mvwprintw(win, y, x, fmt, va_alist)
 #else
 	va_start(ap);
 #endif
-	ret = _sprintw(win, ap);
+	ret = _sprintw(win, fmt, ap);
 	va_end(ap);
 	return ret;
 }
