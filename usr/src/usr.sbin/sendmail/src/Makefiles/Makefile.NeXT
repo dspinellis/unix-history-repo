@@ -7,7 +7,7 @@
 #
 #  This has been tested on NeXT 2.1.
 #
-#	@(#)Makefile.NeXT	8.5 (Berkeley) %G%
+#	@(#)Makefile.NeXT	8.6 (Berkeley) %G%
 #
 
 # use O=-O (usual) or O=-g (debugging)
@@ -99,8 +99,9 @@ install: install-sendmail install-docs
 install-sendmail: sendmail
 	install -o ${BINOWN} -g ${BINGRP} -m ${BINMODE} sendmail ${BINDIR}
 	for i in ${LINKS}; do rm -f $$i; ln -s ${BINDIR}/sendmail $$i; done
-	install -c -o ${BINOWN} -g ${BINGRP} -m 644 /dev/null \
-	    ${STDIR}/sendmail.st
+	cp /dev/null  ${STDIR}/sendmail.st
+	chown ${BINOWN}.${BINGRP} ${STDIR}/sendmail.st
+	chmod 644 ${STDIR}/sendmail.st
 	install -c -o ${BINOWN} -g ${BINGRP} -m 444 sendmail.hf ${HFDIR}
 
 # doesn't actually install them -- you may want to install pre-nroff versions
