@@ -342,12 +342,19 @@ zzzcode( p, c ) register NODE *p; {
 		putstr("\n	");
 
 	case 'E':	/* INCR and DECR, FOREFF */
- 		if (p->in.right->tn.lval == 1)
+ 		if (p->in.right->in.op == ICON && p->in.right->tn.lval == 1)
 			{
 			putstr(p->in.op == INCR ? "inc" : "dec");
 			prtype(p->in.left);
 			putchar('\t');
 			adrput(p->in.left);
+			return;
+			}
+		else if (p->in.left->in.type == FLOAT || p->in.left->in.type == DOUBLE) {
+			if (p->in.op == INCR)
+				expand(p, INAREG, "ldZL\tAL\n\taddZL\tAR\n\tstZL\tAL");
+			else /* DECR */
+				expand(p, INAREG, "ldZL\tAL\n\tsubZL\tAR\n\tstZL\tAL");
 			return;
 			}
 		putstr(p->in.op == INCR ? "add" : "sub");
