@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)2.t	6.25 (Berkeley) %G%
+.\"	@(#)2.t	6.26 (Berkeley) %G%
 .\"
 .ds lq ``
 .ds rq ''
@@ -1439,6 +1439,9 @@ lw(2i) l.
 \fB#\fP \fIdate yymmddhhmm\fP	(set date, see \fIdate\fP\|(1))
 \&....
 \fB#\fP \fIpasswd -l root\fP	(set password for super-user)
+\fBNew password:\fP	(password will not echo)
+\fBRetype new password:\fP
+\fB#\fP \fIpasswd -l toor\fP	(set password for super-user)
 \fBNew password:\fP	(password will not echo)
 \fBRetype new password:\fP
 \fB#\fP \fIhostname mysitename\fP	(set your hostname)
