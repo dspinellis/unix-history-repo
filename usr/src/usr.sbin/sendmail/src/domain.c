@@ -10,9 +10,9 @@
 
 #ifndef lint
 #ifdef NAMED_BIND
-static char sccsid[] = "@(#)domain.c	6.19.1.1 (Berkeley) %G% (with name server)";
+static char sccsid[] = "@(#)domain.c	6.20 (Berkeley) %G% (with name server)";
 #else
-static char sccsid[] = "@(#)domain.c	6.19.1.1 (Berkeley) %G% (without name server)";
+static char sccsid[] = "@(#)domain.c	6.20 (Berkeley) %G% (without name server)";
 #endif
 #endif /* not lint */
 
@@ -349,10 +349,6 @@ getcanonname(host, hbsize)
 	if ((_res.options & RES_INIT) == 0 && res_init() == -1)
 		return (FALSE);
 
-	for (cp = host, n = 0; *cp; cp++)
-		if (*cp == '.')
-			n++;
-
 	/*
 	**  Initialize domain search list.  If there is at least one
 	**  dot in the name, search the unmodified name first so we
@@ -362,6 +358,11 @@ getcanonname(host, hbsize)
 	**  Older versions of the resolver could create this
 	**  list by tearing apart the host name.
 	*/
+
+cnameloop:
+	for (cp = host, n = 0; *cp; cp++)
+		if (*cp == '.')
+			n++;
 
 	dp = searchlist;
 	if (n > 0)
@@ -381,8 +382,6 @@ getcanonname(host, hbsize)
 	**  Now run through the search list for the name in question.
 	*/
 
-cnameloop:
-	dp = searchlist;
 	mxmatch = NULL;
 	qtype = T_ANY;
 
