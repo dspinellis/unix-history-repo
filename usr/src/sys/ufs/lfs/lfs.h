@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.18 (Berkeley) %G%
+ *	@(#)lfs.h	7.19 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -261,7 +261,7 @@ struct segsum {
  */
 typedef struct block_info {
 	ino_t	bi_inode;		/* inode # */
-	off_t	bi_lbn;			/* logical block w/in file */
+	daddr_t	bi_lbn;			/* logical block w/in file */
 	daddr_t	bi_daddr;		/* disk address of block */
 	time_t	bi_segcreate;		/* origin segment create time */
 	void	*bi_bp;			/* data buffer */
