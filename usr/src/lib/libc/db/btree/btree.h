@@ -7,7 +7,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)btree.h	5.11 (Berkeley) %G%
+ *	@(#)btree.h	5.12 (Berkeley) %G%
  */
 
 #include <mpool.h>
@@ -259,8 +259,6 @@ typedef struct BTREE {
 	size_t	bt_dbufsz;		/* data buffer size */
 
 	int	bt_fd;			/* tree file descriptor */
-	FILE	*bt_rfp;		/* R: record FILE pointer */
-	int	bt_rfd;			/* R: record file descriptor */
 
 	pgno_t	bt_free;		/* next free page */
 	indx_t	bt_psize;		/* page size */
@@ -276,23 +274,32 @@ typedef struct BTREE {
 	int	(*bt_pfx) __P((const DBT *, const DBT *));
 					/* R: recno input function */
 	int	(*bt_irec) __P((struct BTREE *, recno_t));
-	recno_t	bt_nrecs;		/* R: number of records */
+
+	FILE	*bt_rfp;		/* R: record FILE pointer */
+	int	bt_rfd;			/* R: record file descriptor */
+
+	caddr_t	bt_cmap;		/* R: current point in mapped space */
 	caddr_t	bt_smap;		/* R: start of mapped space */
 	caddr_t bt_emap;		/* R: end of mapped space */
+	size_t	bt_msize;		/* R: size of mapped region. */
+
+	recno_t	bt_nrecs;		/* R: number of records */
 	size_t	bt_reclen;		/* R: fixed record length */
-	int	bt_reof;		/* R: end of input file reached. */
 	u_char	bt_bval;		/* R: delimiting byte/pad character */
 
-#define	BTF_DELCRSR	0x001		/* cursor has been deleted */
-#define	BTF_FIXEDLEN	0x002		/* R: fixed length records */
-#define	BTF_INMEM	0x004		/* B: in-memory tree */
-#define	BTF_METADIRTY	0x008		/* B: need to write metadata */
-#define	BTF_MODIFIED	0x010		/* tree modified */
-#define	BTF_NODUPS	0x020		/* B: no duplicate keys permitted */
-#define	BTF_RDONLY	0x040		/* read-only tree */
-#define	BTF_RECNO	0x080		/* R: record oriented tree */
-#define	BTF_RINMEM	0x100		/* R: in-memory tree */
-#define	BTF_SEQINIT	0x200		/* sequential scan initialized */
+#define	BTF_CLOSEFP	0x0001		/* R: opened a file pointer */
+#define	BTF_DELCRSR	0x0002		/* cursor has been deleted */
+#define	BTF_EOF		0x0004		/* R: end of input file reached. */
+#define	BTF_FIXEDLEN	0x0008		/* R: fixed length records */
+#define	BTF_INMEM	0x0010		/* B: in-memory tree */
+#define	BTF_MEMMAPPED	0x0020		/* R: memory mapped file. */
+#define	BTF_METADIRTY	0x0040		/* B: need to write metadata */
+#define	BTF_MODIFIED	0x0080		/* tree modified */
+#define	BTF_NODUPS	0x0100		/* B: no duplicate keys permitted */
+#define	BTF_RDONLY	0x0200		/* read-only tree */
+#define	BTF_RECNO	0x0400		/* R: record oriented tree */
+#define	BTF_RINMEM	0x0800		/* R: in-memory tree */
+#define	BTF_SEQINIT	0x1000		/* sequential scan initialized */
 	u_long		bt_flags;	/* btree state */
 } BTREE;
 
