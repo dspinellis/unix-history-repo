@@ -5,12 +5,12 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)char.c	5.2 (Berkeley) %G%";
+static char *sccsid = "@(#)char.c	5.3 (Berkeley) %G%";
 #endif
 
 #include "sh.char.h"
 
-char _cmap[256] = {
+unsigned short _cmap[256] = {
 /*	nul		soh		stx		etx	*/
 	0,		0,		0,		0,
 
@@ -48,61 +48,61 @@ char _cmap[256] = {
 	0,		0,		0,		0,
 
 /*	0		1		2		3	*/
-	0,		0,		0,		0,
+	_DIG,		_DIG,		_DIG,		_DIG,
 
 /*	4		5		6		7	*/
-	0,		0,		0,		0,
+	_DIG,		_DIG,		_DIG,		_DIG,
 
 /*	8		9		:		;	*/
-	0,		0,		0,		_META,
+	_DIG,		_DIG,		0,		_META,
 
 /*	<		=		>		?	*/
 	_META,		0,		_META,		_GLOB,
 
 /*	@		A		B		C	*/
-	0,		0,		0,		0,
+	0,		_LET,		_LET,		_LET,
 
 /*	D		E		F		G	*/
-	0,		0,		0,		0,
+	_LET,		_LET,		_LET,		_LET,
 
 /*	H		I		J		K	*/
-	0,		0,		0,		0,
+	_LET,		_LET,		_LET,		_LET,
 
 /*	L		M		N		O	*/
-	0,		0,		0,		0,
+	_LET,		_LET,		_LET,		_LET,
 
 /*	P		Q		R		S	*/
-	0,		0,		0,		0,
+	_LET,		_LET,		_LET,		_LET,
 
 /*	T		U		V		W	*/
-	0,		0,		0,		0,
+	_LET,		_LET,		_LET,		_LET,
 
 /*	X		Y		Z		[	*/
-	0,		0,		0,		_GLOB,
+	_LET,		_LET,		_LET,		_GLOB,
 
 /*	\		]		^		_	*/
-	_ESC,		0,		0,		0,
+	_ESC,		0,		0,		_LET,
 
 /*	`		a		b		c	*/
-	_Q1|_GLOB,	0,		0,		0,
+	_Q1|_GLOB,	_LET,		_LET,		_LET,
 
 /*	d		e		f		g	*/
-	0,		0,		0,		0,
+	_LET,		_LET,		_LET,		_LET,
 
 /*	h		i		j		k	*/
-	0,		0,		0,		0,
+	_LET,		_LET,		_LET,		_LET,
 
 /*	l		m		n		o	*/
-	0,		0,		0,		0,
+	_LET,		_LET,		_LET,		_LET,
 
 /*	p		q		r		s	*/
-	0,		0,		0,		0,
+	_LET,		_LET,		_LET,		_LET,
 
 /*	t		u		v		w	*/
-	0,		0,		0,		0,
+	_LET,		_LET,		_LET,		_LET,
 
 /*	x		y		z		{	*/
-	0,		0,		0,		_GLOB,
+	_LET,		_LET,		_LET,		_GLOB,
 
 /*	|		}		~		del	*/
 	_META,		0,		0,		0,

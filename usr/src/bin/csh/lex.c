@@ -5,11 +5,10 @@
  */
 
 #ifndef lint
-static char *sccsid = "@(#)lex.c	5.3 (Berkeley) %G%";
+static char *sccsid = "@(#)lex.c	5.4 (Berkeley) %G%";
 #endif
 
 #include "sh.h"
-#include "sh.char.h"
 #include <sgtty.h>
 
 /*
@@ -1302,12 +1301,14 @@ bseek(l)
 }
 
 /* any similarity to bell telephone is purely accidental */
+#ifndef btell
 off_t
 btell()
 {
 
 	return (fseekp);
 }
+#endif
 
 btoeof()
 {
