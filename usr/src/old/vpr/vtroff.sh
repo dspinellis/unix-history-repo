@@ -1,7 +1,6 @@
 #! /bin/csh -f
-set echo
 #
-#	@(#)vtroff.sh	1.5	(Berkeley)	%G%
+#	@(#)vtroff.sh	1.6	(Berkeley)	%G%
 #
 #	$troffmachine is where the troffing will be done.
 set troffmachine = ucbdali
