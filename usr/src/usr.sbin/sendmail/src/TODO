@@ -1,4 +1,4 @@
-(Version 8.30 of %G%)
+(Version 8.31 of %G%)
 
 Key:
   X -- extension (user visible change)
@@ -53,11 +53,6 @@ X ***	Total connection cache lifespan timeout -- a way to give a
 	timeout on connections regardless of whether they are active
 	or not.  For single threaded servers such as Microsoft SMTP
 	gateway.  Douglas Anderson <dlander@afterlife.ncsc.mil>.
-
-X ***	Mailer flag that does a "ping" equivalent -- if it fails, wait
-	30 seconds and try again (for dialup PPP connections).  Could
-	just try the connection and then immediately retry on some
-	kinds of failures.
 
 X ***	Create a macro that has message size.
 	Peter Wemm <peter@DIALix.oz.au>
@@ -129,8 +124,6 @@ X **	"E" configuration line that sets environment variables.
 E **	Change listen() high-load backoff to accept and issue a 4xx
 	message so that it responds more quickly.
 
-E **	Change "/usr/tmp/dead.letter" to be based on _PATH_VARTMP.
-
 B **	Commas in NAME envariable cause problems (Peter Wan
 	<peter@cc.gatech.edu>).  Merge with suggestions to use
 	MIME-format for 8-bit characters?
@@ -172,10 +165,6 @@ X **	Add $!x class to match any number of words not in class x. (KRE)
 
 X **	LOCAL_RULE_5 (Spencer Sun, spencer@phoenix.Princeton.EDU)
 
-X **	Add "bestmx" map -- returns "best MX host" for this address.
-	Allows you to do automatic detection of when you are the best
-	MX for a given address.  [8.7?]
-
 X **	Some way to diddle resolver flags on a per-lookup basis, such
 	as a flag to the map declaration.  (Rick McCarty)
 	- Is this really a good idea?  DNSRCH can be turned off by
@@ -187,8 +176,6 @@ X **	Extend makemap to "gather" values -- i.e., merge entries that
 E **	Allow error messages on individual addresses in the qf file.
 	(BCX)
 
-X **	Multi-character option names.  [9.1]
-
 X **	User database extensions for mailing lists:
 	list:precedence -- Precedence: value for new message
 	list:envelopefrom -- envelope "from" value for new message
@@ -196,13 +183,6 @@ X **	User database extensions for mailing lists:
 
 X **	Command line switch to set precedence (for mailing list
 	generation).  (BCX)
-
-B **	Restore `T' line to eliminate X-Authentication-Warning: at
-	inappropriate times.  (Christophe Wolfhugel)
-	- T could become a shorthand for Ct -- i.e., create a new
-	  predefined class.
-	- Eliminate "<user> set sender to <address>" message entirely?
-	  (this is the workaround)
 
 B **	Return-Path: header should have <> added if not already there.
 
