@@ -1,4 +1,4 @@
-/*	uipc_socket.c	4.61	82/10/23	*/
+/*	uipc_socket.c	4.62	82/10/31	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -186,6 +186,7 @@ sostat(so, sb)
 {
 
 	bzero((caddr_t)sb, sizeof (*sb));		/* XXX */
+	copyout((caddr_t)&sb, (caddr_t)ub, sizeof (sb));/* XXX */
 	return (0);					/* XXX */
 }
 
