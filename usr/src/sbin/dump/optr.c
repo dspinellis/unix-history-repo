@@ -6,12 +6,23 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optr.c	5.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)optr.c	5.9 (Berkeley) %G%";
 #endif /* not lint */
 
+#ifdef sunos
+#include <stdio.h>
+#include <ctype.h>
+#include <sys/param.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/dir.h>
+#else
 #include <sys/param.h>
 #include <sys/wait.h>
 #include <ufs/dir.h>
+#include <stdio.h>
+#endif
 #include <signal.h>
 #include <time.h>
 #include <fstab.h>
@@ -20,7 +31,6 @@ static char sccsid[] = "@(#)optr.c	5.8 (Berkeley) %G%";
 #include <utmp.h>
 #include <tzfile.h>
 #include <errno.h>
-#include <stdio.h>
 #ifdef __STDC__
 #include <unistd.h>
 #include <stdlib.h>

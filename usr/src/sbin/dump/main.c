@@ -12,12 +12,24 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)main.c	5.17 (Berkeley) %G%";
+static char sccsid[] = "@(#)main.c	5.18 (Berkeley) %G%";
 #endif /* not lint */
 
+#ifdef sunos
+#include <stdio.h>
+#include <errno.h>
+#include <ctype.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/dir.h>
+#include <sys/vnode.h>
+#include <ufs/inode.h>
+#else
 #include <sys/param.h>
 #include <ufs/dir.h>
 #include <ufs/dinode.h>
+#endif
 #include <ufs/fs.h>
 #include <protocols/dumprestore.h>
 #include <signal.h>
@@ -454,3 +466,19 @@ rawname(cp)
 	strcat(rawbuf, dp+1);
 	return (rawbuf);
 }
+
+#ifdef sunos
+char *
+strerror(errnum)
+	int errnum;
+{
+	extern int sys_nerr;
+	extern char *sys_errlist[];
+
+	if (errnum < sys_nerr) {
+		return(sys_errlist[errnum]);
+	} else {
+		return("bogus errno in strerror");
+	}
+}
+#endif
