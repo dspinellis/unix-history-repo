@@ -2,9 +2,9 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)make.1	4.1 (Berkeley) %G%
+.\"	@(#)make.1	5.1 (Berkeley) %G%
 .\"
-.TH MAKE 1 
+.TH MAKE 1  "18 January 1983"
 .UC 4
 .SH NAME
 make \- maintain program groups
@@ -59,13 +59,13 @@ on which that name may appear.
 .PP
 Two special forms of a name are recognized.
 A name like
-.I a(b)
+.IR a ( b )
 means the file named
 .I b
 stored in the archive named
 .I a.
 A name like
-.I a((b))
+.IR a (( b ))
 means the file stored in archive
 .I a
 containing the entry point
@@ -100,12 +100,15 @@ string1 = string2
 .PP
 are macro definitions.
 Subsequent appearances of 
-.I $(string1)
+.RI $( string1 )
+or
+.RI ${ string1 }
 are replaced by
 .IR string2 .
 If
 .I string1
-is a single character, the parentheses are optional.
+is a single character, the parentheses or braces
+are optional.
 .PP
 .I Make 
 infers prerequisites for files for which
@@ -172,7 +175,15 @@ and `LFLAGS' and `YFLAGS' for
 .I lex
 and
 .IR yacc (1)
-options.
+options.  In addition, the macro `MFLAGS' is filled in
+with the initial command line options supplied to 
+.IR make .
+This simplifies maintaining a hierarchy of makefiles as
+one may then invoke 
+.I make
+on makefiles in subdirectories and pass along useful options
+such as
+.BR \-k .
 .PP
 Command lines are executed one at a time, each by its
 own shell.
@@ -193,7 +204,8 @@ or the command begins with
 <tab><hyphen>.
 .PP
 Interrupt and quit cause the target to be deleted
-unless the target depends on the special name `.PRECIOUS'.
+unless the target is a directory or
+depends on the special name `.PRECIOUS'.
 .PP
 Other options:
 .TP
