@@ -1,4 +1,4 @@
-/*	ip_icmp.c	4.29	83/03/10	*/
+/*	ip_icmp.c	4.30	83/03/12	*/
 
 #include "../h/param.h"
 #include "../h/systm.h"
@@ -155,7 +155,6 @@ icmp_input(m)
 	case ICMP_UNREACH:
 	case ICMP_TIMXCEED:
 	case ICMP_PARAMPROB:
-	case ICMP_REDIRECT:
 	case ICMP_SOURCEQUENCH:
 		/*
 		 * Problem with previous datagram; advise
@@ -191,12 +190,26 @@ icmp_input(m)
 		/* fill in source address zero fields! */
 		goto reflect;
 
+	case ICMP_REDIRECT:
 	case ICMP_ECHOREPLY:
 	case ICMP_TSTAMPREPLY:
 	case ICMP_IREQREPLY:
 		if (icmplen < ICMP_ADVLENMIN || icmplen < ICMP_ADVLEN(icp)) {
 			icmpstat.icps_badlen++;
 			goto free;
+		}
+		/*
+		 * Short circuit routing redirects to force
+		 * immediate change in the kernel's routing
+		 * tables.  The message is also handed to anyone
+		 * listening on a raw socket (e.g. the routing
+		 * daemon for use in updating it's tables).
+		 */
+		if (icp->icmp_type == ICMP_REDIRECT) {
+			icmpsrc.sin_addr = icp->icmp_ip.ip_dst;
+			icmpdst.sin_addr = icp->icmp_gwaddr;
+			rtredirect((struct sockaddr *)&icmpsrc,
+			  (struct sockaddr *)&icmpdst);
 		}
 		icmpsrc.sin_addr = ip->ip_src;
 		icmpdst.sin_addr = ip->ip_dst;
