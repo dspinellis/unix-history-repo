@@ -1,4 +1,4 @@
-#	@(#)stests	5.2 (Berkeley) %G%
+#	@(#)stests	5.3 (Berkeley) %G%
 
 #Latest version.  My sort passes all tests because I wrote it.
 #We differ only on 25E and 25H.
@@ -77,7 +77,7 @@ cat <<'!' >xsort; chmod +x xsort
 			cmp xx out >/dev/null && exit 0
 			echo $TEST$X comparison failed
 		else
-			test "`cksum <in`" = "`cksum <xx`" && exit 0
+			test "`cksum -o2 <in`" = "`cksum -o2 <xx`" && exit 0
 			echo $TEST$X checksum failed
 		fi
 	else
