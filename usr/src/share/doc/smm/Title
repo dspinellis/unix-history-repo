@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.roff%
 .\"
-.\"	@(#)Title	8.1 (Berkeley) %G%
+.\"	@(#)Title	8.2 (Berkeley) %G%
 .\"
 .ps 18
 .vs 22
@@ -102,7 +102,7 @@ Business Equipment Manufacturers Association (CBEMA), 311 First St., NW,
 Suite 500, Washington, DC 20001-2178.  The developmental work of
 Programming Language C was completed by the X3J11 Technical Committee.''
 .sp 2
-Manual pages clri.8, cron.8, icheck.8, ncheck.8, and sa.8
+Manual pages cron.8, icheck.8, ncheck.8, and sa.8
 and documents SMM:15, 16, and 17
 are copyright 1979, AT&T Bell Laboratories, Incorporated.
 Document SMM:14 is a modification of an earlier document that
