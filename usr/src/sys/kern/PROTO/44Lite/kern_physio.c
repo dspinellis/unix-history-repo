@@ -22,13 +22,10 @@
 #include "user.h"
 #endif
 
-static	struct buf *getswbuf();
-static	freeswbuf();
-
 /*
- * This routine does device I/O for a user process.
+ * This routine does raw device I/O for a user process.
  *
- * If the user has the proper access privilidges, the process is
+ * If the user has the proper access privileges, the process is
  * marked 'delayed unlock' and the pages involved in the I/O are
  * faulted and locked. After the completion of the I/O, the pages
  * are unlocked.
