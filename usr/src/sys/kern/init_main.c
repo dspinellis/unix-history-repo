@@ -2,7 +2,7 @@
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
- *	@(#)init_main.c	8.5 (Berkeley) %G%
+ *	@(#)init_main.c	8.6 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -57,8 +57,8 @@ extern	struct user *proc0paddr;
  * hard work is done in the lower-level initialization routines including
  * startup(), which does memory initialization and autoconfiguration.
  */
-main(regs)
-	int *regs;
+main(framep)
+	void *framep;
 {
 	register struct proc *p;
 	register struct filedesc0 *fdp;
@@ -228,7 +228,7 @@ main(regs)
 	if (fork(p, NULL, rval))
 		panic("fork init");
 	if (rval[1]) {
-		start_init(curproc, regs);
+		start_init(curproc, framep);
 		return;
 	}
 
@@ -267,9 +267,9 @@ static char *initpaths[] = {
  * The program is invoked with one argument containing the boot flags.
  */
 static void
-start_init(p, regs)
+start_init(p, framep)
 	struct proc *p;
-	int *regs;
+	void *framep;
 {
 	vm_offset_t addr;
 	struct execve_args args;
@@ -279,15 +279,13 @@ start_init(p, regs)
 	initproc = p;
 
 	/*
-	 * We need to set p->p_md.md_regs since start_init acts like a
-	 * system call and references the regs to set the entry point
-	 * (see setregs) when it tries to exec.  On regular fork, the
-	 * p->p_md.md_regs of the child is undefined since it is set on
-	 * each system call.  The startup code in "locore.s" has arranged
-	 * that there be some place to set "p->p_md.md_regs" to, and
-	 * passed a pointer to that place as main's argument.
+	 * We need to set the system call frame as if we were entered through
+	 * a syscall() so that when we call execve() below, it will be able
+	 * to set the entry point (see setregs) when it tries to exec.  The
+	 * startup code in "locore.s" has allocated space for the frame and
+	 * passed a pointer to that space as main's argument.
 	 */
-	p->p_md.md_regs = regs;
+	cpu_set_init_frame(p, framep);
 
 	/*
 	 * Need just enough stack to hold the faked-up "execve()" arguments.
