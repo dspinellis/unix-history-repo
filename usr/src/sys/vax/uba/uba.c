@@ -1,4 +1,4 @@
-/*	uba.c	4.4	%G%	*/
+/*	uba.c	4.5	%G%	*/
 
 #include "../h/param.h"
 #include "../h/map.h"
@@ -103,7 +103,7 @@ uballoc(addr, bcnt, bdpflg)
 /*
  * Old ubafree(info) is now ubarelse(&info) to avoid races.
  */
-ubafree(amr)
+ubarelse(amr)
 	int *amr;
 {
 	register int bdp, reg, npf, a;
