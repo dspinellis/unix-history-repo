@@ -1,7 +1,7 @@
 /*
 **  SENDMAIL.H -- Global definitions for sendmail.
 **
-**	@(#)sendmail.h	3.35	%G%
+**	@(#)sendmail.h	3.36	%G%
 */
 
 
@@ -265,6 +265,7 @@ extern bool	SaveFrom;	/* save leading "From" lines */
 extern bool	Verbose;	/* set if blow-by-blow desired */
 extern bool	GrabTo;		/* if set, get recipients from msg */
 extern bool	DontSend;	/* mark recipients as QDONTSEND */
+extern bool	NoReturn;	/* don't return letter to sender */
 extern int	Debug;		/* debugging level */
 extern int	Errors;		/* set if errors */
 extern int	ExitStat;	/* exit status code */
