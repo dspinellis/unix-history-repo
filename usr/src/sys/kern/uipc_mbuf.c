@@ -1,20 +1,9 @@
 /*
- * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
- * provided that the above copyright notice and this paragraph are
- * duplicated in all such forms and that any documentation,
- * advertising materials, and other materials related to such
- * distribution and use acknowledge that the software was developed
- * by the University of California, Berkeley.  The name of the
- * University may not be used to endorse or promote products derived
- * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
- * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- *	@(#)uipc_mbuf.c	7.10 (Berkeley) %G%
+ *	@(#)uipc_mbuf.c	7.4.1.3 (Berkeley) %G%
  */
 
 #include "../machine/pte.h"
@@ -109,6 +98,16 @@ m_clalloc(ncl, how, canwait)
 	return ((caddr_t)m);
 }
 
+m_pgfree(addr, n)
+	caddr_t addr;
+	int n;
+{
+
+#ifdef lint
+	addr = addr; n = n;
+#endif
+}
+
 /*
  * Must be called at splimp.
  */
@@ -191,8 +190,6 @@ m_more(canwait, type)
 			mbstat.m_wait++;
 			m_want++;
 			sleep((caddr_t)&mfree, PZERO - 1);
-			if (mfree)
-				break;
 		} else {
 			mbstat.m_drops++;
 			return (NULL);
@@ -223,7 +220,6 @@ m_freem(m)
  * Mbuffer utility routines.
  */
 
-/*
 /*
  * Make a copy of an mbuf chain starting "off" bytes from the beginning,
  * continuing for "len" bytes.  If len is M_COPYALL, copy to end of mbuf.
@@ -280,40 +276,6 @@ m_copy(m, off, len)
 nospace:
 	m_freem(top);
 	return (0);
-}
-
-/*
- * Copy data from an mbuf chain starting "off" bytes from the beginning,
- * continuing for "len" bytes, into the indicated buffer.
- */
-m_copydata(m, off, len, cp)
-	register struct mbuf *m;
-	register int off;
-	register int len;
-	caddr_t cp;
-{
-	register unsigned count;
-
-	if (off < 0 || len < 0)
-		panic("m_copydata");
-	while (off > 0) {
-		if (m == 0)
-			panic("m_copydata");
-		if (off < m->m_len)
-			break;
-		off -= m->m_len;
-		m = m->m_next;
-	}
-	while (len > 0) {
-		if (m == 0)
-			panic("m_copydata");
-		count = MIN(m->m_len - off, len);
-		bcopy(mtod(m, caddr_t) + off, cp, count);
-		len -= count;
-		cp += count;
-		off = 0;
-		m = m->m_next;
-	}
 }
 
 m_cat(m, n)
