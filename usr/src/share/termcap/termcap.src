@@ -1,6 +1,6 @@
 # ------------------------
 #
-#	Termcap source file	@(#)termcap.src	5.23 (Berkeley) %G%
+#	Termcap source file	@(#)termcap.src	5.24 (Berkeley) %G%
 #	Kevin Layer, Berkeley
 #	Craig Leres, Berkeley
 #	Mark Horton, Berkeley
@@ -2226,7 +2226,7 @@ zs|zen50|z50:zephyr:\
 	:kl=^H:kr=^L:ku=^K:kd=^J:kh=\036:up=^K:\
 	:BS=^U:CL=^V:CR=^B:RK=^L:UK=^K:LK=^H:DK=^J:HM=\036:
 zu|go140|graphon go-140:\
-	:co#80:li#24:cl=10\E[;H\E[2J:bs:cm\E[%i%2;%2H:nd=\E[C:up=\E[A:\
+	:co#80:li#24:cl=10\E[;H\E[2J:bs:cm=\E[%i%2;%2H:nd=\E[C:up=\E[A:\
 	:ce=\E[K:cd=10\E[J:so=\E[7m:se=\E[m:us=\E[4m:ue=\E[m:\
 	:is=\E<\E=\E[?3l\E[?7l\E(B\E[J\E7\E[;r\E8\E[m\E[q:\
 	:dl=\E[M:al=\E[L:dc=\E[P:im=\E[4h:ei=\E[4l:\
