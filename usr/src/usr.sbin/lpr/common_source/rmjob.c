@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)rmjob.c	4.8 (Berkeley) %G%";
+static char sccsid[] = "@(#)rmjob.c	4.9 (Berkeley) %G%";
 #endif
 
 /*
@@ -89,7 +89,7 @@ rmjob()
 	/*
 	 * Restart the printer daemon if it was killed
 	 */
-	if (assasinated && !startdaemon(host))
+	if (assasinated && !startdaemon(printer))
 		fatal("cannot restart printer daemon\n");
 	exit(0);
 }
