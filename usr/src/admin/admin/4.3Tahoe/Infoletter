@@ -3,10 +3,10 @@
 
 .in -3i
 .sp 2
-.lp
+.LP
 Dear Colleague:
 .sp
-.pp
+.PP
 We are happy to send you information about our June 1988
 revision of the Fourth Berkeley Software Distribution
 hereafter referred to as the ``4.3BSD tahoe'' distribution.
@@ -28,7 +28,7 @@ The first purpose is to acquaint you with the details of our distribution
 so you can decide whether or not you would like to receive it.
 The second purpose is to tell you how to obtain our distribution.
 .SH
-What is 4.3BSD?
+What is the 4.3BSD Tahoe Release?
 .PP
 The distribution consists of one 6250 BPI or three 1600 BPI magnetic tapes,
 and a copy of ``Installing and Operating on the Tahoe''.
@@ -47,7 +47,7 @@ and the QVSS and QDSS display drivers for the uVAX II.
 New device support includes the DEC Delua and the Interlan NP100
 ethernet controllers.
 .PP
-The major new software systems include:
+The major new software systems include the following features:
 .IP \(bu
 The networking code has been extensively tuned to increase throughput
 and reduce retransmissions.
@@ -85,24 +85,21 @@ machine types.
 Numerous bug fixes and enhancements have been made.
 .IP \(bu
 We have started a process of identifying the code in the 4.3BSD distribution
-that is not derived from any AT&T code.
+that is not derived from AT&T code.
 The copyrights in this code have been changed to indicate that it
 may be freely distributed if the copyright notice is
 retained and that due credit for its origin is given to
 The Regents of the University of California.
-Over 1000 files has been identified on this distribution.
+Over 1000 files have been identified in this distribution.
 .SH
 How to obtain 4.3BSD for the Tahoe
 .PP
 This section should be read by existing licensees as well as new licensees.
 All previous 4.3BSD licensees will be able to receive
-the 4.3BSD tahoe release without any additional licensing.
-The fee for the 4.3BSD tahoe release is $400.00 for a 6250 BPI distribution
-or $450.00 for a 1600 BPI distribution.
-New licensees will first have to execute
-the revised Berkeley License Agreement (4/86).
-The fee for the 4.3BSD VAX distribution for new licensees is $1,000.00. 
-The 4.3BSD tahoe distribution may be ordered at the same time.
+the 4.3BSD tahoe release by simply executing the steps outlined below.
+4.2BSD licensees who have not yet upgraded to 4.3BSD will be required
+to do so as well as follow the steps outlined below for the
+tahoe distribution.
 For further information on ordering the standard 4.3BSD distribution,
 contact our distribution office at the address given below.
 .PP
@@ -119,9 +116,14 @@ organization to which we distribute.
 Specifically, we must receive from your organization the
 following material before the distribution can be sent:
 .IP \(bu
-One signed and executed copy of the Berkeley License Agreement (for 4.3BSD)
-or Addendum No. One (for 4.3BSD update) between
-your company or institution and The Regents of the University of California.
+Two appropriate signed Addenda for the tahoe distribution if you are a
+4.3BSD licensee. Add to that the appropriate Addendum to
+receive the upgrade if you are a 4.2BSD licensee.
+For new licensees, two executed copies of the Berkeley License
+Agreement (4/86) with the appropriate Addendum, i.e.,  for foreign
+or US government sites, plus the Addendum for the tahoe distribution.
+We require two copies of all Agreements/Addenda with original
+signatures, one of which is returned to the Licensee.
 .IP \(bu
 A check from a U.S. bank for $400.00 U.S. (for a single 6250 BPI tape)
 or $450.00 (for three 1600 BPI tapes) payable to 
@@ -139,8 +141,7 @@ accepted by The Regents of the University of California.
 The revised Berkeley License Agreement (6/83)
 and Addendum Number One govern.''
 .IP \(bu
-If any of the information on your Site Information Form has changed,
-you should fill out and return a new form.
+A completed Site Information Form and Equipment List
 The distribution itself will be sent to the technical contact.
 The site information is kept confidential
 and is for our use in identifying sites with specific configurations.
@@ -160,8 +161,6 @@ Berkeley, California 94720
 Once all these items have been received and are in proper order, the
 distribution will be sent to the technical address indicated on the Site
 Information Form that you provided when you placed your order;
-if you do not provide an update, we will use the information
-that you filed when you ordered your 4.3BSD distribution.
 We cannot provide delivery dates.
 Once the material is assembled and packaged,
 the distribution is shipped by commercial carrier.
@@ -172,8 +171,10 @@ we ask that organizations beyond the North American continent pay
 the collect shipping charges.
 .PP
 The most expedient way to insure that your full distribution is sent
-as quickly as possible is to include in a single package a copy of your
-Berkeley License Agreement, the appropriate check properly made out to 
+as quickly as possible is to include in a single package the signed
+appropriate Addenda for the tahoe distribution plus any other
+necessary signed legal papers, depending on your licensing status,
+the appropriate check properly made out to 
 ``The Regents of the University of California,''
 and a completely filled out Site Information Form and Equipment List,
 and to send this single package to the address noted above.
@@ -184,16 +185,13 @@ Many large organizations have multiple entities that act independently
 from one another and are licensed independently from AT&T.
 Others have the parent organization licensed 
 by AT&T and copies of the software distribution sent
-to each independent entity.
+to each independent entity. The Berkeley License Agreement must be
+executed with the organization holding the appropriate AT&T Software Agreement.
 .PP
 If your organization has an AT&T license
-and chooses not to redistribute internally, and your entity
-has received 4.3BSD from us by forwarding a letter from
-the parent organization to The Regents of the University of California
-authorizing this entity to receive 4.3BSD,
-you may send us a copy of the authorizing letter
-to obtain a copy of the 4.3BSD tahoe distribution.
-Each such entity will have to pay the cost of the distribution.
+and chooses not to redistribute internally,
+please contact us for a copy of the letter of authorization
+to be executed by the parent company.
 .sp
 .SH
 Special Cases
