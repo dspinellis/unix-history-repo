@@ -11,7 +11,7 @@
  *
  * from: Utah $Hdr: hil.c 1.38 92/01/21$
  *
- *	@(#)hil.c	8.2 (Berkeley) %G%
+ *	@(#)hil.c	8.3 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -330,8 +330,9 @@ hilread(dev, uio)
 
 hilioctl(dev, cmd, data, flag, p)
 	dev_t dev;
-	int cmd, flag;
+	u_long cmd;
 	caddr_t data;
+	int flag;
 	struct proc *p;
 {
 	register struct hilloop *hilp = &hilloop[HILLOOP(dev)];
@@ -508,8 +509,9 @@ hilioctl(dev, cmd, data, flag, p)
 /* ARGSUSED */
 hpuxhilioctl(dev, cmd, data, flag)
 	dev_t dev;
-	int cmd, flag;
+	u_long cmd;
 	caddr_t data;
+	int flag;
 {
 	register struct hilloop *hilp = &hilloop[HILLOOP(dev)];
 	char device = HILUNIT(dev);
