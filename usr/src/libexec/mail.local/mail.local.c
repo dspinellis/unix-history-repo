@@ -8,7 +8,7 @@
 #include <setjmp.h>
 #include <sysexits.h>
 
-static char SccsId[] = "@(#)mail.local.c	4.7	%G%";
+static char SccsId[] = "@(#)mail.local.c	4.8	%G%";
 
 #define DELIVERMAIL	"/etc/delivermail"
 
@@ -600,7 +600,6 @@ usage()
 
 #include <sys/socket.h>
 #include <net/in.h>
-#include <wellknown.h>
 struct sockaddr_in biffaddr = { AF_INET, IPPORT_BIFFUDP };
 char *localhost = "localhost";
 
@@ -651,6 +650,10 @@ char *fromaddr;
 	fclose(malf);
 	if (f >= 0) {
 		biffaddr.sin_addr.s_addr = rhost(&localhost);
+#if vax
+		biffaddr.sin_port =
+		    ((biffaddr.sin_port<<8)&0xff00)|((biffaddr.sin_port>>8)&0xff);
+#endif
 		send(f, &biffaddr, buf, strlen(buf)+1);
 		close(f);
 	}
