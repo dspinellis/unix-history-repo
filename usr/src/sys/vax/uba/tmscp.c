@@ -1,4 +1,4 @@
-/*	@(#)tmscp.c	5.5 (Berkeley) %G% */
+/*	@(#)tmscp.c	5.6 (Berkeley) %G% */
 
 #ifndef lint
 static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
@@ -136,6 +136,7 @@ static	char	*sccsid = "@(#)tmscp.c	1.24	(ULTRIX)	1/21/86";
 #include "mtio.h"
 #include "cmap.h"
 #include "uio.h"
+#include "tty.h"
 
 #include "../vax/cpu.h"
 #include "../vax/mtpr.h"
