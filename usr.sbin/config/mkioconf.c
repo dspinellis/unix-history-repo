@@ -652,7 +652,7 @@ i386_ioconf()
 				dp->d_irq = 9;
 				}
 			if (dp->d_irq != -1)
-				fprintf(fp, " extern %s();", shandler(dp));
+				fprintf(fp, " extern void %s();", shandler(dp));
 			fprintf(fp, "\n");
 		}
 		isa_devtab(fp, "bio");
