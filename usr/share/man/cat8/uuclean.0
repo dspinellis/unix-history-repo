@@ -1,0 +1,37 @@
+UUCLEAN(8)                BSD System Manager's Manual               UUCLEAN(8)
+
+NNAAMMEE
+     uuuucclleeaann - uucp spool directory clean-up
+
+SSYYNNOOPPSSIISS
+     uuuucclleeaann [--dd_s_u_b_d_i_r_e_c_t_o_r_y] [--mm] [--nn_t_i_m_e] [--pp_p_r_e]
+
+DDEESSCCRRIIPPTTIIOONN
+     Uuclean will scan the spool directory for files with the specified prefix
+     and delete all those which are older than the specified number of hours.
+
+     The following options are available.
+
+     --dd_s_u_b_d_i_r_e_c_t_o_r_y
+             Only the specified subdirectory will be cleaned.
+
+     --mm      Send mail to the owner of the file when it is deleted.
+
+     --nn_t_i_m_e  Files whose age is more than _t_i_m_e hours will be deleted if the
+             prefix test is satisfied.  (default time is 72 hours)
+
+     --pp_p_r_e   Scan for files with _p_r_e as the file prefix.  Up to 10 --pp argu-
+             ments may be specified.
+
+     This program will typically be run daily by cron(8).
+
+FFIILLEESS
+     /var/spool/uucp  Spool directory
+
+SSEEEE AALLSSOO
+     uucp(1),  uux(1),  uucico(8)
+
+HHIISSTTOORRYY
+     The uuuucclleeaann command appeared in 4.2BSD.
+
+4.2 Berkeley Distribution        June 6, 1993                                1

@@ -1,0 +1,23 @@
+TRUE(1)                      BSD Reference Manual                      TRUE(1)
+
+NNAAMMEE
+     ttrruuee - return true value
+
+SSYYNNOOPPSSIISS
+     ttrruuee
+
+DDEESSCCRRIIPPTTIIOONN
+     TTrruuee is normally used in a Bourne shell script.  TTrruuee tests for the ap-
+     propriate status "false" before running (or failing to run) a list of
+     commands.
+
+SSEEEE AALLSSOO
+     csh(1),  sh(1),  false(1)
+
+DDIIAAGGNNOOSSTTIICCSS
+     The ttrruuee utility always returns with exit code zero.
+
+SSTTAANNDDAARRDDSS
+     The ttrruuee function is expected to be POSIX 1003.2 compatible.
+
+4.4BSD                           June 9, 1993                                1

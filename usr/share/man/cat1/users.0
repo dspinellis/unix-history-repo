@@ -1,0 +1,22 @@
+USERS(1)                     BSD Reference Manual                     USERS(1)
+
+NNAAMMEE
+     uusseerrss - list current users
+
+SSYYNNOOPPSSIISS
+     uusseerrss
+
+DDEESSCCRRIIPPTTIIOONN
+     UUsseerrss lists the login names of the users currently on the system, in
+     sorted order, space separated, on a single line.
+
+FFIILLEESS
+     /etc/utmp
+
+SSEEEE AALLSSOO
+     finger(1),  last(1),  who(1),  utmp(5)
+
+HHIISSTTOORRYY
+     The uusseerrss command appeared in 3.0BSD.
+
+3rd Berkeley Distribution        June 6, 1993                                1

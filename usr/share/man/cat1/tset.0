@@ -1,0 +1,192 @@
+TSET(1)                      BSD Reference Manual                      TSET(1)
+
+NNAAMMEE
+     ttsseett - terminal initialization
+
+SSYYNNOOPPSSIISS
+     ttsseett [--IIQQrrSSss] [--] [--ee _c_h] [--ii _c_h] [--kk _c_h] [--mm _m_a_p_p_i_n_g] [_t_e_r_m_i_n_a_l]
+     rreesseett [--IIQQrrSSss] [--] [--ee _c_h] [--ii _c_h] [--kk _c_h] [--mm _m_a_p_p_i_n_g] [_t_e_r_m_i_n_a_l]
+
+DDEESSCCRRIIPPTTIIOONN
+     TTsseett initializes terminals.  TTsseett first determines the type of terminal
+     that you are using.  This determination is done as follows, using the
+     first terminal type found.
+
+           ++oo   The _t_e_r_m_i_n_a_l argument specified on the command line.
+           ++oo   The value of the TERM environmental variable.
+           ++oo   The terminal type associated with the standard error output de-
+               vice in the _/_e_t_c_/_t_t_y_s file.
+           ++oo   The default terminal type, ``unknown''.
+
+     If the terminal type was not specified on the command-line, the --mm option
+     mappings are then applied (see below for more information).  Then, if the
+     terminal type begins with a question mark (``?''), the user is prompted
+     for confirmation of the terminal type.  An empty response confirms the
+     type, or, another type can be entered to specify a new type.  Once the
+     terminal type has been determined, the termcap entry for the terminal is
+     retrieved.  If no termcap entry is found for the type, the user is
+     prompted for another terminal type.
+
+     Once the termcap entry is retrieved, the window size, backspace, inter-
+     rupt and line kill characters (among many other things) are set and the
+     terminal and tab initialization strings are sent to the standard error
+     output.  Finally, if the erase, interrupt and line kill characters have
+     changed, or are not set to their default values, their values are dis-
+     played to the standard error output.
+
+     When invoked as rreesseett, ttsseett sets cooked and echo modes, turns off cbreak
+     and raw modes, turns on newline translation and resets any unset special
+     characters to their default values before doing the terminal initializa-
+     tion described above.  This is useful after a program dies leaving a ter-
+     minal in a abnormal state.  Note, you may have to type ``<LF>reset<LF>''
+     (the line-feed character is normally control-J) to get the terminal to
+     work, as carriage-return may no longer work in the abnormal state.  Also,
+     the terminal will often not echo the command.
+
+     The options are as follows:
+
+     --     The terminal type is displayed to the standard output, and the ter-
+           minal is not initialized in any way.
+
+     --ee    Set the erase character to _c_h.
+
+     --II    Do not send the terminal or tab initialization strings to the ter-
+           minal.
+
+     --ii    Set the interrupt character to _c_h.
+
+     --kk    Set the line kill character to _c_h.
+
+     --mm    Specify a mapping from a port type to a terminal.  See below for
+           more information.
+
+     --QQ    Don't display any values for the erase, interrupt and line kill
+
+
+           characters.
+
+     --rr    Print the terminal type to the standard error output.
+
+     --SS    Print the terminal type and the termcap entry to the standard out-
+           put.  See the section below on setting the environment for details.
+
+     --ss    Print the sequence of shell commands to initialize the environment
+           variables TERM and TERMCAP to the standard output.  See the section
+           below on setting the environment for details.
+
+     The arguments for the --ee, --ii and --kk options may either be entered as ac-
+     tual characters or by using the ``hat'' notation, i.e. control-h may be
+     specified as ``^H'' or ``^h''.
+
+SSEETTTTIINNGG TTHHEE EENNVVIIRROONNMMEENNTT
+     It is often desirable to enter the terminal type and information about
+     the terminal's capabilities into the shell's environment.  This is done
+     using the --SS and --ss options.
+
+     When the --SS option is specified, the terminal type and the termcap entry
+     are written to the standard output, separated by a space and without a
+     terminating newline.  This can be assigned to an array by ccsshh and kksshh
+     users and then used like any other shell array.
+
+     When the --ss option is specified, the commands to enter the information
+     into the shell's environment are written to the standard output.  If the
+     SHELL environmental variable ends in ``csh'', the commands are for the
+     ccsshh, otherwise, they are for sh.  Note, the ccsshh commands set and unset
+     the shell variable ``noglob'', leaving it unset.  The following line in
+     the _._l_o_g_i_n or _._p_r_o_f_i_l_e files will initialize the environment correctly:
+
+           eval `tset -s options ... `
+
+     To demonstrate a simple use of the --SS option, the following lines in the
+     _._l_o_g_i_n file have an equivalent effect:
+
+           set noglob
+           set term=(`tset -S options ...`)
+           setenv TERM $term[1]
+           setenv TERMCAP "$term[2]"
+           unset term
+           unset noglob
+
+TTEERRMMIINNAALL TTYYPPEE MMAAPPPPIINNGG
+     When the terminal is not hardwired into the system (or the current system
+     information is incorrect) the terminal type derived from the _/_e_t_c_/_t_t_y_s
+     file or the TERM environmental variable is often something generic like
+     ``network'', ``dialup'', or ``unknown''. When ttsseett is used in a startup
+     script (_._p_r_o_f_i_l_e for sh(1) users or _._l_o_g_i_n for csh(1) users) it is often
+     desirable to provide information about the type of terminal used on such
+     ports.  The purpose of the --mm option is to ``map'' from some set of con-
+     ditions to a terminal type, that is, to tell ttsseett ``If I'm on this port
+     at a particular speed, guess that I'm on that kind of terminal''.
+
+     The argument to the --mm option consists of an optional port type, an op-
+     tional operator, an optional baud rate specification, an optional colon
+     (``:'') character and a terminal type.  The port type is a string (delim-
+     ited by either the operator or the colon character).  The operator may be
+     any combination of: ``>'', ``<'', ``@'', and ``!''; ``>'' means greater
+     than, ``<'' means less than, ``@'' means equal to and ``!'' inverts the
+     sense of the test.  The baud rate is specified as a number and is com-
+     pared with the speed of the standard error output (which should be the
+     control terminal).  The terminal type is a string.
+
+
+     If the terminal type is not specified on the command line, the --mm map-
+     pings are applied to the terminal type.  If the port type and baud rate
+     match the mapping, the terminal type specified in the mapping replaces
+     the current type.  If more than one mapping is specified, the first ap-
+     plicable mapping is used.
+
+     For example, consider the following mapping: ``dialup>9600:vt100''. The
+     port type is ``dialup'', the operator is ``>'', the baud rate specifica-
+     tion is ``9600'', and the terminal type is ``vt100''. The result of this
+     mapping is to specify that if the terminal type is ``dialup'', and the
+     baud rate is greater than 9600 baud, a terminal type of ``vt100'' will be
+     used.
+
+     If no port type is specified, the terminal type will match any port type,
+     for example, ``-m dialup:vt100 -m :?xterm'' will cause any dialup port,
+     regardless of baud rate, to match the terminal type ``vt100'', and any
+     non-dialup port type to match the terminal type ``?xterm''. Note, because
+     of the leading question mark, the user will be queried on a default port
+     as to whether they are actually using an _x_t_e_r_m terminal.
+
+     No whitespace characters are permitted in the --mm option argument.  Also,
+     to avoid problems with metacharacters, it is suggested that the entire --mm
+     option argument be placed within single quote characters, and that ccsshh
+     users insert a backslash character (``\'') before any exclamation marks
+     (``!'').
+
+EENNVVIIRROONNMMEENNTT
+     The ttsseett command utilizes the SHELL and TERM environment variables.
+
+FFIILLEESS
+     /etc/ttys                system port name to terminal type mapping
+                              database
+     /usr/share/misc/termcap  terminal capability database
+
+SSEEEE AALLSSOO
+     csh(1),  sh(1),  stty(1),  tty(4),  termcap(5),  ttys(5),  environ(7)
+
+HHIISSTTOORRYY
+     The ttsseett command appeared in 3.0BSD.
+
+CCOOMMPPAATTIIBBIILLIITTYY
+     The --AA, --EE, --hh, --uu and --vv options have been deleted from the ttsseett utili-
+     ty.  None of them were documented in 4.3BSD and all are of limited utili-
+     ty at best.  The --aa, --dd and --pp options are similarly not documented or
+     useful, but were retained as they appear to be in widespread use.  It is
+     strongly recommended that any usage of these three options be changed to
+     use the --mm option instead.  The --nn option remains, but has no effect.  It
+     is still permissible to specify the --ee, --ii and --kk options without argu-
+     ments, although it is strongly recommended that such usage be fixed to
+     explicitly specify the character.
+
+     Executing ttsseett as rreesseett no longer implies the --QQ option.  Also, the in-
+     teraction between the -- option and the _t_e_r_m_i_n_a_l argument in some historic
+     implementations of ttsseett has been removed.
+
+     Finally, the ttsseett implementation has been completely redone (as part of
+     the addition to the system of a IEEE Std1003.1-1988 (``POSIX'') compliant
+     terminal interface) and will no longer compile on systems with older ter-
+     minal interfaces.
+
+4th Berkeley Distribution        June 9, 1993                                3

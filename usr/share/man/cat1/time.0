@@ -1,0 +1,37 @@
+TIME(1)                      BSD Reference Manual                      TIME(1)
+
+NNAAMMEE
+     ttiimmee - time command execution
+
+SSYYNNOOPPSSIISS
+     ttiimmee [--ll] _c_o_m_m_a_n_d
+
+DDEESSCCRRIIPPTTIIOONN
+     The ttiimmee utility executes and times _c_o_m_m_a_n_d by initiating a timer and
+     passing the _c_o_m_m_a_n_d to the shell.  After the _c_o_m_m_a_n_d finishes, ttiimmee
+     writes to the standard error stream, (in seconds): the total time
+     elapsed, time consumed by system overhead, and the time used to execute
+     the _c_o_m_m_a_n_d process.
+
+     Available options:
+
+     --ll      The contents of the _r_u_s_a_g_e structure are printed as well.
+
+     The csh(1) has its own and syntactically different builtin version of
+     ttiimmee.. The command described here is available as _/_u_s_r_/_b_i_n_/_t_i_m_e to csh
+     users.
+
+BBUUGGSS
+     The granularity of seconds on micro processors is crude and can result in
+     times being reported for CPU usage which are too large by a second.
+
+SSEEEE AALLSSOO
+     csh(1)
+
+FFIILLEESS
+     /usr/include/sys/h/resource.h
+
+HHIISSTTOORRYY
+     A ttiimmee command appeared in Version 6 AT&T UNIX.
+
+4th Berkeley Distribution        June 6, 1993                                1
