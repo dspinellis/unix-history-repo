@@ -11,7 +11,7 @@ char copyright[] =
 #endif not lint
 
 #ifndef lint
-static char sccsid[] = "@(#)bad144.c	5.13 (Berkeley) %G%";
+static char sccsid[] = "@(#)bad144.c	5.14 (Berkeley) %G%";
 #endif not lint
 
 /*
@@ -263,6 +263,11 @@ usage:
 	if (nflag == 0 && fflag)
 		for (i = nbad - new; i < nbad; i++)
 			format(f, bn[i]);
+#endif
+#ifdef DIOCSBAD
+	if (nflag == 0 && ioctl(f, DIOCSBAD, (caddr_t)&curbad) < 0)
+		fprintf(stderr,
+	"Can't sync bad-sector file; reboot for changes to take effect\n");
 #endif
 	exit(0);
 }
@@ -559,6 +564,7 @@ format(fd, blk)
 	register struct formats *fp;
 	static char *buf;
 	static char bufsize;
+	struct format_op fop;
 	int n;
 
 	for (fp = formats; fp->f_name; fp++)
@@ -587,29 +593,32 @@ format(fd, blk)
 	 * purpose format routine is specified, we allow it to
 	 * process the sector as well.
 	 */
-	if (lseek(fd, (long)blk * dp->d_secsize, L_SET) < 0)
-		Perror("lseek");
 	if (verbose)
 		printf("format blk %d\n", blk);
-	if (ioctl(fd, DKIOCHDR, (char *)0) < 0)
-		Perror("ioctl");
-	if ((n = read(fd, buf, fp->f_bufsize)) < 0)
-		bzero(buf, fp->f_bufsize);
-	if (fp->f_routine)
-		if ((*fp->f_routine)(fp, dp, blk, buf, n) != 0)
-			return;
+	bzero((char *)&fop, sizeof(fop));
+	fop.df_buf = buf;
+	fop.df_count = fp->f_bufsize;
+	fop.df_startblk = blk;
+	bzero(buf, fp->f_bufsize);
+	if (ioctl(fd, DIOCRFORMAT, &fop) < 0)
+		perror("bad144: read format");
+	if (fp->f_routine &&
+	    (*fp->f_routine)(fp, dp, blk, buf, fop.df_count) != 0)
+		return;
 	if (fp->f_bic) {
 		struct hpuphdr *xp = (struct hpuphdr *)buf;
 
 		xp->hpup_cyl &= ~fp->f_bic;
 	}
-	if (lseek(fd, (long)blk * dp->d_secsize, L_SET) < 0)
-		Perror("lseek");
 	if (nflag)
 		return;
-	if (ioctl(fd, DKIOCHDR, (char *)0) < 0)
-		Perror("ioctl");
-	if (write(fd, buf, fp->f_bufsize) != fp->f_bufsize) {
+	bzero((char *)&fop, sizeof(fop));
+	fop.df_buf = buf;
+	fop.df_count = fp->f_bufsize;
+	fop.df_startblk = blk;
+	if (ioctl(fd, DIOCWFORMAT, &fop) < 0)
+		Perror("write format");
+	if (fop.df_count != fp->f_bufsize) {
 		char msg[80];
 		(void)sprintf(msg, "bad144: write format %d", blk);
 		perror(msg);
