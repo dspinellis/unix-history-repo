@@ -29,6 +29,13 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * PATCHES MAGIC                LEVEL   PATCH THAT GOT US HERE
+ * --------------------         -----   ----------------------
+ * CURRENT PATCH LEVEL:         1       00008
+ * --------------------         -----   ----------------------
+ *
+ * 03 Sep 92	James Dolter		Fixed 1K pathbuf bug
  */
 
 #ifndef lint
@@ -98,13 +105,14 @@ register size_t len1;
 	static size_t buflen;
 	static char *bp, *endp;
 	register size_t len2;
+	register size_t	oldlen;				/* 03 Sep 92*/
 
 	len2 = add2 ? strlen(add2) : 0;
 	if (!bp || bp + len1 + len2 + 2 >= endp) {
+		oldlen = bp - pathbuf;			/* 03 Sep 92*/
 		if (!(pathbuf = realloc(pathbuf, buflen += 1024)))
 			enomem();
-		if (!bp)
-			bp = pathbuf;
+		bp = pathbuf + oldlen;			/* 03 Sep 92*/
 		endp = pathbuf + buflen;
 	}
 	bcopy(add1, bp, len1);
