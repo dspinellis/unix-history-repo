@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_segment.c	7.19 (Berkeley) %G%
+ *	@(#)lfs_segment.c	7.20 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -70,9 +70,11 @@ void	 lfs_shellsort __P((struct buf **, daddr_t *, register int));
 void	 lfs_updatemeta __P((struct lfs *,
 	    struct segment *, struct vnode *, daddr_t *, struct buf **, int));
 void	 lfs_writefile __P((struct lfs *, struct segment *, struct vnode *));
-void	 lfs_writeinode __P((struct lfs *, struct segment *, struct inode *));
-void	 lfs_writeseg __P((struct lfs *, struct segment *));
+int	 lfs_writeinode __P((struct lfs *, struct segment *, struct inode *));
+int	 lfs_writeseg __P((struct lfs *, struct segment *));
 void	 lfs_writesuper __P((struct lfs *, struct segment *));
+void	 lfs_writevnodes __P((struct lfs *fs, struct mount *mp,
+	    struct segment *sp, int dirops));
 
 int	lfs_allclean_wakeup;		/* Cleaner wakeup address. */
 
@@ -131,10 +133,10 @@ lfs_vflush(vp)
 	if (vp->v_dirtyblkhd != NULL)
 		lfs_writefile(fs, sp, vp);
 	ip = VTOI(vp);
-	lfs_writeinode(fs, sp, ip);
+	(void) lfs_writeinode(fs, sp, ip);
 	ip->i_flags &= ~(IMOD | IACC | IUPD | ICHG);
 
-	lfs_writeseg(fs, sp);
+	(void) lfs_writeseg(fs, sp);
 
 	/*
 	 * If the I/O count is non-zero, sleep until it reaches zero.  At the
@@ -160,6 +162,53 @@ lfs_vflush(vp)
 	return (0);
 }
 
+void
+lfs_writevnodes(fs, mp, sp, dirops)
+	struct lfs *fs;
+	struct mount *mp;
+	struct segment *sp;
+	int dirops;
+{
+	struct inode *ip;
+	struct vnode *vp;
+	int error, s;
+
+loop:	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
+		/*
+		 * If the vnode that we are about to sync is no longer
+		 * associated with this mount point, start over.
+		 */
+		if (vp->v_mount != mp)
+			goto loop;
+
+		if (dirops && !(vp->v_flag & VDIROP) ||
+		    !dirops && (vp->v_flag & VDIROP))
+			continue;
+		/*
+		 * XXX
+		 * Up the ref count so we don't get tossed out of
+		 * memory.
+		 */
+		VREF(vp);
+
+		/*
+		 * Write the inode/file if dirty and it's not the
+		 * the IFILE.
+		 */
+		ip = VTOI(vp);
+		if ((ip->i_flag & (IMOD | IACC | IUPD | ICHG) ||
+		    vp->v_dirtyblkhd != NULL) &&
+		    ip->i_number != LFS_IFILE_INUM) {
+			if (vp->v_dirtyblkhd != NULL)
+				lfs_writefile(fs, sp, vp);
+			(void) lfs_writeinode(fs, sp, ip);
+			ip->i_flags &= ~(IMOD | IACC | IUPD | ICHG);
+		}
+		vp->v_flag &= ~VDIROP;
+		vrele(vp);
+	}
+}
+
 int
 lfs_segwrite(mp, do_ckp)
 	struct mount *mp;
@@ -170,7 +219,7 @@ lfs_segwrite(mp, do_ckp)
 	struct lfs *fs;
 	struct segment *sp;
 	struct vnode *vp;
-	int error, islocked, s;
+	int error, s;
 
 #ifdef VERBOSE
 	printf("lfs_segwrite\n");
@@ -196,61 +245,46 @@ lfs_segwrite(mp, do_ckp)
 	 * final decrement, avoiding the wakeup in the callback routine.
 	 */
 	s = splbio();
-	++fs->lfs_iocount;
+	fs->lfs_iocount++;
 	splx(s);
 
-loop:	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
-		/*
-		 * If the vnode that we are about to sync is no longer
-		 * associated with this mount point, start over.
-		 */
-		if (vp->v_mount != mp)
-			goto loop;
-
-		islocked = VOP_ISLOCKED(vp);
-
-		/*
-		 * XXX
-		 * This is wrong, I think -- we should just wait until we
-		 * get the vnode and go on.  Probably going to reschedule
-		 * all of the writes we already scheduled...
-		 */
-		if (islocked)
-			VREF(vp);
-		else if (vget(vp))
-{
-printf("lfs_segment: failed to get vnode (tell Keith)!\n");
-			goto loop;
-}
-		/*
-		 * Write the inode/file if dirty and it's not the
-		 * the IFILE.
-		 */
-		ip = VTOI(vp);
-		if ((ip->i_flag & (IMOD | IACC | IUPD | ICHG) ||
-		    vp->v_dirtyblkhd != NULL) &&
-		    ip->i_number != LFS_IFILE_INUM) {
-			if (vp->v_dirtyblkhd != NULL)
-				lfs_writefile(fs, sp, vp);
-			lfs_writeinode(fs, sp, ip);
-			ip->i_flags &= ~(IMOD | IACC | IUPD | ICHG);
-		}
-		if (islocked)
-			vrele(vp);
-		else
-			vput(vp);
+	lfs_writevnodes(fs, mp, sp, 0);
+	s = splbio();
+	fs->lfs_writer = 1;
+	if (fs->lfs_dirops && (error =
+	    tsleep(&fs->lfs_writer, PRIBIO + 1, "lfs writer", 0))) {
+		free(sp->bpp, M_SEGMENT);
+		free(sp, M_SEGMENT); 
+		fs->lfs_writer = 0;
+		splx(s);
+		return(error);
 	}
-	if (do_ckp) {
+	splx(s);
+
+	lfs_writevnodes(fs, mp, sp, 1);
+
+	/*
+	 * If this is a checkpoint, we need to loop on both the ifile and
+	 * the writeseg to make sure that we don't end up with any dirty
+	 * buffers left when this is all over.
+	 */
+	if (do_ckp || fs->lfs_doifile) {
+redo:
 		vp = fs->lfs_ivnode;
 		while (vget(vp));
 		ip = VTOI(vp);
-		if (vp->v_dirtyblkhd != NULL)
-			lfs_writefile(fs, sp, vp);
-		lfs_writeinode(fs, sp, ip);
+		do {
+			if (vp->v_dirtyblkhd != NULL)
+				lfs_writefile(fs, sp, vp);
+		} while (lfs_writeinode(fs, sp, ip) && do_ckp);
 		ip->i_flags &= ~(IMOD | IACC | IUPD | ICHG);
 		vput(vp);
-	}
-	lfs_writeseg(fs, sp);
+		if (lfs_writeseg(fs, sp) && do_ckp) {
+			lfs_initseg(fs, sp);
+			goto redo;
+		}
+	} else
+		(void) lfs_writeseg(fs, sp);
 
 	/*
 	 * If the I/O count is non-zero, sleep until it reaches zero.  At the
@@ -258,6 +292,10 @@ printf("lfs_segment: failed to get vnode (tell Keith)!\n");
 	 */
 	s = splbio();
 	--fs->lfs_iocount;
+	fs->lfs_writer = 0;
+	fs->lfs_doifile = 0;
+	wakeup(&fs->lfs_dirops);
+
 	if (do_ckp) {
 		if (fs->lfs_iocount && (error =
 		    tsleep(&fs->lfs_iocount, PRIBIO + 1, "lfs sync", 0))) {
@@ -294,7 +332,7 @@ lfs_writefile(fs, sp, vp)
 #endif
 	if (sp->seg_bytes_left < fs->lfs_bsize ||
 	    sp->sum_bytes_left < sizeof(struct finfo)) {
-		lfs_writeseg(fs, sp);
+		(void) lfs_writeseg(fs, sp);
 		lfs_initseg(fs, sp);
 	}
 	sp->sum_bytes_left -= sizeof(struct finfo) - sizeof(daddr_t);
@@ -331,7 +369,7 @@ lfs_writefile(fs, sp, vp)
 		sp->sum_bytes_left += sizeof(struct finfo) - sizeof(daddr_t);
 }
 
-void
+int
 lfs_writeinode(fs, sp, ip)
 	struct lfs *fs;
 	struct segment *sp;
@@ -343,6 +381,7 @@ lfs_writeinode(fs, sp, ip)
 	daddr_t daddr;
 	ino_t ino;
 	int ndx;
+	int redo_ifile = 0;
 
 #ifdef VERBOSE
 	printf("lfs_writeinode\n");
@@ -352,7 +391,7 @@ lfs_writeinode(fs, sp, ip)
 		/* Allocate a new segment if necessary. */
 		if (sp->seg_bytes_left < fs->lfs_bsize ||
 		    sp->sum_bytes_left < sizeof(daddr_t)) {
-			lfs_writeseg(fs, sp);
+			(void) lfs_writeseg(fs, sp);
 			lfs_initseg(fs, sp);
 		}
 
@@ -394,18 +433,29 @@ lfs_writeinode(fs, sp, ip)
 	daddr = ifp->if_daddr;
 	ifp->if_daddr = bp->b_blkno;
 	LFS_UBWRITE(ibp);
+	redo_ifile = (ino == LFS_IFILE_INUM && !(ibp->b_flags & B_GATHERED));
 
-	if (daddr != LFS_UNUSED_DADDR) {
+	/*
+	 * No need to update segment usage if there was no former inode address
+	 * or if the last inode address is in the current partial segment.
+	 */
+	if (daddr != LFS_UNUSED_DADDR && 
+	    !(daddr >= fs->lfs_curseg && daddr <= ifp->if_daddr) ) {
 		LFS_SEGENTRY(sup, fs, datosn(fs, daddr), bp);
 #ifdef DIAGNOSTIC
-		if (sup->su_nbytes < sizeof(struct dinode))
+		if (sup->su_nbytes < sizeof(struct dinode)) {
 			/* XXX -- Change to a panic. */
 			printf("lfs: negative bytes (segment %d)\n",
 			    datosn(fs, daddr));
+			panic("negative bytes");
+		}
 #endif
 		sup->su_nbytes -= sizeof(struct dinode);
 		LFS_UBWRITE(bp);
+		redo_ifile |= 
+		    (ino == LFS_IFILE_INUM && !(bp->b_flags & B_GATHERED));
 	}
+	return(redo_ifile);
 }
 
 void
@@ -415,7 +465,8 @@ lfs_gather(fs, sp, vp, match)
 	struct vnode *vp;
 	int (*match) __P((struct lfs *, struct buf *));
 {
-	struct buf **bpp, *bp, *nbp;
+	struct buf **bpp, *bp;
+struct buf *lastbp;
 	struct finfo *fip;
 	struct inode *ip;
 	daddr_t *lbp, *start_lbp;
@@ -431,13 +482,10 @@ lfs_gather(fs, sp, vp, match)
 	start_lbp = lbp = &fip->fi_blocks[fip->fi_nblocks];
 
 loop:	s = splbio();
-	for (bp = vp->v_dirtyblkhd; bp; bp = nbp) {
-		nbp = bp->b_blockf;
-		/*
-		 * XXX
-		 * Should sleep on any BUSY buffer if doing an fsync?
-		 */
-		if (bp->b_flags & B_BUSY || !match(fs, bp))
+	lastbp = NULL;
+	for (bp = vp->v_dirtyblkhd; bp; lastbp = bp, bp = bp->b_blockf) {
+		if (bp->b_flags & B_BUSY || !match(fs, bp) ||
+		    bp->b_flags & B_GATHERED)
 			continue;
 #ifdef DIAGNOSTIC
 		if (!(bp->b_flags & B_DELWRI))
@@ -459,7 +507,7 @@ loop:	s = splbio();
 			++((SEGSUM *)(sp->segsum))->ss_nfinfo;
 
 			version = fip->fi_version;
-			lfs_writeseg(fs, sp);
+			(void) lfs_writeseg(fs, sp);
 			lfs_initseg(fs, sp);
 
 			fip = sp->fip;
@@ -475,6 +523,7 @@ loop:	s = splbio();
 		}
 
 		/* Insert into the buffer list, update the FINFO block. */
+		bp->b_flags |= B_GATHERED;
 		*sp->cbpp++ = bp;
 		++fip->fi_nblocks;
 		*lbp++ = bp->b_lblkno;
@@ -549,10 +598,12 @@ lfs_updatemeta(fs, sp, vp, lbp, bpp, nblocks)
 		if (daddr != UNASSIGNED) {
 			LFS_SEGENTRY(sup, fs, datosn(fs, daddr), bp);
 #ifdef DIAGNOSTIC
-			if (sup->su_nbytes < fs->lfs_bsize)
+			if (sup->su_nbytes < fs->lfs_bsize) {
 				/* XXX -- Change to a panic. */
 				printf("lfs: negative bytes (segment %d)\n",
 				    datosn(fs, daddr));
+				panic ("Negative Bytes");
+			}
 #endif
 			sup->su_nbytes -= fs->lfs_bsize;
 			LFS_UBWRITE(bp);
@@ -602,6 +653,7 @@ lfs_initseg(fs, sp)
 		sp->seg_bytes_left = (fs->lfs_dbpseg -
 		    (fs->lfs_offset - fs->lfs_curseg)) * DEV_BSIZE;
 	}
+	fs->lfs_lastpseg = fs->lfs_offset;
 
 	sp->ibp = NULL;
 	sp->ninodes = 0;
@@ -652,7 +704,7 @@ lfs_newseg(fs)
 	LFS_UBWRITE(bp);
 
 	LFS_SEGENTRY(sup, fs, datosn(fs, fs->lfs_nextseg), bp);
-	sup->su_flags |= SEGUSE_ACTIVE | SEGUSE_DIRTY;
+	sup->su_flags |= SEGUSE_ACTIVE | SEGUSE_DIRTY | SEGUSE_LIVELOG;
 	LFS_UBWRITE(bp);
 
 	LFS_CLEANERINFO(cip, fs, bp);
@@ -675,7 +727,7 @@ lfs_newseg(fs)
 	fs->lfs_nextseg = sntoda(fs, sn);
 }
 
-void
+int
 lfs_writeseg(fs, sp)
 	struct lfs *fs;
 	struct segment *sp;
@@ -685,15 +737,17 @@ lfs_writeseg(fs, sp)
 	SEGUSE *sup;
 	SEGSUM *ssp;
 	dev_t i_dev;
-	u_long *datap, *dp;
 	size_t size;
-	int ch_per_blk, i, nblocks, num, s, (*strategy)__P((struct vop_strategy_args *));
+	u_long *datap, *dp;
+	int ch_per_blk, do_again, i, nblocks, num, s;
+	int (*strategy)__P((struct vop_strategy_args *));
 	char *p;
 
 #ifdef VERBOSE
 	printf("lfs_writeseg\n");
 #endif
-	if ((nblocks = sp->cbpp - sp->bpp) == 0)
+	/* Checkpoint always writes superblock, even if no data blocks. */
+	if ((nblocks = sp->cbpp - sp->bpp) == 0 && !(sp->seg_flags & SEGM_CKP))
 		return;
 
 	/*
@@ -713,6 +767,15 @@ lfs_writeseg(fs, sp)
 	ssp->ss_sumsum =
 	    cksum(&ssp->ss_datasum, LFS_SUMMARY_SIZE - sizeof(ssp->ss_sumsum));
 	free(datap, M_SEGMENT);
+
+	/* Update the segment usage information. */
+	LFS_SEGENTRY(sup, fs, sp->seg_number, bp);
+	sup->su_nbytes += nblocks - 1 - 
+	    (ssp->ss_ninos + INOPB(fs) - 1) / INOPB(fs) << fs->lfs_bshift;
+	sup->su_nbytes += ssp->ss_ninos * sizeof(struct dinode);
+	sup->su_lastmod = time.tv_sec;
+	LFS_UBWRITE(bp);
+	do_again = !(bp->b_flags & B_GATHERED);
 
 	i_dev = VTOI(fs->lfs_ivnode)->i_dev;
 	strategy = VTOI(fs->lfs_ivnode)->i_devvp->v_op[VOFFSET(vop_strategy)];
@@ -754,9 +817,9 @@ lfs_writeseg(fs, sp)
 			bp = *bpp++;
 			bcopy(bp->b_un.b_addr, p, bp->b_bcount);
 			p += bp->b_bcount;
-			bp->b_flags &=
-			    ~(B_DONE | B_ERROR | B_READ | B_DELWRI | B_LOCKED);
-			if (!(bp->b_flags & B_NOCACHE)) {
+			bp->b_flags &= ~(B_DONE | B_ERROR | B_READ | B_DELWRI |
+			     B_LOCKED | B_GATHERED);
+			if (!(bp->b_flags & (B_NOCACHE | B_INVAL))) {
 				bremfree(bp);
 				reassignbuf(bp, bp->b_vp);
 			}
@@ -768,14 +831,7 @@ lfs_writeseg(fs, sp)
 		vop_strategy_a.a_bp = cbp;
 		(strategy)(&vop_strategy_a);
 	}
-
-	/* Update the segment usage information. */
-	LFS_SEGENTRY(sup, fs, sp->seg_number, bp);
-	sup->su_nbytes += nblocks - 1 - 
-	    (ssp->ss_ninos + INOPB(fs) - 1) / INOPB(fs) << fs->lfs_bshift;
-	sup->su_nbytes += ssp->ss_ninos * sizeof(struct dinode);
-	sup->su_lastmod = time.tv_sec;
-	LFS_UBWRITE(bp);
+	return(do_again);
 }
 
 void

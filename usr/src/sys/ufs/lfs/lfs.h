@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs.h	7.13 (Berkeley) %G%
+ *	@(#)lfs.h	7.14 (Berkeley) %G%
  */
 
 #define	LFS_LABELPAD	8192		/* LFS label size */
@@ -19,6 +19,7 @@ struct segusage {
 #define	SEGUSE_ACTIVE		0x1	/* segment is currently being written */
 #define	SEGUSE_DIRTY		0x2	/* segment has data in it */
 #define	SEGUSE_SUPERBLOCK	0x4	/* segment contains a superblock */
+#define	SEGUSE_LIVELOG		0x8	/* segment has not been checkpointed */
 	u_long	su_flags;
 };
 
@@ -59,6 +60,7 @@ struct lfs {
 	daddr_t	lfs_nextseg;		/* address of next segment to write */
 	daddr_t	lfs_curseg;		/* current segment being written */
 	daddr_t	lfs_offset;		/* offset in curseg for next partial */
+	daddr_t	lfs_lastpseg;		/* address of last partial written */
 	u_long	lfs_tstamp;		/* time stamp */
 
 /* These are configuration parameters. */
@@ -95,6 +97,9 @@ struct lfs {
 					/* XXX NOT USED */
 	void	*XXXlfs_seglist;	/* list of segments being written */
 	u_long	lfs_iocount;		/* number of ios pending */
+	u_long	lfs_writer;		/* don't allow any dirops to start */
+	u_long	lfs_dirops;		/* count of active directory ops */
+	u_long	lfs_doifile;		/* Write ifile blocks on next write */
 	u_char	lfs_fmod;		/* super block modified flag */
 	u_char	lfs_clean;		/* file system is clean flag */
 	u_char	lfs_ronly;		/* mounted read-only flag */
@@ -170,8 +175,12 @@ struct segsum {
 	u_long	ss_datasum;		/* check sum of data */
 	daddr_t	ss_next;		/* next segment */
 	u_long	ss_create;		/* creation time stamp */
-	u_long	ss_nfinfo;		/* number of file info structures */
-	u_long	ss_ninos;		/* number of inodes in summary */
+	u_short	ss_nfinfo;		/* number of file info structures */
+	u_short	ss_ninos;		/* number of inodes in summary */
+#define	SS_DIROP	0x01		/* segment begins a dirop */
+#define	SS_CONT		0x02		/* more partials to finish this write*/
+	u_short	ss_flags;		/* used for directory operations */
+	u_short	ss_pad;			/* extra space */
 	/* FINFO's and inode daddr's... */
 };
 

@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_alloc.c	7.45 (Berkeley) %G%
+ *	@(#)lfs_alloc.c	7.46 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -148,6 +148,7 @@ lfs_vcreate(mp, ino, vpp)
 	/* Initialize the inode. */
 	MALLOC(ip, struct inode *, sizeof(struct inode), M_LFSNODE, M_WAITOK);
 	(*vpp)->v_data = ip;
+	(*vpp)->v_flag |= VDIROP;
 	ip->i_vnode = *vpp;
 	ip->i_devvp = ump->um_devvp;
 	ip->i_flag = 0;
@@ -215,5 +216,3 @@ lfs_vfree (ap)
 	--fs->lfs_nfiles;
 	return (0);
 }
-
-

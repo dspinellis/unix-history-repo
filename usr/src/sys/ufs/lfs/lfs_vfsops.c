@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_vfsops.c	7.74 (Berkeley) %G%
+ *	@(#)lfs_vfsops.c	7.75 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -242,6 +242,11 @@ lfs_mountfs(devvp, mp, p)
 	/* Set up the I/O information */
 	fs->lfs_iocount = 0;
 
+	/* Set up the ifile flags */
+	fs->lfs_doifile = 0;
+	fs->lfs_writer = 0;
+	fs->lfs_dirops = 0;
+
 	/* Set the file system readonly/modify bits. */
 	fs = ump->um_lfs;
 	fs->lfs_ronly = ronly;
@@ -309,18 +314,27 @@ lfs_unmount(mp, mntflags, p)
 			return (EINVAL);
 		flags |= FORCECLOSE;
 	}
+	/*
+	 * FFS does a mntflushbuf here.  Our analagous operation
+	 * would be a segment write, but that has already been
+	 * done in the vfs code.
+	 */
+	if (lfs_mntinvalbuf(mp))
+		return(EBUSY);
+
+	/* Need to checkpoint again to pick up any new ifile changes */
 	if (error = lfs_segwrite(mp, 1))
 		return(error);
-
-ndirty = lfs_umountdebug(mp);
-printf("lfs_umountdebug: returned %d dirty\n", ndirty);
-return(0);
-	if (mntinvalbuf(mp))
-		return (EBUSY);
 	ump = VFSTOUFS(mp);
+	fs = ump->um_lfs;
+	if (fs->lfs_ivnode->v_dirtyblkhd)
+		panic("Still have dirty blocks on ifile vnode\n");
+	if (lfs_vinvalbuf(fs->lfs_ivnode))
+		panic("lfs_vinvalbuf failed on ifile\n");
+
 #ifdef QUOTA
 	if (mp->mnt_flag & MNT_QUOTA) {
-		if (error = vflush(mp, NULLVP, SKIPSYSTEM|flags))
+		if (error = vflush(mp, fs->lfs_ivnode, SKIPSYSTEM|flags))
 			return (error);
 		for (i = 0; i < MAXQUOTAS; i++) {
 			if (ump->um_quotas[i] == NULLVP)
@@ -333,11 +347,10 @@ return(0);
 		 */
 	}
 #endif
+	vrele(fs->lfs_ivnode);
 	if (error = vflush(mp, NULLVP, flags))
 		return (error);
-	fs = ump->um_lfs;
 	ronly = !fs->lfs_ronly;
-	vrele(fs->lfs_ivnode);
 	ump->um_devvp->v_specflags &= ~SI_MOUNTEDON;
 	error = VOP_CLOSE(ump->um_devvp, ronly ? FREAD : FREAD|FWRITE,
 		NOCRED, p);

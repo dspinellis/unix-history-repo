@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_inode.c	7.68 (Berkeley) %G%
+ *	@(#)lfs_inode.c	7.69 (Berkeley) %G%
  */
 
 #include <sys/param.h>
@@ -147,13 +147,14 @@ lfs_ifind(fs, ino, dip)
 	register struct dinode *dip;
 {
 	register int cnt;
+	register struct dinode *ldip;
 
 #ifdef VERBOSE
 	printf("lfs_ifind: inode %d\n", ino);
 #endif
-	for (cnt = INOPB(fs); cnt--; ++dip)
-		if (dip->di_inum == ino)
-			return (dip);
+	for (cnt = INOPB(fs), ldip = dip + (cnt - 1); cnt--; --ldip)
+		if (ldip->di_inum == ino)
+			return (ldip);
 
 	panic("lfs_ifind: dinode %u not found", ino);
 	/* NOTREACHED */

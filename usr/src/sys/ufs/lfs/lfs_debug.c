@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)lfs_debug.c	7.5 (Berkeley) %G%
+ *	@(#)lfs_debug.c	7.6 (Berkeley) %G%
  */
 
 #ifdef DEBUG
@@ -102,79 +102,5 @@ lfs_dump_dinode(dip)
 	for (i = 0; i < NIADDR; i++)
 		(void)printf("\t%lx", dip->di_ib[i]);
 	(void)printf("\n");
-}
-
-/* XXX TEMPORARY */
-#include <sys/buf.h>
-#include <sys/mount.h>
-int
-lfs_umountdebug(mp)
-	struct mount *mp;
-{
-	struct vnode *vp;
-	int dirty;
-
-	dirty = 0;
-	if ((mp->mnt_flag & MNT_MPBUSY) == 0)
-		panic("umountdebug: not busy");
-loop:
-	for (vp = mp->mnt_mounth; vp; vp = vp->v_mountf) {
-		if (vget(vp))
-			goto loop;
-		dirty += lfs_vinvalbuf(vp);
-		vput(vp);
-		if (vp->v_mount != mp)
-			goto loop;
-	}
-	return (dirty);
-}
-
-int
-lfs_vinvalbuf(vp)
-	register struct vnode *vp;
-{
-	register struct buf *bp;
-	struct buf *nbp, *blist;
-	int s, dirty = 0;
-
-	for (;;) {
-		if (blist = vp->v_dirtyblkhd)
-			/* void */;
-		else if (blist = vp->v_cleanblkhd)
-			/* void */;
-		else
-			break;
-		for (bp = blist; bp; bp = nbp) {
-	printf("lfs_vinvalbuf: ino %d, lblkno %d, blkno %lx flags %xl\n",
-	     VTOI(vp)->i_number, bp->b_lblkno, bp->b_blkno, bp->b_flags);
-			nbp = bp->b_blockf;
-			s = splbio();
-			if (bp->b_flags & B_BUSY) {
-	printf("lfs_vinvalbuf: buffer busy, would normally sleep\n");
-/*
-				bp->b_flags |= B_WANTED;
-				sleep((caddr_t)bp, PRIBIO + 1);
-*/
-				splx(s);
-				break;
-			}
-			bremfree(bp);
-			bp->b_flags |= B_BUSY;
-			splx(s);
-			if (bp->b_flags & B_DELWRI) {
-				dirty++;			/* XXX */
-	printf("lfs_vinvalbuf: buffer dirty (DELWRI). would normally write\n");
-				break;
-			}
-			if (bp->b_vp != vp)
-				reassignbuf(bp, bp->b_vp);
-			else
-				bp->b_flags |= B_INVAL;
-			brelse(bp);
-		}
-	}
-	if (vp->v_dirtyblkhd || vp->v_cleanblkhd)
-		panic("lfs_vinvalbuf: flush failed");
-	return (dirty);
 }
 #endif /* DEBUG */
