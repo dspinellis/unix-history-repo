@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)recipient.c	6.37 (Berkeley) %G%";
+static char sccsid[] = "@(#)recipient.c	6.38 (Berkeley) %G%";
 #endif /* not lint */
 
 # include "sendmail.h"
@@ -319,12 +319,27 @@ recipient(a, sendq, e)
 		}
 		else
 		{
-			int err;
+			int ret;
 
 			message("including file %s", a->q_user);
-			err = include(a->q_user, FALSE, a, sendq, e);
-			if (transienterror(err))
+			ret = include(a->q_user, FALSE, a, sendq, e);
+			if (transienterror(ret))
+			{
+#ifdef LOG
+				if (LogLevel > 2)
+					syslog(LOG_NOTICE, "%s: include %s: transient error: %e",
+						e->e_id, a->q_user);
+#endif
 				a->q_flags |= QQUEUEUP|QDONTSEND;
+				usrerr("451 Cannot open %s: %s",
+					a->q_user, errstring(ret));
+			}
+			else if (ret != 0)
+			{
+				usrerr("550 Cannot open %s: %s",
+					a->q_user, errstring(ret));
+				a->q_flags |= QBADADDR;
+			}
 		}
 	}
 	else if (m == FileMailer)
@@ -671,16 +686,6 @@ include(fname, forwarding, ctladdr, sendq, e)
 		int ret = errno;
 
 		clrevent(ev);
-		if (transienterror(ret))
-		{
-			ctladdr->q_flags |= QQUEUEUP|QDONTSEND;
-			errno = 0;
-			usrerr("451 Cannot open %s: %s", fname, errstring(ret));
-		}
-		else
-		{
-			usrerr("550 Cannot open %s: %s", fname, errstring(ret));
-		}
 		return ret;
 	}
 
