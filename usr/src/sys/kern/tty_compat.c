@@ -3,7 +3,7 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)tty_compat.c	7.8 (Berkeley) %G%
+ *	@(#)tty_compat.c	7.9 (Berkeley) %G%
  */
 
 /* 
@@ -13,7 +13,6 @@
 
 #include "param.h"
 #include "systm.h"
-#include "user.h"
 #include "ioctl.h"
 #include "tty.h"
 #include "termios.h"
@@ -21,11 +20,8 @@
 #include "file.h"
 #include "conf.h"
 #include "dkstat.h"
-#include "uio.h"
 #include "kernel.h"
 #include "syslog.h"
-
-#include "machine/reg.h"
 
 int ttydebug = 0;
 
@@ -52,16 +48,6 @@ static int compatspcodes[16] = {
 	0, 50, 75, 110, 134, 150, 200, 300, 600, 1200,
 	1800, 2400, 4800, 9600, 19200, 38400,
 };
-
-ttspeedtab(speed, table)
-	register struct speedtab *table;
-{
-
-	for ( ; table->sp_speed != -1; table++)
-		if (table->sp_speed == speed)
-			return (table->sp_code);
-	return (-1);
-}
 
 /*ARGSUSED*/
 ttcompat(tp, com, data, flag)
