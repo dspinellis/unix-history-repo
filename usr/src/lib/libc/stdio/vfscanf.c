@@ -1,4 +1,4 @@
-static char sccsid[] = "@(#)vfscanf.c	4.1	(Berkeley)	82/12/03";
+static char sccsid[] = "@(#)vfscanf.c	4.2	(Berkeley)	82/12/03";
 
 /* @(#)doscan.c	4.1 (Berkeley) 12/21/80 */
 #include <stdio.h>
@@ -176,7 +176,7 @@ struct _iobuf *iop;
 		*eofptr = 0;
 	} else
 		*eofptr = 1;
- 	if (ptr==NULL || np==numbuf)
+ 	if (ptr==NULL || np==numbuf || (negflg && np==numbuf+1) )/* gene dykes*/
 		return(0);
 	*np++ = 0;
 	switch((scale<<4) | size) {
