@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)optr.c	5.6 (Berkeley) %G%";
+static char sccsid[] = "@(#)optr.c	5.7 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -17,6 +17,7 @@ static char sccsid[] = "@(#)optr.c	5.6 (Berkeley) %G%";
 #include <grp.h>
 #include <varargs.h>
 #include <utmp.h>
+#include <tzfile.h>
 #include <errno.h>
 #include <stdio.h>
 #ifdef __STDC__
@@ -491,7 +492,7 @@ lastdump(arg)
 		dt = fstabsearch(dtwalk->dd_name);
 		dumpme = (dt != NULL &&
 		    dt->fs_freq != 0 &&
-		    dtwalk->dd_ddate < tnow - (dt->fs_freq * DAY));
+		    dtwalk->dd_ddate < tnow - (dt->fs_freq * SECSPERDAY));
 		if (arg != 'w' || dumpme)
 			(void) printf(
 			    "%c %8s\t(%6s) Last dump: Level %c, Date %s\n",
