@@ -2,7 +2,7 @@
 .\" All rights reserved.  The Berkeley software License Agreement
 .\" specifies the terms and conditions for redistribution.
 .\"
-.\"	@(#)readlink.2	6.2 (Berkeley) %G%
+.\"	@(#)readlink.2	6.3 (Berkeley) %G%
 .\"
 .TH READLINK 2 ""
 .UC 5
@@ -22,7 +22,7 @@ int bufsiz;
 places the contents of the symbolic link
 .I name
 in the buffer
-.I buf
+.I buf,
 which has size
 .IR bufsiz . 
 The contents of the link are not null terminated when returned.
