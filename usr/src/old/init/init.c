@@ -1,5 +1,5 @@
 #ifndef lint
-static	char *sccsid = "@(#)init.c	4.13 (Berkeley) %G%";
+static	char *sccsid = "@(#)init.c	4.14 (Berkeley) %G%";
 #endif
 
 #include <signal.h>
@@ -364,6 +364,11 @@ dfork(p)
 		}
 		chown(tty, 0, 0);
 		chmod(tty, 0622);
+		/*
+		 * Give port selectors an opportunity
+		 * to see DTR transition.
+		 */
+		sleep(1);
 		if (open(tty, O_RDWR) < 0) {
 			int repcnt = 0;
 			do {
@@ -434,6 +439,11 @@ rmut(p)
 			write(f, (char *)&wtmp, sizeof(wtmp));
 			close(f);
 		}
+		/*
+		 * After a proper login force reset
+		 * of error detection code in dfork.
+		 */
+		p->gettytime = 0;
 	}
 }
 
