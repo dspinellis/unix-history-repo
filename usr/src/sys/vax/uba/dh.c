@@ -1,4 +1,4 @@
-/*	dh.c	4.36	81/06/05	*/
+/*	dh.c	4.37	81/07/10	*/
 
 #include "dh.h"
 #if NDH > 0
@@ -753,30 +753,32 @@ dmintr(dm)
 	if (ui == 0)
 		return;
 	addr = (struct dmdevice *)ui->ui_addr;
-	if (addr->dmcsr&DM_DONE && addr->dmcsr&DM_CF) {
-		tp = &dh11[(dm<<4)+(addr->dmcsr&0xf)];
-		wakeup((caddr_t)&tp->t_rawq);
-		if ((tp->t_state&WOPEN)==0 &&
-		    (tp->t_local&LMDMBUF)) {
-			if (addr->dmlstat & DML_CAR) {
-				tp->t_state &= ~TTSTOP;
-				ttstart(tp);
-			} else if ((tp->t_state&TTSTOP) == 0) {
-				tp->t_state |= TTSTOP;
-				dhstop(tp, 0);
-			}
-		} else if ((addr->dmlstat&DML_CAR)==0) {
+	if (addr->dmcsr&DM_DONE) {
+		if (addr->dmcsr&DM_CF) {
+			tp = &dh11[(dm<<4)+(addr->dmcsr&0xf)];
+			wakeup((caddr_t)&tp->t_rawq);
 			if ((tp->t_state&WOPEN)==0 &&
-			    (tp->t_local&LNOHANG)==0) {
-				gsignal(tp->t_pgrp, SIGHUP);
-				gsignal(tp->t_pgrp, SIGCONT);
-				addr->dmlstat = 0;
-				flushtty(tp, FREAD|FWRITE);
-			}
-			tp->t_state &= ~CARR_ON;
-		} else
-			tp->t_state |= CARR_ON;
+			    (tp->t_local&LMDMBUF)) {
+				if (addr->dmlstat & DML_CAR) {
+					tp->t_state &= ~TTSTOP;
+					ttstart(tp);
+				} else if ((tp->t_state&TTSTOP) == 0) {
+					tp->t_state |= TTSTOP;
+					dhstop(tp, 0);
+				}
+			} else if ((addr->dmlstat&DML_CAR)==0) {
+				if ((tp->t_state&WOPEN)==0 &&
+				    (tp->t_local&LNOHANG)==0) {
+					gsignal(tp->t_pgrp, SIGHUP);
+					gsignal(tp->t_pgrp, SIGCONT);
+					addr->dmlstat = 0;
+					flushtty(tp, FREAD|FWRITE);
+				}
+				tp->t_state &= ~CARR_ON;
+			} else
+				tp->t_state |= CARR_ON;
+		}
+		addr->dmcsr = DM_IE|DM_SE;
 	}
-	addr->dmcsr = DM_IE|DM_SE;
 }
 #endif
