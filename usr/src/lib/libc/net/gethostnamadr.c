@@ -9,6 +9,7 @@ static char sccsid[] = "@(#)gethostnamadr.c	6.2 (Berkeley) %G%";
 #endif not lint
 
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -78,8 +79,7 @@ getanswer(msg, msglen, iquery)
 	cp = (char *)&answer + sizeof(HEADER);
 	if (qdcount) {
 		if (iquery) {
-			if ((n = dn_expand((char *)&answer, cp, bp, buflen)) < 
-0)
+			if ((n = dn_expand((char *)&answer, cp, bp, buflen)) <0)
 				return (NULL);
 			cp += n + QFIXEDSZ;
 			host.h_name = bp;
@@ -95,7 +95,9 @@ getanswer(msg, msglen, iquery)
 	ap = host_aliases;
 	host.h_aliases = host_aliases;
 	hap = h_addr_ptrs;
+#ifdef BSD4_3
 	host.h_addr_list = h_addr_ptrs;
+#endif
 	haveanswer = 0;
 	while (--ancount >= 0 && cp < eom) {
 		if ((n = dn_expand((char *)&answer, cp, bp, buflen)) < 0)
@@ -125,7 +127,12 @@ getanswer(msg, msglen, iquery)
 			}
 			cp += n;
 			host.h_name = bp;
+#ifdef BSD4_3
 			return(&host);
+#else
+			haveanswer++;
+			break;
+#endif
 		}
 		if (type != T_A)  {
 #ifdef DEBUG
@@ -148,7 +155,7 @@ getanswer(msg, msglen, iquery)
 		} else {
 			host.h_length = n;
 			getclass = class;
-			host.h_addrtype = C_IN ? AF_INET : AF_UNSPEC;
+			host.h_addrtype = (class == C_IN) ? AF_INET : AF_UNSPEC;
 			if (!iquery) {
 				host.h_name = bp;
 				bp += strlen(bp) + 1;
@@ -172,6 +179,9 @@ getanswer(msg, msglen, iquery)
 	if (haveanswer) {
 		*ap = NULL;
 		*hap = NULL;
+#ifndef BSD4_3
+		host.h_addr = h_addr_ptrs[0]; 
+#endif
 		return (&host);
 	} else
 		return (NULL);
