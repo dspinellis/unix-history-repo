@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)tp_subr2.c	7.16 (Berkeley) %G%
+ *	@(#)tp_subr2.c	7.17 (Berkeley) %G%
  */
 
 /***********************************************************
@@ -450,31 +450,133 @@ copyQOSparms(src, dst)
 	dst->p_rx_strat = src->p_rx_strat;
 #undef COPYSIZE
 }
+/*
+ * Determine a reasonable value for maxseg size.
+ * If the route is known, check route for mtu.
+ * We also initialize the congestion/slow start
+ * window to be a single segment if the destination isn't local.
+ * While looking at the routing entry, we also initialize other path-dependent
+ * parameters from pre-set or cached values in the routing entry.
+ */
+void
+tp_mss(tpcb, nhdr_size)
+	register struct tp_pcb *tpcb;
+	int nhdr_size;
+{
+	register struct rtentry *rt;
+	struct ifnet *ifp;
+	register int rtt, mss;
+	u_long bufsize;
+	int i, ssthresh = 0;
+	struct socket *so;
+
+	mss = 1 << tpcb->tp_tpdusize;
+	so = tpcb->tp_sock;
+	if ((rt = *(tpcb->tp_routep)) == 0) {
+		bufsize = so->so_rcv.sb_hiwat;
+		goto punt_route;
+	}
+	ifp = rt->rt_ifp;
+
+#ifdef RTV_MTU	/* if route characteristics exist ... */
+	/*
+	 * While we're here, check if there's an initial rtt
+	 * or rttvar.  Convert from the route-table units
+	 * to hz ticks for the smoothed timers and slow-timeout units
+	 * for other inital variables.
+	 */
+	if (tpcb->tp_rtt == 0 && (rtt = rt->rt_rmx.rmx_rtt)) {
+		tpcb->tp_rtt = rtt * hz / RTM_RTTUNIT;
+		if (rt->rt_rmx.rmx_rttvar)
+			tpcb->tp_rtv = rt->rt_rmx.rmx_rttvar
+						* hz / RTM_RTTUNIT;
+		else
+			tpcb->tp_rtv = tpcb->tp_rtt;
+	}
+	/*
+	 * if there's an mtu associated with the route, use it
+	 */
+	if (rt->rt_rmx.rmx_mtu)
+		mss = rt->rt_rmx.rmx_mtu - nhdr_size;
+	else
+#endif /* RTV_MTU */
+		mss = (ifp->if_mtu - nhdr_size);
+	/* can propose mtu which are multiples of 128 */
+	mss &= ~0x7f;
+	/*
+	 * If there's a pipesize, change the socket buffer
+	 * to that size.
+	 */
+#ifdef RTV_SPIPE
+	if ((bufsize = rt->rt_rmx.rmx_sendpipe) > 0) {
+#endif
+		bufsize = min(bufsize, so->so_snd.sb_hiwat);
+		(void) sbreserve(&so->so_snd, bufsize);
+	}
+#ifdef RTV_SPIPE
+	if ((bufsize = rt->rt_rmx.rmx_recvpipe) > 0) {
+#endif
+		bufsize = min(bufsize, so->so_rcv.sb_hiwat);
+		(void) sbreserve(&so->so_rcv, bufsize);
+	} else
+		bufsize = so->so_rcv.sb_hiwat;
+#ifdef RTV_SSTHRESH
+	/*
+	 * There's some sort of gateway or interface
+	 * buffer limit on the path.  Use this to set
+	 * the slow start threshhold, but set the
+	 * threshold to no less than 2*mss.
+	 */
+	ssthresh = rt->rt_rmx.rmx_ssthresh;
+punt_route:
+	/*
+	 * The current mss is initialized to the default value.
+	 * If we compute a smaller value, reduce the current mss.
+	 * If we compute a larger value, return it for use in sending
+	 * a max seg size option.
+	 * If we received an offer, don't exceed it.
+	 * However, do not accept offers under 128 bytes.
+	 */
+	if (tpcb->tp_l_tpdusize)
+		mss = min(mss, tpcb->tp_l_tpdusize);
+	/*
+	 * We want a minimum recv window of 4 packets to
+	 * signal packet loss by duplicate acks.
+	 */
+	mss = min(mss, bufsize >> 2) & ~0x7f;
+	mss = max(mss, 128);		/* sanity */
+	tpcb->tp_cong_win =
+		(rt == 0 || (rt->rt_flags & RTF_GATEWAY)) ? mss : bufsize;
+	tpcb->tp_l_tpdusize = mss;
+	tpcb->tp_ssthresh = max(2 * mss, ssthresh);
+	/* Calculate log2 of mss */
+	for (i = TP_MIN_TPDUSIZE + 1; i <= TP_MAX_TPDUSIZE; i++)
+		if ((1 << i) > mss)
+			break;
+	i--;
+	tpcb->tp_tpdusize = i;
+#endif /* RTV_MTU */
+}
 
 /*
  * CALLED FROM:
  *  tp_usrreq on PRU_CONNECT and tp_input on receipt of CR
  *	
  * FUNCTION and ARGUMENTS:
- * 	route directly to x.25 if the address is type 37 - GROT.
- *  furthermore, let TP0 handle only type-37 addresses
+ * 	-- An mbuf containing the peer's network address.
+ *  -- Our control block, which will be modified
+ *  -- In the case of cons, a control block for that layer.
  *
- *	Since this assumes that its address argument is in a mbuf, the
- *	parameter was changed to reflect this assumtion. This also
- *	implies that an mbuf must be allocated when this is
- *	called from tp_input
  *	
  * RETURNS:
  *	errno value	 : 
  *	EAFNOSUPPORT if can't find an nl_protosw for x.25 (really could panic)
  *	ECONNREFUSED if trying to run TP0 with non-type 37 address
  *  possibly other E* returned from cons_netcmd()
- * NOTE:
- *  Would like to eliminate as much of this as possible -- 
- *  only one set of defaults (let the user set the parms according
- *  to parameters provided in the directory service).
- *  Left here for now 'cause we don't yet have a clean way to handle
- *  it on the passive end.
+ *
+ * SIDE EFFECTS:
+ *   Determines recommended tpdusize, buffering and intial delays
+ *	 based on information cached on the route.
  */
 int
 tp_route_to( m, tpcb, channel)
@@ -486,6 +588,7 @@ tp_route_to( m, tpcb, channel)
 	extern struct tp_conn_param tp_conn_param[];
 	int error = 0, save_netservice = tpcb->tp_netservice;
 	register struct rtentry *rt = 0;
+	int nhdr_size, mtu, bufsize;
 
 	siso = mtod(m, struct sockaddr_iso *);
 	IFTRACE(D_CONN)
@@ -513,12 +616,11 @@ tp_route_to( m, tpcb, channel)
 		tpcb->tp_npcb = (caddr_t)isop;
 		tpcb->tp_netservice = ISO_CONS;
 		tpcb->tp_nlproto = nl_protosw + ISO_CONS;
-		isop->isop_socket = tpcb->tp_sock;
-		if (isop->isop_refcnt == 0)
+		if (isop->isop_refcnt++ == 0) {
 			iso_putsufx(isop, tpcb->tp_lsuffix, tpcb->tp_lsuffixlen, TP_LOCAL);
-		else
+			isop->isop_socket = tpcb->tp_sock;
+		} else
 			/* there are already connections sharing this */;
-		isop->isop_refcnt++;
 #endif
 	} else {
 		switch (siso->siso_family) {
@@ -527,19 +629,23 @@ tp_route_to( m, tpcb, channel)
 			goto done;
 #ifdef ISO
 		case AF_ISO:
+		{
+			struct isopcb *isop = (struct isopcb *)tpcb->tp_npcb;
+			int flags = tpcb->tp_sock->so_options & SO_DONTROUTE;
 			tpcb->tp_netservice = ISO_CLNS;
-			if (rt = rtalloc1((struct sockaddr *)siso, 0)) {
-				rt->rt_refcnt--;
-				if (rt->rt_flags & RTF_PROTO1)
+			if (clnp_route(&siso->siso_addr, &isop->isop_route,
+							flags, (void **)0, (void **)0) == 0) {
+				rt = isop->isop_route.ro_rt;
+				if (rt && rt->rt_flags & RTF_PROTO1)
 					tpcb->tp_netservice = ISO_CONS;
 			}
-			break;
+		}    break;
 #endif
 #ifdef INET
 		case AF_INET:
 			tpcb->tp_netservice = IN_CLNS;
-		}
 #endif
+		}
 		if (tpcb->tp_nlproto->nlp_afamily != siso->siso_family) {
 			IFDEBUG(D_CONN)
 				printf("tp_route_to( CHANGING nlproto old 0x%x new 0x%x)\n", 
@@ -555,76 +661,10 @@ tp_route_to( m, tpcb, channel)
 		tpcb->tp_nlproto = nl_protosw + tpcb->tp_netservice;
 		error = (tpcb->tp_nlproto->nlp_pcbconn)(tpcb->tp_npcb, m);
 	}
-	if( error )
+	if (error)
 		goto done;
-
-	{
-		switch(tpcb->tp_netservice) {
-		case ISO_COSNS:
-		case ISO_CLNS:
-			/* This is a kludge but seems necessary so the passive end
-			 * can get long enough timers. sigh.
-			if( siso->siso_addr.osinet_idi[1] == (u_char)IDI_OSINET )
-			 */
-			if (rt && rt->rt_ifp && rt->rt_ifp->if_type == IFT_X25) {
-				if( tpcb->tp_dont_change_params == 0) {
-					copyQOSparms( &tp_conn_param[ISO_COSNS],
-							&tpcb->_tp_param);
-				}
-				tpcb->tp_flags |= TPF_NLQOS_PDN;
-			}
-			/* drop through to IN_CLNS*/
-		case IN_CLNS:
-			if (iso_localifa(siso))
-				tpcb->tp_flags |= TPF_PEER_ON_SAMENET;
-			if((tpcb->tp_class & TP_CLASS_4) == 0) {
-				error = EPROTOTYPE;
-				break;
-			} 
-			tpcb->tp_class = TP_CLASS_4;  /* IGNORE dont_change_parms */
-			break;
-
-		case ISO_CONS:
-#ifdef TPCONS
-			tpcb->tp_flags |= TPF_NLQOS_PDN;
-			if( tpcb->tp_dont_change_params == 0 ) {
-				copyQOSparms( &tp_conn_param[ISO_CONS],
-							&tpcb->_tp_param);
-			}
-			/*
-			 * for use over x.25 really need a small receive window,
-			 * need to start slowly, need small max negotiable tpdu size,
-			 * and need to use the congestion window to the max
-			 * IGNORES tp_dont_change_params for these!
-			 */
-			if( tpcb->tp_sock->so_snd.sb_hiwat > 512 ) {
-				(void) soreserve(tpcb->tp_sock, 512, 512 );/* GAG */
-			}
-			tpcb->tp_rx_strat =  TPRX_USE_CW;
-
-			/* class 4 doesn't need to open a vc now - may use one already 
-			 * opened or may open one only when it sends a pkt.
-			 */
-#else TPCONS
-			error = ECONNREFUSED;
-#endif TPCONS
-			break;
-		default:
-			error = EPROTOTYPE;
-		}
-
-	}
-	if (error) {
-		tp_netcmd( tpcb, CONN_CLOSE);
-		goto done;
-	} 
-	{	/* start with the global rtt, rtv stats */
-		register int i =
-		   (int) tpcb->tp_flags & (TPF_PEER_ON_SAMENET | TPF_NLQOS_PDN);
-
-		tpcb->tp_rtt = tp_stat.ts_rtt[i];
-		tpcb->tp_rtv = tp_stat.ts_rtv[i];
-	}
+	nhdr_size = tpcb->tp_nlproto->nlp_mtu(tpcb); /* only gets common info */
+	tp_mss(tpcb, nhdr_size);
 done:
 	IFDEBUG(D_CONN)
 		printf("tp_route_to  returns 0x%x\n", error);
