@@ -1,4 +1,4 @@
-static	char *sccsid = "@(#)diffdir.c	4.5 (Berkeley) 81/02/28";
+static	char *sccsid = "@(#)diffdir.c	4.6 (Berkeley) 82/05/05";
 
 #include "diff.h"
 /*
@@ -11,15 +11,22 @@ static	char *sccsid = "@(#)diffdir.c	4.5 (Berkeley) 81/02/28";
 #define	DIFFER	4		/* Both places and different */
 #define	DIRECT	8		/* Directory */
 
-struct	direct *setupdir();
+struct dir {
+	u_long	d_ino;
+	short	d_reclen;
+	short	d_namlen;
+	char	*d_entry;
+};
+
+struct	dir *setupdir();
 int	header;
 char	title[2*BUFSIZ], *etitle;
 
 diffdir(argv)
 	char **argv;
 {
-	register struct direct *d1, *d2;
-	struct direct *dir1, *dir2;
+	register struct dir *d1, *d2;
+	struct dir *dir1, *dir2;
 	register int i;
 	int cmp;
 
@@ -47,28 +54,26 @@ diffdir(argv)
 	dir1 = setupdir(file1);
 	dir2 = setupdir(file2);
 	d1 = dir1; d2 = dir2;
-	while (d1->d_name[0] != 0 || d2->d_name[0] != 0) {
-		if (d1->d_name[0] && useless(d1->d_name)) {
+	while (d1->d_entry != 0 || d2->d_entry != 0) {
+		if (d1->d_entry && useless(d1->d_entry)) {
 			d1++;
 			continue;
 		}
-		if (d2->d_name[0] && useless(d2->d_name)) {
+		if (d2->d_entry && useless(d2->d_entry)) {
 			d2++;
 			continue;
 		}
-		if (d1->d_name[0] == 0)
+		if (d1->d_entry == 0)
 			cmp = 1;
-		else if (d2->d_name[0] == 0)
+		else if (d2->d_entry == 0)
 			cmp = -1;
 		else
-			cmp = strncmp(d1->d_name, d2->d_name, DIRSIZ);
+			cmp = strcmp(d1->d_entry, d2->d_entry);
 		if (cmp < 0) {
 			if (lflag)
 				d1->d_flags |= ONLY;
-			else if (opt == 0 || opt == 2) {
+			else if (opt == 0 || opt == 2)
 				only(d1, 1);
-				printf(": %.*s\n", DIRSIZ, d1->d_name);
-			}
 			d1++;
 		} else if (cmp == 0) {
 			compare(d1);
@@ -77,10 +82,8 @@ diffdir(argv)
 		} else {
 			if (lflag)
 				d2->d_flags |= ONLY;
-			else if (opt == 0 || opt == 2) {
+			else if (opt == 0 || opt == 2)
 				only(d2, 2);
-				printf(": %.*s\n", DIRSIZ, d2->d_name);
-			}
 			d2++;
 		}
 	}
@@ -94,17 +97,11 @@ diffdir(argv)
 	if (rflag) {
 		if (header && lflag)
 			printf("\f");
-		for (d1 = dir1; d1->d_name[0]; d1++)  {
+		for (d1 = dir1; d1->d_entry; d1++)  {
 			if ((d1->d_flags & DIRECT) == 0)
 				continue;
-			strncpy(efile1, d1->d_name, DIRSIZ);
-			strncpy(efile2, d1->d_name, DIRSIZ);
-/*
-			if (opt != D_EDIT) {
-				*etitle = 0;
-				printf("%s%s %s\n", title, file1, file2);
-			}
-*/
+			strcpy(efile1, d1->d_entry);
+			strcpy(efile2, d1->d_entry);
 			calldiff(0);
 		}
 	}
@@ -129,96 +126,98 @@ setfile(fpp, epp, file)
 }
 
 scanpr(dp, test, title, file, efile)
-	register struct direct *dp;
+	register struct dir *dp;
 	int test;
 	char *title, *file, *efile;
 {
 	int titled = 0;
 
-	for (; dp->d_name[0]; dp++)
-		if (dp->d_flags & test) {
-			if (titled == 0) {
-				if (header == 0) {
-					if (anychange)
-						printf("\f");
-					header = 1;
-				} else
-					printf("\n");
-				printf(title, efile - file - 1, file);
-				printf(":\n");
-				titled = 1;
-			}
-			ptname(dp);
+	for (; dp->d_entry; dp++) {
+		if ((dp->d_flags & test) == 0)
+			continue;
+		if (titled == 0) {
+			if (header == 0) {
+				if (anychange)
+					printf("\f");
+				header = 1;
+			} else
+				printf("\n");
+			printf(title, efile - file - 1, file);
+			printf(":\n");
+			titled = 1;
 		}
+		printf("\t%s\n", dp->d_entry);
+	}
 }
 
 only(dp, which)
-	struct direct *dp;
+	struct dir *dp;
 	int which;
 {
 	char *file = which == 1 ? file1 : file2;
 	char *efile = which == 1 ? efile1 : efile2;
 
-	printf("Only in %.*s", efile - file - 1, file, DIRSIZ, dp->d_name);
-}
-
-ptname(dp)
-	struct direct *dp;
-{
-
-	printf("\t%.*s\n", DIRSIZ, dp->d_name);
+	printf("Only in %.*s: %s\n", efile - file - 1, file, dp->d_entry);
 }
 
 int	entcmp();
 
-struct direct *
+struct dir *
 setupdir(cp)
 	char *cp;
 {
-	struct stat stb;
-	register struct direct *dp, *ep;
+	register struct dir *dp = 0, *ep;
+	register struct direct *rp;
+	register int nitems, n;
+	DIR *dirp;
 
-	close(0);
-	if (open(cp, 0) < 0) {
+	dirp = opendir(cp);
+	if (dirp == NULL) {
 		fprintf(stderr, "diff: ");
 		perror(cp);
 		done();
 	}
-	fstat(0, &stb);
-	dp = (struct direct *)malloc((unsigned) stb.st_size + sizeof (struct direct));
+	nitems = 0;
+	dp = (struct dir *)malloc(sizeof (struct dir));
 	if (dp == 0) {
 		fprintf(stderr, "diff: ran out of memory\n");
 		done();
 	}
-	if (read(0, (char *)dp, (int)stb.st_size) != (int)stb.st_size) {
-		fprintf(stderr, "diff: ");
-		perror(cp);
-		done();
-	}
-	qsort(dp, (int) stb.st_size / sizeof (struct direct), 
-	    sizeof (struct direct), entcmp);
-	ep = &dp[stb.st_size / sizeof (struct direct)];
-	ep->d_name[0] = 0;
-	while (--ep >= dp && ep->d_ino == 0)
-		ep->d_name[0] = 0;
-	for (; ep >= dp; ep--)
+	while (rp = readdir(dirp)) {
+		ep = &dp[nitems++];
+		ep->d_reclen = rp->d_reclen;
+		ep->d_namlen = rp->d_namlen;
+		ep->d_entry = 0;
 		ep->d_flags = 0;
+		if (ep->d_namlen > 0) {
+			ep->d_entry = malloc(ep->d_namlen + 1);
+			if (ep->d_entry == 0) {
+				fprintf(stderr, "diff: out of memory\n");
+				done();
+			}
+			strcpy(ep->d_entry, rp->d_name);
+		}
+		dp = (struct dir *)realloc((char *)dp,
+			(nitems + 1) * sizeof (struct dir));
+		if (dp == 0) {
+			fprintf(stderr, "diff: ran out of memory\n");
+			done();
+		}
+	}
+	dp[nitems].d_entry = 0;		/* delimiter */
+	closedir(dirp);
+	qsort(dp, nitems, sizeof (struct dir), entcmp);
 	return (dp);
 }
 
 entcmp(d1, d2)
-	struct direct *d1, *d2;
+	struct dir *d1, *d2;
 {
-
-	if (d1->d_ino == 0)
-		return (1);
-	if (d2->d_ino == 0)
-		return (-1);
-	return (strncmp(d1->d_name, d2->d_name, DIRSIZ));
+	return (strcmp(d1->d_entry, d2->d_entry));
 }
 
 compare(dp)
-	register struct direct *dp;
+	register struct dir *dp;
 {
 	register int i, j;
 	int f1, f2, fmt1, fmt2;
@@ -226,8 +225,8 @@ compare(dp)
 	int flag = 0;
 	char buf1[BUFSIZ], buf2[BUFSIZ];
 
-	strncpy(efile1, dp->d_name, DIRSIZ);
-	strncpy(efile2, dp->d_name, DIRSIZ);
+	strcpy(efile1, dp->d_entry);
+	strcpy(efile2, dp->d_entry);
 	f1 = open(file1, 0);
 	if (f1 < 0) {
 		perror(file1);
@@ -293,8 +292,7 @@ notsame:
 		calldiff(title);
 	else {
 		if (opt == D_EDIT) {
-			printf("ed - %.*s << '-*-END-*-'\n",
-			    DIRSIZ, dp->d_name);
+			printf("ed - %s << '-*-END-*-'\n", dp->d_entry);
 			calldiff(0);
 		} else {
 			printf("%s%s %s\n", title, file1, file2);
