@@ -6,10 +6,11 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)addbytes.c	5.7 (Berkeley) %G%";
+static char sccsid[] = "@(#)addbytes.c	5.8 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
+#include <termios.h>
 
 #define	SYNCH_IN	{y = win->_cury; x = win->_curx;}
 #define	SYNCH_OUT	{win->_cury = y; win->_curx = x;}
@@ -28,6 +29,7 @@ waddbytes(win, bytes, count)
 	register int c, newx, x, y;
 
 	SYNCH_IN;
+
 #ifdef DEBUG
 	__TRACE("ADDBYTES('%c') at (%d, %d)\n", c, y, x);
 #endif
@@ -67,10 +69,10 @@ waddbytes(win, bytes, count)
 	    win->_lastch[y] - win->_ch_off);
 #endif
 			}
-			win->_y[y][x++] = c;
-			if (x > win->_maxx) {
+			win->_y[y][x] = c;
+			if (++x >= win->_maxx) {
 				x = 0;
-newline:			if (++y > win->_maxy)
+newline:			if (++y >= win->_maxy)
 					if (win->_scroll) {
 						SYNCH_OUT;
 						scroll(win);
@@ -88,7 +90,7 @@ newline:			if (++y > win->_maxy)
 			SYNCH_OUT;
 			wclrtoeol(win);
 			SYNCH_IN;
-			if (!NONL)
+			if (origtermio.c_oflag & ONLCR)
 				x = 0;
 			goto newline;
 		case '\r':
