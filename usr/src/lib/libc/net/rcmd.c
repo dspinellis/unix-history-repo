@@ -5,7 +5,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)rcmd.c	5.5 (Berkeley) %G%";
+static char sccsid[] = "@(#)rcmd.c	5.6 (Berkeley) %G%";
 #endif not lint
 
 #include <stdio.h>
@@ -43,8 +43,13 @@ rcmd(ahost, rport, locuser, remuser, cmd, fd2p)
 	*ahost = hp->h_name;
 retry:
 	s = rresvport(&lport);
-	if (s < 0)
+	if (s < 0) {
+		if (errno == EAGAIN)
+			fprintf(stderr, "socket: All ports in use\n");
+		else
+			perror("rcmd: socket");
 		return (-1);
+	}
 	sin.sin_family = hp->h_addrtype;
 	bcopy(hp->h_addr, (caddr_t)&sin.sin_addr, hp->h_length);
 	sin.sin_port = rport;
@@ -135,17 +140,14 @@ rresvport(alport)
 		sin.sin_port = htons((u_short)*alport);
 		if (bind(s, (caddr_t)&sin, sizeof (sin), 0) >= 0)
 			return (s);
-		if (errno == EADDRNOTAVAIL)
-			return (-1);
 		if (errno != EADDRINUSE) {
-			perror("socket");
 			(void) close(s);
 			return (-1);
 		}
 		(*alport)--;
 		if (*alport == IPPORT_RESERVED/2) {
-			fprintf(stderr, "socket: All ports in use\n");
 			(void) close(s);
+			errno = EAGAIN;		/* close */
 			return (-1);
 		}
 	}
