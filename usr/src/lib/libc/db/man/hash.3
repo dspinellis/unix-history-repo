@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"	@(#)hash.3	8.1 (Berkeley) %G%
+.\"	@(#)hash.3	5.2 (Berkeley) %G%
 .\"
 .TH HASH 3 ""
 .UC 7
@@ -35,11 +35,11 @@ typedef struct {
 .RS
 int bsize;
 .br
-u_int cachesize;
+int cachesize;
 .br
 int ffactor;
 .br
-u_long (*hash)(const void *, const size_t);
+u_long (*hash)(const void *, size_t);
 .br
 int lorder;
 .br
