@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)wwupdate.c	3.14 %G%";
+static char sccsid[] = "@(#)wwupdate.c	3.15 %G%";
 #endif
 
 #include "ww.h"
@@ -118,8 +118,10 @@ wwupdate1(top, bot)
 						tt.tt_ninsert = 0;
 					}
 				} else {
-					(*tt.tt_move)(i, c);
-					(*tt.tt_write)(buf, q - buf - 1);
+					if (q - buf > 1) {
+						(*tt.tt_move)(i, c);
+						(*tt.tt_write)(buf, q-buf-1);
+					}
 					os[-1] = lastc;
 					*touched = WWU_TOUCHED;
 				}
