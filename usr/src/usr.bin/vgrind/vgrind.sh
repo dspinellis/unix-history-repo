@@ -1,3 +1,6 @@
+#! /bin/csh
+#
+#	@(#)vgrind.sh	1.8	(Berkeley)	%G%
 #
 # vgrind
 #
@@ -68,7 +71,9 @@ endif
 if (-r index) then
     echo > nindex
     foreach i ($files)
-	echo "/ $i /d" >> nindex
+	#	make up a sed delete command for filenames
+	#	being careful about slashes.
+	echo "? $i ?d" | sed -e "s:/:\\/:g" -e "s:?:/:g" >> nindex
     end
     sed -f nindex index >xindex
     if ($f == 'filter') then
