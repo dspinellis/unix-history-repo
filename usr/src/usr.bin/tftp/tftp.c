@@ -1,5 +1,5 @@
 #ifndef lint
-static char sccsid[] = "@(#)tftp.c	4.9 (Berkeley) %G%";
+static char sccsid[] = "@(#)tftp.c	4.10 (Berkeley) %G%";
 #endif
 
 /*
@@ -24,7 +24,8 @@ extern	char mode[];
 int	f;
 int	trace;
 int	connected;
-char	buf[BUFSIZ];
+char	sbuf[BUFSIZ];			/* send buffer */
+char	rbuf[BUFSIZ];			/* receive buffer */
 int	rexmtval;
 int	maxtimeout;
 int	timeout;
@@ -49,7 +50,8 @@ sendfile(fd, name)
 	int fd;
 	char *name;
 {
-	register struct tftphdr *tp = (struct tftphdr *)buf;
+	register struct tftphdr *stp = (struct tftphdr *)sbuf;
+	register struct tftphdr *rtp = (struct tftphdr *)rbuf;
 	register int block = 0, size, n, amount = 0;
 	struct sockaddr_in from, to;
 	time_t start = time(0), delta;
@@ -61,19 +63,19 @@ sendfile(fd, name)
 		if (block == 0)
 			size = makerequest(WRQ, name) - 4;
 		else {
-			size = read(fd, tp->th_data, SEGSIZE);
+			size = read(fd, stp->th_data, SEGSIZE);
 			if (size < 0) {
 				nak(&to, errno + 100);
 				break;
 			}
-			tp->th_opcode = htons((u_short)DATA);
-			tp->th_block = htons((u_short)block);
+			stp->th_opcode = htons((u_short)DATA);
+			stp->th_block = htons((u_short)block);
 		}
 		timeout = 0;
 		(void) setjmp(timeoutbuf);
 		if (trace)
-			tpacket("sent", &to, tp, size + 4);
-		n = sendto(f, buf, size + 4, 0, (caddr_t)&to, sizeof (to));
+			tpacket("sent", &to, stp, size + 4);
+		n = sendto(f, sbuf, size + 4, 0, (caddr_t)&to, sizeof (to));
 		if (n != size + 4) {
 			perror("tftp: sendto");
 			aborted = 1;
@@ -84,7 +86,7 @@ again:
 			alarm(rexmtval);
 			do {
 				fromlen = sizeof (from);
-				n = recvfrom(f, buf, sizeof (buf), 0,
+				n = recvfrom(f, rbuf, sizeof (rbuf), 0,
 				    (caddr_t)&from, &fromlen);
 			} while (n <= 0);
 			alarm(0);
@@ -94,27 +96,29 @@ again:
 				goto done;
 			}
 			if (to.sin_addr.s_addr != from.sin_addr.s_addr) {
-				tpacket("discarded (wrong host)", &from, tp, n);
+				tpacket("discarded (wrong host)",
+				    &from, rtp, n);
 				goto again;
 			}
 			if (to.sin_port = sin.sin_port)
 				to.sin_port = from.sin_port;
 			if (to.sin_port != from.sin_port) {
-				tpacket("discarded (wrong port)", &from, tp, n);
+				tpacket("discarded (wrong port)",
+				    &from, rtp, n);
 				goto again;
 			}
 			if (trace)
-				tpacket("received", &from, tp, n);
+				tpacket("received", &from, rtp, n);
 			/* should verify packet came from server */
-			tp->th_opcode = ntohs(tp->th_opcode);
-			tp->th_block = ntohs(tp->th_block);
-			if (tp->th_opcode == ERROR) {
-				printf("Error code %d: %s\n", tp->th_code,
-					tp->th_msg);
+			rtp->th_opcode = ntohs(rtp->th_opcode);
+			rtp->th_block = ntohs(rtp->th_block);
+			if (rtp->th_opcode == ERROR) {
+				printf("Error code %d: %s\n", rtp->th_code,
+					rtp->th_msg);
 				aborted = 1;
 				goto done;
 			}
-		} while (tp->th_opcode != ACK && block != tp->th_block);
+		} while (rtp->th_opcode != ACK && block != rtp->th_block);
 		if (block > 0)
 			amount += size;
 		block++;
@@ -135,7 +139,8 @@ recvfile(fd, name)
 	int fd;
 	char *name;
 {
-	register struct tftphdr *tp = (struct tftphdr *)buf;
+	register struct tftphdr *stp = (struct tftphdr *)sbuf;
+	register struct tftphdr *rtp = (struct tftphdr *)rbuf;
 	register int block = 1, n, size, amount = 0;
 	struct sockaddr_in from, to;
 	time_t start = time(0), delta;
@@ -148,16 +153,16 @@ recvfile(fd, name)
 			size = makerequest(RRQ, name);
 			firsttrip = 0;
 		} else {
-			tp->th_opcode = htons((u_short)ACK);
-			tp->th_block = htons((u_short)(block));
+			stp->th_opcode = htons((u_short)ACK);
+			stp->th_block = htons((u_short)(block));
 			size = 4;
 			block++;
 		}
 		timeout = 0;
 		(void) setjmp(timeoutbuf);
 		if (trace)
-			tpacket("sent", &to, tp, size);
-		if (sendto(f, buf, size, 0, (caddr_t)&to,
+			tpacket("sent", &to, stp, size);
+		if (sendto(f, sbuf, size, 0, (caddr_t)&to,
 		    sizeof (to)) != size) {
 			alarm(0);
 			perror("tftp: sendto");
@@ -169,7 +174,7 @@ again:
 			alarm(rexmtval);
 			do {
 				fromlen = sizeof (from);
-				n = recvfrom(f, buf, sizeof (buf), 0,
+				n = recvfrom(f, rbuf, sizeof (rbuf), 0,
 				    (caddr_t)&from, &fromlen);
 			} while (n <= 0);
 			alarm(0);
@@ -179,27 +184,29 @@ again:
 				goto done;
 			}
 			if (to.sin_addr.s_addr != from.sin_addr.s_addr) {
-				tpacket("discarded (wrong host)", &from, tp, n);
+				tpacket("discarded (wrong host)",
+				    &from, rtp, n);
 				goto again;
 			}
 			if (to.sin_port = sin.sin_port)
 				to.sin_port = from.sin_port;
 			if (to.sin_port != from.sin_port) {
-				tpacket("discarded (wrong port)", &from, tp, n);
+				tpacket("discarded (wrong port)",
+				    &from, rtp, n);
 				goto again;
 			}
 			if (trace)
-				tpacket("received", &from, tp, n);
-			tp->th_opcode = ntohs(tp->th_opcode);
-			tp->th_block = ntohs(tp->th_block);
-			if (tp->th_opcode == ERROR) {
-				printf("Error code %d: %s\n", tp->th_code,
-					tp->th_msg);
+				tpacket("received", &from, rtp, n);
+			rtp->th_opcode = ntohs(rtp->th_opcode);
+			rtp->th_block = ntohs(rtp->th_block);
+			if (rtp->th_opcode == ERROR) {
+				printf("Error code %d: %s\n", rtp->th_code,
+					rtp->th_msg);
 				aborted = 1;
 				goto done;
 			}
-		} while (tp->th_opcode != DATA && tp->th_block != block);
-		size = write(fd, tp->th_data, n - 4);
+		} while (rtp->th_opcode != DATA && rtp->th_block != block);
+		size = write(fd, rtp->th_data, n - 4);
 		if (size < 0) {
 			perror("tftp: write");
 			nak(&to, errno + 100);
@@ -209,9 +216,9 @@ again:
 		amount += size;
 	} while (size == SEGSIZE);
 done:
-	tp->th_opcode = htons((u_short)ACK);
-	tp->th_block = htons((u_short)block);
-	(void) sendto(f, buf, 4, 0, &to, sizeof (to));
+	stp->th_opcode = htons((u_short)ACK);
+	stp->th_block = htons((u_short)block);
+	(void) sendto(f, sbuf, 4, 0, &to, sizeof (to));
 	(void) close(fd);
 	if (!aborted && amount > 0) {
 		delta = time(0) - start;
@@ -224,20 +231,20 @@ makerequest(request, name)
 	int request;
 	char *name;
 {
-	register struct tftphdr *tp;
+	register struct tftphdr *stp;
 	int size;
 	register char *cp;
 
-	tp = (struct tftphdr *)buf;
-	tp->th_opcode = htons((u_short)request);
-	strcpy(tp->th_stuff, name);
+	stp = (struct tftphdr *)sbuf;
+	stp->th_opcode = htons((u_short)request);
+	strcpy(stp->th_stuff, name);
 	size = strlen(name);
-	cp = tp->th_stuff + strlen(name);
+	cp = stp->th_stuff + strlen(name);
 	*cp++ = '\0';
 	strcpy(cp, mode);
 	cp += sizeof ("netascii") - 1;
 	*cp++ = '\0';
-	return (cp - buf);
+	return (cp - sbuf);
 }
 
 struct errmsg {
@@ -265,24 +272,24 @@ nak(to, error)
 	struct sockaddr_in *to;
 	int error;
 {
-	register struct tftphdr *tp;
+	register struct tftphdr *stp;
 	int length;
 	register struct errmsg *pe;
 	extern char *sys_errlist[];
 
-	tp = (struct tftphdr *)buf;
-	tp->th_opcode = htons((u_short)ERROR);
-	tp->th_code = htons((u_short)error);
+	stp = (struct tftphdr *)sbuf;
+	stp->th_opcode = htons((u_short)ERROR);
+	stp->th_code = htons((u_short)error);
 	for (pe = errmsgs; pe->e_code >= 0; pe++)
 		if (pe->e_code == error)
 			break;
 	if (pe->e_code < 0)
 		pe->e_msg = sys_errlist[error - 100];
-	strcpy(tp->th_msg, pe->e_msg);
+	strcpy(stp->th_msg, pe->e_msg);
 	length = strlen(pe->e_msg) + 4;
 	if (trace)
-		tpacket("sent", to, tp, length);
-	if (sendto(f, buf, length, 0, to, sizeof (*to)) != length)
+		tpacket("sent", to, stp, length);
+	if (sendto(f, sbuf, length, 0, to, sizeof (*to)) != length)
 		perror("tftp: nak");
 }
 
