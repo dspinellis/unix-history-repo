@@ -1,8 +1,8 @@
 #ifndef lint
-static char sccsid[] = "@(#)order.c	1.1 (Berkeley) %G%";
+static char sccsid[] = "@(#)order.c	1.2 (Berkeley) %G%";
 #endif
 
-# include "mfile2"
+# include "pass2.h"
 
 int maxargs = { -1 };
 
