@@ -76,6 +76,8 @@ ports/xv                Scott Mace              smace@freefall.cdrom.com
 ports/ytalk             Geoff Rehmet            csgr@cs.ru.ac.za
 ports/zircon            Jordan Hubbard          jkh@freefall.cdrom.com
 ports/zsh               Scott Mace              smace@freefall.cdrom.com
+prog/cc			Poul-Henning Kamp	phk@login.dkuug.dk
+prog/cc25		Poul-Henning Kamp	phk@login.dkuug.dk
 prog/gdb                Gary Jennejohn          gj@pcs.dec.com
 prog/man                Jordan Hubbard          jkh@freefall.cdrom.com
 prog/telnet		Garrett Wollman		wollman@lcs.mit.edu
