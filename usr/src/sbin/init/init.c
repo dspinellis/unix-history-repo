@@ -15,7 +15,7 @@ char copyright[] =
 #endif /* not lint */
 
 #ifndef lint
-static char sccsid[] = "@(#)init.c	6.21 (Berkeley) %G%";
+static char sccsid[] = "@(#)init.c	6.22 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/param.h>
@@ -118,6 +118,9 @@ void collect_child __P((pid_t));
 pid_t start_getty __P((session_t *));
 void transition_handler __P((int));
 void alrm_handler __P((int));
+void setsecuritylevel __P((int));
+int getsecuritylevel __P((void));
+int setupargv __P((session_t *, struct ttyent *));
 int clang;
 
 void clear_session_logs __P((session_t *));
@@ -296,7 +299,6 @@ stall(va_alist)
 	va_dcl
 #endif
 {
-	pid_t pid;
 	va_list ap;
 #ifndef __STDC__
 	char *message;
@@ -420,10 +422,11 @@ getsecuritylevel()
 /*
  * Set the security level of the kernel.
  */
+void
 setsecuritylevel(newlevel)
 	int newlevel;
 {
-	int name[2], len, curlevel;
+	int name[2], curlevel;
 	extern int errno;
 
 	curlevel = getsecuritylevel();
@@ -852,8 +855,10 @@ free_session(sp)
 	register session_t *sp;
 {
 	free(sp->se_device);
-	free(sp->se_getty);
-	free(sp->se_getty_argv);
+	if (sp->se_getty) {
+		free(sp->se_getty);
+		free(sp->se_getty_argv);
+	}
 	if (sp->se_window) {
 		free(sp->se_window);
 		free(sp->se_window_argv);
@@ -878,34 +883,16 @@ new_session(sprev, session_index, typ)
 		return 0;
 
 	sp = (session_t *) malloc(sizeof (session_t));
+	bzero(sp, sizeof *sp);
 
 	sp->se_index = session_index;
-	sp->se_process = 0;
-	sp->se_started = 0;
-	sp->se_flags = 0;
-	sp->se_window = 0;
 
 	sp->se_device = malloc(sizeof(_PATH_DEV) + strlen(typ->ty_name));
 	(void) sprintf(sp->se_device, "%s%s", _PATH_DEV, typ->ty_name);
 
-	sp->se_getty = malloc(strlen(typ->ty_getty) + strlen(typ->ty_name) + 2);
-	(void) sprintf(sp->se_getty, "%s %s", typ->ty_getty, typ->ty_name);
-	sp->se_getty_argv = construct_argv(sp->se_getty);
-	if (sp->se_getty_argv == 0) {
-		warning("can't parse getty for port %s",
-			sp->se_device);
+	if (setupargv(sp, typ) == 0) {
 		free_session(sp);
-		return 0;
-	}
-	if (typ->ty_window) {
-		sp->se_window = strdup(typ->ty_window);
-		sp->se_window_argv = construct_argv(sp->se_window);
-		if (sp->se_window_argv == 0) {
-			warning("can't parse window for port %s",
-				sp->se_device);
-			free_session(sp);
-			return 0;
-		}
+		return (0);
 	}
 
 	sp->se_next = 0;
@@ -918,6 +905,44 @@ new_session(sprev, session_index, typ)
 	}
 
 	return sp;
+}
+
+/*
+ * Calculate getty and if useful window argv vectors.
+ */
+int
+setupargv(sp, typ)
+	session_t *sp;
+	struct ttyent *typ;
+{
+
+	if (sp->se_getty) {
+		free(sp->se_getty);
+		free(sp->se_getty_argv);
+	}
+	sp->se_getty = malloc(strlen(typ->ty_getty) + strlen(typ->ty_name) + 2);
+	(void) sprintf(sp->se_getty, "%s %s", typ->ty_getty, typ->ty_name);
+	sp->se_getty_argv = construct_argv(sp->se_getty);
+	if (sp->se_getty_argv == 0) {
+		warning("can't parse getty for port %s", sp->se_device);
+		free(sp->se_getty);
+		sp->se_getty = 0;
+		return (0);
+	}
+	if (typ->ty_window) {
+		if (sp->se_window)
+			free(sp->se_window);
+		sp->se_window = strdup(typ->ty_window);
+		sp->se_window_argv = construct_argv(sp->se_window);
+		if (sp->se_window_argv == 0) {
+			warning("can't parse window for port %s",
+				sp->se_device);
+			free(sp->se_window);
+			sp->se_window = 0;
+			return (0);
+		}
+	}
+	return (1);
 }
 
 /*
@@ -1175,14 +1200,7 @@ clean_ttys()
 				continue;
 			}
 			sp->se_flags &= ~SE_SHUTDOWN;
-			free(sp->se_getty);
-			sp->se_getty = malloc(strlen(typ->ty_getty) +
-			    strlen(typ->ty_name) + 2);
-			(void) sprintf(sp->se_getty, "%s %s", typ->ty_getty,
-			    typ->ty_name);
-			free(sp->se_getty_argv);
-			sp->se_getty_argv = construct_argv(sp->se_getty);
-			if (sp->se_getty_argv == 0) {
+			if (setupargv(sp, typ) == 0) {
 				warning("can't parse getty for port %s",
 					sp->se_device);
 				sp->se_flags |= SE_SHUTDOWN;
@@ -1255,7 +1273,7 @@ death()
 			return (state_func_t) single_user;
 	}
 
-	warning("some processes wouldn't die");
+	warning("some processes would not die; ps axl advised");
 
 	return (state_func_t) single_user;
 }
