@@ -4,7 +4,7 @@
 #
 # %sccs.include.redist.sh%
 #
-#	@(#)READ_ME	8.20 (Berkeley) %G%
+#	@(#)READ_ME	8.21 (Berkeley) %G%
 #
 
 This directory contains the source files for sendmail.
@@ -243,6 +243,12 @@ Solaris 2.x (SunOS 5.x)
 	To the best of my knowledge, Solaris does not have the
 	gethostbyname problem described above.
 
+	The Solaris "syslog" function is apparently limited to something
+	about 90 characters because of a kernel limitation.  If you have
+	source code, you can probably up this number.  Bill Wisner
+	<wisner@well.sf.ca.us> was able to get an unofficial, unsupported
+	patch.
+
 OSF/1
 	If you are compiling on OSF/1 (DEC Alpha), you must use -lmld.
 
@@ -354,4 +360,4 @@ version.c	The version number and information about this
 
 Eric Allman
 
-(Version 8.20, last update %G% 12:38:13)
+(Version 8.21, last update %G% 17:14:51)
