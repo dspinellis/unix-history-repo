@@ -1,4 +1,4 @@
-#	@(#)Makefile.tahoe	1.18 (Berkeley) %G%
+#	@(#)Makefile.tahoe	1.19 (Berkeley) %G%
 #
 # Makefile for 4.3 BSD
 #
@@ -83,7 +83,7 @@ assym.s: ../sys/param.h ../tahoe/pte.h ../sys/buf.h ../sys/vmparam.h \
 	./a.out >assym.s; rm -f a.out
 
 depend:	assym.s
-	mkdep ${COPTS} ${CFILES}
+	mkdep ${COPTS} ${CFILES} ioconf.c
 
 links:
 	egrep '#if' ${CFILES} | sed -f ../conf/defines | \
