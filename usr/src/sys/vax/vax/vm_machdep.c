@@ -1,4 +1,4 @@
-/*	vm_machdep.c	5.3	82/12/17	*/
+/*	vm_machdep.c	5.4	83/05/10	*/
 
 #include "../machine/pte.h"
 
@@ -117,7 +117,7 @@ chgprot(addr, tprot)
 	if (pte->pg_fod == 0 && pte->pg_pfnum) {
 		c = &cmap[pgtocm(pte->pg_pfnum)];
 		if (c->c_blkno && c->c_mdev != MSWAPX)
-			munhash(mount[c->c_mdev].m_dev, (daddr_t)c->c_blkno);
+			munhash(mount[c->c_mdev].m_dev, c->c_blkno);
 	}
 	*(int *)pte &= ~PG_PROT;
 	*(int *)pte |= tprot;
