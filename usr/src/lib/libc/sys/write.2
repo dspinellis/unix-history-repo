@@ -3,7 +3,7 @@
 .\"
 .\" %sccs.include.redist.man%
 .\"
-.\"     @(#)write.2	6.6 (Berkeley) %G%
+.\"     @(#)write.2	6.7 (Berkeley) %G%
 .\"
 .Dd 
 .Dt WRITE 2
@@ -17,7 +17,7 @@
 .Fd #include <sys/types.h>
 .Fd #include <sys/uio.h>
 .Ft ssize_t
-.Fn write "int d" "const char *buf" "size_t nbytes"
+.Fn write "int d" "const void *buf" "size_t nbytes"
 .Ft int
 .Fn writev "int d" "struct iovec *iov" "int iovcnt"
 .Sh DESCRIPTION
@@ -43,8 +43,8 @@ the
 structure is defined as:
 .Bd -literal -offset indent -compact
 struct iovec {
-	caddr_t	iov_base;
-	int	iov_len;
+	void *iov_base;
+	int iov_len;
 };
 .Ed
 .Pp
