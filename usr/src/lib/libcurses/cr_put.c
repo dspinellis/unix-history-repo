@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)cr_put.c	5.20 (Berkeley) %G%";
+static char sccsid[] = "@(#)cr_put.c	5.21 (Berkeley) %G%";
 #endif	/* not lint */
 
 #include <curses.h>
@@ -257,7 +257,7 @@ plod(cnt, in_refresh)
 	 * If we will later need a \n which will turn into a \r\n by the
 	 * system or the terminal, then don't bother to try to \r.
 	 */
-	if ((!(__orig_termios.c_oflag & ONLCR) ||
+	if ((!(__baset.c_oflag & ONLCR) ||
 	    !__pfast) && outline < destline)
 		goto dontcr;
 
@@ -299,7 +299,7 @@ dontcr:	while (outline < destline) {
 			plodput('\n');
 		if (plodcnt < 0)
 			goto out;
-		if (!(__orig_termios.c_oflag & ONLCR) || __pfast == 0)
+		if (!(__baset.c_oflag & ONLCR) || __pfast == 0)
 			outcol = 0;
 	}
 	if (BT)

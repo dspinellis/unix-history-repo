@@ -6,7 +6,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)tty.c	5.16 (Berkeley) %G%";
+static char sccsid[] = "@(#)tty.c	5.17 (Berkeley) %G%";
 #endif /* not lint */
 
 #include <sys/ioctl.h>
@@ -23,13 +23,15 @@ static char sccsid[] = "@(#)tty.c	5.16 (Berkeley) %G%";
  * See also the comments in getterm().
  */
 #ifdef TCSASOFT
-#define	TCACTION (TCSASOFT | TCSADRAIN)		/* ignore hardware settings */
+int __tcaction = TCSASOFT | TCSADRAIN;         /* ignore hardware settings */
 #else
-#define	TCACTION  TCSADRAIN
+int __tcaction = TCSADRAIN;
 #endif
 
-struct termios __orig_termios;
-static struct termios baset, cbreakt, rawt, *curt;
+/* was, pfast = rand() % HARDTABS; */
+
+struct termios __orig_termios, __baset;
+static struct termios cbreakt, rawt, *curt;
 static int useraw;
 
 #ifndef	OXTABS
@@ -52,11 +54,11 @@ gettmode()
 	if (tcgetattr(STDIN_FILENO, &__orig_termios))
 		return (ERR);
 
-	GT = (__orig_termios.c_oflag & OXTABS) == 0;
-	NONL = (__orig_termios.c_oflag & ONLCR) == 0;
+	__baset = __orig_termios;
+	__baset.c_oflag &= ~OXTABS;
 
-	baset = __orig_termios;
-	baset.c_oflag &= ~OXTABS;
+	GT = 0;		/* historical. was used before we wired OXTABS off */
+	NONL = (__baset.c_oflag & ONLCR) == 0;
 
 	/*
 	 * XXX
@@ -65,7 +67,7 @@ gettmode()
 	 * as the VEOL element.  This means that, if VEOF was ^D, the
 	 * default VMIN is 4.  Majorly stupid.
 	 */
-	cbreakt = baset;
+	cbreakt = __baset;
 	cbreakt.c_lflag &= ~ICANON;
 	cbreakt.c_cc[VMIN] = 1;
 	cbreakt.c_cc[VTIME] = 0;
@@ -88,8 +90,8 @@ gettmode()
 	rawt.c_cflag |= CS8;
 #endif
 
-	curt = &baset;
-	return (tcsetattr(STDIN_FILENO, TCACTION, &baset) ? ERR : OK);
+	curt = &__baset;
+	return (tcsetattr(STDIN_FILENO, __tcaction, &__baset) ? ERR : OK);
 }
 
 int
@@ -97,15 +99,15 @@ raw()
 {
 	useraw = __pfast = __rawmode = 1;
 	curt = &rawt;
-	return (tcsetattr(STDIN_FILENO, TCACTION, &rawt));
+	return (tcsetattr(STDIN_FILENO, __tcaction, &rawt));
 }
 
 int
 noraw()
 {
 	useraw = __pfast = __rawmode = 0;
-	curt = &baset;
-	return (tcsetattr(STDIN_FILENO, TCACTION, &baset));
+	curt = &__baset;
+	return (tcsetattr(STDIN_FILENO, __tcaction, &__baset));
 }
 
 int
@@ -114,7 +116,7 @@ cbreak()
 
 	__rawmode = 1;
 	curt = useraw ? &rawt : &cbreakt;
-	return (tcsetattr(STDIN_FILENO, TCACTION, curt));
+	return (tcsetattr(STDIN_FILENO, __tcaction, curt));
 }
 
 int
@@ -122,8 +124,8 @@ nocbreak()
 {
 
 	__rawmode = 0;
-	curt = useraw ? &rawt : &baset;
-	return (tcsetattr(STDIN_FILENO, TCACTION, curt));
+	curt = useraw ? &rawt : &__baset;
+	return (tcsetattr(STDIN_FILENO, __tcaction, curt));
 }
 	
 int
@@ -131,10 +133,10 @@ echo()
 {
 	rawt.c_lflag |= ECHO;
 	cbreakt.c_lflag |= ECHO;
-	baset.c_lflag |= ECHO;
+	__baset.c_lflag |= ECHO;
 	
 	__echoit = 1;
-	return (tcsetattr(STDIN_FILENO, TCACTION, curt));
+	return (tcsetattr(STDIN_FILENO, __tcaction, curt));
 }
 
 int
@@ -142,10 +144,10 @@ noecho()
 {
 	rawt.c_lflag &= ~ECHO;
 	cbreakt.c_lflag &= ~ECHO;
-	baset.c_lflag &= ~ECHO;
+	__baset.c_lflag &= ~ECHO;
 	
 	__echoit = 0;
-	return (tcsetattr(STDIN_FILENO, TCACTION, curt));
+	return (tcsetattr(STDIN_FILENO, __tcaction, curt));
 }
 
 int
@@ -155,11 +157,11 @@ nl()
 	rawt.c_oflag |= ONLCR;
 	cbreakt.c_iflag |= ICRNL;
 	cbreakt.c_oflag |= ONLCR;
-	baset.c_iflag |= ICRNL;
-	baset.c_oflag |= ONLCR;
+	__baset.c_iflag |= ICRNL;
+	__baset.c_oflag |= ONLCR;
 
 	__pfast = __rawmode;
-	return (tcsetattr(STDIN_FILENO, TCACTION, curt));
+	return (tcsetattr(STDIN_FILENO, __tcaction, curt));
 }
 
 int
@@ -169,11 +171,11 @@ nonl()
 	rawt.c_oflag &= ~ONLCR;
 	cbreakt.c_iflag &= ~ICRNL;
 	cbreakt.c_oflag &= ~ONLCR;
-	baset.c_iflag &= ~ICRNL;
-	baset.c_oflag &= ~ONLCR;
+	__baset.c_iflag &= ~ICRNL;
+	__baset.c_oflag &= ~ONLCR;
 
 	__pfast = 1;
-	return (tcsetattr(STDIN_FILENO, TCACTION, curt));
+	return (tcsetattr(STDIN_FILENO, __tcaction, curt));
 }
 
 void
@@ -202,7 +204,7 @@ endwin()
 	(void)fflush(stdout);
 	(void)setvbuf(stdout, NULL, _IOLBF, 0);
 
-	return (tcsetattr(STDIN_FILENO, TCACTION, &__orig_termios));
+	return (tcsetattr(STDIN_FILENO, __tcaction, &__orig_termios));
 }
 
 /*
@@ -220,5 +222,5 @@ savetty()
 int
 resetty()
 {
-	return (tcsetattr(STDIN_FILENO, TCACTION, &savedtty));
+	return (tcsetattr(STDIN_FILENO, __tcaction, &savedtty));
 }
