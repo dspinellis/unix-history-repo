@@ -4,7 +4,7 @@
  *
  * %sccs.include.redist.c%
  *
- *	@(#)vfs_subr.c	7.70 (Berkeley) %G%
+ *	@(#)vfs_subr.c	7.71 (Berkeley) %G%
  */
 
 /*
@@ -733,7 +733,7 @@ void vrele(vp)
 /*
  * Page or buffer structure gets a reference.
  */
-vhold(vp)
+void vhold(vp)
 	register struct vnode *vp;
 {
 
@@ -743,7 +743,7 @@ vhold(vp)
 /*
  * Page or buffer structure frees a reference.
  */
-holdrele(vp)
+void holdrele(vp)
 	register struct vnode *vp;
 {
 

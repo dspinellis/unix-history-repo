@@ -4,7 +4,7 @@
  *
  * %sccs.include.proprietary.c%
  *
- *	@(#)kern_exec.c	7.54 (Berkeley) %G%
+ *	@(#)kern_exec.c	7.55 (Berkeley) %G%
  */
 
 #include "param.h"
@@ -655,11 +655,12 @@ getxfile(p, vp, ep, paged, ssize, uid, gid)
 		 */
 		if (ep->a_text > 0) {
 			error = vn_rdwr(UIO_READ, vp, vm->vm_taddr,
-				(int)ep->a_text, toff, UIO_USERSPACE,
-				(IO_UNIT|IO_NODELOCKED), cred, (int *)0, p);
-			(void) vm_map_protect(&vm->vm_map, vm->vm_taddr,
-				vm->vm_taddr + trunc_page(ep->a_text),
-				VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
+			    (int)ep->a_text, toff, UIO_USERSPACE,
+			    (IO_UNIT|IO_NODELOCKED), cred, (int *)0, p);
+			(void) vm_map_protect(&vm->vm_map,
+			    (vm_offset_t)vm->vm_taddr,
+			    (vm_offset_t)vm->vm_taddr + trunc_page(ep->a_text),
+			    VM_PROT_READ|VM_PROT_EXECUTE, FALSE);
 		}
 	} else {
 		/*
