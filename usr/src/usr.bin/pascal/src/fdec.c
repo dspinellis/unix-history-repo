@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fdec.c 1.17 %G%";
+static char sccsid[] = "@(#)fdec.c 1.18 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -90,6 +90,8 @@ funcbody(fp)
 		pexit(ERRS);
 	}
 	sizes[cbn].om_max = sizes[cbn].curtmps.om_off = -DPOFF1;
+	sizes[cbn].reg_max = -1;
+	sizes[cbn].curtmps.reg_off = 0;
 	gotos[cbn] = NIL;
 	errcnt[cbn] = syneflg;
 	parts[ cbn ] = NIL;
@@ -115,8 +117,10 @@ funcbody(fp)
 		enter(fp->ptr[NL_FVAR]);
 #		ifdef PC
 		    q = fp -> ptr[ NL_FVAR ];
-		    sizes[cbn].curtmps.om_off -= lwidth( q -> type );
-		    sizes[cbn].om_max = sizes[cbn].curtmps.om_off;
+		    if (q -> ptr[ NL_OFFS ] != tmpalloc(leven(roundup(
+			    (int)lwidth(q -> type), (long)align(q -> type))),
+			q -> type, NOREG))
+			    panic("func var");
 #		endif PC
 	}
 #	ifdef PTREE

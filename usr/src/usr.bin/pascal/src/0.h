@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-/* static char sccsid[] = "@(#)0.h 1.5 %G%"; */
+/* static char sccsid[] = "@(#)0.h 1.6 %G%"; */
 
 #define DEBUG
 #define CONSETS
@@ -319,6 +319,7 @@ struct {
 #define NL_GOLEV 2
 #define NL_GOLINE 3
 #define NL_FORV 1
+#define NL_SOFFS 4
 
 #define	NL_FLDSZ 1
 #define	NL_VARNT 2
@@ -337,6 +338,14 @@ struct {
 #define	NL_KINDS	0
 
 #define	ISUNDEF		1
+
+/*
+ * Variables may reside on the stack as formals or as locals,
+ * or as register temporaries
+ */
+#define PARAMVAR	1
+#define LOCALVAR	2
+#define REGVAR		3
 
 /*
  * NAMELIST CLASSES

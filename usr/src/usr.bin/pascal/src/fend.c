@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static char sccsid[] = "@(#)fend.c 1.1 %G%";
+static char sccsid[] = "@(#)fend.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -52,6 +52,7 @@ funcend(fp, bundle, endline)
 	char *cp;
 	extern int cntstat;
 #	ifdef PC
+	    int	savlabel = getlab();
 	    int	toplabel = getlab();
 	    int	botlabel = getlab();
 #	endif PC
@@ -180,11 +181,8 @@ funcend(fp, bundle, endline)
 	    /*
 	     *	register save mask
 	     */
-	if ( opt( 't' ) ) {
-	    putprintf( "	.word	0x%x" , 0 , RUNCHECK | RSAVEMASK );
-	} else {
-	    putprintf( "	.word	0x%x" , 0 , RSAVEMASK );
-	}
+	putprintf( "	.word	" , 1 );
+        putprintf( PREFIXFORMAT , 0 , LABELPREFIX , savlabel );
 	putjbr( botlabel );
 	putlab( toplabel );
 	if ( profflag ) {
@@ -548,7 +546,11 @@ funcend(fp, bundle, endline)
 	    putprintf( "	ret" , 0 );
 		/*
 		 *	let the second pass allocate locals
+		 * 	and registers
 		 */
+	    putprintf( "	.set	" , 1 );	
+	    putprintf( PREFIXFORMAT , 1 , LABELPREFIX , savlabel );
+	    putprintf( ", 0x%x" , 0 , savmask() );
 	    putlab( botlabel );
 	    putprintf( "	subl2	$LF%d,sp" , 0 , ftnno );
 	    putrbracket( ftnno );

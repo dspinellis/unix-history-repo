@@ -1,6 +1,6 @@
 /* Copyright (c) 1979 Regents of the University of California */
 
-static	char sccsid[] = "@(#)clas.c 1.1 %G%";
+static	char sccsid[] = "@(#)clas.c 1.2 %G%";
 
 #include "whoami.h"
 #include "0.h"
@@ -206,3 +206,23 @@ nowexp(r)
 	return (NIL);
 }
 #endif
+
+    /*
+     *	is a variable a local, a formal parameter, or a register temporary?
+     *	all this from just the offset:
+     *	    positives are parameters
+     *	    negative evens are locals
+     *	    negatives odds are encoded registers  ( see tmpalloc() ).
+     */
+whereis( offset )
+    int	offset;
+{
+    
+    if ( offset >= 0 ) {
+	return PARAMVAR;
+    }
+    if ( offset & 1 ) {
+	return REGVAR;
+    }
+    return LOCALVAR;
+}
