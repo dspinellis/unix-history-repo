@@ -3,68 +3,68 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_pcs.c	7.3 (Berkeley) %G%
+ *	@(#)kdb_pcs.c	7.4 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
 
-char	*NOBKPT;
-char	*SZBKPT;
-char	*EXBKPT;
-char	*BADMOD;
+char	*kdbNOBKPT;
+char	*kdbSZBKPT;
+char	*kdbEXBKPT;
+char	*kdbBADMOD;
 
 /* breakpoints */
-BKPTR	bkpthead;
+BKPTR	kdbbkpthead;
 
-char	*lp;
-char	lastc;
+char	*kdblp;
+char	kdblastc;
 extern	char *kdbmalloc();
-long	loopcnt;
+long	kdbloopcnt;
 
 /* sub process control */
 
-subpcs(modif)
+kdbsubpcs(modif)
 {
 	register check, runmode;
 	register BKPTR bkptr;
 	register char *comptr;
 
-	loopcnt=cntval;
+	kdbloopcnt=kdbcntval;
 	switch (modif) {
 
 		/* delete breakpoint */
 	case 'd': case 'D':
-		if (bkptr=scanbkpt((ADDR)dot)) {
+		if (bkptr=kdbscanbkpt((ADDR)kdbdot)) {
 			bkptr->flag=0;
 			return;
 		}
-		error(NOBKPT);
+		kdberror(kdbNOBKPT);
 
 		/* set breakpoint */
 	case 'b': case 'B':
-		if (bkptr=scanbkpt((ADDR)dot))
+		if (bkptr=kdbscanbkpt((ADDR)kdbdot))
 			bkptr->flag=0;
-		for (bkptr=bkpthead; bkptr; bkptr=bkptr->nxtbkpt)
+		for (bkptr=kdbbkpthead; bkptr; bkptr=bkptr->nxtbkpt)
 			if (bkptr->flag == 0)
 				break;
 		if (bkptr==0) {
 			bkptr=(BKPTR)kdbmalloc(sizeof *bkptr);
 			if (bkptr == (BKPTR)-1)
-				error(SZBKPT);
-			bkptr->nxtbkpt=bkpthead;
-			bkpthead=bkptr;
+				kdberror(kdbSZBKPT);
+			bkptr->nxtbkpt=kdbbkpthead;
+			kdbbkpthead=bkptr;
 		}
-		bkptr->loc = dot;
-		bkptr->initcnt = bkptr->count = cntval;
+		bkptr->loc = kdbdot;
+		bkptr->initcnt = bkptr->count = kdbcntval;
 		bkptr->flag = BKPTSET;
-		check=MAXCOM-1; comptr=bkptr->comm; (void) rdc(); lp--;
+		check=MAXCOM-1; comptr=bkptr->comm; (void) kdbrdc(); kdblp--;
 		do
-			*comptr++ = readchar();
-		while (check-- && lastc!=EOR);
-		*comptr=0; lp--;
+			*comptr++ = kdbreadchar();
+		while (check-- && kdblastc!=EOR);
+		*comptr=0; kdblp--;
 		if (check)
 			return;
-		error(EXBKPT);
+		kdberror(kdbEXBKPT);
 
 		/* single step */
 	case 's': case 'S':
@@ -82,8 +82,8 @@ subpcs(modif)
 		/* NOTREACHED */
 
 	default:
-		error(BADMOD);
+		kdberror(kdbBADMOD);
 	}
-	if (loopcnt>0)
-		runpcs(runmode, 0);
+	if (kdbloopcnt>0)
+		kdbrunpcs(runmode, 0);
 }

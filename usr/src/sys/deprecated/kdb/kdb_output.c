@@ -3,31 +3,31 @@
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  *
- *	@(#)kdb_output.c	7.2 (Berkeley) %G%
+ *	@(#)kdb_output.c	7.3 (Berkeley) %G%
  */
 
 #include "../kdb/defs.h"
 
-long	maxpos;
-int	radix = 16;
+long	kdbmaxpos;
+int	kdbradix = 16;
 
-char	printbuf[MAXLIN];
-char	*printptr = printbuf;
-char	*digitptr;
+char	kdbprintbuf[MAXLIN];
+char	*kdbprintptr = kdbprintbuf;
+char	*kdbdigitptr;
 
-printc(c)
+kdbprintc(c)
 	char c;
 {
 	char d;
 	register char *q;
 	register posn, tabs, p;
 
-	if (mkfault)
+	if (kdbmkfault)
 		return;
-	if ((*printptr=c)==EOR) {
-		tabs=0; posn=0; q=printbuf;
-		for (p=0; p<printptr-printbuf; p++) {
-			d=printbuf[p];
+	if ((*kdbprintptr=c)==EOR) {
+		tabs=0; posn=0; q=kdbprintbuf;
+		for (p=0; p<kdbprintptr-kdbprintbuf; p++) {
+			d=kdbprintbuf[p];
 			if ((p&7)==0 && posn) {
 				tabs++;
 				posn=0;
@@ -42,35 +42,35 @@ printc(c)
 				posn++;
 		 }
 		 *q++=EOR;
-		 kdbwrite(printbuf,q-printbuf);
-		 printptr=printbuf;
+		 kdbwrite(kdbprintbuf,q-kdbprintbuf);
+		 kdbprintptr=kdbprintbuf;
 	} else if (c==TB) {
-		*printptr++=SP;
-		while ((printptr-printbuf)&7)
-			*printptr++=SP;
+		*kdbprintptr++=SP;
+		while ((kdbprintptr-kdbprintbuf)&7)
+			*kdbprintptr++=SP;
 	} else if (c)
-		printptr++;
-	if (printptr >= &printbuf[MAXLIN-9]) {
-		kdbwrite(printbuf, printptr - printbuf);
-		printptr = printbuf;
+		kdbprintptr++;
+	if (kdbprintptr >= &kdbprintbuf[MAXLIN-9]) {
+		kdbwrite(kdbprintbuf, kdbprintptr - kdbprintbuf);
+		kdbprintptr = kdbprintbuf;
 	}
 }
 
-charpos()
+kdbcharpos()
 {
 
-	return (printptr-printbuf);
+	return (kdbprintptr-kdbprintbuf);
 }
 
-flushbuf()
+kdbflushbuf()
 {
 
-	if (printptr!=printbuf)
-		printc(EOR);
+	if (kdbprintptr!=kdbprintbuf)
+		kdbprintc(EOR);
 }
 
 /* VARARGS1 */
-printf(fmat,a1)
+kdbprintf(fmat,a1)
 	char *fmat, *a1;
 {
 	char *fptr;
@@ -85,50 +85,50 @@ printf(fmat,a1)
 	fptr = fmat; dptr = (long *)&a1;
 	while (c = *fptr++) {
 		if (c!='%') {
-			printc(c);
+			kdbprintc(c);
 			continue;
 		}
 		if (*fptr=='-') {
 			adj='l'; fptr++;
 		} else
 			adj='r';
-		width=convert(&fptr);
+		width=kdbconvert(&fptr);
 		if (*fptr=='.') {
-			fptr++; prec=convert(&fptr);
+			fptr++; prec=kdbconvert(&fptr);
 		} else
 			prec = -1;
-		digitptr=digits;
+		kdbdigitptr=digits;
 		x = lx = *dptr++;
 		s=0;
 		switch (c = *fptr++) {
 		case 'd':
-			printnum((u_long)x, -10); break;
+			kdbprintnum((u_long)x, -10); break;
 		case 'u':
-			printnum((u_long)x, 10); break;
+			kdbprintnum((u_long)x, 10); break;
 		case 'o':
-			printnum((u_long)x, 8); break;
+			kdbprintnum((u_long)x, 8); break;
 		case 'q':
-			printnum((u_long)x, -8); break;
+			kdbprintnum((u_long)x, -8); break;
 		case 'x':
-			printnum((u_long)x, 16); break;
+			kdbprintnum((u_long)x, 16); break;
 		case 'z':
-			printnum((u_long)x, -16); break;
+			kdbprintnum((u_long)x, -16); break;
 		case 'R':
-			printnum((u_long)lx, radix); break;
+			kdbprintnum((u_long)lx, kdbradix); break;
 		case 'D':
-			printnum((u_long)lx, -10); break;
+			kdbprintnum((u_long)lx, -10); break;
 		case 'U':
-			printnum((u_long)lx, 10); break;
+			kdbprintnum((u_long)lx, 10); break;
 		case 'O':
-			printnum((u_long)lx, 8); break;
+			kdbprintnum((u_long)lx, 8); break;
 		case 'Q':
-			printnum((u_long)lx, -8); break;
+			kdbprintnum((u_long)lx, -8); break;
 		case 'X':
-			printnum((u_long)lx, 16); break;
+			kdbprintnum((u_long)lx, 16); break;
 		case 'Z':
-			printnum((u_long)lx, -16); break;
+			kdbprintnum((u_long)lx, -16); break;
 		case 'c':
-			printc(x); break;
+			kdbprintc(x); break;
 		case 's':
 			s=(char *)lx; break;
 		case 'm':
@@ -141,31 +141,31 @@ printf(fmat,a1)
 			else
 				dptr--;
 			if (width)
-				width -= charpos()%width;
+				width -= kdbcharpos()%width;
 			break;
 		default:
-			printc(c); dptr--;
+			kdbprintc(c); dptr--;
 			break;
 		}
 		if (s==0) {
-			*digitptr=0; s=digits;
+			*kdbdigitptr=0; s=digits;
 		}
 		n=strlen(s);
 		n=(prec<n && prec>=0 ? prec : n);
 		width -= n;
 		if (adj=='r')
 			while (width-- > 0)
-				printc(SP);
+				kdbprintc(SP);
 		while (n--)
-			printc(*s++);
+			kdbprintc(*s++);
 		while (width-- > 0)
-			printc(SP);
-		digitptr=digits;
+			kdbprintc(SP);
+		kdbdigitptr=digits;
 	}
 }
 
 static
-convert(cp)
+kdbconvert(cp)
 	register char **cp;
 {
 	register char c;
@@ -179,7 +179,7 @@ convert(cp)
 }
 
 static
-printnum(n, base)
+kdbprintnum(n, base)
 	register u_long n;
 {
 	register char *dptr;
@@ -190,7 +190,7 @@ printnum(n, base)
 		base = -base;
 		if ((long)n<0) {
 			n = -n;
-			*digitptr++ = '-';
+			*kdbdigitptr++ = '-';
 		}
 	}
 	while (n) {
@@ -201,13 +201,13 @@ printnum(n, base)
 		*dptr++=0;
 	while (dptr!=digs) {
 		n = *--dptr;
-		*digitptr++ = (n+(n<=9 ? '0' : 'a'-10));
+		*kdbdigitptr++ = (n+(n<=9 ? '0' : 'a'-10));
 	}
 }
 
-endline()
+kdbendline()
 {
 
-	if (maxpos <= charpos())
-		printf("\n");
+	if (kdbmaxpos <= kdbcharpos())
+		kdbprintf("\n");
 }
