@@ -1,4 +1,4 @@
-#       @(#)Makefile	4.16 (Berkeley) %G%
+#       @(#)Makefile	4.17 (Berkeley) %G%
 
 SUBDIR= mailstats praliases
 
@@ -6,5 +6,8 @@ SUBDIR= mailstats praliases
 .if !make(install)
 SUBDIR+=src
 .endif
+
+tar: Files
+	tar cf sendmail.tar `cat Files`
 
 .include <bsd.subdir.mk>
