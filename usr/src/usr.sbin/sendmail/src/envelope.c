@@ -9,7 +9,7 @@
 */
 
 #ifndef lint
-static char	SccsId[] = "@(#)envelope.c	5.2 (Berkeley) %G%";
+static char	SccsId[] = "@(#)envelope.c	5.3 (Berkeley) %G%";
 #endif not lint
 
 #include <pwd.h>
@@ -142,6 +142,8 @@ dropenvelope(e)
 	{
 		if (e->e_dfp != NULL)
 			(void) fclose(e->e_dfp);
+		if (e->e_df != NULL)
+			xunlink(e->e_df);
 		xunlink(queuename(e, 'q'));
 	}
 	else if (queueit || !bitset(EF_INQUEUE, e->e_flags))
@@ -158,8 +160,6 @@ dropenvelope(e)
 	unlockqueue(e);
 
 	/* make sure that this envelope is marked unused */
-	if (e->e_df != NULL)
-		xunlink(e->e_df);
 	e->e_id = e->e_df = NULL;
 	e->e_dfp = NULL;
 }
