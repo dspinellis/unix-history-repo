@@ -1,12 +1,12 @@
 #ifndef lint
-static char *sccsid ="@(#)stty.c	4.14 (Berkeley) %G%";
+static char *sccsid ="@(#)stty.c	4.15 (Berkeley) %G%";
 #endif
 /*
  * set teletype modes
  */
 
 #include <stdio.h>
-#include <sgtty.h>
+#include <sys/ioctl.h>
 
 struct
 {
@@ -127,6 +127,7 @@ struct
 struct tchars tc;
 struct ltchars ltc;
 struct sgttyb mode;
+struct winsize win;
 int	lmode;
 int	oldisc, ldisc;
 
@@ -171,6 +172,7 @@ char	**iargv;
 	ioctl(1, TIOCGETC, &tc);
 	ioctl(1, TIOCLGET, &lmode);
 	ioctl(1, TIOCGLTC, &ltc);
+	ioctl(1, TIOCGWINSZ, &win);
 	if(argc == 1) {
 		prmodes(0);
 		exit(0);
@@ -260,6 +262,16 @@ char	**iargv;
 			ioctl(1, TIOCHPCL, NULL);
 			continue;
 		}
+		if (eq("rows")) {
+			if (--argc == 0)
+				goto done;
+			win.ws_row = atoi(*++argv);
+		}
+		if (eq("columns")) {
+			if (--argc == 0)
+				goto done;
+			win.ws_col = atoi(*++argv);
+		}
 		for(i=0; speeds[i].string; i++)
 			if(eq(speeds[i].string)) {
 				mode.sg_ispeed = mode.sg_ospeed = speeds[i].speed;
@@ -292,6 +304,7 @@ done:
 	ioctl(1, TIOCSETC, &tc);
 	ioctl(1, TIOCSLTC, &ltc);
 	ioctl(1, TIOCLSET, &lmode);
+	ioctl(1, TIOCSWINSZ, &win);
 }
 
 eq(string)
@@ -327,6 +340,8 @@ prmodes(all)
 		prspeed("output speed ", mode.sg_ospeed);
 	} else
 		prspeed("speed ", mode.sg_ispeed);
+	if (all)
+		fprintf(stderr, ", %d rows, %d columns", win.ws_row, win.ws_col);
 	fprintf(stderr, all==2 ? "\n" : "; ");
 	m = mode.sg_flags;
 	if(all==2 || (m&(EVENP|ODDP))!=(EVENP|ODDP)) {
