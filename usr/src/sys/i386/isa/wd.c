@@ -7,7 +7,7 @@
  *
  * %sccs.include.386.c%
  *
- *	@(#)wd.c	5.8 (Berkeley) %G%
+ *	@(#)wd.c	5.9 (Berkeley) %G%
  */
 
 #include "wd.h"
