@@ -7,7 +7,7 @@
  */
 
 #ifndef lint
-static char sccsid[] = "@(#)deliver.c	8.65 (Berkeley) %G%";
+static char sccsid[] = "@(#)deliver.c	8.66 (Berkeley) %G%";
 #endif /* not lint */
 
 #include "sendmail.h"
@@ -1820,9 +1820,9 @@ logdelivery(m, mci, stat, ctladdr, e)
 		(void) strcat(bp, mci->mci_host);
 
 # ifdef DAEMON
-		(void) strcat(bp, " (");
+		(void) strcat(bp, " [");
 		(void) strcat(bp, anynet_ntoa(&CurHostAddr));
-		(void) strcat(bp, ")");
+		(void) strcat(bp, "]");
 # endif
 	}
 	else
@@ -1924,9 +1924,9 @@ logdelivery(m, mci, stat, ctladdr, e)
 		sprintf(bp, ", relay=%s", mci->mci_host);
 
 # ifdef DAEMON
-		(void) strcat(bp, " (");
+		(void) strcat(bp, " [");
 		(void) strcat(bp, anynet_ntoa(&CurHostAddr));
-		(void) strcat(bp, ")");
+		(void) strcat(bp, "]");
 # endif
 	}
 	else
