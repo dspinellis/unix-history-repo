@@ -1,0 +1,22 @@
+		   README for GNU development tools
+			    Cygnus Support
+
+This directory contains various GNU compilers, assemblers, linkers, 
+debuggers, etc., plus their support routines, definitions, and documentation.
+
+If you are receiving this as part of a GDB release, see the file
+gdb/README.  If with a gas release, see gas/README, etc.
+
+It is now possible to configure and build a variety of tools with one
+command.  To build all of the tools contained herein, run the
+``configure'' script here, e.g.:
+
+	./configure MYHOSTTYPE
+
+followed by running ``make''.  (MYHOSTTYPE is a name for your host computer,
+for instance "sun4".  You can use the script ``config.sub'' to test whether
+a name is recognized; if it is, config.sub translates it to a triplet 
+specifying CPU, vendor, and OS.)
+
+See etc/cfg-paper.texi, etc/configure.texi, and/or the README files in
+various subdirectories, for more details.
