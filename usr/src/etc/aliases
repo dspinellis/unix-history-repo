@@ -1,5 +1,5 @@
 #
-#	@(#)aliases	5.5 (Berkeley) %G%
+#	@(#)aliases	5.6 (Berkeley) %G%
 #
 #  Aliases in this file will NOT be expanded in the header from
 #  Mail, but WILL be visible over networks or from /bin/mail.
@@ -27,6 +27,9 @@ uucp:		root
 manager:	root
 dumper:		root
 operator:	root
+
+# trap decode to catch security attacks
+decode:		root
 
 # OFFICIAL CSRG/BUG ADDRESSES
 
