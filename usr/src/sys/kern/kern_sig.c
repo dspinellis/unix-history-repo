@@ -1,4 +1,4 @@
-/*	kern_sig.c	5.14	82/12/19	*/
+/*	kern_sig.c	5.15	82/12/28	*/
 
 #include "../machine/reg.h"
 #include "../machine/pte.h"
@@ -57,77 +57,71 @@ kill()
 }
 #endif
 
+/* TEMPORARY */
 killpg()
 {
+	register struct a {
+		int	pgrp;
+		int	signo;
+	} *uap = (struct a *)u.u_ap;
 
+	u.u_error = okill1(1, uap->signo, uap->pgrp);
 }
 
 /* BEGIN DEFUNCT */
 okill()
 {
-	register struct proc *p;
-	register a, sig;
 	register struct a {
 		int	pid;
 		int	signo;
-	} *uap;
-	int f, priv;
+	} *uap = (struct a *)u.u_ap;
 
-	uap = (struct a *)u.u_ap;
-	f = 0;
-	a = uap->pid;
-	priv = 0;
-	sig = uap->signo;
-	if (sig < 0)
-		/*
-		 * A negative signal means send to process group.
-		 */
-		uap->signo = -uap->signo;
-	if (uap->signo == 0 || uap->signo > NSIG) {
-		u.u_error = EINVAL;
-		return;
+	u.u_error = okill1(uap->signo < 0,
+		uap->signo < 0 ? -uap->signo : uap->signo, uap->pid);
+}
+
+okill1(ispgrp, signo, who)
+	int ispgrp, signo, who;
+{
+	register struct proc *p;
+	int f, priv = 0;
+
+	if (signo == 0 || signo > NSIG)
+		return (EINVAL);
+	if (who > 0 && !ispgrp) {
+		p = pfind(who);
+		if (p == 0 || u.u_uid && u.u_uid != p->p_uid)
+			return (ESRCH);
+		psignal(p, signo);
+		return (0);
 	}
-	if (a > 0 && sig > 0) {
-		p = pfind(a);
-		if (p == 0 || u.u_uid && u.u_uid != p->p_uid) {
-			u.u_error = ESRCH;
-			return;
-		}
-		psignal(p, uap->signo);
-		return;
-	}
-	if (a==-1 && u.u_uid==0) {
-		priv++;
-		a = 0;
-		sig = -1;		/* like sending to pgrp */
-	} else if (a==0) {
+	if (who == -1 && u.u_uid == 0)
+		priv++, who = 0, ispgrp = 1;	/* like sending to pgrp */
+	else if (who == 0) {
 		/*
 		 * Zero process id means send to my process group.
 		 */
-		sig = -1;
-		a = u.u_procp->p_pgrp;
-		if (a == 0) {
-			u.u_error = EINVAL;
-			return;
-		}
+		ispgrp = 1;
+		who = u.u_procp->p_pgrp;
+		if (who == 0)
+			return (EINVAL);
 	}
-	for(p = proc; p < procNPROC; p++) {
+	for (f = 0, p = proc; p < procNPROC; p++) {
 		if (p->p_stat == NULL)
 			continue;
-		if (sig > 0) {
-			if (p->p_pid != a)
+		if (!ispgrp) {
+			if (p->p_pid != who)
 				continue;
-		} else if (p->p_pgrp!=a && priv==0 || p->p_ppid==0 ||
-		    (p->p_flag&SSYS) || (priv && p==u.u_procp))
+		} else if (p->p_pgrp != who && priv == 0 || p->p_ppid == 0 ||
+		    (p->p_flag&SSYS) || (priv && p == u.u_procp))
 			continue;
 		if (u.u_uid != 0 && u.u_uid != p->p_uid &&
-		    (uap->signo != SIGCONT || !inferior(p)))
+		    (signo != SIGCONT || !inferior(p)))
 			continue;
 		f++;
-		psignal(p, uap->signo);
+		psignal(p, signo);
 	}
-	if (f == 0)
-		u.u_error = ESRCH;
+	return (f == 0? ESRCH : 0);
 }
 
 ossig()
